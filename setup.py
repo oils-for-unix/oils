@@ -3,7 +3,7 @@
 from distutils.core import setup, Extension
 
 module = Extension('libc',
-                    sources = ['libc.c'])
+                    sources = ['core/libc.c'])
 
 setup(name = 'libc',
       version = '1.0',
