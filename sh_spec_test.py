@@ -1,15 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 """
 sh_spec_test.py: Tests for sh_spec.py
 """
 
-import cStringIO
+import io
 import pprint
 import unittest
 
 from sh_spec import *  # module under test
 
-TEST = cStringIO.StringIO("""\
+TEST = io.StringIO("""\
 ### Env binding in readonly/declare disallowed
 FOO=foo readonly v=$(tests/printenv.py FOO)
 echo "v=$v"
@@ -42,7 +42,7 @@ class TestShTest(unittest.TestCase):
     self.assertEqual(expected, CASE['mksh'])
 
   def testCreateAssertions(self):
-    print CreateAssertions(CASE, 'bash')
+    print(CreateAssertions(CASE, 'bash'))
 
   def testRunCases(self):
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]

@@ -1,5 +1,4 @@
-#!/usr/bin/python
-from __future__ import print_function
+#!/usr/bin/env python3
 """
 sh_spec.py -- Test framework to compare shells.
 
@@ -125,7 +124,7 @@ class Tokenizer(object):
 
   def next(self):
     """Raises StopIteration when exhausted."""
-    self.cursor = self.it.next()
+    self.cursor = self.it.__next__()
     return self.cursor
 
   def peek(self):
@@ -347,7 +346,10 @@ class EqualAssertion(object):
   """An expected value in a record."""
   def __init__(self, key, expected, qualifier=None):
     self.key = key
-    self.expected = expected  # expected value
+    if isinstance(expected, str):
+      self.expected = expected.encode('utf-8')
+    else:
+        self.expected = expected  # expected value
     self.qualifier = qualifier  # whether this was a special case?
 
   def __repr__(self):
@@ -428,12 +430,15 @@ def RunCases(cases, shells, case_predicate, verbose):
       #print '+', shell, case['desc']
       argv = [sh_path]  # TODO: Add flags
       p = subprocess.Popen(argv, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-      p.stdin.write(code)
+      p.stdin.write(code.encode('utf-8'))
       p.stdin.close()
 
       actual = {}
       actual['stdout'] = p.stdout.read()
       actual['stderr'] = p.stderr.read()
+      p.stdout.close()
+      p.stderr.close()
+
       actual['status'] = p.wait()
 
       messages = []
