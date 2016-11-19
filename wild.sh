@@ -20,7 +20,7 @@ osh-parse() {
 }
 
 # TODO: err file always exists because of --no-exec
-parse-one() {
+_parse-one() {
   local input=$1
   local output=$2
 
@@ -33,7 +33,7 @@ parse-one() {
   return $status
 }
 
-parse-and-copy-one() {
+_parse-and-copy-one() {
   local src_base=$1
   local dest_base=$2
   local rel_path=$3
@@ -53,7 +53,7 @@ parse-and-copy-one() {
   fi
 
   mkdir -p $(dirname $output)
-  if ! parse-one $input $output; then
+  if ! _parse-one $input $output; then
     echo $rel_path >>$dest_base/FAILED.txt
 
     # Append
@@ -76,7 +76,7 @@ parse-and-copy-one() {
   cat < $input > ${output}.txt
 }
 
-parse-many() {
+_parse-many() {
   local src_base=$1
   local dest_base=$2
   shift 2
@@ -89,7 +89,7 @@ parse-many() {
 
   for f in "$@"; do echo $f; done |
     sort |
-    xargs -n 1 -- $0 parse-and-copy-one $src_base $dest_base
+    xargs -n 1 -- $0 _parse-and-copy-one $src_base $dest_base
 
   # PROBLEM that can be solved with tables:
   # using relative path to pass to wc -l
@@ -108,7 +108,7 @@ _parse-project() {
   local src=$1
   local name=$(basename $src)
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/$name-parsed \
     $(find $src -name '*.sh' -a -printf '%P\n')
@@ -118,7 +118,7 @@ _parse-configure-scripts() {
   local src=$1
   local name=$(basename $src)
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/$name-configure-parsed \
     $(find $src -name 'configure' -a -printf '%P\n')
@@ -130,7 +130,7 @@ _parse-configure-scripts() {
 
 oil-sketch() {
   local src=~/git/oil-sketch
-  parse-many \
+  _parse-many \
     $src \
     $RESULT_DIR/oil-sketch-parsed \
     $(cd $src && echo *.sh {awk,demo,make,misc,regex,tools}/*.sh)
@@ -138,7 +138,7 @@ oil-sketch() {
 
 this-repo() {
   local src=$PWD
-  parse-many \
+  _parse-many \
     $src \
     $RESULT_DIR/oil-parsed \
     *.sh
@@ -148,7 +148,7 @@ readonly ABORIGINAL_DIR=~/src/aboriginal-1.4.5
 
 parse-aboriginal() {
   # We want word splitting
-  parse-many \
+  _parse-many \
     $ABORIGINAL_DIR \
     $RESULT_DIR/aboriginal-parsed \
     $(find $ABORIGINAL_DIR -name '*.sh' -printf '%P\n')
@@ -157,7 +157,7 @@ parse-aboriginal() {
 parse-initd() {
   local src=/etc/init.d 
   # NOTE: These scripts don't end with *.sh
-  parse-many \
+  _parse-many \
     $src \
     $RESULT_DIR/initd-parsed \
     $(find $src -type f -a -executable -a -printf '%P\n')
@@ -167,7 +167,7 @@ parse-debootstrap() {
   local src=~/git/basis-build/_tmp/debootstrap-1.0.48+deb7u2
 
   # NOTE: These scripts don't end with *.sh
-  parse-many \
+  _parse-many \
     $src \
     $RESULT_DIR/debootstrap-parsed \
     $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
@@ -182,7 +182,7 @@ parse-debootstrap() {
 parse-git-other() {
   local src=~/git/other
   local depth=3
-  parse-many \
+  _parse-many \
     $src \
     $RESULT_DIR/git-other-parsed \
     $(find $src -maxdepth $depth -name '*.sh' -a -printf '%P\n')
@@ -190,7 +190,7 @@ parse-git-other() {
 
 parse-hg-other() {
   local src=~/hg/other
-  parse-many \
+  _parse-many \
     $src \
     $RESULT_DIR/hg-other-parsed \
     $(find $src -name '*.sh' -a -printf '%P\n')
@@ -203,7 +203,7 @@ parse-git() {
 parse-dokku() {
   local src=~/git/other/dokku
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/dokku-parsed \
     $(find $src '(' -name '*.sh' -o -name dokku ')' -a -printf '%P\n')
@@ -216,7 +216,7 @@ parse-mesos() {
 parse-balls() {
   local src=~/git/other/balls
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/balls-parsed \
     $(find $src '(' -name '*.sh' -o -name balls -o -name esh ')' -a \
@@ -230,7 +230,7 @@ parse-wwwoosh() {
 parse-make-a-lisp() {
   local src=~/git/other/mal/bash
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/make-a-lisp-parsed \
     $(find $src '(' -name '*.sh' ')' -a -printf '%P\n')
@@ -239,7 +239,7 @@ parse-make-a-lisp() {
 parse-gherkin() {
   local src=~/git/other/gherkin
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/gherkin-parsed \
     $(find $src '(' -name '*.sh' -o -name 'gherkin' ')' -a -printf '%P\n')
@@ -252,7 +252,7 @@ parse-lishp() {
 parse-bashcached() {
   local src=~/git/other/bashcached
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/bashcached-parsed \
     $(find $src '(' -name '*.sh' -o -name 'bashcached' ')' -a -printf '%P\n')
@@ -261,7 +261,7 @@ parse-bashcached() {
 parse-quinedb() {
   local src=~/git/other/quinedb
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/quinedb-parsed \
     $(find $src '(' -name '*.sh' -o -name 'quinedb' ')' -a -printf '%P\n')
@@ -270,7 +270,7 @@ parse-quinedb() {
 parse-bashttpd() {
   local src=~/git/other/bashttpd
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/bashttpd \
     $(find $src -name 'bashttpd' -a -printf '%P\n')
@@ -288,7 +288,7 @@ parse-julia() {
 parse-j() {
   local src=~/git/other/j
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/j-parsed \
     $(find $src -type f -a  -name j -a -printf '%P\n')
@@ -327,7 +327,7 @@ parse-bazel() {
 parse-bash-completion() {
   local src=~/git/other/bash-completion
 
-  time parse-many \
+  time _parse-many \
     $src \
     $RESULT_DIR/bash-completion-parsed \
     $(find $src/completions -type f -a -printf 'completions/%P\n')
