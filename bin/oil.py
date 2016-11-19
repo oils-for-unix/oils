@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-from __future__ import print_function
-
+# Copyright 2016 Andy Chu. All rights reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
 """
-shell.py - A Python sketch, to experiment with the architecture of the shell.
-This basicaly implements all the hard parts of the shell, in order to clarify
-internal interfaces.
+oil.py - A busybox-like binary for oil.
+
+Based on argv[0], it acts like a few different programs.
 """
 
 import errno
