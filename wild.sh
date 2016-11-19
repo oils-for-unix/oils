@@ -2,6 +2,9 @@
 #
 # Run the osh parser on shell scripts found in the wild.
 #
+# TODO: There are a lot of hard-coded source paths here.  These files could
+# published in a tarball or torrent.
+#
 # Usage:
 #   ./wild.sh <function name>
 
