@@ -7,8 +7,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source common.sh
-
 all() {
   echo 'SHELL TESTS'
   wc -l tests/*.test.sh | sort --numeric
@@ -19,7 +17,7 @@ all() {
   echo
 
   echo 'BUILD/TEST AUTOMATION'
-  wc -l Makefile *.sh | sort --numeric
+  wc -l *.sh | sort --numeric
   echo
 
   echo 'OIL'
@@ -31,9 +29,8 @@ all() {
   wc -l {osh,core}/*_test.py | sort --numeric
   echo
 
-  echo 'GRAMMAR'
-  wc -l grammar/*.g grammar/*.java | sort --numeric
-  echo
+  return
+  # TODO: Import docs
 
   echo 'DOCS'
   wc -l README.md doc/* | sort --numeric
@@ -56,10 +53,6 @@ parser() {
 # Stuff needed to port to C+
 runtime() {
   wc -l core/*_{exec,eval}.py core/{builtin,process,value}.py | sort -n
-}
-
-shell-semicolons() {
-  count-semi shell/*.{cc,h}
 }
 
 # count instructions, for fun
