@@ -15,26 +15,8 @@ readonly RESULT_DIR=_tmp/wild
 # Helpers
 # 
 
-banner() {
-  echo ---
-  echo "$@"
-  echo ---
-}
-
-parse() {
+osh-parse() {
   bin/osh --print-ast --no-exec "$@"
-}
-
-# TODO: Could do this in parallel
-parse-files() {
-  for f in "$@"; do
-    banner $f
-    parse $f
-  done
-
-  # 2961 lines
-  wc -l "$@" | sort -n
-  echo "DONE: Parsed ${#@} files"
 }
 
 # TODO: err file always exists because of --no-exec
@@ -45,7 +27,7 @@ parse-one() {
   echo $input
 
   local stderr_file=$output-err.txt
-  bin/osh --no-exec --print-ast $input > $output-AST.txt 2> $stderr_file
+  osh-parse $input > $output-AST.txt 2> $stderr_file
   local status=$?
 
   return $status
@@ -147,13 +129,19 @@ _parse-configure-scripts() {
 #
 
 oil-sketch() {
-  local repo=~/git/oil-sketch
-  local files=( $repo/*.sh $repo/{awk,demo,make,misc,regex,tools}/*.sh )
-  parse-files "${files[@]}"
+  local src=~/git/oil-sketch
+  parse-many \
+    $src \
+    $RESULT_DIR/oil-sketch-parsed \
+    $(cd $src && echo *.sh {awk,demo,make,misc,regex,tools}/*.sh)
 }
 
 this-repo() {
-  parse-files *.sh
+  local src=$PWD
+  parse-many \
+    $src \
+    $RESULT_DIR/oil-parsed \
+    *.sh
 }
 
 readonly ABORIGINAL_DIR=~/src/aboriginal-1.4.5
