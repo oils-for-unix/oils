@@ -39,8 +39,22 @@ ref-shells() {
   sh-spec $test_script "${REF_SHELLS[@]}" "$@"
 }
 
-all-testsh() {
-  smoke
+# This should be kept green.  Run before each commit.
+# TODO: Put more tests here, maybe run in parallel.
+osh() {
+  # TODO: Add smoke
+  for t in smoke comments; do
+    if ! $t; then
+      echo
+      echo 'Test FAILED'
+      break
+    fi
+  done
+}
+
+# TODO: Fix all of these!
+all() {
+  smoke || true
   comments
   word-split
   assign || true
