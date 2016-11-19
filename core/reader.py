@@ -28,24 +28,27 @@ class _Reader(object):
     pass
 
 
+_PS1 = '! '  # distinguish it from bash
+_PS2 = '> '
+
 class InteractiveLineReader(_Reader):
   def __init__(self, pool=None):
     _Reader.__init__(self, pool)
-    self.prompt_str = '$ '
+    self.prompt_str = _PS1
 
   def _GetLine(self):
     try:
       ret = input(self.prompt_str) + '\n'
     except EOFError:
       ret = None
-    self.prompt_str = '> '
+    self.prompt_str = _PS2
     return ret
 
   def Reset(self):
     """Call this after command execution, to free memory taken up by the lines,
     and reset prompt string back to PS1.
     """
-    self.prompt_str = '$ '
+    self.prompt_str = _PS1
     # free vector...
 
 

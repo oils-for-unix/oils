@@ -18,8 +18,8 @@ Try it
 Clone the repo and run `bin/osh`.  Basic things like pipelines, variables,
 functions, etc. should work.
 
-    $ bin/osh
-    $ echo 'hello world'
+    bash$ bin/osh
+    ! echo 'hello world'
     hello world
 
 Build it
