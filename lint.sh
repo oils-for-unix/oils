@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# Run tools to maintain the coding style.
+#
 # Usage:
 #   ./lint.sh <function name>
 

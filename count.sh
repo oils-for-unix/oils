@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# Count lines of code in various ways.
+#
 # Usage:
 #   ./count.sh <function name>
 

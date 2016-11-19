@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# Run unit tests.
+#
 # Usage:
 #   ./test.sh <function name>
 

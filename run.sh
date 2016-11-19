@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# Miscellaneous scripts that don't belong elsewhere.
+#
 # Usage:
 #   ./run.sh <function name>
 

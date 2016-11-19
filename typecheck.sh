@@ -1,7 +1,9 @@
 #!/bin/bash
 #
+# Run Python 3 type checking.
+#
 # Usage:
-#   ./type.sh <function name>
+#   ./typecheck.sh <function name>
 
 set -o nounset
 set -o pipefail
