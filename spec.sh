@@ -29,10 +29,14 @@ install-shells() {
   sudo apt-get install busybox-static mksh zsh 
 }
 
+sh-spec() {
+  ./test_sh.py "$@"
+}
+
 ref-shells() {
   local test_script=$1
   shift
-  ./test_sh.py $test_script "${REF_SHELLS[@]}" "$@"
+  sh-spec $test_script "${REF_SHELLS[@]}" "$@"
 }
 
 all-testsh() {
@@ -79,26 +83,26 @@ all-testsh() {
 # - need a "nonzero" status
 
 smoke() {
-  ./test_sh.py tests/smoke.test.sh $DASH $BASH $OSH "$@"
+  sh-spec tests/smoke.test.sh $DASH $BASH $OSH "$@"
 }
 
 # Regress bugs
 bugs() {
-  ./test_sh.py tests/bugs.test.sh $DASH $BASH $OSH "$@"
+  sh-spec tests/bugs.test.sh $DASH $BASH $OSH "$@"
 }
 
 # Regress bugs
 blog1() {
-  ./test_sh.py tests/blog1.test.sh $DASH $BASH $MKSH $ZSH "$@"
+  sh-spec tests/blog1.test.sh $DASH $BASH $MKSH $ZSH "$@"
 }
 
 comments() {
-  ./test_sh.py tests/comments.test.sh $DASH $BASH $MKSH $OSH "$@"
+  sh-spec tests/comments.test.sh $DASH $BASH $MKSH $OSH "$@"
 }
 
 # TODO(pysh): Implement ${foo:-a b c}
 word-split() {
-  ./test_sh.py tests/word-split.test.sh $DASH $BASH $MKSH $OSH "$@"
+  sh-spec tests/word-split.test.sh $DASH $BASH $MKSH $OSH "$@"
 }
 
 # 'do' -- detected statically as syntax error?  hm.
@@ -107,12 +111,12 @@ assign() {
 }
 
 append() {
-  ./test_sh.py tests/append.test.sh $BASH $MKSH "$@" 
+  sh-spec tests/append.test.sh $BASH $MKSH "$@" 
 }
 
 # Need to fix $ tokens, and $''
 quote() {
-  ./test_sh.py tests/quote.test.sh $DASH $BASH $MKSH $OSH "$@"
+  sh-spec tests/quote.test.sh $DASH $BASH $MKSH $OSH "$@"
 }
 
 loop() {
@@ -137,12 +141,12 @@ func() {
 
 # pysh failures: because of Python glob library
 glob() {
-  ./test_sh.py tests/glob.test.sh $DASH $BASH $MKSH $BUSYBOX_ASH $OSH "$@"
+  sh-spec tests/glob.test.sh $DASH $BASH $MKSH $BUSYBOX_ASH $OSH "$@"
 }
 
 extended-glob() {
   # Do NOT use dash here.  Brace sub breaks things.
-  ./test_sh.py tests/extended-glob.test.sh $BASH $MKSH "$@"
+  sh-spec tests/extended-glob.test.sh $BASH $MKSH "$@"
 }
 
 arith() {
@@ -150,7 +154,7 @@ arith() {
 }
 
 arith-context() {
-  ./test_sh.py tests/arith-context.test.sh $BASH $MKSH $ZSH $OSH "$@"
+  sh-spec tests/arith-context.test.sh $BASH $MKSH $ZSH $OSH "$@"
 }
 
 # pysh failures: case not implemented
@@ -160,7 +164,7 @@ command-sub() {
 
 process-sub() {
   # mksh and dash don't support it
-  ./test_sh.py tests/process-sub.test.sh $BASH $ZSH $OSH "$@"
+  sh-spec tests/process-sub.test.sh $BASH $ZSH $OSH "$@"
 }
 
 pipeline() {
@@ -200,37 +204,37 @@ tilde() {
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
-  ./test_sh.py tests/array.test.sh $BASH $MKSH $OSH "$@"
+  sh-spec tests/array.test.sh $BASH $MKSH $OSH "$@"
 }
 
 # associative array
 assoc() {
-  ./test_sh.py tests/assoc.test.sh $BASH $MKSH "$@"
+  sh-spec tests/assoc.test.sh $BASH $MKSH "$@"
 }
 
 # ZSH also has associative arrays, which means we probably need them
 zsh-assoc() {
-  ./test_sh.py tests/zsh-assoc.test.sh $ZSH "$@"
+  sh-spec tests/zsh-assoc.test.sh $ZSH "$@"
 }
 
 brace-expansion() {
   # NOTE: being a korn shell, mksh has brace expansion.  But dash doesn't!
-  ./test_sh.py tests/brace-expansion.test.sh $BASH $MKSH "$@"
+  sh-spec tests/brace-expansion.test.sh $BASH $MKSH "$@"
 }
 
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  ./test_sh.py tests/dbracket.test.sh $BASH $MKSH $OSH "$@"
-  #./test_sh.py tests/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
+  sh-spec tests/dbracket.test.sh $BASH $MKSH $OSH "$@"
+  #sh-spec tests/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
 }
 
 dparen() {
-  ./test_sh.py tests/dparen.test.sh $BASH $MKSH $ZSH $OSH "$@"
+  sh-spec tests/dparen.test.sh $BASH $MKSH $ZSH $OSH "$@"
 }
 
 regex() {
-  ./test_sh.py tests/regex.test.sh $BASH $ZSH "$@"
+  sh-spec tests/regex.test.sh $BASH $ZSH "$@"
 }
 
 var-sub() {
@@ -242,11 +246,11 @@ var-sub-quote() {
 }
 
 var-ref() {
-  ./test_sh.py tests/var-ref.test.sh $BASH $MKSH "$@"
+  sh-spec tests/var-ref.test.sh $BASH $MKSH "$@"
 }
 
 for-let() {
-  ./test_sh.py tests/for-let.test.sh $BASH $MKSH $ZSH "$@"
+  sh-spec tests/for-let.test.sh $BASH $MKSH $ZSH "$@"
 }
 
 # Really what I want is enter(func) and exit(func), and filter by regex?
@@ -260,7 +264,7 @@ trace-var-sub() {
   # This prints trace with line numbers to stdout.
   #python -m trace --trace -C $out \
   python -m trace --trackcalls -C $out \
-    ./test_sh.py tests/var-sub.test.sh $DASH $BASH "$@"
+    sh-spec tests/var-sub.test.sh $DASH $BASH "$@"
 
   ls -l $out
   head $out/*.cover
