@@ -96,7 +96,7 @@ More info
 If you need help using oil, or have general questions, e-mail
 [oil-discuss@oilshell.org][oil-discuss].
 
-[oil-dev]: http://lists.oilshell.org/listinfo.cgi/oil-discuss-oilshell.org
+[oil-discuss]: http://lists.oilshell.org/listinfo.cgi/oil-discuss-oilshell.org
 
 If you want to contribute, e-mail [oil-dev@oilshell.org][oil-dev].
 
