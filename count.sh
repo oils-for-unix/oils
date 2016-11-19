@@ -13,7 +13,7 @@ all() {
   echo
 
   echo 'SHELL TEST FRAMEWORK'
-  wc -l test_sh.py | sort --numeric
+  wc -l sh_spec.py | sort --numeric
   echo
 
   echo 'BUILD/TEST AUTOMATION'
