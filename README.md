@@ -72,7 +72,20 @@ Directory Structure
     oil/              # oil front end (empty now)
     tests/            # spec tests
 
-    _tmp/            # For test temp files
+    pybuild.sh        # build support
+    setup.py
+
+    test.sh           # test scripts
+    spec.sh
+    wild.sh
+    smoke.sh
+
+    lint.sh           # static analysis
+    typecheck.sh
+
+    count.sh          # Get an overview of the repo
+
+    _tmp/             # For test temp files
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
