@@ -78,7 +78,9 @@ func_glob(PyObject *self, PyObject *args) {
     err_str = "read error";
     break;
   case GLOB_NOMATCH:
-    err_str = "nothing matched";
+    // No error, because not matching isn't necessarily a problem.
+    // NOTE: This can be turned on to log overaggressive calls to glob().
+    //err_str = "nothing matched";
     break;
   case GLOB_NOSPACE:
     err_str = "no dynamic memory";

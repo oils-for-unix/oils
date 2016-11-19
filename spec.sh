@@ -52,7 +52,7 @@ _run() {
 
   if ! "$@"; then
     echo
-    echo "*** $name FAILED"
+    echo "*** '$name' FAILED"
     echo
     return 1
   fi
@@ -65,13 +65,14 @@ _run() {
 # This should be kept green.  Run before each commit.
 # TODO: Put more tests here, maybe run in parallel.
 osh() {
-  _run smoke || true
+  _run smoke
   _run comments
 }
 
 # TODO: Fix all of these!
+# Also test for missing ones.
 all() {
-  _run smoke || true
+  _run smoke
   _run comments
   _run word-split || true
   _run assign || true
