@@ -3,8 +3,8 @@ oil
 
 Oil is a new Unix shell, still in its early stages.
 
-This repo contains a prototype in Python of a very complete bash parser, and a
-less complete runtime.
+This repo contains a prototype in Python of a very complete bash parser, along
+with a runtime that is less complete.
 
 The dialect of bash that is recognized is called the **osh language**.  The
 main goal now is to design the **oil language**, which shell scripts can be
@@ -18,6 +18,10 @@ Try it
 Clone the repo and run `bin/osh`.  Basic things like pipelines, variables,
 functions, etc. should work.
 
+    $ bin/osh
+    $ echo 'hello world'
+    hello world
+
 Build it
 --------
 
@@ -27,15 +31,6 @@ Python's builtin `glob` and `fnmatch` modules don't match libc in some cases
     $ ./pybuild.sh libc
 
 Now `bin/osh` will use libc's globbing.
-
-Overview
---------
-
-Try this to show a summary of what's in the repo and their line counts:
-
-    $ ./count.sh all
-
-(Other functions in this file that may be useful as well.)
 
 Running Tests
 -------------
@@ -62,6 +57,15 @@ useful for shaking out bugs, sort of like a fuzz test.
 
 This will run the parser on shell scripts in this repo, and put the output in
 `_tmp/wild/oil-parsed`, which you can view with a web browser.
+
+Code Overview
+-------------
+
+Try this to show a summary of what's in the repo and their line counts:
+
+    $ ./count.sh all
+
+(Other functions in this file that may be useful as well.)
 
 Directory Structure
 -------------------
