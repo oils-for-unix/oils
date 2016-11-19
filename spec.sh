@@ -15,23 +15,26 @@ readonly BUSYBOX_ASH=_tmp/shells/ash
 
 readonly OSH=bin/osh
 
-# ash and dash are similar, so not including it by default.
-readonly REF_SHELLS=($DASH $BASH $MKSH)
-
-# Link the shells
-setup() {
-  mkdir -p _tmp/shells
-  ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
-}
-
 # dash and bash should be there by default on Ubuntu
 install-shells() {
   sudo apt-get install busybox-static mksh zsh 
 }
 
+setup() {
+  mkdir -p _tmp/shells
+  ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
+}
+
+#
+# Helpers
+#
+
 sh-spec() {
   ./sh_spec.py "$@"
 }
+
+# ash and dash are similar, so not including it by default.
+readonly REF_SHELLS=($DASH $BASH $MKSH)
 
 ref-shells() {
   local test_script=$1
@@ -39,54 +42,66 @@ ref-shells() {
   sh-spec $test_script "${REF_SHELLS[@]}" "$@"
 }
 
+_run() {
+  local name=$1
+  echo 
+  echo "--- Running '$name'"
+  echo
+
+  if ! "$@"; then
+    echo
+    echo "*** $name FAILED"
+    echo
+    return 1
+  fi
+}
+
+#
+# Tests
+#
+
 # This should be kept green.  Run before each commit.
 # TODO: Put more tests here, maybe run in parallel.
 osh() {
-  # TODO: Add smoke
-  for t in smoke comments; do
-    if ! $t; then
-      echo
-      echo 'Test FAILED'
-      break
-    fi
-  done
+  _run smoke || true
+  _run comments
 }
 
 # TODO: Fix all of these!
 all() {
-  smoke || true
-  comments
-  word-split
-  assign || true
-  append
-  quote
-  loop
-  case_
-  test-builtin
-  builtins
-  func
-  glob
-  extended-glob
-  arith
-  arith-context
-  command-sub
-  process-sub
-  pipeline
-  explore-parsing
-  here-doc
-  redirect
-  posix
-  tilde
-  array
-  assoc
-  brace-expansion
-  dbracket 
-  dparen
-  regex
-  var-sub
-  var-sub-quote
-  var-ref
-  for-let
+  _run smoke || true
+  _run comments
+  _run word-split || true
+  _run assign || true
+  _run append
+  _run quote
+  _run loop
+  _run case_
+  _run test-builtin
+  _run builtins
+  _run func
+  _run glob
+  _run extended-glob
+  _run arith
+  _run arith-context
+  _run command-sub
+  _run process-sub
+  _run pipeline
+  _run explore-parsing
+  _run here-doc
+  _run redirect
+  _run posix
+  _run tilde
+  _run array
+  _run assoc
+  _run brace-expansion
+  _run dbracket 
+  _run dparen
+  _run regex
+  _run var-sub
+  _run var-sub-quote
+  _run var-ref
+  _run for-let
 }
 
 # TODO:
