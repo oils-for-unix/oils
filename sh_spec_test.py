@@ -1,13 +1,13 @@
-#!/usr/bin/python -S
+#!/usr/bin/python
 """
-test_sh_test.py: Tests for test_sh.py
+sh_spec_test.py: Tests for sh_spec.py
 """
 
 import cStringIO
 import pprint
 import unittest
 
-from test_sh import *  # module under test
+from sh_spec import *  # module under test
 
 TEST = cStringIO.StringIO("""\
 ### Env binding in readonly/declare disallowed

@@ -1,10 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 """
-test_sh.py -- Test framework to compare shells.
-
-TODO: 
-  - Test should have a notion with KNOWN disagreement?  Between bash and dash.
+sh_spec.py -- Test framework to compare shells.
 
 Assertion help:
   stdout: A single line of expected stdout.  Newline is implicit.

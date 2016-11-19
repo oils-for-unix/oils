@@ -30,7 +30,7 @@ install-shells() {
 }
 
 sh-spec() {
-  ./test_sh.py "$@"
+  ./sh_spec.py "$@"
 }
 
 ref-shells() {
