@@ -24,7 +24,7 @@ Build it
 Python's builtin `glob` and `fnmatch` modules don't match libc in some cases
 (e.g. character classes).  To fix that, build the `core/libc.c` wrapper:
 
-    $ ./pybuild.sh build-libc
+    $ ./pybuild.sh libc
 
 Now `bin/osh` will use libc's globbing.
 
@@ -79,6 +79,7 @@ Directory Structure
     spec.sh
     wild.sh
     smoke.sh
+    sh_spec.py        # shell test framework
 
     lint.sh           # static analysis
     typecheck.sh
