@@ -102,7 +102,7 @@ class WordParser(object):
     """
     self.next_lex_state = lex_state
 
-  def Reset(self, lex_state=LexState.ARITH):
+  def Reset(self, lex_state=LexState.OUTER):
     """Called by interactive loop."""
     # For _Peek()
     self.prev_token = None  # for completion
