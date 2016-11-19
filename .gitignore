@@ -1,3 +1,6 @@
 *.swp
 _tmp/
 __pycache__
+# Python build output
+build
+core/libc.so
