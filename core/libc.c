@@ -1,6 +1,7 @@
 // libc bindings for the shell executor.  Python's glob, fnmatch, and regexes
 // are all different than what the shell needs.
 
+#include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
 
 #include <fnmatch.h>
@@ -8,6 +9,17 @@
 #include <regex.h>
 
 #include <Python.h>
+
+// Log messages to stderr.
+void debug(const char* fmt, ...) {
+#ifdef LIBC_VERBOSE
+  va_list args;
+  va_start(args, fmt);
+  vfprintf(stderr, fmt, args);
+  va_end(args);
+  fprintf(stderr, "\n");
+#endif
+}
 
 static PyObject *
 func_fnmatch(PyObject *self, PyObject *args) {
@@ -23,15 +35,15 @@ func_fnmatch(PyObject *self, PyObject *args) {
 
   switch (ret) {
   case 0:
-    fprintf(stderr, "matched: %s\n", str);
+    debug("matched: %s", str);
     return PyLong_FromLong(1);
     break;
   case FNM_NOMATCH:
-    fprintf(stderr, "no match: %s\n", str);
+    debug("no match: %s", str);
     return PyLong_FromLong(0);
     break;
   default:
-    fprintf(stderr, "other error: %s\n", str);
+    debug("other error: %s", str);
     return PyLong_FromLong(-1);
     break;
   }
@@ -208,7 +220,7 @@ func_regex_match(PyObject *self, PyObject *args) {
   int ret;
   // must match at pos 0
   if (regexec(&pat, str, 2, m, 0) == 0) {
-    fprintf(stderr, "MATCH\n");
+    debug("MATCH\n");
   //if (regexec(&pat, str, 2, m, 0) == 0 && !m[0].rm_so) {
     // Return first parenthesized subexpression as string, or length of match
 
@@ -222,7 +234,7 @@ func_regex_match(PyObject *self, PyObject *args) {
     ret = 1;
 
   } else {
-    fprintf(stderr, "NO MATCH\n");
+    debug("NO MATCH");
     /*
     if (pat.re_nsub>0) ret->s = "";
     else assign_int(ret, 0);
