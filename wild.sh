@@ -1,11 +1,17 @@
 #!/bin/bash
 #
+# Run the osh parser on shell scripts found in the wild.
+#
 # Usage:
-#   ./regtest.sh <function name>
+#   ./wild.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+#
+# Helpers
+# 
 
 banner() {
   echo ---
@@ -29,25 +35,19 @@ parse-files() {
   echo "DONE: Parsed ${#@} files"
 }
 
-oil-tests() {
-  local num_failed=0
-  for t in tests/*.test.sh; do
-    banner $t
-    if ! parse-one $t; then
-      echo $t FAILED
-      num_failed=$((num_failed + 1))
-      if test $num_failed -ge 3; then
-        echo "Quit after $num_failed failures"
-        break
-      fi
-    fi
-  done
-}
+#
+# Corpora
+#
 
 # TODO: Move to blog/run.sh eventually.
-oil-scripts() {
-  local files=( *.sh {awk,demo,make,misc,regex,tools}/*.sh )
+oil-sketch() {
+  local repo=~/git/oil-sketch
+  local files=( $repo/*.sh $repo/{awk,demo,make,misc,regex,tools}/*.sh )
   parse-files "${files[@]}"
+}
+
+this-repo() {
+  parse-files *.sh
 }
 
 "$@"
