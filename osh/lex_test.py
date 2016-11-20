@@ -10,7 +10,7 @@ from core.lexer import CompileAll, Lexer, LineLexer, FindLongestMatch
 
 from osh import parse_lib
 #import sh_lexer  # module under test
-from osh.lex import LEXER_DEF, LexState
+from osh.lex import LEXER_DEF, LexMode
 
 
 def _InitLexer(s):
@@ -28,39 +28,39 @@ class LexerTest(unittest.TestCase):
   def testRead(self):
     lexer = _InitLexer(CMD)
 
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(LIT_CHARS, 'ls'), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(WS_SPACE, ' '), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(LIT_CHARS, '/'), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(OP_NEWLINE, '\n'), t)
 
     # Line two
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(LIT_CHARS, 'ls'), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(WS_SPACE, ' '), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(LIT_CHARS, '/home/'), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(OP_NEWLINE, '\n'), t)
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(Eof_REAL, ''), t)
 
     # Another EOF gives EOF
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(Eof_REAL, ''), t)
 
   def testBashRegexState(self):
     lexer = _InitLexer('(foo|bar)')
 
-    t = lexer.Read(LexState.BASH_REGEX)
+    t = lexer.Read(LexMode.BASH_REGEX)
     self.assertEqual(Token(LIT_CHARS, '('), t)
-    t = lexer.Read(LexState.BASH_REGEX)
+    t = lexer.Read(LexMode.BASH_REGEX)
     self.assertEqual(Token(LIT_CHARS, 'foo'), t)
-    t = lexer.Read(LexState.BASH_REGEX)
+    t = lexer.Read(LexMode.BASH_REGEX)
     self.assertEqual(Token(LIT_CHARS, '|'), t)
 
   def testLookAheadForOp(self):
@@ -68,27 +68,27 @@ class LexerTest(unittest.TestCase):
     # the function; then Peek() the next token.  Then Lookahead in that state.
     lexer = _InitLexer('func()')
 
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(LIT_CHARS, 'func'), t)
 
     #self.assertEqual(OP_LPAREN, lexer.LookAheadForOp())
 
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(OP_LPAREN, '('), t)
 
     self.assertEqual(
-        Token(OP_RPAREN, ')'), lexer.LookAheadForOp(LexState.OUTER))
+        Token(OP_RPAREN, ')'), lexer.LookAheadForOp(LexMode.OUTER))
 
     lexer = _InitLexer('func ()')
 
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(LIT_CHARS, 'func'), t)
 
-    t = lexer.Read(LexState.OUTER)
+    t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(WS_SPACE, ' '), t)
 
     self.assertEqual(
-        Token(OP_LPAREN, '('), lexer.LookAheadForOp(LexState.OUTER))
+        Token(OP_LPAREN, '('), lexer.LookAheadForOp(LexMode.OUTER))
 
 
 class LineLexerTest(unittest.TestCase):
@@ -97,40 +97,40 @@ class LineLexerTest(unittest.TestCase):
     # Lines always end with '\n'
     l = LineLexer(LEXER_DEF, '')
     try:
-      l.Read(LexState.OUTER)
+      l.Read(LexMode.OUTER)
     except AssertionError as e:
       print(e)
     else:
       raise AssertionError('Expected error')
 
     l = LineLexer(LEXER_DEF, '\n')
-    self.assertEqual(Token(OP_NEWLINE, '\n'), l.Read(LexState.OUTER))
+    self.assertEqual(Token(OP_NEWLINE, '\n'), l.Read(LexMode.OUTER))
 
   def testLookAheadForOp(self):
     # Lines always end with '\n'
     l = LineLexer(LEXER_DEF, '')
-    self.assertEqual(Token(Eof_REAL, ''), l.LookAheadForOp(LexState.OUTER))
+    self.assertEqual(Token(Eof_REAL, ''), l.LookAheadForOp(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'foo')
-    self.assertEqual(Token(LIT_CHARS, 'foo'), l.Read(LexState.OUTER))
-    self.assertEqual(Token(Eof_REAL, ''), l.LookAheadForOp(LexState.OUTER))
+    self.assertEqual(Token(LIT_CHARS, 'foo'), l.Read(LexMode.OUTER))
+    self.assertEqual(Token(Eof_REAL, ''), l.LookAheadForOp(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'foo  bar')
-    self.assertEqual(Token(LIT_CHARS, 'foo'), l.Read(LexState.OUTER))
-    self.assertEqual(Token(LIT_CHARS, 'bar'), l.LookAheadForOp(LexState.OUTER))
+    self.assertEqual(Token(LIT_CHARS, 'foo'), l.Read(LexMode.OUTER))
+    self.assertEqual(Token(LIT_CHARS, 'bar'), l.LookAheadForOp(LexMode.OUTER))
 
     # No lookahead; using the cursor!
     l = LineLexer(LEXER_DEF, 'func(')
-    self.assertEqual(Token(LIT_CHARS, 'func'), l.Read(LexState.OUTER))
-    self.assertEqual(Token(OP_LPAREN, '('), l.LookAheadForOp(LexState.OUTER))
+    self.assertEqual(Token(LIT_CHARS, 'func'), l.Read(LexMode.OUTER))
+    self.assertEqual(Token(OP_LPAREN, '('), l.LookAheadForOp(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'func  (')
-    self.assertEqual(Token(LIT_CHARS, 'func'), l.Read(LexState.OUTER))
-    self.assertEqual(Token(OP_LPAREN, '('), l.LookAheadForOp(LexState.OUTER))
+    self.assertEqual(Token(LIT_CHARS, 'func'), l.Read(LexMode.OUTER))
+    self.assertEqual(Token(OP_LPAREN, '('), l.LookAheadForOp(LexMode.OUTER))
 
 
-OUTER_RE = CompileAll(LEXER_DEF[LexState.OUTER])
-DOUBLE_QUOTED_RE = CompileAll(LEXER_DEF[LexState.DQ])
+OUTER_RE = CompileAll(LEXER_DEF[LexMode.OUTER])
+DOUBLE_QUOTED_RE = CompileAll(LEXER_DEF[LexMode.DQ])
 
 
 class FunctionTest(unittest.TestCase):

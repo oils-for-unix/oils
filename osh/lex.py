@@ -23,7 +23,7 @@ from core.tokens import *
 
 # - BASH_REGEX -- compatibility mode, %parse-compat bash-regex
 
-LexState = util.Enum('LexState', """
+LexMode = util.Enum('LexMode', """
 NONE
 COMMENT
 OUTER
@@ -97,7 +97,7 @@ _LEFT_UNQUOTED = [
 LEXER_DEF = {}  # TODO: Could be a list too
 
 # Anything until the end of the line is a comment.
-LEXER_DEF[LexState.COMMENT] = [
+LEXER_DEF[LexMode.COMMENT] = [
   (r'.*', IGNORED_COMMENT)  # does not match newline
 ]
 
@@ -163,13 +163,13 @@ _unquoted = [
 ]
 
 # These two can must be recognized in the _unquoted state, but can't nested a [[.
-LEXER_DEF[LexState.OUTER] = [
+LEXER_DEF[LexMode.OUTER] = [
   (r'\[\[', LIT_LEFT_DBRACKET),  # this needs to be a single token
   (r'\(\(', OP_LEFT_DPAREN),  # TODO: Remove for DBracket?
 ] + _unquoted
 
 # \n isn't an operator inside [[ ]]; it's just ignored
-LEXER_DEF[LexState.DBRACKET] = [
+LEXER_DEF[LexMode.DBRACKET] = [
 
   (r'\]\]', LIT_RIGHT_DBRACKET),
   (r'=', LIT_EQUAL),
@@ -182,7 +182,7 @@ LEXER_DEF[LexState.DBRACKET] = [
 # Don't really need redirects either... it actually hurts things
 # No OP_LEFT_DPAREN -- DPAREN can't be nested inside.
 
-LEXER_DEF[LexState.BASH_REGEX] = [
+LEXER_DEF[LexMode.BASH_REGEX] = [
   # Match these literals first, and then the rest of the OUTER state I guess.
   # That's how bash works.
   #
@@ -194,7 +194,7 @@ LEXER_DEF[LexState.BASH_REGEX] = [
   (r'\|', LIT_CHARS),
 ] + _unquoted
 
-LEXER_DEF[LexState.DQ] = [
+LEXER_DEF[LexMode.DQ] = [
   (r'[^$`"\0\\]+', LIT_CHARS),  # matches a line at most
   _CHAR_ESCAPE,
   (r'\\\n', IGNORED_LINE_CONT),
@@ -217,7 +217,7 @@ _VAROP_COMMON = [
 ]
 
 # TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[LexState.VS_ARG_UNQ] = [
+LEXER_DEF[LexMode.VS_ARG_UNQ] = [
   (r'[^$`/}"\0\\#%<>]+', LIT_CHARS),  # NOTE: added < and > so it doesn't eat <()
 ] + _VAROP_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   (r'\0', Eof_REAL),
@@ -225,7 +225,7 @@ LEXER_DEF[LexState.VS_ARG_UNQ] = [
 ]
 
 # TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[LexState.VS_ARG_DQ] = [
+LEXER_DEF[LexMode.VS_ARG_DQ] = [
   (r'[^$`/}"\0\\#%]+', LIT_CHARS),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed
   (r'"', LEFT_D_QUOTE),
@@ -235,7 +235,7 @@ LEXER_DEF[LexState.VS_ARG_DQ] = [
 ]
 
 # NOTE: IGNORED_LINE_CONT is NOT supported in SQ state, as opposed to DQ state.
-LEXER_DEF[LexState.SQ] = [
+LEXER_DEF[LexMode.SQ] = [
   (r"[^']+", LIT_CHARS),  # matches a line at most
   (r"'", RIGHT_S_QUOTE),
   (r'\0', Eof_REAL),
@@ -243,14 +243,14 @@ LEXER_DEF[LexState.SQ] = [
 
 # NOTE: IGNORED_LINE_CONT is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!
-LEXER_DEF[LexState.DOLLAR_SQ] = [
+LEXER_DEF[LexMode.DOLLAR_SQ] = [
   (r"[^'\\]+", LIT_CHARS),
   (r"\\.", LIT_ESCAPED_CHAR),
   (r"'", RIGHT_S_QUOTE),
   (r'\0', Eof_REAL),
 ]
 
-LEXER_DEF[LexState.VS_1] = [
+LEXER_DEF[LexMode.VS_1] = [
   (_VAR_NAME_RE, VS_NAME),
   #  ${11} is valid, compared to $11 which is $1 and then literal 1.
   (r'[0-9]+', VS_NUMBER),
@@ -272,7 +272,7 @@ LEXER_DEF[LexState.VS_1] = [
   (r'.', UNKNOWN_TOK),  # any char except newline
 ]
 
-LEXER_DEF[LexState.VS_2] = [
+LEXER_DEF[LexMode.VS_2] = [
   (r':-',  VS_TEST_COLON_HYPHEN),
   (r'-',   VS_TEST_HYPHEN),
   (r':=',  VS_TEST_COLON_EQUALS),
@@ -306,7 +306,7 @@ LEXER_DEF[LexState.VS_2] = [
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
-LEXER_DEF[LexState.ARITH] = [
+LEXER_DEF[LexMode.ARITH] = [
   (r'[ \t\r\n]+', IGNORED_SPACE),  # newline is ignored space, unlike in OUTER
 
   # Words allowed:

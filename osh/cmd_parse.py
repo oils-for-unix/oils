@@ -31,7 +31,7 @@ from core.tokens import (
     REDIR_GREAT, REDIR_DGREAT, REDIR_GREATAND, REDIR_CLOBBER, REDIR_TLESS,
     RIGHT_CASE_PAT, RIGHT_FUNC_DEF)
 
-from osh.lex import LexState
+from osh.lex import LexMode
 from osh.bool_parse import CondParser
 
 
@@ -54,7 +54,7 @@ class CommandParser(object):
     self.completion_stack = []
 
     # Cursor state set by _Peek()
-    self.next_lex_state = LexState.OUTER
+    self.next_lex_state = LexMode.OUTER
     self.cur_word = None  # current word
     self.word_kind = WordKind.UNDEFINED
     self.word_type = UNDEFINED_TOK
@@ -81,7 +81,7 @@ class CommandParser(object):
     Returns True for success and False on error.  Error examples: bad command
     sub word, or unterminated quoted string, etc.
     """
-    if self.next_lex_state != LexState.NONE:
+    if self.next_lex_state != LexMode.NONE:
       w = self.w_parser.ReadWord(self.next_lex_state)
       if w is None:
         error_stack = self.w_parser.Error()
@@ -92,11 +92,11 @@ class CommandParser(object):
 
       self.word_kind = self.cur_word.Kind()
       self.word_type = self.cur_word.Type()
-      self.next_lex_state = LexState.NONE
+      self.next_lex_state = LexMode.NONE
     #print('_Peek', self.cur_word)
     return True
 
-  def _Next(self, lex_state=LexState.OUTER):
+  def _Next(self, lex_state=LexMode.OUTER):
     """Helper method."""
     self.next_lex_state = lex_state
 

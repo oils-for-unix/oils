@@ -13,7 +13,7 @@ from core.tokens import (
     AS_OP_LBRACKET, AS_OP_COMMA, NODE_ARITH_WORD)
 
 from core.arith_node import AtomANode, UnaryANode, BinaryANode
-from osh.lex import LexState
+from osh.lex import LexMode
 
 
 class ParseError(Exception):
@@ -203,7 +203,7 @@ class TdopParser(object):
 
   def Next(self):
     """Preferred over Eat()? """
-    self.cur_word = self.w_parser.ReadWord(LexState.ARITH)
+    self.cur_word = self.w_parser.ReadWord(LexMode.ARITH)
     if self.cur_word is None:
       error_stack = self.w_parser.Error()
       self.error_stack.extend(error_stack)

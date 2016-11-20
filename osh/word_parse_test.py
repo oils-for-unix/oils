@@ -17,7 +17,7 @@ from core.tokens import (
     VS_BANG, VS_POUND, VS_UNARY_POUND, VS_UNARY_DPOUND)
 
 from osh import parse_lib
-from osh.lex import LexState
+from osh.lex import LexMode
 from osh.word_parse import WordParser # module under test
 
 
@@ -345,9 +345,9 @@ class WordParserTest(unittest.TestCase):
     # Test that we get OP_NEWLINE
     code = '(foo|bar)'
     w_parser = InitWordParser(code)
-    w_parser.next_lex_state = LexState.BASH_REGEX  # needed at beginning
+    w_parser.next_lex_state = LexMode.BASH_REGEX  # needed at beginning
 
-    w = w_parser.ReadWord(LexState.BASH_REGEX)
+    w = w_parser.ReadWord(LexMode.BASH_REGEX)
     assert w
     self.assertEqual('(', w.parts[0].token.val)
     self.assertEqual('foo', w.parts[1].token.val)
@@ -356,7 +356,7 @@ class WordParserTest(unittest.TestCase):
     self.assertEqual(')', w.parts[4].token.val)
     self.assertEqual(5, len(w.parts))
 
-    w = w_parser.ReadWord(LexState.OUTER)
+    w = w_parser.ReadWord(LexMode.OUTER)
     assert w
     self.assertEqual(OP_NEWLINE, w.token.type)
 
@@ -395,10 +395,10 @@ class WordParserTest(unittest.TestCase):
       print()
 
       w_parser = InitWordParser(expr)
-      w_parser._Next(LexState.ARITH)  # Can we remove this requirement?
+      w_parser._Next(LexMode.ARITH)  # Can we remove this requirement?
 
       while True:
-        w = w_parser.ReadWord(LexState.ARITH)
+        w = w_parser.ReadWord(LexMode.ARITH)
         if not w:
           err = w_parser.Error()
           print('ERROR', err)

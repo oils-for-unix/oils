@@ -16,13 +16,13 @@ from core.bool_node import *
 
 from osh import parse_lib
 from osh import bool_parse  # module under test
-from osh.lex import LexState
+from osh.lex import LexMode
 
 
 def _ReadWords(w_parser):
   words = []
   while True:
-    w = w_parser.ReadWord(LexState.DBRACKET)
+    w = w_parser.ReadWord(LexMode.DBRACKET)
     if w.Type() == Eof_REAL:
       break
     words.append(w)

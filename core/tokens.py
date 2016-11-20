@@ -80,7 +80,7 @@ class _TokenDef(object):
 
   IGNORED   = ('LINE_CONT', 'SPACE', 'COMMENT')
 
-  # WS_SPACE is for LexState.OUTER; IGNORED_SPACE is for LexState.ARITH
+  # WS_SPACE is for LexMode.OUTER; IGNORED_SPACE is for LexMode.ARITH
   WS        = ('SPACE',)# 'NEWLINE')
 
   LIT       = ('CHARS', 'VAR_LIKE', 'OTHER', 'ESCAPED_CHAR',
@@ -97,7 +97,7 @@ class _TokenDef(object):
                'POUND',  # for comment or VAROP state
                'SLASH', 'PERCENT',  # / # % for patsub, NOT unary op
 
-               'DIGITS',  # for LexState.ARITH
+               'DIGITS',  # for LexMode.ARITH
                )
 
   OP        = ('NEWLINE', # mostly equivalent to SEMI
