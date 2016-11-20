@@ -10,25 +10,25 @@ set -o pipefail
 set -o errexit
 
 all() {
-  echo 'SHELL TESTS'
-  wc -l tests/*.test.sh | sort --numeric
+  echo 'BUILD/TEST AUTOMATION'
+  wc -l *.sh | sort --numeric
   echo
 
   echo 'SHELL TEST FRAMEWORK'
   wc -l sh_spec.py | sort --numeric
   echo
 
-  echo 'BUILD/TEST AUTOMATION'
-  wc -l *.sh | sort --numeric
+  echo 'SHELL SPEC TESTS'
+  wc -l tests/*.test.sh | sort --numeric
+  echo
+
+  echo 'OIL UNIT TESTS'
+  wc -l {osh,core}/*_test.py | sort --numeric
   echo
 
   echo 'OIL'
   { ls {osh,core}/*.py; echo core/*.c; echo bin/*.py; } |
     grep -v '_test.py$' | xargs wc -l | sort --numeric
-  echo
-
-  echo 'OIL UNIT TESTS'
-  wc -l {osh,core}/*_test.py | sort --numeric
   echo
 
   return
