@@ -39,7 +39,7 @@ class CommandParser(object):
   """
   Args:
     word_parse: to get a stream of words
-    lexer: for lookahead in function def, PushTranslation of ()
+    lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
   def __init__(self, w_parser, lexer, line_reader):
@@ -814,7 +814,7 @@ class CommandParser(object):
     """
     case_item: '('? pattern ('|' pattern)* ')' newline_ok command_term? trailer? ;
     """
-    self.lexer.PushTranslation(OP_RPAREN, RIGHT_CASE_PAT)
+    self.lexer.PushHint(OP_RPAREN, RIGHT_CASE_PAT)
 
     if self.word_type == OP_LPAREN:
       self._Next()
@@ -1049,7 +1049,7 @@ class CommandParser(object):
     if not self._Peek(): return None
     assert self.word_type == OP_LPAREN, self.cur_word
 
-    self.lexer.PushTranslation(OP_RPAREN, RIGHT_FUNC_DEF)
+    self.lexer.PushHint(OP_RPAREN, RIGHT_FUNC_DEF)
     self._Next()
 
     if not self._Eat(RIGHT_FUNC_DEF): return None
@@ -1079,7 +1079,7 @@ class CommandParser(object):
     if not self._Peek(): return None
 
     if self.word_type == OP_LPAREN:
-      self.lexer.PushTranslation(OP_RPAREN, RIGHT_FUNC_DEF)
+      self.lexer.PushHint(OP_RPAREN, RIGHT_FUNC_DEF)
       self._Next()
       if not self._Eat(RIGHT_FUNC_DEF): return None
 
@@ -1100,8 +1100,8 @@ class CommandParser(object):
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
     # translation stack, we want to delay it.
 
-    #print('ParseSubshell lexer.PushTranslation ) -> )')
-    self.lexer.PushTranslation(OP_RPAREN, RIGHT_SUBSHELL)
+    #print('ParseSubshell lexer.PushHint ) -> )')
+    self.lexer.PushHint(OP_RPAREN, RIGHT_SUBSHELL)
 
     node = self.ParseCommandList()
     if not node:

@@ -146,7 +146,7 @@ class Lexer(object):
     """
     return self.line_lexer.LookAheadForOp(lex_state)
 
-  def PushTranslation(self, old_type, new_type):
+  def PushHint(self, old_type, new_type):
     """
     Use cases:
     OP_RPAREN -> RIGHT_SUBSHELL -- disambiguate
@@ -164,7 +164,7 @@ class Lexer(object):
     """
     old_s = TokenTypeToName(old_type)
     new_s = TokenTypeToName(new_type)
-    #print('* Lexer.PushTranslation %s => %s' % (old_s, new_s))
+    #print('* Lexer.PushHint %s => %s' % (old_s, new_s))
     self.translation_stack.append((old_type, new_type))
 
   def _Read(self, lex_state):

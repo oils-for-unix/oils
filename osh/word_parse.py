@@ -663,11 +663,11 @@ class WordParser(object):
     node_token = self.cur_token
 
     # Set the lexer in a state so ) becomes the EOF token.
-    #print('_ReadCommandSubPart lexer.PushTranslation ) -> EOF')
+    #print('_ReadCommandSubPart lexer.PushHint ) -> EOF')
     if token_type in (LEFT_COMMAND_SUB, LEFT_PROC_SUB_IN, LEFT_PROC_SUB_OUT):
-      self.lexer.PushTranslation(OP_RPAREN, Eof_RPAREN)
+      self.lexer.PushHint(OP_RPAREN, Eof_RPAREN)
     elif token_type == LEFT_BACKTICK:
-      self.lexer.PushTranslation(LEFT_BACKTICK, Eof_BACKTICK)
+      self.lexer.PushHint(LEFT_BACKTICK, Eof_BACKTICK)
     else:
       raise AssertionError(self.token_type)
 
@@ -725,7 +725,7 @@ class WordParser(object):
     """
     # The second one needs to be disambiguated in stuff like stuff like:
     # $(echo $(( 1+2 )) )
-    self.lexer.PushTranslation(OP_RPAREN, RIGHT_ARITH_SUB)
+    self.lexer.PushHint(OP_RPAREN, RIGHT_ARITH_SUB)
 
     # NOTE: To disambiguate $(( as arith sub vs. command sub and subshell, we
     # could save the lexer/reader state here, and retry if the arithmetic parse
@@ -777,7 +777,7 @@ class WordParser(object):
     # The second one needs to be disambiguated in stuff like stuff like:
     # TODO: Be consistent with ReadForExpression below and use LexMode.ARITH?
     # Then you can get rid of this.
-    self.lexer.PushTranslation(OP_RPAREN, OP_RIGHT_DPAREN)
+    self.lexer.PushHint(OP_RPAREN, OP_RIGHT_DPAREN)
 
     anode = self._ReadArithExpr()
     if not anode:
@@ -805,8 +805,8 @@ class WordParser(object):
     """Read ((i=0; i<5; ++i)) -- part of command context.
 
     """
-    # No PushTranslation because we're in arith state.
-    #self.lexer.PushTranslation(OP_RPAREN, OP_RIGHT_DPAREN)
+    # No PushHint because we're in arith state.
+    #self.lexer.PushHint(OP_RPAREN, OP_RIGHT_DPAREN)
 
     self._Next(LexMode.ARITH)  # skip over ((
 
@@ -906,7 +906,7 @@ class WordParser(object):
 
           t = self.lexer.LookAheadForOp(LexMode.OUTER)
           if t.type == OP_LPAREN:
-            self.lexer.PushTranslation(OP_RPAREN, RIGHT_ARRAY_LITERAL)
+            self.lexer.PushHint(OP_RPAREN, RIGHT_ARRAY_LITERAL)
             part2 = self._ReadArrayLiteralPart()
             if not part2:
               self.AddErrorContext('_ReadArrayLiteralPart failed')
@@ -935,7 +935,7 @@ class WordParser(object):
           # LEXER HACK for (case x in x) ;; esac )
           assert self.next_lex_state == None  # Rewind before it's used
           if self.lexer.MaybeUnreadOne():
-            self.lexer.PushTranslation(OP_RPAREN, RIGHT_SUBSHELL)
+            self.lexer.PushHint(OP_RPAREN, RIGHT_SUBSHELL)
             self._Next(lex_state)
           done = True
         else:
@@ -947,7 +947,7 @@ class WordParser(object):
       else:
         # LEXER HACK for unbalanced case clause.  'case foo in esac' is valid,
         # so to test for ESAC, we can read ) before getting a chance to
-        # PushTranslation(OP_RPAREN, RIGHT_CASE_PAT).  So here we unread one
+        # PushHint(OP_RPAREN, RIGHT_CASE_PAT).  So here we unread one
         # token and do it again.
 
         # We get OP_RPAREN at top level:      case x in x) ;; esac 
@@ -956,7 +956,7 @@ class WordParser(object):
           assert self.next_lex_state == None  # Rewind before it's used
           if self.lexer.MaybeUnreadOne():
             if self.token_type == Eof_RPAREN:
-              self.lexer.PushTranslation(OP_RPAREN, Eof_RPAREN)  # Redo translation
+              self.lexer.PushHint(OP_RPAREN, Eof_RPAREN)  # Redo translation
             self._Next(lex_state)
 
         done = True  # anything we don't recognize means we're done
