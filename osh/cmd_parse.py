@@ -19,7 +19,6 @@ from core.cmd_node import (
 from core.word_node import (
     EKeyword, EAssignScope, EAssignKeyword, EAssignFlags,
     LiteralPart, CompoundWord, TildeSubPart)
-# Would be better if this were TN
 from core.tokens import Token, Id, CKind
 
 from osh.lex import LexMode

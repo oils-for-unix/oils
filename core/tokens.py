@@ -16,9 +16,9 @@ import sys
 from core import util
 
 
-# TODO: This should be CType() I think
-CKind = util.Enum('CKind',
-    'UNDEFINED COMMAND OPERATOR REDIR Eof'.split())
+# Coarse-grained decisions for CommandPArser.  Similar to TokenKind, except
+# Lit/Left/VSub are combined into "COMMAND" for CompoundWord.
+CKind = util.Enum('CKind', 'UNDEFINED COMMAND OPERATOR REDIR Eof'.split())
 
 
 _TOKEN_TYPE_TO_KIND = {}  # type: dict
