@@ -25,10 +25,8 @@ FOR FOR_EXPR WHILE UNTIL FUNCTION_DEF CASE DBRACKET DPAREN ELSE_TRUE
 
 
 class CNode(_Node):
-  """Abstract base class for CompositeNode/SimpleCommandNode/AssignmentNode.
+  """Abstract base class for _CompositeNode/SimpleCommandNode/AssignmentNode."""
 
-  TODO: Rename to CNode
-  """
   def __init__(self, type):
     self.type = type
     self.redirects = []  # common to almost all nodes
@@ -75,7 +73,7 @@ class RedirectType(object):
 
 class RedirectNode(object):
   """
-  SimpleCommandNode and CompositeNode (function body or compound command) can
+  SimpleCommandNode and _CompositeNode (function body or compound command) can
   have non-NULL redirect nodes.
 
   This is not an CNode since it can't be executed directly.
@@ -291,7 +289,7 @@ class DParenNode(CNode):
     f.write(')')
 
 
-class CompositeNode(CNode):
+class _CompositeNode(CNode):
   def __init__(self, type):
     CNode.__init__(self, type)
     # children of type CNode.
@@ -365,14 +363,14 @@ class CompositeNode(CNode):
 # NOTE: The ANTLR book has all nodes of separate types, but ALSO separate token
 # types.  There are two ways to switch on it.
 
-class ListNode(CompositeNode):
+class ListNode(_CompositeNode):
   """
   For BraceGroup, function body, case item, etc.
 
   children: list of AND_OR
   """
   def __init__(self):
-    CompositeNode.__init__(self, ENode.LIST)
+    _CompositeNode.__init__(self, ENode.LIST)
     self.redirects = []
 
   def _PrintHeader(self, f):
@@ -382,37 +380,37 @@ class ListNode(CompositeNode):
       f.write(str(self.redirects))
 
 
-class SubshellNode(CompositeNode):
+class SubshellNode(_CompositeNode):
   """
   children: either list of AND_OR, or a LIST node?
 
   Exec() is different I guess
   """
   def __init__(self):
-    CompositeNode.__init__(self, ENode.SUBSHELL)
+    _CompositeNode.__init__(self, ENode.SUBSHELL)
     # no redirects for subshell?
 
   def _PrintHeader(self, f):
     f.write('Subshell')
 
 
-class ForkNode(CompositeNode):
+class ForkNode(_CompositeNode):
   """
   children: either list of AND_OR, or a LIST node?
   """
   def __init__(self):
-    CompositeNode.__init__(self, ENode.FORK)
+    _CompositeNode.__init__(self, ENode.FORK)
 
   def _PrintHeader(self, f):
     f.write('Fork')
 
 
-class PipelineNode(CompositeNode):
+class PipelineNode(_CompositeNode):
   """
   children: list of SimpleCommandNode
   """
   def __init__(self, children, negated):
-    CompositeNode.__init__(self, ENode.PIPELINE)
+    _CompositeNode.__init__(self, ENode.PIPELINE)
     self.children = children
     self.negated = negated
     # If there are 3 children, they are numbered 0, 1, and 2.  There are two
@@ -424,26 +422,26 @@ class PipelineNode(CompositeNode):
     f.write('Pipeline%s' % ('!' if self.negated else '',))
 
 
-class AndOrNode(CompositeNode):
+class AndOrNode(_CompositeNode):
   """
   children[0]: LHS
   children[1]: RHS
   """
   def __init__(self, op):
-    CompositeNode.__init__(self, ENode.AND_OR)
+    _CompositeNode.__init__(self, ENode.AND_OR)
     self.op = op  # TokenType Op_AndIf or Op_OrIf, set by parser
 
   def _PrintHeader(self, f):
     f.write('AndOr %s' % TokenTypeToName(self.op))
 
 
-class ForNode(CompositeNode):
+class ForNode(_CompositeNode):
   """
   children: list of AND_OR?
   """
 
   def __init__(self):
-    CompositeNode.__init__(self, ENode.FOR)
+    _CompositeNode.__init__(self, ENode.FOR)
     self.iter_name = None
     self.iter_words = []  # can be empty explicitly empty, which is dumb
     # whether we should iterate over args; iter_words should be empty
@@ -458,12 +456,12 @@ class ForNode(CompositeNode):
     f.write(')')
 
 
-class ForExpressionNode(CompositeNode):
+class ForExpressionNode(_CompositeNode):
   """
   children: list of AND_OR?
   """
   def __init__(self, init, cond, update):
-    CompositeNode.__init__(self, ENode.FOR_EXPR)
+    _CompositeNode.__init__(self, ENode.FOR_EXPR)
     self.init = init  # type: ANode
     self.cond = cond  # type: ANode
     self.update = update  # type: ANode
@@ -473,38 +471,38 @@ class ForExpressionNode(CompositeNode):
     f.write('ForExpr %s %s %s' % (self.init, self.cond, self.update))
 
 
-class WhileNode(CompositeNode):
+class WhileNode(_CompositeNode):
   """
   children[0] = condition (LIST)
   children[1] = body (LIST)
   """
   def __init__(self, children):
-    CompositeNode.__init__(self, ENode.WHILE)
+    _CompositeNode.__init__(self, ENode.WHILE)
     self.children = children
 
   def _PrintHeader(self, f):
     f.write('While')
 
 
-class UntilNode(CompositeNode):
+class UntilNode(_CompositeNode):
   """
   children[0] = condition (LIST)
   children[1] = body (LIST)
   """
   def __init__(self, children):
-    CompositeNode.__init__(self, ENode.UNTIL)
+    _CompositeNode.__init__(self, ENode.UNTIL)
     self.children = children
 
   def _PrintHeader(self, f):
     f.write('Until')
 
 
-class FunctionDefNode(CompositeNode):
+class FunctionDefNode(_CompositeNode):
   """
   children = statement body
   """
   def __init__(self):
-    CompositeNode.__init__(self, ENode.FUNCTION_DEF)
+    _CompositeNode.__init__(self, ENode.FUNCTION_DEF)
     self.name = ''
     self.redirects = []
 
@@ -512,20 +510,20 @@ class FunctionDefNode(CompositeNode):
     f.write('FunctionDef %s %s' % (self.name, self.redirects))
 
 
-class IfNode(CompositeNode):
+class IfNode(_CompositeNode):
   """
   children = condition, action, condition, action
 
   Last condition is TRUE for else!!!
   """
   def __init__(self):
-    CompositeNode.__init__(self, ENode.IF)
+    _CompositeNode.__init__(self, ENode.IF)
 
   def _PrintHeader(self, f):
     f.write('If')
 
 
-class CaseNode(CompositeNode):
+class CaseNode(_CompositeNode):
   """
   Representation:
     pat_word_list = patterns to match, a list parallel to 'children'
@@ -545,7 +543,7 @@ class CaseNode(CompositeNode):
   }
   """
   def __init__(self):
-    CompositeNode.__init__(self, ENode.CASE)
+    _CompositeNode.__init__(self, ENode.CASE)
     # the word to match against successive patterns
     self.to_match = None  # type: Word
     self.pat_word_list = []  # List<List<Word>> -- patterns to match
