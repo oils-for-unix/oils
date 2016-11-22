@@ -74,4 +74,8 @@ replace() {
   done < $file
 }
 
+trailing-ws() {
+  sed -r -i 's/[ ]+$//g' "$@"
+}
+
 "$@"

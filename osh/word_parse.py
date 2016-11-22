@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 word_parse.py - Parse the shell word language.
@@ -13,8 +13,9 @@ from core import base
 from core.word_node import (
     CommandWord, TokenWord,
     LiteralPart, EscapedLiteralPart, SingleQuotedPart, DoubleQuotedPart,
-    VarSubPart, CommandSubPart, ArithSubPart, ArrayLiteralPart, IndexVarOp,
-    TestVarOp, StripVarOp, SliceVarOp, LengthVarOp, PatSubVarOp, RefVarOp)
+    VarSubPart, CommandSubPart, ArithSubPart, ArrayLiteralPart,
+    IndexVarOp, TestVarOp, StripVarOp, SliceVarOp, LengthVarOp, PatSubVarOp,
+    RefVarOp)
 
 from core.tokens import Id, Token, TokenKind
 from core import tdop
@@ -29,21 +30,21 @@ from osh.lex import LexMode
 # Functions that process TokenKind.Left, i.e. nested stuff:
 #
 # _ReadCommandWord
-#   _ReadLeftParts 
+#   _ReadLeftParts
 # _ReadArithWord
-#   _ReadCommandWord -- ${} $() $(()) $[] `` 
+#   _ReadCommandWord -- ${} $() $(()) $[] ``
 # _ReadDoubleQuotedPart (also used for here docs, needs a mode)
 #   _ReadDoubleQuotedLeftParts -- ${} $() $(()) $[] ``
 # _ReadVarOpArg(d_quoted)
 #    _ReadCommandWord(lex_state)
 
 # UNQUOTED: LexMode.OUTER
-#           All subs and quotes are allowed -- 
+#           All subs and quotes are allowed --
 #           $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
 #
 # DQ:       LexMode.DQ
 #           Var, Command, Arith, but no quotes
-#           $v ${v}   $() ``   $(()) 
+#           $v ${v}   $() ``   $(())
 #           No process substitution.
 #
 # LexMode.ARITH:
@@ -65,7 +66,7 @@ from osh.lex import LexMode
 #   In other words, like DS_VS_ARG, except SINGLE Quotes allowed?
 #
 # LexMode.VS_ARG_DQ -- Can't be LexMode.DQ because here we respect $' and $"
-#    tokens, while <( token is not respected. 
+#    tokens, while <( token is not respected.
 #
 #   Like VS_ARG_UNQ, but single quotes are NOT respected (they appear
 #   literally), and process substitution is not respected (ditto).
@@ -83,7 +84,7 @@ from osh.lex import LexMode
 class WordParser(object):
 
   def __init__(self, lexer, line_reader, words_out=None,
-      lex_state=LexMode.OUTER):
+               lex_state=LexMode.OUTER):
     self.lexer = lexer
     self.line_reader = line_reader
     # [] if we want to save an array of all words, or None if not.
@@ -129,7 +130,7 @@ class WordParser(object):
   def AddErrorContext(self, msg, *args, token=None, word=None):
     err = base.MakeError(msg, *args, token=token, word=word)
     self.error_stack.append(err)
-  
+
   def Error(self):
     return self.error_stack
 
@@ -148,7 +149,8 @@ class WordParser(object):
     """
     return self.prev_token
 
-  def _ReadVarOpArg(self, arg_lex_state, eof_type=Id.Undefined_Tok, empty_ok=True):
+  def _ReadVarOpArg(self, arg_lex_state, eof_type=Id.Undefined_Tok,
+                    empty_ok=True):
     # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
     # valid, even when unquoted.
     self._Next(arg_lex_state)
@@ -170,7 +172,7 @@ class WordParser(object):
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
     self._Next(LexMode.ARITH)
     self._Peek()
-    if self.token_type == Id.Arith_Colon:  # Id.Arith_Colon is a pun for Id.VOp_Colon
+    if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp_Colon
       begin = None  # no beginning specified
     else:
       begin = self._ReadSliceArg()
@@ -198,7 +200,7 @@ class WordParser(object):
     """
     Match     = ('/' | '#' | '%') WORD
     VarSub    = ...
-              | VarOf '/' Match '/' WORD 
+              | VarOf '/' Match '/' WORD
     """
     do_all = False
     do_prefix = False
@@ -247,7 +249,7 @@ class WordParser(object):
       return None
 
   def _ReadSubscript(self):
-    """ Subscript = '[' ('@' | '*' | ArithExpr) ']' 
+    """ Subscript = '[' ('@' | '*' | ArithExpr) ']'
 
     LexMode: BVS_1
     """
@@ -347,7 +349,6 @@ class WordParser(object):
       else:
         raise AssertionError(self.cur_token)
 
-
       part.transform_ops.append(op)
 
     # Now look for ops
@@ -367,7 +368,7 @@ class WordParser(object):
                 | VarSymbol
 
     TEST_OP     = '-' | ':-' | '=' | ':=' | '+' | ':+' | '?' | ':?'
-    STRIP_OP    = '#' | '##' | '%' | '%%' 
+    STRIP_OP    = '#' | '##' | '%' | '%%'
     CASE_OP     = ',' | ',,' | '^' | '^^'
 
     UnaryOp     = TEST_OP | STRIP_OP | CASE_OP | ...
@@ -375,7 +376,7 @@ class WordParser(object):
     VarExpr     = VarOf
                 | VarOf UnaryOp WORD
                 | VarOf ':' ArithExpr (':' ArithExpr )?
-                | VarOf '/' Match '/' WORD 
+                | VarOf '/' Match '/' WORD
 
     LengthExpr  = '#' VarOf  # can't apply operators after length
 
@@ -563,7 +564,8 @@ class WordParser(object):
       if not part: return None
 
     elif self.token_type in (
-        Id.Left_CommandSub, Id.Left_Backtick, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+        Id.Left_CommandSub, Id.Left_Backtick, Id.Left_ProcSubIn,
+        Id.Left_ProcSubOut):
       part = self._ReadCommandSubPart(self.token_type)
       if not part: return None
 
@@ -580,7 +582,8 @@ class WordParser(object):
       if not part: return None
 
     elif self.token_type == Id.Left_DollarDoubleQuote:
-      # NOTE: $"" is treated as "" for now.  Does it make sense to add the token?
+      # NOTE: $"" is treated as "" for now.  Does it make sense to add the
+      # token to the part?
       part = self._ReadDoubleQuotedPart()
       if not part: return None
 
@@ -664,7 +667,8 @@ class WordParser(object):
 
     # Set the lexer in a state so ) becomes the EOF token.
     #print('_ReadCommandSubPart lexer.PushHint ) -> EOF')
-    if token_type in (Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+    if token_type in (
+        Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
       self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
     elif token_type == Id.Left_Backtick:
       self.lexer.PushHint(Id.Left_Backtick, Id.Eof_Backtick)
@@ -736,7 +740,7 @@ class WordParser(object):
 
     anode = self._ReadArithExpr()
     if not anode:
-      self.AddErrorContext("Error parsing arith sub part") 
+      self.AddErrorContext("Error parsing arith sub part")
       return None
 
     if self.token_type != Id.Arith_RParen:
@@ -759,7 +763,7 @@ class WordParser(object):
     """Non-standard arith sub $[a + 1]."""
     anode = self._ReadArithExpr()
     if not anode:
-      self.AddErrorContext("Error parsing arith sub part") 
+      self.AddErrorContext("Error parsing arith sub part")
       return None
 
     if self.token_type != Id.Arith_RBracket:
@@ -781,7 +785,7 @@ class WordParser(object):
 
     anode = self._ReadArithExpr()
     if not anode:
-      self.AddErrorContext("Error parsing dparen statement") 
+      self.AddErrorContext("Error parsing dparen statement")
       return None
 
     #print('xx ((', self.cur_token)
@@ -817,7 +821,7 @@ class WordParser(object):
     else:
       init_node = self._ReadArithExpr(do_next=False)
       if not init_node:
-        self.AddErrorContext("Error parsing for init") 
+        self.AddErrorContext("Error parsing for init")
         return None
     self._Next(LexMode.ARITH)
     #print('INIT',init_node)
@@ -829,7 +833,7 @@ class WordParser(object):
     else:
       cond_node = self._ReadArithExpr(do_next=False)
       if not cond_node:
-        self.AddErrorContext("Error parsing for cond") 
+        self.AddErrorContext("Error parsing for cond")
         return None
     self._Next(LexMode.ARITH)
     #print('COND',cond_node)
@@ -841,7 +845,7 @@ class WordParser(object):
     else:
       update_node = self._ReadArithExpr(do_next=False)
       if not update_node:
-        self.AddErrorContext("Error parsing for update") 
+        self.AddErrorContext("Error parsing for update")
         return None
     self._Next(LexMode.ARITH)
     #print('UPDATE',update_node)
@@ -950,7 +954,7 @@ class WordParser(object):
         # PushHint(Id.Op_RParen, Id.Right_CasePat).  So here we unread one
         # token and do it again.
 
-        # We get Id.Op_RParen at top level:      case x in x) ;; esac 
+        # We get Id.Op_RParen at top level:      case x in x) ;; esac
         # We get Id.Eof_RParen inside ComSub:  $(case x in x) ;; esac )
         if self.token_type in (Id.Op_RParen, Id.Eof_RParen):
           assert self.next_lex_state == None  # Rewind before it's used
