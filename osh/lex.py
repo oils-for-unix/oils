@@ -5,11 +5,12 @@ lex.py -- Shell lexer.
 It consists of a series of lexical modes, each with regex -> Id mappings.
 
 TODO:
-- \0 should be OP_NEWLINE or WS_NEWLINE.  And then the higher level Lexer
-  should return the Eof_REAL token, as it does now.
+- \0 should be Id.Op_Newline or Id.WS_Newline.  And then the higher level Lexer
+  should return the Id.Eof_Real token, as it does now.
 """
 
-from core.tokens import *
+from core.tokens import Id
+from core import util
 
 # In oil, I hope to have:
 # COMMAND
@@ -38,47 +39,47 @@ BASH_REGEX_CHARS
 # TODO: There are 4 shared groups here.  I think you should test if that
 # structure should be preserved through re2c.  Do a benchmark.
 #
-# If a group has no matches, then return UNKNOWN_TOK?  And then you can chain
+# If a group has no matches, then return Id.Unknown_Tok?  And then you can chain
 # the groups in order.  It might make sense to experiment with the order too.
 
 # Explicitly exclude newline, although '.' would work too
-_CHAR_ESCAPE = (r'\\[^\n]', LIT_ESCAPED_CHAR)
+_CHAR_ESCAPE = (r'\\[^\n]', Id.Lit_EscapedChar)
 
 _VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
-# All TokenKind.VS 
+# All TokenKind.VSub 
 _VARS = [
   # Unbraced variables
-  (r'\$' + _VAR_NAME_RE, VS_NAME),
-  (r'\$[0-9]', VS_NUMBER),
-  (r'\$!', VS_BANG),
-  (r'\$@', VS_AT),
-  (r'\$\#', VS_POUND),
-  (r'\$\$', VS_DOLLAR),
-  (r'\$&', VS_AMP),
-  (r'\$\*', VS_STAR),
-  (r'\$\-', VS_HYPHEN),
-  (r'\$\?', VS_QMARK),
+  (r'\$' + _VAR_NAME_RE, Id.VSub_Name),
+  (r'\$[0-9]', Id.VSub_Number),
+  (r'\$!', Id.VSub_Bang),
+  (r'\$@', Id.VSub_At),
+  (r'\$\#', Id.VSub_Pound),
+  (r'\$\$', Id.VSub_Dollar),
+  (r'\$&', Id.VSub_Amp),
+  (r'\$\*', Id.VSub_Star),
+  (r'\$\-', Id.VSub_Hyphen),
+  (r'\$\?', Id.VSub_QMark),
 ]
 
-# All TokenKind.LEFT
+# All TokenKind.Left
 _LEFT_SUBS = [
-  (r'`', LEFT_BACKTICK),
-  (r'\$\(', LEFT_COMMAND_SUB),
-  (r'\$\{', LEFT_VAR_SUB),
-  (r'\$\(\(', LEFT_ARITH_SUB),
-  (r'\$\[', LEFT_ARITH_SUB2),
+  (r'`', Id.Left_Backtick),
+  (r'\$\(', Id.Left_CommandSub),
+  (r'\$\{', Id.Left_VarSub),
+  (r'\$\(\(', Id.Left_ArithSub),
+  (r'\$\[', Id.Left_ArithSub2),
 ]
 
-# All TokenKind.LEFT
+# All TokenKind.Left
 _LEFT_UNQUOTED = [
-  (r'"', LEFT_D_QUOTE),
-  (r'\'', LEFT_S_QUOTE),
-  (r'\$"', LEFT_DD_QUOTE),
-  (r'\$\'', LEFT_DS_QUOTE),
+  (r'"', Id.Left_DoubleQuote),
+  (r'\'', Id.Left_SingleQuote),
+  (r'\$"', Id.Left_DollarDoubleQuote),
+  (r'\$\'', Id.Left_DollarSingleQuote),
 
-  (r'<\(', LEFT_PROC_SUB_IN),
-  (r'>\(', LEFT_PROC_SUB_OUT),
+  (r'<\(', Id.Left_ProcSubIn),
+  (r'>\(', Id.Left_ProcSubOut),
 ]
 
 # Constructs used:
@@ -98,89 +99,89 @@ LEXER_DEF = {}  # TODO: Could be a list too
 
 # Anything until the end of the line is a comment.
 LEXER_DEF[LexMode.COMMENT] = [
-  (r'.*', IGNORED_COMMENT)  # does not match newline
+  (r'.*', Id.Ignored_Comment)  # does not match newline
 ]
 
 _unquoted = [
-  (r'[a-zA-Z0-9_/.-]+', LIT_CHARS),
+  (r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars),
 
   # The other ones aren't MAYBE though... put them in a different category.
   # The whole category is
-  # LIT_LHS
-  # LIT_BRACEEX
-  # LIT_DBRACKET
+  # Id.Lit_Lhs
+  # Id.Lit_Braceex
+  # Id.Lit_Dbracket
 
-  # LIT_MAYBE_LHS_VAR
-  (r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', LIT_VAR_LIKE),  # might be NAME=val
+  # Id.Lit_Maybe_LHS_VAR
+  (r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),  # might be NAME=val
 
-  (r'#', LIT_POUND),  # For comments
+  (r'#', Id.Lit_Pound),  # For comments
 
   # Needs to be LONGER than any other
-  #(_VAR_NAME_RE + r'\[', LIT_MAYBE_LHS_ARRAY),
-  # LIT_MAYBE_LHS_ARRAY2
-  #(r'\]\+?=', LIT_MAYBE_ARRAY_ASSIGN_RIGHT),
+  #(_VAR_NAME_RE + r'\[', Id.Lit_Maybe_LHS_ARRAY),
+  # Id.Lit_Maybe_LHS_ARRAY2
+  #(r'\]\+?=', Id.Lit_Maybe_ARRAY_ASSIGN_RIGHT),
 
   # For brace expansion {a,b} 
-  (r'\{', LIT_LBRACE),
-  (r'\}', LIT_RBRACE),  # Also for var sub ${a}
-  (r',', LIT_COMMA),
+  (r'\{', Id.Lit_LBrace),
+  (r'\}', Id.Lit_RBrace),  # Also for var sub ${a}
+  (r',', Id.Lit_Comma),
 
   # For tilde substitution
-  (r'~', LIT_TILDE),
+  (r'~', Id.Lit_Tilde),
 
   _CHAR_ESCAPE,
-  (r'\\\n', IGNORED_LINE_CONT),
+  (r'\\\n', Id.Ignored_LineCont),
 
-  (r'[ \t\r]+', WS_SPACE),
+  (r'[ \t\r]+', Id.WS_Space),
 
-  (r'\0', Eof_REAL),  # TODO: Remove?
+  (r'\0', Id.Eof_Real),  # TODO: Remove?
 
-  (r'\n', OP_NEWLINE),
+  (r'\n', Id.Op_Newline),
 
-  (r'&', OP_AMP),
-  (r'\|', OP_PIPE),
-  (r'\|&', OP_PIPEAMP),
-  (r'&&', OP_AND_IF),
-  (r'\|\|', OP_OR_IF),
-  (r';', OP_SEMI),
-  (r';;', OP_DSEMI),
+  (r'&', Id.Op_Amp),
+  (r'\|', Id.Op_Pipe),
+  (r'\|&', Id.Op_PipeAmp),
+  (r'&&', Id.Op_AndIf),
+  (r'\|\|', Id.Op_OrIf),
+  (r';', Id.Op_Semi),
+  (r';;', Id.Op_DSemi),
 
-  (r'\(', OP_LPAREN),
-  (r'\)', OP_RPAREN),
+  (r'\(', Id.Op_LParen),
+  (r'\)', Id.Op_RParen),
 
-  (r'[0-9]*<', REDIR_LESS),
-  (r'[0-9]*>', REDIR_GREAT),
-  (r'[0-9]*<<', REDIR_DLESS),
-  (r'[0-9]*<<<', REDIR_TLESS),  # Does this need a descriptor?
-  (r'[0-9]*>>', REDIR_DGREAT),
-  (r'[0-9]*<<-', REDIR_DLESSDASH),
-  (r'[0-9]*>&', REDIR_GREATAND),
-  (r'[0-9]*<&', REDIR_LESSAND),
-  (r'<>', REDIR_LESSGREAT),  # does it need a descriptor?
-  (r'>\|', REDIR_CLOBBER),  # does it need a descriptor?
+  (r'[0-9]*<', Id.Redir_Less),
+  (r'[0-9]*>', Id.Redir_Great),
+  (r'[0-9]*<<', Id.Redir_DLess),
+  (r'[0-9]*<<<', Id.Redir_TLess),  # Does this need a descriptor?
+  (r'[0-9]*>>', Id.Redir_DGreat),
+  (r'[0-9]*<<-', Id.Redir_DLessDash),
+  (r'[0-9]*>&', Id.Redir_GreatAnd),
+  (r'[0-9]*<&', Id.Redir_LessAnd),
+  (r'<>', Id.Redir_LessGreat),  # does it need a descriptor?
+  (r'>\|', Id.Redir_Clobber),  # does it need a descriptor?
 ] + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
-  (r'.', LIT_OTHER),  # any other single char is a literal
+  (r'.', Id.Lit_Other),  # any other single char is a literal
 ]
 
 # These two can must be recognized in the _unquoted state, but can't nested a [[.
 LEXER_DEF[LexMode.OUTER] = [
-  (r'\[\[', LIT_LEFT_DBRACKET),  # this needs to be a single token
-  (r'\(\(', OP_LEFT_DPAREN),  # TODO: Remove for DBracket?
+  (r'\[\[', Id.Lit_DLeftBracket),  # this needs to be a single token
+  (r'\(\(', Id.Op_DLeftParen),  # TODO: Remove for DBracket?
 ] + _unquoted
 
 # \n isn't an operator inside [[ ]]; it's just ignored
 LEXER_DEF[LexMode.DBRACKET] = [
 
-  (r'\]\]', LIT_RIGHT_DBRACKET),
-  (r'=', LIT_EQUAL),
-  (r'==', LIT_DEQUAL),
-  (r'!=', LIT_NEQUAL),
-  (r'=~', LIT_TEQUAL),
+  (r'\]\]', Id.Lit_DRightBracket),
+  (r'=', Id.Lit_Equal),
+  (r'==', Id.Lit_DEqual),
+  (r'!=', Id.Lit_NEqual),
+  (r'=~', Id.Lit_TEqual),
 ] + _unquoted
 
-# DBRACKET: can be like OUTER, except OP_NEWLINE is WS_NEWLINE
+# DBRACKET: can be like OUTER, except Id.Op_Newline is Id.WS_Newline
 # Don't really need redirects either... it actually hurts things
-# No OP_LEFT_DPAREN -- DPAREN can't be nested inside.
+# No Id.Op_DLeftParen -- DPAREN can't be nested inside.
 
 LEXER_DEF[LexMode.BASH_REGEX] = [
   # Match these literals first, and then the rest of the OUTER state I guess.
@@ -189,125 +190,125 @@ LEXER_DEF[LexMode.BASH_REGEX] = [
   # At a minimum, you do need $ and ~ expansions to happen.  <>;& could have
   # been allowed unescaped too, but that's not what bash does.  The criteria
   # was whether they were "special" in both languages, which seems dubious.
-  (r'\(', LIT_CHARS),
-  (r'\)', LIT_CHARS),
-  (r'\|', LIT_CHARS),
+  (r'\(', Id.Lit_Chars),
+  (r'\)', Id.Lit_Chars),
+  (r'\|', Id.Lit_Chars),
 ] + _unquoted
 
 LEXER_DEF[LexMode.DQ] = [
-  (r'[^$`"\0\\]+', LIT_CHARS),  # matches a line at most
+  (r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
   _CHAR_ESCAPE,
-  (r'\\\n', IGNORED_LINE_CONT),
+  (r'\\\n', Id.Ignored_LineCont),
 
   # NOTE: Doesn't change state when parsing here doc line
-  (r'"', RIGHT_D_QUOTE),
+  (r'"', Id.Right_DoubleQuote),
 
 ] + _LEFT_SUBS + _VARS + [
-  (r'\0', Eof_REAL),
-  (r'.', LIT_OTHER),  # e.g. "$"
+  (r'\0', Id.Eof_Real),
+  (r'.', Id.Lit_Other),  # e.g. "$"
 ]
 
-_VAROP_COMMON = [
+_VAROP_Common = [
   _CHAR_ESCAPE,
-  (r'\\\n', IGNORED_LINE_CONT),
-  (r'/', LIT_SLASH),  # for patsub (not VS_OP_SLASH)
-  (r'#', LIT_POUND),  # for patsub prefix (not VS_UNARY_POUND)
-  (r'%', LIT_PERCENT),  # for patsdub suffix (not VS_UNARY_PERCENT)
-  (r'\}', RIGHT_VAR_SUB),  # For var sub "${a}"
+  (r'\\\n', Id.Ignored_LineCont),
+  (r'/', Id.Lit_Slash),  # for patsub (not Id.VOp_Slash)
+  (r'#', Id.Lit_Pound),  # for patsub prefix (not Id.VUnary_Pound)
+  (r'%', Id.Lit_Percent),  # for patsdub suffix (not Id.VUnary_Percent)
+  (r'\}', Id.Right_VarSub),  # For var sub "${a}"
 ]
 
 # TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[LexMode.VS_ARG_UNQ] = [
-  (r'[^$`/}"\0\\#%<>]+', LIT_CHARS),  # NOTE: added < and > so it doesn't eat <()
-] + _VAROP_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
-  (r'\0', Eof_REAL),
-  (r'.', LIT_OTHER),  # e.g. "$", must be last
+  (r'[^$`/}"\0\\#%<>]+', Id.Lit_Chars),  # NOTE: added < and > so it doesn't eat <()
+] + _VAROP_Common + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+  (r'\0', Id.Eof_Real),
+  (r'.', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[LexMode.VS_ARG_DQ] = [
-  (r'[^$`/}"\0\\#%]+', LIT_CHARS),  # matches a line at most
+  (r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed
-  (r'"', LEFT_D_QUOTE),
-] + _VAROP_COMMON + _LEFT_SUBS + _VARS + [
-  (r'\0', Eof_REAL),
-  (r'.', LIT_OTHER),  # e.g. "$", must be last
+  (r'"', Id.Left_DoubleQuote),
+] + _VAROP_Common + _LEFT_SUBS + _VARS + [
+  (r'\0', Id.Eof_Real),
+  (r'.', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
-# NOTE: IGNORED_LINE_CONT is NOT supported in SQ state, as opposed to DQ state.
+# NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ state.
 LEXER_DEF[LexMode.SQ] = [
-  (r"[^']+", LIT_CHARS),  # matches a line at most
-  (r"'", RIGHT_S_QUOTE),
-  (r'\0', Eof_REAL),
+  (r"[^']+", Id.Lit_Chars),  # matches a line at most
+  (r"'", Id.Right_SingleQuote),
+  (r'\0', Id.Eof_Real),
 ]
 
-# NOTE: IGNORED_LINE_CONT is also not supported here, even though the whole
+# NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!
 LEXER_DEF[LexMode.DOLLAR_SQ] = [
-  (r"[^'\\]+", LIT_CHARS),
-  (r"\\.", LIT_ESCAPED_CHAR),
-  (r"'", RIGHT_S_QUOTE),
-  (r'\0', Eof_REAL),
+  (r"[^'\\]+", Id.Lit_Chars),
+  (r"\\.", Id.Lit_EscapedChar),
+  (r"'", Id.Right_SingleQuote),
+  (r'\0', Id.Eof_Real),
 ]
 
 LEXER_DEF[LexMode.VS_1] = [
-  (_VAR_NAME_RE, VS_NAME),
+  (_VAR_NAME_RE, Id.VSub_Name),
   #  ${11} is valid, compared to $11 which is $1 and then literal 1.
-  (r'[0-9]+', VS_NUMBER),
-  (r'!', VS_BANG),
-  (r'@', VS_AT),
-  (r'#', VS_POUND),
-  (r'\$', VS_DOLLAR),
-  (r'&', VS_AMP),
-  (r'\*', VS_STAR),
-  (r'\-', VS_HYPHEN),
-  (r'\?', VS_QMARK),
+  (r'[0-9]+', Id.VSub_Number),
+  (r'!', Id.VSub_Bang),
+  (r'@', Id.VSub_At),
+  (r'#', Id.VSub_Pound),
+  (r'\$', Id.VSub_Dollar),
+  (r'&', Id.VSub_Amp),
+  (r'\*', Id.VSub_Star),
+  (r'\-', Id.VSub_Hyphen),
+  (r'\?', Id.VSub_QMark),
 
-  (r'\}', RIGHT_VAR_SUB),
+  (r'\}', Id.Right_VarSub),
 
-  (r'\\\n', IGNORED_LINE_CONT),
+  (r'\\\n', Id.Ignored_LineCont),
 
-  (r'\0', Eof_REAL),  # not used?
-  (r'\n', UNKNOWN_TOK),  # newline not allowed inside ${}
-  (r'.', UNKNOWN_TOK),  # any char except newline
+  (r'\0', Id.Eof_Real),  # not used?
+  (r'\n', Id.Unknown_Tok),  # newline not allowed inside ${}
+  (r'.', Id.Unknown_Tok),  # any char except newline
 ]
 
 LEXER_DEF[LexMode.VS_2] = [
-  (r':-',  VS_TEST_COLON_HYPHEN),
-  (r'-',   VS_TEST_HYPHEN),
-  (r':=',  VS_TEST_COLON_EQUALS),
-  (r'=',   VS_TEST_EQUALS),
-  (r':\?', VS_TEST_COLON_QMARK),
-  (r'\?',  VS_TEST_QMARK),
-  (r':\+', VS_TEST_COLON_PLUS),
-  (r'\+',  VS_TEST_PLUS),
+  (r':-',  Id.VTest_ColonHyphen),
+  (r'-',   Id.VTest_Hyphen),
+  (r':=',  Id.VTest_ColonEquals),
+  (r'=',   Id.VTest_Equals),
+  (r':\?', Id.VTest_ColonQMark),
+  (r'\?',  Id.VTest_QMark),
+  (r':\+', Id.VTest_ColonPlus),
+  (r'\+',  Id.VTest_Plus),
 
-  (r'%',  VS_UNARY_PERCENT),
-  (r'%%', VS_UNARY_DPERCENT),
-  (r'#',  VS_UNARY_POUND),
-  (r'##', VS_UNARY_DPOUND),
+  (r'%',  Id.VUnary_Percent),
+  (r'%%', Id.VUnary_DPercent),
+  (r'#',  Id.VUnary_Pound),
+  (r'##', Id.VUnary_DPound),
 
-  (r'\^',   VS_UNARY_CARET),
-  (r'\^\^', VS_UNARY_DCARET),
-  (r',',    VS_UNARY_COMMA),
-  (r',,',   VS_UNARY_DCOMMA),
+  (r'\^',   Id.VUnary_Caret),
+  (r'\^\^', Id.VUnary_DCaret),
+  (r',',    Id.VUnary_Comma),
+  (r',,',   Id.VUnary_DComma),
 
-  (r'/', VS_OP_SLASH),
-  (r':', VS_OP_COLON),  # slicing
+  (r'/', Id.VOp_Slash),
+  (r':', Id.VOp_Colon),  # slicing
 
-  (r'\[', VS_OP_LBRACKET),
-  (r'\]', VS_OP_RBRACKET),
+  (r'\[', Id.VOp_LBracket),
+  (r'\]', Id.VOp_RBracket),
 
-  (r'\}', RIGHT_VAR_SUB),
+  (r'\}', Id.Right_VarSub),
 
-  (r'\\\n', IGNORED_LINE_CONT),
-  (r'\n', UNKNOWN_TOK),  # newline not allowed inside ${}
-  (r'.', UNKNOWN_TOK),  # any char except newline
+  (r'\\\n', Id.Ignored_LineCont),
+  (r'\n', Id.Unknown_Tok),  # newline not allowed inside ${}
+  (r'.', Id.Unknown_Tok),  # any char except newline
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
 LEXER_DEF[LexMode.ARITH] = [
-  (r'[ \t\r\n]+', IGNORED_SPACE),  # newline is ignored space, unlike in OUTER
+  (r'[ \t\r\n]+', Id.Ignored_Space),  # newline is ignored space, unlike in OUTER
 
   # Words allowed:
   # 64#azAZ
@@ -316,30 +317,30 @@ LEXER_DEF[LexMode.ARITH] = [
 
   # A separate digits part makes this easier to parse STATICALLY.  But this
   # doesn't help with DYNAMIC parsing.
-  (r'[a-zA-Z_@]+', LIT_CHARS),  # for 64#@ or 64@_
-  (r'[0-9]+', LIT_DIGITS),
-  (r'#', LIT_POUND),
+  (r'[a-zA-Z_@]+', Id.Lit_Chars),  # for 64#@ or 64@_
+  (r'[0-9]+', Id.Lit_Digits),
+  (r'#', Id.Lit_Pound),
 
-  (r';', AS_OP_SEMI),  # for loop only
-  (r',', AS_OP_COMMA),  # function call and C comma operator
+  (r';', Id.Arith_Semi),  # for loop only
+  (r',', Id.Arith_Comma),  # function call and C comma operator
 
-  (r'\+', AS_OP_PLUS),  # unary or binary
-  (r'\-', AS_OP_MINUS),  # unary or binary
-  (r'\*', AS_OP_STAR),
-  (r'/', AS_OP_SLASH),
-  (r'%', AS_OP_PERCENT),
+  (r'\+', Id.Arith_Plus),  # unary or binary
+  (r'\-', Id.Arith_Minus),  # unary or binary
+  (r'\*', Id.Arith_Star),
+  (r'/', Id.Arith_Slash),
+  (r'%', Id.Arith_Percent),
 
-  (r'\+\+', AS_OP_DPLUS),  # Pre and post increment
-  (r'--', AS_OP_DMINUS),  # "
-  (r'\*\*', AS_OP_DSTAR),  # exponentiation
+  (r'\+\+', Id.Arith_DPlus),  # Pre and post increment
+  (r'--', Id.Arith_DMinus),  # "
+  (r'\*\*', Id.Arith_DStar),  # exponentiation
 
-  (r'\(', AS_OP_LPAREN),
-  (r'\)', AS_OP_RPAREN),
+  (r'\(', Id.Arith_LParen),
+  (r'\)', Id.Arith_RParen),
 
-  (r'\[', AS_OP_LBRACKET),
-  (r'\]', AS_OP_RBRACKET),
+  (r'\[', Id.Arith_LBracket),
+  (r'\]', Id.Arith_RBracket),
 
-  (r'\}', AS_OP_RBRACE),  # for ending var sub
+  (r'\}', Id.Arith_RBrace),  # for ending var sub
 
   # SPECIAL CASE for ${a[@]}.  The expression in the [] is either and
   # arithmetic expression or @ or *.  In the ArithParser, we disallow this
@@ -347,42 +348,42 @@ LEXER_DEF[LexMode.ARITH] = [
   # Other tokens that serve double duty:
   # - AS_STAR for ${a[*]}
   # - AS_COLON for ${a : i>0 a : 1 : 0 }
-  (r'@', AS_OP_AT),
+  (r'@', Id.Arith_At),
 
   # Logical operators
-  (r'\?', AS_OP_QMARK),  # ternary
-  (r':', AS_OP_COLON),  # ternary
+  (r'\?', Id.Arith_QMark),  # ternary
+  (r':', Id.Arith_Colon),  # ternary
 
-  (r'<=', AS_OP_LE),
-  (r'<', AS_OP_LESS),
-  (r'>=', AS_OP_GE),
-  (r'>', AS_OP_GREAT),
-  (r'==', AS_OP_DEQUAL),
-  (r'!=', AS_OP_NEQUAL),
+  (r'<=', Id.Arith_LessEqual),
+  (r'<', Id.Arith_Less),
+  (r'>=', Id.Arith_GreatEqual),
+  (r'>', Id.Arith_Great),
+  (r'==', Id.Arith_DEqual),
+  (r'!=', Id.Arith_NEqual),
 
   # Bitwise operators
-  (r'>>', AS_OP_DGREAT),
-  (r'<<', AS_OP_DLESS),
-  (r'&', AS_OP_AMP),
-  (r'\|', AS_OP_PIPE),
-  (r'\^', AS_OP_CARET),
-  (r'~', AS_OP_TILDE),  # bitwise negation
+  (r'>>', Id.Arith_DGreat),
+  (r'<<', Id.Arith_DLess),
+  (r'&', Id.Arith_Amp),
+  (r'\|', Id.Arith_Pipe),
+  (r'\^', Id.Arith_Caret),
+  (r'~', Id.Arith_Tilde),  # bitwise negation
 
-  (r'=', AS_OP_EQUAL),
-  (r'\+=', AS_OP_PLUS_EQUAL),
-  (r'-=', AS_OP_MINUS_EQUAL),
-  (r'\*=', AS_OP_STAR_EQUAL),
-  (r'/=', AS_OP_SLASH_EQUAL),
-  (r'%=', AS_OP_PERCENT_EQUAL),
-  (r'>>=', AS_OP_DGREAT_EQUAL),
-  (r'<<=', AS_OP_DLESS_EQUAL),
-  (r'&=', AS_OP_AMP_EQUAL),
-  (r'\|=', AS_OP_PIPE_EQUAL),
-  (r'\^=', AS_OP_CARET_EQUAL),
+  (r'=', Id.Arith_Equal),
+  (r'\+=', Id.Arith_PlusEqual),
+  (r'-=', Id.Arith_MinusEqual),
+  (r'\*=', Id.Arith_StarEqual),
+  (r'/=', Id.Arith_SlashEqual),
+  (r'%=', Id.Arith_PercentEqual),
+  (r'>>=', Id.Arith_DGreatEqual),
+  (r'<<=', Id.Arith_DLessEqual),
+  (r'&=', Id.Arith_AmpEqual),
+  (r'\|=', Id.Arith_PipeEqual),
+  (r'\^=', Id.Arith_CaretEqual),
 
-  (r'&&', AS_OP_DAMP),
-  (r'\|\|', AS_OP_DPIPE),
-  (r'!', AS_OP_BANG),  # logical negation
+  (r'&&', Id.Arith_DAmp),
+  (r'\|\|', Id.Arith_DPipe),
+  (r'!', Id.Arith_Bang),  # logical negation
 
 # NOTE: Tested all left-unquoted in both quoted and unquoted contexts.  e.g.
 # "$(( ${as[$'hi\n']} ))" works, as well as unquotedj
@@ -390,9 +391,9 @@ LEXER_DEF[LexMode.ARITH] = [
 
 ] + _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
 
-  (r'\\\n', IGNORED_LINE_CONT),
+  (r'\\\n', Id.Ignored_LineCont),
     # NOTE: This will give you VS_QMARK tokens, etc.
-  (r'.', UNKNOWN_TOK),  # any char.  This should be a syntax error.
+  (r'.', Id.Unknown_Tok),  # any char.  This should be a syntax error.
 ]
 
 # Notes on BASH_REGEX states

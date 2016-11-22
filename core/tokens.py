@@ -73,185 +73,185 @@ class Token(object):
 # These names will also be used in the text format?  
 
 class _TokenDef(object):
-  UNDEFINED = ('TOK',)  # for initial state
-  UNKNOWN   = ('TOK',)  # for when nothing matches
+  Undefined = ('Tok',)  # for initial state
+  Unknown   = ('Tok',)  # for when nothing matches
 
-  Eof       = ('REAL', 'RPAREN', 'BACKTICK')
+  Eof       = ('Real', 'RParen', 'Backtick')
 
-  IGNORED   = ('LINE_CONT', 'SPACE', 'COMMENT')
+  Ignored   = ('LineCont', 'Space', 'Comment')
 
-  # WS_SPACE is for LexMode.OUTER; IGNORED_SPACE is for LexMode.ARITH
-  WS        = ('SPACE',)# 'NEWLINE')
+  # Id.WS_Space is for LexMode.OUTER; Id.Ignored_Space is for LexMode.ARITH
+  WS        = ('Space',)# 'NEWLINE')
 
-  LIT       = ('CHARS', 'VAR_LIKE', 'OTHER', 'ESCAPED_CHAR',
+  Lit       = ('Chars', 'VarLike', 'Other', 'EscapedChar',
                # Either brace expansion or keyword for { and }
-               'LBRACE', 'RBRACE', 'COMMA',
+               'LBrace', 'RBrace', 'Comma',
                # tilde expansion
-               'TILDE',
+               'Tilde',
 
                # [[ ]] = == -- so they appear together in one LiteralPart
-               'LEFT_DBRACKET', 'RIGHT_DBRACKET',
-               'EQUAL', 'DEQUAL',
-               'NEQUAL', 'TEQUAL',
+               'DLeftBracket', 'DRightBracket',
+               'Equal', 'DEqual',
+               'NEqual', 'TEqual',
 
-               'POUND',  # for comment or VAROP state
-               'SLASH', 'PERCENT',  # / # % for patsub, NOT unary op
+               'Pound',  # for comment or VAROP state
+               'Slash', 'Percent',  # / # % for patsub, NOT unary op
 
-               'DIGITS',  # for LexMode.ARITH
+               'Digits',  # for LexMode.ARITH
                )
 
-  OP        = ('NEWLINE', # mostly equivalent to SEMI
-               'AMP',     # &
-               'PIPE',    # |
-               'PIPEAMP', # |& -- bash extension for stderr
-               'AND_IF',  # &&
-               'OR_IF',   # || 
-               'SEMI',    # ;
-               'DSEMI',   # ;; for case
+  Op        = ('Newline', # mostly equivalent to SEMI
+               'Amp',     # &
+               'Pipe',    # |
+               'PipeAmp', # |& -- bash extension for stderr
+               'AndIf',  # &&
+               'OrIf',   # || 
+               'Semi',    # ;
+               'DSemi',   # ;; for case
 
                # NOTE: This is for subshell only.  It shouldn't be under LEFT_
                # because it's NOT a WordPart.  ReadCommandWord shouldn't
                # process it.
-               'LPAREN',
-               'RPAREN',  # DEFAULT, WILL BE TRANSLATED to RIGHT_*
-               'LEFT_DPAREN',
-               'RIGHT_DPAREN',
+               'LParen',
+               'RParen',  # DEFAULT, WILL BE TRANSLATED to RIGHT_*
+               'DLeftParen',
+               'DRightParen',
                )
 
-  REDIR     = ('LESS',       # < stdin
-               'GREAT',      # > stdout
-               'DLESS',      # << here doc redirect
-               'TLESS',      # <<< bash only here string
-               'DGREAT',     # >> append stdout
-               'GREATAND',   # >& descriptor redirect
-               'LESSAND',    # <& descriptor redirect
-               'DLESSDASH',  # <<- here doc redirect for tabs?
-               'LESSGREAT',  # <>
-               'CLOBBER',    # >|  POSIX?
+  Redir     = ('Less',       # < stdin
+               'Great',      # > stdout
+               'DLess',      # << here doc redirect
+               'TLess',      # <<< bash only here string
+               'DGreat',     # >> append stdout
+               'GreatAnd',   # >& descriptor redirect
+               'LessAnd',    # <& descriptor redirect
+               'DLessDash',  # <<- here doc redirect for tabs?
+               'LessGreat',  # <>
+               'Clobber',    # >|  POSIX?
 
                # TODO: Add bash-specific operators
                )
 
   # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
   # get that.
-  LEFT      = ('D_QUOTE',
-               'S_QUOTE',
-               'BACKTICK',     # `
-               'COMMAND_SUB',  # $(
-               'VAR_SUB',      # ${
-               'ARITH_SUB',    # $((
-               'ARITH_SUB2',   # $[ for bash (and zsh)
-               'DD_QUOTE',     # $" for bash localized strings
-               'DS_QUOTE',     # $' for \n escapes
-               'PROC_SUB_IN',  # <( )
-               'PROC_SUB_OUT', # >( )
+  Left      = ('DoubleQuote',
+               'SingleQuote',
+               'Backtick',     # `
+               'CommandSub',  # $(
+               'VarSub',      # ${
+               'ArithSub',    # $((
+               'ArithSub2',   # $[ for bash (and zsh)
+               'DollarDoubleQuote',     # $" for bash localized strings
+               'DollarSingleQuote',     # $' for \n escapes
+               'ProcSubIn',  # <( )
+               'ProcSubOut', # >( )
                )
 
-  RIGHT     = ('D_QUOTE',
-               'S_QUOTE',
-               'BACKTICK',     # `
-               'COMMAND_SUB',  # )
-               'VAR_SUB',      # }
-               'ARITH_SUB',    # ))
-               # ARITH_SUB2 is just AS_OP_RBRACKET
-               'DD_QUOTE',     # "
-               'DS_QUOTE',     # '
+  Right     = ('DoubleQuote',
+               'SingleQuote',
+               'Backtick',     # `
+               'CommandSub',  # )
+               'VarSub',      # }
+               'ArithSub',    # ))
+               # ArithSub2 is just Id.Arith_RBracket
+               'DollarDoubleQuote',     # "
+               'DollarSingleQuote',     # '
 
                # Disambiguated right parens
-               'SUBSHELL',  # )
-               'FUNC_DEF',  # )
-               'CASE_PAT',  # )
-               'ARRAY_LITERAL',  # )
+               'Subshell',  # )
+               'FuncDef',  # )
+               'CasePat',  # )
+               'ArrayLiteral',  # )
                )
 
   # First position of var sub ${
-  # VS_OP_POUND -- however you can't tell the difference at first!  It could
+  # Id.VOp_Pound -- however you can't tell the difference at first!  It could
   # be an op or a name.  So it makes sense to base i on the state.  
-  # VS_OP_AT
-  # But then you have AS_STAR, or AS_OP_STAR maybe
+  # Id.VOp_At
+  # But then you have AS_STAR, or Id.Arith_Star maybe
 
-  VS        = ('NAME',  # Dummy for VS_NAME in C++, which is a different kind?
-               'NUMBER',  # $0 .. $9
-               'BANG',    # $!
-               'AT',      # $@  or  [@] for array subscripting
-               'POUND',   # $#  or  ${#var} for length
-               'DOLLAR',  # $$
-               'AMP',     # $&
-               'STAR',    # $*
-               'HYPHEN',  # $-
-               'QMARK',   # $?
+  VSub      = ('Name',  # Dummy for VS_NAME in C++, which is a different kind?
+               'Number',  # $0 .. $9
+               'Bang',    # $!
+               'At',      # $@  or  [@] for array subscripting
+               'Pound',   # $#  or  ${#var} for length
+               'Dollar',  # $$
+               'Amp',     # $&
+               'Star',    # $*
+               'Hyphen',  # $-
+               'QMark',   # $?
                )
   
   # Test ops
-  VS_TEST   = ('COLON_HYPHEN',  #  :-
-               'HYPHEN',        #   -
-               'COLON_EQUALS',  #  :=
-               'EQUALS',        #   =
-               'COLON_QMARK',   #  :?
-               'QMARK',         #   ?
-               'COLON_PLUS',    #  :+
-               'PLUS',          #   +
+  VTest     = ('ColonHyphen',  #  :-
+               'Hyphen',        #   -
+               'ColonEquals',  #  :=
+               'Equals',        #   =
+               'ColonQMark',   #  :?
+               'QMark',         #   ?
+               'ColonPlus',    #  :+
+               'Plus',          #   +
                )
 
                # String removal ops
-  VS_UNARY  = ('PERCENT',       #  %
-               'DPERCENT',      #  %%
-               'POUND',         #  # 
-               'DPOUND',        #  ##
+  VUnary    = ('Percent',       #  %
+               'DPercent',      #  %%
+               'Pound',         #  # 
+               'DPound',        #  ##
 
                # Case ops, in bash.  At least parse them.  Execution might
                # require unicode stuff.
-               'CARET',         #  ^
-               'DCARET',        #  ^^
-               'COMMA',         #  ,
-               'DCOMMA',        #  ,,
+               'Caret',         #  ^
+               'DCaret',        #  ^^
+               'Comma',         #  ,
+               'DComma',        #  ,,
                )
 
                # not in POSIX, but in Bash
-  VS_OP     = ('SLASH',         #  / for replacement
-               'COLON',         #  : for slicing
-               'LBRACKET',      #  [ for indexing
-               'RBRACKET',      #  ] for indexing
+  VOp       = ('Slash',         #  / for replacement
+               'Colon',         #  : for slicing
+               'LBracket',      #  [ for indexing
+               'RBracket',      #  ] for indexing
               )
 
   # Operators
-  AS_OP     = ('SEMI',  # ternary for loop only
-               'COMMA',  # function call and C comma operator
-               'PLUS', 'MINUS', 'STAR', 'SLASH', 'PERCENT',
-               'DPLUS', 'DMINUS', 'DSTAR',
-               'LPAREN', 'RPAREN',  # grouping and function call extension
-               'LBRACKET', 'RBRACKET',  # array and assoc array subscript
-               'RBRACE',  # for end of var sub
+  Arith     = ('Semi',  # ternary for loop only
+               'Comma',  # function call and C comma operator
+               'Plus', 'Minus', 'Star', 'Slash', 'Percent',
+               'DPlus', 'DMinus', 'DStar',
+               'LParen', 'RParen',  # grouping and function call extension
+               'LBracket', 'RBracket',  # array and assoc array subscript
+               'RBrace',  # for end of var sub
                # Only for ${a[@]} -- not valid in any other arith context
-               'AT',
+               'At',
 
                # Logical ops
-               'QMARK',  'COLON',  # ternary op: a < b ? 0 : 1
-               'LE', 'LESS', 'GE', 'GREAT', 'DEQUAL', 'NEQUAL',
-               'DAMP', 'DPIPE', 'BANG',  # && || !
+               'QMark',  'Colon',  # ternary op: a < b ? 0 : 1
+               'LessEqual', 'Less', 'GreatEqual', 'Great', 'DEqual', 'NEqual',
+               'DAmp', 'DPipe', 'Bang',  # && || !
 
                # Bitwise ops
-               'DGREAT', 'DLESS',  # >> <<
-               'AMP', 'PIPE', 'CARET', 'TILDE', # & | ^ ~ for bits
+               'DGreat', 'DLess',  # >> <<
+               'Amp', 'Pipe', 'Caret', 'Tilde', # & | ^ ~ for bits
 
   # 11 mutating operators:  =  +=  -=  etc.
-              'EQUAL',
-              'PLUS_EQUAL', 'MINUS_EQUAL', 'STAR_EQUAL', 'SLASH_EQUAL',
-              'PERCENT_EQUAL',
-              'DGREAT_EQUAL', 'DLESS_EQUAL', 'AMP_EQUAL', 'PIPE_EQUAL',
-              'CARET_EQUAL')
+              'Equal',
+              'PlusEqual', 'MinusEqual', 'StarEqual', 'SlashEqual',
+              'PercentEqual',
+              'DGreatEqual', 'DLessEqual', 'AmpEqual', 'PipeEqual',
+              'CaretEqual')
 
   # This kind is for Node types that are NOT tokens.
 
-  NODE      = (
-               # Postfix inc/dec.  Prefix inc/dec use AS_OP_DPLUS and
-               # AS_OP_DMINUS.
-               'POST_DPLUS', 'POST_DMINUS',
+  Node      = (
+               # Postfix inc/dec.  Prefix inc/dec use Id.Arith_DPlus and
+               # Id.Arith_DMinus.
+               'PostDPlus', 'PostDMinus',
                # A complex word in the arith context.
                # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
-               'ARITH_WORD',
+               'ArithWord',
                # +1 and -1, to distinguish from infix.
-               'UNARY_PLUS', 'UNARY_MINUS',
+               'UnaryPlus', 'UnaryMinus',
                )
 
   # Others:
@@ -267,13 +267,15 @@ def TokenTypeToName(t):
   return _TOKEN_TYPE_NAMES[t]
 
 
-class TN(object):
-  """Token type or node type."""
+class TokenKind(object):
+  """Token kind is filled in dynamically."""
   pass
 
 
-class TokenKind(object):
-  """Token kind is filled in dynamically."""
+class Id(object):
+  """
+  Universal Token type and AST Node type.  Used by parsers and evaluators.
+  """
   pass
 
 
@@ -289,7 +291,7 @@ def EncodeTokenVal(s):
     return json.dumps(s)
 
 
-def _GenCodeFromTokens(token_def, module, tk, name_lookup, kind_lookup):
+def _GenCodeFromTokens(token_def, id_, tk, name_lookup, kind_lookup):
   kind_index = 0
   token_index = 0
   kind_sizes = []
@@ -303,12 +305,11 @@ def _GenCodeFromTokens(token_def, module, tk, name_lookup, kind_lookup):
     setattr(tk, kind_name, kind_index)
 
     for t in tokens:
-      token_name = '%s_%s' % (kind_name, t)
-      #print(token_name)
       token_index += 1
 
-      #print('Setting %s' % token_name)
-      setattr(module, token_name, token_index)
+      token_name = '%s_%s' % (kind_name, t)
+      setattr(id_, token_name, token_index)
+
       name_lookup[token_index] = token_name
       kind_lookup[token_index] = kind_index
 
@@ -462,7 +463,7 @@ def _GenCodeFromBTokens(token_def, bkind_enum, btype_enum, name_lookup,
 
 
 _kind_sizes = _GenCodeFromTokens(
-    _TokenDef, sys.modules[__name__], TokenKind, _TOKEN_TYPE_NAMES,
+    _TokenDef, Id, TokenKind, _TOKEN_TYPE_NAMES,
     _TOKEN_TYPE_TO_KIND)
 
 # (kind, logical, arity, arg_type)

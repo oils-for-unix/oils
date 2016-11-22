@@ -13,7 +13,7 @@ TODO: Turn it into a class
 
 import sys
 
-from core.tokens import *
+from core.tokens import Id
 
 
 def ArithEval(node, ev):
@@ -25,7 +25,7 @@ def ArithEval(node, ev):
   """
   atype = node.atype
 
-  if atype == AS_OP_QMARK:
+  if atype == Id.Arith_QMark:
     lhs = int(ArithEval(node.cond, ev))
     if lhs != 0:
       ret = int(ArithEval(node.true_expr, ev))
@@ -34,12 +34,12 @@ def ArithEval(node, ev):
     return ret
 
   # TODO: Should we come up with a kind/arity??
-  elif atype == NODE_UNARY_PLUS:
+  elif atype == Id.Node_UnaryPlus:
     return int(ArithEval(node.child, ev))
-  elif atype == NODE_UNARY_MINUS:
+  elif atype == Id.Node_UnaryMinus:
     return -int(ArithEval(node.child, ev))
 
-  elif atype == NODE_ARITH_WORD:
+  elif atype == Id.Node_ArithWord:
     ok, i = ev.ArithEvalWord(node.word)
     #assert ok
     return i
@@ -51,23 +51,23 @@ def ArithEval(node, ev):
     lhs = int(ArithEval(node.left, ev))
     rhs = int(ArithEval(node.right, ev))
 
-    if atype == AS_OP_COMMA:
+    if atype == Id.Arith_Comma:
       return rhs
 
     # For now:
-    if atype == AS_OP_PLUS:
+    if atype == Id.Arith_Plus:
       return lhs + rhs
-    if atype == AS_OP_MINUS:
+    if atype == Id.Arith_Minus:
       return lhs - rhs
 
-    if atype == AS_OP_STAR:
+    if atype == Id.Arith_Star:
       return lhs * rhs
-    if atype == AS_OP_SLASH:
+    if atype == Id.Arith_Slash:
       return lhs / rhs
-    if atype == AS_OP_PERCENT:
+    if atype == Id.Arith_Percent:
       return lhs % rhs
 
-    if atype == AS_OP_DSTAR:
+    if atype == Id.Arith_DStar:
       return lhs ** rhs
 
   raise NotImplementedError

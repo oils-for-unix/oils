@@ -15,14 +15,13 @@ import unittest
 from core.builtin import Builtins
 from core import cmd_exec  # module under test
 from core.cmd_exec import *
-from core.tokens import *  # REDIR_GREATAND
+from core.tokens import Id
 from core import ui
 from core.word_node import LiteralPart, CommandWord, TestVarOp, VarSubPart
 from core import word_eval
 from core.value import Value
 from core.cmd_node import SimpleCommandNode
 from core.lexer import Token
-from core.tokens import LIT_CHARS
 
 from osh import parse_lib
 from osh.word_parse import CommandWord, LiteralPart
@@ -111,19 +110,19 @@ class ExecutorTest(unittest.TestCase):
     
     # Simulating subshell for each command
     w1 = CommandWord()
-    w1.parts.append(LiteralPart(Token(LIT_CHARS, 'ls')))
+    w1.parts.append(LiteralPart(Token(Id.Lit_Chars, 'ls')))
     node1 = SimpleCommandNode()
     node1.words = [w1]
 
     w2 = CommandWord()
-    w2.parts.append(LiteralPart(Token(LIT_CHARS, 'head')))
+    w2.parts.append(LiteralPart(Token(Id.Lit_Chars, 'head')))
     node2 = SimpleCommandNode()
     node2.words = [w2]
 
     w3 = CommandWord()
-    w3.parts.append(LiteralPart(Token(LIT_CHARS, 'sort')))
+    w3.parts.append(LiteralPart(Token(Id.Lit_Chars, 'sort')))
     w4 = CommandWord()
-    w4.parts.append(LiteralPart(Token(LIT_CHARS, '--reverse')))
+    w4.parts.append(LiteralPart(Token(Id.Lit_Chars, '--reverse')))
     node3 = SimpleCommandNode()
     node3.words = [w3, w4]
 
@@ -155,7 +154,7 @@ class RedirectTest(unittest.TestCase):
     # NOTE: THis starts another process, which confuses unit test framework!
     return
     fd_state = FdState()
-    r = HereDocRedirect(REDIR_DLESS, 0, 'hello\n')
+    r = HereDocRedirect(Id.Redir_DLess, 0, 'hello\n')
     r.ApplyInParent(fd_state)
 
     in_str = sys.stdin.readline()
@@ -167,7 +166,7 @@ class RedirectTest(unittest.TestCase):
     print('BEFORE', os.listdir('/dev/fd'))
 
     fd_state = FdState()
-    r = DescriptorRedirect(REDIR_GREATAND, 1, 2)  # 1>&2
+    r = DescriptorRedirect(Id.Redir_GreatAnd, 1, 2)  # 1>&2
     r.ApplyInParent(fd_state)
 
     sys.stdout.write('write stdout to stderr\n')
@@ -179,8 +178,8 @@ class RedirectTest(unittest.TestCase):
     sys.stdout.write('after restoring stdout\n')
     sys.stdout.flush()  # flush required
 
-    r1 = FilenameRedirect(REDIR_GREAT, 1, '_tmp/desc3-out.txt')
-    r2 = FilenameRedirect(REDIR_GREAT, 2, '_tmp/desc3-err.txt')
+    r1 = FilenameRedirect(Id.Redir_Great, 1, '_tmp/desc3-out.txt')
+    r2 = FilenameRedirect(Id.Redir_Great, 2, '_tmp/desc3-err.txt')
 
     r1.ApplyInParent(fd_state)
     r2.ApplyInParent(fd_state)
@@ -192,8 +191,8 @@ class RedirectTest(unittest.TestCase):
 
     fd_state.RestoreAll()
 
-    r1 = FilenameRedirect(REDIR_GREAT, 1, '_tmp/ls-out.txt')
-    r2 = FilenameRedirect(REDIR_GREAT, 2, '_tmp/ls-err.txt')
+    r1 = FilenameRedirect(Id.Redir_Great, 1, '_tmp/ls-out.txt')
+    r2 = FilenameRedirect(Id.Redir_Great, 2, '_tmp/ls-err.txt')
 
     p = Process(
         ExternalThunk(['ls', '/error', '.']), fd_state=fd_state,
@@ -251,9 +250,9 @@ class VarOpTest(unittest.TestCase):
     set_sub = VarSubPart('x')
     print(ev.EvalVarSub(set_sub))
 
-    part = LiteralPart(Token(LIT_CHARS, 'default'))
+    part = LiteralPart(Token(Id.Lit_Chars, 'default'))
     arg_word = CommandWord(parts=[part])
-    test_op = TestVarOp(VS_TEST_COLON_HYPHEN, arg_word)
+    test_op = TestVarOp(Id.VTest_ColonHyphen, arg_word)
     unset_sub.test_op = test_op
     set_sub.test_op = test_op
 

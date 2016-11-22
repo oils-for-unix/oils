@@ -36,8 +36,8 @@ class PrinterTest(unittest.TestCase):
 
   def testWordParts(self):
     # Tokens use <> ?
-    t1 = Token(LIT_CHARS, 'echo')
-    t2 = Token(OP_NEWLINE, '\n')
+    t1 = Token(Id.Lit_Chars, 'echo')
+    t2 = Token(Id.Op_Newline, '\n')
     print(t1)
     print(t2)
 
@@ -49,16 +49,16 @@ class PrinterTest(unittest.TestCase):
     l2 = LiteralPart(t2)
     print(l2)
 
-    l3 = LiteralPart(Token(LIT_CHARS, 'foo'))
+    l3 = LiteralPart(Token(Id.Lit_Chars, 'foo'))
     print(l3)
 
-    l4 = LiteralPart(Token(LIT_LBRACE, '{'))
+    l4 = LiteralPart(Token(Id.Lit_LBrace, '{'))
     print(l4)
 
     command_list = SimpleCommandNode()
     command_list.words = [l1, l3]
 
-    t = Token(LEFT_COMMAND_SUB, '$(')
+    t = Token(Id.Left_CommandSub, '$(')
     cs_part = CommandSubPart(t, command_list)
     print(cs_part)
 

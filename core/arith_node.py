@@ -6,7 +6,7 @@ arith_node.py - AST nodes for arithmetic expressions
 import sys
 
 from core.base import _Node
-from core.tokens import TokenTypeToName, NODE_ARITH_WORD, UNDEFINED_TOK
+from core.tokens import TokenTypeToName, Id
 
 
 class _ANode(_Node):
@@ -20,7 +20,7 @@ class _ANode(_Node):
 
   def ArrayVarOpToken(self):
     """Returns whether it's ${a[@]} or ${a[*]}."""
-    return UNDEFINED_TOK
+    return Id.Undefined_Tok
 
   def PrintLine(self, f):
     raise NotImplementedError
@@ -79,7 +79,7 @@ class AtomANode(_ANode):
   This could be LitearlWord too, but it's not worth it
   """
   def __init__(self, word):
-    _ANode.__init__(self, NODE_ARITH_WORD)
+    _ANode.__init__(self, Id.Node_ArithWord)
     self.word = word  # type: Word
 
   def PrintLine(self, f):

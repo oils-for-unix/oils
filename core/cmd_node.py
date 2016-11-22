@@ -13,7 +13,7 @@ import io
 
 from core import util
 
-from core.tokens import *
+from core.tokens import Id, TokenTypeToName
 from core.word_node import CommandWord
 from core.base import _Node
 
@@ -153,9 +153,9 @@ class FilenameRedirectNode(RedirectNode):
     if op.val[0].isdigit():
       fd = int(op.val[0])
     else:
-      if op.type in (REDIR_GREAT, REDIR_DGREAT, REDIR_CLOBBER):
+      if op.type in (Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
         fd = 1  # stdout
-      elif op.type == REDIR_LESS:
+      elif op.type == Id.Redir_Less:
         fd = 0  # stdin
       else:  # < would be fd 0
         raise AssertionError
@@ -173,9 +173,9 @@ class DescriptorRedirectNode(RedirectNode):
     if op.val[0].isdigit():
       fd = int(op.val[0])
     else:
-      if op.type == REDIR_GREATAND:
+      if op.type == Id.Redir_GreatAnd:
         fd = 1  # stdout
-      elif op.type == REDIR_LESSAND:
+      elif op.type == Id.Redir_LessAnd:
         fd = 0  # stdout
       else:  # < would be fd 0
         raise AssertionError
@@ -189,7 +189,7 @@ class DescriptorRedirectNode(RedirectNode):
 def _GetHereDocsToFill(redirects):
   return [
       r for r in redirects
-      if r.op.type in (REDIR_DLESS, REDIR_DLESSDASH) and not r.was_filled
+      if r.op.type in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
       ]
 
 class SimpleCommandNode(CNode):

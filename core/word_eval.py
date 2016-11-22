@@ -4,8 +4,9 @@ word_eval.py - Evaluator for the word language.
 """
 
 import glob
-import pwd
 import os
+import pwd
+import re
 
 from core import arith_eval  # ArithEval
 try:
@@ -13,7 +14,7 @@ try:
 except ImportError:
   from core import fake_libc as libc
 from core.word_node import CommandWord
-from core.tokens import *  # VS_TEST_COLON_HYPHEN
+from core.tokens import Id
 from core.value import Value
 
 
@@ -312,21 +313,21 @@ class _Evaluator(object):
     if defined and part.bracket_op:
       vtype = part.bracket_op.vtype
 
-      if vtype == AS_OP_AT:
+      if vtype == Id.Arith_At:
         if val.IsArray():
           array_ok = True
         else:
           self._AddErrorContext("Can't index non-array with @")
           return False, None
 
-      elif vtype == AS_OP_STAR:
+      elif vtype == Id.Arith_Star:
         if val.IsArray():
           array_ok = True
         else:
           self._AddErrorContext("Can't index non-array with *")
           return False, None
 
-      elif vtype == VS_OP_LBRACKET:
+      elif vtype == Id.VOp_LBracket:
         array_ok = True
         is_array, a = val.AsArray()
         if is_array:
@@ -366,15 +367,15 @@ class _Evaluator(object):
       vtype = part.test_op.vtype
 
       # TODO: Change this to a bit test.
-      if vtype in (VS_TEST_COLON_HYPHEN, VS_TEST_COLON_EQUALS,
-          VS_TEST_COLON_QMARK, VS_TEST_COLON_PLUS):
+      if vtype in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+          Id.VTest_ColonQMark, Id.VTest_ColonPlus):
         is_falsey = not defined or val.IsEmptyString()
       else:
         is_falsey = not defined
 
       #print('!!',vtype, is_falsey)
 
-      if vtype in (VS_TEST_COLON_HYPHEN, VS_TEST_HYPHEN):
+      if vtype in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
         if is_falsey:
           argv = []
           ok, val2 = self.EvalCommandWord(part.test_op.arg_word)
@@ -446,13 +447,13 @@ class _Evaluator(object):
         val = Value.FromString(str(length))
 
       # prefix strip 
-      elif op.vtype == VS_UNARY_DPOUND:
+      elif op.vtype == Id.VUnary_DPound:
         pass
-      elif op.vtype == VS_UNARY_POUND:
+      elif op.vtype == Id.VUnary_Pound:
         pass
 
       # suffix strip
-      elif op.vtype == VS_UNARY_PERCENT:
+      elif op.vtype == Id.VUnary_Percent:
         print(op.words)
         argv = []
         for w in op.words:
@@ -475,18 +476,18 @@ class _Evaluator(object):
             s = s[:-len(suffix)]
             val = Value.FromString(s)
 
-      elif op.vtype == VS_UNARY_DPERCENT:
+      elif op.vtype == Id.VUnary_DPercent:
         pass
 
       # Patsub, vectorized
-      elif op.vtype == VS_OP_SLASH:
+      elif op.vtype == Id.VOp_Slash:
         pass
 
       # Either string slicing or array slicing.  However string slicing has a
       # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
       #
       # Or maybe have a different operator for byte slice and char slice.
-      elif op.vtype == VS_OP_COLON:
+      elif op.vtype == Id.VOp_Colon:
         pass
 
       else:
@@ -752,7 +753,7 @@ class _Evaluator(object):
     """
     # Parse time:
     # 1. brace expansion.  TODO: Do at parse time.
-    # 2. Tilde detection.  DONE at parse time.  Only if LIT_TILDE is the first
+    # 2. Tilde detection.  DONE at parse time.  Only if Id.Lit_Tilde is the first
     # WordPart.
     #
     # Run time:

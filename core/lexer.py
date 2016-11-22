@@ -12,8 +12,7 @@ lexer.py - Library for lexing.
 import re
 
 from core import util
-from core.tokens import (
-    Token, Eof_REAL, IGNORED_LINE_CONT, WS_SPACE, TokenTypeToName)
+from core.tokens import Id, Token, TokenTypeToName
 
 
 def CompileAll(pat_list):
@@ -67,7 +66,7 @@ class LineLexer(object):
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
     while True:
       if pos == len(self.line):
-        t = Token(Eof_REAL, '')
+        t = Token(Id.Eof_Real, '')
         return t
 
       re_list = self.lexer_def[lex_state]
@@ -75,7 +74,7 @@ class LineLexer(object):
           re_list, self.line, pos)
       # NOTE: Instead of hard-coding this token, we could pass it in.  This one
       # only appears in OUTER state!  LookAhead(lex_state, past_token_type)
-      if tok_type != WS_SPACE:
+      if tok_type != Id.WS_Space:
         break
       pos = end_index
 
@@ -149,8 +148,8 @@ class Lexer(object):
   def PushHint(self, old_type, new_type):
     """
     Use cases:
-    OP_RPAREN -> RIGHT_SUBSHELL -- disambiguate
-    OP_RPAREN -> Eof_RPAREN
+    Id.Op_RParen -> Id.Right_Subshell -- disambiguate
+    Id.Op_RParen -> Id.Eof_RParen
 
     Problems for $() nesting.
    
@@ -172,7 +171,7 @@ class Lexer(object):
       pool_index, line = self.line_reader.GetLine()
 
       if line is None:  # no more lines
-        t = Token(Eof_REAL, '')
+        t = Token(Id.Eof_Real, '')
         # No line number.  I guess we are showing the last line of the file.
         t.pool_index = self.pool_index - 1
         t.col = 0
@@ -206,11 +205,11 @@ class Lexer(object):
   # WordParser calls ReadForParser().
 
 
-  # We can also collapse newlines here... or at least OP_NEWLINE?
+  # We can also collapse newlines here... or at least Id.Op_Newline?
 
-  # In ARITH state or VS* states, it should be WS_NEWLINE
+  # In ARITH state or VS* states, it should be Id.WS_Newline
   #
-  # IGNORED_SPACE
+  # Id.Ignored_Space
 
   def Read(self, lex_state):
     while True:
@@ -218,11 +217,11 @@ class Lexer(object):
       if self.tokens_out is not None:
         self.tokens_out.append(t)
 
-      self.was_line_cont = (t.type == IGNORED_LINE_CONT)
+      self.was_line_cont = (t.type == Id.Ignored_LineCont)
 
       # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means
       # we don't have to handle them in the VS_1/VS_2/etc. states.
-      if t.type != IGNORED_LINE_CONT:
+      if t.type != Id.Ignored_LineCont:
         break
 
     #print("T", t, lex_state)

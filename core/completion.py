@@ -502,7 +502,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
   prefix = ''
   words = []
 
-  # IMPORTANT: if the last token is IGNORED_SPACE, then we want to add a
+  # IMPORTANT: if the last token is Id.Ignored_Space, then we want to add a
   # dummy word!  empty word
 
   # initial simple algorithm
@@ -526,7 +526,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
   # complete?  Will it be a proper group of LIT tokens?  I don't think you
   # complete anything else besides that?
   #
-  # $<TAB> will be LIT_OTHER -- but you might want to special case
+  # $<TAB> will be Id.Lit_Other -- but you might want to special case
   # $na<TAB> will be VS_NAME
 
   # NOTE: The LineLexer adds \n to the buf?  Should we disable it and add \0?

@@ -77,7 +77,6 @@ from core.process import (
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
 from core.word_node import EAssignScope
 from core.value import Value
-from core.tokens import *
 
 
 class ExecOpts(object):
@@ -739,10 +738,10 @@ class Executor(object):
       left, right = node.children
       status, cflow = self.Execute(left)
 
-      if node.op == OP_OR_IF:
+      if node.op == Id.Op_OrIf:
         if status != 0:
           status = self.Execute(right)
-      elif node.op == OP_AND_IF:
+      elif node.op == Id.Op_AndIf:
         if status == 0:
           status = self.Execute(right)
       else:

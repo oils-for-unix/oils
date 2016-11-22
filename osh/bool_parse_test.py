@@ -11,7 +11,7 @@ bool_parse_test.py: Tests for bool_parse.py
 
 import unittest
 
-from core.tokens import *
+from core.tokens import Id
 from core.bool_node import *
 
 from osh import parse_lib
@@ -23,7 +23,7 @@ def _ReadWords(w_parser):
   words = []
   while True:
     w = w_parser.ReadWord(LexMode.DBRACKET)
-    if w.Type() == Eof_REAL:
+    if w.Type() == Id.Eof_Real:
       break
     words.append(w)
   print('')

@@ -5,21 +5,21 @@ lexer_test.py: Tests for lexer.py
 
 import unittest
 
-from core.tokens import *
+from core.tokens import Id, Token
 from osh.lex import LEXER_DEF
 
 
 class TokenTest(unittest.TestCase):
 
   def testToken(self):
-    t = Token(LIT_CHARS, 'abc')
+    t = Token(Id.Lit_Chars, 'abc')
     print(t)
 
     # This redundancy is OK I guess.
-    t = Token(LIT_LBRACE, '{')
+    t = Token(Id.Lit_LBrace, '{')
     print(t)
 
-    t = Token(OP_SEMI, ';')
+    t = Token(Id.Op_Semi, ';')
     print(t)
 
   def testPrintStats(self):

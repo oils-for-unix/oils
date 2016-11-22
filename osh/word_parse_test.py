@@ -12,9 +12,7 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from core.word_node import LiteralPart, CommandWord, TokenWord
-from core.tokens import (
-    Token, Eof_REAL, UNKNOWN_TOK, LIT_CHARS, OP_NEWLINE,
-    VS_BANG, VS_POUND, VS_UNARY_POUND, VS_UNARY_DPOUND)
+from core.tokens import Id, Token
 
 from osh import parse_lib
 from osh.lex import LexMode
@@ -39,7 +37,7 @@ def _assertReadWord(test, word_str):
 
   # Next word must be \n
   w2 = w_parser.ReadOuter()
-  test.assertEqual(TokenWord(Token(OP_NEWLINE, '\n')) , w2)
+  test.assertEqual(TokenWord(Token(Id.Op_Newline, '\n')) , w2)
 
   return w
 
@@ -93,14 +91,14 @@ class WordParserTest(unittest.TestCase):
     w = _assertReadWord(self, '${15}')
 
     w = _assertReadWord(self, '${#var}')
-    self.assertEqual(VS_POUND, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
     w = _assertReadWord(self, '${!ref}')
-    self.assertEqual(VS_BANG, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).vtype)
 
     # Length of length
     w = _assertReadWord(self, '${##}')
     self.assertEqual('#', _GetVarSub(self, w).name)
-    self.assertEqual(VS_POUND, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${array[0]}')
     self.assertEqual(1, len(w.parts))
@@ -110,15 +108,15 @@ class WordParserTest(unittest.TestCase):
     # Length of element
     w = _assertReadWord(self, '${#array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(VS_POUND, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
     # Ref for element
     w = _assertReadWord(self, '${!array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(VS_BANG, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(VS_UNARY_POUND, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VUnary_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${!var#prefix}')
     self.assertEqual(1, len(w.parts))
@@ -230,14 +228,14 @@ class WordParserTest(unittest.TestCase):
   def testLength(self):
     # Synonym for $#, had a bug here
     w = _assertReadWord(self, '${#@}')
-    self.assertTrue(VS_POUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
 
     # Length of arg 11
     w = _assertReadWord(self, '${#11}')
-    self.assertTrue(VS_POUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${#str}')
-    self.assertTrue(VS_POUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${#array[0]}')
     print(w)
@@ -246,18 +244,18 @@ class WordParserTest(unittest.TestCase):
 
     w = _assertReadWord(self, '${#array["key"]}')
     # BUG!
-    #self.assertTrue(VS_POUND, _GetTransformOp(self, w).vtype)
+    #self.assertTrue(Id.VSub_POUND, _GetTransformOp(self, w).vtype)
 
   def testUnary(self):
     w = _assertReadWord(self, '${var#}')
-    self.assertTrue(VS_UNARY_POUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VUnary_Pound, _GetTransformOp(self, w).vtype)
     w = _assertReadWord(self, '${var#prefix}')
-    self.assertTrue(VS_UNARY_POUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VUnary_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${var##}')
-    self.assertTrue(VS_UNARY_DPOUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VUnary_DPound, _GetTransformOp(self, w).vtype)
     w = _assertReadWord(self, '${var##prefix}')
-    self.assertTrue(VS_UNARY_DPOUND, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VUnary_DPound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${var%suffix}')
     w = _assertReadWord(self, '${var%%suffix}')
@@ -314,11 +312,11 @@ class WordParserTest(unittest.TestCase):
 
         print(w)
 
-        if w.Type() == Eof_REAL:
+        if w.Type() == Id.Eof_Real:
           break
 
   def testReadComment(self):
-    # Test that we get OP_NEWLINE
+    # Test that we get Id.Op_Newline
     code = 'foo # comment\nbar #comment\n'
     w_parser = InitWordParser(code)
     w = w_parser.ReadOuter()
@@ -327,7 +325,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadOuter()
     assert w
-    self.assertEqual(OP_NEWLINE, w.token.type)
+    self.assertEqual(Id.Op_Newline, w.token.type)
 
     w = w_parser.ReadOuter()
     assert w
@@ -335,14 +333,14 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadOuter()
     assert w
-    self.assertEqual(OP_NEWLINE, w.token.type)
+    self.assertEqual(Id.Op_Newline, w.token.type)
 
     w = w_parser.ReadOuter()
     assert w
-    self.assertEqual(Eof_REAL, w.token.type)
+    self.assertEqual(Id.Eof_Real, w.token.type)
 
   def testReadRegex(self):
-    # Test that we get OP_NEWLINE
+    # Test that we get Id.Op_Newline
     code = '(foo|bar)'
     w_parser = InitWordParser(code)
     w_parser.next_lex_state = LexMode.BASH_REGEX  # needed at beginning
@@ -358,7 +356,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(LexMode.OUTER)
     assert w
-    self.assertEqual(OP_NEWLINE, w.token.type)
+    self.assertEqual(Id.Op_Newline, w.token.type)
 
   def testReadArith(self):
     CASES = [
@@ -405,7 +403,7 @@ class WordParserTest(unittest.TestCase):
           self.fail(err)
           break
         print(w)
-        if w.Type() in (Eof_REAL, UNKNOWN_TOK):
+        if w.Type() in (Id.Eof_Real, Id.Unknown_Tok):
           break
 
   def testMultiLine(self):
@@ -419,31 +417,31 @@ ls bar
 
     print('--MULTI')
     w = w_parser.ReadOuter()
-    parts = [LiteralPart(Token(LIT_CHARS, 'ls'))]
+    parts = [LiteralPart(Token(Id.Lit_Chars, 'ls'))]
     self.assertEqual(CommandWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
-    parts = [LiteralPart(Token(LIT_CHARS, 'foo'))]
+    parts = [LiteralPart(Token(Id.Lit_Chars, 'foo'))]
     self.assertEqual(CommandWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
-    t = Token(OP_NEWLINE, '\n')
+    t = Token(Id.Op_Newline, '\n')
     self.assertEqual(TokenWord(t), w)
 
     w = w_parser.ReadOuter()
-    parts = [LiteralPart(Token(LIT_CHARS, 'ls'))]
+    parts = [LiteralPart(Token(Id.Lit_Chars, 'ls'))]
     self.assertEqual(CommandWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
-    parts = [LiteralPart(Token(LIT_CHARS, 'bar'))]
+    parts = [LiteralPart(Token(Id.Lit_Chars, 'bar'))]
     self.assertEqual(CommandWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
-    t = Token(OP_NEWLINE, '\n')
+    t = Token(Id.Op_Newline, '\n')
     self.assertEqual(TokenWord(t), w)
 
     w = w_parser.ReadOuter()
-    t = Token(Eof_REAL, '')
+    t = Token(Id.Eof_Real, '')
     self.assertEqual(TokenWord(t), w)
 
 

@@ -33,7 +33,7 @@ from core import completion
 from core import cmd_exec
 from core.pool import Pool
 from core import reader
-from core.tokens import OP_NEWLINE, Eof_REAL
+from core.tokens import Id
 from core import word_eval
 from core import ui
 from core import util
@@ -44,13 +44,13 @@ class UsageError(RuntimeError):
 
 
 def TestLexer(lexer):
-  from word_parse import Eof_REAL, LexState
+  from word_parse import Id, LexMode
   while True:
     t = lexer.Peek()
     print(t)
-    if t.type == Eof_REAL:
+    if t.type == Id.Eof_Real:
       break
-    lexer.Next(LexState.OUTER)
+    lexer.Next(LexMode.OUTER)
 
 
 def TestWordParser(w_parser):
@@ -76,9 +76,9 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
     if w is None:
       raise RuntimeError('Failed parse: %s' % c_parser.Error())
     word_type = w.Type()
-    if word_type == OP_NEWLINE:
+    if word_type == Id.Op_Newline:
       print('nothing to execute')
-    elif word_type == Eof_REAL:
+    elif word_type == Id.Eof_Real:
       print('EOF')
       break
     else:

@@ -55,7 +55,7 @@ algorithms!  See evalexpr() in expr.c.
 import sys
 
 from core import base
-from core.tokens import *
+from core.tokens import BType, BKind, BOOLEAN_OP_TABLE
 from core.bool_node import NotBNode, LogicalBNode, UnaryBNode, BinaryBNode
 from osh.lex import LexMode
 try:
@@ -129,8 +129,8 @@ class CondParser(object):
   def _Next(self, lex_state=LexMode.DBRACKET):
     """
     Advance to the next token, skipping newlines.  We don't do handle newlines
-    in the lexer because we want the newline after ]] to be OP_NEWLINE rather
-    than WS_NEWLINE.  It's more complicated if it's WS_NEWLINE -- we might have
+    in the lexer because we want the newline after ]] to be Id.Op_Newline rather
+    than Id.WS_Newline.  It's more complicated if it's Id.WS_Newline -- we might have
     to unread tokens, etc.
     """
     while True:

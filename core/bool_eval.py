@@ -15,7 +15,7 @@ try:
   from core import libc
 except ImportError:
   from core import fake_libc as libc
-from core.tokens import BOOLEAN_OP_TABLE, BArgType, BType, OP_OR_IF, OP_AND_IF
+from core.tokens import BOOLEAN_OP_TABLE, BArgType, BType, Id
 from core.value import TValue
 
 

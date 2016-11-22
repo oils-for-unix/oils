@@ -20,7 +20,7 @@ from core.word_node import EAssignScope
 from core import ui
 from core import cmd_exec_test
 from core import completion  # module under test
-from core.tokens import *
+from core.tokens import Id
 
 from osh import parse_lib
 
@@ -66,11 +66,11 @@ class CompletionTest(unittest.TestCase):
     body_node = cmd_node.AssignmentNode(EAssignScope.GLOBAL, 0)
 
     c1 = CommandWord()
-    t1 = lexer.Token(LIT_CHARS, 'f1')
+    t1 = lexer.Token(Id.Lit_Chars, 'f1')
     c1.parts.append(LiteralPart(t1))
 
     c2 = CommandWord()
-    t2 = lexer.Token(LIT_CHARS, 'f2')
+    t2 = lexer.Token(Id.Lit_Chars, 'f2')
     c2.parts.append(LiteralPart(t2))
 
     a = ArrayLiteralPart()

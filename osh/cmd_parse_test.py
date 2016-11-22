@@ -9,8 +9,7 @@ import unittest
 from core import ui
 from core.cmd_node import ENode
 from core.word_node import DoubleQuotedPart
-from core.tokens import (
-    AS_OP_EQUAL, AS_OP_LESS, AS_OP_DPLUS, BType, LIT_CHARS, LIT_ESCAPED_CHAR)
+from core.tokens import Id, BType
 
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test
@@ -662,9 +661,9 @@ for ((i=0; i<5; ++i)); do
   echo $i 
 done
 """)
-    self.assertEqual(AS_OP_EQUAL, node.init.atype)
-    self.assertEqual(AS_OP_LESS, node.cond.atype)
-    self.assertEqual(AS_OP_DPLUS, node.update.atype)
+    self.assertEqual(Id.Arith_Equal, node.init.atype)
+    self.assertEqual(Id.Arith_Less, node.cond.atype)
+    self.assertEqual(Id.Arith_DPlus, node.update.atype)
     self.assertEqual(1, len(node.children))
 
     # Now without the ; OR a newline
@@ -673,9 +672,9 @@ for ((i=0; i<5; ++i)) do
   echo $i 
 done
 """)
-    self.assertEqual(AS_OP_EQUAL, node.init.atype)
-    self.assertEqual(AS_OP_LESS, node.cond.atype)
-    self.assertEqual(AS_OP_DPLUS, node.update.atype)
+    self.assertEqual(Id.Arith_Equal, node.init.atype)
+    self.assertEqual(Id.Arith_Less, node.cond.atype)
+    self.assertEqual(Id.Arith_DPlus, node.update.atype)
     self.assertEqual(1, len(node.children))
 
     node = assertParseCommandList(self, """\
@@ -707,7 +706,7 @@ done
 
 foo ]]""")
 
-    # Newline needs to be OP_NEWLINE!
+    # Newline needs to be Id.Op_Newline!
     node = assertParseCommandList(self, """\
 if [[ $# -gt 1 ]]
 then
@@ -718,6 +717,9 @@ fi
     # Doh, technically this works!
     # [[ =~ =~ =~ ]]; echo $?
     # 0
+
+  def testParseDParen(self):
+    node = assertParseCommandList(self, '(( 1 + 2 ))')
 
   def testParseDBracketRegex(self):
     node = assertParseCommandList(self, '[[ foo =~ foo ]]')
@@ -1116,9 +1118,9 @@ $'abc\ndef'
     self.assertEqual(1, len(w.parts))
     p = w.parts[0]
     self.assertEqual(3, len(p.tokens))
-    self.assertEqual(LIT_CHARS, p.tokens[0].type)
-    self.assertEqual(LIT_ESCAPED_CHAR, p.tokens[1].type)
-    self.assertEqual(LIT_CHARS, p.tokens[2].type)
+    self.assertEqual(Id.Lit_Chars, p.tokens[0].type)
+    self.assertEqual(Id.Lit_EscapedChar, p.tokens[1].type)
+    self.assertEqual(Id.Lit_Chars, p.tokens[2].type)
 
   def testArithConstants(self):
     # Found in Gherkin

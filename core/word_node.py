@@ -16,7 +16,7 @@ BECAUSE the other 3 languages use the words as "tokens".
 import io
 import re
 
-from core.tokens import *
+from core.tokens import Id, TokenKind, TokenTypeToName, EncodeTokenVal, BType
 from core.value import Value
 from core import tokens
 
@@ -45,7 +45,7 @@ EAssignScope = util.Enum('EAssignScope', 'LOCAL GLOBAL'.split())
 # Word types (distinct from token type).
 #
 
-# NOTE: There is also an LIT_LBRACE token, for brace expansion.
+# NOTE: There is also an Id.Lit_LBrace token, for brace expansion.
 EKeyword = util.Enum('EKeyword',
 """ NONE LBRACE RBRACE
     FOR WHILE UNTIL DO DONE IN 
@@ -242,7 +242,7 @@ class LiteralPart(_LiteralPartBase):
     return True, self.token.val, False
 
   def IsVarLike(self):
-    if self.token.type == LIT_VAR_LIKE:
+    if self.token.type == Id.Lit_VarLike:
       return self.token.val[:-1]  # strip off =
     else:
       return False
@@ -290,7 +290,7 @@ class EscapedLiteralPart(_LiteralPartBase):
 class SingleQuotedPart(WordPart):
 
   def __init__(self):
-    self.tokens = []  # list of LIT_CHARS tokens
+    self.tokens = []  # list of Id.Lit_Chars tokens
 
   def TokenPair(self):
     if self.tokens:
@@ -318,7 +318,7 @@ class SingleQuotedPart(WordPart):
 
 class DoubleQuotedPart(WordPart):
   def __init__(self):
-    # TODO: Add token_type?  LEFT_D_QUOTE, LEFT_DD_QUOTE.  But what about here
+    # TODO: Add token_type?  Id.Left_D_QUOTE, Id.Left_DD_QUOTE.  But what about here
     # doc?  It could be a dummy type.
     self.parts = []
 
@@ -369,7 +369,7 @@ class CommandSubPart(WordPart):
     return '[ComSub %s]' % f.getvalue()
 
   def Eval(self, ev, quoted=False):
-    # TODO: If token is LEFT_PROC_SUB_IN or LEFT_PROC_SUB_OUT, we have to
+    # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
     # supply something like /dev/fd/63.
     return ev.EvalCommandSub(self.command_list)
 
@@ -485,7 +485,7 @@ class _ATokenInterface(object):
     TODO: Also precedence if it's an operator.  I think I should return that
     here.
 
-    Like BOOLEAN_OP_TABLE, have ARITH_OP_TABLE.
+    Like BOOLEAN_OP_TABLE, have ARITH_Id.Op_Table.
     """
     raise NotImplementedError
 
@@ -590,7 +590,7 @@ class CommandWord(Word):
 
   # TODO:
   # - Put all the keywords under LIT, and then if there is exactly one part,
-  # test against the token type of LIT_FOR, LIT_LEFT_DBRACKET, etc.
+  # test against the token type of Id.Lit_For, Id.Lit_Left_DBRACKET, etc.
   # - Do you still need caching?  I guess it could be tested over and over
   # again.
   # - Rename to CType() or CmdType()?
@@ -649,7 +649,7 @@ class CommandWord(Word):
     return self.word_type
 
   def AType(self):
-    return NODE_ARITH_WORD
+    return Id.Node_ArithWord
 
   def BType(self):
     if len(self.parts) != 1:
@@ -736,8 +736,8 @@ class CommandWord(Word):
     return False
 
   # TODO for optimization: Put all the keywords under LIT, and then if there is
-  # exactly one part, test against the token type of LIT_FOR,
-  # LIT_LEFT_DBRACKET, etc.
+  # exactly one part, test against the token type of Id.Lit_For,
+  # Id.Lit_Left_DBRACKET, etc.
   def ResolveAssignmentBuiltin(self):
     """Tests if word is an assignment builtin."""
     # has to be a single literal part
@@ -812,10 +812,10 @@ class TokenWord(Word):
 
   NOTES:
   - The token range for this token may be more than one.  For example: a
-    OP_NEWLINE is a token word that the CommandParser needs to know about.  It
-    may "own" IGNORED_COMMENT and IGNORED_SPACE nodes preceding it.  These are
+    Id.Op_Newline is a token word that the CommandParser needs to know about.  It
+    may "own" Id.Ignored_Comment and Id.Ignored_Space nodes preceding it.  These are
     tokens the CommandParser does NOT need to know about.
-  - the Eof_REAL TokenWord owns and trailing whitespace.
+  - the Id.Eof_Real TokenWord owns and trailing whitespace.
   """
   def __init__(self, token):
     Word.__init__(self)
@@ -835,7 +835,7 @@ class TokenWord(Word):
     token_kind = self.token.Kind() 
     if token_kind == TokenKind.Eof:
       return WordKind.Eof
-    elif token_kind == TokenKind.REDIR:
+    elif token_kind == TokenKind.Redir:
       return WordKind.REDIR
     else:
       return WordKind.OPERATOR
@@ -848,28 +848,28 @@ class TokenWord(Word):
     # (( a=1+2 ))
     # ${a[ 1+2 ]}
     # ${a : 1+2 : 1+2}
-    #if self.token.type in (RIGHT_ARITH_SUB, VS_OP_RBRACKET, VS_OP_COLON):
-    #  return Eof_ARITH
+    #if self.token.type in (Id.Right_Arith_SUB, Id.VOp_RBracket, Id.VOp_Colon):
+    #  return Id.Eof_Arith
     return self.token.type  # e.g. AS_PLUS
 
   def BType(self):
     ty = self.token.type
-    if ty == OP_AND_IF:
+    if ty == Id.Op_AndIf:
       return BType.LOGICAL_BINARY_AND
-    if ty == OP_OR_IF:
+    if ty == Id.Op_OrIf:
       return BType.LOGICAL_BINARY_OR
 
-    if ty == REDIR_LESS:  # <
+    if ty == Id.Redir_Less:  # <
       return BType.BINARY_STRING_LESS
-    if ty == REDIR_GREAT:  # <
+    if ty == Id.Redir_Great:  # <
       return BType.BINARY_STRING_GREAT
 
-    if ty == OP_LPAREN:
+    if ty == Id.Op_LParen:
       return BType.PAREN_LEFT
-    if ty == OP_RPAREN:
+    if ty == Id.Op_RParen:
       return BType.PAREN_RIGHT
 
-    if ty == OP_NEWLINE:
+    if ty == Id.Op_Newline:
       return BType.NEWLINE_TOK
 
     raise AssertionError(self.token)
@@ -882,13 +882,13 @@ class _VarOp(object):
   def __init__(self, vtype):
     self.vtype = vtype  # type: TOKEN
                         # I think tokens are better.  
-                        # INDEX should be [ - VS_OP_LBRACKET
+                        # INDEX should be [ - Id.VOp_LBracket
                         # ARRAY should be @ / * - VS_AT or AS_STAR ?
                         # LENGTH should be # - VS_POUND
                         #
-                        # unary # - VS_UNARY_POUND, etc.
-                        # SLICE: VS_OP_COLON 
-                        # PATSUB: VS_OP_SLASH
+                        # unary # - Id.VUnary_Pound, etc.
+                        # SLICE: Id.VOp_Colon 
+                        # PATSUB: Id.VOp_Slash
 
   def PrintLine(self, f):
     raise NotImplementedError
@@ -903,7 +903,7 @@ class _VarOp(object):
 class IndexVarOp(_VarOp):
   """ $a[i+1] """
   def __init__(self, index_expr):
-    _VarOp.__init__(self, VS_OP_LBRACKET)
+    _VarOp.__init__(self, Id.VOp_LBracket)
     self.index_expr = index_expr  # type: _ANode
 
   def PrintLine(self, f):
@@ -925,7 +925,7 @@ class LengthVarOp(_VarOp):
   """ ${#a}  and ${#a[@]}
   """
   def __init__(self):
-    _VarOp.__init__(self, VS_POUND)
+    _VarOp.__init__(self, Id.VSub_Pound)
 
   def PrintLine(self, f):
     f.write('(#len)')
@@ -935,7 +935,7 @@ class RefVarOp(_VarOp):
   """ ${!s}  and ${!s[0]}, but NOT ${!s[@]}
   """
   def __init__(self):
-    _VarOp.__init__(self, VS_BANG)
+    _VarOp.__init__(self, Id.VSub_Bang)
 
   def PrintLine(self, f):
     f.write('(!ref)')
@@ -965,7 +965,7 @@ class StripVarOp(_VarOp):
 class SliceVarOp(_VarOp):
   """ ${a : i+1 : 3}  or  ${a[@] : i+1 : 3} or ${a : 0}"""
   def __init__(self, begin, length):
-    _VarOp.__init__(self, VS_OP_COLON)
+    _VarOp.__init__(self, Id.VOp_Colon)
     self.begin = begin  # type: _ANode
     # None means slice until end
     self.length = length  # Optional[_ANode]
@@ -977,7 +977,7 @@ class SliceVarOp(_VarOp):
 class PatSubVarOp(_VarOp):
   """ ${a/foo*/foo} """
   def __init__(self, pat, replace, do_all, do_prefix, do_suffix):
-    _VarOp.__init__(self, VS_OP_SLASH)
+    _VarOp.__init__(self, Id.VOp_Slash)
     # Can be a glob pattern
     self.pat = pat  # type: CommandWord
     self.replace = replace  # type: Optional[CommandWord]

@@ -8,9 +8,7 @@ tdop.py - Library for expression parsing.
 from core import base
 
 from core import tokens
-from core.tokens import (
-    UNDEFINED_TOK, Eof_REAL, Eof_RPAREN, Eof_BACKTICK, AS_OP_RPAREN,
-    AS_OP_LBRACKET, AS_OP_COMMA, NODE_ARITH_WORD)
+from core.tokens import Id
 
 from core.arith_node import AtomANode, UnaryANode, BinaryANode
 from osh.lex import LexMode
@@ -28,9 +26,9 @@ def Assert(s, expected, tree):
     assert sexpr == expected, '%r != %r' % (sexpr, expected)
 
 
-# Hm everything gets collapsed into NODE_ARITH_WORD
-LVALUE_TYPES = (NODE_ARITH_WORD, AS_OP_LBRACKET)
-CALL_INDEX_TYPES = (NODE_ARITH_WORD,)
+# Hm everything gets collapsed into Id.Node_Arith_WORD
+LVALUE_TYPES = (Id.Node_ArithWord, Id.Arith_LBracket)
+CALL_INDEX_TYPES = (Id.Node_ArithWord,)
 
 
 #
@@ -45,15 +43,15 @@ def NullError(p, t, bp):
 
 def NullConstant(p, t, bp):
   # TODO: if word.HasQuotedParts:
-  # - NODE_ARITH_STRING
-  # - NODE_ARITH_WORD
+  # - Id.Node_Arith_STRING
+  # - Id.Node_Arith_WORD
   return AtomANode(t)
 
 
 def NullParen(p, t, bp):
   """ Arithmetic grouping """
   r = p.ParseUntil(bp)
-  p.Eat(AS_OP_RPAREN)
+  p.Eat(Id.Arith_RParen)
   return r
 
 
@@ -173,7 +171,7 @@ class TdopParser(object):
     self.spec = spec
     self.w_parser = w_parser  # iterable
     self.cur_word = None  # current token
-    self.atype = UNDEFINED_TOK
+    self.atype = Id.Undefined_Tok
 
     self.error_stack = []
 
@@ -220,7 +218,7 @@ class TdopParser(object):
     power LESS THAN OR EQUAL TO rbp.
     """
     # TODO: use TokenKind.Eof
-    if self.atype in (Eof_REAL, Eof_RPAREN, Eof_BACKTICK):
+    if self.atype in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
       raise ParseError('Unexpected end of input')
 
     t = self.cur_word

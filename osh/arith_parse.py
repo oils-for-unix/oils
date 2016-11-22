@@ -9,7 +9,7 @@ TODO:
 import sys
 
 from core import tdop
-from core.tokens import *
+from core.tokens import Id
 from core.arith_node import UnaryANode, BinaryANode, TernaryANode
 #from tokenize import tokenize_expr
 #from parse_util import CompositeNode
@@ -26,13 +26,13 @@ def NullIncDec(p, t, bp):
 def NullUnaryPlus(p, t, bp):
   """ +x, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return UnaryANode(NODE_UNARY_PLUS, right)
+  return UnaryANode(Id.Node_UnaryPlus, right)
 
 
 def NullUnaryMinus(p, t, bp):
   """ -1, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return UnaryANode(NODE_UNARY_MINUS, right)
+  return UnaryANode(Id.Node_UnaryMinus, right)
 
 
 def LeftIncDec(p, t, left, rbp):
@@ -40,10 +40,10 @@ def LeftIncDec(p, t, left, rbp):
   """
   if left.atype not in tdop.LVALUE_TYPES:
     raise tdop.ParseError("Can't assign to %r (%s)" % (left, left.token))
-  if t.AType() == AS_OP_DPLUS:
-    atype = NODE_POST_DPLUS
-  elif t.AType() == AS_OP_DMINUS:
-    atype = NODE_POST_DMINUS
+  if t.AType() == Id.Arith_DPlus:
+    atype = Id.Node_PostDPlus
+  elif t.AType() == Id.Arith_DMinus:
+    atype = Id.Node_PostDMinus
   else:
     raise AssertionError
   return UnaryANode(t.AType(), left)
@@ -55,7 +55,7 @@ def LeftIndex(p, t, left, unused_bp):
   if left.atype not in tdop.CALL_INDEX_TYPES:
     raise tdop.ParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
-  p.Eat(AS_OP_RBRACKET)
+  p.Eat(Id.Arith_RBracket)
 
   return BinaryANode(t.AType(), left, index)
 
@@ -63,7 +63,7 @@ def LeftIndex(p, t, left, unused_bp):
 def LeftTernary(p, t, left, bp):
   """ Function call f(a, b). """
   true_expr = p.ParseUntil(bp)
-  p.Eat(AS_OP_COLON)
+  p.Eat(Id.Arith_Colon)
   false_expr = p.ParseUntil(bp)
   children = [left, true_expr, false_expr]
   return TernaryANode(t.AType(), left, true_expr, false_expr)
@@ -78,13 +78,13 @@ def LeftFuncCall(p, t, left, unused_bp):
   # f(x) or f[i](x)
   if left.atype not in tdop.CALL_INDEX_TYPES:
     raise tdop.ParseError("%s can't be called" % left)
-  while not p.AtToken(AS_OP_RPAREN):
+  while not p.AtToken(Id.Arith_RParen):
     # We don't want to grab the comma, e.g. it is NOT a sequence operator.  So
     # set the precedence to 5.
     children.append(p.ParseUntil(COMMA_PREC))
     if p.AtToken(','):
       p.Next()
-  p.Eat(AS_OP_RPAREN)
+  p.Eat(Id.Arith_RParen)
   t.type = 'call'
   return CompositeNode(t, children)
 
@@ -111,62 +111,62 @@ def MakeShellSpec():
 
   # TODO: Could these work as kinds?
   spec.Null(-1, tdop.NullConstant, [
-      NODE_ARITH_WORD,
-      AS_OP_AT,  # For ${a[@]}
-      AS_OP_STAR,  # For ${a[*]}
-      AS_OP_SEMI,  # for loop
+      Id.Node_ArithWord,
+      Id.Arith_At,  # For ${a[@]}
+      Id.Arith_Star,  # For ${a[*]}
+      Id.Arith_Semi,  # for loop
       ])
   spec.Null(-1, tdop.NullError, [
-      AS_OP_RPAREN, AS_OP_RBRACKET, AS_OP_COLON,
-      Eof_REAL, Eof_RPAREN, Eof_BACKTICK,
+      Id.Arith_RParen, Id.Arith_RBracket, Id.Arith_Colon,
+      Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick,
       # Not in the arithmetic language, but is a cmomon terminator , e.g. ${foo:1}
-      AS_OP_RBRACE,
+      Id.Arith_RBrace,
       ])
 
   # 0 precedence -- doesn't bind until )
-  spec.Null(0, tdop.NullParen, [AS_OP_LPAREN])  # for grouping
+  spec.Null(0, tdop.NullParen, [Id.Arith_LParen])  # for grouping
 
-  spec.Left(33, LeftIncDec, [AS_OP_DPLUS, AS_OP_DMINUS])
-  spec.Left(33, LeftFuncCall, [AS_OP_LPAREN])
-  spec.Left(33, LeftIndex, [AS_OP_LBRACKET])
+  spec.Left(33, LeftIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
+  spec.Left(33, LeftFuncCall, [Id.Arith_LParen])
+  spec.Left(33, LeftIndex, [Id.Arith_LBracket])
 
   # 31 -- binds to everything except function call, indexing, postfix ops
-  spec.Null(31, NullIncDec, [AS_OP_DPLUS, AS_OP_DMINUS])
-  spec.Null(31, NullUnaryPlus, [AS_OP_PLUS])
-  spec.Null(31, NullUnaryMinus, [AS_OP_MINUS])
-  spec.Null(31, tdop.NullPrefixOp, [AS_OP_BANG, AS_OP_TILDE])
+  spec.Null(31, NullIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
+  spec.Null(31, NullUnaryPlus, [Id.Arith_Plus])
+  spec.Null(31, NullUnaryMinus, [Id.Arith_Minus])
+  spec.Null(31, tdop.NullPrefixOp, [Id.Arith_Bang, Id.Arith_Tilde])
 
   # Right associative: 2 ** 3 ** 2 == 2 ** (3 ** 2)
   # NOTE: This isn't in C
-  spec.LeftRightAssoc(29, tdop.LeftBinaryOp, [AS_OP_DSTAR])
+  spec.LeftRightAssoc(29, tdop.LeftBinaryOp, [Id.Arith_DStar])
 
   # * / %
-  spec.Left(27, tdop.LeftBinaryOp, [AS_OP_STAR, AS_OP_SLASH, AS_OP_PERCENT])
+  spec.Left(27, tdop.LeftBinaryOp, [Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
 
-  spec.Left(25, tdop.LeftBinaryOp, [AS_OP_PLUS, AS_OP_MINUS])
-  spec.Left(23, tdop.LeftBinaryOp, [AS_OP_DLESS, AS_OP_DGREAT]) 
+  spec.Left(25, tdop.LeftBinaryOp, [Id.Arith_Plus, Id.Arith_Minus])
+  spec.Left(23, tdop.LeftBinaryOp, [Id.Arith_DLess, Id.Arith_DGreat]) 
   spec.Left(21, tdop.LeftBinaryOp, [
-    AS_OP_LESS, AS_OP_GREAT, AS_OP_LE, AS_OP_GE])
+    Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual])
 
-  spec.Left(19, tdop.LeftBinaryOp, [AS_OP_NEQUAL, AS_OP_DEQUAL])
+  spec.Left(19, tdop.LeftBinaryOp, [Id.Arith_NEqual, Id.Arith_DEqual])
 
-  spec.Left(15, tdop.LeftBinaryOp, [AS_OP_AMP])
-  spec.Left(13, tdop.LeftBinaryOp, [AS_OP_CARET])
-  spec.Left(11, tdop.LeftBinaryOp, [AS_OP_PIPE])
-  spec.Left(9, tdop.LeftBinaryOp, [AS_OP_DAMP])
-  spec.Left(7, tdop.LeftBinaryOp, [AS_OP_DPIPE])
+  spec.Left(15, tdop.LeftBinaryOp, [Id.Arith_Amp])
+  spec.Left(13, tdop.LeftBinaryOp, [Id.Arith_Caret])
+  spec.Left(11, tdop.LeftBinaryOp, [Id.Arith_Pipe])
+  spec.Left(9, tdop.LeftBinaryOp, [Id.Arith_DAmp])
+  spec.Left(7, tdop.LeftBinaryOp, [Id.Arith_DPipe])
 
-  spec.Left(5, LeftTernary, [AS_OP_QMARK])
+  spec.Left(5, LeftTernary, [Id.Arith_QMark])
 
   # Right associative: a = b = 2 is a = (b = 2)
   spec.LeftRightAssoc(3, tdop.LeftAssign, [
-      AS_OP_EQUAL,
-      AS_OP_PLUS_EQUAL, AS_OP_MINUS_EQUAL, AS_OP_STAR_EQUAL, AS_OP_SLASH_EQUAL,
-      AS_OP_PERCENT_EQUAL,
-      AS_OP_DLESS_EQUAL, AS_OP_DGREAT_EQUAL, AS_OP_AMP_EQUAL,
-      AS_OP_CARET_EQUAL, AS_OP_PIPE_EQUAL])
+      Id.Arith_Equal,
+      Id.Arith_PlusEqual, Id.Arith_MinusEqual, Id.Arith_StarEqual,
+      Id.Arith_SlashEqual, Id.Arith_PercentEqual, Id.Arith_DLessEqual,
+      Id.Arith_DGreatEqual, Id.Arith_AmpEqual, Id.Arith_CaretEqual,
+      Id.Arith_PipeEqual])
 
-  spec.Left(COMMA_PREC, tdop.LeftBinaryOp, [AS_OP_COMMA])
+  spec.Left(COMMA_PREC, tdop.LeftBinaryOp, [Id.Arith_Comma])
 
   return spec
 

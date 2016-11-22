@@ -12,21 +12,26 @@ tokens_test.py: Tests for tokens.py
 import unittest
 
 import tokens
-from tokens import *
+from tokens import Id, BType, TokenTypeToName, TokenKind, BKind
 
 from lexer import Token
 
 
 class TokensTest(unittest.TestCase):
 
-  def testTokens(self):
-    print(OP_NEWLINE)
-    print(Token(OP_NEWLINE, '\n'))
+  def testId(self):
+    print(dir(Id))
+    print(Id.Op_Newline)
+    print(Id.Undefined_Tok)
 
-    print(TokenTypeToName(OP_NEWLINE))
+  def testTokens(self):
+    print(Id.Op_Newline)
+    print(Token(Id.Op_Newline, '\n'))
+
+    print(TokenTypeToName(Id.Op_Newline))
 
     print(TokenKind.Eof)
-    print(TokenKind.LEFT)
+    print(TokenKind.Left)
     print('--')
     for name in dir(TokenKind):
       if name[0].isupper():
@@ -38,12 +43,12 @@ class TokensTest(unittest.TestCase):
     # 144 out of 256 tokens now
     print(len(tokens._TOKEN_TYPE_NAMES))
 
-    t = Token(AS_OP_PLUS, '+')
-    self.assertEqual(TokenKind.AS_OP, t.Kind())
-    t = Token(AS_OP_CARET_EQUAL, '^=')
-    self.assertEqual(TokenKind.AS_OP, t.Kind())
-    t = Token(AS_OP_RBRACE, '}')
-    self.assertEqual(TokenKind.AS_OP, t.Kind())
+    t = Token(Id.Arith_Plus, '+')
+    self.assertEqual(TokenKind.Arith, t.Kind())
+    t = Token(Id.Arith_CaretEqual, '^=')
+    self.assertEqual(TokenKind.Arith, t.Kind())
+    t = Token(Id.Arith_RBrace, '}')
+    self.assertEqual(TokenKind.Arith, t.Kind())
 
   def testBTokens(self):
     print(BType)
@@ -75,7 +80,7 @@ if __name__ == '__main__':
     big = [i for i in k if i > 8]
     print('%d BIG groups: %s' % (len(big), big))
 
-    a = len(tokens._TokenDef.AS_OP)
+    a = len(tokens._TokenDef.Arith)
     print(a)
 
     print('BType:', len(tokens._BTOKEN_TYPE_NAMES))
