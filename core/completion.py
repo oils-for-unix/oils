@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 completion.py - Tab completion.
@@ -117,7 +117,7 @@ class CompletionLookup(object):
     key = os.path.basename(argv0)
     actions = self.lookup.get(key)
     if chain:
-      return chain 
+      return chain
 
     for glob_pat, chain in self.patterns:
       if fnmatch.fnmatch(key, glob_pat):
@@ -611,7 +611,7 @@ class RootCompleter(object):
       chain = 'TODO'
     else:
       raise AssertionError(comp_type)
-    
+
     status_lines[0].Write('Completing %r ... (Ctrl-C to cancel)', buf)
     start_time = time.time()
 
@@ -652,8 +652,8 @@ class ReadlineCompleter(object):
       # TODO: Tokenize it according to our language
       buf = readline.get_line_buffer()
 
-      # Begin: the index of the first char of the 'word' in the line.  Words are
-      # parsed according to readline delims (which we won't use).
+      # Begin: the index of the first char of the 'word' in the line.  Words
+      # are parsed according to readline delims (which we won't use).
 
       begin = readline.get_begidx()
 
@@ -723,9 +723,10 @@ def Init(builtins, mem, funcs, comp_lookup, status_lines, ev):
   keywords_action = WordsAction(['TODO:keywords'])
   funcs_action = LiveDictAction(funcs)
 
-  first_chain = ChainedCompleter(
-      [aliases_action, commands_action, builtins_action, keywords_action,
-        funcs_action])
+  first_chain = ChainedCompleter([
+      aliases_action, commands_action, builtins_action, keywords_action,
+      funcs_action
+  ])
 
   # NOTE: These two are the same by default
   comp_lookup.RegisterEmpty(first_chain)

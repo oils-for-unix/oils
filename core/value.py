@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 value.py - Representation of runtime values.
@@ -24,7 +24,7 @@ class Value(object):
   """
   def __init__(self):
     self.type = TValue.STRING  # default value is empty string
-    self.s = ''  
+    self.s = ''
     self.a = []
 
   def __repr__(self):

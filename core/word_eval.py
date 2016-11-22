@@ -44,14 +44,14 @@ def _GlobUnescape(s):  # used by cmd_exec
   while i < n:
     c = s[i]
     if c == '\\':
-      assert i != n-1, 'There should be no trailing single backslash!'
+      assert i != n - 1, 'There should be no trailing single backslash!'
       i += 1
       c2 = s[i]
       if c2 in GLOB_META_CHARS:
         unescaped += c2
       else:
         raise AssertionError("Unexpected escaped character %r" % c2)
-    else:      
+    else:
       unescaped += c
     i += 1
   return unescaped
@@ -80,19 +80,19 @@ def _Split(s, ifs):
 
 def _IfsSplit(s, ifs):
   """
-    http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_05
-    https://www.gnu.org/software/bash/manual/bashref.html#Word-Splitting
+  http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_05
+  https://www.gnu.org/software/bash/manual/bashref.html#Word-Splitting
 
-    Summary:
-    1. ' \t\n' is special.  Whitespace is trimmed off the front and back.
-    2. if IFS is '', no field splitting is performed.
-    3. Otherwise, suppose IFS = ' ,\t'.  Then IFS whitespace is space or comma.
-      a.  IFS whitespace isgnored at beginning and end.
-      b. any other IFS char delimits the field, along with adjacent IFS
-         whitespace.
-      c. IFS whitespace shall delimit a field.
+  Summary:
+  1. ' \t\n' is special.  Whitespace is trimmed off the front and back.
+  2. if IFS is '', no field splitting is performed.
+  3. Otherwise, suppose IFS = ' ,\t'.  Then IFS whitespace is space or comma.
+    a.  IFS whitespace isgnored at beginning and end.
+    b. any other IFS char delimits the field, along with adjacent IFS
+       whitespace.
+    c. IFS whitespace shall delimit a field.
 
-    # Can we do this be regex or something?  Use regex match?
+  # Can we do this be regex or something?  Use regex match?
   """
   if not ifs:
     return [s]  # no splitting
@@ -423,11 +423,11 @@ class _Evaluator(object):
       #   positions.
       #   Implementation:
       #   - Test if it is a LITERAL or a Glob.  Then do a plain string
-      #   operation.  
-      #   - If it's a glob, do the quadratic algorithm. 
+      #   operation.
+      #   - If it's a glob, do the quadratic algorithm.
       #   - NOTE: bash also has an optimization where it extracts the LITERAL
-      #   parts of the string, and does a prematch.  If none of them match, then
-      #   it SKIPs the quadratic algorithm.
+      #   parts of the string, and does a prematch.  If none of them match,
+      #   then it SKIPs the quadratic algorithm.
       #   - The real solution is to compile a glob to RE2, but I want to avoid
       #   that dependency right now... libc regex is good for a bunch of
       #   things.
@@ -446,7 +446,7 @@ class _Evaluator(object):
           length = len(val.s)
         val = Value.FromString(str(length))
 
-      # prefix strip 
+      # prefix strip
       elif op.vtype == Id.VUnary_DPound:
         pass
       elif op.vtype == Id.VUnary_Pound:
@@ -540,10 +540,10 @@ class _Evaluator(object):
           split_parts = _IfsSplit(s, ifs)
           empty = _AppendArray(strs, split_parts, glob_escape=glob_escape)
           if not empty:
-            is_empty_unquoted = False 
+            is_empty_unquoted = False
         else:  # Don't split
           # Any non-subst parts, even '', means we don't elide.
-          is_empty_unquoted = False 
+          is_empty_unquoted = False
           if glob_escape:
             s = _GlobEscape(s)
           strs[-1] += s
@@ -753,8 +753,8 @@ class _Evaluator(object):
     """
     # Parse time:
     # 1. brace expansion.  TODO: Do at parse time.
-    # 2. Tilde detection.  DONE at parse time.  Only if Id.Lit_Tilde is the first
-    # WordPart.
+    # 2. Tilde detection.  DONE at parse time.  Only if Id.Lit_Tilde is the
+    # first WordPart.
     #
     # Run time:
     # 3. tilde sub, var sub, command sub, arith sub.  These are all
@@ -777,7 +777,7 @@ class _Evaluator(object):
         self._AddErrorContext('Error evaluating word %s', w)
         return None
       val.AppendTo(argv)
-    
+
     if do_glob:
       # NOTE: failglob could cause failure?  Do other shells have it?
       argv = self._ExpandGlobs(argv)
@@ -799,7 +799,7 @@ class _Evaluator(object):
         return None
 
       # Set each var so the next one can reference it.  Example:
-      # FOO=1 BAR=$FOO ls /  
+      # FOO=1 BAR=$FOO ls /
       pairs = [(name, val)]
       self.mem.SetLocal(pairs, 0)
 
@@ -823,7 +823,7 @@ class NormalEvaluator(_Evaluator):
     status = p.Run()
 
     # Runtime errors:
-    # what if the command sub was "echo foo > $@".  That is invalid.  Then 
+    # what if the command sub was "echo foo > $@".  That is invalid.  Then
     # Return false here.  How do we get that value from the Process then?  Do
     # we use a special return value?
 
@@ -849,4 +849,3 @@ class CompletionEvaluator(_Evaluator):
   def EvalCommandSub(self, node):
     # Just  return a dummy string?
     return True, Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')
-

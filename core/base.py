@@ -91,7 +91,7 @@ class _Node(object):
 
   def PrintTree(self, f, indent=0):
     """Print to a tree.
-    
+
     Default is to print on a single line.
 
     () : Node
@@ -100,7 +100,7 @@ class _Node(object):
     <> : Token
 
     _BNode is contained within ().  So maybe the parens should be {}.
-    
+
     _ANode is contained within [].  So maybe the parens should be <>.
       There might be confusion between tokens?
       Also anode has full on words, lke ${}.  A WordPart contains _ANode which

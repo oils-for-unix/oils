@@ -117,7 +117,8 @@ class LineLexerTest(unittest.TestCase):
 
     l = LineLexer(LEXER_DEF, 'foo  bar')
     self.assertEqual(Token(Id.Lit_Chars, 'foo'), l.Read(LexMode.OUTER))
-    self.assertEqual(Token(Id.Lit_Chars, 'bar'), l.LookAheadForOp(LexMode.OUTER))
+    self.assertEqual(
+        Token(Id.Lit_Chars, 'bar'), l.LookAheadForOp(LexMode.OUTER))
 
     # No lookahead; using the cursor!
     l = LineLexer(LEXER_DEF, 'func(')

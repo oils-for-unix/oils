@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 word_node.py -- AST Nodes for the word language.
@@ -48,7 +48,7 @@ EAssignScope = util.Enum('EAssignScope', 'LOCAL GLOBAL'.split())
 # NOTE: There is also an Id.Lit_LBrace token, for brace expansion.
 EKeyword = util.Enum('EKeyword',
 """ NONE LBRACE RBRACE
-    FOR WHILE UNTIL DO DONE IN 
+    FOR WHILE UNTIL DO DONE IN
     CASE ESAC IF FI THEN ELSE ELIF BANG
     LEFT_DBRACKET RIGHT_DBRACKET
     FUNCTION
@@ -83,7 +83,7 @@ class WordPart(object):
 
   def Eval(self, ev, quoted=False):
     """Evaluate to a string Value.
-    
+
     For the case where glob is turned off, or we're in DoubleQuotedPart, etc.
 
     Args:
@@ -105,7 +105,7 @@ class WordPart(object):
     disallow var sub, command sub, arith sub, etc.
 
     Returns:
-      3-tuple of 
+      3-tuple of
         ok: bool, success
         value: a string (not Value)
         quoted: whether any part of the word was quoted
@@ -117,7 +117,7 @@ class WordPart(object):
     Returns a StringPiece value if it's a literal token, otherwise the empty
     string.
     Used for EKeyword and BType.
-    """ 
+    """
     return ""
 
   def IsVarLike(self):
@@ -145,7 +145,7 @@ class WordPart(object):
     Returns:
       Is the part an substitution?  (If called
       This is used:
-      
+
       1) To determine whether result of evaluation of the part should be split
       in a unquoted context.
       2) To determine whether an empty string can be elided.
@@ -215,7 +215,7 @@ class _LiteralPartBase(WordPart):
 
 class LiteralPart(_LiteralPartBase):
   """A word part written literally in the program text.
-  
+
   It could be unquoted or quoted, depending on if it appears in a
   DoubleQuotedPart.  (SingleQuotedPart contains a list of Token instance, not
   WordPart instances.)
@@ -232,7 +232,8 @@ class LiteralPart(_LiteralPartBase):
     # TODO: maybe if we have the token number, we can leave out the type.  The
     # client can look it up?
     return '[%s %s]%s' % (
-        TokenTypeToName(self.token.type), EncodeTokenVal(self.token.val), newline)
+        TokenTypeToName(self.token.type), EncodeTokenVal(self.token.val),
+        newline)
 
   def Eval(self, ev, quoted=False):
     s = self.token.val
@@ -318,8 +319,8 @@ class SingleQuotedPart(WordPart):
 
 class DoubleQuotedPart(WordPart):
   def __init__(self):
-    # TODO: Add token_type?  Id.Left_D_QUOTE, Id.Left_DD_QUOTE.  But what about here
-    # doc?  It could be a dummy type.
+    # TODO: Add token_type?  Id.Left_D_QUOTE, Id.Left_DD_QUOTE.  But what about
+    # here doc?  It could be a dummy type.
     self.parts = []
 
   def __eq__(self, other):
@@ -397,7 +398,7 @@ class VarSubPart(WordPart):
     # TODO: seprate array_op -- better for oil
     self.bracket_op = None  # either IndexVarOp or ArrayVarOp
     self.test_op = None  # TestVarOp -- one of 8 types
-    self.transform_ops = []  # list of length/strip/slice/patsub 
+    self.transform_ops = []  # list of length/strip/slice/patsub
 
   def PrintLine(self, f):
     f.write('[VarSub %s' % self.name)  # no quotes around name
@@ -436,14 +437,14 @@ class TildeSubPart(WordPart):
     Args:
       prefix: tilde prefix ("" if no prefix)
     """
-    self.prefix  = prefix
+    self.prefix = prefix
 
   def __repr__(self):
     return '[TildeSub %r]' % self.prefix
 
   def Eval(self, ev, quoted=False):
     # We never parse a quoted string into a TildeSubPart.
-    assert not quoted 
+    assert not quoted
     return ev.EvalTildeSub(self.prefix)
 
   def EvalStatic(self):
@@ -480,7 +481,7 @@ class _ATokenInterface(object):
 
     ( ) is necessary
 
-    operator is necessary. 
+    operator is necessary.
 
     TODO: Also precedence if it's an operator.  I think I should return that
     here.
@@ -723,7 +724,7 @@ class CommandWord(Word):
     for p in self.parts:
       ok, s, q = p.EvalStatic()
       if not ok:
-        return False,'', quoted
+        return False, '', quoted
       if q:
         quoted = True
       ret += s
@@ -789,7 +790,7 @@ class CommandWord(Word):
       detected.
     """
     # Algorithm:
-    # 
+    #
     # Look for patterns like LBRACE COMMA RBRACE
     # And then form cross product somehow.
 
@@ -812,9 +813,9 @@ class TokenWord(Word):
 
   NOTES:
   - The token range for this token may be more than one.  For example: a
-    Id.Op_Newline is a token word that the CommandParser needs to know about.  It
-    may "own" Id.Ignored_Comment and Id.Ignored_Space nodes preceding it.  These are
-    tokens the CommandParser does NOT need to know about.
+    Id.Op_Newline is a token word that the CommandParser needs to know about.
+    It may "own" Id.Ignored_Comment and Id.Ignored_Space nodes preceding it.
+    These are tokens the CommandParser does NOT need to know about.
   - the Id.Eof_Real TokenWord owns and trailing whitespace.
   """
   def __init__(self, token):
@@ -832,7 +833,7 @@ class TokenWord(Word):
     return self.token, self.token
 
   def Kind(self):
-    token_kind = self.token.Kind() 
+    token_kind = self.token.Kind()
     if token_kind == TokenKind.Eof:
       return WordKind.Eof
     elif token_kind == TokenKind.Redir:
@@ -881,13 +882,13 @@ class _VarOp(object):
   """Base class for operations."""
   def __init__(self, vtype):
     self.vtype = vtype  # type: TOKEN
-                        # I think tokens are better.  
+                        # I think tokens are better.
                         # INDEX should be [ - Id.VOp_LBracket
                         # ARRAY should be @ / * - VS_AT or AS_STAR ?
                         # LENGTH should be # - VS_POUND
                         #
                         # unary # - Id.VUnary_Pound, etc.
-                        # SLICE: Id.VOp_Colon 
+                        # SLICE: Id.VOp_Colon
                         # PATSUB: Id.VOp_Slash
 
   def PrintLine(self, f):
@@ -911,7 +912,7 @@ class IndexVarOp(_VarOp):
 
 
 class ArrayVarOp(_VarOp):
-  """ ${a[@]} or ${a[*]} 
+  """ ${a[@]} or ${a[*]}
 
   Take all the elements of an array, to remove ambiguity.
 
@@ -982,7 +983,7 @@ class PatSubVarOp(_VarOp):
     self.pat = pat  # type: CommandWord
     self.replace = replace  # type: Optional[CommandWord]
 
-    self.do_all = do_all # ${v//foo/bar}
+    self.do_all = do_all  # ${v//foo/bar}
     self.do_prefix = do_prefix  # ${v/%foo/bar}
     self.do_suffix = do_suffix  # ${v/#foo/bar}
 

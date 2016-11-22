@@ -937,7 +937,7 @@ class WordParser(object):
           pass
         elif self.token_type == Id.Right_Subshell:
           # LEXER HACK for (case x in x) ;; esac )
-          assert self.next_lex_mode == None  # Rewind before it's used
+          assert self.next_lex_mode is None  # Rewind before it's used
           if self.lexer.MaybeUnreadOne():
             self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
             self._Next(lex_mode)
@@ -957,10 +957,11 @@ class WordParser(object):
         # We get Id.Op_RParen at top level:      case x in x) ;; esac
         # We get Id.Eof_RParen inside ComSub:  $(case x in x) ;; esac )
         if self.token_type in (Id.Op_RParen, Id.Eof_RParen):
-          assert self.next_lex_mode == None  # Rewind before it's used
+          assert self.next_lex_mode is None  # Rewind before it's used
           if self.lexer.MaybeUnreadOne():
             if self.token_type == Id.Eof_RParen:
-              self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)  # Redo translation
+              # Redo translation
+              self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
             self._Next(lex_mode)
 
         done = True  # anything we don't recognize means we're done
@@ -1049,7 +1050,8 @@ class WordParser(object):
     elif self.token_kind == TokenKind.Right:
       #print('WordParser.Read: TokenKind.Right', self.cur_token)
       if self.token_type not in (
-          Id.Right_Subshell, Id.Right_FuncDef, Id.Right_CasePat, Id.Right_ArrayLiteral):
+          Id.Right_Subshell, Id.Right_FuncDef, Id.Right_CasePat,
+          Id.Right_ArrayLiteral):
         raise AssertionError(self.cur_token)
 
       self._Next(lex_mode)
@@ -1123,10 +1125,10 @@ class WordParser(object):
       self.words_out.append(word)
     self.cursor = word
 
-    # TODO: Do conslidation of newlines in the lexer?
+    # TODO: Do consolidation of newlines in the lexer?
     # Note that there can be an infinite (Id.Ignored_Comment Id.Op_Newline
-    # Id.Ignored_Comment Id.Op_Newline) sequence, so we have to keep track of the
-    # last non-ignored token.
+    # Id.Ignored_Comment Id.Op_Newline) sequence, so we have to keep track of
+    # the last non-ignored token.
     self.cursor_was_newline = (self.cursor.Type() == Id.Op_Newline)
     return self.cursor
 
@@ -1149,4 +1151,3 @@ class WordParser(object):
       return False
     w.parts.append(dq)
     return w
-

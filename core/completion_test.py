@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 completion_test.py: Tests for completion.py
@@ -62,7 +62,7 @@ class CompletionTest(unittest.TestCase):
     ex = cmd_exec_test.InitExecutor()
     func_node = cmd_node.FunctionDefNode()
 
-    # Set global COMPREPLY=(f1 f2) 
+    # Set global COMPREPLY=(f1 f2)
     body_node = cmd_node.AssignmentNode(EAssignScope.GLOBAL, 0)
 
     c1 = CommandWord()
@@ -121,7 +121,6 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches('', STATUS))
     self.assertEqual(['grep ', 'sed ', 'test '], m)
 
-
     # Test compound commands. These PARSE
     m = list(r.Matches('echo hi || grep f', STATUS))
     m = list(r.Matches('echo hi; grep f', STATUS))
@@ -149,6 +148,7 @@ def _TestGetCompletionType(buf):
 
 
 f = _TestGetCompletionType
+
 
 class PartialParseTest(unittest.TestCase):
 
@@ -205,17 +205,17 @@ class PartialParseTest(unittest.TestCase):
     print(f('while test '))
 
     print(f('case $foo '))  # in
-    print(f('case $foo in a)')) 
+    print(f('case $foo in a)'))
     print(f('case $foo in a) echo'))
 
   def testVarSub(self):
     # TODO: Mem needs variable "f"
 
-    # VarSubPart 
+    # VarSubPart
     print(f('echo $'))
     print(f('echo $f'))
 
-    # Double Quoted VarSubPart 
+    # Double Quoted VarSubPart
     print(f('echo "$'))
     print(f('echo "$f'))
 

@@ -91,7 +91,8 @@ class SimpleCommandTest(unittest.TestCase):
     self.assertEqual(2, len(node.words))
     self.assertEqual(1, len(node.more_env))
 
-    node = assertParseSimpleCommand(self, 'FOO=bar >output.txt SPAM=eggs ls foo')
+    node = assertParseSimpleCommand(self,
+        'FOO=bar >output.txt SPAM=eggs ls foo')
     self.assertEqual(2, len(node.words))
     self.assertEqual(2, len(node.more_env))
     self.assertEqual(1, len(node.redirects))
@@ -658,7 +659,7 @@ done
   def testParseForExpression(self):
     node = assertParseCommandList(self, """\
 for ((i=0; i<5; ++i)); do
-  echo $i 
+  echo $i
 done
 """)
     self.assertEqual(Id.Arith_Equal, node.init.atype)
@@ -669,7 +670,7 @@ done
     # Now without the ; OR a newline
     node = assertParseCommandList(self, """\
 for ((i=0; i<5; ++i)) do
-  echo $i 
+  echo $i
 done
 """)
     self.assertEqual(Id.Arith_Equal, node.init.atype)
@@ -679,7 +680,7 @@ done
 
     node = assertParseCommandList(self, """\
 for ((;;)); do
-  echo $i 
+  echo $i
 done
 """)
     self.assertEqual(1, len(node.children))
@@ -702,7 +703,7 @@ done
 
     # Bash allows embedded newlines in some places, but not all
     node = assertParseCommandList(self, """\
-[[ $# -gt 1 && 
+[[ $# -gt 1 &&
 
 foo ]]""")
 
@@ -789,7 +790,7 @@ class NestedParensTest(unittest.TestCase):
   """
 
   def testParseSubshell(self):
-    node = assertParseCommandLine(self, 
+    node = assertParseCommandLine(self,
         '(cd /; echo PWD 1); echo PWD 2')
     self.assertEqual(2, len(node.children))
     self.assertEqual(ENode.LIST, node.type)
@@ -955,7 +956,7 @@ $( case foo in
     # the MaybeUnreadOne() lexer hack.
     node = assertParseCommandList(self, """\
 $( for ((i=0; i<3; ++i)); do
-     echo hi 
+     echo hi
    done
 )
 """)
@@ -963,12 +964,11 @@ $( for ((i=0; i<3; ++i)); do
 
     node = assertParseCommandList(self, """\
 ( for ((i=0; i<3; ++i)); do
-    echo hi 
+    echo hi
   done
 )
 """)
     self.assertEqual(ENode.SUBSHELL, node.type)
-
 
 
 class RealBugsTest(unittest.TestCase):

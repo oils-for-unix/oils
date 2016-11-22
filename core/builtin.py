@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 builtins.py
@@ -110,8 +110,8 @@ from core import util
 # - So you can just add "complete" and have it work.
 
 EBuiltin = util.Enum('EBuiltin', """
-NONE BREAK CONTINUE RETURN READ ECHO EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE
-COMPGEN DEBUG_LINE
+NONE BREAK CONTINUE RETURN READ ECHO EXIT SOURCE DOT TRAP EVAL EXEC SET
+COMPLETE COMPGEN DEBUG_LINE
 """.split())
 
 
@@ -197,7 +197,7 @@ class BuiltinDef(object):
       names: name to register
       arg_spec: argument parser.  Used to generate getopt() string, as well as
         completion?  And maybe type checking code.
-      help_str: 72 or 79 width help string. 
+      help_str: 72 or 79 width help string.
         Need to document usage line, and also exit status.
         Bash has a man page thing, but we don't need that.
 
@@ -223,7 +223,7 @@ BUILTINS = [
     BuiltinDef("readonly",
       ArgSpec(
         """
-        readonly [-aA] [name[=value] ...] 
+        readonly [-aA] [name[=value] ...]
         readonly -p
         """,
         """
@@ -239,24 +239,24 @@ BUILTINS = [
         [])
       ),
     BuiltinDef("export", ArgSpec("", "", "", [])),
-    
+
     # Control flow builtins.  No options, could have args
     BuiltinDef("break", NO_ARGS),
     BuiltinDef("continue", NO_ARGS),
     BuiltinDef("return", NO_ARGS),
-    
+
     BuiltinDef("read", NO_ARGS),
     BuiltinDef("echo", NO_ARGS),
     BuiltinDef("exit", NO_ARGS),
-    
+
     # These are aliases
     BuiltinDef("source", NO_ARGS),
     BuiltinDef(".", NO_ARGS),
-    
+
     BuiltinDef("trap", NO_ARGS),
     BuiltinDef("eval", NO_ARGS),
     BuiltinDef("exec", NO_ARGS),
-    
+
     BuiltinDef("set", NO_ARGS),
     BuiltinDef("complete", NO_ARGS),
 
@@ -277,9 +277,8 @@ class Builtins(object):
   The executor resolves full names, and the completion system makes queries for
   prefixes of names.
 
-  TODO: Should have a separate BuiltinMetadata and BuiltinImplementation things?
-  Stuff outside the core should be here.
-
+  TODO: Should have a separate BuiltinMetadata and BuiltinImplementation
+  things?  Stuff outside the core should be here.
   """
   def __init__(self, status_line):
     self.status_line = status_line

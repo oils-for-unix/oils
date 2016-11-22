@@ -49,8 +49,14 @@ format-demo() {
 # Python
 #
 
-# yapf: useful
-# pep8: useful
+# yapf: was useful, but might cause big diffs
 
+oil-pep8() {
+  pep8 --ignore E125,E701,E241,E121,E111,E128,E262 "$@"
+}
+
+pep8-all() {
+  oil-pep8 */*.py
+}
 
 "$@"

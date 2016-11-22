@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 cmd_parse.py - Parse high level shell commands.
@@ -96,8 +96,8 @@ class CommandParser(object):
     """Consume a word of a type.  If it doesn't match, return False.
 
     Args:
-      word_type: either EKeyword.* or a token type like Id.Right_Subshell.  TODO:
-      Rationalize / type check this.
+      word_type: either EKeyword.* or a token type like Id.Right_Subshell.
+      TODO: Rationalize / type check this.
     """
     if not self._Peek():
       return False
@@ -170,7 +170,7 @@ class CommandParser(object):
     Return a new word if it needs to include a TildeSub, or None to leave it
     alone.
 
-    NOTE: This algorithm would be a simpler if 
+    NOTE: This algorithm would be a simpler if
     1. We could assume some regex for user names.
     2. We didn't need to do brace expansion first, like {~foo,~bar}
 
@@ -187,7 +187,7 @@ class CommandParser(object):
     of line: '\n', tabulation: '\t', etc.). Note that using a slash ('/') may
     break the default algorithm for the definition of the user's home
     directory.
-  
+
     """
     if not word.parts:
       return None
@@ -223,7 +223,7 @@ class CommandParser(object):
     if found_slash:
       w.parts.append(tilde_part)
       w.parts.append(remainder_part)
-      j = i+1
+      j = i + 1
       while j < len(word.parts):
         w.parts.append(word.parts[j])
         j += 1
@@ -323,7 +323,7 @@ class CommandParser(object):
     assert self.word_kind == WordKind.REDIR, self.cur_word
 
     # TODO: Make the code shorter.  These four cases all read the next word,
-    # and interpret it differently. 
+    # and interpret it differently.
     # <    filename
     # <<   here doc terminator
     # <&   file descriptor
@@ -347,7 +347,7 @@ class CommandParser(object):
       self._Next()
 
     elif self.word_type in (
-        Id.Redir_Less, Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):  # filename
+        Id.Redir_Less, Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
       node = FilenameRedirectNode(self.cur_word.token)
       self._Next()
 
@@ -541,7 +541,7 @@ class CommandParser(object):
     word_command   : prefix_part* cmd_part+
 
     simple_command : assign_listing
-                   | assignment 
+                   | assignment
                    | proc_command
 
     Simple imperative algorithm:
@@ -552,7 +552,7 @@ class CommandParser(object):
     3) If there are no non-assignment words, then it's a global assignment.
 
     { redirects, global assignments } OR
-    { redirects, prefix_bindings, words } OR 
+    { redirects, prefix_bindings, words } OR
     { redirects, ERROR_prefix_bindings, keyword, assignments, words }
 
     THEN CHECK that prefix bindings don't have any array literal parts!
@@ -564,7 +564,7 @@ class CommandParser(object):
 
     A command can be an assignment word, word, or redirect on its own.
 
-        ls 
+        ls
         >out.txt
 
         >out.txt FOO=bar   # this touches the file, and hten
@@ -763,8 +763,8 @@ class CommandParser(object):
 
   def ParseFor(self):
     """
-    for_clause       : For for_name newline_ok (in for_words? for_sep)? do_group ;
-                     | For '((' ... TODO
+    for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
+               | For '((' ... TODO
     """
     if not self._Eat(EKeyword.FOR): return None
 
@@ -804,7 +804,8 @@ class CommandParser(object):
 
   def ParseCaseItem(self):
     """
-    case_item: '('? pattern ('|' pattern)* ')' newline_ok command_term? trailer? ;
+    case_item: '('? pattern ('|' pattern)* ')'
+               newline_ok command_term? trailer? ;
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
@@ -852,7 +853,7 @@ class CommandParser(object):
 
   def ParseCaseList(self):
     """
-    case_list        : case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
+    case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
     # TODO: The word_parser does self.lexer.MaybeUnreadOne for $().  I think I
     # need the same for subshell.  Gah.  The lexer has to get a chance to
@@ -911,7 +912,7 @@ class CommandParser(object):
 
   def ParseElsePart(self, children):
     """
-    else_part        : (Elif command_list Then command_list)* Else command_list ;
+    else_part: (Elif command_list Then command_list)* Else command_list ;
     """
     self._Peek()
     while self.word_type == EKeyword.ELIF:
@@ -998,7 +999,7 @@ class CommandParser(object):
       return self.ParseCase()
 
     self.AddErrorContext(
-        "Expected a compound command (e.g. for while if case), got %s", 
+        "Expected a compound command (e.g. for while if case), got %s",
         self.cur_word, word=self.cur_word)
     return None
 
@@ -1018,15 +1019,15 @@ class CommandParser(object):
 
   def ParseFunctionDef(self):
     """
-    function_header : fname '(' ')' 
+    function_header : fname '(' ')'
     function_def     : function_header newline_ok function_body ;
 
     Precondition: Looking at the function name.
-    Post condition: 
+    Post condition:
 
     NOTE: There is an ambiguity with:
-    
-    function foo ( echo hi ) and 
+
+    function foo ( echo hi ) and
     function foo () ( echo hi )
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
@@ -1227,7 +1228,7 @@ class CommandParser(object):
 
       # TODO: mutate 'child' if it was Id.Op_PipeAmp
 
-      # cat <<EOF | <newline> 
+      # cat <<EOF | <newline>
       if not self._MaybeReadHereDocsAfterNewline(child):
         return None
 
@@ -1258,12 +1259,12 @@ class CommandParser(object):
     return node
 
   def ParseAndOr(self):
-    """ 
+    """
     and_or           : pipeline (( AND_IF | OR_IF ) newline_ok pipeline)* ;
 
     Left recursive / associative:
 
-    and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline 
+    and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline
                      | pipeline
     """
     left = self.ParsePipeline()
@@ -1378,8 +1379,8 @@ class CommandParser(object):
     # turned into Id.Eof_Real).
     # NOTE: EKeyword.RBRACE needed for func def; that's probably wrong.
     END_LIST = (
-        Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell, EKeyword.RBRACE,
-        Id.Op_DSemi)
+        Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell,
+        EKeyword.RBRACE, Id.Op_DSemi)
 
     children = []
     done = False
@@ -1494,4 +1495,3 @@ class CommandParser(object):
 
   # Alias for now
   ParseFile = ParseCommandListOrEmpty
-

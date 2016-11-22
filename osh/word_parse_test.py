@@ -16,7 +16,7 @@ from core.tokens import Id, Token
 
 from osh import parse_lib
 from osh.lex import LexMode
-from osh.word_parse import WordParser # module under test
+from osh.word_parse import WordParser  # module under test
 
 
 def InitWordParser(s):
@@ -37,9 +37,10 @@ def _assertReadWord(test, word_str):
 
   # Next word must be \n
   w2 = w_parser.ReadOuter()
-  test.assertEqual(TokenWord(Token(Id.Op_Newline, '\n')) , w2)
+  test.assertEqual(TokenWord(Token(Id.Op_Newline, '\n')), w2)
 
   return w
+
 
 def _assertReadWordFailure(test, word_str):
   print('\n---', word_str)
@@ -295,7 +296,7 @@ class WordParserTest(unittest.TestCase):
         '${foo\\\n}',  # VS_2
         '${foo#\\\nyo}',  # VS_ARG_UNQ
         '"${foo#\\\nyo}"',  # VS_ARG_DQ
-        ]
+    ]
     for expr in CASES:
       print('---')
       print(expr)
@@ -385,7 +386,7 @@ class WordParserTest(unittest.TestCase):
         '$(( 1 | 0 ))',
 
         '$((0x$size))',
-        ]
+    ]
 
     for expr in CASES:
       print('---')
