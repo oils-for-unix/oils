@@ -102,16 +102,16 @@ class CondParser(object):
     err = base.MakeError(msg, *args, token=token, word=word)
     self.error_stack.append(err)
 
-  def _NextOne(self, lex_state=LexMode.DBRACKET):
+  def _NextOne(self, lex_mode=LexMode.DBRACKET):
     #print('_Next', self.cur_word)
     n = len(self.words)
     if n == 2:
-      assert lex_state == LexMode.DBRACKET
+      assert lex_mode == LexMode.DBRACKET
       self.words[0] = self.words[1]
       self.cur_word = self.words[0]
       del self.words[1]
     elif n in (0, 1):
-      w = self.w_parser.ReadWord(lex_state)
+      w = self.w_parser.ReadWord(lex_mode)
       if not w:
         err = self.w_parser.Error()
         self.error_stack.extend(err)
@@ -126,7 +126,7 @@ class CondParser(object):
     self.bkind = LookupBKind(self.btype)
     return True
 
-  def _Next(self, lex_state=LexMode.DBRACKET):
+  def _Next(self, lex_mode=LexMode.DBRACKET):
     """
     Advance to the next token, skipping newlines.  We don't do handle newlines
     in the lexer because we want the newline after ]] to be Id.Op_Newline rather
@@ -134,7 +134,7 @@ class CondParser(object):
     to unread tokens, etc.
     """
     while True:
-      w = self._NextOne(lex_state=lex_state)
+      w = self._NextOne(lex_mode=lex_mode)
       if not w:
         return False
       if self.btype != BType.NEWLINE_TOK:
@@ -254,10 +254,10 @@ class CondParser(object):
         op = self.btype
 
         # TODO: Need to change to LexMode.BASH_REGEX.
-        # _Next(lex_state) then?
+        # _Next(lex_mode) then?
         is_regex = t2_btype == BType.BINARY_STRING_TILDE_EQUAL
         if is_regex:
-          if not self._Next(lex_state=LexMode.BASH_REGEX): return None
+          if not self._Next(lex_mode=LexMode.BASH_REGEX): return None
         else:
           if not self._Next(): return None
 

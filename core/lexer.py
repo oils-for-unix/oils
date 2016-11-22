@@ -60,7 +60,7 @@ class LineLexer(object):
       self.line_pos -= 1
       return True
 
-  def LookAheadForOp(self, lex_state):
+  def LookAheadForOp(self, lex_mode):
     """Look ahead for a non-space token, using the given lexical state."""
     pos = self.line_pos
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
@@ -69,11 +69,11 @@ class LineLexer(object):
         t = Token(Id.Eof_Real, '')
         return t
 
-      re_list = self.lexer_def[lex_state]
+      re_list = self.lexer_def[lex_mode]
       end_index, tok_type, tok_val = FindLongestMatch(
           re_list, self.line, pos)
       # NOTE: Instead of hard-coding this token, we could pass it in.  This one
-      # only appears in OUTER state!  LookAhead(lex_state, past_token_type)
+      # only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
       if tok_type != Id.WS_Space:
         break
       pos = end_index
@@ -83,11 +83,11 @@ class LineLexer(object):
   def AtEnd(self):
     return self.line_pos == len(self.line)
 
-  def Read(self, lex_state):
+  def Read(self, lex_mode):
     if self.AtEnd():
       raise AssertionError('EOF')
 
-    re_list = self.lexer_def[lex_state]
+    re_list = self.lexer_def[lex_mode]
 
     end_index, tok_type, tok_val = FindLongestMatch(
         re_list, self.line, self.line_pos)
@@ -128,7 +128,7 @@ class Lexer(object):
   def MaybeUnreadOne(self):
     return self.line_lexer.MaybeUnreadOne()
 
-  def LookAheadForOp(self, lex_state):
+  def LookAheadForOp(self, lex_mode):
     """Look ahead in the current line for the next non-space token.
 
     NOTE: Limiting lookahead to the current line makes the code a lot simpler
@@ -143,7 +143,7 @@ class Lexer(object):
     foo()
     {}
     """
-    return self.line_lexer.LookAheadForOp(lex_state)
+    return self.line_lexer.LookAheadForOp(lex_mode)
 
   def PushHint(self, old_type, new_type):
     """
@@ -166,7 +166,7 @@ class Lexer(object):
     #print('* Lexer.PushHint %s => %s' % (old_s, new_s))
     self.translation_stack.append((old_type, new_type))
 
-  def _Read(self, lex_state):
+  def _Read(self, lex_mode):
     if self.line_lexer.AtEnd():
       pool_index, line = self.line_reader.GetLine()
 
@@ -180,7 +180,7 @@ class Lexer(object):
 
       self.line_lexer.Reset(line, pool_index)
 
-    t = self.line_lexer.Read(lex_state)
+    t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF
     if self.translation_stack:
@@ -211,9 +211,9 @@ class Lexer(object):
   #
   # Id.Ignored_Space
 
-  def Read(self, lex_state):
+  def Read(self, lex_mode):
     while True:
-      t = self._Read(lex_state)
+      t = self._Read(lex_mode)
       if self.tokens_out is not None:
         self.tokens_out.append(t)
 
@@ -224,5 +224,5 @@ class Lexer(object):
       if t.type != Id.Ignored_LineCont:
         break
 
-    #print("T", t, lex_state)
+    #print("T", t, lex_mode)
     return t

@@ -46,7 +46,7 @@ class CommandParser(object):
     self.completion_stack = []
 
     # Cursor state set by _Peek()
-    self.next_lex_state = LexMode.OUTER
+    self.next_lex_mode = LexMode.OUTER
     self.cur_word = None  # current word
     self.word_kind = WordKind.UNDEFINED
     self.word_type = Id.Undefined_Tok
@@ -73,8 +73,8 @@ class CommandParser(object):
     Returns True for success and False on error.  Error examples: bad command
     sub word, or unterminated quoted string, etc.
     """
-    if self.next_lex_state != LexMode.NONE:
-      w = self.w_parser.ReadWord(self.next_lex_state)
+    if self.next_lex_mode != LexMode.NONE:
+      w = self.w_parser.ReadWord(self.next_lex_mode)
       if w is None:
         error_stack = self.w_parser.Error()
         self.error_stack.extend(error_stack)
@@ -84,13 +84,13 @@ class CommandParser(object):
 
       self.word_kind = self.cur_word.Kind()
       self.word_type = self.cur_word.Type()
-      self.next_lex_state = LexMode.NONE
+      self.next_lex_mode = LexMode.NONE
     #print('_Peek', self.cur_word)
     return True
 
-  def _Next(self, lex_state=LexMode.OUTER):
+  def _Next(self, lex_mode=LexMode.OUTER):
     """Helper method."""
-    self.next_lex_state = lex_state
+    self.next_lex_mode = lex_mode
 
   def _Eat(self, word_type):
     """Consume a word of a type.  If it doesn't match, return False.

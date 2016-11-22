@@ -36,7 +36,7 @@ from osh.lex import LexMode
 # _ReadDoubleQuotedPart (also used for here docs, needs a mode)
 #   _ReadDoubleQuotedLeftParts -- ${} $() $(()) $[] ``
 # _ReadVarOpArg(d_quoted)
-#    _ReadCommandWord(lex_state)
+#    _ReadCommandWord(lex_mode)
 
 # UNQUOTED: LexMode.OUTER
 #           All subs and quotes are allowed --
@@ -84,32 +84,32 @@ from osh.lex import LexMode
 class WordParser(object):
 
   def __init__(self, lexer, line_reader, words_out=None,
-               lex_state=LexMode.OUTER):
+               lex_mode=LexMode.OUTER):
     self.lexer = lexer
     self.line_reader = line_reader
     # [] if we want to save an array of all words, or None if not.
     self.words_out = words_out
-    self.Reset(lex_state=lex_state)
+    self.Reset(lex_mode=lex_mode)
 
   def _Peek(self):
     """Helper method."""
-    if self.next_lex_state is not None:
+    if self.next_lex_mode is not None:
       self.prev_token = self.cur_token  # for completion
-      self.cur_token = self.lexer.Read(self.next_lex_state)
+      self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_kind = self.cur_token.Kind()
       self.token_type = self.cur_token.type
 
-      self.next_lex_state = None
+      self.next_lex_mode = None
     return self.cur_token
 
-  def _Next(self, lex_state):
+  def _Next(self, lex_mode):
     """Set the next lex state, but don't actually read a token.
 
     We need this for proper interactive parsing.
     """
-    self.next_lex_state = lex_state
+    self.next_lex_mode = lex_mode
 
-  def Reset(self, lex_state=LexMode.OUTER):
+  def Reset(self, lex_mode=LexMode.OUTER):
     """Called by interactive loop."""
     # For _Peek()
     self.prev_token = None  # for completion
@@ -117,7 +117,7 @@ class WordParser(object):
     self.token_kind = TokenKind.Undefined
     self.token_type = Id.Undefined_Tok
 
-    self.next_lex_state = lex_state
+    self.next_lex_mode = lex_mode
 
     # For newline.  TODO: I think we can do this iteratively, without member
     # state.
@@ -149,14 +149,14 @@ class WordParser(object):
     """
     return self.prev_token
 
-  def _ReadVarOpArg(self, arg_lex_state, eof_type=Id.Undefined_Tok,
+  def _ReadVarOpArg(self, arg_lex_mode, eof_type=Id.Undefined_Tok,
                     empty_ok=True):
     # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
     # valid, even when unquoted.
-    self._Next(arg_lex_state)
+    self._Next(arg_lex_mode)
     self._Peek()
     return self._ReadCommandWord(
-        lex_state=arg_lex_state, eof_type=eof_type, empty_ok=empty_ok)
+        lex_mode=arg_lex_mode, eof_type=eof_type, empty_ok=empty_ok)
 
   def _ReadSliceArg(self):
     """Read an arithmetic expression for either part of ${a : i+1 : i+2}."""
@@ -196,7 +196,7 @@ class WordParser(object):
       self.AddErrorContext("Unexpected token in slice: %s", self.cur_token)
       return None
 
-  def _ReadPatSubVarOp(self, lex_state):
+  def _ReadPatSubVarOp(self, lex_mode):
     """
     Match     = ('/' | '#' | '%') WORD
     VarSub    = ...
@@ -206,13 +206,13 @@ class WordParser(object):
     do_prefix = False
     do_suffix = False
 
-    pat = self._ReadVarOpArg(lex_state, eof_type=Id.Lit_Slash, empty_ok=False)
+    pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
     if not pat: return None
 
     if len(pat.parts) == 1:
       ok, s, quoted = pat.EvalStatic()
       if ok and s == '/' and not quoted:  # Looks like ${a////c}, read again
-        self._Next(lex_state)
+        self._Next(lex_mode)
         self._Peek()
         p = LiteralPart(self.cur_token)
         pat.parts.append(p)
@@ -233,7 +233,7 @@ class WordParser(object):
       return PatSubVarOp(pat, None, do_all, do_prefix, do_suffix)
 
     elif self.token_type == Id.Lit_Slash:
-      replace = self._ReadVarOpArg(lex_state)  # do not stop at /
+      replace = self._ReadVarOpArg(lex_mode)  # do not stop at /
       if not replace: return None
 
       self._Peek()
@@ -299,7 +299,7 @@ class WordParser(object):
     part.bracket_op = bracket_op
     return part
 
-  def _ParseVarExpr(self, arg_lex_state):
+  def _ParseVarExpr(self, arg_lex_mode):
     """
     Start parsing at the op -- we already skipped past the name.
     """
@@ -315,7 +315,7 @@ class WordParser(object):
 
     if op_kind == TokenKind.VTest:
       vtype = self.token_type
-      arg_word = self._ReadVarOpArg(arg_lex_state)
+      arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
         self._BadToken('Unexpected token after test arg: %s', self.cur_token)
         return None
@@ -324,7 +324,7 @@ class WordParser(object):
 
     elif op_kind == TokenKind.VUnary:
       vtype = self.token_type
-      arg_word = self._ReadVarOpArg(arg_lex_state)
+      arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
         self._BadToken('Unexpected token after unary op: %s', self.cur_token)
         return None
@@ -334,7 +334,7 @@ class WordParser(object):
 
     elif op_kind == TokenKind.VOp:
       if self.token_type == Id.VOp_Slash:
-        op = self._ReadPatSubVarOp(arg_lex_state)
+        op = self._ReadPatSubVarOp(arg_lex_mode)
         if not op: return None
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
@@ -413,9 +413,9 @@ class WordParser(object):
     ${#a[@]:1:2} is allowed, but gives the wrong answer
     """
     if d_quoted:
-      arg_lex_state = LexMode.VS_ARG_DQ
+      arg_lex_mode = LexMode.VS_ARG_DQ
     else:
-      arg_lex_state = LexMode.VS_ARG_UNQ
+      arg_lex_mode = LexMode.VS_ARG_UNQ
 
     self._Next(LexMode.VS_1)
     self._Peek()
@@ -443,7 +443,7 @@ class WordParser(object):
         part.transform_ops.append(op)
 
       else:  # not a prefix, '#' is the variable
-        part = self._ParseVarExpr(arg_lex_state)
+        part = self._ParseVarExpr(arg_lex_mode)
         if not part: return None
 
     elif ty == Id.VSub_Bang:
@@ -457,7 +457,7 @@ class WordParser(object):
         # ${!a[@]} -- this is a keys
         # No lookahead -- do it in a second step, or at runtime
         self._Next(LexMode.VS_1)
-        part = self._ParseVarExpr(arg_lex_state)
+        part = self._ParseVarExpr(arg_lex_mode)
         if not part: return None
 
         # NOTE: The ref op has to come FIRST, it is evaluated BEFORE any
@@ -466,12 +466,12 @@ class WordParser(object):
         part.transform_ops.insert(0, op)
 
       else:  # not a prefix, '!' is the variable
-        part = self._ParseVarExpr(arg_lex_state)
+        part = self._ParseVarExpr(arg_lex_mode)
         if not part: return None
 
     # VS_NAME, VS_NUMBER, symbol that isn't # or !
     elif self.token_kind == TokenKind.VSub:
-      part = self._ParseVarExpr(arg_lex_state)
+      part = self._ParseVarExpr(arg_lex_mode)
       if not part: return None
 
     else:
@@ -878,13 +878,13 @@ class WordParser(object):
 
     return array_part
 
-  def _ReadCommandWord(self, eof_type=Id.Undefined_Tok, lex_state=LexMode.OUTER,
+  def _ReadCommandWord(self, eof_type=Id.Undefined_Tok, lex_mode=LexMode.OUTER,
                        empty_ok=True):
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
     """
-    #print('_ReadCommandWord', lex_state)
+    #print('_ReadCommandWord', lex_mode)
     word = CommandWord()
 
     num_parts = 0
@@ -937,10 +937,10 @@ class WordParser(object):
           pass
         elif self.token_type == Id.Right_Subshell:
           # LEXER HACK for (case x in x) ;; esac )
-          assert self.next_lex_state == None  # Rewind before it's used
+          assert self.next_lex_mode == None  # Rewind before it's used
           if self.lexer.MaybeUnreadOne():
             self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
-            self._Next(lex_state)
+            self._Next(lex_mode)
           done = True
         else:
           done = True
@@ -957,16 +957,16 @@ class WordParser(object):
         # We get Id.Op_RParen at top level:      case x in x) ;; esac
         # We get Id.Eof_RParen inside ComSub:  $(case x in x) ;; esac )
         if self.token_type in (Id.Op_RParen, Id.Eof_RParen):
-          assert self.next_lex_state == None  # Rewind before it's used
+          assert self.next_lex_mode == None  # Rewind before it's used
           if self.lexer.MaybeUnreadOne():
             if self.token_type == Id.Eof_RParen:
               self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)  # Redo translation
-            self._Next(lex_state)
+            self._Next(lex_mode)
 
         done = True  # anything we don't recognize means we're done
 
       if not done:
-        self._Next(lex_state)
+        self._Next(lex_mode)
       num_parts += 1
     return word
 
@@ -1002,7 +1002,7 @@ class WordParser(object):
       return w, False
 
     elif self.token_kind in (TokenKind.Lit, TokenKind.Left):
-      w = self._ReadCommandWord(lex_state=LexMode.ARITH)
+      w = self._ReadCommandWord(lex_mode=LexMode.ARITH)
       if not w:
         return None, True
       return w, False
@@ -1021,7 +1021,7 @@ class WordParser(object):
 
     raise AssertionError("Shouldn't get here")
 
-  def _Read(self, lex_state):
+  def _Read(self, lex_mode):
     """Helper function for Read().
 
     Returns:
@@ -1029,7 +1029,7 @@ class WordParser(object):
         word: Word, or None if there was an error, or need_more is set
         need_more: True if the caller should call us again
     """
-    #print('_Read', lex_state, self.cur_token)
+    #print('_Read', lex_mode, self.cur_token)
     self._Peek()
 
     if self.token_kind == TokenKind.Eof:
@@ -1038,7 +1038,7 @@ class WordParser(object):
 
     # Allow Arith for ) at end of for loop?
     elif self.token_kind in (TokenKind.Op, TokenKind.Redir, TokenKind.Arith):
-      self._Next(lex_state)
+      self._Next(lex_mode)
       if self.token_type == Id.Op_Newline:
         if self.cursor_was_newline:
           #print('SKIP(nl)', self.cur_token)
@@ -1052,11 +1052,11 @@ class WordParser(object):
           Id.Right_Subshell, Id.Right_FuncDef, Id.Right_CasePat, Id.Right_ArrayLiteral):
         raise AssertionError(self.cur_token)
 
-      self._Next(lex_state)
+      self._Next(lex_mode)
       return TokenWord(self.cur_token), False
 
     elif self.token_kind in (TokenKind.Ignored, TokenKind.WS):
-      self._Next(lex_state)
+      self._Next(lex_mode)
       return None, True  # tell Read() to try again
 
     elif self.token_kind in (TokenKind.VSub, TokenKind.Lit, TokenKind.Left):
@@ -1072,8 +1072,8 @@ class WordParser(object):
         return None, True  # tell Read() to try again after comment
 
       else:
-        # TODO: Pass another lex_state
-        w = self._ReadCommandWord(lex_state=lex_state)
+        # TODO: Pass another lex_mode
+        w = self._ReadCommandWord(lex_mode=lex_mode)
         if not w:
           self.AddErrorContext('Error reading command word',
               token=self.cur_token)
@@ -1096,7 +1096,7 @@ class WordParser(object):
       token = self.cur_token
     return token.type
 
-  def ReadWord(self, lex_state):
+  def ReadWord(self, lex_mode):
     """Read the next Word.
 
     Returns:
@@ -1105,14 +1105,14 @@ class WordParser(object):
     # Implementation note: This is an stateful/iterative function that calls
     # the stateless "_Read" function.
     while True:
-      if lex_state == LexMode.ARITH:
+      if lex_mode == LexMode.ARITH:
         # TODO: Can this be unified?
         word, need_more = self._ReadArithWord()
-      elif lex_state in (
+      elif lex_mode in (
           LexMode.OUTER, LexMode.DBRACKET, LexMode.BASH_REGEX):
-        word, need_more = self._Read(lex_state)
+        word, need_more = self._Read(lex_mode)
       else:
-        raise AssertionError('Invalid lex state %s' % lex_state)
+        raise AssertionError('Invalid lex state %s' % lex_mode)
       if not need_more:
         break
 

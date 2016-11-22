@@ -343,7 +343,7 @@ class WordParserTest(unittest.TestCase):
     # Test that we get Id.Op_Newline
     code = '(foo|bar)'
     w_parser = InitWordParser(code)
-    w_parser.next_lex_state = LexMode.BASH_REGEX  # needed at beginning
+    w_parser.next_lex_mode = LexMode.BASH_REGEX  # needed at beginning
 
     w = w_parser.ReadWord(LexMode.BASH_REGEX)
     assert w
