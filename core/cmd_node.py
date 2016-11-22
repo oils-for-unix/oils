@@ -14,7 +14,7 @@ import io
 from core import util
 
 from core.tokens import Id, TokenTypeToName
-from core.word_node import CommandWord
+from core.word_node import CompoundWord
 from core.base import _Node
 
 # Types of the main command node.
@@ -25,7 +25,7 @@ FOR FOR_EXPR WHILE UNTIL FUNCTION_DEF CASE DBRACKET DPAREN ELSE_TRUE
 
 
 class CNode(_Node):
-  """Abstract base class for _CompositeNode/SimpleCommandNode/AssignmentNode."""
+  """Abstract base class for _CompoundCNode/SimpleCommandNode/AssignmentNode."""
 
   def __init__(self, type):
     self.type = type
@@ -73,7 +73,7 @@ class RedirectType(object):
 
 class RedirectNode(object):
   """
-  SimpleCommandNode and _CompositeNode (function body or compound command) can
+  SimpleCommandNode and _CompoundCNode (function body or compound command) can
   have non-NULL redirect nodes.
 
   This is not an CNode since it can't be executed directly.
@@ -116,8 +116,8 @@ class HereDocRedirectNode(RedirectNode):
   def __init__(self, op):
     # stdin by default
     RedirectNode.__init__(self, RedirectType.HERE_DOC, op, 0)
-    self.body_word = CommandWord()  # pseudo-word to be expanded
-    self.here_end = None  # CommandWord
+    self.body_word = CompoundWord()  # pseudo-word to be expanded
+    self.here_end = None  # CompoundWord
     self.do_expansion = False
     #self.read_lines = False  # STATE: whether we read lines for this node yet
     self.was_filled = False  # STATE: whether we read lines for this node yet
@@ -194,7 +194,7 @@ def _GetHereDocsToFill(redirects):
 class SimpleCommandNode(CNode):
   def __init__(self):
     CNode.__init__(self, ENode.SIMPLE_COMMAND)
-    self.words = []  # CommandWord instances
+    self.words = []  # CompoundWord instances
     self.more_env = {}  # binding
 
   def GetHereDocsToFill(self):
@@ -289,7 +289,7 @@ class DParenNode(CNode):
     f.write(')')
 
 
-class _CompositeNode(CNode):
+class _CompoundCNode(CNode):
   def __init__(self, type):
     CNode.__init__(self, type)
     # children of type CNode.
@@ -363,14 +363,14 @@ class _CompositeNode(CNode):
 # NOTE: The ANTLR book has all nodes of separate types, but ALSO separate token
 # types.  There are two ways to switch on it.
 
-class ListNode(_CompositeNode):
+class ListNode(_CompoundCNode):
   """
   For BraceGroup, function body, case item, etc.
 
   children: list of AND_OR
   """
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.LIST)
+    _CompoundCNode.__init__(self, ENode.LIST)
     self.redirects = []
 
   def _PrintHeader(self, f):
@@ -380,37 +380,37 @@ class ListNode(_CompositeNode):
       f.write(str(self.redirects))
 
 
-class SubshellNode(_CompositeNode):
+class SubshellNode(_CompoundCNode):
   """
   children: either list of AND_OR, or a LIST node?
 
   Exec() is different I guess
   """
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.SUBSHELL)
+    _CompoundCNode.__init__(self, ENode.SUBSHELL)
     # no redirects for subshell?
 
   def _PrintHeader(self, f):
     f.write('Subshell')
 
 
-class ForkNode(_CompositeNode):
+class ForkNode(_CompoundCNode):
   """
   children: either list of AND_OR, or a LIST node?
   """
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.FORK)
+    _CompoundCNode.__init__(self, ENode.FORK)
 
   def _PrintHeader(self, f):
     f.write('Fork')
 
 
-class PipelineNode(_CompositeNode):
+class PipelineNode(_CompoundCNode):
   """
   children: list of SimpleCommandNode
   """
   def __init__(self, children, negated):
-    _CompositeNode.__init__(self, ENode.PIPELINE)
+    _CompoundCNode.__init__(self, ENode.PIPELINE)
     self.children = children
     self.negated = negated
     # If there are 3 children, they are numbered 0, 1, and 2.  There are two
@@ -422,26 +422,26 @@ class PipelineNode(_CompositeNode):
     f.write('Pipeline%s' % ('!' if self.negated else '',))
 
 
-class AndOrNode(_CompositeNode):
+class AndOrNode(_CompoundCNode):
   """
   children[0]: LHS
   children[1]: RHS
   """
   def __init__(self, op):
-    _CompositeNode.__init__(self, ENode.AND_OR)
+    _CompoundCNode.__init__(self, ENode.AND_OR)
     self.op = op  # TokenType Op_AndIf or Op_OrIf, set by parser
 
   def _PrintHeader(self, f):
     f.write('AndOr %s' % TokenTypeToName(self.op))
 
 
-class ForNode(_CompositeNode):
+class ForNode(_CompoundCNode):
   """
   children: list of AND_OR?
   """
 
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.FOR)
+    _CompoundCNode.__init__(self, ENode.FOR)
     self.iter_name = None
     self.iter_words = []  # can be empty explicitly empty, which is dumb
     # whether we should iterate over args; iter_words should be empty
@@ -456,12 +456,12 @@ class ForNode(_CompositeNode):
     f.write(')')
 
 
-class ForExpressionNode(_CompositeNode):
+class ForExpressionNode(_CompoundCNode):
   """
   children: list of AND_OR?
   """
   def __init__(self, init, cond, update):
-    _CompositeNode.__init__(self, ENode.FOR_EXPR)
+    _CompoundCNode.__init__(self, ENode.FOR_EXPR)
     self.init = init  # type: ANode
     self.cond = cond  # type: ANode
     self.update = update  # type: ANode
@@ -471,38 +471,38 @@ class ForExpressionNode(_CompositeNode):
     f.write('ForExpr %s %s %s' % (self.init, self.cond, self.update))
 
 
-class WhileNode(_CompositeNode):
+class WhileNode(_CompoundCNode):
   """
   children[0] = condition (LIST)
   children[1] = body (LIST)
   """
   def __init__(self, children):
-    _CompositeNode.__init__(self, ENode.WHILE)
+    _CompoundCNode.__init__(self, ENode.WHILE)
     self.children = children
 
   def _PrintHeader(self, f):
     f.write('While')
 
 
-class UntilNode(_CompositeNode):
+class UntilNode(_CompoundCNode):
   """
   children[0] = condition (LIST)
   children[1] = body (LIST)
   """
   def __init__(self, children):
-    _CompositeNode.__init__(self, ENode.UNTIL)
+    _CompoundCNode.__init__(self, ENode.UNTIL)
     self.children = children
 
   def _PrintHeader(self, f):
     f.write('Until')
 
 
-class FunctionDefNode(_CompositeNode):
+class FunctionDefNode(_CompoundCNode):
   """
   children = statement body
   """
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.FUNCTION_DEF)
+    _CompoundCNode.__init__(self, ENode.FUNCTION_DEF)
     self.name = ''
     self.redirects = []
 
@@ -510,20 +510,20 @@ class FunctionDefNode(_CompositeNode):
     f.write('FunctionDef %s %s' % (self.name, self.redirects))
 
 
-class IfNode(_CompositeNode):
+class IfNode(_CompoundCNode):
   """
   children = condition, action, condition, action
 
   Last condition is TRUE for else!!!
   """
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.IF)
+    _CompoundCNode.__init__(self, ENode.IF)
 
   def _PrintHeader(self, f):
     f.write('If')
 
 
-class CaseNode(_CompositeNode):
+class CaseNode(_CompoundCNode):
   """
   Representation:
     pat_word_list = patterns to match, a list parallel to 'children'
@@ -543,7 +543,7 @@ class CaseNode(_CompositeNode):
   }
   """
   def __init__(self):
-    _CompositeNode.__init__(self, ENode.CASE)
+    _CompoundCNode.__init__(self, ENode.CASE)
     # the word to match against successive patterns
     self.to_match = None  # type: Word
     self.pat_word_list = []  # List<List<Word>> -- patterns to match

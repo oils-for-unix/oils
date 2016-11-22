@@ -55,7 +55,7 @@ class UnaryBNode(_BNode):
   """
   def __init__(self, btype, word):
     _BNode.__init__(self, btype)
-    self.word = word  # type: CommandWord
+    self.word = word  # type: CompoundWord
 
   def PrintLine(self, f):
     f.write('{B1 ')
@@ -70,8 +70,8 @@ class BinaryBNode(_BNode):
   """
   def __init__(self, btype, left, right):
     _BNode.__init__(self, btype)
-    self.left = left  # type: CommandWord
-    self.right = right  # type: CommandWord
+    self.left = left  # type: CompoundWord
+    self.right = right  # type: CompoundWord
 
   def PrintLine(self, f):
     f.write('{B2 ')

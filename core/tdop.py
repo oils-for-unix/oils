@@ -65,7 +65,7 @@ def NullPrefixOp(p, t, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   right = p.ParseUntil(bp)
-  return UnaryANode(t.AType(), right)
+  return UnaryANode(t.ArithId(), right)
 
 
 #
@@ -79,7 +79,7 @@ def LeftError(p, t, left, rbp):
 
 def LeftBinaryOp(p, t, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
-  return BinaryANode(t.AType(), left, p.ParseUntil(rbp))
+  return BinaryANode(t.ArithId(), left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, t, left, rbp):
@@ -87,7 +87,7 @@ def LeftAssign(p, t, left, rbp):
   # x += 1, or a[i] += 1
   if left.atype not in LVALUE_TYPES:
     raise ParseError("Can't assign to %r (%s)" % (left, left.atype))
-  return BinaryANode(t.AType(), left, p.ParseUntil(rbp))
+  return BinaryANode(t.ArithId(), left, p.ParseUntil(rbp))
 
 
 #
@@ -171,7 +171,7 @@ class TdopParser(object):
     self.spec = spec
     self.w_parser = w_parser  # iterable
     self.cur_word = None  # current token
-    self.atype = Id.Undefined_Tok
+    self.a_id = Id.Undefined_Tok
 
     self.error_stack = []
 
@@ -186,10 +186,10 @@ class TdopParser(object):
     return self.spec.LookupLed(token)
 
   def AtAnyOf(self, *args):
-    return self.atype in args
+    return self.a_id in args
 
   def AtToken(self, token_type):
-    return self.atype == token_type
+    return self.a_id == token_type
 
   def Eat(self, token_type):
     """ Eat()? """
@@ -209,7 +209,7 @@ class TdopParser(object):
           word=self.cur_word)
       #return False
       raise ParseError()  # use exceptions for now
-    self.atype = self.cur_word.AType()
+    self.a_id = self.cur_word.ArithId()
     return True
 
   def ParseUntil(self, rbp):
@@ -218,19 +218,19 @@ class TdopParser(object):
     power LESS THAN OR EQUAL TO rbp.
     """
     # TODO: use TokenKind.Eof
-    if self.atype in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
+    if self.a_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
       raise ParseError('Unexpected end of input')
 
     t = self.cur_word
     self.Next()  # skip over the token, e.g. ! ~ + -
 
-    null_info = self.spec.LookupNud(t.AType())
+    null_info = self.spec.LookupNud(t.ArithId())
     node = null_info.nud(self, t, null_info.bp)
 
     while True:
       t = self.cur_word
       try:
-        left_info = self._Led(t.AType())
+        left_info = self._Led(t.ArithId())
       except KeyError:
         raise ParseError('Invalid token %s' % t)
 

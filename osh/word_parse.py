@@ -11,7 +11,7 @@ word_parse.py - Parse the shell word language.
 
 from core import base
 from core.word_node import (
-    CommandWord, TokenWord,
+    CompoundWord, TokenWord,
     LiteralPart, EscapedLiteralPart, SingleQuotedPart, DoubleQuotedPart,
     VarSubPart, CommandSubPart, ArithSubPart, ArrayLiteralPart,
     IndexVarOp, TestVarOp, StripVarOp, SliceVarOp, LengthVarOp, PatSubVarOp,
@@ -29,14 +29,14 @@ from osh.lex import LexMode
 #
 # Functions that process TokenKind.Left, i.e. nested stuff:
 #
-# _ReadCommandWord
+# _ReadCompoundWord
 #   _ReadLeftParts
 # _ReadArithWord
-#   _ReadCommandWord -- ${} $() $(()) $[] ``
+#   _ReadCompoundWord -- ${} $() $(()) $[] ``
 # _ReadDoubleQuotedPart (also used for here docs, needs a mode)
 #   _ReadDoubleQuotedLeftParts -- ${} $() $(()) $[] ``
 # _ReadVarOpArg(d_quoted)
-#    _ReadCommandWord(lex_mode)
+#    _ReadCompoundWord(lex_mode)
 
 # UNQUOTED: LexMode.OUTER
 #           All subs and quotes are allowed --
@@ -155,7 +155,7 @@ class WordParser(object):
     # valid, even when unquoted.
     self._Next(arg_lex_mode)
     self._Peek()
-    return self._ReadCommandWord(
+    return self._ReadCompoundWord(
         lex_mode=arg_lex_mode, eof_type=eof_type, empty_ok=empty_ok)
 
   def _ReadSliceArg(self):
@@ -872,20 +872,20 @@ class WordParser(object):
     w_parser = WordParser(self.lexer, self.line_reader)
     while True:
       word = w_parser.ReadOuter()
-      if word.Type() == Id.Right_ArrayLiteral:
+      if word.CommandId() == Id.Right_ArrayLiteral:
         break
       array_part.words.append(word)
 
     return array_part
 
-  def _ReadCommandWord(self, eof_type=Id.Undefined_Tok, lex_mode=LexMode.OUTER,
+  def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok, lex_mode=LexMode.OUTER,
                        empty_ok=True):
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
     """
-    #print('_ReadCommandWord', lex_mode)
-    word = CommandWord()
+    #print('_ReadCompoundWord', lex_mode)
+    word = CompoundWord()
 
     num_parts = 0
     done = False
@@ -1003,7 +1003,7 @@ class WordParser(object):
       return w, False
 
     elif self.token_kind in (TokenKind.Lit, TokenKind.Left):
-      w = self._ReadCommandWord(lex_mode=LexMode.ARITH)
+      w = self._ReadCompoundWord(lex_mode=LexMode.ARITH)
       if not w:
         return None, True
       return w, False
@@ -1013,7 +1013,7 @@ class WordParser(object):
       # TODO: Maybe consolidate with _ReadDoubleQuotedPart
       part = VarSubPart(self.cur_token.val[1:], token=self.cur_token)
       self._Next(LexMode.ARITH)
-      w = CommandWord(parts=[part])
+      w = CompoundWord(parts=[part])
       return w, False
 
     else:
@@ -1075,7 +1075,7 @@ class WordParser(object):
 
       else:
         # TODO: Pass another lex_mode
-        w = self._ReadCommandWord(lex_mode=lex_mode)
+        w = self._ReadCompoundWord(lex_mode=lex_mode)
         if not w:
           self.AddErrorContext('Error reading command word',
               token=self.cur_token)
@@ -1129,7 +1129,7 @@ class WordParser(object):
     # Note that there can be an infinite (Id.Ignored_Comment Id.Op_Newline
     # Id.Ignored_Comment Id.Op_Newline) sequence, so we have to keep track of
     # the last non-ignored token.
-    self.cursor_was_newline = (self.cursor.Type() == Id.Op_Newline)
+    self.cursor_was_newline = (self.cursor.CommandId() == Id.Op_Newline)
     return self.cursor
 
   def ReadOuter(self):
@@ -1141,10 +1141,10 @@ class WordParser(object):
     double quotes.
 
     Returns:
-      CommandWord.  NOTE: We could also just use a DoubleQuotedPart for both
+      CompoundWord.  NOTE: We could also just use a DoubleQuotedPart for both
       cases?
     """
-    w = CommandWord()
+    w = CompoundWord()
     dq = self._ReadDoubleQuotedPart(here_doc=True)
     if not dq:
       self.AddErrorContext('Error parsing here doc body')

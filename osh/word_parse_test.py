@@ -11,7 +11,7 @@ word_parse_test.py: Tests for word_parse.py
 
 import unittest
 
-from core.word_node import LiteralPart, CommandWord, TokenWord
+from core.word_node import LiteralPart, CompoundWord, TokenWord
 from core.tokens import Id, Token
 
 from osh import parse_lib
@@ -313,7 +313,7 @@ class WordParserTest(unittest.TestCase):
 
         print(w)
 
-        if w.Type() == Id.Eof_Real:
+        if w.CommandId() == Id.Eof_Real:
           break
 
   def testReadComment(self):
@@ -404,7 +404,7 @@ class WordParserTest(unittest.TestCase):
           self.fail(err)
           break
         print(w)
-        if w.Type() in (Id.Eof_Real, Id.Unknown_Tok):
+        if w.CommandId() in (Id.Eof_Real, Id.Unknown_Tok):
           break
 
   def testMultiLine(self):
@@ -419,11 +419,11 @@ ls bar
     print('--MULTI')
     w = w_parser.ReadOuter()
     parts = [LiteralPart(Token(Id.Lit_Chars, 'ls'))]
-    self.assertEqual(CommandWord(parts=parts), w)
+    self.assertEqual(CompoundWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
     parts = [LiteralPart(Token(Id.Lit_Chars, 'foo'))]
-    self.assertEqual(CommandWord(parts=parts), w)
+    self.assertEqual(CompoundWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
     t = Token(Id.Op_Newline, '\n')
@@ -431,11 +431,11 @@ ls bar
 
     w = w_parser.ReadOuter()
     parts = [LiteralPart(Token(Id.Lit_Chars, 'ls'))]
-    self.assertEqual(CommandWord(parts=parts), w)
+    self.assertEqual(CompoundWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
     parts = [LiteralPart(Token(Id.Lit_Chars, 'bar'))]
-    self.assertEqual(CommandWord(parts=parts), w)
+    self.assertEqual(CompoundWord(parts=parts), w)
 
     w = w_parser.ReadOuter()
     t = Token(Id.Op_Newline, '\n')

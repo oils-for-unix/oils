@@ -455,7 +455,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
                       # '-a bar'!  Because then flag parsing will be different.
       argv = []
       for w in node.words:
-        ok, val = ev.EvalCommandWord(w, ifs, do_glob)
+        ok, val = ev.EvalCompoundWord(w, ifs, do_glob)
         if not ok:
           # Why would it fail?
           continue

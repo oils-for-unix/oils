@@ -16,6 +16,11 @@ import sys
 from core import util
 
 
+# TODO: This should be CType() I think
+CKind = util.Enum('CKind',
+    'UNDEFINED COMMAND OPERATOR REDIR Eof'.split())
+
+
 _TOKEN_TYPE_TO_KIND = {}  # type: dict
 
 

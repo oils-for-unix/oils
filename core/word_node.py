@@ -16,7 +16,8 @@ BECAUSE the other 3 languages use the words as "tokens".
 import io
 import re
 
-from core.tokens import Id, TokenKind, TokenTypeToName, EncodeTokenVal, BType
+from core.tokens import (
+    Id, TokenKind, TokenTypeToName, EncodeTokenVal, BType, CKind)
 from core.value import Value
 from core import tokens
 
@@ -25,10 +26,6 @@ from core import util
 #
 # Word
 #
-
-# TODO: This should be CType() I think
-WordKind = util.Enum('WordKind',
-    'UNDEFINED COMMAND OPERATOR REDIR Eof'.split())
 
 EAssignKeyword = util.Enum('EAssignKeyword',
     'NONE DECLARE EXPORT LOCAL READONLY'.split())
@@ -181,7 +178,7 @@ class ArrayLiteralPart(WordPart):
   """
   def __init__(self):
     WordPart.__init__(self)
-    # CommandWord instances.  Can hold CommandSubPart, etc.
+    # CompoundWord instances.  Can hold CommandSubPart, etc.
     self.words = []
 
   def __repr__(self):
@@ -340,7 +337,7 @@ class DoubleQuotedPart(WordPart):
   def Eval(self, ev, quoted=False):
     """DoubleQuotedPart.Eval()
 
-    NOTE: This is very much like CommandWord.Eval(), except that we don't need
+    NOTE: This is very much like CompoundWord.Eval(), except that we don't need
     to split with IFS, and we don't elide empty values.
     """
     return ev.EvalDoubleQuotedPart(self)
@@ -471,32 +468,12 @@ class ArithSubPart(WordPart):
     return True
 
 
-class _ATokenInterface(object):
-  """
-  Common interface between simple tokens like 99 and +, as well as words like
-  Foo+
-  """
-  def AType(self):
-    """Distinguish between words and operators for parsing.
-
-    ( ) is necessary
-
-    operator is necessary.
-
-    TODO: Also precedence if it's an operator.  I think I should return that
-    here.
-
-    Like BOOLEAN_OP_TABLE, have ARITH_Id.Op_Table.
-    """
-    raise NotImplementedError
-
-
 class _BTokenInterface(object):
   """
   Common interface between unevaluated words (for [[ ) and evaluated words
   (for [ ).
   """
-  def BType(self):
+  def BoolId(self):
     """Return a token type for [[ and [."""
     raise NotImplementedError
 
@@ -512,7 +489,7 @@ class BToken(object):
   def __init__(self, arg):
     self.arg = arg
 
-  def BType(self):
+  def BoolId(self):
     """Return a token type."""
 
 
@@ -521,7 +498,9 @@ class BToken(object):
 #
 
 
-class Word(_ATokenInterface, _BTokenInterface):
+# TODO: Should descent from _Node too, for printing?  Or do we have separate
+# ABCW executors as well as ABCW printers?
+class Word(_BTokenInterface):
 
   def __init__(self):
     pass
@@ -545,19 +524,19 @@ class Word(_ATokenInterface, _BTokenInterface):
     """
     raise NotImplementedError
 
-  def Type(self):
-    """Return the TokenType (TokenWord), or EKeyword enum (CommandWord).
+  def CommandId(self):
+    """Return an Id for CommandParser decisions.
 
-    TODO: Should we separate these two concepts?  TokenType() and Keyword()?
+    TokenType (TokenWord), or EKeyword enum (CompoundWord).
     """
     raise NotImplementedError
 
-  def Kind(self):
-    """Return WordKind (COMMAND OPERATOR Eof)"""
+  def CommandKind(self):
+    """Return CKind"""
     raise NotImplementedError
 
 
-class CommandWord(Word):
+class CompoundWord(Word):
   """For now this can just hold a double quoted token."""
   def __init__(self, parts=None):
     Word.__init__(self)
@@ -586,8 +565,8 @@ class CommandWord(Word):
     else:
       return None, None
 
-  def Kind(self):
-    return WordKind.COMMAND
+  def CommandKind(self):
+    return CKind.COMMAND
 
   # TODO:
   # - Put all the keywords under LIT, and then if there is exactly one part,
@@ -595,7 +574,7 @@ class CommandWord(Word):
   # - Do you still need caching?  I guess it could be tested over and over
   # again.
   # - Rename to CType() or CmdType()?
-  def Type(self):
+  def CommandId(self):
     """Returns an EKeyword enum."""
     if self.word_type == -1:  # not computed yet
 
@@ -649,10 +628,10 @@ class CommandWord(Word):
 
     return self.word_type
 
-  def AType(self):
+  def ArithId(self):
     return Id.Node_ArithWord
 
-  def BType(self):
+  def BoolId(self):
     if len(self.parts) != 1:
       return BType.ATOM_TOK
 
@@ -761,7 +740,7 @@ class CommandWord(Word):
     if len(self.parts) == 0:
       return False
     name = self.parts[0].IsVarLike()
-    rhs = CommandWord()
+    rhs = CompoundWord()
     if name:
       if len(self.parts) == 1:
         # NOTE: This is necesssary so that EmptyUnquoted elision isn't
@@ -832,19 +811,19 @@ class TokenWord(Word):
   def TokenPair(self):
     return self.token, self.token
 
-  def Kind(self):
+  def CommandKind(self):
     token_kind = self.token.Kind()
     if token_kind == TokenKind.Eof:
-      return WordKind.Eof
+      return CKind.Eof
     elif token_kind == TokenKind.Redir:
-      return WordKind.REDIR
+      return CKind.REDIR
     else:
-      return WordKind.OPERATOR
+      return CKind.OPERATOR
 
-  def Type(self):
+  def CommandId(self):
     return self.token.type
 
-  def AType(self):
+  def ArithId(self):
     # $(( 1+2 ))
     # (( a=1+2 ))
     # ${a[ 1+2 ]}
@@ -853,7 +832,7 @@ class TokenWord(Word):
     #  return Id.Eof_Arith
     return self.token.type  # e.g. AS_PLUS
 
-  def BType(self):
+  def BoolId(self):
     ty = self.token.type
     if ty == Id.Op_AndIf:
       return BType.LOGICAL_BINARY_AND
@@ -946,7 +925,7 @@ class TestVarOp(_VarOp):
   """ ${a:-default} and friends """
   def __init__(self, vtype, arg_word):
     _VarOp.__init__(self, vtype)
-    self.arg_word = arg_word  # type: CommandWord
+    self.arg_word = arg_word  # type: CompoundWord
 
   def PrintLine(self, f):
     f.write('%s %s' % (TokenTypeToName(self.vtype), self.arg_word))
@@ -956,7 +935,7 @@ class StripVarOp(_VarOp):
   """ ${a%suffix} and friends """
   def __init__(self, vtype, arg_word):
     _VarOp.__init__(self, vtype)
-    self.arg_word = arg_word  # type: CommandWord
+    self.arg_word = arg_word  # type: CompoundWord
     # If there are n words, then there are n-1 space tokens in between them
 
   def PrintLine(self, f):
@@ -980,8 +959,8 @@ class PatSubVarOp(_VarOp):
   def __init__(self, pat, replace, do_all, do_prefix, do_suffix):
     _VarOp.__init__(self, Id.VOp_Slash)
     # Can be a glob pattern
-    self.pat = pat  # type: CommandWord
-    self.replace = replace  # type: Optional[CommandWord]
+    self.pat = pat  # type: CompoundWord
+    self.replace = replace  # type: Optional[CompoundWord]
 
     self.do_all = do_all  # ${v//foo/bar}
     self.do_prefix = do_prefix  # ${v/%foo/bar}

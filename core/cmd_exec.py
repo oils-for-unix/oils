@@ -202,7 +202,7 @@ class Executor(object):
   """Executes the program by tree-walking.
 
   It also does some double-dispatch by passing itself into Eval() for
-  CommandWord/WordPart.
+  CompoundWord/WordPart.
   """
   def __init__(self, mem, builtins, funcs, comp_lookup, exec_opts,
       make_parser):
@@ -537,7 +537,7 @@ class Executor(object):
     for n in nodes:
       if n.type == RedirectType.FILENAME:
         # NOTE: no globbing.  You can write to a file called '*.py'.
-        ok, val = self.ev.EvalCommandWord(n.filename)
+        ok, val = self.ev.EvalCompoundWord(n.filename)
         if not ok:
           return False
         is_str, filename = val.AsString()
@@ -551,7 +551,7 @@ class Executor(object):
         redirects.append(FilenameRedirect(n.op, n.fd, filename))
 
       elif n.type == RedirectType.DESCRIPTOR:  # e.g. 1>&2
-        ok, val = self.ev.EvalCommandWord(n.target_fd)
+        ok, val = self.ev.EvalCompoundWord(n.target_fd)
         if not ok:
           return False
         is_str, t = val.AsString()
@@ -571,7 +571,7 @@ class Executor(object):
         redirects.append(DescriptorRedirect(n.op, n.fd, target_fd))
 
       elif n.type == RedirectType.HERE_DOC:
-        ok, val = self.ev.EvalCommandWord(n.body_word)
+        ok, val = self.ev.EvalCompoundWord(n.body_word)
         if not ok:
           return False
         is_str, body = val.AsString()
@@ -711,7 +711,7 @@ class Executor(object):
       for name, word in node.bindings:
         # NOTE: do_glob=False, because foo=*.a makes foo equal to '*.a',
         # literally.
-        ok, val = self.ev.EvalCommandWord(word)
+        ok, val = self.ev.EvalCompoundWord(word)
         if not ok:
           return None
         pairs.append((name, val))

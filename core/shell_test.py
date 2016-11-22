@@ -74,7 +74,7 @@ class PrinterTest(unittest.TestCase):
 
     # Word
 
-    cw = CommandWord()
+    cw = CompoundWord()
     cw.parts = [l1, dq]
     print(cw)
 

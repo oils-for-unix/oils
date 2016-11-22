@@ -13,7 +13,7 @@ try:
   from core import libc
 except ImportError:
   from core import fake_libc as libc
-from core.word_node import CommandWord
+from core.word_node import CompoundWord
 from core.tokens import Id
 from core.value import Value
 
@@ -378,7 +378,7 @@ class _Evaluator(object):
       if vtype in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
         if is_falsey:
           argv = []
-          ok, val2 = self.EvalCommandWord(part.test_op.arg_word)
+          ok, val2 = self.EvalCompoundWord(part.test_op.arg_word)
           if not ok:
             return False, None
           val2.AppendTo(argv)
@@ -457,7 +457,7 @@ class _Evaluator(object):
         print(op.words)
         argv = []
         for w in op.words:
-          ok, val2 = self.EvalCommandWord(w)
+          ok, val2 = self.EvalCompoundWord(w)
           if not ok:
             return False, None
           val2.AppendTo(argv)
@@ -495,8 +495,8 @@ class _Evaluator(object):
 
     return True, val
 
-  def EvalCommandWord(self, word, ifs='', do_glob=False, elide_empty=True):
-    """CommandWord.Eval().
+  def EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
+    """CompoundWord.Eval().
 
     This is used in the following contexts:
     - Evaluating redirect words: no glob and no word splitting
@@ -518,7 +518,7 @@ class _Evaluator(object):
     Returns:
       Value -- empty unquoted, string, or array
     """
-    assert isinstance(word, CommandWord), "Exected CommandWord, got %s" % word
+    assert isinstance(word, CompoundWord), "Exected CompoundWord, got %s" % word
     # assume we elide, unless we get something "significant"
     is_empty_unquoted = True
     ev = self
@@ -573,7 +573,7 @@ class _Evaluator(object):
     bare word: vairable
     quoted word: string
     """
-    ok, val = self.EvalCommandWord(word, elide_empty=False)
+    ok, val = self.EvalCompoundWord(word, elide_empty=False)
     if not ok:
       return False, 0
     is_str, s = val.AsString()
@@ -638,7 +638,7 @@ class _Evaluator(object):
 
   def BoolEvalWord(self, word, do_glob=False):
     """Evaluate with the rules of [[."""
-    return self.EvalCommandWord(word, do_glob=do_glob, elide_empty=False)
+    return self.EvalCompoundWord(word, do_glob=do_glob, elide_empty=False)
 
   def EvalTildeSub(self, prefix):
     """Evaluates ~ and ~user.
@@ -680,7 +680,7 @@ class _Evaluator(object):
 
       # - perform splitting when necessary?
       # set IFS here?
-      ok, val = self.EvalCommandWord(w)
+      ok, val = self.EvalCompoundWord(w)
 
       if not ok:
         # TODO: show errors?
@@ -771,7 +771,7 @@ class _Evaluator(object):
 
     argv = []
     for w in words:
-      ok, val = self.EvalCommandWord(w, ifs=ifs, do_glob=do_glob)
+      ok, val = self.EvalCompoundWord(w, ifs=ifs, do_glob=do_glob)
 
       if not ok:
         self._AddErrorContext('Error evaluating word %s', w)
@@ -786,7 +786,7 @@ class _Evaluator(object):
   def EvalEnv(self, more_env):
     result = {}
     for name, expr in more_env:
-      ok, val = self.EvalCommandWord(expr)
+      ok, val = self.EvalCompoundWord(expr)
       # What happens here?  Undefined variable?
       if not ok:
         self._AddErrorContext("Error evaluating expression %s = %s", name,

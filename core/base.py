@@ -87,7 +87,7 @@ def MakeError(msg, *args, token=None, word=None):
 class _Node(object):
 
   def __init__(self, id):
-    self.id = id
+    self.id = id  # type: Id
 
   def PrintTree(self, f, indent=0):
     """Print to a tree.

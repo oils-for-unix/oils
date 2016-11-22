@@ -14,7 +14,7 @@ import unittest
 from core import cmd_exec
 from core import lexer
 from core import cmd_node
-from core.word_node import CommandWord, LiteralPart, ArrayLiteralPart
+from core.word_node import CompoundWord, LiteralPart, ArrayLiteralPart
 from core import word_eval
 from core.word_node import EAssignScope
 from core import ui
@@ -65,17 +65,17 @@ class CompletionTest(unittest.TestCase):
     # Set global COMPREPLY=(f1 f2)
     body_node = cmd_node.AssignmentNode(EAssignScope.GLOBAL, 0)
 
-    c1 = CommandWord()
+    c1 = CompoundWord()
     t1 = lexer.Token(Id.Lit_Chars, 'f1')
     c1.parts.append(LiteralPart(t1))
 
-    c2 = CommandWord()
+    c2 = CompoundWord()
     t2 = lexer.Token(Id.Lit_Chars, 'f2')
     c2.parts.append(LiteralPart(t2))
 
     a = ArrayLiteralPart()
     a.words = [c1, c2]
-    w = CommandWord()
+    w = CompoundWord()
     w.parts.append(a)
 
     body_node.bindings = [('COMPREPLY', w)]

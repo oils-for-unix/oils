@@ -9,7 +9,6 @@
 cmd_parse.py - Parse high level shell commands.
 """
 
-# This seems to work OK; we need tokens and WordKind, etc.
 from core import base
 from core.cmd_node import (
     HereDocRedirectNode, HereWordRedirectNode, FilenameRedirectNode,
@@ -18,10 +17,10 @@ from core.cmd_node import (
     AndOrNode, ForNode, ForExpressionNode, WhileNode, UntilNode,
     FunctionDefNode, IfNode, CaseNode)
 from core.word_node import (
-    WordKind, EKeyword, EAssignScope, EAssignKeyword, EAssignFlags,
-    LiteralPart, CommandWord, TildeSubPart)
+    EKeyword, EAssignScope, EAssignKeyword, EAssignFlags,
+    LiteralPart, CompoundWord, TildeSubPart)
 # Would be better if this were TN
-from core.tokens import Token, Id
+from core.tokens import Token, Id, CKind
 
 from osh.lex import LexMode
 from osh.bool_parse import BoolParser
@@ -48,8 +47,8 @@ class CommandParser(object):
     # Cursor state set by _Peek()
     self.next_lex_mode = LexMode.OUTER
     self.cur_word = None  # current word
-    self.word_kind = WordKind.UNDEFINED
-    self.word_type = Id.Undefined_Tok
+    self.c_kind = CKind.UNDEFINED
+    self.c_id = Id.Undefined_Tok
 
   def Error(self):
     return self.error_stack
@@ -82,8 +81,8 @@ class CommandParser(object):
         return False
       self.cur_word = w
 
-      self.word_kind = self.cur_word.Kind()
-      self.word_type = self.cur_word.Type()
+      self.c_kind = self.cur_word.CommandKind()
+      self.c_id = self.cur_word.CommandId()
       self.next_lex_mode = LexMode.NONE
     #print('_Peek', self.cur_word)
     return True
@@ -92,19 +91,19 @@ class CommandParser(object):
     """Helper method."""
     self.next_lex_mode = lex_mode
 
-  def _Eat(self, word_type):
+  def _Eat(self, c_id):
     """Consume a word of a type.  If it doesn't match, return False.
 
     Args:
-      word_type: either EKeyword.* or a token type like Id.Right_Subshell.
+      c_id: either EKeyword.* or a token type like Id.Right_Subshell.
       TODO: Rationalize / type check this.
     """
     if not self._Peek():
       return False
     # TODO: It would be nicer to print the word type, right now we get a number
-    if self.word_type != word_type:
+    if self.c_id != c_id:
       self.AddErrorContext(
-          "Expected word type %s, got %s", word_type, self.cur_word,
+          "Expected word type %s, got %s", c_id, self.cur_word,
           word=self.cur_word)
       return False
     self._Next()
@@ -114,7 +113,7 @@ class CommandParser(object):
     """Check for optional newline and consume it."""
     if not self._Peek():
       return False
-    if self.word_type == Id.Op_Newline:
+    if self.c_id == Id.Op_Newline:
       self._Next()
       if not self._Peek():
         return False
@@ -131,7 +130,7 @@ class CommandParser(object):
     """
     expansions = []  # (pos, new_list)
     for i, w in enumerate(words):
-      # Call CommandWord.BraceExpand here.  Returns a list of expansinos, or
+      # Call CompoundWord.BraceExpand here.  Returns a list of expansinos, or
       # nullptr?
       exp_words = w.BraceExpand()
       if exp_words:
@@ -219,7 +218,7 @@ class CommandParser(object):
         found_slash = True
         break
 
-    w = CommandWord()
+    w = CompoundWord()
     if found_slash:
       w.parts.append(tilde_part)
       w.parts.append(remainder_part)
@@ -303,7 +302,7 @@ class CommandParser(object):
     if not self._Peek():
       return False
     #print('_Maybe testing for newline', self.cur_word, node)
-    if self.word_type == Id.Op_Newline:
+    if self.c_id == Id.Op_Newline:
       self._MaybeReadHereDocs(node)
       #print('_Maybe read redirects', node)
       self._Next()
@@ -320,7 +319,7 @@ class CommandParser(object):
     You need different types.
     """
     if not self._Peek(): return None
-    assert self.word_kind == WordKind.REDIR, self.cur_word
+    assert self.c_kind == CKind.REDIR, self.cur_word
 
     # TODO: Make the code shorter.  These four cases all read the next word,
     # and interpret it differently.
@@ -328,7 +327,7 @@ class CommandParser(object):
     # <<   here doc terminator
     # <&   file descriptor
     # <<<  here word
-    if self.word_type in (Id.Redir_DLess, Id.Redir_DLessDash):  # here
+    if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here
       node = HereDocRedirectNode(self.cur_word.token)
 
       self._Next()
@@ -346,13 +345,13 @@ class CommandParser(object):
       node.do_expansion = not quoted
       self._Next()
 
-    elif self.word_type in (
+    elif self.c_id in (
         Id.Redir_Less, Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
       node = FilenameRedirectNode(self.cur_word.token)
       self._Next()
 
       if not self._Peek(): return None
-      if self.word_kind != WordKind.COMMAND:
+      if self.c_kind != CKind.COMMAND:
         self.AddErrorContext('Expected filename after redirect operator',
             word=self.cur_word)
         return None
@@ -360,7 +359,7 @@ class CommandParser(object):
       node.filename = self.cur_word
       self._Next()
 
-    elif self.word_type in (Id.Redir_GreatAnd, Id.Redir_LessAnd):  # descriptor
+    elif self.c_id in (Id.Redir_GreatAnd, Id.Redir_LessAnd):  # descriptor
       node = DescriptorRedirectNode(self.cur_word.token)
 
       # TODO: Check that it's a number?  bash allows 1>&foo as an alias for
@@ -371,12 +370,12 @@ class CommandParser(object):
       node.target_fd = self.cur_word
       self._Next()
 
-    elif self.word_type == Id.Redir_TLess:  # descriptor
+    elif self.c_id == Id.Redir_TLess:  # descriptor
       node = HereWordRedirectNode(self.cur_word.token)
       self._Next()
 
       if not self._Peek(): return None
-      if self.word_kind != WordKind.COMMAND:
+      if self.c_kind != CKind.COMMAND:
         self.AddErrorContext('Expected word after <<< operator',
             word=self.cur_word)
         return None
@@ -404,7 +403,7 @@ class CommandParser(object):
 
       # This prediction needs to ONLY accept redirect operators.  Should we
       # make them a separate TokeNkind?
-      if self.word_kind != WordKind.REDIR:
+      if self.c_kind != CKind.REDIR:
         break
 
       node = self.ParseRedirect()
@@ -420,12 +419,12 @@ class CommandParser(object):
     words = []
     while True:
       if not self._Peek(): return None
-      if self.word_kind == WordKind.REDIR:
+      if self.c_kind == CKind.REDIR:
         node = self.ParseRedirect()
         if not node: return None  # e.g. EOF
         redirects.append(node)
 
-      elif self.word_kind == WordKind.COMMAND:
+      elif self.c_kind == CKind.COMMAND:
         words.append(self.cur_word)
 
       else:
@@ -678,11 +677,11 @@ class CommandParser(object):
     words = []
     while True:
       if not self._Peek(): return None
-      if self.word_type == Id.Op_Semi:
+      if self.c_id == Id.Op_Semi:
         self._Next()
         if not self._NewlineOk(): return None
         break
-      elif self.word_type == Id.Op_Newline:
+      elif self.c_id == Id.Op_Newline:
         self._Next()
         break
       words.append(self.cur_word)
@@ -702,12 +701,12 @@ class CommandParser(object):
     self._Next()
 
     if not self._Peek(): return None
-    if self.word_type == Id.Op_Semi:
+    if self.c_id == Id.Op_Semi:
       self._Next()
       if not self._NewlineOk(): return None
-    elif self.word_type == Id.Op_Newline:
+    elif self.c_id == Id.Op_Newline:
       self._Next()
-    elif self.word_type == EKeyword.DO:  # missing semicolon/newline allowed
+    elif self.c_id == EKeyword.DO:  # missing semicolon/newline allowed
       pass
     else:
       self.AddErrorContext("Unexpected token after for loop: %s",
@@ -733,7 +732,7 @@ class CommandParser(object):
     if not self._NewlineOk(): return None
 
     if not self._Peek(): return None
-    if self.word_type == EKeyword.IN:
+    if self.c_id == EKeyword.IN:
       self._Next()  # skip in
 
       iter_words = self.ParseForWords()
@@ -741,11 +740,11 @@ class CommandParser(object):
         return None
       node.iter_words = iter_words
 
-    elif self.word_type == Id.Op_Semi:
+    elif self.c_id == Id.Op_Semi:
       node.do_arg_iter = True  # implicit for loop
       self._Next()
 
-    elif self.word_type == EKeyword.DO:
+    elif self.c_id == EKeyword.DO:
       node.do_arg_iter = True  # implicit for loop
       # do not advance
 
@@ -769,7 +768,7 @@ class CommandParser(object):
     if not self._Eat(EKeyword.FOR): return None
 
     if not self._Peek(): return None
-    if self.word_type == Id.Op_DLeftParen:
+    if self.c_id == Id.Op_DLeftParen:
       return self._ParseExpressionForLoop()
     else:
       return self._ParseCommandForLoop()
@@ -809,7 +808,7 @@ class CommandParser(object):
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
-    if self.word_type == Id.Op_LParen:
+    if self.c_id == Id.Op_LParen:
       self._Next()
 
     pat_words = []
@@ -819,7 +818,7 @@ class CommandParser(object):
       self._Next()
 
       if not self._Peek(): return None
-      if self.word_type == Id.Op_Pipe:
+      if self.c_id == Id.Op_Pipe:
         self._Next()
       else:
         break
@@ -827,7 +826,7 @@ class CommandParser(object):
     if not self._Eat(Id.Right_CasePat): return None
     if not self._NewlineOk(): return None
 
-    if self.word_type not in (Id.Op_DSemi, EKeyword.ESAC):
+    if self.c_id not in (Id.Op_DSemi, EKeyword.ESAC):
       node = self.ParseCommandTerm()
       if not node:
         return None
@@ -838,9 +837,9 @@ class CommandParser(object):
     # TODO: Parse are there any more combinations of SEMI, DSEMI, NEWLINE,
     # ESAC, etc.?  I think SEMI and NEWLINE is taken care of by the term.  So
     # it's just DSEMI and ESAC we worry about.
-    if self.word_type == EKeyword.ESAC:
+    if self.c_id == EKeyword.ESAC:
       pass
-    elif self.word_type == Id.Op_DSemi:
+    elif self.c_id == Id.Op_DSemi:
       self._Next()
     else:
       self.AddErrorContext('Expected DSEMI or ESAC, got %s', self.cur_word,
@@ -864,9 +863,9 @@ class CommandParser(object):
 
     while True:
       # case item begins with a command word or (
-      if self.word_type == EKeyword.ESAC:
+      if self.c_id == EKeyword.ESAC:
         break
-      if self.word_kind != WordKind.COMMAND and self.word_type != Id.Op_LParen:
+      if self.c_kind != CKind.COMMAND and self.c_id != Id.Op_LParen:
         break
       item = self.ParseCaseItem()
       if not item:
@@ -893,7 +892,7 @@ class CommandParser(object):
     if not self._NewlineOk(): return None
 
     items = []
-    if self.word_type != EKeyword.ESAC:  # empty case list
+    if self.c_id != EKeyword.ESAC:  # empty case list
       items = self.ParseCaseList()
       if items is None:
         self.AddErrorContext("ParseCase: error parsing case list")
@@ -915,7 +914,7 @@ class CommandParser(object):
     else_part: (Elif command_list Then command_list)* Else command_list ;
     """
     self._Peek()
-    while self.word_type == EKeyword.ELIF:
+    while self.c_id == EKeyword.ELIF:
       self._Next()  # skip elif
       cond = self.ParseCommandList()
       if not cond: return None
@@ -928,7 +927,7 @@ class CommandParser(object):
       children.append(cond)
       children.append(body)
 
-    if self.word_type == EKeyword.ELSE:
+    if self.c_id == EKeyword.ELSE:
       self._Next()
       dummy_cond = ElseTrueNode()
       children.append(dummy_cond)
@@ -957,11 +956,11 @@ class CommandParser(object):
     cn.children.append(cond)
     cn.children.append(body)
 
-    if self.word_type in (EKeyword.ELIF, EKeyword.ELSE):
+    if self.c_id in (EKeyword.ELIF, EKeyword.ELSE):
       if not self.ParseElsePart(cn.children):
         return None
 
-    if self.word_type == EKeyword.FI:
+    if self.c_id == EKeyword.FI:
       self._Next()
     else:
       self.AddErrorContext("Expected 'fi' to end if, got %s", self.cur_word)
@@ -981,21 +980,21 @@ class CommandParser(object):
                      | if_clause
                      ;
     """
-    if self.word_type == EKeyword.LBRACE:
+    if self.c_id == EKeyword.LBRACE:
       return self.ParseBraceGroup()
-    if self.word_type == Id.Op_LParen:
+    if self.c_id == Id.Op_LParen:
       return self.ParseSubshell()
 
-    if self.word_type == EKeyword.FOR:
+    if self.c_id == EKeyword.FOR:
       return self.ParseFor()
-    if self.word_type == EKeyword.WHILE:
+    if self.c_id == EKeyword.WHILE:
       return self.ParseWhile()
-    if self.word_type == EKeyword.UNTIL:
+    if self.c_id == EKeyword.UNTIL:
       return self.ParseUntil()
 
-    if self.word_type == EKeyword.IF:
+    if self.c_id == EKeyword.IF:
       return self.ParseIf()
-    if self.word_type == EKeyword.CASE:
+    if self.c_id == EKeyword.CASE:
       return self.ParseCase()
 
     self.AddErrorContext(
@@ -1040,7 +1039,7 @@ class CommandParser(object):
 
     # Must be true beacuse of lookahead
     if not self._Peek(): return None
-    assert self.word_type == Id.Op_LParen, self.cur_word
+    assert self.c_id == Id.Op_LParen, self.cur_word
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
     self._Next()
@@ -1071,7 +1070,7 @@ class CommandParser(object):
 
     if not self._Peek(): return None
 
-    if self.word_type == Id.Op_LParen:
+    if self.c_id == Id.Op_LParen:
       self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
       self._Next()
       if not self._Eat(Id.Right_FuncDef): return None
@@ -1149,20 +1148,20 @@ class CommandParser(object):
     """
     if not self._Peek(): return None
 
-    if self.word_type == EKeyword.FUNCTION:
+    if self.c_id == EKeyword.FUNCTION:
       return self.ParseKshFunctionDef()
 
-    if self.word_type == EKeyword.LEFT_DBRACKET:
+    if self.c_id == EKeyword.LEFT_DBRACKET:
       node = self.ParseDBracket()
       if not node: return None
       return node
 
-    if self.word_type == Id.Op_DLeftParen:
+    if self.c_id == Id.Op_DLeftParen:
       node = self.ParseDParen()
       if not node: return None
       return node
 
-    if self.word_type in (
+    if self.c_id in (
         Id.Op_LParen, EKeyword.LBRACE, EKeyword.FOR, EKeyword.WHILE,
         EKeyword.UNTIL, EKeyword.IF, EKeyword.CASE):
       node = self.ParseCompoundCommand()
@@ -1174,10 +1173,10 @@ class CommandParser(object):
       node.redirects = redirects
       return node
 
-    if self.word_kind == WordKind.REDIR:  # Leading redirect
+    if self.c_kind == CKind.REDIR:  # Leading redirect
       return self.ParseSimpleCommand()
 
-    if self.word_kind == WordKind.COMMAND:
+    if self.c_kind == CKind.COMMAND:
       if self.w_parser.LookAheadForOp() == Id.Op_LParen:  # (
         kv = self.cur_word.LooksLikeAssignment()
         if kv:
@@ -1199,7 +1198,7 @@ class CommandParser(object):
     negated = False
 
     if not self._Peek(): return None
-    if self.word_type == EKeyword.BANG:
+    if self.c_id == EKeyword.BANG:
       negated = True
       self._Next()
 
@@ -1209,7 +1208,7 @@ class CommandParser(object):
     children = [child]
 
     if not self._Peek(): return None
-    if self.word_type not in (Id.Op_Pipe, Id.Op_PipeAmp):
+    if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
       if negated:
         node = PipelineNode(children, negated)
         return node
@@ -1219,7 +1218,7 @@ class CommandParser(object):
     pipe_index = 0
     stderr_indices = []
 
-    if self.word_type == Id.Op_PipeAmp:
+    if self.c_id == Id.Op_PipeAmp:
       stderr_indices.append(pipe_index)
     pipe_index += 1
 
@@ -1241,15 +1240,15 @@ class CommandParser(object):
       children.append(child)
 
       if not self._Peek(): return None
-      if self.word_type not in (Id.Op_Pipe, Id.Op_PipeAmp):
+      if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
         break
 
-      if self.word_type == Id.Op_PipeAmp:
+      if self.c_id == Id.Op_PipeAmp:
         stderr_indices.append(pipe_index)
       pipe_index += 1
 
     # If the pipeline ended in a newline, we need to read here docs.
-    if self.word_type == Id.Op_Newline:
+    if self.c_id == Id.Op_Newline:
       #print('=============> ParsePipeline CHILD', child.DebugString())
       for child in children:
         self._MaybeReadHereDocs(child)
@@ -1273,9 +1272,9 @@ class CommandParser(object):
       return None
 
     if not self._Peek(): return None  # because ParsePipeline need not _Peek()
-    if self.word_type not in (Id.Op_OrIf, Id.Op_AndIf):
+    if self.c_id not in (Id.Op_OrIf, Id.Op_AndIf):
       return left
-    op = self.word_type
+    op = self.c_id
     self._Next()  # Skip past operator
 
     # cat <<EOF || <newline>
@@ -1330,22 +1329,22 @@ class CommandParser(object):
       children.append(n)
 
       if not self._Peek(): return None
-      if self.word_type in (Id.Op_Semi,):  # also Id.Op_Amp.
+      if self.c_id in (Id.Op_Semi,):  # also Id.Op_Amp.
                                         # TODO: Also return ForkNode
         self._Next()
 
         if not self._Peek(): return None
-        if self.word_type == Id.Op_Newline:
+        if self.c_id == Id.Op_Newline:
           self._MaybeReadHereDocs(n)
           break
-        elif self.word_type == Id.Eof_Real:
+        elif self.c_id == Id.Eof_Real:
           break
 
-      elif self.word_type == Id.Op_Newline:
+      elif self.c_id == Id.Op_Newline:
         self._MaybeReadHereDocs(n)
         break
 
-      elif self.word_type == Id.Eof_Real:
+      elif self.c_id == Id.Eof_Real:
         break
 
       else:
@@ -1390,7 +1389,7 @@ class CommandParser(object):
 
       # Most keywords are valid "first words".  But do/done/then do not BEGIN
       # commands, so they are not valid.
-      if self.word_type in (
+      if self.c_id in (
         EKeyword.DO, EKeyword.DONE, EKeyword.THEN, EKeyword.FI, EKeyword.ELIF,
         EKeyword.ELSE, EKeyword.ESAC):
         break
@@ -1403,7 +1402,7 @@ class CommandParser(object):
 
       # TODO: How to consolidate this duplicated logic with ParseCommandLine?
       if not self._Peek(): return None
-      if self.word_type == Id.Op_Newline:
+      if self.c_id == Id.Op_Newline:
         # Read ALL Here docs so far.  cat <<EOF; echo hi <newline>
         for c in children:
           self._MaybeReadHereDocs(c)
@@ -1411,17 +1410,17 @@ class CommandParser(object):
         self._Next()
 
         if not self._Peek(): return None
-        if self.word_type in END_LIST:
+        if self.c_id in END_LIST:
           done = True
 
-      elif self.word_type in (Id.Op_Semi, Id.Op_Amp):
-        if self.word_type == Id.Op_Amp:
+      elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
+        if self.c_id == Id.Op_Amp:
           child = ForkNode()
           child.children = [and_or]
         self._Next()
 
         if not self._Peek(): return None
-        if self.word_type == Id.Op_Newline:
+        if self.c_id == Id.Op_Newline:
           for c in children:
             self._MaybeReadHereDocs(c)
           self._MaybeReadHereDocs(child)  # Read last child's
@@ -1431,13 +1430,13 @@ class CommandParser(object):
           # Test if we should keep going.  There might be another command after
           # the semi and newline.
           if not self._Peek(): return None
-          if self.word_type in END_LIST:
+          if self.c_id in END_LIST:
             done = True
 
-        elif self.word_type in END_LIST:  # ; EOF
+        elif self.c_id in END_LIST:  # ; EOF
           done = True
 
-      elif self.word_type in END_LIST:  # EOF
+      elif self.c_id in END_LIST:  # EOF
         done = True
 
       else:
@@ -1446,7 +1445,7 @@ class CommandParser(object):
       children.append(child)
 
     if not self._Peek(): return None
-    if self.word_type == Id.Op_Newline:
+    if self.c_id == Id.Op_Newline:
       for c in children:
         self._MaybeReadHereDocs(c)
 
@@ -1482,9 +1481,9 @@ class CommandParser(object):
     """
     if not self._NewlineOk(): return None
 
-    #print('ParseFile', self.word_kind, self.cur_word)
+    #print('ParseFile', self.c_kind, self.cur_word)
     # An empty node to execute
-    if self.word_kind == WordKind.Eof:
+    if self.c_kind == CKind.Eof:
       return ListNode()
 
     node = self.ParseCommandTerm()

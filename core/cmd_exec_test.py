@@ -17,14 +17,14 @@ from core import cmd_exec  # module under test
 from core.cmd_exec import *
 from core.tokens import Id
 from core import ui
-from core.word_node import LiteralPart, CommandWord, TestVarOp, VarSubPart
+from core.word_node import LiteralPart, CompoundWord, TestVarOp, VarSubPart
 from core import word_eval
 from core.value import Value
 from core.cmd_node import SimpleCommandNode
 from core.lexer import Token
 
 from osh import parse_lib
-from osh.word_parse import CommandWord, LiteralPart
+from osh.word_parse import CompoundWord, LiteralPart
 
 
 def banner(msg):
@@ -108,19 +108,19 @@ class ExecutorTest(unittest.TestCase):
     ex = InitExecutor()
 
     # Simulating subshell for each command
-    w1 = CommandWord()
+    w1 = CompoundWord()
     w1.parts.append(LiteralPart(Token(Id.Lit_Chars, 'ls')))
     node1 = SimpleCommandNode()
     node1.words = [w1]
 
-    w2 = CommandWord()
+    w2 = CompoundWord()
     w2.parts.append(LiteralPart(Token(Id.Lit_Chars, 'head')))
     node2 = SimpleCommandNode()
     node2.words = [w2]
 
-    w3 = CommandWord()
+    w3 = CompoundWord()
     w3.parts.append(LiteralPart(Token(Id.Lit_Chars, 'sort')))
-    w4 = CommandWord()
+    w4 = CompoundWord()
     w4.parts.append(LiteralPart(Token(Id.Lit_Chars, '--reverse')))
     node3 = SimpleCommandNode()
     node3.words = [w3, w4]
@@ -251,7 +251,7 @@ class VarOpTest(unittest.TestCase):
     print(ev.EvalVarSub(set_sub))
 
     part = LiteralPart(Token(Id.Lit_Chars, 'default'))
-    arg_word = CommandWord(parts=[part])
+    arg_word = CompoundWord(parts=[part])
     test_op = TestVarOp(Id.VTest_ColonHyphen, arg_word)
     unset_sub.test_op = test_op
     set_sub.test_op = test_op

@@ -64,14 +64,14 @@ except ImportError:
   from core import fake_libc as libc
 
 
-def LookupBKind(btype):
+def LookupBKind(b_id):
   """
   Return BKind.ATOM, BKind.UNARY ...
 
   TODO: Maybe separate this into a parse time and a runtime table.
   """
-  bkind, _, _, _ = BOOLEAN_OP_TABLE[btype]
-  return bkind
+  b_kind, _, _, _ = BOOLEAN_OP_TABLE[b_id]
+  return b_kind
 
 
 class BoolParser(object):
@@ -90,8 +90,8 @@ class BoolParser(object):
     self.words = []
 
     self.cur_word = None
-    self.btype = BType.UNDEFINED_TOK
-    self.bkind = BKind.UNDEFINED
+    self.b_id = BType.UNDEFINED_TOK
+    self.b_kind = BKind.UNDEFINED
 
     self.error_stack = []
 
@@ -122,8 +122,8 @@ class BoolParser(object):
         self.words[0] = w
       self.cur_word = w
 
-    self.btype = self.cur_word.BType()
-    self.bkind = LookupBKind(self.btype)
+    self.b_id = self.cur_word.BoolId()
+    self.b_kind = LookupBKind(self.b_id)
     return True
 
   def _Next(self, lex_mode=LexMode.DBRACKET):
@@ -137,12 +137,12 @@ class BoolParser(object):
       w = self._NextOne(lex_mode=lex_mode)
       if not w:
         return False
-      if self.btype != BType.NEWLINE_TOK:
+      if self.b_id != BType.NEWLINE_TOK:
         break
     return True
 
   def AtEnd(self):
-    return self.btype == BType.Eof_TOK
+    return self.b_id == BType.Eof_TOK
 
   def _LookAhead(self):
     n = len(self.words)
@@ -187,7 +187,7 @@ class BoolParser(object):
     make
     """
     left = self.ParseTerm()
-    if self.btype == BType.LOGICAL_BINARY_OR:
+    if self.b_id == BType.LOGICAL_BINARY_OR:
       if not self._Next(): return None
       right = self.ParseExpr()
       return LogicalBNode(BType.LOGICAL_BINARY_OR, left, right)
@@ -207,7 +207,7 @@ class BoolParser(object):
     Term    : Term AND Negated | Negated
     """
     left = self.ParseNegatedFactor()
-    if self.btype == BType.LOGICAL_BINARY_AND:
+    if self.b_id == BType.LOGICAL_BINARY_AND:
       if not self._Next(): return None
       right = self.ParseTerm()
       return LogicalBNode(BType.LOGICAL_BINARY_AND, left, right)
@@ -218,7 +218,7 @@ class BoolParser(object):
     """
     Negated : '!'? Factor
     """
-    if self.btype == BType.LOGICAL_UNARY_NOT:
+    if self.b_id == BType.LOGICAL_UNARY_NOT:
       if not self._Next(): return None
       child = self.ParseFactor()
       return NotBNode(child)
@@ -232,30 +232,30 @@ class BoolParser(object):
             | WORD BINARY_OP WORD
             | '(' Expr ')'
     """
-    #print('ParseFactor %s %s' % (self.bkind, self.btype))
-    if self.bkind == BKind.UNARY:
+    #print('ParseFactor %s %s' % (self.b_kind, self.b_id))
+    if self.b_kind == BKind.UNARY:
       # Just save the type and not the token itself?
-      op = self.btype
+      op = self.b_id
       if not self._Next(): return None
       word = self.cur_word
       if not self._Next(): return None
       node = UnaryBNode(op, word)
       return node
 
-    if self.bkind == BKind.ATOM:
+    if self.b_kind == BKind.ATOM:
       # Peek ahead another token.
       t2 = self._LookAhead()
-      t2_btype = t2.BType()
-      t2_bkind = LookupBKind(t2_btype)
-      if t2_bkind == BKind.BINARY:
+      t2_b_id = t2.BoolId()
+      t2_b_kind = LookupBKind(t2_b_id)
+      if t2_b_kind == BKind.BINARY:
         left = self.cur_word
 
         if not self._Next(): return None
-        op = self.btype
+        op = self.b_id
 
         # TODO: Need to change to LexMode.BASH_REGEX.
         # _Next(lex_mode) then?
-        is_regex = t2_btype == BType.BINARY_STRING_TILDE_EQUAL
+        is_regex = t2_b_id == BType.BINARY_STRING_TILDE_EQUAL
         if is_regex:
           if not self._Next(lex_mode=LexMode.BASH_REGEX): return None
         else:
@@ -278,10 +278,10 @@ class BoolParser(object):
         if not self._Next(): return None
         return UnaryBNode(op, word)
 
-    if self.btype == BType.PAREN_LEFT:
+    if self.b_id == BType.PAREN_LEFT:
       if not self._Next(): return None
       node = self.ParseExpr()
-      if self.btype != BType.PAREN_RIGHT:
+      if self.b_id != BType.PAREN_RIGHT:
         raise RuntimeError("Expected ), got %s", self.cur_word)
       if not self._Next(): return None
       return node
