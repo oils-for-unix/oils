@@ -9,6 +9,15 @@
 oil.py - A busybox-like binary for oil.
 
 Based on argv[0], it acts like a few different programs.
+
+Builtins that can be exposed:
+
+- test / [ -- call BoolParser at runtime
+- 'time' -- because it has format strings, etc.
+- find/xargs equivalents (even if they are not compatible)
+  - list/each/every
+
+- echo: most likely don't care about this
 """
 
 import errno
