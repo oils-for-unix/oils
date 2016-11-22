@@ -35,13 +35,13 @@ def _ReadWords(w_parser):
 def _MakeParser(code_str):
   # NOTE: We need the extra ]] token
   w_parser, _ = parse_lib.MakeParserForCompletion(code_str + ' ]]')
-  p = bool_parse.CondParser(w_parser)
+  p = bool_parse.BoolParser(w_parser)
   if not p._Next():
     raise AssertionError
   return p
 
 
-class CondParserTest(unittest.TestCase):
+class BoolParserTest(unittest.TestCase):
 
   def testParseFactor(self):
     p = _MakeParser('foo')

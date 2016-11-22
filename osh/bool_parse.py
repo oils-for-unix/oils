@@ -14,7 +14,6 @@ a list of Value instances.
 
 TODO:
 - Share parsing with "test / [".  That uses strings, while this uses words.
-  Maybe call this CondParser then.
 
 Grammar from http://compilers.iecc.com/crenshaw/tutor6.txt, adapted to ANTLR
 syntax.
@@ -75,7 +74,7 @@ def LookupBKind(btype):
   return bkind
 
 
-class CondParser(object):
+class BoolParser(object):
   """Parses [[ at compile time and [ at runtime.
   """
   def __init__(self, w_parser):

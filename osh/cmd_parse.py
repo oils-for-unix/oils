@@ -24,7 +24,7 @@ from core.word_node import (
 from core.tokens import Token, Id
 
 from osh.lex import LexMode
-from osh.bool_parse import CondParser
+from osh.bool_parse import BoolParser
 
 
 class CommandParser(object):
@@ -1114,7 +1114,7 @@ class CommandParser(object):
     # (PS2)
 
     self._Next()  # skip [[
-    b_parser = CondParser(self.w_parser)
+    b_parser = BoolParser(self.w_parser)
     bnode = b_parser.Parse()
     if not bnode:
       error_stack = b_parser.Error()
