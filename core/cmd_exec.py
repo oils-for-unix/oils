@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 cmd_exec.py
@@ -31,7 +31,7 @@ TODO:
   - extra: async -- this is interleaved with the interpreter
 
 strace bash -c 'diff -u <(echo one) <(echo two)'
- 
+
 open("/dev/fd/63", O_RDONLY)            = 3
 open("/dev/fd/62", O_RDONLY)            = 4
 read(3, "one\n", 4096)                  = 4
@@ -145,7 +145,7 @@ class Mem(object):
     return False, None
 
   def Get(self, name):
-    for i in range(len(self.var_stack)-1, -1, -1):
+    for i in range(len(self.var_stack) - 1, -1, -1):
       scope = self.var_stack[i]
       if name in scope:
         # Don't need to use flags
@@ -332,7 +332,7 @@ class Executor(object):
     return 0
 
   def _Complete(self, argv):
-    # TODO: Parse flags?  How?  
+    # TODO: Parse flags?  How?
     # opts = self.builtins.Parse(EBuiltin.COMPLETE, argv)
 
     command = argv[1]  # e.g. 'grep'
@@ -378,7 +378,7 @@ class Executor(object):
     argv = argv[1:]
     if argv:
       thunk = ExternalThunk(argv)
-      thunk.RunInParent() # never returns
+      thunk.RunInParent()  # never returns
     else:
       return 0
 
@@ -479,7 +479,7 @@ class Executor(object):
       is_external: If the node MUST be run in an external process.
       thunk: thunk to run
 
-      True, ExternalThunk() instance, or 
+      True, ExternalThunk() instance, or
       False, argv if the thing to run isn't representable by an external
         command.
         argv can be None too.
@@ -613,7 +613,7 @@ class Executor(object):
 
   def ExecuteTop(self, node):
     """
-    Execute from the top level.  
+    Execute from the top level.
 
     TODO: This is wrong; we can't only check here.
     """
@@ -794,7 +794,7 @@ class Executor(object):
       i = 0
       while i < len(node.children):
         cond = node.children[i]
-        body = node.children[i+1]
+        body = node.children[i + 1]
         status, _ = self.Execute(cond)
         if status == 0:
           status, _ = self.Execute(body)

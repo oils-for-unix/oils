@@ -57,7 +57,7 @@ def NullParen(p, t, bp):
 
 def NullPrefixOp(p, t, bp):
   """Prefix operator.
-  
+
   Low precedence:  return, raise, etc.
     return x+y is return (x+y), not (return x) + y
 
@@ -126,7 +126,7 @@ class ParserSpec(object):
 
   def Null(self, bp, nud, tokens):
     """Register a token that doesn't take anything on the left.
-    
+
     Examples: constant, prefix operator, error.
     """
     for token in tokens:
@@ -146,7 +146,7 @@ class ParserSpec(object):
 
   def LeftRightAssoc(self, bp, led, tokens):
     """Register a right associative operator."""
-    self._RegisterLed(bp, bp-1, led, tokens)
+    self._RegisterLed(bp, bp - 1, led, tokens)
 
   def LookupNud(self, token):
     try:
@@ -277,10 +277,10 @@ class DynamicTdopParser(TdopParser):
 
     vs.
 
-    f(x = 1, y = 1) 
+    f(x = 1, y = 1)
 
     This is NOT:
-    f(x = (1, y )= 1) 
+    f(x = (1, y )= 1)
 
     So inside f(x,y), (t1, t2), [i, j], {i:1, i:2} we tweak it.
 

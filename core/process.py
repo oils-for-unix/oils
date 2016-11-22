@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 process.py - Runtime library for launching processes and manipulating file
@@ -366,7 +366,7 @@ class FuncThunk(Thunk):
 
 class HereDocWriterThunk(Thunk):
   """Write a here doc to one end of a pipe.
-  
+
   May be be executed in either a child process or the main shell process.
   """
   def __init__(self, w, body_str):
@@ -385,8 +385,8 @@ class HereDocWriterThunk(Thunk):
 #
 # What about SubProgramThunk?    $(echo foo; echo bar)
 #
-# List node, passed to EvalCommandSub().  Wrap in Process(SubProgramThunk()), and
-# then call .AddOutputVar() on it.  That turns it into a pipeline?
+# List node, passed to EvalCommandSub().  Wrap in Process(SubProgramThunk()),
+# and then call .AddOutputVar() on it.  That turns it into a pipeline?
 #
 # What about memory management of that object in C?  I guess Capturable just
 # has a virtual destructor.
@@ -407,7 +407,7 @@ class Capturable(object):
 
 class Process(object):
   """A process to run.
-  
+
   It provides an API to manipulate file descriptor state in parent and child.
   """
   def __init__(self, thunk, env=None, fd_state=None, redirects=None):
@@ -426,7 +426,7 @@ class Process(object):
     if isinstance(thunk, list):
       self.thunk = ExternalThunk(thunk)
     else:
-      self.thunk = thunk 
+      self.thunk = thunk
     self.env = env or {}
     self.fd_state = fd_state
     self.redirects = redirects or []
@@ -491,7 +491,7 @@ class Pipeline(object):
   Cases we handle:
 
   foo | bar
-  $(foo | bar)  
+  $(foo | bar)
   foo | bar | read v
   """
   def __init__(self):
@@ -542,4 +542,3 @@ class Pipeline(object):
       pipe_status.append(p.Wait())
 
     return pipe_status
-

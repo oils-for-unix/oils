@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 arith_parse_test.py: Tests for arith_parse.py
@@ -102,7 +102,6 @@ class ArithTest(unittest.TestCase):
     return
 
     testEvalExpr('0 = 2 > 3', 0)  # => 0 > 3 => 0
-
 
     # string becomes integer"
     #testEvalExpr(['ab21xx', ':', '[^0-9]*([0-9]*)', '+', '3'], 24)

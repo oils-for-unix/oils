@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 cmd_exec_test.py: Tests for cmd_exec.py
@@ -48,9 +48,8 @@ def InitExecutor():
   funcs = {}
   comp_funcs = {}
   exec_opts = cmd_exec.ExecOpts()
-  return cmd_exec.Executor(
-          mem, builtins, funcs, comp_funcs, exec_opts,
-          parse_lib.MakeParserForExecutor)
+  return cmd_exec.Executor(mem, builtins, funcs, comp_funcs, exec_opts,
+                           parse_lib.MakeParserForExecutor)
 
 
 def InitEvaluator():
@@ -107,7 +106,7 @@ class ExecutorTest(unittest.TestCase):
     print(p.Run())
 
     ex = InitExecutor()
-    
+
     # Simulating subshell for each command
     w1 = CommandWord()
     w1.parts.append(LiteralPart(Token(Id.Lit_Chars, 'ls')))
@@ -143,10 +142,11 @@ class ExecutorTest(unittest.TestCase):
     # stdin
     # EOF
     #
-    # ls | head & 
+    # ls | head &
 
     # Or technically we could fork the whole interpreter for foo|bar|baz and
     # capture stdout of that interpreter.
+
 
 class RedirectTest(unittest.TestCase):
 
@@ -196,7 +196,7 @@ class RedirectTest(unittest.TestCase):
 
     p = Process(
         ExternalThunk(['ls', '/error', '.']), fd_state=fd_state,
-        redirects=[r1,r2])
+        redirects=[r1, r2])
 
     print(p.Run())
 

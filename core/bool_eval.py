@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 bool_eval.py
@@ -70,7 +70,7 @@ def BEval(node, ev):
   # TODO: We could look this up at parse time too?  Is that easier or harder?
   _, logical, arity, arg_type = BOOLEAN_OP_TABLE[btype]
 
-  if logical: 
+  if logical:
     if arity == 1:  # NOTE: LOGICAL_UNARY_NOT?
       ok, b = BEval(node.child, ev)
       if not ok:

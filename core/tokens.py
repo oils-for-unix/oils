@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 tokens.py - Token, Word, and AST Node ID definitions.
@@ -70,7 +70,7 @@ class Token(object):
 # TokenDef helps us generate enums and token name stuff.  The other one will
 # help us generate text.
 # But do I want a description here?
-# These names will also be used in the text format?  
+# These names will also be used in the text format?
 
 class _TokenDef(object):
   Undefined = ('Tok',)  # for initial state
@@ -81,7 +81,7 @@ class _TokenDef(object):
   Ignored   = ('LineCont', 'Space', 'Comment')
 
   # Id.WS_Space is for LexMode.OUTER; Id.Ignored_Space is for LexMode.ARITH
-  WS        = ('Space',)# 'NEWLINE')
+  WS        = ('Space',)
 
   Lit       = ('Chars', 'VarLike', 'Other', 'EscapedChar',
                # Either brace expansion or keyword for { and }
@@ -94,26 +94,25 @@ class _TokenDef(object):
                'Equal', 'DEqual',
                'NEqual', 'TEqual',
 
-               'Pound',  # for comment or VAROP state
-               'Slash', 'Percent',  # / # % for patsub, NOT unary op
+               'Pound',             #  for comment or VAROP state
+               'Slash', 'Percent',  #  / # % for patsub, NOT unary op
 
-               'Digits',  # for LexMode.ARITH
+               'Digits',            # for LexMode.ARITH
                )
 
   Op        = ('Newline', # mostly equivalent to SEMI
                'Amp',     # &
                'Pipe',    # |
                'PipeAmp', # |& -- bash extension for stderr
-               'AndIf',  # &&
-               'OrIf',   # || 
+               'AndIf',   # &&
+               'OrIf',    # ||
                'Semi',    # ;
                'DSemi',   # ;; for case
 
-               # NOTE: This is for subshell only.  It shouldn't be under LEFT_
-               # because it's NOT a WordPart.  ReadCommandWord shouldn't
-               # process it.
+               # NOTE: This is for subshell only.  It's not under LEFT_ because
+               # it's NOT a WordPart.
                'LParen',
-               'RParen',  # DEFAULT, WILL BE TRANSLATED to RIGHT_*
+               'RParen',  # Default, will be translated to Id.Right_*
                'DLeftParen',
                'DRightParen',
                )
@@ -128,49 +127,47 @@ class _TokenDef(object):
                'DLessDash',  # <<- here doc redirect for tabs?
                'LessGreat',  # <>
                'Clobber',    # >|  POSIX?
-
-               # TODO: Add bash-specific operators
                )
 
   # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
   # get that.
   Left      = ('DoubleQuote',
                'SingleQuote',
-               'Backtick',     # `
-               'CommandSub',  # $(
-               'VarSub',      # ${
-               'ArithSub',    # $((
-               'ArithSub2',   # $[ for bash (and zsh)
-               'DollarDoubleQuote',     # $" for bash localized strings
-               'DollarSingleQuote',     # $' for \n escapes
-               'ProcSubIn',  # <( )
-               'ProcSubOut', # >( )
+               'Backtick',           # `
+               'CommandSub',         # $(
+               'VarSub',             # ${
+               'ArithSub',           # $((
+               'ArithSub2',          # $[ for bash (and zsh)
+               'DollarDoubleQuote',  # $" for bash localized strings
+               'DollarSingleQuote',  # $' for \n escapes
+               'ProcSubIn',          # <( )
+               'ProcSubOut',         # >( )
                )
 
   Right     = ('DoubleQuote',
                'SingleQuote',
-               'Backtick',     # `
-               'CommandSub',  # )
-               'VarSub',      # }
-               'ArithSub',    # ))
+               'Backtick',           # `
+               'CommandSub',         # )
+               'VarSub',             # }
+               'ArithSub',           # ))
                # ArithSub2 is just Id.Arith_RBracket
-               'DollarDoubleQuote',     # "
-               'DollarSingleQuote',     # '
+               'DollarDoubleQuote',  # "
+               'DollarSingleQuote',  # '
 
                # Disambiguated right parens
-               'Subshell',  # )
-               'FuncDef',  # )
-               'CasePat',  # )
+               'Subshell',      # )
+               'FuncDef',       # )
+               'CasePat',       # )
                'ArrayLiteral',  # )
                )
 
   # First position of var sub ${
   # Id.VOp_Pound -- however you can't tell the difference at first!  It could
-  # be an op or a name.  So it makes sense to base i on the state.  
+  # be an op or a name.  So it makes sense to base i on the state.
   # Id.VOp_At
   # But then you have AS_STAR, or Id.Arith_Star maybe
 
-  VSub      = ('Name',  # Dummy for VS_NAME in C++, which is a different kind?
+  VSub      = ('Name',    # $foo or ${foo}
                'Number',  # $0 .. $9
                'Bang',    # $!
                'At',      # $@  or  [@] for array subscripting
@@ -181,22 +178,22 @@ class _TokenDef(object):
                'Hyphen',  # $-
                'QMark',   # $?
                )
-  
+
   # Test ops
   VTest     = ('ColonHyphen',  #  :-
-               'Hyphen',        #   -
+               'Hyphen',       #   -
                'ColonEquals',  #  :=
-               'Equals',        #   =
+               'Equals',       #   =
                'ColonQMark',   #  :?
-               'QMark',         #   ?
+               'QMark',        #   ?
                'ColonPlus',    #  :+
-               'Plus',          #   +
+               'Plus',         #   +
                )
 
                # String removal ops
   VUnary    = ('Percent',       #  %
                'DPercent',      #  %%
-               'Pound',         #  # 
+               'Pound',         #  #
                'DPound',        #  ##
 
                # Case ops, in bash.  At least parse them.  Execution might
@@ -212,10 +209,10 @@ class _TokenDef(object):
                'Colon',         #  : for slicing
                'LBracket',      #  [ for indexing
                'RBracket',      #  ] for indexing
-              )
+               )
 
   # Operators
-  Arith     = ('Semi',  # ternary for loop only
+  Arith     = ('Semi',   # ternary for loop only
                'Comma',  # function call and C comma operator
                'Plus', 'Minus', 'Star', 'Slash', 'Percent',
                'DPlus', 'DMinus', 'DStar',
@@ -225,21 +222,21 @@ class _TokenDef(object):
                # Only for ${a[@]} -- not valid in any other arith context
                'At',
 
-               # Logical ops
-               'QMark',  'Colon',  # ternary op: a < b ? 0 : 1
+               # Logical Ops
+               'QMark',  'Colon',  # Ternary Op: a < b ? 0 : 1
                'LessEqual', 'Less', 'GreatEqual', 'Great', 'DEqual', 'NEqual',
                'DAmp', 'DPipe', 'Bang',  # && || !
 
                # Bitwise ops
                'DGreat', 'DLess',  # >> <<
-               'Amp', 'Pipe', 'Caret', 'Tilde', # & | ^ ~ for bits
+               'Amp', 'Pipe', 'Caret', 'Tilde',  #  & | ^ ~ for bits
 
-  # 11 mutating operators:  =  +=  -=  etc.
-              'Equal',
-              'PlusEqual', 'MinusEqual', 'StarEqual', 'SlashEqual',
-              'PercentEqual',
-              'DGreatEqual', 'DLessEqual', 'AmpEqual', 'PipeEqual',
-              'CaretEqual')
+               # 11 mutating operators:  =  +=  -=  etc.
+               'Equal',
+               'PlusEqual', 'MinusEqual', 'StarEqual', 'SlashEqual',
+               'PercentEqual',
+               'DGreatEqual', 'DLessEqual', 'AmpEqual', 'PipeEqual',
+               'CaretEqual')
 
   # This kind is for Node types that are NOT tokens.
 
@@ -253,9 +250,8 @@ class _TokenDef(object):
                # +1 and -1, to distinguish from infix.
                'UnaryPlus', 'UnaryMinus',
                )
-
   # Others:
-  # DB_LIT -- gets translated to BType()  
+  # DB_LIT -- gets translated to BType()
   # KW_LIT -- keywords
   #
   # GOAL: no char literals or strcmp() anywhere in the source!
@@ -337,8 +333,7 @@ class BType(object):
 
 class BKind(object):
   """
-  Token kind for recursive descent dispatching: BTokenKind.UNARY or
-  BTokenType.BINARY.
+  Token kind for recursive descent dispatching: BKind.UNARY or BKind.BINARY.
 
   Filled in by metaprogramming.
   """
@@ -364,7 +359,7 @@ class _BTokenDef(object):
       'STRING': ('EQUAL', 'NOT_EQUAL', 'TILDE_EQUAL', 'LESS', 'GREAT'),
       'FILE': ('EF', 'NT', 'OT'),
       'INT': ('EQ', 'NE', 'GT', 'GE', 'LT', 'LE'),
-      }
+  }
 
   Eof = ('TOK',)
 
@@ -372,7 +367,7 @@ class _BTokenDef(object):
   LOGICAL = {
       'BINARY': ('AND', 'OR'),
       'UNARY': ('NOT',),
-      }
+  }
 
   PAREN = ('LEFT', 'RIGHT')
 
@@ -381,7 +376,7 @@ class _BTokenDef(object):
       'STRING': ('z', 'n'),  # -z -n
       'OTHER': ('o', 'v', 'R'),
       'FILE': UNARY_FILE_CHARS,
-      }
+  }
 
   UNDEFINED = ('TOK',)
 

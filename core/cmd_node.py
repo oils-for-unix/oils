@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 cmd_node.py -- AST Nodes for the command language
@@ -20,7 +20,7 @@ from core.base import _Node
 # Types of the main command node.
 ENode = util.Enum('ENode', """
 SIMPLE_COMMAND ASSIGN PIPELINE AND_OR LIST BRACE_GROUP SUBSHELL FORK CASE IF
-FOR FOR_EXPR WHILE UNTIL FUNCTION_DEF CASE DBRACKET DPAREN ELSE_TRUE 
+FOR FOR_EXPR WHILE UNTIL FUNCTION_DEF CASE DBRACKET DPAREN ELSE_TRUE
 """.split())
 
 
@@ -110,7 +110,7 @@ class RedirectNode(object):
 
 class HereDocRedirectNode(RedirectNode):
   """ << and <<- causes pipe()
-  
+
   TODO: We need a flag to tell if the here end word is quoted!
   cat <<EOF vs cat <<'EOF' or cat <<"EOF"
   """
@@ -119,7 +119,7 @@ class HereDocRedirectNode(RedirectNode):
     # stdin by default
     RedirectNode.__init__(self, RedirectType.HERE_DOC, op, 0)
     self.body_word = CommandWord()  # pseudo-word to be expanded
-    self.here_end = None  # CommandWord 
+    self.here_end = None  # CommandWord
     self.do_expansion = False
     #self.read_lines = False  # STATE: whether we read lines for this node yet
     self.was_filled = False  # STATE: whether we read lines for this node yet
@@ -131,7 +131,7 @@ class HereDocRedirectNode(RedirectNode):
 
 class HereWordRedirectNode(RedirectNode):
   """ <<< and <<- causes pipe()
-  
+
   TODO: We need a flag to tell if the here end word is quoted!
   cat <<EOF vs cat <<'EOF' or cat <<"EOF"
   """
@@ -190,7 +190,8 @@ def _GetHereDocsToFill(redirects):
   return [
       r for r in redirects
       if r.op.type in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
-      ]
+  ]
+
 
 class SimpleCommandNode(CNode):
   def __init__(self):
@@ -206,7 +207,7 @@ class SimpleCommandNode(CNode):
     f.write('(Com ')
     self._PrintLineRedirects(f)
     if self.more_env:
-      # NOTE: This gives a {a:b, c:d} format. 
+      # NOTE: This gives a {a:b, c:d} format.
       f.write('more_env=%s ' % self.more_env)
     for i, w in enumerate(self.words):
       if i != 0:
@@ -225,9 +226,9 @@ class SimpleCommandNode(CNode):
       w.PrintLine(f)  # PrintTree for ComSub and so forth?  nodes?
     if self.redirects:
       f.write('\n')
-      self._PrintTreeRedirects(f, indent=indent+2)
+      self._PrintTreeRedirects(f, indent=indent + 2)
     if self.more_env:
-      # NOTE: This gives a {a:b, c:d} format. 
+      # NOTE: This gives a {a:b, c:d} format.
       f.write('\n')
       f.write(ind)
       f.write(ind)  # 2 indents
@@ -282,7 +283,7 @@ class DParenNode(CNode):
   """Represents a top level (( expression."""
   def __init__(self, anode):
     CNode.__init__(self, ENode.DPAREN)
-    self.anode = anode # type: _ANode
+    self.anode = anode  # type: _ANode
 
   def PrintLine(self, f):
     f.write('(DParen ')
@@ -303,7 +304,7 @@ class CompositeNode(CNode):
     # while read line; do cat <<EOF1; done <<EOF2
     # body
     # EOF1
-    # while 
+    # while
     # EOF2
     here_docs = []
     for child in self.children:
@@ -430,7 +431,7 @@ class AndOrNode(CompositeNode):
   """
   def __init__(self, op):
     CompositeNode.__init__(self, ENode.AND_OR)
-    self.op = op # TokenType AND_IF or OR_IF, set by parser
+    self.op = op  # TokenType Op_AndIf or Op_OrIf, set by parser
 
   def _PrintHeader(self, f):
     f.write('AndOr %s' % TokenTypeToName(self.op))
@@ -443,7 +444,7 @@ class ForNode(CompositeNode):
 
   def __init__(self):
     CompositeNode.__init__(self, ENode.FOR)
-    self.iter_name = None 
+    self.iter_name = None
     self.iter_words = []  # can be empty explicitly empty, which is dumb
     # whether we should iterate over args; iter_words should be empty
     self.do_arg_iter = False
@@ -533,7 +534,7 @@ class CaseNode(CompositeNode):
   This representation makes it easier to write homogeneous walkers.
 
   Alternatively, we could represent the patterns as a boolean expression, like:
-  
+
   case $v in foo|bar) echo match ;; *) echo nope ;; esac
 
   # Also does this force evaluation differently?
@@ -554,4 +555,3 @@ class CaseNode(CompositeNode):
     # on multiple lines!
     f.write('Case to_match=%s, pat_word_list=%s' % (self.to_match,
       self.pat_word_list))
-

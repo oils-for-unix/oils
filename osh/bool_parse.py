@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 bool_parse.py - Parse boolean expressions.
@@ -24,7 +24,7 @@ syntax.
   Negated : '!'? Factor
   Factor  : WORD
           | UNARY_OP WORD
-          | WORD BINARY_OP WORD 
+          | WORD BINARY_OP WORD
           | '(' Expr ')'
 
 OR = ||  -o
@@ -39,10 +39,11 @@ bash has a recursive descent parser in parse.y:
 parse_cond_command() / cond_expr() / ...
 3 levels of precedence.
 
-Bash manual: https://www.gnu.org/software/bash/manual/bash.html#Conditional-Constructs
+Bash manual:
+https://www.gnu.org/software/bash/manual/bash.html#Conditional-Constructs
 
 Precedence table.  Not sure why this is all one table, since [[ and (( are
-separate: http://tldp.org/LDP/abs/html/opprecedence.html 
+separate: http://tldp.org/LDP/abs/html/opprecedence.html
 
 mksh:
 funcs.c: test_isop() / test_eval() /...
@@ -127,11 +128,11 @@ class CondParser(object):
     return True
 
   def _Next(self, lex_mode=LexMode.DBRACKET):
-    """
-    Advance to the next token, skipping newlines.  We don't do handle newlines
-    in the lexer because we want the newline after ]] to be Id.Op_Newline rather
-    than Id.WS_Newline.  It's more complicated if it's Id.WS_Newline -- we might have
-    to unread tokens, etc.
+    """Advance to the next token, skipping newlines.
+
+    We don't handle newlines in the lexer because we want the newline after ]]
+    to be Id.Op_Newline rather than Id.WS_Newline.  It's more complicated if
+    it's Id.WS_Newline -- we might have to unread tokens, etc.
     """
     while True:
       w = self._NextOne(lex_mode=lex_mode)
@@ -203,7 +204,7 @@ class CondParser(object):
     Term    : Negated (AND Term)?
 
     Left associative:
-    
+
     Term    : Term AND Negated | Negated
     """
     left = self.ParseNegatedFactor()
@@ -229,7 +230,7 @@ class CondParser(object):
     """
     Factor  : WORD
             | UNARY_OP WORD
-            | WORD BINARY_OP WORD 
+            | WORD BINARY_OP WORD
             | '(' Expr ')'
     """
     #print('ParseFactor %s %s' % (self.bkind, self.btype))
@@ -237,7 +238,7 @@ class CondParser(object):
       # Just save the type and not the token itself?
       op = self.btype
       if not self._Next(): return None
-      word  = self.cur_word
+      word = self.cur_word
       if not self._Next(): return None
       node = UnaryBNode(op, word)
       return node

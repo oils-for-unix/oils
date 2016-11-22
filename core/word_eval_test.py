@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 word_eval_test.py: Tests for word_eval.py
@@ -66,7 +66,7 @@ class SplitTest(unittest.TestCase):
         ['a', 'cd'],
         word_eval._IfsSplit('\tabcd\n', 'b \t\n'))
 
-    # No non-whitespace IFS 
+    # No non-whitespace IFS
     self.assertEqual(
         ['a', 'c'],
         word_eval._IfsSplit(' a c ', ' '))
@@ -83,7 +83,7 @@ class GlobEscapeTest(unittest.TestCase):
         (r'\?.py', '?.py'),
         (r'\[a\-z\]\[\[\:punct\:\]\]', '[a-z][[:punct:]]'),
         (r'\\n', r'\n'),
-        ]
+    ]
     for e, u in pairs:
       self.assertEqual(e, esc(u))
       self.assertEqual(u, unesc(e))

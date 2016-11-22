@@ -49,7 +49,7 @@ class LogicalBNode(_BNode):
 
 
 class UnaryBNode(_BNode):
-  """ -z -n 
+  """ -z -n
 
   Note that the word itself is parsed as -n
   """
@@ -77,4 +77,3 @@ class BinaryBNode(_BNode):
     f.write('{B2 ')
     f.write('%s %s %s' % (BTokenTypeToName(self.btype), self.left, self.right))
     f.write('}')
-

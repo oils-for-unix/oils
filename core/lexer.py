@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 lexer.py - Library for lexing.
@@ -134,12 +134,12 @@ class Lexer(object):
     NOTE: Limiting lookahead to the current line makes the code a lot simpler
     at the cost of a rare (and superfluous) corner case.  This is not
     recognized as a function:
-    
+
     foo\
     () {}
-    
+
     Of course, this is the proper way to break it:
-    
+
     foo()
     {}
     """
@@ -152,7 +152,7 @@ class Lexer(object):
     Id.Op_RParen -> Id.Eof_RParen
 
     Problems for $() nesting.
-   
+
     - posix:
       - case foo) and case (foo)
       - func() {}
@@ -194,23 +194,7 @@ class Lexer(object):
 
     return t
 
-  # TODO: _Read() -> ReadAny() / ReadForFormatter
-  #       Read() -> ReadForParser() ?  parser doesn't care about comments, line
-  #       continuation, spans of multiple newlines (in OUTER mode only)
-  #       IGNORED and collapsing of newlines.
-  # It's better to have the state here than in WordParser, because that is
-  # reinstantiated.  
-  #
-  # Lexer(pool), just like Reader(pool)
-  # WordParser calls ReadForParser().
-
-
-  # We can also collapse newlines here... or at least Id.Op_Newline?
-
-  # In ARITH state or VS* states, it should be Id.WS_Newline
-  #
-  # Id.Ignored_Space
-
+  # TODO: Collapse newlines here instead of in the WordParser?
   def Read(self, lex_mode):
     while True:
       t = self._Read(lex_mode)

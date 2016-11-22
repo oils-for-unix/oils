@@ -33,7 +33,7 @@ import sys
 # - the thing that owns the list of std::string
 # - it will have a list of filenames too
 # DebugInfo -- per interpreter
-# 
+#
 # And then Reader/Lexer/etc. are PER FILE
 #
 # class Token:
@@ -43,7 +43,7 @@ import sys
 # And then that contains the (filename, actual line number)
 #
 # class LinePool
-#   Line lines[]  
+#   Line lines[]
 #   std::vector filenames;  // filenames in order that we read them.
 #                           // NOTE: we need to normalize them.  Can we use
 #                           // the inode num?.
@@ -92,7 +92,7 @@ class Pool(object):
   """
   def __init__(self):
     # Could be std::vector<char *> pointing into a std::string
-    self.lines = [] 
+    self.lines = []
     self.debug_info = []  # list of (src_path index, line index)
     self.src_paths = []  # list of source paths
     self.src_index = -1  # index of current source file
@@ -167,6 +167,7 @@ class Pool(object):
 
   def OwnPart(self, part):
     pass
+
   def OwnWord(self, word):
     pass
   # So all the nodes inherit from a common base class.  It has a virtual
@@ -179,4 +180,3 @@ class Pool(object):
   # Alternative: Use placement new.  That's what the Dart parser uses.
   # Does that allow multiple interpreters in the same binary in different
   # threads?  I'm not sure I even need that though.
-

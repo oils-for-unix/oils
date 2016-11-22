@@ -115,13 +115,14 @@ def MakeShellSpec():
       Id.Arith_At,  # For ${a[@]}
       Id.Arith_Star,  # For ${a[*]}
       Id.Arith_Semi,  # for loop
-      ])
+  ])
   spec.Null(-1, tdop.NullError, [
       Id.Arith_RParen, Id.Arith_RBracket, Id.Arith_Colon,
       Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick,
-      # Not in the arithmetic language, but is a cmomon terminator , e.g. ${foo:1}
+      # Not in the arithmetic language, but is a common terminator, e.g.
+      # ${foo:1}
       Id.Arith_RBrace,
-      ])
+  ])
 
   # 0 precedence -- doesn't bind until )
   spec.Null(0, tdop.NullParen, [Id.Arith_LParen])  # for grouping
@@ -141,10 +142,11 @@ def MakeShellSpec():
   spec.LeftRightAssoc(29, tdop.LeftBinaryOp, [Id.Arith_DStar])
 
   # * / %
-  spec.Left(27, tdop.LeftBinaryOp, [Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
+  spec.Left(27, tdop.LeftBinaryOp, [
+    Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
 
   spec.Left(25, tdop.LeftBinaryOp, [Id.Arith_Plus, Id.Arith_Minus])
-  spec.Left(23, tdop.LeftBinaryOp, [Id.Arith_DLess, Id.Arith_DGreat]) 
+  spec.Left(23, tdop.LeftBinaryOp, [Id.Arith_DLess, Id.Arith_DGreat])
   spec.Left(21, tdop.LeftBinaryOp, [
     Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual])
 

@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 oil.py - A busybox-like binary for oil.
@@ -84,8 +84,8 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
     else:
       node = c_parser.ParseCommandLine()
 
-      # TODO: Need an error for an empty command, which we ignore?  GetLine could
-      # do that in the first position?
+      # TODO: Need an error for an empty command, which we ignore?  GetLine
+      # could do that in the first position?
       # ParseSimpleCommand fails with '\n' token?
       if not node:
         raise RuntimeError('failed parse: %s' % c_parser.Error())
@@ -128,7 +128,8 @@ def Options():
       '--print-ast', dest='print_ast', action='store_true', default=False,
       help='Print AST before execution')
   p.add_option(
-      '--print-status', dest='print_status', action='store_true', default=False,
+      '--print-status', dest='print_status', action='store_true',
+      default=False,
       help='Print command status after execution')
   p.add_option(
       '--trace', dest='trace', action='append', default=[],
@@ -136,7 +137,6 @@ def Options():
   p.add_option(
       '--no-exec', dest='do_exec', action='store_false', default=True,
       help="Don't execute anything (useful with --print-ast)")
-
 
   # TODO:
   # --dump / --debug outputs:
@@ -307,7 +307,6 @@ def main(argv):
     return BoilMain(main_argv)
   else:
     raise UsageError('Invalid main %r' % main_name)
-
 
 
 if __name__ == '__main__':
