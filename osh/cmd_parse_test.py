@@ -430,7 +430,7 @@ class CommandParserTest(unittest.TestCase):
 
   def testParsePipeline(self):
     c_parser = InitCommandParser('ls foo')
-    node =  c_parser.ParsePipeline()
+    node = c_parser.ParsePipeline()
     print(node.DebugString())
     self.assertEqual(2, len(node.words))
 
@@ -594,7 +594,7 @@ esac
     node = assertParseCommandLine(self, """\
 case word in
   foo) echo foo ;;    # NO TRAILING ;;
-  bar) echo bar         
+  bar) echo bar
 esac
 """)
     self.assertEqual(ENode.CASE, node.type)

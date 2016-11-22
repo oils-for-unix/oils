@@ -16,8 +16,8 @@ from core import util
 # COMMAND
 # EXPRESSION (takes place of ARITH, VS_UNQ_ARG, VS_DQ_ARG)
 # SQ  RAW_SQ  DQ  RAW_DQ
-# VS    -- a single state here?  Or switches into expression state, because } is 
-#       -- an operator
+# VS    -- a single state here?  Or switches into expression state, because }
+#          is an operator
 # Problem: DICT_KEY might be a different state, to accept either a bare word
 # foo, or an expression (X=a+2), which is allowed in shell.  Python doesn't
 # allowed unquoted words, but we want to.
@@ -39,15 +39,16 @@ BASH_REGEX_CHARS
 # TODO: There are 4 shared groups here.  I think you should test if that
 # structure should be preserved through re2c.  Do a benchmark.
 #
-# If a group has no matches, then return Id.Unknown_Tok?  And then you can chain
-# the groups in order.  It might make sense to experiment with the order too.
+# If a group has no matches, then return Id.Unknown_Tok?  And then you can
+# chain the groups in order.  It might make sense to experiment with the order
+# too.
 
 # Explicitly exclude newline, although '.' would work too
 _CHAR_ESCAPE = (r'\\[^\n]', Id.Lit_EscapedChar)
 
 _VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
-# All TokenKind.VSub 
+# All TokenKind.VSub
 _VARS = [
   # Unbraced variables
   (r'\$' + _VAR_NAME_RE, Id.VSub_Name),
@@ -121,7 +122,7 @@ _unquoted = [
   # Id.Lit_Maybe_LHS_ARRAY2
   #(r'\]\+?=', Id.Lit_Maybe_ARRAY_ASSIGN_RIGHT),
 
-  # For brace expansion {a,b} 
+  # For brace expansion {a,b}
   (r'\{', Id.Lit_LBrace),
   (r'\}', Id.Lit_RBrace),  # Also for var sub ${a}
   (r',', Id.Lit_Comma),
@@ -163,7 +164,8 @@ _unquoted = [
   (r'.', Id.Lit_Other),  # any other single char is a literal
 ]
 
-# These two can must be recognized in the _unquoted state, but can't nested a [[.
+# These two can must be recognized in the _unquoted state, but can't nested a
+# [[.
 LEXER_DEF[LexMode.OUTER] = [
   (r'\[\[', Id.Lit_DLeftBracket),  # this needs to be a single token
   (r'\(\(', Id.Op_DLeftParen),  # TODO: Remove for DBracket?
@@ -219,7 +221,8 @@ _VAROP_Common = [
 
 # TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[LexMode.VS_ARG_UNQ] = [
-  (r'[^$`/}"\0\\#%<>]+', Id.Lit_Chars),  # NOTE: added < and > so it doesn't eat <()
+  # NOTE: added < and > so it doesn't eat <()
+  (r'[^$`/}"\0\\#%<>]+', Id.Lit_Chars),
 ] + _VAROP_Common + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   (r'\0', Id.Eof_Real),
   (r'.', Id.Lit_Other),  # e.g. "$", must be last
@@ -235,7 +238,8 @@ LEXER_DEF[LexMode.VS_ARG_DQ] = [
   (r'.', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
-# NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ state.
+# NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ
+# state.
 LEXER_DEF[LexMode.SQ] = [
   (r"[^']+", Id.Lit_Chars),  # matches a line at most
   (r"'", Id.Right_SingleQuote),
@@ -308,12 +312,13 @@ LEXER_DEF[LexMode.VS_2] = [
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
 LEXER_DEF[LexMode.ARITH] = [
-  (r'[ \t\r\n]+', Id.Ignored_Space),  # newline is ignored space, unlike in OUTER
+  # newline is ignored space, unlike in OUTER
+  (r'[ \t\r\n]+', Id.Ignored_Space),
 
-  # Words allowed:
-  # 64#azAZ
-  # 0xabc 0xABC
-  # 0123
+  # Examples of arith constants:
+  #   64#azAZ
+  #   0xabc 0xABC
+  #   0123
 
   # A separate digits part makes this easier to parse STATICALLY.  But this
   # doesn't help with DYNAMIC parsing.
@@ -385,14 +390,13 @@ LEXER_DEF[LexMode.ARITH] = [
   (r'\|\|', Id.Arith_DPipe),
   (r'!', Id.Arith_Bang),  # logical negation
 
-# NOTE: Tested all left-unquoted in both quoted and unquoted contexts.  e.g.
-# "$(( ${as[$'hi\n']} ))" works, as well as unquotedj
-# $(( ${as[$'hi\n']} )) works
+  # NOTE: Tested all left-unquoted in both quoted and unquoted contexts.  e.g.
+  # "$(( ${as[$'hi\n']} ))" works, as well as unquoted $(( ${as[$'hi\n']} ))
+  # works
 
 ] + _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
 
   (r'\\\n', Id.Ignored_LineCont),
-    # NOTE: This will give you VS_QMARK tokens, etc.
   (r'.', Id.Unknown_Tok),  # any char.  This should be a syntax error.
 ]
 

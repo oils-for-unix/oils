@@ -331,7 +331,7 @@ class BType(object):
   """
   Token type for execution, determined at parse time.
   Filled in by metaprogramming.
-  e.g. BTokenType.ATOM, BTokenType.LOGICAL_NOT, BTokenType.BINARY_FILE_OT.
+  e.g. BType.ATOM_TOK, BType.LOGICAL_NOT, BType.BINARY_FILE_OT.
   """
 
 
