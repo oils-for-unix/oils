@@ -84,10 +84,10 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
 
     if w is None:
       raise RuntimeError('Failed parse: %s' % c_parser.Error())
-    word_type = w.Type()
-    if word_type == Id.Op_Newline:
+    c_id = w.CommandId()
+    if c_id == Id.Op_Newline:
       print('nothing to execute')
-    elif word_type == Id.Eof_Real:
+    elif c_id == Id.Eof_Real:
       print('EOF')
       break
     else:
@@ -129,6 +129,9 @@ def Options():
   p.add_option(
       '-c', dest='command', default='',
       help='Shell command to run')
+  p.add_option(
+      '-i', dest='interactive', default=False, action='store_true',
+      help="Force the shell to run interactively (don't test for stdin TTY)")
 
   # TODO:
   # - Make this --print=ast,status
@@ -223,6 +226,10 @@ def OshMain(argv):
     pool.AddSourcePath('<-c arg>')
     line_reader = reader.StringLineReader(opts.command, pool=pool)
     interactive = False
+  elif opts.interactive:  # force interactive
+    pool.AddSourcePath('<stdin -i>')
+    line_reader = reader.InteractiveLineReader(pool=pool)
+    interactive = True
   else:
     try:
       script_name = argv[0]

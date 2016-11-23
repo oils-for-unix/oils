@@ -75,9 +75,8 @@ EOF
 # TODO: test while loop
 }
 
-# TODO: Test interactive with a flag?
 osh-interactive() {
-  echo TODO
+  echo 'echo hi' | $OSH -i
 }
 
 "$@"
