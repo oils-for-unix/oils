@@ -160,6 +160,10 @@ def Options():
   return p
 
 
+# bash --noprofile --norc uses 'bash-4.3$ '
+OSH_PS1 = 'osh$ '
+
+
 def OshMain(argv):
   (opts, argv) = Options().parse_args(argv)
 
@@ -228,7 +232,7 @@ def OshMain(argv):
     interactive = False
   elif opts.interactive:  # force interactive
     pool.AddSourcePath('<stdin -i>')
-    line_reader = reader.InteractiveLineReader(pool=pool)
+    line_reader = reader.InteractiveLineReader(OSH_PS1, pool=pool)
     interactive = True
   else:
     try:
@@ -236,7 +240,7 @@ def OshMain(argv):
     except IndexError:
       if sys.stdin.isatty():
         pool.AddSourcePath('<interactive>')
-        line_reader = reader.InteractiveLineReader(pool=pool)
+        line_reader = reader.InteractiveLineReader(OSH_PS1, pool=pool)
         interactive = True
       else:
         pool.AddSourcePath('<stdin>')
