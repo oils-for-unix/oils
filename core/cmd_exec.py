@@ -404,7 +404,7 @@ class Executor(object):
       try:
         code = int(argv[1])
       except IndexError:
-        pass
+        code = 0
       except ValueError as e:
         print("Invalid argument %r" % argv[1], file=sys.stderr)
         code = 1  # Runtime Error

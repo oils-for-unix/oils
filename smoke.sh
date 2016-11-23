@@ -77,6 +77,8 @@ EOF
 
 osh-interactive() {
   echo 'echo hi' | $OSH -i
+
+  echo 'exit' | $OSH -i
 }
 
 "$@"
