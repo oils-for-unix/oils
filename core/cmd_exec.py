@@ -60,14 +60,13 @@ import os
 import stat
 import sys
 
-from core.cmd_node import ENode, ListNode, RedirectType
-
-from core import util
-from core.util import log
+from core.cmd_node import ListNode, RedirectType
 
 from core import arith_eval
 from core import bool_eval
 from core import word_eval
+from core.tokens import CType
+from core import util
 
 from core import completion
 from core.builtin import EBuiltin
@@ -77,6 +76,9 @@ from core.process import (
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
 from core.word_node import EAssignScope
 from core.value import Value
+
+
+log = util.log
 
 
 class ExecOpts(object):
@@ -503,7 +505,7 @@ class Executor(object):
     """
     Assume we will run the node in another process.  Return a process.
     """
-    if node.type == ENode.SIMPLE_COMMAND:
+    if node.type == CType.Command:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
         err = self.ev.Error()
@@ -641,7 +643,7 @@ class Executor(object):
 
     # TODO: Only eval argv[0] once.  It can have side effects!
 
-    if node.type == ENode.SIMPLE_COMMAND:
+    if node.type == CType.Command:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
         err = self.ev.Error()
@@ -684,27 +686,27 @@ class Executor(object):
         else:
           self.fd_state.ForgetAll()
 
-    elif node.type == ENode.PIPELINE:
+    elif node.type == CType.Pipeline:
       status, cflow = self._RunPipeline(node)
 
-    elif node.type == ENode.SUBSHELL:
+    elif node.type == CType.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
       p = self._GetProcessForNode(node.children[0])
       status = p.Run()
 
-    elif node.type == ENode.DBRACKET:
+    elif node.type == CType.DBracket:
       ok, b = bool_eval.BEval(node.bnode, self.ev)
       status = 0 if b else 1
       # TODO: if not OK, then turn it into an exception
 
-    elif node.type == ENode.DPAREN:
+    elif node.type == CType.DParen:
       i = arith_eval.ArithEval(node.anode, self.ev)
       # Negate the value: non-zero in arithmetic is true, which is zero in
       # shell land
       status = 0 if i != 0 else 1
       # TODO: if not OK, then turn it into an exception
 
-    elif node.type == ENode.ASSIGN:
+    elif node.type == CType.Assign:
       # TODO: Respect flags: readonly, export, sametype, etc.
       # Just pass the Value
       pairs = []
@@ -726,14 +728,14 @@ class Executor(object):
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
 
-    elif node.type == ENode.LIST:
+    elif node.type == CType.List:
       status = 0  # for empty list
       for child in node.children:
         status, cflow = self.Execute(child)  # last status wins
         if cflow in (EBuiltin.BREAK, EBuiltin.CONTINUE):
           break
 
-    elif node.type == ENode.AND_OR:
+    elif node.type == CType.AndOr:
       #print(node.children)
       left, right = node.children
       status, cflow = self.Execute(left)
@@ -747,7 +749,7 @@ class Executor(object):
       else:
         raise AssertionError
 
-    elif node.type == ENode.WHILE:
+    elif node.type == CType.While:
       cond, action = node.children
 
       while True:
@@ -761,7 +763,7 @@ class Executor(object):
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
 
-    elif node.type == ENode.FOR:
+    elif node.type == CType.For:
       iter_name = node.iter_name
       if node.do_arg_iter:
         iter_list = self.mem.GetArgv()
@@ -786,11 +788,11 @@ class Executor(object):
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
 
-    elif node.type == ENode.FUNCTION_DEF:
+    elif node.type == CType.FuncDef:
       self.funcs[node.name] = node
       status = 0
 
-    elif node.type == ENode.IF:
+    elif node.type == CType.If:
       i = 0
       while i < len(node.children):
         cond = node.children[i]
@@ -801,10 +803,10 @@ class Executor(object):
           break
         i += 2
 
-    elif node.type == ENode.ELSE_TRUE:
+    elif node.type == CType.ELSE_TRUE:
       status = 0  # make it true
 
-    elif node.type == ENode.CASE:
+    elif node.type == CType.Case:
       raise NotImplementedError
 
     else:

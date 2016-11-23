@@ -103,7 +103,7 @@ LEXER_DEF[LexMode.COMMENT] = [
   (r'.*', Id.Ignored_Comment)  # does not match newline
 ]
 
-_unquoted = [
+_UNQUOTED = [
   (r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars),
 
   # The other ones aren't MAYBE though... put them in a different category.
@@ -164,12 +164,14 @@ _unquoted = [
   (r'.', Id.Lit_Other),  # any other single char is a literal
 ]
 
-# These two can must be recognized in the _unquoted state, but can't nested a
+# These two can must be recognized in the OUTER state, but can't nested within
 # [[.
+# Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
+# of <Lit_Chars "if">.
 LEXER_DEF[LexMode.OUTER] = [
   (r'\[\[', Id.Lit_DLeftBracket),  # this needs to be a single token
   (r'\(\(', Id.Op_DLeftParen),  # TODO: Remove for DBracket?
-] + _unquoted
+] + _UNQUOTED 
 
 # \n isn't an operator inside [[ ]]; it's just ignored
 LEXER_DEF[LexMode.DBRACKET] = [
@@ -179,7 +181,7 @@ LEXER_DEF[LexMode.DBRACKET] = [
   (r'==', Id.Lit_DEqual),
   (r'!=', Id.Lit_NEqual),
   (r'=~', Id.Lit_TEqual),
-] + _unquoted
+] + _UNQUOTED
 
 # DBRACKET: can be like OUTER, except Id.Op_Newline is Id.WS_Newline
 # Don't really need redirects either... it actually hurts things
@@ -195,7 +197,7 @@ LEXER_DEF[LexMode.BASH_REGEX] = [
   (r'\(', Id.Lit_Chars),
   (r'\)', Id.Lit_Chars),
   (r'\|', Id.Lit_Chars),
-] + _unquoted
+] + _UNQUOTED
 
 LEXER_DEF[LexMode.DQ] = [
   (r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most

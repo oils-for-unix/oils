@@ -40,7 +40,7 @@ import traceback
 from osh import parse_lib
 from core import ui
 from core import util
-from core.cmd_node import ENode
+from core.cmd_node import CType
 
 
 class CompletionLookup(object):
@@ -373,7 +373,7 @@ def _FindLastSimpleCommand(node):
   ls | wc -l
   test -f foo && hello
   """
-  if node.type == ENode.SIMPLE_COMMAND:
+  if node.type == CType.Command:
     return node
 
   assert hasattr(node, 'children'), node
@@ -434,7 +434,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
   com_node = None
   if node:
     # These 4 should all parse
-    if node.type == ENode.SIMPLE_COMMAND:
+    if node.type == CType.Command:
       # NOTE: prev_token can be ;, then complete a new one
       #print('WORDS', node.words)
       # TODO:
@@ -469,11 +469,11 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
       print(argv)
       com_node = node
 
-    elif node.type == ENode.LIST:  # echo a; echo b
+    elif node.type == CType.List:  # echo a; echo b
       com_node = _FindLastSimpleCommand(node)
-    elif node.type == ENode.AND_OR:  # echo a && echo b
+    elif node.type == CType.AndOr:  # echo a && echo b
       com_node = _FindLastSimpleCommand(node)
-    elif node.type == ENode.PIPELINE:  # echo a | wc -l
+    elif node.type == CType.Pipeline:  # echo a | wc -l
       com_node = _FindLastSimpleCommand(node)
     else:
       # Return NONE?  Not handling it for now

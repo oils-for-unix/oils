@@ -38,18 +38,6 @@ EAssignFlags = util.Enum('EAssignFlags', 'EXPORT READONLY'.split())
 # I think I need scope and flags
 EAssignScope = util.Enum('EAssignScope', 'LOCAL GLOBAL'.split())
 
-#
-# Word types (distinct from token type).
-#
-
-# NOTE: There is also an Id.Lit_LBrace token, for brace expansion.
-EKeyword = util.Enum('EKeyword',
-""" NONE LBRACE RBRACE
-    FOR WHILE UNTIL DO DONE IN
-    CASE ESAC IF FI THEN ELSE ELIF BANG
-    LEFT_DBRACKET RIGHT_DBRACKET
-    FUNCTION
-""".split())
 
 #
 # WordPart
@@ -541,7 +529,7 @@ class CompoundWord(Word):
   def __init__(self, parts=None):
     Word.__init__(self)
     self.parts = parts or []  # public, mutable
-    self.word_type = -1  # -1: uninitialized
+    self.c_id = Id.KW_Undefined
 
   def __eq__(self, other):
     return self.parts == other.parts
@@ -566,67 +554,64 @@ class CompoundWord(Word):
       return None, None
 
   def CommandKind(self):
-    return CKind.COMMAND
+    return CKind.CWord
 
-  # TODO:
-  # - Put all the keywords under LIT, and then if there is exactly one part,
-  # test against the token type of Id.Lit_For, Id.Lit_Left_DBRACKET, etc.
-  # - Do you still need caching?  I guess it could be tested over and over
-  # again.
-  # - Rename to CType() or CmdType()?
   def CommandId(self):
-    """Returns an EKeyword enum."""
-    if self.word_type == -1:  # not computed yet
+    """Returns an Id for the word."""
+    if self.c_id == Id.KW_Undefined:  # not computed yet
 
       # has to be a single literal part
       if len(self.parts) != 1:
-        self.word_type = EKeyword.NONE
-        return self.word_type
+        self.c_id = Id.KW_None
+        return self.c_id
 
       lit = self.parts[0].UnquotedLiteralValue()
+      # TODO: These could be checked by type instead of contents.  "for" must
+      # be checked by contents because we can't distinguish is from fooFOOBAR.
       if lit == "{":
-        self.word_type = EKeyword.LBRACE
+        self.c_id = Id.Lit_LBrace
       elif lit == "}":
-        self.word_type = EKeyword.RBRACE
-      elif lit == "for":
-        self.word_type = EKeyword.FOR
-      elif lit == "case":
-        self.word_type = EKeyword.CASE
-      elif lit == "if":
-        self.word_type = EKeyword.IF
-      elif lit == "fi":
-        self.word_type = EKeyword.FI
-      elif lit == "then":
-        self.word_type = EKeyword.THEN
-      elif lit == "elif":
-        self.word_type = EKeyword.ELIF
-      elif lit == "else":
-        self.word_type = EKeyword.ELSE
-      elif lit == "while":
-        self.word_type = EKeyword.WHILE
-      elif lit == "until":
-        self.word_type = EKeyword.UNTIL
-      elif lit == "do":
-        self.word_type = EKeyword.DO
-      elif lit == "done":
-        self.word_type = EKeyword.DONE
-      elif lit == "in":
-        self.word_type = EKeyword.IN
-      elif lit == "esac":
-        self.word_type = EKeyword.ESAC
-      elif lit == "!":
-        self.word_type = EKeyword.BANG
-      elif lit == "function":
-        self.word_type = EKeyword.FUNCTION
+        self.c_id = Id.Lit_RBrace
       elif lit == "[[":
-        self.word_type = EKeyword.LEFT_DBRACKET
+        self.c_id = Id.Lit_DLeftBracket
       elif lit == "]]":
-        self.word_type = EKeyword.RIGHT_DBRACKET
+        self.c_id = Id.Lit_DRightBracket
+
+      elif lit == "!":  # Could distinguish this
+        self.c_id = Id.KW_Bang
+      elif lit == "for":
+        self.c_id = Id.KW_For
+      elif lit == "case":
+        self.c_id = Id.KW_Case
+      elif lit == "if":
+        self.c_id = Id.KW_If
+      elif lit == "fi":
+        self.c_id = Id.KW_Fi
+      elif lit == "then":
+        self.c_id = Id.KW_Then
+      elif lit == "elif":
+        self.c_id = Id.KW_Elif
+      elif lit == "else":
+        self.c_id = Id.KW_Else
+      elif lit == "while":
+        self.c_id = Id.KW_While
+      elif lit == "until":
+        self.c_id = Id.KW_Until
+      elif lit == "do":
+        self.c_id = Id.KW_Do
+      elif lit == "done":
+        self.c_id = Id.KW_Done
+      elif lit == "in":
+        self.c_id = Id.KW_In
+      elif lit == "esac":
+        self.c_id = Id.KW_Esac
+      elif lit == "function":
+        self.c_id = Id.KW_Function
 
       else:
-        self.word_type = EKeyword.NONE
+        self.c_id = Id.KW_None
 
-    return self.word_type
+    return self.c_id
 
   def ArithId(self):
     return Id.Node_ArithWord
@@ -816,9 +801,9 @@ class TokenWord(Word):
     if token_kind == TokenKind.Eof:
       return CKind.Eof
     elif token_kind == TokenKind.Redir:
-      return CKind.REDIR
+      return CKind.Redir
     else:
-      return CKind.OPERATOR
+      return CKind.Op
 
   def CommandId(self):
     return self.token.type

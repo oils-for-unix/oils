@@ -13,15 +13,9 @@ import io
 
 from core import util
 
-from core.tokens import Id, TokenTypeToName
+from core.tokens import Id, TokenTypeToName, CType
 from core.word_node import CompoundWord
 from core.base import _Node
-
-# Types of the main command node.
-ENode = util.Enum('ENode', """
-SIMPLE_COMMAND ASSIGN PIPELINE AND_OR LIST BRACE_GROUP SUBSHELL FORK CASE IF
-FOR FOR_EXPR WHILE UNTIL FUNCTION_DEF CASE DBRACKET DPAREN ELSE_TRUE
-""".split())
 
 
 class CNode(_Node):
@@ -193,7 +187,7 @@ def _GetHereDocsToFill(redirects):
 
 class SimpleCommandNode(CNode):
   def __init__(self):
-    CNode.__init__(self, ENode.SIMPLE_COMMAND)
+    CNode.__init__(self, CType.Command)
     self.words = []  # CompoundWord instances
     self.more_env = {}  # binding
 
@@ -237,10 +231,10 @@ class SimpleCommandNode(CNode):
     f.write(')')
 
 
-class ElseTrueNode(CNode):
+class NoOpNode(CNode):
   """Dummy node for the empty "else" condition."""
   def __init__(self):
-    CNode.__init__(self, ENode.ELSE_TRUE)
+    CNode.__init__(self, CType.NoOp)
 
   def PrintLine(self, f):
     f.write('(ElseTrue)')
@@ -248,7 +242,7 @@ class ElseTrueNode(CNode):
 
 class AssignmentNode(CNode):
   def __init__(self, scope, flags):
-    CNode.__init__(self, ENode.ASSIGN)
+    CNode.__init__(self, CType.Assign)
     self.scope = scope
     self.flags = flags
     # readonly foo bar=baz is allowed.  We separate them here.  Order
@@ -268,7 +262,7 @@ class AssignmentNode(CNode):
 class DBracketNode(CNode):
   """Represents a top level [[ expression."""
   def __init__(self, bnode):
-    CNode.__init__(self, ENode.DBRACKET)
+    CNode.__init__(self, CType.DBracket)
     self.bnode = bnode  # type: _BNode
 
   def PrintLine(self, f):
@@ -280,7 +274,7 @@ class DBracketNode(CNode):
 class DParenNode(CNode):
   """Represents a top level (( expression."""
   def __init__(self, anode):
-    CNode.__init__(self, ENode.DPAREN)
+    CNode.__init__(self, CType.DParen)
     self.anode = anode  # type: _ANode
 
   def PrintLine(self, f):
@@ -370,7 +364,7 @@ class ListNode(_CompoundCNode):
   children: list of AND_OR
   """
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.LIST)
+    _CompoundCNode.__init__(self, CType.List)
     self.redirects = []
 
   def _PrintHeader(self, f):
@@ -387,7 +381,7 @@ class SubshellNode(_CompoundCNode):
   Exec() is different I guess
   """
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.SUBSHELL)
+    _CompoundCNode.__init__(self, CType.Subshell)
     # no redirects for subshell?
 
   def _PrintHeader(self, f):
@@ -399,7 +393,7 @@ class ForkNode(_CompoundCNode):
   children: either list of AND_OR, or a LIST node?
   """
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.FORK)
+    _CompoundCNode.__init__(self, CType.Fork)
 
   def _PrintHeader(self, f):
     f.write('Fork')
@@ -410,7 +404,7 @@ class PipelineNode(_CompoundCNode):
   children: list of SimpleCommandNode
   """
   def __init__(self, children, negated):
-    _CompoundCNode.__init__(self, ENode.PIPELINE)
+    _CompoundCNode.__init__(self, CType.Pipeline)
     self.children = children
     self.negated = negated
     # If there are 3 children, they are numbered 0, 1, and 2.  There are two
@@ -428,7 +422,7 @@ class AndOrNode(_CompoundCNode):
   children[1]: RHS
   """
   def __init__(self, op):
-    _CompoundCNode.__init__(self, ENode.AND_OR)
+    _CompoundCNode.__init__(self, CType.AndOr)
     self.op = op  # TokenType Op_AndIf or Op_OrIf, set by parser
 
   def _PrintHeader(self, f):
@@ -441,7 +435,7 @@ class ForNode(_CompoundCNode):
   """
 
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.FOR)
+    _CompoundCNode.__init__(self, CType.For)
     self.iter_name = None
     self.iter_words = []  # can be empty explicitly empty, which is dumb
     # whether we should iterate over args; iter_words should be empty
@@ -461,7 +455,7 @@ class ForExpressionNode(_CompoundCNode):
   children: list of AND_OR?
   """
   def __init__(self, init, cond, update):
-    _CompoundCNode.__init__(self, ENode.FOR_EXPR)
+    _CompoundCNode.__init__(self, CType.ForExpr)
     self.init = init  # type: ANode
     self.cond = cond  # type: ANode
     self.update = update  # type: ANode
@@ -477,7 +471,7 @@ class WhileNode(_CompoundCNode):
   children[1] = body (LIST)
   """
   def __init__(self, children):
-    _CompoundCNode.__init__(self, ENode.WHILE)
+    _CompoundCNode.__init__(self, CType.While)
     self.children = children
 
   def _PrintHeader(self, f):
@@ -490,7 +484,7 @@ class UntilNode(_CompoundCNode):
   children[1] = body (LIST)
   """
   def __init__(self, children):
-    _CompoundCNode.__init__(self, ENode.UNTIL)
+    _CompoundCNode.__init__(self, CType.Until)
     self.children = children
 
   def _PrintHeader(self, f):
@@ -502,7 +496,7 @@ class FunctionDefNode(_CompoundCNode):
   children = statement body
   """
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.FUNCTION_DEF)
+    _CompoundCNode.__init__(self, CType.FuncDef)
     self.name = ''
     self.redirects = []
 
@@ -517,7 +511,7 @@ class IfNode(_CompoundCNode):
   Last condition is TRUE for else!!!
   """
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.IF)
+    _CompoundCNode.__init__(self, CType.If)
 
   def _PrintHeader(self, f):
     f.write('If')
@@ -543,7 +537,7 @@ class CaseNode(_CompoundCNode):
   }
   """
   def __init__(self):
-    _CompoundCNode.__init__(self, ENode.CASE)
+    _CompoundCNode.__init__(self, CType.Case)
     # the word to match against successive patterns
     self.to_match = None  # type: Word
     self.pat_word_list = []  # List<List<Word>> -- patterns to match

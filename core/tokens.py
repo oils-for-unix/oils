@@ -18,7 +18,24 @@ from core import util
 
 # Coarse-grained decisions for CommandPArser.  Similar to TokenKind, except
 # Lit/Left/VSub are combined into "COMMAND" for CompoundWord.
-CKind = util.Enum('CKind', 'UNDEFINED COMMAND OPERATOR REDIR Eof'.split())
+CKind = util.Enum('CKind', 'Undefined CWord Op Redir Eof'.split())
+
+# Types of the main command node.
+CType = util.Enum('CType', """
+Command Assign Pipeline AndOr List Block Subshell Fork Case If
+For ForExpr While Until FuncDef DBracket DParen NoOp
+""".split())
+# Could be:
+# Id.CNode_Command     could be Id.Lit_Chars
+# Id.CNode_Assign      could be Id.Lit_VarLike
+# Id.CNode_Subshell    could be Id.Right_Subshell
+# Id.CNode_Fork        & or fork  -- could be Id.Op_Amp
+# Id.CNode_FuncDef     could be Id.Right_FuncDef
+#
+# Although I want the AST to be decoupled from tokens for the sake of oil.
+#
+# Inconsistency: CNode has an CType type, but ANode and BNode have an id.  This
+# might be OK for now.
 
 
 _TOKEN_TYPE_TO_KIND = {}  # type: dict
@@ -257,9 +274,13 @@ class _TokenDef(object):
                )
   # Others:
   # DB_LIT -- gets translated to BType()
-  # KW_LIT -- keywords
   #
   # GOAL: no char literals or strcmp() anywhere in the source!
+
+  KW        = ('Undefined', 'None', 'Bang', 
+               'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
+               'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
+              )
 
 
 _TOKEN_TYPE_NAMES = {}  # type: dict
