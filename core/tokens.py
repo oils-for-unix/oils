@@ -16,30 +16,6 @@ import sys
 from core import util
 
 
-# Types of the main command node.
-CType = util.Enum('CType', """
-Command Assign Pipeline AndOr List Block Subshell Fork Case If
-For ForExpr While Until FuncDef DBracket DParen NoOp
-""".split())
-# Id.CNode_Command     
-# Id.CNode_Assign      
-# Id.CNode_AndOr
-# Id.Op_Semi
-# Id.CNode_Block
-# Id.CNode_Subshell    could be Id.Right_Subshell, not in oil
-# Id.CNode_Fork        
-# Id.CNode_Func        could be Id.Right_FuncDef, not in oil
-#                      # what about proc?
-# Id.CNode_ForEach
-# Id.CNode_ForExpr
-# Id.CNode_NoOp
-#
-# Although I want the AST to be decoupled from tokens for the sake of oil.
-#
-# Inconsistency: CNode has an CType type, but ANode and BNode have an id.  This
-# might be OK for now.
-
-
 class Token(object):
   def __init__(self, type, val):
     self.type = type
@@ -81,6 +57,18 @@ class Token(object):
     return _ID_TO_KIND[self.type]
 
 
+# This is word characters, - and _, as well as path name characters . and /.
+_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
+
+def EncodeTokenVal(s):
+  if '\n' in s:
+    return json.dumps(s)  # account for the fact that $ matches the newline
+  if _PLAIN_RE.match(s):
+    return s
+  else:
+    return json.dumps(s)
+
+
 _ID_TO_KIND = {}  # type: dict
 
 def LookupKind(id_):
@@ -103,18 +91,6 @@ class Id(object):
   Universal Token type and AST Node type.  Used by parsers and evaluators.
   """
   pass
-
-
-# This is word characters, - and _, as well as path name characters . and /.
-_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
-
-def EncodeTokenVal(s):
-  if '\n' in s:
-    return json.dumps(s)  # account for the fact that $ matches the newline
-  if _PLAIN_RE.match(s):
-    return s
-  else:
-    return json.dumps(s)
 
 
 # TODO: Fold in more constant tokens.
@@ -289,9 +265,9 @@ def MakeTokens(spec):
   ])
 
   # First position of var sub ${
-  # Id.VOp_Pound -- however you can't tell the difference at first!  It could
+  # Id.VOp2_Pound -- however you can't tell the difference at first!  It could
   # be an op or a name.  So it makes sense to base i on the state.
-  # Id.VOp_At
+  # Id.VOp2_At
   # But then you have AS_STAR, or Id.Arith_Star maybe
 
   spec.AddKind('VSub', [
@@ -319,7 +295,7 @@ def MakeTokens(spec):
   ])
 
   # String removal ops
-  spec.AddKind('VUnary', [
+  spec.AddKind('VOp1', [
       'Percent',       #  %
       'DPercent',      #  %%
       'Pound',         #  #
@@ -334,7 +310,7 @@ def MakeTokens(spec):
   ])
 
   # Not in POSIX, but in Bash
-  spec.AddKind('VOp', [
+  spec.AddKind('VOp2', [
       'Slash',         #  / for replacement
       'Colon',         #  : for slicing
       'LBracket',      #  [ for indexing
@@ -372,11 +348,14 @@ def MakeTokens(spec):
 
   # This kind is for Node types that are NOT tokens.
   spec.AddKind('Node', [
-     # Postfix inc/dec.  Prefix inc/dec use Id.Arith_DPlus and
-     # Id.Arith_DMinus.
-     'PostDPlus', 'PostDMinus',
-     # +1 and -1, to distinguish from infix.
-     'UnaryPlus', 'UnaryMinus',
+     # Arithmetic nodes:
+     'PostDPlus', 'PostDMinus',  # Postfix inc/dec.
+                                 # Prefix inc/dec use Arith_DPlus/Arith_DMinus.
+     'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
+
+     # Command nodes:
+     'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
+     'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
   ])
 
   # A compound word, in arith context, boolean context, or command
@@ -421,8 +400,6 @@ def MakeBool(spec):
       BArgType.STRING: [
           ('Equal', '='), ('DEqual', '=='), ('NEqual', '!='),
           ('EqualTilde', '=~'),
-          #('EQUAL', '='), ('EQUAL', '=='), ('NOT_EQUAL', '!='),
-          #('TILDE_EQUAL', '=~'),
       ],
       BArgType.FILE: _Dash(['ef', 'nt', 'ot']),
       BArgType.INT: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
@@ -440,7 +417,7 @@ def MakeBool(spec):
 ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
 
 MakeTokens(ID_SPEC)
-MakeBool(ID_SPEC)
+MakeBool(ID_SPEC)  # must come second
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes

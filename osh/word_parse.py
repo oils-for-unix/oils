@@ -172,7 +172,7 @@ class WordParser(object):
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
     self._Next(LexMode.ARITH)
     self._Peek()
-    if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp_Colon
+    if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
       begin = None  # no beginning specified
     else:
       begin = self._ReadSliceArg()
@@ -183,7 +183,7 @@ class WordParser(object):
     if self.token_type == Id.Arith_RBrace:
       return SliceVarOp(begin, None)  # No length specified
 
-    # Id.Arith_Colon is a pun for Id.VOp_Colon
+    # Id.Arith_Colon is a pun for Id.VOp2_Colon
     elif self.token_type == Id.Arith_Colon:
       self._Next(LexMode.ARITH)
       length = self._ReadSliceArg()
@@ -290,7 +290,7 @@ class WordParser(object):
 
     #print("NAME", name)
     self._Peek()  # Check for []
-    if self.token_type == Id.VOp_LBracket:
+    if self.token_type == Id.VOp2_LBracket:
       bracket_op = self._ReadSubscript()
       if not bracket_op: return None
     else:
@@ -323,7 +323,7 @@ class WordParser(object):
 
       part.test_op = TestVarOp(vtype, arg_word)
 
-    elif op_kind == Kind.VUnary:
+    elif op_kind == Kind.VOp1:
       vtype = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
@@ -333,14 +333,14 @@ class WordParser(object):
       op = StripVarOp(vtype, arg_word)
       part.transform_ops.append(op)
 
-    elif op_kind == Kind.VOp:
-      if self.token_type == Id.VOp_Slash:
+    elif op_kind == Kind.VOp2:
+      if self.token_type == Id.VOp2_Slash:
         op = self._ReadPatSubVarOp(arg_lex_mode)
         if not op: return None
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
 
-      elif self.token_type == Id.VOp_Colon:
+      elif self.token_type == Id.VOp2_Colon:
         op = self._ReadSliceVarOp()
         if not op: return None
         if self.token_type != Id.Arith_RBrace:

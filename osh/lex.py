@@ -242,9 +242,9 @@ LEXER_DEF[LexMode.DQ] = [
 _VAROP_Common = [
   _CHAR_ESCAPE,
   (r'\\\n', Id.Ignored_LineCont),
-  (r'/', Id.Lit_Slash),  # for patsub (not Id.VOp_Slash)
-  (r'#', Id.Lit_Pound),  # for patsub prefix (not Id.VUnary_Pound)
-  (r'%', Id.Lit_Percent),  # for patsdub suffix (not Id.VUnary_Percent)
+  (r'/', Id.Lit_Slash),  # for patsub (not Id.VOp2_Slash)
+  (r'#', Id.Lit_Pound),  # for patsub prefix (not Id.VOp1_Pound)
+  (r'%', Id.Lit_Percent),  # for patsdub suffix (not Id.VOp1_Percent)
   (r'\}', Id.Right_VarSub),  # For var sub "${a}"
 ]
 
@@ -316,21 +316,21 @@ LEXER_DEF[LexMode.VS_2] = [
   (r':\+', Id.VTest_ColonPlus),
   (r'\+',  Id.VTest_Plus),
 
-  (r'%',  Id.VUnary_Percent),
-  (r'%%', Id.VUnary_DPercent),
-  (r'#',  Id.VUnary_Pound),
-  (r'##', Id.VUnary_DPound),
+  (r'%',  Id.VOp1_Percent),
+  (r'%%', Id.VOp1_DPercent),
+  (r'#',  Id.VOp1_Pound),
+  (r'##', Id.VOp1_DPound),
 
-  (r'\^',   Id.VUnary_Caret),
-  (r'\^\^', Id.VUnary_DCaret),
-  (r',',    Id.VUnary_Comma),
-  (r',,',   Id.VUnary_DComma),
+  (r'\^',   Id.VOp1_Caret),
+  (r'\^\^', Id.VOp1_DCaret),
+  (r',',    Id.VOp1_Comma),
+  (r',,',   Id.VOp1_DComma),
 
-  (r'/', Id.VOp_Slash),
-  (r':', Id.VOp_Colon),  # slicing
+  (r'/', Id.VOp2_Slash),
+  (r':', Id.VOp2_Colon),  # slicing
 
-  (r'\[', Id.VOp_LBracket),
-  (r'\]', Id.VOp_RBracket),
+  (r'\[', Id.VOp2_LBracket),
+  (r'\]', Id.VOp2_RBracket),
 
   (r'\}', Id.Right_VarSub),
 

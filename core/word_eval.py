@@ -327,7 +327,7 @@ class _Evaluator(object):
           self._AddErrorContext("Can't index non-array with *")
           return False, None
 
-      elif vtype == Id.VOp_LBracket:
+      elif vtype == Id.VOp2_LBracket:
         array_ok = True
         is_array, a = val.AsArray()
         if is_array:
@@ -447,13 +447,13 @@ class _Evaluator(object):
         val = Value.FromString(str(length))
 
       # prefix strip
-      elif op.vtype == Id.VUnary_DPound:
+      elif op.vtype == Id.VOp1_DPound:
         pass
-      elif op.vtype == Id.VUnary_Pound:
+      elif op.vtype == Id.VOp1_Pound:
         pass
 
       # suffix strip
-      elif op.vtype == Id.VUnary_Percent:
+      elif op.vtype == Id.VOp1_Percent:
         print(op.words)
         argv = []
         for w in op.words:
@@ -476,18 +476,18 @@ class _Evaluator(object):
             s = s[:-len(suffix)]
             val = Value.FromString(s)
 
-      elif op.vtype == Id.VUnary_DPercent:
+      elif op.vtype == Id.VOp1_DPercent:
         pass
 
       # Patsub, vectorized
-      elif op.vtype == Id.VOp_Slash:
+      elif op.vtype == Id.VOp2_Slash:
         pass
 
       # Either string slicing or array slicing.  However string slicing has a
       # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
       #
       # Or maybe have a different operator for byte slice and char slice.
-      elif op.vtype == Id.VOp_Colon:
+      elif op.vtype == Id.VOp2_Colon:
         pass
 
       else:

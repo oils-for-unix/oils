@@ -117,7 +117,7 @@ class WordParserTest(unittest.TestCase):
 
     w = _assertReadWord(self, '${var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VUnary_Pound, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VOp1_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${!var#prefix}')
     self.assertEqual(1, len(w.parts))
@@ -249,14 +249,14 @@ class WordParserTest(unittest.TestCase):
 
   def testUnary(self):
     w = _assertReadWord(self, '${var#}')
-    self.assertTrue(Id.VUnary_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).vtype)
     w = _assertReadWord(self, '${var#prefix}')
-    self.assertTrue(Id.VUnary_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${var##}')
-    self.assertTrue(Id.VUnary_DPound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).vtype)
     w = _assertReadWord(self, '${var##prefix}')
-    self.assertTrue(Id.VUnary_DPound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).vtype)
 
     w = _assertReadWord(self, '${var%suffix}')
     w = _assertReadWord(self, '${var%%suffix}')

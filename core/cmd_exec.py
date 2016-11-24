@@ -68,7 +68,7 @@ from core import util
 
 from core.builtin import EBuiltin
 from core.cmd_node import ListNode, RedirectType
-from core.tokens import CType, Id
+from core.tokens import Id
 from core.process import (
     FdState, Pipeline, Process,
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
@@ -504,7 +504,7 @@ class Executor(object):
     """
     Assume we will run the node in another process.  Return a process.
     """
-    if node.type == CType.Command:
+    if node.type == Id.Node_Command:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
         err = self.ev.Error()
@@ -642,7 +642,7 @@ class Executor(object):
 
     # TODO: Only eval argv[0] once.  It can have side effects!
 
-    if node.type == CType.Command:
+    if node.type == Id.Node_Command:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
         err = self.ev.Error()
@@ -685,27 +685,27 @@ class Executor(object):
         else:
           self.fd_state.ForgetAll()
 
-    elif node.type == CType.Pipeline:
+    elif node.type == Id.Op_Pipe:
       status, cflow = self._RunPipeline(node)
 
-    elif node.type == CType.Subshell:
+    elif node.type == Id.Node_Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
       p = self._GetProcessForNode(node.children[0])
       status = p.Run()
 
-    elif node.type == CType.DBracket:
+    elif node.type == Id.KW_DLeftBracket:
       ok, b = bool_eval.BEval(node.bnode, self.ev)
       status = 0 if b else 1
       # TODO: if not OK, then turn it into an exception
 
-    elif node.type == CType.DParen:
+    elif node.type == Id.Op_DLeftParen:
       i = arith_eval.ArithEval(node.anode, self.ev)
       # Negate the value: non-zero in arithmetic is true, which is zero in
       # shell land
       status = 0 if i != 0 else 1
       # TODO: if not OK, then turn it into an exception
 
-    elif node.type == CType.Assign:
+    elif node.type == Id.Node_Assign:
       # TODO: Respect flags: readonly, export, sametype, etc.
       # Just pass the Value
       pairs = []
@@ -727,14 +727,14 @@ class Executor(object):
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
 
-    elif node.type == CType.List:
+    elif node.type == Id.Op_Semi:
       status = 0  # for empty list
       for child in node.children:
         status, cflow = self.Execute(child)  # last status wins
         if cflow in (EBuiltin.BREAK, EBuiltin.CONTINUE):
           break
 
-    elif node.type == CType.AndOr:
+    elif node.type == Id.Node_AndOr:
       #print(node.children)
       left, right = node.children
       status, cflow = self.Execute(left)
@@ -748,7 +748,7 @@ class Executor(object):
       else:
         raise AssertionError
 
-    elif node.type == CType.While:
+    elif node.type == Id.KW_While:
       cond, action = node.children
 
       while True:
@@ -762,7 +762,7 @@ class Executor(object):
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
 
-    elif node.type == CType.For:
+    elif node.type == Id.Node_ForEach:
       iter_name = node.iter_name
       if node.do_arg_iter:
         iter_list = self.mem.GetArgv()
@@ -787,11 +787,11 @@ class Executor(object):
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
 
-    elif node.type == CType.FuncDef:
+    elif node.type == Id.Node_FuncDef:
       self.funcs[node.name] = node
       status = 0
 
-    elif node.type == CType.If:
+    elif node.type == Id.KW_If:
       i = 0
       while i < len(node.children):
         cond = node.children[i]
@@ -802,10 +802,10 @@ class Executor(object):
           break
         i += 2
 
-    elif node.type == CType.ELSE_TRUE:
+    elif node.type == Id.Node_NoOp:
       status = 0  # make it true
 
-    elif node.type == CType.Case:
+    elif node.type == Id.KW_Case:
       raise NotImplementedError
 
     else:

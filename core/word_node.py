@@ -714,7 +714,7 @@ class TokenWord(Word):
     # (( a=1+2 ))
     # ${a[ 1+2 ]}
     # ${a : 1+2 : 1+2}
-    #if self.token.type in (Id.Right_Arith_SUB, Id.VOp_RBracket, Id.VOp_Colon):
+    #if self.token.type in (Id.Right_Arith_SUB, Id.VOp2_RBracket, Id.VOp2_Colon):
     #  return Id.Eof_Arith
     return self.token.type  # e.g. AS_PLUS
 
@@ -733,13 +733,13 @@ class _VarOp(object):
   def __init__(self, vtype):
     self.vtype = vtype  # type: TOKEN
                         # I think tokens are better.
-                        # INDEX should be [ - Id.VOp_LBracket
+                        # INDEX should be [ - Id.VOp2_LBracket
                         # ARRAY should be @ / * - VS_AT or AS_STAR ?
                         # LENGTH should be # - VS_POUND
                         #
-                        # unary # - Id.VUnary_Pound, etc.
-                        # SLICE: Id.VOp_Colon
-                        # PATSUB: Id.VOp_Slash
+                        # unary # - Id.VOp1_Pound, etc.
+                        # SLICE: Id.VOp2_Colon
+                        # PATSUB: Id.VOp2_Slash
 
   def PrintLine(self, f):
     raise NotImplementedError
@@ -754,7 +754,7 @@ class _VarOp(object):
 class IndexVarOp(_VarOp):
   """ $a[i+1] """
   def __init__(self, index_expr):
-    _VarOp.__init__(self, Id.VOp_LBracket)
+    _VarOp.__init__(self, Id.VOp2_LBracket)
     self.index_expr = index_expr  # type: _ANode
 
   def PrintLine(self, f):
@@ -816,7 +816,7 @@ class StripVarOp(_VarOp):
 class SliceVarOp(_VarOp):
   """ ${a : i+1 : 3}  or  ${a[@] : i+1 : 3} or ${a : 0}"""
   def __init__(self, begin, length):
-    _VarOp.__init__(self, Id.VOp_Colon)
+    _VarOp.__init__(self, Id.VOp2_Colon)
     self.begin = begin  # type: _ANode
     # None means slice until end
     self.length = length  # Optional[_ANode]
@@ -828,7 +828,7 @@ class SliceVarOp(_VarOp):
 class PatSubVarOp(_VarOp):
   """ ${a/foo*/foo} """
   def __init__(self, pat, replace, do_all, do_prefix, do_suffix):
-    _VarOp.__init__(self, Id.VOp_Slash)
+    _VarOp.__init__(self, Id.VOp2_Slash)
     # Can be a glob pattern
     self.pat = pat  # type: CompoundWord
     self.replace = replace  # type: Optional[CompoundWord]
