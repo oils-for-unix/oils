@@ -632,7 +632,7 @@ class _Evaluator(object):
     try:
       integer = int(s)
     except ValueError:
-      print("%r does not look like an integer" % s)
+      print("Invalid integer constant %r" % s)
       return False, 0
     return True, integer
 

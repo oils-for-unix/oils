@@ -27,15 +27,17 @@ def IdName(t):
   return _ID_NAMES[t]
 
 
-class Kind(object):
-  """Token kind is filled in dynamically."""
+class Id(object):
+  """Universal Token, Word, and Node type.
+
+  Used all over the place, but in particular the evaluator must consider all
+  Ids.
+  """
   pass
 
 
-class Id(object):
-  """
-  Universal Token type and AST Node type.  Used by parsers and evaluators.
-  """
+class Kind(object):
+  """A coarser version of Id, used to make parsing decisions."""
   pass
 
 
@@ -53,15 +55,15 @@ class IdSpec(object):
 
     self.kind_sizes = []  # stats
 
-    self.bool_lexer_pairs = []  # lexer values
+    self.lexer_pairs = {}  # Kind -> [(regex, Id), ...]
     self.bool_ops = bool_ops  # table of runtime values
 
     # Incremented on each method call
     self.token_index = 0
     self.kind_index = 0
 
-  def BoolLexerPairs(self):
-    return self.bool_lexer_pairs
+  def LexerPairs(self, kind):
+    return self.lexer_pairs[kind]
 
   def _AddId(self, token_name):
     self.token_index += 1  # leave out 0 I guess?
@@ -74,17 +76,31 @@ class IdSpec(object):
     self.kind_index += 1
 
   def AddKind(self, kind_name, tokens):
-    # TODO: Tokens can be pairs, and then we can register them as
-    # spec.LexerPairs(Kind.BoolUnary) spec.LexerPairs(Kind.VTest)
     assert isinstance(tokens, list), tokens
 
-    for t in tokens:
-      token_name = '%s_%s' % (kind_name, t)
+    for name in tokens:
+      token_name = '%s_%s' % (kind_name, name)
       self._AddId(token_name)
 
     # Must be after adding Id
     self._AddKind(kind_name)
     self.kind_sizes.append(len(tokens))  # debug info
+
+  def AddKindPairs(self, kind_name, pairs):
+    assert isinstance(pairs, list), pairs
+
+    lexer_pairs = []
+    for name, char_pat in pairs:
+      token_name = '%s_%s' % (kind_name, name)
+      self._AddId(token_name)
+      # After _AddId
+      lexer_pairs.append((re.escape(char_pat), self.token_index))
+
+    self.lexer_pairs[self.kind_index] = lexer_pairs
+
+    # Must be after adding Id
+    self._AddKind(kind_name)
+    self.kind_sizes.append(len(pairs))  # debug info
 
   def AddBoolKind(self, arity, arg_type_pairs):
     """
@@ -92,13 +108,12 @@ class IdSpec(object):
     """
     if arity == 1:
       kind_name = 'BoolUnary'
-      #kind2 = 'UNARY'
     elif arity == 2:
       kind_name = 'BoolBinary'
-      #kind2 = 'BINARY'
     else:
       raise AssertionError(arity)
 
+    lexer_pairs = []
     num_tokens = 0
     for arg_type, pairs in arg_type_pairs.items():
       #print(arg_type, pairs)
@@ -110,9 +125,11 @@ class IdSpec(object):
         # not logical
         self.AddBoolOp(self.token_index, False, arity, arg_type)
         # After _AddId.
-        self.bool_lexer_pairs.append((re.escape(char_pat), self.token_index))
+        lexer_pairs.append((re.escape(char_pat), self.token_index))
 
       num_tokens += len(pairs)
+
+    self.lexer_pairs[self.kind_index] = lexer_pairs
 
     # Must do this after _AddId()
     self._AddKind(kind_name)
@@ -124,7 +141,6 @@ class IdSpec(object):
 
 def MakeTokens(spec):
   # TODO: Unknown_Tok is OK, but Undefined_Id is better
-
   spec.AddKind('Undefined', ['Tok'])  # for initial state
   spec.AddKind('Unknown',   ['Tok'])  # for when nothing matches
 
@@ -139,6 +155,7 @@ def MakeTokens(spec):
       'Chars', 'VarLike', 'Other', 'EscapedChar',
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
+      'DRightBracket',     # ]] that matches [[, NOT a keyword
       'Tilde',             # tilde expansion
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
@@ -229,67 +246,72 @@ def MakeTokens(spec):
       'QMark',   # $?
   ])
 
-  spec.AddKind('VTest', [
-      'ColonHyphen',  #  :-
-      'Hyphen',       #   -
-      'ColonEquals',  #  :=
-      'Equals',       #   =
-      'ColonQMark',   #  :?
-      'QMark',        #   ?
-      'ColonPlus',    #  :+
-      'Plus',         #   +
+  spec.AddKindPairs('VTest', [
+      ('ColonHyphen',   ':-'),
+      ('Hyphen',        '-' ),
+      ('ColonEquals',   ':='),
+      ('Equals',        '=' ),
+      ('ColonQMark',    ':?'),
+      ('QMark',         '?' ),
+      ('ColonPlus',     ':+'),
+      ('Plus',          '+' ),
   ])
 
   # String removal ops
-  spec.AddKind('VOp1', [
-      'Percent',       #  %
-      'DPercent',      #  %%
-      'Pound',         #  #
-      'DPound',        #  ##
-
-      # Case ops, in bash.  A         t least parse them.  Execution might
-      # require unicode stuff         .
-      'Caret',         #  ^           
-      'DCaret',        #  ^^
-      'Comma',         #  ,
-      'DComma',        #  ,,
+  spec.AddKindPairs('VOp1', [
+      ('Percent',       '%' ),
+      ('DPercent',      '%%'),
+      ('Pound',         '#' ),
+      ('DPound',        '##'),
+      # Case ops, in bash.  At least parse them.  Execution might require
+      # unicode stuff.
+      ('Caret',         '^' ),
+      ('DCaret',        '^^'),
+      ('Comma',         ',' ),
+      ('DComma',        ',,'),
   ])
 
   # Not in POSIX, but in Bash
-  spec.AddKind('VOp2', [
-      'Slash',         #  / for replacement
-      'Colon',         #  : for slicing
-      'LBracket',      #  [ for indexing
-      'RBracket',      #  ] for indexing
+  spec.AddKindPairs('VOp2', [
+      ('Slash',         '/'),  #  / for replacement
+      ('Colon',         ':'),  #  : for slicing
+      ('LBracket',      '['),  #  [ for indexing
+      ('RBracket',      ']'),  #  ] for indexing
   ])
 
   # Operators
-  spec.AddKind('Arith', [
-      'Semi',   # ternary for loop only
-      'Comma',  # function call and C comma operator
-      'Plus', 'Minus', 'Star', 'Slash', 'Percent',
-      'DPlus', 'DMinus', 'DStar',
-      'LParen', 'RParen',  # grouping and function call extension
-      'LBracket', 'RBracket',  # array and assoc array subscript
-      'RBrace',  # for end of var sub
-      # Only for ${a[@]} -- not valid in any other arith context
-      'At',
+  spec.AddKindPairs('Arith', [
+      ('Semi', ';'),   # ternary for loop only
+      ('Comma', ','),  # function call and C comma operator
+      ('Plus', '+'), ('Minus', '-'), ('Star', '*'), ('Slash', '/'),
+      ('Percent', '%'),
+      ('DPlus', '++'), ('DMinus', '--'), ('DStar', '**'),
+      ('LParen', '('), ('RParen', ')'),  # grouping and function call extension
+      ('LBracket', '['), ('RBracket', ']'),  # array and assoc array subscript
+      ('RBrace', '}'),  # for end of var sub
+
+      # SPECIAL CASE for ${a[@]}.  The expression in the [] is either and
+      # arithmetic expression or @ or *.  In the ArithParser, we disallow this
+      # token everywhere.  Arith_Star serves double duty for ${a[*]}
+      ('At', '@'),
 
       # Logical Ops
-      'QMark',  'Colon',  # Ternary Op: a < b ? 0 : 1
-      'LessEqual', 'Less', 'GreatEqual', 'Great', 'DEqual', 'NEqual',
-      'DAmp', 'DPipe', 'Bang',  # && || !
+      ('QMark', '?'), ('Colon', ':'), # Ternary Op: a < b ? 0 : 1
+      ('LessEqual', '<='), ('Less', '<'), ('GreatEqual', '>='), ('Great', '>'),
+      ('DEqual', '=='), ('NEqual', '!='),
+      ('DAmp', '&&'), ('DPipe', '||'), ('Bang', '!'),
 
       # Bitwise ops
-      'DGreat', 'DLess',  # >> <<
-      'Amp', 'Pipe', 'Caret', 'Tilde',  #  & | ^ ~ for bits
+      ('DGreat', '>>'), ('DLess', '<<'),
+      ('Amp', '&'), ('Pipe', '|'), ('Caret', '^'), ('Tilde', '~'),
 
       # 11 mutating operators:  =  +=  -=  etc.
-      'Equal',
-      'PlusEqual', 'MinusEqual', 'StarEqual', 'SlashEqual',
-      'PercentEqual',
-      'DGreatEqual', 'DLessEqual', 'AmpEqual', 'PipeEqual',
-      'CaretEqual'
+      ('Equal', '='),
+      ('PlusEqual', '+='), ('MinusEqual', '-='), ('StarEqual', '*='),
+      ('SlashEqual', '/='), ('PercentEqual', '%='),
+      ('DGreatEqual', '>>='), ('DLessEqual', '<<='),
+      ('AmpEqual', '&='), ('PipeEqual', '|='),
+      ('CaretEqual', '^=')
   ])
 
   # This kind is for Node types that are NOT tokens.
@@ -304,14 +326,16 @@ def MakeTokens(spec):
      'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
   ])
 
-  # A compound word, in arith context, boolean context, or command
-  # context.  Also used as a CommandKind.
+  # A compound word, in arith context, boolean context, or command context.
   # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
   spec.AddKind('Word', ['Compound'])
 
+  # NOTE: Not doing AddKindPairs() here because oil will have a different set
+  # of keywords.  It will probably have for/in/while/until/case/if/else/elif,
+  # and then func/proc.
   spec.AddKind('KW', [
-      'None', 
-      'DRightBracket', 'DLeftBracket', 'Bang', 
+      'DLeftBracket',
+      'Bang', 
       'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
   ])

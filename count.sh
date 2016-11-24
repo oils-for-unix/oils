@@ -41,14 +41,15 @@ all() {
 
 # Just the parser
 parser() {
+  echo 'Lexer/Parser'
   wc -l osh/{*_parse.py,lex.py,parse_lib.py} | sort -n
   echo
 
-  # Data
-  wc -l core/{*_node.py,tokens.py} | sort -n
+  echo 'AST and IDs'
+  wc -l core/{*_node,tokens,id_kind}.py | sort -n
   echo
 
-  # Infrastructure
+  echo 'Common Algorithms'
   wc -l core/{tdop,lexer}.py | sort -n
 }
 

@@ -583,7 +583,7 @@ class CompoundWord(Word):
       return Id.Word_Compound
 
     # This is outside the BoolUnary/BoolBinary namespace, but works the same.
-    if token_type in (Id.KW_Bang, Id.KW_DRightBracket):
+    if token_type in (Id.KW_Bang, Id.Lit_DRightBracket):
       return token_type
 
     token_kind = LookupKind(token_type)
@@ -595,11 +595,11 @@ class CompoundWord(Word):
   def CommandId(self):
     # has to be a single literal part
     if len(self.parts) != 1:
-      return Id.KW_None
+      return Id.Word_Compound
 
     token_type = self.parts[0].LiteralId()
     if token_type == Id.Undefined_Tok:
-      return Id.KW_None
+      return Id.Word_Compound
 
     elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace):
       return token_type
@@ -608,9 +608,11 @@ class CompoundWord(Word):
     if token_kind == Kind.KW:
       return token_type
 
-    return Id.KW_None
+    return Id.Word_Compound
 
   def CommandKind(self):
+    # NOTE: This is a bit inconsistent with CommandId, because we never retur
+    # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.
     return Kind.Word
 
   def EvalStatic(self):

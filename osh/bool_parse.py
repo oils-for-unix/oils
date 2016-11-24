@@ -132,7 +132,7 @@ class BoolParser(object):
 
   def AtEnd(self):
     #print('B_ID', IdName(self.b_id), self.cur_word)
-    return self.b_id == Id.KW_DRightBracket
+    return self.b_id == Id.Lit_DRightBracket
 
   def _LookAhead(self):
     n = len(self.words)

@@ -53,12 +53,14 @@ class TokensTest(unittest.TestCase):
     t = Token(Id.BoolBinary_DEqual, '==')
     self.assertEqual(Kind.BoolBinary, t.Kind())
 
-  def testBoolLexerPairs(self):
-    lookup = dict(id_kind.ID_SPEC.BoolLexerPairs())
+  def testLexerPairs(self):
+    lookup = dict(id_kind.ID_SPEC.LexerPairs(Kind.BoolUnary))
     print(lookup)
     self.assertEqual(Id.BoolUnary_a, lookup['\-a'])
     self.assertEqual(Id.BoolUnary_z, lookup['\-z'])
-    self.assertEqual(Id.BoolBinary_eq, lookup['\-eq'])
+
+    lookup2 = dict(id_kind.ID_SPEC.LexerPairs(Kind.BoolBinary))
+    self.assertEqual(Id.BoolBinary_eq, lookup2['\-eq'])
 
 
 def PrintBoolTable():
