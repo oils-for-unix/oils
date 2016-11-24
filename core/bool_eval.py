@@ -11,6 +11,8 @@ bool_eval.py
 TODO: Turn it into a BoolEvalutor class
 """
 
+import os
+
 try:
   from core import libc
 except ImportError:

@@ -165,26 +165,11 @@ class BoolParser(object):
 
   def ParseExpr(self):
     """
+    Iterative:
     Expr    : Term (OR Term)*
 
-    Right associative:
-
+    Right recursion:
     Expr    : Term (OR Expr)?
-
-    Do you want this?  I think it is fine.  It's right recursion, not left
-    recursion.  I want left associativity though.
-
-    Left associative:
-
-    Expr    : Expr OR Term | Term
-    # http://programmers.stackexchange.com/questions/260123/bnf-parsing-rule-for-left-associativity
-
-    This is left recursive.  Answer: look ahead for OR.  If it's there, parse
-    Expr.  Otherwise parse term.
-
-    Another option:
-    You can just do it iteratively, accumulate nodes.  And then add the end,
-    make
     """
     left = self.ParseTerm()
     if self.b_id == BType.LOGICAL_BINARY_OR:

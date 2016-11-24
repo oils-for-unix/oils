@@ -27,9 +27,6 @@ from core import util
 # Word
 #
 
-EAssignKeyword = util.Enum('EAssignKeyword',
-    'NONE DECLARE EXPORT LOCAL READONLY'.split())
-
 # http://stackoverflow.com/questions/4419704/differences-between-declare-typeset-and-local-variable-in-bash
 # "local and declare are mostly identical and take all the same arguments with
 # two exceptions: local will fail if not used within a function, and local with
@@ -120,10 +117,12 @@ class WordPart(object):
     """
     return -2
 
-  def IsLitToken(self, token_type):
-    """Returns whether the part is a literal token.
+  def LiteralId(self):
     """
-    return False
+    If the WordPart consists of a single literal token, return its Id.  Used
+    for Id.KW_For, or Id.RBrace, etc.
+    """
+    return Id.Undefined_Tok  # unequal to any other Id
 
   def IsSubst(self):
     """
@@ -233,8 +232,8 @@ class LiteralPart(_LiteralPartBase):
     else:
       return False
 
-  def IsLitToken(self, token_type):
-    return self.token.type == token_type
+  def LiteralId(self):
+    return self.token.type
 
   def TestLiteralForSlash(self):
     return self.token.val.find('/')
@@ -269,7 +268,7 @@ class EscapedLiteralPart(_LiteralPartBase):
     # I guess escaped literal is fine, like \E ?
     return True, self.token.val[1:], True
 
-  # IsVarLike, IsLitToken, TestLiteralForSlash: default values.  SplitAtIndex?
+  # IsVarLike, TestLiteralForSlash, LiteralId: default values.  SplitAtIndex?
   # Only exists on regular LiteralPart
 
 
@@ -529,7 +528,6 @@ class CompoundWord(Word):
   def __init__(self, parts=None):
     Word.__init__(self)
     self.parts = parts or []  # public, mutable
-    self.c_id = Id.KW_Undefined
 
   def __eq__(self, other):
     return self.parts == other.parts
@@ -553,68 +551,45 @@ class CompoundWord(Word):
     else:
       return None, None
 
+  def ArithId(self):
+    return Id.Node_ArithWord
+
+  def AssignmentBuiltinId(self):
+    """Tests if word is an assignment builtin."""
+    # has to be a single literal part
+    if len(self.parts) != 1:
+      return Id.Assign_None
+
+    token_type = self.parts[0].LiteralId()
+    if token_type == Id.Undefined_Tok:
+      return Id.Assign_None
+
+    token_kind = tokens.LookupTokenKind(token_type)
+    if token_kind == TokenKind.Assign:
+      return token_type
+
+    return Id.Assign_None
+
   def CommandKind(self):
     return CKind.CWord
 
   def CommandId(self):
-    """Returns an Id for the word."""
-    if self.c_id == Id.KW_Undefined:  # not computed yet
+    # has to be a single literal part
+    if len(self.parts) != 1:
+      return Id.KW_None
 
-      # has to be a single literal part
-      if len(self.parts) != 1:
-        self.c_id = Id.KW_None
-        return self.c_id
+    token_type = self.parts[0].LiteralId()
+    if token_type == Id.Undefined_Tok:
+      return Id.KW_None
 
-      lit = self.parts[0].UnquotedLiteralValue()
-      # TODO: These could be checked by type instead of contents.  "for" must
-      # be checked by contents because we can't distinguish is from fooFOOBAR.
-      if lit == "{":
-        self.c_id = Id.Lit_LBrace
-      elif lit == "}":
-        self.c_id = Id.Lit_RBrace
-      elif lit == "[[":
-        self.c_id = Id.Lit_DLeftBracket
-      elif lit == "]]":
-        self.c_id = Id.Lit_DRightBracket
+    elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace):
+      return token_type
 
-      elif lit == "!":  # Could distinguish this
-        self.c_id = Id.KW_Bang
-      elif lit == "for":
-        self.c_id = Id.KW_For
-      elif lit == "case":
-        self.c_id = Id.KW_Case
-      elif lit == "if":
-        self.c_id = Id.KW_If
-      elif lit == "fi":
-        self.c_id = Id.KW_Fi
-      elif lit == "then":
-        self.c_id = Id.KW_Then
-      elif lit == "elif":
-        self.c_id = Id.KW_Elif
-      elif lit == "else":
-        self.c_id = Id.KW_Else
-      elif lit == "while":
-        self.c_id = Id.KW_While
-      elif lit == "until":
-        self.c_id = Id.KW_Until
-      elif lit == "do":
-        self.c_id = Id.KW_Do
-      elif lit == "done":
-        self.c_id = Id.KW_Done
-      elif lit == "in":
-        self.c_id = Id.KW_In
-      elif lit == "esac":
-        self.c_id = Id.KW_Esac
-      elif lit == "function":
-        self.c_id = Id.KW_Function
+    token_kind = tokens.LookupTokenKind(token_type)
+    if token_kind == TokenKind.KW:
+      return token_type
 
-      else:
-        self.c_id = Id.KW_None
-
-    return self.c_id
-
-  def ArithId(self):
-    return Id.Node_ArithWord
+    return Id.KW_None
 
   def BoolId(self):
     if len(self.parts) != 1:
@@ -699,27 +674,6 @@ class CompoundWord(Word):
       if part.IsArrayLiteral():
         return True
     return False
-
-  # TODO for optimization: Put all the keywords under LIT, and then if there is
-  # exactly one part, test against the token type of Id.Lit_For,
-  # Id.Lit_Left_DBRACKET, etc.
-  def ResolveAssignmentBuiltin(self):
-    """Tests if word is an assignment builtin."""
-    # has to be a single literal part
-    if len(self.parts) != 1:
-      return EAssignKeyword.NONE
-
-    lit = self.parts[0].UnquotedLiteralValue()
-    if lit == "declare":
-      return EAssignKeyword.DECLARE
-    if lit == "export":
-      return EAssignKeyword.EXPORT
-    if lit == "local":
-      return EAssignKeyword.LOCAL
-    if lit == "readonly":
-      return EAssignKeyword.READONLY
-
-    return EAssignKeyword.NONE
 
   def LooksLikeAssignment(self):
     if len(self.parts) == 0:

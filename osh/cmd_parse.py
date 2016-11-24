@@ -17,8 +17,7 @@ from core.cmd_node import (
     AndOrNode, ForNode, ForExpressionNode, WhileNode, UntilNode,
     FunctionDefNode, IfNode, CaseNode)
 from core.word_node import (
-    EAssignScope, EAssignKeyword, EAssignFlags,
-    LiteralPart, CompoundWord, TildeSubPart)
+    EAssignScope, EAssignFlags, LiteralPart, CompoundWord, TildeSubPart)
 from core.tokens import Token, Id, CKind
 
 from osh.lex import LexMode
@@ -189,7 +188,7 @@ class CommandParser(object):
     """
     if not word.parts:
       return None
-    if not word.parts[0].IsLitToken(Id.Lit_Tilde):
+    if word.parts[0].LiteralId() != Id.Lit_Tilde:
       return None
 
     prefix = ''
@@ -600,23 +599,23 @@ class CommandParser(object):
       node.bindings = prefix_bindings
       return node
 
-    assign_kw = suffix_words[0].ResolveAssignmentBuiltin()
+    assign_kw = suffix_words[0].AssignmentBuiltinId()
 
     assign_flags = 0
     assign_scope = EAssignScope.GLOBAL
 
-    if assign_kw in (EAssignKeyword.DECLARE, EAssignKeyword.LOCAL):
+    if assign_kw in (Id.Assign_Declare, Id.Assign_Local):
       assign_scope = EAssignScope.LOCAL
       # TODO: Parse declare flags.  Hm is it done before or after evaluation?
 
-    elif assign_kw == EAssignKeyword.EXPORT:  # global
+    elif assign_kw == Id.Assign_Export:  # global
       assign_flags |= 1 << EAssignFlags.EXPORT.value
 
-    elif assign_kw == EAssignKeyword.READONLY:  # global
+    elif assign_kw == Id.Assign_Readonly:  # global
       assign_flags |= 1 << EAssignFlags.READONLY.value
 
     else:  # ls foo  or  FOO=bar ls foo
-      assert assign_kw == EAssignKeyword.NONE
+      assert assign_kw == Id.Assign_None
       return self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
 
     if redirects:
@@ -1150,7 +1149,7 @@ class CommandParser(object):
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
 
-    if self.c_id == Id.Lit_DLeftBracket:
+    if self.c_id == Id.KW_DLeftBracket:
       node = self.ParseDBracket()
       if not node: return None
       return node
@@ -1264,6 +1263,9 @@ class CommandParser(object):
 
     and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline
                      | pipeline
+
+    TODO: Make it left recursive -- results are wrong otherwise.  I guses you
+    have to do it iteratively, and add operators?
     """
     left = self.ParsePipeline()
     if not left:

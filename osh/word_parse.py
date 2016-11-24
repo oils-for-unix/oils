@@ -218,13 +218,14 @@ class WordParser(object):
         pat.parts.append(p)
 
     # Check for other modifiers
-    if pat.parts[0].IsLitToken(Id.Lit_Slash):
+    lit_id = pat.parts[0].LiteralId()
+    if lit_id == Id.Lit_Slash:
       do_all = True
       pat.parts.pop(0)
-    elif pat.parts[0].IsLitToken(Id.Lit_Percent):
+    elif lit_id == Id.Lit_Percent:
       do_prefix = True
       pat.parts.pop(0)
-    elif pat.parts[0].IsLitToken(Id.Lit_Pound):
+    elif lit_id == Id.Lit_Pound:
       do_suffix = True
       pat.parts.pop(0)
 
@@ -896,7 +897,8 @@ class WordParser(object):
       if allow_done and self.token_type == eof_type:
         done = True  # e.g. for ${}
 
-      elif self.token_kind == TokenKind.Lit:
+      # Keywords like "for" are treated like literals
+      elif self.token_kind in (TokenKind.Lit, TokenKind.KW, TokenKind.Assign):
         if self.token_type == Id.Lit_EscapedChar:
           part = EscapedLiteralPart(self.cur_token)
         else:
@@ -1061,7 +1063,9 @@ class WordParser(object):
       self._Next(lex_mode)
       return None, True  # tell Read() to try again
 
-    elif self.token_kind in (TokenKind.VSub, TokenKind.Lit, TokenKind.Left):
+    elif self.token_kind in (
+        TokenKind.VSub, TokenKind.Lit, TokenKind.Left, TokenKind.KW,
+        TokenKind.Assign):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
       # LexMode.COMMENT and read until end of line.  (TODO: How to add
       # comments to AST?)

@@ -60,16 +60,15 @@ import os
 import stat
 import sys
 
-from core.cmd_node import ListNode, RedirectType
-
 from core import arith_eval
 from core import bool_eval
+from core import completion
 from core import word_eval
-from core.tokens import CType
 from core import util
 
-from core import completion
 from core.builtin import EBuiltin
+from core.cmd_node import ListNode, RedirectType
+from core.tokens import CType, Id
 from core.process import (
     FdState, Pipeline, Process,
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
@@ -101,7 +100,7 @@ class Mem(object):
     self.top = {}  # string -> (flags, Value)
     self.var_stack = [self.top]
     self.argv0 = argv
-    self.argv_stack = [argv]  # TODO: Initialize to shell arg!
+    self.argv_stack = [argv]
     self.last_status = 0  # Mutable public variable
 
   def Push(self, argv):
@@ -742,10 +741,10 @@ class Executor(object):
 
       if node.op == Id.Op_OrIf:
         if status != 0:
-          status = self.Execute(right)
+          status, cflow = self.Execute(right)
       elif node.op == Id.Op_AndIf:
         if status == 0:
-          status = self.Execute(right)
+          status, cflow = self.Execute(right)
       else:
         raise AssertionError
 

@@ -12,18 +12,10 @@ TODO:
 from core.tokens import Id
 from core import util
 
-# In oil, I hope to have:
-# COMMAND
-# EXPRESSION (takes place of ARITH, VS_UNQ_ARG, VS_DQ_ARG)
-# SQ  RAW_SQ  DQ  RAW_DQ
-# VS    -- a single state here?  Or switches into expression state, because }
-#          is an operator
-# Problem: DICT_KEY might be a different state, to accept either a bare word
-# foo, or an expression (X=a+2), which is allowed in shell.  Python doesn't
-# allowed unquoted words, but we want to.
-
-# - BASH_REGEX -- compatibility mode, %parse-compat bash-regex
-
+# Thirteen lexer modes for osh.
+# Possible additional modes:
+# - extended glob?
+# - nested backticks: echo `echo \`echo foo\` bar`
 LexMode = util.Enum('LexMode', """
 NONE
 COMMENT
@@ -35,6 +27,16 @@ VS_1 VS_2 VS_ARG_UNQ VS_ARG_DQ
 BASH_REGEX
 BASH_REGEX_CHARS
 """.split())
+
+# In oil, I hope to have these lexer modes:
+# COMMAND
+# EXPRESSION (takes place of ARITH, VS_UNQ_ARG, VS_DQ_ARG)
+# SQ  RAW_SQ  DQ  RAW_DQ
+# VS    -- a single state here?  Or switches into expression state, because }
+#          is an operator
+# Problem: DICT_KEY might be a different state, to accept either a bare word
+# foo, or an expression (X=a+2), which is allowed in shell.  Python doesn't
+# allowed unquoted words, but we want to.
 
 # TODO: There are 4 shared groups here.  I think you should test if that
 # structure should be preserved through re2c.  Do a benchmark.
@@ -84,7 +86,7 @@ _LEFT_UNQUOTED = [
 ]
 
 # Constructs used:
-# character classes [] with simple ranges and negation, +, *, \n, \0
+# Character classes [] with simple ranges and negation, +, *, \n, \0
 # It would be nice to express this as CRE ... ?  And then compile to re2c
 # syntax.  And Python syntax.
 
@@ -164,19 +166,42 @@ _UNQUOTED = [
   (r'.', Id.Lit_Other),  # any other single char is a literal
 ]
 
+_KEYWORDS = [
+  # NOTE: { is matched elsewhere
+  (r'\[\[',     Id.KW_DLeftBracket),
+  (r'!',        Id.KW_Bang),
+  (r'for',      Id.KW_For),
+  (r'while',    Id.KW_While),
+  (r'until',    Id.KW_Until),
+  (r'do',       Id.KW_Do),
+  (r'done',     Id.KW_Done),
+  (r'in',       Id.KW_In),
+  (r'case',     Id.KW_Case),
+  (r'esac',     Id.KW_Esac),
+  (r'if',       Id.KW_If),
+  (r'fi',       Id.KW_Fi),
+  (r'then',     Id.KW_Then),
+  (r'else',     Id.KW_Else),
+  (r'elif',     Id.KW_Elif),
+  (r'function', Id.KW_Function),
+
+  (r'declare',  Id.Assign_Declare),
+  (r'export',   Id.Assign_Export),
+  (r'local',    Id.Assign_Local),
+  (r'readonly', Id.Assign_Readonly),
+]
+
 # These two can must be recognized in the OUTER state, but can't nested within
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
 LEXER_DEF[LexMode.OUTER] = [
-  (r'\[\[', Id.Lit_DLeftBracket),  # this needs to be a single token
   (r'\(\(', Id.Op_DLeftParen),  # TODO: Remove for DBracket?
-] + _UNQUOTED 
+] + _KEYWORDS + _UNQUOTED 
 
 # \n isn't an operator inside [[ ]]; it's just ignored
 LEXER_DEF[LexMode.DBRACKET] = [
-
-  (r'\]\]', Id.Lit_DRightBracket),
+  (r'\]\]', Id.KW_DRightBracket),
   (r'=', Id.Lit_Equal),
   (r'==', Id.Lit_DEqual),
   (r'!=', Id.Lit_NEqual),

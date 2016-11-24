@@ -41,6 +41,10 @@ For ForExpr While Until FuncDef DBracket DParen NoOp
 _TOKEN_TYPE_TO_KIND = {}  # type: dict
 
 
+def LookupTokenKind(id_):
+  return _TOKEN_TYPE_TO_KIND[id_]
+
+
 class Token(object):
   def __init__(self, type, val):
     self.type = type
@@ -111,8 +115,6 @@ class _TokenDef(object):
                # tilde expansion
                'Tilde',
 
-               # [[ ]] = == -- so they appear together in one LiteralPart
-               'DLeftBracket', 'DRightBracket',
                'Equal', 'DEqual',
                'NEqual', 'TEqual',
 
@@ -272,15 +274,17 @@ class _TokenDef(object):
                # +1 and -1, to distinguish from infix.
                'UnaryPlus', 'UnaryMinus',
                )
-  # Others:
-  # DB_LIT -- gets translated to BType()
-  #
-  # GOAL: no char literals or strcmp() anywhere in the source!
 
-  KW        = ('Undefined', 'None', 'Bang', 
+  KW        = ('None', 
+               'DRightBracket', 'DLeftBracket', 'Bang', 
                'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
                'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
               )
+
+  # Assignment builtins -- treated as statically parsed keywords.  They are
+  # different from keywords because env bindings can appear before, e.g.
+  # FOO=bar local v.
+  Assign    = ('None', 'Declare', 'Export', 'Local', 'Readonly')
 
 
 _TOKEN_TYPE_NAMES = {}  # type: dict
