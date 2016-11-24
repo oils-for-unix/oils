@@ -16,33 +16,28 @@ import sys
 from core import util
 
 
-# Coarse-grained decisions for CommandPArser.  Similar to TokenKind, except
-# Lit/Left/VSub are combined into "COMMAND" for CompoundWord.
-CKind = util.Enum('CKind', 'Undefined CWord Op Redir Eof'.split())
-
 # Types of the main command node.
 CType = util.Enum('CType', """
 Command Assign Pipeline AndOr List Block Subshell Fork Case If
 For ForExpr While Until FuncDef DBracket DParen NoOp
 """.split())
-# Could be:
-# Id.CNode_Command     could be Id.Lit_Chars
-# Id.CNode_Assign      could be Id.Lit_VarLike
-# Id.CNode_Subshell    could be Id.Right_Subshell
-# Id.CNode_Fork        & or fork  -- could be Id.Op_Amp
-# Id.CNode_FuncDef     could be Id.Right_FuncDef
+# Id.CNode_Command     
+# Id.CNode_Assign      
+# Id.CNode_AndOr
+# Id.Op_Semi
+# Id.CNode_Block
+# Id.CNode_Subshell    could be Id.Right_Subshell, not in oil
+# Id.CNode_Fork        
+# Id.CNode_Func        could be Id.Right_FuncDef, not in oil
+#                      # what about proc?
+# Id.CNode_ForEach
+# Id.CNode_ForExpr
+# Id.CNode_NoOp
 #
 # Although I want the AST to be decoupled from tokens for the sake of oil.
 #
 # Inconsistency: CNode has an CType type, but ANode and BNode have an id.  This
 # might be OK for now.
-
-
-_TOKEN_TYPE_TO_KIND = {}  # type: dict
-
-
-def LookupTokenKind(id_):
-  return _TOKEN_TYPE_TO_KIND[id_]
 
 
 class Token(object):
@@ -70,7 +65,7 @@ class Token(object):
     return self.type == other.type and self.val == other.val
 
   def __repr__(self):
-    return '<%s %s>' % (TokenTypeToName(self.type), EncodeTokenVal(self.val))
+    return '<%s %s>' % (IdName(self.type), EncodeTokenVal(self.val))
 
   def Val(self, pool):
     """Given a pool of lines, return the value of this token.
@@ -83,217 +78,22 @@ class Token(object):
     return line[c : c+self.length]
 
   def Kind(self):
-    return _TOKEN_TYPE_TO_KIND[self.type]
+    return _ID_TO_KIND[self.type]
 
 
-# Token types and kinds.  We could generated Python code from shell/tokens.txt,
-# but that's probably overkill for this demo.
+_ID_TO_KIND = {}  # type: dict
+
+def LookupKind(id_):
+  return _ID_TO_KIND[id_]
 
 
-# This is Kind -> list of tokens
-# Then the lexer is State -> list of (regex, token)
-#
-# TokenDef helps us generate enums and token name stuff.  The other one will
-# help us generate text.
-# But do I want a description here?
-# These names will also be used in the text format?
+_ID_NAMES = {}  # type: dict
 
-class _TokenDef(object):
-  Undefined = ('Tok',)  # for initial state
-  Unknown   = ('Tok',)  # for when nothing matches
-
-  Eof       = ('Real', 'RParen', 'Backtick')
-
-  Ignored   = ('LineCont', 'Space', 'Comment')
-
-  # Id.WS_Space is for LexMode.OUTER; Id.Ignored_Space is for LexMode.ARITH
-  WS        = ('Space',)
-
-  Lit       = ('Chars', 'VarLike', 'Other', 'EscapedChar',
-               # Either brace expansion or keyword for { and }
-               'LBrace', 'RBrace', 'Comma',
-               # tilde expansion
-               'Tilde',
-
-               'Equal', 'DEqual',
-               'NEqual', 'TEqual',
-
-               'Pound',             #  for comment or VAROP state
-               'Slash', 'Percent',  #  / # % for patsub, NOT unary op
-
-               'Digits',            # for LexMode.ARITH
-               )
-
-  Op        = ('Newline', # mostly equivalent to SEMI
-               'Amp',     # &
-               'Pipe',    # |
-               'PipeAmp', # |& -- bash extension for stderr
-               'AndIf',   # &&
-               'OrIf',    # ||
-               'Semi',    # ;
-               'DSemi',   # ;; for case
-
-               # NOTE: This is for subshell only.  It's not under LEFT_ because
-               # it's NOT a WordPart.
-               'LParen',
-               'RParen',  # Default, will be translated to Id.Right_*
-               'DLeftParen',
-               'DRightParen',
-               )
-
-  Redir     = ('Less',       # < stdin
-               'Great',      # > stdout
-               'DLess',      # << here doc redirect
-               'TLess',      # <<< bash only here string
-               'DGreat',     # >> append stdout
-               'GreatAnd',   # >& descriptor redirect
-               'LessAnd',    # <& descriptor redirect
-               'DLessDash',  # <<- here doc redirect for tabs?
-               'LessGreat',  # <>
-               'Clobber',    # >|  POSIX?
-               )
-
-  # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
-  # get that.
-  Left      = ('DoubleQuote',
-               'SingleQuote',
-               'Backtick',           # `
-               'CommandSub',         # $(
-               'VarSub',             # ${
-               'ArithSub',           # $((
-               'ArithSub2',          # $[ for bash (and zsh)
-               'DollarDoubleQuote',  # $" for bash localized strings
-               'DollarSingleQuote',  # $' for \n escapes
-               'ProcSubIn',          # <( )
-               'ProcSubOut',         # >( )
-               )
-
-  Right     = ('DoubleQuote',
-               'SingleQuote',
-               'Backtick',           # `
-               'CommandSub',         # )
-               'VarSub',             # }
-               'ArithSub',           # ))
-               # ArithSub2 is just Id.Arith_RBracket
-               'DollarDoubleQuote',  # "
-               'DollarSingleQuote',  # '
-
-               # Disambiguated right parens
-               'Subshell',      # )
-               'FuncDef',       # )
-               'CasePat',       # )
-               'ArrayLiteral',  # )
-               )
-
-  # First position of var sub ${
-  # Id.VOp_Pound -- however you can't tell the difference at first!  It could
-  # be an op or a name.  So it makes sense to base i on the state.
-  # Id.VOp_At
-  # But then you have AS_STAR, or Id.Arith_Star maybe
-
-  VSub      = ('Name',    # $foo or ${foo}
-               'Number',  # $0 .. $9
-               'Bang',    # $!
-               'At',      # $@  or  [@] for array subscripting
-               'Pound',   # $#  or  ${#var} for length
-               'Dollar',  # $$
-               'Amp',     # $&
-               'Star',    # $*
-               'Hyphen',  # $-
-               'QMark',   # $?
-               )
-
-  # Test ops
-  VTest     = ('ColonHyphen',  #  :-
-               'Hyphen',       #   -
-               'ColonEquals',  #  :=
-               'Equals',       #   =
-               'ColonQMark',   #  :?
-               'QMark',        #   ?
-               'ColonPlus',    #  :+
-               'Plus',         #   +
-               )
-
-               # String removal ops
-  VUnary    = ('Percent',       #  %
-               'DPercent',      #  %%
-               'Pound',         #  #
-               'DPound',        #  ##
-
-               # Case ops, in bash.  At least parse them.  Execution might
-               # require unicode stuff.
-               'Caret',         #  ^
-               'DCaret',        #  ^^
-               'Comma',         #  ,
-               'DComma',        #  ,,
-               )
-
-               # not in POSIX, but in Bash
-  VOp       = ('Slash',         #  / for replacement
-               'Colon',         #  : for slicing
-               'LBracket',      #  [ for indexing
-               'RBracket',      #  ] for indexing
-               )
-
-  # Operators
-  Arith     = ('Semi',   # ternary for loop only
-               'Comma',  # function call and C comma operator
-               'Plus', 'Minus', 'Star', 'Slash', 'Percent',
-               'DPlus', 'DMinus', 'DStar',
-               'LParen', 'RParen',  # grouping and function call extension
-               'LBracket', 'RBracket',  # array and assoc array subscript
-               'RBrace',  # for end of var sub
-               # Only for ${a[@]} -- not valid in any other arith context
-               'At',
-
-               # Logical Ops
-               'QMark',  'Colon',  # Ternary Op: a < b ? 0 : 1
-               'LessEqual', 'Less', 'GreatEqual', 'Great', 'DEqual', 'NEqual',
-               'DAmp', 'DPipe', 'Bang',  # && || !
-
-               # Bitwise ops
-               'DGreat', 'DLess',  # >> <<
-               'Amp', 'Pipe', 'Caret', 'Tilde',  #  & | ^ ~ for bits
-
-               # 11 mutating operators:  =  +=  -=  etc.
-               'Equal',
-               'PlusEqual', 'MinusEqual', 'StarEqual', 'SlashEqual',
-               'PercentEqual',
-               'DGreatEqual', 'DLessEqual', 'AmpEqual', 'PipeEqual',
-               'CaretEqual')
-
-  # This kind is for Node types that are NOT tokens.
-
-  Node      = (
-               # Postfix inc/dec.  Prefix inc/dec use Id.Arith_DPlus and
-               # Id.Arith_DMinus.
-               'PostDPlus', 'PostDMinus',
-               # A complex word in the arith context.
-               # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
-               'ArithWord',
-               # +1 and -1, to distinguish from infix.
-               'UnaryPlus', 'UnaryMinus',
-               )
-
-  KW        = ('None', 
-               'DRightBracket', 'DLeftBracket', 'Bang', 
-               'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
-               'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
-              )
-
-  # Assignment builtins -- treated as statically parsed keywords.  They are
-  # different from keywords because env bindings can appear before, e.g.
-  # FOO=bar local v.
-  Assign    = ('None', 'Declare', 'Export', 'Local', 'Readonly')
+def IdName(t):
+  return _ID_NAMES[t]
 
 
-_TOKEN_TYPE_NAMES = {}  # type: dict
-
-def TokenTypeToName(t):
-  return _TOKEN_TYPE_NAMES[t]
-
-
-class TokenKind(object):
+class Kind(object):
   """Token kind is filled in dynamically."""
   pass
 
@@ -317,182 +117,330 @@ def EncodeTokenVal(s):
     return json.dumps(s)
 
 
-def _GenCodeFromTokens(token_def, id_, tk, name_lookup, kind_lookup):
-  kind_index = 0
-  token_index = 0
-  kind_sizes = []
-  # NOTE: dir returns names in alphabetical order, which is fine
-  for kind_name in dir(token_def):
-    tokens = getattr(token_def, kind_name)
-    if not isinstance(tokens, tuple):
-      continue
-    kind_sizes.append(len(tokens))
+# TODO: Fold in more constant tokens.
+# ArithLexerPairs(), etc.
 
-    setattr(tk, kind_name, kind_index)
+class IdSpec(object):
+  """Identifiers that form the "spine" of the shell program representation."""
+
+  def __init__(self, token_names, kind_lookup, bool_ops):
+    self.id_enum = Id
+    self.kind_enum = Kind  # Should just be Kind
+    self.token_names = token_names
+    self.kind_lookup = kind_lookup
+
+    self.kind_sizes = []  # stats
+
+    self.bool_lexer_pairs = []  # lexer values
+    self.bool_ops = bool_ops  # table of runtime values
+
+    # Incremented on each method call
+    self.token_index = 0
+    self.kind_index = 0
+
+  def BoolLexerPairs(self):
+    return self.bool_lexer_pairs
+
+  def _AddId(self, token_name):
+    self.token_index += 1  # leave out 0 I guess?
+    setattr(self.id_enum, token_name, self.token_index)
+    self.token_names[self.token_index] = token_name
+    self.kind_lookup[self.token_index] = self.kind_index
+
+  def _AddKind(self, kind_name):
+    setattr(self.kind_enum, kind_name, self.kind_index)
+    self.kind_index += 1
+
+  def AddKind(self, kind_name, tokens):
+    # TODO: Tokens can be pairs, and then we can register them as
+    # spec.LexerPairs(Kind.BoolUnary) spec.LexerPairs(Kind.VTest)
+    assert isinstance(tokens, list), tokens
 
     for t in tokens:
-      token_index += 1
-
       token_name = '%s_%s' % (kind_name, t)
-      setattr(id_, token_name, token_index)
+      self._AddId(token_name)
 
-      name_lookup[token_index] = token_name
-      kind_lookup[token_index] = kind_index
+    # Must be after adding Id
+    self._AddKind(kind_name)
+    self.kind_sizes.append(len(tokens))  # debug info
 
-    kind_index += 1
+  def AddBoolKind(self, arity, arg_type_pairs):
+    """
+    Args:
+    """
+    if arity == 1:
+      kind_name = 'BoolUnary'
+      #kind2 = 'UNARY'
+    elif arity == 2:
+      kind_name = 'BoolBinary'
+      #kind2 = 'BINARY'
+    else:
+      raise AssertionError(arity)
 
-  return kind_sizes
+    num_tokens = 0
+    for arg_type, pairs in arg_type_pairs.items():
+      #print(arg_type, pairs)
 
-#
-# Bool
-#
+      for name, char_pat in pairs:
+        # BoolUnary_f, BoolBinary_eq, BoolBinary_NEqual
+        token_name = '%s_%s' % (kind_name, name)
+        self._AddId(token_name)
+        # not logical
+        self.AddBoolOp(self.token_index, False, arity, arg_type)
+        # After _AddId.
+        self.bool_lexer_pairs.append((re.escape(char_pat), self.token_index))
 
-_BTOKEN_TYPE_NAMES = {}  # type: dict
+      num_tokens += len(pairs)
 
-def BTokenTypeToName(t):
-  return _BTOKEN_TYPE_NAMES[t]
+    # Must do this after _AddId()
+    self._AddKind(kind_name)
+    self.kind_sizes.append(num_tokens)  # debug info
 
-
-class BType(object):
-  """
-  Token type for execution, determined at parse time.
-  Filled in by metaprogramming.
-  e.g. BType.ATOM_TOK, BType.LOGICAL_NOT, BType.BINARY_FILE_OT.
-  """
+  def AddBoolOp(self, id_, logical, arity, arg_type):
+    self.bool_ops[id_] = (logical, arity, arg_type)
 
 
-class BKind(object):
-  """
-  Token kind for recursive descent dispatching: BKind.UNARY or BKind.BINARY.
+def MakeTokens(spec):
+  # TODO: Unknown_Tok is OK, but Undefined_Id is better
 
-  Filled in by metaprogramming.
-  """
+  spec.AddKind('Undefined', ['Tok'])  # for initial state
+  spec.AddKind('Unknown',   ['Tok'])  # for when nothing matches
 
+  spec.AddKind('Eof', ['Real', 'RParen', 'Backtick'])
+
+  spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
+
+  # Id.WS_Space is for LexMode.OUTER; Id.Ignored_Space is for LexMode.ARITH
+  spec.AddKind('WS', ['Space'])
+
+  spec.AddKind('Lit', [
+      'Chars', 'VarLike', 'Other', 'EscapedChar',
+      # Either brace expansion or keyword for { and }
+      'LBrace', 'RBrace', 'Comma',
+      'Tilde',             # tilde expansion
+      'Pound',             #  for comment or VAROP state
+      'Slash', 'Percent',  #  / # % for patsub, NOT unary op
+      'Digits',            # for LexMode.ARITH
+  ])
+
+  spec.AddKind('Op', [
+      'Newline', # mostly equivalent to SEMI
+      'Amp',     # &
+      'Pipe',    # |
+      'PipeAmp', # |& -- bash extension for stderr
+      'DAmp',   # &&
+      'DPipe',    # ||
+      'Semi',    # ;
+      'DSemi',   # ;; for case
+
+      # NOTE: This is for subshell only.  It's not under Kind.Left because it's
+      # NOT a WordPart.
+      'LParen',
+      'RParen',  # Default, will be translated to Id.Right_*
+      'DLeftParen',
+      'DRightParen',
+  ])
+
+  spec.AddKind('Redir', [
+      'Less',       # < stdin
+      'Great',      # > stdout
+      'DLess',      # << here doc redirect
+      'TLess',      # <<< bash only here string
+      'DGreat',     # >> append stdout
+      'GreatAnd',   # >& descriptor redirect
+      'LessAnd',    # <& descriptor redirect
+      'DLessDash',  # <<- here doc redirect for tabs?
+      'LessGreat',  # <>
+      'Clobber',    # >|  POSIX?
+  ])
+
+  # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
+  # get that.
+  spec.AddKind('Left', [
+      'DoubleQuote',
+      'SingleQuote',
+      'Backtick',           # `
+      'CommandSub',         # $(
+      'VarSub',             # ${
+      'ArithSub',           # $((
+      'ArithSub2',          # $[ for bash (and zsh)
+      'DollarDoubleQuote',  # $" for bash localized strings
+      'DollarSingleQuote',  # $' for \n escapes
+      'ProcSubIn',          # <( )
+      'ProcSubOut',         # >( )
+  ])
+
+  spec.AddKind('Right', [
+      'DoubleQuote',
+      'SingleQuote',
+      'Backtick',           # `
+      'CommandSub',         # )
+      'VarSub',             # }
+      'ArithSub',           # ))
+      # ArithSub2 is just Id.Arith_RBracket
+      'DollarDoubleQuote',  # "
+      'DollarSingleQuote',  # '
+
+      # Disambiguated right parens
+      'Subshell',      # )
+      'FuncDef',       # )
+      'CasePat',       # )
+      'ArrayLiteral',  # )
+  ])
+
+  # First position of var sub ${
+  # Id.VOp_Pound -- however you can't tell the difference at first!  It could
+  # be an op or a name.  So it makes sense to base i on the state.
+  # Id.VOp_At
+  # But then you have AS_STAR, or Id.Arith_Star maybe
+
+  spec.AddKind('VSub', [
+      'Name',    # $foo or ${foo}
+      'Number',  # $0 .. $9
+      'Bang',    # $!
+      'At',      # $@  or  [@] for array subscripting
+      'Pound',   # $#  or  ${#var} for length
+      'Dollar',  # $$
+      'Amp',     # $&
+      'Star',    # $*
+      'Hyphen',  # $-
+      'QMark',   # $?
+  ])
+
+  spec.AddKind('VTest', [
+      'ColonHyphen',  #  :-
+      'Hyphen',       #   -
+      'ColonEquals',  #  :=
+      'Equals',       #   =
+      'ColonQMark',   #  :?
+      'QMark',        #   ?
+      'ColonPlus',    #  :+
+      'Plus',         #   +
+  ])
+
+  # String removal ops
+  spec.AddKind('VUnary', [
+      'Percent',       #  %
+      'DPercent',      #  %%
+      'Pound',         #  #
+      'DPound',        #  ##
+
+      # Case ops, in bash.  A         t least parse them.  Execution might
+      # require unicode stuff         .
+      'Caret',         #  ^           
+      'DCaret',        #  ^^
+      'Comma',         #  ,
+      'DComma',        #  ,,
+  ])
+
+  # Not in POSIX, but in Bash
+  spec.AddKind('VOp', [
+      'Slash',         #  / for replacement
+      'Colon',         #  : for slicing
+      'LBracket',      #  [ for indexing
+      'RBracket',      #  ] for indexing
+  ])
+
+  # Operators
+  spec.AddKind('Arith', [
+      'Semi',   # ternary for loop only
+      'Comma',  # function call and C comma operator
+      'Plus', 'Minus', 'Star', 'Slash', 'Percent',
+      'DPlus', 'DMinus', 'DStar',
+      'LParen', 'RParen',  # grouping and function call extension
+      'LBracket', 'RBracket',  # array and assoc array subscript
+      'RBrace',  # for end of var sub
+      # Only for ${a[@]} -- not valid in any other arith context
+      'At',
+
+      # Logical Ops
+      'QMark',  'Colon',  # Ternary Op: a < b ? 0 : 1
+      'LessEqual', 'Less', 'GreatEqual', 'Great', 'DEqual', 'NEqual',
+      'DAmp', 'DPipe', 'Bang',  # && || !
+
+      # Bitwise ops
+      'DGreat', 'DLess',  # >> <<
+      'Amp', 'Pipe', 'Caret', 'Tilde',  #  & | ^ ~ for bits
+
+      # 11 mutating operators:  =  +=  -=  etc.
+      'Equal',
+      'PlusEqual', 'MinusEqual', 'StarEqual', 'SlashEqual',
+      'PercentEqual',
+      'DGreatEqual', 'DLessEqual', 'AmpEqual', 'PipeEqual',
+      'CaretEqual'
+  ])
+
+  # This kind is for Node types that are NOT tokens.
+  spec.AddKind('Node', [
+     # Postfix inc/dec.  Prefix inc/dec use Id.Arith_DPlus and
+     # Id.Arith_DMinus.
+     'PostDPlus', 'PostDMinus',
+     # +1 and -1, to distinguish from infix.
+     'UnaryPlus', 'UnaryMinus',
+  ])
+
+  # A compound word, in arith context, boolean context, or command
+  # context.  Also used as a CommandKind.
+  # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
+  spec.AddKind('Word', ['Compound'])
+
+  spec.AddKind('KW', [
+      'None', 
+      'DRightBracket', 'DLeftBracket', 'Bang', 
+      'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
+      'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
+  ])
+
+  # Assignment builtins -- treated as statically parsed keywords.  They are
+  # different from keywords because env bindings can appear before, e.g.
+  # FOO=bar local v.
+  spec.AddKind('Assign', ['None', 'Declare', 'Export', 'Local', 'Readonly'])
+
+
+# token_type -> (logical, arity, arg_type)
+BOOL_OPS = {}  # type: dict
 
 UNARY_FILE_CHARS = tuple('abcdefghLprsStuwxOGN')
-
-
-class _BTokenDef(object):
-  """Tokens in [[ are WORDS.
-
-  BNode types, separated into BKind.
-
-  NOTE: THere is a difference between ops and tokens:
-  = and == are the same op
-  [[ foo ]] is an implicit -n op
-  """
-  ATOM = ('TOK',)
-  NEWLINE = ('TOK',)
-
-  # BinaryWordBNode
-  BINARY = {
-      'STRING': ('EQUAL', 'NOT_EQUAL', 'TILDE_EQUAL', 'LESS', 'GREAT'),
-      'FILE': ('EF', 'NT', 'OT'),
-      'INT': ('EQ', 'NE', 'GT', 'GE', 'LT', 'LE'),
-  }
-
-  Eof = ('TOK',)
-
-  # For parsing, this must be a different BKind that BINARY or UNARY.
-  LOGICAL = {
-      'BINARY': ('AND', 'OR'),
-      'UNARY': ('NOT',),
-  }
-
-  PAREN = ('LEFT', 'RIGHT')
-
-  # UnaryWordBNode
-  UNARY = {
-      'STRING': ('z', 'n'),  # -z -n
-      'OTHER': ('o', 'v', 'R'),
-      'FILE': UNARY_FILE_CHARS,
-  }
-
-  UNDEFINED = ('TOK',)
-
 
 BArgType = util.Enum('BArgType', 'NONE FILE INT STRING OTHER'.split())
 
 
-def _GenCodeFromBTokens(token_def, bkind_enum, btype_enum, name_lookup,
-    op_table):
-  """
-  Hierarchy: kind, kind2, type
-  """
-  kind_index = 0
-  token_index = 0
-  # NOTE: dir returns names in alphabetical order, whichi s fine
-  for kind_name in dir(token_def):
-    tokens = getattr(token_def, kind_name)
-
-    if isinstance(tokens, tuple):
-
-      for j, t in enumerate(tokens):
-        token_name = '%s_%s' % (kind_name, t)
-
-        setattr(btype_enum, token_name, token_index)
-        name_lookup[token_index] = token_name
-
-        op_table.append((kind_index, False, -1, BArgType.NONE))
-
-        token_index += 1
-
-    elif isinstance(tokens, dict):  # UNARY, BINARY, LOGICAL
-      for j, kind2 in enumerate(sorted(tokens)):
-        names = tokens[kind2]
-
-        for k, t in enumerate(names):
-          token_name = '%s_%s_%s' % (kind_name, kind2, t)
-
-          setattr(btype_enum, token_name, token_index)
-          name_lookup[token_index] = token_name
-
-          # Figure out the table entry
-          logical = (kind_name == 'LOGICAL')
-          if logical:
-            if kind2 == 'UNARY':
-              arity = 1
-            elif kind2 == 'BINARY':
-              arity = 2
-            else:
-              raise AssertionError(kind2)
-
-            arg_type = BArgType.NONE  # not used
-
-          else:
-            if kind_name == 'UNARY':
-              arity = 1
-            elif kind_name == 'BINARY':
-              arity = 2
-            else:
-              arity = -1
-            if kind2 == 'FILE':
-              arg_type = BArgType.FILE
-            elif kind2 == 'INT':
-              arg_type = BArgType.INT
-            elif kind2 == 'STRING':
-              arg_type = BArgType.STRING
-            elif kind2 == 'OTHER':
-              arg_type = BArgType.OTHER
-            else:
-              raise AssertionError(kind2)
-
-          op_table.append((kind_index, logical, arity, arg_type))
-
-          token_index += 1
-    else:
-      continue
-
-    setattr(bkind_enum, kind_name, kind_index)
-    kind_index += 1
+def _Dash(strs):
+  # Gives a pair of (token name, string to match)
+  return [(s, '-' + s) for s in strs]
 
 
-_kind_sizes = _GenCodeFromTokens(
-    _TokenDef, Id, TokenKind, _TOKEN_TYPE_NAMES,
-    _TOKEN_TYPE_TO_KIND)
+def MakeBool(spec):
+  spec.AddBoolKind(1, {
+      BArgType.STRING: _Dash(list('zn')),  # -z -n
+      BArgType.OTHER: _Dash(list('ovR')),
+      BArgType.FILE: _Dash(UNARY_FILE_CHARS),
+  })
 
-# (kind, logical, arity, arg_type)
-BOOLEAN_OP_TABLE = []  # type: list
+  spec.AddBoolKind(2, {
+      BArgType.STRING: [
+          ('Equal', '='), ('DEqual', '=='), ('NEqual', '!='),
+          ('EqualTilde', '=~'),
+          #('EQUAL', '='), ('EQUAL', '=='), ('NOT_EQUAL', '!='),
+          #('TILDE_EQUAL', '=~'),
+      ],
+      BArgType.FILE: _Dash(['ef', 'nt', 'ot']),
+      BArgType.INT: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
+  })
 
-_GenCodeFromBTokens(
-    _BTokenDef, BKind, BType, _BTOKEN_TYPE_NAMES, BOOLEAN_OP_TABLE)
+  # logical, arity, arg_type
+  spec.AddBoolOp(Id.Op_DAmp, True, 2, BArgType.NONE)
+  spec.AddBoolOp(Id.Op_DPipe, True, 2, BArgType.NONE)
+  spec.AddBoolOp(Id.KW_Bang, True, 1, BArgType.NONE)
+
+  spec.AddBoolOp(Id.Redir_Less, False, 2, BArgType.STRING)
+  spec.AddBoolOp(Id.Redir_Great, False, 2, BArgType.STRING)
+
+
+ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
+
+MakeTokens(ID_SPEC)
+MakeBool(ID_SPEC)
+
+# Debug
+_kind_sizes = ID_SPEC.kind_sizes

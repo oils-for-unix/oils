@@ -5,7 +5,7 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
-from core.tokens import Id, Token
+from core.tokens import Id, Token, Kind
 from core.lexer import CompileAll, Lexer, LineLexer, FindLongestMatch
 
 from osh import parse_lib
@@ -62,6 +62,12 @@ class LexerTest(unittest.TestCase):
     self.assertEqual(Token(Id.Lit_Chars, 'foo'), t)
     t = lexer.Read(LexMode.BASH_REGEX)
     self.assertEqual(Token(Id.Lit_Chars, '|'), t)
+
+  def testDBracketState(self):
+    lexer = _InitLexer('-z foo')
+    t = lexer.Read(LexMode.DBRACKET)
+    self.assertEqual(Token(Id.BoolUnary_z, '-z'), t)
+    self.assertEqual(Kind.BoolUnary, t.Kind())
 
   def testLookAheadForOp(self):
     # I think this is the usage pattern we care about.  Peek and Next() past

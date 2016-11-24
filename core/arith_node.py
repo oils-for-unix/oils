@@ -6,7 +6,7 @@ arith_node.py - AST nodes for arithmetic expressions
 import sys
 
 from core.base import _Node
-from core.tokens import TokenTypeToName, Id
+from core.tokens import IdName, Id
 
 
 class _ANode(_Node):
@@ -36,7 +36,7 @@ class UnaryANode(_ANode):
 
   def PrintLine(self, f):
     f.write('{A1 ')
-    f.write('%s %s ' % (TokenTypeToName(self.atype), self.child))
+    f.write('%s %s ' % (IdName(self.atype), self.child))
     f.write('}')
 
 
@@ -51,7 +51,7 @@ class BinaryANode(_ANode):
 
   def PrintLine(self, f):
     f.write('{A2 ')
-    f.write('%s %s %s' % (TokenTypeToName(self.atype), self.left,
+    f.write('%s %s %s' % (IdName(self.atype), self.left,
         self.right))
     f.write('}')
 
@@ -68,7 +68,7 @@ class TernaryANode(_ANode):
 
   def PrintLine(self, f):
     f.write('{A3 ')
-    f.write('%s %s %s %s' % (TokenTypeToName(self.atype), self.cond,
+    f.write('%s %s %s %s' % (IdName(self.atype), self.cond,
         self.true_expr, self.false_expr))
     f.write('}')
 
@@ -79,12 +79,12 @@ class AtomANode(_ANode):
   This could be LitearlWord too, but it's not worth it
   """
   def __init__(self, word):
-    _ANode.__init__(self, Id.Node_ArithWord)
+    _ANode.__init__(self, Id.Word_Compound)
     self.word = word  # type: Word
 
   def PrintLine(self, f):
     f.write('{A Atom ')
-    f.write('%s %s' % (TokenTypeToName(self.atype), self.word))
+    f.write('%s %s' % (IdName(self.atype), self.word))
     f.write('}')
 
 
@@ -98,4 +98,4 @@ class ArrayAtomANode(_ANode):
     return self.atype
 
   def PrintLine(self, f):
-    f.write('{A Array %s}' % TokenTypeToName(self.atype))
+    f.write('{A Array %s}' % IdName(self.atype))

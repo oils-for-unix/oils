@@ -27,8 +27,8 @@ def Assert(s, expected, tree):
 
 
 # Hm everything gets collapsed into Id.Node_Arith_WORD
-LVALUE_TYPES = (Id.Node_ArithWord, Id.Arith_LBracket)
-CALL_INDEX_TYPES = (Id.Node_ArithWord,)
+LVALUE_TYPES = (Id.Word_Compound, Id.Arith_LBracket)
+CALL_INDEX_TYPES = (Id.Word_Compound,)
 
 
 #
@@ -194,7 +194,7 @@ class TdopParser(object):
   def Eat(self, token_type):
     """ Eat()? """
     if not self.AtToken(token_type):
-      t = tokens.TokenTypeToName(token_type)
+      t = tokens.IdName(token_type)
       raise ParseError('TDOP expected %s, got %s' % (t, self.cur_word))
 
     self.Next()
@@ -217,7 +217,7 @@ class TdopParser(object):
     Parse to the right, eating tokens until we encounter a token with binding
     power LESS THAN OR EQUAL TO rbp.
     """
-    # TODO: use TokenKind.Eof
+    # TODO: use Kind.Eof
     if self.a_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
       raise ParseError('Unexpected end of input')
 

@@ -13,7 +13,7 @@ import io
 
 from core import util
 
-from core.tokens import Id, TokenTypeToName, CType
+from core.tokens import Id, IdName, CType
 from core.word_node import CompoundWord
 from core.base import _Node
 
@@ -423,10 +423,10 @@ class AndOrNode(_CompoundCNode):
   """
   def __init__(self, op):
     _CompoundCNode.__init__(self, CType.AndOr)
-    self.op = op  # TokenType Op_AndIf or Op_OrIf, set by parser
+    self.op = op  # TokenType Op_DAmp or Op_DPipe, set by parser
 
   def _PrintHeader(self, f):
-    f.write('AndOr %s' % TokenTypeToName(self.op))
+    f.write('AndOr %s' % IdName(self.op))
 
 
 class ForNode(_CompoundCNode):

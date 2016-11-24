@@ -12,7 +12,7 @@ tokens_test.py: Tests for tokens.py
 import unittest
 
 import tokens
-from tokens import Id, BType, TokenTypeToName, TokenKind, BKind
+from tokens import Id, IdName, Kind
 
 from lexer import Token
 
@@ -28,47 +28,43 @@ class TokensTest(unittest.TestCase):
     print(Id.Op_Newline)
     print(Token(Id.Op_Newline, '\n'))
 
-    print(TokenTypeToName(Id.Op_Newline))
+    print(IdName(Id.Op_Newline))
 
-    print(TokenKind.Eof)
-    print(TokenKind.Left)
+    print(Kind.Eof)
+    print(Kind.Left)
     print('--')
-    for name in dir(TokenKind):
+    for name in dir(Kind):
       if name[0].isupper():
-        print(name, getattr(TokenKind, name))
+        print(name, getattr(Kind, name))
 
     # Make sure we're not exporting too much
     print(dir(tokens))
 
     # 144 out of 256 tokens now
-    print(len(tokens._TOKEN_TYPE_NAMES))
+    print(len(tokens._ID_NAMES))
 
     t = Token(Id.Arith_Plus, '+')
-    self.assertEqual(TokenKind.Arith, t.Kind())
+    self.assertEqual(Kind.Arith, t.Kind())
     t = Token(Id.Arith_CaretEqual, '^=')
-    self.assertEqual(TokenKind.Arith, t.Kind())
+    self.assertEqual(Kind.Arith, t.Kind())
     t = Token(Id.Arith_RBrace, '}')
-    self.assertEqual(TokenKind.Arith, t.Kind())
+    self.assertEqual(Kind.Arith, t.Kind())
 
-  def testBTokens(self):
-    print(BType)
+    t = Token(Id.BoolBinary_DEqual, '==')
+    self.assertEqual(Kind.BoolBinary, t.Kind())
 
-    print('')
-    print(dir(BType))
-    print('')
-    print(dir(BKind))
-    print('')
-
-    from pprint import pprint
-    pprint(tokens._BTOKEN_TYPE_NAMES)
+  def testBoolLexerPairs(self):
+    lookup = dict(tokens.ID_SPEC.BoolLexerPairs())
+    print(lookup)
+    self.assertEqual(Id.BoolUnary_a, lookup['\-a'])
+    self.assertEqual(Id.BoolUnary_z, lookup['\-z'])
+    self.assertEqual(Id.BoolBinary_eq, lookup['\-eq'])
 
 
 def PrintBoolTable():
-  for i, (kind, logical, arity, arg_type) in enumerate(BOOLEAN_OP_TABLE):
-    row = (BTokenTypeToName(i), logical, arity, arg_type)
+  for i, (logical, arity, arg_type) in tokens.BOOL_OPS.items():
+    row = (tokens.IdName(i), logical, arity, arg_type)
     print('\t'.join(str(c) for c in row))
-
-  print(dir(BKind))
 
 
 if __name__ == '__main__':
@@ -79,11 +75,6 @@ if __name__ == '__main__':
     # Thinking about switching
     big = [i for i in k if i > 8]
     print('%d BIG groups: %s' % (len(big), big))
-
-    a = len(tokens._TokenDef.Arith)
-    print(a)
-
-    print('BType:', len(tokens._BTOKEN_TYPE_NAMES))
 
     PrintBoolTable()
 

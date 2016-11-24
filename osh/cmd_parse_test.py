@@ -9,7 +9,7 @@ import unittest
 from core import ui
 from core.cmd_node import CType
 from core.word_node import DoubleQuotedPart
-from core.tokens import Id, BType
+from core.tokens import Id
 
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test
@@ -724,10 +724,10 @@ fi
 
   def testParseDBracketRegex(self):
     node = assertParseCommandList(self, '[[ foo =~ foo ]]')
-    self.assertEqual(BType.BINARY_STRING_TILDE_EQUAL, node.bnode.btype)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.btype)
 
     node = assertParseCommandList(self, '[[ foo =~ (foo|bar) ]]')
-    self.assertEqual(BType.BINARY_STRING_TILDE_EQUAL, node.bnode.btype)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.btype)
     right = node.bnode.right
     self.assertEqual(5, len(right.parts))
     self.assertEqual('(', right.parts[0].token.val)
@@ -735,10 +735,10 @@ fi
     # TODO: Implement BASH_REGEX_CHARS
     return
     node = assertParseCommandList(self, '[[ "< >" =~ (< >) ]]')
-    self.assertEqual(BType.BINARY_STRING_TILDE_EQUAL, node.bnode.btype)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.btype)
 
     node = assertParseCommandList(self, '[[ "ba ba" =~ ([a b]+) ]]')
-    self.assertEqual(BType.BINARY_STRING_TILDE_EQUAL, node.bnode.btype)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.btype)
 
   def testParseIf(self):
     node = assertParseCommandList(self, 'if true; then echo yes; fi')

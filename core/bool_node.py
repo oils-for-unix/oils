@@ -4,7 +4,7 @@ bool_node.py - AST Nodes for boolean expressions
 """
 
 from core.base import _Node
-from core.tokens import BType, BTokenTypeToName
+from core.tokens import Id, IdName
 
 #
 # BNode
@@ -26,7 +26,7 @@ class _BNode(_Node):
 class NotBNode(_BNode):
   """ ! """
   def __init__(self, child):
-    _BNode.__init__(self, BType.LOGICAL_UNARY_NOT)
+    _BNode.__init__(self, Id.KW_Bang)
     self.child = child  # type: _BNode
 
   def PrintLine(self, f):
@@ -36,7 +36,7 @@ class NotBNode(_BNode):
 
 
 class LogicalBNode(_BNode):
-  """ && """
+  """ && and || """
   def __init__(self, btype, left, right):
     _BNode.__init__(self, btype)
     self.left = left  # type: _BNode
@@ -44,7 +44,7 @@ class LogicalBNode(_BNode):
 
   def PrintLine(self, f):
     f.write('{B? ')
-    f.write('%s %s %s' % (BTokenTypeToName(self.btype), self.left, self.right))
+    f.write('%s %s %s' % (IdName(self.btype), self.left, self.right))
     f.write('}')
 
 
@@ -59,7 +59,7 @@ class UnaryBNode(_BNode):
 
   def PrintLine(self, f):
     f.write('{B1 ')
-    f.write('%s %s' % (BTokenTypeToName(self.btype), self.word))
+    f.write('%s %s' % (IdName(self.btype), self.word))
     f.write('}')
 
 
@@ -75,5 +75,5 @@ class BinaryBNode(_BNode):
 
   def PrintLine(self, f):
     f.write('{B2 ')
-    f.write('%s %s %s' % (BTokenTypeToName(self.btype), self.left, self.right))
+    f.write('%s %s %s' % (IdName(self.btype), self.left, self.right))
     f.write('}')

@@ -12,7 +12,7 @@ lexer.py - Library for lexing.
 import re
 
 from core import util
-from core.tokens import Id, Token, TokenTypeToName
+from core.tokens import Id, Token, IdName
 
 
 def CompileAll(pat_list):
@@ -161,8 +161,8 @@ class Lexer(object):
       - precedence in [[,   e.g.  [[ (1 == 2) && (2 == 3) ]]
       - arrays: a=(1 2 3), a+=(4 5)
     """
-    old_s = TokenTypeToName(old_type)
-    new_s = TokenTypeToName(new_type)
+    old_s = IdName(old_type)
+    new_s = IdName(new_type)
     #print('* Lexer.PushHint %s => %s' % (old_s, new_s))
     self.translation_stack.append((old_type, new_type))
 
@@ -186,7 +186,7 @@ class Lexer(object):
     if self.translation_stack:
       old_type, new_type = self.translation_stack[-1]  # top
       if t.type == old_type:
-        new_s = TokenTypeToName(new_type)
+        new_s = IdName(new_type)
         #print('==> TRANSLATING %s ==> %s' % (t, new_s))
         self.translation_stack.pop()
         #print(self.translation_stack)

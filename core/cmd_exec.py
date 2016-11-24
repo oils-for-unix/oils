@@ -739,10 +739,10 @@ class Executor(object):
       left, right = node.children
       status, cflow = self.Execute(left)
 
-      if node.op == Id.Op_OrIf:
+      if node.op == Id.Op_DPipe:
         if status != 0:
           status, cflow = self.Execute(right)
-      elif node.op == Id.Op_AndIf:
+      elif node.op == Id.Op_DAmp:
         if status == 0:
           status, cflow = self.Execute(right)
       else:

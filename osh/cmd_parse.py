@@ -16,9 +16,9 @@ from core.cmd_node import (
     DBracketNode, DParenNode, ListNode, SubshellNode, ForkNode, PipelineNode,
     AndOrNode, ForNode, ForExpressionNode, WhileNode, UntilNode,
     FunctionDefNode, IfNode, CaseNode)
+from core.tokens import Token, Id, Kind
 from core.word_node import (
     EAssignScope, EAssignFlags, LiteralPart, CompoundWord, TildeSubPart)
-from core.tokens import Token, Id, CKind
 
 from osh.lex import LexMode
 from osh.bool_parse import BoolParser
@@ -45,7 +45,7 @@ class CommandParser(object):
     # Cursor state set by _Peek()
     self.next_lex_mode = LexMode.OUTER
     self.cur_word = None  # current word
-    self.c_kind = CKind.Undefined
+    self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
 
   def Error(self):
@@ -170,6 +170,9 @@ class CommandParser(object):
     NOTE: This algorithm would be a simpler if
     1. We could assume some regex for user names.
     2. We didn't need to do brace expansion first, like {~foo,~bar}
+    OR
+    - If Lit_Slash were special (it is in the VAROP states, but not OUTER
+    state).  We could introduce another lexer mode after you hit Lit_Tilde?
 
     So we have to scan all LiteralPart instances until they contain a '/'.
 
@@ -184,7 +187,6 @@ class CommandParser(object):
     of line: '\n', tabulation: '\t', etc.). Note that using a slash ('/') may
     break the default algorithm for the definition of the user's home
     directory.
-
     """
     if not word.parts:
       return None
@@ -317,7 +319,7 @@ class CommandParser(object):
     You need different types.
     """
     if not self._Peek(): return None
-    assert self.c_kind == CKind.Redir, self.cur_word
+    assert self.c_kind == Kind.Redir, self.cur_word
 
     # TODO: Make the code shorter.  These four cases all read the next word,
     # and interpret it differently.
@@ -349,7 +351,7 @@ class CommandParser(object):
       self._Next()
 
       if not self._Peek(): return None
-      if self.c_kind != CKind.CWord:
+      if self.c_kind != Kind.Word:
         self.AddErrorContext('Expected filename after redirect operator',
             word=self.cur_word)
         return None
@@ -373,7 +375,7 @@ class CommandParser(object):
       self._Next()
 
       if not self._Peek(): return None
-      if self.c_kind != CKind.CWord:
+      if self.c_kind != Kind.Word:
         self.AddErrorContext('Expected word after <<< operator',
             word=self.cur_word)
         return None
@@ -401,7 +403,7 @@ class CommandParser(object):
 
       # This prediction needs to ONLY accept redirect operators.  Should we
       # make them a separate TokeNkind?
-      if self.c_kind != CKind.Redir:
+      if self.c_kind != Kind.Redir:
         break
 
       node = self.ParseRedirect()
@@ -417,12 +419,12 @@ class CommandParser(object):
     words = []
     while True:
       if not self._Peek(): return None
-      if self.c_kind == CKind.Redir:
+      if self.c_kind == Kind.Redir:
         node = self.ParseRedirect()
         if not node: return None  # e.g. EOF
         redirects.append(node)
 
-      elif self.c_kind == CKind.CWord:
+      elif self.c_kind == Kind.Word:
         words.append(self.cur_word)
 
       else:
@@ -863,7 +865,7 @@ class CommandParser(object):
       # case item begins with a command word or (
       if self.c_id == Id.KW_Esac:
         break
-      if self.c_kind != CKind.CWord and self.c_id != Id.Op_LParen:
+      if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
       item = self.ParseCaseItem()
       if not item:
@@ -1171,10 +1173,10 @@ class CommandParser(object):
       node.redirects = redirects
       return node
 
-    if self.c_kind == CKind.Redir:  # Leading redirect
+    if self.c_kind == Kind.Redir:  # Leading redirect
       return self.ParseSimpleCommand()
 
-    if self.c_kind == CKind.CWord:
+    if self.c_kind == Kind.Word:
       if self.w_parser.LookAheadForOp() == Id.Op_LParen:  # (
         kv = self.cur_word.LooksLikeAssignment()
         if kv:
@@ -1273,7 +1275,7 @@ class CommandParser(object):
       return None
 
     if not self._Peek(): return None  # because ParsePipeline need not _Peek()
-    if self.c_id not in (Id.Op_OrIf, Id.Op_AndIf):
+    if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
       return left
     op = self.c_id
     self._Next()  # Skip past operator
@@ -1484,7 +1486,7 @@ class CommandParser(object):
 
     #print('ParseFile', self.c_kind, self.cur_word)
     # An empty node to execute
-    if self.c_kind == CKind.Eof:
+    if self.c_kind == Kind.Eof:
       return ListNode()
 
     node = self.ParseCommandTerm()

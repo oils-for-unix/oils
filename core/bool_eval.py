@@ -17,7 +17,7 @@ try:
   from core import libc
 except ImportError:
   from core import fake_libc as libc
-from core.tokens import BOOLEAN_OP_TABLE, BArgType, BType, Id
+from core.tokens import BOOL_OPS, BArgType, Id, IdName
 from core.value import TValue
 
 
@@ -70,15 +70,19 @@ def BEval(node, ev):
   """
   btype = node.btype
   # TODO: We could look this up at parse time too?  Is that easier or harder?
-  _, logical, arity, arg_type = BOOLEAN_OP_TABLE[btype]
+  try:
+    logical, arity, arg_type = BOOL_OPS[btype]
+  except KeyError:
+    print('NOT FOUND', IdName(btype))
+    raise
 
   if logical:
-    if arity == 1:  # NOTE: LOGICAL_UNARY_NOT?
+    if arity == 1:
       ok, b = BEval(node.child, ev)
       if not ok:
         return False, None
 
-      return True, not b
+      return True, not b  # logical negation
     else:
       assert arity == 2
 
@@ -87,7 +91,7 @@ def BEval(node, ev):
         return False, None
 
       # Short-circuit evaluation
-      if btype == BType.LOGICAL_BINARY_AND:
+      if btype == Id.Op_DAmp:
         if b1:
           ok, b2 = BEval(node.right, ev)
           if not ok:
@@ -96,7 +100,7 @@ def BEval(node, ev):
         else:
           return True, False
 
-      if btype == BType.LOGICAL_BINARY_OR:
+      if btype == Id.Op_DPipe:
         if b1:
           return True, True
         else:
@@ -123,7 +127,7 @@ def BEval(node, ev):
         except FileNotFoundError as e:
           mode = None
 
-        if btype == BType.UNARY_FILE_f:
+        if btype == Id.BoolUnary_f:
           if mode:
             ret = stat.S_ISREG(mode)
           else:
@@ -131,9 +135,9 @@ def BEval(node, ev):
           return True, ret  # TODO
 
       if arg_type == BArgType.STRING:
-        if btype == BType.UNARY_STRING_z:
+        if btype == Id.BoolUnary_z:
           return True, not bool(s)
-        if btype == BType.UNARY_STRING_n:
+        if btype == Id.BoolUnary_n:
           return True, bool(s)
         raise NotImplementedError(btype)
 
@@ -144,7 +148,7 @@ def BEval(node, ev):
       if not ok:
         return False, None
 
-      if btype in (BType.BINARY_STRING_EQUAL, BType.BINARY_STRING_NOT_EQUAL):
+      if btype in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual, Id.BoolBinary_NEqual):
         # quoted parts are escaped for globs.
         ok, val2 = ev.BoolEvalWord(node.right, do_glob=True)
         if not ok:
@@ -166,7 +170,7 @@ def BEval(node, ev):
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
-        if btype == BType.BINARY_FILE_NT:
+        if btype == Id.BoolBinary_nt:
           return True, True  # TODO: newer than
 
       if arg_type == BArgType.INT:
@@ -185,9 +189,9 @@ def BEval(node, ev):
           # exec_opts.strict_compare = OFF / ON / WARN
           return False, None
 
-        if btype == BType.BINARY_INT_EQ:
+        if btype == Id.BoolBinary_eq:
           return True, i1 == i2
-        if btype == BType.BINARY_INT_NE:
+        if btype == Id.BoolBinary_ne:
           return True, i1 != i2
 
       if arg_type == BArgType.STRING:
@@ -197,14 +201,14 @@ def BEval(node, ev):
           print("Operator %r requires a string, got %r %r" % (btype, s1, s2))
           return False, None
 
-        if btype == BType.BINARY_STRING_EQUAL:
+        if btype in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
           #return True, _ValuesAreEqual(val1, val2)
           return True, libc.fnmatch(s2, s1)
-        if btype == BType.BINARY_STRING_NOT_EQUAL:
+        if btype == Id.BoolBinary_NEqual:
           #return True, not _ValuesAreEqual(val1, val2)
           return True, not libc.fnmatch(s2, s1)
 
-        if btype == BType.BINARY_STRING_TILDE_EQUAL:
+        if btype == Id.BoolBinary_EqualTilde:
           match = libc.regex_match(s2, s1)
           # TODO: BASH_REMATCH or REGEX_MATCH
           if match == 1:
@@ -222,9 +226,9 @@ def BEval(node, ev):
           # NOTE: regex matching can't fail if compilation succeeds.
           return True, ret
 
-        if btype == BType.BINARY_STRING_LESS:
+        if btype == Id.Redir_Less:  # pun
           return True, s1 < s2
-        if btype == BType.BINARY_STRING_GREAT:
+        if btype == Id.Redir_Great:  # pun
           return True, s1 > s2
 
         raise NotImplementedError

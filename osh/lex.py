@@ -9,7 +9,7 @@ TODO:
   should return the Id.Eof_Real token, as it does now.
 """
 
-from core.tokens import Id
+from core.tokens import Id, ID_SPEC
 from core import util
 
 # Thirteen lexer modes for osh.
@@ -50,7 +50,7 @@ _CHAR_ESCAPE = (r'\\[^\n]', Id.Lit_EscapedChar)
 
 _VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
-# All TokenKind.VSub
+# All Kind.VSub
 _VARS = [
   # Unbraced variables
   (r'\$' + _VAR_NAME_RE, Id.VSub_Name),
@@ -65,7 +65,7 @@ _VARS = [
   (r'\$\?', Id.VSub_QMark),
 ]
 
-# All TokenKind.Left
+# All Kind.Left
 _LEFT_SUBS = [
   (r'`', Id.Left_Backtick),
   (r'\$\(', Id.Left_CommandSub),
@@ -74,7 +74,7 @@ _LEFT_SUBS = [
   (r'\$\[', Id.Left_ArithSub2),
 ]
 
-# All TokenKind.Left
+# All Kind.Left
 _LEFT_UNQUOTED = [
   (r'"', Id.Left_DoubleQuote),
   (r'\'', Id.Left_SingleQuote),
@@ -144,8 +144,8 @@ _UNQUOTED = [
   (r'&', Id.Op_Amp),
   (r'\|', Id.Op_Pipe),
   (r'\|&', Id.Op_PipeAmp),
-  (r'&&', Id.Op_AndIf),
-  (r'\|\|', Id.Op_OrIf),
+  (r'&&', Id.Op_DAmp),
+  (r'\|\|', Id.Op_DPipe),
   (r';', Id.Op_Semi),
   (r';;', Id.Op_DSemi),
 
@@ -199,14 +199,16 @@ LEXER_DEF[LexMode.OUTER] = [
   (r'\(\(', Id.Op_DLeftParen),  # TODO: Remove for DBracket?
 ] + _KEYWORDS + _UNQUOTED 
 
+
+bool_lexer_pairs = ID_SPEC.BoolLexerPairs() 
+assert len(bool_lexer_pairs) == 38, len(bool_lexer_pairs)
+
 # \n isn't an operator inside [[ ]]; it's just ignored
 LEXER_DEF[LexMode.DBRACKET] = [
   (r'\]\]', Id.KW_DRightBracket),
-  (r'=', Id.Lit_Equal),
-  (r'==', Id.Lit_DEqual),
-  (r'!=', Id.Lit_NEqual),
-  (r'=~', Id.Lit_TEqual),
-] + _UNQUOTED
+  (r'!', Id.KW_Bang),  # TODO: change to Lit_Bang?
+
+] + bool_lexer_pairs + _UNQUOTED
 
 # DBRACKET: can be like OUTER, except Id.Op_Newline is Id.WS_Newline
 # Don't really need redirects either... it actually hurts things
@@ -246,7 +248,7 @@ _VAROP_Common = [
   (r'\}', Id.Right_VarSub),  # For var sub "${a}"
 ]
 
-# TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
+# Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[LexMode.VS_ARG_UNQ] = [
   # NOTE: added < and > so it doesn't eat <()
   (r'[^$`/}"\0\\#%<>]+', Id.Lit_Chars),
@@ -255,7 +257,7 @@ LEXER_DEF[LexMode.VS_ARG_UNQ] = [
   (r'.', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
-# TokenKind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
+# Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[LexMode.VS_ARG_DQ] = [
   (r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed

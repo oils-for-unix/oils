@@ -111,7 +111,7 @@ def MakeShellSpec():
 
   # TODO: Could these work as kinds?
   spec.Null(-1, tdop.NullConstant, [
-      Id.Node_ArithWord,
+      Id.Word_Compound,
       Id.Arith_At,  # For ${a[@]}
       Id.Arith_Star,  # For ${a[*]}
       Id.Arith_Semi,  # for loop
@@ -143,12 +143,12 @@ def MakeShellSpec():
 
   # * / %
   spec.Left(27, tdop.LeftBinaryOp, [
-    Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
+      Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
 
   spec.Left(25, tdop.LeftBinaryOp, [Id.Arith_Plus, Id.Arith_Minus])
   spec.Left(23, tdop.LeftBinaryOp, [Id.Arith_DLess, Id.Arith_DGreat])
   spec.Left(21, tdop.LeftBinaryOp, [
-    Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual])
+      Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual])
 
   spec.Left(19, tdop.LeftBinaryOp, [Id.Arith_NEqual, Id.Arith_DEqual])
 
@@ -166,7 +166,8 @@ def MakeShellSpec():
       Id.Arith_PlusEqual, Id.Arith_MinusEqual, Id.Arith_StarEqual,
       Id.Arith_SlashEqual, Id.Arith_PercentEqual, Id.Arith_DLessEqual,
       Id.Arith_DGreatEqual, Id.Arith_AmpEqual, Id.Arith_CaretEqual,
-      Id.Arith_PipeEqual])
+      Id.Arith_PipeEqual
+  ])
 
   spec.Left(COMMA_PREC, tdop.LeftBinaryOp, [Id.Arith_Comma])
 

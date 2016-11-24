@@ -52,28 +52,6 @@ class UsageError(RuntimeError):
   """ Exception for incorrect command line usage. """
 
 
-def TestLexer(lexer):
-  from word_parse import Id, LexMode
-  while True:
-    t = lexer.Peek()
-    print(t)
-    if t.type == Id.Eof_Real:
-      break
-    lexer.Next(LexMode.OUTER)
-
-
-def TestWordParser(w_parser):
-  from word_parse import WordKind
-  while True:
-    w = w_parser.Peek()  # This calls lexer.ReadOuter, which callls GetLine?
-    print('word', w)
-    #if w.Kind() == WordKind.NEWLINE:
-    if w.Kind() == WordKind.Eof:
-      break
-    print('next')
-    w_parser.Next()
-
-
 def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
   while True:
     try:

@@ -55,7 +55,8 @@ algorithms!  See evalexpr() in expr.c.
 import sys
 
 from core import base
-from core.tokens import BType, BKind, BOOLEAN_OP_TABLE
+from core.tokens import Id, Kind, LookupKind, IdName
+
 from core.bool_node import NotBNode, LogicalBNode, UnaryBNode, BinaryBNode
 from osh.lex import LexMode
 try:
@@ -64,34 +65,21 @@ except ImportError:
   from core import fake_libc as libc
 
 
-def LookupBKind(b_id):
-  """
-  Return BKind.ATOM, BKind.UNARY ...
-
-  TODO: Maybe separate this into a parse time and a runtime table.
-  """
-  b_kind, _, _, _ = BOOLEAN_OP_TABLE[b_id]
-  return b_kind
-
-
 class BoolParser(object):
-  """Parses [[ at compile time and [ at runtime.
-  """
+  """Parses [[ at compile time and [ at runtime."""
+
   def __init__(self, w_parser):
     """
     Args:
-      words: Words to parse as a conditional expression.  It must exclude the
-      beginning [[ word, but include the last ]] word (for EOF)
-
-    TODO: Pass w_parser instead of list of words.
+      w_parser: WordParser
     """
     self.w_parser = w_parser
     # Either one word or two words for lookahead
     self.words = []
 
     self.cur_word = None
-    self.b_id = BType.UNDEFINED_TOK
-    self.b_kind = BKind.UNDEFINED
+    self.b_id = Id.Undefined_Tok
+    self.b_kind = Kind.Undefined
 
     self.error_stack = []
 
@@ -123,7 +111,8 @@ class BoolParser(object):
       self.cur_word = w
 
     self.b_id = self.cur_word.BoolId()
-    self.b_kind = LookupBKind(self.b_id)
+    self.b_kind = LookupKind(self.b_id)
+    #print('---- word', self.cur_word, 'b_id', self.b_id, self.b_kind, lex_mode)
     return True
 
   def _Next(self, lex_mode=LexMode.DBRACKET):
@@ -137,12 +126,13 @@ class BoolParser(object):
       w = self._NextOne(lex_mode=lex_mode)
       if not w:
         return False
-      if self.b_id != BType.NEWLINE_TOK:
+      if self.b_id != Id.Op_Newline:
         break
     return True
 
   def AtEnd(self):
-    return self.b_id == BType.Eof_TOK
+    #print('B_ID', IdName(self.b_id), self.cur_word)
+    return self.b_id == Id.KW_DRightBracket
 
   def _LookAhead(self):
     n = len(self.words)
@@ -172,10 +162,10 @@ class BoolParser(object):
     Expr    : Term (OR Expr)?
     """
     left = self.ParseTerm()
-    if self.b_id == BType.LOGICAL_BINARY_OR:
+    if self.b_id == Id.Op_DPipe:
       if not self._Next(): return None
       right = self.ParseExpr()
-      return LogicalBNode(BType.LOGICAL_BINARY_OR, left, right)
+      return LogicalBNode(Id.Op_DPipe, left, right)
     else:
       return left
 
@@ -183,19 +173,14 @@ class BoolParser(object):
     """
     Term    : Negated (AND Negated)*
 
-    Right associative:
-
+    Right recursion:
     Term    : Negated (AND Term)?
-
-    Left associative:
-
-    Term    : Term AND Negated | Negated
     """
     left = self.ParseNegatedFactor()
-    if self.b_id == BType.LOGICAL_BINARY_AND:
+    if self.b_id == Id.Op_DAmp:
       if not self._Next(): return None
       right = self.ParseTerm()
-      return LogicalBNode(BType.LOGICAL_BINARY_AND, left, right)
+      return LogicalBNode(Id.Op_DAmp, left, right)
     else:
       return left
 
@@ -203,7 +188,7 @@ class BoolParser(object):
     """
     Negated : '!'? Factor
     """
-    if self.b_id == BType.LOGICAL_UNARY_NOT:
+    if self.b_id == Id.KW_Bang:
       if not self._Next(): return None
       child = self.ParseFactor()
       return NotBNode(child)
@@ -217,8 +202,8 @@ class BoolParser(object):
             | WORD BINARY_OP WORD
             | '(' Expr ')'
     """
-    #print('ParseFactor %s %s' % (self.b_kind, self.b_id))
-    if self.b_kind == BKind.UNARY:
+    #print('ParseFactor %s %s' % (self.b_kind, IdName(self.b_id)))
+    if self.b_kind == Kind.BoolUnary:
       # Just save the type and not the token itself?
       op = self.b_id
       if not self._Next(): return None
@@ -227,12 +212,14 @@ class BoolParser(object):
       node = UnaryBNode(op, word)
       return node
 
-    if self.b_kind == BKind.ATOM:
+    if self.b_kind == Kind.Word:
       # Peek ahead another token.
       t2 = self._LookAhead()
       t2_b_id = t2.BoolId()
-      t2_b_kind = LookupBKind(t2_b_id)
-      if t2_b_kind == BKind.BINARY:
+      t2_b_kind = LookupKind(t2_b_id)
+
+      # Redir PUN for < and >
+      if t2_b_kind in (Kind.BoolBinary, Kind.Redir):
         left = self.cur_word
 
         if not self._Next(): return None
@@ -240,7 +227,7 @@ class BoolParser(object):
 
         # TODO: Need to change to LexMode.BASH_REGEX.
         # _Next(lex_mode) then?
-        is_regex = t2_b_id == BType.BINARY_STRING_TILDE_EQUAL
+        is_regex = t2_b_id == Id.BoolBinary_EqualTilde
         if is_regex:
           if not self._Next(lex_mode=LexMode.BASH_REGEX): return None
         else:
@@ -258,15 +245,15 @@ class BoolParser(object):
         return BinaryBNode(op, left, right)
       else:
         # [[ foo ]] is implicit Implicit [[ -n foo ]]
-        op = BType.UNARY_STRING_n
+        op = Id.BoolUnary_n
         word = self.cur_word
         if not self._Next(): return None
         return UnaryBNode(op, word)
 
-    if self.b_id == BType.PAREN_LEFT:
+    if self.b_id == Id.Op_LParen:
       if not self._Next(): return None
       node = self.ParseExpr()
-      if self.b_id != BType.PAREN_RIGHT:
+      if self.b_id != Id.Op_RParen:
         raise RuntimeError("Expected ), got %s", self.cur_word)
       if not self._Next(): return None
       return node

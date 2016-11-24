@@ -39,7 +39,7 @@ def ArithEval(node, ev):
   elif atype == Id.Node_UnaryMinus:
     return -int(ArithEval(node.child, ev))
 
-  elif atype == Id.Node_ArithWord:
+  elif atype == Id.Word_Compound:
     ok, i = ev.ArithEvalWord(node.word)
     #assert ok
     return i

@@ -16,8 +16,7 @@ BECAUSE the other 3 languages use the words as "tokens".
 import io
 import re
 
-from core.tokens import (
-    Id, TokenKind, TokenTypeToName, EncodeTokenVal, BType, CKind)
+from core.tokens import Id, Kind, IdName, EncodeTokenVal
 from core.value import Value
 from core import tokens
 
@@ -94,17 +93,17 @@ class WordPart(object):
     """
     raise NotImplementedError
 
+  def IsVarLike(self):
+    """Return the var name string, or False."""
+    return False
+
   def UnquotedLiteralValue(self):
     """
     Returns a StringPiece value if it's a literal token, otherwise the empty
     string.
-    Used for EKeyword and BType.
+    Used only for Tilde detection.  TODO: Might want to reconsider that.
     """
     return ""
-
-  def IsVarLike(self):
-    """Return the var name string, or False."""
-    return False
 
   def TestLiteralForSlash(self):
     """
@@ -216,7 +215,7 @@ class LiteralPart(_LiteralPartBase):
     # TODO: maybe if we have the token number, we can leave out the type.  The
     # client can look it up?
     return '[%s %s]%s' % (
-        TokenTypeToName(self.token.type), EncodeTokenVal(self.token.val),
+        IdName(self.token.type), EncodeTokenVal(self.token.val),
         newline)
 
   def Eval(self, ev, quoted=False):
@@ -235,15 +234,15 @@ class LiteralPart(_LiteralPartBase):
   def LiteralId(self):
     return self.token.type
 
+  def UnquotedLiteralValue(self):
+    return self.token.val
+
   def TestLiteralForSlash(self):
     return self.token.val.find('/')
 
   def SplitAtIndex(self, i):
     s = self.token.val
     return s[:i], s[i:]
-
-  def UnquotedLiteralValue(self):
-    return self.token.val
 
   def GlobsAreExpanded(self):
     return True
@@ -255,7 +254,7 @@ class EscapedLiteralPart(_LiteralPartBase):
   def __repr__(self):
     # Quoted part.  TODO: Get rid of \ ?
     return '[\ %s %s]' % (
-        TokenTypeToName(self.token.type), EncodeTokenVal(self.token.val))
+        IdName(self.token.type), EncodeTokenVal(self.token.val))
 
   def Eval(self, ev, quoted=False):
     val = self.token.val
@@ -488,6 +487,7 @@ class BToken(object):
 # TODO: Should descent from _Node too, for printing?  Or do we have separate
 # ABCW executors as well as ABCW printers?
 class Word(_BTokenInterface):
+  """A word or an operator."""
 
   def __init__(self):
     pass
@@ -511,20 +511,24 @@ class Word(_BTokenInterface):
     """
     raise NotImplementedError
 
-  def CommandId(self):
-    """Return an Id for CommandParser decisions.
+  # Interpret a word as an Id in three contexts.
+  def ArithId(self):
+    raise NotImplementedError
 
-    TokenType (TokenWord), or EKeyword enum (CompoundWord).
-    """
+  def BoolId(self):
+    raise NotImplementedError
+
+  def CommandId(self):
     raise NotImplementedError
 
   def CommandKind(self):
-    """Return CKind"""
+    """Returns: Kind"""
     raise NotImplementedError
 
 
 class CompoundWord(Word):
-  """For now this can just hold a double quoted token."""
+  """A word that is a sequence of WordPart instances"""
+
   def __init__(self, parts=None):
     Word.__init__(self)
     self.parts = parts or []  # public, mutable
@@ -535,10 +539,8 @@ class CompoundWord(Word):
   def PrintLine(self, f):
     # TODO: Consider indenting parts if they are complex, like a command sub
     # part.
-
     # NOTE: Is the K needed?  It's nice for human readability, but programs
     # might not need it.
-
     suffix = ' =' if self.LooksLikeAssignment() else ''
     s = '{' + ' '.join(repr(p) for p in self.parts) + ('%s}' % suffix)
     f.write(s)
@@ -551,9 +553,8 @@ class CompoundWord(Word):
     else:
       return None, None
 
-  def ArithId(self):
-    return Id.Node_ArithWord
-
+  # Interpret the words as 4 kinds of ID: Assignment, Arith, Bool, Command.
+  # TODO: Might need other builtins.
   def AssignmentBuiltinId(self):
     """Tests if word is an assignment builtin."""
     # has to be a single literal part
@@ -564,14 +565,32 @@ class CompoundWord(Word):
     if token_type == Id.Undefined_Tok:
       return Id.Assign_None
 
-    token_kind = tokens.LookupTokenKind(token_type)
-    if token_kind == TokenKind.Assign:
+    token_kind = tokens.LookupKind(token_type)
+    if token_kind == Kind.Assign:
       return token_type
 
     return Id.Assign_None
 
-  def CommandKind(self):
-    return CKind.CWord
+  def ArithId(self):
+    return Id.Word_Compound
+
+  def BoolId(self):
+    if len(self.parts) != 1:
+      return Id.Word_Compound
+
+    token_type = self.parts[0].LiteralId()
+    if token_type == Id.Undefined_Tok:
+      return Id.Word_Compound
+
+    # This is outside the BoolUnary/BoolBinary namespace, but works the same.
+    if token_type in (Id.KW_Bang, Id.KW_DRightBracket):
+      return token_type
+
+    token_kind = tokens.LookupKind(token_type)
+    if token_kind in (Kind.BoolUnary, Kind.BoolBinary):
+      return token_type
+
+    return Id.Word_Compound
 
   def CommandId(self):
     # has to be a single literal part
@@ -585,74 +604,14 @@ class CompoundWord(Word):
     elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace):
       return token_type
 
-    token_kind = tokens.LookupTokenKind(token_type)
-    if token_kind == TokenKind.KW:
+    token_kind = tokens.LookupKind(token_type)
+    if token_kind == Kind.KW:
       return token_type
 
     return Id.KW_None
 
-  def BoolId(self):
-    if len(self.parts) != 1:
-      return BType.ATOM_TOK
-
-    lit = self.parts[0].UnquotedLiteralValue()
-    #print("LIT", lit, self.word)
-
-    for char in tokens.UNARY_FILE_CHARS:
-      if lit == ('-' + char):
-        name = 'UNARY_FILE_' + char
-        return getattr(BType, name)
-
-    if lit == ']]':
-      return BType.Eof_TOK
-
-    if lit == '!':
-      return BType.LOGICAL_UNARY_NOT
-
-    if lit == '-ef':
-      return BType.BINARY_FILE_EF
-    if lit == '-nt':
-      return BType.BINARY_FILE_NT
-    if lit == '-ot':
-      return BType.BINARY_FILE_OT
-
-    if lit == '-eq':
-      return BType.BINARY_INT_EQ
-    if lit == '-ne':
-      return BType.BINARY_INT_NE
-
-    if lit == '-gt':
-      return BType.BINARY_INT_GT
-    if lit == '-ge':
-      return BType.BINARY_INT_GE
-    if lit == '-lt':
-      return BType.BINARY_INT_LT
-    if lit == '-le':
-      return BType.BINARY_INT_LE
-
-    if lit == '=':
-      return BType.BINARY_STRING_EQUAL
-    if lit == '==':
-      return BType.BINARY_STRING_EQUAL
-    if lit == '!=':
-      return BType.BINARY_STRING_NOT_EQUAL
-    if lit == '=~':
-      return BType.BINARY_STRING_TILDE_EQUAL
-
-    if lit == '-z':
-      return BType.UNARY_STRING_z
-    if lit == '-n':
-      return BType.UNARY_STRING_n
-
-    if lit == '-o':
-      return BType.UNARY_OTHER_o
-    if lit == '-v':
-      return BType.UNARY_OTHER_v
-    if lit == '-R':
-      return BType.UNARY_OTHER_R
-
-    # If nothing else matches, it's an atom
-    return BType.ATOM_TOK
+  def CommandKind(self):
+    return Kind.Word
 
   def EvalStatic(self):
     """
@@ -745,22 +704,10 @@ class TokenWord(Word):
 
   def PrintLine(self, f):
     f.write('{%s %s}' % (
-        TokenTypeToName(self.token.type), EncodeTokenVal(self.token.val)))
+        IdName(self.token.type), EncodeTokenVal(self.token.val)))
 
   def TokenPair(self):
     return self.token, self.token
-
-  def CommandKind(self):
-    token_kind = self.token.Kind()
-    if token_kind == TokenKind.Eof:
-      return CKind.Eof
-    elif token_kind == TokenKind.Redir:
-      return CKind.Redir
-    else:
-      return CKind.Op
-
-  def CommandId(self):
-    return self.token.type
 
   def ArithId(self):
     # $(( 1+2 ))
@@ -772,28 +719,13 @@ class TokenWord(Word):
     return self.token.type  # e.g. AS_PLUS
 
   def BoolId(self):
-    ty = self.token.type
-    if ty == Id.Op_AndIf:
-      return BType.LOGICAL_BINARY_AND
-    if ty == Id.Op_OrIf:
-      return BType.LOGICAL_BINARY_OR
+    return self.token.type
 
-    if ty == Id.Redir_Less:  # <
-      return BType.BINARY_STRING_LESS
-    if ty == Id.Redir_Great:  # <
-      return BType.BINARY_STRING_GREAT
+  def CommandId(self):
+    return self.token.type
 
-    if ty == Id.Op_LParen:
-      return BType.PAREN_LEFT
-    if ty == Id.Op_RParen:
-      return BType.PAREN_RIGHT
-
-    if ty == Id.Op_Newline:
-      return BType.NEWLINE_TOK
-
-    raise AssertionError(self.token)
-    # Are invalid operators like << OK?  Bash doesn't allow them.
-    return BType.ATOM_TOK
+  def CommandKind(self):
+    return self.token.Kind()
 
 
 class _VarOp(object):
@@ -837,7 +769,7 @@ class ArrayVarOp(_VarOp):
   vtype = VType.AT or VType.STAR
   """
   def PrintLine(self, f):
-    f.write('(Array %s)' % TokenTypeToName(self.vtype))
+    f.write('(Array %s)' % IdName(self.vtype))
 
 
 class LengthVarOp(_VarOp):
@@ -867,7 +799,7 @@ class TestVarOp(_VarOp):
     self.arg_word = arg_word  # type: CompoundWord
 
   def PrintLine(self, f):
-    f.write('%s %s' % (TokenTypeToName(self.vtype), self.arg_word))
+    f.write('%s %s' % (IdName(self.vtype), self.arg_word))
 
 
 class StripVarOp(_VarOp):
@@ -878,7 +810,7 @@ class StripVarOp(_VarOp):
     # If there are n words, then there are n-1 space tokens in between them
 
   def PrintLine(self, f):
-    f.write('%s %s' % (TokenTypeToName(self.vtype), self.arg_word))
+    f.write('%s %s' % (IdName(self.vtype), self.arg_word))
 
 
 class SliceVarOp(_VarOp):
