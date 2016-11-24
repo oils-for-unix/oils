@@ -8,7 +8,7 @@ import unittest
 
 from core import ui
 from core.word_node import DoubleQuotedPart
-from core.tokens import Id
+from core.id_kind import Id
 
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test

@@ -17,7 +17,8 @@ from core.word_node import (
     IndexVarOp, TestVarOp, StripVarOp, SliceVarOp, LengthVarOp, PatSubVarOp,
     RefVarOp)
 
-from core.tokens import Id, Token, Kind
+from core.id_kind import Id, Kind
+from core.tokens import Token
 from core import tdop
 from core.cmd_node import ForExpressionNode
 

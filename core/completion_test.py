@@ -20,7 +20,7 @@ from core.word_node import EAssignScope
 from core import ui
 from core import cmd_exec_test
 from core import completion  # module under test
-from core.tokens import Id
+from core.id_kind import Id
 
 from osh import parse_lib
 

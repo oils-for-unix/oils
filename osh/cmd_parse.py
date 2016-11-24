@@ -16,7 +16,8 @@ from core.cmd_node import (
     DBracketNode, DParenNode, ListNode, SubshellNode, ForkNode, PipelineNode,
     AndOrNode, ForNode, ForExpressionNode, WhileNode, UntilNode,
     FunctionDefNode, IfNode, CaseNode)
-from core.tokens import Token, Id, Kind
+from core.id_kind import Id, Kind
+from core.tokens import Token
 from core.word_node import (
     EAssignScope, EAssignFlags, LiteralPart, CompoundWord, TildeSubPart)
 

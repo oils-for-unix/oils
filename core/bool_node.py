@@ -4,7 +4,7 @@ bool_node.py - AST Nodes for boolean expressions
 """
 
 from core.base import _Node
-from core.tokens import Id, IdName
+from core.id_kind import Id, IdName
 
 #
 # BNode

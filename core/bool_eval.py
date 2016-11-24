@@ -17,7 +17,7 @@ try:
   from core import libc
 except ImportError:
   from core import fake_libc as libc
-from core.tokens import BOOL_OPS, BArgType, Id, IdName
+from core.id_kind import BOOL_OPS, BArgType, Id, IdName
 from core.value import TValue
 
 

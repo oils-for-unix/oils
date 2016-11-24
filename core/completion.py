@@ -40,7 +40,7 @@ import traceback
 from osh import parse_lib
 from core import ui
 from core import util
-from core.tokens import Id
+from core.id_kind import Id
 
 
 class CompletionLookup(object):

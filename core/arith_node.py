@@ -6,7 +6,7 @@ arith_node.py - AST nodes for arithmetic expressions
 import sys
 
 from core.base import _Node
-from core.tokens import IdName, Id
+from core.id_kind import IdName, Id
 
 
 class _ANode(_Node):

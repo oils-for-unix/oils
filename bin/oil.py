@@ -42,7 +42,7 @@ from core import completion
 from core import cmd_exec
 from core.pool import Pool
 from core import reader
-from core.tokens import Id
+from core.id_kind import Id
 from core import word_eval
 from core import ui
 from core import util

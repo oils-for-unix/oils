@@ -5,7 +5,8 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
-from core.tokens import Id, Token, Kind
+from core.id_kind import Id, Kind
+from core.tokens import Token
 from core.lexer import CompileAll, Lexer, LineLexer, FindLongestMatch
 
 from osh import parse_lib

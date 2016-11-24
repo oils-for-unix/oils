@@ -55,7 +55,7 @@ algorithms!  See evalexpr() in expr.c.
 import sys
 
 from core import base
-from core.tokens import Id, Kind, LookupKind, IdName
+from core.id_kind import Id, Kind, LookupKind, IdName
 
 from core.bool_node import NotBNode, LogicalBNode, UnaryBNode, BinaryBNode
 from osh.lex import LexMode

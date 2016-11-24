@@ -5,7 +5,8 @@ lexer_test.py: Tests for lexer.py
 
 import unittest
 
-from core.tokens import Id, Token
+from core.id_kind import Id
+from core.tokens import Token
 from osh.lex import LEXER_DEF
 
 

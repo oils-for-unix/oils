@@ -9,7 +9,7 @@ TODO:
   should return the Id.Eof_Real token, as it does now.
 """
 
-from core.tokens import Id, ID_SPEC
+from core.id_kind import Id, ID_SPEC
 from core import util
 
 # Thirteen lexer modes for osh.

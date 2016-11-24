@@ -9,7 +9,7 @@ TODO:
 import sys
 
 from core import tdop
-from core.tokens import Id
+from core.id_kind import Id
 from core.arith_node import UnaryANode, BinaryANode, TernaryANode
 #from tokenize import tokenize_expr
 #from parse_util import CompositeNode

@@ -13,7 +13,7 @@ TODO: Turn it into a class
 
 import sys
 
-from core.tokens import Id
+from core.id_kind import Id
 
 
 def ArithEval(node, ev):

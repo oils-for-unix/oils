@@ -6,15 +6,15 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-tokens_test.py: Tests for tokens.py
+id_kind_test.py: Tests for id_kind.py
 """
 
 import unittest
 
-import tokens
-from tokens import Id, IdName, Kind
+import id_kind
+from id_kind import Id, IdName, Kind
 
-from lexer import Token
+from tokens import Token
 
 
 class TokensTest(unittest.TestCase):
@@ -38,10 +38,10 @@ class TokensTest(unittest.TestCase):
         print(name, getattr(Kind, name))
 
     # Make sure we're not exporting too much
-    print(dir(tokens))
+    print(dir(id_kind))
 
-    # 144 out of 256 tokens now
-    print(len(tokens._ID_NAMES))
+    # 206 out of 256 tokens now
+    print(len(id_kind._ID_NAMES))
 
     t = Token(Id.Arith_Plus, '+')
     self.assertEqual(Kind.Arith, t.Kind())
@@ -54,7 +54,7 @@ class TokensTest(unittest.TestCase):
     self.assertEqual(Kind.BoolBinary, t.Kind())
 
   def testBoolLexerPairs(self):
-    lookup = dict(tokens.ID_SPEC.BoolLexerPairs())
+    lookup = dict(id_kind.ID_SPEC.BoolLexerPairs())
     print(lookup)
     self.assertEqual(Id.BoolUnary_a, lookup['\-a'])
     self.assertEqual(Id.BoolUnary_z, lookup['\-z'])
@@ -62,15 +62,15 @@ class TokensTest(unittest.TestCase):
 
 
 def PrintBoolTable():
-  for i, (logical, arity, arg_type) in tokens.BOOL_OPS.items():
-    row = (tokens.IdName(i), logical, arity, arg_type)
+  for i, (logical, arity, arg_type) in id_kind.BOOL_OPS.items():
+    row = (id_kind.IdName(i), logical, arity, arg_type)
     print('\t'.join(str(c) for c in row))
 
 
 if __name__ == '__main__':
   import sys
   if len(sys.argv) > 1 and sys.argv[1] == 'stats':
-    k = tokens._kind_sizes
+    k = id_kind._kind_sizes
     print('STATS: %d tokens in %d groups: %s' % (sum(k), len(k), k))
     # Thinking about switching
     big = [i for i in k if i > 8]

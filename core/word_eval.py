@@ -14,7 +14,7 @@ try:
 except ImportError:
   from core import fake_libc as libc
 from core.word_node import CompoundWord
-from core.tokens import Id
+from core.id_kind import Id
 from core.value import Value
 
 

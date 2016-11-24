@@ -12,7 +12,8 @@ lexer.py - Library for lexing.
 import re
 
 from core import util
-from core.tokens import Id, Token, IdName
+from core.id_kind import Id, IdName
+from core.tokens import Token
 
 
 def CompileAll(pat_list):

@@ -68,7 +68,7 @@ from core import util
 
 from core.builtin import EBuiltin
 from core.cmd_node import ListNode, RedirectType
-from core.tokens import Id
+from core.id_kind import Id
 from core.process import (
     FdState, Pipeline, Process,
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,

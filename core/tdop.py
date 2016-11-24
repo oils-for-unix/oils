@@ -7,8 +7,7 @@ tdop.py - Library for expression parsing.
 #from tokenize import Token
 from core import base
 
-from core import tokens
-from core.tokens import Id
+from core.id_kind import Id, IdName
 
 from core.arith_node import AtomANode, UnaryANode, BinaryANode
 from osh.lex import LexMode
@@ -194,7 +193,7 @@ class TdopParser(object):
   def Eat(self, token_type):
     """ Eat()? """
     if not self.AtToken(token_type):
-      t = tokens.IdName(token_type)
+      t = IdName(token_type)
       raise ParseError('TDOP expected %s, got %s' % (t, self.cur_word))
 
     self.Next()

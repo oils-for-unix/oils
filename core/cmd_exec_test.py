@@ -15,7 +15,7 @@ import unittest
 from core.builtin import Builtins
 from core import cmd_exec  # module under test
 from core.cmd_exec import *
-from core.tokens import Id
+from core.id_kind import Id
 from core import ui
 from core.word_node import LiteralPart, CompoundWord, TestVarOp, VarSubPart
 from core import word_eval

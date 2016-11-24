@@ -16,9 +16,9 @@ BECAUSE the other 3 languages use the words as "tokens".
 import io
 import re
 
-from core.tokens import Id, Kind, IdName, EncodeTokenVal
+from core.id_kind import Id, Kind, IdName, LookupKind
+from core.tokens import EncodeTokenVal
 from core.value import Value
-from core import tokens
 
 from core import util
 
@@ -565,7 +565,7 @@ class CompoundWord(Word):
     if token_type == Id.Undefined_Tok:
       return Id.Assign_None
 
-    token_kind = tokens.LookupKind(token_type)
+    token_kind = LookupKind(token_type)
     if token_kind == Kind.Assign:
       return token_type
 
@@ -586,7 +586,7 @@ class CompoundWord(Word):
     if token_type in (Id.KW_Bang, Id.KW_DRightBracket):
       return token_type
 
-    token_kind = tokens.LookupKind(token_type)
+    token_kind = LookupKind(token_type)
     if token_kind in (Kind.BoolUnary, Kind.BoolBinary):
       return token_type
 
@@ -604,7 +604,7 @@ class CompoundWord(Word):
     elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace):
       return token_type
 
-    token_kind = tokens.LookupKind(token_type)
+    token_kind = LookupKind(token_type)
     if token_kind == Kind.KW:
       return token_type
 

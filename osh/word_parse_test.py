@@ -12,7 +12,8 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from core.word_node import LiteralPart, CompoundWord, TokenWord
-from core.tokens import Id, Token
+from core.id_kind import Id
+from core.tokens import Token
 
 from osh import parse_lib
 from osh.lex import LexMode

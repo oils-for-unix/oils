@@ -13,7 +13,7 @@ import io
 
 from core import util
 
-from core.tokens import Id, IdName
+from core.id_kind import Id, IdName
 from core.word_node import CompoundWord
 from core.base import _Node
 
