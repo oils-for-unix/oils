@@ -18,6 +18,8 @@ install-mypy() {
 }
 
 demo() {
+  mypy core/arith_eval.py
+  return
   #mypy core/oil_main.py  # token errors
 
   # Doesn't like dynamic TN enum
@@ -33,7 +35,6 @@ demo() {
 
   mypy core/lexer.py
 
-  mypy core/arith_eval.py
   #mypy core/bool_eval.py  # problem with libc
 
   mypy core/base.py

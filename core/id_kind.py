@@ -321,10 +321,20 @@ def MakeTokens(spec):
                                  # Prefix inc/dec use Arith_DPlus/Arith_DMinus.
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
 
-     # Command nodes:
+     # Command nodes 
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
      'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
+
+     # TODO: Unify ANode and BNode under these Unary, Binary, Ternary nodes.
+     # They hold one, two, or three words.
+     'Expr1', 'Expr2', 'Expr3',
+     'ConstInt',  # for arithmetic.  There is no ConstBool.
   ])
+  #spec.AddKind('ANode', ['Unary', 'Binary', 'Ternary', 'Word'])
+  #spec.AddKind('BNode', ['Not', 'AndOr', 'Unary', 'Binary'])
+  # TODO:
+  # - CNode
+  # - Move ANode_PostDPlus
 
   # A compound word, in arith context, boolean context, or command context.
   # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
@@ -334,8 +344,7 @@ def MakeTokens(spec):
   # of keywords.  It will probably have for/in/while/until/case/if/else/elif,
   # and then func/proc.
   spec.AddKind('KW', [
-      'DLeftBracket',
-      'Bang', 
+      'DLeftBracket', 'Bang', 
       'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
   ])

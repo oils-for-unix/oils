@@ -260,7 +260,7 @@ class CommandParser(object):
           print('WARNING: unterminated here doc', file=sys.stderr)
           break
 
-        if h.op.type == Id.Redir_DLessDash:
+        if h.op.id == Id.Redir_DLessDash:
           line = line.lstrip('\t')
         if line.rstrip() == h.here_end:
           break
@@ -643,12 +643,9 @@ class CommandParser(object):
     if not self._Eat(Id.Lit_LBrace): return None
 
     node = self.ParseCommandList()
-    if not node:
-      self.AddErrorContext('ParseBraceGroup: failed to parse command list')
-      return None
+    if not node: return None
 
     if not self._Eat(Id.Lit_RBrace): return None
-
     return node
 
   def ParseDoGroup(self):
@@ -658,13 +655,9 @@ class CommandParser(object):
     if not self._Eat(Id.KW_Do): return None
 
     node = self.ParseCommandList()
-
-    if not node:
-      self.AddErrorContext('ParseDoGroup: failed to parse command line')
-      return None
+    if not node: return None
 
     if not self._Eat(Id.KW_Done): return None
-
     return node
 
   def ParseForWords(self):
@@ -835,9 +828,6 @@ class CommandParser(object):
       node = NoOpNode()  # TODO: rename to noop node?
 
     if not self._Peek(): return None
-    # TODO: Parse are there any more combinations of SEMI, DSEMI, NEWLINE,
-    # ESAC, etc.?  I think SEMI and NEWLINE is taken care of by the term.  So
-    # it's just DSEMI and ESAC we worry about.
     if self.c_id == Id.KW_Esac:
       pass
     elif self.c_id == Id.Op_DSemi:
@@ -855,10 +845,6 @@ class CommandParser(object):
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
-    # TODO: The word_parser does self.lexer.MaybeUnreadOne for $().  I think I
-    # need the same for subshell.  Gah.  The lexer has to get a chance to
-    # translate things.
-
     items = []
     if not self._Peek(): return None
 
@@ -1085,6 +1071,12 @@ class CommandParser(object):
 
     return func
 
+  def ParseCoproc(self):
+    """
+    TODO:
+    """
+    raise NotImplementedError
+
   def ParseSubshell(self):
     cn = SubshellNode()
 
@@ -1226,8 +1218,6 @@ class CommandParser(object):
     while True:
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
 
-      # TODO: mutate 'child' if it was Id.Op_PipeAmp
-
       # cat <<EOF | <newline>
       if not self._MaybeReadHereDocsAfterNewline(child):
         return None
@@ -1334,7 +1324,7 @@ class CommandParser(object):
 
       if not self._Peek(): return None
       if self.c_id in (Id.Op_Semi,):  # also Id.Op_Amp.
-                                        # TODO: Also return ForkNode
+                                      # TODO: Also return ForkNode
         self._Next()
 
         if not self._Peek(): return None
@@ -1377,10 +1367,7 @@ class CommandParser(object):
     Returns:
       ListNode with multiple children
     """
-    # Word types that will end the command term.  NOTE: there is no
-    # Id.Right_CommandSub, because that's a TOKEN and not a WORD (and it gets
-    # turned into Id.Eof_Real).
-    # NOTE: Id.KW_RBrace needed for func def; that's probably wrong.
+    # Word types that will end the command term.
     END_LIST = (
         Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell,
         Id.Lit_RBrace, Id.Op_DSemi)

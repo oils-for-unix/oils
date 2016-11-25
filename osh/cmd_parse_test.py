@@ -104,39 +104,39 @@ class SimpleCommandTest(unittest.TestCase):
 
   def testMultipleGlobalAssignments(self):
     node = assertParseCommandList(self, 'ONE=1 TWO=2')
-    self.assertEqual(Id.Node_Assign, node.type)
+    self.assertEqual(Id.Node_Assign, node.id)
     self.assertEqual(2, len(node.bindings))
     self.assertEqual(0, len(node.words))
 
   def testExport(self):
     node = assertParseCommandList(self, 'export ONE=1 TWO=2 THREE')
-    self.assertEqual(Id.Node_Assign, node.type)
+    self.assertEqual(Id.Node_Assign, node.id)
     self.assertEqual(2, len(node.bindings))
     self.assertEqual(1, len(node.words))
 
   def testReadonly(self):
     node = assertParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
-    self.assertEqual(Id.Node_Assign, node.type)
+    self.assertEqual(Id.Node_Assign, node.id)
     self.assertEqual(2, len(node.bindings))
     self.assertEqual(1, len(node.words))
 
   def testOnlyRedirect(self):
     # This just touches the file
     node = assertParseCommandList(self, '>out.txt')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(0, len(node.words))
     self.assertEqual(1, len(node.redirects))
 
   def testParseRedirectInTheMiddle(self):
     node = assertParseCommandList(self, 'echo >out.txt 1 2 3')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(4, len(node.words))
     self.assertEqual(1, len(node.redirects))
 
   def testParseRedirectBeforeAssignment(self):
     # Write ENV to a file
     node = assertParseCommandList(self, '>out.txt PYTHONPATH=. env')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(1, len(node.words))
     self.assertEqual(1, len(node.redirects))
     self.assertEqual(1, len(node.more_env))
@@ -351,14 +351,14 @@ class ArrayTest(unittest.TestCase):
         'empty=()')
     self.assertEqual(['empty'], [k for k, v in node.bindings])
     self.assertEqual([], node.bindings[0][1].parts[0].words)  # No words
-    self.assertEqual(Id.Node_Assign, node.type)
+    self.assertEqual(Id.Node_Assign, node.id)
 
     # Array with 3 elements
     node = assertParseCommandList(self,
         'array=(a b c)')
     self.assertEqual(['array'], [k for k, v in node.bindings])
     self.assertEqual(3, len(node.bindings[0][1].parts[0].words))
-    self.assertEqual(Id.Node_Assign, node.type)
+    self.assertEqual(Id.Node_Assign, node.id)
 
     # Array literal can't come after word
     assertFailCommandList(self,
@@ -438,20 +438,20 @@ class CommandParserTest(unittest.TestCase):
     node = c_parser.ParsePipeline()
     print(node.DebugString())
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
 
     c_parser = InitCommandParser('! echo foo | grep foo')
     node = c_parser.ParsePipeline()
     print(node.DebugString())
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
     self.assertTrue(node.negated)
 
     c_parser = InitCommandParser('ls foo|wc -l|less')
     node = c_parser.ParsePipeline()
     print(node.DebugString())
     self.assertEqual(3, len(node.children))
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
 
     # Should be an error
     c_parser = InitCommandParser('ls foo|')
@@ -460,15 +460,15 @@ class CommandParserTest(unittest.TestCase):
 
   def testParsePipelineBash(self):
     node = assertParseCommandList(self, 'ls | cat |& cat')
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
     self.assertEqual([1], node.stderr_indices)
 
     node = assertParseCommandList(self, 'ls |& cat | cat')
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
     self.assertEqual([0], node.stderr_indices)
 
     node = assertParseCommandList(self, 'ls |& cat |& cat')
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
     self.assertEqual([0, 1], node.stderr_indices)
 
   def testParseAndOr(self):
@@ -481,19 +481,19 @@ class CommandParserTest(unittest.TestCase):
     node = c_parser.ParseAndOr()
     print(node.DebugString())
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
 
     c_parser = InitCommandParser('ls foo || die')
     node = c_parser.ParseAndOr()
     print(node.DebugString())
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Node_AndOr, node.type)
+    self.assertEqual(Id.Node_AndOr, node.id)
 
     c_parser = InitCommandParser('ls foo|wc -l || die')
     node = c_parser.ParseAndOr()
     print(node.DebugString())
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Node_AndOr, node.type)
+    self.assertEqual(Id.Node_AndOr, node.id)
 
   def testParseCommand(self):
     c_parser = InitCommandParser('ls foo')
@@ -504,7 +504,7 @@ class CommandParserTest(unittest.TestCase):
     c_parser = InitCommandParser('func() { echo hi; }')
     node = c_parser.ParseCommand()
     print(node.DebugString())
-    self.assertEqual(Id.Node_FuncDef, node.type)
+    self.assertEqual(Id.Node_FuncDef, node.id)
 
   def testParseCommandLine(self):
     c_parser = InitCommandParser('ls foo 2>/dev/null')
@@ -514,17 +514,17 @@ class CommandParserTest(unittest.TestCase):
 
     c_parser = InitCommandParser('ls foo|wc -l')
     node = c_parser.ParseCommandLine()
-    self.assertEqual(Id.Op_Pipe, node.type)
+    self.assertEqual(Id.Op_Pipe, node.id)
     print(node.DebugString())
 
     c_parser = InitCommandParser('ls foo|wc -l || die')
     node = c_parser.ParseCommandLine()
-    self.assertEqual(Id.Node_AndOr, node.type)
+    self.assertEqual(Id.Node_AndOr, node.id)
     print(node.DebugString())
 
     c_parser = InitCommandParser('ls foo|wc -l || die; ls /')
     node = c_parser.ParseCommandLine()
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
     self.assertEqual(2, len(node.children))  # two top level things
     print(node.DebugString())
 
@@ -533,14 +533,14 @@ class CommandParserTest(unittest.TestCase):
     self.assertEqual(2, len(node.words))
 
     node = assertParseCommandList(self, 'ls foo|wc -l || die; ls /')
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
     self.assertEqual(2, len(node.children))
 
     node = assertParseCommandList(self, """\
 ls foo | wc -l || echo fail ;
 echo bar | wc -c || echo f2
 """)
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
     self.assertEqual(2, len(node.children))
 
     # TODO: Check that we get (LIST (AND_OR (PIPELINE (COMMAND ...)))) here.
@@ -552,7 +552,7 @@ echo bar | wc -c || echo f2
 case foo in
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
 # TODO: Test all these.  Probably need to add newlines too.
 # case foo esac  # INVALID
@@ -568,12 +568,12 @@ case word in
   foo) echo hi ;;
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
     node = assertParseCommandLine(self, """\
 case word in foo) echo one-line ;; esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
     node = assertParseCommandLine(self, """\
 case word in
@@ -581,7 +581,7 @@ case word in
   bar) echo bar ;;
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
     node = assertParseCommandLine(self, """\
 case word in
@@ -589,7 +589,7 @@ case word in
   bar) echo bar ;
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
     node = assertParseCommandLine(self, """\
 case word in
@@ -597,7 +597,7 @@ case word in
   bar) echo bar
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
   def testParseWhile(self):
     node = assertParseCommandList(self, """\
@@ -796,13 +796,13 @@ class NestedParensTest(unittest.TestCase):
     node = assertParseCommandLine(self,
         '(cd /; echo PWD 1); echo PWD 2')
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
 
   def testParseBraceGroup(self):
     node = assertParseCommandLine(self,
         '{ cd /; echo PWD; }; echo PWD')
     self.assertEqual(2, len(node.children))
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
 
   def testUnquotedComSub(self):
     # CommandSubPart with two LiteralPart instances surrounding it
@@ -819,26 +819,26 @@ class NestedParensTest(unittest.TestCase):
     # Within com sub
     node = assertParseSimpleCommand(self,
         'echo $(echo $((1+2)))')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
 
     # Within subshell
     node = assertParseCommandList(self,
         '(echo $((1+2)))')
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
     self.assertEqual(1, len(node.children))
 
   def testArithGroupingWithin(self):
     # Within com sub
     node = assertParseSimpleCommand(self,
         'echo $(echo $((1*(2+3))) )')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
 
     # Within subshell
     node = assertParseCommandList(self,
         '(echo $((1*(2+3))) )')
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
     self.assertEqual(1, len(node.children))
 
   def testLhsArithGroupingWithin(self):
@@ -852,29 +852,29 @@ class NestedParensTest(unittest.TestCase):
   def testFuncDefWithin(self):
     node = assertParseCommandList(self,
         'echo $(func() { echo hi; }; func)')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
 
     node = assertParseCommandList(self,
         '(func() { echo hi; }; func)')
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
     self.assertEqual(1, len(node.children))
 
   def testArrayLiteralWithin(self):
     node = assertParseCommandList(self,
         'echo $(array=(a b c))')
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
 
     node = assertParseCommandList(self,
         '(array=(a b c))')
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
     self.assertEqual(1, len(node.children))
 
   def testSubshellWithinComSub(self):
     node = assertParseCommandList(self,
         'echo one; echo $( (cd /; echo subshell_PWD); echo comsub_PWD); echo two')
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
     self.assertEqual(3, len(node.children))   # 3 echo statements
 
     # TODO: Need a way to test the literal value of a word
@@ -898,7 +898,7 @@ case bar in two) echo comsub2;; esac
     # Comsub within case within comsub
     node = assertParseCommandList(self,
         'echo one; echo $( case one in $(echo one)) echo $(comsub);; esac ); echo two')
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
     # Top level should have 3 echo statements
     self.assertEqual(3, len(node.children))
 
@@ -914,7 +914,7 @@ case bar in two) echo comsub2;; esac
   esac
 )
 """)
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
 
   def testBalancedCaseWithin(self):
     # With leading ( in case.  This one doesn't cause problems!   We don't need
@@ -925,7 +925,7 @@ $( case foo in
   esac
 )
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
 
     node = assertParseCommandList(self, """\
 ( case foo in
@@ -933,7 +933,7 @@ $( case foo in
   esac
 )
 """)
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
 
   def testUnbalancedCaseWithin(self):
     # With leading ( in case.  This one doesn't cause problems!   We don't need
@@ -944,7 +944,7 @@ $( case foo in
   esac
 )
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
 
     node = assertParseCommandList(self, """\
 ( case foo in
@@ -952,7 +952,7 @@ $( case foo in
   esac
 )
 """)
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
 
   def testForExpressionWithin(self):
     # With leading ( in case.  This one doesn't cause problems!   We don't need
@@ -963,7 +963,7 @@ $( for ((i=0; i<3; ++i)); do
    done
 )
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
 
     node = assertParseCommandList(self, """\
 ( for ((i=0; i<3; ++i)); do
@@ -971,7 +971,7 @@ $( for ((i=0; i<3; ++i)); do
   done
 )
 """)
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
 
 
 class RealBugsTest(unittest.TestCase):
@@ -989,7 +989,7 @@ class RealBugsTest(unittest.TestCase):
   done
 )
 """)
-    self.assertEqual(Id.Node_Subshell, node.type)
+    self.assertEqual(Id.Node_Subshell, node.id)
 
   def testParseCase3(self):
     # Bug from git codebase.  NOT a comment token.
@@ -1000,7 +1000,7 @@ case "$fd,$command" in
     ;;
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
   def testGitComment(self):
     # ;# is a comment!  Gah.
@@ -1009,14 +1009,14 @@ esac
     node = assertParseCommandList(self, """\
 . "$TEST_DIRECTORY"/diff-lib.sh ;# test-lib chdir's into trash
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
 
     # This is NOT a comment
     node = assertParseCommandList(self, """\
 echo foo#bar
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
     _, s, _ = node.words[1].EvalStatic()
     self.assertEqual('foo#bar', s)
@@ -1025,7 +1025,7 @@ echo foo#bar
     node = assertParseCommandList(self, """\
 echo foo #comment
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
     _, s, _ = node.words[1].EvalStatic()
     self.assertEqual('foo', s)
@@ -1034,7 +1034,7 @@ echo foo #comment
     node = assertParseCommandList(self, """\
 echo foo #
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(2, len(node.words))
     _, s, _ = node.words[1].EvalStatic()
     self.assertEqual('foo', s)
@@ -1046,7 +1046,7 @@ if true; then (
 )
 fi
 """)
-    self.assertEqual(Id.KW_If, node.type)
+    self.assertEqual(Id.KW_If, node.id)
 
     node = assertParseCommandList(self, """\
 while true; do {
@@ -1054,14 +1054,14 @@ while true; do {
   break
 } done
 """)
-    self.assertEqual(Id.KW_While, node.type)
+    self.assertEqual(Id.KW_While, node.id)
 
     node = assertParseCommandList(self, """\
 if true; then (
   echo hi
 ) fi
 """)
-    self.assertEqual(Id.KW_If, node.type)
+    self.assertEqual(Id.KW_If, node.id)
 
     # Related: two fi's in a row, found in Chrome configure.  Compound commands
     # are special; don't need newlines.
@@ -1072,7 +1072,7 @@ if true; then
   fi fi
 echo hi
 """)
-    self.assertEqual(Id.Op_Semi, node.type)
+    self.assertEqual(Id.Op_Semi, node.id)
 
   def testBackticks(self):
     #return
@@ -1110,20 +1110,20 @@ $'\'')
   ;;
 esac
 """)
-    self.assertEqual(Id.KW_Case, node.type)
+    self.assertEqual(Id.KW_Case, node.id)
 
     node = assertParseCommandList(self, r"""\
 $'abc\ndef'
 """)
-    self.assertEqual(Id.Node_Command, node.type)
+    self.assertEqual(Id.Node_Command, node.id)
     self.assertEqual(1, len(node.words))
     w = node.words[0]
     self.assertEqual(1, len(w.parts))
     p = w.parts[0]
     self.assertEqual(3, len(p.tokens))
-    self.assertEqual(Id.Lit_Chars, p.tokens[0].type)
-    self.assertEqual(Id.Lit_EscapedChar, p.tokens[1].type)
-    self.assertEqual(Id.Lit_Chars, p.tokens[2].type)
+    self.assertEqual(Id.Lit_Chars, p.tokens[0].id)
+    self.assertEqual(Id.Lit_EscapedChar, p.tokens[1].id)
+    self.assertEqual(Id.Lit_Chars, p.tokens[2].id)
 
   def testArithConstants(self):
     # Found in Gherkin

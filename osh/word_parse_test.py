@@ -327,7 +327,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadOuter()
     assert w
-    self.assertEqual(Id.Op_Newline, w.token.type)
+    self.assertEqual(Id.Op_Newline, w.token.id)
 
     w = w_parser.ReadOuter()
     assert w
@@ -335,11 +335,11 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadOuter()
     assert w
-    self.assertEqual(Id.Op_Newline, w.token.type)
+    self.assertEqual(Id.Op_Newline, w.token.id)
 
     w = w_parser.ReadOuter()
     assert w
-    self.assertEqual(Id.Eof_Real, w.token.type)
+    self.assertEqual(Id.Eof_Real, w.token.id)
 
   def testReadRegex(self):
     # Test that we get Id.Op_Newline
@@ -358,7 +358,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(LexMode.OUTER)
     assert w
-    self.assertEqual(Id.Op_Newline, w.token.type)
+    self.assertEqual(Id.Op_Newline, w.token.id)
 
   def testReadArith(self):
     CASES = [

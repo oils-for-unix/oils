@@ -26,33 +26,21 @@ from osh import arith_parse
 from osh.lex import LexMode
 
 # Substitutions can be nested, but which inner subs are allowed depends on the
-# outer sub.
-#
-# Functions that process Kind.Left, i.e. nested stuff:
-#
-# _ReadCompoundWord
-#   _ReadLeftParts
-# _ReadArithWord
-#   _ReadCompoundWord -- ${} $() $(()) $[] ``
-# _ReadDoubleQuotedPart (also used for here docs, needs a mode)
-#   _ReadDoubleQuotedLeftParts -- ${} $() $(()) $[] ``
-# _ReadVarOpArg(d_quoted)
-#    _ReadCompoundWord(lex_mode)
+# outer sub.  See _ReadLeftParts vs. _ReadDoubleQuotedLeftParts.
 
-# UNQUOTED: LexMode.OUTER
-#           All subs and quotes are allowed --
-#           $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
+# LexMode.OUTER
+#   All subs and quotes are allowed --
+#   $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
 #
-# DQ:       LexMode.DQ
-#           Var, Command, Arith, but no quotes
-#           $v ${v}   $() ``   $(())
-#           No process substitution.
+# LexMode.DQ
+#   Var, Command, Arith, but no quotes
+#   $v ${v}   $() ``   $(())
+#   No process substitution.
 #
 # LexMode.ARITH:
-#           Similar to DQ: Var, Command, Arith sub.  No process sub.  bash has
-#           no quotes, but we are changing this in oil.  We are adding ALL FOUR
-#           kinds of quotes , because we need those for associtative array
-#           indexing.
+#   Similar to DQ: Var, Command, Arith sub.  No process sub.  bash has no
+#   quotes, but we are changing this in oil.  We are adding ALL FOUR kinds of
+#   quotes , because we need those for associtative array indexing.
 #
 # LexMode.VS_ARG_UNQ
 #   Like UNQUOTED, except we stop at }.  Everything is allowed, even process
@@ -66,8 +54,9 @@ from osh.lex import LexMode
 #   preserve the space tokens between.
 #   In other words, like DS_VS_ARG, except SINGLE Quotes allowed?
 #
-# LexMode.VS_ARG_DQ -- Can't be LexMode.DQ because here we respect $' and $"
-#    tokens, while <( token is not respected.
+# LexMode.VS_ARG_DQ 
+#   Can't be LexMode.DQ because here we respect $' and $" tokens, while <(
+#   token is not respected.
 #
 #   Like VS_ARG_UNQ, but single quotes are NOT respected (they appear
 #   literally), and process substitution is not respected (ditto).
@@ -76,7 +65,7 @@ from osh.lex import LexMode
 #
 #   Like DQ, except nested "" and $'' and $"" are RESPECTED.
 #
-#   It's weird that double quoted is allowed.  Not sure why that would be.
+#   It's weird that double quotes are allowed.  Not sure why that would be.
 #   Unquoted is also allowed, so " a "b" c " $'' and $"" are lame, because they
 #   don't appear in the DQ context.  I think I should parse those but DISALLOW.
 #   You should always make $'' and $"" as a separate var!
@@ -97,7 +86,7 @@ class WordParser(object):
       self.prev_token = self.cur_token  # for completion
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_kind = self.cur_token.Kind()
-      self.token_type = self.cur_token.type
+      self.token_type = self.cur_token.id
 
       self.next_lex_mode = None
     return self.cur_token
@@ -254,6 +243,11 @@ class WordParser(object):
 
     LexMode: BVS_1
     """
+    # TODO: Is there a way to ask it to try @ and *?  And immediately return?
+    # Instead of returning a _Node, it could return a Token or something.
+    # Look ahead in the LexMode.ARITH mode, and then pass it to tdop.TdopParser if
+    # not?
+
     anode = self._ReadArithExpr()
     if not anode:
       return None
@@ -429,7 +423,7 @@ class WordParser(object):
       # Disambiguate
       t = self.lexer.LookAheadForOp(LexMode.VS_1)
       #print("\t# LOOKAHEAD", t)
-      if t.type not in (Id.Unknown_Tok, Id.Right_VarSub):
+      if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
         # e.g. a name, '#' is the prefix
         self._Next(LexMode.VS_1)
         part = self._ParseVarOf()
@@ -450,7 +444,7 @@ class WordParser(object):
     elif ty == Id.VSub_Bang:
       t = self.lexer.LookAheadForOp(LexMode.VS_1)
       #print("\t! LOOKAHEAD", t)
-      if t.type not in (Id.Unknown_Tok, Id.Right_VarSub):
+      if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
         # e.g. a name, '!' is the prefix
         # ${!a} -- this is a ref
         # ${!3} -- this is ref
@@ -716,7 +710,7 @@ class WordParser(object):
     if do_next:
       self._Next(LexMode.ARITH)
     spec = arith_parse.MakeShellSpec()
-    a_parser = tdop.TdopParser(spec, self)  # Calls ReadWord(LexMode.ARITH)
+    a_parser = tdop.TdopParser(spec, self)  # for self.ReadWord(LexMode.ARITH)
     anode = a_parser.Parse()
     if not anode:
       error_stack = a_parser.Error()
@@ -867,7 +861,7 @@ class WordParser(object):
 
     self._Next(LexMode.OUTER)  # advance past (
     self._Peek()
-    assert self.cur_token.type == Id.Op_LParen, self.cur_token
+    assert self.cur_token.id == Id.Op_LParen, self.cur_token
 
     # MUST use a new word parser (with same lexer).
     w_parser = WordParser(self.lexer, self.line_reader)
@@ -912,7 +906,7 @@ class WordParser(object):
           #print('@', self.cur_token)
 
           t = self.lexer.LookAheadForOp(LexMode.OUTER)
-          if t.type == Id.Op_LParen:
+          if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
             if not part2:
@@ -1068,8 +1062,11 @@ class WordParser(object):
         Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.BoolUnary,
         Kind.BoolBinary):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
-      # LexMode.COMMENT and read until end of line.  (TODO: How to add
-      # comments to AST?)
+      # LexMode.COMMENT and read until end of line.  (TODO: How to add comments
+      # to AST?)
+      #
+      # TODO: Can we do the same thing for Tilde here?  Enter a state where we
+      # look for / too.
       if self.token_type == Id.Lit_Pound:
         self._Next(LexMode.COMMENT)
         self._Peek()
@@ -1079,7 +1076,6 @@ class WordParser(object):
         return None, True  # tell Read() to try again after comment
 
       else:
-        # TODO: Pass another lex_mode
         w = self._ReadCompoundWord(lex_mode=lex_mode)
         if not w:
           self.AddErrorContext('Error reading command word',
@@ -1097,11 +1093,11 @@ class WordParser(object):
     # Is this correct?  Should we also call self._Peek()  here?
     if self.cur_token is None:
       token = self.lexer.LookAheadForOp(LexMode.OUTER)
-    elif self.cur_token.type == Id.WS_Space:
+    elif self.cur_token.id == Id.WS_Space:
       token = self.lexer.LookAheadForOp(LexMode.OUTER)
     else:
       token = self.cur_token
-    return token.type
+    return token.id
 
   def ReadWord(self, lex_mode):
     """Read the next Word.

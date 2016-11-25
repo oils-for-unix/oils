@@ -16,6 +16,7 @@ BECAUSE the other 3 languages use the words as "tokens".
 import io
 import re
 
+from core.base import _Node
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core.tokens import EncodeTokenVal
 from core.value import Value
@@ -40,7 +41,9 @@ EAssignScope = util.Enum('EAssignScope', 'LOCAL GLOBAL'.split())
 #
 
 
-class WordPart(object):
+class WordPart(_Node):
+  def __init__(self, id):
+    _Node.__init__(self, id)
 
   def __repr__(self):
     # repr() always prints as a single line
@@ -151,21 +154,19 @@ class WordPart(object):
 
 
 class ArrayLiteralPart(WordPart):
-  """A WordPart that contains other WORDS.
+  """An Array literal is WordPart that contains other Words.
 
-  (In contrast, a DoubleQuotedPart is a WordPart that contains other
-  WordParts.)
+  In contrast, a DoubleQuotedPart is a WordPart that contains other
+  WordParts.
 
   It's a WordPart because foo=(a b c) is a word with 2 parts.
 
   Note that foo=( $(ls /) ) is also valid.
-
-  NOTE: Could this be used for ${foo:-a b c} too?
   """
   def __init__(self):
-    WordPart.__init__(self)
-    # CompoundWord instances.  Can hold CommandSubPart, etc.
-    self.words = []
+    # There is no Left ArrayLiteral, so just use the right one.
+    WordPart.__init__(self, Id.Right_ArrayLiteral)
+    self.words = []  # type: List[CompoundWord]
 
   def __repr__(self):
     return '[Array ' + ' '.join(repr(w) for w in self.words) + ']'
@@ -186,7 +187,8 @@ class ArrayLiteralPart(WordPart):
 
 
 class _LiteralPartBase(WordPart):
-  def __init__(self, token):
+  def __init__(self, id, token):
+    _Node.__init__(self, id)
     self.token = token
 
   def TokenPair(self):
@@ -203,6 +205,9 @@ class LiteralPart(_LiteralPartBase):
   DoubleQuotedPart.  (SingleQuotedPart contains a list of Token instance, not
   WordPart instances.)
   """
+  def __init__(self, token):
+    _LiteralPartBase.__init__(self, Id.Lit_Chars, token)
+
   def __repr__(self):
     # This looks like a token, except it uses [] instead of <>.  We need the
     # exact type to reverse it, e.g. '"' vs \".
@@ -215,7 +220,7 @@ class LiteralPart(_LiteralPartBase):
     # TODO: maybe if we have the token number, we can leave out the type.  The
     # client can look it up?
     return '[%s %s]%s' % (
-        IdName(self.token.type), EncodeTokenVal(self.token.val),
+        IdName(self.token.id), EncodeTokenVal(self.token.val),
         newline)
 
   def Eval(self, ev, quoted=False):
@@ -226,13 +231,13 @@ class LiteralPart(_LiteralPartBase):
     return True, self.token.val, False
 
   def IsVarLike(self):
-    if self.token.type == Id.Lit_VarLike:
+    if self.token.id == Id.Lit_VarLike:
       return self.token.val[:-1]  # strip off =
     else:
       return False
 
   def LiteralId(self):
-    return self.token.type
+    return self.token.id
 
   def UnquotedLiteralValue(self):
     return self.token.val
@@ -249,12 +254,15 @@ class LiteralPart(_LiteralPartBase):
 
 
 class EscapedLiteralPart(_LiteralPartBase):
-  """Representing \* or \$."""
+  """e.g. \* or \$."""
+
+  def __init__(self, token):
+    _LiteralPartBase.__init__(self, Id.Lit_EscapedChar, token)
 
   def __repr__(self):
     # Quoted part.  TODO: Get rid of \ ?
     return '[\ %s %s]' % (
-        IdName(self.token.type), EncodeTokenVal(self.token.val))
+        IdName(self.token.id), EncodeTokenVal(self.token.val))
 
   def Eval(self, ev, quoted=False):
     val = self.token.val
@@ -274,6 +282,7 @@ class EscapedLiteralPart(_LiteralPartBase):
 class SingleQuotedPart(WordPart):
 
   def __init__(self):
+    WordPart.__init__(self, Id.Left_SingleQuote)
     self.tokens = []  # list of Id.Lit_Chars tokens
 
   def TokenPair(self):
@@ -301,7 +310,9 @@ class SingleQuotedPart(WordPart):
 
 
 class DoubleQuotedPart(WordPart):
+
   def __init__(self):
+    WordPart.__init__(self, Id.Left_DoubleQuote)
     # TODO: Add token_type?  Id.Left_D_QUOTE, Id.Left_DD_QUOTE.  But what about
     # here doc?  It could be a dummy type.
     self.parts = []
@@ -341,6 +352,7 @@ class DoubleQuotedPart(WordPart):
 
 class CommandSubPart(WordPart):
   def __init__(self, token, command_list):
+    WordPart.__init__(self, Id.Left_CommandSub)
     self.token = token
     self.command_list = command_list
 
@@ -375,6 +387,7 @@ class VarSubPart(WordPart):
       name: a string, including '@' '*' '#' etc.?
       token: For debugging only?
     """
+    WordPart.__init__(self, Id.Left_VarSub)
     self.name = name
     self.token = token
 
@@ -420,6 +433,7 @@ class TildeSubPart(WordPart):
     Args:
       prefix: tilde prefix ("" if no prefix)
     """
+    WordPart.__init__(self, Id.Lit_Tilde)
     self.prefix = prefix
 
   def __repr__(self):
@@ -438,6 +452,10 @@ class TildeSubPart(WordPart):
 class ArithSubPart(WordPart):
 
   def __init__(self, anode):
+    # TODO: Do we want to also have Id.Left_ArithSub2 to preserve the source?
+    # Although honestly, for most uses cases, it's probably fine to convert
+    # everything to POSIX.
+    WordPart.__init__(self, Id.Left_ArithSub)
     self.anode = anode
 
   def __repr__(self):
@@ -706,7 +724,7 @@ class TokenWord(Word):
 
   def PrintLine(self, f):
     f.write('{%s %s}' % (
-        IdName(self.token.type), EncodeTokenVal(self.token.val)))
+        IdName(self.token.id), EncodeTokenVal(self.token.val)))
 
   def TokenPair(self):
     return self.token, self.token
@@ -716,15 +734,15 @@ class TokenWord(Word):
     # (( a=1+2 ))
     # ${a[ 1+2 ]}
     # ${a : 1+2 : 1+2}
-    #if self.token.type in (Id.Right_Arith_SUB, Id.VOp2_RBracket, Id.VOp2_Colon):
+    #if self.token.id in (Id.Right_Arith_SUB, Id.VOp2_RBracket, Id.VOp2_Colon):
     #  return Id.Eof_Arith
-    return self.token.type  # e.g. AS_PLUS
+    return self.token.id  # e.g. AS_PLUS
 
   def BoolId(self):
-    return self.token.type
+    return self.token.id
 
   def CommandId(self):
-    return self.token.type
+    return self.token.id
 
   def CommandKind(self):
     return self.token.Kind()

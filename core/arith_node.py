@@ -32,7 +32,7 @@ class UnaryANode(_ANode):
   """
   def __init__(self, atype, child):
     _ANode.__init__(self, atype)
-    self.child = child
+    self.child = child  # type: _ANode
 
   def PrintLine(self, f):
     f.write('{A1 ')
@@ -76,7 +76,7 @@ class TernaryANode(_ANode):
 class AtomANode(_ANode):
   """
   For a token like .
-  This could be LitearlWord too, but it's not worth it
+  This could be LiteralWord too, but it's not worth it
   """
   def __init__(self, word):
     _ANode.__init__(self, Id.Word_Compound)
@@ -88,6 +88,7 @@ class AtomANode(_ANode):
     f.write('}')
 
 
+# TODO: Hook this up again.
 class ArrayAtomANode(_ANode):
 
   def __init__(self, atype):

@@ -146,7 +146,7 @@ class Lexer(object):
     """
     return self.line_lexer.LookAheadForOp(lex_mode)
 
-  def PushHint(self, old_type, new_type):
+  def PushHint(self, old_id, new_id):
     """
     Use cases:
     Id.Op_RParen -> Id.Right_Subshell -- disambiguate
@@ -162,10 +162,10 @@ class Lexer(object):
       - precedence in [[,   e.g.  [[ (1 == 2) && (2 == 3) ]]
       - arrays: a=(1 2 3), a+=(4 5)
     """
-    old_s = IdName(old_type)
-    new_s = IdName(new_type)
+    old_s = IdName(old_id)
+    new_s = IdName(new_id)
     #print('* Lexer.PushHint %s => %s' % (old_s, new_s))
-    self.translation_stack.append((old_type, new_type))
+    self.translation_stack.append((old_id, new_id))
 
   def _Read(self, lex_mode):
     if self.line_lexer.AtEnd():
@@ -185,13 +185,13 @@ class Lexer(object):
 
     # e.g. translate ) or ` into EOF
     if self.translation_stack:
-      old_type, new_type = self.translation_stack[-1]  # top
-      if t.type == old_type:
-        new_s = IdName(new_type)
+      old_id, new_id = self.translation_stack[-1]  # top
+      if t.id == old_id:
+        new_s = IdName(new_id)
         #print('==> TRANSLATING %s ==> %s' % (t, new_s))
         self.translation_stack.pop()
         #print(self.translation_stack)
-        t.type = new_type
+        t.id = new_id
 
     return t
 
@@ -202,11 +202,11 @@ class Lexer(object):
       if self.tokens_out is not None:
         self.tokens_out.append(t)
 
-      self.was_line_cont = (t.type == Id.Ignored_LineCont)
+      self.was_line_cont = (t.id == Id.Ignored_LineCont)
 
       # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means
       # we don't have to handle them in the VS_1/VS_2/etc. states.
-      if t.type != Id.Ignored_LineCont:
+      if t.id != Id.Ignored_LineCont:
         break
 
     #print("T", t, lex_mode)

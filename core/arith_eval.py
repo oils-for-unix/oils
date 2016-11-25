@@ -14,18 +14,27 @@ TODO: Turn it into a class
 import sys
 
 from core.id_kind import Id
+from core.arith_node import _ANode, TernaryANode
+from core.util import cast
 
 
-def ArithEval(node, ev):
+def ArithEval(node: _ANode, ev):
   """
   Args:
     node: _ANode
 
-  TODO: Add errors
+  Issue: Word is not a kind of _ANode or ExprNode.  It is a _Node however,
+  because it has an Id type.
+
+  TODO:
+  - Error checking.  The return value should probably be success/fail, or
+    cflow, and then the integer result can be ArithEval.Result()
   """
   atype = node.atype
 
   if atype == Id.Arith_QMark:
+    node = cast(TernaryANode, node)
+
     lhs = int(ArithEval(node.cond, ev))
     if lhs != 0:
       ret = int(ArithEval(node.true_expr, ev))
@@ -36,6 +45,7 @@ def ArithEval(node, ev):
   # TODO: Should we come up with a kind/arity??
   elif atype == Id.Node_UnaryPlus:
     return int(ArithEval(node.child, ev))
+
   elif atype == Id.Node_UnaryMinus:
     return -int(ArithEval(node.child, ev))
 

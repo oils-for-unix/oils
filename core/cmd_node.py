@@ -21,8 +21,8 @@ from core.base import _Node
 class CNode(_Node):
   """Abstract base class for _CompoundCNode/SimpleCommandNode/AssignmentNode."""
 
-  def __init__(self, type):
-    self.type = type
+  def __init__(self, id):
+    _Node.__init__(self, id)
     self.redirects = []  # common to almost all nodes
 
     # TODO: Fill these out.  BUT: We need ordering info.  If we have < and
@@ -77,7 +77,8 @@ class RedirectNode(object):
     """
     Args:
       type: node type
-      op: Token, the operator
+      op: Token, the operator.
+        TODO: Should this be separated into kinds?  We really only need the id.
     """
     self.type = type
     self.op = op
@@ -145,9 +146,9 @@ class FilenameRedirectNode(RedirectNode):
     if op.val[0].isdigit():
       fd = int(op.val[0])
     else:
-      if op.type in (Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
+      if op.id in (Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
         fd = 1  # stdout
-      elif op.type == Id.Redir_Less:
+      elif op.id == Id.Redir_Less:
         fd = 0  # stdin
       else:  # < would be fd 0
         raise AssertionError
@@ -165,9 +166,9 @@ class DescriptorRedirectNode(RedirectNode):
     if op.val[0].isdigit():
       fd = int(op.val[0])
     else:
-      if op.type == Id.Redir_GreatAnd:
+      if op.id == Id.Redir_GreatAnd:
         fd = 1  # stdout
-      elif op.type == Id.Redir_LessAnd:
+      elif op.id == Id.Redir_LessAnd:
         fd = 0  # stdout
       else:  # < would be fd 0
         raise AssertionError
@@ -181,7 +182,7 @@ class DescriptorRedirectNode(RedirectNode):
 def _GetHereDocsToFill(redirects):
   return [
       r for r in redirects
-      if r.op.type in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
+      if r.op.id in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
   ]
 
 
@@ -284,8 +285,8 @@ class DParenNode(CNode):
 
 
 class _CompoundCNode(CNode):
-  def __init__(self, type):
-    CNode.__init__(self, type)
+  def __init__(self, id):
+    CNode.__init__(self, id)
     # children of type CNode.
     self.children = []
 
@@ -330,7 +331,7 @@ class _CompoundCNode(CNode):
   def __eq__(self, other):
     # TODO: Switch on the type too!  Check all the extra info for each node
     # type.
-    return self.type == other.type and self.children == other.children
+    return self.id == other.id and self.children == other.children
 
 
 # TODO:

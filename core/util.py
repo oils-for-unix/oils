@@ -33,6 +33,13 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
+# Like http://mypy.readthedocs.io/en/latest/casts.html
+# We need to upgrade to Python 3.5 to get the "typings" module.
+# TODO: Could add a runtime check for debug mode.
+def cast(type_, obj):
+  return obj
+
+
 class _EnumValue(object):
   """A unique name."""
   def __init__(self, namespace, name, value):

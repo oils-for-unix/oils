@@ -44,6 +44,8 @@ def NullConstant(p, t, bp):
   # TODO: if word.HasQuotedParts:
   # - Id.Node_Arith_STRING
   # - Id.Node_Arith_WORD
+
+  # NOTE: Just return the word itself?
   return AtomANode(t)
 
 

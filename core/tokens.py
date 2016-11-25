@@ -16,8 +16,8 @@ from core import id_kind
 
 
 class Token(object):
-  def __init__(self, type, val):
-    self.type = type
+  def __init__(self, id, val):
+    self.id = id
     self.val = val
 
     # In C++, instead of val, it will be this triple.  Change it to Val()
@@ -37,10 +37,10 @@ class Token(object):
     # Or maybe 16 bytes is OK
 
   def __eq__(self, other):  # for unit tests
-    return self.type == other.type and self.val == other.val
+    return self.id == other.id and self.val == other.val
 
   def __repr__(self):
-    return '<%s %s>' % (id_kind.IdName(self.type), EncodeTokenVal(self.val))
+    return '<%s %s>' % (id_kind.IdName(self.id), EncodeTokenVal(self.val))
 
   def Val(self, pool):
     """Given a pool of lines, return the value of this token.
@@ -53,7 +53,7 @@ class Token(object):
     return line[c : c+self.length]
 
   def Kind(self):
-    return id_kind.LookupKind(self.type)
+    return id_kind.LookupKind(self.id)
 
 
 # This is word characters, - and _, as well as path name characters . and /.
