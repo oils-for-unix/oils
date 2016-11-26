@@ -10,6 +10,11 @@ a=(1 '2 3')
 echo $a
 # stdout: 1
 
+### ${a[@]} and ${a[*]} give all elements of array
+a=(1 '2 3')
+echo "${a[@]}" "${a[*]}"
+# stdout: 1 2 3 1 2 3
+
 ### local array
 # mksh support local variables, but not local arrays, oddly.
 f() {

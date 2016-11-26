@@ -76,7 +76,7 @@ if __name__ == '__main__':
     print('STATS: %d tokens in %d groups: %s' % (sum(k), len(k), k))
     # Thinking about switching
     big = [i for i in k if i > 8]
-    print('%d BIG groups: %s' % (len(big), big))
+    print('%d BIG groups: %s' % (len(big), sorted(big)))
 
     PrintBoolTable()
 

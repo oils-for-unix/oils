@@ -14,10 +14,10 @@ from core.word_node import (
     CompoundWord, TokenWord,
     LiteralPart, EscapedLiteralPart, SingleQuotedPart, DoubleQuotedPart,
     VarSubPart, CommandSubPart, ArithSubPart, ArrayLiteralPart,
-    IndexVarOp, TestVarOp, StripVarOp, SliceVarOp, LengthVarOp, PatSubVarOp,
-    RefVarOp)
+    IndexVarOp, ArrayVarOp, TestVarOp, StripVarOp, SliceVarOp, LengthVarOp,
+    PatSubVarOp, RefVarOp)
 
-from core.id_kind import Id, Kind
+from core.id_kind import Id, Kind, IdName
 from core.tokens import Token
 from core import tdop
 from core.cmd_node import ForExpressionNode
@@ -150,11 +150,6 @@ class WordParser(object):
   def _ReadSliceArg(self):
     """Read an arithmetic expression for either part of ${a : i+1 : i+2}."""
     anode = self._ReadArithExpr(do_next=False)
-    if not anode: return None
-
-    if anode.ArrayVarOpToken() != Id.Undefined_Tok:
-      self.AddErrorContext('Unexpected token in slice arg: %s', anode.atype)
-      return None
     return anode
 
   def _ReadSliceVarOp(self):
@@ -243,27 +238,29 @@ class WordParser(object):
 
     LexMode: BVS_1
     """
-    # TODO: Is there a way to ask it to try @ and *?  And immediately return?
-    # Instead of returning a _Node, it could return a Token or something.
-    # Look ahead in the LexMode.ARITH mode, and then pass it to tdop.TdopParser if
-    # not?
+    # Lookahead to see if we get @ or *.  Otherwise read a full arithmetic
+    # expression.
+    t2 = self.lexer.LookAhead(LexMode.ARITH)
+    if t2.id in (Id.Lit_At, Id.Arith_Star):
+      op = ArrayVarOp(t2.id)
 
-    anode = self._ReadArithExpr()
-    if not anode:
-      return None
-    token_type = anode.ArrayVarOpToken()
-    if token_type != Id.Undefined_Tok:
-      op = ArrayVarOp(token_type)
+      self._Next(LexMode.ARITH)  # skip past [
+      self._Peek()  
+      self._Next(LexMode.ARITH)  # skip past @
+      self._Peek()  
     else:
+      anode = self._ReadArithExpr()
+      if not anode:
+        return None
       op = IndexVarOp(anode)
+    #print('AFTER', IdName(self.token_type))
 
-    # TODO: Write and use an _Eat() method?
+    #self._Peek()    # Can't do this here.  Should the test go elsewhere?
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
       self._BadToken('Expected ] after subscript, got %s', self.cur_token)
       return None
 
-    # Advance past ]
-    self._Next(LexMode.VS_2)
+    self._Next(LexMode.VS_2)  # skip past ]
     self._Peek()  # Needed to be in the same spot as no subscript
 
     return op
@@ -299,6 +296,7 @@ class WordParser(object):
     Start parsing at the op -- we already skipped past the name.
     """
     part = self._ParseVarOf()
+    if not part: return None
 
     self._Peek()
     if self.token_type == Id.Right_VarSub:
@@ -342,7 +340,7 @@ class WordParser(object):
           return None
 
       else:
-        raise AssertionError(self.cur_token)
+        raise AssertionError("Invalid op token %s" % self.cur_token)
 
       part.transform_ops.append(op)
 
@@ -421,7 +419,7 @@ class WordParser(object):
 
     if ty == Id.VSub_Pound:
       # Disambiguate
-      t = self.lexer.LookAheadForOp(LexMode.VS_1)
+      t = self.lexer.LookAhead(LexMode.VS_1)
       #print("\t# LOOKAHEAD", t)
       if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
         # e.g. a name, '#' is the prefix
@@ -442,7 +440,7 @@ class WordParser(object):
         if not part: return None
 
     elif ty == Id.VSub_Bang:
-      t = self.lexer.LookAheadForOp(LexMode.VS_1)
+      t = self.lexer.LookAhead(LexMode.VS_1)
       #print("\t! LOOKAHEAD", t)
       if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
         # e.g. a name, '!' is the prefix
@@ -866,7 +864,7 @@ class WordParser(object):
     # MUST use a new word parser (with same lexer).
     w_parser = WordParser(self.lexer, self.line_reader)
     while True:
-      word = w_parser.ReadOuter()
+      word = w_parser.ReadWord(LexMode.OUTER)
       if word.CommandId() == Id.Right_ArrayLiteral:
         break
       array_part.words.append(word)
@@ -901,11 +899,11 @@ class WordParser(object):
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:
-          #print('@', self.lexer.LookAheadForOp())
+          #print('@', self.lexer.LookAhead())
           #print('@', self.cursor)
           #print('@', self.cur_token)
 
-          t = self.lexer.LookAheadForOp(LexMode.OUTER)
+          t = self.lexer.LookAhead(LexMode.OUTER)
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
@@ -1019,7 +1017,7 @@ class WordParser(object):
 
     raise AssertionError("Shouldn't get here")
 
-  def _Read(self, lex_mode):
+  def _ReadWord(self, lex_mode):
     """Helper function for Read().
 
     Returns:
@@ -1089,15 +1087,13 @@ class WordParser(object):
 
     raise AssertionError("Shouldn't get here")
 
-  def LookAheadForOp(self):
-    # Is this correct?  Should we also call self._Peek()  here?
-    if self.cur_token is None:
-      token = self.lexer.LookAheadForOp(LexMode.OUTER)
-    elif self.cur_token.id == Id.WS_Space:
-      token = self.lexer.LookAheadForOp(LexMode.OUTER)
-    else:
-      token = self.cur_token
-    return token.id
+  def CurrentTokenId(self):
+    """Get the current token ID, for parser lookahead."""
+    # This is only called in one place.  Assert the state of the word parser.
+    # We could pass through to self.lexer.LookAhead(), but we don't need to.
+    #assert self.next_lex_mode is None, self.next_lex_mode
+    assert self.token_type != Id.Undefined_Tok
+    return self.cur_token.id
 
   def ReadWord(self, lex_mode):
     """Read the next Word.
@@ -1106,14 +1102,13 @@ class WordParser(object):
       Word, or None if there was an error
     """
     # Implementation note: This is an stateful/iterative function that calls
-    # the stateless "_Read" function.
+    # the stateless "_ReadWord" function.
     while True:
       if lex_mode == LexMode.ARITH:
         # TODO: Can this be unified?
         word, need_more = self._ReadArithWord()
-      elif lex_mode in (
-          LexMode.OUTER, LexMode.DBRACKET, LexMode.BASH_REGEX):
-        word, need_more = self._Read(lex_mode)
+      elif lex_mode in (LexMode.OUTER, LexMode.DBRACKET, LexMode.BASH_REGEX):
+        word, need_more = self._ReadWord(lex_mode)
       else:
         raise AssertionError('Invalid lex state %s' % lex_mode)
       if not need_more:
@@ -1132,9 +1127,6 @@ class WordParser(object):
     # the last non-ignored token.
     self.cursor_was_newline = (self.cursor.CommandId() == Id.Op_Newline)
     return self.cursor
-
-  def ReadOuter(self):
-    return self.ReadWord(LexMode.OUTER)
 
   def ReadHereDocBody(self):
     """

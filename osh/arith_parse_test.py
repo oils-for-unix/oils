@@ -40,8 +40,13 @@ def ParseAndEval(code_str):
   exec_opts = cmd_exec.ExecOpts()
   ev = word_eval.CompletionEvaluator(mem, exec_opts)
 
-  value = arith_eval.ArithEval(anode, ev)
-  print('value:', value)
+  arith_ev = arith_eval.ArithEvaluator(ev)
+  ok = arith_ev.Eval(anode)
+  if ok:
+    value = arith_ev.Result()
+    print('value:', value)
+  else:
+    raise AssertionError(code_str)
 
   return value
 

@@ -17,67 +17,95 @@ from core.id_kind import Id
 from core.arith_node import _ANode, TernaryANode
 from core.util import cast
 
+#from core import word_eval 
 
-def ArithEval(node: _ANode, ev):
-  """
-  Args:
-    node: _ANode
 
-  Issue: Word is not a kind of _ANode or ExprNode.  It is a _Node however,
-  because it has an Id type.
+class ArithEvalError(RuntimeError): pass
 
-  TODO:
-  - Error checking.  The return value should probably be success/fail, or
-    cflow, and then the integer result can be ArithEval.Result()
-  """
-  atype = node.atype
+# In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
+# BoolEvalResult, CmdExecResult?  Word is handled differntly because it's a
+# string.
 
-  if atype == Id.Arith_QMark:
-    node = cast(TernaryANode, node)
+class ArithEvaluator:
+  def __init__(self, ev):
+    self.ev = ev  # type: word_eval.WordEvaluator
+    self.result = 0
 
-    lhs = int(ArithEval(node.cond, ev))
-    if lhs != 0:
-      ret = int(ArithEval(node.true_expr, ev))
+  def Result(self):
+    return self.result
+
+  def Eval(self, node: _ANode):
+    try:
+      result = self._Eval(node)
+    except RuntimeError:
+      ok = False
     else:
-      ret = int(ArithEval(node.false_expr, ev))
-    return ret
+      ok = True
+      self.result = result
+    return ok
 
-  # TODO: Should we come up with a kind/arity??
-  elif atype == Id.Node_UnaryPlus:
-    return int(ArithEval(node.child, ev))
+  def _Eval(self, node: _ANode):
+    """
+    Args:
+      node: _ANode
 
-  elif atype == Id.Node_UnaryMinus:
-    return -int(ArithEval(node.child, ev))
+    Issue: Word is not a kind of _ANode or ExprNode.  It is a _Node however,
+    because it has an Id type.
 
-  elif atype == Id.Word_Compound:
-    ok, i = ev.ArithEvalWord(node.word)
-    #assert ok
-    return i
+    TODO:
+    - Error checking.  The return value should probably be success/fail, or
+      cflow, and then the integer result can be ArithEval.Result()
+    """
+    atype = node.atype
 
-  # op precedence is used during parsing, op arity is used during execution.
-  else:
+    if atype == Id.Arith_QMark:
+      node = cast(TernaryANode, node)
 
-    # TODO: Do type check at PARSE TIME, where applicable
-    lhs = int(ArithEval(node.left, ev))
-    rhs = int(ArithEval(node.right, ev))
+      lhs = self._Eval(node.cond)
+      if lhs != 0:
+        ret = self._Eval(node.true_expr)
+      else:
+        ret = self._Eval(node.false_expr)
+      return ret
 
-    if atype == Id.Arith_Comma:
-      return rhs
+    # TODO: Should we come up with a kind/arity??
+    elif atype == Id.Node_UnaryPlus:
+      return self._Eval(node.child)
 
-    # For now:
-    if atype == Id.Arith_Plus:
-      return lhs + rhs
-    if atype == Id.Arith_Minus:
-      return lhs - rhs
+    elif atype == Id.Node_UnaryMinus:
+      return -self._Eval(node.child)
 
-    if atype == Id.Arith_Star:
-      return lhs * rhs
-    if atype == Id.Arith_Slash:
-      return lhs / rhs
-    if atype == Id.Arith_Percent:
-      return lhs % rhs
+    elif atype == Id.Word_Compound:
+      ok, i = self.ev.ArithEvalWord(node.word)
+      if ok:
+        return i
+      else:
+        raise ArithEvalError(self.ev.Error())
 
-    if atype == Id.Arith_DStar:
-      return lhs ** rhs
+    # op precedence is used during parsing, op arity is used during execution.
+    else:
 
-  raise NotImplementedError
+      # TODO: Do type check at PARSE TIME, where applicable
+      lhs = self._Eval(node.left)
+      rhs = self._Eval(node.right)
+
+      if atype == Id.Arith_Comma:
+        return rhs
+
+      # For now:
+      if atype == Id.Arith_Plus:
+        return lhs + rhs
+      if atype == Id.Arith_Minus:
+        return lhs - rhs
+
+      if atype == Id.Arith_Star:
+        return lhs * rhs
+      if atype == Id.Arith_Slash:
+        return lhs / rhs
+      if atype == Id.Arith_Percent:
+        return lhs % rhs
+
+      if atype == Id.Arith_DStar:
+        return lhs ** rhs
+
+    raise NotImplementedError

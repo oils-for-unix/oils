@@ -53,6 +53,11 @@ parser() {
   wc -l core/{tdop,lexer}.py | sort -n
 }
 
+# Stuff we might need to hand-port
+parser-port() {
+  wc -l core/tdop.py osh/*_parse.py | sort -n
+}
+
 # Stuff needed to port to C+
 runtime() {
   wc -l core/*_{exec,eval}.py core/{builtin,process,value}.py | sort -n

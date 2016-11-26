@@ -618,7 +618,7 @@ class CommandParser(object):
       assign_flags |= 1 << EAssignFlags.READONLY.value
 
     else:  # ls foo  or  FOO=bar ls foo
-      assert assign_kw == Id.Assign_None
+      assert assign_kw == Id.Undefined_Tok
       return self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
 
     if redirects:
@@ -1170,7 +1170,7 @@ class CommandParser(object):
       return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Word:
-      if self.w_parser.LookAheadForOp() == Id.Op_LParen:  # (
+      if self.w_parser.CurrentTokenId() == Id.Op_LParen:  # (
         kv = self.cur_word.LooksLikeAssignment()
         if kv:
           return self.ParseSimpleCommand()  # f=(a b c)  # array

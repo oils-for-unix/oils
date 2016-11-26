@@ -577,17 +577,17 @@ class CompoundWord(Word):
     """Tests if word is an assignment builtin."""
     # has to be a single literal part
     if len(self.parts) != 1:
-      return Id.Assign_None
+      return Id.Undefined_Tok
 
     token_type = self.parts[0].LiteralId()
     if token_type == Id.Undefined_Tok:
-      return Id.Assign_None
+      return Id.Undefined_Tok
 
     token_kind = LookupKind(token_type)
     if token_kind == Kind.Assign:
       return token_type
 
-    return Id.Assign_None
+    return Id.Undefined_Tok
 
   def ArithId(self):
     return Id.Word_Compound

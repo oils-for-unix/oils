@@ -61,7 +61,7 @@ class LineLexer(object):
       self.line_pos -= 1
       return True
 
-  def LookAheadForOp(self, lex_mode):
+  def LookAhead(self, lex_mode):
     """Look ahead for a non-space token, using the given lexical state."""
     pos = self.line_pos
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
@@ -129,7 +129,7 @@ class Lexer(object):
   def MaybeUnreadOne(self):
     return self.line_lexer.MaybeUnreadOne()
 
-  def LookAheadForOp(self, lex_mode):
+  def LookAhead(self, lex_mode):
     """Look ahead in the current line for the next non-space token.
 
     NOTE: Limiting lookahead to the current line makes the code a lot simpler
@@ -144,7 +144,7 @@ class Lexer(object):
     foo()
     {}
     """
-    return self.line_lexer.LookAheadForOp(lex_mode)
+    return self.line_lexer.LookAhead(lex_mode)
 
   def PushHint(self, old_id, new_id):
     """

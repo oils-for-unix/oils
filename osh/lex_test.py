@@ -70,7 +70,7 @@ class LexerTest(unittest.TestCase):
     self.assertEqual(Token(Id.BoolUnary_z, '-z'), t)
     self.assertEqual(Kind.BoolUnary, t.Kind())
 
-  def testLookAheadForOp(self):
+  def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
     # the function; then Peek() the next token.  Then Lookahead in that state.
     lexer = _InitLexer('func()')
@@ -78,13 +78,13 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(Id.Lit_Chars, 'func'), t)
 
-    #self.assertEqual(Id.Op_LParen, lexer.LookAheadForOp())
+    #self.assertEqual(Id.Op_LParen, lexer.LookAhead())
 
     t = lexer.Read(LexMode.OUTER)
     self.assertEqual(Token(Id.Op_LParen, '('), t)
 
     self.assertEqual(
-        Token(Id.Op_RParen, ')'), lexer.LookAheadForOp(LexMode.OUTER))
+        Token(Id.Op_RParen, ')'), lexer.LookAhead(LexMode.OUTER))
 
     lexer = _InitLexer('func ()')
 
@@ -95,7 +95,7 @@ class LexerTest(unittest.TestCase):
     self.assertEqual(Token(Id.WS_Space, ' '), t)
 
     self.assertEqual(
-        Token(Id.Op_LParen, '('), lexer.LookAheadForOp(LexMode.OUTER))
+        Token(Id.Op_LParen, '('), lexer.LookAhead(LexMode.OUTER))
 
 
 class LineLexerTest(unittest.TestCase):
@@ -113,28 +113,28 @@ class LineLexerTest(unittest.TestCase):
     l = LineLexer(LEXER_DEF, '\n')
     self.assertEqual(Token(Id.Op_Newline, '\n'), l.Read(LexMode.OUTER))
 
-  def testLookAheadForOp(self):
+  def testLookAhead(self):
     # Lines always end with '\n'
     l = LineLexer(LEXER_DEF, '')
-    self.assertEqual(Token(Id.Eof_Real, ''), l.LookAheadForOp(LexMode.OUTER))
+    self.assertEqual(Token(Id.Eof_Real, ''), l.LookAhead(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'foo')
     self.assertEqual(Token(Id.Lit_Chars, 'foo'), l.Read(LexMode.OUTER))
-    self.assertEqual(Token(Id.Eof_Real, ''), l.LookAheadForOp(LexMode.OUTER))
+    self.assertEqual(Token(Id.Eof_Real, ''), l.LookAhead(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'foo  bar')
     self.assertEqual(Token(Id.Lit_Chars, 'foo'), l.Read(LexMode.OUTER))
     self.assertEqual(
-        Token(Id.Lit_Chars, 'bar'), l.LookAheadForOp(LexMode.OUTER))
+        Token(Id.Lit_Chars, 'bar'), l.LookAhead(LexMode.OUTER))
 
     # No lookahead; using the cursor!
     l = LineLexer(LEXER_DEF, 'func(')
     self.assertEqual(Token(Id.Lit_Chars, 'func'), l.Read(LexMode.OUTER))
-    self.assertEqual(Token(Id.Op_LParen, '('), l.LookAheadForOp(LexMode.OUTER))
+    self.assertEqual(Token(Id.Op_LParen, '('), l.LookAhead(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'func  (')
     self.assertEqual(Token(Id.Lit_Chars, 'func'), l.Read(LexMode.OUTER))
-    self.assertEqual(Token(Id.Op_LParen, '('), l.LookAheadForOp(LexMode.OUTER))
+    self.assertEqual(Token(Id.Op_LParen, '('), l.LookAhead(LexMode.OUTER))
 
 
 OUTER_RE = CompileAll(LEXER_DEF[LexMode.OUTER])

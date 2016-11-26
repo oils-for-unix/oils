@@ -306,9 +306,10 @@ LEXER_DEF[LexMode.ARITH] = \
   #   0123
   # A separate digits part makes this easier to parse STATICALLY.  But this
   # doesn't help with DYNAMIC parsing.
-  (r'[a-zA-Z_@]+', Id.Lit_Chars),  # for 64#@ or 64#_
+  (r'[a-zA-Z_]+', Id.Lit_Chars),  # for variable names or 64#_
   (r'[0-9]+', Id.Lit_Digits),
-  (r'#', Id.Lit_Pound),
+  (r'@', Id.Lit_At),  # for 64#@ or ${a[@]}
+  (r'#', Id.Lit_Pound),  # for 64#a
 
 # TODO: 64#@ interferes with VS_AT.  Hm.
 ] + ID_SPEC.LexerPairs(Kind.Arith) + [

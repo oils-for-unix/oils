@@ -108,12 +108,8 @@ def MakeShellSpec():
   spec = tdop.ParserSpec()
 
   # -1 precedence -- doesn't matter
-
-  # TODO: Could these work as kinds?
   spec.Null(-1, tdop.NullConstant, [
       Id.Word_Compound,
-      Id.Arith_At,  # For ${a[@]}
-      Id.Arith_Star,  # For ${a[*]}
       Id.Arith_Semi,  # for loop
   ])
   spec.Null(-1, tdop.NullError, [

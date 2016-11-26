@@ -18,10 +18,6 @@ class _ANode(_Node):
     _Node.__init__(self, 'TODO: get rid of')
     self.atype = atype  # type: TN
 
-  def ArrayVarOpToken(self):
-    """Returns whether it's ${a[@]} or ${a[*]}."""
-    return Id.Undefined_Tok
-
   def PrintLine(self, f):
     raise NotImplementedError
 
@@ -86,17 +82,3 @@ class AtomANode(_ANode):
     f.write('{A Atom ')
     f.write('%s %s' % (IdName(self.atype), self.word))
     f.write('}')
-
-
-# TODO: Hook this up again.
-class ArrayAtomANode(_ANode):
-
-  def __init__(self, atype):
-    _ANode.__init__(self, atype)
-
-  def ArrayVarOpToken(self):
-    """Returns whether it's ${a[@]} or ${a[*]}."""
-    return self.atype
-
-  def PrintLine(self, f):
-    f.write('{A Array %s}' % IdName(self.atype))

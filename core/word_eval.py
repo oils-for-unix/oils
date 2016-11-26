@@ -195,9 +195,12 @@ class _Evaluator(object):
     raise NotImplementedError
 
   def EvalArithSub(self, anode):
-    i = arith_eval.ArithEval(anode, self)
-    #s = Eval
-    return True, Value.FromString(str(i))
+    arith_ev = arith_eval.ArithEvaluator(self)
+    if arith_ev.Eval(anode):
+      num = arith_ev.Result()
+      return True, Value.FromString(str(num))
+    else:
+      return False, None
 
   def _EvalVar(self, name, quoted=False):
     """Evaluates the given variable in the current scope.
@@ -313,7 +316,8 @@ class _Evaluator(object):
     if defined and part.bracket_op:
       vtype = part.bracket_op.vtype
 
-      if vtype == Id.Arith_At:
+      # TODO: Change this to array_op instead of bracket_op?
+      if vtype == Id.Lit_At:
         if val.IsArray():
           array_ok = True
         else:
@@ -333,12 +337,13 @@ class _Evaluator(object):
         if is_array:
           anode = part.bracket_op.index_expr
           # TODO: This should propagate errors
-          index = arith_eval.ArithEval(anode, self)
-          ok = True
+          arith_ev = arith_eval.ArithEvaluator(self)
+          ok = arith_ev.Eval(anode)
           if not ok:
             self._AddErrorContext(
                 'Error evaluating arith sub in index expression')
             return False, None
+          index = arith_ev.Result()
           try:
             s = a[index]
           except IndexError:
@@ -632,7 +637,7 @@ class _Evaluator(object):
     try:
       integer = int(s)
     except ValueError:
-      print("Invalid integer constant %r" % s)
+      self._AddErrorContext("Invalid integer constant %r" % s)
       return False, 0
     return True, integer
 

@@ -155,11 +155,12 @@ def MakeTokens(spec):
       'Chars', 'VarLike', 'Other', 'EscapedChar',
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
-      'DRightBracket',     # ]] that matches [[, NOT a keyword
+      'DRightBracket',     # the ]] that matches [[, NOT a keyword
       'Tilde',             # tilde expansion
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
       'Digits',            # for LexMode.ARITH
+      'At',                # for ${a[@]}, in LexState.ARITH
   ])
 
   spec.AddKind('Op', [
@@ -172,9 +173,7 @@ def MakeTokens(spec):
       'Semi',    # ;
       'DSemi',   # ;; for case
 
-      # NOTE: This is for subshell only.  It's not under Kind.Left because it's
-      # NOT a WordPart.
-      'LParen',
+      'LParen',  # For subshell.  Not Kind.Left because it's NOT a WordPart.
       'RParen',  # Default, will be translated to Id.Right_*
       'DLeftParen',
       'DRightParen',
@@ -280,6 +279,9 @@ def MakeTokens(spec):
   ])
 
   # Operators
+  # NOTE: Could share Op_Pipe, Op_Amp, Op_DAmp, Op_Semi, Op_LParen, etc.
+  # Actually All of Arith could be folded into Op, because we are using
+  # WordParser._ReadArithWord vs. WordParser._ReadWord.
   spec.AddKindPairs('Arith', [
       ('Semi', ';'),   # ternary for loop only
       ('Comma', ','),  # function call and C comma operator
@@ -289,11 +291,6 @@ def MakeTokens(spec):
       ('LParen', '('), ('RParen', ')'),  # grouping and function call extension
       ('LBracket', '['), ('RBracket', ']'),  # array and assoc array subscript
       ('RBrace', '}'),  # for end of var sub
-
-      # SPECIAL CASE for ${a[@]}.  The expression in the [] is either and
-      # arithmetic expression or @ or *.  In the ArithParser, we disallow this
-      # token everywhere.  Arith_Star serves double duty for ${a[*]}
-      ('At', '@'),
 
       # Logical Ops
       ('QMark', '?'), ('Colon', ':'), # Ternary Op: a < b ? 0 : 1
@@ -316,10 +313,12 @@ def MakeTokens(spec):
 
   # This kind is for Node types that are NOT tokens.
   spec.AddKind('Node', [
-     # Arithmetic nodes:
+     # Arithmetic nodes
      'PostDPlus', 'PostDMinus',  # Postfix inc/dec.
                                  # Prefix inc/dec use Arith_DPlus/Arith_DMinus.
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
+                                 # Actually we don't need this because we they
+                                 # will be under Expr1/Plus vs Expr2/Plus.
 
      # Command nodes 
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
@@ -329,12 +328,9 @@ def MakeTokens(spec):
      # They hold one, two, or three words.
      'Expr1', 'Expr2', 'Expr3',
      'ConstInt',  # for arithmetic.  There is no ConstBool.
+                  # Could be Lit_Digits?  But oil will need
+                  # ConstFloat/ConstNum.
   ])
-  #spec.AddKind('ANode', ['Unary', 'Binary', 'Ternary', 'Word'])
-  #spec.AddKind('BNode', ['Not', 'AndOr', 'Unary', 'Binary'])
-  # TODO:
-  # - CNode
-  # - Move ANode_PostDPlus
 
   # A compound word, in arith context, boolean context, or command context.
   # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
@@ -352,7 +348,7 @@ def MakeTokens(spec):
   # Assignment builtins -- treated as statically parsed keywords.  They are
   # different from keywords because env bindings can appear before, e.g.
   # FOO=bar local v.
-  spec.AddKind('Assign', ['None', 'Declare', 'Export', 'Local', 'Readonly'])
+  spec.AddKind('Assign', ['Declare', 'Export', 'Local', 'Readonly'])
 
 
 # token_type -> (logical, arity, arg_type)
