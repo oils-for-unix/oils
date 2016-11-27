@@ -93,14 +93,14 @@ class WordParserTest(unittest.TestCase):
     w = _assertReadWord(self, '${15}')
 
     w = _assertReadWord(self, '${#var}')
-    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).id)
     w = _assertReadWord(self, '${!ref}')
-    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).id)
 
     # Length of length
     w = _assertReadWord(self, '${##}')
     self.assertEqual('#', _GetVarSub(self, w).name)
-    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${array[0]}')
     self.assertEqual(1, len(w.parts))
@@ -110,15 +110,15 @@ class WordParserTest(unittest.TestCase):
     # Length of element
     w = _assertReadWord(self, '${#array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).id)
     # Ref for element
     w = _assertReadWord(self, '${!array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VOp1_Pound, _GetTransformOp(self, w).vtype)
+    self.assertEqual(Id.VOp1_Pound, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${!var#prefix}')
     self.assertEqual(1, len(w.parts))
@@ -230,34 +230,34 @@ class WordParserTest(unittest.TestCase):
   def testLength(self):
     # Synonym for $#, had a bug here
     w = _assertReadWord(self, '${#@}')
-    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).id)
 
     # Length of arg 11
     w = _assertReadWord(self, '${#11}')
-    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${#str}')
-    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${#array[0]}')
     print(w)
     # BUG!
-    #self.assertTrue(VS_POUND, _GetTransformOp(self, w).vtype)
+    #self.assertTrue(VS_POUND, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${#array["key"]}')
     # BUG!
-    #self.assertTrue(Id.VSub_POUND, _GetTransformOp(self, w).vtype)
+    #self.assertTrue(Id.VSub_POUND, _GetTransformOp(self, w).id)
 
   def testUnary(self):
     w = _assertReadWord(self, '${var#}')
-    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).id)
     w = _assertReadWord(self, '${var#prefix}')
-    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${var##}')
-    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).id)
     w = _assertReadWord(self, '${var##prefix}')
-    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).vtype)
+    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).id)
 
     w = _assertReadWord(self, '${var%suffix}')
     w = _assertReadWord(self, '${var%%suffix}')

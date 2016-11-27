@@ -14,8 +14,7 @@ from core.word_node import (
     CompoundWord, TokenWord,
     LiteralPart, EscapedLiteralPart, SingleQuotedPart, DoubleQuotedPart,
     VarSubPart, CommandSubPart, ArithSubPart, ArrayLiteralPart,
-    IndexVarOp, ArrayVarOp, TestVarOp, StripVarOp, SliceVarOp, LengthVarOp,
-    PatSubVarOp, RefVarOp)
+    VarOp0, VarOp1, SliceVarOp, PatSubVarOp)
 
 from core.id_kind import Id, Kind, IdName
 from core.tokens import Token
@@ -235,14 +234,12 @@ class WordParser(object):
 
   def _ReadSubscript(self):
     """ Subscript = '[' ('@' | '*' | ArithExpr) ']'
-
-    LexMode: BVS_1
     """
     # Lookahead to see if we get @ or *.  Otherwise read a full arithmetic
     # expression.
     t2 = self.lexer.LookAhead(LexMode.ARITH)
     if t2.id in (Id.Lit_At, Id.Arith_Star):
-      op = ArrayVarOp(t2.id)
+      op = VarOp0(t2.id)
 
       self._Next(LexMode.ARITH)  # skip past [
       self._Peek()  
@@ -252,7 +249,7 @@ class WordParser(object):
       anode = self._ReadArithExpr()
       if not anode:
         return None
-      op = IndexVarOp(anode)
+      op = VarOp1(Id.VOp2_LBracket, anode)
     #print('AFTER', IdName(self.token_type))
 
     #self._Peek()    # Can't do this here.  Should the test go elsewhere?
@@ -307,22 +304,22 @@ class WordParser(object):
     op_kind = self.token_kind
 
     if op_kind == Kind.VTest:
-      vtype = self.token_type
+      id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
         self._BadToken('Unexpected token after test arg: %s', self.cur_token)
         return None
 
-      part.test_op = TestVarOp(vtype, arg_word)
+      part.test_op = VarOp1(id, arg_word)
 
     elif op_kind == Kind.VOp1:
-      vtype = self.token_type
+      id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
         self._BadToken('Unexpected token after unary op: %s', self.cur_token)
         return None
 
-      op = StripVarOp(vtype, arg_word)
+      op = VarOp1(id, arg_word)
       part.transform_ops.append(op)
 
     elif op_kind == Kind.VOp2:
@@ -432,7 +429,7 @@ class WordParser(object):
               self.cur_token)
           return None
 
-        op = LengthVarOp()
+        op = VarOp0(Id.VSub_Pound)  # length
         part.transform_ops.append(op)
 
       else:  # not a prefix, '#' is the variable
@@ -455,7 +452,7 @@ class WordParser(object):
 
         # NOTE: The ref op has to come FIRST, it is evaluated BEFORE any
         # operators, e.g. ${!ref#prefix} -- first deref, then strip prefix.
-        op = RefVarOp()
+        op = VarOp0(Id.VSub_Bang)
         part.transform_ops.insert(0, op)
 
       else:  # not a prefix, '!' is the variable

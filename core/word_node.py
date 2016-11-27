@@ -65,21 +65,6 @@ class WordPart(_Node):
     """
     raise NotImplementedError(self.__class__.__name__)
 
-  def Eval(self, ev, quoted=False):
-    """Evaluate to a string Value.
-
-    For the case where glob is turned off, or we're in DoubleQuotedPart, etc.
-
-    Args:
-      ev: _Evaluator
-      quoted: Whether we're in a double quoted context
-
-    Returns:
-      ok: bool, success
-      value: Value, which represents a string or list
-    """
-    raise NotImplementedError
-
   def EvalStatic(self):
     """Evaluate a word at PARSE TIME.
 
@@ -171,17 +156,6 @@ class ArrayLiteralPart(WordPart):
   def __repr__(self):
     return '[Array ' + ' '.join(repr(w) for w in self.words) + ']'
 
-  def Eval(self, ev, quoted=False):
-    """ArrayLiteralPart.Eval().
-
-    This is used when we're on the right hand side of an assignment.  Need
-    splitting too.
-
-    It can't be quoted... because then it would just be a string.
-
-    """
-    return ev.EvalArrayLiteralPart(self)
-
   def IsArrayLiteral(self):
     return True
 
@@ -223,10 +197,6 @@ class LiteralPart(_LiteralPartBase):
         IdName(self.token.id), EncodeTokenVal(self.token.val),
         newline)
 
-  def Eval(self, ev, quoted=False):
-    s = self.token.val
-    return True, Value.FromString(s)
-
   def EvalStatic(self):
     return True, self.token.val, False
 
@@ -264,13 +234,6 @@ class EscapedLiteralPart(_LiteralPartBase):
     return '[\ %s %s]' % (
         IdName(self.token.id), EncodeTokenVal(self.token.val))
 
-  def Eval(self, ev, quoted=False):
-    val = self.token.val
-    assert len(val) == 2, val  # \*
-    assert val[0] == '\\'
-    s = val[1]
-    return True, Value.FromString(s)
-
   def EvalStatic(self):
     # I guess escaped literal is fine, like \E ?
     return True, self.token.val[1:], True
@@ -300,10 +263,6 @@ class SingleQuotedPart(WordPart):
     """Shared between Eval and EvalStatic."""
     return ''.join(t.val for t in self.tokens)
 
-  def Eval(self, ev, quoted=False):
-    s = self._Eval()
-    return True, Value.FromString(s)
-
   def EvalStatic(self):
     # Single quoted literal can be here delimiter!  Like 'EOF'.
     return True, self._Eval(), True
@@ -331,14 +290,6 @@ class DoubleQuotedPart(WordPart):
     else:
       return None, None
 
-  def Eval(self, ev, quoted=False):
-    """DoubleQuotedPart.Eval()
-
-    NOTE: This is very much like CompoundWord.Eval(), except that we don't need
-    to split with IFS, and we don't elide empty values.
-    """
-    return ev.EvalDoubleQuotedPart(self)
-
   def EvalStatic(self):
     ret = ''
     for p in self.parts:
@@ -364,11 +315,6 @@ class CommandSubPart(WordPart):
     self.command_list.PrintLine(f)  # print(on a single line)
     return '[ComSub %s]' % f.getvalue()
 
-  def Eval(self, ev, quoted=False):
-    # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
-    # supply something like /dev/fd/63.
-    return ev.EvalCommandSub(self.command_list)
-
   def EvalStatic(self):
     return False, '', False
 
@@ -391,13 +337,15 @@ class VarSubPart(WordPart):
     self.name = name
     self.token = token
 
-    # TODO: seprate array_op -- better for oil
-    self.bracket_op = None  # either IndexVarOp or ArrayVarOp
-    self.test_op = None  # TestVarOp -- one of 8 types
+    self.array_op = None  # VarOp0 for @ or *
+    self.bracket_op = None  # VarOp1 with arithmetic expression / string
+    self.test_op = None  # VarOp1 -- one of 8 types
     self.transform_ops = []  # list of length/strip/slice/patsub
 
   def PrintLine(self, f):
     f.write('[VarSub %s' % self.name)  # no quotes around name
+    if self.array_op:
+      f.write(' array_op=%r' % self.array_op)
     if self.bracket_op:
       f.write(' bracket_op=%r' % self.bracket_op)
     if self.test_op:
@@ -411,9 +359,6 @@ class VarSubPart(WordPart):
       return self.token, self.token
     else:
       return None, None
-
-  def Eval(self, ev, quoted=False):
-    return ev.EvalVarSub(self, quoted=quoted)
 
   def EvalStatic(self):
     return False, '', False
@@ -439,11 +384,6 @@ class TildeSubPart(WordPart):
   def __repr__(self):
     return '[TildeSub %r]' % self.prefix
 
-  def Eval(self, ev, quoted=False):
-    # We never parse a quoted string into a TildeSubPart.
-    assert not quoted
-    return ev.EvalTildeSub(self.prefix)
-
   def EvalStatic(self):
     print('~ is not allowed')
     return False, '', False
@@ -460,9 +400,6 @@ class ArithSubPart(WordPart):
 
   def __repr__(self):
     return '[ArithSub %r]' % self.anode
-
-  def Eval(self, ev, quoted=False):
-    return ev.EvalArithSub(self.anode)
 
   def EvalStatic(self):
     print('$(()) is not allowed)')
@@ -730,12 +667,6 @@ class TokenWord(Word):
     return self.token, self.token
 
   def ArithId(self):
-    # $(( 1+2 ))
-    # (( a=1+2 ))
-    # ${a[ 1+2 ]}
-    # ${a : 1+2 : 1+2}
-    #if self.token.id in (Id.Right_Arith_SUB, Id.VOp2_RBracket, Id.VOp2_Colon):
-    #  return Id.Eof_Arith
     return self.token.id  # e.g. AS_PLUS
 
   def BoolId(self):
@@ -748,18 +679,17 @@ class TokenWord(Word):
     return self.token.Kind()
 
 
-class _VarOp(object):
+class _VarOp(_Node):
   """Base class for operations."""
-  def __init__(self, vtype):
-    self.vtype = vtype  # type: TOKEN
-                        # I think tokens are better.
-                        # INDEX should be [ - Id.VOp2_LBracket
-                        # ARRAY should be @ / * - VS_AT or AS_STAR ?
-                        # LENGTH should be # - VS_POUND
-                        #
-                        # unary # - Id.VOp1_Pound, etc.
-                        # SLICE: Id.VOp2_Colon
-                        # PATSUB: Id.VOp2_Slash
+  def __init__(self, id):
+    _Node.__init__(self, id)
+    # Examples
+    # INDEX should be [ - Id.VOp2_LBracket
+    # ARRAY should be @ / * - Lit_At and Arith_Star
+    # LENGTH should be # - VSub_Pound
+    # Unary # - Id.VOp1_Pound, etc.
+    # SLICE: Id.VOp2_Colon
+    # PATSUB: Id.VOp2_Slash
 
   def PrintLine(self, f):
     raise NotImplementedError
@@ -771,66 +701,25 @@ class _VarOp(object):
     return f.getvalue()
 
 
-class IndexVarOp(_VarOp):
-  """ $a[i+1] """
-  def __init__(self, index_expr):
-    _VarOp.__init__(self, Id.VOp2_LBracket)
-    self.index_expr = index_expr  # type: _ANode
-
-  def PrintLine(self, f):
-    f.write('(Index %s)' % self.index_expr)
-
-
-class ArrayVarOp(_VarOp):
-  """ ${a[@]} or ${a[*]}
-
-  Take all the elements of an array, to remove ambiguity.
-
-  vtype = VType.AT or VType.STAR
+class VarOp0(_VarOp):
+  """ A VarOp that takes no arguments.
+  Examples:
+  ${#a}  ${#a[0]}  ${#a[@]}
+  ${!a}  ${!a[0]}  ${!a[@]}
+  ${a[@]}  -- Lit_At
   """
   def PrintLine(self, f):
-    f.write('(Array %s)' % IdName(self.vtype))
+    f.write('(VarOp0 %s)' % IdName(self.id))
 
 
-class LengthVarOp(_VarOp):
-  """ ${#a}  and ${#a[@]}
-  """
-  def __init__(self):
-    _VarOp.__init__(self, Id.VSub_Pound)
-
-  def PrintLine(self, f):
-    f.write('(#len)')
-
-
-class RefVarOp(_VarOp):
-  """ ${!s}  and ${!s[0]}, but NOT ${!s[@]}
-  """
-  def __init__(self):
-    _VarOp.__init__(self, Id.VSub_Bang)
-
-  def PrintLine(self, f):
-    f.write('(!ref)')
-
-
-class TestVarOp(_VarOp):
+class VarOp1(_VarOp):
   """ ${a:-default} and friends """
-  def __init__(self, vtype, arg_word):
-    _VarOp.__init__(self, vtype)
+  def __init__(self, id, arg_word):
+    _VarOp.__init__(self, id)
     self.arg_word = arg_word  # type: CompoundWord
 
   def PrintLine(self, f):
-    f.write('%s %s' % (IdName(self.vtype), self.arg_word))
-
-
-class StripVarOp(_VarOp):
-  """ ${a%suffix} and friends """
-  def __init__(self, vtype, arg_word):
-    _VarOp.__init__(self, vtype)
-    self.arg_word = arg_word  # type: CompoundWord
-    # If there are n words, then there are n-1 space tokens in between them
-
-  def PrintLine(self, f):
-    f.write('%s %s' % (IdName(self.vtype), self.arg_word))
+    f.write('(VarOp1 %s %s)' % (IdName(self.id), self.arg_word))
 
 
 class SliceVarOp(_VarOp):

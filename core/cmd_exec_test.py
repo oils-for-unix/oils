@@ -17,7 +17,7 @@ from core import cmd_exec  # module under test
 from core.cmd_exec import *
 from core.id_kind import Id
 from core import ui
-from core.word_node import LiteralPart, CompoundWord, TestVarOp, VarSubPart
+from core.word_node import LiteralPart, CompoundWord, VarSubPart, VarOp1
 from core import word_eval
 from core.value import Value
 from core.cmd_node import SimpleCommandNode
@@ -252,7 +252,7 @@ class VarOpTest(unittest.TestCase):
 
     part = LiteralPart(Token(Id.Lit_Chars, 'default'))
     arg_word = CompoundWord(parts=[part])
-    test_op = TestVarOp(Id.VTest_ColonHyphen, arg_word)
+    test_op = VarOp1(Id.VTest_ColonHyphen, arg_word)
     unset_sub.test_op = test_op
     set_sub.test_op = test_op
 
