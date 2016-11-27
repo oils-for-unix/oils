@@ -1170,7 +1170,7 @@ class CommandParser(object):
       return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Word:
-      if self.w_parser.CurrentTokenId() == Id.Op_LParen:  # (
+      if self.w_parser.LookAhead() == Id.Op_LParen:  # (
         kv = self.cur_word.LooksLikeAssignment()
         if kv:
           return self.ParseSimpleCommand()  # f=(a b c)  # array

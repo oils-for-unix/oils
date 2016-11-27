@@ -69,7 +69,7 @@ echo $a
 # stdout: 3
 
 ### "$@" "$*"
-func() {
+func () {
   argv "$@" "$*"
 }
 func "a b" "c d"

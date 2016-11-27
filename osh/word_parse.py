@@ -704,8 +704,8 @@ class WordParser(object):
     """
     if do_next:
       self._Next(LexMode.ARITH)
-    spec = arith_parse.MakeShellSpec()
-    a_parser = tdop.TdopParser(spec, self)  # for self.ReadWord(LexMode.ARITH)
+    # calls self.ReadWord(LexMode.ARITH)
+    a_parser = tdop.TdopParser(arith_parse.SPEC, self)
     anode = a_parser.Parse()
     if not anode:
       error_stack = a_parser.Error()
@@ -1084,13 +1084,18 @@ class WordParser(object):
 
     raise AssertionError("Shouldn't get here")
 
-  def CurrentTokenId(self):
-    """Get the current token ID, for parser lookahead."""
-    # This is only called in one place.  Assert the state of the word parser.
-    # We could pass through to self.lexer.LookAhead(), but we don't need to.
-    #assert self.next_lex_mode is None, self.next_lex_mode
+  def LookAhead(self):
+    """Look ahead to the next token.
+    
+    For the command parser to recognize func () { } and array= (1 2 3).  And
+    probably coprocesses.
+    """
     assert self.token_type != Id.Undefined_Tok
-    return self.cur_token.id
+    if self.cur_token.id == Id.WS_Space:
+      t = self.lexer.LookAhead(LexMode.OUTER) 
+    else:
+      t = self.cur_token
+    return t.id
 
   def ReadWord(self, lex_mode):
     """Read the next Word.

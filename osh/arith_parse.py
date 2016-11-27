@@ -170,10 +170,12 @@ def MakeShellSpec():
   return spec
 
 
+SPEC = MakeShellSpec()
+
+
 def MakeParser(s):
-  spec = MakeShellSpec()
   lexer = tokenize_expr(s)
-  p = tdop.TdopParser(spec, lexer)
+  p = tdop.TdopParser(SPEC, lexer)
   return p
 
 

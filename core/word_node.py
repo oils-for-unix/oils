@@ -133,10 +133,6 @@ class WordPart(_Node):
     """
     return False
 
-  def IsArrayLiteral(self):
-    """Used for error checking."""
-    return False
-
 
 class ArrayLiteralPart(WordPart):
   """An Array literal is WordPart that contains other Words.
@@ -155,9 +151,6 @@ class ArrayLiteralPart(WordPart):
 
   def __repr__(self):
     return '[Array ' + ' '.join(repr(w) for w in self.words) + ']'
-
-  def IsArrayLiteral(self):
-    return True
 
 
 class _LiteralPartBase(WordPart):
@@ -587,7 +580,7 @@ class CompoundWord(Word):
 
   def HasArrayPart(self):
     for part in self.parts:
-      if part.IsArrayLiteral():
+      if part.id == Id.Right_ArrayLiteral:
         return True
     return False
 

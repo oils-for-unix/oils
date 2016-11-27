@@ -41,9 +41,6 @@ class Kind(object):
   pass
 
 
-# TODO: Fold in more constant tokens.
-# ArithLexerPairs(), etc.
-
 class IdSpec(object):
   """Identifiers that form the "spine" of the shell program representation."""
 
@@ -94,7 +91,7 @@ class IdSpec(object):
       token_name = '%s_%s' % (kind_name, name)
       self._AddId(token_name)
       # After _AddId
-      lexer_pairs.append((re.escape(char_pat), self.token_index))
+      lexer_pairs.append((False, char_pat, self.token_index))  # Constant
 
     self.lexer_pairs[self.kind_index] = lexer_pairs
 
@@ -125,7 +122,7 @@ class IdSpec(object):
         # not logical
         self.AddBoolOp(self.token_index, False, arity, arg_type)
         # After _AddId.
-        lexer_pairs.append((re.escape(char_pat), self.token_index))
+        lexer_pairs.append((False, char_pat, self.token_index))  # constant
 
       num_tokens += len(pairs)
 

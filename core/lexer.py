@@ -16,8 +16,23 @@ from core.id_kind import Id, IdName
 from core.tokens import Token
 
 
+def C(pat, tok_type):
+  """ Create a constant mapping like C('$*', VSub_Star) """
+  return (False, pat, tok_type)
+
+
+def R(pat, tok_type):
+  """ Create a constant mapping like C('$*', VSub_Star) """
+  return (True, pat, tok_type)
+
+
 def CompileAll(pat_list):
-  return [(re.compile(pat), val) for (pat, val) in pat_list]
+  result = []
+  for is_regex, pat, token_id in pat_list:
+    if not is_regex:
+      pat = re.escape(pat)  # turn $ into \$
+    result.append((re.compile(pat), token_id))
+  return result
 
 
 def FindLongestMatch(re_list, s, pos):
@@ -40,8 +55,8 @@ class LineLexer(object):
   def __init__(self, lexer_def, line):
     # Compile all regexes
     self.lexer_def = {}
-    for state, re_list in lexer_def.items():
-      self.lexer_def[state] = CompileAll(re_list)
+    for state, pat_list in lexer_def.items():
+      self.lexer_def[state] = CompileAll(pat_list)
 
     self.Reset(line, -1)  # Invalid pool index to start
 
