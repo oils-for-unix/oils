@@ -348,6 +348,10 @@ parse-exp() {
   _parse-project ~/git/other/exp
 }
 
+parse-minimal-linux() {
+  _parse-project ~/git/other/minimal
+}
+
 #
 # Big projects
 #
