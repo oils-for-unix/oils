@@ -573,10 +573,6 @@ class _Evaluator(object):
       val = Value.FromArray(strs)
     return True, val
 
-  def BoolEvalWord(self, word, do_glob=False):
-    """Evaluate with the rules of [[."""
-    return self.EvalCompoundWord(word, do_glob=do_glob, elide_empty=False)
-
   def EvalTildeSub(self, prefix):
     """Evaluates ~ and ~user.
 

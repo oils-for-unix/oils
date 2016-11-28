@@ -19,6 +19,8 @@ except ImportError:
   from core import fake_libc as libc
 from core.id_kind import BOOL_OPS, BArgType, Id, IdName
 from core.value import TValue
+from core.arith_eval import ExprEvaluator, ExprEvalError
+from core.util import log
 
 
 # NOTE: Not used now
@@ -39,183 +41,135 @@ def _ValuesAreEqual(x, y):
   raise NotImplementedError
 
 
-def BEval(node, ev):
-  """Evaluate a boolean expression.
+class BoolEvaluator(ExprEvaluator):
 
-  TODO:
-  - A better pattern for failure.  This ok, val stuff is UNREADABLE.  Maybe
-    use out params.  Same with val.AsString()
-  - Add error context would be good.
-  - Also consider stack trace?  For boolean expressions it probably doesn't
-    matter.  Although it would be nice to point to the exact token that
-    failed.
+  def _EvalCompoundWord(self, word, do_glob=False):
+    """
+    Args:
+      node: Id.Word_Compound
+      do_glob: TOOD: rename this
+    """
+    ok, val = self.word_ev.EvalCompoundWord(word, do_glob=do_glob,
+                                            elide_empty=False)
+    if not ok:
+      raise ExprEvalError(self.word_ev.Error())
 
-    [[ 0 -eq foo ]]
-             ~~~
-    cannot compare integer to string
+    is_str, s = val.AsString()
+    if not is_str:
+      raise ExprEvaluator("Expected string, got array")
 
-  if not self.BEval(node.child, ev, ret):
-    self.SetError("foo")
-    return None
-  b, = ret
+    return s
 
-  ref = []
-  if not val.AsString(ref):
-    return False
-  s, = ret
+  def _Eval(self, node):
+    if node.id == Id.Word_Compound:
+      s = self._EvalCompoundWord(node)
+      return bool(s)
 
-  This is how expr worked.  It mutated the bool.  I guess that's better in C.
+    if node.id == Id.Node_UnaryExpr:
+      b_id = node.b_id
+      if b_id == Id.KW_Bang:
+        # child could either be a Word, or it could be a BNode
+        b = self._Eval(node.child)
+        return not b
 
-  And we can do that for arithmetic too.
-  """
-  btype = node.btype
-  # TODO: We could look this up at parse time too?  Is that easier or harder?
-  try:
-    logical, arity, arg_type = BOOL_OPS[btype]
-  except KeyError:
-    print('NOT FOUND', IdName(btype))
-    raise
+      s = self._EvalCompoundWord(node.child)
 
-  if logical:
-    if arity == 1:
-      ok, b = BEval(node.child, ev)
-      if not ok:
-        return False, None
-
-      return True, not b  # logical negation
-    else:
-      assert arity == 2
-
-      ok, b1 = BEval(node.left, ev)
-      if not ok:
-        return False, None
-
-      # Short-circuit evaluation
-      if btype == Id.Op_DAmp:
-        if b1:
-          ok, b2 = BEval(node.right, ev)
-          if not ok:
-            return False, None
-          return True, b2
-        else:
-          return True, False
-
-      if btype == Id.Op_DPipe:
-        if b1:
-          return True, True
-        else:
-          ok, b2 = BEval(node.right, ev)
-          if not ok:
-            return False, None
-
-          return True, b2
-
-      raise AssertionError
-
-  else:  # primitive operation
-    if arity == 1:
-      ok, val = ev.BoolEvalWord(node.word)
-      if not ok:
-        return False, None
-
-      is_str, s = val.AsString()
-      assert is_str
-
+      # Now dispatch on arg type
+      _, _, arg_type = BOOL_OPS[b_id]
       if arg_type == BArgType.FILE:
         try:
           mode = os.stat(s).st_mode
         except FileNotFoundError as e:
-          mode = None
+          # TODO: Signal extra debug information?
+          #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
+          return False
 
-        if btype == Id.BoolUnary_f:
-          if mode:
-            ret = stat.S_ISREG(mode)
-          else:
-            ret = False
-          return True, ret  # TODO
+        if b_id == Id.BoolUnary_f:
+          return stat.S_ISREG(mode)
 
       if arg_type == BArgType.STRING:
-        if btype == Id.BoolUnary_z:
-          return True, not bool(s)
-        if btype == Id.BoolUnary_n:
-          return True, bool(s)
-        raise NotImplementedError(btype)
+        if b_id == Id.BoolUnary_z:
+          return not bool(s)
+        if b_id == Id.BoolUnary_n:
+          return bool(s)
 
-    else:
-      assert arity == 2
+        raise NotImplementedError(b_id)
 
-      ok, val1 = ev.BoolEvalWord(node.left)
-      if not ok:
-        return False, None
+      raise NotImplementedError(arg_type)
 
-      if btype in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual, Id.BoolBinary_NEqual):
-        # quoted parts are escaped for globs.
-        ok, val2 = ev.BoolEvalWord(node.right, do_glob=True)
-        if not ok:
-          return False, None
-      else:
-        # normal evaluation
-        ok, val2 = ev.BoolEvalWord(node.right)
-        if not ok:
-          return False, None
+    if node.id == Id.Node_BinaryExpr:
+      b_id = node.b_id
 
-      #print(val1, val2)
-      is_str1, s1 = val1.AsString()
-      is_str2, s2 = val2.AsString()
+      # Short-circuit evaluation
+      if b_id == Id.Op_DAmp:
+        if self._Eval(node.left):
+          return self._Eval(node.right)
+        else:
+          return False
+
+      if b_id == Id.Op_DPipe:
+        if self._Eval(node.left):
+          return True
+        else:
+          return self._Eval(node.right)
+
+      s1 = self._EvalCompoundWord(node.left)
+      # Whehter to glob escape
+      do_glob = b_id in (
+          Id.BoolBinary_Equal, Id.BoolBinary_DEqual, Id.BoolBinary_NEqual)
+      s2 = self._EvalCompoundWord(node.right, do_glob=do_glob)
+
+      # Now dispatch on arg type
+      _, _, arg_type = BOOL_OPS[b_id]
 
       if arg_type == BArgType.FILE:
-        if not is_str1 or not is_str2:
-          print("Operator %r requires a string, got %r %r" % (btype, s1, s2))
-          return False, None
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
-        if btype == Id.BoolBinary_nt:
-          return True, True  # TODO: newer than
+        if b_id == Id.BoolBinary_nt:
+          return True  # TODO: test newer than (mtime)
 
       if arg_type == BArgType.INT:
-        if not is_str1 or not is_str2:
-          return False, None
-
         try:
           i1 = int(s1)
           i2 = int(s2)
-        except ValueError:
-          # TODO: error message
+        except ValueError as e:
+          # NOTE: Bash turns these into zero, but we won't by default.  Could
+          # provide a compat option.
           # Also I think this should turn into exit code 3:
           # - 0 true / 1 false / 3 runtime error
           # - 2 is for PARSE error.
-          # And I think you also need a "strict" mode.
-          # exec_opts.strict_compare = OFF / ON / WARN
-          return False, None
+          raise ExprEvalError("Invalid integer: %s" % e)
 
-        if btype == Id.BoolBinary_eq:
-          return True, i1 == i2
-        if btype == Id.BoolBinary_ne:
-          return True, i1 != i2
+        if b_id == Id.BoolBinary_eq:
+          return i1 == i2
+        if b_id == Id.BoolBinary_ne:
+          return i1 != i2
+
+        raise NotImplementedError(b_id)
 
       if arg_type == BArgType.STRING:
         # TODO:
         # - Compare arrays.  (Although bash coerces them to string first)
-        if not is_str1 or not is_str2:
-          print("Operator %r requires a string, got %r %r" % (btype, s1, s2))
-          return False, None
 
-        if btype in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
+        if b_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
           #return True, _ValuesAreEqual(val1, val2)
-          return True, libc.fnmatch(s2, s1)
-        if btype == Id.BoolBinary_NEqual:
-          #return True, not _ValuesAreEqual(val1, val2)
-          return True, not libc.fnmatch(s2, s1)
+          return libc.fnmatch(s2, s1)
 
-        if btype == Id.BoolBinary_EqualTilde:
+        if b_id == Id.BoolBinary_NEqual:
+          #return True, not _ValuesAreEqual(val1, val2)
+          return not libc.fnmatch(s2, s1)
+
+        if b_id == Id.BoolBinary_EqualTilde:
+          # NOTE: regex matching can't fail if compilation succeeds.
           match = libc.regex_match(s2, s1)
           # TODO: BASH_REMATCH or REGEX_MATCH
           if match == 1:
-            ev.SetRegexMatches('TODO')
-            ret = True
+            # TODO: Should we have self.mem?
+            self.word_ev.SetRegexMatches('TODO')
+            is_match = True
           elif match == 0:
-            ret = False
+            is_match = False
           elif match == -1:
             raise AssertionError(
                 "Invalid regex %r: should have been caught at compile time" %
@@ -223,14 +177,15 @@ def BEval(node, ev):
           else:
             raise AssertionError
 
-          # NOTE: regex matching can't fail if compilation succeeds.
-          return True, ret
+          return is_match
 
-        if btype == Id.Redir_Less:  # pun
-          return True, s1 < s2
-        if btype == Id.Redir_Great:  # pun
-          return True, s1 > s2
+        if b_id == Id.Redir_Less:  # pun
+          return s1 < s2
 
-        raise NotImplementedError
+        if b_id == Id.Redir_Great:  # pun
+          return s1 > s2
 
-      raise AssertionError
+        raise NotImplementedError(b_id)
+
+    # We could have govered all node IDs
+    raise AssertionError(IdName(node.id))

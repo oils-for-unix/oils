@@ -694,9 +694,12 @@ class Executor(object):
       status = p.Run()
 
     elif node.id == Id.KW_DLeftBracket:
-      ok, b = bool_eval.BEval(node.bnode, self.ev)
-      status = 0 if b else 1
-      # TODO: if not OK, then turn it into an exception
+      bool_ev = bool_eval.BoolEvaluator(self.ev)
+      ok = bool_ev.Eval(node.bnode)
+      if ok:
+        status = 0 if bool_ev.Result() else 1
+      else:
+        raise AssertionError('Error evaluating boolean: %s' % bool_ev.Error())
 
     elif node.id == Id.Op_DLeftParen:
       i = arith_eval.ArithEval(node.anode, self.ev)

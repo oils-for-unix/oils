@@ -20,16 +20,19 @@ from core.util import cast
 #from core import word_eval 
 
 
-class ArithEvalError(RuntimeError): pass
+class ExprEvalError(RuntimeError): pass
 
 # In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
 # BoolEvalResult, CmdExecResult?  Word is handled differntly because it's a
 # string.
 
-class ArithEvaluator:
 
-  def __init__(self, mem, word_ev):
-    self.mem = mem
+class ExprEvaluator:
+  """
+  For now the arith and bool evaluators share some logic.
+  """
+
+  def __init__(self, word_ev):
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
     self.result = 0
     self.error_stack = []
@@ -48,13 +51,20 @@ class ArithEvaluator:
   def Eval(self, node: _ANode):
     try:
       result = self._Eval(node)
-    except ArithEvalError as e:
+    except ExprEvalError as e:
       self._AddErrorContext(e.args[0])
       ok = False
     else:
       self.result = result
       ok = True
     return ok
+
+
+class ArithEvaluator(ExprEvaluator):
+
+  def __init__(self, mem, word_ev):
+    ExprEvaluator.__init__(self, word_ev)
+    self.mem = mem
 
   def _ValToInteger(self, val):
     """Evaluate with the rules of arithmetic expressions.
@@ -153,18 +163,18 @@ class ArithEvaluator:
       if ok:
         return i
       else:
-        raise ArithEvalError()
+        raise ExprEvalError()
 
     elif node.id == Id.Word_Compound:  # constant string
       ok, val = self.word_ev.EvalCompoundWord(node, elide_empty=False)
       if not ok:
-        raise ArithEvalError(self.word_ev.Error())
+        raise ExprEvalError(self.word_ev.Error())
 
       ok, i = self._ValToInteger(val)
       if ok:
         return i
       else:
-        raise ArithEvalError()
+        raise ExprEvalError()
 
     elif node.id == Id.Node_UnaryExpr:
       atype = node.a_id
@@ -187,7 +197,7 @@ class ArithEvaluator:
           ret = self._Eval(node.false_expr)
         return ret
       else:
-        raise ArithEvalError("%s not implemented" % IdName(node.a_id))
+        raise ExprEvalError("%s not implemented" % IdName(node.a_id))
 
     elif node.id == Id.Node_BinaryExpr:
       # TODO: Do type check at PARSE TIME, where applicable

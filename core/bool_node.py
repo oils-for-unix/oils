@@ -15,9 +15,9 @@ class _BNode(_Node):
 
   It is an _Node because it has tokens/words to point to?
   """
-  def __init__(self, btype):
-    _Node.__init__(self, 'TODO:get rid of')
-    self.btype = btype
+  def __init__(self, id, b_id):
+    _Node.__init__(self, id)
+    self.b_id = b_id
 
   def PrintLine(self, f):
     raise NotImplementedError  # Abstract
@@ -26,7 +26,7 @@ class _BNode(_Node):
 class NotBNode(_BNode):
   """ ! """
   def __init__(self, child):
-    _BNode.__init__(self, Id.KW_Bang)
+    _BNode.__init__(self, Id.Node_UnaryExpr, Id.KW_Bang)
     self.child = child  # type: _BNode
 
   def PrintLine(self, f):
@@ -37,14 +37,14 @@ class NotBNode(_BNode):
 
 class LogicalBNode(_BNode):
   """ && and || """
-  def __init__(self, btype, left, right):
-    _BNode.__init__(self, btype)
+  def __init__(self, b_id, left, right):
+    _BNode.__init__(self, Id.Node_BinaryExpr, b_id)
     self.left = left  # type: _BNode
     self.right = right  # type: _BNode
 
   def PrintLine(self, f):
     f.write('{B? ')
-    f.write('%s %s %s' % (IdName(self.btype), self.left, self.right))
+    f.write('%s %s %s' % (IdName(self.b_id), self.left, self.right))
     f.write('}')
 
 
@@ -53,13 +53,13 @@ class UnaryBNode(_BNode):
 
   Note that the word itself is parsed as -n
   """
-  def __init__(self, btype, word):
-    _BNode.__init__(self, btype)
-    self.word = word  # type: CompoundWord
+  def __init__(self, b_id, child):
+    _BNode.__init__(self, Id.Node_UnaryExpr, b_id)
+    self.child = child  # type: _Node
 
   def PrintLine(self, f):
     f.write('{B1 ')
-    f.write('%s %s' % (IdName(self.btype), self.word))
+    f.write('%s %s' % (IdName(self.b_id), self.child))
     f.write('}')
 
 
@@ -68,12 +68,12 @@ class BinaryBNode(_BNode):
   ==, == as a GLOB with RHS detected at parse time, -gt for integers, -ot for
   files
   """
-  def __init__(self, btype, left, right):
-    _BNode.__init__(self, btype)
-    self.left = left  # type: CompoundWord
-    self.right = right  # type: CompoundWord
+  def __init__(self, b_id, left, right):
+    _BNode.__init__(self, Id.Node_BinaryExpr, b_id)
+    self.left = left  # type: _Node
+    self.right = right  # type: _Node
 
   def PrintLine(self, f):
     f.write('{B2 ')
-    f.write('%s %s %s' % (IdName(self.btype), self.left, self.right))
+    f.write('%s %s %s' % (IdName(self.b_id), self.left, self.right))
     f.write('}')
