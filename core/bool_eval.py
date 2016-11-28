@@ -17,7 +17,7 @@ try:
   from core import libc
 except ImportError:
   from core import fake_libc as libc
-from core.id_kind import BOOL_OPS, BArgType, Id, IdName
+from core.id_kind import BOOL_OPS, OperandType, Id, IdName
 from core.value import TValue
 from core.arith_eval import ExprEvaluator, ExprEvalError
 from core.util import log
@@ -75,8 +75,8 @@ class BoolEvaluator(ExprEvaluator):
       s = self._EvalCompoundWord(node.child)
 
       # Now dispatch on arg type
-      _, _, arg_type = BOOL_OPS[b_id]
-      if arg_type == BArgType.FILE:
+      arg_type = BOOL_OPS[b_id]
+      if arg_type == OperandType.FILE:
         try:
           mode = os.stat(s).st_mode
         except FileNotFoundError as e:
@@ -87,7 +87,7 @@ class BoolEvaluator(ExprEvaluator):
         if b_id == Id.BoolUnary_f:
           return stat.S_ISREG(mode)
 
-      if arg_type == BArgType.STRING:
+      if arg_type == OperandType.STRING:
         if b_id == Id.BoolUnary_z:
           return not bool(s)
         if b_id == Id.BoolUnary_n:
@@ -120,16 +120,16 @@ class BoolEvaluator(ExprEvaluator):
       s2 = self._EvalCompoundWord(node.right, do_glob=do_glob)
 
       # Now dispatch on arg type
-      _, _, arg_type = BOOL_OPS[b_id]
+      arg_type = BOOL_OPS[b_id]
 
-      if arg_type == BArgType.FILE:
+      if arg_type == OperandType.FILE:
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
         if b_id == Id.BoolBinary_nt:
           return True  # TODO: test newer than (mtime)
 
-      if arg_type == BArgType.INT:
+      if arg_type == OperandType.INT:
         try:
           i1 = int(s1)
           i2 = int(s2)
@@ -148,7 +148,7 @@ class BoolEvaluator(ExprEvaluator):
 
         raise NotImplementedError(b_id)
 
-      if arg_type == BArgType.STRING:
+      if arg_type == OperandType.STRING:
         # TODO:
         # - Compare arrays.  (Although bash coerces them to string first)
 

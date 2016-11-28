@@ -99,17 +99,10 @@ class IdSpec(object):
     self._AddKind(kind_name)
     self.kind_sizes.append(len(pairs))  # debug info
 
-  def AddBoolKind(self, arity, arg_type_pairs):
+  def AddBoolKind(self, kind_name, arg_type_pairs):
     """
     Args:
     """
-    if arity == 1:
-      kind_name = 'BoolUnary'
-    elif arity == 2:
-      kind_name = 'BoolBinary'
-    else:
-      raise AssertionError(arity)
-
     lexer_pairs = []
     num_tokens = 0
     for arg_type, pairs in arg_type_pairs.items():
@@ -120,7 +113,7 @@ class IdSpec(object):
         token_name = '%s_%s' % (kind_name, name)
         self._AddId(token_name)
         # not logical
-        self.AddBoolOp(self.token_index, False, arity, arg_type)
+        self.AddBoolOp(self.token_index, arg_type)
         # After _AddId.
         lexer_pairs.append((False, char_pat, self.token_index))  # constant
 
@@ -132,8 +125,8 @@ class IdSpec(object):
     self._AddKind(kind_name)
     self.kind_sizes.append(num_tokens)  # debug info
 
-  def AddBoolOp(self, id_, logical, arity, arg_type):
-    self.bool_ops[id_] = (logical, arity, arg_type)
+  def AddBoolOp(self, id_, arg_type):
+    self.bool_ops[id_] = arg_type
 
 
 def MakeTokens(spec):
@@ -349,12 +342,12 @@ def MakeTokens(spec):
   spec.AddKind('Assign', ['Declare', 'Export', 'Local', 'Readonly'])
 
 
-# token_type -> (logical, arity, arg_type)
+# Id -> OperandType
 BOOL_OPS = {}  # type: dict
 
 UNARY_FILE_CHARS = tuple('abcdefghLprsStuwxOGN')
 
-BArgType = util.Enum('BArgType', 'NONE FILE INT STRING OTHER'.split())
+OperandType = util.Enum('OperandType', 'NONE FILE INT STRING OTHER'.split())
 
 
 def _Dash(strs):
@@ -363,28 +356,28 @@ def _Dash(strs):
 
 
 def MakeBool(spec):
-  spec.AddBoolKind(1, {
-      BArgType.STRING: _Dash(list('zn')),  # -z -n
-      BArgType.OTHER: _Dash(list('ovR')),
-      BArgType.FILE: _Dash(UNARY_FILE_CHARS),
+  spec.AddBoolKind('BoolUnary', {
+      OperandType.STRING: _Dash(list('zn')),  # -z -n
+      OperandType.OTHER: _Dash(list('ovR')),
+      OperandType.FILE: _Dash(UNARY_FILE_CHARS),
   })
 
-  spec.AddBoolKind(2, {
-      BArgType.STRING: [
+  spec.AddBoolKind('BoolBinary', {
+      OperandType.STRING: [
           ('Equal', '='), ('DEqual', '=='), ('NEqual', '!='),
           ('EqualTilde', '=~'),
       ],
-      BArgType.FILE: _Dash(['ef', 'nt', 'ot']),
-      BArgType.INT: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
+      OperandType.FILE: _Dash(['ef', 'nt', 'ot']),
+      OperandType.INT: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
   })
 
   # logical, arity, arg_type
-  spec.AddBoolOp(Id.Op_DAmp, True, 2, BArgType.NONE)
-  spec.AddBoolOp(Id.Op_DPipe, True, 2, BArgType.NONE)
-  spec.AddBoolOp(Id.KW_Bang, True, 1, BArgType.NONE)
+  spec.AddBoolOp(Id.Op_DAmp, OperandType.NONE)
+  spec.AddBoolOp(Id.Op_DPipe, OperandType.NONE)
+  spec.AddBoolOp(Id.KW_Bang, OperandType.NONE)
 
-  spec.AddBoolOp(Id.Redir_Less, False, 2, BArgType.STRING)
-  spec.AddBoolOp(Id.Redir_Great, False, 2, BArgType.STRING)
+  spec.AddBoolOp(Id.Redir_Less, OperandType.STRING)
+  spec.AddBoolOp(Id.Redir_Great, OperandType.STRING)
 
 
 ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
