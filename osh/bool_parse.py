@@ -57,7 +57,7 @@ import sys
 from core import base
 from core.id_kind import Id, Kind, LookupKind, IdName
 
-from core.bool_node import NotBNode, LogicalBNode, UnaryBNode, BinaryBNode
+from core.bool_node import UnaryBNode, BinaryBNode
 from osh.lex import LexMode
 try:
   from core import libc
@@ -165,7 +165,7 @@ class BoolParser(object):
     if self.b_id == Id.Op_DPipe:
       if not self._Next(): return None
       right = self.ParseExpr()
-      return LogicalBNode(Id.Op_DPipe, left, right)
+      return BinaryBNode(Id.Op_DPipe, left, right)
     else:
       return left
 
@@ -180,7 +180,7 @@ class BoolParser(object):
     if self.b_id == Id.Op_DAmp:
       if not self._Next(): return None
       right = self.ParseTerm()
-      return LogicalBNode(Id.Op_DAmp, left, right)
+      return BinaryBNode(Id.Op_DAmp, left, right)
     else:
       return left
 
@@ -191,7 +191,7 @@ class BoolParser(object):
     if self.b_id == Id.KW_Bang:
       if not self._Next(): return None
       child = self.ParseFactor()
-      return NotBNode(child)
+      return UnaryBNode(Id.KW_Bang, child)
     else:
       return self.ParseFactor()
 
