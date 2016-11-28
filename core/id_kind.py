@@ -316,6 +316,7 @@ def MakeTokens(spec):
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
                                  # Actually we don't need this because we they
                                  # will be under Expr1/Plus vs Expr2/Plus.
+     'ArithVar',                 # a bare variable like (( foo = bar ))
 
      # Command nodes 
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
@@ -323,7 +324,7 @@ def MakeTokens(spec):
 
      # TODO: Unify ANode and BNode under these Unary, Binary, Ternary nodes.
      # They hold one, two, or three words.
-     'Expr1', 'Expr2', 'Expr3',
+     'UnaryExpr', 'BinaryExpr', 'TernaryExpr',
      'ConstInt',  # for arithmetic.  There is no ConstBool.
                   # Could be Lit_Digits?  But oil will need
                   # ConstFloat/ConstNum.

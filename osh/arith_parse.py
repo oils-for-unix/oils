@@ -18,7 +18,7 @@ from core.arith_node import UnaryANode, BinaryANode, TernaryANode
 def NullIncDec(p, t, bp):
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
-  if right.atype not in tdop.LVALUE_TYPES:
+  if not tdop.IsLValue(right):
     raise tdop.ParseError("Can't assign to %r (%s)" % (right, right.token))
   return UnaryANode(t.ArithId(), right)
 
@@ -38,7 +38,7 @@ def NullUnaryMinus(p, t, bp):
 def LeftIncDec(p, t, left, rbp):
   """ For i++ and i--
   """
-  if left.atype not in tdop.LVALUE_TYPES:
+  if not tdop.IsLValue(left):
     raise tdop.ParseError("Can't assign to %r (%s)" % (left, left.token))
   if t.ArithId() == Id.Arith_DPlus:
     a_id = Id.Node_PostDPlus
@@ -52,7 +52,7 @@ def LeftIncDec(p, t, left, rbp):
 def LeftIndex(p, t, left, unused_bp):
   """ index f[x+1] """
   # f[x] or f[x][y]
-  if left.atype not in tdop.CALL_INDEX_TYPES:
+  if not tdop.IsCallable(left):
     raise tdop.ParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
@@ -76,7 +76,7 @@ def LeftFuncCall(p, t, left, unused_bp):
   """ Function call f(a, b). """
   children = [left]
   # f(x) or f[i](x)
-  if left.atype not in tdop.CALL_INDEX_TYPES:
+  if not tdop.IsCallable(left):
     raise tdop.ParseError("%s can't be called" % left)
   while not p.AtToken(Id.Arith_RParen):
     # We don't want to grab the comma, e.g. it is NOT a sequence operator.  So

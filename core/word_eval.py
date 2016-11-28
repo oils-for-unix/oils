@@ -199,11 +199,12 @@ class _Evaluator(object):
     raise NotImplementedError
 
   def EvalArithSub(self, anode):
-    arith_ev = arith_eval.ArithEvaluator(self)
+    arith_ev = arith_eval.ArithEvaluator(self.mem, self)
     if arith_ev.Eval(anode):
       num = arith_ev.Result()
       return True, Value.FromString(str(num))
     else:
+      self.error_stack.extend(arith_ev.Error())
       return False, None
 
   def _EvalVar(self, name, quoted=False):
@@ -536,6 +537,7 @@ class _Evaluator(object):
     for p in word.parts:
       ok, val = self.EvalWordPart(p, quoted=False)
       if not ok:
+        self._AddErrorContext("Error evaluating word part %r" % p)
         return False, Value.FromString('')
       assert isinstance(val, Value), val
       is_str, s = val.AsString()
@@ -570,80 +572,6 @@ class _Evaluator(object):
     else:
       val = Value.FromArray(strs)
     return True, val
-
-  def ArithEvalWord(self, word):
-    """Evaluate with the rules of $(( )).
-
-    Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
-
-    0xAB -- hex constant
-    010 -- octable constant
-    64#z -- arbitary base constant
-    bare word: vairable
-    quoted word: string
-    """
-    ok, val = self.EvalCompoundWord(word, elide_empty=False)
-    if not ok:
-      return False, 0
-    is_str, s = val.AsString()
-    if not is_str:
-      # TODO: Error message: expected string but got integer
-      return False, 0
-
-    if s.startswith('0x'):
-      try:
-        integer = int(s, 16)
-      except ValueError:
-        # TODO: Show line number
-        print('Invalid hex constant %r' % s)
-        return False, 0
-      return True, integer
-
-    if s.startswith('0'):
-      try:
-        integer = int(s, 8)
-      except ValueError:
-        # TODO: Show line number
-        print('Invalid octal constant %r' % s)
-        return False, 0
-      return True, integer
-
-    if '#' in s:
-      b, digits = s.split('#', 1)
-      try:
-        base = int(b)
-      except ValueError:
-        print('Invalid base for numeric constant %r' % b)
-        return False, 0
-
-      integer = 0
-      n = 1
-      for char in digits:
-        if 'a' <= char and char <= 'z':
-          digit = ord(char) - ord('a') + 10
-        elif 'A' <= char and char <= 'Z':
-          digit = ord(char) - ord('A') + 36
-        elif char == '@':  # horrible syntax
-          digit = 62
-        elif char == '_':
-          digit = 63
-        elif char.isdigit():
-          digit = int(char)
-        else:
-          print('Invalid digits for numeric constant %r' % digits)
-          return False, 0
-
-        integer += digit * n
-        n *= base
-      return True, integer
-
-    # Plain integer
-    try:
-      integer = int(s)
-    except ValueError:
-      self._AddErrorContext("Invalid integer constant %r" % s)
-      return False, 0
-    return True, integer
 
   def BoolEvalWord(self, word, do_glob=False):
     """Evaluate with the rules of [[."""

@@ -3,13 +3,11 @@
 tdop.py - Library for expression parsing.
 """
 
-#from parse_util import Node, CompositeNode
-#from tokenize import Token
 from core import base
-
+from core.arith_node import UnaryANode, BinaryANode, VarANode
 from core.id_kind import Id, IdName
+from core.util import cast
 
-from core.arith_node import AtomANode, UnaryANode, BinaryANode
 from osh.lex import LexMode
 
 
@@ -25,9 +23,27 @@ def Assert(s, expected, tree):
     assert sexpr == expected, '%r != %r' % (sexpr, expected)
 
 
-# Hm everything gets collapsed into Id.Node_Arith_WORD
-LVALUE_TYPES = (Id.Word_Compound, Id.Arith_LBracket)
-CALL_INDEX_TYPES = (Id.Word_Compound,)
+def IsCallable(node):
+  if node.id == Id.Node_ArithVar:  # foo() or foo[1]
+    return True
+  elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
+    node = cast(BinaryANode, node)
+    if node.a_id == Id.Arith_LBracket:
+      return True
+  # TODO: Also function calls, like foo(a, b)
+  # But nothing like (a+b)(x)
+  return False
+
+
+def IsLValue(node):
+  """Determine if a node is a valid L-value by whitelisting Ids."""
+  if node.id == Id.Node_ArithVar:  # foo = bar
+    return True
+  elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
+    node = cast(BinaryANode, node)
+    if node.a_id == Id.Arith_LBracket:
+      return True
+  return False
 
 
 #
@@ -40,13 +56,14 @@ def NullError(p, t, bp):
   raise ParseError("Token %s can't be used in prefix position" % t)
 
 
-def NullConstant(p, t, bp):
-  # TODO: if word.HasQuotedParts:
-  # - Id.Node_Arith_STRING
-  # - Id.Node_Arith_WORD
-
-  # NOTE: Just return the word itself?
-  return AtomANode(t)
+def NullConstant(p, word, bp):
+  # The word itself is a node
+  if word.id == Id.Word_Compound:
+    var_name = word.AsArithVarName()
+    if var_name:
+      return VarANode(var_name)
+  # It could be a CompoundWord or TokenWord, etc.
+  return word
 
 
 def NullParen(p, t, bp):
@@ -86,8 +103,9 @@ def LeftBinaryOp(p, t, left, rbp):
 def LeftAssign(p, t, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
-  if left.atype not in LVALUE_TYPES:
-    raise ParseError("Can't assign to %r (%s)" % (left, left.atype))
+
+  if not IsLValue(left):
+    raise ParseError("Can't assign to %r (%s)" % (left, left.a_id))
   return BinaryANode(t.ArithId(), left, p.ParseUntil(rbp))
 
 

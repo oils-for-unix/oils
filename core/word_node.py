@@ -81,7 +81,7 @@ class WordPart(_Node):
     """
     raise NotImplementedError
 
-  def IsVarLike(self):
+  def VarLikeName(self):
     """Return the var name string, or False."""
     return False
 
@@ -193,9 +193,13 @@ class LiteralPart(_LiteralPartBase):
   def EvalStatic(self):
     return True, self.token.val, False
 
-  def IsVarLike(self):
+  def VarLikeName(self):
     if self.token.id == Id.Lit_VarLike:
-      return self.token.val[:-1]  # strip off =
+      val = self.token.val
+      if val.endswith('='):
+        return val[:-1]  # foo= -> foo, in command state
+      else:
+        return val  # foo, in arith state
     else:
       return False
 
@@ -231,7 +235,7 @@ class EscapedLiteralPart(_LiteralPartBase):
     # I guess escaped literal is fine, like \E ?
     return True, self.token.val[1:], True
 
-  # IsVarLike, TestLiteralForSlash, LiteralId: default values.  SplitAtIndex?
+  # VarLikeName, TestLiteralForSlash, LiteralId: default values.  SplitAtIndex?
   # Only exists on regular LiteralPart
 
 
@@ -432,13 +436,11 @@ class BToken(object):
 #
 
 
-# TODO: Should descent from _Node too, for printing?  Or do we have separate
-# ABCW executors as well as ABCW printers?
-class Word(_BTokenInterface):
+class Word(_Node, _BTokenInterface):
   """A word or an operator."""
 
   def __init__(self):
-    pass
+    _Node.__init__(self, Id.Word_Compound)
 
   def __repr__(self):
     # repr() always prints as a single line
@@ -585,9 +587,16 @@ class CompoundWord(Word):
     return False
 
   def LooksLikeAssignment(self):
+    """
+    Returns:
+      String lhs, Word RHS
+      or False
+
+    TODO:  probably needs a different interface.
+    """
     if len(self.parts) == 0:
       return False
-    name = self.parts[0].IsVarLike()
+    name = self.parts[0].VarLikeName()
     rhs = CompoundWord()
     if name:
       if len(self.parts) == 1:
@@ -599,6 +608,13 @@ class CompoundWord(Word):
           rhs.parts.append(p)
       return name, rhs
     return False
+
+  def AsArithVarName(self):
+    """Returns a string if this word looks like an arith var; otherwise False."""
+    if len(self.parts) != 1:
+      return ""
+
+    return self.parts[0].VarLikeName()  # may be empty
 
   def AsFuncName(self):
     ok, s, quoted = self.EvalStatic()

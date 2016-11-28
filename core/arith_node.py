@@ -14,25 +14,35 @@ class _ANode(_Node):
 
   It is an AstNode because it has tokens/words to point to?
   """
-  def __init__(self, atype):
-    _Node.__init__(self, 'TODO: get rid of')
-    self.atype = atype  # type: TN
+  def __init__(self, id):
+    _Node.__init__(self, id)
 
   def PrintLine(self, f):
     raise NotImplementedError
+
+
+# NOTE: Like VarSubPart, but without any ops.
+class VarANode(_ANode):
+  def __init__(self, var_name):
+    _ANode.__init__(self, Id.Node_ArithVar)
+    self.var_name = var_name  # type: str
+
+  def PrintLine(self, f):
+    f.write('{VarANode %s}' % self.var_name)
 
 
 class UnaryANode(_ANode):
   """
   For ~ - etc.
   """
-  def __init__(self, atype, child):
-    _ANode.__init__(self, atype)
+  def __init__(self, a_id, child):
+    _ANode.__init__(self, Id.Node_UnaryExpr)
+    self.a_id = a_id
     self.child = child  # type: _ANode
 
   def PrintLine(self, f):
     f.write('{A1 ')
-    f.write('%s %s ' % (IdName(self.atype), self.child))
+    f.write('%s %s ' % (IdName(self.a_id), self.child))
     f.write('}')
 
 
@@ -40,14 +50,15 @@ class BinaryANode(_ANode):
   """
   For + / < etc>
   """
-  def __init__(self, atype, left, right):
-    _ANode.__init__(self, atype)
+  def __init__(self, a_id, left, right):
+    _ANode.__init__(self, Id.Node_BinaryExpr)
+    self.a_id = a_id
     self.left = left
     self.right = right
 
   def PrintLine(self, f):
     f.write('{A2 ')
-    f.write('%s %s %s' % (IdName(self.atype), self.left,
+    f.write('%s %s %s' % (IdName(self.a_id), self.left,
         self.right))
     f.write('}')
 
@@ -56,29 +67,16 @@ class TernaryANode(_ANode):
   """
   For b ? true : false
   """
-  def __init__(self, atype, cond, true_expr, false_expr):
-    _ANode.__init__(self, atype)
+  def __init__(self, a_id, cond, true_expr, false_expr):
+    _ANode.__init__(self, Id.Node_TernaryExpr)
+    # NOTE: We might use this for PatSub and slice, so keep a_Id.
+    self.a_id = a_id
     self.cond = cond  # type: _ANode
     self.true_expr = true_expr  # type: _ANode
     self.false_expr = false_expr  # type: _ANode
 
   def PrintLine(self, f):
     f.write('{A3 ')
-    f.write('%s %s %s %s' % (IdName(self.atype), self.cond,
+    f.write('%s %s %s %s' % (IdName(self.a_id), self.cond,
         self.true_expr, self.false_expr))
-    f.write('}')
-
-
-class AtomANode(_ANode):
-  """
-  For a token like .
-  This could be LiteralWord too, but it's not worth it
-  """
-  def __init__(self, word):
-    _ANode.__init__(self, Id.Word_Compound)
-    self.word = word  # type: Word
-
-  def PrintLine(self, f):
-    f.write('{A Atom ')
-    f.write('%s %s' % (IdName(self.atype), self.word))
     f.write('}')

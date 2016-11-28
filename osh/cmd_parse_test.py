@@ -661,9 +661,9 @@ for ((i=0; i<5; ++i)); do
   echo $i
 done
 """)
-    self.assertEqual(Id.Arith_Equal, node.init.atype)
-    self.assertEqual(Id.Arith_Less, node.cond.atype)
-    self.assertEqual(Id.Arith_DPlus, node.update.atype)
+    self.assertEqual(Id.Arith_Equal, node.init.a_id)
+    self.assertEqual(Id.Arith_Less, node.cond.a_id)
+    self.assertEqual(Id.Arith_DPlus, node.update.a_id)
     self.assertEqual(1, len(node.children))
 
     # Now without the ; OR a newline
@@ -672,9 +672,9 @@ for ((i=0; i<5; ++i)) do
   echo $i
 done
 """)
-    self.assertEqual(Id.Arith_Equal, node.init.atype)
-    self.assertEqual(Id.Arith_Less, node.cond.atype)
-    self.assertEqual(Id.Arith_DPlus, node.update.atype)
+    self.assertEqual(Id.Arith_Equal, node.init.a_id)
+    self.assertEqual(Id.Arith_Less, node.cond.a_id)
+    self.assertEqual(Id.Arith_DPlus, node.update.a_id)
     self.assertEqual(1, len(node.children))
 
     node = assertParseCommandList(self, """\

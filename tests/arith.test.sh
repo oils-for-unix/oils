@@ -23,6 +23,16 @@ i=1
 echo $((i+1))
 # stdout: 2
 
+### Bizarre recursive evaluation rule
+foo=5
+bar=foo
+spam=bar
+eggs=spam
+echo $((foo+1)) $((bar+1)) $((spam+1)) $((eggs+1))
+# stdout: 6 6 6 6
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### Can use Braced VarSub within ArithSub
 echo $((${j:-5} + 1))
 # stdout: 6
@@ -36,13 +46,13 @@ foo=1; echo $((foo+1))bar$(($foo+1))
 echo $((1 + $(echo 1)${undefined:-3}))
 # stdout: 14
 
-### Quotes within Arith sub not work
+### Constant with quotes like '1'
 # NOTE: Compare with [[.  That is a COMMAND level expression, while this is a
 # WORD level expression.
 echo $(('1' + 2))
-# status: 2
-# OK bash/zsh status: 1
-# BUG mksh status: 0
+# status: 0
+# N-I bash/zsh status: 1
+# N-I dash status: 2
 
 ### Arith sub within arith sub
 # This is unnecessary but works in all shells.

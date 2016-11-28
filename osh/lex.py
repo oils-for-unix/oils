@@ -306,9 +306,9 @@ LEXER_DEF[LexMode.ARITH] = \
   #   64#azAZ
   #   0xabc 0xABC
   #   0123
-  # A separate digits part makes this easier to parse STATICALLY.  But this
+  # A separate digits token makes this easier to parse STATICALLY.  But this
   # doesn't help with DYNAMIC parsing.
-  R(r'[a-zA-Z_]+', Id.Lit_Chars),  # for variable names or 64#_
+  R(_VAR_NAME_RE, Id.Lit_VarLike),  # for variable names or 64#_
   R(r'[0-9]+', Id.Lit_Digits),
   C('@', Id.Lit_At),  # for 64#@ or ${a[@]}
   C('#', Id.Lit_Pound),  # for 64#a
