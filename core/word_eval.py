@@ -8,7 +8,7 @@ import os
 import pwd
 import re
 
-from core import arith_eval  # ArithEval
+from core import expr_eval  # ArithEval
 try:
   from core import libc
 except ImportError:
@@ -199,7 +199,7 @@ class _Evaluator(object):
     raise NotImplementedError
 
   def EvalArithSub(self, anode):
-    arith_ev = arith_eval.ArithEvaluator(self.mem, self)
+    arith_ev = expr_eval.ArithEvaluator(self.mem, self)
     if arith_ev.Eval(anode):
       num = arith_ev.Result()
       return True, Value.FromString(str(num))
@@ -342,7 +342,7 @@ class _Evaluator(object):
         if is_array:
           anode = part.bracket_op.arg_word
           # TODO: This should propagate errors
-          arith_ev = arith_eval.ArithEvaluator(self)
+          arith_ev = expr_eval.ArithEvaluator(self)
           ok = arith_ev.Eval(anode)
           if not ok:
             self._AddErrorContext(

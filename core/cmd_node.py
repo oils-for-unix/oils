@@ -284,6 +284,7 @@ class DParenNode(CNode):
     f.write(')')
 
 
+# NOTE: This has N children, instead of a fixed 0, 1, or 2.
 class _CompoundCNode(CNode):
   def __init__(self, id):
     CNode.__init__(self, id)
@@ -437,7 +438,7 @@ class ForNode(_CompoundCNode):
 
   def __init__(self):
     _CompoundCNode.__init__(self, Id.Node_ForEach)
-    self.iter_name = None
+    self.iter_name = None  # type: str
     self.iter_words = []  # can be empty explicitly empty, which is dumb
     # whether we should iterate over args; iter_words should be empty
     self.do_arg_iter = False

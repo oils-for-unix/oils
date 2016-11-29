@@ -11,7 +11,7 @@ arith_parse_test.py: Tests for arith_parse.py
 
 import unittest
 
-from core import arith_eval
+from core import expr_eval
 from core import tdop
 from core import word_eval
 from core import cmd_exec
@@ -40,7 +40,7 @@ def ParseAndEval(code_str):
   exec_opts = cmd_exec.ExecOpts()
   ev = word_eval.CompletionEvaluator(mem, exec_opts)
 
-  arith_ev = arith_eval.ArithEvaluator(mem, ev)
+  arith_ev = expr_eval.ArithEvaluator(mem, ev)
   ok = arith_ev.Eval(anode)
   if ok:
     value = arith_ev.Result()

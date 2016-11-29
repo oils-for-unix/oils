@@ -13,8 +13,8 @@ TODO: Turn it into a class
 
 import sys
 
+from core.expr_node import _ANode, TernaryANode
 from core.id_kind import Id, IdName
-from core.arith_node import _ANode, TernaryANode
 from core.util import cast
 
 #from core import word_eval 

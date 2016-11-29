@@ -60,9 +60,8 @@ import os
 import stat
 import sys
 
-from core import arith_eval
-from core import bool_eval
 from core import completion
+from core import expr_eval
 from core import word_eval
 from core import util
 
@@ -694,7 +693,7 @@ class Executor(object):
       status = p.Run()
 
     elif node.id == Id.KW_DLeftBracket:
-      bool_ev = bool_eval.BoolEvaluator(self.ev)
+      bool_ev = expr_eval.BoolEvaluator(self.ev)
       ok = bool_ev.Eval(node.bnode)
       if ok:
         status = 0 if bool_ev.Result() else 1
@@ -702,11 +701,15 @@ class Executor(object):
         raise AssertionError('Error evaluating boolean: %s' % bool_ev.Error())
 
     elif node.id == Id.Op_DLeftParen:
-      i = arith_eval.ArithEval(node.anode, self.ev)
-      # Negate the value: non-zero in arithmetic is true, which is zero in
-      # shell land
-      status = 0 if i != 0 else 1
-      # TODO: if not OK, then turn it into an exception
+      arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev)
+      ok = arith_ev.Eval(node.anode)
+      if ok:
+        i = arith_ev.Result()
+        # Negate the value: non-zero in arithmetic is true, which is zero in
+        # shell land
+        status = 0 if i != 0 else 1
+      else:
+        raise AssertionError('Error evaluating (( )): %s' % arith_ev.Error())
 
     elif node.id == Id.Node_Assign:
       # TODO: Respect flags: readonly, export, sametype, etc.

@@ -4,7 +4,7 @@ tdop.py - Library for expression parsing.
 """
 
 from core import base
-from core.arith_node import UnaryANode, BinaryANode, VarANode
+from core.expr_node import UnaryANode, BinaryANode, VarANode
 from core.id_kind import Id, IdName
 from core.util import cast
 

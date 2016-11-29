@@ -10,9 +10,7 @@ import sys
 
 from core import tdop
 from core.id_kind import Id
-from core.arith_node import UnaryANode, BinaryANode, TernaryANode
-#from tokenize import tokenize_expr
-#from parse_util import CompositeNode
+from core.expr_node import UnaryANode, BinaryANode, TernaryANode
 
 
 def NullIncDec(p, t, bp):
