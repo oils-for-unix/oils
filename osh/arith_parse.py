@@ -39,12 +39,12 @@ def LeftIncDec(p, t, left, rbp):
   if not tdop.IsLValue(left):
     raise tdop.ParseError("Can't assign to %r (%s)" % (left, left.token))
   if t.ArithId() == Id.Arith_DPlus:
-    a_id = Id.Node_PostDPlus
+    op_id = Id.Node_PostDPlus
   elif t.ArithId() == Id.Arith_DMinus:
-    a_id = Id.Node_PostDMinus
+    op_id = Id.Node_PostDMinus
   else:
     raise AssertionError
-  return UnaryANode(a_id, left)
+  return UnaryANode(op_id, left)
 
 
 def LeftIndex(p, t, left, unused_bp):

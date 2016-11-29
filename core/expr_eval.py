@@ -182,7 +182,7 @@ class ArithEvaluator(ExprEvaluator):
         raise ExprEvalError()
 
     elif node.id == Id.Node_UnaryExpr:
-      atype = node.a_id
+      atype = node.op_id
 
       # TODO: Should we come up with a kind/arity??
       if atype == Id.Node_UnaryPlus:
@@ -192,7 +192,7 @@ class ArithEvaluator(ExprEvaluator):
         return -self._Eval(node.child)
 
     elif node.id == Id.Node_TernaryExpr:
-      if node.a_id == Id.Arith_QMark:
+      if node.op_id == Id.Arith_QMark:
         node = cast(TernaryANode, node)
 
         lhs = self._Eval(node.cond)
@@ -202,14 +202,14 @@ class ArithEvaluator(ExprEvaluator):
           ret = self._Eval(node.false_expr)
         return ret
       else:
-        raise ExprEvalError("%s not implemented" % IdName(node.a_id))
+        raise ExprEvalError("%s not implemented" % IdName(node.op_id))
 
     elif node.id == Id.Node_BinaryExpr:
       # TODO: Do type check at PARSE TIME, where applicable
       lhs = self._Eval(node.left)
       rhs = self._Eval(node.right)
 
-      atype = node.a_id
+      atype = node.op_id
 
       if atype == Id.Arith_Comma:
         return rhs
@@ -279,8 +279,8 @@ class BoolEvaluator(ExprEvaluator):
       return bool(s)
 
     if node.id == Id.Node_UnaryExpr:
-      b_id = node.b_id
-      if b_id == Id.KW_Bang:
+      op_id = node.op_id
+      if op_id == Id.KW_Bang:
         # child could either be a Word, or it could be a BNode
         b = self._Eval(node.child)
         return not b
@@ -288,7 +288,7 @@ class BoolEvaluator(ExprEvaluator):
       s = self._EvalCompoundWord(node.child)
 
       # Now dispatch on arg type
-      arg_type = BOOL_OPS[b_id]
+      arg_type = BOOL_OPS[op_id]
       if arg_type == OperandType.FILE:
         try:
           mode = os.stat(s).st_mode
@@ -297,30 +297,30 @@ class BoolEvaluator(ExprEvaluator):
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
           return False
 
-        if b_id == Id.BoolUnary_f:
+        if op_id == Id.BoolUnary_f:
           return stat.S_ISREG(mode)
 
       if arg_type == OperandType.STRING:
-        if b_id == Id.BoolUnary_z:
+        if op_id == Id.BoolUnary_z:
           return not bool(s)
-        if b_id == Id.BoolUnary_n:
+        if op_id == Id.BoolUnary_n:
           return bool(s)
 
-        raise NotImplementedError(b_id)
+        raise NotImplementedError(op_id)
 
       raise NotImplementedError(arg_type)
 
     if node.id == Id.Node_BinaryExpr:
-      b_id = node.b_id
+      op_id = node.op_id
 
       # Short-circuit evaluation
-      if b_id == Id.Op_DAmp:
+      if op_id == Id.Op_DAmp:
         if self._Eval(node.left):
           return self._Eval(node.right)
         else:
           return False
 
-      if b_id == Id.Op_DPipe:
+      if op_id == Id.Op_DPipe:
         if self._Eval(node.left):
           return True
         else:
@@ -328,18 +328,18 @@ class BoolEvaluator(ExprEvaluator):
 
       s1 = self._EvalCompoundWord(node.left)
       # Whehter to glob escape
-      do_glob = b_id in (
+      do_glob = op_id in (
           Id.BoolBinary_Equal, Id.BoolBinary_DEqual, Id.BoolBinary_NEqual)
       s2 = self._EvalCompoundWord(node.right, do_glob=do_glob)
 
       # Now dispatch on arg type
-      arg_type = BOOL_OPS[b_id]
+      arg_type = BOOL_OPS[op_id]
 
       if arg_type == OperandType.FILE:
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
-        if b_id == Id.BoolBinary_nt:
+        if op_id == Id.BoolBinary_nt:
           return True  # TODO: test newer than (mtime)
 
       if arg_type == OperandType.INT:
@@ -354,26 +354,26 @@ class BoolEvaluator(ExprEvaluator):
           # - 2 is for PARSE error.
           raise ExprEvalError("Invalid integer: %s" % e)
 
-        if b_id == Id.BoolBinary_eq:
+        if op_id == Id.BoolBinary_eq:
           return i1 == i2
-        if b_id == Id.BoolBinary_ne:
+        if op_id == Id.BoolBinary_ne:
           return i1 != i2
 
-        raise NotImplementedError(b_id)
+        raise NotImplementedError(op_id)
 
       if arg_type == OperandType.STRING:
         # TODO:
         # - Compare arrays.  (Although bash coerces them to string first)
 
-        if b_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
+        if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
           #return True, _ValuesAreEqual(val1, val2)
           return libc.fnmatch(s2, s1)
 
-        if b_id == Id.BoolBinary_NEqual:
+        if op_id == Id.BoolBinary_NEqual:
           #return True, not _ValuesAreEqual(val1, val2)
           return not libc.fnmatch(s2, s1)
 
-        if b_id == Id.BoolBinary_EqualTilde:
+        if op_id == Id.BoolBinary_EqualTilde:
           # NOTE: regex matching can't fail if compilation succeeds.
           match = libc.regex_match(s2, s1)
           # TODO: BASH_REMATCH or REGEX_MATCH
@@ -392,13 +392,13 @@ class BoolEvaluator(ExprEvaluator):
 
           return is_match
 
-        if b_id == Id.Redir_Less:  # pun
+        if op_id == Id.Redir_Less:  # pun
           return s1 < s2
 
-        if b_id == Id.Redir_Great:  # pun
+        if op_id == Id.Redir_Great:  # pun
           return s1 > s2
 
-        raise NotImplementedError(b_id)
+        raise NotImplementedError(op_id)
 
     # We could have govered all node IDs
     raise AssertionError(IdName(node.id))

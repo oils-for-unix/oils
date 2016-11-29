@@ -28,7 +28,7 @@ def IsCallable(node):
     return True
   elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
     node = cast(BinaryANode, node)
-    if node.a_id == Id.Arith_LBracket:
+    if node.op_id == Id.Arith_LBracket:
       return True
   # TODO: Also function calls, like foo(a, b)
   # But nothing like (a+b)(x)
@@ -41,7 +41,7 @@ def IsLValue(node):
     return True
   elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
     node = cast(BinaryANode, node)
-    if node.a_id == Id.Arith_LBracket:
+    if node.op_id == Id.Arith_LBracket:
       return True
   return False
 
@@ -105,7 +105,7 @@ def LeftAssign(p, t, left, rbp):
   # x += 1, or a[i] += 1
 
   if not IsLValue(left):
-    raise ParseError("Can't assign to %r (%s)" % (left, left.a_id))
+    raise ParseError("Can't assign to %r (%s)" % (left, left.op_id))
   return BinaryANode(t.ArithId(), left, p.ParseUntil(rbp))
 
 
@@ -190,7 +190,7 @@ class TdopParser(object):
     self.spec = spec
     self.w_parser = w_parser  # iterable
     self.cur_word = None  # current token
-    self.a_id = Id.Undefined_Tok
+    self.op_id = Id.Undefined_Tok
 
     self.error_stack = []
 
@@ -205,10 +205,10 @@ class TdopParser(object):
     return self.spec.LookupLed(token)
 
   def AtAnyOf(self, *args):
-    return self.a_id in args
+    return self.op_id in args
 
   def AtToken(self, token_type):
-    return self.a_id == token_type
+    return self.op_id == token_type
 
   def Eat(self, token_type):
     """ Eat()? """
@@ -228,7 +228,7 @@ class TdopParser(object):
           word=self.cur_word)
       #return False
       raise ParseError()  # use exceptions for now
-    self.a_id = self.cur_word.ArithId()
+    self.op_id = self.cur_word.ArithId()
     return True
 
   def ParseUntil(self, rbp):
@@ -237,7 +237,7 @@ class TdopParser(object):
     power LESS THAN OR EQUAL TO rbp.
     """
     # TODO: use Kind.Eof
-    if self.a_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
+    if self.op_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
       raise ParseError('Unexpected end of input')
 
     t = self.cur_word

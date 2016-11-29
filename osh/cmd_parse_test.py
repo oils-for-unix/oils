@@ -661,9 +661,9 @@ for ((i=0; i<5; ++i)); do
   echo $i
 done
 """)
-    self.assertEqual(Id.Arith_Equal, node.init.a_id)
-    self.assertEqual(Id.Arith_Less, node.cond.a_id)
-    self.assertEqual(Id.Arith_DPlus, node.update.a_id)
+    self.assertEqual(Id.Arith_Equal, node.init.op_id)
+    self.assertEqual(Id.Arith_Less, node.cond.op_id)
+    self.assertEqual(Id.Arith_DPlus, node.update.op_id)
     self.assertEqual(1, len(node.children))
 
     # Now without the ; OR a newline
@@ -672,9 +672,9 @@ for ((i=0; i<5; ++i)) do
   echo $i
 done
 """)
-    self.assertEqual(Id.Arith_Equal, node.init.a_id)
-    self.assertEqual(Id.Arith_Less, node.cond.a_id)
-    self.assertEqual(Id.Arith_DPlus, node.update.a_id)
+    self.assertEqual(Id.Arith_Equal, node.init.op_id)
+    self.assertEqual(Id.Arith_Less, node.cond.op_id)
+    self.assertEqual(Id.Arith_DPlus, node.update.op_id)
     self.assertEqual(1, len(node.children))
 
     node = assertParseCommandList(self, """\
@@ -723,10 +723,10 @@ fi
 
   def testParseDBracketRegex(self):
     node = assertParseCommandList(self, '[[ foo =~ foo ]]')
-    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.b_id)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.op_id)
 
     node = assertParseCommandList(self, '[[ foo =~ (foo|bar) ]]')
-    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.b_id)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.op_id)
     right = node.bnode.right
     self.assertEqual(5, len(right.parts))
     self.assertEqual('(', right.parts[0].token.val)
@@ -734,10 +734,10 @@ fi
     # TODO: Implement BASH_REGEX_CHARS
     return
     node = assertParseCommandList(self, '[[ "< >" =~ (< >) ]]')
-    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.b_id)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.op_id)
 
     node = assertParseCommandList(self, '[[ "ba ba" =~ ([a b]+) ]]')
-    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.b_id)
+    self.assertEqual(Id.BoolBinary_EqualTilde, node.bnode.op_id)
 
   def testParseIf(self):
     node = assertParseCommandList(self, 'if true; then echo yes; fi')
