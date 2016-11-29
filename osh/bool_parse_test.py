@@ -12,7 +12,7 @@ bool_parse_test.py: Tests for bool_parse.py
 import unittest
 
 from core.id_kind import Id
-from core.bool_node import *
+from core.expr_node import *
 
 from osh import parse_lib
 from osh import bool_parse  # module under test

@@ -57,7 +57,7 @@ import sys
 from core import base
 from core.id_kind import Id, Kind, LookupKind, IdName
 
-from core.bool_node import UnaryBNode, BinaryBNode
+from core.expr_node import UnaryBNode, BinaryBNode
 from osh.lex import LexMode
 try:
   from core import libc
@@ -263,7 +263,7 @@ class BoolParser(object):
 
 
 def main(argv):
-  import bool_eval
+  import expr_eval
   import bool_parse_test
   import cmd_exec
   import word_eval
@@ -277,7 +277,7 @@ def main(argv):
   exec_opts = cmd_exec.ExecOpts()
   ev = word_eval.CompletionEvaluator(mem, exec_opts)
 
-  ok, b = bool_eval.BEval(node, ev)
+  ok, b = expr_eval.BEval(node, ev)
   print('result:', ok, b)
 
 
