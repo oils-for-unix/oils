@@ -10,7 +10,7 @@ import sys
 
 from core import tdop
 from core.id_kind import Id
-from core.expr_node import UnaryANode, BinaryANode, TernaryANode
+from core.expr_node import UnaryExprNode, BinaryExprNode, TernaryExprNode
 
 
 def NullIncDec(p, t, bp):
@@ -18,19 +18,19 @@ def NullIncDec(p, t, bp):
   right = p.ParseUntil(bp)
   if not tdop.IsLValue(right):
     raise tdop.ParseError("Can't assign to %r (%s)" % (right, right.token))
-  return UnaryANode(t.ArithId(), right)
+  return UnaryExprNode(t.ArithId(), right)
 
 
 def NullUnaryPlus(p, t, bp):
   """ +x, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return UnaryANode(Id.Node_UnaryPlus, right)
+  return UnaryExprNode(Id.Node_UnaryPlus, right)
 
 
 def NullUnaryMinus(p, t, bp):
   """ -1, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return UnaryANode(Id.Node_UnaryMinus, right)
+  return UnaryExprNode(Id.Node_UnaryMinus, right)
 
 
 def LeftIncDec(p, t, left, rbp):
@@ -44,7 +44,7 @@ def LeftIncDec(p, t, left, rbp):
     op_id = Id.Node_PostDMinus
   else:
     raise AssertionError
-  return UnaryANode(op_id, left)
+  return UnaryExprNode(op_id, left)
 
 
 def LeftIndex(p, t, left, unused_bp):
@@ -55,7 +55,7 @@ def LeftIndex(p, t, left, unused_bp):
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
-  return BinaryANode(t.ArithId(), left, index)
+  return BinaryExprNode(t.ArithId(), left, index)
 
 
 def LeftTernary(p, t, left, bp):
@@ -64,7 +64,7 @@ def LeftTernary(p, t, left, bp):
   p.Eat(Id.Arith_Colon)
   false_expr = p.ParseUntil(bp)
   children = [left, true_expr, false_expr]
-  return TernaryANode(t.ArithId(), left, true_expr, false_expr)
+  return TernaryExprNode(t.ArithId(), left, true_expr, false_expr)
 
 
 # For overloading of , inside function calls

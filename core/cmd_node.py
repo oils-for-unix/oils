@@ -276,7 +276,7 @@ class DParenNode(CNode):
   """Represents a top level (( expression."""
   def __init__(self, anode):
     CNode.__init__(self, Id.Op_DLeftParen)
-    self.anode = anode  # type: _ANode
+    self.anode = anode  # type: _ExprNode
 
   def PrintLine(self, f):
     f.write('(DParen ')
@@ -458,9 +458,9 @@ class ForExpressionNode(_CompoundCNode):
   """
   def __init__(self, init, cond, update):
     _CompoundCNode.__init__(self, Id.Node_ForExpr)
-    self.init = init  # type: ANode
-    self.cond = cond  # type: ANode
-    self.update = update  # type: ANode
+    self.init = init  # type: ExprNode
+    self.cond = cond  # type: ExprNode
+    self.update = update  # type: ExprNode
 
   def _PrintHeader(self, f):
     # TODO: Put these on separate lines

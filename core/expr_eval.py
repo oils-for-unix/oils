@@ -16,7 +16,7 @@ try:
 except ImportError:
   from core import fake_libc as libc
 
-from core.expr_node import _ANode, TernaryANode
+from core.expr_node import _ExprNode, TernaryExprNode
 from core.id_kind import BOOL_OPS, OperandType, Id, IdName
 from core.util import cast
 from core.util import log
@@ -53,7 +53,7 @@ class ExprEvaluator:
   def Result(self):
     return self.result
 
-  def Eval(self, node: _ANode):
+  def Eval(self, node: _ExprNode):
     try:
       result = self._Eval(node)
     except ExprEvalError as e:
@@ -142,12 +142,12 @@ class ArithEvaluator(ExprEvaluator):
       return False, 0
     return True, integer
 
-  def _Eval(self, node: _ANode):
+  def _Eval(self, node: _ExprNode):
     """
     Args:
-      node: _ANode
+      node: _ExprNode
 
-    Issue: Word is not a kind of _ANode or ExprNode.  It is a _Node however,
+    Issue: Word is not a kind of _ExprNode or ExprNode.  It is a _Node however,
     because it has an Id type.
 
     TODO:
@@ -193,7 +193,7 @@ class ArithEvaluator(ExprEvaluator):
 
     elif node.id == Id.Node_TernaryExpr:
       if node.op_id == Id.Arith_QMark:
-        node = cast(TernaryANode, node)
+        node = cast(TernaryExprNode, node)
 
         lhs = self._Eval(node.cond)
         if lhs != 0:
@@ -289,7 +289,7 @@ class BoolEvaluator(ExprEvaluator):
 
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]
-      if arg_type == OperandType.FILE:
+      if arg_type == OperandType.Path:
         try:
           mode = os.stat(s).st_mode
         except FileNotFoundError as e:
@@ -300,7 +300,7 @@ class BoolEvaluator(ExprEvaluator):
         if op_id == Id.BoolUnary_f:
           return stat.S_ISREG(mode)
 
-      if arg_type == OperandType.STRING:
+      if arg_type == OperandType.Str:
         if op_id == Id.BoolUnary_z:
           return not bool(s)
         if op_id == Id.BoolUnary_n:
@@ -335,14 +335,14 @@ class BoolEvaluator(ExprEvaluator):
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]
 
-      if arg_type == OperandType.FILE:
+      if arg_type == OperandType.Path:
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
         if op_id == Id.BoolBinary_nt:
           return True  # TODO: test newer than (mtime)
 
-      if arg_type == OperandType.INT:
+      if arg_type == OperandType.Int:
         try:
           i1 = int(s1)
           i2 = int(s2)
@@ -361,7 +361,7 @@ class BoolEvaluator(ExprEvaluator):
 
         raise NotImplementedError(op_id)
 
-      if arg_type == OperandType.STRING:
+      if arg_type == OperandType.Str:
         # TODO:
         # - Compare arrays.  (Although bash coerces them to string first)
 

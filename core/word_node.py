@@ -334,6 +334,15 @@ class VarSubPart(WordPart):
     self.name = name
     self.token = token
 
+    # TODO: change this to:
+
+    # prefix_op: ! or #
+    # array_op: [@] or [i+1]
+    # suffix_op:  # or % or / or : :
+    #
+    # This is the PARSED representation.  The executed representation will be
+    # ExprNode.
+
     self.array_op = None  # VarOp0 for @ or *
     self.bracket_op = None  # VarOp1 with arithmetic expression / string
     self.test_op = None  # VarOp1 -- one of 8 types
@@ -735,9 +744,9 @@ class SliceVarOp(_VarOp):
   """ ${a : i+1 : 3}  or  ${a[@] : i+1 : 3} or ${a : 0}"""
   def __init__(self, begin, length):
     _VarOp.__init__(self, Id.VOp2_Colon)
-    self.begin = begin  # type: _ANode
+    self.begin = begin  # type: _ExprNode
     # None means slice until end
-    self.length = length  # Optional[_ANode]
+    self.length = length  # Optional[_ExprNode]
 
   def PrintLine(self, f):
     f.write('Slice %s %s' % (self.begin, self.length))

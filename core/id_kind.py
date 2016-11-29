@@ -129,7 +129,7 @@ class IdSpec(object):
     self.bool_ops[id_] = arg_type
 
 
-def MakeTokens(spec):
+def _AddKinds(spec):
   # TODO: Unknown_Tok is OK, but Undefined_Id is better
   spec.AddKind('Undefined', ['Tok'])  # for initial state
   spec.AddKind('Unknown',   ['Tok'])  # for when nothing matches
@@ -315,7 +315,7 @@ def MakeTokens(spec):
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
      'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
 
-     # TODO: Unify ANode and BNode under these Unary, Binary, Ternary nodes.
+     # TODO: Unify ExprNode and BNode under these Unary, Binary, Ternary nodes.
      # They hold one, two, or three words.
      'UnaryExpr', 'BinaryExpr', 'TernaryExpr',
      'ConstInt',  # for arithmetic.  There is no ConstBool.
@@ -347,7 +347,7 @@ BOOL_OPS = {}  # type: dict
 
 UNARY_FILE_CHARS = tuple('abcdefghLprsStuwxOGN')
 
-OperandType = util.Enum('OperandType', 'NONE FILE INT STRING OTHER'.split())
+OperandType = util.Enum('OperandType', 'Undefined Path Int Str Other'.split())
 
 
 def _Dash(strs):
@@ -355,35 +355,35 @@ def _Dash(strs):
   return [(s, '-' + s) for s in strs]
 
 
-def MakeBool(spec):
+def _AddBoolKinds(spec):
   spec.AddBoolKind('BoolUnary', {
-      OperandType.STRING: _Dash(list('zn')),  # -z -n
-      OperandType.OTHER: _Dash(list('ovR')),
-      OperandType.FILE: _Dash(UNARY_FILE_CHARS),
+      OperandType.Str: _Dash(list('zn')),  # -z -n
+      OperandType.Other: _Dash(list('ovR')),
+      OperandType.Path: _Dash(UNARY_FILE_CHARS),
   })
 
   spec.AddBoolKind('BoolBinary', {
-      OperandType.STRING: [
+      OperandType.Str: [
           ('Equal', '='), ('DEqual', '=='), ('NEqual', '!='),
           ('EqualTilde', '=~'),
       ],
-      OperandType.FILE: _Dash(['ef', 'nt', 'ot']),
-      OperandType.INT: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
+      OperandType.Path: _Dash(['ef', 'nt', 'ot']),
+      OperandType.Int: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
   })
 
   # logical, arity, arg_type
-  spec.AddBoolOp(Id.Op_DAmp, OperandType.NONE)
-  spec.AddBoolOp(Id.Op_DPipe, OperandType.NONE)
-  spec.AddBoolOp(Id.KW_Bang, OperandType.NONE)
+  spec.AddBoolOp(Id.Op_DAmp, OperandType.Undefined)
+  spec.AddBoolOp(Id.Op_DPipe, OperandType.Undefined)
+  spec.AddBoolOp(Id.KW_Bang, OperandType.Undefined)
 
-  spec.AddBoolOp(Id.Redir_Less, OperandType.STRING)
-  spec.AddBoolOp(Id.Redir_Great, OperandType.STRING)
+  spec.AddBoolOp(Id.Redir_Less, OperandType.Str)
+  spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
 
 
 ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
 
-MakeTokens(ID_SPEC)
-MakeBool(ID_SPEC)  # must come second
+_AddKinds(ID_SPEC)
+_AddBoolKinds(ID_SPEC)  # must come second
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes

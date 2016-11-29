@@ -9,7 +9,7 @@ from core.base import _Node
 from core.id_kind import IdName, Id
 
 
-class _ANode(_Node):
+class _ExprNode(_Node):
   """Abstract base class for internal nodes of a $(()) expression.
 
   It is an AstNode because it has tokens/words to point to?
@@ -22,113 +22,65 @@ class _ANode(_Node):
 
 
 # NOTE: Like VarSubPart, but without any ops.
-class VarANode(_ANode):
+class VarExprNode(_ExprNode):
   def __init__(self, var_name):
-    _ANode.__init__(self, Id.Node_ArithVar)
+    _ExprNode.__init__(self, Id.Node_ArithVar)
     self.var_name = var_name  # type: str
 
   def PrintLine(self, f):
-    f.write('{VarANode %s}' % self.var_name)
+    f.write('(VarExprNode %s)' % self.var_name)
 
 
-class UnaryANode(_ANode):
+class UnaryExprNode(_ExprNode):
   """
-  For ~ - etc.
-  """
-  def __init__(self, op_id, child):
-    _ANode.__init__(self, Id.Node_UnaryExpr)
-    self.op_id = op_id
-    self.child = child  # type: _ANode
+  Arith: ~ - etc.
 
-  def PrintLine(self, f):
-    f.write('{A1 ')
-    f.write('%s %s ' % (IdName(self.op_id), self.child))
-    f.write('}')
-
-
-class BinaryANode(_ANode):
-  """
-  For + / < etc>
-  """
-  def __init__(self, op_id, left, right):
-    _ANode.__init__(self, Id.Node_BinaryExpr)
-    self.op_id = op_id
-    self.left = left
-    self.right = right
-
-  def PrintLine(self, f):
-    f.write('{A2 ')
-    f.write('%s %s %s' % (IdName(self.op_id), self.left,
-        self.right))
-    f.write('}')
-
-
-class TernaryANode(_ANode):
-  """
-  For b ? true : false
-  """
-  def __init__(self, op_id, cond, true_expr, false_expr):
-    _ANode.__init__(self, Id.Node_TernaryExpr)
-    # NOTE: We might use this for PatSub and slice, so keep a_Id.
-    self.op_id = op_id
-    self.cond = cond  # type: _ANode
-    self.true_expr = true_expr  # type: _ANode
-    self.false_expr = false_expr  # type: _ANode
-
-  def PrintLine(self, f):
-    f.write('{A3 ')
-    f.write('%s %s %s %s' % (IdName(self.op_id), self.cond,
-        self.true_expr, self.false_expr))
-    f.write('}')
-
-
-#
-# BNode
-#
-
-class _BNode(_Node):
-  """Abstract base class for internal nodes of a [[ expresion.
-
-  It is an _Node because it has tokens/words to point to?
-
-  TODO: Change this to ExprNode, and use op_id instead of op_id and op_id.
-  """
-  def __init__(self, id, op_id):
-    _Node.__init__(self, id)
-    self.op_id = op_id
-
-  def PrintLine(self, f):
-    raise NotImplementedError  # Abstract
-
-
-class UnaryBNode(_BNode):
-  """
-  -z -n hold a Word; ! holds another _BNode; butI think we are just treating
-  them all as _Node
+  Boolean:
+      -z -n hold a Word; ! holds another _BNode; butI think we are just
+      treating them all as _Node
   """
   def __init__(self, op_id, child):
-    _BNode.__init__(self, Id.Node_UnaryExpr, op_id)
-    self.child = child  # type: _Node
+    _ExprNode.__init__(self, Id.Node_UnaryExpr)
+    self.op_id = op_id
+    self.child = child  # type: _ExprNode
 
   def PrintLine(self, f):
-    f.write('{B1 ')
-    f.write('%s %s' % (IdName(self.op_id), self.child))
-    f.write('}')
+    f.write('(%s %s)' % (IdName(self.op_id), self.child))
 
 
-class BinaryBNode(_BNode):
+class BinaryExprNode(_ExprNode):
   """
+  Arith: + / < etc>
+
+  Boolean:
+
   ==, == as a GLOB with RHS detected at parse time, -gt for integers, -ot for
   files
 
   && and || hold a pair of _BNode instances.
   """
   def __init__(self, op_id, left, right):
-    _BNode.__init__(self, Id.Node_BinaryExpr, op_id)
-    self.left = left  # type: _Node
-    self.right = right  # type: _Node
+    _ExprNode.__init__(self, Id.Node_BinaryExpr)
+    self.op_id = op_id
+    self.left = left
+    self.right = right
 
   def PrintLine(self, f):
-    f.write('{B2 ')
-    f.write('%s %s %s' % (IdName(self.op_id), self.left, self.right))
-    f.write('}')
+    f.write('(%s %s %s)' % (IdName(self.op_id), self.left, self.right))
+
+
+class TernaryExprNode(_ExprNode):
+  """
+  For b ? true : false
+  """
+  def __init__(self, op_id, cond, true_expr, false_expr):
+    _ExprNode.__init__(self, Id.Node_TernaryExpr)
+    # NOTE: We might use this for PatSub and slice, so keep a_Id.
+    self.op_id = op_id
+    self.cond = cond  # type: _ExprNode
+    self.true_expr = true_expr  # type: _ExprNode
+    self.false_expr = false_expr  # type: _ExprNode
+
+  def PrintLine(self, f):
+    f.write('(%s %s %s %s)' % (
+        IdName(self.op_id), self.cond, self.true_expr, self.false_expr))

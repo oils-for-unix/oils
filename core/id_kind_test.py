@@ -67,8 +67,8 @@ class TokensTest(unittest.TestCase):
 
 
 def PrintBoolTable():
-  for i, (logical, arity, arg_type) in id_kind.BOOL_OPS.items():
-    row = (id_kind.IdName(i), logical, arity, arg_type)
+  for i, arg_type in id_kind.BOOL_OPS.items():
+    row = (id_kind.IdName(i), arg_type)
     print('\t'.join(str(c) for c in row))
 
 

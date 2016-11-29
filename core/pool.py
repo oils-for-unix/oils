@@ -161,7 +161,7 @@ class Pool(object):
   # CNode: 10 or so types
   #   Redirects: 3 types
   # BNode: 4 or so types
-  # ANode: 4 or so types
+  # ExprNode: 4 or so types
 
   # Another thing we could do is just generate a method for every type?
 

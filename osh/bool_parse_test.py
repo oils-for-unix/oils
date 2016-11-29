@@ -59,14 +59,14 @@ class BoolParserTest(unittest.TestCase):
     print(node)
     self.assertTrue(p.AtEnd())
     self.assertEqual(Id.BoolUnary_z, node.op_id)
-    self.assertEqual(UnaryBNode, node.__class__)
+    self.assertEqual(UnaryExprNode, node.__class__)
 
     p = _MakeParser('foo == bar')
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p.AtEnd())
     self.assertEqual(Id.BoolBinary_DEqual, node.op_id)
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
 
   def testParseNegatedFactor(self):
     p = _MakeParser('foo')
@@ -74,40 +74,40 @@ class BoolParserTest(unittest.TestCase):
     print(node)
     self.assertTrue(p.AtEnd())
     self.assertEqual(Id.BoolUnary_n, node.op_id)
-    self.assertEqual(UnaryBNode, node.__class__)
+    self.assertEqual(UnaryExprNode, node.__class__)
 
     p = _MakeParser('! foo')
     node = p.ParseNegatedFactor()
     print(node)
     self.assertTrue(p.AtEnd())
     self.assertEqual(Id.KW_Bang, node.op_id)
-    self.assertEqual(UnaryBNode, node.__class__)
+    self.assertEqual(UnaryExprNode, node.__class__)
 
   def testParseTerm(self):
     p = _MakeParser('foo && ! bar')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
     self.assertEqual(Id.Op_DAmp, node.op_id)
 
     # TODO: This is an entire expression I guess
     p = _MakeParser('foo && ! bar && baz')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
     self.assertEqual(Id.Op_DAmp, node.op_id)
 
     p = _MakeParser('-z foo && -z bar')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
     self.assertEqual(Id.Op_DAmp, node.op_id)
 
   def testParseExpr(self):
     p = _MakeParser('foo || ! bar')
     node = p.ParseExpr()
     print(node)
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
     self.assertEqual(Id.Op_DPipe, node.op_id)
 
     p = _MakeParser('a == b')
@@ -118,14 +118,14 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p.AtEnd())
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
     self.assertEqual(Id.BoolBinary_DEqual, node.op_id)
 
   def testParseParenthesized(self):
     p = _MakeParser('zoo && ( foo == bar )')
     node = p.ParseExpr()
     print(node)
-    self.assertEqual(BinaryBNode, node.__class__)
+    self.assertEqual(BinaryExprNode, node.__class__)
     self.assertEqual(Id.Op_DAmp, node.op_id)
 
 

@@ -17,7 +17,7 @@ class _Parser(object):
       computed.
       - or is it a range of errors?
       - maybe an error can be associated with any kind of entity: CNode,
-        ANode, etc. Word, WordPart.  And if there is a range of tokens, then
+        ExprNode, etc. Word, WordPart.  And if there is a range of tokens, then
         those will be highlighted.
 
   And we also have to keep state across multiple parsers.
@@ -101,9 +101,9 @@ class _Node(object):
 
     _BNode is contained within ().  So maybe the parens should be {}.
 
-    _ANode is contained within [].  So maybe the parens should be <>.
+    _ExprNode is contained within [].  So maybe the parens should be <>.
       There might be confusion between tokens?
-      Also anode has full on words, lke ${}.  A WordPart contains _ANode which
+      Also anode has full on words, lke ${}.  A WordPart contains _ExprNode which
       contains full words.
     """
     f.write(indent * ' ')

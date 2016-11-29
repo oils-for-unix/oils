@@ -4,7 +4,7 @@ tdop.py - Library for expression parsing.
 """
 
 from core import base
-from core.expr_node import UnaryANode, BinaryANode, VarANode
+from core.expr_node import UnaryExprNode, BinaryExprNode, VarExprNode
 from core.id_kind import Id, IdName
 from core.util import cast
 
@@ -27,7 +27,7 @@ def IsCallable(node):
   if node.id == Id.Node_ArithVar:  # foo() or foo[1]
     return True
   elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
-    node = cast(BinaryANode, node)
+    node = cast(BinaryExprNode, node)
     if node.op_id == Id.Arith_LBracket:
       return True
   # TODO: Also function calls, like foo(a, b)
@@ -40,7 +40,7 @@ def IsLValue(node):
   if node.id == Id.Node_ArithVar:  # foo = bar
     return True
   elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
-    node = cast(BinaryANode, node)
+    node = cast(BinaryExprNode, node)
     if node.op_id == Id.Arith_LBracket:
       return True
   return False
@@ -61,7 +61,7 @@ def NullConstant(p, word, bp):
   if word.id == Id.Word_Compound:
     var_name = word.AsArithVarName()
     if var_name:
-      return VarANode(var_name)
+      return VarExprNode(var_name)
   # It could be a CompoundWord or TokenWord, etc.
   return word
 
@@ -83,7 +83,7 @@ def NullPrefixOp(p, t, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   right = p.ParseUntil(bp)
-  return UnaryANode(t.ArithId(), right)
+  return UnaryExprNode(t.ArithId(), right)
 
 
 #
@@ -97,7 +97,7 @@ def LeftError(p, t, left, rbp):
 
 def LeftBinaryOp(p, t, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
-  return BinaryANode(t.ArithId(), left, p.ParseUntil(rbp))
+  return BinaryExprNode(t.ArithId(), left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, t, left, rbp):
@@ -106,7 +106,7 @@ def LeftAssign(p, t, left, rbp):
 
   if not IsLValue(left):
     raise ParseError("Can't assign to %r (%s)" % (left, left.op_id))
-  return BinaryANode(t.ArithId(), left, p.ParseUntil(rbp))
+  return BinaryExprNode(t.ArithId(), left, p.ParseUntil(rbp))
 
 
 #
