@@ -216,8 +216,9 @@ here-doc() {
 
 # Need to handle all kinds of redirects
 redirect() {
-  #ref-shells tests/redirect.test.sh $OSH "$@"
-  ref-shells tests/redirect.test.sh "$@"
+  # BUG: osh treats stdin as stdout!  Fix this.
+  ref-shells tests/redirect.test.sh $OSH "$@"
+  #ref-shells tests/redirect.test.sh "$@"
 }
 
 posix() {

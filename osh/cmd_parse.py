@@ -11,12 +11,11 @@ cmd_parse.py - Parse high level shell commands.
 
 from core import base
 from core.cmd_node import (
-    HereDocRedirectNode, HereWordRedirectNode, FilenameRedirectNode,
-    DescriptorRedirectNode, SimpleCommandNode, NoOpNode, AssignmentNode,
-    DBracketNode, DParenNode, ListNode, SubshellNode, ForkNode, PipelineNode,
-    AndOrNode, ForNode, ForExpressionNode, WhileNode, UntilNode,
-    FunctionDefNode, IfNode, CaseNode)
-from core.id_kind import Id, Kind
+    RedirNode, HereDocRedirNode, 
+    SimpleCommandNode, NoOpNode, AssignmentNode, DBracketNode, DParenNode,
+    ListNode, SubshellNode, ForkNode, PipelineNode, AndOrNode, ForNode,
+    ForExpressionNode, WhileNode, UntilNode, FunctionDefNode, IfNode, CaseNode)
+from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
 from core.tokens import Token
 from core.word_node import (
     EAssignScope, EAssignFlags, LiteralPart, CompoundWord, TildeSubPart)
@@ -260,7 +259,7 @@ class CommandParser(object):
           print('WARNING: unterminated here doc', file=sys.stderr)
           break
 
-        if h.op.id == Id.Redir_DLessDash:
+        if h.id == Id.Redir_DLessDash:
           line = line.lstrip('\t')
         if line.rstrip() == h.here_end:
           break
@@ -284,13 +283,13 @@ class CommandParser(object):
           self.AddErrorContext(
               'Error reading here doc body: %s', w_parser.Error())
           return False
-        h.body_word = word
+        h.arg_word = word
         h.was_filled = True
       else:
         # TODO: Add pool_index etc. to token
         tokens = [Token(Id.Lit_Chars, line) for _, line in lines]
         parts = [LiteralPart(t) for t in tokens]
-        h.body_word.parts.extend(parts)
+        h.arg_word = CompoundWord(parts=parts)
         h.was_filled = True
 
     #print('')
@@ -322,18 +321,17 @@ class CommandParser(object):
     if not self._Peek(): return None
     assert self.c_kind == Kind.Redir, self.cur_word
 
-    # TODO: Make the code shorter.  These four cases all read the next word,
-    # and interpret it differently.
-    # <    filename
-    # <<   here doc terminator
-    # <&   file descriptor
-    # <<<  here word
+    first_char = self.cur_word.token.val[0]
+    if first_char.isdigit():
+      fd = int(first_char)
+    else:
+      fd = REDIR_DEFAULT_FD[self.c_id]
+
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here
-      node = HereDocRedirectNode(self.cur_word.token)
-
+      node = HereDocRedirNode(self.c_id, fd)
       self._Next()
-      if not self._Peek(): return None
 
+      if not self._Peek(): return None
       # "If any character in word is quoted, the delimiter shall be formed by
       # performing quote removal on word, and the here-document lines shall not
       # be expanded. Otherwise, the delimiter shall be the word itself."
@@ -346,48 +344,18 @@ class CommandParser(object):
       node.do_expansion = not quoted
       self._Next()
 
-    elif self.c_id in (
-        Id.Redir_Less, Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
-      node = FilenameRedirectNode(self.cur_word.token)
-      self._Next()
-
-      if not self._Peek(): return None
-      if self.c_kind != Kind.Word:
-        self.AddErrorContext('Expected filename after redirect operator',
-            word=self.cur_word)
-        return None
-
-      node.filename = self.cur_word
-      self._Next()
-
-    elif self.c_id in (Id.Redir_GreatAnd, Id.Redir_LessAnd):  # descriptor
-      node = DescriptorRedirectNode(self.cur_word.token)
-
-      # TODO: Check that it's a number?  bash allows 1>&foo as an alias for
-      # 1>foo.  I don't like that.
-      self._Next()
-      if not self._Peek(): return None
-
-      node.target_fd = self.cur_word
-      self._Next()
-
-    elif self.c_id == Id.Redir_TLess:  # descriptor
-      node = HereWordRedirectNode(self.cur_word.token)
-      self._Next()
-
-      if not self._Peek(): return None
-      if self.c_kind != Kind.Word:
-        self.AddErrorContext('Expected word after <<< operator',
-            word=self.cur_word)
-        return None
-
-      node.body_word = self.cur_word
-      self._Next()
-
     else:
-      self.AddErrorContext(
-          'ParseRedirect: unexpected token %s' % self.cur_word)
-      return None
+      node = RedirNode(self.c_id, fd)
+      self._Next()
+
+      if not self._Peek(): return None
+      if self.c_kind != Kind.Word:
+        self.AddErrorContext('Expected word after redirect operator',
+            word=self.cur_word)
+        return None
+
+      node.arg_word = self.cur_word
+      self._Next()
 
     return node
 

@@ -328,36 +328,26 @@ class VarSubPart(WordPart):
     """
     Args:
       name: a string, including '@' '*' '#' etc.?
-      token: For debugging only?
+      token: For debugging only?  Change to SourceLocation?
     """
     WordPart.__init__(self, Id.Left_VarSub)
     self.name = name
     self.token = token
 
-    # TODO: change this to:
-
-    # prefix_op: ! or #
-    # array_op: [@] or [i+1]
-    # suffix_op:  # or % or / or : :
-    #
     # This is the PARSED representation.  The executed representation will be
-    # ExprNode.
-
-    self.array_op = None  # VarOp0 for @ or *
-    self.bracket_op = None  # VarOp1 with arithmetic expression / string
-    self.test_op = None  # VarOp1 -- one of 8 types
-    self.transform_ops = []  # list of length/strip/slice/patsub
+    # a tree of ExprNode.
+    self.prefix_op = None  # e.g. VarOp0(VSubBang)
+    self.bracket_op = None  # e.g. VarOp1(ExprNode) or VarOp0(Lit_At)
+    self.suffix_op = None  # e.g. VarOp1(VTest) or VarOp1(VOp1) or VOp2
 
   def PrintLine(self, f):
     f.write('[VarSub %s' % self.name)  # no quotes around name
-    if self.array_op:
-      f.write(' array_op=%r' % self.array_op)
+    if self.prefix_op:
+      f.write(' prefix_op=%r' % self.prefix_op)
     if self.bracket_op:
       f.write(' bracket_op=%r' % self.bracket_op)
-    if self.test_op:
-      f.write(' test_op=%r' % self.test_op)
-    if self.transform_ops:
-      f.write(' transform_ops=%r' % self.transform_ops)
+    if self.suffix_op:
+      f.write(' suffix_op=%r' % self.suffix_op)
     f.write(']')
 
   def TokenPair(self):

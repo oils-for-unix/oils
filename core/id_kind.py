@@ -380,6 +380,11 @@ def _AddBoolKinds(spec):
   spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
 
 
+#
+# Instantiate the spec
+#
+
+
 ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
 
 _AddKinds(ID_SPEC)
@@ -387,3 +392,48 @@ _AddBoolKinds(ID_SPEC)  # must come second
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes
+
+
+# 
+# Redirect Tables associated with IDs
+#
+# These might be osh specific.
+#
+
+REDIR_DEFAULT_FD = {
+    # filename
+    Id.Redir_Less: 0,  # cat <input.txt means cat 0<input.txt
+    Id.Redir_Great: 1,
+    Id.Redir_DGreat: 1,
+    Id.Redir_Clobber: 1,
+    Id.Redir_LessGreat: 1,  # TODO: What does echo <>foo do?
+
+    # descriptor
+    Id.Redir_GreatAnd: 1,  # echo >&2  means echo 1>&2
+    Id.Redir_LessAnd: 0,   # echo <&3 means echo 0<&3, I think
+
+    # here doc
+    Id.Redir_DLess: 0,
+    Id.Redir_DLessDash: 0,
+    Id.Redir_TLess: 0,
+}
+
+RedirType = util.Enum('RedirType', 'Path Desc Str'.split())
+
+REDIR_TYPE = {
+    # filename
+    Id.Redir_Less: RedirType.Path,
+    Id.Redir_Great: RedirType.Path,
+    Id.Redir_DGreat: RedirType.Path,
+    Id.Redir_Clobber: RedirType.Path,
+    Id.Redir_LessGreat: RedirType.Path,  # TODO: What does echo <>foo do?
+
+    # descriptor
+    Id.Redir_GreatAnd: RedirType.Desc,
+    Id.Redir_LessAnd: RedirType.Desc,
+
+    # here doc
+    Id.Redir_DLess: RedirType.Str,
+    Id.Redir_DLessDash: RedirType.Str,
+    Id.Redir_TLess: RedirType.Str,
+}

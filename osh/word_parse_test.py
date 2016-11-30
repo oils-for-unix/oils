@@ -54,12 +54,16 @@ def _assertReadWordFailure(test, word_str):
     print(w_parser.Error())
 
 
-def _GetTransformOp(test, w):
+def _GetSuffixOp(test, w):
   """Get a single transform op"""
   test.assertEqual(1, len(w.parts))
-  ops = w.parts[0].transform_ops
-  test.assertEqual(1, len(ops))
-  return ops[0]
+  return w.parts[0].suffix_op
+
+
+def _GetPrefixOp(test, w):
+  """Get a single transform op"""
+  test.assertEqual(1, len(w.parts))
+  return w.parts[0].prefix_op
 
 
 def _GetVarSub(test, w):
@@ -93,14 +97,14 @@ class WordParserTest(unittest.TestCase):
     w = _assertReadWord(self, '${15}')
 
     w = _assertReadWord(self, '${#var}')
-    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).id)
+    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w).id)
     w = _assertReadWord(self, '${!ref}')
-    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).id)
+    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w).id)
 
     # Length of length
     w = _assertReadWord(self, '${##}')
     self.assertEqual('#', _GetVarSub(self, w).name)
-    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).id)
+    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w).id)
 
     w = _assertReadWord(self, '${array[0]}')
     self.assertEqual(1, len(w.parts))
@@ -110,20 +114,20 @@ class WordParserTest(unittest.TestCase):
     # Length of element
     w = _assertReadWord(self, '${#array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Pound, _GetTransformOp(self, w).id)
+    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w).id)
     # Ref for element
     w = _assertReadWord(self, '${!array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Bang, _GetTransformOp(self, w).id)
+    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w).id)
 
     w = _assertReadWord(self, '${var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VOp1_Pound, _GetTransformOp(self, w).id)
+    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
 
     w = _assertReadWord(self, '${!var#prefix}')
     self.assertEqual(1, len(w.parts))
-    # ref op, and prefix op
-    self.assertEqual(2, len(w.parts[0].transform_ops))
+    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w).id)
+    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
 
     _assertReadWordFailure(self, '${#var#prefix}')
 
@@ -148,7 +152,7 @@ class WordParserTest(unittest.TestCase):
 
   def testPatSub(self):
     w = _assertReadWord(self, '${var/pat/replace}')
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertFalse(op.do_all)
     self.assertFalse(op.do_prefix)
     self.assertFalse(op.do_suffix)
@@ -156,45 +160,45 @@ class WordParserTest(unittest.TestCase):
     self.assertUnquoted('replace', op.replace)
 
     w = _assertReadWord(self, '${var//pat/replace}')  # sub all
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertTrue(op.do_all)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
 
     w = _assertReadWord(self, '${var/%pat/replace}')  # prefix
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertTrue(op.do_prefix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
 
     w = _assertReadWord(self, '${var/#pat/replace}')  # suffix
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertTrue(op.do_suffix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
 
     w = _assertReadWord(self, '${var/pat}')  # no replacement
     w = _assertReadWord(self, '${var//pat}')  # no replacement
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertTrue(op.do_all)
     self.assertUnquoted('pat', op.pat)
     self.assertEqual(None, op.replace)
 
     # replace with slash
     w = _assertReadWord(self, '${var/pat//}')
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('/', op.replace)
 
     # replace with two slashes unquoted
     w = _assertReadWord(self, '${var/pat///}')
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('//', op.replace)
 
     # replace with two slashes quoted
     w = _assertReadWord(self, '${var/pat/"//"}')
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
 
     ok, s, quoted = op.replace.EvalStatic()
@@ -205,7 +209,7 @@ class WordParserTest(unittest.TestCase):
     # Real example found in the wild!
     # http://www.oilshell.org/blog/2016/11/07.html
     w = _assertReadWord(self, r'${var////\\/}')
-    op = _GetTransformOp(self, w)
+    op = _GetSuffixOp(self, w)
     self.assertTrue(op.do_all)
 
     self.assertUnquoted('/', op.pat)
@@ -217,7 +221,7 @@ class WordParserTest(unittest.TestCase):
   def testSlice(self):
     w = _assertReadWord(self, '${foo:0}')
     # No length
-    self.assertEqual(None, _GetTransformOp(self, w).length)
+    self.assertEqual(None, _GetSuffixOp(self, w).length)
 
     w = _assertReadWord(self, '${foo:0:1}')
     w = _assertReadWord(self, '${foo:1+2:2+3}')
@@ -225,39 +229,39 @@ class WordParserTest(unittest.TestCase):
     # This is allowed
     w = _assertReadWord(self, '${foo::1}')
     # No beginning
-    self.assertEqual(None, _GetTransformOp(self, w).begin)
+    self.assertEqual(None, _GetSuffixOp(self, w).begin)
 
   def testLength(self):
     # Synonym for $#, had a bug here
     w = _assertReadWord(self, '${#@}')
-    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w).id)
 
     # Length of arg 11
     w = _assertReadWord(self, '${#11}')
-    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w).id)
 
     w = _assertReadWord(self, '${#str}')
-    self.assertTrue(Id.VSub_Pound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w).id)
 
     w = _assertReadWord(self, '${#array[0]}')
     print(w)
     # BUG!
-    #self.assertTrue(VS_POUND, _GetTransformOp(self, w).id)
+    #self.assertTrue(VS_POUND, _GetSuffixOp(self, w).id)
 
     w = _assertReadWord(self, '${#array["key"]}')
     # BUG!
-    #self.assertTrue(Id.VSub_POUND, _GetTransformOp(self, w).id)
+    #self.assertTrue(Id.VSub_POUND, _GetSuffixOp(self, w).id)
 
   def testUnary(self):
     w = _assertReadWord(self, '${var#}')
-    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
     w = _assertReadWord(self, '${var#prefix}')
-    self.assertTrue(Id.VOp1_Pound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
 
     w = _assertReadWord(self, '${var##}')
-    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).id)
     w = _assertReadWord(self, '${var##prefix}')
-    self.assertTrue(Id.VOp1_DPound, _GetTransformOp(self, w).id)
+    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).id)
 
     w = _assertReadWord(self, '${var%suffix}')
     w = _assertReadWord(self, '${var%%suffix}')

@@ -66,8 +66,8 @@ from core import word_eval
 from core import util
 
 from core.builtin import EBuiltin
-from core.cmd_node import ListNode, RedirectType
-from core.id_kind import Id
+from core.cmd_node import ListNode
+from core.id_kind import Id, RedirType, REDIR_TYPE
 from core.process import (
     FdState, Pipeline, Process,
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
@@ -530,14 +530,14 @@ class Executor(object):
     done
 
     Does it makes sense to just have RedirectNode.Eval?  Nah I think the
-    Redirect() abstraction in the executor is useful.  It has a lot of
-    methods.
+    Redirect() abstraction in process.py is useful.  It has a lot of methods.
     """
     redirects = []
     for n in nodes:
-      if n.type == RedirectType.FILENAME:
+      redir_type = REDIR_TYPE[n.id]
+      if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
-        ok, val = self.ev.EvalCompoundWord(n.filename)
+        ok, val = self.ev.EvalCompoundWord(n.arg_word)
         if not ok:
           return False
         is_str, filename = val.AsString()
@@ -548,10 +548,10 @@ class Executor(object):
           self._AddErrorContext("filename can't be empty")
           return False
 
-        redirects.append(FilenameRedirect(n.op, n.fd, filename))
+        redirects.append(FilenameRedirect(n.id, n.fd, filename))
 
-      elif n.type == RedirectType.DESCRIPTOR:  # e.g. 1>&2
-        ok, val = self.ev.EvalCompoundWord(n.target_fd)
+      elif redir_type == RedirType.Desc:  # e.g. 1>&2
+        ok, val = self.ev.EvalCompoundWord(n.arg_word)
         if not ok:
           return False
         is_str, t = val.AsString()
@@ -568,15 +568,15 @@ class Executor(object):
           self._AddErrorContext(
               "descriptor to redirect to should be an integer, not string")
           return False
-        redirects.append(DescriptorRedirect(n.op, n.fd, target_fd))
+        redirects.append(DescriptorRedirect(n.id, n.fd, target_fd))
 
-      elif n.type == RedirectType.HERE_DOC:
-        ok, val = self.ev.EvalCompoundWord(n.body_word)
+      elif redir_type == RedirType.Str:
+        ok, val = self.ev.EvalCompoundWord(n.arg_word)
         if not ok:
           return False
         is_str, body = val.AsString()
         assert is_str, val  # here doc body can only be parsed as a string!
-        redirects.append(HereDocRedirect(n.op, n.fd, body))
+        redirects.append(HereDocRedirect(n.id, n.fd, body))
 
       else:
         raise AssertionError

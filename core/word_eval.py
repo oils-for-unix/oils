@@ -17,7 +17,7 @@ from core.word_node import (
     CompoundWord,
     ArrayLiteralPart, LiteralPart, EscapedLiteralPart, SingleQuotedPart,
     DoubleQuotedPart, CommandSubPart, VarSubPart, TildeSubPart, ArithSubPart)
-from core.id_kind import Id
+from core.id_kind import Id, Kind, IdName, LookupKind
 from core.value import Value
 from core.util import cast
 
@@ -296,7 +296,6 @@ class _Evaluator(object):
 
     """
     name = part.name
-    ops = part.transform_ops  # TODO: fix
 
     # Possibilities: Array OR Index; then Test OR Transform
 
@@ -373,22 +372,23 @@ class _Evaluator(object):
     # if the op does NOT have colon
     #use_default = not defined
 
-    if part.test_op:
-      id = part.test_op.id
+    if part.suffix_op and LookupKind(part.suffix_op.id) == Kind.VTest:
+      op = part.suffix_op
 
       # TODO: Change this to a bit test.
-      if id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
-          Id.VTest_ColonQMark, Id.VTest_ColonPlus):
+      if op.id in (
+          Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
+          Id.VTest_ColonPlus):
         is_falsey = not defined or val.IsEmptyString()
       else:
         is_falsey = not defined
 
       #print('!!',id, is_falsey)
 
-      if id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
+      if op.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
         if is_falsey:
           argv = []
-          ok, val2 = self.EvalCompoundWord(part.test_op.arg_word)
+          ok, val2 = self.EvalCompoundWord(op.arg_word)
           if not ok:
             return False, None
           val2.AppendTo(argv)
@@ -402,7 +402,6 @@ class _Evaluator(object):
       # +  -- inverted test -- assign to default
       # ?  -- error
       # =  -- side effect assignment
-
       else:
         raise NotImplementedError(id)
 
@@ -421,7 +420,24 @@ class _Evaluator(object):
         # TODO: Isn't this where we do EMPTY_UNQUOTED?
         return True, Value.FromString('')
 
-    for op in part.transform_ops:
+    if part.prefix_op:
+      op = part.prefix_op
+
+      if op.id == Id.VSub_Pound:
+        # LENGTH
+        if val.IsArray():
+          #print("ARRAY LENGTH", len(val.a))
+          length = len(val.a)
+        else:
+          #print("STRING LENGTH", len(val.s))
+          length = len(val.s)
+        val = Value.FromString(str(length))
+
+    # NOTE: You could have both prefix and suffix
+    if part.suffix_op and LookupKind(part.suffix_op.id) in (
+        Kind.VOp1, Kind.VOp2):
+      op = part.suffix_op
+
       # NOTES:
       # - These are VECTORIZED on arrays
       #   - I want to allow this with my shell dialect: @{files|slice 1
@@ -446,18 +462,8 @@ class _Evaluator(object):
       #
       # And then pat_subst() does some special cases.  Geez.
 
-      if op.id == Id.VSub_Pound:
-        # LENGTH
-        if val.IsArray():
-          #print("ARRAY LENGTH", len(val.a))
-          length = len(val.a)
-        else:
-          #print("STRING LENGTH", len(val.s))
-          length = len(val.s)
-        val = Value.FromString(str(length))
-
       # prefix strip
-      elif op.id == Id.VOp1_DPound:
+      if op.id == Id.VOp1_DPound:
         pass
       elif op.id == Id.VOp1_Pound:
         pass

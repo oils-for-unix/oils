@@ -310,7 +310,7 @@ class WordParser(object):
         self._BadToken('Unexpected token after test arg: %s', self.cur_token)
         return None
 
-      part.test_op = VarOp1(id, arg_word)
+      part.suffix_op = VarOp1(id, arg_word)
 
     elif op_kind == Kind.VOp1:
       id = self.token_type
@@ -320,7 +320,7 @@ class WordParser(object):
         return None
 
       op = VarOp1(id, arg_word)
-      part.transform_ops.append(op)
+      part.suffix_op = op
 
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:
@@ -339,7 +339,7 @@ class WordParser(object):
       else:
         raise AssertionError("Invalid op token %s" % self.cur_token)
 
-      part.transform_ops.append(op)
+      part.suffix_op = op
 
     # Now look for ops
     return part
@@ -429,8 +429,7 @@ class WordParser(object):
               self.cur_token)
           return None
 
-        op = VarOp0(Id.VSub_Pound)  # length
-        part.transform_ops.append(op)
+        part.prefix_op = VarOp0(Id.VSub_Pound)  # length
 
       else:  # not a prefix, '#' is the variable
         part = self._ParseVarExpr(arg_lex_mode)
@@ -450,10 +449,7 @@ class WordParser(object):
         part = self._ParseVarExpr(arg_lex_mode)
         if not part: return None
 
-        # NOTE: The ref op has to come FIRST, it is evaluated BEFORE any
-        # operators, e.g. ${!ref#prefix} -- first deref, then strip prefix.
-        op = VarOp0(Id.VSub_Bang)
-        part.transform_ops.insert(0, op)
+        part.prefix_op = VarOp0(Id.VSub_Bang)
 
       else:  # not a prefix, '!' is the variable
         part = self._ParseVarExpr(arg_lex_mode)

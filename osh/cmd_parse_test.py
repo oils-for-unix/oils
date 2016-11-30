@@ -162,7 +162,7 @@ def assertHereDocToken(test, expected_token_val, node):
   #print(node)
   test.assertEqual(1, len(node.redirects))
   h = node.redirects[0]
-  word_parts = h.body_word.parts
+  word_parts = h.arg_word.parts
   test.assertEqual(1, len(word_parts))  # 1 line, one literal part
   part1 = word_parts[0]
   test.assertGreater(len(part1.parts), 1, part1)
@@ -182,8 +182,8 @@ EOF
 """)
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
-    self.assertEqual(1, len(h.body_word.parts))  # 1 double quoted part
-    dq = h.body_word.parts[0]
+    self.assertEqual(1, len(h.arg_word.parts))  # 1 double quoted part
+    dq = h.arg_word.parts[0]
     self.assertTrue(isinstance(dq, DoubleQuotedPart))
     # 4 literal parts: VarSub, newline, right ", "two\n"
     self.assertEqual(4, len(dq.parts))
@@ -199,7 +199,7 @@ EOF
 """)
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
-    self.assertEqual(2, len(h.body_word.parts))  # 2 literal parts
+    self.assertEqual(2, len(h.arg_word.parts))  # 2 literal parts
     self.assertEqual(False, h.do_expansion)
 
     node = assertParseCommandLine(self, """\
@@ -209,7 +209,7 @@ EOF
 """)
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
-    self.assertEqual(1, len(h.body_word.parts))  # 1 line, one literal part
+    self.assertEqual(1, len(h.arg_word.parts))  # 1 line, one literal part
     self.assertEqual(False, h.do_expansion)
 
     # \ escape
@@ -220,7 +220,7 @@ EOF
 """)
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
-    self.assertEqual(1, len(h.body_word.parts))  # 1 line, one literal part
+    self.assertEqual(1, len(h.arg_word.parts))  # 1 line, one literal part
     self.assertEqual(False, h.do_expansion)
 
   def testLeadingTabs(self):

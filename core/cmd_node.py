@@ -59,30 +59,26 @@ class CNode(_Node):
       f.write('>\n')
 
 
-class RedirectType(object):
-  FILENAME = 0
-  DESCRIPTOR = 1
-  HERE_DOC = 2
-
-
-class RedirectNode(object):
+class RedirNode(_Node):
   """
   SimpleCommandNode and _CompoundCNode (function body or compound command) can
   have non-NULL redirect nodes.
 
   This is not an CNode since it can't be executed directly.
   TODO: Does it need self.word_start and self.word_end?  Probably.
+
+  TODO: base class _Node
   """
-  def __init__(self, type, op, fd):
+  def __init__(self, id, fd):
     """
     Args:
-      type: node type
-      op: Token, the operator.
-        TODO: Should this be separated into kinds?  We really only need the id.
+      id: The actual ID
+      fd: the fd that occurs before the operator, e.g. 1 in 1>&2.
+        DescriptorRedirNode has another descriptor AFTER the operator.
     """
-    self.type = type
-    self.op = op
+    _Node.__init__(self, id)
     self.fd = fd
+    self.arg_word = None  # CompoundWord
 
   def DebugString(self):
     return repr(self)
@@ -92,97 +88,43 @@ class RedirectNode(object):
     self.Print(f)
     return f.getvalue()
 
+  def _PrintHeader(self, f):
+    # No extra metadata?
+    pass
+
   def Print(self, f):
     f.write('(%s ' % self.__class__.__name__)
     self._PrintHeader(f)
-    f.write(' %s' % self.op)
+
+    # TODO: This word can be huge
+    f.write(' %s' % self.arg_word)
+
     #if self.fd != -1:
     f.write(' %s' % self.fd)
     f.write(')')
 
 
-class HereDocRedirectNode(RedirectNode):
-  """ << and <<- causes pipe()
-
-  TODO: We need a flag to tell if the here end word is quoted!
-  cat <<EOF vs cat <<'EOF' or cat <<"EOF"
+class HereDocRedirNode(RedirNode):
+  """ << and <<- cause pipe()
   """
-
-  def __init__(self, op):
+  def __init__(self, id, fd):
     # stdin by default
-    RedirectNode.__init__(self, RedirectType.HERE_DOC, op, 0)
-    self.body_word = CompoundWord()  # pseudo-word to be expanded
-    self.here_end = None  # CompoundWord
+    RedirNode.__init__(self, id, fd)
     self.do_expansion = False
-    #self.read_lines = False  # STATE: whether we read lines for this node yet
+    # NOTE: These two can be dropped for execution.  here_end and was_filled
+    # not needed after parsing. 
+    self.here_end = None  # CompoundWord
     self.was_filled = False  # STATE: whether we read lines for this node yet
 
   def _PrintHeader(self, f):
-    f.write('here_end=%r do_expansion=%r body_word=%r' % (
-      self.here_end, self.do_expansion, self.body_word))
-
-
-class HereWordRedirectNode(RedirectNode):
-  """ <<< and <<- causes pipe()
-
-  TODO: We need a flag to tell if the here end word is quoted!
-  cat <<EOF vs cat <<'EOF' or cat <<"EOF"
-  """
-  def __init__(self, op):
-    # Use the same executor
-    RedirectNode.__init__(self, RedirectType.HERE_DOC, op, 0)
-    self.body_word = None
-
-  def _PrintHeader(self, f):
-    f.write('here_word=%r' % self.body_word)
-
-
-class FilenameRedirectNode(RedirectNode):
-  """ < > cause os.open() and then dup2()
-
-  Also handle >> and maybe >|
-  """
-  def __init__(self, op):
-    if op.val[0].isdigit():
-      fd = int(op.val[0])
-    else:
-      if op.id in (Id.Redir_Great, Id.Redir_DGreat, Id.Redir_Clobber):
-        fd = 1  # stdout
-      elif op.id == Id.Redir_Less:
-        fd = 0  # stdin
-      else:  # < would be fd 0
-        raise AssertionError
-    RedirectNode.__init__(self, RedirectType.FILENAME, op, fd)
-    self.filename = ''  # a word
-
-  def _PrintHeader(self, f):
-    f.write('filename=%s' % self.filename)
-
-
-class DescriptorRedirectNode(RedirectNode):
-  """ >& just causes dup2() """
-
-  def __init__(self, op):
-    if op.val[0].isdigit():
-      fd = int(op.val[0])
-    else:
-      if op.id == Id.Redir_GreatAnd:
-        fd = 1  # stdout
-      elif op.id == Id.Redir_LessAnd:
-        fd = 0  # stdout
-      else:  # < would be fd 0
-        raise AssertionError
-    RedirectNode.__init__(self, RedirectType.DESCRIPTOR, op, fd)
-    self.target_fd = -1
-
-  def _PrintHeader(self, f):
-    f.write('target=%s' % self.target_fd)
+    f.write('here_end=%r do_expansion=%r' % (
+      self.here_end, self.do_expansion))
 
 
 def _GetHereDocsToFill(redirects):
   return [
       r for r in redirects
-      if r.op.id in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
+      if r.id in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
   ]
 
 
@@ -290,6 +232,7 @@ class _CompoundCNode(CNode):
     CNode.__init__(self, id)
     # children of type CNode.
     self.children = []
+    # TODO: Add self.redirects, and remove from ListNode/FunctionDefNode
 
   def GetHereDocsToFill(self):
     """For CommandParser to fill here docs"""

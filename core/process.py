@@ -120,14 +120,16 @@ class WritePipeRedirect(Redirect):
 
 
 class UserRedirect(Redirect):
-  def __init__(self, op, fd):
+  """Redirects written in source code?"""
+
+  def __init__(self, id, fd):
     Redirect.__init__(self, fd)
-    self.op = op
+    self.id = id
 
 
 class FilenameRedirect(UserRedirect):
-  def __init__(self, op, fd, filename):
-    UserRedirect.__init__(self, op, fd)
+  def __init__(self, id, fd, filename):
+    UserRedirect.__init__(self, id, fd)
     self.filename = filename
 
   def ApplyInChild(self):
@@ -142,8 +144,8 @@ class FilenameRedirect(UserRedirect):
 
 
 class DescriptorRedirect(UserRedirect):
-  def __init__(self, op, fd, target_fd):
-    UserRedirect.__init__(self, op, fd)
+  def __init__(self, id, fd, target_fd):
+    UserRedirect.__init__(self, id, fd)
     self.target_fd = target_fd
 
   def ApplyInChild(self):
@@ -154,8 +156,8 @@ class DescriptorRedirect(UserRedirect):
 
 
 class HereDocRedirect(UserRedirect):
-  def __init__(self, op, fd, body_str):
-    UserRedirect.__init__(self, op, fd)
+  def __init__(self, id, fd, body_str):
+    UserRedirect.__init__(self, id, fd)
     self.body_str = body_str
     self.r = -1
     self.w = -1
