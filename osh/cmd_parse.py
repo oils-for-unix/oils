@@ -11,7 +11,7 @@ cmd_parse.py - Parse high level shell commands.
 
 from core import base
 from core.cmd_node import (
-    RedirNode, HereDocRedirNode, 
+    RedirNode, HereDocNode, 
     SimpleCommandNode, NoOpNode, AssignmentNode, DBracketNode, DParenNode,
     ListNode, SubshellNode, ForkNode, PipelineNode, AndOrNode, ForNode,
     ForExpressionNode, WhileNode, UntilNode, FunctionDefNode, IfNode, CaseNode)
@@ -328,7 +328,7 @@ class CommandParser(object):
       fd = REDIR_DEFAULT_FD[self.c_id]
 
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here
-      node = HereDocRedirNode(self.c_id, fd)
+      node = HereDocNode(self.c_id, fd)
       self._Next()
 
       if not self._Peek(): return None

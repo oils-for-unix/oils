@@ -104,7 +104,7 @@ class RedirNode(_Node):
     f.write(')')
 
 
-class HereDocRedirNode(RedirNode):
+class HereDocNode(RedirNode):
   """ << and <<- cause pipe()
   """
   def __init__(self, id, fd):
