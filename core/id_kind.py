@@ -149,8 +149,10 @@ def _AddKinds(spec):
       'Tilde',             # tilde expansion
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
+      # LexModeArith
       'Digits',            # for LexMode.ARITH
-      'At',                # for ${a[@]}, in LexState.ARITH
+      'At',                # for ${a[@]}, in LexMode.ARITH
+      'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
   ])
 
   spec.AddKind('Op', [
@@ -317,7 +319,7 @@ def _AddKinds(spec):
 
      # TODO: Unify ExprNode and BNode under these Unary, Binary, Ternary nodes.
      # They hold one, two, or three words.
-     'UnaryExpr', 'BinaryExpr', 'TernaryExpr',
+     'UnaryExpr', 'BinaryExpr', 'TernaryExpr', 'FuncCall',
      'ConstInt',  # for arithmetic.  There is no ConstBool.
                   # Could be Lit_Digits?  But oil will need
                   # ConstFloat/ConstNum.

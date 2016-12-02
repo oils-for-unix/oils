@@ -85,6 +85,15 @@ class WordPart(_Node):
     """Return the var name string, or False."""
     return False
 
+  def ArithVarLikeName(self):
+    """Return the var name string, or False.
+
+    NOTE: This can't be combined with the above because the tokens have to be
+    different.  Otherwise _ReadCompoundWord will be confused between array
+    assigments foo=(1 2) and function calls foo(1, 2).
+    """
+    return False
+
   def UnquotedLiteralValue(self):
     """
     Returns a StringPiece value if it's a literal token, otherwise the empty
@@ -195,11 +204,14 @@ class LiteralPart(_LiteralPartBase):
 
   def VarLikeName(self):
     if self.token.id == Id.Lit_VarLike:
-      val = self.token.val
-      if val.endswith('='):
-        return val[:-1]  # foo= -> foo, in command state
-      else:
-        return val  # foo, in arith state
+      assert self.token.val.endswith('=')
+      return self.token.val[:-1]
+    else:
+      return False
+
+  def ArithVarLikeName(self):
+    if self.token.id == Id.Lit_ArithVarLike:
+      return self.token.val
     else:
       return False
 
@@ -613,7 +625,7 @@ class CompoundWord(Word):
     if len(self.parts) != 1:
       return ""
 
-    return self.parts[0].VarLikeName()  # may be empty
+    return self.parts[0].ArithVarLikeName()  # may be empty
 
   def AsFuncName(self):
     ok, s, quoted = self.EvalStatic()

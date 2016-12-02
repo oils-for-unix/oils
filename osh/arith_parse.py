@@ -10,7 +10,8 @@ import sys
 
 from core import tdop
 from core.id_kind import Id
-from core.expr_node import UnaryExprNode, BinaryExprNode, TernaryExprNode
+from core.expr_node import (
+    UnaryExprNode, BinaryExprNode, TernaryExprNode, FuncCallNode)
 
 
 def NullIncDec(p, t, bp):
@@ -50,7 +51,7 @@ def LeftIncDec(p, t, left, rbp):
 def LeftIndex(p, t, left, unused_bp):
   """ index f[x+1] """
   # f[x] or f[x][y]
-  if not tdop.IsCallable(left):
+  if not tdop.IsIndexable(left):
     raise tdop.ParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
@@ -72,7 +73,7 @@ COMMA_PREC = 1
 
 def LeftFuncCall(p, t, left, unused_bp):
   """ Function call f(a, b). """
-  children = [left]
+  children = []
   # f(x) or f[i](x)
   if not tdop.IsCallable(left):
     raise tdop.ParseError("%s can't be called" % left)
@@ -80,11 +81,10 @@ def LeftFuncCall(p, t, left, unused_bp):
     # We don't want to grab the comma, e.g. it is NOT a sequence operator.  So
     # set the precedence to 5.
     children.append(p.ParseUntil(COMMA_PREC))
-    if p.AtToken(','):
+    if p.AtToken(Id.Arith_Comma):
       p.Next()
   p.Eat(Id.Arith_RParen)
-  t.type = 'call'
-  return CompositeNode(t, children)
+  return FuncCallNode(left, children)
 
 
 def MakeShellSpec():

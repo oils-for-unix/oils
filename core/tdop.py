@@ -24,26 +24,35 @@ def Assert(s, expected, tree):
 
 
 def IsCallable(node):
-  if node.id == Id.Node_ArithVar:  # foo() or foo[1]
-    return True
-  elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
-    node = cast(BinaryExprNode, node)
-    if node.op_id == Id.Arith_LBracket:
-      return True
-  # TODO: Also function calls, like foo(a, b)
-  # But nothing like (a+b)(x)
-  return False
+  """Is the word callable or indexable?
+
+  Args:
+    node: ExprNode
+  """
+  # f(x), or f[1](x)
+  # I guess function calls can be callable?  Return a function later.  Not
+  # sure.  Python allows f(3)(4).
+  return node.op_id in (Id.Node_ArithVar, Id.Arith_LBracket)
+
+
+def IsIndexable(node):
+  """Is the word callable or indexable?
+
+  Args:
+    node: ExprNode
+  """
+  # f[1], or f(x)[1], or f[1][1]
+  return node.op_id in (Id.Node_ArithVar, Id.Arith_LBracket, Id.Node_FuncCall)
 
 
 def IsLValue(node):
-  """Determine if a node is a valid L-value by whitelisting Ids."""
-  if node.id == Id.Node_ArithVar:  # foo = bar
-    return True
-  elif node.id == Id.Node_BinaryExpr:  # foo[1] = bar
-    node = cast(BinaryExprNode, node)
-    if node.op_id == Id.Arith_LBracket:
-      return True
-  return False
+  """Determine if a node is a valid L-value by whitelisting Ids.
+
+  Args:
+    node: ExprNode (could be VarExprNode or BinaryExprNode)
+  """
+  # foo = bar, foo[1] = bar
+  return node.op_id in (Id.Node_ArithVar, Id.Arith_LBracket)
 
 
 #
@@ -62,7 +71,6 @@ def NullConstant(p, word, bp):
     var_name = word.AsArithVarName()
     if var_name:
       return VarExprNode(var_name)
-  # It could be a CompoundWord or TokenWord, etc.
   return word
 
 
@@ -105,7 +113,7 @@ def LeftAssign(p, t, left, rbp):
   # x += 1, or a[i] += 1
 
   if not IsLValue(left):
-    raise ParseError("Can't assign to %r (%s)" % (left, left.op_id))
+    raise ParseError("Can't assign to %r (%s)" % (left, IdName(left.id)))
   return BinaryExprNode(t.ArithId(), left, p.ParseUntil(rbp))
 
 

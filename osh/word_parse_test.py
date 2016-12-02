@@ -12,7 +12,7 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from core.word_node import LiteralPart, CompoundWord, TokenWord
-from core.id_kind import Id
+from core.id_kind import Id, IdName
 from core.tokens import Token
 
 from osh import parse_lib
@@ -363,6 +363,16 @@ class WordParserTest(unittest.TestCase):
     w = w_parser.ReadWord(LexMode.OUTER)
     assert w
     self.assertEqual(Id.Op_Newline, w.token.id)
+
+  def testReadArithWord(self):
+    w = _assertReadWord(self, '$(( f(x) ))')
+    anode = w.parts[0].anode
+    self.assertEqual(Id.Node_FuncCall, anode.id)
+
+    w = _assertReadWord(self, '$(( f(1, 2, 3, 4) ))')
+    anode = w.parts[0].anode
+    self.assertEqual(Id.Node_FuncCall, anode.id)
+    self.assertEqual(4, len(anode.args))
 
   def testReadArith(self):
     CASES = [

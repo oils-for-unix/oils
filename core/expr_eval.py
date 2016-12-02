@@ -57,7 +57,7 @@ class ExprEvaluator:
     try:
       result = self._Eval(node)
     except ExprEvalError as e:
-      self._AddErrorContext(e.args[0])
+      self._AddErrorContext(str(e))
       ok = False
     else:
       self.result = result
