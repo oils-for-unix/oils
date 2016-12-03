@@ -693,7 +693,7 @@ class Executor(object):
       status = p.Run()
 
     elif node.id == Id.KW_DLeftBracket:
-      bool_ev = expr_eval.BoolEvaluator(self.ev)
+      bool_ev = expr_eval.BoolEvaluator(self.mem, self.ev)
       ok = bool_ev.Eval(node.bnode)
       if ok:
         status = 0 if bool_ev.Result() else 1

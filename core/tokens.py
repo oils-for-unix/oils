@@ -13,11 +13,23 @@ import json
 import re
 
 from core import id_kind
+from core.base import _Node
 
 
-class Token(object):
+class Token(_Node):
+
+  # Should a token really be a PAIR of source locations?  They must all be in
+  # the same file?  The "len" is basically "Compression".
+  # Or do we need a flat list of tokens and use token IDs?
+  # But they might not be on the same line.
+  SCHEMA = """
+  record Token extends Node {
+    loc Ref<SourceLocation>
+    val Str
+  }
+  """
   def __init__(self, id, val):
-    self.id = id
+    _Node.__init__(self, id)
     self.val = val
 
     # In C++, instead of val, it will be this triple.  Change it to Val()

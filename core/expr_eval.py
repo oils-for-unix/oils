@@ -37,7 +37,8 @@ class ExprEvaluator:
   For now the arith and bool evaluators share some logic.
   """
 
-  def __init__(self, word_ev):
+  def __init__(self, mem, word_ev):
+    self.mem = mem
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
     self.result = 0
     self.error_stack = []
@@ -66,10 +67,6 @@ class ExprEvaluator:
 
 
 class ArithEvaluator(ExprEvaluator):
-
-  def __init__(self, mem, word_ev):
-    ExprEvaluator.__init__(self, word_ev)
-    self.mem = mem
 
   def _ValToInteger(self, val):
     """Evaluate with the rules of arithmetic expressions.
@@ -256,6 +253,10 @@ def _ValuesAreEqual(x, y):
 
 class BoolEvaluator(ExprEvaluator):
 
+  def _SetRegexMatches(self, matches):
+    """For ~= to set the BASH_REMATCH array."""
+    self.mem
+
   def _EvalCompoundWord(self, word, do_glob=False):
     """
     Args:
@@ -378,8 +379,7 @@ class BoolEvaluator(ExprEvaluator):
           match = libc.regex_match(s2, s1)
           # TODO: BASH_REMATCH or REGEX_MATCH
           if match == 1:
-            # TODO: Should we have self.mem?
-            self.word_ev.SetRegexMatches('TODO')
+            self._SetRegexMatches('TODO')
             is_match = True
           elif match == 0:
             is_match = False
