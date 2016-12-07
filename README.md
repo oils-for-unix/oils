@@ -19,7 +19,8 @@ Clone the repo and run `bin/osh`.  Basic things like pipelines, variables,
 functions, etc. should work.
 
     bash$ bin/osh
-    ! echo 'hello world'
+    osh$ name=world
+    osh$ echo "hello $name"
     hello world
 
 Build it
