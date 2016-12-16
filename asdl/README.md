@@ -16,3 +16,5 @@ This library will be used for serializing parsed `osh` and `oil` code.
 The files `arith_parse.py`, `arith.asdl`, `arith_ast.py`, and `arith_demo.cc`
 are an end-to-end demo, driven by `run.sh`.
 
+For more on Zephyr ASDL, see [this blog post](http://www.oilshell.org/blog/2016/12/11.html).
+
