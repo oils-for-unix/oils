@@ -1,0 +1,109 @@
+-- ASDL's six builtin types are identifier, int, string, bytes, object, singleton
+-- NOTE we're not using identifier/object/singleton/bytes
+-- Python only uses bytes/object/singleton once.
+-- identifier is used all over.  Why?  I have different rules for
+-- for functions and vars.  case/for/assign have vars.
+
+-- TODO:
+-- How to encode position information?
+-- FuncCall inside ${}, in addition to arithmetic context?
+--   Well I guess you can do this: echo $(( f(x,y) ))a.  It is a little more
+--   annoying.
+
+module osh
+{
+  source_location = (string path, int line, int col, int length)
+  token = (string value, source_location loc)
+
+  id = Foo | Bar -- TODO: you need a placeholder to say this is generated
+                 -- by another tool.  Suppress the error.
+
+  -- TODO: generate the following:
+  -- arith_op_id, bool_op_id, vpre_op_id, array_op_id, vpost_op_id
+
+  bracket_op = 
+    ArrayOp(id op_id)  -- * or @
+  | ArrayIndex(arith_expr a)
+
+  suffix_op = 
+    VarUnary(id op_id, word arg)
+  | VarReplace(word pat, word? replace)
+  | VarSlice(arith_expr start, arith_expr? len)
+
+  word_part = 
+    ArrayLiteralPart(word* words)
+  | LiteralPart(token t)
+  | EscapedLiteralPart(token t)
+  | DoubleQuotedPart(word_part* parts)
+  | VarSubPart(string name,
+               id prefix_op,
+               bracket_op bracket_op
+               suffix_op suffix_op)
+  | TildeSubPart(string prefix)
+  | CommandSubPart(command c)
+  | ArithSubPart(arith_expr a)
+  -- NOTE: Could put | Token(token t) as an optimization.
+
+  word = Word(word_part* parts)
+  -- NOTE: Could put | Token(token t) as an optimization.
+
+  arith_expr =
+    ArithVar(string name)  -- eval variable 
+  | ArithWord(word w)  -- word to be evaluated as a constant 
+
+  | ArithUnary(id op_id, arith_expr a)
+  | ArithBinary(id op_id, arith_expr left, arith_expr right)
+  | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
+  | FuncCall(arith_expr func, arith_expr* args)
+
+  bool_expr =
+    BoolBinary(word left, word right)
+  | BoolUnary(word child)
+  | LogicalNot(bool_expr b)
+  | LogicalAnd(bool_expr left, bool_expr right)
+  | LogicalOr(bool_expr left, bool_expr right)
+
+  -- NOTE: To reprint the here doc, I guess we need the whole delimiter?  And
+  -- then do_expansion is calculated from that.
+  redir = 
+    HereDoc(id op_id, word arg_word, int fd, int do_expansion)
+  | Redirect(id op_id, word arg_word, int fd)
+
+  lvalue = 
+    LeftVar(string name)
+  | LeftIndex(string name, arith_expr index)
+
+  scope = Global | Local
+  var_flags = Export | Readonly
+  binding = (lvalue lhs, word rhs)
+
+  and_or = DAmp | DPipe
+  -- |& in osh; |- in oil.
+  pipe_op = Pipe | PipeAndStderr
+
+  case_arm = (word* pat, command* action)
+
+  command = 
+    NoOp
+  | SimpleCommand(word* words, redir* redirects, binding* more_env)
+  | Assignment(scope scope,
+               var_flags flags,
+               word* names,  -- names mentioned without a binding
+               binding* bindings)
+  | DParen(arith_expr a)
+  | DBracket(bool_expr b)
+  | Block(command* commands)
+  | Subshell(command* commands)
+  | Fork(command* commands)  -- shell only allows one command
+  | Pipeline(command* commands, int negated, pipe_op* op)
+  | AndOr(command* commands, and_or ops)
+  -- NOTE: Can't have multiple var length?  Maybe it's just a single command.
+  | ForEach(string var, word* words, command* body)
+  | ForExpr(arith_expr init, arith_expr test, arith_expr update, command* body)
+  -- NOTE: in oil, we will have expression variants?i 
+  | While(command cond, command* body)
+  | Until(command cond, command* body)
+  | If(command test, command* body, command* orelse)
+  | Case(string var_name, case_arm* cases)
+  | FuncDef(string name, command* body)
+}

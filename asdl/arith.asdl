@@ -1,0 +1,36 @@
+module arith {
+  op_id = Plus | Minus | Star
+
+  -- why does source_location have to be lower case?  It's not a constructor?
+  -- it has no tag?
+  source_location = (string path, int line, int col, int length)
+
+  -- TODO:
+  -- - Add optional.  For slicing maybe -- optional end.
+  -- - Add repeated.  For function call maybe.
+
+  arith_expr =
+    Const(int i)  -- 
+  | ArithVar(string name)  -- eval variable 
+  | ArithUnary(op_id op_id, arith_expr a)
+  | ArithBinary(op_id op_id, arith_expr left, arith_expr right)
+  | FuncCall(string name, arith_expr* args)
+  | ForwardRef(bool_expr b)
+  | Index(arith_expr a, arith_expr index)
+    -- Using Python's style for now.  Bash uses length instead of end.
+  | Slice(arith_expr a, arith_expr? begin, arith_expr? end, arith_expr? stride)
+
+  -- Hm these have to be primitives.  Maybe it should just be a location index.
+  -- But honestly that is the same as a pointer in the heap pattern.
+  --attributes (source_location loc)
+
+  word = (string value)
+
+  bool_expr =
+    BoolBinary(word left, word right)
+  | BoolUnary(word child)
+  | LogicalNot(bool_expr b)
+  | LogicalAnd(bool_expr left, bool_expr right)
+  | LogicalOr(bool_expr left, bool_expr right)
+}
+

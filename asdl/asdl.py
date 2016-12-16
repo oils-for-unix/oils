@@ -24,7 +24,49 @@ import re
 
 __all__ = [
     'builtin_types', 'parse', 'AST', 'Module', 'Type', 'Constructor',
-    'Field', 'Sum', 'Product', 'VisitorBase', 'Check', 'check']
+    'Field', 'Sum', 'Product', 'VisitorBase', 'Check', 'check',
+    'is_simple']
+
+
+# PATCH: Moved this function from asdl_c.py.
+def is_simple(sum):
+  """Return True if a sum is a simple.
+
+    A sum is simple if its types have no fields, e.g.
+    unaryop = Invert | Not | UAdd | USub
+    """
+  for t in sum.types:
+    if t.fields:
+      return False
+  return True
+
+
+class StrType:
+  pass
+
+
+class IntType:
+  pass
+
+
+# The type that should be passed
+DESCRIPTORS_BY_NAME = {
+    'string': StrType(),
+    'int': IntType(),
+}
+
+
+class ArrayType:
+  def __init__(self, desc):
+    self.desc = desc
+
+
+class MaybeType:
+  def __init__(self, desc):
+    self.desc = desc  # another descriptor
+
+
+
 
 # The following classes define nodes into which the ASDL description is parsed.
 # Note: this is a "meta-AST". ASDL files (such as Python.asdl) describe the AST
