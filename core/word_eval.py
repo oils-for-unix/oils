@@ -184,10 +184,6 @@ class _Evaluator(object):
   def Error(self):
     return self.error_stack
 
-  def SetRegexMatches(self, matches):
-    """For ~= to set the BASH_REMATCH array."""
-    self.mem
-
   def EvalCommandSub(self, node):
     """
     Args:
