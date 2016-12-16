@@ -232,7 +232,6 @@ class _CompoundCNode(CNode):
     CNode.__init__(self, id)
     # children of type CNode.
     self.children = []
-    # TODO: Add self.redirects, and remove from ListNode/FunctionDefNode
 
   def GetHereDocsToFill(self):
     """For CommandParser to fill here docs"""
@@ -310,7 +309,6 @@ class ListNode(_CompoundCNode):
   """
   def __init__(self):
     _CompoundCNode.__init__(self, Id.Op_Semi)
-    self.redirects = []
 
   def _PrintHeader(self, f):
     f.write('List')
@@ -443,7 +441,6 @@ class FunctionDefNode(_CompoundCNode):
   def __init__(self):
     _CompoundCNode.__init__(self, Id.Node_FuncDef)
     self.name = ''
-    self.redirects = []
 
   def _PrintHeader(self, f):
     f.write('FunctionDef %s %s' % (self.name, self.redirects))
