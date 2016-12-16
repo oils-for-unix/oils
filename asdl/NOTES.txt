@@ -1,0 +1,196 @@
+Lib
+
+asdl/  - library dir
+  asdl.py
+  asdl_py.py  -- metaprogramming.  Import
+  asdl_cc.py  -- generate source.  Command line tool.
+  asdl_tool.py  -- front end?  For serializing and testing.
+osh/
+  osh.asdl
+  ast.py --  does 'import asdl' and it finds the osh/osh.asdl
+oil/
+  oil.asdl
+  ast.py
+core/
+  ovm.asdl -- simplified code as a tree, I think the name is appropriate
+  node.py  - instead of AST, call it node
+
+Terms:
+- osh AST
+- oil AST
+- ovm code
+
+TODO
+----
+
+- integrate it into ~/git/oil repo
+  - tdop.py needs to be consolidated..
+  - Put it in asdl/ dir, or tools?  I think asdl/ is fine.
+
+- buffer interface thing for interfacing with Python
+  - it will have a single function.
+  - b = bytearray()
+  - encode.EncodeRoot(obj, enc, b)  # instead of BinOutput
+    - maybe have FileOutput and BufferOutput
+    - they both are responsible for alignment?
+
+- write a Makefile then?
+
+NAMES:
+- oheap is the format
+- ahi is the language?    idl  ?  odl
+  OIL  -- Oil interface language. haha.
+  oidl -- oil interface defintion language
+
+  ODL - oil data language
+  Some really old related thing.  Probably OK to rename it.
+  https://en.wikipedia.org/wiki/Object_Definition_Language
+  
+  OADL -- oil algebraic data language
+
+  OTL -- oil tree language.  Is it a full data language?  I guess it can be
+  with references.
+
+  ASDL -> OHEAP for now
+  then later:
+  ODL -> OHEAP
+
+  ODL is a subset of oil, with in-memory type annotations and on-disk type
+  annotations.
+
+  ASDL is a tree, non-cyclic.
+
+- separate asdl.h from arith.asdl.h.  Because you don't want duplicate
+  definitions with multiple files.
+  - although right now you depend on pointer_type.  So make it a flag to just
+    generate that file for a specific alignment?
+    "asdl_align32.h" ?
+    - you could use templates, but I don't want to go there now.
+
+  - the arith one will have include "asdl.h" at the top I guess.
+  - this will only happen if the same translation unit includes two ASDL.h
+    files.  do you need an include guard then?
+
+- rename to arith.asdl to demo.asdl.
+  - meh his is OK for now.
+
+- benchmark:
+  - write a tree, and write it in the "expanded" format too?
+- mutable version:
+  e.mutable_left()
+  e.mutable_right()
+  # Does this flip a bit in the ref pointer?  It mutates the original object to
+  # have a ref.
+  # But that means all refs need a mask of the high bit.
+
+- how to disassemble a particular function?  or is it all in-lined potentially?
+  - do the -ffunction-sections thing
+- Just make a function that takes an arith_expr_t&, and then prints the tag,
+  and if it's ArithBinary, prints the left/right pointers?
+
+- first use case: bool_expr in oil
+  - BUT you have to disable the type checking...
+    bool_expr or word_t children
+    word_t still has to be written
+
+- figure out how source_location / attributes works...
+  - maybe append it to ALL... hm.
+  - or just have loc_index?  That's sort of the same thing as a pointer now
+    with the heap.
+
+ODL (sort of like an IDL, but it's more data than functions)
+------------------------------------------------------------
+
+Annotations on types.  like golang strings, but arbitrary expressions.
+
+
+record FuncCall {
+  name      Str 
+  otherName Bytes        [max = 2^16]  # 2 bytes length
+  args      Iter<Expr>  
+  args      Array<Expr>  [max = 2^16]  # maximum length
+  num       Int          [max = 2^24]  # ax
+}
+
+record FuncCall {
+  name      Str 
+  otherName Bytes        [u16]
+  args      Iter<Expr>  
+  args      Array<Expr>  [u16]
+  num       Int          [u24]
+}
+
+record FuncCall {
+  name      Str 
+  otherName Bytes        [uint16]
+  args      Iter<Expr>  
+  args      Array<Expr>  [uint16]
+  num       Int          [uint24]
+}
+
+# Memory type, and then wire type.
+# memory types are all arbitrary width.  Only when you serialize it to you have
+# to give it a type.
+# 
+
+record FuncCall {
+  name      Str 
+  otherName Bytes        [len: UInt16]
+  args      Iter<Expr>   # no wire type means default
+  args      Array<Expr>  [len: UInt16]
+  num       Int          [UInt24]
+  bigNum    Int          # no wire type means it will be a varint on the wire?
+}
+
+[] syntax is for annotations, like function annotations
+
+record FuncCall {
+  name      Str
+  args      Array<Expr>   [hanging]  # hanging off the end, like 0-length array
+}
+
+record Other {
+  name      Str
+  age       Str           [hanging]   # string can hang too
+}
+
+Hanging is only the immutable serialized, not for mutable in-memory.
+
+
+Function language:
+
+
+# No semi-colon?
+
+func foo(a FuncCall, b FuncCall) -> FuncCall 
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  // Sends another greeting
+  rpc SayHelloAgain (HelloRequest) returns (HelloReply) {}
+}
+
+# Meh I think this should have capabilities
+# It also has no arg names. It's 1 to 1 as well?  Doesn't need to be.
+#
+# I guess the args and returns can be wrapped up in a single OHEAP message.
+
+service Foo {
+  rpc SayHello (req HelloRequest) -> (reply HelloReply)
+}
+
+----
+
+Read 24 bytes
+alignment: 4 root: 2
+Tag: 4
+binary: 4
+t4 BINARY
+        1
+        t1 CONST 7
+        t1 CONST 9
+[Inferior 1 (process 15287) exited normally]
+No stack.
+a-
