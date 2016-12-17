@@ -57,7 +57,8 @@ module osh
   | FuncCall(arith_expr func, arith_expr* args)
 
   bool_expr =
-    BoolBinary(word left, word right)
+    WordTest(word w)  -- e.g. [[ myword ]]
+  | BoolBinary(word left, word right)
   | BoolUnary(word child)
   | LogicalNot(bool_expr b)
   | LogicalAnd(bool_expr left, bool_expr right)

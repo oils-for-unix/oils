@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-import tdop
-import arith_parse
+from asdl import tdop
+from asdl import arith_parse
 
 
 def _assertParseError(make_parser, s, error_substring=''):

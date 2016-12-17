@@ -5,9 +5,9 @@ arith_parse.py: Parse shell-like and C-like arithmetic.
 
 import sys
 
-import tdop
-from tdop import Node, CompositeNode
-import arith_ast
+from asdl import tdop
+from asdl.tdop import Node, CompositeNode
+from asdl import arith_ast
 
 #
 # Null Denotation -- token that takes nothing on the left

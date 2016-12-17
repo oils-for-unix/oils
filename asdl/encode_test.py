@@ -5,7 +5,7 @@ encode_test.py: Tests for encode.py
 
 import unittest
 
-import encode  # module under test
+from asdl import encode  # module under test
 
 
 class EncoderTest(unittest.TestCase):

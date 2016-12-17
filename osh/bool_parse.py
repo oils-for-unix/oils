@@ -54,6 +54,8 @@ algorithms!  See evalexpr() in expr.c.
 
 import sys
 
+from osh import ast
+
 from core import base
 from core.id_kind import Id, Kind, LookupKind, IdName
 
@@ -192,6 +194,7 @@ class BoolParser(object):
       if not self._Next(): return None
       child = self.ParseFactor()
       return UnaryExprNode(Id.KW_Bang, child)
+      #return ast.LogicalNot(child)
     else:
       return self.ParseFactor()
 

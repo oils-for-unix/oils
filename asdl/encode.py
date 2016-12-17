@@ -5,8 +5,9 @@ encode.py
 
 import sys
 
-import asdl
-import py_meta
+from asdl import asdl_parse
+from asdl import py_meta
+asdl = asdl_parse  # ALIAS
 
 _DEFAULT_ALIGNMENT = 4
 

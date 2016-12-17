@@ -29,7 +29,8 @@ put: an op is Add() and not Add, an instance of a class, not an integer value.
 import sys
 import pprint
 
-import asdl
+from asdl import asdl_parse
+asdl = asdl_parse  # ALIAS for nodes
 
 
 def _CheckType(value, expected_desc):
@@ -109,6 +110,10 @@ class CompoundObj(Obj):
   FIELDS = []  # ordered list of field names
   DESCRIPTOR_LOOKUP = {}  # field name: (asdl.Type | int | str)
 
+  # Always set for constructor types, which are subclasses of sum types.  Never
+  # set for product types.
+  tag = None
+
   def __init__(self, *args, **kwargs):
     # The user must specify ALL required fields or NONE.
     self._assigned = {f: False for f in self.FIELDS}
@@ -157,7 +162,8 @@ class CompoundObj(Obj):
       self.__dict__[name] = value
       return
     desc = self.DESCRIPTOR_LOOKUP[name]
-    if not _CheckType(value, desc):
+    if False:  # Disable type checking for now
+    #if not _CheckType(value, desc):
       raise AssertionError("Field %r should be of type %s, got %r" %
                            (name, desc, value))
 

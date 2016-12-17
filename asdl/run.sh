@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+export PYTHONPATH=.
+
 # Run unit tests.
 unit() {
   asdl/arith_ast_test.py
@@ -60,7 +62,7 @@ arith-both() {
 }
 
 osh-both() {
-  py-cpp asdl/osh.asdl
+  py-cpp osh/osh.asdl
 }
 
 #
@@ -197,23 +199,6 @@ compare-opts() {
     llvm $opt
   done
   opt-stats
-}
-
-count() {
-  wc -l asdl/{asdl,py_meta,gen_cpp,encode}.py 
-  echo
-
-  wc -l asdl/{py_meta,encode}_test.py
-  echo
-
-  wc -l asdl/arith_parse*.py asdl/tdop.py asdl/arith_ast.py asdl/asdl_demo.py
-  echo
-
-  wc -l asdl/*.cc 
-  echo
-
-  wc -l asdl/*.asdl
-  echo
 }
 
 "$@"

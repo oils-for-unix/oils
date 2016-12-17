@@ -26,9 +26,11 @@ aligned (because the natural alignment woudl be 1 byte anyway.)
 
 import sys
 
-import asdl
-import py_meta
-import encode
+from asdl import asdl_parse
+from asdl import py_meta
+from asdl import encode
+
+asdl = asdl_parse
 
 TABSIZE = 2
 MAX_COL = 80

@@ -5,8 +5,8 @@ arith_ast_test.py: Tests for arith_ast.py
 
 import unittest
 
-import arith_ast  # module under test
-import py_meta
+from asdl import arith_ast  # module under test
+from asdl import py_meta
 
 
 class ArithAstTest(unittest.TestCase):

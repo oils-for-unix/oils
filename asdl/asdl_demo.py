@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-asdl_tool.py
+asdl_demo.py
 """
 
 import sys
-import asdl
-import arith_parse
-import py_meta
-import encode
+from asdl import asdl_parse
+from asdl import arith_parse
+from asdl import py_meta
+from asdl import encode
 
 
 def main(argv):
@@ -19,7 +19,7 @@ def main(argv):
   if action == 'py':
     schema_path = argv[2]
 
-    module = asdl.parse(schema_path)
+    module = asdl_parse.parse(schema_path)
     root = sys.modules[__name__]
     py_meta.MakeTypes(module, root)
     print(dir(root))

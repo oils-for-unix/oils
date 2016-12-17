@@ -275,6 +275,7 @@ class BoolEvaluator(ExprEvaluator):
     return s
 
   def _Eval(self, node):
+    # TODO: Switch on node.tag.
     if node.id == Id.Word_Compound:
       s = self._EvalCompoundWord(node)
       return bool(s)

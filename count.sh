@@ -22,6 +22,22 @@ all() {
   wc -l tests/*.test.sh | sort --numeric
   echo
 
+  echo 'ASDL'
+  wc -l asdl/{asdl_parse,py_meta,gen_cpp,encode}.py 
+  echo
+
+  wc -l asdl/{py_meta,encode}_test.py
+  echo
+
+  #wc -l asdl/arith_parse*.py asdl/tdop.py asdl/arith_ast.py asdl/asdl_demo.py
+  #echo
+
+  #wc -l asdl/*.cc 
+  #echo
+
+  #wc -l asdl/*.asdl
+  #echo
+
   echo 'OIL UNIT TESTS'
   wc -l {osh,core}/*_test.py | sort --numeric
   echo
