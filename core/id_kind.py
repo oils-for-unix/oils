@@ -46,9 +46,9 @@ class IdSpec(object):
 
   def __init__(self, token_names, kind_lookup, bool_ops):
     self.id_enum = Id
-    self.kind_enum = Kind  # Should just be Kind
-    self.token_names = token_names
-    self.kind_lookup = kind_lookup
+    self.kind_enum = Kind
+    self.token_names = token_names  # integer -> string Id
+    self.kind_lookup = kind_lookup  # integer -> Kind
 
     self.kind_sizes = []  # stats
 
@@ -439,3 +439,53 @@ REDIR_TYPE = {
     Id.Redir_DLessDash: RedirType.Str,
     Id.Redir_TLess: RedirType.Str,
 }
+
+
+def main(argv):
+  try:
+    action = argv[1]
+  except IndexError:
+    raise RuntimeError('Action required')
+
+  if action == 'cpp':
+    try:
+      labels = argv[2]
+    except IndexError:
+      labels = None
+    else:
+      # TODO: Permute the tokens according 
+      with open(labels) as f:
+        for line in f:
+          print(f)
+     
+    print(ID_SPEC.token_names)
+    print(ID_SPEC.kind_lookup)
+
+    # TODO: Iterate over kinds, and find the size.  Then look up size in
+    # labels.txt.
+
+    print(ID_SPEC.kind_sizes)
+
+    kind_names = {}
+    for name in dir(Kind):
+      if name[0].isupper():
+        kind = getattr(Kind, name)
+        print(kind, name)
+
+    return
+    for name in dir(Id):
+      if name[0].isupper():
+        print(name)
+        id_ = getattr(Id, name)
+        # TODO: Need the kind names too
+        print(id_, LookupKind(id_))
+  else:
+    raise RuntimeError('Invalid action %r' % action)
+
+
+if __name__ == '__main__':
+  try:
+    main(sys.argv)
+  except RuntimeError as e:
+    print('FATAL: %s' % e, file=sys.stderr)
+    sys.exit(1)
