@@ -447,18 +447,59 @@ def Emit(s, f, depth=0):
     f.write(line)
 
 
-def GenCppCode(kind_names, tokens_by_kind, f):
+def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
+  """
+  Args:
+    kind_names: List of kind name strings, in display order
+    id_names: List of list of id name strings, in display order
+    f: output file
+    id_labels: optional name to integer
+    kind_labels: optional name to integer
+  """
+  Emit('#include <cstdint>', f)
+  Emit('#include "stdio.h"', f)
+  Emit('', f)
   Emit('enum class Kind : uint8_t {', f)
-  Emit(', '.join(kind_names.values()), f, 1)
+  if kind_labels:
+    Emit(', '.join(['%s=%s' % (k, kind_labels[k]) for k in kind_names]) + ',', f, 1)
+  else:
+    Emit(', '.join(kind_names), f, 1)
   Emit('};\n', f)
 
-  # TODO: Divide into kinds
   Emit('enum class Id : uint8_t {', f)
-  for kind, token_list in tokens_by_kind.items():
-    Emit(', '.join(['a', 'b']), f, 1)
-    Emit('\n')
+  for names_in_kind in id_names:
+    if id_labels:
+      Emit(', '.join(['%s=%s' % (i, id_labels[i]) for i in names_in_kind]) + ',', f, 1)
+    else:
+      Emit(', '.join(names_in_kind) + ',', f, 1)
+    Emit('', f)
+
   Emit('};\n', f)
 
+  f.write(r"""
+Kind LookupKind(Id id) {
+  int i = static_cast<int>(id);
+  int k = 175 & i & ((i ^ 173) + 11);
+  return static_cast<Kind>(k);
+}
+
+int main() {
+""")
+  for names_in_kind in id_names:
+    if id_labels:
+      for id_name in names_in_kind:
+        kind_name = id_name.split('_')[0]
+        test = 'if (LookupKind(Id::%s) != Kind::%s) return 1;' % (id_name, kind_name)
+        Emit(test, f, 1)
+    else:
+      pass
+    Emit('', f)
+
+  f.write(r"""
+  printf("PASSED\n");
+  return 0;
+}
+""")
 
 def main(argv):
   try:
@@ -467,39 +508,72 @@ def main(argv):
     raise RuntimeError('Action required')
 
   if action == 'cpp':
+    # For blog post
     try:
       labels = argv[2]
     except IndexError:
-      labels = None
+      label_lines = []
     else:
-      # TODO: Permute the tokens according 
       with open(labels) as f:
-        for line in f:
-          print(f)
+        label_lines = f.readlines()
      
-    print(ID_SPEC.token_names)
-    print(ID_SPEC.kind_lookup)
+    from collections import defaultdict
 
-    # TODO: Iterate over kinds, and find the size.  Then look up size in
-    # labels.txt.
-
-    print(ID_SPEC.kind_sizes)
-
-    kind_names = {}
-    for name in dir(Kind):
-      if name[0].isupper():
-        kind = getattr(Kind, name)
-        #print(kind, name)
-        kind_names[kind] = name
-
+    id_by_kind_index = defaultdict(list)  # Kind name -> [list of Id names]
     for name in dir(Id):
       if name[0].isupper():
-        #print(name)
         id_ = getattr(Id, name)
-        # TODO: Need the kind names too
-        #print(id_, LookupKind(id_))
+        kind_index = LookupKind(id_)
+        id_by_kind_index[kind_index].append(name)
 
-    GenCppCode(kind_names, {}, sys.stdout)
+    kinds = []
+    for name in dir(Kind):
+      if name[0].isupper():
+        kind_index = getattr(Kind, name)
+        #print(kind, name)
+        kinds.append((name, kind_index, len(id_by_kind_index[kind_index])))
+
+    # Sort descending by length of ID list
+    kinds = sorted(kinds, key=lambda p: p[2], reverse=True)
+
+    id_labels = {}  # Id name -> integer
+    kind_labels = {}  # Kind name -> integer
+
+    for k, line in enumerate(label_lines):  # descending order by kind size
+
+      parts = line.split()
+      id_list_len, _, actual_len, _, kind_label, _ = parts[:6]
+      id_list_len = int(id_list_len)
+      kind_label = int(kind_label)
+      id_list = [int(id_) for id_ in parts[6:]]
+
+      try:
+        kind_name, kind_index, len_id_list = kinds[k]
+      except IndexError:
+        break
+      kind_labels[kind_name] = kind_label
+
+      id_names = id_by_kind_index[kind_index]
+      #print(id_names)
+      for i, name in enumerate(id_names):
+        try:
+          id_labels[name] = id_list[i]
+        except IndexError:
+          raise RuntimeError('%s %s' % (name, i))
+
+    if 0:  # disable labeling
+      id_labels = None
+      kind_labels = None
+
+    kind_names = [k[0] for k in kinds]
+
+    id_names = []
+    for _, kind_index, _ in kinds:
+      n = id_by_kind_index[kind_index]
+      id_names.append(n)
+
+    GenCppCode(kind_names, id_names, sys.stdout,
+               id_labels=id_labels, kind_labels=kind_labels)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
