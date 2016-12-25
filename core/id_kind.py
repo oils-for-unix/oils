@@ -441,6 +441,25 @@ REDIR_TYPE = {
 }
 
 
+def Emit(s, f, depth=0):
+  from asdl.gen_cpp import FormatLines
+  for line in FormatLines(s, depth):
+    f.write(line)
+
+
+def GenCppCode(kind_names, tokens_by_kind, f):
+  Emit('enum class Kind : uint8_t {', f)
+  Emit(', '.join(kind_names.values()), f, 1)
+  Emit('};\n', f)
+
+  # TODO: Divide into kinds
+  Emit('enum class Id : uint8_t {', f)
+  for kind, token_list in tokens_by_kind.items():
+    Emit(', '.join(['a', 'b']), f, 1)
+    Emit('\n')
+  Emit('};\n', f)
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -470,15 +489,18 @@ def main(argv):
     for name in dir(Kind):
       if name[0].isupper():
         kind = getattr(Kind, name)
-        print(kind, name)
+        #print(kind, name)
+        kind_names[kind] = name
 
-    return
     for name in dir(Id):
       if name[0].isupper():
-        print(name)
+        #print(name)
         id_ = getattr(Id, name)
         # TODO: Need the kind names too
-        print(id_, LookupKind(id_))
+        #print(id_, LookupKind(id_))
+
+    GenCppCode(kind_names, {}, sys.stdout)
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 

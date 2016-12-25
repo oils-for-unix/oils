@@ -80,6 +80,20 @@ def ReflowLines(s, depth):
   return lines
 
 
+def FormatLines(s, depth, reflow=True):
+  """Format lines."""
+  if reflow:
+    lines = ReflowLines(s, depth)
+  else:
+    lines = [s]
+
+  result = []
+  for line in lines:
+    line = (" " * TABSIZE * depth) + line + "\n"
+    result.append(line)
+  return result
+
+
 class ChainOfVisitors:
   def __init__(self, *visitors):
     self.visitors = visitors
@@ -118,21 +132,8 @@ class AsdlVisitor:
 
     return "%s_t&" % type_name
 
-  def Render(self, s, depth, reflow=True):
-    """Format lines."""
-    if reflow:
-      lines = ReflowLines(s, depth)
-    else:
-      lines = [s]
-
-    result = []
-    for line in lines:
-      line = (" " * TABSIZE * depth) + line + "\n"
-      result.append(line)
-    return result
-
   def Emit(self, s, depth, reflow=True):
-    for line in self.Render(s, depth):
+    for line in FormatLines(s, depth):
       self.f.write(line)
 
   def VisitModule(self, mod):
@@ -320,9 +321,9 @@ class ClassDefVisitor(AsdlVisitor):
             'return static_cast<const %(ctype)s>('
             'Ref(base, %(offset)d).Ref(base, a));')
 
-        self.footer.extend(self.Render(func_def % locals(), 0))
-        self.footer.extend(self.Render(ARRAY_OFFSET, 1))
-        self.footer.extend(self.Render(func_body % locals(), 1))
+        self.footer.extend(FormatLines(func_def % locals(), 0))
+        self.footer.extend(FormatLines(ARRAY_OFFSET, 1))
+        self.footer.extend(FormatLines(func_body % locals(), 1))
         self.footer.append('}\n\n')
         maybe_qual_name = name  # RESET for later
 
@@ -358,8 +359,8 @@ class ClassDefVisitor(AsdlVisitor):
               'return static_cast<const %(ctype)s>(Ref(base, %(offset)d));')
 
         # depth 0 for bodies
-        self.footer.extend(self.Render(func_def % locals(), 0))
-        self.footer.extend(self.Render(func_body % locals(), 1))
+        self.footer.extend(FormatLines(func_def % locals(), 0))
+        self.footer.extend(FormatLines(func_body % locals(), 1))
         self.footer.append('}\n\n')
         maybe_qual_name = name  # RESET for later
 
