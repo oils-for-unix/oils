@@ -12,7 +12,6 @@ cmd_parse.py - Parse high level shell commands.
 from core import base
 from core import word
 from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
-from core.tokens import Token
 
 from osh import ast_ as ast 
 from osh.lex import LexMode
@@ -278,7 +277,7 @@ class CommandParser(object):
         h.was_filled = True
       else:
         # TODO: Add pool_index etc. to token
-        tokens = [Token(Id.Lit_Chars, line) for _, line in lines]
+        tokens = [ast.token(Id.Lit_Chars, line) for _, line in lines]
         parts = [ast.LiteralPart(t) for t in tokens]
         h.arg_word = ast.CompoundWord(parts)
         h.was_filled = True
@@ -1203,7 +1202,6 @@ class CommandParser(object):
 
     # If the pipeline ended in a newline, we need to read here docs.
     if self.c_id == Id.Op_Newline:
-      #print('=============> ParsePipeline CHILD', child.DebugString())
       for child in children:
         self._MaybeReadHereDocs(child)
 

@@ -495,10 +495,10 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
   s2.Write('comp_state %s  error %s', comp_state, c_parser.Error())
   # This one can be multiple lines
   s3.Write('node: %s %s',
-      node.DebugString() if node else '<Parse Error>',
+      repr(node) if node else '<Parse Error>',
       node.tag if node else '')
   # This one can be multiple lines
-  s6.Write('com_node: %s', com_node.DebugString() if com_node else '<None>')
+  s6.Write('com_node: %s', repr(com_node) if com_node else '<None>')
 
   # TODO: Fill these in
   comp_type = ECompletionType.FIRST

@@ -107,7 +107,7 @@ def PrintError(error_stack, pool, f):
     if token:
       #print(token)
       #print(token.pool_index)
-      i = token.pool_index
+      i = token.loc.pool_index
       if i == -1:
         line = '<token had no position info>'
         path = '<unknown>'
@@ -117,8 +117,8 @@ def PrintError(error_stack, pool, f):
         path, line_num = pool.GetDebugInfo(i)
       print('Line %d of %r' % (line_num+1, path))
       print('  ' + line.rstrip())
-      col = token.col
-      length = token.length
+      col = token.loc.col
+      length = token.loc.length
       if col == -1:
         print('NO COL')
       else:

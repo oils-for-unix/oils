@@ -13,7 +13,8 @@ import re
 
 from core import util
 from core.id_kind import Id, IdName
-from core.tokens import Token
+
+from osh import ast_ as ast
 
 
 def C(pat, tok_type):
@@ -82,7 +83,7 @@ class LineLexer(object):
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
     while True:
       if pos == len(self.line):
-        t = Token(Id.Eof_Real, '')
+        t = ast.token(Id.Eof_Real, '')  # no location
         return t
 
       re_list = self.lexer_def[lex_mode]
@@ -94,7 +95,7 @@ class LineLexer(object):
         break
       pos = end_index
 
-    return Token(tok_type, tok_val)
+    return ast.token(tok_type, tok_val)  # no location
 
   def AtEnd(self):
     return self.line_pos == len(self.line)
@@ -108,12 +109,13 @@ class LineLexer(object):
     end_index, tok_type, tok_val = FindLongestMatch(
         re_list, self.line, self.line_pos)
 
-    t = Token(tok_type, tok_val)
+    # NOTE: tok_val is technically redundant, but we're keeping it for now.
+    # It's only really needed in C++.
+
     # TODO: Add this back once pool is threaded everywhere
     #assert self.pool_index != -1
-    t.pool_index = self.pool_index
-    t.col = self.line_pos
-    t.length = len(tok_val)
+    loc = ast.line_span(self.pool_index, self.line_pos, len(tok_val))
+    t = ast.token(tok_type, tok_val, loc)
 
     self.line_pos = end_index
     return t
@@ -187,12 +189,10 @@ class Lexer(object):
       pool_index, line = self.line_reader.GetLine()
 
       if line is None:  # no more lines
-        t = Token(Id.Eof_Real, '')
+        loc = ast.line_span(self.pool_index - 1, 0, 0)
+        t = ast.token(Id.Eof_Real, '', loc)
         # No line number.  I guess we are showing the last line of the file.
         # TODO: Could keep track of previous position for this case?
-        t.pool_index = self.pool_index - 1
-        t.col = 0
-        t.length = 0
         return t
 
       self.line_lexer.Reset(line, pool_index)

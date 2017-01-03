@@ -93,7 +93,6 @@ class SimpleObj(Obj):
 
   Other simple objects: int, str, maybe later a float.
   """
-
   def __init__(self, enum_id, name):
     self.enum_id = enum_id
     self.name = name
@@ -122,10 +121,16 @@ class CompoundObj(Obj):
       self._Init(args, kwargs)
 
   def __eq__(self, other):
+    if not isinstance(other, CompoundObj):
+      return False
+
     if self.tag != other.tag:
       return False
 
     for name in self.FIELDS:
+      # Special case: we are not testing locations right now.
+      if name == 'loc':
+        continue
       left = getattr(self, name)
       right = getattr(other, name)
       if left != right:
@@ -187,16 +192,10 @@ class CompoundObj(Obj):
     self.__dict__[name] = value
 
   def __repr__(self):
-    #import pprint
-    #return '<%s %s>' % (self.__class__.__name__, pprint.pformat(self.__dict__))
     f = io.StringIO()
     tree = fmt.MakeTree(self)
     fmt.PrintTree(tree, f)
     return f.getvalue()
-
-  # For backward compatibility.  TODO: Get rid of this.
-  def DebugString(self):
-    return self.__repr__()
 
 
 def _MakeFieldDescriptors(module, fields, app_types):
@@ -211,7 +210,7 @@ def _MakeFieldDescriptors(module, fields, app_types):
     # It's either a primitive type or sum type
     if primitive_desc is None and app_desc is None:
       assert (isinstance(desc, asdl.Sum) or
-              isinstance(desc, asdl.Product)), desc
+          isinstance(desc, asdl.Product)), 'field %s has descriptor %s' % (f, desc)
 
     # Wrap descriptor here.  Then we can type check.
     # And then encode too.
@@ -231,12 +230,13 @@ def _MakeFieldDescriptors(module, fields, app_types):
   return class_attr
 
 
-def MakeTypes(module, root, app_types):
+def MakeTypes(module, root, app_types=None):
   """
   Args:
     module: asdl.Module
     root: an object/package to add types to
   """
+  app_types = app_types or {}
   for defn in module.dfns:
     typ = defn.value
 
@@ -269,8 +269,6 @@ def MakeTypes(module, root, app_types):
 
           class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
           class_attr['DESCRIPTOR'] = cons
-          # TODO: Allow setting these integers.  We're reusing ID 0 for every
-          # sum type, but that's OK because fields are strongly typed.
           class_attr['tag'] = tag
 
           cls = type(cons.name, (base_class, ), class_attr)

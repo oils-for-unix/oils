@@ -218,12 +218,13 @@ class Check(VisitorBase):
         for f in prod.fields:
             self.visit(f, name)
 
-def check(mod, app_types):
+def check(mod, app_types=None):
     """Check the parsed ASDL tree for correctness.
 
     Return True if success. For failure, the errors are printed out and False
     is returned.
     """
+    app_types = app_types or {}
     v = Check()
     v.visit(mod)
 
@@ -238,7 +239,7 @@ def check(mod, app_types):
 # The ASDL parser itself comes next. The only interesting external interface
 # here is the top-level parse function.
 
-def parse(filename, app_types):
+def parse(filename):
     """Parse ASDL from the given file and return a Module node describing it."""
     with open(filename) as f:
         parser = ASDLParser()

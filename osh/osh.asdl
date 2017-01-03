@@ -1,47 +1,15 @@
--- ASDL's six builtin types are identifier, int, string, bytes, object, singleton
-
--- NOTE we're not using identifier/object/singleton/bytes
--- Python only uses bytes/object/singleton once.
--- identifier is used all over.  Why?  I have different rules for
--- functions and vars.  case/for/assign have vars.
-
--- TODO:
--- How to encode position information?
--- Add bool, for C++ encoding
--- FuncCall inside ${}, in addition to arithmetic context?
---   Well I guess you can do this: echo $(( f(x,y) ))a.  It is a little more
---   annoying.
--- Do we need stricter ID types?
---   arith_op_id, bool_op_id, vpre_op_id, array_op_id, vpost_op_id
+-- ASDL's builtin types are: string, int, bool
 
 module osh
 {
-  source_location = (string path, int line, int col, int length)
+  -- A portion of a line.
+  line_span = (int pool_index, int col, int length)
 
-  -- parse errors don't need to be serialized!  You just calculate them on the
-  -- fly from tokens?  VarSubPart has an extra token.  Maybe it needs a source
-  -- location.
-
-  -- these are for RUNTIME errors.  do you always use either a src_point or
-  -- src_range?  Or more likely they point to a word, which will have
-  src_point = (int line, int col)
-  src_range = (string path, src_point begin, src_point end)
-
-  -- Physical line number
-  debug_line = (int line_num, string line)
-  debug_info = (debug_line* lines)
-
-  -- A unit is a single file.
-  unit = (string path, command root, debug_info info)
-
-  -- The top level structure of multiple pre-compiled modules.
-  -- The standard library can use this I guess.
-  package = (unit* units)
-
-  -- Does the token hold the location, or do nodes?  I think we need to
-  -- annotate most nodes with source_location, but token is only for TokenWord,
-  -- LiteralPart, etc.
-  token = (id id, string value, source_location loc)
+  -- A primitive token.  NOTE: val is redundant with line_span for now.  If
+  -- rewrite the parser in C++, we might care for memory footprint.  But for
+  -- now this is convenient.
+  -- NOTE: identical strings can shared, if we care.
+  token = (id id, string val, line_span? loc)
 
   bracket_op = 
     WholeArray(id op_id)  -- * or @
@@ -106,6 +74,37 @@ module osh
   assign_pair = (lvalue lhs, word rhs)
   env_pair = (string name, word val)
 
+  -- Homogeneous version
+  command = 
+    NoOp
+  | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
+  | Assignment(assign_scope scope,
+               assign_flags flags,
+               word* words,  -- names mentioned without a binding
+               assign_pair* pairs)  -- empty redirects for polymorphism?
+  | Fork(command* children)  -- shell only allows one command
+  | Pipeline(command* children, bool negated, int* stderr_indices)
+  -- | AndOr(command* children, and_or* ops)
+  | AndOr(command* children, int op_id)
+  -- A command list is used for for/if/while conditions and bodies.  No redirects.
+  | CommandList(command* children)
+  -- A brace group is a compound command, with redirects.
+  | BraceGroup(command* children, redir* redirects)
+  | Subshell(command* children, redir* redirects)
+  | DParen(arith_expr child, redir* redirects)
+  | DBracket(bool_expr expr, redir* redirects)
+  -- do_arg_iter: whether to implicitly loop over "$@"
+  | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
+            command* children, redir* redirects)
+  -- C-style for loop
+  | ForExpr(arith_expr init, arith_expr cond, arith_expr update, command* children,
+            redir* redirects)
+  | While(command* children, redir* redirects)
+  | Until(command* children, redir* redirects)
+  | If(command* children, redir* redirects)
+  | Case(word to_match, word* pat_word_list, command* children, redir* redirects)
+  | FuncDef(string name, command* children, redir* redirects)
+
   and_or = DAmp | DPipe
 
   -- For now, using stderr_indices representation because it's more compact.
@@ -143,35 +142,4 @@ module osh
   | XIf(command test, command* body, command* orelse, redir* redirects)
   | XCase(string var_name, case_arm* cases, redir* redirects)
   | XFuncDef(string name, command* body, redir* redirects)
-
-  -- Homogeneous version
-  command = 
-    NoOp
-  | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
-  | Assignment(assign_scope scope,
-               assign_flags flags,
-               word* words,  -- names mentioned without a binding
-               assign_pair* pairs)  -- empty redirects for polymorphism?
-  | Fork(command* children)  -- shell only allows one command
-  | Pipeline(command* children, bool negated, int* stderr_indices)
-  -- | AndOr(command* children, and_or* ops)
-  | AndOr(command* children, int op_id)
-  -- A command list is used for for/if/while conditions and bodies.  No redirects.
-  | CommandList(command* children)
-  -- A compound command, with redirects
-  | BraceGroup(command* children, redir* redirects)
-  | Subshell(command* children, redir* redirects)
-  | DParen(arith_expr child, redir* redirects)
-  | DBracket(bool_expr expr, redir* redirects)
-  -- do_arg_iter: whether to implicitly loop over "$@"
-  | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
-            command* children, redir* redirects)
-  -- C-style for loop
-  | ForExpr(arith_expr init, arith_expr cond, arith_expr update, command* children,
-            redir* redirects)
-  | While(command* children, redir* redirects)
-  | Until(command* children, redir* redirects)
-  | If(command* children, redir* redirects)
-  | Case(word to_match, word* pat_word_list, command* children, redir* redirects)
-  | FuncDef(string name, command* children, redir* redirects)
 }

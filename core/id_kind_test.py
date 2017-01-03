@@ -12,9 +12,9 @@ id_kind_test.py: Tests for id_kind.py
 import unittest
 
 import id_kind
-from id_kind import Id, IdName, Kind
+from id_kind import Id, IdName, Kind, LookupKind
 
-from tokens import Token
+from osh import ast_ as ast
 
 
 class TokensTest(unittest.TestCase):
@@ -26,7 +26,7 @@ class TokensTest(unittest.TestCase):
 
   def testTokens(self):
     print(Id.Op_Newline)
-    print(Token(Id.Op_Newline, '\n'))
+    print(ast.token(Id.Op_Newline, '\n'))
 
     print(IdName(Id.Op_Newline))
 
@@ -43,15 +43,15 @@ class TokensTest(unittest.TestCase):
     # 206 out of 256 tokens now
     print(len(id_kind._ID_NAMES))
 
-    t = Token(Id.Arith_Plus, '+')
-    self.assertEqual(Kind.Arith, t.Kind())
-    t = Token(Id.Arith_CaretEqual, '^=')
-    self.assertEqual(Kind.Arith, t.Kind())
-    t = Token(Id.Arith_RBrace, '}')
-    self.assertEqual(Kind.Arith, t.Kind())
+    t = ast.token(Id.Arith_Plus, '+')
+    self.assertEqual(Kind.Arith, LookupKind(t.id))
+    t = ast.token(Id.Arith_CaretEqual, '^=')
+    self.assertEqual(Kind.Arith, LookupKind(t.id))
+    t = ast.token(Id.Arith_RBrace, '}')
+    self.assertEqual(Kind.Arith, LookupKind(t.id))
 
-    t = Token(Id.BoolBinary_DEqual, '==')
-    self.assertEqual(Kind.BoolBinary, t.Kind())
+    t = ast.token(Id.BoolBinary_DEqual, '==')
+    self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
   def testLexerPairs(self):
     def MakeLookup(p):

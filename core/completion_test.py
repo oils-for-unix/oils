@@ -63,11 +63,11 @@ class CompletionTest(unittest.TestCase):
     func_node = ast.FuncDef()
 
     c1 = ast.CompoundWord()
-    t1 = lexer.Token(Id.Lit_Chars, 'f1')
+    t1 = ast.token(Id.Lit_Chars, 'f1')
     c1.parts.append(ast.LiteralPart(t1))
 
     c2 = ast.CompoundWord()
-    t2 = lexer.Token(Id.Lit_Chars, 'f2')
+    t2 = ast.token(Id.Lit_Chars, 'f2')
     c2.parts.append(ast.LiteralPart(t2))
 
     a = ast.ArrayLiteralPart()

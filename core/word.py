@@ -7,7 +7,6 @@ import sys
 
 from osh import ast_ as ast
 from core.id_kind import Id, Kind, LookupKind
-from core.tokens import Token
 
 word_e = ast.word_e
 word_part_e = ast.word_part_e
@@ -231,7 +230,7 @@ def TildeDetect(word):
       pre, post = val[:p], val[p:]
       prefix += pre
       tilde_part = ast.TildeSubPart(prefix)
-      remainder_part = ast.LiteralPart(Token(Id.Lit_Chars, post))
+      remainder_part = ast.LiteralPart(ast.token(Id.Lit_Chars, post))
       found_slash = True
       break
 
@@ -400,7 +399,7 @@ def CommandId(node):
 
 def CommandKind(w):
   if w.tag == word_e.TokenWord:
-    return w.token.Kind()
+    return LookupKind(w.token.id)
 
   # NOTE: This is a bit inconsistent with CommandId, because we never retur
   # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.

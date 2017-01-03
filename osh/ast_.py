@@ -20,7 +20,7 @@ schema_path = os.path.join(bin_dir, '../osh/osh.asdl')  # ~/git/oil/osh
 # id = external   # in osh.asdl.  provided by the application.
 app_types = {'id': Id}
 
-module = asdl_parse.parse(schema_path, app_types)
+module = asdl_parse.parse(schema_path)
 # Check for type errors
 if not asdl_parse.check(module, app_types):
   raise AssertionError('ASDL file is invalid')

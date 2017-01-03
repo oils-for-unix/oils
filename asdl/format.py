@@ -56,39 +56,13 @@ class AnsiOutput(ColorOutput):
   Generally 80 column output
 
   Color: html code and restore
-
   """
-
   def __init__(self, f):
     ColorOutput.__init__(self, f)
 
 
-INDENT = 2
-
-# TODO: Change algorithm
-# - MakeTree makes it homogeneous:
-#   - strings for primitives, or ? for unset
-#   - (field, value) tuple
-#   - [] for arrays
-#   - _Obj(name, fields)
-#
-# And then PrintTree(max_col) does 
-# temporary buffer
-#
-# if it fails, then print the tree
-# ok = TryPrintLine(child, max_col)
-# if (not ok):
-#   indent
-#   PrintTree()
-#
-# And PrintTree should take a list of Substitutions on node_type to make it
-# shorter?
-# - CompoundWord
-# - SimpleCommand
-# - Lit_Chars for tokens
-
-
 class _Obj:
+  """Intermediate node."""
   def __init__(self, node_type):
     self.node_type = node_type
     self.fields = []  # list of 2-tuples
@@ -208,6 +182,8 @@ def MakeTree(obj, omit_empty=True):
   return out_node
 
 
+INDENT = 2
+
 def PrintTree(node, f, indent=0, max_col=100):
   """
     node: homogeneous tree node
@@ -218,7 +194,7 @@ def PrintTree(node, f, indent=0, max_col=100):
   # Try printing on a single line
   single_f = io.StringIO()
   single_f.write(ind)
-  if TrySingleLine(node, single_f, max_col=max_col-indent):
+  if _TrySingleLine(node, single_f, max_col=max_col-indent):
     f.write(single_f.getvalue())
     return
 
@@ -233,6 +209,7 @@ def PrintTree(node, f, indent=0, max_col=100):
     for name, val in node.fields:
       ind1 = ' ' * (indent+INDENT)
       if isinstance(val, list):
+        # TODO: _TrySingleLine here too.
         f.write('%s%s: [\n' % (ind1, name))
         for child in val:
           # TODO: Add max_col here
@@ -247,7 +224,7 @@ def PrintTree(node, f, indent=0, max_col=100):
         # Try to print it on the same line as the field name; otherwise print
         # it on a separate line.
         single_f = io.StringIO()
-        if TrySingleLine(val, single_f, max_col=max_col - prefix_len):
+        if _TrySingleLine(val, single_f, max_col=max_col - prefix_len):
           f.write(single_f.getvalue())
         else:
           f.write('\n')
@@ -262,7 +239,7 @@ def PrintTree(node, f, indent=0, max_col=100):
     raise AssertionError(node)
 
 
-def TrySingleLine(node, f, max_col=80):
+def _TrySingleLine(node, f, max_col=80):
   """Try printing on a single line.
 
   Args:
@@ -285,7 +262,7 @@ def TrySingleLine(node, f, max_col=80):
     i = 0
     for name, val in node.fields:
       f.write(' %s:' % name)
-      if not TrySingleLine(val, f):
+      if not _TrySingleLine(val, f):
         return False
 
       i += 1
@@ -295,7 +272,7 @@ def TrySingleLine(node, f, max_col=80):
   elif isinstance(node, list):
     f.write('[')
     for item in node:
-      if not TrySingleLine(item, f):
+      if not _TrySingleLine(item, f):
         return False
     f.write(']')
   else:

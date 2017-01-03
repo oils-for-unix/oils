@@ -40,7 +40,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
     if isinstance(node, py_meta.Obj):
       print(node)
     else:
-      print(node.DebugString())
+      print(node)
     if not expect_success:
       test.fail('Expected %r to fail ' % code_str)
   else:
@@ -348,7 +348,7 @@ PIPE 2
 EOF
 echo hi
 """)
-    self.assertEqual(2, len(node.children), node.DebugString())
+    self.assertEqual(2, len(node.children), repr(node))
     assertHereDocToken(self, 'PIPE 1\n', node.children[0])
 
   def testHereDocInSequence2(self):
@@ -514,34 +514,34 @@ class CommandParserTest(unittest.TestCase):
     _, c_parser = InitCommandParser('ls foo')
     node = c_parser.ParseCommand()
     self.assertEqual(2, len(node.words))
-    print(node.DebugString())
+    print(node)
 
     _, c_parser = InitCommandParser('func() { echo hi; }')
     node = c_parser.ParseCommand()
-    print(node.DebugString())
+    print(node)
     self.assertEqual(command_e.FuncDef, node.tag)
 
   def testParseCommandLine(self):
     _, c_parser = InitCommandParser('ls foo 2>/dev/null')
     node = c_parser.ParseCommandLine()
     self.assertEqual(2, len(node.words))
-    print(node.DebugString())
+    print(node)
 
     _, c_parser = InitCommandParser('ls foo|wc -l')
     node = c_parser.ParseCommandLine()
     self.assertEqual(command_e.Pipeline, node.tag)
-    print(node.DebugString())
+    print(node)
 
     _, c_parser = InitCommandParser('ls foo|wc -l || die')
     node = c_parser.ParseCommandLine()
     self.assertEqual(command_e.AndOr, node.tag)
-    print(node.DebugString())
+    print(node)
 
     _, c_parser = InitCommandParser('ls foo|wc -l || die; ls /')
     node = c_parser.ParseCommandLine()
     self.assertEqual(command_e.CommandList, node.tag)
     self.assertEqual(2, len(node.children))  # two top level things
-    print(node.DebugString())
+    print(node)
 
   def testParseCommandList(self):
     node = assertParseCommandList(self, 'ls foo')

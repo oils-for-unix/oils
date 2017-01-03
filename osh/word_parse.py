@@ -11,8 +11,7 @@ word_parse.py - Parse the shell word language.
 
 from core import base
 
-from core.id_kind import Id, Kind, IdName
-from core.tokens import Token
+from core.id_kind import Id, Kind, IdName, LookupKind
 from core import word
 from core import tdop
 
@@ -82,7 +81,7 @@ class WordParser(object):
     if self.next_lex_mode is not None:
       self.prev_token = self.cur_token  # for completion
       self.cur_token = self.lexer.Read(self.next_lex_mode)
-      self.token_kind = self.cur_token.Kind()
+      self.token_kind = LookupKind(self.cur_token.id)
       self.token_type = self.cur_token.id
 
       self.next_lex_mode = None
@@ -465,36 +464,12 @@ class WordParser(object):
 
     return part
 
-  def _ReadDollarSqPart(self):
-    # Do we need a flag to tell if it's $'' rather than ''?
+  def _ReadSingleQuotedPart(self, lex_mode):
     quoted_part = ast.SingleQuotedPart()
 
     done = False
     while not done:
-      self._Next(LexMode.DOLLAR_SQ)
-      self._Peek()
-
-      if self.token_kind == Kind.Lit:
-        quoted_part.tokens.append(self.cur_token)
-
-      elif self.token_kind == Kind.Right:
-        done = True  # assume Id.Right_S_QUOTE
-
-      elif self.token_kind == Kind.Eof:
-        self.AddErrorContext('Unexpected EOF in $ single-quoted string')
-        return False
-
-      else:
-        raise AssertionError(self.token_kind)
-
-    return quoted_part
-
-  def _ReadSingleQuotedPart(self):
-    quoted_part = ast.SingleQuotedPart()
-
-    done = False
-    while not done:
-      self._Next(LexMode.SQ)
+      self._Next(lex_mode)
       self._Peek()
 
       if self.token_kind == Kind.Lit:
@@ -502,7 +477,6 @@ class WordParser(object):
 
       elif self.token_kind == Kind.Eof:
         self.AddErrorContext('Unexpected EOF in single-quoted string')
-
         return False
 
       elif self.token_kind == Kind.Right:
@@ -546,7 +520,11 @@ class WordParser(object):
       if not part: return None
 
     elif self.token_type == Id.Left_SingleQuote:
-      part = self._ReadSingleQuotedPart()
+      part = self._ReadSingleQuotedPart(LexMode.SQ)
+      if not part: return None
+
+    elif self.token_type == Id.Left_DollarSingleQuote:
+      part = self._ReadSingleQuotedPart(LexMode.DOLLAR_SQ)
       if not part: return None
 
     elif self.token_type in (
@@ -571,10 +549,6 @@ class WordParser(object):
       # NOTE: $"" is treated as "" for now.  Does it make sense to add the
       # token to the part?
       part = self._ReadDoubleQuotedPart()
-      if not part: return None
-
-    elif self.token_type == Id.Left_DollarSingleQuote:
-      part = self._ReadDollarSqPart()
       if not part: return None
 
     else:
