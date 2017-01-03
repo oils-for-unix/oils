@@ -801,18 +801,32 @@ class _Evaluator(object):
     return argv
 
   def EvalEnv(self, more_env):
+    """Evaluate environment variable bindings.
+
+    Args:
+      more_env: list of ast.env_pair
+
+    Returns:
+      A dictinory of strings to strings
+
+    Side effect: sets local variables so bindings can reference each other.
+      Hm.  Is this wrong?
+    """
     result = {}
-    for name, expr in more_env:
-      ok, val = self.EvalCompoundWord(expr)
+    for env_pair in more_env:
+      name = env_pair.name
+      val = env_pair.val
+
+      ok, val = self.EvalCompoundWord(val)
       # What happens here?  Undefined variable?
       if not ok:
-        self._AddErrorContext("Error evaluating expression %s = %s", name,
-            expr)
+        self._AddErrorContext(
+            "Error evaluating word %s = %s", name, val)
         return None
       is_str, s = val.AsString()
       if not is_str:
-        self._AddErrorContext("Env vars should be strings, got %s = %s", name,
-            val)
+        self._AddErrorContext(
+            "Env vars should be strings, got %s = %s", name, val)
         return None
 
       # Set each var so the next one can reference it.  Example:

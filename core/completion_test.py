@@ -62,9 +62,6 @@ class CompletionTest(unittest.TestCase):
     ex = cmd_exec_test.InitExecutor()
     func_node = ast.FuncDef()
 
-    # Set global COMPREPLY=(f1 f2)
-    body_node = ast.Assignment(assign_scope_e.Global, 0)
-
     c1 = ast.CompoundWord()
     t1 = lexer.Token(Id.Lit_Chars, 'f1')
     c1.parts.append(ast.LiteralPart(t1))
@@ -78,7 +75,10 @@ class CompletionTest(unittest.TestCase):
     w = ast.CompoundWord()
     w.parts.append(a)
 
-    body_node.bindings = [('COMPREPLY', w)]
+    # Set global COMPREPLY=(f1 f2)
+    pairs = [ast.assign_pair('COMPREPLY', w)]
+    body_node = ast.Assignment(assign_scope_e.Global, 0, [], pairs)
+
     func_node.children.append(body_node)
 
     a = completion.ShellFuncAction(ex, func_node)

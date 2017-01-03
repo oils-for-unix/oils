@@ -450,7 +450,7 @@ class CommandParser(object):
     node = ast.SimpleCommand()
     node.words = words3
     node.redirects = redirects
-    node.more_env = prefix_bindings
+    node.more_env = [ast.env_pair(name, val) for name, val in prefix_bindings]
     return node
 
   def _MakeAssignment(self, assign_scope, assign_flags, suffix_words):
@@ -471,8 +471,9 @@ class CommandParser(object):
       else:
         var_words.append(w)
 
+    assign_pairs = [ast.assign_pair(lhs, rhs) for lhs, rhs in bindings]
     node = ast.Assignment(
-        assign_scope, assign_flags, var_words, bindings)
+        assign_scope, assign_flags, var_words, assign_pairs)
 
     return node
 
@@ -560,10 +561,11 @@ class CommandParser(object):
       # TODO: Have a strict mode to prevent this?
       if redirects:  # >out.txt g=foo
         print('WARNING: Got redirects in assignment: %s', redirects)
-      assign_flags = 0
       assign_scope = assign_scope_e.Global
-      node = ast.Assignment(assign_scope, assign_flags)
-      node.bindings = prefix_bindings
+      assign_flags = 0
+      assign_pairs = [
+          ast.assign_pair(lhs, rhs) for lhs, rhs in prefix_bindings]
+      node = ast.Assignment(assign_scope, assign_flags, [], assign_pairs)
       return node
 
     assign_kw = word.AssignmentBuiltinId(suffix_words[0])

@@ -723,13 +723,13 @@ class Executor(object):
       # TODO: Respect flags: readonly, export, sametype, etc.
       # Just pass the Value
       pairs = []
-      for name, word in node.bindings:
+      for pair in node.pairs:
         # NOTE: do_glob=False, because foo=*.a makes foo equal to '*.a',
         # literally.
-        ok, val = self.ev.EvalCompoundWord(word)
+        ok, val = self.ev.EvalCompoundWord(pair.rhs)
         if not ok:
           return None
-        pairs.append((name, val))
+        pairs.append((pair.lhs, val))
 
       if node.scope == assign_scope_e.Local:
         self.mem.SetLocal(pairs, node.flags)

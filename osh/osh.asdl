@@ -103,7 +103,8 @@ module osh
 
   assign_scope = Global | Local
   assign_flags = Export | ReadOnly
-  binding = (lvalue lhs, word rhs)
+  assign_pair = (lvalue lhs, word rhs)
+  env_pair = (string name, word val)
 
   and_or = DAmp | DPipe
 
@@ -121,11 +122,11 @@ module osh
 
   command_hetero = 
     XNoOp
-  | XSimpleCommand(word* words, redir* redirects, binding* more_env)
+  | XSimpleCommand(word* words, redir* redirects, env_pair* more_env)
   | XAssignment(assign_scope scope,
                assign_flags flags,
                word* names,  -- names mentioned without a binding
-               binding* bindings)
+               assign_pair* bindings)
   | XFork(command* commands)  -- shell only allows one command
   | XPipeline(command* commands, bool negated, int* op)
   | XAndOr(command* commands, and_or* ops)
@@ -146,11 +147,11 @@ module osh
   -- Homogeneous version
   command = 
     NoOp
-  | SimpleCommand(word* words, redir* redirects, binding* more_env)
+  | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
   | Assignment(assign_scope scope,
                assign_flags flags,
                word* words,  -- names mentioned without a binding
-               binding* bindings)  -- empty redirects for polymorphism?
+               assign_pair* pairs)  -- empty redirects for polymorphism?
   | Fork(command* children)  -- shell only allows one command
   | Pipeline(command* children, bool negated, int* stderr_indices)
   -- | AndOr(command* children, and_or* ops)

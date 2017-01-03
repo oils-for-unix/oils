@@ -135,19 +135,19 @@ class SimpleCommandTest(unittest.TestCase):
   def testMultipleGlobalAssignments(self):
     node = assertParseCommandList(self, 'ONE=1 TWO=2')
     self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(2, len(node.bindings))
+    self.assertEqual(2, len(node.pairs))
     self.assertEqual(0, len(node.words))
 
   def testExport(self):
     node = assertParseCommandList(self, 'export ONE=1 TWO=2 THREE')
     self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(2, len(node.bindings))
+    self.assertEqual(2, len(node.pairs))
     self.assertEqual(1, len(node.words))
 
   def testReadonly(self):
     node = assertParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
     self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(2, len(node.bindings))
+    self.assertEqual(2, len(node.pairs))
     self.assertEqual(1, len(node.words))
 
   def testOnlyRedirect(self):
@@ -174,11 +174,11 @@ class SimpleCommandTest(unittest.TestCase):
   def testParseAssignment(self):
     node = assertParseCommandList(self, 'local foo=bar spam eggs one=1')
     self.assertEqual(2, len(node.words), node.words)
-    self.assertEqual(2, len(node.bindings))
+    self.assertEqual(2, len(node.pairs))
 
     node = assertParseCommandList(self, 'foo=bar')
     self.assertEqual(0, len(node.words))
-    self.assertEqual(1, len(node.bindings))
+    self.assertEqual(1, len(node.pairs))
 
     # This is not valid since env isn't respected
     assertFailCommandList(self, 'FOO=bar local foo=$(env)')
@@ -380,15 +380,15 @@ class ArrayTest(unittest.TestCase):
     # Empty array
     node = assertParseCommandList(self,
         'empty=()')
-    self.assertEqual(['empty'], [k for k, v in node.bindings])
-    self.assertEqual([], node.bindings[0][1].parts[0].words)  # No words
+    self.assertEqual(['empty'], [p.lhs for p in node.pairs])
+    self.assertEqual([], node.pairs[0].rhs.parts[0].words)  # No words
     self.assertEqual(command_e.Assignment, node.tag)
 
     # Array with 3 elements
     node = assertParseCommandList(self,
         'array=(a b c)')
-    self.assertEqual(['array'], [k for k, v in node.bindings])
-    self.assertEqual(3, len(node.bindings[0][1].parts[0].words))
+    self.assertEqual(['array'], [p.lhs for p in node.pairs])
+    self.assertEqual(3, len(node.pairs[0].rhs.parts[0].words))
     self.assertEqual(command_e.Assignment, node.tag)
 
     # Array literal can't come after word
@@ -404,7 +404,7 @@ class ArrayTest(unittest.TestCase):
         'array=(a b c); array2=(d e f)')
     self.assertEqual(2, len(node.children))
     a2 = node.children[1]
-    self.assertEqual(['array2'], [k for k, v in a2.bindings])
+    self.assertEqual(['array2'], [p.lhs for p in a2.pairs])
 
 
 class RedirectTest(unittest.TestCase):
