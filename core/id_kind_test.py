@@ -65,16 +65,7 @@ class TokensTest(unittest.TestCase):
     lookup2 = MakeLookup(id_kind.ID_SPEC.LexerPairs(Kind.BoolBinary))
     self.assertEqual(Id.BoolBinary_eq, lookup2['-eq'])
 
-
-def PrintBoolTable():
-  for i, arg_type in id_kind.BOOL_OPS.items():
-    row = (id_kind.IdName(i), arg_type)
-    print('\t'.join(str(c) for c in row))
-
-
-if __name__ == '__main__':
-  import sys
-  if len(sys.argv) > 1 and sys.argv[1] == 'stats':
+  def testPrintStats(self):
     k = id_kind._kind_sizes
     print('STATS: %d tokens in %d groups: %s' % (sum(k), len(k), k))
     # Thinking about switching
@@ -83,5 +74,12 @@ if __name__ == '__main__':
 
     PrintBoolTable()
 
-  else:
-    unittest.main()
+
+def PrintBoolTable():
+  for i, arg_type in id_kind.BOOL_OPS.items():
+    row = (id_kind.IdName(i), arg_type)
+    print('\t'.join(str(c) for c in row))
+
+
+if __name__ == '__main__':
+  unittest.main()

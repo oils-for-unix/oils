@@ -189,6 +189,7 @@ class Lexer(object):
       if line is None:  # no more lines
         t = Token(Id.Eof_Real, '')
         # No line number.  I guess we are showing the last line of the file.
+        # TODO: Could keep track of previous position for this case?
         t.pool_index = self.pool_index - 1
         t.col = 0
         t.length = 0

@@ -57,9 +57,9 @@ import sys
 from osh import ast
 
 from core import base
+from core import word
 from core.id_kind import Id, Kind, LookupKind, IdName
 
-from core.expr_node import UnaryExprNode, BinaryExprNode
 from osh.lex import LexMode
 try:
   from core import libc
@@ -112,7 +112,7 @@ class BoolParser(object):
         self.words[0] = w
       self.cur_word = w
 
-    self.op_id = self.cur_word.BoolId()
+    self.op_id = word.BoolId(self.cur_word)
     self.b_kind = LookupKind(self.op_id)
     #print('---- word', self.cur_word, 'op_id', self.op_id, self.b_kind, lex_mode)
     return True
@@ -167,7 +167,7 @@ class BoolParser(object):
     if self.op_id == Id.Op_DPipe:
       if not self._Next(): return None
       right = self.ParseExpr()
-      return BinaryExprNode(Id.Op_DPipe, left, right)
+      return ast.LogicalOr(left, right)
     else:
       return left
 
@@ -182,7 +182,7 @@ class BoolParser(object):
     if self.op_id == Id.Op_DAmp:
       if not self._Next(): return None
       right = self.ParseTerm()
-      return BinaryExprNode(Id.Op_DAmp, left, right)
+      return ast.LogicalAnd(left, right)
     else:
       return left
 
@@ -193,8 +193,8 @@ class BoolParser(object):
     if self.op_id == Id.KW_Bang:
       if not self._Next(): return None
       child = self.ParseFactor()
-      return UnaryExprNode(Id.KW_Bang, child)
-      #return ast.LogicalNot(child)
+      #return UnaryExprNode(Id.KW_Bang, child)
+      return ast.LogicalNot(child)
     else:
       return self.ParseFactor()
 
@@ -210,15 +210,15 @@ class BoolParser(object):
       # Just save the type and not the token itself?
       op = self.op_id
       if not self._Next(): return None
-      word = self.cur_word
+      w = self.cur_word
       if not self._Next(): return None
-      node = UnaryExprNode(op, word)
+      node = ast.BoolUnary(op, w)
       return node
 
     if self.b_kind == Kind.Word:
       # Peek ahead another token.
       t2 = self._LookAhead()
-      t2_op_id = t2.BoolId()
+      t2_op_id = word.BoolId(t2)
       t2_b_kind = LookupKind(t2_op_id)
 
       # Redir PUN for < and >
@@ -238,20 +238,21 @@ class BoolParser(object):
 
         right = self.cur_word
         if is_regex:
-          ok, regex_str, unused_quoted = right.EvalStatic()
+          ok, regex_str, unused_quoted = word.StaticEval(right)
           # doesn't contain $foo, etc.
           if ok and not libc.regex_parse(regex_str):
             self.AddErrorContext("Invalid regex: %r" % regex_str, word=right)
             return None
 
         if not self._Next(): return None
-        return BinaryExprNode(op, left, right)
+        return ast.BoolBinary(op, left, right)
       else:
         # [[ foo ]] is implicit Implicit [[ -n foo ]]
-        op = Id.BoolUnary_n
-        word = self.cur_word
+        #op = Id.BoolUnary_n
+        w = self.cur_word
         if not self._Next(): return None
-        return UnaryExprNode(op, word)
+        #return UnaryExprNode(op, word)
+        return w
 
     if self.op_id == Id.Op_LParen:
       if not self._Next(): return None

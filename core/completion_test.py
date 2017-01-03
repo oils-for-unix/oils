@@ -13,16 +13,16 @@ import unittest
 
 from core import cmd_exec
 from core import lexer
-from core import cmd_node
-from core.word_node import CompoundWord, LiteralPart, ArrayLiteralPart
 from core import word_eval
-from core.word_node import EAssignScope
 from core import ui
 from core import cmd_exec_test
 from core import completion  # module under test
 from core.id_kind import Id
 
+from osh import ast
 from osh import parse_lib
+
+assign_scope_e = ast.assign_scope
 
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
@@ -60,22 +60,22 @@ class CompletionTest(unittest.TestCase):
 
   def testShellFuncExecution(self):
     ex = cmd_exec_test.InitExecutor()
-    func_node = cmd_node.FunctionDefNode()
+    func_node = ast.FuncDef()
 
     # Set global COMPREPLY=(f1 f2)
-    body_node = cmd_node.AssignmentNode(EAssignScope.GLOBAL, 0)
+    body_node = ast.Assignment(assign_scope_e.Global, 0)
 
-    c1 = CompoundWord()
+    c1 = ast.CompoundWord()
     t1 = lexer.Token(Id.Lit_Chars, 'f1')
-    c1.parts.append(LiteralPart(t1))
+    c1.parts.append(ast.LiteralPart(t1))
 
-    c2 = CompoundWord()
+    c2 = ast.CompoundWord()
     t2 = lexer.Token(Id.Lit_Chars, 'f2')
-    c2.parts.append(LiteralPart(t2))
+    c2.parts.append(ast.LiteralPart(t2))
 
-    a = ArrayLiteralPart()
+    a = ast.ArrayLiteralPart()
     a.words = [c1, c2]
-    w = CompoundWord()
+    w = ast.CompoundWord()
     w.parts.append(a)
 
     body_node.bindings = [('COMPREPLY', w)]

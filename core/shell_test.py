@@ -19,7 +19,6 @@ from osh import parse_lib
 from osh.word_parse import *
 from osh.cmd_parse import CommandParser
 
-from core.cmd_node import *
 from core import cmd_exec_test  # for InitExecutor.  TODO: testutil?
 from core import util
 
@@ -30,56 +29,6 @@ if trace:
   #util.WrapMethods(CommandParser, state)
   #util.WrapMethods(WordParser, state)
   #util.WrapMethods(Lexer, state)
-
-
-class PrinterTest(unittest.TestCase):
-
-  def testWordParts(self):
-    # Tokens use <> ?
-    t1 = Token(Id.Lit_Chars, 'echo')
-    t2 = Token(Id.Op_Newline, '\n')
-    print(t1)
-    print(t2)
-
-    # Word parts use {}
-
-    l1 = LiteralPart(t1)
-    print(l1)
-
-    l2 = LiteralPart(t2)
-    print(l2)
-
-    l3 = LiteralPart(Token(Id.Lit_Chars, 'foo'))
-    print(l3)
-
-    l4 = LiteralPart(Token(Id.Lit_LBrace, '{'))
-    print(l4)
-
-    command_list = SimpleCommandNode()
-    command_list.words = [l1, l3]
-
-    t = Token(Id.Left_CommandSub, '$(')
-    cs_part = CommandSubPart(t, command_list)
-    print(cs_part)
-
-    vs_part = VarSubPart('foo')
-    print(vs_part)
-
-    # A part that contains other parts
-    dq = DoubleQuotedPart()
-    dq.parts.append(l1)
-    dq.parts.append(cs_part)
-
-    print(dq)
-
-    # Word
-
-    cw = CompoundWord()
-    cw.parts = [l1, dq]
-    print(cw)
-
-    tw = TokenWord(t2)
-    print(tw)
 
 
 class LineReaderTest(unittest.TestCase):

@@ -13,13 +13,12 @@ try:
   from core import libc
 except ImportError:
   from core import fake_libc as libc
-from core.word_node import (
-    CompoundWord,
-    ArrayLiteralPart, LiteralPart, EscapedLiteralPart, SingleQuotedPart,
-    DoubleQuotedPart, CommandSubPart, VarSubPart, TildeSubPart, ArithSubPart)
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core.value import Value
 from core.util import cast
+from osh import ast
+
+bracket_op_e = ast.bracket_op_e
 
 
 # Glob Helpers for WordParts.
@@ -168,6 +167,42 @@ def _AppendArray(strs, array, glob_escape=False):
   return empty
 
 
+word_part_e = ast.word_part_e
+
+def _GlobsAreExpanded(p):
+  """
+  Are globs expanded at the top level?  Yes for LiteralPart, and all the var
+  sub parts.
+  No for TildeSubPart, and all the quoted parts.
+  """
+  return p.tag in (
+      word_part_e.LiteralPart, word_part_e.CommandSubPart,
+      word_part_e.VarSubPart)
+
+"""
+  return p.tag in (
+      word_part_e.LiteralPart, word_part_e.CommandSubPart,
+      word_part_e.VarSubPart)
+"""
+
+
+# TODO: Turn this into an ASDL predicate?  Fast table lookup for C++.
+def _IsSubst(p):
+  """
+  Returns:
+    Is the part an substitution?  (If called
+    This is used:
+
+    1) To determine whether result of evaluation of the part should be split
+    in a unquoted context.
+    2) To determine whether an empty string can be elided.
+    3) To do globbing.  If we are NOT in a substitution or literal.
+  """
+  return p.tag in (
+      word_part_e.CommandSubPart, word_part_e.VarSubPart,
+      word_part_e.ArithSubPart)
+
+
 class _Evaluator(object):
   """Abstract base class."""
 
@@ -314,30 +349,34 @@ class _Evaluator(object):
     index_error = False  # test_op can suppress this
 
     if defined and part.bracket_op:
-      id = part.bracket_op.id
+      if part.bracket_op.tag == bracket_op_e.WholeArray:
+        op_id = part.bracket_op.op_id
 
-      # TODO: Change this to array_op instead of bracket_op?
-      if id == Id.Lit_At:
-        if val.IsArray():
-          array_ok = True
+        # TODO: Change this to array_op instead of bracket_op?
+        if op_id == Id.Lit_At:
+          if val.IsArray():
+            array_ok = True
+          else:
+            self._AddErrorContext("Can't index non-array with @")
+            return False, None
+
+        elif op_id == Id.Arith_Star:
+          if val.IsArray():
+            array_ok = True
+          else:
+            self._AddErrorContext("Can't index non-array with *")
+            return False, None
+
         else:
-          self._AddErrorContext("Can't index non-array with @")
-          return False, None
+          raise AssertionError(op_id)
 
-      elif id == Id.Arith_Star:
-        if val.IsArray():
-          array_ok = True
-        else:
-          self._AddErrorContext("Can't index non-array with *")
-          return False, None
-
-      elif id == Id.VOp2_LBracket:
+      elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
         array_ok = True
         is_array, a = val.AsArray()
         if is_array:
-          anode = part.bracket_op.arg_word
+          anode = part.bracket_op.expr
           # TODO: This should propagate errors
-          arith_ev = expr_eval.ArithEvaluator(self)
+          arith_ev = expr_eval.ArithEvaluator(self.mem, self)
           ok = arith_ev.Eval(anode)
           if not ok:
             self._AddErrorContext(
@@ -355,8 +394,9 @@ class _Evaluator(object):
 
         else:  # it's a string
           raise NotImplementedError("String indexing not implemented")
+
       else:
-        raise AssertionError(id)
+        raise AssertionError(part.bracket_op.tag)
 
     if defined and val.IsArray():
       if not array_ok:
@@ -368,11 +408,11 @@ class _Evaluator(object):
     # if the op does NOT have colon
     #use_default = not defined
 
-    if part.suffix_op and LookupKind(part.suffix_op.id) == Kind.VTest:
+    if part.suffix_op and LookupKind(part.suffix_op.op_id) == Kind.VTest:
       op = part.suffix_op
 
       # TODO: Change this to a bit test.
-      if op.id in (
+      if op.op_id in (
           Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
           Id.VTest_ColonPlus):
         is_falsey = not defined or val.IsEmptyString()
@@ -381,7 +421,7 @@ class _Evaluator(object):
 
       #print('!!',id, is_falsey)
 
-      if op.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
+      if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
         if is_falsey:
           argv = []
           ok, val2 = self.EvalCompoundWord(op.arg_word)
@@ -417,9 +457,9 @@ class _Evaluator(object):
         return True, Value.FromString('')
 
     if part.prefix_op:
-      op = part.prefix_op
+      op_id = part.prefix_op
 
-      if op.id == Id.VSub_Pound:
+      if op_id == Id.VSub_Pound:
         # LENGTH
         if val.IsArray():
           #print("ARRAY LENGTH", len(val.a))
@@ -430,7 +470,7 @@ class _Evaluator(object):
         val = Value.FromString(str(length))
 
     # NOTE: You could have both prefix and suffix
-    if part.suffix_op and LookupKind(part.suffix_op.id) in (
+    if part.suffix_op and LookupKind(part.suffix_op.op_id) in (
         Kind.VOp1, Kind.VOp2):
       op = part.suffix_op
 
@@ -459,13 +499,13 @@ class _Evaluator(object):
       # And then pat_subst() does some special cases.  Geez.
 
       # prefix strip
-      if op.id == Id.VOp1_DPound:
+      if op.op_id == Id.VOp1_DPound:
         pass
-      elif op.id == Id.VOp1_Pound:
+      elif op.op_id == Id.VOp1_Pound:
         pass
 
       # suffix strip
-      elif op.id == Id.VOp1_Percent:
+      elif op.op_id == Id.VOp1_Percent:
         print(op.words)
         argv = []
         for w in op.words:
@@ -488,18 +528,18 @@ class _Evaluator(object):
             s = s[:-len(suffix)]
             val = Value.FromString(s)
 
-      elif op.id == Id.VOp1_DPercent:
+      elif op.op_id == Id.VOp1_DPercent:
         pass
 
       # Patsub, vectorized
-      elif op.id == Id.VOp2_Slash:
+      elif op.op_id == Id.VOp2_Slash:
         pass
 
       # Either string slicing or array slicing.  However string slicing has a
       # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
       #
       # Or maybe have a different operator for byte slice and char slice.
-      elif op.id == Id.VOp2_Colon:
+      elif op.op_id == Id.VOp2_Colon:
         pass
 
       else:
@@ -530,7 +570,7 @@ class _Evaluator(object):
     Returns:
       Value -- empty unquoted, string, or array
     """
-    assert isinstance(word, CompoundWord), "Exected CompoundWord, got %s" % word
+    assert isinstance(word, ast.CompoundWord), "Expected CompoundWord, got %s" % word
     # assume we elide, unless we get something "significant"
     is_empty_unquoted = True
     ev = self
@@ -545,10 +585,10 @@ class _Evaluator(object):
       is_str, s = val.AsString()
       #print('-VAL', val, is_str)
 
-      glob_escape = do_glob and not p.GlobsAreExpanded()
+      glob_escape = do_glob and not _GlobsAreExpanded(p)
 
       if is_str:
-        if p.IsSubst():  # Split substitutions
+        if _IsSubst(p):  # Split substitutions
           # NOTE: Splitting is the same whether we are glob escaping or not
           split_parts = _IfsSplit(s, ifs)
           empty = _AppendArray(strs, split_parts, glob_escape=glob_escape)
@@ -634,55 +674,46 @@ class _Evaluator(object):
     return True, Value.FromArray(array)
 
   def EvalWordPart(self, part, quoted=False):
-    if part.id == Id.Right_ArrayLiteral:
-      part = cast(ArrayLiteralPart, part)
+    if part.tag == word_part_e.ArrayLiteralPart:
       return self.EvalArrayLiteralPart(part)
 
-    elif part.id == Id.Lit_Chars:
-      part = cast(LiteralPart, part)
+    elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
       return True, Value.FromString(s)
 
-    elif part.id == Id.Lit_EscapedChar:
-      part = cast(EscapedLiteralPart, part)
+    elif part.tag == word_part_e.EscapedLiteralPart:
       val = self.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
       return True, Value.FromString(s)
 
-    elif part.id == Id.Left_SingleQuote:
-      part = cast(SingleQuotedPart, part)
-      s = part._Eval()  # shared with EvalStatic.  TODO: Consolidate
+    elif part.tag == word_part_e.SingleQuotedPart:
+      s = ''.join(t.val for t in part.tokens)
       return True, Value.FromString(s)
 
-    elif part.id == Id.Left_DoubleQuote:
-      part = cast(DoubleQuotedPart, part)
+    elif part.tag == word_part_e.DoubleQuotedPart:
       return self.EvalDoubleQuotedPart(part)
 
-    elif part.id == Id.Left_CommandSub:
+    elif part.tag == word_part_e.CommandSubPart:
       # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
       # supply something like /dev/fd/63.
-      part = cast(CommandSubPart, part)
       return self.EvalCommandSub(part.command_list)
 
-    elif part.id == Id.Left_VarSub:
-      part = cast(VarSubPart, part)
+    elif part.tag == word_part_e.VarSubPart:
       # This is the only one that uses quoted?
       return self.EvalVarSub(part, quoted=quoted)
 
-    elif part.id == Id.Lit_Tilde:
-      part = cast(TildeSubPart, part)
+    elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
       return self.EvalTildeSub(part.prefix)
 
-    elif part.id in (Id.Left_ArithSub, Id.Left_ArithSub2):
-      part = cast(ArithSubPart, part)
+    elif part.tag == word_part_e.ArithSubPart:
       return self.EvalArithSub(part.anode)
 
     else:
-      raise AssertionError(part.id)
+      raise AssertionError(part.tag)
 
   def EvalDoubleQuotedPart(self, part):
     # NOTE: quoted arg isn't used
@@ -829,7 +860,8 @@ class CompletionEvaluator(_Evaluator):
   TODO: Also disable side effects!  Like ${a:=b} rather than ${a:-b}
   And also $(( a+=1 ))
 
-  TODO: Unify with EvalStatic() methods on Word and WordPart?
+  TODO: Unify with static_eval?  Completion allows more stuff like var names,
+  and maybe words within arrays as well.
   """
   def __init__(self, mem, exec_opts):
     _Evaluator.__init__(self, mem, exec_opts)
@@ -837,3 +869,4 @@ class CompletionEvaluator(_Evaluator):
   def EvalCommandSub(self, node):
     # Just  return a dummy string?
     return True, Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')
+

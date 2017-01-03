@@ -62,7 +62,7 @@ parser() {
   echo
 
   echo 'AST and IDs'
-  wc -l core/{*_node,tokens,id_kind}.py | sort -n
+  wc -l osh/osh.asdl core/{tokens,id_kind}.py | sort -n
   echo
 
   echo 'Common Algorithms'

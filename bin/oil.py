@@ -43,6 +43,7 @@ from core import cmd_exec
 from core.pool import Pool
 from core import reader
 from core.id_kind import Id
+from core import word
 from core import word_eval
 from core import ui
 from core import util
@@ -62,7 +63,7 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
 
     if w is None:
       raise RuntimeError('Failed parse: %s' % c_parser.Error())
-    c_id = w.CommandId()
+    c_id = word.CommandId(w)
     if c_id == Id.Op_Newline:
       print('nothing to execute')
     elif c_id == Id.Eof_Real:
@@ -75,12 +76,11 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
       # could do that in the first position?
       # ParseSimpleCommand fails with '\n' token?
       if not node:
+        # TODO: PrintError here
         raise RuntimeError('failed parse: %s' % c_parser.Error())
 
       if opts.print_ast:
-        node.PrintTree(sys.stdout)
-        sys.stdout.write('\n\n')
-        sys.stdout.flush()
+        print(node)
 
       status, cflow = ex.ExecuteTop(node)
 
@@ -104,8 +104,9 @@ def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser()
 
+  # NOTE: default command is None because empty string is valid.
   p.add_option(
-      '-c', dest='command', default='',
+      '-c', dest='command', default=None,
       help='Shell command to run')
   p.add_option(
       '-i', dest='interactive', default=False, action='store_true',
@@ -204,7 +205,7 @@ def OshMain(argv):
     if e.errno != errno.ENOENT:
       raise
 
-  if opts.command:
+  if opts.command is not None:
     pool.AddSourcePath('<-c arg>')
     line_reader = reader.StringLineReader(opts.command, pool=pool)
     interactive = False
@@ -259,9 +260,7 @@ def OshMain(argv):
       return 2  # parse error is code 2
 
     if opts.print_ast:
-      node.PrintTree(sys.stdout)
-      sys.stdout.write('\n\n')
-      sys.stdout.flush()
+      print(node)
 
     if opts.do_exec:
       status, cflow = ex.Execute(node)

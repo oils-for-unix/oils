@@ -13,10 +13,10 @@ from osh import word_parse
 from osh import cmd_parse
 
 
-def InitLexer(s):
+def InitLexer(s, pool=None):
   """For tests only."""
   line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')
-  line_reader = reader.StringLineReader(s)
+  line_reader = reader.StringLineReader(s, pool=pool)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx
 

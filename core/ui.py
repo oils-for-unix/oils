@@ -87,6 +87,22 @@ def MakeStatusLines():
 
 
 def PrintError(error_stack, pool, f):
+  # TODO:
+  # - rename to PrintParseError()
+  #   - although parse errors happen at runtime because of 'source'
+  #   - should there be a distinction then?
+  # - Write unit tests
+  # - Change error stack to have LineSpan?  No it should be kind of "raw"
+  #   - maybe it should be:
+  #   - MakeError
+  #
+  # ParseError(
+  #   msg
+  #   (args,)
+  #   near_token
+  #   near_word
+  # no near node for now...
+
   for token, msg in error_stack:
     if token:
       #print(token)

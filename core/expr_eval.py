@@ -16,11 +16,16 @@ try:
 except ImportError:
   from core import fake_libc as libc
 
-from core.expr_node import _ExprNode, TernaryExprNode
 from core.id_kind import BOOL_OPS, OperandType, Id, IdName
 from core.util import cast
 from core.util import log
 from core.value import TValue
+
+from osh import ast
+
+arith_expr_e = ast.arith_expr_e
+bool_expr_e = ast.bool_expr_e  # used for dispatch
+word_e = ast.word_e
 
 #from core import word_eval
 
@@ -54,7 +59,7 @@ class ExprEvaluator:
   def Result(self):
     return self.result
 
-  def Eval(self, node: _ExprNode):
+  def Eval(self, node):
     try:
       result = self._Eval(node)
     except ExprEvalError as e:
@@ -139,7 +144,7 @@ class ArithEvaluator(ExprEvaluator):
       return False, 0
     return True, integer
 
-  def _Eval(self, node: _ExprNode):
+  def _Eval(self, node):
     """
     Args:
       node: _ExprNode
@@ -154,8 +159,9 @@ class ArithEvaluator(ExprEvaluator):
     # NOTE: Variable NAMES cannot be formed dynamically; but INTEGERS can.
     # ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have to
     # handle that as a special case.
-    if node.id == Id.Node_ArithVar:
-      defined, val = self.mem.Get(node.var_name)
+    #if node.id == Id.Node_ArithVar:
+    if node.tag == arith_expr_e.RightVar:
+      defined, val = self.mem.Get(node.name)
       # By default, undefined variables are the ZERO value.  TODO: Respect
       # nounset and raise an exception.
       if not defined:
@@ -167,7 +173,7 @@ class ArithEvaluator(ExprEvaluator):
       else:
         raise ExprEvalError()
 
-    elif node.id == Id.Word_Compound:  # constant string
+    elif node.tag == arith_expr_e.ArithWord:  # constant string
       ok, val = self.word_ev.EvalCompoundWord(node, elide_empty=False)
       if not ok:
         raise ExprEvalError(self.word_ev.Error())
@@ -178,7 +184,8 @@ class ArithEvaluator(ExprEvaluator):
       else:
         raise ExprEvalError()
 
-    elif node.id == Id.Node_UnaryExpr:
+    #elif node.id == Id.Node_UnaryExpr:
+    elif node.tag == arith_expr_e.ArithUnary:
       atype = node.op_id
 
       # TODO: Should we come up with a kind/arity??
@@ -188,20 +195,19 @@ class ArithEvaluator(ExprEvaluator):
       elif atype == Id.Node_UnaryMinus:
         return -self._Eval(node.child)
 
-    elif node.id == Id.Node_TernaryExpr:
-      if node.op_id == Id.Arith_QMark:
-        node = cast(TernaryExprNode, node)
+    #elif node.id == Id.Node_TernaryExpr:
+    elif node.tag == arith_expr_e.TernaryOp:
+      node = cast(ast.TernaryOp, node)
 
-        lhs = self._Eval(node.cond)
-        if lhs != 0:
-          ret = self._Eval(node.true_expr)
-        else:
-          ret = self._Eval(node.false_expr)
-        return ret
+      lhs = self._Eval(node.cond)
+      if lhs != 0:
+        ret = self._Eval(node.true_expr)
       else:
-        raise ExprEvalError("%s not implemented" % IdName(node.op_id))
+        ret = self._Eval(node.false_expr)
+      return ret
 
-    elif node.id == Id.Node_BinaryExpr:
+    #elif node.id == Id.Node_BinaryExpr:
+    elif node.tag == arith_expr_e.ArithBinary:
       # TODO: Do type check at PARSE TIME, where applicable
       lhs = self._Eval(node.left)
       rhs = self._Eval(node.right)
@@ -275,18 +281,33 @@ class BoolEvaluator(ExprEvaluator):
     return s
 
   def _Eval(self, node):
-    # TODO: Switch on node.tag.
-    if node.id == Id.Word_Compound:
+    #print('!!', node.tag)
+
+    # TODO: word_e.CompoundWord overlaps with other values!  Make them all distin
+    # Use WordTest.
+    if isinstance(node, ast.CompoundWord) and node.tag == word_e.CompoundWord:
       s = self._EvalCompoundWord(node)
       return bool(s)
 
-    if node.id == Id.Node_UnaryExpr:
-      op_id = node.op_id
-      if op_id == Id.KW_Bang:
-        # child could either be a Word, or it could be a BNode
-        b = self._Eval(node.child)
-        return not b
+    if node.tag == bool_expr_e.LogicalNot:
+      b = self._Eval(node.child)
+      return not b
 
+    if node.tag == bool_expr_e.LogicalAnd:
+      # Short-circuit evaluation
+      if self._Eval(node.left):
+        return self._Eval(node.right)
+      else:
+        return False
+
+    if node.tag == bool_expr_e.LogicalOr:
+      if self._Eval(node.left):
+        return True
+      else:
+        return self._Eval(node.right)
+
+    if node.tag == bool_expr_e.BoolUnary:
+      op_id = node.op_id
       s = self._EvalCompoundWord(node.child)
 
       # Now dispatch on arg type
@@ -312,21 +333,9 @@ class BoolEvaluator(ExprEvaluator):
 
       raise NotImplementedError(arg_type)
 
-    if node.id == Id.Node_BinaryExpr:
+    #if node.id == Id.Node_BinaryExpr:
+    if node.tag == bool_expr_e.BoolBinary:
       op_id = node.op_id
-
-      # Short-circuit evaluation
-      if op_id == Id.Op_DAmp:
-        if self._Eval(node.left):
-          return self._Eval(node.right)
-        else:
-          return False
-
-      if op_id == Id.Op_DPipe:
-        if self._Eval(node.left):
-          return True
-        else:
-          return self._Eval(node.right)
 
       s1 = self._EvalCompoundWord(node.left)
       # Whehter to glob escape

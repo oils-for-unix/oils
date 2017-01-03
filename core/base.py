@@ -76,50 +76,15 @@ def MakeError(msg, *args, token=None, word=None):
   if token:
     near_token = token
   elif word:
-    begin, end = word.TokenPair()
-    near_token = begin  # for now
+    from core.word import ParseErrorLocation
+    near_token = ParseErrorLocation(word)
+    #print('NEAR TOKEN', near_token)
+
+    # TODO: Change this to LocationPair()?  It could be a single location or
+    # multiple locations?  Put it in word.py?  Or somewhere else?  I think you
+    # implement runtime errors in addition to parse time errors first.
   else:
     near_token = None
 
   return (near_token, msg)
 
-
-class _Node(object):
-
-  def __init__(self, id):
-    self.id = id  # type: Id
-
-  def PrintTree(self, f, indent=0):
-    """Print to a tree.
-
-    Default is to print on a single line.
-
-    () : Node
-    {} : Word
-    [] : WordPart
-    <> : Token
-
-    _BNode is contained within ().  So maybe the parens should be {}.
-
-    _ExprNode is contained within [].  So maybe the parens should be <>.
-      There might be confusion between tokens?
-      Also anode has full on words, lke ${}.  A WordPart contains _ExprNode which
-      contains full words.
-    """
-    f.write(indent * ' ')
-    self.PrintLine(f)
-
-  def PrintLine(self, f):
-    """Print to a string."""
-    raise NotImplementedError
-
-  def DebugString(self):
-    f = io.StringIO()
-    self.PrintTree(f)
-    return f.getvalue()
-
-  def __repr__(self):
-    # repr() always prints as a single line
-    f = io.StringIO()
-    self.PrintLine(f)
-    return f.getvalue()

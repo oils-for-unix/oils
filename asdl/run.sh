@@ -34,6 +34,11 @@ asdl-arith-encode() {
   hexdump $out
 }
 
+asdl-arith-format() {
+  local expr="$1"
+  asdl/asdl_demo.py arith-format "$expr"
+}
+
 asdl-py() {
   local schema=$1
   asdl/asdl_demo.py py $schema
@@ -91,9 +96,9 @@ gdb-trace() {
 }
 
 build-demo() {
-  local name=$1
+  local schema=$1
 
-  local schema=asdl/${name}.asdl
+  local name=$(basename $schema .asdl)
 
   # Generate C++ code
   asdl-cpp $schema _tmp/${name}.asdl.h
@@ -113,7 +118,7 @@ arith-demo() {
 
   local bin=_tmp/${name}_demo 
 
-  build-demo $name $bin
+  build-demo asdl/arith.asdl
 
   set -x
   gdb-trace $bin $data
@@ -121,7 +126,7 @@ arith-demo() {
 }
 
 osh-demo() {
-  build-demo osh
+  build-demo osh/osh.asdl
 }
 
 a2() {

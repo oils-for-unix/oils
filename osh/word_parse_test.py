@@ -11,13 +11,16 @@ word_parse_test.py: Tests for word_parse.py
 
 import unittest
 
-from core.word_node import LiteralPart, CompoundWord, TokenWord
 from core.id_kind import Id, IdName
 from core.tokens import Token
+from core import word
 
+from osh import ast
 from osh import parse_lib
 from osh.lex import LexMode
 from osh.word_parse import WordParser  # module under test
+
+arith_expr_e = ast.arith_expr_e
 
 
 def InitWordParser(s):
@@ -38,7 +41,7 @@ def _assertReadWord(test, word_str):
 
   # Next word must be \n
   w2 = w_parser.ReadWord(LexMode.OUTER)
-  test.assertEqual(TokenWord(Token(Id.Op_Newline, '\n')), w2)
+  test.assertEqual(ast.TokenWord(Token(Id.Op_Newline, '\n')), w2)
 
   return w
 
@@ -74,12 +77,12 @@ def _GetVarSub(test, w):
 
 class WordParserTest(unittest.TestCase):
 
-  def testEvalStatic(self):
+  def testStaticEvalWord(self):
     expr = r'\EOF'  # Quoted here doc delimiter
     w_parser = InitWordParser(expr)
     w = w_parser.ReadWord(LexMode.OUTER)
     print(w)
-    ok, s, quoted = w.EvalStatic()
+    ok, s, quoted = word.StaticEval(w)
     self.assertEqual(True, ok)
     self.assertEqual('EOF', s)
     self.assertEqual(True, quoted)
@@ -97,14 +100,14 @@ class WordParserTest(unittest.TestCase):
     w = _assertReadWord(self, '${15}')
 
     w = _assertReadWord(self, '${#var}')
-    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w).id)
+    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w))
     w = _assertReadWord(self, '${!ref}')
-    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w).id)
+    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w))
 
     # Length of length
     w = _assertReadWord(self, '${##}')
     self.assertEqual('#', _GetVarSub(self, w).name)
-    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w).id)
+    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${array[0]}')
     self.assertEqual(1, len(w.parts))
@@ -114,20 +117,20 @@ class WordParserTest(unittest.TestCase):
     # Length of element
     w = _assertReadWord(self, '${#array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w).id)
+    self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w))
     # Ref for element
     w = _assertReadWord(self, '${!array[0]}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w).id)
+    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
+    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
 
     w = _assertReadWord(self, '${!var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w).id)
-    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
+    self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w))
+    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
 
     _assertReadWordFailure(self, '${#var#prefix}')
 
@@ -144,8 +147,8 @@ class WordParserTest(unittest.TestCase):
     # Should be DISALLOWED!
     #w = _assertReadWord(self, '${11[@]}')
 
-  def assertUnquoted(self, expected, word):
-    ok, s, quoted = word.EvalStatic()
+  def assertUnquoted(self, expected, w):
+    ok, s, quoted = word.StaticEval(w)
     self.assertTrue(ok)
     self.assertEqual(expected, s)
     self.assertFalse(quoted)
@@ -201,7 +204,7 @@ class WordParserTest(unittest.TestCase):
     op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
 
-    ok, s, quoted = op.replace.EvalStatic()
+    ok, s, quoted = word.StaticEval(op.replace)
     self.assertTrue(ok)
     self.assertEqual('//', s)
     self.assertTrue(quoted)
@@ -214,7 +217,7 @@ class WordParserTest(unittest.TestCase):
 
     self.assertUnquoted('/', op.pat)
 
-    ok, s, quoted = op.replace.EvalStatic()
+    ok, s, quoted = word.StaticEval(op.replace)
     self.assertTrue(ok)
     self.assertEqual(r'\/', s)
 
@@ -234,14 +237,14 @@ class WordParserTest(unittest.TestCase):
   def testLength(self):
     # Synonym for $#, had a bug here
     w = _assertReadWord(self, '${#@}')
-    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w).id)
+    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     # Length of arg 11
     w = _assertReadWord(self, '${#11}')
-    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w).id)
+    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${#str}')
-    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w).id)
+    self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${#array[0]}')
     print(w)
@@ -254,14 +257,14 @@ class WordParserTest(unittest.TestCase):
 
   def testUnary(self):
     w = _assertReadWord(self, '${var#}')
-    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
+    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
     w = _assertReadWord(self, '${var#prefix}')
-    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).id)
+    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
 
     w = _assertReadWord(self, '${var##}')
-    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).id)
+    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).op_id)
     w = _assertReadWord(self, '${var##prefix}')
-    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).id)
+    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).op_id)
 
     w = _assertReadWord(self, '${var%suffix}')
     w = _assertReadWord(self, '${var%%suffix}')
@@ -318,7 +321,7 @@ class WordParserTest(unittest.TestCase):
 
         print(w)
 
-        if w.CommandId() == Id.Eof_Real:
+        if word.CommandId(w) == Id.Eof_Real:
           break
 
   def testReadComment(self):
@@ -366,13 +369,13 @@ class WordParserTest(unittest.TestCase):
 
   def testReadArithWord(self):
     w = _assertReadWord(self, '$(( f(x) ))')
-    anode = w.parts[0].anode
-    self.assertEqual(Id.Node_FuncCall, anode.id)
+    child = w.parts[0].anode
+    self.assertEqual(arith_expr_e.FuncCall, child.tag)
 
     w = _assertReadWord(self, '$(( f(1, 2, 3, 4) ))')
-    anode = w.parts[0].anode
-    self.assertEqual(Id.Node_FuncCall, anode.id)
-    self.assertEqual(4, len(anode.args))
+    child = w.parts[0].anode
+    self.assertEqual(arith_expr_e.FuncCall, child.tag)
+    self.assertEqual(4, len(child.args))
 
   def testReadArith(self):
     CASES = [
@@ -419,7 +422,7 @@ class WordParserTest(unittest.TestCase):
           self.fail(err)
           break
         print(w)
-        if w.CommandId() in (Id.Eof_Real, Id.Unknown_Tok):
+        if word.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break
 
   def testMultiLine(self):
@@ -433,32 +436,62 @@ ls bar
 
     print('--MULTI')
     w = w_parser.ReadWord(LexMode.OUTER)
-    parts = [LiteralPart(Token(Id.Lit_Chars, 'ls'))]
-    self.assertEqual(CompoundWord(parts=parts), w)
+    parts = [ast.LiteralPart(Token(Id.Lit_Chars, 'ls'))]
+    self.assertEqual(ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(LexMode.OUTER)
-    parts = [LiteralPart(Token(Id.Lit_Chars, 'foo'))]
-    self.assertEqual(CompoundWord(parts=parts), w)
-
-    w = w_parser.ReadWord(LexMode.OUTER)
-    t = Token(Id.Op_Newline, '\n')
-    self.assertEqual(TokenWord(t), w)
-
-    w = w_parser.ReadWord(LexMode.OUTER)
-    parts = [LiteralPart(Token(Id.Lit_Chars, 'ls'))]
-    self.assertEqual(CompoundWord(parts=parts), w)
-
-    w = w_parser.ReadWord(LexMode.OUTER)
-    parts = [LiteralPart(Token(Id.Lit_Chars, 'bar'))]
-    self.assertEqual(CompoundWord(parts=parts), w)
+    parts = [ast.LiteralPart(Token(Id.Lit_Chars, 'foo'))]
+    self.assertEqual(ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(LexMode.OUTER)
     t = Token(Id.Op_Newline, '\n')
-    self.assertEqual(TokenWord(t), w)
+    self.assertEqual(ast.TokenWord(t), w)
+
+    w = w_parser.ReadWord(LexMode.OUTER)
+    parts = [ast.LiteralPart(Token(Id.Lit_Chars, 'ls'))]
+    self.assertEqual(ast.CompoundWord(parts), w)
+
+    w = w_parser.ReadWord(LexMode.OUTER)
+    parts = [ast.LiteralPart(Token(Id.Lit_Chars, 'bar'))]
+    self.assertEqual(ast.CompoundWord(parts), w)
+
+    w = w_parser.ReadWord(LexMode.OUTER)
+    t = Token(Id.Op_Newline, '\n')
+    self.assertEqual(ast.TokenWord(t), w)
 
     w = w_parser.ReadWord(LexMode.OUTER)
     t = Token(Id.Eof_Real, '')
-    self.assertEqual(TokenWord(t), w)
+    self.assertEqual(ast.TokenWord(t), w)
+
+  def testParseErrorLocation(self):
+    from core import word
+
+    w = _assertReadWord(self, 'a=(1 2 3)')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, 'foo')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, '\\$')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, "''")
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, '""')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, '$(echo command sub)')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, '$(( 1 + 2 ))')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, '~user')
+    print(word.ParseErrorLocation(w))
+
+    w = _assertReadWord(self, '${var#}')
+    print(word.ParseErrorLocation(w))
 
 
 if __name__ == '__main__':

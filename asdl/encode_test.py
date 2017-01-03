@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python3
 """
 encode_test.py: Tests for encode.py
 """

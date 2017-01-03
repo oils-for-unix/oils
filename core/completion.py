@@ -37,10 +37,13 @@ import sys
 import time
 import traceback
 
+from osh import ast
 from osh import parse_lib
 from core import ui
 from core import util
 from core.id_kind import Id
+
+command_e = ast.command_e
 
 
 class CompletionLookup(object):
@@ -373,7 +376,7 @@ def _FindLastSimpleCommand(node):
   ls | wc -l
   test -f foo && hello
   """
-  if node.id == Id.Node_Command:
+  if node.tag == command_e.SimpleCommand:
     return node
 
   assert hasattr(node, 'children'), node
@@ -434,7 +437,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
   com_node = None
   if node:
     # These 4 should all parse
-    if node.id == Id.Node_Command:
+    if node.tag == command_e.SimpleCommand:
       # NOTE: prev_token can be ;, then complete a new one
       #print('WORDS', node.words)
       # TODO:
@@ -469,11 +472,11 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
       print(argv)
       com_node = node
 
-    elif node.id == Id.Op_Semi:  # echo a; echo b
+    elif node.tag == command_e.CommandList:  # echo a; echo b
       com_node = _FindLastSimpleCommand(node)
-    elif node.id == Id.Node_AndOr:  # echo a && echo b
+    elif node.tag == command_e.AndOr:  # echo a && echo b
       com_node = _FindLastSimpleCommand(node)
-    elif node.id == Id.Op_Pipe:  # echo a | wc -l
+    elif node.tag == command_e.Pipeline :  # echo a | wc -l
       com_node = _FindLastSimpleCommand(node)
     else:
       # Return NONE?  Not handling it for now
@@ -493,7 +496,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
   # This one can be multiple lines
   s3.Write('node: %s %s',
       node.DebugString() if node else '<Parse Error>',
-      node.id if node else '')
+      node.tag if node else '')
   # This one can be multiple lines
   s6.Write('com_node: %s', com_node.DebugString() if com_node else '<None>')
 

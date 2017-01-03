@@ -222,7 +222,7 @@ def ParseShell(s, expected=None):
   if expected is not None:
     assert sexpr == expected, '%r != %r' % (sexpr, expected)
 
-  print('%-40s %s' % (s, sexpr))
+  #print('%-40s %s' % (s, sexpr))
   return tree
 
 

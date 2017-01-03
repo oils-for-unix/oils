@@ -66,14 +66,17 @@ from core import word_eval
 from core import util
 
 from core.builtin import EBuiltin
-from core.cmd_node import ListNode
 from core.id_kind import Id, RedirType, REDIR_TYPE
 from core.process import (
     FdState, Pipeline, Process,
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
-from core.word_node import EAssignScope
 from core.value import Value
+
+from osh import ast
+
+assign_scope_e = ast.assign_scope
+command_e = ast.command_e
 
 
 log = util.log
@@ -503,7 +506,7 @@ class Executor(object):
     """
     Assume we will run the node in another process.  Return a process.
     """
-    if node.id == Id.Node_Command:
+    if node.tag == command_e.SimpleCommand:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
         err = self.ev.Error()
@@ -534,7 +537,7 @@ class Executor(object):
     """
     redirects = []
     for n in nodes:
-      redir_type = REDIR_TYPE[n.id]
+      redir_type = REDIR_TYPE[n.op_id]
       if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
         ok, val = self.ev.EvalCompoundWord(n.arg_word)
@@ -548,7 +551,7 @@ class Executor(object):
           self._AddErrorContext("filename can't be empty")
           return False
 
-        redirects.append(FilenameRedirect(n.id, n.fd, filename))
+        redirects.append(FilenameRedirect(n.op_id, n.fd, filename))
 
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
         ok, val = self.ev.EvalCompoundWord(n.arg_word)
@@ -568,7 +571,7 @@ class Executor(object):
           self._AddErrorContext(
               "descriptor to redirect to should be an integer, not string")
           return False
-        redirects.append(DescriptorRedirect(n.id, n.fd, target_fd))
+        redirects.append(DescriptorRedirect(n.op_id, n.fd, target_fd))
 
       elif redir_type == RedirType.Str:
         ok, val = self.ev.EvalCompoundWord(n.arg_word)
@@ -576,7 +579,7 @@ class Executor(object):
           return False
         is_str, body = val.AsString()
         assert is_str, val  # here doc body can only be parsed as a string!
-        redirects.append(HereDocRedirect(n.id, n.fd, body))
+        redirects.append(HereDocRedirect(n.op_id, n.fd, body))
 
       else:
         raise AssertionError
@@ -628,7 +631,13 @@ class Executor(object):
     Args:
       node: of type AstNode
     """
-    redirects = self._EvalRedirects(node.redirects)
+    # No redirects
+    if node.tag in (
+        command_e.NoOp, command_e.Assignment, command_e.Pipeline,
+        command_e.AndOr, command_e.Fork, command_e.CommandList):
+      redirects = []
+    else:
+      redirects = self._EvalRedirects(node.redirects)
 
     # TODO: Change this to its own enum?
     # or add EBuiltin.THROW     _throw?  For testing.
@@ -640,8 +649,7 @@ class Executor(object):
     cflow = EBuiltin.NONE
 
     # TODO: Only eval argv[0] once.  It can have side effects!
-
-    if node.id == Id.Node_Command:
+    if node.tag == command_e.SimpleCommand:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
         err = self.ev.Error()
@@ -684,23 +692,23 @@ class Executor(object):
         else:
           self.fd_state.ForgetAll()
 
-    elif node.id == Id.Op_Pipe:
+    elif node.tag == command_e.Pipeline:
       status, cflow = self._RunPipeline(node)
 
-    elif node.id == Id.Node_Subshell:
+    elif node.tag == command_e.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
       p = self._GetProcessForNode(node.children[0])
       status = p.Run()
 
-    elif node.id == Id.KW_DLeftBracket:
+    elif node.tag == command_e.DBracket:
       bool_ev = expr_eval.BoolEvaluator(self.mem, self.ev)
-      ok = bool_ev.Eval(node.bnode)
+      ok = bool_ev.Eval(node.expr)
       if ok:
         status = 0 if bool_ev.Result() else 1
       else:
         raise AssertionError('Error evaluating boolean: %s' % bool_ev.Error())
 
-    elif node.id == Id.Op_DLeftParen:
+    elif node.tag == command_e.DParen:
       arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev)
       ok = arith_ev.Eval(node.anode)
       if ok:
@@ -711,7 +719,7 @@ class Executor(object):
       else:
         raise AssertionError('Error evaluating (( )): %s' % arith_ev.Error())
 
-    elif node.id == Id.Node_Assign:
+    elif node.tag == command_e.Assignment:
       # TODO: Respect flags: readonly, export, sametype, etc.
       # Just pass the Value
       pairs = []
@@ -723,9 +731,9 @@ class Executor(object):
           return None
         pairs.append((name, val))
 
-      if node.scope == EAssignScope.LOCAL:
+      if node.scope == assign_scope_e.Local:
         self.mem.SetLocal(pairs, node.flags)
-      elif node.scope == EAssignScope.GLOBAL:
+      elif node.scope == assign_scope_e.Global:
         self.mem.SetGlobal(pairs, node.flags)
       else:
         raise AssertionError(node.scope)
@@ -733,28 +741,28 @@ class Executor(object):
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
 
-    elif node.id == Id.Op_Semi:
+    elif node.tag == command_e.CommandList:
       status = 0  # for empty list
       for child in node.children:
         status, cflow = self.Execute(child)  # last status wins
         if cflow in (EBuiltin.BREAK, EBuiltin.CONTINUE):
           break
 
-    elif node.id == Id.Node_AndOr:
+    elif node.tag == command_e.AndOr:
       #print(node.children)
       left, right = node.children
       status, cflow = self.Execute(left)
 
-      if node.op == Id.Op_DPipe:
+      if node.op_id == Id.Op_DPipe:
         if status != 0:
           status, cflow = self.Execute(right)
-      elif node.op == Id.Op_DAmp:
+      elif node.op_id == Id.Op_DAmp:
         if status == 0:
           status, cflow = self.Execute(right)
       else:
         raise AssertionError
 
-    elif node.id == Id.KW_While:
+    elif node.tag == command_e.While:
       cond, action = node.children
 
       while True:
@@ -768,7 +776,7 @@ class Executor(object):
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
 
-    elif node.id == Id.Node_ForEach:
+    elif node.tag == command_e.ForEach:
       iter_name = node.iter_name
       if node.do_arg_iter:
         iter_list = self.mem.GetArgv()
@@ -793,11 +801,11 @@ class Executor(object):
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
 
-    elif node.id == Id.Node_FuncDef:
+    elif node.tag == command_e.FuncDef:
       self.funcs[node.name] = node
       status = 0
 
-    elif node.id == Id.KW_If:
+    elif node.tag == command_e.If:
       i = 0
       while i < len(node.children):
         cond = node.children[i]
@@ -808,14 +816,14 @@ class Executor(object):
           break
         i += 2
 
-    elif node.id == Id.Node_NoOp:
+    elif node.tag == command_e.NoOp:
       status = 0  # make it true
 
-    elif node.id == Id.KW_Case:
+    elif node.tag == command_e.Case:
       raise NotImplementedError
 
     else:
-      raise AssertionError(node.id)
+      raise AssertionError(node.tag)
 
     if self.exec_opts.errexit:
       if status != 0:

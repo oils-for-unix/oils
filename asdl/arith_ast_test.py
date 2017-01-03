@@ -6,10 +6,22 @@ arith_ast_test.py: Tests for arith_ast.py
 import unittest
 
 from asdl import arith_ast  # module under test
+from asdl import format as fmt
 from asdl import py_meta
 
 
 class ArithAstTest(unittest.TestCase):
+
+  def testFieldDefaults(self):
+    s = arith_ast.Slice()
+    print(s)
+    self.assertEqual(None, s.begin)
+    self.assertEqual(None, s.end)
+    self.assertEqual(None, s.stride)
+
+    func = arith_ast.FuncCall()
+    print(func)
+    self.assertEqual([], func.args)
 
   def testTypes(self):
     ArithVar = arith_ast.ArithVar
@@ -55,6 +67,14 @@ class ArithAstTest(unittest.TestCase):
 
     #n5 = ArithVar(None)
 
+    s = source_location()
+    s.path = 'hi'
+    s.line = 1
+    s.col = 2
+    s.length = 3
+    print(s)
+
+    # Doesn't work now
     print(source_location())
     
     c = Const(66)
@@ -83,6 +103,10 @@ class ArithAstTest(unittest.TestCase):
     #n.CheckUnassigned()
     n.right = Const(6)
     n.CheckUnassigned()
+
+    arith_expr_e = arith_ast.arith_expr_e
+    self.assertEqual(arith_expr_e.Const, c.tag)
+    self.assertEqual(arith_expr_e.ArithBinary, n.tag)
 
 
 if __name__ == '__main__':

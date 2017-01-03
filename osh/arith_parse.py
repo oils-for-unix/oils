@@ -10,45 +10,45 @@ import sys
 
 from core import tdop
 from core.id_kind import Id
-from core.expr_node import (
-    UnaryExprNode, BinaryExprNode, TernaryExprNode, FuncCallNode)
+from core import word
+from osh import ast
 
 
-def NullIncDec(p, t, bp):
+def NullIncDec(p, w, bp):
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
   if not tdop.IsLValue(right):
     raise tdop.ParseError("Can't assign to %r (%s)" % (right, right.token))
-  return UnaryExprNode(t.ArithId(), right)
+  return ast.ArithUnary(word.ArithId(w), right)
 
 
 def NullUnaryPlus(p, t, bp):
   """ +x, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return UnaryExprNode(Id.Node_UnaryPlus, right)
+  return ast.ArithUnary(Id.Node_UnaryPlus, right)
 
 
 def NullUnaryMinus(p, t, bp):
   """ -1, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return UnaryExprNode(Id.Node_UnaryMinus, right)
+  return ast.ArithUnary(Id.Node_UnaryMinus, right)
 
 
-def LeftIncDec(p, t, left, rbp):
+def LeftIncDec(p, w, left, rbp):
   """ For i++ and i--
   """
   if not tdop.IsLValue(left):
     raise tdop.ParseError("Can't assign to %r (%s)" % (left, left.token))
-  if t.ArithId() == Id.Arith_DPlus:
+  if word.ArithId(w) == Id.Arith_DPlus:
     op_id = Id.Node_PostDPlus
-  elif t.ArithId() == Id.Arith_DMinus:
+  elif word.ArithId(w) == Id.Arith_DMinus:
     op_id = Id.Node_PostDMinus
   else:
     raise AssertionError
-  return UnaryExprNode(op_id, left)
+  return ast.ArithUnary(op_id, left)
 
 
-def LeftIndex(p, t, left, unused_bp):
+def LeftIndex(p, w, left, unused_bp):
   """ index f[x+1] """
   # f[x] or f[x][y]
   if not tdop.IsIndexable(left):
@@ -56,7 +56,7 @@ def LeftIndex(p, t, left, unused_bp):
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
-  return BinaryExprNode(t.ArithId(), left, index)
+  return ast.ArithBinary(word.ArithId(w), left, index)
 
 
 def LeftTernary(p, t, left, bp):
@@ -64,8 +64,7 @@ def LeftTernary(p, t, left, bp):
   true_expr = p.ParseUntil(bp)
   p.Eat(Id.Arith_Colon)
   false_expr = p.ParseUntil(bp)
-  children = [left, true_expr, false_expr]
-  return TernaryExprNode(t.ArithId(), left, true_expr, false_expr)
+  return ast.TernaryOp(left, true_expr, false_expr)
 
 
 # For overloading of , inside function calls
@@ -84,7 +83,7 @@ def LeftFuncCall(p, t, left, unused_bp):
     if p.AtToken(Id.Arith_Comma):
       p.Next()
   p.Eat(Id.Arith_RParen)
-  return FuncCallNode(left, children)
+  return ast.FuncCall(left, children)
 
 
 def MakeShellSpec():

@@ -12,11 +12,14 @@ bool_parse_test.py: Tests for bool_parse.py
 import unittest
 
 from core.id_kind import Id
-from core.expr_node import *
 
+from osh import ast
 from osh import parse_lib
 from osh import bool_parse  # module under test
 from osh.lex import LexMode
+
+bool_expr_e = ast.bool_expr_e
+word_e = ast.word_e
 
 
 def _ReadWords(w_parser):
@@ -58,57 +61,49 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p.AtEnd())
-    self.assertEqual(Id.BoolUnary_z, node.op_id)
-    self.assertEqual(UnaryExprNode, node.__class__)
+    self.assertEqual(bool_expr_e.BoolUnary, node.tag)
 
     p = _MakeParser('foo == bar')
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p.AtEnd())
-    self.assertEqual(Id.BoolBinary_DEqual, node.op_id)
-    self.assertEqual(BinaryExprNode, node.__class__)
+    self.assertEqual(bool_expr_e.BoolBinary, node.tag)
 
   def testParseNegatedFactor(self):
     p = _MakeParser('foo')
     node = p.ParseNegatedFactor()
     print(node)
     self.assertTrue(p.AtEnd())
-    self.assertEqual(Id.BoolUnary_n, node.op_id)
-    self.assertEqual(UnaryExprNode, node.__class__)
+    self.assertEqual(word_e.CompoundWord, node.tag)
 
     p = _MakeParser('! foo')
     node = p.ParseNegatedFactor()
     print(node)
     self.assertTrue(p.AtEnd())
-    self.assertEqual(Id.KW_Bang, node.op_id)
-    self.assertEqual(UnaryExprNode, node.__class__)
+    self.assertEqual(bool_expr_e.LogicalNot, node.tag)
 
   def testParseTerm(self):
     p = _MakeParser('foo && ! bar')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(BinaryExprNode, node.__class__)
-    self.assertEqual(Id.Op_DAmp, node.op_id)
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag)
 
     # TODO: This is an entire expression I guess
     p = _MakeParser('foo && ! bar && baz')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(BinaryExprNode, node.__class__)
-    self.assertEqual(Id.Op_DAmp, node.op_id)
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag)
 
     p = _MakeParser('-z foo && -z bar')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(BinaryExprNode, node.__class__)
-    self.assertEqual(Id.Op_DAmp, node.op_id)
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag)
 
   def testParseExpr(self):
     p = _MakeParser('foo || ! bar')
     node = p.ParseExpr()
     print(node)
-    self.assertEqual(BinaryExprNode, node.__class__)
-    self.assertEqual(Id.Op_DPipe, node.op_id)
+    self.assertEqual(bool_expr_e.LogicalOr, node.tag)
 
     p = _MakeParser('a == b')
     print(p.ParseExpr())
@@ -118,15 +113,13 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p.AtEnd())
-    self.assertEqual(BinaryExprNode, node.__class__)
-    self.assertEqual(Id.BoolBinary_DEqual, node.op_id)
+    self.assertEqual(bool_expr_e.BoolBinary, node.tag)
 
   def testParseParenthesized(self):
     p = _MakeParser('zoo && ( foo == bar )')
     node = p.ParseExpr()
     print(node)
-    self.assertEqual(BinaryExprNode, node.__class__)
-    self.assertEqual(Id.Op_DAmp, node.op_id)
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag)
 
 
 if __name__ == '__main__':

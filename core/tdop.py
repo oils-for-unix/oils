@@ -4,11 +4,16 @@ tdop.py - Library for expression parsing.
 """
 
 from core import base
-from core.expr_node import UnaryExprNode, BinaryExprNode, VarExprNode
 from core.id_kind import Id, IdName
 from core.util import cast
+from core import word
 
+from osh import ast 
 from osh.lex import LexMode
+
+
+arith_expr_e = ast.arith_expr_e
+word_e = ast.word_e
 
 
 class ParseError(Exception):
@@ -32,7 +37,10 @@ def IsCallable(node):
   # f(x), or f[1](x)
   # I guess function calls can be callable?  Return a function later.  Not
   # sure.  Python allows f(3)(4).
-  return node.op_id in (Id.Node_ArithVar, Id.Arith_LBracket)
+  if node.tag == arith_expr_e.RightVar:
+    return True
+  if node.tag == arith_expr_e.ArithBinary:
+    return node.op_id == Id.Arith_LBracket
 
 
 def IsIndexable(node):
@@ -42,17 +50,23 @@ def IsIndexable(node):
     node: ExprNode
   """
   # f[1], or f(x)[1], or f[1][1]
-  return node.op_id in (Id.Node_ArithVar, Id.Arith_LBracket, Id.Node_FuncCall)
+  if node.tag == arith_expr_e.RightVar:
+    return True
+  if node.tag == arith_expr_e.ArithBinary:
+    return node.op_id in (Id.Arith_LBracket, Id.Node_FuncCall)
 
 
 def IsLValue(node):
-  """Determine if a node is a valid L-value by whitelisting Ids.
+  """Determine if a node is a valid L-value by whitelisting tags.
 
   Args:
     node: ExprNode (could be VarExprNode or BinaryExprNode)
   """
   # foo = bar, foo[1] = bar
-  return node.op_id in (Id.Node_ArithVar, Id.Arith_LBracket)
+  if node.tag == arith_expr_e.RightVar:
+    return True
+  if node.tag == arith_expr_e.ArithBinary:
+    return node.op_id == Id.Arith_LBracket
 
 
 #
@@ -65,13 +79,13 @@ def NullError(p, t, bp):
   raise ParseError("Token %s can't be used in prefix position" % t)
 
 
-def NullConstant(p, word, bp):
+def NullConstant(p, w, bp):
   # The word itself is a node
-  if word.id == Id.Word_Compound:
-    var_name = word.AsArithVarName()
+  if w.tag == word_e.CompoundWord:
+    var_name = word.AsArithVarName(w)
     if var_name:
-      return VarExprNode(var_name)
-  return word
+      return ast.RightVar(var_name)
+  return w
 
 
 def NullParen(p, t, bp):
@@ -81,7 +95,7 @@ def NullParen(p, t, bp):
   return r
 
 
-def NullPrefixOp(p, t, bp):
+def NullPrefixOp(p, w, bp):
   """Prefix operator.
 
   Low precedence:  return, raise, etc.
@@ -91,7 +105,7 @@ def NullPrefixOp(p, t, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   right = p.ParseUntil(bp)
-  return UnaryExprNode(t.ArithId(), right)
+  return ast.ArithUnary(word.ArithId(w), right)
 
 
 #
@@ -103,18 +117,18 @@ def LeftError(p, t, left, rbp):
   raise ParseError("Token %s can't be used in infix position" % t)
 
 
-def LeftBinaryOp(p, t, left, rbp):
+def LeftBinaryOp(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
-  return BinaryExprNode(t.ArithId(), left, p.ParseUntil(rbp))
+  return ast.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
 
 
-def LeftAssign(p, t, left, rbp):
+def LeftAssign(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
 
   if not IsLValue(left):
     raise ParseError("Can't assign to %r (%s)" % (left, IdName(left.id)))
-  return BinaryExprNode(t.ArithId(), left, p.ParseUntil(rbp))
+  return ast.ArithAssign(word.ArithId(w), left, p.ParseUntil(rbp))
 
 
 #
@@ -236,7 +250,7 @@ class TdopParser(object):
           word=self.cur_word)
       #return False
       raise ParseError()  # use exceptions for now
-    self.op_id = self.cur_word.ArithId()
+    self.op_id = word.ArithId(self.cur_word)
     return True
 
   def ParseUntil(self, rbp):
@@ -251,13 +265,13 @@ class TdopParser(object):
     t = self.cur_word
     self.Next()  # skip over the token, e.g. ! ~ + -
 
-    null_info = self.spec.LookupNud(t.ArithId())
+    null_info = self.spec.LookupNud(word.ArithId(t))
     node = null_info.nud(self, t, null_info.bp)
 
     while True:
       t = self.cur_word
       try:
-        left_info = self._Led(t.ArithId())
+        left_info = self._Led(word.ArithId(t))
       except KeyError:
         raise ParseError('Invalid token %s' % t)
 

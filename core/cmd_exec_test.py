@@ -17,14 +17,12 @@ from core import cmd_exec  # module under test
 from core.cmd_exec import *
 from core.id_kind import Id
 from core import ui
-from core.word_node import LiteralPart, CompoundWord, VarSubPart, VarOp1
 from core import word_eval
 from core.value import Value
-from core.cmd_node import SimpleCommandNode
 from core.lexer import Token
 
+from osh import ast
 from osh import parse_lib
-from osh.word_parse import CompoundWord, LiteralPart
 
 
 def banner(msg):
@@ -108,21 +106,21 @@ class ExecutorTest(unittest.TestCase):
     ex = InitExecutor()
 
     # Simulating subshell for each command
-    w1 = CompoundWord()
-    w1.parts.append(LiteralPart(Token(Id.Lit_Chars, 'ls')))
-    node1 = SimpleCommandNode()
+    w1 = ast.CompoundWord()
+    w1.parts.append(ast.LiteralPart(Token(Id.Lit_Chars, 'ls')))
+    node1 = ast.SimpleCommand()
     node1.words = [w1]
 
-    w2 = CompoundWord()
-    w2.parts.append(LiteralPart(Token(Id.Lit_Chars, 'head')))
-    node2 = SimpleCommandNode()
+    w2 = ast.CompoundWord()
+    w2.parts.append(ast.LiteralPart(Token(Id.Lit_Chars, 'head')))
+    node2 = ast.SimpleCommand()
     node2.words = [w2]
 
-    w3 = CompoundWord()
-    w3.parts.append(LiteralPart(Token(Id.Lit_Chars, 'sort')))
-    w4 = CompoundWord()
-    w4.parts.append(LiteralPart(Token(Id.Lit_Chars, '--reverse')))
-    node3 = SimpleCommandNode()
+    w3 = ast.CompoundWord()
+    w3.parts.append(ast.LiteralPart(Token(Id.Lit_Chars, 'sort')))
+    w4 = ast.CompoundWord()
+    w4.parts.append(ast.LiteralPart(Token(Id.Lit_Chars, '--reverse')))
+    node3 = ast.SimpleCommand()
     node3.words = [w3, w4]
 
     p = Pipeline()
@@ -244,17 +242,17 @@ class VarOpTest(unittest.TestCase):
 
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
-    unset_sub = VarSubPart('unset')
+    unset_sub = ast.VarSubPart('unset')
     print(ev.EvalVarSub(unset_sub))
 
-    set_sub = VarSubPart('x')
+    set_sub = ast.VarSubPart('x')
     print(ev.EvalVarSub(set_sub))
 
-    part = LiteralPart(Token(Id.Lit_Chars, 'default'))
-    arg_word = CompoundWord(parts=[part])
-    test_op = VarOp1(Id.VTest_ColonHyphen, arg_word)
-    unset_sub.test_op = test_op
-    set_sub.test_op = test_op
+    part = ast.LiteralPart(Token(Id.Lit_Chars, 'default'))
+    arg_word = ast.CompoundWord([part])
+    test_op = ast.StringUnary(Id.VTest_ColonHyphen, arg_word)
+    unset_sub.suffix_op = test_op
+    set_sub.suffix_op = test_op
 
     print(ev.EvalVarSub(unset_sub))
     print(ev.EvalVarSub(set_sub))

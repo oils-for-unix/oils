@@ -81,4 +81,22 @@ osh-interactive() {
   echo 'exit' | $OSH -i
 }
 
+die() {
+  echo 1>&2 "$@"
+  exit 1
+}
+
+assert() {
+  test "$@" || die "$@ failed"
+}
+
+# Had a bug with these two cases.
+empty() {
+  bin/osh -c ''
+  assert $? -eq 0
+
+  echo -n '' | bin/osh
+  assert $? -eq 0
+}
+
 "$@"

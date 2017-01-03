@@ -1,110 +1,179 @@
 -- ASDL's six builtin types are identifier, int, string, bytes, object, singleton
+
 -- NOTE we're not using identifier/object/singleton/bytes
 -- Python only uses bytes/object/singleton once.
 -- identifier is used all over.  Why?  I have different rules for
--- for functions and vars.  case/for/assign have vars.
+-- functions and vars.  case/for/assign have vars.
 
 -- TODO:
 -- How to encode position information?
+-- Add bool, for C++ encoding
 -- FuncCall inside ${}, in addition to arithmetic context?
 --   Well I guess you can do this: echo $(( f(x,y) ))a.  It is a little more
 --   annoying.
+-- Do we need stricter ID types?
+--   arith_op_id, bool_op_id, vpre_op_id, array_op_id, vpost_op_id
 
 module osh
 {
-  source_location = (string path, int line, int col, int length)
-  token = (string value, source_location loc)
-
   id = Foo | Bar -- TODO: you need a placeholder to say this is generated
                  -- by another tool.  Suppress the error.
 
-  -- TODO: generate the following:
-  -- arith_op_id, bool_op_id, vpre_op_id, array_op_id, vpost_op_id
+  source_location = (string path, int line, int col, int length)
+
+  -- parse errors don't need to be serialized!  You just calculate them on the
+  -- fly from tokens?  VarSubPart has an extra token.  Maybe it needs a source
+  -- location.
+
+  -- these are for RUNTIME errors.  do you always use either a src_point or
+  -- src_range?  Or more likely they point to a word, which will have
+  src_point = (int line, int col)
+  src_range = (string path, src_point begin, src_point end)
+
+  -- Physical line number
+  debug_line = (int line_num, string line)
+  debug_info = (debug_line* lines)
+
+  -- A unit is a single file.
+  unit = (string path, command root, debug_info info)
+
+  -- The top level structure of multiple pre-compiled modules.
+  -- The standard library can use this I guess.
+  package = (unit* units)
+
+  -- Does the token hold the location, or do nodes?  I think we need to
+  -- annotate most nodes with source_location, but token is only for TokenWord,
+  -- LiteralPart, etc.
+  token = (id id, string value, source_location loc)
 
   bracket_op = 
-    ArrayOp(id op_id)  -- * or @
-  | ArrayIndex(arith_expr a)
+    WholeArray(id op_id)  -- * or @
+  | ArrayIndex(arith_expr expr)
 
   suffix_op = 
-    VarUnary(id op_id, word arg)
-  | VarReplace(word pat, word? replace)
-  | VarSlice(arith_expr start, arith_expr? len)
+    StringUnary(id op_id, word arg_word)
+  | PatSub(word pat, word? replace, int do_all, int do_prefix, int do_suffix)
+  | Slice(arith_expr begin, arith_expr? length)
 
   word_part = 
     ArrayLiteralPart(word* words)
-  | LiteralPart(token t)
-  | EscapedLiteralPart(token t)
+  | LiteralPart(token token)
+  | EscapedLiteralPart(token token)
+  | SingleQuotedPart(token* tokens)
   | DoubleQuotedPart(word_part* parts)
   | VarSubPart(string name,
-               id prefix_op,
-               bracket_op bracket_op
-               suffix_op suffix_op)
+               id? prefix_op,  -- prefix # or ! operators
+               bracket_op? bracket_op
+               suffix_op? suffix_op)
   | TildeSubPart(string prefix)
-  | CommandSubPart(command c)
-  | ArithSubPart(arith_expr a)
-  -- NOTE: Could put | Token(token t) as an optimization.
+  | CommandSubPart(command command_list)
+  | ArithSubPart(arith_expr anode)
 
-  word = Word(word_part* parts)
-  -- NOTE: Could put | Token(token t) as an optimization.
+  word = 
+    TokenWord(token token)
+  | CompoundWord(word_part* parts)
+ 
+  lvalue = 
+    LeftVar(string name)
+  | LeftIndex(string name, arith_expr index)
 
   arith_expr =
-    ArithVar(string name)  -- eval variable 
-  | ArithWord(word w)  -- word to be evaluated as a constant 
-
-  | ArithUnary(id op_id, arith_expr a)
+    RightVar(string name)  -- eval variable 
+  | ArithWord(word w)  -- a string expression
+  | ArithUnary(id op_id, arith_expr child)
   | ArithBinary(id op_id, arith_expr left, arith_expr right)
+  | ArithAssign(id op_id, lvalue left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
   | FuncCall(arith_expr func, arith_expr* args)
 
   bool_expr =
     WordTest(word w)  -- e.g. [[ myword ]]
-  | BoolBinary(word left, word right)
-  | BoolUnary(word child)
-  | LogicalNot(bool_expr b)
+  | BoolBinary(id op_id, word left, word right)
+  | BoolUnary(id op_id, word child)
+  | LogicalNot(bool_expr child)
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  -- NOTE: To reprint the here doc, I guess we need the whole delimiter?  And
-  -- then do_expansion is calculated from that.
+  -- To reprint the here doc, we need the here_end delimiter.  But it 
+  -- doesn't matter at runtime.  do_expansion is calculated from it.
+  -- TODO: was_filled should be ELIMINATED from serialization format.  It's
+  -- only for use at parse time.
+  -- arg_word uses the same name for Here word and here doc.
   redir = 
-    HereDoc(id op_id, word arg_word, int fd, int do_expansion)
-  | Redirect(id op_id, word arg_word, int fd)
+    Redirect(id op_id, word arg_word, int fd)
+  | HereDoc(id op_id, word arg_word, int fd, int do_expansion,
+            string here_end, int? was_filled)  -- default was_filled None
 
-  lvalue = 
-    LeftVar(string name)
-  | LeftIndex(string name, arith_expr index)
-
-  scope = Global | Local
-  var_flags = Export | Readonly
+  assign_scope = Global | Local
+  assign_flags = Export | ReadOnly
   binding = (lvalue lhs, word rhs)
 
   and_or = DAmp | DPipe
+
+  -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.
-  pipe_op = Pipe | PipeAndStderr
+  -- pipe_op = Pipe | PipeAndStderr
 
   case_arm = (word* pat, command* action)
 
+  -- Almost all of these can have redirects, even function defs.
+  -- AndOr/Pipeline/Fork are exceptions.
+  -- Fork is in its own wrapper node because it's easy to translate.
+  -- Redirects are easier to translate as well if they are WITHIN each command
+  -- node.
+
+  command_hetero = 
+    XNoOp
+  | XSimpleCommand(word* words, redir* redirects, binding* more_env)
+  | XAssignment(assign_scope scope,
+               assign_flags flags,
+               word* names,  -- names mentioned without a binding
+               binding* bindings)
+  | XFork(command* commands)  -- shell only allows one command
+  | XPipeline(command* commands, int negated, int* op)
+  | XAndOr(command* commands, and_or* ops)
+  | XBlock(command* commands, redir* redirects)
+  | XSubshell(command* commands, redir* redirects)
+  | XDParen(arith_expr child, redir* redirects)
+  | XDBracket(bool_expr child, redir* redirects)
+  | XForEach(string var, word* words, command* body, redir* redirects)
+  -- C-style for loop
+  | XForExpr(arith_expr init, arith_expr test, arith_expr update, command* body,
+            redir* redirects)
+  | XWhile(command cond, command* body, redir* redirects)
+  | XUntil(command cond, command* body, redir* redirects)
+  | XIf(command test, command* body, command* orelse, redir* redirects)
+  | XCase(string var_name, case_arm* cases, redir* redirects)
+  | XFuncDef(string name, command* body, redir* redirects)
+
+  -- Homogeneous version
   command = 
     NoOp
   | SimpleCommand(word* words, redir* redirects, binding* more_env)
-  | Assignment(scope scope,
-               var_flags flags,
-               word* names,  -- names mentioned without a binding
-               binding* bindings)
-  | DParen(arith_expr a)
-  | DBracket(bool_expr b)
-  | Block(command* commands)
-  | Subshell(command* commands)
-  | Fork(command* commands)  -- shell only allows one command
-  | Pipeline(command* commands, int negated, pipe_op* op)
-  | AndOr(command* commands, and_or ops)
-  -- NOTE: Can't have multiple var length?  Maybe it's just a single command.
-  | ForEach(string var, word* words, command* body)
-  | ForExpr(arith_expr init, arith_expr test, arith_expr update, command* body)
-  -- NOTE: in oil, we will have expression variants?i 
-  | While(command cond, command* body)
-  | Until(command cond, command* body)
-  | If(command test, command* body, command* orelse)
-  | Case(string var_name, case_arm* cases)
-  | FuncDef(string name, command* body)
+  | Assignment(assign_scope scope,
+               assign_flags flags,
+               word* words,  -- names mentioned without a binding
+               binding* bindings)  -- empty redirects for polymorphism?
+  | Fork(command* children)  -- shell only allows one command
+  | Pipeline(command* children, int negated, int* stderr_indices)
+  -- | AndOr(command* children, and_or* ops)
+  | AndOr(command* children, int op_id)
+  -- A command list is used for for/if/while conditions and bodies.  No redirects.
+  | CommandList(command* children)
+  -- A compound command, with redirects
+  | BraceGroup(command* children, redir* redirects)
+  | Subshell(command* children, redir* redirects)
+  | DParen(arith_expr child, redir* redirects)
+  | DBracket(bool_expr expr, redir* redirects)
+  -- do_arg_iter: whether to implicitly loop over "$@"
+  | ForEach(string iter_name, word* iter_words, int do_arg_iter,
+            command* children, redir* redirects)
+  -- C-style for loop
+  | ForExpr(arith_expr init, arith_expr cond, arith_expr update, command* children,
+            redir* redirects)
+  | While(command* children, redir* redirects)
+  | Until(command* children, redir* redirects)
+  | If(command* children, redir* redirects)
+  | Case(word to_match, word* pat_word_list, command* children, redir* redirects)
+  | FuncDef(string name, command* children, redir* redirects)
 }
