@@ -24,16 +24,3 @@ tests/echo.s?
 
 echo classes
 tests/echo.s[[:alpha:]]
-
-# Geez this is lame
-
-# "In addition to the traditional globs (supported by all Bourne-family shells)
-# that we've seen so far, Bash (and Korn Shell) offers extended globs, which
-# have the expressive power of regular expressions. Korn shell enables these by
-# default; in Bash, you must run the command "
-
-# ?(pattern-list): Matches empty or one of the patterns
-# *(pattern-list): Matches empty or any number of occurrences of the patterns
-# +(pattern-list): Matches at least one occurrences of the patterns
-# @(pattern-list): Matches exactly one of the patterns
-# !(pattern-list): Matches anything EXCEPT any of the patterns

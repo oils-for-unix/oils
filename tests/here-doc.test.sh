@@ -258,3 +258,11 @@ cat <<-EOF
   3
 EOF
 # stdout-json: "1\n2\n  3\n"
+
+### Here doc within subshell with boolean
+[[ $(cat <<EOF
+foo
+EOF
+) == foo ]]; echo $?
+# stdout: 0
+# N-I dash stdout: 127
