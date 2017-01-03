@@ -41,7 +41,7 @@ class Token:
 
   def __repr__(self):
     #pos = '(%s %s %s)' % (self.pool_index, self.col, self.length)
-    return ('<%s %s>' % (id_kind.IdName(self.id), EncodeTokenVal(self.val))) #+pos
+    return ('<%r %s>' % (self.id, EncodeTokenVal(self.val))) #+pos
 
   def Kind(self):
     return id_kind.LookupKind(self.id)

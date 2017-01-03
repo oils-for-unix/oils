@@ -141,7 +141,8 @@ def EncodeArray(obj_list, item_desc, enc, out):
   array_chunk = bytearray()
   enc.Int(len(obj_list), array_chunk)  # Length prefix
 
-  if isinstance(item_desc, asdl.IntType):
+  if isinstance(item_desc, asdl.IntType) or \
+      isinstance(item_desc, asdl.BoolType):
     for item in obj_list:
       enc.Int(item, array_chunk)
 
@@ -206,7 +207,7 @@ def EncodeObj(obj, enc, out):
     # - Repeated value: write them all adjacent to each other?
 
     # INLINE
-    if isinstance(desc, asdl.IntType):
+    if isinstance(desc, asdl.IntType) or isinstance(desc, BoolType):
       enc.Int(field_val, this_chunk)
 
     elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):

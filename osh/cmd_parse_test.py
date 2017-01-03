@@ -13,7 +13,7 @@ from core.id_kind import Id
 from core.pool import Pool
 from core import word
 
-from osh import ast
+from osh import ast_ as ast
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test
 from osh.word_parse import WordParser

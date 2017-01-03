@@ -18,7 +18,7 @@ from core import tdop
 
 from osh import arith_parse
 from osh.lex import LexMode
-from osh import ast
+from osh import ast_ as ast
 
 word_part_e = ast.word_part_e
 
@@ -304,22 +304,22 @@ class WordParser(object):
     op_kind = self.token_kind
 
     if op_kind == Kind.VTest:
-      id = self.token_type
+      op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
         self._BadToken('Unexpected token after test arg: %s', self.cur_token)
         return None
 
-      part.suffix_op = ast.StringUnary(id, arg_word)
+      part.suffix_op = ast.StringUnary(op_id, arg_word)
 
     elif op_kind == Kind.VOp1:
-      id = self.token_type
+      op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
         self._BadToken('Unexpected token after unary op: %s', self.cur_token)
         return None
 
-      op = ast.StringUnary(id, arg_word)
+      op = ast.StringUnary(op_id, arg_word)
       part.suffix_op = op
 
     elif op_kind == Kind.VOp2:

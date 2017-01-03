@@ -16,7 +16,7 @@ except ImportError:
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core.value import Value
 from core.util import cast
-from osh import ast
+from osh import ast_ as ast
 
 bracket_op_e = ast.bracket_op_e
 

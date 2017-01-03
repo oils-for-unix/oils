@@ -13,7 +13,7 @@ import unittest
 
 from core.id_kind import Id
 
-from osh import ast
+from osh import ast_ as ast
 from osh import parse_lib
 from osh import bool_parse  # module under test
 from osh.lex import LexMode

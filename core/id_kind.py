@@ -23,17 +23,31 @@ def LookupKind(id_):
 
 _ID_NAMES = {}  # type: dict
 
-def IdName(t):
-  return _ID_NAMES[t]
+def IdName(id_):
+  return _ID_NAMES[id_]
 
 
 class Id(object):
-  """Universal Token, Word, and Node type.
+  """Token and op type.
 
-  Used all over the place, but in particular the evaluator must consider all
-  Ids.
+  The evaluator must consider all Ids.
   """
-  pass
+  def __init__(self, enum_value):
+    self.enum_value = enum_value
+
+  def __eq__(self, other):
+    # NOTE: We need to compare to ints too because of the ID hash tables.  They
+    # are keyed by index, and then an equality test happens.
+    if isinstance(other, int):
+      return self.enum_value == other
+
+    return self.enum_value == other.enum_value
+
+  def __hash__(self):
+    return hash(self.enum_value)
+
+  def __repr__(self):
+    return IdName(self.enum_value)
 
 
 class Kind(object):
@@ -48,7 +62,7 @@ class IdSpec(object):
     self.id_enum = Id
     self.kind_enum = Kind
     self.token_names = token_names  # integer -> string Id
-    self.kind_lookup = kind_lookup  # integer -> Kind
+    self.kind_lookup = kind_lookup  # Id -> Kind
 
     self.kind_sizes = []  # stats
 
@@ -64,9 +78,11 @@ class IdSpec(object):
 
   def _AddId(self, token_name):
     self.token_index += 1  # leave out 0 I guess?
-    setattr(self.id_enum, token_name, self.token_index)
+    id_val = Id(self.token_index)
+    setattr(self.id_enum, token_name, id_val)
     self.token_names[self.token_index] = token_name
     self.kind_lookup[self.token_index] = self.kind_index
+    return id_val
 
   def _AddKind(self, kind_name):
     setattr(self.kind_enum, kind_name, self.kind_index)
@@ -89,9 +105,9 @@ class IdSpec(object):
     lexer_pairs = []
     for name, char_pat in pairs:
       token_name = '%s_%s' % (kind_name, name)
-      self._AddId(token_name)
+      id_val = self._AddId(token_name)
       # After _AddId
-      lexer_pairs.append((False, char_pat, self.token_index))  # Constant
+      lexer_pairs.append((False, char_pat, id_val))  # Constant
 
     self.lexer_pairs[self.kind_index] = lexer_pairs
 
@@ -111,11 +127,11 @@ class IdSpec(object):
       for name, char_pat in pairs:
         # BoolUnary_f, BoolBinary_eq, BoolBinary_NEqual
         token_name = '%s_%s' % (kind_name, name)
-        self._AddId(token_name)
+        id_val = self._AddId(token_name)
         # not logical
-        self.AddBoolOp(self.token_index, arg_type)
+        self.AddBoolOp(id_val, arg_type)
         # After _AddId.
-        lexer_pairs.append((False, char_pat, self.token_index))  # constant
+        lexer_pairs.append((False, char_pat, id_val))  # constant
 
       num_tokens += len(pairs)
 

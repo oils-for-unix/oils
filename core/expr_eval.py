@@ -21,7 +21,7 @@ from core.util import cast
 from core.util import log
 from core.value import TValue
 
-from osh import ast
+from osh import ast_ as ast
 
 arith_expr_e = ast.arith_expr_e
 bool_expr_e = ast.bool_expr_e  # used for dispatch

@@ -19,7 +19,7 @@ from core import cmd_exec_test
 from core import completion  # module under test
 from core.id_kind import Id
 
-from osh import ast
+from osh import ast_ as ast
 from osh import parse_lib
 
 assign_scope_e = ast.assign_scope

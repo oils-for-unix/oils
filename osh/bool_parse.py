@@ -54,7 +54,7 @@ algorithms!  See evalexpr() in expr.c.
 
 import sys
 
-from osh import ast
+from osh import ast_ as ast
 
 from core import base
 from core import word

@@ -16,9 +16,6 @@
 
 module osh
 {
-  id = Foo | Bar -- TODO: you need a placeholder to say this is generated
-                 -- by another tool.  Suppress the error.
-
   source_location = (string path, int line, int col, int length)
 
   -- parse errors don't need to be serialized!  You just calculate them on the
@@ -52,7 +49,7 @@ module osh
 
   suffix_op = 
     StringUnary(id op_id, word arg_word)
-  | PatSub(word pat, word? replace, int do_all, int do_prefix, int do_suffix)
+  | PatSub(word pat, word? replace, bool do_all, bool do_prefix, bool do_suffix)
   | Slice(arith_expr begin, arith_expr? length)
 
   word_part = 
@@ -102,7 +99,7 @@ module osh
   redir = 
     Redirect(id op_id, word arg_word, int fd)
   | HereDoc(id op_id, word arg_word, int fd, int do_expansion,
-            string here_end, int? was_filled)  -- default was_filled None
+            string here_end, bool was_filled)
 
   assign_scope = Global | Local
   assign_flags = Export | ReadOnly
@@ -130,7 +127,7 @@ module osh
                word* names,  -- names mentioned without a binding
                binding* bindings)
   | XFork(command* commands)  -- shell only allows one command
-  | XPipeline(command* commands, int negated, int* op)
+  | XPipeline(command* commands, bool negated, int* op)
   | XAndOr(command* commands, and_or* ops)
   | XBlock(command* commands, redir* redirects)
   | XSubshell(command* commands, redir* redirects)
@@ -155,7 +152,7 @@ module osh
                word* words,  -- names mentioned without a binding
                binding* bindings)  -- empty redirects for polymorphism?
   | Fork(command* children)  -- shell only allows one command
-  | Pipeline(command* children, int negated, int* stderr_indices)
+  | Pipeline(command* children, bool negated, int* stderr_indices)
   -- | AndOr(command* children, and_or* ops)
   | AndOr(command* children, int op_id)
   -- A command list is used for for/if/while conditions and bodies.  No redirects.
@@ -166,7 +163,7 @@ module osh
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
   -- do_arg_iter: whether to implicitly loop over "$@"
-  | ForEach(string iter_name, word* iter_words, int do_arg_iter,
+  | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
             command* children, redir* redirects)
   -- C-style for loop
   | ForExpr(arith_expr init, arith_expr cond, arith_expr update, command* children,

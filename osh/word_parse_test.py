@@ -15,7 +15,7 @@ from core.id_kind import Id, IdName
 from core.tokens import Token
 from core import word
 
-from osh import ast
+from osh import ast_ as ast
 from osh import parse_lib
 from osh.lex import LexMode
 from osh.word_parse import WordParser  # module under test

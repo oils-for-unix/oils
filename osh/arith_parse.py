@@ -11,7 +11,7 @@ import sys
 from core import tdop
 from core.id_kind import Id
 from core import word
-from osh import ast
+from osh import ast_ as ast
 
 
 def NullIncDec(p, w, bp):

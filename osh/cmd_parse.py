@@ -14,7 +14,7 @@ from core import word
 from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
 from core.tokens import Token
 
-from osh import ast 
+from osh import ast_ as ast 
 from osh.lex import LexMode
 from osh.bool_parse import BoolParser
 
@@ -323,6 +323,7 @@ class CommandParser(object):
       node.op_id = self.c_id
       node.arg_word = None  # not read yet
       node.fd = fd
+      node.was_filled = False
       self._Next()
 
       if not self._Peek(): return None

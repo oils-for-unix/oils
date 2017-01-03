@@ -73,7 +73,7 @@ from core.process import (
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
 from core.value import Value
 
-from osh import ast
+from osh import ast_ as ast
 
 assign_scope_e = ast.assign_scope
 command_e = ast.command_e
@@ -741,7 +741,9 @@ class Executor(object):
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
 
-    elif node.tag == command_e.CommandList:
+    # The only difference between these two is that CommandList has no
+    # redirects.  We already took care of that above.
+    elif node.tag in (command_e.CommandList, command_e.BraceGroup):
       status = 0  # for empty list
       for child in node.children:
         status, cflow = self.Execute(child)  # last status wins

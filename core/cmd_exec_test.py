@@ -21,7 +21,7 @@ from core import word_eval
 from core.value import Value
 from core.lexer import Token
 
-from osh import ast
+from osh import ast_ as ast
 from osh import parse_lib
 
 

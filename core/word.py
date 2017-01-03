@@ -5,7 +5,7 @@ word.py -- Functions for using words as "tokens".
 
 import sys
 
-from osh import ast
+from osh import ast_ as ast
 from core.id_kind import Id, Kind, LookupKind
 from core.tokens import Token
 

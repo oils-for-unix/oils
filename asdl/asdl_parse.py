@@ -44,8 +44,10 @@ def is_simple(sum):
 class StrType:
   pass
 
-
 class IntType:
+  pass
+
+class BoolType:
   pass
 
 
@@ -53,6 +55,7 @@ class IntType:
 DESCRIPTORS_BY_NAME = {
     'string': StrType(),
     'int': IntType(),
+    'bool': BoolType(),
 }
 
 
@@ -60,12 +63,9 @@ class ArrayType:
   def __init__(self, desc):
     self.desc = desc
 
-
 class MaybeType:
   def __init__(self, desc):
     self.desc = desc  # another descriptor
-
-
 
 
 # The following classes define nodes into which the ASDL description is parsed.
@@ -75,7 +75,10 @@ class MaybeType:
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
 
-builtin_types = {'identifier', 'string', 'bytes', 'int', 'object', 'singleton'}
+# TODO:
+# - Add id type -- or should it be py(id) or something?
+
+builtin_types = {'string', 'int', 'bool'}
 
 class AST:
     def __repr__(self):
@@ -215,7 +218,7 @@ class Check(VisitorBase):
         for f in prod.fields:
             self.visit(f, name)
 
-def check(mod):
+def check(mod, app_types):
     """Check the parsed ASDL tree for correctness.
 
     Return True if success. For failure, the errors are printed out and False
@@ -225,16 +228,17 @@ def check(mod):
     v.visit(mod)
 
     for t in v.types:
-        if t not in mod.types and not t in builtin_types:
-            v.errors += 1
-            uses = ", ".join(v.types[t])
-            print('Undefined type {}, used in {}'.format(t, uses))
+        if t in mod.types or t in builtin_types or t in app_types:
+            continue
+        v.errors += 1
+        uses = ", ".join(v.types[t])
+        print('Undefined type {}, used in {}'.format(t, uses))
     return not v.errors
 
 # The ASDL parser itself comes next. The only interesting external interface
 # here is the top-level parse function.
 
-def parse(filename):
+def parse(filename, app_types):
     """Parse ASDL from the given file and return a Module node describing it."""
     with open(filename) as f:
         parser = ASDLParser()

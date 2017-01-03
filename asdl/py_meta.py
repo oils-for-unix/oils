@@ -7,7 +7,7 @@ All objects descends from Obj, which allows them to be dynamically type-checked
 and serialized.  Objects hold type descriptors, which are defined in asdl.py.
 
 Usage:
-  from osh import ast
+  from osh import ast_ as ast
 
   n1 = ast.ArithVar()
   n2 = ast.ArrayLiteralPart()
@@ -199,15 +199,17 @@ class CompoundObj(Obj):
     return self.__repr__()
 
 
-def _MakeFieldDescriptors(module, fields):
+def _MakeFieldDescriptors(module, fields, app_types):
   desc_lookup = {}
   for f in fields:
     # look up type by name
     primitive_desc = asdl.DESCRIPTORS_BY_NAME.get(f.type)
+    app_desc = app_types.get(f.type)
 
-    desc = primitive_desc or module.types[f.type]
+    # Lookup order: primitive, defined in the ASDL file, passed by the app
+    desc = primitive_desc or module.types.get(f.type) or app_desc
     # It's either a primitive type or sum type
-    if primitive_desc is None:
+    if primitive_desc is None and app_desc is None:
       assert (isinstance(desc, asdl.Sum) or
               isinstance(desc, asdl.Product)), desc
 
@@ -229,7 +231,7 @@ def _MakeFieldDescriptors(module, fields):
   return class_attr
 
 
-def MakeTypes(module, root):
+def MakeTypes(module, root, app_types):
   """
   Args:
     module: asdl.Module
@@ -265,7 +267,7 @@ def MakeTypes(module, root):
           tag = i + 1  # zero reserved?
           tag_num[cons.name] = tag  # for enum
 
-          class_attr = _MakeFieldDescriptors(module, cons.fields)
+          class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
           class_attr['DESCRIPTOR'] = cons
           # TODO: Allow setting these integers.  We're reusing ID 0 for every
           # sum type, but that's OK because fields are strongly typed.
@@ -280,7 +282,7 @@ def MakeTypes(module, root):
         setattr(root, enum_name, tag_enum)
 
     elif isinstance(typ, asdl.Product):
-      class_attr = _MakeFieldDescriptors(module, typ.fields)
+      class_attr = _MakeFieldDescriptors(module, typ.fields, app_types)
       class_attr['DESCRIPTOR'] = typ
 
       cls = type(defn.name, (CompoundObj, ), class_attr)

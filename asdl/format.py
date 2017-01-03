@@ -139,6 +139,8 @@ def MakeTree(obj, omit_empty=True):
   # converted.
   from asdl import py_meta
   if not isinstance(obj, py_meta.CompoundObj):
+    # Tokens use this now
+    #print("OBJ", obj.__class__.__name__, obj)
     #raise AssertionError(obj)
     return repr(obj)
 
@@ -160,7 +162,7 @@ def MakeTree(obj, omit_empty=True):
       continue
 
     desc = obj.DESCRIPTOR_LOOKUP[field_name]
-    if isinstance(desc, asdl.IntType):
+    if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
       # TODO: How to check for overflow?
       out_val = str(field_val)
 
@@ -238,9 +240,19 @@ def PrintTree(node, f, indent=0, max_col=100):
           f.write('\n')
         f.write('%s]' % ind1)
       else:
-        f.write('%s%s:\n' % (ind1, name))
-        # TODO: Add max_col here, taking into account the field name
-        PrintTree(val, f, indent=indent+INDENT+INDENT)
+        name_str = '%s%s: ' % (ind1, name)
+        f.write(name_str)
+        prefix_len = len(name_str)
+
+        # Try to print it on the same line as the field name; otherwise print
+        # it on a separate line.
+        single_f = io.StringIO()
+        if TrySingleLine(val, single_f, max_col=max_col - prefix_len):
+          f.write(single_f.getvalue())
+        else:
+          f.write('\n')
+          # TODO: Add max_col here, taking into account the field name
+          PrintTree(val, f, indent=indent+INDENT+INDENT)
         i += 1
       f.write('\n')  # separate fields
 
