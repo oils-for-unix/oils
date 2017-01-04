@@ -141,11 +141,7 @@ def MakeTree(obj, omit_empty=True):
       out_val = str(field_val)
 
     elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
-      # HACK for now to reflect that Id is an integer.
-      if isinstance(field_val, int):
-        out_val = str(field_val)
-      else:
-        out_val = field_val.name
+      out_val = field_val.name
 
     elif isinstance(desc, asdl.StrType):
       out_val = field_val
@@ -184,8 +180,18 @@ def MakeTree(obj, omit_empty=True):
 
 INDENT = 2
 
+# TODO:
+# - Add plugins:
+# look up _Obj.name into a dictionary of plugin printers.
+# it needs to receive max_col, and do _TrySingleLine
+# - add a flag (verbose) whether you want to print loc or not.
+#
+# --ast-output foo.bin
+# --ast-format text,ansi,oheap,html
+
 def PrintTree(node, f, indent=0, max_col=100):
   """
+  Args:
     node: homogeneous tree node
     f: output file. TODO: Should take ColorOutput?
   """

@@ -41,6 +41,12 @@ def _CheckType(value, expected_desc):
     expected_desc: instance of asdl.Product, asl.Sum, asdl.StrType,
       asdl.IntType, ArrayType, MaybeType, etc.
   """
+  if isinstance(expected_desc, asdl.Constructor):
+    # This doesn't make sense because the descriptors are derived from the
+    # declared types.  You can declare a field as arith_expr_e but not
+    # ArithBinary.
+    raise AssertionError("Invalid Constructor descriptor")
+
   if isinstance(expected_desc, asdl.MaybeType):
     if value is None:
       return True
@@ -69,7 +75,6 @@ def _CheckType(value, expected_desc):
   except AttributeError:
     return False  # it's not of the right type
 
-  # TODO: How is this different than asdl.Constructor?
   if isinstance(expected_desc, asdl.Product):
     return actual_desc is expected_desc
 
@@ -82,12 +87,13 @@ def _CheckType(value, expected_desc):
         # It has to be one of the alternatives
         if actual_desc is cons:
           return True
+      return False
 
-  # Example:
-  # - Id.DESCRIPTOR == Id.
-  # - ast.ArithBinary.DESCRIPTOR == ast.ArithBinary.  See MakeTypes below where
-  # it constructs a type for each "Constructor".
-  return isinstance(value, actual_desc)
+  if isinstance(expected_desc, asdl.UserType):
+    return isinstance(value, expected_desc.typ)
+
+  raise AssertionError(
+      'Invalid descriptor %r: %r' % (expected_desc.__class__, expected_desc))
 
 
 class Obj:
@@ -191,10 +197,10 @@ class CompoundObj(Obj):
     except KeyError:
       raise AttributeError('Object of type %r has no attribute %r' %
                            (self.__class__.__name__, name))
-    #if False:  # Disable type checking for now
+
     if not _CheckType(value, desc):
-      raise AssertionError("Field %r should be of type %s, got %r" %
-                           (name, desc, value))
+      raise AssertionError("Field %r should be of type %s, got %r (%s)" %
+                           (name, desc, value, value.__class__))
 
     self._assigned[name] = True  # check this later when encoding
     self.__dict__[name] = value
@@ -277,10 +283,11 @@ def MakeTypes(module, root, app_types=None):
           tag_num[cons.name] = tag  # for enum
 
           class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
+          class_attr['DESCRIPTOR'] = cons  # asdl.Constructor
           class_attr['tag'] = tag
 
           cls = type(cons.name, (base_class, ), class_attr)
-          cls.DESCRIPTOR = cls  # CIRCULAR, for type checking.
+          #cls.DESCRIPTOR = cls  # CIRCULAR, for type checking.
                                 # TODO: Consider a different scheme.
 
           setattr(root, cons.name, cls)

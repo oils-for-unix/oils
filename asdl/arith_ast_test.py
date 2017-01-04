@@ -3,11 +3,23 @@
 arith_ast_test.py: Tests for arith_ast.py
 """
 
+import io
 import unittest
 
 from asdl import arith_ast  # module under test
 from asdl import format as fmt
 from asdl import py_meta
+from asdl import encode
+
+
+ArithVar = arith_ast.ArithVar
+ArithUnary = arith_ast.ArithUnary
+ArithBinary = arith_ast.ArithBinary
+Const = arith_ast.Const
+Slice = arith_ast.Slice
+arith_expr = arith_ast.arith_expr
+source_location = arith_ast.source_location
+op_id = arith_ast.op_id
 
 
 class ArithAstTest(unittest.TestCase):
@@ -23,15 +35,20 @@ class ArithAstTest(unittest.TestCase):
     print(func)
     self.assertEqual([], func.args)
 
+  def testTypeCheck(self):
+    v = ArithVar('name')
+    # Integer is not allowed
+    self.assertRaises(AssertionError, ArithVar, 1)
+
+    v = ArithUnary(op_id.Minus, Const(99))
+    # Raw integer is not allowed
+    self.assertRaises(AssertionError, ArithUnary, op_id.Minus, 99)
+
+    v = ArithUnary(op_id.Minus, Const(99))
+    # Raw integer is not allowed
+    #self.assertRaises(AssertionError, ArithUnary, op_id.Minus, op_id.Plus)
+
   def testTypes(self):
-    ArithVar = arith_ast.ArithVar
-    ArithUnary = arith_ast.ArithUnary
-    ArithBinary = arith_ast.ArithBinary
-    Const = arith_ast.Const
-    Slice = arith_ast.Slice
-    arith_expr = arith_ast.arith_expr
-    source_location = arith_ast.source_location
-    op_id = arith_ast.op_id
 
     print(ArithVar)
     print('FIELDS', ArithVar.FIELDS)
@@ -107,6 +124,30 @@ class ArithAstTest(unittest.TestCase):
     arith_expr_e = arith_ast.arith_expr_e
     self.assertEqual(arith_expr_e.Const, c.tag)
     self.assertEqual(arith_expr_e.ArithBinary, n.tag)
+
+  def testEncode(self):
+    obj = arith_ast.Const(99)
+    print('Encoding into binary:')
+    print(obj)
+
+    enc = encode.Params()
+    f = io.BytesIO()
+    out = encode.BinOutput(f)
+    encode.EncodeRoot(obj, enc, out)
+    e = f.getvalue()
+
+    #print(repr(e))
+    #print(e[0:4], e[4:8], e[8:])
+
+    # Header is OHP version 1
+    self.assertEqual(b'OHP\x01', e[0:4])
+
+    self.assertEqual(b'\x04', e[4:5])  # alignment 4
+
+    self.assertEqual(b'\x02\x00\x00', e[5:8])  # root ref 2
+
+    self.assertEqual(b'\x01', e[8:9])  # tag 1 is const
+    self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99 
 
 
 if __name__ == '__main__':

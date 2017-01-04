@@ -190,7 +190,9 @@ def EncodeObj(obj, enc, out):
   assert isinstance(obj, py_meta.CompoundObj), \
     '%s is not a compound obj (%r)' % (obj, obj.__class__)
 
+  # Constructor objects have a tag.
   if isinstance(obj.DESCRIPTOR, asdl.Constructor):
+  #if getattr(obj, 'tag', None) is not None:
     enc.Tag(obj.tag, this_chunk)
 
   for name in obj.FIELDS:  # encode in order
@@ -207,7 +209,7 @@ def EncodeObj(obj, enc, out):
     # - Repeated value: write them all adjacent to each other?
 
     # INLINE
-    if isinstance(desc, asdl.IntType) or isinstance(desc, BoolType):
+    if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
       enc.Int(field_val, this_chunk)
 
     elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
@@ -265,6 +267,6 @@ def EncodeRoot(obj, enc, out):
   root_ref = EncodeObj(obj, enc, out)
   chunk = bytearray()
   enc.Ref(root_ref, chunk)
-  out.WriteRootRef(chunk)
+  out.WriteRootRef(chunk)  # back up and write it
 
   #print("Root obj ref:", root_ref)

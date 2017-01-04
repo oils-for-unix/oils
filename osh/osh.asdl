@@ -41,7 +41,7 @@ module osh
  
   lvalue = 
     LeftVar(string name)
-  | LeftIndex(string name, arith_expr index)
+  | LeftIndex(arith_expr obj, arith_expr index)
 
   arith_expr =
     RightVar(string name)  -- eval variable 
@@ -113,7 +113,8 @@ module osh
   -- |& in osh; |- in oil.
   -- pipe_op = Pipe | PipeAndStderr
 
-  case_arm = (word* pat, command* action)
+  -- You can have more than one pattern like case var in foo|bar) ...
+  case_arm = (word* patterns, command* action)
 
   -- Almost all of these can have redirects, even function defs.
   -- AndOr/Pipeline/Fork are exceptions.

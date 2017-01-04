@@ -70,6 +70,14 @@ class MaybeType:
   def __init__(self, desc):
     self.desc = desc  # another descriptor
 
+class UserType:
+  def __init__(self, typ):
+    assert isinstance(typ, type), typ
+    self.typ = typ
+
+  def __repr__(self):
+    return '<UserType %s>' % self.typ
+
 
 # The following classes define nodes into which the ASDL description is parsed.
 # Note: this is a "meta-AST". ASDL files (such as Python.asdl) describe the AST

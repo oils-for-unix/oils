@@ -193,4 +193,27 @@ t4 BINARY
         t1 CONST 9
 [Inferior 1 (process 15287) exited normally]
 No stack.
+
+
+ASDL Classes
+------------
+
+py_meta.SimpleObj -- for simple enum types
+
+py_meta.CompoundObj -- for BOTH product and sum types.  Is that a mistake?  Sum types have a tag, but product types don't.
+  FIELDS : list of sorted field names
+  DESCRIPTOR_LOOKUP : field name to descriptor value
+     descriptor is any of AST?
+
+     {id: Id} is not right.  {id: asdl.UserType(Id)}
+
+
+descriptors:
+
+asdl.Product(fields)
+asdl.Sum()
+
+asdl.Constructor(
+
+
 a-

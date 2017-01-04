@@ -11,27 +11,15 @@ set -o errexit
 
 export PYTHONPATH=.
 
-# Run unit tests.
-unit() {
-  asdl/arith_ast_test.py
-  asdl/py_meta_test.py
-  asdl/encode_test.py
-  return
-  for t in asdl/*_test.py; do
-    echo -----
-    echo $t
-    echo -----
-
-    $t
-  done
-}
-
 asdl-arith-encode() {
   local expr="$1"
   local out=${2:-_tmp/arith.bin}
   asdl/asdl_demo.py arith-encode "$expr" $out
+  echo
+
   ls -l $out
-  hexdump $out
+  hexdump -C $out
+  echo
 }
 
 asdl-arith-format() {

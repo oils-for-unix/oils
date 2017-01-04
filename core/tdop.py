@@ -85,7 +85,7 @@ def NullConstant(p, w, bp):
     var_name = word.AsArithVarName(w)
     if var_name:
       return ast.RightVar(var_name)
-  return w
+  return ast.ArithWord(w)
 
 
 def NullParen(p, t, bp):
@@ -128,7 +128,19 @@ def LeftAssign(p, w, left, rbp):
 
   if not IsLValue(left):
     raise ParseError("Can't assign to %r (%s)" % (left, IdName(left.id)))
-  return ast.ArithAssign(word.ArithId(w), left, p.ParseUntil(rbp))
+
+  # HACK: NullConstant makes this of type RightVar?  Change that to something
+  # generic?
+  if left.tag == arith_expr_e.RightVar:
+    lhs = ast.LeftVar(left.name)
+  elif left.tag == arith_expr_e.ArithBinary:
+    assert left.op_id == Id.Arith_LBracket
+    # change a[i] to LeftIndex(a, i)
+    lhs = ast.LeftIndex(left.left, left.right)
+  else:
+    raise AssertionError
+
+  return ast.ArithAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
 
 
 #

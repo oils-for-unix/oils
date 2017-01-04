@@ -9,7 +9,7 @@ import os
 import sys
 
 from asdl import py_meta
-from asdl import asdl_parse
+from asdl import asdl_parse as asdl
 
 from core.id_kind import Id
 
@@ -18,11 +18,11 @@ schema_path = os.path.join(bin_dir, '../osh/osh.asdl')  # ~/git/oil/osh
 
 # TODO: A better syntax for this might be:
 # id = external   # in osh.asdl.  provided by the application.
-app_types = {'id': Id}
+app_types = {'id': asdl.UserType(Id)}
 
-module = asdl_parse.parse(schema_path)
+module = asdl.parse(schema_path)
 # Check for type errors
-if not asdl_parse.check(module, app_types):
+if not asdl.check(module, app_types):
   raise AssertionError('ASDL file is invalid')
 
 root = sys.modules[__name__]

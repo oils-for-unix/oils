@@ -11,8 +11,8 @@ id_kind_test.py: Tests for id_kind.py
 
 import unittest
 
-import id_kind
-from id_kind import Id, IdName, Kind, LookupKind
+from core import id_kind
+from core.id_kind import Id, IdName, Kind, LookupKind
 
 from osh import ast_ as ast
 

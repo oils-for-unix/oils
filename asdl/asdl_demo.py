@@ -30,7 +30,8 @@ def main(argv):
     out_path = argv[3]
 
     obj = arith_parse.ParseShell(expr)
-    #print(obj)
+    print('Encoding %r into binary:' % expr)
+    print(obj)
 
     enc = encode.Params()
     with open(out_path, 'wb') as f:

@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 
   auto base = reinterpret_cast<uint32_t*>(image);
 
-  size_t offset = alignment * root_ref;
+  size_t offset = alignment * root_ref + 0;
   auto expr = reinterpret_cast<arith_expr_t*>(image + offset);
   PrintExpr(base, *expr, 0);
 }

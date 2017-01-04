@@ -174,7 +174,7 @@ class ArithEvaluator(ExprEvaluator):
         raise ExprEvalError()
 
     elif node.tag == arith_expr_e.ArithWord:  # constant string
-      ok, val = self.word_ev.EvalCompoundWord(node, elide_empty=False)
+      ok, val = self.word_ev.EvalCompoundWord(node.w, elide_empty=False)
       if not ok:
         raise ExprEvalError(self.word_ev.Error())
 
@@ -283,10 +283,8 @@ class BoolEvaluator(ExprEvaluator):
   def _Eval(self, node):
     #print('!!', node.tag)
 
-    # TODO: word_e.CompoundWord overlaps with other values!  Make them all distin
-    # Use WordTest.
-    if isinstance(node, ast.CompoundWord) and node.tag == word_e.CompoundWord:
-      s = self._EvalCompoundWord(node)
+    if node.tag == bool_expr_e.WordTest:
+      s = self._EvalCompoundWord(node.w)
       return bool(s)
 
     if node.tag == bool_expr_e.LogicalNot:
