@@ -7,7 +7,7 @@ import unittest
 
 from core.id_kind import Id, Kind, LookupKind
 from core.lexer import CompileAll, Lexer, LineLexer, FindLongestMatch
-from core.tokens import TokensEqual
+from core.test_lib import TokensEqual
 
 from osh import parse_lib
 from osh import ast_ as ast

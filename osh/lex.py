@@ -102,7 +102,7 @@ _LEFT_UNQUOTED = [
 #
 # https://docs.python.org/2/library/re.html
 
-LEXER_DEF = {}  # TODO: Could be a list too
+LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 
 # Anything until the end of the line is a comment.
 LEXER_DEF[LexMode.COMMENT] = [
@@ -160,7 +160,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
 _KEYWORDS = [
   # NOTE: { is matched elsewhere
-  C('[[',     Id.KW_DLeftBracket),
+  C('[[',       Id.KW_DLeftBracket),
   C('!',        Id.KW_Bang),
   C('for',      Id.KW_For),
   C('while',    Id.KW_While),

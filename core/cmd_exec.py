@@ -77,8 +77,6 @@ from osh import ast_ as ast
 
 assign_scope_e = ast.assign_scope
 command_e = ast.command_e
-
-
 log = util.log
 
 
@@ -93,10 +91,11 @@ class ExecOpts(object):
     self.bash_array = True
 
 
-# Does there need to be a Mem() for Make?  Lazily evaluated functions?
-
 class Mem(object):
-  """Mem is better than "Env" -- Env implies OS stuff."""
+  """For storing variables.
+  
+  Mem is better than "Env" -- Env implies OS stuff.
+  """
 
   def __init__(self, argv0, argv):
     self.top = {}  # string -> (flags, Value)
@@ -593,7 +592,6 @@ class Executor(object):
 
     # NOTE: First or last one can use the "main" shell thread.  Doesn't have to
     # run in subshell.  Although I guess it's simpler if it always does.
-
     pi = Pipeline()
 
     for child in node.children:

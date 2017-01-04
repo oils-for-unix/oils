@@ -30,7 +30,7 @@ import io
 import sys
 
 from asdl import format as fmt
-from asdl import asdl_parse as asdl  # ALIAS for nodes
+from asdl import asdl_ as asdl  # ALIAS for nodes
 
 
 def _CheckType(value, expected_desc):
@@ -70,6 +70,9 @@ def _CheckType(value, expected_desc):
   if isinstance(expected_desc, asdl.BoolType):
     return isinstance(value, bool)
 
+  if isinstance(expected_desc, asdl.UserType):
+    return isinstance(value, expected_desc.typ)
+
   try:
     actual_desc = value.__class__.DESCRIPTOR
   except AttributeError:
@@ -88,9 +91,6 @@ def _CheckType(value, expected_desc):
         if actual_desc is cons:
           return True
       return False
-
-  if isinstance(expected_desc, asdl.UserType):
-    return isinstance(value, expected_desc.typ)
 
   raise AssertionError(
       'Invalid descriptor %r: %r' % (expected_desc.__class__, expected_desc))

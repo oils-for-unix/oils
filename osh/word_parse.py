@@ -249,7 +249,6 @@ class WordParser(object):
       if not anode:
         return None
       op = ast.ArrayIndex(anode)
-    #print('AFTER', IdName(self.token_type))
 
     #self._Peek()    # Can't do this here.  Should the test go elsewhere?
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
@@ -263,8 +262,6 @@ class WordParser(object):
 
   def _ParseVarOf(self):
     """
-    No disambiguation now.
-
     VarOf     = NAME Subscript?
               | NUMBER      # no subscript allowed, none of these are arrays
                             # ${@[1]} doesn't work, even though slicing does
@@ -275,7 +272,6 @@ class WordParser(object):
     name = self.cur_token.val
     self._Next(LexMode.VS_2)
 
-    #print("NAME", name)
     self._Peek()  # Check for []
     if self.token_type == Id.VOp2_LBracket:
       bracket_op = self._ReadSubscript()
@@ -492,69 +488,51 @@ class WordParser(object):
   def _ReadDoubleQuotedLeftParts(self):
     """Read substitution parts in a double quoted context."""
     if self.token_type in (Id.Left_CommandSub, Id.Left_Backtick):
-      part = self._ReadCommandSubPart(self.token_type)
-      if not part: return None
+      return self._ReadCommandSubPart(self.token_type)
 
-    elif self.token_type == Id.Left_VarSub:
-      part = self._ReadBracedVarSubPart(d_quoted=True)
-      if not part: return None
+    if self.token_type == Id.Left_VarSub:
+      return self._ReadBracedVarSubPart(d_quoted=True)
 
-    elif self.token_type == Id.Left_ArithSub:
-      part = self._ReadArithSubPart()
-      if not part: return None
+    if self.token_type == Id.Left_ArithSub:
+      return self._ReadArithSubPart()
 
-    elif self.token_type == Id.Left_ArithSub2:
-      part = self._ReadArithSub2Part()
-      if not part: return None
+    if self.token_type == Id.Left_ArithSub2:
+      return self._ReadArithSub2Part()
 
-    else:
-      raise AssertionError(self.cur_token)
-
-    return part
+    raise AssertionError(self.cur_token)
 
   def _ReadLeftParts(self):
     """Read substitutions and quoted strings."""
 
     if self.token_type == Id.Left_DoubleQuote:
-      part = self._ReadDoubleQuotedPart()
-      if not part: return None
+      return self._ReadDoubleQuotedPart()
 
-    elif self.token_type == Id.Left_SingleQuote:
-      part = self._ReadSingleQuotedPart(LexMode.SQ)
-      if not part: return None
-
-    elif self.token_type == Id.Left_DollarSingleQuote:
-      part = self._ReadSingleQuotedPart(LexMode.DOLLAR_SQ)
-      if not part: return None
-
-    elif self.token_type in (
-        Id.Left_CommandSub, Id.Left_Backtick, Id.Left_ProcSubIn,
-        Id.Left_ProcSubOut):
-      part = self._ReadCommandSubPart(self.token_type)
-      if not part: return None
-
-    elif self.token_type == Id.Left_VarSub:
-      part = self._ReadBracedVarSubPart(d_quoted=False)
-      if not part: return None
-
-    elif self.token_type == Id.Left_ArithSub:
-      part = self._ReadArithSubPart()
-      if not part: return None
-
-    elif self.token_type == Id.Left_ArithSub2:
-      part = self._ReadArithSub2Part()
-      if not part: return None
-
-    elif self.token_type == Id.Left_DollarDoubleQuote:
+    if self.token_type == Id.Left_DollarDoubleQuote:
       # NOTE: $"" is treated as "" for now.  Does it make sense to add the
       # token to the part?
-      part = self._ReadDoubleQuotedPart()
-      if not part: return None
+      return self._ReadDoubleQuotedPart()
 
-    else:
-      raise AssertionError('%s not handled' % self.cur_token)
+    if self.token_type == Id.Left_SingleQuote:
+      return self._ReadSingleQuotedPart(LexMode.SQ)
 
-    return part
+    if self.token_type == Id.Left_DollarSingleQuote:
+      return self._ReadSingleQuotedPart(LexMode.DOLLAR_SQ)
+
+    if self.token_type in (
+        Id.Left_CommandSub, Id.Left_Backtick, Id.Left_ProcSubIn,
+        Id.Left_ProcSubOut):
+      return self._ReadCommandSubPart(self.token_type)
+
+    if self.token_type == Id.Left_VarSub:
+      return self._ReadBracedVarSubPart(d_quoted=False)
+
+    if self.token_type == Id.Left_ArithSub:
+      return self._ReadArithSubPart()
+
+    if self.token_type == Id.Left_ArithSub2:
+      return self._ReadArithSub2Part()
+
+    raise AssertionError('%s not handled' % self.cur_token)
 
   def _ReadDoubleQuotedPart(self, eof_type=Id.Undefined_Tok, here_doc=False):
     """
@@ -1029,7 +1007,7 @@ class WordParser(object):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
       # LexMode.COMMENT and read until end of line.  (TODO: How to add comments
       # to AST?)
-      #
+
       # TODO: Can we do the same thing for Tilde here?  Enter a state where we
       # look for / too.
       if self.token_type == Id.Lit_Pound:

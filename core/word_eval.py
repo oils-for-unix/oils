@@ -169,6 +169,7 @@ def _AppendArray(strs, array, glob_escape=False):
 
 word_part_e = ast.word_part_e
 
+# TODO: Turn these into an ASDL predicates?  Fast table lookup for C++.
 def _GlobsAreExpanded(p):
   """
   Are globs expanded at the top level?  Yes for LiteralPart, and all the var
@@ -179,14 +180,7 @@ def _GlobsAreExpanded(p):
       word_part_e.LiteralPart, word_part_e.CommandSubPart,
       word_part_e.VarSubPart)
 
-"""
-  return p.tag in (
-      word_part_e.LiteralPart, word_part_e.CommandSubPart,
-      word_part_e.VarSubPart)
-"""
 
-
-# TODO: Turn this into an ASDL predicate?  Fast table lookup for C++.
 def _IsSubst(p):
   """
   Returns:
@@ -420,7 +414,6 @@ class _Evaluator(object):
         is_falsey = not defined
 
       #print('!!',id, is_falsey)
-
       if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
         if is_falsey:
           argv = []
@@ -459,8 +452,7 @@ class _Evaluator(object):
     if part.prefix_op:
       op_id = part.prefix_op
 
-      if op_id == Id.VSub_Pound:
-        # LENGTH
+      if op_id == Id.VSub_Pound:  # LENGTH
         if val.IsArray():
           #print("ARRAY LENGTH", len(val.a))
           length = len(val.a)
@@ -515,8 +507,7 @@ class _Evaluator(object):
           val2.AppendTo(argv)
 
         # TODO: Evaluate words, and add the SPACE VALUES, getting a single
-        # string
-        # And then test if it's a literal or glob.
+        # string.  And then test if it's a literal or glob.
         suffix = argv[0]
 
         if val.IsArray():
@@ -883,4 +874,3 @@ class CompletionEvaluator(_Evaluator):
   def EvalCommandSub(self, node):
     # Just  return a dummy string?
     return True, Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')
-

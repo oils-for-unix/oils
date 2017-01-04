@@ -13,7 +13,7 @@ import unittest
 
 from core.id_kind import Id, IdName
 from core import word
-from core.tokens import TokenWordsEqual
+from core.test_lib import TokenWordsEqual
 
 from osh import ast_ as ast
 from osh import parse_lib

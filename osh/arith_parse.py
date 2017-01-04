@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 """
 arith_parse.py - Parse shell arithmetic, which is based on C.
-
-TODO:
-- fix main()
 """
 
 import sys
@@ -168,28 +165,3 @@ def MakeShellSpec():
 
 
 SPEC = MakeShellSpec()
-
-
-def MakeParser(s):
-  lexer = tokenize_expr(s)
-  p = tdop.TdopParser(SPEC, lexer)
-  return p
-
-
-def ParseShell(s, expected=None):
-  p = MakeParser(s)
-  tree = p.Parse()
-
-  tdop.Assert(s, expected, tree)
-  return tree
-
-
-def main(argv):
-  s = argv[1]
-
-  tree = ParseShell(s)
-  print(tree)
-
-
-if __name__ == '__main__':
-  main(sys.argv)

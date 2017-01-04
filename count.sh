@@ -23,7 +23,7 @@ all() {
   echo
 
   echo 'ASDL'
-  wc -l asdl/{asdl_parse,py_meta,gen_cpp,encode}.py 
+  wc -l asdl/{asdl_,py_meta,gen_cpp,encode}.py 
   echo
 
   wc -l asdl/{py_meta,encode}_test.py
@@ -44,7 +44,8 @@ all() {
 
   echo 'OIL'
   { ls {osh,core}/*.py; echo core/*.c; echo bin/*.py; } |
-    grep -v '_test.py$' | xargs wc -l | sort --numeric
+    grep -E -v '_gen.py$|_test.py$|test_lib.py|fake_libc.py' |
+    xargs wc -l | sort --numeric
   echo
 
   return
@@ -62,7 +63,7 @@ parser() {
   echo
 
   echo 'AST and IDs'
-  wc -l osh/osh.asdl core/{tokens,id_kind}.py | sort -n
+  wc -l osh/osh.asdl core/id_kind.py | sort -n
   echo
 
   echo 'Common Algorithms'

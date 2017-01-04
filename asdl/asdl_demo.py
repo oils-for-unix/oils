@@ -4,11 +4,13 @@ asdl_demo.py
 """
 
 import sys
-from asdl import asdl_parse
+from asdl import asdl_ as asdl
 from asdl import arith_parse
 from asdl import py_meta
 from asdl import encode
 from asdl import format as fmt
+
+from core.id_kind import Id
 
 
 def main(argv):
@@ -20,9 +22,11 @@ def main(argv):
   if action == 'py':
     schema_path = argv[2]
 
-    module = asdl_parse.parse(schema_path)
+    module = asdl.parse(schema_path)
     root = sys.modules[__name__]
-    py_meta.MakeTypes(module, root)
+    # NOTE: We shouldn't pass in app_types for arith.asdl, but this is just a
+    # demo.
+    py_meta.MakeTypes(module, root, app_types={'id': asdl.UserType(Id)})
     print(dir(root))
 
   elif action == 'arith-encode':

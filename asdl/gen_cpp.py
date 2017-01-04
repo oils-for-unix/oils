@@ -26,11 +26,9 @@ aligned (because the natural alignment woudl be 1 byte anyway.)
 
 import sys
 
-from asdl import asdl_parse
+from asdl import asdl_ as asdl
 from asdl import py_meta
 from asdl import encode
-
-asdl = asdl_parse
 
 TABSIZE = 2
 MAX_COL = 80
@@ -103,6 +101,13 @@ class ChainOfVisitors:
       v.VisitModule(module)
 
 
+_BUILTINS = {
+    'string': 'char*',  # A read-only string is a char*
+    'int': 'int',
+    'bool': 'bool',
+    'id': 'Id',  # Application specific hack for now
+}
+
 class AsdlVisitor:
   def __init__(self, f):
     self.f = f
@@ -112,12 +117,9 @@ class AsdlVisitor:
     """Return a string for the C++ name of the type."""
     type_name = field.type
 
-    # Special cases the default types provided by ASDL.
-    if type_name == 'string':
-      return 'char*'  # A read-only string is a char*
-
-    if type_name == 'int':
-      return 'int'
+    cpp_type = _BUILTINS.get(type_name)
+    if cpp_type is not None:
+      return cpp_type
 
     typ = self.module.types[type_name]
     if isinstance(typ, asdl.Sum) and asdl.is_simple(typ):

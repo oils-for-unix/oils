@@ -262,32 +262,3 @@ class BoolParser(object):
 
     # TODO: A proper error, e.g. for "&&"
     raise AssertionError("Unexpected token: %s" % self.cur_word)
-
-
-def main(argv):
-  import expr_eval
-  import bool_parse_test
-  import cmd_exec
-  import word_eval
-
-  p = bool_parse_test._MakeParser(argv[1])
-  node = p.ParseExpr()
-  assert p.AtEnd()
-  print('node:', node)
-
-  mem = cmd_exec.Mem('', [])
-  exec_opts = cmd_exec.ExecOpts()
-  ev = word_eval.CompletionEvaluator(mem, exec_opts)
-
-  ok, b = expr_eval.BEval(node, ev)
-  print('result:', ok, b)
-
-
-if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except NotImplementedError:
-    raise
-  except RuntimeError as e:
-    print('FATAL: %r' % e, file=sys.stderr)
-    sys.exit(1)

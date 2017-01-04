@@ -1,11 +1,15 @@
 #!/usr/bin/python3
 """
-base.py - Common base classes.
+base.py -- Common base classes.
 """
 
 import io
 import sys
 
+
+# NOTE: These aren't really necessary in Python.  I'm keeping them for now
+# because I might want to have an ErrorState class that
+# {arith,bool,word,cmd}_parse.py can share.  Composition over inheritance.
 
 class _Parser(object):
   """
@@ -26,16 +30,8 @@ class _Parser(object):
   and looking them up with IDs.
   """
   def __init__(self, arena):
-    # The arena is used to serialize the tree quickly?  And make sure every
-    # node has a number?
-    #
-    # It can also be used in the interactive REPL to clear everything...
-    # although honestly it will take a trivial amount of time to follow like
-    # 100 pointers max and delete them.
-    #
-    # Well it lets you "forget" about some of them?  Although I guess every
-    # word should be owned by node, and every WordPart is owned by a node.  Hm.
-    # And token are passed by value, so you can forget them.  Hm.
+    # The arena is used to allocate nodes and clear them all at once.  The
+    # Reader needs to allocate lines; the Lexer needs to allocate tokens.
     self.arena = arena
 
   def AddErrorContext(self):
@@ -57,7 +53,6 @@ class _Evaluator(object):
 
   And should there be a unified stack trace system?
   """
-
   def AddErrorContext(self):
     pass
 
@@ -87,4 +82,3 @@ def MakeError(msg, *args, token=None, word=None):
     near_token = None
 
   return (near_token, msg)
-

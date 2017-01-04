@@ -1,12 +1,14 @@
--- ASDL's builtin types are: string, int, bool
+-- Data types for the osh AST.
+-- They are composed of the builtin ASDL types (string, int, bool) and our
+-- application type 'id', which is core.id_kind.Id.
 
 module osh
 {
-  -- A portion of a line.
+  -- A portion of a line, used for error messages.
   line_span = (int pool_index, int col, int length)
 
-  -- A primitive token.  NOTE: val is redundant with line_span for now.  If
-  -- rewrite the parser in C++, we might care for memory footprint.  But for
+  -- A primitive token.  NOTE: val is redundant with 'loc' for now.  If we
+  -- rewrite the parser in C++, we might care for memory footprint.  But for 
   -- now this is convenient.
   -- NOTE: identical strings can shared, if we care.
   token = (id id, string val, line_span? loc)
@@ -60,14 +62,15 @@ module osh
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  -- To reprint the here doc, we need the here_end delimiter.  But it 
-  -- doesn't matter at runtime.  do_expansion is calculated from it.
-  -- TODO: was_filled should be ELIMINATED from serialization format.  It's
-  -- only for use at parse time.
-  -- arg_word uses the same name for Here word and here doc.
+  -- Notes about here docs:
+  -- * arg_word is the same for here word (<<<) and here doc (<<).
+  -- * arg_word is required, but must be initialized after construction.
+  -- * To reprint the here doc, we need the here_end delimiter, but it doesn't
+  -- matter at runtime.  do_expansion is calculated from it.
+  -- * was_filled is only used during th parse and should be eliminated from
+  -- serialization format>
   redir = 
     Redirect(id op_id, word arg_word, int fd)
-  -- NOTE: arg_word is required, but must be initialized after construction.
   | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
             string here_end, bool was_filled)
 
@@ -112,37 +115,4 @@ module osh
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.
   -- pipe_op = Pipe | PipeAndStderr
-
-  -- You can have more than one pattern like case var in foo|bar) ...
-  case_arm = (word* patterns, command* action)
-
-  -- Almost all of these can have redirects, even function defs.
-  -- AndOr/Pipeline/Fork are exceptions.
-  -- Fork is in its own wrapper node because it's easy to translate.
-  -- Redirects are easier to translate as well if they are WITHIN each command
-  -- node.
-
-  command_hetero = 
-    XNoOp
-  | XSimpleCommand(word* words, redir* redirects, env_pair* more_env)
-  | XAssignment(assign_scope scope,
-               assign_flags flags,
-               word* names,  -- names mentioned without a binding
-               assign_pair* bindings)
-  | XFork(command* commands)  -- shell only allows one command
-  | XPipeline(command* commands, bool negated, int* op)
-  | XAndOr(command* commands, and_or* ops)
-  | XBlock(command* commands, redir* redirects)
-  | XSubshell(command* commands, redir* redirects)
-  | XDParen(arith_expr child, redir* redirects)
-  | XDBracket(bool_expr child, redir* redirects)
-  | XForEach(string var, word* words, command* body, redir* redirects)
-  -- C-style for loop
-  | XForExpr(arith_expr init, arith_expr test, arith_expr update, command* body,
-            redir* redirects)
-  | XWhile(command cond, command* body, redir* redirects)
-  | XUntil(command cond, command* body, redir* redirects)
-  | XIf(command test, command* body, command* orelse, redir* redirects)
-  | XCase(string var_name, case_arm* cases, redir* redirects)
-  | XFuncDef(string name, command* body, redir* redirects)
 }

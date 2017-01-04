@@ -10,7 +10,7 @@ For pretty-printing.
 import io
 import sys
 
-from asdl import asdl_parse as asdl
+from asdl import asdl_ as asdl
 
 
 class ColorOutput:
@@ -186,8 +186,15 @@ INDENT = 2
 # it needs to receive max_col, and do _TrySingleLine
 # - add a flag (verbose) whether you want to print loc or not.
 #
-# --ast-output foo.bin
-# --ast-format text,ansi,oheap,html
+# --ast-output foo.bin (default stdout)
+# --ast-format text,ansi,oheap,html (default text)
+
+# --ast-format text,ansi,oheap,html (default pretty-text)
+#              text-,ansi-,html- -- abbreviated versions
+
+# abbrevs: {'CompoundWord: f}
+# function to format it
+
 
 def PrintTree(node, f, indent=0, max_col=100):
   """
