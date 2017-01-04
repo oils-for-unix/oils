@@ -470,7 +470,8 @@ class CommandParser(object):
       else:
         var_words.append(w)
 
-    assign_pairs = [ast.assign_pair(lhs, rhs) for lhs, rhs in bindings]
+    assign_pairs = [
+        ast.assign_pair(ast.LeftVar(lhs), rhs) for lhs, rhs in bindings]
     node = ast.Assignment(
         assign_scope, assign_flags, var_words, assign_pairs)
 
@@ -561,15 +562,14 @@ class CommandParser(object):
       if redirects:  # >out.txt g=foo
         print('WARNING: Got redirects in assignment: %s', redirects)
       assign_scope = assign_scope_e.Global
-      assign_flags = 0
       assign_pairs = [
-          ast.assign_pair(lhs, rhs) for lhs, rhs in prefix_bindings]
-      node = ast.Assignment(assign_scope, assign_flags, [], assign_pairs)
+          ast.assign_pair(ast.LeftVar(lhs), rhs) for lhs, rhs in prefix_bindings]
+      node = ast.Assignment(assign_scope, [], [], assign_pairs)
       return node
 
     assign_kw = word.AssignmentBuiltinId(suffix_words[0])
 
-    assign_flags = 0
+    assign_flags = []
     assign_scope = assign_scope_e.Global
 
     if assign_kw in (Id.Assign_Declare, Id.Assign_Local):
@@ -577,10 +577,10 @@ class CommandParser(object):
       # TODO: Parse declare flags.  Hm is it done before or after evaluation?
 
     elif assign_kw == Id.Assign_Export:  # global
-      assign_flags |= 1 << assign_flags_e.Export.enum_id
+      assign_flags.append(assign_flags_e.Export)
 
     elif assign_kw == Id.Assign_Readonly:  # global
-      assign_flags |= 1 << assign_flags_e.ReadOnly.enum_id
+      assign_flags.append(assign_flags_e.ReadOnly)
 
     else:  # ls foo  or  FOO=bar ls foo
       assert assign_kw == Id.Undefined_Tok

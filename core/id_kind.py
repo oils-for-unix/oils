@@ -32,6 +32,8 @@ class Id(object):
 
   The evaluator must consider all Ids.
   """
+  DESCRIPTOR = None
+
   def __init__(self, enum_value):
     self.enum_value = enum_value
 
@@ -48,6 +50,11 @@ class Id(object):
 
   def __repr__(self):
     return IdName(self.enum_value)
+
+
+# Circular reference for ASDL type checking.  See _CheckType in
+# asdl/py_meta.py.
+Id.DESCRIPTOR = Id
 
 
 class Kind(object):

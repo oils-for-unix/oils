@@ -76,8 +76,8 @@ class CompletionTest(unittest.TestCase):
     w.parts.append(a)
 
     # Set global COMPREPLY=(f1 f2)
-    pairs = [ast.assign_pair('COMPREPLY', w)]
-    body_node = ast.Assignment(assign_scope_e.Global, 0, [], pairs)
+    pairs = [ast.assign_pair(ast.LeftVar('COMPREPLY'), w)]
+    body_node = ast.Assignment(assign_scope_e.Global, [], [], pairs)
 
     func_node.children.append(body_node)
 

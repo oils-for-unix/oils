@@ -54,7 +54,7 @@ def InitEvaluator():
 
   val1 = Value.FromString('xxx')
   val2 = Value.FromString('yyy')
-  pairs = [('x', val1), ('y', val2)]
+  pairs = [(ast.LeftVar('x'), val1), (ast.LeftVar('y'), val2)]
   mem.SetLocal(pairs, 0)
 
   exec_opts = cmd_exec.ExecOpts()

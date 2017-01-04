@@ -61,11 +61,15 @@ def _CheckType(value, expected_desc):
   if isinstance(expected_desc, asdl.IntType):
     return isinstance(value, int)
 
+  if isinstance(expected_desc, asdl.BoolType):
+    return isinstance(value, bool)
+
   try:
     actual_desc = value.__class__.DESCRIPTOR
   except AttributeError:
     return False  # it's not of the right type
 
+  # TODO: How is this different than asdl.Constructor?
   if isinstance(expected_desc, asdl.Product):
     return actual_desc is expected_desc
 
@@ -79,7 +83,11 @@ def _CheckType(value, expected_desc):
         if actual_desc is cons:
           return True
 
-  return False
+  # Example:
+  # - Id.DESCRIPTOR == Id.
+  # - ast.ArithBinary.DESCRIPTOR == ast.ArithBinary.  See MakeTypes below where
+  # it constructs a type for each "Constructor".
+  return isinstance(value, actual_desc)
 
 
 class Obj:
@@ -183,8 +191,8 @@ class CompoundObj(Obj):
     except KeyError:
       raise AttributeError('Object of type %r has no attribute %r' %
                            (self.__class__.__name__, name))
-    if False:  # Disable type checking for now
-    #if not _CheckType(value, desc):
+    #if False:  # Disable type checking for now
+    if not _CheckType(value, desc):
       raise AssertionError("Field %r should be of type %s, got %r" %
                            (name, desc, value))
 
@@ -242,14 +250,15 @@ def MakeTypes(module, root, app_types=None):
 
     #print('TYPE', defn.name, typ)
     if isinstance(typ, asdl.Sum):
-      if asdl.is_simple(typ):
+      sum_type = typ
+      if asdl.is_simple(sum_type):
         # An object without fields, which can be stored inline.
-        class_attr = {'DESCRIPTOR': typ}  # asdl.Sum
+        class_attr = {'DESCRIPTOR': sum_type}  # asdl.Sum
         cls = type(defn.name, (SimpleObj, ), class_attr)
         #print('CLASS', cls)
         setattr(root, defn.name, cls)
 
-        for i, cons in enumerate(typ.types):
+        for i, cons in enumerate(sum_type.types):
           enum_id = i + 1
           name = cons.name
           val = cls(enum_id, cons.name)  # Instantiate SimpleObj subtype
@@ -263,15 +272,17 @@ def MakeTypes(module, root, app_types=None):
         setattr(root, defn.name, base_class)
 
         # Make a type and a enum tag for each alternative.
-        for i, cons in enumerate(typ.types):
+        for i, cons in enumerate(sum_type.types):
           tag = i + 1  # zero reserved?
           tag_num[cons.name] = tag  # for enum
 
           class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
-          class_attr['DESCRIPTOR'] = cons
           class_attr['tag'] = tag
 
           cls = type(cons.name, (base_class, ), class_attr)
+          cls.DESCRIPTOR = cls  # CIRCULAR, for type checking.
+                                # TODO: Consider a different scheme.
+
           setattr(root, cons.name, cls)
 
         # e.g. arith_expr_e.Const == 1
@@ -281,6 +292,7 @@ def MakeTypes(module, root, app_types=None):
 
     elif isinstance(typ, asdl.Product):
       class_attr = _MakeFieldDescriptors(module, typ.fields, app_types)
+      # TODO: Descriptor should be cls, like above?
       class_attr['DESCRIPTOR'] = typ
 
       cls = type(defn.name, (CompoundObj, ), class_attr)

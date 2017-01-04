@@ -18,7 +18,8 @@ module osh
   suffix_op = 
     StringUnary(id op_id, word arg_word)
   | PatSub(word pat, word? replace, bool do_all, bool do_prefix, bool do_suffix)
-  | Slice(arith_expr begin, arith_expr? length)
+  -- begin is optional with ${array::1}
+  | Slice(arith_expr? begin, arith_expr? length)
 
   word_part = 
     ArrayLiteralPart(word* words)
@@ -66,7 +67,8 @@ module osh
   -- arg_word uses the same name for Here word and here doc.
   redir = 
     Redirect(id op_id, word arg_word, int fd)
-  | HereDoc(id op_id, word arg_word, int fd, int do_expansion,
+  -- NOTE: arg_word is required, but must be initialized after construction.
+  | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
             string here_end, bool was_filled)
 
   assign_scope = Global | Local
@@ -79,13 +81,13 @@ module osh
     NoOp
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
   | Assignment(assign_scope scope,
-               assign_flags flags,
+               assign_flags* flags,
                word* words,  -- names mentioned without a binding
                assign_pair* pairs)  -- empty redirects for polymorphism?
   | Fork(command* children)  -- shell only allows one command
   | Pipeline(command* children, bool negated, int* stderr_indices)
   -- | AndOr(command* children, and_or* ops)
-  | AndOr(command* children, int op_id)
+  | AndOr(command* children, id op_id)
   -- A command list is used for for/if/while conditions and bodies.  No redirects.
   | CommandList(command* children)
   -- A brace group is a compound command, with redirects.
@@ -96,9 +98,9 @@ module osh
   -- do_arg_iter: whether to implicitly loop over "$@"
   | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
             command* children, redir* redirects)
-  -- C-style for loop
-  | ForExpr(arith_expr init, arith_expr cond, arith_expr update, command* children,
-            redir* redirects)
+  -- C-style for loop.  Any of the 3 expressions can be omitted.
+  | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
+            command* children, redir* redirects)
   | While(command* children, redir* redirects)
   | Until(command* children, redir* redirects)
   | If(command* children, redir* redirects)

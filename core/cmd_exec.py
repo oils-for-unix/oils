@@ -165,9 +165,10 @@ class Mem(object):
   def SetGlobal(self, pairs, flags):
     """For completion."""
     g = self.var_stack[0]  # global scope
-    for name, value in pairs:
+    for lhs, value in pairs:
       assert isinstance(value, Value), value
-      g[name] = flags, value
+      # Assuming LeftVar for now.
+      g[lhs.name] = flags, value
 
   def SetLocal(self, pairs, flags):
     # TODO: respect flags
@@ -187,9 +188,10 @@ class Mem(object):
     # This helps with stuff like IFS.  It starts off as a string, and assigning
     # it to a list is en error.  I guess you will have to turn this no for
     # bash?
-    for name, value in pairs:
+    for lhs, value in pairs:
       assert isinstance(value, Value), value
-      self.top[name] = flags, value
+      # Assuming LeftVar for now.
+      self.top[lhs.name] = flags, value
 
   # Are special vars here?  # like $? and $0 ?
   # IFS, PWD, etc.
@@ -267,7 +269,7 @@ class Executor(object):
     line = sys.stdin.readline()
     # TODO: split line and do that logic
     val = Value.FromString(line.strip())
-    pairs = [(names[0], val)]
+    pairs = [(ast.LeftVar(names[0]), val)]
     self.mem.SetLocal(pairs, 0)  # read always uses local variables?
     return 0
 

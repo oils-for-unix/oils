@@ -380,14 +380,14 @@ class ArrayTest(unittest.TestCase):
     # Empty array
     node = assertParseCommandList(self,
         'empty=()')
-    self.assertEqual(['empty'], [p.lhs for p in node.pairs])
+    self.assertEqual(['empty'], [p.lhs.name for p in node.pairs])
     self.assertEqual([], node.pairs[0].rhs.parts[0].words)  # No words
     self.assertEqual(command_e.Assignment, node.tag)
 
     # Array with 3 elements
     node = assertParseCommandList(self,
         'array=(a b c)')
-    self.assertEqual(['array'], [p.lhs for p in node.pairs])
+    self.assertEqual(['array'], [p.lhs.name for p in node.pairs])
     self.assertEqual(3, len(node.pairs[0].rhs.parts[0].words))
     self.assertEqual(command_e.Assignment, node.tag)
 
@@ -404,7 +404,7 @@ class ArrayTest(unittest.TestCase):
         'array=(a b c); array2=(d e f)')
     self.assertEqual(2, len(node.children))
     a2 = node.children[1]
-    self.assertEqual(['array2'], [p.lhs for p in a2.pairs])
+    self.assertEqual(['array2'], [p.lhs.name for p in a2.pairs])
 
 
 class RedirectTest(unittest.TestCase):

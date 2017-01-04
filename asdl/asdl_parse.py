@@ -51,7 +51,10 @@ class BoolType:
   pass
 
 
-# The type that should be passed
+# NOTE: We might want to change this to PrimitiveType(int tag).  Then
+# ArrayType, MaybeType, Sum, and Product are expressions involving primitives.
+
+# The type that should be passed.
 DESCRIPTORS_BY_NAME = {
     'string': StrType(),
     'int': IntType(),

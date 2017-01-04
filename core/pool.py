@@ -1,6 +1,16 @@
 #!/usr/bin/python
 """
 pool.py - Sketch of memory management, like you would do in C++.
+
+TODO: I think this should be a pool/arena for EVERY line parsed.
+parse/execute/parse/execute.
+At least for osh.
+So you have to keep track of which arena, and ALSO the line WITHIN the arena?
+
+So line_span becomes (int arena, int line_index, int col, int length)
+
+Right after executing, you remove the arena from the pool.
+Better names?  I think pool is the higher level, and arena is the lower level.
 """
 
 import sys

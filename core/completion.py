@@ -201,8 +201,8 @@ class ShellFuncAction(CompletionAction):
     # reply = []
     # self.ex.GetArray(reply)
 
-    self.ex.mem.SetGlobalArray('COMP_WORDS', words)
-    self.ex.mem.SetGlobalString('COMP_CWORD', str(index))
+    self.ex.mem.SetGlobalArray(ast.LeftVar('COMP_WORDS'), words)
+    self.ex.mem.SetGlobalString(ast.LeftVar('COMP_CWORD'), str(index))
 
     self.ex.RunFunc(self.func, [])  # call with no arguments
 
