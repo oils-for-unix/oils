@@ -23,7 +23,7 @@ all() {
   echo
 
   echo 'ASDL'
-  wc -l asdl/{asdl_,py_meta,gen_cpp,encode}.py 
+  wc -l asdl/{asdl_,py_meta,gen_cpp,encode,format}.py | sort --numeric
   echo
 
   wc -l asdl/{py_meta,encode}_test.py

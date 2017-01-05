@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "id_kind.h"
 #include "osh.asdl.h"
 
 // Returns the root ref, or -1 for invalid

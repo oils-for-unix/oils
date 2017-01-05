@@ -181,9 +181,10 @@ class ForwardDeclareVisitor(AsdlVisitor):
 class ClassDefVisitor(AsdlVisitor):
   """Generate C++ classes and type-safe enums."""
 
-  def __init__(self, f, enc):
+  def __init__(self, f, enc, enum_types=None):
     AsdlVisitor.__init__(self, f)
     self.ref_width = enc.ref_width
+    self.enum_types = enum_types or {}
     self.pointer_type = enc.pointer_type
     self.footer = []  # lines
 
@@ -296,7 +297,7 @@ class ClassDefVisitor(AsdlVisitor):
           'inline const %(ctype)s %(maybe_qual_name)s('
           'const %(pointer_type)s* base, int index) const')
 
-      if ctype == 'int':
+      if ctype in ('bool', 'int'):
         func_header = A_POINTER + ' {'
         body_line1 = ARRAY_OFFSET
         inline_body = 'return Ref(base, %(offset)d).Int(a);'
@@ -335,11 +336,11 @@ class ClassDefVisitor(AsdlVisitor):
           'inline const %(ctype)s %(maybe_qual_name)s('
           'const %(pointer_type)s* base) const')
 
-      if ctype == 'int':
+      if ctype in ('bool', 'int'):
         func_header = SIMPLE
         inline_body = 'return Int(%(offset)d);'
 
-      elif ctype.endswith('_e'):
+      elif ctype.endswith('_e') or ctype in self.enum_types:
         func_header = SIMPLE
         inline_body = 'return static_cast<const %(ctype)s>(Int(%(offset)d));'
 
@@ -424,7 +425,10 @@ class Obj {
 
 """ % d)
 
-    c = ChainOfVisitors(ForwardDeclareVisitor(f), ClassDefVisitor(f, enc))
+    # Id should be treated as an enum.
+    c = ChainOfVisitors(
+        ForwardDeclareVisitor(f),
+        ClassDefVisitor(f, enc, enum_types=['Id']))
     c.VisitModule(module)
 
     f.write("""\

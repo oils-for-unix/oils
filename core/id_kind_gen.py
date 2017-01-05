@@ -30,7 +30,7 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
     kind_labels: optional name to integer
   """
   Emit('#include <cstdint>', f)
-  Emit('#include "stdio.h"', f)
+  #Emit('#include "stdio.h"', f)
   Emit('', f)
   Emit('enum class Kind : uint8_t {', f)
   if kind_labels:
@@ -49,30 +49,31 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
 
   Emit('};\n', f)
 
-  f.write(r"""
-Kind LookupKind(Id id) {
-  int i = static_cast<int>(id);
-  int k = 175 & i & ((i ^ 173) + 11);
-  return static_cast<Kind>(k);
-}
+  if 0:  # Test for blog post
+    f.write(r"""
+  Kind LookupKind(Id id) {
+    int i = static_cast<int>(id);
+    int k = 175 & i & ((i ^ 173) + 11);
+    return static_cast<Kind>(k);
+  }
 
-int main() {
-""")
-  for names_in_kind in id_names:
-    if id_labels:
-      for id_name in names_in_kind:
-        kind_name = id_name.split('_')[0]
-        test = 'if (LookupKind(Id::%s) != Kind::%s) return 1;' % (id_name, kind_name)
-        Emit(test, f, 1)
-    else:
-      pass
-    Emit('', f)
+  int main() {
+  """)
+    for names_in_kind in id_names:
+      if id_labels:
+        for id_name in names_in_kind:
+          kind_name = id_name.split('_')[0]
+          test = 'if (LookupKind(Id::%s) != Kind::%s) return 1;' % (id_name, kind_name)
+          Emit(test, f, 1)
+      else:
+        pass
+      Emit('', f)
 
-  f.write(r"""
-  printf("PASSED\n");
-  return 0;
-}
-""")
+    f.write(r"""
+    printf("PASSED\n");
+    return 0;
+  }
+  """)
 
 def main(argv):
   try:

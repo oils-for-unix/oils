@@ -114,7 +114,16 @@ arith-demo() {
 }
 
 osh-demo() {
+  local name=osh
+  local data=_tmp/${name}.bin
+
+  # TODO: Call bin/osh --ast-output _tmp/a.oheap --ast-format oheap -c 'echo # hi'
+
+  core/id_kind_gen.py cpp > _tmp/id_kind.h
   build-demo osh/osh.asdl
+
+  local bin=_tmp/${name}_demo 
+  $bin $data
 }
 
 a2() {
