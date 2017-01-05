@@ -3,8 +3,6 @@
 osh/ast_.py -- Parse osh.asdl and dynamically create classes on this module.
 """
 
-import json
-import re
 import os
 import sys
 
@@ -13,27 +11,21 @@ from asdl import asdl_ as asdl
 
 from core.id_kind import Id
 
-# This is word characters, - and _, as well as path name characters . and /.
-_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
-
-def EncodeTokenVal(s):
-  if '\n' in s:
-    return json.dumps(s)  # account for the fact that $ matches the newline
-  if _PLAIN_RE.match(s):
-    return s
-  else:
-    return json.dumps(s)
-
-
-def PrintAst(node, out_f, do_abbrev=False):
+def PrettyPrint(node, out_f, do_abbrev=False):
   """
+  Args:
+    node: node from osh.asdl
+    out_f: ColorOutput
   """
   pass
 
 
 def _ParseAndMakeTypes(schema_path, root):
   # TODO: A better syntax for this might be:
-  # id = external in osh.asdl.  provided by the application.
+  #
+  #     id = external
+  #
+  # in osh.asdl.  Then we can show an error if it's not provided.
   app_types = {'id': asdl.UserType(Id)}
 
   module = asdl.parse(schema_path)

@@ -23,3 +23,9 @@ HOME=/home/bob
 echo x=~
 # stdout: x=~
 # BUG bash/mksh stdout: x=/home/bob
+
+### tilde expansion of word after redirect
+echo hi > ~/git/oil/_tmp/tilde1.txt
+cat $HOME/git/oil/_tmp/tilde1.txt | wc -c 
+# stdout: 3
+# status: 0

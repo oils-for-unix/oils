@@ -8,6 +8,8 @@ For pretty-printing.
 """
 
 import io
+import json
+import re
 import sys
 
 from asdl import asdl_ as asdl
@@ -178,6 +180,18 @@ def MakeTree(obj, omit_empty=True):
   return out_node
 
 
+# This is word characters, - and _, as well as path name characters . and /.
+_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
+
+def _PrettyString(s):
+  if '\n' in s:
+    return json.dumps(s)  # account for the fact that $ matches the newline
+  if _PLAIN_RE.match(s):
+    return s
+  else:
+    return json.dumps(s)
+
+
 INDENT = 2
 
 # TODO:
@@ -212,7 +226,7 @@ def PrintTree(node, f, indent=0, max_col=100):
     return
 
   if isinstance(node, str):
-    f.write(ind + node)
+    f.write(ind + _PrettyString(node))
 
   elif isinstance(node, _Obj):
     f.write(ind + '(')
@@ -266,7 +280,7 @@ def _TrySingleLine(node, f, max_col=80):
       If False, you can't use the value of f.
   """
   if isinstance(node, str):
-    f.write(node)
+    f.write(_PrettyString(node))
 
   elif isinstance(node, _Obj):
     f.write('(')

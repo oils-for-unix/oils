@@ -349,7 +349,8 @@ class CommandParser(object):
             'Expected word after redirect operator', word=self.cur_word)
         return None
 
-      node.arg_word = self.cur_word
+      new_word = word.TildeDetect(self.cur_word)
+      node.arg_word = new_word or self.cur_word
       self._Next()
 
     return node

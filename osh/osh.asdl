@@ -2,6 +2,13 @@
 -- They are composed of the builtin ASDL types (string, int, bool) and our
 -- application type 'id', which is core.id_kind.Id.
 
+-- Unimplemented:
+-- * extended globs: unlike globs, these are parsed up front
+-- * Brace expansion: should this be another kind of 'word'?  It can be
+--   expanded at compile time.
+-- * let arithmetic (rarely used)
+-- * coprocesses
+
 module osh
 {
   -- A portion of a line, used for error messages.
@@ -23,8 +30,12 @@ module osh
   -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 
+  array_item = 
+    ArrayWord(word w)  -- # TODO: make them scoped?  array_item::Pair?
+  | ArrayPair(word key, word value)
+
   word_part = 
-    ArrayLiteralPart(word* words)
+    ArrayLiteralPart(word* words) -- TODO: should be array_item* items
   | LiteralPart(token token)
   | EscapedLiteralPart(token token)
   | SingleQuotedPart(token* tokens)
