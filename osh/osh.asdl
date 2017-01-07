@@ -18,6 +18,9 @@
 -- * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
 -- * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
 -- * HereDoc vs HereWord.  I collapsed them.
+-- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
+-- * Don't fill in file descriptor unless user specified it, e.g. echo < in.txt
+--   vs. echo 1< in.txt
 
 module osh
 {

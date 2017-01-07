@@ -206,10 +206,13 @@ class CompoundObj(Obj):
     self.__dict__[name] = value
 
   def __repr__(self):
-    f = io.StringIO()
+    # For the console
+    f = fmt.AnsiOutput(io.StringIO())
+    #f = fmt.HtmlOutput(io.StringIO())
     tree = fmt.MakeTree(self)
     fmt.PrintTree(tree, f)
-    return f.getvalue()
+    s, _ = f.GetRaw()
+    return s
 
 
 def _MakeFieldDescriptors(module, fields, app_types):

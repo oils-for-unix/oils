@@ -18,8 +18,9 @@ readonly RESULT_DIR=_tmp/wild
 # Helpers
 # 
 
+# Default abbrev-text format
 osh-parse() {
-  bin/osh --print-ast --no-exec "$@"
+  bin/osh --ast-output - --no-exec "$@"
 }
 
 # TODO: err file always exists because of --no-exec
@@ -27,10 +28,23 @@ _parse-one() {
   local input=$1
   local output=$2
 
-  echo $input
-
   local stderr_file=$output-err.txt
   osh-parse $input > $output-AST.txt 2> $stderr_file
+  local status=$?
+
+  return $status
+}
+
+osh-html() {
+  bin/osh --ast-output - --ast-format html --no-exec "$@"
+}
+
+_osh-html-one() {
+  local input=$1
+  local output=$2
+
+  local stderr_file=$output-htmlerr.txt
+  osh-html $input > $output-AST.html 2> $stderr_file
   local status=$?
 
   return $status
@@ -56,7 +70,12 @@ _parse-and-copy-one() {
   fi
 
   mkdir -p $(dirname $output)
-  if ! _parse-one $input $output; then
+  echo $input
+
+  if _parse-one $input $output; then
+    # If the text worked, do html
+    _osh-html-one $input $output
+  else
     echo $rel_path >>$dest_base/FAILED.txt
 
     # Append

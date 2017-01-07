@@ -31,11 +31,15 @@ import traceback  # for debugging
 this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(this_dir, '..'))
 
+from asdl import format as fmt
+from asdl import encode
+
 from osh import word_parse  # for tracing
 from osh import cmd_parse  # for tracing
-from osh import parse_lib
-
 from core import lexer  # for tracing
+
+from osh import ast_ as ast
+from osh import parse_lib
 
 from core import builtin
 from core import completion
@@ -54,6 +58,16 @@ class UsageError(RuntimeError):
 
 
 def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
+  # Is this correct?  Are there any non-ANSI terminals?  I guess you can pass
+  # -i but redirect stdout.
+  if opts.ast_output == '-':
+    ast_f = fmt.DetectConsoleOutput(sys.stdout)
+  elif opts.ast_output == '-':
+    f = open(opts.ast_output, 'w')  # implicitly closed when the process ends
+    ast_f = fmt.DetectConsoleOutput(f)
+  else:
+    ast_f = None
+
   while True:
     try:
       w = c_parser.Peek()
@@ -79,8 +93,8 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
         # TODO: PrintError here
         raise RuntimeError('failed parse: %s' % c_parser.Error())
 
-      if opts.print_ast:
-        print(node)
+      if ast_f:
+        ast.PrettyPrint(node)
 
       status, cflow = ex.ExecuteTop(node)
 
@@ -116,8 +130,12 @@ def Options():
   # - Make this --print=ast,status
   # - And maybe --dump=tokens,words,nodes ?
   p.add_option(
-      '--print-ast', dest='print_ast', action='store_true', default=False,
-      help='Print AST before execution')
+      '--ast-output', dest='ast_output', default='',
+      help='Print the AST to this file; - for stdout')
+  p.add_option(
+      '--ast-format', dest='ast_format', default='abbrev-text',
+      choices=['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'],
+      help='What format to use for the AST (text or html)')
   p.add_option(
       '--print-status', dest='print_status', action='store_true',
       default=False,
@@ -259,8 +277,27 @@ def OshMain(argv):
       ui.PrintError(err, pool, sys.stderr)
       return 2  # parse error is code 2
 
-    if opts.print_ast:
-      print(node)
+    if opts.ast_output:
+      if opts.ast_output == '-':
+        f = sys.stdout
+      else:
+        f = open(opts.ast_output, 'w')  # implicitly closed
+
+      if opts.ast_format == 'oheap':
+        pass
+        # TODO: encode.EncodeRoot
+      else:
+        if opts.ast_format in ('text', 'abbrev-text'):
+          ast_f = fmt.DetectConsoleOutput(f)
+        elif opts.ast_format in ('html', 'abbrev-html'):
+          ast_f = fmt.HtmlOutput(f)
+        else:
+          raise AssertionError
+        tree = fmt.MakeTree(node, abbrev_hook=ast.AbbreviateNodes)
+        ast_f.FileHeader()
+        fmt.PrintTree(tree, ast_f)
+        ast_f.FileFooter()
+        ast_f.write('\n')
 
     if opts.do_exec:
       status, cflow = ex.Execute(node)

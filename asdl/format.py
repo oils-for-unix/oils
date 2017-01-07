@@ -1,12 +1,22 @@
 #!/usr/bin/python
 """
-format.py
+format.py -- Pretty print an ASDL data structure.
 
 Like encode.py, but uses text instead of binary.
 
-For pretty-printing.
+TODO:
+
+- auto-abbreviation of single field things (minus location)
+
+- option to omit spaces for SQ, SQ, W?  It's all one thing.
+
+Places where we try a single line:
+ - arrays 
+ - objects with name fields
+ - abbreviated, unnamed fields
 """
 
+import cgi
 import io
 import json
 import re
@@ -15,167 +25,279 @@ import sys
 from asdl import asdl_ as asdl
 
 
+def DetectConsoleOutput(f):
+  """Wrapped to auto-detect."""
+  if f.isatty():
+    return AnsiOutput(f)
+  else:
+    return TextOutput(f)
+
+
 class ColorOutput:
-  """
-  API:
+  """Abstract base class for plain text, ANSI color, and HTML color."""
 
-  PushColor() ?
-  PopColor()?
-
-  Things that should be color: raw text, like "ls" and '/foo/bar"
-
-  certain kinds of nodes.
-
-  Should we have both a background color and a foreground color?
-  """
   def __init__(self, f):
     self.f = f
-    self.lines = []
+    self.num_chars = 0
 
-  def Write(self, line):
-    self.lines.append(line)
+  def NewTempBuffer(self):
+    """Return a temporary buffer for the line wrapping calculation."""
+    raise NotImplementedError
+
+  def FileHeader(self):
+    """Hook for printing a full file."""
+    pass
+
+  def FileFooter(self):
+    """Hook for printing a full file."""
+    pass
+
+  def PushColor(self, str_type):
+    raise NotImplementedError
+
+  def PopColor(self):
+    raise NotImplementedError
+
+  def write(self, s):
+    self.f.write(s)
+    self.num_chars += len(s)  # Only count visible characters!
+
+  def WriteRaw(self, raw):
+    """
+    Write raw data without escaping, and without counting control codes in the length.
+    """
+    s, num_chars = raw
+    self.f.write(s)
+    self.num_chars += num_chars
+
+  def NumChars(self):
+    return self.num_chars
+
+  def GetRaw(self):
+    # For when we have an io.StringIO()
+    return self.f.getvalue(), self.num_chars
 
 
 class TextOutput(ColorOutput):
   """TextOutput put obeys the color interface, but outputs nothing."""
+
   def __init__(self, f):
     ColorOutput.__init__(self, f)
+
+  def NewTempBuffer(self):
+    return TextOutput(io.StringIO())
+
+  def PushColor(self, str_type):
+    pass  # ignore color
+
+  def PopColor(self):
+    pass  # ignore color
 
 
 class HtmlOutput(ColorOutput):
   """
-  HTML one can have wider columns.  Maybe not even fixed-width font.
-  Hm yeah indentation should be logical then?
+  HTML one can have wider columns.  Maybe not even fixed-width font.  Hm yeah
+  indentation should be logical then?
 
   Color: HTML spans
   """
   def __init__(self, f):
     ColorOutput.__init__(self, f)
 
+  def NewTempBuffer(self):
+    return HtmlOutput(io.StringIO())
+
+  def FileHeader(self):
+    # TODO: Use a different CSS file to make the colors match.  I like string
+    # literals as yellow, etc.
+     #<link rel="stylesheet" type="text/css" href="/css/code.css" />
+    self.f.write("""
+<html>
+  <head>
+     <title>oil AST</title>
+     <style>
+      .n { color: brown }
+      .s { font-weight: bold }
+      .o { color: darkgreen }
+     </style>
+  </head>
+  <body>
+    <pre>
+""")
+
+  def FileFooter(self):
+    self.f.write("""
+    </pre>
+  </body>
+</html>
+    """)
+
+  def PushColor(self, str_type):
+    # To save bandwidth, use single character CSS names.
+    if str_type == _NODE_TYPE:
+      css_class = 'n'
+    elif str_type == _STRING_LITERAL:
+      css_class = 's'
+    elif str_type == _OTHER_LITERAL:
+      css_class = 'o'
+    elif str_type == _OTHER_TYPE:
+      css_class = 'o'
+    else:
+      raise AssertionError(str_type)
+    self.f.write('<span class="%s">' % css_class)
+
+  def PopColor(self):
+    self.f.write('</span>')
+
+  def write(self, s):
+    # PROBLEM: Double escaping!
+    self.f.write(cgi.escape(s))
+    self.num_chars += len(s)  # Only count visible characters!
+
+
+# Color token types
+_NODE_TYPE = 1
+_STRING_LITERAL = 2
+_OTHER_LITERAL = 3  # Int and bool.  Green?
+_OTHER_TYPE = 4  # Or
+
+
+# ANSI color constants (also in sh_spec.py)
+_RESET = '\033[0;0m'
+_BOLD = '\033[1m'
+
+_RED = '\033[31m'
+_GREEN = '\033[32m'
+_BLUE = '\033[34m'
+
+_YELLOW = '\033[33m'
+_CYAN = '\033[36m'
+
 
 class AnsiOutput(ColorOutput):
-  """
-  Generally 80 column output
+  """For the console."""
 
-  Color: html code and restore
-  """
   def __init__(self, f):
     ColorOutput.__init__(self, f)
 
+  def NewTempBuffer(self):
+    return AnsiOutput(io.StringIO())
+
+  def PushColor(self, str_type):
+    if str_type == _NODE_TYPE:
+      #self.f.write(_GREEN)
+      self.f.write(_YELLOW)
+    elif str_type == _STRING_LITERAL:
+      self.f.write(_BOLD)
+    elif str_type == _OTHER_LITERAL:
+      self.f.write(_GREEN)
+    elif str_type == _OTHER_TYPE:
+      self.f.write(_GREEN)  # Same color as other literals for now
+    else:
+      raise AssertionError(str_type)
+
+  def PopColor(self):
+    self.f.write(_RESET)
+
+
+#
+# Nodes
+#
+
 
 class _Obj:
-  """Intermediate node."""
+  """Node for pretty-printing."""
   def __init__(self, node_type):
     self.node_type = node_type
-    self.fields = []  # list of 2-tuples
+    self.fields = []  # list of 2-tuples of (name, Obj or ColoredString)
+
+    # Custom hooks can change these:
+    self.abbrev = False
+    self.show_node_type = True  # only respected when abbrev is false
+    self.left = '('
+    self.right = ')'
+    self.unnamed_fields = []  # if this is set, it's printed instead?
+                              # problem: CompoundWord just has word_part though
+                              # List of Obj or ColoredString
+
+class _ColoredString:
+  """Node for pretty-printing."""
+  def __init__(self, s, str_type):
+    self.s = s
+    self.str_type = str_type
 
 
-def MakeTree(obj, omit_empty=True):
-  """
+def MakeTree(obj, abbrev_hook=None, omit_empty=True):
+  """The first step of printing: create a homogeneous tree.
+
   Args:
     obj: py_meta.Obj
     omit_empty: Whether to omit empty lists
   Returns:
-    A tree of strings and lists.
-
-  NOTES:
-
-  {} for words, [] for wordpart?  What about tokens?  I think each node has to
-  be able to override the behavior.  How to do this though?  Free functions?
-
-  Common case:
-  ls /foo /bar -> (Com {[ls]} {[/foo]} {[/bar]})
-  Or use color for this?
-
-  (ArithBinary Plus (ArithBinary Plus (Const 1) (Const 2)) (Const 3))
-  vs.
-  ArithBinary
-    Plus
-    ArithBinary
-      Plus
-      Const 1
-      Const 2
-    Const 3
-
-  What about field names?
-
-  Inline:
-  (Node children:[() () ()])
-
-  Indented
-  (Node
-    children:[
-      () 
-      ()
-      ()
-    ]
-  )
+    _Obj node
   """
-  # HACK to incorporate old AST nodes.  Remove when the whole thing is
-  # converted.
   from asdl import py_meta
-  if not isinstance(obj, py_meta.CompoundObj):
-    # Tokens use this now
-    #print("OBJ", obj.__class__.__name__, obj)
-    #raise AssertionError(obj)
-    return repr(obj)
 
-  # These lines can be possibly COMBINED all into one.  () can replace
-  # indentation?
-  out_node = _Obj(obj.__class__.__name__)
-  fields = out_node.fields
+  if isinstance(obj, py_meta.SimpleObj):  # Primitive
+    return obj.name
 
-  for field_name in obj.FIELDS:
-    show_field = True
-    out_val = ''
+  elif isinstance(obj, py_meta.CompoundObj):
+    # These lines can be possibly COMBINED all into one.  () can replace
+    # indentation?
+    out_node = _Obj(obj.__class__.__name__)
+    fields = out_node.fields
 
-    # Need a different data model.  Pairs?
-    #print(name)
-    try:
-      field_val = getattr(obj, field_name)
-    except AttributeError:
-      out_val = '?'
-      continue
+    for field_name in obj.FIELDS:
+      show_field = True
+      out_val = ''
 
-    desc = obj.DESCRIPTOR_LOOKUP[field_name]
-    if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
-      # TODO: How to check for overflow?
-      out_val = str(field_val)
+      try:
+        field_val = getattr(obj, field_name)
+      except AttributeError:
+        out_val = '?'
+        continue
 
-    elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
-      out_val = field_val.name
+      desc = obj.DESCRIPTOR_LOOKUP[field_name]
+      if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
+        out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
 
-    elif isinstance(desc, asdl.StrType):
-      out_val = field_val
+      elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
+        out_val = field_val.name
 
-    elif isinstance(desc, asdl.ArrayType):
-      # Hm does an array need the field name?  I can have multiple arrays like
-      # redirects, more_env, and words.  Is there a way to make "words"
-      # special?
-      out_val = []
-      obj_list = field_val
-      for child_obj in obj_list:
-        t = MakeTree(child_obj)
-        out_val.append(t)
+      elif isinstance(desc, asdl.StrType):
+        out_val = _ColoredString(field_val, _STRING_LITERAL)
 
-      if omit_empty and not obj_list:
-        show_field = False
+      elif isinstance(desc, asdl.ArrayType):
+        out_val = []
+        obj_list = field_val
+        for child_obj in obj_list:
+          t = MakeTree(child_obj, abbrev_hook)
+          out_val.append(t)
 
-    elif isinstance(desc, asdl.MaybeType):
-      if field_val is None:
-        show_field = False
+        if omit_empty and not obj_list:
+          show_field = False
+
+      elif isinstance(desc, asdl.MaybeType):
+        if field_val is None:
+          show_field = False
+        else:
+          out_val = MakeTree(field_val, abbrev_hook)
+
       else:
-        out_val = MakeTree(field_val)
+        out_val = MakeTree(field_val, abbrev_hook)
 
-    else:
-      # Recursive call for child records.  Write children before parents.
+      if show_field:
+        out_node.fields.append((field_name, out_val))
 
-      # Children can't be written directly to 'out'.  We have to know if they
-      # will fit first.
-      out_val = MakeTree(field_val)
+    # Call user-defined hook to abbreviate compound objects.
+    if abbrev_hook:
+      abbrev_hook(obj, out_node)
 
-    if show_field:
-      out_node.fields.append((field_name, out_val))
+  else:
+    # Id uses this now.  TODO: Should we have plugins?  Might need it for
+    # color.
+    #print('OTHER', obj.__class__, isinstance(obj, py_meta.CompoundObj))
+    return _ColoredString(repr(obj), _OTHER_TYPE)
 
   return out_node
 
@@ -194,85 +316,201 @@ def _PrettyString(s):
 
 INDENT = 2
 
-# TODO:
-# - Add plugins:
-# look up _Obj.name into a dictionary of plugin printers.
-# it needs to receive max_col, and do _TrySingleLine
-# - add a flag (verbose) whether you want to print loc or not.
-#
-# --ast-output foo.bin (default stdout)
-# --ast-format text,ansi,oheap,html (default text)
+def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
+  """Print an array of objects with line wrapping.
 
-# --ast-format text,ansi,oheap,html (default pretty-text)
-#              text-,ansi-,html- -- abbreviated versions
-
-# abbrevs: {'CompoundWord: f}
-# function to format it
-
-
-def PrintTree(node, f, indent=0, max_col=100):
+  Returns whether they all fit on a single line, so you can print the closing
+  brace properly.
   """
-  Args:
-    node: homogeneous tree node
-    f: output file. TODO: Should take ColorOutput?
-  """
+  all_fit = True
+  chars_so_far = prefix_len
+
+  for i, val in enumerate(array):
+    if i != 0:
+      f.write(' ')
+
+    single_f = f.NewTempBuffer()
+    if _TrySingleLine(val, single_f, max_col - chars_so_far):
+      f.WriteRaw(single_f.GetRaw())
+      chars_so_far += single_f.NumChars()
+    else:  # WRAP THE LINE
+      f.write('\n')
+      # TODO: Add max_col here, taking into account the field name
+      new_indent = indent+INDENT
+      PrintTree(val, f, indent=new_indent, max_col=max_col)
+
+      chars_so_far = 0  # allow more
+      all_fit = False
+  return all_fit
+
+
+def _PrintWholeArray(array, prefix_len, f, indent, max_col):
+  # This is UNLIKE the abbreviated case above, where we do WRAPPING.
+  # Here, ALL children must fit on a single line, or else we separate
+  # each one oonto a separate line.  This is to avoid the following:
+  #
+  # children: [(C ...)
+  #   (C ...)
+  # ]
+  # The first child is out of line.  The abbreviated objects have a
+  # small header like C or DQ so it doesn't matter as much.
+  all_fit = True
+  pieces = []
+  chars_so_far = prefix_len
+  for item in array:
+    single_f = f.NewTempBuffer()
+    if _TrySingleLine(item, single_f, max_col - chars_so_far):
+      pieces.append(single_f.GetRaw())
+      chars_so_far += single_f.NumChars()
+    else:
+      all_fit = False
+      break
+
+  if all_fit:
+    for i, p in enumerate(pieces):
+      if i != 0:
+        f.write(' ')
+      f.WriteRaw(p)
+    f.write(']')
+  return all_fit
+
+
+def _PrintTreeObj(node, f, indent, max_col):
+  """Print a CompoundObj in abbreviated or normal form."""
   ind = ' ' * indent
 
-  # Try printing on a single line
-  single_f = io.StringIO()
-  single_f.write(ind)
-  if _TrySingleLine(node, single_f, max_col=max_col-indent):
-    f.write(single_f.getvalue())
-    return
+  if node.abbrev:  # abbreviated
+    prefix = ind + node.left
+    f.write(prefix)
+    if node.show_node_type:
+      f.PushColor(_NODE_TYPE)
+      f.write(node.node_type)
+      f.PopColor()
+      f.write(' ')
 
-  if isinstance(node, str):
-    f.write(ind + _PrettyString(node))
+    prefix_len = len(prefix) + len(node.node_type) + 1
+    all_fit = _PrintWrappedArray(
+        node.unnamed_fields, prefix_len, f, indent, max_col)
 
-  elif isinstance(node, _Obj):
-    f.write(ind + '(')
+    if not all_fit:
+      f.write('\n')
+      f.write(ind)
+    f.write(node.right)
+
+  else:  # full form like (SimpleCommand ...)
+    f.write(ind + node.left)
+
+    f.PushColor(_NODE_TYPE)
     f.write(node.node_type)
+    f.PopColor()
+
     f.write('\n')
     i = 0
     for name, val in node.fields:
       ind1 = ' ' * (indent+INDENT)
-      if isinstance(val, list):
-        # TODO: _TrySingleLine here too.
-        f.write('%s%s: [\n' % (ind1, name))
-        for child in val:
-          # TODO: Add max_col here
-          PrintTree(child, f, indent=indent+INDENT+INDENT)
+      if isinstance(val, list):  # list field
+        name_str = '%s%s: [' % (ind1, name)
+        f.write(name_str)
+        prefix_len = len(name_str)
+
+        if not _PrintWholeArray(val, prefix_len, f, indent, max_col):
           f.write('\n')
-        f.write('%s]' % ind1)
-      else:
+          for child in val:
+            # TODO: Add max_col here
+            PrintTree(child, f, indent=indent+INDENT+INDENT)
+            f.write('\n')
+          f.write('%s]' % ind1)
+
+      else:  # primitive field
         name_str = '%s%s: ' % (ind1, name)
         f.write(name_str)
         prefix_len = len(name_str)
 
         # Try to print it on the same line as the field name; otherwise print
         # it on a separate line.
-        single_f = io.StringIO()
-        if _TrySingleLine(val, single_f, max_col=max_col - prefix_len):
-          f.write(single_f.getvalue())
+        single_f = f.NewTempBuffer()
+        if _TrySingleLine(val, single_f, max_col - prefix_len):
+          f.WriteRaw(single_f.GetRaw())
         else:
           f.write('\n')
           # TODO: Add max_col here, taking into account the field name
           PrintTree(val, f, indent=indent+INDENT+INDENT)
         i += 1
+
       f.write('\n')  # separate fields
 
-    f.write(ind + ')')
+    f.write(ind + node.right)
+ 
+
+def PrintTree(node, f, indent=0, max_col=100):
+  """Second step of printing: turn homogeneous tree into a colored string.
+
+  Args:
+    node: homogeneous tree node
+    f: ColorOutput instance.
+    max_col: don't print past this column number on ANY line
+  """
+  ind = ' ' * indent
+
+  # Try printing on a single line
+  single_f = f.NewTempBuffer()
+  single_f.write(ind)
+  if _TrySingleLine(node, single_f, max_col - indent):
+    f.WriteRaw(single_f.GetRaw())
+    return
+
+  if isinstance(node, str):
+    f.write(ind + _PrettyString(node))
+
+  elif isinstance(node, _ColoredString):
+    f.PushColor(node.str_type)
+    f.write(_PrettyString(node.s))
+    f.PopColor()
+
+  elif isinstance(node, _Obj):
+    _PrintTreeObj(node, f, indent, max_col)
 
   else:
     raise AssertionError(node)
 
 
-def _TrySingleLine(node, f, max_col=80):
+def _TrySingleLineObj(node, f, max_chars):
+  """Print an object on a single line."""
+  f.write(node.left)
+  if node.abbrev:
+    if node.show_node_type:
+      f.PushColor(_NODE_TYPE)
+      f.write(node.node_type)
+      f.PopColor()
+      f.write(' ')
+
+    for i, val in enumerate(node.unnamed_fields):
+      if i != 0:
+        f.write(' ')
+      if not _TrySingleLine(val, f, max_chars):
+        return False
+  else:
+    f.PushColor(_NODE_TYPE)
+    f.write(node.node_type)
+    f.PopColor()
+
+    n = len(node.fields)
+    for name, val in node.fields:
+      f.write(' %s:' % name)
+      if not _TrySingleLine(val, f, max_chars):
+        return False
+
+  f.write(node.right)
+  return True
+
+
+def _TrySingleLine(node, f, max_chars):
   """Try printing on a single line.
 
   Args:
     node: homogeneous tree node
-    f: output file. TODO: Should take ColorOutput?
-    max_col: maximum length of the line
+    f: ColorOutput instance
+    max_chars: maximum number of characters to print on THIS line
     indent: current indent level
 
   Returns:
@@ -282,32 +520,27 @@ def _TrySingleLine(node, f, max_col=80):
   if isinstance(node, str):
     f.write(_PrettyString(node))
 
-  elif isinstance(node, _Obj):
-    f.write('(')
-    f.write(node.node_type)
-    n = len(node.fields)
-    i = 0
-    for name, val in node.fields:
-      f.write(' %s:' % name)
-      if not _TrySingleLine(val, f):
-        return False
+  elif isinstance(node, _ColoredString):
+    f.PushColor(node.str_type)
+    f.write(_PrettyString(node.s))
+    f.PopColor()
 
-      i += 1
-
-    f.write(')')
-
-  elif isinstance(node, list):
+  elif isinstance(node, list):  # Can we fit the WHOLE list on the line?
     f.write('[')
     for item in node:
-      if not _TrySingleLine(item, f):
+      if not _TrySingleLine(item, f, max_chars):
         return False
     f.write(']')
+
+  elif isinstance(node, _Obj):
+    return _TrySingleLineObj(node, f, max_chars)
+
   else:
-    raise AssertionError(p)
+    raise AssertionError("Unexpected node: %r (%r)" % (node, node.__class__))
 
   # Take into account the last char.
-  num_chars_so_far = len(f.getvalue()) 
-  if num_chars_so_far > max_col:
+  num_chars_so_far = f.NumChars()
+  if num_chars_so_far > max_chars:
     return False
 
   return True

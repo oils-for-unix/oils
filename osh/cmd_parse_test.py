@@ -37,10 +37,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   node = m()
 
   if node:
-    if isinstance(node, py_meta.Obj):
-      print(node)
-    else:
-      print(node)
+    ast.PrettyPrint(node)
     if not expect_success:
       test.fail('Expected %r to fail ' % code_str)
   else:
@@ -58,7 +55,7 @@ def _assertParseCommandListError(test, code_str):
   node = c_parser.ParseCommandLine()
   if node:
     print('UNEXPECTED:')
-    print(node)
+    ast.PrettyPrint(node)
     test.fail("Exepcted %r to fail" % code_str)
     return
   err = c_parser.Error()
