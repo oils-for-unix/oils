@@ -395,4 +395,51 @@ parse-openwireless() {
     /mnt/ssd-1T/build/ssd-backup/sdb/build/OpenWireless
 }
 
+#
+# Search Aboriginal Packages
+#
+
+readonly AB_PACKAGES=~/hg/scratch/aboriginal/aboriginal-1.2.2/packages
+
+aboriginal-packages() {
+  for z in $AB_PACKAGES/*.tar.gz; do
+    local name=$(basename $z .tar.gz)
+    echo $z -z $name
+  done
+  for z in $AB_PACKAGES/*.tar.bz2; do
+    local name=$(basename $z .tar.bz2)
+    echo $z -j $name
+  done
+}
+
+readonly AB_OUT=_tmp/aboriginal
+
+aboriginal-manifest() {
+  mkdir -p $AB_OUT
+
+  aboriginal-packages | while read z tar_flag name; do
+    echo $z $name
+    local listing=$AB_OUT/${name}.txt
+    tar --list --verbose $tar_flag < $z | grep '\.sh$' > $listing || true
+  done
+}
+
+aboriginal-biggest() {
+  # print size and filename
+  cat $AB_OUT/*.txt | awk '{print $3 " " $6}' | sort -n
+}
+
+# biggest scripts besides ltmain:
+#
+# 8406 binutils-397a64b3/binutils/embedspu.sh
+# 8597 binutils-397a64b3/ld/emulparams/msp430all.sh
+# 9951 bash-2.05b/examples/scripts/dd-ex.sh
+# 12558 binutils-397a64b3/ld/genscripts.sh
+# 14148 bash-2.05b/examples/scripts/adventure.sh
+# 21811 binutils-397a64b3/gas/testsuite/gas/xstormy16/allinsn.sh
+# 28004 bash-2.05b/examples/scripts/bcsh.sh
+# 29666 gcc-4.2.1/ltcf-gcj.sh
+# 33972 gcc-4.2.1/ltcf-c.sh
+# 39048 gcc-4.2.1/ltcf-cxx.sh
+
 "$@"
