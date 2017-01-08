@@ -3,11 +3,21 @@
 -- application type 'id', which is core.id_kind.Id.
 
 -- Unimplemented:
+-- * LeftIndex -- LHS of assignment
+-- * ArrayPair -- ([foo]=bar)
+
+-- Unrepresented:
 -- * extended globs: unlike globs, these are parsed up front
 -- * Brace expansion: should this be another kind of 'word'?  It can be
 --   expanded at compile time.
 -- * let arithmetic (rarely used)
 -- * coprocesses
+
+-- TODO: Preserve these source differences:
+-- * $foo vs. ${foo}.  VarSub vs. BracedVarSub
+-- * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
+-- * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
+-- * HereDoc vs HereWord.  I collapsed them.
 
 module osh
 {
