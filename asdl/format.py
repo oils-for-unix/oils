@@ -231,8 +231,10 @@ def FormatField(obj, field_name, abbrev_hook, omit_empty=True):
   try:
     field_val = getattr(obj, field_name)
   except AttributeError:
-    raise AssertionError  # shouldn't happen?
-    return _ColoredString('?', _OTHER_LITERAL)
+    # This happens when required fields are not initialized, e.g. FuncCall()
+    # without setting name.
+    raise AssertionError(
+        '%s is missing field %r' % (obj.__class__, field_name))
 
   desc = obj.DESCRIPTOR_LOOKUP[field_name]
   if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):

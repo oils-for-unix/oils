@@ -26,14 +26,16 @@ class ArithAstTest(unittest.TestCase):
 
   def testFieldDefaults(self):
     s = arith_ast.Slice()
-    print(s)
+    s.a = ArithVar('foo')
     self.assertEqual(None, s.begin)
     self.assertEqual(None, s.end)
     self.assertEqual(None, s.stride)
+    print(s)
 
     func = arith_ast.FuncCall()
-    print(func)
+    func.name = 'f'
     self.assertEqual([], func.args)
+    print(func)
 
   def testTypeCheck(self):
     v = ArithVar('name')
@@ -91,9 +93,6 @@ class ArithAstTest(unittest.TestCase):
     s.length = 3
     print(s)
 
-    # Doesn't work now
-    print(source_location())
-    
     c = Const(66)
     print(c)
     # Test out hierarchy

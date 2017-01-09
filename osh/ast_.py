@@ -105,13 +105,14 @@ def AbbreviateNodes(obj, node):
 
   else:
     # Do generic abbreviation here if none of the specific ones applied.
-    #if False:  # not working
     field_names = getattr(obj, 'FIELDS', None)
     if field_names is not None and len(field_names) == 1:
-      node.abbrev = True
       field_name = field_names[0]
-      out_val = fmt.FormatField(obj, field_name, AbbreviateNodes)
-      node.unnamed_fields.append(out_val)
+      actual_desc = obj.DESCRIPTOR_LOOKUP[field_name]
+      if not isinstance(actual_desc, asdl.ArrayType):  # Arrays can't be abbreviated
+        node.abbrev = True
+        out_val = fmt.FormatField(obj, field_name, AbbreviateNodes)
+        node.unnamed_fields.append(out_val)
 
 
 def PrettyPrint(node, f=sys.stdout):
