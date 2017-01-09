@@ -53,9 +53,10 @@ def FindLongestMatch(re_list, s, pos):
 
 
 class LineLexer(object):
-  def __init__(self, lexer_def, line):
+  def __init__(self, lexer_def, line, out_spans=None):
     # Compile all regexes
     self.lexer_def = {}
+    self.out_spans = out_spans
     for state, pat_list in lexer_def.items():
       self.lexer_def[state] = CompileAll(pat_list)
 
@@ -117,6 +118,12 @@ class LineLexer(object):
     loc = ast.line_span(self.pool_index, self.line_pos, len(tok_val))
     t = ast.token(tok_type, tok_val, loc)
 
+    # NOTE: We're putting the out_spans hook in LineLexer and not Lexer because
+    # we want it to be "low level".  The only thing artifical here is that a
+    # newline may be added at the last ilne.
+    if self.out_spans is not None:
+      self.out_spans.append(loc)
+
     self.line_pos = end_index
     return t
 
@@ -126,7 +133,7 @@ class Lexer(object):
   Read lines from the line_reader, split them into tokens with line_lexer,
   returning them in a stream.
   """
-  def __init__(self, line_lexer, line_reader, tokens_out=None):
+  def __init__(self, line_lexer, line_reader):
     """
     Args:
       line_lexer: Underlying object to get tokens from
@@ -137,11 +144,7 @@ class Lexer(object):
     self.was_line_cont = False  # last token was line continuation?
 
     self.pool_index = -1  # Invalid one
-
     self.translation_stack = []
-    # TODO: Move this to pool?
-    # [] if we want to save an array of all tokens, or None if we don't.
-    self.tokens_out = tokens_out
 
   def MaybeUnreadOne(self):
     return self.line_lexer.MaybeUnreadOne()
@@ -215,8 +218,6 @@ class Lexer(object):
   def Read(self, lex_mode):
     while True:
       t = self._Read(lex_mode)
-      if self.tokens_out is not None:
-        self.tokens_out.append(t)
 
       self.was_line_cont = (t.id == Id.Ignored_LineCont)
 

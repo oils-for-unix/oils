@@ -1321,7 +1321,7 @@ class CommandParser(object):
     which is slightly different.  (HOW?  Is it the DSEMI?)
 
     Returns:
-      ListNode with multiple children
+      ast.command
     """
     # Word types that will end the command term.
     END_LIST = (
@@ -1420,10 +1420,13 @@ class CommandParser(object):
       return None
     return node
 
-  def ParseCommandListOrEmpty(self):
+  def ParseWholeFile(self):
     """Entry point for main() in non-interactive shell.
 
-    Very similar to CommandList, but we allow empty files.
+    Very similar to ParseCommandList, but we allow empty files.
+
+    TODO: This should be turned into a Parse and Execute loop, freeing arenas
+    if they don't contain functions.
     """
     if not self._NewlineOk(): return None
 
@@ -1432,11 +1435,10 @@ class CommandParser(object):
     if self.c_kind == Kind.Eof:
       return ast.NoOp()
 
+    # This calls ParseAndOr(), but I think it should be a loop that calls
+    # ParseCommandLine(), like oil.InteractiveLoop.
     node = self.ParseCommandTerm()
     if not node:
       return None
 
     return node
-
-  # Alias for now
-  ParseFile = ParseCommandListOrEmpty

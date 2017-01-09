@@ -356,7 +356,7 @@ class Executor(object):
 
   def _EvalHelper(self, code_str):
     c_parser = self.make_parser(code_str)
-    node = c_parser.ParseFile()
+    node = c_parser.ParseWholeFile()
     # NOTE: We could model a parse error as an exception, like Python, so we
     # get a traceback.  (This won't be applicable for a static module system.)
     if not node:
@@ -520,11 +520,11 @@ class Executor(object):
     else:
       thunk = SubProgramThunk(self, node)
 
-    redirects = self._EvalRedirects(node.redirects)
+    redirects = self._EvalRedirects(node)
     p = Process(thunk, fd_state=self.fd_state, redirects=redirects)
     return p
 
-  def _EvalRedirects(self, nodes):
+  def _EvalRedirects(self, node):
     """Evaluate redirect nodes to concrete objects.
 
     We have to do this every time, because you could have something like:
@@ -536,8 +536,14 @@ class Executor(object):
     Does it makes sense to just have RedirectNode.Eval?  Nah I think the
     Redirect() abstraction in process.py is useful.  It has a lot of methods.
     """
+    # No redirects
+    if node.tag in (
+        command_e.NoOp, command_e.Assignment, command_e.Pipeline,
+        command_e.AndOr, command_e.Fork, command_e.CommandList):
+      return []
+
     redirects = []
-    for n in nodes:
+    for n in node.redirects:
       redir_type = REDIR_TYPE[n.op_id]
       if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
@@ -631,13 +637,7 @@ class Executor(object):
     Args:
       node: of type AstNode
     """
-    # No redirects
-    if node.tag in (
-        command_e.NoOp, command_e.Assignment, command_e.Pipeline,
-        command_e.AndOr, command_e.Fork, command_e.CommandList):
-      redirects = []
-    else:
-      redirects = self._EvalRedirects(node.redirects)
+    redirects = self._EvalRedirects(node)
 
     # TODO: Change this to its own enum?
     # or add EBuiltin.THROW     _throw?  For testing.

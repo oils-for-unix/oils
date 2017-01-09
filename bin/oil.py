@@ -40,6 +40,7 @@ from core import lexer  # for tracing
 
 from osh import ast_ as ast
 from osh import parse_lib
+from osh import fix
 
 from core import builtin
 from core import completion
@@ -137,6 +138,10 @@ def Options():
       choices=['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'],
       help='What format to use for the AST (text or html)')
   p.add_option(
+      '--fix', dest='fix', action='store_true',
+      default=False,
+      help='Fix code')
+  p.add_option(
       '--print-status', dest='print_status', action='store_true',
       default=False,
       help='Print command status after execution')
@@ -208,7 +213,7 @@ def OshMain(argv):
 
     rc_line_reader = reader.StringLineReader(contents, pool=pool)
     _, rc_c_parser = parse_lib.MakeParserForTop(rc_line_reader)
-    rc_node = rc_c_parser.ParseFile()
+    rc_node = rc_c_parser.ParseWholeFile()
     if not rc_node:
       # TODO: Error should return a token, and then the token should have a
       # pool index, and then look that up in the pool.
@@ -251,10 +256,11 @@ def OshMain(argv):
 
   # TODO: assert pool.NumSourcePaths() == 1
 
-  tokens_out = []
-  words_out = []
-  w_parser, c_parser = parse_lib.MakeParserForTop(line_reader,
-      tokens_out=tokens_out, words_out=words_out)
+  # TODO: Do we need out_spans for the .rc file?
+  # Should this be part of the pool?
+  out_spans = []
+  w_parser, c_parser = parse_lib.MakeParserForTop(
+      line_reader, out_spans=out_spans)
 
   if interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
@@ -271,22 +277,32 @@ def OshMain(argv):
 
     # TODO: Do I need ParseAndEvalLoop?  How is it different than
     # InteractiveLoop?
-    node = c_parser.ParseFile()
+    node = c_parser.ParseWholeFile()
     if not node:
       err = c_parser.Error()
       ui.PrintError(err, pool, sys.stderr)
       return 2  # parse error is code 2
 
     if opts.ast_output:
-      if opts.ast_output == '-':
-        f = sys.stdout
-      else:
-        f = open(opts.ast_output, 'w')  # implicitly closed
 
       if opts.ast_format == 'oheap':
-        pass
-        # TODO: encode.EncodeRoot
-      else:
+        if opts.ast_output == '-':
+          if sys.stdout.isatty():
+            raise RuntimeError('ERROR: Not dumping binary data to a TTY.')
+          f = sys.stdout
+        else:
+          f = open(opts.ast_output, 'wb')  # implicitly closed
+
+        enc = encode.Params()
+        out = encode.BinOutput(f)
+        encode.EncodeRoot(node, enc, out)
+
+      else:  # text output
+        if opts.ast_output == '-':
+          f = sys.stdout
+        else:
+          f = open(opts.ast_output, 'w')  # implicitly closed
+
         if opts.ast_format in ('text', 'abbrev-text'):
           ast_f = fmt.DetectConsoleOutput(f)
         elif opts.ast_format in ('html', 'abbrev-html'):
@@ -305,10 +321,9 @@ def OshMain(argv):
       util.log('Execution skipped because --no-exec was passed')
       status = 0
 
-  # TODO: Have a mode to just parse
-  #print('T', tokens_out)
-  #print('W', words_out)
-
+  if opts.fix:
+    fix.Print(pool, out_spans, node)
+  #print(out_spans)
   return status
 
 

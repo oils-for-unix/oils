@@ -15,6 +15,28 @@ Better names?  I think pool is the higher level, and arena is the lower level.
 
 import sys
 
+class Arena(object):
+  """A collection of lines and line spans.
+
+  For execution, the parse tree doesn't need to represent these.
+  For conversion, we.
+
+  In C++ and maybe oil: A block of memory that can be freed at once.
+  """
+  def __init__(self, arena_id):
+    self.arena_id = arena_id  # an integer
+    self.lines = []
+    self.spans = []
+    # TODO: Should this be the ast.arena object?  That has a command too.
+
+    # The parser should increment an arena_id and pass it in.
+
+  def AddLine(self, line, line_num):
+    pool_index = len(self.lines)
+    self.lines.append(line)
+    self.debug_info.append((self.src_index, line_num))
+    return pool_index
+
 
 # In C++, InteractiveLineReader and StringLineReader should use the same
 # representation: std::string with internal NULs to terminate lines, and then
@@ -33,6 +55,10 @@ class Pool(object):
   def __init__(self):
     # Could be std::vector<char *> pointing into a std::string
     self.lines = []
+
+    # TODO: line_spans?  For reconstruction?
+    # Use ast.whole_file, ast.partial_file, and arena?
+
     self.debug_info = []  # list of (src_path index, line index)
     self.src_paths = []  # list of source paths
     self.src_index = -1  # index of current source file

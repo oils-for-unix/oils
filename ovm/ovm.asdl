@@ -1,0 +1,18 @@
+-- A data type that can be executed.
+
+-- Concept: Both osh and oil compile to this common representatino.
+--
+-- There is a single expression language, not one for Str, Int, Bool.
+-- There should be just one way to express an operation.
+-- Must have enough source location info for runtime stack traces.
+
+-- Stretch: should it be in SSA form for further optimization?
+
+module ovm
+{
+  -- Variables can be special system variables or user vars.
+  -- Should we represent something like $PIPESTATUS as a third option?
+  var =
+    SystemVar(id op_id)  -- e.g. $@ $?
+  | UserVar(string name)  -- $foo.
+}

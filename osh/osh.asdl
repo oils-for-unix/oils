@@ -1,5 +1,9 @@
 -- Data types for the osh AST.
--- They are composed of the builtin ASDL types (string, int, bool) and our
+--
+-- Invariant: the source text can be reconstructed byte-for-byte from this
+-- tree.
+-- 
+-- The AST is composed of the builtin ASDL types (string, int, bool) and our 
 -- application type 'id', which is core.id_kind.Id.
 
 -- Unimplemented:
@@ -69,9 +73,11 @@ module osh
     LeftVar(string name)
   | LeftIndex(arith_expr obj, arith_expr index)
 
+  -- should every node have _begin_loc?  Then before you print it, you fill
+  -- out.
   arith_expr =
-    RightVar(string name)  -- eval variable 
-  | ArithWord(word w)  -- a string expression
+    RightVar(string name)  -- variable without $
+  | ArithWord(word w)  -- a string that looks like an integer
   | ArithUnary(id op_id, arith_expr child)
   | ArithBinary(id op_id, arith_expr left, arith_expr right)
   | ArithAssign(id op_id, lvalue left, arith_expr right)

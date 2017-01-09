@@ -187,11 +187,10 @@ def EncodeObj(obj, enc, out):
 
   this_chunk = bytearray()
   assert isinstance(obj, py_meta.CompoundObj), \
-    '%s is not a compound obj (%r)' % (obj, obj.__class__)
+    '%r is not a compound obj (%r)' % (obj, obj.__class__)
 
   # Constructor objects have a tag.
   if isinstance(obj.DESCRIPTOR, asdl.Constructor):
-  #if getattr(obj, 'tag', None) is not None:
     enc.Tag(obj.tag, this_chunk)
 
   for name in obj.FIELDS:  # encode in order
@@ -245,6 +244,10 @@ def EncodeObj(obj, enc, out):
       else:
         ref = EncodeObj(field_val, enc, out)
         enc.Ref(ref, this_chunk)
+
+    elif isinstance(desc, asdl.UserType):
+      # Assume Id for now
+      enc.Int(field_val.enum_value, this_chunk)
 
     else:
       # Recursive call for child records.  Write children before parents.

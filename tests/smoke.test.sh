@@ -85,3 +85,8 @@ func "a b" "c d"
 ### failed comment
 ls /nonexistent
 # status: 2
+
+### subshell
+(echo 1; echo 2)
+# stdout-json: "1\n2\n"
+# status: 0

@@ -27,11 +27,12 @@ def InitLexer(s, pool=None):
 #   you need somewhere to store the side effects -- errors for parsers, and the
 #   actual values for the evaluators/executors.
 
-def MakeParserForTop(line_reader, tokens_out=None, words_out=None):
+def MakeParserForTop(line_reader, out_spans=None):
   """Top level parser."""
-  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')  # AtEnd() is true
-  lx = lexer.Lexer(line_lexer, line_reader, tokens_out=tokens_out)
-  w_parser = word_parse.WordParser(lx, line_reader, words_out=words_out)
+  # AtEnd() is true
+  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '', out_spans=out_spans)
+  lx = lexer.Lexer(line_lexer, line_reader)
+  w_parser = word_parse.WordParser(lx, line_reader)
   c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader)
   return w_parser, c_parser
 

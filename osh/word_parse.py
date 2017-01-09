@@ -68,12 +68,9 @@ word_part_e = ast.word_part_e
 
 class WordParser(object):
 
-  def __init__(self, lexer, line_reader, words_out=None,
-               lex_mode=LexMode.OUTER):
+  def __init__(self, lexer, line_reader, lex_mode=LexMode.OUTER):
     self.lexer = lexer
     self.line_reader = line_reader
-    # [] if we want to save an array of all words, or None if not.
-    self.words_out = words_out
     self.Reset(lex_mode=lex_mode)
 
   def _Peek(self):
@@ -616,7 +613,7 @@ class WordParser(object):
     from osh import parse_lib
     c_parser = parse_lib.MakeParserForCommandSub(self.line_reader, self.lexer)
 
-    node = c_parser.ParseCommandListOrEmpty()  # `` and $() allowed
+    node = c_parser.ParseWholeFile()  # `` and $() allowed
     if not node:
       # Example of parse error:
       # echo $(cat |)  OR
@@ -1067,8 +1064,6 @@ class WordParser(object):
     if not w:
       return None
 
-    if self.words_out is not None:
-      self.words_out.append(w)
     self.cursor = w
 
     # TODO: Do consolidation of newlines in the lexer?

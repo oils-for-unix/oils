@@ -58,6 +58,10 @@ osh-both() {
   py-cpp osh/osh.asdl
 }
 
+ovm-both() {
+  py-cpp ovm/ovm.asdl
+}
+
 #
 # Native Code
 #

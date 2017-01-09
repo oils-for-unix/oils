@@ -48,7 +48,7 @@ def ParseAndExecute(code_str):
   w_parser = WordParser(lexer, line_reader)
   c_parser = CommandParser(w_parser, lexer, line_reader)
 
-  node = c_parser.ParseFile()
+  node = c_parser.ParseWholeFile()
   if not node:
     raise AssertionError()
 

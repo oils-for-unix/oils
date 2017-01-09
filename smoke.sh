@@ -99,4 +99,22 @@ empty() {
   assert $? -eq 0
 }
 
+ast() {
+  bin/osh --no-exec --ast-output - -c 'echo hi'
+  bin/osh --no-exec --ast-output - --ast-format html -c 'echo hi'
+
+  # Not dupming to terminal
+  if bin/osh --no-exec --ast-output - --ast-format oheap -c 'echo hi'; then
+    die "Should have failed"
+  fi
+  local ast_bin=_tmp/smoke-ast.bin 
+  bin/osh --no-exec --ast-output $ast_bin --ast-format oheap -c 'echo hi'
+  ls -l $ast_bin
+  hexdump -C $ast_bin
+}
+
+fix() {
+  bin/osh --no-exec --fix -c 'echo hi'
+}
+
 "$@"
