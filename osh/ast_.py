@@ -105,18 +105,13 @@ def AbbreviateNodes(obj, node):
 
   else:
     # Do generic abbreviation here if none of the specific ones applied.
-
     #if False:  # not working
     field_names = getattr(obj, 'FIELDS', None)
     if field_names is not None and len(field_names) == 1:
-      name = field_names[0]
-      actual_desc = obj.DESCRIPTOR_LOOKUP[name]
-      if not isinstance(actual_desc, asdl.ArrayType):
-        node.abbrev = True
-        field_val = getattr(obj, name)
-        v = MakeTree(field_val, AbbreviateNodes)
-        #print('!!', obj.__class__, name, v, v.__class__)
-        node.unnamed_fields.append(v)
+      node.abbrev = True
+      field_name = field_names[0]
+      out_val = fmt.FormatField(obj, field_name, AbbreviateNodes)
+      node.unnamed_fields.append(out_val)
 
 
 def PrettyPrint(node, f=sys.stdout):

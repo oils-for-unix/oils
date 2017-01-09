@@ -34,7 +34,7 @@ def _assertReadWord(test, word_str):
   w_parser = InitWordParser(word_str)
   w = w_parser.ReadWord(LexMode.OUTER)
   if w:
-    print(w)
+    ast.PrettyPrint(w)
   else:
     err = w_parser.Error()
     test.fail("Couldn't parse %r: %s" % (word_str, err))
@@ -54,7 +54,7 @@ def _assertReadWordFailure(test, word_str):
   w_parser = InitWordParser(word_str)
   w = w_parser.ReadWord(LexMode.OUTER)
   if w:
-    print(w)
+    ast.PrettyPrint(w)
     test.fail('Expected a parser error, got %r' % w)
   else:
     print(w_parser.Error())
@@ -84,7 +84,6 @@ class WordParserTest(unittest.TestCase):
     expr = r'\EOF'  # Quoted here doc delimiter
     w_parser = InitWordParser(expr)
     w = w_parser.ReadWord(LexMode.OUTER)
-    print(w)
     ok, s, quoted = word.StaticEval(w)
     self.assertEqual(True, ok)
     self.assertEqual('EOF', s)
@@ -250,7 +249,6 @@ class WordParserTest(unittest.TestCase):
     self.assertTrue(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${#array[0]}')
-    print(w)
     # BUG!
     #self.assertTrue(VS_POUND, _GetSuffixOp(self, w).id)
 
@@ -322,7 +320,7 @@ class WordParserTest(unittest.TestCase):
           print('Error in word parser: %s' % e)
           self.fail(e)
 
-        print(w)
+        ast.PrettyPrint(w)
 
         if word.CommandId(w) == Id.Eof_Real:
           break
@@ -424,7 +422,7 @@ class WordParserTest(unittest.TestCase):
           print('ERROR', err)
           self.fail(err)
           break
-        print(w)
+        ast.PrettyPrint(w)
         if word.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break
 

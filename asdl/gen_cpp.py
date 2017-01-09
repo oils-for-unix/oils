@@ -310,6 +310,7 @@ class ClassDefVisitor(AsdlVisitor):
 
       elif ctype == 'char*':
         func_header = A_POINTER + ' {'
+        body_line1 = ARRAY_OFFSET
         inline_body = 'return Ref(base, %(offset)d).Str(base, a);'
 
       else:

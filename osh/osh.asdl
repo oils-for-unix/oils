@@ -139,4 +139,16 @@ module osh
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.
   -- pipe_op = Pipe | PipeAndStderr
+
+  -- A node with full debug info
+  -- All other nodes should have span_id?  int _loc or int _begin, int _end.
+  -- It can be further compressed perhaps, like a varint.
+  arena = (string* lines, line_span* spans, command root)
+
+  -- On-disk format for an entire file.  Enough info so we can reconstruct the
+  -- text byte-for-byte.
+  whole_file = (string path, arena a)
+
+  -- In-memory format for all the functions snipped out of a file.
+  partial_file = (string path, arena* funcs)
 }

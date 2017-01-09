@@ -227,6 +227,45 @@ class _ColoredString:
     self.str_type = str_type
 
 
+def FormatField(obj, field_name, abbrev_hook, omit_empty=True):
+  try:
+    field_val = getattr(obj, field_name)
+  except AttributeError:
+    raise AssertionError  # shouldn't happen?
+    return _ColoredString('?', _OTHER_LITERAL)
+
+  desc = obj.DESCRIPTOR_LOOKUP[field_name]
+  if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
+    out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
+
+  elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
+    out_val = field_val.name
+
+  elif isinstance(desc, asdl.StrType):
+    out_val = _ColoredString(field_val, _STRING_LITERAL)
+
+  elif isinstance(desc, asdl.ArrayType):
+    out_val = []
+    obj_list = field_val
+    for child_obj in obj_list:
+      t = MakeTree(child_obj, abbrev_hook)
+      out_val.append(t)
+
+    if omit_empty and not obj_list:
+      out_val = None
+
+  elif isinstance(desc, asdl.MaybeType):
+    if field_val is None:
+      out_val = None
+    else:
+      out_val = MakeTree(field_val, abbrev_hook)
+
+  else:
+    out_val = MakeTree(field_val, abbrev_hook)
+
+  return out_val
+
+
 def MakeTree(obj, abbrev_hook=None, omit_empty=True):
   """The first step of printing: create a homogeneous tree.
 
@@ -248,45 +287,10 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
     fields = out_node.fields
 
     for field_name in obj.FIELDS:
-      show_field = True
-      out_val = ''
+      out_val = FormatField(obj, field_name, abbrev_hook,
+                            omit_empty=omit_empty)
 
-      try:
-        field_val = getattr(obj, field_name)
-      except AttributeError:
-        out_val = '?'
-        continue
-
-      desc = obj.DESCRIPTOR_LOOKUP[field_name]
-      if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
-        out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
-
-      elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
-        out_val = field_val.name
-
-      elif isinstance(desc, asdl.StrType):
-        out_val = _ColoredString(field_val, _STRING_LITERAL)
-
-      elif isinstance(desc, asdl.ArrayType):
-        out_val = []
-        obj_list = field_val
-        for child_obj in obj_list:
-          t = MakeTree(child_obj, abbrev_hook)
-          out_val.append(t)
-
-        if omit_empty and not obj_list:
-          show_field = False
-
-      elif isinstance(desc, asdl.MaybeType):
-        if field_val is None:
-          show_field = False
-        else:
-          out_val = MakeTree(field_val, abbrev_hook)
-
-      else:
-        out_val = MakeTree(field_val, abbrev_hook)
-
-      if show_field:
+      if out_val is not None:
         out_node.fields.append((field_name, out_val))
 
     # Call user-defined hook to abbreviate compound objects.
