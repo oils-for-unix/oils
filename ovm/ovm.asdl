@@ -8,6 +8,28 @@
 
 -- Stretch: should it be in SSA form for further optimization?
 
+-- IDEA: For each operation, have a fail_loc, and for each compound operation,
+-- have a stack_loc?  
+--
+-- compound:
+-- * function
+-- * subshell
+-- * command sub
+-- * arithsub
+--
+-- If it's on the same line, skip it.
+--
+-- Operations: arith, bool operators
+-- command: I guess it's the first word.  If it's "$@" or @Args then you can
+-- point at that too, but print the evaluated value.
+-- There aren't that many cases to think about once you have these reduced
+-- operations.  It's all expressions or side effects (procs).
+--
+-- NameError -- the name   $(foo or bar)
+-- ValueError -- the function call  f(x)
+-- TypeError -- the operation
+
+
 module ovm
 {
   -- Variables can be special system variables or user vars.

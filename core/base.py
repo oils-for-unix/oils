@@ -26,7 +26,7 @@ class _Parser(object):
 
   And we also have to keep state across multiple parsers.
 
-  Do all of them have access to a pool_ / arena_ ?  For creating new objects
+  Do all of them have access to a arena_ / arena_ ?  For creating new objects
   and looking them up with IDs.
   """
   def __init__(self, arena):

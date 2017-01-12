@@ -45,7 +45,7 @@ from osh import fix
 from core import builtin
 from core import completion
 from core import cmd_exec
-from core.pool import Pool
+from core.alloc import Pool
 from core import reader
 from core.id_kind import Id
 from core import word
@@ -182,7 +182,13 @@ def OshMain(argv):
   else:
     dollar0 = ''
 
-  pool = Pool()  # for lines, nodes, etc.
+  # TODO: Create a --parse action or 'osh parse' or 'oil osh-parse'
+  # osh-fix
+  # It uses a different memory-management model.  It's a batch program and not
+  # an interactive program.
+
+  pool = Pool()
+  arena = pool.NewArena()
 
   # TODO: Maybe wrap this initialization sequence up in an oil_State, like
   # lua_State.
@@ -208,17 +214,17 @@ def OshMain(argv):
     rc_path = 'oilrc'
     with open(rc_path) as f:
       contents = f.read()
-    pool.AddSourcePath(rc_path)
+    arena.AddSourcePath(rc_path)
     #print(repr(contents))
 
-    rc_line_reader = reader.StringLineReader(contents, pool=pool)
+    rc_line_reader = reader.StringLineReader(contents, arena=arena)
     _, rc_c_parser = parse_lib.MakeParserForTop(rc_line_reader)
     rc_node = rc_c_parser.ParseWholeFile()
     if not rc_node:
       # TODO: Error should return a token, and then the token should have a
-      # pool index, and then look that up in the pool.
+      # arena index, and then look that up in the arena.
       err = rc_c_parser.Error()
-      ui.PrintError(err, pool, sys.stderr)
+      ui.PrintError(err, arena, sys.stderr)
       return 2  # parse error is code 2
 
     status, cflow = ex.Execute(rc_node)
@@ -229,38 +235,34 @@ def OshMain(argv):
       raise
 
   if opts.command is not None:
-    pool.AddSourcePath('<-c arg>')
-    line_reader = reader.StringLineReader(opts.command, pool=pool)
+    arena.AddSourcePath('<-c arg>')
+    line_reader = reader.StringLineReader(opts.command, arena=arena)
     interactive = False
   elif opts.interactive:  # force interactive
-    pool.AddSourcePath('<stdin -i>')
-    line_reader = reader.InteractiveLineReader(OSH_PS1, pool=pool)
+    arena.AddSourcePath('<stdin -i>')
+    line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
     interactive = True
   else:
     try:
       script_name = argv[0]
     except IndexError:
       if sys.stdin.isatty():
-        pool.AddSourcePath('<interactive>')
-        line_reader = reader.InteractiveLineReader(OSH_PS1, pool=pool)
+        arena.AddSourcePath('<interactive>')
+        line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
         interactive = True
       else:
-        pool.AddSourcePath('<stdin>')
-        line_reader = reader.StringLineReader(sys.stdin.read(), pool=pool)
+        arena.AddSourcePath('<stdin>')
+        line_reader = reader.StringLineReader(sys.stdin.read(), arena=arena)
         interactive = False
     else:
-      pool.AddSourcePath(script_name)
+      arena.AddSourcePath(script_name)
       with open(script_name) as f:
-        line_reader = reader.StringLineReader(f.read(), pool=pool)
+        line_reader = reader.StringLineReader(f.read(), arena=arena)
       interactive = False
 
-  # TODO: assert pool.NumSourcePaths() == 1
-
-  # TODO: Do we need out_spans for the .rc file?
-  # Should this be part of the pool?
-  out_spans = []
-  w_parser, c_parser = parse_lib.MakeParserForTop(
-      line_reader, out_spans=out_spans)
+  # TODO: assert arena.NumSourcePaths() == 1
+  # TODO: .rc file needs its own arena.
+  w_parser, c_parser = parse_lib.MakeParserForTop(line_reader, arena=arena)
 
   if interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
@@ -280,7 +282,7 @@ def OshMain(argv):
     node = c_parser.ParseWholeFile()
     if not node:
       err = c_parser.Error()
-      ui.PrintError(err, pool, sys.stderr)
+      ui.PrintError(err, arena, sys.stderr)
       return 2  # parse error is code 2
 
     if opts.ast_output:
@@ -322,8 +324,7 @@ def OshMain(argv):
       status = 0
 
   if opts.fix:
-    fix.Print(pool, out_spans, node)
-  #print(out_spans)
+    fix.Print(arena, node)
   return status
 
 
@@ -335,15 +336,24 @@ def BoilMain(main_argv):
   raise NotImplementedError('boil')
 
 
+_OIL_USAGE = 'Usage: oil MAIN [OPTION]... [ARG]...'
+
+
 def main(argv):
   b = os.path.basename(argv[0])
   main_name, _ = os.path.splitext(b)
 
   if main_name in ('oil', 'oil_main'):
     try:
-      main_name = argv[1]
+      first_arg = argv[1]
     except IndexError:
       raise UsageError('Missing name of main()')
+
+    if first_arg in ('-h', '--help'):
+      print(_OIL_USAGE, file=sys.stderr)
+      sys.exit(0)
+
+    main_name = first_arg
     main_argv = argv[2:]
   else:
     main_argv = argv[1:]
@@ -357,14 +367,13 @@ def main(argv):
   else:
     raise UsageError('Invalid main %r' % main_name)
 
-
 if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv))
   except NotImplementedError as e:
     raise
   except UsageError as e:
-    print('Usage: oil MAIN [OPTION]... [ARG]...', file=sys.stderr)
+    print(_OIL_USAGE, file=sys.stderr)
     print(str(e), file=sys.stderr)
     sys.exit(2)
   except RuntimeError as e:

@@ -10,7 +10,7 @@ from asdl import py_meta
 
 from core import ui
 from core.id_kind import Id
-from core.pool import Pool
+from core.alloc import Pool
 from core import word
 
 from osh import ast_ as ast
@@ -24,15 +24,16 @@ command_e = ast.command_e
 # TODO: Use parse_lib instead
 def InitCommandParser(code_str):
   pool = Pool()
-  pool.AddSourcePath('<unit test>')
-  line_reader, lexer = parse_lib.InitLexer(code_str, pool=pool)
+  arena = pool.NewArena()
+  arena.AddSourcePath('<unit test>')
+  line_reader, lexer = parse_lib.InitLexer(code_str, arena=arena)
   w_parser = WordParser(lexer, line_reader)
   c_parser = CommandParser(w_parser, lexer, line_reader)
-  return pool, c_parser  # pool is returned for printing errors
+  return arena, c_parser  # arena is returned for printing errors
 
 
 def _assertParseMethod(test, code_str, method, expect_success=True):
-  pool, c_parser = InitCommandParser(code_str)
+  arena, c_parser = InitCommandParser(code_str)
   m = getattr(c_parser, method)
   node = m()
 
@@ -44,14 +45,14 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
     # TODO: Could copy PrintError from pysh.py
     err = c_parser.Error()
     print(err)
-    ui.PrintError(err, pool, sys.stdout)
+    ui.PrintError(err, arena, sys.stdout)
     if expect_success:
       test.fail('%r failed' % code_str)
   return node
 
 
 def _assertParseCommandListError(test, code_str):
-  pool, c_parser = InitCommandParser(code_str)
+  arena, c_parser = InitCommandParser(code_str)
   node = c_parser.ParseCommandLine()
   if node:
     print('UNEXPECTED:')
@@ -60,7 +61,7 @@ def _assertParseCommandListError(test, code_str):
     return
   err = c_parser.Error()
   #print(err)
-  ui.PrintError(err, pool, sys.stdout)
+  ui.PrintError(err, arena, sys.stdout)
 
 
 #

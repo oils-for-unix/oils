@@ -86,7 +86,12 @@ def MakeStatusLines():
   return [StatusLine(row_num=i) for i in range(3, 10)]
 
 
-def PrintError(error_stack, pool, f):
+def PrintError(error_stack, arena, f):
+  """
+  NOTE: Parse errors always occur within a single arena.  Runtime errors may
+  span arenas (e.g. the function stack).
+
+  """
   # TODO:
   # - rename to PrintParseError()
   #   - although parse errors happen at runtime because of 'source'
@@ -106,19 +111,24 @@ def PrintError(error_stack, pool, f):
   for token, msg in error_stack:
     if token:
       #print(token)
-      #print(token.pool_index)
-      i = token.loc.pool_index
-      if i == -1:
+      #print(token.line_id)
+      span_id = token.span_id
+      if span_id == -1:
         line = '<token had no position info>'
         path = '<unknown>'
         line_num = -1
+        col = -1
+        length = -1
       else:
-        line = pool.GetLine(i)
-        path, line_num = pool.GetDebugInfo(i)
+        line_span = arena.GetLineSpan(span_id)
+        line_id = line_span.line_id
+        line = arena.GetLine(line_id)
+        path, line_num = arena.GetDebugInfo(line_id)
+        col = line_span.col
+        length = line_span.length
+
       print('Line %d of %r' % (line_num+1, path))
       print('  ' + line.rstrip())
-      col = token.loc.col
-      length = token.loc.length
       if col == -1:
         print('NO COL')
       else:

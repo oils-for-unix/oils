@@ -13,10 +13,10 @@ from osh import word_parse
 from osh import cmd_parse
 
 
-def InitLexer(s, pool=None):
+def InitLexer(s, arena=None):
   """For tests only."""
   line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')
-  line_reader = reader.StringLineReader(s, pool=pool)
+  line_reader = reader.StringLineReader(s, arena=arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx
 
@@ -27,10 +27,10 @@ def InitLexer(s, pool=None):
 #   you need somewhere to store the side effects -- errors for parsers, and the
 #   actual values for the evaluators/executors.
 
-def MakeParserForTop(line_reader, out_spans=None):
+def MakeParserForTop(line_reader, arena=None):
   """Top level parser."""
   # AtEnd() is true
-  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '', out_spans=out_spans)
+  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '', arena=arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
   c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader)
@@ -43,7 +43,7 @@ def MakeParserForTop(line_reader, out_spans=None):
 # Hm the REPL only does line_reader.Reset()?
 def MakeParserForCompletion(code_str):
   """Parser for partial lines."""
-  # NOTE: We don't need to use a pool here?  Or we need a "scratch pool" that
+  # NOTE: We don't need to use a arena here?  Or we need a "scratch arena" that
   # doesn't interfere with the rest of the program.
   line_reader = reader.StringLineReader(code_str)
   line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')  # AtEnd() is true

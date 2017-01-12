@@ -92,6 +92,8 @@ assert() {
 
 # Had a bug with these two cases.
 empty() {
+  set +o errexit
+
   bin/osh -c ''
   assert $? -eq 0
 
@@ -115,6 +117,19 @@ ast() {
 
 fix() {
   bin/osh --no-exec --fix -c 'echo hi'
+}
+
+help() {
+  set +o errexit
+
+  bin/oil osh --help
+  assert $? -eq 0
+
+  bin/osh --help
+  assert $? -eq 0
+
+  bin/oil --help
+  assert $? -eq 0
 }
 
 "$@"

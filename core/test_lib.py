@@ -11,11 +11,11 @@ test_lib.py - Functions for testing.
 
 def TokensEqual(left, right):
   # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
-  #return left.id == right.id and left.val == right.val
-  return left == right
+  return left.id == right.id and left.val == right.val
+  #return left == right
 
 
 def TokenWordsEqual(left, right):
   # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
-  #return TokensEqual(left.token, right.token)
-  return left == right
+  return TokensEqual(left.token, right.token)
+  #return left == right

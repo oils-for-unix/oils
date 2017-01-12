@@ -243,7 +243,7 @@ class CommandParser(object):
       while True:
         # If op is <<-, strip off all leading tabs (NOT spaces).
         # (in C++, just bump the start?)
-        pool_index, line = self.line_reader.GetLine()
+        line_id, line = self.line_reader.GetLine()
 
         #print("LINE %r %r" % (line, h.here_end))
         if not line:  # EOF
@@ -255,7 +255,7 @@ class CommandParser(object):
         if line.rstrip() == h.here_end:
           break
 
-        lines.append((pool_index, line))
+        lines.append((line_id, line))
 
       parts = []
       if h.do_expansion:
@@ -276,7 +276,7 @@ class CommandParser(object):
         h.arg_word = word
         h.was_filled = True
       else:
-        # TODO: Add pool_index etc. to token
+        # TODO: Add line_id etc. to token
         tokens = [ast.token(Id.Lit_Chars, line) for _, line in lines]
         parts = [ast.LiteralPart(t) for t in tokens]
         h.arg_word = ast.CompoundWord(parts)

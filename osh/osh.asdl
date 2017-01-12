@@ -29,20 +29,20 @@
 module osh
 {
   -- A portion of a line, used for error messages.
-  line_span = (int pool_index, int col, int length)
+  line_span = (int line_id, int col, int length)
 
   -- A primitive token.  NOTE: val is redundant with 'loc' for now.  If we
   -- rewrite the parser in C++, we might care for memory footprint.  But for 
   -- now this is convenient.
   -- NOTE: identical strings can shared, if we care.
-  token = (id id, string val, line_span? loc)
+  token = (id id, string val, int? span_id)
 
   bracket_op = 
     WholeArray(id op_id)  -- * or @
   | ArrayIndex(arith_expr expr)
 
   suffix_op = 
-    StringUnary(id op_id, word arg_word)
+    StringUnary(id op_id, word arg_word)  -- e.g. ${v:-default}
   | PatSub(word pat, word? replace, bool do_all, bool do_prefix, bool do_suffix)
   -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)

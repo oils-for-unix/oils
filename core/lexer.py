@@ -53,19 +53,19 @@ def FindLongestMatch(re_list, s, pos):
 
 
 class LineLexer(object):
-  def __init__(self, lexer_def, line, out_spans=None):
+  def __init__(self, lexer_def, line, arena=None):
     # Compile all regexes
     self.lexer_def = {}
-    self.out_spans = out_spans
+    self.arena = arena
     for state, pat_list in lexer_def.items():
       self.lexer_def[state] = CompileAll(pat_list)
 
-    self.Reset(line, -1)  # Invalid pool index to start
+    self.Reset(line, -1)  # Invalid arena index to start
 
-  def Reset(self, line, pool_index):
+  def Reset(self, line, line_id):
     self.line = line
     self.line_pos = 0
-    self.pool_index = pool_index
+    self.line_id = line_id
 
   def MaybeUnreadOne(self):
     """Return True if we can unread one character, or False otherwise.
@@ -110,19 +110,25 @@ class LineLexer(object):
     end_index, tok_type, tok_val = FindLongestMatch(
         re_list, self.line, self.line_pos)
 
-    # NOTE: tok_val is technically redundant, but we're keeping it for now.
-    # It's only really needed in C++.
+    # NOTE: tok_val is redundant, but even in osh.asdl we have some separation
+    # between data needed for formatting and data needed for execution.  Could
+    # revisit this later.
 
-    # TODO: Add this back once pool is threaded everywhere
-    #assert self.pool_index != -1
-    loc = ast.line_span(self.pool_index, self.line_pos, len(tok_val))
-    t = ast.token(tok_type, tok_val, loc)
+    # TODO: Add this back once arena is threaded everywhere
+    #assert self.line_id != -1
+    line_span = ast.line_span(self.line_id, self.line_pos, len(tok_val))
 
-    # NOTE: We're putting the out_spans hook in LineLexer and not Lexer because
-    # we want it to be "low level".  The only thing artifical here is that a
-    # newline may be added at the last ilne.
-    if self.out_spans is not None:
-      self.out_spans.append(loc)
+    # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
+    # want it to be "low level".  The only thing fabricated here is a newline
+    # added at the last line, so we don't end with \0.
+
+    if self.arena is not None:
+      span_id = self.arena.AddLineSpan(line_span)
+    else:
+      # Completion parser might do this?  Not sure yet.
+      span_id = -1
+
+    t = ast.token(tok_type, tok_val, span_id)
 
     self.line_pos = end_index
     return t
@@ -143,7 +149,7 @@ class Lexer(object):
     self.line_reader = line_reader
     self.was_line_cont = False  # last token was line continuation?
 
-    self.pool_index = -1  # Invalid one
+    self.line_id = -1  # Invalid one
     self.translation_stack = []
 
   def MaybeUnreadOne(self):
@@ -189,16 +195,15 @@ class Lexer(object):
 
   def _Read(self, lex_mode):
     if self.line_lexer.AtEnd():
-      pool_index, line = self.line_reader.GetLine()
+      line_id, line = self.line_reader.GetLine()
 
       if line is None:  # no more lines
-        loc = ast.line_span(self.pool_index - 1, 0, 0)
-        t = ast.token(Id.Eof_Real, '', loc)
+        t = ast.token(Id.Eof_Real, '', -1)
         # No line number.  I guess we are showing the last line of the file.
         # TODO: Could keep track of previous position for this case?
         return t
 
-      self.line_lexer.Reset(line, pool_index)
+      self.line_lexer.Reset(line, line_id)
 
     t = self.line_lexer.Read(lex_mode)
 

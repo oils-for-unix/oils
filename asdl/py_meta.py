@@ -143,7 +143,7 @@ class CompoundObj(Obj):
 
     for name in self.FIELDS:
       # Special case: we are not testing locations right now.
-      if name == 'loc':
+      if name == 'span_id':
         continue
       left = getattr(self, name)
       right = getattr(other, name)

@@ -10,18 +10,18 @@ reader.py - Read lines of input.
 """
 
 class _Reader(object):
-  def __init__(self, pool):
-    self.pool = pool
+  def __init__(self, arena):
+    self.arena = arena
     self.line_num = 0  # physical line number
 
   def GetLine(self):
     line = self._GetLine()
-    if self.pool:
-      pool_index = self.pool.AddLine(line, self.line_num)
+    if self.arena:
+      line_id = self.arena.AddLine(line, self.line_num)
     else:
-      pool_index = -1
+      line_id = -1
     self.line_num += 1
-    return pool_index, line
+    return line_id, line
 
   def Reset(self):
     # Should never be called?
@@ -31,8 +31,8 @@ class _Reader(object):
 _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
-  def __init__(self, ps1, pool=None):
-    _Reader.__init__(self, pool)
+  def __init__(self, ps1, arena=None):
+    _Reader.__init__(self, arena)
     self.ps1 = ps1
     self.prompt_str = ps1
 
@@ -55,12 +55,12 @@ class InteractiveLineReader(_Reader):
 class StringLineReader(_Reader):
   """For -c and stdin?"""
 
-  def __init__(self, s, pool=None):
+  def __init__(self, s, arena=None):
     """
     Args:
-      lines: List of (pool_index, line) pairs
+      lines: List of (line_id, line) pairs
     """
-    _Reader.__init__(self, pool)
+    _Reader.__init__(self, arena)
     self.lines = s.splitlines(True)
     self.pos = 0
 
@@ -93,7 +93,7 @@ class VirtualLineReader(object):
   def __init__(self, lines):
     """
     Args:
-      lines: List of (pool_index, line) pairs
+      lines: List of (line_id, line) pairs
     """
     self.lines = lines
     self.pos = 0
@@ -101,7 +101,7 @@ class VirtualLineReader(object):
   def GetLine(self):
     if self.pos == len(self.lines):
       return -1, None
-    pool_index, line = self.lines[self.pos]
+    line_id, line = self.lines[self.pos]
 
     self.pos += 1
-    return pool_index, line
+    return line_id, line
