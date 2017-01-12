@@ -92,7 +92,7 @@ def AbbreviateNodes(obj, node):
       # Well actually then the printer needs to recursively handle it
       node.unnamed_fields.append(MakeTree(w, AbbreviateNodes))
 
-  elif node.node_type == 'VarSubPart':
+  elif node.node_type == 'BracedVarSub':
     field_names = [n for n, _ in node.fields]
     if field_names != ['name']:
       return  # we have other fields to display; don't abbreviate

@@ -72,8 +72,9 @@ def _EvalWordPart(part):
     return True, ret, True  # At least one part was quoted!
 
   elif part.tag in (
-      word_part_e.CommandSubPart, word_part_e.VarSubPart,
-      word_part_e.TildeSubPart, word_part_e.ArithSubPart):
+      word_part_e.CommandSubPart, word_part_e.SimpleVarSub,
+      word_part_e.BracedVarSub, word_part_e.TildeSubPart,
+      word_part_e.ArithSubPart):
     return False, '', False
 
   else:
@@ -95,56 +96,113 @@ def StaticEval(w):
   return True, ret, quoted
 
 
-def _ParseErrorLocationForPart(part):
+def _LeftMostSpanForPart(part):
   # TODO: Write unit tests in ui.py for error values
 
   #from core.id_kind import IdName
   #print(IdName(part.id))
 
   if part.tag == word_part_e.ArrayLiteralPart:
-    return ParseErrorLocation(part.words[0])  # Hm this is a=(1 2 3)
+    return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
   elif part.tag == word_part_e.LiteralPart:
     # Just use the token
-    return part.token
+    return part.token.span_id
 
   elif part.tag == word_part_e.EscapedLiteralPart:
-    return part.token
+    return part.token.span_id
 
   elif part.tag == word_part_e.SingleQuotedPart:
     if part.tokens:
-      return part.tokens[0]
+      return part.tokens[0].span_id
     else:
-      return None
+      return -1
 
   elif part.tag == word_part_e.DoubleQuotedPart:
     if part.parts:
-      return _ParseErrorLocationForPart(part.parts[0])
+      return _LeftMostSpanForPart(part.parts[0])
     else:
       # We need the double quote location
-      return None
+      return -1
 
-  elif part.tag == word_part_e.VarSubPart:
+  elif part.tag == word_part_e.SimpleVarSub:
+    return part.token.span_id
+
+  elif part.tag == word_part_e.BracedVarSub:
     # TODO: This isn't set when we have $foo, only ${foo}.  We should probably
     # have another kind of part?
     #assert part.token
     #return part.token  # debug
-    return None
+    return -1
 
   elif part.tag == word_part_e.CommandSubPart:
-    return None
+    return part.spids[0]
 
   elif part.tag == word_part_e.TildeSubPart:
-    return None
+    return -1
 
   elif part.tag == word_part_e.ArithSubPart:
-    return None  # TODO
+    # begin, end
+    return part.spids[0]
 
   else:
     raise AssertionError(part.tag)
 
 
-def ParseErrorLocation(w):
+def _RightMostSpanForPart(part):
+  # TODO: Write unit tests in ui.py for error values
+
+  #from core.id_kind import IdName
+  #print(IdName(part.id))
+
+  if part.tag == word_part_e.ArrayLiteralPart:
+    # TODO: Return )
+    return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
+
+  elif part.tag == word_part_e.LiteralPart:
+    # Just use the token
+    return part.token.span_id
+
+  elif part.tag == word_part_e.EscapedLiteralPart:
+    return part.token.span_id
+
+  elif part.tag == word_part_e.SingleQuotedPart:
+    if part.tokens:
+      return part.tokens[-1].span_id
+    else:
+      return -1
+
+  elif part.tag == word_part_e.DoubleQuotedPart:
+    if part.parts:
+      return _LeftMostSpanForPart(part.parts[-1])
+    else:
+      # We need the double quote location
+      return -1
+
+  elif part.tag == word_part_e.SimpleVarSub:
+    return part.token.span_id
+
+  elif part.tag == word_part_e.BracedVarSub:
+    # TODO: This isn't set when we have $foo, only ${foo}.  We should probably
+    # have another kind of part?
+    #assert part.token
+    #return part.token  # debug
+    return -1
+
+  elif part.tag == word_part_e.CommandSubPart:
+    return part.spids[1]
+
+  elif part.tag == word_part_e.TildeSubPart:
+    return -1
+
+  elif part.tag == word_part_e.ArithSubPart:
+    return -1
+
+  else:
+    raise AssertionError(part.tag)
+
+
+def LeftMostSpanForWord(w):
   # For now it returns a LineSpan.  That's all you know how to print.
   #
   # Runtime errors may be different.
@@ -162,18 +220,33 @@ def ParseErrorLocation(w):
   # TODO: Really we should use par
   if w.tag == word_e.CompoundWord:
     if len(w.parts) == 0:
-      return None
+      return -1
     elif len(w.parts) == 1:
-      return _ParseErrorLocationForPart(w.parts[0])
+      return _LeftMostSpanForPart(w.parts[0])
     else:
       begin = w.parts[0]
-      end = w.parts[-1]
       # TODO: We need to combine LineSpan()?  If they're both on the same line,
       # return them both.  If they're not, then just use "begin"?
-      return _ParseErrorLocationForPart(begin)
+      return _LeftMostSpanForPart(begin)
 
   # It's a TokenWord?
-  return w.token
+  return w.token.span_id
+
+
+# This is needed for DoWord I guess?  IT makes it easier to write the fixer.
+def UNUSED_RightMostSpanForWord(w):
+  # TODO: Really we should use par
+  if w.tag == word_e.CompoundWord:
+    if len(w.parts) == 0:
+      return -1
+    elif len(w.parts) == 1:
+      return _RightMostSpanForPart(w.parts[0])
+    else:
+      end = w.parts[-1]
+      return _RightMostSpanForPart(end)
+
+  # It's a TokenWord?
+  return w.token.span_id
 
 
 def TildeDetect(word):

@@ -11,6 +11,7 @@ word_parse_test.py: Tests for word_parse.py
 
 import unittest
 
+from core import alloc
 from core.id_kind import Id, IdName
 from core import word
 from core.test_lib import TokenWordsEqual
@@ -23,15 +24,22 @@ from osh.word_parse import WordParser  # module under test
 arith_expr_e = ast.arith_expr_e
 
 
-def InitWordParser(s):
-  line_reader, lexer = parse_lib.InitLexer(s)
+def _InitWordParserWithArena(s):
+  pool = alloc.Pool()
+  arena = pool.NewArena()
+  line_reader, lexer = parse_lib.InitLexer(s, arena=arena)
   w_parser = WordParser(lexer, line_reader)
+  return arena, w_parser
+
+
+def InitWordParser(s):
+  _, w_parser = _InitWordParserWithArena(s)
   return w_parser
 
 
-def _assertReadWord(test, word_str):
+def _assertReadWordWithArena(test, word_str):
   print('\n---', word_str)
-  w_parser = InitWordParser(word_str)
+  arena, w_parser = _InitWordParserWithArena(word_str)
   w = w_parser.ReadWord(LexMode.OUTER)
   if w:
     ast.PrettyPrint(w)
@@ -46,7 +54,24 @@ def _assertReadWord(test, word_str):
         ast.TokenWord(ast.token(Id.Op_Newline, '\n')),
         w2))
 
+  return arena, w
+
+
+def _assertReadWord(test, word_str):
+  _, w = _assertReadWordWithArena(test, word_str)
   return w
+
+
+def _assertSpanForWord(test, code_str):
+  arena, w = _assertReadWordWithArena(test, code_str)
+  span_id = word.LeftMostSpanForWord(w)
+
+  print(code_str)
+  print(span_id)
+
+  if span_id != -1:
+    span = arena.GetLineSpan(span_id)
+    print(span)
 
 
 def _assertReadWordFailure(test, word_str):
@@ -467,32 +492,27 @@ ls bar
   def testParseErrorLocation(self):
     from core import word
 
-    w = _assertReadWord(self, 'a=(1 2 3)')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, 'a=(1 2 3)')
 
-    w = _assertReadWord(self, 'foo')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, 'foo')
 
-    w = _assertReadWord(self, '\\$')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, '\\$')
 
-    w = _assertReadWord(self, "''")
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, "''")
 
-    w = _assertReadWord(self, '""')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, "'sq'")
 
-    w = _assertReadWord(self, '$(echo command sub)')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, '""')
 
-    w = _assertReadWord(self, '$(( 1 + 2 ))')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, '"dq"')
 
-    w = _assertReadWord(self, '~user')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, '$(echo command sub)')
 
-    w = _assertReadWord(self, '${var#}')
-    print(word.ParseErrorLocation(w))
+    w = _assertSpanForWord(self, '$(( 1 + 2 ))')
+
+    w = _assertSpanForWord(self, '~user')
+
+    w = _assertSpanForWord(self, '${var#}')
 
 
 if __name__ == '__main__':

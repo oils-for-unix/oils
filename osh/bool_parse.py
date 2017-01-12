@@ -89,7 +89,7 @@ class BoolParser(object):
     return self.error_stack
 
   def AddErrorContext(self, msg, *args, token=None, word=None):
-    err = base.MakeError(msg, *args, token=token, word=word)
+    err = base.ParseError(msg, *args, token=token, word=word)
     self.error_stack.append(err)
 
   def _NextOne(self, lex_mode=LexMode.DBRACKET):

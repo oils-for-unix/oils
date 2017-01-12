@@ -30,7 +30,7 @@ import io
 import sys
 
 from asdl import format as fmt
-from asdl import asdl_ as asdl  # ALIAS for nodes
+from asdl import asdl_ as asdl
 
 
 def _CheckType(value, expected_desc):
@@ -206,16 +206,15 @@ class CompoundObj(Obj):
     self.__dict__[name] = value
 
   def __repr__(self):
-    # For the console
-    f = fmt.AnsiOutput(io.StringIO())
-    #f = fmt.HtmlOutput(io.StringIO())
+    #ast_f = fmt.AnsiOutput(io.StringIO())  # Color by default.
+    ast_f = fmt.TextOutput(io.StringIO())  # No color by default.
     tree = fmt.MakeTree(self)
-    fmt.PrintTree(tree, f)
-    s, _ = f.GetRaw()
+    fmt.PrintTree(tree, ast_f)
+    s, _ = ast_f.GetRaw()
     return s
 
 
-def _MakeFieldDescriptors(module, fields, app_types):
+def _MakeFieldDescriptors(module, fields, app_types, add_spids=False):
   desc_lookup = {}
   for f in fields:
     # look up type by name
@@ -240,8 +239,15 @@ def _MakeFieldDescriptors(module, fields, app_types):
 
     desc_lookup[f.name] = desc
 
+  field_names = [f.name for f in fields]
+
+  # Add 'int* spids' if requested.
+  if add_spids:
+    field_names.append('spids')
+    desc_lookup['spids'] = asdl.ArrayType(asdl.IntType())
+
   class_attr = {
-      'FIELDS': [f.name for f in fields],
+      'FIELDS': field_names,
       'DESCRIPTOR_LOOKUP': desc_lookup,
   }
   return class_attr
@@ -285,14 +291,19 @@ def MakeTypes(module, root, app_types=None):
           tag = i + 1  # zero reserved?
           tag_num[cons.name] = tag  # for enum
 
-          class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
+          # TODO: Add 'int* spids' to every constructor?  Or you can make them
+          # all derive from the base class.  But then you need to use super()
+          # in Python.  How do you know what args to pass super?
+
+          add_spids = True
+          #add_spids = False
+          class_attr = _MakeFieldDescriptors(
+              module, cons.fields, app_types, add_spids=add_spids)
+
           class_attr['DESCRIPTOR'] = cons  # asdl.Constructor
           class_attr['tag'] = tag
 
           cls = type(cons.name, (base_class, ), class_attr)
-          #cls.DESCRIPTOR = cls  # CIRCULAR, for type checking.
-                                # TODO: Consider a different scheme.
-
           setattr(root, cons.name, cls)
 
         # e.g. arith_expr_e.Const == 1
@@ -302,7 +313,6 @@ def MakeTypes(module, root, app_types=None):
 
     elif isinstance(typ, asdl.Product):
       class_attr = _MakeFieldDescriptors(module, typ.fields, app_types)
-      # TODO: Descriptor should be cls, like above?
       class_attr['DESCRIPTOR'] = typ
 
       cls = type(defn.name, (CompoundObj, ), class_attr)

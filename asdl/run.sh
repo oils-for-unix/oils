@@ -18,7 +18,8 @@ asdl-arith-encode() {
   echo
 
   ls -l $out
-  hexdump -C $out
+  #hexdump -C $out
+  xxd $out
   echo
 }
 

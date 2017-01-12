@@ -72,12 +72,12 @@ echo $i
 
 ### while in pipe with subshell
 i=0
-find misc/ -type f | ( while read path; do
+find bin/ -type f | ( while read path; do
   i=$((i+1))
   #echo $i
 done
 echo $i )
-# stdout: 6
+# stdout: 1
 
 ### until loop
 # This is just the opposite of while?  while ! cond?

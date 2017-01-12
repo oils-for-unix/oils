@@ -125,7 +125,7 @@ class LineLexer(object):
     if self.arena is not None:
       span_id = self.arena.AddLineSpan(line_span)
     else:
-      # Completion parser might do this?  Not sure yet.
+      # Completion parser might not have aerna?  Not sure yet.
       span_id = -1
 
     t = ast.token(tok_type, tok_val, span_id)

@@ -103,9 +103,11 @@ empty() {
 
 ast() {
   bin/osh --no-exec --ast-output - -c 'echo hi'
+  bin/osh --no-exec --ast-output - --ast-format text -c 'echo hi'
+  bin/osh --no-exec --ast-output - --ast-format abbrev-html -c 'echo hi'
   bin/osh --no-exec --ast-output - --ast-format html -c 'echo hi'
 
-  # Not dupming to terminal
+  # Not dumping to terminal
   if bin/osh --no-exec --ast-output - --ast-format oheap -c 'echo hi'; then
     die "Should have failed"
   fi
@@ -113,10 +115,6 @@ ast() {
   bin/osh --no-exec --ast-output $ast_bin --ast-format oheap -c 'echo hi'
   ls -l $ast_bin
   hexdump -C $ast_bin
-}
-
-fix() {
-  bin/osh --no-exec --fix -c 'echo hi'
 }
 
 help() {
@@ -130,6 +128,22 @@ help() {
 
   bin/oil --help
   assert $? -eq 0
+}
+
+_error-case() {
+  echo
+  echo "$@"
+  echo
+  bin/osh -c "$@"
+}
+
+parse-errors() {
+  set +o errexit
+  _error-case 'echo < <<'
+  _error-case '${foo:}'
+  _error-case '$(( 1 +  ))'
+  _error-case 'echo $( echo > >>  )'
+  #_error-case 'echo ${'
 }
 
 "$@"

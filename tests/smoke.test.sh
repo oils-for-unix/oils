@@ -90,3 +90,11 @@ ls /nonexistent
 (echo 1; echo 2)
 # stdout-json: "1\n2\n"
 # status: 0
+
+### for loop
+for i in a b c
+do
+  echo $i
+done
+# stdout-json: "a\nb\nc\n"
+# status: 0

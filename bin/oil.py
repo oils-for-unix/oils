@@ -311,7 +311,9 @@ def OshMain(argv):
           ast_f = fmt.HtmlOutput(f)
         else:
           raise AssertionError
-        tree = fmt.MakeTree(node, abbrev_hook=ast.AbbreviateNodes)
+        abbrev_hook = (
+            ast.AbbreviateNodes if 'abbrev-' in opts.ast_format else None)
+        tree = fmt.MakeTree(node, abbrev_hook=abbrev_hook)
         ast_f.FileHeader()
         fmt.PrintTree(tree, ast_f)
         ast_f.FileFooter()

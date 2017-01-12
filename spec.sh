@@ -80,6 +80,7 @@ all() {
   _run quote
   _run loop
   _run case_
+  _run if_
   _run test-builtin
   _run builtins
   _run func
@@ -152,11 +153,16 @@ quote() {
 }
 
 loop() {
-  ref-shells tests/loop.test.sh "$@"
+  ref-shells tests/loop.test.sh $OSH "$@"
 }
 
+# Not implemented in osh at all.  Need glob matching of words.
 case_() {
   ref-shells tests/case.test.sh "$@"
+}
+
+if_() {
+  ref-shells tests/if.test.sh $OSH "$@"
 }
 
 test-builtin() {

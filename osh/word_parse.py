@@ -110,7 +110,7 @@ class WordParser(object):
 
   # TODO: Factor this into ErrorState class.  Each parser owns one.
   def AddErrorContext(self, msg, *args, token=None, word=None):
-    err = base.MakeError(msg, *args, token=token, word=word)
+    err = base.ParseError(msg, *args, token=token, word=word)
     self.error_stack.append(err)
 
   def Error(self):
@@ -276,7 +276,7 @@ class WordParser(object):
     else:
       bracket_op = None
 
-    part = ast.VarSubPart(name)  # TODO: add debug_token
+    part = ast.BracedVarSub(name)  # TODO: add debug_token
     part.bracket_op = bracket_op
     return part
 
@@ -336,7 +336,7 @@ class WordParser(object):
     # Now look for ops
     return part
 
-  def _ReadBracedVarSubPart(self, d_quoted=False):
+  def _ReadBracedBracedVarSub(self, d_quoted=False):
     """For the ${} expression language.
 
     NAME        = [a-zA-Z_][a-zA-Z0-9_]*
@@ -394,6 +394,8 @@ class WordParser(object):
     ${a[@]:1:2} is not allowed
     ${#a[@]:1:2} is allowed, but gives the wrong answer
     """
+    left_spid = self.cur_token.span_id
+
     if d_quoted:
       arg_lex_mode = LexMode.VS_ARG_DQ
     else:
@@ -455,6 +457,12 @@ class WordParser(object):
     else:
       raise AssertionError(self.cur_token)
 
+    part.spids.append(left_spid)
+
+    # Does this work?
+    right_spid = self.cur_token.span_id
+    part.spids.append(right_spid)
+
     return part
 
   def _ReadSingleQuotedPart(self, lex_mode):
@@ -488,7 +496,7 @@ class WordParser(object):
       return self._ReadCommandSubPart(self.token_type)
 
     if self.token_type == Id.Left_VarSub:
-      return self._ReadBracedVarSubPart(d_quoted=True)
+      return self._ReadBracedBracedVarSub(d_quoted=True)
 
     if self.token_type == Id.Left_ArithSub:
       return self._ReadArithSubPart()
@@ -521,7 +529,7 @@ class WordParser(object):
       return self._ReadCommandSubPart(self.token_type)
 
     if self.token_type == Id.Left_VarSub:
-      return self._ReadBracedVarSubPart(d_quoted=False)
+      return self._ReadBracedBracedVarSub(d_quoted=False)
 
     if self.token_type == Id.Left_ArithSub:
       return self._ReadArithSubPart()
@@ -566,7 +574,7 @@ class WordParser(object):
 
       elif self.token_kind == Kind.VSub:
         # strip $ off of $name, $$, etc.
-        part = ast.VarSubPart(self.cur_token.val[1:])  # TODO: Debug token
+        part = ast.BracedVarSub(self.cur_token.val[1:])  # TODO: Debug token
         quoted_part.parts.append(part)
 
       elif self.token_kind == Kind.Right:
@@ -595,6 +603,8 @@ class WordParser(object):
 
     command_sub = '$(' command_list ')'
     """
+    left_spid = self.cur_token.span_id
+
     #print('_ReadCommandSubPart', self.cur_token)
     self._Next(LexMode.OUTER)  # advance past $( or `
 
@@ -624,7 +634,14 @@ class WordParser(object):
       self.AddErrorContext('Error parsing commmand list in command sub')
       return None
 
+    # Hm this creates its own word parser, which is thrown away?
+    #print('X', self.cur_token)
+    #right_spid = self.cur_token.span_id
+    right_spid = c_parser.w_parser.cur_token.span_id #- 1
+
     cs_part = ast.CommandSubPart(node)
+    cs_part.spids.append(left_spid)
+    cs_part.spids.append(right_spid)
     return cs_part
 
   def _ReadArithExpr(self, do_next=True):
@@ -662,6 +679,8 @@ class WordParser(object):
     Read an arith substitution, which contains an arith expression, e.g.
     $((a + 1)).
     """
+    left_span_id = self.cur_token.span_id
+
     # The second one needs to be disambiguated in stuff like stuff like:
     # $(echo $(( 1+2 )) )
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ArithSub)
@@ -682,6 +701,7 @@ class WordParser(object):
       self._BadToken('Expected first paren to end arith sub, got %s',
           self.cur_token)
       return None
+
     self._Next(LexMode.OUTER)  # TODO: This could be DQ or ARITH too
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
@@ -691,11 +711,17 @@ class WordParser(object):
       self._BadToken('Expected second paren to end arith sub, got %s',
           self.cur_token)
       return None
+    right_span_id = self.cur_token.span_id
 
-    return ast.ArithSubPart(anode)
+    node = ast.ArithSubPart(anode)
+    node.spids.append(left_span_id)
+    node.spids.append(right_span_id)
+    return node
 
   def _ReadArithSub2Part(self):
     """Non-standard arith sub $[a + 1]."""
+    left_span_id = self.cur_token.span_id
+
     anode = self._ReadArithExpr()
     if not anode:
       self.AddErrorContext("Error parsing arith sub part")
@@ -704,8 +730,12 @@ class WordParser(object):
     if self.token_type != Id.Arith_RBracket:
       self.AddErrorContext("Expected ], got %s", self.cur_token)
       return None
+    right_span_id = self.cur_token.span_id
 
-    return ast.ArithSubPart(anode)
+    node = ast.ArithSubPart(anode)
+    node.spids.append(left_span_id)
+    node.spids.append(right_span_id)
+    return node
 
   def ReadDParen(self):
     """Read ((1+ 2))  -- command context.
@@ -838,6 +868,8 @@ class WordParser(object):
           part = ast.EscapedLiteralPart(self.cur_token)
         else:
           part = ast.LiteralPart(self.cur_token)
+          #part.xspans.append(self.cur_token.span_id)
+
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:
@@ -855,7 +887,7 @@ class WordParser(object):
             word.parts.append(part2)
 
       elif self.token_kind == Kind.VSub:
-        part = ast.VarSubPart(self.cur_token.val[1:])  # strip $
+        part = ast.SimpleVarSub(self.cur_token)
         word.parts.append(part)
 
       elif self.token_kind == Kind.Left:
@@ -946,9 +978,7 @@ class WordParser(object):
       return w, False
 
     elif self.token_kind == Kind.VSub:
-      # strip $ off of $name, $$, etc.
-      # TODO: Maybe consolidate with _ReadDoubleQuotedPart
-      part = ast.VarSubPart(self.cur_token.val[1:])  # TODO: debug token
+      part = ast.SimpleVarSub(self.cur_token)
       self._Next(LexMode.ARITH)
       w = ast.CompoundWord([part])
       return w, False

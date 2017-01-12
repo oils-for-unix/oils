@@ -74,6 +74,7 @@ class Arena(object):
     Given an line ID, return the actual filename, physical line number, and
     line contents.
     """
+    assert line_id >= 0
     return self.lines[line_id]
 
   def AddLineSpan(self, line_span):
@@ -87,10 +88,12 @@ class Arena(object):
     return span_id
 
   def GetLineSpan(self, span_id):
+    assert span_id >= 0
     return self.spans[span_id]
 
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
+    assert line_id >= 0
     src_index, line_num = self.debug_info[line_id]
     try:
       path = self.src_paths[src_index]

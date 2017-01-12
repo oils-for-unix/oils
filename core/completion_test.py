@@ -79,7 +79,7 @@ class CompletionTest(unittest.TestCase):
     pairs = [ast.assign_pair(ast.LeftVar('COMPREPLY'), w)]
     body_node = ast.Assignment(assign_scope_e.Global, [], [], pairs)
 
-    func_node.children.append(body_node)
+    func_node.body = body_node
 
     a = completion.ShellFuncAction(ex, func_node)
     matches = (list(a.Matches([], 0, 'f')))
@@ -211,11 +211,11 @@ class PartialParseTest(unittest.TestCase):
   def testVarSub(self):
     # TODO: Mem needs variable "f"
 
-    # VarSubPart
+    # BracedVarSub
     print(f('echo $'))
     print(f('echo $f'))
 
-    # Double Quoted VarSubPart
+    # Double Quoted BracedVarSub
     print(f('echo "$'))
     print(f('echo "$f'))
 

@@ -240,10 +240,10 @@ class VarOpTest(unittest.TestCase):
 
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
-    unset_sub = ast.VarSubPart('unset')
+    unset_sub = ast.BracedVarSub('unset')
     print(ev.EvalVarSub(unset_sub))
 
-    set_sub = ast.VarSubPart('x')
+    set_sub = ast.BracedVarSub('x')
     print(ev.EvalVarSub(set_sub))
 
     part = ast.LiteralPart(ast.token(Id.Lit_Chars, 'default'))

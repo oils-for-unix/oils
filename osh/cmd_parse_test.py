@@ -566,6 +566,7 @@ case foo in
 esac
 """)
     self.assertEqual(command_e.Case, node.tag)
+    self.assertEqual(0, len(node.arms))
 
 # TODO: Test all these.  Probably need to add newlines too.
 # case foo esac  # INVALID
@@ -575,18 +576,19 @@ esac
 # case foo in foo) echo hi ;; esac
 # case foo in foo) echo hi; ;; esac
 
-  def testParseCase2(self):
     node = assertParseCommandLine(self, """\
 case word in
-  foo) echo hi ;;
+  foo|foo2|foo3) echo hi ;;
 esac
 """)
     self.assertEqual(command_e.Case, node.tag)
+    self.assertEqual(1, len(node.arms))
 
     node = assertParseCommandLine(self, """\
 case word in foo) echo one-line ;; esac
 """)
     self.assertEqual(command_e.Case, node.tag)
+    self.assertEqual(1, len(node.arms))
 
     node = assertParseCommandLine(self, """\
 case word in
@@ -595,6 +597,7 @@ case word in
 esac
 """)
     self.assertEqual(command_e.Case, node.tag)
+    self.assertEqual(2, len(node.arms))
 
     node = assertParseCommandLine(self, """\
 case word in
@@ -603,6 +606,7 @@ case word in
 esac
 """)
     self.assertEqual(command_e.Case, node.tag)
+    self.assertEqual(2, len(node.arms))
 
     node = assertParseCommandLine(self, """\
 case word in
@@ -611,6 +615,7 @@ case word in
 esac
 """)
     self.assertEqual(command_e.Case, node.tag)
+    self.assertEqual(2, len(node.arms))
 
   def testParseWhile(self):
     node = assertParseCommandList(self, """\
@@ -677,7 +682,7 @@ done
     self.assertEqual(Id.Arith_Equal, node.init.op_id)
     self.assertEqual(Id.Arith_Less, node.cond.op_id)
     self.assertEqual(Id.Arith_DPlus, node.update.op_id)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.SimpleCommand, node.body.tag)
 
     # Now without the ; OR a newline
     node = assertParseCommandList(self, """\
@@ -688,14 +693,14 @@ done
     self.assertEqual(Id.Arith_Equal, node.init.op_id)
     self.assertEqual(Id.Arith_Less, node.cond.op_id)
     self.assertEqual(Id.Arith_DPlus, node.update.op_id)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.SimpleCommand, node.body.tag)
 
     node = assertParseCommandList(self, """\
 for ((;;)); do
   echo $i
 done
 """)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.SimpleCommand, node.body.tag)
 
   def testParseCommandSub(self):
     # Two adjacent command subs
@@ -781,7 +786,7 @@ fi
     # Redirects
     node = assertParseCommandList(self, 'foo() { echo hi; } 1>&2 2>/dev/null')
     self.assertEqual(2, len(node.redirects))
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.BraceGroup, node.body.tag)
 
   def testParseKeyword(self):
     # NOTE: It chooses the longest match, which is Lit_Chars>

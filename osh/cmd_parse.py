@@ -52,8 +52,29 @@ def _GetHereDocsToFill(node):
   # NOTE: When we change to heterogeneous children, we need to do something
   # smarter.
   here_docs = []
-  for child in node.children:
-    here_docs.extend(_GetHereDocsToFill(child))
+
+  if node.tag == command_e.If:
+    for arm in node.arms:
+      here_docs.extend(_GetHereDocsToFill(arm.cond))
+      here_docs.extend(_GetHereDocsToFill(arm.action))
+
+  elif node.tag == command_e.Case:
+    for arm in node.arms:
+      here_docs.extend(_GetHereDocsToFill(arm.action))
+
+  elif node.tag in (command_e.ForEach, command_e.ForExpr, command_e.FuncDef):
+    here_docs.extend(_GetHereDocsToFill(node.body))
+
+  elif node.tag in (command_e.While, command_e.Until):
+    here_docs.extend(_GetHereDocsToFill(node.cond))
+    here_docs.extend(_GetHereDocsToFill(node.body))
+
+  elif node.tag == command_e.Fork:
+    here_docs.extend(_GetHereDocsToFill(node.child))
+
+  else:
+    for child in node.children:
+      here_docs.extend(_GetHereDocsToFill(child))
 
   # && || and | don't have their own redirects, but have children that may.
   if node.tag not in (
@@ -101,7 +122,7 @@ class CommandParser(object):
     self.AddErrorContext(msg, w, word=w)
 
   def AddErrorContext(self, msg, *args, token=None, word=None):
-    err = base.MakeError(msg, *args, token=token, word=word)
+    err = base.ParseError(msg, *args, token=token, word=word)
     self.error_stack.append(err)
 
   def GetCompletionState(self):
@@ -619,14 +640,22 @@ class CommandParser(object):
 
   def ParseDoGroup(self):
     """
+    Used by ForEach, ForExpr, While, Until.  Should this be a Do node?
+
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
+    do_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Do): return None
 
     node = self.ParseCommandList()
     if not node: return None
 
+    done_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Done): return None
+
+    assert len(node.spids) == 0  # might change later
+    node.spids.append(do_spid)
+    node.spids.append(done_spid)
     return node
 
   def ParseForWords(self):
@@ -680,7 +709,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     if not body_node: return None
 
-    node.children.append(body_node)
+    node.body = body_node
     return node
 
   def _ParseForEachLoop(self):
@@ -701,6 +730,7 @@ class CommandParser(object):
     if self.c_id == Id.KW_In:
       self._Next()  # skip in
 
+      node.spids.append(word.LeftMostSpanForWord(self.cur_word) + 1)
       iter_words = self.ParseForWords()
       if iter_words is None:  # empty list of words is OK
         return None
@@ -719,11 +749,13 @@ class CommandParser(object):
           word=self.cur_word)
       return None
 
+    do_spid = word.LeftMostSpanForWord(self.cur_word)
+    node.spids.append(do_spid)
+
     body_node = self.ParseDoGroup()
     if not body_node: return None
 
-    node.children.append(body_node)
-
+    node.body = body_node
     return node
 
   def ParseFor(self):
@@ -735,9 +767,11 @@ class CommandParser(object):
 
     if not self._Peek(): return None
     if self.c_id == Id.Op_DLeftParen:
-      return self._ParseForExprLoop()
+      node = self._ParseForExprLoop()
     else:
-      return self._ParseForEachLoop()
+      node = self._ParseForEachLoop()
+
+    return node
 
   def ParseWhile(self):
     """
@@ -751,7 +785,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     if not body_node: return None
 
-    return ast.While([cond_node, body_node])
+    return ast.While(cond_node, body_node)
 
   def ParseUntil(self):
     """
@@ -765,7 +799,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     if not body_node: return None
 
-    return ast.Until([cond_node, body_node])
+    return ast.Until(cond_node, body_node)
 
   def ParseCaseItem(self):
     """
@@ -811,13 +845,12 @@ class CommandParser(object):
 
     if not self._NewlineOk(): return None
 
-    return pat_words, node
+    return ast.case_arm(pat_words, node)
 
-  def ParseCaseList(self):
+  def ParseCaseList(self, arms):
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
-    items = []
     if not self._Peek(): return None
 
     while True:
@@ -826,34 +859,32 @@ class CommandParser(object):
         break
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
-      item = self.ParseCaseItem()
-      if not item:
-        return None
-      items.append(item)
+      arm = self.ParseCaseItem()
+      if not arm: return None
+
+      arms.append(arm)
       if not self._Peek(): return None
       # Now look for DSEMI or ESAC
 
-    return items
+    return True
 
   def ParseCase(self):
     """
     case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
     """
-    cn = ast.Case()
+    case_node = ast.Case()
     self._Next()  # skip case
 
     if not self._Peek(): return None
-    cn.to_match = self.cur_word
+    case_node.to_match = self.cur_word
     self._Next()
 
     if not self._NewlineOk(): return None
     if not self._Eat(Id.KW_In): return None
     if not self._NewlineOk(): return None
 
-    items = []
     if self.c_id != Id.KW_Esac:  # empty case list
-      items = self.ParseCaseList()
-      if items is None:
+      if not self.ParseCaseList(case_node.arms):
         self.AddErrorContext("ParseCase: error parsing case list")
         return None
       # TODO: should it return a list of nodes, and extend?
@@ -862,13 +893,9 @@ class CommandParser(object):
     if not self._Eat(Id.KW_Esac): return None
     self._Next()
 
-    for (pat, node) in items:
-      cn.pat_word_list.append(pat)
-      cn.children.append(node)
+    return case_node
 
-    return cn
-
-  def ParseElsePart(self, children):
+  def ParseElsePart(self, arms):
     """
     else_part: (Elif command_list Then command_list)* Else command_list ;
     """
@@ -883,25 +910,21 @@ class CommandParser(object):
       body = self.ParseCommandList()
       if not body: return None
 
-      children.append(cond)
-      children.append(body)
+      arms.append(ast.if_arm(cond, body))
 
     if self.c_id == Id.KW_Else:
       self._Next()
-      dummy_cond = ast.NoOp()
-      children.append(dummy_cond)
       body = self.ParseCommandList()
-      if not body:
-        return None
-      children.append(body)
+      if not body: return None
+      arms.append(ast.if_arm(ast.NoOp(), body))
 
-    return children
+    return True
 
   def ParseIf(self):
     """
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
-    cn = ast.If()
+    if_node = ast.If()
     self._Next()  # skip if
 
     cond = self.ParseCommandList()
@@ -912,16 +935,15 @@ class CommandParser(object):
     body = self.ParseCommandList()
     if not body: return None
 
-    cn.children.append(cond)
-    cn.children.append(body)
+    if_node.arms.append(ast.if_arm(cond, body))
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
-      if not self.ParseElsePart(cn.children):
+      if not self.ParseElsePart(if_node.arms):
         return None
 
     if not self._Eat(Id.KW_Fi): return None
 
-    return cn
+    return if_node
 
   def ParseCompoundCommand(self):
     """
@@ -966,7 +988,7 @@ class CommandParser(object):
     redirects = self._ParseRedirectList()
     if redirects is None: return None
 
-    func.children.append(body)
+    func.body = body
     func.redirects = redirects
     return True
 
@@ -985,6 +1007,8 @@ class CommandParser(object):
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
     """
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
+
     ok, name = word.AsFuncName(self.cur_word)
     if not ok:
       self.AddErrorContext("Invalid function name: %r",
@@ -1000,20 +1024,26 @@ class CommandParser(object):
     self._Next()
 
     if not self._Eat(Id.Right_FuncDef): return None
+    after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
 
     if not self._NewlineOk(): return None
 
     func = ast.FuncDef()
     func.name = name
+
     if not self.ParseFunctionBody(func):
       return None
 
+    func.spids.append(left_spid)
+    func.spids.append(after_name_spid)
     return func
 
   def ParseKshFunctionDef(self):
     """
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
+
     self._Next()  # skip past 'function'
 
     if not self._Peek(): return None
@@ -1021,22 +1051,27 @@ class CommandParser(object):
     if not ok:
       self.AddErrorContext("Invalid function name: %r", self.cur_word)
       return None
+    after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
     self._Next()  # skip past 'function name
 
     if not self._Peek(): return None
-
     if self.c_id == Id.Op_LParen:
       self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
       self._Next()
       if not self._Eat(Id.Right_FuncDef): return None
+      # Change it: after )
+      after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
 
     if not self._NewlineOk(): return None
 
     func = ast.FuncDef()
     func.name = name
+
     if not self.ParseFunctionBody(func):
       return None
 
+    func.spids.append(left_spid)
+    func.spids.append(after_name_spid)
     return func
 
   def ParseCoproc(self):
@@ -1247,6 +1282,11 @@ class CommandParser(object):
     """
     NOTE: This is only called in InteractiveLoop?  Oh crap I need to really
     read and execute a line at a time then?
+
+    BUG: sleep 1 & sleep 1 &  doesn't work here, when written in REPL.   But it
+    does work with '-c', because that calls ParseFile and not ParseCommandLine
+    over and over.
+
     TODO: Get rid of ParseFile and stuff?  Shouldn't be used for -c and so
     forth.  Just have an ExecuteLoop for now.  But you still need
     ParseCommandList, for internal nodes.
@@ -1362,8 +1402,7 @@ class CommandParser(object):
 
       elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
         if self.c_id == Id.Op_Amp:
-          child = ast.Fork()
-          child.children = [and_or]
+          child = ast.Fork(and_or)
         self._Next()
 
         if not self._Peek(): return None

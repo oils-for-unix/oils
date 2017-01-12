@@ -11,6 +11,8 @@ ui.py - User interface constructs.
 
 import sys
 
+from core import word
+
 
 def Clear():
   sys.stdout.write('\033[2J')  # clear screen
@@ -90,59 +92,48 @@ def PrintError(error_stack, arena, f):
   """
   NOTE: Parse errors always occur within a single arena.  Runtime errors may
   span arenas (e.g. the function stack).
-
   """
   # TODO:
   # - rename to PrintParseError()
   #   - although parse errors happen at runtime because of 'source'
   #   - should there be a distinction then?
-  # - Write unit tests
-  # - Change error stack to have LineSpan?  No it should be kind of "raw"
-  #   - maybe it should be:
-  #   - MakeError
-  #
-  # ParseError(
-  #   msg
-  #   (args,)
-  #   near_token
-  #   near_word
-  # no near node for now...
-
-  for token, msg in error_stack:
-    if token:
-      #print(token)
-      #print(token.line_id)
-      span_id = token.span_id
-      if span_id == -1:
-        line = '<token had no position info>'
-        path = '<unknown>'
-        line_num = -1
-        col = -1
-        length = -1
-      else:
-        line_span = arena.GetLineSpan(span_id)
-        line_id = line_span.line_id
-        line = arena.GetLine(line_id)
-        path, line_num = arena.GetDebugInfo(line_id)
-        col = line_span.col
-        length = line_span.length
-
-      print('Line %d of %r' % (line_num+1, path))
-      print('  ' + line.rstrip())
-      if col == -1:
-        print('NO COL')
-      else:
-        sys.stdout.write('  ')
-        # preserve tabs
-        for c in line[:col]:
-          sys.stdout.write('\t' if c == '\t' else ' ')
-        sys.stdout.write('^')
-        sys.stdout.write('~' * (length-1))
-        sys.stdout.write('\n')
+  for parse_error in error_stack:
+    print(parse_error)
+    if parse_error.token:
+      span_id = parse_error.token.span_id
+    elif parse_error.word:
+      # Can be -1
+      span_id = word.LeftMostSpanForWord(parse_error.word)
     else:
-      #print('<no token>')
-      pass
+      span_id = -1
 
-    print(msg, file=f)
+    if span_id == -1:
+      line = '<token had no position info>'
+      path = '<unknown>'
+      line_num = -1
+      col = -1
+      length = -1
+    else:
+      line_span = arena.GetLineSpan(span_id)
+      line_id = line_span.line_id
+      line = arena.GetLine(line_id)
+      path, line_num = arena.GetDebugInfo(line_id)
+      col = line_span.col
+      length = line_span.length
+
+    print('Line %d of %r' % (line_num+1, path))
+    print('  ' + line.rstrip())
+    if col == -1:
+      print('NO COL')
+    else:
+      sys.stdout.write('  ')
+      # preserve tabs
+      for c in line[:col]:
+        sys.stdout.write('\t' if c == '\t' else ' ')
+      sys.stdout.write('^')
+      sys.stdout.write('~' * (length-1))
+      sys.stdout.write('\n')
+
+    print(parse_error.UserErrorString(), file=f)
     print('---')
   #print(error_stack, file=f)

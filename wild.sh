@@ -371,6 +371,22 @@ parse-minimal-linux() {
   _parse-project ~/git/other/minimal
 }
 
+# NOTE:
+# Find executable scripts, since they don't end in sh.
+# net/tcpretrans is written in Perl.
+parse-perf-tools() {
+  local src=~/git/other/perf-tools
+  local files=$(find $src \
+                \( -name .git -a -prune \) -o \
+                \( -name tcpretrans -a -prune \) -o \
+                \( -type f -a -executable -a -printf '%P\n' \) )
+  #echo $files
+  time _parse-many \
+    $src \
+    $RESULT_DIR/perf-tools-parsed \
+    $files
+}
+
 #
 # Big projects
 #

@@ -60,25 +60,16 @@ class _Evaluator(object):
     pass
 
 
-def MakeError(msg, *args, token=None, word=None):
-  """Common function to make an error."""
-  if args:
-    msg = msg % args
+class ParseError:
+  """A parse error that can be formatted.
 
-  if token and word:
-    raise AssertionError('Only one error location can be specified')
+  Formatting is in ui.PrintError.
+  """
+  def __init__(self, msg, *args, token=None, word=None):
+    self.msg = msg
+    self.args = args
+    self.token = token
+    self.word = word
 
-  if token:
-    near_token = token
-  elif word:
-    from core.word import ParseErrorLocation
-    near_token = ParseErrorLocation(word)
-    #print('NEAR TOKEN', near_token)
-
-    # TODO: Change this to LocationPair()?  It could be a single location or
-    # multiple locations?  Put it in word.py?  Or somewhere else?  I think you
-    # implement runtime errors in addition to parse time errors first.
-  else:
-    near_token = None
-
-  return (near_token, msg)
+  def UserErrorString(self):
+    return self.msg % self.args

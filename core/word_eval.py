@@ -178,7 +178,7 @@ def _GlobsAreExpanded(p):
   """
   return p.tag in (
       word_part_e.LiteralPart, word_part_e.CommandSubPart,
-      word_part_e.VarSubPart)
+      word_part_e.SimpleVarSub, word_part_e.BracedVarSub)
 
 
 def _IsSubst(p):
@@ -193,8 +193,8 @@ def _IsSubst(p):
     3) To do globbing.  If we are NOT in a substitution or literal.
   """
   return p.tag in (
-      word_part_e.CommandSubPart, word_part_e.VarSubPart,
-      word_part_e.ArithSubPart)
+      word_part_e.CommandSubPart, word_part_e.SimpleVarSub,
+      word_part_e.BracedVarSub, word_part_e.ArithSubPart)
 
 
 class _Evaluator(object):
@@ -282,7 +282,7 @@ class _Evaluator(object):
     # TODO: $0 $1 ...
 
     else:
-      # VarSubPart is for $foo, without qualifiers.
+      # BracedVarSub is for $foo, without qualifiers.
       defined, val = self.mem.Get(name)
       return defined, val
 
@@ -304,7 +304,7 @@ class _Evaluator(object):
         if self.exec_opts.nounset:
           # stack will unwind
           token = None
-          # TODO: Need to have the ast for varsub.  VarSubPart should have a
+          # TODO: Need to have the ast for varsub.  BracedVarSub should have a
           # token?
           #tb = self.mem.GetTraceback(token)
           self._AddErrorContext("Unset variable %s" % name)
@@ -315,11 +315,20 @@ class _Evaluator(object):
   def EvalVarSub(self, part, quoted=False):
     """
     Args:
-      name: name of the variable to evaluate
+      part: SimpleVarSub or BracedVar
       ops: list of VarOp to execute
       quoted: whether the var sub was double quoted
-
     """
+    if part.tag == word_part_e.SimpleVarSub:
+      name = part.token.val[1:]  # strip off leading $
+      defined, val = self._EvalVar(name, quoted=quoted)
+      if not defined:
+        self._AddErrorContext("Undefined variable %s" % name)
+        return False, None
+      # TODO: Fix this and merge it with logic below.  Respect 'nounset'
+      # option, etc.
+      return True, val
+
     name = part.name
 
     # Possibilities: Array OR Index; then Test OR Transform
@@ -439,7 +448,7 @@ class _Evaluator(object):
       if self.exec_opts.nounset:
         # stack will unwind
         token = None
-        # TODO: Need to have the ast for varsub.  VarSubPart should have a
+        # TODO: Need to have the ast for varsub.  BracedVarSub should have a
         # token?
         #tb = self.mem.GetTraceback(token)
         self._AddErrorContext("Unset variable %s" % name)
@@ -691,7 +700,7 @@ class _Evaluator(object):
       # supply something like /dev/fd/63.
       return self.EvalCommandSub(part.command_list)
 
-    elif part.tag == word_part_e.VarSubPart:
+    elif part.tag in (word_part_e.SimpleVarSub, word_part_e.BracedVarSub):
       # This is the only one that uses quoted?
       return self.EvalVarSub(part, quoted=quoted)
 
@@ -822,8 +831,7 @@ class _Evaluator(object):
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      pairs = [(name, val)]
-      self.mem.SetLocal(pairs, 0)
+      self.mem.SetSimpleVar(name, val)
 
       result[name] = s
     return result

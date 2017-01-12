@@ -192,6 +192,10 @@ class Mem(object):
       # Assuming LeftVar for now.
       self.top[lhs.name] = flags, value
 
+  def SetSimpleVar(self, name, value):
+    """Set a simple variable (not an array)."""
+    self.top[name] = 0, value
+
   # Are special vars here?  # like $? and $0 ?
   # IFS, PWD, etc.
 
@@ -266,6 +270,8 @@ class Executor(object):
   def _Read(self, argv):
     names = argv[1:]
     line = sys.stdin.readline()
+    if not line:  # EOF
+      return 1
     # TODO: split line and do that logic
     val = Value.FromString(line.strip())
     pairs = [(ast.LeftVar(names[0]), val)]
@@ -459,7 +465,7 @@ class Executor(object):
 
   def RunFunc(self, func_node, argv):
     """Called by FuncThunk."""
-    func_body = func_node.children[0]
+    func_body = func_node.body
     # TODO: Call func with $@, $1, etc.
 
     self.mem.Push(argv[1:])
@@ -700,6 +706,9 @@ class Executor(object):
       p = self._GetProcessForNode(node.children[0])
       status = p.Run()
 
+    elif node.tag == command_e.Fork:
+      raise NotImplementedError('Fork')
+
     elif node.tag == command_e.DBracket:
       bool_ev = expr_eval.BoolEvaluator(self.mem, self.ev)
       ok = bool_ev.Eval(node.expr)
@@ -710,7 +719,7 @@ class Executor(object):
 
     elif node.tag == command_e.DParen:
       arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev)
-      ok = arith_ev.Eval(node.anode)
+      ok = arith_ev.Eval(node.child)
       if ok:
         i = arith_ev.Result()
         # Negate the value: non-zero in arithmetic is true, which is zero in
@@ -765,13 +774,11 @@ class Executor(object):
         raise AssertionError
 
     elif node.tag == command_e.While:
-      cond, action = node.children
-
       while True:
-        status, _ = self.Execute(cond)
+        status, _ = self.Execute(node.cond)
         if status != 0:
           break
-        status, cflow = self.Execute(action)  # last one wins
+        status, cflow = self.Execute(node.body)  # last one wins
         if cflow == EBuiltin.BREAK:
           cflow = EBuiltin.NONE  # reset since we respected it
           break
@@ -790,12 +797,9 @@ class Executor(object):
       status = 0  # in case we don't loop
       cflow = EBuiltin.NONE
       for x in iter_list:
-        flags = 0
-        pairs = [(iter_name, Value.FromString(x))]
-        self.mem.SetLocal(pairs, flags)
+        self.mem.SetSimpleVar(iter_name, Value.FromString(x))
 
-        assert len(node.children) == 1
-        status, cflow = self.Execute(node.children[0])
+        status, cflow = self.Execute(node.body)
 
         if cflow == EBuiltin.BREAK:
           cflow = EBuiltin.NONE  # reset since we respected it
@@ -808,15 +812,11 @@ class Executor(object):
       status = 0
 
     elif node.tag == command_e.If:
-      i = 0
-      while i < len(node.children):
-        cond = node.children[i]
-        body = node.children[i + 1]
-        status, _ = self.Execute(cond)
+      for arm in node.arms:
+        status, _ = self.Execute(arm.cond)
         if status == 0:
-          status, _ = self.Execute(body)
+          status, _ = self.Execute(arm.action)
           break
-        i += 2
 
     elif node.tag == command_e.NoOp:
       status = 0  # make it true

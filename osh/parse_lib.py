@@ -15,7 +15,7 @@ from osh import cmd_parse
 
 def InitLexer(s, arena=None):
   """For tests only."""
-  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')
+  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '', arena=arena)
   line_reader = reader.StringLineReader(s, arena=arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx

@@ -203,7 +203,6 @@ def EncodeObj(obj, enc, out):
 
     # TODO:
     # - Float would be inline, etc.
-    # - Optional value: write all enc.Ref(0)?  This is 'nullptr'.
     # - Repeated value: write them all adjacent to each other?
 
     # INLINE
@@ -235,6 +234,7 @@ def EncodeObj(obj, enc, out):
       elif isinstance(item_desc, asdl.Product):
         ok = True
 
+      # TODO: Fix this for span_id.  Need to extract a method.
       if not ok:
         raise AssertionError(
             "Currently not encoding simple optional types: %s", field_val)

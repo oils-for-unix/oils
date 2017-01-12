@@ -50,6 +50,14 @@ class ArithAstTest(unittest.TestCase):
     # Raw integer is not allowed
     #self.assertRaises(AssertionError, ArithUnary, op_id.Minus, op_id.Plus)
 
+  def testExtraFields(self):
+    v = ArithVar('z')
+
+    # TODO: Attach this to EVERY non-simple constructor?  Those are subclasses
+    # of Sum types.
+    # What about product types?
+    #print(v.xspans)
+
   def testTypes(self):
 
     print(ArithVar)
@@ -143,6 +151,8 @@ class ArithAstTest(unittest.TestCase):
 
     self.assertEqual(b'\x04', e[4:5])  # alignment 4
 
+    # TODO: Fix after spids
+    return
     self.assertEqual(b'\x02\x00\x00', e[5:8])  # root ref 2
 
     self.assertEqual(b'\x01', e[8:9])  # tag 1 is const

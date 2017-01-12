@@ -15,16 +15,21 @@
 -- * Brace expansion: should this be another kind of 'word'?  It can be
 --   expanded at compile time.
 -- * let arithmetic (rarely used)
--- * coprocesses
+-- * coprocesses -- two kinds
+-- * time builtin can take a block
 
 -- TODO: Preserve these source differences:
--- * $foo vs. ${foo}.  VarSub vs. BracedVarSub
 -- * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
 -- * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
 -- * HereDoc vs HereWord.  I collapsed them.
 -- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
 -- * Don't fill in file descriptor unless user specified it, e.g. echo < in.txt
 --   vs. echo 1< in.txt
+-- & 'echo >out.txt hi'  vs echo hi >out.txt
+-- * $(( )) vs $[ ] in bash -- easier to reformat separately.
+--
+-- Not strictly necessary for oil conversion
+-- * foo() { } vs function foo { } -- ksh 
 
 module osh
 {
@@ -57,10 +62,11 @@ module osh
   | EscapedLiteralPart(token token)
   | SingleQuotedPart(token* tokens)
   | DoubleQuotedPart(word_part* parts)
-  | VarSubPart(string name,
-               id? prefix_op,  -- prefix # or ! operators
-               bracket_op? bracket_op
-               suffix_op? suffix_op)
+  | SimpleVarSub(token token)
+  | BracedVarSub(string name,
+                id? prefix_op,  -- prefix # or ! operators
+                bracket_op? bracket_op
+                suffix_op? suffix_op)
   | TildeSubPart(string prefix)
   | CommandSubPart(command command_list)
   | ArithSubPart(arith_expr anode)
@@ -109,6 +115,10 @@ module osh
   assign_pair = (lvalue lhs, word rhs)
   env_pair = (string name, word val)
 
+  -- Each arm tests one word against multiple words
+  case_arm = (word* pat_list, command action)
+  if_arm = (command cond, command action)
+
   -- Homogeneous version
   command = 
     NoOp
@@ -117,7 +127,7 @@ module osh
                assign_flags* flags,
                word* words,  -- names mentioned without a binding
                assign_pair* pairs)  -- empty redirects for polymorphism?
-  | Fork(command* children)  -- shell only allows one command
+  | Fork(command child)  -- shell only allows one command
   | Pipeline(command* children, bool negated, int* stderr_indices)
   -- | AndOr(command* children, and_or* ops)
   | AndOr(command* children, id op_id)
@@ -130,21 +140,28 @@ module osh
   | DBracket(bool_expr expr, redir* redirects)
   -- do_arg_iter: whether to implicitly loop over "$@"
   | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
-            command* children, redir* redirects)
+            command body, redir* redirects)
   -- C-style for loop.  Any of the 3 expressions can be omitted.
+  -- TODO: body is required, but only optional here because of initialization
+  -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
-            command* children, redir* redirects)
-  | While(command* children, redir* redirects)
-  | Until(command* children, redir* redirects)
-  | If(command* children, redir* redirects)
-  | Case(word to_match, word* pat_word_list, command* children, redir* redirects)
-  | FuncDef(string name, command* children, redir* redirects)
+            command? body, redir* redirects)
+  | While(command cond, command body, redir* redirects)
+  | Until(command cond, command body, redir* redirects)
+  | If(if_arm* arms, redir* redirects)
+  | Case(word to_match, case_arm* arms, redir* redirects)
+  | FuncDef(string name, command body, redir* redirects)
 
   and_or = DAmp | DPipe
 
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.
   -- pipe_op = Pipe | PipeAndStderr
+
+  --  NOTE: Do we even need these types?  Arena already has methods.  They can
+  --  We just need to go from text -> text.  For execution, we'll be compiling
+  -- to a different format.  We also won't bootstrap with osh code -- only oil
+  -- code.  shell can call oil builtins if necessary.
 
   -- A node with full debug info
   -- All other nodes should have span_id?  int _loc or int _begin, int _end.
