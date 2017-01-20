@@ -19,13 +19,14 @@
 -- * time builtin can take a block
 
 -- TODO: Preserve these source differences:
+-- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
+--   * In the printer, I want to preserve line breaks!  foo \bar?
 -- * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
 -- * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
 -- * HereDoc vs HereWord.  I collapsed them.
 -- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
 -- * Don't fill in file descriptor unless user specified it, e.g. echo < in.txt
 --   vs. echo 1< in.txt
--- & 'echo >out.txt hi'  vs echo hi >out.txt
 -- * $(( )) vs $[ ] in bash -- easier to reformat separately.
 --
 -- Not strictly necessary for oil conversion
@@ -122,7 +123,9 @@ module osh
   -- Homogeneous version
   command = 
     NoOp
+  -- TODO: respect order 
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
+  -- TODO: respect order 
   | Assignment(assign_scope scope,
                assign_flags* flags,
                word* words,  -- names mentioned without a binding

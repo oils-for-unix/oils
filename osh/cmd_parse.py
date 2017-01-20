@@ -332,18 +332,22 @@ class CommandParser(object):
     if not self._Peek(): return None
     assert self.c_kind == Kind.Redir, self.cur_word
 
+    left_spid = self.cur_word.token.span_id
+
+    # For now only supporting single digit descriptor
     first_char = self.cur_word.token.val[0]
     if first_char.isdigit():
       fd = int(first_char)
     else:
-      fd = REDIR_DEFAULT_FD[self.c_id]
+      fd = -1
 
-    if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here
+    if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()
       node.op_id = self.c_id
       node.arg_word = None  # not read yet
       node.fd = fd
       node.was_filled = False
+      node.spids.append(left_spid)
       self._Next()
 
       if not self._Peek(): return None
@@ -362,6 +366,7 @@ class CommandParser(object):
       node = ast.Redirect()
       node.op_id = self.c_id
       node.fd = fd
+      node.spids.append(left_spid)
       self._Next()
 
       if not self._Peek(): return None

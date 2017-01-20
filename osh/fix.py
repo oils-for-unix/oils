@@ -94,16 +94,120 @@ def Print(arena, node):
   #print('')
 
 
-class Fixer:
+# NICE mode: Assume that the user isn't relying on word splitting.  A lot of
+# users want this!
+#
+# Problem cases:
+# 
+# for name in $(find ...); do echo $name; done
+#
+# This doesn't split.  Heuristic:
 
-  def __init__(self, cursor, arena, f):
+NICE = 0
+
+# Try to convert with pedantic correctness.  Not sure if users will want this
+# though.  Most people are not super principled about their shell programs.
+# But experts might want it.  Experts might want to run ShellCheck first and
+# quote everything, and then everything will be unquoted.
+PEDANTIC = 1
+
+
+class Fixer:
+  """
+  Convert osh code to oil.
+
+  Convert command, word, word_part, arith_expr, bool_expr, etc.
+    redirects, ops, etc.
+
+  Other things to convert:
+  - builtins
+    - set -o errexit to  
+    - option +errexit +xtrace +allow-unset
+  - brace expansion: haven't done that yet
+
+  - command invocations
+    - find invocations
+    - xargs
+
+  """
+
+  def __init__(self, cursor, arena, f, mode=NICE):
     self.cursor = cursor
     self.arena = arena
     self.f = f
+    # In PEDANTIC mode, we translate unquoted $foo to @-foo, which means it will
+    # be split and globbed?
+    self.mode = mode
 
   def End(self):
     end_id = len(self.arena.spans)
     self.cursor.PrintUntil(end_id)
+
+  def DoRedirect(self, node):
+    #print(node, file=sys.stderr)
+    self.cursor.PrintUntil(node.spids[0])
+
+    # TODO:
+    # - Do < and <& the same way.
+    # - How to handle here docs and here docs?
+    # - >> becomes >+ or >-, or maybe >>>
+
+    if node.fd == -1:
+      if node.op_id == Id.Redir_Great:
+        self.f.write('>')  # Allow us to replace the operator
+        self.cursor.SkipUntil(node.spids[0] + 1)
+      elif node.op_id == Id.Redir_GreatAnd:
+        self.f.write('> !')  # Replace >& 2 with > !2
+        spid = word.LeftMostSpanForWord(node.arg_word)
+        self.cursor.SkipUntil(spid)
+        #self.DoWord(node.arg_word)
+
+    else:
+      # NOTE: Spacing like !2>err.txt vs !2 > err.txt can be done in the
+      # formatter.
+      self.f.write('!%d ' % node.fd)
+      if node.op_id == Id.Redir_Great:
+        self.f.write('>')
+        self.cursor.SkipUntil(node.spids[0] + 1)
+      elif node.op_id == Id.Redir_GreatAnd:
+        self.f.write('> !')  # Replace 1>& 2 with !1 > !2
+        spid = word.LeftMostSpanForWord(node.arg_word)
+        self.cursor.SkipUntil(spid)
+
+    # First pass
+    #
+    # >&2  >!2
+    # 1>&2  !1 > !2
+    #
+    # <<< 'here word'
+    # << 'here word'
+    #
+    # 2> out.txt
+    # !2 > out.txt
+
+    # cat 1<< EOF
+    # hello $name
+    # EOF
+    # cat !1 << """
+    # hello $name
+    # """
+    #
+    # cat << 'EOF'
+    # no expansion
+    # EOF
+    #   cat <<- 'EOF'
+    #   no expansion and indented
+    #
+    # cat << '''
+    # no expansion
+    # '''
+    #   cat << '''
+    #   no expansion and indented
+    #   '''
+
+    #
+    # Warn about multiple here docs on a line.
+    pass
 
   def DoCommand(self, node):
     if node.tag == command_e.CommandList:
@@ -121,6 +225,11 @@ class Fixer:
 
       for w in node.words:
         self.DoWord(w)
+
+      # NOTE: This will change to "phrase"?  Word or redirect.
+      for r in node.redirects:
+        self.DoRedirect(r)
+
       # TODO: Print the terminator.  Could be \n or ;
       # Need to print env like PYTHONPATH = 'foo' && ls
       # Need to print redirects:
@@ -128,27 +237,49 @@ class Fixer:
       # append is >+
 
     elif node.tag == command_e.Assignment:
-      # print spaces
-      # change RHS to expression language.  Literal not allowed.  foo -> 'foo'
-      # var foo = 'bar'
-      # foo := 'bar'
-      # foo ::= 'bar'
-      # deprecated assignment:  create a local or mutate a global
-
+      # Print spaces
+      # Change RHS to expression language.  Bare words not allowed.  foo ->
+      # 'foo'
+      #
       # local foo=bar => var foo = 'bar'
-      # readonly foo=bar => foo = 'bar'
+      # readonly local foo=bar => foo = 'bar'
 
-      # RHS is either a string or an array
-      pass
+      # Do lexical analysis: if it's not a local, then it's a global.
+      #
+      # local foo=bar
+      # foo=new
+      # myglobal=2
+      #
+      # var foo = 'bar'
+      # foo := 'new'
+      # global myglobal := 2
+
+      # If the RHS is a var sub, then you don't need quotes:
+      # local src=${1:-foo}
+      #
+      # Should be:
+      # var src = $1 or 'foo'
+      #
+      # NOT:
+      #
+      # var src = $($1 or 'foo')
+
+      for pair in node.pairs:
+        if word.IsVarSub(pair.rhs):  # ${1} or "$1"
+          # DO it in expression mode
+          pass
+        else:
+          # foo=bar -> foo = 'bar'
+          pass
 
     elif node.tag == command_e.Pipeline:  # No changes.
+      # Obscure: |& turns into |- or |+ for stderr.
       pass
 
     elif node.tag == command_e.AndOr:  # No changes
       pass
 
     elif node.tag == command_e.Fork:
-      # Then do the command?
       # 'ls &' to 'fork ls'
       self.f.write('fork ')
 
@@ -169,6 +300,7 @@ class Fixer:
       self.DoArithExpr(self.child)
 
     elif node.tag == command_e.DBracket:
+      # [[ 1 -eq 2 ]] to (1 == 2)
       self.DoBoolExpr(self.child)
 
     elif node.tag == command_e.FuncDef:
@@ -182,7 +314,16 @@ class Fixer:
       self.f.write(node.name)
       self.cursor.SkipUntil(node.spids[1])
 
-      self.DoCommand(node.body)
+      if node.body.tag == command_e.BraceGroup:
+        # Don't add "do" like a standalone brace group.  Just use {}.
+        self.DoCommand(node.body)
+      else:
+        pass
+        # Add {}.
+        # proc foo {
+        #   shell {echo hi; echo bye}
+        # }
+        #self.DoCommand(node.body)
 
     elif node.tag == command_e.BraceGroup:
       for child in node.children:
@@ -242,9 +383,22 @@ class Fixer:
     #self.DoCommand(node.body)
 
   def DoWord(self, node):
+    # Are we getting rid of word joining?  Or maybe keep it but discourage and
+    # provide alternatives.
+    #
+    # You don't really have a problem with byte strings, those are b'foo', but
+    # that's in expression mode, not command mode.
+
+    # Tilde sub can't be quoted.  ls ~/foo/"foo" are incompatible with the
+    # rule.
+
     # What about here docs words?  It's a double quoted part, but with
     # different formatting!
     if node.tag == word_e.CompoundWord:
+      # UNQUOTE simple var subs
+      # "$foo" -> $foo
+      # "${foo}" -> $foo
+
       # TODO: I think we have to print the beginning and the end?
 
       left_spid = word.LeftMostSpanForWord(node)

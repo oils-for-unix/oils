@@ -30,6 +30,56 @@ echo hi
 OIL
 }
 
+redirect() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+cat >out.txt <in.txt
+OSH
+cat >out.txt <in.txt
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+cat >out.txt 2> err.txt
+OSH
+cat >out.txt !2 > err.txt
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo "error message" >& 2 
+OSH
+echo "error message" > !2 
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo "error message" 1>&2 
+OSH
+echo "error message" !1 > !2 
+OIL
+}
+
+here-doc() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+cat <<ONE
+echo $hi
+ONE
+OSH
+cat << """
+echo $hi
+"""
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+cat <<'ONE'
+single quoted
+ONE
+OSH
+cat << '''
+single quoted
+'''
+OIL
+
+  # TODO: <<-
+}
+
 pipeline() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 ls | sort | uniq -c | sort -n -r
@@ -220,6 +270,7 @@ OIL
 
 all-passing() {
   simple-command
+  redirect
   pipeline
   and-or
   posix-func

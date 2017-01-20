@@ -15,6 +15,7 @@ import os
 import sys
 
 from core import util  # log
+from core.id_kind import REDIR_DEFAULT_FD
 
 
 class FdState(object):
@@ -123,6 +124,8 @@ class UserRedirect(Redirect):
   """Redirects written in source code?"""
 
   def __init__(self, id, fd):
+    if fd == -1:
+      fd = REDIR_DEFAULT_FD[id]
     Redirect.__init__(self, fd)
     self.id = id
 
