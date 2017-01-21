@@ -98,3 +98,8 @@ do
 done
 # stdout-json: "a\nb\nc\n"
 # status: 0
+
+### vars
+a=5
+echo $a ${a} "$a ${a}"
+# stdout: 5 5 5 5

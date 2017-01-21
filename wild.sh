@@ -36,7 +36,7 @@ _parse-one() {
 }
 
 osh-html() {
-  bin/osh --ast-output - --ast-format html --no-exec "$@"
+  bin/osh --ast-output - --ast-format abbrev-html --no-exec "$@"
 }
 
 _osh-html-one() {

@@ -116,11 +116,11 @@ class WordParserTest(unittest.TestCase):
 
   def testDisambiguatePrefix(self):
     w = _assertReadWord(self, '${#}')
-    self.assertEqual('#', _GetVarSub(self, w).name)
+    self.assertEqual('#', _GetVarSub(self, w).token.val)
     w = _assertReadWord(self, '${!}')
-    self.assertEqual('!', _GetVarSub(self, w).name)
+    self.assertEqual('!', _GetVarSub(self, w).token.val)
     w = _assertReadWord(self, '${?}')
-    self.assertEqual('?', _GetVarSub(self, w).name)
+    self.assertEqual('?', _GetVarSub(self, w).token.val)
 
     w = _assertReadWord(self, '${var}')
 
@@ -133,7 +133,7 @@ class WordParserTest(unittest.TestCase):
 
     # Length of length
     w = _assertReadWord(self, '${##}')
-    self.assertEqual('#', _GetVarSub(self, w).name)
+    self.assertEqual('#', _GetVarSub(self, w).token.val)
     self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${array[0]}')

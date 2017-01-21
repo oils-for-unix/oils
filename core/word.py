@@ -477,3 +477,10 @@ def CommandKind(w):
   # NOTE: This is a bit inconsistent with CommandId, because we never retur
   # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.
   return Kind.Word
+
+
+
+# Stubs for converting RHS of assignment to expression mode.
+def IsVarSub(w):
+  # Return whether it's any var sub, or a double quoted one
+  return True

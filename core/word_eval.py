@@ -329,7 +329,7 @@ class _Evaluator(object):
       # option, etc.
       return True, val
 
-    name = part.name
+    name = part.token.val
 
     # Possibilities: Array OR Index; then Test OR Transform
 

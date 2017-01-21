@@ -162,7 +162,6 @@ def _AddKinds(spec):
       'Tilde',             # tilde expansion
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
-      # LexModeArith
       'Digits',            # for LexMode.ARITH
       'At',                # for ${a[@]}, in LexMode.ARITH
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
@@ -173,8 +172,8 @@ def _AddKinds(spec):
       'Amp',     # &
       'Pipe',    # |
       'PipeAmp', # |& -- bash extension for stderr
-      'DAmp',   # &&
-      'DPipe',    # ||
+      'DAmp',    # &&
+      'DPipe',   # ||
       'Semi',    # ;
       'DSemi',   # ;; for case
 

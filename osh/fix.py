@@ -174,11 +174,6 @@ class Fixer:
         spid = word.LeftMostSpanForWord(node.arg_word)
         self.cursor.SkipUntil(spid)
 
-    # First pass
-    #
-    # >&2  >!2
-    # 1>&2  !1 > !2
-    #
     # <<< 'here word'
     # << 'here word'
     #
@@ -205,8 +200,18 @@ class Fixer:
     #   no expansion and indented
     #   '''
 
-    #
     # Warn about multiple here docs on a line.
+    # As an obscure feature, allow
+    # cat << _'ONE' << _"TWO"
+    # 123
+    # ONE
+    # 234
+    # TWO
+    # The _ is an indicator that it's not a string to be piped in.
+
+
+
+
     pass
 
   def DoCommand(self, node):
@@ -222,6 +227,14 @@ class Fixer:
       #
       # echo foo \
       #   bar
+
+      # TODO: Need to print until the left most part of the phrase?  the phrase
+      # is a word, binding, redirect.
+      #self.cursor.PrintUntil()
+
+      if node.more_env:
+        # Take advantage and just prefix
+        self.f.write('env ')
 
       for w in node.words:
         self.DoWord(w)
@@ -266,8 +279,10 @@ class Fixer:
 
       for pair in node.pairs:
         if word.IsVarSub(pair.rhs):  # ${1} or "$1"
-          # DO it in expression mode
+          # Do it in expression mode
           pass
+        # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
+        # conversion to string.
         else:
           # foo=bar -> foo = 'bar'
           pass
@@ -363,6 +378,10 @@ class Fixer:
       # Change then/elif/fi to braces
       pass
 
+    elif node.tag == command_e.Case:
+      # Change then/elif/fi to braces
+      pass
+
     else:
       print('Command not handled', node)
       raise AssertionError(node.tag)
@@ -389,8 +408,12 @@ class Fixer:
     # You don't really have a problem with byte strings, those are b'foo', but
     # that's in expression mode, not command mode.
 
-    # Tilde sub can't be quoted.  ls ~/foo/"foo" are incompatible with the
+    # Problems:
+    # - Tilde sub can't be quoted.  ls ~/foo/"foo" are incompatible with the
     # rule.
+    # - Globs can't be quoted. ls 'foo'*.py can't be ls "foo*.py" -- it means
+    # something different.
+    # Might need to finish more of the globber to figure this out.
 
     # What about here docs words?  It's a double quoted part, but with
     # different formatting!
@@ -426,7 +449,7 @@ class Fixer:
     else:
       raise AssertionError(node.tag)
 
-  def DoWordPart(self, node):
+  def DoWordPart(self, node, quoted=False):
     span_id = word._LeftMostSpanForPart(node)
     if span_id is not None and span_id >= 0:
       span = self.arena.GetLineSpan(span_id)
@@ -434,7 +457,14 @@ class Fixer:
 
       self.cursor.PrintUntil(span_id)
 
-    if node.tag == word_part_e.LiteralPart:
+    if node.tag == word_part_e.ArrayLiteralPart:
+      pass
+
+    elif node.tag == word_part_e.EscapedLiteralPart:
+      # NOTE: If unquoted, it should quoted instead.  ''  \<invisible space>
+      pass
+
+    elif node.tag == word_part_e.LiteralPart:
       # Print it literally.
       # TODO: We might want to do it all on the word level though.  For
       # example, foo"bar" becomes "foobar" in oil.
@@ -452,11 +482,52 @@ class Fixer:
 
     elif node.tag == word_part_e.DoubleQuotedPart:
       for part in node.parts:
-        self.DoWordPart(part)
+        self.DoWordPart(part, quoted=True)
 
     elif node.tag == word_part_e.SimpleVarSub:
       spid = node.token.span_id
-      self.cursor.PrintUntil(spid + 1)
+      op_id = node.token.id
+
+      if op_id == Id.VSub_Name:
+        self.cursor.PrintUntil(spid + 1)
+
+      elif op_id == Id.VSub_Number:
+        self.cursor.PrintUntil(spid + 1)
+
+      elif op_id == Id.VSub_Bang:  # $!
+        self.f.write('$Bang')  # TODO
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_At:  # $@
+        self.f.write('@Argv')  # PEDANTIC: Depends if quoted or unquoted
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_Pound:  # $#
+        self.f.write('$len(Argv)')  # should we have Argc?
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_Pound:  # $$
+        self.f.write('$Dollar') 
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_Amp:  # $&
+        self.f.write('$Amp') 
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_Star:  # $*
+        self.f.write('@Argv')  # PEDANTIC: Depends if quoted or unquoted
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_Hyphen:  # $*
+        self.f.write('$Flags')
+        self.cursor.SkipUntil(spid + 1)
+
+      elif op_id == Id.VSub_QMark:  # $?
+        self.f.write('$Status') 
+        self.cursor.SkipUntil(spid + 1)
+
+      else:
+        raise AssertionError
 
     elif node.tag == word_part_e.BracedVarSub:
       left_spid, right_spid = node.spids
@@ -464,23 +535,50 @@ class Fixer:
       # NOTE: Why do we need this but we don't need it in command sub?
       self.cursor.PrintUntil(left_spid)
 
-      # Skip over left bracket and write our own.
-      self.f.write('$(')
-      self.cursor.SkipUntil(left_spid + 1)
+      name_spid = node.token.span_id
+      op_id = node.token.id
 
-      # TODO: Do ops.
+      parens_needed = True
       if node.bracket_op:
+        # a[1]
+        # These two change the sigil!  ${a[@]} is now @a!
+        # a[@] 
+        # a[*]
         pass
+
       if node.prefix_op:
+        # len()
         pass
       if node.suffix_op:
+        # foo.trimLeft()
+        # foo.trimGlobLeft()
+        # foo.trimGlobLeft(longest=True)
+        #
+        # python lstrip() does something different
+
+        # a[1:1]
+
+        # .replace()
+        # .replaceGlob()
+
         pass
 
-      # Placeholder for now
-      self.cursor.PrintUntil(right_spid)
+      if op_id == Id.VSub_QMark:
+        self.cursor.PrintUntil(name_spid + 1)
 
-      # Skip over right bracket and write our own.
-      self.f.write(')')
+      if parens_needed:
+        # Skip over left bracket and write our own.
+        self.f.write('$(')
+        self.cursor.SkipUntil(left_spid + 1)
+
+        # Placeholder for now
+        self.cursor.PrintUntil(right_spid)
+
+        # Skip over right bracket and write our own.
+        self.f.write(')')
+      else:
+        pass
+
       self.cursor.SkipUntil(right_spid + 1)
 
     elif node.tag == word_part_e.CommandSubPart:

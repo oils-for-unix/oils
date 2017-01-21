@@ -21,15 +21,13 @@
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
 --   * In the printer, I want to preserve line breaks!  foo \bar?
--- * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
--- * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
+-- * parens
+--   * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
+--   * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
 -- * HereDoc vs HereWord.  I collapsed them.
 -- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
--- * Don't fill in file descriptor unless user specified it, e.g. echo < in.txt
---   vs. echo 1< in.txt
--- * $(( )) vs $[ ] in bash -- easier to reformat separately.
 --
--- Not strictly necessary for oil conversion
+-- Found to be not strictly necessary for oil conversion
 -- * foo() { } vs function foo { } -- ksh 
 
 module osh
@@ -64,7 +62,7 @@ module osh
   | SingleQuotedPart(token* tokens)
   | DoubleQuotedPart(word_part* parts)
   | SimpleVarSub(token token)
-  | BracedVarSub(string name,
+  | BracedVarSub(token token,
                 id? prefix_op,  -- prefix # or ! operators
                 bracket_op? bracket_op
                 suffix_op? suffix_op)
@@ -120,6 +118,10 @@ module osh
   case_arm = (word* pat_list, command action)
   if_arm = (command cond, command action)
 
+  iterable = 
+    IterArgv
+  | IterArray(word* words)
+
   -- Homogeneous version
   command = 
     NoOp
@@ -142,6 +144,7 @@ module osh
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
   -- do_arg_iter: whether to implicitly loop over "$@"
+  -- TODO: Make iter_words a sum type.  iterable for_words
   | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
             command body, redir* redirects)
   -- C-style for loop.  Any of the 3 expressions can be omitted.

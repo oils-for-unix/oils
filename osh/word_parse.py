@@ -265,8 +265,7 @@ class WordParser(object):
               | VarSymbol
     """
     self._Peek()
-    debug_token = self.cur_token
-    name = self.cur_token.val
+    name_token = self.cur_token
     self._Next(LexMode.VS_2)
 
     self._Peek()  # Check for []
@@ -276,7 +275,7 @@ class WordParser(object):
     else:
       bracket_op = None
 
-    part = ast.BracedVarSub(name)  # TODO: add debug_token
+    part = ast.BracedVarSub(name_token)
     part.bracket_op = bracket_op
     return part
 
@@ -573,8 +572,7 @@ class WordParser(object):
         quoted_part.parts.append(part)
 
       elif self.token_kind == Kind.VSub:
-        # strip $ off of $name, $$, etc.
-        part = ast.BracedVarSub(self.cur_token.val[1:])  # TODO: Debug token
+        part = ast.SimpleVarSub(self.cur_token)
         quoted_part.parts.append(part)
 
       elif self.token_kind == Kind.Right:

@@ -20,6 +20,19 @@ _STRING_LITERAL = fmt._STRING_LITERAL
 _OTHER_TYPE = fmt._OTHER_TYPE
 
 
+def _AbbreviateToken(token, out):
+  if token.id != Id.Lit_Chars:
+    c = _ColoredString(str(token.id), _OTHER_TYPE)
+    out.append(c)
+
+  out.append(_ColoredString(token.val, _STRING_LITERAL))
+
+
+def _GetFieldNames(node):
+  # Don't let the 'spids' field disable abbreviation
+  return [n for n, _ in node.fields if n != 'spids']
+
+
 def AbbreviateNodes(obj, node):
   """
   Args:
@@ -32,30 +45,31 @@ def AbbreviateNodes(obj, node):
     node.show_node_type = False
     node.left = '<'
     node.right = '>'
-    if obj.id != Id.Lit_Chars:
-      c = _ColoredString(str(obj.id), _OTHER_TYPE)
-      node.unnamed_fields.append(c)
-
-    node.unnamed_fields.append(_ColoredString(obj.val, _STRING_LITERAL))
+    _AbbreviateToken(obj, node.unnamed_fields)
 
   elif node.node_type == 'LiteralPart':
     node.abbrev = True
     node.node_type = 'L'
     node.show_node_type = False
-    node.left = '['
-    node.right = ']'
 
-    token = obj.token
-    if token.id != Id.Lit_Chars:
-      c = _ColoredString(str(token.id), _OTHER_TYPE)
-      node.unnamed_fields.append(c)
-    node.unnamed_fields.append(_ColoredString(token.val, _STRING_LITERAL))
+    _AbbreviateToken(obj.token, node.unnamed_fields)
+
+  elif node.node_type == 'SimpleVarSub':
+    node.abbrev = True
+    node.node_type = '$'
+    _AbbreviateToken(obj.token, node.unnamed_fields)
+
+  elif node.node_type == 'BracedVarSub':
+    if _GetFieldNames(node) != ['token']:
+      return  # we have other fields to display; don't abbreviate
+
+    node.abbrev = True
+    node.node_type = '${'
+    _AbbreviateToken(obj.token, node.unnamed_fields)
 
   elif node.node_type == 'DoubleQuotedPart':
     node.abbrev = True
     node.node_type = 'DQ'
-    node.left = '['
-    node.right = ']'
 
     for part in obj.parts:
       node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
@@ -63,8 +77,6 @@ def AbbreviateNodes(obj, node):
   elif node.node_type == 'SingleQuotedPart':
     node.abbrev = True
     node.node_type = 'SQ'
-    node.left = '['
-    node.right = ']'
 
     for token in obj.tokens:
       node.unnamed_fields.append(MakeTree(token, AbbreviateNodes))
@@ -80,8 +92,7 @@ def AbbreviateNodes(obj, node):
       node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
 
   elif node.node_type == 'SimpleCommand':
-    field_names = [n for n, _ in node.fields]
-    if field_names != ['words']:
+    if _GetFieldNames(node) != ['words']:
       return  # we have other fields to display; don't abbreviate
 
     node.abbrev = True
@@ -91,17 +102,6 @@ def AbbreviateNodes(obj, node):
       # Recursively call MakeTree here?
       # Well actually then the printer needs to recursively handle it
       node.unnamed_fields.append(MakeTree(w, AbbreviateNodes))
-
-  elif node.node_type == 'BracedVarSub':
-    field_names = [n for n, _ in node.fields]
-    if field_names != ['name']:
-      return  # we have other fields to display; don't abbreviate
-
-    node.abbrev = True
-    node.node_type = '$'
-    node.left = '['
-    node.right = ']'
-    node.unnamed_fields.append(_ColoredString(obj.name, _STRING_LITERAL))
 
   else:
     # Do generic abbreviation here if none of the specific ones applied.
