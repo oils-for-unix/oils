@@ -22,8 +22,6 @@ from core.id_kind import Id
 from osh import ast_ as ast
 from osh import parse_lib
 
-assign_scope_e = ast.assign_scope
-
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
 
@@ -77,7 +75,7 @@ class CompletionTest(unittest.TestCase):
 
     # Set global COMPREPLY=(f1 f2)
     pairs = [ast.assign_pair(ast.LeftVar('COMPREPLY'), w)]
-    body_node = ast.Assignment(assign_scope_e.Global, [], [], pairs)
+    body_node = ast.Assignment(Id.Assign_None, pairs)
 
     func_node.body = body_node
 

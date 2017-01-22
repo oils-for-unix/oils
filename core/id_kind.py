@@ -353,7 +353,8 @@ def _AddKinds(spec):
   # Assignment builtins -- treated as statically parsed keywords.  They are
   # different from keywords because env bindings can appear before, e.g.
   # FOO=bar local v.
-  spec.AddKind('Assign', ['Declare', 'Export', 'Local', 'Readonly'])
+  # "None" could either be a global variable or assignment to a local.
+  spec.AddKind('Assign', ['Declare', 'Export', 'Local', 'Readonly', 'None'])
 
 
 # Id -> OperandType

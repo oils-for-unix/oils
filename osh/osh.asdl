@@ -29,6 +29,7 @@
 --
 -- Found to be not strictly necessary for oil conversion
 -- * foo() { } vs function foo { } -- ksh 
+-- * $'n' vs 'n'  -- one of them just has EscapedLiteralPart
 
 module osh
 {
@@ -51,12 +52,14 @@ module osh
   -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 
+  -- TODO: Constructors should be scoped?  array_item::Pair?
   array_item = 
-    ArrayWord(word w)  -- # TODO: make them scoped?  array_item::Pair?
+    ArrayWord(word w)
   | ArrayPair(word key, word value)
 
   word_part = 
-    ArrayLiteralPart(word* words) -- TODO: should be array_item* items
+    -- TODO: should be array_item* items.  They CAN be mixed, like a=([x]=y z)
+    ArrayLiteralPart(word* words)
   | LiteralPart(token token)
   | EscapedLiteralPart(token token)
   | SingleQuotedPart(token* tokens)
@@ -109,9 +112,7 @@ module osh
   | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
             string here_end, bool was_filled)
 
-  assign_scope = Global | Local
-  assign_flags = Export | ReadOnly
-  assign_pair = (lvalue lhs, word rhs)
+  assign_pair = (lvalue lhs, word? rhs)
   env_pair = (string name, word val)
 
   -- Each arm tests one word against multiple words
@@ -122,24 +123,26 @@ module osh
     IterArgv
   | IterArray(word* words)
 
-  -- Homogeneous version
+  -- TODO: Make field names consistent: child vs expr, etc.
+
   command = 
     NoOp
   -- TODO: respect order 
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
-  -- TODO: respect order 
-  | Assignment(assign_scope scope,
-               assign_flags* flags,
-               word* words,  -- names mentioned without a binding
-               assign_pair* pairs)  -- empty redirects for polymorphism?
-  | Fork(command child)  -- shell only allows one command
+  | Sentence(command command, token terminator)
+  -- TODO: parse flags -r -x; -a and -A aren't needed
+  | Assignment(id keyword, assign_pair* pairs)
   | Pipeline(command* children, bool negated, int* stderr_indices)
-  -- | AndOr(command* children, and_or* ops)
+  -- TODO: Should be left and right
   | AndOr(command* children, id op_id)
-  -- A command list is used for for/if/while conditions and bodies.  No redirects.
+  -- TODO: Get rid of CommandList?  No redirects, so can be a plain list.
   | CommandList(command* children)
-  -- A brace group is a compound command, with redirects.
+  -- Part of for/while/until.  Can have one or more children.
+  | DoGroup(command child, redir* redirects)
+  -- A brace group is a compound command, with redirects.  Can have one or more
+  -- children.
   | BraceGroup(command* children, redir* redirects)
+  -- Can have one or more children.
   | Subshell(command* children, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)

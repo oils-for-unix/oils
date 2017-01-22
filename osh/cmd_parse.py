@@ -12,13 +12,12 @@ cmd_parse.py - Parse high level shell commands.
 from core import base
 from core import word
 from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
+from core.util import log
 
 from osh import ast_ as ast 
 from osh.lex import LexMode
 from osh.bool_parse import BoolParser
 
-assign_scope_e = ast.assign_scope
-assign_flags_e = ast.assign_flags
 command_e = ast.command_e
 
 
@@ -39,18 +38,16 @@ def _GetHereDocsToFill(node):
   # while
   # EOF2
 
-  # These have no redirects at all.
+  # Leaf nodes: no redirects and no children.
   if node.tag in (command_e.NoOp, command_e.Assignment):
     return []
 
-  # These have redirects but not children.
+  # Leaf nodes: these have redirects but not children.
   if node.tag in (
       command_e.SimpleCommand, command_e.DParen, command_e.DBracket):
     return _UnfilledHereDocs(node.redirects)
 
-  # Everything else has children.
-  # NOTE: When we change to heterogeneous children, we need to do something
-  # smarter.
+  # Interior nodes with children:
   here_docs = []
 
   if node.tag == command_e.If:
@@ -69,8 +66,11 @@ def _GetHereDocsToFill(node):
     here_docs.extend(_GetHereDocsToFill(node.cond))
     here_docs.extend(_GetHereDocsToFill(node.body))
 
-  elif node.tag == command_e.Fork:
+  elif node.tag == command_e.DoGroup:
     here_docs.extend(_GetHereDocsToFill(node.child))
+
+  elif node.tag == command_e.Sentence:
+    here_docs.extend(_GetHereDocsToFill(node.command))
 
   else:
     for child in node.children:
@@ -78,8 +78,8 @@ def _GetHereDocsToFill(node):
 
   # && || and | don't have their own redirects, but have children that may.
   if node.tag not in (
-      command_e.AndOr, command_e.Pipeline, command_e.Fork,
-      command_e.CommandList):
+      command_e.AndOr, command_e.Pipeline, command_e.CommandList,
+      command_e.Sentence):
     here_docs.extend(_UnfilledHereDocs(node.redirects))  # parent
 
   return here_docs
@@ -424,15 +424,19 @@ class CommandParser(object):
     return redirects, words
 
   def _SplitSimpleCommandPrefix(self, words):
+    """
+    Second pass of SimpleCommand parsing: look for assignment words.
+    """
     prefix_bindings = []
     suffix_words = []
 
-    # Second pass: look for assignment words, as well as keywords
     done_prefix = False
     for w in words:
       if done_prefix:
         suffix_words.append(w)
         continue
+
+      left_spid = word.LeftMostSpanForWord(w)
 
       kv = word.LooksLikeAssignment(w)
       if kv:
@@ -440,29 +444,30 @@ class CommandParser(object):
         t = word.TildeDetect(v)
         if t:
           # t is an unevaluated word with TildeSubPart
-          prefix_bindings.append((k, t))
+          prefix_bindings.append((k, t, left_spid))
         else:
-          prefix_bindings.append((k, v))  # v is unevaluated word
+          prefix_bindings.append((k, v, left_spid))  # v is unevaluated word
       else:
         done_prefix = True
         suffix_words.append(w)
+
     return prefix_bindings, suffix_words
 
   def _MakeSimpleCommand(self, prefix_bindings, suffix_words, redirects):
-    for k, v in prefix_bindings:  # FOO=(1 2 3) ls is not allowed
+    # FOO=(1 2 3) ls is not allowed
+    for k, v, _ in prefix_bindings:
       if word.HasArrayPart(v):
         self.AddErrorContext(
             'Unexpected array literal in binding: %s', v, word=v)
         return None
 
-    # NOTE: Here is the place to check validity of words at parse time.  Can
-    # resolve against builtins, functions, aliases, static PATH, etc.
-    for w in suffix_words:  # ls FOO=(1 2 3) is not allowed
+    # echo FOO=(1 2 3) is not allowed
+    # NOTE: Other checks can be inserted here.  Can resolve builtins,
+    # functions, aliases, static PATH, etc.
+    for w in suffix_words:
       kv = word.LooksLikeAssignment(w)
       if kv:
         k, v = kv
-        # Normal assign words like foo=bar are just literal.  But array words
-        # foo=(1 2) don't belong.  They can only be prefixes.
         if word.HasArrayPart(v):
           self.AddErrorContext('Unexpected array literal: %s', v, word=v)
           return None
@@ -476,31 +481,38 @@ class CommandParser(object):
     node = ast.SimpleCommand()
     node.words = words3
     node.redirects = redirects
-    node.more_env = [ast.env_pair(name, val) for name, val in prefix_bindings]
+    node.more_env = [
+        ast.env_pair(name, val) for name, val, _ in prefix_bindings]
     return node
 
-  def _MakeAssignment(self, assign_scope, assign_flags, suffix_words):
+  def _MakeAssignment(self, assign_kw, suffix_words):
     bindings = []
-    var_words = []  # local foo bar, export foo bar
     for i, w in enumerate(suffix_words):
       if i == 0:
         continue  # skip over local, export, etc.
+
+      left_spid = word.LeftMostSpanForWord(w)
+
       kv = word.LooksLikeAssignment(w)
       if kv:
         k, v = kv
         t = word.TildeDetect(v)
         if t:
           # t is an unevaluated word with TildeSubPart
-          bindings.append((k, t))
+          pair = (k, t, left_spid)
         else:
-          bindings.append((k, v))  # v is unevaluated word
+          pair = (k, v, left_spid)  # v is unevaluated word
       else:
-        var_words.append(w)
+        pair = (k, None, left_spid)  # No value is equivalent to ''
+      bindings.append(pair)
 
-    assign_pairs = [
-        ast.assign_pair(ast.LeftVar(lhs), rhs) for lhs, rhs in bindings]
-    node = ast.Assignment(
-        assign_scope, assign_flags, var_words, assign_pairs)
+    pairs = []
+    for lhs, rhs, spid in bindings:
+      p = ast.assign_pair(ast.LeftVar(lhs), rhs)
+      p.spids.append(spid)
+      pairs.append(p)
+
+    node = ast.Assignment(assign_kw, pairs)
 
     return node
 
@@ -588,60 +600,65 @@ class CommandParser(object):
       # TODO: Have a strict mode to prevent this?
       if redirects:  # >out.txt g=foo
         print('WARNING: Got redirects in assignment: %s', redirects)
-      assign_scope = assign_scope_e.Global
-      assign_pairs = [
-          ast.assign_pair(ast.LeftVar(lhs), rhs) for lhs, rhs in prefix_bindings]
-      node = ast.Assignment(assign_scope, [], [], assign_pairs)
+
+      pairs = []
+      for lhs, rhs, spid in prefix_bindings:
+        p = ast.assign_pair(ast.LeftVar(lhs), rhs)
+        p.spids.append(spid)
+        pairs.append(p)
+
+      node = ast.Assignment(Id.Assign_None, pairs)
+      left_spid = word.LeftMostSpanForWord(words[0])
+      node.spids.append(left_spid)  # no keyword spid to skip past
       return node
 
-    assign_kw = word.AssignmentBuiltinId(suffix_words[0])
+    assign_kw, keyword_spid = word.AssignmentBuiltinId(suffix_words[0])
 
-    assign_flags = []
-    assign_scope = assign_scope_e.Global
-
-    if assign_kw in (Id.Assign_Declare, Id.Assign_Local):
-      assign_scope = assign_scope_e.Local
-      # TODO: Parse declare flags.  Hm is it done before or after evaluation?
-
-    elif assign_kw == Id.Assign_Export:  # global
-      assign_flags.append(assign_flags_e.Export)
-
-    elif assign_kw == Id.Assign_Readonly:  # global
-      assign_flags.append(assign_flags_e.ReadOnly)
-
-    else:  # ls foo  or  FOO=bar ls foo
-      assert assign_kw == Id.Undefined_Tok
-      return self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+    if assign_kw == Id.Undefined_Tok:
+      node = self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+      return node
 
     if redirects:
-      print('WARNING: Got redirects in assignment: %s', redirects)
+      # TODO: Make it a warning, or do it in the second stage?
+      print(
+          'WARNING: Got redirects in assignment: %s' % redirects, file=sys.stderr)
 
     if prefix_bindings:  # FOO=bar local spam=eggs not allowed
       # Use the location of the first value.  TODO: Use the whole word before
       # splitting.
-      _, v0 = prefix_bindings[0]
+      _, v0, _ = prefix_bindings[0]
       self.AddErrorContext(
-          'Got prefix bindings in assignment: %s', prefix_bindings, word=v0)
+          'Invalid prefix bindings in assignment: %s', prefix_bindings,
+          word=v0)
       return None
 
-    return self._MakeAssignment(assign_scope, assign_flags, suffix_words)
+    node = self._MakeAssignment(assign_kw, suffix_words)
+    node.spids.append(keyword_spid)
+    return node
 
   def ParseBraceGroup(self):
     """
     brace_group      : LBrace command_list RBrace ;
     """
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Lit_LBrace): return None
 
     node = self.ParseCommandList()
     if not node: return None
 
+    # Not needed
+    #right_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Lit_RBrace): return None
 
+    # OPTIMIZATION of AST.
     # CommandList has no redirects; BraceGroup may have redirects.
     if node.tag == command_e.CommandList:
-      return ast.BraceGroup(node.children)
+      n = ast.BraceGroup(node.children)
     else:
-      return ast.BraceGroup([node])
+      n = ast.BraceGroup([node])
+
+    n.spids.append(left_spid)
+    return n
 
   def ParseDoGroup(self):
     """
@@ -649,18 +666,17 @@ class CommandParser(object):
 
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
-    do_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Do): return None
+    do_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
-    node = self.ParseCommandList()
-    if not node: return None
+    child = self.ParseCommandList()  # could be any thing
+    if not child: return None
 
-    done_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Done): return None
+    done_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
-    assert len(node.spids) == 0  # might change later
-    node.spids.append(do_spid)
-    node.spids.append(done_spid)
+    node = ast.DoGroup(child)
+    node.spids.extend((do_spid, done_spid))
     return node
 
   def ParseForWords(self):
@@ -672,9 +688,13 @@ class CommandParser(object):
                      ;
     """
     words = []
+    semi_spid = -1  # The span_id of any semi-colon, so we can remove it.
+
     while True:
       if not self._Peek(): return None
+      # TODO: Add span ID of semi-colon or -1
       if self.c_id == Id.Op_Semi:
+        semi_spid = self.cur_word.token.span_id  # TokenWord
         self._Next()
         if not self._NewlineOk(): return None
         break
@@ -683,7 +703,7 @@ class CommandParser(object):
         break
       words.append(self.cur_word)
       self._Next()
-    return words
+    return words, semi_spid
 
   def _ParseForExprLoop(self):
     """
@@ -736,17 +756,19 @@ class CommandParser(object):
       self._Next()  # skip in
 
       node.spids.append(word.LeftMostSpanForWord(self.cur_word) + 1)
-      iter_words = self.ParseForWords()
+      iter_words, semi_spid = self.ParseForWords()
       if iter_words is None:  # empty list of words is OK
         return None
       node.iter_words = iter_words
 
     elif self.c_id == Id.Op_Semi:
       node.do_arg_iter = True  # implicit for loop
+      semi_spid = -1
       self._Next()
 
     elif self.c_id == Id.KW_Do:
       node.do_arg_iter = True  # implicit for loop
+      semi_spid = -1
       # do not advance
 
     else:
@@ -754,8 +776,7 @@ class CommandParser(object):
           word=self.cur_word)
       return None
 
-    do_spid = word.LeftMostSpanForWord(self.cur_word)
-    node.spids.append(do_spid)
+    node.spids.append(semi_spid)
 
     body_node = self.ParseDoGroup()
     if not body_node: return None
@@ -833,8 +854,7 @@ class CommandParser(object):
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
       node = self.ParseCommandTerm()
-      if not node:
-        return None
+      assert node is not False
     else:
       node = ast.NoOp()
 
@@ -885,6 +905,7 @@ class CommandParser(object):
     self._Next()
 
     if not self._NewlineOk(): return None
+    in_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_In): return None
     if not self._NewlineOk(): return None
 
@@ -895,9 +916,11 @@ class CommandParser(object):
       # TODO: should it return a list of nodes, and extend?
       if not self._Peek(): return None
 
+    esac_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Esac): return None
     self._Next()
 
+    case_node.spids.extend((in_spid, esac_spid))
     return case_node
 
   def ParseElsePart(self, arms):
@@ -935,6 +958,7 @@ class CommandParser(object):
     cond = self.ParseCommandList()
     if not cond: return None
 
+    then_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Then): return None
 
     body = self.ParseCommandList()
@@ -946,8 +970,10 @@ class CommandParser(object):
       if not self.ParseElsePart(if_node.arms):
         return None
 
+    fi_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Fi): return None
 
+    if_node.spids.extend((then_spid, fi_spid))
     return if_node
 
   def ParseCompoundCommand(self):
@@ -957,8 +983,10 @@ class CommandParser(object):
                      | for_clause
                      | while_clause
                      | until_clause
-                     | case_clause
                      | if_clause
+                     | case_clause
+                     | [[ BoolExpr ]]
+                     | (( ArithExpr ))
                      ;
     """
     if self.c_id == Id.Lit_LBrace:
@@ -977,6 +1005,14 @@ class CommandParser(object):
       return self.ParseIf()
     if self.c_id == Id.KW_Case:
       return self.ParseCase()
+
+    # Example of redirect that is observable:
+    # $ (( $(echo one 1>&2; echo 2) > 0 )) 2> out.txt
+    if self.c_id == Id.KW_DLeftBracket:
+      return self.ParseDBracket()
+
+    if self.c_id == Id.Op_DLeftParen:
+      return self.ParseDParen()
 
     self.AddErrorContext(
         "Expected a compound command (e.g. for while if case), got %s",
@@ -1086,8 +1122,7 @@ class CommandParser(object):
     raise NotImplementedError
 
   def ParseSubshell(self):
-    cn = ast.Subshell()
-
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip past (
 
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
@@ -1096,14 +1131,18 @@ class CommandParser(object):
     #print('ParseSubshell lexer.PushHint ) -> )')
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
-    node = self.ParseCommandList()
-    if not node:
-      return None
-    cn.children.append(node)
+    child = self.ParseCommandList()
+    if not child: return None
 
+    #print('SUB', self.cur_word)
+    node = ast.Subshell()
+    node.children.append(child)
+
+    right_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Right_Subshell): return None
 
-    return cn
+    node.spids.extend((left_spid, right_spid))
+    return node
 
   def ParseDBracket(self):
     """
@@ -1143,8 +1182,6 @@ class CommandParser(object):
                      | compound_command io_redirect*
                      | function_def
                      | ksh_function_def
-                     | [[ ... TODO
-                     | (( ArithExpr ))
                      ;
     """
     if not self._Peek(): return None
@@ -1152,15 +1189,9 @@ class CommandParser(object):
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
 
-    if self.c_id == Id.KW_DLeftBracket:
-      return self.ParseDBracket()
-
-    if self.c_id == Id.Op_DLeftParen:
-      return self.ParseDParen()
-
     if self.c_id in (
-        Id.Op_LParen, Id.Lit_LBrace, Id.KW_For, Id.KW_While, Id.KW_Until,
-        Id.KW_If, Id.KW_Case):
+        Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
+        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case):
       node = self.ParseCompoundCommand()
       if not node: return None
       redirects = self._ParseRedirectList()
@@ -1285,7 +1316,7 @@ class CommandParser(object):
 
   def ParseCommandLine(self):
     """
-    NOTE: This is only called in InteractiveLoop?  Oh crap I need to really
+    NOTE: This is only called in InteractiveLoop.  Oh crap I need to really
     read and execute a line at a time then?
 
     BUG: sleep 1 & sleep 1 &  doesn't work here, when written in REPL.   But it
@@ -1319,34 +1350,36 @@ class CommandParser(object):
     I think you should be able to factor these out.
     """
     children = []
-    while True:
-      n = self.ParseAndOr()
-      if not n: return None
-      children.append(n)
+    done = False
+    while not done:
+      child = self.ParseAndOr()
+      if not child: return None
 
       if not self._Peek(): return None
-      if self.c_id in (Id.Op_Semi,):  # also Id.Op_Amp.
-                                      # TODO: Also return ForkNode
+      if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
+        child = ast.Sentence(child, self.cur_word.token)
         self._Next()
 
         if not self._Peek(): return None
         if self.c_id == Id.Op_Newline:
-          self._MaybeReadHereDocs(n)
-          break
+          self._MaybeReadHereDocs(child)
+          done = True
         elif self.c_id == Id.Eof_Real:
-          break
+          done = True
 
       elif self.c_id == Id.Op_Newline:
-        self._MaybeReadHereDocs(n)
-        break
+        self._MaybeReadHereDocs(child)
+        done = True
 
       elif self.c_id == Id.Eof_Real:
-        break
+        done = True
 
       else:
         self.AddErrorContext(
             'ParseCommandLine: Unexpected token %s', self.cur_word)
         return None
+
+      children.append(child)
 
     if len(children) == 1:
       return children[0]
@@ -1373,10 +1406,19 @@ class CommandParser(object):
         Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell,
         Id.Lit_RBrace, Id.Op_DSemi)
 
+    # NOTE: This is similar to ParseCommandLine, except there is a lot of stuff
+    # about here docs.  Here docs are inherently line-oriented.
+    #
+    # - Why aren't we doing END_LIST above?
+    #   - Because you will never be inside $() at the top level.
+    #   - We also know it will end in a newline.  It can't end in "fi"!
+    #   - example: if true; then { echo hi; } fi
+    # - Why aren't we doing 'for c in children' too?
+
     children = []
     done = False
     while not done:
-      if not self._Peek(): return False
+      if not self._Peek(): return None
       #print('====> ParseCommandTerm word', self.cur_word)
 
       # Most keywords are valid "first words".  But do/done/then do not BEGIN
@@ -1386,13 +1428,11 @@ class CommandParser(object):
         Id.KW_Esac):
         break
 
-      and_or = self.ParseAndOr()
-      if not and_or:
+      child = self.ParseAndOr()
+      if not child:
         self.AddErrorContext('Error parsing AndOr in ParseCommandTerm')
         return None
-      child = and_or  # default
 
-      # TODO: How to consolidate this duplicated logic with ParseCommandLine?
       if not self._Peek(): return None
       if self.c_id == Id.Op_Newline:
         # Read ALL Here docs so far.  cat <<EOF; echo hi <newline>
@@ -1406,8 +1446,7 @@ class CommandParser(object):
           done = True
 
       elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
-        if self.c_id == Id.Op_Amp:
-          child = ast.Fork(and_or)
+        child = ast.Sentence(child, self.cur_word.token)
         self._Next()
 
         if not self._Peek(): return None
@@ -1460,8 +1499,8 @@ class CommandParser(object):
     if not self._NewlineOk(): return None
 
     node = self.ParseCommandTerm()
-    if not node:
-      return None
+    if node is None: return None
+    assert node is not False
     return node
 
   def ParseWholeFile(self):
@@ -1482,7 +1521,7 @@ class CommandParser(object):
     # This calls ParseAndOr(), but I think it should be a loop that calls
     # ParseCommandLine(), like oil.InteractiveLoop.
     node = self.ParseCommandTerm()
-    if not node:
-      return None
+    if node is None: return None
+    assert node is not False
 
     return node

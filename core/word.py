@@ -303,6 +303,8 @@ def TildeDetect(word):
       pre, post = val[:p], val[p:]
       prefix += pre
       tilde_part = ast.TildeSubPart(prefix)
+      # TODO: Need a span_id here.  Or use different algorithm.
+      #print('SPLITTING %s p = %d' % (word.parts[i], p), file=sys.stderr)
       remainder_part = ast.LiteralPart(ast.token(Id.Lit_Chars, post))
       found_slash = True
       break
@@ -365,6 +367,10 @@ def AsArithVarName(w):
 
 
 def LooksLikeAssignment(w):
+  """Tests whether a word looke like FOO=bar.
+
+  If so, return a (string, CompoundWord) pair.  Otherwise, return False.  
+  """
   assert w.tag == word_e.CompoundWord
   if len(w.parts) == 0:
     return False
@@ -384,6 +390,7 @@ def LooksLikeAssignment(w):
   else:
     for p in w.parts[1:]:
       rhs.parts.append(p)
+
   return name, rhs
 
 
@@ -395,17 +402,17 @@ def AssignmentBuiltinId(w):
 
   # has to be a single literal part
   if len(w.parts) != 1:
-    return Id.Undefined_Tok
+    return Id.Undefined_Tok, -1
 
   token_type = _LiteralPartId(w.parts[0])
   if token_type == Id.Undefined_Tok:
-    return Id.Undefined_Tok
+    return Id.Undefined_Tok, -1
 
   token_kind = LookupKind(token_type)
   if token_kind == Kind.Assign:
-    return token_type
+    return token_type, w.parts[0].token.span_id
 
-  return Id.Undefined_Tok
+  return Id.Undefined_Tok, -1
 
 
 #
@@ -483,4 +490,4 @@ def CommandKind(w):
 # Stubs for converting RHS of assignment to expression mode.
 def IsVarSub(w):
   # Return whether it's any var sub, or a double quoted one
-  return True
+  return False

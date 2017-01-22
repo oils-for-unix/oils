@@ -57,6 +57,10 @@ class LineLexer(object):
     # Compile all regexes
     self.lexer_def = {}
     self.arena = arena
+
+    self.arena_skip = False  # For MaybeUnreadOne
+    self.last_span_id = -1  # For MaybeUnreadOne
+
     for state, pat_list in lexer_def.items():
       self.lexer_def[state] = CompileAll(pat_list)
 
@@ -76,6 +80,7 @@ class LineLexer(object):
       return False
     else:
       self.line_pos -= 1
+      self.arena_skip = True  # don't add the next token to the arena
       return True
 
   def LookAhead(self, lex_mode):
@@ -123,9 +128,16 @@ class LineLexer(object):
     # added at the last line, so we don't end with \0.
 
     if self.arena is not None:
-      span_id = self.arena.AddLineSpan(line_span)
+      if self.arena_skip:
+        assert self.last_span_id != -1
+        span_id = self.last_span_id
+        self.arena_skip = False
+      else:
+        span_id = self.arena.AddLineSpan(line_span)
+        self.last_span_id = span_id
     else:
-      # Completion parser might not have aerna?  Not sure yet.
+      # Completion parser might not have arena?
+      # We should probably get rid of this.
       span_id = -1
 
     t = ast.token(tok_type, tok_val, span_id)

@@ -214,7 +214,7 @@ class CompoundObj(Obj):
     return s
 
 
-def _MakeFieldDescriptors(module, fields, app_types, add_spids=False):
+def _MakeFieldDescriptors(module, fields, app_types, add_spids=True):
   desc_lookup = {}
   for f in fields:
     # look up type by name
@@ -291,14 +291,8 @@ def MakeTypes(module, root, app_types=None):
           tag = i + 1  # zero reserved?
           tag_num[cons.name] = tag  # for enum
 
-          # TODO: Add 'int* spids' to every constructor?  Or you can make them
-          # all derive from the base class.  But then you need to use super()
-          # in Python.  How do you know what args to pass super?
-
-          add_spids = True
-          #add_spids = False
-          class_attr = _MakeFieldDescriptors(
-              module, cons.fields, app_types, add_spids=add_spids)
+          # Add 'int* spids' to every constructor.
+          class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
 
           class_attr['DESCRIPTOR'] = cons  # asdl.Constructor
           class_attr['tag'] = tag

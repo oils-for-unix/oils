@@ -75,7 +75,6 @@ from core.value import Value
 
 from osh import ast_ as ast
 
-assign_scope_e = ast.assign_scope
 command_e = ast.command_e
 log = util.log
 
@@ -545,7 +544,8 @@ class Executor(object):
     # No redirects
     if node.tag in (
         command_e.NoOp, command_e.Assignment, command_e.Pipeline,
-        command_e.AndOr, command_e.Fork, command_e.CommandList):
+        command_e.AndOr, command_e.CommandList,
+        command_e.Sentence):
       return []
 
     redirects = []
@@ -698,6 +698,10 @@ class Executor(object):
         else:
           self.fd_state.ForgetAll()
 
+    elif node.tag == command_e.Sentence:
+      # TODO: Compile this away
+      status, cflow = self.Execute(node.command)
+
     elif node.tag == command_e.Pipeline:
       status, cflow = self._RunPipeline(node)
 
@@ -705,9 +709,6 @@ class Executor(object):
       # This makes sure we don't waste a process if we'd launch one anyway.
       p = self._GetProcessForNode(node.children[0])
       status = p.Run()
-
-    elif node.tag == command_e.Fork:
-      raise NotImplementedError('Fork')
 
     elif node.tag == command_e.DBracket:
       bool_ev = expr_eval.BoolEvaluator(self.mem, self.ev)
@@ -729,23 +730,22 @@ class Executor(object):
         raise AssertionError('Error evaluating (( )): %s' % arith_ev.Error())
 
     elif node.tag == command_e.Assignment:
-      # TODO: Respect flags: readonly, export, sametype, etc.
-      # Just pass the Value
       pairs = []
       for pair in node.pairs:
         # NOTE: do_glob=False, because foo=*.a makes foo equal to '*.a',
         # literally.
+
+        # TODO: Also have to evaluate the right hand side.
         ok, val = self.ev.EvalCompoundWord(pair.rhs)
         if not ok:
           return None
         pairs.append((pair.lhs, val))
 
-      if node.scope == assign_scope_e.Local:
-        self.mem.SetLocal(pairs, node.flags)
-      elif node.scope == assign_scope_e.Global:
-        self.mem.SetGlobal(pairs, node.flags)
-      else:
-        raise AssertionError(node.scope)
+      flags = 0  # TODO: Calculate from keyword/flags
+      if node.keyword == Id.Assign_Local:
+        self.mem.SetLocal(pairs, flags)
+      else:  # could be readonly/export/etc.
+        self.mem.SetGlobal(pairs, flags)
 
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
@@ -806,6 +806,11 @@ class Executor(object):
           break
         if cflow == EBuiltin.CONTINUE:
           cflow = EBuiltin.NONE  # reset since we respected it
+
+    elif node.tag == command_e.DoGroup:
+      # Delegate to command list
+      # TODO: This should be compiled out!
+      status, cflow = self.Execute(node.child)
 
     elif node.tag == command_e.FuncDef:
       self.funcs[node.name] = node

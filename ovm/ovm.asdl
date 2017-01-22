@@ -34,7 +34,56 @@ module ovm
 {
   -- Variables can be special system variables or user vars.
   -- Should we represent something like $PIPESTATUS as a third option?
+
+  -- Mode: default 0, or default ''.  I guess this happens at runtime.
+
+  token = (id id, string val, int? span_id)
+
+  env_pair = (string name, word val)
+
   var =
     SystemVar(id op_id)  -- e.g. $@ $?
   | UserVar(string name)  -- $foo.
+
+  mut = Const | Var
+
+  word_part = 
+    SingleQuotedPart(token* tokens)
+  | DoubleQuotedPart(word_part* parts)
+
+  word = (word_part* parts)
+
+  redir = 
+    Redirect(id op_id, word arg_word, int fd)
+  | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
+            string here_end, bool was_filled)
+
+  -- Only two high level constructs: command and expr.
+
+  expr = 
+    SingleQuotedLiteral(word_part* parts)  -- like Word
+  | DoubleQuotedLiteral(word_part* parts)  -- like Word
+  | IntLiteral()  -- oil only
+  | FloatLiteral()  -- oil only
+  | VarSub(var var, int span_id)
+
+  -- TODO: what about export?  Is that always a separate command?
+  -- export FOO=bar is var FOO = 'bar'; setenv FOO
+
+  assign_scope = Global | Local
+  assign_flags = Export | ReadOnly
+
+  lvalue = 
+    LeftVar(string name)  -- TODO: use token for conversion
+  | LeftIndex(expr obj, expr index)
+
+  -- issue local foo[bar]=baz
+  command = 
+    SimpleCommand(word* words, redir* redirects, env_pair* more_env)
+  | VarDecl(mut mode, string name, expr value)
+  | VarAssign(lvalue name, expr value, assign_scope scope, assign_flags flags)  
+  -- osh BraceGroup / DoGroup / CommandList / etc. compile to this
+  | CommandSeq(command* commands)  
+  | Fork(command child)  
+
 }

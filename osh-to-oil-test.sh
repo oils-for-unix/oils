@@ -7,9 +7,23 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-
 osh-to-oil() {
   bin/osh --no-exec --fix "$@"
+}
+
+this-repo() {
+  local out=_tmp/osh-to-oil/this-repo
+  mkdir -p $out
+
+  # BUG: Why does this stop parsing?
+  # Oh it's because } is a first word... oops.
+  #time {
+    for script in *.sh; do
+      local name=$(basename $script .sh)
+      echo $name
+      osh-to-oil $script > $out/$name.oil
+    done
+  #}
 }
 
 fail() {
@@ -24,9 +38,22 @@ osh0-oil3() {
 
 special-vars() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $? $# $@
+echo one "$@" two
 OSH
-echo $Status $len(Argv) @Argv
+echo one @Argv two
+OIL
+
+  # These are all the same.  Join by first char of IFS.
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo one $* "__$*__" $@ two
+OSH
+echo one $ifsjoin(Argv) "__$ifsjoin(Argv)__" $ifsjoin(Argv) two
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo $? $#
+OSH
+echo $Status $len(Argv)
 OIL
 
   # TODO: Some ops don't require $(), like $foo[1] and $foo[1:1+3]
@@ -44,6 +71,20 @@ OIL
 echo $9 $10 ${10} ${11}
 OSH
 echo $9 $10 $10 $11   # Rule is changed
+OIL
+}
+
+arg-array() {
+  # Only "$@" goes to @Argv
+  # "__$@__" goes "$join(Argv)__"
+  # Yeah the rest go to $join(Argv)
+  # does join respect IFS though?  Have to work that out.
+  # or maybe $ifsjoin(Argv) -- make explicit the global variable.
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo $@ $* "$@" "$*" "__$@__" "__$*__"
+OSH
+echo $Status $len(Argv) @Argv
 OIL
 }
 
@@ -98,6 +139,18 @@ echo hi
 OIL
 }
 
+line-breaks() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo one \
+  two three \
+  four
+OSH
+echo one \
+  two three \
+  four
+OIL
+}
+
 builtins() {
   # Runtime option is setoption. Compile time is at top of file, with :option
   # +errexit.  This aids compilation.
@@ -107,7 +160,6 @@ set -o errexit
 OSH
 setoption +errexit
 OIL
-  # Could also be OPT['errexit'] = F.  I think that is too low level.
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
 . lib.sh
@@ -149,6 +201,12 @@ freeze FOO
 BAR = 'bar'
 OIL
 
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+exec 1>&2  # stdout to stderr from now on
+OSH
+redir !1 > !2
+OIL
+
   # TODO: Statically parseable [ invocations can be built in?
   # But not dynamic ones like [ foo $op bar ].
 }
@@ -177,6 +235,13 @@ echo "error message" 1>&2
 OSH
 echo "error message" !1 > !2 
 OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+cat >${out} <${in}
+OSH
+cat >$(out) <$(in)
+OIL
+
 }
 
 here-doc() {
@@ -215,8 +280,32 @@ echo 2
 OIL
 }
 
+assign-common() {
+  # top level
+  osh-to-oil --fix -c 'foo=bar spam="$var"'
+  osh-to-oil --fix -c 'readonly foo=bar spam="${var}"'
+  osh-to-oil --fix -c 'export foo=bar spam="${var}/const"'
+
+  # Inside function
+  osh-to-oil --fix -c 'f() { foo=bar spam=${var:-default}; }'
+  osh-to-oil --fix -c 'f() { local foo=bar spam=eggs; foo=mutated; g=new; }'
+
+  # TODO:
+  # - Test everything without a RHS.  export and readonly
+  # - Print RHS as expression
+  # - declare -- but this is more rare.  declare is usually 'var'.
+}
+
 # , and ; are similar.
 assign() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+local foo=$(basename $1)
+OSH
+var foo = $[basename $1]
+OIL
+  return
+
+
   osh0-oil3 << 'OSH' 3<< 'OIL'
 local one=1 two three=3
 OSH
@@ -296,9 +385,9 @@ OIL
 
 and-or() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
-ls && echo || die "foo"
+ls && echo "$@" || die "foo"
 OSH
-ls && echo || die "foo"
+ls && echo @Argv || die "foo"
 OIL
 }
 
@@ -368,6 +457,50 @@ for x in [a b c \
   echo $x
 }
 OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+for x in a b c \
+  d e f
+do
+  echo $x
+done
+OSH
+for x in [a b c \
+  d e f]
+{
+  echo $x
+}
+OIL
+}
+
+empty-for-loop() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+for x in 
+do
+  echo $x
+done
+OSH
+for x in []
+{
+  echo $x
+}
+OIL
+}
+
+args-for-loop() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+set -- 1 2 3
+for x
+do
+  echo $x
+done
+OSH
+setargv -- 1 2 3
+for x in @Argv
+{
+  echo $x
+}
+OIL
 }
 
 while-loop() {
@@ -380,9 +513,43 @@ while read line {
   echo $line
 }
 OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+while read \
+  line; do
+  echo $line
+done
+OSH
+while read \
+  line {
+  echo $line
+}
+OIL
 }
 
 if_() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+if true; then
+  echo yes
+fi
+OSH
+if true {
+  echo yes
+}
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+if true
+then
+  echo yes
+fi
+OSH
+if true
+{
+  echo yes
+}
+OIL
+
   osh0-oil3 << 'OSH' 3<< 'OIL'
 if true; then
   echo yes
@@ -404,7 +571,7 @@ OIL
 
 case_() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
-case var in
+case $var in
   foo|bar)
     echo foobar
     ;;
@@ -413,7 +580,7 @@ case var in
     ;;
 esac
 OSH
-match var {
+strmatch $var {
   'foo' or 'bar' {
     echo foobar
   }
@@ -426,17 +593,41 @@ OIL
 
 subshell() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
+(echo hi;)
+OSH
+shell {echo hi;}
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
 (echo hi)
-done
 OSH
 shell {echo hi}
 OIL
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
 (echo hi; echo bye)
-done
 OSH
 shell {echo hi; echo bye}
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+( (echo hi; echo bye ) )
+OSH
+shell { shell {echo hi; echo bye } }
+OIL
+}
+
+brace-group() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+{ echo hi; }
+OSH
+do { echo hi; }
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+{ echo hi; echo bye; }
+OSH
+do { echo hi; echo bye; }
 OIL
 }
 
@@ -446,21 +637,6 @@ sleep 1&
 OSH
 fork sleep 1
 OIL
-}
-
-empty-for-loop() {
-  for x in 
-  do
-    echo $x
-  done
-}
-
-args-for-loop() {
-  set -- 1 2 3
-  for x
-  do
-    echo $x
-  done
 }
 
 var-sub() {
@@ -558,6 +734,31 @@ isDir('/') && echo "is dir"
 OIL
 }
 
+escaped-literal() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo \$  \  \n "\$" "\n"
+OSH
+echo '$'  ' ' 'n' "\$" "\n"
+OIL
+
+  return
+  # TODO: Have to combine adjacent escaped literals
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo \$\ \$
+OSH
+echo '$ $'
+OIL
+
+  # Make sure we don't mess up the backslash
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo \
+  hi
+OSH
+echo \
+  hi
+OIL
+}
+
 words() {
   # I probably should drive this with specific cases, rather than making it
   # super general.  Most scripts don't use WordPart juxtaposition.
@@ -580,13 +781,20 @@ OIL
 
 all-passing() {
   simple-command
+  line-breaks
   redirect
   pipeline
   and-or
+  brace-group
+  subshell
   posix-func
   ksh-func
   command-sub
   arith-sub
+  while-loop
+  escaped-literal
+  for-loop
+  empty-for-loop
 }
 
 "$@"

@@ -5,16 +5,20 @@ fix.py -- Do source transformations.  Somewhat like 'go fix'.
 
 import sys
 
+from core import util
 from core import word
 from core.id_kind import Id
 
 from osh import ast_ as ast
+
+log = util.log
 
 command_e = ast.command_e
 word_e = ast.word_e
 word_part_e = ast.word_part_e
 arith_expr_e = ast.arith_expr_e
 bool_expr_e = ast.bool_expr_e
+lvalue_e = ast.lvalue_e
 
 
 class Cursor:
@@ -22,7 +26,6 @@ class Cursor:
   Wrapper for printing/transforming a complete source file stored in a single
   arena.
   """
-
   def __init__(self, arena, f):
     self.arena = arena
     self.f = f
@@ -49,51 +52,121 @@ class Cursor:
 
 # Should this just take an arena, which has all three things?
 
-def Print(arena, node):
+#DEBUG_SPID = True
+DEBUG_SPID = False
+
+def PrintAsOil(arena, node):
   #print node
   #print(spans)
-
-  # TODO: 
-  # - Attach span_id to every node, with  "attributes" I guess
-  #   - or do it manually on arithmetic first
-
-  # - Then do 
-
-  # First pass:
-  # - f() {} to proc f {}
-  # - $(( )) and $[ ]  to $()
-  # - ${foo} to $(foo)
-  # - $(echo hi) to $[echo hi]
-  #
-  # Dispatch on node.type I guess.
-  #
-  # or just try 'echo $( echo hi )'  -- preserving whitespace
-
-  # def Fix(node, cursor, f):
-  #  cursor.PrintUntil(node._begin_id, f)
-  #  print(Reformat(node))
-  #  cursor.Skip(node._end_id)
-
-  #  for child in node.children:
-  #    Fix(node, cursor, f)
-  #
-  # "node" is a node tof ix
-
-  if 0:
+  if DEBUG_SPID:
     for i, span in enumerate(arena.spans):
       line = arena.GetLine(span.line_id)
       piece = line[span.col : span.col + span.length]
-      print('%5d %r' % (i, piece))
-    print('(%d spans)' % len(arena.spans))
+      print('%5d %r' % (i, piece), file=sys.stderr)
+    print('(%d spans)' % len(arena.spans), file=sys.stderr)
 
   cursor = Cursor(arena, sys.stdout)
-  fixer = Fixer(cursor, arena, sys.stdout)
-  fixer.DoCommand(node)
+  fixer = OilPrinter(cursor, arena, sys.stdout)
+  fixer.DoCommand(node, None, at_top_level=True)  # no local symbols yet
   fixer.End()
 
-  #print('')
+
+    # Cases:
+    #
+    # - Does it look like $foo?
+    #   - Pedantic mode, then:
+    #     x = @split(foo)          No globbing here!
+    #                              @split($1) or @1 ?
+    #     @-foo @-1 in expression mode
+    #     And then for command mode, you will have *@1 and *@foo.  Split first
+    #     then glob.
+    #     
+    #   - Nice mode, then foo
+    #     --assume no-word-splitting
+    # - Does it look like $(( 1 + 2 )) ?  or $(echo hi)
+    #   pedantic mode:  $(1 + 2) or @[echo hi]   ?
+    #   nice mode: $(1 + 2) or $[echo hi]
+    #    
+    # - Does it look like "$foo" or "${foo:-}"?  Then it's just x = foo
+    #   x = foo or 'default'
+    # - Does it contain any substitutions?  Then whole thing is double quoted
+    # - Otherwise single quoted
+    #
+    # PROBLEM: ~ substitution.  That is disabled by "".
+    # You can turn it into $HOME I guess
+    # const foo = $HOME/hello
+    # const foo = $~/bar  # hm I kind of don't like this but OK
+    # const foo = "$~/bar"
+    # const foo = [ ~/bar ][0]  # does this make sense?
+    # const foo = `~/bar`
+
+    # I think ~ should be like $ -- special.  Maybe even inside double quotes?
+    # Or only at the front?
 
 
+SPLIT, EXPR, UNQUOTED, DQ, SQ = range(5)  # 5 modes of expression
+
+# DQ: \$ \\ \"
+# SQ: \\ \'
+
+WordStyle = util.Enum('WordStyle', 'Expr Unquoted DQ SQ'.split())
+
+# QEFS is wrong?  Because RHS never gets split!  It can always be foo=$1/foo.
+# Not used because RHS not split:
+# $x -> @-x  and  ${x} -> @-x
+# ${x:-default}  ->  @-(x or 'default')
+
+def _GetRhsStyle(w):
+  # NOTE: Pattern matching style would be a lot nicer for this...
+
+  # Arith and command sub both retain $() and $[], so they are not pure
+  # "expressions".
+  VAR_SUBS = (word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
+              word_part_e.TildeSubPart)
+  OTHER_SUBS = (word_part_e.CommandSubPart, word_part_e.ArithSubPart)
+
+  ALL_SUBS = VAR_SUBS + OTHER_SUBS
+
+  # Actually splitting NEVER HAPPENS ON ASSIGNMENT.  LEAVE IT OFF.
+
+  if len(w.parts) == 0:
+    raise AssertionError(w)
+
+  elif len(w.parts) == 1:
+    part0 = w.parts[0]
+    if part0.tag in VAR_SUBS:
+      # $x -> x  and  ${x} -> x  and ${x:-default} -> x or 'default'
+      # ~ -> homedir()
+      # ~andy -> homedir('andy')
+      # tilde()
+      # tilde('andy') ?
+      return WordStyle.Expr
+    elif part0.tag in OTHER_SUBS:
+      return WordStyle.Unquoted
+
+    elif part0.tag == word_part_e.DoubleQuotedPart:
+      if len(part0.parts) == 1:
+        dq_part0 = part0.parts[0]
+        # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
+        if dq_part0.tag in VAR_SUBS:
+          return WordStyle.Expr
+        elif dq_part0.tag in OTHER_SUBS:
+          return WordStyle.Unquoted
+
+  # Tilde subs also cause double quoted style.
+  for part in w.parts:
+    if part.tag == word_part_e.DoubleQuotedPart:
+      for dq_part in part.parts:
+        if dq_part.tag in ALL_SUBS:
+          return WordStyle.DQ
+    elif part.tag in ALL_SUBS:
+      return WordStyle.DQ
+
+  return WordStyle.SQ
+
+
+# TODO: Change to --assume, and have a default for each one?
+#
 # NICE mode: Assume that the user isn't relying on word splitting.  A lot of
 # users want this!
 #
@@ -102,6 +175,17 @@ def Print(arena, node):
 # for name in $(find ...); do echo $name; done
 #
 # This doesn't split.  Heuristic:
+#
+# This should be a bunch of flags:
+#
+# --assume 'no-word-splitting no-undefined' etc.
+#   globals-defined-first-outside-func (then we can generated := vs. ::=)
+# --split-output-from-commands 'find ls'  # tokenize these
+
+# Special case: "find" is assumed to produce multiple things that you will want
+# to split?  But that doesn't go within function calls.  Hm.
+#
+# $(find -type f) -> @[find -type f]
 
 NICE = 0
 
@@ -109,28 +193,23 @@ NICE = 0
 # though.  Most people are not super principled about their shell programs.
 # But experts might want it.  Experts might want to run ShellCheck first and
 # quote everything, and then everything will be unquoted.
+#
+# "$foo" "${foo}" -> $foo $foo
+# $foo -> @-foo   -> split then glob?
+#         *@foo    maybe    
+# $(find -type f) -> @[find -type f]
+
 PEDANTIC = 1
 
 
-class Fixer:
+class OilPrinter:
   """
   Convert osh code to oil.
-
-  Convert command, word, word_part, arith_expr, bool_expr, etc.
-    redirects, ops, etc.
-
-  Other things to convert:
-  - builtins
-    - set -o errexit to  
-    - option +errexit +xtrace +allow-unset
-  - brace expansion: haven't done that yet
 
   - command invocations
     - find invocations
     - xargs
-
   """
-
   def __init__(self, cursor, arena, f, mode=NICE):
     self.cursor = cursor
     self.arena = arena
@@ -139,11 +218,19 @@ class Fixer:
     # be split and globbed?
     self.mode = mode
 
+  def _DebugSpid(self, spid):
+    span = self.arena.GetLineSpan(spid)
+    line = self.arena.GetLine(span.line_id)
+    # TODO: This should be factored out
+    s = line[span.col : span.col + span.length]
+    print('SPID %d = %r' % (spid, s), file=sys.stderr)
+
   def End(self):
+    """Make sure we print until the end of the file."""
     end_id = len(self.arena.spans)
     self.cursor.PrintUntil(end_id)
 
-  def DoRedirect(self, node):
+  def DoRedirect(self, node, local_symbols):
     #print(node, file=sys.stderr)
     self.cursor.PrintUntil(node.spids[0])
 
@@ -160,7 +247,7 @@ class Fixer:
         self.f.write('> !')  # Replace >& 2 with > !2
         spid = word.LeftMostSpanForWord(node.arg_word)
         self.cursor.SkipUntil(spid)
-        #self.DoWord(node.arg_word)
+        #self.DoWordInCommand(node.arg_word)
 
     else:
       # NOTE: Spacing like !2>err.txt vs !2 > err.txt can be done in the
@@ -173,6 +260,8 @@ class Fixer:
         self.f.write('> !')  # Replace 1>& 2 with !1 > !2
         spid = word.LeftMostSpanForWord(node.arg_word)
         self.cursor.SkipUntil(spid)
+
+    self.DoWordInCommand(node.arg_word, local_symbols)
 
     # <<< 'here word'
     # << 'here word'
@@ -202,24 +291,195 @@ class Fixer:
 
     # Warn about multiple here docs on a line.
     # As an obscure feature, allow
-    # cat << _'ONE' << _"TWO"
+    # cat << \'ONE' << \"TWO"
     # 123
     # ONE
     # 234
     # TWO
     # The _ is an indicator that it's not a string to be piped in.
-
-
-
-
     pass
 
-  def DoCommand(self, node):
+  def DoAssignment(self, node, at_top_level, local_symbols):
+    """
+    local_symbols:
+      - Add every 'local' declaration to it
+        - problem: what if you have local in an "if" ?
+        - we could treat it like nested scope and see what happens?  Do any
+          programs have a problem with it?
+          case/if/for/while/BraceGroup all define scopes or what?
+          You don't want inconsistency of variables that could be defined at
+          any point.
+          - or maybe you only need it within "if / case" ?  Well I guess
+            for/while can break out of the loop and cause problems.  A break is
+              an "if".
+
+      - for subsequent
+    """
+    # Change RHS to expression language.  Bare words not allowed.  foo -> 'foo'
+
+    has_rhs = False  # TODO: This is on a per-variable basis.
+                     # local foo -> var foo = ''
+                     # readonly foo -> setconst foo
+                     # export foo -> export foo
+
+    # TODO:
+    # - This depends on self.mode.
+    # - And we also need the enclosing FuncDef node to analyze.
+    #   - or we need a symbol table for the current function.  Forget about
+    #
+    # Oil keywords:
+    # - global : scope qualifier
+    # - var, const : mutability
+    # - setconst, export : state mutation
+    #
+    # Operators:
+    # = and :=
+    #
+    # NOTE: Bash also has "unset".  Does anyone use it?
+    # You can use "delete" like Python I guess.  It's not the opposite of
+    # set.
+
+    # NOTE:
+    # - We CAN tell if a variable has been defined locally.
+    # - We CANNOT tell if it's been defined globally, because different files
+    # share the same global namespace, and we can't statically figure out what
+    # files are in the program.
+    defined_locally = False  # is it a local variable in this function?
+                             # can't tell if global
+    # We can change it from = to := or ::= (in pedantic mode)
+    new_assign_op = None
+
+    if node.keyword == Id.Assign_Local:
+      # Assume that 'local' it's a declaration.  In osh, it's an error if
+      # locals are redefined.  In bash, it's OK to do 'local f=1; local f=2'.
+      # Could have a flag if enough people do this.
+      if at_top_level:
+        raise RuntimeError('local at top level is invalid')
+
+      if defined_locally:
+        raise RuntimeError("Can't redefine local")
+
+      keyword_spid = node.spids[0]
+      self.cursor.PrintUntil(keyword_spid)
+      self.cursor.SkipUntil(keyword_spid + 1)
+      self.f.write('var')
+
+      if local_symbols is not None:
+        for pair in node.pairs:
+          # NOTE: Not handling local a[b]=c
+          if pair.lhs.tag == lvalue_e.LeftVar:
+            #print("REGISTERED %s" % pair.lhs.name)
+            local_symbols[pair.lhs.name] = True
+
+    elif node.keyword == Id.Assign_None:
+      self.cursor.PrintUntil(node.spids[0])
+
+      # For now, just detect whether the FIRST assignment on the line has been
+      # declared locally.  We might want to split every line into separate
+      # statements.
+      if local_symbols is not None:
+        lhs0 = node.pairs[0].lhs
+        if lhs0.tag == lvalue_e.LeftVar and lhs0.name in local_symbols:
+          defined_locally = True
+        #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
+
+      # need semantic analysis.
+      # Would be nice to assume that it's a local though.
+      if at_top_level:
+        self.f.write('global ')  # can't be redefined
+        new_assign_op = '::='
+        #self.f.write('global TODO := TODO')  # mutate global or define it
+      elif defined_locally:
+        new_assign_op = ':='  # assume mutation of local
+        #self.f.write('[local mutated]')
+      else:
+        # we're in a function, but it's not defined locally.
+        self.f.write('global ')  # assume mutation of local
+        if self.mode == PEDANTIC:  # assume globals defined
+          new_assign_op = '::='
+        else:
+          new_assign_op = ':='
+
+    elif node.keyword == Id.Assign_Export:
+      # Flags:
+      # -n: remove the property!
+      #
+      # I would do this:
+      # export FOO = 'bar' {
+      # }
+      # pop export FOO
+      # Or just keep -n, sinec probably very few people use it.
+
+      keyword_spid = node.spids[0]
+
+      if at_top_level:
+        # We don't know if it was defined elsewhere
+        new_assign_op = '::='
+      elif defined_locally:
+        self.f.write('export TODO := TODO')
+      else:
+        # Mutating a global
+        self.f.write('export global TODO := TODO')
+
+    elif node.keyword == Id.Assign_Readonly:
+      # Explicit const.  Assume it can't be redefined.
+      # Verb.
+      #
+      # Top level;
+      #   readonly FOO=bar  -> const FOO = 'bar'
+      #   readonly FOO -> freeze FOO
+      # function level:
+      #   readonly FOO=bar  -> const global FOO ::= 'bar'
+      #   readonly FOO  -> freeze FOO
+      keyword_spid = node.spids[0]
+      if at_top_level:
+        self.cursor.PrintUntil(keyword_spid)
+        self.cursor.SkipUntil(keyword_spid + 1)
+        self.f.write('const')  # can't be redefined
+      elif defined_locally:
+        self.f.write('setconst FOO = "bar"')
+      else:
+        self.f.write('setconst global FOO = "bar"')
+
+    elif node.keyword == Id.Assign_Declare:
+      # declare -rx foo spam=eggs
+      # export foo
+      # setconst foo
+      #
+      # spam = eggs
+      # export spam
+
+      # Have to parse the flags
+      self.f.write('TODO ')
+
+    # foo=bar spam=eggs -> foo = 'bar', spam = 'eggs'
+    n = len(node.pairs)
+    for i, pair in enumerate(node.pairs):
+      assert pair.lhs.tag == lvalue_e.LeftVar
+
+      left_spid = pair.spids[0]
+      self.cursor.PrintUntil(left_spid)
+      # Assume skipping over one Lit_VarLike token
+      self.cursor.SkipUntil(left_spid + 1)
+
+      # Replace name.  I guess it's Lit_Chars.
+      self.f.write(pair.lhs.name)
+      op = new_assign_op if new_assign_op else '='
+      self.f.write(' %s ' % op)
+
+      # foo=bar -> foo = 'bar'
+      #print('RHS', pair.rhs, file=sys.stderr)
+      self.DoWordAsExpr(pair.rhs, local_symbols)
+
+      if i != n - 1:
+        self.f.write(',')
+
+  def DoCommand(self, node, local_symbols, at_top_level=False):
     if node.tag == command_e.CommandList:
       # TODO: How to distinguish between echo hi; echo bye; and on separate
       # lines
       for child in node.children:
-        self.DoCommand(child)
+        self.DoCommand(child, local_symbols)
 
     elif node.tag == command_e.SimpleCommand:
       # How to preserve spaces between words?  Do you want to do it?
@@ -237,11 +497,11 @@ class Fixer:
         self.f.write('env ')
 
       for w in node.words:
-        self.DoWord(w)
+        self.DoWordInCommand(w, local_symbols)
 
       # NOTE: This will change to "phrase"?  Word or redirect.
       for r in node.redirects:
-        self.DoRedirect(r)
+        self.DoRedirect(r, local_symbols)
 
       # TODO: Print the terminator.  Could be \n or ;
       # Need to print env like PYTHONPATH = 'foo' && ls
@@ -250,77 +510,79 @@ class Fixer:
       # append is >+
 
     elif node.tag == command_e.Assignment:
-      # Print spaces
-      # Change RHS to expression language.  Bare words not allowed.  foo ->
-      # 'foo'
-      #
-      # local foo=bar => var foo = 'bar'
-      # readonly local foo=bar => foo = 'bar'
+      self.DoAssignment(node, at_top_level, local_symbols)
 
-      # Do lexical analysis: if it's not a local, then it's a global.
-      #
-      # local foo=bar
-      # foo=new
-      # myglobal=2
-      #
-      # var foo = 'bar'
-      # foo := 'new'
-      # global myglobal := 2
-
-      # If the RHS is a var sub, then you don't need quotes:
-      # local src=${1:-foo}
-      #
-      # Should be:
-      # var src = $1 or 'foo'
-      #
-      # NOT:
-      #
-      # var src = $($1 or 'foo')
-
-      for pair in node.pairs:
-        if word.IsVarSub(pair.rhs):  # ${1} or "$1"
-          # Do it in expression mode
-          pass
-        # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
-        # conversion to string.
-        else:
-          # foo=bar -> foo = 'bar'
-          pass
-
-    elif node.tag == command_e.Pipeline:  # No changes.
+    elif node.tag == command_e.Pipeline:
       # Obscure: |& turns into |- or |+ for stderr.
-      pass
+      # TODO:
+      # if ! true; then -> if not true {
 
-    elif node.tag == command_e.AndOr:  # No changes
-      pass
+      # if ! echo | grep; then -> if not { echo | grep } {
+      # }
+      # not is like do {}, but it negates the return value I guess.
 
-    elif node.tag == command_e.Fork:
+      for child in node.children:
+        self.DoCommand(child, local_symbols)
+
+    elif node.tag == command_e.AndOr:
+      for child in node.children:
+        self.DoCommand(child, local_symbols)
+
+    elif node.tag == command_e.Sentence:
       # 'ls &' to 'fork ls'
-      self.f.write('fork ')
+      # Keep ; the same.
+      self.DoCommand(node.command, local_symbols)
 
     # This has to be different in the function case.
-    #elif node.tag == command_e.BraceGroup:
+    elif node.tag == command_e.BraceGroup:
       # { echo hi; } -> do { echo hi }
       # For now it might be OK to keep 'do { echo hi; }
-    #  self.f.write('do')
+      #left_spid, right_spid = node.spids
+      (left_spid,) = node.spids
+
+      self.cursor.PrintUntil(left_spid)
+      self.cursor.SkipUntil(left_spid + 1)
+      self.f.write('do {')
+
+      for child in node.children:
+        self.DoCommand(child, local_symbols)
 
     elif node.tag == command_e.Subshell:
       # (echo hi) -> shell echo hi
       # (echo hi; echo bye) -> shell {echo hi; echo bye}
-      self.f.write('shell ')
+
+      (left_spid, right_spid) = node.spids
+
+      self.cursor.PrintUntil(left_spid)
+      self.cursor.SkipUntil(left_spid + 1)
+      self.f.write('shell {')
+
+      for c in node.children:
+        self.DoCommand(c, local_symbols)
+
+      #self._DebugSpid(right_spid)
+      #self._DebugSpid(right_spid + 1)
+
+      #print('RIGHT SPID', right_spid)
+      self.cursor.PrintUntil(right_spid)
+      self.cursor.SkipUntil(right_spid + 1)
+      self.f.write('}')
 
     elif node.tag == command_e.DParen:
       # Just change (( )) to ( )
       # Test it with while loop
-      self.DoArithExpr(self.child)
+      self.DoArithExpr(node.child)
 
     elif node.tag == command_e.DBracket:
       # [[ 1 -eq 2 ]] to (1 == 2)
-      self.DoBoolExpr(self.child)
+      self.DoBoolExpr(node.expr)
 
     elif node.tag == command_e.FuncDef:
       # TODO: skip name
       #self.f.write('proc %s' % node.name)
+
+      # New symbol table for every function.
+      new_local_symbols = {}
 
       # Should be the left most span, including 'function'
       self.cursor.PrintUntil(node.spids[0])
@@ -331,7 +593,8 @@ class Fixer:
 
       if node.body.tag == command_e.BraceGroup:
         # Don't add "do" like a standalone brace group.  Just use {}.
-        self.DoCommand(node.body)
+        for child in node.body.children:
+          self.DoCommand(child, new_local_symbols)
       else:
         pass
         # Add {}.
@@ -342,7 +605,19 @@ class Fixer:
 
     elif node.tag == command_e.BraceGroup:
       for child in node.children:
-        self.DoCommand(child)
+        self.DoCommand(child, local_symbols)
+
+    elif node.tag == command_e.DoGroup:
+      do_spid, done_spid = node.spids
+      self.cursor.PrintUntil(do_spid)
+      self.cursor.SkipUntil(do_spid + 1)
+      self.f.write('{')
+
+      self.DoCommand(node.child, local_symbols)
+
+      self.cursor.PrintUntil(done_spid)
+      self.cursor.SkipUntil(done_spid + 1)
+      self.f.write('}')
 
     elif node.tag == command_e.ForEach:
       # Need to preserve spaces between words, because there can be line
@@ -350,58 +625,167 @@ class Fixer:
       # for x in a b c \
       #    d e f; do
 
-      self.cursor.PrintUntil(node.spids[0] + 1)  # 'for x in' and then space
-      self.f.write('[')
-      for i, w in enumerate(node.iter_words):
-        if i != 0:
-          #self.f.write('_')
-          pass
-        self.DoWord(w)
-      self.f.write(']')
+      in_spid, semi_spid = node.spids
 
-      # TODO: Skip over ; if it's present.  How?
-      self._FixDoGroup(node.body)
+      self.cursor.PrintUntil(in_spid + 1)  # 'for x in' and then space
+      self.f.write('[')
+      for w in node.iter_words:
+        self.DoWordInCommand(w, local_symbols)
+      self.f.write(']')
+      #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+      if semi_spid != -1:
+        self.cursor.PrintUntil(semi_spid)
+        self.cursor.SkipUntil(semi_spid + 1)
+
+      self.DoCommand(node.body, local_symbols)
 
     elif node.tag == command_e.ForExpr:
       # Change (( )) to ( ), and then _FixDoGroup
       pass
 
     elif node.tag == command_e.While:
-      # I think like this?
-      # omit semicolon, but don't omit newline!
-      # self.DoCommand(node.cond, omit_semi_if_simple)
+      if node.cond.tag == command_e.Sentence:
+        spid = node.cond.terminator.span_id
+        self.cursor.PrintUntil(spid)
+        self.cursor.SkipUntil(spid + 1)
 
-      # TODO: Skip over ; if it's present.  How?
-      self._FixDoGroup(node.body)
+      self.DoCommand(node.body, local_symbols)
 
     elif node.tag == command_e.If:
-      # Change then/elif/fi to braces
-      pass
+      then_spid, fi_spid = node.spids
+      then_arm = node.arms[0]
+
+      # NOTE:
+      # We need DoCommand on then_arm.action, to make sure we get all the
+      # symbols.  Even if we don't
+
+      if then_arm.cond.tag == command_e.Sentence:
+        sentence = then_arm.cond
+        self.DoCommand(sentence, local_symbols)
+
+        # Remove semi-colon
+        semi_spid = sentence.terminator.span_id
+        self.cursor.PrintUntil(semi_spid)
+        self.cursor.SkipUntil(semi_spid + 1)
+
+      # then -> {
+      self.cursor.PrintUntil(then_spid)
+      self.cursor.SkipUntil(then_spid + 1)
+      self.f.write('{')
+
+      # then_spid should be on if_arm?
+      # Also we need to do ELSE.
+      for arms in node.arms[1:]:
+        #print('SPIDS', arms.spids, file=sys.stderr)
+        pass
+
+      # fi -> }
+      self.cursor.PrintUntil(fi_spid)
+      self.cursor.SkipUntil(fi_spid + 1)
+      self.f.write('}')
 
     elif node.tag == command_e.Case:
-      # Change then/elif/fi to braces
-      pass
+      word_spid = word.LeftMostSpanForWord(node.to_match)
+      self.cursor.SkipUntil(word_spid - 1)  # space before
+      self.f.write('strmatch')
+
+      in_spid = node.spids[0]
+      self.cursor.PrintUntil(in_spid)
+      self.cursor.SkipUntil(in_spid + 1)
+      self.f.write('{')  # strmatch $var {
+
+      # each arm needs the ) and the ;; node to skip over?
+      for arm in node.arms:
+        # change | to 'or'
+        for pat in arm.pat_list:
+          pass
+        # surround it with { }
+
+      esac_spid = node.spids[1]
+      self.cursor.PrintUntil(esac_spid)
+      self.cursor.SkipUntil(esac_spid + 1)
+      self.f.write('}')  # strmatch $var {
 
     else:
       print('Command not handled', node)
       raise AssertionError(node.tag)
 
-  def _FixDoGroup(self, body_node):
-    # TODO: Can factor into DoDoGroup()
-    do_spid, done_spid = body_node.spids
-    self.cursor.PrintUntil(do_spid)
-    self.cursor.SkipUntil(do_spid + 1)
-    self.f.write('{')
+  def DoWordAsExpr(self, node, local_symbols):
+    style = _GetRhsStyle(node)
+    if style == WordStyle.SQ:
+      self.f.write("'")
+      self.DoWordInCommand(node, local_symbols)
+      self.f.write("'")
+    elif style == WordStyle.DQ:
+      self.f.write('"')
+      self.DoWordInCommand(node, local_symbols)
+      self.f.write('"')
+    else:
+      # "${foo:-default}" -> foo or 'default'
+      # ${foo:-default} -> @split(foo or 'default')
+      #                    @(foo or 'default')  -- implicit split.
 
-    self.DoCommand(body_node)
+      if word.IsVarSub(node):  # ${1} or "$1"
+        # Do it in expression mode
+        pass
+      # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
+      # conversion to string.
 
-    self.cursor.PrintUntil(done_spid)
-    self.cursor.SkipUntil(done_spid + 1)
-    self.f.write('}')
+      # For now, jsut stub it out
+      self.DoWordInCommand(node, local_symbols)
 
-    #self.DoCommand(node.body)
+  def DoWordInCommand(self, node, local_symbols):
+    """
+    echo == must be changed to echo '==' because = is a reserved symbol.
 
-  def DoWord(self, node):
+    Problems: 
+    rm --verbose=true
+    rm '--verbose=true'  -- is this bad?
+
+    Same with comma
+    foo, bar = 1
+
+    # I guess we can allow this
+    ls --long foo,bar
+
+    or force:
+    (foo, bar) = 1
+
+    Maybe we need a clever 'pre-lex'
+    overwhelmingly the second char will be ' '
+
+    foo/bar/foo.py
+    foo.py
+    ./hello
+    foo_bar
+    [a-zA-Z0-9]  / - . _  -- filename chars
+
+
+    first word:
+      var, const, export, setconst, global
+      func, proc, do, not, shell,
+      maybe: time, coproc, etc.
+
+      =    -- generic expression, = 1+2
+
+    non-filename char AFTER first word
+      cmd:
+          ' '     foo bar baz
+          '\n'    foo
+          '<'     foo < bar
+          '>'     foo > bar
+          !       ls !2 > !1
+          |       who | wc -l
+          |-       who |- wc -l
+
+      expr: 
+          =   foo = bar
+          ,   a, b = x
+          [   a[x] = 1
+          (   f(x)  for(  while(  if(
+
+    1+2  -- I think this tries to run the command
+    """
     # Are we getting rid of word joining?  Or maybe keep it but discourage and
     # provide alternatives.
     #
@@ -418,18 +802,37 @@ class Fixer:
     # What about here docs words?  It's a double quoted part, but with
     # different formatting!
     if node.tag == word_e.CompoundWord:
+
       # UNQUOTE simple var subs
-      # "$foo" -> $foo
-      # "${foo}" -> $foo
 
       # TODO: I think we have to print the beginning and the end?
 
       left_spid = word.LeftMostSpanForWord(node)
       #right_spid = word.RightMostSpanForWord(node)
       right_spid = -1
-      #print('DoWord %s %s' % (left_spid, right_spid), file=sys.stderr)
+      #print('DoWordInCommand %s %s' % (left_spid, right_spid), file=sys.stderr)
 
-      if left_spid >= 0:
+      # Special case for "$@".  Wow this needs pattern matching!
+      # TODO:
+      # "$foo" -> $foo
+      # "${foo}" -> $foo
+
+      if (len(node.parts) == 1 and
+          node.parts[0].tag == word_part_e.DoubleQuotedPart):
+        dq_part = node.parts[0]
+        if (len(dq_part.parts) == 1 and
+            dq_part.parts[0].tag == word_part_e.SimpleVarSub):
+          vsub_part = dq_part.parts[0]
+          if vsub_part.token.id == Id.VSub_At:
+            # NOTE: This is off for double quoted part.  Hack to subtract 1.
+            self.cursor.PrintUntil(left_spid - 1)
+            self.cursor.SkipUntil(left_spid + 2)  # " then $@ then "
+            self.f.write('@Argv')
+            return  # Done replacing
+
+      # It's None for here docs I think.
+      #log("NODE %s", node)
+      if left_spid is not None and left_spid >= 0:
         #span = self.arena.GetLineSpan(span_id)
         #print(span)
 
@@ -440,7 +843,7 @@ class Fixer:
       # If any part is double quoted, you can always double quote the whole
       # thing?
       for part in node.parts:
-        self.DoWordPart(part)
+        self.DoWordPart(part, local_symbols)
 
       if right_spid >= 0:
         #self.cursor.PrintUntil(right_spid)
@@ -449,7 +852,7 @@ class Fixer:
     else:
       raise AssertionError(node.tag)
 
-  def DoWordPart(self, node, quoted=False):
+  def DoWordPart(self, node, local_symbols, quoted=False):
     span_id = word._LeftMostSpanForPart(node)
     if span_id is not None and span_id >= 0:
       span = self.arena.GetLineSpan(span_id)
@@ -461,15 +864,31 @@ class Fixer:
       pass
 
     elif node.tag == word_part_e.EscapedLiteralPart:
-      # NOTE: If unquoted, it should quoted instead.  ''  \<invisible space>
-      pass
+      if quoted:
+        pass
+      else:
+        # If unquoted \e, it should quoted instead.  ' ' vs. \<invisible space>
+        # Hm is this necessary though?  I think the only motivation is changing
+        # \{ and \( for macros.  And ' ' to be readable/visible.
+        t = node.token
+        val = t.val[1:]
+        assert len(val) == 1, val
+        if val != '\n':
+          self.cursor.PrintUntil(t.span_id)
+          self.cursor.SkipUntil(t.span_id + 1)
+          self.f.write("'%s'" % val)
 
     elif node.tag == word_part_e.LiteralPart:
       # Print it literally.
       # TODO: We might want to do it all on the word level though.  For
       # example, foo"bar" becomes "foobar" in oil.
       spid = node.token.span_id
-      self.cursor.PrintUntil(spid + 1)
+      if spid is None:
+        #raise RuntimeError('%s has no span_id' % node.token)
+        # TODO: Fix word.TildeDetect to construct proper tokens.
+        print('WARNING:%s has no span_id' % node.token, file=sys.stderr)
+      else:
+        self.cursor.PrintUntil(spid + 1)
 
     elif node.tag == word_part_e.TildeSubPart:  # No change
       pass
@@ -478,11 +897,15 @@ class Fixer:
       # TODO: 
       # '\n' is '\\n'
       # $'\n' is '\n'
-      pass
+      # TODO: Should print until right_spid
+      # left_spid, right_spid = node.spids
+      if node.tokens:  # Empty string has no tokens
+        last_spid = node.tokens[-1].span_id
+        self.cursor.PrintUntil(last_spid + 1)
 
     elif node.tag == word_part_e.DoubleQuotedPart:
       for part in node.parts:
-        self.DoWordPart(part, quoted=True)
+        self.DoWordPart(part, local_symbols, quoted=True)
 
     elif node.tag == word_part_e.SimpleVarSub:
       spid = node.token.span_id
@@ -499,7 +922,7 @@ class Fixer:
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_At:  # $@
-        self.f.write('@Argv')  # PEDANTIC: Depends if quoted or unquoted
+        self.f.write('$ifsjoin(Argv)')
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Pound:  # $#
@@ -515,7 +938,7 @@ class Fixer:
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Star:  # $*
-        self.f.write('@Argv')  # PEDANTIC: Depends if quoted or unquoted
+        self.f.write('$ifsjoin(Argv)')  # PEDANTIC: Depends if quoted or unquoted
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Hyphen:  # $*
@@ -588,7 +1011,7 @@ class Fixer:
       self.f.write('$[')
       self.cursor.SkipUntil(left_spid + 1)
 
-      self.DoCommand(node.command_list)
+      self.DoCommand(node.command_list, local_symbols)
 
       self.f.write(']')
       self.cursor.SkipUntil(right_spid + 1)

@@ -53,3 +53,70 @@ echo "func2_global $func2_global"
 # These don't leak
 echo "loc1: $loc1 loc2: $loc2"
 
+# Nothing can be combined.  Only one keyword.  Use declare flags to combine.
+combined() {
+  local __LOCAL=1
+  export __ONE=one
+  export local __TWO=two
+  export readonly __THREE=three
+
+  # does not work!
+  local export __FOUR=four
+  # does not work!
+  readonly export __FIVE=five
+
+  readonly local __SIX=six
+  echo $SIX
+
+  local readonly __SEVEN=seven
+  echo $SEVEN
+  #echo "readonly: [$readonly]"
+
+  # This doesn't work!
+  export readonly local __EIGHT=eight
+
+  tests/printenv.py __ONE __TWO __THREE __FOUR __FIVE __SIX __SEVEN __EIGHT
+  # export can come first, but local can't come first
+
+  # These are both -a
+  local __array=(1 2 3)
+  local __array2=([a]=1 [b]=2 [c]=3)
+
+  # This gets -A
+  local -A __array3=([a]=1 [b]=2 [c]=3)
+
+  # Doesn't get any flags.  global/local is NOT a flag!  It's about the
+  # position in the symbol tables I guess.
+  declare -g __global=g
+
+  declare -p | grep __
+}
+
+__GLOBAL=foo
+
+combined
+echo GLOBAL
+declare -p | grep __
+
+conditional-local() {
+  if test $# -eq 0; then
+    echo DEFINING LOCAL
+    local x=1
+    echo $x
+  else
+    echo DEFINING GLOBAL
+    x=2
+    echo $x
+  fi
+
+  x=3
+  echo $x
+}
+
+conditional-local
+echo $x  # x is not defined
+
+conditional-local foo
+echo $x  # x is not defined
+
+

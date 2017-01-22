@@ -326,7 +326,7 @@ def OshMain(argv):
       status = 0
 
   if opts.fix:
-    fix.Print(arena, node)
+    fix.PrintAsOil(arena, node)
   return status
 
 

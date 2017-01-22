@@ -134,19 +134,16 @@ class SimpleCommandTest(unittest.TestCase):
     node = assertParseCommandList(self, 'ONE=1 TWO=2')
     self.assertEqual(command_e.Assignment, node.tag)
     self.assertEqual(2, len(node.pairs))
-    self.assertEqual(0, len(node.words))
 
   def testExport(self):
     node = assertParseCommandList(self, 'export ONE=1 TWO=2 THREE')
     self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(2, len(node.pairs))
-    self.assertEqual(1, len(node.words))
+    self.assertEqual(3, len(node.pairs))
 
   def testReadonly(self):
     node = assertParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
     self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(2, len(node.pairs))
-    self.assertEqual(1, len(node.words))
+    self.assertEqual(3, len(node.pairs))
 
   def testOnlyRedirect(self):
     # This just touches the file
@@ -171,11 +168,9 @@ class SimpleCommandTest(unittest.TestCase):
 
   def testParseAssignment(self):
     node = assertParseCommandList(self, 'local foo=bar spam eggs one=1')
-    self.assertEqual(2, len(node.words), node.words)
-    self.assertEqual(2, len(node.pairs))
+    self.assertEqual(4, len(node.pairs))
 
     node = assertParseCommandList(self, 'foo=bar')
-    self.assertEqual(0, len(node.words))
     self.assertEqual(1, len(node.pairs))
 
     # This is not valid since env isn't respected
@@ -258,6 +253,7 @@ EOF
 \tEOF
 echo hi
 """)
+    self.assertEqual(node.tag, command_e.SimpleCommand)
     assertHereDocToken(self, 'one tab then foo: ', node)
 
   def testHereDocInPipeline(self):
@@ -346,8 +342,9 @@ PIPE 2
 EOF
 echo hi
 """)
+    self.assertEqual(node.tag, command_e.CommandList)
     self.assertEqual(2, len(node.children), repr(node))
-    assertHereDocToken(self, 'PIPE 1\n', node.children[0])
+    assertHereDocToken(self, 'PIPE 1\n', node.children[0].command)
 
   def testHereDocInSequence2(self):
     # ; and command on SAME LINE
@@ -357,9 +354,9 @@ PIPE 1
 PIPE 2
 EOF
 """)
-    #print(node.children)
+    self.assertEqual(node.tag, command_e.CommandList)
     self.assertEqual(2, len(node.children))
-    assertHereDocToken(self, 'PIPE 1\n', node.children[0])
+    assertHereDocToken(self, 'PIPE 1\n', node.children[0].command)
 
   def testCommandSubInHereDoc(self):
     node = assertParseCommandLine(self, """\
@@ -682,7 +679,7 @@ done
     self.assertEqual(Id.Arith_Equal, node.init.op_id)
     self.assertEqual(Id.Arith_Less, node.cond.op_id)
     self.assertEqual(Id.Arith_DPlus, node.update.op_id)
-    self.assertEqual(command_e.SimpleCommand, node.body.tag)
+    self.assertEqual(command_e.DoGroup, node.body.tag)
 
     # Now without the ; OR a newline
     node = assertParseCommandList(self, """\
@@ -693,14 +690,14 @@ done
     self.assertEqual(Id.Arith_Equal, node.init.op_id)
     self.assertEqual(Id.Arith_Less, node.cond.op_id)
     self.assertEqual(Id.Arith_DPlus, node.update.op_id)
-    self.assertEqual(command_e.SimpleCommand, node.body.tag)
+    self.assertEqual(command_e.DoGroup, node.body.tag)
 
     node = assertParseCommandList(self, """\
 for ((;;)); do
   echo $i
 done
 """)
-    self.assertEqual(command_e.SimpleCommand, node.body.tag)
+    self.assertEqual(command_e.DoGroup, node.body.tag)
 
   def testParseCommandSub(self):
     # Two adjacent command subs
@@ -1032,8 +1029,8 @@ esac
     node = assertParseCommandList(self, """\
 . "$TEST_DIRECTORY"/diff-lib.sh ;# test-lib chdir's into trash
 """)
-    self.assertEqual(command_e.SimpleCommand, node.tag)
-    self.assertEqual(2, len(node.words))
+    self.assertEqual(command_e.Sentence, node.tag)
+    self.assertEqual(2, len(node.command.words))
 
     # This is NOT a comment
     node = assertParseCommandList(self, """\
