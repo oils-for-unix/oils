@@ -817,11 +817,16 @@ class Executor(object):
       status = 0
 
     elif node.tag == command_e.If:
+      done = False
       for arm in node.arms:
         status, _ = self.Execute(arm.cond)
         if status == 0:
           status, _ = self.Execute(arm.action)
+          done = True
           break
+      # TODO: The compiler should flatten this
+      if not done and node.else_action is not None:
+        status, _ = self.Execute(node.else_action)
 
     elif node.tag == command_e.NoOp:
       status = 0  # make it true

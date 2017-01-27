@@ -129,11 +129,7 @@ def _LeftMostSpanForPart(part):
     return part.token.span_id
 
   elif part.tag == word_part_e.BracedVarSub:
-    # TODO: This isn't set when we have $foo, only ${foo}.  We should probably
-    # have another kind of part?
-    #assert part.token
-    #return part.token  # debug
-    return -1
+    return part.spids[0]
 
   elif part.tag == word_part_e.CommandSubPart:
     return part.spids[0]
@@ -183,11 +179,9 @@ def _RightMostSpanForPart(part):
     return part.token.span_id
 
   elif part.tag == word_part_e.BracedVarSub:
-    # TODO: This isn't set when we have $foo, only ${foo}.  We should probably
-    # have another kind of part?
-    #assert part.token
-    #return part.token  # debug
-    return -1
+    spid = part.spids[0]
+    assert spid != -1
+    return spid
 
   elif part.tag == word_part_e.CommandSubPart:
     return part.spids[1]

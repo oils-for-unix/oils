@@ -11,21 +11,6 @@ osh-to-oil() {
   bin/osh --no-exec --fix "$@"
 }
 
-this-repo() {
-  local out=_tmp/osh-to-oil/this-repo
-  mkdir -p $out
-
-  # BUG: Why does this stop parsing?
-  # Oh it's because } is a first word... oops.
-  #time {
-    for script in *.sh; do
-      local name=$(basename $script .sh)
-      echo $name
-      osh-to-oil $script > $out/$name.oil
-    done
-  #}
-}
-
 fail() {
   echo 'TEST FAILED'
   exit 1
@@ -36,7 +21,7 @@ osh0-oil3() {
   osh-to-oil "$@" | diff -u /dev/fd/3 - || fail
 }
 
-special-vars() {
+args-vars() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo one "$@" two
 OSH
@@ -53,9 +38,19 @@ OIL
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo $? $#
 OSH
-echo $Status $len(Argv)
+echo $Status $Argc
 OIL
+}
 
+unquote-vars() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo "$1" "$foo"
+OSH
+echo $1 $foo
+OIL
+}
+
+special-vars() {
   # TODO: Some ops don't require $(), like $foo[1] and $foo[1:1+3]
   # We don't want $(foo[1]).
   osh0-oil3 << 'OSH' 3<< 'OIL'
@@ -148,6 +143,24 @@ OSH
 echo one \
   two three \
   four
+OIL
+}
+
+bracket-builtin() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+[ ! -z "$foo" ] || die
+OSH
+test ! -z $foo || die
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+if [ "$foo" -eq 3 ]; then
+  echo yes
+fi
+OSH
+if test $foo -eq 3 {
+  echo yes
+}
 OIL
 }
 
@@ -277,6 +290,12 @@ OSH
 echo 1
 env FOO=bar BAR=baz echo 2
 echo 2
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+FOO="${bar}" BAR="$(echo hi)" echo 2
+OSH
+env FOO="$(bar)" BAR="$[echo hi]" echo 2
 OIL
 }
 
@@ -489,13 +508,27 @@ OIL
 
 args-for-loop() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
-set -- 1 2 3
+for x; do
+  echo $x
+done
+OSH
+for x in @Argv {
+  echo $x
+}
+OIL
+
+  # NOTE: we don't have the detailed spid info to preserve the brace style.
+  # Leave it to the reformatter?
+  return
+
+#set -- 1 2 3
+#setargv -- 1 2 3
+  osh0-oil3 << 'OSH' 3<< 'OIL'
 for x
 do
   echo $x
 done
 OSH
-setargv -- 1 2 3
 for x in @Argv
 {
   echo $x
@@ -555,6 +588,8 @@ if true; then
   echo yes
 elif false; then
   echo elif
+elif spam; then
+  echo elif
 else
   echo no
 fi
@@ -562,6 +597,8 @@ OSH
 if true {
   echo yes
 } elif false {
+  echo elif
+} elif spam {
   echo elif
 } else {
   echo no
@@ -573,20 +610,35 @@ case_() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 case $var in
   foo|bar)
-    echo foobar
+    [ -f foo ] && echo file
     ;;
   *)
     echo default
     ;;
 esac
 OSH
-strmatch $var {
-  'foo' or 'bar' {
-    echo foobar
-  }
+matchstr $var {
+  foo|bar {
+    test -f foo && echo file
+    }
   * {
     echo default
-  }
+    }
+}
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+case "$var" in
+  *)
+    echo foo
+    echo bar  # no dsemi
+esac
+OSH
+matchstr $var {
+  * {
+    echo foo
+    echo bar  # no dsemi
+    }
 }
 OIL
 }
@@ -781,20 +833,33 @@ OIL
 
 all-passing() {
   simple-command
+  more-env
   line-breaks
   redirect
   pipeline
   and-or
-  brace-group
-  subshell
-  posix-func
-  ksh-func
+
+  # Word stuff
+  escaped-literal
+  args-vars
+  unquote-vars
+
+  # Substitutions
   command-sub
   arith-sub
+
+  posix-func
+  ksh-func
+
+  # Compound commands
+  brace-group
+  subshell
   while-loop
-  escaped-literal
+  if_
+  case_
   for-loop
   empty-for-loop
+  args-for-loop
 }
 
 "$@"

@@ -74,7 +74,7 @@ class Arena(object):
     Given an line ID, return the actual filename, physical line number, and
     line contents.
     """
-    assert line_id >= 0
+    assert line_id >= 0, line_id
     return self.lines[line_id]
 
   def AddLineSpan(self, line_span):
@@ -88,7 +88,7 @@ class Arena(object):
     return span_id
 
   def GetLineSpan(self, span_id):
-    assert span_id >= 0
+    assert span_id >= 0, span_id
     return self.spans[span_id]
 
   def GetDebugInfo(self, line_id):

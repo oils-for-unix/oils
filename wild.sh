@@ -2,11 +2,16 @@
 #
 # Run the osh parser on shell scripts found in the wild.
 #
-# TODO: There are a lot of hard-coded source paths here.  These files could
-# published in a tarball or torrent.
-#
 # Usage:
 #   ./wild.sh <function name>
+#
+# TODO:
+# - There are a lot of hard-coded source paths here.  These files could
+# published in a tarball or torrent.
+#
+# - Need to create an overview HTML page
+# - Need to create an index page
+#   - original source.
 
 set -o nounset
 set -o pipefail
@@ -28,7 +33,7 @@ _parse-one() {
   local input=$1
   local output=$2
 
-  local stderr_file=$output-err.txt
+  local stderr_file=${output}__err.txt
   osh-parse $input > $output-AST.txt 2> $stderr_file
   local status=$?
 
@@ -43,8 +48,23 @@ _osh-html-one() {
   local input=$1
   local output=$2
 
-  local stderr_file=$output-htmlerr.txt
+  local stderr_file=${output}__htmlerr.txt
   osh-html $input > $output-AST.html 2> $stderr_file
+  local status=$?
+
+  return $status
+}
+
+osh-to-oil() {
+  bin/osh --no-exec --fix "$@"
+}
+
+_osh-to-oil-one() {
+  local input=$1
+  local output=$2
+
+  local stderr_file=${output}__osh-to-oil-err.txt
+  osh-to-oil $input > ${output}.oil 2> $stderr_file
   local status=$?
 
   return $status
@@ -72,30 +92,46 @@ _parse-and-copy-one() {
   mkdir -p $(dirname $output)
   echo $input
 
-  if _parse-one $input $output; then
-    # If the text worked, do html
-    _osh-html-one $input $output
-  else
+  # Add .txt extension so it's not executable, and use 'cat' instead of cp
+  # So it's not executable.
+  cat < $input > ${output}.txt
+
+  if ! _parse-one $input $output; then  # text AST
     echo $rel_path >>$dest_base/FAILED.txt
 
     # Append
-    local html="
-    <a href=\"$rel_path.txt\">$rel_path.txt</a>
-    <a href=\"$rel_path-err.txt\">$rel_path-err.txt</a>
-    <a href=\"$rel_path-AST.txt\">$rel_path-AST.txt</a>
+    cat >>$dest_base/FAILED.html <<EOF
+    <a href="$rel_path.txt">$rel_path.txt</a>
+    <a href="${rel_path}__err.txt">${rel_path}__err.txt</a>
+    <a href="$rel_path-AST.txt">$rel_path-AST.txt</a>
     <br/>
     <pre>
     $(cat $output-err.txt)
     </pre>
     <hr/>
-    "
-    echo $html >>$dest_base/FAILED.html
+EOF
+    return 1
   fi
   #rm $output-err.txt
 
-  # Add .txt extension so it's not executable, and use 'cat' instead of cp
-  # So it's not executable.
-  cat < $input > ${output}.txt
+  if ! _osh-html-one $input $output; then  # do HTML AST if text AST worked
+    return 1
+  fi
+
+  if ! _osh-to-oil-one $input $output; then
+    return 1
+  fi
+
+  local filename=$(basename $rel_path)  # Used for links
+  cat > ${output}__index.html <<EOF
+<p>
+$rel_path<br/>
+<a href="${filename}.txt">Original Source: ${filename}.txt</a><br/>
+<a href="${filename}-AST.html">AST in HTML</a><br/>
+<a href="${filename}-AST.txt">AST in text</a><br/>
+<a href="${filename}.oil">Auto-conversion to Oil</a><br/>
+</p>
+EOF
 }
 
 _parse-many() {

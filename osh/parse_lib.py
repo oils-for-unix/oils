@@ -59,6 +59,7 @@ def MakeParserForExecutor(code_str):
   return c_parser
 
 
+# TODO: This has to take an arena so it gets the spans.
 def MakeWordParserForHereDoc(lines):
   line_reader = reader.VirtualLineReader(lines)
   line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')

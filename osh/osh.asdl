@@ -157,7 +157,7 @@ module osh
             command? body, redir* redirects)
   | While(command cond, command body, redir* redirects)
   | Until(command cond, command body, redir* redirects)
-  | If(if_arm* arms, redir* redirects)
+  | If(if_arm* arms, command? else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
   | FuncDef(string name, command body, redir* redirects)
 

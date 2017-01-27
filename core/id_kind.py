@@ -243,7 +243,6 @@ def _AddKinds(spec):
       'At',      # $@  or  [@] for array subscripting
       'Pound',   # $#  or  ${#var} for length
       'Dollar',  # $$
-      'Amp',     # $&
       'Star',    # $*
       'Hyphen',  # $-
       'QMark',   # $?

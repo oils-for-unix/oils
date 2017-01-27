@@ -289,6 +289,7 @@ class CommandParser(object):
 
         # TODO: Move this import
         from osh import parse_lib
+        # TODO: Thread arena.  need self.arena
         w_parser = parse_lib.MakeWordParserForHereDoc(lines)
         word = w_parser.ReadHereDocBody()
         if not word:
@@ -297,7 +298,8 @@ class CommandParser(object):
         h.arg_word = word
         h.was_filled = True
       else:
-        # TODO: Add line_id etc. to token
+        # TODO: Add span_id to token
+        # Each line is a single span.
         tokens = [ast.token(Id.Lit_Chars, line) for _, line in lines]
         parts = [ast.LiteralPart(t) for t in tokens]
         h.arg_word = ast.CompoundWord(parts)
@@ -481,8 +483,10 @@ class CommandParser(object):
     node = ast.SimpleCommand()
     node.words = words3
     node.redirects = redirects
-    node.more_env = [
-        ast.env_pair(name, val) for name, val, _ in prefix_bindings]
+    for name, val, left_spid in prefix_bindings:
+      pair = ast.env_pair(name, val) 
+      pair.spids.append(left_spid)
+      node.more_env.append(pair)
     return node
 
   def _MakeAssignment(self, assign_kw, suffix_words):
@@ -503,7 +507,14 @@ class CommandParser(object):
         else:
           pair = (k, v, left_spid)  # v is unevaluated word
       else:
-        pair = (k, None, left_spid)  # No value is equivalent to ''
+        # In aboriginal in variables/sources: export_if_blank does export "$1".
+        # We should allow that.
+        ok, value, quoted = word.StaticEval(w)
+        if not ok or quoted:
+          self.AddErrorContext(
+              'Variable names must be constant strings, got %s', w, word=w)
+          return None
+        pair = (value, None, left_spid)  # No value is equivalent to ''
       bindings.append(pair)
 
     pairs = []
@@ -633,6 +644,7 @@ class CommandParser(object):
       return None
 
     node = self._MakeAssignment(assign_kw, suffix_words)
+    if not node: return None
     node.spids.append(keyword_spid)
     return node
 
@@ -751,11 +763,14 @@ class CommandParser(object):
 
     if not self._NewlineOk(): return None
 
+    in_spid = -1
+    semi_spid = -1
+
     if not self._Peek(): return None
     if self.c_id == Id.KW_In:
       self._Next()  # skip in
 
-      node.spids.append(word.LeftMostSpanForWord(self.cur_word) + 1)
+      in_spid = word.LeftMostSpanForWord(self.cur_word) + 1
       iter_words, semi_spid = self.ParseForWords()
       if iter_words is None:  # empty list of words is OK
         return None
@@ -763,12 +778,10 @@ class CommandParser(object):
 
     elif self.c_id == Id.Op_Semi:
       node.do_arg_iter = True  # implicit for loop
-      semi_spid = -1
       self._Next()
 
     elif self.c_id == Id.KW_Do:
       node.do_arg_iter = True  # implicit for loop
-      semi_spid = -1
       # do not advance
 
     else:
@@ -776,7 +789,7 @@ class CommandParser(object):
           word=self.cur_word)
       return None
 
-    node.spids.append(semi_spid)
+    node.spids.extend((in_spid, semi_spid))
 
     body_node = self.ParseDoGroup()
     if not body_node: return None
@@ -834,6 +847,7 @@ class CommandParser(object):
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
     if self.c_id == Id.Op_LParen:
       self._Next()
 
@@ -849,6 +863,7 @@ class CommandParser(object):
       else:
         break
 
+    rparen_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Right_CasePat): return None
     if not self._NewlineOk(): return None
 
@@ -856,12 +871,15 @@ class CommandParser(object):
       node = self.ParseCommandTerm()
       assert node is not False
     else:
-      node = ast.NoOp()
+      node = ast.NoOp()  # empty action
 
+    dsemi_spid = -1
+    last_spid = -1
     if not self._Peek(): return None
     if self.c_id == Id.KW_Esac:
-      pass
+      last_spid = word.LeftMostSpanForWord(self.cur_word)
     elif self.c_id == Id.Op_DSemi:
+      dsemi_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Next()
     else:
       self.AddErrorContext('Expected DSEMI or ESAC, got %s', self.cur_word,
@@ -870,7 +888,9 @@ class CommandParser(object):
 
     if not self._NewlineOk(): return None
 
-    return ast.case_arm(pat_words, node)
+    arm = ast.case_arm(pat_words, node)
+    arm.spids.extend((left_spid, rparen_spid, dsemi_spid, last_spid))
+    return arm
 
   def ParseCaseList(self, arms):
     """
@@ -898,6 +918,8 @@ class CommandParser(object):
     case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
     """
     case_node = ast.Case()
+
+    case_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip case
 
     if not self._Peek(): return None
@@ -920,31 +942,43 @@ class CommandParser(object):
     if not self._Eat(Id.KW_Esac): return None
     self._Next()
 
-    case_node.spids.extend((in_spid, esac_spid))
+    case_node.spids.extend((case_spid, in_spid, esac_spid))
     return case_node
 
-  def ParseElsePart(self, arms):
+  def _ParseElifElse(self, if_node):
     """
     else_part: (Elif command_list Then command_list)* Else command_list ;
     """
+    arms = if_node.arms
+
     self._Peek()
     while self.c_id == Id.KW_Elif:
+      elif_spid = word.LeftMostSpanForWord(self.cur_word)
+
       self._Next()  # skip elif
       cond = self.ParseCommandList()
       if not cond: return None
 
+      then_spid = word.LeftMostSpanForWord(self.cur_word)
       if not self._Eat(Id.KW_Then): return None
 
       body = self.ParseCommandList()
       if not body: return None
 
-      arms.append(ast.if_arm(cond, body))
+      arm = ast.if_arm(cond, body)
+      arm.spids.extend((elif_spid, then_spid))
+      arms.append(arm)
 
     if self.c_id == Id.KW_Else:
+      else_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Next()
       body = self.ParseCommandList()
       if not body: return None
-      arms.append(ast.if_arm(ast.NoOp(), body))
+      if_node.else_action = body
+    else:
+      else_spid = -1
+
+    if_node.spids.append(else_spid)
 
     return True
 
@@ -964,16 +998,20 @@ class CommandParser(object):
     body = self.ParseCommandList()
     if not body: return None
 
-    if_node.arms.append(ast.if_arm(cond, body))
+    arm = ast.if_arm(cond, body)
+    arm.spids.extend((-1, then_spid))  # no if spid at first?
+    if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
-      if not self.ParseElsePart(if_node.arms):
+      if not self._ParseElifElse(if_node):
         return None
+    else:
+      if_node.spids.append(-1)  # no else spid
 
     fi_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Fi): return None
 
-    if_node.spids.extend((then_spid, fi_spid))
+    if_node.spids.append(fi_spid)
     return if_node
 
   def ParseCompoundCommand(self):

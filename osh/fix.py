@@ -47,12 +47,13 @@ class Cursor:
     """Skip everything before next_span_id.
     Printing will start at next_span_id
     """
+    assert next_span_id >= 0, next_span_id
     self.next_span_id = next_span_id
 
 
 # Should this just take an arena, which has all three things?
 
-#DEBUG_SPID = True
+DEBUG_SPID = True
 DEBUG_SPID = False
 
 def PrintAsOil(arena, node):
@@ -419,7 +420,8 @@ class OilPrinter:
         self.f.write('export TODO := TODO')
       else:
         # Mutating a global
-        self.f.write('export global TODO := TODO')
+        #self.f.write('export global TODO := TODO')
+        pass
 
     elif node.keyword == Id.Assign_Readonly:
       # Explicit const.  Assume it can't be redefined.
@@ -469,7 +471,10 @@ class OilPrinter:
 
       # foo=bar -> foo = 'bar'
       #print('RHS', pair.rhs, file=sys.stderr)
-      self.DoWordAsExpr(pair.rhs, local_symbols)
+      if pair.rhs is None:
+        self.f.write("''")  # local i -> var i = ''
+      else:
+        self.DoWordAsExpr(pair.rhs, local_symbols)
 
       if i != n - 1:
         self.f.write(',')
@@ -493,8 +498,45 @@ class OilPrinter:
       #self.cursor.PrintUntil()
 
       if node.more_env:
-        # Take advantage and just prefix
+        (left_spid,) = node.more_env[0].spids
+        self.cursor.PrintUntil(left_spid)
         self.f.write('env ')
+
+        # We only need to transform the right side, not left side.
+        for pair in node.more_env:
+          self.DoWordInCommand(pair.val, local_symbols)
+
+      # More translations:
+      # - . to source
+      # - eval to sh-eval
+
+      if node.words:
+        first_word = node.words[0]
+        ok, val, quoted = word.StaticEval(first_word)
+        if ok and val == '[':
+          last_word = node.words[-1]
+          # Check if last word is ]
+          ok, val, quoted = word.StaticEval(last_word)
+          if ok and val == ']':
+            # Replace [ with 'test'
+            self.cursor.PrintUntil(word.LeftMostSpanForWord(first_word))
+
+            word1_spid = word.LeftMostSpanForWord(node.words[1])
+            assert word1_spid != -1
+            self.cursor.SkipUntil(word1_spid)
+
+            self.f.write('test ')
+
+            for w in node.words[1:-1]:
+              self.DoWordInCommand(w, local_symbols)
+
+            # Now omit ]
+            last_spid = word.LeftMostSpanForWord(last_word)
+            self.cursor.PrintUntil(last_spid - 1)  # Get the space before
+            self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
+            return
+          else:
+            raise RuntimeError('Got [ without ]')
 
       for w in node.words:
         self.DoWordInCommand(w, local_symbols)
@@ -508,6 +550,10 @@ class OilPrinter:
       # Need to print redirects:
       # < > are the same.  << is here string, and >> is assignment.
       # append is >+
+
+      # TODO: static_eval of simple command
+      # - [ -> "test".  Eliminate trailing ].
+      # - . -> source, etc.
 
     elif node.tag == command_e.Assignment:
       self.DoAssignment(node, at_top_level, local_symbols)
@@ -571,7 +617,7 @@ class OilPrinter:
     elif node.tag == command_e.DParen:
       # Just change (( )) to ( )
       # Test it with while loop
-      self.DoArithExpr(node.child)
+      self.DoArithExpr(node.child, local_symbols)
 
     elif node.tag == command_e.DBracket:
       # [[ 1 -eq 2 ]] to (1 == 2)
@@ -627,12 +673,18 @@ class OilPrinter:
 
       in_spid, semi_spid = node.spids
 
-      self.cursor.PrintUntil(in_spid + 1)  # 'for x in' and then space
-      self.f.write('[')
-      for w in node.iter_words:
-        self.DoWordInCommand(w, local_symbols)
-      self.f.write(']')
-      #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+      if in_spid == -1:
+        #self.cursor.PrintUntil()  # 'for x' and then space
+        self.f.write('for %s in @Argv ' % node.iter_name)
+        self.cursor.SkipUntil(node.body.spids[0])
+      else:
+        self.cursor.PrintUntil(in_spid + 1)  # 'for x in' and then space
+        self.f.write('[')
+        for w in node.iter_words:
+          self.DoWordInCommand(w, local_symbols)
+        self.f.write(']')
+        #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+
       if semi_spid != -1:
         self.cursor.PrintUntil(semi_spid)
         self.cursor.SkipUntil(semi_spid + 1)
@@ -652,32 +704,41 @@ class OilPrinter:
       self.DoCommand(node.body, local_symbols)
 
     elif node.tag == command_e.If:
-      then_spid, fi_spid = node.spids
-      then_arm = node.arms[0]
+      else_spid, fi_spid = node.spids
 
-      # NOTE:
-      # We need DoCommand on then_arm.action, to make sure we get all the
-      # symbols.  Even if we don't
+      # if foo; then -> if foo {
+      # elif foo; then -> } elif foo {
+      for arm in node.arms:
+        elif_spid, then_spid = arm.spids
+        if elif_spid != -1:
+          self.cursor.PrintUntil(elif_spid)
+          self.f.write('} ')
 
-      if then_arm.cond.tag == command_e.Sentence:
-        sentence = then_arm.cond
-        self.DoCommand(sentence, local_symbols)
+        if arm.cond.tag == command_e.Sentence:
+          sentence = arm.cond
+          self.DoCommand(sentence, local_symbols)
 
-        # Remove semi-colon
-        semi_spid = sentence.terminator.span_id
-        self.cursor.PrintUntil(semi_spid)
-        self.cursor.SkipUntil(semi_spid + 1)
+          # Remove semi-colon
+          semi_spid = sentence.terminator.span_id
+          self.cursor.PrintUntil(semi_spid)
+          self.cursor.SkipUntil(semi_spid + 1)
+        else:
+          self.DoCommand(arm.cond, local_symbols)
 
-      # then -> {
-      self.cursor.PrintUntil(then_spid)
-      self.cursor.SkipUntil(then_spid + 1)
-      self.f.write('{')
+        self.cursor.PrintUntil(then_spid)
+        self.cursor.SkipUntil(then_spid + 1)
+        self.f.write('{')
 
-      # then_spid should be on if_arm?
-      # Also we need to do ELSE.
-      for arms in node.arms[1:]:
-        #print('SPIDS', arms.spids, file=sys.stderr)
-        pass
+        self.DoCommand(arm.action, local_symbols)
+
+      # else -> } else {
+      if node.else_action:
+        self.cursor.PrintUntil(else_spid)
+        self.f.write('} ')
+        self.cursor.PrintUntil(else_spid + 1)
+        self.f.write(' {')
+
+        self.DoCommand(node.else_action, local_symbols)
 
       # fi -> }
       self.cursor.PrintUntil(fi_spid)
@@ -685,29 +746,68 @@ class OilPrinter:
       self.f.write('}')
 
     elif node.tag == command_e.Case:
-      word_spid = word.LeftMostSpanForWord(node.to_match)
-      self.cursor.SkipUntil(word_spid - 1)  # space before
-      self.f.write('strmatch')
+      case_spid, in_spid, esac_spid = node.spids
+      self.cursor.PrintUntil(case_spid)
+      self.cursor.SkipUntil(case_spid + 1)
+      self.f.write('matchstr')
 
-      in_spid = node.spids[0]
+      # Reformat "$1" to $1
+      self.DoWordInCommand(node.to_match, local_symbols)
+
       self.cursor.PrintUntil(in_spid)
       self.cursor.SkipUntil(in_spid + 1)
-      self.f.write('{')  # strmatch $var {
+      self.f.write('{')  # matchstr $var {
 
       # each arm needs the ) and the ;; node to skip over?
       for arm in node.arms:
+        left_spid, rparen_spid, dsemi_spid, last_spid = arm.spids
+        #print(left_spid, rparen_spid, dsemi_spid)
+
+        self.cursor.PrintUntil(left_spid)
+        # Hm maybe keep | because it's semi-deprecated?  You acn use
+        # reload|force-relaod {
+        # }
+        # e/reload|force-reload/ {
+        # }
+        # / 'reload' or 'force-reload' / {
+        # }
+        #
+        # Yeah it's the more abbreviated syntax.
+
         # change | to 'or'
         for pat in arm.pat_list:
           pass
-        # surround it with { }
 
-      esac_spid = node.spids[1]
+        # Skip this
+        self.cursor.PrintUntil(rparen_spid)
+        self.cursor.SkipUntil(rparen_spid + 1)
+        self.f.write(' {')  # surround it with { }
+
+        self.DoCommand(arm.action, local_symbols)
+
+        if dsemi_spid != -1:
+          self.cursor.PrintUntil(dsemi_spid)
+          self.cursor.SkipUntil(dsemi_spid + 1)
+          # NOTE: indentation here will be off because ;; is likely indented
+          # with body.
+          self.f.write('}')
+        elif last_spid != -1:
+          self.cursor.PrintUntil(last_spid)
+          # NOTE: Indentation is also off here.  Arbitrarily put 4 spaces.
+          self.f.write('    }\n')
+        else:
+          raise AssertionError(
+              "Expected with dsemi_spid or last_spid in case arm")
+
       self.cursor.PrintUntil(esac_spid)
       self.cursor.SkipUntil(esac_spid + 1)
       self.f.write('}')  # strmatch $var {
 
+    elif node.tag == command_e.NoOp:
+      pass
+
     else:
-      print('Command not handled', node)
+      log('Command not handled: %s', node)
       raise AssertionError(node.tag)
 
   def DoWordAsExpr(self, node, local_symbols):
@@ -736,7 +836,9 @@ class OilPrinter:
 
   def DoWordInCommand(self, node, local_symbols):
     """
-    echo == must be changed to echo '==' because = is a reserved symbol.
+    New reserved symbols:
+      echo == must be changed to echo '==' because = is a reserved symbol.
+      echo @$foo -> echo "@$foo" because @ is reserved
 
     Problems: 
     rm --verbose=true
@@ -820,15 +922,43 @@ class OilPrinter:
       if (len(node.parts) == 1 and
           node.parts[0].tag == word_part_e.DoubleQuotedPart):
         dq_part = node.parts[0]
-        if (len(dq_part.parts) == 1 and
-            dq_part.parts[0].tag == word_part_e.SimpleVarSub):
-          vsub_part = dq_part.parts[0]
-          if vsub_part.token.id == Id.VSub_At:
-            # NOTE: This is off for double quoted part.  Hack to subtract 1.
-            self.cursor.PrintUntil(left_spid - 1)
-            self.cursor.SkipUntil(left_spid + 2)  # " then $@ then "
-            self.f.write('@Argv')
-            return  # Done replacing
+        # TODO: Double quoted part needs left and right IDs
+        #left, right = dq_part.spids
+
+        if len(dq_part.parts) == 1:
+          part0 = dq_part.parts[0]
+          if part0.tag == word_part_e.SimpleVarSub:
+            vsub_part = dq_part.parts[0]
+            if vsub_part.token.id == Id.VSub_At:
+              # NOTE: This is off for double quoted part.  Hack to subtract 1.
+              self.cursor.PrintUntil(left_spid - 1)
+              self.cursor.SkipUntil(left_spid + 2)  # " then $@ then "
+              self.f.write('@Argv')
+              return  # Done replacing
+
+            # "$1" -> $1, "$foo" -> $foo
+            if vsub_part.token.id in (Id.VSub_Number, Id.VSub_Name):
+              self.cursor.PrintUntil(left_spid - 1)
+              self.cursor.SkipUntil(left_spid + 2)
+              self.f.write(vsub_part.token.val)
+              return
+
+          # Single arith sub, command sub, etc.
+          # On the other hand, an unquoted one needs to turn into
+          #
+          # $(echo one two) -> @[echo one two]
+          # `echo one two` -> @[echo one two]
+          #
+          # ${var:-'the default'} -> @$(var or 'the default')
+          #
+          # $((1 + 2)) -> $(1 + 2) -- this is OK unquoted
+
+          elif part0.tag == word_part_e.CommandSubPart:
+
+            # TODO: Skip over the quotes
+            self.DoWordPart(part0, local_symbols)
+            return
+
 
       # It's None for here docs I think.
       #log("NODE %s", node)
@@ -918,7 +1048,7 @@ class OilPrinter:
         self.cursor.PrintUntil(spid + 1)
 
       elif op_id == Id.VSub_Bang:  # $!
-        self.f.write('$Bang')  # TODO
+        self.f.write('$BgPid')  # Job most recently placed in backgroudn
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_At:  # $@
@@ -926,15 +1056,11 @@ class OilPrinter:
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Pound:  # $#
-        self.f.write('$len(Argv)')  # should we have Argc?
+        self.f.write('$Argc')
         self.cursor.SkipUntil(spid + 1)
 
-      elif op_id == Id.VSub_Pound:  # $$
-        self.f.write('$Dollar') 
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_Amp:  # $&
-        self.f.write('$Amp') 
+      elif op_id == Id.VSub_Dollar:  # $$
+        self.f.write('$Pid') 
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Star:  # $*
@@ -950,7 +1076,7 @@ class OilPrinter:
         self.cursor.SkipUntil(spid + 1)
 
       else:
-        raise AssertionError
+        raise AssertionError(op_id)
 
     elif node.tag == word_part_e.BracedVarSub:
       left_spid, right_spid = node.spids
@@ -1025,7 +1151,7 @@ class OilPrinter:
       self.cursor.SkipUntil(left_spid + 1)
 
       # NOTE: This doesn't do anything yet.
-      self.DoArithExpr(node.anode)
+      self.DoArithExpr(node.anode, local_symbols)
       # Placeholder for now
       self.cursor.PrintUntil(right_spid - 1)
 
@@ -1034,10 +1160,10 @@ class OilPrinter:
       self.cursor.SkipUntil(right_spid + 1)
 
     else:
-      print('WordPart not handled', node)
+      log('WordPart not handled: %s', node)
       raise AssertionError(node.tag)
 
-  def DoArithExpr(self, node):
+  def DoArithExpr(self, node, local_symbols):
     if node.tag == arith_expr_e.ArithBinary:
       # Maybe I should just write the left span and right span for each word?
       #self.f.write(str(node.left))
@@ -1049,7 +1175,11 @@ class OilPrinter:
         #self.f.write('PLUS')
 
       #self.f.write(str(node.right))
+    elif node.tag == arith_expr_e.ArithWord:
+      self.DoWordInCommand(node.w, local_symbols)
+
     else:
+      log("Unhandled: %s", node)
       raise AssertionError(node.tag)
 
   def DoBoolExpr(self, node):
