@@ -1,0 +1,70 @@
+<html>
+
+<!--
+TODO: Would be nice to either:
+- scroll iframes together
+  - The conversion of osh to oil is line-for-line (but the AST isn't.)
+    - maybe scroll 2 of them together, and provide a textbox for the others
+
+- provide a line number text box
+
+- provide a search textbox
+  - API to scroll to text position?
+
+- fragment params:
+  - line to highlight?
+  - could even be the filename to load.  then you don't have to generate so
+  much code.
+-->
+
+<head>
+  <script type="text/javascript" src="osh-to-oil.js"></script>
+  <style>
+    iframe {
+      width: 700px;
+      height: 700px;
+    }
+    /* For AJAX errors */
+    #status {
+      text-align: center;
+      font-size: x-large;
+      color: darkred;
+    }
+  </style>
+</head>
+
+<body onload="onLoad(location.hash, globals, kStatusElem);"
+      onhashchange="onHashChange(location.hash, globals, kStatusElem);">
+
+<p>Back to <a href="FILES.html">file list</a></p>
+
+<p id="status"></p>
+
+<h2 id="title"></h2>
+
+<!--
+TODO: provide direct links too
+<p>
+Original Source: <a href="acpid.txt">acpid.txt</a><br/>
+AST in <a href="acpid-AST.html">HTML</a>, <a href="acpid-AST.txt">text</a><br/>
+<a href="acpid.oil">Auto-conversion to Oil</a><br/>
+</p>
+--<
+
+<p>
+<i>(Widen your browser until osh and oil code appears side by side)</i>
+</p>
+
+<!-- src filled in from URL hash -->
+<iframe id="orig" src=""></iframe>
+<iframe id="oil" src=""></iframe>
+<iframe id="ast" src=""></iframe>
+
+<!-- page globals -->
+<script type="text/javascript">
+  var globals = {};  // currently unused
+  var kStatusElem = document.getElementById('status');
+</script>
+
+</body>
+</html>

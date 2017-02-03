@@ -140,6 +140,18 @@ _parse-many() {
   shift 2
   # Rest of args are relative paths
 
+  { pushd $src_base >/dev/null
+    wc -l "$@"
+    popd >/dev/null
+  } > $dest_base/LINE-COUNTS.txt
+
+  # Don't call it index.html
+  make-index < $dest_base/LINE-COUNTS.txt > $dest_base/FILES.html
+
+  ln -s -f --verbose ../../../web/osh-to-oil.html $dest_base
+  ln -s -f --verbose ../../../web/osh-to-oil.js $dest_base
+  ln -s -f --verbose ../../../web/osh-to-oil-index.css $dest_base
+
   # Truncate the failure
   mkdir -p $dest_base
   echo -n '' >$dest_base/FAILED.txt
@@ -149,16 +161,37 @@ _parse-many() {
     sort |
     xargs -n 1 -- $0 _parse-and-copy-one $src_base $dest_base
 
-  # PROBLEM that can be solved with tables:
-  # using relative path to pass to wc -l
-  # wc -l "$@" >
-
-  { pushd $src_base >/dev/null
-    wc -l "$@"
-    popd >/dev/null
-  } > $dest_base/LINE-COUNTS.txt
-
   tree -p $dest_base
+}
+
+make-index() {
+  cat << EOF
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="osh-to-oil-index.css" />
+</head>
+<body>
+<p> <a href="..">Up</a> </p>
+
+<h2>Files in this Project</h2>
+
+<table>
+EOF
+  echo "<thead> <tr> <td align=right>Count</td> <td>Name</td> </tr> </thead>";
+  while read count name; do
+    echo -n "<tr> <td align=right>$count</td> "
+    if test $name == 'total'; then
+      echo -n "<td>$name</td>"
+    else
+      echo -n "<td><a href=\"osh-to-oil.html#${name}\">$name</a></td> </tr>"
+    fi
+    echo "</tr>"
+  done
+  cat << EOF
+</table>
+</body>
+</html>
+EOF
 }
 
 # generic helper

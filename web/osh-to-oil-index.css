@@ -1,0 +1,21 @@
+/* For the FILES.html index */
+
+thead {
+  font-weight: bold;
+  /*text-align: center;*/
+}
+
+table {
+  padding: 10px;  /* Padding makes it look nicer. */
+  margin: 0 auto;  /* center table on the page */
+  border-collapse: collapse;  /* this is like old cellpadding */
+}
+
+/* like cellspacing? */
+td {
+  padding: 5px;
+}
+
+h2 {
+  text-align: center;
+}
