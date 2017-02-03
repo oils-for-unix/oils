@@ -513,30 +513,34 @@ class OilPrinter:
       if node.words:
         first_word = node.words[0]
         ok, val, quoted = word.StaticEval(first_word)
-        if ok and val == '[':
-          last_word = node.words[-1]
-          # Check if last word is ]
-          ok, val, quoted = word.StaticEval(last_word)
-          if ok and val == ']':
-            # Replace [ with 'test'
-            self.cursor.PrintUntil(word.LeftMostSpanForWord(first_word))
+        word0_spid = word.LeftMostSpanForWord(first_word)
+        if ok and not quoted:
+          if val == '[':
+            last_word = node.words[-1]
+            # Check if last word is ]
+            ok, val, quoted = word.StaticEval(last_word)
+            if ok and not quoted and val == ']':
+              # Replace [ with 'test'
+              self.cursor.PrintUntil(word0_spid)
+              self.cursor.SkipUntil(word0_spid + 1)
+              self.f.write('test')
 
-            word1_spid = word.LeftMostSpanForWord(node.words[1])
-            assert word1_spid != -1
-            self.cursor.SkipUntil(word1_spid)
+              for w in node.words[1:-1]:
+                self.DoWordInCommand(w, local_symbols)
 
-            self.f.write('test ')
+              # Now omit ]
+              last_spid = word.LeftMostSpanForWord(last_word)
+              self.cursor.PrintUntil(last_spid - 1)  # Get the space before
+              self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
+              return
+            else:
+              raise RuntimeError('Got [ without ]')
 
-            for w in node.words[1:-1]:
-              self.DoWordInCommand(w, local_symbols)
-
-            # Now omit ]
-            last_spid = word.LeftMostSpanForWord(last_word)
-            self.cursor.PrintUntil(last_spid - 1)  # Get the space before
-            self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
+          elif val == '.':
+            self.cursor.PrintUntil(word0_spid)
+            self.cursor.SkipUntil(word0_spid + 1)
+            self.f.write('source')
             return
-          else:
-            raise RuntimeError('Got [ without ]')
 
       for w in node.words:
         self.DoWordInCommand(w, local_symbols)
@@ -909,9 +913,9 @@ class OilPrinter:
 
       # TODO: I think we have to print the beginning and the end?
 
-      left_spid = word.LeftMostSpanForWord(node)
+      #left_spid = word.LeftMostSpanForWord(node)
       #right_spid = word.RightMostSpanForWord(node)
-      right_spid = -1
+      #right_spid = -1
       #print('DoWordInCommand %s %s' % (left_spid, right_spid), file=sys.stderr)
 
       # Special case for "$@".  Wow this needs pattern matching!
@@ -922,8 +926,10 @@ class OilPrinter:
       if (len(node.parts) == 1 and
           node.parts[0].tag == word_part_e.DoubleQuotedPart):
         dq_part = node.parts[0]
+
         # TODO: Double quoted part needs left and right IDs
-        #left, right = dq_part.spids
+        left_spid, right_spid = dq_part.spids
+        assert right_spid != -1, right_spid
 
         if len(dq_part.parts) == 1:
           part0 = dq_part.parts[0]
@@ -931,15 +937,15 @@ class OilPrinter:
             vsub_part = dq_part.parts[0]
             if vsub_part.token.id == Id.VSub_At:
               # NOTE: This is off for double quoted part.  Hack to subtract 1.
-              self.cursor.PrintUntil(left_spid - 1)
-              self.cursor.SkipUntil(left_spid + 2)  # " then $@ then "
+              self.cursor.PrintUntil(left_spid)
+              self.cursor.SkipUntil(right_spid + 1)  # " then $@ then "
               self.f.write('@Argv')
               return  # Done replacing
 
             # "$1" -> $1, "$foo" -> $foo
             if vsub_part.token.id in (Id.VSub_Number, Id.VSub_Name):
-              self.cursor.PrintUntil(left_spid - 1)
-              self.cursor.SkipUntil(left_spid + 2)
+              self.cursor.PrintUntil(left_spid)
+              self.cursor.SkipUntil(right_spid + 1)
               self.f.write(vsub_part.token.val)
               return
 
@@ -953,21 +959,29 @@ class OilPrinter:
           #
           # $((1 + 2)) -> $(1 + 2) -- this is OK unquoted
 
-          elif part0.tag == word_part_e.CommandSubPart:
-
-            # TODO: Skip over the quotes
+          elif part0.tag == word_part_e.BracedVarSub:
+            # Skip over quote
+            self.cursor.PrintUntil(left_spid)
+            self.cursor.SkipUntil(left_spid + 1)
             self.DoWordPart(part0, local_symbols)
+            self.cursor.SkipUntil(right_spid + 1)
             return
 
+          elif part0.tag == word_part_e.CommandSubPart:
+            self.cursor.PrintUntil(left_spid)
+            self.cursor.SkipUntil(left_spid + 1)
+            self.DoWordPart(part0, local_symbols)
+            self.cursor.SkipUntil(right_spid + 1)
+            return
 
       # It's None for here docs I think.
       #log("NODE %s", node)
-      if left_spid is not None and left_spid >= 0:
+      #if left_spid is not None and left_spid >= 0:
         #span = self.arena.GetLineSpan(span_id)
         #print(span)
 
         #self.cursor.PrintUntil(left_spid)
-        pass
+        #pass
 
       # TODO: 'foo'"bar" should be "foobar", etc.
       # If any part is double quoted, you can always double quote the whole
@@ -975,9 +989,9 @@ class OilPrinter:
       for part in node.parts:
         self.DoWordPart(part, local_symbols)
 
-      if right_spid >= 0:
+      #if right_spid >= 0:
         #self.cursor.PrintUntil(right_spid)
-        pass
+        #pass
 
     else:
       raise AssertionError(node.tag)

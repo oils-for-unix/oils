@@ -64,7 +64,8 @@ _osh-to-oil-one() {
   local output=$2
 
   local stderr_file=${output}__osh-to-oil-err.txt
-  osh-to-oil $input > ${output}.oil 2> $stderr_file
+  # NOTE: Need text extension for some web servers.
+  osh-to-oil $input > ${output}.oil.txt 2> $stderr_file
   local status=$?
 
   return $status
@@ -106,32 +107,21 @@ _parse-and-copy-one() {
     <a href="$rel_path-AST.txt">$rel_path-AST.txt</a>
     <br/>
     <pre>
-    $(cat $output-err.txt)
+    $(cat ${output}__err.txt)
     </pre>
     <hr/>
 EOF
     return 1
   fi
-  #rm $output-err.txt
+  #rm ${output}__err.txt
 
   if ! _osh-html-one $input $output; then  # do HTML AST if text AST worked
     return 1
   fi
 
-  if ! _osh-to-oil-one $input $output; then
+  if ! _osh-to-oil-one $input $output; then  # convert to oil
     return 1
   fi
-
-  local filename=$(basename $rel_path)  # Used for links
-  cat > ${output}__index.html <<EOF
-<p>
-$rel_path<br/>
-<a href="${filename}.txt">Original Source: ${filename}.txt</a><br/>
-<a href="${filename}-AST.html">AST in HTML</a><br/>
-<a href="${filename}-AST.txt">AST in text</a><br/>
-<a href="${filename}.oil">Auto-conversion to Oil</a><br/>
-</p>
-EOF
 }
 
 _parse-many() {
@@ -139,6 +129,8 @@ _parse-many() {
   local dest_base=$2
   shift 2
   # Rest of args are relative paths
+
+  mkdir -p $dest_base
 
   { pushd $src_base >/dev/null
     wc -l "$@"
@@ -152,8 +144,7 @@ _parse-many() {
   ln -s -f --verbose ../../../web/osh-to-oil.js $dest_base
   ln -s -f --verbose ../../../web/osh-to-oil-index.css $dest_base
 
-  # Truncate the failure
-  mkdir -p $dest_base
+  # Truncate files
   echo -n '' >$dest_base/FAILED.txt
   echo -n '' >$dest_base/FAILED.html
 
@@ -223,7 +214,7 @@ oil-sketch() {
   local src=~/git/oil-sketch
   _parse-many \
     $src \
-    $RESULT_DIR/oil-sketch-parsed \
+    $RESULT_DIR/oil-sketch \
     $(cd $src && echo *.sh {awk,demo,make,misc,regex,tools}/*.sh)
 }
 
@@ -231,7 +222,7 @@ this-repo() {
   local src=$PWD
   _parse-many \
     $src \
-    $RESULT_DIR/oil-parsed \
+    $RESULT_DIR/oil \
     *.sh
 }
 
@@ -241,7 +232,7 @@ parse-aboriginal() {
   # We want word splitting
   _parse-many \
     $ABORIGINAL_DIR \
-    $RESULT_DIR/aboriginal-parsed \
+    $RESULT_DIR/aboriginal \
     $(find $ABORIGINAL_DIR -name '*.sh' -printf '%P\n')
 }
 
@@ -250,7 +241,7 @@ parse-initd() {
   # NOTE: These scripts don't end with *.sh
   _parse-many \
     $src \
-    $RESULT_DIR/initd-parsed \
+    $RESULT_DIR/initd \
     $(find $src -type f -a -executable -a -printf '%P\n')
 }
 
@@ -260,7 +251,7 @@ parse-debootstrap() {
   # NOTE: These scripts don't end with *.sh
   _parse-many \
     $src \
-    $RESULT_DIR/debootstrap-parsed \
+    $RESULT_DIR/debootstrap \
     $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
     $(find $src/scripts -type f -a -printf 'scripts/%P\n')
 }
@@ -296,7 +287,7 @@ parse-dokku() {
 
   time _parse-many \
     $src \
-    $RESULT_DIR/dokku-parsed \
+    $RESULT_DIR/dokku \
     $(find $src '(' -name '*.sh' -o -name dokku ')' -a -printf '%P\n')
 }
 

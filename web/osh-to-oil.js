@@ -46,9 +46,12 @@ function loadSource(sourceName, statusElem) {
   document.getElementById('title').innerHTML = sourceName;
 
   document.getElementById('orig').src = sourceName + '.txt';
-  document.getElementById('oil').src = sourceName + '.oil';
+  document.getElementById('oil').src = sourceName + '.oil.txt';
   document.getElementById('ast').src = sourceName + '-AST.html';
-  appendMessage(statusElem, "Loaded contents for " + sourceName);
+  // NOTE: There is no error checking here.  They will just see a 404 in the
+  // iframe pane.
+  // http://stackoverflow.com/questions/16499117/how-to-detect-an-error-404-in-an-iframe
+  //appendMessage(statusElem, "Loaded contents for " + sourceName);
 }
 
 function getNameFromHash(urlHash, statusElem) {

@@ -42,11 +42,23 @@ echo $Status $Argc
 OIL
 }
 
-unquote-vars() {
+unquote-subs() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo "$1" "$foo"
 OSH
 echo $1 $foo
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo "${foo}"
+OSH
+echo $(foo)
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo "$(echo hi)"
+OSH
+echo $[echo hi]
 OIL
 }
 
@@ -165,19 +177,26 @@ OIL
 }
 
 builtins() {
-  # Runtime option is setoption. Compile time is at top of file, with :option
-  # +errexit.  This aids compilation.
-  # could also be "bashoption" for deprecated stuff.
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-set -o errexit
-OSH
-setoption +errexit
-OIL
-
   osh0-oil3 << 'OSH' 3<< 'OIL'
 . lib.sh
 OSH
 source lib.sh
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+[ -f lib.sh ] && . lib.sh
+OSH
+test -f lib.sh && source lib.sh
+OIL
+
+  # Runtime option is setoption. Compile time is at top of file, with :option
+  # +errexit.  This aids compilation.
+  # could also be "bashoption" for deprecated stuff.
+  # Hm but this is the DEFAULT.
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+set -o errexit
+OSH
+setoption +errexit
 OIL
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
@@ -196,6 +215,18 @@ OSH
 oshEval('echo $?')  # call into osh!
 OIL
 
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+exec 1>&2  # stdout to stderr from now on
+OSH
+redir !1 > !2
+OIL
+
+  # TODO: Statically parseable [ invocations can be built in?
+  # But not dynamic ones like [ foo $op bar ].
+}
+
+
+export-readonly() {
   # Separate definition and attribute?
   osh0-oil3 << 'OSH' 3<< 'OIL'
 export FOO
@@ -213,15 +244,6 @@ OSH
 freeze FOO
 BAR = 'bar'
 OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-exec 1>&2  # stdout to stderr from now on
-OSH
-redir !1 > !2
-OIL
-
-  # TODO: Statically parseable [ invocations can be built in?
-  # But not dynamic ones like [ foo $op bar ].
 }
 
 redirect() {
@@ -295,7 +317,7 @@ OIL
   osh0-oil3 << 'OSH' 3<< 'OIL'
 FOO="${bar}" BAR="$(echo hi)" echo 2
 OSH
-env FOO="$(bar)" BAR="$[echo hi]" echo 2
+env FOO=$(bar) BAR=$[echo hi] echo 2
 OIL
 }
 
@@ -842,11 +864,12 @@ all-passing() {
   # Word stuff
   escaped-literal
   args-vars
-  unquote-vars
+  unquote-subs
 
   # Substitutions
   command-sub
   arith-sub
+  unquote-subs
 
   posix-func
   ksh-func
@@ -860,6 +883,9 @@ all-passing() {
   for-loop
   empty-for-loop
   args-for-loop
+
+  # Builtins
+  bracket-builtin
 }
 
 "$@"

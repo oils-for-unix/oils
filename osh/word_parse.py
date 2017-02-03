@@ -547,6 +547,11 @@ class WordParser(object):
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
     quoted_part = ast.DoubleQuotedPart()
+    left_spid = -1
+    right_spid = -1  # gets set later
+
+    if self.cur_token is not None:  # None in here doc case
+      left_spid = self.cur_token.span_id
 
     done = False
     while not done:
@@ -582,6 +587,7 @@ class WordParser(object):
           quoted_part.parts.append(ast.LiteralPart(self.cur_token))
         else:
           done = True  # assume Id.Right_DoubleQuote
+          right_spid = self.cur_token.span_id
 
       elif self.token_kind == Kind.Eof:
         if here_doc:  # here docs will have an EOF in their token stream
@@ -593,6 +599,7 @@ class WordParser(object):
       else:
         raise AssertionError(self.cur_token)
 
+    quoted_part.spids.extend((left_spid, right_spid))
     return quoted_part
 
   def _ReadCommandSubPart(self, token_type):
