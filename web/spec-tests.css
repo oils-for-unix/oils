@@ -1,0 +1,59 @@
+h1 {
+  text-align: center;
+}
+
+h2 {
+  text-align: center;
+}
+
+table {
+  margin: 0 auto;  /* center table on the page */
+  border-collapse: collapse;
+}
+p {
+  text-align: center;
+}
+
+thead {
+  font-weight: bold;
+}
+
+tfoot {  /* summary row */
+  font-weight: bold;
+}
+
+td {
+  padding: 0.4em;
+  text-align: right;
+}
+
+.case-desc {
+  text-align: left;
+}
+
+/* failure messages */
+.assertion {
+  color: darkred;
+}
+
+#details td {
+  vertical-align: top;  /* so the #anchor goes to top of cell */
+  text-align: left;
+  border-top: solid 1px;
+  border-color: lightgrey;
+}
+
+.pass { color: darkgreen; font-size: large; }
+.ok   { color: #660; font-size: large; }
+.n-i  { color: #660; font-size: large; }
+.bug  { color: #660; font-size: large; }
+.fail { color: darkred; font-size: large; }
+
+.osh-pass {
+  background-color: #e0ffe0;
+}
+
+.osh-fail {
+  background-color: #ffe0e0;
+}
+

@@ -1,0 +1,43 @@
+/* For spec test code listings */
+
+/* For highlighting specific lines.  Don't need an anchor! */
+:target {
+   background-color: palegoldenrod;
+}
+
+.num {
+  color: #666;
+  text-align: right;
+}
+
+.line {
+  white-space: pre;
+}
+
+.comm3 {
+  /*font-style: italic;*/
+  font-weight: bold;
+  color: #60a0b0;  /* this blue from Blog/pygments */
+}
+
+.comm1 {
+  color: #60a0b0
+}
+
+table {
+  border-collapse: collapse;
+  font-family: monospace;
+}
+
+td {
+  padding-top: 1px;
+  padding-bottom: 1px;
+  /*
+  padding-top: 0px;
+  padding-bottom: 0px;
+  */
+  /* The line number and code need margins */
+  padding-left: 1em;
+  padding-right: 1em;
+}
+

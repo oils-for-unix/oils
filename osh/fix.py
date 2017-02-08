@@ -51,15 +51,10 @@ class Cursor:
     self.next_span_id = next_span_id
 
 
-# Should this just take an arena, which has all three things?
-
-DEBUG_SPID = True
-DEBUG_SPID = False
-
-def PrintAsOil(arena, node):
+def PrintAsOil(arena, node, debug_spans):
   #print node
   #print(spans)
-  if DEBUG_SPID:
+  if debug_spans:
     for i, span in enumerate(arena.spans):
       line = arena.GetLine(span.line_id)
       piece = line[span.col : span.col + span.length]

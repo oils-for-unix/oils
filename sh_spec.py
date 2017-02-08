@@ -35,6 +35,8 @@ it will be a BUG.
 If one shell disagrees with others, that is generally a BUG.
 """
 
+import collections
+import cgi
 import json
 import optparse
 import os
@@ -236,40 +238,6 @@ def ParseTestFile(tokens):
   return test_cases
 
 
-# ANSI color constants
-_RESET = '\033[0;0m'
-_BOLD = '\033[1m'
-
-_RED = '\033[31m'
-_GREEN = '\033[32m'
-_YELLOW = '\033[33m'
-
-
-COLOR_FAIL = ''.join([_RED, _BOLD, 'FAIL', _RESET])
-COLOR_BUG = ''.join([_YELLOW, _BOLD, 'BUG', _RESET])
-COLOR_NI = ''.join([_YELLOW, _BOLD, 'N-I', _RESET])
-COLOR_OK = ''.join([_YELLOW, _BOLD, 'OK', _RESET])
-COLOR_PASS = ''.join([_GREEN, _BOLD, 'PASS', _RESET])
-
-
-def PrintResultRow(row):
-  for result in row:
-    if result == Result.FAIL:
-      c = COLOR_FAIL
-    elif result == Result.BUG:
-      c = COLOR_BUG
-    elif result == Result.NI:
-      c = COLOR_NI
-    elif result == Result.OK:
-      c = COLOR_OK
-    elif result == Result.PASS:
-      c = COLOR_PASS
-    else:
-      raise AssertionError
-    sys.stdout.write(c)
-    sys.stdout.write('\t')
-
-
 def CreateStringAssertion(d, key, assertions, qualifier=False):
   found = False
 
@@ -358,7 +326,7 @@ class EqualAssertion(object):
   def Check(self, shell, record):
     actual = record[self.key]
     if actual != self.expected:
-      msg = '%s %s: Expected %r, got %r' % (shell, self.key, self.expected,
+      msg = '[%s %s] Expected %r, got %r' % (shell, self.key, self.expected,
           actual)
       return Result.FAIL, msg
     if self.qualifier == 'BUG':  # equal, but known bad
@@ -393,23 +361,18 @@ class NonzeroAssertion(object):
 
 PIPE = subprocess.PIPE
 
-def RunCases(cases, shells, case_predicate, verbose):
+def RunCases(cases, case_predicate, shells, out):
+  """
+  Run a list of test 'cases' for all 'shells' and write output to 'out'.
+  """
   #pprint.pprint(cases)
 
-  sys.stdout.write(_BOLD)
-  sys.stdout.write('case\tline\t')  # for line number and test number
-  for sh_label, _ in shells:
-    sys.stdout.write(sh_label)
-    sys.stdout.write('\t')
-  sys.stdout.write(_RESET)
-  sys.stdout.write('\n')
+  out.WriteHeader(shells)
 
-  num_failed = 0
-  num_bug = 0
-  num_ni = 0
-  num_ok = 0
-  num_passed = 0
-  num_skipped = 0
+  stats = collections.defaultdict(int)
+  stats['num_cases'] = len(cases)
+  stats['osh_num_passed'] = 0
+  stats['osh_num_failed'] = 0
 
   for i, case in enumerate(cases):
     line_num = case['line_num']
@@ -417,20 +380,21 @@ def RunCases(cases, shells, case_predicate, verbose):
     code = case['code']
 
     if not case_predicate(i, case):
-      num_skipped += 1
+      stats['num_skipped'] += 1
       continue
 
     #print code
 
-    debug_info = []  # by shell
     result_row = []
+
+    # TODO: copy this source somewhere
+    code_utf8 = code.encode('utf-8')
 
     for sh_label, sh_path in shells:
 
-      #print '+', shell, case['desc']
       argv = [sh_path]  # TODO: Add flags
       p = subprocess.Popen(argv, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-      p.stdin.write(code.encode('utf-8'))
+      p.stdin.write(code_utf8)
       p.stdin.close()
 
       actual = {}
@@ -457,43 +421,31 @@ def RunCases(cases, shells, case_predicate, verbose):
           messages.append(msg)
 
       if cell_result != Result.PASS:
-        debug_info.append(
-            (sh_path, actual['stdout'], actual['stderr'], messages))
+        d = (i, sh_label, actual['stdout'], actual['stderr'], messages)
+        out.AddDetails(d)
 
       result_row.append(cell_result)
 
       if cell_result == Result.FAIL:
-        num_failed += 1
+        stats['num_failed'] += 1
+        if sh_label == 'osh':
+          stats['osh_num_failed'] += 1
       elif cell_result == Result.BUG:
-        num_bug += 1
+        stats['num_bug'] += 1
       elif cell_result == Result.NI:
-        num_ni += 1
+        stats['num_ni'] += 1
       elif cell_result == Result.OK:
-        num_ok += 1
+        stats['num_ok'] += 1
       elif cell_result == Result.PASS:
-        num_passed += 1
+        stats['num_passed'] += 1
+        if sh_label == 'osh':
+          stats['osh_num_passed'] += 1
       else:
         raise AssertionError
 
-    sys.stdout.write('%3d\t%3d\t' % (i, line_num))
-    PrintResultRow(result_row)
-    print(desc)  # repr(code)[:30]
+    out.WriteRow(i, line_num, result_row, desc)
 
-    if verbose:
-      for shell, stdout, stderr, messages in debug_info:
-        for m in messages:
-          print(m)
-        print('%s stdout:' % shell)
-        print(stdout)
-        print('%s stderr:' % shell)
-        print(stderr)
-
-  print(
-      '%d passed, %d ok, %d known unimplemented, %d known bugs, '
-      '%d failed, %d skipped' % (num_passed, num_ok, num_ni, num_bug,
-        num_failed, num_skipped))
-
-  return num_failed == 0
+  return stats
 
 
 RANGE_RE = re.compile('(\d+) \s* - \s* (\d+)', re.VERBOSE)
@@ -532,6 +484,230 @@ class RegexPredicate(object):
     return bool(self.desc_re.search(case['desc']))
 
 
+# ANSI color constants
+_RESET = '\033[0;0m'
+_BOLD = '\033[1m'
+
+_RED = '\033[31m'
+_GREEN = '\033[32m'
+_YELLOW = '\033[33m'
+
+
+COLOR_FAIL = ''.join([_RED, _BOLD, 'FAIL', _RESET])
+COLOR_BUG = ''.join([_YELLOW, _BOLD, 'BUG', _RESET])
+COLOR_NI = ''.join([_YELLOW, _BOLD, 'N-I', _RESET])
+COLOR_OK = ''.join([_YELLOW, _BOLD, 'ok', _RESET])
+COLOR_PASS = ''.join([_GREEN, _BOLD, 'pass', _RESET])
+
+
+ANSI_CELLS = {
+    Result.FAIL: COLOR_FAIL,
+    Result.BUG: COLOR_BUG,
+    Result.NI: COLOR_NI,
+    Result.OK: COLOR_OK,
+    Result.PASS: COLOR_PASS,
+}
+
+HTML_CELLS = {
+    Result.FAIL: '<td class="fail">FAIL',
+    Result.BUG: '<td class="bug">BUG',
+    Result.NI: '<td class="n-i">N-I',
+    Result.OK: '<td class="ok">ok',
+    Result.PASS: '<td class="pass">pass',
+}
+
+
+class ColorOutput(object):
+
+  def __init__(self, f, verbose):
+    self.f = f
+    self.verbose = verbose
+    self.details = []
+
+  def AddDetails(self, entry):
+    self.details.append(entry)
+
+  def BeginCases(self, test_file):
+    self.f.write('%s\n' % test_file)
+
+  def WriteHeader(self, shells):
+    self.f.write(_BOLD)
+    self.f.write('case\tline\t')  # for line number and test number
+    for sh_label, _ in shells:
+      self.f.write(sh_label)
+      self.f.write('\t')
+    self.f.write(_RESET)
+    self.f.write('\n')
+
+  def WriteRow(self, i, line_num, row, desc):
+    self.f.write('%3d\t%3d\t' % (i, line_num))
+
+    for result in row:
+      c = ANSI_CELLS[result]
+      self.f.write(c)
+      self.f.write('\t')
+
+    self.f.write(desc)
+    self.f.write('\n')
+
+    if self.verbose:
+      self._WriteDetailsAsText(self.details)
+      self.details.clear()
+
+  def _WriteDetailsAsText(self, details):
+    for case_index, shell, stdout, stderr, messages in details:
+      print('case: %d' % case_index, file=self.f)
+      for m in messages:
+        print(m, file=self.f)
+      print('%s stdout:' % shell, file=self.f)
+      print(stdout.decode('utf-8'), file=self.f)
+      print('%s stderr:' % shell, file=self.f)
+      print(stderr.decode('utf-8'), file=self.f)
+      print('', file=self.f)
+
+  def _WriteStats(self, stats):
+    self.f.write(
+        '%(num_passed)d passed, %(num_ok)d ok, '
+        '%(num_ni)d known unimplemented, %(num_bug)d known bugs, '
+        '%(num_failed)d failed, %(num_skipped)d skipped\n' % stats)
+
+  def EndCases(self, stats):
+    self._WriteStats(stats)
+
+
+class AnsiOutput(ColorOutput):
+  pass
+
+
+class HtmlOutput(ColorOutput):
+
+  def __init__(self, f, verbose, spec_name, sh_labels, cases):
+    ColorOutput.__init__(self, f, verbose)
+    self.spec_name = spec_name
+    self.sh_labels = sh_labels  # saved from header
+    self.cases = cases  # for linking to code
+
+  def _SourceLink(self, line_num, desc):
+    return '<a href="%s.test.html#L%d">%s</a>' % (
+        self.spec_name, line_num, cgi.escape(desc))
+
+  def BeginCases(self, test_file):
+    self.f.write('''
+<html>
+  <head>
+    <link href="spec-tests.css" rel="stylesheet">
+  </head>
+  <body>
+    <h2>%s</h2>
+    <table>
+    ''' % test_file)
+
+  def EndCases(self, stats):
+    self.f.write('</table>\n')
+    self.f.write('<p>')
+    self._WriteStats(stats)
+    self.f.write('</p>')
+
+    # TODO:
+    # - Link to test cases
+    if self.details:
+      self._WriteDetails()
+
+    self.f.write('</body></html>')
+
+  def _WriteDetails(self):
+    self.f.write("<h2>Details on runs that didn't PASS</h2>")
+    self.f.write('<table id="details">')
+
+    for case_index, sh_label, stdout, stderr, messages in self.details:
+      self.f.write('<tr>')
+      self.f.write('<td><a name="details-%s-%s"></a><b>%s</b></td>' % (
+        case_index, sh_label, sh_label))
+
+      self.f.write('<td>')
+
+      # Write description and link to the code
+      case = self.cases[case_index]
+      line_num = case['line_num']
+      desc = case['desc']
+      self.f.write('%d ' % case_index)
+      self.f.write(self._SourceLink(line_num, desc))
+      self.f.write('<br/><br/>\n')
+
+      for m in messages:
+        self.f.write('<span class="assertion">%s</span><br/>\n' % cgi.escape(m))
+      if messages:
+        self.f.write('<br/>\n')
+
+      def _WriteRaw(s):
+        self.f.write('<pre>')
+        self.f.write(cgi.escape(s.decode('utf-8')))
+        self.f.write('</pre>')
+
+      self.f.write('<i>stdout:</i> <br/>\n')
+      _WriteRaw(stdout)
+
+      self.f.write('<i>stderr:</i> <br/>\n')
+      _WriteRaw(stderr)
+
+      self.f.write('</td>')
+      self.f.write('</tr>')
+
+    self.f.write('</table>')
+
+  def WriteHeader(self, shells):
+    # TODO: Use oil template language for this...
+    self.f.write('''
+<thead>
+  <tr>
+  ''')
+
+    columns = ['case'] + [sh_label for sh_label, _ in shells]
+    for c in columns:
+      self.f.write('<td>%s</td>' % c)
+    self.f.write('<td class="case-desc">description</td>')
+
+    self.f.write('''
+  </tr>
+</thead>
+''')
+
+  def WriteRow(self, i, line_num, row, desc):
+    self.f.write('<tr>')
+    self.f.write('<td>%3d</td>' % i)
+
+    non_passing = False
+
+    for result in row:
+      c = HTML_CELLS[result]
+      if result != Result.PASS:
+        non_passing = True
+
+      self.f.write(c)
+      self.f.write('</td>')
+      self.f.write('\t')
+
+    self.f.write('<td class="case-desc">')
+    self.f.write(self._SourceLink(line_num, desc))
+    self.f.write('</td>')
+    self.f.write('</tr>')
+
+    # Show row with details link.
+    if non_passing:
+      self.f.write('<tr>')
+      self.f.write('<td></td>')  # for the number
+
+      for col_index, result in enumerate(row):
+        self.f.write('<td>')
+        if result != Result.PASS:
+          sh_label = self.sh_labels[col_index]
+          self.f.write('<a href="#details-%s-%s">details</a>' % (i, sh_label))
+        self.f.write('</td>')
+
+      self.f.write('<td></td>')  # for the description
+      self.f.write('</tr>')
+
+
 def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('test_sh.py [options] TEST_FILE shell...')
@@ -548,6 +724,15 @@ def Options():
   p.add_option(
       '--list', dest='do_list', action='store_true', default=None,
       help='Just list tests')
+  p.add_option(
+      '--format', dest='format', choices=['ansi', 'html'], default='ansi',
+      help="Output format (default 'ansi')")
+  p.add_option(
+      '--stats-file', dest='stats_file', default=None,
+      help="File to write stats to")
+  p.add_option(
+      '--stats-template', dest='stats_template', default='',
+      help="Python format string for stats")
 
   return p
 
@@ -564,10 +749,17 @@ def main(argv):
 
   shells = argv[2:]
 
+  shell_pairs = []
+  for path in shells:
+    name, _ = os.path.splitext(path)
+    label = os.path.basename(name)
+    shell_pairs.append((label, path))
+
   with open(test_file) as f:
     tokens = Tokenizer(LineIter(f))
     cases = ParseTestFile(tokens)
 
+  # List test cases and return
   if opts.do_list:
     for i, case in enumerate(cases):
       if opts.verbose:  # print the raw dictionary for debugging
@@ -585,20 +777,40 @@ def main(argv):
   else:
     case_predicate = lambda i, case: True
 
-  shell_pairs = []
-  for path in shells:
-    name, _ = os.path.splitext(path)
-    label = os.path.basename(name)
-    shell_pairs.append((label, path))
+  # Set up output style.  Also see asdl/format.py
+  if opts.format == 'ansi':
+    out = AnsiOutput(sys.stdout, opts.verbose)
+  elif opts.format == 'html':
+    spec_name = os.path.basename(test_file)
+    spec_name = spec_name.split('.')[0]
 
-  success = RunCases(cases, shell_pairs, case_predicate, opts.verbose)
-  if not success:
-    sys.exit(1)
+    sh_labels = [label for label, _ in shell_pairs]
+
+    out = HtmlOutput(sys.stdout, opts.verbose, spec_name, sh_labels, cases)
+  else:
+    raise AssertionError
+
+  out.BeginCases(os.path.basename(test_file))
+  stats = RunCases(cases, case_predicate, shell_pairs, out)
+  out.EndCases(stats)
+
+  if opts.stats_file:
+    with open(opts.stats_file, 'w') as f:
+      f.write(opts.stats_template % stats)
+      f.write('\n')  # bash 'read' requires a newline
+
+  if stats['num_failed'] == 0:
+    #if stats['osh_num_passed'] == 0:
+    #  print('*** Exit with status 2 because osh not tested', file=sys.stderr)
+    #  return 2  # Change success to exit code 2 if we didn't run osh
+    return 0
+  else:
+    return 1
 
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

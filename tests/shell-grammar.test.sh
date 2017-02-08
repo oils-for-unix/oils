@@ -33,7 +33,7 @@ echo word_a && echo word_b || echo
 ### Invalid token
 invalid
 # TODO: change these to qualifiers!
-# status: nonzero
+# status: 99
 
 ### Filename Redirect
 echo 2>filename
@@ -157,7 +157,7 @@ case word_a in
     echo
     ;;
 esac
-# status: nonzero
+# status: 99
 
 
 ### Case with last dsemi on same line
@@ -185,7 +185,7 @@ case word_a in word_b) echo word_b;; word_c) echo word_c; esac
 ### Case all on one line without trailing ;; or ;
 # My ANTLR parsers don't fail here and they should.
 case word_a in word_b) echo word_b;; word_c) echo word_c esac
-# status: nonzero
+# status: 99
 
 ### case: Using ; instead of ;;
 case word_a in
@@ -195,7 +195,7 @@ case word_a in
     echo
     ;;
 esac
-# status: nonzero
+# status: 99
 
 
 ### Function def

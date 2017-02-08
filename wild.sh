@@ -245,6 +245,16 @@ parse-initd() {
     $(find $src -type f -a -executable -a -printf '%P\n')
 }
 
+parse-pixelb-scripts() {
+  local src=~/git/other/pixelb-scripts
+  # NOTE: These scripts don't end with *.sh
+  _parse-many \
+    $src \
+    $RESULT_DIR/pixelb-scripts \
+    $(find $src \( -name .git -a -prune \) -o \
+                \(  -type f -a -executable -a -printf '%P\n' \) )
+}
+
 parse-debootstrap() {
   local src=~/git/basis-build/_tmp/debootstrap-1.0.48+deb7u2
 

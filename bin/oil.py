@@ -142,6 +142,10 @@ def Options():
       default=False,
       help='Fix code')
   p.add_option(
+      '--debug-spans', dest='debug_spans', action='store_true',
+      help='Print a debug representation of line spans.  '
+           'Must use --fix.')
+  p.add_option(
       '--print-status', dest='print_status', action='store_true',
       default=False,
       help='Print command status after execution')
@@ -326,7 +330,7 @@ def OshMain(argv):
       status = 0
 
   if opts.fix:
-    fix.PrintAsOil(arena, node)
+    fix.PrintAsOil(arena, node, opts.debug_spans)
   return status
 
 
