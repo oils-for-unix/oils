@@ -15,21 +15,16 @@ readonly BUSYBOX_ASH=_tmp/shells/ash
 
 readonly OSH=bin/osh
 
+# ash and dash are similar, so not including ash by default.  zsh is not quite
+# POSIX.
+readonly REF_SHELLS=($DASH $BASH $MKSH)
+
 #
 # Helpers
 #
 
 sh-spec() {
   ./sh_spec.py "$@"
-}
-
-# ash and dash are similar, so not including it by default.
-readonly REF_SHELLS=($DASH $BASH $MKSH)
-
-ref-shells() {
-  local test_script=$1
-  shift
-  sh-spec $test_script "${REF_SHELLS[@]}" "$@"
 }
 
 #
@@ -64,131 +59,133 @@ trace-var-sub() {
 # - need a "nonzero" status
 
 smoke() {
-  sh-spec tests/smoke.test.sh $DASH $BASH $OSH "$@"
+  sh-spec tests/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Regress bugs
 bugs() {
-  sh-spec tests/bugs.test.sh $DASH $BASH $OSH "$@"
+  sh-spec tests/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Regress bugs
 blog1() {
-  sh-spec tests/blog1.test.sh $DASH $BASH $MKSH $ZSH "$@"
+  sh-spec tests/blog1.test.sh ${REF_SHELLS[@]} $ZSH "$@"
 }
 
 comments() {
-  sh-spec tests/comments.test.sh $DASH $BASH $MKSH $OSH "$@"
+  sh-spec tests/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # TODO(pysh): Implement ${foo:-a b c}
 word-split() {
-  sh-spec tests/word-split.test.sh $DASH $BASH $MKSH $OSH "$@"
+  sh-spec tests/word-split.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # 'do' -- detected statically as syntax error?  hm.
 assign() {
-  ref-shells tests/assign.test.sh $OSH "$@" 
-}
-
-append() {
-  sh-spec tests/append.test.sh $BASH $MKSH "$@" 
+  sh-spec tests/assign.test.sh ${REF_SHELLS[@]} $OSH "$@" 
 }
 
 # Need to fix $ tokens, and $''
 quote() {
-  sh-spec tests/quote.test.sh $DASH $BASH $MKSH $OSH "$@"
+  sh-spec tests/quote.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 loop() {
-  ref-shells tests/loop.test.sh $OSH "$@"
+  sh-spec tests/loop.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Not implemented in osh at all.  Need glob matching of words.
 case_() {
-  ref-shells tests/case_.test.sh $OSH "$@"
+  sh-spec tests/case_.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 if_() {
-  ref-shells tests/if_.test.sh $ZSH $OSH "$@"
+  sh-spec tests/if_.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 # NOTE: osh uses external test!  But that's OK for now.
 test-builtin() {
-  ref-shells tests/test-builtin.test.sh $OSH "$@"
+  sh-spec tests/test-builtin.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 builtins() {
-  ref-shells tests/builtins.test.sh $OSH "$@"
+  sh-spec tests/builtins.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 func() {
-  ref-shells tests/func.test.sh $OSH "$@"
+  sh-spec tests/func.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # pysh failures: because of Python glob library
 glob() {
-  sh-spec tests/glob.test.sh $DASH $BASH $MKSH $BUSYBOX_ASH $OSH "$@"
-}
-
-extended-glob() {
-  # Do NOT use dash here.  Brace sub breaks things.
-  sh-spec tests/extended-glob.test.sh $BASH $MKSH "$@"
+  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
 arith() {
-  ref-shells tests/arith.test.sh $ZSH $OSH "$@"
-}
-
-arith-context() {
-  sh-spec tests/arith-context.test.sh $BASH $MKSH $ZSH $OSH "$@"
+  sh-spec tests/arith.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 # pysh failures: case not implemented
 command-sub() {
-  ref-shells tests/command-sub.test.sh $OSH "$@"
-}
-
-process-sub() {
-  # mksh and dash don't support it
-  sh-spec tests/process-sub.test.sh $BASH $ZSH $OSH "$@"
+  sh-spec tests/command-sub.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 pipeline() {
-  ref-shells tests/pipeline.test.sh $ZSH $OSH "$@"
+  sh-spec tests/pipeline.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 explore-parsing() {
-  ref-shells tests/explore-parsing.test.sh $OSH "$@"
+  sh-spec tests/explore-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 here-doc() {
-  ref-shells tests/here-doc.test.sh $OSH "$@"
+  sh-spec tests/here-doc.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Need to handle all kinds of redirects
 redirect() {
   # BUG: osh treats stdin as stdout!  Fix this.
-  ref-shells tests/redirect.test.sh $OSH "$@"
+  sh-spec tests/redirect.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 posix() {
-  ref-shells tests/posix.test.sh $OSH "$@"
+  sh-spec tests/posix.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # DONE -- pysh is the most conformant!
 tilde() {
-  ref-shells tests/tilde.test.sh $OSH "$@"
+  sh-spec tests/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
+var-sub() {
+  sh-spec tests/var-sub.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
+var-sub-quote() {
+  sh-spec tests/var-sub-quote.test.sh ${REF_SHELLS[@]} $OSH "$@"
+}
+
+
 # 
-# Non-POSIX extensions: arrays, brace expansion, and [[.
+# Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
 #
+
+# There as many non-POSIX arithmetic contexts.
+arith-context() {
+  sh-spec tests/arith-context.test.sh $BASH $MKSH $ZSH $OSH "$@"
+}
 
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
   sh-spec tests/array.test.sh $BASH $MKSH $OSH "$@"
+}
+
+# += is not POSIX and not in dash.
+append() {
+  sh-spec tests/append.test.sh $BASH $MKSH "$@" 
 }
 
 # associative array
@@ -201,11 +198,6 @@ assoc-zsh() {
   sh-spec tests/assoc-zsh.test.sh $ZSH "$@"
 }
 
-brace-expansion() {
-  # NOTE: being a korn shell, mksh has brace expansion.  But dash doesn't!
-  sh-spec tests/brace-expansion.test.sh $BASH $MKSH "$@"
-}
-
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
@@ -214,21 +206,29 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec tests/dparen.test.sh $BASH $MKSH $ZSH $OSH "$@"
+  sh-spec tests/dparen.test.sh --osh-failures-allowed 1 $BASH $MKSH $ZSH $OSH "$@"
+}
+
+brace-expansion() {
+  # NOTE: being a korn shell, mksh has brace expansion.  But dash doesn't!
+  sh-spec tests/brace-expansion.test.sh $BASH $MKSH "$@"
 }
 
 regex() {
   sh-spec tests/regex.test.sh $BASH $ZSH "$@"
 }
 
-var-sub() {
-  ref-shells tests/var-sub.test.sh $ZSH $OSH "$@"
+process-sub() {
+  # mksh and dash don't support it
+  sh-spec tests/process-sub.test.sh $BASH $ZSH $OSH "$@"
 }
 
-var-sub-quote() {
-  ref-shells tests/var-sub-quote.test.sh $OSH "$@"
+extended-glob() {
+  # Do NOT use dash here.  Brace sub breaks things.
+  sh-spec tests/extended-glob.test.sh $BASH $MKSH "$@"
 }
 
+# ${!var} syntax -- oil should replace this with associative arrays.
 var-ref() {
   sh-spec tests/var-ref.test.sh $BASH $MKSH "$@"
 }

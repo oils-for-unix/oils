@@ -733,6 +733,9 @@ def Options():
   p.add_option(
       '--stats-template', dest='stats_template', default='',
       help="Python format string for stats")
+  p.add_option(
+      '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
+      default=0, help="Allow this number of osh failures")
 
   return p
 
@@ -805,6 +808,15 @@ def main(argv):
     #  return 2  # Change success to exit code 2 if we didn't run osh
     return 0
   else:
+    allowed = opts.osh_failures_allowed
+    all_count = stats['num_failed'] 
+    osh_count = stats['osh_num_failed']
+    # If we got the allowed number of failures, exit 0.
+    if allowed != 0 and allowed == all_count and all_count == osh_count:
+      print('*** Got %d allowed osh failures, exit with status 0' % allowed,
+          file=sys.stderr)
+      return 0
+
     return 1
 
 

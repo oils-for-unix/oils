@@ -127,10 +127,14 @@ EOF
     sum_osh_num_failed += osh_num_failed
     num_rows += 1
 
-    if (status == 0 && osh_num_passed != 0) {
+    if (osh_num_failed != 0) {
+      if (status == 0) {
+        css_class = "osh-allow-fail"
+      } else {
+        css_class = "osh-fail"
+      }
+    } else if (status == 0 && osh_num_passed != 0) {
       css_class = "osh-pass"
-    } else if (osh_num_failed != 0) {
-      css_class = "osh-fail"
     } else {
       css_class = ""
     }
