@@ -319,6 +319,8 @@ LEXER_DEF[LexMode.ARITH] = \
 
 # Notes on BASH_REGEX states
 #
+# From bash manual:
+#
 # - Any part of the pattern may be quoted to force the quoted portion to be
 # matched as a string.
 # - Bracket expressions in regular expressions must be treated carefully, since
@@ -330,3 +332,5 @@ LEXER_DEF[LexMode.ARITH] = \
 #
 # TODO: For testing, write a script to extract and save regexes... and compile
 # them with regcomp.  I've only seen constant regexes.
+#
+# From code: ( | ) are treated special.

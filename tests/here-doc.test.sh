@@ -59,6 +59,7 @@ $(a)
 # OK mksh status: 1
 
 ### Here doc and < redirect -- last one wins
+echo hello >tests/hello.txt  # temporary fix
 cat <<EOF <tests/hello.txt
 here
 EOF

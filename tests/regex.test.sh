@@ -30,17 +30,33 @@
 # backslashes are used both by the shell and regular expressions to remove the
 # special meaning from the following character. The following two sets of
 # commands are not equivalent: 
+#
+# From bash code: ( | ) are treated special.  Normally they must be quoted, but
+# they can be UNQUOTED in BASH_REGEX state.  In fact they can't be quoted!
 
+### Match is unanchored at both ends
+[[ 'bar' =~ a ]] && echo true
+# stdout: true
+
+### Failed match
+[[ 'bar' =~ X ]] && echo true
+# stdout-json: ""
+
+### Regex quoted with \ -- preferred in bash
+[[ 'a b' =~ ^(a\ b)$ ]] && echo true
+# stdout: true
 
 ### Regex quoted with single quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ '^(a b)$' ]] && echo true
 # stdout: true
+# OK bash stdout-json: ""
 
 ### Regex quoted with double quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ "^(a b)$" ]] && echo true
 # stdout: true
+# OK bash stdout-json: ""
 
 ### Fix single quotes by storing in variable
 pat='^(a b)$'
@@ -56,15 +72,13 @@ pat="^(a b)$"
 pat="^(a b)$"
 [[ 'a b' =~ "$pat" ]] && echo true
 # stdout: true
+# OK bash stdout-json: ""
 
-### Regex quoted with \
-[[ 'a b' =~ ^(a\ b)$ ]] && echo true
-# stdout: true
-
-### Using a regex with ==, to prove the lexical state is different
+### Regex with == and not =~ is parse error, different lexer mode required
 # They both give a syntax error.  This is lame.
 [[ '^(a b)$' == ^(a\ b)$ ]] && echo true
-# stdout: true
+# status: 2
+# OK zsh status: 1
 
 ### Omitting ( )
 [[ '^a b$' == ^a\ b$ ]] && echo true
@@ -74,7 +88,8 @@ pat="^(a b)$"
 # Are they trying to PARSE the regex?  Do they feed the buffer directly to
 # regcomp()?
 [[ 'a b' =~ ^)a\ b($ ]] && echo true
-# stdout: true
+# status: 2
+# OK zsh status: 1
 
 ### Regex with char class
 # For some reason it doesn't work without parens?
@@ -83,6 +98,12 @@ pat="^(a b)$"
 
 ### Operators lose meaning in () in regex state (BASH_REGEX_CAHRS)
 [[ '< >' =~ (< >) ]] && echo true
+# stdout: true
+# N-I zsh stdout-json: ""
+# N-I zsh status: 1
+
+### Regex with |
+[[ 'bar' =~ foo|bar ]] && echo true
 # stdout: true
 # N-I zsh stdout-json: ""
 # N-I zsh status: 1

@@ -16,6 +16,7 @@ for i in ; do
   echo $i
 done
 # stdout-json: ""
+# BUG mksh stdout-json: "1\n2\n3\n"
 
 ### for loop with invalid identifier
 # should be compile time error, but runtime error is OK too
@@ -24,7 +25,7 @@ for - in a b c; do
 done
 # stdout-json: ""
 # status: 2
-# OK bash status: 1
+# OK bash/mksh status: 1
 
 ### using loop var outside loop
 func() {

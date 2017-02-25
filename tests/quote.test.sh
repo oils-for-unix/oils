@@ -81,14 +81,12 @@ echo foo\
 $
 # stdout: foo$
 
-### $$ split over multiple lines should not give PID
-# But allow it
+### $? split over multiple lines
+# Same with $$, etc.  OSH won't do this because $? is a single token.
 echo $\
-$
-# stdout: $$
-# OK bash/mksh stdout: TODO
-# regex of \d+?
-
+?
+# stdout: $?
+# OK bash/mksh stdout: 0
 
 #
 # Bad quotes

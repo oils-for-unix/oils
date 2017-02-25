@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ### Leading redirect
+echo hello >tests/hello.txt  # temporary fix
 <tests/hello.txt cat
 # stdout: hello
 
@@ -57,7 +58,7 @@ cat _tmp/file-redir2.txt
 
 ### Descriptor redirect with filename
 # Should be a syntax error, but bash allows this.
-echo one 1>&out
+echo one 1>&nonexistent-filename__
 # status: 2
 # stdout-json: ""
 # OK  mksh status: 1
@@ -109,10 +110,10 @@ cat $f
 # stdout-json: "1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 "
 
 ### Named file descriptor
-exec {myfd}< tests/hello.txt
-read line <& $myfd
-echo $line
-# stdout: hello
+exec {myfd}> _tmp/named-fd.txt
+echo named-fd-contents >& $myfd
+cat _tmp/named-fd.txt
+# stdout: named-fd-contents
 # N-I dash/mksh stdout-json: ""
 
 

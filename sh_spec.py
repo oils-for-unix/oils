@@ -598,7 +598,7 @@ class HtmlOutput(ColorOutput):
     <link href="spec-tests.css" rel="stylesheet">
   </head>
   <body>
-    <h2>%s</h2>
+    <h2>Results for %s</h2>
     <table>
     ''' % test_file)
 
@@ -608,8 +608,6 @@ class HtmlOutput(ColorOutput):
     self._WriteStats(stats)
     self.f.write('</p>')
 
-    # TODO:
-    # - Link to test cases
     if self.details:
       self._WriteDetails()
 
@@ -690,22 +688,22 @@ class HtmlOutput(ColorOutput):
     self.f.write('<td class="case-desc">')
     self.f.write(self._SourceLink(line_num, desc))
     self.f.write('</td>')
-    self.f.write('</tr>')
+    self.f.write('</tr>\n')
 
     # Show row with details link.
     if non_passing:
       self.f.write('<tr>')
-      self.f.write('<td></td>')  # for the number
+      self.f.write('<td class="details-row"></td>')  # for the number
 
       for col_index, result in enumerate(row):
-        self.f.write('<td>')
+        self.f.write('<td class="details-row">')
         if result != Result.PASS:
           sh_label = self.sh_labels[col_index]
           self.f.write('<a href="#details-%s-%s">details</a>' % (i, sh_label))
         self.f.write('</td>')
 
-      self.f.write('<td></td>')  # for the description
-      self.f.write('</tr>')
+      self.f.write('<td class="details-row"></td>')  # for the description
+      self.f.write('</tr>\n')
 
 
 def Options():

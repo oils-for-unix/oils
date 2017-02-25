@@ -139,6 +139,7 @@ argv "${foo%c d}" "${foo%c  d}"
 foo='a b c d'
 argv "${foo%'c d'}" "${foo%'c  d'}"
 # stdout: ['a b ', 'a b c d']
+# BUG dash stdout: ['a b c d', 'a b c d']
 
 ### The string to strip can be single quoted, outer is unquoted
 foo='a b c d'

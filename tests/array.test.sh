@@ -247,6 +247,7 @@ argv ${empty[@]:-not one} "${empty[@]:-not one}"
 single=('')
 argv ${single[@]:-none} "${single[@]:-none}"
 # stdout: ['none', '']
+# OK mksh stdout: ['none', 'none']
 
 ### Stripping a whole array
 files=('foo.c' 'sp ace.h' 'bar.c')

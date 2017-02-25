@@ -148,7 +148,7 @@ echo $((array[1] + array[2]*3))
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
-### Constants in bases 36
+### Constants in base 36
 echo $((36#a))-$((36#z))
 # stdout: 10-35
 # N-I dash stdout-json: ""
@@ -158,13 +158,16 @@ echo $((36#a))-$((36#z))
 # This is a truly bizarre syntax.  Oh it comes from zsh... which allows 36.
 echo $((64#a))-$((64#z)), $((64#A))-$((64#Z)), $((64#@)), $(( 64#_ ))
 # stdout: 10-35, 36-61, 62, 63
-# N-I dash/mksh/zsh stdout-json: ""
-# N-I dash/mksh/zsh status: 2
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+# N-I mksh/zsh stdout-json: ""
+# N-I mksh/zsh status: 1
 
 ### Dynamic base constants
 base=16
 echo $(( ${base}#a ))
 # stdout: 10
+# N-I dash stdout-json: ""
 # N-I dash status: 2
 
 ### Octal constant

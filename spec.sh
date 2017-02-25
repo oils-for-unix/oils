@@ -33,7 +33,14 @@ _spec-manifest() {
     echo $t 
   done | gawk '
   match($0, "tests/(.*)[.]test.sh", array) {
-    print array[1]
+    name = array[1]
+    # Nothing passing here
+    if (name == "extended-glob") next;
+
+    # This was meant for ANTLR.
+    if (name == "shell-grammar") next;
+
+    print name
   }
   '
   # only gawk does this kind of extraction
@@ -90,7 +97,7 @@ _html-summary() {
   </head>
   <body>
 
-<h1>Oil Spec Test Summary</h1>
+<h1>Spec Test Results Summary</h1>
 
 <table>
   <thead>
@@ -127,13 +134,11 @@ EOF
     sum_osh_num_failed += osh_num_failed
     num_rows += 1
 
-    if (osh_num_failed != 0) {
-      if (status == 0) {
-        css_class = "osh-allow-fail"
-      } else {
-        css_class = "osh-fail"
-      }
-    } else if (status == 0 && osh_num_passed != 0) {
+    if (status != 0) {
+      css_class = "failed"
+    } else if (osh_num_failed != 0) {
+      css_class = "osh-allow-fail"
+    } else if (osh_num_passed != 0) {
       css_class = "osh-pass"
     } else {
       css_class = ""
@@ -180,13 +185,16 @@ link-css() {
 _all-parallel() {
   mkdir -p _tmp/spec
 
-  #cat _tmp/spec/MANIFEST.txt \
+  manifest
+
   head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
     | xargs -n 1 -P 8 --verbose -- $0 run-cases || true
 
   #ls -l _tmp/spec
 
   html-summary
+
+  all-tests-to-html
 }
 
 # 8.5 seconds, 43 users.

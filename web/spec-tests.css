@@ -16,6 +16,11 @@ p {
 
 thead {
   font-weight: bold;
+  background-color: #eee;
+}
+
+tbody tr:hover {
+  background-color: #eee;
 }
 
 tfoot {  /* summary row */
@@ -23,8 +28,15 @@ tfoot {  /* summary row */
 }
 
 td {
-  padding: 0.4em;
+  padding-top: 0.3em;
+  padding-bottom: 0.4em;
+  padding-left: 1em;
+  padding-right: 1em;
   text-align: right;
+}
+
+.details-row {
+  padding-top: 0;
 }
 
 .case-desc {
@@ -49,12 +61,12 @@ td {
 .bug  { color: #660; font-size: large; }
 .fail { color: darkred; font-size: large; }
 
-.osh-pass {
-  background-color: #e0ffe0;
+.failed {
+  background-color: #ffe0e0;
 }
 
-.osh-fail {
-  background-color: #ffe0e0;
+.osh-pass {
+  background-color: #e0ffe0;
 }
 
 .osh-allow-fail {

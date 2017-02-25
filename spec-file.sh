@@ -49,14 +49,11 @@ trace-var-sub() {
 }
 
 #
-# Run tests
+# Invidual tests.
 #
-
-# TODO:
-# - Be consistent about order of shells.  Might want to use an ARRAY here 
-# - make tests run on the maximal set of shells
-# - maybe output summary of each shell
-# - need a "nonzero" status
+# We configure the shells they run on and the number of allowed failures (to
+# prevent regressions.)
+#
 
 smoke() {
   sh-spec tests/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
@@ -69,7 +66,8 @@ bugs() {
 
 # Regress bugs
 blog1() {
-  sh-spec tests/blog1.test.sh ${REF_SHELLS[@]} $ZSH "$@"
+  sh-spec tests/blog1.test.sh --osh-failures-allowed 6 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 comments() {
@@ -130,7 +128,7 @@ glob() {
 }
 
 arith() {
-  sh-spec tests/arith.test.sh --osh-failures-allowed 19 \
+  sh-spec tests/arith.test.sh --osh-failures-allowed 9 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -172,12 +170,14 @@ tilde() {
 }
 
 var-sub() {
-  sh-spec tests/var-sub.test.sh --osh-failures-allowed 11 \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
+  # FILES!  But ultimately we don't really care, so I disabled it.
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 23 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-sub-quote() {
-  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 23 \
+  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 11 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -204,9 +204,9 @@ append() {
   sh-spec tests/append.test.sh $BASH $MKSH "$@" 
 }
 
-# associative array
+# associative array -- mksh implements different associative arrays.
 assoc() {
-  sh-spec tests/assoc.test.sh $BASH $MKSH "$@"
+  sh-spec tests/assoc.test.sh $BASH "$@"
 }
 
 # ZSH also has associative arrays, which means we probably need them
@@ -223,7 +223,8 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec tests/dparen.test.sh --osh-failures-allowed 1 $BASH $MKSH $ZSH $OSH "$@"
+  sh-spec tests/dparen.test.sh --osh-failures-allowed 4 \
+    $BASH $MKSH $ZSH $OSH "$@"
 }
 
 brace-expansion() {
@@ -251,8 +252,13 @@ var-ref() {
   sh-spec tests/var-ref.test.sh $BASH $MKSH "$@"
 }
 
-for-let() {
-  sh-spec tests/for-let.test.sh $BASH $MKSH $ZSH "$@"
+let() {
+  sh-spec tests/let.test.sh $BASH $MKSH $ZSH "$@"
+}
+
+for-expr() {
+  sh-spec tests/for-expr.test.sh --osh-failures-allowed 2 \
+    $MKSH $BASH $OSH "$@"
 }
 
 # TODO: This is for the ANTLR grammars, in the oil-sketch repo.
