@@ -78,30 +78,36 @@ comments() {
 
 # TODO(pysh): Implement ${foo:-a b c}
 word-split() {
-  sh-spec tests/word-split.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/word-split.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # 'do' -- detected statically as syntax error?  hm.
 assign() {
-  sh-spec tests/assign.test.sh ${REF_SHELLS[@]} $OSH "$@" 
+  sh-spec tests/assign.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH "$@" 
 }
 
 # Need to fix $ tokens, and $''
 quote() {
-  sh-spec tests/quote.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/quote.test.sh --osh-failures-allowed 5 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 loop() {
-  sh-spec tests/loop.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/loop.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Not implemented in osh at all.  Need glob matching of words.
 case_() {
-  sh-spec tests/case_.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/case_.test.sh --osh-failures-allowed 4 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 if_() {
-  sh-spec tests/if_.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec tests/if_.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 # NOTE: osh uses external test!  But that's OK for now.
@@ -118,40 +124,46 @@ func() {
   sh-spec tests/func.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# pysh failures: because of Python glob library
 glob() {
-  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} --osh-failures-allowed 6 \
+    $BUSYBOX_ASH $OSH "$@"
 }
 
 arith() {
-  sh-spec tests/arith.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec tests/arith.test.sh --osh-failures-allowed 19 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 # pysh failures: case not implemented
 command-sub() {
-  sh-spec tests/command-sub.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/command-sub.test.sh --osh-failures-allowed 5 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 pipeline() {
-  sh-spec tests/pipeline.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec tests/pipeline.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 explore-parsing() {
-  sh-spec tests/explore-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/explore-parsing.test.sh --osh-failures-allowed 6 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 here-doc() {
-  sh-spec tests/here-doc.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/here-doc.test.sh --osh-failures-allowed 12 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# Need to handle all kinds of redirects
 redirect() {
   # BUG: osh treats stdin as stdout!  Fix this.
-  sh-spec tests/redirect.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/redirect.test.sh --osh-failures-allowed 12 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 posix() {
-  sh-spec tests/posix.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/posix.test.sh --osh-failures-allowed 4 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # DONE -- pysh is the most conformant!
@@ -160,11 +172,13 @@ tilde() {
 }
 
 var-sub() {
-  sh-spec tests/var-sub.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 11 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 var-sub-quote() {
-  sh-spec tests/var-sub-quote.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 23 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 
@@ -174,13 +188,15 @@ var-sub-quote() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec tests/arith-context.test.sh $BASH $MKSH $ZSH $OSH "$@"
+  sh-spec tests/arith-context.test.sh --osh-failures-allowed 10 \
+    $BASH $MKSH $ZSH $OSH "$@"
 }
 
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
-  sh-spec tests/array.test.sh $BASH $MKSH $OSH "$@"
+  sh-spec tests/array.test.sh --osh-failures-allowed 31 \
+    $BASH $MKSH $OSH "$@"
 }
 
 # += is not POSIX and not in dash.
@@ -201,7 +217,8 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec tests/dbracket.test.sh $BASH $MKSH $OSH "$@"
+  sh-spec tests/dbracket.test.sh --osh-failures-allowed 7 \
+    $BASH $MKSH $OSH "$@"
   #sh-spec tests/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
 }
 
@@ -220,7 +237,8 @@ regex() {
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec tests/process-sub.test.sh $BASH $ZSH $OSH "$@"
+  sh-spec tests/process-sub.test.sh --osh-failures-allowed 1 \
+    $BASH $ZSH $OSH "$@"
 }
 
 extended-glob() {
