@@ -197,8 +197,8 @@ assoc() {
 }
 
 # ZSH also has associative arrays, which means we probably need them
-zsh-assoc() {
-  sh-spec tests/zsh-assoc.test.sh $ZSH "$@"
+assoc-zsh() {
+  sh-spec tests/assoc-zsh.test.sh $ZSH "$@"
 }
 
 brace-expansion() {
