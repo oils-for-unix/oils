@@ -195,6 +195,8 @@ _all-parallel() {
   html-summary
 
   all-tests-to-html
+
+  link-css
 }
 
 # 8.5 seconds, 43 users.

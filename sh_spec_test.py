@@ -46,7 +46,8 @@ class TestShTest(unittest.TestCase):
 
   def testRunCases(self):
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
-    RunCases([CASE], shells, lambda i, case: True, True)
+    out = AnsiOutput(sys.stdout, False)
+    RunCases([CASE], lambda i, case: True, shells, out)
 
 
 if __name__ == '__main__':
