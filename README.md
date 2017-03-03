@@ -50,27 +50,30 @@ Try this to show a summary of what's in the repo and their line counts:
 Directory Structure
 -------------------
 
+    asdl/             # [ASDL](http://www.oilshell.org/blog/2016/12/11.html) implementation
     bin/              # programs to run (bin/osh)
     core/             # the implementation (AST, runtime, etc.)
     osh/              # osh front end
     oil/              # oil front end (empty now)
+    ovm/              # C++ runtime (empty now)
     tests/            # spec tests
+    web/              # HTML/JS/CSS for tests and tools
 
-    pybuild.sh        # build support
+    build.sh          # build support
     setup.py
 
-    test.sh           # test scripts
+    unit.sh           # test runners
     spec.sh
     wild.sh
+
     smoke.sh
     sh_spec.py        # shell test framework
 
     lint.sh           # static analysis
-    typecheck.sh
-
     count.sh          # Get an overview of the repo
 
     _tmp/             # For test temp files
+    build/            # Python setup.py makes this directory
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
