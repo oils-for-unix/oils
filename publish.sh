@@ -10,6 +10,7 @@ set -o errexit
 spec() {
   local user=$1
   local host=$2
+  local label=${3:-$(hostname)}  # what machine we ran it on
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
   echo $branch
@@ -17,7 +18,7 @@ spec() {
   local short_hash=${hash:0:8}
   echo $short_hash
 
-  local dest=oilshell.org/git-branch/$branch/$short_hash/spec
+  local dest=oilshell.org/git-branch/$branch/$short_hash/$label/spec
   ssh $user@$host mkdir -p $dest
 
   # rsync is faster than scp and has the --no-target-directory behavior.
