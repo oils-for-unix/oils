@@ -10,7 +10,8 @@ The dialect of bash that is recognized is called the **osh language**.  The
 main goal now is to design the **oil language**, which shell scripts can be
 automatically converted to.
 
-After that, the Python dependency can be broken by porting it to C++.
+After that, the Python dependency can be broken, which will involve some C++
+code (but hopefully not too much).
 
 Try it
 ------
@@ -23,41 +24,19 @@ functions, etc. should work.
     osh$ echo "hello $name"
     hello world
 
-Build it
---------
+Contributing
+------------
 
-Python's builtin `glob` and `fnmatch` modules don't match libc in some cases
-(e.g. character classes).  To fix that, build the `core/libc.c` wrapper:
+If you want to contribute, e-mail [oil-dev@oilshell.org][oil-dev].
 
-    $ ./pybuild.sh libc
+[oil-dev]: http://lists.oilshell.org/listinfo.cgi/oil-dev-oilshell.org
 
-Now `bin/osh` will use libc's globbing.
+[The blog](http://www.oilshell.org/blog/) has some general updates on the
+project status.
 
-Running Tests
--------------
+For information on how to build and test Oil, see [Contributing][] on the wiki.
 
-There are three kinds of tests: unit tests, spec tests, and "wild tests".
-
-Unit tests are in Python:
-
-    $ ./test.sh all-unit
-    $ ./test.sh unit osh/word_parse_test.py
-
-(test.sh is a simple wrapper that sets `PYTHONPATH`)
-
-Spec tests are written with the `sh_spec.py` framework:
-
-    $ ./spec.sh setup
-    $ ./spec.sh smoke   # or other actions
-
-"Wild tests" test the parser against code in the wild.  We don't have any
-golden data to compare against, but whether the parse succeeds or fails is
-useful for shaking out bugs, sort of like a fuzz test.
-
-    $ ./wild.sh this-repo
-
-This will run the parser on shell scripts in this repo, and put the output in
-`_tmp/wild/oil-parsed`, which you can view with a web browser.
+[Contributing]: https://github.com/oilshell/oil/wiki/Contributing
 
 Code Overview
 -------------
@@ -66,7 +45,7 @@ Try this to show a summary of what's in the repo and their line counts:
 
     $ ./count.sh all
 
-(Other functions in this file that may be useful as well.)
+(Other functions in this file may be useful as well.)
 
 Directory Structure
 -------------------
@@ -98,14 +77,9 @@ Unit tests are named `foo_test.py` and live next to `foo.py`.
 More info
 ---------
 
-If you need help using oil, or have general questions, e-mail
-[oil-discuss@oilshell.org][oil-discuss].
+Right now we're using
+[/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/) for general discussion.
 
-[oil-discuss]: http://lists.oilshell.org/listinfo.cgi/oil-discuss-oilshell.org
-
-If you want to contribute, e-mail [oil-dev@oilshell.org][oil-dev].
-
-[oil-dev]: http://lists.oilshell.org/listinfo.cgi/oil-dev-oilshell.org
 
 I have docs that need to be cleaned up and published.  For now, there is a fair
 amount of design information on
