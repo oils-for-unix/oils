@@ -16,11 +16,11 @@ set -o errexit
 export PYTHONPATH=.  # current dir
 
 # For auto-complete
-unit() {
+one() {
   "$@"
 }
 
-all-unit() {
+all() {
   local skip_c=${1:-}
 
   for t in {asdl,core,osh}/*_test.py; do

@@ -1,281 +1,290 @@
 #!/bin/bash
 #
-# Run tests against multiple shells with the sh_spec framework.
-#
 # Usage:
-#   ./spec.sh <function name>
+#   ./spec-file.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly DASH=/bin/dash
+readonly BASH=/bin/bash
+readonly MKSH=/bin/mksh
+readonly ZSH=/usr/bin/zsh  # Ubuntu puts it here
+readonly BUSYBOX_ASH=_tmp/shells/ash 
+
+readonly OSH=bin/osh
+
+# ash and dash are similar, so not including ash by default.  zsh is not quite
+# POSIX.
+readonly REF_SHELLS=($DASH $BASH $MKSH)
+
 #
-# Manual Setup
+# Setup
 #
 
-# dash and bash should be there by default on Ubuntu
+# dash and bash should be there by default on Ubuntu.
 install-shells() {
   sudo apt-get install busybox-static mksh zsh 
-}
-
-setup() {
   mkdir -p _tmp/shells
   ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
 }
 
 #
-# Test Runner
+# Helpers
 #
 
-# Generate an array of all the spec tests.
-_spec-manifest() {
-  for t in tests/*.test.sh; do
-    echo $t 
-  done | gawk '
-  match($0, "tests/(.*)[.]test.sh", array) {
-    name = array[1]
-    # Nothing passing here
-    if (name == "extended-glob") next;
-
-    # This was meant for ANTLR.
-    if (name == "shell-grammar") next;
-
-    print name
-  }
-  '
-  # only gawk does this kind of extraction
+sh-spec() {
+  ./sh_spec.py "$@"
 }
 
-manifest() {
-  _spec-manifest > _tmp/spec/MANIFEST.txt
-}
-
-run-cases() {
-  local spec_name=$1
-
-  run-task-with-status \
-    _tmp/spec/${spec_name}.task.txt \
-    ./spec-file.sh $spec_name \
-      --format html \
-      --stats-file _tmp/spec/${spec_name}.stats.txt \
-      --stats-template '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d' \
-    > _tmp/spec/${spec_name}.html
-}
-
-run-task-with-status() {
-  local out_file=$1
-  shift
-
-  # --quiet suppresses a warning message
-  /usr/bin/time \
-    --output $out_file \
-    --quiet \
-    --format '%x %e' \
-    -- "$@"
-
-  # TODO: Use rows like this with oil
-  # '{"status": %x, "wall_secs": %e, "user_secs": %U, "kernel_secs": %S}' \
-}
-
-run-task-with-status-test() {
-  run-task-with-status _tmp/status.txt sleep 0.1
-  cat _tmp/status.txt
-}
-
-readonly NUM_TASKS=40
-
-# TODO:
 #
-# - Sum columns in the table.
+# Misc
+#
 
-_html-summary() {
-  # TODO: I think the style should be shared
-  cat <<EOF
-<html>
-  <head>
-    <link href="spec-tests.css" rel="stylesheet">
-  </head>
-  <body>
+# Really what I want is enter(func) and exit(func), and filter by regex?
+trace-var-sub() {
+  local out=_tmp/coverage
+  mkdir -p $out
 
-<h1>Spec Test Results Summary</h1>
+  # This creates *.cover files, with line counts.
+  #python -m trace --count -C $out \
 
-<table>
-  <thead>
-    <tr>
-      <td>name</td> <td>Exit Code</td> <td>Elapsed Seconds</td>
-      <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
-    </tr>
-  </thead>
-EOF
+  # This prints trace with line numbers to stdout.
+  #python -m trace --trace -C $out \
+  python3 -m trace --trackcalls -C $out \
+    ./sh_spec.py tests/var-sub.test.sh $DASH $BASH "$@"
 
-  # Awk notes:
-  # - "getline" is kind of like bash "read", but it doesn't allow you do
-  # specify variable names.  You have to destructure it yourself.
-  # - Lack of string interpolation is very annoying
-
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt | awk '
-  {
-    spec_name = $0
-
-    # Read from the task files
-    getline < ( "_tmp/spec/" spec_name ".task.txt" )
-    status = $1
-    wall_secs = $2
-
-    getline < ( "_tmp/spec/" spec_name ".stats.txt" )
-    num_cases = $1
-    osh_num_passed = $2
-    osh_num_failed = $3
-
-    sum_status += status
-    sum_wall_secs += wall_secs
-    sum_num_cases += num_cases
-    sum_osh_num_passed += osh_num_passed
-    sum_osh_num_failed += osh_num_failed
-    num_rows += 1
-
-    if (status != 0) {
-      css_class = "failed"
-    } else if (osh_num_failed != 0) {
-      css_class = "osh-allow-fail"
-    } else if (osh_num_passed != 0) {
-      css_class = "osh-pass"
-    } else {
-      css_class = ""
-    }
-    print "<tr class=" css_class ">"
-    print "<td><a href=" spec_name ".html>" spec_name "</a></td>"
-    print "<td>" status "</td>"
-    print "<td>" wall_secs "</td>"
-    print "<td>" num_cases "</td>"
-    print "<td>" osh_num_passed "</td>"
-    print "<td>" osh_num_failed "</td>"
-    print "</tr>"
-  }
-
-  END {
-    print "<tfoot>"
-    print "<tr>"
-    print "<td>TOTAL (" num_rows " rows) </td>"
-    print "<td>" sum_status "</td>"
-    print "<td>" sum_wall_secs "</td>"
-    print "<td>" sum_num_cases "</td>"
-    print "<td>" sum_osh_num_passed "</td>"
-    print "<td>" sum_osh_num_failed "</td>"
-    print "</tr>"
-    print "</tfoot>"
-  }
-  '
-
-  cat <<EOF
-    </table>
-  </body>
-</html>
-EOF
+  ls -l $out
+  head $out/*.cover
 }
 
-html-summary() {
-  _html-summary > _tmp/spec/RESULTS.html
+#
+# Run All tests
+#
+
+all() {
+  ./spec-runner.sh all-parallel "$@"
 }
 
-link-css() {
-  ln -s -f --verbose $PWD/web/{spec-tests,spec-code}.css _tmp/spec
+
+#
+# Invidual tests.
+#
+# We configure the shells they run on and the number of allowed failures (to
+# prevent regressions.)
+#
+
+smoke() {
+  sh-spec tests/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
-_all-parallel() {
-  mkdir -p _tmp/spec
-
-  manifest
-
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
-    | xargs -n 1 -P 8 --verbose -- $0 run-cases || true
-
-  #ls -l _tmp/spec
-
-  html-summary
-
-  all-tests-to-html
-
-  link-css
+# Regress bugs
+bugs() {
+  sh-spec tests/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# 8.5 seconds, 43 users.
-all-parallel() {
-  time $0 _all-parallel
+# Regress bugs
+blog1() {
+  sh-spec tests/blog1.test.sh --osh-failures-allowed 6 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
-# For debugging only: run tests serially.
-all-serial() {
-  mkdir -p _tmp/spec
-
-  cat _tmp/spec/MANIFEST.txt | while read t; do
-    echo $t
-    # Run the wrapper function here
-    ./spec-file.sh $t --format html > _tmp/spec/${t}.html || {
-      echo "FAILED"
-      exit 1
-    }
-  done
+comments() {
+  sh-spec tests/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# NOTES:
-# - GitHub does it with tables -- 2-columns, a cell for each number and line.
-# - srcbook does it with a table of 2 CELLS, each with a <pre> block.  But it
-#   - but doesn't link to individual # ones yet?
-
-_test-to-html() {
-  local spec_name=$1
-
-  # A row per line makes sense for highlighting with ":target".
-
-  #print "<a name=L" NR "></a>" line_num " " $0 
-  #print "<span id=L" NR "></a>" line_num " " $0 "</span>"
-  # Explicit PRE tag messes up Firefox formatting.
-  #print "<td id=L" NR "><pre>" line "</pre></td>"
-
-  cat <<EOF
-<html>
-  <head>
-    <link href="spec-code.css" rel="stylesheet">
-  </head>
-  <body>
-    <table>
-EOF
-  awk < tests/${spec_name}.test.sh '
-  { 
-    gsub("&", "\&amp;");
-    gsub("<", "\&lt;");
-    gsub(">", "\&gt;");
-    line_num = NR
-
-    print "<tr>"
-    print "<td class=num>" line_num "</td>"
-    if ($0 ~ /^###/) {
-      line = "<span class=comm3>" $0 "</span>"
-    } else if ($0 ~ /^#/) {
-      line = "<span class=comm1>" $0 "</span>"
-    } else {
-      line = $0
-    }
-    print "<td class=line id=L" line_num ">" line "</td>"
-    print "</tr>"
-  }
-  '
-  cat <<EOF
-    </table>
-  </body>
-</html>
-EOF
+# TODO(pysh): Implement ${foo:-a b c}
+word-split() {
+  sh-spec tests/word-split.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
-test-to-html() {
-  local spec_name=$1
-  _test-to-html $spec_name > _tmp/spec/${spec_name}.test.html
+# 'do' -- detected statically as syntax error?  hm.
+assign() {
+  sh-spec tests/assign.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH "$@" 
 }
 
-all-tests-to-html() {
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
-    | xargs -n 1 -P 8 --verbose -- $0 test-to-html || true
+# Need to fix $ tokens, and $''
+quote() {
+  sh-spec tests/quote.test.sh --osh-failures-allowed 5 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+loop() {
+  sh-spec tests/loop.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+# Not implemented in osh at all.  Need glob matching of words.
+case_() {
+  sh-spec tests/case_.test.sh --osh-failures-allowed 4 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+if_() {
+  sh-spec tests/if_.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
+# NOTE: osh uses external test!  But that's OK for now.
+test-builtin() {
+  sh-spec tests/test-builtin.test.sh ${REF_SHELLS[@]} $OSH "$@"
+}
+
+builtins() {
+  sh-spec tests/builtins.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+func() {
+  sh-spec tests/func.test.sh ${REF_SHELLS[@]} $OSH "$@"
+}
+
+glob() {
+  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} --osh-failures-allowed 6 \
+    $BUSYBOX_ASH $OSH "$@"
+}
+
+arith() {
+  sh-spec tests/arith.test.sh --osh-failures-allowed 9 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
+# pysh failures: case not implemented
+command-sub() {
+  sh-spec tests/command-sub.test.sh --osh-failures-allowed 5 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+pipeline() {
+  sh-spec tests/pipeline.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
+explore-parsing() {
+  sh-spec tests/explore-parsing.test.sh --osh-failures-allowed 6 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+here-doc() {
+  sh-spec tests/here-doc.test.sh --osh-failures-allowed 12 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+redirect() {
+  # BUG: osh treats stdin as stdout!  Fix this.
+  sh-spec tests/redirect.test.sh --osh-failures-allowed 12 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+posix() {
+  sh-spec tests/posix.test.sh --osh-failures-allowed 4 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+# DONE -- pysh is the most conformant!
+tilde() {
+  sh-spec tests/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
+}
+
+var-sub() {
+  # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
+  # FILES!  But ultimately we don't really care, so I disabled it.
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 23 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+var-sub-quote() {
+  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 11 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+
+# 
+# Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
+#
+
+# There as many non-POSIX arithmetic contexts.
+arith-context() {
+  sh-spec tests/arith-context.test.sh --osh-failures-allowed 10 \
+    $BASH $MKSH $ZSH $OSH "$@"
+}
+
+# TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
+# messed up.
+array() {
+  sh-spec tests/array.test.sh --osh-failures-allowed 31 \
+    $BASH $MKSH $OSH "$@"
+}
+
+# += is not POSIX and not in dash.
+append() {
+  sh-spec tests/append.test.sh $BASH $MKSH "$@" 
+}
+
+# associative array -- mksh implements different associative arrays.
+assoc() {
+  sh-spec tests/assoc.test.sh $BASH "$@"
+}
+
+# ZSH also has associative arrays, which means we probably need them
+assoc-zsh() {
+  sh-spec tests/assoc-zsh.test.sh $ZSH "$@"
+}
+
+# NOTE: zsh passes about half and fails about half.  It supports a subset of [[
+# I guess.
+dbracket() {
+  sh-spec tests/dbracket.test.sh --osh-failures-allowed 7 \
+    $BASH $MKSH $OSH "$@"
+  #sh-spec tests/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
+}
+
+dparen() {
+  sh-spec tests/dparen.test.sh --osh-failures-allowed 4 \
+    $BASH $MKSH $ZSH $OSH "$@"
+}
+
+brace-expansion() {
+  # NOTE: being a korn shell, mksh has brace expansion.  But dash doesn't!
+  sh-spec tests/brace-expansion.test.sh $BASH $MKSH "$@"
+}
+
+regex() {
+  sh-spec tests/regex.test.sh $BASH $ZSH "$@"
+}
+
+process-sub() {
+  # mksh and dash don't support it
+  sh-spec tests/process-sub.test.sh --osh-failures-allowed 1 \
+    $BASH $ZSH $OSH "$@"
+}
+
+extended-glob() {
+  # Do NOT use dash here.  Brace sub breaks things.
+  sh-spec tests/extended-glob.test.sh $BASH $MKSH "$@"
+}
+
+# ${!var} syntax -- oil should replace this with associative arrays.
+var-ref() {
+  sh-spec tests/var-ref.test.sh $BASH $MKSH "$@"
+}
+
+let() {
+  sh-spec tests/let.test.sh $BASH $MKSH $ZSH "$@"
+}
+
+for-expr() {
+  sh-spec tests/for-expr.test.sh --osh-failures-allowed 2 \
+    $MKSH $BASH $OSH "$@"
+}
+
+# TODO: This is for the ANTLR grammars, in the oil-sketch repo.
+# osh has infinite loop?
+shell-grammar() {
+  sh-spec tests/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
 }
 
 "$@"

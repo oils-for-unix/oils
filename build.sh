@@ -10,7 +10,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-libc() {
+pylibc() {
   ./setup.py build
 
   # Wildcard to match any Python 3 version.
@@ -20,7 +20,8 @@ libc() {
   ln -s -f --verbose ../$so core/libc.so
 }
 
-test-libc() {
+# Also done by unit.sh.
+test-pylibc() {
   export PYTHONPATH=.
   libc
   core/libc_test.py
