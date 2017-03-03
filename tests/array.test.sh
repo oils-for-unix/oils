@@ -20,8 +20,8 @@ echo "${a[@]}" "${a[*]}"
 f() {
   local a=(1 '2 3')
   # TODO: Implement brace syntax in pysh
-  #argv "${a}"
-  argv "$a"
+  #argv.py "${a}"
+  argv.py "$a"
 }
 f
 # stdout: ['1']
@@ -31,7 +31,7 @@ f
 
 ### Command with with word splitting in array
 array=('1 2' $(echo '3 4'))
-argv "${array[@]}"
+argv.py "${array[@]}"
 # stdout: ['1 2', '3', '4']
 
 ### space before ( in array initialization
@@ -44,56 +44,56 @@ echo $a
 
 ### empty array
 empty=()
-argv "${empty[@]}"
+argv.py "${empty[@]}"
 # stdout: []
 
 ### array with empty string
 empty=('')
-argv "${empty[@]}"
+argv.py "${empty[@]}"
 # stdout: ['']
 
 ### Assign to array index without initialization
 b[2]=9
-argv "${b[@]}"
+argv.py "${b[@]}"
 # stdout: ['9']
 
 ### Retrieve index
 a=(1 '2 3')
-argv "${a[1]}"
+argv.py "${a[1]}"
 # stdout: ['2 3']
 
 ### Retrieve out of bounds index
 a=(1 '2 3')
-argv "${a[3]}"
+argv.py "${a[3]}"
 # stdout: ['']
 
 ### Retrieve index that is a variable
 a=(1 '2 3')
 i=1
-argv "${a[$i]}"
+argv.py "${a[$i]}"
 # stdout: ['2 3']
 
 ### Retrieve index that is a variable without $
 a=(1 '2 3')
 i=5
-argv "${a[i-4]}"
+argv.py "${a[i-4]}"
 # stdout: ['2 3']
 
 ### Retrieve index that is a command sub
 a=(1 '2 3')
-argv "${a[$(echo 1)]}"
+argv.py "${a[$(echo 1)]}"
 # stdout: ['2 3']
 
 ### Retrieve all indices with !
 a=(1 '2 3')
-argv "${!a[@]}"
+argv.py "${!a[@]}"
 # stdout: ['0', '1']
 
 ### Retrieve indices for one value
 # Not really standardized between bash and mksh.  Just doing whatever bash
 # does.
 a=(4 '2 3')
-argv "${!a[1]}"
+argv.py "${!a[1]}"
 # status: 0
 # stdout: ['']
 # OK mksh stdout: ['1']
@@ -102,34 +102,34 @@ argv "${!a[1]}"
 # bash gives empty string?
 # mksh gives the name of the variable with !.  Very weird.
 a=(1 '2 3')
-argv "${!a}"
+argv.py "${!a}"
 # stdout: ['']
 # OK mksh stdout: ['a']
 
 ### All elements unquoted
 a=(1 '2 3')
-argv ${a[@]}
+argv.py ${a[@]}
 # stdout: ['1', '2', '3']
 
 ### All elements quoted
 a=(1 '2 3')
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['1', '2 3']
 
 ### $*
 a=(1 '2 3')
-argv ${a[*]}
+argv.py ${a[*]}
 # stdout: ['1', '2', '3']
 
 ### "$*"
 a=(1 '2 3')
-argv "${a[*]}"
+argv.py "${a[*]}"
 # stdout: ['1 2 3']
 
 ### Interpolate array into array
 a=(1 '2 3')
 a=(0 "${a[@]}" '4 5')
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['0', '1', '2 3', '4 5']
 
 ### Arrays can't be copied directly
@@ -138,7 +138,7 @@ a=(x y z)
 b="${a[@]}"  # this collapses to a string
 c=("${a[@]}")  # this preserves the array
 c[1]=YYY  # mutate a copy -- doesn't affect the original
-argv "${a[@]}" "${b[@]}" "${c[@]}"
+argv.py "${a[@]}" "${b[@]}" "${c[@]}"
 # stdout: ['x', 'y', 'z', 'x y z', 'x', 'YYY', 'z']
 
 ### Exporting array doesn't do anything, not even first element
@@ -161,14 +161,14 @@ A=a B=(b b) tests/printenv.py A B
 ### Set element
 a=(1 '2 3')
 a[0]=9
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['9', '2 3']
 
 ### Set element with var ref
 a=(1 '2 3')
 i=0
 a[$i]=9
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['9', '2 3']
 
 ### Set element with array ref
@@ -177,13 +177,13 @@ argv "${a[@]}"
 a=(1 '2 3')
 i=(0 1)
 a[${i[1]}]=9
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['1', '9']
 
 ### Slice of array with [@]
 # mksh doesn't support this syntax!  It's a bash extension.
 a=(1 2 3)
-argv "${a[@]:1:2}"
+argv.py "${a[@]:1:2}"
 # stdout: ['2', '3']
 # N-I mksh status: 1
 # N-I mksh stdout-json: ""
@@ -193,7 +193,7 @@ argv "${a[@]:1:2}"
 # NOTE: for some reason -2) has to be in parens?  Ah that's because it
 # conflicts with :-!  That's silly.  You can also add a space.
 a=(1 2 3)
-argv "${a[@]:(-2):1}"
+argv.py "${a[@]:(-2):1}"
 # stdout: ['2']
 # N-I mksh status: 1
 # N-I mksh stdout-json: ""
@@ -201,7 +201,7 @@ argv "${a[@]:(-2):1}"
 ### Slice with arithmetic
 a=(1 2 3)
 i=5
-argv "${a[@]:i-4:2}"
+argv.py "${a[@]:i-4:2}"
 # stdout: ['2', '3']
 # N-I mksh status: 1
 # N-I mksh stdout-json: ""
@@ -221,14 +221,14 @@ done
 ### glob within array yields separate elements
 touch _tmp/y.Y _tmp/yy.Y
 a=(_tmp/*.Y)
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['_tmp/y.Y', '_tmp/yy.Y']
 
 ### declare array and then append
 declare -a array
 array+=(a)
 array+=(b c)
-argv "${array[@]}"
+argv.py "${array[@]}"
 # stdout: ['a', 'b', 'c']
 
 ### Array syntax in wrong place
@@ -238,26 +238,26 @@ ls foo=(1 2)
 
 ### Empty array with :-
 empty=()
-argv ${empty[@]:-not one} "${empty[@]:-not one}"
+argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
 # stdout: ['not', 'one', 'not one']
 
 ### Single array with :-
 # bash does EMPTY ELISION here, unless it's double quoted.  Looks like mksh has
 # the sane behavior.
 single=('')
-argv ${single[@]:-none} "${single[@]:-none}"
+argv.py ${single[@]:-none} "${single[@]:-none}"
 # stdout: ['none', '']
 # OK mksh stdout: ['none', 'none']
 
 ### Stripping a whole array
 files=('foo.c' 'sp ace.h' 'bar.c')
-argv ${files[@]%.c} "${files[@]%.c}"
+argv.py ${files[@]%.c} "${files[@]%.c}"
 # stdout: ['foo', 'sp', 'ace.h', 'bar', 'foo', 'sp ace.h', 'bar']
 # N-I mksh stdout-json: ""
 
 ### Multiple subscripts not allowed
 a=('123' '456')
-argv "${a[0]}" "${a[0][0]}"
+argv.py "${a[0]}" "${a[0][0]}"
 # stdout-json: ""
 # status: 2
 # OK mksh status: 1
@@ -287,5 +287,5 @@ set -- 'a b' 'c'
 array1=('x y' 'z')
 array2=("$@")
 array3="$@"  # Without splicing with (), this one is flattened
-argv "${array1[@]}" "${array2[@]}" "${array3[@]}"
+argv.py "${array1[@]}" "${array2[@]}" "${array3[@]}"
 # stdout: ['x y', 'z', 'a b', 'c', 'a b c']

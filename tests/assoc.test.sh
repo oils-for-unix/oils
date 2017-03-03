@@ -21,7 +21,7 @@ a=([aa]=b [foo]=bar ['a+1']=c)
 ### retrieve indices with !
 declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)
-argv "${!a[@]}"
+argv.py "${!a[@]}"
 # Is this invalid on associative arrays?  Makes no sense.
 # stdout: ['aa', 'foo', 'a+1']
 
@@ -85,7 +85,7 @@ echo "${a[xx]}" "${a[cc]}"
 array=('1 2' 3)
 declare -A d
 d[a]="${array[@]}"
-argv "${d[a]}"
+argv.py "${d[a]}"
 # stdout: ['1 2 3']
 
 ### Can't initialize assoc array with indexed array

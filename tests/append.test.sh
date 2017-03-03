@@ -9,7 +9,7 @@ echo $s
 ### Append array to array
 a=(x y )
 a+=(t 'u v')
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['x', 'y', 't', 'u v']
 
 ### Append array to string should be an error
@@ -25,7 +25,7 @@ echo $s
 # also disallow it on the RHS.
 a=(x y )
 a+=z
-argv "${a[@]}"
+argv.py "${a[@]}"
 # OK bash/mksh stdout: ['xz', 'y']
 # OK bash/mksh status: 0
 # status: 1
@@ -35,7 +35,7 @@ argv "${a[@]}"
 # also disallow it on the RHS.
 a=(x y )
 a[1]+=z
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['x', 'yz']
 # status: 0
 
@@ -44,7 +44,7 @@ argv "${a[@]}"
 # a[-1] is allowed on the LHS.  mksh doesn't have negative indexing?
 a=(1 '2 3')
 a[-1]+=' 4'
-argv "${a[@]}"
+argv.py "${a[@]}"
 # stdout: ['1', '2 3 4']
 # BUG mksh stdout: ['1', '2 3', ' 4']
 

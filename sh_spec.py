@@ -361,7 +361,7 @@ class NonzeroAssertion(object):
 
 PIPE = subprocess.PIPE
 
-def RunCases(cases, case_predicate, shells, out):
+def RunCases(cases, case_predicate, shells, env, out):
   """
   Run a list of test 'cases' for all 'shells' and write output to 'out'.
   """
@@ -391,9 +391,9 @@ def RunCases(cases, case_predicate, shells, out):
     code_utf8 = code.encode('utf-8')
 
     for sh_label, sh_path in shells:
-
-      argv = [sh_path]  # TODO: Add flags
-      p = subprocess.Popen(argv, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+      argv = [sh_path]  # TODO: Be able to test shell flags?
+      p = subprocess.Popen(argv, env=env,
+                           stdin=PIPE, stdout=PIPE, stderr=PIPE)
       p.stdin.write(code_utf8)
       p.stdin.close()
 
@@ -734,6 +734,12 @@ def Options():
   p.add_option(
       '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
       default=0, help="Allow this number of osh failures")
+  p.add_option(
+      '--path-env', dest='path_env', default='',
+      help="The full PATH, for finding binaries used in tests.")
+  p.add_option(
+      '--tmp-env', dest='tmp_env', default='',
+      help="A temporary directory that the tests can use.")
 
   return p
 
@@ -792,7 +798,16 @@ def main(argv):
     raise AssertionError
 
   out.BeginCases(os.path.basename(test_file))
-  stats = RunCases(cases, case_predicate, shell_pairs, out)
+
+  if not opts.tmp_env:
+    raise RuntimeError('--tmp-env required')
+  if not opts.path_env:
+    raise RuntimeError('--path-env required')
+  env = {
+    'TMP': opts.tmp_env,
+    'PATH': opts.path_env,
+  }
+  stats = RunCases(cases, case_predicate, shell_pairs, env, out)
   out.EndCases(stats)
 
   if opts.stats_file:

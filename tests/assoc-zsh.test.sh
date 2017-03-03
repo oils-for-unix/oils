@@ -21,7 +21,7 @@ echo ${a[aa]}
 typeset -A a
 a=(aa b foo bar a+1 c)
 a[X]=XX
-argv "${a[@]}"
+argv.py "${a[@]}"
 # What order is this?
 # stdout: ['bar', 'b', 'c', 'XX']
 
@@ -50,5 +50,5 @@ echo ${#assoc} ${#assoc[k1]}
 ### index by integer does not work
 typeset -A assoc
 assoc=(k1 v1 k2 v2 k3 v3)
-argv "${assoc[1]}"
+argv.py "${assoc[1]}"
 # stdout: ['']

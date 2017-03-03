@@ -155,6 +155,15 @@ EOF
 
   cat <<EOF
     </table>
+
+    <h3>Versions Information</h3>
+    <pre>
+EOF
+
+  ./spec.sh version-text
+
+  cat <<EOF
+    </pre>
   </body>
 </html>
 EOF

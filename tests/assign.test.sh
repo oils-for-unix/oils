@@ -44,13 +44,13 @@ EMPTY= tests/printenv.py EMPTY
 ### Assignment doesn't do word splitting
 words='one two'
 a=$words
-argv "$a"
+argv.py "$a"
 # stdout: ['one two']
 
 ### Assignment doesn't do glob expansion
 touch _tmp/z.Z _tmp/zz.Z
 a=_tmp/*.Z
-argv "$a"
+argv.py "$a"
 # stdout: ['_tmp/*.Z']
 
 ### Env binding in readonly/declare disallowed

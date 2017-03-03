@@ -30,12 +30,41 @@ install-shells() {
   ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
 }
 
+version-text() {
+  $BASH --version | head -n 1
+  echo
+
+  $ZSH --version | head -n 1
+  echo
+
+  # These don't have versions
+  dpkg -s dash | egrep '^Package|Version'
+  echo
+
+  dpkg -s mksh | egrep '^Package|Version'
+  echo
+
+  busybox | head -n 1
+  echo
+
+  cat /etc/lsb-release
+  echo
+}
+
 #
 # Helpers
 #
 
 sh-spec() {
-  ./sh_spec.py "$@"
+  local this_dir=$(cd $(dirname $0) && pwd)
+
+  local tmp_env=$this_dir/_tmp/spec-tmp
+  mkdir -p $tmp_env
+
+  ./sh_spec.py \
+      --tmp-env $tmp_env \
+      --path-env "$this_dir/tests/bin:$PATH" \
+      "$@"
 }
 
 #

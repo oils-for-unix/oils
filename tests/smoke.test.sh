@@ -70,14 +70,14 @@ echo $a
 
 ### "$@" "$*"
 func () {
-  argv "$@" "$*"
+  argv.py "$@" "$*"
 }
 func "a b" "c d"
 # stdout: ['a b', 'c d', 'a b c d']
 
 ### $@ $*
 func() {
-  argv $@ $*
+  argv.py $@ $*
 }
 func "a b" "c d"
 # stdout: ['a', 'b', 'c', 'd', 'a', 'b', 'c', 'd']

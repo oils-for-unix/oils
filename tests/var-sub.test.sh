@@ -173,7 +173,7 @@ echo ${foo:-$({ which ls; })}
 # difference.  Need to test array semantics!
 func() {
   local v=$@
-  argv $v
+  argv.py $v
 }
 func 1 2 3
 # stdout: ['1', '2', '3']
@@ -184,7 +184,7 @@ func 1 2 3
 # dash doesn't like this -- says '2 3' bad variable name.
 func() {
   local v="$@"
-  argv $v
+  argv.py $v
 }
 func 1 '2 3'
 # stdout: ['1', '2', '3']
@@ -195,7 +195,7 @@ func 1 '2 3'
 # dash doesn't like this -- says '2 3' bad variable name.
 func() {
   local v="$@"
-  argv "$v"
+  argv.py "$v"
 }
 func 1 '2 3'
 # stdout: ['1 2 3']
