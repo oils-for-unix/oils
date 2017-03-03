@@ -199,7 +199,13 @@ explore-parsing() {
 }
 
 here-doc() {
-  sh-spec tests/here-doc.test.sh --osh-failures-allowed 12 \
+  # NOTE: The last two tests, 28 and 29, have different behavior on my Ubuntu
+  # and Debian machines.
+  # - On Ubuntu, read_from_fd.py fails with Errno 9 -- bad file descriptor.
+  # - On Debian, the whole process hangs.
+  # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
+  # functionality, so it's probably best to just implement it.
+  sh-spec tests/here-doc.test.sh --osh-failures-allowed 10 --range 1-27 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

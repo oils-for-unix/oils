@@ -22,25 +22,6 @@ fd3
 EOF3
 # stdout-json: "0: fd0\n3: fd3\n"
 
-### Multiple here docs in pipeline
-# The second instance reads its stdin from the pipe, and fd 5 from a here doc.
-read_from_fd.py 3 3<<EOF3 | read_from_fd.py 0 5 5<<EOF5
-fd3
-EOF3
-fd5
-EOF5
-# stdout-json: "0: 3: fd3\n5: fd5\n"
-
-### Multiple here docs in pipeline on multiple lines
-# The second instance reads its stdin from the pipe, and fd 5 from a here doc.
-read_from_fd.py 3 3<<EOF3 |
-fd3
-EOF3
-read_from_fd.py 0 5 5<<EOF5
-fd5
-EOF5
-# stdout-json: "0: 3: fd3\n5: fd5\n"
-
 ### Here doc with bad var delimiter
 cat <<${a}
 here
@@ -267,3 +248,25 @@ EOF
 ) == foo ]]; echo $?
 # stdout: 0
 # N-I dash stdout: 127
+
+### Multiple here docs in pipeline
+# SKIPPED: hangs with osh on Debian
+# The second instance reads its stdin from the pipe, and fd 5 from a here doc.
+read_from_fd.py 3 3<<EOF3 | read_from_fd.py 0 5 5<<EOF5
+fd3
+EOF3
+fd5
+EOF5
+# stdout-json: "0: 3: fd3\n5: fd5\n"
+
+### Multiple here docs in pipeline on multiple lines
+# SKIPPED: hangs with osh on Debian
+# The second instance reads its stdin from the pipe, and fd 5 from a here doc.
+read_from_fd.py 3 3<<EOF3 |
+fd3
+EOF3
+read_from_fd.py 0 5 5<<EOF5
+fd5
+EOF5
+# stdout-json: "0: 3: fd3\n5: fd5\n"
+
