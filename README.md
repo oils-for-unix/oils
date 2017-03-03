@@ -50,7 +50,7 @@ Try this to show a summary of what's in the repo and their line counts:
 Directory Structure
 -------------------
 
-    asdl/             # [ASDL](http://www.oilshell.org/blog/2016/12/11.html) implementation
+    asdl/             # ASDL implementation
     bin/              # programs to run (bin/osh)
     core/             # the implementation (AST, runtime, etc.)
     osh/              # osh front end
