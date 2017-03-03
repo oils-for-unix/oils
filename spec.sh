@@ -31,6 +31,15 @@ install-shells() {
   ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
 }
 
+maybe-show() {
+  local path=$1
+  if test -e $path; then
+    echo "--- $path ---"
+    cat $path
+    echo
+  fi
+}
+
 version-text() {
   # TODO: Only use Python 3
   python --version
@@ -52,11 +61,12 @@ version-text() {
   dpkg -s mksh | egrep '^Package|Version'
   echo
 
-  busybox | head -n 1
+  # Need || true because of pipefail
+  { busybox || true; } | head -n 1
   echo
 
-  cat /etc/lsb-release
-  echo
+  maybe-show /etc/debian_version
+  maybe-show /etc/lsb-release
 }
 
 #
