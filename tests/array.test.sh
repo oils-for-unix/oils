@@ -146,14 +146,14 @@ argv.py "${a[@]}" "${b[@]}" "${c[@]}"
 # mksh gives syntax error -- parses differently with 'export'
 export PYTHONPATH=(a b c)
 export PYTHONPATH=a  # NOTE: in bash, this doesn't work afterward!
-tests/printenv.py PYTHONPATH
+printenv.py PYTHONPATH
 # stdout: None
 # BUG mksh stdout-json: ""
 # BUG mksh status: 1
 
 ### Env with array
 # Hm it treats it as a string!
-A=a B=(b b) tests/printenv.py A B
+A=a B=(b b) printenv.py A B
 # stdout-json: "a\n(b b)\n"
 # BUG mksh stdout-json: ""
 # BUG mksh status: 1

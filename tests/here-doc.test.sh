@@ -9,13 +9,13 @@ EOF
 
 ### Here doc from another input file descriptor
 # NOTE: dash seemed to fail on descriptor 99, but descriptor 5 works.
-tests/read_from_fd.py 5  5<<EOF
+read_from_fd.py 5  5<<EOF
 fd5
 EOF
 # stdout: 5: fd5
 
 ### Multiple here docs with different descriptors
-tests/read_from_fd.py 0 3 <<EOF 3<<EOF3
+read_from_fd.py 0 3 <<EOF 3<<EOF3
 fd0
 EOF
 fd3
@@ -24,7 +24,7 @@ EOF3
 
 ### Multiple here docs in pipeline
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
-tests/read_from_fd.py 3 3<<EOF3 | tests/read_from_fd.py 0 5 5<<EOF5
+read_from_fd.py 3 3<<EOF3 | read_from_fd.py 0 5 5<<EOF5
 fd3
 EOF3
 fd5
@@ -33,10 +33,10 @@ EOF5
 
 ### Multiple here docs in pipeline on multiple lines
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
-tests/read_from_fd.py 3 3<<EOF3 |
+read_from_fd.py 3 3<<EOF3 |
 fd3
 EOF3
-tests/read_from_fd.py 0 5 5<<EOF5
+read_from_fd.py 0 5 5<<EOF5
 fd5
 EOF5
 # stdout-json: "0: 3: fd3\n5: fd5\n"

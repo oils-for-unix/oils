@@ -7,6 +7,6 @@
 # stdout-json: "two\none\n"
 
 ### |&
-tests/stdout_stderr.py |& cat
+stdout_stderr.py |& cat
 # stdout-json: "STDERR\nSTDOUT\n"
 # N-I dash/mksh stdout-json: ""

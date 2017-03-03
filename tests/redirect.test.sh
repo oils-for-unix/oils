@@ -95,7 +95,7 @@ wc -c _tmp/block-stdout.txt
 # stdout: 10 _tmp/block-stdout.txt
 
 ### Redirect in the middle of two assignments
-FOO=foo >out.txt BAR=bar tests/printenv.py FOO BAR
+FOO=foo >out.txt BAR=bar printenv.py FOO BAR
 tac out.txt
 # stdout-json: "bar\nfoo\n"
 
