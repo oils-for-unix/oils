@@ -32,6 +32,13 @@ install-shells() {
 }
 
 version-text() {
+  # TODO: Only use Python 3
+  python --version
+  echo
+
+  python3 --version
+  echo
+
   $BASH --version | head -n 1
   echo
 
