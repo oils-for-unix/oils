@@ -12,7 +12,11 @@ def main(argv):
   for arg in sys.argv[1:]:
     fd = int(arg)
     #print 'reading from', fd
-    in_str = os.read(fd, 1024)
+    try:
+      in_str = os.read(fd, 1024)
+    except OSError as e:
+      print >>sys.stderr, 'FATAL: Error reading from fd %d: %s' % (fd, e)
+      sys.exit(1)
     sys.stdout.write('%d: %s' % (fd, in_str))
 
 
