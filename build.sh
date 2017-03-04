@@ -10,6 +10,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+install-deps() {
+  # python-dev: for pylibc
+  # gawk: used by spec-runner.sh for the special match() function.
+  sudo apt-get install python3-dev gawk
+
+  ./spec.sh install-shells
+}
+
 pylibc() {
   ./setup.py build
 
