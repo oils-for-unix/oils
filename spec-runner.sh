@@ -276,4 +276,6 @@ all-tests-to-html() {
     | xargs -n 1 -P 8 --verbose -- $0 test-to-html || true
 }
 
-"$@"
+if test "$(basename $0)" = 'spec-runner.sh'; then
+  "$@"
+fi
