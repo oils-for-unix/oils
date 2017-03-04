@@ -25,7 +25,6 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 
 # dash and bash should be there by default on Ubuntu.
 install-shells() {
-  # NOTE: gawk is used by spec-runner.sh for the special match() function.
   sudo apt-get install busybox-static mksh zsh
   mkdir -p _tmp/shells
   ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
