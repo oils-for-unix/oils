@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 format.py -- Pretty print an ASDL data structure.
 

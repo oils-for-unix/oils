@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 lex.py -- Shell lexer.
 

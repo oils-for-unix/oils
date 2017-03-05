@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 word_eval.py - Evaluator for the word language.
 """

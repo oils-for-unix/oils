@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 alloc.py - Sketch of memory management, like you would do in C++.
 

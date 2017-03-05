@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 compile.py: osh.asdl -> ovm.asdl
 
