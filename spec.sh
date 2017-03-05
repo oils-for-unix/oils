@@ -40,11 +40,7 @@ maybe-show() {
 }
 
 version-text() {
-  # TODO: Only use Python 3
-  python --version
-  echo
-
-  python3 --version
+  python3 --version 2>&1
   echo
 
   $BASH --version | head -n 1
