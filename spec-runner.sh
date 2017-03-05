@@ -61,7 +61,7 @@ run-task-with-status() {
   /usr/bin/time \
     --output $out_file \
     --format '%x %e' \
-    -- "$@"
+    -- "$@" || true  # suppress failure
 
   # Hack to get around the fact that --quiet is Debian-specific:
   # http://lists.oilshell.org/pipermail/oil-dev-oilshell.org/2017-March/000012.html
