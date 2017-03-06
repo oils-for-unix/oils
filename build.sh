@@ -13,7 +13,8 @@ set -o errexit
 install-deps() {
   # python-dev: for pylibc
   # gawk: used by spec-runner.sh for the special match() function.
-  sudo apt-get install python3-dev gawk
+  # time: used to allow formatting of time output to be consisten across Ubutntu shells
+  sudo apt-get install python3-dev gawk time
 
   ./spec.sh install-shells
 }
