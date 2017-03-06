@@ -25,10 +25,33 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 
 # dash and bash should be there by default on Ubuntu.
 install-shells() {
-  # NOTE: gawk is used by spec-runner.sh for the special match() function.
-  sudo apt-get install busybox-static mksh zsh gawk
+  sudo apt-get install busybox-static mksh zsh
   mkdir -p _tmp/shells
   ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
+}
+
+_wget() {
+  wget --no-clobber --directory _tmp/src "$@"
+}
+
+# As of March 2017
+download-shell-source() {
+  mkdir -p _tmp/src
+
+  # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
+  # https://ftp.gnu.org/gnu/bash/ 
+  _wget https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz
+
+  # https://www.mirbsd.org/mksh.htm - no dates given
+  _wget https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R54.tgz
+
+  # https://tracker.debian.org/pkg/dash  -- old versions
+  # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
+  # Site seems down now.
+  # _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.9.1.tar.gz
+
+  # http://zsh.sourceforge.net/News/ - 12/2016 release
+  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
 }
 
 maybe-show() {
@@ -41,11 +64,7 @@ maybe-show() {
 }
 
 version-text() {
-  # TODO: Only use Python 3
-  python --version
-  echo
-
-  python3 --version
+  python3 --version 2>&1
   echo
 
   $BASH --version | head -n 1

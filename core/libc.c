@@ -94,7 +94,7 @@ func_glob(PyObject *self, PyObject *args) {
   }
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
-  int n = results.gl_pathc;
+  size_t n = results.gl_pathc;
   PyObject* matches = PyList_New(n);
 
   // Print array of results

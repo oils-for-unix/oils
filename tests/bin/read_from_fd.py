@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 """
 read_from_fd.py
 """
@@ -15,9 +15,12 @@ def main(argv):
     try:
       in_str = os.read(fd, 1024)
     except OSError as e:
-      print >>sys.stderr, 'FATAL: Error reading from fd %d: %s' % (fd, e)
+      print('FATAL: Error reading from fd %d: %s' % (fd, e), file=sys.stderr)
       sys.exit(1)
-    sys.stdout.write('%d: %s' % (fd, in_str))
+
+    s = '%d: ' % fd
+    sys.stdout.buffer.write(s.encode('utf-8'))
+    sys.stdout.buffer.write(in_str)  # write binary data to stdout
 
 
 if __name__ == '__main__':

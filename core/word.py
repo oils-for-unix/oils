@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 word.py -- Functions for using words as "tokens".
 """

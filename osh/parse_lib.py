@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 parse_lib.py - Consolidate various parser instantiations here.
 """

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 fix.py -- Do source transformations.  Somewhat like 'go fix'.
 """

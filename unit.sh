@@ -1,17 +1,20 @@
 #!/bin/bash
 #
-# Run unit tests.
+# Run unit tests.  Sets PYTHONPATH.
 #
 # Usage:
-#   ./test.sh <function name>
+#   ./unit.sh <function name>
+#
+# Examples:
+#
+#   ./unit.sh one core/lexer_test.py
+#   ./unit.sh all
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-#
-# Unit tests
-#
+source spec-runner.sh  # TODO: Separate this?
 
 export PYTHONPATH=.  # current dir
 
@@ -20,8 +23,15 @@ one() {
   "$@"
 }
 
-all() {
+_log-one() {
+  local name=$1
+  $name > _tmp/unit/${name}.log.txt 2>&1
+}
+
+_all() {
   local skip_c=${1:-}
+
+  mkdir -p _tmp/unit
 
   for t in {asdl,core,osh}/*_test.py; do
     # NOTE: This test hasn't passed in awhile.  It uses strings as output.
@@ -33,8 +43,20 @@ all() {
       continue
     fi
     echo $t
-    $t
+
+    mkdir -p _tmp/unit/$(dirname $t)
+    run-task-with-status _tmp/unit/${t}.task.txt $0 _log-one $t
   done
+}
+
+# spec-runer looks at .task.txt and .stats.txt.  We don't need that.  We just
+# time, status, and a link to the .txt file.
+_html-summary() {
+  find _tmp/unit -name '*.task.txt'
+}
+
+all() {
+  time $0 _all
 }
 
 "$@"

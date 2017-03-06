@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """
 arith_parse.py: Parse shell-like and C-like arithmetic.
 """
