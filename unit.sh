@@ -49,10 +49,14 @@ _all() {
   done
 }
 
-# spec-runer looks at .task.txt and .stats.txt.  We don't need that.  We just
+# spec-runner looks at .task.txt and .stats.txt.  We don't need that.  We just
 # time, status, and a link to the .txt file.
 _html-summary() {
-  find _tmp/unit -name '*.task.txt'
+  find _tmp/unit -name '*.task.txt' | xargs head -n 1
+}
+
+html-summary() {
+  _html-summary
 }
 
 all() {

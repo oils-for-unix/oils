@@ -374,6 +374,14 @@ def RunCases(cases, case_predicate, shells, env, out):
   stats['osh_num_passed'] = 0
   stats['osh_num_failed'] = 0
 
+  # Make an environment for each shell.  $SH is the path to the shell, so we
+  # can test flags, etc.
+  sh_env = []
+  for _, sh_path in shells:
+    e = dict(env)
+    e['SH'] = sh_path
+    sh_env.append(e)
+
   for i, case in enumerate(cases):
     line_num = case['line_num']
     desc = case['desc']
@@ -390,9 +398,9 @@ def RunCases(cases, case_predicate, shells, env, out):
     # TODO: copy this source somewhere
     code_utf8 = code.encode('utf-8')
 
-    for sh_label, sh_path in shells:
+    for shell_index, (sh_label, sh_path) in enumerate(shells):
       argv = [sh_path]  # TODO: Be able to test shell flags?
-      p = subprocess.Popen(argv, env=env,
+      p = subprocess.Popen(argv, env=sh_env[shell_index],
                            stdin=PIPE, stdout=PIPE, stderr=PIPE)
       p.stdin.write(code_utf8)
       p.stdin.close()

@@ -264,7 +264,12 @@ tilde() {
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec tests/var-sub.test.sh --osh-failures-allowed 23 \
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 22 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+var-num() {
+  sh-spec tests/var-num.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -287,7 +292,7 @@ arith-context() {
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 31 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 30 \
     $BASH $MKSH $OSH "$@"
 }
 

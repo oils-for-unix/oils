@@ -240,20 +240,21 @@ class VarOpTest(unittest.TestCase):
 
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
-    unset_sub = ast.BracedVarSub(ast.token(Id.Lit_Chars, 'unset'))
-    print(ev.EvalVarSub(unset_sub))
+    unset_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'unset'))
+    print(ev._EvalWordPart(unset_sub))
 
-    set_sub = ast.BracedVarSub(ast.token(Id.Lit_Chars, 'x'))
-    print(ev.EvalVarSub(set_sub))
+    set_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'x'))
+    print(ev._EvalWordPart(set_sub))
 
+    # Now add some ops
     part = ast.LiteralPart(ast.token(Id.Lit_Chars, 'default'))
     arg_word = ast.CompoundWord([part])
     test_op = ast.StringUnary(Id.VTest_ColonHyphen, arg_word)
     unset_sub.suffix_op = test_op
     set_sub.suffix_op = test_op
 
-    print(ev.EvalVarSub(unset_sub))
-    print(ev.EvalVarSub(set_sub))
+    print(ev._EvalWordPart(unset_sub))
+    print(ev._EvalWordPart(set_sub))
 
 
 if __name__ == '__main__':

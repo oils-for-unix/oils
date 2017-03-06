@@ -205,6 +205,11 @@ class Mem(object):
     pass
 
 
+class _ExecError(RuntimeError):
+  """Internal to Executor."""
+  pass
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -367,7 +372,7 @@ class Executor(object):
     if not node:
       print('Error parsing code %r' % code_str)
       return 1
-    status, cflow = self.Execute(node)
+    status, cflow = self._Execute(node)
     return status
 
   def _Eval(self, argv):
@@ -471,7 +476,7 @@ class Executor(object):
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).
-    status, cflow = self.Execute(func_body)
+    status, cflow = self._Execute(func_body)
     self.mem.Pop()
     return status, cflow
 
@@ -626,19 +631,7 @@ class Executor(object):
 
     return status, EBuiltin.NONE  # no control flow
 
-  def ExecuteTop(self, node):
-    """
-    Execute from the top level.
-
-    TODO: This is wrong; we can't only check here.
-    """
-    status, cflow = self.Execute(node)
-    if cflow != EBuiltin.NONE:
-      print('break / continue can only be used inside loop')
-      status = 129  # TODO: Fix this.  Use correct macros
-    return status, cflow
-
-  def Execute(self, node):
+  def _Execute(self, node):
     """
     Args:
       node: of type AstNode
@@ -700,7 +693,7 @@ class Executor(object):
 
     elif node.tag == command_e.Sentence:
       # TODO: Compile this away
-      status, cflow = self.Execute(node.command)
+      status, cflow = self._Execute(node.command)
 
     elif node.tag == command_e.Pipeline:
       status, cflow = self._RunPipeline(node)
@@ -738,7 +731,8 @@ class Executor(object):
         # TODO: Also have to evaluate the right hand side.
         ok, val = self.ev.EvalCompoundWord(pair.rhs)
         if not ok:
-          return None
+          self.error_stack.extend(self.ev.Error())
+          raise _ExecError()
         pairs.append((pair.lhs, val))
 
       flags = 0  # TODO: Calculate from keyword/flags
@@ -755,30 +749,30 @@ class Executor(object):
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
       status = 0  # for empty list
       for child in node.children:
-        status, cflow = self.Execute(child)  # last status wins
+        status, cflow = self._Execute(child)  # last status wins
         if cflow in (EBuiltin.BREAK, EBuiltin.CONTINUE):
           break
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
       left, right = node.children
-      status, cflow = self.Execute(left)
+      status, cflow = self._Execute(left)
 
       if node.op_id == Id.Op_DPipe:
         if status != 0:
-          status, cflow = self.Execute(right)
+          status, cflow = self._Execute(right)
       elif node.op_id == Id.Op_DAmp:
         if status == 0:
-          status, cflow = self.Execute(right)
+          status, cflow = self._Execute(right)
       else:
         raise AssertionError
 
     elif node.tag == command_e.While:
       while True:
-        status, _ = self.Execute(node.cond)
+        status, _ = self._Execute(node.cond)
         if status != 0:
           break
-        status, cflow = self.Execute(node.body)  # last one wins
+        status, cflow = self._Execute(node.body)  # last one wins
         if cflow == EBuiltin.BREAK:
           cflow = EBuiltin.NONE  # reset since we respected it
           break
@@ -799,7 +793,7 @@ class Executor(object):
       for x in iter_list:
         self.mem.SetSimpleVar(iter_name, Value.FromString(x))
 
-        status, cflow = self.Execute(node.body)
+        status, cflow = self._Execute(node.body)
 
         if cflow == EBuiltin.BREAK:
           cflow = EBuiltin.NONE  # reset since we respected it
@@ -810,7 +804,7 @@ class Executor(object):
     elif node.tag == command_e.DoGroup:
       # Delegate to command list
       # TODO: This should be compiled out!
-      status, cflow = self.Execute(node.child)
+      status, cflow = self._Execute(node.child)
 
     elif node.tag == command_e.FuncDef:
       self.funcs[node.name] = node
@@ -819,14 +813,14 @@ class Executor(object):
     elif node.tag == command_e.If:
       done = False
       for arm in node.arms:
-        status, _ = self.Execute(arm.cond)
+        status, _ = self._Execute(arm.cond)
         if status == 0:
-          status, _ = self.Execute(arm.action)
+          status, _ = self._Execute(arm.action)
           done = True
           break
       # TODO: The compiler should flatten this
       if not done and node.else_action is not None:
-        status, _ = self.Execute(node.else_action)
+        status, _ = self._Execute(node.else_action)
 
     elif node.tag == command_e.NoOp:
       status = 0  # make it true
@@ -850,4 +844,28 @@ class Executor(object):
     # TODO: Is this the right place to put it?  Does it need a stack for
     # function calls?
     self.mem.last_status = status
+    return status, cflow
+
+  def Execute(self, node):
+    """Execute an LST node."""
+    # Use exceptions internally, but exit codes externally.
+    try:
+      status, cflow = self._Execute(node)
+    except _ExecError:
+      # TODO: Nicer runtime error message.
+      print(self.error_stack, file=sys.stderr)
+      status = 1
+      cflow = EBuiltin.NONE
+    return status, cflow
+
+  def ExecuteTop(self, node):
+    """
+    Execute from the top level.
+
+    TODO: This is wrong; we can't only check here.
+    """
+    status, cflow = self.Execute(node)
+    if cflow != EBuiltin.NONE:
+      print('break / continue can only be used inside loop')
+      status = 129  # TODO: Fix this.  Use correct macros
     return status, cflow

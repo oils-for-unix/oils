@@ -196,8 +196,18 @@ def _IsSubst(p):
       word_part_e.BracedVarSub, word_part_e.ArithSubPart)
 
 
+class _EvalError(RuntimeError):
+  pass
+
+
 class _Evaluator(object):
-  """Abstract base class."""
+  """Abstract base class for word evaluators.
+
+  Public entry points:
+    EvalCompoundWord
+    EvalWords
+    Error
+  """
 
   def __init__(self, mem, exec_opts):
     self.mem = mem
@@ -226,110 +236,18 @@ class _Evaluator(object):
     arith_ev = expr_eval.ArithEvaluator(self.mem, self)
     if arith_ev.Eval(anode):
       num = arith_ev.Result()
-      return True, Value.FromString(str(num))
+      return Value.FromString(str(num))
     else:
       self.error_stack.extend(arith_ev.Error())
-      return False, None
+      raise _EvalError()
 
-  def _EvalVar(self, name, quoted=False):
-    """Evaluates the given variable in the current scope.
-
-    Returns:
-       bool ok, Value v
-    """
-    # $@ is special -- it need to know whether it is in a double quoted
-    # context.
-    #
-    # - If it's $@ in a double quoted context, return an ARRAY.
-    # - If it's $@ in a normal context, return a STRING, which then will be
-    # subject to splitting.
-
-    # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
-    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
-    # "When the expansion occurs within a double-quoted string (see
-    # Double-Quotes), it shall expand to a single field with the value of
-    # each parameter separated by the first character of the IFS variable, or
-    # by a <space> if IFS is unset. If IFS is set to a null string, this is
-    # not equivalent to unsetting it; its first character does not exist, so
-    # the parameter values are concatenated."
-    ifs = _GetIfs(self.mem)
-    sep = ifs[0] if ifs else ''
-
-    # GetArgv.  And then look at whether we're in a double quoted context or
-    # not.
-    if name in ('@', '*'):
-      if name == '@' and quoted:  # "$@" evaluates to an array
-        argv = self.mem.GetArgv()
-        val = Value.FromArray(argv)
-        #print('$@', val)
-        return True, val
-      else:  # $@ $* "$*"
-        argv = self.mem.GetArgv()
-        val = Value.FromString(ifs[0].join(argv))
-        return True, val
-
-    elif name == '?':
-      # TODO: Have to parse status somewhere.
-      # External commands need WIFEXITED test.  What about subshells?
-      return True, Value.FromString(str(self.mem.last_status))
-
-    elif name == '#':
-      argv = self.mem.GetArgv()
-      s = str(len(argv))
-      return True, Value.FromString(s)
-
-    # TODO: $0 $1 ...
-
-    else:
-      # BracedVarSub is for $foo, without qualifiers.
-      defined, val = self.mem.Get(name)
-      return defined, val
-
-      if defined:
-        # If there are no modifiers like a[@], add implicit a[0], as long as
-        # exec option bash_array is set.
-        #
-        # TODO: $array is an error.  Only an explicit ${array[0]} or
-        # ${array[@]} is valid.  This is compatible with bash, and makes it
-        # easier to read and catch bugs.  We know the type at compile
-        # time.  It makes it easier to apply VarOps with unsurprising
-        # semantics.
-
-        if self.exec_opts.bash_array:
-          val = val.EvalToFirst()
-        return True, val
-      else:
-        # TODO: MOVE down to EvalVarSub().  Test ops will change this.
-        if self.exec_opts.nounset:
-          # stack will unwind
-          token = None
-          # TODO: Need to have the ast for varsub.  BracedVarSub should have a
-          # token?
-          #tb = self.mem.GetTraceback(token)
-          self._AddErrorContext("Unset variable %s" % name)
-          return False, None
-        else:
-          return True, Value.FromString('')
-
-  def EvalVarSub(self, part, quoted=False):
+  def _ApplyVarOps(self, defined, val, part):
     """
     Args:
-      part: SimpleVarSub or BracedVar
-      ops: list of VarOp to execute
-      quoted: whether the var sub was double quoted
+      part: BracedVarSub
+    Returns:
+      defined, val
     """
-    if part.tag == word_part_e.SimpleVarSub:
-      name = part.token.val[1:]  # strip off leading $
-      defined, val = self._EvalVar(name, quoted=quoted)
-      if not defined:
-        self._AddErrorContext("Undefined variable %s" % name)
-        return False, None
-      # TODO: Fix this and merge it with logic below.  Respect 'nounset'
-      # option, etc.
-      return True, val
-
-    name = part.token.val
-
     # Possibilities: Array OR Index; then Test OR Transform
 
     # So instead of a list of ops, it should be optional IndexOp, optional
@@ -344,10 +262,7 @@ class _Evaluator(object):
     # ${empty:-foo} -> foo
     # ${empty-foo} -> ''
 
-    defined, val = self._EvalVar(name, quoted=quoted)
-    #print('@@@', defined, val)
-
-    array_ok = (name == '@')  # Don't need any op for array $@
+    array_ok = False
     index_error = False  # test_op can suppress this
 
     if defined and part.bracket_op:
@@ -425,9 +340,7 @@ class _Evaluator(object):
       if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
         if is_falsey:
           argv = []
-          ok, val2 = self.EvalCompoundWord(op.arg_word)
-          if not ok:
-            return False, None
+          val2 = self._EvalCompoundWord(op.arg_word)
           val2.AppendTo(argv)
           # TODO: This is roundabout
           val = Value.FromArray(argv)
@@ -450,7 +363,7 @@ class _Evaluator(object):
         # TODO: Need to have the ast for varsub.  BracedVarSub should have a
         # token?
         #tb = self.mem.GetTraceback(token)
-        self._AddErrorContext("Unset variable %s" % name)
+        self._AddErrorContext("Unset variable %s" % var_name)
         return False, None
       else:
         print("UNDEFINED")
@@ -509,9 +422,7 @@ class _Evaluator(object):
         print(op.words)
         argv = []
         for w in op.words:
-          ok, val2 = self.EvalCompoundWord(w)
-          if not ok:
-            return False, None
+          val2 = self._EvalCompoundWord(w)
           val2.AppendTo(argv)
 
         # TODO: Evaluate words, and add the SPACE VALUES, getting a single
@@ -546,8 +457,8 @@ class _Evaluator(object):
 
     return True, val
 
-  def EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
-    """CompoundWord.Eval().
+  def _EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
+    """Evaluate a word.
 
     This is used in the following contexts:
     - Evaluating redirect words: no glob and no word splitting
@@ -567,6 +478,7 @@ class _Evaluator(object):
         '*' turn into \*.  But other metacharacters must be left alone.
 
     Returns:
+      ok
       Value -- empty unquoted, string, or array
     """
     assert isinstance(word, ast.CompoundWord), "Expected CompoundWord, got %s" % word
@@ -576,10 +488,7 @@ class _Evaluator(object):
 
     strs = ['']
     for p in word.parts:
-      ok, val = self.EvalWordPart(p, quoted=False)
-      if not ok:
-        self._AddErrorContext("Error evaluating word part %r" % p)
-        return False, Value.FromString('')
+      val = self._EvalWordPart(p, quoted=False)  # may raise
       assert isinstance(val, Value), val
       is_str, s = val.AsString()
       #print('-VAL', val, is_str)
@@ -612,7 +521,14 @@ class _Evaluator(object):
       val = Value.FromString(strs[0])
     else:
       val = Value.FromArray(strs)
-    return True, val
+    return val
+
+  def EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
+    try:
+      v = self._EvalCompoundWord(word, ifs, do_glob, elide_empty)
+      return True, v
+    except _EvalError:
+      return False, None
 
   def EvalTildeSub(self, prefix):
     """Evaluates ~ and ~user.
@@ -624,7 +540,7 @@ class _Evaluator(object):
       # First look up the HOME var, and then env var
       defined, val = self.mem.Get('HOME')
       if defined:
-        return True, val
+        return val
 
       # If no env, fall back on /etc/passwd
       uid = os.getuid()
@@ -635,7 +551,7 @@ class _Evaluator(object):
       else:
         s = e.pw_dir
 
-      return True, Value.FromString(s)
+      return Value.FromString(s)
 
     # http://linux.die.net/man/3/getpwnam
     try:
@@ -645,7 +561,7 @@ class _Evaluator(object):
     else:
       s = e.pw_dir
 
-    return True, Value.FromString(s)
+    return Value.FromString(s)
 
   def EvalArrayLiteralPart(self, part):
     #print(self.words, '!!!')
@@ -654,11 +570,8 @@ class _Evaluator(object):
 
       # - perform splitting when necessary?
       # set IFS here?
-      ok, val = self.EvalCompoundWord(w)
+      val = self._EvalCompoundWord(w)
 
-      if not ok:
-        # TODO: show errors?
-        return False, None
       # NOTE: For now, we enforce homogeneous arrays of strings.  This is for
       # the shell / proc dialect.  For func dialect, we can have heterogeneous
       # arrays.
@@ -668,28 +581,132 @@ class _Evaluator(object):
       else:
         # TODO:
         # - interpolate array into array
-        raise AssertionError('Expected string')
+        self._AddErrorContext('Expected string in array')
+        raise _EvalError()
 
-    return True, Value.FromArray(array)
+    return Value.FromArray(array)
 
-  def EvalWordPart(self, part, quoted=False):
+  def _EvalVarNum(self, var_num):
+    argv = self.mem.GetArgv()
+    assert var_num >= 0
+
+    if var_num == 0:
+      raise NotImplementedError
+    else:
+      index = var_num - 1
+      if index < len(argv):
+        return True, Value.FromString(str(argv[index]))
+      else:
+        # NOTE: This is not a fatal error.
+        self._AddErrorContext(
+            'argv has %d entries; %d is out of range', len(argv), var_num)
+        return False, None  # undefined
+
+  def _EvalSpecialVar(self, op_id, quoted):
+    # $@ is special -- it need to know whether it is in a double quoted
+    # context.
+    #
+    # - If it's $@ in a double quoted context, return an ARRAY.
+    # - If it's $@ in a normal context, return a STRING, which then will be
+    # subject to splitting.
+
+    # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
+    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
+    # "When the expansion occurs within a double-quoted string (see
+    # Double-Quotes), it shall expand to a single field with the value of
+    # each parameter separated by the first character of the IFS variable, or
+    # by a <space> if IFS is unset. If IFS is set to a null string, this is
+    # not equivalent to unsetting it; its first character does not exist, so
+    # the parameter values are concatenated."
+    ifs = _GetIfs(self.mem)
+    sep = ifs[0] if ifs else ''
+
+    # GetArgv.  And then look at whether we're in a double quoted context or
+    # not.
+    if op_id in (Id.VSub_At, Id.VSub_Star):
+      if op_id == Id.VSub_At and quoted:  # "$@" evaluates to an array
+        argv = self.mem.GetArgv()
+        val = Value.FromArray(argv)
+        #print('$@', val)
+        return True, val
+      else:  # $@ $* "$*"
+        argv = self.mem.GetArgv()
+        val = Value.FromString(ifs[0].join(argv))
+        return True, val
+
+    elif op_id == Id.VSub_QMark:  # $?
+      # TODO: Have to parse status somewhere.
+      # External commands need WIFEXITED test.  What about subshells?
+      return True, Value.FromString(str(self.mem.last_status))
+
+    elif op_id == Id.VSub_Pound:  # $#
+      argv = self.mem.GetArgv()
+      s = str(len(argv))
+      return True, Value.FromString(s)
+
+    else:
+      raise NotImplementedError(op_id)
+
+  def _EvalVarPost(self, defined, val):
+    """Evaluates the given variable in the current scope.
+
+    Returns:
+       bool ok, Value v
+    """
+    if defined:
+      # If there are no modifiers like a[@], add implicit a[0], as long as
+      # exec option bash_array is set.
+      #
+      # TODO: $array is an error.  Only an explicit ${array[0]} or
+      # ${array[@]} is valid.  This is compatible with bash, and makes it
+      # easier to read and catch bugs.  We know the type at compile
+      # time.  It makes it easier to apply VarOps with unsurprising
+      # semantics.
+
+      # TODO: Put this back.  Don't break "$@".
+      #if self.exec_opts.bash_array:
+      #  val = val.EvalToFirst()
+      return val
+    else:
+      # TODO: MOVE down to EvalVarSub().  Test ops will change this.
+      if self.exec_opts.nounset:
+        # stack will unwind
+        token = None
+        # TODO: Need to have the ast for varsub.  BracedVarSub should have a
+        # token?
+        #tb = self.mem.GetTraceback(token)
+        self._AddErrorContext("Unset variable %s" % name)
+        raise _EvalError()
+      # Raise _WordEvalError  -- unwind 
+      # Eval
+      # And then have a EvalCompoundWord
+
+      else:
+        return Value.FromString('')
+
+  def _EvalWordPart(self, part, quoted=False):
+    """
+    Returns:
+      bool ok
+      Value
+    """
     if part.tag == word_part_e.ArrayLiteralPart:
       return self.EvalArrayLiteralPart(part)
 
     elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
-      return True, Value.FromString(s)
+      return Value.FromString(s)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
       val = self.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      return True, Value.FromString(s)
+      return Value.FromString(s)
 
     elif part.tag == word_part_e.SingleQuotedPart:
       s = ''.join(t.val for t in part.tokens)
-      return True, Value.FromString(s)
+      return Value.FromString(s)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
       return self.EvalDoubleQuotedPart(part)
@@ -699,9 +716,38 @@ class _Evaluator(object):
       # supply something like /dev/fd/63.
       return self.EvalCommandSub(part.command_list)
 
-    elif part.tag in (word_part_e.SimpleVarSub, word_part_e.BracedVarSub):
-      # This is the only one that uses quoted?
-      return self.EvalVarSub(part, quoted=quoted)
+    elif part.tag == word_part_e.SimpleVarSub:
+      # 1. Evaluate from (var_name, var_num, token) -> defined, value
+      if part.token.id == Id.VSub_Name:
+        var_name = part.token.val[1:]
+        defined, val = self.mem.Get(var_name)
+      elif part.token.id == Id.VSub_Number:
+        var_num = int(part.token.val[1:])
+        defined, val = self._EvalVarNum(var_num)
+      else:
+        defined, val = self._EvalSpecialVar(part.token.id, quoted)
+
+      # 2. And then nounset, basharray opts
+      val = self._EvalVarPost(defined, val)
+      return val
+
+    elif part.tag == word_part_e.BracedVarSub:
+      # 1. Evaluate from (var_name, var_num, token) -> defined, value
+      if part.token.id == Id.VSub_Name:
+        var_name = part.token.val
+        defined, val = self.mem.Get(var_name)
+      elif part.token.id == Id.VSub_Number:
+        var_num = int(part.token.val)
+        defined, val = self._EvalVarNum(var_num)
+      else:
+        defined, val = self._EvalSpecialVar(part.token.id, quoted)
+
+      # 2. Evaluate the ops from the part
+      defined, val = self._ApplyVarOps(defined, val, part)
+
+      # 3. And then nounset, basharray opts
+      val = self._EvalVarPost(defined, val)
+      return val
 
     elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
@@ -718,10 +764,7 @@ class _Evaluator(object):
     # NOTE: quoted arg isn't used
     strs = ['']
     for p in part.parts:
-      ok, val = self.EvalWordPart(p, quoted=True)
-      if not ok:
-        return False, Value.FromString('')  # ERROR
-
+      val = self._EvalWordPart(p, quoted=True)
       assert isinstance(val, Value), val
       is_str, s = val.AsString()
       if is_str:
@@ -735,7 +778,7 @@ class _Evaluator(object):
       val = Value.FromString(strs[0])
     else:
       val = Value.FromArray(strs)
-    return True, val
+    return val
 
   def _ExpandGlobs(self, argv):
     result = []
@@ -758,7 +801,7 @@ class _Evaluator(object):
         result.append(u)
     return result
 
-  def EvalWords(self, words):
+  def _EvalWords(self, words):
     """Turns a list of Words into a list of strings.
 
     Args:
@@ -787,17 +830,20 @@ class _Evaluator(object):
 
     argv = []
     for w in words:
-      ok, val = self.EvalCompoundWord(w, ifs=ifs, do_glob=do_glob)
-
-      if not ok:
-        self._AddErrorContext('Error evaluating word %s', w)
-        return None
+      # TODO: Raise execption
+      val = self._EvalCompoundWord(w, ifs=ifs, do_glob=do_glob)
       val.AppendTo(argv)
 
     if do_glob:
       # NOTE: failglob could cause failure?  Do other shells have it?
       argv = self._ExpandGlobs(argv)
     return argv
+
+  def EvalWords(self, words):
+    try:
+      return self._EvalWords(words)
+    except _EvalError:
+      return None
 
   def EvalEnv(self, more_env):
     """Evaluate environment variable bindings.
@@ -816,17 +862,12 @@ class _Evaluator(object):
       name = env_pair.name
       val = env_pair.val
 
-      ok, val = self.EvalCompoundWord(val)
-      # What happens here?  Undefined variable?
-      if not ok:
-        self._AddErrorContext(
-            "Error evaluating word %s = %s", name, val)
-        return None
+      val = self._EvalCompoundWord(val)
       is_str, s = val.AsString()
       if not is_str:
         self._AddErrorContext(
             "Env vars should be strings, got %s = %s", name, val)
-        return None
+        raise _EvalError()
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
@@ -856,12 +897,10 @@ class NormalEvaluator(_Evaluator):
     # Return false here.  How do we get that value from the Process then?  Do
     # we use a special return value?
 
-    ok = True
-
     # I think $() does a strip basically?
     # argv $(echo ' hi')$(echo bye) -> hibye
     s = ''.join(stdout).strip()
-    return ok, Value.FromString(s)
+    return Value.FromString(s)
 
 
 class CompletionEvaluator(_Evaluator):
@@ -880,4 +919,4 @@ class CompletionEvaluator(_Evaluator):
 
   def EvalCommandSub(self, node):
     # Just  return a dummy string?
-    return True, Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')
+    return Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')
