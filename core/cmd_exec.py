@@ -650,6 +650,7 @@ class Executor(object):
     # TODO: Only eval argv[0] once.  It can have side effects!
     if node.tag == command_e.SimpleCommand:
       argv = self.ev.EvalWords(node.words)
+
       if argv is None:
         self.error_stack.extend(self.ev.Error())
         raise _ExecError()

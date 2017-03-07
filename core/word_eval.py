@@ -8,55 +8,13 @@ import pwd
 import re
 
 from core import expr_eval  # ArithEval
-try:
-  from core import libc
-except ImportError:
-  from core import fake_libc as libc
+from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core.value import Value
 from core.util import cast
 from osh import ast_ as ast
 
 bracket_op_e = ast.bracket_op_e
-
-
-# Glob Helpers for WordParts.
-# ! : - are metachars within character classes
-GLOB_META_CHARS = r'\*?[]-:!'
-
-def _GlobEscape(s):
-  """
-  For SingleQuotedPart, DoubleQuotedPart, and EscapedLiteralPart
-  """
-  escaped = ''
-  for c in s:
-    if c in GLOB_META_CHARS:
-      escaped += '\\'
-    escaped += c
-  return escaped
-
-
-def _GlobUnescape(s):  # used by cmd_exec
-  """
-  If there is no glob match, just unescape the string.
-  """
-  unescaped = ''
-  i = 0
-  n = len(s)
-  while i < n:
-    c = s[i]
-    if c == '\\':
-      assert i != n - 1, 'There should be no trailing single backslash!'
-      i += 1
-      c2 = s[i]
-      if c2 in GLOB_META_CHARS:
-        unescaped += c2
-      else:
-        raise AssertionError("Unexpected escaped character %r" % c2)
-    else:
-      unescaped += c
-    i += 1
-  return unescaped
 
 
 def _GetIfs(mem):
@@ -157,7 +115,7 @@ def _AppendArray(strs, array, glob_escape=False):
       empty = False
 
     if glob_escape:
-      s = _GlobEscape(s)
+      s = GlobEscape(s)
 
     if i == 0:
       strs[-1] += s
@@ -212,6 +170,8 @@ class _Evaluator(object):
   def __init__(self, mem, exec_opts):
     self.mem = mem
     self.exec_opts = exec_opts
+
+    self.globber = Globber(exec_opts)
     self.error_stack = []
 
   def _AddErrorContext(self, msg, *args):
@@ -222,7 +182,7 @@ class _Evaluator(object):
   def Error(self):
     return self.error_stack
 
-  def EvalCommandSub(self, node):
+  def _EvalCommandSub(self, node):
     """
     Args:
       node: COMMAND_SUB node
@@ -232,7 +192,7 @@ class _Evaluator(object):
     """
     raise NotImplementedError
 
-  def EvalArithSub(self, anode):
+  def _EvalArithSub(self, anode):
     arith_ev = expr_eval.ArithEvaluator(self.mem, self)
     if arith_ev.Eval(anode):
       num = arith_ev.Result()
@@ -461,8 +421,10 @@ class _Evaluator(object):
     """Evaluate a word.
 
     This is used in the following contexts:
-    - Evaluating redirect words: no glob and no word splitting
-    - Right hand side of assignments -- no globbing
+    - Regular commands via _EvalWords(): WITH globbing and word splitting
+    - Evaluating redirect words: no globbing or word splitting
+    - Right hand side of assignments and environments -- no globbing or word
+      splitting
     - [[ context
       - no word splitting
       - but do_glob=True when on RHS of ==
@@ -476,6 +438,7 @@ class _Evaluator(object):
       do_glob: Whether we are performing globs AFTER this.  This means that
         quoted literal glob metacharacters need to start with \.  e.g. "*" and
         '*' turn into \*.  But other metacharacters must be left alone.
+      elide_empty: whether empty words turn into EmptyUnquoted
 
     Returns:
       ok
@@ -506,7 +469,7 @@ class _Evaluator(object):
           # Any non-subst parts, even '', means we don't elide.
           is_empty_unquoted = False
           if glob_escape:
-            s = _GlobEscape(s)
+            s = GlobEscape(s)
           strs[-1] += s
 
       else:  # The result of a DoubleQuotedPart can be an array.
@@ -530,7 +493,7 @@ class _Evaluator(object):
     except _EvalError:
       return False, None
 
-  def EvalTildeSub(self, prefix):
+  def _EvalTildeSub(self, prefix):
     """Evaluates ~ and ~user.
 
     Args:
@@ -563,7 +526,9 @@ class _Evaluator(object):
 
     return Value.FromString(s)
 
-  def EvalArrayLiteralPart(self, part):
+  def _EvalArrayLiteralPart(self, part):
+    # TODO: Also ened globbing here.  Call EvalWords?
+
     #print(self.words, '!!!')
     array = []
     for w in part.words:
@@ -690,7 +655,7 @@ class _Evaluator(object):
       Value
     """
     if part.tag == word_part_e.ArrayLiteralPart:
-      return self.EvalArrayLiteralPart(part)
+      return self._EvalArrayLiteralPart(part)
 
     elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
@@ -708,12 +673,12 @@ class _Evaluator(object):
       return Value.FromString(s)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
-      return self.EvalDoubleQuotedPart(part)
+      return self._EvalDoubleQuotedPart(part)
 
     elif part.tag == word_part_e.CommandSubPart:
       # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
       # supply something like /dev/fd/63.
-      return self.EvalCommandSub(part.command_list)
+      return self._EvalCommandSub(part.command_list)
 
     elif part.tag == word_part_e.SimpleVarSub:
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
@@ -751,15 +716,15 @@ class _Evaluator(object):
     elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
-      return self.EvalTildeSub(part.prefix)
+      return self._EvalTildeSub(part.prefix)
 
     elif part.tag == word_part_e.ArithSubPart:
-      return self.EvalArithSub(part.anode)
+      return self._EvalArithSub(part.anode)
 
     else:
       raise AssertionError(part.tag)
 
-  def EvalDoubleQuotedPart(self, part):
+  def _EvalDoubleQuotedPart(self, part):
     # NOTE: quoted arg isn't used
     strs = ['']
     for p in part.parts:
@@ -778,27 +743,6 @@ class _Evaluator(object):
     else:
       val = Value.FromArray(strs)
     return val
-
-  def _ExpandGlobs(self, argv):
-    result = []
-    for arg in argv:
-      # TODO: Only try to glob if there are any glob metacharacters.
-      try:
-        #g = glob.glob(arg)
-        g = libc.glob(arg)
-      except Exception as e:
-        # - [C\-D] is invalid in Python?  Regex compilation error.
-        # - [:punct:] not supported
-        print("Error expanding glob %r: %s" % (arg, e))
-        raise
-      #print('G', arg, g)
-
-      if g:
-        result.extend(g)
-      else:
-        u = _GlobUnescape(arg)
-        result.append(u)
-    return result
 
   def _EvalWords(self, words):
     """Turns a list of Words into a list of strings.
@@ -829,13 +773,14 @@ class _Evaluator(object):
 
     argv = []
     for w in words:
-      # TODO: Raise execption
+      # TODO: Get rid of do_glob here.  That knowledge should only be in the
+      # globber.
       val = self._EvalCompoundWord(w, ifs=ifs, do_glob=do_glob)
       val.AppendTo(argv)
 
     if do_glob:
       # NOTE: failglob could cause failure?  Do other shells have it?
-      argv = self._ExpandGlobs(argv)
+      argv = self.globber.Expand(argv)
     return argv
 
   def EvalWords(self, words):
@@ -844,6 +789,7 @@ class _Evaluator(object):
     except _EvalError:
       return None
 
+  # TODO: Wrap and catch _EvalError
   def EvalEnv(self, more_env):
     """Evaluate environment variable bindings.
 
@@ -883,7 +829,7 @@ class NormalEvaluator(_Evaluator):
     _Evaluator.__init__(self, mem, exec_opts)
     self.ex = ex
 
-  def EvalCommandSub(self, node):
+  def _EvalCommandSub(self, node):
     p = self.ex._GetProcessForNode(node)
     # NOTE: We could do an optimization for pipelines.  Pick the last
     # process element, and do pi.procs[-1].CaptureOutput()
@@ -916,6 +862,6 @@ class CompletionEvaluator(_Evaluator):
   def __init__(self, mem, exec_opts):
     _Evaluator.__init__(self, mem, exec_opts)
 
-  def EvalCommandSub(self, node):
+  def _EvalCommandSub(self, node):
     # Just  return a dummy string?
     return Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')

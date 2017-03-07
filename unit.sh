@@ -52,7 +52,26 @@ _all() {
 # spec-runner looks at .task.txt and .stats.txt.  We don't need that.  We just
 # time, status, and a link to the .txt file.
 _html-summary() {
-  find _tmp/unit -name '*.task.txt' | xargs head -n 1
+  find _tmp/unit -name '*.task.txt' | awk '
+  { path = $0
+    getline < path
+    status = $1
+    wall_secs = $2
+
+    if (status == 0) {
+      num_passed += 1
+    } else {
+      num_failed = 1
+      print path " failed"
+    }
+  }
+  END {
+    if (num_failed == 0) {
+      print ""
+      print "ALL " num_passed " TESTS PASSED"
+    }
+  }
+  '
 }
 
 html-summary() {
@@ -61,6 +80,7 @@ html-summary() {
 
 all() {
   time $0 _all
+  html-summary
 }
 
 "$@"

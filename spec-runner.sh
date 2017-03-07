@@ -131,6 +131,14 @@ EOF
     sum_osh_num_failed += osh_num_failed
     num_rows += 1
 
+    # For the console
+    if (status == 0) {
+      num_passed += 1
+    } else {
+      num_failed += 1
+      print spec_name " failed with status " status > "/dev/stderr"
+    }
+
     if (status != 0) {
       css_class = "failed"
     } else if (osh_num_failed != 0) {
@@ -161,6 +169,14 @@ EOF
     print "<td>" sum_osh_num_failed "</td>"
     print "</tr>"
     print "</tfoot>"
+
+    # For the console
+    print "" > "/dev/stderr"
+    if (num_failed == 0) {
+      print "*** All " num_passed " tests PASSED" > "/dev/stderr"
+    } else {
+      print "*** " num_failed " tests FAILED" > "/dev/stderr"
+  }
   }
   '
 

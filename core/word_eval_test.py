@@ -72,22 +72,5 @@ class SplitTest(unittest.TestCase):
         word_eval._IfsSplit(' a c ', ' '))
 
 
-class GlobEscapeTest(unittest.TestCase):
-
-  def testEscapeUnescape(self):
-    esc = word_eval._GlobEscape
-    unesc = word_eval._GlobUnescape
-
-    pairs = [
-        (r'\*.py', '*.py'),
-        (r'\?.py', '?.py'),
-        (r'\[a\-z\]\[\[\:punct\:\]\]', '[a-z][[:punct:]]'),
-        (r'\\n', r'\n'),
-    ]
-    for e, u in pairs:
-      self.assertEqual(e, esc(u))
-      self.assertEqual(u, unesc(e))
-
-
 if __name__ == '__main__':
   unittest.main()
