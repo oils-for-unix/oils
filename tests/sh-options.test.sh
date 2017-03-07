@@ -20,6 +20,20 @@ echo end  # never reached
 # status: 1
 # OK dash status: 2
 
+### reset option with long flag
+set -o errexit
+set +o errexit
+echo "[$unset]"
+# stdout: []
+# status: 0
+
+### reset option with short flag
+set -u 
+set +u
+echo "[$unset]"
+# stdout: []
+# status: 0
+
 ### sh -c
 $SH -c 'echo hi'
 # stdout: hi
