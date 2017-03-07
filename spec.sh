@@ -278,6 +278,11 @@ var-sub-quote() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+sh-options() {
+  sh-spec tests/sh-options.test.sh --osh-failures-allowed 0 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 
 # 
 # Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
