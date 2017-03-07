@@ -668,14 +668,13 @@ class _Evaluator(object):
       #  val = val.EvalToFirst()
       return val
     else:
-      # TODO: MOVE down to EvalVarSub().  Test ops will change this.
       if self.exec_opts.nounset:
         # stack will unwind
         token = None
-        # TODO: Need to have the ast for varsub.  BracedVarSub should have a
-        # token?
+        # TODO: Print the name.  Need to have the ast for varsub.  BracedVarSub
+        # should have a token?
         #tb = self.mem.GetTraceback(token)
-        self._AddErrorContext("Unset variable %s" % name)
+        self._AddErrorContext('Undefined variable')
         raise _EvalError()
       # Raise _WordEvalError  -- unwind 
       # Eval

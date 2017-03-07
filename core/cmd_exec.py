@@ -651,9 +651,8 @@ class Executor(object):
     if node.tag == command_e.SimpleCommand:
       argv = self.ev.EvalWords(node.words)
       if argv is None:
-        err = self.ev.Error()
-        # TODO: Throw shell exception
-        raise AssertionError('Error evaluating words: %s' % err)
+        self.error_stack.extend(self.ev.Error())
+        raise _ExecError()
       more_env = self.ev.EvalEnv(node.more_env)
       if more_env is None:
         print(self.error_stack)
