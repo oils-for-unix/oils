@@ -204,6 +204,11 @@ builtins() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+builtins-special() {
+  sh-spec tests/builtins-special.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 func() {
   sh-spec tests/func.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
