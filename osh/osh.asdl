@@ -72,6 +72,10 @@ module osh
   | TildeSubPart(string prefix)
   | CommandSubPart(command command_list)
   | ArithSubPart(arith_expr anode)
+  | AltPart(word* words)  -- {a,b,c} is a single AltPart
+  | NumRangePart(int start, int end, int? step)  -- {1..10} or {1..10..2}
+  | CharRangePart(string start, string end, int? step) 
+  -- {a..f} or {a..f..2} or {a..f..-2}
 
   word = 
     TokenWord(token token)

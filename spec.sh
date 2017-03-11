@@ -336,7 +336,8 @@ dparen() {
 
 brace-expansion() {
   # NOTE: being a korn shell, mksh has brace expansion.  But dash doesn't!
-  sh-spec tests/brace-expansion.test.sh $BASH $MKSH "$@"
+  # numeric ranges come from ZSH?  mksh doesn't have them.
+  sh-spec tests/brace-expansion.test.sh $BASH $MKSH $ZSH "$@"
 }
 
 regex() {
