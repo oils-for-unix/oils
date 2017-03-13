@@ -206,8 +206,8 @@ class CompoundObj(Obj):
     self.__dict__[name] = value
 
   def __repr__(self):
-    #ast_f = fmt.AnsiOutput(io.StringIO())  # Color by default.
     ast_f = fmt.TextOutput(io.StringIO())  # No color by default.
+    #ast_f = fmt.AnsiOutput(io.StringIO())
     tree = fmt.MakeTree(self)
     fmt.PrintTree(tree, ast_f)
     s, _ = ast_f.GetRaw()

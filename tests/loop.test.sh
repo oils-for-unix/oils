@@ -27,6 +27,20 @@ done
 # status: 2
 # OK bash/mksh status: 1
 
+### Tilde expansion within for loop
+HOME=/home/bob
+for name in ~/src ~/git; do
+  echo $name
+done
+# stdout-json: "/home/bob/src\n/home/bob/git\n"
+
+### Brace Expansion within Array
+for i in -{a,b} {c,d}-; do
+  echo $i
+  done
+# stdout-json: "-a\n-b\nc-\nd-\n"
+# N-I dash stdout-json: "-{a,b}\n{c,d}-\n"
+
 ### using loop var outside loop
 func() {
   for i in a b c; do

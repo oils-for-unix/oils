@@ -29,6 +29,14 @@ def _ColorPrint(n):
 class BracesTest(unittest.TestCase):
 
   def testBraceDetect(self):
+    w = _assertReadWord(self, '}')
+    tree = braces._BraceDetect(w)
+    self.assertEqual(None, tree)
+
+    w = _assertReadWord(self, ',')
+    tree = braces._BraceDetect(w)
+    self.assertEqual(None, tree)
+
     w = _assertReadWord(self, 'B-{a,b}-E')
     tree = braces._BraceDetect(w)
     self.assertEqual(3, len(tree.parts))
@@ -56,14 +64,14 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
-    self.assertEqual(word_part_e.AltPart, middle_part.tag)
+    self.assertEqual(word_part_e.BracedAltPart, middle_part.tag)
     self.assertEqual(4, len(middle_part.words))  # a b c ={d,e}
 
     last_alternative = middle_part.words[3]
     self.assertEqual(2, len(last_alternative.parts)) # = {d,e}
 
     second_part = last_alternative.parts[1]
-    self.assertEqual(word_part_e.AltPart, second_part.tag)
+    self.assertEqual(word_part_e.BracedAltPart, second_part.tag)
     self.assertEqual(2, len(second_part.words)) # {d,e}
 
     # Another nested expansion
@@ -73,7 +81,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
-    self.assertEqual(word_part_e.AltPart, middle_part.tag)
+    self.assertEqual(word_part_e.BracedAltPart, middle_part.tag)
     self.assertEqual(3, len(middle_part.words))  # a ={b,c}= d
 
     first_alternative = middle_part.words[0]
@@ -85,7 +93,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(middle_alternative.parts))  # = {b,c} =
 
     middle_part2 = middle_alternative.parts[1]
-    self.assertEqual(word_part_e.AltPart, middle_part2.tag)
+    self.assertEqual(word_part_e.BracedAltPart, middle_part2.tag)
     self.assertEqual(2, len(middle_part2.words))  # b c
 
     # Third alternative is a CompoundWord with zero parts
@@ -97,10 +105,7 @@ class BracesTest(unittest.TestCase):
 
   def testBraceExpand(self):
     w = _assertReadWord(self, 'hi')
-    tree = braces._BraceDetect(w)
-    self.assertEqual(1, len(tree.parts))
-    pprint(tree)
-    results = braces._BraceExpand(tree.parts)
+    results = braces._BraceExpand(w.parts)
     self.assertEqual(1, len(results))
     for parts in results:
       _ColorPrint(ast.CompoundWord(parts))

@@ -289,3 +289,14 @@ array2=("$@")
 array3="$@"  # Without splicing with (), this one is flattened
 argv.py "${array1[@]}" "${array2[@]}" "${array3[@]}"
 # stdout: ['x y', 'z', 'a b', 'c', 'a b c']
+
+### Tilde expansion within array
+HOME=/home/bob
+a=(~/src ~/git)
+echo "${a[@]}"
+# stdout: /home/bob/src /home/bob/git
+
+### Brace Expansion within Array
+a=(-{a,b} {c,d}-)
+echo "${a[@]}"
+# stdout: -a -b c- d-

@@ -23,4 +23,10 @@ version-text() {
   _compare ./spec.sh version-text
 }
 
+count() {
+  # TODO: Need to implement 'return'
+  _compare ./count.sh all
+  #_compare ./count.sh parser
+}
+
 "$@"

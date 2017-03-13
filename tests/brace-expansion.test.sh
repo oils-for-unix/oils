@@ -7,14 +7,27 @@ echo {foo}
 ### incomplete trailing expansion
 echo {a,b}_{
 # stdout: a_{ b_{
+# OK osh stdout: {a,b}_{
 
 ### partial leading expansion
 echo }_{a,b}
 # stdout: }_a }_b
+# OK osh stdout: }_{a,b}
 
 ### partial leading expansion 2
 echo {x}_{a,b}
 # stdout: {x}_a {x}_b
+# OK osh stdout: {x}_{a,b}
+
+### } in expansion
+# hm they treat this the SAME.  Leftmost { is matched by first }, and then
+# there is another } as the postfix.
+echo {a,b}}
+# stdout: a} b}
+# status: 0
+# OK osh stdout: {a,b}}
+# OK zsh stdout-json: ""
+# OK zsh status: 1
 
 ### single expansion
 echo {foo,bar}
@@ -86,15 +99,6 @@ echo {{a,b}
 ### quoted { in expansion
 echo \{{a,b}
 # stdout: {a {b
-
-### } in expansion
-# hm they treat this the SAME.  Leftmost { is matched by first }, and then
-# there is another } as the postfix.
-echo {a,b}}
-# stdout: a} b}
-# status 0
-# OK zsh stdout-json: ""
-# OK zsh status: 1
 
 ### Empty expansion
 echo a{X,,Y}b

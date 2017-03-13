@@ -316,6 +316,17 @@ def TildeDetect(word):
   return w
 
 
+def TildeDetectAll(words):
+  out = []
+  for w in words:
+    t = TildeDetect(w)
+    if t:
+      out.append(t)
+    else:
+      out.append(w)
+  return out
+
+
 def HasArrayPart(w):
   """Used in cmd_parse."""
   assert w.tag == word_e.CompoundWord

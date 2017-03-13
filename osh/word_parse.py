@@ -12,6 +12,7 @@ word_parse.py - Parse the shell word language.
 from core import base
 
 from core.id_kind import Id, Kind, IdName, LookupKind
+from core import braces
 from core import word
 from core import tdop
 
@@ -832,21 +833,24 @@ class WordParser(object):
     return ast.ForExpr(init_node, cond_node, update_node)
 
   def _ReadArrayLiteralPart(self):
-    array_part = ast.ArrayLiteralPart()
-
     self._Next(LexMode.OUTER)  # advance past (
     self._Peek()
     assert self.cur_token.id == Id.Op_LParen, self.cur_token
 
     # MUST use a new word parser (with same lexer).
     w_parser = WordParser(self.lexer, self.line_reader)
+    words = []
     while True:
       w = w_parser.ReadWord(LexMode.OUTER)
       if word.CommandId(w) == Id.Right_ArrayLiteral:
         break
-      array_part.words.append(w)
 
-    return array_part
+      words.append(w)
+
+    words2 = braces.BraceDetectAll(words)
+    words3 = word.TildeDetectAll(words2)
+
+    return ast.ArrayLiteralPart(words3)
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok, lex_mode=LexMode.OUTER,
                        empty_ok=True):

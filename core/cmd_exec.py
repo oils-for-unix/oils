@@ -60,6 +60,7 @@ import os
 import stat
 import sys
 
+from core import braces
 from core import completion
 from core import expr_eval
 from core import word_eval
@@ -518,7 +519,8 @@ class Executor(object):
     Assume we will run the node in another process.  Return a process.
     """
     if node.tag == command_e.SimpleCommand:
-      argv = self.ev.EvalWords(node.words)
+      words = braces.BraceExpandWords(node.words)
+      argv = self.ev.EvalWords(words)
       if argv is None:
         err = self.ev.Error()
         raise AssertionError("Error evaluating words: %s" % err)
@@ -649,7 +651,8 @@ class Executor(object):
 
     # TODO: Only eval argv[0] once.  It can have side effects!
     if node.tag == command_e.SimpleCommand:
-      argv = self.ev.EvalWords(node.words)
+      words = braces.BraceExpandWords(node.words)
+      argv = self.ev.EvalWords(words)
 
       if argv is None:
         self.error_stack.extend(self.ev.Error())
@@ -784,7 +787,8 @@ class Executor(object):
       if node.do_arg_iter:
         iter_list = self.mem.GetArgv()
       else:
-        iter_list = self.ev.EvalWords(node.iter_words)
+        words = braces.BraceExpandWords(node.iter_words)
+        iter_list = self.ev.EvalWords(words)
         # We need word splitting and so forth
         # NOTE: This expands globs too.  TODO: We should pass in a Globber()
         # object.

@@ -10,6 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 """
 
 from core import base
+from core import braces
 from core import word
 from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
 from core.util import log
@@ -185,73 +186,6 @@ class CommandParser(object):
       if not self._Peek():
         return False
     return True
-
-  # TODO: Hook up brace expansion!  Does this work?
-  def _BraceExpandIter():  # one iteration
-    """
-    Args:
-      words: list of words
-
-    Returns:
-      new_words: list of new words, or None
-    """
-    expansions = []  # (pos, new_list)
-    for i, w in enumerate(words):
-      # Call CompoundWord.BraceExpand here.  Returns a list of expansinos, or
-      # nullptr?
-      exp_words = w.BraceExpand()
-      if exp_words:
-        expansions.append((i, exp_words))
-
-    # If we got any expansions, create the new word list.
-    j = 0
-    if expansions:
-      new_words = []
-      for i, old_word in enumerate(words):
-        if j < len(expansions):
-          index, exp_words = expansions[j]
-          if index == i:
-            new_words.extend(exp_words)
-          else:
-            new_words.append(old_word)
-      return new_words
-    else:
-      return None
-
-  def _BraceExpand(self, words):
-    """
-    Returns:
-      A list of new Word instances, or None if there was no brace expansion
-      detected.
-    """
-    # Algorithm:
-    #
-    # Look for patterns like LBRACE COMMA RBRACE
-    # And then form cross product somehow.
-
-    # "A correctly-formed brace expansion must contain unquoted opening and
-    # closing braces, and at least one unquoted comma or a valid sequence
-    # expression.  Any incorrectly formed brace expansion is left unchanged. "
-
-    # Could this be recursive?  preamble,options,postscript
-    #
-    # Hm bash also has integer expressions!  {1..3} => {1,2,3}
-    # {1..5..2} => {1,3,5}
-    # - mksh doesn't have it.
-
-    # look for subseqeuence like '{' ','+ '}'
-    # And then make a data structure for this.
-    return words
-
-  def _TildeDetectAll(self, words):
-    new_words = []
-    for w in words:
-      t = word.TildeDetect(w)
-      if t:
-        new_words.append(t)
-      else:
-        new_words.append(w)
-    return new_words
 
   def _MaybeReadHereDocs(self, node):
     here_docs = _GetHereDocsToFill(node)
@@ -474,11 +408,14 @@ class CommandParser(object):
           self.AddErrorContext('Unexpected array literal: %s', v, word=v)
           return None
 
-    words2 = self._BraceExpand(suffix_words)
-    # NOTE: Must do tilde detection after brace expansion, e.g.
-    # {~bob,~jane}/src should work, even though ~ isn't the leading character
-    # of the initial word.
-    words3 = self._TildeDetectAll(words2)
+    # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading
+    # character of the initial word.
+    # However, this means we must do tilde detection AFTER brace EXPANSION, not
+    # just after brace DETECTION like we're doing here.
+    # The BracedWordTree instances have to be expanded into CompoundWord instances
+    # for the tilde detection to work.
+    words2 = braces.BraceDetectAll(suffix_words)
+    words3 = word.TildeDetectAll(words2)
 
     node = ast.SimpleCommand()
     node.words = words3
@@ -772,9 +709,12 @@ class CommandParser(object):
 
       in_spid = word.LeftMostSpanForWord(self.cur_word) + 1
       iter_words, semi_spid = self.ParseForWords()
+      words2 = braces.BraceDetectAll(iter_words)
+      words3 = word.TildeDetectAll(words2)
+
       if iter_words is None:  # empty list of words is OK
         return None
-      node.iter_words = iter_words
+      node.iter_words = words3
 
     elif self.c_id == Id.Op_Semi:
       node.do_arg_iter = True  # implicit for loop

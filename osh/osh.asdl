@@ -72,14 +72,23 @@ module osh
   | TildeSubPart(string prefix)
   | CommandSubPart(command command_list)
   | ArithSubPart(arith_expr anode)
-  | AltPart(word* words)  -- {a,b,c} is a single AltPart
-  | NumRangePart(int start, int end, int? step)  -- {1..10} or {1..10..2}
-  | CharRangePart(string start, string end, int? step) 
-  -- {a..f} or {a..f..2} or {a..f..-2}
+    -- {a,b,c}
+  | BracedAltPart(word* words)
+    -- {1..10} or {1..10..2}
+  | BracedIntRangePart(int start, int end, int? step)
+    -- {a..f} or {a..f..2} or {a..f..-2}
+  | BracedCharRangePart(string start, string end, int? step)
 
   word = 
     TokenWord(token token)
+    -- A CompoundWord can contain any word_part except the Braced*Part.
+    -- We could model this with another variant type but it incurs runtime
+    -- overhead and seems like overkill.  Note that DoubleQuotedPart can't
+    -- contain a SingleQuotedPart, etc. either.
   | CompoundWord(word_part* parts)
+    -- A BracedWordTree is a word because it can appear in a command.  It can
+    -- contains any type of word_part.
+  | BracedWordTree(word_part* parts)
  
   lvalue = 
     LeftVar(string name)

@@ -64,6 +64,14 @@ maybe-show() {
 }
 
 version-text() {
+  date
+  echo
+
+  local branch=$(git rev-parse --abbrev-ref HEAD)
+  local hash=$(git rev-parse $branch)
+  echo "oil version: $hash on branch $branch"
+  echo
+
   python3 --version 2>&1
   echo
 
@@ -168,13 +176,13 @@ word-split() {
 
 # 'do' -- detected statically as syntax error?  hm.
 assign() {
-  sh-spec tests/assign.test.sh --osh-failures-allowed 3 \
+  sh-spec tests/assign.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
 # Need to fix $ tokens, and $''
 quote() {
-  sh-spec tests/quote.test.sh --osh-failures-allowed 5 \
+  sh-spec tests/quote.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -214,7 +222,7 @@ func() {
 }
 
 glob() {
-  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} --osh-failures-allowed 6 \
+  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} --osh-failures-allowed 1 \
     $BUSYBOX_ASH $OSH "$@"
 }
 
@@ -252,7 +260,7 @@ here-doc() {
 
 redirect() {
   # BUG: osh treats stdin as stdout!  Fix this.
-  sh-spec tests/redirect.test.sh --osh-failures-allowed 12 \
+  sh-spec tests/redirect.test.sh --osh-failures-allowed 11 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -302,7 +310,7 @@ arith-context() {
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 30 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 27 \
     $BASH $MKSH $OSH "$@"
 }
 
@@ -335,9 +343,9 @@ dparen() {
 }
 
 brace-expansion() {
-  # NOTE: being a korn shell, mksh has brace expansion.  But dash doesn't!
-  # numeric ranges come from ZSH?  mksh doesn't have them.
-  sh-spec tests/brace-expansion.test.sh $BASH $MKSH $ZSH "$@"
+  # TODO for osh: implement num ranges, mark char ranges unimplemented?
+  sh-spec tests/brace-expansion.test.sh --osh-failures-allowed 13 \
+    $BASH $MKSH $ZSH $OSH "$@"
 }
 
 regex() {

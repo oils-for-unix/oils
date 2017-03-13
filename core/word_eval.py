@@ -7,6 +7,7 @@ import os
 import pwd
 import re
 
+from core import braces
 from core import expr_eval  # ArithEval
 from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
@@ -527,28 +528,8 @@ class _Evaluator(object):
     return Value.FromString(s)
 
   def _EvalArrayLiteralPart(self, part):
-    # TODO: Also ened globbing here.  Call EvalWords?
-
-    #print(self.words, '!!!')
-    array = []
-    for w in part.words:
-
-      # - perform splitting when necessary?
-      # set IFS here?
-      val = self._EvalCompoundWord(w)
-
-      # NOTE: For now, we enforce homogeneous arrays of strings.  This is for
-      # the shell / proc dialect.  For func dialect, we can have heterogeneous
-      # arrays.
-      is_str, s = val.AsString()
-      if is_str:
-        array.append(s)
-      else:
-        # TODO:
-        # - interpolate array into array
-        self._AddErrorContext('Expected string in array')
-        raise _EvalError()
-
+    words = braces.BraceExpandWords(part.words)
+    array = self._EvalWords(words)
     return Value.FromArray(array)
 
   def _EvalVarNum(self, var_num):
@@ -662,7 +643,7 @@ class _Evaluator(object):
       return Value.FromString(s)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
-      val = self.token.val
+      val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]

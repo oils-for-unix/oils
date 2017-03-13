@@ -8,7 +8,7 @@ uses goto!
 Possible optimization flags for CompoundWord:
 - has Lit_LBrace, LitRBrace -- set during word_parse phase
   - it if has both, then do _BraceDetect
-- has AltPart -- set during _BraceDetect
+- has BracedAltPart -- set during _BraceDetect
   - if it does, then do the expansion
 - has Lit_Star, ?, [ ] -- globbing?
   - but after expansion do you still have those flags?
@@ -20,6 +20,14 @@ from core.id_kind import Id
 from osh import ast_ as ast
 
 word_part_e = ast.word_part_e
+word_e = ast.word_e
+
+
+class _StackFrame:
+  def __init__(self, cur_parts):
+    self.cur_parts = cur_parts
+    self.alt_part = ast.BracedAltPart()
+    self.saw_comma = False
 
 
 def _BraceDetect(w):
@@ -68,8 +76,9 @@ def _BraceDetect(w):
   # {a}    - no comma, and also not an numeric range
 
   cur_parts = []
-  parts_stack = []  # stack of parts in progress
-  alt_stack = []  # stack of alternatives
+  stack = []
+
+  found = False
 
   for i, part in enumerate(w.parts):
     append = True
@@ -77,19 +86,27 @@ def _BraceDetect(w):
       id_ = part.token.id
       if id_ == Id.Lit_LBrace:
         # Save prefix parts.  Start new parts list.
-        parts_stack.append(cur_parts)
+        new_frame = _StackFrame(cur_parts)
+        stack.append(new_frame)
         cur_parts = []
-
-        alternatives = ast.AltPart()
-        alt_stack.append(alternatives)
         append = False
+        found = True  # assume found, but can early exit with None later
 
       elif id_ == Id.Lit_Comma:
         # Append a new alternative.
         #print('*** Appending after COMMA', cur_parts)
-        alt_stack[-1].words.append(ast.CompoundWord(cur_parts))
-        cur_parts = []  # clear
-        append = False
+
+        # NOTE: Should we allow this:
+        # ,{a,b}
+        # or force this:
+        # \,{a,b}
+        # ?  We're forcing braces right now but not commas.
+        if stack:
+          stack[-1].saw_comma = True
+
+          stack[-1].alt_part.words.append(ast.CompoundWord(cur_parts))
+          cur_parts = []  # clear
+          append = False
 
       elif id_ == Id.Lit_RBrace:
         # TODO:
@@ -100,25 +117,42 @@ def _BraceDetect(w):
         #     - digit+ '..' digit+  ( '..' digit+ )?
         # - Char ranges are bash only!
         #
-        # ast.NumRangePart()
+        # ast.BracedIntRangePart()
         # ast.CharRangePart()
 
-        alt_stack[-1].words.append(ast.CompoundWord(cur_parts))
+        if not stack:  # e.g. echo }  -- unbalancd {
+          return None
+        if not stack[-1].saw_comma:  # {foo} is not a real alternative
+          return None
+        stack[-1].alt_part.words.append(ast.CompoundWord(cur_parts))
 
-        # TODO: catch errors here
-        cur_parts = parts_stack.pop()
-        alternatives = alt_stack.pop()
-
-        cur_parts.append(alternatives)  # TODO: Wrap in AltPart
+        frame = stack.pop()
+        cur_parts = frame.cur_parts
+        cur_parts.append(frame.alt_part)
         append = False
 
     if append:
       cur_parts.append(part)
 
-  # TODO: Errors here
-  assert len(alt_stack) == 0
-  assert len(parts_stack) == 0
-  return ast.CompoundWord(cur_parts)
+  if len(stack) != 0:
+    return None
+
+  if found:
+    return ast.BracedWordTree(cur_parts)
+  else:
+    return None
+
+
+def BraceDetectAll(words):
+  out = []
+  for w in words:
+    #print(w)
+    brace_tree = _BraceDetect(w)
+    if brace_tree:
+      out.append(brace_tree)
+    else:
+      out.append(w)
+  return out
 
 
 # Possible optmization for later:
@@ -133,7 +167,7 @@ def _TreeCount(tree_word):
   """
   # TODO: Copy the structure of _BraceExpand and _BraceExpandOne.
   for part in tree_word.parts:
-    if part.tag == word_part_e.AltPart:
+    if part.tag == word_part_e.BracedAltPart:
       for word in part.words:
         pass
   num_results = 2
@@ -141,13 +175,13 @@ def _TreeCount(tree_word):
   return num_results , max_parts
 
 
-def _BraceExpandOne(parts, first_alt_index, suffix):
+def _BraceExpandOne(parts, first_alt_index, suffixes):
   """Helper for _BraceExpand.
 
   Args:
     parts: input parts
-    first_alt_index: index of the first AltPart
-    suffix: the suffix to append
+    first_alt_index: index of the first BracedAltPart
+    suffixes: List of suffixes to append.
   """
   out = []
 
@@ -159,26 +193,25 @@ def _BraceExpandOne(parts, first_alt_index, suffix):
 
   prefix = parts[ : first_alt_index]
   for alt_parts in expanded_alts:
-    out_parts = []
-    out_parts.extend(prefix)
-    out_parts.extend(alt_parts)
-    out_parts.extend(suffix)
-    # TODO: Do we need to preserve flags?
-    out.append(out_parts)
+    for suffix in suffixes:
+      out_parts = []
+      out_parts.extend(prefix)
+      out_parts.extend(alt_parts)
+      out_parts.extend(suffix)
+      # TODO: Do we need to preserve flags?
+      out.append(out_parts)
   return out
 
 
 def _BraceExpand(parts):
   num_alts = 0
   first_alt_index = -1
-  second_alt_index = -1
   for i, part in enumerate(parts):
-    if part.tag == word_part_e.AltPart:
+    if part.tag == word_part_e.BracedAltPart:
       num_alts += 1
       if num_alts == 1:
         first_alt_index = i
       elif num_alts == 2:
-        second_alt_index = i
         break  # don't need to count anymore
 
   # NOTE: There are TWO recursive calls here, not just one -- one for
@@ -189,16 +222,24 @@ def _BraceExpand(parts):
   elif num_alts == 1:
     out = []
     suffix = parts[first_alt_index+1 : ]
-    return _BraceExpandOne(parts, first_alt_index, suffix)
+    return _BraceExpandOne(parts, first_alt_index, [suffix])
 
   else:
     # Now call it on the tail
-    tail_parts = parts[second_alt_index : ]
+    tail_parts = parts[first_alt_index+1 : ]
     suffixes = _BraceExpand(tail_parts)  # recursive call
-    out = []
-    for suffix in suffixes:
-      out.extend(_BraceExpandOne(parts, first_alt_index, suffix))
-    return out
+    return _BraceExpandOne(parts, first_alt_index, suffixes)
+
+
+def BraceExpandWords(words):
+  out = []
+  for w in words:
+    if w.tag == word_e.BracedWordTree:
+      parts_list = _BraceExpand(w.parts)
+      out.extend(ast.CompoundWord(p) for p in parts_list)
+    else:
+      out.append(w)
+  return out
 
 
 def _Cartesian(tuples):
