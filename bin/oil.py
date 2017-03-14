@@ -97,10 +97,10 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
       if ast_f:
         ast.PrettyPrint(node)
 
-      status, cflow = ex.ExecuteTop(node)
+      status = ex.Execute(node)
 
       if opts.print_status:
-        print('STATUS', repr(status), cflow)
+        print('STATUS', repr(status))
 
     # Reset prompt and clear memory.  TODO: If there are any function
     # definitions ANYWHERE in the node, you should not clear the underlying
@@ -231,9 +231,9 @@ def OshMain(argv):
       ui.PrintError(err, arena, sys.stderr)
       return 2  # parse error is code 2
 
-    status, cflow = ex.Execute(rc_node)
+    status = ex.Execute(rc_node)
     #print('oilrc:', status, cflow, file=sys.stderr)
-    # Ignore bad status?  What about cflow?
+    # Ignore bad status?
   except IOError as e:
     if e.errno != errno.ENOENT:
       raise
@@ -324,7 +324,7 @@ def OshMain(argv):
         ast_f.write('\n')
 
     if opts.do_exec:
-      status, cflow = ex.Execute(node)
+      status = ex.Execute(node)
     else:
       util.log('Execution skipped because --no-exec was passed')
       status = 0

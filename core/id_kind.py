@@ -355,6 +355,10 @@ def _AddKinds(spec):
   # "None" could either be a global variable or assignment to a local.
   spec.AddKind('Assign', ['Declare', 'Export', 'Local', 'Readonly', 'None'])
 
+  # Unlike bash, we parse control flow statically.  They're not
+  # dynamically-resolved builtins.
+  spec.AddKind('ControlFlow', ['Break', 'Continue', 'Return'])
+
 
 # Id -> OperandType
 BOOL_OPS = {}  # type: dict

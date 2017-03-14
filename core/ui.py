@@ -98,7 +98,7 @@ def PrintError(error_stack, arena, f):
   #   - although parse errors happen at runtime because of 'source'
   #   - should there be a distinction then?
   for parse_error in error_stack:
-    print(parse_error)
+    #print(parse_error)
     if parse_error.token:
       span_id = parse_error.token.span_id
     elif parse_error.word:
@@ -121,19 +121,19 @@ def PrintError(error_stack, arena, f):
       col = line_span.col
       length = line_span.length
 
-    print('Line %d of %r' % (line_num+1, path))
-    print('  ' + line.rstrip())
+    print('Line %d of %r' % (line_num+1, path), file=f)
+    print('  ' + line.rstrip(), file=f)
     if col == -1:
-      print('NO COL')
+      print('NO COL', file=f)
     else:
-      sys.stdout.write('  ')
+      f.write('  ')
       # preserve tabs
       for c in line[:col]:
-        sys.stdout.write('\t' if c == '\t' else ' ')
-      sys.stdout.write('^')
-      sys.stdout.write('~' * (length-1))
-      sys.stdout.write('\n')
+        f.write('\t' if c == '\t' else ' ')
+      f.write('^')
+      f.write('~' * (length-1))
+      f.write('\n')
 
     print(parse_error.UserErrorString(), file=f)
-    print('---')
+    print('---', file=f)
   #print(error_stack, file=f)

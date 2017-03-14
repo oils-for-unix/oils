@@ -872,7 +872,8 @@ class WordParser(object):
 
       # Keywords like "for" are treated like literals
       elif self.token_kind in (
-          Kind.Lit, Kind.KW, Kind.Assign, Kind.BoolUnary, Kind.BoolBinary):
+          Kind.Lit, Kind.KW, Kind.Assign, Kind.ControlFlow, Kind.BoolUnary,
+          Kind.BoolBinary):
         if self.token_type == Id.Lit_EscapedChar:
           part = ast.EscapedLiteralPart(self.cur_token)
         else:
@@ -1038,8 +1039,8 @@ class WordParser(object):
       return None, True  # tell Read() to try again
 
     elif self.token_kind in (
-        Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.BoolUnary,
-        Kind.BoolBinary):
+        Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.ControlFlow,
+        Kind.BoolUnary, Kind.BoolBinary):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
       # LexMode.COMMENT and read until end of line.  (TODO: How to add comments
       # to AST?)

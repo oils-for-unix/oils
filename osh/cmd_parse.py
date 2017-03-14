@@ -9,6 +9,8 @@
 cmd_parse.py - Parse high level shell commands.
 """
 
+import sys
+
 from core import base
 from core import braces
 from core import word
@@ -40,7 +42,7 @@ def _GetHereDocsToFill(node):
   # EOF2
 
   # Leaf nodes: no redirects and no children.
-  if node.tag in (command_e.NoOp, command_e.Assignment):
+  if node.tag in (command_e.NoOp, command_e.Assignment, command_e.ControlFlow):
     return []
 
   # Leaf nodes: these have redirects but not children.
@@ -560,30 +562,57 @@ class CommandParser(object):
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node
 
-    assign_kw, keyword_spid = word.AssignmentBuiltinId(suffix_words[0])
+    # NOTE: Could also detect break/continue/return here?  Parse time or
+    # runtime?
 
-    if assign_kw == Id.Undefined_Tok:
-      node = self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+    kind, kw_token = word.KeywordToken(suffix_words[0])
+    if kind == Kind.Assign:
+      if redirects:
+        self.AddErrorContext('Got redirects in assignment: %s', redirects)
+        return None
+
+      if prefix_bindings:  # FOO=bar local spam=eggs not allowed
+        # Use the location of the first value.  TODO: Use the whole word before
+        # splitting.
+        _, v0, _ = prefix_bindings[0]
+        self.AddErrorContext(
+            'Invalid prefix bindings in assignment: %s', prefix_bindings,
+            word=v0)
+        return None
+
+      node = self._MakeAssignment(kw_token.id, suffix_words)
+      if not node: return None
+      node.spids.append(kw_token.span_id)
       return node
 
-    if redirects:
-      # TODO: Make it a warning, or do it in the second stage?
-      print(
-          'WARNING: Got redirects in assignment: %s' % redirects, file=sys.stderr)
+    elif kind == Kind.ControlFlow:
+      if redirects:
+        self.AddErrorContext('Got redirects in control flow: %s', redirects)
+        return None
 
-    if prefix_bindings:  # FOO=bar local spam=eggs not allowed
-      # Use the location of the first value.  TODO: Use the whole word before
-      # splitting.
-      _, v0, _ = prefix_bindings[0]
-      self.AddErrorContext(
-          'Invalid prefix bindings in assignment: %s', prefix_bindings,
-          word=v0)
-      return None
+      if prefix_bindings:  # FOO=bar local spam=eggs not allowed
+        # Use the location of the first value.  TODO: Use the whole word before
+        # splitting.
+        _, v0, _ = prefix_bindings[0]
+        self.AddErrorContext(
+            'Invalid prefix bindings in control flow: %s', prefix_bindings,
+            word=v0)
+        return None
 
-    node = self._MakeAssignment(assign_kw, suffix_words)
-    if not node: return None
-    node.spids.append(keyword_spid)
-    return node
+      # Attach the token for errors.  (Assignment may not need it.)
+      if len(suffix_words) == 1:
+        arg_word = None
+      elif len(suffix_words) == 2:
+        arg_word = suffix_words[1]
+      else:
+        self.AddErrorContext('Too many arguments')
+        return None
+
+      return ast.ControlFlow(kw_token, arg_word)
+
+    else:
+      node = self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+      return node
 
   def ParseBraceGroup(self):
     """

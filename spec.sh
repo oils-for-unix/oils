@@ -217,6 +217,14 @@ builtins-special() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+command-parsing() {
+  sh-spec tests/command-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+}
+
+func-parsing() {
+  sh-spec tests/func-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+}
+
 func() {
   sh-spec tests/func.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
@@ -254,7 +262,7 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec tests/here-doc.test.sh --osh-failures-allowed 10 --range 1-27 \
+  sh-spec tests/here-doc.test.sh --osh-failures-allowed 9 --range 1-27 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -277,7 +285,7 @@ tilde() {
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec tests/var-sub.test.sh --osh-failures-allowed 22 \
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 21 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -310,7 +318,7 @@ arith-context() {
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 27 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 26 \
     $BASH $MKSH $OSH "$@"
 }
 

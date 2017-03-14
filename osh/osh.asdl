@@ -145,6 +145,7 @@ module osh
   | Sentence(command command, token terminator)
   -- TODO: parse flags -r -x; -a and -A aren't needed
   | Assignment(id keyword, assign_pair* pairs)
+  | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
   -- TODO: Should be left and right
   | AndOr(command* children, id op_id)

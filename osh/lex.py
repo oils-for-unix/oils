@@ -179,6 +179,10 @@ _KEYWORDS = [
   C('export',   Id.Assign_Export),
   C('local',    Id.Assign_Local),
   C('readonly', Id.Assign_Readonly),
+
+  C('break',    Id.ControlFlow_Break),
+  C('continue', Id.ControlFlow_Continue),
+  C('return',   Id.ControlFlow_Return),
 ]
 
 # These two can must be recognized in the OUTER state, but can't nested within

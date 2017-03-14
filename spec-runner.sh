@@ -79,7 +79,7 @@ run-task-with-status-test() {
   test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
 }
 
-readonly NUM_TASKS=40
+readonly NUM_TASKS=400
 
 # TODO:
 #

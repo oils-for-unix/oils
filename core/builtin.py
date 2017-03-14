@@ -110,8 +110,7 @@ from core import util
 # - So you can just add "complete" and have it work.
 
 EBuiltin = util.Enum('EBuiltin', """
-NONE BREAK CONTINUE RETURN READ ECHO EXIT SOURCE DOT TRAP EVAL EXEC SET
-COMPLETE COMPGEN DEBUG_LINE
+NONE READ ECHO EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE COMPGEN DEBUG_LINE
 """.split())
 
 
@@ -120,10 +119,13 @@ COMPLETE COMPGEN DEBUG_LINE
 # On the other hand, 'cd' CAN be redefined.
 # TODO:
 # - use these
-# - local and declare should be here, since export and readonly are.
 SPECIAL_BUILTINS = [
     'break', ':', 'continue', '.', 'eval', 'exec', 'exit', 'export',
     'readonly', 'return', 'set', 'shift', 'times', 'trap', 'unset',
+
+    # local and declare are not POSIX, but should be here since export and
+    # readonly are.
+    'local', 'declare',
 ]
 
 
@@ -309,14 +311,7 @@ class Builtins(object):
     # For completion, this is a flat list of names.  Although coloring them
     # would be nice.
 
-    if argv0 == "break":
-      return EBuiltin.BREAK
-    elif argv0 == "continue":
-      return EBuiltin.CONTINUE
-    elif argv0 == "return":
-      return EBuiltin.RETURN
-
-    elif argv0 == "read":
+    if argv0 == "read":
       return EBuiltin.READ
     elif argv0 == "echo":
       return EBuiltin.ECHO

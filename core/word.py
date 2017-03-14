@@ -398,25 +398,27 @@ def LooksLikeAssignment(w):
   return name, rhs
 
 
-# Interpret the words as 4 kinds of ID: Assignment, Arith, Bool, Command.
-# TODO: Might need other builtins.
-def AssignmentBuiltinId(w):
-  """Tests if word is an assignment builtin."""
+def KeywordToken(w):
+  """Tests if a word is an assignment or control flow word.
+
+  Returns:
+    kind, token
+  """
   assert w.tag == word_e.CompoundWord
 
-  # has to be a single literal part
+  err = (Kind.Undefined, None)
   if len(w.parts) != 1:
-    return Id.Undefined_Tok, -1
+    return err
 
   token_type = _LiteralPartId(w.parts[0])
   if token_type == Id.Undefined_Tok:
-    return Id.Undefined_Tok, -1
+    return err
 
   token_kind = LookupKind(token_type)
-  if token_kind == Kind.Assign:
-    return token_type, w.parts[0].token.span_id
+  if token_kind in (Kind.Assign, Kind.ControlFlow):
+    return token_kind, w.parts[0].token
 
-  return Id.Undefined_Tok, -1
+  return err
 
 
 #

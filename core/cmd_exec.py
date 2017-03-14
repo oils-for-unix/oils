@@ -206,9 +206,37 @@ class Mem(object):
     pass
 
 
-class _ExecError(RuntimeError):
-  """Internal to Executor."""
+class _FatalError(RuntimeError):
+  """Internal exception for fatal errors."""
   pass
+
+
+class _ControlFlow(RuntimeError):
+  """Internal execption for control flow.
+
+  break and continue are caught by loops, return is caught by functions.
+  """
+
+  def __init__(self, token, arg):
+    """
+    Args:
+      token: the keyword token
+    """
+    self.token = token
+    self.arg = arg
+
+  def IsReturn(self):
+    return self.token.id == Id.ControlFlow_Return
+
+  def IsBreak(self):
+    return self.token.id == Id.ControlFlow_Break
+
+  def IsContinue(self):
+    return self.token.id == Id.ControlFlow_Continue
+
+  def ReturnValue(self):
+    assert self.IsReturn()
+    return self.arg
 
 
 class Executor(object):
@@ -373,7 +401,7 @@ class Executor(object):
     if not node:
       print('Error parsing code %r' % code_str)
       return 1
-    status, cflow = self._Execute(node)
+    status = self._Execute(node)
     return status
 
   def _Eval(self, argv):
@@ -398,7 +426,6 @@ class Executor(object):
       return 0
 
   def RunBuiltin(self, builtin_id, argv):
-    cflow = EBuiltin.NONE  # default value
     restore_fd_state = True
 
     # TODO: Just test Type() == COMMAND word, and then if it's a command word,
@@ -423,20 +450,6 @@ class Executor(object):
         code = 1  # Runtime Error
       # TODO: Should this be turned into our own SystemExit exception?
       sys.exit(code)
-
-    elif builtin_id == EBuiltin.BREAK:
-      status = 0
-      cflow = EBuiltin.BREAK
-
-    elif builtin_id == EBuiltin.CONTINUE:
-      status = 0
-      cflow = EBuiltin.CONTINUE
-
-    elif builtin_id == EBuiltin.RETURN:
-      # TODO: Hook up the rest of this!  Need to know when you're in a function
-      # body.
-      status = 0
-      cflow = EBuiltin.RETURN
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
@@ -466,7 +479,7 @@ class Executor(object):
     else:
       raise AssertionError('Unhandled builtin: %d' % builtin_id)
 
-    return status, cflow
+    return status
 
   def RunFunc(self, func_node, argv):
     """Called by FuncThunk."""
@@ -477,9 +490,16 @@ class Executor(object):
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).
-    status, cflow = self._Execute(func_body)
+    try:
+      status = self._Execute(func_body)
+    except _ControlFlow as e:
+      if e.IsReturn():
+        status = e.ReturnValue()
+      else:
+        # break/continue used in the wrong place
+        raise AssertionError('Invalid control flow')
     self.mem.Pop()
-    return status, cflow
+    return status
 
   def _GetThunkForSimpleCommand(self, argv, more_env):
     """
@@ -508,6 +528,7 @@ class Executor(object):
     builtin_id = self.builtins.Resolve(argv[0])
     if builtin_id != EBuiltin.NONE:
       return BuiltinThunk(self, builtin_id, argv)
+
     func_node = self.funcs.get(argv[0])
     if func_node is not None:
       return FuncThunk(self, func_node, argv)
@@ -526,9 +547,19 @@ class Executor(object):
         raise AssertionError("Error evaluating words: %s" % err)
       more_env = self.ev.EvalEnv(node.more_env)
       if more_env is None:
-        # TODO:
+        # TODO: proper error
         raise AssertionError()
       thunk = self._GetThunkForSimpleCommand(argv, more_env)
+
+    elif node.tag == command_e.ControlFlow:
+      # TODO: Raise _FatalError
+      # Pipeline or subshells with control flow are invalid, e.g.:
+      # - break | less
+      # - continue | less
+      # - ( return )
+      # NOTE: This could be done at parse time too.
+      raise AssertionError('Invalid control flow %s' % node)
+
     else:
       thunk = SubProgramThunk(self, node)
 
@@ -550,8 +581,8 @@ class Executor(object):
     """
     # No redirects
     if node.tag in (
-        command_e.NoOp, command_e.Assignment, command_e.Pipeline,
-        command_e.AndOr, command_e.CommandList,
+        command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
+        command_e.Pipeline, command_e.AndOr, command_e.CommandList,
         command_e.Sentence):
       return []
 
@@ -631,7 +662,7 @@ class Executor(object):
     else:
       status = pipe_status[-1]  # last one determines status
 
-    return status, EBuiltin.NONE  # no control flow
+    return status
 
   def _Execute(self, node):
     """
@@ -640,15 +671,6 @@ class Executor(object):
     """
     redirects = self._EvalRedirects(node)
 
-    # TODO: Change this to its own enum?
-    # or add EBuiltin.THROW     _throw?  For testing.
-    # Is this different han exit?  exit should really be throw.  Because we
-    # want to be able to unwind the stack, show stats, etc.  Exiting in the
-    # middle is bad.
-    # exit and _throw could be the same, except _throw takes an error message,
-    # and exits 1, and shows traceback.
-    cflow = EBuiltin.NONE
-
     # TODO: Only eval argv[0] once.  It can have side effects!
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
@@ -656,7 +678,7 @@ class Executor(object):
 
       if argv is None:
         self.error_stack.extend(self.ev.Error())
-        raise _ExecError()
+        raise _FatalError()
       more_env = self.ev.EvalEnv(node.more_env)
       if more_env is None:
         print(self.error_stack)
@@ -682,7 +704,7 @@ class Executor(object):
         for r in redirects:
           r.ApplyInParent(self.fd_state)
 
-        status, cflow = thunk.RunInParent()
+        status = thunk.RunInParent()
         restore_fd_state = thunk.ShouldRestoreFdState()
 
         # Special case for exec 1>&2 (with no args): we permanently change the
@@ -695,11 +717,11 @@ class Executor(object):
           self.fd_state.ForgetAll()
 
     elif node.tag == command_e.Sentence:
-      # TODO: Compile this away
-      status, cflow = self._Execute(node.command)
+      # TODO: Compile this away.
+      status = self._Execute(node.command)
 
     elif node.tag == command_e.Pipeline:
-      status, cflow = self._RunPipeline(node)
+      status = self._RunPipeline(node)
 
     elif node.tag == command_e.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
@@ -735,7 +757,7 @@ class Executor(object):
         ok, val = self.ev.EvalCompoundWord(pair.rhs)
         if not ok:
           self.error_stack.extend(self.ev.Error())
-          raise _ExecError()
+          raise _FatalError()
         pairs.append((pair.lhs, val))
 
       flags = 0  # TODO: Calculate from keyword/flags
@@ -747,40 +769,57 @@ class Executor(object):
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
 
+    elif node.tag == command_e.ControlFlow:
+      if node.arg_word:  # Evaluate the argument
+        ok, val = self.ev.EvalCompoundWord(node.arg_word)
+        if not ok:
+          self.error_stack.extend(self.ev.Error())
+          raise _FatalError()
+        is_str, arg_str = val.AsString()
+        assert is_str
+        arg = int(arg_str)  # They all take integers
+      else:
+        arg = 0  # return 0, break 0 levels, etc.
+
+      raise _ControlFlow(node.token, arg)
+
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
       status = 0  # for empty list
       for child in node.children:
-        status, cflow = self._Execute(child)  # last status wins
-        if cflow in (EBuiltin.BREAK, EBuiltin.CONTINUE):
-          break
+        status = self._Execute(child)  # last status wins
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
       left, right = node.children
-      status, cflow = self._Execute(left)
+      status = self._Execute(left)
 
       if node.op_id == Id.Op_DPipe:
         if status != 0:
-          status, cflow = self._Execute(right)
+          status = self._Execute(right)
       elif node.op_id == Id.Op_DAmp:
         if status == 0:
-          status, cflow = self._Execute(right)
+          status = self._Execute(right)
       else:
         raise AssertionError
 
     elif node.tag == command_e.While:
       while True:
-        status, _ = self._Execute(node.cond)
+        status = self._Execute(node.cond)
         if status != 0:
           break
-        status, cflow = self._Execute(node.body)  # last one wins
-        if cflow == EBuiltin.BREAK:
-          cflow = EBuiltin.NONE  # reset since we respected it
-          break
-        if cflow == EBuiltin.CONTINUE:
-          cflow = EBuiltin.NONE  # reset since we respected it
+        try:
+          status = self._Execute(node.body)  # last one wins
+        except _ControlFlow as e:
+          if e.IsBreak():
+            status = 0
+            break
+          elif e.IsContinue():
+            status = 0
+            continue
+          else:  # return needs to pop up more
+            raise
 
     elif node.tag == command_e.ForEach:
       iter_name = node.iter_name
@@ -793,22 +832,25 @@ class Executor(object):
         # NOTE: This expands globs too.  TODO: We should pass in a Globber()
         # object.
       status = 0  # in case we don't loop
-      cflow = EBuiltin.NONE
       for x in iter_list:
         self.mem.SetSimpleVar(iter_name, Value.FromString(x))
 
-        status, cflow = self._Execute(node.body)
-
-        if cflow == EBuiltin.BREAK:
-          cflow = EBuiltin.NONE  # reset since we respected it
-          break
-        if cflow == EBuiltin.CONTINUE:
-          cflow = EBuiltin.NONE  # reset since we respected it
+        try:
+          status = self._Execute(node.body)  # last one wins
+        except _ControlFlow as e:
+          if e.IsBreak():
+            status = 0
+            break
+          elif e.IsContinue():
+            status = 0
+            continue
+          else:  # return needs to pop up more
+            raise
 
     elif node.tag == command_e.DoGroup:
       # Delegate to command list
       # TODO: This should be compiled out!
-      status, cflow = self._Execute(node.child)
+      status = self._Execute(node.child)
 
     elif node.tag == command_e.FuncDef:
       self.funcs[node.name] = node
@@ -817,14 +859,14 @@ class Executor(object):
     elif node.tag == command_e.If:
       done = False
       for arm in node.arms:
-        status, _ = self._Execute(arm.cond)
+        status = self._Execute(arm.cond)
         if status == 0:
-          status, _ = self._Execute(arm.action)
+          status = self._Execute(arm.action)
           done = True
           break
       # TODO: The compiler should flatten this
       if not done and node.else_action is not None:
-        status, _ = self._Execute(node.else_action)
+        status = self._Execute(node.else_action)
 
     elif node.tag == command_e.NoOp:
       status = 0  # make it true
@@ -843,33 +885,29 @@ class Executor(object):
         tb = self.mem.GetTraceback(token)
         self._SetException(tb,
             "Command %s exited with code %d" % ('TODO', status))
-        # cflow should be EXCEPT
+        # TODO: raise _ControlFlow?  Except?
+        # Dummy?
 
     # TODO: Is this the right place to put it?  Does it need a stack for
     # function calls?
     self.mem.last_status = status
-    return status, cflow
+    return status
 
   def Execute(self, node):
-    """Execute an LST node."""
+    """Execute a top level LST node."""
     # Use exceptions internally, but exit codes externally.
     try:
-      status, cflow = self._Execute(node)
-    except _ExecError:
+      status = self._Execute(node)
+    except _ControlFlow as e:
+      # TODO: Make this error message better.
+      print('Break/continue/return bubbled up to top level', file=sys.stderr)
+      status = 1 
+    except _FatalError:
       # TODO: Nicer runtime error message.
       print(self.error_stack, file=sys.stderr)
       status = 1
-      cflow = EBuiltin.NONE
-    return status, cflow
 
-  def ExecuteTop(self, node):
-    """
-    Execute from the top level.
-
-    TODO: This is wrong; we can't only check here.
-    """
-    status, cflow = self.Execute(node)
-    if cflow != EBuiltin.NONE:
-      print('break / continue can only be used inside loop')
-      status = 129  # TODO: Fix this.  Use correct macros
-    return status, cflow
+    # TODO: Hook this up
+    #print('break / continue can only be used inside loop')
+    #status = 129  # TODO: Fix this.  Use correct macros
+    return status

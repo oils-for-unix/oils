@@ -49,22 +49,46 @@ func() {
   echo $i
 }
 func
+# status: 0
 # stdout-json: "a\nb\nc\nc\n"
 
 ### continue
 for i in a b c; do
   echo $i
-  continue
+  if test $i = b; then
+    continue
+  fi
   echo $i
 done
-# stdout-json: "a\nb\nc\n"
+# status: 0
+# stdout-json: "a\na\nb\nc\nc\n"
 
 ### break
 for i in a b c; do
   echo $i
-  break
+  if test $i = b; then
+    break
+  fi
 done
-# stdout: a
+# status: 0
+# stdout-json: "a\nb\n"
+
+### continue at top level is error
+# NOTE: bash and mksh both print warnings, but don't exit with an error.
+continue
+echo bad
+# N-I bash/dash/mksh status: 0
+# N-I bash/dash/mksh stdout: bad
+# stdout-json: ""
+# status: 1
+
+### break at top level is error
+break
+echo bad
+# N-I bash/dash/mksh status: 0
+# N-I bash/dash/mksh stdout: bad
+# stdout-json: ""
+# status: 1
 
 ### while in while condition
 # This is a consequence of the grammar

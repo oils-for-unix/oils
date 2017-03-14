@@ -54,7 +54,7 @@ def ParseAndExecute(code_str):
 
   print(node)
   ex = cmd_exec_test.InitExecutor()
-  status, cflow = ex.Execute(node)
+  status = ex.Execute(node)
 
   # TODO: Can we capture output here?
   return status
