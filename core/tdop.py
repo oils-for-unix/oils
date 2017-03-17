@@ -5,7 +5,6 @@ tdop.py - Library for expression parsing.
 
 from core import base
 from core.id_kind import Id, IdName
-from core.util import cast
 from core import word
 
 from osh import ast_ as ast 

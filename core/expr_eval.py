@@ -17,7 +17,6 @@ except ImportError:
   from core import fake_libc as libc
 
 from core.id_kind import BOOL_OPS, OperandType, Id, IdName
-from core.util import cast
 from core.util import log
 from core.value import TValue
 
@@ -197,8 +196,6 @@ class ArithEvaluator(ExprEvaluator):
 
     #elif node.id == Id.Node_TernaryExpr:
     elif node.tag == arith_expr_e.TernaryOp:
-      node = cast(ast.TernaryOp, node)
-
       lhs = self._Eval(node.cond)
       if lhs != 0:
         ret = self._Eval(node.true_expr)
