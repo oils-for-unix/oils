@@ -19,9 +19,7 @@ echo "${a[@]}" "${a[*]}"
 # mksh support local variables, but not local arrays, oddly.
 f() {
   local a=(1 '2 3')
-  # TODO: Implement brace syntax in pysh
-  #argv.py "${a}"
-  argv.py "$a"
+  argv.py "${a[0]}"
 }
 f
 # stdout: ['1']

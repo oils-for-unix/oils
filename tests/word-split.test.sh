@@ -85,6 +85,15 @@ argv.py $foo
 argv.py 1 ${undefined:-"2 3" "4 5"} 6
 # stdout: ['1', '2 3', '4 5', '6']
 
+### default value can yield multiple words with part joining
+argv.py 1${undefined:-"2 3" "4 5"}6
+# stdout: ['12 3', '4 56']
+
+### default value with unquoted IFS char
+IFS=_
+argv.py 1${undefined:-"2_3"x_x"4_5"}6
+# stdout: ['12_3x', 'x4_56']
+
 
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)

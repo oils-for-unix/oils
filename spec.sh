@@ -170,7 +170,7 @@ comments() {
 
 # TODO(pysh): Implement ${foo:-a b c}
 word-split() {
-  sh-spec tests/word-split.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/word-split.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -193,7 +193,7 @@ loop() {
 
 # Not implemented in osh at all.  Need glob matching of words.
 case_() {
-  sh-spec tests/case_.test.sh --osh-failures-allowed 4 \
+  sh-spec tests/case_.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -230,8 +230,8 @@ func() {
 }
 
 glob() {
-  sh-spec tests/glob.test.sh ${REF_SHELLS[@]} --osh-failures-allowed 1 \
-    $BUSYBOX_ASH $OSH "$@"
+  sh-spec tests/glob.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
 arith() {
@@ -318,7 +318,7 @@ arith-context() {
 # TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
 # messed up.
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 26 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 25 \
     $BASH $MKSH $OSH "$@"
 }
 

@@ -11,6 +11,7 @@ from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core.value import Value
 from core import util
+from core import runtime
 from osh import ast_ as ast
 
 bracket_op_e = ast.bracket_op_e
@@ -35,6 +36,25 @@ def _Split(s, ifs):
     else:
       parts[-1] += c
   return parts
+
+
+class Splitter:
+  """
+  After word evaluation, we'll get a list of of part_value.  We need to apply
+  part joining, word splitting, and word elision to create inputs for globbing.
+  """
+  def __init__(self, mem, exec_opts):
+    # Depends on IFS (set -o noglob)
+    # TODO: Should we create readonly "role interfaces" for these?
+    self.mem = mem
+    self.exec_opts = exec_opts
+
+  def Split(self, part_values):
+    """
+    part_value[] -> part_value[]
+
+    Depends on no_glob
+    """
 
 
 def _IfsSplit(s, ifs):
@@ -200,6 +220,100 @@ class _Evaluator(object):
       self.error_stack.extend(arith_ev.Error())
       raise _EvalError()
 
+  def _EvalTildeSub(self, prefix):
+    """Evaluates ~ and ~user.
+
+    Args:
+      prefix: The tilde prefix (possibly empty)
+    """
+    if prefix == '':
+      # First look up the HOME var, and then env var
+      defined, val = self.mem.Get('HOME')
+      if defined:
+        return val
+
+      s = util.GetHomeDir()
+      if s is None:
+        s = '~' + prefix  # No expansion I guess
+
+      return Value.FromString(s)
+
+    # http://linux.die.net/man/3/getpwnam
+    try:
+      e = pwd.getpwnam(prefix)
+    except KeyError:
+      s = '~' + prefix
+    else:
+      s = e.pw_dir
+
+    return Value.FromString(s)
+
+  def _EvalArrayLiteral(self, part):
+    words = braces.BraceExpandWords(part.words)
+    array = self._EvalWords(words)
+    return Value.FromArray(array)
+
+  def _EvalVarNum(self, var_num):
+    argv = self.mem.GetArgv()
+    assert var_num >= 0
+
+    if var_num == 0:
+      return True, Value.FromString(self.mem.GetArgv0())
+    else:
+      index = var_num - 1
+      if index < len(argv):
+        return True, Value.FromString(str(argv[index]))
+      else:
+        # NOTE: This is not a fatal error.
+        self._AddErrorContext(
+            'argv has %d entries; %d is out of range', len(argv), var_num)
+        return False, None  # undefined
+
+  def _EvalSpecialVar(self, op_id, quoted):
+    # $@ is special -- it need to know whether it is in a double quoted
+    # context.
+    #
+    # - If it's $@ in a double quoted context, return an ARRAY.
+    # - If it's $@ in a normal context, return a STRING, which then will be
+    # subject to splitting.
+
+    # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
+    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
+    # "When the expansion occurs within a double-quoted string (see
+    # Double-Quotes), it shall expand to a single field with the value of
+    # each parameter separated by the first character of the IFS variable, or
+    # by a <space> if IFS is unset. If IFS is set to a null string, this is
+    # not equivalent to unsetting it; its first character does not exist, so
+    # the parameter values are concatenated."
+    ifs = _GetIfs(self.mem)
+    sep = ifs[0] if ifs else ''
+
+    # GetArgv.  And then look at whether we're in a double quoted context or
+    # not.
+    if op_id in (Id.VSub_At, Id.VSub_Star):
+      if op_id == Id.VSub_At and quoted:  # "$@" evaluates to an array
+        argv = self.mem.GetArgv()
+        val = Value.FromArray(argv)
+        #print('$@', val)
+        return True, val
+      else:  # $@ $* "$*"
+        argv = self.mem.GetArgv()
+        val = Value.FromString(ifs[0].join(argv))
+        return True, val
+
+    elif op_id == Id.VSub_QMark:  # $?
+      # TODO: Have to parse status somewhere.
+      # External commands need WIFEXITED test.  What about subshells?
+      return True, Value.FromString(str(self.mem.last_status))
+
+    elif op_id == Id.VSub_Pound:  # $#
+      argv = self.mem.GetArgv()
+      s = str(len(argv))
+      return True, Value.FromString(s)
+
+    else:
+      raise NotImplementedError(op_id)
+
   def _ApplyVarOps(self, defined, val, part):
     """
     Args:
@@ -314,21 +428,6 @@ class _Evaluator(object):
       else:
         raise NotImplementedError(id)
 
-    if not defined:
-      # TODO: MOVE down to EvalVarSub().  Test ops will change this.
-      if self.exec_opts.nounset:
-        # stack will unwind
-        token = None
-        # TODO: Need to have the ast for varsub.  BracedVarSub should have a
-        # token?
-        #tb = self.mem.GetTraceback(token)
-        self._AddErrorContext("Unset variable %s" % var_name)
-        return False, None
-      else:
-        print("UNDEFINED")
-        # TODO: Isn't this where we do EMPTY_UNQUOTED?
-        return True, Value.FromString('')
-
     if part.prefix_op:
       op_id = part.prefix_op
 
@@ -416,6 +515,138 @@ class _Evaluator(object):
 
     return True, val
 
+  def _EvalVarPost(self, defined, val):
+    """Evaluates the given variable in the current scope.
+
+    Returns:
+       bool ok, Value v
+    """
+    if defined:
+      # If there are no modifiers like a[@], add implicit a[0], as long as
+      # exec option bash_array is set.
+      #
+      # TODO: $array is an error.  Only an explicit ${array[0]} or
+      # ${array[@]} is valid.  This is compatible with bash, and makes it
+      # easier to read and catch bugs.  We know the type at compile
+      # time.  It makes it easier to apply VarOps with unsurprising
+      # semantics.
+
+      # TODO: Put this back.  Don't break "$@".
+      #if self.exec_opts.bash_array:
+      #  val = val.EvalToFirst()
+      return val
+    else:
+      if self.exec_opts.nounset:
+        # stack will unwind
+        token = None
+        # TODO: Print the name.  Need to have the ast for varsub.  BracedVarSub
+        # should have a token?
+        #tb = self.mem.GetTraceback(token)
+        self._AddErrorContext('Undefined variable')
+        raise _EvalError()
+      # Raise _WordEvalError  -- unwind 
+      # Eval
+      # And then have a EvalCompoundWord
+
+      else:
+        return Value.FromString('')
+
+  def _EvalDoubleQuotedPart(self, part):
+    # NOTE: quoted arg isn't used
+    strs = ['']
+    for p in part.parts:
+      val = self._EvalWordPart(p, quoted=True)
+      assert isinstance(val, Value), val
+      is_str, s = val.AsString()
+      if is_str:
+        strs[-1] += s
+      else:
+        _AppendArray(strs, val.a)  # top level escape
+
+    # TODO: Fix bug.  "$@" could have only one entry, but we still want it to
+    # be an array!
+    if len(strs) == 1:
+      val = Value.FromString(strs[0])
+    else:
+      val = Value.FromArray(strs)
+    return val
+
+  def _EvalWordPart(self, part, quoted=False):
+    """
+    Returns:
+      bool ok
+      Value
+    """
+    if part.tag == word_part_e.ArrayLiteralPart:
+      return self._EvalArrayLiteral(part)
+
+    elif part.tag == word_part_e.LiteralPart:
+      s = part.token.val
+      return Value.FromString(s)
+
+    elif part.tag == word_part_e.EscapedLiteralPart:
+      val = part.token.val
+      assert len(val) == 2, val  # e.g. \*
+      assert val[0] == '\\'
+      s = val[1]
+      return Value.FromString(s)
+
+    elif part.tag == word_part_e.SingleQuotedPart:
+      s = ''.join(t.val for t in part.tokens)
+      return Value.FromString(s)
+
+    elif part.tag == word_part_e.DoubleQuotedPart:
+      return self._EvalDoubleQuotedPart(part)
+
+    elif part.tag == word_part_e.CommandSubPart:
+      # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
+      # supply something like /dev/fd/63.
+      return self._EvalCommandSub(part.command_list)
+
+    elif part.tag == word_part_e.SimpleVarSub:
+      # 1. Evaluate from (var_name, var_num, token) -> defined, value
+      if part.token.id == Id.VSub_Name:
+        var_name = part.token.val[1:]
+        defined, val = self.mem.Get(var_name)
+      elif part.token.id == Id.VSub_Number:
+        var_num = int(part.token.val[1:])
+        defined, val = self._EvalVarNum(var_num)
+      else:
+        defined, val = self._EvalSpecialVar(part.token.id, quoted)
+
+      # 2. And then nounset, basharray opts
+      val = self._EvalVarPost(defined, val)
+      return val
+
+    elif part.tag == word_part_e.BracedVarSub:
+      # 1. Evaluate from (var_name, var_num, token) -> defined, value
+      if part.token.id == Id.VSub_Name:
+        var_name = part.token.val
+        defined, val = self.mem.Get(var_name)
+      elif part.token.id == Id.VSub_Number:
+        var_num = int(part.token.val)
+        defined, val = self._EvalVarNum(var_num)
+      else:
+        defined, val = self._EvalSpecialVar(part.token.id, quoted)
+
+      # 2. Evaluate the ops from the part
+      defined, val = self._ApplyVarOps(defined, val, part)
+
+      # 3. And then nounset, basharray opts
+      val = self._EvalVarPost(defined, val)
+      return val
+
+    elif part.tag == word_part_e.TildeSubPart:
+      # We never parse a quoted string into a TildeSubPart.
+      assert not quoted
+      return self._EvalTildeSub(part.prefix)
+
+    elif part.tag == word_part_e.ArithSubPart:
+      return self._EvalArithSub(part.anode)
+
+    else:
+      raise AssertionError(part.tag)
+
   def _EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
     """Evaluate a word.
 
@@ -491,232 +722,6 @@ class _Evaluator(object):
       return True, v
     except _EvalError:
       return False, None
-
-  def _EvalTildeSub(self, prefix):
-    """Evaluates ~ and ~user.
-
-    Args:
-      prefix: The tilde prefix (possibly empty)
-    """
-    if prefix == '':
-      # First look up the HOME var, and then env var
-      defined, val = self.mem.Get('HOME')
-      if defined:
-        return val
-
-      s = util.GetHomeDir()
-      if s is None:
-        s = '~' + prefix  # No expansion I guess
-
-      return Value.FromString(s)
-
-    # http://linux.die.net/man/3/getpwnam
-    try:
-      e = pwd.getpwnam(prefix)
-    except KeyError:
-      s = '~' + prefix
-    else:
-      s = e.pw_dir
-
-    return Value.FromString(s)
-
-  def _EvalArrayLiteralPart(self, part):
-    words = braces.BraceExpandWords(part.words)
-    array = self._EvalWords(words)
-    return Value.FromArray(array)
-
-  def _EvalVarNum(self, var_num):
-    argv = self.mem.GetArgv()
-    assert var_num >= 0
-
-    if var_num == 0:
-      return True, Value.FromString(self.mem.GetArgv0())
-    else:
-      index = var_num - 1
-      if index < len(argv):
-        return True, Value.FromString(str(argv[index]))
-      else:
-        # NOTE: This is not a fatal error.
-        self._AddErrorContext(
-            'argv has %d entries; %d is out of range', len(argv), var_num)
-        return False, None  # undefined
-
-  def _EvalSpecialVar(self, op_id, quoted):
-    # $@ is special -- it need to know whether it is in a double quoted
-    # context.
-    #
-    # - If it's $@ in a double quoted context, return an ARRAY.
-    # - If it's $@ in a normal context, return a STRING, which then will be
-    # subject to splitting.
-
-    # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
-    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
-    # "When the expansion occurs within a double-quoted string (see
-    # Double-Quotes), it shall expand to a single field with the value of
-    # each parameter separated by the first character of the IFS variable, or
-    # by a <space> if IFS is unset. If IFS is set to a null string, this is
-    # not equivalent to unsetting it; its first character does not exist, so
-    # the parameter values are concatenated."
-    ifs = _GetIfs(self.mem)
-    sep = ifs[0] if ifs else ''
-
-    # GetArgv.  And then look at whether we're in a double quoted context or
-    # not.
-    if op_id in (Id.VSub_At, Id.VSub_Star):
-      if op_id == Id.VSub_At and quoted:  # "$@" evaluates to an array
-        argv = self.mem.GetArgv()
-        val = Value.FromArray(argv)
-        #print('$@', val)
-        return True, val
-      else:  # $@ $* "$*"
-        argv = self.mem.GetArgv()
-        val = Value.FromString(ifs[0].join(argv))
-        return True, val
-
-    elif op_id == Id.VSub_QMark:  # $?
-      # TODO: Have to parse status somewhere.
-      # External commands need WIFEXITED test.  What about subshells?
-      return True, Value.FromString(str(self.mem.last_status))
-
-    elif op_id == Id.VSub_Pound:  # $#
-      argv = self.mem.GetArgv()
-      s = str(len(argv))
-      return True, Value.FromString(s)
-
-    else:
-      raise NotImplementedError(op_id)
-
-  def _EvalVarPost(self, defined, val):
-    """Evaluates the given variable in the current scope.
-
-    Returns:
-       bool ok, Value v
-    """
-    if defined:
-      # If there are no modifiers like a[@], add implicit a[0], as long as
-      # exec option bash_array is set.
-      #
-      # TODO: $array is an error.  Only an explicit ${array[0]} or
-      # ${array[@]} is valid.  This is compatible with bash, and makes it
-      # easier to read and catch bugs.  We know the type at compile
-      # time.  It makes it easier to apply VarOps with unsurprising
-      # semantics.
-
-      # TODO: Put this back.  Don't break "$@".
-      #if self.exec_opts.bash_array:
-      #  val = val.EvalToFirst()
-      return val
-    else:
-      if self.exec_opts.nounset:
-        # stack will unwind
-        token = None
-        # TODO: Print the name.  Need to have the ast for varsub.  BracedVarSub
-        # should have a token?
-        #tb = self.mem.GetTraceback(token)
-        self._AddErrorContext('Undefined variable')
-        raise _EvalError()
-      # Raise _WordEvalError  -- unwind 
-      # Eval
-      # And then have a EvalCompoundWord
-
-      else:
-        return Value.FromString('')
-
-  def _EvalWordPart(self, part, quoted=False):
-    """
-    Returns:
-      bool ok
-      Value
-    """
-    if part.tag == word_part_e.ArrayLiteralPart:
-      return self._EvalArrayLiteralPart(part)
-
-    elif part.tag == word_part_e.LiteralPart:
-      s = part.token.val
-      return Value.FromString(s)
-
-    elif part.tag == word_part_e.EscapedLiteralPart:
-      val = part.token.val
-      assert len(val) == 2, val  # e.g. \*
-      assert val[0] == '\\'
-      s = val[1]
-      return Value.FromString(s)
-
-    elif part.tag == word_part_e.SingleQuotedPart:
-      s = ''.join(t.val for t in part.tokens)
-      return Value.FromString(s)
-
-    elif part.tag == word_part_e.DoubleQuotedPart:
-      return self._EvalDoubleQuotedPart(part)
-
-    elif part.tag == word_part_e.CommandSubPart:
-      # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
-      # supply something like /dev/fd/63.
-      return self._EvalCommandSub(part.command_list)
-
-    elif part.tag == word_part_e.SimpleVarSub:
-      # 1. Evaluate from (var_name, var_num, token) -> defined, value
-      if part.token.id == Id.VSub_Name:
-        var_name = part.token.val[1:]
-        defined, val = self.mem.Get(var_name)
-      elif part.token.id == Id.VSub_Number:
-        var_num = int(part.token.val[1:])
-        defined, val = self._EvalVarNum(var_num)
-      else:
-        defined, val = self._EvalSpecialVar(part.token.id, quoted)
-
-      # 2. And then nounset, basharray opts
-      val = self._EvalVarPost(defined, val)
-      return val
-
-    elif part.tag == word_part_e.BracedVarSub:
-      # 1. Evaluate from (var_name, var_num, token) -> defined, value
-      if part.token.id == Id.VSub_Name:
-        var_name = part.token.val
-        defined, val = self.mem.Get(var_name)
-      elif part.token.id == Id.VSub_Number:
-        var_num = int(part.token.val)
-        defined, val = self._EvalVarNum(var_num)
-      else:
-        defined, val = self._EvalSpecialVar(part.token.id, quoted)
-
-      # 2. Evaluate the ops from the part
-      defined, val = self._ApplyVarOps(defined, val, part)
-
-      # 3. And then nounset, basharray opts
-      val = self._EvalVarPost(defined, val)
-      return val
-
-    elif part.tag == word_part_e.TildeSubPart:
-      # We never parse a quoted string into a TildeSubPart.
-      assert not quoted
-      return self._EvalTildeSub(part.prefix)
-
-    elif part.tag == word_part_e.ArithSubPart:
-      return self._EvalArithSub(part.anode)
-
-    else:
-      raise AssertionError(part.tag)
-
-  def _EvalDoubleQuotedPart(self, part):
-    # NOTE: quoted arg isn't used
-    strs = ['']
-    for p in part.parts:
-      val = self._EvalWordPart(p, quoted=True)
-      assert isinstance(val, Value), val
-      is_str, s = val.AsString()
-      if is_str:
-        strs[-1] += s
-      else:
-        _AppendArray(strs, val.a)  # top level escape
-
-    # TODO: Fix bug.  "$@" could have only one entry, but we still want it to
-    # be an array!
-    if len(strs) == 1:
-      val = Value.FromString(strs[0])
-    else:
-      val = Value.FromArray(strs)
-    return val
 
   def _EvalWords(self, words):
     """Turns a list of Words into a list of strings.

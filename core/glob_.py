@@ -8,27 +8,8 @@ try:
 except ImportError:
   from core import fake_libc as libc
 
-# Pipeline sketch:
+# EXAMPLES
 #
-# data: CompoundWord ->
-#       BraceExpand(words, out) ->
-# data: [CompoundWord] ->
-#       ev.EvalCompoundWord()  # does both substitution and splitting 
-#                              # should we separate these things?
-#                              # because splitting depends on quoting too
-#                              # get rid of IsSubst
-#       heterogeneous WordPart to homogeneous Value
-# data: WordValue!  -> 
-#
-#   WordFramer(ifs).JoinSplitElide(out)
-#     Appends to the given array of WordValue
-#
-# data: WordValue with split_or_elide all false? ->
-#
-#       globber.Expand() ->
-#
-# data: argv array
-
 # Splitting happens before globbing:
 #
 # pat='*.py *.sh'
@@ -38,26 +19,97 @@ except ImportError:
 # echo "core"/*.py
 # echo "?core"/*.py
 
+# ---- example:
+#
+# pat='*.py *.s'
+# echo ${pat}h
+#
+# Array
+# -> [PartValue('echo')] [ [PartValue('*.py *.s')  PartValue('h') ]
+#    dse=1,dg=0             dse=1, dg=1           dse=0, dg=0
+#
+# Split, Join and Glob Escape -- but glob escapping depends on globber
+# settings!
 
-class WordValue:
-  def __init__(self, parts):
-    # Parallel arrays:
-    self.parts = []  # PartValue, string or array?
-                     # Arrays are the result of evaluating "$@" and "${a[@]}"
-    self.split_or_elide = []  # only substitutions
-                              # e.g. $a$b should be elided
-                              # clear this flag after splitting?
-    self.do_glob = []  # literals and substitutions
-                       # maybe have a thing to turn it off?
+# -> [ PartValue('echo') ] [ PartValue('*.py') PartValue('*.sh') ]
+#      dse=0 dg=0            dse=0 dg=1        dse0=dg1
+#
+# Maybe it should be
+# 
+# glob_arg
+# [ LiteralArg, GlobArg, LiteralArg ]
+#
+# ---- example:
+#
+# argv.py 1${undefined:-"2 3" "4 5"}6
+# stdout: ['12 3', '4 56']
+#
+# So you first evaluate the BracedVarSub, and get
+#
+# CompoundWord([DoubleQuotedPart("2 3") LiteralPart(" ") DoubleQuotedPart("4 5")
+#
+# Then you put it into the rest of PartValues
+#
+# 
+# StringPartValue("1", dse=1), 
+# StringPartValue("2 3", dse=0)
+# StringPartValue(" ", dse=1)  # Because it was unquoted
+# StringPartValue("4 5", dse=0)
+# StringPartValue("6", dse=0)
+#
+# StringPartValue turns into ArrayPartValue by SPLITTING.  Duh.
+#
+# And then you have a bunch of part_values and you just join them.
+# Single algorithm to join.
 
-  def ShouldGlob(self):
-    """Should the word be passed to glob()?"""
-    return any(self.do_glob)
+# Tests to make pass:
+# - var-sub-quote
+# - word-split
+# - array: $* and "$*", empty array, etc.
 
-  def ShouldElide(self):
-    """Should the word be passed to glob()?"""
-    # TODO: all parts empty and unquoted
-    return False
+# CLASSES / PIPELINE SKETCH
+#
+# WordEvaluator(mem, exec_opts)
+#   EvalCompoundWord
+#   EvalWords
+#   EvalEnv
+#
+# PartEvaluator(mem, exec_opts)
+# word_part -> part_value   (go one by one)
+#   def Eval(self, part)
+#
+# Splitter(mem.IFS)
+# part_value[] -> part_value[]
+#   def Split(self, vals)
+#
+# Joiner(exec_opts.do_glob)  # for do_glob
+# part_value[] -> arg_value[]
+#   def JoinAndGlobEscape(vals)
+#   Elide()
+#
+# Globber(exec_opts)
+# arg_value[] -> string[]
+#   Expand()
+#
+# Vertical slice:
+# - start by evaluating all parts, no splitting, joining, or globbing
+# - just the trivial algorithm of joining all the parts.
+#   - like IFS='' and noglob?
+
+def LooksLikeGlob():
+  """
+  TODO: Reference lib/glob /   glob_pattern functions in bash
+  grep glob_pattern lib/glob/*
+
+  NOTE: Dash has CTLESC = -127.
+  Does that mean a string is an array of ints or shorts?  Not bytes?
+  How does it handle unicode/utf-8 then?
+  Nope it's using it with char* p.
+  So it dash only ASCII or what?  TODO: test it
+  
+  NOTE: May not need this if we use structured parts.
+  """
+  pass
 
 
 # Glob Helpers for WordParts.

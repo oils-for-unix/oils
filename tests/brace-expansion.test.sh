@@ -104,6 +104,21 @@ echo \{{a,b}
 echo a{X,,Y}b
 # stdout: aXb ab aYb
 
+### Empty alternative
+# zsh and mksh don't do word elision, probably because they do brace expansion
+# AFTER variable substitution.
+argv.py {X,,Y,}
+# stdout: ['X', 'Y']
+# OK mksh/zsh stdout: ['X', '', 'Y', '']
+# status: 0
+
+### Empty alternative with empty string suffix
+# zsh and mksh don't do word elision, probably because they do brace expansion
+# AFTER variable substitution.
+argv.py {X,,Y,}''
+# stdout: ['X', '', 'Y', '']
+# status: 0
+
 ### nested brace expansion
 echo -{A,={a,b}=,B}-
 # stdout: -A- -=a=- -=b=- -B-

@@ -1,0 +1,31 @@
+-- Data types for evaluating an AST (or LST at the moment.)
+
+
+module runtime
+{
+  -- A part value is the result of evaluating a WordPart.
+  part_value = 
+    StringPartValue(string s, bool do_split_elide, bool do_glob)
+    -- "$@" or "${a[@]}" -- never split or globbed since double quoted
+  | ArrayPartValue(string* s)
+    -- A string part after splitting.  Parts may still be elided.
+  | SplitPartValue(string* s, bool do_elide, bool do_glob)
+
+  -- Split() algorithm works on StringPartValue only
+  -- JoinAndGlobEscape() works on ArrayPartValue() and SplitPartValue()
+  -- Elide() -- after joining. 
+     -- Example: {a,b,} has two args (third is elided)(, but {a,b,}'' has 3
+     -- if empty and do_elide?
+
+  -- With regard to joining, ArrayPartValue() behaves just like
+  -- SplitPartValue(do_glob=False), but we model them separately for a little
+  -- type safety.
+
+  -- TODO: ArgValue value?  Or those could just be strings?
+  -- After word splitting, we will get of arg_values.
+  arg_value = 
+    ConstArg(string s)
+  | GlobArg(string s)  -- non-glob parts glob-escaped
+
+  -- After glob expansion, we get an array of simple strings.
+}

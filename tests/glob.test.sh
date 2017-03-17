@@ -121,3 +121,14 @@ echo foo > _tmp/*.F
 cat '_tmp/*.F'
 # stdout: foo
 
+### Glob after var manipulation
+touch _tmp/foo.zzz _tmp/bar.zzz
+g='_tmp/*.zzzZ'
+echo $g ${g%Z}
+# stdout: _tmp/*.zzzZ _tmp/bar.zzz _tmp/foo.zzz
+
+### Glob after part joining
+touch _tmp/foo.yyy _tmp/bar.yyy
+g='_tmp/*.yy'
+echo $g ${g}y
+# stdout: _tmp/*.yy _tmp/bar.yyy _tmp/foo.yyy

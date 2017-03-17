@@ -36,3 +36,26 @@ case $empty in
   *) echo no ;;
 esac
 # stdout: match
+
+### Match a literal with a glob character
+x='*.py'
+case "$x" in
+  '*.py') echo match ;;
+esac
+# stdout: match
+
+### Match a literal with a glob character with a dynamic pattern
+x='b.py'
+pat='[ab].py'
+case "$x" in
+  $pat) echo match ;;
+esac
+# stdout: match
+
+### Quoted literal in glob pattern
+x='[ab].py'
+pat='[ab].py'
+case "$x" in
+  "$pat") echo match ;;
+esac
+# stdout: match

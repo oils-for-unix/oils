@@ -102,15 +102,11 @@ var='a b c'
 argv.py "${Unset:-'$var'}"
 # stdout: ["'a b c'"]
 
-
-
 ### No outer quotes, Multiple internal quotes
 # It's like a single command word.  Parts are joined directly.
 var='a b c'
 argv.py ${Unset:-A$var " $var"D E F}
 # stdout: ['Aa', 'b', 'c', ' a b cD', 'E', 'F']
-
-
 
 ### Strip a string with single quotes, unquoted
 foo="'a b c d'"
