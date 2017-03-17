@@ -181,11 +181,10 @@ def OshMain(argv):
   if 'lexer' in opts.trace:
     util.WrapMethods(lexer.Lexer, state)
 
-  # TODO: Should be bin/osh sys.argv[0]  if no args
-  if len(argv) >= 2:
-    dollar0 = argv[0]
+  if len(argv) == 0:
+    dollar0 = sys.argv[0]  # e.g. bin/osh
   else:
-    dollar0 = ''
+    dollar0 = argv[0]  # the script name
 
   # TODO: Create a --parse action or 'osh parse' or 'oil osh-parse'
   # osh-fix

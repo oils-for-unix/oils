@@ -537,7 +537,7 @@ class _Evaluator(object):
     assert var_num >= 0
 
     if var_num == 0:
-      raise NotImplementedError
+      return True, Value.FromString(self.mem.GetArgv0())
     else:
       index = var_num - 1
       if index < len(argv):

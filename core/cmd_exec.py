@@ -100,7 +100,7 @@ class Mem(object):
   def __init__(self, argv0, argv):
     self.top = {}  # string -> (flags, Value)
     self.var_stack = [self.top]
-    self.argv0 = argv
+    self.argv0 = argv0
     self.argv_stack = [argv]
     self.last_status = 0  # Mutable public variable
 
@@ -112,6 +112,10 @@ class Mem(object):
   def Pop(self):
     self.var_stack.pop()
     self.argv_stack.pop()
+
+  def GetArgv0(self):
+    """For $0."""
+    return self.argv0
 
   def GetArgv(self):
     """For $* and $@."""
