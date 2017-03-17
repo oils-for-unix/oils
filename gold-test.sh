@@ -24,9 +24,10 @@ version-text() {
 }
 
 count() {
-  # TODO: Need to implement 'return'
   _compare ./count.sh all
-  #_compare ./count.sh parser
+  _compare ./count.sh parser
+  _compare ./count.sh parser-port
+  _compare ./count.sh runtime
 }
 
 "$@"
