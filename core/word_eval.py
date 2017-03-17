@@ -3,8 +3,6 @@ word_eval.py - Evaluator for the word language.
 """
 
 import glob
-import os
-import pwd
 import re
 
 from core import braces
@@ -12,6 +10,7 @@ from core import expr_eval  # ArithEval
 from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core.value import Value
+from core import util
 from osh import ast_ as ast
 
 bracket_op_e = ast.bracket_op_e
@@ -505,14 +504,9 @@ class _Evaluator(object):
       if defined:
         return val
 
-      # If no env, fall back on /etc/passwd
-      uid = os.getuid()
-      try:
-        e = pwd.getpwuid(uid)
-      except KeyError:
-        s = '~' + prefix
-      else:
-        s = e.pw_dir
+      s = util.GetHomeDir()
+      if s is None:
+        s = '~' + prefix  # No expansion I guess
 
       return Value.FromString(s)
 

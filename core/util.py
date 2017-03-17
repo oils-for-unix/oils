@@ -23,6 +23,8 @@ easily to C++.
 # http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
 
 import inspect
+import os
+import pwd
 import sys
 import types
 
@@ -31,6 +33,21 @@ def log(msg, *args):
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
+
+
+def GetHomeDir():
+  """Get the user's home directory from the /etc/passwd.
+
+  Used by tilde expansion in word_eval.py and readline initialization in
+  completion.py.
+  """
+  uid = os.getuid()
+  try:
+    e = pwd.getpwuid(uid)
+  except KeyError:
+    return None
+  else:
+    return e.pw_dir
 
 
 class _EnumValue(object):

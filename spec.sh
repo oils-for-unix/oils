@@ -251,7 +251,7 @@ pipeline() {
 }
 
 explore-parsing() {
-  sh-spec tests/explore-parsing.test.sh --osh-failures-allowed 6 \
+  sh-spec tests/explore-parsing.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -290,7 +290,7 @@ var-sub() {
 }
 
 var-num() {
-  sh-spec tests/var-num.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/var-num.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

@@ -692,7 +692,13 @@ class ReadlineCompleter(object):
 
 
 def InitReadline(complete_cb):
-  history_filename = os.path.join(os.environ['HOME'], 'oil_history')
+  home_dir = os.environ.get('HOME')
+  if home_dir is None:
+    home_dir = util.GetHomeDir()
+    if home_dir is None:
+      print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
+      return
+  history_filename = os.path.join(home_dir, 'oil_history')
 
   try:
     readline.read_history_file(history_filename)
