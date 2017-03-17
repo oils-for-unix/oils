@@ -181,6 +181,7 @@ def OshMain(argv):
   if 'lexer' in opts.trace:
     util.WrapMethods(lexer.Lexer, state)
 
+  # TODO: Should be bin/osh sys.argv[0]  if no args
   if len(argv) >= 2:
     dollar0 = argv[0]
   else:
