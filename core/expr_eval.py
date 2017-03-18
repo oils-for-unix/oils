@@ -18,18 +18,19 @@ except ImportError:
 
 from core.id_kind import BOOL_OPS, OperandType, Id, IdName
 from core.util import log
-from core.value import TValue
+from core import runtime
 
 from osh import ast_ as ast
 
 arith_expr_e = ast.arith_expr_e
 bool_expr_e = ast.bool_expr_e  # used for dispatch
 word_e = ast.word_e
+part_value_e = runtime.part_value_e
+value_e = runtime.value_e
 
-#from core import word_eval
 
-
-class ExprEvalError(RuntimeError): pass
+class ExprEvalError(RuntimeError):
+  pass
 
 # In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
 # BoolEvalResult, CmdExecResult?  Word is handled differntly because it's a
@@ -83,10 +84,11 @@ class ArithEvaluator(ExprEvaluator):
     bare word: variable
     quoted word: string
     """
-    is_str, s = val.AsString()
-    if not is_str:
+    assert isinstance(val, runtime.value), val
+    if val.tag != value_e.Str:
       # TODO: Error message: expected string but got integer/array
       return False, 0
+    s = val.s
 
     if s.startswith('0x'):
       try:
@@ -160,10 +162,10 @@ class ArithEvaluator(ExprEvaluator):
     # handle that as a special case.
     #if node.id == Id.Node_ArithVar:
     if node.tag == arith_expr_e.RightVar:
-      defined, val = self.mem.Get(node.name)
+      val = self.mem.Get(node.name)
       # By default, undefined variables are the ZERO value.  TODO: Respect
       # nounset and raise an exception.
-      if not defined:
+      if val.tag == value_e.Undef:
         return 0
 
       ok, i = self._ValToInteger(val)
@@ -173,7 +175,7 @@ class ArithEvaluator(ExprEvaluator):
         raise ExprEvalError()
 
     elif node.tag == arith_expr_e.ArithWord:  # constant string
-      ok, val = self.word_ev.EvalCompoundWord(node.w, elide_empty=False)
+      ok, val = self.word_ev.EvalWordToString(node.w)
       if not ok:
         raise ExprEvalError(self.word_ev.Error())
 
@@ -236,46 +238,22 @@ class ArithEvaluator(ExprEvaluator):
     raise AssertionError("Shouldn't get here")
 
 
-# NOTE: Not used now
-def _ValuesAreEqual(x, y):
-  """Equality is used for [[.
-
-  NOTE: Equality of arrays works!
-  """
-  if x.type != y.type:
-    # TODO: should we throw an INCOMPARABLE error?  Same with -eq on strings.
-    return False
-
-  if x.type == TValue.STRING:
-    #return x.s == y.s
-    # RHS is the PATTERN.  LHS is the value.
-    return libc.fnmatch(y.s, x.s)
-
-  raise NotImplementedError
-
-
 class BoolEvaluator(ExprEvaluator):
 
   def _SetRegexMatches(self, matches):
     """For ~= to set the BASH_REMATCH array."""
     self.mem
 
-  def _EvalCompoundWord(self, word, do_glob=False):
+  def _EvalCompoundWord(self, word, do_fnmatch=False):
     """
     Args:
       node: Id.Word_Compound
-      do_glob: TOOD: rename this
     """
-    ok, val = self.word_ev.EvalCompoundWord(word, do_glob=do_glob,
-                                            elide_empty=False)
+    ok, val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch)
     if not ok:
       raise ExprEvalError(self.word_ev.Error())
 
-    is_str, s = val.AsString()
-    if not is_str:
-      raise ExprEvaluator("Expected string, got array")
-
-    return s
+    return val.s
 
   def _Eval(self, node):
     #print('!!', node.tag)
@@ -334,9 +312,9 @@ class BoolEvaluator(ExprEvaluator):
 
       s1 = self._EvalCompoundWord(node.left)
       # Whehter to glob escape
-      do_glob = op_id in (
+      do_fnmatch = op_id in (
           Id.BoolBinary_Equal, Id.BoolBinary_DEqual, Id.BoolBinary_NEqual)
-      s2 = self._EvalCompoundWord(node.right, do_glob=do_glob)
+      s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)
 
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]
@@ -372,11 +350,10 @@ class BoolEvaluator(ExprEvaluator):
         # - Compare arrays.  (Although bash coerces them to string first)
 
         if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
-          #return True, _ValuesAreEqual(val1, val2)
+          #log('Comparing %s and %s', s2, s1)
           return libc.fnmatch(s2, s1)
 
         if op_id == Id.BoolBinary_NEqual:
-          #return True, not _ValuesAreEqual(val1, val2)
           return not libc.fnmatch(s2, s1)
 
         if op_id == Id.BoolBinary_EqualTilde:

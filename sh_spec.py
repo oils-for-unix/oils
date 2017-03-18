@@ -818,6 +818,7 @@ def main(argv):
   stats = RunCases(cases, case_predicate, shell_pairs, env, out)
   out.EndCases(stats)
 
+  stats['osh_failures_allowed'] = opts.osh_failures_allowed
   if opts.stats_file:
     with open(opts.stats_file, 'w') as f:
       f.write(opts.stats_template % stats)

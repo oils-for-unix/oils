@@ -168,9 +168,13 @@ comments() {
   sh-spec tests/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# TODO(pysh): Implement ${foo:-a b c}
 word-split() {
   sh-spec tests/word-split.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+word-eval() {
+  sh-spec tests/word-eval.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -282,6 +286,11 @@ tilde() {
   sh-spec tests/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
+var-op-test() {
+  sh-spec tests/var-op-test.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
@@ -315,10 +324,8 @@ arith-context() {
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
-# TODO: array= (a b c) vs array=(a b c).  I think LookAheadForOp might still be
-# messed up.
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 25 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 22 \
     $BASH $MKSH $OSH "$@"
 }
 

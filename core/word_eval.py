@@ -9,22 +9,46 @@ from core import braces
 from core import expr_eval  # ArithEval
 from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
-from core.value import Value
 from core import util
 from core import runtime
 from osh import ast_ as ast
 
 bracket_op_e = ast.bracket_op_e
+part_value_e = runtime.part_value_e
+value_e = runtime.value_e
+arg_value_e = runtime.arg_value_e
+word_part_e = ast.word_part_e
+log = util.log
+
+
+def _ValueToPartValue(val, quoted):
+  """Helper for VarSub evaluation."""
+  assert isinstance(val, runtime.value), val
+  if val.tag == value_e.Undef:
+    return runtime.UndefPartValue()
+
+  elif val.tag == value_e.Str:
+    return runtime.StringPartValue(val.s, not quoted, not quoted)
+
+  elif val.tag == value_e.StrArray:
+    return runtime.ArrayPartValue(val.strs)
+
+  else:
+    raise AssertionError
 
 
 def _GetIfs(mem):
-  defined, val = mem.Get('IFS')
-  if defined:
-    is_str, ifs = val.AsString()
-    assert is_str  # should have never been set as array
+  """
+  Used for splitting words in Splitter, and joining $* in _WordPartEvaluator.
+  """
+  val = mem.Get('IFS')
+  if val.tag == value_e.Undef:
+    return ' \t\n'  # default for sh; default for oil is ''
+  elif val.tag == value_e.Str:
+    return val.s
   else:
-    ifs = ' \t\n'  # default for sh; default for oil is ''
-  return ifs
+    # TODO: Raise proper error
+    raise AssertionError("IFS shouldn't be an array")
 
 
 def _Split(s, ifs):
@@ -36,25 +60,6 @@ def _Split(s, ifs):
     else:
       parts[-1] += c
   return parts
-
-
-class Splitter:
-  """
-  After word evaluation, we'll get a list of of part_value.  We need to apply
-  part joining, word splitting, and word elision to create inputs for globbing.
-  """
-  def __init__(self, mem, exec_opts):
-    # Depends on IFS (set -o noglob)
-    # TODO: Should we create readonly "role interfaces" for these?
-    self.mem = mem
-    self.exec_opts = exec_opts
-
-  def Split(self, part_values):
-    """
-    part_value[] -> part_value[]
-
-    Depends on no_glob
-    """
 
 
 def _IfsSplit(s, ifs):
@@ -73,14 +78,15 @@ def _IfsSplit(s, ifs):
 
   # Can we do this be regex or something?  Use regex match?
   """
+  # TODO: test undef
   if not ifs:
     return [s]  # no splitting
 
   # print("IFS SPLIT %r %r" % (s, ifs))
   if ifs == ' \t\n':
     # Split by whitespace, and empty strings removed
-    parts = _Split(s, ifs)
-    return [p for p in parts if p]
+    frags = _Split(s, ifs)
+    return [f for f in frags if f]
 
   # Detect IFS whitespace
   ifs_whitespace = ''
@@ -111,114 +117,133 @@ def _IfsSplit(s, ifs):
     raise AssertionError
 
   #print('PAT', repr(pat))
-
   regex = re.compile(pat)
-  parts = regex.split(s)
-
-  # Ignore at beginning and end.
-  if not parts[0]:
-    del parts[0]
-  if parts and not parts[-1]:
-    del parts[-1]
-
-  return parts
+  frags = regex.split(s)
+  return frags
 
 
-def _AppendArray(strs, array, glob_escape=False):
+def _SplitPartsIntoFragments(part_vals, ifs):
   """
-  Append 'array' to existing 'strs'.  The first one is joined.
+  part_value[] -> part_value[]
+  Depends on no_glob
   """
-  empty = True
-  for i, s in enumerate(array):
-    if s:
-      empty = False
-
-    if glob_escape:
-      s = GlobEscape(s)
-
-    if i == 0:
-      strs[-1] += s
+  # Every part yields a single fragment array.
+  frag_arrays = []
+  for p in part_vals:
+    if p.tag == part_value_e.StringPartValue:
+      #log("SPLITTING %s", p)
+      if p.do_split_elide:
+        frags = _IfsSplit(p.s, ifs)
+        do_glob = bool(p.do_glob)  # TODO: initialize
+        res = [runtime.fragment(f, True, do_glob) for f in frags]
+      else:
+        # Example: 'a b' and "a b" don't need to be split.
+        do_elide = bool(p.do_split_elide)
+        do_glob = bool(p.do_glob)  # TODO: initialize
+        res = [runtime.fragment(p.s, do_elide, do_glob)]
+    elif p.tag == part_value_e.ArrayPartValue:
+      # "$@" and "${a[@]}" don't need to be split or globbed
+      res = [runtime.fragment(f, False, False) for f in p.strs]
     else:
-      strs.append(s)
-  return empty
+      raise AssertionError(p.tag)
+
+    frag_arrays.append(res)
+
+  return frag_arrays
 
 
-word_part_e = ast.word_part_e
-
-# TODO: Turn these into an ASDL predicates?  Fast table lookup for C++.
-def _GlobsAreExpanded(p):
+def _Reframe(frag_arrays):
   """
-  Are globs expanded at the top level?  Yes for LiteralPart, and all the var
-  sub parts.
-  No for TildeSubPart, and all the quoted parts.
+  frag_arrays -> frag_arrays
+
+  Example:
+  [a b][c][d e] -> [a] [bcd] [e]
   """
-  return p.tag in (
-      word_part_e.LiteralPart, word_part_e.CommandSubPart,
-      word_part_e.SimpleVarSub, word_part_e.BracedVarSub)
+  # Reframe:
+  res = [[]]
+  for frag_array in frag_arrays:
+    if len(frag_array) == 1:
+      frag = frag_array[0]
+      res[-1].append(frag)
+    else:
+      for i, frag in enumerate(frag_array):
+        if i == 0:
+          res[-1].append(frag)
+        else:
+          res.append([frag])  # singleton frag
+  return res
 
 
-def _IsSubst(p):
-  """
+def _JoinElideEscape(frag_arrays, glob_escape=False):
+  """Join parts without globbing or eliding.
+
+  Args:
+    pass
+
   Returns:
-    Is the part an substitution?  (If called
-    This is used:
-
-    1) To determine whether result of evaluation of the part should be split
-    in a unquoted context.
-    2) To determine whether an empty string can be elided.
-    3) To do globbing.  If we are NOT in a substitution or literal.
+    arg: TODO: Retu
   """
-  return p.tag in (
-      word_part_e.CommandSubPart, word_part_e.SimpleVarSub,
-      word_part_e.BracedVarSub, word_part_e.ArithSubPart)
+  args = []
+  for frag_array in frag_arrays:
+    if glob_escape:
+      #log('frag_array: %s', frag_array)
+      escaped_frags = []
+      any_glob = False
+      for frag in frag_array:
+        if frag.do_glob:  # *.py should be literal
+          escaped_frags.append(frag.s)
+          any_glob = True
+        else:
+          # "*.py" should be glob-escaped to \*.py
+          escaped_frags.append(GlobEscape(frag.s))
+
+      arg_str = ''.join(escaped_frags)
+      #log('ARG STR %s', arg_str)
+      if any_glob:
+        arg = runtime.GlobArg(arg_str)
+      else:
+        # e.g. 'foo'"${var}" shouldn't be globbed
+        # TODO: combine with below:
+        arg = runtime.ConstArg(''.join(frag.s for frag in frag_array))
+    else:
+      arg = runtime.ConstArg(''.join(frag.s for frag in frag_array))
+
+    # Elide $a$b, but not $a"$b" or $a''
+    # NOTE: Does this depend on IFS?
+    if not arg.s and all(frag.do_elide for frag in frag_array):
+      continue
+
+    args.append(arg)
+
+  return args
 
 
 class _EvalError(RuntimeError):
   pass
 
+# Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
 
-class _Evaluator(object):
-  """Abstract base class for word evaluators.
+Effect = util.Enum('Effect', 'Eval Error Assign NoOp'.split())
 
-  Public entry points:
-    EvalCompoundWord
-    EvalWords
-    Error
-  """
 
-  def __init__(self, mem, exec_opts):
-    self.mem = mem
-    self.exec_opts = exec_opts
+class _WordPartEvaluator:
+  """Abstract base class."""
 
-    self.globber = Globber(exec_opts)
-    self.error_stack = []
+  def __init__(self, mem, exec_opts, word_ev):
+    self.mem = mem  # for $HOME, $1, etc.
+    self.exec_opts = exec_opts  # for nounset
+    self.word_ev = word_ev  # for arith words, var op words
 
-  def _AddErrorContext(self, msg, *args):
-    if msg:
-      msg = msg % args
-    self.error_stack.append(msg)
+  def _EvalCommandSub(self, part):
+    """Abstract since it has a side effect.
 
-  def Error(self):
-    return self.error_stack
-
-  def _EvalCommandSub(self, node):
-    """
     Args:
-      node: COMMAND_SUB node
+      part: CommandSubPart
 
     Returns:
-       bool ok, Value v
+       part_value
     """
     raise NotImplementedError
-
-  def _EvalArithSub(self, anode):
-    arith_ev = expr_eval.ArithEvaluator(self.mem, self)
-    if arith_ev.Eval(anode):
-      num = arith_ev.Result()
-      return Value.FromString(str(num))
-    else:
-      self.error_stack.extend(arith_ev.Error())
-      raise _EvalError()
 
   def _EvalTildeSub(self, prefix):
     """Evaluates ~ and ~user.
@@ -228,15 +253,16 @@ class _Evaluator(object):
     """
     if prefix == '':
       # First look up the HOME var, and then env var
-      defined, val = self.mem.Get('HOME')
-      if defined:
-        return val
+      val = self.mem.Get('HOME')
+      if val.tag == value_e.Str:
+        return val.s
+      elif val.tag == value_e.StrArray:
+        raise AssertionError
 
       s = util.GetHomeDir()
       if s is None:
         s = '~' + prefix  # No expansion I guess
-
-      return Value.FromString(s)
+      return s
 
     # http://linux.die.net/man/3/getpwnam
     try:
@@ -245,29 +271,23 @@ class _Evaluator(object):
       s = '~' + prefix
     else:
       s = e.pw_dir
-
-    return Value.FromString(s)
-
-  def _EvalArrayLiteral(self, part):
-    words = braces.BraceExpandWords(part.words)
-    array = self._EvalWords(words)
-    return Value.FromArray(array)
+    return s
 
   def _EvalVarNum(self, var_num):
     argv = self.mem.GetArgv()
     assert var_num >= 0
 
     if var_num == 0:
-      return True, Value.FromString(self.mem.GetArgv0())
+      return runtime.Str(self.mem.GetArgv0())
     else:
       index = var_num - 1
       if index < len(argv):
-        return True, Value.FromString(str(argv[index]))
+        return runtime.Str(str(argv[index]))
       else:
         # NOTE: This is not a fatal error.
-        self._AddErrorContext(
-            'argv has %d entries; %d is out of range', len(argv), var_num)
-        return False, None  # undefined
+        #self._AddErrorContext(
+        #    'argv has %d entries; %d is out of range', len(argv), var_num)
+        return runtime.Undef()
 
   def _EvalSpecialVar(self, op_id, quoted):
     # $@ is special -- it need to know whether it is in a double quoted
@@ -293,153 +313,136 @@ class _Evaluator(object):
     if op_id in (Id.VSub_At, Id.VSub_Star):
       if op_id == Id.VSub_At and quoted:  # "$@" evaluates to an array
         argv = self.mem.GetArgv()
-        val = Value.FromArray(argv)
+        val = runtime.StrArray(argv)
         #print('$@', val)
-        return True, val
+        return val
       else:  # $@ $* "$*"
         argv = self.mem.GetArgv()
-        val = Value.FromString(ifs[0].join(argv))
-        return True, val
+        val = runtime.Str(ifs[0].join(argv))
+        return val
 
     elif op_id == Id.VSub_QMark:  # $?
       # TODO: Have to parse status somewhere.
       # External commands need WIFEXITED test.  What about subshells?
-      return True, Value.FromString(str(self.mem.last_status))
+      return runtime.Str(str(self.mem.last_status))
 
     elif op_id == Id.VSub_Pound:  # $#
       argv = self.mem.GetArgv()
       s = str(len(argv))
-      return True, Value.FromString(s)
+      return runtime.Str(s)
 
     else:
       raise NotImplementedError(op_id)
 
-  def _ApplyVarOps(self, defined, val, part):
+  def _ApplyBracketOp(self, val, bracket_op, quoted):
     """
     Args:
       part: BracedVarSub
     Returns:
       defined, val
     """
-    # Possibilities: Array OR Index; then Test OR Transform
+    assert isinstance(val, runtime.value), val
+    assert val.tag == value_e.StrArray
 
-    # So instead of a list of ops, it should be optional IndexOp, optional
-    # TestOp, optional TransformOp.
+    if bracket_op.tag == bracket_op_e.WholeArray:
+      op_id = bracket_op.op_id
 
-    # empty=''
-    # $unset -> ''  EMPTY_UNQUOTED
-    # ${unset:-foo} -> foo
-    # ${unset-foo} -> foo
-
-    # $empty -> ''
-    # ${empty:-foo} -> foo
-    # ${empty-foo} -> ''
-
-    array_ok = False
-    index_error = False  # test_op can suppress this
-
-    if defined and part.bracket_op:
-      if part.bracket_op.tag == bracket_op_e.WholeArray:
-        op_id = part.bracket_op.op_id
-
-        # TODO: Change this to array_op instead of bracket_op?
-        if op_id == Id.Lit_At:
-          if val.IsArray():
-            array_ok = True
-          else:
-            self._AddErrorContext("Can't index non-array with @")
-            return False, None
-
-        elif op_id == Id.Arith_Star:
-          if val.IsArray():
-            array_ok = True
-          else:
-            self._AddErrorContext("Can't index non-array with *")
-            return False, None
-
+      joined = runtime.StringPartValue(' '.join(s for s in val.strs),
+                                       not quoted, not quoted)
+      if op_id == Id.Lit_At:
+        #log("PART %s %s", part, val)
+        if val.tag == value_e.StrArray:
+          if quoted: # "${a[@]}"
+            return runtime.ArrayPartValue(val.strs)
+          else:      #  ${a[@]}
+            return joined
         else:
-          raise AssertionError(op_id)
+          raise AssertionError("Can't index non-array with @")
 
-      elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
-        array_ok = True
-        is_array, a = val.AsArray()
-        if is_array:
-          anode = part.bracket_op.expr
-          # TODO: This should propagate errors
-          arith_ev = expr_eval.ArithEvaluator(self.mem, self)
-          ok = arith_ev.Eval(anode)
-          if not ok:
-            self._AddErrorContext(
-                'Error evaluating arith sub in index expression')
-            return False, None
-          index = arith_ev.Result()
-          try:
-            s = a[index]
-          except IndexError:
-            index_error = True
-            defined = False
-            val = None
-          else:
-            val = Value.FromString(s)
-
-        else:  # it's a string
-          raise NotImplementedError("String indexing not implemented")
+      elif op_id == Id.Arith_Star:
+        if val.tag == value_e.StrArray:
+          return joined
+        else:
+          raise AssertionError("Can't index non-array with *")
 
       else:
-        raise AssertionError(part.bracket_op.tag)
+        raise AssertionError(op_id)  # unknown
 
-    if defined and val.IsArray():
-      if not array_ok:
+    elif bracket_op.tag == bracket_op_e.ArrayIndex:
+      anode = bracket_op.expr
+      # TODO: This should propagate errors
+      arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
+      ok = arith_ev.Eval(anode)
+      if not ok:
         self._AddErrorContext(
-            "Array was referenced without explicit index, e.g. ${a[@]} "
-            "or ${a[0]}")
+            'Error evaluating arith sub in index expression')
         return False, None
+      index = arith_ev.Result()
 
+      try:
+        s = val.strs[index]
+      except IndexError:
+        return runtime.UndefPartValue()
+      else:
+        return runtime.StringPartValue(s, not quoted, not quoted)
+
+    else:
+      raise AssertionError(bracket_op.tag)
+
+  def _ApplyTestOp(self, part_val, op):
+    """
+    Returns:
+      ${a:-} returns part_value[]
+      ${a:+} returns part_value[]
+      ${a:?error} returns error word?
+      ${a:=} returns part_value[] but also needs self.mem for side effects.
+
+      So I guess it should return part_value[], and then a flag for raising an
+      error, and then a flag for assigning it?
+      The original BracedVarSub will have the name.
+    """
+    undefined = (part_val.tag == part_value_e.UndefPartValue)
+
+    # TODO: Change this to a bit test.
+    if op.op_id in (
+        Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
+        Id.VTest_ColonPlus):
+      is_falsey = (
+          undefined or (part_val.tag == value_e.Str and part_val.s == ''))
+    else:
+      is_falsey = undefined
+
+    #print('!!',id, is_falsey)
+    if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
+      if is_falsey:
+        ok, val = self.word_ev.EvalWordToAny(op.arg_word)
+        if not ok:
+          raise AssertionError
+        # NOTE: Pretending it's QUOTED
+        return _ValueToPartValue(val, quoted=True), Effect.Eval
+      else:
+        return None, Effect.NoOp
+
+    # TODO:
+    # +  -- inverted test -- assign to default
+    # ?  -- error
+    # =  -- side effect assignment
+    else:
+      raise NotImplementedError(id)
+
+  def _ApplyPrefixOp(self, val, op_id):
+    if op_id == Id.VSub_Pound:  # LENGTH
+      if val.tag == value_e.StrArray:
+        length = len(val.strs)
+      else:
+        length = len(val.s)
+      return runtime.Str(str(length))
+    else:
+      raise NotImplementedError(op_id)
+
+  def _ApplySuffixOp(self, defined, val, part):
     # if the op does NOT have colon
     #use_default = not defined
-
-    if part.suffix_op and LookupKind(part.suffix_op.op_id) == Kind.VTest:
-      op = part.suffix_op
-
-      # TODO: Change this to a bit test.
-      if op.op_id in (
-          Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
-          Id.VTest_ColonPlus):
-        is_falsey = not defined or val.IsEmptyString()
-      else:
-        is_falsey = not defined
-
-      #print('!!',id, is_falsey)
-      if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
-        if is_falsey:
-          argv = []
-          val2 = self._EvalCompoundWord(op.arg_word)
-          val2.AppendTo(argv)
-          # TODO: This is roundabout
-          val = Value.FromArray(argv)
-
-          defined = True  # now we have a variable
-          #print("DEFAULT", val)
-
-      # TODO:
-      # +  -- inverted test -- assign to default
-      # ?  -- error
-      # =  -- side effect assignment
-      else:
-        raise NotImplementedError(id)
-
-    if part.prefix_op:
-      op_id = part.prefix_op
-
-      if op_id == Id.VSub_Pound:  # LENGTH
-        if val.IsArray():
-          #print("ARRAY LENGTH", len(val.a))
-          length = len(val.a)
-        else:
-          #print("STRING LENGTH", len(val.s))
-          length = len(val.s)
-        val = Value.FromString(str(length))
-
     # NOTE: You could have both prefix and suffix
     if part.suffix_op and LookupKind(part.suffix_op.op_id) in (
         Kind.VOp1, Kind.VOp2):
@@ -480,7 +483,7 @@ class _Evaluator(object):
         print(op.words)
         argv = []
         for w in op.words:
-          val2 = self._EvalCompoundWord(w)
+          val2 = self._EvalParts(w)
           val2.AppendTo(argv)
 
         # TODO: Evaluate words, and add the SPACE VALUES, getting a single
@@ -494,7 +497,7 @@ class _Evaluator(object):
           s = val.s
           if s.endswith(suffix):
             s = s[:-len(suffix)]
-            val = Value.FromString(s)
+            val = runtime.StringPartValue(s)
 
       elif op.op_id == Id.VOp1_DPercent:
         pass
@@ -513,29 +516,36 @@ class _Evaluator(object):
       else:
         raise NotImplementedError(op)
 
-    return True, val
+    return defined, val
 
-  def _EvalVarPost(self, defined, val):
-    """Evaluates the given variable in the current scope.
+  def _EvalDoubleQuotedPart(self, part):
+    # Example of returnins array arrays:
+    # $ a=(1 2); b=(3); $ c=(4 5)
+    # $ argv "${a[@]}${b[@]}${c[@]}"
+    # ['1', '234', '5']
 
-    Returns:
-       bool ok, Value v
-    """
-    if defined:
-      # If there are no modifiers like a[@], add implicit a[0], as long as
-      # exec option bash_array is set.
-      #
-      # TODO: $array is an error.  Only an explicit ${array[0]} or
-      # ${array[@]} is valid.  This is compatible with bash, and makes it
-      # easier to read and catch bugs.  We know the type at compile
-      # time.  It makes it easier to apply VarOps with unsurprising
-      # semantics.
+    strs = ['']  # TODO: Use fragment style?
+    for p in part.parts:
+      part_val = self._EvalWordPart(p, quoted=True)
+      assert isinstance(part_val, runtime.part_value), (p, part_val)
+      if part_val.tag == part_value_e.StringPartValue:
+        strs[-1] += part_val.s
+      else:
+        for i, s in enumerate(part_val.strs):
+          if i == 0:
+            strs[-1] += s
+          else:
+            strs.append(s)
 
-      # TODO: Put this back.  Don't break "$@".
-      #if self.exec_opts.bash_array:
-      #  val = val.EvalToFirst()
-      return val
+    if len(strs) == 1:
+      val = runtime.StringPartValue(strs[0], False, False)
     else:
+      val = runtime.ArrayPartValue(strs)
+    return val
+
+  def _EmptyStringPartOrError(self, part_val, quoted):
+    assert isinstance(part_val, runtime.part_value), part_val
+    if part_val.tag == value_e.Undef:
       if self.exec_opts.nounset:
         # stack will unwind
         token = None
@@ -544,56 +554,39 @@ class _Evaluator(object):
         #tb = self.mem.GetTraceback(token)
         self._AddErrorContext('Undefined variable')
         raise _EvalError()
-      # Raise _WordEvalError  -- unwind 
-      # Eval
-      # And then have a EvalCompoundWord
-
       else:
-        return Value.FromString('')
-
-  def _EvalDoubleQuotedPart(self, part):
-    # NOTE: quoted arg isn't used
-    strs = ['']
-    for p in part.parts:
-      val = self._EvalWordPart(p, quoted=True)
-      assert isinstance(val, Value), val
-      is_str, s = val.AsString()
-      if is_str:
-        strs[-1] += s
-      else:
-        _AppendArray(strs, val.a)  # top level escape
-
-    # TODO: Fix bug.  "$@" could have only one entry, but we still want it to
-    # be an array!
-    if len(strs) == 1:
-      val = Value.FromString(strs[0])
+        return runtime.StringPartValue('', not quoted, not quoted)
     else:
-      val = Value.FromArray(strs)
-    return val
+      return part_val
 
   def _EvalWordPart(self, part, quoted=False):
-    """
+    """Evaluate a word part.
     Returns:
-      bool ok
-      Value
+      value
+
+    Raises:
+      _EvalError
     """
     if part.tag == word_part_e.ArrayLiteralPart:
-      return self._EvalArrayLiteral(part)
+      raise AssertionError(
+          'Array literal should have been handled at word level')
 
     elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
-      return Value.FromString(s)
+      do_split_elide = False
+      do_glob = True
+      return runtime.StringPartValue(s, do_split_elide, do_glob)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      return Value.FromString(s)
+      return runtime.StringPartValue(s, False, False)
 
     elif part.tag == word_part_e.SingleQuotedPart:
       s = ''.join(t.val for t in part.tokens)
-      return Value.FromString(s)
+      return runtime.StringPartValue(s, False, False)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
       return self._EvalDoubleQuotedPart(part)
@@ -607,51 +600,136 @@ class _Evaluator(object):
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
       if part.token.id == Id.VSub_Name:
         var_name = part.token.val[1:]
-        defined, val = self.mem.Get(var_name)
+        val = self.mem.Get(var_name)
       elif part.token.id == Id.VSub_Number:
         var_num = int(part.token.val[1:])
-        defined, val = self._EvalVarNum(var_num)
+        val = self._EvalVarNum(var_num)
       else:
-        defined, val = self._EvalSpecialVar(part.token.id, quoted)
+        val = self._EvalSpecialVar(part.token.id, quoted)
 
-      # 2. And then nounset, basharray opts
-      val = self._EvalVarPost(defined, val)
-      return val
+      part_val = _ValueToPartValue(val, quoted)
+      part_val = self._EmptyStringPartOrError(part_val, quoted)
+      return part_val
 
     elif part.tag == word_part_e.BracedVarSub:
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
       if part.token.id == Id.VSub_Name:
         var_name = part.token.val
-        defined, val = self.mem.Get(var_name)
+        val = self.mem.Get(var_name)
+        log('EVAL NAME %s -> %s', var_name, val)
+
       elif part.token.id == Id.VSub_Number:
         var_num = int(part.token.val)
-        defined, val = self._EvalVarNum(var_num)
+        val = self._EvalVarNum(var_num)
       else:
-        defined, val = self._EvalSpecialVar(part.token.id, quoted)
+        val = self._EvalSpecialVar(part.token.id, quoted)
 
-      # 2. Evaluate the ops from the part
-      defined, val = self._ApplyVarOps(defined, val, part)
+      # Later this could be part_val, if you implemented named references.
+      if part.prefix_op:
+        val = self._ApplyPrefixOp(val, part.prefix_op)
+        # return part_val
+        # TODO: check if undefined
 
-      # 3. And then nounset, basharray opts
-      val = self._EvalVarPost(defined, val)
-      return val
+      # The bracket_op changes it to part_val.
+      # That means the that test ops and suffix need to work on part_val:
+      # ${a[2]%6}
+      # ${a[2]:-undefined}
+      #
+      # Prefix ops need to work on val:
+      # ${!a[*]} is still the length of the array, not of the string.
+
+      #log("VAL %s", val)
+      if part.bracket_op:
+        if val.tag == value_e.Undef:
+          part_val = runtime.UndefPartValue()
+        elif val.tag == value_e.Str:
+          raise AssertionError("Can't apply bracket op to string")
+        elif val.tag == value_e.StrArray:
+          part_val = self._ApplyBracketOp(val, part.bracket_op, quoted)
+      else:
+        if val.tag == value_e.Undef:
+          part_val = runtime.UndefPartValue()
+        elif val.tag == value_e.Str:
+          part_val = runtime.StringPartValue(val.s, not quoted, not quoted)
+        elif val.tag == value_e.StrArray:
+          part_val = runtime.ArrayPartValue(val.strs)
+
+      did_suffix = False
+      if part.suffix_op and LookupKind(part.suffix_op.op_id) == Kind.VTest:
+        new_part_val, effect = self._ApplyTestOp(part_val, part.suffix_op)
+        did_suffix = True
+
+        if effect == Effect.Eval:
+          defined = True
+          part_val = new_part_val
+
+        elif effect == Effect.Error:
+          raise NotImplementedError
+
+        elif effect == Effect.Assign:
+          raise NotImplementedError
+
+        else:
+          pass  # do nothing, may still be undefined
+
+      part_val = self._EmptyStringPartOrError(part_val, quoted)
+
+      if part.suffix_op and not did_suffix:
+        part_val = self._ApplySuffixOp(part_val, part)
+
+      #print('APPLY OPS', var_name, '->', defined, val)
+      return part_val
 
     elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
-      return self._EvalTildeSub(part.prefix)
+      s = self._EvalTildeSub(part.prefix)
+      return runtime.StringPartValue(s, False, False)
 
     elif part.tag == word_part_e.ArithSubPart:
-      return self._EvalArithSub(part.anode)
+      arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
+      if arith_ev.Eval(part.anode):
+        num = arith_ev.Result()
+        return runtime.StringPartValue(str(num), True, True)
+      else:
+        self.error_stack.extend(arith_ev.Error())
+        raise _EvalError()
 
     else:
       raise AssertionError(part.tag)
 
-  def _EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
+
+class WordEvaluator:
+  """Abstract base class for word evaluators.
+
+  Public entry points:
+    EvalWordToString
+    EvalWordToAny
+    EvalWordSequence
+    Error
+  """
+  def __init__(self, mem, exec_opts, part_ev):
+    self.mem = mem
+    self.exec_opts = exec_opts
+
+    self.part_ev = part_ev
+    self.globber = Globber(exec_opts)
+
+    self.error_stack = []
+
+  def _AddErrorContext(self, msg, *args):
+    if msg:
+      msg = msg % args
+    self.error_stack.append(msg)
+
+  def Error(self):
+    return self.error_stack
+
+  def _EvalParts(self, word):
     """Evaluate a word.
 
     This is used in the following contexts:
-    - Regular commands via _EvalWords(): WITH globbing and word splitting
+    - Regular commands via _EvalWordSequence(): WITH globbing and word splitting
     - Evaluating redirect words: no globbing or word splitting
     - Right hand side of assignments and environments -- no globbing or word
       splitting
@@ -671,60 +749,140 @@ class _Evaluator(object):
       elide_empty: whether empty words turn into EmptyUnquoted
 
     Returns:
-      ok
-      Value -- empty unquoted, string, or array
+      part_value[]
     """
-    assert isinstance(word, ast.CompoundWord), "Expected CompoundWord, got %s" % word
-    # assume we elide, unless we get something "significant"
-    is_empty_unquoted = True
-    ev = self
+    assert isinstance(word, ast.CompoundWord), \
+        "Expected CompoundWord, got %s" % word
 
-    strs = ['']
+    part_vals = []
     for p in word.parts:
-      val = self._EvalWordPart(p, quoted=False)  # may raise
-      assert isinstance(val, Value), val
-      is_str, s = val.AsString()
-      #print('-VAL', val, is_str)
+      v = self.part_ev._EvalWordPart(p, quoted=False)  # may raise
+      part_vals.append(v)
+    return part_vals
 
-      glob_escape = do_glob and not _GlobsAreExpanded(p)
+  def EvalWordToString(self, word, do_fnmatch=False):
+    """
+    Used for redirect arg, ControlFlow arg, ArithWord, BoolWord, etc.
 
-      if is_str:
-        if _IsSubst(p):  # Split substitutions
-          # NOTE: Splitting is the same whether we are glob escaping or not
-          split_parts = _IfsSplit(s, ifs)
-          empty = _AppendArray(strs, split_parts, glob_escape=glob_escape)
-          if not empty:
-            is_empty_unquoted = False
-        else:  # Don't split
-          # Any non-subst parts, even '', means we don't elide.
-          is_empty_unquoted = False
-          if glob_escape:
-            s = GlobEscape(s)
-          strs[-1] += s
+    do_fnmatch is true for case $pat and RHS of [[ == ]].
 
-      else:  # The result of a DoubleQuotedPart can be an array.
-        #print('ARRAY', val.a)
-        is_empty_unquoted = False
-        # No glob escape because callee (e.g. DoubleQuotedPart) is responsible
-        _AppendArray(strs, val.a, glob_escape=glob_escape)
+    pat="*.py"
+    case $x in
+      $pat) echo 'matches glob pattern' ;;
+      "$pat") echo 'equal to glob string' ;;  // must be glob escaped
+    esac
+    """
+    strs = []
+    part_vals = []
+    for part in word.parts:
+      part_val = self.part_ev._EvalWordPart(part, quoted=False)  # may raise
+      if part_val.tag != part_value_e.StringPartValue:
+        # TODO: Better error message
+        self._AddErrorContext("Only string parts are allowed", word=word)
+        return False, None
+      part_vals.append(part_val)
+      if do_fnmatch:
+        if part_val.do_glob:
+          strs.append(part_val.s)
+        else:
+          strs.append(GlobEscape(part_val.s))
+      else:
+        strs.append(part_val.s)
 
-    if elide_empty and is_empty_unquoted:
-      val = Value.EmptyUnquoted()
-    elif len(strs) == 1:
-      val = Value.FromString(strs[0])
-    else:
-      val = Value.FromArray(strs)
-    return val
+    return True, runtime.Str(''.join(strs))
 
-  def EvalCompoundWord(self, word, ifs='', do_glob=False, elide_empty=True):
+  def EvalWordToAny(self, word, glob_escape=False):
+    """
+    Used for RHS of assignment
+
+    Also used for default value?  e.g. "${a:-"a" "b"}" and so forth.
+
+    Returns:
+      arg_value
+      Or maybe just string?  Whatever would go in ConstArg and GlobArg.
+      But you don't need to distinguish it later.
+      You could also have EvalWord and EvalGlobWord methods or EvalPatternWord
+    """
     try:
-      v = self._EvalCompoundWord(word, ifs, do_glob, elide_empty)
-      return True, v
+      # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
+      # don't look like assignments.
+      if (len(word.parts) == 1 and 
+          word.parts[0].tag == word_part_e.ArrayLiteralPart):
+        array_words = word.parts[0].words
+        words = braces.BraceExpandWords(array_words)
+        strs = self._EvalWordSequence(words)
+        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+        return True, runtime.StrArray(strs)
+
+      part_vals = self._EvalParts(word)
+      #log('part_vals %s', part_vals)
+
+      # Instead of splitting, do a trivial transformation to frag array.
+      # Example:
+      # foo="-$@-${a[@]}-" requires fragment, reframe, and simple join
+      frag_arrays = []
+      for p in part_vals:
+        if p.tag == part_value_e.StringPartValue:
+          frag_arrays.append([runtime.fragment(p.s, False, False)])
+        elif p.tag == part_value_e.ArrayPartValue:
+          frag_arrays.append(
+              [runtime.fragment(s, False, False) for s in p.strs])
+        else:
+          raise AssertionError
+
+      frag_arrays = _Reframe(frag_arrays)
+      #log('frag_arrays %s', frag_arrays)
+
+      # Simple join
+      args = []
+      for frag_array in frag_arrays:
+        args.append(''.join(frag.s for frag in frag_array))
+
+      # Example:
+      # a=(1 2)
+      # b=$a  # one word
+      # c="${a[@]}"  # two words
+      if len(args) == 1:
+        val = runtime.Str(args[0])
+      else:
+        # NOTE: For bash compatibility, could have an option to join them here.
+        # foo="-$@-${a[@]}-"  -- join with IFS again, like "$*" ?
+        # Or maybe do that in cmd_exec in assignment.
+        val = runtime.StrArray(args)
+
+      return True, val
     except _EvalError:
       return False, None
 
-  def _EvalWords(self, words):
+  def _EvalWordAndReframe(self, word):
+    """Helper for _EvalWordSequence.
+    
+    Used in command, array, and foreach context.
+
+    Args:
+      word: CompoundWord
+    Returns:
+      val: runtime.value
+    """
+    part_vals = self._EvalParts(word)
+    #log('After _EvalParts %s', part_vals)
+    ifs = _GetIfs(self.mem)
+    frag_arrays = _SplitPartsIntoFragments(part_vals, ifs)
+    #log('After split %s', frag_arrays)
+    frag_arrays = _Reframe(frag_arrays)
+
+    # TODO: Loop over each one, only glob it if it's a GlobArg.
+    #argv = self.globber.Glob(arg_vals)
+
+    glob_escape = not self.exec_opts.noglob
+    args = _JoinElideEscape(frag_arrays, glob_escape=glob_escape)
+    #log('After _JoinElideEscape %s', frag_arrays)
+    return args
+
+  def _EvalWordSequence(self, words):
     """Turns a list of Words into a list of strings.
+
+    Unlike the EvalWord*() methods, it does globbing.
 
     Args:
       words: list of Word instances
@@ -744,68 +902,36 @@ class _Evaluator(object):
     # off for oil.
     # 5. globbing -- several exec_opts affect this: nullglob, safeglob, etc.
 
-    argv = []
-    ifs = _GetIfs(self.mem)
-
-    # NOTE: -f sets noglob
-    do_glob = not self.exec_opts.noglob
-
+    #log('W %s', words)
     argv = []
     for w in words:
-      # TODO: Get rid of do_glob here.  That knowledge should only be in the
-      # globber.
-      val = self._EvalCompoundWord(w, ifs=ifs, do_glob=do_glob)
-      val.AppendTo(argv)
+      args = self._EvalWordAndReframe(w)
+      #log('A %s', args)
+      for arg in args:
+        if arg.tag == arg_value_e.ConstArg:
+          argv.append(arg.s)
+        elif arg.tag == arg_value_e.GlobArg:
+          results = self.globber.Expand(arg.s)
+          #log('Glob Expand %s to %s', arg.s, results)
+          argv.extend(results)
+        else:
+          raise AssertionError(arg.tag)
 
-    if do_glob:
-      # NOTE: failglob could cause failure?  Do other shells have it?
-      argv = self.globber.Expand(argv)
+    #log('ARGV %s', argv)
     return argv
 
-  def EvalWords(self, words):
+  def EvalWordSequence(self, words):
     try:
-      return self._EvalWords(words)
+      return self._EvalWordSequence(words)
     except _EvalError:
       return None
 
-  # TODO: Wrap and catch _EvalError
-  def EvalEnv(self, more_env):
-    """Evaluate environment variable bindings.
 
-    Args:
-      more_env: list of ast.env_pair
-
-    Returns:
-      A dictinory of strings to strings
-
-    Side effect: sets local variables so bindings can reference each other.
-      Hm.  Is this wrong?
-    """
-    result = {}
-    for env_pair in more_env:
-      name = env_pair.name
-      val = env_pair.val
-
-      val = self._EvalCompoundWord(val)
-      is_str, s = val.AsString()
-      if not is_str:
-        self._AddErrorContext(
-            "Env vars should be strings, got %s = %s", name, val)
-        raise _EvalError()
-
-      # Set each var so the next one can reference it.  Example:
-      # FOO=1 BAR=$FOO ls /
-      self.mem.SetSimpleVar(name, val)
-
-      result[name] = s
-    return result
-
-
-class NormalEvaluator(_Evaluator):
+class _NormalPartEvaluator(_WordPartEvaluator):
   """The Executor uses this to evaluate words."""
 
-  def __init__(self, mem, exec_opts, ex):
-    _Evaluator.__init__(self, mem, exec_opts)
+  def __init__(self, mem, exec_opts, ex, word_ev):
+    _WordPartEvaluator.__init__(self, mem, exec_opts, word_ev)
     self.ex = ex
 
   def _EvalCommandSub(self, node):
@@ -824,10 +950,17 @@ class NormalEvaluator(_Evaluator):
     # I think $() does a strip basically?
     # argv $(echo ' hi')$(echo bye) -> hibye
     s = ''.join(stdout).strip()
-    return Value.FromString(s)
+    return runtime.StringPartValue(s, True, True)
 
 
-class CompletionEvaluator(_Evaluator):
+class NormalWordEvaluator(WordEvaluator):
+
+  def __init__(self, mem, exec_opts, ex):
+    part_ev = _NormalPartEvaluator(mem, exec_opts, ex, self)
+    WordEvaluator.__init__(self, mem, exec_opts, part_ev)
+
+
+class _CompletionPartEvaluator(_WordPartEvaluator):
   """For completion.
 
   We are disabling command substitution for now.
@@ -838,9 +971,17 @@ class CompletionEvaluator(_Evaluator):
   TODO: Unify with static_eval?  Completion allows more stuff like var names,
   and maybe words within arrays as well.
   """
-  def __init__(self, mem, exec_opts):
-    _Evaluator.__init__(self, mem, exec_opts)
+  def __init__(self, mem, exec_opts, word_ev):
+    _WordPartEvaluator.__init__(self, mem, exec_opts, word_ev)
 
   def _EvalCommandSub(self, node):
     # Just  return a dummy string?
-    return Value.FromString('__COMMAND_SUB_NOT_EXECUTED__')
+    return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__')
+
+
+# TODO: Rename word_eval.CompletionWordEvaluator
+class CompletionEvaluator(WordEvaluator):
+
+  def __init__(self, mem, exec_opts):
+    part_ev = _CompletionPartEvaluator(mem, exec_opts, self)
+    WordEvaluator.__init__(self, mem, exec_opts, part_ev)

@@ -283,6 +283,7 @@ def MakeTypes(module, root, app_types=None):
         tag_num = {}
 
         # e.g. for arith_expr
+        # Should this be arith_expr_t?  It is in C++.
         base_class = type(defn.name, (CompoundObj, ), {})
         setattr(root, defn.name, base_class)
 

@@ -1,31 +1,46 @@
 -- Data types for evaluating an AST (or LST at the moment.)
 
+-- TODO: add ASDL option to put constructors under the vraitn namespace:
+--   part_value.String, part_value.Array
+--   fragment
+--   arg.Const, arg.Glob
+--   value.Str, value StrArray,
 
 module runtime
 {
-  -- A part value is the result of evaluating a WordPart.
+  -- A static word_part from os.asdl is evaluated to a dynamic part_value.
   part_value = 
-    StringPartValue(string s, bool do_split_elide, bool do_glob)
-    -- "$@" or "${a[@]}" -- never split or globbed since double quoted
-  | ArrayPartValue(string* s)
-    -- A string part after splitting.  Parts may still be elided.
-  | SplitPartValue(string* s, bool do_elide, bool do_glob)
+    -- UndefPartValue is for internal processing only.
+    UndefPartValue
+    -- Substitutions get split/elided/globbed.  Unquoted literals also get
+    -- globbed.
+  | StringPartValue(string s, bool? do_split_elide, bool? do_glob)
+    -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
+  | ArrayPartValue(string* strs)
 
-  -- Split() algorithm works on StringPartValue only
-  -- JoinAndGlobEscape() works on ArrayPartValue() and SplitPartValue()
-  -- Elide() -- after joining. 
-     -- Example: {a,b,} has two args (third is elided)(, but {a,b,}'' has 3
-     -- if empty and do_elide?
+  -- part_values are split into fragments.  Fragments may still be elided
+  -- and globbed.
+  fragment = (string s, bool do_elide, bool do_glob)
 
-  -- With regard to joining, ArrayPartValue() behaves just like
-  -- SplitPartValue(do_glob=False), but we model them separately for a little
-  -- type safety.
-
-  -- TODO: ArgValue value?  Or those could just be strings?
-  -- After word splitting, we will get of arg_values.
+  -- We reframe and join fragments into an array of arg_value.  If any
+  -- fragment in an arg had do_glob set, the whole arg is globbed, with
+  -- quoted fragments being glob-escaped.
+  -- e.g. "my[]dir/"*.py -> my\[\]dir/*.py.
   arg_value = 
     ConstArg(string s)
   | GlobArg(string s)  -- non-glob parts glob-escaped
 
-  -- After glob expansion, we get an array of simple strings.
+  -- A static word from osh.asdl is evaluted to a dynamic value.  value
+  -- instances are stored in memory.
+  value =
+    -- Undef isn't visible at the language level.  We model it as a value
+    -- rather than an error code because it's manipulated with ${a:-default}
+    -- and such.
+    Undef
+  | Str(string s)
+  | StrArray(string* strs)
+
+  -- For Oil?
+  -- | ArrayInt(int* array_int)
+  -- | ArrayBool(bool* a)
 }

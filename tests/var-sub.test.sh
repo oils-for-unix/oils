@@ -135,7 +135,7 @@ echo ref ${!a}
 # BUG mksh stdout: ref a
 # N-I dash/zsh stdout-json: ""
 
-### Local Var
+### Dynamic Scope
 # Oh this is interesting.  Local vars in a function are visible to the function
 # it calls.  That is not how functions work!  Functions are supposed to take
 # params.

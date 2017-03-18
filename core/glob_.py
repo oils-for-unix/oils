@@ -8,6 +8,8 @@ try:
 except ImportError:
   from core import fake_libc as libc
 
+from core.util import log
+
 # EXAMPLES
 #
 # Splitting happens before globbing:
@@ -71,7 +73,7 @@ except ImportError:
 #
 # WordEvaluator(mem, exec_opts)
 #   EvalCompoundWord
-#   EvalWords
+#   EvalWordSequence
 #   EvalEnv
 #
 # PartEvaluator(mem, exec_opts)
@@ -90,11 +92,7 @@ except ImportError:
 # Globber(exec_opts)
 # arg_value[] -> string[]
 #   Expand()
-#
-# Vertical slice:
-# - start by evaluating all parts, no splitting, joining, or globbing
-# - just the trivial algorithm of joining all the parts.
-#   - like IFS='' and noglob?
+
 
 def LooksLikeGlob():
   """
@@ -171,33 +169,31 @@ class Globber:
     # TODO: Figure out which ones are in other shells, and only support those?
     # - Include globstar since I use it, and zsh has it.
 
-  def Expand(self, argv):
-    result = []
-    for arg in argv:
-      # TODO: Only try to glob if there are any glob metacharacters.
-      # Or maybe it is a conservative "avoid glob" heuristic?
-      #
-      # Non-glob but with glob characters:
-      # echo ][
-      # echo []  # empty
-      # echo []LICENSE  # empty
-      # echo [L]ICENSE  # this one is good
-      # So yeah you need to test the validity somehow.
+  def Expand(self, arg):
+    # TODO: Only try to glob if there are any glob metacharacters.
+    # Or maybe it is a conservative "avoid glob" heuristic?
+    #
+    # Non-glob but with glob characters:
+    # echo ][
+    # echo []  # empty
+    # echo []LICENSE  # empty
+    # echo [L]ICENSE  # this one is good
+    # So yeah you need to test the validity somehow.
 
-      try:
-        #g = glob.glob(arg)  # Bad Python glob
-        # PROBLEM: / is significant and can't be escaped!  Hav eto avoid globbing it.
-        g = libc.glob(arg)
-      except Exception as e:
-        # - [C\-D] is invalid in Python?  Regex compilation error.
-        # - [:punct:] not supported
-        print("Error expanding glob %r: %s" % (arg, e))
-        raise
-      #print('G', arg, g)
+    try:
+      #g = glob.glob(arg)  # Bad Python glob
+      # PROBLEM: / is significant and can't be escaped!  Hav eto avoid globbing it.
+      g = libc.glob(arg)
+    except Exception as e:
+      # - [C\-D] is invalid in Python?  Regex compilation error.
+      # - [:punct:] not supported
+      print("Error expanding glob %r: %s" % (arg, e))
+      raise
+    #print('G', arg, g)
 
-      if g:
-        result.extend(g)
-      else:
-        u = _GlobUnescape(arg)
-        result.append(u)
-    return result
+    #log('Globbing %s', arg)
+    if g:
+      return g
+    else:
+      u = _GlobUnescape(arg)
+      return [u]

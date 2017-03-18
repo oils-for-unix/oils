@@ -39,11 +39,13 @@ import traceback
 
 from osh import ast_ as ast
 from osh import parse_lib
+from core import runtime
 from core import ui
 from core import util
 from core.id_kind import Id
 
 command_e = ast.command_e
+value_e = runtime.value_e
 
 
 class CompletionLookup(object):
@@ -212,10 +214,10 @@ class ShellFuncAction(CompletionAction):
       print('COMP_REPLY not defined', file=sys.stderr)
       return
 
-    is_array, reply = val.AsArray()
-    if not is_array:
+    if val.tag != value_e.StrArray:
       print('ERROR: COMP_REPLY should be an array, got %s', file=sys.stderr)
       return
+    reply = val.strs
 
     print('REPLY', reply)
     #reply = ['g1', 'g2', 'h1', 'i1']
@@ -282,15 +284,11 @@ class ExternalCommandAction(object):
     - When we get a newer timestamp, we should clear the old one.
     - When PATH is changed, we can remove old entries.
     """
-    defined, val = self.mem.Get('PATH')
-    if not defined:
-      # No matches if not defined
-      return
-    is_str, path = val.AsString()
-    if not is_str:
+    val = self.mem.Get('PATH')
+    if val.tag != value_e.Str:
       # No matches if not a string
       return
-    path_dirs = path.split(':')
+    path_dirs = val.s.split(':')
     #print(path_dirs)
 
     names = []
@@ -445,26 +443,21 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
       # - EvalTildeSub needs to be somewhere else
       # - EvalCommandSub needs to be
       #
-      # maybe write a version of Executor._EvalWords that doesn't do
+      # maybe write a version of Executor._EvalWordSequence that doesn't do
       # CommandSub.  Or honestly you can just reuse it for now.  Can you pass
       # the same cmd_exec in?  What about side effects?  I guess it can't
       # really have any.  It can only have them on the file system.  Hm.
       # Defining funcitons?  Yeah if you complete partial functions that could
       # be bad.  That is, you could change the name of the function.
 
-      ifs = ''
-      do_glob = True  # this is from the cmd_exec.  $foo/bar could be split up.
-                      # Does that matter for us?  Yes it can matter if $foo is
-                      # '-a bar'!  Because then flag parsing will be different.
       argv = []
       for w in node.words:
-        ok, val = ev.EvalCompoundWord(w, ifs, do_glob)
+        ok, val = ev.EvalWordToAny(w)
         if not ok:
           # Why would it fail?
           continue
-        is_str, s = val.AsString()
-        if is_str:
-          argv.append(s)
+        if val.tag == value_e.Str:
+          argv.append(val.s)
         else:
           pass
           # Oh I have to handle $@ on the command line?

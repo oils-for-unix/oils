@@ -72,11 +72,13 @@ from core.process import (
     FdState, Pipeline, Process,
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
-from core.value import Value
+from core import runtime
 
 from osh import ast_ as ast
 
 command_e = ast.command_e
+part_value_e = runtime.part_value_e
+value_e = runtime.value_e
 log = util.log
 
 
@@ -98,7 +100,7 @@ class Mem(object):
   """
 
   def __init__(self, argv0, argv):
-    self.top = {}  # string -> (flags, Value)
+    self.top = {}  # string -> (flags, runtime.value)
     self.var_stack = [self.top]
     self.argv0 = argv0
     self.argv_stack = [argv]
@@ -130,14 +132,14 @@ class Mem(object):
   def SetGlobalArray(self, name, a):
     """Helper for completion."""
     assert isinstance(a, list)
-    val = Value.FromArray(a)
+    val = runtime.StrArray(a)
     pairs = [(name, val)]
     self.SetGlobal(pairs, 0)
 
   def SetGlobalString(self, name, s):
     """Helper for completion."""
     assert isinstance(s, str)
-    val = Value.FromString(s)
+    val = runtime.Str(s)
     pairs = [(name, val)]
     self.SetGlobal(pairs, 0)
 
@@ -151,25 +153,28 @@ class Mem(object):
     return False, None
 
   def Get(self, name):
+    # TODO: Don't implement dynamic scope
     for i in range(len(self.var_stack) - 1, -1, -1):
       scope = self.var_stack[i]
       if name in scope:
         # Don't need to use flags
         _, value = scope[name]
-        return True, value
+        return value
 
     # Fall back on environment
     v = os.getenv(name)
     if v is not None:
-      return True, Value.FromString(v)
+      return runtime.Str(v)
 
-    return False, None
+    return runtime.Undef()
 
   def SetGlobal(self, pairs, flags):
     """For completion."""
     g = self.var_stack[0]  # global scope
     for lhs, value in pairs:
-      assert isinstance(value, Value), value
+      #log('SETTING %s -> %s', lhs, value)
+      assert value.tag in (value_e.Str, value_e.StrArray)
+
       # Assuming LeftVar for now.
       g[lhs.name] = flags, value
 
@@ -192,7 +197,7 @@ class Mem(object):
     # it to a list is en error.  I guess you will have to turn this no for
     # bash?
     for lhs, value in pairs:
-      assert isinstance(value, Value), value
+      assert value.tag in (value_e.Str, value_e.StrArray)
       # Assuming LeftVar for now.
       self.top[lhs.name] = flags, value
 
@@ -269,7 +274,7 @@ class Executor(object):
     self.exec_opts = exec_opts
     self.make_parser = make_parser
 
-    self.ev = word_eval.NormalEvaluator(mem, exec_opts, self)
+    self.ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
 
     self.mem.last_status = 0  # For $?
 
@@ -310,7 +315,7 @@ class Executor(object):
     if not line:  # EOF
       return 1
     # TODO: split line and do that logic
-    val = Value.FromString(line.strip())
+    val = runtime.Str(line.strip())
     pairs = [(ast.LeftVar(names[0]), val)]
     self.mem.SetLocal(pairs, 0)  # read always uses local variables?
     return 0
@@ -545,11 +550,11 @@ class Executor(object):
     """
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
-      argv = self.ev.EvalWords(words)
+      argv = self.ev.EvalWordSequence(words)
       if argv is None:
         err = self.ev.Error()
         raise AssertionError("Error evaluating words: %s" % err)
-      more_env = self.ev.EvalEnv(node.more_env)
+      more_env = self._EvalEnv(node.more_env)
       if more_env is None:
         # TODO: proper error
         raise AssertionError()
@@ -595,13 +600,13 @@ class Executor(object):
       redir_type = REDIR_TYPE[n.op_id]
       if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
-        ok, val = self.ev.EvalCompoundWord(n.arg_word)
+        ok, val = self.ev.EvalWordToString(n.arg_word)
         if not ok:
           return False
-        is_str, filename = val.AsString()
-        if not is_str:
+        if val.tag != value_e.Str:
           self._AddErrorContext("filename to redirect to should be a string")
           return False
+        filename = val.s
         if not filename:
           self._AddErrorContext("filename can't be empty")
           return False
@@ -609,14 +614,14 @@ class Executor(object):
         redirects.append(FilenameRedirect(n.op_id, n.fd, filename))
 
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
-        ok, val = self.ev.EvalCompoundWord(n.arg_word)
+        ok, val = self.ev.EvalWordToString(n.arg_word)
         if not ok:
           return False
-        is_str, t = val.AsString()
-        if not is_str:
+        if val.tag != value_e.Str:
           self._AddErrorContext(
               "descriptor to redirect to should be an integer, not list")
           return False
+        t = val.s
         if not t:
           self._AddErrorContext("descriptor can't be empty")
           return False
@@ -629,16 +634,46 @@ class Executor(object):
         redirects.append(DescriptorRedirect(n.op_id, n.fd, target_fd))
 
       elif redir_type == RedirType.Str:
-        ok, val = self.ev.EvalCompoundWord(n.arg_word)
+        ok, val = self.ev.EvalWordToString(n.arg_word)
         if not ok:
           return False
-        is_str, body = val.AsString()
-        assert is_str, val  # here doc body can only be parsed as a string!
-        redirects.append(HereDocRedirect(n.op_id, n.fd, body))
+        assert val.tag == value_e.Str, \
+              "descriptor to redirect to should be an integer, not list"
+
+        redirects.append(HereDocRedirect(n.op_id, n.fd, val.s))
 
       else:
         raise AssertionError
     return redirects
+
+  def _EvalEnv(self, more_env):
+    """Evaluate environment variable bindings.
+
+    Args:
+      more_env: list of ast.env_pair
+
+    Returns:
+      A dictionary of strings to strings
+
+    Side effect: sets local variables so bindings can reference each other.
+      Hm.  Is this wrong?
+    """
+    result = {}
+    for env_pair in more_env:
+      name = env_pair.name
+      rhs = env_pair.val
+
+      ok, val = self.ev.EvalWordToString(rhs)
+      if not ok:
+        raise AssertionError
+
+      # Set each var so the next one can reference it.  Example:
+      # FOO=1 BAR=$FOO ls /
+      self.mem.SetSimpleVar(name, val)
+      # TODO: Need to pop bindings for simple commands.  Need a stack.
+
+      result[name] = val.s
+    return result
 
   def _RunPipeline(self, node):
     # TODO: Also check for "echo" and "read".  Turn them into HereDocRedirect()
@@ -678,12 +713,12 @@ class Executor(object):
     # TODO: Only eval argv[0] once.  It can have side effects!
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
-      argv = self.ev.EvalWords(words)
+      argv = self.ev.EvalWordSequence(words)
 
       if argv is None:
         self.error_stack.extend(self.ev.Error())
         raise _FatalError()
-      more_env = self.ev.EvalEnv(node.more_env)
+      more_env = self._EvalEnv(node.more_env)
       if more_env is None:
         print(self.error_stack)
         # TODO: throw exception
@@ -754,11 +789,10 @@ class Executor(object):
     elif node.tag == command_e.Assignment:
       pairs = []
       for pair in node.pairs:
-        # NOTE: do_glob=False, because foo=*.a makes foo equal to '*.a',
-        # literally.
-
-        # TODO: Also have to evaluate the right hand side.
-        ok, val = self.ev.EvalCompoundWord(pair.rhs)
+        # RHS can be a string or array.
+        ok, val = self.ev.EvalWordToAny(pair.rhs)
+        assert isinstance(val, runtime.value), val
+        log('RHS %s -> %s', pair.rhs, val)
         if not ok:
           self.error_stack.extend(self.ev.Error())
           raise _FatalError()
@@ -775,13 +809,12 @@ class Executor(object):
 
     elif node.tag == command_e.ControlFlow:
       if node.arg_word:  # Evaluate the argument
-        ok, val = self.ev.EvalCompoundWord(node.arg_word)
+        ok, val = self.ev.EvalWordToString(node.arg_word)
         if not ok:
           self.error_stack.extend(self.ev.Error())
           raise _FatalError()
-        is_str, arg_str = val.AsString()
-        assert is_str
-        arg = int(arg_str)  # They all take integers
+        assert val.tag == value_e.Str
+        arg = int(val.s)  # They all take integers
       else:
         arg = 0  # return 0, break 0 levels, etc.
 
@@ -831,13 +864,13 @@ class Executor(object):
         iter_list = self.mem.GetArgv()
       else:
         words = braces.BraceExpandWords(node.iter_words)
-        iter_list = self.ev.EvalWords(words)
+        iter_list = self.ev.EvalWordSequence(words)
         # We need word splitting and so forth
         # NOTE: This expands globs too.  TODO: We should pass in a Globber()
         # object.
       status = 0  # in case we don't loop
       for x in iter_list:
-        self.mem.SetSimpleVar(iter_name, Value.FromString(x))
+        self.mem.SetSimpleVar(iter_name, runtime.Str(x))
 
         try:
           status = self._Execute(node.body)  # last one wins

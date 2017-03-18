@@ -49,7 +49,8 @@ run-cases() {
     ./spec.sh $spec_name \
       --format html \
       --stats-file _tmp/spec/${spec_name}.stats.txt \
-      --stats-template '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d' \
+      --stats-template \
+        '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d' \
     > _tmp/spec/${spec_name}.html
 }
 
@@ -100,7 +101,7 @@ _html-summary() {
   <thead>
     <tr>
       <td>name</td> <td>Exit Code</td> <td>Elapsed Seconds</td>
-      <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
+      <td># cases</td> <td>osh # passed</td> <td>osh # failed</td> <td>osh failures allowed </d>
     </tr>
   </thead>
 EOF
@@ -123,12 +124,14 @@ EOF
     num_cases = $1
     osh_num_passed = $2
     osh_num_failed = $3
+    osh_failures_allowed = $4
 
     sum_status += status
     sum_wall_secs += wall_secs
     sum_num_cases += num_cases
     sum_osh_num_passed += osh_num_passed
     sum_osh_num_failed += osh_num_failed
+    sum_osh_failures_allowed += osh_failures_allowed
     num_rows += 1
 
     # For the console
@@ -155,6 +158,7 @@ EOF
     print "<td>" num_cases "</td>"
     print "<td>" osh_num_passed "</td>"
     print "<td>" osh_num_failed "</td>"
+    print "<td>" osh_failures_allowed "</td>"
     print "</tr>"
   }
 
@@ -167,6 +171,7 @@ EOF
     print "<td>" sum_num_cases "</td>"
     print "<td>" sum_osh_num_passed "</td>"
     print "<td>" sum_osh_num_failed "</td>"
+    print "<td>" sum_osh_failures_allowed "</td>"
     print "</tr>"
     print "</tfoot>"
 

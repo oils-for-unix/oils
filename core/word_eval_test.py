@@ -22,7 +22,7 @@ class SplitTest(unittest.TestCase):
     self.assertEqual(
         [], word_eval._IfsSplit(' ', ' \t\n'))
     self.assertEqual(
-        [], word_eval._IfsSplit('', ' '))
+        [''], word_eval._IfsSplit('', ' '))
 
     # No word splitting when no IFS.  Hm.
     self.assertEqual(
@@ -59,16 +59,16 @@ class SplitTest(unittest.TestCase):
         word_eval._IfsSplit('abbc', 'b '))
 
     self.assertEqual(
-        ['a', '', '', 'cd'],
+        ['', 'a', '', '', 'cd', ''],
         word_eval._IfsSplit('\ta b\tb cd\n', 'b \t\n'))
 
     self.assertEqual(
-        ['a', 'cd'],
+        ['', 'a', 'cd', ''],
         word_eval._IfsSplit('\tabcd\n', 'b \t\n'))
 
     # No non-whitespace IFS
     self.assertEqual(
-        ['a', 'c'],
+        ['', 'a', 'c', ''],
         word_eval._IfsSplit(' a c ', ' '))
 
 

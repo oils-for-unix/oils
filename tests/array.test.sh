@@ -10,10 +10,15 @@ a=(1 '2 3')
 echo $a
 # stdout: 1
 
-### ${a[@]} and ${a[*]} give all elements of array
+### "${a[@]}" and "${a[*]}"
 a=(1 '2 3')
-echo "${a[@]}" "${a[*]}"
-# stdout: 1 2 3 1 2 3
+argv.py "${a[@]}" "${a[*]}"
+# stdout: ['1', '2 3', '1 2 3']
+
+### ${a[@]} and ${a[*]}
+a=(1 '2 3')
+argv.py ${a[@]} ${a[*]}
+# stdout: ['1', '2', '3', '1', '2', '3']
 
 ### local array
 # mksh support local variables, but not local arrays, oddly.
@@ -298,3 +303,9 @@ echo "${a[@]}"
 a=(-{a,b} {c,d}-)
 echo "${a[@]}"
 # stdout: -a -b c- d-
+
+### array default
+default=('1 2' '3')
+argv.py "${undef[@]:-${default[@]}}"
+# stdout: ['1 2', '3']
+

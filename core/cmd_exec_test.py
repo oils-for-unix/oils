@@ -18,7 +18,7 @@ from core.cmd_exec import *
 from core.id_kind import Id
 from core import ui
 from core import word_eval
-from core.value import Value
+from core import runtime
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -52,8 +52,8 @@ def InitExecutor():
 def InitEvaluator():
   mem = cmd_exec.Mem('', [])
 
-  val1 = Value.FromString('xxx')
-  val2 = Value.FromString('yyy')
+  val1 = runtime.Str('xxx')
+  val2 = runtime.Str('yyy')
   pairs = [(ast.LeftVar('x'), val1), (ast.LeftVar('y'), val2)]
   mem.SetLocal(pairs, 0)
 
@@ -241,10 +241,10 @@ class VarOpTest(unittest.TestCase):
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
     unset_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'unset'))
-    print(ev._EvalWordPart(unset_sub))
+    print(ev.part_ev._EvalWordPart(unset_sub))
 
     set_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'x'))
-    print(ev._EvalWordPart(set_sub))
+    print(ev.part_ev._EvalWordPart(set_sub))
 
     # Now add some ops
     part = ast.LiteralPart(ast.token(Id.Lit_Chars, 'default'))
@@ -253,8 +253,8 @@ class VarOpTest(unittest.TestCase):
     unset_sub.suffix_op = test_op
     set_sub.suffix_op = test_op
 
-    print(ev._EvalWordPart(unset_sub))
-    print(ev._EvalWordPart(set_sub))
+    print(ev.part_ev._EvalWordPart(unset_sub))
+    print(ev.part_ev._EvalWordPart(set_sub))
 
 
 if __name__ == '__main__':
