@@ -304,7 +304,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 11 \
+  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 12 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

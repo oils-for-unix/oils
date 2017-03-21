@@ -67,6 +67,13 @@ argv.py "${Unset:-'a b c'}"
 # WEIRD ONE.
 # stdout: ["'a b c'"]
 
+### Mixed inner quotes
+argv.py ${Unset:-"a b" c}
+# stdout: ['a b', 'c']
+
+### Mixed inner quotes with outer quotes
+argv.py "${Unset:-"a b" c}"
+# stdout: ['a b c']
 
 ### Var with multiple words: no quotes
 var='a b c'

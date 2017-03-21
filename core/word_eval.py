@@ -219,7 +219,7 @@ class _EvalError(RuntimeError):
 
 # Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
 
-Effect = util.Enum('Effect', 'Eval Error Assign NoOp'.split())
+Effect = util.Enum('Effect', 'SpliceParts Error SpliceAndAssign NoOp'.split())
 
 
 class _WordPartEvaluator:
@@ -383,10 +383,10 @@ class _WordPartEvaluator:
     else:
       raise AssertionError(bracket_op.tag)
 
-  def _ApplyTestOp(self, part_val, op):
+  def _ApplyTestOp(self, part_val, op, quoted):
     """
     Returns:
-      value, Effect
+      part_vals, Effect
 
       ${a:-} returns part_value[]
       ${a:+} returns part_value[]
@@ -411,13 +411,37 @@ class _WordPartEvaluator:
     #print('!!',id, is_falsey)
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
+        # Should not be split:
+        #   ${undef:-a b c}
+        # Should be split:
+        #   ${undef:-'a b c'}
+        #   ${undef:-"a b c"}
+        #   "${undef:-a b c}"
+        # Problem: you need to SPLICE.  Because each part_val has a different
+        # quote/no quote setting!
+
         ok, val = self.word_ev.EvalWordToAny(op.arg_word)
         if not ok:
           raise AssertionError
-        # NOTE: Pretending it's QUOTED
-        return _ValueToPartValue(val, quoted=True), Effect.Eval
+        return _ValueToPartValue(val, quoted), Effect.SpliceParts
+
+        #part_vals = self.word_ev._EvalParts(op.arg_word)
+        return part_vals, Effect.SpliceParts
       else:
         return None, Effect.NoOp
+
+    elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
+      # Can also return part_vals
+      raise NotImplementedError
+
+    elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
+      # TODO: Behave like -, but also assign with self.mem.  I guess evaluate
+      # the word.  Is it bad to evaluate it twice?
+      raise NotImplementedError
+
+    elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
+      # TODO: Construct error
+      raise NotImplementedError
 
     # TODO:
     # +  -- inverted test -- assign to default
@@ -617,7 +641,7 @@ class _WordPartEvaluator:
       if part.token.id == Id.VSub_Name:
         var_name = part.token.val
         val = self.mem.Get(var_name)
-        log('EVAL NAME %s -> %s', var_name, val)
+        #log('EVAL NAME %s -> %s', var_name, val)
 
       elif part.token.id == Id.VSub_Number:
         var_num = int(part.token.val)
@@ -657,22 +681,24 @@ class _WordPartEvaluator:
 
       did_suffix = False
       if part.suffix_op and LookupKind(part.suffix_op.op_id) == Kind.VTest:
-        new_part_val, effect = self._ApplyTestOp(part_val, part.suffix_op)
+        new_part_val, effect = self._ApplyTestOp(part_val, part.suffix_op,
+                                                 quoted)
         did_suffix = True
 
-        if effect == Effect.Eval:
+        if effect == Effect.SpliceParts:
           defined = True
           part_val = new_part_val
 
-        elif effect == Effect.Error:
+        elif effect == Effect.SpliceAndAssign:
           raise NotImplementedError
 
-        elif effect == Effect.Assign:
+        elif effect == Effect.Error:
           raise NotImplementedError
 
         else:
           pass  # do nothing, may still be undefined
 
+      #log('part_val after VTest %s', part_val)
       part_val = self._EmptyStringPartOrError(part_val, quoted)
 
       if part.suffix_op and not did_suffix:
@@ -774,14 +800,12 @@ class _WordEvaluator:
     esac
     """
     strs = []
-    part_vals = []
     for part in word.parts:
       part_val = self.part_ev._EvalWordPart(part, quoted=False)  # may raise
       if part_val.tag != part_value_e.StringPartValue:
         # TODO: Better error message
         self._AddErrorContext("Only string parts are allowed", word=word)
         return False, None
-      part_vals.append(part_val)
       if do_fnmatch:
         if part_val.do_glob:
           strs.append(part_val.s)
