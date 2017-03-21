@@ -51,20 +51,16 @@ s1=' '
 argv.py $s1
 # stdout: []
 
-### Word elision with IFS
+### Word elision with non-whitespace IFS
 # Treated differently than the default IFS.  What is the rule here?
 IFS=_
 s1='_'
 argv.py $s1
 # stdout: ['']
 
-### Default value with single quotes 
-argv ${undef:-'a b'} 
-# stdout: ['a b']
-
 ### Default values -- more cases
-argv ${undef:-hi} "${undef:-c d}" "${un:-"e f"}" "${un:-'g h'}"
-# stdout: ['hi', 'c d', 'e f', "'g h'"]
+argv ${undef:-hi} ${undef:-'a b'} "${undef:-c d}" "${un:-"e f"}" "${un:-'g h'}"
+# stdout: ['hi', 'a b', 'c d', 'e f', "'g h'"]
 
 ### Globbing after splitting
 touch _tmp/foo.gg _tmp/bar.gg _tmp/foo.hh

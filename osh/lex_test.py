@@ -64,6 +64,14 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(LexMode.OUTER)
     self.assertTokensEqual(ast.token(Id.Eof_Real, ''), t)
 
+  def testRead_VS_ARG_UNQ(self):
+    # Another EOF gives EOF
+    lexer = _InitLexer("'hi'")
+    t = lexer.Read(LexMode.VS_ARG_UNQ)
+    #self.assertTokensEqual(ast.token(Id.Eof_Real, ''), t)
+    #t = l.Read(LexMode.VS_ARG_UNQ)
+    print(t)
+
   def testBashRegexState(self):
     lexer = _InitLexer('(foo|bar)')
 
@@ -128,6 +136,11 @@ class LineLexerTest(unittest.TestCase):
     l = LineLexer(LEXER_DEF, '\n')
     self.assertTokensEqual(
         ast.token(Id.Op_Newline, '\n'), l.Read(LexMode.OUTER))
+
+  def testRead_VS_ARG_UNQ(self):
+    l = LineLexer(LEXER_DEF, "'hi'")
+    t = l.Read(LexMode.VS_ARG_UNQ)
+    self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'

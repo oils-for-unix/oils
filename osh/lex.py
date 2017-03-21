@@ -234,7 +234,7 @@ _VS_ARG_COMMON = _BACKSLASH + [
 LEXER_DEF[LexMode.VS_ARG_UNQ] = \
     _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
-  R(r'[^$`/}"\0\\#%<>]+', Id.Lit_Chars),
+  R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
   C('\0', Id.Eof_Real),
   R(r'.', Id.Lit_Other),  # e.g. "$", must be last
 ]

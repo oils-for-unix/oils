@@ -174,7 +174,7 @@ word-split() {
 }
 
 word-eval() {
-  sh-spec tests/word-eval.test.sh --osh-failures-allowed 3 \
+  sh-spec tests/word-eval.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -304,7 +304,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 8 \
+  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
