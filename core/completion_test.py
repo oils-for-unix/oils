@@ -134,7 +134,7 @@ class CompletionTest(unittest.TestCase):
 def _MakeTestEvaluator():
   mem = cmd_exec.Mem('', [])
   exec_opts = cmd_exec.ExecOpts()
-  ev = word_eval.CompletionEvaluator(mem, exec_opts)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
   return ev
 
 

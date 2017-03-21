@@ -59,7 +59,7 @@ def InitEvaluator():
 
   exec_opts = cmd_exec.ExecOpts()
   # Don't need side effects for most things
-  return word_eval.CompletionEvaluator(mem, exec_opts)
+  return word_eval.CompletionWordEvaluator(mem, exec_opts)
 
 
 class ExecutorTest(unittest.TestCase):

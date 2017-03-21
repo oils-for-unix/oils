@@ -159,7 +159,6 @@ def _Reframe(frag_arrays):
   Example:
   [a b][c][d e] -> [a] [bcd] [e]
   """
-  # Reframe:
   res = [[]]
   for frag_array in frag_arrays:
     if len(frag_array) == 1:
@@ -177,11 +176,8 @@ def _Reframe(frag_arrays):
 def _JoinElideEscape(frag_arrays, glob_escape=False):
   """Join parts without globbing or eliding.
 
-  Args:
-    pass
-
   Returns:
-    arg: TODO: Retu
+    arg_value[]
   """
   args = []
   for frag_array in frag_arrays:
@@ -336,10 +332,8 @@ class _WordPartEvaluator:
 
   def _ApplyBracketOp(self, val, bracket_op, quoted):
     """
-    Args:
-      part: BracedVarSub
     Returns:
-      defined, val
+      part_value
     """
     assert isinstance(val, runtime.value), val
     assert val.tag == value_e.StrArray
@@ -392,6 +386,8 @@ class _WordPartEvaluator:
   def _ApplyTestOp(self, part_val, op):
     """
     Returns:
+      value, Effect
+
       ${a:-} returns part_value[]
       ${a:+} returns part_value[]
       ${a:?error} returns error word?
@@ -431,6 +427,10 @@ class _WordPartEvaluator:
       raise NotImplementedError(id)
 
   def _ApplyPrefixOp(self, val, op_id):
+    """
+    Returns:
+      value
+    """
     if op_id == Id.VSub_Pound:  # LENGTH
       if val.tag == value_e.StrArray:
         length = len(val.strs)
@@ -519,7 +519,7 @@ class _WordPartEvaluator:
     return defined, val
 
   def _EvalDoubleQuotedPart(self, part):
-    # Example of returnins array arrays:
+    # Example of returning array:
     # $ a=(1 2); b=(3); $ c=(4 5)
     # $ argv "${a[@]}${b[@]}${c[@]}"
     # ['1', '234', '5']
@@ -561,8 +561,9 @@ class _WordPartEvaluator:
 
   def _EvalWordPart(self, part, quoted=False):
     """Evaluate a word part.
+
     Returns:
-      value
+      part_value
 
     Raises:
       _EvalError
@@ -699,7 +700,7 @@ class _WordPartEvaluator:
       raise AssertionError(part.tag)
 
 
-class WordEvaluator:
+class _WordEvaluator:
   """Abstract base class for word evaluators.
 
   Public entry points:
@@ -953,11 +954,11 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     return runtime.StringPartValue(s, True, True)
 
 
-class NormalWordEvaluator(WordEvaluator):
+class NormalWordEvaluator(_WordEvaluator):
 
   def __init__(self, mem, exec_opts, ex):
     part_ev = _NormalPartEvaluator(mem, exec_opts, ex, self)
-    WordEvaluator.__init__(self, mem, exec_opts, part_ev)
+    _WordEvaluator.__init__(self, mem, exec_opts, part_ev)
 
 
 class _CompletionPartEvaluator(_WordPartEvaluator):
@@ -979,9 +980,8 @@ class _CompletionPartEvaluator(_WordPartEvaluator):
     return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__')
 
 
-# TODO: Rename word_eval.CompletionWordEvaluator
-class CompletionEvaluator(WordEvaluator):
+class CompletionWordEvaluator(_WordEvaluator):
 
   def __init__(self, mem, exec_opts):
     part_ev = _CompletionPartEvaluator(mem, exec_opts, self)
-    WordEvaluator.__init__(self, mem, exec_opts, part_ev)
+    _WordEvaluator.__init__(self, mem, exec_opts, part_ev)

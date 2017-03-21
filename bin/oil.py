@@ -271,7 +271,7 @@ def OshMain(argv):
   if interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
-    ev = word_eval.CompletionEvaluator(mem, exec_opts)
+    ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
     completion.Init(builtins, mem, funcs, comp_lookup, status_lines, ev)
 
     # TODO: Could instantiate "printer" instead of showing ops
