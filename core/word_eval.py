@@ -84,9 +84,7 @@ def _IfsSplit(s, ifs):
 
   # print("IFS SPLIT %r %r" % (s, ifs))
   if ifs == ' \t\n':
-    # Split by whitespace, and empty strings removed
-    frags = _Split(s, ifs)
-    return [f for f in frags if f]
+    return _Split(s, ifs)
 
   # Detect IFS whitespace
   ifs_whitespace = ''
@@ -131,11 +129,12 @@ def _SplitPartsIntoFragments(part_vals, ifs):
   frag_arrays = []
   for p in part_vals:
     if p.tag == part_value_e.StringPartValue:
-      #log("SPLITTING %s", p)
+      #log("SPLITTING %s with ifs %r", p, ifs)
       if p.do_split_elide:
         frags = _IfsSplit(p.s, ifs)
         do_glob = bool(p.do_glob)  # TODO: initialize
         res = [runtime.fragment(f, True, do_glob) for f in frags]
+        #log("RES %s", res)
       else:
         # Example: 'a b' and "a b" don't need to be split.
         do_elide = bool(p.do_split_elide)
@@ -905,7 +904,7 @@ class _WordEvaluator:
       val: runtime.value
     """
     part_vals = self._EvalParts(word)
-    #log('After _EvalParts %s', part_vals)
+    #log('part_vals after _EvalParts %s', part_vals)
     ifs = _GetIfs(self.mem)
     frag_arrays = _SplitPartsIntoFragments(part_vals, ifs)
     #log('Fragments after split: %s', frag_arrays)

@@ -18,9 +18,9 @@ class SplitTest(unittest.TestCase):
 
   def testIfsSplitEmpty(self):
     self.assertEqual(
-        [], word_eval._IfsSplit('', ' \t\n'))
+        [''], word_eval._IfsSplit('', ' \t\n'))
     self.assertEqual(
-        [], word_eval._IfsSplit(' ', ' \t\n'))
+        ['', ''], word_eval._IfsSplit(' ', ' \t\n'))
     self.assertEqual(
         [''], word_eval._IfsSplit('', ' '))
 
@@ -30,7 +30,7 @@ class SplitTest(unittest.TestCase):
 
   def testIfsSplit(self):
     self.assertEqual(
-        ['foo', 'bar'],
+        ['', 'foo', 'bar', ''],
         word_eval._IfsSplit('\tfoo bar\n', ' \t\n'))
 
     self.assertEqual(
@@ -70,6 +70,10 @@ class SplitTest(unittest.TestCase):
     self.assertEqual(
         ['', 'a', 'c', ''],
         word_eval._IfsSplit(' a c ', ' '))
+
+    self.assertEqual(
+        ['', 'c'],
+        word_eval._IfsSplit(' c', ' \t\n'))
 
 
 if __name__ == '__main__':
