@@ -405,7 +405,10 @@ class _WordPartEvaluator:
         Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
         Id.VTest_ColonPlus):
       is_falsey = (
-          undefined or (part_val.tag == value_e.Str and part_val.s == ''))
+          undefined or
+          (part_val.tag == value_e.Str and not part_val.s) or
+          (part_val.tag == value_e.StrArray and not part_val.strs)
+          )
     else:
       is_falsey = undefined
 
@@ -493,54 +496,59 @@ class _WordPartEvaluator:
 
     assert part_val.tag != part_value_e.UndefPartValue
 
-    # prefix strip
-    if op.op_id == Id.VOp1_DPound:
-      pass
-    elif op.op_id == Id.VOp1_Pound:
-      pass
+    op_kind = LookupKind(op.op_id) 
 
-    # suffix strip
-    elif op.op_id == Id.VOp1_Percent:
+    if op_kind == Kind.VOp1:
       #log('%s', op)
-      ok, arg_val = self.word_ev.EvalWordToAny(op.arg_word)
+      ok, arg_val = self.word_ev.EvalWordToString(op.arg_word, do_fnmatch=True)
       if not ok:
         raise AssertionError(op.arg_word)
       #log('%s', arg_val)
 
-      if arg_val.tag == value_e.Undef:
-        raise AssertionError  # shouldn't happen
-      elif arg_val.tag == value_e.StrArray:
-        # The bash way would be to decay to a string, but I don't want to do
-        # that.
-        raise AssertionError("Don't know how to strip an array suffix")
-      suffix = arg_val.s
+      assert arg_val.tag == value_e.Str
 
-      if part_val.tag == part_value_e.StringPartValue:
-        s = part_val.s
-        if s.endswith(suffix):
-          s = s[:-len(suffix)]
-          part_val = runtime.StringPartValue(s, part_val.do_split_elide,
-                                             part_val.do_glob)
-        else:
-          log("%r doesn't end with %r", s, suffix)
+      # TODO: Needs to eval to GlobArg or LiteralArg?
+      # There's a different algorithm for glob prefixes, suffixes, and PatSub.
+      op_str = arg_val.s
 
-      elif part_val.tag == part_value_e.ArrayPartValue:
-        # Do vecotrized strip
+      if op.op_id == Id.VOp1_Pound:  # shortest prefix
+        pass
+
+      elif op.op_id == Id.VOp1_DPound:  # longest prefix
+        pass
+
+      elif op.op_id == Id.VOp1_Percent:  # shortest suffix
+        suffix = op_str
+
+        if part_val.tag == part_value_e.StringPartValue:
+          if part_val.s.endswith(suffix):
+            # Mutate it so we preserve the flags.
+            part_val.s = part_val.s[:-len(suffix)]
+          else:
+            log("%r doesn't end with %r", part_val.s, suffix)
+
+        elif part_val.tag == part_value_e.ArrayPartValue:
+          for i, s in enumerate(part_val.strs):
+            if s.endswith(suffix):
+              # Mutate it so we preserve the flags.
+              part_val.strs[i] = s[:-len(suffix)]
+              log('%s -> %s', s, s[:-len(suffix)])
+            else:
+              log("%r doesn't end with %r", s, suffix)
+
+      elif op.op_id == Id.VOp1_DPercent:  # longest suffix
         raise NotImplementedError
 
-    elif op.op_id == Id.VOp1_DPercent:
-      raise NotImplementedError
+    elif op_kind == Kind.VOp2:
+      if op.op_id == Id.VOp2_Slash:  # PatSub, vectorized
+        raise NotImplementedError
 
-    # PatSub, vectorized
-    elif op.op_id == Id.VOp2_Slash:
-      raise NotImplementedError
-
-    # Either string slicing or array slicing.  However string slicing has a
-    # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
-    #
-    # Or maybe have a different operator for byte slice and char slice.
-    elif op.op_id == Id.VOp2_Colon:
-      raise NotImplementedError
+      # Either string slicing or array slicing.  However string slicing has a
+      # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
+      #
+      # Or maybe have a different operator for byte slice and char slice.
+      elif op.op_id == Id.VOp2_Colon:
+        raise NotImplementedError
 
     else:
       raise NotImplementedError(op)
