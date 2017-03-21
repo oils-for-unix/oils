@@ -420,12 +420,12 @@ class _WordPartEvaluator:
         # Problem: you need to SPLICE.  Because each part_val has a different
         # quote/no quote setting!
 
-        ok, val = self.word_ev.EvalWordToAny(op.arg_word)
-        if not ok:
-          raise AssertionError
-        return _ValueToPartValue(val, quoted), Effect.SpliceParts
+        #ok, val = self.word_ev.EvalWordToAny(op.arg_word)
+        #if not ok:
+        #  raise AssertionError
+        #return _ValueToPartValue(val, quoted), Effect.SpliceParts
 
-        #part_vals = self.word_ev._EvalParts(op.arg_word)
+        part_vals = self.word_ev._EvalParts(op.arg_word, quoted=quoted)
         return part_vals, Effect.SpliceParts
       else:
         return None, Effect.NoOp
@@ -550,16 +550,16 @@ class _WordPartEvaluator:
 
     strs = ['']  # TODO: Use fragment style?
     for p in part.parts:
-      part_val = self._EvalWordPart(p, quoted=True)
-      assert isinstance(part_val, runtime.part_value), (p, part_val)
-      if part_val.tag == part_value_e.StringPartValue:
-        strs[-1] += part_val.s
-      else:
-        for i, s in enumerate(part_val.strs):
-          if i == 0:
-            strs[-1] += s
-          else:
-            strs.append(s)
+      for part_val in self._EvalWordPart(p, quoted=True):
+        assert isinstance(part_val, runtime.part_value), (p, part_val)
+        if part_val.tag == part_value_e.StringPartValue:
+          strs[-1] += part_val.s
+        else:
+          for i, s in enumerate(part_val.strs):
+            if i == 0:
+              strs[-1] += s
+            else:
+              strs.append(s)
 
     if len(strs) == 1:
       val = runtime.StringPartValue(strs[0], False, False)
@@ -587,7 +587,9 @@ class _WordPartEvaluator:
     """Evaluate a word part.
 
     Returns:
-      part_value
+      A LIST of part_value, rather than just a single part_value, because of
+      the quirk where ${a:-'x'y} is a single WordPart, but yields two
+      part_values.
 
     Raises:
       _EvalError
@@ -598,28 +600,28 @@ class _WordPartEvaluator:
 
     elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
-      do_split_elide = False
+      do_split_elide = not quoted
       do_glob = True
-      return runtime.StringPartValue(s, do_split_elide, do_glob)
+      return [runtime.StringPartValue(s, do_split_elide, do_glob)]
 
     elif part.tag == word_part_e.EscapedLiteralPart:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      return runtime.StringPartValue(s, False, False)
+      return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.SingleQuotedPart:
       s = ''.join(t.val for t in part.tokens)
-      return runtime.StringPartValue(s, False, False)
+      return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.DoubleQuotedPart:
-      return self._EvalDoubleQuotedPart(part)
+      return [self._EvalDoubleQuotedPart(part)]
 
     elif part.tag == word_part_e.CommandSubPart:
       # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
       # supply something like /dev/fd/63.
-      return self._EvalCommandSub(part.command_list, quoted)
+      return [self._EvalCommandSub(part.command_list, quoted)]
 
     elif part.tag == word_part_e.SimpleVarSub:
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
@@ -634,7 +636,7 @@ class _WordPartEvaluator:
 
       part_val = _ValueToPartValue(val, quoted)
       part_val = self._EmptyStringPartOrError(part_val, quoted)
-      return part_val
+      return [part_val]
 
     elif part.tag == word_part_e.BracedVarSub:
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
@@ -679,15 +681,16 @@ class _WordPartEvaluator:
         elif val.tag == value_e.StrArray:
           part_val = runtime.ArrayPartValue(val.strs)
 
+      out_part_vals = []
       did_suffix = False
       if part.suffix_op and LookupKind(part.suffix_op.op_id) == Kind.VTest:
-        new_part_val, effect = self._ApplyTestOp(part_val, part.suffix_op,
+        new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
                                                  quoted)
         did_suffix = True
 
         if effect == Effect.SpliceParts:
           defined = True
-          part_val = new_part_val
+          out_part_vals.extend(new_part_vals)
 
         elif effect == Effect.SpliceAndAssign:
           raise NotImplementedError
@@ -696,28 +699,37 @@ class _WordPartEvaluator:
           raise NotImplementedError
 
         else:
+          # The old one
+          out_part_vals.append(part_val)
           pass  # do nothing, may still be undefined
+      else:
+        out_part_vals.append(part_val)
+
+      return out_part_vals
+
+      # TODO: Implement ops below
 
       #log('part_val after VTest %s', part_val)
       part_val = self._EmptyStringPartOrError(part_val, quoted)
 
       if part.suffix_op and not did_suffix:
         part_val = self._ApplySuffixOp(part_val, part)
+        out_part_vals.append(part_val)
 
       #print('APPLY OPS', var_name, '->', defined, val)
-      return part_val
+      return out_part_vals
 
     elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
       s = self._EvalTildeSub(part.prefix)
-      return runtime.StringPartValue(s, False, False)
+      return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.ArithSubPart:
       arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
       if arith_ev.Eval(part.anode):
         num = arith_ev.Result()
-        return runtime.StringPartValue(str(num), True, True)
+        return [runtime.StringPartValue(str(num), True, True)]
       else:
         self.error_stack.extend(arith_ev.Error())
         raise _EvalError()
@@ -752,7 +764,7 @@ class _WordEvaluator:
   def Error(self):
     return self.error_stack
 
-  def _EvalParts(self, word):
+  def _EvalParts(self, word, quoted=False):
     """Evaluate a word.
 
     This is used in the following contexts:
@@ -783,8 +795,9 @@ class _WordEvaluator:
 
     part_vals = []
     for p in word.parts:
-      v = self.part_ev._EvalWordPart(p, quoted=False)  # may raise
-      part_vals.append(v)
+      for v in self.part_ev._EvalWordPart(p, quoted=quoted):
+        #log('_EvalParts %s -> %s (q=%s)', p, v, quoted)
+        part_vals.append(v)
     return part_vals
 
   def EvalWordToString(self, word, do_fnmatch=False):
@@ -801,18 +814,18 @@ class _WordEvaluator:
     """
     strs = []
     for part in word.parts:
-      part_val = self.part_ev._EvalWordPart(part, quoted=False)  # may raise
-      if part_val.tag != part_value_e.StringPartValue:
-        # TODO: Better error message
-        self._AddErrorContext("Only string parts are allowed", word=word)
-        return False, None
-      if do_fnmatch:
-        if part_val.do_glob:
-          strs.append(part_val.s)
+      for part_val in self.part_ev._EvalWordPart(part, quoted=False):
+        if part_val.tag != part_value_e.StringPartValue:
+          # TODO: Better error message
+          self._AddErrorContext("Only string parts are allowed", word=word)
+          return False, None
+        if do_fnmatch:
+          if part_val.do_glob:
+            strs.append(part_val.s)
+          else:
+            strs.append(GlobEscape(part_val.s))
         else:
-          strs.append(GlobEscape(part_val.s))
-      else:
-        strs.append(part_val.s)
+          strs.append(part_val.s)
 
     return True, runtime.Str(''.join(strs))
 
