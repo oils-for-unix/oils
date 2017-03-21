@@ -560,20 +560,41 @@ class _WordPartEvaluator:
     # $ a=(1 2); b=(3); $ c=(4 5)
     # $ argv "${a[@]}${b[@]}${c[@]}"
     # ['1', '234', '5']
+    # Example of multiple parts
+    # $ argv "${a[@]}${undef[@]:-${c[@]}}"
+    # ['1', '24', '5']
 
-    strs = ['']  # TODO: Use fragment style?
+    #log('DQ part %s', part)
+
+    # Special case for "".  The parser outputs (DoubleQuotedPart []), instead
+    # of (DoubleQuotedPart [LiteralPart '']).  This is better but it means we
+    # have to check for it.
+    if not part.parts:
+      return runtime.StringPartValue('', False, False)
+
+    frag_arrays = [[]]
     for p in part.parts:
       for part_val in self._EvalWordPart(p, quoted=True):
         assert isinstance(part_val, runtime.part_value), (p, part_val)
         if part_val.tag == part_value_e.StringPartValue:
-          strs[-1] += part_val.s
+          frag_arrays[-1].append(part_val.s)
         else:
           for i, s in enumerate(part_val.strs):
             if i == 0:
-              strs[-1] += s
+              frag_arrays[-1].append(s)
             else:
-              strs.append(s)
+              frag_arrays.append([s])
 
+    #log('frag_arrays %s', frag_arrays)
+
+    strs = []
+    for frag_array in frag_arrays:
+      # "${empty[@]}" leads to [[]], should eval to [] and not ['']
+      if frag_array: 
+        strs.append(''.join(frag_array))
+
+    # This should be able to evaluate to EMPTY ARRAY!
+    #log('strs %s', strs)
     if len(strs) == 1:
       val = runtime.StringPartValue(strs[0], False, False)
     else:
@@ -857,7 +878,7 @@ class _WordEvaluator:
         array_words = word.parts[0].words
         words = braces.BraceExpandWords(array_words)
         strs = self._EvalWordSequence(words)
-        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+        log('ARRAY LITERAL EVALUATED TO -> %s', strs)
         return True, runtime.StrArray(strs)
 
       part_vals = self._EvalParts(word)
