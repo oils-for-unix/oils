@@ -77,7 +77,7 @@ parser-port() {
 
 # Stuff needed to port to C+
 runtime() {
-  wc -l core/*_{exec,eval}.py core/{builtin,process,value}.py | sort -n
+  wc -l core/*_{exec,eval}.py core/{builtin,process}.py core/runtime.asdl | sort -n
 }
 
 # count instructions, for fun

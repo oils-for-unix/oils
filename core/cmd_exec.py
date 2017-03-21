@@ -792,7 +792,7 @@ class Executor(object):
         # RHS can be a string or array.
         ok, val = self.ev.EvalWordToAny(pair.rhs)
         assert isinstance(val, runtime.value), val
-        log('RHS %s -> %s', pair.rhs, val)
+        #log('RHS %s -> %s', pair.rhs, val)
         if not ok:
           self.error_stack.extend(self.ev.Error())
           raise _FatalError()
