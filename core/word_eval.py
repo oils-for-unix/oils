@@ -161,7 +161,9 @@ def _Reframe(frag_arrays):
   """
   res = [[]]
   for frag_array in frag_arrays:
-    if len(frag_array) == 1:
+    if len(frag_array) == 0:
+      res.append([])
+    elif len(frag_array) == 1:
       frag = frag_array[0]
       res[-1].append(frag)
     else:
@@ -906,11 +908,9 @@ class _WordEvaluator:
     #log('After _EvalParts %s', part_vals)
     ifs = _GetIfs(self.mem)
     frag_arrays = _SplitPartsIntoFragments(part_vals, ifs)
-    #log('After split %s', frag_arrays)
+    #log('Fragments after split: %s', frag_arrays)
     frag_arrays = _Reframe(frag_arrays)
-
-    # TODO: Loop over each one, only glob it if it's a GlobArg.
-    #argv = self.globber.Glob(arg_vals)
+    #log('Fragments after reframe: %s', frag_arrays)
 
     glob_escape = not self.exec_opts.noglob
     args = _JoinElideEscape(frag_arrays, glob_escape=glob_escape)
