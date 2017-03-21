@@ -14,7 +14,7 @@ module runtime
     UndefPartValue
     -- Substitutions get split/elided/globbed.  Unquoted literals also get
     -- globbed.
-  | StringPartValue(string s, bool? do_split_elide, bool? do_glob)
+  | StringPartValue(string s, bool do_split_elide, bool do_glob)
     -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
   | ArrayPartValue(string* strs)
 

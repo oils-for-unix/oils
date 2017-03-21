@@ -230,7 +230,7 @@ class _WordPartEvaluator:
     self.exec_opts = exec_opts  # for nounset
     self.word_ev = word_ev  # for arith words, var op words
 
-  def _EvalCommandSub(self, part):
+  def _EvalCommandSub(self, part, quoted):
     """Abstract since it has a side effect.
 
     Args:
@@ -595,7 +595,7 @@ class _WordPartEvaluator:
     elif part.tag == word_part_e.CommandSubPart:
       # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
       # supply something like /dev/fd/63.
-      return self._EvalCommandSub(part.command_list)
+      return self._EvalCommandSub(part.command_list, quoted)
 
     elif part.tag == word_part_e.SimpleVarSub:
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
@@ -935,7 +935,7 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     _WordPartEvaluator.__init__(self, mem, exec_opts, word_ev)
     self.ex = ex
 
-  def _EvalCommandSub(self, node):
+  def _EvalCommandSub(self, node, quoted):
     p = self.ex._GetProcessForNode(node)
     # NOTE: We could do an optimization for pipelines.  Pick the last
     # process element, and do pi.procs[-1].CaptureOutput()
@@ -951,7 +951,7 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     # I think $() does a strip basically?
     # argv $(echo ' hi')$(echo bye) -> hibye
     s = ''.join(stdout).strip()
-    return runtime.StringPartValue(s, True, True)
+    return runtime.StringPartValue(s, not quoted, not quoted)
 
 
 class NormalWordEvaluator(_WordEvaluator):
@@ -975,9 +975,10 @@ class _CompletionPartEvaluator(_WordPartEvaluator):
   def __init__(self, mem, exec_opts, word_ev):
     _WordPartEvaluator.__init__(self, mem, exec_opts, word_ev)
 
-  def _EvalCommandSub(self, node):
+  def _EvalCommandSub(self, node, quoted):
     # Just  return a dummy string?
-    return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__')
+    return runtime.StringPartValue(
+        '__COMMAND_SUB_NOT_EXECUTED__', not quoted, not quoted)
 
 
 class CompletionWordEvaluator(_WordEvaluator):

@@ -59,3 +59,7 @@ one
 two
 EOF
 # stdout-json: "twoXoneX"
+
+### Command Sub word split
+argv.py $(echo 'hi there') "$(echo 'hi there')"
+# stdout: ['hi', 'there', 'hi there']
