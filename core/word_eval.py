@@ -465,83 +465,87 @@ class _WordPartEvaluator:
     else:
       raise NotImplementedError(op_id)
 
-  def _ApplySuffixOp(self, defined, val, part):
-    # if the op does NOT have colon
-    #use_default = not defined
-    # NOTE: You could have both prefix and suffix
-    if part.suffix_op and LookupKind(part.suffix_op.op_id) in (
-        Kind.VOp1, Kind.VOp2):
-      op = part.suffix_op
+  def _ApplyOtherSuffixOp(self, part_val, op):
 
-      # NOTES:
-      # - These are VECTORIZED on arrays
-      #   - I want to allow this with my shell dialect: @{files|slice 1
-      #   2|upper} does the same thing to all of them.
-      # - How to do longest and shortest possible match?  bash and mksh both
-      #   call fnmatch() in a loop, with possible short-circuit optimizations.
-      #   - TODO: Write a test program to show quadratic behavior?
-      #   - original AT&T ksh has special glob routines that returned the match
-      #   positions.
-      #   Implementation:
-      #   - Test if it is a LITERAL or a Glob.  Then do a plain string
-      #   operation.
-      #   - If it's a glob, do the quadratic algorithm.
-      #   - NOTE: bash also has an optimization where it extracts the LITERAL
-      #   parts of the string, and does a prematch.  If none of them match,
-      #   then it SKIPs the quadratic algorithm.
-      #   - The real solution is to compile a glob to RE2, but I want to avoid
-      #   that dependency right now... libc regex is good for a bunch of
-      #   things.
-      # - Bash has WIDE CHAR support for this.  With wchar_t.
-      #   - All sorts of functions like xdupmbstowcs
-      #
-      # And then pat_subst() does some special cases.  Geez.
+    # NOTES:
+    # - These are VECTORIZED on arrays
+    #   - I want to allow this with my shell dialect: @{files|slice 1
+    #   2|upper} does the same thing to all of them.
+    # - How to do longest and shortest possible match?  bash and mksh both
+    #   call fnmatch() in a loop, with possible short-circuit optimizations.
+    #   - TODO: Write a test program to show quadratic behavior?
+    #   - original AT&T ksh has special glob routines that returned the match
+    #   positions.
+    #   Implementation:
+    #   - Test if it is a LITERAL or a Glob.  Then do a plain string
+    #   operation.
+    #   - If it's a glob, do the quadratic algorithm.
+    #   - NOTE: bash also has an optimization where it extracts the LITERAL
+    #   parts of the string, and does a prematch.  If none of them match,
+    #   then it SKIPs the quadratic algorithm.
+    #   - The real solution is to compile a glob to RE2, but I want to avoid
+    #   that dependency right now... libc regex is good for a bunch of
+    #   things.
+    # - Bash has WIDE CHAR support for this.  With wchar_t.
+    #   - All sorts of functions like xdupmbstowcs
+    #
+    # And then pat_subst() does some special cases.  Geez.
 
-      # prefix strip
-      if op.op_id == Id.VOp1_DPound:
-        pass
-      elif op.op_id == Id.VOp1_Pound:
-        pass
+    assert part_val.tag != part_value_e.UndefPartValue
 
-      # suffix strip
-      elif op.op_id == Id.VOp1_Percent:
-        print(op.words)
-        argv = []
-        for w in op.words:
-          val2 = self._EvalParts(w)
-          val2.AppendTo(argv)
+    # prefix strip
+    if op.op_id == Id.VOp1_DPound:
+      pass
+    elif op.op_id == Id.VOp1_Pound:
+      pass
 
-        # TODO: Evaluate words, and add the SPACE VALUES, getting a single
-        # string.  And then test if it's a literal or glob.
-        suffix = argv[0]
+    # suffix strip
+    elif op.op_id == Id.VOp1_Percent:
+      #log('%s', op)
+      ok, arg_val = self.word_ev.EvalWordToAny(op.arg_word)
+      if not ok:
+        raise AssertionError(op.arg_word)
+      #log('%s', arg_val)
 
-        if val.IsArray():
-          # TODO: Vectorize it
-          raise NotImplementedError
+      if arg_val.tag == value_e.Undef:
+        raise AssertionError  # shouldn't happen
+      elif arg_val.tag == value_e.StrArray:
+        # The bash way would be to decay to a string, but I don't want to do
+        # that.
+        raise AssertionError("Don't know how to strip an array suffix")
+      suffix = arg_val.s
+
+      if part_val.tag == part_value_e.StringPartValue:
+        s = part_val.s
+        if s.endswith(suffix):
+          s = s[:-len(suffix)]
+          part_val = runtime.StringPartValue(s, part_val.do_split_elide,
+                                             part_val.do_glob)
         else:
-          s = val.s
-          if s.endswith(suffix):
-            s = s[:-len(suffix)]
-            val = runtime.StringPartValue(s)
+          log("%r doesn't end with %r", s, suffix)
 
-      elif op.op_id == Id.VOp1_DPercent:
-        pass
+      elif part_val.tag == part_value_e.ArrayPartValue:
+        # Do vecotrized strip
+        raise NotImplementedError
 
-      # Patsub, vectorized
-      elif op.op_id == Id.VOp2_Slash:
-        pass
+    elif op.op_id == Id.VOp1_DPercent:
+      raise NotImplementedError
 
-      # Either string slicing or array slicing.  However string slicing has a
-      # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
-      #
-      # Or maybe have a different operator for byte slice and char slice.
-      elif op.op_id == Id.VOp2_Colon:
-        pass
+    # PatSub, vectorized
+    elif op.op_id == Id.VOp2_Slash:
+      raise NotImplementedError
 
-      else:
-        raise NotImplementedError(op)
+    # Either string slicing or array slicing.  However string slicing has a
+    # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
+    #
+    # Or maybe have a different operator for byte slice and char slice.
+    elif op.op_id == Id.VOp2_Colon:
+      raise NotImplementedError
 
-    return defined, val
+    else:
+      raise NotImplementedError(op)
+
+    return part_val
 
   def _EvalDoubleQuotedPart(self, part):
     # Example of returning array:
@@ -683,41 +687,36 @@ class _WordPartEvaluator:
           part_val = runtime.ArrayPartValue(val.strs)
 
       out_part_vals = []
-      did_suffix = False
-      if part.suffix_op and LookupKind(part.suffix_op.op_id) == Kind.VTest:
-        new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
-                                                 quoted)
-        did_suffix = True
+      if part.suffix_op:
+        if LookupKind(part.suffix_op.op_id) == Kind.VTest:
+          new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
+                                                   quoted)
 
-        if effect == Effect.SpliceParts:
-          defined = True
-          out_part_vals.extend(new_part_vals)
+          if effect == Effect.SpliceParts:
+            defined = True
+            out_part_vals.extend(new_part_vals)
 
-        elif effect == Effect.SpliceAndAssign:
-          raise NotImplementedError
+          elif effect == Effect.SpliceAndAssign:
+            raise NotImplementedError
 
-        elif effect == Effect.Error:
-          raise NotImplementedError
+          elif effect == Effect.Error:
+            raise NotImplementedError
+
+          else:
+            # The old one
+            part_val = self._EmptyStringPartOrError(part_val, quoted)
+            out_part_vals.append(part_val)
+            pass  # do nothing, may still be undefined
 
         else:
-          # The old one
+          part_val = self._ApplyOtherSuffixOp(part_val, part.suffix_op)
+          part_val = self._EmptyStringPartOrError(part_val, quoted)
           out_part_vals.append(part_val)
-          pass  # do nothing, may still be undefined
+
       else:
+        part_val = self._EmptyStringPartOrError(part_val, quoted)
         out_part_vals.append(part_val)
 
-      return out_part_vals
-
-      # TODO: Implement ops below
-
-      #log('part_val after VTest %s', part_val)
-      part_val = self._EmptyStringPartOrError(part_val, quoted)
-
-      if part.suffix_op and not did_suffix:
-        part_val = self._ApplySuffixOp(part_val, part)
-        out_part_vals.append(part_val)
-
-      #print('APPLY OPS', var_name, '->', defined, val)
       return out_part_vals
 
     elif part.tag == word_part_e.TildeSubPart:

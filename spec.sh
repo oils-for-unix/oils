@@ -234,7 +234,7 @@ func() {
 }
 
 glob() {
-  sh-spec tests/glob.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/glob.test.sh \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
@@ -304,7 +304,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec tests/var-sub-quote.test.sh --osh-failures-allowed 6 \
+  sh-spec tests/var-sub-quote.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -325,7 +325,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 22 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 21 \
     $BASH $MKSH $OSH "$@"
 }
 

@@ -125,26 +125,28 @@ foo="'a b c d'"
 argv.py "${foo%d\'}"
 # stdout: ["'a b c "]
 
+### The string to strip is space sensitive
+foo='a b c d'
+argv.py "${foo%c d}" "${foo%c  d}"
+# stdout: ['a b ', 'a b c d']
+
+### The string to strip can be single quoted, outer is unquoted
+foo='a b c d'
+argv.py ${foo%'c d'} ${foo%'c  d'}
+# stdout: ['a', 'b', 'a', 'b', 'c', 'd']
+
 ### Strip a string with single quotes, double quoted, with unescaped '
-# We're in a double quoted context, so we should be able to use a regular
+# We're in a double quoted context, so we should be able to use a literal
 # single quote.  This is very much the case with :-.
 foo="'a b c d'"
 argv.py "${foo%d'}"
 # stdout: ["'a b c "]
 # BUG bash/mksh stdout-json: ""
 
-### The string to strip is space sensitive
-foo='a b c d'
-argv.py "${foo%c d}" "${foo%c  d}"
-# stdout: ['a b ', 'a b c d']
-
 ### The string to strip can be single quoted, outer is double quoted
+# This is an inconsistency in bash/mksh because '' are treated as literals in
+# double quotes.  The correct ways are above.
 foo='a b c d'
 argv.py "${foo%'c d'}" "${foo%'c  d'}"
-# stdout: ['a b ', 'a b c d']
-# BUG dash stdout: ['a b c d', 'a b c d']
-
-### The string to strip can be single quoted, outer is unquoted
-foo='a b c d'
-argv.py ${foo%'c d'} ${foo%'c  d'}
-# stdout: ['a', 'b', 'a', 'b', 'c', 'd']
+# stdout: ['a b c d', 'a b c d']
+# BUG bash/mksh stdout: ['a b ', 'a b c d']
