@@ -342,6 +342,10 @@ class _WordPartEvaluator:
     if bracket_op.tag == bracket_op_e.WholeArray:
       op_id = bracket_op.op_id
 
+      # Problems with joining here::
+      # ${#a[*]} gives you the length of the array, not the joined string.
+      # ${#a[*]%suffix} also strips every element, and then joins.
+      # So really the bracket op should set a flag for later?
       joined = runtime.StringPartValue(' '.join(s for s in val.strs),
                                        not quoted, not quoted)
       if op_id == Id.Lit_At:
@@ -686,13 +690,17 @@ class _WordPartEvaluator:
         val = self._EvalSpecialVar(part.token.id, quoted)
 
       # Later this could be part_val, if you implemented named references.
+
+      # This has to come AFTER bracket_op.  For example,
+      # a=(x yyy); echo ${#a[@]} ${#a[0] ${#a[1]} -> 2 1 3
+
       if part.prefix_op:
         val = self._ApplyPrefixOp(val, part.prefix_op)
         # return part_val
         # TODO: check if undefined
 
-      # The bracket_op changes it to part_val.
-      # That means the that test ops and suffix need to work on part_val:
+      # The bracket_op necessarily changes val -> part_val.  So subsequent
+      # test ops and suffix need to work on part_val:
       # ${a[2]%6}
       # ${a[2]:-undefined}
       #

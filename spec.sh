@@ -287,14 +287,24 @@ tilde() {
 }
 
 var-op-test() {
-  sh-spec tests/var-op-test.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/var-op-test.test.sh --osh-failures-allowed 6 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+var-op-other() {
+  sh-spec tests/var-op-other.test.sh --osh-failures-allowed 5 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+var-op-strip() {
+  sh-spec tests/var-op-strip.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec tests/var-sub.test.sh --osh-failures-allowed 21 \
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -325,7 +335,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 19 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 20 \
     $BASH $MKSH $OSH "$@"
 }
 

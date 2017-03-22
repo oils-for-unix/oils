@@ -214,6 +214,11 @@ a=(1 '2 3')
 echo "${#a[@]}"
 # stdout: 2
 
+### Length of an element
+a=(1 '2 3')
+echo "${#a[1]}"
+# stdout: 3
+
 ### Iteration
 a=(1 '2 3')
 for v in "${a[@]}"; do

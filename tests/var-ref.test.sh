@@ -40,3 +40,26 @@ caller
 # mksh appears not to hav elocal arrays!
 # BUG mksh stdout-json: ""
 # BUG mksh status: 1
+
+### Var ref with ${!a}
+a=b
+b=c
+echo ref ${!a}
+# Woah mksh has a completely different behavior -- var name, not var ref.
+# stdout: ref c
+# BUG mksh stdout: ref a
+# N-I dash/zsh stdout-json: ""
+
+### Bad var ref with ${!a}
+#set -o nounset
+a='bad var name'
+echo ref ${!a}
+# Woah even dash implements this!
+# stdout-json: "ref\n"
+# BUG mksh stdout: ref a
+# N-I dash/zsh stdout-json: ""
+
+### Nested ${} 
+bar=ZZ
+echo ${foo:-${bar}}
+# stdout: ZZ
