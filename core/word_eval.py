@@ -132,14 +132,11 @@ def _SplitPartsIntoFragments(part_vals, ifs):
       #log("SPLITTING %s with ifs %r", p, ifs)
       if p.do_split_elide:
         frags = _IfsSplit(p.s, ifs)
-        do_glob = bool(p.do_glob)  # TODO: initialize
-        res = [runtime.fragment(f, True, do_glob) for f in frags]
+        res = [runtime.fragment(f, True, p.do_glob) for f in frags]
         #log("RES %s", res)
       else:
         # Example: 'a b' and "a b" don't need to be split.
-        do_elide = bool(p.do_split_elide)
-        do_glob = bool(p.do_glob)  # TODO: initialize
-        res = [runtime.fragment(p.s, do_elide, do_glob)]
+        res = [runtime.fragment(p.s, p.do_split_elide, p.do_glob)]
     elif p.tag == part_value_e.ArrayPartValue:
       # "$@" and "${a[@]}" don't need to be split or globbed
       res = [runtime.fragment(f, False, False) for f in p.strs]
@@ -404,7 +401,7 @@ class _WordPartEvaluator:
     """
     undefined = (part_val.tag == part_value_e.UndefPartValue)
 
-    # TODO: Change this to a bit test.
+    # TODO: Change this to a bitwise test?
     if op.op_id in (
         Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
         Id.VTest_ColonPlus):
@@ -427,11 +424,6 @@ class _WordPartEvaluator:
         #   "${undef:-a b c}"
         # Problem: you need to SPLICE.  Because each part_val has a different
         # quote/no quote setting!
-
-        #ok, val = self.word_ev.EvalWordToAny(op.arg_word)
-        #if not ok:
-        #  raise AssertionError
-        #return _ValueToPartValue(val, quoted), Effect.SpliceParts
 
         part_vals = self.word_ev._EvalParts(op.arg_word, quoted=quoted)
         return part_vals, Effect.SpliceParts
