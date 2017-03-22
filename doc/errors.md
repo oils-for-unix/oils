@@ -64,15 +64,31 @@ Builtin has too many arguments -- but this falls under the errexit rule
 Although we might want to highlight the extra args.
 
 
-Error from stat() system call:
+Fatal error from system calls:
+    fork() could fail in theory
 
-[[ -f /tmp/foo ]] 
+Some are not failures:
+
+    stat() [[ -f /tmp/foo ]] 
+    cd /ff  chdir()  # exit code 1
+    cat <nonexistent  # This is just exit code 1 
+
+
 
 Redirects:
   Redirect to empty filename/descriptor ( or array)
 
 { break; }   
   ^~~~~~ break only invalid inside loop, etc.
+
+
+NotImplementedError
+  - e.g for var ref ${!a}
+  - bash associative arrays?  I think we want most of that
+  - $"" ?
+  - |& not yet done
+  - ;;& for case -- although parsing it is all of the work I guess
+  - some could be parse time errors too though?
 
 
 Runtime: Stack Too Deep (catch infinite recursion)
@@ -83,4 +99,22 @@ Runtime Parse Errors
 
 The way bash works 0x$var can be a hex literal.
 so var=xx makes this invalid.   hex/octal/decimal have this problem.
+
+
+Parse Time Errors
+-----------------
+
+regcomp() errors.
+
+Need to show stack trace for "source" like Python.  Prototype this.
+
+Also might show which token thing caused you to be in arith parse state, like:
+
+$((echo hi))
+^~      ^~
+Arith   Invalid token
+
+
+
+
 

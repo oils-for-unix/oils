@@ -332,33 +332,30 @@ class _WordPartEvaluator:
   def _ApplyBracketOp(self, val, bracket_op, quoted):
     """
     Returns:
-      part_value
+      value, decay_array
+
+    Problems with joining/decaying array to string here:
+
+    ${#a[*]} gives you the length of the array, not the joined string.
+    ${#a[*]%suffix} also strips every element, and then joins.
+    So really the bracket op should set a flag for later?
     """
     assert isinstance(val, runtime.value), val
-    assert val.tag == value_e.StrArray
 
     if bracket_op.tag == bracket_op_e.WholeArray:
       op_id = bracket_op.op_id
 
-      # Problems with joining here::
-      # ${#a[*]} gives you the length of the array, not the joined string.
-      # ${#a[*]%suffix} also strips every element, and then joins.
-      # So really the bracket op should set a flag for later?
-      joined = runtime.StringPartValue(' '.join(s for s in val.strs),
-                                       not quoted, not quoted)
       if op_id == Id.Lit_At:
         #log("PART %s %s", part, val)
         if val.tag == value_e.StrArray:
-          if quoted: # "${a[@]}"
-            return runtime.ArrayPartValue(val.strs)
-          else:      #  ${a[@]}
-            return joined
+          return runtime.StrArray(val.strs), not quoted
         else:
           raise AssertionError("Can't index non-array with @")
 
       elif op_id == Id.Arith_Star:
         if val.tag == value_e.StrArray:
-          return joined
+          # Always decay_array with ${a[*]} or "${a[*]}"
+          return runtime.StrArray(val.strs), True
         else:
           raise AssertionError("Can't index non-array with *")
 
@@ -379,14 +376,14 @@ class _WordPartEvaluator:
       try:
         s = val.strs[index]
       except IndexError:
-        return runtime.UndefPartValue()
+        return runtime.Undef(), False
       else:
-        return runtime.StringPartValue(s, not quoted, not quoted)
+        return runtime.Str(s), False
 
     else:
       raise AssertionError(bracket_op.tag)
 
-  def _ApplyTestOp(self, part_val, op, quoted):
+  def _ApplyTestOp(self, val, op, quoted):
     """
     Returns:
       part_vals, Effect
@@ -400,7 +397,7 @@ class _WordPartEvaluator:
       error, and then a flag for assigning it?
       The original BracedVarSub will have the name.
     """
-    undefined = (part_val.tag == part_value_e.UndefPartValue)
+    undefined = (val.tag == value_e.Undef)
 
     # TODO: Change this to a bitwise test?
     if op.op_id in (
@@ -408,8 +405,8 @@ class _WordPartEvaluator:
         Id.VTest_ColonPlus):
       is_falsey = (
           undefined or
-          (part_val.tag == value_e.Str and not part_val.s) or
-          (part_val.tag == value_e.StrArray and not part_val.strs)
+          (val.tag == value_e.Str and not val.s) or
+          (val.tag == value_e.StrArray and not val.strs)
           )
     else:
       is_falsey = undefined
@@ -453,16 +450,18 @@ class _WordPartEvaluator:
     Returns:
       value
     """
+    assert val.tag != value_e.Undef
+
     if op_id == Id.VSub_Pound:  # LENGTH
-      if val.tag == value_e.StrArray:
-        length = len(val.strs)
-      else:
+      if val.tag == value_e.Str:
         length = len(val.s)
+      elif val.tag == value_e.StrArray:
+        length = len(val.strs)
       return runtime.Str(str(length))
     else:
       raise NotImplementedError(op_id)
 
-  def _ApplyOtherSuffixOp(self, part_val, op):
+  def _ApplyOtherSuffixOp(self, val, op):
 
     # NOTES:
     # - These are VECTORIZED on arrays
@@ -488,9 +487,11 @@ class _WordPartEvaluator:
     #
     # And then pat_subst() does some special cases.  Geez.
 
-    assert part_val.tag != part_value_e.UndefPartValue
+    assert val.tag != value_e.Undef
 
     op_kind = LookupKind(op.op_id) 
+
+    new_val = None
 
     if op_kind == Kind.VOp1:
       #log('%s', op)
@@ -501,37 +502,72 @@ class _WordPartEvaluator:
 
       assert arg_val.tag == value_e.Str
 
-      # TODO: Needs to eval to GlobArg or LiteralArg?
-      # There's a different algorithm for glob prefixes, suffixes, and PatSub.
-      op_str = arg_val.s
+      looks_like_glob = False
+      if looks_like_glob:
+        if op.op_id == Id.VOp1_Pound:  # shortest prefix
+          raise NotImplementedError
+        elif op.op_id == Id.VOp1_DPound:  # longest prefix
+          raise NotImplementedError
 
-      if op.op_id == Id.VOp1_Pound:  # shortest prefix
-        pass
+        elif op.op_id == Id.VOp1_Percent:  # shortest suffix
+          raise NotImplementedError
+        elif op.op_id == Id.VOp1_DPercent:  # longest suffix
+          raise NotImplementedError
+        else:
+          raise AssertionError(op.op_id)
 
-      elif op.op_id == Id.VOp1_DPound:  # longest prefix
-        pass
+      else:
+        op_str = arg_val.s
 
-      elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-        suffix = op_str
+        # TODO: Factor these out into a common fuction?
+        if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
+          prefix = op_str
 
-        if part_val.tag == part_value_e.StringPartValue:
-          if part_val.s.endswith(suffix):
-            # Mutate it so we preserve the flags.
-            part_val.s = part_val.s[:-len(suffix)]
-          else:
-            log("%r doesn't end with %r", part_val.s, suffix)
-
-        elif part_val.tag == part_value_e.ArrayPartValue:
-          for i, s in enumerate(part_val.strs):
-            if s.endswith(suffix):
+          if val.tag == value_e.Str:
+            if val.s.startswith(prefix):
               # Mutate it so we preserve the flags.
-              part_val.strs[i] = s[:-len(suffix)]
-              log('%s -> %s', s, s[:-len(suffix)])
+              new_val = runtime.Str(val.s[len(prefix):])
             else:
-              log("%r doesn't end with %r", s, suffix)
+              #log("Str: %r doesn't end with %r", val.s, suffix)
+              pass
 
-      elif op.op_id == Id.VOp1_DPercent:  # longest suffix
-        raise NotImplementedError
+          elif val.tag == value_e.StrArray:
+            new_val = runtime.StrArray()
+            for i, s in enumerate(val.strs):
+              if s.startswith(prefix):
+                # Mutate it so we preserve the flags.
+                new_s = s[len(prefix):]
+                #log('%s -> %s', s, s[:-len(suffix)])
+              else:
+                new_s = s
+                #log("Array: %r doesn't end with %r", s, suffix)
+              new_val.strs.append(new_s)
+
+        elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
+          suffix = op_str
+
+          if val.tag == value_e.Str:
+            if val.s.endswith(suffix):
+              # Mutate it so we preserve the flags.
+              new_val = runtime.Str(val.s[:-len(suffix)])
+            else:
+              #log("Str: %r doesn't end with %r", val.s, suffix)
+              pass
+
+          elif val.tag == value_e.StrArray:
+            new_val = runtime.StrArray()
+            for i, s in enumerate(val.strs):
+              if s.endswith(suffix):
+                # Mutate it so we preserve the flags.
+                new_s = s[:-len(suffix)]
+                #log('%s -> %s', s, s[:-len(suffix)])
+              else:
+                new_s = s
+                #log("Array: %r doesn't end with %r", s, suffix)
+              new_val.strs.append(new_s)
+
+        else:
+          raise AssertionError(op.op_id)
 
     elif op_kind == Kind.VOp2:
       if op.op_id == Id.VOp2_Slash:  # PatSub, vectorized
@@ -547,7 +583,10 @@ class _WordPartEvaluator:
     else:
       raise NotImplementedError(op)
 
-    return part_val
+    if new_val:
+      return new_val
+    else:
+      return val
 
   def _EvalDoubleQuotedPart(self, part):
     # Example of returning array:
@@ -595,9 +634,10 @@ class _WordPartEvaluator:
       val = runtime.ArrayPartValue(strs)
     return val
 
-  def _EmptyStringPartOrError(self, part_val, quoted):
-    assert isinstance(part_val, runtime.part_value), part_val
-    if part_val.tag == value_e.Undef:
+  def _EmptyStrOrError(self, val):
+    assert isinstance(val, runtime.value), val
+
+    if val.tag == value_e.Undef:
       if self.exec_opts.nounset:
         # stack will unwind
         token = None
@@ -607,12 +647,28 @@ class _WordPartEvaluator:
         self._AddErrorContext('Undefined variable')
         raise _EvalError()
       else:
-        return runtime.StringPartValue('', not quoted, not quoted)
+        return runtime.Str('')
     else:
-      return part_val
+      return val
 
   def _EvalBracedVarSub(self, part, quoted):
-    # 1. Evaluate from (var_name, var_num, token) -> defined, value
+    """
+    Returns:
+      part_value[]
+    """
+    # Bracket: value -> (value, bool decay_array)
+    #
+    # Then these four are mutually exclusive:
+    #   prefix length: value -> value
+    #   test: value -> part_value[]
+    #   suffix: value -> value
+    #     process decay_array here
+    #   none: you have a value
+    #
+    # Then for all the prefix/suffix/test cases, you need value -> singleton
+    # part_value[]
+
+    # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       var_name = part.token.val
       val = self.mem.Get(var_name)
@@ -624,57 +680,44 @@ class _WordPartEvaluator:
     else:
       val = self._EvalSpecialVar(part.token.id, quoted)
 
-    # Later this could be part_val, if you implemented named references.
-
-    # This has to come AFTER bracket_op.  For example,
-    # a=(x yyy); echo ${#a[@]} ${#a[0] ${#a[1]} -> 2 1 3
-
-    if part.prefix_op:
-      val = self._ApplyPrefixOp(val, part.prefix_op)
-      # return part_val
-      # TODO: check if undefined
-
-    # The bracket_op necessarily changes val -> part_val.  So subsequent
-    # test ops and suffix need to work on part_val:
-    # ${a[2]%6}
-    # ${a[2]:-undefined}
-    #
-    # Prefix ops need to work on val:
-    # ${!a[*]} is still the length of the array, not of the string.
-
+    # 2. Bracket: value -> (value v, bool decay_array)
+    # decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER suffix ops
+    # are applied.  If we take the length with a prefix op, the distinction is
+    # ignored.
     #log("VAL %s", val)
+    decay_array = False
     if part.bracket_op:
-      if val.tag == value_e.Undef:
-        part_val = runtime.UndefPartValue()
-      elif val.tag == value_e.Str:
-        raise AssertionError("Can't apply bracket op to string")
-      elif val.tag == value_e.StrArray:
+      if val.tag != value_e.Undef:
         # TODO: Need to separate ArrayIndex and WholeArray cases.  They
         # interact differently with the length operator.
+        val, decay_array = self._ApplyBracketOp(val, part.bracket_op, quoted)
+    #else:
+      #if val.tag == value_e.Undef:
+      #  part_val = runtime.UndefPartValue()
+      #elif val.tag == value_e.Str:
+      #  part_val = runtime.StringPartValue(val.s, not quoted, not quoted)
+      #elif val.tag == value_e.StrArray:
+      #  part_val = runtime.ArrayPartValue(val.strs)
 
-        # Maybe I need a join_array flag?  Apply suffix_op and then join
-        # array.
-        part_val = self._ApplyBracketOp(val, part.bracket_op, quoted)
-    else:
-      if val.tag == value_e.Undef:
-        part_val = runtime.UndefPartValue()
-      elif val.tag == value_e.Str:
-        part_val = runtime.StringPartValue(val.s, not quoted, not quoted)
-      elif val.tag == value_e.StrArray:
-        part_val = runtime.ArrayPartValue(val.strs)
+    #log("VAL %s decay_array %s", val, decay_array)
 
-    out_part_vals = []
-    if part.suffix_op:
+    if part.prefix_op:
+      val = self._EmptyStrOrError(val)  # maybe error
+      val = self._ApplyPrefixOp(val, part.prefix_op)
+      # At least for length, we can't have a test or suffix afterward.
+
+    elif part.suffix_op:
+      out_part_vals = []
       if LookupKind(part.suffix_op.op_id) == Kind.VTest:
-        new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
-                                                 quoted)
+        # VTest: value -> part_value[]
+        new_part_vals, effect = self._ApplyTestOp(val, part.suffix_op,
+                                                  quoted)
 
         # NOTE: Splicing part_values is necessary because of code like
         # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
         # do_glob/do_elide setting.
         if effect == Effect.SpliceParts:
-          defined = True
-          out_part_vals.extend(new_part_vals)
+          return new_part_vals  # early return
 
         elif effect == Effect.SpliceAndAssign:
           raise NotImplementedError
@@ -684,20 +727,23 @@ class _WordPartEvaluator:
 
         else:
           # The old one
-          part_val = self._EmptyStringPartOrError(part_val, quoted)
-          out_part_vals.append(part_val)
+          #val = self._EmptyStringPartOrError(part_val, quoted)
+          #out_part_vals.append(part_val)
           pass  # do nothing, may still be undefined
 
       else:
-        part_val = self._ApplyOtherSuffixOp(part_val, part.suffix_op)
-        part_val = self._EmptyStringPartOrError(part_val, quoted)
-        out_part_vals.append(part_val)
+        val = self._EmptyStrOrError(val)  # maybe error
+        # Other suffix: value -> value
+        val = self._ApplyOtherSuffixOp(val, part.suffix_op)
 
-    else:
-      part_val = self._EmptyStringPartOrError(part_val, quoted)
-      out_part_vals.append(part_val)
+    # After applying suffixes, process decay_array here.
+    if decay_array and val.tag == value_e.StrArray:
+      val = runtime.Str(' '.join(s for s in val.strs))
 
-    return out_part_vals
+    # No prefix or suffix ops
+    val = self._EmptyStrOrError(val)
+
+    return [_ValueToPartValue(val, quoted)]
 
   def _EvalWordPart(self, part, quoted=False):
     """Evaluate a word part.
@@ -750,8 +796,8 @@ class _WordPartEvaluator:
       else:
         val = self._EvalSpecialVar(part.token.id, quoted)
 
+      val = self._EmptyStrOrError(val)
       part_val = _ValueToPartValue(val, quoted)
-      part_val = self._EmptyStringPartOrError(part_val, quoted)
       return [part_val]
 
     elif part.tag == word_part_e.BracedVarSub:
@@ -887,7 +933,7 @@ class _WordEvaluator:
         array_words = word.parts[0].words
         words = braces.BraceExpandWords(array_words)
         strs = self._EvalWordSequence(words)
-        log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
         return True, runtime.StrArray(strs)
 
       part_vals = self._EvalParts(word)

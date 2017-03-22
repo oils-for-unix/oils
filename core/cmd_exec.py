@@ -695,6 +695,7 @@ class Executor(object):
 
     # TODO: Set PipeStatus() in self.mem
     pipe_status = pi.Run()
+    #log('pipe_status %s', pipe_status)
 
     if self.exec_opts.pipefail:
       # If any process failed, the status of the entire pipeline is 1.
@@ -733,15 +734,6 @@ class Executor(object):
       if thunk.IsExternal():
         p = Process(thunk, fd_state=self.fd_state, redirects=redirects)
         status = p.Run()
-
-        if os.WIFEXITED(status):
-          status = os.WEXITSTATUS(status)
-          #print('exited with code', code)
-        else:
-          sig = os.WTERMSIG(status)
-          #print('exited with signal', sig)
-          # TODO: Is this right?
-          status = 0
 
       else:  # Internal
         for r in redirects:

@@ -753,6 +753,15 @@ def Options():
 
 
 def main(argv):
+  # First check if bash is polluting the environment.  Tests rely on the
+  # environment.
+  v = os.getenv('RANDOM')
+  if v is not None:
+    raise AssertionError('got $RANDOM = %s' % v)
+  v = os.getenv('PPID')
+  if v is not None:
+    raise AssertionError('got $PPID = %s' % v)
+
   o = Options()
   (opts, argv) = o.parse_args(argv)
 

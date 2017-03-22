@@ -158,9 +158,8 @@ bugs() {
   sh-spec tests/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# Regress bugs
 blog1() {
-  sh-spec tests/blog1.test.sh --osh-failures-allowed 6 \
+  sh-spec tests/blog1.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -169,12 +168,12 @@ comments() {
 }
 
 word-split() {
-  sh-spec tests/word-split.test.sh \
+  sh-spec tests/word-split.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 word-eval() {
-  sh-spec tests/word-eval.test.sh --osh-failures-allowed 2 \
+  sh-spec tests/word-eval.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -250,7 +249,7 @@ command-sub() {
 }
 
 pipeline() {
-  sh-spec tests/pipeline.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/pipeline.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -281,6 +280,11 @@ posix() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+special-vars() {
+  sh-spec tests/special-vars.test.sh --osh-failures-allowed 8 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 # DONE -- pysh is the most conformant!
 tilde() {
   sh-spec tests/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
@@ -297,14 +301,14 @@ var-op-other() {
 }
 
 var-op-strip() {
-  sh-spec tests/var-op-strip.test.sh --osh-failures-allowed 4 \
+  sh-spec tests/var-op-strip.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec tests/var-sub.test.sh --osh-failures-allowed 4 \
+  sh-spec tests/var-sub.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -335,7 +339,12 @@ arith-context() {
 }
 
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 20 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 14 \
+    $BASH $MKSH $OSH "$@"
+}
+
+array-compat() {
+  sh-spec tests/array-compat.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $OSH "$@"
 }
 

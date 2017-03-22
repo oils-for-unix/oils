@@ -5,11 +5,6 @@
 ### SETUP
 a=(1 '2 3')
 
-### $a gives first element of array
-a=(1 '2 3')
-echo $a
-# stdout: 1
-
 ### "${a[@]}" and "${a[*]}"
 a=(1 '2 3')
 argv.py "${a[@]}" "${a[*]}"
@@ -135,15 +130,6 @@ a=(0 "${a[@]}" '4 5')
 argv.py "${a[@]}"
 # stdout: ['0', '1', '2 3', '4 5']
 
-### Arrays can't be copied directly
-declare -a a b
-a=(x y z)
-b="${a[@]}"  # this collapses to a string
-c=("${a[@]}")  # this preserves the array
-c[1]=YYY  # mutate a copy -- doesn't affect the original
-argv.py "${a[@]}" "${b[@]}" "${c[@]}"
-# stdout: ['x', 'y', 'z', 'x y z', 'x', 'YYY', 'z']
-
 ### Exporting array doesn't do anything, not even first element
 # bash parses, but doesn't execute.
 # mksh gives syntax error -- parses differently with 'export'
@@ -250,12 +236,13 @@ argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
 # stdout: ['not', 'one', 'not one']
 
 ### Single array with :-
-# bash does EMPTY ELISION here, unless it's double quoted.  Looks like mksh has
-# the sane behavior.
+# bash does EMPTY ELISION here, unless it's double quoted.  mksh has
+# more sane behavior.  OSH is better.
 single=('')
-argv.py ${single[@]:-none} "${single[@]:-none}"
-# stdout: ['none', '']
-# OK mksh stdout: ['none', 'none']
+argv.py ${single[@]:-none} x "${single[@]:-none}"
+# OK osh stdout: ['x', '']
+# OK bash stdout: ['none', 'x', '']
+# OK mksh stdout: ['none', 'x', 'none']
 
 ### Stripping a whole array unquoted
 # Problem: it joins it first.
@@ -301,9 +288,8 @@ echo ${s[@]}
 set -- 'a b' 'c'
 array1=('x y' 'z')
 array2=("$@")
-array3="$@"  # Without splicing with (), this one is flattened
-argv.py "${array1[@]}" "${array2[@]}" "${array3[@]}"
-# stdout: ['x y', 'z', 'a b', 'c', 'a b c']
+argv.py "${array1[@]}" "${array2[@]}"
+# stdout: ['x y', 'z', 'a b', 'c']
 
 ### Tilde expansion within array
 HOME=/home/bob

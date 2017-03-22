@@ -14,7 +14,7 @@ import fcntl
 import os
 import sys
 
-from core import util  # log
+from core.util import log
 from core.id_kind import REDIR_DEFAULT_FD
 
 
@@ -310,8 +310,8 @@ class ExternalThunk(Thunk):
     try:
       os.execvpe(self.argv[0], self.argv, env)
     except OSError as e:
-      util.log('Unexpected error in execvpe(%r, %r, ...): %s', self.argv[0],
-               self.argv, e)
+      log('Unexpected error in execvpe(%r, %r, ...): %s', self.argv[0],
+          self.argv, e)
       # Command not found means 127.  TODO: Are there other cases?
       sys.exit(127)
     # no return
@@ -471,11 +471,18 @@ class Process(object):
     for r in self.redirects:  # here docs
       r.AfterForkInParent()
 
+  # TODO: Should be a free function.  Not using self!
   def Wait(self):
     # NOTE: Need to check errors
     wait_pid, status = os.wait()
 
-    # TODO: split up status?
+    # TODO: change status in more cases.
+    if os.WIFSIGNALED(status):
+      pass
+    elif os.WIFEXITED(status):
+      status = os.WEXITSTATUS(status)
+      #log('exit status: %s', status)
+
     return status
 
   def Run(self):
@@ -537,13 +544,17 @@ class Pipeline(object):
     for p in self.procs:
       #print('start', p)
       p.Start()
+      # TODO: Return pid
 
     pipe_status = []
 
     # TODO: Could do some sort of garbage collection here  too.
-
     for p in self.procs:
-      #print('Wait', p)
-      pipe_status.append(p.Wait())
+      # BUG: This doesn't do things in order!  It just calls os.wait()!
+      # Need to key off wait_pid
+
+      status = p.Wait()
+      #log('Process %s returned status %s', p, status)
+      pipe_status.append(status)
 
     return pipe_status

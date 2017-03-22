@@ -7,6 +7,16 @@ v=foo
 echo ${#v}
 # stdout: 3
 
+### Length of undefined variable
+echo ${#undef}
+# stdout: 0
+
+### Length of undefined variable with nounset
+set -o nounset
+echo ${#undef}
+# status: 1
+# OK dash status: 2
+
 ### Cannot take length of substring slice
 # These are runtime errors, but we could make them parse time errors.
 v=abcde

@@ -46,18 +46,6 @@ s1=''
 argv.py $s1 - "$s1"
 # stdout: ['-', '']
 
-### Word elision with space
-s1=' '
-argv.py $s1
-# stdout: []
-
-### Word elision with non-whitespace IFS
-# Treated differently than the default IFS.  What is the rule here?
-IFS=_
-s1='_'
-argv.py $s1
-# stdout: ['']
-
 ### Default values -- more cases
 argv ${undef:-hi} ${undef:-'a b'} "${undef:-c d}" "${un:-"e f"}" "${un:-'g h'}"
 # stdout: ['hi', 'a b', 'c d', 'e f', "'g h'"]
@@ -73,10 +61,3 @@ touch '_tmp/[bc]ar.mm' # file that looks like a glob pattern
 touch _tmp/bar.mm _tmp/car.mm
 argv '_tmp/[bc]'*.mm - _tmp/?ar.mm
 # stdout: ['_tmp/[bc]ar.mm', '-', '_tmp/bar.mm', '_tmp/car.mm']
-
-### Assignment Causes Array Decay
-set -- x y z
-#argv "[$@]"  # NOT DECAYED here.
-var="[$@]"
-argv "$var"
-# stdout: ['[x y z]']

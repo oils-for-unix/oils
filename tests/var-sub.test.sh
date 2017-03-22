@@ -13,41 +13,6 @@ echo ${foo:-$({ which ls; })}
 # BUG bash stdout-json: ""
 # BUG bash status: 2
 
-### Assigning $@ to var
-# dash doesn't like this -- says '2' bad variable name.
-# NOTE: bash and mksh support array variables!  This is probably the
-# difference.  Need to test array semantics!
-func() {
-  local v=$@
-  argv.py $v
-}
-func 1 2 3
-# stdout: ['1', '2', '3']
-# BUG dash status: 2
-# BUG dash stdout-json: ""
-
-### Assigning "$@" to var
-# dash doesn't like this -- says '2 3' bad variable name.
-func() {
-  local v="$@"
-  argv.py $v
-}
-func 1 '2 3'
-# stdout: ['1', '2', '3']
-# BUG dash status: 2
-# BUG dash stdout-json: ""
-
-### Assigning "$@" to var, then showing it quoted
-# dash doesn't like this -- says '2 3' bad variable name.
-func() {
-  local v="$@"
-  argv.py "$v"
-}
-func 1 '2 3'
-# stdout: ['1 2 3']
-# BUG dash status: 2
-# BUG dash stdout-json: ""
-
 ### Filename redirect with "$@" 
 # bash - ambiguous redirect -- yeah I want this error
 #   - But I want it at PARSE time?  So is there a special DollarAtPart?

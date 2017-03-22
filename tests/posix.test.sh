@@ -102,7 +102,7 @@ do
   echo $x
   x=$(($x-1))
 done
-# stdout-json "3\n2\n1\n"
+# stdout-json: "3\n2\n1\n"
 
 ### Newlines in compound lists
 x=3

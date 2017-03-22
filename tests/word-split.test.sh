@@ -55,6 +55,18 @@ func() { argv.py "-$@-"; }
 func "a 1" "b 2" "c 3"
 # stdout: ['-a 1', 'b 2', 'c 3-']
 
+### Word elision with space
+s1=' '
+argv.py $s1
+# stdout: []
+
+### Word elision with non-whitespace IFS
+# Treated differently than the default IFS.  What is the rule here?
+IFS=_
+s1='_'
+argv.py $s1
+# stdout: ['']
+
 ### empty $@ and $* is elided
 func() { argv.py 1 $@ $* 2; }
 func
