@@ -4,6 +4,7 @@ word_eval.py - Evaluator for the word language.
 
 import glob
 import re
+import sys
 
 from core import braces
 from core import expr_eval  # ArithEval
@@ -416,23 +417,18 @@ class _WordPartEvaluator:
     #print('!!',id, is_falsey)
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
-        # Should not be split:
-        #   ${undef:-a b c}
-        # Should be split:
-        #   ${undef:-'a b c'}
-        #   ${undef:-"a b c"}
-        #   "${undef:-a b c}"
-        # Problem: you need to SPLICE.  Because each part_val has a different
-        # quote/no quote setting!
-
         part_vals = self.word_ev._EvalParts(op.arg_word, quoted=quoted)
         return part_vals, Effect.SpliceParts
       else:
         return None, Effect.NoOp
 
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
-      # Can also return part_vals
-      raise NotImplementedError
+      # Inverse of the above.
+      if is_falsey:
+        return None, Effect.NoOp
+      else:
+        part_vals = self.word_ev._EvalParts(op.arg_word, quoted=quoted)
+        return part_vals, Effect.SpliceParts
 
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       # TODO: Behave like -, but also assign with self.mem.  I guess evaluate
@@ -441,6 +437,8 @@ class _WordPartEvaluator:
 
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       # TODO: Construct error
+      # So the test fails!  Exit code 1 makes it pass.
+      sys.exit(33)
       raise NotImplementedError
 
     # TODO:
@@ -671,6 +669,9 @@ class _WordPartEvaluator:
         new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
                                                  quoted)
 
+        # NOTE: Splicing part_values is necessary because of code like
+        # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
+        # do_glob/do_elide setting.
         if effect == Effect.SpliceParts:
           defined = True
           out_part_vals.extend(new_part_vals)

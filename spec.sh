@@ -287,7 +287,7 @@ tilde() {
 }
 
 var-op-test() {
-  sh-spec tests/var-op-test.test.sh --osh-failures-allowed 6 \
+  sh-spec tests/var-op-test.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
