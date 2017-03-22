@@ -891,6 +891,9 @@ class Executor(object):
           else:  # return needs to pop up more
             raise
 
+    elif node.tag == command_e.ForExpr:
+      raise NotImplementedError(node.tag)
+
     elif node.tag == command_e.DoGroup:
       # Delegate to command list
       # TODO: This should be compiled out!
