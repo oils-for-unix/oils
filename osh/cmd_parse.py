@@ -18,7 +18,7 @@ from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
 from core.util import log
 
 from osh import ast_ as ast 
-from osh.lex import LexMode
+from osh.lex import LexMode, VAR_NAME_RE
 from osh.bool_parse import BoolParser
 
 command_e = ast.command_e
@@ -719,12 +719,16 @@ class CommandParser(object):
     node = ast.ForEach()
     node.do_arg_iter = False
 
-    ok, value, quoted = word.StaticEval(self.cur_word)
+    ok, iter_name, quoted = word.StaticEval(self.cur_word)
     if not ok or quoted:
       self.AddErrorContext(
           "Invalid for loop variable: %s", self.cur_word, word=self.cur_word)
       return None
-    node.iter_name = value
+    if not VAR_NAME_RE.match(iter_name):
+      self.AddErrorContext(
+          "Invalid for loop variable name: %s", self.cur_word, word=self.cur_word)
+      return None
+    node.iter_name = iter_name
     self._Next()  # skip past name
 
     if not self._NewlineOk(): return None

@@ -191,7 +191,7 @@ quote() {
 }
 
 loop() {
-  sh-spec tests/loop.test.sh --osh-failures-allowed 2 \
+  sh-spec tests/loop.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
