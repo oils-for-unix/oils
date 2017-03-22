@@ -621,6 +621,91 @@ class _WordPartEvaluator:
     else:
       return part_val
 
+  def _EvalBracedVarSub(self, part, quoted):
+    # 1. Evaluate from (var_name, var_num, token) -> defined, value
+    if part.token.id == Id.VSub_Name:
+      var_name = part.token.val
+      val = self.mem.Get(var_name)
+      #log('EVAL NAME %s -> %s', var_name, val)
+
+    elif part.token.id == Id.VSub_Number:
+      var_num = int(part.token.val)
+      val = self._EvalVarNum(var_num)
+    else:
+      val = self._EvalSpecialVar(part.token.id, quoted)
+
+    # Later this could be part_val, if you implemented named references.
+
+    # This has to come AFTER bracket_op.  For example,
+    # a=(x yyy); echo ${#a[@]} ${#a[0] ${#a[1]} -> 2 1 3
+
+    if part.prefix_op:
+      val = self._ApplyPrefixOp(val, part.prefix_op)
+      # return part_val
+      # TODO: check if undefined
+
+    # The bracket_op necessarily changes val -> part_val.  So subsequent
+    # test ops and suffix need to work on part_val:
+    # ${a[2]%6}
+    # ${a[2]:-undefined}
+    #
+    # Prefix ops need to work on val:
+    # ${!a[*]} is still the length of the array, not of the string.
+
+    #log("VAL %s", val)
+    if part.bracket_op:
+      if val.tag == value_e.Undef:
+        part_val = runtime.UndefPartValue()
+      elif val.tag == value_e.Str:
+        raise AssertionError("Can't apply bracket op to string")
+      elif val.tag == value_e.StrArray:
+        # TODO: Need to separate ArrayIndex and WholeArray cases.  They
+        # interact differently with the length operator.
+
+        # Maybe I need a join_array flag?  Apply suffix_op and then join
+        # array.
+        part_val = self._ApplyBracketOp(val, part.bracket_op, quoted)
+    else:
+      if val.tag == value_e.Undef:
+        part_val = runtime.UndefPartValue()
+      elif val.tag == value_e.Str:
+        part_val = runtime.StringPartValue(val.s, not quoted, not quoted)
+      elif val.tag == value_e.StrArray:
+        part_val = runtime.ArrayPartValue(val.strs)
+
+    out_part_vals = []
+    if part.suffix_op:
+      if LookupKind(part.suffix_op.op_id) == Kind.VTest:
+        new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
+                                                 quoted)
+
+        if effect == Effect.SpliceParts:
+          defined = True
+          out_part_vals.extend(new_part_vals)
+
+        elif effect == Effect.SpliceAndAssign:
+          raise NotImplementedError
+
+        elif effect == Effect.Error:
+          raise NotImplementedError
+
+        else:
+          # The old one
+          part_val = self._EmptyStringPartOrError(part_val, quoted)
+          out_part_vals.append(part_val)
+          pass  # do nothing, may still be undefined
+
+      else:
+        part_val = self._ApplyOtherSuffixOp(part_val, part.suffix_op)
+        part_val = self._EmptyStringPartOrError(part_val, quoted)
+        out_part_vals.append(part_val)
+
+    else:
+      part_val = self._EmptyStringPartOrError(part_val, quoted)
+      out_part_vals.append(part_val)
+
+    return out_part_vals
+
   def _EvalWordPart(self, part, quoted=False):
     """Evaluate a word part.
 
@@ -677,84 +762,7 @@ class _WordPartEvaluator:
       return [part_val]
 
     elif part.tag == word_part_e.BracedVarSub:
-      # 1. Evaluate from (var_name, var_num, token) -> defined, value
-      if part.token.id == Id.VSub_Name:
-        var_name = part.token.val
-        val = self.mem.Get(var_name)
-        #log('EVAL NAME %s -> %s', var_name, val)
-
-      elif part.token.id == Id.VSub_Number:
-        var_num = int(part.token.val)
-        val = self._EvalVarNum(var_num)
-      else:
-        val = self._EvalSpecialVar(part.token.id, quoted)
-
-      # Later this could be part_val, if you implemented named references.
-
-      # This has to come AFTER bracket_op.  For example,
-      # a=(x yyy); echo ${#a[@]} ${#a[0] ${#a[1]} -> 2 1 3
-
-      if part.prefix_op:
-        val = self._ApplyPrefixOp(val, part.prefix_op)
-        # return part_val
-        # TODO: check if undefined
-
-      # The bracket_op necessarily changes val -> part_val.  So subsequent
-      # test ops and suffix need to work on part_val:
-      # ${a[2]%6}
-      # ${a[2]:-undefined}
-      #
-      # Prefix ops need to work on val:
-      # ${!a[*]} is still the length of the array, not of the string.
-
-      #log("VAL %s", val)
-      if part.bracket_op:
-        if val.tag == value_e.Undef:
-          part_val = runtime.UndefPartValue()
-        elif val.tag == value_e.Str:
-          raise AssertionError("Can't apply bracket op to string")
-        elif val.tag == value_e.StrArray:
-          part_val = self._ApplyBracketOp(val, part.bracket_op, quoted)
-      else:
-        if val.tag == value_e.Undef:
-          part_val = runtime.UndefPartValue()
-        elif val.tag == value_e.Str:
-          part_val = runtime.StringPartValue(val.s, not quoted, not quoted)
-        elif val.tag == value_e.StrArray:
-          part_val = runtime.ArrayPartValue(val.strs)
-
-      out_part_vals = []
-      if part.suffix_op:
-        if LookupKind(part.suffix_op.op_id) == Kind.VTest:
-          new_part_vals, effect = self._ApplyTestOp(part_val, part.suffix_op,
-                                                   quoted)
-
-          if effect == Effect.SpliceParts:
-            defined = True
-            out_part_vals.extend(new_part_vals)
-
-          elif effect == Effect.SpliceAndAssign:
-            raise NotImplementedError
-
-          elif effect == Effect.Error:
-            raise NotImplementedError
-
-          else:
-            # The old one
-            part_val = self._EmptyStringPartOrError(part_val, quoted)
-            out_part_vals.append(part_val)
-            pass  # do nothing, may still be undefined
-
-        else:
-          part_val = self._ApplyOtherSuffixOp(part_val, part.suffix_op)
-          part_val = self._EmptyStringPartOrError(part_val, quoted)
-          out_part_vals.append(part_val)
-
-      else:
-        part_val = self._EmptyStringPartOrError(part_val, quoted)
-        out_part_vals.append(part_val)
-
-      return out_part_vals
+      return self._EvalBracedVarSub(part, quoted)
 
     elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
