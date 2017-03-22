@@ -841,10 +841,17 @@ class Executor(object):
       else:
         raise AssertionError
 
-    elif node.tag == command_e.While:
+    elif node.tag in (command_e.While, command_e.Until):
+      # TODO: Compile this out?
+      if node.tag == command_e.While:
+        _DonePredicate = lambda status: status != 0
+      else:
+        _DonePredicate = lambda status: status == 0
+
       while True:
         status = self._Execute(node.cond)
-        if status != 0:
+        done = status != 0
+        if _DonePredicate(status):
           break
         try:
           status = self._Execute(node.body)  # last one wins
