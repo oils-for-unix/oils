@@ -197,7 +197,7 @@ loop() {
 
 # Not implemented in osh at all.  Need glob matching of words.
 case_() {
-  sh-spec tests/case_.test.sh --osh-failures-allowed 7 \
+  sh-spec tests/case_.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -245,7 +245,7 @@ arith() {
 
 # pysh failures: case not implemented
 command-sub() {
-  sh-spec tests/command-sub.test.sh --osh-failures-allowed 5 \
+  sh-spec tests/command-sub.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

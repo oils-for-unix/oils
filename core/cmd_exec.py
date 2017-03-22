@@ -73,6 +73,10 @@ from core.process import (
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
 from core import runtime
+try:
+  from core import libc  # for fnmatch
+except ImportError:
+  from core import fake_libc as libc
 
 from osh import ast_ as ast
 
@@ -919,7 +923,23 @@ class Executor(object):
       status = 0  # make it true
 
     elif node.tag == command_e.Case:
-      raise NotImplementedError
+      ok, val = self.ev.EvalWordToString(node.to_match)
+      assert ok
+      to_match = val.s
+
+      status = 0  # If there are no arms, it should be zero?
+      done = False
+      for arm in node.arms:
+        for pat_word in arm.pat_list:
+          # NOTE: Is it OK that we're evaluating these as we go?
+          ok, pat_val = self.ev.EvalWordToString(pat_word, do_fnmatch=True)
+          assert ok
+          #log('Matching word %r against pattern %r', to_match, pat_val.s)
+          if libc.fnmatch(pat_val.s, to_match):
+            status = self._Execute(arm.action)
+            done = True  # TODO: Parse ;;& and for fallthrough and such?
+        if done:
+          break
 
     else:
       raise AssertionError(node.tag)
