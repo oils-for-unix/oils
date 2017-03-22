@@ -88,4 +88,8 @@ instructions() {
   objdump -d $bin | cut -f3 | grep -oE "^[a-z]+" | sort | uniq -c | sort -n
 }
 
+imports() {
+  grep --no-filename import */*.py | sort | uniq -c | sort -n
+}
+
 "$@"
