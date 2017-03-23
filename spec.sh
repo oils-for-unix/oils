@@ -339,7 +339,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 15 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 14 \
     $BASH $MKSH $OSH "$@"
 }
 

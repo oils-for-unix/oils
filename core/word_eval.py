@@ -337,59 +337,6 @@ class _WordPartEvaluator:
     else:
       raise NotImplementedError(op_id)
 
-  def _ApplyBracketOp(self, val, bracket_op, quoted):
-    """
-    Returns:
-      value, decay_array
-
-    Problems with joining/decaying array to string here:
-
-    ${#a[*]} gives you the length of the array, not the joined string.
-    ${#a[*]%suffix} also strips every element, and then joins.
-    So really the bracket op should set a flag for later?
-    """
-    assert isinstance(val, runtime.value), val
-
-    if bracket_op.tag == bracket_op_e.WholeArray:
-      op_id = bracket_op.op_id
-
-      if op_id == Id.Lit_At:
-        #log("PART %s %s", part, val)
-        if val.tag == value_e.StrArray:
-          return runtime.StrArray(val.strs), not quoted
-        else:
-          raise AssertionError("Can't index non-array with @")
-
-      elif op_id == Id.Arith_Star:
-        if val.tag == value_e.StrArray:
-          # Always decay_array with ${a[*]} or "${a[*]}"
-          return runtime.StrArray(val.strs), True
-        else:
-          raise AssertionError("Can't index non-array with *")
-
-      else:
-        raise AssertionError(op_id)  # unknown
-
-    elif bracket_op.tag == bracket_op_e.ArrayIndex:
-      anode = bracket_op.expr
-      # TODO: This should propagate errors
-      arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
-      ok = arith_ev.Eval(anode)
-      if not ok:
-        self._AddErrorContext(
-            'Error evaluating arith sub in index expression')
-        return False, None
-      index = arith_ev.Result()
-
-      try:
-        s = val.strs[index]
-      except IndexError:
-        return runtime.Undef(), False
-      else:
-        return runtime.Str(s), False
-
-    else:
-      raise AssertionError(bracket_op.tag)
 
   def _ApplyTestOp(self, val, op, quoted):
     """
@@ -664,22 +611,32 @@ class _WordPartEvaluator:
     else:
       return val
 
+  def _EmptyStrArrayOrError(self):
+    if self.exec_opts.nounset:
+      self._AddErrorContext('Undefined array')
+      raise _EvalError()
+    else:
+      return runtime.StrArray([])
+
   def _EvalBracedVarSub(self, part, quoted):
     """
     Returns:
       part_value[]
     """
-    # Bracket: value -> (value, bool decay_array)
+    # We have four types of operator that interact.
     #
-    # Then these four are mutually exclusive:
-    #   prefix length: value -> value
-    #   test: value -> part_value[]
-    #   suffix: value -> value
-    #     process decay_array here
-    #   none: you have a value
+    # 1. Bracket: value -> (value, bool decay_array)
     #
-    # Then for all the prefix/suffix/test cases, you need value -> singleton
-    # part_value[]
+    # 2. Then these four cases are mutually exclusive:
+    #
+    #   a. Prefix length: value -> value
+    #   b. Test: value -> part_value[]
+    #   c. Other Suffix: value -> value
+    #   d. no operator: you have a value
+    #
+    # That is, we don't have both prefix and suffix operators.
+    #
+    # 3. Process decay_array here before returning.
 
     decay_array = False  # for $*, ${a[*]}, etc.
 
@@ -693,27 +650,67 @@ class _WordPartEvaluator:
       var_num = int(part.token.val)
       val = self._EvalVarNum(var_num)
     else:
+      # $* decays
       val, decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
     # 2. Bracket: value -> (value v, bool decay_array)
     # decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER suffix ops
     # are applied.  If we take the length with a prefix op, the distinction is
     # ignored.
-    #log("VAL %s", val)
     if part.bracket_op:
-      if val.tag != value_e.Undef:
-        # TODO: Need to separate ArrayIndex and WholeArray cases.  They
-        # interact differently with the length operator.
-        val, decay_array = self._ApplyBracketOp(val, part.bracket_op, quoted)
-    #else:
-      #if val.tag == value_e.Undef:
-      #  part_val = runtime.UndefPartValue()
-      #elif val.tag == value_e.Str:
-      #  part_val = runtime.StringPartValue(val.s, not quoted, not quoted)
-      #elif val.tag == value_e.StrArray:
-      #  part_val = runtime.ArrayPartValue(val.strs)
+      if part.bracket_op.tag == bracket_op_e.WholeArray:
+        op_id = part.bracket_op.op_id
 
-    #log("VAL %s decay_array %s", val, decay_array)
+        if op_id == Id.Lit_At:
+          if not quoted:
+            decay_array = True  # ${a[@]} decays but "${a[@]}" doesn't
+          if val.tag == value_e.Undef:
+            val = self._EmptyStrArrayOrError()
+          elif val.tag == value_e.Str:
+            raise RuntimeError("Can't index string with @")
+          elif val.tag == value_e.StrArray:
+            val = runtime.StrArray(val.strs)
+
+        elif op_id == Id.Arith_Star:
+          decay_array = True  # both ${a[*]} and "${a[*]}" decay
+          if val.tag == value_e.Undef:
+            val = self._EmptyStrArrayOrError()
+          elif val.tag == value_e.Str:
+            raise RuntimeError("Can't index string with *")
+          elif val.tag == value_e.StrArray:
+            # Always decay_array with ${a[*]} or "${a[*]}"
+            val = runtime.StrArray(val.strs)
+
+        else:
+          raise AssertionError(op_id)  # unknown
+
+      elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
+        anode = part.bracket_op.expr
+        # TODO: This should propagate errors
+        arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
+        ok = arith_ev.Eval(anode)
+        if not ok:
+          self._AddErrorContext(
+              'Error evaluating arith sub in index expression')
+          raise _EvalError()
+        index = arith_ev.Result()
+
+        if val.tag == value_e.Undef:
+          pass  # it will be checked later
+        elif val.tag == value_e.Str:
+          # TODO: Implement this as an extension, requires unicode like
+          # slicing.
+          raise RuntimeError("Can't index string with integer")
+        elif val.tag == value_e.StrArray:
+          try:
+            s = val.strs[index]
+          except IndexError:
+            val = runtime.Undef()
+          else:
+            val = runtime.Str(s)
+
+      else:
+        raise AssertionError(part.bracket_op.tag)
 
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
@@ -731,7 +728,7 @@ class _WordPartEvaluator:
         # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
         # do_glob/do_elide setting.
         if effect == Effect.SpliceParts:
-          return new_part_vals  # early return
+          return new_part_vals  # EARLY RETURN
 
         elif effect == Effect.SpliceAndAssign:
           raise NotImplementedError
