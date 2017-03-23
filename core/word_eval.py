@@ -102,11 +102,12 @@ def _IfsSplit(s, ifs):
 
   # Can we do this be regex or something?  Use regex match?
   """
-  # TODO: test undef
+  assert isinstance(ifs, str), ifs
   if not ifs:
     return [s]  # no splitting
 
   # print("IFS SPLIT %r %r" % (s, ifs))
+  # TODO: This detect if it's ALL whitespace?  If ifs_other is empty?
   if ifs == ' \t\n':
     return _Split(s, ifs)
 
@@ -119,6 +120,8 @@ def _IfsSplit(s, ifs):
     else:
       ifs_other += c
 
+  # TODO: Rule 3a. Ignore leading and trailing IFS whitespace?
+
   # hack to make an RE
 
   # Hm this escapes \t as \\\t?  I guess that works.
@@ -128,11 +131,16 @@ def _IfsSplit(s, ifs):
   #print('chars', repr(ifs_whitespace), repr(ifs_other))
   #print('RE', repr(ws_re), repr(other_re))
 
+  # BUG: re.split() is the wrong model.  It works with the 'delimiting' model.
+  # Forward iteration.  TODO: grep for IFS in dash/mksh/bash/ash.
+
   # ifs_ws | ifs_ws* non_ws_ifs ifs_ws*
   if ifs_whitespace and ifs_other:
+    # first alternative is rule 3c.
+    # BUG: It matches the whitespace first?
     pat = '[%s]+|[%s]*[%s][%s]*' % (ws_re, ws_re, other_re, ws_re)
   elif ifs_whitespace:
-    pat = '[%s]*[%s][%s]*' % (ws_re, other_re, ws_re)
+    pat = '[%s]+' % ws_re
   elif ifs_other:
     pat = '[%s]' % other_re
   else:
@@ -141,6 +149,7 @@ def _IfsSplit(s, ifs):
   #print('PAT', repr(pat))
   regex = re.compile(pat)
   frags = regex.split(s)
+  #log('split %r by %r -> frags %s', s, pat, frags)
   return frags
 
 
@@ -195,13 +204,14 @@ def _Reframe(frag_arrays):
   return res
 
 
-def _JoinElideEscape(frag_arrays, glob_escape=False):
+def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
   """Join parts without globbing or eliding.
 
   Returns:
     arg_value[]
   """
   args = []
+  #log('_JoinElideEscape frag_arrays %s', frag_arrays)
   for frag_array in frag_arrays:
     if glob_escape:
       #log('frag_array: %s', frag_array)
@@ -227,8 +237,9 @@ def _JoinElideEscape(frag_arrays, glob_escape=False):
       arg = runtime.ConstArg(''.join(frag.s for frag in frag_array))
 
     # Elide $a$b, but not $a"$b" or $a''
-    # NOTE: Does this depend on IFS?
-    if not arg.s and all(frag.do_elide for frag in frag_array):
+    if (elide_empty and
+        not arg.s and all(frag.do_elide for frag in frag_array)):
+      #log('eliding frag_array %s', frag_array)
       continue
 
     args.append(arg)
@@ -863,31 +874,9 @@ class _WordEvaluator:
     return self.error_stack
 
   def _EvalParts(self, word, quoted=False):
-    """Evaluate a word.
-
-    This is used in the following contexts:
-    - Regular commands via _EvalWordSequence(): WITH globbing and word splitting
-    - Evaluating redirect words: no globbing or word splitting
-    - Right hand side of assignments and environments -- no globbing or word
-      splitting
-    - [[ context
-      - no word splitting
-      - but do_glob=True when on RHS of ==
-        - we will later use in fnmatch (not glob())
-      - elide_empty=False
-
-    Args:
-      w: word to evaluate
-      ifs: None if we don't want any word splitting.  Or a bunch of
-        characters.
-      do_glob: Whether we are performing globs AFTER this.  This means that
-        quoted literal glob metacharacters need to start with \.  e.g. "*" and
-        '*' turn into \*.  But other metacharacters must be left alone.
-      elide_empty: whether empty words turn into EmptyUnquoted
-
-    Returns:
-      part_value[]
-    """
+    """Helper for EvalWordToAny and _EvalWordAndReframe.
+    
+    Returns part_value[]."""
     assert isinstance(word, ast.CompoundWord), \
         "Expected CompoundWord, got %s" % word
 
@@ -1009,8 +998,16 @@ class _WordEvaluator:
     #log('Fragments after reframe: %s', frag_arrays)
 
     glob_escape = not self.exec_opts.noglob
-    args = _JoinElideEscape(frag_arrays, glob_escape=glob_escape)
-    #log('After _JoinElideEscape %s', frag_arrays)
+
+    # NOTE: Empirically, elision depends on IFS.  I don't see it in the POSIX
+    # spec though.  This may need to be revised to have ' \t\n'.
+    elide_empty = True
+    for c in ifs:
+      if c not in ' \t\n':
+        elide_empty = False
+
+    args = _JoinElideEscape(frag_arrays, elide_empty, glob_escape)
+    #log('After _JoinElideEscape %s', args)
     return args
 
   def _EvalWordSequence(self, words):

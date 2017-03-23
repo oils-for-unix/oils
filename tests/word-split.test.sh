@@ -71,6 +71,26 @@ s1='_'
 argv.py $s1
 # stdout: ['']
 
+### Leading/trailing word elision with non-whitespace IFS
+# This behavior is weird.
+IFS=_
+s1='_a_b_'
+argv.py $s1
+# stdout: ['', 'a', 'b']
+
+### Multiple non-whitespace IFS chars.
+IFS=_-
+s1='a__b---c_d'
+argv.py $s1
+# stdout: ['a', '', 'b', '', '', 'c', 'd']
+
+### IFS with whitespace and non-whitepace.
+# NOTE: Three delimiters means two empty words in the middle.  No elision.
+IFS='_ '
+s1='a_b _ _ _ c  _d e'
+argv.py $s1
+# stdout: ['a', 'b', '', '', 'c', 'd', 'e']
+
 ### empty $@ and $* is elided
 func() { argv.py 1 $@ $* 2; }
 func

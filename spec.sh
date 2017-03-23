@@ -168,7 +168,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec tests/word-split.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/word-split.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -383,7 +383,8 @@ brace-expansion() {
 }
 
 regex() {
-  sh-spec tests/regex.test.sh $BASH $ZSH "$@"
+  sh-spec tests/regex.test.sh --osh-failures-allowed 2 \
+    $BASH $ZSH $OSH "$@"
 }
 
 process-sub() {

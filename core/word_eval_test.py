@@ -41,6 +41,7 @@ class SplitTest(unittest.TestCase):
         ['a', '', 'd'],
         word_eval._IfsSplit('abcd', 'bc'))
 
+  def testIfsSplit_Mixed(self):
     self.assertEqual(
         ['a', 'cd'],
         word_eval._IfsSplit('abcd', ' b'))
@@ -66,6 +67,14 @@ class SplitTest(unittest.TestCase):
         ['', 'a', 'cd', ''],
         word_eval._IfsSplit('\tabcd\n', 'b \t\n'))
 
+  def testIfsSplit_Mixed2(self):
+    # Doesn't work yet
+    return
+    self.assertEqual(
+        ['a', '', '', 'b'],
+        word_eval._IfsSplit('a _  _ _  b', '_ '))
+
+  def testIfsSplitWhitespaceOnly(self):
     # No non-whitespace IFS
     self.assertEqual(
         ['', 'a', 'c', ''],
@@ -74,6 +83,15 @@ class SplitTest(unittest.TestCase):
     self.assertEqual(
         ['', 'c'],
         word_eval._IfsSplit(' c', ' \t\n'))
+
+  def testIfsSplitNonWhitespaceOnly(self):
+    self.assertEqual(
+        ['a', 'c'],
+        word_eval._IfsSplit('a_c', '_'))
+
+    self.assertEqual(
+        ['', ''],
+        word_eval._IfsSplit('_', '_'))
 
 
 if __name__ == '__main__':
