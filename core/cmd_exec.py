@@ -326,6 +326,7 @@ class Executor(object):
 
   def _Echo(self, argv):
     argv = argv[1:]
+    #log('echo argv %s', argv)
     for a in argv[:-1]:
       sys.stdout.write(a)
       sys.stdout.write(' ')  # arg separator

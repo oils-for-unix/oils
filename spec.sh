@@ -233,7 +233,7 @@ func() {
 }
 
 glob() {
-  sh-spec tests/glob.test.sh \
+  sh-spec tests/glob.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 

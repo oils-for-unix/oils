@@ -10,89 +10,6 @@ except ImportError:
 
 from core.util import log
 
-# EXAMPLES
-#
-# Splitting happens before globbing:
-#
-# pat='*.py *.sh'
-# echo $pat  # split into two glob patterns, then expand!
-
-# Parts must be glob-escaped separately:
-# echo "core"/*.py
-# echo "?core"/*.py
-
-# ---- example:
-#
-# pat='*.py *.s'
-# echo ${pat}h
-#
-# Array
-# -> [PartValue('echo')] [ [PartValue('*.py *.s')  PartValue('h') ]
-#    dse=1,dg=0             dse=1, dg=1           dse=0, dg=0
-#
-# Split, Join and Glob Escape -- but glob escapping depends on globber
-# settings!
-
-# -> [ PartValue('echo') ] [ PartValue('*.py') PartValue('*.sh') ]
-#      dse=0 dg=0            dse=0 dg=1        dse0=dg1
-#
-# Maybe it should be
-# 
-# glob_arg
-# [ LiteralArg, GlobArg, LiteralArg ]
-#
-# ---- example:
-#
-# argv.py 1${undefined:-"2 3" "4 5"}6
-# stdout: ['12 3', '4 56']
-#
-# So you first evaluate the BracedVarSub, and get
-#
-# CompoundWord([DoubleQuotedPart("2 3") LiteralPart(" ") DoubleQuotedPart("4 5")
-#
-# Then you put it into the rest of PartValues
-#
-# 
-# StringPartValue("1", dse=1), 
-# StringPartValue("2 3", dse=0)
-# StringPartValue(" ", dse=1)  # Because it was unquoted
-# StringPartValue("4 5", dse=0)
-# StringPartValue("6", dse=0)
-#
-# StringPartValue turns into ArrayPartValue by SPLITTING.  Duh.
-#
-# And then you have a bunch of part_values and you just join them.
-# Single algorithm to join.
-
-# Tests to make pass:
-# - var-sub-quote
-# - word-split
-# - array: $* and "$*", empty array, etc.
-
-# CLASSES / PIPELINE SKETCH
-#
-# WordEvaluator(mem, exec_opts)
-#   EvalCompoundWord
-#   EvalWordSequence
-#   EvalEnv
-#
-# PartEvaluator(mem, exec_opts)
-# word_part -> part_value   (go one by one)
-#   def Eval(self, part)
-#
-# Splitter(mem.IFS)
-# part_value[] -> part_value[]
-#   def Split(self, vals)
-#
-# Joiner(exec_opts.do_glob)  # for do_glob
-# part_value[] -> arg_value[]
-#   def JoinAndGlobEscape(vals)
-#   Elide()
-#
-# Globber(exec_opts)
-# arg_value[] -> string[]
-#   Expand()
-
 
 def LooksLikeGlob():
   """
@@ -105,7 +22,7 @@ def LooksLikeGlob():
   Nope it's using it with char* p.
   So it dash only ASCII or what?  TODO: test it
   
-  NOTE: May not need this if we use structured parts.
+  Still need this for slow path / fast path of prefix/suffix/patsub ops.
   """
   pass
 
@@ -127,6 +44,7 @@ def GlobEscape(s):
   return escaped
 
 
+# TODO: Can probably get rid of this, as long as you save the original word.
 def _GlobUnescape(s):  # used by cmd_exec
   """
   If there is no glob match, just unescape the string.
@@ -154,6 +72,10 @@ class Globber:
   def __init__(self, exec_opts):
     # TODO: separate into set_opts.glob_opts, and sh_opts.glob_opts?  Only if
     # other shels use the same options as bash though.
+
+    # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells do.
+    # Could a default GLOBIGNORE to ignore flags on the file system be part of
+    # the security solution?  It doesn't seem totally sound.
 
     self.noglob = False  # set -f
 

@@ -136,3 +136,20 @@ touch _tmp/foo.yyy _tmp/bar.yyy
 g='_tmp/*.yy'
 echo $g ${g}y
 # stdout: _tmp/*.yy _tmp/bar.yyy _tmp/foo.yyy
+
+### Glob flags on file system
+touch _tmp/-n _tmp/zzzzz
+cd _tmp
+echo -* hello zzzz?
+# stdout-json: "hello zzzzz"
+
+### Don't glob flags on file system with GLOBIGNORE
+# This is a bash-specific extension.
+expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
+touch _tmp/-n _tmp/zzzzz
+cd _tmp  # this fail in osh
+GLOBIGNORE=-*:zzzzz  # colon-separated pattern list
+echo -* hello zzzz?
+# stdout-json: "-* hello zzzz?\n"
+# N-I dash/mksh/ash stdout-json: "hello zzzzz"
+# status: 0
