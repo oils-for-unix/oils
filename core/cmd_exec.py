@@ -110,6 +110,14 @@ class Mem(object):
     self.argv_stack = [argv]
     self.last_status = 0  # Mutable public variable
 
+    self._InitDefaults()
+
+  def _InitDefaults(self):
+    # Default value; user may unset it.
+    # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
+    # ' \t\n'
+    self.SetGlobalString(ast.LeftVar('IFS'), ' \t\n')
+
   def Push(self, argv):
     self.top = {}
     self.var_stack.append(self.top)

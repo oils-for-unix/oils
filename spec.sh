@@ -301,7 +301,7 @@ var-op-other() {
 }
 
 var-op-strip() {
-  sh-spec tests/var-op-strip.test.sh --osh-failures-allowed 5 \
+  sh-spec tests/var-op-strip.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -339,7 +339,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 14 \
+  sh-spec tests/array.test.sh --osh-failures-allowed 15 \
     $BASH $MKSH $OSH "$@"
 }
 

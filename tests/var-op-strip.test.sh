@@ -10,7 +10,13 @@ v=abcd
 echo ${v#a} ${v##ab}
 # stdout: bcd cd
 
-### Remove vectorized const suffix
+### Remove const suffix is vectorized on user array
+a=(1a 2a 3a)
+argv.py ${a[@]%a}
+# stdout: ['1', '2', '3']
+# N-I dash/mksh stdout-json: ""
+
+### Remove const suffix is vectorized on $@ array
 set -- 1a 2a 3a
 argv.py ${@%a}
 # stdout: ['1', '2', '3']

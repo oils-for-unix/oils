@@ -40,13 +40,36 @@ def _ValueToPartValue(val, quoted):
 
 def _GetIfs(mem):
   """
-  Used for splitting words in Splitter, and joining $* in _WordPartEvaluator.
+  Used for splitting words in Splitter.
   """
   val = mem.Get('IFS')
   if val.tag == value_e.Undef:
-    return ' \t\n'  # default for sh; default for oil is ''
+    return ''
   elif val.tag == value_e.Str:
     return val.s
+  else:
+    # TODO: Raise proper error
+    raise AssertionError("IFS shouldn't be an array")
+
+
+def _GetJoinChar(mem):
+  """
+  For decaying arrays by joining, eg. "$@" -> $@.
+  array
+  """
+  # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
+  # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
+  # "When the expansion occurs within a double-quoted string (see
+  # Double-Quotes), it shall expand to a single field with the value of
+  # each parameter separated by the first character of the IFS variable, or
+  # by a <space> if IFS is unset. If IFS is set to a null string, this is
+  # not equivalent to unsetting it; its first character does not exist, so
+  # the parameter values are concatenated."
+  val = mem.Get('IFS')
+  if val.tag == value_e.Undef:
+    return ''
+  elif val.tag == value_e.Str:
+    return val.s[0]
   else:
     # TODO: Raise proper error
     raise AssertionError("IFS shouldn't be an array")
@@ -292,39 +315,24 @@ class _WordPartEvaluator:
     # - If it's $@ in a normal context, return a STRING, which then will be
     # subject to splitting.
 
-    # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
-    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
-    # "When the expansion occurs within a double-quoted string (see
-    # Double-Quotes), it shall expand to a single field with the value of
-    # each parameter separated by the first character of the IFS variable, or
-    # by a <space> if IFS is unset. If IFS is set to a null string, this is
-    # not equivalent to unsetting it; its first character does not exist, so
-    # the parameter values are concatenated."
-    ifs = _GetIfs(self.mem)
-    sep = ifs[0] if ifs else ''
-
-    # GetArgv.  And then look at whether we're in a double quoted context or
-    # not.
     if op_id in (Id.VSub_At, Id.VSub_Star):
-      if op_id == Id.VSub_At and quoted:  # "$@" evaluates to an array
-        argv = self.mem.GetArgv()
-        val = runtime.StrArray(argv)
-        #print('$@', val)
-        return val
+      argv = self.mem.GetArgv()
+      val = runtime.StrArray(argv)
+      if op_id == Id.VSub_At:
+        # "$@" evaluates to an array, $@ should be decayed
+        return val, not quoted
       else:  # $@ $* "$*"
-        argv = self.mem.GetArgv()
-        val = runtime.Str(ifs[0].join(argv))
-        return val
+        return val, True
 
     elif op_id == Id.VSub_QMark:  # $?
       # TODO: Have to parse status somewhere.
       # External commands need WIFEXITED test.  What about subshells?
-      return runtime.Str(str(self.mem.last_status))
+      return runtime.Str(str(self.mem.last_status)), False
 
     elif op_id == Id.VSub_Pound:  # $#
       argv = self.mem.GetArgv()
       s = str(len(argv))
-      return runtime.Str(s)
+      return runtime.Str(s), False
 
     else:
       raise NotImplementedError(op_id)
@@ -634,6 +642,11 @@ class _WordPartEvaluator:
       val = runtime.ArrayPartValue(strs)
     return val
 
+  def _DecayArray(self, val):
+    sep = _GetJoinChar(self.mem)
+    assert val.tag == value_e.StrArray
+    return runtime.Str(sep.join(val.strs))
+
   def _EmptyStrOrError(self, val):
     assert isinstance(val, runtime.value), val
 
@@ -668,6 +681,8 @@ class _WordPartEvaluator:
     # Then for all the prefix/suffix/test cases, you need value -> singleton
     # part_value[]
 
+    decay_array = False  # for $*, ${a[*]}, etc.
+
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       var_name = part.token.val
@@ -678,14 +693,13 @@ class _WordPartEvaluator:
       var_num = int(part.token.val)
       val = self._EvalVarNum(var_num)
     else:
-      val = self._EvalSpecialVar(part.token.id, quoted)
+      val, decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
     # 2. Bracket: value -> (value v, bool decay_array)
     # decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER suffix ops
     # are applied.  If we take the length with a prefix op, the distinction is
     # ignored.
     #log("VAL %s", val)
-    decay_array = False
     if part.bracket_op:
       if val.tag != value_e.Undef:
         # TODO: Need to separate ArrayIndex and WholeArray cases.  They
@@ -737,8 +751,8 @@ class _WordPartEvaluator:
         val = self._ApplyOtherSuffixOp(val, part.suffix_op)
 
     # After applying suffixes, process decay_array here.
-    if decay_array and val.tag == value_e.StrArray:
-      val = runtime.Str(' '.join(s for s in val.strs))
+    if decay_array:
+      val = self._DecayArray(val)
 
     # No prefix or suffix ops
     val = self._EmptyStrOrError(val)
@@ -786,6 +800,7 @@ class _WordPartEvaluator:
       return [self._EvalCommandSub(part.command_list, quoted)]
 
     elif part.tag == word_part_e.SimpleVarSub:
+      decay_array = False
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
       if part.token.id == Id.VSub_Name:
         var_name = part.token.val[1:]
@@ -794,9 +809,11 @@ class _WordPartEvaluator:
         var_num = int(part.token.val[1:])
         val = self._EvalVarNum(var_num)
       else:
-        val = self._EvalSpecialVar(part.token.id, quoted)
+        val, decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
       val = self._EmptyStrOrError(val)
+      if decay_array:
+        val = self._DecayArray(val)
       part_val = _ValueToPartValue(val, quoted)
       return [part_val]
 

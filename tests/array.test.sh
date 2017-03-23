@@ -15,6 +15,14 @@ a=(1 '2 3')
 argv.py ${a[@]} ${a[*]}
 # stdout: ['1', '2', '3', '1', '2', '3']
 
+### "${a[@]}" on empty array
+argv.py "${a[@]}"
+# stdout: []
+
+### other empty array tests
+argv.py 1 ${a[@]} 2 ${a[*]} 3 "${a[*]}" 4
+# stdout: ['1', '2', '3', '', '4']
+
 ### local array
 # mksh support local variables, but not local arrays, oddly.
 f() {
