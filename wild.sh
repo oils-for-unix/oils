@@ -386,6 +386,16 @@ parse-j() {
     $(find $src -type f -a  -name j -a -printf '%P\n')
 }
 
+# Doesn't parse because of extended glob.
+parse-wd() {
+  local src=~/git/other/wd
+
+  time _parse-many \
+    $src \
+    $RESULT_DIR/wd \
+    $(find $src -type f -a  -name wd -a -printf '%P\n')
+}
+
 parse-json-sh() {
   _parse-project ~/git/other/JSON.sh
 }
