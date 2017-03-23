@@ -12,11 +12,11 @@
 
 -- Unrepresented:
 -- * extended globs: unlike globs, these are parsed up front
--- * Brace expansion: should this be another kind of 'word'?  It can be
---   expanded at compile time.
+--   * hidden behind set -o extglob
 -- * let arithmetic (rarely used)
--- * coprocesses -- two kinds
--- * time builtin can take a block
+-- * coprocesses -- one with arg and one without
+-- * time builtin can a pipeline/block
+-- * Append operator in Assignment: +=
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
