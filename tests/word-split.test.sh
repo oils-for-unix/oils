@@ -55,6 +55,10 @@ func() { argv.py "-$@-"; }
 func "a 1" "b 2" "c 3"
 # stdout: ['-a 1', 'b 2', 'c 3-']
 
+### empty argv
+argv.py 1 "$@" 2 $@ 3 "$*" 4 $* 5
+# stdout: ['1', '2', '3', '', '4', '5']
+
 ### Word elision with space
 s1=' '
 argv.py $s1
