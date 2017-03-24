@@ -183,6 +183,12 @@ assign() {
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
+background() {
+  sh-spec tests/background.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH "$@" 
+}
+
+
 # Need to fix $ tokens, and $''
 quote() {
   sh-spec tests/quote.test.sh --osh-failures-allowed 4 \
@@ -211,7 +217,7 @@ test-builtin() {
 }
 
 builtins() {
-  sh-spec tests/builtins.test.sh --osh-failures-allowed 1 \
+  sh-spec tests/builtins.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

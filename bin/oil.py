@@ -155,6 +155,11 @@ def Options():
   p.add_option(
       '--no-exec', dest='do_exec', action='store_false', default=True,
       help="Don't execute anything (useful with --print-ast)")
+  p.add_option(
+      '--hijack-shebang', dest='hijack_shebang', action='append',
+      metavar='/bin/foo',
+      help="Before executing programs, look for this shebang line, and "
+           "substitute it with Oil.  For porting.")
 
   # TODO:
   # --dump / --debug outputs:

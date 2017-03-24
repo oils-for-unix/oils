@@ -448,6 +448,11 @@ class CommandParser(object):
       else:
         # In aboriginal in variables/sources: export_if_blank does export "$1".
         # We should allow that.
+
+        # Parse this differently then?
+        # dynamic-export?
+        # It sets global variables.
+
         ok, value, quoted = word.StaticEval(w)
         if not ok or quoted:
           self.AddErrorContext(

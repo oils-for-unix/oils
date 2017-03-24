@@ -22,3 +22,32 @@ exit invalid
 # Rationale: runtime errors are 1
 # status: 1
 # OK dash/bash status: 2
+
+### Export sets a global variable
+# Even after you do export -n, it still exists.
+f() { export GLOBAL=X; }
+f
+echo $GLOBAL
+printenv.py GLOBAL
+# stdout-json: "X\nX\n"
+
+### Export sets a global variable that persists after export -n
+f() { export GLOBAL=X; }
+f
+echo $GLOBAL
+printenv.py GLOBAL
+export -n GLOBAL
+echo $GLOBAL
+printenv.py GLOBAL
+# stdout-json: "X\nX\nX\nNone\n"
+# N-I mksh/dash stdout-json: "X\nX\n"
+
+### Export a global variable and unset it
+f() { export GLOBAL=X; }
+f
+echo $GLOBAL
+printenv.py GLOBAL
+unset GLOBAL
+echo $GLOBAL
+printenv.py GLOBAL
+# stdout-json: "X\nX\n\nNone\n"
