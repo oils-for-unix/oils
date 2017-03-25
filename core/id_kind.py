@@ -353,7 +353,9 @@ def _AddKinds(spec):
   # different from keywords because env bindings can appear before, e.g.
   # FOO=bar local v.
   # "None" could either be a global variable or assignment to a local.
-  spec.AddKind('Assign', ['Declare', 'Export', 'Local', 'Readonly', 'None'])
+  # NOTE: We're not parsing export here.  Although it sets a global variable,
+  # and has the same syntax, too many scripts use it in a dynamic fashion.
+  spec.AddKind('Assign', ['Declare', 'Local', 'Readonly', 'None'])
 
   # Unlike bash, we parse control flow statically.  They're not
   # dynamically-resolved builtins.

@@ -395,28 +395,6 @@ class OilPrinter:
         else:
           new_assign_op = ':='
 
-    elif node.keyword == Id.Assign_Export:
-      # Flags:
-      # -n: remove the property!
-      #
-      # I would do this:
-      # export FOO = 'bar' {
-      # }
-      # pop export FOO
-      # Or just keep -n, sinec probably very few people use it.
-
-      keyword_spid = node.spids[0]
-
-      if at_top_level:
-        # We don't know if it was defined elsewhere
-        new_assign_op = '::='
-      elif defined_locally:
-        self.f.write('export TODO := TODO')
-      else:
-        # Mutating a global
-        #self.f.write('export global TODO := TODO')
-        pass
-
     elif node.keyword == Id.Assign_Readonly:
       # Explicit const.  Assume it can't be redefined.
       # Verb.

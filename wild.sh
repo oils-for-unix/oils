@@ -23,6 +23,10 @@ readonly RESULT_DIR=_tmp/wild
 # Helpers
 # 
 
+log() {
+  echo "$@" 1>&2
+}
+
 # Default abbrev-text format
 osh-parse() {
   bin/osh --ast-output - --no-exec "$@"
@@ -97,7 +101,7 @@ _parse-and-copy-one() {
   # So it's not executable.
   cat < $input > ${output}.txt
 
-  if ! _parse-one $input $output; then  # text AST
+  if ! _parse-one $input $output; then  # Conver to text AST
     echo $rel_path >>$dest_base/FAILED.txt
 
     # Append
@@ -111,15 +115,17 @@ _parse-and-copy-one() {
     </pre>
     <hr/>
 EOF
+
+    log "*** Failed to parse $rel_path"
     return 1
   fi
   #rm ${output}__err.txt
 
-  if ! _osh-html-one $input $output; then  # do HTML AST if text AST worked
+  if ! _osh-html-one $input $output; then  # Convert to HTML AST
     return 1
   fi
 
-  if ! _osh-to-oil-one $input $output; then  # convert to oil
+  if ! _osh-to-oil-one $input $output; then  # Convert to Oil
     return 1
   fi
 }

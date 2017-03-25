@@ -181,7 +181,6 @@ _KEYWORDS = [
   C('function', Id.KW_Function),
 
   C('declare',  Id.Assign_Declare),
-  C('export',   Id.Assign_Export),
   C('local',    Id.Assign_Local),
   C('readonly', Id.Assign_Readonly),
 
