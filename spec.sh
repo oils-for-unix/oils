@@ -184,7 +184,7 @@ assign() {
 }
 
 background() {
-  sh-spec tests/background.test.sh --osh-failures-allowed 3 \
+  sh-spec tests/background.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
