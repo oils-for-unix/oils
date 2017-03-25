@@ -117,6 +117,7 @@ class Mem(object):
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
     self.SetGlobalString(ast.LeftVar('IFS'), ' \t\n')
+    self.SetGlobalString(ast.LeftVar('PWD'), os.getcwd())
 
   def Push(self, argv):
     self.top = {}
@@ -227,6 +228,29 @@ class Mem(object):
     pass
 
 
+class CdState:
+  """State for builtins that change the working directory."""
+
+  def __init__(self, mem):
+    self.mem = mem  # PWD, OLDPWD
+    self.dir_stack = []
+
+  def Cd(self, argv):
+    # TODO: Parse flags, error checking, etc.
+    d = argv[1]
+    os.chdir(d)
+    self.mem.SetGlobalString(ast.LeftVar('PWD'), d)
+    return 0
+
+  def Pushd(self, argv):
+    raise NotImplementedError
+    return 0
+
+  def Popd(self, argv):
+    raise NotImplementedError
+    return 0
+
+
 class _FatalError(RuntimeError):
   """Internal exception for fatal errors."""
   pass
@@ -302,8 +326,7 @@ class Executor(object):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.jobs = {}
 
-    # for pushd, popd, dirs (though these are all bash-specific)
-    self.dir_stack = []
+    self.cd_state = CdState(mem)
 
     self.traceback = None
     self.traceback_msg = ''
@@ -462,6 +485,15 @@ class Executor(object):
     elif builtin_id == EBuiltin.ECHO:
       status = self._Echo(argv)
 
+    elif builtin_id == EBuiltin.CD:
+      status = self.cd_state.Cd(argv)
+
+    elif builtin_id == EBuiltin.PUSHD:
+      status = self.cd_state.Pushd(argv)
+
+    elif builtin_id == EBuiltin.POPD:
+      status = self.cd_state.Popd(argv)
+
     elif builtin_id == EBuiltin.EXIT:
       try:
         code = int(argv[1])
@@ -501,6 +533,7 @@ class Executor(object):
     else:
       raise AssertionError('Unhandled builtin: %d' % builtin_id)
 
+    assert isinstance(status, int)
     return status
 
   def RunFunc(self, func_node, argv):

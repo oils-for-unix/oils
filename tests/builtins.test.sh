@@ -1,5 +1,24 @@
 #!/bin/bash
 
+### cd and $PWD
+cd /
+echo $PWD
+# stdout: /
+
+### $OLDPWD
+cd /
+cd $TMP
+echo "old: $OLDPWD"
+cd -
+# stdout-json: "old: /\n/\n"
+
+### Source
+lib=$TMP/spec-test-lib.sh
+echo 'LIBVAR=libvar' > $lib
+. $lib  # dash doesn't have source
+echo $LIBVAR
+# stdout: libvar
+
 ### time block
 # bash and mksh work; dash does't.  TODO: test substring
 { time { sleep 0.01; sleep 0.02; } } 2>_tmp/time.txt
@@ -51,3 +70,4 @@ unset GLOBAL
 echo $GLOBAL
 printenv.py GLOBAL
 # stdout-json: "X\nX\n\nNone\n"
+

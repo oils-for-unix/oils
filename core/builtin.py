@@ -110,7 +110,8 @@ from core import util
 # - So you can just add "complete" and have it work.
 
 EBuiltin = util.Enum('EBuiltin', """
-NONE READ ECHO EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE COMPGEN DEBUG_LINE
+NONE READ ECHO CD PUSHD POPD
+EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE COMPGEN DEBUG_LINE
 """.split())
 
 
@@ -204,9 +205,6 @@ class BuiltinDef(object):
         Bash has a man page thing, but we don't need that.
 
       special: Whether it's a special builtin.
-      assign: Whether it's an assignment?  These are implemented inside the
-      command Executor.
-      Do we need
     """
     self.name = name
     self.arg_spec = arg_spec
@@ -216,6 +214,13 @@ NO_ARGS = ArgSpec("", "", "", [])
 
 # TODO:
 DECLARE_LOCAL_ARGS = ArgSpec("", "", "", [])
+
+
+# TODO: local/declare/global should be statically parsed, but readonly and export
+# are dynamic builtins?  That would be more consistent.
+#
+# declare can be dynamic -- code='FOO=xx'; declare $code works.
+# Maybe only local and global, and declare is thed ynamic version
 
 BUILTINS = [
     # local has options as 'declare'.
@@ -242,13 +247,13 @@ BUILTINS = [
       ),
     BuiltinDef("export", ArgSpec("", "", "", [])),
 
-    # Control flow builtins.  No options, could have args
-    BuiltinDef("break", NO_ARGS),
-    BuiltinDef("continue", NO_ARGS),
-    BuiltinDef("return", NO_ARGS),
-
     BuiltinDef("read", NO_ARGS),
     BuiltinDef("echo", NO_ARGS),
+
+    BuiltinDef("cd", NO_ARGS),
+    BuiltinDef("pushd", NO_ARGS),
+    BuiltinDef("popd", NO_ARGS),
+
     BuiltinDef("exit", NO_ARGS),
 
     # These are aliases
@@ -311,10 +316,19 @@ class Builtins(object):
     # For completion, this is a flat list of names.  Although coloring them
     # would be nice.
 
+    # TODO: Use BuiltinDef instances in BUILTINS to initialize.
+
     if argv0 == "read":
       return EBuiltin.READ
     elif argv0 == "echo":
       return EBuiltin.ECHO
+    elif argv0 == "cd":
+      return EBuiltin.CD
+    elif argv0 == "pushd":
+      return EBuiltin.PUSHD
+    elif argv0 == "popd":
+      return EBuiltin.POPD
+
     elif argv0 == "exit":
       return EBuiltin.EXIT
 

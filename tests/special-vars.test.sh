@@ -1,5 +1,10 @@
 #!/bin/bash
 
+### $PWD
+# Just test that it has a slash for now.
+echo $PWD | grep -o /
+# status: 0
+
 ### $?
 echo $?  # starts out as 0
 sh -c 'exit 33'
@@ -55,12 +60,6 @@ argv.py "${PIPESTATUS[@]}"
 # stdout: ['0', '33', '0']
 # N-I dash stdout-json: ""
 # N-I dash status: 2
-
-### $PWD
-cd /
-echo $PWD
-# status: 0
-# stdout: /
 
 ### $RANDOM
 expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue

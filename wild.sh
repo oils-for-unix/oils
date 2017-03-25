@@ -262,7 +262,8 @@ parse-pixelb-scripts() {
 }
 
 parse-debootstrap() {
-  local src=~/git/basis-build/_tmp/debootstrap-1.0.48+deb7u2
+  # Version 1.0.89 extracts to a version-less dir.
+  local src=~/git/basis-build/_tmp/debootstrap
 
   # NOTE: These scripts don't end with *.sh
   _parse-many \

@@ -217,7 +217,7 @@ test-builtin() {
 }
 
 builtins() {
-  sh-spec tests/builtins.test.sh --osh-failures-allowed 4 \
+  sh-spec tests/builtins.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -287,7 +287,7 @@ posix() {
 }
 
 special-vars() {
-  sh-spec tests/special-vars.test.sh --osh-failures-allowed 8 \
+  sh-spec tests/special-vars.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
