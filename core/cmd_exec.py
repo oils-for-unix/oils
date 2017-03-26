@@ -228,26 +228,25 @@ class Mem(object):
     pass
 
 
-class CdState:
-  """State for builtins that change the working directory."""
+class DirStack:
+  """State for pushd/popd."""
 
-  def __init__(self, mem):
-    self.mem = mem  # PWD, OLDPWD
+  def __init__(self):
     self.dir_stack = []
 
-  def Cd(self, argv):
-    # TODO: Parse flags, error checking, etc.
-    d = argv[1]
-    os.chdir(d)
-    self.mem.SetGlobalString(ast.LeftVar('PWD'), d)
-    return 0
-
   def Pushd(self, argv):
-    raise NotImplementedError
+    self.dir_stack.append(os.getcwd())
+    dest_dir = argv[1]
+    os.chdir(dest_dir)  # TODO: error checking
     return 0
 
   def Popd(self, argv):
-    raise NotImplementedError
+    try:
+      dest_dir = self.dir_stack.pop()
+    except IndexError:
+      log('popd: directory stack is empty')
+      return 1
+    os.chdir(dest_dir)  # TODO: error checking
     return 0
 
 
@@ -326,7 +325,7 @@ class Executor(object):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.jobs = {}
 
-    self.cd_state = CdState(mem)
+    self.dir_stack = DirStack()
 
     self.traceback = None
     self.traceback_msg = ''
@@ -470,6 +469,27 @@ class Executor(object):
     else:
       return 0
 
+  def _Cd(self, argv):
+    # TODO: Parse flags, error checking, etc.
+    dest_dir = argv[1]
+    if dest_dir == '-':
+      old = self.mem.Get('OLDPWD')
+      if old.tag == value_e.Undef:
+        log('OLDPWD not set')
+        return 1
+      elif old.tag == value_e.Str:
+        dest_dir = old.s
+        print(dest_dir)  # Shells print the directory
+      elif old.tag == value_e.StrArray:
+        # Prevent the user from setting to array?
+        raise AssertionError
+
+    # Save OLDPWD.
+    self.mem.SetGlobalString(ast.LeftVar('OLDPWD'), os.getcwd())
+    os.chdir(dest_dir)
+    self.mem.SetGlobalString(ast.LeftVar('PWD'), dest_dir)
+    return 0
+
   def RunBuiltin(self, builtin_id, argv):
     restore_fd_state = True
 
@@ -486,13 +506,13 @@ class Executor(object):
       status = self._Echo(argv)
 
     elif builtin_id == EBuiltin.CD:
-      status = self.cd_state.Cd(argv)
+      status = self._Cd(argv)
 
     elif builtin_id == EBuiltin.PUSHD:
-      status = self.cd_state.Pushd(argv)
+      status = self.dir_stack.Pushd(argv)
 
     elif builtin_id == EBuiltin.POPD:
-      status = self.cd_state.Popd(argv)
+      status = self.dir_stack.Popd(argv)
 
     elif builtin_id == EBuiltin.EXIT:
       try:

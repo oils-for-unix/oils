@@ -12,6 +12,15 @@ echo "old: $OLDPWD"
 cd -
 # stdout-json: "old: /\n/\n"
 
+### pushd/popd
+set -o errexit
+cd /
+pushd $TMP
+popd
+pwd
+# status: 0
+# N-I dash/mksh status: 127
+
 ### Source
 lib=$TMP/spec-test-lib.sh
 echo 'LIBVAR=libvar' > $lib

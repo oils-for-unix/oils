@@ -241,7 +241,7 @@ all-serial() {
   cat _tmp/spec/MANIFEST.txt | while read t; do
     echo $t
     # Run the wrapper function here
-    ./spec-file.sh $t --format html > _tmp/spec/${t}.html || {
+    ./spec.sh $t --format html > _tmp/spec/${t}.html || {
       echo "FAILED"
       exit 1
     }
