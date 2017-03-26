@@ -24,7 +24,7 @@ pylibc() {
 
   # Wildcard to match any Python 3 version.
   shopt -s failglob
-  local so=$(echo build/lib.linux-x86_64-3.*/libc.cpython-3*.so)
+  local so=$(echo build/lib.linux-$(uname -m)-3.*/libc.cpython-3*.so)
 
   ln -s -f --verbose ../$so core/libc.so
 }
