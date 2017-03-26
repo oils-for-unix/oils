@@ -53,6 +53,8 @@ from core import word_eval
 from core import ui
 from core import util
 
+log = util.log
+
 
 class UsageError(RuntimeError):
   """ Exception for incorrect command line usage. """

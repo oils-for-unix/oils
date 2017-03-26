@@ -18,28 +18,43 @@ from core.util import log
 from core.id_kind import REDIR_DEFAULT_FD
 
 
-class FdState(object):
-  """This is for the current process, not child processes?"""
-
-  def __init__(self, base_fd=10):
-    self.base_fd = base_fd
-    self.next_fd = base_fd
+class _FdFrame:
+  def __init__(self):
     self.saved = []
     self.need_close = []
+
+  def __repr__(self):
+    return '<_FdFrame %s %s>' % (self.saved, self.need_close)
+
+
+class FdState:
+  """This is for the current process, as opposed to child processes. 
+
+  For example, you can do 'myfunc > out.txt' without forking.
+  """
+  def __init__(self, next_fd=10):
+    self.next_fd = next_fd  # where to start saving descriptors
+    self.cur_frame = _FdFrame()
+    self.stack = [self.cur_frame]
+    #self.saved = []
+    #self.need_close = []
+
+  def PushFrame(self):
+    #log('> PushFrame')
+    new_frame = _FdFrame()
+    self.stack.append(new_frame)
+    self.cur_frame = new_frame
 
   def SaveAndDup(self, fd1, fd2):
     """
     Save fd2 and dup fd1 onto fd2.
     """
-    #sys.stdout.write('---- %s %s\n' % (fd1, fd2))
-
-    #print('SaveAndDup %s %s (saving to: %d)' % (fd1, fd2, self.next_fd))
+    #log('---- SaveAndDup %s %s\n', fd1, fd2)
     fcntl.fcntl(fd2, fcntl.F_DUPFD, self.next_fd)
     os.close(fd2)
     fcntl.fcntl(self.next_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
-    #sys.stdout.write('==== %s %s\n' % (fd1, fd2))
-
+    #log('==== dup %s %s\n' % (fd1, fd2))
     try:
       os.dup2(fd1, fd2)
     except OSError as e:
@@ -54,27 +69,32 @@ class FdState(object):
     # Oh this is wrong?
     #os.close(fd1)
 
-    self.saved.append((self.next_fd, fd2))
+    self.cur_frame.saved.append((self.next_fd, fd2))
     self.next_fd += 1
     return True
 
   def NeedClose(self, fd):
-    self.need_close.append(fd)
+    self.cur_frame.need_close.append(fd)
 
-  def RestoreAll(self):
-    for saved, orig in reversed(self.saved):
+  def PopAndRestore(self):
+    frame = self.stack.pop()
+    #log('< Pop %s', frame)
+    for saved, orig in reversed(frame.saved):
       os.dup2(saved, orig)
       os.close(saved)
-    self.saved = []
-    #print('dup2 %s %s' % (fd1, fd2))
-    self.next_fd = self.base_fd
+      #log('dup2 %s %s', saved, orig)
+      self.next_fd -= 1  # Count down
 
-    for fd in self.need_close:
-      os.close(fd)
+    for fd in frame.need_close:
+      #log('Close %d', fd)
+      try:
+        os.close(fd)
+      except OSError as e:
+        log('Error closing descriptor %d: %s', fd, e)
+        raise
 
-  def ForgetAll(self):
-    self.saved = []
-    self.need_close = []
+  def PopAndForget(self):
+    self.stack.pop()
 
 
 class Redirect(object):
@@ -123,32 +143,34 @@ class WritePipeRedirect(Redirect):
 class UserRedirect(Redirect):
   """Redirects written in source code?"""
 
-  def __init__(self, id, fd):
+  def __init__(self, op_id, fd):
     if fd == -1:
-      fd = REDIR_DEFAULT_FD[id]
+      fd = REDIR_DEFAULT_FD[op_id]
     Redirect.__init__(self, fd)
-    self.id = id
+    self.op_id = op_id
 
 
 class FilenameRedirect(UserRedirect):
-  def __init__(self, id, fd, filename):
-    UserRedirect.__init__(self, id, fd)
+  def __init__(self, op_id, fd, filename):
+    UserRedirect.__init__(self, op_id, fd)
     self.filename = filename
 
   def ApplyInChild(self):
+    # TODO: Implement stdin
     target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
     os.dup2(target_fd, self.fd)
     os.close(target_fd)
 
   def ApplyInParent(self, fd_state):
     target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+    #log('fd %d - target fd %d', self.fd, target_fd)
     fd_state.SaveAndDup(target_fd, self.fd)
     fd_state.NeedClose(target_fd)
 
 
 class DescriptorRedirect(UserRedirect):
-  def __init__(self, id, fd, target_fd):
-    UserRedirect.__init__(self, id, fd)
+  def __init__(self, op_id, fd, target_fd):
+    UserRedirect.__init__(self, op_id, fd)
     self.target_fd = target_fd
 
   def ApplyInChild(self):
@@ -159,8 +181,8 @@ class DescriptorRedirect(UserRedirect):
 
 
 class HereDocRedirect(UserRedirect):
-  def __init__(self, id, fd, body_str):
-    UserRedirect.__init__(self, id, fd)
+  def __init__(self, op_id, fd, body_str):
+    UserRedirect.__init__(self, op_id, fd)
     self.body_str = body_str
     self.r = -1
     self.w = -1

@@ -39,8 +39,7 @@ one-spec-test() {
   _compare ./spec.sh builtins-special
 }
 
-# Fails because of redirect of function stdout!
-# Oh because it should be run in a  separate process?
+# Uses redirect of functions.
 html-summary() {
   _compare ./spec-runner.sh html-summary
 }

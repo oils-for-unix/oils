@@ -778,6 +778,13 @@ class Executor(object):
         status = p.Run()
 
       else:  # Internal
+        #log('ARGV %s', argv)
+
+        # NOTE: _EvalRedirects turns LST nodes into core/process.py nodes.  And
+        # then we use polymorphism here.  Does it make sense to use functional
+        # style based on the RedirType?  Might be easier to read.
+
+        self.fd_state.PushFrame()
         for r in redirects:
           r.ApplyInParent(self.fd_state)
 
@@ -786,12 +793,11 @@ class Executor(object):
 
         # Special case for exec 1>&2 (with no args): we permanently change the
         # fd state.  BUT we don't want to restore later.
-        #
         # TODO: Instead of this, maybe r.ApplyPermaent(self.fd_state)?
         if restore_fd_state:
-          self.fd_state.RestoreAll()
+          self.fd_state.PopAndRestore()
         else:
-          self.fd_state.ForgetAll()
+          self.fd_state.PopAndForget()
 
     elif node.tag == command_e.Sentence:
       # TODO: Compile this away.
