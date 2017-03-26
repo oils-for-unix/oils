@@ -43,4 +43,9 @@ module runtime
   -- For Oil?
   -- | ArrayInt(int* array_int)
   -- | ArrayBool(bool* a)
+
+
+  -- For storing a variable.
+  cell = (value val, bool exported, bool readonly)
 }
+

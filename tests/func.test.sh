@@ -46,4 +46,14 @@ g() {
 g
 # stdout: g_var
 
-
+### Dynamic Scope Mutation (wow this is bad)
+f() {
+  g_var=f_mutation
+}
+g() {
+  local g_var=g_var
+  f
+  echo "g: $g_var"
+}
+g
+# stdout: g: f_mutation

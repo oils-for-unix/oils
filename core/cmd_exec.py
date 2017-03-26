@@ -104,7 +104,7 @@ class Mem(object):
   """
 
   def __init__(self, argv0, argv):
-    self.top = {}  # string -> (flags, runtime.value)
+    self.top = {}  # string -> runtime.cell
     self.var_stack = [self.top]
     self.argv0 = argv0
     self.argv_stack = [argv]
@@ -116,17 +116,39 @@ class Mem(object):
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
-    self.SetGlobalString(ast.LeftVar('IFS'), ' \t\n')
-    self.SetGlobalString(ast.LeftVar('PWD'), os.getcwd())
+    self.SetGlobalString('IFS', ' \t\n')
+    self.SetGlobalString('PWD', os.getcwd())
+
+  #
+  # Stack
+  #
 
   def Push(self, argv):
-    self.top = {}
-    self.var_stack.append(self.top)
+    self.var_stack.append({})
     self.argv_stack.append(argv)
 
   def Pop(self):
     self.var_stack.pop()
     self.argv_stack.pop()
+
+  def PushTemp(self):
+    """For FOO=bar BAR=baz command."""
+    self.var_stack.append({})
+
+  def PopTemp(self):
+    """For FOO=bar BAR=baz command."""
+    self.var_stack.pop()
+
+  def GetTraceback(self, token):
+    """For runtime and parse time errors."""
+    # TODO: When you Push(), add a function pointer.  And then walk
+    # self.argv_stack here.
+    # We also need a token number.
+    pass
+
+  #
+  # Argv
+  #
 
   def GetArgv0(self):
     """For $0."""
@@ -142,37 +164,71 @@ class Mem(object):
     # from set -- 1 2 3
     self.argv_stack[-1] = argv
 
+  #
+  # Helper
+  #
+
+  def _FindInScope(self, name):
+    # TODO: Return the right scope.  Respect 
+    # compat dynamic-scope flag?
+    # or is it shopt or set ?
+    # oilopt?
+    pass
+
+  def _SetInScope(self, scope, pairs):
+    for lhs, val in pairs:
+      #log('SETTING %s -> %s', lhs, value)
+      assert val.tag in (value_e.Str, value_e.StrArray)
+
+      name = lhs.name
+      if name in scope:
+        # Preserve cell flags.  For example, could be Undef and exported!
+        scope[name].val = val
+      else:
+        scope[name] = runtime.cell(val, False, False)
+
+  #
+  # Globals
+  #
+
+  def GetGlobal(self, name):
+    """Helper for completion."""
+    g = self.var_stack[0]  # global scope
+    if name in g:
+      return g[name].val
+
+    return runtime.Undef()
+
+  def SetGlobals(self, pairs):
+    """For completion."""
+    self._SetInScope(self.var_stack[0], pairs)
+
   def SetGlobalArray(self, name, a):
     """Helper for completion."""
     assert isinstance(a, list)
     val = runtime.StrArray(a)
-    pairs = [(name, val)]
-    self.SetGlobal(pairs, 0)
+    pairs = [(ast.LeftVar(name), val)]
+    self.SetGlobals(pairs)
 
   def SetGlobalString(self, name, s):
     """Helper for completion."""
     assert isinstance(s, str)
     val = runtime.Str(s)
-    pairs = [(name, val)]
-    self.SetGlobal(pairs, 0)
+    pairs = [(ast.LeftVar(name), val)]
+    self.SetGlobals(pairs)
 
-  def GetGlobal(self, name):
-    """Helper for completion."""
-    g = self.var_stack[0]  # global scope
-    #print('!!GetGlobal', self.var_stack)
-    if name in g:
-      _, value = g[name]
-      return True, value
-    return False, None
+  #
+  # Locals
+  #
 
   def Get(self, name):
     # TODO: Don't implement dynamic scope
     for i in range(len(self.var_stack) - 1, -1, -1):
       scope = self.var_stack[i]
       if name in scope:
+        #log('Get %s -> %s in scope %d', name, scope[name].val, i)
         # Don't need to use flags
-        _, value = scope[name]
-        return value
+        return scope[name].val
 
     # Fall back on environment
     v = os.getenv(name)
@@ -181,50 +237,66 @@ class Mem(object):
 
     return runtime.Undef()
 
-  def SetGlobal(self, pairs, flags):
-    """For completion."""
-    g = self.var_stack[0]  # global scope
-    for lhs, value in pairs:
-      #log('SETTING %s -> %s', lhs, value)
-      assert value.tag in (value_e.Str, value_e.StrArray)
-
-      # Assuming LeftVar for now.
-      g[lhs.name] = flags, value
-
-  def SetLocal(self, pairs, flags):
-    # TODO: respect flags
-    # TRACE: hm maybe.  It's for debugging, but seems exotic.
-
-    # types: indexed, associative, integer?  Not sure if any of these are
-    # valuable.  Integer could be useful for type checking, but this is a
-    # DYNAMIC flag.
-
-    # - If the value is readonly, don't set it.
-    # - If the value is marked 'export', call setenv()
-
+  def SetLocals(self, pairs):
     # - Never change types?  yeah I think that's a good idea, at least for oil
     # (not sh, for compatibility).  set -o strict-types or something.  That
     # means arrays have to be initialized with let arr = [], which is fine.
-
     # This helps with stuff like IFS.  It starts off as a string, and assigning
     # it to a list is en error.  I guess you will have to turn this no for
     # bash?
-    for lhs, value in pairs:
-      assert value.tag in (value_e.Str, value_e.StrArray)
-      # Assuming LeftVar for now.
-      self.top[lhs.name] = flags, value
 
-  def SetSimpleVar(self, name, value):
-    """Set a simple variable (not an array)."""
-    self.top[name] = 0, value
+    # TODO: Shells have dynamic scope for setting variables.  This is really
+    # bad.
+    self._SetInScope(self.var_stack[-1], pairs)
 
-  # Are special vars here?  # like $? and $0 ?
-  # IFS, PWD, etc.
+  def SetLocal(self, name, val):
+    """Set a single local.""" 
+    pairs = [(ast.LeftVar(name), val)]
+    self.SetLocals(pairs)
 
-  def GetTraceback(self, token):
-    # TODO: When you Push(), add a function pointer.  And then walk
-    # self.argv_stack here.
-    # We also need a token number.
+  def Unset(self, name):
+    # For unset -v (variable)
+    # unset -f is different.
+    raise NotImplementedError
+
+  #
+  # Export
+  #
+
+  def SetExportFlag(self, name, b):
+    """
+    First look for local, then global
+    """
+    found = False
+    for i in range(len(self.var_stack) - 1, -1, -1):
+      scope = self.var_stack[i]
+      if name in scope:
+        cell = scope[name]
+        cell.exported = b
+        found = True
+        break
+
+    if not found:
+      # You can export an undefined variable!
+      scope[name] = runtime.cell(runtime.Undef(), True, False)
+
+  def GetExported(self):
+    exported = {}
+    # Search from globals up.  Names higher on the stack will overwrite names
+    # lower on the stack.
+    for scope in self.var_stack:
+      for name, cell in scope.items():
+        if cell.exported and cell.val.tag == value_e.Str:
+          exported[name] = cell.val.s
+    return exported
+
+  #
+  # Readonly
+  #
+
+  def SetReadonlyFlag(self, name, b):
+    # Or should this get a flag name?
+    # readonly needs to be respected with 'set'.
     pass
 
 
@@ -350,8 +422,7 @@ class Executor(object):
       return 1
     # TODO: split line and do that logic
     val = runtime.Str(line.strip())
-    pairs = [(ast.LeftVar(names[0]), val)]
-    self.mem.SetLocal(pairs, 0)  # read always uses local variables?
+    self.mem.SetLocal(names[0], val)
     return 0
 
   def _Echo(self, argv):
@@ -485,9 +556,24 @@ class Executor(object):
         raise AssertionError
 
     # Save OLDPWD.
-    self.mem.SetGlobalString(ast.LeftVar('OLDPWD'), os.getcwd())
+    self.mem.SetGlobalString('OLDPWD', os.getcwd())
     os.chdir(dest_dir)
-    self.mem.SetGlobalString(ast.LeftVar('PWD'), dest_dir)
+    self.mem.SetGlobalString('PWD', dest_dir)
+    return 0
+
+  def _Export(self, argv):
+    for arg in argv:
+      parts = arg.split('=', 1)
+      if len(parts) == 1:
+        name = parts[0]
+      else:
+        name, val = parts
+        # TODO: Set the global flag
+        self.mem.SetGlobalString(name, val)
+
+      # May create an undefined variable
+      self.mem.SetExportFlag(name, True)
+
     return 0
 
   def RunBuiltin(self, builtin_id, argv):
@@ -524,6 +610,9 @@ class Executor(object):
         code = 1  # Runtime Error
       # TODO: Should this be turned into our own SystemExit exception?
       sys.exit(code)
+
+    elif builtin_id == EBuiltin.EXPORT:
+      status = self._Export(argv)
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
@@ -620,10 +709,8 @@ class Executor(object):
       if argv is None:
         err = self.ev.Error()
         raise AssertionError("Error evaluating words: %s" % err)
-      more_env = self._EvalEnv(node.more_env)
-      if more_env is None:
-        # TODO: proper error
-        raise AssertionError()
+      more_env = self.mem.GetExported()
+      self._EvalEnv(node.more_env, more_env)
       thunk = self._GetThunkForSimpleCommand(argv, more_env)
 
     elif node.tag == command_e.ControlFlow:
@@ -712,34 +799,32 @@ class Executor(object):
         raise AssertionError
     return redirects
 
-  def _EvalEnv(self, more_env):
+  def _EvalEnv(self, node_env, out_env):
     """Evaluate environment variable bindings.
 
     Args:
       more_env: list of ast.env_pair
-
-    Returns:
-      A dictionary of strings to strings
-
-    Side effect: sets local variables so bindings can reference each other.
-      Hm.  Is this wrong?
+      out_env: mutated.
     """
-    result = {}
-    for env_pair in more_env:
+    # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
+    # pushes argv.  Don't need that?
+    self.mem.PushTemp()  
+    for env_pair in node_env:
       name = env_pair.name
       rhs = env_pair.val
 
+      # Could pass extra bindings like out_env here?  But PushTemp should work?
       ok, val = self.ev.EvalWordToString(rhs)
       if not ok:
         raise AssertionError
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetSimpleVar(name, val)
+      self.mem.SetLocal(name, val)
       # TODO: Need to pop bindings for simple commands.  Need a stack.
 
-      result[name] = val.s
-    return result
+      out_env[name] = val.s
+    self.mem.PopTemp()
 
   def _RunPipeline(self, node):
     # TODO: Also check for "echo" and "read".  Turn them into HereDocRedirect()
@@ -785,11 +870,8 @@ class Executor(object):
       if argv is None:
         self.error_stack.extend(self.ev.Error())
         raise _FatalError()
-      more_env = self._EvalEnv(node.more_env)
-      if more_env is None:
-        print(self.error_stack)
-        # TODO: throw exception
-        raise AssertionError()
+      more_env = self.mem.GetExported()
+      self._EvalEnv(node.more_env, more_env)
       thunk = self._GetThunkForSimpleCommand(argv, more_env)
 
       # Don't waste a process if we'd launch one anyway.
@@ -862,11 +944,10 @@ class Executor(object):
           raise _FatalError()
         pairs.append((pair.lhs, val))
 
-      flags = 0  # TODO: Calculate from keyword/flags
       if node.keyword == Id.Assign_Local:
-        self.mem.SetLocal(pairs, flags)
+        self.mem.SetLocals(pairs)
       else:  # could be readonly/export/etc.
-        self.mem.SetGlobal(pairs, flags)
+        self.mem.SetGlobals(pairs)
 
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
@@ -941,7 +1022,9 @@ class Executor(object):
         # object.
       status = 0  # in case we don't loop
       for x in iter_list:
-        self.mem.SetSimpleVar(iter_name, runtime.Str(x))
+        #log('> ForEach setting %r', x)
+        self.mem.SetLocal(iter_name, runtime.Str(x))
+        #log('<')
 
         try:
           status = self._Execute(node.body)  # last one wins

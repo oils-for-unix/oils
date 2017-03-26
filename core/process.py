@@ -34,10 +34,8 @@ class FdState:
   """
   def __init__(self, next_fd=10):
     self.next_fd = next_fd  # where to start saving descriptors
-    self.cur_frame = _FdFrame()
+    self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
-    #self.saved = []
-    #self.need_close = []
 
   def PushFrame(self):
     #log('> PushFrame')

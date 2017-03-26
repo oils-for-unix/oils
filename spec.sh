@@ -217,7 +217,7 @@ test-builtin() {
 }
 
 builtins() {
-  sh-spec tests/builtins.test.sh --osh-failures-allowed 6 \
+  sh-spec tests/builtins.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -235,7 +235,8 @@ func-parsing() {
 }
 
 func() {
-  sh-spec tests/func.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec tests/func.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 glob() {
@@ -271,7 +272,7 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec tests/here-doc.test.sh --osh-failures-allowed 9 --range 1-27 \
+  sh-spec tests/here-doc.test.sh --osh-failures-allowed 8 --range 1-27 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

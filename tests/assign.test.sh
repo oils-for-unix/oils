@@ -1,5 +1,10 @@
 #!/bin/bash
 
+### Env value doesn't persist
+FOO=foo printenv.py FOO
+echo [$FOO]
+# stdout-json: "foo\n[]\n"
+
 ### Env value with equals
 FOO=foo=foo printenv.py FOO
 # stdout: foo=foo

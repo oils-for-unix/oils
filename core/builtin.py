@@ -111,6 +111,7 @@ from core import util
 
 EBuiltin = util.Enum('EBuiltin', """
 NONE READ ECHO CD PUSHD POPD
+EXPORT
 EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE COMPGEN DEBUG_LINE
 """.split())
 
@@ -328,6 +329,9 @@ class Builtins(object):
       return EBuiltin.PUSHD
     elif argv0 == "popd":
       return EBuiltin.POPD
+
+    elif argv0 == "export":
+      return EBuiltin.EXPORT
 
     elif argv0 == "exit":
       return EBuiltin.EXIT

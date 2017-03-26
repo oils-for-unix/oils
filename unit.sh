@@ -18,8 +18,12 @@ source spec-runner.sh  # TODO: Separate this?
 
 export PYTHONPATH=.  # current dir
 
-# For auto-complete
 one() {
+  "$@"
+}
+
+# For auto-complete
+unit() {
   "$@"
 }
 

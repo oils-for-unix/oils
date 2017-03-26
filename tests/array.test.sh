@@ -137,12 +137,15 @@ argv.py "${a[@]}"
 ### Exporting array doesn't do anything, not even first element
 # bash parses, but doesn't execute.
 # mksh gives syntax error -- parses differently with 'export'
+# osh no longer parses this statically.
 export PYTHONPATH=(a b c)
 export PYTHONPATH=a  # NOTE: in bash, this doesn't work afterward!
 printenv.py PYTHONPATH
 # stdout: None
-# BUG mksh stdout-json: ""
-# BUG mksh status: 1
+# OK mksh stdout-json: ""
+# OK mksh status: 1
+# OK osh stdout-json: ""
+# OK osh status: 2
 
 ### Env with array
 # Hm it treats it as a string!
