@@ -66,7 +66,7 @@ copy-pycompiler() {
 }
 
 copy-pycompiler-tools() {
-  cp -v ~/src/Python-2.7.6/Tools/compiler/{ast.txt,ACKS,*.py} tools/
+  cp -v ~/src/Python-2.7.6/Tools/compiler/{ast.txt,ACKS,README,*.py} tools/
 }
 
 # 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
