@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Run the Python regression test using the compiler
 
 This test runs the standard Python test suite using bytecode generated
