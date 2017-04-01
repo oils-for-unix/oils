@@ -65,6 +65,10 @@ copy-pycompiler() {
   cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compiler
 }
 
+copy-pycompiler-tools() {
+  cp -v ~/src/Python-2.7.6/Tools/compiler/{ast.txt,ACKS,*.py} tools/
+}
+
 # 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
 # transformer -> ast -> compiler -> byte code
 count() {
