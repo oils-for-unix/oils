@@ -65,9 +65,10 @@ copy-pycompiler() {
   cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compiler
 }
 
+# 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
+# transformer -> ast -> compiler -> byte code
 count() {
-  wc -l *.py pgen2/*.py | sort -n
-  wc -l *.asdl
+  wc -l *.py pgen2/*.py compiler/*.py | sort -n
 }
 
 test-pgen-parse() {
