@@ -13,24 +13,24 @@ def compare(a, b):
     if not (a.co_name == "?" or a.co_name.startswith('<lambda')):
         assert a.co_name == b.co_name, (a, b)
     if a.co_stacksize != b.co_stacksize:
-        print "stack mismatch %s: %d vs. %d" % (a.co_name,
+        print("stack mismatch %s: %d vs. %d" % (a.co_name,
                                                 a.co_stacksize,
-                                                b.co_stacksize)
+                                                b.co_stacksize))
         if a.co_stacksize > b.co_stacksize:
-            print "good code"
+            print("good code")
             dis.dis(a)
-            print "bad code"
+            print("bad code")
             dis.dis(b)
             assert 0
 
 def main(files):
     for file in files:
-        print file
+        print(file)
         buf = open(file).read()
         try:
             co1 = compile(buf, file, "exec")
         except SyntaxError:
-            print "skipped"
+            print("skipped")
             continue
         co2 = compiler.compile(buf, file, "exec")
         co1l = extract_code_objects(co1)

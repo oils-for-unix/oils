@@ -5,11 +5,11 @@ import dis
 import types
 
 def dump(obj):
-    print obj
+    print(obj)
     for attr in dir(obj):
         if attr.startswith('co_'):
             val = getattr(obj, attr)
-            print "\t", attr, repr(val)
+            print("\t", attr, repr(val))
 
 def loadCode(path):
     f = open(path)
@@ -21,7 +21,7 @@ def loadCode(path):
 def walk(co, match=None):
     if match is None or co.co_name == match:
         dump(co)
-        print
+        print()
         dis.dis(co)
     for obj in co.co_consts:
         if type(obj) == types.CodeType:

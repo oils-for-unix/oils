@@ -20,7 +20,7 @@ class MethodFinder:
 
     def visitFunction(self, node, scope=None):
         if scope is not None:
-            print "%s.%s" % (scope, node.name)
+            print("%s.%s" % (scope, node.name))
         self.visit(node.code, None)
 
 def main(files):

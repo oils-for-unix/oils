@@ -17,19 +17,19 @@ import tempfile
 def copy_test_suite():
     dest = tempfile.mkdtemp()
     os.system("cp -r %s/* %s" % (test.__path__[0], dest))
-    print "Creating copy of test suite in", dest
+    print("Creating copy of test suite in", dest)
     return dest
 
 def copy_library():
     dest = tempfile.mkdtemp()
     libdir = os.path.split(test.__path__[0])[0]
-    print "Found standard library in", libdir
-    print "Creating copy of standard library in", dest
+    print("Found standard library in", libdir)
+    print("Creating copy of standard library in", dest)
     os.system("cp -r %s/* %s" % (libdir, dest))
     return dest
 
 def compile_files(dir):
-    print "Compiling", dir, "\n\t",
+    print("Compiling", dir, "\n\t", end=' ')
     line_len = 10
     for file in os.listdir(dir):
         base, ext = os.path.splitext(file)
@@ -37,13 +37,13 @@ def compile_files(dir):
             source = os.path.join(dir, file)
             line_len = line_len + len(file) + 1
             if line_len > 75:
-                print "\n\t",
+                print("\n\t", end=' ')
                 line_len = len(source) + 9
-            print file,
+            print(file, end=' ')
             try:
                 compileFile(source)
-            except SyntaxError, err:
-                print err
+            except SyntaxError as err:
+                print(err)
                 continue
             # make sure the .pyc file is not over-written
             os.chmod(source + "c", 444)
@@ -52,12 +52,12 @@ def compile_files(dir):
         else:
             path = os.path.join(dir, file)
             if os.path.isdir(path):
-                print
-                print
+                print()
+                print()
                 compile_files(path)
-                print "\t",
+                print("\t", end=' ')
                 line_len = 10
-    print
+    print()
 
 def run_regrtest(lib_dir):
     test_dir = os.path.join(lib_dir, "test")
@@ -71,7 +71,7 @@ def main():
     lib_dir = copy_library()
     compile_files(lib_dir)
     run_regrtest(lib_dir)
-    raw_input("Cleanup?")
+    input("Cleanup?")
     cleanup(lib_dir)
 
 if __name__ == "__main__":

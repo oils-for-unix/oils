@@ -28,11 +28,11 @@ def main():
         if k == '-p':
             PROFILE = 1
     if not args:
-        print "no files to compile"
+        print("no files to compile")
     else:
         for filename in args:
             if VERBOSE:
-                print filename
+                print(filename)
             try:
                 if PROFILE:
                     profile.run('compileFile(%r, %r)' % (filename, DISPLAY),
@@ -40,10 +40,10 @@ def main():
                 else:
                     compileFile(filename, DISPLAY)
 
-            except SyntaxError, err:
-                print err
+            except SyntaxError as err:
+                print(err)
                 if err.lineno is not None:
-                    print err.lineno
+                    print(err.lineno)
                 if not CONTINUE:
                     sys.exit(-1)
 
