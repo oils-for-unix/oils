@@ -1,0 +1,21 @@
+-- AST for pgen grammar.
+-- Constrast with asdl.asdl
+
+module pgen
+{
+  term = 
+    String(string s)            -- '(', etc.
+  | Name(string n)              -- expr_stmt
+  | Group(term t)               -- (expr stmt)
+  | Repeat(term t, int times)   -- foo+, foo* (';' small_stmt)*
+  | Optional(term t)            -- ['=' test]
+  | Seq(term* terms)            -- A B
+  | Alt(term* alts)             -- '+=' X | '-=' X Y
+                                -- | has low precedence
+
+  -- Not used because we just use a simple dict of string -> term
+  -- Terms are concatenated
+  -- rule = (string lhs, term rhs)
+
+  -- grammar = (rule* rules)
+}
