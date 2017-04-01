@@ -33,7 +33,7 @@ clear-tokens() {
   rm -rf --verbose __pycache ../__pycache__
 }
 
-copy() {
+copy-lib2to3() {
   #cp -v $PY/Lib/{token,tokenize}.py .
   #return
 
@@ -51,6 +51,12 @@ copy() {
 
   # For comparison
   #cp -v $PY/Grammar/Grammar .
+}
+
+copy-pycompiler() {
+  # The last version of the pure Python compile package.
+  mkdir -p compile
+  cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compile
 }
 
 count() {
