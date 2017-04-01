@@ -32,9 +32,9 @@ class SyntaxErrorChecker:
     def error(self, node, msg):
         self.errors = self.errors + 1
         if self.multi is not None:
-            print "%s:%s: %s" % (node.filename, node.lineno, msg)
+            print("%s:%s: %s" % (node.filename, node.lineno, msg))
         else:
-            raise SyntaxError, "%s (%s:%s)" % (msg, node.filename, node.lineno)
+            raise SyntaxError("%s (%s:%s)" % (msg, node.filename, node.lineno))
 
     def visitAssign(self, node):
         # the transformer module handles many of these

@@ -22,10 +22,16 @@ parse-oil() {
   parse-with-pgen2 *.py ../*.py ../osh/*.py ../core/*.py ../asdl/*.py
 }
 
-# As a test of bootstrapping
-parse-pycompiler() {
+# Parse the old Python2 code
+parse-pycompiler2() {
   # parse print statement
   PYTHON2=1 parse-with-pgen2 ~/src/Python-2.7.6/Lib/compiler/*.py
+}
+
+# After lib2to3
+parse-pycompiler() {
+  # parse print statement
+  parse-with-pgen2 compiler/*.py
 }
 
 clear-tokens() {
@@ -55,8 +61,8 @@ copy-lib2to3() {
 
 copy-pycompiler() {
   # The last version of the pure Python compile package.
-  mkdir -p compile
-  cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compile
+  mkdir -p compiler
+  cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compiler
 }
 
 count() {

@@ -34,15 +34,14 @@ class FutureParser:
                 if name in self.features:
                     self.found[name] = 1
                 else:
-                    raise SyntaxError, \
-                          "future feature %s is not defined" % name
+                    raise SyntaxError("future feature %s is not defined" % name)
             stmt.valid_future = 1
             return 1
         return 0
 
     def get_features(self):
         """Return list of features enabled by future statements"""
-        return self.found.keys()
+        return list(self.found.keys())
 
 class BadFutureParser:
     """Check for invalid future statements"""
@@ -52,7 +51,7 @@ class BadFutureParser:
             return
         if node.modname != "__future__":
             return
-        raise SyntaxError, "invalid future statement " + repr(node)
+        raise SyntaxError("invalid future statement " + repr(node))
 
 def find_futures(node):
     p1 = FutureParser()
@@ -66,9 +65,9 @@ if __name__ == "__main__":
     from compiler import parseFile, walk
 
     for file in sys.argv[1:]:
-        print file
+        print(file)
         tree = parseFile(file)
         v = FutureParser()
         walk(tree, v)
-        print v.found
-        print
+        print(v.found)
+        print()

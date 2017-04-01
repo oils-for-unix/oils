@@ -19,11 +19,11 @@ class FlowGraph:
     def startBlock(self, block):
         if self._debug:
             if self.current:
-                print "end", repr(self.current)
-                print "    next", self.current.next
-                print "    prev", self.current.prev
-                print "   ", self.current.get_children()
-            print repr(block)
+                print("end", repr(self.current))
+                print("    next", self.current.__next__)
+                print("    prev", self.current.prev)
+                print("   ", self.current.get_children())
+            print(repr(block))
         self.current = block
 
     def nextBlock(self, block=None):
@@ -68,7 +68,7 @@ class FlowGraph:
 
     def emit(self, *inst):
         if self._debug:
-            print "\t", inst
+            print("\t", inst)
         if len(inst) == 2 and isinstance(inst[1], Block):
             self.current.addOutEdge(inst[1])
         self.current.emit(inst)
@@ -120,8 +120,8 @@ def order_blocks(start_block, exit_block):
     # before it.
     dominators = {}
     for b in remaining:
-        if __debug__ and b.next:
-            assert b is b.next[0].prev[0], (b, b.next)
+        if __debug__ and b.__next__:
+            assert b is b.next[0].prev[0], (b, b.__next__)
         # Make sure every block appears in dominators, even if no
         # other block must precede it.
         dominators.setdefault(b, set())
@@ -151,7 +151,7 @@ def order_blocks(start_block, exit_block):
     while 1:
         order.append(b)
         remaining.discard(b)
-        if b.next:
+        if b.__next__:
             b = b.next[0]
             continue
         elif b is not exit_block and not b.has_unconditional_transfer():
@@ -181,7 +181,7 @@ class Block:
             return "<block id=%d>" % (self.bid)
 
     def __str__(self):
-        insts = map(str, self.insts)
+        insts = list(map(str, self.insts))
         return "<block %s %d:\n%s>" % (self.label, self.bid,
                                        '\n'.join(insts))
 
@@ -197,9 +197,9 @@ class Block:
 
     def addNext(self, block):
         self.next.append(block)
-        assert len(self.next) == 1, map(str, self.next)
+        assert len(self.__next__) == 1, list(map(str, self.__next__))
         block.prev.append(self)
-        assert len(block.prev) == 1, map(str, block.prev)
+        assert len(block.prev) == 1, list(map(str, block.prev))
 
     _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
                         'JUMP_ABSOLUTE', 'JUMP_FORWARD', 'CONTINUE_LOOP',
@@ -216,11 +216,11 @@ class Block:
         return op in self._uncond_transfer
 
     def get_children(self):
-        return list(self.outEdges) + self.next
+        return list(self.outEdges) + self.__next__
 
     def get_followers(self):
         """Get the whole list of followers, including the next block."""
-        followers = set(self.next)
+        followers = set(self.__next__)
         # Blocks that must be emitted *after* this one, because of
         # bytecode offsets (e.g. relative jumps) pointing to them.
         for inst in self.insts:
@@ -322,12 +322,12 @@ class PyFlowGraph(FlowGraph):
         for t in self.insts:
             opname = t[0]
             if opname == "SET_LINENO":
-                print
+                print()
             if len(t) == 1:
-                print "\t", "%3d" % pc, opname
+                print("\t", "%3d" % pc, opname)
                 pc = pc + 1
             else:
-                print "\t", "%3d" % pc, opname, t[1]
+                print("\t", "%3d" % pc, opname, t[1])
                 pc = pc + 3
         if io:
             sys.stdout = save
@@ -426,7 +426,7 @@ class PyFlowGraph(FlowGraph):
                          if name in cells]
         for name in self.cellvars:
             del cells[name]
-        self.cellvars = self.cellvars + cells.keys()
+        self.cellvars = self.cellvars + list(cells.keys())
         self.closure = self.cellvars + self.freevars
 
     def _lookupName(self, name, list):
@@ -495,7 +495,7 @@ class PyFlowGraph(FlowGraph):
 
     # similarly for other opcodes...
 
-    for name, obj in locals().items():
+    for name, obj in list(locals().items()):
         if name[:9] == "_convert_":
             opname = name[9:]
             _converters[opname] = obj
@@ -517,8 +517,8 @@ class PyFlowGraph(FlowGraph):
                 try:
                     lnotab.addCode(self.opnum[opname], lo, hi)
                 except ValueError:
-                    print opname, oparg
-                    print self.opnum[opname], lo, hi
+                    print(opname, oparg)
+                    print(self.opnum[opname], lo, hi)
                     raise
         self.stage = DONE
 
@@ -660,7 +660,7 @@ class StackDepthTracker:
         for i in insts:
             opname = i[0]
             if debug:
-                print i,
+                print(i, end=' ')
             delta = self.effect.get(opname, None)
             if delta is not None:
                 depth = depth + delta
@@ -679,7 +679,7 @@ class StackDepthTracker:
             if depth > maxDepth:
                 maxDepth = depth
             if debug:
-                print depth, maxDepth
+                print(depth, maxDepth)
         return maxDepth
 
     effect = {
