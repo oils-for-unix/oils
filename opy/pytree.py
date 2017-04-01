@@ -240,6 +240,12 @@ class Node(Base):
                                type_repr(self.type),
                                self.children)
 
+    def PrettyPrint(self, f, depth=0):
+      indent = '  ' * depth
+      print(indent + type_repr(self.type), file=f)
+      for c in self.children:
+        c.PrettyPrint(f, depth+1)
+
     def __unicode__(self):
         """
         Return a pretty string representation.
@@ -348,6 +354,10 @@ class Leaf(Base):
         return "%s(%r, %r)" % (self.__class__.__name__,
                                self.type,
                                self.value)
+
+    def PrettyPrint(self, f, depth=0):
+      indent = '  ' * depth
+      print("%s(%r, %r)" % (indent, self.type, self.value), file=f)
 
     def __unicode__(self):
         """

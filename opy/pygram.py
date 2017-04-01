@@ -36,5 +36,5 @@ python_symbols = Symbols(python_grammar)
 python_grammar_no_print_statement = python_grammar.copy()
 del python_grammar_no_print_statement.keywords["print"]
 
-pattern_grammar = driver.load_grammar(_PATTERN_GRAMMAR_FILE)
-pattern_symbols = Symbols(pattern_grammar)
+#pattern_grammar = driver.load_grammar(_PATTERN_GRAMMAR_FILE)
+#pattern_symbols = Symbols(pattern_grammar)
