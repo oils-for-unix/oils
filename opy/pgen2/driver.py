@@ -35,11 +35,11 @@ class Driver(object):
         self.logger = logger
         self.convert = convert
 
-    def parse_tokens(self, tokens, debug=False):
+    def parse_tokens(self, tokens, start_symbol=None, debug=False):
         """Parse a series of tokens and return the syntax tree."""
         # XXX Move the prefix computation into a wrapper around tokenize.
         p = parse.Parser(self.grammar, self.convert)
-        p.setup()
+        p.setup(start=start_symbol)
         lineno = 1
         column = 0
         type = value = start = end = line_text = None

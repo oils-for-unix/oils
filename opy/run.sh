@@ -10,10 +10,84 @@ set -o errexit
 readonly PY=~/src/Python-3.6.1
 readonly DIFF=${DIFF:-diff -u}
 
+_parse-one() {
+  PYTHONPATH=. ./parse.py 2to3.grammar parse "$@"
+}
+
+_stdlib-parse-one() {
+  PYTHONPATH=. ./parse.py 2to3.grammar stdlib-parse "$@"
+}
+
+_compile-one() {
+  # The production testlist_starexpr is unhandled in the compiler package.
+  # Python 2.7 doesn't have it.
+  #local g=2to3.grammar 
+  local g=py27.grammar
+  PYTHONPATH=. ./parse.py $g compile "$@"
+}
+
+parse-test() {
+  _parse-one testdata/hello_py3.py
+  echo ---
+  PYTHON2=1 _parse-one testdata/hello_py2.py
+}
+
+stdlib-parse-test() {
+  _stdlib-parse-one testdata/hello_py3.py
+  echo ---
+  PYTHON2=1 _stdlib-parse-one testdata/hello_py2.py
+}
+
+compile-gold() {
+  pushd testdata
+  python3 -c 'import hello_py3'
+
+  ls -l __pycache__
+  xxd __pycache__/hello_py3.cpython-34.pyc
+
+  popd
+}
+
+_compile-and-run() {
+  local path=$1
+  local basename=$(basename $path .py)
+
+  mkdir -p _tmp
+  # Doesn't work why?  Because it was written for Python 2.7?
+  local out=_tmp/${basename}.pyc
+  _compile-one $path $out
+
+  ls -l $out
+  xxd $out
+
+  # Crap, it doesn't work!
+  python3 $out
+
+  return
+
+  echo ---
+  # This doesn't work because compiler does 'import parser', which is the
+  # Python 3 paresr now!
+  PYTHON2=1 _compile-one testdata/hello_py2.py
+}
+
+compile-hello() {
+  _compile-and-run testdata/hello_py3.py
+}
+
+compile-self() {
+  _compile-and-run ./parse.py
+}
+
+old-compile-test() {
+  PYTHONPATH=. tools/compile.py testdata/hello_py3.py
+}
+
+# 2to3.grammar is from  Python-3.6.1/ Lib/lib2to3/Grammar.txt
 parse-with-pgen2() {
   set +o errexit
   for py in "$@"; do
-    PYTHONPATH=.. ./parse.py $py >/dev/null #2>&1
+    _parse-one $py >/dev/null #2>&1
     echo $? $py
   done
 }
@@ -31,8 +105,12 @@ parse-pycompiler2() {
 # After lib2to3
 parse-pycompiler() {
   # parse print statement
-  parse-with-pgen2 compiler/*.py
+  parse-with-pgen2 compiler/*.py tools/*.py
 }
+
+#
+# File Management
+#
 
 clear-tokens() {
   rm token.py tokenize.py
@@ -55,8 +133,12 @@ copy-lib2to3() {
 
   cp -v $PY/Parser/Python.asdl .
 
-  # For comparison
-  #cp -v $PY/Grammar/Grammar .
+}
+
+# For compatibility with the compiler package.
+# I kind of want the static type syntax though?
+copy-old-grammar() {
+  cp -v $PY27/Grammar/Grammar py27.grammar
 }
 
 copy-pycompiler() {
@@ -80,8 +162,11 @@ test-pgen-parse() {
   PYTHONPATH=.. ./pgen_parse.py Grammar.txt pgen_parse.py
 }
 
+readonly PY27=~/src/Python-2.7.6
+
 compare-grammar() {
-  $DIFF Grammar Grammar.txt
+  # The compiler package was written for a different grammar!
+  $DIFF $PY27/Grammar/Grammar 2to3.grammar 
 }
 
 # pgen2 has BACKQUOTE = 25.  No main.

@@ -19,15 +19,21 @@ from io import StringIO
 HUGE = 0x7FFFFFFF  # maximum repeat count, default max
 
 _type_reprs = {}
+
 def type_repr(type_num):
-    global _type_reprs
-    if not _type_reprs:
-        from .pygram import python_symbols
-        # printing tokens is possible but not as useful
-        # from .pgen2 import token // token.__dict__.items():
-        for name, val in python_symbols.__dict__.items():
-            if type(val) == int: _type_reprs[val] = name
-    return _type_reprs.setdefault(type_num, type_num)
+    return _type_reprs[type_num]
+
+
+def Init(python_symbols):
+  # printing tokens is possible but not as useful
+  # from .pgen2 import token // token.__dict__.items():
+
+  # Fill in the dict.
+  global _type_reprs
+  for name, val in python_symbols.__dict__.items():
+      if type(val) == int:
+          _type_reprs[val] = name
+
 
 class Base(object):
 

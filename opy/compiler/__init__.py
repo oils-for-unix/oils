@@ -28,4 +28,4 @@ warnings.warn("The compiler package is deprecated and removed in Python 3.x.",
 
 from compiler.transformer import parse, parseFile
 from compiler.visitor import walk
-from compiler.pycodegen import compile, compileFile
+from compiler.pycodegen import compile

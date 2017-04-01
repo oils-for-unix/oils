@@ -17,7 +17,7 @@ import collections
 import pickle
 
 # Local imports
-from opy.pgen2 import token, tokenize
+from pgen2 import token, tokenize
 
 
 class Grammar(object):

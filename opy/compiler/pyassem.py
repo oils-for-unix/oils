@@ -20,7 +20,7 @@ class FlowGraph:
         if self._debug:
             if self.current:
                 print("end", repr(self.current))
-                print("    next", self.current.__next__)
+                print("    next", self.current.next)
                 print("    prev", self.current.prev)
                 print("   ", self.current.get_children())
             print(repr(block))
@@ -120,8 +120,8 @@ def order_blocks(start_block, exit_block):
     # before it.
     dominators = {}
     for b in remaining:
-        if __debug__ and b.__next__:
-            assert b is b.next[0].prev[0], (b, b.__next__)
+        if __debug__ and b.next:
+            assert b is b.next[0].prev[0], (b, b.next)
         # Make sure every block appears in dominators, even if no
         # other block must precede it.
         dominators.setdefault(b, set())
@@ -151,7 +151,7 @@ def order_blocks(start_block, exit_block):
     while 1:
         order.append(b)
         remaining.discard(b)
-        if b.__next__:
+        if b.next:
             b = b.next[0]
             continue
         elif b is not exit_block and not b.has_unconditional_transfer():
@@ -197,7 +197,7 @@ class Block:
 
     def addNext(self, block):
         self.next.append(block)
-        assert len(self.__next__) == 1, list(map(str, self.__next__))
+        assert len(self.next) == 1, list(map(str, self.next))
         block.prev.append(self)
         assert len(block.prev) == 1, list(map(str, block.prev))
 
@@ -216,11 +216,11 @@ class Block:
         return op in self._uncond_transfer
 
     def get_children(self):
-        return list(self.outEdges) + self.__next__
+        return list(self.outEdges) + self.next
 
     def get_followers(self):
         """Get the whole list of followers, including the next block."""
-        followers = set(self.__next__)
+        followers = set(self.next)
         # Blocks that must be emitted *after* this one, because of
         # bytecode offsets (e.g. relative jumps) pointing to them.
         for inst in self.insts:
@@ -536,12 +536,47 @@ class PyFlowGraph(FlowGraph):
         argcount = self.argcount
         if self.flags & CO_VARKEYWORDS:
             argcount = argcount - 1
-        return types.CodeType(argcount, nlocals, self.stacksize, self.flags,
-                        self.lnotab.getCode(), self.getConsts(),
-                        tuple(self.names), tuple(self.varnames),
-                        self.filename, self.name, self.lnotab.firstline,
-                        self.lnotab.getTable(), tuple(self.freevars),
-                        tuple(self.cellvars))
+
+        # NOTE: This introduces a dependency on the host VM.  For example, if
+        # we're runing on Python 3.4, we'll get the Python 3.4 CodeTyep, which
+        # is _f.__code__.
+        #
+        # Patch for Python 3.0 kwonlyargs:
+        # https://www.python.org/dev/peps/pep-3102/
+        #
+        # This is defined in Include/code.h PyCodeObject.
+
+        kwonlyargcount = 0
+        bytecode = self.lnotab.getCode().encode('latin-1')
+
+        # addr <-> lineno mapping.
+        # See Objects/lnotab_notes.txt
+        lnotab = self.lnotab.getTable().encode('latin-1')
+
+        code_args = (
+            argcount, kwonlyargcount, nlocals, self.stacksize, self.flags,  # int
+            bytecode,  # bytes
+            self.getConsts(),
+            tuple(self.names),
+            tuple(self.varnames),
+            self.filename,
+            self.name,
+            self.lnotab.firstline,
+            lnotab,  # bytes
+            tuple(self.freevars),
+            tuple(self.cellvars))
+
+        if 0:
+          for a in code_args:
+            print(type(a))
+            if isinstance(a, str):
+              print(repr(a))
+              # bytes/str confusion!  We expect bytes.
+              #new_args.append(a.encode('latin-1'))  # bytes type
+            elif isinstance(a, tuple):
+              print(repr(a))
+
+        return types.CodeType(*code_args)
 
     def getConsts(self):
         """Return a tuple for the const slot of the code object
