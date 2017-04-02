@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 fix.py -- Do source transformations.  Somewhat like 'go fix'.
 """

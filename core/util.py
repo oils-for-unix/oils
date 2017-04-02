@@ -5,6 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+from __future__ import print_function
 """
 util.py -- Common infrastructure.
 
@@ -27,6 +28,9 @@ import os
 import pwd
 import sys
 import types
+
+
+PY2 = sys.version[0] == '2'
 
 
 def log(msg, *args):

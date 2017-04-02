@@ -96,7 +96,7 @@ def _CheckType(value, expected_desc):
       'Invalid descriptor %r: %r' % (expected_desc.__class__, expected_desc))
 
 
-class Obj:
+class Obj(object):
   # NOTE: We're using CAPS for these static fields, since they are constant at
   # runtime after metaprogramming.
   DESCRIPTOR = None  # Used for type checking

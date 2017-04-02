@@ -41,6 +41,7 @@ def log(msg, *args):
 def is_unicode(s):
   if PY2:
     return isinstance(s, unicode)
+    #return isinstance(s, unicode) or isinstance(s, str)
   else:
     return isinstance(s, str)
 

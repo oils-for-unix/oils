@@ -227,8 +227,8 @@ class TdopParser(object):
 
     self.error_stack = []
 
-  def AddErrorContext(self, msg, *args, token=None, word=None):
-    err = base.ParseError(msg, *args, token=token, word=word)
+  def AddErrorContext(self, msg, *args, **kwargs):
+    err = base.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
   def Error(self):

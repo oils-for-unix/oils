@@ -65,11 +65,13 @@ class ParseError:
 
   Formatting is in ui.PrintError.
   """
-  def __init__(self, msg, *args, token=None, word=None):
+  def __init__(self, msg, *args, **kwargs):
     self.msg = msg
     self.args = args
-    self.token = token
-    self.word = word
+    self.token = kwargs.pop('token', None)
+    self.word = kwargs.pop('word', None)
+    if kwargs:
+      raise AssertionError('Invalid keyword args %s' % kwargs)
 
   def UserErrorString(self):
     return self.msg % self.args

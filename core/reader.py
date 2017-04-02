@@ -8,6 +8,8 @@
 """
 reader.py - Read lines of input.
 """
+from core import util
+
 
 class _Reader(object):
   def __init__(self, arena):
@@ -30,6 +32,12 @@ class _Reader(object):
 
 _PS2 = '> '
 
+if util.PY2:
+  _PROMPT_FUNC = raw_input
+else:
+  _PROMPT_FUNC = input
+
+
 class InteractiveLineReader(_Reader):
   def __init__(self, ps1, arena=None):
     _Reader.__init__(self, arena)
@@ -38,7 +46,7 @@ class InteractiveLineReader(_Reader):
 
   def _GetLine(self):
     try:
-      ret = input(self.prompt_str) + '\n'
+      ret = _PROMPT_FUNC(self.prompt_str) + '\n'
     except EOFError:
       ret = None
     self.prompt_str = _PS2

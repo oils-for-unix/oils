@@ -53,6 +53,11 @@ def HostStdlibNames():
   return names
 
 
+_READ_SOURCE_AS_UNICODE = True
+# Not sure why this doesn't work?  It should be more like what the compiler
+# module expected.
+#_READ_SOURCE_AS_UNICODE = False
+
 # Emulate the interface that Transformer expects from parsermodule.c.
 class Pgen2PythonParser:
   def __init__(self, driver, start_symbol):
@@ -61,10 +66,11 @@ class Pgen2PythonParser:
 
   def suite(self, text):
     #if util.PY2:
-    #  import cStringIO
-    #  f = cStringIO.StringIO()
-    #else:
-    f = io.StringIO(text)
+    if _READ_SOURCE_AS_UNICODE:
+      f = io.StringIO(text)
+    else:
+      import cStringIO
+      f = cStringIO.StringIO()
     tokens = tokenize.generate_tokens(f.readline)
     tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
     return tree
@@ -156,11 +162,14 @@ def main(argv):
       tr = transformer.Transformer()
 
     # for Python 2.7 compatibility:
-    with codecs.open(py_path, encoding='utf-8') as f:
-    #with open(py_path) as f:
-      contents = f.read()
-      co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-      file_size = os.path.getsize(py_path)
+    if _READ_SOURCE_AS_UNICODE:
+      f = codecs.open(py_path, encoding='utf-8')
+    else:
+      f = open(py_path)
+
+    contents = f.read()
+    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+    file_size = os.path.getsize(py_path)
     log("Code length: %d", len(co.co_code))
 
     # Write the .pyc file

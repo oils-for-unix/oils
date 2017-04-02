@@ -5,6 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+from __future__ import print_function
 """
 cmd_parse.py - Parse high level shell commands.
 """
@@ -124,8 +125,8 @@ class CommandParser(object):
     """
     self.AddErrorContext(msg, w, word=w)
 
-  def AddErrorContext(self, msg, *args, token=None, word=None):
-    err = base.ParseError(msg, *args, token=token, word=word)
+  def AddErrorContext(self, msg, *args, **kwargs):
+    err = base.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
   def GetCompletionState(self):
