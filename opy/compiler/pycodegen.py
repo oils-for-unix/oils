@@ -1,6 +1,5 @@
 import imp
 import os
-import marshal
 import struct
 import sys
 from io import StringIO
@@ -13,6 +12,9 @@ from compiler.consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
      CO_NESTED, CO_GENERATOR, CO_FUTURE_DIVISION,
      CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
 from compiler.pyassem import TupleArg
+
+import util
+from util import log
 
 # XXX The version-specific code can go, since this code only works with 2.x.
 # Do we have Python 1.x or Python 2.x?
@@ -35,7 +37,8 @@ TRY_FINALLY = 3
 END_FINALLY = 4
 
 
-MAGIC = imp.get_magic()
+PY34_MAGIC = imp.get_magic()
+PY27_MAGIC = b'\x03\xf3\r\n'
 
 def getPycHeader(filename):
     # compile.c uses marshal to write a long directly, with
@@ -49,13 +52,15 @@ def getPycHeader(filename):
     # https://nedbatchelder.com/blog/200804/the_structure_of_pyc_files.html
     # https://gist.github.com/anonymous/35c08092a6eb70cdd723
     # It has the file size.  Is this just for signature purposes?
-    file_size = struct.pack('<i', 0)
-    return MAGIC + mtime + file_size
 
+    if util.PY2:
+      file_size = b''
+      magic = PY27_MAGIC
+    else:
+      file_size = struct.pack('<i', 0)
+      magic = PY34_MAGIC
 
-def WritePyc(code, orig_filename, f):
-  f.write(getPycHeader(orig_filename))
-  marshal.dump(code, f)
+    return magic + mtime + file_size
 
 
 def compile(source, filename, mode, flags=None, dont_inherit=None, transformer=None):
@@ -1480,14 +1485,19 @@ def generateArgList(arglist):
     count = 0
     for i in range(len(arglist)):
         elt = arglist[i]
-        if isinstance(elt, str):
+        if util.is_unicode(elt):
+            args.append(elt)
+        # for Python 2 -- not sure why I got non-unicode
+        elif isinstance(elt, str):
             args.append(elt)
         elif isinstance(elt, tuple):
             args.append(TupleArg(i * 2, elt))
             extra.extend(misc.flatten(elt))
             count = count + 1
         else:
-            raise ValueError("unexpect argument type:").with_traceback(elt)
+            # Not in Python 2.
+            #raise ValueError("unexpect argument type:").with_traceback(elt)
+            raise ValueError("unexpect argument type: %r (%s)" % (elt, type(elt)))
     return args + extra, count
 
 def findOp(node):

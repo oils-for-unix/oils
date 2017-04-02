@@ -1,6 +1,6 @@
 # Copyright 2006 Google, Inc. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
-
+from __future__ import print_function
 """
 Python parse tree definitions.
 
@@ -89,22 +89,6 @@ class Base(object):
         """
         raise NotImplementedError
 
-    def post_order(self):
-        """
-        Return a post-order iterator for the tree.
-
-        This must be implemented by the concrete subclass.
-        """
-        raise NotImplementedError
-
-    def pre_order(self):
-        """
-        Return a pre-order iterator for the tree.
-
-        This must be implemented by the concrete subclass.
-        """
-        raise NotImplementedError
-
     def replace(self, new):
         """Replace this node with a new one in the parent."""
         assert self.parent is not None, str(self)
@@ -188,10 +172,6 @@ class Base(object):
                     return None
                 return self.parent.children[i-1]
 
-    def leaves(self):
-        for child in self.children:
-            yield from child.leaves()
-
     def depth(self):
         if self.parent is None:
             return 0
@@ -271,18 +251,6 @@ class Node(Base):
         """Return a cloned (deep) copy of self."""
         return Node(self.type, [ch.clone() for ch in self.children],
                     fixers_applied=self.fixers_applied)
-
-    def post_order(self):
-        """Return a post-order iterator for the tree."""
-        for child in self.children:
-            yield from child.post_order()
-        yield self
-
-    def pre_order(self):
-        """Return a pre-order iterator for the tree."""
-        yield self
-        for child in self.children:
-            yield from child.pre_order()
 
     def _prefix_getter(self):
         """
@@ -385,17 +353,6 @@ class Leaf(Base):
         return Leaf(self.type, self.value,
                     (self.prefix, (self.lineno, self.column)),
                     fixers_applied=self.fixers_applied)
-
-    def leaves(self):
-        yield self
-
-    def post_order(self):
-        """Return a post-order iterator for the tree."""
-        yield self
-
-    def pre_order(self):
-        """Return a pre-order iterator for the tree."""
-        yield self
 
     def _prefix_getter(self):
         """

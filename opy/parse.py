@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """
 parse.py
-
 """
+from __future__ import print_function
 
+import codecs
 import io
 import os
 import sys
+import marshal
 
 from pgen2 import driver
 from pgen2 import token, tokenize
 import pytree
 from compiler import transformer
 from compiler import pycodegen
+from compiler import opcode27
+from util import log
+import util
 
 
 # From lib2to3/pygram.py.  This presumably takes the place of the 'symbol'
@@ -31,7 +36,7 @@ class Symbols(object):
         """
         for name, symbol in grammar.symbol2number.items():
             setattr(self, name, symbol)
-            #print('%s -> %d' % (name, symbol))
+            #log('%s -> %d' % (name, symbol))
         # For transformer to use
         self.number2symbol = grammar.number2symbol
         #assert 0
@@ -55,6 +60,10 @@ class Pgen2PythonParser:
     self.start_symbol = start_symbol
 
   def suite(self, text):
+    #if util.PY2:
+    #  import cStringIO
+    #  f = cStringIO.StringIO()
+    #else:
     f = io.StringIO(text)
     tokens = tokenize.generate_tokens(f.readline)
     tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
@@ -71,35 +80,13 @@ def main(argv):
   pytree.Init(symbols)  # for type_repr() pretty printing
   transformer.Init(symbols)  # for _names and other dicts
 
-  if 'PYTHON2' in os.environ:
-    pass
-  else:
-    # lib2to3 had a flag for the print statement!  Don't use it with Python 3.
+  # In Python 2 code, always use from __future__ import print_function.
+  try:
     del grammar.keywords["print"]
+  except KeyError:
+    pass
 
-  # TODO: Now hook convert to generate Python.asdl?
-  #
-  # or opy.asdl
-  #
-  # then maybe -> ovm.asdl to flatten loops?  Make .append special?
-  #
-  # YES: modules, classes, functions (kwargs), exceptions, generators, strings,
-  # int list comprehensions, generator expressions, % string formatting,
-  #   dicts/list runtime (append/extend)
-  # assert
-  #
-  # metaprogramming: setattr() for core/id_kind.py.
-  #
-  # sparingly:
-  #   I don't think lambda
-  #   yield in asdl, tdop, and completion.  Hm.
-  #
-  # NO: complex numbers, async/await, global/nonlocal, I don't see any use of
-  # with
-  # 
-  # Libraries: optparse, etc.
-
-  do_glue = False
+  #do_glue = False
   do_glue = True
 
   if do_glue:  # Make it a flag
@@ -137,7 +124,7 @@ def main(argv):
     tree = st.totuple()
 
     n = transformer.CountTupleTree(tree)
-    print('COUNT', n)
+    log('COUNT %d', n)
     printer = transformer.TupleTreePrinter(HostStdlibNames())
     printer.Print(tree)
 
@@ -149,19 +136,18 @@ def main(argv):
 
     if isinstance(tree, tuple):
       n = transformer.CountTupleTree(tree)
-      print('COUNT', n)
+      log('COUNT %d', n)
 
       printer = transformer.TupleTreePrinter(transformer._names)
       printer.Print(tree)
     else:
       tree.PrettyPrint(sys.stdout)
-      print('\tChildren: %d' % len(tree.children), file=sys.stderr)
+      log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
   elif action == 'compile':
-
-    DISPLAY = 0  # debugging?
     py_path = argv[3]
     out_path = argv[4]
+
     if do_glue:
       py_parser = Pgen2PythonParser(d, FILE_INPUT)
       printer = transformer.TupleTreePrinter(transformer._names)
@@ -169,18 +155,19 @@ def main(argv):
     else:
       tr = transformer.Transformer()
 
-    #pycodegen.compileFile(py_path, transformer=tr)
-
-    # Not file_input instead of single_input?  Why is this not a Module?
-    # Because you 
-
-    with open(py_path) as f:
+    # for Python 2.7 compatibility:
+    with codecs.open(py_path, encoding='utf-8') as f:
+    #with open(py_path) as f:
       contents = f.read()
       co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
       file_size = os.path.getsize(py_path)
-    print(co)
+    log("Code length: %d", len(co.co_code))
+
+    # Write the .pyc file
     with open(out_path, 'wb') as out_f:
-      pycodegen.WritePyc(co, py_path, out_f)
+      h = pycodegen.getPycHeader(py_path)
+      out_f.write(h)
+      marshal.dump(co, out_f)
 
   else: 
     raise RuntimeError('Invalid action %r' % action)
@@ -199,5 +186,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
+    log('FATAL: %s', e)
     sys.exit(1)

@@ -1,1 +1,1 @@
-print("hi")
+print("hi from Python 3")

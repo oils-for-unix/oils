@@ -7,8 +7,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly PY=~/src/Python-3.6.1
-readonly DIFF=${DIFF:-diff -u}
+source compare.sh
+
+readonly PY=$PY36
 
 _parse-one() {
   PYTHONPATH=. ./parse.py 2to3.grammar parse "$@"
@@ -26,18 +27,24 @@ _compile-one() {
   PYTHONPATH=. ./parse.py $g compile "$@"
 }
 
+_compile-one-py2() {
+  local g=py27.grammar
+  PYTHONPATH=. python2 ./parse.py $g compile "$@"
+}
+
 parse-test() {
   _parse-one testdata/hello_py3.py
   echo ---
-  PYTHON2=1 _parse-one testdata/hello_py2.py
+  _parse-one testdata/hello_py2.py
 }
 
 stdlib-parse-test() {
   _stdlib-parse-one testdata/hello_py3.py
   echo ---
-  PYTHON2=1 _stdlib-parse-one testdata/hello_py2.py
+  _stdlib-parse-one testdata/hello_py2.py
 }
 
+# Generate .pyc using the Python interpreter.
 compile-gold() {
   pushd testdata
   python3 -c 'import hello_py3'
@@ -60,25 +67,65 @@ _compile-and-run() {
   ls -l $out
   xxd $out
 
-  # Crap, it doesn't work!
   python3 $out
+}
 
-  return
+_compile-many() {
+  local version=$1
+  shift
 
-  echo ---
-  # This doesn't work because compiler does 'import parser', which is the
-  # Python 3 paresr now!
-  PYTHON2=1 _compile-one testdata/hello_py2.py
+  for py in "$@"; do
+    echo "--- $py ---"
+    local out=_tmp/t.pyc
+    if test "$version" = "py2"; then
+      _compile-one-py2 $py $out #|| true
+    else
+      # Caught problem with yield from.  Deletd.
+      _compile-one $py $out || true
+    fi
+  done
+}
+
+# Problems:
+# Can't convert 'bytes' object to str implicitly
+compile-opy() {
+  local version=${1:-py2}
+  _compile-many $version *.py {compiler,pgen2,testdata,tools}/*.py
+}
+
+# Has a problem with keyword args after *args, e.g. *args, token=None
+compile-osh() {
+  local version=${1:-py2}
+  # Works
+  #_compile-many ../*.py 
+
+  # kwonlyargs issue
+  #_compile-many ../core/*.py
+
+  # kwonlyargs issue
+  #_compile-many ../osh/*.py
+
+  # Works.
+  #_compile-many $version ../asdl/*.py
 }
 
 compile-hello() {
   _compile-and-run testdata/hello_py3.py
 }
 
+# Bad code object because it only has 14 fields.  Gah!
+# We have to marshal the old one I guess.
+compile-hello2() {
+  local out=_tmp/hello_py2.pyc27
+  _compile-one-py2 testdata/hello_py2.py $out
+  python $out
+}
+
 compile-self() {
   _compile-and-run ./parse.py
 }
 
+# Doesn't work because of compileFile.
 old-compile-test() {
   PYTHONPATH=. tools/compile.py testdata/hello_py3.py
 }
@@ -99,7 +146,7 @@ parse-oil() {
 # Parse the old Python2 code
 parse-pycompiler2() {
   # parse print statement
-  PYTHON2=1 parse-with-pgen2 ~/src/Python-2.7.6/Lib/compiler/*.py
+  parse-with-pgen2 ~/src/Python-2.7.6/Lib/compiler/*.py
 }
 
 # After lib2to3
@@ -151,6 +198,24 @@ copy-pycompiler-tools() {
   cp -v ~/src/Python-2.7.6/Tools/compiler/{ast.txt,ACKS,README,*.py} tools/
 }
 
+compare-emitted() {
+  # 67 opcodes emitted
+  grep emit compiler/pycodegen.py | egrep -o '[A-Z][A-Z_]+' |
+    sort | uniq > _tmp/opcodes-emitted.txt
+
+  # 119 ops?
+  PYTHONPATH=. python3 > _tmp/opcodes-defined.txt -c '
+from compiler import opcode27
+names = sorted(opcode27.opmap)
+for n in names:
+  print(n)
+'
+
+  wc -l _tmp/opcodes-defined.txt
+
+  diff -u _tmp/opcodes-{emitted,defined}.txt
+}
+
 # 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
 # transformer -> ast -> compiler -> byte code
 count() {
@@ -160,23 +225,6 @@ count() {
 test-pgen-parse() {
   # Parse itself
   PYTHONPATH=.. ./pgen_parse.py Grammar.txt pgen_parse.py
-}
-
-readonly PY27=~/src/Python-2.7.6
-
-compare-grammar() {
-  # The compiler package was written for a different grammar!
-  $DIFF $PY27/Grammar/Grammar 2to3.grammar 
-}
-
-# pgen2 has BACKQUOTE = 25.  No main.
-compare-tokens() {
-  $DIFF token.py pgen2/token.py
-}
-
-# This is very different -- is it Python 2 vs. Python 3?
-compare-tokenize() {
-  $DIFF tokenize.py pgen2/tokenize.py
 }
 
 # Features from Python 3 used?  Static types?  I guess Python 3.6 has locals with

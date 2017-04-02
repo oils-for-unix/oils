@@ -1,9 +1,12 @@
 """A flow graph representation for Python bytecode"""
+from __future__ import print_function
 
-import dis
 import types
 import sys
 
+import util
+
+from compiler import opcode27 as opcode
 from compiler import misc
 from compiler.consts \
      import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
@@ -254,6 +257,16 @@ DONE = "DONE"
 class PyFlowGraph(FlowGraph):
     super_init = FlowGraph.__init__
 
+    # Static members
+    hasjrel = set()
+    for i in opcode.hasjrel:
+        hasjrel.add(opcode.opname[i])
+    hasjabs = set()
+    for i in opcode.hasjabs:
+        hasjabs.add(opcode.opname[i])
+
+    _cmp = list(opcode.cmp_op)
+
     def __init__(self, name, filename, args=(), optimized=0, klass=None):
         self.super_init()
         self.name = name
@@ -395,13 +408,6 @@ class PyFlowGraph(FlowGraph):
                 insts[i] = opname, begin[inst[1]]
         self.stage = FLAT
 
-    hasjrel = set()
-    for i in dis.hasjrel:
-        hasjrel.add(dis.opname[i])
-    hasjabs = set()
-    for i in dis.hasjabs:
-        hasjabs.add(dis.opname[i])
-
     def convertArgs(self):
         """Convert arguments from symbolic to concrete form"""
         assert self.stage == FLAT
@@ -489,7 +495,6 @@ class PyFlowGraph(FlowGraph):
         self._lookupName(arg, self.varnames)
         return self._lookupName(arg, self.closure)
 
-    _cmp = list(dis.cmp_op)
     def _convert_COMPARE_OP(self, arg):
         return self._cmp.index(arg)
 
@@ -523,8 +528,8 @@ class PyFlowGraph(FlowGraph):
         self.stage = DONE
 
     opnum = {}
-    for num in range(len(dis.opname)):
-        opnum[dis.opname[num]] = num
+    for num in range(len(opcode.opname)):
+        opnum[opcode.opname[num]] = num
     del num
 
     def newCodeObject(self):
@@ -546,25 +551,38 @@ class PyFlowGraph(FlowGraph):
         #
         # This is defined in Include/code.h PyCodeObject.
 
-        kwonlyargcount = 0
-        bytecode = self.lnotab.getCode().encode('latin-1')
+        if util.PY2:
+          bytecode = self.lnotab.getCode()
+          lnotab = self.lnotab.getTable()
+          self.filename = self.filename.encode('latin-1')
+          self.name = self.filename.encode('latin-1')
+          def _tuple(t):
+            return tuple(s.encode('latin-1') for s in t)
+        else:
+          bytecode = self.lnotab.getCode().encode('latin-1')
+          # addr <-> lineno mapping.
+          # See Objects/lnotab_notes.txt
+          lnotab = self.lnotab.getTable().encode('latin-1')
+          _tuple = tuple
 
-        # addr <-> lineno mapping.
-        # See Objects/lnotab_notes.txt
-        lnotab = self.lnotab.getTable().encode('latin-1')
-
-        code_args = (
-            argcount, kwonlyargcount, nlocals, self.stacksize, self.flags,  # int
+        if util.PY2:
+          code_args = (argcount,)
+        else:
+          kwonlyargcount = 0
+          code_args = (argcount, kwonlyargcount)
+            
+        code_args = code_args + (
+            nlocals, self.stacksize, self.flags,  # int
             bytecode,  # bytes
             self.getConsts(),
-            tuple(self.names),
-            tuple(self.varnames),
+            _tuple(self.names),
+            _tuple(self.varnames),
             self.filename,
             self.name,
             self.lnotab.firstline,
             lnotab,  # bytes
-            tuple(self.freevars),
-            tuple(self.cellvars))
+            _tuple(self.freevars),
+            _tuple(self.cellvars))
 
         if 0:
           for a in code_args:

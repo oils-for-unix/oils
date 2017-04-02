@@ -1,4 +1,5 @@
 """Module symbol-table generator"""
+from __future__ import print_function
 
 from compiler import ast
 from compiler.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
