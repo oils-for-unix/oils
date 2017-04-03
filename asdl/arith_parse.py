@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import print_function
 """
 arith_parse.py: Parse shell-like and C-like arithmetic.
 """

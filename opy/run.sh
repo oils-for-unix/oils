@@ -15,8 +15,20 @@ _parse-one() {
   PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
 }
 
+parse-test() {
+  _parse-one testdata/hello_py3.py
+  echo ---
+  _parse-one testdata/hello_py2.py
+}
+
 _stdlib-parse-one() {
   PYTHONPATH=. ./opy_main.py 2to3.grammar stdlib-parse "$@"
+}
+
+stdlib-parse-test() {
+  _stdlib-parse-one testdata/hello_py3.py
+  echo ---
+  _stdlib-parse-one testdata/hello_py2.py
 }
 
 _compile-one() {
@@ -27,21 +39,8 @@ _compile-one() {
   PYTHONPATH=. ./opy_main.py $g compile "$@"
 }
 
-_compile-one-py2() {
-  local g=py27.grammar
-  PYTHONPATH=. python2 ./opy_main.py $g compile "$@"
-}
-
-parse-test() {
-  _parse-one testdata/hello_py3.py
-  echo ---
-  _parse-one testdata/hello_py2.py
-}
-
-stdlib-parse-test() {
-  _stdlib-parse-one testdata/hello_py3.py
-  echo ---
-  _stdlib-parse-one testdata/hello_py2.py
+_stdlib-compile-one() {
+  misc/stdlib_compile.py "$@"
 }
 
 # Generate .pyc using the Python interpreter.
@@ -60,26 +59,43 @@ _compile-and-run() {
   local basename=$(basename $path .py)
 
   mkdir -p _tmp
-  # Doesn't work why?  Because it was written for Python 2.7?
   local out=_tmp/${basename}.pyc
   _compile-one $path $out
 
   ls -l $out
   xxd $out
 
-  python3 $out
+  python $out
 }
 
-compile-hello() {
-  _compile-and-run testdata/hello_py3.py
+_stdlib-compile-and-run() {
+  local path=$1
+  local basename=$(basename $path .py)
+
+  mkdir -p _tmp
+  local out=_tmp/${basename}.pyc_stdlib
+  misc/stdlib_compile.py $path $out
+
+  ls -l $out
+  xxd $out
+
+  python $out
+}
+
+stdlib-compile-test() {
+  _stdlib-compile-and-run testdata/hello_py2.py
 }
 
 # Bad code object because it only has 14 fields.  Gah!
 # We have to marshal the old one I guess.
 compile-hello2() {
   local out=_tmp/hello_py2.pyc27
-  _compile-one-py2 testdata/hello_py2.py $out
-  python $out
+  _compile-and-run testdata/hello_py2.py $out
+}
+
+# This compiles Python 3 to Python 2 bytecode, and runs it.
+compile-hello3() {
+  _compile-and-run testdata/hello_py3.py
 }
 
 _compile-many() {
@@ -89,33 +105,133 @@ _compile-many() {
   for py in "$@"; do
     echo "--- $py ---"
     local out=_tmp/t.pyc
-    if test "$version" = "py2"; then
-      _compile-one-py2 $py $out #|| true
-    else
-      # Caught problem with yield from.  Deletd.
-      _compile-one $py $out #|| true
-    fi
+    _compile-one $py $out #|| true
   done
 }
 
-# Problems:
-# Can't convert 'bytes' object to str implicitly
 compile-opy() {
   local version=${1:-py2}
   _compile-many $version *.py {compiler,pgen2,testdata,tools}/*.py
 }
 
-# Has a problem with keyword args after *args, e.g. *args, token=None
 compile-osh() {
   local version=${1:-py2}
   # Works
   _compile-many $version ../*.py ../{core,osh,asdl,bin}/*.py
 }
 
+_compile-tree() {
+  local src_tree=$1
+  local dest_tree=$2
+  local version=$3
+  shift 3
+
+  #local ext=opyc
+
+  rm -r -f $dest_tree
+
+  local ext=pyc
+
+  for rel_path in "$@"; do
+    echo $rel_path
+    local dest=${dest_tree}/${rel_path%.py}.${ext}
+    mkdir -p $(dirname $dest)
+
+    if test $version = stdlib; then
+      _stdlib-compile-one $src_tree/${rel_path} $dest
+    else
+      _compile-one $src_tree/${rel_path} $dest
+    fi
+  done
+
+  tree $dest_tree
+  md5-manifest $dest_tree
+}
+
+md5-manifest() {
+  local tree=$1
+  pushd $tree
+  find . -type f | sort | xargs md5sum | tee MANIFEST.txt
+  popd
+}
+
+compile-opy-tree() {
+  local src=$PWD
+  local files=( $(find $src -name _tmp -a -prune -o -name '*.py' -a -printf '%P\n') )
+
+  local dest=_tmp/opy-opy/ 
+  _compile-tree $src $dest opy "${files[@]}"
+
+  local dest=_tmp/opy-stdlib/ 
+  _compile-tree $src $dest stdlib "${files[@]}"
+}
+
+compile-osh-tree() {
+  local src=$(cd .. && echo $PWD)
+  local files=( $(find $src \
+              -name _tmp -a -prune -o \
+              -name opy -a -prune -o \
+              -name tests -a -prune -o \
+              -name '*.py' -a -printf '%P\n') )
+
+  _compile-tree $src _tmp/osh-opy/ opy "${files[@]}"
+  _compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
+}
+
+byterun() {
+  ~/git/other/byterun/byterun/__main__.py "$@"
+}
+
+# Wow!  Runs itself to parse itself... I need some VM instrumentation to make
+# sure it's not accidentally cheating or leaking.
+opy-parse-on-byterun() {
+  local g=$PWD/2to3.grammar 
+  local arg=$PWD/opy_main.py
+  pushd _tmp/opy-stdlib
+  byterun -c opy_main.pyc $g parse $arg
+  popd
+}
+
+osh-parse-on-byterun() {
+  cmd=(osh --ast-output - --no-exec -c 'echo "hello world"')
+
+  ../bin/oil.py "${cmd[@]}"
+
+  cp ../osh/osh.asdl _tmp/osh-stdlib/osh
+  cp ../core/runtime.asdl _tmp/osh-stdlib/core
+
+  echo ---
+
+  byterun -c _tmp/osh-stdlib/bin/oil.pyc "${cmd[@]}"
+}
+
+compare-sizes() {
+  local left=$1
+  local right=$2
+  find $left -name '*.pyc' -a -printf '%s %P\n' | sort -n
+  echo ---
+  # Wow, opyc files are bigger!  Code is not as optimal or what?
+  # Order is roughly the same.
+  find $right -name '*.opyc' -a -printf '%s %P\n' | sort -n
+}
+
+compare-opy-sizes() {
+  compare-sizes .. _tmp/opy
+}
+
+compare-osh-sizes() {
+  # TODO: filter opy out of the left
+  compare-sizes .. _tmp/osh
+}
+
 # Doesn't work because of compileFile.
 old-compile-test() {
   PYTHONPATH=. tools/compile.py testdata/hello_py3.py
 }
+
+#
+# Parsing tests subsummed by compiling
+#
 
 # 2to3.grammar is from  Python-3.6.1/ Lib/lib2to3/Grammar.txt
 parse-with-pgen2() {
@@ -209,11 +325,6 @@ count() {
   wc -l *.py pgen2/*.py compiler/*.py | sort -n
 }
 
-test-pgen-parse() {
-  # Parse itself
-  PYTHONPATH=.. ./pgen_parse.py Grammar.txt pgen_parse.py
-}
-
 # Features from Python 3 used?  Static types?  I guess Python 3.6 has locals with
 # foo: str = 1
 # 
@@ -228,9 +339,5 @@ test-pgen-parse() {
 # few places.
 #
 # So mostly cosmetic issues.
-
-test-pgen2() {
-  pgen2/pgen.py
-}
 
 "$@"

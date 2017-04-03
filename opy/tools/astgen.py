@@ -1,3 +1,4 @@
+from __future__ import print_function
 """Generate ast module from specification
 
 This script generates the ast module from a simple specification,
