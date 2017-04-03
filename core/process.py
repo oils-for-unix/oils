@@ -15,6 +15,7 @@ import fcntl
 import os
 import sys
 
+from core import util
 from core.util import log
 from core.id_kind import REDIR_DEFAULT_FD
 
@@ -278,7 +279,10 @@ class CommandSubRedirect(Redirect):
       byte_str = os.read(self.r, 4096)
       if not byte_str:
         break
-      self.var.append(byte_str.decode('utf-8'))
+      if util.PY2:
+        self.var.append(byte_str)
+      else:
+        self.var.append(byte_str.decode('utf-8'))
     os.close(self.r)
 
 
