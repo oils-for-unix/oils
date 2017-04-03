@@ -288,7 +288,7 @@ class BoolEvaluator(ExprEvaluator):
       if arg_type == OperandType.Path:
         try:
           mode = os.stat(s).st_mode
-        except FileNotFoundError as e:
+        except OSError as e:  # Python 3: FileNotFoundError
           # TODO: Signal extra debug information?
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
           return False
