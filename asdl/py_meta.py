@@ -31,6 +31,7 @@ import sys
 
 from asdl import format as fmt
 from asdl import asdl_ as asdl
+from core import util
 
 
 def _CheckType(value, expected_desc):
@@ -206,7 +207,7 @@ class CompoundObj(Obj):
     self.__dict__[name] = value
 
   def __repr__(self):
-    ast_f = fmt.TextOutput(io.StringIO())  # No color by default.
+    ast_f = fmt.TextOutput(util.Buffer())  # No color by default.
     #ast_f = fmt.AnsiOutput(io.StringIO())
     tree = fmt.MakeTree(self)
     fmt.PrintTree(tree, ast_f)

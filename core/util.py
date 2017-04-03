@@ -24,6 +24,7 @@ easily to C++.
 # http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
 
 import inspect
+import io
 import os
 import pwd
 import sys
@@ -31,6 +32,13 @@ import types
 
 
 PY2 = sys.version[0] == '2'
+
+
+# so we can do f.write('') in either case (not b'' or u'')
+if PY2:
+  Buffer = io.BytesIO
+else:
+  Buffer = io.StringIO
 
 
 def log(msg, *args):

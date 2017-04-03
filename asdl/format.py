@@ -22,6 +22,7 @@ import re
 import sys
 
 from asdl import asdl_ as asdl
+from core import util
 
 
 def DetectConsoleOutput(f):
@@ -84,7 +85,7 @@ class TextOutput(ColorOutput):
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return TextOutput(io.StringIO())
+    return TextOutput(util.Buffer())
 
   def PushColor(self, str_type):
     pass  # ignore color
@@ -104,7 +105,7 @@ class HtmlOutput(ColorOutput):
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return HtmlOutput(io.StringIO())
+    return HtmlOutput(util.Buffer())
 
   def FileHeader(self):
     # TODO: Use a different CSS file to make the colors match.  I like string
@@ -180,7 +181,7 @@ class AnsiOutput(ColorOutput):
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return AnsiOutput(io.StringIO())
+    return AnsiOutput(util.Buffer())
 
   def PushColor(self, str_type):
     if str_type == _NODE_TYPE:
