@@ -12,11 +12,11 @@ source compare.sh
 readonly PY=$PY36
 
 _parse-one() {
-  PYTHONPATH=. ./parse.py 2to3.grammar parse "$@"
+  PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
 }
 
 _stdlib-parse-one() {
-  PYTHONPATH=. ./parse.py 2to3.grammar stdlib-parse "$@"
+  PYTHONPATH=. ./opy_main.py 2to3.grammar stdlib-parse "$@"
 }
 
 _compile-one() {
@@ -24,12 +24,12 @@ _compile-one() {
   # Python 2.7 doesn't have it.
   #local g=2to3.grammar 
   local g=py27.grammar
-  PYTHONPATH=. ./parse.py $g compile "$@"
+  PYTHONPATH=. ./opy_main.py $g compile "$@"
 }
 
 _compile-one-py2() {
   local g=py27.grammar
-  PYTHONPATH=. python2 ./parse.py $g compile "$@"
+  PYTHONPATH=. python2 ./opy_main.py $g compile "$@"
 }
 
 parse-test() {
@@ -70,6 +70,18 @@ _compile-and-run() {
   python3 $out
 }
 
+compile-hello() {
+  _compile-and-run testdata/hello_py3.py
+}
+
+# Bad code object because it only has 14 fields.  Gah!
+# We have to marshal the old one I guess.
+compile-hello2() {
+  local out=_tmp/hello_py2.pyc27
+  _compile-one-py2 testdata/hello_py2.py $out
+  python $out
+}
+
 _compile-many() {
   local version=$1
   shift
@@ -81,7 +93,7 @@ _compile-many() {
       _compile-one-py2 $py $out #|| true
     else
       # Caught problem with yield from.  Deletd.
-      _compile-one $py $out || true
+      _compile-one $py $out #|| true
     fi
   done
 }
@@ -97,30 +109,7 @@ compile-opy() {
 compile-osh() {
   local version=${1:-py2}
   # Works
-  #_compile-many $version ../*.py 
-
-  #_compile-many $version ../core/*.py
-
-  #_compile-many $version ../osh/*.py
-
-  # Works.
-  _compile-many $version ../asdl/*.py
-}
-
-compile-hello() {
-  _compile-and-run testdata/hello_py3.py
-}
-
-# Bad code object because it only has 14 fields.  Gah!
-# We have to marshal the old one I guess.
-compile-hello2() {
-  local out=_tmp/hello_py2.pyc27
-  _compile-one-py2 testdata/hello_py2.py $out
-  python $out
-}
-
-compile-self() {
-  _compile-and-run ./parse.py
+  _compile-many $version ../*.py ../{core,osh,asdl,bin}/*.py
 }
 
 # Doesn't work because of compileFile.
