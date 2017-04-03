@@ -1,4 +1,5 @@
 *.swp
+*.pyc
 _tmp/
 __pycache__
 # Python build output
