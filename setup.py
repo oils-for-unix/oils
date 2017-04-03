@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-
+#!/usr/bin/python
 from distutils.core import setup, Extension
 
 module = Extension('libc',

@@ -19,7 +19,7 @@ install-deps() {
   ./spec.sh install-shells
 }
 
-pylibc() {
+pylibc3() {
   ./setup.py build
 
   # Wildcard to match any Python 3 version.
@@ -27,6 +27,18 @@ pylibc() {
   local so=$(echo build/lib.linux-$(uname -m)-3.*/libc.cpython-3*.so)
 
   ln -s -f --verbose ../$so core/libc.so
+}
+
+pylibc() {
+  ./setup.py build
+
+  # Wildcard to match any Python 3 version.
+  shopt -s failglob
+  local arch=$(uname -m)
+  local so=$(echo build/lib.linux-$arch-2.*/libc.so)
+
+  ln -s -f --verbose ../$so core/libc.so
+  file core/libc.so
 }
 
 # Also done by unit.sh.

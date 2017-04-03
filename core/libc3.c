@@ -1,31 +1,5 @@
-/*
-Copyright 2014 Google Inc. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-/*
- * _fastrand.c -- Python extension module to generate random bit vectors
- * quickly.
- *
- * IMPORTANT: This module does not use crytographically strong randomness.  It
- * should be used ONLY be used to speed up the simulation.  Don't use it in
- * production.
- *
- * If an adversary can predict which random bits are flipped, then RAPPOR's
- * privacy is compromised.
- *
- */
+// libc bindings for the shell executor.  Python's glob, fnmatch, and regexes
+// are all different than what the shell needs.
 
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
@@ -133,7 +107,13 @@ func_glob(PyObject *self, PyObject *args) {
   globfree(&results);
 
   return matches;
+
+  //Py_RETURN_TRUE;
+
+  //return Py_BuildValue("{issi}", 23," zig", "zag", 42);
 }
+
+// TODO: See bash lib/sh/shmatch.c in bash for exact flags!
 
 static PyObject *
 func_regex_parse(PyObject *self, PyObject *args) {
@@ -275,13 +255,17 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 }
 
-PyMethodDef methods[] = {
+PyMethodDef libc_methods[] = {
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
+
   // Python's glob doesn't have char classes
   {"glob", func_glob, METH_VARARGS,
    "Return files that match a pattern."},
-  // https://docs.python.org/2/c-api/capsule.html#capsules
+
+  // Don't bind regcomp/regexec directly.  We are parsing regexes twice for
+  // now, because we want errors to show up at parse time, and we want the
+  // resulting AST to be serializable.  So we just use the pattern itself.
   {"regex_parse", func_regex_parse, METH_VARARGS,
    "Compile a regex in ERE syntax, returning whether it is valid"},
   {"regex_match", func_regex_match, METH_VARARGS,
@@ -289,6 +273,17 @@ PyMethodDef methods[] = {
   {NULL, NULL},
 };
 
-void initlibc(void) {
-  Py_InitModule("libc", methods);
+static struct PyModuleDef libc_module_def = {
+  PyModuleDef_HEAD_INIT,
+  "libc",
+  "libc bindings",
+  -1,
+  libc_methods
+};
+
+PyMODINIT_FUNC PyInit_libc(void)
+{
+    Py_Initialize();
+
+    return PyModule_Create(&libc_module_def);
 }
