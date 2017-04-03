@@ -459,7 +459,6 @@ ls foo
 
 ls bar
 """)
-
     print('--MULTI')
     w = w_parser.ReadWord(LexMode.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]

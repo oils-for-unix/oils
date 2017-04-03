@@ -153,6 +153,12 @@ class CompoundObj(Obj):
 
     return True
 
+  # Interesting difference: Python 3 automatically fills in __ne__ for you!
+  # https://docs.python.org/2/reference/datamodel.html
+  # https://docs.python.org/3/reference/datamodel.html#object.__ne__
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
   def _SetDefaults(self):
     for name in self.FIELDS:
       #print("%r wasn't assigned" % name)
