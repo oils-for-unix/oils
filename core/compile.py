@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 compile.py: osh.asdl -> ovm.asdl
 
@@ -32,22 +33,18 @@ Things the compiler should do:
 - maybe compile differently based on module-level :option
 
 - not sure if redirects need to be separate into primitive push/pop
-
-
-
-
 """
 
 import sys
 
 
 def main(argv):
-  print 'Hello from compile.py'
+  print('Hello from compile.py')
 
 
 if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

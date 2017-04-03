@@ -97,16 +97,14 @@ compile-opy() {
 compile-osh() {
   local version=${1:-py2}
   # Works
-  #_compile-many ../*.py 
+  #_compile-many $version ../*.py 
 
-  # kwonlyargs issue
-  #_compile-many ../core/*.py
+  #_compile-many $version ../core/*.py
 
-  # kwonlyargs issue
-  #_compile-many ../osh/*.py
+  #_compile-many $version ../osh/*.py
 
   # Works.
-  #_compile-many $version ../asdl/*.py
+  _compile-many $version ../asdl/*.py
 }
 
 compile-hello() {
