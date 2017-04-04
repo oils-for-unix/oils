@@ -39,8 +39,34 @@ _compile-one() {
   PYTHONPATH=. ./opy_main.py $g compile "$@"
 }
 
+_compile2-one() {
+  local g=py27.grammar
+  PYTHONPATH=. ./opy_main.py $g compile2 "$@"
+}
+
 _stdlib-compile-one() {
-  misc/stdlib_compile.py "$@"
+  # Run it from source, so we can patch.  Bug still appears.
+
+  #$PY27/python misc/stdlib_compile.py "$@"
+
+  # No with statement
+  #~/src/Python-2.4.6/python misc/stdlib_compile.py "$@"
+
+  # NOT here
+  #~/src/Python-2.6.9/python misc/stdlib_compile.py "$@"
+
+  # Bug appears in Python 2.7.9 too!
+  #~/src/Python-2.7.9/python misc/stdlib_compile.py "$@"
+
+  # Why is it in 2.7.2?  No hash randomization there?
+  #~/src/Python-2.7.2/python misc/stdlib_compile.py "$@"
+
+  # Woah it took 51 iterations to find!
+  # Much rarer in Python 2.7.0.  100 iterations didn't find it?
+  # Then 35 found it.  Wow.
+  ~/src/Python-2.7/python misc/stdlib_compile.py "$@"
+
+  #misc/stdlib_compile.py "$@"
 }
 
 # Generate .pyc using the Python interpreter.
@@ -98,16 +124,86 @@ compile-hello3() {
   _compile-and-run testdata/hello_py3.py
 }
 
+stdlib-determinism() {
+  mkdir -p _tmp/det
+  local file=./opy_main.py
+
+  # 1 in 10 times we get a diff!  And sometimes same diff!  wtf!
+  #
+  # Code is definitely reordered.  Basic block.  But then there are tiny byte
+  # differences too!
+
+  #local file=./pytree.py
+  _stdlib-compile-one $file _tmp/det/$file.1
+  _stdlib-compile-one $file _tmp/det/$file.2
+
+  compare-files _tmp/det/$file.{1,2}
+}
+
+determinism-loop() {
+  local func=$1
+  local file=./opy_main.py
+
+  for i in $(seq 100); do
+    echo "--- $i ---"
+    $func $file _tmp/det/$file.1
+    $func $file _tmp/det/$file.2
+
+    local size1=$(stat --format '%s' _tmp/det/$file.1)
+    local size2=$(stat --format '%s' _tmp/det/$file.2)
+    if test $size1 != $size2; then
+      compare-files _tmp/det/$file.{1,2}
+      echo "Found problem after $i iterations"
+      break
+    fi
+  done
+}
+
+stdlib-determinism-loop() {
+  determinism-loop _stdlib-compile-one 
+}
+
+compile2-determinism-loop() {
+  determinism-loop _compile2-one 
+}
+
+
+# We want to fix the bug here.  Hm not able to hit it?
+compile2-determinism() {
+  mkdir -p _tmp/det
+  local file=./opy_main.py
+
+  #local file=./pytree.py
+  _compile2-one $file _tmp/det/$file.1
+  _compile2-one $file _tmp/det/$file.2
+
+  compare-files _tmp/det/$file.{1,2}
+}
+
+# Compare stdlib and compile2.  They differ every time!  Is it because somehow
+# the Python interpreter is in a different state?  TODO: Could force iteration
+# order.
+
+stdlib-compile2() {
+  mkdir -p _tmp/det
+  local file=./opy_main.py
+
+  #local file=./pytree.py
+  _stdlib-compile-one $file _tmp/det/$file.stdlib
+  _compile2-one $file _tmp/det/$file.compile2
+
+  compare-files _tmp/det/$file.{stdlib,compile2}
+}
+
 _compile-tree() {
   local src_tree=$1
   local dest_tree=$2
   local version=$3
   shift 3
 
-  #local ext=opyc
-
   rm -r -f $dest_tree
 
+  #local ext=opyc
   local ext=pyc
 
   for rel_path in "$@"; do
@@ -117,8 +213,12 @@ _compile-tree() {
 
     if test $version = stdlib; then
       _stdlib-compile-one $src_tree/${rel_path} $dest
-    else
+    elif test $version = compiler2; then
+      _compile2-one $src_tree/${rel_path} $dest
+    elif test $version = opy; then
       _compile-one $src_tree/${rel_path} $dest
+    else
+      die "bad"
     fi
   done
 
@@ -126,22 +226,81 @@ _compile-tree() {
   md5-manifest $dest_tree
 }
 
+export PYTHONHASHSEED=0
+#export PYTHONHASHSEED=random
+
 md5-manifest() {
   local tree=$1
   pushd $tree
-  find . -type f | sort | xargs md5sum | tee MANIFEST.txt
+  # size and name
+  find . -type f | sort | xargs stat --format '%s %n' | tee SIZES.txt
+  find . -type f | sort | xargs md5sum | tee MD5.txt
   popd
 }
 
 compile-opy-tree() {
   local src=$PWD
-  local files=( $(find $src -name _tmp -a -prune -o -name '*.py' -a -printf '%P\n') )
+  local files=( $(find $src \
+              -name _tmp -a -prune -o \
+              -name '*.py' -a -printf '%P\n') )
 
-  local dest=_tmp/opy-opy/ 
-  _compile-tree $src $dest opy "${files[@]}"
+  local dest=_tmp/opy-compile2/ 
+  _compile-tree $src $dest compiler2 "${files[@]}"
 
   local dest=_tmp/opy-stdlib/ 
   _compile-tree $src $dest stdlib "${files[@]}"
+}
+
+# For comparing different bytecode.
+compare-files() {
+  local left=$1
+  local right=$2
+
+  md5sum "$@"
+  ls -l "$@"
+
+  misc/inspect_pyc.py $left > _tmp/pyc-left.txt
+  misc/inspect_pyc.py $right > _tmp/pyc-right.txt
+  $DIFF _tmp/pyc-{left,right}.txt || true
+
+  return
+  strings $left > _tmp/str-left.txt
+  strings $right > _tmp/str-right.txt
+
+  # The ORDER of strings is definitely different.  But the SIZE and CONTENTS
+  # are too!
+  # Solution: can you walk your own code objects and produce custom .pyc files?
+
+  diff -u _tmp/str-{left,right}.txt || true
+
+  #xxd $left > _tmp/hexleft.txt
+  #xxd $right > _tmp/hexright.txt
+  #diff -u _tmp/hex{left,right}.txt || true
+  echo done
+}
+
+compare-opy-tree() {
+  diff -u _tmp/opy-{stdlib,stdlib2}/SIZES.txt || true
+  #diff -u _tmp/opy-{stdlib,stdlib2}/MD5.txt || true
+
+  # Hm even two stdlib runs are different!
+  # TODO: find the smallest ones that are differet
+
+  # Same strings output
+  compare-files _tmp/opy-{stdlib,stdlib2}/pytree.pyc
+  return
+  compare-files _tmp/opy-{stdlib,stdlib2}/opy_main.pyc
+  compare-files _tmp/opy-{stdlib,stdlib2}/compiler2/pyassem.pyc
+  compare-files _tmp/opy-{stdlib,stdlib2}/compiler2/pycodegen.pyc
+  compare-files _tmp/opy-{stdlib,stdlib2}/compiler2/symbols.pyc
+  compare-files _tmp/opy-{stdlib,stdlib2}/compiler2/transformer.pyc
+  return
+
+  #diff -u _tmp/opy-{stdlib,compile2}/MANIFEST.txt
+
+  compare-files _tmp/opy-{stdlib,compile2}/util.pyc
+  compare-files _tmp/opy-{stdlib,compile2}/pgen2/driver.pyc
+  compare-files _tmp/opy-{stdlib,compile2}/opy_main.pyc
 }
 
 compile-osh-tree() {
@@ -152,8 +311,34 @@ compile-osh-tree() {
               -name tests -a -prune -o \
               -name '*.py' -a -printf '%P\n') )
 
-  _compile-tree $src _tmp/osh-opy/ opy "${files[@]}"
   _compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
+  _compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
+}
+
+fill-osh-tree() {
+  local dir=${1:-_tmp/osh-stdlib}
+  cp -v ../osh/osh.asdl $dir/osh
+  cp -v ../core/runtime.asdl $dir/core
+  cp -v ../asdl/arith.asdl $dir/asdl
+  ln -v -s -f $PWD/../core/libc.so $dir/core
+}
+
+test-osh-tree() {
+  local dir=${1:-_tmp/osh-stdlib}
+  pushd $dir
+  mkdir -p _tmp
+  for t in {asdl,core,osh}/*_test.pyc; do
+    if [[ $t == *arith_parse_test.pyc ]]; then
+      continue
+    fi
+    if [[ $t == *libc_test.pyc ]]; then
+      continue
+    fi
+
+    echo $t
+    PYTHONPATH=. python $t
+  done
+  popd
 }
 
 byterun() {
@@ -174,9 +359,6 @@ osh-parse-on-byterun() {
   cmd=(osh --ast-output - --no-exec -c 'echo "hello world"')
 
   ../bin/oil.py "${cmd[@]}"
-
-  cp ../osh/osh.asdl _tmp/osh-stdlib/osh
-  cp ../core/runtime.asdl _tmp/osh-stdlib/core
 
   echo ---
 
@@ -301,6 +483,16 @@ for n in names:
 # transformer -> ast -> compiler -> byte code
 count() {
   wc -l *.py pgen2/*.py compiler/*.py | sort -n
+}
+
+determinism() {
+  # This changes it.  Python 2.7 doesn't have it on by default I guess.
+  # So what is the cause in the compiler package?
+  #export PYTHONHASHSEED=random
+
+  misc/determinism.py > _tmp/d1.txt
+  misc/determinism.py > _tmp/d2.txt
+  $DIFF _tmp/{d1,d2}.txt && echo SAME
 }
 
 # Features from Python 3 used?  Static types?  I guess Python 3.6 has locals with

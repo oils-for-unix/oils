@@ -1,9 +1,9 @@
 """Module symbol-table generator"""
 
-from compiler import ast
-from compiler.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
+from compiler2 import ast
+from compiler2.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
     SC_FREE, SC_CELL, SC_UNKNOWN
-from compiler.misc import mangle
+from compiler2.misc import mangle
 import types
 
 

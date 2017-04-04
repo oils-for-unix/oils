@@ -4,8 +4,8 @@ import dis
 import types
 import sys
 
-from compiler import misc
-from compiler.consts \
+from compiler2 import misc
+from compiler2.consts \
      import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
 class FlowGraph:

@@ -52,6 +52,25 @@ tokenize() {
   $DIFF tokenize.py pgen2/tokenize.py
 }
 
+compiler2() {
+  #diff -u $PY27/Lib/compiler/ compiler2
+
+  # The version we're actually running
+  diff -u /usr/lib/python2.7/compiler/ compiler2
+}
+
+compiler26-27() {
+  diff -u ~/src/Python-2.{6,7}.9/Lib/compiler/
+}
+
+compiler27() {
+  diff -u ~/src/Python-2.7.{2,9}/Lib/compiler/
+}
+
+set27() {
+  diff -u ~/src/Python-2.7.{2,3}/Objects/setobject.c
+}
+
 if test $(basename $0) = compare.sh; then
   "$@"
 fi

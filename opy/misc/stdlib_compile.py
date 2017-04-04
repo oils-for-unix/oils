@@ -4,14 +4,14 @@ from __future__ import print_function
 stdlib_compile.py
 """
 
+import compiler as stdlib_comp
 import imp
 import os
-import compiler as stdlib_comp
 import marshal
 import struct
 import sys
 
-import hashlib
+#import hashlib
 
 
 def getPycHeader(filename):
@@ -25,14 +25,11 @@ def getPycHeader(filename):
   return imp.get_magic() + mtime 
 
 
-def main(argv):
-  in_path = argv[1]
-  out_path = argv[2]
-
+def compileAndWrite(in_path, out_path, compile_func):
   #print(stdlib_comp, file=sys.stderr)
 
   with open(in_path) as f:
-    co = stdlib_comp.compile(f.read(), in_path, 'exec')
+    co = compile_func(f.read(), in_path, 'exec')
 
   #print(co, file=sys.stderr)
 
@@ -46,6 +43,13 @@ def main(argv):
     #print(m.hexdigest(), file=sys.stderr)
 
     out_f.write(s)
+
+
+def main(argv):
+  in_path = argv[1]
+  out_path = argv[2]
+
+  compileAndWrite(in_path, out_path, stdlib_comp.compile)
 
 
 if __name__ == '__main__':

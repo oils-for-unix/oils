@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-parse.py
+opy_main.py
 """
 from __future__ import print_function
 
@@ -177,6 +177,15 @@ def main(argv):
       h = pycodegen.getPycHeader(py_path)
       out_f.write(h)
       marshal.dump(co, out_f)
+
+  elif action == 'compile2':
+    in_path = argv[3]
+    out_path = argv[4]
+
+    from compiler2 import pycodegen as pycodegen2
+    from misc import stdlib_compile
+
+    stdlib_compile.compileAndWrite(in_path, out_path, pycodegen2.compile)
 
   else: 
     raise RuntimeError('Invalid action %r' % action)
