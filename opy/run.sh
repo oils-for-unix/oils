@@ -271,8 +271,8 @@ copy-old-grammar() {
 
 copy-pycompiler() {
   # The last version of the pure Python compile package.
-  mkdir -p compiler
-  cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compiler
+  mkdir -p compiler2
+  cp -v ~/src/Python-2.7.6/Lib/compiler/*.py compiler2
 }
 
 copy-pycompiler-tools() {
