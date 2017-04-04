@@ -98,28 +98,6 @@ compile-hello3() {
   _compile-and-run testdata/hello_py3.py
 }
 
-_compile-many() {
-  local version=$1
-  shift
-
-  for py in "$@"; do
-    echo "--- $py ---"
-    local out=_tmp/t.pyc
-    _compile-one $py $out #|| true
-  done
-}
-
-compile-opy() {
-  local version=${1:-py2}
-  _compile-many $version *.py {compiler,pgen2,testdata,tools}/*.py
-}
-
-compile-osh() {
-  local version=${1:-py2}
-  # Works
-  _compile-many $version ../*.py ../{core,osh,asdl,bin}/*.py
-}
-
 _compile-tree() {
   local src_tree=$1
   local dest_tree=$2
