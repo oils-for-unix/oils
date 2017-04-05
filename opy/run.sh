@@ -69,6 +69,10 @@ _stdlib-compile-one() {
   #misc/stdlib_compile.py "$@"
 }
 
+_ccompile-one() {
+  misc/ccompile.py "$@"
+}
+
 # Generate .pyc using the Python interpreter.
 compile-gold() {
   pushd testdata
@@ -215,6 +219,8 @@ _compile-tree() {
       _stdlib-compile-one $src_tree/${rel_path} $dest
     elif test $version = compiler2; then
       _compile2-one $src_tree/${rel_path} $dest
+    elif test $version = ccompile; then
+      _ccompile-one $src_tree/${rel_path} $dest
     elif test $version = opy; then
       _compile-one $src_tree/${rel_path} $dest
     else
@@ -311,6 +317,7 @@ compile-osh-tree() {
               -name tests -a -prune -o \
               -name '*.py' -a -printf '%P\n') )
 
+  _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
   _compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
   _compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
 }
@@ -323,21 +330,68 @@ fill-osh-tree() {
   ln -v -s -f $PWD/../core/libc.so $dir/core
 }
 
+# TODO: Run all cross product of {compile2,compile} x {byterun,cpython}.
+
 test-osh-tree() {
   local dir=${1:-_tmp/osh-stdlib}
+  local vm=${2:-byterun}  # byterun or cpython
+
   pushd $dir
   mkdir -p _tmp
   for t in {asdl,core,osh}/*_test.pyc; do
     if [[ $t == *arith_parse_test.pyc ]]; then
       continue
     fi
-    if [[ $t == *libc_test.pyc ]]; then
-      continue
-    fi
+    #if [[ $t == *libc_test.pyc ]]; then
+    #  continue
+    #fi
 
     echo $t
-    PYTHONPATH=. python $t
+    if test $vm = byterun; then
+      PYTHONPATH=. byterun -c $t
+    else
+      PYTHONPATH=. python $t
+    fi
   done
+  popd
+}
+
+unit-osh() {
+  local dir=${1:-_tmp/osh-stdlib}
+  local vm=${2:-byterun}  # or cpython
+  shift 2
+  pushd $dir
+  if test $vm = byterun; then
+    PYTHONPATH=. byterun -c "$@"
+  else
+    PYTHONPATH=. python "$@"
+  fi
+  popd
+}
+
+# Compile and byterun
+
+# Weird interaction:
+#
+# ccompile / run std VM -- OK
+# ccompile / byterun VM -- OK
+# stdlib-compiler or compile2 / run with std VM -- OK
+#
+# stdlib-compiler or compiler2 / byterun VM -- weird exception!
+#
+# So each component works with the python VM, but not with each other.
+#
+# Oh you don't have a method of compling with the python VM.  Then run with
+# byterun.  That would be a good comparison.
+
+pyc-byterun() {
+  local t=${1:-core/id_kind_test.py}
+  pushd ..
+
+  python -c 'from core import id_kind_test' || true
+  ls -l ${t}c
+
+  PYTHONPATH=. byterun -c ${t}c
   popd
 }
 
