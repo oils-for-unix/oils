@@ -256,7 +256,7 @@ class PyFlowGraph(FlowGraph):
 
     def __init__(self, name, filename, args=(), optimized=0, klass=None):
         self.super_init()
-        self.name = name
+        self.name = name  # name that is put in the code object
         self.filename = filename
         self.docstring = None
         self.args = args # XXX

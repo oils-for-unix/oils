@@ -11,6 +11,11 @@ source compare.sh
 
 readonly PY=$PY36
 
+die() {
+  echo "FATAL: $@" 1>&2
+  exit 1
+}
+
 _parse-one() {
   PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
 }
@@ -257,6 +262,10 @@ compile-opy-tree() {
   _compile-tree $src $dest stdlib "${files[@]}"
 }
 
+inspect-pyc() {
+  PYTHONPATH=. misc/inspect_pyc.py "$@"
+}
+
 # For comparing different bytecode.
 compare-files() {
   local left=$1
@@ -265,8 +274,8 @@ compare-files() {
   md5sum "$@"
   ls -l "$@"
 
-  misc/inspect_pyc.py $left > _tmp/pyc-left.txt
-  misc/inspect_pyc.py $right > _tmp/pyc-right.txt
+  inspect-pyc $left > _tmp/pyc-left.txt
+  inspect-pyc $right > _tmp/pyc-right.txt
   $DIFF _tmp/pyc-{left,right}.txt || true
 
   return
@@ -309,6 +318,7 @@ compare-opy-tree() {
   compare-files _tmp/opy-{stdlib,compile2}/opy_main.pyc
 }
 
+
 compile-osh-tree() {
   local src=$(cd .. && echo $PWD)
   local files=( $(find $src \
@@ -320,6 +330,12 @@ compile-osh-tree() {
   _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
   _compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
   _compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
+}
+
+compare-osh-tree() {
+  #diff -u _tmp/opy-{stdlib,stdlib2}/SIZES.txt || true
+  #compare-files _tmp/osh-{ccompile,compile2}/core/id_kind_test.pyc
+  compare-files _tmp/osh-{ccompile,compile2}/core/testdbg.pyc
 }
 
 fill-osh-tree() {
@@ -369,30 +385,30 @@ unit-osh() {
   popd
 }
 
-# Compile and byterun
+# Combinatios of {ccompile, compiler2} x {cpython, byterun}
+compile-run-one() {
+  local compiler=${1:-ccompile}  # or compile2
+  local vm=${2:-byterun}  # or cpython
+  local py=$3
+  shift 3
 
-# Weird interaction:
-#
-# ccompile / run std VM -- OK
-# ccompile / byterun VM -- OK
-# stdlib-compiler or compile2 / run with std VM -- OK
-#
-# stdlib-compiler or compiler2 / byterun VM -- weird exception!
-#
-# So each component works with the python VM, but not with each other.
-#
-# Oh you don't have a method of compling with the python VM.  Then run with
-# byterun.  That would be a good comparison.
+  if ! { test $compiler = ccompile || test $compiler = compile2; } then
+    die "Invalid compiler $compiler"
+  fi
 
-pyc-byterun() {
-  local t=${1:-core/id_kind_test.py}
-  pushd ..
+  local dir="_tmp/osh-$compiler"
+  local pyc="$dir/$(basename $py)c"
+  _$compiler-one $py $pyc
 
-  python -c 'from core import id_kind_test' || true
-  ls -l ${t}c
-
-  PYTHONPATH=. byterun -c ${t}c
-  popd
+  export PYTHONPATH=$dir 
+  if test $vm = cpython; then
+    python $pyc "$@"
+  elif test $vm = byterun; then
+    #byterun -v -c $pyc "$@" 
+    byterun -c $pyc "$@" 
+  else
+    die $vm
+  fi
 }
 
 byterun() {
@@ -404,7 +420,7 @@ byterun() {
 opy-parse-on-byterun() {
   local g=$PWD/2to3.grammar 
   local arg=$PWD/opy_main.py
-  pushd _tmp/opy-stdlib
+  pushd _tmp/opy-compile2
   byterun -c opy_main.pyc $g parse $arg
   popd
 }
@@ -416,7 +432,7 @@ osh-parse-on-byterun() {
 
   echo ---
 
-  byterun -c _tmp/osh-stdlib/bin/oil.pyc "${cmd[@]}"
+  byterun -c _tmp/osh-compile2/bin/oil.pyc "${cmd[@]}"
 }
 
 compare-sizes() {

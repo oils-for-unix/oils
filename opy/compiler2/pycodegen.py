@@ -1431,6 +1431,11 @@ class GenExprCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
     def __init__(self, gexp, scopes, class_name, mod):
         self.scopes = scopes
         self.scope = scopes[gexp]
+        # NOTE: isLambda=1, which causes the code object to be named
+        # "lambda.<n>".  To match Python, we can thread an argument through and
+        # name it "<genexpr>".  byterun has a hack due to 
+        # http://bugs.python.org/issue19611 that relies on this.  But we worked
+        # around it there.
         self.__super_init(gexp, scopes, 1, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())

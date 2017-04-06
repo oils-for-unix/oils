@@ -66,9 +66,33 @@ def show_bytecode(code, level=0):
     buffer = StringIO()
     sys.stdout = buffer
     # NOTE: This format has addresses in it, disable for now
-    #dis.disassemble(code)
+    dis.disassemble(code)
     sys.stdout = sys.__stdout__
     print(indent + buffer.getvalue().replace("\n", "\n"+indent))
+
+
+# TODO: Do this in a cleaner way.  Right now I'm avoiding modifying the
+# consts module.
+def build_flags_def(consts, co_flags_def):
+  for name in dir(consts): 
+    if name.startswith('CO_'):
+      co_flags_def[name] = getattr(consts, name)
+
+from compiler2 import consts
+_CO_FLAGS_DEF = {}
+build_flags_def(consts, _CO_FLAGS_DEF)
+
+def show_flags(value):
+    names = []
+    for name, bit in _CO_FLAGS_DEF.items():
+      if value & bit:
+        names.append(name)
+
+    h = "0x%05x" % value
+    if names:
+      return '%s %s' % (h, ' '.join(names))
+    else:
+      return h
 
 def show_code(code, level=0):
     indent = INDENT*level
@@ -82,7 +106,7 @@ def show_code(code, level=0):
         if isinstance(value, str):
             value = repr(value)
         elif name == "co_flags":
-            value = "0x%05x" % value
+            value = show_flags(value)
         elif name == "co_lnotab":
             value = "0x(%s)" % to_hexstr(value)
         print("%s%s%s" % (indent, (name+":").ljust(NAME_OFFSET), value))
