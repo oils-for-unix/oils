@@ -1,9 +1,13 @@
+#!/usr/bin/python
 """Test the with statement for Byterun."""
 
 from __future__ import print_function
-from . import vmtest
 
+import unittest
 import six
+
+import vmtest
+
 PY3 = six.PY3
 
 class TestWithStatement(vmtest.VmTestCase):

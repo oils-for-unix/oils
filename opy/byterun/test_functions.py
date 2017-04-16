@@ -1,8 +1,12 @@
+#!/usr/bin/python
+from __future__ import print_function
 """Test functions etc, for Byterun."""
 
-from __future__ import print_function
-from . import vmtest
+import unittest
+
 import six
+
+import vmtest
 
 PY3 = six.PY3
 
@@ -383,3 +387,7 @@ class TestGenerators(vmtest.VmTestCase):
 
                 list(main())
             """)
+
+
+if __name__ == '__main__':
+    unittest.main()

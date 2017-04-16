@@ -1,7 +1,10 @@
+#!/usr/bin/python
+from __future__ import print_function
 """Test exceptions for Byterun."""
 
-from __future__ import print_function
-from . import vmtest
+import unittest
+
+import vmtest
 
 import six
 
@@ -159,3 +162,7 @@ class TestExceptions(vmtest.VmTestCase):
             print(l)
             assert l == [0, 'f', 'e', 1, 'f', 'e', 2, 'f', 'e', 'r']
             """)
+
+
+if __name__ == '__main__':
+    unittest.main()

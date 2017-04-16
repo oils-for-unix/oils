@@ -1,11 +1,12 @@
 """Execute files of Python code."""
 
 import imp
+import marshal
 import os
 import sys
 import tokenize
 
-from .pyvm2 import VirtualMachine
+from pyvm2 import VirtualMachine
 
 
 # This code is ripped off from coverage.py.  Define things it expects.
@@ -143,3 +144,39 @@ def run_python_file(filename, args, package=None):
         # Restore the old argv and path
         sys.argv = old_argv
         sys.path[0] = old_path0
+
+
+def run_pyc_file(filename, args, package=None):
+    # Create a module to serve as __main__
+    old_main_mod = sys.modules['__main__']
+    main_mod = imp.new_module('__main__')
+    sys.modules['__main__'] = main_mod
+    main_mod.__file__ = filename
+    if package:
+        main_mod.__package__ = package
+    main_mod.__builtins__ = BUILTINS
+
+    # Set sys.argv and the first path element properly.
+    old_argv = sys.argv
+    old_path0 = sys.path[0]
+    sys.argv = args
+    if package:
+        sys.path[0] = ''
+    else:
+        sys.path[0] = os.path.abspath(os.path.dirname(filename))
+
+    try:
+        with open(filename) as f:
+          f.seek(8)  # past header.  TODO: validate it!
+          code = marshal.load(f)
+
+        # Execute the source file.
+        exec_code_object(code, main_mod.__dict__)
+    finally:
+        # Restore the old __main__
+        sys.modules['__main__'] = old_main_mod
+
+        # Restore the old argv and path
+        sys.argv = old_argv
+        sys.path[0] = old_path0
+

@@ -1,7 +1,9 @@
 """Implementations of Python fundamental objects for Byterun."""
+from __future__ import print_function
 
 import collections
 import inspect
+import sys
 import types
 
 import six
@@ -61,15 +63,26 @@ class Function(object):
             return self
 
     def __call__(self, *args, **kwargs):
-        if PY2 and self.func_name in ["<setcomp>", "<dictcomp>", "<genexpr>"]:
+        #if PY2 and self.func_name in ["<setcomp>", "<dictcomp>", "<genexpr>"]:
             # D'oh! http://bugs.python.org/issue19611 Py2 doesn't know how to
             # inspect set comprehensions, dict comprehensions, or generator
             # expressions properly.  They are always functions of one argument,
             # so just do the right thing.
-            assert len(args) == 1 and not kwargs, "Surprising comprehension!"
+            #assert len(args) == 1 and not kwargs, "Surprising comprehension!"
+            #callargs = {".0": args[0]}
+
+        # Different workaround for issue 19611 that works with
+        # compiler2-generated code.  Note that byterun does not use fastlocals,
+        # so the name matters.  With fastlocals, the co_varnames entry is just
+        # a comment; the index is used instead.
+        code = self.func_code
+        if code.co_argcount == 1 and code.co_varnames[0] == '.0':
             callargs = {".0": args[0]}
         else:
+            # NOTE: Can get ValueError due to issue 19611
             callargs = inspect.getcallargs(self._func, *args, **kwargs)
+        #print('-- func_name %s CALLS ARGS %s' % (self.func_name, callargs))
+
         frame = self._vm.make_frame(
             self.func_code, callargs, self.func_globals, {}
         )

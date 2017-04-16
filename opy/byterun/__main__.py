@@ -1,9 +1,10 @@
+#!/usr/bin/python
 """A main program for Byterun."""
 
 import argparse
 import logging
 
-from . import execfile
+import execfile
 
 parser = argparse.ArgumentParser(
     prog="byterun",
@@ -12,6 +13,10 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '-m', dest='module', action='store_true',
     help="prog is a module name, not a file name.",
+)
+parser.add_argument(
+    '-c', dest='compiled', action='store_true',
+    help="prog is a compiled .pyc file, not a .py file",
 )
 parser.add_argument(
     '-v', '--verbose', dest='verbose', action='store_true',
@@ -27,7 +32,11 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if args.module:
+# TODO: Add option to run raw bytecode, just like the regular Python
+# interpreter.
+if args.compiled:
+    run_fn = execfile.run_pyc_file
+elif args.module:
     run_fn = execfile.run_python_module
 else:
     run_fn = execfile.run_python_file

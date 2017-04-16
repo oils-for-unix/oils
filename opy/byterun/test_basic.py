@@ -1,9 +1,12 @@
+#!/usr/bin/python
+from __future__ import print_function
 """Basic tests for Byterun."""
 
-from __future__ import print_function
-from . import vmtest
+import unittest
 
 import six
+
+import vmtest
 
 PY3, PY2 = six.PY3, not six.PY3
 
@@ -649,3 +652,7 @@ class TestComparisons(vmtest.VmTestCase):
             assert "z" > "a"
             assert "z" >= "a" and "z" >= "z"
             """)
+
+
+if __name__ == '__main__':
+    unittest.main()
