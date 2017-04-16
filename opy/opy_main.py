@@ -13,9 +13,16 @@ import marshal
 from pgen2 import driver
 from pgen2 import token, tokenize
 import pytree
+
+# TODO: Delete these
 from compiler import transformer
 from compiler import pycodegen
 from compiler import opcode27
+
+#from compiler2 import transformer
+#from compiler2 import pycodegen
+#from compiler2 import opcode
+
 from util import log
 import util
 
@@ -150,7 +157,7 @@ def main(argv):
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
-  elif action == 'compile':
+  elif action == 'old-compile':
     py_path = argv[3]
     out_path = argv[4]
 
@@ -177,6 +184,11 @@ def main(argv):
       h = pycodegen.getPycHeader(py_path)
       out_f.write(h)
       marshal.dump(co, out_f)
+
+  elif action == 'compile':
+    # 'opy compile' is pgen2 + compiler2
+    # TODO: import compiler2
+    raise NotImplementedError
 
   elif action == 'compile2':
     in_path = argv[3]
