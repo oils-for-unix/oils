@@ -117,8 +117,11 @@ compile-osh-tree() {
               -name '*.py' -a -printf '%P\n') )
 
   _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
-  _compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
   _compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
+
+  # Not deterministic!
+  #_compile-tree $src _tmp/osh-compile2.gold/ compiler2 "${files[@]}"
+  #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
 }
 
 fill-osh-tree() {
@@ -175,6 +178,10 @@ EOF
   time byterun -c _tmp/speed.opyc 10000
 }
 
+#
+# Byterun smoke tests
+#
+
 # Wow!  Runs itself to parse itself... I need some VM instrumentation to make
 # sure it's not accidentally cheating or leaking.
 opy-parse-on-byterun() {
@@ -191,6 +198,79 @@ osh-parse-on-byterun() {
   ../bin/oil.py "${cmd[@]}"
   echo ---
   byterun -c _tmp/osh-compile2/bin/oil.pyc "${cmd[@]}"
+}
+
+#
+# Determinism
+#
+# There are problems here, but it's because of an underlying Python 2.7 issue.
+# For now we will do functional tests.
+#
+
+# Doesn't suffice for for compiler2 determinism.
+#export PYTHONHASHSEED=0
+
+inspect-pyc() {
+  PYTHONPATH=. misc/inspect_pyc.py "$@"
+}
+
+# For comparing different bytecode.
+compare-bytecode() {
+  local left=$1
+  local right=$2
+
+  md5sum "$@"
+  ls -l "$@"
+
+  inspect-pyc $left > _tmp/pyc-left.txt
+  inspect-pyc $right > _tmp/pyc-right.txt
+  $DIFF _tmp/pyc-{left,right}.txt || true
+
+  return
+  strings $left > _tmp/str-left.txt
+  strings $right > _tmp/str-right.txt
+
+  # The ORDER of strings is definitely different.  But the SIZE and CONTENTS
+  # are too!
+  # Solution: can you walk your own code objects and produce custom .pyc files?
+
+  diff -u _tmp/str-{left,right}.txt || true
+
+  #xxd $left > _tmp/hexleft.txt
+  #xxd $right > _tmp/hexright.txt
+  #diff -u _tmp/hex{left,right}.txt || true
+  echo done
+}
+
+# Compile opy_main a 100 times and make sure it's the same.
+#
+# NOTE: This doesn't surface all the problems.  Remember the fix was in
+# compiler2/misc.py:Set.
+determinism-loop() {
+  local func=$1
+  local file=${2:-./opy_main.py}
+
+  mkdir -p _tmp/det
+
+  local name=$(basename $file)
+  for i in $(seq 100); do
+    echo "--- $i ---"
+    $func $file _tmp/det/$name.1
+    $func $file _tmp/det/$name.2
+
+    local size1=$(stat --format '%s' _tmp/det/$name.1)
+    local size2=$(stat --format '%s' _tmp/det/$name.2)
+    if test $size1 != $size2; then
+      # TODO: Import from run.sh
+      compare-bytecode _tmp/det/$file.{1,2}
+      echo "Found problem after $i iterations"
+      break
+    fi
+  done
+}
+
+compile2-determinism-loop() {
+  determinism-loop _compile2-one ../core/lexer.py
 }
 
 "$@"

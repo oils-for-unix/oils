@@ -374,6 +374,8 @@ def RunCases(cases, case_predicate, shells, env, out):
   stats['num_cases'] = len(cases)
   stats['osh_num_passed'] = 0
   stats['osh_num_failed'] = 0
+  # Number of opypy-osh results that differed from cpython-osh a.k.a. osh.
+  stats['opypy_delta'] = 0
 
   # Make an environment for each shell.  $SH is the path to the shell, so we
   # can test flags, etc.
@@ -436,7 +438,11 @@ def RunCases(cases, case_predicate, shells, env, out):
       result_row.append(cell_result)
 
       if cell_result == Result.FAIL:
-        stats['num_failed'] += 1
+        # Special logic: don't count opypy-osh beacuse its failures will be
+        # counted in the delta.
+        if sh_label != 'opypy-osh':
+          stats['num_failed'] += 1
+
         if sh_label == 'osh':
           stats['osh_num_failed'] += 1
       elif cell_result == Result.BUG:
@@ -451,6 +457,12 @@ def RunCases(cases, case_predicate, shells, env, out):
           stats['osh_num_passed'] += 1
       else:
         raise AssertionError
+
+      if sh_label == 'opyopy-osh':
+        opypy_result = result_row[-1]
+        cpython_result = result_row[-2]
+        if opypy_result != cpython_result:
+          stats['opypy_delta'] += 1
 
     out.WriteRow(i, line_num, result_row, desc)
 

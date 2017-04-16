@@ -13,7 +13,11 @@ readonly MKSH=/bin/mksh
 readonly ZSH=/usr/bin/zsh  # Ubuntu puts it here
 readonly BUSYBOX_ASH=_tmp/shells/ash 
 
-readonly OSH=bin/osh
+
+# HACK that relies on word splitting
+# TODO: Use ${OSH[@]} everywhere
+readonly OSH='bin/osh bin/opypy-osh'
+#readonly OSH=bin/osh
 
 # ash and dash are similar, so not including ash by default.  zsh is not quite
 # POSIX.

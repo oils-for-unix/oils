@@ -50,7 +50,7 @@ run-cases() {
       --format html \
       --stats-file _tmp/spec/${spec_name}.stats.txt \
       --stats-template \
-        '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d' \
+      '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d %(opypy_delta)d' \
     > _tmp/spec/${spec_name}.html
 }
 
@@ -81,6 +81,7 @@ run-task-with-status-test() {
 }
 
 readonly NUM_TASKS=400
+#readonly NUM_TASKS=4
 
 # TODO:
 #
@@ -101,7 +102,9 @@ _html-summary() {
   <thead>
     <tr>
       <td>name</td> <td>Exit Code</td> <td>Elapsed Seconds</td>
-      <td># cases</td> <td>osh # passed</td> <td>osh # failed</td> <td>osh failures allowed </d>
+      <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
+      <td>osh failures allowed</td>
+      <td>opypy-osh delta</td>
     </tr>
   </thead>
 EOF
@@ -125,6 +128,7 @@ EOF
     osh_num_passed = $2
     osh_num_failed = $3
     osh_failures_allowed = $4
+    opypy_delta = $5
 
     sum_status += status
     sum_wall_secs += wall_secs
@@ -132,6 +136,7 @@ EOF
     sum_osh_num_passed += osh_num_passed
     sum_osh_num_failed += osh_num_failed
     sum_osh_failures_allowed += osh_failures_allowed
+    sum_opypy_delta += opypy_delta
     num_rows += 1
 
     # For the console
@@ -159,6 +164,7 @@ EOF
     print "<td>" osh_num_passed "</td>"
     print "<td>" osh_num_failed "</td>"
     print "<td>" osh_failures_allowed "</td>"
+    print "<td>" opypy_delta "</td>"
     print "</tr>"
   }
 
@@ -172,6 +178,7 @@ EOF
     print "<td>" sum_osh_num_passed "</td>"
     print "<td>" sum_osh_num_failed "</td>"
     print "<td>" sum_osh_failures_allowed "</td>"
+    print "<td>" sum_opypy_delta "</td>"
     print "</tr>"
     print "</tfoot>"
 

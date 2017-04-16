@@ -108,31 +108,8 @@ stdlib-determinism() {
   compare-files _tmp/det/$file.{1,2}
 }
 
-determinism-loop() {
-  local func=$1
-  local file=./opy_main.py
-
-  for i in $(seq 100); do
-    echo "--- $i ---"
-    $func $file _tmp/det/$file.1
-    $func $file _tmp/det/$file.2
-
-    local size1=$(stat --format '%s' _tmp/det/$file.1)
-    local size2=$(stat --format '%s' _tmp/det/$file.2)
-    if test $size1 != $size2; then
-      compare-files _tmp/det/$file.{1,2}
-      echo "Found problem after $i iterations"
-      break
-    fi
-  done
-}
-
 stdlib-determinism-loop() {
   determinism-loop _stdlib-compile-one 
-}
-
-compile2-determinism-loop() {
-  determinism-loop _compile2-one 
 }
 
 
@@ -165,38 +142,6 @@ stdlib-compile2() {
 
 export PYTHONHASHSEED=0
 #export PYTHONHASHSEED=random
-
-inspect-pyc() {
-  PYTHONPATH=. misc/inspect_pyc.py "$@"
-}
-
-# For comparing different bytecode.
-compare-files() {
-  local left=$1
-  local right=$2
-
-  md5sum "$@"
-  ls -l "$@"
-
-  inspect-pyc $left > _tmp/pyc-left.txt
-  inspect-pyc $right > _tmp/pyc-right.txt
-  $DIFF _tmp/pyc-{left,right}.txt || true
-
-  return
-  strings $left > _tmp/str-left.txt
-  strings $right > _tmp/str-right.txt
-
-  # The ORDER of strings is definitely different.  But the SIZE and CONTENTS
-  # are too!
-  # Solution: can you walk your own code objects and produce custom .pyc files?
-
-  diff -u _tmp/str-{left,right}.txt || true
-
-  #xxd $left > _tmp/hexleft.txt
-  #xxd $right > _tmp/hexright.txt
-  #diff -u _tmp/hex{left,right}.txt || true
-  echo done
-}
 
 compare-opy-tree() {
   diff -u _tmp/opy-{stdlib,stdlib2}/SIZES.txt || true

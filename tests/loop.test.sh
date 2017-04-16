@@ -116,7 +116,7 @@ find bin/ -type f | ( while read path; do
   #echo $i
 done
 echo $i )
-# stdout: 1
+# stdout: 2
 
 ### until loop
 # This is just the opposite of while?  while ! cond?
