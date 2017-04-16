@@ -36,6 +36,9 @@ unit() {
   for t in ./test_*.py; do
     echo $t
     $t
+
+    # This exposes the dependency on 'six' that we don't want.
+    #python -S $t
   done
 }
 
