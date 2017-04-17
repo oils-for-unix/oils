@@ -5,7 +5,9 @@ import struct
 import sys
 from cStringIO import StringIO
 
-from compiler2 import ast, parse, walk, syntax
+from compiler2 import ast, syntax
+from compiler2.visitor import walk
+from compiler2.transformer import parse
 from compiler2 import pyassem, misc, future, symbols
 from compiler2.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
      SC_FREE, SC_CELL

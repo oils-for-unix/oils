@@ -2,7 +2,9 @@
 
 """
 
-from compiler2 import ast, walk
+from compiler2 import ast
+from compiler2.visitor import walk
+
 
 def is_future(stmt):
     """Return true if statement is a well-formed future statement"""
