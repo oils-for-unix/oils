@@ -59,11 +59,13 @@ compile-opy-tree() {
               -name _tmp -a -prune -o \
               -name '*.py' -a -printf '%P\n') )
 
-  local dest=_tmp/opy-compile2/ 
-  _compile-tree $src $dest compiler2 "${files[@]}"
+  #local dest=_tmp/opy-compile2/ 
+  #_compile-tree $src $dest compiler2 "${files[@]}"
+  #local dest=_tmp/opy-stdlib/ 
+  #_compile-tree $src $dest stdlib "${files[@]}"
 
-  local dest=_tmp/opy-stdlib/ 
-  _compile-tree $src $dest stdlib "${files[@]}"
+  _compile-tree $src _tmp/opy-ccompile/ ccompile "${files[@]}"
+  _compile-tree $src _tmp/opy-opy/ opy "${files[@]}"
 }
 
 compile-osh-tree() {
@@ -75,8 +77,9 @@ compile-osh-tree() {
               -name '*.py' -a -printf '%P\n') )
 
   _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
-  #_compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
   _compile-tree $src _tmp/osh-opy/ opy "${files[@]}"
+
+  #_compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
 
   # Not deterministic!
   #_compile-tree $src _tmp/osh-compile2.gold/ compiler2 "${files[@]}"

@@ -349,6 +349,11 @@ determinism() {
   $DIFF _tmp/{d1,d2}.txt && echo SAME
 }
 
+# We don't want print statements.
+2to3-print() {
+  2to3 --fix print --write "$@" 
+}
+
 # Features from Python 3 used?  Static types?  I guess Python 3.6 has locals with
 # foo: str = 1
 # 

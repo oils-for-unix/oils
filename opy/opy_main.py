@@ -130,10 +130,11 @@ def main(argv):
   transformer.Init(symbols)  # for _names and other dicts
 
   # In Python 2 code, always use from __future__ import print_function.
-  try:
-    del grammar.keywords["print"]
-  except KeyError:
-    pass
+  if 1:  # TODO: re-enable after 2to3
+    try:
+      del grammar.keywords["print"]
+    except KeyError:
+      pass
 
   #do_glue = False
   do_glue = True
