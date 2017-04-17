@@ -10,8 +10,9 @@ import io
 import os
 import sys
 import marshal
+import logging
 
-from pgen2 import driver
+from pgen2 import driver, pgen, grammar
 from pgen2 import token, tokenize
 import pytree
 
@@ -33,17 +34,17 @@ import util
 
 class Symbols(object):
 
-    def __init__(self, grammar):
+    def __init__(self, gr):
         """Initializer.
 
         Creates an attribute for each grammar symbol (nonterminal),
         whose value is the symbol's type (an int >= 256).
         """
-        for name, symbol in grammar.symbol2number.items():
+        for name, symbol in gr.symbol2number.items():
             setattr(self, name, symbol)
             #log('%s -> %d' % (name, symbol))
         # For transformer to use
-        self.number2symbol = grammar.number2symbol
+        self.number2symbol = gr.number2symbol
         #assert 0
 
 
@@ -56,6 +57,43 @@ def HostStdlibNames():
   for k, v in token.tok_name.items():
     names[k] = v
   return names
+
+
+def _newer(a, b):
+    """Inquire whether file a was written since file b."""
+    if not os.path.exists(a):
+        return False
+    if not os.path.exists(b):
+        return True
+    return os.path.getmtime(a) >= os.path.getmtime(b)
+
+
+def _generate_pickle_name(gt):
+    head, tail = os.path.splitext(gt)
+    if tail == ".txt":
+        tail = ""
+    return head + tail + ".".join(map(str, sys.version_info)) + ".pickle"
+
+
+def load_grammar(gt="Grammar.txt", gp=None,
+                 save=True, force=False, logger=None):
+    """Load the grammar (maybe from a pickle)."""
+    if logger is None:
+        logger = logging.getLogger()
+    gp = _generate_pickle_name(gt) if gp is None else gp
+    if force or not _newer(gp, gt):
+        logger.info("Generating grammar tables from %s", gt)
+        g = pgen.generate_grammar(gt)
+        if save:
+            logger.info("Writing grammar tables to %s", gp)
+            try:
+                g.dump(gp)
+            except OSError as e:
+                logger.info("Writing failed: %s", e)
+    else:
+        g = grammar.Grammar()
+        g.load(gp)
+    return g
 
 
 _READ_SOURCE_AS_UNICODE = True
@@ -118,17 +156,17 @@ class TupleTreePrinter:
 def main(argv):
   grammar_path = argv[1]
   # NOTE: This is cached as a pickle
-  grammar = driver.load_grammar(grammar_path)
-  FILE_INPUT = grammar.symbol2number['file_input']
+  gr = load_grammar(grammar_path)
+  FILE_INPUT = gr.symbol2number['file_input']
 
-  symbols = Symbols(grammar)
+  symbols = Symbols(gr)
   pytree.Init(symbols)  # for type_repr() pretty printing
   transformer.Init(symbols)  # for _names and other dicts
 
   # In Python 2 code, always use from __future__ import print_function.
   if 1:  # TODO: re-enable after 2to3
     try:
-      del grammar.keywords["print"]
+      del gr.keywords["print"]
     except KeyError:
       pass
 
@@ -138,7 +176,7 @@ def main(argv):
   if do_glue:  # Make it a flag
     # Emulating parser.st structures from parsermodule.c.
     # They have a totuple() method, which outputs tuples like this.
-    def py2st(grammar, raw_node):
+    def py2st(gr, raw_node):
       type, value, context, children = raw_node
       # See pytree.Leaf
       if context:
@@ -155,7 +193,7 @@ def main(argv):
   else:
     convert = pytree.convert
 
-  dr = driver.Driver(grammar, convert=convert)
+  dr = driver.Driver(gr, convert=convert)
 
   action = argv[2]
 
@@ -252,6 +290,11 @@ def main(argv):
     stdlib_compile.compileAndWrite(in_path, out_path, pycodegen2.compile)
 
   elif action == 'run':
+    # TODO: Add an option like -v in __main__
+
+    #level = logging.DEBUG if args.verbose else logging.WARNING
+    #logging.basicConfig(level=level)
+
     # Compile and run, without writing pyc file
     py_path = argv[3]
     opy_argv = argv[3:]
