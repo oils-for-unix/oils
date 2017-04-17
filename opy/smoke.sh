@@ -118,26 +118,80 @@ test-osh-tree() {
   popd
 }
 
-byterun-speed-test() {
+write-speed() {
   cat >_tmp/speed.py <<EOF
-import sys 
-n = int(sys.argv[1])
-sum = 0
-for i in xrange(n):
-  sum += i
-print(sum)
-EOF
+def do_sum(n):
+  sum = 0
+  for i in xrange(n):
+    sum += i
+  print(sum)
 
-  _compile2-one _tmp/speed.py _tmp/speed.pyc
+if __name__ == '__main__':
+  import sys
+  n = int(sys.argv[1])
+  do_sum(n)
+
+EOF
+  cat >_tmp/speed_main.py <<EOF
+import sys 
+import speed
+
+n = int(sys.argv[1])
+speed.do_sum(n)
+EOF
+}
+
+opy-speed-test() {
+  write-speed
+
+  _compile-one _tmp/speed.py _tmp/speed.pyc
+  _compile-one _tmp/speed_main.py _tmp/speed_main.pyc
+
   cp _tmp/speed.pyc _tmp/speed.opyc
+
+  # For logging
+  local n=10000
+  #local n=10
 
   # 7 ms
   echo PYTHON
-  time python _tmp/speed.opyc 10000
+  time python _tmp/speed.opyc $n
 
   # 205 ms.  So it's 30x slower.  Makes sense.
-  echo BYTERUN
-  time byterun -c _tmp/speed.opyc 10000
+  echo OPY
+  time opy_ run _tmp/speed.opyc $n
+
+  # 7 ms
+  echo PYTHON
+  time python _tmp/speed_main.pyc $n
+
+  # 205 ms.  So it's 30x slower.  Makes sense.
+  echo OPY
+  time opy_ run _tmp/speed_main.pyc $n
+}
+
+byterun-speed-test() {
+  write-speed
+
+  echo OLD BYTERUN
+  time _byterun $PWD/_tmp/speed_main.py 10000
+  time _byterun $PWD/_tmp/speed.py 10000
+}
+
+
+_byterun() {
+  # Wow this is SO confusing.
+  # Not executable on master branch
+
+  #python ~/git/other/byterun/byterun/__main__.py "$@"
+  #python ~/git/other/byterun/byterun "$@"
+  #python -m ~/git/other/byterun/byterun "$@"
+  #PYTHONPATH=~/git/other/byterun 
+
+  # WHY is this the only way to make it work?
+  pushd ~/git/other/byterun 
+  python -m byterun.__main__ "$@"
+  popd
 }
 
 #

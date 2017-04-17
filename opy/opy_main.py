@@ -12,6 +12,12 @@ import sys
 import marshal
 import logging
 
+# Like oil.py, set PYTHONPATH internally?  So symlinks work?
+# Actually '.' is implicitly in PYTHONPATH, so we don't need it.
+# If we were in bin/oil.py, then we would need this.
+#this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+#sys.path.append(os.path.join(this_dir))
+
 from pgen2 import driver, pgen, grammar
 from pgen2 import token, tokenize
 import pytree
@@ -25,11 +31,8 @@ from byterun import execfile
 from util_opy import log
 
 
-# From lib2to3/pygram.py.  This presumably takes the place of the 'symbol'
-# module.  Could we hook it up elsewhere?
-#
+# From lib2to3/pygram.py.  This takes the place of the 'symbol' module.
 # compiler/transformer module needs this.
-# tools/compile.py runs compileFile, which runs parseFile.
 
 class Symbols(object):
 
@@ -164,11 +167,10 @@ def main(argv):
   transformer.Init(symbols)  # for _names and other dicts
 
   # In Python 2 code, always use from __future__ import print_function.
-  if 1:  # TODO: re-enable after 2to3
-    try:
-      del gr.keywords["print"]
-    except KeyError:
-      pass
+  try:
+    del gr.keywords["print"]
+  except KeyError:
+    pass
 
   #do_glue = False
   do_glue = True
@@ -294,6 +296,7 @@ def main(argv):
 
     #level = logging.DEBUG if args.verbose else logging.WARNING
     #logging.basicConfig(level=level)
+    #logging.basicConfig(level=logging.DEBUG)
 
     # Compile and run, without writing pyc file
     py_path = argv[3]
@@ -308,7 +311,7 @@ def main(argv):
       co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
       execfile.run_code_object(co, opy_argv)
 
-    elif py_path.endswith('.pyc'):
+    elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
       with open(py_path) as f:
         f.seek(8)  # past header.  TODO: validate it!
         co = marshal.load(f)

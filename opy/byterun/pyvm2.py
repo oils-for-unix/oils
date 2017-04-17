@@ -9,6 +9,7 @@ import linecache
 import logging
 import operator
 import sys
+import types
 
 import six
 from six.moves import reprlib
@@ -18,11 +19,6 @@ PY3, PY2 = six.PY3, not six.PY3
 from pyobj import Frame, Block, Method, Function, Generator
 
 log = logging.getLogger(__name__)
-
-if six.PY3:
-    byteint = lambda b: b
-else:
-    byteint = ord
 
 # Create a repr that won't overflow.
 repr_obj = reprlib.Repr()
@@ -169,7 +165,7 @@ class VirtualMachine(object):
         an instruction and optionally arguments."""
         f = self.frame
         opoffset = f.f_lasti
-        byteCode = byteint(f.f_code.co_code[opoffset])
+        byteCode = ord(f.f_code.co_code[opoffset])
         f.f_lasti += 1
         byteName = dis.opname[byteCode]
         arg = None
@@ -177,7 +173,7 @@ class VirtualMachine(object):
         if byteCode >= dis.HAVE_ARGUMENT:
             arg = f.f_code.co_code[f.f_lasti:f.f_lasti+2]
             f.f_lasti += 2
-            intArg = byteint(arg[0]) + (byteint(arg[1]) << 8)
+            intArg = ord(arg[0]) + (ord(arg[1]) << 8)
             if byteCode in dis.hasconst:
                 arg = f.f_code.co_consts[intArg]
             elif byteCode in dis.hasfree:
@@ -314,7 +310,9 @@ class VirtualMachine(object):
 
         """
         self.push_frame(frame)
+        num_ticks = 0
         while True:
+            num_ticks += 1
             byteName, arguments, opoffset = self.parse_byte_and_args()
             if log.isEnabledFor(logging.INFO):
                 self.log(byteName, arguments, opoffset)
@@ -342,8 +340,13 @@ class VirtualMachine(object):
         self.pop_frame()
 
         if why == 'exception':
+            # Hm there is no third traceback part of the tuple?
+            #print('GOT', self.last_exception)
             six.reraise(*self.last_exception)
+            # How to raise with_traceback?  Is that Python 3 only?
+            #raise self.last_exception
 
+        #print('num_ticks: %d' % num_ticks)
         return self.return_value
 
     ## Stack manipulation
@@ -963,7 +966,27 @@ class VirtualMachine(object):
                     )
                 )
             func = func.im_func
-        retval = func(*posargs, **namedargs)
+
+        # BUG FIX: The callable must be a pyobj.Function, not a native Python
+        # function (types.FunctionType).  The latter will be executed using the
+        # HOST CPython interpreter rather than the byterun interpreter.
+
+        # Cases:
+        # 1. builtin functions like int().  We want to use the host here.
+        # 2. User-defined functions from this module.  These are created with
+        #    MAKE_FUNCTION, which properly turns them into pyobj.Function.
+        # 3. User-defined function from another module.  These are created with
+        #    __import__, which yields a native function.
+
+        if isinstance(func, types.FunctionType):
+            defaults = func.func_defaults or ()
+            byterun_func = Function(
+                    func.func_name, func.func_code, func.func_globals,
+                    defaults, func.func_closure, self)
+        else:
+            byterun_func = func
+         
+        retval = byterun_func(*posargs, **namedargs)
         self.push(retval)
 
     def byte_RETURN_VALUE(self):
@@ -1003,9 +1026,9 @@ class VirtualMachine(object):
     def byte_IMPORT_NAME(self, name):
         level, fromlist = self.popn(2)
         frame = self.frame
-        self.push(
-            __import__(name, frame.f_globals, frame.f_locals, fromlist, level)
-        )
+        mod = __import__(name, frame.f_globals, frame.f_locals, fromlist, level)
+        #print('-- IMPORTED %s -> %s' % (name, mod))
+        self.push(mod)
 
     def byte_IMPORT_STAR(self):
         # TODO: this doesn't use __all__ properly.

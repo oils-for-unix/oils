@@ -50,7 +50,7 @@ class Function(object):
         self._func = types.FunctionType(code, globs, **kw)
 
     def __repr__(self):         # pragma: no cover
-        return '<Function %s at 0x%08x>' % (
+        return '<byterun Function %s at 0x%08x>' % (
             self.func_name, id(self)
         )
 
