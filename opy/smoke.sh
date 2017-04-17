@@ -75,7 +75,8 @@ compile-osh-tree() {
               -name '*.py' -a -printf '%P\n') )
 
   _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
-  _compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
+  #_compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
+  _compile-tree $src _tmp/osh-opy/ opy "${files[@]}"
 
   # Not deterministic!
   #_compile-tree $src _tmp/osh-compile2.gold/ compiler2 "${files[@]}"

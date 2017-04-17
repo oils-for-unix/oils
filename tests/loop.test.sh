@@ -111,12 +111,12 @@ echo $i
 
 ### while in pipe with subshell
 i=0
-find bin/ -type f | ( while read path; do
+find bin/ -type l | ( while read path; do
   i=$((i+1))
   #echo $i
 done
 echo $i )
-# stdout: 2
+# stdout: 5
 
 ### until loop
 # This is just the opposite of while?  while ! cond?

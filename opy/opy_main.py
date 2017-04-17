@@ -4,6 +4,7 @@ opy_main.py
 """
 from __future__ import print_function
 
+import cStringIO
 import codecs
 import io
 import os
@@ -15,13 +16,14 @@ from pgen2 import token, tokenize
 import pytree
 
 # TODO: Delete these
-from compiler import transformer
-from compiler import pycodegen
-from compiler import opcode27
-
-#from compiler2 import transformer
-#from compiler2 import pycodegen
-#from compiler2 import opcode
+if 0:
+  from compiler import transformer
+  from compiler import pycodegen
+  from compiler import opcode27
+else:
+  from compiler2 import transformer
+  from compiler2 import pycodegen
+  from compiler2 import opcode
 
 from util import log
 import util
@@ -72,15 +74,49 @@ class Pgen2PythonParser:
     self.start_symbol = start_symbol
 
   def suite(self, text):
-    #if util.PY2:
-    if _READ_SOURCE_AS_UNICODE:
-      f = io.StringIO(text)
-    else:
-      import cStringIO
-      f = cStringIO.StringIO()
+    # Python 3
+    #f = io.StringIO(text)
+    f = cStringIO.StringIO(text)
     tokens = tokenize.generate_tokens(f.readline)
     tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
     return tree
+
+
+def CountTupleTree(tu):
+  """Count the nodes in a tuple parse tree."""
+  if isinstance(tu, tuple):
+    s = 0
+    for entry in tu:
+      s += CountTupleTree(entry)
+    return s
+  elif isinstance(tu, int):
+    return 1
+  elif isinstance(tu, str):
+    return 1
+  else:
+    raise AssertionError(tu)
+
+
+class TupleTreePrinter:
+  def __init__(self, names):
+    self._names = names
+
+  def Print(self, tu, f=sys.stdout, indent=0):
+    ind = '  ' * indent
+    f.write(ind)
+    if isinstance(tu, tuple):
+      f.write(self._names[tu[0]])
+      f.write('\n')
+      for entry in tu[1:]:
+        self.Print(entry, f, indent=indent+1)
+    elif isinstance(tu, int):
+      f.write(str(tu))
+      f.write('\n')
+    elif isinstance(tu, str):
+      f.write(str(tu))
+      f.write('\n')
+    else:
+      raise AssertionError(tu)
 
 
 def main(argv):
@@ -138,7 +174,7 @@ def main(argv):
 
     n = transformer.CountTupleTree(tree)
     log('COUNT %d', n)
-    printer = transformer.TupleTreePrinter(HostStdlibNames())
+    printer = TupleTreePrinter(HostStdlibNames())
     printer.Print(tree)
 
   elif action == 'parse':
@@ -148,10 +184,10 @@ def main(argv):
       tree = d.parse_tokens(tokens, start_symbol=FILE_INPUT)
 
     if isinstance(tree, tuple):
-      n = transformer.CountTupleTree(tree)
+      n = CountTupleTree(tree)
       log('COUNT %d', n)
 
-      printer = transformer.TupleTreePrinter(transformer._names)
+      printer = TupleTreePrinter(transformer._names)
       printer.Print(tree)
     else:
       tree.PrettyPrint(sys.stdout)
@@ -163,7 +199,7 @@ def main(argv):
 
     if do_glue:
       py_parser = Pgen2PythonParser(d, FILE_INPUT)
-      printer = transformer.TupleTreePrinter(transformer._names)
+      printer = TupleTreePrinter(transformer._names)
       tr = transformer.Pgen2Transformer(py_parser, printer)
     else:
       tr = transformer.Transformer()
@@ -176,7 +212,6 @@ def main(argv):
 
     contents = f.read()
     co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-    file_size = os.path.getsize(py_path)
     log("Code length: %d", len(co.co_code))
 
     # Write the .pyc file
@@ -188,7 +223,28 @@ def main(argv):
   elif action == 'compile':
     # 'opy compile' is pgen2 + compiler2
     # TODO: import compiler2
-    raise NotImplementedError
+    #raise NotImplementedError
+    py_path = argv[3]
+    out_path = argv[4]
+
+    if do_glue:
+      py_parser = Pgen2PythonParser(d, FILE_INPUT)
+      printer = TupleTreePrinter(transformer._names)
+      tr = transformer.Pgen2Transformer(py_parser, printer)
+    else:
+      tr = transformer.Transformer()
+
+    f = open(py_path)
+
+    contents = f.read()
+    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+    log("Code length: %d", len(co.co_code))
+
+    # Write the .pyc file
+    with open(out_path, 'wb') as out_f:
+      h = pycodegen.getPycHeader(py_path)
+      out_f.write(h)
+      marshal.dump(co, out_f)
 
   elif action == 'compile2':
     in_path = argv[3]

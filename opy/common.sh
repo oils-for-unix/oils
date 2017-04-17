@@ -19,11 +19,16 @@ _compile-one() {
   # Python 2.7 doesn't have it.
   #local g=2to3.grammar 
   local g=py27.grammar
-  PYTHONPATH=. ./opy_main.py $g old-compile "$@"
+  # pgen2 + old compiler/
+  #PYTHONPATH=. ./opy_main.py $g old-compile "$@"
+
+  # opy is pgen2 + compiler2
+  PYTHONPATH=. ./opy_main.py $g compile "$@"
 }
 
 _compile2-one() {
   local g=py27.grammar
+  # The unmodified compiler2
   PYTHONPATH=. ./opy_main.py $g compile2 "$@"
 }
 

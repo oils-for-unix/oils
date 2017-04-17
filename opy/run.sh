@@ -18,7 +18,8 @@ die() {
 }
 
 _parse-one() {
-  PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
+  #PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
+  PYTHONPATH=. ./opy_main.py py27.grammar parse "$@"
 }
 
 parse-test() {
@@ -54,7 +55,13 @@ _compile-and-run() {
 
   mkdir -p _tmp
   local out=_tmp/${basename}.pyc
+
+  #_parse-one $path
+
+  # new opy compile
   _compile-one $path $out
+  # unmodified pgen2
+  #_compile2-one $path $out
 
   ls -l $out
   xxd $out

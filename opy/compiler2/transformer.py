@@ -26,9 +26,140 @@ parseFile(path) -> AST
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
 from compiler2.ast import *
-import parser
-import symbol
-import token
+#import parser  # stdlib module we want to get rid of
+from pgen2 import token
+#import token
+from pytree import type_repr
+
+
+symbol = None
+
+def Init(sym):
+  """Replacement for the stdlib symbol module.
+
+  Args:
+    sym: module
+  
+  The stdlib module is generated from pgen.c's output data.  pgen2 derives it
+  from the grammar directly.
+
+  """
+  global symbol
+  symbol = sym
+  _InitGlobals()
+
+
+# Various constants
+_doc_nodes = []
+_legal_node_types = []
+_assign_types = []
+# NOTE: This is somewhat duplicated in pytree.py as type_repr.
+_names = {}
+
+def _InitGlobals():
+  _doc_nodes.extend([
+    symbol.expr_stmt,
+    symbol.testlist,
+    symbol.testlist_safe,
+    symbol.test,
+    symbol.or_test,
+    symbol.and_test,
+    symbol.not_test,
+    symbol.comparison,
+    symbol.expr,
+    symbol.xor_expr,
+    symbol.and_expr,
+    symbol.shift_expr,
+    symbol.arith_expr,
+    symbol.term,
+    symbol.factor,
+    symbol.power,
+    ])
+
+  _legal_node_types.extend([
+    symbol.funcdef,
+    symbol.classdef,
+    symbol.stmt,
+    symbol.small_stmt,
+    symbol.flow_stmt,
+    symbol.simple_stmt,
+    symbol.compound_stmt,
+    symbol.expr_stmt,
+    symbol.print_stmt,
+    symbol.del_stmt,
+    symbol.pass_stmt,
+    symbol.break_stmt,
+    symbol.continue_stmt,
+    symbol.return_stmt,
+    symbol.raise_stmt,
+    symbol.import_stmt,
+    symbol.global_stmt,
+    symbol.exec_stmt,
+    symbol.assert_stmt,
+    symbol.if_stmt,
+    symbol.while_stmt,
+    symbol.for_stmt,
+    symbol.try_stmt,
+    symbol.with_stmt,
+    symbol.suite,
+    symbol.testlist,
+    symbol.testlist_safe,
+    symbol.test,
+    symbol.and_test,
+    symbol.not_test,
+    symbol.comparison,
+    symbol.exprlist,
+    symbol.expr,
+    symbol.xor_expr,
+    symbol.and_expr,
+    symbol.shift_expr,
+    symbol.arith_expr,
+    symbol.term,
+    symbol.factor,
+    symbol.power,
+    symbol.atom,
+    ])
+
+  if hasattr(symbol, 'yield_stmt'):
+    _legal_node_types.append(symbol.yield_stmt)
+  if hasattr(symbol, 'yield_expr'):
+    _legal_node_types.append(symbol.yield_expr)
+
+  _assign_types.extend([
+    symbol.test,
+    symbol.or_test,
+    symbol.and_test,
+    symbol.not_test,
+    symbol.comparison,
+    symbol.expr,
+    symbol.xor_expr,
+    symbol.and_expr,
+    symbol.shift_expr,
+    symbol.arith_expr,
+    symbol.term,
+    symbol.factor,
+    ])
+
+  # Do this first beause NT_OFFSET (non-terminal offset) conflicts with
+  # file_input.
+  for k, v in token.tok_name.items():
+      _names[k] = v
+  for k, v in symbol.number2symbol.items():
+      _names[k] = v
+
+
+# comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
+#             | 'in' | 'not' 'in' | 'is' | 'is' 'not'
+_cmp_types = {
+    token.LESS : '<',
+    token.GREATER : '>',
+    token.EQEQUAL : '==',
+    token.EQUAL : '==',
+    token.LESSEQUAL : '<=',
+    token.GREATEREQUAL : '>=',
+    token.NOTEQUAL : '!=',
+    }
+
 
 class WalkerError(StandardError):
     pass
@@ -46,11 +177,12 @@ def parseFile(path):
     f.close()
     return parse(src)
 
-def parse(buf, mode="exec"):
+def parse(buf, mode="exec", transformer=None):
+    tr = transformer or Transformer()
     if mode == "exec" or mode == "single":
-        return Transformer().parsesuite(buf)
+        return tr.parsesuite(buf)
     elif mode == "eval":
-        return Transformer().parseexpr(buf)
+        return tr.parseexpr(buf)
     else:
         raise ValueError("compile() arg 3 must be"
                          " 'exec' or 'eval' or 'single'")
@@ -103,7 +235,7 @@ class Transformer:
 
     def __init__(self):
         self._dispatch = {}
-        for value, name in symbol.sym_name.items():
+        for value, name in symbol.number2symbol.items():
             if hasattr(self, name):
                 self._dispatch[value] = getattr(self, name)
         self._dispatch[token.NEWLINE] = self.com_NEWLINE
@@ -119,8 +251,9 @@ class Transformer:
 
     def transform(self, tree):
         """Transform an AST into a modified parse tree."""
-        if not (isinstance(tree, tuple) or isinstance(tree, list)):
-            tree = parser.st2tuple(tree, line_info=1)
+        # We only use Pgen2Transformer
+        # if not (isinstance(tree, tuple) or isinstance(tree, list)):
+        #    tree = parser.st2tuple(tree, line_info=1)
         return self.compile_node(tree)
 
     def parsesuite(self, text):
@@ -164,7 +297,7 @@ class Transformer:
         if n == symbol.classdef:
             return self.classdef(node[1:])
 
-        raise WalkerError, ('unexpected node type', n)
+        raise WalkerError('unexpected node type %r' % type_repr(n))
 
     def single_input(self, node):
         ### do we want to do anything about being "interactive" ?
@@ -1422,106 +1555,17 @@ class Transformer:
         return None
 
 
-_doc_nodes = [
-    symbol.expr_stmt,
-    symbol.testlist,
-    symbol.testlist_safe,
-    symbol.test,
-    symbol.or_test,
-    symbol.and_test,
-    symbol.not_test,
-    symbol.comparison,
-    symbol.expr,
-    symbol.xor_expr,
-    symbol.and_expr,
-    symbol.shift_expr,
-    symbol.arith_expr,
-    symbol.term,
-    symbol.factor,
-    symbol.power,
-    ]
+class Pgen2Transformer(Transformer):
+  def __init__(self, py_parser, printer):
+    Transformer.__init__(self)
+    self.py_parser = py_parser
+    self.printer = printer
 
-# comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
-#             | 'in' | 'not' 'in' | 'is' | 'is' 'not'
-_cmp_types = {
-    token.LESS : '<',
-    token.GREATER : '>',
-    token.EQEQUAL : '==',
-    token.EQUAL : '==',
-    token.LESSEQUAL : '<=',
-    token.GREATEREQUAL : '>=',
-    token.NOTEQUAL : '!=',
-    }
+  def parsesuite(self, text):
+    tree = self.py_parser.suite(text)
+    #self.printer.Print(tree)
+    return self.transform(tree)
 
-_legal_node_types = [
-    symbol.funcdef,
-    symbol.classdef,
-    symbol.stmt,
-    symbol.small_stmt,
-    symbol.flow_stmt,
-    symbol.simple_stmt,
-    symbol.compound_stmt,
-    symbol.expr_stmt,
-    symbol.print_stmt,
-    symbol.del_stmt,
-    symbol.pass_stmt,
-    symbol.break_stmt,
-    symbol.continue_stmt,
-    symbol.return_stmt,
-    symbol.raise_stmt,
-    symbol.import_stmt,
-    symbol.global_stmt,
-    symbol.exec_stmt,
-    symbol.assert_stmt,
-    symbol.if_stmt,
-    symbol.while_stmt,
-    symbol.for_stmt,
-    symbol.try_stmt,
-    symbol.with_stmt,
-    symbol.suite,
-    symbol.testlist,
-    symbol.testlist_safe,
-    symbol.test,
-    symbol.and_test,
-    symbol.not_test,
-    symbol.comparison,
-    symbol.exprlist,
-    symbol.expr,
-    symbol.xor_expr,
-    symbol.and_expr,
-    symbol.shift_expr,
-    symbol.arith_expr,
-    symbol.term,
-    symbol.factor,
-    symbol.power,
-    symbol.atom,
-    ]
-
-if hasattr(symbol, 'yield_stmt'):
-    _legal_node_types.append(symbol.yield_stmt)
-if hasattr(symbol, 'yield_expr'):
-    _legal_node_types.append(symbol.yield_expr)
-
-_assign_types = [
-    symbol.test,
-    symbol.or_test,
-    symbol.and_test,
-    symbol.not_test,
-    symbol.comparison,
-    symbol.expr,
-    symbol.xor_expr,
-    symbol.and_expr,
-    symbol.shift_expr,
-    symbol.arith_expr,
-    symbol.term,
-    symbol.factor,
-    ]
-
-_names = {}
-for k, v in symbol.sym_name.items():
-    _names[k] = v
-for k, v in token.tok_name.items():
-    _names[k] = v
 
 def debug_tree(tree):
     l = []

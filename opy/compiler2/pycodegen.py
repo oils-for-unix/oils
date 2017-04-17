@@ -34,21 +34,25 @@ EXCEPT = 2
 TRY_FINALLY = 3
 END_FINALLY = 4
 
-def compileFile(filename, display=0):
-    f = open(filename, 'U')
-    buf = f.read()
-    f.close()
-    mod = Module(buf, filename)
-    try:
-        mod.compile(display)
-    except SyntaxError:
-        raise
-    else:
-        f = open(filename + "c", "wb")
-        mod.dump(f)
-        f.close()
 
-def compile(source, filename, mode, flags=None, dont_inherit=None):
+PY27_MAGIC = b'\x03\xf3\r\n'  # removed host dep imp.get_magic()
+
+def getPycHeader(filename):
+    # compile.c uses marshal to write a long directly, with
+    # calling the interface that would also generate a 1-byte code
+    # to indicate the type of the value.  simplest way to get the
+    # same effect is to call marshal and then skip the code.
+    mtime = os.path.getmtime(filename)
+    mtime = struct.pack('<i', int(mtime))
+
+    # Update for Python 3:
+    # https://nedbatchelder.com/blog/200804/the_structure_of_pyc_files.html
+    # https://gist.github.com/anonymous/35c08092a6eb70cdd723
+
+    return PY27_MAGIC + mtime
+
+
+def compile(source, filename, mode, flags=None, dont_inherit=None, transformer=None):
     """Replacement for builtin compile() function"""
     if flags is not None or dont_inherit is not None:
         raise RuntimeError, "not implemented yet"
@@ -62,7 +66,7 @@ def compile(source, filename, mode, flags=None, dont_inherit=None):
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
-    gen.compile()
+    gen.compile(transformer=transformer)
     return gen.code
 
 class AbstractCompileMode:
@@ -74,8 +78,8 @@ class AbstractCompileMode:
         self.filename = filename
         self.code = None
 
-    def _get_tree(self):
-        tree = parse(self.source, self.mode)
+    def _get_tree(self, transformer=None):
+        tree = parse(self.source, self.mode, transformer=transformer)
         misc.set_filename(self.filename, tree)
         syntax.check(tree)
         return tree
@@ -108,28 +112,13 @@ class Module(AbstractCompileMode):
 
     mode = "exec"
 
-    def compile(self, display=0):
-        tree = self._get_tree()
+    def compile(self, display=0, transformer=None):
+        tree = self._get_tree(transformer=transformer)
         gen = ModuleCodeGenerator(tree)
         if display:
             import pprint
             print pprint.pprint(tree)
         self.code = gen.getCode()
-
-    def dump(self, f):
-        f.write(self.getPycHeader())
-        marshal.dump(self.code, f)
-
-    MAGIC = imp.get_magic()
-
-    def getPycHeader(self):
-        # compile.c uses marshal to write a long directly, with
-        # calling the interface that would also generate a 1-byte code
-        # to indicate the type of the value.  simplest way to get the
-        # same effect is to call marshal and then skip the code.
-        mtime = os.path.getmtime(self.filename)
-        mtime = struct.pack('<i', mtime)
-        return self.MAGIC + mtime
 
 class LocalNameFinder:
     """Find local names in scope"""
@@ -1554,7 +1543,3 @@ wrapper = {
 
 def wrap_aug(node):
     return wrapper[node.__class__](node)
-
-if __name__ == "__main__":
-    for file in sys.argv[1:]:
-        compileFile(file)

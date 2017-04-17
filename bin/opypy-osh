@@ -5,5 +5,6 @@
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly OIL_DIR=$THIS_DIR/..
 
-export PYTHONPATH=$OIL_DIR/opy/_tmp/compile2 
-$OIL_DIR/opy/byterun/__main__.py -c $OIL_DIR/opy/_tmp/osh-compile2/bin/oil.pyc osh "$@"
+# Don't need PYTHONPATH because oil.py sets it
+#export PYTHONPATH=$OIL_DIR/opy/_tmp/osh-opy
+$OIL_DIR/opy/byterun/__main__.py -c $OIL_DIR/opy/_tmp/osh-opy/bin/oil.pyc osh "$@"
