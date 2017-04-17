@@ -22,8 +22,7 @@ from compiler2 import opcode
 
 from byterun import execfile
 
-from util import log
-import util
+from util_opy import log
 
 
 # From lib2to3/pygram.py.  This presumably takes the place of the 'symbol'
@@ -299,13 +298,23 @@ def main(argv):
     py_path = argv[3]
     opy_argv = argv[3:]
 
-    py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-    printer = TupleTreePrinter(transformer._names)
-    tr = transformer.Pgen2Transformer(py_parser, printer)
-    with open(py_path) as f:
-      contents = f.read()
-    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-    execfile.run_code_object(co, opy_argv)
+    if py_path.endswith('.py'):
+      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
+      printer = TupleTreePrinter(transformer._names)
+      tr = transformer.Pgen2Transformer(py_parser, printer)
+      with open(py_path) as f:
+        contents = f.read()
+      co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+      execfile.run_code_object(co, opy_argv)
+
+    elif py_path.endswith('.pyc'):
+      with open(py_path) as f:
+        f.seek(8)  # past header.  TODO: validate it!
+        co = marshal.load(f)
+      execfile.run_code_object(co, opy_argv)
+
+    else:
+      raise RuntimeError('Invalid path %r' % py_path)
 
   else: 
     raise RuntimeError('Invalid action %r' % action)

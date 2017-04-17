@@ -95,7 +95,7 @@ fill-osh-tree() {
 }
 
 test-osh-tree() {
-  local dir=${1:-_tmp/osh-stdlib}
+  local dir=${1:-_tmp/osh-opy}
   local vm=${2:-byterun}  # byterun or cpython
 
   pushd $dir
@@ -110,7 +110,7 @@ test-osh-tree() {
 
     echo $t
     if test $vm = byterun; then
-      PYTHONPATH=. byterun -c $t
+      PYTHONPATH=. opy_ run $t
     else
       PYTHONPATH=. python $t
     fi
@@ -147,10 +147,10 @@ EOF
 # Wow!  Runs itself to parse itself... I need some VM instrumentation to make
 # sure it's not accidentally cheating or leaking.
 opy-parse-on-byterun() {
-  local g=$PWD/2to3.grammar 
-  local arg=$PWD/opy_main.py
-  pushd _tmp/opy-compile2
-  byterun -c opy_main.pyc $g parse $arg
+  #local arg=$PWD/opy_main.py
+  local arg=$PWD/testdata/hello_py2.py
+  pushd _tmp/opy-opy
+  opy_ run opy_main.pyc $GRAMMAR parse $arg
   popd
 }
 
@@ -159,7 +159,7 @@ osh-parse-on-byterun() {
 
   ../bin/oil.py "${cmd[@]}"
   echo ---
-  byterun -c _tmp/osh-compile2/bin/oil.pyc "${cmd[@]}"
+  opy_ run _tmp/osh-opy/bin/oil.pyc "${cmd[@]}"
 }
 
 opy-hello2() {

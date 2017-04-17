@@ -11,7 +11,7 @@ util_test.py: Tests for util.py
 
 import unittest
 
-import util  # module under test
+from core import util  # module under test
 
 
 class _Parser(object):

@@ -8,11 +8,7 @@ set -o pipefail
 set -o errexit
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly GRAMMAR=py27.grammar
-
-byterun() {
-  $THIS_DIR/byterun/__main__.py "$@"
-}
+readonly GRAMMAR=$THIS_DIR/py27.grammar
 
 # The old compile path
 _compile-one() {
@@ -61,5 +57,5 @@ _ccompile-one() {
 }
 
 opy_() {
-  PYTHONPATH=. ./opy_main.py $GRAMMAR "$@"
+  PYTHONPATH=. $THIS_DIR/opy_main.py $GRAMMAR "$@"
 }

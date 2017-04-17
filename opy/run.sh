@@ -336,7 +336,14 @@ for n in names:
 # 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
 # transformer -> ast -> compiler -> byte code
 count() {
-  wc -l *.py pgen2/*.py compiler2/*.py | sort -n
+  wc -l *.py pgen2/*.py | sort -n
+  echo
+
+  wc -l compiler2/*.py | sort -n
+  echo
+
+  ls byterun/*.py | grep -v 'test' | xargs wc -l | sort -n
+  echo
 }
 
 determinism() {
