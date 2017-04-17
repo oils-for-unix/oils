@@ -86,12 +86,13 @@ def load_grammar(gt="Grammar.txt", gp=None,
         if save:
             logger.info("Writing grammar tables to %s", gp)
             try:
+                # calls pickle.dump on self.__dict__ after making it deterministic
                 g.dump(gp)
             except OSError as e:
                 logger.info("Writing failed: %s", e)
     else:
         g = grammar.Grammar()
-        g.load(gp)
+        g.load(gp)  # pickle.load()
     return g
 
 

@@ -13,8 +13,10 @@ fallback token code OP, but the parser needs the actual token code.
 """
 
 # Python imports
+import cStringIO
 import collections
 import pickle
+import marshal
 
 # Local imports
 from pgen2 import token, tokenize
@@ -100,12 +102,28 @@ class Grammar(object):
         """
         with open(filename, "wb") as f:
             d = _make_deterministic(self.__dict__)
-            pickle.dump(d, f, 2)
+            pickle.dump(d, f, 2)  # protocol 2
+            # d isn't marshallable.  But neither is self.__dict__.
+            # Probably have to go through and marshal each member.
+            #marshal.dump(self.__dict__, f)
+
+            if 0:
+              s = ''
+              s += marshal.dumps(self.symbol2number)
+              s += marshal.dumps(self.number2symbol)
+              s += marshal.dumps(self.dfas)
+              s += marshal.dumps(self.labels)
+              s += marshal.dumps(self.keywords)
+              s += marshal.dumps(self.tokens)
+              s += marshal.dumps(self.symbol2label)
+              s += marshal.dumps(self.start)
+              print('Marshalled bytes: %d' % len(s))
 
     def load(self, filename):
         """Load the grammar tables from a pickle file."""
         with open(filename, "rb") as f:
             d = pickle.load(f)
+            #d = marshal.load(f)
         self.__dict__.update(d)
 
     def copy(self):
