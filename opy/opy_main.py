@@ -15,15 +15,11 @@ from pgen2 import driver
 from pgen2 import token, tokenize
 import pytree
 
-# TODO: Delete these
-if 0:
-  from compiler import transformer
-  from compiler import pycodegen
-  from compiler import opcode27
-else:
-  from compiler2 import transformer
-  from compiler2 import pycodegen
-  from compiler2 import opcode
+from compiler2 import transformer
+from compiler2 import pycodegen
+from compiler2 import opcode
+
+from byterun import execfile
 
 from util import log
 import util
@@ -159,7 +155,7 @@ def main(argv):
   else:
     convert = pytree.convert
 
-  d = driver.Driver(grammar, convert=convert)
+  dr = driver.Driver(grammar, convert=convert)
 
   action = argv[2]
 
@@ -182,7 +178,7 @@ def main(argv):
     py_path = argv[3]
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
-      tree = d.parse_tokens(tokens, start_symbol=FILE_INPUT)
+      tree = dr.parse_tokens(tokens, start_symbol=FILE_INPUT)
 
     if isinstance(tree, tuple):
       n = CountTupleTree(tree)
@@ -199,7 +195,7 @@ def main(argv):
     out_path = argv[4]
 
     if do_glue:
-      py_parser = Pgen2PythonParser(d, FILE_INPUT)
+      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
       printer = TupleTreePrinter(transformer._names)
       tr = transformer.Pgen2Transformer(py_parser, printer)
     else:
@@ -229,15 +225,14 @@ def main(argv):
     out_path = argv[4]
 
     if do_glue:
-      py_parser = Pgen2PythonParser(d, FILE_INPUT)
+      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
       printer = TupleTreePrinter(transformer._names)
       tr = transformer.Pgen2Transformer(py_parser, printer)
     else:
       tr = transformer.Transformer()
 
-    f = open(py_path)
-
-    contents = f.read()
+    with open(py_path) as f:
+      contents = f.read()
     co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
     log("Code length: %d", len(co.co_code))
 
@@ -255,6 +250,19 @@ def main(argv):
     from misc import stdlib_compile
 
     stdlib_compile.compileAndWrite(in_path, out_path, pycodegen2.compile)
+
+  elif action == 'run':
+    # Compile and run, without writing pyc file
+    py_path = argv[3]
+    opy_argv = argv[3:]
+
+    py_parser = Pgen2PythonParser(dr, FILE_INPUT)
+    printer = TupleTreePrinter(transformer._names)
+    tr = transformer.Pgen2Transformer(py_parser, printer)
+    with open(py_path) as f:
+      contents = f.read()
+    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+    execfile.run_code_object(co, opy_argv)
 
   else: 
     raise RuntimeError('Invalid action %r' % action)

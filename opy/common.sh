@@ -8,6 +8,7 @@ set -o pipefail
 set -o errexit
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+readonly GRAMMAR=py27.grammar
 
 byterun() {
   $THIS_DIR/byterun/__main__.py "$@"
@@ -23,13 +24,11 @@ _compile-one() {
   #PYTHONPATH=. ./opy_main.py $g old-compile "$@"
 
   # opy is pgen2 + compiler2
-  PYTHONPATH=. ./opy_main.py $g compile "$@"
+  PYTHONPATH=. ./opy_main.py $GRAMMAR compile "$@"
 }
 
 _compile2-one() {
-  local g=py27.grammar
-  # The unmodified compiler2
-  PYTHONPATH=. ./opy_main.py $g compile2 "$@"
+  PYTHONPATH=. ./opy_main.py $GRAMMAR compile2 "$@"
 }
 
 _stdlib-compile-one() {
@@ -59,4 +58,8 @@ _stdlib-compile-one() {
 
 _ccompile-one() {
   misc/ccompile.py "$@"
+}
+
+opy_() {
+  PYTHONPATH=. ./opy_main.py $GRAMMAR "$@"
 }

@@ -162,6 +162,14 @@ osh-parse-on-byterun() {
   byterun -c _tmp/osh-compile2/bin/oil.pyc "${cmd[@]}"
 }
 
+opy-hello2() {
+  opy_ run testdata/hello_py2.py
+}
+
+opy-hello3() {
+  opy_ run testdata/hello_py3.py
+}
+
 #
 # Determinism
 #
