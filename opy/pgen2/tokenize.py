@@ -33,8 +33,8 @@ import string, re
 from codecs import BOM_UTF8, lookup
 #from lib2to3.pgen2.token import *
 
-from pgen2 import token
-from pgen2.token import *
+from . import token
+from .token import *
 
 __all__ = [x for x in dir(token) if x[0] != '_'] + ["tokenize",
            "generate_tokens", "untokenize"]

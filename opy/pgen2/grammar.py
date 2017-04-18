@@ -19,7 +19,7 @@ import pickle
 import marshal
 
 # Local imports
-from pgen2 import token, tokenize
+from . import token, tokenize
 
 
 class Grammar(object):

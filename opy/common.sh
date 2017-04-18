@@ -8,7 +8,15 @@ set -o pipefail
 set -o errexit
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly GRAMMAR=$THIS_DIR/py27.grammar
+readonly GRAMMAR=$THIS_DIR/_tmp/py27.grammar.pickle
+
+opy_() {
+  PYTHONPATH=$THIS_DIR $THIS_DIR/opy_main.py "$@"
+}
+
+opyg() {
+  opy_ -g $GRAMMAR -- "$@"
+}
 
 # The old compile path
 _compile-one() {
@@ -20,11 +28,11 @@ _compile-one() {
   #PYTHONPATH=. ./opy_main.py $g old-compile "$@"
 
   # opy is pgen2 + compiler2
-  PYTHONPATH=. ./opy_main.py $GRAMMAR compile "$@"
+  opyg compile "$@"
 }
 
 _compile2-one() {
-  PYTHONPATH=. ./opy_main.py $GRAMMAR compile2 "$@"
+  opyg compile2 "$@"
 }
 
 _stdlib-compile-one() {
@@ -54,8 +62,4 @@ _stdlib-compile-one() {
 
 _ccompile-one() {
   misc/ccompile.py "$@"
-}
-
-opy_() {
-  PYTHONPATH=. $THIS_DIR/opy_main.py $GRAMMAR "$@"
 }

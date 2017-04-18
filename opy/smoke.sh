@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 source common.sh
+source compare.sh  # for DIFF
 
 md5-manifest() {
   local tree=$1
@@ -53,6 +54,10 @@ _compile-tree() {
   md5-manifest $dest_tree
 }
 
+_fill-opy-tree() {
+  echo TODO: grammar pickle
+}
+
 compile-opy-tree() {
   local src=$PWD
   local files=( $(find $src \
@@ -68,6 +73,14 @@ compile-opy-tree() {
   _compile-tree $src _tmp/opy-opy/ opy "${files[@]}"
 }
 
+_fill-osh-tree() {
+  local dir=${1:-_tmp/osh-stdlib}
+  cp -v ../osh/osh.asdl $dir/osh
+  cp -v ../core/runtime.asdl $dir/core
+  cp -v ../asdl/arith.asdl $dir/asdl
+  ln -v -s -f $PWD/../core/libc.so $dir/core
+}
+
 compile-osh-tree() {
   local src=$(cd .. && echo $PWD)
   local files=( $(find $src \
@@ -79,19 +92,14 @@ compile-osh-tree() {
   _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
   _compile-tree $src _tmp/osh-opy/ opy "${files[@]}"
 
+  _fill-osh-tree _tmp/osh-ccompile/ 
+  _fill-osh-tree _tmp/osh-opy/
+
   #_compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
 
   # Not deterministic!
   #_compile-tree $src _tmp/osh-compile2.gold/ compiler2 "${files[@]}"
   #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
-}
-
-fill-osh-tree() {
-  local dir=${1:-_tmp/osh-stdlib}
-  cp -v ../osh/osh.asdl $dir/osh
-  cp -v ../core/runtime.asdl $dir/core
-  cp -v ../asdl/arith.asdl $dir/asdl
-  ln -v -s -f $PWD/../core/libc.so $dir/core
 }
 
 test-osh-tree() {
@@ -201,10 +209,9 @@ _byterun() {
 # Wow!  Runs itself to parse itself... I need some VM instrumentation to make
 # sure it's not accidentally cheating or leaking.
 opy-parse-on-byterun() {
-  #local arg=$PWD/opy_main.py
   local arg=$PWD/testdata/hello_py2.py
   pushd _tmp/opy-opy
-  opy_ run opy_main.pyc $GRAMMAR parse $arg
+  opyg run opy_main.pyc -g $GRAMMAR parse $arg
   popd
 }
 
@@ -213,15 +220,15 @@ osh-parse-on-byterun() {
 
   ../bin/oil.py "${cmd[@]}"
   echo ---
-  opy_ run _tmp/osh-opy/bin/oil.pyc "${cmd[@]}"
+  opyg run _tmp/osh-opy/bin/oil.pyc "${cmd[@]}"
 }
 
 opy-hello2() {
-  opy_ run testdata/hello_py2.py
+  opyg run testdata/hello_py2.py
 }
 
 opy-hello3() {
-  opy_ run testdata/hello_py3.py
+  opyg run testdata/hello_py3.py
 }
 
 #
@@ -266,7 +273,7 @@ compare-bytecode() {
   echo done
 }
 
-# Compile opy_main a 100 times and make sure it's the same.
+# Compile opy_ a 100 times and make sure it's the same.
 #
 # NOTE: This doesn't surface all the problems.  Remember the fix was in
 # compiler2/misc.py:Set.
@@ -285,16 +292,17 @@ determinism-loop() {
     local size1=$(stat --format '%s' _tmp/det/$name.1)
     local size2=$(stat --format '%s' _tmp/det/$name.2)
     if test $size1 != $size2; then
+      echo "mismatched sizes: $size1 $size2"
       # TODO: Import from run.sh
-      compare-bytecode _tmp/det/$file.{1,2}
+      compare-bytecode _tmp/det/$name.{1,2}
       echo "Found problem after $i iterations"
       break
     fi
   done
 }
 
-compile2-determinism-loop() {
-  determinism-loop _compile2-one ../core/lexer.py
+opy-determinism-loop() {
+  determinism-loop _compile-one ../core/lexer.py
 }
 
 if test $(basename $0) = 'smoke.sh'; then

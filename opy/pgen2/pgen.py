@@ -5,7 +5,7 @@
 # Pgen imports
 #import grammar, token, tokenize
 # NOTE: Need these special versions of token/tokenize for BACKQUOTE and such.
-from pgen2 import grammar, token, tokenize
+from . import grammar, token, tokenize
 
 class PgenGrammar(grammar.Grammar):
     pass

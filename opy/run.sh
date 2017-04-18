@@ -19,7 +19,7 @@ die() {
 
 _parse-one() {
   #PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
-  PYTHONPATH=. ./opy_main.py py27.grammar parse "$@"
+  opyg parse "$@"
 }
 
 parse-test() {
@@ -28,6 +28,7 @@ parse-test() {
   _parse-one testdata/hello_py2.py
 }
 
+# This might not work
 _stdlib-parse-one() {
   PYTHONPATH=. ./opy_main.py 2to3.grammar stdlib-parse "$@"
 }
