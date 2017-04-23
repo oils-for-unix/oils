@@ -474,6 +474,17 @@ parse-perf-tools() {
     $files
 }
 
+# Bats bash test framework.  It appears to be fairly popular.
+parse-bats() {
+  local src=~/git/other/bats
+  local files=$(find $src \
+                \( -wholename '*/libexec/*' -a -type f -a -executable -a -printf '%P\n' \) )
+  time _parse-many \
+    $src \
+    $RESULT_DIR/bats \
+    $files
+}
+
 #
 # Big projects
 #
