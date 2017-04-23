@@ -198,7 +198,7 @@ _parse-project() {
 
   time _parse-many \
     $src \
-    $RESULT_DIR/$name-parsed \
+    $RESULT_DIR/$name \
     $(find $src -name '*.sh' -a -printf '%P\n')
 }
 
@@ -456,6 +456,18 @@ parse-exp() {
 
 parse-minimal-linux() {
   _parse-project ~/git/other/minimal
+}
+
+parse-micropython() {
+  _parse-project ~/git/other/micropython
+}
+
+parse-staticpython() {
+  _parse-project ~/git/other/staticpython
+}
+
+parse-linuxkit() {
+  _parse-project ~/git/other/linuxkit
 }
 
 # NOTE:
