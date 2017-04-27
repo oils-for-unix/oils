@@ -347,16 +347,6 @@ count() {
   echo
 }
 
-determinism() {
-  # This changes it.  Python 2.7 doesn't have it on by default I guess.
-  # So what is the cause in the compiler package?
-  #export PYTHONHASHSEED=random
-
-  misc/determinism.py > _tmp/d1.txt
-  misc/determinism.py > _tmp/d2.txt
-  $DIFF _tmp/{d1,d2}.txt && echo SAME
-}
-
 # We don't want print statements.
 2to3-print() {
   2to3 --fix print --write "$@" 

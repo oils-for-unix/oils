@@ -305,6 +305,21 @@ opy-determinism-loop() {
   determinism-loop _compile-one ../core/lexer.py
 }
 
+# Not able to reproduce the non-determinism with d.keys()?  Why not?
+hash-determinism() {
+  local in=$1
+  local out=$2
+  # This changes it.  Python 2.7 doesn't have it on by default I guess.
+  # So what is the cause in the compiler package?
+  #export PYTHONHASHSEED=random
+
+  misc/determinism.py $in > $out
+}
+
+hash-determinism-loop() {
+  determinism-loop hash-determinism
+}
+
 if test $(basename $0) = 'smoke.sh'; then
   "$@"
 fi

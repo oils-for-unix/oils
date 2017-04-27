@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 """
 determinism.py
 """
@@ -9,17 +10,19 @@ import sys
 def main(argv):
 
   s = set()
-  #d = {}
-  with open(sys.argv[0]) as f:
+  d = {}
+  with open(sys.argv[1]) as f:
     for line in f:
-      #d[line] = 1
-      s.add(line)
+      d[line] = 1
+      #s.add(line)
       print(hash(line))
   #return
 
   #for line in d:
   #  sys.stdout.write(line)
 
+  print(d.keys())
+  return
   print('--')
   for line in s:
     sys.stdout.write(line)
