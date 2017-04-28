@@ -26,9 +26,10 @@ parseFile(path) -> AST
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
 from .ast import *
-#import parser  # stdlib module we want to get rid of
+from .consts import CO_VARARGS, CO_VARKEYWORDS
+from .consts import OP_ASSIGN, OP_DELETE, OP_APPLY
+
 from pgen2 import token
-#import token
 from pytree import type_repr
 
 
@@ -164,8 +165,6 @@ _cmp_types = {
 class WalkerError(StandardError):
     pass
 
-from compiler.consts import CO_VARARGS, CO_VARKEYWORDS
-from compiler.consts import OP_ASSIGN, OP_DELETE, OP_APPLY
 
 def parseFile(path):
     f = open(path, "U")
