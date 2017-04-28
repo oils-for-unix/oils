@@ -9,8 +9,8 @@ But it seems clearer to write checkers that use the AST to detect
 errors.
 """
 
-from compiler2 import ast
-from compiler2.visitor import walk
+from . import ast
+from .visitor import walk
 
 
 def check(tree, multi=None):

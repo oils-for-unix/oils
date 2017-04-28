@@ -2,8 +2,8 @@
 
 """
 
-from compiler2 import ast
-from compiler2.visitor import walk
+from . import ast
+from .visitor import walk
 
 
 def is_future(stmt):

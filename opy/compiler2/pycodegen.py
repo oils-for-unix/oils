@@ -5,16 +5,16 @@ import struct
 import sys
 from cStringIO import StringIO
 
-from compiler2 import ast, syntax
-from compiler2.visitor import walk
-from compiler2.transformer import parse
-from compiler2 import pyassem, misc, future, symbols
-from compiler2.consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
+from . import ast, syntax
+from .visitor import walk
+from .transformer import parse
+from . import pyassem, misc, future, symbols
+from .consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
      SC_FREE, SC_CELL
-from compiler2.consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
+from .consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
      CO_NESTED, CO_GENERATOR, CO_FUTURE_DIVISION,
      CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
-from compiler2.pyassem import TupleArg
+from .pyassem import TupleArg
 
 # XXX The version-specific code can go, since this code only works with 2.x.
 # Do we have Python 1.x or Python 2.x?

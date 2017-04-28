@@ -9,10 +9,10 @@ import sys
 import symtable
 import unittest
 
-from compiler2 import symbols
-from compiler2 import transformer 
-from compiler2.transformer import parseFile
-from compiler2.visitor import walk
+from . import symbols
+from . import transformer 
+from .transformer import parseFile
+from .visitor import walk
 
 
 def list_eq(l1, l2):

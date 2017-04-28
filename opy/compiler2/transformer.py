@@ -25,7 +25,7 @@ parseFile(path) -> AST
 #   http://www.opensource.org/licenses/bsd-license.html
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
-from compiler2.ast import *
+from .ast import *
 #import parser  # stdlib module we want to get rid of
 from pgen2 import token
 #import token
