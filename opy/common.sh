@@ -11,7 +11,7 @@ readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly GRAMMAR=$THIS_DIR/_tmp/py27.grammar.pickle
 
 opy_() {
-  PYTHONPATH=$THIS_DIR $THIS_DIR/opy_main.py "$@"
+  PYTHONPATH=$THIS_DIR $THIS_DIR/../bin/opy_.py "$@"
 }
 
 opyg() {

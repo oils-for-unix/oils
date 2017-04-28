@@ -18,17 +18,17 @@ import logging
 #this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 #sys.path.append(os.path.join(this_dir))
 
-from pgen2 import driver, pgen, grammar
-from pgen2 import token, tokenize
-import pytree
+from .pgen2 import driver, pgen, grammar
+from .pgen2 import token, tokenize
+from . import pytree
 
-from compiler2 import transformer
-from compiler2 import pycodegen
-from compiler2 import opcode
+from .compiler2 import transformer
+from .compiler2 import pycodegen
+from .compiler2 import opcode
 
-from byterun import execfile
+from .byterun import execfile
 
-from util_opy import log
+from .util_opy import log
 
 
 # From lib2to3/pygram.py.  This takes the place of the 'symbol' module.
@@ -145,7 +145,7 @@ def Options():
   return p
 
 
-def main(argv):
+def OpyMain(argv):
   """Dispatch to the right action."""
 
   opts, argv = Options().parse_args(argv)
@@ -335,37 +335,10 @@ class UsageError(RuntimeError):
 
 _OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'
 
-def main2(argv):
-  b = os.path.basename(argv[0])
-  main_name, _ = os.path.splitext(b)
 
-  if main_name in ('opy', 'opy_'):
-    try:
-      first_arg = argv[1]
-    except IndexError:
-      raise UsageError('Missing name of main()')
-
-    if first_arg in ('-h', '--help'):
-      print(_OPY_USAGE, file=sys.stderr)
-      sys.exit(0)
-
-    main_name = first_arg
-    main_argv = argv[2:]
-  else:
-    main_argv = argv[1:]
-
-  # opy is treated like opy_main opy-run
-  if main_name in ('opy_', 'opy_main'):
-    return OpyMain(main_argv)
-  elif main_name == 'opy':
-    return OpyMain(['run'] + main_argv)
-  else:
-    raise UsageError('Invalid main %r' % main_name)
-
-
-if __name__ == '__main__':
+def main(argv):
   try:
-    main(sys.argv[1:])
+    OpyMain(argv[1:])
   except UsageError as e:
     print(_OPY_USAGE, file=sys.stderr)
     print(str(e), file=sys.stderr)
