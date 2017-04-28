@@ -80,6 +80,10 @@ compare() {
     $callback $py -S -c 'import traceback;import json;print("hi")' || true
     echo
   done
+
+  echo app.zip
+  $callback python -S _tmp/app.zip
+  echo
 }
 
 compare-strace() {
@@ -97,6 +101,43 @@ import-stats() {
 
   echo nonexistent___
   strace python -c 'import nonexistent___' 2>&1 | grep nonexistent___ | wc -l
+}
+
+make-zip() {
+  rm -rf _tmp/app
+  rm _tmp/app.zip
+
+  mkdir -p _tmp/app
+
+  cat > _tmp/app/lib1.py <<EOF
+print "hi from lib1"
+EOF
+
+  cat > _tmp/app/lib2.py <<EOF
+print "hi from lib2"
+EOF
+
+  cat > _tmp/app/__main__.py <<EOF
+import sys
+sys.path = [sys.argv[0]]
+import lib1
+import lib2
+print "hi from zip"
+EOF
+
+  pushd _tmp/app
+  zip -r ../app.zip .
+  popd
+}
+
+# Can get this down to 5 ms, 593 syscalls.  Needs to be much less.
+test-zip() {
+  python -S _tmp/app.zip
+}
+
+# This still tries to import encodings and stuff like that.
+strace-zip() {
+  strace python -S _tmp/app.zip
 }
 
 "$@"
