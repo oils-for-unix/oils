@@ -130,7 +130,8 @@ def _ParseAndMakeTypes(schema_path, root):
   # in osh.asdl.  Then we can show an error if it's not provided.
   app_types = {'id': asdl.UserType(Id)}
 
-  module = asdl.parse(schema_path)
+  with open(schema_path) as f:
+    module = asdl.parse(f)
 
   # Check for type errors
   if not asdl.check(module, app_types):

@@ -12,7 +12,8 @@ from asdl import py_meta
 from asdl import asdl_ as asdl
 
 def _ParseAndMakeTypes(schema_path, root):
-  module = asdl.parse(schema_path)
+  with open(schema_path) as f:
+    module = asdl.parse(f)
 
   app_types = {}
 

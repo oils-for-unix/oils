@@ -250,11 +250,10 @@ def check(mod, app_types=None):
 # The ASDL parser itself comes next. The only interesting external interface
 # here is the top-level parse function.
 
-def parse(filename):
+def parse(f):
     """Parse ASDL from the given file and return a Module node describing it."""
-    with open(filename) as f:
-        parser = ASDLParser()
-        return parser.parse(f.read())
+    parser = ASDLParser()
+    return parser.parse(f)
 
 # Types for describing tokens in an ASDL specification.
 class TokenKind:
@@ -276,9 +275,9 @@ class ASDLSyntaxError(Exception):
     def __str__(self):
         return 'Syntax error on line {0.lineno}: {0.msg}'.format(self)
 
-def tokenize_asdl(buf):
+def tokenize_asdl(f):
     """Tokenize the given buffer. Yield Token objects."""
-    for lineno, line in enumerate(buf.splitlines(), 1):
+    for lineno, line in enumerate(f, 1):
         for m in re.finditer(r'\s*(\w+|--.*|.)', line.strip()):
             c = m.group(1)
             if c[0].isalpha():
@@ -309,10 +308,10 @@ class ASDLParser:
         self._tokenizer = None
         self.cur_token = None
 
-    def parse(self, buf):
-        """Parse the ASDL in the buffer and return an AST with a Module root.
+    def parse(self, f):
+        """Parse the ASDL in the file and return an AST with a Module root.
         """
-        self._tokenizer = tokenize_asdl(buf)
+        self._tokenizer = tokenize_asdl(f)
         self._advance()
         return self._parse_module()
 
