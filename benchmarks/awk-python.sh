@@ -11,6 +11,9 @@
 # Update: simply adding tolower() makes gawk much slower than Python (555 ms
 # vs. 280 ms), and mawk is still much faster at 138 ms.
 #
+# Mawk is known to be fast?  Faster than Java on this benchmark.
+# https://brenocon.com/blog/2009/09/dont-mawk-awk-the-fastest-and-most-elegant-big-data-munging-language/
+#
 # Usage:
 #   ./awk-python.sh <function name>
 
