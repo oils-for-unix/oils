@@ -14,10 +14,11 @@ from core import util
 from core import runtime
 from osh import ast_ as ast
 
-bracket_op_e = ast.bracket_op_e
+arg_value_e = runtime.arg_value_e
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
-arg_value_e = runtime.arg_value_e
+
+bracket_op_e = ast.bracket_op_e
 word_part_e = ast.word_part_e
 log = util.log
 
