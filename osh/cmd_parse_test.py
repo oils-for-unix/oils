@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 cmd_parse_test.py: Tests for cmd_parse.py
 """

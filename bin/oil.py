@@ -355,7 +355,7 @@ def BoilMain(main_argv):
 _OIL_USAGE = 'Usage: oil MAIN [OPTION]... [ARG]...'
 
 
-def main(argv):
+def OilMain(argv):
   b = os.path.basename(argv[0])
   main_name, _ = os.path.splitext(b)
 
@@ -383,9 +383,10 @@ def main(argv):
   else:
     raise UsageError('Invalid main %r' % main_name)
 
-if __name__ == '__main__':
+
+def main(argv):
   try:
-    sys.exit(main(sys.argv))
+    sys.exit(OilMain(argv))
   except NotImplementedError as e:
     raise
   except UsageError as e:
@@ -395,3 +396,7 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+
+if __name__ == '__main__':
+  main(sys.argv)

@@ -5,15 +5,15 @@ core/runtime.py -- Parse runtime.asdl and dynamically create classes on this mod
 Similar to osh/ast_.py.
 """
 
-import os
 import sys
 
 from asdl import py_meta
 from asdl import asdl_ as asdl
+from core import util
 
-def _ParseAndMakeTypes(schema_path, root):
-  with open(schema_path) as f:
-    module = asdl.parse(f)
+
+def _ParseAndMakeTypes(f, root):
+  module = asdl.parse(f)
 
   app_types = {}
 
@@ -23,9 +23,6 @@ def _ParseAndMakeTypes(schema_path, root):
   py_meta.MakeTypes(module, root, app_types)
 
 
-bin_dir = os.path.dirname(os.path.abspath(sys.argv[0]))  # ~/git/oil/bin
-schema_path = os.path.join(bin_dir, '../core/runtime.asdl')  # ~/git/oil/osh
-
+f = util.GetResourceLoader().open('core/runtime.asdl')
 root = sys.modules[__name__]
-
-_ParseAndMakeTypes(schema_path, root)
+_ParseAndMakeTypes(f, root)

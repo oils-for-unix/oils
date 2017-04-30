@@ -141,3 +141,47 @@ class TraceState(object):
 
   def Pop(self):
     self.indent = self.indent[:-self.num_spaces]
+
+
+
+class _FileResourceLoader:
+  """Open resources relative to argv[0]."""
+
+  def __init__(self, argv0):
+    bin_dir = os.path.dirname(os.path.abspath(argv0))  # ~/git/oil/bin
+    self.root_dir = os.path.join(bin_dir, '..')  # ~/git/oil/osh
+  
+  # TODO: Make this a context manager?
+  def open(self, rel_path):
+    return open(os.path.join(self.root_dir, rel_path))
+
+
+import zipimport  # NOT zipfile, we don't need it.
+
+class _ZipResourceLoader:
+  """Open resources INSIDE argv[0] as a zip file."""
+
+  def __init__(self, argv0):
+    self.z = zipimport.zipimporter(argv0)
+  
+  def open(self, rel_path):
+    contents = self.z.get_data(rel_path)
+    return io.BytesIO(contents)
+
+
+_loader = None
+
+def GetResourceLoader():
+  global _loader
+  if _loader:
+    return _loader
+
+  argv0 = sys.argv[0]
+
+  # Ovm_Main in main.c sets this.
+  if os.getenv('_OVM_IS_BUNDLE') == '1':
+    _loader = _ZipResourceLoader(argv0)
+  else:
+    _loader = _FileResourceLoader(argv0)
+
+  return _loader

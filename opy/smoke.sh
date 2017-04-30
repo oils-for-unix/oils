@@ -102,6 +102,14 @@ compile-osh-tree() {
   #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
 }
 
+zip-oil-tree() {
+  #pushd _tmp/osh-opy
+  rm -f _tmp/oil.zip
+  pushd _tmp/osh-ccompile
+  zip ../oil.zip -r .
+  popd
+}
+
 test-osh-tree() {
   local dir=${1:-_tmp/osh-opy}
   local vm=${2:-byterun}  # byterun or cpython
