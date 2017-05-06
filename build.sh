@@ -19,16 +19,6 @@ install-deps() {
   ./spec.sh install-shells
 }
 
-pylibc3() {
-  ./setup.py build
-
-  # Wildcard to match any Python 3 version.
-  shopt -s failglob
-  local so=$(echo build/lib.linux-$(uname -m)-3.*/libc.cpython-3*.so)
-
-  ln -s -f --verbose ../$so core/libc.so
-}
-
 pylibc() {
   ./setup.py build
 
@@ -44,7 +34,7 @@ pylibc() {
 # Also done by unit.sh.
 test-pylibc() {
   export PYTHONPATH=.
-  libc
+  pylibc
   core/libc_test.py
 }
 
