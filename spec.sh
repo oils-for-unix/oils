@@ -7,10 +7,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+IFS=$' \t\n'
+
 readonly DASH=/bin/dash
 readonly BASH=/bin/bash
 readonly MKSH=/bin/mksh
-readonly ZSH=/usr/bin/zsh  # Ubuntu puts it here
+readonly ZSH=/usr/bin/zsh  # Debian/Ubuntu puts it here
 readonly BUSYBOX_ASH=_tmp/shells/ash 
 
 
@@ -19,7 +21,7 @@ readonly BUSYBOX_ASH=_tmp/shells/ash
 readonly OSH='bin/osh bin/opypy-osh'
 #readonly OSH=bin/osh
 
-# ash and dash are similar, so not including ash by default.  zsh is not quite
+# ash and dash are similar, so not including ash by default. zsh is not quite
 # POSIX.
 readonly REF_SHELLS=($DASH $BASH $MKSH)
 
@@ -82,14 +84,15 @@ version-text() {
   $BASH --version | head -n 1
   echo
 
+  #dpkg -s mksh | egrep '^Package|Version'
+  $MKSH -c 'echo "$KSH_VERSION"'
+  echo
+
   $ZSH --version | head -n 1
   echo
 
   # These don't have versions
-  dpkg -s dash | egrep '^Package|Version'
-  echo
-
-  dpkg -s mksh | egrep '^Package|Version'
+  dpkg -s dash | grep -E '^Package|Version'
   echo
 
   # Need || true because of pipefail
@@ -105,7 +108,7 @@ version-text() {
 #
 
 sh-spec() {
-  local this_dir=$(cd $(dirname $0) && pwd)
+  local this_dir=$(cd -- "$(dirname "$(readlink -snf -- "$BASH_SOURCE")" )" && pwd)
 
   local tmp_env=$this_dir/_tmp/spec-tmp
   mkdir -p $tmp_env
@@ -144,7 +147,6 @@ trace-var-sub() {
 all() {
   ./spec-runner.sh all-parallel "$@"
 }
-
 
 #
 # Invidual tests.
