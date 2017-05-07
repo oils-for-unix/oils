@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Count lines of code in various ways.
+# Count lines ofcode in various ways.
 #
 # Usage:
 #   ./count.sh <function name>
@@ -39,11 +39,11 @@ all() {
   #echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {osh,core}/*_test.py | sort --numeric
+  wc -l {osh,core,native}/*_test.py | sort --numeric
   echo
 
   echo 'OIL'
-  { ls {osh,core}/*.py; echo core/*.c; echo bin/*.py; } |
+  { ls {osh,core}/*.py; echo native/*.c; echo bin/*.py; } |
     grep -E -v '_gen.py$|_test.py$|test_lib.py|fake_libc.py' |
     xargs wc -l | sort --numeric
   echo
