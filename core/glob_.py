@@ -3,10 +3,7 @@
 glob_.py
 """
 
-try:
-  from core import libc
-except ImportError:
-  from core import fake_libc as libc
+import libc
 
 from core.util import log
 

@@ -11,10 +11,7 @@ expr_eval.py -- Currently used for boolean and arithmetic expressions.
 
 import os
 
-try:
-  from core import libc
-except ImportError:
-  from core import fake_libc as libc
+import libc  # for fnmatch
 
 from core.id_kind import BOOL_OPS, OperandType, Id, IdName
 from core.util import log

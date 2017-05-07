@@ -27,19 +27,19 @@ pylibc() {
   local arch=$(uname -m)
   local so=$(echo build/lib.linux-$arch-2.*/libc.so)
 
-  ln -s -f --verbose ../$so core/libc.so
-  file core/libc.so
+  ln -s -f --verbose $so libc.so
+  file libc.so
 }
 
 # Also done by unit.sh.
 test-pylibc() {
   export PYTHONPATH=.
   pylibc
-  core/libc_test.py
+  native/libc_test.py
 }
 
 clean() {
-  rm -f --verbose core/libc.so
+  rm -f --verbose libc.so
   rm -r -f --verbose build
 }
 

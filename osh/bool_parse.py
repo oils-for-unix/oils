@@ -61,10 +61,8 @@ from core import word
 from core.id_kind import Id, Kind, LookupKind, IdName
 
 from osh.lex import LexMode
-try:
-  from core import libc
-except ImportError:
-  from core import fake_libc as libc
+
+import libc  # for regex_parse
 
 
 class BoolParser(object):

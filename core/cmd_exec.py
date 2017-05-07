@@ -74,12 +74,10 @@ from core.process import (
     HereDocRedirect, DescriptorRedirect, FilenameRedirect,
     FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
 from core import runtime
-try:
-  from core import libc  # for fnmatch
-except ImportError:
-  from core import fake_libc as libc
 
 from osh import ast_ as ast
+
+import libc  # for fnmatch
 
 command_e = ast.command_e
 part_value_e = runtime.part_value_e
