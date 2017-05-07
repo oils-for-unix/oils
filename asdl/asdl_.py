@@ -19,7 +19,6 @@
 # [1] "The Zephyr Abstract Syntax Description Language" by Wang, et. al. See
 #     http://asdl.sourceforge.net/
 #-------------------------------------------------------------------------------
-from collections import namedtuple
 import re
 
 __all__ = [
@@ -265,7 +264,11 @@ class TokenKind:
         '=': Equals, ',': Comma,    '?': Question, '|': Pipe,    '(': LParen,
         ')': RParen, '*': Asterisk, '{': LBrace,   '}': RBrace}
 
-Token = namedtuple('Token', 'kind value lineno')
+class Token:
+    def __init__(self, kind, value, lineno):
+        self.kind = kind
+        self.value = value
+        self.lineno = lineno
 
 class ASDLSyntaxError(Exception):
     def __init__(self, msg, lineno=None):

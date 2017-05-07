@@ -23,12 +23,15 @@ easily to C++.
 #
 # http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
 
-import inspect
 import io
 import os
 import pwd
 import sys
-import types
+
+import os
+if not os.getenv('_OVM_DEPS'):
+  import inspect
+  import types
 
 
 PY2 = sys.version[0] == '2'

@@ -15,7 +15,6 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
-import cgi
 import io
 import json
 import re
@@ -23,6 +22,10 @@ import sys
 
 from asdl import asdl_ as asdl
 from core import util
+
+import os
+if not os.getenv('_OVM_DEPS'):
+  import cgi
 
 
 def DetectConsoleOutput(f):
