@@ -20,12 +20,13 @@ install-deps() {
 }
 
 pylibc() {
-  ./setup.py build
+  mkdir -p _pybuild
+  local arch=$(uname -m)
+  ./setup.py build --build-lib _pybuild/$arch
 
   # Wildcard to match any Python 3 version.
   shopt -s failglob
-  local arch=$(uname -m)
-  local so=$(echo build/lib.linux-$arch-2.*/libc.so)
+  local so=$(echo _pybuild/$arch/libc.so)
 
   ln -s -f --verbose $so libc.so
   file libc.so
@@ -40,7 +41,7 @@ test-pylibc() {
 
 clean() {
   rm -f --verbose libc.so
-  rm -r -f --verbose build
+  rm -r -f --verbose _pybuild
 }
 
 "$@"
