@@ -7,3 +7,4 @@ _bin
 _build
 _release
 libc.so
+Python-2.7.13/*/*.o
