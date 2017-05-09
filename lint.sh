@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/common.sh
+
 get-cpplint() {
   mkdir -p _tmp
   wget --directory _tmp \
@@ -57,6 +59,13 @@ oil-pep8() {
 
 pep8-all() {
   oil-pep8 */*.py
+}
+
+# Language independent
+find-tabs() {
+  find . '(' -name _tmp -o -name $PY27 ')' -a -prune -o \
+         '(' -name '*.py' -o -name '*.sh' ')' -a -print |
+    xargs grep -n $'\t'
 }
 
 "$@"

@@ -74,9 +74,9 @@ extdecls() {
     echo "extern void init$mod(void);"
   done
 }
-		
+
 initbits() {
-	for mod in "$@"; do
+  for mod in "$@"; do
     echo "    {\"$mod\", init$mod},"
   done
 }
@@ -88,24 +88,24 @@ gen-module-init() {
   local initbits
   initbits=$(initbits "$@")
 
-  local template=$PY27/Modules/config.c.in 
+  local template=$PY27/Modules/config.c.in
 
-	awk -v template=$template -v extdecls="$extdecls" -v initbits="$initbits" '
-		BEGIN {
+  awk -v template=$template -v extdecls="$extdecls" -v initbits="$initbits" '
+    BEGIN {
       print "/* Generated automatically from " template " */"
     }
-		/MARKER 1/ {
+    /MARKER 1/ {
       print extdecls
       next
     }
-		/MARKER 2/ {
+    /MARKER 2/ {
       print initbits
       next
     }
     {
       print $0
     }
-		' $template
+    ' $template
 }
 
 #

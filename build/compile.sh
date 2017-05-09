@@ -12,92 +12,91 @@ source build/common.sh
 readonly OVM_PARSER_OBJS='Parser/myreadline.c'
 
 readonly OVM_PYTHON_OBJS='
-		Python/_warnings.c
-		Python/bltinmodule.c
-		Python/ceval.c
-		Python/codecs.c
-		Python/errors.c
-		Python/frozen.c
-		Python/frozenmain.c
-		Python/future.c
-		Python/getargs.c
-		Python/getcompiler.c
-		Python/getcopyright.c
-		Python/getplatform.c
-		Python/getversion.c
-		Python/import.c
-		Python/importdl.c
-		Python/marshal.c
-		Python/modsupport.c
-		Python/mystrtoul.c
-		Python/mysnprintf.c
-		Python/pyarena.c
-		Python/pyctype.c
-		Python/pyfpe.c
-		Python/pymath.c
-		Python/pystate.c
-		Python/pythonrun.c
-    Python/random.c
-		Python/structmember.c
-		Python/sysmodule.c
-		Python/traceback.c
-		Python/getopt.c
-		Python/pystrcmp.c
-		Python/pystrtod.c
-		Python/dtoa.c
-		Python/formatter_unicode.c
-		Python/formatter_string.c
-		Python/dynload_shlib.c
+Python/_warnings.c
+Python/bltinmodule.c
+Python/ceval.c
+Python/codecs.c
+Python/errors.c
+Python/frozen.c
+Python/frozenmain.c
+Python/future.c
+Python/getargs.c
+Python/getcompiler.c
+Python/getcopyright.c
+Python/getplatform.c
+Python/getversion.c
+Python/import.c
+Python/importdl.c
+Python/marshal.c
+Python/modsupport.c
+Python/mystrtoul.c
+Python/mysnprintf.c
+Python/pyarena.c
+Python/pyctype.c
+Python/pyfpe.c
+Python/pymath.c
+Python/pystate.c
+Python/pythonrun.c
+Python/random.c
+Python/structmember.c
+Python/sysmodule.c
+Python/traceback.c
+Python/getopt.c
+Python/pystrcmp.c
+Python/pystrtod.c
+Python/dtoa.c
+Python/formatter_unicode.c
+Python/formatter_string.c
+Python/dynload_shlib.c
 '
 
 OBJECT_OBJS='
-		Objects/abstract.c
-		Objects/boolobject.c
-		Objects/bufferobject.c
-		Objects/bytes_methods.c
-		Objects/bytearrayobject.c
-		Objects/capsule.c
-		Objects/cellobject.c
-		Objects/classobject.c
-		Objects/cobject.c
-		Objects/codeobject.c
-		Objects/complexobject.c
-		Objects/descrobject.c
-		Objects/enumobject.c
-		Objects/exceptions.c
-		Objects/genobject.c
-		Objects/fileobject.c
-		Objects/floatobject.c
-		Objects/frameobject.c
-		Objects/funcobject.c
-		Objects/intobject.c
-		Objects/iterobject.c
-		Objects/listobject.c
-		Objects/longobject.c
-		Objects/dictobject.c
-		Objects/memoryobject.c
-		Objects/methodobject.c
-		Objects/moduleobject.c
-		Objects/object.c
-		Objects/obmalloc.c
-		Objects/rangeobject.c
-		Objects/setobject.c
-		Objects/sliceobject.c
-		Objects/stringobject.c
-		Objects/structseq.c
-		Objects/tupleobject.c
-		Objects/typeobject.c
-		Objects/weakrefobject.c
-
-    Objects/unicodeobject.c
-    Objects/unicodectype.c
+Objects/abstract.c
+Objects/boolobject.c
+Objects/bufferobject.c
+Objects/bytes_methods.c
+Objects/bytearrayobject.c
+Objects/capsule.c
+Objects/cellobject.c
+Objects/classobject.c
+Objects/cobject.c
+Objects/codeobject.c
+Objects/complexobject.c
+Objects/descrobject.c
+Objects/enumobject.c
+Objects/exceptions.c
+Objects/genobject.c
+Objects/fileobject.c
+Objects/floatobject.c
+Objects/frameobject.c
+Objects/funcobject.c
+Objects/intobject.c
+Objects/iterobject.c
+Objects/listobject.c
+Objects/longobject.c
+Objects/dictobject.c
+Objects/memoryobject.c
+Objects/methodobject.c
+Objects/moduleobject.c
+Objects/object.c
+Objects/obmalloc.c
+Objects/rangeobject.c
+Objects/setobject.c
+Objects/sliceobject.c
+Objects/stringobject.c
+Objects/structseq.c
+Objects/tupleobject.c
+Objects/typeobject.c
+Objects/weakrefobject.c
+Objects/unicodeobject.c
+Objects/unicodectype.c
 '
 
 # Non-standard lib stuff.
 MODULE_OBJS='
-		Modules/getpath.c
-		Modules/main.c
-		Modules/gcmodule.c
+Modules/getpath.c
+Modules/main.c
+Modules/gcmodule.c
 '
 
 # The stuff in Modules/Setup.dist, plus zlibmodule.c and signalmodule.c.
@@ -116,12 +115,12 @@ Modules/signalmodule.c
 '
 
 OVM_LIBRARY_OBJS="
-		Modules/getbuildinfo.c
-		$OVM_PARSER_OBJS
-		$OBJECT_OBJS
-		$OVM_PYTHON_OBJS 
-		$MODULE_OBJS
-		$MODOBJS
+Modules/getbuildinfo.c
+$OVM_PARSER_OBJS
+$OBJECT_OBJS
+$OVM_PYTHON_OBJS 
+$MODULE_OBJS
+$MODOBJS
 "
 
 # Install prefix for architecture-independent files
@@ -137,13 +136,13 @@ readonly pythonpath='""'
 # -D OVM_DISABLE_DLOPEN
 
 readonly PREPROC_FLAGS=(
-    -D OVM_MAIN \
-		-D PYTHONPATH="$pythonpath" \
-		-D PREFIX="$prefix" \
-		-D EXEC_PREFIX="$exec_prefix" \
-		-D VERSION="$VERSION" \
-		-D VPATH="$VPATH" \
-    -D Py_BUILD_CORE
+  -D OVM_MAIN \
+  -D PYTHONPATH="$pythonpath" \
+  -D PREFIX="$prefix" \
+  -D EXEC_PREFIX="$exec_prefix" \
+  -D VERSION="$VERSION" \
+  -D VPATH="$VPATH" \
+  -D Py_BUILD_CORE
 )
 
 readonly INCLUDE_PATHS=(-I . -I Include)
