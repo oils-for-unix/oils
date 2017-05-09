@@ -175,7 +175,11 @@ _PyImport_Init(void)
 
     _PyImport_Filetab = filetab;
 
+#ifdef OVM_MAIN
+    if (0) {
+#else
     if (Py_OptimizeFlag) {
+#endif
         /* Replace ".pyc" with ".pyo" in _PyImport_Filetab */
         for (; filetab->suffix != NULL; filetab++) {
 #ifndef RISCOS
@@ -769,7 +773,12 @@ make_compiled_pathname(char *pathname, char *buf, size_t buflen)
         --len;          /* pretend 'w' isn't there */
 #endif
     memcpy(buf, pathname, len);
+#ifdef OVM_MAIN
+    buf[len] = 'c';
+#else
     buf[len] = Py_OptimizeFlag ? 'o' : 'c';
+#endif
+
     buf[len+1] = '\0';
 
     return buf;
@@ -867,6 +876,10 @@ load_compiled_module(char *name, char *cpathname, FILE *fp)
 static PyCodeObject *
 parse_source_module(const char *pathname, FILE *fp)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "parse_source_module: no AST\n");
+    return NULL;
+#else
     PyCodeObject *co = NULL;
     mod_ty mod;
     PyCompilerFlags flags;
@@ -883,6 +896,7 @@ parse_source_module(const char *pathname, FILE *fp)
     }
     PyArena_Free(arena);
     return co;
+#endif
 }
 
 
@@ -1849,7 +1863,11 @@ find_init_module(char *buf)
         }
     }
     i += strlen(pname);
+#ifdef OVM_MAIN
+    strcpy(buf+i, "c");
+#else
     strcpy(buf+i, Py_OptimizeFlag ? "o" : "c");
+#endif
     if (stat(buf, &statbuf) == 0) {
         if (case_ok(buf,
                     save_len + 9,               /* len("/__init__") */

@@ -480,6 +480,11 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
                              "dont_inherit", NULL};
     int start[] = {Py_file_input, Py_eval_input, Py_single_input};
 
+#ifdef OVM_MAIN
+    fprintf(stderr, "builtin_compile: no AST");
+    return NULL;
+#endif
+
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "Oss|ii:compile",
                                      kwlist, &cmd, &filename, &startstr,
                                      &supplied_flags, &dont_inherit))
@@ -2739,7 +2744,11 @@ _PyBuiltin_Init(void)
 #ifdef Py_USING_UNICODE
     SETBUILTIN("unicode",               &PyUnicode_Type);
 #endif
+#ifdef OVM_MAIN
+    debug = PyBool_FromLong(0);
+#else
     debug = PyBool_FromLong(Py_OptimizeFlag == 0);
+#endif
     if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
         Py_XDECREF(debug);
         return NULL;

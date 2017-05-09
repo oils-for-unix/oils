@@ -203,6 +203,14 @@ static int RunModule(char *module, int set_argv0)
     return 0;
 }
 
+
+#ifdef OVM_MAIN
+extern char* MAIN_NAME;
+#else
+char* MAIN_NAME = "__main__";
+#endif
+
+
 static int RunMainFromImporter(char *filename)
 {
     PyObject *argv0 = NULL, *importer = NULL;
@@ -220,7 +228,7 @@ static int RunMainFromImporter(char *filename)
             Py_INCREF(argv0);
             Py_DECREF(importer);
             sys_path = NULL;
-            return RunModule("__main__", 0) != 0;
+            return RunModule(MAIN_NAME, 0) != 0;
         }
     }
     Py_XDECREF(argv0);
@@ -234,6 +242,72 @@ static int RunMainFromImporter(char *filename)
 
 
 /* Main program */
+
+#ifdef OVM_MAIN
+int
+Ovm_Main(int argc, char **argv)
+{
+    int sts;
+    char *filename = NULL;
+    FILE *fp = stdin;
+    int run_self = 0;
+
+    // This var has a leading _ because it's not meant for end users.
+    // _OVM_BUNDLE=0 is how you disable it.
+    char* not_bundle = Py_GETENV("_OVM_RUN_SELF");
+    if (not_bundle) {
+        if (argc <= 1) {
+          fprintf(stderr, "Expected argument with _OVM_RUN_SELF\n");
+          return 2;
+        }
+        filename = argv[1];
+    } else {
+        run_self = 1;
+    }
+
+    /* Always behave like -S */
+    Py_NoSiteFlag++;
+
+    // NOTE: I think is so the startup files can change compiler flags.
+    // We don't need it?
+    PyCompilerFlags cf;
+    cf.cf_flags = 0;
+
+    // NOTE: I think we need sys.path to find runpy in the first place.  But
+    // then runpy mutates sys.path again.
+    if (run_self) {
+        // Hm there is weird logic in sysmodule.c makeargvobject to make it
+        // [""] instead of [].
+        Py_InitializeEx(0 /*install_sigs*/, argv[0] /*sys_path*/);
+        PySys_SetArgv(argc, argv);
+        setenv("_OVM_IS_BUNDLE", "1", 1);  // for .zip resources
+        setenv("_OVM_DEPS", "1", 1);  // for debug imports
+        sts = RunMainFromImporter(argv[0]);
+        fprintf(stderr, "sts: %d\n", sts);
+    } else {
+        // Try detecting and running a directory or .zip file first.
+        Py_InitializeEx(0 /*install_sigs*/, filename /*sys_path*/);
+        PySys_SetArgv(argc-1, argv+1);
+        setenv("_OVM_IS_BUNDLE", "1", 1);  // for .zip resources
+        setenv("_OVM_DEPS", "1", 1);  // for debug imports
+        sts = RunMainFromImporter(filename);
+
+        fprintf(stderr, "sts after RunMainFromImporter: %d\n", sts);
+        if (sts == -1) {
+            setenv("_OVM_IS_BUNDLE", "", 1);  // rest it
+            if ((fp = fopen(filename, "r")) == NULL) {
+                fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
+                    argv[0], filename, errno, strerror(errno));
+            }
+            sts = PyRun_AnyFileExFlags(fp, filename, 1 /*closeit*/, &cf) != 0;
+        }
+    }
+
+    Py_Finalize();
+    return sts;
+}
+
+#else
 
 int
 Py_Main(int argc, char **argv)
@@ -387,7 +461,10 @@ Py_Main(int argc, char **argv)
             break;
 
         case 't':
+#ifndef OVM_MAIN
+            /* defined in Parser/parsetok.c, odd */
             Py_TabcheckFlag++;
+#endif
             break;
 
         case 'u':
@@ -447,9 +524,11 @@ Py_Main(int argc, char **argv)
         return 0;
     }
 
+#ifndef OVM_MAIN
     if (Py_Py3kWarningFlag && !Py_TabcheckFlag)
         /* -3 implies -t (but not -tt) */
         Py_TabcheckFlag = 1;
+#endif
 
     if (!Py_InspectFlag &&
         (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
@@ -683,6 +762,7 @@ Py_Main(int argc, char **argv)
 
     return sts;
 }
+#endif /* OVM_MAIN */
 
 /* this is gonna seem *real weird*, but if you put some other code between
    Py_Main() and Py_GetArgcArgv() you will need to adjust the test in the

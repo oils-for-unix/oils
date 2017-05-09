@@ -2273,7 +2273,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             if ((add_dict && strcmp(s, "__dict__") == 0) ||
                 (add_weak && strcmp(s, "__weakref__") == 0))
                 continue;
+#ifndef OVM_MAIN
+            /* NOTE: OVM BEHAVIOR CHANGE
+             *
+             * I know I don't use __private names, but libraries do.
+             * */
             tmp =_Py_Mangle(name, tmp);
+#endif
             if (!tmp) {
                 Py_DECREF(newslots);
                 goto bad_slots;

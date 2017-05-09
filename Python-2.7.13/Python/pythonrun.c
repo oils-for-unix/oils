@@ -152,7 +152,7 @@ isatty_no_error(PyObject *sys_stream)
 }
 
 void
-Py_InitializeEx(int install_sigs)
+Py_InitializeEx(int install_sigs, char* sys_path)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
@@ -182,8 +182,10 @@ Py_InitializeEx(int install_sigs)
         Py_DebugFlag = add_flag(Py_DebugFlag, p);
     if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
         Py_VerboseFlag = add_flag(Py_VerboseFlag, p);
+#ifndef OVM_MAIN
     if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
         Py_OptimizeFlag = add_flag(Py_OptimizeFlag, p);
+#endif
     if ((p = Py_GETENV("PYTHONDONTWRITEBYTECODE")) && *p != '\0')
         Py_DontWriteBytecodeFlag = add_flag(Py_DontWriteBytecodeFlag, p);
     /* The variable is only tested for existence here; _PyRandom_Init will
@@ -246,7 +248,10 @@ Py_InitializeEx(int install_sigs)
         Py_FatalError("Py_Initialize: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
     _PyImport_FixupExtension("sys", "sys");
-    PySys_SetPath(Py_GetPath());
+    if (sys_path == NULL)
+        sys_path = Py_GetPath();
+    PySys_SetPath(sys_path);
+
     PyDict_SetItemString(interp->sysdict, "modules",
                          interp->modules);
 
@@ -378,7 +383,7 @@ Py_InitializeEx(int install_sigs)
 void
 Py_Initialize(void)
 {
-    Py_InitializeEx(1);
+    Py_InitializeEx(1, NULL);
 }
 
 
@@ -541,7 +546,9 @@ Py_Finalize(void)
        - whatever various modules and libraries allocate
     */
 
+#ifndef OVM_MAIN
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -940,13 +947,20 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
         }
+#ifndef OVM_MAIN
         /* Turn on optimization if a .pyo file is given */
         if (strcmp(ext, ".pyo") == 0)
             Py_OptimizeFlag = 1;
+#endif
         v = run_pyc_file(fp, filename, d, d, flags);
     } else {
+#ifdef OVM_MAIN
+        fprintf(stderr, "Oil: expected .pyc file\n");
+        return -1;
+#else
         v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
                               closeit, flags);
+#endif
     }
     if (v == NULL) {
         PyErr_Print();
@@ -1368,6 +1382,10 @@ static PyObject *
 run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
          PyCompilerFlags *flags, PyArena *arena)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "run_mod: Oil has no AST\n");
+    return NULL;
+#else
     PyCodeObject *co;
     PyObject *v;
     co = PyAST_Compile(mod, filename, flags, arena);
@@ -1376,6 +1394,7 @@ run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
     v = PyEval_EvalCode(co, globals, locals);
     Py_DECREF(co);
     return v;
+#endif
 }
 
 static PyObject *
@@ -1414,6 +1433,10 @@ PyObject *
 Py_CompileStringFlags(const char *str, const char *filename, int start,
                       PyCompilerFlags *flags)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "run_mod: no AST");
+    return NULL;
+#else
     PyCodeObject *co;
     mod_ty mod;
     PyArena *arena = PyArena_New();
@@ -1433,11 +1456,16 @@ Py_CompileStringFlags(const char *str, const char *filename, int start,
     co = PyAST_Compile(mod, filename, flags, arena);
     PyArena_Free(arena);
     return (PyObject *)co;
+#endif
 }
 
 struct symtable *
 Py_SymtableString(const char *str, const char *filename, int start)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "Py_SymtableString: no AST");
+    return NULL;
+#else
     struct symtable *st;
     mod_ty mod;
     PyCompilerFlags flags;
@@ -1455,6 +1483,7 @@ Py_SymtableString(const char *str, const char *filename, int start)
     st = PySymtable_Build(mod, filename, 0);
     PyArena_Free(arena);
     return st;
+#endif
 }
 
 /* Preferred access to parser is through AST. */
@@ -1467,6 +1496,10 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
+#ifdef OVM_MAIN
+    fprintf(stderr, "PyParser_ASTFromString: OVM has no parser");
+    return NULL;
+#else
     node *n = PyParser_ParseStringFlagsFilenameEx(s, filename,
                                     &_PyParser_Grammar, start, &err,
                                     &iflags);
@@ -1484,6 +1517,7 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
         err_input(&err);
         return NULL;
     }
+#endif
 }
 
 mod_ty
@@ -1496,6 +1530,10 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
+#ifdef OVM_MAIN
+    fprintf(stderr, "PyParser_ASTFromFile: OVM has no parser");
+    return NULL;
+#else
     node *n = PyParser_ParseFileFlagsEx(fp, filename, &_PyParser_Grammar,
                             start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {
@@ -1514,6 +1552,7 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
             *errcode = err.error;
         return NULL;
     }
+#endif
 }
 
 /* Simplified interface to parsefile -- return node or set exception */
@@ -1521,6 +1560,10 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
 node *
 PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "PyParser_SimpleParseFileFlags: OVM has no parser");
+    return NULL;
+#else
     perrdetail err;
     node *n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
                                       start, NULL, NULL, &err, flags);
@@ -1528,6 +1571,7 @@ PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int fla
         err_input(&err);
 
     return n;
+#endif
 }
 
 /* Simplified interface to parsestring -- return node or set exception */
@@ -1535,24 +1579,34 @@ PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int fla
 node *
 PyParser_SimpleParseStringFlags(const char *str, int start, int flags)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "PyParser_SimpleParseStringFlags: OVM has no parser");
+    return NULL;
+#else
     perrdetail err;
     node *n = PyParser_ParseStringFlags(str, &_PyParser_Grammar,
                                         start, &err, flags);
     if (n == NULL)
         err_input(&err);
     return n;
+#endif
 }
 
 node *
 PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
                                         int start, int flags)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "PyParser_SimpleParseStringFlagsFilename: OVM has no parser");
+    return NULL;
+#else
     perrdetail err;
     node *n = PyParser_ParseStringFlagsFilename(str, filename,
                             &_PyParser_Grammar, start, &err, flags);
     if (n == NULL)
         err_input(&err);
     return n;
+#endif
 }
 
 node *
