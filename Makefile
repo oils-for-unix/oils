@@ -10,19 +10,21 @@
 # directories but I don't know it.
 $(shell mkdir -p _bin _release _build/hello _build/oil)
 
-# What the user should build when they type 'make'.
-default: _bin/oil.bundle 
+# What the end user should build when they type 'make'.
+default: _bin/oil.ovm
 
-hello: _bin/hello.bundle 
-
-dist: _release/hello.tar _release/oil.tar
+# Debug bundles and release tarballs.
+all: \
+	_bin/hello.ovm _bin/oil.ovm \
+	_bin/hello.ovm-dbg _bin/oil.ovm-dbg \
+	_release/hello.tar _release/oil.tar
 
 clean:
 	rm -r -f _bin _build/hello _build/oil
 	rm -f _build/runpy-deps-*.txt _build/c-module-toc.txt
 	build/actions.sh clean-pyc
 
-.PHONY: default hello dist clean
+.PHONY: default all clean
 
 PY27 = Python-2.7.13
 
@@ -126,9 +128,12 @@ _build/%/ovm-cov: _build/%/module_init.c _build/%/main_name.c _build/%/c-module-
 	# TODO: cov flags
 	build/compile.sh build $@ $^
 
-# Pattern rule to make bundles.
-# NOTE: Using ovm-dbg for now.
-_bin/%.bundle: _build/%/ovm-dbg _build/%/bytecode.zip
+# Make bundles quickly.
+_bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/bytecode.zip
+	cat $^ > $@
+	chmod +x $@
+
+_bin/%.ovm: _build/%/ovm _build/%/bytecode.zip
 	cat $^ > $@
 	chmod +x $@
 

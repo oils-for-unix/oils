@@ -15,7 +15,7 @@ make-zip() {
 
 hello-bundle() {
   set +o errexit
-  _bin/hello.bundle 
+  _bin/hello.ovm
   if test $? = 1; then
     echo OK
   else
@@ -25,8 +25,8 @@ hello-bundle() {
 }
 
 oil-bundle() {
-  _bin/oil.bundle osh -c 'echo hi'
-  ln -s oil.bundle _bin/osh
+  _bin/oil.ovm osh -c 'echo hi'
+  ln -s -f oil.ovm _bin/osh
   _bin/osh -c 'echo hi from osh'
 }
 
@@ -37,8 +37,10 @@ _tarball() {
   mkdir -p $tmp
   cd $tmp
   tar --extract < ../../_release/$name.tar
-  make _bin/$name.bundle
-  _bin/$name.bundle
+
+  # Build the fast one for a test
+  make _bin/${name}.ovm-dbg
+  _bin/${name}.ovm-dbg
 }
 
 hello-tar() {
