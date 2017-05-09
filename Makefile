@@ -10,14 +10,19 @@
 # directories but I don't know it.
 $(shell mkdir -p _bin _release _build/hello _build/oil)
 
-all: _bin/hello.bundle _bin/oil.bundle _release/hello.tar _release/oil.tar
+# What the user should build when they type 'make'.
+default: _bin/oil.bundle 
+
+hello: _bin/hello.bundle 
+
+dist: _release/hello.tar _release/oil.tar
 
 clean:
 	rm -r -f _bin _build/hello _build/oil
 	rm -f _build/runpy-deps-*.txt _build/c-module-toc.txt
 	build/actions.sh clean-pyc
 
-.PHONY: all clean
+.PHONY: default hello dist clean
 
 PY27 = Python-2.7.13
 

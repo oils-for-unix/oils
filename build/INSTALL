@@ -23,6 +23,8 @@ Instructions
 ------------
 
     ./configure [--prefix=PREFIX] [--without-readline]
+      --lto
+      --pgo
     make
     sudo make install
 
