@@ -1,0 +1,1 @@
+/home/andy/git/cpython-slice/build/testdata/hello-data.txt hello-data.txt
