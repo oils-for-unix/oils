@@ -11,13 +11,16 @@ readonly DASH=/bin/dash
 readonly BASH=/bin/bash
 readonly MKSH=/bin/mksh
 readonly ZSH=/usr/bin/zsh  # Ubuntu puts it here
-readonly BUSYBOX_ASH=_tmp/shells/ash 
+readonly BUSYBOX_ASH=_tmp/shells/ash
 
+readonly OSH=bin/osh
+
+# Run under the app bundle.
+#readonly OSH=_bin/osh
 
 # HACK that relies on word splitting
 # TODO: Use ${OSH[@]} everywhere
-readonly OSH='bin/osh bin/opypy-osh'
-#readonly OSH=bin/osh
+#readonly OSH='bin/osh bin/opypy-osh'
 
 # ash and dash are similar, so not including ash by default.  zsh is not quite
 # POSIX.
@@ -43,7 +46,7 @@ download-shell-source() {
   mkdir -p _tmp/src
 
   # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
-  # https://ftp.gnu.org/gnu/bash/ 
+  # https://ftp.gnu.org/gnu/bash/
   _wget https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz
 
   # https://www.mirbsd.org/mksh.htm - no dates given
