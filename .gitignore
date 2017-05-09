@@ -1,7 +1,9 @@
 *.swp
 *.pyc
 _tmp/
-__pycache__
 # Python build output
-build
-core/libc.so
+_pybuild
+_bin
+_build
+_release
+libc.so
