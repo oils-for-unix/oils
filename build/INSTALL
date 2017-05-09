@@ -1,0 +1,28 @@
+
+*** DRAFT ***
+
+Building and Installing Oil
+===========================
+
+(This file is packaged with the Oil source release, oil.tar.)
+
+
+System Requirements
+-------------------
+
+- C compiler (C89 ?)
+- Bourne shell (POSIX)
+- GNU Make (for now)
+
+Optional:
+
+- GNU readline library   OR
+- libedit?  (NOTE: dash supports it.)
+
+Instructions
+------------
+
+    ./configure [--prefix=PREFIX] [--without-readline]
+    make
+    sudo make install
+
