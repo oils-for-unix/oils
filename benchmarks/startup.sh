@@ -75,14 +75,12 @@ compare() {
     echo
   done
 
-  for py in python python3; do
-    echo $py two import
-    $callback $py -S -c 'import traceback;import json;print("hi")' || true
-    echo
-  done
-
-  echo app.zip
+  echo 'Small app.zip'
   $callback python -S _tmp/app.zip
+  echo
+
+  echo 'Oil Bundle Hello World'
+  $callback _bin/osh -c 'echo hi'
   echo
 }
 
@@ -104,8 +102,8 @@ import-stats() {
 }
 
 make-zip() {
-  rm -rf _tmp/app
-  rm _tmp/app.zip
+  rm -r -f _tmp/app
+  rm -f _tmp/app.zip
 
   mkdir -p _tmp/app
 

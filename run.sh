@@ -17,9 +17,17 @@ replace-print() {
 }
 
 make-bin-links() {
-  mkdir -p bin
-  for link in oil osh sh wok boil; do
+  # bin/ is for running with the Python interpreter.  _bin/ is for running with
+  # OVM app bundles.
+  links='oil osh sh wok boil'
+  mkdir -p bin _bin
+
+  for link in $links ; do
     ln -s -f --verbose oil.py bin/$link
+  done
+
+  for link in $links; do
+    ln -s -f --verbose oil.ovm _bin/$link
   done
 }
 
