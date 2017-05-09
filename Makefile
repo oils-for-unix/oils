@@ -100,7 +100,7 @@ _build/%/c-module-srcs.txt: \
 	build/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-c.txt 
 	build/c_module_srcs.py $(filter-out $<,$^) > $@
 
-_build/%/all-deps-c.txt: static-c-modules.txt _build/%/app-deps-c.txt
+_build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 	build/actions.sh join-modules $^ > $@
 
 # Per-app extension module initialization.

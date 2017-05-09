@@ -1,0 +1,22 @@
+# The modules listed here can't be built as shared libraries for
+# various reasons; therefore they are listed here instead of in the
+# normal order.
+
+# This only contains the minimal set of modules required to run the 
+# setup.py script in the root of the Python source tree.
+
+posix posixmodule.c		# posix (UNIX) system calls
+errno errnomodule.c		# posix (UNIX) errno values
+pwd pwdmodule.c			# this is needed to find out the user's home dir
+				# if $HOME is not set
+_sre _sre.c			# Fredrik Lundh's new regular expressions
+_codecs _codecsmodule.c		# access to the builtin codecs and codec registry
+_weakref _weakref.c             # weak references
+
+# The zipimport module is always imported at startup. Having it as a
+# builtin module avoids some bootstrapping problems and reduces overhead.
+zipimport zipimport.c
+zlib zlibmodule.
+
+# From Setup.config
+signal signalmodule.c
