@@ -103,7 +103,7 @@ _build/%/ovm.d: _build/%/app-deps-c.txt
 # A trick: remove the first dep to form the lists.  You can't just use $^
 # because './c_module_srcs.py' is rewritten to 'c_module_srcs.py'.
 _build/%/c-module-srcs.txt: \
-	build/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-c.txt 
+	build/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-c.txt
 	build/c_module_srcs.py $(filter-out $<,$^) > $@
 
 _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
@@ -125,7 +125,6 @@ _build/%/ovm-dbg: _build/%/module_init.c _build/%/main_name.c _build/%/c-module-
 # Coverage, for paring down the files that we build.
 # TODO: Hook this up.
 _build/%/ovm-cov: _build/%/module_init.c _build/%/main_name.c _build/%/c-module-srcs.c
-	# TODO: cov flags
 	build/compile.sh build $@ $^
 
 # Make bundles quickly.
@@ -137,17 +136,7 @@ _bin/%.ovm: _build/%/ovm _build/%/bytecode.zip
 	cat $^ > $@
 	chmod +x $@
 
-# Makefile, selected .c files, selected .py files, app source.
-# I guess it should look like the repo?
-# hello.tar/
-#   Makefile
-#   bytecode.zip  # So we don't have to have zip on the machine
-#   Python-2.7.13
-#     Lib/
-#     Modules/
-#     Python/
-#     Objects/  # Which ones?  Use coverage I guess?
-#     Include/  # Which ones? strace?
+# Makefile, shell scripts, discovered .c and .py deps, app source.
 
 # TODO:
 # - Why does putting c_module_srcs.txt here mess it up?
