@@ -32,12 +32,11 @@ oil-bundle() {
 
 _tarball() {
   local name=${1:-hello}
-  local tmp=_tmp/tar-test
+  local tmp=_tmp/$name-tar-test
   rm -r -f $tmp
   mkdir -p $tmp
   cd $tmp
   tar --extract < ../../_release/$name.tar
-  make dirs
   make _bin/$name.bundle
   _bin/$name.bundle
 }

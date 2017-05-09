@@ -10,8 +10,7 @@
 # directories but I don't know it.
 $(shell mkdir -p _bin _release _build/hello _build/oil)
 
-# _release/oil.tar
-all: _bin/hello.bundle _bin/oil.bundle _release/hello.tar
+all: _bin/hello.bundle _bin/oil.bundle _release/hello.tar _release/oil.tar
 
 clean:
 	rm -r -f _bin _build/hello _build/oil

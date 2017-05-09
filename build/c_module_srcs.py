@@ -23,12 +23,16 @@ def main(argv):
       line = line.strip()
       mod_name, _ = line.split(None, 2)
 
-      if mod_name == 'libc':
-        # Hard-coded special case for now
-        print '/home/andy/git/oil/native/libc.c'
+      # Hard-coded special cases for now.
+
+      if mod_name == 'libc':  # Our own module
+        # Relative to Python-2.7.13 dir
+        print '../native/libc.c'
+
       elif mod_name == 'math':
         print 'Modules/mathmodule.c'
         print 'Modules/_math.c'
+
       elif mod_name == '_io':
         # This data is in setup.py and Modules/Setup.dist.
         #_io -I$(srcdir)/Modules/_io _io/bufferedio.c _io/bytesio.c
@@ -41,6 +45,7 @@ def main(argv):
         print 'Modules/_io/_iomodule.c'
         print 'Modules/_io/stringio.c'
         print 'Modules/_io/textio.c'
+
       else:
         print manifest[mod_name]
 
