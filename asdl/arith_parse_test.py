@@ -99,7 +99,7 @@ def TestUnary(t_parse):
 
   #
   # 1.   x++  f()  x[]  left associative
-  #                     f(x)[1]++  means 
+  #                     f(x)[1]++  means
   #                     (++ (get (call f x) 1))
   # 2.   ++x  + - ! ~   right associative
   #                     -++x means (- (++ x))

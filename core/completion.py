@@ -470,7 +470,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
       com_node = _FindLastSimpleCommand(node)
     elif node.tag == command_e.AndOr:  # echo a && echo b
       com_node = _FindLastSimpleCommand(node)
-    elif node.tag == command_e.Pipeline :  # echo a | wc -l
+    elif node.tag == command_e.Pipeline:  # echo a | wc -l
       com_node = _FindLastSimpleCommand(node)
     else:
       # Return NONE?  Not handling it for now

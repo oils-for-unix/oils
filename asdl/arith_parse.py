@@ -33,7 +33,7 @@ def NullParen(p, token, bp):
 
 def NullPrefixOp(p, token, bp):
   """Prefix operator.
-  
+
   Low precedence:  return, raise, etc.
     return x+y is return (x+y), not (return x) + y
 
@@ -121,7 +121,7 @@ def LeftAssign(p, token, left, rbp):
 
 
 def LeftComma(p, token, left, rbp):
-  """ foo, bar, baz 
+  """ foo, bar, baz
 
   Could be sequencing operator, or tuple without parens
   """
@@ -176,7 +176,7 @@ def MakeShellParserSpec():
   spec.Left(25, LeftBinaryOp, ['*', '/', '%'])
 
   spec.Left(23, LeftBinaryOp, ['+', '-'])
-  spec.Left(21, LeftBinaryOp, ['<<', '>>']) 
+  spec.Left(21, LeftBinaryOp, ['<<', '>>'])
   spec.Left(19, LeftBinaryOp, ['<', '>', '<=', '>='])
   spec.Left(17, LeftBinaryOp, ['!=', '=='])
 

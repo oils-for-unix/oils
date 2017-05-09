@@ -146,14 +146,13 @@ class TraceState(object):
     self.indent = self.indent[:-self.num_spaces]
 
 
-
 class _FileResourceLoader:
   """Open resources relative to argv[0]."""
 
   def __init__(self, argv0):
     bin_dir = os.path.dirname(os.path.abspath(argv0))  # ~/git/oil/bin
     self.root_dir = os.path.join(bin_dir, '..')  # ~/git/oil/osh
-  
+
   # TODO: Make this a context manager?
   def open(self, rel_path):
     return open(os.path.join(self.root_dir, rel_path))
@@ -166,7 +165,7 @@ class _ZipResourceLoader:
 
   def __init__(self, argv0):
     self.z = zipimport.zipimporter(argv0)
-  
+
   def open(self, rel_path):
     contents = self.z.get_data(rel_path)
     return io.BytesIO(contents)

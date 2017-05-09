@@ -349,7 +349,6 @@ class _WordPartEvaluator:
     else:
       raise NotImplementedError(op_id)
 
-
   def _ApplyTestOp(self, val, op, quoted):
     """
     Returns:
@@ -374,7 +373,7 @@ class _WordPartEvaluator:
           undefined or
           (val.tag == value_e.Str and not val.s) or
           (val.tag == value_e.StrArray and not val.strs)
-          )
+      )
     else:
       is_falsey = undefined
 
@@ -456,7 +455,7 @@ class _WordPartEvaluator:
 
     assert val.tag != value_e.Undef
 
-    op_kind = LookupKind(op.op_id) 
+    op_kind = LookupKind(op.op_id)
 
     new_val = None
 
@@ -590,7 +589,7 @@ class _WordPartEvaluator:
     strs = []
     for frag_array in frag_arrays:
       # "${empty[@]}" leads to [[]], should eval to [] and not ['']
-      if frag_array: 
+      if frag_array:
         strs.append(''.join(frag_array))
 
     # This should be able to evaluate to EMPTY ARRAY!
@@ -876,7 +875,7 @@ class _WordEvaluator:
 
   def _EvalParts(self, word, quoted=False):
     """Helper for EvalWordToAny and _EvalWordAndReframe.
-    
+
     Returns part_value[]."""
     assert isinstance(word, ast.CompoundWord), \
         "Expected CompoundWord, got %s" % word
@@ -932,7 +931,7 @@ class _WordEvaluator:
     try:
       # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
       # don't look like assignments.
-      if (len(word.parts) == 1 and 
+      if (len(word.parts) == 1 and
           word.parts[0].tag == word_part_e.ArrayLiteralPart):
         array_words = word.parts[0].words
         words = braces.BraceExpandWords(array_words)
@@ -982,7 +981,7 @@ class _WordEvaluator:
 
   def _EvalWordAndReframe(self, word):
     """Helper for _EvalWordSequence.
-    
+
     Used in command, array, and foreach context.
 
     Args:

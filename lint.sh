@@ -53,12 +53,16 @@ format-demo() {
 
 # yapf: was useful, but might cause big diffs
 
+# disable:
+# E226: missing whitespace around arithmetic -- I want to do i+1
+# E302: expected two blank lines, found 1 (sometimes one is useful).
 oil-pep8() {
-  pep8 --ignore E125,E701,E241,E121,E111,E128,E262 "$@"
+  local temp=E501  # line too long
+  pep8 --ignore E125,E701,E241,E121,E111,E128,E262,E226,E302,$temp "$@"
 }
 
 pep8-all() {
-  oil-pep8 */*.py
+  oil-pep8 {asdl,bin,core,osh,oil,opy}/*.py "$@"
 }
 
 # Language independent

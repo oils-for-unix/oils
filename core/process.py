@@ -30,7 +30,7 @@ class _FdFrame:
 
 
 class FdState:
-  """This is for the current process, as opposed to child processes. 
+  """This is for the current process, as opposed to child processes.
 
   For example, you can do 'myfunc > out.txt' without forking.
   """

@@ -26,7 +26,7 @@ def _EvalWordPart(part):
   """Evaluate a WordPart at PARSE TIME.
 
   Used for:
-  
+
   1. here doc delimiters
   2. function names
   3. for loop variable names
@@ -204,7 +204,7 @@ def LeftMostSpanForWord(w):
   # LiteralPart: token.line_span
   # composites: just use the first part for now, but show the stack trace:
   #   $(( 1 +  + ))
-  #   ^~~  
+  #   ^~~
   #   In arithmetic substitution
   #   $(( 1 +  + ))
   #            ^
@@ -373,7 +373,7 @@ def AsArithVarName(w):
 def LooksLikeAssignment(w):
   """Tests whether a word looke like FOO=bar.
 
-  If so, return a (string, CompoundWord) pair.  Otherwise, return False.  
+  If so, return a (string, CompoundWord) pair.  Otherwise, return False.
   """
   assert w.tag == word_e.CompoundWord
   if len(w.parts) == 0:
@@ -490,7 +490,6 @@ def CommandKind(w):
   # NOTE: This is a bit inconsistent with CommandId, because we never retur
   # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.
   return Kind.Word
-
 
 
 # Stubs for converting RHS of assignment to expression mode.

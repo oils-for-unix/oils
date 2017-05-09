@@ -156,7 +156,7 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual(b'\x02\x00\x00', e[5:8])  # root ref 2
 
     self.assertEqual(b'\x01', e[8:9])  # tag 1 is const
-    self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99 
+    self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99
 
 
 if __name__ == '__main__':

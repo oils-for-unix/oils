@@ -98,7 +98,7 @@ class ExecOpts(object):
 
 class Mem(object):
   """For storing variables.
-  
+
   Mem is better than "Env" -- Env implies OS stuff.
   """
 
@@ -168,7 +168,7 @@ class Mem(object):
   #
 
   def _FindInScope(self, name):
-    # TODO: Return the right scope.  Respect 
+    # TODO: Return the right scope.  Respect
     # compat dynamic-scope flag?
     # or is it shopt or set ?
     # oilopt?
@@ -249,7 +249,7 @@ class Mem(object):
     self._SetInScope(self.var_stack[-1], pairs)
 
   def SetLocal(self, name, val):
-    """Set a single local.""" 
+    """Set a single local."""
     pairs = [(ast.LeftVar(name), val)]
     self.SetLocals(pairs)
 
@@ -790,7 +790,7 @@ class Executor(object):
         if not ok:
           return False
         assert val.tag == value_e.Str, \
-              "descriptor to redirect to should be an integer, not list"
+            "descriptor to redirect to should be an integer, not list"
 
         redirects.append(HereDocRedirect(n.op_id, n.fd, val.s))
 
@@ -807,7 +807,7 @@ class Executor(object):
     """
     # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
     # pushes argv.  Don't need that?
-    self.mem.PushTemp()  
+    self.mem.PushTemp()
     for env_pair in node_env:
       name = env_pair.name
       rhs = env_pair.val
@@ -1110,7 +1110,7 @@ class Executor(object):
     except _ControlFlow as e:
       # TODO: Make this error message better.
       print('Break/continue/return bubbled up to top level', file=sys.stderr)
-      status = 1 
+      status = 1
     except _FatalError:
       # TODO: Nicer runtime error message.
       print(self.error_stack, file=sys.stderr)

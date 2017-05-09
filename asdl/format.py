@@ -10,7 +10,7 @@ TODO:
 - option to omit spaces for SQ, SQ, W?  It's all one thing.
 
 Places where we try a single line:
- - arrays 
+ - arrays
  - objects with name fields
  - abbreviated, unnamed fields
 """
@@ -67,7 +67,8 @@ class ColorOutput:
 
   def WriteRaw(self, raw):
     """
-    Write raw data without escaping, and without counting control codes in the length.
+    Write raw data without escaping, and without counting control codes in the
+    length.
     """
     s, num_chars = raw
     self.f.write(s)
@@ -223,6 +224,7 @@ class _Obj:
                               # problem: CompoundWord just has word_part though
                               # List of Obj or ColoredString
 
+
 class _ColoredString:
   """Node for pretty-printing."""
   def __init__(self, s, str_type):
@@ -345,7 +347,7 @@ def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
     else:  # WRAP THE LINE
       f.write('\n')
       # TODO: Add max_col here, taking into account the field name
-      new_indent = indent+INDENT
+      new_indent = indent + INDENT
       PrintTree(val, f, indent=new_indent, max_col=max_col)
 
       chars_so_far = 0  # allow more

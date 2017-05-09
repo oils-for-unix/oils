@@ -76,13 +76,13 @@ def PrintAsOil(arena, node, debug_spans):
     #     @-foo @-1 in expression mode
     #     And then for command mode, you will have *@1 and *@foo.  Split first
     #     then glob.
-    #     
+    #
     #   - Nice mode, then foo
     #     --assume no-word-splitting
     # - Does it look like $(( 1 + 2 )) ?  or $(echo hi)
     #   pedantic mode:  $(1 + 2) or @[echo hi]   ?
     #   nice mode: $(1 + 2) or $[echo hi]
-    #    
+    #
     # - Does it look like "$foo" or "${foo:-}"?  Then it's just x = foo
     #   x = foo or 'default'
     # - Does it contain any substitutions?  Then whole thing is double quoted
@@ -167,7 +167,7 @@ def _GetRhsStyle(w):
 # users want this!
 #
 # Problem cases:
-# 
+#
 # for name in $(find ...); do echo $name; done
 #
 # This doesn't split.  Heuristic:
@@ -192,7 +192,7 @@ NICE = 0
 #
 # "$foo" "${foo}" -> $foo $foo
 # $foo -> @-foo   -> split then glob?
-#         *@foo    maybe    
+#         *@foo    maybe
 # $(find -type f) -> @[find -type f]
 
 PEDANTIC = 1
@@ -817,7 +817,7 @@ class OilPrinter:
       echo == must be changed to echo '==' because = is a reserved symbol.
       echo @$foo -> echo "@$foo" because @ is reserved
 
-    Problems: 
+    Problems:
     rm --verbose=true
     rm '--verbose=true'  -- is this bad?
 
@@ -857,7 +857,7 @@ class OilPrinter:
           |       who | wc -l
           |-       who |- wc -l
 
-      expr: 
+      expr:
           =   foo = bar
           ,   a, b = x
           [   a[x] = 1
@@ -1011,7 +1011,7 @@ class OilPrinter:
       pass
 
     elif node.tag == word_part_e.SingleQuotedPart:
-      # TODO: 
+      # TODO:
       # '\n' is '\\n'
       # $'\n' is '\n'
       # TODO: Should print until right_spid
@@ -1047,7 +1047,7 @@ class OilPrinter:
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Dollar:  # $$
-        self.f.write('$Pid') 
+        self.f.write('$Pid')
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Star:  # $*
@@ -1059,7 +1059,7 @@ class OilPrinter:
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_QMark:  # $?
-        self.f.write('$Status') 
+        self.f.write('$Status')
         self.cursor.SkipUntil(spid + 1)
 
       else:
@@ -1078,7 +1078,7 @@ class OilPrinter:
       if node.bracket_op:
         # a[1]
         # These two change the sigil!  ${a[@]} is now @a!
-        # a[@] 
+        # a[@]
         # a[*]
         pass
 
@@ -1182,4 +1182,3 @@ class OilPrinter:
 # bracket_op
 # suffix_op
 # prefix_op
-

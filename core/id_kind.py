@@ -168,17 +168,17 @@ def _AddKinds(spec):
   ])
 
   spec.AddKind('Op', [
-      'Newline', # mostly equivalent to SEMI
-      'Amp',     # &
-      'Pipe',    # |
-      'PipeAmp', # |& -- bash extension for stderr
-      'DAmp',    # &&
-      'DPipe',   # ||
-      'Semi',    # ;
-      'DSemi',   # ;; for case
+      'Newline',  # mostly equivalent to SEMI
+      'Amp',      # &
+      'Pipe',     # |
+      'PipeAmp',  # |& -- bash extension for stderr
+      'DAmp',     # &&
+      'DPipe',    # ||
+      'Semi',     # ;
+      'DSemi',    # ;; for case
 
-      'LParen',  # For subshell.  Not Kind.Left because it's NOT a WordPart.
-      'RParen',  # Default, will be translated to Id.Right_*
+      'LParen',   # For subshell.  Not Kind.Left because it's NOT a WordPart.
+      'RParen',   # Default, will be translated to Id.Right_*
       'DLeftParen',
       'DRightParen',
   ])
@@ -296,7 +296,7 @@ def _AddKinds(spec):
       ('RBrace', '}'),  # for end of var sub
 
       # Logical Ops
-      ('QMark', '?'), ('Colon', ':'), # Ternary Op: a < b ? 0 : 1
+      ('QMark', '?'), ('Colon', ':'),  # Ternary Op: a < b ? 0 : 1
       ('LessEqual', '<='), ('Less', '<'), ('GreatEqual', '>='), ('Great', '>'),
       ('DEqual', '=='), ('NEqual', '!='),
       ('DAmp', '&&'), ('DPipe', '||'), ('Bang', '!'),
@@ -324,7 +324,7 @@ def _AddKinds(spec):
                                  # will be under Expr1/Plus vs Expr2/Plus.
      'ArithVar',                 # a bare variable like (( foo = bar ))
 
-     # Command nodes 
+     # Command nodes
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
      'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
 
@@ -344,7 +344,7 @@ def _AddKinds(spec):
   # of keywords.  It will probably have for/in/while/until/case/if/else/elif,
   # and then func/proc.
   spec.AddKind('KW', [
-      'DLeftBracket', 'Bang', 
+      'DLeftBracket', 'Bang',
       'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
   ])
@@ -414,7 +414,7 @@ _AddBoolKinds(ID_SPEC)  # must come second
 _kind_sizes = ID_SPEC.kind_sizes
 
 
-# 
+#
 # Redirect Tables associated with IDs
 #
 # These might be osh specific.
@@ -457,5 +457,3 @@ REDIR_TYPE = {
     Id.Redir_DLessDash: RedirType.Str,
     Id.Redir_TLess: RedirType.Str,
 }
-
-

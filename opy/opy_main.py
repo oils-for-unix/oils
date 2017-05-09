@@ -316,7 +316,7 @@ def OpyMain(argv):
     else:
       raise RuntimeError('Invalid path %r' % py_path)
 
-  else: 
+  else:
     raise RuntimeError('Invalid action %r' % action)
 
   # Examples of nodes Leaf(type, value):

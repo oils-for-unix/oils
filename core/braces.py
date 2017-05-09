@@ -159,7 +159,7 @@ def BraceDetectAll(words):
 # Possible optmization for later:
 def _TreeCount(tree_word):
   """Count output size for allocation purposes.
-  
+
   We can count the number of words expanded into, and the max number of parts
   in a word.
 
@@ -173,7 +173,7 @@ def _TreeCount(tree_word):
         pass
   num_results = 2
   max_parts = 5
-  return num_results , max_parts
+  return num_results, max_parts
 
 
 def _BraceExpandOne(parts, first_alt_index, suffixes):

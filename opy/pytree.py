@@ -195,7 +195,7 @@ class Node(Base):
 
     """Concrete implementation for interior nodes."""
 
-    def __init__(self,type, children,
+    def __init__(self, type, children,
                  context=None,
                  prefix=None,
                  fixers_applied=None):
@@ -619,7 +619,7 @@ class WildcardPattern(BasePattern):
             # Check sanity of alternatives
             assert len(content), repr(content)  # Can't have zero alternatives
             for alt in content:
-                assert len(alt), repr(alt) # Can have empty alternatives
+                assert len(alt), repr(alt)  # Can have empty alternatives
         self.content = content
         self.min = min
         self.max = max

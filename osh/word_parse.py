@@ -51,7 +51,7 @@ word_part_e = ast.word_part_e
 #   preserve the space tokens between.
 #   In other words, like DS_VS_ARG, except SINGLE Quotes allowed?
 #
-# LexMode.VS_ARG_DQ 
+# LexMode.VS_ARG_DQ
 #   Can't be LexMode.DQ because here we respect $' and $" tokens, while <(
 #   token is not respected.
 #
@@ -239,9 +239,9 @@ class WordParser(object):
       op = ast.WholeArray(t2.id)
 
       self._Next(LexMode.ARITH)  # skip past [
-      self._Peek()  
+      self._Peek()
       self._Next(LexMode.ARITH)  # skip past @
-      self._Peek()  
+      self._Peek()
     else:
       anode = self._ReadArithExpr()
       if not anode:
@@ -642,8 +642,7 @@ class WordParser(object):
 
     # Hm this creates its own word parser, which is thrown away?
     #print('X', self.cur_token)
-    #right_spid = self.cur_token.span_id
-    right_spid = c_parser.w_parser.cur_token.span_id #- 1
+    right_spid = c_parser.w_parser.cur_token.span_id
 
     cs_part = ast.CommandSubPart(node)
     cs_part.spids.append(left_spid)
@@ -1071,13 +1070,13 @@ class WordParser(object):
 
   def LookAhead(self):
     """Look ahead to the next token.
-    
+
     For the command parser to recognize func () { } and array= (1 2 3).  And
     probably coprocesses.
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:
-      t = self.lexer.LookAhead(LexMode.OUTER) 
+      t = self.lexer.LookAhead(LexMode.OUTER)
     else:
       t = self.cur_token
     return t.id

@@ -18,7 +18,7 @@ def LooksLikeGlob():
   How does it handle unicode/utf-8 then?
   Nope it's using it with char* p.
   So it dash only ASCII or what?  TODO: test it
-  
+
   Still need this for slow path / fast path of prefix/suffix/patsub ops.
   """
   pass

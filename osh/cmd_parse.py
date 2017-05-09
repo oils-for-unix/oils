@@ -18,7 +18,7 @@ from core import word
 from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
 from core.util import log
 
-from osh import ast_ as ast 
+from osh import ast_ as ast
 from osh.lex import LexMode, VAR_NAME_RE
 from osh.bool_parse import BoolParser
 
@@ -424,7 +424,7 @@ class CommandParser(object):
     node.words = words3
     node.redirects = redirects
     for name, val, left_spid in prefix_bindings:
-      pair = ast.env_pair(name, val) 
+      pair = ast.env_pair(name, val)
       pair.spids.append(left_spid)
       node.more_env.append(pair)
     return node
