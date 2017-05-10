@@ -11,9 +11,13 @@ source build/common.sh
 
 readonly OVM_PARSER_OBJS='Parser/myreadline.c'
 
-# TODO: Can probably delete frozen*.c.  It might be more efficient in theory,
-# but it's not the bottleneck.  It's less debuggable uses the fairly complex
+# TODO:
+# - Can probably delete frozen*.c.  It might be more efficient in theory, but
+# it's not the bottleneck.  It's less debuggable uses the fairly complex
 # Tools/freeze.py and modulefinder module.  Have to remove hooks in import.c.
+# - getpath.c can be removed.  Has hooks in sys.exec_prefix, etc. which we
+# don't need.
+
 readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
 Python/bltinmodule.c
@@ -294,17 +298,17 @@ make-tar() {
 # Probably need unicode for compatibility with modules and web frameworks
 # especially.
 
-count-lines() {
+count-c-lines() {
   pushd $PY27
-  wc -l $OVM_LIBRARY_OBJS Include/*.h | sort -n
+  wc -l $OVM_LIBRARY_OBJS | sort -n
 
   # 90 files.
-  # NOTE: This doesn't count headers.
+  # NOTE: To count headers, use the tar file.
   echo
   echo 'Files:'
-  { for i in $OVM_LIBRARY_OBJS Include/*.h; do
+  { for i in $OVM_LIBRARY_OBJS; do
      echo $i
-    done 
+    done
   } | wc -l
 
   popd
