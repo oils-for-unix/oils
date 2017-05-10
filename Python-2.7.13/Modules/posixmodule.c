@@ -3915,7 +3915,8 @@ posix_fork(PyObject *self, PyObject *noargs)
 #endif
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX */
 
-#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
+/* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
+#if 0
 PyDoc_STRVAR(posix_openpty__doc__,
 "openpty() -> (master_fd, slave_fd)\n\n\
 Open a pseudo-terminal, returning open fd's for both master and slave end.\n");
@@ -3981,7 +3982,7 @@ posix_openpty(PyObject *self, PyObject *noargs)
 }
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
-#ifdef HAVE_FORKPTY
+#if 0  /* HAVE_FORKPTY */
 PyDoc_STRVAR(posix_forkpty__doc__,
 "forkpty() -> (pid, master_fd)\n\n\
 Fork a new process with a new pseudo-terminal as controlling tty.\n\n\
@@ -8914,10 +8915,12 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FORK
     {"fork",            posix_fork, METH_NOARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
-#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
+
+/* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
+#if 0
     {"openpty",         posix_openpty, METH_NOARGS, posix_openpty__doc__},
 #endif /* HAVE_OPENPTY || HAVE__GETPTY || HAVE_DEV_PTMX */
-#ifdef HAVE_FORKPTY
+#if 0  /* used to be HAVE_FORKPTY */
     {"forkpty",         posix_forkpty, METH_NOARGS, posix_forkpty__doc__},
 #endif /* HAVE_FORKPTY */
 #ifdef HAVE_GETEGID

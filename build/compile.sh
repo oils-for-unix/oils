@@ -182,7 +182,6 @@ build() {
     $(cat $abs_c_module_srcs) \
     Modules/ovm.c \
     -l dl \
-    -l util \
     -l m \
     -l z \
     -l readline -l termcap \

@@ -21,7 +21,8 @@ all: \
 
 clean:
 	rm -r -f _build/hello _build/oil
-	rm -f _bin/oil.* _bin/hello.* _build/runpy-deps-*.txt _build/c-module-toc.txt
+	rm -f _bin/oil.* _bin/hello.* _release/*.tar \
+		_build/runpy-deps-*.txt _build/c-module-toc.txt
 	build/actions.sh clean-pyc
 
 .PHONY: default all clean
