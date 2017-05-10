@@ -11,6 +11,9 @@ source build/common.sh
 
 readonly OVM_PARSER_OBJS='Parser/myreadline.c'
 
+# TODO: Can probably delete frozen*.c.  It might be more efficient in theory,
+# but it's not the bottleneck.  It's less debuggable uses the fairly complex
+# Tools/freeze.py and modulefinder module.  Have to remove hooks in import.c.
 readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
 Python/bltinmodule.c
@@ -186,15 +189,9 @@ build() {
     || true
   popd
 
-  # NOTE: 
-  # zlibmodule
-  # readline module
-  # hashlib: -l crypto -- if you use hashlib; we're not using it now
-
-  # Notes on removing:
-  # -l dl -- only used for dynload_shlib.c.  Keeping it because we might want
-  # extension modules in the future, and bash links against it.
-  # -l util -- only for posix_forkpty in posixmodule.c.  Don't need it.
+  # NOTE:
+  # zlibmodule: for zipimport
+  # readline/termcap module
 }
 
 # build the optimized one.  Makefile uses -O3.

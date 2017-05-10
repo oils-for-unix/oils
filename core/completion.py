@@ -668,7 +668,7 @@ class ReadlineCompleter(object):
       self.status_line.Write("ASSERT comp_iter shouldn't be None")
 
     try:
-      next_completion = self.comp_iter.__next__()
+      next_completion = self.comp_iter.next()
     except StopIteration:
       next_completion = None  # sentinel?
 

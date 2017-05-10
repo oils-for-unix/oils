@@ -114,19 +114,24 @@ _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 _build/%/module_init.c: $(PY27)/Modules/config.c.in _build/%/all-deps-c.txt
 	cat _build/$*/all-deps-c.txt | xargs build/actions.sh gen-module-init > $@
 
+COMPILE_SH := build/compile.sh
+
 # Release build.
 # This depends on the static modules
-_build/%/ovm: _build/%/module_init.c _build/%/main_name.c _build/%/c-module-srcs.txt
-	build/compile.sh build-opt $@ $^
+_build/%/ovm: _build/%/module_init.c _build/%/main_name.c \
+	_build/%/c-module-srcs.txt $(COMPILE_SH)
+	build/compile.sh build-opt $@ $(filter-out $(COMPILE_SH),$^)
 
 # Fast build, with symbols for debugging.
-_build/%/ovm-dbg: _build/%/module_init.c _build/%/main_name.c _build/%/c-module-srcs.txt
-	build/compile.sh build-dbg $@ $^
+_build/%/ovm-dbg: _build/%/module_init.c _build/%/main_name.c \
+	_build/%/c-module-srcs.txt $(COMPILE_SH)
+	build/compile.sh build-dbg $@ $(filter-out $(COMPILE_SH),$^)
 
 # Coverage, for paring down the files that we build.
 # TODO: Hook this up.
-_build/%/ovm-cov: _build/%/module_init.c _build/%/main_name.c _build/%/c-module-srcs.c
-	build/compile.sh build $@ $^
+_build/%/ovm-cov: _build/%/module_init.c _build/%/main_name.c \
+	_build/%/c-module-srcs.c $(COMPILE_SH)
+	build/compile.sh build $@ $(filter-out $(COMPILE_SH),$^)
 
 # Make bundles quickly.
 _bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/bytecode.zip
