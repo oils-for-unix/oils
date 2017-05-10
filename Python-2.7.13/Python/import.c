@@ -156,7 +156,7 @@ _PyImport_Init(void)
     /* prepare _PyImport_Filetab: copy entries from
        _PyImport_DynLoadFiletab and _PyImport_StandardFiletab.
      */
-#ifdef HAVE_DYNAMIC_LOADING
+#if 0  /* HAVE_DYNAMIC_LOADING */
     for (scan = _PyImport_DynLoadFiletab; scan->suffix != NULL; ++scan)
         ++countD;
 #endif
@@ -165,7 +165,7 @@ _PyImport_Init(void)
     filetab = PyMem_NEW(struct filedescr, countD + countS + 1);
     if (filetab == NULL)
         Py_FatalError("Can't initialize import file table.");
-#ifdef HAVE_DYNAMIC_LOADING
+#if 0  /* HAVE_DYNAMIC_LOADING */
     memcpy(filetab, _PyImport_DynLoadFiletab,
            countD * sizeof(struct filedescr));
 #endif
@@ -1950,7 +1950,7 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
         m = load_compiled_module(name, pathname, fp);
         break;
 
-#ifdef HAVE_DYNAMIC_LOADING
+#if 0  /* HAVE_DYNAMIC_LOADING */
     case C_EXTENSION:
         m = _PyImport_LoadDynamicModule(name, pathname, fp);
         break;
@@ -3140,7 +3140,7 @@ imp_load_compiled(PyObject *self, PyObject *args)
     return m;
 }
 
-#ifdef HAVE_DYNAMIC_LOADING
+#if 0  /* HAVE_DYNAMIC_LOADING */
 
 static PyObject *
 imp_load_dynamic(PyObject *self, PyObject *args)
@@ -3322,7 +3322,7 @@ static PyMethodDef imp_methods[] = {
     {"is_builtin",              imp_is_builtin,         METH_VARARGS},
     {"is_frozen",               imp_is_frozen,          METH_VARARGS},
     {"load_compiled",           imp_load_compiled,      METH_VARARGS},
-#ifdef HAVE_DYNAMIC_LOADING
+#if 0  /* HAVE_DYNAMIC_LOADING */
     {"load_dynamic",            imp_load_dynamic,       METH_VARARGS},
 #endif
     {"load_package",            imp_load_package,       METH_VARARGS},

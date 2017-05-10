@@ -26,7 +26,6 @@ Python/getcopyright.c
 Python/getplatform.c
 Python/getversion.c
 Python/import.c
-Python/importdl.c
 Python/marshal.c
 Python/modsupport.c
 Python/mystrtoul.c
@@ -47,7 +46,6 @@ Python/pystrtod.c
 Python/dtoa.c
 Python/formatter_unicode.c
 Python/formatter_string.c
-Python/dynload_shlib.c
 '
 
 OBJECT_OBJS='
@@ -181,7 +179,6 @@ build() {
     $abs_main_name \
     $(cat $abs_c_module_srcs) \
     Modules/ovm.c \
-    -l dl \
     -l m \
     -l z \
     -l readline -l termcap \
