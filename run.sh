@@ -19,7 +19,7 @@ replace-print() {
 make-bin-links() {
   # bin/ is for running with the Python interpreter.  _bin/ is for running with
   # OVM app bundles.
-  links='oil osh sh wok boil'
+  links='oil osh sh wok boil true false'
   mkdir -p bin _bin
 
   for link in $links ; do

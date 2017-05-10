@@ -79,7 +79,12 @@ compare() {
   $callback python -S _tmp/app.zip
   echo
 
-  echo 'Oil Bundle Hello World'
+  # This is close to app.zip, a few milliseconds slower.
+  echo 'hello app bundle'
+  $callback _bin/hello.ovm || true
+  echo
+
+  echo 'OSH app bundle Hello World'
   $callback _bin/osh -c 'echo hi'
   echo
 }

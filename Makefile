@@ -20,8 +20,8 @@ all: \
 	_release/hello.tar _release/oil.tar
 
 clean:
-	rm -r -f _bin _build/hello _build/oil
-	rm -f _build/runpy-deps-*.txt _build/c-module-toc.txt
+	rm -r -f _build/hello _build/oil
+	rm -f _bin/oil.* _bin/hello.* _build/runpy-deps-*.txt _build/c-module-toc.txt
 	build/actions.sh clean-pyc
 
 .PHONY: default all clean

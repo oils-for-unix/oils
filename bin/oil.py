@@ -1,6 +1,4 @@
 #!/usr/bin/python
-#!/usr/bin/env python3
-# TODO: enable after running spec tests.
 # Copyright 2016 Andy Chu. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +20,16 @@ Builtins that can be exposed:
 
 - echo: most likely don't care about this
 """
+
+import time
+start_time = time.time()
+
+# Uncomment this to see startup time problems.
+def tlog(msg):
+  #print('%.3f' % ((time.time() - start_time) * 1000), msg)
+  pass
+
+tlog('before imports')
 
 import errno
 import optparse
@@ -58,6 +66,7 @@ from core import util
 
 log = util.log
 
+tlog('after imports')
 
 class UsageError(RuntimeError):
   """ Exception for incorrect command line usage. """
@@ -375,11 +384,17 @@ def OilMain(argv):
     main_argv = argv[1:]
 
   if main_name in ('osh', 'sh'):
-    return OshMain(main_argv)
+    status = OshMain(main_argv)
+    tlog('done osh main')
+    return status
   elif main_name == 'wok':
     return WokMain(main_argv)
   elif main_name == 'boil':
     return BoilMain(main_argv)
+  elif main_name == 'true':
+    return 0
+  elif main_name == 'false':
+    return 1
   else:
     raise UsageError('Invalid main %r' % main_name)
 
