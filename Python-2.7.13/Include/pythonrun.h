@@ -78,7 +78,11 @@ PyAPI_FUNC(void) Py_Exit(int);
 PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap */
+#ifdef OVM_MAIN
+PyAPI_FUNC(int) Ovm_Main(int argc, char **argv);
+#else
 PyAPI_FUNC(int) Py_Main(int argc, char **argv);
+#endif
 
 /* Use macros for a bunch of old variants */
 #define PyRun_String(str, s, g, l) PyRun_StringFlags(str, s, g, l, NULL)
