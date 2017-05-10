@@ -21,11 +21,15 @@ struct st_zip_searchorder {
    '/' is replaced by SEP there. */
 static struct st_zip_searchorder zip_searchorder[] = {
     {"/__init__.pyc", IS_PACKAGE | IS_BYTECODE},
+#ifndef OVM_MAIN
     {"/__init__.pyo", IS_PACKAGE | IS_BYTECODE},
     {"/__init__.py", IS_PACKAGE | IS_SOURCE},
+#endif
     {".pyc", IS_BYTECODE},
+#ifndef OVM_MAIN
     {".pyo", IS_BYTECODE},
     {".py", IS_SOURCE},
+#endif
     {"", 0}
 };
 
@@ -1304,11 +1308,11 @@ initzipimport(void)
     if (PyType_Ready(&ZipImporter_Type) < 0)
         return;
 
+#ifndef OVM_MAIN
     /* Correct directory separator */
     zip_searchorder[0].suffix[0] = SEP;
     zip_searchorder[1].suffix[0] = SEP;
     zip_searchorder[2].suffix[0] = SEP;
-#ifndef OVM_MAIN
     if (Py_OptimizeFlag) {
         /* Reverse *.pyc and *.pyo */
         struct st_zip_searchorder tmp;

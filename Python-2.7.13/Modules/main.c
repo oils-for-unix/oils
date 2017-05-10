@@ -268,6 +268,10 @@ Ovm_Main(int argc, char **argv)
     /* Always behave like -S */
     Py_NoSiteFlag++;
 
+    if (Py_GETENV("OVM_VERBOSE")) {
+        Py_VerboseFlag++;
+    }
+
     // NOTE: I think is so the startup files can change compiler flags.
     // We don't need it?
     PyCompilerFlags cf;
