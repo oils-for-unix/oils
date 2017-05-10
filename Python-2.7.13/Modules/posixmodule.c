@@ -7529,7 +7529,7 @@ posix_statvfs(PyObject *self, PyObject *args)
 #endif /* HAVE_STATVFS */
 
 
-#ifdef HAVE_TEMPNAM
+#if 0  /* HAVE_TEMPNAM */
 PyDoc_STRVAR(posix_tempnam__doc__,
 "tempnam([dir[, prefix]]) -> string\n\n\
 Return a unique name for a temporary file.\n\
@@ -7591,7 +7591,7 @@ posix_tmpfile(PyObject *self, PyObject *noargs)
 #endif
 
 
-#ifdef HAVE_TMPNAM
+#if 0  /* used to be ifdef HAVE_TMPNAM */
 PyDoc_STRVAR(posix_tmpnam__doc__,
 "tmpnam() -> string\n\n\
 Return a unique name for a temporary file.");
@@ -9106,10 +9106,10 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_TMPFILE
     {"tmpfile",         posix_tmpfile, METH_NOARGS, posix_tmpfile__doc__},
 #endif
-#ifdef HAVE_TEMPNAM
+#if 0  /* used to be ifdef HAVE_TEMPNAM */
     {"tempnam",         posix_tempnam, METH_VARARGS, posix_tempnam__doc__},
 #endif
-#ifdef HAVE_TMPNAM
+#if 0  /* used to be ifdef HAVE_TMPNAM */
     {"tmpnam",          posix_tmpnam, METH_NOARGS, posix_tmpnam__doc__},
 #endif
 #ifdef HAVE_CONFSTR
