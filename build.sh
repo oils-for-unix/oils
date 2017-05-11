@@ -14,7 +14,7 @@ install-deps() {
   # python-dev: for pylibc
   # gawk: used by spec-runner.sh for the special match() function.
   # time: used to collect the exit code and timing of a test
-  sudo apt-get install python3-dev gawk time
+  sudo apt-get install python-dev gawk time
 
   ./spec.sh install-shells
 }
