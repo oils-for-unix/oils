@@ -294,7 +294,11 @@ class ExternalCommandAction(object):
 
     names = []
     for d in path_dirs:
-      st = os.stat(d)
+      try:
+        st = os.stat(d)
+      except OSError as e:
+        # There could be a directory that doesn't exist in the $PATH.
+        continue
       key = (d, st.st_mtime)
       listing = self.cache.get(key)
       if listing is None:
