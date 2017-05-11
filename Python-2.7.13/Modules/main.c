@@ -277,6 +277,13 @@ Ovm_Main(int argc, char **argv)
     PyCompilerFlags cf;
     cf.cf_flags = 0;
 
+    setenv("_OVM_IS_BUNDLE", "1", 1);  // for .zip resources
+    setenv("_OVM_DEPS", "1", 1);  // for debug imports
+#ifndef HAVE_READLINE
+    // Communicate C build configuration to Python env.
+    setenv("_OVM_HAVE_READLINE", "0", 1);
+#endif
+
     // NOTE: I think we need sys.path to find runpy in the first place.  But
     // then runpy mutates sys.path again.
     if (run_self) {
@@ -284,21 +291,19 @@ Ovm_Main(int argc, char **argv)
         // [""] instead of [].
         Py_InitializeEx(0 /*install_sigs*/, argv[0] /*sys_path*/);
         PySys_SetArgv(argc, argv);
-        setenv("_OVM_IS_BUNDLE", "1", 1);  // for .zip resources
-        setenv("_OVM_DEPS", "1", 1);  // for debug imports
         sts = RunMainFromImporter(argv[0]);
         fprintf(stderr, "sts: %d\n", sts);
     } else {
         // Try detecting and running a directory or .zip file first.
         Py_InitializeEx(0 /*install_sigs*/, filename /*sys_path*/);
         PySys_SetArgv(argc-1, argv+1);
-        setenv("_OVM_IS_BUNDLE", "1", 1);  // for .zip resources
-        setenv("_OVM_DEPS", "1", 1);  // for debug imports
         sts = RunMainFromImporter(filename);
 
         fprintf(stderr, "sts after RunMainFromImporter: %d\n", sts);
+        // Not a .zip file.  Run a plain .pyc file.
         if (sts == -1) {
-            setenv("_OVM_IS_BUNDLE", "", 1);  // rest it
+            unsetenv("_OVM_IS_BUNDLE");
+            unsetenv("_OVM_DEPS");
             if ((fp = fopen(filename, "r")) == NULL) {
                 fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
                     argv[0], filename, errno, strerror(errno));

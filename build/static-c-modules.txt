@@ -16,7 +16,6 @@ _weakref _weakref.c             # weak references
 # The zipimport module is always imported at startup. Having it as a
 # builtin module avoids some bootstrapping problems and reduces overhead.
 zipimport zipimport.c
-zlib zlibmodule.
 
 # From Setup.config
 signal signalmodule.c

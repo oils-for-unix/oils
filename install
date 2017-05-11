@@ -1,0 +1,24 @@
+#!/bin/sh 
+#
+# POSIX shell script to install a build oil into the proper directory.
+# Distributed with the source tarball.
+
+# TODO:
+# - copy bin/oil with the right permissions.
+# - make dummy man page that points to HTML docs?
+#   - or just a cheat sheet for flags, usage, etc.
+
+# Portable install script (configure doesn't always guess right)
+# From Python.
+#INSTALL=  /usr/bin/install -c
+#INSTALL_PROGRAM=${INSTALL}
+#INSTALL_SCRIPT= ${INSTALL}
+#INSTALL_DATA= ${INSTALL} -m 644
+# Shared libraries must be installed with executable mode on some systems;
+# rather than figuring out exactly which, we always give them executable mode.
+# Also, making them read-only seems to be a good idea...
+#INSTALL_SHARED= ${INSTALL} -m 555
+#
+# NOTE: install is part of coreutils.
+
+echo TODO

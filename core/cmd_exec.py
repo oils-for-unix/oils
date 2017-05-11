@@ -62,7 +62,6 @@ import stat
 import sys
 
 from core import braces
-from core import completion
 from core import expr_eval
 from core import word_eval
 from core import util
@@ -360,13 +359,14 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, builtins, funcs, comp_lookup, exec_opts,
-      make_parser):
+  def __init__(self, mem, builtins, funcs, completion, comp_lookup, exec_opts,
+               make_parser):
     """
     Args:
       mem: Mem instance for storing variables
       builtins: builtin metadata/implementation
       funcs: registry of functions (these names are completed)
+      completion: completion module, if available
       comp_lookup: completion pattern/action
       make_parser: Callback for creating a new command parser (eval and source)
     """
@@ -374,6 +374,7 @@ class Executor(object):
     self.builtins = builtins
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
+    self.completion = completion
     # Completion hooks, set by 'complete' builtin.
     self.comp_lookup = comp_lookup
     # This is for shopt and set -o.  They are initialized by flags.
@@ -502,9 +503,12 @@ class Executor(object):
       print('Function %r not found' % func_name)
       return 1
 
-    chain = completion.ShellFuncAction(self, func)
-    self.comp_lookup.RegisterName(command, chain)
-    # TODO: Some feedback would be nice?
+    if self.completion:
+      chain = self.completion.ShellFuncAction(self, func)
+      self.comp_lookup.RegisterName(command, chain)
+      # TODO: Some feedback would be nice?
+    else:
+      print('ERROR: Oil was not built with readline/completion.', file=sys.stderr)
     return 0
 
   def _EvalHelper(self, code_str):

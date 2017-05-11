@@ -115,7 +115,6 @@ Modules/_sre.c
 Modules/_codecsmodule.c  
 Modules/_weakref.c
 Modules/zipimport.c  
-Modules/zlibmodule.c
 Modules/signalmodule.c
 '
 
@@ -151,6 +150,7 @@ readonly PREPROC_FLAGS=(
 )
 
 readonly INCLUDE_PATHS=(-I . -I Include)
+readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 build() {
   local out=${1:-$PY27/ovm2}
@@ -174,9 +174,6 @@ build() {
   # So the OVM is ~600K smaller now.  1.97 MB for ./run.sh build-default.  1.65
   # MB for ./run.sh build-clang-small.
 
-  CC=$CLANG
-  #CC=gcc
-
   time $CC \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
@@ -187,15 +184,17 @@ build() {
     $(cat $abs_c_module_srcs) \
     Modules/ovm.c \
     -l m \
-    -l z \
-    -l readline -l termcap \
+    -l readline \
     "$@" \
     || true
   popd
 
   # NOTE:
-  # zlibmodule: for zipimport
-  # readline/termcap module
+  # -l readline -l termcap -- for Python readline.  Hm it builds without -l
+  # termcap.
+  # -l z , for zlibmodule.c, for zipimport
+  # I think zlib is a statically linked dependency only, but it's still better
+  # not to have it.
 }
 
 # build the optimized one.  Makefile uses -O3.
@@ -270,6 +269,7 @@ make-tar() {
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 
   tar --create --file $out \
+    LICENSE \
     Makefile \
     build/compile.sh \
     build/actions.sh \
@@ -281,6 +281,11 @@ make-tar() {
     $(cat $c_module_srcs | add-py27) \
     $(python-headers $c_module_srcs) \
     $(python-sources)
+
+  # TODO: Add Python licence at top level!
+
+  # Add INSTALL instructions.  Maybe move this to the top level of the repo.
+  tar --append --file $out --directory build INSTALL
 
   ls -l $out
 }

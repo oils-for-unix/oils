@@ -83,7 +83,7 @@ _build/oil/main_name.c:
 
 # Dependencies calculated by importing main.
 _build/oil/app-deps-%.txt: build/app_deps.py
-	test -d _build/hello && \
+	test -d _build/oil && \
 		build/actions.sh app-deps oil ~/git/oil bin.oil
 
 # TODO: Need $(OIL_SRCS) here?

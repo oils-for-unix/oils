@@ -13,12 +13,11 @@ def main(argv):
   # Write input files to a .zip
   out_path = argv[1]
 
-  # NOTE: Startup is ~3 ms faster WITHOUT compression.  38 ms. vs 41. ms.  For
-  # now it's not the main bottleneck, so favor a smaller binary.
-  mode = zipfile.ZIP_DEFLATED
+  # NOTE: Startup is ~3 ms faster WITHOUT compression.  38 ms. vs 41. ms.
+  #mode = zipfile.ZIP_DEFLATED
 
   # Increase size of bytecode, slightly faster compression, don't need zlib.
-  #mode = zipfile.ZIP_STORED
+  mode = zipfile.ZIP_STORED
 
   z = zipfile.ZipFile(out_path, 'w', mode)
 

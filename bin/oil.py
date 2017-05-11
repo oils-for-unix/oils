@@ -38,9 +38,12 @@ import re
 import sys
 import traceback  # for debugging
 
-# TODO: Set PTYHONPATH from outside?
+# TODO: Set PYTHONPATH from outside?
 this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(this_dir, '..'))
+
+# Set in Modules/main.c.
+HAVE_READLINE = os.getenv('_OVM_HAVE_READLINE') != '0'
 
 from asdl import format as fmt
 from asdl import encode
@@ -54,7 +57,10 @@ from osh import parse_lib
 from osh import fix
 
 from core import builtin
-from core import completion
+if HAVE_READLINE:
+  from core import completion
+else:
+  completion = None
 from core import cmd_exec
 from core.alloc import Pool
 from core import reader
@@ -221,14 +227,18 @@ def OshMain(argv):
   funcs = {}
 
   # Passed to Executor for 'complete', and passed to completion.Init
-  comp_lookup = completion.CompletionLookup()
+  if completion:
+    comp_lookup = completion.CompletionLookup()
+  else:
+    # TODO: NullLookup?
+    comp_lookup = None
   exec_opts = cmd_exec.ExecOpts()
 
   # TODO: How to get a handle to initialized builtins here?
   # tokens.py has it.  I think you just make a separate table, with
   # metaprogramming.
   ex = cmd_exec.Executor(
-      mem, builtins, funcs, comp_lookup, exec_opts,
+      mem, builtins, funcs, completion, comp_lookup, exec_opts,
       parse_lib.MakeParserForExecutor)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
@@ -290,8 +300,9 @@ def OshMain(argv):
   if interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
-    ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
-    completion.Init(builtins, mem, funcs, comp_lookup, status_lines, ev)
+    if HAVE_READLINE:
+      ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
+      completion.Init(builtins, mem, funcs, comp_lookup, status_lines, ev)
 
     # TODO: Could instantiate "printer" instead of showing ops
     InteractiveLoop(opts, ex, c_parser, w_parser, line_reader)
