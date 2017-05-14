@@ -10,8 +10,12 @@ set -o pipefail
 set -o errexit
 
 all() {
-  echo 'BUILD/TEST AUTOMATION'
-  wc -l {build,test}/*.{sh,py} | sort --numeric
+  echo 'BUILD AUTOMATION'
+  wc -l build/*.{sh,py} | sort --numeric
+  echo
+
+  echo 'TEST AUTOMATION'
+  wc -l test/*.{sh,py} | sort --numeric
   echo
 
   echo 'SHELL SPEC TESTS'
