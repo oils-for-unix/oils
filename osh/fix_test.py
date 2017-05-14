@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 fix_test.py: Tests for fix.py
 """

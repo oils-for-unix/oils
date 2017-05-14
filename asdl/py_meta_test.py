@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 py_meta_test.py: Tests for py_meta.py
 """

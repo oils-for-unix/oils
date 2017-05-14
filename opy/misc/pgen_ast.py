@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 foil/pgen_ast.py -- Parse pgen.asdl and dynamically create classes on this
 module.

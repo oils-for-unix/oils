@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 arith_ast_test.py: Tests for arith_ast.py
 """

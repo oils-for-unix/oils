@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 lexer_test.py: Tests for lexer.py
 """

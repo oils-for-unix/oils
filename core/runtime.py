@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 core/runtime.py -- Parse runtime.asdl and dynamically create classes on this module.
 
