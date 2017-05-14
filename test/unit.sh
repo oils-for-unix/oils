@@ -41,7 +41,7 @@ _all() {
   # NOTE: build and test have small unit tests
   # TODO: Add opy.
 
-  for t in {build,test,asdl,core,osh}/*_test.py; do
+  for t in {build,test,native,asdl,core,osh}/*_test.py; do
     # NOTE: This test hasn't passed in awhile.  It uses strings as output.
 
     if [[ $t == *arith_parse_test.py ]]; then
