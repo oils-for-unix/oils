@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 # Copyright 2016 Andy Chu. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ from core.builtin import Builtins
 from core import cmd_exec  # module under test
 from core.cmd_exec import *
 from core.id_kind import Id
+from core import completion
 from core import ui
 from core import word_eval
 from core import runtime
@@ -45,7 +46,7 @@ def InitExecutor():
   funcs = {}
   comp_funcs = {}
   exec_opts = cmd_exec.ExecOpts()
-  return cmd_exec.Executor(mem, builtins, funcs, comp_funcs, exec_opts,
+  return cmd_exec.Executor(mem, builtins, funcs, completion, comp_funcs, exec_opts,
                            parse_lib.MakeParserForExecutor)
 
 
