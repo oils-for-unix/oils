@@ -130,6 +130,15 @@ EOF
   fi
 }
 
+_link-or-copy() {
+  # Problem: Firefox treats symlinks as redirects, which breaks the AJAX.  Copy
+  # it for now.
+  local src=$1
+  local dest=$2
+  #ln -s -f --verbose ../../../$src $dest
+  cp -f --verbose $src $dest
+}
+
 _parse-many() {
   local src_base=$1
   local dest_base=$2
@@ -146,9 +155,9 @@ _parse-many() {
   # Don't call it index.html
   make-index < $dest_base/LINE-COUNTS.txt > $dest_base/FILES.html
 
-  ln -s -f --verbose ../../../web/osh-to-oil.html $dest_base
-  ln -s -f --verbose ../../../web/osh-to-oil.js $dest_base
-  ln -s -f --verbose ../../../web/osh-to-oil-index.css $dest_base
+  _link-or-copy web/osh-to-oil.html $dest_base
+  _link-or-copy web/osh-to-oil.js $dest_base
+  _link-or-copy web/osh-to-oil-index.css $dest_base
 
   # Truncate files
   echo -n '' >$dest_base/FAILED.txt

@@ -36,17 +36,17 @@ count() {
 
 # Uses $(cd $(dirname $0) && pwd)
 one-spec-test() {
-  _compare ./spec.sh builtins-special
+  _compare test/spec.sh builtins-special
 }
 
 # Uses redirect of functions.
 html-summary() {
-  _compare ./spec-runner.sh html-summary
+  _compare test/spec-runner.sh html-summary
 }
 
 # Fails because 'time' can't find _parse-many!  Gah it needs to be a builtin.
 wild() {
-  _compare ./wild.sh parse-j
+  _compare test/wild.sh parse-j
 }
 
 "$@"

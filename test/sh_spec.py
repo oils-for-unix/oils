@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 from __future__ import print_function
 """
 sh_spec.py -- Test framework to compare shells.
@@ -127,7 +127,7 @@ class Tokenizer(object):
 
   def next(self):
     """Raises StopIteration when exhausted."""
-    self.cursor = self.it.__next__()
+    self.cursor = self.it.next()
     return self.cursor
 
   def peek(self):

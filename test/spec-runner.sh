@@ -3,7 +3,7 @@
 # Run tests against multiple shells with the sh_spec framework.
 #
 # Usage:
-#   ./spec.sh <function name>
+#   test/spec-runner.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -46,7 +46,7 @@ run-cases() {
 
   run-task-with-status \
     _tmp/spec/${spec_name}.task.txt \
-    ./spec.sh $spec_name \
+    test/spec.sh $spec_name \
       --format html \
       --stats-file _tmp/spec/${spec_name}.stats.txt \
       --stats-template \
@@ -199,7 +199,7 @@ EOF
     <pre>
 EOF
 
-  ./spec.sh version-text
+  test/spec.sh version-text
 
   cat <<EOF
     </pre>
@@ -250,7 +250,7 @@ all-serial() {
   cat _tmp/spec/MANIFEST.txt | while read t; do
     echo $t
     # Run the wrapper function here
-    ./spec.sh $t --format html > _tmp/spec/${t}.html || {
+    test/spec.sh $t --format html > _tmp/spec/${t}.html || {
       echo "FAILED"
       exit 1
     }

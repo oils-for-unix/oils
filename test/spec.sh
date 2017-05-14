@@ -110,12 +110,12 @@ version-text() {
 sh-spec() {
   local this_dir=$(cd $(dirname $0) && pwd)
 
-  local tmp_env=$this_dir/_tmp/spec-tmp
+  local tmp_env=$this_dir/../_tmp/spec-tmp
   mkdir -p $tmp_env
 
-  ./sh_spec.py \
+  test/sh_spec.py \
       --tmp-env $tmp_env \
-      --path-env "$this_dir/tests/bin:$PATH" \
+      --path-env "$this_dir/../tests/bin:$PATH" \
       "$@"
 }
 
@@ -133,8 +133,8 @@ trace-var-sub() {
 
   # This prints trace with line numbers to stdout.
   #python -m trace --trace -C $out \
-  python3 -m trace --trackcalls -C $out \
-    ./sh_spec.py tests/var-sub.test.sh $DASH $BASH "$@"
+  python -m trace --trackcalls -C $out \
+    test/sh_spec.py tests/var-sub.test.sh $DASH $BASH "$@"
 
   ls -l $out
   head $out/*.cover
@@ -145,7 +145,7 @@ trace-var-sub() {
 #
 
 all() {
-  ./spec-runner.sh all-parallel "$@"
+  test/spec-runner.sh all-parallel "$@"
 }
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 """
 sh_spec_test.py: Tests for sh_spec.py
 """
@@ -9,7 +9,7 @@ import unittest
 
 from sh_spec import *  # module under test
 
-TEST = io.StringIO("""\
+TEST = io.BytesIO("""\
 ### Env binding in readonly/declare disallowed
 FOO=foo readonly v=$(tests/printenv.py FOO)
 echo "v=$v"

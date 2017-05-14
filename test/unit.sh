@@ -14,7 +14,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source spec-runner.sh  # TODO: Separate this?
+source test/spec-runner.sh  # TODO: Separate this?
 
 export PYTHONPATH=.  # current dir
 
@@ -38,7 +38,10 @@ _all() {
 
   mkdir -p _tmp/unit
 
-  for t in {asdl,core,osh}/*_test.py; do
+  # NOTE: build and test have small unit tests
+  # TODO: Add opy.
+
+  for t in {build,test,asdl,core,osh}/*_test.py; do
     # NOTE: This test hasn't passed in awhile.  It uses strings as output.
 
     if [[ $t == *arith_parse_test.py ]]; then
