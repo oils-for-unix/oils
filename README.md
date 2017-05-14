@@ -1,4 +1,4 @@
-oil
+Oil
 ===
 
 Oil is a new Unix shell, still in its early stages.
@@ -10,14 +10,18 @@ The dialect of bash that is recognized is called the **osh language**.  The
 main goal now is to design the **oil language**, which shell scripts can be
 automatically converted to.
 
-After that, the Python dependency can be broken, which will involve some C++
-code (but hopefully not too much).
+The code is in Python, but we deploy a native executable.  A subset of the
+Python-2.7.13/ directory is packaged with the application.
 
 Try it
 ------
 
-Clone the repo and run `bin/osh`.  Basic things like pipelines, variables,
-functions, etc. should work.
+Clone the repo, build the Python extension, and run `bin/osh`.  Basic things
+like pipelines, variables, functions, etc. should work.
+
+    bash$ build/pylibc.sh build
+    ...
+    # Now you should have a libc.so symlink in the repository root directory
 
     bash$ bin/osh
     osh$ name=world
