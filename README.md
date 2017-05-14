@@ -51,6 +51,7 @@ Directory Structure
 -------------------
 
     # Development Scripts
+
     benchmarks/       # Test for speed
     build/            # Build automation
       pylibc.sh       # For developers to build the Python extension
@@ -60,11 +61,11 @@ Directory Structure
       wild.sh
       smoke.sh
       sh_spec.py        # shell test framework
-
     tests/            # spec tests
     web/              # HTML/JS/CSS for tests and tools
 
-    # Code:
+    # Oil Code
+
     Python-2.7.13/    # CPython is the initial basis for the Oil VM
     asdl/             # ASDL implementation
     bin/              # programs to run (bin/osh)
@@ -75,10 +76,23 @@ Directory Structure
     opy/              # Python compiler in Python
 
     # Temporary Directories
+
     _bin/             # Native executables are put here
     _release/         # Source release tarballs are put here
     _build/           # Temporary build files
     _tmp/             # Temporary test files and the like
+
+    # End user docs
+    LICENSE
+    INSTALL
+
+    # End user build system
+
+    Makefile
+    configure
+    install
+
+    # Misc development scripts
 
     setup.py
 
