@@ -238,7 +238,7 @@ this-repo() {
   _parse-many \
     $src \
     $RESULT_DIR/oil \
-    *.sh
+    configure install *.sh {benchmarks,build,test,scripts,opy}/*.sh
 }
 
 readonly ABORIGINAL_DIR=~/src/aboriginal-1.4.5
