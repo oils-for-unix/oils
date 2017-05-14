@@ -11,11 +11,7 @@ set -o errexit
 
 all() {
   echo 'BUILD/TEST AUTOMATION'
-  wc -l *.sh | sort --numeric
-  echo
-
-  echo 'SHELL TEST FRAMEWORK'
-  wc -l sh_spec.py | sort --numeric
+  wc -l {build,test}/*.{sh,py} | sort --numeric
   echo
 
   echo 'SHELL SPEC TESTS'
