@@ -43,7 +43,7 @@ Code Overview
 
 Try this to show a summary of what's in the repo and their line counts:
 
-    $ ./count.sh all
+    $ scripts/count.sh all
 
 (Other functions in this file may be useful as well.)
 
@@ -62,6 +62,7 @@ Directory Structure
       smoke.sh
       sh_spec.py        # shell test framework
     tests/            # spec tests
+    scripts/          # Other development scripts
     web/              # HTML/JS/CSS for tests and tools
 
     # Oil Code
@@ -82,6 +83,10 @@ Directory Structure
     _build/           # Temporary build files
     _tmp/             # Temporary test files and the like
 
+    # Dev Docs
+
+    README.md
+
     # End user docs
     LICENSE
     INSTALL
@@ -91,14 +96,6 @@ Directory Structure
     Makefile
     configure
     install
-
-    # Misc development scripts
-
-    setup.py
-
-    lint.sh           # static analysis
-    count.sh          # Get an overview of the repo
-
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
