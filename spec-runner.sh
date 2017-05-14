@@ -219,13 +219,15 @@ link-css() {
   ln -s -f --verbose $PWD/web/{spec-tests,spec-code}.css _tmp/spec
 }
 
+readonly JOBS=$(( $(nproc) - 1 ))
+
 _all-parallel() {
   mkdir -p _tmp/spec
 
   manifest
 
   head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
-    | xargs -n 1 -P 8 --verbose -- $0 run-cases || true
+    | xargs -n 1 -P $JOBS --verbose -- $0 run-cases || true
 
   #ls -l _tmp/spec
 
