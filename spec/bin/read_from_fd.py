@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 """
 read_from_fd.py
 """
