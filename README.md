@@ -50,30 +50,41 @@ Try this to show a summary of what's in the repo and their line counts:
 Directory Structure
 -------------------
 
-    asdl/             # ASDL implementation
-    bin/              # programs to run (bin/osh)
-    core/             # the implementation (AST, runtime, etc.)
-    osh/              # osh front end
-    oil/              # oil front end (empty now)
-    ovm/              # C++ runtime (empty now)
+    # Development Scripts
+    benchmarks/       # Test for speed
+    build/            # Build automation
+      pylibc.sh       # For developers to build the Python extension
+    test/             # Test atomation
+      unit.sh         # test runners
+      spec.sh
+      wild.sh
+      smoke.sh
+      sh_spec.py        # shell test framework
+
     tests/            # spec tests
     web/              # HTML/JS/CSS for tests and tools
 
-    build.sh          # build support
+    # Code:
+    Python-2.7.13/    # CPython is the initial basis for the Oil VM
+    asdl/             # ASDL implementation
+    bin/              # programs to run (bin/osh)
+    core/             # the implementation (AST, runtime, etc.)
+    native/           # Native code for Oil, e.g. libc.c
+    osh/              # osh front end
+    oil/              # oil front end (empty now)
+    opy/              # Python compiler in Python
+
+    # Temporary Directories
+    _bin/             # Native executables are put here
+    _release/         # Source release tarballs are put here
+    _build/           # Temporary build files
+    _tmp/             # Temporary test files and the like
+
     setup.py
-
-    unit.sh           # test runners
-    spec.sh
-    wild.sh
-
-    smoke.sh
-    sh_spec.py        # shell test framework
 
     lint.sh           # static analysis
     count.sh          # Get an overview of the repo
 
-    _tmp/             # For test temp files
-    build/            # Python setup.py makes this directory
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
