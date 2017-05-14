@@ -13,7 +13,7 @@ set -o errexit
 build() {
   mkdir -p _build/pylibc
   local arch=$(uname -m)
-  ./setup.py build --build-lib _build/pylibc/$arch
+  build/setup.py build --build-lib _build/pylibc/$arch
 
   # Wildcard to match any Python 3 version.
   shopt -s failglob
