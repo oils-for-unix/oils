@@ -47,17 +47,17 @@ argv.py $s1 - "$s1"
 # stdout: ['-', '']
 
 ### Default values -- more cases
-argv ${undef:-hi} ${undef:-'a b'} "${undef:-c d}" "${un:-"e f"}" "${un:-'g h'}"
+argv.py ${undef:-hi} ${undef:-'a b'} "${undef:-c d}" "${un:-"e f"}" "${un:-'g h'}"
 # stdout: ['hi', 'a b', 'c d', 'e f', "'g h'"]
 
 ### Globbing after splitting
 touch _tmp/foo.gg _tmp/bar.gg _tmp/foo.hh
 pat='_tmp/*.hh _tmp/*.gg'
-argv $pat
+argv.py $pat
 # stdout: ['_tmp/foo.hh', '_tmp/bar.gg', '_tmp/foo.gg']
 
 ### Globbing escaping
 touch '_tmp/[bc]ar.mm' # file that looks like a glob pattern
 touch _tmp/bar.mm _tmp/car.mm
-argv '_tmp/[bc]'*.mm - _tmp/?ar.mm
+argv.py '_tmp/[bc]'*.mm - _tmp/?ar.mm
 # stdout: ['_tmp/[bc]ar.mm', '-', '_tmp/bar.mm', '_tmp/car.mm']
