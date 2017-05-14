@@ -55,13 +55,13 @@ Directory Structure
     benchmarks/       # Test for speed
     build/            # Build automation
       pylibc.sh       # For developers to build the Python extension
-    test/             # Test atomation
-      unit.sh         # test runners
+    test/             # Test automation
+      unit.sh         ## Types of test runner: unit, spec, wild, smoke
       spec.sh
-      wild.sh
+      wild.sh        
       smoke.sh
-      sh_spec.py        # shell test framework
-    tests/            # spec tests
+      sh_spec.py      # shell spec test framework
+    spec/             # spec test cases
     scripts/          # Other development scripts
     web/              # HTML/JS/CSS for tests and tools
 

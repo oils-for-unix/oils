@@ -19,7 +19,7 @@ all() {
   echo
 
   echo 'SHELL SPEC TESTS'
-  wc -l tests/*.test.sh | sort --numeric
+  wc -l spec/*.test.sh | sort --numeric
   echo
 
   echo 'ASDL'
