@@ -115,7 +115,7 @@ sh-spec() {
 
   test/sh_spec.py \
       --tmp-env $tmp_env \
-      --path-env "$this_dir/../tests/bin:$PATH" \
+      --path-env "$this_dir/../spec/bin:$PATH" \
       "$@"
 }
 
@@ -134,7 +134,7 @@ trace-var-sub() {
   # This prints trace with line numbers to stdout.
   #python -m trace --trace -C $out \
   python -m trace --trackcalls -C $out \
-    test/sh_spec.py tests/var-sub.test.sh $DASH $BASH "$@"
+    test/sh_spec.py spec/var-sub.test.sh $DASH $BASH "$@"
 
   ls -l $out
   head $out/*.cover
@@ -157,118 +157,118 @@ all() {
 #
 
 smoke() {
-  sh-spec tests/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Regress bugs
 bugs() {
-  sh-spec tests/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 blog1() {
-  sh-spec tests/blog1.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/blog1.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 comments() {
-  sh-spec tests/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 word-split() {
-  sh-spec tests/word-split.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/word-split.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 word-eval() {
-  sh-spec tests/word-eval.test.sh \
+  sh-spec spec/word-eval.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # 'do' -- detected statically as syntax error?  hm.
 assign() {
-  sh-spec tests/assign.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
 background() {
-  sh-spec tests/background.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/background.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
 
 # Need to fix $ tokens, and $''
 quote() {
-  sh-spec tests/quote.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/quote.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 loop() {
-  sh-spec tests/loop.test.sh \
+  sh-spec spec/loop.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # Not implemented in osh at all.  Need glob matching of words.
 case_() {
-  sh-spec tests/case_.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/case_.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 if_() {
-  sh-spec tests/if_.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/if_.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 # NOTE: osh uses external test!  But that's OK for now.
 test-builtin() {
-  sh-spec tests/test-builtin.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/test-builtin.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 builtins() {
-  sh-spec tests/builtins.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 builtins-special() {
-  sh-spec tests/builtins-special.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 command-parsing() {
-  sh-spec tests/command-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/command-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 func-parsing() {
-  sh-spec tests/func-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 func() {
-  sh-spec tests/func.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/func.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 glob() {
-  sh-spec tests/glob.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
 arith() {
-  sh-spec tests/arith.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/arith.test.sh --osh-failures-allowed 9 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 # pysh failures: case not implemented
 command-sub() {
-  sh-spec tests/command-sub.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/command-sub.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 pipeline() {
-  sh-spec tests/pipeline.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/pipeline.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 explore-parsing() {
-  sh-spec tests/explore-parsing.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/explore-parsing.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -279,65 +279,65 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec tests/here-doc.test.sh --osh-failures-allowed 8 --range 1-27 \
+  sh-spec spec/here-doc.test.sh --osh-failures-allowed 8 --range 1-27 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 redirect() {
   # BUG: osh treats stdin as stdout!  Fix this.
-  sh-spec tests/redirect.test.sh --osh-failures-allowed 11 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 11 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 posix() {
-  sh-spec tests/posix.test.sh \
+  sh-spec spec/posix.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 special-vars() {
-  sh-spec tests/special-vars.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/special-vars.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 # DONE -- pysh is the most conformant!
 tilde() {
-  sh-spec tests/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-op-test() {
-  sh-spec tests/var-op-test.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-op-other() {
-  sh-spec tests/var-op-other.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-op-strip() {
-  sh-spec tests/var-op-strip.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec tests/var-sub.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/var-sub.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-num() {
-  sh-spec tests/var-num.test.sh \
+  sh-spec spec/var-num.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-sub-quote() {
-  sh-spec tests/var-sub-quote.test.sh \
+  sh-spec spec/var-sub-quote.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 sh-options() {
-  sh-spec tests/sh-options.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/sh-options.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -348,88 +348,88 @@ sh-options() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec tests/arith-context.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/arith-context.test.sh --osh-failures-allowed 10 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
 array() {
-  sh-spec tests/array.test.sh --osh-failures-allowed 14 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 14 \
     $BASH $MKSH $OSH "$@"
 }
 
 array-compat() {
-  sh-spec tests/array-compat.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/array-compat.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $OSH "$@"
 }
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec tests/append.test.sh $BASH $MKSH "$@" 
+  sh-spec spec/append.test.sh $BASH $MKSH "$@" 
 }
 
 # associative array -- mksh implements different associative arrays.
 assoc() {
-  sh-spec tests/assoc.test.sh $BASH "$@"
+  sh-spec spec/assoc.test.sh $BASH "$@"
 }
 
 # ZSH also has associative arrays, which means we probably need them
 assoc-zsh() {
-  sh-spec tests/assoc-zsh.test.sh $ZSH "$@"
+  sh-spec spec/assoc-zsh.test.sh $ZSH "$@"
 }
 
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec tests/dbracket.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/dbracket.test.sh --osh-failures-allowed 7 \
     $BASH $MKSH $OSH "$@"
-  #sh-spec tests/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
+  #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
 }
 
 dparen() {
-  sh-spec tests/dparen.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/dparen.test.sh --osh-failures-allowed 4 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
 brace-expansion() {
   # TODO for osh: implement num ranges, mark char ranges unimplemented?
-  sh-spec tests/brace-expansion.test.sh --osh-failures-allowed 13 \
+  sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 13 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
 regex() {
-  sh-spec tests/regex.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/regex.test.sh --osh-failures-allowed 2 \
     $BASH $ZSH $OSH "$@"
 }
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec tests/process-sub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/process-sub.test.sh --osh-failures-allowed 1 \
     $BASH $ZSH $OSH "$@"
 }
 
 extended-glob() {
   # Do NOT use dash here.  Brace sub breaks things.
-  sh-spec tests/extended-glob.test.sh $BASH $MKSH "$@"
+  sh-spec spec/extended-glob.test.sh $BASH $MKSH "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.
 var-ref() {
-  sh-spec tests/var-ref.test.sh $BASH $MKSH "$@"
+  sh-spec spec/var-ref.test.sh $BASH $MKSH "$@"
 }
 
 let() {
-  sh-spec tests/let.test.sh $BASH $MKSH $ZSH "$@"
+  sh-spec spec/let.test.sh $BASH $MKSH $ZSH "$@"
 }
 
 for-expr() {
-  sh-spec tests/for-expr.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/for-expr.test.sh --osh-failures-allowed 2 \
     $MKSH $BASH $OSH "$@"
 }
 
 # TODO: This is for the ANTLR grammars, in the oil-sketch repo.
 # osh has infinite loop?
 shell-grammar() {
-  sh-spec tests/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
+  sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
 }
 
 "$@"

@@ -20,10 +20,10 @@ die() {
 
 # Generate an array of all the spec tests.
 _spec-manifest() {
-  for t in tests/*.test.sh; do
+  for t in spec/*.test.sh; do
     echo $t 
   done | gawk '
-  match($0, "tests/(.*)[.]test.sh", array) {
+  match($0, "spec/(.*)[.]test.sh", array) {
     name = array[1]
     # Nothing passing here
     if (name == "extended-glob") next;
@@ -280,7 +280,7 @@ _test-to-html() {
   <body>
     <table>
 EOF
-  awk < tests/${spec_name}.test.sh '
+  awk < spec/${spec_name}.test.sh '
   { 
     gsub("&", "\&amp;");
     gsub("<", "\&lt;");
