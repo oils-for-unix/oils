@@ -337,7 +337,7 @@ var-sub-quote() {
 }
 
 sh-options() {
-  sh-spec spec/sh-options.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/sh-options.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

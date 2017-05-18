@@ -38,3 +38,13 @@ echo "[$unset]"
 $SH -c 'echo hi'
 # stdout: hi
 # status: 0
+
+### -n for no execution (useful with --ast-output)
+# NOTE: set +n doesn't work because nothing is executed!
+echo 1
+set -n
+echo 2
+set +n
+echo 3
+# stdout-json: "1\n"
+# status: 0
