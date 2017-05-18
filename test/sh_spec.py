@@ -573,7 +573,7 @@ class ColorOutput(object):
 
     if self.verbose:
       self._WriteDetailsAsText(self.details)
-      self.details.clear()
+      self.details = []
 
   def _WriteDetailsAsText(self, details):
     for case_index, shell, stdout, stderr, messages in details:
