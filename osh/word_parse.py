@@ -21,6 +21,7 @@ from osh.lex import LexMode
 from osh import ast_ as ast
 
 word_part_e = ast.word_part_e
+word_e = ast.word_e
 
 # Substitutions can be nested, but which inner subs are allowed depends on the
 # outer sub.  See _ReadLeftParts vs. _ReadDoubleQuotedLeftParts.
@@ -843,6 +844,9 @@ class WordParser(object):
       w = w_parser.ReadWord(LexMode.OUTER)
       if word.CommandId(w) == Id.Right_ArrayLiteral:
         break
+      # Unlike command parsing, array parsing allows embedded \n.
+      if w.tag == word_e.TokenWord:
+        continue
 
       words.append(w)
 

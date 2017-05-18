@@ -44,6 +44,15 @@ echo $a
 # OK mksh status: 0
 # OK mksh stdout: 1
 
+### array over multiple lines
+a=(
+1
+'2 3'
+)
+argv.py "${a[@]}"
+# stdout: ['1', '2 3']
+# status: 0
+
 ### empty array
 empty=()
 argv.py "${empty[@]}"
