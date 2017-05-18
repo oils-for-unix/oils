@@ -842,11 +842,17 @@ class WordParser(object):
     words = []
     while True:
       w = w_parser.ReadWord(LexMode.OUTER)
-      if word.CommandId(w) == Id.Right_ArrayLiteral:
-        break
-      # Unlike command parsing, array parsing allows embedded \n.
+
       if w.tag == word_e.TokenWord:
-        continue
+        word_id = word.CommandId(w) 
+        if word_id == Id.Right_ArrayLiteral:
+          break
+        # Unlike command parsing, array parsing allows embedded \n.
+        elif word_id == Id.Op_Newline:
+          continue
+        else:
+          self.AddErrorContext('Unexpected word in array literal: %s', w, word=w)
+          return None
 
       words.append(w)
 

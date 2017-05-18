@@ -53,6 +53,16 @@ argv.py "${a[@]}"
 # stdout: ['1', '2 3']
 # status: 0
 
+### array with invalid token
+a=(
+1
+&
+'2 3'
+)
+argv.py "${a[@]}"
+# status: 2
+# OK mksh status: 1
+
 ### empty array
 empty=()
 argv.py "${empty[@]}"
