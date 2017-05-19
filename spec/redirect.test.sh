@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ### Leading redirect
-echo hello >tests/hello.txt  # temporary fix
-<tests/hello.txt cat
+echo hello >$TMP/hello.txt  # temporary fix
+<$TMP/hello.txt cat
 # stdout: hello
 
 ### No command
