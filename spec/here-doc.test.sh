@@ -40,14 +40,14 @@ $(a)
 # OK mksh status: 1
 
 ### Here doc and < redirect -- last one wins
-echo hello >tests/hello.txt  # temporary fix
-cat <<EOF <tests/hello.txt
+echo hello >$TMP/hello.txt  # temporary fix
+cat <<EOF <$TMP/hello.txt
 here
 EOF
 # stdout: hello
 
 ### < redirect and here doc -- last one wins
-cat <tests/hello.txt <<EOF
+cat <$TMP/hello.txt <<EOF
 here
 EOF
 # stdout: here

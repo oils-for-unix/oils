@@ -20,8 +20,8 @@ def main(argv):
       sys.exit(1)
 
     s = '%d: ' % fd
-    sys.stdout.buffer.write(s.encode('utf-8'))
-    sys.stdout.buffer.write(in_str)  # write binary data to stdout
+    sys.stdout.write(s.encode('utf-8'))
+    sys.stdout.write(in_str)  # write binary data to stdout
 
 
 if __name__ == '__main__':
