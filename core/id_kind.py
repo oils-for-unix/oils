@@ -347,6 +347,7 @@ def _AddKinds(spec):
       'DLeftBracket', 'Bang',
       'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
+      'Time',
   ])
 
   # Assignment builtins -- treated as statically parsed keywords.  They are

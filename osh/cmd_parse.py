@@ -993,6 +993,9 @@ class CommandParser(object):
     if_node.spids.append(fi_spid)
     return if_node
 
+  def ParseTime(self):
+    raise NotImplementedError
+
   def ParseCompoundCommand(self):
     """
     compound_command : brace_group
@@ -1002,6 +1005,7 @@ class CommandParser(object):
                      | until_clause
                      | if_clause
                      | case_clause
+                     | time_clause
                      | [[ BoolExpr ]]
                      | (( ArithExpr ))
                      ;
@@ -1022,6 +1026,8 @@ class CommandParser(object):
       return self.ParseIf()
     if self.c_id == Id.KW_Case:
       return self.ParseCase()
+    if self.c_id == Id.KW_Time:
+      return self.ParseTime()
 
     # Example of redirect that is observable:
     # $ (( $(echo one 1>&2; echo 2) > 0 )) 2> out.txt
@@ -1208,7 +1214,7 @@ class CommandParser(object):
 
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
-        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case):
+        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time):
       node = self.ParseCompoundCommand()
       if not node: return None
       redirects = self._ParseRedirectList()

@@ -179,6 +179,7 @@ _KEYWORDS = [
   C('else',     Id.KW_Else),
   C('elif',     Id.KW_Elif),
   C('function', Id.KW_Function),
+  C('time',     Id.KW_Time),
 
   C('declare',  Id.Assign_Declare),
   C('local',    Id.Assign_Local),
