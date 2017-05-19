@@ -123,13 +123,14 @@ outer
 
 ### time block
 # bash and mksh work; dash does't.  TODO: test substring
+err=_tmp/time-$(basename $SH).txt
 {
   time {
     sleep 0.01
     sleep 0.02
   }
-} 2>_tmp/time.txt
-cat _tmp/time.txt | grep --only-matching real
+} 2> $err
+cat $err | grep --only-matching real
 # Just check that we found 'real'.
 # This is fiddly:
 # | sed -n -E -e 's/.*(0m0\.03).*/\1/'

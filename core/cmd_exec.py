@@ -60,6 +60,7 @@ This just does head?  Last one wins.
 import os
 import stat
 import sys
+import time
 
 from core import braces
 from core import expr_eval
@@ -748,7 +749,7 @@ class Executor(object):
     if node.tag in (
         command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
         command_e.Pipeline, command_e.AndOr, command_e.CommandList,
-        command_e.Sentence):
+        command_e.Sentence, command_e.TimeBlock):
       return []
 
     redirects = []
@@ -1086,6 +1087,12 @@ class Executor(object):
             done = True  # TODO: Parse ;;& and for fallthrough and such?
         if done:
           break
+
+    elif node.tag == command_e.TimeBlock:
+      # TODO: Measure timing!  What syscalls are made?
+      start_time = time.time()
+      status = self._Execute(node.pipeline)
+      print('TIME: %.3f' % (time.time() - start_time), file=sys.stderr)
 
     else:
       raise AssertionError(node.tag)

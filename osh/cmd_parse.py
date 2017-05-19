@@ -76,6 +76,9 @@ def _GetHereDocsToFill(node):
   elif node.tag == command_e.Sentence:
     here_docs.extend(_GetHereDocsToFill(node.command))
 
+  elif node.tag == command_e.TimeBlock:
+    here_docs.extend(_GetHereDocsToFill(node.pipeline))
+
   else:
     for child in node.children:
       here_docs.extend(_GetHereDocsToFill(child))
@@ -83,7 +86,7 @@ def _GetHereDocsToFill(node):
   # && || and | don't have their own redirects, but have children that may.
   if node.tag not in (
       command_e.AndOr, command_e.Pipeline, command_e.CommandList,
-      command_e.Sentence):
+      command_e.Sentence, command_e.TimeBlock):
     here_docs.extend(_UnfilledHereDocs(node.redirects))  # parent
 
   return here_docs
@@ -994,7 +997,16 @@ class CommandParser(object):
     return if_node
 
   def ParseTime(self):
-    raise NotImplementedError
+    """
+    time [-p] pipeline
+
+    According to bash help.
+    """
+    self._Next()  # skip time
+
+    pipeline = self.ParsePipeline()
+    if not pipeline: return None
+    return ast.TimeBlock(pipeline)
 
   def ParseCompoundCommand(self):
     """
@@ -1217,10 +1229,11 @@ class CommandParser(object):
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time):
       node = self.ParseCompoundCommand()
       if not node: return None
-      redirects = self._ParseRedirectList()
-      if redirects is None:
-        return None
-      node.redirects = redirects
+      if node.tag != command_e.TimeBlock:  # The only one without redirects
+        redirects = self._ParseRedirectList()
+        if redirects is None:
+          return None
+        node.redirects = redirects
       return node
 
     if self.c_kind == Kind.Redir:  # Leading redirect
