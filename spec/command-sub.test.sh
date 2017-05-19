@@ -28,8 +28,9 @@ echo `echo -n l; echo -n s`
 ### Nested backticks
 # Inner `` are escaped!  # Not sure how to do triple..  Seems like an unlikely
 # use case.  Not sure if I even want to support this!
-echo `\`echo -n l; echo -n s\` tests | head -n 1`
-# stdout: 01-bad-func.sh
+echo X > $TMP/000000-first
+echo `\`echo -n l; echo -n s\` $TMP | head -n 1`
+# stdout: 000000-first
 
 ### Making command out of command sub should work
 # Works in bash and dash!
