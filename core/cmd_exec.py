@@ -58,9 +58,9 @@ This just does head?  Last one wins.
 """
 
 import os
+import resource
 import stat
 import sys
-import time
 
 from core import braces
 from core import expr_eval
@@ -1076,6 +1076,7 @@ class Executor(object):
 
       status = 0  # If there are no arms, it should be zero?
       done = False
+
       for arm in node.arms:
         for pat_word in arm.pat_list:
           # NOTE: Is it OK that we're evaluating these as we go?
@@ -1089,10 +1090,18 @@ class Executor(object):
           break
 
     elif node.tag == command_e.TimeBlock:
-      # TODO: Measure timing!  What syscalls are made?
-      start_time = time.time()
+      # TODO:
+      # - When do we need RUSAGE_CHILDREN?
+      start_u = resource.getrusage(resource.RUSAGE_SELF)
       status = self._Execute(node.pipeline)
-      print('TIME: %.3f' % (time.time() - start_time), file=sys.stderr)
+      end_u = resource.getrusage(resource.RUSAGE_SELF)
+
+      real = 0.0  # time.time()?  Look at bash (dash doesn't have time)
+      user = end_u.ru_utime - start_u.ru_utime
+      sys_ = end_u.ru_stime - start_u.ru_stime
+      print('real %.3f' % real, file=sys.stderr)
+      print('user %.3f' % user, file=sys.stderr)
+      print('sys  %.3f' % sys_, file=sys.stderr)
 
     else:
       raise AssertionError(node.tag)
