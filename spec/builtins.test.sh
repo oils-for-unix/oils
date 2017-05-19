@@ -122,7 +122,8 @@ outer
 # stdout-json: "before inner\nNone\ninner: X\nX\nafter inner\nX\n"
 
 ### time block
-# bash and mksh work; dash does't.  TODO: test substring
+# bash and mksh work; dash does't.
+# TODO: osh needs to implement BraceGroup redirect properly.
 err=_tmp/time-$(basename $SH).txt
 {
   time {
