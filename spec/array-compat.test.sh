@@ -7,7 +7,7 @@
 set -- x y z
 #argv "[$@]"  # NOT DECAYED here.
 var="[$@]"
-argv "$var"
+argv.py "$var"
 # stdout: ['[x y z]']
 
 ### User arrays decay

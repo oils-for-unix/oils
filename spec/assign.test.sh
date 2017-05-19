@@ -25,8 +25,8 @@ FOO=foo\<foo printenv.py FOO
 # stdout: foo<foo
 
 ### Escaped = in command name
-# foo=bar is in the 'tests' dir.
-PATH=tests foo\=bar
+# foo=bar is in the 'spec/bin' dir.
+foo\=bar
 # stdout: HI
 
 ### Env binding not allowed before compound command
