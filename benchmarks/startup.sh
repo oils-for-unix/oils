@@ -17,6 +17,17 @@ readonly TIMEFORMAT='%R'
 # This throws off absolute timing, but relative still makes sense.
 # TODO: get rid of wc -l if not.
 
+# Ubuntu inside Virtualbox on Macbook Air:
+#
+# dash/mksh/mawk: 1 ms
+# bash/gawk/perl: 2 ms
+# zsh: 3 ms
+# python -S: 5 ms
+# python3 -S : 13 ms
+# python import: 16 ms
+# app.zip / hello.ovm: 10 ms
+# oil true: 46 ms
+# oil echo hi: 59 ms
 
 strace-callback() {
   strace "$@" 2>&1 | wc -l
@@ -43,18 +54,22 @@ compare() {
     echo
   done
 
-  echo lua
-  $callback lua -e 'print "hi"'
-  echo
+  if which lua; then
+    echo lua
+    $callback lua -e 'print "hi"'
+    echo
+  fi
 
   echo perl
   $callback perl -e 'print "hi\n"'
   echo
 
   # Woah 247 ms?  Ruby is slower than Python.
-  echo ruby
-  $callback ruby -e 'print "hi\n"'
-  echo
+  if which ruby; then
+    echo ruby
+    $callback ruby -e 'print "hi\n"'
+    echo
+  fi
 
   # Oh almost all stats come from -S!
   for py in python python3; do
@@ -82,6 +97,10 @@ compare() {
   # This is close to app.zip, a few milliseconds slower.
   echo 'hello app bundle'
   $callback _bin/hello.ovm || true
+  echo
+
+  echo 'OSH app bundle true'
+  $callback _bin/true
   echo
 
   echo 'OSH app bundle Hello World'
