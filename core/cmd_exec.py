@@ -61,6 +61,7 @@ import os
 import resource
 import stat
 import sys
+import time
 
 from core import braces
 from core import expr_eval
@@ -1092,11 +1093,13 @@ class Executor(object):
     elif node.tag == command_e.TimeBlock:
       # TODO:
       # - When do we need RUSAGE_CHILDREN?
+      start_t = time.time()  # calls gettimeofday() under the hood
       start_u = resource.getrusage(resource.RUSAGE_SELF)
       status = self._Execute(node.pipeline)
+      end_t = time.time()
       end_u = resource.getrusage(resource.RUSAGE_SELF)
 
-      real = 0.0  # time.time()?  Look at bash (dash doesn't have time)
+      real = end_t - start_t
       user = end_u.ru_utime - start_u.ru_utime
       sys_ = end_u.ru_stime - start_u.ru_stime
       print('real %.3f' % real, file=sys.stderr)
