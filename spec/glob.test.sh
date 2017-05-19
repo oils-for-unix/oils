@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# NOTE: Could move tests/03-glob.sh here.
+# NOTE: Could move spec/03-glob.sh here.
 
 ### glob double quote escape
 echo "*.sh"
@@ -15,24 +15,24 @@ echo \*.sh
 # stdout: *.sh
 
 ### 1 char glob
-echo [t]ests
-# stdout: tests
+echo [b]in
+# stdout: bin
 
 ### 0 char glob -- does NOT work
-echo []tests
-# stdout: []tests
+echo []bin
+# stdout: []bin
 
 ### looks like glob at the start, but isn't
-echo [tests
-# stdout: [tests
+echo [bin
+# stdout: [bin
 
 ### looks like glob plus negation at the start, but isn't
-echo [!tests
-# stdout: [!tests
+echo [!bin
+# stdout: [!bin
 
 ### glob can expand to command and arg
-tests/echo.s[hz]
-# stdout: tests/echo.sz
+spec/echo.s[hz]
+# stdout: spec/echo.sz
 
 ### glob after var expansion
 touch _tmp/a.A _tmp/aa.A _tmp/b.B
