@@ -1093,6 +1093,11 @@ class Executor(object):
     elif node.tag == command_e.TimeBlock:
       # TODO:
       # - When do we need RUSAGE_CHILDREN?
+      # - Respect TIMEFORMAT environment variable.
+      # "If this variable is not set, Bash acts as if it had the value"
+      # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
+      # "A trailing newline is added when the format string is displayed."
+
       start_t = time.time()  # calls gettimeofday() under the hood
       start_u = resource.getrusage(resource.RUSAGE_SELF)
       status = self._Execute(node.pipeline)
@@ -1102,9 +1107,9 @@ class Executor(object):
       real = end_t - start_t
       user = end_u.ru_utime - start_u.ru_utime
       sys_ = end_u.ru_stime - start_u.ru_stime
-      print('real %.3f' % real, file=sys.stderr)
-      print('user %.3f' % user, file=sys.stderr)
-      print('sys  %.3f' % sys_, file=sys.stderr)
+      print('real\t%.3f' % real, file=sys.stderr)
+      print('user\t%.3f' % user, file=sys.stderr)
+      print('sys\t%.3f' % sys_, file=sys.stderr)
 
     else:
       raise AssertionError(node.tag)
