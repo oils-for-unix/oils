@@ -687,10 +687,10 @@ class Executor(object):
 
     For deciding whether we need a subshell.
     """
-    assert argv, "Need at least one arugment"
+    if not argv:
+      return process.NoOpThunk()
 
     # TODO: respect the special builtin order too
-
     builtin_id = self.builtins.Resolve(argv[0])
     if builtin_id != EBuiltin.NONE:
       return process.BuiltinThunk(self, builtin_id, argv)

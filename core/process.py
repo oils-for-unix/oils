@@ -324,6 +324,13 @@ class Thunk(object):
     return True
 
 
+class NoOpThunk(Thunk):
+  """When argv evaluates to nothing."""
+
+  def RunInParent(self):
+    return 0  # success
+
+
 class ExternalThunk(Thunk):
   """An external executable."""
 
