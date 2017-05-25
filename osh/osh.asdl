@@ -15,7 +15,6 @@
 --   * hidden behind set -o extglob
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
--- * time builtin can a pipeline/block
 -- * Append operator in Assignment: +=
 
 -- TODO: Preserve these source differences:

@@ -858,6 +858,12 @@ class Executor(object):
     else:
       status = pipe_status[-1]  # last one determines status
 
+    if node.negated:
+      if status == 0:
+        return 1
+      else:
+        return 0
+
     return status
 
   def _Execute(self, node):
