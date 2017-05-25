@@ -23,15 +23,15 @@ _compare() {
 # - { busybox || true; } | head
 # - $1
 version-text() {
-  _compare ./spec.sh version-text
+  _compare test/spec.sh version-text
 }
 
 # Uses {core,osh}/*.py
 count() {
-  _compare ./count.sh all
-  _compare ./count.sh parser
-  _compare ./count.sh parser-port
-  _compare ./count.sh runtime
+  _compare scripts/count.sh all
+  _compare scripts/count.sh parser
+  _compare scripts/count.sh parser-port
+  _compare scripts/count.sh runtime
 }
 
 # Uses $(cd $(dirname $0) && pwd)
@@ -47,6 +47,13 @@ html-summary() {
 # Fails because 'time' can't find _parse-many!  Gah it needs to be a builtin.
 wild() {
   _compare test/wild.sh parse-j
+}
+
+all() {
+  version-text
+  count
+  one-spec-test
+  html-summary
 }
 
 "$@"
