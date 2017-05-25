@@ -162,7 +162,7 @@ class Mem(object):
     self.argv_stack[-1] = argv
 
   #
-  # Helper
+  # Helper functions
   #
 
   def _FindInScope(self, name):
@@ -173,6 +173,7 @@ class Mem(object):
     pass
 
   def _SetInScope(self, scope, pairs):
+    """Helper to set locals or globals."""
     for lhs, val in pairs:
       #log('SETTING %s -> %s', lhs, value)
       assert val.tag in (value_e.Str, value_e.StrArray)
@@ -208,7 +209,7 @@ class Mem(object):
     self.SetGlobals(pairs)
 
   def SetGlobalString(self, name, s):
-    """Helper for completion."""
+    """Helper for completion, $PWD, etc."""
     assert isinstance(s, str)
     val = runtime.Str(s)
     pairs = [(ast.LeftVar(name), val)]
@@ -219,7 +220,7 @@ class Mem(object):
   #
 
   def Get(self, name):
-    # TODO: Don't implement dynamic scope
+    # TODO: Optionally disable dynamic scope
     for i in range(len(self.var_stack) - 1, -1, -1):
       scope = self.var_stack[i]
       if name in scope:
@@ -247,9 +248,36 @@ class Mem(object):
     self._SetInScope(self.var_stack[-1], pairs)
 
   def SetLocal(self, name, val):
-    """Set a single local."""
+    """Set a single local.
+
+    Used for:
+    1) for loop iteration variables
+    2) temporary environments like FOO=bar BAR=$FOO cmd, 
+    3) read builtin
+    """
     pairs = [(ast.LeftVar(name), val)]
     self.SetLocals(pairs)
+
+  def _SetLocalOrGlobal(self, name, val):
+    # TODO:
+    # - Use _FindInScope helper?  So we preserve flags.
+    # - Optionally disable dynamic scope
+    # - Implement readonly, etc.  Test the readonly flag!
+    cell = runtime.cell(val, False, False)
+
+    for i in range(len(self.var_stack) - 1, -1, -1):  # This implements dynamic scope.
+      scope = self.var_stack[i]
+      if name in scope:
+        scope[name] = cell
+        break
+    else:
+      global_scope = self.var_stack[0]
+      global_scope[name] = cell
+
+  def SetLocalsOrGlobals(self, pairs):
+    """For x=1 inside a function."""
+    for lhs, val in pairs:
+      self._SetLocalOrGlobal(lhs.name, val)
 
   def Unset(self, name):
     # For unset -v (variable)
@@ -943,19 +971,24 @@ class Executor(object):
     elif node.tag == command_e.Assignment:
       pairs = []
       for pair in node.pairs:
-        # RHS can be a string or array.
-        ok, val = self.ev.EvalWordToAny(pair.rhs)
-        assert isinstance(val, runtime.value), val
-        #log('RHS %s -> %s', pair.rhs, val)
-        if not ok:
-          self.error_stack.extend(self.ev.Error())
-          raise _FatalError()
+        if pair.rhs:
+          # RHS can be a string or array.
+          ok, val = self.ev.EvalWordToAny(pair.rhs)
+          assert isinstance(val, runtime.value), val
+          #log('RHS %s -> %s', pair.rhs, val)
+          if not ok:
+            self.error_stack.extend(self.ev.Error())
+            raise _FatalError()
+        else:
+          # 'local x' is equivalent to local x=""
+          val = runtime.Str('')
         pairs.append((pair.lhs, val))
 
       if node.keyword == Id.Assign_Local:
         self.mem.SetLocals(pairs)
-      else:  # could be readonly/export/etc.
-        self.mem.SetGlobals(pairs)
+      else:
+        # NOTE: could be readonly/export/etc.
+        self.mem.SetLocalsOrGlobals(pairs)
 
       # TODO: This should be eval of RHS, unlike bash!
       status = 0

@@ -82,6 +82,7 @@ all() {
   one-spec-test
   html-summary
   configure
+  no-op
   gen-module-init
 }
 

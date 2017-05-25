@@ -145,3 +145,12 @@ cat $err | grep --only-matching real
 time echo hi | wc -c
 # stdout: 3
 # status: 0
+
+### shift
+set -- 1 2 3 4
+shift
+echo "$@"
+shift 2
+echo "$@"
+# stdout-json: "2 3 4\n4\n"
+# status: 0

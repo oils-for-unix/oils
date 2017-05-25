@@ -57,3 +57,25 @@ g() {
 }
 g
 # stdout: g: f_mutation
+
+### Assign local separately
+f() {
+  local f
+  f='new-value'
+  echo "[$f]"
+}
+f
+# stdout: [new-value]
+# status: 0
+
+### Assign a local and global on same line
+myglobal=
+f() {
+  local mylocal
+  mylocal=L myglobal=G
+  echo "[$mylocal $myglobal]"
+}
+f
+echo "[$mylocal $myglobal]"
+# stdout-json: "[L G]\n[ G]\n"
+# status: 0
