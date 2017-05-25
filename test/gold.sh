@@ -44,6 +44,10 @@ html-summary() {
   _compare test/spec-runner.sh html-summary
 }
 
+configure() {
+  _compare ./configure
+}
+
 # Fails because 'time' can't find _parse-many!  Gah it needs to be a builtin.
 wild() {
   _compare test/wild.sh parse-j
