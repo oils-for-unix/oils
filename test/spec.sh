@@ -284,8 +284,7 @@ here-doc() {
 }
 
 redirect() {
-  # BUG: osh treats stdin as stdout!  Fix this.
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 11 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 10 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

@@ -17,7 +17,7 @@ import sys
 
 from core import util
 from core.util import log
-from core.id_kind import REDIR_DEFAULT_FD
+from core.id_kind import Id, REDIR_DEFAULT_FD
 
 
 class _FdFrame:
@@ -156,14 +156,27 @@ class FilenameRedirect(UserRedirect):
     self.filename = filename
 
   def ApplyInChild(self):
-    # TODO: Implement stdin
-    target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+    if self.op_id == Id.Redir_Great:
+      target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+    elif self.op_id == Id.Redir_Less:
+      target_fd = os.open(self.filename, os.O_RDONLY)
+    else:
+      raise NotImplementedError(self.op_id)
+
     os.dup2(target_fd, self.fd)
     os.close(target_fd)
 
   def ApplyInParent(self, fd_state):
-    target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-    #log('fd %d - target fd %d', self.fd, target_fd)
+    """
+    e.g. echo hi > out.txt
+    """
+    if self.op_id == Id.Redir_Great:
+      target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+    elif self.op_id == Id.Redir_Less:
+      target_fd = os.open(self.filename, os.O_RDONLY)
+    else:
+      raise NotImplementedError(self.op_id)
+
     fd_state.SaveAndDup(target_fd, self.fd)
     fd_state.NeedClose(target_fd)
 
