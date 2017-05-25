@@ -34,8 +34,6 @@ _log-one() {
 }
 
 _all() {
-  local skip_c=${1:-}
-
   mkdir -p _tmp/unit
 
   # NOTE: build and test have small unit tests
@@ -43,11 +41,7 @@ _all() {
 
   for t in {build,test,native,asdl,core,osh}/*_test.py; do
     # NOTE: This test hasn't passed in awhile.  It uses strings as output.
-
     if [[ $t == *arith_parse_test.py ]]; then
-      continue
-    fi
-    if test -n "$skip_c" && [[ $t == *libc_test.py ]]; then
       continue
     fi
     echo $t

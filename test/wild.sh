@@ -260,6 +260,14 @@ parse-initd() {
     $(find $src -type f -a -executable -a -printf '%P\n')
 }
 
+parse-usr-bin() {
+  local src=/usr/bin
+  _parse-many \
+    $src \
+    $RESULT_DIR/usr-bin \
+    $(find $src -name '*.sh' -a -printf '%P\n')
+}
+
 parse-pixelb-scripts() {
   local src=~/git/other/pixelb-scripts
   # NOTE: These scripts don't end with *.sh

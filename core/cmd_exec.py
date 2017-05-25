@@ -70,10 +70,7 @@ from core import util
 
 from core.builtin import EBuiltin
 from core.id_kind import Id, RedirType, REDIR_TYPE
-from core.process import (
-    FdState, Pipeline, Process,
-    HereDocRedirect, DescriptorRedirect, FilenameRedirect,
-    FuncThunk, ExternalThunk, SubProgramThunk, BuiltinThunk)
+from core import process
 from core import runtime
 
 from osh import ast_ as ast
@@ -388,7 +385,7 @@ class Executor(object):
     self.mem.last_status = 0  # For $?
 
     self.traps = {}
-    self.fd_state = FdState()
+    self.fd_state = process.FdState()
 
     # TODO: Pass these in from main()
     self.aliases = {}  # alias name -> string
@@ -540,7 +537,7 @@ class Executor(object):
     # NOTE: Redirects were processed earlier.
     argv = argv[1:]
     if argv:
-      thunk = ExternalThunk(argv)
+      thunk = process.ExternalThunk(argv)
       thunk.RunInParent()  # never returns
     else:
       return 0
@@ -696,13 +693,13 @@ class Executor(object):
 
     builtin_id = self.builtins.Resolve(argv[0])
     if builtin_id != EBuiltin.NONE:
-      return BuiltinThunk(self, builtin_id, argv)
+      return process.BuiltinThunk(self, builtin_id, argv)
 
     func_node = self.funcs.get(argv[0])
     if func_node is not None:
-      return FuncThunk(self, func_node, argv)
+      return process.FuncThunk(self, func_node, argv)
 
-    return ExternalThunk(argv, more_env)
+    return process.ExternalThunk(argv, more_env)
 
   def _GetProcessForNode(self, node):
     """
@@ -728,10 +725,10 @@ class Executor(object):
       raise AssertionError('Invalid control flow %s' % node)
 
     else:
-      thunk = SubProgramThunk(self, node)
+      thunk = process.SubProgramThunk(self, node)
 
     redirects = self._EvalRedirects(node)
-    p = Process(thunk, fd_state=self.fd_state, redirects=redirects)
+    p = process.Process(thunk, fd_state=self.fd_state, redirects=redirects)
     return p
 
   def _EvalRedirects(self, node):
@@ -769,7 +766,7 @@ class Executor(object):
           self._AddErrorContext("filename can't be empty")
           return False
 
-        redirects.append(FilenameRedirect(n.op_id, n.fd, filename))
+        redirects.append(process.FilenameRedirect(n.op_id, n.fd, filename))
 
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
         ok, val = self.ev.EvalWordToString(n.arg_word)
@@ -789,7 +786,7 @@ class Executor(object):
           self._AddErrorContext(
               "descriptor to redirect to should be an integer, not string")
           return False
-        redirects.append(DescriptorRedirect(n.op_id, n.fd, target_fd))
+        redirects.append(process.DescriptorRedirect(n.op_id, n.fd, target_fd))
 
       elif redir_type == RedirType.Str:
         ok, val = self.ev.EvalWordToString(n.arg_word)
@@ -798,7 +795,7 @@ class Executor(object):
         assert val.tag == value_e.Str, \
             "descriptor to redirect to should be an integer, not list"
 
-        redirects.append(HereDocRedirect(n.op_id, n.fd, val.s))
+        redirects.append(process.HereDocRedirect(n.op_id, n.fd, val.s))
 
       else:
         raise AssertionError
@@ -837,7 +834,7 @@ class Executor(object):
 
     # NOTE: First or last one can use the "main" shell thread.  Doesn't have to
     # run in subshell.  Although I guess it's simpler if it always does.
-    pi = Pipeline()
+    pi = process.Pipeline()
 
     for child in node.children:
       p = self._GetProcessForNode(child)
@@ -887,7 +884,7 @@ class Executor(object):
 
       # Don't waste a process if we'd launch one anyway.
       if thunk.IsExternal():
-        p = Process(thunk, fd_state=self.fd_state, redirects=redirects)
+        p = process.Process(thunk, fd_state=self.fd_state, redirects=redirects)
         status = p.Run()
 
       else:  # Internal
