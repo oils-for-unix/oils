@@ -27,10 +27,9 @@ unit() {
   "$@"
 }
 
-# TODO: Change all shebang lines
 _log-one() {
   local name=$1
-  python2 $name > _tmp/unit/${name}.log.txt 2>&1
+  $name > _tmp/unit/${name}.log.txt 2>&1
 }
 
 _all() {
