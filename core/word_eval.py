@@ -1078,9 +1078,9 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     # Return false here.  How do we get that value from the Process then?  Do
     # we use a special return value?
 
-    # I think $() does a strip basically?
-    # argv $(echo ' hi')$(echo bye) -> hibye
-    s = ''.join(stdout).strip()
+    # Why rstrip()?
+    # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
+    s = ''.join(stdout).rstrip('\n')
     return runtime.StringPartValue(s, not quoted, not quoted)
 
 

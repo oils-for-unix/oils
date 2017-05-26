@@ -64,3 +64,13 @@ EOF
 ### Command Sub word split
 argv.py $(echo 'hi there') "$(echo 'hi there')"
 # stdout: ['hi', 'there', 'hi there']
+
+### Command Sub trailing newline removed
+s=$(python -c 'print "ab\ncd\n"')
+argv "$s"
+# stdout: ['ab\ncd']
+
+### Command Sub trailing whitespace not removed
+s=$(python -c 'print "ab\ncd\n "')
+argv "$s"
+# stdout: ['ab\ncd\n ']

@@ -292,10 +292,7 @@ class CommandSubRedirect(Redirect):
       byte_str = os.read(self.r, 4096)
       if not byte_str:
         break
-      if util.PY2:
-        self.var.append(byte_str)
-      else:
-        self.var.append(byte_str.decode('utf-8'))
+      self.var.append(byte_str)
     os.close(self.r)
 
 
