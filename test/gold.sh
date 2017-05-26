@@ -84,6 +84,7 @@ all() {
   configure
   no-op
   gen-module-init
+  wild
 }
 
 "$@"

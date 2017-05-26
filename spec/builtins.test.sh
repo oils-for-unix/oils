@@ -154,3 +154,15 @@ shift 2
 echo "$@"
 # stdout-json: "2 3 4\n4\n"
 # status: 0
+
+### Shifting too far
+set -- 1
+shift 2
+# status: 1
+# OK dash status: 2
+
+### Invalid shift argument
+shift ZZZ
+# status: 1
+# OK dash status: 2
+# BUG mksh status: 0

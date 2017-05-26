@@ -111,7 +111,7 @@ from core import util
 # - So you can just add "complete" and have it work.
 
 EBuiltin = util.Enum('EBuiltin', """
-NONE READ ECHO CD PUSHD POPD
+NONE READ ECHO SHIFT CD PUSHD POPD
 EXPORT
 EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE COMPGEN DEBUG_LINE
 """.split())
@@ -326,6 +326,8 @@ class Builtins(object):
       return EBuiltin.ECHO
     elif argv0 == "cd":
       return EBuiltin.CD
+    elif argv0 == "shift":
+      return EBuiltin.SHIFT
     elif argv0 == "pushd":
       return EBuiltin.PUSHD
     elif argv0 == "popd":

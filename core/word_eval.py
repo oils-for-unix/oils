@@ -248,8 +248,12 @@ def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
   return args
 
 
-class _EvalError(RuntimeError):
-  pass
+class _EvalError(Exception):
+
+  def __init__(self, msg, token=None):
+    self.msg = msg
+    self.token = token
+
 
 # Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
 
@@ -304,20 +308,8 @@ class _WordPartEvaluator:
     return s
 
   def _EvalVarNum(self, var_num):
-    argv = self.mem.GetArgv()
     assert var_num >= 0
-
-    if var_num == 0:
-      return runtime.Str(self.mem.GetArgv0())
-    else:
-      index = var_num - 1
-      if index < len(argv):
-        return runtime.Str(str(argv[index]))
-      else:
-        # NOTE: This is not a fatal error.
-        #self._AddErrorContext(
-        #    'argv has %d entries; %d is out of range', len(argv), var_num)
-        return runtime.Undef()
+    return self.mem.GetArgNum(var_num)
 
   def _EvalSpecialVar(self, op_id, quoted):
     # $@ is special -- it need to know whether it is in a double quoted
@@ -342,9 +334,8 @@ class _WordPartEvaluator:
       return runtime.Str(str(self.mem.last_status)), False
 
     elif op_id == Id.VSub_Pound:  # $#
-      argv = self.mem.GetArgv()
-      s = str(len(argv))
-      return runtime.Str(s), False
+      n = self.mem.GetNumArgs()
+      return runtime.Str(str(n)), False
 
     else:
       raise NotImplementedError(op_id)
@@ -605,7 +596,7 @@ class _WordPartEvaluator:
     assert val.tag == value_e.StrArray
     return runtime.Str(sep.join(val.strs))
 
-  def _EmptyStrOrError(self, val):
+  def _EmptyStrOrError(self, val, token=None):
     assert isinstance(val, runtime.value), val
 
     if val.tag == value_e.Undef:
@@ -615,8 +606,9 @@ class _WordPartEvaluator:
         # TODO: Print the name.  Need to have the ast for varsub.  BracedVarSub
         # should have a token?
         #tb = self.mem.GetTraceback(token)
-        self._AddErrorContext('Undefined variable')
-        raise _EvalError()
+        #self._AddErrorContext('Undefined variable')
+        log('UNDEFINED (todo: show error)')
+        raise _EvalError('Undefined variable', token=token)
       else:
         return runtime.Str('')
     else:
@@ -819,7 +811,8 @@ class _WordPartEvaluator:
       else:
         val, decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
-      val = self._EmptyStrOrError(val)
+      #log('SIMPLE %s', part)
+      val = self._EmptyStrOrError(val, token=part.token)
       if decay_array:
         val = self._DecayArray(val)
       part_val = _ValueToPartValue(val, quoted)
@@ -1052,9 +1045,12 @@ class _WordEvaluator:
     return argv
 
   def EvalWordSequence(self, words):
+    """
+    Used in: SimpleCommand, ForEach.
+    """
     try:
       return self._EvalWordSequence(words)
-    except _EvalError:
+    except _EvalError:  # TODO: propagate error info up
       return None
 
 

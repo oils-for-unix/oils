@@ -68,6 +68,38 @@ class MemTest(unittest.TestCase):
     mem.Pop()
     print(mem.Get('NONEXISTENT'))
 
+  def testArgv(self):
+    mem = cmd_exec.Mem('', [])
+    mem.Push(['a', 'b'])
+    self.assertEqual(['a', 'b'], mem.GetArgv())
+
+    mem.Push(['x', 'y'])
+    self.assertEqual(['x', 'y'], mem.GetArgv())
+
+    status = mem.Shift(1)
+    self.assertEqual(['y'], mem.GetArgv())
+    self.assertEqual(0, status)
+
+    status = mem.Shift(1)
+    self.assertEqual([], mem.GetArgv())
+    self.assertEqual(0, status)
+
+    status = mem.Shift(1)
+    self.assertEqual([], mem.GetArgv())
+    self.assertEqual(1, status)  # error
+
+    mem.Pop()
+    self.assertEqual(['a', 'b'], mem.GetArgv())
+
+  def testArgv2(self):
+    mem = cmd_exec.Mem('', ['x', 'y'])
+
+    mem.Shift(1)
+    self.assertEqual(['y'], mem.GetArgv())
+
+    mem.SetArgv(['i', 'j', 'k'])
+    self.assertEqual(['i', 'j', 'k'], mem.GetArgv())
+
 
 class ExpansionTest(unittest.TestCase):
 

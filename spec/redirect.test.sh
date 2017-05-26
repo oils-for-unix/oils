@@ -81,7 +81,7 @@ cat $TMP/redirect2.txt
 # status: 2
 # OK mksh status: 1
 
-### Block redirect
+### Brace group redirect
 # Suffix works, but prefix does NOT work.
 # That comes from '| compound_command redirect_list' in the grammar!
 { echo block-redirect; } > $TMP/br.txt

@@ -214,7 +214,7 @@ case_() {
 }
 
 if_() {
-  sh-spec spec/if_.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/if_.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -279,12 +279,12 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec spec/here-doc.test.sh --osh-failures-allowed 8 --range 1-27 \
+  sh-spec spec/here-doc.test.sh --osh-failures-allowed 7 --range 1-27 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 8 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

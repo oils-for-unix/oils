@@ -90,8 +90,34 @@ class ExecOpts(object):
     self.nounset = False
     self.errexit = False
     self.pipefail = False
+    self.xtrace = False
     self.noglob = False  # -f
     self.bash_array = True
+
+
+class _ArgFrame(object):
+  """Stack frame for arguments array."""
+
+  def __init__(self, argv):
+    self.argv = argv
+    self.num_shifted = 0
+
+  def GetArgNum(self, arg_num):
+    index = self.num_shifted + arg_num - 1
+    if index >= len(self.argv):
+      return runtime.Undef()
+
+    return runtime.Str(str(self.argv[index]))
+
+  def GetArgv(self):
+    return self.argv[self.num_shifted : ]
+
+  def GetNumArgs(self):
+    return len(self.argv) - self.num_shifted
+
+  def SetArgv(self, argv):
+    self.argv = argv
+    self.num_shifted = 0
 
 
 class Mem(object):
@@ -101,10 +127,10 @@ class Mem(object):
   """
 
   def __init__(self, argv0, argv):
-    self.top = {}  # string -> runtime.cell
-    self.var_stack = [self.top]
+    top = {}  # string -> runtime.cell
+    self.var_stack = [top]
     self.argv0 = argv0
-    self.argv_stack = [argv]
+    self.argv_stack = [_ArgFrame(argv)]
     self.last_status = 0  # Mutable public variable
 
     self._InitDefaults()
@@ -122,7 +148,7 @@ class Mem(object):
 
   def Push(self, argv):
     self.var_stack.append({})
-    self.argv_stack.append(argv)
+    self.argv_stack.append(_ArgFrame(argv))
 
   def Pop(self):
     self.var_stack.pop()
@@ -147,19 +173,34 @@ class Mem(object):
   # Argv
   #
 
-  def GetArgv0(self):
-    """For $0."""
-    return self.argv0
+  def Shift(self, n):
+    frame = self.argv_stack[-1]
+    num_args = len(frame.argv)
+
+    if (frame.num_shifted + n) <= num_args:
+      frame.num_shifted += n
+      return 0  # success
+    else:
+      return 1  # silent error
+
+  def GetArgNum(self, arg_num):
+    if arg_num == 0:
+      return runtime.Str(self.argv0)
+
+    return self.argv_stack[-1].GetArgNum(arg_num)
 
   def GetArgv(self):
     """For $* and $@."""
-    return self.argv_stack[-1]  # top of stack
+    return self.argv_stack[-1].GetArgv()
+
+  def GetNumArgs(self):
+    """For $* and $@."""
+    return self.argv_stack[-1].GetNumArgs()
 
   def SetArgv(self, argv):
     """For set -- 1 2 3."""
-    #print('ARGV', argv)
     # from set -- 1 2 3
-    self.argv_stack[-1] = argv
+    self.argv_stack[-1].SetArgv(argv)
 
   #
   # Helper functions
@@ -489,6 +530,8 @@ class Executor(object):
         self.exec_opts.nounset = True
       elif name == 'pipefail':
         self.exec_opts.pipefail = True
+      elif name == 'xtrace':
+        self.exec_opts.xtrace = True
       else:
         raise NotImplementedError(name)
     return 0
@@ -499,8 +542,26 @@ class Executor(object):
     raise NotImplementedError
 
   def _Shift(self, argv):
-    # Mutates self.mem
-    raise NotImplementedError
+    try:
+      n = int(argv[1])
+    except IndexError:
+      n = 1
+    except ValueError as e:
+      print("Invalid shift argument %r" % argv[1], file=sys.stderr)
+      return 1  # runtime error
+
+    return self.mem.Shift(n)
+
+  def _Exit(self, argv):
+    try:
+      code = int(argv[1])
+    except IndexError:
+      code = 0
+    except ValueError as e:
+      print("Invalid argument %r" % argv[1], file=sys.stderr)
+      code = 1  # Runtime Error
+    # TODO: Should this be turned into our own SystemExit exception?
+    sys.exit(code)
 
   def _Trap(self, argv):
     # TODO: register trap
@@ -621,6 +682,9 @@ class Executor(object):
     elif builtin_id == EBuiltin.ECHO:
       status = self._Echo(argv)
 
+    elif builtin_id == EBuiltin.SHIFT:
+      status = self._Shift(argv)
+
     elif builtin_id == EBuiltin.CD:
       status = self._Cd(argv)
 
@@ -631,15 +695,7 @@ class Executor(object):
       status = self.dir_stack.Popd(argv)
 
     elif builtin_id == EBuiltin.EXIT:
-      try:
-        code = int(argv[1])
-      except IndexError:
-        code = 0
-      except ValueError as e:
-        print("Invalid argument %r" % argv[1], file=sys.stderr)
-        code = 1  # Runtime Error
-      # TODO: Should this be turned into our own SystemExit exception?
-      sys.exit(code)
+      status = self._Exit(argv)
 
     elif builtin_id == EBuiltin.EXPORT:
       status = self._Export(argv)
@@ -1009,9 +1065,15 @@ class Executor(object):
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
+      self.fd_state.PushFrame()
+      for r in redirects:
+        r.ApplyInParent(self.fd_state)
+
       status = 0  # for empty list
       for child in node.children:
         status = self._Execute(child)  # last status wins
+
+      self.fd_state.PopAndRestore()
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
