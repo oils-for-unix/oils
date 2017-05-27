@@ -39,12 +39,16 @@ all() {
   #echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {osh,core,native}/*_test.py | sort --numeric
+  wc -l {osh,core,native,tools}/*_test.py | sort --numeric
+  echo
+
+  echo 'TOOLS'
+  ls tools/*.py | grep -E -v '__init__.py$|_test.py$' | xargs wc -l | sort --numeric
   echo
 
   echo 'OIL'
-  { ls {osh,core}/*.py; echo native/*.c; echo bin/*.py; } |
-    grep -E -v '_gen.py$|_test.py$|test_lib.py|fake_libc.py' |
+  { ls {bin,osh,core}/*.py; ls native/*.c; } |
+    grep -E -v '_gen.py$|__init__.py$|_test.py$|test_lib.py' |
     xargs wc -l | sort --numeric
   echo
 
