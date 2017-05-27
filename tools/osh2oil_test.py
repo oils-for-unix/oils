@@ -1,15 +1,15 @@
 #!/usr/bin/python
 """
-fix_test.py: Tests for fix.py
+osh2oil_test.py: Tests for osh2oil.py
 """
 
 import unittest
 
 from core import word
-from osh import fix  # module under test
-WordStyle = fix.WordStyle
+from tools import osh2oil  # module under test
+WordStyle = osh2oil.WordStyle
 
-from word_parse_test import _assertReadWord
+from osh.word_parse_test import _assertReadWord
 
 
 def assertStyle(test, expected_style, word_str):
@@ -19,7 +19,7 @@ def assertStyle(test, expected_style, word_str):
   if new_word is not None:
     w = new_word
 
-  actual = fix._GetRhsStyle(w)
+  actual = osh2oil._GetRhsStyle(w)
   test.assertEqual(expected_style, actual)
 
 

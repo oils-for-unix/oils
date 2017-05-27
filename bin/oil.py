@@ -50,18 +50,13 @@ from asdl import encode
 
 from osh import word_parse  # for tracing
 from osh import cmd_parse  # for tracing
-from core import lexer  # for tracing
 
 from osh import ast_ as ast
 from osh import parse_lib
-from osh import fix
 
 from core import builtin
-if HAVE_READLINE:
-  from core import completion
-else:
-  completion = None
 from core import cmd_exec
+from core import lexer  # for tracing
 from core.alloc import Pool
 from core import reader
 from core.id_kind import Id
@@ -69,6 +64,13 @@ from core import word
 from core import word_eval
 from core import ui
 from core import util
+
+if HAVE_READLINE:
+  from core import completion
+else:
+  completion = None
+
+from tools import osh2oil
 
 log = util.log
 
@@ -360,7 +362,7 @@ def OshMain(argv):
       status = 0
 
   if opts.fix:
-    fix.PrintAsOil(arena, node, opts.debug_spans)
+    osh2oil.PrintAsOil(arena, node, opts.debug_spans)
   return status
 
 
