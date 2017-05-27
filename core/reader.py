@@ -32,11 +32,6 @@ class _Reader(object):
 
 _PS2 = '> '
 
-if util.PY2:
-  _PROMPT_FUNC = raw_input
-else:
-  _PROMPT_FUNC = input
-
 
 class InteractiveLineReader(_Reader):
   def __init__(self, ps1, arena=None):
@@ -46,7 +41,7 @@ class InteractiveLineReader(_Reader):
 
   def _GetLine(self):
     try:
-      ret = _PROMPT_FUNC(self.prompt_str) + '\n'
+      ret = raw_input(self.prompt_str) + '\n'
     except EOFError:
       ret = None
     self.prompt_str = _PS2

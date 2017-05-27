@@ -34,14 +34,7 @@ if not os.getenv('_OVM_DEPS'):
   import types
 
 
-PY2 = sys.version[0] == '2'
-
-
-# so we can do f.write('') in either case (not b'' or u'')
-if PY2:
-  Buffer = io.BytesIO
-else:
-  Buffer = io.StringIO
+Buffer = io.BytesIO
 
 
 def log(msg, *args):
