@@ -12,16 +12,16 @@ cmd_parse.py - Parse high level shell commands.
 
 import sys
 
-from core import base
 from core import braces
 from core import word
 from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
-from core.util import log
+from core import util
 
 from osh import ast_ as ast
 from osh.lex import LexMode, VAR_NAME_RE
 from osh.bool_parse import BoolParser
 
+log = util.log
 command_e = ast.command_e
 
 
@@ -129,7 +129,7 @@ class CommandParser(object):
     self.AddErrorContext(msg, w, word=w)
 
   def AddErrorContext(self, msg, *args, **kwargs):
-    err = base.ParseError(msg, *args, **kwargs)
+    err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
   def GetCompletionState(self):

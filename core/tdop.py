@@ -3,9 +3,9 @@
 tdop.py - Library for expression parsing.
 """
 
-from core import base
 from core.id_kind import Id, IdName
 from core import word
+from core import util
 
 from osh import ast_ as ast
 from osh.lex import LexMode
@@ -228,7 +228,7 @@ class TdopParser(object):
     self.error_stack = []
 
   def AddErrorContext(self, msg, *args, **kwargs):
-    err = base.ParseError(msg, *args, **kwargs)
+    err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
   def Error(self):
@@ -304,7 +304,7 @@ class TdopParser(object):
       node = self.ParseUntil(0)
     except TdopParseError as e:
       # TODO: attribute to token or word
-      err = base.ParseError(str(e))
+      err = util.ParseError(str(e))
       self.error_stack.append(err)
       return None
     return node

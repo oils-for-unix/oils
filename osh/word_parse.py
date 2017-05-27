@@ -9,12 +9,12 @@
 word_parse.py - Parse the shell word language.
 """
 
-from core import base
 
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core import braces
 from core import word
 from core import tdop
+from core import util
 
 from osh import arith_parse
 from osh.lex import LexMode
@@ -112,7 +112,7 @@ class WordParser(object):
 
   # TODO: Factor this into ErrorState class.  Each parser owns one.
   def AddErrorContext(self, msg, *args, **kwargs):
-    err = base.ParseError(msg, *args, **kwargs)
+    err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
   def Error(self):

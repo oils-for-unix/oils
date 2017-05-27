@@ -56,9 +56,9 @@ import sys
 
 from osh import ast_ as ast
 
-from core import base
 from core import word
 from core.id_kind import Id, Kind, LookupKind, IdName
+from core import util
 
 from osh.lex import LexMode
 
@@ -87,7 +87,7 @@ class BoolParser(object):
     return self.error_stack
 
   def AddErrorContext(self, msg, *args, **kwargs):
-    err = base.ParseError(msg, *args, **kwargs)
+    err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
   def _NextOne(self, lex_mode=LexMode.DBRACKET):
