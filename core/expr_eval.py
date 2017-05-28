@@ -29,8 +29,78 @@ part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 
 
-class ExprEvalError(RuntimeError):
-  pass
+def _StringToInteger(s):
+  """Use bash-like rules to coerce a string to an integer.
+
+  Supports hex, octal, etc.
+  """
+  if s.startswith('0x'):
+    try:
+      integer = int(s, 16)
+    except ValueError:
+      # TODO: Show line number
+      e_die('Invalid hex constant %r', s)
+    return integer
+
+  if s.startswith('0'):
+    try:
+      integer = int(s, 8)
+    except ValueError:
+      e_die('Invalid octal constant %r', s)  # TODO: Show line number
+    return integer
+
+  if '#' in s:
+    b, digits = s.split('#', 1)
+    try:
+      base = int(b)
+    except ValueError:
+      e_die('Invalid base for numeric constant %r',  b)
+
+    integer = 0
+    n = 1
+    for char in digits:
+      if 'a' <= char and char <= 'z':
+        digit = ord(char) - ord('a') + 10
+      elif 'A' <= char and char <= 'Z':
+        digit = ord(char) - ord('A') + 36
+      elif char == '@':  # horrible syntax
+        digit = 62
+      elif char == '_':
+        digit = 63
+      elif char.isdigit():
+        digit = int(char)
+      else:
+        e_die('Invalid digits for numeric constant %r', digits)
+
+      integer += digit * n
+      n *= base
+    return integer
+
+  # Plain integer
+  try:
+    integer = int(s)
+  except ValueError:
+    e_die("Invalid integer constant %r", s)
+  return integer
+
+
+def _ValToInteger(val):
+  """Evaluate with the rules of arithmetic expressions.
+
+  Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
+
+  0xAB -- hex constant
+  010 -- octable constant
+  64#z -- arbitary base constant
+  bare word: variable
+  quoted word: string
+  """
+  assert isinstance(val, runtime.value), val
+  if val.tag != value_e.Str:
+    # TODO: Error message: expected string but got integer/array
+    e_die('Expected string but got %r', val)
+  return _StringToInteger(val.s)
+
 
 # In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
 # BoolEvalResult, CmdExecResult?  Word is handled differntly because it's a
@@ -45,105 +115,13 @@ class ExprEvaluator:
   def __init__(self, mem, word_ev):
     self.mem = mem
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
-    self.result = 0
-    self.error_stack = []
 
-  def _AddErrorContext(self, msg, *args):
-    if msg:
-      msg = msg % args
-    self.error_stack.append(msg)
-
-  def Error(self):
-    return self.error_stack
-
-  def Result(self):
-    return self.result
-
+  # TODO: Remove this
   def Eval(self, node):
-    try:
-      result = self._Eval(node)
-    except ExprEvalError as e:
-      self._AddErrorContext(str(e))
-      ok = False
-    else:
-      self.result = result
-      ok = True
-    return ok
+    return self._Eval(node)
 
 
 class ArithEvaluator(ExprEvaluator):
-
-  def _ValToInteger(self, val):
-    """Evaluate with the rules of arithmetic expressions.
-
-    Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
-
-    0xAB -- hex constant
-    010 -- octable constant
-    64#z -- arbitary base constant
-    bare word: variable
-    quoted word: string
-    """
-    assert isinstance(val, runtime.value), val
-    if val.tag != value_e.Str:
-      # TODO: Error message: expected string but got integer/array
-      return False, 0
-    s = val.s
-
-    if s.startswith('0x'):
-      try:
-        integer = int(s, 16)
-      except ValueError:
-        # TODO: Show line number
-        self._AddErrorContext('Invalid hex constant %r' % s)
-        return False, 0
-      return True, integer
-
-    if s.startswith('0'):
-      try:
-        integer = int(s, 8)
-      except ValueError:
-        # TODO: Show line number
-        self._AddErrorContext('Invalid octal constant %r' % s)
-        return False, 0
-      return True, integer
-
-    if '#' in s:
-      b, digits = s.split('#', 1)
-      try:
-        base = int(b)
-      except ValueError:
-        self._AddErrorContext('Invalid base for numeric constant %r' % b)
-        return False, 0
-
-      integer = 0
-      n = 1
-      for char in digits:
-        if 'a' <= char and char <= 'z':
-          digit = ord(char) - ord('a') + 10
-        elif 'A' <= char and char <= 'Z':
-          digit = ord(char) - ord('A') + 36
-        elif char == '@':  # horrible syntax
-          digit = 62
-        elif char == '_':
-          digit = 63
-        elif char.isdigit():
-          digit = int(char)
-        else:
-          self._AddErrorContext('Invalid digits for numeric constant %r' % digits)
-          return False, 0
-
-        integer += digit * n
-        n *= base
-      return True, integer
-
-    # Plain integer
-    try:
-      integer = int(s)
-    except ValueError:
-      self._AddErrorContext("Invalid integer constant %r" % s)
-      return False, 0
-    return True, integer
 
   def _Eval(self, node):
     """
@@ -168,22 +146,11 @@ class ArithEvaluator(ExprEvaluator):
       if val.tag == value_e.Undef:
         return 0
 
-      ok, i = self._ValToInteger(val)
-      if ok:
-        return i
-      else:
-        raise ExprEvalError()
+      return _ValToInteger(val)
 
     elif node.tag == arith_expr_e.ArithWord:  # constant string
-      ok, val = self.word_ev.EvalWordToString(node.w)
-      if not ok:
-        raise ExprEvalError(self.word_ev.Error())
-
-      ok, i = self._ValToInteger(val)
-      if ok:
-        return i
-      else:
-        raise ExprEvalError()
+      val = self.word_ev.EvalWordToString(node.w)
+      return _ValToInteger(val)
 
     #elif node.id == Id.Node_UnaryExpr:
     elif node.tag == arith_expr_e.ArithUnary:
@@ -254,10 +221,7 @@ class BoolEvaluator(ExprEvaluator):
     Args:
       node: Id.Word_Compound
     """
-    ok, val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch)
-    if not ok:
-      raise ExprEvalError(self.word_ev.Error())
-
+    val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch)
     return val.s
 
   def _Eval(self, node):
@@ -332,16 +296,8 @@ class BoolEvaluator(ExprEvaluator):
           return True  # TODO: test newer than (mtime)
 
       if arg_type == OperandType.Int:
-        try:
-          i1 = int(s1)
-          i2 = int(s2)
-        except ValueError as e:
-          # NOTE: Bash turns these into zero, but we won't by default.  Could
-          # provide a compat option.
-          # Also I think this should turn into exit code 3:
-          # - 0 true / 1 false / 3 runtime error
-          # - 2 is for PARSE error.
-          raise ExprEvalError("Invalid integer: %s" % e)
+        i1 = _StringToInteger(s1)
+        i2 = _StringToInteger(s2)
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2

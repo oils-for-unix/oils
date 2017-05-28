@@ -69,12 +69,20 @@ divzero() {
   echo 'SHOULD NOT GET HERE'
 }
 
+# Only dash flags this as an error.
+string_to_int_arith() {
+  local x='ZZZ'
+  echo $(( x + 1 ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
 #
 # BOOLEAN ERRORS
 #
 
 # Only osh cares about this.
-string_to_int() {
+string_to_int_bool() {
   [[ a -eq 0 ]]
 
   echo 'SHOULD NOT GET HERE'
@@ -101,7 +109,7 @@ all() {
 
   for t in \
     no_such_command errexit pipefail nonexistent nounset \
-    divzero string_to_int; do
+    divzero string_to_int_arith string_to_int_bool; do
 
     _run_test $t
   done

@@ -249,13 +249,6 @@ def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
   return args
 
 
-class _EvalError(Exception):
-
-  def __init__(self, msg, token=None):
-    self.msg = msg
-    self.token = token
-
-
 # Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
 
 Effect = util.Enum('Effect', 'SpliceParts Error SpliceAndAssign NoOp'.split())
@@ -453,11 +446,7 @@ class _WordPartEvaluator:
 
     if op_kind == Kind.VOp1:
       #log('%s', op)
-      ok, arg_val = self.word_ev.EvalWordToString(op.arg_word, do_fnmatch=True)
-      if not ok:
-        raise AssertionError(op.arg_word)
-      #log('%s', arg_val)
-
+      arg_val = self.word_ev.EvalWordToString(op.arg_word, do_fnmatch=True)
       assert arg_val.tag == value_e.Str
 
       looks_like_glob = False
@@ -689,12 +678,7 @@ class _WordPartEvaluator:
         anode = part.bracket_op.expr
         # TODO: This should propagate errors
         arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
-        ok = arith_ev.Eval(anode)
-        if not ok:
-          self._AddErrorContext(
-              'Error evaluating arith sub in index expression')
-          raise _EvalError()
-        index = arith_ev.Result()
+        index = arith_ev.Eval(anode)
 
         if val.tag == value_e.Undef:
           pass  # it will be checked later
@@ -764,9 +748,6 @@ class _WordPartEvaluator:
       A LIST of part_value, rather than just a single part_value, because of
       the quirk where ${a:-'x'y} is a single WordPart, but yields two
       part_values.
-
-    Raises:
-      _EvalError
     """
     if part.tag == word_part_e.ArrayLiteralPart:
       raise AssertionError(
@@ -827,12 +808,8 @@ class _WordPartEvaluator:
 
     elif part.tag == word_part_e.ArithSubPart:
       arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
-      if arith_ev.Eval(part.anode):
-        num = arith_ev.Result()
-        return [runtime.StringPartValue(str(num), True, True)]
-      else:
-        self.error_stack.extend(arith_ev.Error())
-        raise _EvalError()
+      num = arith_ev.Eval(part.anode)
+      return [runtime.StringPartValue(str(num), True, True)]
 
     else:
       raise AssertionError(part.tag)
@@ -905,7 +882,7 @@ class _WordEvaluator:
         else:
           strs.append(part_val.s)
 
-    return True, runtime.Str(''.join(strs))
+    return runtime.Str(''.join(strs))
 
   def EvalWordToAny(self, word, glob_escape=False):
     """
@@ -919,56 +896,53 @@ class _WordEvaluator:
       But you don't need to distinguish it later.
       You could also have EvalWord and EvalGlobWord methods or EvalPatternWord
     """
-    try:
-      # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
-      # don't look like assignments.
-      if (len(word.parts) == 1 and
-          word.parts[0].tag == word_part_e.ArrayLiteralPart):
-        array_words = word.parts[0].words
-        words = braces.BraceExpandWords(array_words)
-        strs = self._EvalWordSequence(words)
-        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-        return True, runtime.StrArray(strs)
+    # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
+    # don't look like assignments.
+    if (len(word.parts) == 1 and
+        word.parts[0].tag == word_part_e.ArrayLiteralPart):
+      array_words = word.parts[0].words
+      words = braces.BraceExpandWords(array_words)
+      strs = self._EvalWordSequence(words)
+      #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+      return runtime.StrArray(strs)
 
-      part_vals = self._EvalParts(word)
-      #log('part_vals %s', part_vals)
+    part_vals = self._EvalParts(word)
+    #log('part_vals %s', part_vals)
 
-      # Instead of splitting, do a trivial transformation to frag array.
-      # Example:
-      # foo="-$@-${a[@]}-" requires fragment, reframe, and simple join
-      frag_arrays = []
-      for p in part_vals:
-        if p.tag == part_value_e.StringPartValue:
-          frag_arrays.append([runtime.fragment(p.s, False, False)])
-        elif p.tag == part_value_e.ArrayPartValue:
-          frag_arrays.append(
-              [runtime.fragment(s, False, False) for s in p.strs])
-        else:
-          raise AssertionError
-
-      frag_arrays = _Reframe(frag_arrays)
-      #log('frag_arrays %s', frag_arrays)
-
-      # Simple join
-      args = []
-      for frag_array in frag_arrays:
-        args.append(''.join(frag.s for frag in frag_array))
-
-      # Example:
-      # a=(1 2)
-      # b=$a  # one word
-      # c="${a[@]}"  # two words
-      if len(args) == 1:
-        val = runtime.Str(args[0])
+    # Instead of splitting, do a trivial transformation to frag array.
+    # Example:
+    # foo="-$@-${a[@]}-" requires fragment, reframe, and simple join
+    frag_arrays = []
+    for p in part_vals:
+      if p.tag == part_value_e.StringPartValue:
+        frag_arrays.append([runtime.fragment(p.s, False, False)])
+      elif p.tag == part_value_e.ArrayPartValue:
+        frag_arrays.append(
+            [runtime.fragment(s, False, False) for s in p.strs])
       else:
-        # NOTE: For bash compatibility, could have an option to join them here.
-        # foo="-$@-${a[@]}-"  -- join with IFS again, like "$*" ?
-        # Or maybe do that in cmd_exec in assignment.
-        val = runtime.StrArray(args)
+        raise AssertionError
 
-      return True, val
-    except _EvalError:
-      return False, None
+    frag_arrays = _Reframe(frag_arrays)
+    #log('frag_arrays %s', frag_arrays)
+
+    # Simple join
+    args = []
+    for frag_array in frag_arrays:
+      args.append(''.join(frag.s for frag in frag_array))
+
+    # Example:
+    # a=(1 2)
+    # b=$a  # one word
+    # c="${a[@]}"  # two words
+    if len(args) == 1:
+      val = runtime.Str(args[0])
+    else:
+      # NOTE: For bash compatibility, could have an option to join them here.
+      # foo="-$@-${a[@]}-"  -- join with IFS again, like "$*" ?
+      # Or maybe do that in cmd_exec in assignment.
+      val = runtime.StrArray(args)
+
+    return val
 
   def _EvalWordAndReframe(self, word):
     """Helper for _EvalWordSequence.
@@ -1046,10 +1020,8 @@ class _WordEvaluator:
     """
     Used in: SimpleCommand, ForEach.
     """
-    try:
-      return self._EvalWordSequence(words)
-    except _EvalError:  # TODO: propagate error info up
-      return None
+    # TODO: Remove this stub
+    return self._EvalWordSequence(words)
 
 
 class _NormalPartEvaluator(_WordPartEvaluator):

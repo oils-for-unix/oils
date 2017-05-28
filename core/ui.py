@@ -100,7 +100,7 @@ def PrettyPrintError(parse_error, arena, f):
       span_id = -1
 
     if span_id == -1:
-      line = '<token had no position info>'
+      line = '<no position info for token>'
       path = '<unknown>'
       line_num = -1
       col = -1
@@ -115,9 +115,7 @@ def PrettyPrintError(parse_error, arena, f):
 
     print('Line %d of %r' % (line_num+1, path), file=f)
     print('  ' + line.rstrip(), file=f)
-    if col == -1:
-      print('NO COL', file=f)
-    else:
+    if col != -1:
       f.write('  ')
       # preserve tabs
       for c in line[:col]:

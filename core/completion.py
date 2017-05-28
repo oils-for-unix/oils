@@ -457,8 +457,9 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
 
       argv = []
       for w in node.words:
-        ok, val = ev.EvalWordToAny(w)
-        if not ok:
+        try:
+          val = ev.EvalWordToAny(w)
+        except util.FatalRuntimeError:
           # Why would it fail?
           continue
         if val.tag == value_e.Str:

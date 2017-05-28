@@ -793,9 +793,6 @@ class Executor(object):
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
-      if argv is None:
-        err = self.ev.Error()
-        e_die("Error evaluating words: %s", err)
       more_env = self.mem.GetExported()
       self._EvalEnv(node.more_env, more_env)
       thunk = self._GetThunkForSimpleCommand(argv, more_env)
@@ -840,9 +837,7 @@ class Executor(object):
       redir_type = REDIR_TYPE[n.op_id]
       if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
-        ok, val = self.ev.EvalWordToString(n.arg_word)
-        if not ok:
-          return False
+        val = self.ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:
           self._AddErrorContext("filename to redirect to should be a string")
           return False
@@ -854,9 +849,7 @@ class Executor(object):
         redirects.append(process.FilenameRedirect(n.op_id, n.fd, filename))
 
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
-        ok, val = self.ev.EvalWordToString(n.arg_word)
-        if not ok:
-          return False
+        val = self.ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:
           self._AddErrorContext(
               "descriptor to redirect to should be an integer, not list")
@@ -874,9 +867,7 @@ class Executor(object):
         redirects.append(process.DescriptorRedirect(n.op_id, n.fd, target_fd))
 
       elif redir_type == RedirType.Str:
-        ok, val = self.ev.EvalWordToString(n.arg_word)
-        if not ok:
-          return False
+        val = self.ev.EvalWordToString(n.arg_word)
         assert val.tag == value_e.Str, \
             "descriptor to redirect to should be an integer, not list"
 
@@ -901,9 +892,7 @@ class Executor(object):
       rhs = env_pair.val
 
       # Could pass extra bindings like out_env here?  But PushTemp should work?
-      ok, val = self.ev.EvalWordToString(rhs)
-      if not ok:
-        raise AssertionError
+      val = self.ev.EvalWordToString(rhs)
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
@@ -1027,7 +1016,7 @@ class Executor(object):
       for pair in node.pairs:
         if pair.rhs:
           # RHS can be a string or array.
-          _, val = self.ev.EvalWordToAny(pair.rhs)
+          val = self.ev.EvalWordToAny(pair.rhs)
           assert isinstance(val, runtime.value), val
         else:
           # 'local x' is equivalent to local x=""
