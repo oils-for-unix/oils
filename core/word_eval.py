@@ -21,6 +21,7 @@ value_e = runtime.value_e
 bracket_op_e = ast.bracket_op_e
 word_part_e = ast.word_part_e
 log = util.log
+e_die = util.e_die
 
 
 def _ValueToPartValue(val, quoted):
@@ -601,23 +602,20 @@ class _WordPartEvaluator:
 
     if val.tag == value_e.Undef:
       if self.exec_opts.nounset:
-        # stack will unwind
-        token = None
-        # TODO: Print the name.  Need to have the ast for varsub.  BracedVarSub
-        # should have a token?
-        #tb = self.mem.GetTraceback(token)
-        #self._AddErrorContext('Undefined variable')
-        log('UNDEFINED (todo: show error)')
-        raise _EvalError('Undefined variable', token=token)
+        if token is None:
+          e_die('Undefined variable')
+        else:
+          name = token.val[1:] if token.val.startswith('$') else token.val
+          e_die('Undefined variable %r', name, token=token)
       else:
         return runtime.Str('')
     else:
       return val
 
-  def _EmptyStrArrayOrError(self):
+  def _EmptyStrArrayOrError(self, token):
+    assert token is not None
     if self.exec_opts.nounset:
-      self._AddErrorContext('Undefined array')
-      raise _EvalError()
+      e_die('Undefined array %r', token.val, token=token)
     else:
       return runtime.StrArray([])
 
@@ -668,7 +666,7 @@ class _WordPartEvaluator:
           if not quoted:
             decay_array = True  # ${a[@]} decays but "${a[@]}" doesn't
           if val.tag == value_e.Undef:
-            val = self._EmptyStrArrayOrError()
+            val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
             raise RuntimeError("Can't index string with @")
           elif val.tag == value_e.StrArray:
@@ -677,7 +675,7 @@ class _WordPartEvaluator:
         elif op_id == Id.Arith_Star:
           decay_array = True  # both ${a[*]} and "${a[*]}" decay
           if val.tag == value_e.Undef:
-            val = self._EmptyStrArrayOrError()
+            val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
             raise RuntimeError("Can't index string with *")
           elif val.tag == value_e.StrArray:
@@ -701,9 +699,9 @@ class _WordPartEvaluator:
         if val.tag == value_e.Undef:
           pass  # it will be checked later
         elif val.tag == value_e.Str:
-          # TODO: Implement this as an extension, requires unicode like
-          # slicing.
-          raise RuntimeError("Can't index string with integer")
+          # TODO: Implement this as an extension. Requires unicode support.
+          # Bash treats it as an array.
+          e_die("Can't index string %r with integer", part.token.val)
         elif val.tag == value_e.StrArray:
           try:
             s = val.strs[index]
@@ -1068,6 +1066,10 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     stdout = []
     p.CaptureOutput(stdout)
     status = p.Run()
+
+    # TODO: Add context
+    if self.ex.exec_opts.errexit and status != 0:
+      e_die('Command sub exited with status %d (%r)', status, node.__class__.__name__)
 
     # Runtime errors:
     # what if the command sub was "echo foo > $@".  That is invalid.  Then

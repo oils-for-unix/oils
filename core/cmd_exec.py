@@ -66,6 +66,7 @@ import time
 from core import braces
 from core import expr_eval
 from core import word_eval
+from core import ui
 from core import util
 
 from core.builtin import EBuiltin
@@ -81,6 +82,7 @@ command_e = ast.command_e
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 log = util.log
+e_die = util.e_die
 
 
 class ExecOpts(object):
@@ -388,11 +390,6 @@ class DirStack:
     return 0
 
 
-class _FatalError(RuntimeError):
-  """Internal exception for fatal errors."""
-  pass
-
-
 class _ControlFlow(RuntimeError):
   """Internal execption for control flow.
 
@@ -428,7 +425,7 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, builtins, funcs, completion, comp_lookup, exec_opts,
-               make_parser):
+               make_parser, arena):
     """
     Args:
       mem: Mem instance for storing variables
@@ -437,6 +434,7 @@ class Executor(object):
       completion: completion module, if available
       comp_lookup: completion pattern/action
       make_parser: Callback for creating a new command parser (eval and source)
+      arena: for printing error locations
     """
     self.mem = mem
     self.builtins = builtins
@@ -448,6 +446,7 @@ class Executor(object):
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
     self.make_parser = make_parser
+    self.arena = arena
 
     self.ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
 
@@ -617,6 +616,7 @@ class Executor(object):
     return self._EvalHelper(code_str)
 
   def _Source(self, argv):
+    # TODO: Use LineReader
     with open(argv[1]) as f:
       code_str = f.read()
     return self._EvalHelper(code_str)
@@ -643,8 +643,9 @@ class Executor(object):
         dest_dir = old.s
         print(dest_dir)  # Shells print the directory
       elif old.tag == value_e.StrArray:
-        # Prevent the user from setting to array?
-        raise AssertionError
+        # TODO: Prevent the user from setting OLDPWD to array (or maybe they
+        # can't even set it at all.)
+        raise AssertionError('Invalid OLDPWD')
 
     # Save OLDPWD.
     self.mem.SetGlobalString('OLDPWD', os.getcwd())
@@ -747,7 +748,7 @@ class Executor(object):
         status = e.ReturnValue()
       else:
         # break/continue used in the wrong place
-        raise AssertionError('Invalid control flow')
+        e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
     self.mem.Pop()
     return status
 
@@ -794,19 +795,19 @@ class Executor(object):
       argv = self.ev.EvalWordSequence(words)
       if argv is None:
         err = self.ev.Error()
-        raise AssertionError("Error evaluating words: %s" % err)
+        e_die("Error evaluating words: %s", err)
       more_env = self.mem.GetExported()
       self._EvalEnv(node.more_env, more_env)
       thunk = self._GetThunkForSimpleCommand(argv, more_env)
 
     elif node.tag == command_e.ControlFlow:
-      # TODO: Raise _FatalError
       # Pipeline or subshells with control flow are invalid, e.g.:
       # - break | less
       # - continue | less
       # - ( return )
       # NOTE: This could be done at parse time too.
-      raise AssertionError('Invalid control flow %s' % node)
+      e_die('Invalid control flow %r in pipeline or subshell', node.token.val,
+            token=node.token)
 
     else:
       thunk = process.SubProgramThunk(self, node)
@@ -882,7 +883,7 @@ class Executor(object):
         redirects.append(process.HereDocRedirect(n.op_id, n.fd, val.s))
 
       else:
-        raise AssertionError
+        raise AssertionError('Unknown redirect type')
     return redirects
 
   def _EvalEnv(self, node_env, out_env):
@@ -959,9 +960,6 @@ class Executor(object):
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
 
-      if argv is None:
-        self.error_stack.extend(self.ev.Error())
-        raise _FatalError()
       more_env = self.mem.GetExported()
       self._EvalEnv(node.more_env, more_env)
       thunk = self._GetThunkForSimpleCommand(argv, more_env)
@@ -1011,7 +1009,7 @@ class Executor(object):
       if ok:
         status = 0 if bool_ev.Result() else 1
       else:
-        raise AssertionError('Error evaluating boolean: %s' % bool_ev.Error())
+        e_die('Error evaluating boolean: %s' % bool_ev.Error())
 
     elif node.tag == command_e.DParen:
       arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev)
@@ -1022,19 +1020,15 @@ class Executor(object):
         # shell land
         status = 0 if i != 0 else 1
       else:
-        raise AssertionError('Error evaluating (( )): %s' % arith_ev.Error())
+        e_die('Error evaluating (( )): %s' % arith_ev.Error())
 
     elif node.tag == command_e.Assignment:
       pairs = []
       for pair in node.pairs:
         if pair.rhs:
           # RHS can be a string or array.
-          ok, val = self.ev.EvalWordToAny(pair.rhs)
+          _, val = self.ev.EvalWordToAny(pair.rhs)
           assert isinstance(val, runtime.value), val
-          #log('RHS %s -> %s', pair.rhs, val)
-          if not ok:
-            self.error_stack.extend(self.ev.Error())
-            raise _FatalError()
         else:
           # 'local x' is equivalent to local x=""
           val = runtime.Str('')
@@ -1051,10 +1045,7 @@ class Executor(object):
 
     elif node.tag == command_e.ControlFlow:
       if node.arg_word:  # Evaluate the argument
-        ok, val = self.ev.EvalWordToString(node.arg_word)
-        if not ok:
-          self.error_stack.extend(self.ev.Error())
-          raise _FatalError()
+        _, val = self.ev.EvalWordToString(node.arg_word)
         assert val.tag == value_e.Str
         arg = int(val.s)  # They all take integers
       else:
@@ -1212,16 +1203,12 @@ class Executor(object):
     else:
       raise AssertionError(node.tag)
 
-    if self.exec_opts.errexit:
-      if status != 0:
-        # TODO: token should be set to what?  Is it node.begin_word and
-        # node.end_word?
-        token = None
-        tb = self.mem.GetTraceback(token)
-        self._SetException(tb,
-            "Command %s exited with code %d" % ('TODO', status))
-        # TODO: raise _ControlFlow?  Except?
-        # Dummy?
+    if self.exec_opts.errexit and status != 0:
+      if node.tag == command_e.SimpleCommand:
+        # TODO: Add context
+        e_die('%r command exited with status %d (%s)', argv[0], status, node.words[0])
+      else:
+        e_die('%r command exited with status %d', node.__class__.__name__, status)
 
     # TODO: Is this the right place to put it?  Does it need a stack for
     # function calls?
@@ -1234,12 +1221,13 @@ class Executor(object):
     try:
       status = self._Execute(node)
     except _ControlFlow as e:
-      # TODO: Make this error message better.
-      print('Break/continue/return bubbled up to top level', file=sys.stderr)
+      # TODO: pretty print error with e.token
+      log('osh failed: Unexpected %r at top level' % e.token.val)
       status = 1
-    except _FatalError:
-      # TODO: Nicer runtime error message.
-      print(self.error_stack, file=sys.stderr)
+    except util.FatalRuntimeError as e:
+      # TODO:
+      ui.PrettyPrintError(e, self.arena, sys.stderr)
+      print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
       status = 1
 
     # TODO: Hook this up

@@ -14,10 +14,13 @@ import os
 import libc  # for fnmatch
 
 from core.id_kind import BOOL_OPS, OperandType, Id, IdName
-from core.util import log
+from core import util
 from core import runtime
 
 from osh import ast_ as ast
+
+log = util.log
+e_die = util.e_die
 
 arith_expr_e = ast.arith_expr_e
 bool_expr_e = ast.bool_expr_e  # used for dispatch
@@ -222,7 +225,12 @@ class ArithEvaluator(ExprEvaluator):
       if atype == Id.Arith_Star:
         return lhs * rhs
       if atype == Id.Arith_Slash:
-        return lhs / rhs
+        try:
+          return lhs / rhs
+        except ZeroDivisionError:
+          # TODO: Instead of op_id, I should have the token
+          e_die('Divide by zero', word=node.right)
+
       if atype == Id.Arith_Percent:
         return lhs % rhs
 
@@ -230,7 +238,7 @@ class ArithEvaluator(ExprEvaluator):
         return lhs ** rhs
 
     else:
-      raise AssertionError("Invalid node %r" % node.id)
+      raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
 
     raise AssertionError("Shouldn't get here")
 

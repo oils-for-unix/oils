@@ -42,10 +42,10 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
     if not expect_success:
       test.fail('Expected %r to fail ' % code_str)
   else:
-    # TODO: Could copy PrintError from pysh.py
+    # TODO: Could copy PrettyPrintError from pysh.py
     err = c_parser.Error()
     print(err)
-    ui.PrintError(err, arena, sys.stdout)
+    ui.PrintErrorStack(err, arena, sys.stdout)
     if expect_success:
       test.fail('%r failed' % code_str)
   return node
@@ -61,7 +61,7 @@ def _assertParseCommandListError(test, code_str):
     return
   err = c_parser.Error()
   #print(err)
-  ui.PrintError(err, arena, sys.stdout)
+  ui.PrintErrorStack(err, arena, sys.stdout)
 
 
 #

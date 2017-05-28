@@ -241,7 +241,7 @@ def OshMain(argv):
   # metaprogramming.
   ex = cmd_exec.Executor(
       mem, builtins, funcs, completion, comp_lookup, exec_opts,
-      parse_lib.MakeParserForExecutor)
+      parse_lib.MakeParserForExecutor, arena)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
@@ -259,7 +259,7 @@ def OshMain(argv):
       # TODO: Error should return a token, and then the token should have a
       # arena index, and then look that up in the arena.
       err = rc_c_parser.Error()
-      ui.PrintError(err, arena, sys.stderr)
+      ui.PrintErrorStack(err, arena, sys.stderr)
       return 2  # parse error is code 2
 
     status = ex.Execute(rc_node)
@@ -270,7 +270,7 @@ def OshMain(argv):
       raise
 
   if opts.command is not None:
-    arena.AddSourcePath('<-c arg>')
+    arena.AddSourcePath('<command string>')
     line_reader = reader.StringLineReader(opts.command, arena=arena)
     interactive = False
   elif opts.interactive:  # force interactive
@@ -318,7 +318,7 @@ def OshMain(argv):
     node = c_parser.ParseWholeFile()
     if not node:
       err = c_parser.Error()
-      ui.PrintError(err, arena, sys.stderr)
+      ui.PrintErrorStack(err, arena, sys.stderr)
       return 2  # parse error is code 2
 
     if opts.ast_output:

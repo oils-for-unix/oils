@@ -19,6 +19,8 @@ from core import util
 from core.util import log
 from core.id_kind import Id, REDIR_DEFAULT_FD
 
+e_die = util.e_die
+
 
 class _FdFrame:
   def __init__(self):
@@ -156,12 +158,16 @@ class FilenameRedirect(UserRedirect):
     self.filename = filename
 
   def ApplyInChild(self):
-    if self.op_id == Id.Redir_Great:
-      target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-    elif self.op_id == Id.Redir_Less:
-      target_fd = os.open(self.filename, os.O_RDONLY)
-    else:
-      raise NotImplementedError(self.op_id)
+    try:
+      if self.op_id == Id.Redir_Great:
+        target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+      elif self.op_id == Id.Redir_Less:
+        target_fd = os.open(self.filename, os.O_RDONLY)
+      else:
+        raise NotImplementedError(self.op_id)
+    except OSError as e:
+      # TODO: Hide this under a set -o flag.  It's not fatal in any shell.
+      e_die("can't open %r: %s", self.filename, os.strerror(e.errno))
 
     os.dup2(target_fd, self.fd)
     os.close(target_fd)

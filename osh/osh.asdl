@@ -99,6 +99,7 @@ module osh
     RightVar(string name)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
   | ArithUnary(id op_id, arith_expr child)
+  -- TODO: add token for divide by zero
   | ArithBinary(id op_id, arith_expr left, arith_expr right)
   | ArithAssign(id op_id, lvalue left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)

@@ -37,13 +37,7 @@ if not os.getenv('_OVM_DEPS'):
 Buffer = io.BytesIO
 
 
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
-
-
-class ParseError:
+class _ErrorWithLocation(Exception):
   """A parse error that can be formatted.
 
   Formatting is in ui.PrintError.
@@ -60,6 +54,42 @@ class ParseError:
 
   def UserErrorString(self):
     return self.msg % self.args
+
+
+class ParseError(_ErrorWithLocation):
+  """Used in the parsers.
+
+  TODO:
+  - This could just be FatalError?
+  - You might want to catch this and add multiple locations?
+    try:
+      foo
+    except ParseError as e:
+      e.AddErrorInfo('hi', token=t)
+      raise
+  """
+  pass
+
+
+class FatalRuntimeError(_ErrorWithLocation):
+  """Used in the evaluators."""
+  pass
+
+
+def p_die(msg, *args, **kwargs):
+  """Convenience wrapper for parse errors."""
+  raise ParseError(msg, *args, **kwargs)
+
+
+def e_die(msg, *args, **kwargs):
+  """Convenience wrapper for runtime errors."""
+  raise FatalRuntimeError(msg, *args, **kwargs)
+
+
+def log(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
 
 
 def GetHomeDir():

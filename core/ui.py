@@ -89,16 +89,7 @@ def MakeStatusLines():
   return [StatusLine(row_num=i) for i in range(3, 10)]
 
 
-def PrintError(error_stack, arena, f):
-  """
-  NOTE: Parse errors always occur within a single arena.  Runtime errors may
-  span arenas (e.g. the function stack).
-  """
-  # TODO:
-  # - rename to PrintParseError()
-  #   - although parse errors happen at runtime because of 'source'
-  #   - should there be a distinction then?
-  for parse_error in error_stack:
+def PrettyPrintError(parse_error, arena, f):
     #print(parse_error)
     if parse_error.token:
       span_id = parse_error.token.span_id
@@ -135,6 +126,20 @@ def PrintError(error_stack, arena, f):
       f.write('~' * (length-1))
       f.write('\n')
 
-    print(parse_error.UserErrorString(), file=f)
-    print('---', file=f)
   #print(error_stack, file=f)
+
+
+def PrintErrorStack(error_stack, arena, f):
+  """
+  NOTE:
+  - Parse errors always occur within a single arena.  Actually NO, you want to
+    show the 'source' stack trace like Python shows the import stack trace.
+
+  - Runtime errors may span arenas (e.g. the function stack).
+  """
+  # - parse errors happen at runtime because of 'source'
+  #   - should there be a distinction then?
+  for err in error_stack:
+    PrettyPrintError(err, arena, f)
+    print(err.UserErrorString(), file=f)
+    print('---', file=f)

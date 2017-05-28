@@ -12,6 +12,7 @@ cmd_exec_test.py: Tests for cmd_exec.py
 import os
 import unittest
 
+from core import alloc
 from core.builtin import Builtins
 from core import cmd_exec  # module under test
 from core.cmd_exec import *
@@ -42,8 +43,10 @@ def InitExecutor():
   funcs = {}
   comp_funcs = {}
   exec_opts = cmd_exec.ExecOpts()
+  pool = alloc.Pool()
+  arena = pool.NewArena()
   return cmd_exec.Executor(mem, builtins, funcs, completion, comp_funcs, exec_opts,
-                           parse_lib.MakeParserForExecutor)
+                           parse_lib.MakeParserForExecutor, arena)
 
 
 def InitEvaluator():
