@@ -77,6 +77,27 @@ string_to_int_arith() {
   echo 'SHOULD NOT GET HERE'
 }
 
+# Hm bash treats this as a fatal error
+string_to_hex() {
+  echo $(( 0xGG + 1 ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
+# Hm bash treats this as a fatal error
+string_to_octal() {
+  echo $(( 018 + 1 ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
+# Hm bash treats this as a fatal error
+string_to_intbase() {
+  echo $(( 16#GG ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
 #
 # BOOLEAN ERRORS
 #
@@ -109,7 +130,8 @@ all() {
 
   for t in \
     no_such_command errexit pipefail nonexistent nounset \
-    divzero string_to_int_arith string_to_int_bool; do
+    divzero string_to_int_arith string_to_hex string_to_octal \
+    string_to_intbase string_to_int_bool; do
 
     _run_test $t
   done

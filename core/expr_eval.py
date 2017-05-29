@@ -72,6 +72,9 @@ def _StringToInteger(s):
       else:
         e_die('Invalid digits for numeric constant %r', digits)
 
+      if digit >= base:
+        e_die('Digits %r out of range for base %d', digits, base)
+
       integer += digit * n
       n *= base
     return integer
