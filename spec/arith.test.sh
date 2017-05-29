@@ -68,21 +68,30 @@ echo $((1 + $((2 + 3)) + 4))
 echo $((`echo 1` + 2))
 # stdout: 3
 
-### Bad variable substitution
-# Hm bash, mksh, and zsh ignore the variable.  They treat it as 0?
+### Invalid string to int
+# bash, mksh, and zsh all treat strings that don't look like numbers as zero.
 s=foo
 echo $((s+5))
-# status: 1
+# OK dash stdout-json: ""
 # OK dash status: 2
-# BUG bash/mksh/zsh status: 0
+# OK bash/mksh/zsh/osh stdout: 5
+# OK bash/mksh/zsh/osh status: 0
 
-### Two bad variable substitutions
+### Invalid string to int with strict-arith
+set -o strict-arith || true
 s=foo
-t=bar
-echo $((s+t))
+echo $s
+echo $((s+5))
 # status: 1
-# OK dash status: 2
-# BUG bash/mksh/zsh status: 0
+# stdout-json: "foo\n"
+# N-I bash status: 0
+# N-I bash stdout-json: "foo\n5\n"
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+# N-I mksh status: 1
+# N-I mksh stdout-json: ""
+# N-I zsh status: 1
+# N-I zsh stdout-json: ""
 
 ### Newline in the middle of expression
 echo $((1
