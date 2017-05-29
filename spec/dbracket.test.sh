@@ -212,3 +212,9 @@ a=(1 3 5)
 [[ '3' = 3 ]] && echo true
 [[ '3' -eq 3 ]] && echo true
 # stdout-json: "true\ntrue\n"
+
+### -eq with arithmetic expression!
+[[ 1+2 -eq 3 ]] && echo true
+expr='1+2'
+[[ $expr -eq 3 ]] && echo true  # must be dynamically parsed
+# stdout-json: "true\ntrue\n"
