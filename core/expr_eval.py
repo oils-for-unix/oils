@@ -20,6 +20,7 @@ from core import runtime
 from osh import ast_ as ast
 
 log = util.log
+warn = util.warn
 e_die = util.e_die
 
 arith_expr_e = ast.arith_expr_e
@@ -160,11 +161,27 @@ class ArithEvaluator(ExprEvaluator):
         else:
           return 0
       else:
-        return _ValToInteger(val)
+        try:
+          i = _ValToInteger(val)
+        except util.FatalRuntimeError as e:
+          if self.exec_opts.strict_arith:
+            raise
+          else:
+            i = 0
+            warn(e.UserErrorString())
+        return i
 
     elif node.tag == arith_expr_e.ArithWord:  # $(( $x )) or $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
-      return _ValToInteger(val, word=node.w)
+      try:
+        i = _ValToInteger(val, word=node.w)
+      except util.FatalRuntimeError as e:
+        if self.exec_opts.strict_arith:
+          raise
+        else:
+          i = 0
+          warn(e.UserErrorString())
+      return i
 
     #elif node.id == Id.Node_UnaryExpr:
     elif node.tag == arith_expr_e.ArithUnary:
@@ -318,13 +335,13 @@ class BoolEvaluator(ExprEvaluator):
         except util.FatalRuntimeError as e:
           # TODO: Have a strict mode
           i1 = 0
-          log(e.UserErrorString())
+          warn(e.UserErrorString())
 
         try:
           i2 = _StringToInteger(s2)
         except util.FatalRuntimeError as e:
           i2 = 0
-          log(e.UserErrorString())
+          warn(e.UserErrorString())
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2

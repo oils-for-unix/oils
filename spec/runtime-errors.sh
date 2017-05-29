@@ -10,12 +10,13 @@
 #
 
 no_such_command() {
+  set -o errexit
   ZZZZZ
 
   echo 'SHOULD NOT GET HERE'
 }
 
-errexit() {
+failed_command() {
   set -o errexit
   false
 
@@ -33,7 +34,7 @@ pipefail() {
 }
 
 # Other errors: permission denied for >, etc.
-# Hm this is not fatal either.
+# Hm this is not fatal unless set -o errexit.
 nonexistent() {
   cat < nonexistent.txt
 
@@ -86,7 +87,11 @@ divzero_var() {
 # Only dash flags this as an error.
 string_to_int_arith() {
   local x='ZZZ'
-  echo $(( x + 1 ))
+  echo $(( x + 5 ))
+
+  set -o strict-arith
+
+  echo $(( x + 5 ))
 
   echo 'SHOULD NOT GET HERE'
 }
@@ -143,7 +148,7 @@ all() {
   _run_test control_flow 
 
   for t in \
-    no_such_command errexit pipefail nonexistent nounset \
+    no_such_command failed_command pipefail nonexistent nounset \
     nounset_arith divzero divzero_var \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool; do

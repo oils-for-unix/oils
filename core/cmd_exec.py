@@ -94,7 +94,9 @@ class ExecOpts(object):
     self.pipefail = False
     self.xtrace = False
     self.noglob = False  # -f
-    self.bash_array = True
+
+    self.strict_arith = False
+    self.strict_command = False
 
 
 class _ArgFrame(object):
@@ -531,6 +533,16 @@ class Executor(object):
         self.exec_opts.pipefail = True
       elif name == 'xtrace':
         self.exec_opts.xtrace = True
+
+      # Oil-specific
+      elif name == 'strict-arith':
+        self.exec_opts.strict_arith = True
+      elif name == 'strict-command':
+        self.exec_opts.strict_command = True
+      # TODO:
+      # - STRICT: should be a combination of errexit,nounset,pipefail, plus
+      #   strict-*, plus IFS?  Caps because it's a composite.
+
       else:
         raise NotImplementedError(name)
     return 0
