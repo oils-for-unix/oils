@@ -34,6 +34,9 @@ def _StringToInteger(s, word=None):
 
   Supports hex, octal, etc.
   """
+  # TODO: In non-strict mode, empty string becomes zero.  In strict mode, it's
+  # a runtime error.
+
   if s.startswith('0x'):
     try:
       integer = int(s, 16)
@@ -146,7 +149,7 @@ class ArithEvaluator(ExprEvaluator):
     # ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have to
     # handle that as a special case.
     #if node.id == Id.Node_ArithVar:
-    if node.tag == arith_expr_e.RightVar:
+    if node.tag == arith_expr_e.RightVar:  # $(( x ))
       val = self.mem.Get(node.name)
       # By default, undefined variables are the ZERO value.  TODO: Respect
       # nounset and raise an exception.
@@ -159,7 +162,7 @@ class ArithEvaluator(ExprEvaluator):
       else:
         return _ValToInteger(val)
 
-    elif node.tag == arith_expr_e.ArithWord:  # constant string
+    elif node.tag == arith_expr_e.ArithWord:  # $(( $x )) or $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
       return _ValToInteger(val, word=node.w)
 

@@ -218,3 +218,7 @@ a=(1 3 5)
 expr='1+2'
 [[ $expr -eq 3 ]] && echo true  # must be dynamically parsed
 # stdout-json: "true\ntrue\n"
+
+### -eq coercion produces weird results
+[[ '' -eq 0 ]] && echo true
+# stdout: true

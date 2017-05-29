@@ -33,7 +33,11 @@ echo $((foo+1)) $((bar+1)) $((spam+1)) $((eggs+1))
 # N-I dash stdout-json: ""
 # N-I dash status: 2
 
-### Can use Braced VarSub within ArithSub
+### SimpleVarSub within arith
+echo $(($j + 1))
+# stdout: 1
+
+### BracedVarSub within ArithSub
 echo $((${j:-5} + 1))
 # stdout: 6
 
