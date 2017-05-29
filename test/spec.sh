@@ -379,7 +379,7 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 8 \
+  sh-spec spec/dbracket.test.sh --osh-failures-allowed 5 \
     $BASH $MKSH $OSH "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
 }

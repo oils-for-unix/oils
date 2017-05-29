@@ -313,8 +313,18 @@ class BoolEvaluator(ExprEvaluator):
       if arg_type == OperandType.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
         # Bash also allows [[ 1+2 -eq 3 ]].
-        i1 = _StringToInteger(s1)
-        i2 = _StringToInteger(s2)
+        try:
+          i1 = _StringToInteger(s1)
+        except util.FatalRuntimeError as e:
+          # TODO: Have a strict mode
+          i1 = 0
+          log(e.UserErrorString())
+
+        try:
+          i2 = _StringToInteger(s2)
+        except util.FatalRuntimeError as e:
+          i2 = 0
+          log(e.UserErrorString())
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2
