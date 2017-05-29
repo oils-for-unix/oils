@@ -199,6 +199,7 @@ class ArithEvaluator(ExprEvaluator):
           return lhs / rhs
         except ZeroDivisionError:
           # TODO: Instead of op_id, I should have the token
+          # node.right.w crashes if it's not a constant!
           e_die('Divide by zero', word=node.right.w)
 
       if atype == Id.Arith_Percent:

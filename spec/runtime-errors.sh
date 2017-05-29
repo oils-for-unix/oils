@@ -69,6 +69,13 @@ divzero() {
   echo 'SHOULD NOT GET HERE'
 }
 
+divzero_var() {
+  local zero=0
+  echo $(( 1 / zero ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
 # Only dash flags this as an error.
 string_to_int_arith() {
   local x='ZZZ'
@@ -130,7 +137,8 @@ all() {
 
   for t in \
     no_such_command errexit pipefail nonexistent nounset \
-    divzero string_to_int_arith string_to_hex string_to_octal \
+    divzero divzero_var \
+    string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool; do
 
     _run_test $t
