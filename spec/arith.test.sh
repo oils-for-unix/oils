@@ -191,3 +191,14 @@ foo=5
 x=oo
 echo $(( foo + f$x + 1 ))
 # stdout: 11
+
+### nounset with arithmetic
+set -o nounset
+x=$(( y + 5 ))
+echo "should not get here: x=${x:-<unset>}"
+# stdout-json: ""
+# status: 1
+# BUG dash/mksh/zsh stdout: should not get here: x=5
+# BUG dash/mksh/zsh status: 0
+
+

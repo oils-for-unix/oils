@@ -63,6 +63,13 @@ nounset() {
 # ARITHMETIC ERRORS
 #
 
+nounset_arith() {
+  set -o nounset
+  echo $(( x ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
 divzero() {
   echo $(( 1 / 0 ))
 
@@ -137,7 +144,7 @@ all() {
 
   for t in \
     no_such_command errexit pipefail nonexistent nounset \
-    divzero divzero_var \
+    nounset_arith divzero divzero_var \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool; do
 

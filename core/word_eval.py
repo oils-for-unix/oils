@@ -677,7 +677,7 @@ class _WordPartEvaluator:
       elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
         anode = part.bracket_op.expr
         # TODO: This should propagate errors
-        arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
+        arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev, self.exec_opts)
         index = arith_ev.Eval(anode)
 
         if val.tag == value_e.Undef:
@@ -807,7 +807,7 @@ class _WordPartEvaluator:
       return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.ArithSubPart:
-      arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev)
+      arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev, self.exec_opts)
       num = arith_ev.Eval(part.anode)
       return [runtime.StringPartValue(str(num), True, True)]
 

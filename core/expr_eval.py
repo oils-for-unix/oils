@@ -126,6 +126,10 @@ class ExprEvaluator:
 
 class ArithEvaluator(ExprEvaluator):
 
+  def __init__(self, mem, word_ev, exec_opts):
+    ExprEvaluator.__init__(self, mem, word_ev)
+    self.exec_opts = exec_opts
+
   def _Eval(self, node):
     """
     Args:
@@ -143,14 +147,17 @@ class ArithEvaluator(ExprEvaluator):
     # handle that as a special case.
     #if node.id == Id.Node_ArithVar:
     if node.tag == arith_expr_e.RightVar:
-      # TODO: need token
       val = self.mem.Get(node.name)
       # By default, undefined variables are the ZERO value.  TODO: Respect
       # nounset and raise an exception.
       if val.tag == value_e.Undef:
-        return 0
-
-      return _ValToInteger(val)
+        if self.exec_opts.nounset:
+          # TODO: need token
+          e_die('Undefined variable %r', node.name)
+        else:
+          return 0
+      else:
+        return _ValToInteger(val)
 
     elif node.tag == arith_expr_e.ArithWord:  # constant string
       val = self.word_ev.EvalWordToString(node.w)

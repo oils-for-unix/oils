@@ -998,7 +998,7 @@ class Executor(object):
       status = 0 if result else 1
 
     elif node.tag == command_e.DParen:
-      arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev)
+      arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev, self.exec_opts)
       i = arith_ev.Eval(node.child)
       status = 0 if i != 0 else 1
 
