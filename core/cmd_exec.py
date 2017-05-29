@@ -1152,8 +1152,7 @@ class Executor(object):
       status = 0  # make it true
 
     elif node.tag == command_e.Case:
-      ok, val = self.ev.EvalWordToString(node.to_match)
-      assert ok
+      val = self.ev.EvalWordToString(node.to_match)
       to_match = val.s
 
       status = 0  # If there are no arms, it should be zero?
@@ -1162,8 +1161,7 @@ class Executor(object):
       for arm in node.arms:
         for pat_word in arm.pat_list:
           # NOTE: Is it OK that we're evaluating these as we go?
-          ok, pat_val = self.ev.EvalWordToString(pat_word, do_fnmatch=True)
-          assert ok
+          pat_val = self.ev.EvalWordToString(pat_word, do_fnmatch=True)
           #log('Matching word %r against pattern %r', to_match, pat_val.s)
           if libc.fnmatch(pat_val.s, to_match):
             status = self._Execute(arm.action)
