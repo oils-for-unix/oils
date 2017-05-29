@@ -125,6 +125,9 @@ string_to_intbase() {
 string_to_int_bool() {
   [[ a -eq 0 ]]
 
+  set -o strict-arith
+
+  [[ a -eq 0 ]]
   echo 'SHOULD NOT GET HERE'
 }
 

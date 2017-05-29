@@ -119,9 +119,10 @@ class ExprEvaluator:
   For now the arith and bool evaluators share some logic.
   """
 
-  def __init__(self, mem, word_ev):
+  def __init__(self, mem, word_ev, exec_opts):
     self.mem = mem
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
+    self.exec_opts = exec_opts
 
   # TODO: Remove this
   def Eval(self, node):
@@ -130,9 +131,16 @@ class ExprEvaluator:
 
 class ArithEvaluator(ExprEvaluator):
 
-  def __init__(self, mem, word_ev, exec_opts):
-    ExprEvaluator.__init__(self, mem, word_ev)
-    self.exec_opts = exec_opts
+  def _ValToIntegerOrError(self, val, word=None):
+    try:
+      i = _ValToInteger(val, word=word)
+    except util.FatalRuntimeError as e:
+      if self.exec_opts.strict_arith:
+        raise
+      else:
+        i = 0
+        warn(e.UserErrorString())
+    return i
 
   def _Eval(self, node):
     """
@@ -161,27 +169,11 @@ class ArithEvaluator(ExprEvaluator):
         else:
           return 0
       else:
-        try:
-          i = _ValToInteger(val)
-        except util.FatalRuntimeError as e:
-          if self.exec_opts.strict_arith:
-            raise
-          else:
-            i = 0
-            warn(e.UserErrorString())
-        return i
+        return self._ValToIntegerOrError(val)
 
     elif node.tag == arith_expr_e.ArithWord:  # $(( $x )) or $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
-      try:
-        i = _ValToInteger(val, word=node.w)
-      except util.FatalRuntimeError as e:
-        if self.exec_opts.strict_arith:
-          raise
-        else:
-          i = 0
-          warn(e.UserErrorString())
-      return i
+      return self._ValToIntegerOrError(val, word=node.w)
 
     #elif node.id == Id.Node_UnaryExpr:
     elif node.tag == arith_expr_e.ArithUnary:
@@ -243,6 +235,17 @@ class ArithEvaluator(ExprEvaluator):
 
 
 class BoolEvaluator(ExprEvaluator):
+
+  def _StringToIntegerOrError(self, s):
+    try:
+      i = _StringToInteger(s)
+    except util.FatalRuntimeError as e:
+      if self.exec_opts.strict_arith:
+        raise
+      else:
+        i = 0
+        warn(e.UserErrorString())
+    return i
 
   def _SetRegexMatches(self, matches):
     """For ~= to set the BASH_REMATCH array."""
@@ -330,18 +333,8 @@ class BoolEvaluator(ExprEvaluator):
       if arg_type == OperandType.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
         # Bash also allows [[ 1+2 -eq 3 ]].
-        try:
-          i1 = _StringToInteger(s1)
-        except util.FatalRuntimeError as e:
-          # TODO: Have a strict mode
-          i1 = 0
-          warn(e.UserErrorString())
-
-        try:
-          i2 = _StringToInteger(s2)
-        except util.FatalRuntimeError as e:
-          i2 = 0
-          warn(e.UserErrorString())
+        i1 = self._StringToIntegerOrError(s1)
+        i2 = self._StringToIntegerOrError(s2)
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2
