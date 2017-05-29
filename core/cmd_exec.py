@@ -994,22 +994,13 @@ class Executor(object):
 
     elif node.tag == command_e.DBracket:
       bool_ev = expr_eval.BoolEvaluator(self.mem, self.ev)
-      ok = bool_ev.Eval(node.expr)
-      if ok:
-        status = 0 if bool_ev.Result() else 1
-      else:
-        e_die('Error evaluating boolean: %s' % bool_ev.Error())
+      result = bool_ev.Eval(node.expr)
+      status = 0 if result else 1
 
     elif node.tag == command_e.DParen:
       arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev)
-      ok = arith_ev.Eval(node.child)
-      if ok:
-        i = arith_ev.Result()
-        # Negate the value: non-zero in arithmetic is true, which is zero in
-        # shell land
-        status = 0 if i != 0 else 1
-      else:
-        e_die('Error evaluating (( )): %s' % arith_ev.Error())
+      i = arith_ev.Eval(node.child)
+      status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
       pairs = []
