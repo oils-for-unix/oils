@@ -96,6 +96,7 @@ module osh
   -- should every node have _begin_loc?  Then before you print it, you fill
   -- out.
   arith_expr =
+    -- TODO: need token
     RightVar(string name)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
   | ArithUnary(id op_id, arith_expr child)

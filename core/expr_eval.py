@@ -29,7 +29,7 @@ part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 
 
-def _StringToInteger(s):
+def _StringToInteger(s, word=None):
   """Use bash-like rules to coerce a string to an integer.
 
   Supports hex, octal, etc.
@@ -39,14 +39,14 @@ def _StringToInteger(s):
       integer = int(s, 16)
     except ValueError:
       # TODO: Show line number
-      e_die('Invalid hex constant %r', s)
+      e_die('Invalid hex constant %r', s, word=word)
     return integer
 
   if s.startswith('0'):
     try:
       integer = int(s, 8)
     except ValueError:
-      e_die('Invalid octal constant %r', s)  # TODO: Show line number
+      e_die('Invalid octal constant %r', s, word=word)  # TODO: Show line number
     return integer
 
   if '#' in s:
@@ -54,7 +54,7 @@ def _StringToInteger(s):
     try:
       base = int(b)
     except ValueError:
-      e_die('Invalid base for numeric constant %r',  b)
+      e_die('Invalid base for numeric constant %r',  b, word=word)
 
     integer = 0
     n = 1
@@ -70,10 +70,10 @@ def _StringToInteger(s):
       elif char.isdigit():
         digit = int(char)
       else:
-        e_die('Invalid digits for numeric constant %r', digits)
+        e_die('Invalid digits for numeric constant %r', digits, word=word)
 
       if digit >= base:
-        e_die('Digits %r out of range for base %d', digits, base)
+        e_die('Digits %r out of range for base %d', digits, base, word=word)
 
       integer += digit * n
       n *= base
@@ -83,11 +83,11 @@ def _StringToInteger(s):
   try:
     integer = int(s)
   except ValueError:
-    e_die("Invalid integer constant %r", s)
+    e_die("Invalid integer constant %r", s, word=word)
   return integer
 
 
-def _ValToInteger(val):
+def _ValToInteger(val, word=None):
   """Evaluate with the rules of arithmetic expressions.
 
   Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
@@ -102,7 +102,7 @@ def _ValToInteger(val):
   if val.tag != value_e.Str:
     # TODO: Error message: expected string but got integer/array
     e_die('Expected string but got %r', val)
-  return _StringToInteger(val.s)
+  return _StringToInteger(val.s, word=word)
 
 
 # In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
@@ -143,6 +143,7 @@ class ArithEvaluator(ExprEvaluator):
     # handle that as a special case.
     #if node.id == Id.Node_ArithVar:
     if node.tag == arith_expr_e.RightVar:
+      # TODO: need token
       val = self.mem.Get(node.name)
       # By default, undefined variables are the ZERO value.  TODO: Respect
       # nounset and raise an exception.
@@ -153,7 +154,7 @@ class ArithEvaluator(ExprEvaluator):
 
     elif node.tag == arith_expr_e.ArithWord:  # constant string
       val = self.word_ev.EvalWordToString(node.w)
-      return _ValToInteger(val)
+      return _ValToInteger(val, word=node.w)
 
     #elif node.id == Id.Node_UnaryExpr:
     elif node.tag == arith_expr_e.ArithUnary:
@@ -300,6 +301,8 @@ class BoolEvaluator(ExprEvaluator):
           return True  # TODO: test newer than (mtime)
 
       if arg_type == OperandType.Int:
+        # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
+        # Bash also allows [[ 1+2 -eq 3 ]].
         i1 = _StringToInteger(s1)
         i2 = _StringToInteger(s2)
 
