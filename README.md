@@ -79,6 +79,7 @@ Directory Structure
     osh/              # osh front end
     oil/              # oil front end (empty now)
     opy/              # Python compiler in Python
+    tools/            # osh2oil translator
 
     # Temporary Directories
 
@@ -92,6 +93,7 @@ Directory Structure
     README.md
 
     # End user docs
+
     LICENSE
     INSTALL
 

@@ -9,13 +9,21 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+filter-py() {
+  grep -E -v '__init__.py$|_test.py$' 
+}
+
 all() {
   echo 'BUILD AUTOMATION'
-  wc -l build/*.{sh,py} | sort --numeric
+  wc -l build/*.{sh,py} | filter-py | sort --numeric
   echo
 
   echo 'TEST AUTOMATION'
-  wc -l test/*.{sh,py} | sort --numeric
+  wc -l test/*.{sh,py} | filter-py | sort --numeric
+  echo
+
+  echo 'BENCHMARKS'
+  wc -l benchmarks/*.sh | sort --numeric
   echo
 
   echo 'SHELL SPEC TESTS'
@@ -26,29 +34,21 @@ all() {
   wc -l asdl/{asdl_,py_meta,gen_cpp,encode,format}.py | sort --numeric
   echo
 
-  wc -l asdl/{py_meta,encode}_test.py
+  echo 'TOOLS'
+  ls tools/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
-  #wc -l asdl/arith_parse*.py asdl/tdop.py asdl/arith_ast.py asdl/asdl_demo.py
-  #echo
-
-  #wc -l asdl/*.cc 
-  #echo
-
-  #wc -l asdl/*.asdl
-  #echo
+  echo 'OTHER UNIT TESTS'
+  wc -l {build,test,asdl,tools}/*_test.py | sort --numeric
+  echo
 
   echo 'OIL UNIT TESTS'
   wc -l {osh,core,native,tools}/*_test.py | sort --numeric
   echo
 
-  echo 'TOOLS'
-  ls tools/*.py | grep -E -v '__init__.py$|_test.py$' | xargs wc -l | sort --numeric
-  echo
-
   echo 'OIL'
   { ls {bin,osh,core}/*.py; ls native/*.c; } |
-    grep -E -v '_gen.py$|__init__.py$|_test.py$|test_lib.py' |
+    filter-py | grep -E -v '_gen.py$|test_lib.py' |
     xargs wc -l | sort --numeric
   echo
 
