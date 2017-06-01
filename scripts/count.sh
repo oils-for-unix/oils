@@ -47,7 +47,7 @@ all() {
   echo
 
   echo 'OIL'
-  { ls {bin,osh,core}/*.py; ls native/*.c; } |
+  { ls {bin,osh,core}/*.py native/*.c osh/osh.asdl core/runtime.asdl; } |
     filter-py | grep -E -v '_gen.py$|test_lib.py' |
     xargs wc -l | sort --numeric
   echo
