@@ -214,4 +214,9 @@ echo "should not get here: x=${x:-<unset>}"
 # BUG dash/mksh/zsh stdout: should not get here: x=5
 # BUG dash/mksh/zsh status: 0
 
-
+### Integer Overflow
+set -o nounset
+echo $(( 999999 * 999999 * 999999 * 999999 ))
+# stdout: 999996000005999996000001
+# BUG dash/bash/zsh stdout: -1996229794797103359
+# BUG mksh stdout: -15640831
