@@ -485,13 +485,24 @@ class Executor(object):
     self.traceback_msg = msg
 
   def _Read(self, argv):
+    # TODO:
+    # - parse flags.
+    # - Use IFS instead of Python's split().
+
     names = argv[1:]
     line = sys.stdin.readline()
+    if line.endswith('\n'):  # strip trailing newline
+      line = line[:-1]
     if not line:  # EOF
       return 1
-    # TODO: split line and do that logic
-    val = runtime.Str(line.strip())
-    self.mem.SetLocal(names[0], val)
+    # leftover words assigned to the last name
+    n = len(names)
+
+    strs = line.split(None, n-1)
+
+    for i in xrange(n):
+      val = runtime.Str(strs[i])
+      self.mem.SetLocal(names[i], val)
     return 0
 
   def _Echo(self, argv):

@@ -166,3 +166,21 @@ shift ZZZ
 # status: 1
 # OK dash status: 2
 # BUG mksh status: 0
+
+### Read builtin
+# NOTE: there are TABS below
+read x <<EOF
+A		B C D E
+FG
+EOF
+echo "[$x]"
+# stdout: [A		B C D E]
+
+### Read builtin with multiple variables
+# NOTE: there are TABS below
+read x y z <<EOF
+A		B C D E
+FG
+EOF
+echo "$x/$y/$z"
+# stdout: A/B/C D E
