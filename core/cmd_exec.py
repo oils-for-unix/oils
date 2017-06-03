@@ -544,7 +544,8 @@ class Executor(object):
       #   strict-*, plus IFS?  Caps because it's a composite.
 
       else:
-        raise NotImplementedError(name)
+        util.error('set: invalid option %r', name)
+        return 1
     return 0
 
   def _Unset(self, argv):
@@ -1193,6 +1194,7 @@ class Executor(object):
     else:
       raise AssertionError(node.tag)
 
+    # TODO: This shouldn't fail in false || true
     if self.exec_opts.errexit and status != 0:
       if node.tag == command_e.SimpleCommand:
         # TODO: Add context

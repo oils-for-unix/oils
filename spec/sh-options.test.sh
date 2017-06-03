@@ -2,6 +2,14 @@
 #
 # Test set flags, sh flags.
 
+### can continue after unknown option
+# dash and mksh make this a fatal error no matter what.
+set -o errexit
+set -o STRICT || true # unknown option
+echo hello
+# stdout: hello
+# BUG dash/mksh stdout-json: ""
+
 ### nounset
 echo "[$unset]"
 set -o nounset

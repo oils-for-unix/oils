@@ -98,6 +98,12 @@ def warn(msg, *args):
   print('osh warning: ' + msg, file=sys.stderr)
 
 
+def error(msg, *args):
+  if args:
+    msg = msg % args
+  print('osh error: ' + msg, file=sys.stderr)
+
+
 def GetHomeDir():
   """Get the user's home directory from the /etc/passwd.
 
