@@ -501,7 +501,11 @@ class Executor(object):
     strs = line.split(None, n-1)
 
     for i in xrange(n):
-      val = runtime.Str(strs[i])
+      try:
+        s = strs[i]
+      except IndexError:
+        s = ''  # if there are too many variables
+      val = runtime.Str(s)
       self.mem.SetLocal(names[i], val)
     return 0
 

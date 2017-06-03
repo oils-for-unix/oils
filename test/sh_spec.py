@@ -268,6 +268,7 @@ def CreateIntAssertion(d, key, assertions, qualifier=False):
   return False
 
 
+# TODO: If there is no 'status' assertion, create a zero assertion.
 def CreateAssertions(case, shell):
   assertions = []
 

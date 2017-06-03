@@ -175,6 +175,14 @@ FG
 EOF
 echo "[$x]"
 # stdout: [A		B C D E]
+# status: 0
+
+#### Read builtin with no newline.
+# This is odd because the variable is populated successfully.  OSH/Oil might
+# need a separate put reading feature that doesn't use IFS.
+echo -n ZZZ | { read x; echo $?; echo $x; }
+# stdout-json: "1\nZZZ\n"
+# status: 0
 
 ### Read builtin with multiple variables
 # NOTE: there are TABS below
@@ -184,3 +192,14 @@ FG
 EOF
 echo "$x/$y/$z"
 # stdout: A/B/C D E
+# status: 0
+
+#### Read builtin with not enough variables
+set -o errexit
+set -o nounset  # hm this doesn't change it
+read x y z <<EOF
+A B
+EOF
+echo /$x/$y/$z/
+# stdout: /A/B//
+# status: 0
