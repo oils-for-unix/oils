@@ -122,10 +122,12 @@ EOF
   #rm ${output}__err.txt
 
   if ! _osh-html-one $input $output; then  # Convert to HTML AST
+    log "*** Failed to convert $input to AST"
     return 1
   fi
 
   if ! _osh-to-oil-one $input $output; then  # Convert to Oil
+    log "*** Failed to convert $input to Oil"
     return 1
   fi
 }
@@ -163,11 +165,19 @@ _parse-many() {
   echo -n '' >$dest_base/FAILED.txt
   echo -n '' >$dest_base/FAILED.html
 
+  local failed=''
+
   for f in "$@"; do echo $f; done |
     sort |
-    xargs -n 1 -- $0 _parse-and-copy-one $src_base $dest_base
+    xargs -n 1 -- $0 _parse-and-copy-one $src_base $dest_base ||
+    failed=1
 
   tree -p $dest_base
+
+  if test -n "$failed"; then
+    log ""
+    log "*** Some tasks failed.  See messages above."
+  fi
 }
 
 make-index() {
