@@ -100,18 +100,19 @@ class _ErrExit:
   """
 
   def __init__(self):
-    self.errexit = False  # the setting
-    self.guarding = False
+    self.errexit = False  # the boolean value
+    self.guarding = 0  # number of nested guards
 
   def Push(self):
-    if self.errexit:
-      self.guarding = True
+    if self.errexit and self.guarding == 0:
       self.errexit = False
+    self.guarding += 1
 
   def Pop(self):
-    if self.guarding:
+    self.guarding -= 1
+    # Pop it back once we've gotten to zero.
+    if not self.errexit and self.guarding == 0:
       self.errexit = True
-      self.guarding = False
 
   def Set(self, b):
     if self.guarding:

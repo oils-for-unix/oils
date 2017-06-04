@@ -206,6 +206,17 @@ echo 7
 # stdout-json: "1\n2\n"
 # OK dash/bash/mksh stdout-json: "1\n2\n3\n4\n5\n6\n"
 
+### errexit double quard
+# OSH bug fix.  ErrExit needs a counter, not a boolean.
+set -o errexit
+if { ! false; false; true; } then
+  echo true
+fi
+false
+echo done
+# status: 1
+# stdout-json: "true\n"
+
 ### pipefail
 # NOTE: the sleeps are because osh can fail non-deterministically because of a
 # bug.  Same problem as PIPESTATUS.
