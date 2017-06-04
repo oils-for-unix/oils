@@ -86,17 +86,15 @@ e_die = util.e_die
 
 
 class _ErrExit:
-  """
-  Manages the errexit setting.
+  """Manages the errexit setting.
 
-  - The user can set it with builtin 'set'
-  - Some constructs implicitly disable it:
-    - if
+  - The user can change it with builtin 'set' at any point in the code.
+  - These constructs implicitly disable 'errexit':
+    - if / while / until conditions
     - ! (part of pipeline)
     - && ||
-    - while and until conditions
 
-  This prevents them from colliding.
+  An _ErrExit object prevents these two mechanisms from clobbering each other.
   """
 
   def __init__(self):
