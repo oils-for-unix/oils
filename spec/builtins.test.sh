@@ -1,5 +1,11 @@
 #!/bin/bash
 
+### echo dashes
+echo -
+echo --
+echo ---
+# stdout-json: "-\n--\n---\n"
+
 ### cd and $PWD
 cd /
 echo $PWD
@@ -177,7 +183,7 @@ echo "[$x]"
 # stdout: [A		B C D E]
 # status: 0
 
-#### Read builtin with no newline.
+### Read builtin with no newline.
 # This is odd because the variable is populated successfully.  OSH/Oil might
 # need a separate put reading feature that doesn't use IFS.
 echo -n ZZZ | { read x; echo $?; echo $x; }
@@ -194,7 +200,7 @@ echo "$x/$y/$z"
 # stdout: A/B/C D E
 # status: 0
 
-#### Read builtin with not enough variables
+### Read builtin with not enough variables
 set -o errexit
 set -o nounset  # hm this doesn't change it
 read x y z <<EOF

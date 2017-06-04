@@ -420,6 +420,44 @@ class _ControlFlow(RuntimeError):
     return self.arg
 
 
+def _Echo(argv):
+  """
+  echo builtin.  Doesn't depend on executor state.
+
+  TODO: Where to put help?  docstring?
+  """
+  # NOTE: both getopt and optparse are unsuitable for 'echo' because:
+  # - 'echo -c' should print '-c', not fail
+  # - echo '---' should print ---, not fail
+
+  argv = argv[1:]
+
+  opt_n = False
+  opt_e = False
+  num_to_skip = 0
+  for a in argv:
+    if a == '-n':
+      opt_n = True
+      num_to_skip += 1
+    elif a == '-e':
+      opt_e = True
+      num_to_skip += 1
+      raise NotImplementedError('echo -e')
+    else:
+      break  # something else
+
+  #log('echo argv %s', argv)
+  for a in argv[num_to_skip:-1]:
+    sys.stdout.write(a)
+    sys.stdout.write(' ')  # arg separator
+  if argv:
+    sys.stdout.write(argv[-1])
+  if not opt_n:
+    sys.stdout.write('\n')
+  sys.stdout.flush()
+  return 0
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -491,10 +529,16 @@ class Executor(object):
 
     names = argv[1:]
     line = sys.stdin.readline()
-    if line.endswith('\n'):  # strip trailing newline
-      line = line[:-1]
     if not line:  # EOF
       return 1
+
+    if line.endswith('\n'):  # strip trailing newline
+      line = line[:-1]
+      status = 0
+    else:
+      # odd bash behavior: fail even if we can set variables.
+      status = 1
+
     # leftover words assigned to the last name
     n = len(names)
 
@@ -507,19 +551,7 @@ class Executor(object):
         s = ''  # if there are too many variables
       val = runtime.Str(s)
       self.mem.SetLocal(names[i], val)
-    return 0
-
-  def _Echo(self, argv):
-    argv = argv[1:]
-    #log('echo argv %s', argv)
-    for a in argv[:-1]:
-      sys.stdout.write(a)
-      sys.stdout.write(' ')  # arg separator
-    if argv:
-      sys.stdout.write(argv[-1])
-    sys.stdout.write('\n')
-    sys.stdout.flush()
-    return 0
+    return status
 
   def _Set(self, argv):
     # TODO:
@@ -709,7 +741,7 @@ class Executor(object):
       status = self._Read(argv)
 
     elif builtin_id == EBuiltin.ECHO:
-      status = self._Echo(argv)
+      status = _Echo(argv)
 
     elif builtin_id == EBuiltin.SHIFT:
       status = self._Shift(argv)

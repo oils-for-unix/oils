@@ -224,7 +224,7 @@ test-builtin() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -258,7 +258,7 @@ arith() {
 
 # pysh failures: case not implemented
 command-sub() {
-  sh-spec spec/command-sub.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/command-sub.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
