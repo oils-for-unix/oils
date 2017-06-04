@@ -44,6 +44,14 @@ exit invalid
 # status: 1
 # OK dash/bash status: 2
 
+### Exit builtin with too many args
+exit 7 8 9
+echo "no exit: $?"
+# status: 0
+# stdout-json: "no exit: 1\n"
+# BUG dash/mksh status: 7
+# BUG dash/mksh stdout-json: ""
+
 ### Export sets a global variable
 # Even after you do export -n, it still exists.
 f() { export GLOBAL=X; }

@@ -497,6 +497,22 @@ def _Echo(argv):
   return 0
 
 
+def _Exit(argv):
+  if len(argv) > 2:
+    util.error('exit: too many arguments')
+    return 1
+  try:
+    code = int(argv[1])
+  except IndexError:
+    code = 0
+  except ValueError as e:
+    print("Invalid argument %r" % argv[1], file=sys.stderr)
+    code = 1  # Runtime Error
+  # TODO: Should this be turned into our own SystemExit exception?
+  sys.exit(code)
+
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -650,17 +666,6 @@ class Executor(object):
 
     return self.mem.Shift(n)
 
-  def _Exit(self, argv):
-    try:
-      code = int(argv[1])
-    except IndexError:
-      code = 0
-    except ValueError as e:
-      print("Invalid argument %r" % argv[1], file=sys.stderr)
-      code = 1  # Runtime Error
-    # TODO: Should this be turned into our own SystemExit exception?
-    sys.exit(code)
-
   def _Trap(self, argv):
     # TODO: register trap
 
@@ -795,7 +800,7 @@ class Executor(object):
       status = self.dir_stack.Popd(argv)
 
     elif builtin_id == EBuiltin.EXIT:
-      status = self._Exit(argv)
+      status = _Exit(argv)
 
     elif builtin_id == EBuiltin.EXPORT:
       status = self._Export(argv)
