@@ -311,12 +311,12 @@ class Thunk(object):
 
   def RunInChild(self):
     """Never returns."""
-    self.RunInParent()
+    status = self.RunInParent()
 
     # TODO: How do we communicate a bad status to the parent process?  It
     # waits?  Signal?
     # The problem is that a subshell cannot fail!
-    sys.exit(0)  # This is required
+    sys.exit(status)  # This is required
 
   def IsExternal(self):
     """Test if a thunk represents an external process (ExternalThunk)."""

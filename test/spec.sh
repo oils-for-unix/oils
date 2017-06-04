@@ -195,6 +195,10 @@ background() {
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
+subshell() {
+  sh-spec spec/subshell.test.sh \
+    ${REF_SHELLS[@]} $OSH "$@" 
+}
 
 # Need to fix $ tokens, and $''
 quote() {
@@ -247,7 +251,7 @@ func() {
 }
 
 glob() {
-  sh-spec spec/glob.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
@@ -279,7 +283,7 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec spec/here-doc.test.sh --osh-failures-allowed 7 --range 1-27 \
+  sh-spec spec/here-doc.test.sh --osh-failures-allowed 6 --range 1-27 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -336,7 +340,7 @@ var-sub-quote() {
 }
 
 sh-options() {
-  sh-spec spec/sh-options.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/sh-options.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

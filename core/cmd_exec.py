@@ -85,18 +85,58 @@ log = util.log
 e_die = util.e_die
 
 
+class _ErrExit:
+  """
+  Manages the errexit setting.
+
+  - The user can set it with builtin 'set'
+  - Some constructs implicitly disable it:
+    - if
+    - ! (part of pipeline)
+    - && ||
+    - while and until conditions
+
+  This prevents them from colliding.
+  """
+
+  def __init__(self):
+    self.errexit = False  # the setting
+    self.guarding = False
+
+  def Push(self):
+    if self.errexit:
+      self.guarding = True
+      self.errexit = False
+
+  def Pop(self):
+    if self.guarding:
+      self.errexit = True
+      self.guarding = False
+
+  def Set(self, b):
+    if self.guarding:
+      # TODO: Add error context.
+      e_die("Can't set 'errexit' in a context where it's disabled "
+            "(if, !, && ||, while/until conditions)")
+    self.errexit = b
+
+
 class ExecOpts(object):
 
   def __init__(self):
+    self.errexit = _ErrExit()
+
     # TODO: Set from flags
     self.nounset = False
-    self.errexit = False
     self.pipefail = False
     self.xtrace = False
     self.noglob = False  # -f
 
     self.strict_arith = False
     self.strict_command = False
+
+  def ErrExit(self):
+    return self.errexit.errexit
 
 
 class _ArgFrame(object):
@@ -573,7 +613,7 @@ class Executor(object):
         raise NotImplementedError()
 
       if name == 'errexit':
-        self.exec_opts.errexit = True
+        self.exec_opts.errexit.Set(True)
       elif name == 'nounset':
         self.exec_opts.nounset = True
       elif name == 'pipefail':
@@ -971,31 +1011,31 @@ class Executor(object):
     pi = process.Pipeline()
 
     for child in node.children:
-      p = self._GetProcessForNode(child)
+      p = self._GetProcessForNode(child)  # NOTE: evaluates, does errexit guard
       pi.Add(p)
 
     #print(pi)
 
-    # TODO: Set PipeStatus() in self.mem
     pipe_status = pi.Run()
+    # TODO: Set PipeStatus() in self.mem
     #log('pipe_status %s', pipe_status)
 
     if self.exec_opts.pipefail:
-      # If any process failed, the status of the entire pipeline is 1.
+      # The status is that of the last command that is non-zero.
       status = 0
       for st in pipe_status:
         if st != 0:
-          status = 1
+          status = st
     else:
-      status = pipe_status[-1]  # last one determines status
-
-    if node.negated:
-      if status == 0:
-        return 1
-      else:
-        return 0
+      status = pipe_status[-1]  # status of last one is pipeline status
 
     return status
+
+  def _PushErrExit(self):
+    self.exec_opts.errexit.Push()
+
+  def _PopErrExit(self):
+    self.exec_opts.errexit.Pop()
 
   def _Execute(self, node):
     """
@@ -1045,7 +1085,20 @@ class Executor(object):
       status = self._Execute(node.command)
 
     elif node.tag == command_e.Pipeline:
-      status = self._RunPipeline(node)
+      if node.negated:
+        self._PushErrExit()
+        try:
+          status = self._RunPipeline(node)
+        finally:
+          self._PopErrExit()
+
+        if status == 0:
+          return 1
+        else:
+          return 0
+
+      else:
+        status = self._RunPipeline(node)
 
     elif node.tag == command_e.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
@@ -1085,12 +1138,13 @@ class Executor(object):
 
     elif node.tag == command_e.ControlFlow:
       if node.arg_word:  # Evaluate the argument
-        _, val = self.ev.EvalWordToString(node.arg_word)
+        val = self.ev.EvalWordToString(node.arg_word)
         assert val.tag == value_e.Str
         arg = int(val.s)  # They all take integers
       else:
         arg = 0  # return 0, break 0 levels, etc.
 
+      # NOTE: always raises so we don't set status.
       raise _ControlFlow(node.token, arg)
 
     # The only difference between these two is that CommandList has no
@@ -1109,7 +1163,13 @@ class Executor(object):
     elif node.tag == command_e.AndOr:
       #print(node.children)
       left, right = node.children
-      status = self._Execute(left)
+
+      # This is everything except the last one.
+      self._PushErrExit()
+      try:
+        status = self._Execute(left)
+      finally:
+        self._PopErrExit()
 
       if node.op_id == Id.Op_DPipe:
         if status != 0:
@@ -1127,10 +1187,16 @@ class Executor(object):
       else:
         _DonePredicate = lambda status: status == 0
 
+      status = 0
       while True:
-        status = self._Execute(node.cond)
-        done = status != 0
-        if _DonePredicate(status):
+        self._PushErrExit()
+        try:
+          cond_status = self._Execute(node.cond)
+        finally:
+          self._PopErrExit()
+
+        done = cond_status != 0
+        if _DonePredicate(cond_status):
           break
         try:
           status = self._Execute(node.body)  # last one wins
@@ -1187,7 +1253,12 @@ class Executor(object):
     elif node.tag == command_e.If:
       done = False
       for arm in node.arms:
-        status = self._Execute(arm.cond)
+        self._PushErrExit()
+        try:
+          status = self._Execute(arm.cond)
+        finally:
+          self._PopErrExit()
+
         if status == 0:
           status = self._Execute(arm.action)
           done = True
@@ -1241,13 +1312,26 @@ class Executor(object):
     else:
       raise AssertionError(node.tag)
 
-    # TODO: This shouldn't fail in false || true
-    if self.exec_opts.errexit and status != 0:
+    # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
+    # However, any bash construct can appear in a pipeline.  So it's easier
+    # just to put it at the end, instead of execute.
+    # Possible exceptions:
+    # - function def (however this always exits 0 anyway)
+    # - assignment - its result should be the result of the RHS?
+    #   - e.g. arith sub, command sub?  I don't want arith sub.
+    # - ControlFlow: always raises, it has no status.
+
+    # TODO:
+    # - Check errexit on fake 'pipeline' node.
+    # - Also should be useful for TimeBlock?
+    if self.exec_opts.ErrExit() and status != 0:
       if node.tag == command_e.SimpleCommand:
         # TODO: Add context
-        e_die('%r command exited with status %d (%s)', argv[0], status, node.words[0])
+        e_die('%r command exited with status %d (%s)', argv[0], status,
+              node.words[0])
       else:
-        e_die('%r command exited with status %d', node.__class__.__name__, status)
+        e_die('%r command exited with status %d', node.__class__.__name__,
+              status)
 
     # TODO: Is this the right place to put it?  Does it need a stack for
     # function calls?

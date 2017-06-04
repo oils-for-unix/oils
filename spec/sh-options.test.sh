@@ -66,6 +66,13 @@ echo 2
 
 ### errexit aborts early
 set -o errexit
+false
+echo done
+# stdout-json: ""
+# status: 1
+
+### errexit aborts early on pipeline
+set -o errexit
 echo hi | grep nonexistent
 echo two
 # stdout-json: ""
@@ -139,16 +146,15 @@ set -o errexit
 # status: 1
 
 ### errexit with command sub
-# This is the bug here:
+# This is the bash-specific bug here:
 # https://blogs.janestreet.com/when-bash-scripts-bite/
 set -o errexit
 s=$(echo one; false; echo two;)
 echo "$s"
-# stdout-json: "one\n"
-# status: 0
+# stdout-json: ""
+# status: 1
+# BUG bash status: 0
 # BUG bash stdout-json: "one\ntwo\n"
-# BUG dash/mksh stdout-json: ""
-# BUG dash/mksh status: 1
 
 ### errexit with local
 # I've run into this problem a lot.
@@ -160,13 +166,14 @@ f() {
   echo $x
 }
 f
-# stdout-json: "good"
+# stdout-json: "good\n"
 # status: 1
 # BUG bash/dash/mksh stdout-json: "good\nbad\n"
 # BUG bash/dash/mksh status: 0
 
 ### setting errexit while it's being ignored
 # ignored and then set again
+set -o errexit
 if { echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4; }; then
   echo 5;
 fi
@@ -175,8 +182,9 @@ false  # this is the one that makes it fail!
        # TODO: might want to disallow setting errexit while it's ignored?
        # That means it goes at the top of the script.
 echo 7
-# stdout-json: "1\n2\n3\n4\n5\n6\n"
 # status: 1
+# stdout-json: "1\n2\n"
+# OK dash/bash/mksh stdout-json: "1\n2\n3\n4\n5\n6\n"
 
 ### setting errexit in a subshell works but doesn't affect parent shell
 ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4; )
@@ -187,11 +195,24 @@ echo 6
 # status: 0
 
 ### setting errexit while it's being ignored in a subshell
+set -o errexit
 if ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4 ); then
   echo 5;
 fi
 echo 6
 false 
 echo 7
-# stdout-json: "1\n2\n3\n4\n5\n6\n7\n"
-# status: 0
+# status: 1
+# stdout-json: "1\n2\n"
+# OK dash/bash/mksh stdout-json: "1\n2\n3\n4\n5\n6\n"
+
+### pipefail
+# NOTE: the sleeps are because osh can fail non-deterministically because of a
+# bug.  Same problem as PIPESTATUS.
+{ sleep 0.01; exit 9; } | { sleep 0.02; exit 2; } | { sleep 0.03; exit 0; }
+echo $?
+set -o pipefail
+{ sleep 0.01; exit 9; } | { sleep 0.02; exit 2; } | { sleep 0.03; exit 0; }
+echo $?
+# stdout-json: "0\n2\n"
+# N-I dash stdout-json: "0\n"

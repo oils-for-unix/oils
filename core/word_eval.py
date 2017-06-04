@@ -1040,8 +1040,9 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     status = p.Run()
 
     # TODO: Add context
-    if self.ex.exec_opts.errexit and status != 0:
-      e_die('Command sub exited with status %d (%r)', status, node.__class__.__name__)
+    if self.ex.exec_opts.ErrExit() and status != 0:
+      e_die('Command sub exited with status %d (%r)', status,
+            node.__class__.__name__)
 
     # Runtime errors:
     # what if the command sub was "echo foo > $@".  That is invalid.  Then
