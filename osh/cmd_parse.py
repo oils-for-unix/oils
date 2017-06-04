@@ -1276,12 +1276,6 @@ class CommandParser(object):
         node = ast.Pipeline(children, negated)
         return node
       else:
-        # Hm just wrap this in null Pipeline()?
-        # a pipeline with one child is a SimpleCommand?
-        # (P (ForEach ...))
-        # (P (SimpleCommand ...))
-        # (FakePipeline)
-        # (ErrExit)
         return child
 
     pipe_index = 0
