@@ -13,6 +13,14 @@ echo hello
 # BUG dash status: 2
 # BUG mksh status: 1
 
+### set with both options and argv
+set -o errexit a b c
+echo "$@"
+false
+echo done
+# stdout: a b c
+# status: 1
+
 ### nounset
 echo "[$unset]"
 set -o nounset

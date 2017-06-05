@@ -650,7 +650,8 @@ class Executor(object):
     # TODO:
     # - mutate settings in self.exec_opts
     #   - parse -o and +o, -e and +e, etc.
-    # - change self.mem perhaps (set -- 1 2 3)
+    # - argv can be COMBINED with options.
+    # - share with bin/osh command line parsing.  How?
 
     # Replace the top of the stack
     if len(argv) >= 2 and argv[1] == '--':
