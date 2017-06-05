@@ -645,10 +645,6 @@ class Executor(object):
 
     self.traceback = None
     self.traceback_msg = ''
-    self.error_stack = []
-
-  def Error(self):
-    return self.error_stack
 
   def _Set(self, argv):
     # TODO:

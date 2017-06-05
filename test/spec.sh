@@ -293,7 +293,7 @@ redirect() {
 }
 
 posix() {
-  sh-spec spec/posix.test.sh \
+  sh-spec spec/posix.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
