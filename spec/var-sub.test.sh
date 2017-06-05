@@ -35,19 +35,20 @@ foo='_tmp/1 2'
 rm '_tmp/1 2'
 echo hi > $foo
 test -f '_tmp/1 2' && cat '_tmp/1 2'
-# status: 1
-# OK dash/mksh status: 0
-# OK dash/mksh stdout: hi
+# status: 0
+# stdout: hi
+# OK bash status: 1
+# OK bash stdout-json: ""
 
 ### Descriptor redirect to bad "$@"
 # All of them give errors:
 # dash - bad fd number, parse error?
 # bash - ambiguous redirect
-# mksh - illegal file scriptor name
+# mksh - illegal file descriptor name
 set -- '2 3' 'c d'
 echo hi 1>& "$@"
-# status: 2
-# OK bash/mksh status: 1
+# status: 1
+# OK dash status: 2
 
 ### Here doc with bad "$@" delimiter
 # bash - syntax error

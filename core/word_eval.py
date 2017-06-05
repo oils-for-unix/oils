@@ -871,9 +871,8 @@ class _WordEvaluator:
     for part in word.parts:
       for part_val in self.part_ev._EvalWordPart(part, quoted=False):
         if part_val.tag != part_value_e.StringPartValue:
-          # TODO: Better error message
-          self._AddErrorContext("Only string parts are allowed", word=word)
-          return False, None
+          # Example: echo f > "$@".  TODO: Add proper context.  
+          e_die("Expected string, got %s", part)
         if do_fnmatch:
           if part_val.do_glob:
             strs.append(part_val.s)
