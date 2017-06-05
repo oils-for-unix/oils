@@ -177,11 +177,15 @@ class FilenameRedirect(UserRedirect):
     e.g. echo hi > out.txt
     """
     if self.op_id == Id.Redir_Great:
-      target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+      mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+    elif self.op_id == Id.Redir_DGreat:
+      mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
     elif self.op_id == Id.Redir_Less:
-      target_fd = os.open(self.filename, os.O_RDONLY)
+      mode = os.O_RDONLY
     else:
       raise NotImplementedError(self.op_id)
+
+    target_fd = os.open(self.filename, mode)
 
     fd_state.SaveAndDup(target_fd, self.fd)
     fd_state.NeedClose(target_fd)

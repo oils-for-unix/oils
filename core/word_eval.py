@@ -831,16 +831,6 @@ class _WordEvaluator:
     self.part_ev = part_ev
     self.globber = Globber(exec_opts)
 
-    self.error_stack = []
-
-  def _AddErrorContext(self, msg, *args):
-    if msg:
-      msg = msg % args
-    self.error_stack.append(msg)
-
-  def Error(self):
-    return self.error_stack
-
   def _EvalParts(self, word, quoted=False):
     """Helper for EvalWordToAny and _EvalWordAndReframe.
 

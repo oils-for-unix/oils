@@ -59,9 +59,9 @@ cat $TMP/file-redir2.txt
 ### Descriptor redirect with filename
 # Should be a syntax error, but bash allows this.
 echo one 1>&$TMP/nonexistent-filename__
-# status: 2
+# status: 1
 # stdout-json: ""
-# OK  mksh status: 1
+# OK  dash status: 2
 # BUG bash status: 0
 
 ### redirect for loop

@@ -76,6 +76,10 @@ wild() {
   _compare test/wild.sh parse-usr-bin
 }
 
+startup-benchmark() {
+  _compare benchmarks/startup.sh compare-strace
+}
+
 all() {
   version-text
   count
@@ -85,6 +89,7 @@ all() {
   no-op
   gen-module-init
   wild
+  startup-benchmark
 }
 
 "$@"
