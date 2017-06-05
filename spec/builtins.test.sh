@@ -6,6 +6,12 @@ echo --
 echo ---
 # stdout-json: "-\n--\n---\n"
 
+### exec builtin with redirects
+exec 1>&2
+echo 'to stderr'
+# stdout-json: ""
+# stderr: to stderr
+
 ### cd and $PWD
 cd /
 echo $PWD

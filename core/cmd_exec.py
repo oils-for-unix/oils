@@ -511,6 +511,89 @@ def _Exit(argv):
   sys.exit(code)
 
 
+def _Read(argv, mem):
+  # TODO:
+  # - parse flags.
+  # - Use IFS instead of Python's split().
+
+  names = argv[1:]
+  line = sys.stdin.readline()
+  if not line:  # EOF
+    return 1
+
+  if line.endswith('\n'):  # strip trailing newline
+    line = line[:-1]
+    status = 0
+  else:
+    # odd bash behavior: fail even if we can set variables.
+    status = 1
+
+  # leftover words assigned to the last name
+  n = len(names)
+
+  strs = line.split(None, n-1)
+
+  for i in xrange(n):
+    try:
+      s = strs[i]
+    except IndexError:
+      s = ''  # if there are too many variables
+    val = runtime.Str(s)
+    mem.SetLocal(names[i], val)
+
+  return status
+
+
+def _Shift(argv, mem):
+  try:
+    n = int(argv[1])
+  except IndexError:
+    n = 1
+  except ValueError as e:
+    print("Invalid shift argument %r" % argv[1], file=sys.stderr)
+    return 1  # runtime error
+
+  return mem.Shift(n)
+
+
+def _Cd(argv, mem):
+  # TODO: Parse flags, error checking, etc.
+  dest_dir = argv[1]
+  if dest_dir == '-':
+    old = mem.Get('OLDPWD')
+    if old.tag == value_e.Undef:
+      log('OLDPWD not set')
+      return 1
+    elif old.tag == value_e.Str:
+      dest_dir = old.s
+      print(dest_dir)  # Shells print the directory
+    elif old.tag == value_e.StrArray:
+      # TODO: Prevent the user from setting OLDPWD to array (or maybe they
+      # can't even set it at all.)
+      raise AssertionError('Invalid OLDPWD')
+
+  # Save OLDPWD.
+  mem.SetGlobalString('OLDPWD', os.getcwd())
+  os.chdir(dest_dir)
+  mem.SetGlobalString('PWD', dest_dir)
+  return 0
+
+
+def _Export(argv, mem):
+  for arg in argv:
+    parts = arg.split('=', 1)
+    if len(parts) == 1:
+      name = parts[0]
+    else:
+      name, val = parts
+      # TODO: Set the global flag
+      mem.SetGlobalString(name, val)
+
+    # May create an undefined variable
+    mem.SetExportFlag(name, True)
+
+  return 0
+
 
 class Executor(object):
   """Executes the program by tree-walking.
@@ -576,37 +659,6 @@ class Executor(object):
     self.traceback = traceback
     self.traceback_msg = msg
 
-  def _Read(self, argv):
-    # TODO:
-    # - parse flags.
-    # - Use IFS instead of Python's split().
-
-    names = argv[1:]
-    line = sys.stdin.readline()
-    if not line:  # EOF
-      return 1
-
-    if line.endswith('\n'):  # strip trailing newline
-      line = line[:-1]
-      status = 0
-    else:
-      # odd bash behavior: fail even if we can set variables.
-      status = 1
-
-    # leftover words assigned to the last name
-    n = len(names)
-
-    strs = line.split(None, n-1)
-
-    for i in xrange(n):
-      try:
-        s = strs[i]
-      except IndexError:
-        s = ''  # if there are too many variables
-      val = runtime.Str(s)
-      self.mem.SetLocal(names[i], val)
-    return status
-
   def _Set(self, argv):
     # TODO:
     # - mutate settings in self.exec_opts
@@ -616,54 +668,49 @@ class Executor(object):
     # Replace the top of the stack
     if len(argv) >= 2 and argv[1] == '--':
       self.mem.SetArgv(argv[2:])
+      return 0
+
+    # TODO: Loop through -o, +o, etc.
+    for a in argv:
+      pass
+
+    try:
+      flag = argv[1]
+      name = argv[2]
+    except IndexError:
+      raise NotImplementedError(argv)
+
+    if flag != '-o':
+      raise NotImplementedError()
+
+    if name == 'errexit':
+      self.exec_opts.errexit.Set(True)
+    elif name == 'nounset':
+      self.exec_opts.nounset = True
+    elif name == 'pipefail':
+      self.exec_opts.pipefail = True
+    elif name == 'xtrace':
+      self.exec_opts.xtrace = True
+
+    # Oil-specific
+    elif name == 'strict-arith':
+      self.exec_opts.strict_arith = True
+    elif name == 'strict-command':
+      self.exec_opts.strict_command = True
+    # TODO:
+    # - STRICT: should be a combination of errexit,nounset,pipefail, plus
+    #   strict-*, plus IFS?  Caps because it's a composite.
+
     else:
-      try:
-        flag = argv[1]
-        name = argv[2]
-      except IndexError:
-        raise NotImplementedError(argv)
+      util.error('set: invalid option %r', name)
+      return 1
 
-      if flag != '-o':
-        raise NotImplementedError()
-
-      if name == 'errexit':
-        self.exec_opts.errexit.Set(True)
-      elif name == 'nounset':
-        self.exec_opts.nounset = True
-      elif name == 'pipefail':
-        self.exec_opts.pipefail = True
-      elif name == 'xtrace':
-        self.exec_opts.xtrace = True
-
-      # Oil-specific
-      elif name == 'strict-arith':
-        self.exec_opts.strict_arith = True
-      elif name == 'strict-command':
-        self.exec_opts.strict_command = True
-      # TODO:
-      # - STRICT: should be a combination of errexit,nounset,pipefail, plus
-      #   strict-*, plus IFS?  Caps because it's a composite.
-
-      else:
-        util.error('set: invalid option %r', name)
-        return 1
     return 0
 
   def _Unset(self, argv):
     # mutate self.mem
     # NOTE: sh has DYNAMIC SCOPE, so you need tests for that here.
     raise NotImplementedError
-
-  def _Shift(self, argv):
-    try:
-      n = int(argv[1])
-    except IndexError:
-      n = 1
-    except ValueError as e:
-      print("Invalid shift argument %r" % argv[1], file=sys.stderr)
-      return 1  # runtime error
-
-    return self.mem.Shift(n)
 
   def _Trap(self, argv):
     # TODO: register trap
@@ -698,7 +745,7 @@ class Executor(object):
       self.comp_lookup.RegisterName(command, chain)
       # TODO: Some feedback would be nice?
     else:
-      print('ERROR: Oil was not built with readline/completion.', file=sys.stderr)
+      util.error('Oil was not built with readline/completion.')
     return 0
 
   def _EvalHelper(self, code_str):
@@ -734,43 +781,6 @@ class Executor(object):
     else:
       return 0
 
-  def _Cd(self, argv):
-    # TODO: Parse flags, error checking, etc.
-    dest_dir = argv[1]
-    if dest_dir == '-':
-      old = self.mem.Get('OLDPWD')
-      if old.tag == value_e.Undef:
-        log('OLDPWD not set')
-        return 1
-      elif old.tag == value_e.Str:
-        dest_dir = old.s
-        print(dest_dir)  # Shells print the directory
-      elif old.tag == value_e.StrArray:
-        # TODO: Prevent the user from setting OLDPWD to array (or maybe they
-        # can't even set it at all.)
-        raise AssertionError('Invalid OLDPWD')
-
-    # Save OLDPWD.
-    self.mem.SetGlobalString('OLDPWD', os.getcwd())
-    os.chdir(dest_dir)
-    self.mem.SetGlobalString('PWD', dest_dir)
-    return 0
-
-  def _Export(self, argv):
-    for arg in argv:
-      parts = arg.split('=', 1)
-      if len(parts) == 1:
-        name = parts[0]
-      else:
-        name, val = parts
-        # TODO: Set the global flag
-        self.mem.SetGlobalString(name, val)
-
-      # May create an undefined variable
-      self.mem.SetExportFlag(name, True)
-
-    return 0
-
   def RunBuiltin(self, builtin_id, argv):
     restore_fd_state = True
 
@@ -781,16 +791,16 @@ class Executor(object):
     # TODO: figure out a quicker dispatch mechanism.  Just make a table of
     # builtins I guess.
     if builtin_id == EBuiltin.READ:
-      status = self._Read(argv)
+      status = _Read(argv, self.mem)
 
     elif builtin_id == EBuiltin.ECHO:
       status = _Echo(argv)
 
     elif builtin_id == EBuiltin.SHIFT:
-      status = self._Shift(argv)
+      status = _Shift(argv, self.mem)
 
     elif builtin_id == EBuiltin.CD:
-      status = self._Cd(argv)
+      status = _Cd(argv, self.mem)
 
     elif builtin_id == EBuiltin.PUSHD:
       status = self.dir_stack.Pushd(argv)
@@ -802,7 +812,7 @@ class Executor(object):
       status = _Exit(argv)
 
     elif builtin_id == EBuiltin.EXPORT:
-      status = self._Export(argv)
+      status = _Export(argv, self.mem)
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
@@ -814,6 +824,7 @@ class Executor(object):
       status = self._Eval(argv)
 
     elif builtin_id == EBuiltin.EXEC:
+      # TODO: Need to parse the redirects here.  How?
       status = self._Exec(argv)  # may never return
       restore_fd_state = False
 
@@ -1084,10 +1095,17 @@ class Executor(object):
           self.fd_state.PopAndForget()
 
     elif node.tag == command_e.Sentence:
-      # TODO: Compile this away.
-      status = self._Execute(node.command)
+      if node.terminator.id == Id.Op_Semi:
+        status = self._Execute(node.command)
+      else:
+        # TODO: Async processes.
+        raise NotImplementedError(node.terminator.id)
 
     elif node.tag == command_e.Pipeline:
+      # TODO: add redirects to simulate?
+      if node.stderr_indices:
+        raise NotImplementedError('|&')
+
       if node.negated:
         self._PushErrExit()
         try:
