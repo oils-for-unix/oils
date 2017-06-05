@@ -595,6 +595,56 @@ def _Export(argv, mem):
   return 0
 
 
+def _Set(argv, exec_opts, mem):
+  # TODO:
+  # - mutate settings in self.exec_opts
+  #   - parse -o and +o, -e and +e, etc.
+  # - argv can be COMBINED with options.
+  # - share with bin/osh command line parsing.  How?
+
+  # Replace the top of the stack
+  if len(argv) >= 2 and argv[1] == '--':
+    mem.SetArgv(argv[2:])
+    return 0
+
+  # TODO: Loop through -o, +o, etc.
+  for a in argv:
+    pass
+
+  try:
+    flag = argv[1]
+    name = argv[2]
+  except IndexError:
+    raise NotImplementedError(argv)
+
+  if flag != '-o':
+    raise NotImplementedError()
+
+  if name == 'errexit':
+    exec_opts.errexit.Set(True)
+  elif name == 'nounset':
+    exec_opts.nounset = True
+  elif name == 'pipefail':
+    exec_opts.pipefail = True
+  elif name == 'xtrace':
+    exec_opts.xtrace = True
+
+  # Oil-specific
+  elif name == 'strict-arith':
+    exec_opts.strict_arith = True
+  elif name == 'strict-command':
+    exec_opts.strict_command = True
+  # TODO:
+  # - STRICT: should be a combination of errexit,nounset,pipefail, plus
+  #   strict-*, plus IFS?  Caps because it's a composite.
+
+  else:
+    util.error('set: invalid option %r', name)
+    return 1
+
+  return 0
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -645,55 +695,6 @@ class Executor(object):
 
     self.traceback = None
     self.traceback_msg = ''
-
-  def _Set(self, argv):
-    # TODO:
-    # - mutate settings in self.exec_opts
-    #   - parse -o and +o, -e and +e, etc.
-    # - argv can be COMBINED with options.
-    # - share with bin/osh command line parsing.  How?
-
-    # Replace the top of the stack
-    if len(argv) >= 2 and argv[1] == '--':
-      self.mem.SetArgv(argv[2:])
-      return 0
-
-    # TODO: Loop through -o, +o, etc.
-    for a in argv:
-      pass
-
-    try:
-      flag = argv[1]
-      name = argv[2]
-    except IndexError:
-      raise NotImplementedError(argv)
-
-    if flag != '-o':
-      raise NotImplementedError()
-
-    if name == 'errexit':
-      self.exec_opts.errexit.Set(True)
-    elif name == 'nounset':
-      self.exec_opts.nounset = True
-    elif name == 'pipefail':
-      self.exec_opts.pipefail = True
-    elif name == 'xtrace':
-      self.exec_opts.xtrace = True
-
-    # Oil-specific
-    elif name == 'strict-arith':
-      self.exec_opts.strict_arith = True
-    elif name == 'strict-command':
-      self.exec_opts.strict_command = True
-    # TODO:
-    # - STRICT: should be a combination of errexit,nounset,pipefail, plus
-    #   strict-*, plus IFS?  Caps because it's a composite.
-
-    else:
-      util.error('set: invalid option %r', name)
-      return 1
-
-    return 0
 
   def _Unset(self, argv):
     # mutate self.mem
@@ -790,17 +791,27 @@ class Executor(object):
     elif builtin_id == EBuiltin.CD:
       status = _Cd(argv, self.mem)
 
+    elif builtin_id == EBuiltin.SET:
+      status = _Set(argv, self.exec_opts, self.mem)
+
+    elif builtin_id == EBuiltin.EXPORT:
+      status = _Export(argv, self.mem)
+
+    elif builtin_id == EBuiltin.EXIT:
+      status = _Exit(argv)
+
+    elif builtin_id == EBuiltin.EXEC:
+      # TODO:
+      # - Need to parse the redirects here.  How?
+      # - can be lifted out to builtin
+      status = self._Exec(argv)  # may never return
+      restore_fd_state = False
+
     elif builtin_id == EBuiltin.PUSHD:
       status = self.dir_stack.Pushd(argv)
 
     elif builtin_id == EBuiltin.POPD:
       status = self.dir_stack.Popd(argv)
-
-    elif builtin_id == EBuiltin.EXIT:
-      status = _Exit(argv)
-
-    elif builtin_id == EBuiltin.EXPORT:
-      status = _Export(argv, self.mem)
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
@@ -810,14 +821,6 @@ class Executor(object):
 
     elif builtin_id == EBuiltin.EVAL:
       status = self._Eval(argv)
-
-    elif builtin_id == EBuiltin.EXEC:
-      # TODO: Need to parse the redirects here.  How?
-      status = self._Exec(argv)  # may never return
-      restore_fd_state = False
-
-    elif builtin_id == EBuiltin.SET:
-      status = self._Set(argv)
 
     elif builtin_id == EBuiltin.COMPLETE:
       status = self._Complete(argv)
