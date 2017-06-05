@@ -98,22 +98,21 @@ class _ErrExit:
   """
 
   def __init__(self):
-    self.errexit = False  # the boolean value
-    self.guarding = 0  # number of nested guards
+    self.errexit = False  # the setting
+    self.stack = []
 
   def Push(self):
-    if self.errexit and self.guarding == 0:
+    if self.errexit:
       self.errexit = False
-    self.guarding += 1
+      self.stack.append(True)  # value to restore
+    else:
+      self.stack.append(False)
 
   def Pop(self):
-    self.guarding -= 1
-    # Pop it back once we've gotten to zero.
-    if not self.errexit and self.guarding == 0:
-      self.errexit = True
+    self.errexit = self.stack.pop()
 
   def Set(self, b):
-    if self.guarding:
+    if True in self.stack:  # are we in a temporary state?
       # TODO: Add error context.
       e_die("Can't set 'errexit' in a context where it's disabled "
             "(if, !, && ||, while/until conditions)")
