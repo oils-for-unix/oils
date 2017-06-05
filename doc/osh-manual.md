@@ -27,3 +27,8 @@ Here is another difference:
     if/while/until condition, !, && ||), and the user tries to 'set +o
     errexit', back, then this is a fatal error.  Other shells delay setting
     back until after the whole construct.
+
+Very good articles on bash errexit:
+
+  - http://mywiki.wooledge.org/BashFAQ/105
+  - http://fvue.nl/wiki/Bash:_Error_handling
