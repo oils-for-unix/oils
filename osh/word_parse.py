@@ -610,12 +610,11 @@ class WordParser(object):
 
     command_sub = '$(' command_list ')'
     """
-    left_spid = self.cur_token.span_id
+    left_token = self.cur_token
+    left_spid = left_token.span_id
 
     #print('_ReadCommandSubPart', self.cur_token)
     self._Next(LexMode.OUTER)  # advance past $( or `
-
-    node_token = self.cur_token
 
     # Set the lexer in a state so ) becomes the EOF token.
     #print('_ReadCommandSubPart lexer.PushHint ) -> EOF')
@@ -645,7 +644,7 @@ class WordParser(object):
     #print('X', self.cur_token)
     right_spid = c_parser.w_parser.cur_token.span_id
 
-    cs_part = ast.CommandSubPart(node)
+    cs_part = ast.CommandSubPart(node, left_token)
     cs_part.spids.append(left_spid)
     cs_part.spids.append(right_spid)
     return cs_part

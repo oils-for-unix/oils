@@ -69,7 +69,8 @@ module osh
                 bracket_op? bracket_op
                 suffix_op? suffix_op)
   | TildeSubPart(string prefix)
-  | CommandSubPart(command command_list)
+    -- For command sub and process sub: $(...)  <(...)  >(...)
+  | CommandSubPart(command command_list, token left_token)
   | ArithSubPart(arith_expr anode)
     -- {a,b,c}
   | BracedAltPart(word* words)
