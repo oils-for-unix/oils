@@ -650,15 +650,6 @@ class Executor(object):
   def Error(self):
     return self.error_stack
 
-  def _AddErrorContext(self, msg, *args):
-    if msg:
-      msg = msg % args
-    self.error_stack.append(msg)
-
-  def _SetException(self, traceback, msg):
-    self.traceback = traceback
-    self.traceback_msg = msg
-
   def _Set(self, argv):
     # TODO:
     # - mutate settings in self.exec_opts
