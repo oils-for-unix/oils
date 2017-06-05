@@ -259,7 +259,7 @@ def CreateStringAssertion(d, key, assertions, qualifier=False):
 
 
 def CreateIntAssertion(d, key, assertions, qualifier=False):
-  exp = d.get(key)
+  exp = d.get(key)  # expected
   if exp is not None:
     # For now, turn it into int
     a = EqualAssertion(key, int(exp), qualifier=qualifier)
@@ -268,7 +268,6 @@ def CreateIntAssertion(d, key, assertions, qualifier=False):
   return False
 
 
-# TODO: If there is no 'status' assertion, create a zero assertion.
 def CreateAssertions(case, shell):
   assertions = []
 
@@ -291,11 +290,17 @@ def CreateAssertions(case, shell):
   if not stderr:
     CreateStringAssertion(case, 'stderr', assertions)
   if not status:
-    CreateIntAssertion(case, 'status', assertions)
+    if 'status' in case:
+      CreateIntAssertion(case, 'status', assertions)
+    else:
+      # If the user didn't specify a 'status' assertion, assert that the exit
+      # code is 0.
+      a = EqualAssertion('status', 0)
+      assertions.append(a)
     
   #print 'SHELL', shell
   #pprint.pprint(case)
-  #print assertions
+  #print(assertions)
   return assertions
 
 

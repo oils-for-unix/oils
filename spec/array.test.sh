@@ -274,13 +274,17 @@ argv.py ${single[@]:-none} x "${single[@]:-none}"
 # Problem: it joins it first.
 files=('foo.c' 'sp ace.h' 'bar.c')
 argv.py ${files[@]%.c}
+# status: 0
 # stdout: ['foo', 'sp', 'ace.h', 'bar']
+# N-I mksh status: 1
 # N-I mksh stdout-json: ""
 
 ### Stripping a whole array quoted
 files=('foo.c' 'sp ace.h' 'bar.c')
 argv.py "${files[@]%.c}"
+# status: 0
 # stdout: ['foo', 'sp ace.h', 'bar']
+# N-I mksh status: 1
 # N-I mksh stdout-json: ""
 
 ### Multiple subscripts not allowed

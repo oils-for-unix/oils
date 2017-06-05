@@ -44,7 +44,10 @@ echo ${1#'###'}
 ### ${#1#'###'}
 set -- '####'
 echo ${#1#'###'}
-# dash and zsh accept; mksh and bash don't
+# dash and zsh accept; mksh/bash/osh don't.
+# status: 2
+# stdout-json: ""
+# OK dash/zsh status: 0
 # OK dash stdout: 4
 # OK zsh stdout: 1
-# N-I bash/mksh stdout-json: ""
+# N-I bash/mksh status: 1

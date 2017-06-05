@@ -114,7 +114,9 @@ exec {myfd}> $TMP/named-fd.txt
 echo named-fd-contents >& $myfd
 cat $TMP/named-fd.txt
 # stdout: named-fd-contents
+# status: 0
 # N-I dash/mksh stdout-json: ""
+# N-I dash/mksh status: 127
 
 ### Redirect function stdout
 f() { echo one; echo two; }

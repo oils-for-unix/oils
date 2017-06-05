@@ -40,6 +40,7 @@
 
 ### Failed match
 [[ 'bar' =~ X ]] && echo true
+# status: 1
 # stdout-json: ""
 
 ### Regex quoted with \ -- preferred in bash
@@ -50,13 +51,17 @@
 # bash doesn't like the quotes
 [[ 'a b' =~ '^(a b)$' ]] && echo true
 # stdout: true
+# status: 0
 # OK bash stdout-json: ""
+# OK bash status: 1
 
 ### Regex quoted with double quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ "^(a b)$" ]] && echo true
 # stdout: true
+# status: 0
 # OK bash stdout-json: ""
+# OK bash status: 1
 
 ### Fix single quotes by storing in variable
 pat='^(a b)$'
@@ -72,7 +77,9 @@ pat="^(a b)$"
 pat="^(a b)$"
 [[ 'a b' =~ "$pat" ]] && echo true
 # stdout: true
+# status: 0
 # OK bash stdout-json: ""
+# OK bash status: 1
 
 ### Regex with == and not =~ is parse error, different lexer mode required
 # They both give a syntax error.  This is lame.

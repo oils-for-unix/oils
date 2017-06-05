@@ -24,7 +24,9 @@ echo a | egrep '[0-9]+'
 ### |&
 stdout_stderr.py |& cat
 # stdout-json: "STDERR\nSTDOUT\n"
+# status: 0
 # N-I dash/mksh stdout-json: ""
+# N-I dash status: 2
 
 ### ! turns non-zero into zero
 ! $SH -c 'exit 42'; echo $?

@@ -142,6 +142,8 @@ foo="'a b c d'"
 argv.py "${foo%d'}"
 # stdout: ["'a b c "]
 # BUG bash/mksh stdout-json: ""
+# BUG bash status: 2
+# BUG mksh status: 1
 
 ### The string to strip can be single quoted, outer is double quoted
 # This is an inconsistency in bash/mksh because '' are treated as literals in

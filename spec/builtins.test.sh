@@ -70,6 +70,8 @@ echo $GLOBAL
 printenv.py GLOBAL
 # stdout-json: "X\nX\nX\nNone\n"
 # N-I mksh/dash stdout-json: "X\nX\n"
+# N-I mksh status: 1
+# N-I dash status: 2
 
 ### Export a global variable and unset it
 f() { export GLOBAL=X; }

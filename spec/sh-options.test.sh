@@ -8,7 +8,10 @@ set -o errexit
 set -o STRICT || true # unknown option
 echo hello
 # stdout: hello
+# status: 0
 # BUG dash/mksh stdout-json: ""
+# BUG dash status: 2
+# BUG mksh status: 1
 
 ### nounset
 echo "[$unset]"
@@ -226,4 +229,6 @@ set -o pipefail
 { sleep 0.01; exit 9; } | { sleep 0.02; exit 2; } | { sleep 0.03; exit 0; }
 echo $?
 # stdout-json: "0\n2\n"
+# status: 0
 # N-I dash stdout-json: "0\n"
+# N-I dash status: 2

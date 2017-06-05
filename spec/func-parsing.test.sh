@@ -21,6 +21,8 @@
 # function_body    : compound_command
 #                  | compound_command redirect_list  /* Apply rule 9 */
 # code: one_line() ls; one_line;
+# status: 0
+# OK bash/osh status: 2
 
 ### Function with spaces, to see if ( and ) are separate tokens.
 # NOTE: Newline after ( is not OK.

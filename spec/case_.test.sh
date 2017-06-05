@@ -17,8 +17,10 @@ case a in
   *) echo star ;;&
   *) echo star2 ;;
 esac
+# status: 0
 # stdout-json: "A\nstar\nstar2\n"
 # N-I dash stdout-json: ""
+# N-I dash status: 2
 
 ### Case statement with ;&
 # ;& ignores the next condition.  Why would that be useful?
@@ -27,8 +29,10 @@ case a in
   XX) echo two ;&
   YY) echo three ;;
 esac
+# status: 0
 # stdout-json: "A\ntwo\nthree\n"
 # N-I dash stdout-json: ""
+# N-I dash status: 2
 
 ### Case with empty condition
 case $empty in
