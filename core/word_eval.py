@@ -774,7 +774,6 @@ class _WordPartEvaluator:
       return [self._EvalDoubleQuotedPart(part)]
 
     elif part.tag == word_part_e.CommandSubPart:
-
       if part.left_token.id != Id.Left_CommandSub:
         # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
         # supply something like /dev/fd/63.
