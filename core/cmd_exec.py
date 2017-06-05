@@ -924,6 +924,8 @@ class Executor(object):
       thunk = process.SubProgramThunk(self, node)
 
     redirects = self._EvalRedirects(node)
+    if redirects is None:
+      raise RuntimeError('TODO: handle redirect errors in pipeline')
     p = process.Process(thunk, fd_state=self.fd_state, redirects=redirects)
     return p
 
@@ -953,31 +955,31 @@ class Executor(object):
         # NOTE: no globbing.  You can write to a file called '*.py'.
         val = self.ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:
-          self._AddErrorContext("filename to redirect to should be a string")
-          return False
+          util.warn("Redirect filename must be a string, got %s", val)
+          return None
         filename = val.s
         if not filename:
-          self._AddErrorContext("filename can't be empty")
-          return False
+          # Whether this is fatal depends on errexit.
+          util.warn("Redirect filename can't be empty")
+          return None
 
         redirects.append(process.FilenameRedirect(n.op_id, n.fd, filename))
 
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
         val = self.ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:
-          self._AddErrorContext(
-              "descriptor to redirect to should be an integer, not list")
-          return False
+          util.warn("Redirect descriptor should be a string, got %s", val)
+          return None
         t = val.s
         if not t:
-          self._AddErrorContext("descriptor can't be empty")
-          return False
+          util.warn("Redirect descriptor can't be empty")
+          return None
         try:
           target_fd = int(t)
         except ValueError:
-          self._AddErrorContext(
-              "descriptor to redirect to should be an integer, not string")
-          return False
+          util.warn(
+              "Redirect descriptor should look like an integer, got %s", val)
+          return None
         redirects.append(process.DescriptorRedirect(n.op_id, n.fd, target_fd))
 
       elif redir_type == RedirType.Str:
@@ -1051,12 +1053,29 @@ class Executor(object):
   def _PopErrExit(self):
     self.exec_opts.errexit.Pop()
 
+  def _CheckStatus(self, status, node, argv=None):
+    if self.exec_opts.ErrExit() and status != 0:
+      #if node.tag == command_e.SimpleCommand:
+      #  # TODO: Add context
+      #  e_die('%r command exited with status %d (%s)', argv[0], status,
+      #        node.words[0])
+
+      e_die('%r command exited with status %d', node.__class__.__name__,
+            status)
+
   def _Execute(self, node):
     """
     Args:
       node: of type AstNode
     """
     redirects = self._EvalRedirects(node)
+    if redirects is None:
+      status = 1  # Redirect error causes bad status
+      self._CheckStatus(status, node)
+      self.mem.last_status = status  # TODO: This is somewhat duplicated
+      return status
+
+    assert isinstance(redirects, list), redirects
 
     # TODO: Only eval argv[0] once.  It can have side effects!
     if node.tag == command_e.SimpleCommand:
@@ -1345,14 +1364,7 @@ class Executor(object):
     # TODO:
     # - Check errexit on fake 'pipeline' node.
     # - Also should be useful for TimeBlock?
-    if self.exec_opts.ErrExit() and status != 0:
-      if node.tag == command_e.SimpleCommand:
-        # TODO: Add context
-        e_die('%r command exited with status %d (%s)', argv[0], status,
-              node.words[0])
-      else:
-        e_die('%r command exited with status %d', node.__class__.__name__,
-              status)
+    self._CheckStatus(status, node)
 
     # TODO: Is this the right place to put it?  Does it need a stack for
     # function calls?

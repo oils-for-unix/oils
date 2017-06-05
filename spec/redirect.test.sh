@@ -140,3 +140,16 @@ cat $TMP/inner.txt
 echo --
 cat $TMP/outer.txt
 # stdout-json: "i1\ni2\n--\no1\no2\n"
+
+### Redirect to empty string
+f=''
+echo s > "$f"
+echo "result=$?"
+set -o errexit
+echo s > "$f"
+echo DONE
+# stdout: result=1
+# status: 1
+# OK dash stdout: result=2
+# OK dash status: 2
+
