@@ -774,7 +774,7 @@ class _WordPartEvaluator:
       return [self._EvalDoubleQuotedPart(part)]
 
     elif part.tag == word_part_e.CommandSubPart:
-      if part.left_token.id != Id.Left_CommandSub:
+      if part.left_token.id not in (Id.Left_CommandSub, Id.Left_Backtick):
         # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
         # supply something like /dev/fd/63.
         raise NotImplementedError(part.left_token.id)
