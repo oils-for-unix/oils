@@ -24,6 +24,7 @@ warn = util.warn
 e_die = util.e_die
 
 arith_expr_e = ast.arith_expr_e
+lvalue_e = ast.lvalue_e
 bool_expr_e = ast.bool_expr_e  # used for dispatch
 word_e = ast.word_e
 part_value_e = runtime.part_value_e
@@ -142,23 +143,35 @@ class ArithEvaluator(ExprEvaluator):
         warn(e.UserErrorString())
     return i
 
+  def _EvalLeft(self, node):
+    """Evaluate the LHS of an assignment.
+
+    Args:
+      node: osh_ast.lvalue
+
+    Returns:
+      LValue, a pointer to Mem?
+    """
+    if node.tag == lvalue_e.LeftVar:  # a = b
+      return 9
+    if node.tag == lvalue_e.LeftIndex:  # a[1] = b
+      return 999
+
+    raise AssertionError(node.tag)
+
   def _Eval(self, node):
     """
     Args:
-      node: _ExprNode
+      node: osh_ast.arith_expr
 
-    Issue: Word is not a kind of _ExprNode or ExprNode.  It is a _Node however,
-    because it has an Id type.
-
-    TODO:
-    - Error checking.  The return value should probably be success/fail, or
-      cflow, and then the integer result can be ArithEval.Result()
+    Returns:
+      integer
     """
-    # NOTE: Variable NAMES cannot be formed dynamically; but INTEGERS can.
-    # ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have to
-    # handle that as a special case.
-    #if node.id == Id.Node_ArithVar:
-    if node.tag == arith_expr_e.RightVar:  # $(( x ))
+    # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
+    # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
+    # to handle that as a special case.
+
+    if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))
       val = self.mem.Get(node.name)
       # By default, undefined variables are the ZERO value.  TODO: Respect
       # nounset and raise an exception.
@@ -168,70 +181,169 @@ class ArithEvaluator(ExprEvaluator):
           e_die('Undefined variable %r', node.name)
         else:
           return 0
-      else:
-        return self._ValToIntegerOrError(val)
 
-    elif node.tag == arith_expr_e.ArithWord:  # $(( $x )) or $(( ${x}${y} )), etc.
+      # TODO: It could be an array too!
+      return self._ValToIntegerOrError(val)
+
+    # $(( $x )) or $(( ${x}${y} )), etc.
+    if node.tag == arith_expr_e.ArithWord:
       val = self.word_ev.EvalWordToString(node.w)
       return self._ValToIntegerOrError(val, word=node.w)
 
-    #elif node.id == Id.Node_UnaryExpr:
-    elif node.tag == arith_expr_e.ArithUnary:
-      atype = node.op_id
+    if node.tag == arith_expr_e.UnaryAssign:  # a++
+      op_id = node.op_id
+      lval = self._EvalLeft(node.child)
 
-      # TODO: Should we come up with a kind/arity??
-      if atype == Id.Node_UnaryPlus:
+      if op_id == Id.Node_PostDPlus:  # post-increment
+        # TODO: need to modify through self.mem
+        pass
+      if op_id == Id.Node_PostDMinus:  # post-decrement
+        # TODO: need to modify through self.mem
+        pass
+      if op_id == Id.Arith_DPlus:  # pre-increment
+        # TODO: need to modify through self.mem
+        pass
+      if op_id == Id.Arith_DMinus:  # pre-decrement
+        # TODO: need to modify through self.mem
+        pass
+
+      raise NotImplementedError(op_id)
+
+    if node.tag == arith_expr_e.BinaryAssign:  # a=1
+      op_id = node.op_id
+      lhs = self._EvalLeft(node.left)
+      rhs = self._Eval(node.right)
+
+      if op_id == Id.Arith_Equal:
+        pass
+      elif op_id == Id.Arith_PlusEqual:
+        pass
+      elif op_id == Id.Arith_MinusEqual:
+        pass
+      elif op_id == Id.Arith_StarEqual:
+        pass
+      elif op_id == Id.Arith_SlashEqual:
+        pass
+      elif op_id == Id.Arith_PercentEqual:
+        pass
+      elif op_id == Id.Arith_PercentEqual:
+        pass
+      elif op_id == Id.Arith_DGreatEqual:
+        pass
+      elif op_id == Id.Arith_DLessEqual:
+        pass
+      elif op_id == Id.Arith_AmpEqual:
+        pass
+      elif op_id == Id.Arith_PipeEqual:
+        pass
+      elif op_id == Id.Arith_CaretEqual:
+        pass
+      else:
+        raise AssertionError(op_id)  # shouldn't get here
+ 
+      # TODO: Use self.mem
+      raise NotImplementedError('assign')
+
+    if node.tag == arith_expr_e.ArithUnary:
+      op_id = node.op_id
+
+      if op_id == Id.Node_UnaryPlus:
         return self._Eval(node.child)
-
-      elif atype == Id.Node_UnaryMinus:
+      if op_id == Id.Node_UnaryMinus:
         return -self._Eval(node.child)
 
-    #elif node.id == Id.Node_TernaryExpr:
-    elif node.tag == arith_expr_e.TernaryOp:
-      lhs = self._Eval(node.cond)
-      if lhs != 0:
-        ret = self._Eval(node.true_expr)
-      else:
-        ret = self._Eval(node.false_expr)
-      return ret
+      if op_id == Id.Arith_Bang:  # logical negation
+        return int(not self._Eval(node.child))
+      if op_id == Id.Arith_Tilde:  # bitwise complement
+        return ~self._Eval(node.child)
 
-    #elif node.id == Id.Node_BinaryExpr:
-    elif node.tag == arith_expr_e.ArithBinary:
-      # TODO: Do type check at PARSE TIME, where applicable
+      raise NotImplementedError(op_id)
+
+    if node.tag == arith_expr_e.ArithBinary:
+      op_id = node.op_id
       lhs = self._Eval(node.left)
       rhs = self._Eval(node.right)
 
-      atype = node.op_id
+      if op_id == Id.Arith_LBracket:
+        if not isinstance(lhs, list):
+          # TODO: Add error context
+          e_die('Left-hand side of array index should be an array')
 
-      if atype == Id.Arith_Comma:
+        try:
+          ret = lhs[rhs]
+        except IndexError:
+          if self.exec_opts.nounset:
+            e_die('Index out of bounds')
+          else:
+            return 0  # If not fatal, return 0
+
+      if op_id == Id.Arith_Comma:
         return rhs
 
-      # For now:
-      if atype == Id.Arith_Plus:
+      if op_id == Id.Arith_Plus:
         return lhs + rhs
-      if atype == Id.Arith_Minus:
+      if op_id == Id.Arith_Minus:
         return lhs - rhs
-
-      if atype == Id.Arith_Star:
+      if op_id == Id.Arith_Star:
         return lhs * rhs
-      if atype == Id.Arith_Slash:
+      if op_id == Id.Arith_Slash:
         try:
           return lhs / rhs
         except ZeroDivisionError:
           # TODO: Instead of op_id, I should have the token
           # node.right.w crashes if it's not a constant!
           e_die('Divide by zero', word=node.right.w)
-
-      if atype == Id.Arith_Percent:
+      if op_id == Id.Arith_Percent:
         return lhs % rhs
-
-      if atype == Id.Arith_DStar:
+      if op_id == Id.Arith_DStar:
         return lhs ** rhs
 
-    else:
-      raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
+      if op_id == Id.Arith_DEqual:
+        return int(lhs == rhs)
+      if op_id == Id.Arith_NEqual:
+        return int(lhs != rhs)
+      if op_id == Id.Arith_Great:
+        return int(lhs > rhs)
+      if op_id == Id.Arith_GreatEqual:
+        return int(lhs >= rhs)
+      if op_id == Id.Arith_Less:
+        return int(lhs < rhs)
+      if op_id == Id.Arith_LessEqual:
+        return int(lhs <= rhs)
 
-    raise AssertionError("Shouldn't get here")
+      # TODO: Need short-circuit evaluation.
+      if op_id == Id.Arith_DPipe:
+        l = int(lhs != 0)
+        r = int(rhs != 0)
+        return l or r
+      if op_id == Id.Arith_DAmp:
+        l = int(lhs != 0)
+        r = int(rhs != 0)
+        return l and r
+
+      if op_id == Id.Arith_Pipe:
+        return lhs | rhs
+      if op_id == Id.Arith_Amp:
+        return lhs & rhs
+      if op_id == Id.Arith_Caret:
+        return lhs ^ rhs
+
+      # Note: how to define shift of negative numbers?
+      if op_id == Id.Arith_DLess:
+        return lhs << rhs
+      if op_id == Id.Arith_DGreat:
+        return lhs >> rhs
+
+      raise NotImplementedError(op_id)
+
+    if node.tag == arith_expr_e.TernaryOp:
+      cond = self._Eval(node.cond)
+      if cond:  # nonzero
+        return self._Eval(node.true_expr)
+      else:
+        return self._Eval(node.false_expr)
+
+    raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
 
 
 class BoolEvaluator(ExprEvaluator):

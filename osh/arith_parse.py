@@ -14,9 +14,8 @@ from osh import ast_ as ast
 def NullIncDec(p, w, bp):
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
-  if not tdop.IsLValue(right):
-    raise tdop.ParseError("Can't assign to %r (%s)" % (right, right.token))
-  return ast.ArithUnary(word.ArithId(w), right)
+  child = tdop.ToLValue(right)
+  return ast.UnaryAssign(word.ArithId(w), child)
 
 
 def NullUnaryPlus(p, t, bp):
@@ -34,15 +33,15 @@ def NullUnaryMinus(p, t, bp):
 def LeftIncDec(p, w, left, rbp):
   """ For i++ and i--
   """
-  if not tdop.IsLValue(left):
-    raise tdop.ParseError("Can't assign to %r (%s)" % (left, left.token))
   if word.ArithId(w) == Id.Arith_DPlus:
     op_id = Id.Node_PostDPlus
   elif word.ArithId(w) == Id.Arith_DMinus:
     op_id = Id.Node_PostDMinus
   else:
     raise AssertionError
-  return ast.ArithUnary(op_id, left)
+
+  child = tdop.ToLValue(left)
+  return ast.UnaryAssign(op_id, child)
 
 
 def LeftIndex(p, w, left, unused_bp):

@@ -13,6 +13,14 @@
 # 
 # NOTE $(( 8#9 )) can fail, and this can be done at parse time...
 
+### Side Effect in Array Indexing
+a=(4 5 6)
+echo "${a[b=2]} b=$b"
+# stdout: 6 b=2
+# OK zsh stdout: 5 b=2
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### Add one to var
 i=1
 echo $(($i+1))
@@ -134,11 +142,40 @@ echo $((a+=1))
 echo $a
 # stdout-json: "5\n5\n"
 
+### Comparison Ops
+echo $(( 1 == 1 ))
+echo $(( 1 != 1 ))
+echo $(( 1 < 1 ))
+echo $(( 1 <= 1 ))
+echo $(( 1 > 1 ))
+echo $(( 1 >= 1 ))
+# stdout-json: "1\n0\n0\n1\n0\n1\n"
+
+### Logical Ops
+echo $((1 || 2))
+echo $((1 && 2))
+echo $((!(1 || 2)))
+# stdout-json: "1\n1\n0\n"
+
+### Logical Ops Short Circuit
+x=11
+(( 1 || (x = 22) ))
+echo $x
+(( 0 || (x = 33) ))
+echo $x
+(( 0 && (x = 44) ))
+echo $x
+(( 1 && (x = 55) ))
+echo $x
+# stdout-json: "11\n33\n33\n55\n"
+# N-I dash stdout-json: "11\n11\n11\n11\n"
+
 ### Bitwise ops
 echo $((1|2))
 echo $((1&2))
+echo $((1^2))
 echo $((~(1|2)))
-# stdout-json: "3\n0\n-4\n"
+# stdout-json: "3\n0\n3\n-4\n"
 
 ### Unary minus and plus
 a=1

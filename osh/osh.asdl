@@ -94,16 +94,16 @@ module osh
     LeftVar(string name)
   | LeftIndex(arith_expr obj, arith_expr index)
 
-  -- should every node have _begin_loc?  Then before you print it, you fill
-  -- out.
+  -- Need to preserve physical parens?  Maybe need Parens node.
   arith_expr =
     -- TODO: need token
-    RightVar(string name)  -- variable without $
+    ArithVarRef(string name)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
+  | UnaryAssign(id op_id, lvalue child)
+  | BinaryAssign(id op_id, lvalue left, arith_expr right)
   | ArithUnary(id op_id, arith_expr child)
   -- TODO: add token for divide by zero
   | ArithBinary(id op_id, arith_expr left, arith_expr right)
-  | ArithAssign(id op_id, lvalue left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
   | FuncCall(arith_expr func, arith_expr* args)
 

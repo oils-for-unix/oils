@@ -36,7 +36,7 @@ def IsCallable(node):
   # f(x), or f[1](x)
   # I guess function calls can be callable?  Return a function later.  Not
   # sure.  Python allows f(3)(4).
-  if node.tag == arith_expr_e.RightVar:
+  if node.tag == arith_expr_e.ArithVarRef:
     return True
   if node.tag == arith_expr_e.ArithBinary:
     return node.op_id == Id.Arith_LBracket
@@ -49,23 +49,27 @@ def IsIndexable(node):
     node: ExprNode
   """
   # f[1], or f(x)[1], or f[1][1]
-  if node.tag == arith_expr_e.RightVar:
+  if node.tag == arith_expr_e.ArithVarRef:
     return True
   if node.tag == arith_expr_e.ArithBinary:
     return node.op_id in (Id.Arith_LBracket, Id.Node_FuncCall)
 
 
-def IsLValue(node):
+def ToLValue(node):
   """Determine if a node is a valid L-value by whitelisting tags.
 
   Args:
     node: ExprNode (could be VarExprNode or BinaryExprNode)
   """
   # foo = bar, foo[1] = bar
-  if node.tag == arith_expr_e.RightVar:
-    return True
+  if node.tag == arith_expr_e.ArithVarRef:
+    return ast.LeftVar(node.name)
   if node.tag == arith_expr_e.ArithBinary:
-    return node.op_id == Id.Arith_LBracket
+    if node.op_id == Id.Arith_LBracket:
+      return ast.LeftIndex(node.left, node.right)
+
+  # TODO: parse error context here.
+  raise TdopParseError("Can't assign to %r (%s)" % (left, IdName(left.id)))
 
 
 #
@@ -83,7 +87,7 @@ def NullConstant(p, w, bp):
   if w.tag == word_e.CompoundWord:
     var_name = word.AsArithVarName(w)
     if var_name:
-      return ast.RightVar(var_name)
+      return ast.ArithVarRef(var_name)
   return ast.ArithWord(w)
 
 
@@ -124,22 +128,8 @@ def LeftBinaryOp(p, w, left, rbp):
 def LeftAssign(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
-
-  if not IsLValue(left):
-    raise TdopParseError("Can't assign to %r (%s)" % (left, IdName(left.id)))
-
-  # HACK: NullConstant makes this of type RightVar?  Change that to something
-  # generic?
-  if left.tag == arith_expr_e.RightVar:
-    lhs = ast.LeftVar(left.name)
-  elif left.tag == arith_expr_e.ArithBinary:
-    assert left.op_id == Id.Arith_LBracket
-    # change a[i] to LeftIndex(a, i)
-    lhs = ast.LeftIndex(left.left, left.right)
-  else:
-    raise AssertionError
-
-  return ast.ArithAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
+  lhs = ToLValue(left)
+  return ast.BinaryAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
 
 
 #
