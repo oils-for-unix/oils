@@ -19,6 +19,7 @@ part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 
 bracket_op_e = ast.bracket_op_e
+suffix_op_e = ast.suffix_op_e
 word_part_e = ast.word_part_e
 log = util.log
 e_die = util.e_die
@@ -583,7 +584,7 @@ class _WordPartEvaluator:
 
   def _DecayArray(self, val):
     sep = _GetJoinChar(self.mem)
-    assert val.tag == value_e.StrArray
+    assert val.tag == value_e.StrArray, val
     return runtime.Str(sep.join(val.strs))
 
   def _EmptyStrOrError(self, val, token=None):
@@ -704,33 +705,41 @@ class _WordPartEvaluator:
 
     elif part.suffix_op:
       out_part_vals = []
-      if LookupKind(part.suffix_op.op_id) == Kind.VTest:
-        # VTest: value -> part_value[]
-        new_part_vals, effect = self._ApplyTestOp(val, part.suffix_op,
-                                                  quoted)
+      op = part.suffix_op
+      if op.tag == suffix_op_e.StringUnary:
+        if LookupKind(part.suffix_op.op_id) == Kind.VTest:
+          # VTest: value -> part_value[]
+          new_part_vals, effect = self._ApplyTestOp(val, part.suffix_op,
+                                                    quoted)
 
-        # NOTE: Splicing part_values is necessary because of code like
-        # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
-        # do_glob/do_elide setting.
-        if effect == Effect.SpliceParts:
-          return new_part_vals  # EARLY RETURN
+          # NOTE: Splicing part_values is necessary because of code like
+          # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
+          # do_glob/do_elide setting.
+          if effect == Effect.SpliceParts:
+            return new_part_vals  # EARLY RETURN
 
-        elif effect == Effect.SpliceAndAssign:
-          raise NotImplementedError
+          elif effect == Effect.SpliceAndAssign:
+            raise NotImplementedError
 
-        elif effect == Effect.Error:
-          raise NotImplementedError
+          elif effect == Effect.Error:
+            raise NotImplementedError
+
+          else:
+            # The old one
+            #val = self._EmptyStringPartOrError(part_val, quoted)
+            #out_part_vals.append(part_val)
+            pass  # do nothing, may still be undefined
 
         else:
-          # The old one
-          #val = self._EmptyStringPartOrError(part_val, quoted)
-          #out_part_vals.append(part_val)
-          pass  # do nothing, may still be undefined
+          val = self._EmptyStrOrError(val)  # maybe error
+          # Other suffix: value -> value
+          val = self._ApplyOtherSuffixOp(val, part.suffix_op)
 
-      else:
-        val = self._EmptyStrOrError(val)  # maybe error
-        # Other suffix: value -> value
-        val = self._ApplyOtherSuffixOp(val, part.suffix_op)
+      elif op.tag == suffix_op_e.PatSub:
+        raise NotImplementedError(op)
+
+      elif op.tag == suffix_op_e.Slice:
+        raise NotImplementedError(op)
 
     # After applying suffixes, process decay_array here.
     if decay_array:

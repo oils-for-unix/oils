@@ -18,7 +18,7 @@ word_e = ast.word_e
 word_part_e = ast.word_part_e
 arith_expr_e = ast.arith_expr_e
 bool_expr_e = ast.bool_expr_e
-lvalue_e = ast.lvalue_e
+lhs_expr_e = ast.lhs_expr_e
 
 
 class Cursor:
@@ -363,7 +363,7 @@ class OilPrinter:
       if local_symbols is not None:
         for pair in node.pairs:
           # NOTE: Not handling local a[b]=c
-          if pair.lhs.tag == lvalue_e.LeftVar:
+          if pair.lhs.tag == lhs_expr_e.LhsName:
             #print("REGISTERED %s" % pair.lhs.name)
             local_symbols[pair.lhs.name] = True
 
@@ -375,7 +375,7 @@ class OilPrinter:
       # statements.
       if local_symbols is not None:
         lhs0 = node.pairs[0].lhs
-        if lhs0.tag == lvalue_e.LeftVar and lhs0.name in local_symbols:
+        if lhs0.tag == lhs_expr_e.LhsName and lhs0.name in local_symbols:
           defined_locally = True
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
@@ -430,7 +430,7 @@ class OilPrinter:
     # foo=bar spam=eggs -> foo = 'bar', spam = 'eggs'
     n = len(node.pairs)
     for i, pair in enumerate(node.pairs):
-      assert pair.lhs.tag == lvalue_e.LeftVar
+      assert pair.lhs.tag == lhs_expr_e.LhsName
 
       left_spid = pair.spids[0]
       self.cursor.PrintUntil(left_spid)

@@ -45,10 +45,26 @@ def LeftIncDec(p, w, left, rbp):
 
 
 def LeftIndex(p, w, left, unused_bp):
-  """ index f[x+1] """
-  # f[x] or f[x][y]
+  """Array indexing, in both LValue and RValue context.
+
+  LValue: f[0] = 1  f[x+1] = 2
+  RValue: a = f[0]  b = f[x+1]
+
+  On RHS, you can have:
+  1. a = f[0]
+  2. a = f(x, y)[0]
+  3. a = f[0][0]  # in theory, if we want character indexing?
+     NOTE: a = f[0].charAt() is probably better
+
+  On LHS, you can only have:
+  1. a[0] = 1
+
+  Nothing else is valid:
+  2. function calls return COPIES.  They need a name, at least in osh.
+  3. strings don't have mutable characters.
+  """
   if not tdop.IsIndexable(left):
-    raise tdop.ParseError("%s can't be indexed" % left)
+    raise tdop.TdopParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 

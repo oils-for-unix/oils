@@ -73,11 +73,6 @@ empty=('')
 argv.py "${empty[@]}"
 # stdout: ['']
 
-### Assign to array index without initialization
-b[2]=9
-argv.py "${b[@]}"
-# stdout: ['9']
-
 ### Retrieve index
 a=(1 '2 3')
 argv.py "${a[1]}"

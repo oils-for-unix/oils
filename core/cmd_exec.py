@@ -288,14 +288,14 @@ class Mem(object):
     """Helper for completion."""
     assert isinstance(a, list)
     val = runtime.StrArray(a)
-    pairs = [(ast.LeftVar(name), val)]
+    pairs = [(ast.LhsName(name), val)]
     self.SetGlobals(pairs)
 
   def SetGlobalString(self, name, s):
     """Helper for completion, $PWD, etc."""
     assert isinstance(s, str)
     val = runtime.Str(s)
-    pairs = [(ast.LeftVar(name), val)]
+    pairs = [(ast.LhsName(name), val)]
     self.SetGlobals(pairs)
 
   #
@@ -338,7 +338,7 @@ class Mem(object):
     2) temporary environments like FOO=bar BAR=$FOO cmd, 
     3) read builtin
     """
-    pairs = [(ast.LeftVar(name), val)]
+    pairs = [(ast.LhsName(name), val)]
     self.SetLocals(pairs)
 
   def _SetLocalOrGlobal(self, name, val):

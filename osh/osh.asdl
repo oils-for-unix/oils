@@ -90,17 +90,18 @@ module osh
     -- contains any type of word_part.
   | BracedWordTree(word_part* parts)
  
-  lvalue = 
-    LeftVar(string name)
-  | LeftIndex(arith_expr obj, arith_expr index)
+  -- TODO: Might want to preserve token here.
+  lhs_expr =
+    LhsName(string name)
+  | LhsIndexedName(string name, arith_expr index)
 
   -- Need to preserve physical parens?  Maybe need Parens node.
   arith_expr =
     -- TODO: need token
     ArithVarRef(string name)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
-  | UnaryAssign(id op_id, lvalue child)
-  | BinaryAssign(id op_id, lvalue left, arith_expr right)
+  | UnaryAssign(id op_id, lhs_expr child)
+  | BinaryAssign(id op_id, lhs_expr left, arith_expr right)
   | ArithUnary(id op_id, arith_expr child)
   -- TODO: add token for divide by zero
   | ArithBinary(id op_id, arith_expr left, arith_expr right)
@@ -127,7 +128,7 @@ module osh
   | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
             string here_end, bool was_filled)
 
-  assign_pair = (lvalue lhs, word? rhs)
+  assign_pair = (lhs_expr lhs, word? rhs)
   env_pair = (string name, word val)
 
   -- Each arm tests one word against multiple words

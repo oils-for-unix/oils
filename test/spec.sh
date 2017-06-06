@@ -256,7 +256,7 @@ glob() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/arith.test.sh --osh-failures-allowed 8 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -351,7 +351,7 @@ sh-options() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/arith-context.test.sh --osh-failures-allowed 9 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
@@ -389,7 +389,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/dparen.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 

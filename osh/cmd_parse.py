@@ -467,7 +467,7 @@ class CommandParser(object):
 
     pairs = []
     for lhs, rhs, spid in bindings:
-      p = ast.assign_pair(ast.LeftVar(lhs), rhs)
+      p = ast.assign_pair(ast.LhsName(lhs), rhs)
       p.spids.append(spid)
       pairs.append(p)
 
@@ -562,7 +562,7 @@ class CommandParser(object):
 
       pairs = []
       for lhs, rhs, spid in prefix_bindings:
-        p = ast.assign_pair(ast.LeftVar(lhs), rhs)
+        p = ast.assign_pair(ast.LhsName(lhs), rhs)
         p.spids.append(spid)
         pairs.append(p)
 

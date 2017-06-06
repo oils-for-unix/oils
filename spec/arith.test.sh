@@ -31,16 +31,6 @@ i=1
 echo $((i+1))
 # stdout: 2
 
-### Bizarre recursive evaluation rule
-foo=5
-bar=foo
-spam=bar
-eggs=spam
-echo $((foo+1)) $((bar+1)) $((spam+1)) $((eggs+1))
-# stdout: 6 6 6 6
-# N-I dash stdout-json: ""
-# N-I dash status: 2
-
 ### SimpleVarSub within arith
 echo $(($j + 1))
 # stdout: 1
@@ -128,6 +118,34 @@ echo $a
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
+### Increment undefined variables
+(( undef1++ ))
+(( ++undef2 ))
+echo "[$undef1][$undef2]"
+# stdout: [1][1]
+# N-I dash stdout-json: "[][]\n"
+
+### Increment and decrement array
+a=(5 6 7 8)
+(( a[0]++, ++a[1], a[2]--, --a[3] ))
+(( undef[0]++, ++undef[1], undef[2]--, --undef[3] ))
+echo "${a[@]}" - "${undef[@]}"
+# stdout: 6 7 6 7 - 1 1 -1 -1
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+# BUG zsh stdout: 5 6 7 8 -
+
+### Increment undefined variables with nounset
+set -o nounset
+(( undef1++ ))
+(( ++undef2 ))
+echo "[$undef1][$undef2]"
+# stdout-json: ""
+# status: 1
+# OK dash status: 2
+# BUG mksh/zsh status: 0
+# BUG mksh/zsh stdout-json: "[1][1]\n"
+
 ### Comma operator (borrowed from C)
 a=1
 b=2
@@ -136,7 +154,7 @@ echo $((a,(b+1)))
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
-### Mutating ops
+### Augmented assignment
 a=4
 echo $((a+=1))
 echo $a
@@ -185,8 +203,8 @@ echo $((- a + + b))
 
 ### No floating point
 echo $((1 + 2.3))
-# status: 1
-# OK dash status: 2
+# status: 2
+# OK bash/mksh status: 1
 # BUG zsh status: 0
 
 ### Array indexing in arith
@@ -236,11 +254,21 @@ zero=0
 echo $(( ${zero}xAB ))
 # stdout: 171
 
-### Dynamic var names!
+### Dynamic var names - result of runtime parse/eval
 foo=5
 x=oo
 echo $(( foo + f$x + 1 ))
 # stdout: 11
+
+### Bizarre recursive name evaluation - result of runtime parse/eval
+foo=5
+bar=foo
+spam=bar
+eggs=spam
+echo $((foo+1)) $((bar+1)) $((spam+1)) $((eggs+1))
+# stdout: 6 6 6 6
+# N-I dash stdout-json: ""
+# N-I dash status: 2
 
 ### nounset with arithmetic
 set -o nounset
@@ -257,3 +285,43 @@ echo $(( 999999 * 999999 * 999999 * 999999 ))
 # stdout: 999996000005999996000001
 # BUG dash/bash/zsh stdout: -1996229794797103359
 # BUG mksh stdout: -15640831
+
+### Invalid LValue
+a=9
+(( (a + 2) = 3 ))
+echo $a
+# status: 2
+# stdout-json: ""
+# OK bash/mksh/zsh stdout: 9
+# OK bash/mksh/zsh status: 0
+#   dash doesn't implement assignment
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+
+### Invalid LValue that looks like array
+(( 1[2] = 3 ))
+echo "status=$?"
+# status: 2
+# stdout-json: ""
+# OK bash stdout: status=1
+# OK bash status: 0
+# OK mksh/zsh stdout: status=2
+# OK mksh/zsh status: 0
+# N-I dash stdout: status=127
+# N-I dash status: 0
+
+### Invalid LValue: two sets of brackets
+(( a[1][2] = 3 ))
+echo "status=$?"
+#   shells treat this as a NON-fatal error
+# status: 2
+# stdout-json: ""
+# OK bash stdout: status=1
+# OK mksh/zsh stdout: status=2
+# OK bash/mksh/zsh status: 0
+#   dash doesn't implement assignment
+# N-I dash stdout: status=127
+# N-I dash status: 0
+
+
+

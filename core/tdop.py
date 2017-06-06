@@ -51,8 +51,13 @@ def IsIndexable(node):
   # f[1], or f(x)[1], or f[1][1]
   if node.tag == arith_expr_e.ArithVarRef:
     return True
+  if node.tag == arith_expr_e.FuncCall:
+    return True
+
+  # Hm f[1][1] is not allowed in shell, but might be in Oil.  There are no
+  # nested arrays, or mutable strings.
   if node.tag == arith_expr_e.ArithBinary:
-    return node.op_id in (Id.Arith_LBracket, Id.Node_FuncCall)
+    return node.op_id == Id.Arith_LBracket
 
 
 def ToLValue(node):
@@ -63,13 +68,15 @@ def ToLValue(node):
   """
   # foo = bar, foo[1] = bar
   if node.tag == arith_expr_e.ArithVarRef:
-    return ast.LeftVar(node.name)
+    return ast.LhsName(node.name)
   if node.tag == arith_expr_e.ArithBinary:
-    if node.op_id == Id.Arith_LBracket:
-      return ast.LeftIndex(node.left, node.right)
+    # For example, a[0][0] = 1 is NOT valid.
+    if (node.op_id == Id.Arith_LBracket and
+        node.left.tag == arith_expr_e.ArithVarRef):
+      return ast.LhsIndexedName(node.left.name, node.right)
 
   # TODO: parse error context here.
-  raise TdopParseError("Can't assign to %r (%s)" % (left, IdName(left.id)))
+  raise TdopParseError("Can't assign to %r" % node)
 
 
 #

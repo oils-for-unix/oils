@@ -24,9 +24,10 @@ warn = util.warn
 e_die = util.e_die
 
 arith_expr_e = ast.arith_expr_e
-lvalue_e = ast.lvalue_e
+lhs_expr_e = ast.lhs_expr_e
 bool_expr_e = ast.bool_expr_e  # used for dispatch
 word_e = ast.word_e
+
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 
@@ -34,7 +35,13 @@ value_e = runtime.value_e
 def _StringToInteger(s, word=None):
   """Use bash-like rules to coerce a string to an integer.
 
-  Supports hex, octal, etc.
+  0xAB -- hex constant
+  010 -- octable constant
+  64#z -- arbitary base constant
+  bare word: variable
+  quoted word: string
+
+  Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
   """
   # TODO: In non-strict mode, empty string becomes zero.  In strict mode, it's
   # a runtime error.
@@ -92,28 +99,34 @@ def _StringToInteger(s, word=None):
   return integer
 
 
-def _ValToInteger(val, word=None):
-  """Evaluate with the rules of arithmetic expressions.
+def _ValToArith(val, word=None):
+  """Convert runtime.value to Python int or list.
 
-  Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
+  NOTE: We could have a runtime.arith_value and get rid of the isinstance()
+  check.  But this means our array indexing is lazy, which I think is fine.
 
-  0xAB -- hex constant
-  010 -- octable constant
-  64#z -- arbitary base constant
-  bare word: variable
-  quoted word: string
+  PROBLEM: array[1000000]=1 could use up a lot of memory.
+
+  But I think that is OK, at least until there's evidence that people want
+  to use arrays that way.
+
+  But what about hash tables?  That should be a separate type.
+
+  Representation could be:
+
+  ['1', 2, 3, None, None, '4', None]
+  Then length counts the entries that are not None.
   """
   assert isinstance(val, runtime.value), val
-  if val.tag != value_e.Str:
-    # TODO: Error message: expected string but got integer/array
-    e_die('Expected string but got %r', val)
-  return _StringToInteger(val.s, word=word)
+  if val.tag == value_e.Str:
+    return _StringToInteger(val.s, word=word)
+  if val.tag == value_e.StrArray:
+    return val.strs  # Python list of strings
 
 
 # In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
 # BoolEvalResult, CmdExecResult?  Word is handled differntly because it's a
 # string.
-
 
 class ExprEvaluator:
   """
@@ -125,16 +138,9 @@ class ExprEvaluator:
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
     self.exec_opts = exec_opts
 
-  # TODO: Remove this
-  def Eval(self, node):
-    return self._Eval(node)
-
-
-class ArithEvaluator(ExprEvaluator):
-
-  def _ValToIntegerOrError(self, val, word=None):
+  def _StringToIntegerOrError(self, s):
     try:
-      i = _ValToInteger(val, word=word)
+      i = _StringToInteger(s)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -143,21 +149,93 @@ class ArithEvaluator(ExprEvaluator):
         warn(e.UserErrorString())
     return i
 
-  def _EvalLeft(self, node):
+  # TODO: Remove this
+  def Eval(self, node):
+    return self._Eval(node)
+
+
+class ArithEvaluator(ExprEvaluator):
+
+  def _ValToArithOrError(self, val, word=None):
+    try:
+      i = _ValToArith(val, word=word)
+    except util.FatalRuntimeError as e:
+      if self.exec_opts.strict_arith:
+        raise
+      else:
+        i = 0
+        warn(e.UserErrorString())
+    return i
+
+  def _VarLookup(self, name):
+    val = self.mem.Get(name)
+    # By default, undefined variables are the ZERO value.  TODO: Respect
+    # nounset and raise an exception.
+    if val.tag == value_e.Undef:
+      if self.exec_opts.nounset:
+        # TODO: need token
+        e_die('Undefined variable %r', node.name)
+      else:
+        return 0
+
+    # TODO: It could be an array too!
+    return self._ValToArithOrError(val)
+
+  def _LValueToLocation(self, node):
     """Evaluate the LHS of an assignment.
 
     Args:
-      node: osh_ast.lvalue
+      node: osh_ast.lhs_expr
 
     Returns:
       LValue, a pointer to Mem?
     """
-    if node.tag == lvalue_e.LeftVar:  # a = b
+    # TODO: Add runtime.Location?
+    # And then _Store(location, value)
+
+    if node.tag == lhs_expr_e.LhsName:  # a = b
       return 9
-    if node.tag == lvalue_e.LeftIndex:  # a[1] = b
+    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
       return 999
 
     raise AssertionError(node.tag)
+
+  def _LValueToValue(self, node):
+    """Evaluate the operand for a++ a[0]++ as an R-value.
+
+    Args:
+      node: osh_ast.lhs_expr
+
+    Returns:
+      int
+    """
+    #log('lhs_expr NODE %s', node)
+    assert isinstance(node, ast.lhs_expr), node
+    if node.tag == lhs_expr_e.LhsName:  # a = b
+      # Problem: It can't be an array?  
+      # a=(1 2)
+      # (( a++ ))
+      return self._VarLookup(node.name)
+
+    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
+      # See tdop.IsIndexable for valid values:
+      # - ArithVarRef (not LhsName): a[1]
+      # - FuncCall: f(x), 1
+      # - ArithBinary LBracket: f[1][1] -- no semantics for this?
+
+      # TODO: if we get Undef, we should make an empty array, if not
+      # 'strict-arith'
+      array = self._VarLookup(node.name)
+
+      index = self._Eval(node.index)
+      log('ARRAY %s -> %s, index %d', node.name, array, index)
+      return array[index]
+
+    raise AssertionError(node.tag)
+
+  def _Store(self, lhs_loc, new_int):
+    log('LHS %s %s', lhs_loc, int)
+    raise NotImplementedError
 
   def _Eval(self, node):
     """
@@ -172,77 +250,82 @@ class ArithEvaluator(ExprEvaluator):
     # to handle that as a special case.
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))
-      val = self.mem.Get(node.name)
-      # By default, undefined variables are the ZERO value.  TODO: Respect
-      # nounset and raise an exception.
-      if val.tag == value_e.Undef:
-        if self.exec_opts.nounset:
-          # TODO: need token
-          e_die('Undefined variable %r', node.name)
-        else:
-          return 0
-
-      # TODO: It could be an array too!
-      return self._ValToIntegerOrError(val)
+      return self._VarLookup(node.name)
 
     # $(( $x )) or $(( ${x}${y} )), etc.
     if node.tag == arith_expr_e.ArithWord:
       val = self.word_ev.EvalWordToString(node.w)
-      return self._ValToIntegerOrError(val, word=node.w)
+      return self._ValToArithOrError(val, word=node.w)
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
-      lval = self._EvalLeft(node.child)
+      old_int = self._LValueToValue(node.child)
 
       if op_id == Id.Node_PostDPlus:  # post-increment
-        # TODO: need to modify through self.mem
-        pass
-      if op_id == Id.Node_PostDMinus:  # post-decrement
-        # TODO: need to modify through self.mem
-        pass
-      if op_id == Id.Arith_DPlus:  # pre-increment
-        # TODO: need to modify through self.mem
-        pass
-      if op_id == Id.Arith_DMinus:  # pre-decrement
-        # TODO: need to modify through self.mem
-        pass
+        new_int = old_int + 1
+        ret = old_int
 
-      raise NotImplementedError(op_id)
+      elif op_id == Id.Node_PostDMinus:  # post-decrement
+        new_int = old_int - 1
+        ret = old_int
 
-    if node.tag == arith_expr_e.BinaryAssign:  # a=1
+      elif op_id == Id.Arith_DPlus:  # pre-increment
+        new_int = old_int + 1
+        ret = new_int
+
+      elif op_id == Id.Arith_DMinus:  # pre-decrement
+        new_int = old_int + 1
+        ret = new_int
+
+      else:
+        raise NotImplementedError(op_id)
+
+      log('old %d new %d ret %d', old_int, new_int, ret)
+      lhs_loc = self._LValueToLocation(node.child)
+      self._Store(lhs_loc, new_int)
+      return ret
+
+    if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
       op_id = node.op_id
-      lhs = self._EvalLeft(node.left)
+      old_int = self._LValueToValue(node.left)
+
       rhs = self._Eval(node.right)
 
+      # Also have to get the value of node.left, which is of type lhs_expr
+
       if op_id == Id.Arith_Equal:
-        pass
+        new_int = rhs
       elif op_id == Id.Arith_PlusEqual:
-        pass
+        new_int = old_int + rhs
       elif op_id == Id.Arith_MinusEqual:
-        pass
+        new_int = old_int - rhs
       elif op_id == Id.Arith_StarEqual:
-        pass
+        new_int = old_int * rhs
       elif op_id == Id.Arith_SlashEqual:
-        pass
+        try:
+          new_int = old_int / rhs
+        except ZeroDivisionError:
+          # TODO: location
+          e_die('Divide by zero')
       elif op_id == Id.Arith_PercentEqual:
-        pass
-      elif op_id == Id.Arith_PercentEqual:
-        pass
+        new_int = old_int % rhs
+
       elif op_id == Id.Arith_DGreatEqual:
-        pass
+        new_int = old_int >> rhs
       elif op_id == Id.Arith_DLessEqual:
-        pass
+        new_int = old_int << rhs
       elif op_id == Id.Arith_AmpEqual:
-        pass
+        new_int = old_int & rhs
       elif op_id == Id.Arith_PipeEqual:
-        pass
+        new_int = old_int | rhs
       elif op_id == Id.Arith_CaretEqual:
-        pass
+        new_int = old_int ^ rhs
       else:
         raise AssertionError(op_id)  # shouldn't get here
  
-      # TODO: Use self.mem
-      raise NotImplementedError('assign')
+      lhs_loc = self._LValueToLocation(node.left)
+      self._Store(lhs_loc, new_int)
+      return self.new_int
 
     if node.tag == arith_expr_e.ArithUnary:
       op_id = node.op_id
@@ -267,15 +350,21 @@ class ArithEvaluator(ExprEvaluator):
       if op_id == Id.Arith_LBracket:
         if not isinstance(lhs, list):
           # TODO: Add error context
-          e_die('Left-hand side of array index should be an array')
+          e_die('Expected array in index expression, got %s', lhs)
 
         try:
-          ret = lhs[rhs]
+          item = lhs[rhs]
         except IndexError:
           if self.exec_opts.nounset:
             e_die('Index out of bounds')
           else:
             return 0  # If not fatal, return 0
+
+        if isinstance(item, str):
+          return self._StringToIntegerOrError(item)
+        # We could have an integer if we did 'a=(1 2); (( a[0]=0 ))'
+        assert isinstance(item, int), item
+        return item
 
       if op_id == Id.Arith_Comma:
         return rhs
@@ -347,17 +436,6 @@ class ArithEvaluator(ExprEvaluator):
 
 
 class BoolEvaluator(ExprEvaluator):
-
-  def _StringToIntegerOrError(self, s):
-    try:
-      i = _StringToInteger(s)
-    except util.FatalRuntimeError as e:
-      if self.exec_opts.strict_arith:
-        raise
-      else:
-        i = 0
-        warn(e.UserErrorString())
-    return i
 
   def _SetRegexMatches(self, matches):
     """For ~= to set the BASH_REMATCH array."""
