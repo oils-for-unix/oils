@@ -2,6 +2,12 @@
 #
 # Corner cases in var sub.  Maybe rename this file.
 
+### Bad var sub
+echo ${a|}
+# stdout-json: ""
+# status: 2
+# OK bash/mksh status: 1
+
 ### Braced block inside ${}
 # NOTE: This doesn't work in bash.  The nested {} aren't parsed.  It works in
 # dash though!

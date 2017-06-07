@@ -458,7 +458,8 @@ class WordParser(object):
       if not part: return None
 
     else:
-      raise AssertionError(self.cur_token)
+      # e.g. ${^}
+      p_die('Unexpected token %s', self.cur_token, token=self.cur_token)
 
     part.spids.append(left_spid)
 
