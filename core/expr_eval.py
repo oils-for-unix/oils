@@ -232,7 +232,7 @@ class ArithEvaluator(_ExprEvaluator):
   def _Store(self, lval, new_int):
     if lval.tag == lvalue_e.LhsName:
       val = runtime.Str(str(new_int))
-      # TODO
+      # TODO: Change API
       pairs = [(lval, val)]
       self.mem.SetLocalsOrGlobals(pairs)
 

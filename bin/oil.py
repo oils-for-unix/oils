@@ -315,11 +315,18 @@ def OshMain(argv):
 
     # TODO: Do I need ParseAndEvalLoop?  How is it different than
     # InteractiveLoop?
-    node = c_parser.ParseWholeFile()
-    if not node:
-      err = c_parser.Error()
-      ui.PrintErrorStack(err, arena, sys.stderr)
-      return 2  # parse error is code 2
+    try:
+      node = c_parser.ParseWholeFile()
+    except util.ParseError as e:
+      ui.PrettyPrintError(e, arena, sys.stderr)
+      print('parse error: %s' % e.UserErrorString(), file=sys.stderr)
+      return 2
+    else:
+      # TODO: Remove this older form of error handling.
+      if not node:
+        err = c_parser.Error()
+        ui.PrintErrorStack(err, arena, sys.stderr)
+        return 2  # parse error is code 2
 
     if opts.ast_output:
 

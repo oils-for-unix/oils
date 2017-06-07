@@ -23,6 +23,8 @@ from osh import ast_ as ast
 word_part_e = ast.word_part_e
 word_e = ast.word_e
 
+p_die = util.p_die
+
 # Substitutions can be nested, but which inner subs are allowed depends on the
 # outer sub.  See _ReadLeftParts vs. _ReadDoubleQuotedLeftParts.
 
@@ -330,7 +332,7 @@ class WordParser(object):
           return None
 
       else:
-        raise AssertionError("Invalid op token %s" % self.cur_token)
+        p_die('Unexpected token %s', self.cur_token, token=self.cur_token)
 
       part.suffix_op = op
 
