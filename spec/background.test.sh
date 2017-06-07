@@ -32,3 +32,11 @@ for i in 1 2 3; do
 done & wait
 # stdout-json: "1\n2\n3\n"
 # status: 0
+
+### Background process doesn't affect parent
+echo ${foo=1}
+echo $foo
+echo ${bar=2} &
+wait
+echo $bar  # bar is NOT SET in the parent process
+# stdout-json: "1\n1\n2\n\n"

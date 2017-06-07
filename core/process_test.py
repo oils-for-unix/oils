@@ -11,9 +11,13 @@ from core.id_kind import Id
 from osh import ast_ as ast
 
 from core import process  # module under test
+from core import util
 from core.cmd_exec_test import InitExecutor  # helper
 
 Process = process.Process
+ExternalThunk = process.ExternalThunk
+
+log = util.log
 
 
 def Banner(msg):
@@ -21,20 +25,26 @@ def Banner(msg):
   print(msg)
 
 
+_WAITER = process.Waiter()
+
+
 class ProcessTest(unittest.TestCase):
 
   def testProcess(self):
+
     # 3 fds.  Does Python open it?  Shell seems to have it too.  Maybe it
     # inherits from the shell.
     print('FDS BEFORE', os.listdir('/dev/fd'))
 
     Banner('date')
-    p = Process(['date'])
-    print(p.Run())
+    p = Process(ExternalThunk(['date']))
+    status = p.Run(_WAITER)
+    log('date returned %d', status)
+    self.assertEqual(0, status)
 
     Banner('does-not-exist')
-    p = Process(['does-not-exist'])
-    print(p.Run())
+    p = Process(ExternalThunk(['does-not-exist']))
+    print(p.Run(_WAITER))
 
     # 12 file descriptors open!
     print('FDS AFTER', os.listdir('/dev/fd'))
@@ -43,23 +53,24 @@ class ProcessTest(unittest.TestCase):
     print('BEFORE', os.listdir('/dev/fd'))
 
     p = process.Pipeline()
-    p.Add(Process(process.ExternalThunk(['ls'])))
-    p.Add(Process(process.ExternalThunk(['cut', '-d', '.', '-f', '2'])))
-    p.Add(Process(process.ExternalThunk(['sort'])))
-    p.Add(Process(process.ExternalThunk(['uniq', '-c'])))
+    p.Add(Process(ExternalThunk(['ls'])))
+    p.Add(Process(ExternalThunk(['cut', '-d', '.', '-f', '2'])))
+    p.Add(Process(ExternalThunk(['sort'])))
+    p.Add(Process(ExternalThunk(['uniq', '-c'])))
 
-    p.Run()
+    pipe_status = p.Run(_WAITER)
+    log('pipe_status: %s', pipe_status)
 
     print('AFTER', os.listdir('/dev/fd'))
 
   def testPipeline2(self):
     Banner('ls | cut -d . -f 1 | head')
     p = process.Pipeline()
-    p.Add(Process(process.ExternalThunk(['ls'])))
-    p.Add(Process(process.ExternalThunk(['cut', '-d', '.', '-f', '1'])))
-    p.Add(Process(process.ExternalThunk(['head'])))
+    p.Add(Process(ExternalThunk(['ls'])))
+    p.Add(Process(ExternalThunk(['cut', '-d', '.', '-f', '1'])))
+    p.Add(Process(ExternalThunk(['head'])))
 
-    print(p.Run())
+    print(p.Run(_WAITER))
 
     ex = InitExecutor()
 
@@ -86,7 +97,7 @@ class ProcessTest(unittest.TestCase):
     p.Add(Process(process.SubProgramThunk(ex, node2)))
     p.Add(Process(process.SubProgramThunk(ex, node3)))
 
-    print(p.Run())
+    print(p.Run(_WAITER))
 
     # TODO: Combine pipelines for other things:
 

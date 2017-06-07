@@ -494,21 +494,22 @@ def _Echo(argv):
 
   opt_n = False
   opt_e = False
-  num_to_skip = 0  # TODO: Should be optind?
+  opt_index = 0
   for a in argv:
     if a == '-n':
       opt_n = True
-      num_to_skip += 1
+      opt_index += 1
     elif a == '-e':
       opt_e = True
-      num_to_skip += 1
+      opt_index += 1
       raise NotImplementedError('echo -e')
     else:
       break  # something else
 
   #log('echo argv %s', argv)
-  for a in argv[num_to_skip:-1]:
-    sys.stdout.write(a)
+  n = len(argv)
+  for i in xrange(opt_index, n-1):
+    sys.stdout.write(argv[i])
     sys.stdout.write(' ')  # arg separator
   if argv:
     sys.stdout.write(argv[-1])
@@ -533,7 +534,9 @@ def _Exit(argv):
   sys.exit(code)
 
 
-def _Wait(argv, jobs):
+import getopt
+
+def _Wait(argv, waiter, job_state):
   """
   wait: wait [-n] [id ...]
       Wait for job completion and return exit status.
@@ -557,36 +560,46 @@ def _Wait(argv, jobs):
 
   This is different than a PID?  But it does have a PID.
   """
-  # What's the difference between wait and wait -n?
-  # 'wait' waits  for everything?
-  # wait -n waits for the next one.
+  # NOTE: echo can't use getopt because of 'echo ---'
+  # But that's a special case; the rest of the builtins can use it.
+  # We must respect -- everywhere, EXCEPT echo.  'wait -- -n' should work must work.
 
   opt_n = False
-  opt_index = 0  
-  for a in argv:
-    if a == '-n':
+
+  try:
+    opts, args = getopt.getopt(argv, 'n')
+  except getopt.GetoptError as e:
+    util.usage(str(e))
+    sys.exit(2)
+  for name, val in opts:
+    if name == '-n':
       opt_n = True
-      opt_index += 1
     else:
-      break
+      raise AssertionError
 
   if opt_n:
-    # wait for next
+    waiter.Wait()
+    print('wait next')
+    # TODO: Get rid of args?
     return 0
 
-  if len(argv) == 1:
+  if not args:
+    # TODO: get all background jobs from JobState?
+    print('wait all')
     # wait for everything
     return 0
 
-  for i in argv:
+  # Get list of jobs.  Then we need to check if they are ALL stopped.
+  for a in args:
+    print('wait %s' % a)
     # parse pid
     # parse job spec
-    pass
 
   return 0
 
 
-def _Jobs(argv, jobs):
+def _Jobs(argv, job_state):
+  """List jobs."""
   raise NotImplementedError
   return 0
 
@@ -778,8 +791,9 @@ class Executor(object):
                        # metaprogramming or regular target syntax
                        # Whether argv[0] is make determines if it is executed
 
+    self.waiter = process.Waiter()
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
-    self.jobs = process.JobState()
+    self.job_state = process.JobState()
 
     self.dir_stack = DirStack()
 
@@ -900,10 +914,10 @@ class Executor(object):
       restore_fd_state = False
 
     elif builtin_id == EBuiltin.WAIT:
-      status = _Wait(argv, self.jobs)
+      status = _Wait(argv, self.waiter, self.job_state)
 
     elif builtin_id == EBuiltin.JOBS:
-      status = _Jobs(argv, self.jobs)
+      status = _Jobs(argv, self.job_ste)
 
     elif builtin_id == EBuiltin.PUSHD:
       status = self.dir_stack.Pushd(argv)
@@ -1121,7 +1135,7 @@ class Executor(object):
 
     #print(pi)
 
-    pipe_status = pi.Run()
+    pipe_status = pi.Run(self.waiter)
     self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])
 
     if self.exec_opts.pipefail:
@@ -1193,7 +1207,7 @@ class Executor(object):
       # Don't waste a process if we'd launch one anyway.
       if thunk.IsExternal():
         p = process.Process(thunk, fd_state=self.fd_state, redirects=redirects)
-        status = p.Run()
+        status = p.Run(self.waiter)
 
       else:  # Internal
         #log('ARGV %s', argv)
@@ -1247,7 +1261,7 @@ class Executor(object):
     elif node.tag == command_e.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
       p = self._GetProcessForNode(node.children[0])
-      status = p.Run()
+      status = p.Run(self.waiter)
 
     elif node.tag == command_e.DBracket:
       result = self.bool_ev.Eval(node.expr)
@@ -1494,3 +1508,18 @@ class Executor(object):
     #print('break / continue can only be used inside loop')
     #status = 129  # TODO: Fix this.  Use correct macros
     return status
+
+  def RunCommandSub(self, node):
+    p = self._GetProcessForNode(node)
+    # NOTE: We could do an optimization for pipelines.  Pick the last
+    # process element, and do pi.procs[-1].CaptureOutput()
+    stdout = []
+    p.CaptureOutput(stdout)
+    status = p.Run(self.waiter)
+
+    # TODO: Add context
+    if self.exec_opts.ErrExit() and status != 0:
+      e_die('Command sub exited with status %d (%r)', status,
+            node.__class__.__name__)
+    return ''.join(stdout).rstrip('\n')
+

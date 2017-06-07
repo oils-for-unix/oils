@@ -46,9 +46,7 @@ wait
 # status: 0
 
 ### $PPID
-expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue
 echo $PPID | egrep '[0-9]+'
-# Disabled because of spec-runner.sh issue: bash sets it for osh
 # status: 0
 
 # NOTE: There is also $BASHPID

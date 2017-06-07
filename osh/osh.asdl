@@ -6,16 +6,20 @@
 -- The AST is composed of the builtin ASDL types (string, int, bool) and our 
 -- application type 'id', which is core.id_kind.Id.
 
--- Unimplemented:
--- * LeftIndex -- LHS of assignment
--- * ArrayPair -- ([foo]=bar)
-
 -- Unrepresented:
 -- * extended globs: unlike globs, these are parsed up front
 --   * hidden behind set -o extglob
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
 -- * Append operator in Assignment: +=
+
+-- Represented but Not Parsed:
+-- * LeftIndex -- LHS of assignment
+-- * ArrayPair -- ([foo]=bar)
+
+-- Parsed but Not Implemented
+-- * Process sub -- <() and >()
+-- * Background -- foo &
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
@@ -128,6 +132,7 @@ module osh
   | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
             string here_end, bool was_filled)
 
+  -- TODO: Add op_id for = vs +=
   assign_pair = (lhs_expr lhs, word? rhs)
   env_pair = (string name, word val)
 
@@ -143,33 +148,33 @@ module osh
 
   command = 
     NoOp
-  -- TODO: respect order 
+    -- TODO: respect order 
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
   | Sentence(command command, token terminator)
-  -- TODO: parse flags -r -x; -a and -A aren't needed
+    -- TODO: parse flags -r -x; -a and -A aren't needed
   | Assignment(id keyword, assign_pair* pairs)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
-  -- TODO: Should be left and right
+    -- TODO: Should be left and right
   | AndOr(command* children, id op_id)
-  -- TODO: Get rid of CommandList?  No redirects, so can be a plain list.
+    -- TODO: Get rid of CommandList?  No redirects, so can be a plain list.
   | CommandList(command* children)
-  -- Part of for/while/until.  Can have one or more children.
+    -- Part of for/while/until.  Can have one or more children.
   | DoGroup(command child, redir* redirects)
-  -- A brace group is a compound command, with redirects.  Can have one or more
-  -- children.
+    -- A brace group is a compound command, with redirects.  Can have one or
+    -- more children.
   | BraceGroup(command* children, redir* redirects)
-  -- Can have one or more children.
+    -- Can have one or more children.
   | Subshell(command* children, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
-  -- do_arg_iter: whether to implicitly loop over "$@"
-  -- TODO: Make iter_words a sum type.  iterable for_words
+    -- do_arg_iter: whether to implicitly loop over "$@"
+    -- TODO: Make iter_words a sum type.  iterable for_words
   | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
             command body, redir* redirects)
-  -- C-style for loop.  Any of the 3 expressions can be omitted.
-  -- TODO: body is required, but only optional here because of initialization
-  -- order.
+    -- C-style for loop.  Any of the 3 expressions can be omitted.
+    -- TODO: body is required, but only optional here because of initialization
+    -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
             command? body, redir* redirects)
   | While(command cond, command body, redir* redirects)

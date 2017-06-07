@@ -267,7 +267,7 @@ command-sub() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/pipeline.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 

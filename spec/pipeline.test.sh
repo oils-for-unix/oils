@@ -17,7 +17,6 @@ done | tac
 # stdout-json: "two\none\n"
 
 ### Exit code is last status
-expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue
 echo a | egrep '[0-9]+'
 # status: 1
 

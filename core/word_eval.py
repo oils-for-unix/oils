@@ -1032,27 +1032,13 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     self.ex = ex
 
   def _EvalCommandSub(self, node, quoted):
-    p = self.ex._GetProcessForNode(node)
-    # NOTE: We could do an optimization for pipelines.  Pick the last
-    # process element, and do pi.procs[-1].CaptureOutput()
-    stdout = []
-    p.CaptureOutput(stdout)
-    status = p.Run()
+    stdout = self.ex.RunCommandSub(node)
 
-    # TODO: Add context
-    if self.ex.exec_opts.ErrExit() and status != 0:
-      e_die('Command sub exited with status %d (%r)', status,
-            node.__class__.__name__)
-
-    # Runtime errors:
-    # what if the command sub was "echo foo > $@".  That is invalid.  Then
-    # Return false here.  How do we get that value from the Process then?  Do
-    # we use a special return value?
+    # Runtime errors test case: # $("echo foo > $@")
 
     # Why rstrip()?
     # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
-    s = ''.join(stdout).rstrip('\n')
-    return runtime.StringPartValue(s, not quoted, not quoted)
+    return runtime.StringPartValue(stdout, not quoted, not quoted)
 
 
 class NormalWordEvaluator(_WordEvaluator):

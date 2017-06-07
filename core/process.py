@@ -11,6 +11,7 @@ process.py - Runtime library for launching processes and manipulating file
 descriptors.
 """
 
+import errno
 import fcntl
 import os
 import sys
@@ -218,17 +219,19 @@ class HereDocRedirect(UserRedirect):
     """
     self.r, self.w = os.pipe()
     thunk = HereDocWriterThunk(self.w, self.body_str)
-    start_process = len(self.body_str) > 10  # TODO: Use correct heuristic
 
+    # TODO: Use PIPE_SIZE here?
+    #start_process = len(self.body_str) > 10
     start_process = True
+
     if start_process:
       #print('starting here doc helper process')
       self.here_proc = Process(thunk)
-      self.here_proc.Start()  # who waits for this guy?
+      pid = self.here_proc.Start()
+      # TODO: Nobody is waiting now.  This will cause a warning because there's
+      # no callback registered.
+      # We could register a dummy, or just get rid of that warning?
 
-      # here proc is not going to read.  Or really you don't have to worry
-      # about this?
-      #self.here_proc.ChildClose(self.r)
     else:
       #print('writing %s to pipe in %d shell process' % (self.here_lines,)
       #    self.w)
@@ -253,11 +256,6 @@ class HereDocRedirect(UserRedirect):
   def AfterForkInParent(self):  # applying in child
     os.close(self.r)  # parent isn't going to read or write
     os.close(self.w)
-
-    #print('!! AfterForkInParent')
-    if self.here_proc:
-      _, status = self.here_proc.Wait()
-      #print('Here doc writer finished with status %d' % status)
 
   # Separate path: Apply the whole thing in the parent
   def ApplyInParent(self, fd_state):
@@ -437,8 +435,14 @@ class HereDocWriterThunk(Thunk):
     #os.close(self.w)
 
 
+ProcessState = util.Enum('ProcessState', """Init Done""".split())
+
+
 class Process(object):
   """A process to run.
+
+  TODO: Should we make it clear that this is a FOREGROUND process?  A
+  background process is wrapped in a "job".  It is unevaluated.
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
@@ -459,11 +463,16 @@ class Process(object):
       self.thunk = ExternalThunk(thunk)
     else:
       self.thunk = thunk
+
     self.env = env or {}
     self.fd_state = fd_state
     self.redirects = redirects or []
 
     self.inputs = []
+
+    self.pid = -1
+    self.status = -1
+    self.state = ProcessState.Init
 
   def __repr__(self):
     return '<Process %s>' % self.thunk
@@ -475,9 +484,7 @@ class Process(object):
     self.redirects.append(CommandSubRedirect(var))
 
   def Start(self):
-    """
-    Start a process.
-    """
+    """Start this process with fork(), haandling redirects."""
     for r in self.redirects:
       r.BeforeFork(self.fd_state)
 
@@ -495,27 +502,19 @@ class Process(object):
       self.thunk.RunInChild()
       # Never returns
 
-    for r in self.redirects:  # here docs
-      r.AfterForkInParent()
+    for r in self.redirects:
+      r.AfterForkInParent()  # here docs wait here
 
     return pid
 
-  # TODO: Should be a free function.  Not using self!
-  def Wait(self):
-    # NOTE: Need to check errors
-    wait_pid, status = os.wait()
+  def Run(self, waiter):
+    """Run this process synchronously."""
+    self.pid = self.Start()
+    # NOTE: No race condition between start and Register, because the shell is
+    # single-threaded and nothing else can call Wait() before we do!
 
-    # TODO: change status in more cases.
-    if os.WIFSIGNALED(status):
-      pass
-    elif os.WIFEXITED(status):
-      status = os.WEXITSTATUS(status)
-      #log('exit status: %s', status)
-
-    return wait_pid, status
-
-  def Run(self):
-    self.Start()
+    #log('STARTED %d', self.pid)
+    waiter.Register(self.pid, self.WhenDone)
 
     # TODO: Can collect garbage here, and record timing stats.  The process
     # will likely take longer than the GC?  Although I guess some processes can
@@ -523,9 +522,18 @@ class Process(object):
     # Maybe you can have a separate GC thread, and only start it after 100ms,
     # and then cancel when done?
 
-    # TODO: This might get the wrong process!
-    _, status = self.Wait()
-    return status
+    while True:
+      if not waiter.Wait():
+        break
+      if self.state == ProcessState.Done:
+        break
+
+    return self.status
+
+  def WhenDone(self, pid, status):
+    #log('WhenDone %d %d', pid, status)
+    assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
+    self.status = status
 
 
 class Pipeline(object):
@@ -540,6 +548,8 @@ class Pipeline(object):
   def __init__(self):
     self.procs = []
     self.pipes = []  # there is a pipe for every pair of procs.
+    self.state = ProcessState.Init
+    self.pid_status = {}  # pid -> None or integer status
 
   def __repr__(self):
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
@@ -571,85 +581,77 @@ class Pipeline(object):
     """
     self.procs[-1].CaptureOutput(var)
 
-  def Run(self):
-    pids = []
-    for p in self.procs:
-      pids.append(p.Start())
+  def Run(self, waiter):
+    """Run this pipeline synchronously."""
+    pid_order = []
+    for proc in self.procs:
+      pid = proc.Start()
+      pid_order.append(pid)
+      self.pid_status[pid] = None
+      waiter.Register(pid, self.WhenDone)
 
-    # TODO: This algorithm is wrong, because you need a GLOBAL list of running
-    # processes to key off of.
-    # You want to wait until all of them finish.
-    # Loop until all of them finish!
-    #
-    # NOTE: strace reveals that all shells call wait4(-1), which waits for any
-    # process.  osh calls it too.
+    while True:
+      if not waiter.Wait():
+        break
+      if self.state == ProcessState.Done:
+        #log('Pipeline DONE')
+        break
 
-    # Example: running two pipelines in parallel:
-
-    # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
-    # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
-    # wait
-    # wait
-
-    # Another example:
-    # 
-    # sleep 0.01 &  # This can finish IN BETWEEN OTHER PROCESSES.
-    # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
-
-    lookup = {}
-    for p in self.procs:
-      # BUG: This doesn't do things in order!  It just calls os.wait()!
-      # Need to key off wait_pid
-
-      pid, status = p.Wait()
-      #log('Process %s returned status %s', p, status)
-      lookup[pid] = status
-
-    pipe_status = [lookup[pid] for pid in pids]
+    pipe_status = []
+    for pid in pid_order: 
+      pipe_status.append(self.pid_status[pid])
     return pipe_status
+
+  def WhenDone(self, pid, status):
+    #log('Pipeline WhenDone %d %d', pid, status)
+    assert pid in self.pid_status, 'Unexpected PID %d' % pid
+    assert self.pid_status[pid] is None  # we should get exactly one notification
+    self.pid_status[pid] = status
+    if all((status is not None) for status in self.pid_status.values()):
+      self.state = ProcessState.Done
+
+
+# Waitable interface?  User can wait on Job.  But shell always waits on Process
+# and Pipeline.
+
+class Job:
+  def __init__(self, thunk, waiter):
+    # Thunk ensures it's UNEVALUATED in the parent.  See tests.
+    self.thunk = thunk
+    self.waiter = waiter
+    self.state = ProcessState.Init
+    self.status = -1
+
+  def Start(self):
+    p = Process(thunk)
+    pid = p.Start()
+
+    # NOTE: The JOB should be notified?  Not the process?
+    self.waiter.Register(pid, self.WhenDone)
+
+  def WhenDone(self, pid, status):
+    self.status = status
+    self.state = ProcessState.Done
+    # TODO: Update JobState?
+    # Every Job should be created with a job_state to update?
 
 
 class JobState:
-  """
-  Usage:
+  """Global list of jobs, used by a few builtins."""
 
-  # executor
-  self.jobs = JobState()
-
-  p = Process()
-  self.jobs.Start(p)
-  self.jobs.Wait()
-
-  pi = Pipeline()
-  self.jobs.Start(pi)
-
-  for i in xrange(pi.Length()):
-    self.jobs.Wait()
-
-  # That fills this in?
-  pi.PipeStatus()
-
-  class Pipeline(_Job):
-    init():
-      self.pipe_status = []
-
-  class Process(_Job):
-    init():
-      self.status = -1
-
-
-  NOTE: When does $? and ${PIPESTATUS[@]} get set?
-
-  """
   def __init__(self):
-    # pid -> f()
-    self.callbacks = {}
-
+    # pid -> Job instance
     # A pipeline that is backgrounded is always run in a SubProgramThunk?  So
     # you can wait for it once?
     self.jobs = {}
 
-  def Start(self, job):
+  def Register(self, job):
+    """ Used by 'sleep 1&' """
+    self.jobs[pid] = job
+    # TODO: Use the waiter?
+
+  def List(self):
+    """Used by the 'jobs' builtin."""
     # NOTE: A job is a background process.
     #
     # echo hi | wc -l    -- this starts two processes.  Wait for TWO
@@ -659,9 +661,48 @@ class JobState:
     #self.callbacks[pid]
     pass
 
+
+class Waiter:
+  """A capability to wait for processes.
+
+  This must be a singleton (and is because Executor is a singleton).
+
+  Invariants:
+  - Every child process is registered once
+  - Every child process is waited for
+
+  Canonical example of why we need a GLBOAL waiter:
+
+  { sleep 3; echo 'done 3'; } &
+  { sleep 4; echo 'done 4'; } &
+
+  # ... do arbitrary stuff ...
+
+  { sleep 1; exit 1; } | { sleep 2; exit 2; }
+
+  Now when you do wait() after starting the pipeline, you might get a pipeline
+  process OR a background process!  So you have to distinguish between them.
+
+  NOTE: strace reveals that all shells call wait4(-1), which waits for ANY
+  process.  os.wait() ends up calling that too.  This is the only way to
+  support the processes we need.
+  """
+  def __init__(self):
+    self.callbacks = {}  # pid -> callback
+
+  def Register(self, pid, callback):
+    self.callbacks[pid] = callback
+
   def Wait(self):
-    # NOTE: Need to check errors
-    wait_pid, status = os.wait()
+    # This is a list of async jobs
+    try:
+      pid, status = os.wait()
+    except OSError as e:
+      if e.errno == errno.ECHILD:
+        return False  # caller should stop
+      else:
+        # What else can go wrong?
+        raise
 
     # TODO: change status in more cases.
     if os.WIFSIGNALED(status):
@@ -670,4 +711,16 @@ class JobState:
       status = os.WEXITSTATUS(status)
       #log('exit status: %s', status)
 
-    return wait_pid, status
+    # This could happen via coding error.  But this may legitimately happen
+    # if a grandchild outlives the child (its parent).  Then it is reparented
+    # under this process, so we might receive notification of its exit, even
+    # though we didn't start it.  We can't have any knowledge of such
+    # processes, so print a warning.
+    if pid not in self.callbacks:
+      util.warn("PID %d stopped, but osh didn't start it", pid)
+      return True  # caller should keep waiting
+
+    callback = self.callbacks.pop(pid)
+    callback(pid, status)
+
+    return True  # caller should keep waiting
