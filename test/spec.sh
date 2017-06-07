@@ -256,7 +256,7 @@ glob() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 8 \
+  sh-spec spec/arith.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -308,7 +308,7 @@ tilde() {
 }
 
 var-op-test() {
-  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -351,7 +351,7 @@ sh-options() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/arith-context.test.sh --osh-failures-allowed 7 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
@@ -361,7 +361,7 @@ array() {
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/array-compat.test.sh --osh-failures-allowed 7 \
     $BASH $MKSH $OSH "$@"
 }
 
@@ -395,7 +395,7 @@ dparen() {
 
 brace-expansion() {
   # TODO for osh: implement num ranges, mark char ranges unimplemented?
-  sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 13 \
+  sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 12 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 

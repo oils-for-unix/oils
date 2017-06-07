@@ -352,8 +352,24 @@ class ArithEvaluator(ExprEvaluator):
 
     if node.tag == arith_expr_e.ArithBinary:
       op_id = node.op_id
+
       lhs = self._Eval(node.left)
-      rhs = self._Eval(node.right)
+
+      # Short-circuit evaluation for || and &&.
+      if op_id == Id.Arith_DPipe:
+        if lhs == 0:
+          rhs = self._Eval(node.right)
+          return int(rhs != 0)
+        else:
+          return 1  # true
+      if op_id == Id.Arith_DAmp:
+        if lhs == 0:
+          return 0  # false
+        else:
+          rhs = self._Eval(node.right)
+          return int(rhs != 0)
+
+      rhs = self._Eval(node.right)  # eager evaluation for the rest
 
       if op_id == Id.Arith_LBracket:
         if not isinstance(lhs, list):
@@ -407,16 +423,6 @@ class ArithEvaluator(ExprEvaluator):
         return int(lhs < rhs)
       if op_id == Id.Arith_LessEqual:
         return int(lhs <= rhs)
-
-      # TODO: Need short-circuit evaluation.
-      if op_id == Id.Arith_DPipe:
-        l = int(lhs != 0)
-        r = int(rhs != 0)
-        return l or r
-      if op_id == Id.Arith_DAmp:
-        l = int(lhs != 0)
-        r = int(rhs != 0)
-        return l and r
 
       if op_id == Id.Arith_Pipe:
         return lhs | rhs
