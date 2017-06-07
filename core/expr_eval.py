@@ -230,18 +230,9 @@ class ArithEvaluator(_ExprEvaluator):
     raise AssertionError(node.tag)
 
   def _Store(self, lval, new_int):
-    if lval.tag == lvalue_e.LhsName:
-      val = runtime.Str(str(new_int))
-      # TODO: Change API
-      pairs = [(lval, val)]
-      self.mem.SetLocalsOrGlobals(pairs)
-
-    elif lval.tag == lvalue_e.LhsIndexedName:
-      log('LHS %s %s', lval, int)
-      self.mem
-      raise NotImplementedError
-    else:
-      raise AssertionError(lval.tag)
+    val = runtime.Str(str(new_int))
+    pairs = [(lval, val)]
+    self.mem.SetLocalsOrGlobals(pairs)  # TODO: Change API
 
   def _Eval(self, node):
     """

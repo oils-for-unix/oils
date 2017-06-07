@@ -83,6 +83,7 @@ lhs_expr_e = ast.lhs_expr_e
 
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
+lvalue_e = runtime.lvalue_e
 
 log = util.log
 e_die = util.e_die
@@ -174,6 +175,14 @@ class Mem(object):
   """For storing variables.
 
   Mem is better than "Env" -- Env implies OS stuff.
+
+  Callers:
+    User code: assigning and evaluating variables, in command context or
+      arithmetic context.
+    Completion engine: for COMP_WORDS, etc.
+    Builtins call it implicitly: read, cd for $PWD, $OLDPWD, etc.
+
+  Modules: cmd_exec, word_eval, expr_eval, completion
   """
 
   def __init__(self, argv0, argv):
@@ -265,11 +274,11 @@ class Mem(object):
 
   def _SetInScope(self, scope, pairs):
     """Helper to set locals or globals."""
-    for lhs, val in pairs:
-      #log('SETTING %s -> %s', lhs, value)
+    for lval, val in pairs:
+      #log('SETTING %s -> %s', lval, val)
       assert val.tag in (value_e.Str, value_e.StrArray)
 
-      name = lhs.name
+      name = lval.name
       if name in scope:
         # Preserve cell flags.  For example, could be Undef and exported!
         scope[name].val = val
@@ -356,7 +365,7 @@ class Mem(object):
     # - Implement readonly, etc.  Test the readonly flag!
     cell = runtime.cell(val, False, False)
 
-    for i in range(len(self.var_stack) - 1, -1, -1):  # This implements dynamic scope.
+    for i in range(len(self.var_stack) - 1, -1, -1):  # dynamic scope
       scope = self.var_stack[i]
       if name in scope:
         scope[name] = cell
@@ -367,11 +376,12 @@ class Mem(object):
 
   def SetLocalsOrGlobals(self, pairs):
     """For x=1 inside a function.
-
-    NOTE: lhs is a lhs_expr now.  Should be lvalue, to handle arrays too.
     """
-    for lhs, val in pairs:
-      self._SetLocalOrGlobal(lhs.name, val)
+    for lval, val in pairs:
+      if lval.tag == lvalue_e.LhsName:
+        self._SetLocalOrGlobal(lval.name, val)
+      elif lval.tag == lvalue_e.LhsIndexedName:
+        raise NotImplementedError('a[x]=')
 
   def Unset(self, name):
     # For unset -v (variable)
@@ -1073,15 +1083,18 @@ class Executor(object):
             status)
 
   def _EvalLhs(self, node):
-    # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
     assert isinstance(node, ast.lhs_expr), node
+
+    # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
+    # TODO: Need to get the old value like _EvalLhs, for +=.  Maybe have a
+    # flag that says whether you need it?
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
       return runtime.LhsName(node.name)
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
-      index = self.arith_ev.Eval(node.index)
-      return runtime.LhsIndexedName(node.name, index)
+      i = self.arith_ev.Eval(node.index)
+      return runtime.LhsIndexedName(node.name, i)
 
     raise AssertionError(node.tag)
 
