@@ -44,8 +44,12 @@ module runtime
   -- | ArrayInt(int* array_int)
   -- | ArrayBool(bool* a)
 
-
   -- For storing a variable.
   cell = (value val, bool exported, bool readonly)
+
+  -- For assignment, evaluated to osh_ast.lhs_expr
+  lvalue = 
+    LhsName(string name)
+  | LhsIndexedName(string name, int index)
 }
 

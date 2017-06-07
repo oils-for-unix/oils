@@ -358,7 +358,10 @@ class Mem(object):
       global_scope[name] = cell
 
   def SetLocalsOrGlobals(self, pairs):
-    """For x=1 inside a function."""
+    """For x=1 inside a function.
+
+    NOTE: lhs is a lhs_expr now.  Should be lvalue, to handle arrays too.
+    """
     for lhs, val in pairs:
       self._SetLocalOrGlobal(lhs.name, val)
 

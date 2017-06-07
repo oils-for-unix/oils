@@ -30,6 +30,7 @@ word_e = ast.word_e
 
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
+lvalue_e = runtime.lvalue_e
 
 
 def _StringToInteger(s, word=None):
@@ -181,33 +182,14 @@ class ArithEvaluator(ExprEvaluator):
     # TODO: It could be an array too!
     return self._ValToArithOrError(val)
 
-  def _LValueToLocation(self, node):
-    """Evaluate the LHS of an assignment.
-
-    Args:
-      node: osh_ast.lhs_expr
-
-    Returns:
-      LValue, a pointer to Mem?
-    """
-    # TODO: Add runtime.Location?
-    # And then _Store(location, value)
-
-    if node.tag == lhs_expr_e.LhsName:  # a = b
-      return 9
-    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
-      return 999
-
-    raise AssertionError(node.tag)
-
-  def _LValueToValue(self, node):
+  def _EvalLhs(self, node):
     """Evaluate the operand for a++ a[0]++ as an R-value.
 
     Args:
       node: osh_ast.lhs_expr
 
     Returns:
-      int
+      int, runtime.lvalue
     """
     #log('lhs_expr NODE %s', node)
     assert isinstance(node, ast.lhs_expr), node
@@ -215,7 +197,8 @@ class ArithEvaluator(ExprEvaluator):
       # Problem: It can't be an array?  
       # a=(1 2)
       # (( a++ ))
-      return self._VarLookup(node.name)
+      lval = runtime.LhsName(node.name)
+      return self._VarLookup(node.name), lval
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
       # See tdop.IsIndexable for valid values:
@@ -225,17 +208,44 @@ class ArithEvaluator(ExprEvaluator):
 
       # TODO: if we get Undef, we should make an empty array, if not
       # 'strict-arith'
-      array = self._VarLookup(node.name)
-
       index = self._Eval(node.index)
-      log('ARRAY %s -> %s, index %d', node.name, array, index)
-      return array[index]
+      lval = runtime.LhsIndexedName(node.name, index)
+
+      val = self.mem.Get(node.name)
+      if val.tag == value_e.Str:
+        e_die("String %r can't be assigned to", node.name)
+
+      if val.tag == value_e.Undef:
+        if self.exec_opts.strict_arith:
+          # TODO: need token
+          e_die('Undefined array %r', node.name)
+        # Construct a new array with the index set.
+        a = [None] * (index + 1)
+        v = 0
+        a[index] = v
+        return v, lval
+
+      if val.tag == value_e.StrArray:
+        #log('ARRAY %s -> %s, index %d', node.name, array, index)
+        array = val.strs
+        # TODO: Handle out of bounds error with strict_arith
+        return array[index], lval
 
     raise AssertionError(node.tag)
 
-  def _Store(self, lhs_loc, new_int):
-    log('LHS %s %s', lhs_loc, int)
-    raise NotImplementedError
+  def _Store(self, lval, new_int):
+    if lval.tag == lvalue_e.LhsName:
+      val = runtime.Str(str(new_int))
+      # TODO
+      pairs = [(lval, val)]
+      self.mem.SetLocalsOrGlobals(pairs)
+
+    elif lval.tag == lvalue_e.LhsIndexedName:
+      log('LHS %s %s', lval, int)
+      self.mem
+      raise NotImplementedError
+    else:
+      raise AssertionError(lval.tag)
 
   def _Eval(self, node):
     """
@@ -259,7 +269,7 @@ class ArithEvaluator(ExprEvaluator):
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
-      old_int = self._LValueToValue(node.child)
+      old_int, lval = self._EvalLhs(node.child)
 
       if op_id == Id.Node_PostDPlus:  # post-increment
         new_int = old_int + 1
@@ -280,14 +290,13 @@ class ArithEvaluator(ExprEvaluator):
       else:
         raise NotImplementedError(op_id)
 
-      log('old %d new %d ret %d', old_int, new_int, ret)
-      lhs_loc = self._LValueToLocation(node.child)
-      self._Store(lhs_loc, new_int)
+      #log('old %d new %d ret %d', old_int, new_int, ret)
+      self._Store(lval, new_int)
       return ret
 
     if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
       op_id = node.op_id
-      old_int = self._LValueToValue(node.left)
+      old_int, lval = self._EvalLhs(node.left)
 
       rhs = self._Eval(node.right)
 
@@ -323,9 +332,8 @@ class ArithEvaluator(ExprEvaluator):
       else:
         raise AssertionError(op_id)  # shouldn't get here
  
-      lhs_loc = self._LValueToLocation(node.left)
-      self._Store(lhs_loc, new_int)
-      return self.new_int
+      self._Store(lval, new_int)
+      return new_int
 
     if node.tag == arith_expr_e.ArithUnary:
       op_id = node.op_id

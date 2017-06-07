@@ -190,6 +190,15 @@ a[${i[1]}]=9
 argv.py "${a[@]}"
 # stdout: ['1', '9']
 
+### Set array item to array
+a=(1 2)
+a[0]=(3 4)
+echo "status=$?"
+# stdout: status=1
+# status: 0
+# N-I mksh stdout-json: ""
+# N-I mksh status: 1
+
 ### Slice of array with [@]
 # mksh doesn't support this syntax!  It's a bash extension.
 a=(1 2 3)
