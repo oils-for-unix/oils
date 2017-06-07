@@ -125,19 +125,15 @@ def _ValToArith(val, word=None):
     return val.strs  # Python list of strings
 
 
-# In C++ is there a compact notation for {true, i+i}?  ArithEvalResult,
-# BoolEvalResult, CmdExecResult?  Word is handled differntly because it's a
-# string.
-
-class ExprEvaluator:
+class _ExprEvaluator:
   """
   For now the arith and bool evaluators share some logic.
   """
 
-  def __init__(self, mem, word_ev, exec_opts):
+  def __init__(self, mem, exec_opts, word_ev):
     self.mem = mem
-    self.word_ev = word_ev  # type: word_eval.WordEvaluator
     self.exec_opts = exec_opts
+    self.word_ev = word_ev  # type: word_eval.WordEvaluator
 
   def _StringToIntegerOrError(self, s):
     try:
@@ -155,7 +151,7 @@ class ExprEvaluator:
     return self._Eval(node)
 
 
-class ArithEvaluator(ExprEvaluator):
+class ArithEvaluator(_ExprEvaluator):
 
   def _ValToArithOrError(self, val, word=None):
     try:
@@ -449,7 +445,7 @@ class ArithEvaluator(ExprEvaluator):
     raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
 
 
-class BoolEvaluator(ExprEvaluator):
+class BoolEvaluator(_ExprEvaluator):
 
   def _SetRegexMatches(self, matches):
     """For ~= to set the BASH_REMATCH array."""

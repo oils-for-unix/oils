@@ -465,6 +465,7 @@ class CommandParser(object):
         pair = (value, None, left_spid)  # No value is equivalent to ''
       bindings.append(pair)
 
+    # TODO: Also make with LhsIndexedName
     pairs = []
     for lhs, rhs, spid in bindings:
       p = ast.assign_pair(ast.LhsName(lhs), rhs)

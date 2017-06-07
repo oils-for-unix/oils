@@ -7,7 +7,7 @@ import re
 import sys
 
 from core import braces
-from core import expr_eval  # ArithEval
+from core import expr_eval
 from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core import util
@@ -262,6 +262,8 @@ class _WordPartEvaluator:
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
     self.word_ev = word_ev  # for arith words, var op words
+    # NOTE: Executor also instantiates one.
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev)
 
   def _EvalCommandSub(self, part, quoted):
     """Abstract since it has a side effect.
@@ -677,9 +679,7 @@ class _WordPartEvaluator:
 
       elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
         anode = part.bracket_op.expr
-        # TODO: This should propagate errors
-        arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev, self.exec_opts)
-        index = arith_ev.Eval(anode)
+        index = self.arith_ev.Eval(anode)
 
         if val.tag == value_e.Undef:
           pass  # it will be checked later
@@ -819,8 +819,7 @@ class _WordPartEvaluator:
       return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.ArithSubPart:
-      arith_ev = expr_eval.ArithEvaluator(self.mem, self.word_ev, self.exec_opts)
-      num = arith_ev.Eval(part.anode)
+      num = self.arith_ev.Eval(part.anode)
       return [runtime.StringPartValue(str(num), True, True)]
 
     else:

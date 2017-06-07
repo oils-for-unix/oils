@@ -127,11 +127,16 @@ class ExecOpts(object):
     # TODO: Set from flags
     self.nounset = False
     self.pipefail = False
-    self.xtrace = False
+    self.xtrace = False  # NOTE: uses PS4
     self.noglob = False  # -f
 
-    self.strict_arith = False
-    self.strict_command = False
+    # OSH-specific
+    self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
+    self.strict_array = False  # ${a} not ${a[0]}, require double quotes, etc.
+    self.strict_command = False  # break at top level.
+    self.strict_scope = False  # disable dynamic scope
+
+    # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
 
   def ErrExit(self):
     return self.errexit.errexit
@@ -303,7 +308,7 @@ class Mem(object):
   #
 
   def Get(self, name):
-    # TODO: Optionally disable dynamic scope
+    # TODO: Respect strict_arith to disable dynamic scope
     for i in range(len(self.var_stack) - 1, -1, -1):
       scope = self.var_stack[i]
       if name in scope:
@@ -635,8 +640,13 @@ def _Set(argv, exec_opts, mem):
   # Oil-specific
   elif name == 'strict-arith':
     exec_opts.strict_arith = True
+  elif name == 'strict-array':
+    exec_opts.strict_array = True
   elif name == 'strict-command':
     exec_opts.strict_command = True
+  elif name == 'strict-scope':
+    exec_opts.strict_scope = True
+
   # TODO:
   # - STRICT: should be a combination of errexit,nounset,pipefail, plus
   #   strict-*, plus IFS?  Caps because it's a composite.
@@ -679,6 +689,8 @@ class Executor(object):
     self.arena = arena
 
     self.ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.ev)
+    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.ev)
 
     self.mem.last_status = 0  # For $?
 
@@ -1140,13 +1152,11 @@ class Executor(object):
       status = p.Run()
 
     elif node.tag == command_e.DBracket:
-      bool_ev = expr_eval.BoolEvaluator(self.mem, self.ev, self.exec_opts)
-      result = bool_ev.Eval(node.expr)
+      result = self.bool_ev.Eval(node.expr)
       status = 0 if result else 1
 
     elif node.tag == command_e.DParen:
-      arith_ev = expr_eval.ArithEvaluator(self.mem, self.ev, self.exec_opts)
-      i = arith_ev.Eval(node.child)
+      i = self.arith_ev.Eval(node.child)
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
@@ -1159,6 +1169,10 @@ class Executor(object):
         else:
           # 'local x' is equivalent to local x=""
           val = runtime.Str('')
+
+        # TODO: turn pair.lhs into lval
+        # lvalue.LhsName, LhsIndexedName
+        # Need arith evaluator
         pairs.append((pair.lhs, val))
 
       if node.keyword == Id.Assign_Local:
