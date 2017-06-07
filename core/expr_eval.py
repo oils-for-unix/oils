@@ -296,9 +296,9 @@ class ArithEvaluator(_ExprEvaluator):
 
       rhs = self._Eval(node.right)
 
-      # Also have to get the value of node.left, which is of type lhs_expr
-
       if op_id == Id.Arith_Equal:
+        # NOTE: We don't need old_int for this case.  Evaluating it has no side
+        # effects, so it's harmless.
         new_int = rhs
       elif op_id == Id.Arith_PlusEqual:
         new_int = old_int + rhs

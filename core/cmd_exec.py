@@ -79,8 +79,11 @@ from osh import ast_ as ast
 import libc  # for fnmatch
 
 command_e = ast.command_e
+lhs_expr_e = ast.lhs_expr_e
+
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
+
 log = util.log
 e_die = util.e_die
 
@@ -1069,6 +1072,19 @@ class Executor(object):
       e_die('%r command exited with status %d', node.__class__.__name__,
             status)
 
+  def _EvalLhs(self, node):
+    # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
+    assert isinstance(node, ast.lhs_expr), node
+
+    if node.tag == lhs_expr_e.LhsName:  # a=x
+      return runtime.LhsName(node.name)
+
+    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
+      index = self.arith_ev.Eval(node.index)
+      return runtime.LhsIndexedName(node.name, index)
+
+    raise AssertionError(node.tag)
+
   def _Execute(self, node):
     """
     Args:
@@ -1170,10 +1186,8 @@ class Executor(object):
           # 'local x' is equivalent to local x=""
           val = runtime.Str('')
 
-        # TODO: turn pair.lhs into lval
-        # lvalue.LhsName, LhsIndexedName
-        # Need arith evaluator
-        pairs.append((pair.lhs, val))
+        lval = self._EvalLhs(pair.lhs)
+        pairs.append((lval, val))
 
       if node.keyword == Id.Assign_Local:
         self.mem.SetLocals(pairs)
