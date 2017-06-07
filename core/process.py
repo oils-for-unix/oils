@@ -548,6 +548,7 @@ class Process(object):
     # Maybe you can have a separate GC thread, and only start it after 100ms,
     # and then cancel when done?
 
+    # TODO: This might get the wrong process!
     _, status = self.Wait()
     return status
 
@@ -604,6 +605,13 @@ class Pipeline(object):
     # processes to key off of.
     # You want to wait until all of them finish.
     # Loop until all of them finish!  TODO: See what otehr shells do.
+    #
+    # Example: running two pipelines in parallel:
+
+    # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
+    # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
+    # wait
+    # wait
 
     lookup = {}
     for p in self.procs:
@@ -613,7 +621,6 @@ class Pipeline(object):
       pid, status = p.Wait()
       #log('Process %s returned status %s', p, status)
       lookup[pid] = status
-
 
     pipe_status = [lookup[pid] for pid in pids]
     return pipe_status
