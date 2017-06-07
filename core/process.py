@@ -600,6 +600,11 @@ class Pipeline(object):
     for p in self.procs:
       pids.append(p.Start())
 
+    # TODO: This algorithm is wrong, because you need a GLOBAL list of running
+    # processes to key off of.
+    # You want to wait until all of them finish.
+    # Loop until all of them finish!  TODO: See what otehr shells do.
+
     lookup = {}
     for p in self.procs:
       # BUG: This doesn't do things in order!  It just calls os.wait()!
@@ -608,6 +613,7 @@ class Pipeline(object):
       pid, status = p.Wait()
       #log('Process %s returned status %s', p, status)
       lookup[pid] = status
+
 
     pipe_status = [lookup[pid] for pid in pids]
     return pipe_status

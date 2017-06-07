@@ -272,7 +272,7 @@ pipeline() {
 }
 
 explore-parsing() {
-  sh-spec spec/explore-parsing.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/explore-parsing.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -325,7 +325,7 @@ var-op-strip() {
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec spec/var-sub.test.sh \
+  sh-spec spec/var-sub.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -356,7 +356,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 14 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 13 \
     $BASH $MKSH $OSH "$@"
 }
 
