@@ -440,7 +440,7 @@ class DirStack:
 
   def Pushd(self, argv):
     self.dir_stack.append(os.getcwd())
-    dest_dir = argv[1]
+    dest_dir = argv[0]
     os.chdir(dest_dir)  # TODO: error checking
     return 0
 
@@ -492,8 +492,6 @@ def _Echo(argv):
   # - 'echo -c' should print '-c', not fail
   # - echo '---' should print ---, not fail
 
-  argv = argv[1:]
-
   opt_n = False
   opt_e = False
   num_to_skip = 0  # TODO: Should be optind?
@@ -521,15 +519,15 @@ def _Echo(argv):
 
 
 def _Exit(argv):
-  if len(argv) > 2:
+  if len(argv) > 1:
     util.error('exit: too many arguments')
     return 1
   try:
-    code = int(argv[1])
+    code = int(argv[0])
   except IndexError:
     code = 0
   except ValueError as e:
-    print("Invalid argument %r" % argv[1], file=sys.stderr)
+    print("Invalid argument %r" % argv[0], file=sys.stderr)
     code = 1  # Runtime Error
   # TODO: Should this be turned into our own SystemExit exception?
   sys.exit(code)
@@ -562,8 +560,6 @@ def _Wait(argv, jobs):
   # What's the difference between wait and wait -n?
   # 'wait' waits  for everything?
   # wait -n waits for the next one.
-
-  argv = argv[1:]
 
   opt_n = False
   opt_index = 0  
@@ -600,7 +596,7 @@ def _Read(argv, mem):
   # - parse flags.
   # - Use IFS instead of Python's split().
 
-  names = argv[1:]
+  names = argv
   line = sys.stdin.readline()
   if not line:  # EOF
     return 1
@@ -629,8 +625,11 @@ def _Read(argv, mem):
 
 
 def _Shift(argv, mem):
+  if len(argv) > 1:
+    util.error('shift: too many arguments')
+    return 1
   try:
-    n = int(argv[1])
+    n = int(argv[0])
   except IndexError:
     n = 1
   except ValueError as e:
@@ -642,7 +641,7 @@ def _Shift(argv, mem):
 
 def _Cd(argv, mem):
   # TODO: Parse flags, error checking, etc.
-  dest_dir = argv[1]
+  dest_dir = argv[0]
   if dest_dir == '-':
     old = mem.Get('OLDPWD')
     if old.tag == value_e.Undef:
@@ -687,8 +686,8 @@ def _Set(argv, exec_opts, mem):
   # - share with bin/osh command line parsing.  How?
 
   # Replace the top of the stack
-  if len(argv) >= 2 and argv[1] == '--':
-    mem.SetArgv(argv[2:])
+  if len(argv) >= 1 and argv[0] == '--':
+    mem.SetArgv(argv[1:])
     return 0
 
   # TODO: Loop through -o, +o, etc.
@@ -696,8 +695,8 @@ def _Set(argv, exec_opts, mem):
     pass
 
   try:
-    flag = argv[1]
-    name = argv[2]
+    flag = argv[0]
+    name = argv[1]
   except IndexError:
     raise NotImplementedError(argv)
 
@@ -810,8 +809,8 @@ class Executor(object):
     # TODO: Parse flags?  How?
     # opts = self.builtins.Parse(EBuiltin.COMPLETE, argv)
 
-    command = argv[1]  # e.g. 'grep'
-    func_name = argv[2]
+    command = argv[0]  # e.g. 'grep'
+    func_name = argv[1]
 
     # NOTE: bash doesn't actually check the name until completion time, but
     # obviously it's better to check here.
@@ -842,19 +841,18 @@ class Executor(object):
   def _Eval(self, argv):
     # TODO: in oil, eval shouldn't take multiple args.  For clarity 'eval ls
     # foo' will say "extra arg".
-    code_str = argv[1]
+    code_str = argv[0]
     return self._EvalHelper(code_str)
 
   def _Source(self, argv):
     # TODO: Use LineReader
-    with open(argv[1]) as f:
+    with open(argv[0]) as f:
       code_str = f.read()
     return self._EvalHelper(code_str)
 
   def _Exec(self, argv):
     # Either execute command with redirects, or apply redirects in this shell.
     # NOTE: Redirects were processed earlier.
-    argv = argv[1:]
     if argv:
       thunk = process.ExternalThunk(argv)
       thunk.RunInParent()  # never returns
@@ -863,6 +861,9 @@ class Executor(object):
 
   def RunBuiltin(self, builtin_id, argv):
     restore_fd_state = True
+
+    # NOTE: Builtins don't need to know their own name.
+    argv = argv[1:]
 
     # TODO: Just test Type() == COMMAND word, and then if it's a command word,
     # type IsBuiltin().  And then builtins are NOT tokens!  Keywords might be

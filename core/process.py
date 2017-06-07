@@ -395,8 +395,8 @@ class BuiltinThunk(Thunk):
     """
     Args:
       ex: Executor
-      builtin_id: integer
-      argv: arguuments
+      builtin_id: EBuiltin
+      argv: list of strings
     """
     self.ex = ex
     self.builtin_id = builtin_id
