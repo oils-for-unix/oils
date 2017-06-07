@@ -496,7 +496,7 @@ def _Echo(argv):
 
   opt_n = False
   opt_e = False
-  num_to_skip = 0
+  num_to_skip = 0  # TODO: Should be optind?
   for a in argv:
     if a == '-n':
       opt_n = True
@@ -533,6 +533,66 @@ def _Exit(argv):
     code = 1  # Runtime Error
   # TODO: Should this be turned into our own SystemExit exception?
   sys.exit(code)
+
+
+def _Wait(argv, jobs):
+  """
+  wait: wait [-n] [id ...]
+      Wait for job completion and return exit status.
+
+      Waits for each process identified by an ID, which may be a process ID or a
+      job specification, and reports its termination status.  If ID is not
+      given, waits for all currently active child processes, and the return
+      status is zero.  If ID is a a job specification, waits for all processes
+      in that job's pipeline.
+
+      If the -n option is supplied, waits for the next job to terminate and
+      returns its exit status.
+
+      Exit Status:
+      Returns the status of the last ID; fails if ID is invalid or an invalid
+      option is given.
+
+  # Job spec, %1 %2, %%, %?a etc.
+
+  http://mywiki.wooledge.org/BashGuide/JobControl#jobspec
+
+  This is different than a PID?  But it does have a PID.
+  """
+  # What's the difference between wait and wait -n?
+  # 'wait' waits  for everything?
+  # wait -n waits for the next one.
+
+  argv = argv[1:]
+
+  opt_n = False
+  opt_index = 0  
+  for a in argv:
+    if a == '-n':
+      opt_n = True
+      opt_index += 1
+    else:
+      break
+
+  if opt_n:
+    # wait for next
+    return 0
+
+  if len(argv) == 1:
+    # wait for everything
+    return 0
+
+  for i in argv:
+    # parse pid
+    # parse job spec
+    pass
+
+  return 0
+
+
+def _Jobs(argv, jobs):
+  raise NotImplementedError
+  return 0
 
 
 def _Read(argv, mem):
@@ -720,7 +780,7 @@ class Executor(object):
                        # Whether argv[0] is make determines if it is executed
 
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
-    self.jobs = {}
+    self.jobs = process.JobState()
 
     self.dir_stack = DirStack()
 
@@ -837,6 +897,12 @@ class Executor(object):
       # - can be lifted out to builtin
       status = self._Exec(argv)  # may never return
       restore_fd_state = False
+
+    elif builtin_id == EBuiltin.WAIT:
+      status = _Wait(argv, self.jobs)
+
+    elif builtin_id == EBuiltin.JOBS:
+      status = _Jobs(argv, self.jobs)
 
     elif builtin_id == EBuiltin.PUSHD:
       status = self.dir_stack.Pushd(argv)

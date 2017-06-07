@@ -113,7 +113,7 @@ from core import util
 EBuiltin = util.Enum('EBuiltin', """
 NONE READ ECHO SHIFT CD PUSHD POPD
 EXPORT
-EXIT SOURCE DOT TRAP EVAL EXEC SET COMPLETE COMPGEN DEBUG_LINE
+EXIT SOURCE DOT TRAP EVAL EXEC WAIT JOBS SET COMPLETE COMPGEN DEBUG_LINE
 """.split())
 
 
@@ -350,6 +350,10 @@ class Builtins(object):
       return EBuiltin.EVAL
     elif argv0 == "exec":
       return EBuiltin.EXEC
+    elif argv0 == "wait":
+      return EBuiltin.WAIT
+    elif argv0 == "jobs":
+      return EBuiltin.JOBS
 
     elif argv0 == "set":
       return EBuiltin.SET

@@ -437,31 +437,6 @@ class HereDocWriterThunk(Thunk):
     #os.close(self.w)
 
 
-# TODO:
-# - Do Process and Pipeline need this common interface?
-#
-# What about SubProgramThunk?    $(echo foo; echo bar)
-#
-# List node, passed to EvalCommandSub().  Wrap in Process(SubProgramThunk()),
-# and then call .AddOutputVar() on it.  That turns it into a pipeline?
-#
-# What about memory management of that object in C?  I guess Capturable just
-# has a virtual destructor.
-#
-# Pipeline.AddOutputVar() -- return this
-#
-# When you have both input and output, the output is the one that runs in the
-# main thread, and input becomes Process(SubProgramThunk).
-
-
-class Capturable(object):
-  def __init__(self):
-    pass
-
-  def CaptureOutput(self, var):
-    raise NotImplementedError
-
-
 class Process(object):
   """A process to run.
 
@@ -604,14 +579,22 @@ class Pipeline(object):
     # TODO: This algorithm is wrong, because you need a GLOBAL list of running
     # processes to key off of.
     # You want to wait until all of them finish.
-    # Loop until all of them finish!  TODO: See what otehr shells do.
+    # Loop until all of them finish!
     #
+    # NOTE: strace reveals that all shells call wait4(-1), which waits for any
+    # process.  osh calls it too.
+
     # Example: running two pipelines in parallel:
 
     # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
     # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
     # wait
     # wait
+
+    # Another example:
+    # 
+    # sleep 0.01 &  # This can finish IN BETWEEN OTHER PROCESSES.
+    # { sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } &
 
     lookup = {}
     for p in self.procs:
@@ -624,3 +607,67 @@ class Pipeline(object):
 
     pipe_status = [lookup[pid] for pid in pids]
     return pipe_status
+
+
+class JobState:
+  """
+  Usage:
+
+  # executor
+  self.jobs = JobState()
+
+  p = Process()
+  self.jobs.Start(p)
+  self.jobs.Wait()
+
+  pi = Pipeline()
+  self.jobs.Start(pi)
+
+  for i in xrange(pi.Length()):
+    self.jobs.Wait()
+
+  # That fills this in?
+  pi.PipeStatus()
+
+  class Pipeline(_Job):
+    init():
+      self.pipe_status = []
+
+  class Process(_Job):
+    init():
+      self.status = -1
+
+
+  NOTE: When does $? and ${PIPESTATUS[@]} get set?
+
+  """
+  def __init__(self):
+    # pid -> f()
+    self.callbacks = {}
+
+    # A pipeline that is backgrounded is always run in a SubProgramThunk?  So
+    # you can wait for it once?
+    self.jobs = {}
+
+  def Start(self, job):
+    # NOTE: A job is a background process.
+    #
+    # echo hi | wc -l    -- this starts two processes.  Wait for TWO
+    # echo hi | wc -l &   -- this starts a process which starts two processes
+    #                        Wait for ONE.
+
+    #self.callbacks[pid]
+    pass
+
+  def Wait(self):
+    # NOTE: Need to check errors
+    wait_pid, status = os.wait()
+
+    # TODO: change status in more cases.
+    if os.WIFSIGNALED(status):
+      pass
+    elif os.WIFEXITED(status):
+      status = os.WEXITSTATUS(status)
+      #log('exit status: %s', status)
+
+    return wait_pid, status
