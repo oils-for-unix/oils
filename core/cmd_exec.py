@@ -179,6 +179,9 @@ class Mem(object):
   Callers:
     User code: assigning and evaluating variables, in command context or
       arithmetic context.
+      SetLocal -- for local
+      SetReadonlyFlag
+      SetExportFlag
     Completion engine: for COMP_WORDS, etc.
     Builtins call it implicitly: read, cd for $PWD, $OLDPWD, etc.
 
@@ -1052,8 +1055,7 @@ class Executor(object):
     #print(pi)
 
     pipe_status = pi.Run()
-    # TODO: Set PipeStatus() in self.mem
-    #log('pipe_status %s', pipe_status)
+    self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])
 
     if self.exec_opts.pipefail:
       # The status is that of the last command that is non-zero.

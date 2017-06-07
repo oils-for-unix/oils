@@ -298,7 +298,7 @@ posix() {
 }
 
 special-vars() {
-  sh-spec spec/special-vars.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/special-vars.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

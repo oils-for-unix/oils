@@ -21,6 +21,14 @@ expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue
 echo a | egrep '[0-9]+'
 # status: 1
 
+### PIPESTATUS
+{ sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } | { sleep 0.01; exit 3; }
+echo ${PIPESTATUS[@]}
+# stdout: 1 2 3
+# N-I dash status: 2
+# N-I zsh status: 3
+# N-I dash/zsh stdout-json: ""
+
 ### |&
 stdout_stderr.py |& cat
 # stdout-json: "STDERR\nSTDOUT\n"

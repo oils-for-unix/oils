@@ -256,7 +256,7 @@ class HereDocRedirect(UserRedirect):
 
     #print('!! AfterForkInParent')
     if self.here_proc:
-      status = self.here_proc.Wait()
+      _, status = self.here_proc.Wait()
       #print('Here doc writer finished with status %d' % status)
 
   # Separate path: Apply the whole thing in the parent
@@ -523,6 +523,8 @@ class Process(object):
     for r in self.redirects:  # here docs
       r.AfterForkInParent()
 
+    return pid
+
   # TODO: Should be a free function.  Not using self!
   def Wait(self):
     # NOTE: Need to check errors
@@ -535,7 +537,7 @@ class Process(object):
       status = os.WEXITSTATUS(status)
       #log('exit status: %s', status)
 
-    return status
+    return wait_pid, status
 
   def Run(self):
     self.Start()
@@ -546,7 +548,8 @@ class Process(object):
     # Maybe you can have a separate GC thread, and only start it after 100ms,
     # and then cancel when done?
 
-    return self.Wait()
+    _, status = self.Wait()
+    return status
 
 
 class Pipeline(object):
@@ -593,20 +596,18 @@ class Pipeline(object):
     self.procs[-1].CaptureOutput(var)
 
   def Run(self):
+    pids = []
     for p in self.procs:
-      #print('start', p)
-      p.Start()
-      # TODO: Return pid
+      pids.append(p.Start())
 
-    pipe_status = []
-
-    # TODO: Could do some sort of garbage collection here  too.
+    lookup = {}
     for p in self.procs:
       # BUG: This doesn't do things in order!  It just calls os.wait()!
       # Need to key off wait_pid
 
-      status = p.Wait()
+      pid, status = p.Wait()
       #log('Process %s returned status %s', p, status)
-      pipe_status.append(status)
+      lookup[pid] = status
 
+    pipe_status = [lookup[pid] for pid in pids]
     return pipe_status
