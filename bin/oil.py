@@ -54,12 +54,13 @@ from osh import cmd_parse  # for tracing
 from osh import ast_ as ast
 from osh import parse_lib
 
+from core import alloc
 from core import builtin
 from core import cmd_exec
-from core import lexer  # for tracing
-from core.alloc import Pool
-from core import reader
 from core.id_kind import Id
+from core import lexer  # for tracing
+from core import reader
+from core import state
 from core import word
 from core import word_eval
 from core import ui
@@ -200,13 +201,13 @@ OSH_PS1 = 'osh$ '
 def OshMain(argv):
   (opts, argv) = Options().parse_args(argv)
 
-  state = util.TraceState()
+  trace_state = util.TraceState()
   if 'cp' in opts.trace:
-    util.WrapMethods(cmd_parse.CommandParser, state)
+    util.WrapMethods(cmd_parse.CommandParser, trace_state)
   if 'wp' in opts.trace:
-    util.WrapMethods(word_parse.WordParser, state)
+    util.WrapMethods(word_parse.WordParser, trace_state)
   if 'lexer' in opts.trace:
-    util.WrapMethods(lexer.Lexer, state)
+    util.WrapMethods(lexer.Lexer, trace_state)
 
   if len(argv) == 0:
     dollar0 = sys.argv[0]  # e.g. bin/osh
@@ -218,13 +219,13 @@ def OshMain(argv):
   # It uses a different memory-management model.  It's a batch program and not
   # an interactive program.
 
-  pool = Pool()
+  pool = alloc.Pool()
   arena = pool.NewArena()
 
   # TODO: Maybe wrap this initialization sequence up in an oil_State, like
   # lua_State.
   status_lines = ui.MakeStatusLines()
-  mem = cmd_exec.Mem(dollar0, argv[1:])
+  mem = state.Mem(dollar0, argv[1:])
   builtins = builtin.Builtins(status_lines[0])
   funcs = {}
 
@@ -234,7 +235,7 @@ def OshMain(argv):
   else:
     # TODO: NullLookup?
     comp_lookup = None
-  exec_opts = cmd_exec.ExecOpts()
+  exec_opts = state.ExecOpts()
 
   # TODO: How to get a handle to initialized builtins here?
   # tokens.py has it.  I think you just make a separate table, with

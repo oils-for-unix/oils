@@ -37,12 +37,12 @@ def InitCommandParser(code_str):
 
 
 def InitExecutor():
-  mem = cmd_exec.Mem('', [])
+  mem = state.Mem('', [])
   status_line = ui.NullStatusLine()
   builtins = Builtins(status_line)
   funcs = {}
   comp_funcs = {}
-  exec_opts = cmd_exec.ExecOpts()
+  exec_opts = state.ExecOpts()
   pool = alloc.Pool()
   arena = pool.NewArena()
   return cmd_exec.Executor(mem, builtins, funcs, completion, comp_funcs, exec_opts,
@@ -50,14 +50,14 @@ def InitExecutor():
 
 
 def InitEvaluator():
-  mem = cmd_exec.Mem('', [])
+  mem = state.Mem('', [])
 
   val1 = runtime.Str('xxx')
   val2 = runtime.Str('yyy')
   pairs = [(ast.LhsName('x'), val1), (ast.LhsName('y'), val2)]
   mem.SetLocals(pairs)
 
-  exec_opts = cmd_exec.ExecOpts()
+  exec_opts = state.ExecOpts()
   # Don't need side effects for most things
   return word_eval.CompletionWordEvaluator(mem, exec_opts)
 
@@ -65,14 +65,14 @@ def InitEvaluator():
 class MemTest(unittest.TestCase):
 
   def testGet(self):
-    mem = cmd_exec.Mem('', [])
+    mem = state.Mem('', [])
     mem.Push(['a', 'b'])
     print(mem.Get('HOME'))
     mem.Pop()
     print(mem.Get('NONEXISTENT'))
 
   def testArgv(self):
-    mem = cmd_exec.Mem('', [])
+    mem = state.Mem('', [])
     mem.Push(['a', 'b'])
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
@@ -95,7 +95,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
   def testArgv2(self):
-    mem = cmd_exec.Mem('', ['x', 'y'])
+    mem = state.Mem('', ['x', 'y'])
 
     mem.Shift(1)
     self.assertEqual(['y'], mem.GetArgv())

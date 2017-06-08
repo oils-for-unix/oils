@@ -864,11 +864,13 @@ class NestedParensTest(unittest.TestCase):
     self.assertEqual(command_e.SimpleCommand, node.child.tag)
 
   def testLhsArithGroupingWithin(self):
-    # NOTE: LHS not implemented yet
+    # Within Arith sub
+    node = assertParseSimpleCommand(self, 'echo $((a[1*(2+3)]=x))')
+    self.assertEqual(2, len(node.words))
+
+    # Within Command Sub -- NOT IMPLEMENTED
     return
-    # Within com sub
-    node = assertParseSimpleCommand(self,
-        'echo $(a[1*(2+3)]=x)')
+    node = assertParseSimpleCommand(self, 'echo $(a[1*(2+3)]=x)')
     self.assertEqual(2, len(node.words))
 
   def testFuncDefWithin(self):

@@ -233,7 +233,7 @@ class VarAction(object):
   def __init__(self, environ, mem):
     """
     Args:
-      mem: cmd_exec.Mem object
+      mem: state.Mem object
     """
     self.environ = environ
     # How to complete environment?  **environ global var.  That's os.environ.
@@ -774,7 +774,7 @@ if __name__ == '__main__':
   status_lines = ui.MakeStatusLines()
 
   builtins = Builtins(status_lines[0])
-  mem = cmd_exec.Mem('dummy', [])
+  mem = state.Mem('dummy', [])
 
   funcs = {'func1': None, 'func2': None, 'exfunc': None}
   comp_lookup = CompletionLookup()

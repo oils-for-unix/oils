@@ -12,11 +12,12 @@ completion_test.py: Tests for completion.py
 import unittest
 
 from core import cmd_exec
-from core import lexer
-from core import word_eval
-from core import ui
 from core import cmd_exec_test
 from core import completion  # module under test
+from core import lexer
+from core import state
+from core import word_eval
+from core import ui
 from core.id_kind import Id
 
 from osh import ast_ as ast
@@ -52,7 +53,7 @@ class CompletionTest(unittest.TestCase):
     print(list(A1.Matches(['f'], 0, 'f')))
 
   def testExternalCommandAction(self):
-    mem = cmd_exec.Mem('dummy', [])
+    mem = state.Mem('dummy', [])
     a = completion.ExternalCommandAction(mem)
     print(list(a.Matches([], 0, 'f')))
 
@@ -132,8 +133,8 @@ class CompletionTest(unittest.TestCase):
 
 
 def _MakeTestEvaluator():
-  mem = cmd_exec.Mem('', [])
-  exec_opts = cmd_exec.ExecOpts()
+  mem = state.Mem('', [])
+  exec_opts = state.ExecOpts()
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
   return ev
 

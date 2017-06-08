@@ -36,8 +36,8 @@ def ParseAndEval(code_str):
 
   print('node:', anode)
 
-  mem = cmd_exec.Mem('', [])
-  exec_opts = cmd_exec.ExecOpts()
+  mem = state.Mem('', [])
+  exec_opts = state.ExecOpts()
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
 
   arith_ev = expr_eval.ArithEvaluator(mem, ev, exec_opts)
