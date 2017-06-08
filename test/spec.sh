@@ -246,7 +246,7 @@ func-parsing() {
 }
 
 func() {
-  sh-spec spec/func.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/func.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -389,7 +389,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/dparen.test.sh \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 

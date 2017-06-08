@@ -16,6 +16,10 @@ for w in one two; do
 done | tac
 # stdout-json: "two\none\n"
 
+### Redirect in Pipeline
+echo hi 1>&2 | wc -l
+# stdout: 0
+
 ### Exit code is last status
 echo a | egrep '[0-9]+'
 # status: 1
@@ -76,6 +80,6 @@ $v echo hi
 
 ### Evaluation of argv[0] in pipeline occurs in child
 ${cmd=echo} hi | wc -l
-echo "[$cmd]"
-# stdout-json: "1\n[]\n"
-# BUG zsh stdout-json: "1\n[echo]\n"
+echo "cmd=$cmd"
+# stdout-json: "1\ncmd=\n"
+# BUG zsh stdout-json: "1\ncmd=echo\n"
