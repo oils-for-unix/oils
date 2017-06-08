@@ -69,7 +69,7 @@ from core import word_eval
 from core import ui
 from core import util
 
-from core.builtin import EBuiltin
+from core import builtin
 from core.id_kind import Id, RedirType, REDIR_TYPE
 from core import process
 from core import runtime
@@ -78,6 +78,8 @@ from core import state
 from osh import ast_ as ast
 
 import libc  # for fnmatch
+
+EBuiltin = builtin.EBuiltin
 
 command_e = ast.command_e
 lhs_expr_e = ast.lhs_expr_e
@@ -114,292 +116,6 @@ class _ControlFlow(RuntimeError):
   def ReturnValue(self):
     assert self.IsReturn()
     return self.arg
-
-
-def _Echo(argv):
-  """
-  echo builtin.  Doesn't depend on executor state.
-
-  TODO: Where to put help?  docstring?
-  """
-  # NOTE: both getopt and optparse are unsuitable for 'echo' because:
-  # - 'echo -c' should print '-c', not fail
-  # - echo '---' should print ---, not fail
-
-  opt_n = False
-  opt_e = False
-  opt_index = 0
-  for a in argv:
-    if a == '-n':
-      opt_n = True
-      opt_index += 1
-    elif a == '-e':
-      opt_e = True
-      opt_index += 1
-      raise NotImplementedError('echo -e')
-    else:
-      break  # something else
-
-  #log('echo argv %s', argv)
-  n = len(argv)
-  for i in xrange(opt_index, n-1):
-    sys.stdout.write(argv[i])
-    sys.stdout.write(' ')  # arg separator
-  if argv:
-    sys.stdout.write(argv[-1])
-  if not opt_n:
-    sys.stdout.write('\n')
-  sys.stdout.flush()
-  return 0
-
-
-def _Exit(argv):
-  if len(argv) > 1:
-    util.error('exit: too many arguments')
-    return 1
-  try:
-    code = int(argv[0])
-  except IndexError:
-    code = 0
-  except ValueError as e:
-    print("Invalid argument %r" % argv[0], file=sys.stderr)
-    code = 1  # Runtime Error
-  # TODO: Should this be turned into our own SystemExit exception?
-  sys.exit(code)
-
-
-import getopt
-
-def _Wait(argv, waiter, job_state):
-  """
-  wait: wait [-n] [id ...]
-      Wait for job completion and return exit status.
-
-      Waits for each process identified by an ID, which may be a process ID or a
-      job specification, and reports its termination status.  If ID is not
-      given, waits for all currently active child processes, and the return
-      status is zero.  If ID is a a job specification, waits for all processes
-      in that job's pipeline.
-
-      If the -n option is supplied, waits for the next job to terminate and
-      returns its exit status.
-
-      Exit Status:
-      Returns the status of the last ID; fails if ID is invalid or an invalid
-      option is given.
-
-  # Job spec, %1 %2, %%, %?a etc.
-
-  http://mywiki.wooledge.org/BashGuide/JobControl#jobspec
-
-  This is different than a PID?  But it does have a PID.
-  """
-  # NOTE: echo can't use getopt because of 'echo ---'
-  # But that's a special case; the rest of the builtins can use it.
-  # We must respect -- everywhere, EXCEPT echo.  'wait -- -n' should work must work.
-
-  opt_n = False
-
-  try:
-    opts, args = getopt.getopt(argv, 'n')
-  except getopt.GetoptError as e:
-    util.usage(str(e))
-    sys.exit(2)
-  for name, val in opts:
-    if name == '-n':
-      opt_n = True
-    else:
-      raise AssertionError
-
-  if opt_n:
-    waiter.Wait()
-    print('wait next')
-    # TODO: Get rid of args?
-    return 0
-
-  if not args:
-    # TODO: get all background jobs from JobState?
-    print('wait all')
-    # wait for everything
-    return 0
-
-  # Get list of jobs.  Then we need to check if they are ALL stopped.
-  for a in args:
-    print('wait %s' % a)
-    # parse pid
-    # parse job spec
-
-  return 0
-
-
-def _Jobs(argv, job_state):
-  """List jobs."""
-  raise NotImplementedError
-  return 0
-
-
-def _Read(argv, mem):
-  # TODO:
-  # - parse flags.
-  # - Use IFS instead of Python's split().
-
-  names = argv
-  line = sys.stdin.readline()
-  if not line:  # EOF
-    return 1
-
-  if line.endswith('\n'):  # strip trailing newline
-    line = line[:-1]
-    status = 0
-  else:
-    # odd bash behavior: fail even if we can set variables.
-    status = 1
-
-  # leftover words assigned to the last name
-  n = len(names)
-
-  strs = line.split(None, n-1)
-
-  for i in xrange(n):
-    try:
-      s = strs[i]
-    except IndexError:
-      s = ''  # if there are too many variables
-    val = runtime.Str(s)
-    mem.SetLocal(names[i], val)
-
-  return status
-
-
-def _Shift(argv, mem):
-  if len(argv) > 1:
-    util.error('shift: too many arguments')
-    return 1
-  try:
-    n = int(argv[0])
-  except IndexError:
-    n = 1
-  except ValueError as e:
-    print("Invalid shift argument %r" % argv[1], file=sys.stderr)
-    return 1  # runtime error
-
-  return mem.Shift(n)
-
-
-def _Cd(argv, mem):
-  # TODO: Parse flags, error checking, etc.
-  dest_dir = argv[0]
-  if dest_dir == '-':
-    old = mem.Get('OLDPWD')
-    if old.tag == value_e.Undef:
-      log('OLDPWD not set')
-      return 1
-    elif old.tag == value_e.Str:
-      dest_dir = old.s
-      print(dest_dir)  # Shells print the directory
-    elif old.tag == value_e.StrArray:
-      # TODO: Prevent the user from setting OLDPWD to array (or maybe they
-      # can't even set it at all.)
-      raise AssertionError('Invalid OLDPWD')
-
-  # Save OLDPWD.
-  mem.SetGlobalString('OLDPWD', os.getcwd())
-  os.chdir(dest_dir)
-  mem.SetGlobalString('PWD', dest_dir)
-  return 0
-
-
-def _Pushd(argv, dir_stack):
-  dir_stack.append(os.getcwd())
-  dest_dir = argv[0]
-  os.chdir(dest_dir)  # TODO: error checking
-  return 0
-
-
-def _Popd(argv, dir_stack):
-  try:
-    dest_dir = dir_stack.pop()
-  except IndexError:
-    log('popd: directory stack is empty')
-    return 1
-  os.chdir(dest_dir)  # TODO: error checking
-  return 0
-
-
-def _Dirs(argv, dir_stack):
-  print(dir_stack)
-  return 0
-
-
-def _Export(argv, mem):
-  for arg in argv:
-    parts = arg.split('=', 1)
-    if len(parts) == 1:
-      name = parts[0]
-    else:
-      name, val = parts
-      # TODO: Set the global flag
-      mem.SetGlobalString(name, val)
-
-    # May create an undefined variable
-    mem.SetExportFlag(name, True)
-
-  return 0
-
-
-def _Set(argv, exec_opts, mem):
-  # TODO:
-  # - mutate settings in self.exec_opts
-  #   - parse -o and +o, -e and +e, etc.
-  # - argv can be COMBINED with options.
-  # - share with bin/osh command line parsing.  How?
-
-  # Replace the top of the stack
-  if len(argv) >= 1 and argv[0] == '--':
-    mem.SetArgv(argv[1:])
-    return 0
-
-  # TODO: Loop through -o, +o, etc.
-  for a in argv:
-    pass
-
-  try:
-    flag = argv[0]
-    name = argv[1]
-  except IndexError:
-    raise NotImplementedError(argv)
-
-  if flag != '-o':
-    raise NotImplementedError()
-
-  if name == 'errexit':
-    exec_opts.errexit.Set(True)
-  elif name == 'nounset':
-    exec_opts.nounset = True
-  elif name == 'pipefail':
-    exec_opts.pipefail = True
-  elif name == 'xtrace':
-    exec_opts.xtrace = True
-
-  # Oil-specific
-  elif name == 'strict-arith':
-    exec_opts.strict_arith = True
-  elif name == 'strict-array':
-    exec_opts.strict_array = True
-  elif name == 'strict-command':
-    exec_opts.strict_command = True
-  elif name == 'strict-scope':
-    exec_opts.strict_scope = True
-
-  # TODO:
-  # - STRICT: should be a combination of errexit,nounset,pipefail, plus
-  #   strict-*, plus IFS?  Caps because it's a composite.
-
-  else:
-    util.error('set: invalid option %r', name)
-    return 1
-
-  return 0
 
 
 class Executor(object):
@@ -476,9 +192,6 @@ class Executor(object):
     return 0
 
   def _Complete(self, argv):
-    # TODO: Parse flags?  How?
-    # opts = self.builtins.Parse(EBuiltin.COMPLETE, argv)
-
     command = argv[0]  # e.g. 'grep'
     func_name = argv[1]
 
@@ -542,25 +255,25 @@ class Executor(object):
     # TODO: figure out a quicker dispatch mechanism.  Just make a table of
     # builtins I guess.
     if builtin_id == EBuiltin.READ:
-      status = _Read(argv, self.mem)
+      status = builtin._Read(argv, self.mem)
 
     elif builtin_id == EBuiltin.ECHO:
-      status = _Echo(argv)
+      status = builtin._Echo(argv)
 
     elif builtin_id == EBuiltin.SHIFT:
-      status = _Shift(argv, self.mem)
+      status = builtin._Shift(argv, self.mem)
 
     elif builtin_id == EBuiltin.CD:
-      status = _Cd(argv, self.mem)
+      status = builtin._Cd(argv, self.mem)
 
     elif builtin_id == EBuiltin.SET:
-      status = _Set(argv, self.exec_opts, self.mem)
+      status = builtin._Set(argv, self.exec_opts, self.mem)
 
     elif builtin_id == EBuiltin.EXPORT:
-      status = _Export(argv, self.mem)
+      status = builtin._Export(argv, self.mem)
 
     elif builtin_id == EBuiltin.EXIT:
-      status = _Exit(argv)
+      status = builtin._Exit(argv)
 
     elif builtin_id == EBuiltin.EXEC:
       # TODO:
@@ -570,19 +283,19 @@ class Executor(object):
       restore_fd_state = False
 
     elif builtin_id == EBuiltin.WAIT:
-      status = _Wait(argv, self.waiter, self.job_state)
+      status = builtin._Wait(argv, self.waiter, self.job_state)
 
     elif builtin_id == EBuiltin.JOBS:
-      status = _Jobs(argv, self.job_ste)
+      status = builtin._Jobs(argv, self.job_ste)
 
     elif builtin_id == EBuiltin.PUSHD:
-      status = _Pushd(argv, self.dir_stack)
+      status = builtin._Pushd(argv, self.dir_stack)
 
     elif builtin_id == EBuiltin.POPD:
-      status = _Popd(argv, self.dir_stack)
+      status = builtin._Popd(argv, self.dir_stack)
 
     elif builtin_id == EBuiltin.DIRS:
-      status = _Dirs(argv, self.dir_stack)
+      status = builtin._Dirs(argv, self.dir_stack)
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
