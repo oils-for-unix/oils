@@ -160,6 +160,10 @@ smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
 
+osh-only() {
+  sh-spec spec/osh-only.test.sh $OSH "$@"
+}
+
 # Regress bugs
 bugs() {
   sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"

@@ -294,9 +294,7 @@ class Builtins(object):
   TODO: Should have a separate BuiltinMetadata and BuiltinImplementation
   things?  Stuff outside the core should be here.
   """
-  def __init__(self, status_line):
-    self.status_line = status_line
-
+  def __init__(self):
     # Is this what we want?
     names = set()
     names.update(b.name for b in BUILTINS)
@@ -306,75 +304,71 @@ class Builtins(object):
 
     self.to_complete = sorted(names)
 
-  def DebugLine(self, argv):
-    # TODO: Maybe add a position flag?  Like debug-line -n 1 'foo'
-    # And enforce that you get a single arg?
-
-    # TODO: This should move out
-    self.status_line.Write('DEBUG: %s', ' '.join(argv[1:]))
-
   def GetNamesToComplete(self):
     """For completion of builtin names."""
     return self.to_complete
 
-  def Resolve(self, argv0):
-    # TODO: ResolveSpecialBuiltin first, then ResolveFunction, then
-    # ResolveOtherBuiltin.  In other words, you can't redefine special builtins
-    # with functions, but you can redefine other builtins.
 
-    # For completion, this is a flat list of names.  Although coloring them
-    # would be nice.
+# TODO: This and EBuiltin kind of useless?  We could just test for string
+# equality directly.
+def Resolve(argv0):
+  # TODO: ResolveSpecialBuiltin first, then ResolveFunction, then
+  # ResolveOtherBuiltin.  In other words, you can't redefine special builtins
+  # with functions, but you can redefine other builtins.
 
-    # TODO: Use BuiltinDef instances in BUILTINS to initialize.
+  # For completion, this is a flat list of names.  Although coloring them
+  # would be nice.
 
-    if argv0 == "read":
-      return EBuiltin.READ
-    elif argv0 == "echo":
-      return EBuiltin.ECHO
-    elif argv0 == "cd":
-      return EBuiltin.CD
-    elif argv0 == "shift":
-      return EBuiltin.SHIFT
-    elif argv0 == "pushd":
-      return EBuiltin.PUSHD
-    elif argv0 == "popd":
-      return EBuiltin.POPD
-    elif argv0 == "dirs":
-      return EBuiltin.DIRS
+  # TODO: Use BuiltinDef instances in BUILTINS to initialize.
 
-    elif argv0 == "export":
-      return EBuiltin.EXPORT
+  if argv0 == "read":
+    return EBuiltin.READ
+  elif argv0 == "echo":
+    return EBuiltin.ECHO
+  elif argv0 == "cd":
+    return EBuiltin.CD
+  elif argv0 == "shift":
+    return EBuiltin.SHIFT
+  elif argv0 == "pushd":
+    return EBuiltin.PUSHD
+  elif argv0 == "popd":
+    return EBuiltin.POPD
+  elif argv0 == "dirs":
+    return EBuiltin.DIRS
 
-    elif argv0 == "exit":
-      return EBuiltin.EXIT
+  elif argv0 == "export":
+    return EBuiltin.EXPORT
 
-    elif argv0 == "source":
-      return EBuiltin.SOURCE
-    elif argv0 == ".":
-      return EBuiltin.DOT
+  elif argv0 == "exit":
+    return EBuiltin.EXIT
 
-    elif argv0 == "trap":
-      return EBuiltin.TRAP
-    elif argv0 == "eval":
-      return EBuiltin.EVAL
-    elif argv0 == "exec":
-      return EBuiltin.EXEC
-    elif argv0 == "wait":
-      return EBuiltin.WAIT
-    elif argv0 == "jobs":
-      return EBuiltin.JOBS
+  elif argv0 == "source":
+    return EBuiltin.SOURCE
+  elif argv0 == ".":
+    return EBuiltin.DOT
 
-    elif argv0 == "set":
-      return EBuiltin.SET
-    elif argv0 == "complete":
-      return EBuiltin.COMPLETE
-    elif argv0 == "compgen":
-      return EBuiltin.COMPGEN
+  elif argv0 == "trap":
+    return EBuiltin.TRAP
+  elif argv0 == "eval":
+    return EBuiltin.EVAL
+  elif argv0 == "exec":
+    return EBuiltin.EXEC
+  elif argv0 == "wait":
+    return EBuiltin.WAIT
+  elif argv0 == "jobs":
+    return EBuiltin.JOBS
 
-    elif argv0 == "debug-line":
-      return EBuiltin.DEBUG_LINE
+  elif argv0 == "set":
+    return EBuiltin.SET
+  elif argv0 == "complete":
+    return EBuiltin.COMPLETE
+  elif argv0 == "compgen":
+    return EBuiltin.COMPGEN
 
-    return EBuiltin.NONE
+  elif argv0 == "debug-line":
+    return EBuiltin.DEBUG_LINE
+
+  return EBuiltin.NONE
 
 
 def _Echo(argv):
@@ -663,6 +657,12 @@ def _Set(argv, exec_opts, mem):
   return 0
 
 
+def _DebugLine(argv, status_lines):
+  # TODO: Maybe add a position flag?  Like debug-line -n 1 'foo'
+  # And enforce that you get a single arg?
+
+  status_lines[0].Write('DEBUG: %s', ' '.join(argv))
+  return 0
 
 
 def main(argv):

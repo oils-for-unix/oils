@@ -226,7 +226,7 @@ def OshMain(argv):
   # lua_State.
   status_lines = ui.MakeStatusLines()
   mem = state.Mem(dollar0, argv[1:])
-  builtins = builtin.Builtins(status_lines[0])
+  builtins = builtin.Builtins()
   funcs = {}
 
   # Passed to Executor for 'complete', and passed to completion.Init
@@ -241,7 +241,7 @@ def OshMain(argv):
   # tokens.py has it.  I think you just make a separate table, with
   # metaprogramming.
   ex = cmd_exec.Executor(
-      mem, builtins, funcs, completion, comp_lookup, exec_opts,
+      mem, status_lines, funcs, completion, comp_lookup, exec_opts,
       parse_lib.MakeParserForExecutor, arena)
 
   # NOTE: The rc file can contain both commands and functions... ideally we

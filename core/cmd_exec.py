@@ -124,12 +124,12 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, builtins, funcs, completion, comp_lookup, exec_opts,
-               make_parser, arena):
+  def __init__(self, mem, status_lines, funcs, completion, comp_lookup,
+               exec_opts, make_parser, arena):
     """
     Args:
       mem: Mem instance for storing variables
-      builtins: builtin metadata/implementation
+      status_lines: shared with completion.  TODO: Move this to the end.
       funcs: registry of functions (these names are completed)
       completion: completion module, if available
       comp_lookup: completion pattern/action
@@ -137,7 +137,7 @@ class Executor(object):
       arena: for printing error locations
     """
     self.mem = mem
-    self.builtins = builtins
+    self.status_lines = status_lines  
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
     self.completion = completion
@@ -313,7 +313,7 @@ class Executor(object):
       status = self._CompGen(argv)
 
     elif builtin_id == EBuiltin.DEBUG_LINE:
-      status = self.builtins.DebugLine(argv)
+      status = builtin._DebugLine(argv, self.status_lines)
 
     else:
       raise AssertionError('Unhandled builtin: %d' % builtin_id)
@@ -359,7 +359,7 @@ class Executor(object):
       return process.NoOpThunk()
 
     # TODO: respect the special builtin order too
-    builtin_id = self.builtins.Resolve(argv[0])
+    builtin_id = builtin.Resolve(argv[0])
     if builtin_id != EBuiltin.NONE:
       return process.BuiltinThunk(self, builtin_id, argv)
 
