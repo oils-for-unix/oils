@@ -185,13 +185,12 @@ f
 ### setting errexit while it's being ignored
 # ignored and then set again
 set -o errexit
+# osh aborts early here
 if { echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4; }; then
   echo 5;
 fi
 echo 6
-false  # this is the one that makes it fail!
-       # TODO: might want to disallow setting errexit while it's ignored?
-       # That means it goes at the top of the script.
+false  # this is the one that makes other shells fail
 echo 7
 # status: 1
 # stdout-json: "1\n2\n"
@@ -210,11 +209,11 @@ set -o errexit
 if ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4 ); then
   echo 5;
 fi
-echo 6
+echo 6  # This is executed because the subshell just returns false
 false 
 echo 7
 # status: 1
-# stdout-json: "1\n2\n"
+# stdout-json: "1\n2\n6\n"
 # OK dash/bash/mksh stdout-json: "1\n2\n3\n4\n5\n6\n"
 
 ### errexit double quard

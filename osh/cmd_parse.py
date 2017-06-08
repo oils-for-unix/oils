@@ -56,25 +56,31 @@ def _GetHereDocsToFill(node):
 
   if node.tag == command_e.If:
     for arm in node.arms:
-      here_docs.extend(_GetHereDocsToFill(arm.cond))
-      here_docs.extend(_GetHereDocsToFill(arm.action))
+      for child in arm.cond:
+        here_docs.extend(_GetHereDocsToFill(child))
+      for child in arm.action:
+        here_docs.extend(_GetHereDocsToFill(child))
+    for child in node.else_action:
+      here_docs.extend(_GetHereDocsToFill(child))
 
   elif node.tag == command_e.Case:
     for arm in node.arms:
-      here_docs.extend(_GetHereDocsToFill(arm.action))
+      for child in arm.action:
+        here_docs.extend(_GetHereDocsToFill(child))
 
   elif node.tag in (command_e.ForEach, command_e.ForExpr, command_e.FuncDef):
     here_docs.extend(_GetHereDocsToFill(node.body))
 
   elif node.tag in (command_e.While, command_e.Until):
-    here_docs.extend(_GetHereDocsToFill(node.cond))
+    for child in node.cond:
+      here_docs.extend(_GetHereDocsToFill(child))
     here_docs.extend(_GetHereDocsToFill(node.body))
-
-  elif node.tag == command_e.DoGroup:
-    here_docs.extend(_GetHereDocsToFill(node.child))
 
   elif node.tag == command_e.Sentence:
     here_docs.extend(_GetHereDocsToFill(node.command))
+
+  elif node.tag == command_e.Subshell:
+    return _GetHereDocsToFill(node.child)
 
   elif node.tag == command_e.TimeBlock:
     here_docs.extend(_GetHereDocsToFill(node.pipeline))
@@ -631,22 +637,16 @@ class CommandParser(object):
     left_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Lit_LBrace): return None
 
-    node = self.ParseCommandList()
-    if not node: return None
+    c_list = self.ParseCommandList()
+    if not c_list: return None
 
     # Not needed
     #right_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Lit_RBrace): return None
 
-    # OPTIMIZATION of AST.
-    # CommandList has no redirects; BraceGroup may have redirects.
-    if node.tag == command_e.CommandList:
-      n = ast.BraceGroup(node.children)
-    else:
-      n = ast.BraceGroup([node])
-
-    n.spids.append(left_spid)
-    return n
+    node = ast.BraceGroup(c_list.children)
+    node.spids.append(left_spid)
+    return node
 
   def ParseDoGroup(self):
     """
@@ -657,13 +657,13 @@ class CommandParser(object):
     if not self._Eat(Id.KW_Do): return None
     do_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
-    child = self.ParseCommandList()  # could be any thing
-    if not child: return None
+    c_list = self.ParseCommandList()  # could be any thing
+    if not c_list: return None
 
     if not self._Eat(Id.KW_Done): return None
     done_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
-    node = ast.DoGroup(child)
+    node = ast.DoGroup(c_list.children)
     node.spids.extend((do_spid, done_spid))
     return node
 
@@ -807,7 +807,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     if not body_node: return None
 
-    return ast.While(cond_node, body_node)
+    return ast.While(cond_node.children, body_node)
 
   def ParseUntil(self):
     """
@@ -821,7 +821,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     if not body_node: return None
 
-    return ast.Until(cond_node, body_node)
+    return ast.Until(cond_node.children, body_node)
 
   def ParseCaseItem(self):
     """
@@ -851,10 +851,11 @@ class CommandParser(object):
     if not self._NewlineOk(): return None
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
-      node = self.ParseCommandTerm()
-      assert node is not False
+      c_list = self.ParseCommandTerm()
+      if not c_list: return None
+      action_children = c_list.children
     else:
-      node = ast.NoOp()  # empty action
+      action_children = []
 
     dsemi_spid = -1
     last_spid = -1
@@ -871,7 +872,7 @@ class CommandParser(object):
 
     if not self._NewlineOk(): return None
 
-    arm = ast.case_arm(pat_words, node)
+    arm = ast.case_arm(pat_words, action_children)
     arm.spids.extend((left_spid, rparen_spid, dsemi_spid, last_spid))
     return arm
 
@@ -948,7 +949,7 @@ class CommandParser(object):
       body = self.ParseCommandList()
       if not body: return None
 
-      arm = ast.if_arm(cond, body)
+      arm = ast.if_arm(cond.children, body.children)
       arm.spids.extend((elif_spid, then_spid))
       arms.append(arm)
 
@@ -957,7 +958,7 @@ class CommandParser(object):
       self._Next()
       body = self.ParseCommandList()
       if not body: return None
-      if_node.else_action = body
+      if_node.else_action = body.children
     else:
       else_spid = -1
 
@@ -981,7 +982,7 @@ class CommandParser(object):
     body = self.ParseCommandList()
     if not body: return None
 
-    arm = ast.if_arm(cond, body)
+    arm = ast.if_arm(cond.children, body.children)
     arm.spids.extend((-1, then_spid))  # no if spid at first?
     if_node.arms.append(arm)
 
@@ -1171,8 +1172,7 @@ class CommandParser(object):
     if not child: return None
 
     #print('SUB', self.cur_word)
-    node = ast.Subshell()
-    node.children.append(child)
+    node = ast.Subshell(child)
 
     right_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.Right_Subshell): return None
@@ -1418,11 +1418,7 @@ class CommandParser(object):
 
       children.append(child)
 
-    if len(children) == 1:
-      return children[0]
-    else:
-      node = ast.CommandList(children)
-      return node
+    return ast.CommandList(children)
 
   def ParseCommandTerm(self):
     """"
@@ -1516,11 +1512,7 @@ class CommandParser(object):
       for c in children:
         self._MaybeReadHereDocs(c)
 
-    if len(children) == 1:
-      return children[0]
-    else:
-      node = ast.CommandList(children)
-      return node
+    return ast.CommandList(children)
 
   def ParseCommandList(self):
     """

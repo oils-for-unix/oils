@@ -137,8 +137,8 @@ module osh
   env_pair = (string name, word val)
 
   -- Each arm tests one word against multiple words
-  case_arm = (word* pat_list, command action)
-  if_arm = (command cond, command action)
+  case_arm = (word* pat_list, command* action)
+  if_arm = (command* cond, command* action)
 
   iterable = 
     IterArgv
@@ -157,15 +157,13 @@ module osh
   | Pipeline(command* children, bool negated, int* stderr_indices)
     -- TODO: Should be left and right
   | AndOr(command* children, id op_id)
-    -- TODO: Get rid of CommandList?  No redirects, so can be a plain list.
-  | CommandList(command* children)
     -- Part of for/while/until.  Can have one or more children.
-  | DoGroup(command child, redir* redirects)
+  | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.  Can have one or
     -- more children.
   | BraceGroup(command* children, redir* redirects)
     -- Can have one or more children.
-  | Subshell(command* children, redir* redirects)
+  | Subshell(command child, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
     -- do_arg_iter: whether to implicitly loop over "$@"
@@ -177,12 +175,15 @@ module osh
     -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
             command? body, redir* redirects)
-  | While(command cond, command body, redir* redirects)
-  | Until(command cond, command body, redir* redirects)
-  | If(if_arm* arms, command? else_action, redir* redirects)
+  | While(command* cond, command body, redir* redirects)
+  | Until(command* cond, command body, redir* redirects)
+  | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
   | FuncDef(string name, command body, redir* redirects)
   | TimeBlock(command pipeline)
+    -- Most nodes optimize it out as command*, but there are a few places where
+    -- this is useful for type safety.
+  | CommandList(command* children)
 
   and_or = DAmp | DPipe
 

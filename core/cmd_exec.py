@@ -1181,6 +1181,12 @@ class Executor(object):
 
     raise AssertionError(node.tag)
 
+  def _ExecuteList(self, children):
+    status = 0  # for empty list
+    for child in children:
+      status = self._Execute(child)  # last status wins
+    return status
+
   def _Execute(self, node):
     """
     Args:
@@ -1260,7 +1266,7 @@ class Executor(object):
 
     elif node.tag == command_e.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
-      p = self._GetProcessForNode(node.children[0])
+      p = self._GetProcessForNode(node.child)
       status = p.Run(self.waiter)
 
     elif node.tag == command_e.DBracket:
@@ -1312,9 +1318,7 @@ class Executor(object):
       for r in redirects:
         r.ApplyInParent(self.fd_state)
 
-      status = 0  # for empty list
-      for child in node.children:
-        status = self._Execute(child)  # last status wins
+      status = self._ExecuteList(node.children)
 
       self.fd_state.PopAndRestore()
 
@@ -1349,7 +1353,7 @@ class Executor(object):
       while True:
         self._PushErrExit()
         try:
-          cond_status = self._Execute(node.cond)
+          cond_status = self._ExecuteList(node.cond)
         finally:
           self._PopErrExit()
 
@@ -1400,9 +1404,7 @@ class Executor(object):
       raise NotImplementedError(node.tag)
 
     elif node.tag == command_e.DoGroup:
-      # Delegate to command list
-      # TODO: This should be compiled out!
-      status = self._Execute(node.child)
+      status = self._ExecuteList(node.children)
 
     elif node.tag == command_e.FuncDef:
       self.funcs[node.name] = node
@@ -1413,17 +1415,17 @@ class Executor(object):
       for arm in node.arms:
         self._PushErrExit()
         try:
-          status = self._Execute(arm.cond)
+          status = self._ExecuteList(arm.cond)
         finally:
           self._PopErrExit()
 
         if status == 0:
-          status = self._Execute(arm.action)
+          status = self._ExecuteList(arm.action)
           done = True
           break
       # TODO: The compiler should flatten this
       if not done and node.else_action is not None:
-        status = self._Execute(node.else_action)
+        status = self._ExecuteList(node.else_action)
 
     elif node.tag == command_e.NoOp:
       status = 0  # make it true
@@ -1441,7 +1443,7 @@ class Executor(object):
           pat_val = self.ev.EvalWordToString(pat_word, do_fnmatch=True)
           #log('Matching word %r against pattern %r', to_match, pat_val.s)
           if libc.fnmatch(pat_val.s, to_match):
-            status = self._Execute(arm.action)
+            status = self._ExecuteList(arm.action)
             done = True  # TODO: Parse ;;& and for fallthrough and such?
         if done:
           break
