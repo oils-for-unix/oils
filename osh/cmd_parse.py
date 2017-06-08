@@ -1168,10 +1168,14 @@ class CommandParser(object):
     #print('ParseSubshell lexer.PushHint ) -> )')
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
-    child = self.ParseCommandList()
-    if not child: return None
+    c_list = self.ParseCommandList()
+    if not c_list: return None
 
-    #print('SUB', self.cur_word)
+    # Remove singleton CommandList as an optimization.
+    if len(c_list.children) == 1:
+      child = c_list.children[0]
+    else:
+      child = c_list
     node = ast.Subshell(child)
 
     right_spid = word.LeftMostSpanForWord(self.cur_word)

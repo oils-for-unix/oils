@@ -79,10 +79,18 @@ def assertParseAndOr(test, code_str):
   return _assertParseMethod(test, code_str, 'ParseAndOr')
 
 def assertParseCommandLine(test, code_str):
-  return _assertParseMethod(test, code_str, 'ParseCommandLine')
+  node = _assertParseMethod(test, code_str, 'ParseCommandLine')
+  if len(node.children) == 1:
+    return node.children[0]
+  else:
+    return node
 
 def assertParseCommandList(test, code_str):
-  return _assertParseMethod(test, code_str, 'ParseCommandList')
+  node = _assertParseMethod(test, code_str, 'ParseCommandList')
+  if len(node.children) == 1:
+    return node.children[0]
+  else:
+    return node
 
 def assertParseRedirect(test, code_str):
   return _assertParseMethod(test, code_str, 'ParseRedirect')
@@ -519,26 +527,18 @@ class CommandParserTest(unittest.TestCase):
     self.assertEqual(command_e.FuncDef, node.tag)
 
   def testParseCommandLine(self):
-    _, c_parser = InitCommandParser('ls foo 2>/dev/null')
-    node = c_parser.ParseCommandLine()
+    node = assertParseCommandLine(self, 'ls foo 2>/dev/null')
     self.assertEqual(2, len(node.words))
-    print(node)
 
-    _, c_parser = InitCommandParser('ls foo|wc -l')
-    node = c_parser.ParseCommandLine()
+    node = assertParseCommandLine(self, 'ls foo|wc -l')
     self.assertEqual(command_e.Pipeline, node.tag)
-    print(node)
 
-    _, c_parser = InitCommandParser('ls foo|wc -l || die')
-    node = c_parser.ParseCommandLine()
+    node = assertParseCommandLine(self, 'ls foo|wc -l || die')
     self.assertEqual(command_e.AndOr, node.tag)
-    print(node)
 
-    _, c_parser = InitCommandParser('ls foo|wc -l || die; ls /')
-    node = c_parser.ParseCommandLine()
+    node = assertParseCommandLine(self, 'ls foo|wc -l || die; ls /')
     self.assertEqual(command_e.CommandList, node.tag)
     self.assertEqual(2, len(node.children))  # two top level things
-    print(node)
 
   def testParseCommandList(self):
     node = assertParseCommandList(self, 'ls foo')
@@ -848,7 +848,7 @@ class NestedParensTest(unittest.TestCase):
     node = assertParseCommandList(self,
         '(echo $((1+2)))')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.SimpleCommand, node.child.tag)
 
   def testArithGroupingWithin(self):
     # Within com sub
@@ -861,7 +861,7 @@ class NestedParensTest(unittest.TestCase):
     node = assertParseCommandList(self,
         '(echo $((1*(2+3))) )')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.SimpleCommand, node.child.tag)
 
   def testLhsArithGroupingWithin(self):
     # NOTE: LHS not implemented yet
@@ -880,7 +880,7 @@ class NestedParensTest(unittest.TestCase):
     node = assertParseCommandList(self,
         '(func() { echo hi; }; func)')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.CommandList, node.child.tag)
 
   def testArrayLiteralWithin(self):
     node = assertParseCommandList(self,
@@ -891,7 +891,7 @@ class NestedParensTest(unittest.TestCase):
     node = assertParseCommandList(self,
         '(array=(a b c))')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(1, len(node.children))
+    self.assertEqual(command_e.Assignment, node.child.tag)
 
   def testSubshellWithinComSub(self):
     node = assertParseCommandList(self,
