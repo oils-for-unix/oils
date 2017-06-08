@@ -172,25 +172,6 @@ class Executor(object):
     self.traceback = None
     self.traceback_msg = ''
 
-  def _Unset(self, argv):
-    # mutate self.mem
-    # NOTE: sh has DYNAMIC SCOPE, so you need tests for that here.
-    raise NotImplementedError
-
-  def _Trap(self, argv):
-    # TODO: register trap
-
-    # Example:
-    # trap -- 'echo "hi  there" | wc ' SIGINT
-    #
-    # Then hit Ctrl-C.
-    #
-    # Yeah you need the EvalHelper.  traps is a list of signals to parsed
-    # NODES.
-
-    log(self.traps)
-    return 0
-
   def _Complete(self, argv):
     command = argv[0]  # e.g. 'grep'
     func_name = argv[1]
@@ -269,6 +250,9 @@ class Executor(object):
     elif builtin_id == EBuiltin.SET:
       status = builtin._Set(argv, self.exec_opts, self.mem)
 
+    elif builtin_id == EBuiltin.UNSET:
+      status = builtin._Unset(argv, self.mem)
+
     elif builtin_id == EBuiltin.EXPORT:
       status = builtin._Export(argv, self.mem)
 
@@ -301,7 +285,7 @@ class Executor(object):
       status = self._Source(argv)
 
     elif builtin_id == EBuiltin.TRAP:
-      status = self._Trap(argv)
+      status = builtin._Trap(argv, self.traps)
 
     elif builtin_id == EBuiltin.EVAL:
       status = self._Eval(argv)

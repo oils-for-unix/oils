@@ -116,9 +116,12 @@ log = util.log
 # - So you can just add "complete" and have it work.
 
 EBuiltin = util.Enum('EBuiltin', """
-NONE READ ECHO SHIFT CD PUSHD POPD DIRS
-EXPORT
-EXIT SOURCE DOT TRAP EVAL EXEC WAIT JOBS SET COMPLETE COMPGEN DEBUG_LINE
+NONE READ ECHO SHIFT
+CD PUSHD POPD DIRS
+EXPORT UNSET SET
+TRAP 
+EXIT SOURCE DOT EVAL EXEC WAIT JOBS 
+COMPLETE COMPGEN DEBUG_LINE
 """.split())
 
 
@@ -360,6 +363,8 @@ def Resolve(argv0):
 
   elif argv0 == "set":
     return EBuiltin.SET
+  elif argv0 == "unset":
+    return EBuiltin.UNSET
   elif argv0 == "complete":
     return EBuiltin.COMPLETE
   elif argv0 == "compgen":
@@ -659,6 +664,26 @@ def _Set(argv, exec_opts, mem):
     util.error('set: invalid option %r', name)
     return 1
 
+  return 0
+
+
+def _Unset(argv, mem):
+  # mutate self.mem
+  # NOTE: sh has DYNAMIC SCOPE, so you need tests for that here.
+  raise NotImplementedError
+
+def _Trap(argv, traps):
+  # TODO: register trap
+
+  # Example:
+  # trap -- 'echo "hi  there" | wc ' SIGINT
+  #
+  # Then hit Ctrl-C.
+  #
+  # Yeah you need the EvalHelper.  traps is a list of signals to parsed
+  # NODES.
+
+  log(traps)
   return 0
 
 
