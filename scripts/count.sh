@@ -79,9 +79,11 @@ parser-port() {
   wc -l core/tdop.py osh/*_parse.py | sort -n
 }
 
-# Stuff needed to port to C+
 runtime() {
-  wc -l core/*_{exec,eval}.py core/{builtin,process}.py core/runtime.asdl | sort -n
+  # NOTE: braces.py contains both parsing and runtime.  It is a  middle stage.
+  wc -l \
+    core/*_{exec,eval}.py core/{builtin,glob_,process,state}.py \
+    core/runtime.asdl | sort -n
 }
 
 # count instructions, for fun
