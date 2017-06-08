@@ -643,12 +643,17 @@ def _Set(argv, exec_opts, mem):
     exec_opts.strict_array = True
   elif name == 'strict-command':
     exec_opts.strict_command = True
+  elif name == 'strict-word':
+    exec_opts.strict_word = True
   elif name == 'strict-scope':
     exec_opts.strict_scope = True
 
   # TODO:
   # - STRICT: should be a combination of errexit,nounset,pipefail, plus
   #   strict-*, plus IFS?  Caps because it's a composite.
+  # - SANE: disallow constructs like $* ?  That can be done with an explicit
+  #   join, like s="$@" or something?
+  #   or s="$@"  # osh: join
 
   else:
     util.error('set: invalid option %r', name)

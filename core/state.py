@@ -74,6 +74,7 @@ class ExecOpts(object):
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
     self.strict_array = False  # ${a} not ${a[0]}, require double quotes, etc.
     self.strict_command = False  # break at top level.
+    self.strict_word = False  # word splitting, etc.
     self.strict_scope = False  # disable dynamic scope
 
     # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
