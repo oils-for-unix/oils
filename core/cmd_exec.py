@@ -979,13 +979,7 @@ class Executor(object):
       more_env: evaluated environment
 
     Returns:
-      is_external: If the node MUST be run in an external process.
       thunk: thunk to run
-
-      True, ExternalThunk() instance, or
-      False, argv if the thing to run isn't representable by an external
-        command.
-        argv can be None too.
 
     For deciding whether we need a subshell.
     """
@@ -1008,6 +1002,12 @@ class Executor(object):
     Assume we will run the node in another process.  Return a process.
     """
     if node.tag == command_e.SimpleCommand:
+      # TODO: This shouldn't happen in the parent process.  We don't need
+      # BuiltinThunk/FuncThunk.  We just need SubProgramThunk.
+      # We can have a boolean in the subprocess that causes us just to eval and
+      # then exec(), but not fork again.  I guess we EvalWordSequence() after
+      # fork() but before exec()?  Builtins can just be run directly.
+
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
       more_env = self.mem.GetExported()

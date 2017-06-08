@@ -21,6 +21,17 @@ echo ${empty:-is empty}
 echo ${unset-is unset}
 # stdout: is unset
 
+### Unquoted with array as default value
+set -- '1 2' '3 4'
+argv.py X${unset=x"$@"x}X
+# stdout: ['Xx1', '2', '3', '4xX']
+
+### Quoted with array as default value
+set -- '1 2' '3 4'
+argv.py "X${unset=x"$@"x}X"
+# stdout: ['Xx1 2 3 4xX']
+# BUG bash stdout: ['Xx1', '2', '3', '4xX']
+
 ### Assign default value when empty
 empty=''
 ${empty:=is empty}
@@ -31,6 +42,15 @@ echo $empty
 ${unset=is unset}
 echo $unset
 # stdout: is unset
+
+### Assign default with array
+#    HMMMM osh stdout-json: "['Xx1 2', '3 4xX']\n['x1 2 3 4x']\n"
+#    I think OSH diverges here because VTest is different than VOp1?
+#    I parse all the arg words the same way.
+set -- '1 2' '3 4'
+argv.py X${unset=x"$@"x}X
+argv.py "$unset"
+# stdout-json: "['Xx1', '2', '3', '4xX']\n['x1 2 3 4x']\n"
 
 ### Alternative value when empty
 v=foo

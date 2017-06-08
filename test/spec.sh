@@ -191,7 +191,7 @@ assign() {
 }
 
 background() {
-  sh-spec spec/background.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/background.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
@@ -308,7 +308,7 @@ tilde() {
 }
 
 var-op-test() {
-  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

@@ -74,3 +74,8 @@ v='!'
 $v echo hi
 # status: 127
 
+### Evaluation of argv[0] in pipeline occurs in child
+${cmd=echo} hi | wc -l
+echo "[$cmd]"
+# stdout-json: "1\n[]\n"
+# BUG zsh stdout-json: "1\n[echo]\n"

@@ -250,6 +250,21 @@ def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
   return args
 
 
+def _DecayPartValuesToString(part_vals, join_char):
+  # Decay ${a=x"$@"x} to string.
+  out = []
+  for p in part_vals:
+    if p.tag == part_value_e.StringPartValue:
+       out.append(p.s)
+    else:
+      last = len(p.strs) - 1
+      for i, s in enumerate(p.strs):
+        out.append(s)
+        if i != last:
+          out.append(join_char)
+  return ''.join(out)
+
+
 # Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
 
 Effect = util.Enum('Effect', 'SpliceParts Error SpliceAndAssign NoOp'.split())
@@ -350,6 +365,14 @@ class _WordPartEvaluator:
       So I guess it should return part_value[], and then a flag for raising an
       error, and then a flag for assigning it?
       The original BracedVarSub will have the name.
+
+    Example of needing multiple part_value[]
+
+      echo X-${a:-'def'"ault"}-X
+
+    We return two part values from the BracedVarSub.  Also consider:
+
+      echo ${a:-x"$@"x}
     """
     undefined = (val.tag == value_e.Undef)
 
@@ -382,9 +405,11 @@ class _WordPartEvaluator:
         return part_vals, Effect.SpliceParts
 
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
-      # TODO: Behave like -, but also assign with self.mem.  I guess evaluate
-      # the word.  Is it bad to evaluate it twice?
-      raise NotImplementedError
+      if is_falsey:
+        part_vals = self.word_ev._EvalParts(op.arg_word, quoted=quoted)
+        return part_vals, Effect.SpliceAndAssign
+      else:
+        return None, Effect.NoOp
 
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       # TODO: Construct error
@@ -633,6 +658,8 @@ class _WordPartEvaluator:
 
     decay_array = False  # for $*, ${a[*]}, etc.
 
+    var_name = None  # For ${foo=default}
+
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       var_name = part.token.val
@@ -719,7 +746,14 @@ class _WordPartEvaluator:
             return new_part_vals  # EARLY RETURN
 
           elif effect == Effect.SpliceAndAssign:
-            raise NotImplementedError
+            if var_name is None:
+              # TODO: error context
+              e_die("Can't assign to special variable")
+            else:
+              # NOTE: This decays arrays too!  'set -o strict_array' could avoid it.
+              rhs_str = _DecayPartValuesToString(new_part_vals, _GetJoinChar(self.mem))
+              self.mem.SetLocal(var_name, runtime.Str(rhs_str))
+            return new_part_vals
 
           elif effect == Effect.Error:
             raise NotImplementedError
