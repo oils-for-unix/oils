@@ -27,6 +27,7 @@ class _FdFrame:
   def __init__(self):
     self.saved = []
     self.need_close = []
+    self.need_wait = []
 
   def __repr__(self):
     return '<_FdFrame %s %s>' % (self.saved, self.need_close)
@@ -79,6 +80,9 @@ class FdState:
   def NeedClose(self, fd):
     self.cur_frame.need_close.append(fd)
 
+  def NeedWait(self, proc, waiter):
+    self.cur_frame.need_wait.append((proc, waiter))
+
   def PopAndRestore(self):
     frame = self.stack.pop()
     #log('< Pop %s', frame)
@@ -96,327 +100,104 @@ class FdState:
         log('Error closing descriptor %d: %s', fd, e)
         raise
 
+    # Wait for here doc processes to finish.
+    for proc, waiter in frame.need_wait:
+      unused_status = proc.WaitUntilDone(waiter)
+
   def PopAndForget(self):
     self.stack.pop()
 
 
-class Redirect(object):
-  def __init__(self, fd):
-    self.fd = fd
+class ChildStateChange:
 
-  def ApplyInParent(self, fd_state):
-    """Apply redirect in the main shell process, e.g. for a builtin."""
+  def Apply(self):
     raise NotImplementedError
 
-  # In child, we don't need to restore state.  Just do os.dup2().
-  def ApplyInChild(self):
-    raise NotImplementedError(self.__class__.__name__)
 
-  def BeforeFork(self, fd_state):
-    pass
+class StdinFromPipe(ChildStateChange):
+  def __init__(self, pipe_read_fd, w):
+    self.r = pipe_read_fd
+    self.w = w
 
-  def AfterForkInParent(self):
-    pass
+  def __repr__(self):
+    return '<StdinFromPipe %d %d>' % (self.r, self.w)
 
+  def Apply(self):
+    os.dup2(self.r, 0)
+    os.close(self.r)  # close after dup
 
-class ReadPipeRedirect(Redirect):
-  def __init__(self, fd):
-    Redirect.__init__(self, fd)
-
-  def ApplyInChild(self):
-    os.dup2(self.fd, 0)
-    os.close(self.fd)  # close after dup
-
-  def AfterForkInParent(self):
-    os.close(self.fd)
+    os.close(self.w)  # we're reading from the pipe, not writing
+    #log('child CLOSE w %d pid=%d', self.w, os.getpid())
 
 
-class WritePipeRedirect(Redirect):
-  def __init__(self, fd):
-    Redirect.__init__(self, fd)
+class StdoutToPipe(ChildStateChange):
+  def __init__(self, r, pipe_write_fd):
+    self.r = r
+    self.w = pipe_write_fd
 
-  def ApplyInChild(self):
-    os.dup2(self.fd, 1)
-    os.close(self.fd)  # close after dup
+  def __repr__(self):
+    return '<StdoutToPipe %d %d>' % (self.r, self.w)
 
-  def AfterForkInParent(self):
-    os.close(self.fd)
-
-
-class UserRedirect(Redirect):
-  """Redirects written in source code?"""
-
-  def __init__(self, op_id, fd):
-    if fd == -1:
-      fd = REDIR_DEFAULT_FD[op_id]
-    Redirect.__init__(self, fd)
-    self.op_id = op_id
-
-
-class FilenameRedirect(UserRedirect):
-  def __init__(self, op_id, fd, filename):
-    UserRedirect.__init__(self, op_id, fd)
-    self.filename = filename
-
-  def ApplyInChild(self):
-    try:
-      if self.op_id == Id.Redir_Great:
-        target_fd = os.open(self.filename, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-      elif self.op_id == Id.Redir_Less:
-        target_fd = os.open(self.filename, os.O_RDONLY)
-      else:
-        raise NotImplementedError(self.op_id)
-    except OSError as e:
-      # TODO: Hide this under a set -o flag.  It's not fatal in any shell.
-      e_die("can't open %r: %s", self.filename, os.strerror(e.errno))
-
-    os.dup2(target_fd, self.fd)
-    os.close(target_fd)
-
-  def ApplyInParent(self, fd_state):
-    """
-    e.g. echo hi > out.txt
-    """
-    if self.op_id == Id.Redir_Great:
-      mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-    elif self.op_id == Id.Redir_DGreat:
-      mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
-    elif self.op_id == Id.Redir_Less:
-      mode = os.O_RDONLY
-    else:
-      raise NotImplementedError(self.op_id)
-
-    target_fd = os.open(self.filename, mode)
-
-    fd_state.SaveAndDup(target_fd, self.fd)
-    fd_state.NeedClose(target_fd)
-
-
-class DescriptorRedirect(UserRedirect):
-  def __init__(self, op_id, fd, target_fd):
-    UserRedirect.__init__(self, op_id, fd)
-    self.target_fd = target_fd
-
-  def ApplyInChild(self):
-    os.dup2(self.target_fd, self.fd)
-
-  def ApplyInParent(self, fd_state):
-    fd_state.SaveAndDup(self.target_fd, self.fd)
-
-
-class HereDocRedirect(UserRedirect):
-  def __init__(self, op_id, fd, body_str):
-    UserRedirect.__init__(self, op_id, fd)
-    self.body_str = body_str
-    self.r = -1
-    self.w = -1
-    self.here_proc = None
-
-  def _CreatePipeAndMaybeProcess(self, fd_state):
-    """
-    Create a pipe to write the here doc to.  For big here docs, create a
-    separate process to avoid deadlock.
-    """
-    self.r, self.w = os.pipe()
-    thunk = HereDocWriterThunk(self.w, self.body_str)
-
-    # TODO: Use PIPE_SIZE here?
-    #start_process = len(self.body_str) > 10
-    start_process = True
-
-    if start_process:
-      #print('starting here doc helper process')
-      self.here_proc = Process(thunk)
-      pid = self.here_proc.Start()
-      # TODO: Nobody is waiting now.  This will cause a warning because there's
-      # no callback registered.
-      # We could register a dummy, or just get rid of that warning?
-
-    else:
-      #print('writing %s to pipe in %d shell process' % (self.here_lines,)
-      #    self.w)
-      thunk.RunInParent()
-      os.close(self.w)
-
-  def BeforeFork(self, fd_state):  # applying in child
-    #print('!!! BeforeFork')
-    self._CreatePipeAndMaybeProcess(fd_state)
-
-  def ApplyInChild(self):  # in child
-    """When we have an external command."""
-    #print('!! ApplyInChild')
-    os.dup2(self.r, 0)  # TODO: self.fd
-
-    # NOTE: If we write the short doc to the pipe synchronously, we can't close
-    # here!
-    #print(os.listdir('/dev/fd'))
-    #print('CLOSING', self.w)
-    os.close(self.w)  # child is not going to write
-
-  def AfterForkInParent(self):  # applying in child
-    os.close(self.r)  # parent isn't going to read or write
-    os.close(self.w)
-
-  # Separate path: Apply the whole thing in the parent
-  def ApplyInParent(self, fd_state):
-    """When we have a builtin command."""
-    #print('!! ApplyInParent')
-    self._CreatePipeAndMaybeProcess(fd_state)
-    fd_state.SaveAndDup(self.r, 0)  # dup stdin.  TODO: self.fd
-
-
-class CommandSubRedirect(Redirect):
-  """
-- Realization: here docs and command sub are NOT complementary.  There can be
-  more than one here doc per command / pipeline, but there can only be one
-  command sub!
-
-  cat <<EOF 3<<EOF3
-  ...
-
-  cat <<EOF | cat 3<<EOF | cat 5<<EOF
-  ...
-
-  Here docs need to always create a process (or temp file, but we're not doing
-  that).  CommandSub can use the parent process to read.
-  """
-  def __init__(self, var):
-    fd = 1  # TODO: get rid of DUMMY
-    Redirect.__init__(self, fd)
-    self.var = var  # list to append to
-    self.r = -1
-    self.w = -1
-
-  def BeforeFork(self, fd_state):
-    self.r, self.w = os.pipe()
-
-  def ApplyInChild(self):  # in child
+  def Apply(self):
     os.dup2(self.w, 1)
-    os.close(self.r)  # child is not going read
+    os.close(self.w)  # close after dup
 
-  def AfterForkInParent(self):
-    os.close(self.w)  # not going to read
-    while True:
-      byte_str = os.read(self.r, 4096)
-      if not byte_str:
-        break
-      self.var.append(byte_str)
-    os.close(self.r)
+    os.close(self.r)  # we're writing to the pipe, not reading
+    #log('child CLOSE r %d pid=%d', self.r, os.getpid())
 
 
 class Thunk(object):
   """Abstract base class for things runnable in another process."""
 
-  def RunInParent(self):
+  def Run(self):
     """Returns a status code."""
     raise NotImplementedError
 
-  def RunInChild(self):
-    """Never returns."""
-    status = self.RunInParent()
 
-    # TODO: How do we communicate a bad status to the parent process?  It
-    # waits?  Signal?
-    # The problem is that a subshell cannot fail!
-    sys.exit(status)  # This is required
+def ExecExternalProgram(argv, more_env):
+  """
+  """
+  # TODO: If there is an error, like the file isn't executable, then we
+  # should exit, and the parent will reap it.  Should it capture stderr?
 
-  def IsExternal(self):
-    """Test if a thunk represents an external process (ExternalThunk)."""
-    return False
+  # NOTE: Do we have to do this?
+  env = dict(os.environ)
+  env.update(more_env)
 
-  def ShouldRestoreFdState(self):
-    """Default is to restore."""
-    return True
-
-
-class NoOpThunk(Thunk):
-  """When argv evaluates to nothing."""
-
-  def RunInParent(self):
-    return 0  # success
+  try:
+    os.execvpe(argv[0], argv, env)
+  except OSError as e:
+    log('Unexpected error in execvpe(%r, %r, ...): %s', argv[0], argv, e)
+    # Command not found means 127.  TODO: Are there other cases?
+    sys.exit(127)
+  # no return
 
 
-class ExternalThunk(Thunk):
+class ExternalThunk:
   """An external executable."""
 
   def __init__(self, argv, more_env=None):
     self.argv = argv
     self.more_env = more_env or {}
 
-  def IsExternal(self):
-    return True
-
-  def RunInParent(self):
+  def Run(self):
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
-    # TODO: If there is an error, like the file isn't executable, then we
-    # should exit, and the parent will reap it.  Should it capture stderr?
-
-    # NOTE: Do we have to do this?
-    env = dict(os.environ)
-    env.update(self.more_env)
-
-    try:
-      os.execvpe(self.argv[0], self.argv, env)
-    except OSError as e:
-      log('Unexpected error in execvpe(%r, %r, ...): %s', self.argv[0],
-          self.argv, e)
-      # Command not found means 127.  TODO: Are there other cases?
-      sys.exit(127)
-    # no return
+    ExecExternalProgram(self.argv, self.more_env)
 
 
-class SubProgramThunk(Thunk):
+class SubProgramThunk:
   """A subprogram that can be executed in another process."""
 
   def __init__(self, ex, node):
     self.ex = ex
     self.node = node
 
-  def RunInParent(self):
-    return self.ex.Execute(self.node)
-
-
-# NOTE: We need BuiltinThunk and FuncThunk to maintain the invariant that words
-# are evaluated into argv only ONCE.  We don't want to do work in the parent
-# process and then do it again in the process.  First word resolution happens
-# in the parent no matter what -- but execution may happen in the child.
-
-class BuiltinThunk(Thunk):
-  """A resolved builtin.
-
-  We do NOT want to evaluate the node twice, because it can involve side
-  effects.
-  """
-  def __init__(self, ex, builtin_id, argv):
-    """
-    Args:
-      ex: Executor
-      builtin_id: EBuiltin
-      argv: list of strings
-    """
-    self.ex = ex
-    self.builtin_id = builtin_id
-    self.argv = argv
-
-  def RunInParent(self):
-    return self.ex.RunBuiltin(self.builtin_id, self.argv)
-
-  def ShouldRestoreFdState(self):
-    # TODO: exec
-    return True
-
-
-class FuncThunk(Thunk):
-  """A resolved user defined function."""
-  def __init__(self, ex, func_node, argv):
-    self.ex = ex
-    self.func_node = func_node
-    self.argv = argv
-
-  def RunInParent(self):
-    return self.ex.RunFunc(self.func_node, self.argv)
+  def Run(self):
+    # NOTE: may NOT return due to exec().
+    status = self.ex.Execute(self.node, fork_external=False)
+    sys.exit(status)  # Must exit!
 
 
 class HereDocWriterThunk(Thunk):
@@ -428,11 +209,23 @@ class HereDocWriterThunk(Thunk):
     self.w = w
     self.body_str = body_str
 
-  def RunInParent(self):
-    byte_str = self.body_str.encode('utf-8')
-    os.write(self.w, byte_str)
-    # Don't bother to close, since the process will die
-    #os.close(self.w)
+  #def RunInParent(self):
+  #  byte_str = self.body_str.encode('utf-8')
+  #  os.write(self.w, byte_str)
+  #  # Don't bother to close, since the process will die
+  #  #os.close(self.w)
+
+  def Run(self):
+    """
+    do_exit: For small pipelines
+    """
+    #log('Writing %r', self.body_str)
+    os.write(self.w, self.body_str)
+    #log('Wrote %r', self.body_str)
+    os.close(self.w)
+    #log('Closed %d', self.w)
+
+    sys.exit(0)  # Could this fail?
 
 
 ProcessState = util.Enum('ProcessState', """Init Done""".split())
@@ -446,29 +239,18 @@ class Process(object):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk, env=None, fd_state=None, redirects=None):
+  def __init__(self, thunk):
     """
     Args:
       thunk: Thunk instance
-      fd_state: created in parent, but modified in child sometimes (bash does
-        this) example: exec 1>&2; ls | wc -l
-      redirects: List of EVALUATED redirects (filename, raw string, target
-        descriptor)
-        Caller should call os.open() or os.pipe() to get file descriptors.
-        Sometimes files should be opened in the child.
-        Maybe have redirect.ChangeState(fd_state)
-        Always in the current process?
     """
-    if isinstance(thunk, list):
-      self.thunk = ExternalThunk(thunk)
-    else:
-      self.thunk = thunk
+    assert not isinstance(thunk, list), thunk
+    self.thunk = thunk
 
-    self.env = env or {}
-    self.fd_state = fd_state
-    self.redirects = redirects or []
-
-    self.inputs = []
+    # For pipelines
+    self.state_changes = []
+    self.close_r = -1
+    self.close_w = -1
 
     self.pid = -1
     self.status = -1
@@ -477,43 +259,59 @@ class Process(object):
   def __repr__(self):
     return '<Process %s>' % self.thunk
 
-  def AddRedirect(self, redirect):
-    self.redirects.append(redirect)
+  def AddStateChange(self, s):
+    self.state_changes.append(s)
 
-  def CaptureOutput(self, var):
-    self.redirects.append(CommandSubRedirect(var))
+  def AddPipeToClose(self, r, w):
+    self.close_r = r
+    self.close_w = w
+
+  def ClosePipe(self):
+    if self.close_r != -1:
+      os.close(self.close_r)
+      os.close(self.close_w)
 
   def Start(self):
     """Start this process with fork(), haandling redirects."""
-    for r in self.redirects:
-      r.BeforeFork(self.fd_state)
-
     pid = os.fork()
     if pid < 0:
       # When does this happen?
       raise RuntimeError('Fatal error in os.fork()')
 
     elif pid == 0:  # child
-      # NOTE: We never call RestoreAll().  It doesn't really matter since
-      # the process is torn down.
-      for r in self.redirects:
-        r.ApplyInChild()
+      for st in self.state_changes:
+        st.Apply()
 
-      self.thunk.RunInChild()
+      self.thunk.Run()
       # Never returns
 
-    for r in self.redirects:
-      r.AfterForkInParent()  # here docs wait here
+    #log('STARTED process %s, pid = %d', self, pid)
 
+    # Invariant, after the process is started, it stores its PID.
+    self.pid = pid 
     return pid
+
+  def WaitUntilDone(self, waiter):
+    while True:
+      #log('WAITING')
+      if not waiter.Wait():
+        break
+      if self.state == ProcessState.Done:
+        break
+    return self.status
+
+  def WhenDone(self, pid, status):
+    #log('WhenDone %d %d', pid, status)
+    assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
+    self.status = status
+    self.state = ProcessState.Done
 
   def Run(self, waiter):
     """Run this process synchronously."""
-    self.pid = self.Start()
+    self.Start()
     # NOTE: No race condition between start and Register, because the shell is
     # single-threaded and nothing else can call Wait() before we do!
 
-    #log('STARTED %d', self.pid)
     waiter.Register(self.pid, self.WhenDone)
 
     # TODO: Can collect garbage here, and record timing stats.  The process
@@ -522,18 +320,7 @@ class Process(object):
     # Maybe you can have a separate GC thread, and only start it after 100ms,
     # and then cancel when done?
 
-    while True:
-      if not waiter.Wait():
-        break
-      if self.state == ProcessState.Done:
-        break
-
-    return self.status
-
-  def WhenDone(self, pid, status):
-    #log('WhenDone %d %d', pid, status)
-    assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
-    self.status = status
+    return self.WaitUntilDone(waiter)
 
 
 class Pipeline(object):
@@ -550,6 +337,7 @@ class Pipeline(object):
     self.pipes = []  # there is a pipe for every pair of procs.
     self.state = ProcessState.Init
     self.pid_status = {}  # pid -> None or integer status
+    self.to_close = []
 
   def __repr__(self):
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
@@ -566,31 +354,30 @@ class Pipeline(object):
     r, w = os.pipe()
     prev = self.procs[-1]
 
-    prev.AddRedirect(WritePipeRedirect(w))
-    p.AddRedirect(ReadPipeRedirect(r))
+    #prev.AddRedirect(WritePipeRedirect(w))
+    #p.AddRedirect(ReadPipeRedirect(r))
+    prev.AddStateChange(StdoutToPipe(r, w))
+    p.AddStateChange(StdinFromPipe(r, w))
+
+    p.AddPipeToClose(r, w)
 
     self.procs.append(p)
-
-  def CaptureOutput(self, var):
-    """Add output var.
-
-    Args:
-      var: A list that is mutated.
-
-    After pi.Run(), you can read the value of 'var'.
-    """
-    self.procs[-1].CaptureOutput(var)
 
   def Run(self, waiter):
     """Run this pipeline synchronously."""
     pid_order = []
-    for proc in self.procs:
+    for i, proc in enumerate(self.procs):
       pid = proc.Start()
       pid_order.append(pid)
       self.pid_status[pid] = None
       waiter.Register(pid, self.WhenDone)
 
+      # NOTE: This has to be done after every fork() call.  Otherwise processes
+      # will have descriptors from non-adjacent pipes.
+      proc.ClosePipe()
+
     while True:
+      #log('WAIT pipeline')
       if not waiter.Wait():
         break
       if self.state == ProcessState.Done:
@@ -605,7 +392,7 @@ class Pipeline(object):
   def WhenDone(self, pid, status):
     #log('Pipeline WhenDone %d %d', pid, status)
     assert pid in self.pid_status, 'Unexpected PID %d' % pid
-    assert self.pid_status[pid] is None  # we should get exactly one notification
+    assert self.pid_status[pid] is None  # we should get exactly 1 notification
     self.pid_status[pid] = status
     if all((status is not None) for status in self.pid_status.values()):
       self.state = ProcessState.Done
@@ -699,10 +486,13 @@ class Waiter:
       pid, status = os.wait()
     except OSError as e:
       if e.errno == errno.ECHILD:
-        return False  # caller should stop
+        #log('WAIT ECHILD')
+        return False  # nothing to wait for caller should stop
       else:
         # What else can go wrong?
         raise
+
+    #log('WAIT got %s %s', pid, status)
 
     # TODO: change status in more cases.
     if os.WIFSIGNALED(status):

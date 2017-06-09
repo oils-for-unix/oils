@@ -282,9 +282,12 @@ _test-to-html() {
 EOF
   awk < spec/${spec_name}.test.sh '
   { 
-    gsub("&", "\&amp;");
-    gsub("<", "\&lt;");
-    gsub(">", "\&gt;");
+    # & is the substitution character.  Why is \\& a literal backslash instead
+    # of \&?  This changed on the gawk between Ubuntu 14.04 and 16.04.
+
+    gsub("&", "\\&amp;");
+    gsub("<", "\\&lt;");
+    gsub(">", "\\&gt;");
     line_num = NR
 
     print "<tr>"

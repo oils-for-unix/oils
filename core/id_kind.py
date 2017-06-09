@@ -433,13 +433,14 @@ REDIR_DEFAULT_FD = {
     Id.Redir_GreatAnd: 1,  # echo >&2  means echo 1>&2
     Id.Redir_LessAnd: 0,   # echo <&3 means echo 0<&3, I think
 
-    # here doc
+    Id.Redir_TLess: 0,  # here word
+
+    # here docs included
     Id.Redir_DLess: 0,
     Id.Redir_DLessDash: 0,
-    Id.Redir_TLess: 0,
 }
 
-RedirType = util.Enum('RedirType', 'Path Desc Str'.split())
+RedirType = util.Enum('RedirType', 'Path Desc Here'.split())
 
 REDIR_TYPE = {
     # filename
@@ -453,8 +454,6 @@ REDIR_TYPE = {
     Id.Redir_GreatAnd: RedirType.Desc,
     Id.Redir_LessAnd: RedirType.Desc,
 
-    # here doc
-    Id.Redir_DLess: RedirType.Str,
-    Id.Redir_DLessDash: RedirType.Str,
-    Id.Redir_TLess: RedirType.Str,
+    Id.Redir_TLess: RedirType.Here,  # here word
+    # note: here docs aren't included
 }

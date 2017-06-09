@@ -104,6 +104,7 @@ module osh
     -- TODO: need token
     ArithVarRef(string name)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
+
   | UnaryAssign(id op_id, lhs_expr child)
   | BinaryAssign(id op_id, lhs_expr left, arith_expr right)
   | ArithUnary(id op_id, arith_expr child)
@@ -121,15 +122,18 @@ module osh
   | LogicalOr(bool_expr left, bool_expr right)
 
   -- Notes about here docs:
-  -- * arg_word is the same for here word (<<<) and here doc (<<).
-  -- * arg_word is required, but must be initialized after construction.
+  -- * 'body' is required, but must be initialized after construction.
+  -- * here_end could be a word at parse time for the LST.  Then the second
+  --   pass could StaticEval it to a string and set do_expansion.
   -- * To reprint the here doc, we need the here_end delimiter, but it doesn't
-  -- matter at runtime.  do_expansion is calculated from it.
-  -- * was_filled is only used during th parse and should be eliminated from
-  -- serialization format>
+  --   matter at runtime.  do_expansion is calculated from it.
+  -- * was_filled is only used during the parse and should be eliminated from
+  --   serialization format.
+  -- TODO : id -> token for translation?
+
   redir = 
-    Redirect(id op_id, word arg_word, int fd)
-  | HereDoc(id op_id, word? arg_word, int fd, int do_expansion,
+    Redir(id op_id, int fd, word arg_word)
+  | HereDoc(id op_id, int fd, word? body, int do_expansion,
             string here_end, bool was_filled)
 
   -- TODO: Add op_id for = vs +=

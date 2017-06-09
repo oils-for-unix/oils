@@ -10,12 +10,13 @@ import sys
 from asdl import py_meta
 from asdl import asdl_ as asdl
 from core import util
+from core.id_kind import Id
 
 
 def _ParseAndMakeTypes(f, root):
   module = asdl.parse(f)
 
-  app_types = {}
+  app_types = {'id': asdl.UserType(Id)}
 
   # Check for type errors
   if not asdl.check(module, app_types):

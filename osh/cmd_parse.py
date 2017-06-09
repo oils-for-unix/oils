@@ -14,7 +14,7 @@ import sys
 
 from core import braces
 from core import word
-from core.id_kind import Id, Kind, REDIR_DEFAULT_FD
+from core.id_kind import Id, Kind
 from core import util
 
 from osh import ast_ as ast
@@ -217,6 +217,7 @@ class CommandParser(object):
           print('WARNING: unterminated here doc', file=sys.stderr)
           break
 
+        # NOTE: Could do this runtime to preserve LST.
         if h.op_id == Id.Redir_DLessDash:
           line = line.lstrip('\t')
         if line.rstrip() == h.here_end:
@@ -241,14 +242,14 @@ class CommandParser(object):
         if not word:
           self.AddErrorContext('Error reading here doc body: %s', w_parser.Error())
           return False
-        h.arg_word = word
+        h.body = word
         h.was_filled = True
       else:
         # TODO: Add span_id to token
         # Each line is a single span.
         tokens = [ast.token(Id.Lit_Chars, line) for _, line in lines]
         parts = [ast.LiteralPart(t) for t in tokens]
-        h.arg_word = ast.CompoundWord(parts)
+        h.body = ast.CompoundWord(parts)
         h.was_filled = True
 
     #print('')
@@ -292,7 +293,7 @@ class CommandParser(object):
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()
       node.op_id = self.c_id
-      node.arg_word = None  # not read yet
+      node.body = None  # not read yet
       node.fd = fd
       node.was_filled = False
       node.spids.append(left_spid)
@@ -311,7 +312,7 @@ class CommandParser(object):
       self._Next()
 
     else:
-      node = ast.Redirect()
+      node = ast.Redir()
       node.op_id = self.c_id
       node.fd = fd
       node.spids.append(left_spid)
@@ -565,7 +566,7 @@ class CommandParser(object):
     if not suffix_words:  # ONE=1 TWO=2  (with no other words)
       # TODO: Have a strict mode to prevent this?
       if redirects:  # >out.txt g=foo
-        print('WARNING: Got redirects in assignment: %s', redirects)
+        util.warn('WARNING: Got redirects in assignment: %s', redirects)
 
       pairs = []
       for lhs, rhs, spid in prefix_bindings:

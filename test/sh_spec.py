@@ -409,8 +409,13 @@ def RunCases(cases, case_predicate, shells, env, out):
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
       argv = [sh_path]  # TODO: Be able to test shell flags?
-      p = subprocess.Popen(argv, env=sh_env[shell_index],
-                           stdin=PIPE, stdout=PIPE, stderr=PIPE)
+      try:
+        p = subprocess.Popen(argv, env=sh_env[shell_index],
+                             stdin=PIPE, stdout=PIPE, stderr=PIPE)
+      except OSError as e:
+        print('Error running %r: %s' % (sh_path, e), file=sys.stderr)
+        sys.exit(1)
+
       p.stdin.write(code_utf8)
       p.stdin.close()
 

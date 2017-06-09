@@ -19,6 +19,7 @@ done | tac
 ### Redirect in Pipeline
 echo hi 1>&2 | wc -l
 # stdout: 0
+# BUG zsh stdout: 1
 
 ### Exit code is last status
 echo a | egrep '[0-9]+'

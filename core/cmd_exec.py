@@ -70,7 +70,7 @@ from core import ui
 from core import util
 
 from core import builtin
-from core.id_kind import Id, RedirType, REDIR_TYPE
+from core.id_kind import Id, RedirType, REDIR_TYPE, REDIR_DEFAULT_FD
 from core import process
 from core import runtime
 from core import state
@@ -82,9 +82,11 @@ import libc  # for fnmatch
 EBuiltin = builtin.EBuiltin
 
 command_e = ast.command_e
+redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 
 value_e = runtime.value_e
+redirect_e = runtime.redirect_e
 
 log = util.log
 e_die = util.e_die
@@ -152,10 +154,9 @@ class Executor(object):
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.ev)
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.ev)
 
-    self.mem.last_status = 0  # For $?
-
     self.traps = {}
     self.fd_state = process.FdState()
+    self.dir_stack = []
 
     # TODO: Pass these in from main()
     self.aliases = {}  # alias name -> string
@@ -167,10 +168,6 @@ class Executor(object):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = process.JobState()
 
-    self.dir_stack = []
-
-    self.traceback = None
-    self.traceback_msg = ''
 
   def _Complete(self, argv):
     command = argv[0]  # e.g. 'grep'
@@ -223,15 +220,11 @@ class Executor(object):
     else:
       return 0
 
-  def RunBuiltin(self, builtin_id, argv):
+  def _RunBuiltin(self, builtin_id, argv):
     restore_fd_state = True
 
     # NOTE: Builtins don't need to know their own name.
     argv = argv[1:]
-
-    # TODO: Just test Type() == COMMAND word, and then if it's a command word,
-    # type IsBuiltin().  And then builtins are NOT tokens!  Keywords might be
-    # tokens, but builtins aren't.
 
     # TODO: figure out a quicker dispatch mechanism.  Just make a table of
     # builtins I guess.
@@ -305,72 +298,11 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def RunFunc(self, func_node, argv):
-    """Called by FuncThunk."""
-    func_body = func_node.body
-    # TODO: Call func with $@, $1, etc.
-
-    self.mem.Push(argv[1:])
-
-    # Redirects still valid for functions.
-    # Here doc causes a pipe and Process(SubProgramThunk).
-    try:
-      status = self._Execute(func_body)
-    except _ControlFlow as e:
-      if e.IsReturn():
-        status = e.ReturnValue()
-      else:
-        # break/continue used in the wrong place
-        e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    self.mem.Pop()
-    return status
-
-  def _GetThunkForSimpleCommand(self, argv, more_env):
-    """
-    Given a node, resolve the first command word, and return a thunk.  The
-    thunk may be run in either the parent shell process or a child process.
-
-    Args:
-      argv: evaluated arguments
-      more_env: evaluated environment
-
-    Returns:
-      thunk: thunk to run
-
-    For deciding whether we need a subshell.
-    """
-    if not argv:
-      return process.NoOpThunk()
-
-    # TODO: respect the special builtin order too
-    builtin_id = builtin.Resolve(argv[0])
-    if builtin_id != EBuiltin.NONE:
-      return process.BuiltinThunk(self, builtin_id, argv)
-
-    func_node = self.funcs.get(argv[0])
-    if func_node is not None:
-      return process.FuncThunk(self, func_node, argv)
-
-    return process.ExternalThunk(argv, more_env)
-
   def _GetProcessForNode(self, node):
     """
     Assume we will run the node in another process.  Return a process.
     """
-    if node.tag == command_e.SimpleCommand:
-      # TODO: This shouldn't happen in the parent process.  We don't need
-      # BuiltinThunk/FuncThunk.  We just need SubProgramThunk.
-      # We can have a boolean in the subprocess that causes us just to eval and
-      # then exec(), but not fork again.  I guess we EvalWordSequence() after
-      # fork() but before exec()?  Builtins can just be run directly.
-
-      words = braces.BraceExpandWords(node.words)
-      argv = self.ev.EvalWordSequence(words)
-      more_env = self.mem.GetExported()
-      self._EvalEnv(node.more_env, more_env)
-      thunk = self._GetThunkForSimpleCommand(argv, more_env)
-
-    elif node.tag == command_e.ControlFlow:
+    if node.tag == command_e.ControlFlow:
       # Pipeline or subshells with control flow are invalid, e.g.:
       # - break | less
       # - continue | less
@@ -379,14 +311,70 @@ class Executor(object):
       e_die('Invalid control flow %r in pipeline or subshell', node.token.val,
             token=node.token)
 
-    else:
-      thunk = process.SubProgramThunk(self, node)
-
+    thunk = process.SubProgramThunk(self, node)
     redirects = self._EvalRedirects(node)
     if redirects is None:
       raise RuntimeError('TODO: handle redirect errors in pipeline')
-    p = process.Process(thunk, fd_state=self.fd_state, redirects=redirects)
+    p = process.Process(thunk)
     return p
+
+  def _EvalRedirect(self, n):
+    fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == -1 else n.fd
+    if n.tag == redir_e.Redir:
+      redir_type = REDIR_TYPE[n.op_id]
+
+      if redir_type == RedirType.Path:
+        # NOTE: no globbing.  You can write to a file called '*.py'.
+        val = self.ev.EvalWordToString(n.arg_word)
+        if val.tag != value_e.Str:
+          util.warn("Redirect filename must be a string, got %s", val)
+          return None
+        filename = val.s
+        if not filename:
+          # Whether this is fatal depends on errexit.
+          util.warn("Redirect filename can't be empty")
+          return None
+
+        return runtime.PathRedirect(n.op_id, fd, filename)
+
+      elif redir_type == RedirType.Desc:  # e.g. 1>&2
+        val = self.ev.EvalWordToString(n.arg_word)
+        if val.tag != value_e.Str:
+          util.warn("Redirect descriptor should be a string, got %s", val)
+          return None
+        t = val.s
+        if not t:
+          util.warn("Redirect descriptor can't be empty")
+          return None
+        try:
+          target_fd = int(t)
+        except ValueError:
+          util.warn(
+              "Redirect descriptor should look like an integer, got %s", val)
+          return None
+
+        return runtime.DescRedirect(n.op_id, fd, target_fd)
+
+      elif redir_type == RedirType.Here:  # here word
+        # TODO: decay should be controlled by an option
+        val = self.ev.EvalWordToString(n.arg_word, decay=True)
+        if val.tag != value_e.Str:
+          util.warn("Here word body should be a string, got %s", val)
+          return None
+        return runtime.HereRedirect(fd, val.s)
+      else:
+        raise AssertionError('Unknown redirect op')
+
+    elif n.tag == redir_e.HereDoc:
+      # TODO: decay shoudl be controlled by an option
+      val = self.ev.EvalWordToString(n.body, decay=True)
+      if val.tag != value_e.Str:
+        util.warn("Here doc body should be a string, got %s", val)
+        return None
+      return runtime.HereRedirect(fd, val.s)
+
+    else:
+      raise AssertionError('Unknown redirect type')
 
   def _EvalRedirects(self, node):
     """Evaluate redirect nodes to concrete objects.
@@ -408,48 +396,13 @@ class Executor(object):
       return []
 
     redirects = []
-    for n in node.redirects:
-      redir_type = REDIR_TYPE[n.op_id]
-      if redir_type == RedirType.Path:
-        # NOTE: no globbing.  You can write to a file called '*.py'.
-        val = self.ev.EvalWordToString(n.arg_word)
-        if val.tag != value_e.Str:
-          util.warn("Redirect filename must be a string, got %s", val)
-          return None
-        filename = val.s
-        if not filename:
-          # Whether this is fatal depends on errexit.
-          util.warn("Redirect filename can't be empty")
-          return None
-
-        redirects.append(process.FilenameRedirect(n.op_id, n.fd, filename))
-
-      elif redir_type == RedirType.Desc:  # e.g. 1>&2
-        val = self.ev.EvalWordToString(n.arg_word)
-        if val.tag != value_e.Str:
-          util.warn("Redirect descriptor should be a string, got %s", val)
-          return None
-        t = val.s
-        if not t:
-          util.warn("Redirect descriptor can't be empty")
-          return None
-        try:
-          target_fd = int(t)
-        except ValueError:
-          util.warn(
-              "Redirect descriptor should look like an integer, got %s", val)
-          return None
-        redirects.append(process.DescriptorRedirect(n.op_id, n.fd, target_fd))
-
-      elif redir_type == RedirType.Str:
-        val = self.ev.EvalWordToString(n.arg_word)
-        assert val.tag == value_e.Str, \
-            "descriptor to redirect to should be an integer, not list"
-
-        redirects.append(process.HereDocRedirect(n.op_id, n.fd, val.s))
-
-      else:
-        raise AssertionError('Unknown redirect type')
+    for redir in node.redirects:
+      r = self._EvalRedirect(redir)
+      if r is None:
+        # Ignore it for now.  TODO: We might want to skip JUST the command.
+        # Give it status 1, and then errexit will take care of it.
+        continue
+      redirects.append(r)
     return redirects
 
   def _EvalEnv(self, node_env, out_env):
@@ -478,9 +431,6 @@ class Executor(object):
     self.mem.PopTemp()
 
   def _RunPipeline(self, node):
-    # TODO: Also check for "echo" and "read".  Turn them into HereDocRedirect()
-    # and p.CaptureOutput()
-
     # NOTE: First or last one can use the "main" shell thread.  Doesn't have to
     # run in subshell.  Although I guess it's simpler if it always does.
     pi = process.Pipeline()
@@ -543,10 +493,112 @@ class Executor(object):
       status = self._Execute(child)  # last status wins
     return status
 
-  def _Execute(self, node):
+  def _ApplyRedirect(self, r, fd_state):
+    # NOTE: We dont' use self here
+
+    # TODO: r.fd needs to be opened!  if it's not stdin or stdout
+    # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
+
+    if r.tag == redirect_e.PathRedirect:
+      if r.op_id == Id.Redir_Great:  # >
+        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+      elif r.op_id == Id.Redir_DGreat:  # >>
+        mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
+      elif r.op_id == Id.Redir_Less:  # <
+        mode = os.O_RDONLY
+      else:
+        raise NotImplementedError(r.op_id)
+
+      target_fd = os.open(r.filename, mode)
+
+      fd_state.SaveAndDup(target_fd, r.fd)
+      fd_state.NeedClose(target_fd)
+
+    elif r.tag == redirect_e.DescRedirect:
+      if r.op_id == Id.Redir_GreatAnd:  # 1>&
+        fd_state.SaveAndDup(r.target_fd, r.fd)
+      elif r.op_id == Id.Redir_LessAnd:
+        raise NotImplementedError
+      else:
+        raise NotImplementedError
+
+    elif r.tag == redirect_e.HereRedirect:
+      read_fd, write_fd = os.pipe()
+      fd_state.SaveAndDup(read_fd, r.fd)  # stdin is now the pipe
+      fd_state.NeedClose(read_fd)
+
+      thunk = process.HereDocWriterThunk(write_fd, r.body)
+
+      # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
+      # which are the common case.
+      start_process = True
+      #start_process = False
+
+      if start_process:
+        here_proc = process.Process(thunk)
+
+        # NOTE: we could close the read pipe here, but it doesn't really
+        # matter because we control the code.
+        # here_proc.StateChange()
+        pid = here_proc.Start()
+        # no-op callback
+        self.waiter.Register(pid, here_proc.WhenDone)
+        #log('Started %s as %d', here_proc, pid)
+        fd_state.NeedWait(here_proc, self.waiter)
+
+        # Now that we've started the child, close it in the parent.
+        os.close(write_fd)
+
+      else:
+        os.write(write_fd, r.body)
+        os.close(write_fd)
+
+  def _RunSimpleCommand(self, argv, more_env, redirects, fork_external):
+    # This happens when you write "$@" but have no arguments.
+    if not argv:
+      return 0  # status 0, or skip it?
+
+    # TODO: respect the special builtin order too
+    arg0 = argv[0]
+
+    self.fd_state.PushFrame()
+    for r in redirects:
+      self._ApplyRedirect(r, self.fd_state)
+
+    try:
+      builtin_id = builtin.Resolve(arg0)
+      if builtin_id != EBuiltin.NONE:
+        status = self._RunBuiltin(builtin_id, argv)
+        return status
+
+      func_node = self.funcs.get(arg0)
+      if func_node is not None:
+        status = self.RunFunc(func_node, argv)
+        return status
+
+      if fork_external:
+        thunk = process.ExternalThunk(argv, more_env)
+        p = process.Process(thunk)
+        status = p.Run(self.waiter)
+        return status
+
+      # NOTE: Never returns!
+      process.ExecExternalProgram(argv, more_env)
+    finally:
+      # TODO: Does this style make more sense?
+      # for r in redirects:
+
+      # TODO: exec 1>&2 should not restore redirects!  RunBuiltin calculates
+      # whether we ran exec.  
+      self.fd_state.PopAndRestore()
+
+  def _Execute(self, node, fork_external=True):
     """
     Args:
       node: of type AstNode
+      fork_external: if we get a SimpleCommand that is an external command,
+        should we fork first?  This is disabled in the context of a pipeline
+        process and a subshell.
     """
     redirects = self._EvalRedirects(node)
     if redirects is None:
@@ -557,41 +609,14 @@ class Executor(object):
 
     assert isinstance(redirects, list), redirects
 
-    # TODO: Only eval argv[0] once.  It can have side effects!
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
 
       more_env = self.mem.GetExported()
       self._EvalEnv(node.more_env, more_env)
-      thunk = self._GetThunkForSimpleCommand(argv, more_env)
 
-      # Don't waste a process if we'd launch one anyway.
-      if thunk.IsExternal():
-        p = process.Process(thunk, fd_state=self.fd_state, redirects=redirects)
-        status = p.Run(self.waiter)
-
-      else:  # Internal
-        #log('ARGV %s', argv)
-
-        # NOTE: _EvalRedirects turns LST nodes into core/process.py nodes.  And
-        # then we use polymorphism here.  Does it make sense to use functional
-        # style based on the RedirType?  Might be easier to read.
-
-        self.fd_state.PushFrame()
-        for r in redirects:
-          r.ApplyInParent(self.fd_state)
-
-        status = thunk.RunInParent()
-        restore_fd_state = thunk.ShouldRestoreFdState()
-
-        # Special case for exec 1>&2 (with no args): we permanently change the
-        # fd state.  BUT we don't want to restore later.
-        # TODO: Instead of this, maybe r.ApplyPermaent(self.fd_state)?
-        if restore_fd_state:
-          self.fd_state.PopAndRestore()
-        else:
-          self.fd_state.PopAndForget()
+      status = self._RunSimpleCommand(argv, more_env, redirects, fork_external)
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
@@ -672,7 +697,7 @@ class Executor(object):
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
       self.fd_state.PushFrame()
       for r in redirects:
-        r.ApplyInParent(self.fd_state)
+        self._ApplyRedirect(r, self.fd_state)
 
       status = self._ExecuteList(node.children)
 
@@ -847,11 +872,11 @@ class Executor(object):
     self.mem.last_status = status
     return status
 
-  def Execute(self, node):
+  def Execute(self, node, fork_external=True):
     """Execute a top level LST node."""
     # Use exceptions internally, but exit codes externally.
     try:
-      status = self._Execute(node)
+      status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
       # TODO: pretty print error with e.token
       log('osh failed: Unexpected %r at top level' % e.token.val)
@@ -869,15 +894,60 @@ class Executor(object):
 
   def RunCommandSub(self, node):
     p = self._GetProcessForNode(node)
-    # NOTE: We could do an optimization for pipelines.  Pick the last
-    # process element, and do pi.procs[-1].CaptureOutput()
-    stdout = []
-    p.CaptureOutput(stdout)
-    status = p.Run(self.waiter)
+
+    r, w = os.pipe()
+    p.AddStateChange(process.StdoutToPipe(r, w))
+    pid = p.Start()
+    #log('Command sub started %d', pid)
+    self.waiter.Register(pid, p.WhenDone)
+
+    chunks = []
+    os.close(w)  # not going to write
+    while True:
+      byte_str = os.read(r, 4096)
+      if not byte_str:
+        break
+      chunks.append(byte_str)
+    os.close(r)
+
+    status = p.WaitUntilDone(self.waiter)
 
     # TODO: Add context
     if self.exec_opts.ErrExit() and status != 0:
       e_die('Command sub exited with status %d (%r)', status,
             node.__class__.__name__)
-    return ''.join(stdout).rstrip('\n')
 
+    return ''.join(chunks).rstrip('\n')
+
+  def RunFunc(self, func_node, argv):
+    """Used by completion engine."""
+    self.fd_state.PushFrame()
+
+    # These are redirects at DEFINITION SITE.  You can also have redirects at
+    # the CALLER.
+
+    # f() { echo hi; } 1>&2
+    # f 2>&1
+
+    def_redirects = self._EvalRedirects(func_node)
+
+    for r in def_redirects:
+      self._ApplyRedirect(r, self.fd_state)
+
+    self.mem.Push(argv[1:])
+
+    # Redirects still valid for functions.
+    # Here doc causes a pipe and Process(SubProgramThunk).
+    try:
+      status = self._Execute(func_node.body)
+    except _ControlFlow as e:
+      if e.IsReturn():
+        status = e.ReturnValue()
+      else:
+        # break/continue used in the wrong place
+        e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
+    finally:
+      self.mem.Pop()
+      self.fd_state.PopAndRestore()
+
+    return status

@@ -9,10 +9,10 @@ EOF
 
 ### Here doc from another input file descriptor
 # NOTE: dash seemed to fail on descriptor 99, but descriptor 5 works.
-read_from_fd.py 5  5<<EOF
-fd5
+read_from_fd.py 9  9<<EOF
+fd9
 EOF
-# stdout: 5: fd5
+# stdout: 9: fd9
 
 ### Multiple here docs with different descriptors
 read_from_fd.py 0 3 <<EOF 3<<EOF3

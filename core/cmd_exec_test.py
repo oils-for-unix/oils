@@ -38,14 +38,14 @@ def InitCommandParser(code_str):
 
 def InitExecutor():
   mem = state.Mem('', [])
-  status_line = ui.NullStatusLine()
-  builtins = Builtins(status_line)
+  status_lines = None  # not needed for what we're testing
+  builtins = Builtins()
   funcs = {}
   comp_funcs = {}
   exec_opts = state.ExecOpts()
   pool = alloc.Pool()
   arena = pool.NewArena()
-  return cmd_exec.Executor(mem, builtins, funcs, completion, comp_funcs, exec_opts,
+  return cmd_exec.Executor(mem, status_lines, funcs, completion, comp_funcs, exec_opts,
                            parse_lib.MakeParserForExecutor, arena)
 
 

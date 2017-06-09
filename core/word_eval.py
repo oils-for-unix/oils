@@ -890,7 +890,7 @@ class _WordEvaluator:
         part_vals.append(v)
     return part_vals
 
-  def EvalWordToString(self, word, do_fnmatch=False):
+  def EvalWordToString(self, word, do_fnmatch=False, decay=False):
     """
     Used for redirect arg, ControlFlow arg, ArithWord, BoolWord, etc.
 
@@ -905,6 +905,9 @@ class _WordEvaluator:
     strs = []
     for part in word.parts:
       for part_val in self.part_ev._EvalWordPart(part, quoted=False):
+        # TODO: if decay, then allow string part.  e.g. for here word or here
+        # doc with "$@".
+
         if part_val.tag != part_value_e.StringPartValue:
           # Example: echo f > "$@".  TODO: Add proper context.  
           e_die("Expected string, got %s", part)

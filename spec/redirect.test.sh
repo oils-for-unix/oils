@@ -20,18 +20,26 @@ echo $FOO
 ### Redirect in assignment
 # dash captures stderr to a file here, which seems correct.  Bash doesn't and
 # just lets it go to actual stderr.
-# For now we've settled on bash behavior, for compatibility?
+# For now we agree with dash/mksh, since it involves fewer special cases in the
+# code.
 FOO=$(echo foo 1>&2) 2>$TMP/no-command.txt
 echo FILE=
 cat $TMP/no-command.txt
 echo "FOO=$FOO"
-# OK dash/mksh stdout-json: "FILE=\nfoo\nFOO=\n"
-# stdout-json: "FILE=\nFOO=\n"
+# stdout-json: "FILE=\nfoo\nFOO=\n"
+# BUG bash stdout-json: "FILE=\nFOO=\n"
 
 ### Redirect in function body.
-# Wow this is interesting, didn't know about it.
-func() { echo hi; } 1>&2; func
-# stderr: hi
+func() { echo hi; } 1>&2
+func
+# stdout-json: ""
+# stderr-json: "hi\n"
+
+### Redirect in function body AND function call
+func() { echo hi; } 1>&2
+func 2>&1
+# stdout-json: "hi\n"
+# stderr-json: ""
 
 ### Descriptor redirect with spaces
 # Hm this seems like a failure of lookahead!  The second thing should look to a
@@ -57,12 +65,14 @@ cat $TMP/file-redir2.txt
 # stdout: two 1
 
 ### Descriptor redirect with filename
-# Should be a syntax error, but bash allows this.
+# bash/mksh treat this like a filename, not a descriptor.
+# dash aborts.
 echo one 1>&$TMP/nonexistent-filename__
-# status: 1
-# stdout-json: ""
-# OK  dash status: 2
-# BUG bash status: 0
+echo "status=$?"
+# stdout: status=1
+# BUG bash stdout: status=0
+# OK dash stdout-json: ""
+# OK dash status: 2
 
 ### redirect for loop
 for i in $(seq 3)

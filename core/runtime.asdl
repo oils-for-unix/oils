@@ -51,5 +51,11 @@ module runtime
   lvalue = 
     LhsName(string name)
   | LhsIndexedName(string name, int index)
-}
 
+  -- evaluated version of osh_ast.redir
+  redirect = 
+    PathRedirect(id op_id, int fd, string filename)
+  | DescRedirect(id op_id, int fd, int target_fd)
+    -- here doc or here word
+  | HereRedirect(int fd, string body)
+}

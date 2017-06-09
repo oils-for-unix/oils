@@ -82,7 +82,7 @@ func() {
 func "a b" "c d"
 # stdout: ['a', 'b', 'c', 'd', 'a', 'b', 'c', 'd']
 
-### failed comment
+### failed command
 ls /nonexistent
 # status: 2
 
