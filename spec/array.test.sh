@@ -105,14 +105,14 @@ a=(1 '2 3')
 argv.py "${!a[@]}"
 # stdout: ['0', '1']
 
-### Retrieve indices for one value
-# Not really standardized between bash and mksh.  Just doing whatever bash
-# does.
-a=(4 '2 3')
+### ${!a[1]} is named ref in bash
+# mksh ignores it
+foo=bar
+a=('1 2' foo '2 3')
 argv.py "${!a[1]}"
 # status: 0
-# stdout: ['']
-# OK mksh stdout: ['1']
+# stdout: ['bar']
+# N-I mksh stdout: ['a[1]']
 
 ### Retrieve indices without []
 # bash gives empty string?
