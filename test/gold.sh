@@ -76,6 +76,11 @@ wild() {
   _compare test/wild.sh parse-usr-bin
 }
 
+# NOTE: zsh behaves differently under sh and bin/osh!  Looks like it is an
+# inherited file descriptor issue.
+#
+# A bin/osh app bundle also behaves differently.  Maybe because of the internal
+# environment variables.
 startup-benchmark() {
   _compare benchmarks/startup.sh compare-strace
 }
