@@ -154,7 +154,7 @@ module osh
     NoOp
     -- TODO: respect order 
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
-  | Sentence(command command, token terminator)
+  | Sentence(command child, token terminator)
     -- TODO: parse flags -r -x; -a and -A aren't needed
   | Assignment(id keyword, assign_pair* pairs)
   | ControlFlow(token token, word? arg_word)

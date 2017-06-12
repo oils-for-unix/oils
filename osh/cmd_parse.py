@@ -76,11 +76,8 @@ def _GetHereDocsToFill(node):
       here_docs.extend(_GetHereDocsToFill(child))
     here_docs.extend(_GetHereDocsToFill(node.body))
 
-  elif node.tag == command_e.Sentence:
-    here_docs.extend(_GetHereDocsToFill(node.command))
-
-  elif node.tag == command_e.Subshell:
-    return _GetHereDocsToFill(node.child)
+  elif node.tag in (command_e.Sentence, command_e.Subshell):
+    here_docs.extend(_GetHereDocsToFill(node.child))
 
   elif node.tag == command_e.TimeBlock:
     here_docs.extend(_GetHereDocsToFill(node.pipeline))

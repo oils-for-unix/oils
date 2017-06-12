@@ -620,10 +620,20 @@ class Executor(object):
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
-        status = self._Execute(node.command)
+        status = self._Execute(node.child)
       else:
+        p = self._GetProcessForNode(node.child)
+        pid = p.Start()
+        log('Started background job with pid %d', pid)
+        status = 0
+        #self.waiter.Register(pid, p.WhenDone)
+        #p.WaitUntilDone(self.waiter)
+
+        #log('started %d', pid)
+        log('job state %s', self.job_state)
+
         # TODO: Async processes.
-        raise NotImplementedError(node.terminator.id)
+        #raise NotImplementedError(node.terminator.id)
 
     elif node.tag == command_e.Pipeline:
       # TODO: add redirects to simulate?
