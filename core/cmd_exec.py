@@ -490,7 +490,7 @@ class Executor(object):
     return status
 
   def _ApplyRedirect(self, r, fd_state):
-    # NOTE: We dont' use self here
+    # NOTE: We only use self for self.waiter.
 
     # TODO: r.fd needs to be opened!  if it's not stdin or stdout
     # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
@@ -931,14 +931,13 @@ class Executor(object):
 
   def RunFunc(self, func_node, argv):
     """Used by completion engine."""
-    self.fd_state.PushFrame()
-
     # These are redirects at DEFINITION SITE.  You can also have redirects at
-    # the CALLER.
+    # the CALLER.  For example:
 
     # f() { echo hi; } 1>&2
     # f 2>&1
 
+    self.fd_state.PushFrame()
     def_redirects = self._EvalRedirects(func_node)
 
     for r in def_redirects:
