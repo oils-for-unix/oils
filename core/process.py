@@ -119,7 +119,7 @@ class FdState:
       self._PushDup(read_fd, r.fd)  # stdin is now the pipe
       self._PushClose(read_fd)
 
-      thunk = process.HereDocWriterThunk(write_fd, r.body)
+      thunk = _HereDocWriterThunk(write_fd, r.body)
 
       # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
       # which are the common case.
@@ -127,14 +127,14 @@ class FdState:
       #start_process = False
 
       if start_process:
-        here_proc = process.Process(thunk)
+        here_proc = Process(thunk)
 
         # NOTE: we could close the read pipe here, but it doesn't really
         # matter because we control the code.
         # here_proc.StateChange()
         pid = here_proc.Start()
         # no-op callback
-        self.waiter.Register(pid, here_proc.WhenDone)
+        waiter.Register(pid, here_proc.WhenDone)
         #log('Started %s as %d', here_proc, pid)
         self._PushWait(here_proc, waiter)
 
@@ -267,7 +267,7 @@ class SubProgramThunk:
     sys.exit(status)  # Must exit!
 
 
-class HereDocWriterThunk(Thunk):
+class _HereDocWriterThunk(Thunk):
   """Write a here doc to one end of a pipe.
 
   May be be executed in either a child process or the main shell process.
