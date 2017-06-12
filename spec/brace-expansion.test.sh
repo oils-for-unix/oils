@@ -204,7 +204,7 @@ echo -{8..1..-3}-
 ### Char range expansion
 echo -{a..e}-
 # stdout: -a- -b- -c- -d- -e-
-# N-I mksh/zsh stdout: -{a..e}-
+# N-I mksh stdout: -{a..e}-
 
 ### Char range expansion with step
 echo -{a..e..2}- -{a..e..-2}-
