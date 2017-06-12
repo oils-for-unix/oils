@@ -228,7 +228,10 @@ class Executor(object):
 
     # TODO: figure out a quicker dispatch mechanism.  Just make a table of
     # builtins I guess.
-    if builtin_id == EBuiltin.READ:
+    if builtin_id == EBuiltin.EXEC:
+      status = self._Exec(argv)  # may never return
+
+    elif builtin_id == EBuiltin.READ:
       status = builtin._Read(argv, self.mem)
 
     elif builtin_id == EBuiltin.ECHO:
@@ -251,13 +254,6 @@ class Executor(object):
 
     elif builtin_id == EBuiltin.EXIT:
       status = builtin._Exit(argv)
-
-    elif builtin_id == EBuiltin.EXEC:
-      # TODO:
-      # - Need to parse the redirects here.  How?
-      # - can be lifted out to builtin
-      status = self._Exec(argv)  # may never return
-      restore_fd_state = False
 
     elif builtin_id == EBuiltin.WAIT:
       status = builtin._Wait(argv, self.waiter, self.job_state)
@@ -565,10 +561,13 @@ class Executor(object):
     for r in redirects:
       self._ApplyRedirect(r, self.fd_state)
 
+    restore_fd_state = True
     try:
       builtin_id = builtin.Resolve(arg0)
       if builtin_id != EBuiltin.NONE:
         status = self._RunBuiltin(builtin_id, argv)
+        if builtin_id == EBuiltin.EXEC:
+          restore_fd_state = False
         return status
 
       func_node = self.funcs.get(arg0)
@@ -585,12 +584,13 @@ class Executor(object):
       # NOTE: Never returns!
       process.ExecExternalProgram(argv, more_env)
     finally:
-      # TODO: Does this style make more sense?
-      # for r in redirects:
-
-      # TODO: exec 1>&2 should not restore redirects!  RunBuiltin calculates
-      # whether we ran exec.  
-      self.fd_state.PopAndRestore()
+      # TODO: Does this style make more sense?  for r in redirects:
+      if restore_fd_state:
+        self.fd_state.PopAndRestore()
+      else:
+        # For exec 1>&2
+        # Does this work with here docs?
+        self.fd_state.PopAndForget()
 
   def _Execute(self, node, fork_external=True):
     """
