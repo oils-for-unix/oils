@@ -86,7 +86,6 @@ redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 
 value_e = runtime.value_e
-redirect_e = runtime.redirect_e
 
 log = util.log
 e_die = util.e_die
@@ -489,65 +488,8 @@ class Executor(object):
       status = self._Execute(child)  # last status wins
     return status
 
-  def _ApplyRedirect(self, r, fd_state):
-    # NOTE: We only use self for self.waiter.
-
-    # TODO: r.fd needs to be opened!  if it's not stdin or stdout
-    # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
-
-    if r.tag == redirect_e.PathRedirect:
-      if r.op_id == Id.Redir_Great:  # >
-        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-      elif r.op_id == Id.Redir_DGreat:  # >>
-        mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
-      elif r.op_id == Id.Redir_Less:  # <
-        mode = os.O_RDONLY
-      else:
-        raise NotImplementedError(r.op_id)
-
-      target_fd = os.open(r.filename, mode)
-
-      fd_state.SaveAndDup(target_fd, r.fd)
-      fd_state.NeedClose(target_fd)
-
-    elif r.tag == redirect_e.DescRedirect:
-      if r.op_id == Id.Redir_GreatAnd:  # 1>&
-        fd_state.SaveAndDup(r.target_fd, r.fd)
-      elif r.op_id == Id.Redir_LessAnd:
-        raise NotImplementedError
-      else:
-        raise NotImplementedError
-
-    elif r.tag == redirect_e.HereRedirect:
-      read_fd, write_fd = os.pipe()
-      fd_state.SaveAndDup(read_fd, r.fd)  # stdin is now the pipe
-      fd_state.NeedClose(read_fd)
-
-      thunk = process.HereDocWriterThunk(write_fd, r.body)
-
-      # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
-      # which are the common case.
-      start_process = True
-      #start_process = False
-
-      if start_process:
-        here_proc = process.Process(thunk)
-
-        # NOTE: we could close the read pipe here, but it doesn't really
-        # matter because we control the code.
-        # here_proc.StateChange()
-        pid = here_proc.Start()
-        # no-op callback
-        self.waiter.Register(pid, here_proc.WhenDone)
-        #log('Started %s as %d', here_proc, pid)
-        fd_state.NeedWait(here_proc, self.waiter)
-
-        # Now that we've started the child, close it in the parent.
-        os.close(write_fd)
-
-      else:
-        os.write(write_fd, r.body)
-        os.close(write_fd)
+  def _PushRedirects(self, redirects):
+    self.fd_state.Push(redirects, self.waiter)
 
   def _RunSimpleCommand(self, argv, more_env, redirects, fork_external):
     # This happens when you write "$@" but have no arguments.
@@ -557,9 +499,7 @@ class Executor(object):
     # TODO: respect the special builtin order too
     arg0 = argv[0]
 
-    self.fd_state.PushFrame()
-    for r in redirects:
-      self._ApplyRedirect(r, self.fd_state)
+    self._PushRedirects(redirects)
 
     restore_fd_state = True
     try:
@@ -705,13 +645,11 @@ class Executor(object):
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
-      self.fd_state.PushFrame()
-      for r in redirects:
-        self._ApplyRedirect(r, self.fd_state)
-
-      status = self._ExecuteList(node.children)
-
-      self.fd_state.PopAndRestore()
+      self._PushRedirects(redirects)
+      try:
+        status = self._ExecuteList(node.children)
+      finally:
+        self.fd_state.PopAndRestore()
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
@@ -937,11 +875,8 @@ class Executor(object):
     # f() { echo hi; } 1>&2
     # f 2>&1
 
-    self.fd_state.PushFrame()
     def_redirects = self._EvalRedirects(func_node)
-
-    for r in def_redirects:
-      self._ApplyRedirect(r, self.fd_state)
+    self._PushRedirects(def_redirects)
 
     self.mem.Push(argv[1:])
 

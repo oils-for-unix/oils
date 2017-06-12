@@ -16,10 +16,12 @@ import fcntl
 import os
 import sys
 
+from core import runtime
 from core import util
 from core.util import log
 from core.id_kind import Id, REDIR_DEFAULT_FD
 
+redirect_e = runtime.redirect_e
 e_die = util.e_die
 
 
@@ -82,6 +84,71 @@ class FdState:
 
   def NeedWait(self, proc, waiter):
     self.cur_frame.need_wait.append((proc, waiter))
+
+  def _ApplyRedirect(self, r, waiter):
+    # NOTE: We only use self for self.waiter.
+
+    # TODO: r.fd needs to be opened!  if it's not stdin or stdout
+    # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
+
+    if r.tag == redirect_e.PathRedirect:
+      if r.op_id == Id.Redir_Great:  # >
+        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+      elif r.op_id == Id.Redir_DGreat:  # >>
+        mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
+      elif r.op_id == Id.Redir_Less:  # <
+        mode = os.O_RDONLY
+      else:
+        raise NotImplementedError(r.op_id)
+
+      target_fd = os.open(r.filename, mode)
+
+      self.SaveAndDup(target_fd, r.fd)
+      self.NeedClose(target_fd)
+
+    elif r.tag == redirect_e.DescRedirect:
+      if r.op_id == Id.Redir_GreatAnd:  # 1>&
+        self.SaveAndDup(r.target_fd, r.fd)
+      elif r.op_id == Id.Redir_LessAnd:
+        raise NotImplementedError
+      else:
+        raise NotImplementedError
+
+    elif r.tag == redirect_e.HereRedirect:
+      read_fd, write_fd = os.pipe()
+      self.SaveAndDup(read_fd, r.fd)  # stdin is now the pipe
+      self.NeedClose(read_fd)
+
+      thunk = process.HereDocWriterThunk(write_fd, r.body)
+
+      # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
+      # which are the common case.
+      start_process = True
+      #start_process = False
+
+      if start_process:
+        here_proc = process.Process(thunk)
+
+        # NOTE: we could close the read pipe here, but it doesn't really
+        # matter because we control the code.
+        # here_proc.StateChange()
+        pid = here_proc.Start()
+        # no-op callback
+        self.waiter.Register(pid, here_proc.WhenDone)
+        #log('Started %s as %d', here_proc, pid)
+        self.NeedWait(here_proc, waiter)
+
+        # Now that we've started the child, close it in the parent.
+        os.close(write_fd)
+
+      else:
+        os.write(write_fd, r.body)
+        os.close(write_fd)
+
+  def Push(self, redirects, waiter):
+    self.PushFrame()
+    for r in redirects:
+      self._ApplyRedirect(r, waiter)
 
   def PopAndRestore(self):
     frame = self.stack.pop()
