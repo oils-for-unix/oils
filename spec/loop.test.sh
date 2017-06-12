@@ -16,7 +16,6 @@ for i in ; do
   echo $i
 done
 # stdout-json: ""
-# BUG mksh stdout-json: "1\n2\n3\n"
 
 ### for loop with invalid identifier
 # should be compile time error, but runtime error is OK too
