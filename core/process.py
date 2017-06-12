@@ -51,11 +51,11 @@ class FdState:
     self.stack.append(new_frame)
     self.cur_frame = new_frame
 
-  def SaveAndDup(self, fd1, fd2):
+  def _PushDup(self, fd1, fd2):
     """
     Save fd2 and dup fd1 onto fd2.
     """
-    #log('---- SaveAndDup %s %s\n', fd1, fd2)
+    #log('---- _PushDup %s %s\n', fd1, fd2)
     fcntl.fcntl(fd2, fcntl.F_DUPFD, self.next_fd)
     os.close(fd2)
     fcntl.fcntl(self.next_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
@@ -79,10 +79,10 @@ class FdState:
     self.next_fd += 1
     return True
 
-  def NeedClose(self, fd):
+  def _PushClose(self, fd):
     self.cur_frame.need_close.append(fd)
 
-  def NeedWait(self, proc, waiter):
+  def _PushWait(self, proc, waiter):
     self.cur_frame.need_wait.append((proc, waiter))
 
   def _ApplyRedirect(self, r, waiter):
@@ -103,12 +103,12 @@ class FdState:
 
       target_fd = os.open(r.filename, mode)
 
-      self.SaveAndDup(target_fd, r.fd)
-      self.NeedClose(target_fd)
+      self._PushDup(target_fd, r.fd)
+      self._PushClose(target_fd)
 
     elif r.tag == redirect_e.DescRedirect:
       if r.op_id == Id.Redir_GreatAnd:  # 1>&
-        self.SaveAndDup(r.target_fd, r.fd)
+        self._PushDup(r.target_fd, r.fd)
       elif r.op_id == Id.Redir_LessAnd:
         raise NotImplementedError
       else:
@@ -116,8 +116,8 @@ class FdState:
 
     elif r.tag == redirect_e.HereRedirect:
       read_fd, write_fd = os.pipe()
-      self.SaveAndDup(read_fd, r.fd)  # stdin is now the pipe
-      self.NeedClose(read_fd)
+      self._PushDup(read_fd, r.fd)  # stdin is now the pipe
+      self._PushClose(read_fd)
 
       thunk = process.HereDocWriterThunk(write_fd, r.body)
 
@@ -136,7 +136,7 @@ class FdState:
         # no-op callback
         self.waiter.Register(pid, here_proc.WhenDone)
         #log('Started %s as %d', here_proc, pid)
-        self.NeedWait(here_proc, waiter)
+        self._PushWait(here_proc, waiter)
 
         # Now that we've started the child, close it in the parent.
         os.close(write_fd)
