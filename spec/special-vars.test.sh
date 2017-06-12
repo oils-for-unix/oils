@@ -33,10 +33,42 @@ echo $_
 # stdout-json: "hi\nhi\n"
 # N-I dash/mksh stdout-json: "hi\n\n"
 
-### PID $$
+### $$ looks like a PID
 # Just test that it has decimal digits
 echo $$ | egrep '[0-9]+'
 # status: 0
+
+### $$ doesn't change with subshell
+# Just test that it has decimal digits
+set -o errexit
+die() {
+  echo 1>&2 "$@"; exit 1
+}
+parent=$$
+test -n "$parent" || die "empty PID in parent"
+( child=$$
+  test -n "$child" || die "empty PID in child"
+  test "$parent" = "$child" || die "should be equal: $parent != $child"
+)
+exit 3  # make sure we got here
+# stdout-json: ""
+# status: 3
+
+### $BASHPID DOES change with subshell
+set -o errexit
+die() {
+  echo 1>&2 "$@"; exit 1
+}
+parent=$BASHPID
+test -n "$parent" || die "empty BASHPID in parent"
+( child=$BASHPID
+  test -n "$child" || die "empty BASHPID in child"
+  test "$parent" != "$child" || die "should not be equal: $parent = $child"
+)
+exit 3  # make sure we got here
+# stdout-json: ""
+# status: 3
+# N-I dash status: 1
 
 ### Background PID $!
 # Just test that it has decimal digits
