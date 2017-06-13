@@ -6,11 +6,21 @@ echo --
 echo ---
 # stdout-json: "-\n--\n---\n"
 
+### exec builtin 
+exec echo hi
+# stdout: hi
+
 ### exec builtin with redirects
 exec 1>&2
 echo 'to stderr'
 # stdout-json: ""
 # stderr: to stderr
+
+### exec builtin with here doc
+# This has in a separate file because both code and data can be read from
+# stdin.
+$SH spec/exec-here-doc.sh
+# stdout-json: "x=one\ny=two\nDONE\n"
 
 ### cd and $PWD
 cd /

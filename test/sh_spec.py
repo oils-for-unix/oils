@@ -404,9 +404,6 @@ def RunCases(cases, case_predicate, shells, env, out):
 
     result_row = []
 
-    # TODO: copy this source somewhere
-    code_utf8 = code.encode('utf-8')
-
     for shell_index, (sh_label, sh_path) in enumerate(shells):
       argv = [sh_path]  # TODO: Be able to test shell flags?
       try:
@@ -416,7 +413,7 @@ def RunCases(cases, case_predicate, shells, env, out):
         print('Error running %r: %s' % (sh_path, e), file=sys.stderr)
         sys.exit(1)
 
-      p.stdin.write(code_utf8)
+      p.stdin.write(code)
       p.stdin.close()
 
       actual = {}

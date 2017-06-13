@@ -31,6 +31,12 @@ class _FdFrame:
     self.need_close = []
     self.need_wait = []
 
+  def Forget(self):
+    """For exec 1>&2."""
+    del self.saved[:]  # like list.clear() in Python 3.3
+    del self.need_close[:]
+    del self.need_wait[:]
+
   def __repr__(self):
     return '<_FdFrame %s %s>' % (self.saved, self.need_close)
 
@@ -44,12 +50,6 @@ class FdState:
     self.next_fd = next_fd  # where to start saving descriptors
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
-
-  def PushFrame(self):
-    #log('> PushFrame')
-    new_frame = _FdFrame()
-    self.stack.append(new_frame)
-    self.cur_frame = new_frame
 
   def _PushDup(self, fd1, fd2):
     """
@@ -88,7 +88,7 @@ class FdState:
   def _ApplyRedirect(self, r, waiter):
     # NOTE: We only use self for self.waiter.
 
-    # TODO: r.fd needs to be opened!  if it's not stdin or stdout
+    # TODO: r.fd needs to be opened?  if it's not stdin or stdout
     # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
 
     if r.tag == redirect_e.PathRedirect:
@@ -146,9 +146,16 @@ class FdState:
         os.close(write_fd)
 
   def Push(self, redirects, waiter):
-    self.PushFrame()
+    #log('> PushFrame')
+    new_frame = _FdFrame()
+    self.stack.append(new_frame)
+    self.cur_frame = new_frame
+
     for r in redirects:
       self._ApplyRedirect(r, waiter)
+
+  def MakePermanent(self):
+    self.cur_frame.Forget()
 
   def PopAndRestore(self):
     frame = self.stack.pop()

@@ -82,6 +82,11 @@ done > $TMP/redirect-for-loop.txt
 cat $TMP/redirect-for-loop.txt
 # stdout-json: "1\n2\n3\n"
 
+### redirect subshell
+( echo foo ) 1>&2
+# stderr: foo
+# stdout-json: ""
+
 ### Prefix redirect for loop -- not allowed
 >$TMP/redirect2.txt for i in $(seq 3)
 do

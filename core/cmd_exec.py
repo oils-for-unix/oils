@@ -221,9 +221,9 @@ class Executor(object):
     # Either execute command with redirects, or apply redirects in this shell.
     # NOTE: Redirects were processed earlier.
     if argv:
-      thunk = process.ExternalThunk(argv)
-      thunk.RunInParent()  # never returns
+      process.ExecExternalProgram(argv, {})  # never returns
     else:
+      # TODO: self.fd_state.MakePermanent()
       return 0
 
   def _RunBuiltin(self, builtin_id, argv):
@@ -236,6 +236,9 @@ class Executor(object):
     # builtins I guess.
     if builtin_id == EBuiltin.EXEC:
       status = self._Exec(argv)  # may never return
+      # But if it returns, then we want to permanently apply the redirects
+      # associated with it.
+      self.fd_state.MakePermanent()
 
     elif builtin_id == EBuiltin.READ:
       status = builtin._Read(argv, self.mem)
@@ -473,13 +476,10 @@ class Executor(object):
 
     self._PushRedirects(redirects)
 
-    restore_fd_state = True
     try:
       builtin_id = builtin.Resolve(arg0)
       if builtin_id != EBuiltin.NONE:
         status = self._RunBuiltin(builtin_id, argv)
-        if builtin_id == EBuiltin.EXEC:
-          restore_fd_state = False
         return status
 
       func_node = self.funcs.get(arg0)
@@ -496,13 +496,7 @@ class Executor(object):
       # NOTE: Never returns!
       process.ExecExternalProgram(argv, more_env)
     finally:
-      # TODO: Does this style make more sense?  for r in redirects:
-      if restore_fd_state:
-        self.fd_state.PopAndRestore()
-      else:
-        # For exec 1>&2
-        # Does this work with here docs?
-        self.fd_state.PopAndForget()
+      self.fd_state.PopAndRestore()
 
   def _MakePipeline(self, node, job_state=None):
     # NOTE: First or last one could use the "main" shell thread.  Doesn't have
@@ -762,6 +756,8 @@ class Executor(object):
       status = self._ExecuteList(node.children)
 
     elif node.tag == command_e.FuncDef:
+      # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
+      # It will save time on function calls.
       self.funcs[node.name] = node
       status = 0
 
