@@ -467,6 +467,11 @@ class CommandParser(object):
               'Variable names must be constant strings, got %s', w, word=w)
           return None
         pair = (value, None, left_spid)  # No value is equivalent to ''
+        m = VAR_NAME_RE.match(value)
+        if not m:
+          self.AddErrorContext('Invalid variable name %r', value, word=w)
+          return None
+
       bindings.append(pair)
 
     # TODO: Also make with LhsIndexedName
@@ -1239,6 +1244,12 @@ class CommandParser(object):
         node.redirects = redirects
       return node
 
+    # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
+    # work because Lit_RBrace is in END_LIST below.
+    if self.c_id == Id.Lit_RBrace:
+      self.AddErrorContext('Unexpected }', word=self.cur_word)
+      return None
+
     if self.c_kind == Kind.Redir:  # Leading redirect
       return self.ParseSimpleCommand()
 
@@ -1444,7 +1455,7 @@ class CommandParser(object):
     # NOTE: This is similar to ParseCommandLine, except there is a lot of stuff
     # about here docs.  Here docs are inherently line-oriented.
     #
-    # - Why aren't we doing END_LIST above?
+    # - Why aren't we doing END_LIST in ParseCommandLine?
     #   - Because you will never be inside $() at the top level.
     #   - We also know it will end in a newline.  It can't end in "fi"!
     #   - example: if true; then { echo hi; } fi

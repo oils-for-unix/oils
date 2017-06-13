@@ -280,6 +280,11 @@ explore-parsing() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+parse-errors() {
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 here-doc() {
   # NOTE: The last two tests, 28 and 29, have different behavior on my Ubuntu
   # and Debian machines.

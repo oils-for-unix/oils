@@ -55,8 +55,9 @@ _BACKSLASH = [
 
 _VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
-# Used by osh/cmd_parse.py to validate for loop name.
-VAR_NAME_RE = re.compile(_VAR_NAME_RE)
+# Used by osh/cmd_parse.py to validate for loop name.  Note it must be
+# anchored on the right.
+VAR_NAME_RE = re.compile(_VAR_NAME_RE + '$')
 
 # All Kind.VSub
 _VARS = [
