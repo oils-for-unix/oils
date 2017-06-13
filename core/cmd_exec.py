@@ -319,9 +319,6 @@ class Executor(object):
       e_die('%r command exited with status %d', node.__class__.__name__,
             status)
 
-  def _PushRedirects(self, redirects):
-    self.fd_state.Push(redirects, self.waiter)
-
   def _EvalLhs(self, node):
     assert isinstance(node, ast.lhs_expr), node
 
@@ -814,7 +811,7 @@ class Executor(object):
       return status
     assert isinstance(redirects, list), redirects
 
-    self._PushRedirects(redirects)
+    self.fd_state.Push(redirects, self.waiter)
     try:
       status = self._Dispatch(node, fork_external)
     finally:
@@ -901,7 +898,7 @@ class Executor(object):
     # f 2>&1
 
     def_redirects = self._EvalRedirects(func_node)
-    self._PushRedirects(def_redirects)
+    self.fd_state.Push(def_redirects, self.waiter)
 
     self.mem.Push(argv[1:])
 
