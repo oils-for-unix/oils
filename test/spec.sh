@@ -195,7 +195,7 @@ assign() {
 }
 
 background() {
-  sh-spec spec/background.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/background.test.sh \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
@@ -302,7 +302,7 @@ posix() {
 }
 
 special-vars() {
-  sh-spec spec/special-vars.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/special-vars.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

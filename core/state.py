@@ -14,6 +14,7 @@ import os
 
 from core import runtime
 from core import util
+from core.id_kind import Id
 
 from osh import ast_ as ast
 
@@ -130,7 +131,12 @@ class Mem(object):
     self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
+
     self.last_status = 0  # Mutable public variable
+    self.last_job_id = -1  # Uninitialized value mutable public variable
+
+    # Done ONCE on initialization
+    self.root_pid = os.getpid()
 
     self._InitDefaults()
 
@@ -192,14 +198,36 @@ class Mem(object):
     """For $* and $@."""
     return self.argv_stack[-1].GetArgv()
 
-  def GetNumArgs(self):
-    """For $* and $@."""
-    return self.argv_stack[-1].GetNumArgs()
-
   def SetArgv(self, argv):
     """For set -- 1 2 3."""
     # from set -- 1 2 3
     self.argv_stack[-1].SetArgv(argv)
+
+  #
+  # Public
+  #
+
+  def GetSpecialVar(self, op_id):
+    if op_id == Id.VSub_Bang:  # $!
+      n = self.last_job_id
+      if n == -1:
+        return runtime.Undef()  # could be an error
+
+    elif op_id == Id.VSub_QMark:  # $?
+      # TODO: Have to parse status somewhere.
+      # External commands need WIFEXITED test.  What about subshells?
+      n = self.last_status
+
+    elif op_id == Id.VSub_Pound:  # $#
+      n = self.argv_stack[-1].GetNumArgs()
+
+    elif op_id == Id.VSub_Dollar:  # $$
+      n = self.root_pid
+
+    else:
+      raise NotImplementedError(op_id)
+
+    return runtime.Str(str(n))
 
   #
   # Helper functions

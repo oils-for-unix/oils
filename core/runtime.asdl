@@ -58,4 +58,10 @@ module runtime
   | DescRedirect(id op_id, int fd, int target_fd)
     -- here doc or here word
   | HereRedirect(int fd, string body)
+
+  -- NOTE: not used right now, isinstance() check works fine
+  job_status =
+    ProcessStatus(int status)
+  | PipelineStatus(int* statuses)
 }
+

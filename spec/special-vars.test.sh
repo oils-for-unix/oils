@@ -70,12 +70,13 @@ exit 3  # make sure we got here
 # status: 3
 # N-I dash status: 1
 
-### Background PID $!
-# Just test that it has decimal digits
+### Background PID $! looks like a PID
 sleep 0.01 &
-echo $! | egrep '[0-9]+'
+pid=$!
 wait
-# status: 0
+echo $pid | egrep '[0-9]+' >/dev/null
+echo status=$?
+# stdout: status=0
 
 ### $PPID
 echo $PPID | egrep '[0-9]+'

@@ -262,10 +262,10 @@ class Executor(object):
       status = builtin._Exit(argv)
 
     elif builtin_id == EBuiltin.WAIT:
-      status = builtin._Wait(argv, self.waiter, self.job_state)
+      status = builtin._Wait(argv, self.waiter, self.job_state, self.mem)
 
     elif builtin_id == EBuiltin.JOBS:
-      status = builtin._Jobs(argv, self.job_ste)
+      status = builtin._Jobs(argv, self.job_state)
 
     elif builtin_id == EBuiltin.PUSHD:
       status = builtin._Pushd(argv, self.dir_stack)
@@ -429,14 +429,20 @@ class Executor(object):
       out_env[name] = val.s
     self.mem.PopTemp()
 
-  def _RunPipeline(self, node):
-    # NOTE: First or last one can use the "main" shell thread.  Doesn't have to
-    # run in subshell.  Although I guess it's simpler if it always does.
-    pi = process.Pipeline()
+  def _MakePipeline(self, node, job_state=None):
+    # NOTE: First or last one could use the "main" shell thread.  Doesn't have
+    # to run in subshell.  Although I guess it's simpler if it always does.
+    # I think bash has an option to control this?  echo hi | read x; should
+    # test it.
+    pi = process.Pipeline(job_state=job_state)
 
     for child in node.children:
       p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
       pi.Add(p)
+    return pi
+
+  def _RunPipeline(self, node):
+    pi = self._MakePipeline(node)
 
     #print(pi)
 
@@ -537,11 +543,21 @@ class Executor(object):
         self.fd_state.PopAndForget()
 
   def _RunJobInBackground(self, node):
-    """
-    """
-    # Special case for pipeline?
+    # Special case for pipeline.  There is some evidence here:
+    # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html#Launching-Jobs
+    #
+    #  "You can either make all the processes in the process group be children
+    #  of the shell process, or you can make one process in group be the
+    #  ancestor of all the other processes in that group. The sample shell
+    #  program presented in this chapter uses the first approach because it
+    #  makes bookkeeping somewhat simpler."
     if node.tag == command_e.Pipeline:
-      raise NotImplementedError
+      pi = self._MakePipeline(node, job_state=self.job_state)
+      job_id = pi.Start(self.waiter)
+      self.mem.last_job_id = job_id  # for $!
+      self.job_state.Register(job_id, pi)
+      log('Started background pipeline with job ID %d', job_id)
+
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
       # have to register SIGCHLD.  But then that introduces race conditions.
@@ -550,9 +566,11 @@ class Executor(object):
       #log('job state %s', self.job_state)
       p = self._MakeProcess(node, job_state=self.job_state)
       pid = p.Start()
+      self.mem.last_job_id = pid  # for $!
+      self.job_state.Register(pid, p)
       self.waiter.Register(pid, p.WhenDone)
       log('Started background job with pid %d', pid)
-      return 0
+    return 0
 
   def _Execute(self, node, fork_external=True):
     """

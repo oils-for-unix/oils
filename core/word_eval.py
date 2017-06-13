@@ -340,17 +340,9 @@ class _WordPartEvaluator:
       else:  # $@ $* "$*"
         return val, True
 
-    elif op_id == Id.VSub_QMark:  # $?
-      # TODO: Have to parse status somewhere.
-      # External commands need WIFEXITED test.  What about subshells?
-      return runtime.Str(str(self.mem.last_status)), False
-
-    elif op_id == Id.VSub_Pound:  # $#
-      n = self.mem.GetNumArgs()
-      return runtime.Str(str(n)), False
-
     else:
-      raise NotImplementedError(op_id)
+      val = self.mem.GetSpecialVar(op_id)
+      return val, False  # dont' decay
 
   def _ApplyTestOp(self, val, op, quoted):
     """

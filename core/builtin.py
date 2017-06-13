@@ -430,7 +430,7 @@ def _Exit(argv):
 
 import getopt
 
-def _Wait(argv, waiter, job_state):
+def _Wait(argv, waiter, job_state, mem):
   """
   wait: wait [-n] [id ...]
       Wait for job completion and return exit status.
@@ -472,24 +472,54 @@ def _Wait(argv, waiter, job_state):
       raise AssertionError
 
   if opt_n:
-    waiter.Wait()
-    print('wait next')
-    # TODO: Get rid of args?
-    return 0
+    # wait -n returns the exit status of the process.  But how do you know
+    # WHICH process?  That doesn't seem useful.
+    log('wait next')
+    if waiter.Wait():
+      return waiter.last_status
+    else:
+      return 127  # nothing to wait for
 
   if not args:
+    log('wait all')
     # TODO: get all background jobs from JobState?
-    print('wait all')
-    # wait for everything
+    i = 0
+    while True:
+      if not waiter.Wait():
+        break  # nothing to wait for
+      i += 1
+      if job_state.AllDone():
+        break
+
+    log('waited for %d processes', i)
     return 0
 
   # Get list of jobs.  Then we need to check if they are ALL stopped.
-  for a in args:
-    print('wait %s' % a)
-    # parse pid
-    # parse job spec
+  # Returns the exit code of the last one on the COMMAND LINE, not the exit
+  # code of last one to FINSIH.
 
-  return 0
+  status = 1  # error
+  for a in args:
+    # NOTE: osh doesn't accept 'wait %1' yet
+    try:
+      jid = int(a)
+    except ValueError:
+      util.error('Invalid argument %r', a)
+      return 127
+
+    job = job_state.jobs.get(jid)
+    if job is None:
+      util.error('No such job: %s', jid)
+      return 127
+
+    st = job.WaitUntilDone(waiter)
+    if isinstance(st, list):
+      status = st[-1]
+      mem.SetGlobalArray('PIPESTATUS', [str(p) for p in st])
+    else:
+      status = st
+
+  return status
 
 
 def _Jobs(argv, job_state):
