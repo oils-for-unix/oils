@@ -157,7 +157,7 @@ class FdState:
   def MakePermanent(self):
     self.cur_frame.Forget()
 
-  def PopAndRestore(self):
+  def Pop(self):
     frame = self.stack.pop()
     #log('< Pop %s', frame)
     for saved, orig in reversed(frame.saved):
@@ -177,9 +177,6 @@ class FdState:
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
       unused_status = proc.WaitUntilDone(waiter)
-
-  def PopAndForget(self):
-    self.stack.pop()
 
 
 class ChildStateChange:

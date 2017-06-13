@@ -466,7 +466,7 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, more_env, redirects, fork_external):
+  def _RunSimpleCommand(self, argv, more_env, fork_external):
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
@@ -474,29 +474,24 @@ class Executor(object):
     # TODO: respect the special builtin order too
     arg0 = argv[0]
 
-    self._PushRedirects(redirects)
+    builtin_id = builtin.Resolve(arg0)
+    if builtin_id != EBuiltin.NONE:
+      status = self._RunBuiltin(builtin_id, argv)
+      return status
 
-    try:
-      builtin_id = builtin.Resolve(arg0)
-      if builtin_id != EBuiltin.NONE:
-        status = self._RunBuiltin(builtin_id, argv)
-        return status
+    func_node = self.funcs.get(arg0)
+    if func_node is not None:
+      status = self.RunFunc(func_node, argv)
+      return status
 
-      func_node = self.funcs.get(arg0)
-      if func_node is not None:
-        status = self.RunFunc(func_node, argv)
-        return status
+    if fork_external:
+      thunk = process.ExternalThunk(argv, more_env)
+      p = process.Process(thunk)
+      status = p.Run(self.waiter)
+      return status
 
-      if fork_external:
-        thunk = process.ExternalThunk(argv, more_env)
-        p = process.Process(thunk)
-        status = p.Run(self.waiter)
-        return status
-
-      # NOTE: Never returns!
-      process.ExecExternalProgram(argv, more_env)
-    finally:
-      self.fd_state.PopAndRestore()
+    # NOTE: Never returns!
+    process.ExecExternalProgram(argv, more_env)
 
   def _MakePipeline(self, node, job_state=None):
     # NOTE: First or last one could use the "main" shell thread.  Doesn't have
@@ -557,29 +552,7 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
-  def _ExecuteList(self, children):
-    status = 0  # for empty list
-    for child in children:
-      status = self._Execute(child)  # last status wins
-    return status
-
-  def _Execute(self, node, fork_external=True):
-    """
-    Args:
-      node: of type AstNode
-      fork_external: if we get a SimpleCommand that is an external command,
-        should we fork first?  This is disabled in the context of a pipeline
-        process and a subshell.
-    """
-    redirects = self._EvalRedirects(node)
-    if redirects is None:
-      status = 1  # Redirect error causes bad status
-      self._CheckStatus(status, node)
-      self.mem.last_status = status  # TODO: This is somewhat duplicated
-      return status
-
-    assert isinstance(redirects, list), redirects
-
+  def _Dispatch(self, node, redirects, fork_external):
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
@@ -587,7 +560,11 @@ class Executor(object):
       more_env = self.mem.GetExported()
       self._EvalEnv(node.more_env, more_env)
 
-      status = self._RunSimpleCommand(argv, more_env, redirects, fork_external)
+      self._PushRedirects(redirects)
+      try:
+        status = self._RunSimpleCommand(argv, more_env, fork_external)
+      finally:
+        self.fd_state.Pop()
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
@@ -669,7 +646,7 @@ class Executor(object):
       try:
         status = self._ExecuteList(node.children)
       finally:
-        self.fd_state.PopAndRestore()
+        self.fd_state.Pop()
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
@@ -823,6 +800,26 @@ class Executor(object):
     else:
       raise AssertionError(node.tag)
 
+    return status
+
+  def _Execute(self, node, fork_external=True):
+    """
+    Args:
+      node: of type AstNode
+      fork_external: if we get a SimpleCommand that is an external command,
+        should we fork first?  This is disabled in the context of a pipeline
+        process and a subshell.
+    """
+    redirects = self._EvalRedirects(node)
+    if redirects is None:
+      status = 1  # Redirect error causes bad status
+      self._CheckStatus(status, node)
+      self.mem.last_status = status  # TODO: This is somewhat duplicated
+      return status
+    assert isinstance(redirects, list), redirects
+
+    status = self._Dispatch(node, redirects, fork_external)
+
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier
     # just to put it at the end, instead of execute.
@@ -840,6 +837,12 @@ class Executor(object):
     # TODO: Is this the right place to put it?  Does it need a stack for
     # function calls?
     self.mem.last_status = status
+    return status
+
+  def _ExecuteList(self, children):
+    status = 0  # for empty list
+    for child in children:
+      status = self._Execute(child)  # last status wins
     return status
 
   def Execute(self, node, fork_external=True):
@@ -914,6 +917,6 @@ class Executor(object):
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
     finally:
       self.mem.Pop()
-      self.fd_state.PopAndRestore()
+      self.fd_state.Pop()
 
     return status
