@@ -14,7 +14,6 @@ shadock=(ga bu zo meu)
 show_value shadock 2
 # stdout: zo
 
-
 ### pass assoc array by reference
 show_value() {
   local -n array=$1
@@ -24,6 +23,8 @@ show_value() {
 days=([monday]=eggs [tuesday]=bread [sunday]=jam)
 show_value days sunday
 # stdout: jam
+# BUG mksh stdout: [monday]=eggs
+#  mksh note: it coerces "days" to 0?  Horrible.
 
 ### pass local array by reference, relying on DYNAMIC SCOPING
 show_value() {
