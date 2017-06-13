@@ -300,7 +300,7 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _MakeProcess(self, node):
+  def _MakeProcess(self, node, job_state=None):
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -314,7 +314,7 @@ class Executor(object):
             token=node.token)
 
     thunk = process.SubProgramThunk(self, node)
-    p = process.Process(thunk)
+    p = process.Process(thunk, job_state=job_state)
     return p
 
   def _EvalRedirect(self, n):
@@ -537,22 +537,22 @@ class Executor(object):
         self.fd_state.PopAndForget()
 
   def _RunJobInBackground(self, node):
+    """
+    """
     # Special case for pipeline?
     if node.tag == command_e.Pipeline:
       raise NotImplementedError
     else:
+      # Problem: to get the 'set -b' behavior of immediate notifications, we
+      # have to register SIGCHLD.  But then that introduces race conditions.
+      # If we haven't called Register yet, then we won't know who to notify.
+
       #log('job state %s', self.job_state)
-      p = self._MakeProcess(node.child)
+      p = self._MakeProcess(node, job_state=self.job_state)
       pid = p.Start()
+      self.waiter.Register(pid, p.WhenDone)
       log('Started background job with pid %d', pid)
       return 0
-        #self.waiter.Register(pid, p.WhenDone)
-        #p.WaitUntilDone(self.waiter)
-
-        #log('started %d', pid)
-
-        # TODO: Async processes.
-        #raise NotImplementedError(node.terminator.id)
 
   def _Execute(self, node, fork_external=True):
     """

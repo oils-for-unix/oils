@@ -306,13 +306,15 @@ class Process(object):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk):
+  def __init__(self, thunk, job_state=None):
     """
     Args:
       thunk: Thunk instance
+      job_state: notify upon completion
     """
     assert not isinstance(thunk, list), thunk
     self.thunk = thunk
+    self.job_state = job_state
 
     # For pipelines
     self.state_changes = []
@@ -368,10 +370,12 @@ class Process(object):
     return self.status
 
   def WhenDone(self, pid, status):
-    #log('WhenDone %d %d', pid, status)
+    log('WhenDone %d %d', pid, status)
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
     self.state = ProcessState.Done
+    if self.job_state:
+      self.job_state.WhenDone(pid)
 
   def Run(self, waiter):
     """Run this process synchronously."""
@@ -399,12 +403,12 @@ class Pipeline(object):
   $(foo | bar)
   foo | bar | read v
   """
-  def __init__(self):
+  def __init__(self, job_state=None):
+    self.job_state = job_state
     self.procs = []
-    self.pipes = []  # there is a pipe for every pair of procs.
+    self.pids = []  # pids in order
+    self.pipe_status = []  # status in order
     self.state = ProcessState.Init
-    self.pid_status = {}  # pid -> None or integer status
-    self.to_close = []
 
   def __repr__(self):
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
@@ -432,11 +436,10 @@ class Pipeline(object):
 
   def Run(self, waiter):
     """Run this pipeline synchronously."""
-    pid_order = []
     for i, proc in enumerate(self.procs):
       pid = proc.Start()
-      pid_order.append(pid)
-      self.pid_status[pid] = None
+      self.pids.append(pid)
+      self.pipe_status.append(-1)  # uninitialized
       waiter.Register(pid, self.WhenDone)
 
       # NOTE: This has to be done after every fork() call.  Otherwise processes
@@ -451,18 +454,17 @@ class Pipeline(object):
         #log('Pipeline DONE')
         break
 
-    pipe_status = []
-    for pid in pid_order: 
-      pipe_status.append(self.pid_status[pid])
-    return pipe_status
+    return self.pipe_status
 
   def WhenDone(self, pid, status):
     #log('Pipeline WhenDone %d %d', pid, status)
-    assert pid in self.pid_status, 'Unexpected PID %d' % pid
-    assert self.pid_status[pid] is None  # we should get exactly 1 notification
-    self.pid_status[pid] = status
-    if all((status is not None) for status in self.pid_status.values()):
+    i = self.pids.index(pid)
+    assert i != -1, 'Unexpected PID %d' % pid
+    self.pipe_status[i] = status
+    if all(status != -1 for status in self.pipe_status):
       self.state = ProcessState.Done
+      if self.job_state:
+        self.job_state.WhenDone(self.pipe_status[-1])
 
 
 # Waitable interface?  User can wait on Job.  But shell always waits on Process
@@ -514,6 +516,10 @@ class JobState:
 
     #self.callbacks[pid]
     pass
+
+  def WhenDone(self, pid):
+    """Process and Pipeline can call this."""
+    log('JobState WhenDone %d', pid)
 
 
 class Waiter:
