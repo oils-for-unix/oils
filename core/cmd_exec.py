@@ -167,8 +167,12 @@ class Executor(object):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = process.JobState()
 
-
   def _Complete(self, argv):
+    """complete builtin - register a completion function.
+
+    NOTE: It's a member of Executor because it creates a ShellFuncAction, which
+    needs an Executor.
+    """
     command = argv[0]  # e.g. 'grep'
     func_name = argv[1]
 
@@ -186,6 +190,9 @@ class Executor(object):
     else:
       util.error('Oil was not built with readline/completion.')
     return 0
+
+  def _CompGen(self, argv):
+    raise NotImplementedError
 
   def _EvalHelper(self, code_str):
     c_parser = self.make_parser(code_str)
