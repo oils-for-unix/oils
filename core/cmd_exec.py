@@ -300,22 +300,40 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _MakeProcess(self, node, job_state=None):
-    """
-    Assume we will run the node in another process.  Return a process.
-    """
-    if node.tag == command_e.ControlFlow:
-      # Pipeline or subshells with control flow are invalid, e.g.:
-      # - break | less
-      # - continue | less
-      # - ( return )
-      # NOTE: This could be done at parse time too.
-      e_die('Invalid control flow %r in pipeline / subshell / background', node.token.val,
-            token=node.token)
+  def _PushErrExit(self):
+    self.exec_opts.errexit.Push()
 
-    thunk = process.SubProgramThunk(self, node)
-    p = process.Process(thunk, job_state=job_state)
-    return p
+  def _PopErrExit(self):
+    self.exec_opts.errexit.Pop()
+
+  def _CheckStatus(self, status, node, argv=None):
+    if self.exec_opts.ErrExit() and status != 0:
+      #if node.tag == command_e.SimpleCommand:
+      #  # TODO: Add context
+      #  e_die('%r command exited with status %d (%s)', argv[0], status,
+      #        node.words[0])
+
+      e_die('%r command exited with status %d', node.__class__.__name__,
+            status)
+
+  def _PushRedirects(self, redirects):
+    self.fd_state.Push(redirects, self.waiter)
+
+  def _EvalLhs(self, node):
+    assert isinstance(node, ast.lhs_expr), node
+
+    # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
+    # TODO: Need to get the old value like _EvalLhs, for +=.  Maybe have a
+    # flag that says whether you need it?
+
+    if node.tag == lhs_expr_e.LhsName:  # a=x
+      return runtime.LhsName(node.name)
+
+    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
+      i = self.arith_ev.Eval(node.index)
+      return runtime.LhsIndexedName(node.name, i)
+
+    raise AssertionError(node.tag)
 
   def _EvalRedirect(self, n):
     fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == -1 else n.fd
@@ -429,77 +447,22 @@ class Executor(object):
       out_env[name] = val.s
     self.mem.PopTemp()
 
-  def _MakePipeline(self, node, job_state=None):
-    # NOTE: First or last one could use the "main" shell thread.  Doesn't have
-    # to run in subshell.  Although I guess it's simpler if it always does.
-    # I think bash has an option to control this?  echo hi | read x; should
-    # test it.
-    pi = process.Pipeline(job_state=job_state)
+  def _MakeProcess(self, node, job_state=None):
+    """
+    Assume we will run the node in another process.  Return a process.
+    """
+    if node.tag == command_e.ControlFlow:
+      # Pipeline or subshells with control flow are invalid, e.g.:
+      # - break | less
+      # - continue | less
+      # - ( return )
+      # NOTE: This could be done at parse time too.
+      e_die('Invalid control flow %r in pipeline / subshell / background', node.token.val,
+            token=node.token)
 
-    for child in node.children:
-      p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
-      pi.Add(p)
-    return pi
-
-  def _RunPipeline(self, node):
-    pi = self._MakePipeline(node)
-
-    #print(pi)
-
-    pipe_status = pi.Run(self.waiter)
-    self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])
-
-    if self.exec_opts.pipefail:
-      # The status is that of the last command that is non-zero.
-      status = 0
-      for st in pipe_status:
-        if st != 0:
-          status = st
-    else:
-      status = pipe_status[-1]  # status of last one is pipeline status
-
-    return status
-
-  def _PushErrExit(self):
-    self.exec_opts.errexit.Push()
-
-  def _PopErrExit(self):
-    self.exec_opts.errexit.Pop()
-
-  def _CheckStatus(self, status, node, argv=None):
-    if self.exec_opts.ErrExit() and status != 0:
-      #if node.tag == command_e.SimpleCommand:
-      #  # TODO: Add context
-      #  e_die('%r command exited with status %d (%s)', argv[0], status,
-      #        node.words[0])
-
-      e_die('%r command exited with status %d', node.__class__.__name__,
-            status)
-
-  def _EvalLhs(self, node):
-    assert isinstance(node, ast.lhs_expr), node
-
-    # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
-    # TODO: Need to get the old value like _EvalLhs, for +=.  Maybe have a
-    # flag that says whether you need it?
-
-    if node.tag == lhs_expr_e.LhsName:  # a=x
-      return runtime.LhsName(node.name)
-
-    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
-      i = self.arith_ev.Eval(node.index)
-      return runtime.LhsIndexedName(node.name, i)
-
-    raise AssertionError(node.tag)
-
-  def _ExecuteList(self, children):
-    status = 0  # for empty list
-    for child in children:
-      status = self._Execute(child)  # last status wins
-    return status
-
-  def _PushRedirects(self, redirects):
-    self.fd_state.Push(redirects, self.waiter)
+    thunk = process.SubProgramThunk(self, node)
+    p = process.Process(thunk, job_state=job_state)
+    return p
 
   def _RunSimpleCommand(self, argv, more_env, redirects, fork_external):
     # This happens when you write "$@" but have no arguments.
@@ -542,6 +505,37 @@ class Executor(object):
         # Does this work with here docs?
         self.fd_state.PopAndForget()
 
+  def _MakePipeline(self, node, job_state=None):
+    # NOTE: First or last one could use the "main" shell thread.  Doesn't have
+    # to run in subshell.  Although I guess it's simpler if it always does.
+    # I think bash has an option to control this?  echo hi | read x; should
+    # test it.
+    pi = process.Pipeline(job_state=job_state)
+
+    for child in node.children:
+      p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
+      pi.Add(p)
+    return pi
+
+  def _RunPipeline(self, node):
+    pi = self._MakePipeline(node)
+
+    #print(pi)
+
+    pipe_status = pi.Run(self.waiter)
+    self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])
+
+    if self.exec_opts.pipefail:
+      # The status is that of the last command that is non-zero.
+      status = 0
+      for st in pipe_status:
+        if st != 0:
+          status = st
+    else:
+      status = pipe_status[-1]  # status of last one is pipeline status
+
+    return status
+
   def _RunJobInBackground(self, node):
     # Special case for pipeline.  There is some evidence here:
     # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html#Launching-Jobs
@@ -571,6 +565,12 @@ class Executor(object):
       self.waiter.Register(pid, p.WhenDone)
       log('Started background job with pid %d', pid)
     return 0
+
+  def _ExecuteList(self, children):
+    status = 0  # for empty list
+    for child in children:
+      status = self._Execute(child)  # last status wins
+    return status
 
   def _Execute(self, node, fork_external=True):
     """
