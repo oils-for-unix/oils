@@ -524,7 +524,7 @@ def _Wait(argv, waiter, job_state, mem):
 
 def _Jobs(argv, job_state):
   """List jobs."""
-  raise NotImplementedError
+  job_state.List()
   return 0
 
 

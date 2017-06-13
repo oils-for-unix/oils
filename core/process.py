@@ -514,7 +514,7 @@ class JobState:
 
     #self.callbacks[pid]
     for pid, job in self.jobs.iteritems():
-      print(pid, job)
+      print(pid, job.State(), job)
 
   def IsDone(self, jid):
     """Test if a specific job is done."""
