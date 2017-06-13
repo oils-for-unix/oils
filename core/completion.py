@@ -382,7 +382,7 @@ def _FindLastSimpleCommand(node):
   if node.tag == command_e.SimpleCommand:
     return node
   if node.tag == command_e.Sentence:
-    return node.command
+    return node.child
   if node.tag == command_e.TimeBlock:
     child = node.pipeline
     if child.tag == command_e.SimpleCommand:

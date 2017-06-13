@@ -308,8 +308,8 @@ class Executor(object):
 
   def _CheckStatus(self, status, node, argv=None):
     if self.exec_opts.ErrExit() and status != 0:
+      # TODO: Add context based on node type
       #if node.tag == command_e.SimpleCommand:
-      #  # TODO: Add context
       #  e_die('%r command exited with status %d (%s)', argv[0], status,
       #        node.words[0])
 
@@ -323,8 +323,8 @@ class Executor(object):
     assert isinstance(node, ast.lhs_expr), node
 
     # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
-    # TODO: Need to get the old value like _EvalLhs, for +=.  Maybe have a
-    # flag that says whether you need it?
+    # TODO: Need to get the old value like _EvalLhs, for +=.  Maybe have a flag
+    # that says whether you need it?
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
       return runtime.LhsName(node.name)
@@ -442,7 +442,6 @@ class Executor(object):
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
       self.mem.SetLocal(name, val)
-      # TODO: Need to pop bindings for simple commands.  Need a stack.
 
       out_env[name] = val.s
     self.mem.PopTemp()
@@ -519,8 +518,6 @@ class Executor(object):
 
   def _RunPipeline(self, node):
     pi = self._MakePipeline(node)
-
-    #print(pi)
 
     pipe_status = pi.Run(self.waiter)
     self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])

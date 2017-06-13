@@ -354,7 +354,7 @@ echo hi
 """)
     self.assertEqual(node.tag, command_e.CommandList)
     self.assertEqual(2, len(node.children), repr(node))
-    assertHereDocToken(self, 'PIPE 1\n', node.children[0].command)
+    assertHereDocToken(self, 'PIPE 1\n', node.children[0].child)
 
   def testHereDocInSequence2(self):
     # ; and command on SAME LINE
@@ -366,7 +366,7 @@ EOF
 """)
     self.assertEqual(node.tag, command_e.CommandList)
     self.assertEqual(2, len(node.children))
-    assertHereDocToken(self, 'PIPE 1\n', node.children[0].command)
+    assertHereDocToken(self, 'PIPE 1\n', node.children[0].child)
 
   def testCommandSubInHereDoc(self):
     node = assertParseCommandLine(self, """\
@@ -1034,7 +1034,7 @@ esac
 . "$TEST_DIRECTORY"/diff-lib.sh ;# test-lib chdir's into trash
 """)
     self.assertEqual(command_e.Sentence, node.tag)
-    self.assertEqual(2, len(node.command.words))
+    self.assertEqual(2, len(node.child.words))
 
     # This is NOT a comment
     node = assertParseCommandList(self, """\
