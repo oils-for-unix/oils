@@ -569,6 +569,7 @@ class Executor(object):
         finally:
           self._PopErrExit()
 
+        # EARLY EXIT: skip _CheckStatus so we don't fail in either case.
         if status == 0:
           return 1
         else:
@@ -781,6 +782,22 @@ class Executor(object):
     else:
       raise AssertionError(node.tag)
 
+    # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
+    # However, any bash construct can appear in a pipeline.  So it's easier
+    # just to put it at the end, instead of execute.
+    #
+    # Possible exceptions:
+    # - function def (however this always exits 0 anyway)
+    # - assignment - its result should be the result of the RHS?
+    #   - e.g. arith sub, command sub?  I don't want arith sub.
+    # - ControlFlow: always raises, it has no status.
+
+    self._CheckStatus(status, node)
+
+    # TODO: Is this the right place to put it?  Does it need a stack for
+    # function calls?
+    self.mem.last_status = status
+
     return status
 
   def _Execute(self, node, fork_external=True):
@@ -817,23 +834,6 @@ class Executor(object):
     finally:
       self.fd_state.Pop()
 
-    # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
-    # However, any bash construct can appear in a pipeline.  So it's easier
-    # just to put it at the end, instead of execute.
-    # Possible exceptions:
-    # - function def (however this always exits 0 anyway)
-    # - assignment - its result should be the result of the RHS?
-    #   - e.g. arith sub, command sub?  I don't want arith sub.
-    # - ControlFlow: always raises, it has no status.
-
-    # TODO:
-    # - Check errexit on fake 'pipeline' node.
-    # - Also should be useful for TimeBlock?
-    self._CheckStatus(status, node)
-
-    # TODO: Is this the right place to put it?  Does it need a stack for
-    # function calls?
-    self.mem.last_status = status
     return status
 
   def _ExecuteList(self, children):
