@@ -300,7 +300,7 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _GetProcessForNode(self, node):
+  def _MakeProcess(self, node):
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -310,13 +310,10 @@ class Executor(object):
       # - continue | less
       # - ( return )
       # NOTE: This could be done at parse time too.
-      e_die('Invalid control flow %r in pipeline or subshell', node.token.val,
+      e_die('Invalid control flow %r in pipeline / subshell / background', node.token.val,
             token=node.token)
 
     thunk = process.SubProgramThunk(self, node)
-    redirects = self._EvalRedirects(node)
-    if redirects is None:
-      raise RuntimeError('TODO: handle redirect errors in pipeline')
     p = process.Process(thunk)
     return p
 
@@ -438,7 +435,7 @@ class Executor(object):
     pi = process.Pipeline()
 
     for child in node.children:
-      p = self._GetProcessForNode(child)  # NOTE: evaluates, does errexit guard
+      p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
       pi.Add(p)
 
     #print(pi)
@@ -539,6 +536,24 @@ class Executor(object):
         # Does this work with here docs?
         self.fd_state.PopAndForget()
 
+  def _RunJobInBackground(self, node):
+    # Special case for pipeline?
+    if node.tag == command_e.Pipeline:
+      raise NotImplementedError
+    else:
+      #log('job state %s', self.job_state)
+      p = self._MakeProcess(node.child)
+      pid = p.Start()
+      log('Started background job with pid %d', pid)
+      return 0
+        #self.waiter.Register(pid, p.WhenDone)
+        #p.WaitUntilDone(self.waiter)
+
+        #log('started %d', pid)
+
+        # TODO: Async processes.
+        #raise NotImplementedError(node.terminator.id)
+
   def _Execute(self, node, fork_external=True):
     """
     Args:
@@ -569,18 +584,7 @@ class Executor(object):
       if node.terminator.id == Id.Op_Semi:
         status = self._Execute(node.child)
       else:
-        p = self._GetProcessForNode(node.child)
-        pid = p.Start()
-        log('Started background job with pid %d', pid)
-        status = 0
-        #self.waiter.Register(pid, p.WhenDone)
-        #p.WaitUntilDone(self.waiter)
-
-        #log('started %d', pid)
-        log('job state %s', self.job_state)
-
-        # TODO: Async processes.
-        #raise NotImplementedError(node.terminator.id)
+        status = self._RunJobInBackground(node.child)
 
     elif node.tag == command_e.Pipeline:
       # TODO: add redirects to simulate?
@@ -604,7 +608,7 @@ class Executor(object):
 
     elif node.tag == command_e.Subshell:
       # This makes sure we don't waste a process if we'd launch one anyway.
-      p = self._GetProcessForNode(node.child)
+      p = self._MakeProcess(node.child)
       status = p.Run(self.waiter)
 
     elif node.tag == command_e.DBracket:
@@ -848,7 +852,7 @@ class Executor(object):
     return status
 
   def RunCommandSub(self, node):
-    p = self._GetProcessForNode(node)
+    p = self._MakeProcess(node)
 
     r, w = os.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
