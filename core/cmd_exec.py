@@ -408,13 +408,6 @@ class Executor(object):
     Does it makes sense to just have RedirectNode.Eval?  Nah I think the
     Redirect() abstraction in process.py is useful.  It has a lot of methods.
     """
-    # No redirects
-    if node.tag in (
-        command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
-        command_e.Pipeline, command_e.AndOr, command_e.CommandList,
-        command_e.Sentence, command_e.TimeBlock):
-      return []
-
     redirects = []
     for redir in node.redirects:
       r = self._EvalRedirect(redir)
@@ -810,7 +803,19 @@ class Executor(object):
         should we fork first?  This is disabled in the context of a pipeline
         process and a subshell.
     """
-    redirects = self._EvalRedirects(node)
+    # No redirects to evaluate.
+    # NOTE: Function definitions have redirects, but we do NOT want to evaluate
+    # redirects them yet!  They are evaluated on every invocation instead!
+    if node.tag in (
+        command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
+        command_e.Pipeline, command_e.AndOr, command_e.CommandList,
+        command_e.Sentence, command_e.TimeBlock,
+        command_e.FuncDef
+        ):
+      redirects = []
+    else:
+      redirects = self._EvalRedirects(node)
+
     if redirects is None:
       status = 1  # Redirect error causes bad status
       self._CheckStatus(status, node)

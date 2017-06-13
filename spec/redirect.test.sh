@@ -35,6 +35,20 @@ func
 # stdout-json: ""
 # stderr-json: "hi\n"
 
+### Redirect in function body is evaluated multiple times
+i=0
+func() { echo "file $i"; } 1> "$TMP/file$((i++))"
+func
+func
+echo i=$i
+echo __
+cat $TMP/file0
+echo __
+cat $TMP/file1
+# stdout-json: "i=2\n__\nfile 1\n__\nfile 2\n"
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### Redirect in function body AND function call
 func() { echo hi; } 1>&2
 func 2>&1
