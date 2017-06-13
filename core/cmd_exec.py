@@ -545,7 +545,7 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
-  def _Dispatch(self, node, redirects, fork_external):
+  def _Dispatch(self, node, fork_external):
     if node.tag == command_e.SimpleCommand:
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
@@ -553,11 +553,7 @@ class Executor(object):
       more_env = self.mem.GetExported()
       self._EvalEnv(node.more_env, more_env)
 
-      self._PushRedirects(redirects)
-      try:
-        status = self._RunSimpleCommand(argv, more_env, fork_external)
-      finally:
-        self.fd_state.Pop()
+      status = self._RunSimpleCommand(argv, more_env, fork_external)
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
@@ -566,7 +562,6 @@ class Executor(object):
         status = self._RunJobInBackground(node.child)
 
     elif node.tag == command_e.Pipeline:
-      # TODO: add redirects to simulate?
       if node.stderr_indices:
         raise NotImplementedError('|&')
 
@@ -635,11 +630,7 @@ class Executor(object):
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
-      self._PushRedirects(redirects)
-      try:
-        status = self._ExecuteList(node.children)
-      finally:
-        self.fd_state.Pop()
+      status = self._ExecuteList(node.children)
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
@@ -823,7 +814,11 @@ class Executor(object):
       return status
     assert isinstance(redirects, list), redirects
 
-    status = self._Dispatch(node, redirects, fork_external)
+    self._PushRedirects(redirects)
+    try:
+      status = self._Dispatch(node, fork_external)
+    finally:
+      self.fd_state.Pop()
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier
