@@ -224,8 +224,15 @@ class ArithEvaluator(_ExprEvaluator):
       if val.tag == value_e.StrArray:
         #log('ARRAY %s -> %s, index %d', node.name, array, index)
         array = val.strs
-        # TODO: Handle out of bounds error with strict_arith
-        return array[index], lval
+        # NOTE: Similar logic in RHS Arith_LBracket
+        try:
+          v = array[index]
+        except IndexError:
+          # TODO: Handle out of bounds error with strict_arith
+          raise
+        if isinstance(v, str):
+          v = self._StringToIntegerOrError(v)
+        return v, lval
 
     raise AssertionError(node.tag)
 
