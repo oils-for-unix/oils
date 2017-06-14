@@ -1340,8 +1340,9 @@ class CommandParser(object):
     and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline
                      | pipeline
 
-    TODO: Make it left recursive -- results are wrong otherwise.  I guses you
-    have to do it iteratively, and add operators?
+    TODO: Make it left recursive -- results are wrong otherwise.  I guess you
+    have to do it iteratively, and add operators?  It's similar to the  | and
+    |& issue.
     """
     left = self.ParsePipeline()
     if not left: return None

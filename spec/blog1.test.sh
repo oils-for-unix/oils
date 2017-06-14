@@ -14,22 +14,30 @@ echo ${##}
 set -- $(seq 25)
 echo ${###}
 # stdout: 25
+# N-I osh stdout-json: ""
+# N-I osh status: 2
 
 ### ${####}
 set -- $(seq 25)
 echo ${####}
 # stdout: 25
+# N-I osh stdout-json: ""
+# N-I osh status: 2
 
 ### ${##2}
 set -- $(seq 25)
 echo ${##2}
 # stdout: 5
+# N-I osh stdout-json: ""
+# N-I osh status: 2
 
 ### ${###2}
 set -- $(seq 25)
 echo ${###2}
 # stdout: 5
 # BUG mksh stdout: 25
+# N-I osh stdout-json: ""
+# N-I osh status: 2
 
 ### ${1####}
 set -- '####'
