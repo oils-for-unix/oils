@@ -32,6 +32,28 @@ echo ${v/c*/XX}
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
+### Pattern replacement ${v/} is not valid
+v=abcde
+echo -${v/}-
+echo status=$?
+# status: 2
+# stdout-json: ""
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+# BUG bash/mksh status: 0
+# BUG bash/mksh stdout-json: "-abcde-\nstatus=0\n"
+
+### Pattern replacement ${v//} is not valid
+v='a/b/c'
+echo -${v//}-
+echo status=$?
+# status: 2
+# stdout-json: ""
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+# BUG bash/mksh status: 0
+# BUG bash/mksh stdout-json: "-a/b/c-\nstatus=0\n"
+
 ### String slice
 foo=abcdefg
 echo ${foo:1:3}
