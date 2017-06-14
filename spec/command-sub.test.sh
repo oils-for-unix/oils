@@ -42,7 +42,10 @@ $(echo ec)$(echo ho) split builtin
 # reserved words I guess.
 # dash fails, but gives code 0
 $(echo f)$(echo or) i in a b c; do echo $i; done
+echo status=$?
+# stdout-json: ""
 # status: 2
+# BUG dash stdout-json: "\nstatus=0\n"
 # BUG dash status: 0
 # OK mksh status: 1
 
