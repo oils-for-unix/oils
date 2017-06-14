@@ -18,6 +18,33 @@ fi
 # status: 2
 # BUG dash/bash/mksh status: 0
 
+### Incomplete while
+echo hi; while
+echo status=$?
+# status: 2
+# stdout-json: ""
+# OK mksh status: 1
+
+### Incomplete for
+echo hi; for
+echo status=$?
+# status: 2
+# stdout-json: ""
+# OK mksh status: 1
+
+### Incomplete if
+echo hi; if
+echo status=$?
+# status: 2
+# stdout-json: ""
+# OK mksh status: 1
+
+### do unexpected
+do echo hi
+# status: 2
+# stdout-json: ""
+# OK mksh status: 1
+
 ### } is a parse error
 }
 echo should not get here
