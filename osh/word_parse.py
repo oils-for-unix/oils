@@ -336,6 +336,12 @@ class WordParser(object):
 
       part.suffix_op = op
 
+    # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
+    # mode.  It's redundantly checked above.
+    if self.token_type not in (Id.Right_VarSub, Id.Arith_RBrace):
+      self._BadToken('Unexpected token after var sub: %s', self.cur_token)
+      return None
+
     # Now look for ops
     return part
 

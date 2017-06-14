@@ -338,7 +338,7 @@ var-op-strip() {
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec spec/var-sub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-sub.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
