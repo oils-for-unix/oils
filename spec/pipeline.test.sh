@@ -10,16 +10,29 @@
 { echo one; echo two; } | tac
 # stdout-json: "two\none\n"
 
-### For loop in pipeline
+### For loop starts pipeline
 for w in one two; do
   echo $w
 done | tac
 # stdout-json: "two\none\n"
 
+### While Loop ends pipeline
+seq 3 | while read i
+do
+  echo ".$i"
+done
+# stdout-json: ".1\n.2\n.3\n"
+
 ### Redirect in Pipeline
 echo hi 1>&2 | wc -l
 # stdout: 0
 # BUG zsh stdout: 1
+
+### Pipeline comments
+echo abcd |    # input
+               # blank line
+tr a-z A-Z     # transform
+# stdout: ABCD
 
 ### Exit code is last status
 echo a | egrep '[0-9]+'
