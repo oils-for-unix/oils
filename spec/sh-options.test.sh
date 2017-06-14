@@ -82,6 +82,13 @@ echo done
 # stdout-json: ""
 # status: 1
 
+### errexit for nonexistent command
+set -o errexit
+nonexistent__ZZ
+echo done
+# stdout-json: ""
+# status: 127
+
 ### errexit aborts early on pipeline
 set -o errexit
 echo hi | grep nonexistent
