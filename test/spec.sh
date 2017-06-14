@@ -264,9 +264,13 @@ arith() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
-# pysh failures: case not implemented
 command-sub() {
   sh-spec spec/command-sub.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+command_() {
+  sh-spec spec/command_.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -276,12 +280,12 @@ pipeline() {
 }
 
 explore-parsing() {
-  sh-spec spec/explore-parsing.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/explore-parsing.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -349,10 +353,9 @@ var-sub-quote() {
 }
 
 sh-options() {
-  sh-spec spec/sh-options.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/sh-options.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
-
 
 # 
 # Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.

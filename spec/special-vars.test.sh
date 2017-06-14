@@ -5,6 +5,11 @@
 echo $PWD | grep -o /
 # status: 0
 
+### $1 .. $9 are scoped, while $0 is not
+func() { echo $0 $1 $2 | sed -e 's/.*sh/sh/'; }
+func a b
+# stdout: sh a b
+
 ### $?
 echo $?  # starts out as 0
 sh -c 'exit 33'
