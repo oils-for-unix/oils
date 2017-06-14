@@ -517,11 +517,22 @@ parse-perf-tools() {
 parse-bats() {
   local src=~/git/other/bats
   local files=$(find $src \
-                \( -wholename '*/libexec/*' -a -type f -a -executable -a -printf '%P\n' \) )
+                \( -wholename '*/libexec/*' -a -type f -a
+                   -executable -a -printf '%P\n' \) )
+
   time _parse-many \
     $src \
     $RESULT_DIR/bats \
     $files
+}
+
+parse-bashdb() {
+  local src=~/src/bashdb-4.4-0.92
+
+  time _parse-many \
+    $src \
+    $RESULT_DIR/bashdb \
+    $(find $src -name '*.sh' -a -printf '%P\n')
 }
 
 #
