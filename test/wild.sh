@@ -517,7 +517,7 @@ parse-perf-tools() {
 parse-bats() {
   local src=~/git/other/bats
   local files=$(find $src \
-                \( -wholename '*/libexec/*' -a -type f -a
+                \( -wholename '*/libexec/*' -a -type f -a \
                    -executable -a -printf '%P\n' \) )
 
   time _parse-many \

@@ -1246,6 +1246,8 @@ class CommandParser(object):
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.
+
+    # TODO: KW_Do is also invalid here.
     if self.c_id == Id.Lit_RBrace:
       self.AddErrorContext('Unexpected }', word=self.cur_word)
       return None
