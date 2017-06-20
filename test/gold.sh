@@ -2,6 +2,9 @@
 #
 # Run real shell code with osh and bash, and compare the results.
 #
+# Limitation: If a script shells out to another bash script, osh won't be run.
+# TODO: --hijack-shebang or just 'sed' all the scripts in a repo?
+#
 # Usage:
 #   ./gold-test.sh <function name>
 
