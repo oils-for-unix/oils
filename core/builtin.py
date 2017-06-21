@@ -104,6 +104,7 @@ the path search in step 1d.
 import os
 import sys
 
+from core import args
 from core import runtime
 from core import util
 
@@ -639,40 +640,111 @@ def _Export(argv, mem):
 
 def _Set(argv, exec_opts, mem):
   # TODO:
-  # - mutate settings in self.exec_opts
-  #   - parse -o and +o, -e and +e, etc.
-  # - argv can be COMBINED with options.
-  # - share with bin/osh command line parsing.  How?
+  # - How to share with bin/osh command line parsing.
+  # - How to integrate this with auto-completion?  Have to handle '+'.
+  # - Maybe use setattr on exec_opts?
 
-  # Replace the top of the stack
-  if len(argv) >= 1 and argv[0] == '--':
-    mem.SetArgv(argv[1:])
+  n = len(argv)
+
+  if n == 0:
+    # TODO: If no arguments are given, it shows functions/vars?  Why not show
+    # other state?
+    print('TODO')
     return 0
 
-  # TODO: Loop through -o, +o, etc.
-  for a in argv:
-    pass
+  i = 0
+  while i != n:
+    arg = argv[i]
 
-  try:
-    flag = argv[0]
-    name = argv[1]
-  except IndexError:
-    raise NotImplementedError(argv)
+    if arg == '--':
+      i += 1
+      break
 
-  if flag != '-o':
-    raise NotImplementedError()
+    elif arg == '-o' or arg == '+o':
+      b = (arg[0] == '-')
+      i += 1
+      if i == n:
+        raise args.UsageError('-o expected argument')
+      arg = argv[i]
 
-  if name == 'errexit':
-    exec_opts.errexit.Set(True)
-  elif name == 'nounset':
-    exec_opts.nounset = True
-  elif name == 'pipefail':
-    exec_opts.pipefail = True
-  elif name == 'xtrace':
-    exec_opts.xtrace = True
+      if arg == 'errexit':
+        exec_opts.errexit.Set(b)
+      elif arg == 'nounset':
+        exec_opts.nounset = b
+      elif arg == 'pipefail':
+        exec_opts.pipefail = b
+      elif arg == 'xtrace':
+        exec_opts.xtrace = b
+      else:
+        raise args.UsageError('set: invalid -o argument %r' % arg)
+
+    elif arg == '-e':
+      exec_opts.errexit.Set(True)
+    elif arg == '+e':
+      exec_opts.errexit.Set(False)
+
+    elif arg == '-u':
+      exec_opts.nounset = True
+    elif arg == '+u':
+      exec_opts.nounset = False
+
+    elif arg == '-x':
+      exec_opts.xtrace = True
+    elif arg == '+x':
+      exec_opts.xtrace = False
+
+    # NOTE: After -n, nothing can be executed, so no point in +n!!!
+    elif arg == '-n':
+      exec_opts.noexecute = True
+
+    elif arg.startswith('-'):
+      raise args.UsageError('set: invalid flag %r' % arg)
+
+    else:
+      # No more flags
+      break
+
+    i += 1
+
+  mem.SetArgv(argv[i:])
+  return 0
+
+  # TODO:
+  # - STRICT: should be a combination of errexit,nounset,pipefail, plus
+  #   strict-*, plus IFS?  Caps because it's a composite.
+  # - SANE: disallow constructs like $* ?  That can be done with an explicit
+  #   join, like s="$@" or something?
+  #   or s="$@"  # osh: join
+  #
+  # This should be done at the module level.
+  #
+  # Maybe:
+  # option -o foo
+  # option +o foo
+  # But it can only be in a module with all functions?  I don't want the state
+  # to persist.
+  # It's a flag on functions?  Were they defined in a FILE with -o?
+  #
+  # source
+  # This way they're not global variables.
+  # or what about shopt?
+  #
+  # Ways of setting options:
+  #   set -o +o
+  #   shopt -o +o
+  #   shopt -s / shopt -u
+  #
+  # shopt is also a runtime thing, not a delaration.
+  #
+  # PROBLEM:
+  # shopt -s noglob
+  # set -o pipefail
+  # source 'lib.sh'  # behavior is changed.  Although not if you put everything
+  # in functions!  In that case, it's really the settings in main() that matter
+  # (as long as nobody later turns things off.)
 
   # Oil-specific
-  elif name == 'strict-arith':
+  if name == 'strict-arith':
     exec_opts.strict_arith = True
   elif name == 'strict-array':
     exec_opts.strict_array = True
@@ -683,24 +755,14 @@ def _Set(argv, exec_opts, mem):
   elif name == 'strict-scope':
     exec_opts.strict_scope = True
 
-  # TODO:
-  # - STRICT: should be a combination of errexit,nounset,pipefail, plus
-  #   strict-*, plus IFS?  Caps because it's a composite.
-  # - SANE: disallow constructs like $* ?  That can be done with an explicit
-  #   join, like s="$@" or something?
-  #   or s="$@"  # osh: join
-
-  else:
-    util.error('set: invalid option %r', name)
-    return 1
-
-  return 0
-
 
 def _Unset(argv, mem):
-  # mutate self.mem
-  # NOTE: sh has DYNAMIC SCOPE, so you need tests for that here.
-  raise NotImplementedError
+  # TODO: Parse flags -v and -f (variable and function)
+  for name in argv:
+    found = mem.Unset(name)
+    log('%s: %s', name, found)
+  return 0
+
 
 def _Trap(argv, traps):
   # TODO: register trap

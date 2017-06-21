@@ -138,6 +138,12 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
     c_parser.Reset()
 
 
+# TODO: -n
+# How to integrate with 'set' parsing
+# I want only -- options maybe?  Or maybe they go first like bash, and then
+# pass it off to set.
+# _ParseSet.
+
 def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser()

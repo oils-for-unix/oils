@@ -63,6 +63,7 @@ import stat
 import sys
 import time
 
+from core import args
 from core import braces
 from core import expr_eval
 from core import word_eval
@@ -466,7 +467,12 @@ class Executor(object):
 
     builtin_id = builtin.Resolve(arg0)
     if builtin_id != EBuiltin.NONE:
-      status = self._RunBuiltin(builtin_id, argv)
+      try:
+        status = self._RunBuiltin(builtin_id, argv)
+      except args.UsageError as e:
+        # TODO: Make this message more consistent?
+        util.usage(str(e))
+        status = 2  # consistent error code for usage error
       return status
 
     func_node = self.funcs.get(arg0)

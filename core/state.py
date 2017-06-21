@@ -70,6 +70,7 @@ class ExecOpts(object):
     self.pipefail = False
     self.xtrace = False  # NOTE: uses PS4
     self.noglob = False  # -f
+    self.noexecute = False  # -n
 
     # OSH-specific
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
@@ -352,9 +353,15 @@ class Mem(object):
         raise NotImplementedError('a[x]=')
 
   def Unset(self, name):
-    # For unset -v (variable)
-    # unset -f is different.
-    raise NotImplementedError
+    found = False
+    for i in range(len(self.var_stack) - 1, -1, -1):  # dynamic scope
+      scope = self.var_stack[i]
+      if name in scope:
+        found = True
+        del scope[name]
+        break
+
+    return found
 
   #
   # Export

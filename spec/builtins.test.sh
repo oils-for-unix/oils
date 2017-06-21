@@ -237,3 +237,73 @@ EOF
 echo /$x/$y/$z/
 # stdout: /A/B//
 # status: 0
+
+### Unset a variable
+foo=bar
+echo foo=$foo
+unset foo
+echo foo=$foo
+# stdout-json: "foo=bar\nfoo=\n"
+
+### Unset exit status
+V=123
+unset V
+echo status=$?
+# stdout: status=0
+
+### Unset nonexistent variable
+unset ZZZ
+echo status=$?
+# stdout: status=0
+
+### Unset readonly variable
+# dash aborts the whole program
+readonly R=foo
+unset R
+echo status=$?
+# stdout-json: "status=1\n"
+# OK dash status: 2
+# OK dash stdout-json: ""
+
+### Unset a function without -f
+f() {
+  echo foo
+}
+f
+unset f
+f
+# stdout: foo
+# status: 127
+# N-I dash/mksh status: 0
+# N-I dash/mksh stdout-json: "foo\nfoo\n"
+
+### Unset has dynamic scope
+f() {
+  unset foo
+}
+foo=bar
+echo foo=$foo
+f
+echo foo=$foo
+# stdout-json: "foo=bar\nfoo=\n"
+
+### Unset -v
+foo() {
+  echo "function foo"
+}
+foo=bar
+unset -v foo
+echo foo=$foo
+foo
+# stdout-json: "foo=\nfunction foo\n"
+
+### Unset -f
+foo() {
+  echo "function foo"
+}
+foo=bar
+unset -f foo
+echo foo=$foo
+foo
+echo status=$?
+# stdout-json: "foo=bar\nstatus=127\n"

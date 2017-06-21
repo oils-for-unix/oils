@@ -2,6 +2,31 @@
 #
 # Test set flags, sh flags.
 
+### sh -c
+$SH -c 'echo hi'
+# stdout: hi
+# status: 0
+
+### empty -c input
+# had a bug here
+$SH -c ''
+# stdout-json: ""
+# status: 0
+
+### empty stdin
+# had a bug here
+echo -n '' | $SH
+# stdout-json: ""
+# status: 0
+
+### args are passed
+$SH -c 'argv.py "$@"' dummy a b
+# stdout: ['a', 'b']
+
+### args that look like flags are passed
+$SH -c 'argv.py "$@"' --help --help -h
+# stdout: ['--help', '-h']
+
 ### can continue after unknown option
 # dash and mksh make this a fatal error no matter what.
 set -o errexit
@@ -51,11 +76,6 @@ set -u
 set +u
 echo "[$unset]"
 # stdout: []
-# status: 0
-
-### sh -c
-$SH -c 'echo hi'
-# stdout: hi
 # status: 0
 
 ### -n for no execution (useful with --ast-output)

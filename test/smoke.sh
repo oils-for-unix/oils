@@ -90,17 +90,6 @@ assert() {
   test "$@" || die "$@ failed"
 }
 
-# Had a bug with these two cases.
-empty() {
-  set +o errexit
-
-  bin/osh -c ''
-  assert $? -eq 0
-
-  echo -n '' | bin/osh
-  assert $? -eq 0
-}
-
 ast() {
   bin/osh --no-exec --ast-output - -c 'echo hi'
   bin/osh --no-exec --ast-output - --ast-format text -c 'echo hi'
