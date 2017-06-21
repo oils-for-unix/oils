@@ -6,6 +6,11 @@ echo --
 echo ---
 # stdout-json: "-\n--\n---\n"
 
+### echo -en
+echo -en "abc\ndef\n"
+# stdout-json: "abc\ndef\n"
+# N-I dash stdout-json: "-en abc\ndef\n\n"
+
 ### exec builtin 
 exec echo hi
 # stdout: hi

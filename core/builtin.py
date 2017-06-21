@@ -638,74 +638,40 @@ def _Export(argv, mem):
   return 0
 
 
+def AddOptionsToArgSpec(spec):
+  """Shared between 'set' builtin and the shell's own arg parser."""
+  spec.Option('e', 'errexit')
+  spec.Option('n', 'noexec')
+  spec.Option('u', 'nounset')
+  spec.Option('x', 'xtrace')
+  spec.Option(None, 'pipefail')
+
+
+set_spec = args.FlagsAndOptions()
+AddOptionsToArgSpec(set_spec)
+
+
+def SetExecOpts(exec_opts, opt_changes):
+  for name, val in opt_changes:
+    if name == 'errexit':
+      exec_opts.errexit.Set(val)
+    else:
+      setattr(exec_opts, name, val)
+
+
 def _Set(argv, exec_opts, mem):
   # TODO:
-  # - How to share with bin/osh command line parsing.
   # - How to integrate this with auto-completion?  Have to handle '+'.
-  # - Maybe use setattr on exec_opts?
 
-  n = len(argv)
-
-  if n == 0:
+  if not argv:  # empty
     # TODO: If no arguments are given, it shows functions/vars?  Why not show
     # other state?
     print('TODO')
     return 0
 
-  i = 0
-  while i != n:
-    arg = argv[i]
+  arg, i = set_spec.Parse(argv)
 
-    if arg == '--':
-      i += 1
-      break
-
-    elif arg == '-o' or arg == '+o':
-      b = (arg[0] == '-')
-      i += 1
-      if i == n:
-        raise args.UsageError('-o expected argument')
-      arg = argv[i]
-
-      if arg == 'errexit':
-        exec_opts.errexit.Set(b)
-      elif arg == 'nounset':
-        exec_opts.nounset = b
-      elif arg == 'pipefail':
-        exec_opts.pipefail = b
-      elif arg == 'xtrace':
-        exec_opts.xtrace = b
-      else:
-        raise args.UsageError('set: invalid -o argument %r' % arg)
-
-    elif arg == '-e':
-      exec_opts.errexit.Set(True)
-    elif arg == '+e':
-      exec_opts.errexit.Set(False)
-
-    elif arg == '-u':
-      exec_opts.nounset = True
-    elif arg == '+u':
-      exec_opts.nounset = False
-
-    elif arg == '-x':
-      exec_opts.xtrace = True
-    elif arg == '+x':
-      exec_opts.xtrace = False
-
-    # NOTE: After -n, nothing can be executed, so no point in +n!!!
-    elif arg == '-n':
-      exec_opts.noexecute = True
-
-    elif arg.startswith('-'):
-      raise args.UsageError('set: invalid flag %r' % arg)
-
-    else:
-      # No more flags
-      break
-
-    i += 1
-
+  SetExecOpts(exec_opts, arg.opt_changes)
   mem.SetArgv(argv[i:])
   return 0
 
@@ -756,10 +722,23 @@ def _Set(argv, exec_opts, mem):
     exec_opts.strict_scope = True
 
 
-def _Unset(argv, mem):
+unset_spec = args.BuiltinFlags()
+unset_spec.ShortFlag('-v')
+unset_spec.ShortFlag('-f')
+
+
+def _Unset(argv, mem, funcs):
+  #flags, i = unset_spec.Parse(argv)
+  i = 0
+
   # TODO: Parse flags -v and -f (variable and function)
-  for name in argv:
+  for name in argv[i:]:
     found = mem.Unset(name)
+    # If it's not a var, try to unset function if not found
+    if not found:
+      if name in funcs:
+        del funcs[name]
+
     log('%s: %s', name, found)
   return 0
 

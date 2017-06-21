@@ -23,9 +23,26 @@ echo -n '' | $SH
 $SH -c 'argv.py "$@"' dummy a b
 # stdout: ['a', 'b']
 
-### args that look like flags are passed
+### args that look like flags are passed after script
+script=$TMP/sh1.sh
+echo 'argv.py "$@"' > $script
+chmod +x $script
+$SH $script --help --help -h
+# stdout: ['--help', '--help', '-h']
+
+### args that look like flags are passed after -c
 $SH -c 'argv.py "$@"' --help --help -h
 # stdout: ['--help', '-h']
+
+### pass short options on command line
+$SH -e -c 'false; echo status=$?'
+# stdout-json: ""
+# status: 1
+
+### pass long options on command line
+$SH -o errexit -c 'false; echo status=$?'
+# stdout-json: ""
+# status: 1
 
 ### can continue after unknown option
 # dash and mksh make this a fatal error no matter what.
@@ -77,6 +94,14 @@ set +u
 echo "[$unset]"
 # stdout: []
 # status: 0
+
+### set -eu (flag parsing)
+set -eu 
+echo "[$unset]"
+echo status=$?
+# stdout-json: ""
+# status: 1
+# OK dash status: 2
 
 ### -n for no execution (useful with --ast-output)
 # NOTE: set +n doesn't work because nothing is executed!

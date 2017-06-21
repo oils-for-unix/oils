@@ -32,7 +32,6 @@ def tlog(msg):
 tlog('before imports')
 
 import errno
-import optparse
 import os
 import re
 import sys
@@ -55,6 +54,7 @@ from osh import ast_ as ast
 from osh import parse_lib
 
 from core import alloc
+from core import args
 from core import builtin
 from core import cmd_exec
 from core.id_kind import Id
@@ -138,81 +138,44 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
     c_parser.Reset()
 
 
-# TODO: -n
-# How to integrate with 'set' parsing
-# I want only -- options maybe?  Or maybe they go first like bash, and then
-# pass it off to set.
-# _ParseSet.
-
-def Options():
-  """Returns an option parser instance."""
-  p = optparse.OptionParser()
-
-  # NOTE: default command is None because empty string is valid.
-  p.add_option(
-      '-c', dest='command', default=None,
-      help='Shell command to run')
-  p.add_option(
-      '-i', dest='interactive', default=False, action='store_true',
-      help="Force the shell to run interactively (don't test for stdin TTY)")
-
-  # TODO:
-  # - Make this --print=ast,status
-  # - And maybe --dump=tokens,words,nodes ?
-  p.add_option(
-      '--ast-output', dest='ast_output', default='',
-      help='Print the AST to this file; - for stdout')
-  p.add_option(
-      '--ast-format', dest='ast_format', default='abbrev-text',
-      choices=['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'],
-      help='What format to use for the AST (text or html)')
-  p.add_option(
-      '--fix', dest='fix', action='store_true',
-      default=False,
-      help='Fix code')
-  p.add_option(
-      '--debug-spans', dest='debug_spans', action='store_true',
-      help='Print a debug representation of line spans.  '
-           'Must use --fix.')
-  p.add_option(
-      '--print-status', dest='print_status', action='store_true',
-      default=False,
-      help='Print command status after execution')
-  p.add_option(
-      '--trace', dest='trace', action='append', default=[],
-      help='Method calls to trace: lexer|wp|cp')
-  p.add_option(
-      '--no-exec', dest='do_exec', action='store_false', default=True,
-      help="Don't execute anything (useful with --print-ast)")
-  p.add_option(
-      '--hijack-shebang', dest='hijack_shebang', action='append',
-      metavar='/bin/foo',
-      help="Before executing programs, look for this shebang line, and "
-           "substitute it with Oil.  For porting.")
-
-  # TODO:
-  # --dump / --debug outputs:
-  #   1. tokens themselves, with char ranges
-  #   2. words, with token ranges
-  #   3. nodes, with word ranges
-
-  # maybe need --trace too
-  return p
-
-
 # bash --noprofile --norc uses 'bash-4.3$ '
 OSH_PS1 = 'osh$ '
 
 
 def OshMain(argv):
-  (opts, argv) = Options().parse_args(argv)
+  spec = args.FlagsAndOptions()
+  spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
+  spec.ShortFlag('-i')  # interactive
+
+  spec.LongFlag('--help')
+  spec.LongFlag('--ast-output', args.Str)
+  spec.LongFlag('--ast-format', ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'])
+  spec.LongFlag('--fix')
+  spec.LongFlag('--debug-spans')
+  spec.LongFlag('--print-status')
+  spec.LongFlag('--trace', ['cmd-parse', 'word-parse', 'lexer'])  # NOTE: can only trace one now
+  spec.LongFlag('--hijack-shebang')
+
+  builtin.AddOptionsToArgSpec(spec)
+
+  try:
+    opts, i = spec.Parse(argv)
+  except args.UsageError as e:
+    util.usage(str(e))
+    return 2
+
+  if opts.help:
+    print('TODO: HELP')
+    return 0
+
+  argv = argv[i:]
 
   trace_state = util.TraceState()
-  if 'cp' in opts.trace:
+  if 'cmd-parse' == opts.trace:
     util.WrapMethods(cmd_parse.CommandParser, trace_state)
-  if 'wp' in opts.trace:
+  if 'word-parse' == opts.trace:
     util.WrapMethods(word_parse.WordParser, trace_state)
-  if 'lexer' in opts.trace:
+  if 'lexer' == opts.trace:
     util.WrapMethods(lexer.Lexer, trace_state)
 
   if len(argv) == 0:
@@ -242,6 +205,7 @@ def OshMain(argv):
     # TODO: NullLookup?
     comp_lookup = None
   exec_opts = state.ExecOpts()
+  builtin.SetExecOpts(exec_opts, opts.opt_changes)
 
   # TODO: How to get a handle to initialized builtins here?
   # tokens.py has it.  I think you just make a separate table, with
@@ -276,11 +240,11 @@ def OshMain(argv):
     if e.errno != errno.ENOENT:
       raise
 
-  if opts.command is not None:
+  if opts.c is not None:
     arena.AddSourcePath('<command string>')
-    line_reader = reader.StringLineReader(opts.command, arena=arena)
+    line_reader = reader.StringLineReader(opts.c, arena=arena)
     interactive = False
-  elif opts.interactive:  # force interactive
+  elif opts.i:  # force interactive
     arena.AddSourcePath('<stdin -i>')
     line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
     interactive = True
@@ -369,11 +333,11 @@ def OshMain(argv):
         ast_f.FileFooter()
         ast_f.write('\n')
 
-    if opts.do_exec:
-      status = ex.Execute(node)
-    else:
-      util.log('Execution skipped because --no-exec was passed')
+    if exec_opts.noexec:
+      util.log("Execution skipped because 'noexec' is on ")
       status = 0
+    else:
+      status = ex.Execute(node)
 
   if opts.fix:
     osh2oil.PrintAsOil(arena, node, opts.debug_spans)

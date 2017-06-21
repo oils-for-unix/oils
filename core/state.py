@@ -70,7 +70,7 @@ class ExecOpts(object):
     self.pipefail = False
     self.xtrace = False  # NOTE: uses PS4
     self.noglob = False  # -f
-    self.noexecute = False  # -n
+    self.noexec = False  # -n
 
     # OSH-specific
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer

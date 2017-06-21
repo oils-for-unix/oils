@@ -257,7 +257,7 @@ class Executor(object):
       status = builtin._Set(argv, self.exec_opts, self.mem)
 
     elif builtin_id == EBuiltin.UNSET:
-      status = builtin._Unset(argv, self.mem)
+      status = builtin._Unset(argv, self.mem, self.funcs)
 
     elif builtin_id == EBuiltin.EXPORT:
       status = builtin._Export(argv, self.mem)
