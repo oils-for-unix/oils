@@ -307,10 +307,10 @@ class FlagsAndOptions(object):
             print(self.actions_short)
             raise UsageError('Invalid flag %r' % char)
           quit = action.OnMatch(char0, None, state, out)
+        state.Next() # process the next flag
         if quit:
           break
         else:
-          state.Next()  # process the next flag
           continue
 
       break  # it's a regular arg
