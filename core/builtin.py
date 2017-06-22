@@ -379,6 +379,11 @@ def Resolve(argv0):
   return EBuiltin.NONE
 
 
+echo_spec = args.BuiltinFlags()
+echo_spec.ShortFlag('-e')  # no backslash escapes
+echo_spec.ShortFlag('-n')
+
+
 def _Echo(argv):
   """
   echo builtin.  Doesn't depend on executor state.
@@ -389,28 +394,18 @@ def _Echo(argv):
   # - 'echo -c' should print '-c', not fail
   # - echo '---' should print ---, not fail
 
-  opt_n = False
-  opt_e = False
-  opt_index = 0
-  for a in argv:
-    if a == '-n':
-      opt_n = True
-      opt_index += 1
-    elif a == '-e':
-      opt_e = True
-      opt_index += 1
-      util.warn('*** echo -e not implemented ***')
-    else:
-      break  # something else
+  arg, i = echo_spec.ParseLikeEcho(argv)
+  if arg.e:
+    util.warn('*** echo -e not implemented ***')
 
   #log('echo argv %s', argv)
   n = len(argv)
-  for i in xrange(opt_index, n-1):
+  for i in xrange(i, n-1):
     sys.stdout.write(argv[i])
     sys.stdout.write(' ')  # arg separator
   if argv:
     sys.stdout.write(argv[-1])
-  if not opt_n:
+  if not arg.n:
     sys.stdout.write('\n')
   sys.stdout.flush()
   return 0
