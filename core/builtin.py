@@ -120,7 +120,7 @@ EBuiltin = util.Enum('EBuiltin', """
 NONE READ ECHO SHIFT
 CD PUSHD POPD DIRS
 EXPORT UNSET SET
-TRAP 
+TRAP UMASK
 EXIT SOURCE DOT EVAL EXEC WAIT JOBS 
 COMPLETE COMPGEN DEBUG_LINE
 """.split())
@@ -353,6 +353,8 @@ def Resolve(argv0):
 
   elif argv0 == "trap":
     return EBuiltin.TRAP
+  elif argv0 == "umask":
+    return EBuiltin.UMASK
   elif argv0 == "eval":
     return EBuiltin.EVAL
   elif argv0 == "exec":
@@ -755,6 +757,11 @@ def _Trap(argv, traps):
   # NODES.
 
   log(traps)
+  return 0
+
+
+def Umask(argv):
+  util.warn('*** umask not implemented ***')
   return 0
 
 

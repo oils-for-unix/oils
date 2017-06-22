@@ -286,6 +286,9 @@ class Executor(object):
     elif builtin_id == EBuiltin.TRAP:
       status = builtin._Trap(argv, self.traps)
 
+    elif builtin_id == EBuiltin.UMASK:
+      status = builtin.Umask(argv)
+
     elif builtin_id == EBuiltin.EVAL:
       status = self._Eval(argv)
 
