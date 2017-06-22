@@ -399,7 +399,7 @@ def _Echo(argv):
     elif a == '-e':
       opt_e = True
       opt_index += 1
-      raise NotImplementedError('echo -e')
+      util.warn('*** echo -e not implemented ***')
     else:
       break  # something else
 
@@ -756,7 +756,7 @@ def _Trap(argv, traps):
   # Yeah you need the EvalHelper.  traps is a list of signals to parsed
   # NODES.
 
-  log(traps)
+  util.warn('*** trap not implemented ***')
   return 0
 
 
