@@ -56,9 +56,17 @@ class FdState:
     Save fd2 and dup fd1 onto fd2.
     """
     #log('---- _PushDup %s %s\n', fd1, fd2)
-    fcntl.fcntl(fd2, fcntl.F_DUPFD, self.next_fd)
-    os.close(fd2)
-    fcntl.fcntl(self.next_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
+    try:
+      fcntl.fcntl(fd2, fcntl.F_DUPFD, self.next_fd)
+    except IOError as e:
+      # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
+      # open.
+      # This seems to be ignored in dash too in savefd()?
+      if e.errno != errno.EBADF:
+        raise
+    else:
+      os.close(fd2)
+      fcntl.fcntl(self.next_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
     #log('==== dup %s %s\n' % (fd1, fd2))
     try:
