@@ -40,6 +40,13 @@ However I don't see these used anywhere!  I only see ':' used.
 
 TODO:
   - add default values, e.g. ast_format='text'
+  - add help text: spec.Flag(..., help='')
+  - add usage line: BuiltinFlags('echo [-en]')
+  - add --foo=bar syntax
+
+  - add GNU-style option to interleave flags and args
+    - NOTE: after doing this, you could probably statically parse a lot of
+      scripts and analyze flag usage?
 """
 
 from core import util
@@ -380,7 +387,27 @@ class BuiltinFlags(object):
     #
     # - But don't respect --
     # - doesn't fail with invalid flag
-    pass
+    state = _ArgState(argv)
+    out = _Attributes(self.attr_names)
+
+    while not state.Done():
+      arg = state.Peek()
+      if arg.startswith('-') and len(arg) > 1:
+        if not all(c in self.arity0 for c in arg[1:]):
+          break  # looks like args
+
+        n = len(arg)
+        for i in xrange(1, n):
+          char = arg[i]
+          action = self.arity0[char]
+          action.OnMatch(None, None, state, out)
+
+      else:
+        break  # Looks like an arg
+
+      state.Next()  # next arg
+
+    return out, state.i
 
   def Parse(self, argv):
     # TODO: Parse -en into separate actions

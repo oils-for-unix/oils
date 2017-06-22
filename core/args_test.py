@@ -155,6 +155,27 @@ class ArgsTest(unittest.TestCase):
     # Invalid flag 'z'
     self.assertRaises(args.UsageError, s.Parse, ['-rz'])
 
+  def testParseLikeEcho(self):
+    s = args.BuiltinFlags()
+    s.ShortFlag('-e')  # no backslash escapes
+    s.ShortFlag('-n')
+
+    arg, i = s.ParseLikeEcho(['-e', '-n', 'foo'])
+    self.assertEqual(True, arg.e)
+    self.assertEqual(True, arg.n)
+    self.assertEqual(2, i)
+
+    arg, i = s.ParseLikeEcho(['-en', 'foo'])
+    self.assertEqual(True, arg.e)
+    self.assertEqual(True, arg.n)
+    self.assertEqual(1, i)
+
+    arg, i = s.ParseLikeEcho(['-ez', 'foo'])
+    self.assertEqual(None, arg.e)
+    self.assertEqual(None, arg.n)
+    self.assertEqual(0, i)
+
+
 
 if __name__ == '__main__':
   unittest.main()
