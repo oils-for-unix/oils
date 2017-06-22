@@ -29,6 +29,17 @@ builtins.  The reason is that these cases behave differently:
 set -opipefail  # not allowed, space required
 
 read -t1.0  # allowed
+
+bashgetopt.c codes:
+  leading +: allow options
+  : requires argument
+  ; argument may be missing
+  # numeric argument
+
+However I don't see these used anywhere!  I only see ':' used.
+
+TODO:
+  - add default values, e.g. ast_format='text'
 """
 
 from core import util
@@ -61,9 +72,13 @@ class _ArgState:
     self.n = len(argv)
     self.i = 0
 
+  def __repr__(self):
+    return '<_ArgState %r %d>' % (self.argv, self.i)
+
   def Next(self):
     """Get the next arg."""
     self.i += 1
+    #assert self.i <= self.n, self.i
 
   def Peek(self):
     return self.argv[self.i]
@@ -75,7 +90,7 @@ class _ArgState:
 class _Action(object):
   """What is done when a flag or option is detected."""
 
-  def OnMatch(self, prefix, state, out):
+  def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches.
 
     Returns:
@@ -92,12 +107,20 @@ class SetToArg(_Action):
     self.arg_type = arg_type
     self.quit_parsing_flags = quit_parsing_flags
 
-  def OnMatch(self, prefix, state, out):
+  def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches."""
-    try:
-      arg = state.Peek()
-    except IndexError:
-      raise UsageError('Expected argument for %r' % self.name)
+
+    #log('SetToArg SUFFIX %r', suffix)
+    if suffix:
+      arg = suffix
+    else:
+      state.Next()
+      try:
+        arg = state.Peek()
+      except IndexError:
+        raise UsageError('Expected argument for %r' % self.name)
+
+    #log('SetToArg Arg %r', arg)
 
     typ = self.arg_type
     if isinstance(typ, list):
@@ -116,20 +139,17 @@ class SetToArg(_Action):
         raise AssertionError
 
     setattr(out, self.name, value)
-    state.Next()
-
     return self.quit_parsing_flags
 
 
-class SetToBool(_Action):
+class SetToTrue(_Action):
 
-  def __init__(self, name, b):
+  def __init__(self, name):
     self.name = name
-    self.b = b
 
-  def OnMatch(self, prefix, state, out):
+  def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches."""
-    setattr(out, self.name, self.b)
+    setattr(out, self.name, True)
 
 
 class SetOption(_Action):
@@ -138,7 +158,7 @@ class SetOption(_Action):
   def __init__(self, name):
     self.name = name
 
-  def OnMatch(self, prefix, state, out):
+  def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches."""
     b = (prefix == '-')
     out.opt_changes.append((self.name, b))
@@ -153,9 +173,11 @@ class SetNamedOption(_Action):
   def Add(self, name):
     self.names.append(name)
 
-  def OnMatch(self, prefix, state, out):
+  def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches."""
     b = (prefix == '-')
+    #log('SetNamedOption %r %r %r', prefix, suffix, state)
+    state.Next()  # always advance
     try:
       arg = state.Peek()
     except IndexError:
@@ -165,7 +187,6 @@ class SetNamedOption(_Action):
     if arg not in self.names:
       raise UsageError('Invalid option name %r' % arg)
     out.opt_changes.append((arg, b))
-    state.Next()
 
 
 # Arg type:
@@ -203,7 +224,7 @@ class FlagsAndOptions(object):
     char = short_name[1]
     if arg_type is None:
       assert quit_parsing_flags == False
-      self.actions_short[char] = SetToBool(char, True)
+      self.actions_short[char] = SetToTrue(char)
     else:
       self.actions_short[char] = SetToArg(char, arg_type,
                                           quit_parsing_flags=quit_parsing_flags)
@@ -216,7 +237,7 @@ class FlagsAndOptions(object):
 
     name = long_name[2:].replace('-', '_')
     if arg_type is None:
-      self.actions_long[long_name] = SetToBool(name, True)
+      self.actions_long[long_name] = SetToTrue(name)
     else:
       self.actions_long[long_name] = SetToArg(name, arg_type)
 
@@ -271,22 +292,26 @@ class FlagsAndOptions(object):
           action = self.actions_long[arg]
         except KeyError:
           raise UsageError('Invalid flag %r' % arg)
+        # TODO: Suffix could be 'bar' for --foo=bar
+        action.OnMatch(None, None, state, out)
         state.Next()
-        action.OnMatch(None, state, out)
         continue
 
       if arg.startswith('-') or arg.startswith('+'):
         char0 = arg[0]
-        state.Next()  # call BEFORE actions
         for char in arg[1:]:
+          #log('char %r state %s', char, state)
           try:
             action = self.actions_short[char]
           except KeyError:
             print(self.actions_short)
             raise UsageError('Invalid flag %r' % char)
-          quit = action.OnMatch(char0, state, out)
-        if not quit:
-          continue  # process the next flag
+          quit = action.OnMatch(char0, None, state, out)
+        if quit:
+          break
+        else:
+          state.Next()  # process the next flag
+          continue
 
       break  # it's a regular arg
 
@@ -309,8 +334,8 @@ class BuiltinFlags(object):
   """
 
   def __init__(self):
-    self.arity0 = {}  # {'+e': _Action}  e.g. set -e
-    self.arity1 = {}  # {'+o': _Action}  e.g. set -o errexit
+    self.arity0 = {}  # {'r': _Action}  e.g. read -r
+    self.arity1 = {}  # {'t': _Action}  e.g. read -t 1.0
 
     self.attr_names = []
 
@@ -318,17 +343,20 @@ class BuiltinFlags(object):
     self.off_flag = None
 
   def ShortFlag(self, short_name, arg_type=None):
-    """ -c """
+    """ 
+    This is very similar to ShortFlag for FlagsAndOptions, except we have
+    separate arity0 and arity1 dicts.
+    """
     assert short_name.startswith('-'), short_flag
     assert len(short_name) == 2, short_flag
 
-    attr_name = short_name[1]
+    char = short_name[1]
     if arg_type is None:
-      self.arity0[short_name] = SetToBool(attr_name, True)
+      self.arity0[char] = SetToTrue(char)
     else:
-      self.arity1[short_name] = SetToArg(attr_name, arg_type)
+      self.arity1[char] = SetToArg(char, arg_type)
 
-    self.attr_names.append(attr_name)
+    self.attr_names.append(char)
 
   def LongFlag(self, long_name, arg_type=None):
     """ --ast-format """
@@ -373,35 +401,28 @@ class BuiltinFlags(object):
         state.Next()
         break
 
-      if arg.startswith('-') or arg.startswith('+') and len(arg) > 1:
-        char0 = arg[0]
-        prefix = arg[:2]
-        b = (char0 == '-')
+      if arg.startswith('-') and len(arg) > 1:
+        n = len(arg)
+        for i in xrange(1, n):
+          char = arg[i]
 
-        # So register by SINGLE LETTER.
-        # And then pass to state.  You don't have to know.
+          if char in self.arity0:  # e.g. read -r
+            action = self.arity0[char]
+            action.OnMatch(None, None, state, out)
+            continue
 
-        if prefix in self.arity0:
-          for char in arg[1:]:  # e.g. set -eu
-            try:
-              action = self.arity0[char0 + char]
-            except KeyError:
-              raise UsageError('Unkown flag %r' % (char0 + char))
-            action.OnMatch(letter, state, out)
-          state.Next()
-          continue
+          if char in self.arity1:  # e.g. read -t1.0
+            action = self.arity1[char]
+            suffix = arg[i+1:]
+            #log('SUFFIX %r ARG %r', suffix, arg)
+            action.OnMatch(None, suffix, state, out)
+            break
 
-        if prefix in self.arity1:
-          action = self.arity1[prefix]
-          state.Next()  # skip the flag
-          action.OnMatch(arg, state, out)
-        continue
+          raise UsageError('Invalid flag %r' % char)
 
-        try:
-          arity = self.arity[arg]
-        except KeyError:
-          raise UsageError('Invalid flag %r' % arg)
+        state.Next()  # next arg
 
-      break
+      else:  # a regular arg
+        break
 
     return out, state.i

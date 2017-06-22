@@ -10,33 +10,6 @@ from core import args  # module under test
 
 class ArgsTest(unittest.TestCase):
 
-  def testBuiltinFlags(self):
-    return
-    s = args.BuiltinFlags()
-    s.ShortFlag('-f')
-    s.ShortFlag('-n')
-    s.ShortFlag('-d', args.Str)  # delimiter
-
-    arg, i = s.Parse(['-f', 'foo', 'bar'])
-    self.assertEqual(1, i)
-    self.assertEqual(True, arg.f)
-    self.assertEqual(None, arg.n)
-
-    self.assertRaises(args.UsageError, s.Parse, ['-f', '-d'])
-
-    arg, i = s.Parse(['-d', ' ', 'foo'])
-    self.assertEqual(2, i)
-    self.assertEqual(' ', arg.d)
-
-  def testChoices(self):
-    s = args.FlagsAndOptions()
-    s.LongFlag('--ast-format', ['text', 'html'])
-
-    arg, i = s.Parse(['--ast-format', 'text'])
-    self.assertEqual('text', arg.ast_format)
-
-    self.assertRaises(args.UsageError, s.Parse, ['--ast-format', 'oops'])
-
   def testFlagsAndOptions(self):
     s = args.FlagsAndOptions()
     s.ShortFlag('-c', args.Str)
@@ -81,65 +54,106 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(True, arg.help)
     self.assertEqual('bashrc', arg.rcfile)
 
-    # Also: 'set -ooo' and 'set -o -o -o' bash runs in three times!  How dumb.
-
     # This is an odd syntax!
     argv = ['-euo', 'pipefail']
     arg, i = s.Parse(argv)
+    self.assertEqual(
+        [('errexit', True), ('nounset', True), ('pipefail', True)],
+        arg.opt_changes)
+    self.assertEqual(2, i)
 
     # Even weirder!
-    argv = ['-oeu', 'pipefail']
+    argv = ['+oeu', 'pipefail']
     arg, i = s.Parse(argv)
+    self.assertEqual(
+        [('pipefail', False), ('errexit', False), ('nounset', False)],
+        arg.opt_changes)
+    self.assertEqual(2, i)
 
     # Even weirder!
     argv = ['+oo', 'pipefail', 'errexit']
     arg, i = s.Parse(argv)
+    self.assertEqual(
+        [('pipefail', False), ('errexit', False)],
+        arg.opt_changes)
+    self.assertEqual(3, i)
 
     # Now this is an arg.  Gah.
     argv = ['+o', 'pipefail', 'errexit'] 
     arg, i = s.Parse(argv)
+    self.assertEqual([('pipefail', False)], arg.opt_changes)
+    self.assertEqual(['errexit'], argv[i:])
 
-  def testParseRead(self):
-    return
-    # -r is arity0
-    # -p is arity1
-    argv = ['-rp', '>']
-    arg, i = s.Parse(argv)
+    # NOTE: 'set -ooo' and 'set -o -o -o' bash runs 'set -o' three times!
+    # We're not going to replicate that silly behavior.
+
+  def testChoices(self):
+    s = args.FlagsAndOptions()
+    s.LongFlag('--ast-format', ['text', 'html'])
+
+    arg, i = s.Parse(['--ast-format', 'text'])
+    self.assertEqual('text', arg.ast_format)
+
+    self.assertRaises(args.UsageError, s.Parse, ['--ast-format', 'oops'])
+
+  def testBuiltinFlags(self):
+    s = args.BuiltinFlags()
+    s.ShortFlag('-f')
+    s.ShortFlag('-n')
+    s.ShortFlag('-d', args.Str)  # delimiter
+
+    arg, i = s.Parse(['-f', 'foo', 'bar'])
+    self.assertEqual(1, i)
+    self.assertEqual(True, arg.f)
+    self.assertEqual(None, arg.n)
+
+    self.assertRaises(args.UsageError, s.Parse, ['-f', '-d'])
+
+    arg, i = s.Parse(['-d', ' ', 'foo'])
+    self.assertEqual(2, i)
+    self.assertEqual(' ', arg.d)
+
+    arg, i = s.Parse(['-d,',  'foo'])
+    self.assertEqual(1, i)
+    self.assertEqual(',', arg.d)
+
+  def testReadBuiltinFlags(self):
+    s = args.BuiltinFlags()
+    s.ShortFlag('-r')  # no backslash escapes
+    s.ShortFlag('-t', args.Float)  # timeout
+    s.ShortFlag('-p', args.Str)  # prompt string
+
+    arg, i = s.Parse(['-r', 'foo'])
+    self.assertEqual(True, arg.r)
+    self.assertEqual(1, i)
+
+    arg, i = s.Parse(['-p', '>'])
+    self.assertEqual(None, arg.r)
+    self.assertEqual('>', arg.p)
+    self.assertEqual(2, i)
+
+    arg, i = s.Parse(['-rp', '>'])
+    self.assertEqual(True, arg.r)
+    self.assertEqual('>', arg.p)
+    self.assertEqual(2, i)
 
     # REALLY ANNOYING: The first r is a flag, the second R is the prompt!  Only
     # works in that order
     # Does that mean anything with an arity consumes the rest?
     # read -p line
     #
-    argv = ['-rpr']
+    arg, i = s.Parse(['-rpr'])
+    self.assertEqual(True, arg.r)
+    self.assertEqual('r', arg.p)
+    self.assertEqual(1, i)
+
+    argv = ['-t1.5', '>']
     arg, i = s.Parse(argv)
+    self.assertEqual(1.5, arg.t)
+    self.assertEqual(1, i)
 
-    argv = ['-t1.0', '>']
-    arg, i = s.Parse(argv)
-
-    # This is an array name!  Not an invalid option.
-    # I think there are TWO KINDS OF OPTION PARSERS.  Yeah it's all custom
-    # code.
-
-    # ParseFlagsAndOptions -- uses
-    #  this is DIFFERENT because -opipefail is NOT allowed!
-    #  must be -o pipefail
-
-    # ParseBuiltinFlags -- uses internal_getopt
-    #  allows -t1.0  but also -rp>
-
-    # ParseLikeEcho -- ignores --
-
-    #   bashgetopt has a *opts == '+' check
-    #   leading +: allow options
-    #   codes:
-    #   : requires argument
-    #   ; argument may be missing
-    #   # numeric argument
-    #
-    # However I don't see these used anywhere!  I only see ':' used.
-    argv = ['-azzz']
-    arg, i = s.Parse(argv)
+    # Invalid flag 'z'
+    self.assertRaises(args.UsageError, s.Parse, ['-rz'])
 
 
 if __name__ == '__main__':
