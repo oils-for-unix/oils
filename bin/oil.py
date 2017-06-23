@@ -282,6 +282,7 @@ def OshMain(argv):
     # Parse the whole thing up front
     #print('Parsing file')
 
+    tlog('ParseWholeFile')
     # TODO: Do I need ParseAndEvalLoop?  How is it different than
     # InteractiveLoop?
     try:
@@ -335,6 +336,7 @@ def OshMain(argv):
       util.log("Execution skipped because 'noexec' is on ")
       status = 0
     else:
+      tlog('Execute(node)')
       status = ex.Execute(node)
 
   if opts.fix:

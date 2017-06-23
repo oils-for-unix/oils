@@ -2,6 +2,24 @@
 #
 # Test set flags, sh flags.
 
+### $- with -c
+# dash's behavior seems most sensible here?
+$SH -o nounset -c 'echo $-'
+# stdout: u
+# OK bash stdout: huBc
+# OK mksh stdout: uhc
+# status: 0
+
+### $- with pipefail
+set -o pipefail -o nounset
+echo $-
+# stdout: u
+# status: 0
+# OK bash stdout: huB
+# OK mksh stdout: ush
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### sh -c
 $SH -c 'echo hi'
 # stdout: hi

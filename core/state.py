@@ -84,6 +84,24 @@ class ExecOpts(object):
   def ErrExit(self):
     return self.errexit.errexit
 
+  def GetDollarHyphen(self):
+    chars = []
+    if self.ErrExit():
+      chars.append('e')
+    if self.nounset:
+      chars.append('u')
+    # NO letter for pipefail?
+    if self.xtrace:
+      chars.append('x')
+    if self.noexec:
+      chars.append('n')
+
+    # bash has:
+    # - c for sh -c, i for sh -i (mksh also has this)
+    # - h for hashing (mksh also has this)
+    # - B for brace expansion
+    return ''.join(chars)
+
 
 class _ArgFrame(object):
   """Stack frame for arguments array."""

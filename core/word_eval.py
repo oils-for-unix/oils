@@ -340,6 +340,9 @@ class _WordPartEvaluator:
       else:  # $@ $* "$*"
         return val, True
 
+    elif op_id == Id.VSub_Hyphen:
+      s = self.exec_opts.GetDollarHyphen()
+      return runtime.Str(s), False
     else:
       val = self.mem.GetSpecialVar(op_id)
       return val, False  # dont' decay

@@ -7,9 +7,18 @@ echo ---
 # stdout-json: "-\n--\n---\n"
 
 ### echo -en
-echo -en "abc\ndef\n"
+echo -en 'abc\ndef\n'
 # stdout-json: "abc\ndef\n"
 # N-I dash stdout-json: "-en abc\ndef\n\n"
+
+### echo -ez (invalid flag)
+# bash differs from the other two shells, but its behavior is possibly more
+# sensible, if you're going to ignore the error.  It doesn't make sense for the
+# 'e' to mean 2 different things simultaneously: flag and literal to be
+# printed.
+echo -ez 'abc\n'
+# stdout-json: "-ez abc\\n\n"
+# BUG dash/mksh stdout-json: "-ez abc\n\n"
 
 ### exec builtin 
 exec echo hi

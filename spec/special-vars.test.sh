@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# NOTE:
+# - $! is tested in background.test.sh
+# - $- is tested in sh-options
 
 ### $PWD
 # Just test that it has a slash for now.
@@ -21,14 +25,6 @@ echo $?
 set -- 1 2 3 4
 echo $#
 # stdout: 4
-# status: 0
-
-### $-
-# dash's behavior seems most sensible here?
-$SH -o nounset -c 'echo $-'
-# OK bash stdout: huBc
-# OK dash stdout: u
-# OK mksh stdout: uhc
 # status: 0
 
 ### $_
