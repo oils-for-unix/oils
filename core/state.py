@@ -127,7 +127,7 @@ class Mem(object):
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
 
-  def __init__(self, argv0, argv):
+  def __init__(self, argv0, argv, environ):
     top = {}  # string -> runtime.cell
     self.var_stack = [top]
     self.argv0 = argv0
@@ -140,6 +140,7 @@ class Mem(object):
     self.root_pid = os.getpid()
 
     self._InitDefaults()
+    self._InitEnviron(environ)
 
   def _InitDefaults(self):
     # Default value; user may unset it.
@@ -147,6 +148,14 @@ class Mem(object):
     # ' \t\n'
     self.SetGlobalString('IFS', ' \t\n')
     self.SetGlobalString('PWD', os.getcwd())
+
+  def _InitEnviron(self, environ):
+    # This is the way dash and bash work -- at startup, they turn everything in
+    # 'environ' variable into shell variables.  Bash has an export_env
+    # variable.  Dash has a loop through environ in init.c
+    for n, v in environ.iteritems():
+      self.SetGlobalString(n, v)
+      self.SetExportFlag(n, True)
 
   #
   # Stack

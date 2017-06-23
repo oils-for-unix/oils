@@ -37,7 +37,7 @@ def InitCommandParser(code_str):
 
 
 def InitExecutor():
-  mem = state.Mem('', [])
+  mem = state.Mem('', [], {})
   status_lines = None  # not needed for what we're testing
   builtins = Builtins()
   funcs = {}
@@ -50,7 +50,7 @@ def InitExecutor():
 
 
 def InitEvaluator():
-  mem = state.Mem('', [])
+  mem = state.Mem('', [], {})
 
   val1 = runtime.Str('xxx')
   val2 = runtime.Str('yyy')
@@ -65,14 +65,14 @@ def InitEvaluator():
 class MemTest(unittest.TestCase):
 
   def testGet(self):
-    mem = state.Mem('', [])
+    mem = state.Mem('', [], {})
     mem.Push(['a', 'b'])
     print(mem.Get('HOME'))
     mem.Pop()
     print(mem.Get('NONEXISTENT'))
 
   def testArgv(self):
-    mem = state.Mem('', [])
+    mem = state.Mem('', [], {})
     mem.Push(['a', 'b'])
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
@@ -95,7 +95,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
   def testArgv2(self):
-    mem = state.Mem('', ['x', 'y'])
+    mem = state.Mem('', ['x', 'y'], {})
 
     mem.Shift(1)
     self.assertEqual(['y'], mem.GetArgv())

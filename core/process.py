@@ -233,18 +233,13 @@ class Thunk(object):
     raise NotImplementedError
 
 
-def ExecExternalProgram(argv, more_env):
+def ExecExternalProgram(argv, environ):
   """
   """
-  # TODO: If there is an error, like the file isn't executable, then we
-  # should exit, and the parent will reap it.  Should it capture stderr?
-
-  # NOTE: Do we have to do this?
-  env = dict(os.environ)
-  env.update(more_env)
-
+  # TODO: If there is an error, like the file isn't executable, then we should
+  # exit, and the parent will reap it.  Should it capture stderr?
   try:
-    os.execvpe(argv[0], argv, env)
+    os.execvpe(argv[0], argv, environ)
   except OSError as e:
     log('Unexpected error in execvpe(%r, %r, ...): %s', argv[0], argv, e)
     # Command not found means 127.  TODO: Are there other cases?
@@ -255,15 +250,15 @@ def ExecExternalProgram(argv, more_env):
 class ExternalThunk:
   """An external executable."""
 
-  def __init__(self, argv, more_env=None):
+  def __init__(self, argv, environ):
     self.argv = argv
-    self.more_env = more_env or {}
+    self.environ = environ
 
   def Run(self):
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
-    ExecExternalProgram(self.argv, self.more_env)
+    ExecExternalProgram(self.argv, self.environ)
 
 
 class SubProgramThunk:

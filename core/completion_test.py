@@ -53,7 +53,7 @@ class CompletionTest(unittest.TestCase):
     print(list(A1.Matches(['f'], 0, 'f')))
 
   def testExternalCommandAction(self):
-    mem = state.Mem('dummy', [])
+    mem = state.Mem('dummy', [], {})
     a = completion.ExternalCommandAction(mem)
     print(list(a.Matches([], 0, 'f')))
 
@@ -133,7 +133,7 @@ class CompletionTest(unittest.TestCase):
 
 
 def _MakeTestEvaluator():
-  mem = state.Mem('', [])
+  mem = state.Mem('', [], {})
   exec_opts = state.ExecOpts()
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
   return ev

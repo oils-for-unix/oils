@@ -159,7 +159,7 @@ def OshMain(argv):
   builtin.AddOptionsToArgSpec(spec)
 
   try:
-    opts, i = spec.Parse(argv)
+    opts, opt_index = spec.Parse(argv)
   except args.UsageError as e:
     util.usage(str(e))
     return 2
@@ -167,8 +167,6 @@ def OshMain(argv):
   if opts.help:
     print('TODO: HELP')
     return 0
-
-  argv = argv[i:]
 
   trace_state = util.TraceState()
   if 'cmd-parse' == opts.trace:
@@ -178,10 +176,10 @@ def OshMain(argv):
   if 'lexer' == opts.trace:
     util.WrapMethods(lexer.Lexer, trace_state)
 
-  if len(argv) == 0:
+  if opt_index == len(argv):
     dollar0 = sys.argv[0]  # e.g. bin/osh
   else:
-    dollar0 = argv[0]  # the script name
+    dollar0 = argv[opt_index]  # the script name, or the arg after -c
 
   # TODO: Create a --parse action or 'osh parse' or 'oil osh-parse'
   # osh-fix
@@ -194,7 +192,7 @@ def OshMain(argv):
   # TODO: Maybe wrap this initialization sequence up in an oil_State, like
   # lua_State.
   status_lines = ui.MakeStatusLines()
-  mem = state.Mem(dollar0, argv[1:])
+  mem = state.Mem(dollar0, argv[opt_index + 1:], os.environ)
   builtins = builtin.Builtins()
   funcs = {}
 
@@ -250,7 +248,7 @@ def OshMain(argv):
     interactive = True
   else:
     try:
-      script_name = argv[0]
+      script_name = argv[opt_index]
     except IndexError:
       if sys.stdin.isatty():
         arena.AddSourcePath('<interactive>')

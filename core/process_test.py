@@ -28,6 +28,10 @@ def Banner(msg):
 _WAITER = process.Waiter()
 
 
+def _ExtProc(argv):
+  return Process(ExternalThunk(argv, {}))
+
+
 class ProcessTest(unittest.TestCase):
 
   def testProcess(self):
@@ -37,13 +41,13 @@ class ProcessTest(unittest.TestCase):
     print('FDS BEFORE', os.listdir('/dev/fd'))
 
     Banner('date')
-    p = Process(ExternalThunk(['date']))
+    p = _ExtProc(['date'])
     status = p.Run(_WAITER)
     log('date returned %d', status)
     self.assertEqual(0, status)
 
     Banner('does-not-exist')
-    p = Process(ExternalThunk(['does-not-exist']))
+    p = _ExtProc(['does-not-exist'])
     print(p.Run(_WAITER))
 
     # 12 file descriptors open!
@@ -53,10 +57,10 @@ class ProcessTest(unittest.TestCase):
     print('BEFORE', os.listdir('/dev/fd'))
 
     p = process.Pipeline()
-    p.Add(Process(ExternalThunk(['ls'])))
-    p.Add(Process(ExternalThunk(['cut', '-d', '.', '-f', '2'])))
-    p.Add(Process(ExternalThunk(['sort'])))
-    p.Add(Process(ExternalThunk(['uniq', '-c'])))
+    p.Add(_ExtProc(['ls']))
+    p.Add(_ExtProc(['cut', '-d', '.', '-f', '2']))
+    p.Add(_ExtProc(['sort']))
+    p.Add(_ExtProc(['uniq', '-c']))
 
     pipe_status = p.Run(_WAITER)
     log('pipe_status: %s', pipe_status)
@@ -66,9 +70,9 @@ class ProcessTest(unittest.TestCase):
   def testPipeline2(self):
     Banner('ls | cut -d . -f 1 | head')
     p = process.Pipeline()
-    p.Add(Process(ExternalThunk(['ls'])))
-    p.Add(Process(ExternalThunk(['cut', '-d', '.', '-f', '1'])))
-    p.Add(Process(ExternalThunk(['head'])))
+    p.Add(_ExtProc(['ls']))
+    p.Add(_ExtProc(['cut', '-d', '.', '-f', '1']))
+    p.Add(_ExtProc(['head']))
 
     print(p.Run(_WAITER))
 

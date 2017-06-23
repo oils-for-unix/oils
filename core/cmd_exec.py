@@ -222,7 +222,8 @@ class Executor(object):
     # Either execute command with redirects, or apply redirects in this shell.
     # NOTE: Redirects were processed earlier.
     if argv:
-      process.ExecExternalProgram(argv, {})  # never returns
+      environ = self.mem.GetExported()
+      process.ExecExternalProgram(argv, environ)  # never returns
     else:
       # TODO: self.fd_state.MakePermanent()
       return 0
@@ -423,7 +424,7 @@ class Executor(object):
     """Evaluate environment variable bindings.
 
     Args:
-      more_env: list of ast.env_pair
+      node_env: list of ast.env_pair
       out_env: mutated.
     """
     # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
@@ -460,7 +461,7 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, more_env, fork_external):
+  def _RunSimpleCommand(self, argv, environ, fork_external):
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
@@ -484,13 +485,13 @@ class Executor(object):
       return status
 
     if fork_external:
-      thunk = process.ExternalThunk(argv, more_env)
+      thunk = process.ExternalThunk(argv, environ)
       p = process.Process(thunk)
       status = p.Run(self.waiter)
       return status
 
     # NOTE: Never returns!
-    process.ExecExternalProgram(argv, more_env)
+    process.ExecExternalProgram(argv, environ)
 
   def _MakePipeline(self, node, job_state=None):
     # NOTE: First or last one could use the "main" shell thread.  Doesn't have
@@ -556,10 +557,10 @@ class Executor(object):
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
 
-      more_env = self.mem.GetExported()
-      self._EvalEnv(node.more_env, more_env)
+      environ = self.mem.GetExported()
+      self._EvalEnv(node.more_env, environ)
 
-      status = self._RunSimpleCommand(argv, more_env, fork_external)
+      status = self._RunSimpleCommand(argv, environ, fork_external)
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:

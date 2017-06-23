@@ -68,9 +68,3 @@ echo "v=$v"
 # OK bash/dash/mksh stdout: v=None
 # OK bash/dash/mksh status: 0
 # status: 2
-
-### Dependent export setting
-# FOO is not respected here either.
-export FOO=foo v=$(printenv.py FOO)
-echo "v=$v"
-# stdout: v=None
