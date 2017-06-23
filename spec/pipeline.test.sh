@@ -97,3 +97,27 @@ ${cmd=echo} hi | wc -l
 echo "cmd=$cmd"
 # stdout-json: "1\ncmd=\n"
 # BUG zsh stdout-json: "1\ncmd=echo\n"
+
+### last command is run in its own process
+echo hi | read line
+echo "line=$line"
+# stdout: line=
+# OK zsh stdout: line=hi
+
+### shopt -s lastpipe
+shopt -s lastpipe
+echo hi | read line
+echo "line=$line"
+# stdout: line=hi
+# N-I dash/mksh stdout: line=
+
+### shopt -s lastpipe
+shopt -s lastpipe
+i=0
+seq 3 | while read line; do
+  (( i++ ))
+done
+echo i=$i
+# stdout: i=3
+# N-I dash/mksh stdout: i=0
+

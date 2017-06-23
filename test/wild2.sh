@@ -75,8 +75,16 @@ osh-py-configure() {
 }
 
 compare-pyconfig() {
-  diff -u -r _tmp/wild2/{bash,osh}-py-configure
+  #diff -u -r _tmp/wild2/{bash,osh}-py-configure
+  diff -u -r _tmp/wild2/{bash,osh}-py-configure/config.status
 }
+
+# Hm this is behavior differently.  Ideas for better xtrace in osh:
+#
+# - PID (not just +)
+# - indent by callstack
+# - maybe even the line number.  That should be easy to get from
+#   SimpleCommand.
 
 sh-config-status() {
   local sh=${1:-bash}
@@ -87,7 +95,7 @@ sh-config-status() {
   popd
   echo status=$?
 
-  tree -d $out
+  tree $out
 }
 
 osh-config-status() {

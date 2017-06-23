@@ -167,3 +167,27 @@ echo /$x/$y/$z/
 # stdout: /A/B//
 # status: 0
 
+### get umask
+umask | grep '[0-9]\+'  # check for digits
+# status: 0
+
+### set umask in octal
+rm $TMP/umask-one $TMP/umask-two
+echo one > $TMP/umask-one
+umask 0022
+echo two > $TMP/umask-two
+stat -c '%a' $TMP/umask-one $TMP/umask-two
+# status: 0
+# stdout-json: "664\n644\n"
+# stderr-json: ""
+
+### set umask symbolically
+rm $TMP/umask-one $TMP/umask-two
+echo one > $TMP/umask-one
+umask g-w,o-w
+echo two > $TMP/umask-two
+stat -c '%a' $TMP/umask-one $TMP/umask-two
+# status: 0
+# stdout-json: "664\n644\n"
+# stderr-json: ""
+
