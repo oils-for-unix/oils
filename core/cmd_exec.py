@@ -475,6 +475,12 @@ class Executor(object):
     # TODO: respect the special builtin order too
     arg0 = argv[0]
 
+    # Builtins like 'true' can be redefined as functions.
+    func_node = self.funcs.get(arg0)
+    if func_node is not None:
+      status = self.RunFunc(func_node, argv)
+      return status
+
     builtin_id = builtin.Resolve(arg0)
     if builtin_id != EBuiltin.NONE:
       try:
@@ -483,11 +489,6 @@ class Executor(object):
         # TODO: Make this message more consistent?
         util.usage(str(e))
         status = 2  # consistent error code for usage error
-      return status
-
-    func_node = self.funcs.get(arg0)
-    if func_node is not None:
-      status = self.RunFunc(func_node, argv)
       return status
 
     if fork_external:
