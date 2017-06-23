@@ -31,3 +31,10 @@ echo 'echo $0' > $s
 chmod +x $s
 $SH $s
 # stdout: _tmp/dollar0
+
+### $@ with filename
+s=_tmp/dollar0
+echo 'echo $@' > $s
+chmod +x $s
+$SH $s a b c
+# stdout: a b c

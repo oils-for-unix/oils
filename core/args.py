@@ -64,6 +64,7 @@ class _Attributes(object):
 
   def __init__(self, names):
     self.opt_changes = []  # special name
+    self.saw_double_dash = False  # for set --
     for n in names:
       setattr(self, n, None)
 
@@ -290,6 +291,7 @@ class FlagsAndOptions(object):
     while not state.Done():
       arg = state.Peek()
       if arg == '--':
+        out.saw_double_dash = True
         state.Next()
         break
 
@@ -425,6 +427,7 @@ class BuiltinFlags(object):
     while not state.Done():
       arg = state.Peek()
       if arg == '--':
+        out.saw_double_dash = True
         state.Next()
         break
 

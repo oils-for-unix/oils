@@ -237,7 +237,7 @@ builtins() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -290,7 +290,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -331,7 +331,7 @@ var-op-test() {
 }
 
 var-op-other() {
-  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -358,7 +358,7 @@ var-sub-quote() {
 }
 
 sh-options() {
-  sh-spec spec/sh-options.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/sh-options.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

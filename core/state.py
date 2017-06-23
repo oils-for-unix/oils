@@ -92,6 +92,9 @@ class _ArgFrame(object):
     self.argv = argv
     self.num_shifted = 0
 
+  def __repr__(self):
+    return '<_ArgFrame %s %d at %x>' % (self.argv, self.num_shifted, id(self))
+
   def GetArgNum(self, arg_num):
     index = self.num_shifted + arg_num - 1
     if index >= len(self.argv):

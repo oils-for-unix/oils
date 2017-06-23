@@ -669,7 +669,8 @@ def _Set(argv, exec_opts, mem):
   arg, i = set_spec.Parse(argv)
 
   SetExecOpts(exec_opts, arg.opt_changes)
-  mem.SetArgv(argv[i:])
+  if arg.saw_double_dash or i != len(argv):  # set -u shouldn't affect argv
+    mem.SetArgv(argv[i:])
   return 0
 
   # TODO:

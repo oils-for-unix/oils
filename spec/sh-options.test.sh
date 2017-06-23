@@ -81,6 +81,24 @@ echo end  # never reached
 # status: 1
 # OK dash status: 2
 
+### nounset with "$@"
+set a b c
+set -u  # shouldn't touch argv
+echo "$@"
+# stdout: a b c
+
+### set -u -- clears argv
+set a b c
+set -u -- # shouldn't touch argv
+echo "$@"
+# stdout: 
+
+### set -u -- x y z
+set a b c
+set -u -- x y z
+echo "$@"
+# stdout: x y z
+
 ### reset option with long flag
 set -o errexit
 set +o errexit
