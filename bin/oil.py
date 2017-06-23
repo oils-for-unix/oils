@@ -21,18 +21,21 @@ Builtins that can be exposed:
 - echo: most likely don't care about this
 """
 
+import os
 import time
 start_time = time.time()
 
 # Uncomment this to see startup time problems.
-def tlog(msg):
-  #print('%.3f' % ((time.time() - start_time) * 1000), msg)
-  pass
+if os.environ.get('OIL_TIMING'):
+  def tlog(msg):
+    print('%.3f' % ((time.time() - start_time) * 1000), msg)
+else:
+  def tlog(msg):
+    pass
 
 tlog('before imports')
 
 import errno
-import os
 import re
 import sys
 import traceback  # for debugging

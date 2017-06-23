@@ -581,6 +581,9 @@ class Executor(object):
       self._EvalEnv(node.more_env, environ)
 
       status = self._RunSimpleCommand(argv, environ, fork_external)
+      # TODO: Do something nicer
+      if self.exec_opts.xtrace:
+        log('+ %s -> %d', argv, status)
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:

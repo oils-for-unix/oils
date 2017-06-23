@@ -13,6 +13,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly OSH=~/git/oil/bin/osh
+
 replace-shebang() {
   local dir=$1
   find $dir -name '*.sh' \
@@ -33,45 +35,66 @@ build-toybox() {
 
 readonly DE_DIR=~/git/basis-build/_tmp/debootstrap
 
-bash-debootstrap() {
-  DEBOOTSTRAP_DIR=$DE_DIR $DE_DIR/debootstrap "$@"
+sh-debootstrap() {
+  local sh=$1
+  shift
+  DEBOOTSTRAP_DIR=$DE_DIR $sh $DE_DIR/debootstrap "$@"
 }
 
-osh-debootstrap() {
-  DEBOOTSTRAP_DIR=$DE_DIR bin/osh $DE_DIR/debootstrap "$@"
-}
-
-de-help() {
-  osh-debootstrap --help
+osh-de-help() {
+  sh-debootstrap $OSH --help
 }
 
 # Probably not great to run as root.
-de-xenial() {
+sh-de-xenial() {
   local sh=$1
   local target_dir=_tmp/debootstrap/$sh-xenial
   mkdir -p $target_dir
-  time sudo $0 ${sh}-debootstrap xenial $target_dir || true
+  time sudo $0 debootstrap $sh xenial $target_dir || true
 }
 
-bash-de-xenial() {
-  de-xenial bash
-}
+readonly PYTHON_DIR=$PWD/Python-2.7.13
 
-# Probably not great to run as root.
-osh-de-xenial() {
-  de-xenial osh
-}
+sh-py-configure() {
+  local sh=${1:-bash}
+  local out=_tmp/wild2/$(basename $sh)-py-configure
+  mkdir -p $out
 
-readonly PYTHON_DIR=~/src/Python-2.7.9
-
-py-configure() {
-  cd $PYTHON_DIR
   # Hm this seems to take a long time to parse.  TODO: Show parse timing with
   # -v or xtrace or something.
 
-  # TODO: Implement ':'.  It's a special builtin.
-  time ~/git/oil/bin/osh configure
+  pushd $out
+  time $sh $PYTHON_DIR/configure || true
+  popd
+
+  tree $out
 }
+
+osh-py-configure() {
+  OIL_TIMING=1 sh-py-configure $OSH
+}
+
+compare-pyconfig() {
+  diff -u -r _tmp/wild2/{bash,osh}-py-configure
+}
+
+sh-config-status() {
+  local sh=${1:-bash}
+  local out=_tmp/wild2/$(basename $sh)-py-configure
+
+  pushd $out
+  $sh ./config.status
+  popd
+  echo status=$?
+
+  tree -d $out
+}
+
+osh-config-status() {
+  OIL_TIMING=1 sh-config-status $OSH
+}
+
+# TODO: Save these files and make sure they are the same! 
 
 
 "$@"
