@@ -299,6 +299,9 @@ class Executor(object):
     elif builtin_id == EBuiltin.COMPGEN:
       status = self._CompGen(argv)
 
+    elif builtin_id == EBuiltin.COLON:  # special builtin like 'true'
+      status = 0
+
     elif builtin_id == EBuiltin.TRUE:
       status = 0
 
@@ -474,6 +477,16 @@ class Executor(object):
 
     # TODO: respect the special builtin order too
     arg0 = argv[0]
+
+    builtin_id = builtin.ResolveSpecial(arg0)
+    if builtin_id != EBuiltin.NONE:
+      try:
+        status = self._RunBuiltin(builtin_id, argv)
+      except args.UsageError as e:
+        # TODO: Make this message more consistent?
+        util.usage(str(e))
+        status = 2  # consistent error code for usage error
+      return status
 
     # Builtins like 'true' can be redefined as functions.
     func_node = self.funcs.get(arg0)

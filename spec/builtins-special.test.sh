@@ -30,10 +30,10 @@ echo status=$?
 ### Special builtins can't be redefined as functions
 # bash manual says they are 'found before' functions.
 test -n "$BASH_VERSION" && set -o posix
-readonly() {
-  echo 'readonly func'
+export() {
+  echo 'export func'
 }
-readonly hi
+export hi
 echo status=$?
 # status: 2
 # BUG mksh status: 0

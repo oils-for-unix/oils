@@ -124,14 +124,17 @@ TRAP UMASK
 EXIT SOURCE DOT EVAL EXEC WAIT JOBS 
 COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
+COLON
 """.split())
 
 
 # These can't be redefined by functions.
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 # On the other hand, 'cd' CAN be redefined.
-# TODO:
-# - use these
+#
+# NOTE: OSH treats these specially:
+# - break/continue/return
+# - local/readonly
 SPECIAL_BUILTINS = [
     'break', ':', 'continue', '.', 'eval', 'exec', 'exit', 'export',
     'readonly', 'return', 'set', 'shift', 'times', 'trap', 'unset',
@@ -314,8 +317,21 @@ class Builtins(object):
     return self.to_complete
 
 
-# TODO: This and EBuiltin kind of useless?  We could just test for string
-# equality directly.
+# TODO: Resolve() and EBuiltin kind of useless?  We could just test for string
+# equality directly.  Or do we want to cache this lookup so it isn't done on
+# say every iteration of a loop?
+
+def ResolveSpecial(argv0):
+  # TODO: Add more special builtins here
+  if argv0 == "export":
+    return EBuiltin.EXPORT
+  elif argv0 == "exit":
+    return EBuiltin.EXIT
+  elif argv0 == ":":
+    return EBuiltin.COLON
+
+  return EBuiltin.NONE
+
 def Resolve(argv0):
   # TODO: ResolveSpecialBuiltin first, then ResolveFunction, then
   # ResolveOtherBuiltin.  In other words, you can't redefine special builtins
@@ -340,12 +356,6 @@ def Resolve(argv0):
     return EBuiltin.POPD
   elif argv0 == "dirs":
     return EBuiltin.DIRS
-
-  elif argv0 == "export":
-    return EBuiltin.EXPORT
-
-  elif argv0 == "exit":
-    return EBuiltin.EXIT
 
   elif argv0 == "source":
     return EBuiltin.SOURCE
