@@ -170,7 +170,7 @@ bugs() {
 }
 
 blog1() {
-  sh-spec spec/blog1.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/blog1.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 

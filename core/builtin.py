@@ -123,6 +123,7 @@ EXPORT UNSET SET
 TRAP UMASK
 EXIT SOURCE DOT EVAL EXEC WAIT JOBS 
 COMPLETE COMPGEN DEBUG_LINE
+TRUE FALSE
 """.split())
 
 
@@ -372,6 +373,11 @@ def Resolve(argv0):
     return EBuiltin.COMPLETE
   elif argv0 == "compgen":
     return EBuiltin.COMPGEN
+
+  elif argv0 == "true":
+    return EBuiltin.TRUE
+  elif argv0 == "false":
+    return EBuiltin.FALSE
 
   elif argv0 == "debug-line":
     return EBuiltin.DEBUG_LINE

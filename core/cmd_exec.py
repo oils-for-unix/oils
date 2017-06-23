@@ -299,6 +299,12 @@ class Executor(object):
     elif builtin_id == EBuiltin.COMPGEN:
       status = self._CompGen(argv)
 
+    elif builtin_id == EBuiltin.TRUE:
+      status = 0
+
+    elif builtin_id == EBuiltin.FALSE:
+      status = 1
+
     elif builtin_id == EBuiltin.DEBUG_LINE:
       status = builtin._DebugLine(argv, self.status_lines)
 

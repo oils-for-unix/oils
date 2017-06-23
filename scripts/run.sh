@@ -31,14 +31,4 @@ make-bin-links() {
   done
 }
 
-replace-shebang() {
-  local dir=$1
-  find $dir -name '*.sh' \
-    | xargs -- sed -i 's|^#!/bin/bash|#!/home/andy/git/oil/bin/osh|'
-}
-
-replace-toybox() {
-  replace-shebang ~/git/other/toybox
-}
-
 "$@"
