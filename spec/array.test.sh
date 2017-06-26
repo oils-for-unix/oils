@@ -83,6 +83,12 @@ a=(1 '2 3')
 argv.py "${a[3]}"
 # stdout: ['']
 
+### Negative index
+a=(1 '2 3')
+argv.py "${a[-1]}" "${a[-2]}" "${a[-5]}"  # last one out of bounds
+# stdout: ['2 3', '1', '']
+# N-I mksh stdout: ['', '', '']
+
 ### Retrieve index that is a variable
 a=(1 '2 3')
 i=1
