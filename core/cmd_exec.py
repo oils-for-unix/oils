@@ -574,6 +574,8 @@ class Executor(object):
 
   # TODO: This causes "bad descriptor errors"
   #XFILE = open('/tmp/xtrace.log', 'w')
+  # typically fd 4, not sure why it interferes?
+  #log('*** XFILE %d', XFILE.fileno())
 
   def _Dispatch(self, node, fork_external):
     if node.tag == command_e.SimpleCommand:
