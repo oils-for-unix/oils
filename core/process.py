@@ -72,8 +72,8 @@ class FdState:
     try:
       os.dup2(fd1, fd2)
     except OSError as e:
-      #print("%s: %s %s" % (e, fd1, fd2))
-      print(e, file=sys.stderr)
+      # bash/dash give this error too, e.g. for 'echo hi 1>&3'
+      util.error('%d: %s', fd1, os.strerror(e.errno))
       # Restore and return error
       os.dup2(self.next_fd, fd2)
       os.close(self.next_fd)
@@ -98,6 +98,7 @@ class FdState:
 
     # TODO: r.fd needs to be opened?  if it's not stdin or stdout
     # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
+    ok = True
 
     if r.tag == redirect_e.PathRedirect:
       if r.op_id == Id.Redir_Great:  # >
@@ -111,12 +112,15 @@ class FdState:
 
       target_fd = os.open(r.filename, mode)
 
-      self._PushDup(target_fd, r.fd)
+      if not self._PushDup(target_fd, r.fd):
+        ok = False
+
       self._PushClose(target_fd)
 
     elif r.tag == redirect_e.DescRedirect:
       if r.op_id == Id.Redir_GreatAnd:  # 1>&
-        self._PushDup(r.target_fd, r.fd)
+        if not self._PushDup(r.target_fd, r.fd):
+          ok = False
       elif r.op_id == Id.Redir_LessAnd:
         raise NotImplementedError
       else:
@@ -124,7 +128,8 @@ class FdState:
 
     elif r.tag == redirect_e.HereRedirect:
       read_fd, write_fd = os.pipe()
-      self._PushDup(read_fd, r.fd)  # stdin is now the pipe
+      if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
+        ok = False
       self._PushClose(read_fd)
 
       thunk = _HereDocWriterThunk(write_fd, r.body)
@@ -153,14 +158,21 @@ class FdState:
         os.write(write_fd, r.body)
         os.close(write_fd)
 
+    return ok
+
   def Push(self, redirects, waiter):
     #log('> PushFrame')
     new_frame = _FdFrame()
     self.stack.append(new_frame)
     self.cur_frame = new_frame
 
+    ok = True
     for r in redirects:
-      self._ApplyRedirect(r, waiter)
+      #log('apply %s', r)
+      if not self._ApplyRedirect(r, waiter):
+        ok = False  # for bad descriptor
+    #log('done applying %d redirects', len(redirects))
+    return ok
 
   def MakePermanent(self):
     self.cur_frame.Forget()
@@ -169,7 +181,11 @@ class FdState:
     frame = self.stack.pop()
     #log('< Pop %s', frame)
     for saved, orig in reversed(frame.saved):
-      os.dup2(saved, orig)
+      try:
+        os.dup2(saved, orig)
+      except OSError as e:
+        log('dup2(%d, %d) error: %s', saved, orig, e)
+        raise
       os.close(saved)
       #log('dup2 %s %s', saved, orig)
       self.next_fd -= 1  # Count down

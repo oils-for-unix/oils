@@ -182,3 +182,23 @@ echo DONE
 # OK dash stdout: result=2
 # OK dash status: 2
 
+### Redirect to file descriptor that's not open
+echo hi 1>&3
+# status: 1
+# OK dash status: 2
+
+### Open descriptor with exec
+# What is the point of this?  ./configure scripts and debootstrap use it.
+exec 3>&1
+echo hi 1>&3
+# stdout: hi
+# status: 0
+
+### Open multiple descriptors with exxec
+# What is the point of this?  ./configure scripts and debootstrap use it.
+exec 3>&1
+exec 4>&1
+echo three 1>&3
+echo four 1>&4
+# stdout-json: "three\nfour\n"
+# status: 0

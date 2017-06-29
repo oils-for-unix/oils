@@ -91,7 +91,7 @@ sh-config-status() {
   local out=_tmp/wild2/$(basename $sh)-py-configure
 
   pushd $out
-  $sh ./config.status
+  $sh -x ./config.status
   popd
   echo status=$?
 

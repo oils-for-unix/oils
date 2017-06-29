@@ -572,18 +572,40 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
+  # TODO: This causes "bad descriptor errors"
+  #XFILE = open('/tmp/xtrace.log', 'w')
+
   def _Dispatch(self, node, fork_external):
     if node.tag == command_e.SimpleCommand:
+      # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
+      # redirected here, which screws up loggnig.  For example, 'echo hi
+      # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
+      # redirects.
+
+      # Another problem:
+      # - tracing can be called concurrently from multiple processes, leading
+      # to overlap.  Maybe have a mode that creates a file per process.
+      # xtrace-proc
+      # - line numbers for every command would be very nice.  But then you have
+      # to print the filename too.
+
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
 
       environ = self.mem.GetExported()
       self._EvalEnv(node.more_env, environ)
 
-      status = self._RunSimpleCommand(argv, environ, fork_external)
-      # TODO: Do something nicer
       if self.exec_opts.xtrace:
-        log('+ %s -> %d', argv, status)
+        log('+ %s', argv)
+        #print('+ %s' % argv, file=sys.stderr)
+        #print('+ %s' % argv, file=self.XFILE)
+        #os.write(2, '+ %s\n' % argv)
+
+      status = self._RunSimpleCommand(argv, environ, fork_external)
+
+      if self.exec_opts.xtrace:
+        #log('+ %s -> %d', argv, status)
+        pass
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
@@ -861,7 +883,10 @@ class Executor(object):
       return status
     assert isinstance(redirects, list), redirects
 
-    self.fd_state.Push(redirects, self.waiter)
+    if not self.fd_state.Push(redirects, self.waiter):
+      # The whole command fails with status 1, e.g. bad file descriptor.
+      return 1
+
     try:
       status = self._Dispatch(node, fork_external)
     finally:
@@ -931,7 +956,8 @@ class Executor(object):
     # f 2>&1
 
     def_redirects = self._EvalRedirects(func_node)
-    self.fd_state.Push(def_redirects, self.waiter)
+    if not self.fd_state.Push(def_redirects, self.waiter):
+      return 1  # error
 
     self.mem.Push(argv[1:])
 
