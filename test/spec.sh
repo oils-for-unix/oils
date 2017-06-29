@@ -232,7 +232,7 @@ test-builtin() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -242,7 +242,7 @@ builtin-vars() {
 }
 
 builtins-special() {
-  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -265,7 +265,7 @@ glob() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/arith.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -280,7 +280,7 @@ command_() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/pipeline.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
