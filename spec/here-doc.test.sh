@@ -8,11 +8,12 @@ EOF
 # stdout: one
 
 ### Here doc from another input file descriptor
-# NOTE: dash seemed to fail on descriptor 99, but descriptor 5 works.
-read_from_fd.py 9  9<<EOF
-fd9
+# NOTE: OSH fails on descriptor 9, but not descriptor 8?  Is this because of
+# the Python VM?  How  to inspect state?
+read_from_fd.py 8  8<<EOF
+here doc on descriptor
 EOF
-# stdout: 9: fd9
+# stdout: 8: here doc on descriptor
 
 ### Multiple here docs with different descriptors
 read_from_fd.py 0 3 <<EOF 3<<EOF3
