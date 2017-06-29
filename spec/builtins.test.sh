@@ -173,6 +173,7 @@ umask | grep '[0-9]\+'  # check for digits
 
 ### set umask in octal
 rm $TMP/umask-one $TMP/umask-two
+umask 0002
 echo one > $TMP/umask-one
 umask 0022
 echo two > $TMP/umask-two

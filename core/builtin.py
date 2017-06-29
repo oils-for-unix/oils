@@ -773,8 +773,26 @@ def _Trap(argv, traps):
 
 
 def Umask(argv):
-  util.warn('*** umask not implemented ***')
-  return 0
+  if len(argv) == 0:
+    # umask() has a dumb API: you can't get it without modifying it first!
+    # NOTE: dash disables interrupts around the two umask() calls, but that
+    # shouldn't be a concern for us.  Signal handlers won't call umask().
+    mask = os.umask(0)
+    os.umask(mask)  # 
+    print('0%03o' % mask)  # octal format
+    return 0
+
+  if len(argv) == 1:
+    a = argv[0]
+    if a.isdigit():
+      new_mask = int(a, 8)
+      os.umask(new_mask)
+      return 0
+    else:
+      util.warn('*** umask with symbolic input not implemented ***')
+      return 1
+
+  raise args.UsageError('umask: unexpected arguments')
 
 
 def _DebugLine(argv, status_lines):
