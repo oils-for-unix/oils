@@ -49,6 +49,7 @@ class _ErrorWithLocation(Exception):
     # args.
     self.token = kwargs.pop('token', None)
     self.word = kwargs.pop('word', None)
+    self.exit_status = kwargs.pop('status', None)
     if kwargs:
       raise AssertionError('Invalid keyword args %s' % kwargs)
 

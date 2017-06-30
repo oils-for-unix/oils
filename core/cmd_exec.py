@@ -330,8 +330,9 @@ class Executor(object):
       #  e_die('%r command exited with status %d (%s)', argv[0], status,
       #        node.words[0])
 
-      e_die('%r command exited with status %d', node.__class__.__name__,
-            status)
+      raise util.FatalRuntimeError(
+          '%r command exited with status %d', node.__class__.__name__, status,
+          status=status)
 
   def _EvalLhs(self, node):
     assert isinstance(node, ast.lhs_expr), node
@@ -915,7 +916,7 @@ class Executor(object):
       # TODO:
       ui.PrettyPrintError(e, self.arena, sys.stderr)
       print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
-      status = 1
+      status = e.exit_status if e.exit_status is not None else 1
 
     # TODO: Hook this up
     #print('break / continue can only be used inside loop')
