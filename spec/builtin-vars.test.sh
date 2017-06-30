@@ -102,6 +102,24 @@ new=$PATH
 test "$old" = "$new" && echo "not changed"
 # stdout: not changed
 
+### assign to readonly variable
+# bash doesn't abort unless errexit!
+readonly foo=bar
+foo=eggs
+echo "status=$?"  # nothing happens
+# status: 1
+# BUG bash stdout: status=1
+# BUG bash status: 0
+# OK dash/mksh status: 2
+
+### assign to readonly variable - errexit
+set -o errexit
+readonly foo=bar
+foo=eggs
+echo "status=$?"  # nothing happens
+# status: 1
+# OK dash/mksh status: 2
+
 ### Unset a variable
 foo=bar
 echo foo=$foo

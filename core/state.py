@@ -432,3 +432,37 @@ class Mem(object):
     # Or should this get a flag name?
     # readonly needs to be respected with 'set'.
     pass
+
+  #
+  # New Smaller Interface
+  #
+  # GetSpecialVar -- readonly.  Although some of these are not here.
+  # GetVar(name, val, scope) -- GetGlobal, Get
+  # SetVar -- set variables and flags, of all scopes
+  # Unset
+  # GetExported -- for starting a process
+
+  # Helpers
+  # state.SetGlobalString(mem, 'PWD', 'hi')
+  # state.SetGlobalArray(mem, 'COMPREPLY', ['a', 'b'])
+
+  def SetVar(self, lhs, value, flags, dynamic_scope):
+    """
+    Args:
+      lval: lvalue
+      val: value
+      flags: int, Readonly | Exported 
+        How to unset?  val = None and flags are a mask?
+        or new_flags?
+
+    or scope:
+      Local | Global | Dynamic - for builtins, PWD, etc.
+
+      NOTE: in bash, PWD=/ changes the directory.  But not in dash.
+    """
+
+    # local doesn't 
+    pass
+
+  def GetVar(self, name, scope):
+    pass
