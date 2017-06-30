@@ -25,6 +25,15 @@ printenv.py GLOBAL
 # N-I mksh status: 1
 # N-I dash status: 2
 
+### export -n undefined is ignored
+set -o errexit
+export -n undef
+echo status=$?
+# stdout: status=0
+# N-I mksh/dash stdout-json: ""
+# N-I mksh status: 1
+# N-I dash  status: 2
+
 ### Export a global variable and unset it
 f() { export GLOBAL=X; }
 f
@@ -139,13 +148,16 @@ echo status=$?
 # stdout: status=0
 
 ### Unset readonly variable
-# dash aborts the whole program
+# dash aborts the whole program.  I'm also aborting the whole program because
+# it's a programming error.
 readonly R=foo
 unset R
 echo status=$?
-# stdout-json: "status=1\n"
+# status: 1
+# stdout-json: ""
 # OK dash status: 2
-# OK dash stdout-json: ""
+# BUG mksh/bash stdout-json: "status=1\n"
+# BUG mksh/bash status: 0
 
 ### Unset a function without -f
 f() {
@@ -189,3 +201,20 @@ echo foo=$foo
 foo
 echo status=$?
 # stdout-json: "foo=bar\nstatus=127\n"
+
+### Unset array member
+a=(x y z)
+unset 'a[1]'
+echo "${a[@]}" len="${#a[@]}"
+# stdout: x z len=2
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+
+### Unset array member with expression
+i=1
+a=(w x y z)
+unset 'a[ i - 1 ]' a[i+1]  # note: can't have space between a and [
+echo "${a[@]}" len="${#a[@]}"
+# stdout: x z len=2
+# N-I dash status: 2
+# N-I dash stdout-json: ""

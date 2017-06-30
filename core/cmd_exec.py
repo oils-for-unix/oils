@@ -87,6 +87,8 @@ redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 
 value_e = runtime.value_e
+scope = runtime.scope
+var_flags = runtime.var_flags
 
 log = util.log
 e_die = util.e_die
@@ -243,49 +245,49 @@ class Executor(object):
       self.fd_state.MakePermanent()
 
     elif builtin_id == EBuiltin.READ:
-      status = builtin._Read(argv, self.mem)
+      status = builtin.Read(argv, self.mem)
 
     elif builtin_id == EBuiltin.ECHO:
-      status = builtin._Echo(argv)
+      status = builtin.Echo(argv)
 
     elif builtin_id == EBuiltin.SHIFT:
-      status = builtin._Shift(argv, self.mem)
+      status = builtin.Shift(argv, self.mem)
 
     elif builtin_id == EBuiltin.CD:
       status = builtin._Cd(argv, self.mem)
 
     elif builtin_id == EBuiltin.SET:
-      status = builtin._Set(argv, self.exec_opts, self.mem)
+      status = builtin.Set(argv, self.exec_opts, self.mem)
 
     elif builtin_id == EBuiltin.UNSET:
-      status = builtin._Unset(argv, self.mem, self.funcs)
+      status = builtin.Unset(argv, self.mem, self.funcs)
 
     elif builtin_id == EBuiltin.EXPORT:
-      status = builtin._Export(argv, self.mem)
+      status = builtin.Export(argv, self.mem)
 
     elif builtin_id == EBuiltin.EXIT:
-      status = builtin._Exit(argv)
+      status = builtin.Exit(argv)
 
     elif builtin_id == EBuiltin.WAIT:
-      status = builtin._Wait(argv, self.waiter, self.job_state, self.mem)
+      status = builtin.Wait(argv, self.waiter, self.job_state, self.mem)
 
     elif builtin_id == EBuiltin.JOBS:
-      status = builtin._Jobs(argv, self.job_state)
+      status = builtin.Jobs(argv, self.job_state)
 
     elif builtin_id == EBuiltin.PUSHD:
-      status = builtin._Pushd(argv, self.dir_stack)
+      status = builtin.Pushd(argv, self.dir_stack)
 
     elif builtin_id == EBuiltin.POPD:
-      status = builtin._Popd(argv, self.dir_stack)
+      status = builtin.Popd(argv, self.dir_stack)
 
     elif builtin_id == EBuiltin.DIRS:
-      status = builtin._Dirs(argv, self.dir_stack)
+      status = builtin.Dirs(argv, self.dir_stack)
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
 
     elif builtin_id == EBuiltin.TRAP:
-      status = builtin._Trap(argv, self.traps)
+      status = builtin.Trap(argv, self.traps)
 
     elif builtin_id == EBuiltin.UMASK:
       status = builtin.Umask(argv)
@@ -309,7 +311,7 @@ class Executor(object):
       status = 1
 
     elif builtin_id == EBuiltin.DEBUG_LINE:
-      status = builtin._DebugLine(argv, self.status_lines)
+      status = builtin.DebugLine(argv, self.status_lines)
 
     else:
       raise AssertionError('Unhandled builtin: %d' % builtin_id)
@@ -449,7 +451,7 @@ class Executor(object):
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetLocal(name, val)
+      self.mem.SetVar(ast.LhsName(name), val, (), scope.LocalOnly)
 
       out_env[name] = val.s
     self.mem.PopTemp()
@@ -530,7 +532,7 @@ class Executor(object):
     pi = self._MakePipeline(node)
 
     pipe_status = pi.Run(self.waiter)
-    self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])
+    state.SetGlobalArray(self.mem, 'PIPESTATUS', [str(p) for p in pipe_status])
 
     if self.exec_opts.pipefail:
       # The status is that of the last command that is non-zero.
@@ -651,6 +653,19 @@ class Executor(object):
 
     elif node.tag == command_e.Assignment:
       pairs = []
+      if node.keyword == Id.Assign_Local:
+        lookup_mode = scope.LocalOnly
+        flags = ()
+      elif node.keyword == Id.Assign_Readonly:
+        lookup_mode = scope.Dynamic
+        flags = (var_flags.ReadOnly,)
+      elif node.keyword == Id.Assign_None:
+        lookup_mode = scope.Dynamic
+        flags = ()
+      else:
+        # TODO: typeset, declare, etc.  Those are dynamic though.
+        raise NotImplementedError(node.keyword)
+
       for pair in node.pairs:
         if pair.rhs:
           # RHS can be a string or array.
@@ -661,13 +676,9 @@ class Executor(object):
           val = runtime.Str('')
 
         lval = self._EvalLhs(pair.lhs)
-        pairs.append((lval, val))
-
-      if node.keyword == Id.Assign_Local:
-        self.mem.SetLocals(pairs)
-      else:
-        # NOTE: could be readonly/export/etc.
-        self.mem.SetLocalsOrGlobals(pairs)
+        # TODO: Respect readonly
+        #log('ASSIGNING %s -> %s', lval, val)
+        self.mem.SetVar(lval, val, flags, lookup_mode)
 
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
@@ -751,7 +762,7 @@ class Executor(object):
       status = 0  # in case we don't loop
       for x in iter_list:
         #log('> ForEach setting %r', x)
-        self.mem.SetLocal(iter_name, runtime.Str(x))
+        state.SetLocalString(self.mem, iter_name, x)
         #log('<')
 
         try:

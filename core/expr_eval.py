@@ -31,6 +31,7 @@ word_e = ast.word_e
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 lvalue_e = runtime.lvalue_e
+scope = runtime.scope
 
 
 def _StringToInteger(s, word=None):
@@ -146,6 +147,11 @@ class _ExprEvaluator:
         warn(e.UserErrorString())
     return i
 
+  def _UndefZeroOrError(self):
+    if self.exec_opts.strict_arith:
+      e_die("Undefined variable")  # TODO: better context
+    return 0
+
   # TODO: Remove this
   def Eval(self, node):
     return self._Eval(node)
@@ -165,7 +171,7 @@ class ArithEvaluator(_ExprEvaluator):
     return i
 
   def _VarLookup(self, name):
-    val = self.mem.Get(name)
+    val = self.mem.GetVar(name)
     # By default, undefined variables are the ZERO value.  TODO: Respect
     # nounset and raise an exception.
     if val.tag == value_e.Undef:
@@ -207,7 +213,7 @@ class ArithEvaluator(_ExprEvaluator):
       index = self._Eval(node.index)
       lval = runtime.LhsIndexedName(node.name, index)
 
-      val = self.mem.Get(node.name)
+      val = self.mem.GetVar(node.name)
       if val.tag == value_e.Str:
         e_die("String %r can't be assigned to", node.name)
 
@@ -228,8 +234,7 @@ class ArithEvaluator(_ExprEvaluator):
         try:
           v = array[index]
         except IndexError:
-          # TODO: Handle out of bounds error with strict_arith
-          raise
+          v = self._UndefZeroOrError()
         if isinstance(v, str):
           v = self._StringToIntegerOrError(v)
         return v, lval
@@ -238,8 +243,7 @@ class ArithEvaluator(_ExprEvaluator):
 
   def _Store(self, lval, new_int):
     val = runtime.Str(str(new_int))
-    pairs = [(lval, val)]
-    self.mem.SetLocalsOrGlobals(pairs)  # TODO: Change API
+    self.mem.SetVar(lval, val, (), scope.Dynamic)
 
   def _Eval(self, node):
     """
@@ -278,7 +282,7 @@ class ArithEvaluator(_ExprEvaluator):
         ret = new_int
 
       elif op_id == Id.Arith_DMinus:  # pre-decrement
-        new_int = old_int + 1
+        new_int = old_int - 1
         ret = new_int
 
       else:

@@ -41,12 +41,15 @@ import traceback
 from osh import ast_ as ast
 from osh import parse_lib
 from core import runtime
+from core import state
 from core import ui
 from core import util
 from core.id_kind import Id
 
 command_e = ast.command_e
 value_e = runtime.value_e
+
+log = util.log
 
 
 class CompletionLookup(object):
@@ -204,19 +207,19 @@ class ShellFuncAction(CompletionAction):
     # reply = []
     # self.ex.GetArray(reply)
 
-    self.ex.mem.SetGlobalArray('COMP_WORDS', words)
-    self.ex.mem.SetGlobalString('COMP_CWORD', str(index))
+    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', words)
+    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
 
     self.ex.RunFunc(self.func, [])  # call with no arguments
 
     # Should be COMP_REPLY to follow naming convention!  Lame.
-    val = self.ex.mem.GetGlobal('COMPREPLY')
+    val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
-      print('COMP_REPLY not defined', file=sys.stderr)
+      log('COMPREPLY not defined')
       return
 
     if val.tag != value_e.StrArray:
-      print('ERROR: COMP_REPLY should be an array, got %s' % val, file=sys.stderr)
+      log('ERROR: COMPREPLY should be an array, got %s', val)
       return
     reply = val.strs
 
@@ -285,7 +288,7 @@ class ExternalCommandAction(object):
     - When we get a newer timestamp, we should clear the old one.
     - When PATH is changed, we can remove old entries.
     """
-    val = self.mem.Get('PATH')
+    val = self.mem.GetVar('PATH')
     if val.tag != value_e.Str:
       # No matches if not a string
       return

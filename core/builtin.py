@@ -107,8 +107,13 @@ import sys
 from core import args
 from core import runtime
 from core import util
+from core import state
+
+from osh import lex
 
 value_e = runtime.value_e
+scope = runtime.scope
+var_flags = runtime.var_flags
 log = util.log
 
 # NOTE: NONE is a special value.
@@ -400,7 +405,7 @@ echo_spec.ShortFlag('-e')  # no backslash escapes
 echo_spec.ShortFlag('-n')
 
 
-def _Echo(argv):
+def Echo(argv):
   """
   echo builtin.  Doesn't depend on executor state.
 
@@ -427,7 +432,7 @@ def _Echo(argv):
   return 0
 
 
-def _Exit(argv):
+def Exit(argv):
   if len(argv) > 1:
     util.error('exit: too many arguments')
     return 1
@@ -444,7 +449,7 @@ def _Exit(argv):
 
 import getopt
 
-def _Wait(argv, waiter, job_state, mem):
+def Wait(argv, waiter, job_state, mem):
   """
   wait: wait [-n] [id ...]
       Wait for job completion and return exit status.
@@ -529,20 +534,20 @@ def _Wait(argv, waiter, job_state, mem):
     st = job.WaitUntilDone(waiter)
     if isinstance(st, list):
       status = st[-1]
-      mem.SetGlobalArray('PIPESTATUS', [str(p) for p in st])
+      state.SetGlobalArray(mem, 'PIPESTATUS', [str(p) for p in st])
     else:
       status = st
 
   return status
 
 
-def _Jobs(argv, job_state):
+def Jobs(argv, job_state):
   """List jobs."""
   job_state.List()
   return 0
 
 
-def _Read(argv, mem):
+def Read(argv, mem):
   # TODO:
   # - parse flags.
   # - Use IFS instead of Python's split().
@@ -569,13 +574,12 @@ def _Read(argv, mem):
       s = strs[i]
     except IndexError:
       s = ''  # if there are too many variables
-    val = runtime.Str(s)
-    mem.SetLocal(names[i], val)
+    state.SetLocalString(mem, names[i], s)
 
   return status
 
 
-def _Shift(argv, mem):
+def Shift(argv, mem):
   if len(argv) > 1:
     util.error('shift: too many arguments')
     return 1
@@ -594,7 +598,7 @@ def _Cd(argv, mem):
   # TODO: Parse flags, error checking, etc.
   dest_dir = argv[0]
   if dest_dir == '-':
-    old = mem.Get('OLDPWD')
+    old = mem.GetVar('OLDPWD', scope.GlobalOnly)
     if old.tag == value_e.Undef:
       log('OLDPWD not set')
       return 1
@@ -607,20 +611,20 @@ def _Cd(argv, mem):
       raise AssertionError('Invalid OLDPWD')
 
   # Save OLDPWD.
-  mem.SetGlobalString('OLDPWD', os.getcwd())
+  state.SetGlobalString(mem, 'OLDPWD', os.getcwd())
   os.chdir(dest_dir)
-  mem.SetGlobalString('PWD', dest_dir)
+  state.SetGlobalString(mem, 'PWD', dest_dir)
   return 0
 
 
-def _Pushd(argv, dir_stack):
+def Pushd(argv, dir_stack):
   dir_stack.append(os.getcwd())
   dest_dir = argv[0]
   os.chdir(dest_dir)  # TODO: error checking
   return 0
 
 
-def _Popd(argv, dir_stack):
+def Popd(argv, dir_stack):
   try:
     dest_dir = dir_stack.pop()
   except IndexError:
@@ -630,23 +634,39 @@ def _Popd(argv, dir_stack):
   return 0
 
 
-def _Dirs(argv, dir_stack):
+def Dirs(argv, dir_stack):
   print(dir_stack)
   return 0
 
 
-def _Export(argv, mem):
-  for arg in argv:
-    parts = arg.split('=', 1)
-    if len(parts) == 1:
-      name = parts[0]
-    else:
-      name, val = parts
-      # TODO: Set the global flag
-      mem.SetGlobalString(name, val)
+EXPORT_SPEC = args.BuiltinFlags()
+EXPORT_SPEC.ShortFlag('-n')
 
-    # May create an undefined variable
-    mem.SetExportFlag(name, True)
+
+def Export(argv, mem):
+  arg, i = EXPORT_SPEC.Parse(argv)
+  if arg.n:
+    for name in argv[i:]:
+      # TODO: Validate variable name
+      m = lex.VAR_NAME_RE.match(name)
+      if not m:
+        raise args.UsageError('export: Invalid variable name %r' % name)
+
+      # NOTE: bash does not care if it wasn't found
+      _ = mem.ClearFlag(name, var_flags.Exported, scope.Dynamic)
+  else:
+    for arg in argv[i:]:
+      parts = arg.split('=', 1)
+      if len(parts) == 1:
+        name = parts[0]
+        val = None  # Creates an empty variable
+      else:
+        name, s = parts
+        val = runtime.Str(s)
+
+      #log('%s %s', name, val)
+      mem.SetVar(
+          runtime.LhsName(name), val, (var_flags.Exported,), scope.Dynamic)
 
   return 0
 
@@ -672,7 +692,7 @@ def SetExecOpts(exec_opts, opt_changes):
       setattr(exec_opts, name, val)
 
 
-def _Set(argv, exec_opts, mem):
+def Set(argv, exec_opts, mem):
   # TODO:
   # - How to integrate this with auto-completion?  Have to handle '+'.
 
@@ -736,28 +756,34 @@ def _Set(argv, exec_opts, mem):
     exec_opts.strict_scope = True
 
 
-unset_spec = args.BuiltinFlags()
-unset_spec.ShortFlag('-v')
-unset_spec.ShortFlag('-f')
+UNSET_SPEC = args.BuiltinFlags()
+UNSET_SPEC.ShortFlag('-v')
+UNSET_SPEC.ShortFlag('-f')
 
 
-def _Unset(argv, mem, funcs):
-  #flags, i = unset_spec.Parse(argv)
-  i = 0
+# TODO:
+# - Parse lvalue expression: unset 'a[ i - 1 ]'.  Static or dynamic parsing?
+def Unset(argv, mem, funcs):
+  arg, i = UNSET_SPEC.Parse(argv)
 
-  # TODO: Parse flags -v and -f (variable and function)
   for name in argv[i:]:
-    found = mem.Unset(name)
-    # If it's not a var, try to unset function if not found
-    if not found:
+    if arg.f:
       if name in funcs:
         del funcs[name]
+    elif arg.v:
+      mem.Unset(runtime.LhsName(name), scope.Dynamic)
+    else:
+      # Try to delete var first, then func.
+      found = mem.Unset(runtime.LhsName(name), scope.Dynamic)
+      #log('%s: %s', name, found)
+      if not found:
+        if name in funcs:
+          del funcs[name]
 
-    log('%s: %s', name, found)
   return 0
 
 
-def _Trap(argv, traps):
+def Trap(argv, traps):
   # TODO: register trap
 
   # Example:
@@ -795,7 +821,7 @@ def Umask(argv):
   raise args.UsageError('umask: unexpected arguments')
 
 
-def _DebugLine(argv, status_lines):
+def DebugLine(argv, status_lines):
   # TODO: Maybe add a position flag?  Like debug-line -n 1 'foo'
   # And enforce that you get a single arg?
 

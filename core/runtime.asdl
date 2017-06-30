@@ -47,6 +47,9 @@ module runtime
   -- For storing a variable.
   cell = (value val, bool exported, bool readonly)
 
+  var_flags = Exported | ReadOnly
+  scope = LocalOnly | GlobalOnly | Dynamic
+
   -- For assignment, evaluated to osh_ast.lhs_expr
   lvalue = 
     LhsName(string name)

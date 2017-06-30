@@ -81,7 +81,7 @@ class CompletionTest(unittest.TestCase):
     func_node.body = body_node
 
     a = completion.ShellFuncAction(ex, func_node)
-    matches = (list(a.Matches([], 0, 'f')))
+    matches = list(a.Matches([], 0, 'f'))
     self.assertEqual(['f1 ', 'f2 '], matches)
 
   def testChainedCompleter(self):

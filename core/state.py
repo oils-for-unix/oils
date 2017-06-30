@@ -21,6 +21,8 @@ from osh import ast_ as ast
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 lvalue_e = runtime.lvalue_e
+scope = runtime.scope
+var_flags = runtime.var_flags
 
 log = util.log
 e_die = util.e_die
@@ -139,9 +141,6 @@ class Mem(object):
   Callers:
     User code: assigning and evaluating variables, in command context or
       arithmetic context.
-      SetLocal -- for local
-      SetReadonlyFlag
-      SetExportFlag
     Completion engine: for COMP_WORDS, etc.
     Builtins call it implicitly: read, cd for $PWD, $OLDPWD, etc.
 
@@ -163,26 +162,37 @@ class Mem(object):
     self._InitDefaults()
     self._InitEnviron(environ)
 
+  def __repr__(self):
+    parts = []
+    parts.append('<Mem')
+    for i, frame in enumerate(self.var_stack):
+      parts.append('  -- %d --' % i)
+      for n, v in frame.iteritems():
+        parts.append('  %s %s' % (n, v))
+    parts.append('>')
+    return '\n'.join(parts) + '\n'
+
   def _InitDefaults(self):
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
-    self.SetGlobalString('IFS', ' \t\n')
-    self.SetGlobalString('PWD', os.getcwd())
+    SetGlobalString(self, 'IFS', ' \t\n')
+    SetGlobalString(self, 'PWD', os.getcwd())
 
   def _InitEnviron(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
-      self.SetGlobalString(n, v)
-      self.SetExportFlag(n, True)
+      self.SetVar(ast.LhsName(n), runtime.Str(v),
+                 (var_flags.Exported,), scope.GlobalOnly)
 
   #
   # Stack
   #
 
   def Push(self, argv):
+    """For function calls."""
     self.var_stack.append({})
     self.argv_stack.append(_ArgFrame(argv))
 
@@ -191,19 +201,11 @@ class Mem(object):
     self.argv_stack.pop()
 
   def PushTemp(self):
-    """For FOO=bar BAR=baz command."""
+    """For the temporary scope in 'FOO=bar BAR=baz echo'."""
     self.var_stack.append({})
 
   def PopTemp(self):
-    """For FOO=bar BAR=baz command."""
     self.var_stack.pop()
-
-  def GetTraceback(self, token):
-    """For runtime and parse time errors."""
-    # TODO: When you Push(), add a function pointer.  And then walk
-    # self.argv_stack here.
-    # We also need a token number.
-    pass
 
   #
   # Argv
@@ -235,7 +237,7 @@ class Mem(object):
     self.argv_stack[-1].SetArgv(argv)
 
   #
-  # Public
+  # Special Vars
   #
 
   def GetSpecialVar(self, op_id):
@@ -261,160 +263,191 @@ class Mem(object):
     return runtime.Str(str(n))
 
   #
-  # Helper functions
+  # Named Vars
   #
 
-  def _FindInScope(self, name):
-    # TODO: Return the right scope.  Respect
-    # compat dynamic-scope flag?
-    # or is it shopt or set ?
-    # oilopt?
-    pass
+  def _FindCellAndNamespace(self, name, lookup_mode):
+    """
+    Returns:
+      cell: The cell corresponding to looking up 'name' with the given mode, or
+        None if it's not found.
+      namespace: The namespace it should be set to or deleted from.
+    """
+    if lookup_mode == scope.Dynamic:
+      found = False
+      for i in range(len(self.var_stack) - 1, -1, -1):
+        namespace = self.var_stack[i]
+        if name in namespace:
+          cell = namespace[name]
+          return cell, namespace
+      return None, self.var_stack[0]
 
-  def _SetInScope(self, scope, pairs):
-    """Helper to set locals or globals."""
-    for lval, val in pairs:
-      #log('SETTING %s -> %s', lval, val)
-      assert val.tag in (value_e.Str, value_e.StrArray)
+    elif lookup_mode == scope.LocalOnly:
+      namespace = self.var_stack[-1]
+      return namespace.get(name), namespace
 
-      name = lval.name
-      if name in scope:
-        # Preserve cell flags.  For example, could be Undef and exported!
-        scope[name].val = val
-      else:
-        scope[name] = runtime.cell(val, False, False)
+    elif lookup_mode == scope.GlobalOnly:
+      namespace = self.var_stack[0]
+      return namespace.get(name), namespace
 
-  #
-  # Globals
-  #
+    else: 
+      raise AssertionError(lookup_mode)
 
-  def GetGlobal(self, name):
-    """Helper for completion."""
-    g = self.var_stack[0]  # global scope
-    if name in g:
-      return g[name].val
+  def SetVar(self, lval, value, new_flags, lookup_mode):
+    """
+    Args:
+      lval: lvalue
+      val: value, or None if only changing flags
+      new_flags: tuple of flags to set: ReadOnly | Exported 
+        () means no flags to start with
+        None means unchanged?
+      scope:
+        Local | Global | Dynamic - for builtins, PWD, etc.
 
-    return runtime.Undef()
-
-  def SetGlobals(self, pairs):
-    """For completion."""
-    self._SetInScope(self.var_stack[0], pairs)
-
-  def SetGlobalArray(self, name, a):
-    """Helper for completion."""
-    assert isinstance(a, list)
-    val = runtime.StrArray(a)
-    pairs = [(ast.LhsName(name), val)]
-    self.SetGlobals(pairs)
-
-  def SetGlobalString(self, name, s):
-    """Helper for completion, $PWD, etc."""
-    assert isinstance(s, str)
-    val = runtime.Str(s)
-    pairs = [(ast.LhsName(name), val)]
-    self.SetGlobals(pairs)
-
-  #
-  # Locals
-  #
-
-  def Get(self, name):
-    # TODO: Respect strict_arith to disable dynamic scope
-    for i in range(len(self.var_stack) - 1, -1, -1):
-      scope = self.var_stack[i]
-      if name in scope:
-        #log('Get %s -> %s in scope %d', name, scope[name].val, i)
-        # Don't need to use flags
-        return scope[name].val
-
-    # Fall back on environment
-    v = os.getenv(name)
-    if v is not None:
-      return runtime.Str(v)
-
-    return runtime.Undef()
-
-  def SetLocals(self, pairs):
-    # - Never change types?  yeah I think that's a good idea, at least for oil
+      NOTE: in bash, PWD=/ changes the directory.  But not in dash.
+    """
+    # STRICTNESS / SANENESS:
+    #
+    # 1) Don't create arrays automatically, e.g. a[1000]=x
+    # 2) Never change types?  yeah I think that's a good idea, at least for oil
     # (not sh, for compatibility).  set -o strict-types or something.  That
     # means arrays have to be initialized with let arr = [], which is fine.
     # This helps with stuff like IFS.  It starts off as a string, and assigning
     # it to a list is en error.  I guess you will have to turn this no for
     # bash?
 
-    # TODO: Shells have dynamic scope for setting variables.  This is really
-    # bad.
-    self._SetInScope(self.var_stack[-1], pairs)
+    assert new_flags is not None
 
-  def SetLocal(self, name, val):
-    """Set a single local.
+    if lval.tag == lvalue_e.LhsName:
+      # Maybe this should return one of (cell, scope).  existing cell, or the
+      # scope to put it in?
+      # _FindCellOrScope
 
-    Used for:
-    1) for loop iteration variables
-    2) temporary environments like FOO=bar BAR=$FOO cmd, 
-    3) read builtin
-    """
-    pairs = [(ast.LhsName(name), val)]
-    self.SetLocals(pairs)
+      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      if cell:
+        if value is not None:
+          if cell.readonly:
+            # TODO: error context
+            e_die("Can't assign to readonly value %r", lval.name)
+          cell.val = value
+        if var_flags.Exported in new_flags:
+          cell.exported = True
+        if var_flags.ReadOnly in new_flags:
+          cell.readonly = True
+      else:
+        if value is None:
+          value = runtime.Str('')  # export foo, readonly foo
+        cell = runtime.cell(value,
+                            var_flags.Exported in new_flags ,
+                            var_flags.ReadOnly in new_flags )
+        namespace[lval.name] = cell
 
-  def _SetLocalOrGlobal(self, name, val):
-    # TODO:
-    # - Use _FindInScope helper?  So we preserve flags.
-    # - Optionally disable dynamic scope
-    # - Implement readonly, etc.  Test the readonly flag!
-    cell = runtime.cell(val, False, False)
+      if (cell.val is not None and cell.val.tag == value_e.StrArray and
+          cell.exported):
+        e_die("Can't export array")  # TODO: error context
 
-    for i in range(len(self.var_stack) - 1, -1, -1):  # dynamic scope
-      scope = self.var_stack[i]
-      if name in scope:
-        scope[name] = cell
-        break
+    elif lval.tag == lvalue_e.LhsIndexedName:
+      # a[1]=(1 2 3)
+      if value.tag == value_e.StrArray:
+        e_die("Can't assign array to array member")  # TODO: error context
+
+      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      if cell:
+        if cell.val.tag != value_e.StrArray:
+          # s=x
+          # s[1]=y
+          e_die("Can't index non-array")  # TODO: error context
+
+        if cell.readonly:
+          e_die("Can't assign to readonly value")
+
+        strs = cell.val.strs
+        try:
+          strs[lval.index] = value.s
+        except IndexError:
+          # TODO: strict-array won't support this.  For Oil arrays.
+          n = len(strs) - lval.index + 1
+          strs.extend([None] * n)  # Fill it in iwith None
+          strs[lval.index] = value.s
+      else:
+        # TODO:
+        # - This is a bug, because a[2]=2 creates an array of length ONE, even
+        # though the index is two.
+        # - Maybe represent as hash table?  Then it's not an ASDL type?
+
+        # representations:
+        # - array_item.Str array_item.Undef
+        # - parallel array: val.strs, val.undefs
+        # - or change ASDL type checking
+        #   - ASDL language does not allow: StrArray(string?* strs)
+        # - or add dict to ASDL?  Didn't it support obj?
+        #   - finding the max index is linear time?
+        #     - also you have to sort the indices
+        #
+        # array ops:
+        # a=(1 2)
+        # a[1]=x
+        # a+=(1 2)
+        # ${a[@]}  - get all
+        # ${#a[@]} - length
+        # ${!a[@]} - keys
+        # That seems pretty minimal.
+
+        items = [''] * lval.index
+        items.append(value.s)
+        new_value = runtime.StrArray(items)
+        # arrays can't be exported
+        cell = runtime.cell(new_value, False,
+                            var_flags.ReadOnly in new_flags)
+        namespace[lval.name] = cell
+
     else:
-      global_scope = self.var_stack[0]
-      global_scope[name] = cell
+      raise AssertionError
 
-  def SetLocalsOrGlobals(self, pairs):
-    """For x=1 inside a function.
+  # NOTE: Have a default for convenience
+  def GetVar(self, name, lookup_mode=scope.Dynamic):
+    assert isinstance(name, str), name
+    cell, _ = self._FindCellAndNamespace(name, lookup_mode)
+
+    if cell:
+      return cell.val
+
+    return runtime.Undef()
+
+  def Unset(self, lval, lookup_mode):
     """
-    for lval, val in pairs:
-      if lval.tag == lvalue_e.LhsName:
-        self._SetLocalOrGlobal(lval.name, val)
-      elif lval.tag == lvalue_e.LhsIndexedName:
-        raise NotImplementedError('a[x]=')
-
-  def Unset(self, name):
-    found = False
-    for i in range(len(self.var_stack) - 1, -1, -1):  # dynamic scope
-      scope = self.var_stack[i]
-      if name in scope:
-        found = True
-        del scope[name]
-        break
-
-    return found
-
-  #
-  # Export
-  #
-
-  def SetExportFlag(self, name, b):
+    Returns:
+      Success or failure.  A non-existent variable is still considered success.
     """
-    First look for local, then global
-    """
-    found = False
-    for i in range(len(self.var_stack) - 1, -1, -1):
-      scope = self.var_stack[i]
-      if name in scope:
-        cell = scope[name]
-        cell.exported = b
-        found = True
-        break
+    if lval.tag == lvalue_e.LhsName:  # unset x
+      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      if cell:
+        if cell.readonly:
+          e_die("Can't unset readonly variable %r", lval.name)
+        del namespace[lval.name]  # it must be here
+        return True  # found
+      else:
+        return False
 
-    if not found:
-      # You can export an undefined variable!
-      scope[name] = runtime.cell(runtime.Undef(), True, False)
+    elif lval.tag == lvalue_e.LhsIndexedName:  # unset a[1]
+      raise NotImplementedError
+
+    else:
+      raise AssertionError
+
+  def ClearFlag(self, name, flag, lookup_mode):
+    cell, namespace = self._FindCellAndNamespace(name, lookup_mode)
+    if cell:
+      if flag == var_flags.Exported:
+        cell.exported = False
+      else:
+        raise AssertionError
+      return True
+    else:
+      return False
 
   def GetExported(self):
+    """Get all the variables that are marked exported."""
     exported = {}
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.
@@ -424,45 +457,32 @@ class Mem(object):
           exported[name] = cell.val.s
     return exported
 
-  #
-  # Readonly
-  #
 
-  def SetReadonlyFlag(self, name, b):
-    # Or should this get a flag name?
-    # readonly needs to be respected with 'set'.
-    pass
+def SetLocalString(mem, name, s):
+  """Set a local string.
 
-  #
-  # New Smaller Interface
-  #
-  # GetSpecialVar -- readonly.  Although some of these are not here.
-  # GetVar(name, val, scope) -- GetGlobal, Get
-  # SetVar -- set variables and flags, of all scopes
-  # Unset
-  # GetExported -- for starting a process
+  Used for:
+  1) for loop iteration variables
+  2) temporary environments like FOO=bar BAR=$FOO cmd, 
+  3) read builtin
+  """
+  assert isinstance(s, str)
+  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope.LocalOnly)
 
-  # Helpers
-  # state.SetGlobalString(mem, 'PWD', 'hi')
-  # state.SetGlobalArray(mem, 'COMPREPLY', ['a', 'b'])
 
-  def SetVar(self, lhs, value, flags, dynamic_scope):
-    """
-    Args:
-      lval: lvalue
-      val: value
-      flags: int, Readonly | Exported 
-        How to unset?  val = None and flags are a mask?
-        or new_flags?
+def SetGlobalString(mem, name, s):
+  """Helper for completion, $PWD, etc."""
+  assert isinstance(s, str)
+  val = runtime.Str(s)
+  mem.SetVar(ast.LhsName(name), val, (), scope.GlobalOnly)
 
-    or scope:
-      Local | Global | Dynamic - for builtins, PWD, etc.
 
-      NOTE: in bash, PWD=/ changes the directory.  But not in dash.
-    """
+def SetGlobalArray(mem, name, a):
+  """Helper for completion."""
+  assert isinstance(a, list)
+  mem.SetVar(ast.LhsName(name), runtime.StrArray(a), (), scope.GlobalOnly)
 
-    # local doesn't 
-    pass
 
-  def GetVar(self, name, scope):
-    pass
+def GetGlobal(mem, name):
+  assert isinstance(name, str), name
+  return mem.GetVar(name, scope.GlobalOnly)

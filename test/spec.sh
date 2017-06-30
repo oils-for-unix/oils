@@ -237,7 +237,7 @@ builtins() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -265,7 +265,7 @@ glob() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/arith.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -290,7 +290,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

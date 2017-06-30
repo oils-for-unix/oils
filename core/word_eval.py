@@ -10,8 +10,9 @@ from core import braces
 from core import expr_eval
 from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
-from core import util
 from core import runtime
+from core import state
+from core import util
 from osh import ast_ as ast
 
 arg_value_e = runtime.arg_value_e
@@ -45,7 +46,7 @@ def _GetIfs(mem):
   """
   Used for splitting words in Splitter.
   """
-  val = mem.Get('IFS')
+  val = mem.GetVar('IFS')
   if val.tag == value_e.Undef:
     return ''
   elif val.tag == value_e.Str:
@@ -68,7 +69,7 @@ def _GetJoinChar(mem):
   # by a <space> if IFS is unset. If IFS is set to a null string, this is
   # not equivalent to unsetting it; its first character does not exist, so
   # the parameter values are concatenated."
-  val = mem.Get('IFS')
+  val = mem.GetVar('IFS')
   if val.tag == value_e.Undef:
     return ''
   elif val.tag == value_e.Str:
@@ -299,7 +300,7 @@ class _WordPartEvaluator:
     """
     if prefix == '':
       # First look up the HOME var, and then env var
-      val = self.mem.Get('HOME')
+      val = self.mem.GetVar('HOME')
       if val.tag == value_e.Str:
         return val.s
       elif val.tag == value_e.StrArray:
@@ -430,6 +431,7 @@ class _WordPartEvaluator:
       if val.tag == value_e.Str:
         length = len(val.s)
       elif val.tag == value_e.StrArray:
+        # TODO: There can be empty placeholder values in the array.
         length = len(val.strs)
       return runtime.Str(str(length))
     else:
@@ -658,7 +660,7 @@ class _WordPartEvaluator:
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       var_name = part.token.val
-      val = self.mem.Get(var_name)
+      val = self.mem.GetVar(var_name)
       #log('EVAL NAME %s -> %s', var_name, val)
 
     elif part.token.id == Id.VSub_Number:
@@ -745,9 +747,11 @@ class _WordPartEvaluator:
               # TODO: error context
               e_die("Can't assign to special variable")
             else:
-              # NOTE: This decays arrays too!  'set -o strict_array' could avoid it.
-              rhs_str = _DecayPartValuesToString(new_part_vals, _GetJoinChar(self.mem))
-              self.mem.SetLocal(var_name, runtime.Str(rhs_str))
+              # NOTE: This decays arrays too!  'set -o strict_array' could
+              # avoid it.
+              rhs_str = _DecayPartValuesToString(new_part_vals,
+                                                 _GetJoinChar(self.mem))
+              state.SetLocalString(self.mem, var_name, rhs_str)
             return new_part_vals
 
           elif effect == Effect.Error:
@@ -824,7 +828,7 @@ class _WordPartEvaluator:
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
       if part.token.id == Id.VSub_Name:
         var_name = part.token.val[1:]
-        val = self.mem.Get(var_name)
+        val = self.mem.GetVar(var_name)
       elif part.token.id == Id.VSub_Number:
         var_num = int(part.token.val[1:])
         val = self._EvalVarNum(var_num)

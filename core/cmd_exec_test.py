@@ -51,11 +51,8 @@ def InitExecutor():
 
 def InitEvaluator():
   mem = state.Mem('', [], {})
-
-  val1 = runtime.Str('xxx')
-  val2 = runtime.Str('yyy')
-  pairs = [(ast.LhsName('x'), val1), (ast.LhsName('y'), val2)]
-  mem.SetLocals(pairs)
+  state.SetLocalString(mem, 'x', 'xxx')
+  state.SetLocalString(mem, 'y', 'yyy')
 
   exec_opts = state.ExecOpts()
   # Don't need side effects for most things
