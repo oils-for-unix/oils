@@ -59,8 +59,3 @@ echo ref ${!a}
 # stdout-json: "ref\n"
 # BUG mksh stdout: ref a
 # N-I dash/zsh stdout-json: ""
-
-### Nested ${} 
-bar=ZZ
-echo ${foo:-${bar}}
-# stdout: ZZ

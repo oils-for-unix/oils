@@ -19,6 +19,11 @@ echo ${foo:-$({ which ls; })}
 # BUG bash stdout-json: ""
 # BUG bash status: 2
 
+### Nested ${} 
+bar=ZZ
+echo ${foo:-${bar}}
+# stdout: ZZ
+
 ### Filename redirect with "$@" 
 # bash - ambiguous redirect -- yeah I want this error
 #   - But I want it at PARSE time?  So is there a special DollarAtPart?
@@ -74,4 +79,3 @@ func 1 2
 # status: 2
 # stdout-json: ""
 # OK mksh status: 1
-
