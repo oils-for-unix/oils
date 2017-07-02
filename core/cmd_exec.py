@@ -211,7 +211,7 @@ class Executor(object):
   def _Eval(self, argv):
     # TODO: in oil, eval shouldn't take multiple args.  For clarity 'eval ls
     # foo' will say "extra arg".
-    code_str = argv[0]
+    code_str = ' '.join(argv)
     return self._EvalHelper(code_str)
 
   def _Source(self, argv):
