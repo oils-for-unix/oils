@@ -699,7 +699,7 @@ def Set(argv, exec_opts, mem):
   if not argv:  # empty
     # TODO: If no arguments are given, it shows functions/vars?  Why not show
     # other state?
-    print('TODO')
+    print('TODO: set without arguments')
     return 0
 
   arg, i = set_spec.Parse(argv)

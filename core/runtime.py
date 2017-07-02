@@ -27,3 +27,4 @@ def _ParseAndMakeTypes(f, root):
 f = util.GetResourceLoader().open('core/runtime.asdl')
 root = sys.modules[__name__]
 _ParseAndMakeTypes(f, root)
+f.close()

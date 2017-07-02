@@ -140,3 +140,4 @@ def _ParseAndMakeTypes(f, root):
 f = util.GetResourceLoader().open('osh/osh.asdl')
 root = sys.modules[__name__]
 _ParseAndMakeTypes(f, root)
+f.close()
