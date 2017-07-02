@@ -171,9 +171,9 @@ class FdState:
     for r in redirects:
       #log('apply %s', r)
       if not self._ApplyRedirect(r, waiter):
-        ok = False  # for bad descriptor
+        return False  # for bad descriptor
     #log('done applying %d redirects', len(redirects))
-    return ok
+    return True
 
   def MakePermanent(self):
     self.cur_frame.Forget()
