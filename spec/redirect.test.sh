@@ -205,7 +205,7 @@ echo hi 1>&3
 # stdout: hi
 # status: 0
 
-### Open multiple descriptors with exxec
+### Open multiple descriptors with exec
 # What is the point of this?  ./configure scripts and debootstrap use it.
 exec 3>&1
 exec 4>&1
@@ -214,13 +214,43 @@ echo four 1>&4
 # stdout-json: "three\nfour\n"
 # status: 0
 
+### >| to clobber
+echo XX >| $TMP/c.txt
+set -o noclobber
+echo YY >  $TMP/c.txt  # not globber
+echo status=$?
+cat $TMP/c.txt
+echo ZZ >| $TMP/c.txt
+cat $TMP/c.txt
+# stdout-json: "status=1\nXX\nZZ\n"
+# OK dash stdout-json: "status=2\nXX\nZZ\n"
+
 ### &> redirects stdout and stderr
-stdout_stderr.py &> f.txt
+stdout_stderr.py &> $TMP/f.txt
 # order is indeterminate
-grep STDOUT f.txt >/dev/null && echo 'ok'
-grep STDERR f.txt >/dev/null && echo 'ok'
+grep STDOUT $TMP/f.txt >/dev/null && echo 'ok'
+grep STDERR $TMP/f.txt >/dev/null && echo 'ok'
 # stdout-json: "ok\nok\n"
 # N-I dash stdout: STDOUT
 # N-I dash stderr: STDERR
 # N-I dash status: 1
 
+### 1>&2- to close file descriptor
+# NOTE: "hi\n" goes to stderr, but it's hard to test this because other shells
+# put errors on stderr.
+echo hi 1>&2-
+# stdout-json: ""
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+# N-I mksh status: 1
+# N-I mksh stdout-json: ""
+
+### <> for read/write
+echo first >$TMP/rw.txt
+exec 8<>$TMP/rw.txt
+read line <&8
+echo line=$line
+echo second 1>&8
+echo CONTENTS
+cat $TMP/rw.txt
+# stdout-json: "line=first\nCONTENTS\nfirst\nsecond\n"

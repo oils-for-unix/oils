@@ -12,6 +12,8 @@
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
 -- * Append operator in Assignment: +=
+-- * &> redirect stdout and stderr
+-- * 1>&2- to close redirect
 
 -- Represented but Not Parsed:
 -- * LeftIndex -- LHS of assignment
@@ -19,7 +21,7 @@
 
 -- Parsed but Not Implemented
 -- * Process sub -- <() and >()
--- * Background -- foo &
+-- * <>, >| redirects
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
