@@ -213,3 +213,14 @@ echo three 1>&3
 echo four 1>&4
 # stdout-json: "three\nfour\n"
 # status: 0
+
+### &> redirects stdout and stderr
+stdout_stderr.py &> f.txt
+# order is indeterminate
+grep STDOUT f.txt >/dev/null && echo 'ok'
+grep STDERR f.txt >/dev/null && echo 'ok'
+# stdout-json: "ok\nok\n"
+# N-I dash stdout: STDOUT
+# N-I dash stderr: STDERR
+# N-I dash status: 1
+
