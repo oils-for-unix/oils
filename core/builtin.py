@@ -810,13 +810,16 @@ def Umask(argv):
 
   if len(argv) == 1:
     a = argv[0]
-    if a.isdigit():
+    try:
       new_mask = int(a, 8)
-      os.umask(new_mask)
-      return 0
-    else:
+    except ValueError:
+      # NOTE: This happens if we have '8' or '9' in the input too.
+
       util.warn('*** umask with symbolic input not implemented ***')
       return 1
+    else:
+      os.umask(new_mask)
+      return 0
 
   raise args.UsageError('umask: unexpected arguments')
 
