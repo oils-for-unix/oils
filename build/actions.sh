@@ -18,7 +18,7 @@ c-module-toc() {
 
 # Modules needed to 'import runpy'.
 runpy-deps() {
-  $PY27/python -S build/runpy_deps.py "$@"
+  $PREPARE_DIR/python -S build/runpy_deps.py "$@"
 }
 
 # This version gets the paths out of the repo.  But it requires that we
@@ -43,7 +43,7 @@ app-deps() {
   # I need the right relative path for Oil
   ln -s -f $PWD/build/app_deps.py ~/git/oil/_tmp
   PYTHONPATH=$pythonpath \
-    $PY27/python -S ~/git/oil/_tmp/app_deps.py $main_module $prefix
+    $PREPARE_DIR/python -S ~/git/oil/_tmp/app_deps.py $main_module $prefix
 }
 
 # Make .d file

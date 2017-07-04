@@ -1,5 +1,9 @@
 #!/bin/bash
 #
+# Do a full CPython build out of tree, so we can walk dependencies dynamically.
+#
+# The 'app-deps' and 'runpy-deps' build steps require this.
+#
 # Usage:
 #   ./prepare.sh <function name>
 
@@ -9,11 +13,16 @@ set -o errexit
 
 source build/common.sh
 
-# we're always doing it without threads for now.  not sure about signal module
-# just yet.  have to implement "trap"?
 configure() {
-  cd $PY27
-  time ./configure --without-threads
+  local dir=$PREPARE_DIR
+
+  rm -r -f $dir
+  mkdir -p $dir
+
+  local conf=$PWD/$PY27/configure 
+
+  cd $dir 
+  time $conf --without-threads
 }
 
 # Clang makes this faster.  We have to build all modules so that we can
@@ -27,7 +36,7 @@ configure() {
 readonly JOBS=$(( $(nproc) - 1 ))
 
 build-python() {
-  cd $PY27
+  cd $PREPARE_DIR
   make clean
   # Speed it up with -O0.
   # NOTE: CFLAGS clobbers some Python flags, so use EXTRA_CFLAGS.
