@@ -13,14 +13,12 @@ readonly MKSH=/bin/mksh
 readonly ZSH=/usr/bin/zsh  # Ubuntu puts it here
 readonly BUSYBOX_ASH=_tmp/shells/ash
 
-readonly OSH=bin/osh
+# TODO: Does it make sense to copy the binary to an unrelated to directory,
+# like /tmp?  /tmp/{oil.ovm,osh}.
+readonly OSH_BIN=_bin/osh
 
-# Run under the app bundle.
-#readonly OSH=_bin/osh
-
-# HACK that relies on word splitting
-# TODO: Use ${OSH[@]} everywhere
-#readonly OSH='bin/osh bin/opypy-osh'
+# HACK that relies on word splitting.  TODO: Use ${OSH[@]} everywhere
+readonly OSH="bin/osh $OSH_BIN"
 
 # ash and dash are similar, so not including ash by default.  zsh is not quite
 # POSIX.
@@ -35,6 +33,14 @@ install-shells() {
   sudo apt-get install busybox-static mksh zsh
   mkdir -p _tmp/shells
   ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
+}
+
+# TODO: Maybe do this before running all tests.
+check-shells() {
+  for sh in "${REF_SHELLS[@]}" $ZSH $OSH; do
+    test -e $sh || { echo "ERROR: $sh does not exist"; break; }
+    test -x $sh || { echo "ERROR: $sh isn't executable"; break; }
+  done
 }
 
 _wget() {

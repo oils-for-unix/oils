@@ -268,7 +268,11 @@ def CreateIntAssertion(d, key, assertions, qualifier=False):
   return False
 
 
-def CreateAssertions(case, shell):
+def CreateAssertions(case, sh_label):
+  """
+  Given a raw test case and a shell label, create EqualAssertion instances to
+  run.
+  """
   assertions = []
 
   # Whether we found assertions
@@ -276,13 +280,17 @@ def CreateAssertions(case, shell):
   stderr = False
   status = False
 
-  if shell in case:
-    q = case[shell]['qualifier']
-    if CreateStringAssertion(case[shell], 'stdout', assertions, qualifier=q):
+  # So the assertion are exactly the same for osh and osh_ALT
+  if sh_label == 'osh_ALT':
+    sh_label = 'osh'
+
+  if sh_label in case:
+    q = case[sh_label]['qualifier']
+    if CreateStringAssertion(case[sh_label], 'stdout', assertions, qualifier=q):
       stdout = True
-    if CreateStringAssertion(case[shell], 'stderr', assertions, qualifier=q):
+    if CreateStringAssertion(case[sh_label], 'stderr', assertions, qualifier=q):
       stderr = True
-    if CreateIntAssertion(case[shell], 'status', assertions, qualifier=q):
+    if CreateIntAssertion(case[sh_label], 'status', assertions, qualifier=q):
       status = True
 
   if not stdout:
@@ -380,8 +388,8 @@ def RunCases(cases, case_predicate, shells, env, out):
   stats['num_cases'] = len(cases)
   stats['osh_num_passed'] = 0
   stats['osh_num_failed'] = 0
-  # Number of opypy-osh results that differed from cpython-osh a.k.a. osh.
-  stats['opypy_delta'] = 0
+  # Number of osh_ALT results that differed from osh.
+  stats['osh_ALT_delta'] = 0
 
   # Make an environment for each shell.  $SH is the path to the shell, so we
   # can test flags, etc.
@@ -446,9 +454,9 @@ def RunCases(cases, case_predicate, shells, env, out):
       result_row.append(cell_result)
 
       if cell_result == Result.FAIL:
-        # Special logic: don't count opypy-osh beacuse its failures will be
+        # Special logic: don't count osh_ALT beacuse its failures will be
         # counted in the delta.
-        if sh_label != 'opypy-osh':
+        if sh_label != 'osh_ALT':
           stats['num_failed'] += 1
 
         if sh_label == 'osh':
@@ -466,11 +474,11 @@ def RunCases(cases, case_predicate, shells, env, out):
       else:
         raise AssertionError
 
-      if sh_label == 'opyopy-osh':
-        opypy_result = result_row[-1]
+      if sh_label == 'osh_ALT':
+        osh_alt_result = result_row[-1]
         cpython_result = result_row[-2]
-        if opypy_result != cpython_result:
-          stats['opypy_delta'] += 1
+        if osh_alt_result != cpython_result:
+          stats['osh_ALT_delta'] += 1
 
     out.WriteRow(i, line_num, result_row, desc)
 
@@ -795,9 +803,15 @@ def main(argv):
   shells = argv[2:]
 
   shell_pairs = []
+  saw_osh = False
   for path in shells:
     name, _ = os.path.splitext(path)
     label = os.path.basename(name)
+    if label == 'osh':
+      if saw_osh:
+        label = 'osh_ALT'  # distinct label
+      else:
+        saw_osh = True
     shell_pairs.append((label, path))
 
   with open(test_file) as f:
