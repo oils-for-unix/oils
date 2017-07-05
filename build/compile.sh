@@ -270,6 +270,7 @@ make-tar() {
 
   tar --create --file $out \
     LICENSE \
+    INSTALL \
     Makefile \
     build/compile.sh \
     build/actions.sh \
@@ -283,9 +284,6 @@ make-tar() {
     $(python-sources)
 
   # TODO: Add Python licence at top level!
-
-  # Add INSTALL instructions.  Maybe move this to the top level of the repo.
-  tar --append --file $out --directory build INSTALL
 
   ls -l $out
 }
