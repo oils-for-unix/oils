@@ -1183,12 +1183,6 @@
    this defined. */
 /* #undef _POSIX_1_SOURCE */
 
-/* Define to activate features from IEEE Stds 1003.1-2001 */
-#define _POSIX_C_SOURCE 200112L
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-/* #undef _POSIX_SOURCE */
-
 /* Define if you have POSIX threads, and your system does not define that. */
 /* #undef _POSIX_THREADS */
 
