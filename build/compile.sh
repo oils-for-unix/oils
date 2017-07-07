@@ -156,7 +156,7 @@ build() {
   local out=${1:-$PY27/ovm2}
   local module_init=${2:-$PY27/Modules/config.c}
   local main_name=${3:-_tmp/hello/main_name.c}
-  local c_module_srcs=${4:-_tmp/hello/c-module-srcs-to-compile.txt}
+  local c_module_srcs=${4:-_tmp/hello/c-module-srcs.txt}
   shift 4
 
   local abs_out=$PWD/$out
@@ -178,10 +178,13 @@ build() {
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
     # We should create a special no_readline_raw_input().
 
-    # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appera to use it?
+    c_module_src_list=$(cat $abs_c_module_srcs)
+    # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appear to use it?
     compile_readline='-D HAVE_READLINE'
     link_readline='-l readline'
   else
+    # don't fail
+    c_module_src_list=$(grep -v '/readline.c' $abs_c_module_srcs || true)
     compile_readline=''
     link_readline=''
   fi
@@ -198,7 +201,7 @@ build() {
     $OVM_LIBRARY_OBJS \
     $abs_module_init \
     $abs_main_name \
-    $(cat $abs_c_module_srcs) \
+    $c_module_src_list \
     Modules/ovm.c \
     $compile_readline \
     -l m \
@@ -281,18 +284,21 @@ make-tar() {
   # actions.sh for concatenation
   #
   # NOTE: Need intermediate c-module-srcs.txt file so we can use the same
-  # Makefile?  But if we didn't we might not need it?  It's really part of the
-  # command line.
+  # Makefile.  We don't want to ship app_deps.py.
+  # Problem: now module_init.c DEPENDS on the detected modules!  Oops.
 
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 
   tar --create --file $out \
     LICENSE \
     INSTALL \
+    configure \
+    install \
     Makefile \
     build/compile.sh \
     build/actions.sh \
     build/common.sh \
+    build/detect-*.c \
     _build/$app_name/bytecode.zip \
     _build/$app_name/*.c \
     $PY27/Modules/ovm.c \

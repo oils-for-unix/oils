@@ -38,6 +38,8 @@ _tarball() {
   cd $tmp
   tar --extract < ../../_release/$name.tar
 
+  ./configure
+
   # Build the fast one for a test.
   # TODO: Maybe edit the Makefile to change the top target.
   time make _bin/${name}.ovm-dbg

@@ -114,7 +114,7 @@ _build/oil/bytecode.zip: build/oil-manifest.txt \
 #
 
 # Regenerate dependencies.  But only if we made the app dirs.
-_build/%/ovm.d: _build/%/app-deps-to-compile.txt
+_build/%/ovm.d: _build/%/app-deps-c.txt
 	build/actions.sh make-dotd $* $^ > $@
 
 # Source paths of all C modules the app depends on.  For the tarball.
@@ -124,21 +124,29 @@ _build/%/c-module-srcs.txt: \
 	build/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-c.txt
 	build/c_module_srcs.py $(filter-out $<,$^) > $@
 
-# Source paths of all C modules to initialize.
-_build/%/c-module-srcs-to-compile.txt: \
-	build/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-to-compile.txt
-	build/c_module_srcs.py $(filter-out $<,$^) > $@
-
-# App-specific list of modules to initialize.
-_build/%/static-c-modules.txt: build/static-c-modules.txt \
-	                             _build/%/app-deps-to-compile.txt
+_build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 	build/actions.sh join-modules $^ > $@
 
 # Per-app extension module initialization.
-_build/%/module_init.c: $(PY27)/Modules/config.c.in _build/%/static-c-modules.txt
-	cat _build/$*/static-c-modules.txt | xargs build/actions.sh gen-module-init > $@
+_build/%/module_init.c: $(PY27)/Modules/config.c.in _build/%/all-deps-c.txt
+	# NOTE: Using xargs < input.txt style because it will fail if input.txt
+	# doesn't exist!  'cat' errors will be swallowed.
+	xargs build/actions.sh gen-module-init < _build/$*/all-deps-c.txt > $@
+
 
 COMPILE_SH := build/compile.sh
+
+# 
+# Tarballs
+#
+# Contain Makefile and associated shell scripts, discovered .c and .py deps,
+# app source.
+
+_release/%.tar: _build/%/bytecode.zip \
+	              _build/%/module_init.c \
+								_build/%/main_name.c \
+								_build/%/c-module-srcs.txt
+	$(COMPILE_SH) make-tar $* $@
 
 #
 # Native Builds
@@ -147,19 +155,19 @@ COMPILE_SH := build/compile.sh
 # Release build.
 # This depends on the static modules
 _build/%/ovm: _build/%/module_init.c _build/%/main_name.c \
-	_build/%/c-module-srcs-to-compile.txt $(COMPILE_SH)
-	build/compile.sh build-opt $@ $(filter-out $(COMPILE_SH),$^)
+	_build/%/c-module-srcs.txt $(COMPILE_SH)
+	$(COMPILE_SH) build-opt $@ $(filter-out $(COMPILE_SH),$^)
 
 # Fast build, with symbols for debugging.
 _build/%/ovm-dbg: _build/%/module_init.c _build/%/main_name.c \
-	_build/%/c-module-srcs-to-compile.txt $(COMPILE_SH)
-	build/compile.sh build-dbg $@ $(filter-out $(COMPILE_SH),$^)
+	_build/%/c-module-srcs.txt $(COMPILE_SH)
+	$(COMPILE_SH) build-dbg $@ $(filter-out $(COMPILE_SH),$^)
 
 # Coverage, for paring down the files that we build.
 # TODO: Hook this up.
 _build/%/ovm-cov: _build/%/module_init.c _build/%/main_name.c \
-	_build/%/c-module-srcs-to-compile.txt $(COMPILE_SH)
-	build/compile.sh build $@ $(filter-out $(COMPILE_SH),$^)
+	_build/%/c-module-srcs.txt $(COMPILE_SH)
+	$(COMPILE_SH) build $@ $(filter-out $(COMPILE_SH),$^)
 
 # Make bundles quickly.
 _bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/bytecode.zip
@@ -169,15 +177,6 @@ _bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/bytecode.zip
 _bin/%.ovm: _build/%/ovm _build/%/bytecode.zip
 	cat $^ > $@
 	chmod +x $@
-
-# Makefile, shell scripts, discovered .c and .py deps, app source.
-
-# TODO:
-# - Why does putting c_module_srcs.txt here mess it up?
-_release/%.tar: _build/%/bytecode.zip \
-	              _build/%/module_init.c \
-								_build/%/main_name.c
-	build/compile.sh make-tar $* $@
 
 # For debugging
 print-%:

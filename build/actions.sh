@@ -86,14 +86,20 @@ make-dotd() {
 
 extdecls() {
   for mod in "$@"; do
+    test "$mod" = readline && echo "#ifdef HAVE_READLINE"
     echo "extern void init$mod(void);"
+    test "$mod" = readline && echo "#endif"
   done
+  return 0  # because test can fail
 }
 
 initbits() {
   for mod in "$@"; do
+    test "$mod" = readline && echo "#ifdef HAVE_READLINE"
     echo "    {\"$mod\", init$mod},"
+    test "$mod" = readline && echo "#endif"
   done
+  return 0  # because test can fail
 }
 
 # Ported from sed to awk.  Awk is MUCH nicer (no $NL ugliness, -v flag, etc.)
@@ -129,7 +135,7 @@ gen-module-init() {
 
 join-modules() {
   local static=${1:-static-c-modules.txt}
-  local discovered=${2:-_tmp/oil/discovered-c.txt}
+  local discovered=${2:-_build/oil/all-deps-c.txt}
 
   # Filter out comments, print the first line.
   #
