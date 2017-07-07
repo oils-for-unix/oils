@@ -116,8 +116,11 @@ Modules/zipimport.c
 Modules/signalmodule.c
 '
 
+# Parser/myreadline.c is needed for raw_input() to work.  There is a dependency
+# from Python/bltinmodule.c to it.
 OVM_LIBRARY_OBJS="
 Modules/getbuildinfo.c
+Parser/myreadline.c
 $OBJECT_OBJS
 $OVM_PYTHON_OBJS 
 $MODULE_OBJS
@@ -174,7 +177,9 @@ build() {
     # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
     # We should create a special no_readline_raw_input().
-    compile_readline='-D HAVELIB_READLINE Parser/myreadline.c'
+
+    # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appera to use it?
+    compile_readline='-D HAVE_READLINE'
     link_readline='-l readline'
   else
     compile_readline=''
