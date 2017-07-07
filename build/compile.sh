@@ -283,9 +283,8 @@ make-tar() {
   # compile.sh is for the command line
   # actions.sh for concatenation
   #
-  # NOTE: Need intermediate c-module-srcs.txt file so we can use the same
-  # Makefile.  We don't want to ship app_deps.py.
-  # Problem: now module_init.c DEPENDS on the detected modules!  Oops.
+  # NOTE: We include the intermediate file c-module-srcs.txt, so we don't have
+  # to ship app_deps.py.  We don't want the build to depend on Python.
 
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 

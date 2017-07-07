@@ -43,23 +43,8 @@ app-deps() {
   # I need the right relative path for Oil
   ln -s -f $PWD/build/app_deps.py ~/git/oil/_tmp
 
-  # Set _HAVE_READLINE env variable for Python.
   PYTHONPATH=$pythonpath \
     $PREPARE_DIR/python -S ~/git/oil/_tmp/app_deps.py $main_module $prefix
-
-  source-detected-config-or-die  # for HAVE_READLINE
-
-  # apps-deps-c.txt is for the developer building the tarball.
-  # app-deps-to-compile.txt is for the end-user build.
-
-  local out2=${prefix}-c.txt
-  local out3=${prefix}-to-compile.txt
-  if test "$HAVE_READLINE" = 1; then
-    cat $out2 > $out3
-  else
-    # Don't fail if grep fails!
-    grep -v 'readline' $out2 > $out3 || true
-  fi
 }
 
 # Make .d file

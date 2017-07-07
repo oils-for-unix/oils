@@ -1,4 +1,58 @@
-# Build App Bundles.
+# Build OVM App Bundles (Python code with a statically-linked CPython
+# interpreter.)
+#
+# We can also build a tarball that allows the end user to build an app bundle.
+# They need GNU Make, bash, and a C compiler.  (And xargs, chmod, etc.)
+#
+# Tarball layout (see build/compile.sh for details):
+#
+# oil.tar/
+#   configure
+#   install
+#   Makefile
+#   _build/                 # Intermediate files
+#     oil/                  # The app name
+#       bytecode.zip        # Arch-independent
+#       main_name.c
+#       module_init.c       # Python module initializer
+#       c-module-srcs.txt   # List of Modules/ etc.
+#   native/                 # App-specific modules
+#     libc.c
+#   build/
+#     static-c-modules.txt  # From Python interpreter
+#     compile.sh ...
+#     detect-cc.c ...
+#   Python-2.7.13/
+#     pyconfig.h            # A frozen version
+#     Python/
+#     Objects/
+#     Modules/
+#     Include/
+#
+#
+# Intermediate layout:
+#
+# _build/
+#   cpython-full/           # Full CPython build, for dynamically
+#                           # discovering Python/C dependencies
+#   c-module-toc.txt        # What files each module is in
+#   oil/                    # App-specific dir
+#     all-deps-c.txt        # App deps plus CPython platform deps
+#     app-deps-c.txt
+#     app-deps-py.txt
+#     bytecode.zip
+#     c-module-srcs.txt
+#     main_name.c
+#     module_init.c
+#     ovm.d                 # Make fragment
+#     ovm, ovm-dbg          # OVM executables (without bytecode)
+# _release/
+#   oil.tar                 # See tarball layout above
+# _bin/                     # Concatenated App Bundles
+#   oil.ovm
+#   oil.ovm-dbg
+#   hello.ovm
+#   hello.ovm-dbg
 
 # Needed for rules with '> $@'.  Does this always work?
 .DELETE_ON_ERROR:
@@ -13,6 +67,9 @@
 # Do this before every build.  There should be a nicer way of handling
 # directories but I don't know it.
 $(shell mkdir -p _bin _release _build/hello _build/oil)
+
+ACTIONS_SH := build/actions.sh
+COMPILE_SH := build/compile.sh
 
 # For faster tesing of builds
 default: _bin/oil.ovm-dbg
@@ -30,7 +87,7 @@ clean:
 	rm -r -f _build/hello _build/oil
 	rm -f _bin/oil.* _bin/hello.* _release/*.tar \
 		_build/runpy-deps-*.txt _build/c-module-toc.txt
-	build/actions.sh clean-pyc
+	$(ACTIONS_SH) clean-pyc
 
 .PHONY: default all clean
 
@@ -45,13 +102,13 @@ _build/detected-config.sh:
 # TODO:
 # - Where to put -l z?  (Done in Modules/Setup.dist)
 _build/c-module-toc.txt: build/c_module_toc.py
-	build/actions.sh c-module-toc > $@
+	$(ACTIONS_SH) c-module-toc > $@
 
 # Python and C dependencies of runpy.
 # NOTE: This is done with a pattern rule because of the "multiple outputs"
 # problem in Make.
 _build/runpy-deps-%.txt: build/runpy_deps.py
-	build/actions.sh runpy-deps _build
+	$(ACTIONS_SH) runpy-deps _build
 
 #
 # Hello App.  Everything below here is app-specific.
@@ -69,7 +126,7 @@ _build/hello/main_name.c:
 _build/hello/app-deps-%.txt: $(HELLO_SRCS) _build/detected-config.sh \
 	                           build/app_deps.py
 	test -d _build/hello && \
-		build/actions.sh app-deps hello build/testdata hello
+		$(ACTIONS_SH) app-deps hello build/testdata hello
 
 # NOTE: We could use src/dest paths pattern instead of _build/app?
 #
@@ -100,7 +157,7 @@ _build/oil/main_name.c:
 # - For the tarball, we should ALWAYS include readline.
 _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
-		build/actions.sh app-deps oil ~/git/oil bin.oil
+		$(ACTIONS_SH) app-deps oil ~/git/oil bin.oil
 
 # TODO: Need $(OIL_SRCS) here?
 _build/oil/bytecode.zip: build/oil-manifest.txt \
@@ -115,7 +172,7 @@ _build/oil/bytecode.zip: build/oil-manifest.txt \
 
 # Regenerate dependencies.  But only if we made the app dirs.
 _build/%/ovm.d: _build/%/app-deps-c.txt
-	build/actions.sh make-dotd $* $^ > $@
+	$(ACTIONS_SH) make-dotd $* $^ > $@
 
 # Source paths of all C modules the app depends on.  For the tarball.
 # A trick: remove the first dep to form the lists.  You can't just use $^
@@ -125,16 +182,14 @@ _build/%/c-module-srcs.txt: \
 	build/c_module_srcs.py $(filter-out $<,$^) > $@
 
 _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
-	build/actions.sh join-modules $^ > $@
+	$(ACTIONS_SH) join-modules $^ > $@
 
 # Per-app extension module initialization.
 _build/%/module_init.c: $(PY27)/Modules/config.c.in _build/%/all-deps-c.txt
 	# NOTE: Using xargs < input.txt style because it will fail if input.txt
 	# doesn't exist!  'cat' errors will be swallowed.
-	xargs build/actions.sh gen-module-init < _build/$*/all-deps-c.txt > $@
+	xargs $(ACTIONS_SH) gen-module-init < _build/$*/all-deps-c.txt > $@
 
-
-COMPILE_SH := build/compile.sh
 
 # 
 # Tarballs
