@@ -9,8 +9,6 @@ set -o errexit
 
 source build/common.sh
 
-readonly OVM_PARSER_OBJS='Parser/myreadline.c'
-
 # TODO:
 # - Can probably delete frozen*.c.  It might be more efficient in theory, but
 # it's not the bottleneck.  It's less debuggable uses the fairly complex
@@ -120,7 +118,6 @@ Modules/signalmodule.c
 
 OVM_LIBRARY_OBJS="
 Modules/getbuildinfo.c
-$OVM_PARSER_OBJS
 $OBJECT_OBJS
 $OVM_PYTHON_OBJS 
 $MODULE_OBJS
@@ -156,7 +153,7 @@ build() {
   local out=${1:-$PY27/ovm2}
   local module_init=${2:-$PY27/Modules/config.c}
   local main_name=${3:-_tmp/hello/main_name.c}
-  local c_module_srcs=${4:-_tmp/hello/c-module-srcs.txt}
+  local c_module_srcs=${4:-_tmp/hello/c-module-srcs-to-compile.txt}
   shift 4
 
   local abs_out=$PWD/$out
@@ -166,14 +163,29 @@ build() {
 
   #echo $OVM_LIBRARY_OBJS
 
-  pushd $PY27
-  # Slower when done serially.
+  # HAVE_READLINE defined in detected-config.sh.
+  source-detected-config-or-die
 
+  pushd $PY27
+
+  local compile_readline
+  local link_readline
+  if test "$HAVE_READLINE" = 1; then
+    # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
+    # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
+    # We should create a special no_readline_raw_input().
+    compile_readline='-D HAVELIB_READLINE Parser/myreadline.c'
+    link_readline='-l readline'
+  else
+    compile_readline=''
+    link_readline=''
+  fi
+
+  # Slower when done serially.
   # PREFIX, EXEC_PREFIX, VERSION, VPATH, etc. are from Modules/getpath.o
 
   # So the OVM is ~600K smaller now.  1.97 MB for ./run.sh build-default.  1.65
   # MB for ./run.sh build-clang-small.
-
   time $CC \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
@@ -183,8 +195,9 @@ build() {
     $abs_main_name \
     $(cat $abs_c_module_srcs) \
     Modules/ovm.c \
+    $compile_readline \
     -l m \
-    -l readline \
+    $link_readline \
     "$@" \
     || true
   popd
@@ -283,7 +296,7 @@ make-tar() {
     $(python-headers $c_module_srcs) \
     $(python-sources)
 
-  # TODO: Add Python licence at top level!
+  # TODO: Add Python license at top level!
 
   ls -l $out
 }

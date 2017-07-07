@@ -42,26 +42,41 @@ app-deps() {
 
   # I need the right relative path for Oil
   ln -s -f $PWD/build/app_deps.py ~/git/oil/_tmp
+
+  # Set _HAVE_READLINE env variable for Python.
   PYTHONPATH=$pythonpath \
     $PREPARE_DIR/python -S ~/git/oil/_tmp/app_deps.py $main_module $prefix
+
+  source-detected-config-or-die  # for HAVE_READLINE
+
+  # apps-deps-c.txt is for the developer building the tarball.
+  # app-deps-to-compile.txt is for the end-user build.
+
+  local out2=${prefix}-c.txt
+  local out3=${prefix}-to-compile.txt
+  if test "$HAVE_READLINE" = 1; then
+    cat $out2 > $out3
+  else
+    # Don't fail if grep fails!
+    grep -v 'readline' $out2 > $out3 || true
+  fi
 }
 
 # Make .d file
 make-dotd() {
   local app_name=${1:-hello}
-  local discovered=${2:-_tmp/hello/discovered-c.txt}
+  local app_deps_to_compile=${2:-_tmp/hello/app-deps-to-compile.txt}
 
   # TODO: For each module, look it up in the manifest.
   # I guess make a Python file.
 
-  echo "# TODO $discovered"
-
-  #cat $discovered
+  echo "# TODO $app_deps_to_compile"
 
   # The dependencies we want.
-  echo "_tmp/$app_name/ovm:"
-  echo "_tmp/$app_name/ovm-dbg:"
-  echo "_tmp/$app_name/ovm-cov:"
+  # X to prevent screwing things up.
+  echo "X_build/$app_name/ovm:"
+  echo "X_build/$app_name/ovm-dbg:"
+  echo "X_build/$app_name/ovm-cov:"
 }
 
 #

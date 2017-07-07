@@ -21,11 +21,11 @@ die() {
   exit 1
 }
 
-
 # Default value is /usr/bin/oil.  The user might want to change it to
 # /usr/local/bin/oil or $HOME/bin/oil.
 FLAG_prefix='/usr/bin'
 FLAG_with_readline=''  # Fail if it's not available.
+FLAG_without_readline=''  # Don't even check if it's available>
 
 while true; do
   case "$1" in
@@ -39,6 +39,10 @@ while true; do
 
     --with-readline)
       FLAG_with_readline=1
+      ;;
+
+    --without-readline)
+      FLAG_without_readline=1
       ;;
 
     # TODO: Maybe prefix only needs to be part of the install step?  I'm not
@@ -68,9 +72,16 @@ detect_readline() {
     if test "$FLAG_with_readline" = 1; then
       die 'readline was not detected on the system (--with-readline passed).'
     fi
-    echo 'HAVE_READLINE=0'
+    echo 'HAVE_READLINE='
   fi
+}
 
+detect_and_echo_vars() {
+  if test "$FLAG_without_readline" = 1; then
+    echo 'HAVE_READLINE='
+  else
+    detect_readline
+  fi
   echo "PREFIX=$FLAG_prefix"
 }
 
@@ -82,10 +93,11 @@ main() {
     die "Couldn't compile a basic C program (cc not installed?)"
   fi
 
-  # The makefile or shell script will 'source detected-config.sh'?  And then it
-  # can pass -D to the compiler?
-  local out=detected-config.sh
-  detect_readline > $out
+  # The shell build actions will 'source _build/detected-config.sh'.  And then
+  # adjust flags to compiler (-D, -l, etc.)
+  mkdir -p _build
+  local out=_build/detected-config.sh
+  detect_and_echo_vars > $out
   log "Wrote $out"
 }
 

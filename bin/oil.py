@@ -45,7 +45,7 @@ this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(this_dir, '..'))
 
 # Set in Modules/main.c.
-HAVE_READLINE = os.getenv('_OVM_HAVE_READLINE') != '0'
+HAVE_READLINE = os.getenv('_HAVE_READLINE') != ''
 
 from asdl import format as fmt
 from asdl import encode

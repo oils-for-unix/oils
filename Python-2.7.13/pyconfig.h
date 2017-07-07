@@ -66,7 +66,7 @@
 #define HAVE_ASINH 1
 
 /* Define to 1 if you have the <asm/types.h> header file. */
-#define HAVE_ASM_TYPES_H 1
+/* #undef HAVE_ASM_TYPES_H */
 
 /* Define to 1 if you have the `atanh' function. */
 #define HAVE_ATANH 1
@@ -84,7 +84,7 @@
 /* #undef HAVE_BLUETOOTH_H */
 
 /* Define if nice() returns success/failure instead of the new priority. */
-/* #undef HAVE_BROKEN_NICE */
+#define HAVE_BROKEN_NICE 1
 
 /* Define if the system reports an invalid PIPE_BUF value. */
 /* #undef HAVE_BROKEN_PIPE_BUF */
@@ -99,7 +99,7 @@
 /* #undef HAVE_BROKEN_PTHREAD_SIGMASK */
 
 /* define to 1 if your sem_getvalue is broken. */
-#define HAVE_BROKEN_SEM_GETVALUE 1
+/* #undef HAVE_BROKEN_SEM_GETVALUE */
 
 /* Define if `unsetenv` does not return an int. */
 /* #undef HAVE_BROKEN_UNSETENV */
@@ -172,7 +172,7 @@
 /* #undef HAVE_DEV_PTC */
 
 /* Define to 1 if you have the /dev/ptmx device file. */
-#define HAVE_DEV_PTMX 1
+/* #undef HAVE_DEV_PTMX */
 
 /* Define to 1 if you have the <direct.h> header file. */
 /* #undef HAVE_DIRECT_H */
@@ -269,7 +269,7 @@
 #define HAVE_GAI_STRERROR 1
 
 /* Define to 1 if you have the `gamma' function. */
-#define HAVE_GAMMA 1
+/* #undef HAVE_GAMMA */
 
 /* Define if we can use gcc inline assembler to get and set x87 control word
    */
@@ -357,7 +357,7 @@
 #define HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the `getwd' function. */
-#define HAVE_GETWD 1
+/* #undef HAVE_GETWD */
 
 /* Define to 1 if you have the <grp.h> header file. */
 #define HAVE_GRP_H 1
@@ -414,7 +414,7 @@
 /* #undef HAVE_LCHFLAGS */
 
 /* Define to 1 if you have the `lchmod' function. */
-/* #undef HAVE_LCHMOD */
+#define HAVE_LCHMOD 1
 
 /* Define to 1 if you have the `lchown' function. */
 #define HAVE_LCHOWN 1
@@ -432,7 +432,7 @@
 /* #undef HAVE_LIBIEEE */
 
 /* Define to 1 if you have the <libintl.h> header file. */
-#define HAVE_LIBINTL_H 1
+/* #undef HAVE_LIBINTL_H */
 
 /* Define if you have the readline library (-lreadline). */
 /* #undef HAVE_LIBREADLINE */
@@ -447,10 +447,10 @@
 #define HAVE_LINK 1
 
 /* Define to 1 if you have the <linux/netlink.h> header file. */
-#define HAVE_LINUX_NETLINK_H 1
+/* #undef HAVE_LINUX_NETLINK_H */
 
 /* Define to 1 if you have the <linux/tipc.h> header file. */
-#define HAVE_LINUX_TIPC_H 1
+/* #undef HAVE_LINUX_TIPC_H */
 
 /* Define to 1 if you have the `log1p' function. */
 #define HAVE_LOG1P 1
@@ -588,16 +588,16 @@
 #define HAVE_SELECT 1
 
 /* Define to 1 if you have the `sem_getvalue' function. */
-/* #undef HAVE_SEM_GETVALUE */
+#define HAVE_SEM_GETVALUE 1
 
 /* Define to 1 if you have the `sem_open' function. */
-/* #undef HAVE_SEM_OPEN */
+#define HAVE_SEM_OPEN 1
 
 /* Define to 1 if you have the `sem_timedwait' function. */
-/* #undef HAVE_SEM_TIMEDWAIT */
+#define HAVE_SEM_TIMEDWAIT 1
 
 /* Define to 1 if you have the `sem_unlink' function. */
-/* #undef HAVE_SEM_UNLINK */
+#define HAVE_SEM_UNLINK 1
 
 /* Define to 1 if you have the `setegid' function. */
 #define HAVE_SETEGID 1
@@ -852,7 +852,7 @@
 #define HAVE_TMPNAM 1
 
 /* Define to 1 if you have the `tmpnam_r' function. */
-#define HAVE_TMPNAM_R 1
+/* #undef HAVE_TMPNAM_R */
 
 /* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
    `HAVE_STRUCT_TM_TM_ZONE' instead. */
@@ -961,7 +961,7 @@
 /* #undef PACKAGE_VERSION */
 
 /* Define if POSIX semaphores aren't enabled on your system */
-#define POSIX_SEMAPHORES_NOT_ENABLED 1
+/* #undef POSIX_SEMAPHORES_NOT_ENABLED */
 
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 /* #undef PTHREAD_SYSTEM_SCHED_SUPPORTED */

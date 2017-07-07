@@ -281,7 +281,7 @@ Ovm_Main(int argc, char **argv)
     setenv("_OVM_DEPS", "1", 1);  // for debug imports
 #ifndef HAVE_READLINE
     // Communicate C build configuration to Python env.
-    setenv("_OVM_HAVE_READLINE", "0", 1);
+    setenv("_HAVE_READLINE", "0", 1);
 #endif
 
     // NOTE: I think we need sys.path to find runpy in the first place.  But

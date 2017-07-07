@@ -17,3 +17,12 @@ readonly PY27=Python-2.7.13
 
 readonly PREPARE_DIR=_build/cpython-full
 
+source-detected-config-or-die() {
+  if ! source _build/detected-config.sh; then
+    # Make this error stand out.
+    echo
+    echo "FATAL: can't find _build/detected-config.h.  Run './configure'"
+    echo
+    exit 1
+  fi
+}
