@@ -13,9 +13,11 @@ filter-py() {
   grep -E -v '__init__.py$|_test.py$' 
 }
 
+# TODO: Sum up all the support material.  It's more than Oil itself!  Turn
+# everything into an array.  An hash table of arrays would be useful here.
 all() {
   echo 'BUILD AUTOMATION'
-  wc -l build/*.{sh,py} | filter-py | sort --numeric
+  wc -l build/*.{sh,py} Makefile configure install | filter-py | sort --numeric
   echo
 
   echo 'TEST AUTOMATION'
