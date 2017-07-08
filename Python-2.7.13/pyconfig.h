@@ -1199,12 +1199,6 @@
    #define below would cause a syntax error. */
 /* #undef _UINT64_T */
 
-/* Define to the level of X/Open that your system supports */
-#define _XOPEN_SOURCE 600
-
-/* Define to activate Unix95-and-earlier features */
-#define _XOPEN_SOURCE_EXTENDED 1
-
 /* Define on FreeBSD to activate all library features */
 #define __BSD_VISIBLE 1
 
