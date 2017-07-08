@@ -35,7 +35,7 @@ EOF
 setup-dns() { sudo $0 _setup-dns; }
 
 # 106 MiB as of 7/7/2017.
-add-packages() {
+add-oil-build-deps() {
   sudo chroot _chroot/alpine1 /bin/sh <<EOF
 apk update
 apk add bash make gcc musl-dev 
@@ -44,7 +44,11 @@ EOF
 
 # Interactive /bin/sh.
 enter-chroot() {
-  sudo chroot _chroot/alpine1 /bin/sh
+  sudo chroot _chroot/alpine1 "$@"
+}
+
+interactive() {
+  enter-chroot /bin/sh
 }
 
 _copy-tar() {
@@ -52,9 +56,26 @@ _copy-tar() {
 
   local dest=$CHROOT_DIR/src
   mkdir -p $dest
-  cp ~/git/oil/_release/$name.tar $dest
+  cp _release/$name.tar $dest
   ls -l $CHROOT_DIR/src
 }
 copy-tar() { sudo $0 _copy-tar; }
+
+
+# TODO: tarball needs to have a root directory like oil-$VERSION/.
+
+_test-tar() {
+  local name=${1:-hello}
+
+  enter-chroot /bin/sh <<EOF
+cd src
+tar --extract < ${name}.tar
+./configure
+time make _bin/${name}.ovm-dbg
+echo "Running _bin/${name}.ovm-dbg"
+_bin/${name}.ovm-dbg
+EOF
+}
+test-tar() { sudo $0 _test-tar; }
 
 "$@"
