@@ -311,6 +311,7 @@ make-tar() {
   tar --create --transform "$sed_expr" --file $out \
     LICENSE \
     INSTALL \
+    $version_file \
     configure \
     install \
     Makefile \

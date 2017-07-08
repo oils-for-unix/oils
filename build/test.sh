@@ -32,26 +32,29 @@ oil-bundle() {
 
 _tarball() {
   local name=${1:-hello}
+  local version=${2:-0.0.0}
+
   local tmp=_tmp/$name-tar-test
   rm -r -f $tmp
   mkdir -p $tmp
   cd $tmp
-  tar --extract < ../../_release/$name.tar
+  tar --extract -z < ../../_release/$name-$version.tar.gz
 
+  cd $name-$version
   ./configure
 
   # Build the fast one for a test.
   # TODO: Maybe edit the Makefile to change the top target.
   time make _bin/${name}.ovm-dbg
-  _bin/${name}.ovm-dbg
+  _bin/${name}.ovm-dbg --version
 }
 
 hello-tar() {
-  _tarball hello
+  _tarball hello $(head -n 1 build/testdata/hello-version.txt)
 }
 
 oil-tar() {
-  _tarball oil
+  _tarball oil $(head -n 1 oil-version.txt)
 }
 
 # Test the different entry points.

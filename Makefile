@@ -89,9 +89,13 @@ clean:
 		_build/runpy-deps-*.txt _build/c-module-toc.txt
 	$(ACTIONS_SH) clean-pyc
 
-.PHONY: default all clean install _build/build-date.txt
+.PHONY: default all clean install
 
-# NOTE: This messes up reproducible builds.
+# NOTES:
+# - Manually rm this file to generate a new build timestamp.
+# - This messes up reproducible builds.
+# - It's not marked .PHONY because that would mess up the end user build.
+#   bytecode.zip should NOT be built by the user.
 _build/build-date.txt:
 	date > $@
 
