@@ -54,12 +54,12 @@ interactive() {
 _copy-tar() {
   local name=${1:-hello}
 
-  local dest=$CHROOT_DIR/src
+  local dest=$CHROOT_DIR/src/$name
   mkdir -p $dest
   cp _release/$name.tar $dest
   ls -l $CHROOT_DIR/src
 }
-copy-tar() { sudo $0 _copy-tar; }
+copy-tar() { sudo $0 _copy-tar "$@"; }
 
 
 # TODO: tarball needs to have a root directory like oil-$VERSION/.
@@ -68,7 +68,7 @@ _test-tar() {
   local name=${1:-hello}
 
   enter-chroot /bin/sh <<EOF
-cd src
+cd src/$name
 tar --extract < ${name}.tar
 ./configure
 time make _bin/${name}.ovm-dbg
@@ -76,6 +76,6 @@ echo "Running _bin/${name}.ovm-dbg"
 _bin/${name}.ovm-dbg
 EOF
 }
-test-tar() { sudo $0 _test-tar; }
+test-tar() { sudo $0 _test-tar "$@"; }
 
 "$@"
