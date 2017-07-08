@@ -180,10 +180,6 @@ func_regex_parse(PyObject *self, PyObject *args) {
     err_str = "Unknown character class name.";
     break;
 
-  case REG_EEND:
-    err_str = "Nonspecific error.  This is not defined by POSIX.2.";
-    break;
-
   case REG_EESCAPE:
     err_str = "Trailing backslash.";
     break;
@@ -196,10 +192,6 @@ func_regex_parse(PyObject *self, PyObject *args) {
     err_str = "Invalid use of the range operator, e.g., the ending point of the range occurs prior to the starting point.";
     break;
 
-  case REG_ESIZE:
-    err_str = "Compiled regular expression requires a pattern buffer larger than 64Kb.  This is not defined by POSIX.2.";
-    break;
-
   case REG_ESPACE:
     err_str = "The regex routines ran out of memory.";
     break;
@@ -208,7 +200,20 @@ func_regex_parse(PyObject *self, PyObject *args) {
     err_str = "Invalid back reference to a subexpression.";
     break;
 
+    /* NOTE: These are not defined by musl libc on Alpine.
+     * TODO: If we can construct test cases for these, add them back.
+     * */
+#if 0
+  case REG_EEND:
+    err_str = "Nonspecific error.  This is not defined by POSIX.2.";
+    break;
+  case REG_ESIZE:
+    err_str = "Compiled regular expression requires a pattern buffer larger than 64Kb.  This is not defined by POSIX.2.";
+    break;
+#endif
+
   default:
+    /* TODO: Add the integer to error message */
     err_str = "Unknown error compiling regex";
   }
 
