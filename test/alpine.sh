@@ -42,9 +42,13 @@ apk add bash make gcc musl-dev
 EOF
 }
 
+destroy-chroot() {
+  sudo rm -r -rf $CHROOT_DIR
+}
+
 # Interactive /bin/sh.
 enter-chroot() {
-  sudo chroot _chroot/alpine1 "$@"
+  sudo chroot $CHROOT_DIR "$@"
 }
 
 interactive() {
