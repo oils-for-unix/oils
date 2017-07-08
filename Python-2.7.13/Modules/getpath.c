@@ -661,33 +661,62 @@ calculate_path(void)
 char *
 Py_GetPath(void)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "OVM warning: Py_GetPath should not be called\n");
+    module_search_path[0] = '\0';  // empty string
+    return module_search_path;
+#else
     if (!module_search_path)
         calculate_path();
     return module_search_path;
+#endif
 }
+
+//
+// OVM: Stub these out so they don't call calculate_path(), which spams stderr.
+//
+// TODO: It woudl be nicer to get rid of this whol emodule, but I'm not sure
+// where sys.prefix, sys.exec_prefix, etc. are used in the standard library.
+// They're probably used in the runpy module, which we are using.
+//
 
 char *
 Py_GetPrefix(void)
 {
+#ifdef OVM_MAIN
+    prefix[0] = '\0';  // empty string
+    return prefix;
+#else
     if (!module_search_path)
         calculate_path();
     return prefix;
+#endif
 }
 
 char *
 Py_GetExecPrefix(void)
 {
+#ifdef OVM_MAIN
+    exec_prefix[0] = '\0';  // empty string
+    return exec_prefix;
+#else
     if (!module_search_path)
         calculate_path();
     return exec_prefix;
+#endif
 }
 
 char *
 Py_GetProgramFullPath(void)
 {
+#ifdef OVM_MAIN
+    progpath[0] = '\0';  // empty string
+    return progpath;
+#else
     if (!module_search_path)
         calculate_path();
     return progpath;
+#endif
 }
 
 

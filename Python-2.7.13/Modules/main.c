@@ -293,6 +293,7 @@ Ovm_Main(int argc, char **argv)
         // Hm there is weird logic in sysmodule.c makeargvobject to make it
         // [""] instead of [].
         Py_InitializeEx(0 /*install_sigs*/, argv[0] /*sys_path*/);
+
         PySys_SetArgv(argc, argv);
         sts = RunMainFromImporter(argv[0]);
         fprintf(stderr, "sts: %d\n", sts);

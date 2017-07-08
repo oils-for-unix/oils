@@ -73,6 +73,7 @@ tar --extract < ${name}.tar
 ./configure
 time make _bin/${name}.ovm-dbg
 echo "Running _bin/${name}.ovm-dbg"
+#PYTHONVERBOSE=9 
 _bin/${name}.ovm-dbg
 EOF
 }

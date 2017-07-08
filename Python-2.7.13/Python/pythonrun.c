@@ -619,6 +619,7 @@ Py_NewInterpreter(void)
         if (interp->sysdict == NULL)
             goto handle_error;
         Py_INCREF(interp->sysdict);
+        fprintf(stderr, "OVM warning: got to a line that calls Py_GetPath()\n");
         PySys_SetPath(Py_GetPath());
         PyDict_SetItemString(interp->sysdict, "modules",
                              interp->modules);
