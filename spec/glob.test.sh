@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # NOTE: Could move spec/03-glob.sh here.
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Cases from
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html

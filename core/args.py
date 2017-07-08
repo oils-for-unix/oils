@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 args.py - Flag, option, and arg parsing for the shell.
 

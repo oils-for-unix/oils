@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 osh2oil_test.py: Tests for osh2oil.py
 """

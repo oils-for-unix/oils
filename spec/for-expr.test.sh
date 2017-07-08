@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Constructs borrowed from ksh.  Hm I didn't realize zsh also implements these!
 # mksh implements most too.

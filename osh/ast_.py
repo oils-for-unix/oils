@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 osh/ast_.py -- Parse osh.asdl and dynamically create classes on this module.
 """

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### debug-line builtin
 debug-line 'hi there'

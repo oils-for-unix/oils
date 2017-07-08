@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # POSIX rule about special builtins pointed at:
 #

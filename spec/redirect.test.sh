@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### Leading redirect
 echo hello >$TMP/hello.txt  # temporary fix

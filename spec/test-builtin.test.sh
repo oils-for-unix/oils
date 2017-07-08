@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### empty string is false.  Equivalent to -n.
 test 'a'  && echo true

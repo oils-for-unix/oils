@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python -S
 """
 symbols_test.py: Tests for symbols.py
 

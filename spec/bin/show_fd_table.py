@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 show_fd_table.py -- Uses Linux-specific proc interface
 """

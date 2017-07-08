@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """Test the with statement for Byterun."""
 
 from __future__ import print_function

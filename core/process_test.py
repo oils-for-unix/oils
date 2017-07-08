@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python -S
 """
 process_test.py: Tests for process.py
 """

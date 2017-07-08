@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Run tests against multiple shells with the sh_spec framework.
 #

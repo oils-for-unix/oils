@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Arrays decay upon assignment (without splicing) and equality.  This will not
 # be true in Oil -- arrays will be first class.

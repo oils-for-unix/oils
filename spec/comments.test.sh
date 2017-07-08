@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # NOTE: The test harness isn't good for this test; it strips lines that start
 # with #

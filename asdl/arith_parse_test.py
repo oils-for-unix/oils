@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from asdl import tdop
 from asdl import arith_parse
 

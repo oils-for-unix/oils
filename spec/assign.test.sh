@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### Env value doesn't persist
 FOO=foo printenv.py FOO

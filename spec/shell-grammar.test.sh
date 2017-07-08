@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test cases for the grammar.  It uses pidgin shell because we don't have a
 # proper lexer in ANTLR (ANTLR's lexers don't have states anyway.)

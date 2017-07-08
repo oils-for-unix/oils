@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 sh_spec_test.py: Tests for sh_spec.py
 """

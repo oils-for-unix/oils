@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 foo=a
 case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac
