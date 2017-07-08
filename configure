@@ -64,9 +64,15 @@ while true; do
   shift
 done
 
+# No output file, no logging, no stderr.
+# TODO: Maybe send stdout/stderr to config.log?
+cc_quiet() {
+  cc "$@" -o /dev/null >/dev/null 2>&1
+}
+
 # Write a shell script to standard out with variables, or fail.
 detect_readline() {
-  if cc build/detect-readline.c -l readline -o /dev/null; then
+  if cc_quiet build/detect-readline.c -l readline; then
     echo 'HAVE_READLINE=1'
   else
     if test "$FLAG_with_readline" = 1; then
@@ -89,7 +95,7 @@ detect_and_echo_vars() {
 # And set the default target as oil_readline, oil_no_readline, oil_lto,
 # oil_pgo, etc.?
 main() {
-  if ! cc build/detect-cc.c -o /dev/null; then
+  if ! cc_quiet build/detect-cc.c; then
     die "Couldn't compile a basic C program (cc not installed?)"
   fi
 
