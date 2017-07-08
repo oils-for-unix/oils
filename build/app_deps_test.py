@@ -1,4 +1,4 @@
-#!/usr/bin/env python -S
+#!/usr/bin/env python
 """
 app_deps_test.py: Tests for app_deps.py
 """

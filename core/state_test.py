@@ -1,4 +1,4 @@
-#!/usr/bin/env python -S
+#!/usr/bin/env python
 """
 state_test.py: Tests for state.py
 """

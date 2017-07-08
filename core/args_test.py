@@ -1,4 +1,4 @@
-#!/usr/bin/env python -S
+#!/usr/bin/env python
 """
 args_test.py: Tests for args.py
 """
