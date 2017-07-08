@@ -22,25 +22,23 @@ def main(argv):
   z = zipfile.ZipFile(out_path, 'w', mode)
 
   seen = {}
-  for manifest in argv[2:]:
-    with open(manifest) as f:
-      for line in f:
-        line = line.strip()
-        try:
-          full_path, rel_path = line.split(None, 1)
-        except ValueError:
-          raise RuntimeError('Invalid line %r' % line)
+  for line in sys.stdin:
+    line = line.strip()
+    try:
+      full_path, rel_path = line.split(None, 1)
+    except ValueError:
+      raise RuntimeError('Invalid line %r' % line)
 
-        if rel_path in seen:
-          expected = seen[rel_path]
-          if expected != full_path:
-            print >>sys.sterr, 'WARNING: expected %r, got %r' % (expected,
-                full_path)
-          continue
+    if rel_path in seen:
+      expected = seen[rel_path]
+      if expected != full_path:
+        print >>sys.sterr, 'WARNING: expected %r, got %r' % (expected,
+            full_path)
+      continue
 
-        #print >>sys.stderr, '%s -> %s' % (full_path, rel_path)
-        z.write(full_path, rel_path)
-        seen[rel_path] = full_path
+    #print >>sys.stderr, '%s -> %s' % (full_path, rel_path)
+    z.write(full_path, rel_path)
+    seen[rel_path] = full_path
 
   # TODO: Make summary
 

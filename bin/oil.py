@@ -146,6 +146,29 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
 OSH_PS1 = 'osh$ '
 
 
+def _ShowVersion():
+  loader = util.GetResourceLoader()
+  f = loader.open('oil-version.txt')
+  version = f.readline().strip()
+  f.close()
+
+  try:
+    f = loader.open('build-date.txt')
+  except IOError:
+    build_date = '-'  # in dev tree
+  else:
+    build_date = f.readline().strip()
+  finally:
+    f.close()
+
+  # What C functions do these come from?
+  print('Oil version %s' % version)
+  print('Build Date: %s' % build_date)
+  print('Arch: %s' % platform.machine())
+  print('OS: %s' % platform.system())
+  print('Platform: %s' % platform.version())
+
+
 def OshMain(argv):
   spec = args.FlagsAndOptions()
   spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
@@ -174,7 +197,7 @@ def OshMain(argv):
     return 0
   if opts.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
-    print(_OIL_VERSION)
+    _ShowVersion()
     return 0
 
   trace_state = util.TraceState()
@@ -363,12 +386,6 @@ def BoilMain(main_argv):
 
 _OIL_USAGE = 'Usage: oil MAIN [OPTION]... [ARG]...'
 
-# TODO: There is also platform.compiler()?  Exposing key-value pairs and
-# cleaning up the C code would be nice.
-_OIL_VERSION = """\
-Oil version 0.1
-%s %s %s""" % (platform.machine(), platform.system(), platform.version())
-
 
 def OilMain(argv):
   b = os.path.basename(argv[0])
@@ -385,7 +402,7 @@ def OilMain(argv):
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):
-      print(_OIL_VERSION, file=sys.stderr)
+      _ShowVersion()
       sys.exit(0)
 
     main_name = first_arg
