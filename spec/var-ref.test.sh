@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Var refs are done with ${!a} and local/declare -n.
 #

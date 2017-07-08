@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Do a full CPython build out of tree, so we can walk dependencies dynamically.
 #

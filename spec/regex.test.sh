@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Only bash and zsh seem to implement [[ foo =~ '' ]]
 #

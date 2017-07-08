@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### [[ glob matching, [[ has no glob expansion
 [[ foo.py == *.py ]] && echo true

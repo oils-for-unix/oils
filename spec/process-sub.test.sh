@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### Process sub input
 f=_tmp/process-sub.txt

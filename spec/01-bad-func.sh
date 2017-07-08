@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 
 # NOTE: The error message is different at interactive prompt:
 #

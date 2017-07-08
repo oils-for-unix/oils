@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Usage:
 #   ./spec-file.sh <function name>
@@ -7,18 +7,23 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly DASH=/bin/dash
-readonly BASH=/bin/bash
-readonly MKSH=/bin/mksh
-readonly ZSH=/usr/bin/zsh  # Ubuntu puts it here
+readonly DASH=$(which dash 2>/dev/null || echo /bin/sh)
+readonly BASH=$(which bash)
+readonly MKSH=$(which mksh)
+readonly ZSH=$(which zsh)
 readonly BUSYBOX_ASH=_tmp/shells/ash
 
-# TODO: Does it make sense to copy the binary to an unrelated to directory,
-# like /tmp?  /tmp/{oil.ovm,osh}.
-readonly OSH_BIN=_bin/osh
+if test -f _bin/osh; then
+  # TODO: Does it make sense to copy the binary to an unrelated to directory,
+  # like /tmp?  /tmp/{oil.ovm,osh}.
+  readonly OSH_BIN=_bin/osh
 
-# HACK that relies on word splitting.  TODO: Use ${OSH[@]} everywhere
-readonly OSH="bin/osh $OSH_BIN"
+  # HACK that relies on word splitting.  TODO: Use ${OSH[@]} everywhere
+  readonly OSH="bin/osh $OSH_BIN"
+else
+  readonly OSH="bin/osh"
+fi
+
 
 # ash and dash are similar, so not including ash by default.  zsh is not quite
 # POSIX.

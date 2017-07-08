@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # word-eval.test.sh: Test the word evaluation pipeline in order.
 #

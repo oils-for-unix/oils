@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Run real shell code with osh and bash, and compare the results.
 #

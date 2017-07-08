@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Job control constructs:
 #   & terminator (instead of ;)

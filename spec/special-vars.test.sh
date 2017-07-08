@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # NOTE:
 # - $! is tested in background.test.sh

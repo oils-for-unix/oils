@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 arith_parse.py - Parse shell arithmetic, which is based on C.
 """

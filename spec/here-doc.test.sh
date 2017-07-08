@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ### Here redirect with explicit descriptor
 # A space betwen 0 and <<EOF causes it to pass '0' as an arg to cat.

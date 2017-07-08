@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build Python extension modules.  We use symlinks instead of installing them
 # globally (or using virtualenv).
@@ -19,7 +19,7 @@ build() {
   shopt -s failglob
   local so=$(echo _build/pylibc/$arch/libc.so)
 
-  ln -s -f --verbose $so libc.so
+  ln -s -f -v $so libc.so
   file libc.so
 }
 

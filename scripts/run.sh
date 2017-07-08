@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Miscellaneous scripts that don't belong elsewhere.
 #

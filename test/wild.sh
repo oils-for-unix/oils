@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Run the osh parser on shell scripts found in the wild.
 #
