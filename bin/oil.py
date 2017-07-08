@@ -36,6 +36,7 @@ else:
 tlog('before imports')
 
 import errno
+import platform
 import re
 import sys
 import traceback  # for debugging
@@ -151,6 +152,7 @@ def OshMain(argv):
   spec.ShortFlag('-i')  # interactive
 
   spec.LongFlag('--help')
+  spec.LongFlag('--version')
   spec.LongFlag('--ast-output', args.Str)
   spec.LongFlag('--ast-format', ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'])
   spec.LongFlag('--fix')
@@ -168,7 +170,11 @@ def OshMain(argv):
     return 2
 
   if opts.help:
-    print('TODO: HELP')
+    print('TODO: OSH Help')
+    return 0
+  if opts.version:
+    # OSH version is the only binary in Oil right now, so it's all one version.
+    print(_OIL_VERSION)
     return 0
 
   trace_state = util.TraceState()
@@ -357,6 +363,12 @@ def BoilMain(main_argv):
 
 _OIL_USAGE = 'Usage: oil MAIN [OPTION]... [ARG]...'
 
+# TODO: There is also platform.compiler()?  Exposing key-value pairs and
+# cleaning up the C code would be nice.
+_OIL_VERSION = """\
+Oil version 0.1
+%s %s %s""" % (platform.machine(), platform.system(), platform.version())
+
 
 def OilMain(argv):
   b = os.path.basename(argv[0])
@@ -370,6 +382,10 @@ def OilMain(argv):
 
     if first_arg in ('-h', '--help'):
       print(_OIL_USAGE, file=sys.stderr)
+      sys.exit(0)
+
+    if first_arg in ('-V', '--version'):
+      print(_OIL_VERSION, file=sys.stderr)
       sys.exit(0)
 
     main_name = first_arg
