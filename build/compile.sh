@@ -280,6 +280,23 @@ make-tar() {
   local app_name=${1:-hello}
   local out=${2:-_release/hello.tar}
 
+  local version_file
+  case $app_name in
+    oil)
+      version_file=oil-version.txt
+      ;;
+    hello)
+      version_file=build/testdata/hello-version.txt
+      ;;
+    *)
+      die "Unknown app $app_name"
+      exit 1
+      ;;
+  esac
+  local version=$(head -n 1 $version_file)
+
+  echo "Creating $app_name version $version"
+
   # compile.sh is for the command line
   # actions.sh for concatenation
   #
@@ -288,7 +305,10 @@ make-tar() {
 
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 
-  tar --create --file $out \
+  # Add oil-0.0.0/ to the beginning of every path.
+  local sed_expr="s,^,${app_name}-${version}/,"
+
+  tar --create --transform "$sed_expr" --file $out \
     LICENSE \
     INSTALL \
     configure \

@@ -17,6 +17,11 @@ readonly PY27=Python-2.7.13
 
 readonly PREPARE_DIR=_build/cpython-full
 
+die() {
+  echo "FATAL: $@" 1>&2
+  exit 1
+}
+
 source-detected-config-or-die() {
   if ! source _build/detected-config.sh; then
     # Make this error stand out.
