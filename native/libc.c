@@ -35,7 +35,7 @@ limitations under the License.
 #ifdef __FreeBSD__
 #include <gnu/posix/regex.h>
 #else
-include <regex.h>
+#include <regex.h>
 #endif
 
 #include <Python.h>
