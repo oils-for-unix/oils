@@ -1077,6 +1077,14 @@ unmarshal_code(const char *pathname, PyObject *data, time_t mtime)
         return Py_None;  /* signal caller to try alternative */
     }
 
+    /* This check is pointless, and it caused a bug in OVM.
+     *
+     * I think it was due to time zone issues.  Also, eq_mtime is fuzzy because
+     * zip timestamps are different than file system timestamps.
+     *
+     * https://bugs.python.org/issue23734
+     */
+#ifndef OVM_MAIN
     if (mtime != 0 && !eq_mtime(get_uint32(buf + 4), mtime)) {
         if (Py_VerboseFlag) {
             PySys_WriteStderr("# %s has bad mtime\n",
@@ -1085,6 +1093,7 @@ unmarshal_code(const char *pathname, PyObject *data, time_t mtime)
         Py_INCREF(Py_None);
         return Py_None;  /* signal caller to try alternative */
     }
+#endif
 
     code = PyMarshal_ReadObjectFromString((char *)buf + 8, size - 8);
     if (code == NULL) {
