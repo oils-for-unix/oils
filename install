@@ -21,4 +21,22 @@
 #
 # NOTE: install is part of coreutils.
 
-echo TODO
+die() {
+  echo "FATAL install error: $@" 1<&2
+  exit 1
+}
+
+# NOTE: The configure step
+main() {
+  local dest=${1:-/usr/bin}
+  if ! install _bin/oil.ovm-dbg $dest; then
+    die "Couldn't install oil binary"
+  fi
+  cd $dest
+  if ! ln -s oil.ovm-dbg osh; then
+    die "Couldn't create osh symlink"
+  fi
+}
+
+main "$@"
+
