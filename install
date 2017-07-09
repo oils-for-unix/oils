@@ -17,13 +17,22 @@ die() {
 
 # NOTE: The configure step
 main() {
-  local dest=${1:-/usr/bin}
-  if ! install _bin/oil.ovm-dbg $dest; then
+  if ! . _build/detected-config.sh; then
+    die "Can't find _build/detected-config.h.  Run './configure'"
+  fi
+
+  # Now $PREFIX should be defined
+
+  local exec_filename=oil.ovm-dbg  # Should this go in configure output?
+  local dest=$PREFIX/bin/$exec_filename
+
+  echo "Installing to $dest"
+  if ! install _bin/$exec_filename $dest; then
     die "Couldn't install oil binary"
   fi
 
-  cd $dest
-  if ! ln -s -f oil.ovm-dbg osh; then  # -f to overwrite
+  cd $PREFIX/bin
+  if ! ln -s -f $exec_filename osh; then  # -f to overwrite
     die "Couldn't create osh symlink"
   fi
 }

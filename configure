@@ -21,9 +21,10 @@ die() {
   exit 1
 }
 
-# Default value is /usr/bin/oil.  The user might want to change it to
-# /usr/local/bin/oil or $HOME/bin/oil.
-FLAG_prefix='/usr/bin'
+# Default installation is /usr/local/bin/oil, but this can be changed with
+# --prefix.  We roughly follow GNU:
+# https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
+FLAG_prefix='/usr/local'
 FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available>
 

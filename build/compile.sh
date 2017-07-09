@@ -127,25 +127,14 @@ $MODULE_OBJS
 $MODOBJS
 "
 
-# Install prefix for architecture-independent files
-readonly prefix='"/usr/local"'  # must be quoted string
+readonly EMPTY_STR='""'
 
-# Install prefix for architecture-dependent files
-readonly exec_prefix="$prefix"
-readonly VERSION='"2.7"'
-readonly VPATH='""'
-readonly pythonpath='""'
-
-# TODO:
-# -D OVM_DISABLE_DLOPEN
-
+# Stub out a few variables
 readonly PREPROC_FLAGS=(
   -D OVM_MAIN \
-  -D PYTHONPATH="$pythonpath" \
-  -D PREFIX="$prefix" \
-  -D EXEC_PREFIX="$exec_prefix" \
-  -D VERSION="$VERSION" \
-  -D VPATH="$VPATH" \
+  -D PYTHONPATH="$EMPTY_STR" \
+  -D VERSION="$EMPTY_STR" \
+  -D VPATH="$EMPTY_STR" \
   -D Py_BUILD_CORE
 )
 
@@ -189,14 +178,15 @@ build() {
     link_readline=''
   fi
 
-  # Slower when done serially.
-  # PREFIX, EXEC_PREFIX, VERSION, VPATH, etc. are from Modules/getpath.o
+  # $PREFIX comes from ./configure and defaults to /usr/local.
+  # $EXEC_PREFIX is a GNU thing and used in getpath.c.  Could probably get rid
+  # of it.
 
-  # So the OVM is ~600K smaller now.  1.97 MB for ./run.sh build-default.  1.65
-  # MB for ./run.sh build-clang-small.
   time $CC \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
+    -D PREFIX="\"$PREFIX\"" \
+    -D EXEC_PREFIX="\"$PREFIX\"" \
     -o $abs_out \
     $OVM_LIBRARY_OBJS \
     $abs_module_init \
@@ -228,7 +218,7 @@ build() {
 # GCC -O2 is 1.35 MB.  21 seconds to compile.
 
 build-dbg() {
-  build "$@" -O0 -g
+  build "$@" -O0 -g -D OVM_DEBUG
 }
 
 # http://stackoverflow.com/questions/1349166/what-is-the-difference-between-gcc-s-and-a-strip-command

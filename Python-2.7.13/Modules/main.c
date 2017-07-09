@@ -244,6 +244,9 @@ static int RunMainFromImporter(char *filename)
 /* Main program */
 
 #ifdef OVM_MAIN
+
+extern char* OVM_BUNDLE_FILENAME;
+
 int
 Ovm_Main(int argc, char **argv)
 {
@@ -290,9 +293,41 @@ Ovm_Main(int argc, char **argv)
     // NOTE: I think we need sys.path to find runpy in the first place.  But
     // then runpy mutates sys.path again.
     if (run_self) {
-        // Hm there is weird logic in sysmodule.c makeargvobject to make it
-        // [""] instead of [].
-        Py_InitializeEx(0 /*install_sigs*/, argv[0] /*sys_path*/);
+        // NOTES:
+        // - there is weird logic in sysmodule.c makeargvobject to make it [""]
+        // instead of [].
+        // - It's OK to have a stack-allocated string here because a copy gets
+        // made in PySys_SetPath().
+
+        char* sys_path;
+        char ovm_path[MAXPATHLEN+1];
+
+        // Due to the app bundle format, sys.path should be the path of the
+        // executable.
+        if (strchr(argv[0], '/')) {
+          // If argv[0] has a slash like _bin/osh, then it's OK to use it as
+          // PYTHONPATH.
+          sys_path = argv[0];
+        } else {
+          // Otherwise it looks like 'osh', wich is found through $PATH.  We
+          // want construct $PREFIX/bin/$OVM_BUNDLE_FILENAME , e.g.
+          // /usr/local/bin/oil.ovm-dbg.
+          //
+          // Linux has /proc/self/exe but it's not portable.
+          sys_path = ovm_path;
+          size_t n = MAXPATHLEN;
+          strncpy(ovm_path, PREFIX, n);
+          n -= strlen(PREFIX);
+          strncat(ovm_path, "/bin/", n);
+          n -= strlen("/bin/");
+
+          // From main_name.c.
+          strncat(ovm_path, OVM_BUNDLE_FILENAME, n);
+        }
+        // TODO: Should be OVMVERBOSE=1 ?
+        fprintf(stderr, "sys_path %s\n", sys_path);
+
+        Py_InitializeEx(0 /*install_sigs*/, sys_path);
 
         PySys_SetArgv(argc, argv);
         sts = RunMainFromImporter(argv[0]);

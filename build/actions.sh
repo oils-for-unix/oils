@@ -15,6 +15,20 @@ write-release-date() {
   date > _build/release-date.txt
 }
 
+main-name() {
+  local python_main=${1:-hello}
+  local ovm_bundle_prefix=${2:-hello.ovm}
+
+  cat <<EOF 
+char* MAIN_NAME = "$python_main";
+#if OVM_DEBUG
+  char* OVM_BUNDLE_FILENAME = "${ovm_bundle_prefix}-dbg";
+#else
+  char* OVM_BUNDLE_FILENAME = "$ovm_bundle_prefix";
+#endif
+EOF
+}
+
 c-module-toc() {
   cd $PY27
   ../build/c_module_toc.py

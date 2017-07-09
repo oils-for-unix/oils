@@ -129,7 +129,7 @@ _build/runpy-deps-%.txt: build/runpy_deps.py
 
 # What Python module to run.
 _build/hello/main_name.c:
-	echo 'char* MAIN_NAME = "hello";' > $@
+	$(ACTIONS_SH) main-name hello hello.ovm > $@
 
 # Dependencies calculated by importing main.  The guard is because ovm.d
 # depends on it.  Is that correct?  We'll skip it before 'make dirs'.
@@ -165,7 +165,7 @@ _build/hello/bytecode.zip: $(HELLO_SRCS) \
 -include _build/oil/ovm.d
 
 _build/oil/main_name.c:
-	echo 'char* MAIN_NAME = "bin.oil";' > $@
+	$(ACTIONS_SH) main-name bin.oil oil.ovm > $@
 
 # Dependencies calculated by importing main.
 # NOTE: The list of files is used both to compile and to make a tarball.
