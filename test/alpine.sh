@@ -55,12 +55,15 @@ interactive() {
   enter-chroot /bin/sh
 }
 
-_copy-tar() {
-  local name=${1:-hello}
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
-  local dest=$CHROOT_DIR/src/$name
+_copy-tar() {
+  local name=${1:-oil}
+  local version=${2:-$OIL_VERSION}
+
+  local dest=$CHROOT_DIR/src
   mkdir -p $dest
-  cp _release/$name.tar $dest
+  cp _release/$name-$version.tar.gz $dest
   ls -l $CHROOT_DIR/src
 }
 copy-tar() { sudo $0 _copy-tar "$@"; }
@@ -69,16 +72,24 @@ copy-tar() { sudo $0 _copy-tar "$@"; }
 # TODO: tarball needs to have a root directory like oil-$VERSION/.
 
 _test-tar() {
-  local name=${1:-hello}
+  local name=${1:-oil}
+  local version=${2:-$OIL_VERSION}
 
   enter-chroot /bin/sh <<EOF
-cd src/$name
-tar --extract < ${name}.tar
+set -e
+cd src
+tar --extract -z < $name-$version.tar.gz
+cd $name-$version
 ./configure
 time make _bin/${name}.ovm-dbg
-echo "Running _bin/${name}.ovm-dbg"
+echo
+echo "*** Running _bin/${name}.ovm-dbg"
 #PYTHONVERBOSE=9 
-_bin/${name}.ovm-dbg
+_bin/${name}.ovm-dbg --version
+./install
+echo
+echo "*** Running /usr/bin/osh"
+/usr/bin/osh --version
 EOF
 }
 test-tar() { sudo $0 _test-tar "$@"; }

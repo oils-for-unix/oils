@@ -8,18 +8,7 @@
 # - make dummy man page that points to HTML docs?
 #   - or just a cheat sheet for flags, usage, etc.
 
-# Portable install script (configure doesn't always guess right)
-# From Python.
-#INSTALL=  /usr/bin/install -c
-#INSTALL_PROGRAM=${INSTALL}
-#INSTALL_SCRIPT= ${INSTALL}
-#INSTALL_DATA= ${INSTALL} -m 644
-# Shared libraries must be installed with executable mode on some systems;
-# rather than figuring out exactly which, we always give them executable mode.
-# Also, making them read-only seems to be a good idea...
-#INSTALL_SHARED= ${INSTALL} -m 555
-#
-# NOTE: install is part of coreutils.
+# NOTE: install is part of coreutils and busybox.
 
 die() {
   echo "FATAL install error: $@" 1<&2
@@ -32,11 +21,11 @@ main() {
   if ! install _bin/oil.ovm-dbg $dest; then
     die "Couldn't install oil binary"
   fi
+
   cd $dest
-  if ! ln -s oil.ovm-dbg osh; then
+  if ! ln -s -f oil.ovm-dbg osh; then  # -f to overwrite
     die "Couldn't create osh symlink"
   fi
 }
 
 main "$@"
-
