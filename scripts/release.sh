@@ -14,6 +14,10 @@ _compressed-tarball() {
   local in=_release/$name.tar
   local out=_release/$name-$version.tar.gz
 
+  # Overwrite it to cause rebuild of oil.tar (_build/oil/bytecode.zip will be
+  # out of date.)
+  build/actions.sh write-release-date
+
   make $in
   gzip -c $in > $out
   ls -l $out

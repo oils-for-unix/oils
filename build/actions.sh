@@ -11,6 +11,10 @@ set -o errexit
 
 source build/common.sh
 
+write-release-date() {
+  date > _build/release-date.txt
+}
+
 c-module-toc() {
   cd $PY27
   ../build/c_module_toc.py

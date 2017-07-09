@@ -153,17 +153,17 @@ def _ShowVersion():
   f.close()
 
   try:
-    f = loader.open('build-date.txt')
+    f = loader.open('release-date.txt')
   except IOError:
-    build_date = '-'  # in dev tree
+    release_date = '-'  # in dev tree
   else:
-    build_date = f.readline().strip()
+    release_date = f.readline().strip()
   finally:
     f.close()
 
   # What C functions do these come from?
   print('Oil version %s' % version)
-  print('Build Date: %s' % build_date)
+  print('Release Date: %s' % release_date)
   print('Arch: %s' % platform.machine())
   print('OS: %s' % platform.system())
   print('Platform: %s' % platform.version())
