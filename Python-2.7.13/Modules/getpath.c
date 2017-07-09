@@ -95,6 +95,47 @@
  extern "C" {
 #endif
 
+#ifdef OVM_MAIN
+
+static char* OVM_DUMMY = "OVM_DUMMY";
+
+//
+// OVM: Stub these out so they don't call calculate_path(), which spams stderr.
+//
+// It woudl be nicer to get rid of this whol emodule, but I'm not sure where
+// sys.prefix, sys.exec_prefix, etc. are used in the standard library.  They're
+// probably used in the runpy module, which we are using.
+//
+
+char *
+Py_GetPath(void)
+{
+    //fprintf(stderr, "Warning: Py_GetPath called\n");
+    return OVM_DUMMY;
+}
+
+char *
+Py_GetPrefix(void)
+{
+    //fprintf(stderr, "Warning: Py_GetPrefix called\n");
+    return OVM_DUMMY;
+}
+
+char *
+Py_GetExecPrefix(void)
+{
+    //fprintf(stderr, "Warning: Py_GetExecPrefix called\n");
+    return OVM_DUMMY;
+}
+
+char *
+Py_GetProgramFullPath(void)
+{
+    //fprintf(stderr, "Warning: Py_GetProgramFullPath called\n");
+    return OVM_DUMMY;
+}
+
+#else
 
 #if !defined(PREFIX) || !defined(EXEC_PREFIX) || !defined(VERSION) || !defined(VPATH)
 #error "PREFIX, EXEC_PREFIX, VERSION, and VPATH must be constant defined"
@@ -661,15 +702,9 @@ calculate_path(void)
 char *
 Py_GetPath(void)
 {
-#ifdef OVM_MAIN
-    fprintf(stderr, "OVM warning: Py_GetPath should not be called\n");
-    module_search_path[0] = '\0';  // empty string
-    return module_search_path;
-#else
     if (!module_search_path)
         calculate_path();
     return module_search_path;
-#endif
 }
 
 //
@@ -683,42 +718,28 @@ Py_GetPath(void)
 char *
 Py_GetPrefix(void)
 {
-#ifdef OVM_MAIN
-    prefix[0] = '\0';  // empty string
-    return prefix;
-#else
     if (!module_search_path)
         calculate_path();
     return prefix;
-#endif
 }
 
 char *
 Py_GetExecPrefix(void)
 {
-#ifdef OVM_MAIN
-    exec_prefix[0] = '\0';  // empty string
-    return exec_prefix;
-#else
     if (!module_search_path)
         calculate_path();
     return exec_prefix;
-#endif
 }
 
 char *
 Py_GetProgramFullPath(void)
 {
-#ifdef OVM_MAIN
-    progpath[0] = '\0';  // empty string
-    return progpath;
-#else
     if (!module_search_path)
         calculate_path();
     return progpath;
-#endif
 }
 
+#endif  // OVM_MAIN
 
 #ifdef __cplusplus
 }

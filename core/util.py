@@ -242,6 +242,7 @@ def GetResourceLoader():
   # Ovm_Main in main.c sets this.
   if os.getenv('_OVM_IS_BUNDLE') == '1':
     ovm_path = os.getenv('_OVM_PATH')
+    #log('! OVM_PATH = %s', ovm_path)
     _loader = _ZipResourceLoader(ovm_path)
   else:
     _loader = _FileResourceLoader(sys.argv[0])

@@ -299,38 +299,40 @@ Ovm_Main(int argc, char **argv)
         // - It's OK to have a stack-allocated string here because a copy gets
         // made in PySys_SetPath().
 
-        char* sys_path;
-        char ovm_path[MAXPATHLEN+1];
+        char* ovm_path;
+        char ovm_path_buf[MAXPATHLEN+1];
 
         // Due to the app bundle format, sys.path should be the path of the
         // executable.
         if (strchr(argv[0], '/')) {
           // If argv[0] has a slash like _bin/osh, then it's OK to use it as
           // PYTHONPATH.
-          sys_path = argv[0];
+          ovm_path = argv[0];
+          //fprintf(stderr, "ovm_path is argv[0] %s\n", argv[0]);
         } else {
           // Otherwise it looks like 'osh', wich is found through $PATH.  We
           // want construct $PREFIX/bin/$OVM_BUNDLE_FILENAME , e.g.
           // /usr/local/bin/oil.ovm-dbg.
           //
           // Linux has /proc/self/exe but it's not portable.
-          sys_path = ovm_path;
+          ovm_path = ovm_path_buf;
           size_t n = MAXPATHLEN;
-          strncpy(ovm_path, PREFIX, n);
+          strncpy(ovm_path_buf, PREFIX, n);
           n -= strlen(PREFIX);
-          strncat(ovm_path, "/bin/", n);
+          strncat(ovm_path_buf, "/bin/", n);
           n -= strlen("/bin/");
 
           // From main_name.c.
-          strncat(ovm_path, OVM_BUNDLE_FILENAME, n);
+          strncat(ovm_path_buf, OVM_BUNDLE_FILENAME, n);
 
+          //fprintf(stderr, "ovm_path is ovm_path_buf %s\n", ovm_path_buf);
         }
         setenv("_OVM_PATH", ovm_path, 1);  // for util.GetResourceLoader
 
         // TODO: Should be on OVMVERBOSE=1 ?
-        // fprintf(stderr, "sys_path %s\n", sys_path);
+        //fprintf(stderr, "ovm_path %s\n", ovm_path);
 
-        Py_InitializeEx(0 /*install_sigs*/, sys_path);
+        Py_InitializeEx(0 /*install_sigs*/, ovm_path);
 
         PySys_SetArgv(argc, argv);
         sts = RunMainFromImporter(argv[0]);
