@@ -339,7 +339,9 @@ Ovm_Main(int argc, char **argv)
         Py_InitializeEx(0 /*install_sigs*/, ovm_path);
 
         PySys_SetArgv(argc, argv);
-        sts = RunMainFromImporter(argv[0]);
+        // NOTE: This seems like it could be simplified to RunModule(MAIN_NAME,
+        // 0), but it caused a SystemError exception from runpy.
+        sts = RunMainFromImporter(ovm_path);
         OVM_VERBOSE_LOG("status of RunMainFromImporter: %d\n", sts);
     } else {
         // Try detecting and running a directory or .zip file first.
@@ -347,7 +349,7 @@ Ovm_Main(int argc, char **argv)
         PySys_SetArgv(argc-1, argv+1);
         sts = RunMainFromImporter(filename);
 
-        fprintf(stderr, "sts after RunMainFromImporter: %d\n", sts);
+        OVM_VERBOSE_LOG("(!run_self) status of RunMainFromImporter: %d\n", sts);
         // Not a .zip file.  Run a plain .pyc file.
         if (sts == -1) {
             unsetenv("_OVM_IS_BUNDLE");
