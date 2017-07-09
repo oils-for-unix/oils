@@ -219,7 +219,7 @@ class _FileResourceLoader:
     return open(os.path.join(self.root_dir, rel_path))
 
 
-import zipimport  # NOT zipfile, we don't need it.
+import zipimport  # NOT the zipfile module.
 
 class _ZipResourceLoader:
   """Open resources INSIDE argv[0] as a zip file."""
@@ -239,12 +239,11 @@ def GetResourceLoader():
   if _loader:
     return _loader
 
-  argv0 = sys.argv[0]
-
   # Ovm_Main in main.c sets this.
   if os.getenv('_OVM_IS_BUNDLE') == '1':
-    _loader = _ZipResourceLoader(argv0)
+    ovm_path = os.getenv('_OVM_PATH')
+    _loader = _ZipResourceLoader(ovm_path)
   else:
-    _loader = _FileResourceLoader(argv0)
+    _loader = _FileResourceLoader(sys.argv[0])
 
   return _loader

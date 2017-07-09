@@ -323,15 +323,18 @@ Ovm_Main(int argc, char **argv)
 
           // From main_name.c.
           strncat(ovm_path, OVM_BUNDLE_FILENAME, n);
+
         }
-        // TODO: Should be OVMVERBOSE=1 ?
-        fprintf(stderr, "sys_path %s\n", sys_path);
+        setenv("_OVM_PATH", ovm_path, 1);  // for util.GetResourceLoader
+
+        // TODO: Should be on OVMVERBOSE=1 ?
+        // fprintf(stderr, "sys_path %s\n", sys_path);
 
         Py_InitializeEx(0 /*install_sigs*/, sys_path);
 
         PySys_SetArgv(argc, argv);
         sts = RunMainFromImporter(argv[0]);
-        fprintf(stderr, "sts: %d\n", sts);
+        //fprintf(stderr, "sts: %d\n", sts);
     } else {
         // Try detecting and running a directory or .zip file first.
         Py_InitializeEx(0 /*install_sigs*/, filename /*sys_path*/);
