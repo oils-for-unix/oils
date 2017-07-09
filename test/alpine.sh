@@ -88,8 +88,10 @@ echo "*** Running _bin/${name}.ovm-dbg"
 _bin/${name}.ovm-dbg --version
 ./install
 echo
-echo "*** Running /usr/bin/osh"
-/usr/bin/osh --version
+echo "*** Running osh"
+osh --version
+echo status=$?
+echo DONE
 EOF
 }
 test-tar() { sudo $0 _test-tar "$@"; }

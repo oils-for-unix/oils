@@ -245,6 +245,9 @@ static int RunMainFromImporter(char *filename)
 
 #ifdef OVM_MAIN
 
+#define OVM_VERBOSE_LOG(...) \
+  if (Py_VerboseFlag) fprintf(stderr, __VA_ARGS__);
+
 extern char* OVM_BUNDLE_FILENAME;
 
 int
@@ -256,7 +259,7 @@ Ovm_Main(int argc, char **argv)
     int run_self = 0;
 
     // This var has a leading _ because it's not meant for end users.
-    // _OVM_BUNDLE=0 is how you disable it.
+    // _OVM_RUN_SELF=0 is how you disable it.
     char* not_bundle = Py_GETENV("_OVM_RUN_SELF");
     if (not_bundle) {
         if (argc <= 1) {
@@ -271,6 +274,7 @@ Ovm_Main(int argc, char **argv)
     /* Always behave like -S */
     Py_NoSiteFlag++;
 
+    // naming style is different than PYTHONVERBOSE
     if (Py_GETENV("OVM_VERBOSE")) {
         Py_VerboseFlag++;
     }
@@ -284,6 +288,7 @@ Ovm_Main(int argc, char **argv)
     setenv("_OVM_DEPS", "1", 1);  // for debug imports
 
     // Communicate C build configuration to Python env.
+    // TODO: Could rename back to _OVM_HAVE_READLINE.
 #ifdef HAVE_READLINE
     setenv("_HAVE_READLINE", "1", 1);
 #else
@@ -308,7 +313,7 @@ Ovm_Main(int argc, char **argv)
           // If argv[0] has a slash like _bin/osh, then it's OK to use it as
           // PYTHONPATH.
           ovm_path = argv[0];
-          //fprintf(stderr, "ovm_path is argv[0] %s\n", argv[0]);
+          OVM_VERBOSE_LOG("ovm_path = argv[0] (%s)\n", argv[0]);
         } else {
           // Otherwise it looks like 'osh', wich is found through $PATH.  We
           // want construct $PREFIX/bin/$OVM_BUNDLE_FILENAME , e.g.
@@ -325,18 +330,17 @@ Ovm_Main(int argc, char **argv)
           // From main_name.c.
           strncat(ovm_path_buf, OVM_BUNDLE_FILENAME, n);
 
-          //fprintf(stderr, "ovm_path is ovm_path_buf %s\n", ovm_path_buf);
+          OVM_VERBOSE_LOG("ovm_path = ovm_path_buf (%s)\n", ovm_path_buf);
         }
         setenv("_OVM_PATH", ovm_path, 1);  // for util.GetResourceLoader
 
-        // TODO: Should be on OVMVERBOSE=1 ?
-        //fprintf(stderr, "ovm_path %s\n", ovm_path);
+        OVM_VERBOSE_LOG("ovm_path: %s\n", ovm_path);
 
         Py_InitializeEx(0 /*install_sigs*/, ovm_path);
 
         PySys_SetArgv(argc, argv);
         sts = RunMainFromImporter(argv[0]);
-        //fprintf(stderr, "sts: %d\n", sts);
+        OVM_VERBOSE_LOG("status of RunMainFromImporter: %d\n", sts);
     } else {
         // Try detecting and running a directory or .zip file first.
         Py_InitializeEx(0 /*install_sigs*/, filename /*sys_path*/);
