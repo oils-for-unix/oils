@@ -27,10 +27,10 @@ directory that contains ./configure and ./install.
 System Requirements
 -------------------
 
-- libc, with development headers
-- A C compiler
-- bash (required for the build, may be relaxed later to POSIX sh)
-- GNU Make
+Roughly speaking, you need a POSIX C environment (compiler and libc), plus GNU
+Bash and GNU Make.
+
+I want to eventually remove the GNU requirements and use just POSIX sh intsead.
 
 Optional:
 
@@ -45,6 +45,13 @@ Alpine Linux:
 
     apk add libc-dev gcc bash make 
 
+
+OSH hasn't been tested on non-Linux systems.  If you'd like it to work on a
+particular system, it would be helpful to:
+
+1. Provide well-tested patches
+2. Provide a machine / build environment accessible via SSH, for continuous
+builds and testing.
 
 Build Options
 -------------
