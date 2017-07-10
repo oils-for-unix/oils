@@ -152,7 +152,7 @@ _build/hello/bytecode.zip: $(HELLO_SRCS) \
                            build/testdata/hello-manifest.txt
 	{ echo 'build/testdata/hello-version.txt hello-version.txt'; \
 	  echo '_build/release-date.txt release-date.txt'; \
-	  cat build/testdata/hello-manifest.txt
+	  cat build/testdata/hello-manifest.txt \
 	      _build/hello/app-deps-py.txt \
 	      _build/runpy-deps-py.txt; \
 	} | build/make_zip.py $@

@@ -48,14 +48,30 @@ def Busy(n):
 
 
 def main(argv):
-  if argv:
-    n = int(argv[0])
-  else:
-    n = 100
-  Busy(n)
+  try:
+    action = argv[0]
+  except IndexError:
+    action = 'busy'
 
-  lib.Crash()
+  if action == 'busy':
+    try:
+      n = int(argv[1])
+    except IndexError:
+      n = 100
+    Busy(n)
+
+  elif action == 'crash':  # For testing that stack trace shows code
+    lib.Crash()
+
+  elif action == 'exit42':  # for testing exit code
+    return 42
+
+  else:
+    print('Unknown action %r' % action, file=sys.stderr)
+    return 1
+
+  return 0
 
 
 if __name__ == '__main__':
-  main(sys.argv[1:])
+  sys.exit(main(sys.argv[1:]))
