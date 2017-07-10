@@ -1,30 +1,75 @@
-
-*** DRAFT ***
-
-Building and Installing Oil
+Building and Installing OSH
 ===========================
 
-(This file is packaged with the Oil source release, oil.tar.)
+OSH is a bash-compatible shell, and is part of the Oil project
+(http://www.oilshell.org).
 
+This file describes how to install OSH.
+
+Quick Start
+-----------
+
+To install as /usr/local/bin/osh:
+
+    ./configure    
+    make
+    sudo ./install
+
+To install as ~/bin/osh, which doesn't require root access:
+
+    ./configure --prefix ~
+    make
+    ./install
+
+NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
+directory that contains ./configure and ./install.
 
 System Requirements
 -------------------
 
-- C compiler (C89 ?)
-- Bourne shell (POSIX)
-- GNU Make (for now)
+- libc, with development headers
+- A C compiler
+- bash (required for the build, may be relaxed later to POSIX sh)
+- GNU Make
 
 Optional:
 
-- GNU readline library   OR
-- libedit?  (NOTE: dash supports it.)
+- GNU readline library, for interactive features
+  - https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
-Instructions
-------------
+Debian/Ubuntu and derivatives:
 
-    ./configure [--prefix=PREFIX] [--without-readline]
-      --lto
-      --pgo
-    make
-    sudo make install
+    sudo apt install build-essential
 
+Alpine Linux:
+
+    apk add libc-dev gcc bash make 
+
+
+Build Options
+-------------
+
+./configure --help will show the options.  Right now, the only significant
+options are --prefix and --{with,without}-readline.
+
+Notes
+-----
+
+- The oil executable behaves like busybox.  If it's run directly, then argv[1]
+  should be the name of a program:
+
+    /usr/local/bin/oil osh -c 'echo hi'
+ 
+  If it's invoked through a symlink like 'osh', then that is treated as the
+  name of a program:
+
+    /usr/local/bin/osh -c 'echo hi'
+
+- OSH uses a slight fork of the Python 2.7 runtime.  It should therefore
+  compile on with most compilers and operating systems.
+
+
+TODO
+----
+
+- Add back PGO and LTO.  CPython has build support.
