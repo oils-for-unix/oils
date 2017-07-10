@@ -310,6 +310,10 @@ class Executor(object):
     elif builtin_id == EBuiltin.FALSE:
       status = 1
 
+    elif builtin_id == EBuiltin.HELP:
+      loader = util.GetResourceLoader()
+      status = builtin.Help(argv, loader)
+
     elif builtin_id == EBuiltin.DEBUG_LINE:
       status = builtin.DebugLine(argv, self.status_lines)
 

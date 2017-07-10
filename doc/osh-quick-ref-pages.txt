@@ -1,0 +1,81 @@
+OSH Quick Reference with Examples
+=================================
+
+This file gets converted to HTML and do a directory of .txt files for use in
+OSH.
+
+Meta-variables for
+  foo        :  string
+  out.txt    :  output file
+  input.txt  : input file
+  /some/dir/ : file system path
+  $myvar     : var
+  echo, ls   : a command
+
+  echo foo >out.txt
+  read myvar <input.txt
+
+format of this file:
+
+#BEGIN page
+#END page
+
+And there is stuff in the middle for HTML only?
+
+# COMMAND LANGUAGE   (mark-down-ask)
+
+## Commands
+
+#BEGIN simple-command
+Simple commands are separated by words:
+    ls /
+
+Redirects can also appear anywhere
+    echo hi 1>&2
+
+#END simple-command
+
+#BEGIN semicolon ;
+;  -- separate statements
+
+#END semicolon ;
+
+
+# BUILTINS
+
+OSH aims to have almost all of the builtins that bash does.  Here they are,
+divided into sections.
+
+## I/O Builtins
+
+These builtins take input and output.  They are often used with redirects[1].
+
+[1] help redirects
+
+#BEGIN read
+Usage: read -p 
+#END read
+
+Or maybe get rid of #END -- it can just go until the next # command.  It's a
+little bit like the spec tests honestly.  Can copy sh_specpy
+
+
+
+==> osh-quick-ref-toc
+
+#case
+
+case: case WORD in [PATTERN [| PATTERN]...) COMMANDS ;;]... esac
+    Execute commands based on pattern matching.
+
+    Selectively execute COMMANDS based upon WORD matching PATTERN.  The
+    `|' is used to separate multiple patterns.
+
+    Exit Status:
+    Returns the status of the last command executed.
+ 
+Examples:
+
+    case
+
+

@@ -23,7 +23,9 @@ main() {
 
   # Now $PREFIX should be defined
 
-  local exec_filename=oil.ovm-dbg  # Should this go in configure output?
+  #local exec_filename=oil.ovm-dbg  # Should this go in configure output?
+  local exec_filename=oil.ovm  # Should this go in configure output?
+
   local dest=$PREFIX/bin/$exec_filename
 
   echo "Installing to $dest"

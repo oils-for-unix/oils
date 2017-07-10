@@ -47,6 +47,10 @@ TODO:
   - add GNU-style option to interleave flags and args
     - NOTE: after doing this, you could probably statically parse a lot of
       scripts and analyze flag usage?
+
+- NOTE: GNU getopt has fuzzy matching for long flags.  I think we should rely
+  on good completion instead.
+
 """
 
 from core import util

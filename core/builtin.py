@@ -7,71 +7,17 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-builtins.py
+builtins.py - Implementation of builtins, along with their metadata.
 
-Metadata about builtins.
-
-TODO:
-  - used for lookup in cmd_exec.py
-    - need a hash of builtin names for quick testing?
-  - handle completion of builtin NAMES -- pass to completion.py
-    - handle aliases : . and source, [ and test
-  - handle flags they take
-    - handle completion of builtin FLAGS
-  - handle args?  And check number of args?  e.g. 'break 3 4' -- "too many
-    arguments" though.
-  - handle help text
-  - Add the "help" builtin itself
-
-- builtins are NOT tokens I think
-
-- Write our own option parser?
-  - Expose it to the user of the proc dialect?
-
-- NOTE: If it's going to be exposed to the user, it can't be done in with C++
-  code generation!  This compiler perhaps needs to be ported over to the func
-  dialect later!
-
-- options: name, arity/type, help, var to set
-  - long option name, I guess GNU style, as our usability extension for
-    builtins, and also to allow users to use it
-- also + vs -  -- set +o vs -o, pushd +3 -3
-  - +o vs -o means that there are two values?  bool and string name?
-  - might also need code generation for opts, since it is in "set" as well as
-    the "sh" arguments itself.
-
-NOTE: The POSIX spec defines only boolean flags essentially.  All builtins seem
-to have at most 3 flags.  But bash has some with tons of flags, and it also has
-args, e.g. for compgen.
-
-- option groups?  For help only.  Although you can just write a code gen check
-  to see if help lists all the options defined in the spec.
-- default values
-- GNU getopt has fuzzy matching... might want an option to turn that on or off.
-
-Why does every shell have its own getopt?  I think you can just generate the
-getopt string from Python optparse-like spec.
-
-Well you don't want to depend on the GNU libc for long options, etc.  The
-language should be self contained and not affected by libc (except possibly for
-the old ERE regex syntax -- that can be regcomp?)
-
-Not sure if help should be auto-generated.  We may be able to format it better
-in a custom manner.  Although perhaps help should take an arg like help --xml
-or help --json
-
-Also --line-number etc. is annoying to type in both the spec and the help.
+- used for lookup in cmd_exec.py
+  - need a hash of builtin names for quick testing?
+- handle completion of builtin NAMES -- pass to completion.py
+  - handle aliases : . and source, [ and test
+- handle flags they take
+  - handle completion of builtin FLAGS
+- Add the "help" builtin itself
 
 NOTE: bash has help -d -m -s.  Default is -s, like a man page.
-
-parsing issues:
-  combining stuff  cd -LP .
-
-NOTE: Port metadata for ALL bash builtins, but don't implement all of them yet?
-e.g. caller, command
-
-Whether it's special or not!  This affects the search path and a couple other
-things.  Didn't realize this.
 
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 "A syntax error in a special built-in utility may cause a shell executing that
@@ -98,7 +44,6 @@ function shall be invoked as described in Function Definition Command. If the
 implementation has provided a standard utility in the form of a function, it
 shall not be recognized at this point. It shall be invoked in conjunction with
 the path search in step 1d.
-
 """
 
 import os
@@ -130,6 +75,7 @@ EXIT SOURCE DOT EVAL EXEC WAIT JOBS
 COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
+HELP
 """.split())
 
 
@@ -394,6 +340,9 @@ def Resolve(argv0):
   elif argv0 == "false":
     return EBuiltin.FALSE
 
+  elif argv0 == "help":
+    return EBuiltin.HELP
+
   elif argv0 == "debug-line":
     return EBuiltin.DEBUG_LINE
 
@@ -428,6 +377,15 @@ def Echo(argv):
     sys.stdout.write(argv[-1])
   if not arg.n:
     sys.stdout.write('\n')
+
+  # Do I need the flush?  Had a problem here under load, but it might not have
+  # been because of that.
+  # File "/home/andy/git/oil/bin/../core/cmd_exec.py", line 251, in _RunBuiltin
+  #   status = builtin.Echo(argv)
+  # File "/home/andy/git/oil/bin/../core/builtin.py", line 431, in Echo
+  #   sys.stdout.flush()
+  # IOError: [Errno 32] Broken pipe
+
   sys.stdout.flush()
   return 0
 
@@ -822,6 +780,13 @@ def Umask(argv):
       return 0
 
   raise args.UsageError('umask: unexpected arguments')
+
+
+def Help(argv, loader):
+  f = loader.open('help/index.txt')
+  for line in f:
+    sys.stdout.write(line)
+  return 0
 
 
 def DebugLine(argv, status_lines):
