@@ -342,12 +342,14 @@ Ovm_Main(int argc, char **argv)
         // NOTE: This seems like it could be simplified to RunModule(MAIN_NAME,
         // 0), but it caused a SystemError exception from runpy.
         sts = RunMainFromImporter(ovm_path);
+        assert(sts != -1);  // failed import
         OVM_VERBOSE_LOG("status of RunMainFromImporter: %d\n", sts);
     } else {
         // Try detecting and running a directory or .zip file first.
         Py_InitializeEx(0 /*install_sigs*/, filename /*sys_path*/);
         PySys_SetArgv(argc-1, argv+1);
         sts = RunMainFromImporter(filename);
+        assert(sts != -1);  // failed import
 
         OVM_VERBOSE_LOG("(!run_self) status of RunMainFromImporter: %d\n", sts);
         // Not a .zip file.  Run a plain .pyc file.
