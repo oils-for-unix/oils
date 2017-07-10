@@ -310,13 +310,12 @@ make-tar() {
     build/detect-*.c \
     _build/$app_name/bytecode.zip \
     _build/$app_name/*.c \
+    $PY27/LICENSE \
     $PY27/Modules/ovm.c \
     $c_module_srcs \
     $(cat $c_module_srcs | add-py27) \
     $(python-headers $c_module_srcs) \
     $(python-sources)
-
-  # TODO: Add Python license at top level!
 
   ls -l $out
 }
