@@ -95,168 +95,18 @@ SPECIAL_BUILTINS = [
     'local', 'declare',
 ]
 
-
-# Should we use python3 argparse?  It has stuff like nargs.
-# choices, def
-# But it doesn't handle '+' probably.
-
-class ArgDef(object):
-  """
-  Either an flag or positional argument.
-
-  Used for code gen.
-  """
-  def __init__(self,
-      pos=0, letter='', long_name='', metavar='', type='str', default=None):
-    """
-    Args:
-      pos: 1 for first argj, e.g. break 'n'
-      letter: 'a' for -a
-      long name: used for --force, and also var name to generate?
-      metavar: the name of the arg placeholder when printing help
-
-      type: default str, can be int or bool?  Bool means it doesn't take args.
-        or can be a list of strings for choices?
-      help_str: short help string.  Alignment is an issue (see grep --help)
-        Also grouping.
-      default: default value if none is specified
-
-      required?  Not sure if anyone uses this.
-
-      What about - vs +?  +o
-    """
-    pass
-
-
-class ArgSpec(object):
-  """
-  Holds ArgDef instances in groups?  This helps usability, when reading long
-  lists of options (ulimit, compopt, compgen, set)
-  """
-  def __init__(self, syntax_str, usage_str, end_str, arg_defs):
-    """
-    Args:
-      arg_defs: maybe {section name: [ ArgDef, ... ]}
-    """
-    pass
-
-  def GetOneLineHelp(self):
-    """
-    For "help" index
-    """
-
-  def GetHelp(self):
-    """Return help as a big string.
-
-    Usgae
-    Sections of short opt, long opt, help
-    end_str
-    """
-    # TODO: This could be compressed in the C++ binary somehow?  Count up the
-    # size first.
-
-
-class BuiltinDef(object):
-  """Metadata for the builtin.  Not necessarily the implementation.
-
-  Used for code gen."""
-  def __init__(self, name, arg_spec, special=False):
-    """
-    Args:
-      names: name to register
-      arg_spec: argument parser.  Used to generate getopt() string, as well as
-        completion?  And maybe type checking code.
-      help_str: 72 or 79 width help string.
-        Need to document usage line, and also exit status.
-        Bash has a man page thing, but we don't need that.
-
-      special: Whether it's a special builtin.
-    """
-    self.name = name
-    self.arg_spec = arg_spec
-
-
-NO_ARGS = ArgSpec("", "", "", [])
-
-# TODO:
-DECLARE_LOCAL_ARGS = ArgSpec("", "", "", [])
-
-
-# TODO: local/declare/global should be statically parsed, but readonly and export
-# are dynamic builtins?  That would be more consistent.
-#
-# declare can be dynamic -- code='FOO=xx'; declare $code works.
-# Maybe only local and global, and declare is thed ynamic version
-
-BUILTINS = [
-    # local has options as 'declare'.
-    BuiltinDef("declare", DECLARE_LOCAL_ARGS),
-    BuiltinDef("local", DECLARE_LOCAL_ARGS),
-
-    BuiltinDef("readonly",
-      ArgSpec(
-        """
-        readonly [-aA] [name[=value] ...]
-        readonly -p
-        """,
-        """
-        Mark shell variables as immutable.
-
-        After executing 'readonly NAME', assignments to NAME result in an
-        error.  If a VALUE is supplied, then the variable is bound before
-        making it read-only.
-        """,
-        """Exit Status: Returns success unless an invalid flag or NAME is
-        given.
-        """,
-        [])
-      ),
-    BuiltinDef("export", ArgSpec("", "", "", [])),
-
-    BuiltinDef("read", NO_ARGS),
-    BuiltinDef("echo", NO_ARGS),
-
-    BuiltinDef("cd", NO_ARGS),
-    BuiltinDef("pushd", NO_ARGS),
-    BuiltinDef("popd", NO_ARGS),
-
-    BuiltinDef("exit", NO_ARGS),
-
-    # These are aliases
-    BuiltinDef("source", NO_ARGS),
-    BuiltinDef(".", NO_ARGS),
-
-    BuiltinDef("trap", NO_ARGS),
-    BuiltinDef("eval", NO_ARGS),
-    BuiltinDef("exec", NO_ARGS),
-
-    BuiltinDef("set", NO_ARGS),
-    BuiltinDef("complete", NO_ARGS),
-
-    # TODO: compgen should instead be a config file?
-    BuiltinDef("compgen", NO_ARGS),
-    BuiltinDef("debug-line", NO_ARGS),
-]
-
-
-def HelpBuiltin():
-  for b_def in BUILTINS:
-    # TODO: GetOneLineHelp
-    print(b_def.name)
+# TODO: Add a way to register.
+BUILTINS = ['echo', 'read']
 
 
 class Builtins(object):
   """
-  The executor resolves full names, and the completion system makes queries for
-  prefixes of names.
-
-  TODO: Should have a separate BuiltinMetadata and BuiltinImplementation
-  things?  Stuff outside the core should be here.
+  NOTE: Used by completion.py.
   """
   def __init__(self):
     # Is this what we want?
     names = set()
-    names.update(b.name for b in BUILTINS)
+    names.update(BUILTINS)
     names.update(SPECIAL_BUILTINS)
     # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
     # all do this.  Also do/done
@@ -783,7 +633,7 @@ def Umask(argv):
 
 
 def Help(argv, loader):
-  f = loader.open('help/index.txt')
+  f = loader.open('doc/osh-quick-ref-toc.txt')
   for line in f:
     sys.stdout.write(line)
   return 0
@@ -798,16 +648,12 @@ def DebugLine(argv, status_lines):
 
 
 def main(argv):
-  # TODO: Print all help to static C++ strings?
-  # Maybe just make it a single line.
-
   # Localization: Optionally  use GNU gettext()?  For help only.  Might be
   # useful in parser error messages too.  Good thing both kinds of code are
   # generated?  Because I don't want to deal with a C toolchain for it.
 
-  HelpBuiltin()
-  b = Builtins()
-  print(b)
+  loader = util.GetResourceLoader()
+  Help([], loader)
 
 
 if __name__ == '__main__':
