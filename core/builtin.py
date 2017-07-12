@@ -66,7 +66,7 @@ HELP
 # NOTE: OSH treats these specially:
 # - break/continue/return
 # - local/readonly
-SPECIAL_BUILTINS = [
+_SPECIAL_BUILTINS = [
     'break', ':', 'continue', '.', 'eval', 'exec', 'exit', 'export',
     'readonly', 'return', 'set', 'shift', 'times', 'trap', 'unset',
 
@@ -76,26 +76,42 @@ SPECIAL_BUILTINS = [
 ]
 
 # TODO: Add a way to register.
-BUILTINS = ['echo', 'read']
+_BUILTINS = ['echo', 'read']
 
 
-class Builtins(object):
+class BuiltinDef(object):
   """
   NOTE: Used by completion.py.
   """
   def __init__(self):
     # Is this what we want?
     names = set()
-    names.update(BUILTINS)
-    names.update(SPECIAL_BUILTINS)
+    names.update(_BUILTINS)
+    names.update(_SPECIAL_BUILTINS)
     # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
     # all do this.  Also do/done
 
+    self.arg_specs = {}
     self.to_complete = sorted(names)
 
   def GetNamesToComplete(self):
     """For completion of builtin names."""
     return self.to_complete
+
+  def Register(self, name, help_topic=None):
+    help_topic = help_topic or name
+    arg_spec = args.BuiltinFlags()
+    self.arg_specs[name] = arg_spec
+    return arg_spec
+
+
+# Global instance for "metaprogramming" before main().
+BUILTIN_DEF = BuiltinDef()
+
+
+def _Register(name, help_topic=None):
+  return BUILTIN_DEF.Register(name, help_topic=help_topic)
+
 
 
 # TODO: Resolve() and EBuiltin kind of useless?  We could just test for string
@@ -113,6 +129,7 @@ def ResolveSpecial(argv0):
 
   return EBuiltin.NONE
 
+
 def Resolve(argv0):
   # TODO: ResolveSpecialBuiltin first, then ResolveFunction, then
   # ResolveOtherBuiltin.  In other words, you can't redefine special builtins
@@ -121,7 +138,7 @@ def Resolve(argv0):
   # For completion, this is a flat list of names.  Although coloring them
   # would be nice.
 
-  # TODO: Use BuiltinDef instances in BUILTINS to initialize.
+  # TODO: Use Buitlins to initialize.
 
   if argv0 == "read":
     return EBuiltin.READ
@@ -179,7 +196,7 @@ def Resolve(argv0):
   return EBuiltin.NONE
 
 
-echo_spec = args.BuiltinFlags()
+echo_spec = _Register('echo')
 echo_spec.ShortFlag('-e')  # no backslash escapes
 echo_spec.ShortFlag('-n')
 
@@ -427,7 +444,7 @@ def Dirs(argv, dir_stack):
   return 0
 
 
-EXPORT_SPEC = args.BuiltinFlags()
+EXPORT_SPEC = _Register('export')
 EXPORT_SPEC.ShortFlag('-n')
 
 
@@ -544,7 +561,7 @@ def Set(argv, exec_opts, mem):
     exec_opts.strict_scope = True
 
 
-UNSET_SPEC = args.BuiltinFlags()
+UNSET_SPEC = _Register('unset')
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
 
@@ -613,9 +630,25 @@ def Umask(argv):
 
 
 def Help(argv, loader):
-  f = loader.open('doc/osh-quick-ref-toc.txt')
+  # TODO: Need $VERSION inside all pages?
+  try:
+    topic = argv[0]
+  except IndexError:
+    f = loader.open('doc/help.txt')
+  else:
+    if topic == 'toc':
+      f = loader.open('doc/osh-quick-ref-toc.txt')
+    else:
+      try:
+        f = loader.open('_build/help/%s.txt' % topic)
+      except IOError:
+        util.error('No help for topic %r', topic)
+        return 1
+
   for line in f:
     sys.stdout.write(line)
+
+  f.close()
   return 0
 
 
@@ -634,6 +667,11 @@ def main(argv):
 
   loader = util.GetResourceLoader()
   Help([], loader)
+
+  for name, spec in BUILTIN_DEF.arg_specs.iteritems():
+    print(name)
+    spec.PrintHelp(sys.stdout)
+    print()
 
 
 if __name__ == '__main__':

@@ -1,9 +1,6 @@
 OSH Quick Reference: Table of Contents
 
-- Usage: 'help foo' to show help on topic 'foo'.
-- View on the web: http://www.oilshell.org/v0.0.0/doc/help/
-- Type 'osh --help' for help on flags to the OSH binary.
-- Shell features that OSH doesn't yet implement are indicated with (X).
+- Features that OSH doesn't yet implement have an (X) prefix.
 
 COMMAND LANGUAGE
     [Commands]      simple-command    semicolon ;   ampersand &

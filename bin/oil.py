@@ -225,7 +225,6 @@ def OshMain(argv):
   # lua_State.
   status_lines = ui.MakeStatusLines()
   mem = state.Mem(dollar0, argv[opt_index + 1:], os.environ)
-  builtins = builtin.Builtins()
   funcs = {}
 
   # Passed to Executor for 'complete', and passed to completion.Init
@@ -305,7 +304,8 @@ def OshMain(argv):
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
-      completion.Init(builtins, mem, funcs, comp_lookup, status_lines, ev)
+      completion.Init(builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
+                      status_lines, ev)
 
     # TODO: Could instantiate "printer" instead of showing ops
     InteractiveLoop(opts, ex, c_parser, w_parser, line_reader)

@@ -355,6 +355,14 @@ class BuiltinFlags(object):
     self.on_flag = None
     self.off_flag = None
 
+  def PrintHelp(self, f):
+    print('[0]')
+    for ch in self.arity0:
+      print ch
+    print('[1]')
+    for ch in self.arity1:
+      print ch
+
   def ShortFlag(self, short_name, arg_type=None):
     """ 
     This is very similar to ShortFlag for FlagsAndOptions, except we have

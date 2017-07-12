@@ -771,13 +771,14 @@ def Init(builtins, mem, funcs, comp_lookup, status_lines, ev):
 
 
 if __name__ == '__main__':
-  from builtin import Builtins
-  import cmd_exec
+  from core import builtin
+  from core import cmd_exec
 
   status_lines = ui.MakeStatusLines()
 
-  builtins = Builtins(status_lines[0])
-  mem = state.Mem('dummy', [])
+  builtins = builtin.BUILTIN_DEF
+
+  mem = state.Mem('dummy', [], {})
 
   funcs = {'func1': None, 'func2': None, 'exfunc': None}
   comp_lookup = CompletionLookup()
