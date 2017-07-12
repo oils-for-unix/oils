@@ -7,51 +7,9 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-cmd_exec.py
-
-System calls we care about:
-  fork exec
-  dup2 pipe
-  open read write close
-
-  Maybe later: process state stuff, like setpgrp and so forth
-
-TODO:
-  - test file descriptor state in the CHILD.  Assert that we don't have extra
-    stuff.
-
-  - extra: process sub: <() .  Does this create a temporary named pipe or
-    something?
-    When I strace bash, I see calls to open("/dev/fd/63")
-  - extra: coprocess.  This is covered in APUE.
-    - what are coprocesses used for?  Awk has this too.
-    - http://wiki.bash-hackers.org/syntax/keywords/coproc
-    - http://unix.stackexchange.com/questions/86270/how-do-you-use-the-command-coproc-in-bash
-      -- good history.  Lots of good info about buffering.
-      -- Yeah I think leave this for later.
-  - extra: async -- this is interleaved with the interpreter
-
-strace bash -c 'diff -u <(echo one) <(echo two)'
-
-open("/dev/fd/63", O_RDONLY)            = 3
-open("/dev/fd/62", O_RDONLY)            = 4
-read(3, "one\n", 4096)                  = 4
-read(3, "", 4092)                       = 0
-read(4, "two\n", 4096)                  = 4
-read(4, "", 4092)                       = 0
-
-OK then it passes them like this.  OK you fork diff with some fds.  Do all Unix
-operating systems have this?
-
-execve("/usr/bin/diff", ["diff", "-u", "/dev/fd/63", "/dev/fd/62"], [/* 68 vars */]) = 0
-
-NOTE: you cannot STATICALLY know if a command is a builtin, because it depends
-on $PATH at runtime.  So you can't automatically insert subshell nodes at
-compile time I think.  It has to be done at runtime.  For oil, you can
-statically resolve things.
+cmd_exec.py -- Interpreter for the command language.
 
 Problems:
-
 $ < Makefile cat | < NOTES.txt head
 
 This just does head?  Last one wins.
