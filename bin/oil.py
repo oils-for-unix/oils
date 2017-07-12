@@ -193,7 +193,8 @@ def OshMain(argv):
     return 2
 
   if opts.help:
-    print('TODO: OSH Help')
+    loader = util.GetResourceLoader()  # TOOD: Use Global
+    builtin.Help(['osh-usage'], loader)
     return 0
   if opts.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
@@ -384,9 +385,6 @@ def BoilMain(main_argv):
   raise NotImplementedError('boil')
 
 
-_OIL_USAGE = 'Usage: oil MAIN [OPTION]... [ARG]...'
-
-
 def OilMain(argv):
   b = os.path.basename(argv[0])
   main_name, _ = os.path.splitext(b)
@@ -398,7 +396,7 @@ def OilMain(argv):
       raise UsageError('Missing name of main()')
 
     if first_arg in ('-h', '--help'):
-      print(_OIL_USAGE, file=sys.stderr)
+      builtin.Help(['oil-usage'], util.GetResourceLoader())
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):

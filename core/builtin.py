@@ -638,6 +638,12 @@ def Help(argv, loader):
   else:
     if topic == 'toc':
       f = loader.open('doc/osh-quick-ref-toc.txt')
+    elif topic == 'osh-usage':
+      print('TODO: osh-usage')
+      return 0
+    elif topic == 'oil-usage':
+      print('Usage: oil MAIN [OPTION]... [ARG]...')
+      return 0
     else:
       try:
         f = loader.open('_build/help/%s.txt' % topic)
