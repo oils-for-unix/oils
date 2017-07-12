@@ -19,31 +19,11 @@ builtins.py - Implementation of builtins, along with their metadata.
 
 NOTE: bash has help -d -m -s.  Default is -s, like a man page.
 
-# http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
-"A syntax error in a special built-in utility may cause a shell executing that
-utility to abort, while a syntax error in a regular built-in utility shall not
-cause a shell executing that utility to abort. (See Consequences of Shell
-Errors for the consequences of errors on interactive and non-interactive
-shells.) If a special built-in utility encountering a syntax error does not
-abort the shell, its exit value shall be non-zero.
+Links on special builtins:
+http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 
-"Variable assignments specified with special built-in utilities remain in
-effect after the built-in completes; this shall not be the case with a regular
-built-in or other utility.
-
-http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01_01
-
-"If the command name does not contain any <slash> characters, the first
-successful step in the following sequence shall occur:
-
-"If the command name matches the name of a special built-in utility, that
-special built-in utility shall be invoked.
-
-"If the command name matches the name of a function known to this shell, the
-function shall be invoked as described in Function Definition Command. If the
-implementation has provided a standard utility in the form of a function, it
-shall not be recognized at this point. It shall be invoked in conjunction with
-the path search in step 1d.
+- syntax errors in special builtins may cause the shell to abort, but NOT for
+  regular builtins?
 """
 
 import os
