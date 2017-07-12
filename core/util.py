@@ -13,16 +13,6 @@ In some cases, we're using C++ idioms in Python, so the code translates more
 easily to C++.
 """
 
-# Mutate the class after defining it:
-#
-# http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
-
-# Other more complicated ways:
-#
-# http://code.activestate.com/recipes/366254-generic-proxy-object-with-beforeafter-method-hooks/
-#
-# http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
-
 import io
 import os
 import pwd
@@ -173,6 +163,16 @@ class Enum(object):
     if val is None:
       raise AttributeError(name)
     return val
+
+
+# Mutate the class after defining it:
+#
+# http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
+
+# Other more complicated ways:
+#
+# http://code.activestate.com/recipes/366254-generic-proxy-object-with-beforeafter-method-hooks/
+# http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
 
 
 def TracedFunc(func, cls_name, state):

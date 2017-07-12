@@ -42,6 +42,7 @@ WORD LANGUAGE
 
 OTHER SHELL SUBLANGUAGES
     [Arithmetic]    arith-context Where it's used (7 contexts)
+                    numbers       0xFF  0755  etc.
                     math          1 + 2*3
                     logical       !a && b
                     bitwise       ~a ^ b

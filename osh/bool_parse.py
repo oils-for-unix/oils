@@ -10,10 +10,9 @@ bool_parse.py - Parse boolean expressions.
 
 In contrast to test / [, the parsing of [[ expressions is done BEFORE
 evaluation.  So we are parsing a list of Word instances to an AST, rather than
-a list of Value instances.
+a list of strings.
 
-TODO:
-- Share parsing with "test / [".  That uses strings, while this uses words.
+TODO: If we implement "test / [", we should share the parsing.
 
 Grammar from http://compilers.iecc.com/crenshaw/tutor6.txt, adapted to ANTLR
 syntax.
@@ -31,25 +30,6 @@ AND = &&  -a
 WORD = any word
 UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
-
-Other shell implementations:
-
-bash has a recursive descent parser in parse.y:
-parse_cond_command() / cond_expr() / ...
-3 levels of precedence.
-
-Bash manual:
-https://www.gnu.org/software/bash/manual/bash.html#Conditional-Constructs
-
-Precedence table.  Not sure why this is all one table, since [[ and (( are
-separate: http://tldp.org/LDP/abs/html/opprecedence.html
-
-mksh:
-funcs.c: test_isop() / test_eval() /...
-It is SHARED with [ using Test_env.
-
-But mksh uses precedence climbing for the arithmetic parser.  Two different
-algorithms!  See evalexpr() in expr.c.
 """
 
 import sys

@@ -9,7 +9,6 @@
 word_parse.py - Parse the shell word language.
 """
 
-
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core import braces
 from core import word
