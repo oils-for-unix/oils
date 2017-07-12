@@ -1,29 +1,26 @@
 """
-alloc.py - Sketch of memory management, like you would do in C++.
+alloc.py - Sketch of memory management.
 
-Keep track of which arena, and ALSO the line WITHIN the arena?
-So line_span becomes (int arena, int line_index, int col, int length)
+This is roughly what you might do in C++, but it's probably overly complicated
+for Python.
 
-Right after executing, you remove the arena from the pool.
-Better names?  I think pool is the higher level, and arena is the lower level.
+The idea is to save the LST for functions, but discard it for commands that
+have already executed.  Each statement/function can be parsed into a separate
+Arena, and the entire Arena can be discarded at once.
+
+Also, we don't want to save comment lines.
 """
 
 class Arena(object):
   """A collection of lines and line spans.
 
-  For execution, the parse tree doesn't need to represent these.
-  For conversion, we.
-
-  In C++ and maybe oil: A block of memory that can be freed at once.
+  In C++ and maybe Oil: A block of memory that can be freed at once.
 
   Two use cases:
-
-  - Reformatting
-    - PopLine() is never called
-  - Execution
-    - PopLine() for lines that are all comments.  The purpose of this is not to
-      penalize big comment blocks in .rc files and completion files!
-
+  1. Reformatting: ClearLastLine() is never called
+  2. Execution: ClearLastLine() for lines that are all comments.  The purpose
+     of this is not to penalize big comment blocks in .rc files and completion
+     files!
   """
   def __init__(self, arena_id):
     self.arena_id = arena_id  # an integer stored in tokens
@@ -111,23 +108,15 @@ class Arena(object):
 class Pool(object):
   """Owns source lines plus debug info.
 
-  The Lexer will use the Reader and LineLexer to produce tokens.
-
-  The LinePool has to be passed into both the parser and executor?
-  And also parts need to be able to print themselves.. hm.
-
-
   Two use cases:
+  1. Reformatting: PopArena() is never called
+  2. Execution: PopArena() is called if an arena doesn't have any functions.
+  If the whole thing was executed.
 
-  - Reformatting
-    - PopArena() is never called
-  - Execution
-    - PopArena() is called if an arena doesn't have any functions.  If the
-      whole thing was executed.
-  - At the end of the program, all remaining arenas can be freed, or we just
-    let the OS clean up.  Probably in debug/ASAN mode, we will clean it up.
-    We also want to clean up in embedded mode.  the oil_Init() and
-    oil_Destroy() methods of the API should do this.
+  At the end of the program, all remaining arenas can be freed, or we just let
+  the OS clean up.  Probably in debug/ASAN mode, we will clean it up.  We also
+  want to clean up in embedded mode.  the oil_Init() and oil_Destroy() methods
+  of the API should do this.
   """
   def __init__(self):
     self.arenas = []
