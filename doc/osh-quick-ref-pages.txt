@@ -79,3 +79,17 @@ Examples:
     case
 
 
+#TOPIC getopt
+use /usr/bin/getopt
+
+#TOPIC kill
+bash accepts job control syntax
+
+#TOPIC enable
+Bash has this, but OSH won't implement it.
+
+#TOPIC osh-usage
+Same as osh --help, man osh
+
+#TOPIC oil-usage
+Same as oil --help, man oil

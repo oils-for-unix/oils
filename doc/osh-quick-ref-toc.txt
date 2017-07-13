@@ -1,92 +1,86 @@
-OSH Quick Reference: Table of Contents
+OSH Quick Reference
 
-- Features that OSH doesn't yet implement have an (X) prefix.
+- Below is a list of topics, organized into [Sections].
+- Type 'help <topic>' for details, e.g. 'help overview' or 'help case'.
+- Features not yet implemented have an (X) prefix.
+
+OSH BINARY
+  [Overview]      overview
+  [Usage]         osh-usage   oil-usage   config   startup
+  [Interactivity] line-editing  history
 
 COMMAND LANGUAGE
-    [Commands]      simple-command    semicolon ;   ampersand &
-    [Conditional]   case  if  true  false
-                    bang !   and &&   or ||  dbracket [[  colon :
-    [Iteration]     while  until  for  for-expr
-    [Control Flow]  break  continue  return
-    [Grouping]      function    block {   subshell (
-    [Pipelines]     |   (X) |&
-    [Redirects]     redir-file  >  >>  >|  <  <>  &>  
-                    redir-desc  >&  <&
-                    here-doc    <<  <<-  <<<
-    [Arithmetic]    let   dparen ((
-    [Other]         time   coproc
+  [Commands]      simple-command    semicolon ;   ampersand &
+  [Conditional]   case  if  true  false
+                  bang !   and &&   or ||  dbracket [[  colon :
+  [Iteration]     while  until  for  for-expr
+  [Control Flow]  break  continue  return
+  [Grouping]      function    block {   subshell (
+  [Pipelines]     pipeline  |   X |&
+  [Redirects]     redir-file  >  >>  >|  <  <>   X &>
+                  redir-desc  >&  <&
+                  here-doc    <<  <<-  <<<
+  [Arithmetic]    let   dparen ((
+  [Other]         time   coproc
 
 CREATING VARIABLES
-    [Assignment     local   readonly   export   unset   shift
-     Keywords]      (X) declare   (X) typeset   (X) let
-    [Assignment     assign        str='xyz'   array[x]=b
-     Operators]     (X) append    str+='abc'
-    [Arrays]        array         array=(a b c)   array[x]=b
-                    assoc         (X) declare -A assoc=([a]=1 [b]=2)
+  [Assignment     local   readonly   export   unset   shift
+   Keywords]      X declare   X typeset   X let
+  [Assignment     assign        str='xyz'
+   Operators]     X append      str+='abc'
+  [Arrays]        array         array=(a b c)   array[x]=b
+                  X assoc       declare -A assoc=([a]=1 [b]=2)
 
 WORD LANGUAGE
-    [Quotes]        quotes        'abc'  $'\n'  "$var"
-    [Var Ops]       op-test       ${x:-default}  
-                    op-transform  ${x%%suffix}  etc.
-                    op-patsub     ${x/y/z}
-                    op-slice      ${a[@]:0:1}
-    [Substitutions] com-sub       $(command)   `command`
-                    var-sub       ${var}
-                    arith-sub     $((1 + 2))  $[1 + 2]
-                    tilde-sub     ~/src
-                    proc-sub      diff <(sort L.txt) <(sort R.txt)
-    [Special Vars]  special-vars  $?  $#  $PPID  $IFS  ...
+  [Quotes]        quotes        'abc'  $'\n'  "$var"
+  [Var Ops]       op-test       ${x:-default}  
+                  op-transform  ${x%%suffix}  etc.
+                  op-patsub     ${x/y/z}
+                  op-slice      ${a[@]:0:1}
+  [Substitutions] com-sub       $(command)   `command`
+                  var-sub       ${var}
+                  arith-sub     $((1 + 2))  $[1 + 2]
+                  tilde-sub     ~/src
+                  proc-sub      diff <(sort L.txt) <(sort R.txt)
+  [Special Vars]  special-vars  $?  $#  $PPID  $IFS  ...
 
 OTHER SHELL SUBLANGUAGES
-    [Arithmetic]    arith-context Where it's used (7 contexts)
-                    numbers       0xFF  0755  etc.
-                    math          1 + 2*3
-                    logical       !a && b
-                    bitwise       ~a ^ b
-                    assignment    a *= 2
-    [Boolean]       dbracket      [[ $a == $b ]]
-    [Patterns]      glob          *.py
-                    (X) extglob   !(*.py)
-                    regex         [[ foo =~ [a-z]+ ]]
-    [Brace          braces        {a,b}
-     Expansion]
+  [Arithmetic]    arith-context Where it's used (7 contexts)
+                  numbers       0xFF  0755  etc.
+                  math          1 + 2*3
+                  logical       !a && b
+                  bitwise       ~a ^ b
+                  assignment    a *= 2
+  [Boolean]       dbracket      [[ $a == $b ]]
+  [Patterns]      glob          *.py
+                  X extglob    @(*.py|*.sh)
+                  regex         [[ foo =~ [a-z]+ ]]
+  [Brace          braces        {alice,bob}@example.com
+   Expansion]
 
 BUILTINS
-    [I/O]           read   echo 
-                    (X) readarray   (X) mapfile   (X) select
-    [Run Code]      source   dot .   eval
-    [Set Options]   set   (X) shopt
-    [Working Dir]   cd   pwd   pushd   popd   dirs
-    [Completion]    complete   (X) compgen   (X) compopt
-    [Shell Process  exec   exit   (X) logout 
-     Control]       umask   (X) ulimit   (X) trap   (X) times
-    [Child Process  jobs   wait   ampersand &
-     Control]       (X) fg   (X) bg   (X) disown 
-(X) [Word Lookup]   command   builtin
-(X) [Introspection] hash   type   caller
-(X) [Interactive]   alias/unalias   bind   history   fc
-(X) [External]      test  [
-                    printf
-                    getopts - use /usr/bin/getopt
-                    kill - bash accepts job control syntax
-(X) [Unsupported]   enable (will not implement)
+  [I/O]           read   echo 
+                  X readarray   X mapfile   X select
+  [Run Code]      source .   eval
+  [Set Options]   set   X shopt
+  [Working Dir]   cd   pwd   pushd   popd   dirs
+  [Completion]    complete   X compgen   X compopt
+  [Shell Process  exec   exit   X logout 
+   Control]       umask   X ulimit   X trap   X times
+  [Child Process  jobs   wait   ampersand &
+   Control]       X fg   X bg   X disown 
+X [Word Lookup]   command   builtin
+X [Introspection] hash   type   caller
+X [Interactive]   alias  unalias   bind   history   fc
+X [External]      test [   printf   getopts   kill
+X [Unsupported]   enable
 
 (External: bash has builtins that replace these external commands, but OSH
 doesn't)
 
 SHELL OPTIONS
-    [Parsing]
-    [Execution]     errors (nounset, errexit, pipefail, ...)
-                    globbing (noglob, failglob, ...)
-                    debugging (xtrace, verbose, ...)
-    [OSH Options]   strict
-                    sane
-
-OSH BINARY
-    [Usage]         osh-usage     Same as osh --help, man osh
-    [Configuration Files]
-    [Startup]
-
-INTERACTIVITY
-    [Command Line Editing] 
-    [History]
+  [Parsing]
+  [Execution]     errors (nounset, errexit, pipefail, ...)
+                  globbing (noglob, failglob, ...)
+                  debugging (xtrace, verbose, ...)
+  [OSH Options]   strict   sane
