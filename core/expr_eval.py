@@ -176,8 +176,7 @@ class ArithEvaluator(_ExprEvaluator):
     # nounset and raise an exception.
     if val.tag == value_e.Undef:
       if self.exec_opts.nounset:
-        # TODO: need token
-        e_die('Undefined variable %r', node.name)
+        e_die('Undefined variable %r', name)  # TODO: need token
       else:
         return 0
 
