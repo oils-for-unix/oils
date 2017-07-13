@@ -851,20 +851,17 @@ class Executor(object):
     else:
       redirects = self._EvalRedirects(node)
 
-    status = 0
-    if redirects is None:
-      status = 1  # Redirect error causes bad status
-    else:
+    if redirects is not None:
       assert isinstance(redirects, list), redirects
-
       if self.fd_state.Push(redirects, self.waiter):
         try:
           status = self._Dispatch(node, fork_external)
         finally:
           self.fd_state.Pop()
-      else:
-        # The whole command fails with status 1, e.g. bad file descriptor.
+      else:  # Error applying redirects, e.g. bad file descriptor.
         status = 1
+    else:  # Error evaluating redirects
+      status = 1
 
     self._CheckStatus(status, node)
     self.mem.last_status = status  # TODO: This is somewhat duplicated
