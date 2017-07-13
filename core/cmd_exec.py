@@ -286,16 +286,16 @@ class Executor(object):
   def _PopErrExit(self):
     self.exec_opts.errexit.Pop()
 
-  def _CheckStatus(self, status, node, argv=None):
+  def _CheckStatus(self, status, node, argv0=None):
     if self.exec_opts.ErrExit() and status != 0:
-      # TODO: Add context based on node type
-      #if node.tag == command_e.SimpleCommand:
-      #  e_die('%r command exited with status %d (%s)', argv[0], status,
-      #        node.words[0])
-
-      raise util.FatalRuntimeError(
-          '%r command exited with status %d', node.__class__.__name__, status,
-          status=status)
+      # Add context based on node type
+      if node.tag == command_e.SimpleCommand:
+        argv0 = argv0 or '<unknown>'
+        e_die('[%d] %r command exited with status %d', os.getpid(), argv0,
+              status, word=node.words[0], status=status)
+      else:
+        e_die('[%d] %r exited with status %d', os.getpid(),
+              node.__class__.__name__, status, status=status)
 
   def _EvalLhs(self, node):
     assert isinstance(node, ast.lhs_expr), node
@@ -430,6 +430,14 @@ class Executor(object):
       e_die('Invalid control flow %r in pipeline / subshell / background', node.token.val,
             token=node.token)
 
+    # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
+    # only really matters when executing 'exit 42', because the child shell
+    # inherits errexit and will be verbose.  Other notes:
+    #
+    # - We might want errors to fit on a single line so they don't get
+    # interleaved.
+    # - We could return the `exit` builtin into a FatalRuntimeError exception
+    # and get this check for "free".
     thunk = process.SubProgramThunk(self, node)
     p = process.Process(thunk, job_state=job_state)
     return p
@@ -455,6 +463,7 @@ class Executor(object):
     # Builtins like 'true' can be redefined as functions.
     func_node = self.funcs.get(arg0)
     if func_node is not None:
+      # NOTE: Functions could call 'exit 42' directly, etc.
       status = self.RunFunc(func_node, argv)
       return status
 
@@ -542,6 +551,7 @@ class Executor(object):
   #log('*** XFILE %d', XFILE.fileno())
 
   def _Dispatch(self, node, fork_external):
+    argv0 = None  # for error message
     if node.tag == command_e.SimpleCommand:
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up loggnig.  For example, 'echo hi
@@ -557,6 +567,8 @@ class Executor(object):
 
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
+      if argv:
+        argv0 = argv[0]
 
       environ = self.mem.GetExported()
       self._EvalEnv(node.more_env, environ)
@@ -822,12 +834,8 @@ class Executor(object):
     #   - e.g. arith sub, command sub?  I don't want arith sub.
     # - ControlFlow: always raises, it has no status.
 
-    self._CheckStatus(status, node)
-
-    # TODO: Is this the right place to put it?  Does it need a stack for
-    # function calls?
+    self._CheckStatus(status, node, argv0=argv0)
     self.mem.last_status = status
-
     return status
 
   def _Execute(self, node, fork_external=True):
