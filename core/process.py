@@ -111,7 +111,11 @@ class FdState:
         raise NotImplementedError(r.op_id)
 
       # NOTE: 0666 is affected by umask, all shells use it.
-      target_fd = os.open(r.filename, mode, 0666)
+      try:
+        target_fd = os.open(r.filename, mode, 0666)
+      except OSError as e:
+        util.error("Can't open %r: %s", r.filename, os.strerror(e.errno))
+        return False
 
       if not self._PushDup(target_fd, r.fd):
         ok = False

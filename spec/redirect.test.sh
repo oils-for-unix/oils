@@ -5,6 +5,12 @@ echo hello >$TMP/hello.txt  # temporary fix
 <$TMP/hello.txt cat
 # stdout: hello
 
+### Nonexistent file
+cat <$TMP/nonexistent.txt
+echo status=$?
+# stdout: status=1
+# OK dash stdout: status=2
+
 ### No command
 # Hm this is valid in bash and dash.  It's parsed as an assigment with a
 # redirect, which doesn't make sense.  But it's a mistake, and should be a W2

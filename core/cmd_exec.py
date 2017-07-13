@@ -185,7 +185,6 @@ class Executor(object):
       environ = self.mem.GetExported()
       process.ExecExternalProgram(argv, environ)  # never returns
     else:
-      # TODO: self.fd_state.MakePermanent()
       return 0
 
   def _RunBuiltin(self, builtin_id, argv):
@@ -852,22 +851,23 @@ class Executor(object):
     else:
       redirects = self._EvalRedirects(node)
 
+    status = 0
     if redirects is None:
       status = 1  # Redirect error causes bad status
-      self._CheckStatus(status, node)
-      self.mem.last_status = status  # TODO: This is somewhat duplicated
-      return status
-    assert isinstance(redirects, list), redirects
+    else:
+      assert isinstance(redirects, list), redirects
 
-    if not self.fd_state.Push(redirects, self.waiter):
-      # The whole command fails with status 1, e.g. bad file descriptor.
-      return 1
+      if self.fd_state.Push(redirects, self.waiter):
+        try:
+          status = self._Dispatch(node, fork_external)
+        finally:
+          self.fd_state.Pop()
+      else:
+        # The whole command fails with status 1, e.g. bad file descriptor.
+        status = 1
 
-    try:
-      status = self._Dispatch(node, fork_external)
-    finally:
-      self.fd_state.Pop()
-
+    self._CheckStatus(status, node)
+    self.mem.last_status = status  # TODO: This is somewhat duplicated
     return status
 
   def _ExecuteList(self, children):
