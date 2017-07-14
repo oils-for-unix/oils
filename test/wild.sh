@@ -29,7 +29,7 @@ log() {
 
 # Default abbrev-text format
 osh-parse() {
-  bin/osh --ast-output - --no-exec "$@"
+  bin/osh --ast-output - -n "$@"
 }
 
 # TODO: err file always exists because of --no-exec
@@ -45,7 +45,7 @@ _parse-one() {
 }
 
 osh-html() {
-  bin/osh --ast-output - --ast-format abbrev-html --no-exec "$@"
+  bin/osh --ast-output - --ast-format abbrev-html -n "$@"
 }
 
 _osh-html-one() {
@@ -60,7 +60,7 @@ _osh-html-one() {
 }
 
 osh-to-oil() {
-  bin/osh --no-exec --fix "$@"
+  bin/osh -n --fix "$@"
 }
 
 _osh-to-oil-one() {
@@ -533,6 +533,18 @@ parse-bashdb() {
     $src \
     $RESULT_DIR/bashdb \
     $(find $src -name '*.sh' -a -printf '%P\n')
+}
+
+parse-bash-snippets() {
+  local src=~/git/other/Bash-Snippets
+  local files=$(find $src \
+                \( -name .git -a -prune \) -o \
+                \( -type f -a -executable -a -printf '%P\n' \) )
+
+  time _parse-many \
+    $src \
+    $RESULT_DIR/bash-snippets \
+    $files
 }
 
 #

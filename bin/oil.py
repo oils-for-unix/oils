@@ -177,7 +177,9 @@ def OshMain(argv):
   spec.LongFlag('--help')
   spec.LongFlag('--version')
   spec.LongFlag('--ast-output', args.Str)
-  spec.LongFlag('--ast-format', ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'])
+  spec.LongFlag('--ast-format',
+                ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'],
+                default='abbrev-text')
   spec.LongFlag('--fix')
   spec.LongFlag('--debug-spans')
   spec.LongFlag('--print-status')

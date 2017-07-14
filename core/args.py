@@ -66,11 +66,11 @@ class UsageError(Exception):
 class _Attributes(object):
   """Object to hold flags"""
 
-  def __init__(self, names):
+  def __init__(self, defaults):
     self.opt_changes = []  # special name
     self.saw_double_dash = False  # for set --
-    for n in names:
-      setattr(self, n, None)
+    for name, v in defaults.iteritems():
+      setattr(self, name, v)
 
   def __repr__(self):
     return '<_Attributes %s>' % self.__dict__
@@ -224,11 +224,13 @@ class FlagsAndOptions(object):
   def __init__(self):
     self.actions_short = {}  # {'-c': _Action}
     self.actions_long = {}  # {'--rcfile': _Action}
-    self.attr_names = []  # attributes that name flags
+    self.attr_names = {}  # attributes that name flags
+    self.defaults = {}
 
     self.actions_short['o'] = SetNamedOption()  # -o and +o
 
-  def ShortFlag(self, short_name, arg_type=None, quit_parsing_flags=False):
+  def ShortFlag(self, short_name, arg_type=None, default=None,
+                quit_parsing_flags=False):
     """ -c """
     assert short_name.startswith('-'), short_name
     assert len(short_name) == 2, short_name
@@ -241,9 +243,9 @@ class FlagsAndOptions(object):
       self.actions_short[char] = SetToArg(char, arg_type,
                                           quit_parsing_flags=quit_parsing_flags)
 
-    self.attr_names.append(char)
+    self.attr_names[char] = default
 
-  def LongFlag(self, long_name, arg_type=None):
+  def LongFlag(self, long_name, arg_type=None, default=None):
     """ --rcfile """
     assert long_name.startswith('--'), long_name
 
@@ -253,7 +255,7 @@ class FlagsAndOptions(object):
     else:
       self.actions_long[long_name] = SetToArg(name, arg_type)
 
-    self.attr_names.append(name)
+    self.attr_names[name] = default
 
   def Option(self, short_flag, name):
     """
@@ -350,7 +352,7 @@ class BuiltinFlags(object):
     self.arity0 = {}  # {'r': _Action}  e.g. read -r
     self.arity1 = {}  # {'t': _Action}  e.g. read -t 1.0
 
-    self.attr_names = []
+    self.attr_names = {}
 
     self.on_flag = None
     self.off_flag = None
@@ -377,7 +379,7 @@ class BuiltinFlags(object):
     else:
       self.arity1[char] = SetToArg(char, arg_type)
 
-    self.attr_names.append(char)
+    self.attr_names[char] = None
 
   def LongFlag(self, long_name, arg_type=None):
     """ --ast-format """
