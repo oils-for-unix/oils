@@ -629,6 +629,14 @@ def Umask(argv):
   raise args.UsageError('umask: unexpected arguments')
 
 
+_OSH_USAGE = """
+Like POSIX sh, plus:
+
+  -n           -- only validate the syntax.  Also prints the AST.
+  --show-ast   -- print the AST in additino to executing.
+  --ast-format -- what format the AST should be in
+"""
+
 def Help(argv, loader):
   # TODO: Need $VERSION inside all pages?
   try:
@@ -639,7 +647,7 @@ def Help(argv, loader):
     if topic == 'toc':
       f = loader.open('doc/osh-quick-ref-toc.txt')
     elif topic == 'osh-usage':
-      print('TODO: osh-usage')
+      print(_OSH_USAGE)
       return 0
     elif topic == 'oil-usage':
       print('Usage: oil MAIN [OPTION]... [ARG]...')

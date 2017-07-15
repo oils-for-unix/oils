@@ -319,7 +319,7 @@ class FlagsAndOptions(object):
           try:
             action = self.actions_short[char]
           except KeyError:
-            print(self.actions_short)
+            #print(self.actions_short)
             raise UsageError('Invalid flag %r' % char)
           quit = action.OnMatch(char0, None, state, out)
         state.Next() # process the next flag

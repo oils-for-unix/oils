@@ -81,18 +81,13 @@ log = util.log
 
 tlog('after imports')
 
-class UsageError(RuntimeError):
+class OilUsageError(RuntimeError):
   """ Exception for incorrect command line usage. """
 
 
 def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
-  # Is this correct?  Are there any non-ANSI terminals?  I guess you can pass
-  # -i but redirect stdout.
-  if opts.ast_output == '-':
+  if opts.show_ast:
     ast_f = fmt.DetectConsoleOutput(sys.stdout)
-  elif opts.ast_output == '-':
-    f = open(opts.ast_output, 'w')  # implicitly closed when the process ends
-    ast_f = fmt.DetectConsoleOutput(f)
   else:
     ast_f = None
 
@@ -174,12 +169,13 @@ def OshMain(argv):
   spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
   spec.ShortFlag('-i')  # interactive
 
+  # TODO: -h too
   spec.LongFlag('--help')
   spec.LongFlag('--version')
-  spec.LongFlag('--ast-output', args.Str)
   spec.LongFlag('--ast-format',
                 ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'],
                 default='abbrev-text')
+  spec.LongFlag('--show-ast')  # execute and show
   spec.LongFlag('--fix')
   spec.LongFlag('--debug-spans')
   spec.LongFlag('--print-status')
@@ -333,25 +329,26 @@ def OshMain(argv):
         ui.PrintErrorStack(err, arena, sys.stderr)
         return 2  # parse error is code 2
 
-    if opts.ast_output:
+    do_exec = True
+    if opts.fix:
+      osh2oil.PrintAsOil(arena, node, opts.debug_spans)
+      do_exec = False
+    if exec_opts.noexec:
+      do_exec = False
 
+    if exec_opts.noexec or opts.show_ast:  # -n shows the AST
       if opts.ast_format == 'oheap':
-        if opts.ast_output == '-':
-          if sys.stdout.isatty():
-            raise RuntimeError('ERROR: Not dumping binary data to a TTY.')
-          f = sys.stdout
-        else:
-          f = open(opts.ast_output, 'wb')  # implicitly closed
+        # TODO: Make this a separate flag?
+        if sys.stdout.isatty():
+          raise RuntimeError('ERROR: Not dumping binary data to a TTY.')
+        f = sys.stdout
 
         enc = encode.Params()
         out = encode.BinOutput(f)
         encode.EncodeRoot(node, enc, out)
 
       else:  # text output
-        if opts.ast_output == '-':
-          f = sys.stdout
-        else:
-          f = open(opts.ast_output, 'w')  # implicitly closed
+        f = sys.stdout
 
         if opts.ast_format in ('text', 'abbrev-text'):
           ast_f = fmt.DetectConsoleOutput(f)
@@ -367,15 +364,13 @@ def OshMain(argv):
         ast_f.FileFooter()
         ast_f.write('\n')
 
-    if exec_opts.noexec:
-      util.log("Execution skipped because 'noexec' is on ")
+      #util.log("Execution skipped because 'noexec' is on ")
       status = 0
-    else:
+
+    if do_exec:
       tlog('Execute(node)')
       status = ex.Execute(node)
 
-  if opts.fix:
-    osh2oil.PrintAsOil(arena, node, opts.debug_spans)
   return status
 
 
@@ -395,7 +390,7 @@ def OilMain(argv):
     try:
       first_arg = argv[1]
     except IndexError:
-      raise UsageError('Missing name of main()')
+      raise OilUsageError('Missing name of main()')
 
     if first_arg in ('-h', '--help'):
       builtin.Help(['oil-usage'], util.GetResourceLoader())
@@ -423,7 +418,7 @@ def OilMain(argv):
   elif main_name == 'false':
     return 1
   else:
-    raise UsageError('Invalid main %r' % main_name)
+    raise OilUsageError('Invalid main %r' % main_name)
 
 
 def main(argv):
@@ -431,7 +426,7 @@ def main(argv):
     sys.exit(OilMain(argv))
   except NotImplementedError as e:
     raise
-  except UsageError as e:
+  except OilUsageError as e:
     print(_OIL_USAGE, file=sys.stderr)
     print(str(e), file=sys.stderr)
     sys.exit(2)

@@ -29,7 +29,7 @@ log() {
 
 # Default abbrev-text format
 osh-parse() {
-  bin/osh --ast-output - -n "$@"
+  bin/osh -n "$@"
 }
 
 # TODO: err file always exists because of --no-exec
@@ -45,7 +45,7 @@ _parse-one() {
 }
 
 osh-html() {
-  bin/osh --ast-output - --ast-format abbrev-html -n "$@"
+  bin/osh --ast-format abbrev-html -n "$@"
 }
 
 _osh-html-one() {
@@ -101,7 +101,7 @@ _parse-and-copy-one() {
   # So it's not executable.
   cat < $input > ${output}.txt
 
-  if ! _parse-one $input $output; then  # Conver to text AST
+  if ! _parse-one $input $output; then  # Convert to text AST
     echo $rel_path >>$dest_base/FAILED.txt
 
     # Append
@@ -178,6 +178,7 @@ _parse-many() {
     log ""
     log "*** Some tasks failed.  See messages above."
   fi
+  echo "Results: file://$PWD/$dest_base"
 }
 
 make-index() {

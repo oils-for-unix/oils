@@ -91,17 +91,17 @@ assert() {
 }
 
 ast() {
-  bin/osh --no-exec --ast-output - -c 'echo hi'
-  bin/osh --no-exec --ast-output - --ast-format text -c 'echo hi'
-  bin/osh --no-exec --ast-output - --ast-format abbrev-html -c 'echo hi'
-  bin/osh --no-exec --ast-output - --ast-format html -c 'echo hi'
+  bin/osh -n -c 'echo hi'
+  bin/osh -n --ast-format text -c 'echo hi'
+  bin/osh -n --ast-format abbrev-html -c 'echo hi'
+  bin/osh -n --ast-format html -c 'echo hi'
 
   # Not dumping to terminal
-  if bin/osh --no-exec --ast-output - --ast-format oheap -c 'echo hi'; then
+  if bin/osh -n --ast-format oheap -c 'echo hi'; then
     die "Should have failed"
   fi
   local ast_bin=_tmp/smoke-ast.bin 
-  bin/osh --no-exec --ast-output $ast_bin --ast-format oheap -c 'echo hi'
+  bin/osh -n --ast-format oheap -c 'echo hi' > $ast_bin
   ls -l $ast_bin
   hexdump -C $ast_bin
 }

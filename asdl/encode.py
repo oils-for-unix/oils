@@ -236,7 +236,7 @@ def EncodeObj(obj, enc, out):
       # TODO: Fix this for span_id.  Need to extract a method.
       if not ok:
         raise AssertionError(
-            "Currently not encoding simple optional types: %s", field_val)
+            "Currently not encoding simple optional types: %s" % field_val)
 
       if field_val is None:
         enc.Ref(0, this_chunk)
