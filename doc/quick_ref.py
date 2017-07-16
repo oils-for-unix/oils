@@ -16,8 +16,35 @@ CAPS_RE = re.compile(r'^[A-Z ]+$')
 
 TOPIC_RE = re.compile(r'\b(X[ ])?([a-z\-]+)([ ]\S+)?', re.VERBOSE)
 
+# Sections have alphabetical characters, spaces, and '/' for I/O.  They are
+# turned into anchors.
+SECTION_RE = re.compile(r'\s*\[([a-zA-Z /]+)\]')
+
 # Can occur at the beginning of a line, or before a topic
 RED_X = '<span style="color: darkred">X </span>'
+
+
+def _StringToHref(s):
+  return s.replace(' ', '-')
+
+
+def MaybeHighlightSection(line, parts):
+  m = SECTION_RE.match(line)
+  if not m:
+    return line
+
+  print >>sys.stderr, m.groups()
+
+  start = m.start(1)
+  end = m.end(1)
+  parts.append(line[:start])  # this is spaces, so not bothering to escape
+
+  section = m.group(1)
+  href = _StringToHref(section)
+  section_link = '<a href="#%s" class="level2">%s</a>' % (href, section)
+  parts.append(section_link)
+
+  return line[end:]
 
 
 def HighlightLine(line):
@@ -29,8 +56,10 @@ def HighlightLine(line):
   last_end = 0
   found_one = False
 
+  line = MaybeHighlightSection(line, parts)
+
   for m in TOPIC_RE.finditer(line):
-    print >>sys.stderr, m.groups()
+    #print >>sys.stderr, m.groups()
 
     have_x = m.group(1) is not None
     start = m.start(1) if have_x else m.start(2)
@@ -145,10 +174,13 @@ def main(argv):
         margin: 0 auto;
         width: 50em;
       }
+      /* different color because they're links but not topics */
       .level1 {
         /* color: green; */
-        /* different color because they're links but not topics */
         color: black;
+      }
+      .level2 {
+        color: #555;
       }
     </style>
   </head>
@@ -165,9 +197,11 @@ def main(argv):
       if i == 0:
         html_line = '<h1>%s</h1>' % cgi.escape(line)
       elif CAPS_RE.match(line):
-        anchor_text = cgi.escape(line)
-        href = cgi.escape(line.replace(' ', '-'))
-        html_line = '<b><a href="#%s" class="level1">%s</a></b>' % (
+        heading = line.strip()
+        anchor_text = cgi.escape(heading)
+        href = _StringToHref(heading)
+        # Add the newline back here
+        html_line = '<b><a href="#%s" class="level1">%s</a></b>\n' % (
             href, anchor_text)
       elif line.startswith('  '):
         html_line = HighlightLine(line)
