@@ -1,21 +1,20 @@
 OSH Quick Reference
 
 - Below is a list of topics, organized into [Sections].
-- Type 'help <topic>' for details, e.g. 'help overview' or 'help case'.
+- Type 'help TOPIC' for details, e.g. 'help overview' or 'help case'.
 - Features not yet implemented have an (X) prefix.
 
 OSH BINARY
   [Overview]      overview
-  [Usage]         osh-usage   oil-usage   config   startup
-  [Interactivity] line-editing  history
+  [Usage]         osh-usage   oil-usage   config   startup   line-editing
 
 COMMAND LANGUAGE
-  [Commands]      simple-command    semicolon ;   ampersand &
-  [Conditional]   case  if  true  false
-                  bang !   and &&   or ||  dbracket [[  colon :
-  [Iteration]     while  until  for  for-expr
-  [Control Flow]  break  continue  return
-  [Grouping]      function    block {   subshell (
+  [Commands]      simple-command   semicolon ;   ampersand &
+  [Conditional]   case   if   true   false   colon :
+                  bang !   and &&   or ||   dbracket [[
+  [Iteration]     while   until   for   for-expr ((
+  [Control Flow]  break   continue   return
+  [Grouping]      function   block {   subshell (
   [Pipelines]     pipeline  |   X |&
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
                   redir-desc  >&  <&
@@ -23,12 +22,12 @@ COMMAND LANGUAGE
   [Arithmetic]    let   dparen ((
   [Other]         time   coproc
 
-CREATING VARIABLES
-  [Assignment     local   readonly   export   unset   shift
-   Keywords]      X declare   X typeset   X let
-  [Assignment     assign        str='xyz'
-   Operators]     X append      str+='abc'
-  [Arrays]        array         array=(a b c)   array[x]=b
+ASSIGNING VARIABLES
+  [Keywords]      local   readonly   export   unset   shift
+                  X declare   X typeset   X let
+  [Operators]     assign        str='xyz'
+                  X append      str+='abc'
+  [Compound Data] array         array=(a b c)   array[x]=b
                   X assoc       declare -A assoc=([a]=1 [b]=2)
 
 WORD LANGUAGE
@@ -41,22 +40,21 @@ WORD LANGUAGE
                   var-sub       ${var}
                   arith-sub     $((1 + 2))  $[1 + 2]
                   tilde-sub     ~/src
-                  proc-sub      diff <(sort L.txt) <(sort R.txt)
+                  X proc-sub    diff <(sort L.txt) <(sort R.txt)
   [Special Vars]  special-vars  $?  $#  $PPID  $IFS  ...
 
 OTHER SHELL SUBLANGUAGES
-  [Arithmetic]    arith-context Where it's used (7 contexts)
-                  numbers       0xFF  0755  etc.
+  [Arithmetic]    arith-intro   Contexts where math is allowed
+                  num-literals  0xFF  0755  etc.
                   math          1 + 2*3
-                  logical       !a && b
+                  arith-logical !a && b
                   bitwise       ~a ^ b
-                  assignment    a *= 2
+                  arith-assign  a *= 2
   [Boolean]       dbracket      [[ $a == $b ]]
   [Patterns]      glob          *.py
-                  X extglob    @(*.py|*.sh)
+                  X extglob     @(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
-  [Brace          braces        {alice,bob}@example.com
-   Expansion]
+  [Brace Expand]  braces        {alice,bob}@example.com
 
 BUILTINS
   [I/O]           read   echo 
@@ -65,18 +63,15 @@ BUILTINS
   [Set Options]   set   X shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs
   [Completion]    complete   X compgen   X compopt
-  [Shell Process  exec   exit   X logout 
-   Control]       umask   X ulimit   X trap   X times
-  [Child Process  jobs   wait   ampersand &
-   Control]       X fg   X bg   X disown 
+  [Shell Process] exec   exit   X logout 
+                  umask   X ulimit   X trap   X times
+  [Child Process] jobs   wait   ampersand &
+                  X fg   X bg   X disown 
 X [Word Lookup]   command   builtin
 X [Introspection] hash   type   caller
-X [Interactive]   alias  unalias   bind   history   fc
+X [Interactive]   alias   unalias   bind   history   fc
 X [External]      test [   printf   getopts   kill
 X [Unsupported]   enable
-
-(External: bash has builtins that replace these external commands, but OSH
-doesn't)
 
 SHELL OPTIONS
   [Parsing]

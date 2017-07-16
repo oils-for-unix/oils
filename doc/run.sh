@@ -38,4 +38,8 @@ publish() {
   echo 'Hello from run.sh'
 }
 
+build-quickref() {
+  doc/quick_ref.py doc/osh-quick-ref-toc.txt > _tmp/osh-quick-ref-toc.html
+}
+
 "$@"

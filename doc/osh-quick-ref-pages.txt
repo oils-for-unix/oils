@@ -20,6 +20,15 @@ format of this file:
 #BEGIN page
 #END page
 
+##### COMMAND LANGUAGE  (turns into <a name=>)
+### Commands commands
+# case
+# if
+
+# TOPIC true false   # link them together?
+
+
+
 And there is stuff in the middle for HTML only?
 
 # COMMAND LANGUAGE   (mark-down-ask)
@@ -93,3 +102,10 @@ Same as osh --help, man osh
 
 #TOPIC oil-usage
 Same as oil --help, man oil
+
+#TOPIC external
+
+External: bash has builtins that replace these external commands, but OSH
+doesn't)
+
+
