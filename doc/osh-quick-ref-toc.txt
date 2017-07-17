@@ -4,7 +4,7 @@ OSH Quick Reference
 - Type 'help TOPIC' for details, e.g. 'help overview' or 'help case'.
 - Features not yet implemented have an X prefix.
 
-OSH BINARY
+INTRO
   [Overview]      overview
   [Usage]         osh-usage   oil-usage   config   startup   line-editing
 
@@ -56,7 +56,7 @@ OTHER SHELL SUBLANGUAGES
                   regex         [[ foo =~ [a-z]+ ]]
   [Brace Expand]  braces        {alice,bob}@example.com
 
-BUILTINS
+BUILTIN COMMANDS
   [I/O]           read   echo 
                   X readarray   X mapfile   X select
   [Run Code]      source .   eval

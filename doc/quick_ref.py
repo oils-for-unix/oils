@@ -4,10 +4,12 @@ quick_ref.py
 """
 
 import cgi
+import os
 import re
 import sys
 
 
+# e.g. COMMAND LANGUAGE
 CAPS_RE = re.compile(r'^[A-Z ]+$')
 
 # 1. Optional X, then a SINGLE space
@@ -101,7 +103,9 @@ def HighlightLine(line):
   return html_line
 
 
-def main(argv):
+def TableOfContents(f):
+
+
   # inputs: -toc.txt, -pages.txt
 
   # outputs:
@@ -158,65 +162,148 @@ def main(argv):
   # lower-with-dashes for topics
 
 
-  # TODO: Html Skeleton
-  print """\
-<!DOCTYPE html>
-<html>
-  <head>
-    <style>
-      a:link {
-        text-decoration: none;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-      body {
-        margin: 0 auto;
-        width: 50em;
-      }
-      /* different color because they're links but not topics */
-      .level1 {
-        /* color: green; */
-        color: black;
-      }
-      .level2 {
-        color: #555;
-      }
-    </style>
-  </head>
-  <body>
-"""
+  # TODO: Add version and so forht?
+  title_line = f.readline()
+  print '<h1>%s</h1>' % cgi.escape(title_line)
+  print '<a name="toc"></a>'
   print '<pre>'
 
-  with open(argv[1]) as f:
-    for i, line in enumerate(f):
-      if not line.strip():
-        sys.stdout.write('\n')
-        continue
+  for line in f:
+    if not line.strip():
+      sys.stdout.write('\n')
+      continue
 
-      if i == 0:
-        html_line = '<h1>%s</h1>' % cgi.escape(line)
-      elif CAPS_RE.match(line):
-        heading = line.strip()
-        anchor_text = cgi.escape(heading)
-        href = _StringToHref(heading)
-        # Add the newline back here
-        html_line = '<b><a href="#%s" class="level1">%s</a></b>\n' % (
-            href, anchor_text)
-      elif line.startswith('  '):
-        html_line = HighlightLine(line)
-      elif line.startswith('X '):
-        html_line = RED_X + HighlightLine(line[2:])
-      else:
-        html_line = cgi.escape(line)
+    if CAPS_RE.match(line):
+      heading = line.strip()
+      anchor_text = cgi.escape(heading)
+      href = _StringToHref(heading)
+      # Add the newline back here
+      html_line = '<b><a href="#%s" class="level1">%s</a></b>\n' % (
+          href, anchor_text)
+    elif line.startswith('  '):
+      html_line = HighlightLine(line)
+    elif line.startswith('X '):
+      html_line = RED_X + HighlightLine(line[2:])
+    else:
+      html_line = cgi.escape(line)
 
-      sys.stdout.write(html_line)
+    sys.stdout.write(html_line)
 
   print '</pre>'
-  print """
-  </body>
-</html>
-"""
+
+# TODO:
+# - group 1: # prefix determines h1, h2, h3
+# - group 2 is the <a name=""> -- there can be MORE THAN ONE
+#   - OSH-BINARY
+#   - Commands
+#   - for-expr
+#   - true|false
+# - group 3: the anchor text to display
+#
+
+## Conditional Conditional Constructs
+## Quotes Quotes
+### COMMAND-LANGUAGE Command Language
+
+### {Conditional} Conditional Constructs
+### <Conditional> Conditional Constructs
+
+# These have no title?  Just true?  false?
+
+# true|false true
+
+
+class TextOutput:
+  def __init__(self, text_dir, topic_lookup):
+    self.text_dir = text_dir
+    self.topic_lookup = topic_lookup
+
+  def WriteFile(self, section_id, topics, lines):
+    """
+    """
+    section_name = '%d-%d-%d' % tuple(section_id)
+    path = os.path.join(self.text_dir, section_name)
+    with open(path, 'w') as f:
+      for line in lines:
+        f.write(line)
+    print >>sys.stderr, 'Wrote %s' % path
+
+    for topic in topics:
+      self.topic_lookup[topic] = section_name
+
+
+HEADING_RE = re.compile(r'(#+) <(\S+)> (.*)')
+
+def Pages(f, text_out):
+  print '<pre>'
+
+  # TODO: I need to assign numbers
+  section_id = [0, 0, 0]  # L1, L2, L3
+
+  prev_lines = []
+
+  for line in f:
+    m = HEADING_RE.match(line)
+    if not m:
+      sys.stdout.write(cgi.escape(line))
+      prev_lines.append(line)
+      continue
+
+    level, topic_str, text = m.groups()
+    print >>sys.stderr, m.groups()
+    topics = topic_str.split()
+
+    # We got a heading.  Write the previous lines
+    text_out.WriteFile(section_id, topics, prev_lines)
+    prev_lines = []
+
+    if len(level) == 4:
+      htag = 2
+      section_id[0] += 1  # from 2.3.4 to 3.0.0
+      section_id[1] = 0
+      section_id[2] = 0
+
+    elif len(level) == 3:
+      htag = 3
+      section_id[1] += 1  # from 2.2.3 to 2.3.0
+      section_id[2] = 0
+
+    elif len(level) == 2:
+      htag = 4
+      section_id[2] += 1  # from 2.2.2 to 2.2.3
+
+    else:
+      raise RuntimeError('Invalid level %r' % level)
+
+    print '</pre>'
+    for topic in topics:
+      print '<a name="%s"></a>' % topic
+    print '<h%d>%s</h%d>' % (htag, text, htag)
+    print '(%d.%d.%d)' % tuple(section_id)
+    print '<pre>'
+    
+  print '</pre>'
+
+
+def main(argv):
+  action = argv[1]
+  if action == 'toc':
+    with open(argv[2]) as f:
+      TableOfContents(f)
+  elif action == 'pages':
+    html_out, text_dir, py_out_path = argv[2:5]
+
+    topic_lookup = {}
+    with open(html_out) as f:
+      text_out = TextOutput(text_dir, topic_lookup)
+      Pages(f, text_out)
+
+    print >>sys.stderr, topic_lookup
+    with open(py_out_path, 'w') as f:
+      f.write(repr(topic_lookup))
+
+  else:
+    raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':

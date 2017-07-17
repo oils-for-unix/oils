@@ -1,3 +1,4 @@
+
 OSH Quick Reference with Examples
 =================================
 
@@ -15,62 +16,96 @@ Meta-variables for
   echo foo >out.txt
   read myvar <input.txt
 
-format of this file:
 
-#BEGIN page
-#END page
+Sections on help
+- usage line (auto-generated?)
+  read [options] [VARNAME ...]  # default variable is REPLY
+- list of flags
+- EXAMPLES 
+- ADVICE / STYLE
+  - Don't use this.  Use something else.
+  - also: conversion to Oil!
+    - [[ is preferred, but 'test [' is also valid
 
-##### COMMAND LANGUAGE  (turns into <a name=>)
-### Commands commands
-# case
-# if
+#### <INTRO> Introduction
 
-# TOPIC true false   # link them together?
+### <Overview> Overview
 
+OSH is a shell.
 
 
-And there is stuff in the middle for HTML only?
+### <Usage> Usage
 
-# COMMAND LANGUAGE   (mark-down-ask)
+## <osh-usage> Usage of the OSH Binary
 
-## Commands
+Same as osh --help, man osh
 
-#BEGIN simple-command
+## <oil-usage> Usage of the Oil Binary
+
+Same as oil --help, man oil
+
+
+#### <COMMAND-LANGUAGE> Command Language
+
+### <Commands> Commands
+
+## <simple-command> Simple Commands
 Simple commands are separated by words:
     ls /
 
 Redirects can also appear anywhere
     echo hi 1>&2
 
-#END simple-command
-
-#BEGIN semicolon ;
+## <semicolon> Semi-colon  ;
 ;  -- separate statements
 
-#END semicolon ;
+## <case> case
+## <if> if
 
+#### <ASSIGNING-VARIABLES> Assigning Variables
 
-# BUILTINS
+#### <WORD-LANGUAGE> Word Language
+
+#### <OTHER-SHELL-SUBLANGUAGES> Other Shell Sublanguages
+
+#### <BUILTIN-COMMANDS> Builtin Commands
 
 OSH aims to have almost all of the builtins that bash does.  Here they are,
 divided into sections.
 
-## I/O Builtins
+### <I/O> I/O Builtins
 
 These builtins take input and output.  They are often used with redirects[1].
 
 [1] help redirects
 
-#BEGIN read
+## <read> read
 Usage: read -p 
-#END read
 
 Or maybe get rid of #END -- it can just go until the next # command.  It's a
 little bit like the spec tests honestly.  Can copy sh_specpy
 
+### <External> Builtins That Are Like External Commaands
+
+External: bash has builtins that replace these external commands, but OSH
+doesn't)
+
+## <getopt> getopt
+
+use /usr/bin/getopt
+
+## <kill> kill
+
+bash accepts job control syntax
+
+## <enable> enable
+
+Bash has this, but OSH won't implement it.
+
+#### <SHELL-OPTIONS> Shell Options
 
 
-==> osh-quick-ref-toc
+And there is stuff in the middle for HTML only?
 
 #case
 
@@ -86,26 +121,5 @@ case: case WORD in [PATTERN [| PATTERN]...) COMMANDS ;;]... esac
 Examples:
 
     case
-
-
-#TOPIC getopt
-use /usr/bin/getopt
-
-#TOPIC kill
-bash accepts job control syntax
-
-#TOPIC enable
-Bash has this, but OSH won't implement it.
-
-#TOPIC osh-usage
-Same as osh --help, man osh
-
-#TOPIC oil-usage
-Same as oil --help, man oil
-
-#TOPIC external
-
-External: bash has builtins that replace these external commands, but OSH
-doesn't)
 
 
