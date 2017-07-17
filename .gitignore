@@ -1,9 +1,9 @@
 *.swp
 *.pyc
-_tmp/
-# Python build output
-_pybuild
+_tmp
 _bin
 _build
 _release
 libc.so
+# Python build support
+build/temp.*
