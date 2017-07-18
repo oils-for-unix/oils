@@ -36,6 +36,8 @@ from core import state
 
 from osh import lex
 
+from _build import osh_help  # generated file
+
 value_e = runtime.value_e
 scope = runtime.scope
 var_flags = runtime.var_flags
@@ -629,39 +631,31 @@ def Umask(argv):
   raise args.UsageError('umask: unexpected arguments')
 
 
-_OSH_USAGE = """
-Like POSIX sh, plus:
-
-  -n           -- only validate the syntax.  Also prints the AST.
-  --show-ast   -- print the AST in additino to executing.
-  --ast-format -- what format the AST should be in
-"""
-
 def Help(argv, loader):
   # TODO: Need $VERSION inside all pages?
   try:
     topic = argv[0]
   except IndexError:
-    f = loader.open('doc/help.txt')
+    topic = 'help'
+
+  if topic == 'toc':
+    # Just show the raw source.
+    f = loader.open('doc/osh-quick-ref-toc.txt')
   else:
-    if topic == 'toc':
-      f = loader.open('doc/osh-quick-ref-toc.txt')
-    elif topic == 'osh-usage':
-      print(_OSH_USAGE)
-      return 0
-    elif topic == 'oil-usage':
-      print('Usage: oil MAIN [OPTION]... [ARG]...')
-      return 0
+    try:
+      section_id = osh_help.TOPIC_LOOKUP[topic]
+    except IndexError:
+      util.error('No help for topic %r', topic)
+      return 1
     else:
       try:
-        f = loader.open('_build/help/%s.txt' % topic)
-      except IOError:
-        util.error('No help for topic %r', topic)
-        return 1
+        f = loader.open('_build/osh-quick-ref/%s' % section_id)
+      except IOError as e:
+        util.error(str(e))
+        raise AssertionError('Should have found %r' % section_id)
 
   for line in f:
     sys.stdout.write(line)
-
   f.close()
   return 0
 

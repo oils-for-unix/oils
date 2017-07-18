@@ -5,6 +5,7 @@ quick_ref.py
 
 import cgi
 import os
+import pprint
 import re
 import sys
 
@@ -239,7 +240,8 @@ def Pages(f, text_out):
 
   # TODO: I need to assign numbers
   section_id = [0, 0, 0]  # L1, L2, L3
-
+  topics = []
+  prev_topics = []  # from previous iteration
   prev_lines = []
 
   for line in f:
@@ -249,13 +251,13 @@ def Pages(f, text_out):
       prev_lines.append(line)
       continue
 
+    # We got a heading.  Write the previous lines
+    text_out.WriteFile(section_id, prev_topics, prev_lines)
+    prev_lines = []
+
     level, topic_str, text = m.groups()
     print >>sys.stderr, m.groups()
     topics = topic_str.split()
-
-    # We got a heading.  Write the previous lines
-    text_out.WriteFile(section_id, topics, prev_lines)
-    prev_lines = []
 
     if len(level) == 4:
       htag = 2
@@ -281,6 +283,8 @@ def Pages(f, text_out):
     print '<h%d>%s</h%d>' % (htag, text, htag)
     print '(%d.%d.%d)' % tuple(section_id)
     print '<pre>'
+
+    prev_topics = topics
     
   print '</pre>'
 
@@ -290,6 +294,7 @@ def main(argv):
   if action == 'toc':
     with open(argv[2]) as f:
       TableOfContents(f)
+
   elif action == 'pages':
     html_out, text_dir, py_out_path = argv[2:5]
 
@@ -298,9 +303,11 @@ def main(argv):
       text_out = TextOutput(text_dir, topic_lookup)
       Pages(f, text_out)
 
-    print >>sys.stderr, topic_lookup
+    d = pprint.pformat(topic_lookup)
+    print >>sys.stderr, d
     with open(py_out_path, 'w') as f:
-      f.write(repr(topic_lookup))
+      f.write('TOPIC_LOOKUP = ')
+      f.write(d)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

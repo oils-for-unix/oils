@@ -42,9 +42,10 @@ osh-quick-ref() {
   local html_out=_tmp/osh-quick-ref.html
   local text_dir=_build/osh-quick-ref
 
-  local py_out=_build/_help_topics.py
+  local py_out=_build/osh_help.py
 
   mkdir -p $text_dir
+  touch _build/__init__.py  # so osh_help is importable
 
   {
     cat <<EOF

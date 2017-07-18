@@ -72,10 +72,10 @@ ACTIONS_SH := build/actions.sh
 COMPILE_SH := build/compile.sh
 
 # For faster tesing of builds
-#default: _bin/oil.ovm-dbg
+default: _bin/oil.ovm-dbg
 
 # What the end user should build when they type 'make'.
-default: _bin/oil.ovm
+#default: _bin/oil.ovm
 
 # Debug bundles and release tarballs.
 all: \

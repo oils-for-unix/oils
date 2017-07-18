@@ -37,6 +37,11 @@ OSH is a shell.
 ### <Usage> Usage
 
 ## <osh-usage> Usage of the OSH Binary
+Like POSIX sh, plus:
+
+  -n           -- only validate the syntax.  Also prints the AST.
+  --show-ast   -- print the AST in additino to executing.
+  --ast-format -- what format the AST should be in
 
 Same as osh --help, man osh
 
@@ -85,7 +90,44 @@ Usage: read -p
 Or maybe get rid of #END -- it can just go until the next # command.  It's a
 little bit like the spec tests honestly.  Can copy sh_specpy
 
-### <External> Builtins That Are Like External Commaands
+### <Run-Code> Run Code
+source .   eval
+
+### <Set-Options> Set Shell Options
+set   X shopt
+
+### <Working-Dir> Builtins - Working Dir
+cd   pwd   pushd   popd   dirs
+
+### <Completion> Completion
+complete   X compgen   X compopt
+
+### <Shell-Process> Shell Process Control
+exec   exit   X logout 
+umask   X ulimit   X trap   X times
+
+### <Child-Process> Child Process Control
+jobs   wait   ampersand &
+X fg   X bg   X disown 
+
+### <Introspection> Builtins That Introspect
+
+## <help> help
+Usage:
+  help <topic>   -- show help on a given topic
+  help toc       -- list help topics
+  help osh-usage -- same as osh --help
+  help oil-usage -- same as oil --help
+
+View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
+
+## <hash> hash
+
+## <caller> caller
+
+## <type> type
+
+### <External> Builtins That Are Like External Commands
 
 External: bash has builtins that replace these external commands, but OSH
 doesn't)

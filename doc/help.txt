@@ -1,7 +1,0 @@
-Usage:
-  help <topic>   -- show help on a given topic
-  help toc       -- list help topics
-  help osh-usage -- same as osh --help
-  help oil-usage -- same as oil --help
-
-View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html

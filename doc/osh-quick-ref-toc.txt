@@ -1,8 +1,8 @@
 OSH Quick Reference
 
 - Below is a list of topics, organized into [Sections].
-- Type 'help TOPIC' for details, e.g. 'help overview' or 'help case'.
 - Features not yet implemented have an X prefix.
+- View it on the web at https://www.oilshell.org/TODO
 
 INTRO
   [Overview]      overview
@@ -68,7 +68,7 @@ BUILTIN COMMANDS
   [Child Process] jobs   wait   ampersand &
                   X fg   X bg   X disown 
 X [Word Lookup]   command   builtin
-X [Introspection] hash   type   caller
+X [Introspection] help   hash   type   caller
 X [Interactive]   alias   unalias   bind   history   fc
 X [External]      test [   printf   getopts   kill
 X [Unsupported]   enable
