@@ -38,8 +38,20 @@ publish() {
   echo 'Hello from run.sh'
 }
 
+_build-timestamp() {
+  echo '<hr/>'
+  echo "<i>Generated on $(date)</i>"
+}
+
+# Places version is used
+#
+# - in --version
+# - in URL for every page?  inside the binary
+# - in titles for index, install, osh-quick-ref TOC, etc.
+# - in deployment script
+
 osh-quick-ref() {
-  local html_out=_tmp/osh-quick-ref.html
+  local html_out=_tmp/doc/osh-quick-ref.html
   local text_dir=_build/osh-quick-ref
 
   local py_out=_build/osh_help.py
@@ -83,6 +95,7 @@ EOF
     doc/quick_ref.py pages \
       doc/osh-quick-ref-pages.txt $text_dir $py_out
 
+    _build-timestamp
     cat <<EOF
   </body>
 </html>
@@ -90,6 +103,52 @@ EOF
   } > $html_out
 
   echo "Wrote $html_out"
+}
+
+markdown2html() {
+  local src=$1
+  local out=$2
+  local monospace=${3:-}
+  mkdir -p _tmp/doc
+
+  { cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0 auto;
+        width: 40em;
+        $monospace
+      }
+      pre {
+        color: green;
+        margin-left: 4em;
+      }
+    </style>
+  </head>
+  <body>
+EOF
+  
+    markdown < $src  # TODO: CommonMark
+
+    _build-timestamp
+    cat <<EOF
+  </body>
+</html>
+EOF
+  } > $out
+}
+
+readonly MONOSPACE='font-family: monospace;'
+
+install() {
+  markdown2html INSTALL _tmp/doc/INSTALL.html "$MONOSPACE"
+}
+
+index() {
+  # Not monospace
+  markdown2html doc/index.md _tmp/doc/index.html ''
 }
 
 # TODO: TOC is one doc?  Maybe use Makefile.

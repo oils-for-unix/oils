@@ -4,38 +4,48 @@ Building and Installing OSH
 OSH is a bash-compatible shell, and is part of the Oil project
 (http://www.oilshell.org).
 
-This file describes how to install OSH.
+This file describes how to install OSH.  (It's in the release tarball and also
+published on the web.)
 
 Quick Start
 -----------
 
-To install as /usr/local/bin/osh:
+Extract the tarball:
+ 
+    tar -x --xz < oil-0.0.0.tar.xz
+    cd oil-0.0.0
+
+Either install as /usr/local/bin/osh:
 
     ./configure    
     make
     sudo ./install
 
-To install as ~/bin/osh, which doesn't require root access:
+Or install as ~/bin/osh, which doesn't require root access:
 
     ./configure --prefix ~
     make
     ./install
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-directory that contains ./configure and ./install.
+oil-0.0.0 directory.
 
 System Requirements
 -------------------
 
-Roughly speaking, you need a POSIX C environment (compiler and libc), plus GNU
-Bash and GNU Make.
+Roughly speaking, you need:
 
-I want to eventually remove the GNU requirements and use just POSIX sh intsead.
+  - an ANSI C environment (compiler and libc)
+  - GNU Bash
+  - GNU Make.
+
+(I want to eventually remove the GNU requirements and require just POSIX sh
+instead).
 
 Optional:
 
-- GNU readline library, for interactive features
-  - https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
+  - GNU readline library, for interactive features
+    (https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
 
 Debian/Ubuntu and derivatives:
 
@@ -46,12 +56,8 @@ Alpine Linux:
     apk add libc-dev gcc bash make 
 
 
-OSH hasn't been tested on non-Linux systems.  If you'd like it to work on a
-particular system, it would be helpful to:
-
-1. Provide well-tested patches
-2. Provide a machine / build environment accessible via SSH, for continuous
-builds and testing.
+OSH hasn't been tested on non-Linux systems, but eventually it should run on
+any POSIX-compatible system.
 
 Build Options
 -------------
@@ -62,21 +68,14 @@ options are --prefix and --{with,without}-readline.
 Notes
 -----
 
-- The oil executable behaves like busybox.  If it's run directly, then argv[1]
-  should be the name of a program:
-
-    /usr/local/bin/oil osh -c 'echo hi'
- 
-  If it's invoked through a symlink like 'osh', then that is treated as the
-  name of a program:
-
-    /usr/local/bin/osh -c 'echo hi'
-
-- OSH uses a slight fork of the Python 2.7 runtime.  It should therefore
-  compile on with most compilers and operating systems.
-
+- The oil executable behaves like busybox, and osh is a symlink to it.  Compare
+  oil --help vs. osh --help.
+- OSH uses a slight fork of the Python 2.7 runtime, so it should
+  compile with most popular compiler/OS combinations.
 
 TODO
 ----
 
-- Add back PGO and LTO.  CPython has build support.
+- Add back build support for PGO and LTO and document them.  (CPython has
+  this.)
+

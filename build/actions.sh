@@ -65,6 +65,20 @@ app-deps() {
     $PREPARE_DIR/python -S ~/git/oil/_tmp/app_deps.py $main_module $prefix
 }
 
+files-manifest() {
+  for path in "$@"; do
+    echo "$path $path"
+  done
+}
+
+# For embedding in oil/bytecode.zip.
+quick-ref-manifest() {
+  local dir=$1
+  for path in $dir/*; do
+    echo "$path $path"  # relative path is the same
+  done
+}
+
 # Make .d file
 make-dotd() {
   local app_name=${1:-hello}

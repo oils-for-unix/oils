@@ -21,6 +21,10 @@ die() {
   exit 1
 }
 
+show_help() {
+  echo HELP
+}
+
 # Default installation is /usr/local/bin/oil, but this can be changed with
 # --prefix.  We roughly follow GNU:
 # https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
@@ -35,7 +39,8 @@ while true; do
       ;;
     --help)
       # TODO: Fill out help
-      echo HELP
+      show_help
+      exit 0
       ;;
 
     --with-readline)
