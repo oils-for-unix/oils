@@ -136,7 +136,7 @@ _build/hello/main_name.c:
 _build/hello/app-deps-%.txt: $(HELLO_SRCS) _build/detected-config.sh \
 	                           build/app_deps.py
 	test -d _build/hello && \
-		$(ACTIONS_SH) app-deps hello build/testdata hello
+	  $(ACTIONS_SH) app-deps hello build/testdata hello
 
 # NOTE: We could use src/dest paths pattern instead of _build/app?
 #
@@ -173,7 +173,7 @@ _build/oil/main_name.c:
 # - For the tarball, we should ALWAYS include readline.
 _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
-		$(ACTIONS_SH) app-deps oil ~/git/oil bin.oil
+	  $(ACTIONS_SH) app-deps oil ~/git/oil bin.oil
 
 # TODO: Need $(OIL_SRCS) here?
 # NOTES:
@@ -190,8 +190,8 @@ _build/oil/bytecode.zip: oil-version.txt \
                          _build/osh_help.py \
                          doc/osh-quick-ref-toc.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
-  	$(ACTIONS_SH) files-manifest oil-version.txt \
-									               doc/osh-quick-ref-toc.txt; \
+	  $(ACTIONS_SH) files-manifest oil-version.txt \
+	                               doc/osh-quick-ref-toc.txt; \
 	  cat build/oil-manifest.txt \
 	      _build/oil/app-deps-py.txt \
 	      _build/runpy-deps-py.txt; \

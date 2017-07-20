@@ -141,6 +141,26 @@ readonly PREPROC_FLAGS=(
 readonly INCLUDE_PATHS=(-I . -I Include)
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
+# BASE_CFLAGS is copied by observation from what configure.ac does on my Ubuntu
+# 16.04 system.  Then we check if it works on Alpine Linux too.
+
+# "Python violates C99 rules, by casting between incompatible pointer types.
+# GCC may generate bad code as a result of that, so use -fno-strict-aliasing if
+# supported."
+# - gcc 4.x and Clang need -fwrapv
+
+# TODO:
+# - -DNDEBUG is also passed.  What is that?
+# - We should auto-detect the flags in configure, or simplify the source so it
+# isn't necessary.  Python's configure.ac sometimes does it by compiling a test
+# file; at other times it does it by grepping $CC --help.
+
+readonly BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
+
+# The user should be able to customize CFLAGS, but it shouldn't disable what's
+# in BASE_CFLAGS.
+readonly CFLAGS=${CFLAGS:-}
+
 build() {
   local out=${1:-$PY27/ovm2}
   local module_init=${2:-$PY27/Modules/config.c}
@@ -183,6 +203,8 @@ build() {
   # of it.
 
   time $CC \
+    ${BASE_CFLAGS} \
+    ${CFLAGS} \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
     -D PREFIX="\"$PREFIX\"" \
