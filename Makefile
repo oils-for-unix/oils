@@ -171,6 +171,9 @@ _build/oil/main_name.c:
 # NOTE: The list of files is used both to compile and to make a tarball.
 # - For compiling, we should respect _HAVE_READLINE in detected_config
 # - For the tarball, we should ALWAYS include readline.
+#
+# BUG: Running 'make' the first time files because it can't find the '_build'
+# package.  doc/run.sh currently makes _build/__init__.py.
 _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
 	  $(ACTIONS_SH) app-deps oil ~/git/oil bin.oil

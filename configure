@@ -22,7 +22,16 @@ die() {
 }
 
 show_help() {
-  echo HELP
+  cat <<EOF
+Usage: ./configure [OPTION]
+
+Detects system settings before a build of Oil.
+
+  --prefix            Prefix for the bin/ directory [/usr/local]
+  --with-readline     Fail unless readline is available.
+  --without-readline  Don't compile with readline, even if it's available.
+		      The shell won't have any interactive features.
+EOF
 }
 
 # Default installation is /usr/local/bin/oil, but this can be changed with

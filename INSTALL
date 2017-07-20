@@ -10,7 +10,7 @@ published on the web.)
 Quick Start
 -----------
 
-Extract the tarball:
+If you haven't already done so, extract the tarball:
  
     tar -x --xz < oil-0.0.0.tar.xz
     cd oil-0.0.0
@@ -49,12 +49,11 @@ Optional:
 
 Debian/Ubuntu and derivatives:
 
-    sudo apt install build-essential
+    sudo apt install build-essential libreadline-dev
 
 Alpine Linux:
 
-    apk add libc-dev gcc bash make 
-
+    apk add libc-dev gcc bash make readline-dev
 
 OSH hasn't been tested on non-Linux systems, but eventually it should run on
 any POSIX-compatible system.

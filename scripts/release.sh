@@ -19,8 +19,13 @@ _compressed-tarball() {
   build/actions.sh write-release-date
 
   make $in
-  gzip -c $in > $out
+  time gzip -c $in > $out
   ls -l $out
+
+  # xz version is considerably smaller.  1.15 MB  vs. 1.59 MB.
+  local out2=_release/$name-$version.tar.xz
+  time xz -c $in > $out2
+  ls -l $out2
 }
 
 oil() {

@@ -56,7 +56,7 @@ osh-quick-ref() {
 
   local py_out=_build/osh_help.py
 
-  mkdir -p $text_dir
+  mkdir -p _tmp/doc $text_dir
   touch _build/__init__.py  # so osh_help is importable
 
   {
