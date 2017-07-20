@@ -37,18 +37,25 @@ OSH is a shell.
 ### <Usage> Usage
 
 ## <osh-usage> Usage of the OSH Binary
-Like POSIX sh, plus:
+osh accepts POSIX sh flags, with the following differences:
 
   -n           -- only validate the syntax.  Also prints the AST.
-  --show-ast   -- print the AST in additino to executing.
+  --show-ast   -- print the AST in addition to executing.
   --ast-format -- what format the AST should be in
 
-Same as osh --help, man osh
+# Same as osh --help, man osh
 
 ## <oil-usage> Usage of the Oil Binary
+oil MAIN_NAME [ARG]...
+MAIN_NAME [ARG]...
 
-Same as oil --help, man oil
+oil behaves like busybox.  If it's invoked through a symlink like 'osh', then
+it behaves like that binary.  Otherwise the binary name can be passed as an
+argument, like:
 
+    oil osh -c 'echo hi'
+
+# Same as oil --help, man oil
 
 #### <COMMAND-LANGUAGE> Command Language
 

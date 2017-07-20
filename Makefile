@@ -175,6 +175,9 @@ _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
 	  $(ACTIONS_SH) app-deps oil ~/git/oil bin.oil
 
+_build/osh_help.py: doc/osh-quick-ref-pages.txt
+	doc/run.sh osh-quick-ref
+
 # TODO: Need $(OIL_SRCS) here?
 # NOTES:
 # - _build/osh_help.py is a minor hack to depend on the entire

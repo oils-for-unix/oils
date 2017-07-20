@@ -427,7 +427,7 @@ def main(argv):
   except NotImplementedError as e:
     raise
   except OilUsageError as e:
-    print(_OIL_USAGE, file=sys.stderr)
+    builtin.Help(['oil-usage'], util.GetResourceLoader())
     print(str(e), file=sys.stderr)
     sys.exit(2)
   except RuntimeError as e:
