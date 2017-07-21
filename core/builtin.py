@@ -486,6 +486,8 @@ def AddOptionsToArgSpec(spec):
   spec.Option('x', 'xtrace')
   spec.Option(None, 'pipefail')
 
+  spec.Option(None, 'debug-completion')
+
 
 set_spec = args.FlagsAndOptions()
 AddOptionsToArgSpec(set_spec)
@@ -504,9 +506,11 @@ def Set(argv, exec_opts, mem):
   # - How to integrate this with auto-completion?  Have to handle '+'.
 
   if not argv:  # empty
-    # TODO: If no arguments are given, it shows functions/vars?  Why not show
-    # other state?
-    print('TODO: set without arguments')
+    # TODO:
+    # - set -o is different than plain 'set'.
+    # If no arguments are given, it shows functions/vars?  Why not show other
+    # state?
+    exec_opts.Show(sys.stdout)
     return 0
 
   arg, i = set_spec.Parse(argv)

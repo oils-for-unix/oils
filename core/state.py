@@ -73,6 +73,7 @@ class ExecOpts(object):
     self.xtrace = False  # NOTE: uses PS4
     self.noglob = False  # -f
     self.noexec = False  # -n
+    self.debug_completion = False
 
     # OSH-specific
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
@@ -103,6 +104,17 @@ class ExecOpts(object):
     # - h for hashing (mksh also has this)
     # - B for brace expansion
     return ''.join(chars)
+
+  FMT = '%-20s%s'
+
+  def Show(self, f):
+    # TODO: Maybe sort them differently?
+    for name in sorted(self.__dict__):
+      if name == 'errexit':
+        print(self.FMT % (name, self.errexit.errexit), file=f)
+      else:
+        val = getattr(self, name)
+        print(self.FMT % (name, val), file=f)
 
 
 class _ArgFrame(object):

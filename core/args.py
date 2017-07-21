@@ -195,10 +195,11 @@ class SetNamedOption(_Action):
     except IndexError:
       raise UsageError('Expected argument for option')
 
+    attr_name = arg.replace('-', '_')
     # Validate the option name against a list of valid names.
-    if arg not in self.names:
+    if attr_name not in self.names:
       raise UsageError('Invalid option name %r' % arg)
-    out.opt_changes.append((arg, b))
+    out.opt_changes.append((attr_name, b))
 
 
 # Arg type:
@@ -263,11 +264,12 @@ class FlagsAndOptions(object):
       short_flag: 'e'
       name: errexit
     """
+    attr_name = name.replace('-', '_')  # debug-completion -> debug_completion
     if short_flag:
       assert not short_flag.startswith('-'), short_flag
-      self.actions_short[short_flag] = SetOption(name)
+      self.actions_short[short_flag] = SetOption(attr_name)
 
-    self.actions_short['o'].Add(name)
+    self.actions_short['o'].Add(attr_name)
 
   def Parse(self, argv):
     # Respect +
