@@ -394,6 +394,8 @@ def _FindLastSimpleCommand(node):
       return child.children[0]
   if node.tag == command_e.Assignment:
     return None
+  if node.tag == command_e.ControlFlow:
+    return None
 
   assert hasattr(node, 'children'), node
 
@@ -429,7 +431,7 @@ ECompletionType = util.Enum('ECompletionState',
 # VarCompleter.Complete(prefix) -> iter
 # HashKey.Complete(hash_name, prefix) -> iter
 
-def _GetCompletionType(w_parser, c_parser, ev, status_lines):
+def _GetCompletionType(w_parser, c_parser, ev, status_out):
   """
   Parser returns completion state.
   Then we translate that into ECompletionType.
@@ -497,20 +499,14 @@ def _GetCompletionType(w_parser, c_parser, ev, status_lines):
     pass
 
   # TODO: Need to show buf... Need a multiline display for debugging?
-  s1 = status_lines[1]
-  s2 = status_lines[2]
-  s3 = status_lines[3]
-  s6 = status_lines[6]
-
-  s1.Write('prev_token %s  cur_token %s  cur_word %s', prev_token, cur_token,
-      cur_word)
-  s2.Write('comp_state %s  error %s', comp_state, c_parser.Error())
+  status_out.Write(1, 'prev_token %s  cur_token %s  cur_word %s', prev_token, cur_token,
+                    cur_word)
+  status_out.Write(2, 'comp_state %s  error %s', comp_state, c_parser.Error())
   # This one can be multiple lines
-  s3.Write('node: %s %s',
-      repr(node) if node else '<Parse Error>',
-      node.tag if node else '')
+  status_out.Write(3, 'node: %s %s', repr(node) if node else '<Parse Error>',
+                    node.tag if node else '')
   # This one can be multiple lines
-  s6.Write('com_node: %s', repr(com_node) if com_node else '<None>')
+  status_out.Write(6, 'com_node: %s', repr(com_node) if com_node else '<None>')
 
   # TODO: Fill these in
   comp_type = ECompletionType.FIRST
@@ -596,10 +592,10 @@ class RootCompleter(object):
 
     self.parser = DummyParser()  # TODO: remove
 
-  def Matches(self, buf, status_lines):
+  def Matches(self, buf, status_out):
     w_parser, c_parser = self.make_parser(buf)
     comp_type, prefix, comp_words = _GetCompletionType(
-        w_parser, c_parser, self.ev, status_lines)
+        w_parser, c_parser, self.ev, status_out)
 
     comp_type, prefix, comp_words = _GetCompletionType1(self.parser, buf)
 
@@ -627,7 +623,7 @@ class RootCompleter(object):
     else:
       raise AssertionError(comp_type)
 
-    status_lines[0].Write('Completing %r ... (Ctrl-C to cancel)', buf)
+    status_out.Write(0, 'Completing %r ... (Ctrl-C to cancel)', buf)
     start_time = time.time()
 
     index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
@@ -638,13 +634,13 @@ class RootCompleter(object):
       i += 1
       elapsed = time.time() - start_time
       plural = '' if i == 1 else 'es'
-      status_lines[0].Write(
+      status_out.Write(0,
           '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
           plural, buf, elapsed)
 
     elapsed = time.time() - start_time
     plural = '' if i == 1 else 'es'
-    status_lines[0].Write(
+    status_out.Write(0,
         'Found %d match%s for %r in %.2f seconds', i,
         plural, buf, elapsed)
 
@@ -655,9 +651,9 @@ class RootCompleter(object):
 
 
 class ReadlineCompleter(object):
-  def __init__(self, root_comp, status_lines, debug=False):
+  def __init__(self, root_comp, status_out, debug=False):
     self.root_comp = root_comp
-    self.status_lines = status_lines
+    self.status_out  = status_out 
     self.debug = debug
 
     self.comp_iter = None  # current completion being processed
@@ -676,14 +672,14 @@ class ReadlineCompleter(object):
       end = readline.get_endidx()
 
       if self.debug:
-        self.status_line.Write(
+        self.status_out.Write(0,
             'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
             buf[begin:end])
 
-      self.comp_iter = self.root_comp.Matches(buf, self.status_lines)
+      self.comp_iter = self.root_comp.Matches(buf, self.status_out)
 
     if self.comp_iter is None:
-      self.status_line.Write("ASSERT comp_iter shouldn't be None")
+      self.status_out.Write(0, "ASSERT comp_iter shouldn't be None")
 
     try:
       next_completion = self.comp_iter.next()
@@ -700,7 +696,7 @@ class ReadlineCompleter(object):
       return self._GetNextCompletion(word, state)
     except Exception as e:
       traceback.print_exc()
-      self.status_line.Write('Unhandled exception while completing: %s', e)
+      self.status_out.Write(0, 'Unhandled exception while completing: %s', e)
 
 
 def InitReadline(complete_cb):
@@ -736,7 +732,18 @@ def InitReadline(complete_cb):
   readline.set_completer_delims(' ')
 
 
-def Init(builtins, mem, funcs, comp_lookup, status_lines, ev):
+class StatusOutput:
+  def __init__(self, status_lines, exec_opts):
+    self.status_lines = status_lines
+    self.exec_opts = exec_opts
+
+  def Write(self, index, msg, *args):
+    # Only line zero gets shown by default
+    if index == 0 or self.exec_opts.debug_completion:
+      self.status_lines[index].Write(msg, *args)
+
+
+def Init(builtins, mem, funcs, comp_lookup, status_out, ev):
 
   aliases_action = WordsAction(['TODO:alias'])
   commands_action = ExternalCommandAction(mem)
@@ -766,15 +773,18 @@ def Init(builtins, mem, funcs, comp_lookup, status_lines, ev):
   var_comp = VarAction(os.environ, mem)
   root_comp = RootCompleter(make_parser, ev, comp_lookup, var_comp)
 
-  complete_cb = ReadlineCompleter(root_comp, status_lines)
+  complete_cb = ReadlineCompleter(root_comp, status_out)
   InitReadline(complete_cb)
 
 
 if __name__ == '__main__':
   from core import builtin
   from core import cmd_exec
+  from core import state
 
   status_lines = ui.MakeStatusLines()
+  exec_opts = state.ExecOpts()
+  status_out = StatusOutput(status_lines, exec_opts)
 
   builtins = builtin.BUILTIN_DEF
 
@@ -784,7 +794,7 @@ if __name__ == '__main__':
   comp_lookup = CompletionLookup()
   ev = None
 
-  Init(builtins, mem, funcs, comp_lookup, status_lines, ev)
+  Init(builtins, mem, funcs, comp_lookup, status_out, ev)
 
   # Disable it.  OK so this is how you go back and forth?  At least in Python.
   # Enable and disable custom completer?

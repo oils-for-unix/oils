@@ -23,7 +23,7 @@ def Clear():
 
 class StatusLine(object):
 
-  def __init__(self, row_num=3, width=200):
+  def __init__(self, row_num=3, width=80):
     # NOTE: '%-80s' % msg doesn't do this, because it doesn't pad at the end
     self.width = width
     self.row_num = row_num

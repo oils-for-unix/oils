@@ -28,7 +28,10 @@ A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
 
 C1 = completion.ChainedCompleter([A1])
 
-STATUS = [ui.TestStatusLine()] * 10  # A bunch of dummies
+status_lines = [ui.TestStatusLine()] * 10  # A bunch of dummies
+exec_opts = state.ExecOpts()
+STATUS = completion.StatusOutput(status_lines, exec_opts)
+
 
 V1 = completion.WordsAction(['$var1', '$var2', '$another_var'])
 
