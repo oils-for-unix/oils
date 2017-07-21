@@ -33,9 +33,9 @@ ASSIGNING VARIABLES
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Var Ops]       op-test       ${x:-default}  
-                  op-transform  ${x%%suffix}  etc.
-                  op-patsub     ${x/y/z}
-                  op-slice      ${a[@]:0:1}
+                  X op-unary    ${x%%suffix}  etc.
+                  X op-str      ${x/y/z}
+                  X op-slice    ${a[@]:0:1}
   [Substitutions] com-sub       $(command)   `command`
                   var-sub       ${var}
                   arith-sub     $((1 + 2))  $[1 + 2]

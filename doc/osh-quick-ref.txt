@@ -1,3 +1,27 @@
+
+- TODO
+  - Get rid of this doc
+  - Add one set of ### to the headings.
+
+##### COMMAND LANGUAGE
+####
+###
+
+And then comments are like this
+
+## This is an idea.
+
+## Format of this file
+## 
+## Lines that begin with two or more # signs are special.
+##
+## 2: comment that is omitted
+## 3, 4, 5: three levels of sections.
+##
+## These are turned into <h2> <h3> <h4> tags in HTML, with <a> anchors.
+## In help text.
+
+
 Idea:
 
 This is a short, dense, and slightly opinionated overview of OSH, a

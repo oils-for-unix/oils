@@ -86,6 +86,9 @@ osh-quick-ref() {
     </style>
   </head>
   <body>
+    <p style="color: darkred; font-size: x-large;">
+      NOTE: This document is a work in progress!
+    </p>
 EOF
 
     # TODO: Add version and URL
