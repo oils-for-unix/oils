@@ -34,6 +34,9 @@ set -o errexit
 #     test/
 #     benchmarks/
 
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+export OIL_VERSION  # for quick_ref.py
+
 publish() {
   echo 'Hello from run.sh'
 }
@@ -49,6 +52,11 @@ _build-timestamp() {
 # - in URL for every page?  inside the binary
 # - in titles for index, install, osh-quick-ref TOC, etc.
 # - in deployment script
+
+# Run with environment variable
+_quick-ref() {
+  doc/quick_ref.py "$@"
+}
 
 osh-quick-ref() {
   local html_out=_tmp/doc/osh-quick-ref.html
@@ -91,12 +99,10 @@ osh-quick-ref() {
     </p>
 EOF
 
-    # TODO: Add version and URL
-    doc/quick_ref.py toc doc/osh-quick-ref-toc.txt
+    _quick-ref toc doc/osh-quick-ref-toc.txt
 
     # Also generate _build/osh-quick-ref/ dir
-    doc/quick_ref.py pages \
-      doc/osh-quick-ref-pages.txt $text_dir $py_out
+    _quick-ref pages doc/osh-quick-ref-pages.txt $text_dir $py_out
 
     _build-timestamp
     cat <<EOF
@@ -153,6 +159,17 @@ index() {
   # Not monospace
   markdown2html doc/index.md _tmp/doc/index.html ''
 }
+
+# I want to ship the INSTALL file literally, so just mutate things
+_sed-ext() {
+  sed --regexp-extended -i "$@"
+}
+
+update-src-versions() {
+  _sed-ext "s/Version [0-9]+.[0-9]+.[0-9]+/Version $OIL_VERSION/g" doc/index.md
+  _sed-ext "s/oil-[0-9]+.[0-9]+.[0-9]+/oil-$OIL_VERSION/g" INSTALL
+}
+
 
 # TODO: TOC is one doc?  Maybe use Makefile.
 

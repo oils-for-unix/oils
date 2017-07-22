@@ -167,6 +167,8 @@ def TableOfContents(f):
   title_line = f.readline()
   print '<h1>%s</h1>' % cgi.escape(title_line)
   print '<a name="toc"></a>'
+  # doc/run.sh must set environment.
+  print '<i>Version %s</i>' % os.environ['OIL_VERSION']
   print '<pre>'
 
   for line in f:
