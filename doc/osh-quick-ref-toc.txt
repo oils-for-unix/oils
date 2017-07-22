@@ -9,18 +9,18 @@ INTRO
   [Usage]         osh-usage   oil-usage   config   startup   line-editing
 
 COMMAND LANGUAGE
-  [Commands]      simple-command   semicolon ;   ampersand &
+  [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
   [Iteration]     while   until   for   for-expr ((
   [Control Flow]  break   continue   return
   [Grouping]      function   block {   subshell (
-  [Pipelines]     pipeline  |   X |&
+  [Concurrency]   pipe   |   X |&
+                  ampersand &   X proc-sub
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
-  [Arithmetic]    let   dparen ((
-  [Other]         time   coproc
+  [Other]         dparen ((   time   coproc
 
 ASSIGNING VARIABLES
   [Keywords]      local   readonly   export   unset   shift
@@ -32,16 +32,16 @@ ASSIGNING VARIABLES
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
-  [Var Ops]       op-test       ${x:-default}  
-                  X op-unary    ${x%%suffix}  etc.
-                  X op-str      ${x/y/z}
-                  X op-slice    ${a[@]:0:1}
   [Substitutions] com-sub       $(command)   `command`
                   var-sub       ${var}
                   arith-sub     $((1 + 2))  $[1 + 2]
                   tilde-sub     ~/src
                   X proc-sub    diff <(sort L.txt) <(sort R.txt)
   [Special Vars]  special-vars  $?  $#  $PPID  $IFS  ...
+  [Var Ops]       op-test       ${x:-default}  
+                  X op-unary    ${x%%suffix}  etc.
+                  X op-str      ${x/y/z}
+                  X op-slice    ${a[@]:0:1}
 
 OTHER SHELL SUBLANGUAGES
   [Arithmetic]    arith-intro   Contexts where math is allowed

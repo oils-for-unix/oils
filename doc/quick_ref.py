@@ -235,60 +235,70 @@ class TextOutput:
       self.topic_lookup[topic] = section_name
 
 
-HEADING_RE = re.compile(r'(#+) <(\S+)> (.*)')
+# TODO: Also allow {} in addition to <> delimiters.
+HEADING_RE = re.compile(r'(#+) <(.*)>(.*)')
 
 def Pages(f, text_out):
   print '<pre>'
 
-  # TODO: I need to assign numbers
   section_id = [0, 0, 0]  # L1, L2, L3
   topics = []
   prev_topics = []  # from previous iteration
   prev_lines = []
 
   for line in f:
-    m = HEADING_RE.match(line)
-    if not m:
+    if line.startswith('##'):  # heading or comment
+      m = HEADING_RE.match(line)
+      if m:
+        # We got a heading.  Write the previous lines
+        text_out.WriteFile(section_id, prev_topics, prev_lines)
+        prev_lines = []
+
+        level, topic_str, text = m.groups()
+        print >>sys.stderr, m.groups()
+        topics = topic_str.split()
+        if not text.strip():
+          text = topic_str
+
+        if len(level) == 5:
+          htag = 2
+          section_id[0] += 1  # from 2.3.4 to 3.0.0
+          section_id[1] = 0
+          section_id[2] = 0
+
+        elif len(level) == 4:
+          htag = 3
+          section_id[1] += 1  # from 2.2.3 to 2.3.0
+          section_id[2] = 0
+
+        elif len(level) == 3:
+          htag = 4
+          section_id[2] += 1  # from 2.2.2 to 2.2.3
+
+        else:
+          raise RuntimeError('Invalid level %r' % level)
+
+        print '</pre>'
+        for topic in topics:
+          print '<a name="%s"></a>' % topic
+        print '<h%d>%s</h%d>' % (htag, text, htag)
+        print '<!-- %d.%d.%d -->' % tuple(section_id)
+        print '<pre>'
+
+        prev_topics = topics
+        
+      else:
+        # Three or more should be a heading, not a comment.
+        if line.startswith('###'):
+          raise RuntimeError('Expected a heading, got %r' % line)
+
+    else:  # normal line
       sys.stdout.write(cgi.escape(line))
       prev_lines.append(line)
       continue
 
-    # We got a heading.  Write the previous lines
-    text_out.WriteFile(section_id, prev_topics, prev_lines)
-    prev_lines = []
-
-    level, topic_str, text = m.groups()
-    print >>sys.stderr, m.groups()
-    topics = topic_str.split()
-
-    if len(level) == 4:
-      htag = 2
-      section_id[0] += 1  # from 2.3.4 to 3.0.0
-      section_id[1] = 0
-      section_id[2] = 0
-
-    elif len(level) == 3:
-      htag = 3
-      section_id[1] += 1  # from 2.2.3 to 2.3.0
-      section_id[2] = 0
-
-    elif len(level) == 2:
-      htag = 4
-      section_id[2] += 1  # from 2.2.2 to 2.2.3
-
-    else:
-      raise RuntimeError('Invalid level %r' % level)
-
-    print '</pre>'
-    for topic in topics:
-      print '<a name="%s"></a>' % topic
-    print '<h%d>%s</h%d>' % (htag, text, htag)
-    print '(%d.%d.%d)' % tuple(section_id)
-    print '<pre>'
-
-    prev_topics = topics
-    
   print '</pre>'
+
 
 
 def main(argv):
@@ -305,8 +315,9 @@ def main(argv):
       text_out = TextOutput(text_dir, topic_lookup)
       Pages(f, text_out)
 
+    # TODO: Fuzzy matching of help topics
     d = pprint.pformat(topic_lookup)
-    print >>sys.stderr, d
+    #print >>sys.stderr, d
     with open(py_out_path, 'w') as f:
       f.write('TOPIC_LOOKUP = ')
       f.write(d)

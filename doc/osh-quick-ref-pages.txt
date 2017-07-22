@@ -1,125 +1,212 @@
+## OSH Quick Reference with Examples
 
-OSH Quick Reference with Examples
-=================================
+## This file gets converted to HTML and do a directory of .txt files for use in
+## OSH.
 
-This file gets converted to HTML and do a directory of .txt files for use in
-OSH.
-
-Meta-variables for
-  foo        :  string
-  out.txt    :  output file
-  input.txt  : input file
-  /some/dir/ : file system path
-  $myvar     : var
-  echo, ls   : a command
-
-  echo foo >out.txt
-  read myvar <input.txt
+## Format of this file
+## 
+## Lines that begin with two or more # signs are special.
+##
+## 2: comment that is omitted
+## 3, 4, 5: three levels of sections.
+##
+## These are turned into <h2> <h3> <h4> tags in HTML, with <a> anchors.
+## In help text.
 
 
-Sections on help
-- usage line (auto-generated?)
-  read [options] [VARNAME ...]  # default variable is REPLY
-- list of flags
-- EXAMPLES 
-- ADVICE / STYLE
-  - Don't use this.  Use something else.
-  - also: conversion to Oil!
-    - [[ is preferred, but 'test [' is also valid
+## Meta-variables for
+##   foo        :  string
+##   out.txt    :  output file
+##   input.txt  : input file
+##   /some/dir/ : file system path
+##   $myvar     : var
+##   echo, ls   : a command
+## 
+##   echo foo >out.txt
+##   read myvar <input.txt
 
-#### <INTRO> Introduction
+## Sections on help
+## - usage line (auto-generated?)
+##   read [options] [VARNAME ...]  # default variable is REPLY
+## - list of flags
+## - EXAMPLES 
+## - ADVICE / STYLE
+##   - Don't use this.  Use something else.
+##   - also: conversion to Oil!
+##     - [[ is preferred, but 'test [' is also valid
 
-### <Overview> Overview
+##### <INTRO> Introduction
+
+#### <Overview> Overview
+
+### <overview>
 
 OSH is a shell.
 
 
-### <Usage> Usage
+#### <Usage> Usage
 
-## <osh-usage> Usage of the OSH Binary
+### <osh-usage> Usage of the OSH Binary
+Usage: osh [OPTION]... SCRIPT [ARG]...
+       osh [OPTION]... -c COMMAND [ARG]...
+
 osh accepts POSIX sh flags, with the following differences:
 
-  -n           -- only validate the syntax.  Also prints the AST.
-  --show-ast   -- print the AST in addition to executing.
-  --ast-format -- what format the AST should be in
+  -n             only validate the syntax.  Also prints the AST.
+  --show-ast     print the AST in addition to executing.
+  --ast-format   what format the AST should be in
 
-# Same as osh --help, man osh
+## Same as osh --help, man osh
 
-## <oil-usage> Usage of the Oil Binary
-oil MAIN_NAME [ARG]...
-MAIN_NAME [ARG]...
+### <oil-usage> Usage of the Oil Binary
+Usage: oil MAIN_NAME [ARG]...
+       MAIN_NAME [ARG]...
 
-oil behaves like busybox.  If it's invoked through a symlink like 'osh', then
-it behaves like that binary.  Otherwise the binary name can be passed as an
-argument, like:
+oil behaves like busybox.  If it's invoked through a symlink, e.g. 'osh', then
+it behaves like that binary.  Otherwise the binary name can be passed as the
+first argument, e.g.:
 
     oil osh -c 'echo hi'
 
-# Same as oil --help, man oil
+## Same as oil --help, man oil
 
-#### <COMMAND-LANGUAGE> Command Language
+##### <COMMAND-LANGUAGE> Command Language
 
-### <Commands> Commands
+The command language is specified by the POSIX shell grammar.
 
-## <simple-command> Simple Commands
+#### <Commands> Commands
+
+### <simple-command> Simple Commands
 Simple commands are separated by words:
     ls /
 
 Redirects can also appear anywhere
     echo hi 1>&2
 
-## <semicolon> Semi-colon  ;
+### <semicolon> Semi-colon  ;
 ;  -- separate statements
 
-## <case> case
-## <if> if
+#### <Conditional> Conditional Constructs
 
-#### <ASSIGNING-VARIABLES> Assigning Variables
+### <case> case
+### <if> if
 
-#### <WORD-LANGUAGE> Word Language
+### <true false colon :>
 
-#### <OTHER-SHELL-SUBLANGUAGES> Other Shell Sublanguages
+### <bang !>
 
-#### <BUILTIN-COMMANDS> Builtin Commands
+### <and && or ||>
+
+### <dbracket [[>
+For conditionals.
+
+#### <Conditional> Iteration Constructs
+
+### <while until>
+
+### <for for-expr>
+
+#### <Grouping> Grouping Constructs
+
+### <function>
+
+### <block>
+
+### <subshell>
+
+#### <Concurrency>
+
+### <pipe>
+
+### <ampersand &>
+
+#### <Redirects>
+
+### <redir-file>
+
+### <redir-desc>
+
+### <here-doc>
+
+#### <Other> Other Commands
+
+### <dparen ((>
+
+### <time>
+
+### <coproc>
+
+
+##### <ASSIGNING-VARIABLES> Assigning Variables
+
+#### <Keywords> Assignment Keywords
+
+#### <Operators> Assignment Operators
+
+#### <Compound-Data> Compound Data Structures
+
+
+##### <WORD-LANGUAGE> Word Language
+
+#### <Quotes>
+
+#### <Substitutions>
+
+#### <Special-Vars> Special Variables
+
+#### <Var-Ops> Operations on Variables
+
+
+##### <OTHER-SHELL-SUBLANGUAGES> Other Shell Sublanguages
+
+#### <Arithmetic> 
+
+#### <Boolean> 
+
+#### <Patterns> 
+
+#### <Brace-Expand> Brace Expansion
+
+##### <BUILTIN-COMMANDS> Builtin Commands
 
 OSH aims to have almost all of the builtins that bash does.  Here they are,
 divided into sections.
 
-### <I/O> I/O Builtins
+#### <I/O> I/O Builtins
 
 These builtins take input and output.  They are often used with redirects[1].
 
 [1] help redirects
 
-## <read> read
+### <read> read
 Usage: read -p 
 
 Or maybe get rid of #END -- it can just go until the next # command.  It's a
 little bit like the spec tests honestly.  Can copy sh_specpy
 
-### <Run-Code> Run Code
+#### <Run-Code> Run Code
 source .   eval
 
-### <Set-Options> Set Shell Options
+#### <Set-Options> Set Shell Options
 set   X shopt
 
-### <Working-Dir> Builtins - Working Dir
+#### <Working-Dir> Builtins - Working Dir
 cd   pwd   pushd   popd   dirs
 
-### <Completion> Completion
+#### <Completion> Completion
 complete   X compgen   X compopt
 
-### <Shell-Process> Shell Process Control
+#### <Shell-Process> Shell Process Control
 exec   exit   X logout 
 umask   X ulimit   X trap   X times
 
-### <Child-Process> Child Process Control
+#### <Child-Process> Child Process Control
 jobs   wait   ampersand &
 X fg   X bg   X disown 
 
-### <Introspection> Builtins That Introspect
+#### <Introspection> Builtins That Introspect
 
-## <help> help
+### <help> help
 Usage:
   help <topic>   -- show help on a given topic
   help toc       -- list help topics
@@ -128,47 +215,36 @@ Usage:
 
 View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
 
-## <hash> hash
+### <hash> hash
 
-## <caller> caller
+### <caller> caller
 
-## <type> type
+### <type> type
 
-### <External> Builtins That Are Like External Commands
+#### <External> Builtins That Are Like External Commands
 
 External: bash has builtins that replace these external commands, but OSH
 doesn't)
 
-## <getopt> getopt
+### <getopt> getopt
 
 use /usr/bin/getopt
 
-## <kill> kill
+### <kill> kill
 
 bash accepts job control syntax
 
-## <enable> enable
+### <enable> enable
 
 Bash has this, but OSH won't implement it.
 
-#### <SHELL-OPTIONS> Shell Options
+##### <SHELL-OPTIONS> Shell Options
 
 
-And there is stuff in the middle for HTML only?
+#### <Parsing> Parsing Options
 
-#case
+#### <Execution> Execution Options
 
-case: case WORD in [PATTERN [| PATTERN]...) COMMANDS ;;]... esac
-    Execute commands based on pattern matching.
-
-    Selectively execute COMMANDS based upon WORD matching PATTERN.  The
-    `|' is used to separate multiple patterns.
-
-    Exit Status:
-    Returns the status of the last command executed.
- 
-Examples:
-
-    case
+#### <OSH-Options> Options Only in OSH
 
 

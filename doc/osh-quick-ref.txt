@@ -1,27 +1,4 @@
 
-- TODO
-  - Get rid of this doc
-  - Add one set of ### to the headings.
-
-##### COMMAND LANGUAGE
-####
-###
-
-And then comments are like this
-
-## This is an idea.
-
-## Format of this file
-## 
-## Lines that begin with two or more # signs are special.
-##
-## 2: comment that is omitted
-## 3, 4, 5: three levels of sections.
-##
-## These are turned into <h2> <h3> <h4> tags in HTML, with <a> anchors.
-## In help text.
-
-
 Idea:
 
 This is a short, dense, and slightly opinionated overview of OSH, a
@@ -33,22 +10,6 @@ Maybe there will never be a proper manual?
 
 - Flat namespace:  #let  #pipe  etc.
 - SINGLE FILE.  Must be short enough for a single file.
-
-
-osh_quick_ref.py -> 
-
-- Turn into HTML with hyperlinks.  I think it's not even Markdown or what?
-
-  http://oilshell.org/doc/v0.0.0/osh-quick-ref.html
-
-- Turn into text for including in the binary
-  _build/help/
-    osh-usage.txt  : This is also osh --help, and man page.
-    toc.txt
-    pipe.txt
-    simple-command.txt
-
-    So you have random access?
 
 - Turn the [osh-usage] into a man page.  Just refer to in-shell help and online
   manual in the man page.
@@ -63,7 +24,6 @@ Bottom line:
   writing a single text file that serves as all.
 
 NOTE: Also do this for oil, wok, etc.
-
 
 Other generated things:
   index of all #tags

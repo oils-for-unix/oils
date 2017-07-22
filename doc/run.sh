@@ -87,6 +87,9 @@ osh-quick-ref() {
       .level2 {
         color: #555;
       }
+      h1,h2,h3,h4 {
+        color: darkcyan;
+      }
     </style>
   </head>
   <body>
@@ -165,30 +168,5 @@ update-src-versions() {
   _sed-ext "s/Version [0-9]+.[0-9]+.[0-9]+/Version $OIL_VERSION/g" doc/index.md
   _sed-ext "s/oil-[0-9]+.[0-9]+.[0-9]+/oil-$OIL_VERSION/g" INSTALL
 }
-
-
-# TODO: TOC is one doc?  Maybe use Makefile.
-
-# Output:
-#
-# _build/doc/
-#   osh-quick-ref-pages.html
-#   osh-quick-ref-toc.html
-#   osh-quick-ref.html  # concatenated with sed or something?
-#
-# _build/doc/osh-quick-ref/
-#   1.txt
-#   1-1.txt
-#   1-1-1.txt
-#   1-1-2.txt
-#   1.2
-#   2
-#   2.1
-#
-# and then osh/help_topics.py
-#
-# HELP_TOPICS = { 'true': "1.1.1", "false": "1.1.1" }
-#
-# LATER: Fuzzy matching of help topics
 
 "$@"
