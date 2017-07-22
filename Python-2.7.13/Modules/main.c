@@ -52,6 +52,7 @@ static int  orig_argc;
 extern int Py_RISCOSWimpFlag;
 #endif /*RISCOS*/
 
+#ifndef OVM_MAIN
 /* Short usage message (with %s for argv0) */
 static char *usage_line =
 "usage: %s [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
@@ -165,6 +166,7 @@ static void RunStartupFile(PyCompilerFlags *cf)
         }
     }
 }
+#endif  // OVM_MAIN
 
 
 static int RunModule(char *module, int set_argv0)

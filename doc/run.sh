@@ -37,10 +37,6 @@ set -o errexit
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 export OIL_VERSION  # for quick_ref.py
 
-publish() {
-  echo 'Hello from run.sh'
-}
-
 _build-timestamp() {
   echo '<hr/>'
   echo "<i>Generated on $(date)</i>"

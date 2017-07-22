@@ -7,6 +7,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# TODO:
+# - Publish unit tests and spec tests?  (then gold and wild)
+# - Update the doc/ "latest" redirect?
+# - Alpine test log?  (along with build stats?)
+
 _compressed-tarball() {
   local name=${1:-hello}
   local version=${2:-0.0.0}

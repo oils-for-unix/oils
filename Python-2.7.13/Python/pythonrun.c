@@ -1492,15 +1492,15 @@ mod_ty
 PyParser_ASTFromString(const char *s, const char *filename, int start,
                        PyCompilerFlags *flags, PyArena *arena)
 {
+#ifdef OVM_MAIN
+    fprintf(stderr, "PyParser_ASTFromString: OVM has no parser");
+    return NULL;
+#else
     mod_ty mod;
     PyCompilerFlags localflags;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
-#ifdef OVM_MAIN
-    fprintf(stderr, "PyParser_ASTFromString: OVM has no parser");
-    return NULL;
-#else
     node *n = PyParser_ParseStringFlagsFilenameEx(s, filename,
                                     &_PyParser_Grammar, start, &err,
                                     &iflags);
@@ -1526,15 +1526,14 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
                      char *ps2, PyCompilerFlags *flags, int *errcode,
                      PyArena *arena)
 {
-    mod_ty mod;
-    PyCompilerFlags localflags;
-    perrdetail err;
-    int iflags = PARSER_FLAGS(flags);
-
 #ifdef OVM_MAIN
     fprintf(stderr, "PyParser_ASTFromFile: OVM has no parser");
     return NULL;
 #else
+    mod_ty mod;
+    PyCompilerFlags localflags;
+    perrdetail err;
+    int iflags = PARSER_FLAGS(flags);
     node *n = PyParser_ParseFileFlagsEx(fp, filename, &_PyParser_Grammar,
                             start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {

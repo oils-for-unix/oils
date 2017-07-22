@@ -1037,6 +1037,7 @@ error:
     return NULL;
 }
 
+#ifndef OVM_MAIN
 /* Lenient date/time comparison function. The precision of the mtime
    in the archive is lower than the mtime stored in a .pyc: we
    must allow a difference of at most one second. */
@@ -1049,6 +1050,7 @@ eq_mtime(time_t t1, time_t t2)
     /* dostime only stores even seconds, so be lenient */
     return d <= 1;
 }
+#endif
 
 /* Given the contents of a .py[co] file in a buffer, unmarshal the data
    and return the code object. Return None if it the magic word doesn't
