@@ -11,26 +11,32 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # TODO: enforce that there is a release-0.0.0 branch?
 build-and-test() {
-  build/pylibc.sh build
+  rm -r -f _devbuild _build _release
+
+  build/pylibc.sh build  # for libc.so
+  build/doc.sh osh-quick-ref  # for _devbuild/osh_help.py
+
+  test/unit.sh all
 
   build/prepare.sh configure
   build/prepare.sh build-python
-
-  rm -r -f _release
 
   # Could do build/prepare.sh test too?
   make clean
   make
 
-  test/unit.sh all
+  # Make sure
+  test/spec.sh smoke
+
   test/spec.sh all
 
-  # Test the oil tar
+  # Build the oil tar
   $0 oil
 
+  # Test the oil tar
   build/test.sh oil-tar
 
-  # Should we do a clean test?
+  # TODO: Make a clean alpine chroot?
   test/alpine.sh copy-tar oil
   test/alpine.sh test-tar oil
 }
