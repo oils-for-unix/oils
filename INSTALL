@@ -21,11 +21,14 @@ Either install as /usr/local/bin/osh:
     make             # 30-60 seconds
     sudo ./install
 
-Or install as ~/bin/osh, which doesn't require root access:
+or install as ~/bin/osh:
 
     ./configure --prefix ~
     make
     ./install
+
+The latter doesn't require root access, but it requires ~/bin to be in your
+PATH.
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
 oil-0.0.0 directory.
