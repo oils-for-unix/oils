@@ -75,17 +75,20 @@ _test-tar() {
   local name=${1:-oil}
   local version=${2:-$OIL_VERSION}
 
+  local target=_bin/${name}.ovm
+  #local target=_bin/${name}.ovm-dbg
+
   enter-chroot /bin/sh <<EOF
 set -e
 cd src
 tar --extract -z < $name-$version.tar.gz
 cd $name-$version
 ./configure
-time make _bin/${name}.ovm-dbg
+time make $target
 echo
-echo "*** Running _bin/${name}.ovm-dbg"
+echo "*** Running $target"
 #PYTHONVERBOSE=9 
-_bin/${name}.ovm-dbg --version
+$target --version
 ./install
 echo
 echo "*** Running osh"
