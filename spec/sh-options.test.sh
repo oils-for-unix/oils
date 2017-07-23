@@ -215,6 +215,12 @@ echo three
 # stdout-json: "one\ntwo\nthree\n"
 # status: 0
 
+### errexit with ! and ;
+# AST has extra Sentence nodes; there was a REGRESSION here.
+set -o errexit; echo one; ! true; echo two; ! false; echo three
+# stdout-json: "one\ntwo\nthree\n"
+# status: 0
+
 ### errexit with while/until
 set -o errexit
 while false; do
