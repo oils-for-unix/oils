@@ -36,7 +36,7 @@ def MaybeHighlightSection(line, parts):
   if not m:
     return line
 
-  print >>sys.stderr, m.groups()
+  #print >>sys.stderr, m.groups()
 
   start = m.start(1)
   end = m.end(1)
@@ -229,7 +229,7 @@ class TextOutput:
     with open(path, 'w') as f:
       for line in lines:
         f.write(line)
-    print >>sys.stderr, 'Wrote %s' % path
+    #print >>sys.stderr, 'Wrote %s' % path
 
     for topic in topics:
       self.topic_lookup[topic] = section_name
@@ -255,7 +255,7 @@ def Pages(f, text_out):
         prev_lines = []
 
         level, topic_str, text = m.groups()
-        print >>sys.stderr, m.groups()
+        #print >>sys.stderr, m.groups()
         topics = topic_str.split()
         if not text.strip():
           text = topic_str
@@ -321,6 +321,9 @@ def main(argv):
     with open(py_out_path, 'w') as f:
       f.write('TOPIC_LOOKUP = ')
       f.write(d)
+
+    print >>sys.stderr, 'Wrote %s, %s, and %s' % (
+        html_out, text_dir, py_out_path)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

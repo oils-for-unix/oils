@@ -51,17 +51,16 @@ _build-timestamp() {
 
 # Run with environment variable
 _quick-ref() {
-  doc/quick_ref.py "$@"
+  build/quick_ref.py "$@"
 }
 
 osh-quick-ref() {
   local html_out=_tmp/doc/osh-quick-ref.html
-  local text_dir=_build/osh-quick-ref
+  local text_out_dir=_build/osh-quick-ref
+  local py_out=_devbuild/osh_help.py
 
-  local py_out=_build/osh_help.py
-
-  mkdir -p _tmp/doc $text_dir
-  touch _build/__init__.py  # so osh_help is importable
+  mkdir -p _tmp/doc $text_out_dir _devbuild
+  touch _devbuild/__init__.py  # so osh_help is importable
 
   {
     cat <<EOF
@@ -101,7 +100,7 @@ EOF
     _quick-ref toc doc/osh-quick-ref-toc.txt
 
     # Also generate _build/osh-quick-ref/ dir
-    _quick-ref pages doc/osh-quick-ref-pages.txt $text_dir $py_out
+    _quick-ref pages doc/osh-quick-ref-pages.txt $text_out_dir $py_out
 
     _build-timestamp
     cat <<EOF
@@ -109,8 +108,6 @@ EOF
 </html>
 EOF
   } > $html_out
-
-  echo "Wrote $html_out"
 }
 
 markdown2html() {

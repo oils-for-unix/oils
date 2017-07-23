@@ -11,13 +11,13 @@ set -o pipefail
 set -o errexit
 
 build() {
-  mkdir -p _build/pylibc
+  mkdir -p _devbuild/pylibc
   local arch=$(uname -m)
-  build/setup.py build --build-lib _build/pylibc/$arch
+  build/setup.py build --build-lib _devbuild/pylibc/$arch
 
   # Wildcard to match any Python 3 version.
   shopt -s failglob
-  local so=$(echo _build/pylibc/$arch/libc.so)
+  local so=$(echo _devbuild/pylibc/$arch/libc.so)
 
   ln -s -f -v $so libc.so
   file libc.so
@@ -32,7 +32,7 @@ test() {
 
 clean() {
   rm -f --verbose libc.so
-  rm -r -f --verbose _build/pylibc
+  rm -r -f --verbose _devbuild/pylibc
 }
 
 "$@"

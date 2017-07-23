@@ -171,4 +171,12 @@ clean-pyc() {
   find $PY27/Lib -name '*.pyc' | xargs --no-run-if-empty -- rm --verbose
 }
 
+# NOTE: Not deleting cpython-full.  Maybe we should, or we should put it in a
+# diffent directory?
+clean() {
+	rm -r -f _build _release
+	rm -f _bin/oil.* _bin/hello.*
+	clean-pyc
+}
+
 "$@"

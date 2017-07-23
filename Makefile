@@ -72,10 +72,10 @@ ACTIONS_SH := build/actions.sh
 COMPILE_SH := build/compile.sh
 
 # For faster tesing of builds
-default: _bin/oil.ovm-dbg
+#default: _bin/oil.ovm-dbg
 
 # What the end user should build when they type 'make'.
-#default: _bin/oil.ovm
+default: _bin/oil.ovm
 
 # Debug bundles and release tarballs.
 all: \
@@ -84,10 +84,7 @@ all: \
 	_release/hello.tar _release/oil.tar
 
 clean:
-	rm -r -f _build/hello _build/oil
-	rm -f _bin/oil.* _bin/hello.* _release/*.tar \
-		_build/runpy-deps-*.txt _build/c-module-toc.txt
-	$(ACTIONS_SH) clean-pyc
+	$(ACTIONS_SH) clean
 
 .PHONY: default all clean install
 
@@ -173,13 +170,13 @@ _build/oil/main_name.c:
 # - For the tarball, we should ALWAYS include readline.
 #
 # BUG: Running 'make' the first time files because it can't find the '_build'
-# package.  doc/run.sh currently makes _build/__init__.py.
+# package.  build/doc.sh currently makes _build/__init__.py.
 _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
 	  $(ACTIONS_SH) app-deps oil ~/git/oil bin.oil
 
 _build/osh_help.py: doc/osh-quick-ref-pages.txt
-	doc/run.sh osh-quick-ref
+	build/doc.sh osh-quick-ref
 
 # TODO: Need $(OIL_SRCS) here?
 # NOTES:

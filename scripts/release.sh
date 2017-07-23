@@ -7,6 +7,34 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+
+# TODO: enforce that there is a release-0.0.0 branch?
+build-and-test() {
+  build/pylibc.sh build
+
+  build/prepare.sh configure
+  build/prepare.sh build-python
+
+  rm -r -f _release
+
+  # Could do build/prepare.sh test too?
+  make clean
+  make
+
+  test/unit.sh all
+  test/spec.sh all
+
+  # Test the oil tar
+  $0 oil
+
+  build/test.sh oil-tar
+
+  # Should we do a clean test?
+  test/alpine.sh copy-tar oil
+  test/alpine.sh test-tar oil
+}
+
 # TODO:
 # - Publish unit tests and spec tests?  (then gold and wild)
 # - Update the doc/ "latest" redirect?
@@ -32,8 +60,6 @@ _compressed-tarball() {
   time xz -c $in > $out2
   ls -l $out2
 }
-
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 oil() {
   _compressed-tarball oil $OIL_VERSION
