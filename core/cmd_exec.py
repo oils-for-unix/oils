@@ -552,6 +552,8 @@ class Executor(object):
 
   def _Dispatch(self, node, fork_external):
     argv0 = None  # for error message
+    check_errexit = True  # for errexit
+
     if node.tag == command_e.SimpleCommand:
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up loggnig.  For example, 'echo hi
@@ -587,8 +589,9 @@ class Executor(object):
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
-        # SKIP _CheckStatus since this isn't a real node!
-        return self._Execute(node.child)
+        # Don't check_errexit since this isn't a real node!
+        check_errexit = False
+        status = self._Execute(node.child)
       else:
         status = self._RunJobInBackground(node.child)
 
@@ -599,16 +602,13 @@ class Executor(object):
       if node.negated:
         self._PushErrExit()
         try:
-          status = self._RunPipeline(node)
+          status2 = self._RunPipeline(node)
         finally:
           self._PopErrExit()
 
-        # EARLY EXIT: skip _CheckStatus so we don't fail in either case.
-        if status == 0:
-          return 1
-        else:
-          return 0
-
+        # errexit is disabled for !.
+        check_errexit = False
+        status = 1 if status2 == 0 else 0
       else:
         status = self._RunPipeline(node)
 
@@ -825,19 +825,7 @@ class Executor(object):
     else:
       raise AssertionError(node.tag)
 
-    # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
-    # However, any bash construct can appear in a pipeline.  So it's easier
-    # just to put it at the end, instead of execute.
-    #
-    # Possible exceptions:
-    # - function def (however this always exits 0 anyway)
-    # - assignment - its result should be the result of the RHS?
-    #   - e.g. arith sub, command sub?  I don't want arith sub.
-    # - ControlFlow: always raises, it has no status.
-
-    self._CheckStatus(status, node, argv0=argv0)
-    self.mem.last_status = status
-    return status
+    return status, check_errexit
 
   def _Execute(self, node, fork_external=True):
     """
@@ -860,12 +848,12 @@ class Executor(object):
     else:
       redirects = self._EvalRedirects(node)
 
-    check_status = True
+    check_errexit = True
     if redirects is not None:
       assert isinstance(redirects, list), redirects
       if self.fd_state.Push(redirects, self.waiter):
         try:
-          status = self._Dispatch(node, fork_external)
+          status, check_errexit = self._Dispatch(node, fork_external)
         finally:
           self.fd_state.Pop()
         check_status = False
@@ -875,8 +863,19 @@ class Executor(object):
     else:  # Error evaluating redirects
       status = 1
 
-    self.mem.last_status = status  # TODO: This is somewhat duplicated
-    if check_status:
+    self.mem.last_status = status
+
+    # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
+    # However, any bash construct can appear in a pipeline.  So it's easier
+    # just to put it at the end, instead of after every node.
+    #
+    # Possible exceptions:
+    # - function def (however this always exits 0 anyway)
+    # - assignment - its result should be the result of the RHS?
+    #   - e.g. arith sub, command sub?  I don't want arith sub.
+    # - ControlFlow: always raises, it has no status.
+
+    if check_errexit:
       self._CheckStatus(status, node)
     return status
 
