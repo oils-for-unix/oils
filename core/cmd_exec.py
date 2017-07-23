@@ -587,7 +587,8 @@ class Executor(object):
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
-        status = self._Execute(node.child)
+        # SKIP _CheckStatus since this isn't a real node!
+        return self._Execute(node.child)
       else:
         status = self._RunJobInBackground(node.child)
 
@@ -859,6 +860,7 @@ class Executor(object):
     else:
       redirects = self._EvalRedirects(node)
 
+    check_status = True
     if redirects is not None:
       assert isinstance(redirects, list), redirects
       if self.fd_state.Push(redirects, self.waiter):
@@ -866,13 +868,16 @@ class Executor(object):
           status = self._Dispatch(node, fork_external)
         finally:
           self.fd_state.Pop()
+        check_status = False
+        #log('_dispatch returned %d', status)
       else:  # Error applying redirects, e.g. bad file descriptor.
         status = 1
     else:  # Error evaluating redirects
       status = 1
 
-    self._CheckStatus(status, node)
     self.mem.last_status = status  # TODO: This is somewhat duplicated
+    if check_status:
+      self._CheckStatus(status, node)
     return status
 
   def _ExecuteList(self, children):
