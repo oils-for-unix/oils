@@ -79,13 +79,11 @@ publish-doc() {
   local user=$1
   local host=$2
 
-  # TODO: Change this to make
-  rm -rf _tmp/doc
-  doc/run.sh osh-quick-ref
-  doc/run.sh install
-  doc/run.sh index
+  build/doc.sh osh-quick-ref
+  build/doc.sh install
+  build/doc.sh index
   rsync --archive --verbose \
-    _tmp/doc/ "$user@$host:oilshell.org/doc/$OIL_VERSION/"
+    _build/doc/ "$user@$host:oilshell.org/doc/$OIL_VERSION/"
 
   echo "Visit https://www.oilshell.org/doc/$OIL_VERSION/"
 }

@@ -55,11 +55,11 @@ _quick-ref() {
 }
 
 osh-quick-ref() {
-  local html_out=_tmp/doc/osh-quick-ref.html
+  local html_out=_build/doc/osh-quick-ref.html
   local text_out_dir=_build/osh-quick-ref
   local py_out=_devbuild/osh_help.py
 
-  mkdir -p _tmp/doc $text_out_dir _devbuild
+  mkdir -p _build/doc $text_out_dir _devbuild
   touch _devbuild/__init__.py  # so osh_help is importable
 
   {
@@ -87,7 +87,7 @@ osh-quick-ref() {
         color: #555;
       }
       h1,h2,h3,h4 {
-        color: darkcyan;
+      /* color: darkcyan; */
       }
     </style>
   </head>
@@ -114,7 +114,7 @@ markdown2html() {
   local src=$1
   local out=$2
   local monospace=${3:-}
-  mkdir -p _tmp/doc
+  mkdir -p _build/doc
 
   { cat <<EOF
 <!DOCTYPE html>
@@ -148,12 +148,12 @@ EOF
 readonly MONOSPACE='font-family: monospace;'
 
 install() {
-  markdown2html INSTALL _tmp/doc/INSTALL.html "$MONOSPACE"
+  markdown2html INSTALL _build/doc/INSTALL.html "$MONOSPACE"
 }
 
 index() {
   # Not monospace
-  markdown2html doc/index.md _tmp/doc/index.html ''
+  markdown2html doc/index.md _build/doc/index.html ''
 }
 
 # I want to ship the INSTALL file literally, so just mutate things
