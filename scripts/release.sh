@@ -90,9 +90,9 @@ publish-doc() {
   build/doc.sh install
   build/doc.sh index
   rsync --archive --verbose \
-    _build/doc/ "$user@$host:oilshell.org/doc/$OIL_VERSION/"
+    _build/doc/ "$user@$host:oilshell.org/release/$OIL_VERSION/doc/"
 
-  echo "Visit https://www.oilshell.org/doc/$OIL_VERSION/"
+  echo "Visit https://www.oilshell.org/release/$OIL_VERSION/doc/"
 }
 
 publish-release() {
