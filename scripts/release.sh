@@ -12,6 +12,7 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 # TODO: enforce that there is a release-0.0.0 branch?
 build-and-test() {
   rm -r -f _devbuild _build _release
+  rm -f _bin/oil.*
 
   build/pylibc.sh build  # for libc.so
   build/doc.sh osh-quick-ref  # for _devbuild/osh_help.py
