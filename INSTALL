@@ -17,8 +17,8 @@ If you haven't already done so, extract the tarball:
 
 Either install as /usr/local/bin/osh:
 
-    ./configure    
-    make
+    ./configure      # completes very quickly
+    make             # 30-60 seconds
     sudo ./install
 
 Or install as ~/bin/osh, which doesn't require root access:
@@ -29,6 +29,18 @@ Or install as ~/bin/osh, which doesn't require root access:
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
 oil-0.0.0 directory.
+
+Smoke Test
+----------
+
+OSH behaves like a POSIX shell:
+
+    $ osh -c 'echo hi'
+    hi
+
+This parses and prints a syntax tree for the 'configure' script.
+
+    osh -n configure
 
 System Requirements
 -------------------
