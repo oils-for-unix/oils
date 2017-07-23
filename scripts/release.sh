@@ -42,10 +42,16 @@ build-and-test() {
   test/alpine.sh test-tar oil
 }
 
+# Release procedure after build-and-test:
+#
+# ./local.sh publish-doc
+# ./local.sh publish-release
+# ./local.sh publish-spec
+
 # TODO:
-# - Publish unit tests and spec tests?  (then gold and wild)
+# - publish-unit
 # - Update the doc/ "latest" redirect?
-# - Alpine test log?  (along with build stats?)
+# - Publish Alpine test log?  (along with build stats?)
 
 _compressed-tarball() {
   local name=${1:-hello}
