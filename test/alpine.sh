@@ -36,7 +36,7 @@ setup-dns() { sudo $0 _setup-dns; }
 
 # 106 MiB as of 7/7/2017.
 add-oil-build-deps() {
-  sudo chroot _chroot/alpine1 /bin/sh <<EOF
+  sudo chroot $CHROOT_DIR /bin/sh <<EOF
 apk update
 apk add bash make gcc musl-dev 
 EOF
