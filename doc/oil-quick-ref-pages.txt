@@ -3,24 +3,6 @@
 ## This file gets converted to HTML and do a directory of .txt files for use in
 ## OSH.
 
-## IDEA
-## This is a short, dense, and slightly opinionated overview of OSH, a
-## bash-compatible shell.
-
-## I'm writing a single text file that serves as all of:
-## - the online HTML manual
-## - in-shell help
-##  - the man page.
-## 
-## Format:
-## - Flat namespace of tags:  #let  #pipe  etc.
-## - SINGLE FILE.  Must be short enough for a single file.
-## 
-## - Some parts can also be turned into man pages, e.g. #osh-usage and #oil-usage.
-## 
-## Idea: Examples from SPEC TESTS.  Hm.  You could have a file#label spec test
-## or something.
-
 ## Format of this file
 ## 
 ## Lines that begin with two or more # signs are special.
