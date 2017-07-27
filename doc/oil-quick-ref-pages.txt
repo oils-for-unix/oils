@@ -70,6 +70,16 @@ first argument, e.g.:
 
 ## Same as oil --help, man oil
 
+### <config> Configuration Files
+
+### <startup> Shell Startup
+
+### <line-editing> Line Editing
+
+### <prompt> Customizing the Prompt String
+
+TODO: Bash uses $PS1, $PS2, etc.  Oil should use functions.
+
 ##### <COMMAND-LANGUAGE> Command Language
 
 The command language is specified by the POSIX shell grammar.

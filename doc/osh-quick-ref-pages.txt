@@ -88,6 +88,14 @@ first argument, e.g.:
 
 ## Same as oil --help, man oil
 
+### <config> Configuration Files
+
+### <startup> Shell Startup
+
+### <line-editing> Line Editing
+
+### <prompt> Customizing the Prompt String
+
 ##### <COMMAND-LANGUAGE> Command Language
 
 The command language is specified by the POSIX shell grammar.

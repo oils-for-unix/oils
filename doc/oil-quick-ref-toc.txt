@@ -6,7 +6,8 @@ Oil Quick Reference
 
 INTRO
   [Overview]      overview   cmd-vs-expr
-  [Usage]         ovm-usage  oil-usage   config   startup   line-editing
+  [Usage]         ovm-usage   oil-usage   config   startup   line-editing
+                  prompt
 
 COMMAND LANGUAGE
   [Commands]      simple-command   semicolon ;
@@ -22,10 +23,11 @@ COMMAND LANGUAGE
                   block-redir      redir > /dev/null then !2 > !1 { ls / }
                   here-doc  << >>
                   desc !0 !1 !2 !stdin !stdout !stderr
+                  feed (pass?)  (for left to right syntax)
   [Other]         expr (   time   coproc
 
 ASSIGNING VARIABLES
-  [Keywords]      var  const   set   unset  export
+  [Keywords]      var  const   set   setglobal   unset  export
                   shift  # for compatibility
   [Operators]     assign        str = 'xyz'
                   X append      str += 'abc'  array += [c d]
@@ -43,15 +45,24 @@ ASSIGNING VARIABLES
 
 OIL EXTENSIONS
   [Functions]     func
-                  types Int  Float  Str  Array<Int>  Array<Float>  Array<Str>
   [Blocks]        cd {}  redir {}  with {}
   [Data Frames]   Literals and Operators
   [Pipelines]     nonlinear graph {}  structured-data |>
   [Modules]       use  (static modules)
-  [Other Tools]   fs-expr -- like find
+  [Other Tools]   
                   parallel -- like xargs
-  [Wok]           begin  end  when  -- like awk
   [Boil]          rule -- like make
+  [Data Types]    Bool  Int  Float  Str (utf-8 or bytes)
+                  Array<Int>  Array<Float>  Array<Str>
+                  List  heterogeneous, for JSON
+                  Dict
+                  Table<...>
+                  Null
+
+PATTERN ACTION EXTENSIONS
+  [Wok]           begin  end  when  -- like awk
+                  fs-expr -- like find, awk over FS metadata
+                  flagparse  -- some kind of block syntax
 
 LIBRARIES
   [Files]         fd = open('foo.txt', 'w')  # replacement for exec {fd}>foo.txt
@@ -78,14 +89,19 @@ WORD LANGUAGE
 OTHER SHELL SUBLANGUAGES
   [Expression]    arith-intro   Contexts where math is allowed
                   num-literals  0xFF  0755  etc.
+                                powers of 2  Ki  Mi  Gi  Ti
+                                powers of 10  K  M G  T  (not confused with true)
                   math          1 + 2*3
                   arith-logical not a and b
                   bitwise       ~a ^ b   This might change
                   arith-assign  set a *= 2
+                  table-expr    t[name == 'foo',age]
+                  list-expr     mylist[1:2]
+                  set-expr      a .| b, a .& b
                   fs-expr       test(:f)
                   comprehension [x for x in range(3) if x % 2 == 0]
-                                {x: 1 for a in range(3)}
-                                Set {x for a in range(3)}
+                                {x: 1 for x in range(3)}
+                                Set {x for x in range(3)}
   [Patterns]      glob          *.py
                   X extglob     @glob[*.py *.sh]
                   regex         (foo ~ [a-z]+)
@@ -107,6 +123,8 @@ X [Word Lookup]   command   builtin
 X [Introspection] help   hash   type   caller
 X [Interactive]   bind   history   fc
 X [External]      test  [ $a = $b ]
+                  printf  kill
+                  env
   [Compat Only]   pushd   popd   dirs
 
 SHELL OPTIONS

@@ -222,6 +222,9 @@ build() {
     || true
   popd
 
+  # TODO: Return proper exit code from this action
+  return 0
+
   # NOTE:
   # -l readline -l termcap -- for Python readline.  Hm it builds without -l
   # termcap.
