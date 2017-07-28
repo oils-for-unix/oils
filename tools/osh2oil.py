@@ -554,7 +554,7 @@ class OilPrinter:
     elif node.tag == command_e.Sentence:
       # 'ls &' to 'fork ls'
       # Keep ; the same.
-      self.DoCommand(node.command, local_symbols)
+      self.DoCommand(node.child, local_symbols)
 
     # This has to be different in the function case.
     elif node.tag == command_e.BraceGroup:
@@ -580,8 +580,7 @@ class OilPrinter:
       self.cursor.SkipUntil(left_spid + 1)
       self.f.write('shell {')
 
-      for c in node.children:
-        self.DoCommand(c, local_symbols)
+      self.DoCommand(node.child, local_symbols)
 
       #self._DebugSpid(right_spid)
       #self._DebugSpid(right_spid + 1)
@@ -636,7 +635,8 @@ class OilPrinter:
       self.cursor.SkipUntil(do_spid + 1)
       self.f.write('{')
 
-      self.DoCommand(node.child, local_symbols)
+      for child in node.children:
+        self.DoCommand(child, local_symbols)
 
       self.cursor.PrintUntil(done_spid)
       self.cursor.SkipUntil(done_spid + 1)
@@ -673,8 +673,9 @@ class OilPrinter:
       pass
 
     elif node.tag == command_e.While:
-      if node.cond.tag == command_e.Sentence:
-        spid = node.cond.terminator.span_id
+      cond = node.cond
+      if len(cond) == 1 and cond[0].tag == command_e.Sentence:
+        spid = cond[0].terminator.span_id
         self.cursor.PrintUntil(spid)
         self.cursor.SkipUntil(spid + 1)
 
@@ -691,8 +692,9 @@ class OilPrinter:
           self.cursor.PrintUntil(elif_spid)
           self.f.write('} ')
 
-        if arm.cond.tag == command_e.Sentence:
-          sentence = arm.cond
+        cond = arm.cond
+        if len(cond) == 1 and cond[0].tag == command_e.Sentence:
+          sentence = cond[0]
           self.DoCommand(sentence, local_symbols)
 
           # Remove semi-colon
@@ -700,13 +702,15 @@ class OilPrinter:
           self.cursor.PrintUntil(semi_spid)
           self.cursor.SkipUntil(semi_spid + 1)
         else:
-          self.DoCommand(arm.cond, local_symbols)
+          for child in arm.cond:
+            self.DoCommand(child, local_symbols)
 
         self.cursor.PrintUntil(then_spid)
         self.cursor.SkipUntil(then_spid + 1)
         self.f.write('{')
 
-        self.DoCommand(arm.action, local_symbols)
+        for child in arm.action:
+          self.DoCommand(child, local_symbols)
 
       # else -> } else {
       if node.else_action:
@@ -715,7 +719,8 @@ class OilPrinter:
         self.cursor.PrintUntil(else_spid + 1)
         self.f.write(' {')
 
-        self.DoCommand(node.else_action, local_symbols)
+        for child in node.else_action:
+          self.DoCommand(child, local_symbols)
 
       # fi -> }
       self.cursor.PrintUntil(fi_spid)
@@ -760,7 +765,8 @@ class OilPrinter:
         self.cursor.SkipUntil(rparen_spid + 1)
         self.f.write(' {')  # surround it with { }
 
-        self.DoCommand(arm.action, local_symbols)
+        for child in arm.action:
+          self.DoCommand(child, local_symbols)
 
         if dsemi_spid != -1:
           self.cursor.PrintUntil(dsemi_spid)

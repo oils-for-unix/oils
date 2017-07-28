@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 osh-to-oil() {
-  bin/osh --no-exec --fix "$@"
+  bin/osh --fix "$@"
 }
 
 fail() {

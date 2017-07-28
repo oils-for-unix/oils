@@ -371,6 +371,8 @@ def OshMain(argv):
     if do_exec:
       tlog('Execute(node)')
       status = ex.Execute(node)
+    else:
+      status = 0
 
   return status
 
