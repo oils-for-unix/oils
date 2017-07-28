@@ -117,18 +117,30 @@ _parse-and-copy-one() {
 EOF
 
     log "*** Failed to parse $rel_path"
-    return 1
+    return 1  # no point in continuing
   fi
   #rm ${output}__err.txt
 
   if ! _osh-html-one $input $output; then  # Convert to HTML AST
     log "*** Failed to convert $input to AST"
-    return 1
+    return 1  # no point in continuing
   fi
 
   if ! _osh-to-oil-one $input $output; then  # Convert to Oil
+    # Append
+    cat >>$dest_base/FAILED.html <<EOF
+    <a href="$rel_path.txt">$rel_path.txt</a>
+    <a href="${rel_path}__osh-to-oil-err.txt">${rel_path}__osh-to-oil-err.txt</a>
+    <a href="$rel_path.oil.txt">$rel_path.oil.txt</a>
+    <br/>
+    <pre>
+    $(cat ${output}__osh-to-oil-err.txt)
+    </pre>
+    <hr/>
+EOF
+
     log "*** Failed to convert $input to Oil"
-    return 1
+    return 1  # failed
   fi
 }
 
