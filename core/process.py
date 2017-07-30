@@ -123,11 +123,14 @@ class FdState:
       self._PushClose(target_fd)
 
     elif r.tag == redirect_e.DescRedirect:
-      if r.op_id == Id.Redir_GreatAnd:  # 1>&
+      if r.op_id == Id.Redir_GreatAnd:  # 1>&2
         if not self._PushDup(r.target_fd, r.fd):
           ok = False
-      elif r.op_id == Id.Redir_LessAnd:
-        raise NotImplementedError
+      elif r.op_id == Id.Redir_LessAnd:  # 0<&5
+        # The only difference between >& and <& is the default file
+        # descriptor argument.
+        if not self._PushDup(r.target_fd, r.fd):
+          ok = False
       else:
         raise NotImplementedError
 

@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+### >&
+echo hi 1>&2
+# stderr: hi
+
+### <&
+# Is there a simpler test case for this?
+echo foo > $TMP/lessamp.txt
+exec 5< $TMP/lessamp.txt
+read line <&5
+echo "[$line]"
+# stdout: [foo]
+
 ### Leading redirect
 echo hello >$TMP/hello.txt  # temporary fix
 <$TMP/hello.txt cat
