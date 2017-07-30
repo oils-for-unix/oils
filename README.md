@@ -3,14 +3,17 @@ Oil
 
 Oil is a new Unix shell, still in its early stages.
 
-This repo contains a prototype in Python of a very complete bash parser, along
-with a runtime that is less complete.
+This repo contains a bash-compatible shell called OSH, written in Python.
 
-The dialect of bash that is recognized is called the **osh language**.  The
-main goal now is to design the **oil language**, which shell scripts can be
-automatically converted to.
+The dialect of bash that is recognized is called the [OSH
+language][osh-language].  The main goal now is to design the [Oil
+language][oil-language], which shell scripts can be automatically converted
+to.
 
-The code is in Python, but we deploy a native executable.  A subset of the
+[osh-language]: http://www.oilshell.org/cross-ref.html#osh-language
+[oil-language]: http://www.oilshell.org/cross-ref.html#oil-language
+
+Oil is written in Python, but we deploy a native executable.  A subset of the
 Python-2.7.13/ directory is packaged with the application.
 
 Try it
@@ -19,7 +22,7 @@ Try it
 Clone the repo, build the Python extension, and run `bin/osh`.  Basic things
 like pipelines, variables, functions, etc. should work.
 
-    bash$ build/pylibc.sh build
+    bash$ build/dev.sh all
     ...
     # Now you should have a libc.so symlink in the repository root directory
 
@@ -27,6 +30,9 @@ like pipelines, variables, functions, etc. should work.
     osh$ name=world
     osh$ echo "hello $name"
     hello world
+
+You can also try the [Oil 0.0
+release](https://www.oilshell.org/blog/2017/07/23.html).
 
 Contributing
 ------------
@@ -58,7 +64,7 @@ Directory Structure
 
     benchmarks/       # Test for speed
     build/            # Build automation
-      pylibc.sh       # For developers to build the Python extension
+      dev.sh          # For development builds, running CPython
     test/             # Test automation
       unit.sh         ## Types of test runner: unit, spec, wild, smoke
       spec.sh
@@ -86,6 +92,7 @@ Directory Structure
     _bin/             # Native executables are put here
     _release/         # Source release tarballs are put here
     _build/           # Temporary build files
+    _devbuild/        # Developer build files not deleted upon 'make clean'
     _tmp/             # Temporary test files and the like
 
     # Dev Docs
