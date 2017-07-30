@@ -11,7 +11,7 @@
 # NOTE: install is part of coreutils and busybox.
 
 die() {
-  echo "FATAL install error: $@" 1<&2
+  echo "FATAL install error: $@" 1>&2
   exit 1
 }
 
