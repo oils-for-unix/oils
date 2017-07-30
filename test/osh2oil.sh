@@ -853,6 +853,38 @@ echo "$HOME/name with spaces"
 OIL
 }
 
+time-block() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+time ls
+OSH
+time ls
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+time while false; do
+  echo $i
+done
+OSH
+time while false {
+  echo $i
+}
+OIL
+
+  return
+  # TODO: The "do" has to be removed
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+time {
+  echo one
+  echo two
+}
+OSH
+time {
+  echo one
+  echo two
+}
+OIL
+}
+
 all-passing() {
   simple-command
   more-env
@@ -883,6 +915,7 @@ all-passing() {
   for-loop
   empty-for-loop
   args-for-loop
+  time-block
 
   # Builtins
   bracket-builtin

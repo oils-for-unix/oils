@@ -16,6 +16,7 @@ from osh import ast_ as ast
 log = util.log
 
 command_e = ast.command_e
+redir_e = ast.redir_e
 word_e = ast.word_e
 word_part_e = ast.word_part_e
 arith_expr_e = ast.arith_expr_e
@@ -237,29 +238,39 @@ class OilPrinter:
     # - How to handle here docs and here docs?
     # - >> becomes >+ or >-, or maybe >>>
 
-    if node.fd == -1:
-      if node.op_id == Id.Redir_Great:
-        self.f.write('>')  # Allow us to replace the operator
-        self.cursor.SkipUntil(node.spids[0] + 1)
-      elif node.op_id == Id.Redir_GreatAnd:
-        self.f.write('> !')  # Replace >& 2 with > !2
-        spid = word.LeftMostSpanForWord(node.arg_word)
-        self.cursor.SkipUntil(spid)
-        #self.DoWordInCommand(node.arg_word)
+    if node.tag == redir_e.Redir:
+      if node.fd == -1:
+        if node.op_id == Id.Redir_Great:
+          self.f.write('>')  # Allow us to replace the operator
+          self.cursor.SkipUntil(node.spids[0] + 1)
+        elif node.op_id == Id.Redir_GreatAnd:
+          self.f.write('> !')  # Replace >& 2 with > !2
+          spid = word.LeftMostSpanForWord(node.arg_word)
+          self.cursor.SkipUntil(spid)
+          #self.DoWordInCommand(node.arg_word)
+
+      else:
+        # NOTE: Spacing like !2>err.txt vs !2 > err.txt can be done in the
+        # formatter.
+        self.f.write('!%d ' % node.fd)
+        if node.op_id == Id.Redir_Great:
+          self.f.write('>')
+          self.cursor.SkipUntil(node.spids[0] + 1)
+        elif node.op_id == Id.Redir_GreatAnd:
+          self.f.write('> !')  # Replace 1>& 2 with !1 > !2
+          spid = word.LeftMostSpanForWord(node.arg_word)
+          self.cursor.SkipUntil(spid)
+
+      self.DoWordInCommand(node.arg_word, local_symbols)
+
+    elif node.tag == redir_e.HereDoc:
+      # TODO:
+      # If do_expansion, then """, else '''
+      # HereDoc LST node needs spids for both opening and closing delimiter.
+      raise NotImplementedError
 
     else:
-      # NOTE: Spacing like !2>err.txt vs !2 > err.txt can be done in the
-      # formatter.
-      self.f.write('!%d ' % node.fd)
-      if node.op_id == Id.Redir_Great:
-        self.f.write('>')
-        self.cursor.SkipUntil(node.spids[0] + 1)
-      elif node.op_id == Id.Redir_GreatAnd:
-        self.f.write('> !')  # Replace 1>& 2 with !1 > !2
-        spid = word.LeftMostSpanForWord(node.arg_word)
-        self.cursor.SkipUntil(spid)
-
-    self.DoWordInCommand(node.arg_word, local_symbols)
+      raise AssertionError(node.tag)
 
     # <<< 'here word'
     # << 'here word'
@@ -790,6 +801,9 @@ class OilPrinter:
 
     elif node.tag == command_e.NoOp:
       pass
+
+    elif node.tag == command_e.TimeBlock:
+      self.DoCommand(node.pipeline, local_symbols)
 
     else:
       log('Command not handled: %s', node)
