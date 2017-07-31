@@ -13,11 +13,11 @@
 # install steps.
 
 log() {
-  echo "$0: $@" 2>&1
+  echo "$0: $@" 1>&2
 }
 
 die() {
-  echo "$0 ERROR: $@" 2>&1
+  echo "$0 ERROR: $@" 1>&2
   exit 1
 }
 
