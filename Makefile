@@ -64,9 +64,11 @@
 # easier to read.
 .SUFFIXES:
 
-# Do this before every build.  There should be a nicer way of handling
-# directories but I don't know it.
-$(shell mkdir -p _bin _release _build/hello _build/oil)
+# Make all directories before every build.  There might be a nicer way of
+# handling directories but I don't know it.
+# NOTE: _devbuild is made by build/dev.sh.  That directory is NOT cleaned with
+# 'make clean'.
+$(shell mkdir -p _bin _release _tmp _build/hello _build/oil)
 
 ACTIONS_SH := build/actions.sh
 COMPILE_SH := build/compile.sh
