@@ -166,6 +166,15 @@ _build/hello/bytecode.zip: $(HELLO_SRCS) \
 _build/oil/main_name.c:
 	$(ACTIONS_SH) main-name bin.oil oil.ovm > $@
 
+# The root of this repo, e.g. ~/git/oil, should be our PYTHONPATH for
+# detecting dependencies.
+# 
+# From this link:
+# https://stackoverflow.com/questions/322936/common-gnu-makefile-directory-path
+# Except we're using 'firstword' instead of 'lastword', because
+# _build/oil/ovm.d is the last one.
+REPO_ROOT := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+
 # Dependencies calculated by importing main.
 # NOTE: The list of files is used both to compile and to make a tarball.
 # - For compiling, we should respect _HAVE_READLINE in detected_config
@@ -175,7 +184,7 @@ _build/oil/main_name.c:
 # package.  build/doc.sh currently makes _build/__init__.py.
 _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
-	  $(ACTIONS_SH) app-deps oil ~/git/oil bin.oil
+	  $(ACTIONS_SH) app-deps oil $(REPO_ROOT) bin.oil
 
 _build/osh_help.py: doc/osh-quick-ref-pages.txt
 	build/doc.sh osh-quick-ref
