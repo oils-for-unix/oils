@@ -267,7 +267,7 @@ class OilPrinter:
       # TODO:
       # If do_expansion, then """, else '''
       # HereDoc LST node needs spids for both opening and closing delimiter.
-      raise NotImplementedError
+      raise NotImplementedError(str(node))
 
     else:
       raise AssertionError(node.tag)
@@ -802,12 +802,16 @@ class OilPrinter:
     elif node.tag == command_e.NoOp:
       pass
 
+    elif node.tag == command_e.ControlFlow:
+      # No change for break / return / continue
+      pass
+
     elif node.tag == command_e.TimeBlock:
       self.DoCommand(node.pipeline, local_symbols)
 
     else:
       log('Command not handled: %s', node)
-      raise AssertionError(node.tag)
+      raise AssertionError(str(node.tag))
 
   def DoWordAsExpr(self, node, local_symbols):
     style = _GetRhsStyle(node)
