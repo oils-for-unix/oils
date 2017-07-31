@@ -267,10 +267,10 @@ class OilPrinter:
       # TODO:
       # If do_expansion, then """, else '''
       # HereDoc LST node needs spids for both opening and closing delimiter.
-      raise NotImplementedError(str(node))
+      raise NotImplementedError(node.__class__.__name__)
 
     else:
-      raise AssertionError(node.tag)
+      raise AssertionError(node.__class__.__name__)
 
     # <<< 'here word'
     # << 'here word'
@@ -810,8 +810,8 @@ class OilPrinter:
       self.DoCommand(node.pipeline, local_symbols)
 
     else:
-      log('Command not handled: %s', node)
-      raise AssertionError(str(node.tag))
+      #log('Command not handled: %s', node)
+      raise AssertionError(node.__class__.__name__)
 
   def DoWordAsExpr(self, node, local_symbols):
     style = _GetRhsStyle(node)
@@ -993,7 +993,7 @@ class OilPrinter:
         #pass
 
     else:
-      raise AssertionError(node.tag)
+      raise AssertionError(node.__class__.__name__)
 
   def DoWordPart(self, node, local_symbols, quoted=False):
     span_id = word._LeftMostSpanForPart(node)
@@ -1173,8 +1173,8 @@ class OilPrinter:
       self.cursor.SkipUntil(right_spid + 1)
 
     else:
-      log('WordPart not handled: %s', node)
-      raise AssertionError(node.tag)
+      #log('WordPart not handled: %s', node)
+      raise AssertionError(node.__class__.__name__)
 
   def DoArithExpr(self, node, local_symbols):
     if node.tag == arith_expr_e.ArithBinary:
@@ -1192,8 +1192,8 @@ class OilPrinter:
       self.DoWordInCommand(node.w, local_symbols)
 
     else:
-      log("Unhandled: %s", node)
-      raise AssertionError(node.tag)
+      #log("Unhandled: %s", node)
+      raise AssertionError(node.__class__.__name__)
 
   def DoBoolExpr(self, node):
     # TODO: switch on node.tag
