@@ -174,8 +174,19 @@ class Executor(object):
 
   def _Source(self, argv):
     # TODO: Use LineReader
-    with open(argv[0]) as f:
-      code_str = f.read()
+    try:
+      path = argv[0]
+    except IndexError:
+      # TODO: Should point to the source statement that failed.
+      util.error('source: missing required argument')
+      return 1
+    try:
+      with open(path) as f:
+        code_str = f.read()
+    except IOError as e:
+      # TODO: Should point to the source statement that failed.
+      util.error('source %r failed: %s', path, os.strerror(e.errno))
+      return 1
     return self._EvalHelper(code_str)
 
   def _Exec(self, argv):

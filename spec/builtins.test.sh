@@ -69,6 +69,19 @@ echo 'LIBVAR=libvar' > $lib
 echo $LIBVAR
 # stdout: libvar
 
+### Source nonexistent
+source /nonexistent/path
+echo status=$?
+# stdout: status=1
+# OK dash stdout: status=127
+
+### Source with no arguments
+source
+echo status=$?
+# stdout: status=1
+# OK bash stdout: status=2
+# OK dash stdout: status=127
+
 ### Exit builtin
 exit 3
 # status: 3
