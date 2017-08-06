@@ -45,8 +45,8 @@ def InitExecutor():
   exec_opts = state.ExecOpts()
   pool = alloc.Pool()
   arena = pool.NewArena()
-  return cmd_exec.Executor(mem, status_lines, funcs, completion, comp_funcs, exec_opts,
-                           parse_lib.MakeParserForExecutor, arena)
+  return cmd_exec.Executor(mem, status_lines, funcs, completion, comp_funcs,
+                           exec_opts, arena)
 
 
 def InitEvaluator():

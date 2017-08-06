@@ -36,6 +36,11 @@ class TokenTest(unittest.TestCase):
     print("Number of lex states: %d" % len(LEXER_DEF))
     print("Number of token dispatches: %d" % total)
 
+  def testLineId(self):
+    # TODO: Test that the lexer gives line_ids when passed an arena.
+    # This might be more relevant if we start deallocating memroy.
+    pass
+
 
 if __name__ == '__main__':
   unittest.main()

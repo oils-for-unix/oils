@@ -39,6 +39,7 @@
 module osh
 {
   -- A portion of a line, used for error messages.
+  -- TODO: Need arena_id, for different files
   line_span = (int line_id, int col, int length)
 
   -- A primitive token.  NOTE: val is redundant with 'loc' for now.  If we

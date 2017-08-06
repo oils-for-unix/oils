@@ -102,10 +102,11 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, w_parser, lexer, line_reader):
+  def __init__(self, w_parser, lexer, line_reader, arena=None):
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer  # for fast lookahead to (, for function defs
     self.line_reader = line_reader  # for here docs
+    self.arena = arena
 
     self.Reset()
 
@@ -234,10 +235,11 @@ class CommandParser(object):
         # TODO: Move this import
         from osh import parse_lib
         # TODO: Thread arena.  need self.arena
-        w_parser = parse_lib.MakeWordParserForHereDoc(lines)
+        w_parser = parse_lib.MakeWordParserForHereDoc(lines, self.arena)
         word = w_parser.ReadHereDocBody()
         if not word:
-          self.AddErrorContext('Error reading here doc body: %s', w_parser.Error())
+          self.AddErrorContext(
+              'Error reading here doc body: %s', w_parser.Error())
           return False
         h.body = word
         h.was_filled = True

@@ -27,6 +27,7 @@ arith_expr_e = ast.arith_expr_e
 def _InitWordParserWithArena(s):
   pool = alloc.Pool()
   arena = pool.NewArena()
+  arena.PushSource('word_parse_test.py')
   line_reader, lexer = parse_lib.InitLexer(s, arena=arena)
   w_parser = WordParser(lexer, line_reader)
   return arena, w_parser

@@ -6,6 +6,28 @@
 # Run with bash/dash/mksh/zsh.
 
 #
+# PARSE ERRORS
+#
+
+source_bad_syntax() {
+  cat >_tmp/bad-syntax.sh <<EOF
+if foo; echo ls; fi
+EOF
+  . _tmp/bad-syntax.sh
+}
+
+# NOTE:
+# - bash correctly reports line 25 (24 would be better)
+# - mksh: no line number
+# - zsh: line 2 of eval, which doesn't really help.
+# - dash: ditto, line 2 of eval
+eval_bad_syntax() {
+  local code='if foo; echo ls; fi'
+  eval "echo --
+        $code"
+}
+
+#
 # COMMAND ERRORS
 #
 
@@ -13,6 +35,26 @@ no_such_command() {
   set -o errexit
   ZZZZZ
 
+  echo 'SHOULD NOT GET HERE'
+}
+
+no_such_command_commandsub() {
+  set -o errexit
+  echo $(ZZZZZ)
+  echo 'SHOULD NOT GET HERE'
+}
+
+no_such_command_heredoc() {
+  set -o errexit
+
+  # Note: bash gives the line of the beginning of the here doc!  Not the actual
+  # line.
+  # TODO: osh doesn't give any psition info.
+  cat <<EOF
+one
+$(ZZZZZ)
+three
+EOF
   echo 'SHOULD NOT GET HERE'
 }
 
@@ -33,7 +75,7 @@ pipefail() {
   echo 'SHOULD NOT GET HERE'
 }
 
-pipefail-func() {
+pipefail_func() {
   set -o errexit -o pipefail
   f() {
     cat
@@ -48,7 +90,7 @@ pipefail-func() {
 
 # TODO: point to {.  It's the same sas a subshell so you don't know exactly
 # which command failed.
-pipefail-group() {
+pipefail_group() {
   set -o errexit -o pipefail
   echo hi | { cat; sh -c 'exit 42'; } | wc
 
@@ -56,7 +98,7 @@ pipefail-group() {
 }
 
 # TODO: point to (
-pipefail-subshell() {
+pipefail_subshell() {
   set -o errexit -o pipefail
   echo hi | (cat; sh -c 'exit 42') | wc
 
@@ -64,7 +106,7 @@ pipefail-subshell() {
 }
 
 # TODO: point to 'while'
-pipefail-while() {
+pipefail_while() {
   set -o errexit -o pipefail
   seq 3 | while true; do
     read line
@@ -78,7 +120,7 @@ pipefail-while() {
 }
 
 # Multiple errors from multiple processes
-pipefail-multiple() {
+pipefail_multiple() {
   set -o errexit -o pipefail
   { echo 'four'; sh -c 'exit 4'; } |
   { echo 'five'; sh -c 'exit 5'; } |
@@ -195,8 +237,9 @@ all() {
   _run_test control_flow 
 
   for t in \
-    no_such_command failed_command \
-    pipefail pipefail-group pipefail-subshell pipefail-func pipefail-while \
+    no_such_command no_such_command_commandsub no_such_command_heredoc \
+    failed_command \
+    pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
     nonexistent nounset \
     nounset_arith divzero divzero_var \
     string_to_int_arith string_to_hex string_to_octal \

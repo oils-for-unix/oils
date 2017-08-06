@@ -8,6 +8,9 @@
 """
 reader.py - Read lines of input.
 """
+
+import cStringIO
+
 from core import util
 
 
@@ -18,6 +21,9 @@ class _Reader(object):
 
   def GetLine(self):
     line = self._GetLine()
+    if line is None:
+      return -1, None
+
     if self.arena:
       line_id = self.arena.AddLine(line, self.line_num)
     else:
@@ -55,30 +61,32 @@ class InteractiveLineReader(_Reader):
     # free vector...
 
 
-class StringLineReader(_Reader):
+class FileLineReader(_Reader):
   """For -c and stdin?"""
 
-  def __init__(self, s, arena=None):
+  def __init__(self, f, arena=None):
     """
     Args:
       lines: List of (line_id, line) pairs
     """
     _Reader.__init__(self, arena)
-    self.lines = s.splitlines(True)
-    self.pos = 0
+    self.f = f
 
   def _GetLine(self):
-    if self.pos == len(self.lines):
+    line = self.f.readline()
+    if not line:
       return None
-    line = self.lines[self.pos]
 
     # The last line should be passed to the Lexer with a '\n', even if it
     # didn't have one.
     if not line.endswith('\n'):
       line += '\n'
 
-    self.pos += 1
     return line
+
+
+def StringLineReader(s, arena=None):
+  return FileLineReader(cStringIO.StringIO(s), arena=arena)
 
 
 # C++ ownership notes:
@@ -91,18 +99,20 @@ class StringLineReader(_Reader):
 # internally.
 
 
-class VirtualLineReader(object):
+class VirtualLineReader(_Reader):
   """Used for here docs."""
-  def __init__(self, lines):
+  def __init__(self, lines, arena):
     """
     Args:
       lines: List of (line_id, line) pairs
     """
+    _Reader.__init__(self, arena)
     self.lines = lines
+    self.num_lines = len(lines)
     self.pos = 0
 
   def GetLine(self):
-    if self.pos == len(self.lines):
+    if self.pos == self.num_lines:
       return -1, None
     line_id, line = self.lines[self.pos]
 

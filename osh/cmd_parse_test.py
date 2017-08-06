@@ -25,7 +25,7 @@ command_e = ast.command_e
 def InitCommandParser(code_str):
   pool = Pool()
   arena = pool.NewArena()
-  arena.AddSourcePath('<unit test>')
+  arena.PushSource('<unit test>')
   line_reader, lexer = parse_lib.InitLexer(code_str, arena=arena)
   w_parser = WordParser(lexer, line_reader)
   c_parser = CommandParser(w_parser, lexer, line_reader)

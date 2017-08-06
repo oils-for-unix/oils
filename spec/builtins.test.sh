@@ -62,6 +62,11 @@ pwd
 # status: 0
 # N-I dash/mksh status: 127
 
+### Eval
+eval "a=3"
+echo $a
+# stdout: 3
+
 ### Source
 lib=$TMP/spec-test-lib.sh
 echo 'LIBVAR=libvar' > $lib

@@ -24,6 +24,7 @@ import time
 from core import args
 from core import braces
 from core import expr_eval
+from core import reader
 from core import word_eval
 from core import ui
 from core import util
@@ -35,6 +36,7 @@ from core import runtime
 from core import state
 
 from osh import ast_ as ast
+from osh import parse_lib
 
 import libc  # for fnmatch
 
@@ -87,7 +89,7 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, status_lines, funcs, completion, comp_lookup,
-               exec_opts, make_parser, arena):
+               exec_opts, arena):
     """
     Args:
       mem: Mem instance for storing variables
@@ -95,7 +97,7 @@ class Executor(object):
       funcs: registry of functions (these names are completed)
       completion: completion module, if available
       comp_lookup: completion pattern/action
-      make_parser: Callback for creating a new command parser (eval and source)
+      exec_opts: ExecOpts
       arena: for printing error locations
     """
     self.mem = mem
@@ -107,7 +109,6 @@ class Executor(object):
     self.comp_lookup = comp_lookup
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
-    self.make_parser = make_parser
     self.arena = arena
 
     self.ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
@@ -155,25 +156,31 @@ class Executor(object):
   def _CompGen(self, argv):
     raise NotImplementedError
 
-  def _EvalHelper(self, code_str):
-    c_parser = self.make_parser(code_str)
-    node = c_parser.ParseWholeFile()
-    # NOTE: We could model a parse error as an exception, like Python, so we
-    # get a traceback.  (This won't be applicable for a static module system.)
-    if not node:
-      print('Error parsing code %r' % code_str)
-      return 1
-    status = self._Execute(node)
-    return status
+  def _EvalHelper(self, c_parser, source_name):
+    self.arena.PushSource(source_name)
+    try:
+      node = c_parser.ParseWholeFile()
+      # NOTE: We could model a parse error as an exception, like Python, so we
+      # get a traceback.  (This won't be applicable for a static module system.)
+      if not node:
+        util.error('Parse error in %r:', source_name)
+        err = c_parser.Error()
+        ui.PrintErrorStack(err, self.arena, sys.stderr)
+        return 1
+      status = self._Execute(node)
+      return status
+    finally:
+      self.arena.PopSource()
 
   def _Eval(self, argv):
-    # TODO: in oil, eval shouldn't take multiple args.  For clarity 'eval ls
-    # foo' will say "extra arg".
+    # NOTE: in oil, eval shouldn't take multiple args.  For clarity, 'eval ls
+    # foo' will be an "extra arg" error.
     code_str = ' '.join(argv)
-    return self._EvalHelper(code_str)
+    line_reader = reader.StringLineReader(code_str, self.arena)
+    _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+    return self._EvalHelper(c_parser, '<eval string>')
 
   def _Source(self, argv):
-    # TODO: Use LineReader
     try:
       path = argv[0]
     except IndexError:
@@ -182,12 +189,13 @@ class Executor(object):
       return 1
     try:
       with open(path) as f:
-        code_str = f.read()
+        line_reader = reader.FileLineReader(f, self.arena)
+        _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+        return self._EvalHelper(c_parser, path)
     except IOError as e:
       # TODO: Should point to the source statement that failed.
       util.error('source %r failed: %s', path, os.strerror(e.errno))
       return 1
-    return self._EvalHelper(code_str)
 
   def _Exec(self, argv):
     # Either execute command with redirects, or apply redirects in this shell.

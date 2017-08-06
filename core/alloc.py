@@ -35,9 +35,12 @@ class Arena(object):
     self.spans = []
     self.next_span_id = 0
 
-    self.debug_info = []  # list of (src_path index, physical line number)
+    # List of (src_path index, physical line number).  This is two integers for
+    # every line read.  We could use a clever encoding of this.  (Although the
+    # it's probably more important to compact the ASDL representation.)
+    self.debug_info = []
     self.src_paths = []  # list of source paths
-    self.src_index = -1  # index of current source file
+    self.src_id_stack = []  # stack of src_id integers
 
   def IsComplete(self):
     """Return whether we have a full set of lines -- none of which was cleared.
@@ -45,20 +48,27 @@ class Arena(object):
     Maybe just an assertion error.
     """
 
-  def AddSourcePath(self, src_path):
-    # TODO: Should this be part of the pool?
+  def PushSource(self, src_path):
+    src_id = len(self.src_paths)
     self.src_paths.append(src_path)
-    self.src_index += 1
+    self.src_id_stack.append(src_id)
+
+  def PopSource(self):
+    self.src_id_stack.pop()
 
   def AddLine(self, line, line_num):
     """
+    Args:
+      line: string
+      line_num: physical line number, for printing
+
     TODO: Add an option of whether to save the line?  You can retrieve it on
-    disk in many cases.
+    disk in many cases.  (But not in the stdin, '-c', 'eval' case)
     """
     line_id = self.next_line_id
     self.lines.append(line)
     self.next_line_id += 1
-    self.debug_info.append((self.src_index, line_num))
+    self.debug_info.append((self.src_id_stack[-1], line_num))
     return line_id
 
   def ClearLastLine(self):
@@ -90,11 +100,11 @@ class Arena(object):
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
     assert line_id >= 0
-    src_index, line_num = self.debug_info[line_id]
+    src_id , line_num = self.debug_info[line_id]
     try:
-      path = self.src_paths[src_index]
+      path = self.src_paths[src_id]
     except IndexError:
-      print('INDEX', src_index)
+      print('INDEX', src_id)
       raise
     return path, line_num
 

@@ -63,11 +63,6 @@ EOF
 wc -c _tmp/smoke1.txt
 # stdout: 8 _tmp/smoke1.txt
 
-### Eval
-eval "a=3"
-echo $a
-# stdout: 3
-
 ### "$@" "$*"
 func () {
   argv.py "$@" "$*"

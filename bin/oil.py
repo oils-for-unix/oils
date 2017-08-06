@@ -239,27 +239,26 @@ def OshMain(argv):
   # tokens.py has it.  I think you just make a separate table, with
   # metaprogramming.
   ex = cmd_exec.Executor(
-      mem, status_lines, funcs, completion, comp_lookup, exec_opts,
-      parse_lib.MakeParserForExecutor, arena)
+      mem, status_lines, funcs, completion, comp_lookup, exec_opts, arena)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
   try:
     rc_path = 'oilrc'
+    arena.PushSource(rc_path)
     with open(rc_path) as f:
-      contents = f.read()
-    arena.AddSourcePath(rc_path)
-    #print(repr(contents))
-
-    rc_line_reader = reader.StringLineReader(contents, arena=arena)
-    _, rc_c_parser = parse_lib.MakeParserForTop(rc_line_reader)
-    rc_node = rc_c_parser.ParseWholeFile()
-    if not rc_node:
-      # TODO: Error should return a token, and then the token should have a
-      # arena index, and then look that up in the arena.
-      err = rc_c_parser.Error()
-      ui.PrintErrorStack(err, arena, sys.stderr)
-      return 2  # parse error is code 2
+      rc_line_reader = reader.FileLineReader(f, arena=arena)
+      _, rc_c_parser = parse_lib.MakeParser(rc_line_reader, arena)
+      try:
+        rc_node = rc_c_parser.ParseWholeFile()
+        if not rc_node:
+          # TODO: Error should return a token, and then the token should have a
+          # arena index, and then look that up in the arena.
+          err = rc_c_parser.Error()
+          ui.PrintErrorStack(err, arena, sys.stderr)
+          return 2  # parse error is code 2
+      finally:
+        arena.PopSource()
 
     status = ex.Execute(rc_node)
     #print('oilrc:', status, cflow, file=sys.stderr)
@@ -269,11 +268,11 @@ def OshMain(argv):
       raise
 
   if opts.c is not None:
-    arena.AddSourcePath('<command string>')
+    arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena=arena)
     interactive = False
   elif opts.i:  # force interactive
-    arena.AddSourcePath('<stdin -i>')
+    arena.PushSource('<stdin -i>')
     line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
     interactive = True
   else:
@@ -281,22 +280,29 @@ def OshMain(argv):
       script_name = argv[opt_index]
     except IndexError:
       if sys.stdin.isatty():
-        arena.AddSourcePath('<interactive>')
+        arena.PushSource('<interactive>')
         line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
         interactive = True
       else:
-        arena.AddSourcePath('<stdin>')
-        line_reader = reader.StringLineReader(sys.stdin.read(), arena=arena)
+        arena.PushSource('<stdin>')
+        line_reader = reader.FileLineReader(sys.stdin, arena=arena)
         interactive = False
     else:
-      arena.AddSourcePath(script_name)
-      with open(script_name) as f:
-        line_reader = reader.StringLineReader(f.read(), arena=arena)
+      arena.PushSource(script_name)
+      # TODO: Does this open file descriptor need to be moved beyond 3..9 ?
+      # Yes!  See dash input.c setinputfile.  It calls savefd().
+      # TODO: It also needs to be closed later.
+      try:
+        f = open(script_name)
+      except IOError as e:
+        util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
+        return 1
+      line_reader = reader.FileLineReader(f, arena=arena)
       interactive = False
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
-  w_parser, c_parser = parse_lib.MakeParserForTop(line_reader, arena=arena)
+  w_parser, c_parser = parse_lib.MakeParser(line_reader, arena)
 
   if interactive:
     # NOTE: We're using a different evaluator here.  The completion system can

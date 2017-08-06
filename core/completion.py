@@ -653,14 +653,16 @@ class RootCompleter(object):
 class ReadlineCompleter(object):
   def __init__(self, root_comp, status_out, debug=False):
     self.root_comp = root_comp
-    self.status_out  = status_out 
+    self.status_out = status_out 
     self.debug = debug
 
     self.comp_iter = None  # current completion being processed
 
-  def _GetNextCompletion(self, word, state):
+  def _GetNextCompletion(self, state):
     if state == 0:
-      # TODO: Tokenize it according to our language
+      # TODO: Tokenize it according to our language.  If this is $PS2, we also
+      # need previous lines!  Could make a VirtualLineReader instead of
+      # StringLineReader?
       buf = readline.get_line_buffer()
 
       # Begin: the index of the first char of the 'word' in the line.  Words
@@ -688,12 +690,14 @@ class ReadlineCompleter(object):
 
     return next_completion
 
-  def __call__(self, word, state):
+  def __call__(self, unused_word, state):
     """Return a single match."""
-    # The readline library swallows exceptions.  We have to display them
-    # ourselves.
+    # NOTE: The readline library tokenizes words.  We bypass that and use
+    # get_line_buffer().  So we get 'for x in l' instead of just 'l'.
+
+    #self.status_out.Write(0, 'word %r state %s', unused_word, state)
     try:
-      return self._GetNextCompletion(word, state)
+      return self._GetNextCompletion(state)
     except Exception as e:
       traceback.print_exc()
       self.status_out.Write(0, 'Unhandled exception while completing: %s', e)
