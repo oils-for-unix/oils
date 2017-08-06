@@ -858,6 +858,8 @@ def main(argv):
   env = {
     'TMP': opts.tmp_env,
     'PATH': opts.path_env,
+    # The normal case for ~ and 'cd' is that $HOME is defined.
+    'HOME': os.environ['HOME'],
   }
   stats = RunCases(cases, case_predicate, shell_pairs, env, out)
   out.EndCases(stats)

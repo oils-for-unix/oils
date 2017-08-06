@@ -211,7 +211,7 @@ class Executor(object):
       status = builtin.Shift(argv, self.mem)
 
     elif builtin_id == EBuiltin.CD:
-      status = builtin._Cd(argv, self.mem)
+      status = builtin.Cd(argv, self.mem)
 
     elif builtin_id == EBuiltin.SET:
       status = builtin.Set(argv, self.exec_opts, self.mem)

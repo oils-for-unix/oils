@@ -48,6 +48,11 @@ echo "old: $OLDPWD"
 cd -
 # stdout-json: "old: /\n/\n"
 
+### cd with no arguments
+cd
+test $(pwd) = ~ && echo OK
+# stdout: OK
+
 ### pushd/popd
 set -o errexit
 cd /

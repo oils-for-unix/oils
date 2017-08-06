@@ -401,9 +401,15 @@ def Shift(argv, mem):
   return mem.Shift(n)
 
 
-def _Cd(argv, mem):
+def Cd(argv, mem):
   # TODO: Parse flags, error checking, etc.
-  dest_dir = argv[0]
+  try:
+    dest_dir = argv[0]
+  except IndexError:
+    # NOTE: This is equivalent to 'cd ~', but bash/mksh only seem to respect
+    # $HOME, and not /etc/passwd.  OSH behavior is different but better.
+    dest_dir = util.GetHomeDir()
+
   if dest_dir == '-':
     old = mem.GetVar('OLDPWD', scope.GlobalOnly)
     if old.tag == value_e.Undef:
