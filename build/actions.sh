@@ -60,10 +60,10 @@ app-deps() {
   local prefix=_build/$app_name/app-deps
 
   # I need the right relative path for Oil
-  ln -s -f $PWD/build/app_deps.py ~/git/oil/_tmp
+  ln -s -f $PWD/build/app_deps.py _tmp
 
   PYTHONPATH=$pythonpath \
-    $PREPARE_DIR/python -S ~/git/oil/_tmp/app_deps.py $main_module $prefix
+    $PREPARE_DIR/python -S _tmp/app_deps.py $main_module $prefix
 }
 
 files-manifest() {
