@@ -431,7 +431,12 @@ def Cd(argv, mem):
 
   # Save OLDPWD.
   state.SetGlobalString(mem, 'OLDPWD', os.getcwd())
-  os.chdir(dest_dir)
+  try:
+    os.chdir(dest_dir)
+  except OSError as e:
+    # TODO: Add line number, etc.
+    util.error("cd %r: %s", dest_dir, os.strerror(e.errno))
+    return 1
   state.SetGlobalString(mem, 'PWD', dest_dir)
   return 0
 

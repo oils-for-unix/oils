@@ -55,6 +55,12 @@ cd
 test $(pwd) = "$HOME" && echo OK
 # stdout: OK
 
+### cd to nonexistent dir
+cd /nonexistent/dir
+echo status=$?
+# stdout: status=1
+# OK dash/mksh stdout: status=2
+
 ### pushd/popd
 set -o errexit
 cd /
