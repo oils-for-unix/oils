@@ -12,6 +12,7 @@ set -o errexit
 source build/common.sh
 
 write-release-date() {
+  mkdir -p _build
   date > _build/release-date.txt
 }
 
