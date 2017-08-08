@@ -594,7 +594,7 @@ class CommandParser(object):
         p.spids.append(spid)
         pairs.append(p)
 
-      node = ast.Assignment(Id.Assign_None, pairs)
+      node = ast.Assignment(Id.Assign_None, [], pairs)
       left_spid = word.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node

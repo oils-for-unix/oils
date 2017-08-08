@@ -79,7 +79,7 @@ class CompletionTest(unittest.TestCase):
 
     # Set global COMPREPLY=(f1 f2)
     pairs = [ast.assign_pair(ast.LhsName('COMPREPLY'), w)]
-    body_node = ast.Assignment(Id.Assign_None, pairs)
+    body_node = ast.Assignment(Id.Assign_None, [], pairs)
 
     func_node.body = body_node
 
