@@ -324,8 +324,8 @@ make-tar() {
   local sed_expr="s,^,${app_name}-${version}/,"
 
   tar --create --transform "$sed_expr" --file $out \
-    LICENSE \
-    INSTALL \
+    LICENSE.txt \
+    INSTALL.txt \
     configure \
     install \
     Makefile \

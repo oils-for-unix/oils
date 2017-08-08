@@ -101,8 +101,8 @@ Directory Structure
 
     # End user docs
 
-    LICENSE
-    INSTALL
+    LICENSE.txt
+    INSTALL.txt
 
     # End user build system
 

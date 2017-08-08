@@ -158,7 +158,7 @@ EOF
 readonly MONOSPACE='font-family: monospace;'
 
 install() {
-  markdown2html INSTALL _build/doc/INSTALL.html "$MONOSPACE"
+  markdown2html INSTALL.txt _build/doc/INSTALL.html "$MONOSPACE"
 }
 
 index() {
@@ -173,7 +173,7 @@ _sed-ext() {
 
 update-src-versions() {
   _sed-ext "s/Version [0-9]+.[0-9]+.[0-9]+/Version $OIL_VERSION/g" doc/index.md
-  _sed-ext "s/oil-[0-9]+.[0-9]+.[0-9]+/oil-$OIL_VERSION/g" INSTALL
+  _sed-ext "s/oil-[0-9]+.[0-9]+.[0-9]+/oil-$OIL_VERSION/g" INSTALL.txt
 }
 
 "$@"
