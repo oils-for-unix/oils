@@ -68,3 +68,26 @@ echo "v=$v"
 # OK bash/dash/mksh stdout: v=None
 # OK bash/dash/mksh status: 0
 # status: 2
+
+### local -a
+# nixpkgs setup.sh uses this (issue #26)
+f() {
+  local -a array=(x y z)
+  argv "${array[@]}"
+}
+f
+# stdout: ['x', 'y', 'z']
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+# N-I mksh stdout-json: ""
+# N-I mksh status: 1
+
+### declare -a
+# nixpkgs setup.sh uses this (issue #26)
+declare -a array=(x y z)
+argv "${array[@]}"
+# stdout: ['x', 'y', 'z']
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+# N-I mksh stdout-json: ""
+# N-I mksh status: 1

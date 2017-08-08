@@ -649,6 +649,12 @@ class Executor(object):
       if node.keyword == Id.Assign_Local:
         lookup_mode = scope.LocalOnly
         flags = ()
+      elif node.keyword == Id.Assign_Declare:
+        # declare is like local, except it can also be used outside functions?
+        lookup_mode = scope.LocalOnly
+        # TODO: Respect flags.  -r and -x matter, but -a and -A might be
+        # implicit in the RHS?
+        flags = ()
       elif node.keyword == Id.Assign_Readonly:
         lookup_mode = scope.Dynamic
         flags = (var_flags.ReadOnly,)

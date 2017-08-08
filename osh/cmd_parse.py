@@ -439,13 +439,28 @@ class CommandParser(object):
     return node
 
   def _MakeAssignment(self, assign_kw, suffix_words):
+    flags = []
     bindings = []
-    for i, w in enumerate(suffix_words):
-      if i == 0:
-        continue  # skip over local, export, etc.
 
+    # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
+    n = len(suffix_words)
+    i = 1
+    while i < n:
+      w = suffix_words[i]
+      ok, static_val, quoted = word.StaticEval(w)
+      if not ok or quoted:
+        break  # can't statically evaluate
+
+      if static_val.startswith('-'):
+        flags.append(static_val)
+      else:
+        break  # not a flag, rest are args
+      i += 1
+
+    # Now parse bindings or variable names
+    while i < n:
+      w = suffix_words[i]
       left_spid = word.LeftMostSpanForWord(w)
-
       kv = word.LooksLikeAssignment(w)
       if kv:
         k, v = kv
@@ -462,19 +477,20 @@ class CommandParser(object):
         # Parse this differently then?
         # dynamic-export?
         # It sets global variables.
-
-        ok, value, quoted = word.StaticEval(w)
+        ok, static_val, quoted = word.StaticEval(w)
         if not ok or quoted:
-          self.AddErrorContext(
-              'Variable names must be constant strings, got %s', w, word=w)
-          return None
-        pair = (value, None, left_spid)  # No value is equivalent to ''
-        m = VAR_NAME_RE.match(value)
+           self.AddErrorContext(
+               'Variable names must be constant strings, got %s', w, word=w)
+           return None
+
+        pair = (static_val, None, left_spid)  # No value is equivalent to ''
+        m = VAR_NAME_RE.match(static_val)
         if not m:
-          self.AddErrorContext('Invalid variable name %r', value, word=w)
+          self.AddErrorContext('Invalid variable name %r', static_val, word=w)
           return None
 
       bindings.append(pair)
+      i += 1
 
     # TODO: Also make with LhsIndexedName
     pairs = []
@@ -483,7 +499,7 @@ class CommandParser(object):
       p.spids.append(spid)
       pairs.append(p)
 
-    node = ast.Assignment(assign_kw, pairs)
+    node = ast.Assignment(assign_kw, flags, pairs)
 
     return node
 

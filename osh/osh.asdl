@@ -158,8 +158,7 @@ module osh
     -- TODO: respect order 
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
-    -- TODO: parse flags -r -x; -a and -A aren't needed
-  | Assignment(id keyword, assign_pair* pairs)
+  | Assignment(id keyword, string* flags, assign_pair* pairs)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
     -- TODO: Should be left and right
