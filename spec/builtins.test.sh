@@ -49,8 +49,10 @@ cd -
 # stdout-json: "old: /\n/\n"
 
 ### cd with no arguments
+HOME=$TMP/home
+mkdir -p $HOME
 cd
-test $(pwd) = ~ && echo OK
+test $(pwd) = "$HOME" && echo OK
 # stdout: OK
 
 ### pushd/popd

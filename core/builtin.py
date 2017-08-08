@@ -406,9 +406,15 @@ def Cd(argv, mem):
   try:
     dest_dir = argv[0]
   except IndexError:
-    # NOTE: This is equivalent to 'cd ~', but bash/mksh only seem to respect
-    # $HOME, and not /etc/passwd.  OSH behavior is different but better.
-    dest_dir = util.GetHomeDir()
+    val = mem.GetVar('HOME')
+    if val.tag == value_e.Undef:
+      util.error("$HOME isn't defined")
+      return 1
+    elif val.tag == value_e.Str:
+      dest_dir = val.s
+    elif val.tag == value_e.StrArray:
+      util.error("$HOME shouldn't be an array.")
+      return 1
 
   if dest_dir == '-':
     old = mem.GetVar('OLDPWD', scope.GlobalOnly)

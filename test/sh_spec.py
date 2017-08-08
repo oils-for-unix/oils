@@ -856,10 +856,8 @@ def main(argv):
   if not opts.path_env:
     raise RuntimeError('--path-env required')
   env = {
-    'TMP': opts.tmp_env,
+    'TMP': os.path.normpath(opts.tmp_env),  # no .. or .
     'PATH': opts.path_env,
-    # The normal case for ~ and 'cd' is that $HOME is defined.
-    'HOME': os.environ['HOME'],
   }
   stats = RunCases(cases, case_predicate, shell_pairs, env, out)
   out.EndCases(stats)
