@@ -61,3 +61,52 @@ s2=$s1
 s1+='d'
 echo $s1 $s2
 # stdout: abcd abc
+
+### Append to nonexistent string
+f() {
+  local a+=a
+  echo $a
+
+  b+=b
+  echo $b
+
+  readonly c+=c
+  echo $c
+
+  export d+=d
+  echo $d
+
+  # Not declared anywhere
+  e[1]+=e
+  echo ${e[1]}
+
+  # Declare is the same, but mksh doesn't support it
+  #declare e+=e
+  #echo $e
+}
+f
+# stdout-json: "a\nb\nc\nd\ne\n"
+
+### Append to nonexistent array
+f() {
+  # NOTE: mksh doesn't like a=() after keyword.  Doesn't allow local arrays!
+  local x+=(a b)
+  argv "${x[@]}"
+
+  y+=(c d)
+  argv "${y[@]}"
+
+  readonly z+=(e f)
+  argv "${z[@]}"
+}
+f
+# stdout-json: "['a', 'b']\n['c', 'd']\n['e', 'f']\n"
+# N-I mksh stdout-json: ""
+# N-I mksh status: 1
+
+### Append used like env prefix
+# This should be an error but it's not.
+A=a
+A+=a printenv.py A
+# BUG bash stdout: aa
+# BUG mksh stdout: a

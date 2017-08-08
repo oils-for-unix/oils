@@ -139,8 +139,8 @@ module osh
   | HereDoc(id op_id, int fd, word? body, int do_expansion,
             string here_end, bool was_filled)
 
-  -- TODO: Add op_id for = vs +=
-  assign_pair = (lhs_expr lhs, word? rhs)
+  assign_op = Equal | PlusEqual
+  assign_pair = (lhs_expr lhs, assign_op op, word? rhs)
   env_pair = (string name, word val)
 
   -- Each arm tests one word against multiple words

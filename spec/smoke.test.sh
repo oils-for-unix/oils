@@ -44,9 +44,9 @@ EOF
 echo "var = $var"
 # stdout: var = value
 
-### Redirect
-expr 3 > _tmp/expr3.txt
-cat _tmp/expr3.txt
+### Redirect external command
+expr 3 > $TMP/expr3.txt
+cat $TMP/expr3.txt
 # stdout: 3
 # stderr-json: ""
 

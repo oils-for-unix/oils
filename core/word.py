@@ -3,12 +3,12 @@ word.py -- Functions for using words as "tokens".
 """
 
 import sys
-
 from osh import ast_ as ast
 from core.id_kind import Id, Kind, LookupKind
 
 word_e = ast.word_e
 word_part_e = ast.word_part_e
+assign_op = ast.assign_op
 
 
 def _LiteralPartId(p):
@@ -371,9 +371,23 @@ def AsArithVarName(w):
 
 
 def LooksLikeAssignment(w):
-  """Tests whether a word looke like FOO=bar.
+  """Tests whether a word looks like FOO=bar.
 
-  If so, return a (string, CompoundWord) pair.  Otherwise, return False.
+  Returns:
+    (string, CompoundWord) if it looks like FOO=bar
+    False                  if it doesn't
+
+  s=1
+  s+=1
+  s[x]=1
+  s[x]+=1
+
+  a=()
+  a+=()
+  a[x]=()
+  a[x]+=()  # Not valid because arrays can't be nested.
+
+  NOTE: a[ and s[ might be parsed separately?
   """
   assert w.tag == word_e.CompoundWord
   if len(w.parts) == 0:
@@ -383,8 +397,14 @@ def LooksLikeAssignment(w):
   if _LiteralPartId(part0) != Id.Lit_VarLike:
     return False
 
-  assert part0.token.val.endswith('=')
-  name = part0.token.val[:-1]
+  s = part0.token.val
+  assert s.endswith('=')
+  if s[-2] == '+':
+    op = assign_op.PlusEqual
+    name = s[:-2]
+  else:
+    op = assign_op.Equal
+    name = s[:-1]
 
   rhs = ast.CompoundWord()
   if len(w.parts) == 1:
@@ -395,7 +415,26 @@ def LooksLikeAssignment(w):
     for p in w.parts[1:]:
       rhs.parts.append(p)
 
-  return name, rhs
+  return name, op, rhs
+
+
+# TODO:
+# - local/declare should use this.
+# - Doesn't work with 'readonly' or 'export'
+# - global is parsed at the top level with LhsIndexedLike.
+def LooksLikeLhsIndex(s):
+  """Tests if a STRING looks like a[x + 1]=b
+
+  # After EvalStatic, do another around of lexing at runtime.
+  # Use osh/lex.py.
+
+  Returns:
+    (string, arith_expr) if it looks like a[x + 1]=b
+    LhsIndexedName?
+
+    False                  if it doesn't
+  """
+  # PROBLEM: What arena tokens to use?
 
 
 def KeywordToken(w):

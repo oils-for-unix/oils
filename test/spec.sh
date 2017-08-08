@@ -201,7 +201,7 @@ word-eval() {
 
 # 'do' -- detected statically as syntax error?  hm.
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 

@@ -73,7 +73,7 @@ echo "v=$v"
 # nixpkgs setup.sh uses this (issue #26)
 f() {
   local -a array=(x y z)
-  argv "${array[@]}"
+  argv.py "${array[@]}"
 }
 f
 # stdout: ['x', 'y', 'z']
@@ -85,9 +85,25 @@ f
 ### declare -a
 # nixpkgs setup.sh uses this (issue #26)
 declare -a array=(x y z)
-argv "${array[@]}"
+argv.py "${array[@]}"
 # stdout: ['x', 'y', 'z']
 # N-I dash stdout-json: ""
 # N-I dash status: 2
 # N-I mksh stdout-json: ""
 # N-I mksh status: 1
+
+### typeset -a a[1]=a a[3]=c
+# declare works the same way in bash, but not mksh.
+# spaces are NOT allowed here.
+typeset -a a[1*1]=x a[1+2]=z
+argv.py "${a[@]}"
+# stdout: ['x', 'z']
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
+### indexed LHS without spaces is allowed
+a[1 * 1]=x a[ 1 + 2 ]=z
+argv.py "${a[@]}"
+# stdout: ['x', 'z']
+# N-I dash stdout-json: ""
+# N-I dash status: 2

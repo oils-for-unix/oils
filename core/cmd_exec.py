@@ -319,10 +319,6 @@ class Executor(object):
   def _EvalLhs(self, node):
     assert isinstance(node, ast.lhs_expr), node
 
-    # NOTE: shares some logic with _EvalLhs in ArithEvaluator.  
-    # TODO: Need to get the old value like _EvalLhs, for +=.  Maybe have a flag
-    # that says whether you need it?
-
     if node.tag == lhs_expr_e.LhsName:  # a=x
       return runtime.LhsName(node.name)
 
@@ -675,7 +671,11 @@ class Executor(object):
           val = runtime.Str('')
 
         lval = self._EvalLhs(pair.lhs)
-        # TODO: Respect readonly
+
+        # TODO: Respect +=
+        # See expr_eval.
+        # old_val, lval = expr_eval.EvalLhs(mem, exec_opts, arith_eval)
+
         #log('ASSIGNING %s -> %s', lval, val)
         self.mem.SetVar(lval, val, flags, lookup_mode)
 
