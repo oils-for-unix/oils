@@ -636,7 +636,7 @@ class CommandParser(object):
       if prefix_bindings:  # FOO=bar local spam=eggs not allowed
         # Use the location of the first value.  TODO: Use the whole word before
         # splitting.
-        _, v0, _ = prefix_bindings[0]
+        _, _, v0, _ = prefix_bindings[0]
         self.AddErrorContext(
             'Invalid prefix bindings in control flow: %s', prefix_bindings,
             word=v0)

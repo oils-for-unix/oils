@@ -110,7 +110,7 @@ echo $i
 
 ### while in pipe with subshell
 i=0
-find . -maxdepth 1 -name INSTALL -o -name LICENSE | ( while read path; do
+find . -maxdepth 1 -name INSTALL.txt -o -name LICENSE.txt | ( while read path; do
   i=$((i+1))
   #echo $i
 done
