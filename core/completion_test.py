@@ -23,6 +23,8 @@ from core.id_kind import Id
 from osh import ast_ as ast
 from osh import parse_lib
 
+assign_op = ast.assign_op
+
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
 
@@ -78,7 +80,7 @@ class CompletionTest(unittest.TestCase):
     w.parts.append(a)
 
     # Set global COMPREPLY=(f1 f2)
-    pairs = [ast.assign_pair(ast.LhsName('COMPREPLY'), w)]
+    pairs = [ast.assign_pair(ast.LhsName('COMPREPLY'), assign_op.Equal, w)]
     body_node = ast.Assignment(Id.Assign_None, [], pairs)
 
     func_node.body = body_node

@@ -445,10 +445,8 @@ class CommandParser(object):
     return node
 
   def _MakeAssignment(self, assign_kw, suffix_words):
-    flags = []
-    bindings = []
-
     # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
+    flags = []
     n = len(suffix_words)
     i = 1
     while i < n:
@@ -464,6 +462,7 @@ class CommandParser(object):
       i += 1
 
     # Now parse bindings or variable names
+    assignments = []
     while i < n:
       w = suffix_words[i]
       left_spid = word.LeftMostSpanForWord(w)
@@ -473,9 +472,9 @@ class CommandParser(object):
         t = word.TildeDetect(v)
         if t:
           # t is an unevaluated word with TildeSubPart
-          pair = (k, op, t, left_spid)
+          a = (k, op, t, left_spid)
         else:
-          pair = (k, op, v, left_spid)  # v is unevaluated word
+          a = (k, op, v, left_spid)  # v is unevaluated word
       else:
         # In aboriginal in variables/sources: export_if_blank does export "$1".
         # We should allow that.
@@ -489,18 +488,19 @@ class CommandParser(object):
                'Variable names must be constant strings, got %s', w, word=w)
            return None
 
-        pair = (static_val, None, left_spid)  # No value is equivalent to ''
+        # No value is equivalent to ''
         m = VAR_NAME_RE.match(static_val)
         if not m:
           self.AddErrorContext('Invalid variable name %r', static_val, word=w)
           return None
+        a = (static_val, assign_op.Equal, None, left_spid)
 
-      bindings.append(pair)
+      assignments.append(a)
       i += 1
 
     # TODO: Also make with LhsIndexedName
     pairs = []
-    for lhs, op, rhs, spid in bindings:
+    for lhs, op, rhs, spid in assignments:
       p = ast.assign_pair(ast.LhsName(lhs), op, rhs)
       p.spids.append(spid)
       pairs.append(p)
