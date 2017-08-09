@@ -119,7 +119,9 @@ def _ValToArith(val, word=None):
   ['1', 2, 3, None, None, '4', None]
   Then length counts the entries that are not None.
   """
-  assert isinstance(val, runtime.value), val
+  assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+  if val.tag == value_e.Undef:
+    return 0
   if val.tag == value_e.Str:
     return _StringToInteger(val.s, word=word)
   if val.tag == value_e.StrArray:
@@ -147,15 +149,6 @@ class _ExprEvaluator:
         warn(e.UserErrorString())
     return i
 
-  def _UndefZeroOrError(self):
-    if self.exec_opts.strict_arith:
-      e_die("Undefined variable")  # TODO: better context
-    return 0
-
-  # TODO: Remove this
-  def Eval(self, node):
-    return self._Eval(node)
-
 
 class ArithEvaluator(_ExprEvaluator):
 
@@ -170,27 +163,22 @@ class ArithEvaluator(_ExprEvaluator):
         warn(e.UserErrorString())
     return i
 
-  def _VarLookup(self, name):
+  def _Lookup(self, name):
     val = self.mem.GetVar(name)
     # By default, undefined variables are the ZERO value.  TODO: Respect
     # nounset and raise an exception.
-    if val.tag == value_e.Undef:
-      if self.exec_opts.nounset:
-        e_die('Undefined variable %r', name)  # TODO: need token
-      else:
-        return 0
+    if val.tag == value_e.Undef and self.exec_opts.nounset:
+      e_die('Undefined variable %r', name)  # TODO: need token
+    return val
 
-    # TODO: It could be an array too!
-    return self._ValToArithOrError(val)
-
-  def _EvalLhs(self, node):
+  def _EvalLhsToValue(self, node):
     """Evaluate the operand for a++ a[0]++ as an R-value.
 
     Args:
       node: osh_ast.lhs_expr
 
     Returns:
-      int, runtime.lvalue
+      runtime.value, runtime.lvalue
     """
     #log('lhs_expr NODE %s', node)
     assert isinstance(node, ast.lhs_expr), node
@@ -199,65 +187,74 @@ class ArithEvaluator(_ExprEvaluator):
       # a=(1 2)
       # (( a++ ))
       lval = runtime.LhsName(node.name)
-      return self._VarLookup(node.name), lval
+      val = self._Lookup(node.name)
 
-    if node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
+    elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
       # See tdop.IsIndexable for valid values:
       # - ArithVarRef (not LhsName): a[1]
       # - FuncCall: f(x), 1
       # - ArithBinary LBracket: f[1][1] -- no semantics for this?
 
-      # TODO: if we get Undef, we should make an empty array, if not
-      # 'strict-arith'
-      index = self._Eval(node.index)
+      index = self.Eval(node.index)
       lval = runtime.LhsIndexedName(node.name, index)
 
       val = self.mem.GetVar(node.name)
       if val.tag == value_e.Str:
         e_die("String %r can't be assigned to", node.name)
 
-      if val.tag == value_e.Undef:
-        if self.exec_opts.strict_arith:
-          # TODO: need token
-          e_die('Undefined array %r', node.name)
-        # Construct a new array with the index set.
-        a = [None] * (index + 1)
-        v = 0
-        a[index] = v
-        return v, lval
+      elif val.tag == value_e.Undef:
+        # It would make more sense for 'nounset' to control this, but bash
+        # doesn't work that way.
+        #if self.exec_opts.strict_arith:
+        #  e_die('Undefined array %r', node.name)  # TODO: error location
+        val = runtime.Str('')
 
-      if val.tag == value_e.StrArray:
+      elif val.tag == value_e.StrArray:
         #log('ARRAY %s -> %s, index %d', node.name, array, index)
         array = val.strs
         # NOTE: Similar logic in RHS Arith_LBracket
         try:
-          v = array[index]
+          item = array[index]
         except IndexError:
-          v = self._UndefZeroOrError()
-        if isinstance(v, str):
-          v = self._StringToIntegerOrError(v)
-        return v, lval
+          val = runtime.Str('')
+        else:
+          assert isinstance(item, str), item
+          val = runtime.Str(item)
+      else:
+        raise AssertionError(val.tag)
+    else:
+      raise AssertionError(node.tag)
 
-    raise AssertionError(node.tag)
+    return val, lval
+
+  def _EvalLhsToArith(self, node):
+    """
+    Returns:
+      int or list of strings, runtime.lvalue
+    """
+    val, lval = self._EvalLhsToValue(node)
+    #log('Evaluating node %r -> %r', node, val)
+    return self._ValToArithOrError(val), lval
 
   def _Store(self, lval, new_int):
     val = runtime.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope.Dynamic)
 
-  def _Eval(self, node):
+  def Eval(self, node):
     """
     Args:
       node: osh_ast.arith_expr
 
     Returns:
-      integer
+      int or list of strings
     """
     # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
     # to handle that as a special case.
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))
-      return self._VarLookup(node.name)
+      val = self._Lookup(node.name)
+      return self._ValToArithOrError(val)
 
     # $(( $x )) or $(( ${x}${y} )), etc.
     if node.tag == arith_expr_e.ArithWord:
@@ -266,7 +263,7 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
-      old_int, lval = self._EvalLhs(node.child)
+      old_int, lval = self._EvalLhsToArith(node.child)
 
       if op_id == Id.Node_PostDPlus:  # post-increment
         new_int = old_int + 1
@@ -293,9 +290,9 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
       op_id = node.op_id
-      old_int, lval = self._EvalLhs(node.left)
+      old_int, lval = self._EvalLhsToArith(node.left)
 
-      rhs = self._Eval(node.right)
+      rhs = self.Eval(node.right)
 
       if op_id == Id.Arith_Equal:
         # NOTE: We don't need old_int for this case.  Evaluating it has no side
@@ -336,26 +333,26 @@ class ArithEvaluator(_ExprEvaluator):
       op_id = node.op_id
 
       if op_id == Id.Node_UnaryPlus:
-        return self._Eval(node.child)
+        return self.Eval(node.child)
       if op_id == Id.Node_UnaryMinus:
-        return -self._Eval(node.child)
+        return -self.Eval(node.child)
 
       if op_id == Id.Arith_Bang:  # logical negation
-        return int(not self._Eval(node.child))
+        return int(not self.Eval(node.child))
       if op_id == Id.Arith_Tilde:  # bitwise complement
-        return ~self._Eval(node.child)
+        return ~self.Eval(node.child)
 
       raise NotImplementedError(op_id)
 
     if node.tag == arith_expr_e.ArithBinary:
       op_id = node.op_id
 
-      lhs = self._Eval(node.left)
+      lhs = self.Eval(node.left)
 
       # Short-circuit evaluation for || and &&.
       if op_id == Id.Arith_DPipe:
         if lhs == 0:
-          rhs = self._Eval(node.right)
+          rhs = self.Eval(node.right)
           return int(rhs != 0)
         else:
           return 1  # true
@@ -363,10 +360,10 @@ class ArithEvaluator(_ExprEvaluator):
         if lhs == 0:
           return 0  # false
         else:
-          rhs = self._Eval(node.right)
+          rhs = self.Eval(node.right)
           return int(rhs != 0)
 
-      rhs = self._Eval(node.right)  # eager evaluation for the rest
+      rhs = self.Eval(node.right)  # eager evaluation for the rest
 
       if op_id == Id.Arith_LBracket:
         if not isinstance(lhs, list):
@@ -381,11 +378,8 @@ class ArithEvaluator(_ExprEvaluator):
           else:
             return 0  # If not fatal, return 0
 
-        if isinstance(item, str):
-          return self._StringToIntegerOrError(item)
-        # We could have an integer if we did 'a=(1 2); (( a[0]=0 ))'
-        assert isinstance(item, int), item
-        return item
+        assert isinstance(item, str), item
+        return self._StringToIntegerOrError(item)
 
       if op_id == Id.Arith_Comma:
         return rhs
@@ -437,11 +431,11 @@ class ArithEvaluator(_ExprEvaluator):
       raise NotImplementedError(op_id)
 
     if node.tag == arith_expr_e.TernaryOp:
-      cond = self._Eval(node.cond)
+      cond = self.Eval(node.cond)
       if cond:  # nonzero
-        return self._Eval(node.true_expr)
+        return self.Eval(node.true_expr)
       else:
-        return self._Eval(node.false_expr)
+        return self.Eval(node.false_expr)
 
     raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
 
@@ -460,7 +454,7 @@ class BoolEvaluator(_ExprEvaluator):
     val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch)
     return val.s
 
-  def _Eval(self, node):
+  def Eval(self, node):
     #print('!!', node.tag)
 
     if node.tag == bool_expr_e.WordTest:
@@ -468,21 +462,21 @@ class BoolEvaluator(_ExprEvaluator):
       return bool(s)
 
     if node.tag == bool_expr_e.LogicalNot:
-      b = self._Eval(node.child)
+      b = self.Eval(node.child)
       return not b
 
     if node.tag == bool_expr_e.LogicalAnd:
       # Short-circuit evaluation
-      if self._Eval(node.left):
-        return self._Eval(node.right)
+      if self.Eval(node.left):
+        return self.Eval(node.right)
       else:
         return False
 
     if node.tag == bool_expr_e.LogicalOr:
-      if self._Eval(node.left):
+      if self.Eval(node.left):
         return True
       else:
-        return self._Eval(node.right)
+        return self.Eval(node.right)
 
     if node.tag == bool_expr_e.BoolUnary:
       op_id = node.op_id

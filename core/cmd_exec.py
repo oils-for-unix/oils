@@ -317,6 +317,8 @@ class Executor(object):
               node.__class__.__name__, status, status=status)
 
   def _EvalLhs(self, node):
+    """
+    """
     assert isinstance(node, ast.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x

@@ -377,7 +377,7 @@ class Mem(object):
         except IndexError:
           # TODO: strict-array won't support this.  For Oil arrays.
           n = len(strs) - lval.index + 1
-          strs.extend([None] * n)  # Fill it in iwith None
+          strs.extend([None] * n)  # Fill it in with None
           strs[lval.index] = value.s
       else:
         # TODO:
