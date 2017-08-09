@@ -101,17 +101,6 @@ def _StringToInteger(s, word=None):
   return integer
 
 
-def _ValToArith(val, word=None):
-  """Convert runtime.value to a Python int or list of strings."""
-  assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
-  if val.tag == value_e.Undef:
-    return 0
-  if val.tag == value_e.Str:
-    return _StringToInteger(val.s, word=word)
-  if val.tag == value_e.StrArray:
-    return val.strs  # Python list of strings
-
-
 class _ExprEvaluator:
   """
   For now the arith and bool evaluators share some logic.
@@ -134,6 +123,83 @@ class _ExprEvaluator:
     return i
 
 
+def _LookupVar(name, mem, exec_opts):
+  val = mem.GetVar(name)
+  # By default, undefined variables are the ZERO value.  TODO: Respect
+  # nounset and raise an exception.
+  if val.tag == value_e.Undef and exec_opts.nounset:
+    e_die('Undefined variable %r', name)  # TODO: need token
+  return val
+
+
+def EvalLhs(node, arith_ev, mem, exec_opts):
+  """Evaluate the operand for a++ a[0]++ as an R-value.
+
+  Args:
+    node: osh_ast.lhs_expr
+
+  Returns:
+    runtime.value, runtime.lvalue
+  """
+  #log('lhs_expr NODE %s', node)
+  assert isinstance(node, ast.lhs_expr), node
+  if node.tag == lhs_expr_e.LhsName:  # a = b
+    # Problem: It can't be an array?  
+    # a=(1 2)
+    # (( a++ ))
+    lval = runtime.LhsName(node.name)
+    val = _LookupVar(node.name, mem, exec_opts)
+
+  elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
+    # See tdop.IsIndexable for valid values:
+    # - ArithVarRef (not LhsName): a[1]
+    # - FuncCall: f(x), 1
+    # - ArithBinary LBracket: f[1][1] -- no semantics for this?
+
+    index = arith_ev.Eval(node.index)
+    lval = runtime.LhsIndexedName(node.name, index)
+
+    val = mem.GetVar(node.name)
+    if val.tag == value_e.Str:
+      e_die("Can't assign to characters of string %r", node.name)
+
+    elif val.tag == value_e.Undef:
+      # It would make more sense for 'nounset' to control this, but bash
+      # doesn't work that way.
+      #if self.exec_opts.strict_arith:
+      #  e_die('Undefined array %r', node.name)  # TODO: error location
+      val = runtime.Str('')
+
+    elif val.tag == value_e.StrArray:
+      #log('ARRAY %s -> %s, index %d', node.name, array, index)
+      array = val.strs
+      # NOTE: Similar logic in RHS Arith_LBracket
+      try:
+        item = array[index]
+      except IndexError:
+        val = runtime.Str('')
+      else:
+        assert isinstance(item, str), item
+        val = runtime.Str(item)
+    else:
+      raise AssertionError(val.tag)
+  else:
+    raise AssertionError(node.tag)
+
+  return val, lval
+
+
+def _ValToArith(val, word=None):
+  """Convert runtime.value to a Python int or list of strings."""
+  assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+  if val.tag == value_e.Undef:
+    return 0
+  if val.tag == value_e.Str:
+    return _StringToInteger(val.s, word=word)
+  if val.tag == value_e.StrArray:
+    return val.strs  # Python list of strings
+
+
 class ArithEvaluator(_ExprEvaluator):
 
   def _ValToArithOrError(self, val, word=None):
@@ -147,76 +213,15 @@ class ArithEvaluator(_ExprEvaluator):
         warn(e.UserErrorString())
     return i
 
-  def _Lookup(self, name):
-    val = self.mem.GetVar(name)
-    # By default, undefined variables are the ZERO value.  TODO: Respect
-    # nounset and raise an exception.
-    if val.tag == value_e.Undef and self.exec_opts.nounset:
-      e_die('Undefined variable %r', name)  # TODO: need token
-    return val
-
-  def _EvalLhsToValue(self, node):
-    """Evaluate the operand for a++ a[0]++ as an R-value.
-
-    Args:
-      node: osh_ast.lhs_expr
-
-    Returns:
-      runtime.value, runtime.lvalue
-    """
-    #log('lhs_expr NODE %s', node)
-    assert isinstance(node, ast.lhs_expr), node
-    if node.tag == lhs_expr_e.LhsName:  # a = b
-      # Problem: It can't be an array?  
-      # a=(1 2)
-      # (( a++ ))
-      lval = runtime.LhsName(node.name)
-      val = self._Lookup(node.name)
-
-    elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
-      # See tdop.IsIndexable for valid values:
-      # - ArithVarRef (not LhsName): a[1]
-      # - FuncCall: f(x), 1
-      # - ArithBinary LBracket: f[1][1] -- no semantics for this?
-
-      index = self.Eval(node.index)
-      lval = runtime.LhsIndexedName(node.name, index)
-
-      val = self.mem.GetVar(node.name)
-      if val.tag == value_e.Str:
-        e_die("String %r can't be assigned to", node.name)
-
-      elif val.tag == value_e.Undef:
-        # It would make more sense for 'nounset' to control this, but bash
-        # doesn't work that way.
-        #if self.exec_opts.strict_arith:
-        #  e_die('Undefined array %r', node.name)  # TODO: error location
-        val = runtime.Str('')
-
-      elif val.tag == value_e.StrArray:
-        #log('ARRAY %s -> %s, index %d', node.name, array, index)
-        array = val.strs
-        # NOTE: Similar logic in RHS Arith_LBracket
-        try:
-          item = array[index]
-        except IndexError:
-          val = runtime.Str('')
-        else:
-          assert isinstance(item, str), item
-          val = runtime.Str(item)
-      else:
-        raise AssertionError(val.tag)
-    else:
-      raise AssertionError(node.tag)
-
-    return val, lval
+  def _LookupVar(self, name):
+    return _LookupVar(name, self.mem, self.exec_opts)
 
   def _EvalLhsToArith(self, node):
     """
     Returns:
       int or list of strings, runtime.lvalue
     """
-    val, lval = self._EvalLhsToValue(node)
+    val, lval = EvalLhs(node, self, self.mem, self.exec_opts)
     #log('Evaluating node %r -> %r', node, val)
     return self._ValToArithOrError(val), lval
 
@@ -237,7 +242,7 @@ class ArithEvaluator(_ExprEvaluator):
     # to handle that as a special case.
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))
-      val = self._Lookup(node.name)
+      val = self._LookupVar(node.name)
       return self._ValToArithOrError(val)
 
     # $(( $x )) or $(( ${x}${y} )), etc.

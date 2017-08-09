@@ -104,9 +104,12 @@ f
 # N-I mksh stdout-json: ""
 # N-I mksh status: 1
 
-### Append used like env prefix
-# This should be an error but it's not.
+### Append used like env prefix is a parse error
+# This should be an error in other shells but it's not.
 A=a
 A+=a printenv.py A
+# status: 2
 # BUG bash stdout: aa
+# BUG bash status: 0
 # BUG mksh stdout: a
+# BUG mksh status: 0

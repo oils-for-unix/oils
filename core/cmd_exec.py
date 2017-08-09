@@ -45,6 +45,7 @@ EBuiltin = builtin.EBuiltin
 command_e = ast.command_e
 redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
+assign_op = ast.assign_op
 
 value_e = runtime.value_e
 scope = runtime.scope
@@ -317,8 +318,7 @@ class Executor(object):
               node.__class__.__name__, status, status=status)
 
   def _EvalLhs(self, node):
-    """
-    """
+    """lhs_expr -> lvalue."""
     assert isinstance(node, ast.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
@@ -656,7 +656,7 @@ class Executor(object):
       elif node.keyword == Id.Assign_Readonly:
         lookup_mode = scope.Dynamic
         flags = (var_flags.ReadOnly,)
-      elif node.keyword == Id.Assign_None:
+      elif node.keyword == Id.Assign_None:  # mutate existing local or global
         lookup_mode = scope.Dynamic
         flags = ()
       else:
@@ -672,11 +672,20 @@ class Executor(object):
           # 'local x' is equivalent to local x=""
           val = runtime.Str('')
 
-        lval = self._EvalLhs(pair.lhs)
-
-        # TODO: Respect +=
-        # See expr_eval.
-        # old_val, lval = expr_eval.EvalLhs(mem, exec_opts, arith_eval)
+        if pair.op == assign_op.PlusEqual:
+          old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
+                                            self.exec_opts)
+          sig = (old_val.tag, val.tag)
+          if sig == (value_e.Str, value_e.Str):
+            val = runtime.Str(old_val.s + val.s)
+          elif sig == (value_e.Str, value_e.StrArray):
+            e_die("Can't append array to string")
+          elif sig == (value_e.StrArray, value_e.Str):
+            e_die("Can't append string to array")
+          elif sig == (value_e.StrArray, value_e.StrArray):
+            val = runtime.StrArray(old_val.strs + val.strs)
+        else:
+          lval = self._EvalLhs(pair.lhs)
 
         #log('ASSIGNING %s -> %s', lval, val)
         self.mem.SetVar(lval, val, flags, lookup_mode)

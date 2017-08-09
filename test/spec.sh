@@ -395,7 +395,8 @@ array-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh $BASH $MKSH "$@" 
+  sh-spec spec/append.test.sh --osh-failures-allowed 4 \
+    $BASH $MKSH $OSH "$@" 
 }
 
 # associative array -- mksh implements different associative arrays.
