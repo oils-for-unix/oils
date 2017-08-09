@@ -75,6 +75,10 @@ class ExecOpts(object):
     self.noexec = False  # -n
     self.debug_completion = False
 
+    # shopt -s / -u
+    self.nullglob = False 
+    self.failglob = False 
+
     # OSH-specific
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
     self.strict_array = False  # ${a} not ${a[0]}, require double quotes, etc.

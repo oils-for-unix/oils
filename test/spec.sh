@@ -271,7 +271,7 @@ func() {
 }
 
 glob() {
-  sh-spec spec/glob.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 

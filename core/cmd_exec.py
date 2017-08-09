@@ -236,6 +236,9 @@ class Executor(object):
     elif builtin_id == EBuiltin.SET:
       status = builtin.Set(argv, self.exec_opts, self.mem)
 
+    elif builtin_id == EBuiltin.SHOPT:
+      status = builtin.Shopt(argv, self.exec_opts)
+
     elif builtin_id == EBuiltin.UNSET:
       status = builtin.Unset(argv, self.mem, self.funcs)
 

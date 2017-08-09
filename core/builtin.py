@@ -51,7 +51,7 @@ log = util.log
 EBuiltin = util.Enum('EBuiltin', """
 NONE READ ECHO SHIFT
 CD PUSHD POPD DIRS
-EXPORT UNSET SET
+EXPORT UNSET SET SHOPT
 TRAP UMASK
 EXIT SOURCE DOT EVAL EXEC WAIT JOBS 
 COMPLETE COMPGEN DEBUG_LINE
@@ -177,6 +177,8 @@ def Resolve(argv0):
 
   elif argv0 == "set":
     return EBuiltin.SET
+  elif argv0 == "shopt":
+    return EBuiltin.SHOPT
   elif argv0 == "unset":
     return EBuiltin.UNSET
   elif argv0 == "complete":
@@ -501,6 +503,7 @@ def AddOptionsToArgSpec(spec):
   spec.Option('n', 'noexec')
   spec.Option('u', 'nounset')
   spec.Option('x', 'xtrace')
+  spec.Option('f', 'noglob')
   spec.Option(None, 'pipefail')
 
   spec.Option(None, 'debug-completion')
@@ -582,6 +585,32 @@ def Set(argv, exec_opts, mem):
     exec_opts.strict_word = True
   elif name == 'strict-scope':
     exec_opts.strict_scope = True
+
+
+SHOPT_SPEC = _Register('shopt')
+SHOPT_SPEC.ShortFlag('-s')  # set
+SHOPT_SPEC.ShortFlag('-u')  # unset
+
+
+def Shopt(argv, exec_opts):
+  arg, i = SHOPT_SPEC.Parse(argv)
+  #log('%s', arg)
+
+  b = None
+  if arg.s:
+    b = True
+  elif arg.u:
+    b = False
+
+  if b is None:
+    raise NotImplementedError  # Display options
+
+  for opt_name in argv[i:]:
+    if opt_name not in ('nullglob', 'failglob'):
+      raise args.UsageError('shopt: Invalid option %r' % opt_name)
+    setattr(exec_opts, opt_name, b)
+
+  return 0
 
 
 UNSET_SPEC = _Register('unset')

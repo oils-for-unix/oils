@@ -8,7 +8,7 @@ import sys
 
 from core import braces
 from core import expr_eval
-from core.glob_ import Globber, GlobEscape
+from core import glob_
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core import runtime
 from core import state
@@ -227,7 +227,7 @@ def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
           any_glob = True
         else:
           # "*.py" should be glob-escaped to \*.py
-          escaped_frags.append(GlobEscape(frag.s))
+          escaped_frags.append(glob_.GlobEscape(frag.s))
 
       arg_str = ''.join(escaped_frags)
       #log('ARG STR %s', arg_str)
@@ -873,7 +873,7 @@ class _WordEvaluator:
     self.exec_opts = exec_opts
 
     self.part_ev = part_ev
-    self.globber = Globber(exec_opts)
+    self.globber = glob_.Globber(exec_opts)
 
   def _EvalParts(self, word, quoted=False):
     """Helper for EvalWordToAny and _EvalWordAndReframe.
@@ -914,7 +914,7 @@ class _WordEvaluator:
           if part_val.do_glob:
             strs.append(part_val.s)
           else:
-            strs.append(GlobEscape(part_val.s))
+            strs.append(glob_.GlobEscape(part_val.s))
         else:
           strs.append(part_val.s)
 
