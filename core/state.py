@@ -375,9 +375,13 @@ class Mem(object):
         try:
           strs[lval.index] = value.s
         except IndexError:
-          # TODO: strict-array won't support this.  For Oil arrays.
+          # Fill it in with None.  It could look like this:
+          # ['1', 2, 3, None, None, '4', None]
+          # Then ${#a[@]} counts the entries that are not None.
+          #
+          # TODO: strict-array for Oil arrays won't auto-fill.
           n = len(strs) - lval.index + 1
-          strs.extend([None] * n)  # Fill it in with None
+          strs.extend([None] * n)
           strs[lval.index] = value.s
       else:
         # TODO:

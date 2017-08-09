@@ -102,23 +102,7 @@ def _StringToInteger(s, word=None):
 
 
 def _ValToArith(val, word=None):
-  """Convert runtime.value to Python int or list.
-
-  NOTE: We could have a runtime.arith_value and get rid of the isinstance()
-  check.  But this means our array indexing is lazy, which I think is fine.
-
-  PROBLEM: array[1000000]=1 could use up a lot of memory.
-
-  But I think that is OK, at least until there's evidence that people want
-  to use arrays that way.
-
-  But what about hash tables?  That should be a separate type.
-
-  Representation could be:
-
-  ['1', 2, 3, None, None, '4', None]
-  Then length counts the entries that are not None.
-  """
+  """Convert runtime.value to a Python int or list of strings."""
   assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
   if val.tag == value_e.Undef:
     return 0
