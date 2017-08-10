@@ -239,7 +239,8 @@ if_() {
 
 # NOTE: osh uses external test!  But that's OK for now.
 test-builtin() {
-  sh-spec spec/test-builtin.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
 }
 
 builtins() {
