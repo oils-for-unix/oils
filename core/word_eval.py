@@ -435,6 +435,12 @@ class _WordPartEvaluator:
         length = len(val.strs)
       return runtime.Str(str(length))
     elif op_id == Id.VSub_Bang:
+      # NOTES:
+      # - Could translate to eval('$' + name) or eval("\$$name")
+      # - ${!array[@]} means something completely different.  TODO: implement that.
+      # - It might make sense to suggest implementing this with associative
+      #   arrays?
+
       # Treat the value of the variable as a variable name.
       return self.mem.GetVar(val.s)
     else:
