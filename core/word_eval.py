@@ -434,8 +434,11 @@ class _WordPartEvaluator:
         # TODO: There can be empty placeholder values in the array.
         length = len(val.strs)
       return runtime.Str(str(length))
+    elif op_id == Id.VSub_Bang:
+      # Treat the value of the variable as a variable name.
+      return self.mem.GetVar(val.s)
     else:
-      raise NotImplementedError(op_id)
+      raise AssertionError(op_id)
 
   def _ApplyOtherSuffixOp(self, val, op):
 
