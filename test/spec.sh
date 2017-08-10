@@ -331,6 +331,12 @@ special-vars() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+# dash/mksh don't implement this.
+introspect() {
+  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
+    $BASH $OSH "$@"
+}
+
 # DONE -- pysh is the most conformant!
 tilde() {
   sh-spec spec/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
