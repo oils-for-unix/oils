@@ -400,6 +400,10 @@ array-compat() {
     $BASH $MKSH $OSH "$@"
 }
 
+type-compat() {
+  sh-spec spec/type-compat.test.sh $BASH "$@"
+}
+
 # += is not POSIX and not in dash.
 append() {
   sh-spec spec/append.test.sh --osh-failures-allowed 4 \
