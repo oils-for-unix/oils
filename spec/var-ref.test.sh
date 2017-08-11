@@ -13,6 +13,16 @@ echo ref ${!a} ${a}
 # BUG mksh stdout: ref a b
 # N-I dash/zsh stdout-json: ""
 
+### var ref with special vars
+myfunc() {
+  local ref=$1
+  echo ${!ref}
+}
+myfunc FUNCNAME
+myfunc '?'  # osh doesn't do this dynamically
+# stdout-json: "myfunc\n0\n"
+# N-I mksh stdout-json: "ref\nref\n"
+
 ### declare -n and ${!a}
 declare -n a
 a=b
@@ -65,4 +75,5 @@ caller
 # mksh appears not to hav elocal arrays!
 # BUG mksh stdout-json: ""
 # BUG mksh status: 1
+
 

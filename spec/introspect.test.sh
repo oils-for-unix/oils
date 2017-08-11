@@ -5,15 +5,12 @@
 
 ### ${FUNCNAME[@]} array
 f() {
-  echo "begin: ${FUNCNAME[@]}"
+  argv.py "${FUNCNAME[@]}"
   g
-  echo "end: ${FUNCNAME[@]}"
+  argv.py "${FUNCNAME[@]}"
 }
 g() {
-  echo "func: ${FUNCNAME[@]}"
+  argv.py "${FUNCNAME[@]}"
 }
 f
-# stdout-json: "begin: f\nfunc: g f\nend: f\n"
-# N-I mksh stdout-json: "begin: \nfunc: \nend: \n"
-# N-I dash stdout-json: ""
-# N-I dash status: 2
+# stdout-json: "['f']\n['g', 'f']\n['f']\n"

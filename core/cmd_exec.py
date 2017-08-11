@@ -983,7 +983,7 @@ class Executor(object):
     if not self.fd_state.Push(def_redirects, self.waiter):
       return 1  # error
 
-    self.mem.Push(argv[1:])
+    self.mem.PushCall(func_node.name, argv[1:])
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).
@@ -996,7 +996,7 @@ class Executor(object):
         # break/continue used in the wrong place
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
     finally:
-      self.mem.Pop()
+      self.mem.PopCall()
       self.fd_state.Pop()
 
     return status

@@ -166,6 +166,10 @@ class Mem(object):
     self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
+    # NOTE: could use deque and appendleft/popleft, but
+    # 1. ASDL type checking of StrArray doesn't allow it (could be fixed)
+    # 2. We don't otherwise depend on the collections module
+    self.func_name_stack = []
 
     self.last_status = 0  # Mutable public variable
     self.last_job_id = -1  # Uninitialized value mutable public variable
@@ -205,12 +209,17 @@ class Mem(object):
   # Stack
   #
 
-  def Push(self, argv):
+  def PushCall(self, func_name, argv):
     """For function calls."""
+    # bash uses this order: top of stack first.
+    self.func_name_stack.append(func_name)
+
     self.var_stack.append({})
     self.argv_stack.append(_ArgFrame(argv))
 
-  def Pop(self):
+  def PopCall(self):
+    self.func_name_stack.pop()
+
     self.var_stack.pop()
     self.argv_stack.pop()
 
@@ -425,6 +434,16 @@ class Mem(object):
   # NOTE: Have a default for convenience
   def GetVar(self, name, lookup_mode=scope.Dynamic):
     assert isinstance(name, str), name
+
+    # Do lookup of system globals before looking at user variables.  Note: we
+    # could optimize this at compile-time like $?.  That would break
+    # ${!varref}, but it's already broken for $?.
+    if name == 'FUNCNAME':
+      # bash wants it in reverse order.  This is a little inefficient but we're
+      # not depending on deque().
+      strs = list(reversed(self.func_name_stack))
+      return runtime.StrArray(strs)
+
     cell, _ = self._FindCellAndNamespace(name, lookup_mode)
 
     if cell:

@@ -457,7 +457,7 @@ extended-glob() {
 
 # ${!var} syntax -- oil should replace this with associative arrays.
 var-ref() {
-  sh-spec spec/var-ref.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/var-ref.test.sh --osh-failures-allowed 5 \
     $BASH $MKSH $OSH "$@"
 }
 

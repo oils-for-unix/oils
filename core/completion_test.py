@@ -83,6 +83,7 @@ class CompletionTest(unittest.TestCase):
     pairs = [ast.assign_pair(ast.LhsName('COMPREPLY'), assign_op.Equal, w)]
     body_node = ast.Assignment(Id.Assign_None, [], pairs)
 
+    func_node.name = 'myfunc'
     func_node.body = body_node
 
     a = completion.ShellFuncAction(ex, func_node)

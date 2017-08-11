@@ -18,16 +18,16 @@ class MemTest(unittest.TestCase):
 
   def testGet(self):
     mem = state.Mem('', [], {})
-    mem.Push(['a', 'b'])
+    mem.PushCall('my-func', ['a', 'b'])
     print(mem.GetVar('HOME'))
-    mem.Pop()
+    mem.PopCall()
     print(mem.GetVar('NONEXISTENT'))
 
   def testSetVarClearFlag(self):
     mem = state.Mem('', [], {})
     print(mem)
 
-    mem.Push(['ONE'])
+    mem.PushCall('my-func', ['ONE'])
     self.assertEqual(2, len(mem.var_stack))  # internal details
 
     # local x=y
@@ -36,7 +36,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual('y', mem.var_stack[-1]['x'].val.s)
 
     # New frame
-    mem.Push(['TWO'])
+    mem.PushCall('my-func', ['TWO'])
     self.assertEqual(3, len(mem.var_stack))  # internal details
 
     # x=y -- test out dynamic scope
@@ -220,10 +220,10 @@ class MemTest(unittest.TestCase):
 
   def testArgv(self):
     mem = state.Mem('', [], {})
-    mem.Push(['a', 'b'])
+    mem.PushCall('my-func', ['a', 'b'])
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
-    mem.Push(['x', 'y'])
+    mem.PushCall('my-func', ['x', 'y'])
     self.assertEqual(['x', 'y'], mem.GetArgv())
 
     status = mem.Shift(1)
@@ -238,7 +238,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual([], mem.GetArgv())
     self.assertEqual(1, status)  # error
 
-    mem.Pop()
+    mem.PopCall()
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
   def testArgv2(self):
