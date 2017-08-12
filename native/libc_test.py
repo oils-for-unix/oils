@@ -29,6 +29,14 @@ class LibcTest(unittest.TestCase):
         ('\\\\', '\\', 1),
         # What is another error?  Invalid escape is OK?
         ('\\', '\\', 0),  # no pattern is valid
+
+        ('[[:alpha:]]', 'a', 1),
+        ('[^[:alpha:]]', 'a', 0),  # negate
+        ('[[:alpha:]]', 'aa', 0),  # exact match fails
+
+        # Combining char class and a literal character
+        ('[[:alpha:]7]', '7', 1),
+        ('[[:alpha:]][[:alpha:]]', 'az', 1),
     ]
 
     for pat, s, expected in cases:

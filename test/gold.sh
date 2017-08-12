@@ -88,6 +88,10 @@ startup-benchmark() {
   _compare benchmarks/startup.sh compare-strace
 }
 
+03-glob() {
+  _compare spec/03-glob.sh
+}
+
 all() {
   version-text
   count
@@ -98,6 +102,7 @@ all() {
   gen-module-init
   wild
   startup-benchmark
+  03-glob
 }
 
 "$@"

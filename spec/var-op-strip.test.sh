@@ -53,3 +53,8 @@ v=aabbccdd
 echo ${v##*b}
 # stdout: ccdd
 
+### Strip char class
+v=abc
+echo ${v%[[:alpha:]]}
+# stdout: ab
+# N-I mksh stdout: abc

@@ -713,6 +713,11 @@ class Executor(object):
       status = self._ExecuteList(node.children)
 
     elif node.tag == command_e.AndOr:
+      # TODO: We have to fix && || precedence.  See case #13 in
+      # dbracket.test.sh.
+
+      check_errexit = False  # only check last condition
+
       #print(node.children)
       left, right = node.children
 
@@ -726,9 +731,11 @@ class Executor(object):
       if node.op_id == Id.Op_DPipe:
         if status != 0:
           status = self._Execute(right)
+          check_errexit = True  # status from last clause
       elif node.op_id == Id.Op_DAmp:
         if status == 0:
           status = self._Execute(right)
+          check_errexit = True  # status from last clause
       else:
         raise AssertionError
 
