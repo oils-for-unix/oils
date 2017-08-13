@@ -6,6 +6,8 @@ import glob
 import re
 import sys
 
+import libc
+
 from core import braces
 from core import expr_eval
 from core import glob_
@@ -437,7 +439,8 @@ class _WordPartEvaluator:
     elif op_id == Id.VSub_Bang:
       # NOTES:
       # - Could translate to eval('$' + name) or eval("\$$name")
-      # - ${!array[@]} means something completely different.  TODO: implement that.
+      # - ${!array[@]} means something completely different.  TODO: implement
+      #   that.
       # - It might make sense to suggest implementing this with associative
       #   arrays?
 
@@ -446,8 +449,53 @@ class _WordPartEvaluator:
     else:
       raise AssertionError(op_id)
 
-  def _ApplyOtherSuffixOp(self, val, op):
+  # TODO: Make a free function
+  def _DoUnarySuffixOp(self, s, op, arg):
+    """Helper for ${x#prefix} and family."""
 
+    # op_id?
+    py_regex = glob_.GlobToPythonRegex(arg)
+    if py_regex is not None:
+      # Extract the group from the regex and return it
+
+      if op.op_id == Id.VOp1_Pound:  # shortest prefix
+        raise NotImplementedError
+      elif op.op_id == Id.VOp1_DPound:  # longest prefix
+        raise NotImplementedError
+
+      elif op.op_id == Id.VOp1_Percent:  # shortest suffix
+        raise NotImplementedError
+      elif op.op_id == Id.VOp1_DPercent:  # longest suffix
+        raise NotImplementedError
+      else:
+        raise AssertionError(op.op_id)
+
+    else:  # fixed string
+      if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
+        if s.startswith(arg):
+          return s[len(arg):]
+        else:
+          return s
+
+      elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
+        if s.endswith(arg):
+          # Mutate it so we preserve the flags.
+          return s[:-len(arg)]
+        else:
+          return s
+
+      else:
+        raise AssertionError(op.op_id)
+
+  # TODO: Make a free function
+  def _PatSub(self, s, op, pat, replace_str):
+    """Helper for ${x/pat/replace}."""
+    #log('PAT %r REPLACE %r', pat, replace_str)
+    ere = glob_.GlobToExtendedRegex(pat)
+    # This can't fail?  ere must be valid?
+    return libc.regex_replace(ere, replace_str, s, op.do_all)
+
+  def _ApplyUnarySuffixOp(self, val, op):
     # NOTES:
     # - These are VECTORIZED on arrays
     #   - I want to allow this with my shell dialect: @{files|slice 1
@@ -475,94 +523,25 @@ class _WordPartEvaluator:
     assert val.tag != value_e.Undef
 
     op_kind = LookupKind(op.op_id)
-
     new_val = None
 
+    # TODO: Vectorization should be factored out of all the branches.
     if op_kind == Kind.VOp1:
       #log('%s', op)
       arg_val = self.word_ev.EvalWordToString(op.arg_word, do_fnmatch=True)
       assert arg_val.tag == value_e.Str
 
-      looks_like_glob = False
-      if looks_like_glob:
-        if op.op_id == Id.VOp1_Pound:  # shortest prefix
-          raise NotImplementedError
-        elif op.op_id == Id.VOp1_DPound:  # longest prefix
-          raise NotImplementedError
-
-        elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-          raise NotImplementedError
-        elif op.op_id == Id.VOp1_DPercent:  # longest suffix
-          raise NotImplementedError
-        else:
-          raise AssertionError(op.op_id)
-
-      else:
-        op_str = arg_val.s
-
-        # TODO: Factor these out into a common fuction?
-        if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
-          prefix = op_str
-
-          if val.tag == value_e.Str:
-            if val.s.startswith(prefix):
-              # Mutate it so we preserve the flags.
-              new_val = runtime.Str(val.s[len(prefix):])
-            else:
-              #log("Str: %r doesn't end with %r", val.s, suffix)
-              pass
-
-          elif val.tag == value_e.StrArray:
-            new_val = runtime.StrArray()
-            for i, s in enumerate(val.strs):
-              if s.startswith(prefix):
-                # Mutate it so we preserve the flags.
-                new_s = s[len(prefix):]
-                #log('%s -> %s', s, s[:-len(suffix)])
-              else:
-                new_s = s
-                #log("Array: %r doesn't end with %r", s, suffix)
-              new_val.strs.append(new_s)
-
-        elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
-          suffix = op_str
-
-          if val.tag == value_e.Str:
-            if val.s.endswith(suffix):
-              # Mutate it so we preserve the flags.
-              new_val = runtime.Str(val.s[:-len(suffix)])
-            else:
-              #log("Str: %r doesn't end with %r", val.s, suffix)
-              pass
-
-          elif val.tag == value_e.StrArray:
-            new_val = runtime.StrArray()
-            for i, s in enumerate(val.strs):
-              if s.endswith(suffix):
-                # Mutate it so we preserve the flags.
-                new_s = s[:-len(suffix)]
-                #log('%s -> %s', s, s[:-len(suffix)])
-              else:
-                new_s = s
-                #log("Array: %r doesn't end with %r", s, suffix)
-              new_val.strs.append(new_s)
-
-        else:
-          raise AssertionError(op.op_id)
-
-    elif op_kind == Kind.VOp2:
-      if op.op_id == Id.VOp2_Slash:  # PatSub, vectorized
-        raise NotImplementedError
-
-      # Either string slicing or array slicing.  However string slicing has a
-      # unicode problem?  TODO: Test bash out.  We need utf-8 parsing in C++?
-      #
-      # Or maybe have a different operator for byte slice and char slice.
-      elif op.op_id == Id.VOp2_Colon:
-        raise NotImplementedError
+      if val.tag == value_e.Str:
+        s = self._DoUnarySuffixOp(val.s, op, arg_val.s)
+        new_val = runtime.Str(s)
+      else:  # val.tag == value_e.StrArray:
+        strs = []
+        for s in val.strs:
+          strs.append(self._DoUnarySuffixOp(s, op, arg_val.s))
+        new_val = runtime.StrArray(strs)
 
     else:
-      raise NotImplementedError(op)
+      raise AssertionError(op_kind)
 
     if new_val:
       return new_val
@@ -775,12 +754,37 @@ class _WordPartEvaluator:
         else:
           val = self._EmptyStrOrError(val)  # maybe error
           # Other suffix: value -> value
-          val = self._ApplyOtherSuffixOp(val, part.suffix_op)
+          val = self._ApplyUnarySuffixOp(val, part.suffix_op)
 
-      elif op.tag == suffix_op_e.PatSub:
-        raise NotImplementedError(op)
+      elif op.tag == suffix_op_e.PatSub:  # PatSub, vectorized
+        pat_val = self.word_ev.EvalWordToString(op.pat, do_fnmatch=True)
+        assert pat_val.tag == value_e.Str, pat_val
+
+        if op.replace:
+          replace_val = self.word_ev.EvalWordToString(op.replace,
+              do_fnmatch=True)
+          assert replace_val.tag == value_e.Str, replace_val
+          replace_str = replace_val.s
+        else:
+          replace_str = ''
+
+        pat = pat_val.s
+        if val.tag == value_e.Str:
+          s = self._PatSub(val.s, op, pat, replace_str)
+          val = runtime.Str(s)
+        elif val.tag == value_e.StrArray:
+          strs = []
+          for s in val.strs:
+            strs.append(self._PatSub(s, op, pat, replace_str))
+          val = runtime.StrArray(strs)
+
+        else:
+          raise AssertionError(val.tag)
 
       elif op.tag == suffix_op_e.Slice:
+        # Either string slicing or array slicing.  However string slicing has
+        # a unicode problem? 
+        # Or maybe have a different operator for byte slice and char slice.
         raise NotImplementedError(op)
 
     # After applying suffixes, process decay_array here.

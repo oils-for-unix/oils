@@ -53,6 +53,14 @@ echo ${s/?xx/_yy} ${s/%?xx/_yy}
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
+### Replace is longest match
+# If it were shortest, then you would just replace the first <html>
+s='begin <html></html> end'
+echo ${s/<*>/[]}
+# stdout: begin [] end
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+
 ### Replace char class
 s=xx_xx_xx
 echo ${s//[[:alpha:]]/y} ${s//[^[:alpha:]]/-}

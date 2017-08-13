@@ -33,7 +33,7 @@ argv.py ${@%a}
 echo ${undef%suffix}
 # stdout:
 
-### Remove smallest glob suffix
+### Remove shortest glob suffix
 v=aabbccdd
 echo ${v%c*}
 # stdout: aabbc
@@ -43,7 +43,7 @@ v=aabbccdd
 echo ${v%%c*}
 # stdout: aabb
 
-### Remove smallest glob prefix
+### Remove shortest glob prefix
 v=aabbccdd
 echo ${v#*b}
 # stdout: bccdd

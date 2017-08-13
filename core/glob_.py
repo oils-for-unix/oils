@@ -55,6 +55,58 @@ def GlobEscape(s):
   return escaped
 
 
+def GlobToExtendedRegex(g):
+  """Convert a glob to a libc extended regexp.
+
+  For ${s//pat*/__}.
+
+  We need to use regcomp/regex because fnmatch doesn't give you the positions
+  of matches.
+
+  Why not use Python?  To avoid backtracking?  I think we should just Python
+  here.  Because we want Unicode to be consistent too.
+  
+  What other string ops are there?
+
+
+  Returns:
+    A ERE string, or None if it's the pattern is a constant string rather than
+    a glob.
+  """
+  # NOTE: character classes are retained literally, since EREs have the same
+  # char class syntax?
+
+
+def GlobToPythonRegex(g, longest=True):
+  """Convert a glob to a libc extended regexp.
+
+  Args:
+    longest: whether * should be '.*' (greedy) or '.*?' (non-greedy)
+
+  We need Python's engine for greedy and non-greedy matches.  libc doesn't have
+  that.
+
+  For string ops like ${s#'*b'}
+
+  NOTE: character classes aren't supported.
+
+  Returns:
+    A Python regex string, or None if it's the pattern is a constant string
+    rather than a glob.
+  """
+  return None
+  # TODO:
+  # - Iterate through each characater
+  # - Check for escapes
+  # - If it 
+
+  if longest:
+    pass
+  else:
+    pass
+  return '^' + '$'
+
+
 def _GlobUnescape(s):  # used by cmd_exec
   """Remove glob escaping from a string.
   

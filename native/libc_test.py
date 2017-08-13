@@ -53,10 +53,36 @@ class LibcTest(unittest.TestCase):
     print(libc.regex_parse(r'*'))
     print(libc.regex_parse('\\'))
 
-    print(libc.regex_match(r'.*\.py', 'foo.py'))
-    print(libc.regex_match(r'.*\.py', 'abcd'))
-    # error
+
+    cases = [
+        (r'.*\.py', 'foo.py', True),
+        (r'.*\.py', 'abcd', False),
+        # The match is unanchored
+        (r'bc', 'abcd', True),
+        # The match is unanchored
+        (r'.c', 'abcd', True),
+        ]
+
+    for pat, s, expected in cases:
+      actual = libc.regex_match(pat, s)
+      self.assertEqual(expected, actual)
+
+    # Error.
     print(libc.regex_match(r'*', 'abcd'))
+
+
+  def testRegexReplace(self):
+    cases = [
+        (r'.\.py', 'X', 'foo.py', False, 'foX'),
+        (r'^\.py', 'X', 'foo.py', False, 'foo.py'),  # Anchored left
+        (r'foo$', 'X', 'foo.py', False, 'foo.py'),  # Anchored Right
+        (r'o', 'X', 'foo.py', False, 'fXo.py'),  # replace all
+        (r'o', 'X', 'foo.py', True, 'fXX.py'),  # replace all
+        ]
+    return
+    for pat, replace, s, do_all, expected in cases:
+      actual = libc.regex_replace(pat, replace, s, do_all)
+      self.assertEqual(expected, actual)
 
 
 if __name__ == '__main__':
