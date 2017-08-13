@@ -572,9 +572,10 @@ class Executor(object):
 
   def _Dispatch(self, node, fork_external):
     argv0 = None  # for error message
-    check_errexit = True  # for errexit
+    check_errexit = False  # for errexit
 
     if node.tag == command_e.SimpleCommand:
+      check_errexit = True
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up loggnig.  For example, 'echo hi
       # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
@@ -608,14 +609,14 @@ class Executor(object):
         pass
 
     elif node.tag == command_e.Sentence:
+      # Don't check_errexit since this isn't a real node!
       if node.terminator.id == Id.Op_Semi:
-        # Don't check_errexit since this isn't a real node!
-        check_errexit = False
         status = self._Execute(node.child)
       else:
         status = self._RunJobInBackground(node.child)
 
     elif node.tag == command_e.Pipeline:
+      check_errexit = True
       if node.stderr_indices:
         raise NotImplementedError('|&')
 
@@ -633,19 +634,23 @@ class Executor(object):
         status = self._RunPipeline(node)
 
     elif node.tag == command_e.Subshell:
+      check_errexit = True
       # This makes sure we don't waste a process if we'd launch one anyway.
       p = self._MakeProcess(node.child)
       status = p.Run(self.waiter)
 
     elif node.tag == command_e.DBracket:
+      check_errexit = True
       result = self.bool_ev.Eval(node.expr)
       status = 0 if result else 1
 
     elif node.tag == command_e.DParen:
+      check_errexit = True
       i = self.arith_ev.Eval(node.child)
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
+      check_errexit = True
       pairs = []
       if node.keyword == Id.Assign_Local:
         lookup_mode = scope.LocalOnly
@@ -711,12 +716,11 @@ class Executor(object):
     # redirects.  We already took care of that above.
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
       status = self._ExecuteList(node.children)
+      check_errexit = False
 
     elif node.tag == command_e.AndOr:
       # TODO: We have to fix && || precedence.  See case #13 in
       # dbracket.test.sh.
-
-      check_errexit = False  # only check last condition
 
       #print(node.children)
       left, right = node.children
@@ -731,11 +735,11 @@ class Executor(object):
       if node.op_id == Id.Op_DPipe:
         if status != 0:
           status = self._Execute(right)
-          check_errexit = True  # status from last clause
+          check_errexit = True  # only check last condition
       elif node.op_id == Id.Op_DAmp:
         if status == 0:
           status = self._Execute(right)
-          check_errexit = True  # status from last clause
+          check_errexit = True  # only check last condition
       else:
         raise AssertionError
 
@@ -802,6 +806,7 @@ class Executor(object):
 
     elif node.tag == command_e.DoGroup:
       status = self._ExecuteList(node.children)
+      check_errexit = False  # not real statements
 
     elif node.tag == command_e.FuncDef:
       # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
@@ -858,6 +863,7 @@ class Executor(object):
       start_t = time.time()  # calls gettimeofday() under the hood
       start_u = resource.getrusage(resource.RUSAGE_SELF)
       status = self._Execute(node.pipeline)
+
       end_t = time.time()
       end_u = resource.getrusage(resource.RUSAGE_SELF)
 

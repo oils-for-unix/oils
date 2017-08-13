@@ -218,6 +218,26 @@ echo status=$?
 # stdout-json: ""
 # status: 1
 
+### errexit and loop
+set -o errexit
+for x in 1 2 3; do
+  test $x = 2 && echo "hi $x"
+done
+# stdout: hi 2
+# status: 1
+
+### errexit and brace group { }
+set -o errexit
+{ test no = yes && echo hi; }
+echo status=$?
+# stdout: status=1
+
+### errexit and time { }
+set -o errexit
+time false
+echo status=$?
+# status: 1
+
 ### errexit with !
 set -o errexit
 echo one
