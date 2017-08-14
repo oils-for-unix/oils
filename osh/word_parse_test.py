@@ -198,13 +198,13 @@ class WordParserTest(unittest.TestCase):
 
     w = _assertReadWord(self, '${var/%pat/replace}')  # prefix
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_prefix)
+    self.assertTrue(op.do_suffix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
 
     w = _assertReadWord(self, '${var/#pat/replace}')  # suffix
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_suffix)
+    self.assertTrue(op.do_prefix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
 

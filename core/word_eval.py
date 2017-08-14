@@ -268,6 +268,115 @@ def _DecayPartValuesToString(part_vals, join_char):
   return ''.join(out)
 
 
+# TODO:
+# - Unicode support: Convert both pattern, string, and replacement to unicode,
+#   then the result back at the end.
+# - Add location info to errors.  Maybe pass spid pair all the way down.
+#   - Compile time errors for [[:space:]] ?
+
+def _DoUnarySuffixOp(s, op, arg):
+  """Helper for ${x#prefix} and family."""
+
+  pat_re, err = glob_.GlobToPythonRegex(arg)
+  if err:
+    e_die("Can't convert glob to regex: %r", arg)
+
+  if pat_re is None:  # simple/fast path for fixed strings
+    if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
+      if s.startswith(arg):
+        return s[len(arg):]
+      else:
+        return s
+
+    elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
+      if s.endswith(arg):
+        # Mutate it so we preserve the flags.
+        return s[:-len(arg)]
+      else:
+        return s
+
+    else:  # e.g. ^ ^^ , ,,
+      raise AssertionError(op.op_id)
+
+  else:  # glob pattern
+    # Extract the group from the regex and return it
+    if op.op_id == Id.VOp1_Pound:  # shortest prefix
+      # Need non-greedy match
+      pat_re2, err = glob_.GlobToPythonRegex(arg, greedy=False)
+      r = re.compile(pat_re2)
+      m = r.match(s)
+      if m:
+        return s[m.end(0):]
+      else:
+        return s
+
+    elif op.op_id == Id.VOp1_DPound:  # longest prefix
+      r = re.compile(pat_re)
+      m = r.match(s)
+      if m:
+        return s[m.end(0):]
+      else:
+        return s
+
+    elif op.op_id == Id.VOp1_Percent:  # shortest suffix
+      # NOTE: This is different than re.search, which will find the longest suffix.
+      r = re.compile('^(.*)' + pat_re + '$')
+      m = r.match(s)
+      if m:
+        return m.group(1)
+      else:
+        return s
+      
+    elif op.op_id == Id.VOp1_DPercent:  # longest suffix
+      r = re.compile('^(.*?)' + pat_re + '$')  # non-greedy
+      m = r.match(s)
+      if m:
+        return m.group(1)
+      else:
+        return s
+
+    else:
+      raise AssertionError(op.op_id)
+
+
+def _PatSub(s, op, pat, replace_str):
+  """Helper for ${x/pat/replace}."""
+  #log('PAT %r REPLACE %r', pat, replace_str)
+  py_regex, err = glob_.GlobToPythonRegex(pat)
+  if err:
+    e_die("Can't convert glob to regex: %r", pat)
+
+  if py_regex is None:  # Simple/fast path for fixed strings
+    if op.do_all:
+      return s.replace(pat, replace_str)
+    elif op.do_prefix:
+      if s.startswith(pat):
+        n = len(pat)
+        return replace_str + s[n:]
+      else:
+        return s
+    elif op.do_suffix:
+      if s.endswith(pat):
+        n = len(pat)
+        return s[:-n] + replace_str
+      else:
+        return s
+    else:
+      return s.replace(pat, replace_str, 1)  # just the first one
+
+  else:
+    count = 1  # replace first occurrence only
+    if op.do_all:
+      count = 0  # replace all
+    elif op.do_prefix:
+      py_regex = '^' + py_regex
+    elif op.do_suffix:
+      py_regex = py_regex + '$'
+
+    pat_re = re.compile(py_regex)
+    return pat_re.sub(replace_str, s, count)
+
+
 # Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
 
 Effect = util.Enum('Effect', 'SpliceParts Error SpliceAndAssign NoOp'.split())
@@ -449,104 +558,30 @@ class _WordPartEvaluator:
     else:
       raise AssertionError(op_id)
 
-  # TODO: Make a free function
-  def _DoUnarySuffixOp(self, s, op, arg):
-    """Helper for ${x#prefix} and family."""
-
-    # op_id?
-    py_regex = glob_.GlobToPythonRegex(arg)
-    if py_regex is not None:
-      # Extract the group from the regex and return it
-
-      if op.op_id == Id.VOp1_Pound:  # shortest prefix
-        raise NotImplementedError
-      elif op.op_id == Id.VOp1_DPound:  # longest prefix
-        raise NotImplementedError
-
-      elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-        raise NotImplementedError
-      elif op.op_id == Id.VOp1_DPercent:  # longest suffix
-        raise NotImplementedError
-      else:
-        raise AssertionError(op.op_id)
-
-    else:  # fixed string
-      if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
-        if s.startswith(arg):
-          return s[len(arg):]
-        else:
-          return s
-
-      elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
-        if s.endswith(arg):
-          # Mutate it so we preserve the flags.
-          return s[:-len(arg)]
-        else:
-          return s
-
-      else:
-        raise AssertionError(op.op_id)
-
-  # TODO: Make a free function
-  def _PatSub(self, s, op, pat, replace_str):
-    """Helper for ${x/pat/replace}."""
-    #log('PAT %r REPLACE %r', pat, replace_str)
-    ere = glob_.GlobToExtendedRegex(pat)
-    # This can't fail?  ere must be valid?
-    return libc.regex_replace(ere, replace_str, s, op.do_all)
-
   def _ApplyUnarySuffixOp(self, val, op):
-    # NOTES:
-    # - These are VECTORIZED on arrays
-    #   - I want to allow this with my shell dialect: @{files|slice 1
-    #   2|upper} does the same thing to all of them.
-    # - How to do longest and shortest possible match?  bash and mksh both
-    #   call fnmatch() in a loop, with possible short-circuit optimizations.
-    #   - TODO: Write a test program to show quadratic behavior?
-    #   - original AT&T ksh has special glob routines that returned the match
-    #   positions.
-    #   Implementation:
-    #   - Test if it is a LITERAL or a Glob.  Then do a plain string
-    #   operation.
-    #   - If it's a glob, do the quadratic algorithm.
-    #   - NOTE: bash also has an optimization where it extracts the LITERAL
-    #   parts of the string, and does a prematch.  If none of them match,
-    #   then it SKIPs the quadratic algorithm.
-    #   - The real solution is to compile a glob to RE2, but I want to avoid
-    #   that dependency right now... libc regex is good for a bunch of
-    #   things.
-    # - Bash has WIDE CHAR support for this.  With wchar_t.
-    #   - All sorts of functions like xdupmbstowcs
-    #
-    # And then pat_subst() does some special cases.  Geez.
-
     assert val.tag != value_e.Undef
 
     op_kind = LookupKind(op.op_id)
-    new_val = None
 
-    # TODO: Vectorization should be factored out of all the branches.
     if op_kind == Kind.VOp1:
       #log('%s', op)
       arg_val = self.word_ev.EvalWordToString(op.arg_word, do_fnmatch=True)
       assert arg_val.tag == value_e.Str
 
       if val.tag == value_e.Str:
-        s = self._DoUnarySuffixOp(val.s, op, arg_val.s)
+        s = _DoUnarySuffixOp(val.s, op, arg_val.s)
         new_val = runtime.Str(s)
       else:  # val.tag == value_e.StrArray:
+        # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
         strs = []
         for s in val.strs:
-          strs.append(self._DoUnarySuffixOp(s, op, arg_val.s))
+          strs.append(_DoUnarySuffixOp(s, op, arg_val.s))
         new_val = runtime.StrArray(strs)
 
     else:
       raise AssertionError(op_kind)
 
-    if new_val:
-      return new_val
-    else:
-      return val
+    return new_val
 
   def _EvalDoubleQuotedPart(self, part):
     # Example of returning array:
@@ -770,16 +805,16 @@ class _WordPartEvaluator:
 
         pat = pat_val.s
         if val.tag == value_e.Str:
-          s = self._PatSub(val.s, op, pat, replace_str)
+          s = _PatSub(val.s, op, pat, replace_str)
           val = runtime.Str(s)
         elif val.tag == value_e.StrArray:
           strs = []
           for s in val.strs:
-            strs.append(self._PatSub(s, op, pat, replace_str))
+            strs.append(_PatSub(s, op, pat, replace_str))
           val = runtime.StrArray(strs)
 
         else:
-          raise AssertionError(val.tag)
+          raise AssertionError(val.__class__.__name__)
 
       elif op.tag == suffix_op_e.Slice:
         # Either string slicing or array slicing.  However string slicing has

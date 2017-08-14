@@ -197,22 +197,26 @@ class WordParser(object):
         p = ast.LiteralPart(self.cur_token)
         pat.parts.append(p)
 
-    # Check for other modifiers
-    first_part = pat.parts[0]
-    if first_part.tag == word_part_e.LiteralPart:
-      lit_id = first_part.token.id
-      if lit_id == Id.Lit_Slash:
-        do_all = True
-        pat.parts.pop(0)
-      elif lit_id == Id.Lit_Percent:
-        do_prefix = True
-        pat.parts.pop(0)
-      elif lit_id == Id.Lit_Pound:
-        do_suffix = True
-        pat.parts.pop(0)
+    if len(pat.parts) == 0:
+      self._BadToken("Pattern must not be empty: %r", token=self.cur_token)
+      return None
+    else:
+      first_part = pat.parts[0]
+      if first_part.tag == word_part_e.LiteralPart:
+        lit_id = first_part.token.id
+        if lit_id == Id.Lit_Slash:
+          do_all = True
+          pat.parts.pop(0)
+        elif lit_id == Id.Lit_Pound:
+          do_prefix = True
+          pat.parts.pop(0)
+        elif lit_id == Id.Lit_Percent:
+          do_suffix = True
+          pat.parts.pop(0)
 
     #self._Peek()
     if self.token_type == Id.Right_VarSub:
+      # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
       return ast.PatSub(pat, None, do_all, do_prefix, do_suffix)
 
     elif self.token_type == Id.Lit_Slash:

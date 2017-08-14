@@ -53,6 +53,13 @@ echo ${s/?xx/_yy} ${s/%?xx/_yy}
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
+### Replace fixed strings
+s=xx_xx
+echo ${s/xx/yy} ${s//xx/yy} ${s/#xx/yy} ${s/%xx/yy}
+# stdout: yy_xx yy_yy yy_xx xx_yy
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+
 ### Replace is longest match
 # If it were shortest, then you would just replace the first <html>
 s='begin <html></html> end'
@@ -90,6 +97,14 @@ echo status=$?
 # N-I dash stdout-json: ""
 # BUG bash/mksh status: 0
 # BUG bash/mksh stdout-json: "-a/b/c-\nstatus=0\n"
+
+### ${v/a} is the same as ${v/a/}  -- no replacement string
+v='aabb'
+echo ${v/a}
+echo status=$?
+# stdout-json: "abb\nstatus=0\n"
+# N-I dash stdout-json: ""
+# N-I dash status: 2
 
 ### String slice
 foo=abcdefg

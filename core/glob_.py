@@ -3,6 +3,8 @@
 glob_.py
 """
 
+import re
+
 import libc
 
 from core.util import log
@@ -55,56 +57,88 @@ def GlobEscape(s):
   return escaped
 
 
+# We need to handle glob patterns, but fnmatch doesn't give you the positions
+# of matches.  So we convert globs to regexps.
+
+# There are two regex engines we can use.  Each has advantages and
+# disadvantages:
+
+# Python regex:
+# - Supports Greedy vs. Non-greedy (necessary for strip ops, but not patsub)
+# - Doesn't rely on global variables for unicode.  I think libc string
+#   functions use LOCALE?
+
+# ERE:
+# - Linear time algorithm
+# - Save code space
+# - Supports the same character classes as glob.
+
+
 def GlobToExtendedRegex(g):
   """Convert a glob to a libc extended regexp.
-
-  For ${s//pat*/__}.
-
-  We need to use regcomp/regex because fnmatch doesn't give you the positions
-  of matches.
-
-  Why not use Python?  To avoid backtracking?  I think we should just Python
-  here.  Because we want Unicode to be consistent too.
-  
-  What other string ops are there?
-
 
   Returns:
     A ERE string, or None if it's the pattern is a constant string rather than
     a glob.
   """
-  # NOTE: character classes are retained literally, since EREs have the same
-  # char class syntax?
+  # Could be used for ${s//pat*/__}, but NOT # ## % %%.
+  # We'll use Python everywhere for simplicity.
+  raise NotImplementedError
 
 
-def GlobToPythonRegex(g, longest=True):
+def GlobToPythonRegex(s, greedy=True):
   """Convert a glob to a libc extended regexp.
 
   Args:
-    longest: whether * should be '.*' (greedy) or '.*?' (non-greedy)
-
-  We need Python's engine for greedy and non-greedy matches.  libc doesn't have
-  that.
-
-  For string ops like ${s#'*b'}
+    greedy: whether * should be '.*' (greedy) or '.*?' (non-greedy)
 
   NOTE: character classes aren't supported.
 
   Returns:
     A Python regex string, or None if it's the pattern is a constant string
     rather than a glob.
-  """
-  return None
-  # TODO:
-  # - Iterate through each characater
-  # - Check for escapes
-  # - If it 
 
-  if longest:
-    pass
+    regex, err?
+  """
+  star_pat = '.*' if greedy else '.*?'
+
+  is_glob = False
+  err = None
+
+  i = 0
+  n = len(s)
+  out = []
+  while i < n:
+    c = s[i]
+    if c == '\\':  # glob escape like \* or \?
+      i += 1
+      out.append(s[i])
+    elif c == '*':
+      is_glob = True
+      out.append(star_pat)
+    elif c == '?':
+      is_glob = True
+      out.append('.')
+    # TODO: Should we enter a different state and parse these?
+    elif c == '[':
+      err = True  # TODO: better error
+      break
+    elif c == ']':
+      err = True
+    else:
+      # e.g. . -> \.
+      out.append(re.escape(c))
+
+    i += 1
+
+  if err:
+    return None, err
   else:
-    pass
-  return '^' + '$'
+    if is_glob:
+      regex = ''.join(out)
+    else:
+      regex = None
+    return regex, err
 
 
 def _GlobUnescape(s):  # used by cmd_exec

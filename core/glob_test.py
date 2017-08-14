@@ -77,11 +77,34 @@ class GlobEscapeTest(unittest.TestCase):
     # x=~/git/oil
     # ${x//git*/X/}
 
-    # NOTE: This should be regcomp
-    r = re.compile('(^.*)git.*(.*)')
-
-    result = r.sub(r'\1' + 'X' + r'\2', '~/git/oil')
+    # git*
+    r1 = re.compile('git.*')
+    result = r1.sub('X', '~/git/oil')
     self.assertEqual('~/X', result)
+
+    r2 = re.compile('[a-z]')
+    result = r2.sub('X', 'a-b-c')
+    self.assertEqual('X-X-X', result)
+
+    # Substitute the first one only
+    r2 = re.compile('[a-z]')
+    result = r2.sub('X', 'a-b-c', count=1)
+    self.assertEqual('X-b-c', result)
+
+  def testGlobToPythonRegex(self):
+    CASES = [
+        # glob input, (regex, err)
+        ('*.py', '.*\.py', None),
+        ('*.?', '.*\..', None),
+        ('abc', None, None),
+        ('[[:space:]]', None, True),
+    ]
+    for glob, expected_regex, expected_err in CASES:
+      regex, err = glob_.GlobToPythonRegex(glob)
+      self.assertEqual(expected_regex, regex,
+          '%s: expected %r, got %r' % (glob, expected_regex, regex))
+      self.assertEqual(expected_err, err,
+          '%s: expected %r, got %r' % (glob, expected_err, err))
 
   def testPatSubRegexesLibc(self):
     r = libc.regex_parse('^(.*)git.*(.*)')
@@ -92,9 +115,6 @@ class GlobEscapeTest(unittest.TestCase):
 
     # Or should we make a match in a loop?
     # We have to keep advancing the string until there are no more matches.
-
-
-
 
 
 if __name__ == '__main__':

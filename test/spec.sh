@@ -349,12 +349,12 @@ var-op-test() {
 }
 
 var-op-other() {
-  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
