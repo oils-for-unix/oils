@@ -9,6 +9,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# https://lobste.rs/s/bqftd6/avoid_directly_manipulating_file
+#
+# - "One thing that I have found non-{0,1,2} FDs useful for however is when
+#   tools (e.g. gpg) take a --passphrase-fd argument, useful for when you are
+#   also redirecting some other thing into stdin."
+# - "Some protocols (like djb’s checkpassword or doit) rely on specific file
+#   descriptors"
+
 # https://www.reddit.com/r/bash/comments/6td8j2/avoid_directly_manipulating_file_descriptors_in/
 
 interactive-stdin() {
@@ -42,7 +50,6 @@ tee-like() {
   cat $log
 }
 
-# Hm this one isn't working yet
 pipe-stderr() {
   local log=_tmp/pipe-stderr.log
   set +o errexit
@@ -75,5 +82,39 @@ zip-demo() {
   seq 5 10 > _tmp/right.txt
   _zip _tmp/{left,right}.txt 
 }
+
+
+_work() {
+  local id=$1
+  echo "Job $id"
+  for i in 1 2 3; do
+    echo "... $i ..."
+    sleep 0.2
+  done
+}
+
+# man flock
+_flock() {
+  (
+    flock -n 9 || {
+      echo "Another job is already running; aborting"
+      exit 1
+    }
+    "$@"
+
+  ) 9>_tmp/mylockfile
+}
+
+flock-demo() {
+  _work A
+  _work B
+
+  # Instead of running
+  $0 _flock _work C &
+  $0 _flock _work D &  # One is already running
+  wait
+  wait
+}
+
 
 "$@"
