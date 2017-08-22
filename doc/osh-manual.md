@@ -32,3 +32,30 @@ Very good articles on bash errexit:
 
   - http://mywiki.wooledge.org/BashFAQ/105
   - http://fvue.nl/wiki/Bash:_Error_handling
+
+## Unicode
+
+Encoding of programs should be utf-8.
+
+But those programs can manipulate data in ANY encoding?
+
+echo $'[\u03bc]'  # C-escaped string
+
+vs literal unicode vs. echo -e.  $'' is preferred because it's statically parsed.
+
+
+List of operations that are Unicode-aware:
+
+- ${#s} -- number of characters in a string
+- slice: ${s:0:1}
+- any operations that uses glob, which has '.' and [[:alpha:]] expressions
+  - case
+  - [[ $x == . ]]
+  - ${s/./x}
+  - ${s#.}  # remove one character
+- sorting [[ $a < $b ]] -- should use current locale?  I guess that is like the
+  'sort' command.
+
+- prompt string has time, which is locale-specific.
+
+

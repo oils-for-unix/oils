@@ -115,15 +115,29 @@ EOF
   # - Lack of string interpolation is very annoying
 
   head -n $NUM_TASKS _tmp/spec/MANIFEST.txt | awk '
+  # Awk problem: getline errors are ignored by default!
+  function error(path) {
+    print "Error reading line from file: " path > "/dev/stderr"
+    exit(1)
+  }
+
   {
     spec_name = $0
 
     # Read from the task files
-    getline < ( "_tmp/spec/" spec_name ".task.txt" )
+    path = ( "_tmp/spec/" spec_name ".task.txt" )
+    n = getline < path
+    if (n != 1) {
+      error(path)
+    }
     status = $1
     wall_secs = $2
 
-    getline < ( "_tmp/spec/" spec_name ".stats.txt" )
+    path = ( "_tmp/spec/" spec_name ".stats.txt" )
+    n = getline < path
+    if (n != 1) {
+      error(path)
+    }
     num_cases = $1
     osh_num_passed = $2
     osh_num_failed = $3

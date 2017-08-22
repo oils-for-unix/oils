@@ -255,6 +255,14 @@ def CreateStringAssertion(d, key, assertions, qualifier=False):
     assertions.append(a)
     found = True
 
+  # For testing invalid unicode
+  exp_repr = d.get(key + '-repr')
+  if exp_repr is not None:
+    exp = eval(exp_repr)
+    a = EqualAssertion(key, exp, qualifier=qualifier)
+    assertions.append(a)
+    found = True
+
   return found
 
 
@@ -329,10 +337,7 @@ class EqualAssertion(object):
   """An expected value in a record."""
   def __init__(self, key, expected, qualifier=None):
     self.key = key
-    if isinstance(expected, str):
-      self.expected = expected.encode('utf-8')
-    else:
-        self.expected = expected  # expected value
+    self.expected = expected  # expected value
     self.qualifier = qualifier  # whether this was a special case?
 
   def __repr__(self):
@@ -597,9 +602,15 @@ class ColorOutput(object):
       for m in messages:
         print(m, file=self.f)
       print('%s stdout:' % shell, file=self.f)
-      print(stdout.decode('utf-8'), file=self.f)
+      try:
+        print(stdout.decode('utf-8'), file=self.f)
+      except UnicodeDecodeError:
+        print(stdout, file=self.f)
       print('%s stderr:' % shell, file=self.f)
-      print(stderr.decode('utf-8'), file=self.f)
+      try:
+        print(stderr.decode('utf-8'), file=self.f)
+      except UnicodeDecodeError:
+        print(stderr, file=self.f)
       print('', file=self.f)
 
   def _WriteStats(self, stats):
@@ -676,7 +687,13 @@ class HtmlOutput(ColorOutput):
 
       def _WriteRaw(s):
         self.f.write('<pre>')
-        self.f.write(cgi.escape(s.decode('utf-8')))
+        # We output utf-8-encoded HTML.  If we get invalid utf-8 as stdout
+        # (which is very possible), then show the ASCII repr().
+        try:
+          s2 = s.decode('utf-8')
+        except UnicodeDecodeError:
+          s2 = repr(s)  # ASCII representation
+        self.f.write(cgi.escape(s2))
         self.f.write('</pre>')
 
       self.f.write('<i>stdout:</i> <br/>\n')
@@ -858,6 +875,9 @@ def main(argv):
   env = {
     'TMP': os.path.normpath(opts.tmp_env),  # no .. or .
     'PATH': opts.path_env,
+    # Copied from my own environment.  For now, we want to test bash and other
+    # shells in utf-8 mode.
+    'LANG': 'en_US.UTF-8',
   }
   stats = RunCases(cases, case_predicate, shell_pairs, env, out)
   out.EndCases(stats)

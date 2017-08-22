@@ -34,7 +34,11 @@ echo-char() {
 }
 
 raw-char() {
-  # Use vim to put utf-8 in this source file.
+  # Use vim to put utf-8 in this source file:
+  # 1. i to enter Insert mode
+  # 2. Ctrl-V
+  # 3. u 
+  # 4. 03bc  -- 4 digits of hex0
   echo [μ]
 }
 

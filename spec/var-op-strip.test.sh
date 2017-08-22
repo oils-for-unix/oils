@@ -58,3 +58,12 @@ v=abc
 echo ${v%[[:alpha:]]}
 # stdout: ab
 # N-I mksh stdout: abc
+
+### Strip unicode prefix
+# NOTE: LANG is set to utf-8.  Problem: there is no way to represent the
+# invalid character!  Instead of stdout-json, how about stdout-bytes?
+v='μ-'
+echo ${v#?}  # ? is a glob that stands for one character
+# stdout: -
+# BUG dash/mksh stdout-repr: '\xbc-\n'
+# BUG zsh stdout-repr: '\n'
