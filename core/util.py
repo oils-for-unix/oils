@@ -43,6 +43,9 @@ class _ErrorWithLocation(Exception):
     if kwargs:
       raise AssertionError('Invalid keyword args %s' % kwargs)
 
+  #def __repr__(self):
+  #  return '<%s %s %r %r %d>' % (self.msg, self.args, self.token, self.word, self.exit_status)
+
   def UserErrorString(self):
     return self.msg % self.args
 

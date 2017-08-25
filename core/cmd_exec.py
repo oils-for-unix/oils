@@ -25,6 +25,7 @@ from core import args
 from core import braces
 from core import expr_eval
 from core import reader
+from core import test_builtin
 from core import word_eval
 from core import ui
 from core import util
@@ -289,6 +290,12 @@ class Executor(object):
 
     elif builtin_id == EBuiltin.FALSE:
       status = 1
+
+    elif builtin_id == EBuiltin.TEST:
+      status = test_builtin.Test(argv, False)
+
+    elif builtin_id == EBuiltin.BRACKET:
+      status = test_builtin.Test(argv, True)  # need_right_bracket
 
     elif builtin_id == EBuiltin.HELP:
       loader = util.GetResourceLoader()

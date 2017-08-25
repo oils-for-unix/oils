@@ -473,6 +473,9 @@ def ArithId(node):
 
 
 def BoolId(node):
+  if node.tag == word_e.StringWord:  # for test/[
+    return node.id
+
   if node.tag == word_e.TokenWord:
     return node.token.id
 

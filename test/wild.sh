@@ -561,6 +561,10 @@ parse-bash-snippets() {
 }
 
 # ASDF meta package/version manager.
+# Note that the language-specific plugins are specified (as remote repos) here:
+# https://github.com/asdf-vm/asdf-plugins/tree/master/plugins
+# They could be used for more tests.
+
 parse-asdf() {
   local src=~/git/other/asdf
 

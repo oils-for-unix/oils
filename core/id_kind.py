@@ -366,7 +366,13 @@ def _AddKinds(spec):
 # Id -> OperandType
 BOOL_OPS = {}  # type: dict
 
-UNARY_FILE_CHARS = tuple('abcdefghLprsStuwxOGN')
+# Shared between [[ and test/[.
+_UNARY_STR_CHARS = 'zn'  # -z -n
+_UNARY_OTHER_CHARS = 'ovR'
+_UNARY_PATH_CHARS = 'abcdefghLprsStuwxOGN'
+
+_BINARY_PATH = ['ef', 'nt', 'ot']
+_BINARY_INT = ['eq', 'ne', 'gt', 'ge', 'lt', 'le']
 
 OperandType = util.Enum('OperandType', 'Undefined Path Int Str Other'.split())
 
@@ -378,9 +384,9 @@ def _Dash(strs):
 
 def _AddBoolKinds(spec):
   spec.AddBoolKind('BoolUnary', {
-      OperandType.Str: _Dash(list('zn')),  # -z -n
-      OperandType.Other: _Dash(list('ovR')),
-      OperandType.Path: _Dash(UNARY_FILE_CHARS),
+      OperandType.Str: _Dash(list(_UNARY_STR_CHARS)),
+      OperandType.Other: _Dash(list(_UNARY_OTHER_CHARS)),
+      OperandType.Path: _Dash(list(_UNARY_PATH_CHARS)),
   })
 
   spec.AddBoolKind('BoolBinary', {
@@ -388,8 +394,8 @@ def _AddBoolKinds(spec):
           ('Equal', '='), ('DEqual', '=='), ('NEqual', '!='),
           ('EqualTilde', '=~'),
       ],
-      OperandType.Path: _Dash(['ef', 'nt', 'ot']),
-      OperandType.Int: _Dash(['eq', 'ne', 'gt', 'ge', 'lt', 'le']),
+      OperandType.Path: _Dash(_BINARY_PATH),
+      OperandType.Int: _Dash(_BINARY_INT),
   })
 
   # logical, arity, arg_type
@@ -399,6 +405,38 @@ def _AddBoolKinds(spec):
 
   spec.AddBoolOp(Id.Redir_Less, OperandType.Str)
   spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
+
+
+def SetupTestBuiltin(spec):
+  """Setup tokens for test/[.
+
+  Similar to _AddBoolKinds above.  Differences:
+  - =~ doesn't exist
+  - && -> -a, || -> -o
+  - ( ) -> Op_LParen (they don't appear above)
+  """ 
+  for letter in _UNARY_STR_CHARS + _UNARY_OTHER_CHARS + _UNARY_PATH_CHARS:
+    token_name = 'BoolUnary_%s' % letter
+    spec['-' + letter] = getattr(Id, token_name)
+
+  for s in _BINARY_PATH + _BINARY_INT:
+    token_name = 'BoolBinary_%s' % s
+    spec['-' + s] = getattr(Id, token_name)
+
+  # Like the above, but without =~.
+  spec['='] = Id.BoolBinary_Equal
+  spec['=='] = Id.BoolBinary_DEqual
+  spec['!='] = Id.BoolBinary_NEqual
+
+  spec['-a'] = Id.Op_DAmp  # like [[ &&
+  spec['-o'] = Id.Op_DPipe # like [[ ||
+  spec['!'] = Id.KW_Bang  # like [[ !
+  spec['('] = Id.Op_LParen
+  spec[')'] = Id.Op_RParen
+
+  # Some of these names don't quite match, but it keeps the BoolParser simple.
+  spec['<'] = Id.Redir_Less
+  spec['>'] = Id.Redir_Great
 
 
 #

@@ -126,20 +126,13 @@ hex=0x0f    # = 15 (decimal)
 # stdout-json: "true\ntrue\n"
 # OK bash/mksh stdout-json: "true\ntrue\n"
 
-### [[ compare with literal -f
+### [[ compare with literal -f (compare with test-builtin.test.sh)
 var=-f
 [[ $var == -f ]] && echo true
 [[ '-f' == $var ]] && echo true
 # stdout-json: "true\ntrue\n"
 
-### [ compare with literal -f
-# Hm this is the same
-var=-f
-[ $var == -f ] && echo true
-[ '-f' == $var ] && echo true
-# stdout-json: "true\ntrue\n"
-
-### [[ with op variable
+### [[ with op variable (compare with test-builtin.test.sh)
 # Parse error -- parsed BEFORE evaluation of vars
 op='=='
 [[ a $op a ]] && echo true
@@ -147,23 +140,10 @@ op='=='
 # status: 2
 # OK mksh status: 1
 
-### [ with op variable
-# OK -- parsed AFTER evaluation of vars
-op='=='
-[ a $op a ] && echo true
-[ a $op b ] || echo false
-# status: 0
-# stdout-json: "true\nfalse\n"
-
-### [[ with unquoted empty var
+### [[ with unquoted empty var (compare with test-builtin.test.sh)
 empty=''
 [[ $empty == '' ]] && echo true
 # stdout: true
-
-### [ with unquoted empty var
-empty=''
-[ $empty == '' ] && echo true
-# status: 2
 
 ### [[ at runtime doesn't work
 dbracket=[[
@@ -222,3 +202,35 @@ expr='1+2'
 ### -eq coercion produces weird results
 [[ '' -eq 0 ]] && echo true
 # stdout: true
+
+### [[ '(' ]] is treated as literal
+[[ '(' ]]
+echo status=$?
+# stdout: status=0
+
+### [[ '(' foo ]] is syntax error
+[[ '(' foo ]]
+echo status=$?
+# status: 2
+# OK mksh status: 1
+
+### empty ! is treated as literal
+[[ '!' ]]
+echo status=$?
+# stdout: status=0
+
+### [[ -z ]] is syntax error
+[[ -z ]]
+echo status=$?
+# status: 2
+# OK mksh status: 1
+
+### [[ -z '>' ]]
+[[ -z '>' ]] || echo false  # -z is operator
+# stdout: false
+
+### [[ -z '>' a ]] is syntax error
+[[ -z '>' -- ]]
+echo status=$?
+# status: 2
+# OK mksh status: 1

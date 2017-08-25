@@ -44,6 +44,8 @@ from osh.lex import LexMode
 
 import libc  # for regex_parse
 
+log = util.log
+
 
 class BoolParser(object):
   """Parses [[ at compile time and [ at runtime."""
@@ -131,6 +133,14 @@ class BoolParser(object):
       self.AddErrorContext("Unexpected extra word %r", self.cur_word,
           word=self.cur_word)
       return None
+    return node
+
+  def ParseForBuiltin(self, need_right_bracket):
+    """For test/[."""
+    if not self._Next(): return None
+
+    node = self.ParseExpr()
+    #log('TRAILING op_id %s', self.op_id)
     return node
 
   def ParseExpr(self):

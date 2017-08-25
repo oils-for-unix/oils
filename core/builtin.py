@@ -57,6 +57,7 @@ EXIT SOURCE DOT EVAL EXEC WAIT JOBS
 COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
+TEST BRACKET
 HELP
 """.split())
 
@@ -190,6 +191,11 @@ def Resolve(argv0):
     return EBuiltin.TRUE
   elif argv0 == "false":
     return EBuiltin.FALSE
+
+  elif argv0 == "test":
+    return EBuiltin.TEST
+  elif argv0 == "[":
+    return EBuiltin.BRACKET
 
   elif argv0 == "help":
     return EBuiltin.HELP

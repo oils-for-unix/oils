@@ -237,9 +237,8 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
-# NOTE: osh uses external test!  But that's OK for now.
 test-builtin() {
-  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 10 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
