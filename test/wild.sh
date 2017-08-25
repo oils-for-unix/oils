@@ -560,6 +560,16 @@ parse-bash-snippets() {
     $files
 }
 
+# ASDF meta package/version manager.
+parse-asdf() {
+  local src=~/git/other/asdf
+
+  time _parse-many \
+    $src \
+    $RESULT_DIR/asdf \
+    $(find $src \( -name '*.sh' -o -name '*.bash' \) -a -printf '%P\n' )
+}
+
 #
 # Big projects
 #
