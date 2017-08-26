@@ -21,11 +21,11 @@ set -o errexit
 
 interactive-stdin() {
   local path=$0  # This script
-	while read line <&"$fd" ; do
+  while read line <&"$fd" ; do
     echo "[$line]"
-    read -p "Continue? " ans 
+    read -p "Continue? " ans
     [[ "$ans" != yes ]] && exit 1
-	done {fd}< $path
+  done {fd}< $path
 }
 
 # https://www.reddit.com/r/oilshell/comments/6tch5v/avoid_directly_manipulating_file_descriptors_in/
@@ -115,6 +115,5 @@ flock-demo() {
   wait
   wait
 }
-
 
 "$@"
