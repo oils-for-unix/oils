@@ -28,6 +28,27 @@ interactive-stdin() {
   done {fd}< $path
 }
 
+# Here stdin conflicts
+interactive-stdin-bad() {
+  local path=$0  # This script
+  while read line;  do
+    echo "[$line]"
+    read -p "Continue? " ans
+    [[ "$ans" != yes ]] && exit 1
+  done < $path
+}
+
+# Alternative way without explicit descriptors.
+interactive-stdin-alternative() {
+  local path=$0  # This script
+  local tty=$(tty)  # e.g. /dev/pts/23
+  while read line;  do
+    echo "[$line]"
+    read -p "Continue? " ans < $tty
+    [[ "$ans" != yes ]] && exit 1
+  done < $path
+}
+
 # https://www.reddit.com/r/oilshell/comments/6tch5v/avoid_directly_manipulating_file_descriptors_in/
 
 log-dates() {
