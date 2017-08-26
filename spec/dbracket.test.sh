@@ -234,3 +234,22 @@ echo status=$?
 echo status=$?
 # status: 2
 # OK mksh status: 1
+
+### test whether ']]' is empty
+[[ ']]' ]]
+echo status=$?
+# status: 0
+
+### [[ ]] is syntax error
+[[ ]]
+echo status=$?
+# stdout-json: ""
+# status: 2
+# OK mksh status: 1
+
+### [[ && ]] is syntax error
+[[ && ]]
+echo status=$?
+# stdout-json: ""
+# status: 2
+# OK mksh status: 1

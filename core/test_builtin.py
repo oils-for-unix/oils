@@ -9,20 +9,23 @@ from core import id_kind
 from core import expr_eval
 from core import word
 from core import runtime
-from core.util import log, e_die
+from core import util
 
 from osh import bool_parse
 from osh import ast_ as ast
 
 Id = id_kind.Id
+log = util.log
 
 
-_ID_LOOKUP = {}  # string -> Id
+_UNARY_LOOKUP = {}
+_BINARY_LOOKUP = {}
+_OTHER_LOOKUP = {}
 
-id_kind.SetupTestBuiltin(_ID_LOOKUP)
+id_kind.SetupTestBuiltin(_UNARY_LOOKUP, _BINARY_LOOKUP, _OTHER_LOOKUP)
 
 
-class _WordParser:
+class _StringWordEmitter:
   """For test/[, we need a word parser that returns StringWord.
   
   The BoolParser calls word.BoolId(w), and deals with Kind.BoolUnary,
@@ -43,7 +46,11 @@ class _WordParser:
     s = self.argv[self.i]
     self.i += 1
 
-    id_ = _ID_LOOKUP.get(s, Id.Word_Compound)  # default is an operand word
+    # default is an operand word
+    id_ = (
+        _UNARY_LOOKUP.get(s) or _BINARY_LOOKUP.get(s) or _OTHER_LOOKUP.get(s)
+        or Id.Word_Compound)
+
     return ast.StringWord(id_, s)
 
 
@@ -56,32 +63,129 @@ class _WordEvaluator:
     return runtime.Str(w.s)
 
 
+def _StringWordTest(s):
+  # TODO: Could be Word_String
+  return ast.WordTest(ast.StringWord(Id.Word_Compound, s))
+
+
+def _TwoArgs(argv):
+  """Returns an expression tree to be evaluated."""
+  a0, a1 = argv
+  if a0 == '!':
+    return ast.LogicalNot(_StringWordTest(a1))
+  unary_id = _UNARY_LOOKUP.get(a0)
+  if unary_id is None:
+    # TODO:
+    # - syntax error
+    # - separate lookup by unary
+    util.p_die('Expected unary operator, got %r', a0)
+  child = ast.StringWord(Id.Word_Compound, a1)
+  return ast.BoolUnary(unary_id, child)
+
+
+def _ThreeArgs(argv):
+  """Returns an expression tree to be evaluated."""
+  a0, a1, a2 = argv
+
+  # NOTE: Order is important here.
+
+  binary_id = _BINARY_LOOKUP.get(a1)
+  if binary_id is not None:
+    left = ast.StringWord(Id.Word_Compound, a0)
+    right = ast.StringWord(Id.Word_Compound, a2)
+    return ast.BoolBinary(binary_id, left, right)
+
+  if a1 == '-a':
+    left = _StringWordTest(a0)
+    right = _StringWordTest(a2)
+    return ast.LogicalAnd(left, right)
+
+  if a1 == '-o':
+    left = _StringWordTest(a0)
+    right = _StringWordTest(a2)
+    return ast.LogicalOr(left, right)
+
+  if a0 == '!':
+    child = _TwoArgs(argv[1:])
+    return ast.LogicalNot(child)
+
+  if a0 == '(' and a2 == ')':
+    return _StringWordTest(a1)
+
+  util.p_die('Syntax error: binary operator expected')
+
+
 def Test(argv, need_right_bracket):
   """The test/[ builtin.
 
   The only difference between test and [ is that [ needs a matching ].
   """
-  w_parser = _WordParser(argv)
+  if need_right_bracket:
+    if argv[-1] != ']':
+      util.error('[: missing closing ]')
+      return 2
+    del argv[-1]
+
+  w_parser = _StringWordEmitter(argv)
   b_parser = bool_parse.BoolParser(w_parser)
-  node = b_parser.ParseForBuiltin(need_right_bracket)
-  if node is None:
-    for e in b_parser.Error():
-      log("error %s", e)
-    e_die("Error parsing test/[ expression")
 
-  log('Bool expr %s', node)
+  # There is a fundamental ambiguity due to poor language design, in cases like:
+  # [ -z ]
+  # [ -z -a ]
+  # [ -z -a ] ]
+  #
+  # See posixtest() in bash's test.c:
+  # "This is an implementation of a Posix.2 proposal by David Korn."
+  # It dispatches on expressions of length 0, 1, 2, 3, 4, and N args.  We do
+  # the same here.
+  #
+  # Another ambiguity:
+  # -a is both a unary prefix operator and an infix operator.  How to fix this
+  # ambiguity?
 
-  # def __init__(self, mem, exec_opts, word_ev):
+  bool_node = None
+  n = len(argv)
+  try:
+    if n == 0:
+      return 1  # [ ] is False
+    elif n == 1:
+      bool_node = _StringWordTest(argv[0])
+    elif n == 2:
+      bool_node = _TwoArgs(argv)
+    elif n == 3:
+      bool_node = _ThreeArgs(argv)
+    if n == 4:
+      a0 = argv[0]
+      if a0 == '!':
+        child = _ThreeArgs(argv[1:])
+        bool_node = ast.LogicalNot(child)
+      elif a0 == '(' and argv[3] == ')':
+        bool_node = _TwoArgs(argv[1:3])
+      else:
+        pass  # fallthrough
+
+    if bool_node is None:
+      bool_node = b_parser.ParseForBuiltin()
+      #log('Bool expr %s', bool_node)
+
+      if bool_node is None:
+        for e in b_parser.Error():
+          log("error %s", e)
+        log("Error parsing test/[ expression")
+        return 2  # parse error is 2
+
+  except util.ParseError as e:
+    util.error(e.UserErrorString())
+    return 2
+
   # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
-  # exec_opts: don't need it
-  # word_ev: don't need it
+  # exec_opts: don't need it, but might need it later
 
   mem = None
   exec_opts = None
   word_ev = _WordEvaluator()
 
   bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev)
-  # TODO: Catch exceptions and turn into failure.  It can't have a fatal error, like [[ ${foo?error} ]].
-  result = bool_ev.Eval(node)
-  status = 0 if result else 1
+  b = bool_ev.Eval(bool_node)
+  status = 0 if b else 1
   return status

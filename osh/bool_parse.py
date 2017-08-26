@@ -112,10 +112,6 @@ class BoolParser(object):
         break
     return True
 
-  def AtEnd(self):
-    #print('B_ID', IdName(self.op_id), self.cur_word)
-    return self.op_id == Id.Lit_DRightBracket
-
   def _LookAhead(self):
     n = len(self.words)
     if n != 1:
@@ -129,18 +125,21 @@ class BoolParser(object):
     if not self._Next(): return None
 
     node = self.ParseExpr()
-    if not self.AtEnd():
+    if self.op_id != Id.Lit_DRightBracket:
       self.AddErrorContext("Unexpected extra word %r", self.cur_word,
           word=self.cur_word)
       return None
     return node
 
-  def ParseForBuiltin(self, need_right_bracket):
-    """For test/[."""
+  def ParseForBuiltin(self):
+    """For test builtin."""
     if not self._Next(): return None
 
     node = self.ParseExpr()
-    #log('TRAILING op_id %s', self.op_id)
+    if self.op_id != Id.Eof_Real:
+      self.AddErrorContext("Trailing words in test", self.cur_word)
+      return None
+
     return node
 
   def ParseExpr(self):
@@ -167,6 +166,8 @@ class BoolParser(object):
     Term    : Negated (AND Term)?
     """
     left = self.ParseNegatedFactor()
+    if not left:
+      return None  # TODO: An exception should handle this case.
     if self.op_id == Id.Op_DAmp:
       if not self._Next(): return None
       right = self.ParseTerm()
@@ -244,9 +245,11 @@ class BoolParser(object):
       if not self._Next(): return None
       node = self.ParseExpr()
       if self.op_id != Id.Op_RParen:
-        raise RuntimeError("Expected ), got %s", self.cur_word)
+        self.AddErrorContext("Expected ), got %s", self.cur_word, word=self.cur_word)
+        return None
       if not self._Next(): return None
       return node
 
-    # TODO: A proper error, e.g. for "&&"
-    raise AssertionError("Unexpected token: %s" % self.cur_word)
+    # TODO: A proper error, e.g. for [[ && ]] or [[ ]]
+    self.AddErrorContext("Unexpected token: %s" % self.cur_word, word=self.cur_word)
+    return None

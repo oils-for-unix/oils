@@ -369,7 +369,11 @@ BOOL_OPS = {}  # type: dict
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
 _UNARY_OTHER_CHARS = 'ovR'
-_UNARY_PATH_CHARS = 'abcdefghLprsStuwxOGN'
+# NOTE: In bash and mksh, -a is an alias for -e (exists).  For example, see
+# test.c in bash.  That causes an ambiguity with -a as the binary "and"
+# operator, so I just omit it.  BoolParser can be changed to deal with the
+# ambiguity later if necessary.
+_UNARY_PATH_CHARS = 'bcdefghLprsStuwxOGN'
 
 _BINARY_PATH = ['ef', 'nt', 'ot']
 _BINARY_INT = ['eq', 'ne', 'gt', 'ge', 'lt', 'le']
@@ -407,7 +411,7 @@ def _AddBoolKinds(spec):
   spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
 
 
-def SetupTestBuiltin(spec):
+def SetupTestBuiltin(unary_lookup, binary_lookup, other_lookup):
   """Setup tokens for test/[.
 
   Similar to _AddBoolKinds above.  Differences:
@@ -417,26 +421,28 @@ def SetupTestBuiltin(spec):
   """ 
   for letter in _UNARY_STR_CHARS + _UNARY_OTHER_CHARS + _UNARY_PATH_CHARS:
     token_name = 'BoolUnary_%s' % letter
-    spec['-' + letter] = getattr(Id, token_name)
+    unary_lookup['-' + letter] = getattr(Id, token_name)
 
   for s in _BINARY_PATH + _BINARY_INT:
     token_name = 'BoolBinary_%s' % s
-    spec['-' + s] = getattr(Id, token_name)
+    binary_lookup['-' + s] = getattr(Id, token_name)
 
   # Like the above, but without =~.
-  spec['='] = Id.BoolBinary_Equal
-  spec['=='] = Id.BoolBinary_DEqual
-  spec['!='] = Id.BoolBinary_NEqual
-
-  spec['-a'] = Id.Op_DAmp  # like [[ &&
-  spec['-o'] = Id.Op_DPipe # like [[ ||
-  spec['!'] = Id.KW_Bang  # like [[ !
-  spec['('] = Id.Op_LParen
-  spec[')'] = Id.Op_RParen
+  binary_lookup['='] = Id.BoolBinary_Equal
+  binary_lookup['=='] = Id.BoolBinary_DEqual
+  binary_lookup['!='] = Id.BoolBinary_NEqual
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.
-  spec['<'] = Id.Redir_Less
-  spec['>'] = Id.Redir_Great
+  binary_lookup['<'] = Id.Redir_Less
+  binary_lookup['>'] = Id.Redir_Great
+
+  other_lookup['-a'] = Id.Op_DAmp  # like [[ &&
+  other_lookup['-o'] = Id.Op_DPipe # like [[ ||
+  other_lookup['!'] = Id.KW_Bang  # like [[ !
+  other_lookup['('] = Id.Op_LParen
+  other_lookup[')'] = Id.Op_RParen
+
+  other_lookup[']'] = Id.Arith_RBracket  # For closing ]
 
 
 #

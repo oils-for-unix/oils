@@ -238,7 +238,7 @@ if_() {
 }
 
 test-builtin() {
-  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
