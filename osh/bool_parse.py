@@ -131,6 +131,10 @@ class BoolParser(object):
       return None
     return node
 
+  def _TestAtEnd(self):
+    """For unit tests only."""
+    return self.op_id == Id.Lit_DRightBracket
+
   def ParseForBuiltin(self):
     """For test builtin."""
     if not self._Next(): return None

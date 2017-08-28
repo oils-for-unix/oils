@@ -138,6 +138,16 @@ class IdSpec(object):
     self._AddKind(kind_name)
     self.kind_sizes.append(num_tokens)  # debug info
 
+  def AddBoolBinaryForBuiltin(self, token_name):
+    """For [ = ] [ == ] and [ != ].
+    
+    These operators are NOT added to the lexer.  The are "lexed" as StringWord.
+    """
+    token_name = 'BoolBinary_%s' % token_name
+    id_val = self._AddId(token_name)
+    self.AddBoolOp(id_val, OperandType.Str)
+    return id_val
+
   def AddBoolOp(self, id_, arg_type):
     self.bool_ops[id_] = arg_type
 
@@ -366,6 +376,10 @@ def _AddKinds(spec):
 # Id -> OperandType
 BOOL_OPS = {}  # type: dict
 
+TEST_UNARY_LOOKUP = {}
+TEST_BINARY_LOOKUP = {}
+TEST_OTHER_LOOKUP = {}
+
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
 _UNARY_OTHER_CHARS = 'ovR'
@@ -395,7 +409,7 @@ def _AddBoolKinds(spec):
 
   spec.AddBoolKind('BoolBinary', {
       OperandType.Str: [
-          ('Equal', '='), ('DEqual', '=='), ('NEqual', '!='),
+          ('GlobEqual', '='), ('GlobDEqual', '=='), ('GlobNEqual', '!='),
           ('EqualTilde', '=~'),
       ],
       OperandType.Path: _Dash(_BINARY_PATH),
@@ -411,7 +425,7 @@ def _AddBoolKinds(spec):
   spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
 
 
-def SetupTestBuiltin(unary_lookup, binary_lookup, other_lookup):
+def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
   """Setup tokens for test/[.
 
   Similar to _AddBoolKinds above.  Differences:
@@ -427,10 +441,11 @@ def SetupTestBuiltin(unary_lookup, binary_lookup, other_lookup):
     token_name = 'BoolBinary_%s' % s
     binary_lookup['-' + s] = getattr(Id, token_name)
 
-  # Like the above, but without =~.
-  binary_lookup['='] = Id.BoolBinary_Equal
-  binary_lookup['=='] = Id.BoolBinary_DEqual
-  binary_lookup['!='] = Id.BoolBinary_NEqual
+  # Like the [[ definition above, but without globbing and without =~ .
+
+  for token_name, token_str in [('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
+    id_val = id_spec.AddBoolBinaryForBuiltin(token_name)
+    binary_lookup[token_str] = id_val
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.
   binary_lookup['<'] = Id.Redir_Less
@@ -454,6 +469,8 @@ ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
 
 _AddKinds(ID_SPEC)
 _AddBoolKinds(ID_SPEC)  # must come second
+_SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP)
+
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes

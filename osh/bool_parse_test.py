@@ -49,36 +49,36 @@ class BoolParserTest(unittest.TestCase):
   def testParseFactor(self):
     p = _MakeParser('foo')
     print(p.ParseFactor())
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
 
     p = _MakeParser('$foo"bar"')
     print(p.ParseFactor())
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
 
     p = _MakeParser('-z foo')
     print('-------------')
     node = p.ParseFactor()
     print(node)
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
     self.assertEqual(bool_expr_e.BoolUnary, node.tag)
 
     p = _MakeParser('foo == bar')
     node = p.ParseFactor()
     print(node)
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
     self.assertEqual(bool_expr_e.BoolBinary, node.tag)
 
   def testParseNegatedFactor(self):
     p = _MakeParser('foo')
     node = p.ParseNegatedFactor()
     print(node)
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
     self.assertEqual(bool_expr_e.WordTest, node.tag)
 
     p = _MakeParser('! foo')
     node = p.ParseNegatedFactor()
     print(node)
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
     self.assertEqual(bool_expr_e.LogicalNot, node.tag)
 
   def testParseTerm(self):
@@ -111,7 +111,7 @@ class BoolParserTest(unittest.TestCase):
     p = _MakeParser('( foo == bar )')
     node = p.ParseFactor()
     print(node)
-    self.assertTrue(p.AtEnd())
+    self.assertTrue(p._TestAtEnd())
     self.assertEqual(bool_expr_e.BoolBinary, node.tag)
 
   def testParseParenthesized(self):

@@ -18,11 +18,9 @@ Id = id_kind.Id
 log = util.log
 
 
-_UNARY_LOOKUP = {}
-_BINARY_LOOKUP = {}
-_OTHER_LOOKUP = {}
-
-id_kind.SetupTestBuiltin(_UNARY_LOOKUP, _BINARY_LOOKUP, _OTHER_LOOKUP)
+_UNARY_LOOKUP = id_kind.TEST_UNARY_LOOKUP
+_BINARY_LOOKUP = id_kind.TEST_BINARY_LOOKUP
+_OTHER_LOOKUP = id_kind.TEST_OTHER_LOOKUP
 
 
 class _StringWordEmitter:

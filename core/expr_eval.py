@@ -503,7 +503,7 @@ class BoolEvaluator(_ExprEvaluator):
       s1 = self._EvalCompoundWord(node.left)
       # Whehter to glob escape
       do_fnmatch = op_id in (
-          Id.BoolBinary_Equal, Id.BoolBinary_DEqual, Id.BoolBinary_NEqual)
+          Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual, Id.BoolBinary_GlobNEqual)
       s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)
 
       # Now dispatch on arg type
@@ -533,12 +533,18 @@ class BoolEvaluator(_ExprEvaluator):
         # TODO:
         # - Compare arrays.  (Although bash coerces them to string first)
 
-        if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
+        if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
           #log('Comparing %s and %s', s2, s1)
           return libc.fnmatch(s2, s1)
 
-        if op_id == Id.BoolBinary_NEqual:
+        if op_id == Id.BoolBinary_GlobNEqual:
           return not libc.fnmatch(s2, s1)
+
+        if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
+          return s1 == s2
+
+        if op_id == Id.BoolBinary_NEqual:
+          return s1 != s2
 
         if op_id == Id.BoolBinary_EqualTilde:
           # NOTE: regex matching can't fail if compilation succeeds.

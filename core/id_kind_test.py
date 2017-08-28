@@ -50,7 +50,7 @@ class TokensTest(unittest.TestCase):
     t = ast.token(Id.Arith_RBrace, '}')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
 
-    t = ast.token(Id.BoolBinary_DEqual, '==')
+    t = ast.token(Id.BoolBinary_GlobDEqual, '==')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
   def testLexerPairs(self):
@@ -59,7 +59,7 @@ class TokensTest(unittest.TestCase):
 
     lookup = MakeLookup(id_kind.ID_SPEC.LexerPairs(Kind.BoolUnary))
     print(lookup)
-    self.assertEqual(Id.BoolUnary_a, lookup['-a'])
+    self.assertEqual(Id.BoolUnary_e, lookup['-e'])
     self.assertEqual(Id.BoolUnary_z, lookup['-z'])
 
     lookup2 = MakeLookup(id_kind.ID_SPEC.LexerPairs(Kind.BoolBinary))
