@@ -10,6 +10,7 @@ expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
 import os
+import stat
 
 import libc  # for fnmatch
 
