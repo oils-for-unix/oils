@@ -527,6 +527,14 @@ class BoolEvaluator(_ExprEvaluator):
           return i1 == i2
         if op_id == Id.BoolBinary_ne:
           return i1 != i2
+        if op_id == Id.BoolBinary_gt:
+          return i1 > i2
+        if op_id == Id.BoolBinary_ge:
+          return i1 >= i2
+        if op_id == Id.BoolBinary_lt:
+          return i1 < i2
+        if op_id == Id.BoolBinary_le:
+          return i1 <= i2
 
         raise NotImplementedError(op_id)
 
