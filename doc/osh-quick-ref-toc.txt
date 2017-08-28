@@ -27,7 +27,7 @@ ASSIGNING VARIABLES
   [Keywords]      local   readonly   export   unset   shift
                   X declare   X typeset   X let
   [Operators]     assign        str='xyz'
-                  X append      str+='abc'
+                  append        str+='abc'
   [Compound Data] array         array=(a b c)   array[x]=b
                   X assoc       declare -A assoc=([a]=1 [b]=2)
 
@@ -40,8 +40,8 @@ WORD LANGUAGE
                   X proc-sub    diff <(sort L.txt) <(sort R.txt)
   [Special Vars]  special-vars  $?  $#  $PPID  $IFS  ...
   [Var Ops]       op-test       ${x:-default}  
-                  X op-unary    ${x%%suffix}  etc.
-                  X op-str      ${x/y/z}
+                  op-unary      ${x%%suffix}  etc.
+                  op-str        ${x/y/z}
                   X op-slice    ${a[@]:0:1}
 
 OTHER SHELL SUBLANGUAGES
@@ -61,17 +61,17 @@ BUILTIN COMMANDS
   [I/O]           read   echo 
                   X readarray   X mapfile   X select
   [Run Code]      source .   eval
-  [Set Options]   set   X shopt
+  [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs
   [Completion]    complete   X compgen   X compopt
   [Shell Process] exec   exit   X logout 
                   umask   X ulimit   X trap   X times
   [Child Process] jobs   wait   ampersand &
                   X fg   X bg   X disown 
+  [External]      test [   X printf   X getopts   X kill
 X [Word Lookup]   command   builtin
 X [Introspection] help   hash   type   caller
 X [Interactive]   alias   unalias   bind   history   fc
-X [External]      test [   printf   getopts   kill
 X [Unsupported]   enable
 
 SHELL OPTIONS
