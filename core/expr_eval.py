@@ -485,6 +485,9 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_f:
           return stat.S_ISREG(mode)
 
+        if op_id == Id.BoolUnary_d:
+          return stat.S_ISDIR(mode)
+
         raise NotImplementedError(op_id)
 
       if arg_type == OperandType.Str:

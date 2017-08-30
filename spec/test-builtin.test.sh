@@ -164,4 +164,9 @@ echo status=$?
 # OK mksh stdout: status=2
 # OK dash stdout: status=1
 
-
+### -d
+test -d $TMP
+echo status=$?
+test -d $TMP/__nonexistent_Z_Z__
+echo status=$?
+# stdout-json: "status=0\nstatus=1\n"
