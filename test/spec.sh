@@ -185,6 +185,11 @@ blog1() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
+blog2() {
+  sh-spec spec/blog2.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
 comments() {
   sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
