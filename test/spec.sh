@@ -190,6 +190,11 @@ blog2() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
+blog-other1() {
+  sh-spec spec/blog-other1.test.sh \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
 comments() {
   sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }

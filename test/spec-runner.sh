@@ -31,6 +31,9 @@ _spec-manifest() {
     # This was meant for ANTLR.
     if (name == "shell-grammar") next;
 
+    # Just a demo
+    if (name == "blog-other1") next;
+
     print name
   }
   '
