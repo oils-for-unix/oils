@@ -32,3 +32,25 @@ EOPATHS
 )
 echo "$paths"
 # stdout-json: "/foo\n/bar\n/baz\n"
+
+### Simpler example
+foo=`cat`<<EOM
+hello world
+EOM
+echo "$foo"
+# stdout: hello world
+
+### ` after here doc delimiter
+foo=`cat <<EOM
+hello world
+EOM`
+echo "$foo"
+# stdout: hello world
+
+### ` on its own line
+foo=`cat <<EOM
+hello world
+EOM
+`
+echo "$foo"
+# stdout: hello world
