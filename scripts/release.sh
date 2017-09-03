@@ -30,6 +30,7 @@ log() {
 #         osh-quick-ref.html
 #       test/  # results
 #         spec/
+#           machine-lisa/
 #         unit/
 #         wild/
 #         gold/
