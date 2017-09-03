@@ -13,14 +13,59 @@ log() {
   echo "$@" 1>&2
 }
 
-# TODO: enforce that there is a release-0.0.0 branch?
+# TODO:
+# - enforce that there is a release/$VERSION branch?
+
+# oilshell.org__deploy/
+#   releases.html
+#   opy-releases.html  (later)
+#   release/
+#     $VERSION/
+#       index.html  # links to all this stuff
+#       oil-version.txt
+#       release-date.txt
+#       Changelog.txt  # raw git log, release announcement is prose
+#       doc/
+#         INSTALL.html
+#         osh-quick-ref.html
+#       test/  # results
+#         spec/
+#         unit/
+#         wild/
+#         gold/
+#         tarball/  # log of building and running the tarball?
+#       metrics/  # static metrics on source code?
+#                 # could also do cloc?
+#         loc-src.txt  # oil, tools, etc.
+#         loc-pydeps.txt  (build/stats.sh line counts)
+#         loc-nativedeps.txt
+#         number of functions, classes, etc.?
+#         bytecode/bundle size, binary size on x86_64
+#         tarball size?
+#       coverage/  # coverage of all spec tests?  And gold tests maybe?
+#         python/  # python stdlib coverage  with pycoverage
+#         c/       # c coverage with gcc/clang
+#       benchmarks/
+#         machine-lisa/
+#           proc/meminfo etc.
+#           compile time on my machine (serial, optimized, etc.)
+#           startup time for hello world
+#           osh speed test, opy compiling, etc.
+#         machine-pizero/
+#   download/
+#     0.0.0/  # TODO: Add version here, so we can have binaries too?
+#       oil-0.0.0.tar.xz 
+
+# NOTE: Also need build/doc.sh update-src-versions to change doc/index.md, etc.
+
 build-and-test() {
   rm -r -f _devbuild _build _release
   rm -f _bin/oil.*
 
-  build/pylibc.sh build  # for libc.so
+  build/dev.sh pylibc  # for libc.so, needed to crawl deps
   build/doc.sh osh-quick-ref  # for _devbuild/osh_help.py
 
+  # TODO: publish these
   test/unit.sh all
 
   build/prepare.sh configure
@@ -41,7 +86,8 @@ build-and-test() {
   # Test the oil tar
   build/test.sh oil-tar
 
-  # TODO: Make a clean alpine chroot?
+  # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps, etc.
+
   test/alpine.sh copy-tar oil
   test/alpine.sh test-tar oil
 }
@@ -50,6 +96,7 @@ build-and-test() {
 #
 # ./local.sh publish-doc
 # ./local.sh publish-release
+# ./local.sh publish-releases-html
 # ./local.sh publish-spec
 
 # TODO:
@@ -86,37 +133,53 @@ hello() {
   _compressed-tarball hello $(head -n 1 build/testdata/hello-version.txt)
 }
 
-publish-doc() {
-  local user=$1
-  local host=$2
+deploy-doc() {
+  local deploy_repo='../oilshell.org__deploy'
+  local release_root_dir="$deploy_repo/release"
+  local release_dir="$release_root_dir/$OIL_VERSION"
+
+  mkdir -p $release_dir/{doc,test,metrics}
+
+  # Metadata
+  cp -v _build/release-date.txt oil-version.txt $release_dir
+
+  # Line counts.  TODO: It would be nicer to make this structured data somehow.
+  scripts/count.sh all \
+    > $release_dir/metrics/linecount-src.txt  # Count repo lines
+  build/metrics.sh linecount-pydeps \
+    > $release_dir/metrics/linecount-pydeps.txt
+  build/metrics.sh linecount-nativedeps \
+    > $release_dir/metrics/linecount-nativedeps.txt
+
+  # Tests
+  cp -v -r --no-target-directory _tmp/spec/ $release_dir/test/spec
+
+  # Generate release index.
+  html-index $release_root_dir _tmp/releases.html
+  cp -v _tmp/releases.html $deploy_repo
 
   build/doc.sh osh-quick-ref
+  # Generate docs.
   build/doc.sh install
   build/doc.sh index
-  rsync --archive --verbose \
-    _build/doc/ "$user@$host:oilshell.org/release/$OIL_VERSION/doc/"
 
-  echo "Visit https://www.oilshell.org/release/$OIL_VERSION/doc/"
+  cp -v -r --no-target-directory _build/doc/ $release_dir/doc
+
+  tree -L 3 $release_root_dir
+  
+  ls -l $deploy_repo/releases.html
 }
 
-publish-release() {
-  local user=$1
-  local host=$2
+# I think these aren't checked into git?  They can just be managed separately?
+# Or should you check in the sha checksums?  Those will be in releases.html,
+# but a CSV might be nice.
+deploy-tar() {
+  local download_dir='../oilshell.org__deploy/download/'
+  mkdir -p $download_dir
 
-  rsync --archive --verbose \
-    _release/oil-$OIL_VERSION.tar.* \
-    "$user@$host:oilshell.org/download/"
+  cp -v _release/oil-$OIL_VERSION.tar.* $download_dir
 
-  echo "Visit https://www.oilshell.org/download/"
-}
-
-publish-release-html() {
-  local user=$1
-  local host=$2
-
-  rsync --archive --verbose \
-    _tmp/releases.html \
-    "$user@$host:oilshell.org/"
+  ls -l $download_dir
 }
 
 #
@@ -140,8 +203,8 @@ _release-files-html() {
   echo '<tr><thead> <td>File</td> <td>Size</td> <td>SHA256 Checksum</td> </thead></tr>'
 
   for name in oil-$version.tar.{xz,gz}; do
-    local url="/download/$name"  # The server URL
-    local path=_download/$name
+    local url="download/$name"  # The server URL
+    local path=../oilshell.org__deploy/download/$name
     local checksum=$(sha256sum $path | awk '{print $1}')
     local size=$(stat --format '%s' $path)
 
@@ -155,49 +218,58 @@ _release-files-html() {
   echo '</table>'
 }
 
+# Columns: Date / Version / Docs /    / Files
+#                           Changelog  .xz
+#                           Install
+#                           Docs/
+#
+# The files could be a separate page and separate table?  I could provide
+# pre-built versions eventually?  Linux static versions?
+
+# TODO: Each of these would be a good candidate for a data frame!  Data vs.
+# presentation.
+
+# Simple UI:
+# - home page shows latest version (source release for now, binary release later?)
+#   - link to Changelog, INSTALL, doc index
+# - or see all releases
+# - Grey out older releases?
+
+# TODO: Should be sorted by date?  How to do that, with bash array?  Or Awk?
+# $timestamp $version $timestamp file?  And then sort -n  I guess?  Change
+# the release date format.  It will use Unix timestamp (OK until 2038!)
+
 _html-index() {
-  local in_dir=${1:-_download}  # the download directory we want to make an index of
+  local release_root_dir=$1 # the directory we want to make an index of
 
-  local tmp_dir=_tmp/release-html
-  mkdir -p $tmp_dir
+  for entry in $release_root_dir/*; do
+    if ! test -d $entry; then
+      continue
+    fi
+    local dir=$entry
 
-  # Columns: Date / Version / Docs /    / Files
-  #                           Changelog  .xz
-  #                           Install
-  #                           Docs/
-  #
-  # The files could be a separate page and separate table?  I could provide
-  # pre-built versions eventually?  Linux static versions?
+    local version=$(head -n 1 $dir/oil-version.txt)
+    local release_date=$(head -n 1 $dir/release-date.txt)
 
-  # TODO: Each of these would be a good candidate for a data frame!  Data vs.
-  # presentation.
-
-  # Simple UI:
-  # - home page shows latest version (source release for now, binary release later?)
-  #   - link to Changelog, INSTALL, doc index
-  # - or see all releases
-  # - Grey out older releases?
-
-  # TODO: Should be sorted by date?  How to do that, with bash array?  Or Awk?
-  # $timestamp $version $timestamp file?  And then sort -n  I guess?  Change
-  # the release date format.  It will use Unix timestamp (OK until 2038!)
-
-  for tar in $in_dir/*.gz; do  # all releases
-    log "--- $tar"
-    local version=$(basename $tar .gz | egrep --only-matching '[0-9]+\.[0-9]+\.[a-z0-9]+')
+    log "-- $dir"
     log "Version: $version"
-
-    local bytecode_rel_path=oil-$version/_build/oil/bytecode.zip
-    tar --extract --gzip --file $tar --directory $tmp_dir $bytecode_rel_path
-    local bytecode_path=$tmp_dir/$bytecode_rel_path
-    local release_date=$(unzip -p $bytecode_path release-date.txt)
-    log "Release date: $release_date"
+    log "Release Date: $release_date"
     log ""
+
+    echo "$release_date $version"
+  done > _tmp/release-meta.txt
+
+  # Reverse sort by release date
+  sort -r _tmp/release-meta.txt > _tmp/sorted-releases.txt
+
+  while read date _ version; do
+    log "Release Date: $date"
+    log "Version: $version"
 
     local announce_url
     case $version in
       0.0.0)
-        announce_url='/blog/2017/07/23.html'
+        announce_url='blog/2017/07/23.html'
         ;;
       *)
         # TODO: Fail?
@@ -208,20 +280,16 @@ _html-index() {
     echo '<a name="'$version'"></a>'
     echo "<h2>Version $version</h2>"
 
-    echo "<p>Release Date: $release_date</p>"
+    echo "<p class="date">$date</p>"
 
     echo '<p>                 <a href="'"$announce_url"'">Release Announcment</a>
-              &nbsp; | &nbsp; <a href="/release/'$version'/doc/INSTALL.html">INSTALL</a>
-              &nbsp; | &nbsp; <a href="/release/'$version'/doc/">Docs</a>
+              &nbsp; | &nbsp; <a href="release/'$version'/doc/INSTALL.html">INSTALL</a>
+              &nbsp; | &nbsp; <a href="release/'$version'/">Docs and Details</a>
           </p>'
               #&nbsp; | &nbsp; <a href="/release/'$version'/test/">Test Results</a>
 
     _release-files-html $version
-
-    #unzip -p $bytecode_path oil-version.txt
-  done
-
-  #tree _tmp/html
+  done < _tmp/sorted-releases.txt
 }
 
 _html-header() {
@@ -255,9 +323,15 @@ _html-header() {
       }
       .checksum {
         font-family: monospace;
-        color: #888;
+        color: #555;
       }
 
+      /* Copied from oilshell.org bundle.css */
+      .date {
+        font-size: medium;
+        color: #555;
+        padding-left: 1em;
+      }
     </style>
   </head>
   <body>
@@ -274,9 +348,11 @@ EOF
 }
 
 html-index() {
-  local out=_tmp/releases.html
+  local release_root_dir=$1
+  local out=${2:-_tmp/releases.html}
+
   { _html-header
-    _html-index "$@" 
+    _html-index $release_root_dir
     _html-footer
   } > $out
   ls -l $out

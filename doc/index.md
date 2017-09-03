@@ -1,7 +1,7 @@
 Oil Documentation
 =================
 
-*Version 0.0.0*
+*Version 0.1.alpha1*
 
 For End Users
 -------------

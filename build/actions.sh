@@ -13,7 +13,9 @@ source build/common.sh
 
 write-release-date() {
   mkdir -p _build  # Makefile makes this, but scripts/release.sh needs it too
-  date > _build/release-date.txt
+
+  # Write a readable, sortable date that is independent of time zone.
+  date --utc --rfc-3339 seconds > _build/release-date.txt
 }
 
 main-name() {

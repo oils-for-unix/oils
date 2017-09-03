@@ -17,13 +17,22 @@ bundle-size() {
   ls -l _build/*/bytecode.zip _build/*/ovm _bin/*.ovm
 }
 
-_tar-lines() {
-  local app_name=$1
+linecount-nativedeps() {
+  local app_name=${1:-oil}
   find _tmp/$app_name-tar-test -name '*.[ch]' | xargs wc -l | sort -n
+}
 
+linecount-pydeps() {
+  local app_name=${1:-oil}
   awk '/\.py$/ { print $1 }' \
     _build/runpy-deps-py.txt _build/$app_name/app-deps-py.txt |
   sort | uniq | xargs wc -l | sort -n
+}
+
+_tar-lines() {
+  linecount-nativedeps "$@"
+  echo
+  linecount-pydeps "$@"
 }
 
 # 144.6 K lines of C
