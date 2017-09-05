@@ -154,8 +154,10 @@ deploy-doc() {
   build/metrics.sh linecount-nativedeps \
     > $release_dir/metrics/linecount-nativedeps.txt
 
-  # Tests
-  cp -v -r --no-target-directory _tmp/spec/ $release_dir/test/spec
+  # --dereference because test/spec has css symlinks that should be files.
+  # rsync should just transfer raw files.
+  cp -v -r --force --dereference --no-target-directory \
+    _tmp/spec/ $release_dir/test/spec
 
   # Generate release index.
   html-index $release_root_dir _tmp/releases.html
