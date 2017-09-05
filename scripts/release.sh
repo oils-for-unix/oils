@@ -168,7 +168,8 @@ _git-changelog-body() {
     <td><a class="checksum"
            href="https://github.com/oilshell/oil/commit/%H">%h</a>
     </td>
-    <td class="date">%cd</td>
+    <td class="date">%ad</td>
+    <td>%x00%an%x01</td>
     <td class="subject">%x00%s%x01</td>
   </tr>'
   git log \
