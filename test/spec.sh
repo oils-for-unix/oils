@@ -262,6 +262,12 @@ builtin-vars() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+# Bash impleement type -t, but no other shell does.  For Nix.
+builtin-type() {
+  sh-spec spec/builtin-type.test.sh \
+    $BASH $OSH "$@"
+}
+
 builtins-special() {
   sh-spec spec/builtins-special.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"

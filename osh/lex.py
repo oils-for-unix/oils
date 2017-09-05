@@ -181,7 +181,11 @@ _KEYWORDS = [
   C('elif',     Id.KW_Elif),
   C('function', Id.KW_Function),
   C('time',     Id.KW_Time),
+]
 
+# These are treated like builtins in bash, but keywords in OSH.  However, we
+# main compatibility with bash for the 'type' builtin.
+_MORE_KEYWORDS = [
   C('declare',  Id.Assign_Declare),
   C('local',    Id.Assign_Local),
   C('readonly', Id.Assign_Readonly),
@@ -191,13 +195,27 @@ _KEYWORDS = [
   C('return',   Id.ControlFlow_Return),
 ]
 
+
+_TYPE_KEYWORDS = set(name for _, name, _ in _KEYWORDS)
+_TYPE_KEYWORDS.add('{')  # not in our lexer list
+_TYPE_BUILTINS = set(name for _, name, _ in _MORE_KEYWORDS)
+
+
+def IsOtherBuiltin(name):
+  return name in _TYPE_BUILTINS
+
+
+def IsKeyword(name):
+  return name in _TYPE_KEYWORDS
+
+
 # These two can must be recognized in the OUTER state, but can't nested within
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
 LEXER_DEF[LexMode.OUTER] = [
   C('((', Id.Op_DLeftParen),  # not allowed within [[
-] + _KEYWORDS + _UNQUOTED
+] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED
 
 # DBRACKET: can be like OUTER, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less

@@ -58,7 +58,7 @@ COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
 TEST BRACKET
-HELP
+TYPE HELP
 """.split())
 
 
@@ -196,6 +196,9 @@ def Resolve(argv0):
     return EBuiltin.TEST
   elif argv0 == "[":
     return EBuiltin.BRACKET
+
+  elif argv0 == "type":
+    return EBuiltin.TYPE
 
   elif argv0 == "help":
     return EBuiltin.HELP
@@ -644,6 +647,61 @@ def Unset(argv, mem, funcs):
           del funcs[name]
 
   return 0
+
+
+TYPE_SPEC = _Register('type')
+TYPE_SPEC.ShortFlag('-t')
+
+def Type(argv, funcs, path_val):
+  arg, i = TYPE_SPEC.Parse(argv)
+
+  if path_val.tag == value_e.Str:
+    path_list = path_val.s.split(':')
+  else:
+    path_list = []  # treat as empty path
+
+  status = 0
+  if not arg.t:
+    util.warn("*** 'type' builtin called without -t ***")
+    status = 1
+    # Keep going anyway
+
+  for name in argv[i:]:
+    if name in funcs:
+      print('function')
+      continue
+
+    if Resolve(name) != EBuiltin.NONE:
+      print('builtin')
+      continue
+    if ResolveSpecial(name) != EBuiltin.NONE:
+      print('builtin')
+      continue
+    if lex.IsOtherBuiltin(name):
+      print('builtin')
+      continue
+
+    if lex.IsKeyword(name):
+      print('keyword')
+      continue
+
+    # Now look for files.
+    found = False
+    for path_dir in path_list:
+      full_path = os.path.join(path_dir, name)
+      if os.path.exists(full_path):
+        print('file')
+        found = True
+        break
+    if found:
+      continue
+
+    # Name not found.  Nothing printed, but status is 1.
+    #log('%r not found', name)
+    status = 1
+
+  return status
+
 
 
 def Trap(argv, traps):
