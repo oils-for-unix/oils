@@ -29,6 +29,8 @@ spec() {
   echo "Visit http://$dest/RESULTS.html"
 }
 
+# TODO: These should really go to the oilshell.org__deploy repo.
+
 # Publish unit tests
 unit() {
   echo 'Hello from publish.sh'
