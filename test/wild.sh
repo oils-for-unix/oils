@@ -574,6 +574,17 @@ parse-asdf() {
     $(find $src \( -name '*.sh' -o -name '*.bash' \) -a -printf '%P\n' )
 }
 
+parse-scripts-to-rule-them-all() {
+  local src=~/git/other/scripts-to-rule-them-all
+
+  time _parse-many \
+    $src \
+    $RESULT_DIR/scripts-to-rule-them-all \
+    $(find $src \
+      \( -name .git -a -prune \) -o \
+      \( -type f -a -executable -a -printf '%P\n' \) )
+}
+
 #
 # Big projects
 #
