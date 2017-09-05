@@ -186,7 +186,7 @@ blog1() {
 }
 
 blog2() {
-  sh-spec spec/blog2.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/blog2.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 

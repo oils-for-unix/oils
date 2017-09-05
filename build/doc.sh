@@ -161,9 +161,10 @@ install() {
   markdown2html INSTALL.txt _build/doc/INSTALL.html "$MONOSPACE"
 }
 
-index() {
+release-index() {
+  local out=${1:-_build/doc/release-index.html}
   # Not monospace
-  markdown2html doc/index.md _build/doc/index.html ''
+  markdown2html doc/release-index.md $out ''
 }
 
 # I want to ship the INSTALL file literally, so just mutate things

@@ -35,6 +35,8 @@ log() {
 #         wild/
 #         gold/
 #         tarball/  # log of building and running the tarball?
+#       asan/       # spec tests or other?
+#                   # or it can be put under test/{spec,wild}
 #       metrics/  # static metrics on source code?
 #                 # could also do cloc?
 #         loc-src.txt  # oil, tools, etc.
@@ -162,9 +164,10 @@ deploy-doc() {
   build/doc.sh osh-quick-ref
   # Generate docs.
   build/doc.sh install
-  build/doc.sh index
 
   cp -v -r --no-target-directory _build/doc/ $release_dir/doc
+
+  build/doc.sh release-index $release_dir/index.html
 
   tree -L 3 $release_root_dir
   
