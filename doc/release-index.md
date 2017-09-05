@@ -20,5 +20,8 @@ Documentation
 Links
 -----
 
+- [Raw Git change log](changelog.html).  Some of these changes may not
+  affect the release tarball (e.g. tool changes).  See the [release
+  announcement](announcement.html) for a higher-level summary.
 - [Spec Test Results](test/spec/RESULTS.html)
 - [Metrics](metrics/)

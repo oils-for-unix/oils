@@ -24,7 +24,8 @@ log() {
 #       index.html  # links to all this stuff
 #       oil-version.txt
 #       release-date.txt
-#       Changelog.txt  # raw git log, release announcement is prose
+#       announcement.html  # HTML redirect
+#       changelog.html
 #       doc/
 #         INSTALL.html
 #         osh-quick-ref.html
@@ -136,6 +137,144 @@ hello() {
   _compressed-tarball hello $(head -n 1 build/testdata/hello-version.txt)
 }
 
+# NOTE: Left to right evaluation would be nice on this!
+#
+# Rewrite in oil:
+# 
+# sys.stdin.read() | sub( / "\x00" { any* } "\x01" /, html_escape) | write
+escape-segments() {
+  python -c '
+import cgi, re, sys
+
+print re.sub(
+  r"\x00(.*)\x01", 
+  lambda match: cgi.escape(match.group(1)),
+  sys.stdin.read())
+'
+}
+
+# TODO: It would be nice to column of bugs fixed / addressed!
+
+_git-changelog-body() {
+  local prev_branch=$1
+  local cur_branch=$2
+
+  # - a trick for HTML escaping (avoid XSS): surround %s with unlikely bytes,
+  #   \x00 and \x01.  Then pipe Python to escape.
+  # --reverse makes it go in forward chronlogical order.
+
+  # %x00 generates the byte \x00
+  local format='<tr>
+    <td><a class="checksum"
+           href="https://github.com/oilshell/oil/commit/%H">%h</a>
+    </td>
+    <td class="date">%cd</td>
+    <td class="subject">%x00%s%x01</td>
+  </tr>'
+  git log \
+    $prev_branch..$cur_branch \
+    --reverse \
+    --pretty="format:$format" \
+    --date=short \
+  | escape-segments
+}
+
+_git-changelog-header() {
+  local prev_branch=$1
+  local cur_branch=$2
+
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Commits Between $prev_branch and $cur_branch</title>
+    <style>
+      /* Make it centered and skinny for readability */
+      body {
+        margin: 0 auto;
+        width: 60em;
+      }
+      table {
+        width: 100%;
+      }
+      code {
+        color: green;
+      }
+      .checksum {
+        font-family: monospace;
+      }
+      .date {
+        /*font-family: monospace;*/
+      }
+      .subject {
+        font-family: monospace;
+      }
+
+      /* Copied from oilshell.org bundle.css */
+      .date {
+        font-size: medium;
+        color: #555;
+        padding-left: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Commits Between Branches <code>$prev_branch</code> and
+       <code>$cur_branch</code></h3>
+    <table>
+EOF
+# Doesn't seem necessary now.
+#     <thead>
+#        <tr>
+#          <td>Commit</td>
+#          <td>Date</td>
+#          <td>Description</td>
+#        </tr>
+#      </thead>
+}
+
+_git-changelog() {
+  _git-changelog-header "$@"
+  _git-changelog-body "$@"
+  cat <<EOF
+  </table>
+EOF
+  _html-footer
+}
+
+git-changelog-0.1() {
+  local version='0.1.alpha1'
+  _git-changelog release/0.0.0 release/0.1.0 \
+    > ../oilshell.org__deploy/release/$version/changelog.html
+}
+
+# For announcement.html
+html-redirect() {
+  local url=$1
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; url=$url" />
+  </head>
+  <body>
+    <p>Redirect to<a href="$url">$url</a></p>
+  </body>
+</html>  
+EOF
+}
+
+announcement-0.0() {
+	html-redirect '/blog/2017/07/23.html' \
+    > ../oilshell.org__deploy/release/0.0.0/announcement.html
+}
+
+announcement-0.1() {
+  local version='0.1.alpha1'
+	html-redirect '/blog/2017/09/TODO.html' \
+    > ../oilshell.org__deploy/release/$version/announcement.html
+}
+
 deploy-doc() {
   local deploy_repo='../oilshell.org__deploy'
   local release_root_dir="$deploy_repo/release"
@@ -187,6 +326,7 @@ deploy-tar() {
 
   ls -l $download_dir
 }
+
 
 #
 # Generate release.html.
@@ -272,23 +412,13 @@ _html-index() {
     log "Release Date: $date"
     log "Version: $version"
 
-    local announce_url
-    case $version in
-      0.0.0)
-        announce_url='blog/2017/07/23.html'
-        ;;
-      *)
-        # TODO: Fail?
-        announce_url="javascript:alert('No release announcement');"
-    esac
-
     # anchor
     echo '<a name="'$version'"></a>'
     echo "<h2>Version $version</h2>"
 
     echo "<p class="date">$date</p>"
 
-    echo '<p>                 <a href="'"$announce_url"'">Release Announcment</a>
+    echo '<p>                 <a href="release/'$version'/announcement.html">Release Announcment</a>
               &nbsp; | &nbsp; <a href="release/'$version'/doc/INSTALL.html">INSTALL</a>
               &nbsp; | &nbsp; <a href="release/'$version'/">Docs and Details</a>
           </p>'
@@ -298,8 +428,9 @@ _html-index() {
   done < _tmp/sorted-releases.txt
 }
 
-_html-header() {
+_releases-html-header() {
   cat <<EOF
+<!DOCTYPE html>
 <html>
   <head>
     <title>Oil Releases</title>
@@ -357,7 +488,7 @@ html-index() {
   local release_root_dir=$1
   local out=${2:-_tmp/releases.html}
 
-  { _html-header
+  { _releases-html-header
     _html-index $release_root_dir
     _html-footer
   } > $out
