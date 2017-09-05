@@ -15,9 +15,30 @@ a=(1 '2 3')
 argv.py ${a[@]} ${a[*]}
 # stdout: ['1', '2', '3', '1', '2', '3']
 
-### Empty array tests
+### 4 ways to interpolate empty array
 argv.py 1 "${a[@]}" 2 ${a[@]} 3 "${a[*]}" 4 ${a[*]} 5
 # stdout: ['1', '2', '3', '', '4', '5']
+
+### empty array
+empty=()
+argv.py "${empty[@]}"
+# stdout: []
+
+### Empty array with :-
+empty=()
+argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
+# stdout: ['not', 'one', 'not one']
+
+### nounset with empty array (design bug, makes it hard to use arrays)
+# http://lists.gnu.org/archive/html/help-bash/2017-09/msg00005.html
+# TODO: sane-arrays should get rid of this problem.
+set -o nounset
+empty=()
+argv.py "${empty[@]}"
+echo status=$?
+# stdout-json: "[]\nstatus=0\n"
+# BUG bash/mksh stdout-json: ""
+# BUG bash/mksh status: 1
 
 ### local array
 # mksh support local variables, but not local arrays, oddly.
@@ -62,11 +83,6 @@ a=(
 argv.py "${a[@]}"
 # status: 2
 # OK mksh status: 1
-
-### empty array
-empty=()
-argv.py "${empty[@]}"
-# stdout: []
 
 ### array with empty string
 empty=('')
@@ -265,11 +281,6 @@ argv.py "${array[@]}"
 ls foo=(1 2)
 # status: 2
 # OK mksh status: 1
-
-### Empty array with :-
-empty=()
-argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
-# stdout: ['not', 'one', 'not one']
 
 ### Single array with :-
 # bash does EMPTY ELISION here, unless it's double quoted.  mksh has
