@@ -366,3 +366,19 @@ echo $?
 # status: 0
 # N-I dash stdout-json: "0\n"
 # N-I dash status: 2
+
+### shopt -p -o
+shopt -po nounset
+set -u
+shopt -po nounset
+# stdout-json: "set +o nounset\nset -o nounset\n"
+# N-I dash/mksh stdout-json: ""
+# N-I dash/mksh status: 127
+
+### shopt -p
+shopt -p nullglob
+shopt -s nullglob
+shopt -p nullglob
+# stdout-json: "shopt -u nullglob\nshopt -s nullglob\n"
+# N-I dash/mksh stdout-json: ""
+# N-I dash/mksh status: 127

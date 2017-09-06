@@ -12,6 +12,7 @@ state.py -- Interpreter state
 
 import os
 
+from core import args
 from core import runtime
 from core import util
 from core.id_kind import Id
@@ -62,13 +63,27 @@ class _ErrExit:
     self.errexit = b
 
 
+# Used by builtin
+SET_OPTIONS = [
+    ('e', 'errexit'),
+    ('n', 'noexec'),
+    ('u', 'nounset'),
+    ('x', 'xtrace'),
+    ('f', 'noglob'),
+    (None, 'pipefail'),
+
+    (None, 'debug-completion'),
+]
+
+_SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
+
+
 class ExecOpts(object):
 
   def __init__(self):
-    self.errexit = _ErrExit()
-
-    # TODO: Set from flags
-    self.nounset = False
+    # set -o / set +o
+    self.errexit = _ErrExit()  # -e
+    self.nounset = False  # -u
     self.pipefail = False
     self.xtrace = False  # NOTE: uses PS4
     self.noglob = False  # -f
@@ -109,14 +124,44 @@ class ExecOpts(object):
     # - B for brace expansion
     return ''.join(chars)
 
-  def Show(self, f):
+  # TODO: Share with the other spec
+  SET_OPTIONS = ('errexit',)
+
+  def SetOption(self, opt_name, b):
+    """ For set -o, set +o, or shopt -s/-u -o. """
+    if opt_name not in _SET_OPTION_NAMES:
+      raise args.UsageError('Invalid option %r' % opt_name)
+    if opt_name == 'errexit':
+      self.errexit.Set(b)
+    else:
+      setattr(self, opt_name, b)
+
+  SHOPT_OPTIONS = ('nullglob', 'failglob')
+
+  def SetShoptOption(self, opt_name, b):
+    """ For shopt -s/-u. """
+    if opt_name not in self.SHOPT_OPTIONS:
+      raise args.UsageError('Invalid option %r' % opt_name)
+    setattr(self, opt_name, b)
+
+  def ShowOptions(self, opt_names):
+    """ For 'set -o' and 'shopt -p -o' """
     # TODO: Maybe sort them differently?
-    for name in sorted(self.__dict__):
-      if name == 'errexit':
-        val = self.errexit.errexit
+    opt_names = opt_names or _SET_OPTION_NAMES
+    for opt_name in opt_names:
+      if opt_name == 'errexit':
+        b = self.errexit.errexit
       else:
-        val = getattr(self, name)
-      print('%-20s%s' % (name, val), file=f)
+        attr = opt_name.replace('-', '_')
+        b = getattr(self, attr)
+      print('set %so %s' % ('-' if b else '+', opt_name))
+
+  def ShowShoptOptions(self, opt_names):
+    """ For 'shopt -p' """
+    opt_names = opt_names or self.SHOPT_OPTIONS  # show all
+    for opt_name in opt_names:
+      b = getattr(self, opt_name)
+      print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 
 
 class _ArgFrame(object):

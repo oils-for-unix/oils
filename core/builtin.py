@@ -530,26 +530,18 @@ def Export(argv, mem):
 
 def AddOptionsToArgSpec(spec):
   """Shared between 'set' builtin and the shell's own arg parser."""
-  spec.Option('e', 'errexit')
-  spec.Option('n', 'noexec')
-  spec.Option('u', 'nounset')
-  spec.Option('x', 'xtrace')
-  spec.Option('f', 'noglob')
-  spec.Option(None, 'pipefail')
-
-  spec.Option(None, 'debug-completion')
+  for short_flag, opt_name in state.SET_OPTIONS:
+    spec.Option(short_flag, opt_name)
 
 
-set_spec = args.FlagsAndOptions()
-AddOptionsToArgSpec(set_spec)
+SET_SPEC = args.FlagsAndOptions()
+AddOptionsToArgSpec(SET_SPEC)
 
 
 def SetExecOpts(exec_opts, opt_changes):
-  for name, val in opt_changes:
-    if name == 'errexit':
-      exec_opts.errexit.Set(val)
-    else:
-      setattr(exec_opts, name, val)
+  """Used by bin/oil.py too."""
+  for opt_name, b in opt_changes:
+    exec_opts.SetOption(opt_name, b)
 
 
 def Set(argv, exec_opts, mem):
@@ -558,14 +550,15 @@ def Set(argv, exec_opts, mem):
 
   if not argv:  # empty
     # TODO:
-    # - set -o is different than plain 'set'.
-    # If no arguments are given, it shows functions/vars?  Why not show other
-    # state?
-    exec_opts.Show(sys.stdout)
+    # - This should be set -o, not plain 'set'.
+    # - When no arguments are given, it shows functions/vars?  Why not show
+    # other state?
+    exec_opts.ShowOptions([])
     return 0
 
-  arg, i = set_spec.Parse(argv)
+  arg, i = SET_SPEC.Parse(argv)
 
+  # TODO: exec_opts.SetOption()
   SetExecOpts(exec_opts, arg.opt_changes)
   if arg.saw_double_dash or i != len(argv):  # set -u shouldn't affect argv
     mem.SetArgv(argv[i:])
@@ -605,27 +598,23 @@ def Set(argv, exec_opts, mem):
   # in functions!  In that case, it's really the settings in main() that matter
   # (as long as nobody later turns things off.)
 
-  # Oil-specific
-  if name == 'strict-arith':
-    exec_opts.strict_arith = True
-  elif name == 'strict-array':
-    exec_opts.strict_array = True
-  elif name == 'strict-command':
-    exec_opts.strict_command = True
-  elif name == 'strict-word':
-    exec_opts.strict_word = True
-  elif name == 'strict-scope':
-    exec_opts.strict_scope = True
-
 
 SHOPT_SPEC = _Register('shopt')
 SHOPT_SPEC.ShortFlag('-s')  # set
 SHOPT_SPEC.ShortFlag('-u')  # unset
+SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' up names
+SHOPT_SPEC.ShortFlag('-p')  # print
 
 
 def Shopt(argv, exec_opts):
   arg, i = SHOPT_SPEC.Parse(argv)
-  #log('%s', arg)
+
+  if arg.p:  # print values
+    if arg.o:  # use set -o names
+      exec_opts.ShowOptions(argv[i:])
+    else:
+      exec_opts.ShowShoptOptions(argv[i:])
+    return 0
 
   b = None
   if arg.s:
@@ -636,10 +625,12 @@ def Shopt(argv, exec_opts):
   if b is None:
     raise NotImplementedError  # Display options
 
+  # TODO: exec_opts.SetShoptOption()
   for opt_name in argv[i:]:
-    if opt_name not in ('nullglob', 'failglob'):
-      raise args.UsageError('shopt: Invalid option %r' % opt_name)
-    setattr(exec_opts, opt_name, b)
+    if arg.o:
+      exec_opts.SetOption(opt_name, b)
+    else:
+      exec_opts.SetShoptOption(opt_name, b)
 
   return 0
 
