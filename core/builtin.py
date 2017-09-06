@@ -669,36 +669,25 @@ def Type(argv, funcs, path_val):
   for name in argv[i:]:
     if name in funcs:
       print('function')
-      continue
-
-    if Resolve(name) != EBuiltin.NONE:
+    elif Resolve(name) != EBuiltin.NONE:
       print('builtin')
-      continue
-    if ResolveSpecial(name) != EBuiltin.NONE:
+    elif ResolveSpecial(name) != EBuiltin.NONE:
       print('builtin')
-      continue
-    if lex.IsOtherBuiltin(name):
+    elif lex.IsOtherBuiltin(name):  # declare, continue, etc.
       print('builtin')
-      continue
-
-    if lex.IsKeyword(name):
+    elif lex.IsKeyword(name):
       print('keyword')
-      continue
-
-    # Now look for files.
-    found = False
-    for path_dir in path_list:
-      full_path = os.path.join(path_dir, name)
-      if os.path.exists(full_path):
-        print('file')
-        found = True
-        break
-    if found:
-      continue
-
-    # Name not found.  Nothing printed, but status is 1.
-    #log('%r not found', name)
-    status = 1
+    else:
+      # Now look for files.
+      found = False
+      for path_dir in path_list:
+        full_path = os.path.join(path_dir, name)
+        if os.path.exists(full_path):
+          print('file')
+          found = True
+          break
+      if not found:  # Nothing printed, but status is 1.
+        status = 1
 
   return status
 
