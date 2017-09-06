@@ -88,8 +88,8 @@ startup-benchmark() {
   _compare benchmarks/startup.sh compare-strace
 }
 
-03-glob() {
-  _compare spec/03-glob.sh
+glob() {
+  _compare gold/glob.sh
 }
 
 all() {
@@ -102,7 +102,7 @@ all() {
   gen-module-init
   wild
   startup-benchmark
-  03-glob
+  glob
 }
 
 "$@"
