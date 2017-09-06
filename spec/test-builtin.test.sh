@@ -170,3 +170,12 @@ echo status=$?
 test -d $TMP/__nonexistent_Z_Z__
 echo status=$?
 # stdout-json: "status=0\nstatus=1\n"
+
+### -x
+rm -f $TMP/x
+echo 'echo hi' > $TMP/x
+test -x $TMP/x || echo 'no'
+chmod +x $TMP/x
+test -x $TMP/x && echo 'yes'
+test -x $TMP/__nonexistent__ || echo 'bad'
+# stdout-json: "no\nyes\nbad\n"

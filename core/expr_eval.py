@@ -488,6 +488,10 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_d:
           return stat.S_ISDIR(mode)
 
+        if op_id == Id.BoolUnary_x:
+          # TODO: Bash and dash do something more complicated with faccessat()?
+          return bool(mode & os.X_OK)
+
         raise NotImplementedError(op_id)
 
       if arg_type == OperandType.Str:

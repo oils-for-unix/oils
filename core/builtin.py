@@ -692,7 +692,6 @@ def Type(argv, funcs, path_val):
   return status
 
 
-
 def Trap(argv, traps):
   # TODO: register trap
 
