@@ -92,6 +92,10 @@ glob() {
   _compare gold/glob.sh
 }
 
+nix() {
+  _compare gold/nix.sh isElfSimpleWithStdin
+}
+
 all() {
   version-text
   count

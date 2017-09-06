@@ -365,12 +365,32 @@ def Jobs(argv, job_state):
   return 0
 
 
+READ_SPEC = _Register('read')
+READ_SPEC.ShortFlag('-r')
+READ_SPEC.ShortFlag('-n', args.Int)
+
 def Read(argv, mem):
   # TODO:
-  # - parse flags.
   # - Use IFS instead of Python's split().
 
-  names = argv
+  arg, i = READ_SPEC.Parse(argv)
+
+  if not arg.r:
+    util.warn('*** read without -r not implemented ***')
+
+  names = argv[i:]
+  if arg.n is not None:
+    try:
+      name = names[0]
+    except IndexError:
+      name = 'REPLY'  # default variable name
+    s = os.read(sys.stdin.fileno(), arg.n)
+    #log('read -n: %s = %s', name, s)
+
+    state.SetLocalString(mem, name, s)
+    # NOTE: Even if we don't get n bytes back, there is no error?
+    return 0
+
   line = sys.stdin.readline()
   if not line:  # EOF
     return 1
@@ -387,11 +407,13 @@ def Read(argv, mem):
 
   strs = line.split(None, n-1)
 
+  # TODO: Use REPLY variable here too?
   for i in xrange(n):
     try:
       s = strs[i]
     except IndexError:
       s = ''  # if there are too many variables
+    #log('read: %s = %s', names[i], s)
     state.SetLocalString(mem, names[i], s)
 
   return status

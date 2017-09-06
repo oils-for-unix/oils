@@ -202,6 +202,18 @@ echo /$x/$y/$z/
 umask | grep '[0-9]\+'  # check for digits
 # status: 0
 
+### Read -n (with $REPLY)
+echo 12345 > $TMP/readn.txt
+read -n 4 x < $TMP/readn.txt
+read -n 2 < $TMP/readn.txt  # Do it again with no variable
+argv.py $x $REPLY
+# stdout: ['1234', '12']
+# N-I dash stdout: []
+
+### get umask
+umask | grep '[0-9]\+'  # check for digits
+# status: 0
+
 ### set umask in octal
 rm $TMP/umask-one $TMP/umask-two
 umask 0002
