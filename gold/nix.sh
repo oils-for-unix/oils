@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Usage:
-#   ./nix.sh <function name>
+# Copied from hard-coded-descriptors/ in oilshell/blog-code, which was copied
+# from Nix setup.sh.  See issue #26.
 
 set -o nounset
 set -o pipefail

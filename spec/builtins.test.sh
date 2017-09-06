@@ -210,6 +210,13 @@ argv.py $x $REPLY
 # stdout: ['1234', '12']
 # N-I dash stdout: []
 
+### read -r ignores backslashes
+echo 'one\ two' > $TMP/readr.txt
+read escaped < $TMP/readr.txt
+read -r raw < $TMP/readr.txt
+argv "$escaped" "$raw"
+# stdout: ['one two', 'one\\ two']
+
 ### get umask
 umask | grep '[0-9]\+'  # check for digits
 # status: 0
