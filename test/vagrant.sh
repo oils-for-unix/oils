@@ -8,11 +8,13 @@ set -o pipefail
 set -o errexit
 
 # TODO:
-# - Arch Linux
-# - CentOS
-#
-# - FreeBSD
-# - OpenBSD
+# - FreeBSD - fix
+# - OpenBSD - no official image
+
+# - 32-bit https://app.vagrantup.com/puppetlabs/boxes/ubuntu-16.04-32-puppet
+# Or a really old one:
+# - https://app.vagrantup.com/hashicorp/boxes/precise32
+
 
 # Hm lots of Ruby dependencies.
 install() {

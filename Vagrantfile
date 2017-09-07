@@ -21,6 +21,36 @@ Vagrant.configure(2) do |config|
     c.vm.box = "centos/7"
   end
 
+  # 32-bit architecture.
+  config.vm.define "ubuntu32" do |c|
+    c.vm.box = "puppetlabs/ubuntu-16.04-32-puppet"
+  end
+
+  # Old 32-bit box.  Testing both old libc and 32-bit architecture.
+  config.vm.define "precise32" do |c|
+    c.vm.box = "hashicorp/precise32"
+  end
+
+  # Hm I can't get this to work, even with conflicting instructions here:
+  # https://app.vagrantup.com/freebsd/boxes/FreeBSD-11.0-STABLE
+  # https://forums.freebsd.org/threads/52717/
+  # https://planet.freebsd.org/brd/2015/08/07/official-vagrant-freebsd-images/
+  config.vm.define "freebsd" do |c|
+    c.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
+    c.vm.box = "freebsd/FreeBSD-11.0-STABLE"
+    c.ssh.shell = "sh"
+    c.vm.base_mac = "080027D14C66"
+
+    c.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
+      vb.customize ["modifyvm", :id, "--cpus", "1"]
+      vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
+      vb.customize ["modifyvm", :id, "--audio", "none"]
+      vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
+      vb.customize ["modifyvm", :id, "--nictype2", "virtio"]
+    end
+  end
+
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
