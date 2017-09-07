@@ -95,7 +95,7 @@ def StaticEval(w):
   return True, ret, quoted
 
 
-def _LeftMostSpanForPart(part):
+def LeftMostSpanForPart(part):
   # TODO: Write unit tests in ui.py for error values
 
   #from core.id_kind import IdName
@@ -119,7 +119,7 @@ def _LeftMostSpanForPart(part):
 
   elif part.tag == word_part_e.DoubleQuotedPart:
     if part.parts:
-      return _LeftMostSpanForPart(part.parts[0])
+      return LeftMostSpanForPart(part.parts[0])
     else:
       # We need the double quote location
       return -1
@@ -169,7 +169,7 @@ def _RightMostSpanForPart(part):
 
   elif part.tag == word_part_e.DoubleQuotedPart:
     if part.parts:
-      return _LeftMostSpanForPart(part.parts[-1])
+      return LeftMostSpanForPart(part.parts[-1])
     else:
       # We need the double quote location
       return -1
@@ -215,12 +215,12 @@ def LeftMostSpanForWord(w):
     if len(w.parts) == 0:
       return -1
     elif len(w.parts) == 1:
-      return _LeftMostSpanForPart(w.parts[0])
+      return LeftMostSpanForPart(w.parts[0])
     else:
       begin = w.parts[0]
       # TODO: We need to combine LineSpan()?  If they're both on the same line,
       # return them both.  If they're not, then just use "begin"?
-      return _LeftMostSpanForPart(begin)
+      return LeftMostSpanForPart(begin)
 
   # It's a TokenWord?
   return w.token.span_id

@@ -38,6 +38,7 @@ class _ErrorWithLocation(Exception):
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
     # args.
     self.token = kwargs.pop('token', None)
+    self.part = kwargs.pop('part', None)
     self.word = kwargs.pop('word', None)
     self.exit_status = kwargs.pop('status', None)
     if kwargs:

@@ -93,6 +93,8 @@ def PrettyPrintError(parse_error, arena, f):
     #print(parse_error)
     if parse_error.token:
       span_id = parse_error.token.span_id
+    elif parse_error.part:
+      span_id = word.LeftMostSpanForPart(parse_error.part)
     elif parse_error.word:
       # Can be -1
       span_id = word.LeftMostSpanForWord(parse_error.word)

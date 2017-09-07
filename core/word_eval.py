@@ -707,7 +707,7 @@ class _WordPartEvaluator:
           if val.tag == value_e.Undef:
             val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
-            raise RuntimeError("Can't index string with @")
+            e_die("Can't index string with @: %r", val, part=part)
           elif val.tag == value_e.StrArray:
             val = runtime.StrArray(val.strs)
 
@@ -716,7 +716,7 @@ class _WordPartEvaluator:
           if val.tag == value_e.Undef:
             val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
-            raise RuntimeError("Can't index string with *")
+            e_die("Can't index string with *: %r", val, part=part)
           elif val.tag == value_e.StrArray:
             # Always decay_array with ${a[*]} or "${a[*]}"
             val = runtime.StrArray(val.strs)
