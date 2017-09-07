@@ -13,6 +13,10 @@ Vagrant.configure(2) do |config|
     c.vm.box = "archlinux/archlinux"
   end
 
+  # NOTE: This box uses rsync for some reason.  Have to do 'vagrant halt
+  # centos' and 'vagrant up centos' to refresh /vagrant.
+
+  # https://github.com/mitchellh/vagrant/issues/6940
   config.vm.define "centos" do |c|
     c.vm.box = "centos/7"
   end
