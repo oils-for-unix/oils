@@ -229,6 +229,19 @@ detect_c_language() {
   # TODO: Detect header and size.
   echo '#define HAVE_WCHAR_H 1'
   echo '#define SIZEOF_WCHAR_T 4'
+
+  cat >$TMP/detect_va_list.c <<EOF
+#include <stdarg.h>  /* C89 */
+int main() {
+  va_list list1, list2;
+  list1 = list2;
+}
+EOF
+  if cc_quiet $TMP/detect_va_list.c; then
+    echo ''  # not an array
+  else
+    echo '#define VA_LIST_IS_ARRAY 1'
+  fi
 }
 
 # Another way of working: set detected-config.mk ?
