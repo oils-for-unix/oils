@@ -524,21 +524,6 @@
 /* Define if you have GNU PTH threads. */
 /* #undef HAVE_PTH */
 
-/* Define to 1 if you have the `pthread_atfork' function. */
-/* #undef HAVE_PTHREAD_ATFORK */
-
-/* Defined for Solaris 2.6 bug in pthread header. */
-/* #undef HAVE_PTHREAD_DESTRUCTOR */
-
-/* Define to 1 if you have the <pthread.h> header file. */
-#define HAVE_PTHREAD_H 1
-
-/* Define to 1 if you have the `pthread_init' function. */
-/* #undef HAVE_PTHREAD_INIT */
-
-/* Define to 1 if you have the `pthread_sigmask' function. */
-/* #undef HAVE_PTHREAD_SIGMASK */
-
 /* Define to 1 if you have the <pty.h> header file. */
 #define HAVE_PTY_H 1
 
@@ -794,9 +779,6 @@
 /* Define to 1 if you have the <sys/times.h> header file. */
 #define HAVE_SYS_TIMES_H 1
 
-/* Define to 1 if you have the <sys/time.h> header file. */
-#define HAVE_SYS_TIME_H 1
-
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
@@ -865,9 +847,6 @@
 /* Define if your compiler provides uint64_t. */
 #define HAVE_UINT64_T 1
 
-/* Define to 1 if the system has the type `uintptr_t'. */
-#define HAVE_UINTPTR_T 1
-
 /* Define to 1 if you have the `uname' function. */
 #define HAVE_UNAME 1
 
@@ -899,9 +878,6 @@
 
 /* Define to 1 if you have the `waitpid' function. */
 #define HAVE_WAITPID 1
-
-/* Define if the compiler provides a wchar.h header file. */
-#define HAVE_WCHAR_H 1
 
 /* Define to 1 if you have the `wcscoll' function. */
 #define HAVE_WCSCOLL 1
@@ -992,21 +968,6 @@
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 /* #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS */
-
-/* The size of `off_t', as computed by sizeof. */
-#define SIZEOF_OFF_T 8
-
-/* The size of `pthread_t', as computed by sizeof. */
-#define SIZEOF_PTHREAD_T 8
-
-/* The size of `time_t', as computed by sizeof. */
-#define SIZEOF_TIME_T 8
-
-/* The size of `uintptr_t', as computed by sizeof. */
-#define SIZEOF_UINTPTR_T 8
-
-/* The size of `wchar_t', as computed by sizeof. */
-#define SIZEOF_WCHAR_T 4
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

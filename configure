@@ -175,7 +175,7 @@ check_sizeof() {
   local actual_bytes
   actual_bytes=$(cat $TMP/print_expr.out)
 
-  if test "$actual_bytes" -lt "$min_bytes"; then
+  if test -n "$min_bytes" && test "$actual_bytes" -lt "$min_bytes"; then
     die "sizeof($c_type) should be at least $min_bytes; got $actual_bytes"
   fi
 
@@ -199,6 +199,11 @@ detect_c_language() {
   check_sizeof SIZEOF_FPOS_T 'fpos_t' 4
   check_sizeof SIZEOF_PID_T 'pid_t' 4
 
+  check_sizeof SIZEOF_OFF_T 'off_t' ''
+  # autoconf checks if we have time.h, but the check isn't used.  We just
+  # assume it's there.
+  check_sizeof SIZEOF_TIME_T 'time_t' ''
+
   if cc_statement HAVE_LONG_LONG 'long long x; x = (long long)0;'
   then
     check_sizeof SIZEOF_LONG_LONG 'long long' 8
@@ -207,11 +212,23 @@ detect_c_language() {
   then
     check_sizeof SIZEOF_LONG_DOUBLE 'long double' 8
   fi
+
   if cc_statement HAVE_C99_BOOL '_Bool x; x = (_Bool)0;'
   then
     # NOTE: this is mainly used in ctypes.h, which we might not need.
     check_sizeof SIZEOF__BOOL '_Bool' 1
   fi
+  # NOTE: Python also has a check for C99 uintptr_t.  Just assume we don't
+  # have it?
+
+  #if cc_statement HAVE_C99_BOOL 'wchar_t x; x = (wchar_t)0;'
+  #then
+  #  check_sizeof SIZEOF_WCHAR_T 'wchar_t' 4
+  #fi
+
+  # TODO: Detect header and size.
+  echo '#define HAVE_WCHAR_H 1'
+  echo '#define SIZEOF_WCHAR_T 4'
 }
 
 # Another way of working: set detected-config.mk ?
