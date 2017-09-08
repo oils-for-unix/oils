@@ -69,8 +69,8 @@ BUILTIN COMMANDS
   [Child Process] jobs   wait   ampersand &
                   X fg   X bg   X disown 
   [External]      test [   X printf   X getopts   X kill
+  [Introspection] help   X hash   type   X caller
 X [Word Lookup]   command   builtin
-X [Introspection] help   hash   type   caller
 X [Interactive]   alias   unalias   bind   history   fc
 X [Unsupported]   enable
 

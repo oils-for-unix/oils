@@ -60,6 +60,9 @@ def main(argv):
       n = 100
     Busy(n)
 
+  elif action == 'unicode':  # For testing that we support 4-byte chars
+    print(repr(unichr(0x10000)))
+
   elif action == 'crash':  # For testing that stack trace shows code
     lib.Crash()
 

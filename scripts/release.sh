@@ -2,6 +2,15 @@
 #
 # Usage:
 #   ./release.sh <function name>
+#
+# Steps:
+#   $0 build-and-test
+#   $0 deploy-tar
+#   $0 deploy-doc
+#   - Generate changelog.html
+#   - Generate announcment.html (link)
+# 
+# Then go to oilshell.org repo and do ./deploy.sh all.
 
 set -o nounset
 set -o pipefail
@@ -244,7 +253,7 @@ EOF
 }
 
 git-changelog-0.1() {
-  local version='0.1.alpha1'
+  local version='0.1.0'
   _git-changelog release/0.0.0 release/0.1.0 \
     > ../oilshell.org__deploy/release/$version/changelog.html
 }
@@ -271,8 +280,8 @@ announcement-0.0() {
 }
 
 announcement-0.1() {
-  local version='0.1.alpha1'
-	html-redirect '/blog/2017/09/TODO.html' \
+  local version='0.1.0'
+	html-redirect '/blog/2017/09/09.html' \
     > ../oilshell.org__deploy/release/$version/announcement.html
 }
 
@@ -328,9 +337,8 @@ deploy-tar() {
   ls -l $download_dir
 }
 
-
 #
-# Generate release.html.
+# Generate releases.html.
 #
 
 # Examples of similar release HTML pages:

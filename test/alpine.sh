@@ -117,7 +117,7 @@ _test-tar() {
   local target=_bin/${name}.ovm
   #local target=_bin/${name}.ovm-dbg
 
-  enter-chroot /bin/sh <<EOF
+  enter-chroot '' /bin/sh <<EOF
 set -e
 cd src
 tar --extract -z < $name-$version.tar.gz

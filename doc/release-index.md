@@ -1,27 +1,29 @@
 <!-- NOTE: This file is at /release/$VERSION/index.html -->
 
-Oil Version 0.1.alpha1
-======================
+Oil Version 0.1.0
+-----------------
 
-Documentation
---------------
+### What's New
 
-### For End Users
+- The [Release announcement](announcement.html) has a high-level summary of
+  changes.
+- Details are in the [raw git change log](changelog.html).  Some of these
+  changes may not affect the release tarball (e.g. tool changes).
 
-- [INSTALL](doc/INSTALL.html).  How to install OSH.  This text file is also
-  at the root of the tarball.
-- [OSH Quick Reference](doc/osh-quick-ref.html), with Examples.  This document
-  underlies the OSH `help` builtin.
+### Docs For End Users
 
-### For Developers
+- [INSTALL](doc/INSTALL.html).  How to install OSH.  This text file is also at
+  the root of the tarball.
+- [OSH Quick Reference](doc/osh-quick-ref.html), with Examples (in progress).
+  This document underlies the OSH `help` builtin.  It also gives a rough
+  overview of what features OSH implements.
+
+### Docs For Developers
 
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
-Links
------
+### Links
 
-- [Raw Git change log](changelog.html).  Some of these changes may not
-  affect the release tarball (e.g. tool changes).  See the [release
-  announcement](announcement.html) for a higher-level summary.
-- [Spec Test Results](test/spec/RESULTS.html)
-- [Metrics](metrics/)
+- [Spec Test Results](test/spec/RESULTS.html).  OSH behavior is tested against
+  the behavior of existing shells.
+- [Source Code Metrics](metrics/).  How much code is in Oil?
