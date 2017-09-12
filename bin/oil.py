@@ -164,7 +164,7 @@ def _ShowVersion():
   print('Platform: %s' % platform.version())
 
 
-def OshMain(argv):
+def OshMain(argv, login_shell):
   spec = args.FlagsAndOptions()
   spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
   spec.ShortFlag('-i')  # interactive
@@ -392,8 +392,13 @@ def BoilMain(main_argv):
 
 
 def OilMain(argv):
+  login_shell = False
+
   b = os.path.basename(argv[0])
   main_name, _ = os.path.splitext(b)
+  if main_name.startswith("-"):
+    login_shell = True
+    main_name = main_name[1:]
 
   if main_name in ('oil', 'oil_main'):
     try:
@@ -410,12 +415,15 @@ def OilMain(argv):
       sys.exit(0)
 
     main_name = first_arg
+    if main_name.startswith("-"):
+      login_shell = True
+      main_name = main_name[1:]
     main_argv = argv[2:]
   else:
     main_argv = argv[1:]
 
   if main_name in ('osh', 'sh'):
-    status = OshMain(main_argv)
+    status = OshMain(main_argv, login_shell)
     tlog('done osh main')
     return status
   elif main_name == 'wok':
