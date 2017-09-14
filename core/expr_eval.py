@@ -489,8 +489,13 @@ class BoolEvaluator(_ExprEvaluator):
           return stat.S_ISDIR(mode)
 
         if op_id == Id.BoolUnary_x:
-          # TODO: Bash and dash do something more complicated with faccessat()?
-          return bool(mode & os.X_OK)
+          return os.access(s, os.X_OK)
+
+        if op_id == Id.BoolUnary_r:
+          return os.access(s, os.R_OK)
+
+        if op_id == Id.BoolUnary_w:
+          return os.access(s, os.W_OK)
 
         raise NotImplementedError(op_id)
 
