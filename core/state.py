@@ -242,6 +242,10 @@ class Mem(object):
     SetGlobalString(self, 'IFS', ' \t\n')
     SetGlobalString(self, 'PWD', os.getcwd())
 
+    # NOTE: Should we put these in a namespace for Oil?
+    SetGlobalString(self, 'UID', str(os.getuid()))
+    SetGlobalString(self, 'EUID', str(os.geteuid()))
+
   def _InitEnviron(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env

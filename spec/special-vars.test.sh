@@ -98,3 +98,13 @@ expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue
 echo $RANDOM | egrep '[0-9]+'
 # status: 0
 # N-I dash status: 1
+
+### $UID and $EUID
+# These are both bash-specific.
+set -o errexit
+echo $UID | egrep -o '[0-9]+' >/dev/null
+echo $EUID | egrep -o '[0-9]+' >/dev/null
+echo status=$?
+# stdout: status=0
+# N-I dash/mksh stdout-json: ""
+# N-I dash/mksh status: 1
