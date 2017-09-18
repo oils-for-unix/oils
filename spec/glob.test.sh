@@ -175,3 +175,15 @@ echo -* hello zzzz?
 # stdout-json: "-* hello zzzz?\n"
 # N-I dash/mksh/ash stdout-json: "hello zzzzz"
 # status: 0
+
+### Splitting/Globbing doesn't happen on local assignment
+f() {
+  # Dash splits words and globs before handing it to the 'local' builtin.  But
+  # ash doesn't!
+  local foo=$1
+  echo "$foo"
+}
+f 'void *'
+# stdout: void *
+# BUG dash stdout-json: ""
+# BUG dash status: 2
