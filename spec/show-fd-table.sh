@@ -13,7 +13,7 @@ show-fd-table() {
   echo "   function in pid $$"
   # Make it truly parallel
   sleep 0.5
-  /usr/bin/time --output /tmp/$$.txt -- spec/bin/show_fd_table.py "$@"
+  /usr/bin/env time --output /tmp/$$.txt -- spec/bin/show_fd_table.py "$@"
 }
 
 # Trying to recreate spec-runner problem with file descriptors.
@@ -25,7 +25,7 @@ main() {
   echo
 
   # File descriptor 3 is open!
-  /usr/bin/time --output /tmp/task.txt -- spec/bin/show_fd_table.py 
+  /usr/bin/env time --output /tmp/task.txt -- spec/bin/show_fd_table.py
   echo
 
   # Cannot reproduce problem.  What's the deal with descriptors 8 and 9?  Oh
