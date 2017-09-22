@@ -37,7 +37,7 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 install-shells() {
   sudo apt-get install busybox-static mksh zsh
   mkdir -p _tmp/shells
-  ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
+  ln -s -f --verbose "$(which busybox)" $BUSYBOX_ASH
 }
 
 # TODO: Maybe do this before running all tests.

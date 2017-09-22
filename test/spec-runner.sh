@@ -62,7 +62,7 @@ run-task-with-status() {
   shift
 
   # --quiet suppresses a warning message
-  /usr/bin/time \
+  /usr/bin/env time \
     --output $out_file \
     --format '%x %e' \
     -- "$@" || true  # suppress failure
