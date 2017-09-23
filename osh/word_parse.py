@@ -149,8 +149,9 @@ class WordParser(object):
     # potential problem of not having spids.
     #
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
-    # return a CompoundWord(parts=[]), which fails later.
-    if not w.parts and empty_ok:
+    # return a CompoundWord with no parts, which is explicitly checked with a
+    # custom error message.
+    if not w.parts and arg_lex_mode == LexMode.VS_ARG_DQ and empty_ok:
       w.parts.append(ast.SingleQuotedPart())
     return w
 
