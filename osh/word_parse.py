@@ -23,6 +23,7 @@ word_part_e = ast.word_part_e
 word_e = ast.word_e
 
 p_die = util.p_die
+log = util.log
 
 # Substitutions can be nested, but which inner subs are allowed depends on the
 # outer sub.  See _ReadLeftParts vs. _ReadDoubleQuotedLeftParts.
@@ -140,8 +141,18 @@ class WordParser(object):
     # valid, even when unquoted.
     self._Next(arg_lex_mode)
     self._Peek()
-    return self._ReadCompoundWord(
+
+    w = self._ReadCompoundWord(
         lex_mode=arg_lex_mode, eof_type=eof_type, empty_ok=empty_ok)
+    # This is for "${s:-}", ${s/a//}, etc.  It is analogous to
+    # LooksLikeAssignment where we turn x= into x=''.  It has the same
+    # potential problem of not having spids.
+    #
+    # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
+    # return a CompoundWord(parts=[]), which fails later.
+    if not w.parts and empty_ok:
+      w.parts.append(ast.SingleQuotedPart())
+    return w
 
   def _ReadSliceArg(self):
     """Read an arithmetic expression for either part of ${a : i+1 : i+2}."""

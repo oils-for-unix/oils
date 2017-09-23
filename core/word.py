@@ -408,8 +408,9 @@ def LooksLikeAssignment(w):
 
   rhs = ast.CompoundWord()
   if len(w.parts) == 1:
-    # NOTE: This is necesssary so that EmptyUnquoted elision isn't
-    # applied.  EMPTY= is like EMPTY=''.
+    # This fake SingleQuotedPart is necesssary so that EmptyUnquoted elision
+    # isn't applied.  EMPTY= is like EMPTY=''.
+    # TODO: This part doesn't have spids, so it might break some invariants.
     rhs.parts.append(ast.SingleQuotedPart())
   else:
     for p in w.parts[1:]:

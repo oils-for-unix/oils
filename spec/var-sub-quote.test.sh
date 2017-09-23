@@ -15,8 +15,8 @@
 # makes sense I guess.  Vim's syntax highlighting is throwing me off.
 
 ### :- with empty alternative
-foo=
-argv.py "${foo:-}"
+empty=
+argv.py "${empty:-}"
 # stdout: ['']
 
 ### :-
