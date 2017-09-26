@@ -247,11 +247,6 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
-test-builtin() {
-  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH "$@"
-}
-
 builtins() {
   sh-spec spec/builtins.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
@@ -259,6 +254,11 @@ builtins() {
 
 builtin-vars() {
   sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+builtin-test() {
+  sh-spec spec/builtin-test.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
