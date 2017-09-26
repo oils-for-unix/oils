@@ -245,6 +245,8 @@ class Mem(object):
     # NOTE: Should we put these in a namespace for Oil?
     SetGlobalString(self, 'UID', str(os.getuid()))
     SetGlobalString(self, 'EUID', str(os.geteuid()))
+    # For getopts builtin
+    SetGlobalString(self, 'OPTIND', '1')
 
   def _InitEnviron(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in

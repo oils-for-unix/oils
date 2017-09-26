@@ -297,6 +297,9 @@ class Executor(object):
     elif builtin_id == EBuiltin.BRACKET:
       status = test_builtin.Test(argv, True)  # need_right_bracket
 
+    elif builtin_id == EBuiltin.GETOPTS:
+      status = builtin.GetOpts(argv, self.mem)
+
     elif builtin_id == EBuiltin.TYPE:
       path = self.mem.GetVar('PATH')
       status = builtin.Type(argv, self.funcs, path)

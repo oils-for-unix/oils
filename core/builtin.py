@@ -42,6 +42,9 @@ value_e = runtime.value_e
 scope = runtime.scope
 var_flags = runtime.var_flags
 log = util.log
+e_die = util.e_die
+
+
 
 # NOTE: NONE is a special value.
 # TODO:
@@ -57,7 +60,7 @@ EXIT SOURCE DOT EVAL EXEC WAIT JOBS
 COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
-TEST BRACKET
+TEST BRACKET GETOPTS
 TYPE HELP
 """.split())
 
@@ -196,6 +199,9 @@ def Resolve(argv0):
     return EBuiltin.TEST
   elif argv0 == "[":
     return EBuiltin.BRACKET
+
+  elif argv0 == "getopts":
+    return EBuiltin.GETOPTS
 
   elif argv0 == "type":
     return EBuiltin.TYPE
@@ -744,6 +750,105 @@ def Umask(argv):
       return 0
 
   raise args.UsageError('umask: unexpected arguments')
+
+
+def _ParseOptSpec(spec_str):
+  spec = {}
+  i = 0
+  n = len(spec_str)
+  while True:
+    if i >= n:
+      break
+    c = spec_str[i]
+    key = '-' + c
+    spec[key] = False
+    i += 1
+    if i >= n:
+      break
+    # If the next character is :, change the value to True.
+    if spec_str[i] == ':':
+      spec[key] = True
+      i += 1
+  return spec
+
+
+def _GetOpts(spec, mem, optind):
+  optarg = ''  # not set by default
+
+  v2 = mem.GetArgNum(optind)
+  if v2.tag == value_e.Undef:  # No more arguments.
+    return 1, '?', optarg, optind
+  assert v2.tag == value_e.Str
+
+  current = v2.s
+
+  if not current.startswith('-'):  # The next arg doesn't look like a flag.
+    return 1, '?', optarg, optind
+
+  # It looks like an argument.  Stop iteration by returning 1.
+  if current not in spec:  # Invalid flag
+    optind += 1
+    return 0, '?', optarg, optind
+
+  optind += 1
+  opt_char = current[-1]
+
+  needs_arg = spec[current]
+  if needs_arg:
+    v3 = mem.GetArgNum(optind)
+    if v3.tag == value_e.Undef:
+      util.error('getopts: option %r requires an argument', current)
+      # Hm doesn't cause status 1?
+      return 0, '?', optarg, optind
+    assert v3.tag == value_e.Str
+
+    optarg = v3.s
+    optind += 1
+
+  return 0, opt_char, optarg, optind
+
+
+# spec string -> {flag, arity}
+_GETOPTS_CACHE = {}
+
+def GetOpts(argv, mem):
+  """
+  Vars to set:
+    OPTIND - initialized to 1 at startup
+    OPTARG - argument
+  Vars used:
+    OPTERR: disable printing of error messages
+  """
+  try:
+    # NOTE: If first char is a colon, error reporting is different.  Alpine
+    # might not use that?
+    spec_str = argv[0]
+    var_name = argv[1]
+  except IndexError:
+    raise args.UsageError('getopts optstring name [arg]')
+
+  try:
+    spec = _GETOPTS_CACHE[spec_str]
+  except KeyError:
+    spec = _ParseOptSpec(spec_str)
+    _GETOPTS_CACHE[spec_str] = spec
+
+  # These errors are fatal errors, not like the builtin exiting with code 1.
+  # Because the invariants of the shell have been violated!
+  v = mem.GetVar('OPTIND')
+  if v.tag != value_e.Str:
+    e_die('OPTIND should be a string, got %r', v)
+  try:
+    optind = int(v.s)
+  except ValueError:
+    e_die("OPTIND doesn't look like an integer, got %r", v.s)
+
+  status, opt_char, optarg, optind = _GetOpts(spec, mem, optind)
+
+  state.SetGlobalString(mem, var_name, opt_char)
+  state.SetGlobalString(mem, 'OPTARG', optarg)
+  state.SetGlobalString(mem, 'OPTIND', str(optind))
+  return status
 
 
 def Help(argv, loader):
