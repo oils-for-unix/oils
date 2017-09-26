@@ -400,6 +400,11 @@ sh-options() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+errexit() {
+  sh-spec spec/errexit.test.sh \
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+}
+
 # 
 # Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
 #
