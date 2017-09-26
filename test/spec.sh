@@ -257,6 +257,11 @@ builtin-vars() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+builtin-getopts() {
+  sh-spec spec/builtin-getopts.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 builtin-test() {
   sh-spec spec/builtin-test.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
