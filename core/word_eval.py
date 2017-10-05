@@ -6,8 +6,6 @@ import glob
 import re
 import sys
 
-import libc
-
 from core import braces
 from core import expr_eval
 from core import glob_

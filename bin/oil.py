@@ -28,7 +28,8 @@ start_time = time.time()
 # Uncomment this to see startup time problems.
 if os.environ.get('OIL_TIMING'):
   def tlog(msg):
-    print('%.3f' % ((time.time() - start_time) * 1000), msg)
+    pid = os.getpid()  # TODO: Maybe remove PID later.
+    print('[%d] %.3f %s' % (pid, (time.time() - start_time) * 1000, msg))
 else:
   def tlog(msg):
     pass
@@ -450,6 +451,8 @@ def main(argv):
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+  finally:
+    tlog('Exiting main()')
 
 
 if __name__ == '__main__':
