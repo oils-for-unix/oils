@@ -42,7 +42,10 @@ from core import util
 
 from osh.lex import LexMode
 
-import libc  # for regex_parse
+try:
+  import libc  # for regex_parse
+except ImportError:
+  from benchmarks import fake_libc as libc
 
 log = util.log
 

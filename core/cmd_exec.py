@@ -39,7 +39,10 @@ from core import state
 from osh import ast_ as ast
 from osh import parse_lib
 
-import libc  # for fnmatch
+try:
+  import libc  # for fnmatch
+except ImportError:
+  from benchmarks import fake_libc as libc
 
 EBuiltin = builtin.EBuiltin
 
