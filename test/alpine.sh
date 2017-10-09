@@ -36,6 +36,12 @@ _extract() {
 extract() { sudo $0 _extract "$@"; }
 extract-distro-build() { sudo $0 _extract $DISTRO_BUILD_CHROOT_DIR; }
 
+# Without this, you can't 'su myusername'.  It won't be able to execute bash.
+chmod-chroot() {
+  local dest=${1:-$CHROOT_DIR}
+  sudo chmod 755 $dest
+}
+
 # add DNS -- for package manager
 
 _setup-dns() {

@@ -39,7 +39,10 @@ from core import state
 from osh import ast_ as ast
 from osh import parse_lib
 
-import libc  # for fnmatch
+try:
+  import libc  # for fnmatch
+except ImportError:
+  from benchmarks import fake_libc as libc
 
 EBuiltin = builtin.EBuiltin
 
@@ -296,6 +299,9 @@ class Executor(object):
 
     elif builtin_id == EBuiltin.BRACKET:
       status = test_builtin.Test(argv, True)  # need_right_bracket
+
+    elif builtin_id == EBuiltin.GETOPTS:
+      status = builtin.GetOpts(argv, self.mem)
 
     elif builtin_id == EBuiltin.TYPE:
       path = self.mem.GetVar('PATH')

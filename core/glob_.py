@@ -5,7 +5,10 @@ glob_.py
 
 import re
 
-import libc
+try:
+  import libc
+except ImportError:
+  from benchmarks import fake_libc as libc
 
 from core.util import log
 

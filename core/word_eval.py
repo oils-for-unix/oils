@@ -6,8 +6,6 @@ import glob
 import re
 import sys
 
-import libc
-
 from core import braces
 from core import expr_eval
 from core import glob_
@@ -991,7 +989,7 @@ class _WordEvaluator:
       return runtime.StrArray(strs)
 
     part_vals = self._EvalParts(word)
-    #log('part_vals %s', part_vals)
+    #log('EvalWordToAny part_vals %s', part_vals)
 
     # Instead of splitting, do a trivial transformation to frag array.
     # Example:

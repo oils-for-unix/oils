@@ -14,6 +14,16 @@
 # LexState.OUTER.  If we have "${}", then it's parsed as LexState.DQ.  That
 # makes sense I guess.  Vim's syntax highlighting is throwing me off.
 
+### "${empty:-}"
+empty=
+argv.py "${empty:-}"
+# stdout: ['']
+
+### ${empty:-}
+empty=
+argv.py ${empty:-}
+# stdout: []
+
 ### :-
 empty=''
 argv.py ${empty:-a} ${Unset:-b}

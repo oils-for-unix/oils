@@ -472,3 +472,4 @@ class BuiltinFlags(object):
         break
 
     return out, state.i
+

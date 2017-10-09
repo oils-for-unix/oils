@@ -37,7 +37,7 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 install-shells() {
   sudo apt-get install busybox-static mksh zsh
   mkdir -p _tmp/shells
-  ln -s -f --verbose /bin/busybox $BUSYBOX_ASH
+  ln -s -f --verbose "$(which busybox)" $BUSYBOX_ASH
 }
 
 # TODO: Maybe do this before running all tests.
@@ -247,11 +247,6 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
-test-builtin() {
-  sh-spec spec/test-builtin.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH "$@"
-}
-
 builtins() {
   sh-spec spec/builtins.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
@@ -259,6 +254,16 @@ builtins() {
 
 builtin-vars() {
   sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+builtin-getopts() {
+  sh-spec spec/builtin-getopts.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+}
+
+builtin-test() {
+  sh-spec spec/builtin-test.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -393,6 +398,11 @@ var-sub-quote() {
 sh-options() {
   sh-spec spec/sh-options.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
+}
+
+errexit() {
+  sh-spec spec/errexit.test.sh \
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
 # 

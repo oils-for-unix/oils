@@ -179,3 +179,20 @@ chmod +x $TMP/x
 test -x $TMP/x && echo 'yes'
 test -x $TMP/__nonexistent__ || echo 'bad'
 # stdout-json: "no\nyes\nbad\n"
+
+### -r
+echo '1' > $TMP/testr_yes
+echo '2' > $TMP/testr_no
+chmod -r $TMP/testr_no  # remove read permission
+test -r $TMP/testr_yes && echo 'yes'
+test -r $TMP/testr_no || echo 'no'
+# stdout-json: "yes\nno\n"
+
+### -w
+rm -f $TMP/testw_*
+echo '1' > $TMP/testw_yes
+echo '2' > $TMP/testw_no
+chmod -w $TMP/testw_no  # remove write permission
+test -w $TMP/testw_yes && echo 'yes'
+test -w $TMP/testw_no || echo 'no'
+# stdout-json: "yes\nno\n"
