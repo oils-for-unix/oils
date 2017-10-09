@@ -22,29 +22,37 @@ Builtins that can be exposed:
 """
 
 import os
-import time
-start_time = time.time()
-
-# Uncomment this to see startup time problems.
-if os.environ.get('OIL_TIMING'):
-  def tlog(msg):
-    pid = os.getpid()  # TODO: Maybe remove PID later.
-    print('[%d] %.3f %s' % (pid, (time.time() - start_time) * 1000, msg))
-else:
-  def tlog(msg):
-    pass
-
-tlog('before imports')
-
-import errno
-import platform
-import re
 import sys
-import traceback  # for debugging
 
 # TODO: Set PYTHONPATH from outside?
 this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(this_dir, '..'))
+
+_trace_path = os.environ.get('_PY_TRACE')
+if _trace_path:
+  from benchmarks import pytrace
+  _tracer = pytrace.Tracer()
+  _tracer.Start()
+else:
+  _tracer = None
+
+# Uncomment this to see startup time problems.
+if os.environ.get('OIL_TIMING'):
+  import time
+  start_time = time.time()
+  def _tlog(msg):
+    pid = os.getpid()  # TODO: Maybe remove PID later.
+    print('[%d] %.3f %s' % (pid, (time.time() - start_time) * 1000, msg))
+else:
+  def _tlog(msg):
+    pass
+
+_tlog('before imports')
+
+import errno
+import platform
+import re
+import traceback  # for debugging
 
 # Set in Modules/main.c.
 HAVE_READLINE = os.getenv('_HAVE_READLINE') != ''
@@ -80,7 +88,7 @@ from tools import osh2oil
 
 log = util.log
 
-tlog('after imports')
+_tlog('after imports')
 
 class OilUsageError(RuntimeError):
   """ Exception for incorrect command line usage. """
@@ -321,7 +329,7 @@ def OshMain(argv, login_shell):
     # Parse the whole thing up front
     #print('Parsing file')
 
-    tlog('ParseWholeFile')
+    _tlog('ParseWholeFile')
     # TODO: Do I need ParseAndEvalLoop?  How is it different than
     # InteractiveLoop?
     try:
@@ -376,7 +384,7 @@ def OshMain(argv, login_shell):
       status = 0
 
     if do_exec:
-      tlog('Execute(node)')
+      _tlog('Execute(node)')
       status = ex.Execute(node)
     else:
       status = 0
@@ -425,7 +433,7 @@ def OilMain(argv):
 
   if main_name in ('osh', 'sh'):
     status = OshMain(main_argv, login_shell)
-    tlog('done osh main')
+    _tlog('done osh main')
     return status
   elif main_name == 'wok':
     return WokMain(main_argv)
@@ -452,8 +460,11 @@ def main(argv):
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
   finally:
-    tlog('Exiting main()')
+    _tlog('Exiting main()')
+    if _trace_path:
+      _tracer.Stop(_trace_path)
 
 
 if __name__ == '__main__':
   main(sys.argv)
+

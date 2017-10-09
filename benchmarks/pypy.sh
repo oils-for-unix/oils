@@ -14,9 +14,11 @@ set -o errexit
 
 readonly PYPY=~/install/pypy2-v5.9.0-linux64/bin/pypy
 
+readonly ABUILD=~/git/alpine/abuild/abuild 
+
 parse-abuild() {
   local vm=$1
-  time $vm bin/oil.py osh -n ~/git/alpine/abuild/abuild >/dev/null
+  time $vm bin/oil.py osh -n $ABUILD >/dev/null
 }
 
 # ~3.5 seconds
