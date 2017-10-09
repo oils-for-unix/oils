@@ -996,7 +996,7 @@ class OilPrinter:
       raise AssertionError(node.__class__.__name__)
 
   def DoWordPart(self, node, local_symbols, quoted=False):
-    span_id = word._LeftMostSpanForPart(node)
+    span_id = word.LeftMostSpanForPart(node)
     if span_id is not None and span_id >= 0:
       span = self.arena.GetLineSpan(span_id)
       #print(span)
