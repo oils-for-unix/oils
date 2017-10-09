@@ -485,6 +485,9 @@ class BoolEvaluator(_ExprEvaluator):
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
           return False
 
+        if op_id == Id.BoolUnary_e:
+          return True
+
         if op_id == Id.BoolUnary_f:
           return stat.S_ISREG(mode)
 
@@ -499,6 +502,9 @@ class BoolEvaluator(_ExprEvaluator):
 
         if op_id == Id.BoolUnary_w:
           return os.access(s, os.W_OK)
+
+        if op_id == Id.BoolUnary_h:
+          return stat.S_ISLNK(mode)
 
         raise NotImplementedError(op_id)
 
