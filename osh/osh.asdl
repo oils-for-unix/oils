@@ -11,8 +11,7 @@
 --   * hidden behind set -o extglob
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
--- * Append operator in Assignment: +=
--- * &> redirect stdout and stderr
+-- * &> redirect both stdout and stderr
 -- * 1>&2- to close redirect
 
 -- Represented but Not Parsed:
@@ -29,7 +28,6 @@
 -- * parens
 --   * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
 --   * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
--- * HereDoc vs HereWord.  I collapsed them.
 -- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
 --
 -- Found to be not strictly necessary for oil conversion

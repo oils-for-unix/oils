@@ -9,10 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-die() {
-  echo 1>&2 "$@"
-  exit 1
-}
+source test/common.sh
 
 #
 # Test Runner
@@ -55,32 +52,6 @@ run-cases() {
       --stats-template \
       '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d %(osh_ALT_delta)d' \
     > _tmp/spec/${spec_name}.html
-}
-
-run-task-with-status() {
-  local out_file=$1
-  shift
-
-  # --quiet suppresses a warning message
-  /usr/bin/env time \
-    --output $out_file \
-    --format '%x %e' \
-    -- "$@" || true  # suppress failure
-
-  # Hack to get around the fact that --quiet is Debian-specific:
-  # http://lists.oilshell.org/pipermail/oil-dev-oilshell.org/2017-March/000012.html
-  #
-  # Long-term solution: our xargs should have --format.
-  sed -i '/Command exited with non-zero status/d' $out_file
-
-  # TODO: Use rows like this with oil
-  # '{"status": %x, "wall_secs": %e, "user_secs": %U, "kernel_secs": %S}' \
-}
-
-run-task-with-status-test() {
-  run-task-with-status _tmp/status.txt sh -c 'sleep 0.1; exit 1' || true
-  cat _tmp/status.txt
-  test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
 }
 
 readonly NUM_TASKS=400
@@ -235,8 +206,6 @@ html-summary() {
 link-css() {
   ln -s -f --verbose $PWD/web/{spec-tests,spec-code}.css _tmp/spec
 }
-
-readonly JOBS=$(( $(nproc) - 1 ))
 
 _all-parallel() {
   mkdir -p _tmp/spec

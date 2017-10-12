@@ -1,0 +1,57 @@
+/* For the wild-dir.html, etc. */
+
+#status {
+  text-align: center;
+  font-size: x-large;
+  color: darkred;
+}
+
+body {
+  margin: 0 auto;
+  width: 80em;
+}
+
+table {
+  padding: 10px;  /* Padding makes it look nicer. */
+  border-collapse: collapse;  /* this is like old cellpadding */
+}
+
+thead {
+  font-weight: bold;
+  /*text-align: center;*/
+}
+
+/* like cellspacing? */
+td {
+  padding: 5px;
+  text-align: right;
+}
+
+.name { text-align: left; }
+tbody .name { font-family: monospace; }
+
+h2 {
+  /*text-align: center;*/
+}
+
+/* Adaptedfrom spec-tests.css */
+.ok   { color: darkgreen; }
+.fail { color: darkred; }
+
+/* Copied from spec-tests.css */
+tbody tr:hover {
+  background-color: #eee;
+}
+#stderr td {
+  vertical-align: top;  /* so the #anchor goes to top of cell */
+  text-align: left;
+  border-top: solid 1px;
+  border-color: lightgrey;
+}
+
+#nav {
+  /* background-color: #eee; */
+  padding: 1em;
+  font-size: large;
+  font-family: monospace;
+}

@@ -8,628 +8,344 @@
 # TODO:
 # - There are a lot of hard-coded source paths here.  These files could
 # published in a tarball or torrent.
-#
-# - Need to create an overview HTML page
-# - Need to create an index page
-#   - original source.
+# - Add gentoo
+# - Add a quick smoke test that excludes distros and big ones, etc.
+#   - Just do a regex
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/wild-runner.sh
+
 readonly RESULT_DIR=_tmp/wild
 
 #
 # Helpers
-# 
+#
 
-log() {
-  echo "$@" 1>&2
-}
-
-# Default abbrev-text format
-osh-parse() {
-  bin/osh -n "$@"
-}
-
-# TODO: err file always exists because of --no-exec
-_parse-one() {
-  local input=$1
-  local output=$2
-
-  local stderr_file=${output}__err.txt
-  osh-parse $input > $output-AST.txt 2> $stderr_file
-  local status=$?
-
-  return $status
-}
-
-osh-html() {
-  bin/osh --ast-format abbrev-html -n "$@"
-}
-
-_osh-html-one() {
-  local input=$1
-  local output=$2
-
-  local stderr_file=${output}__htmlerr.txt
-  osh-html $input > $output-AST.html 2> $stderr_file
-  local status=$?
-
-  return $status
-}
-
-osh-to-oil() {
-  bin/osh -n --fix "$@"
-}
-
-_osh-to-oil-one() {
-  local input=$1
-  local output=$2
-
-  local stderr_file=${output}__osh-to-oil-err.txt
-  # NOTE: Need text extension for some web servers.
-  osh-to-oil $input > ${output}.oil.txt 2> $stderr_file
-  local status=$?
-
-  return $status
-}
-
-_parse-and-copy-one() {
-  local src_base=$1
-  local dest_base=$2
-  local rel_path=$3
-
-  local input=$src_base/$rel_path
-  local output=$dest_base/$rel_path
-
-  if grep -E 'exec wish|exec tclsh' $input; then
-    echo "$rel_path SKIPPED"
-
-    local html="
-    $rel_path SKIPPED because it has 'exec wish' or 'exec tclsh'
-    <hr/>
-    "
-    echo $html >>$dest_base/FAILED.html
-    return 0
-  fi
-
-  mkdir -p $(dirname $output)
-  echo $input
-
-  # Add .txt extension so it's not executable, and use 'cat' instead of cp
-  # So it's not executable.
-  cat < $input > ${output}.txt
-
-  if ! _parse-one $input $output; then  # Convert to text AST
-    echo $rel_path >>$dest_base/FAILED.txt
-
-    # Append
-    cat >>$dest_base/FAILED.html <<EOF
-    <a href="$rel_path.txt">$rel_path.txt</a>
-    <a href="${rel_path}__err.txt">${rel_path}__err.txt</a>
-    <a href="$rel_path-AST.txt">$rel_path-AST.txt</a>
-    <br/>
-    <pre>
-    $(cat ${output}__err.txt)
-    </pre>
-    <hr/>
-EOF
-
-    log "*** Failed to parse $rel_path"
-    return 1  # no point in continuing
-  fi
-  #rm ${output}__err.txt
-
-  if ! _osh-html-one $input $output; then  # Convert to HTML AST
-    log "*** Failed to convert $input to AST"
-    return 1  # no point in continuing
-  fi
-
-  if ! _osh-to-oil-one $input $output; then  # Convert to Oil
-    # Append
-    cat >>$dest_base/FAILED.html <<EOF
-    <a href="$rel_path.txt">$rel_path.txt</a>
-    <a href="${rel_path}__osh-to-oil-err.txt">${rel_path}__osh-to-oil-err.txt</a>
-    <a href="$rel_path.oil.txt">$rel_path.oil.txt</a>
-    <br/>
-    <pre>
-    $(cat ${output}__osh-to-oil-err.txt)
-    </pre>
-    <hr/>
-EOF
-
-    log "*** Failed to convert $input to Oil"
-    return 1  # failed
-  fi
-}
-
-_link-or-copy() {
-  # Problem: Firefox treats symlinks as redirects, which breaks the AJAX.  Copy
-  # it for now.
-  local src=$1
-  local dest=$2
-  #ln -s -f --verbose ../../../$src $dest
-  cp -f --verbose $src $dest
-}
-
-_parse-many() {
-  local src_base=$1
-  local dest_base=$2
+_manifest() {
+  local name=$1
+  local base_dir=$2
   shift 2
-  # Rest of args are relative paths
 
-  mkdir -p $dest_base
-
-  { pushd $src_base >/dev/null
-    wc -l "$@"
-    popd >/dev/null
-  } > $dest_base/LINE-COUNTS.txt
-
-  # Don't call it index.html
-  make-index < $dest_base/LINE-COUNTS.txt > $dest_base/FILES.html
-
-  _link-or-copy web/osh-to-oil.html $dest_base
-  _link-or-copy web/osh-to-oil.js $dest_base
-  _link-or-copy web/osh-to-oil-index.css $dest_base
-
-  # Truncate files
-  echo -n '' >$dest_base/FAILED.txt
-  echo -n '' >$dest_base/FAILED.html
-
-  local failed=''
-
-  for f in "$@"; do echo $f; done |
-    sort |
-    xargs -n 1 -- $0 _parse-and-copy-one $src_base $dest_base ||
-    failed=1
-
-  tree -p $dest_base
-
-  if test -n "$failed"; then
-    log ""
-    log "*** Some tasks failed.  See messages above."
-  fi
-  echo "Results: file://$PWD/$dest_base"
-}
-
-make-index() {
-  cat << EOF
-<html>
-<head>
-  <link rel="stylesheet" type="text/css" href="osh-to-oil-index.css" />
-</head>
-<body>
-<p> <a href="..">Up</a> </p>
-
-<h2>Files in this Project</h2>
-
-<table>
-EOF
-  echo "<thead> <tr> <td align=right>Count</td> <td>Name</td> </tr> </thead>";
-  while read count name; do
-    echo -n "<tr> <td align=right>$count</td> "
-    if test $name == 'total'; then
-      echo -n "<td>$name</td>"
-    else
-      echo -n "<td><a href=\"osh-to-oil.html#${name}\">$name</a></td> </tr>"
-    fi
-    echo "</tr>"
+  for path in "$@"; do
+    echo $name $base_dir/$path $path
   done
-  cat << EOF
-</table>
-</body>
-</html>
-EOF
 }
 
 # generic helper
-_parse-project() {
-  local src=$1
-  local name=$(basename $src)
+_sh-manifest() {
+  local base_dir=$1
+  shift
 
-  time _parse-many \
-    $src \
-    $RESULT_DIR/$name \
-    $(find $src -name '*.sh' -a -printf '%P\n')
+  local name=$(basename $base_dir)
+  _manifest $name $base_dir \
+    $(find $base_dir -name '*.sh' -a -printf '%P\n')
 }
 
-_parse-configure-scripts() {
-  local src=$1
-  local name=$(basename $src)
+_configure-manifest() {
+  local base_dir=$1
+  shift
 
-  time _parse-many \
-    $src \
-    $RESULT_DIR/$name-configure-parsed \
+  local name=$(basename $base_dir)
+  _manifest ${name}__configure $base_dir \
     $(find $src -name 'configure' -a -printf '%P\n')
 }
 
 #
-# Corpora
+# Special Case Corpora Using Explicit Globs
 #
 
-oil-sketch() {
-  local src=~/git/oil-sketch
-  _parse-many \
-    $src \
-    $RESULT_DIR/oil-sketch \
-    $(cd $src && echo *.sh {awk,demo,make,misc,regex,tools}/*.sh)
+# TODO: Where do we write the base dir?
+oil-sketch-manifest() {
+  local base_dir=~/git/oil-sketch
+  pushd $base_dir >/dev/null
+  for name in *.sh {awk,demo,make,misc,regex,tools}/*.sh; do
+    echo oil-sketch $base_dir/$name $name
+  done
+  popd >/dev/null
 }
 
-this-repo() {
-  local src=$PWD
-  _parse-many \
-    $src \
-    $RESULT_DIR/oil \
-    configure install *.sh {benchmarks,build,test,scripts,opy}/*.sh
+oil-manifest() {
+  local base_dir=$PWD
+  for name in \
+    configure install *.sh {benchmarks,build,test,scripts,opy}/*.sh; do
+    echo oil $base_dir/$name $name
+  done
 }
 
 readonly ABORIGINAL_DIR=~/src/aboriginal-1.4.5
 
-parse-aboriginal() {
-  # We want word splitting
-  _parse-many \
-    $ABORIGINAL_DIR \
-    $RESULT_DIR/aboriginal \
-    $(find $ABORIGINAL_DIR -name '*.sh' -printf '%P\n')
-}
+#
+# All
+#
 
-parse-initd() {
-  local src=/etc/init.d 
-  # NOTE: These scripts don't end with *.sh
-  _parse-many \
-    $src \
-    $RESULT_DIR/initd \
-    $(find $src -type f -a -executable -a -printf '%P\n')
-}
+all-manifests() {
+  # Don't expose this repo for now
+  #oil-sketch-manifest
 
-parse-usr-bin() {
-  local src=/usr/bin
-  _parse-many \
-    $src \
-    $RESULT_DIR/usr-bin \
-    $(find $src -name '*.sh' -a -printf '%P\n')
-}
+  oil-manifest
 
-parse-pixelb-scripts() {
-  local src=~/git/other/pixelb-scripts
-  # NOTE: These scripts don't end with *.sh
-  _parse-many \
-    $src \
-    $RESULT_DIR/pixelb-scripts \
-    $(find $src \( -name .git -a -prune \) -o \
-                \(  -type f -a -executable -a -printf '%P\n' \) )
-}
+  local src
 
-parse-debootstrap() {
-  # Version 1.0.89 extracts to a version-less dir.
-  local src=~/git/basis-build/_tmp/debootstrap
-
-  # NOTE: These scripts don't end with *.sh
-  _parse-many \
-    $src \
-    $RESULT_DIR/debootstrap \
-    $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
-    $(find $src/scripts -type f -a -printf 'scripts/%P\n')
-}
-
-# WOW.  I found another lexical state in Bazel.  How to I handle this?
-# Anything that's not a space?  Yeah I think after
-# () is allowed as a literal
-# [[ "${COMMANDS}" =~ ^$keywords(,$keywords)*$ ]] || usage "$@"
-
-parse-git-other() {
-  local src=~/git/other
-  local depth=3
-  _parse-many \
-    $src \
-    $RESULT_DIR/git-other-parsed \
-    $(find $src -maxdepth $depth -name '*.sh' -a -printf '%P\n')
-}
-
-parse-hg-other() {
-  local src=~/hg/other
-  _parse-many \
-    $src \
-    $RESULT_DIR/hg-other-parsed \
-    $(find $src -name '*.sh' -a -printf '%P\n')
-}
-
-parse-git() {
-  _parse-project ~/git/other/git
-}
-
-parse-dokku() {
-  local src=~/git/other/dokku
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/dokku \
-    $(find $src '(' -name '*.sh' -o -name dokku ')' -a -printf '%P\n')
-}
-
-parse-mesos() {
-  _parse-project ~/git/other/mesos
-}
-
-parse-balls() {
-  local src=~/git/other/balls
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/balls-parsed \
-    $(find $src '(' -name '*.sh' -o -name balls -o -name esh ')' -a \
-                -printf '%P\n')
-}
-
-parse-wwwoosh() {
-  _parse-project ~/git/other/wwwoosh
-}
-
-parse-make-a-lisp() {
-  local src=~/git/other/mal/bash
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/make-a-lisp-parsed \
-    $(find $src '(' -name '*.sh' ')' -a -printf '%P\n')
-}
-
-parse-gherkin() {
-  local src=~/git/other/gherkin
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/gherkin-parsed \
-    $(find $src '(' -name '*.sh' -o -name 'gherkin' ')' -a -printf '%P\n')
-}
-
-parse-lishp() {
-  _parse-project ~/git/other/lishp
-}
-
-parse-bashcached() {
-  local src=~/git/other/bashcached
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/bashcached-parsed \
-    $(find $src '(' -name '*.sh' -o -name 'bashcached' ')' -a -printf '%P\n')
-}
-
-parse-quinedb() {
-  local src=~/git/other/quinedb
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/quinedb-parsed \
-    $(find $src '(' -name '*.sh' -o -name 'quinedb' ')' -a -printf '%P\n')
-}
-
-parse-bashttpd() {
-  local src=~/git/other/bashttpd
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/bashttpd \
-    $(find $src -name 'bashttpd' -a -printf '%P\n')
-}
-
-parse-chef-bcpc() {
-  _parse-project ~/git/other/chef-bcpc
-}
-
-parse-julia() {
-  _parse-project ~/git/other/julia
-}
-
-# uses a bare "for" in a function!
-parse-j() {
-  local src=~/git/other/j
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/j-parsed \
-    $(find $src -type f -a  -name j -a -printf '%P\n')
-}
-
-# Doesn't parse because of extended glob.
-parse-wd() {
-  local src=~/git/other/wd
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/wd \
-    $(find $src -type f -a  -name wd -a -printf '%P\n')
-}
-
-parse-json-sh() {
-  _parse-project ~/git/other/JSON.sh
-}
-
-# declare -a foo=(..) is not parsed right
-parse-shasm() {
-  _parse-project ~/git/scratch/shasm
-}
-
-parse-sandstorm() {
-  _parse-project ~/git/other/sandstorm
-}
-
-parse-kubernetes() {
-  _parse-project ~/git/other/kubernetes
-}
-
-parse-sdk() {
-  _parse-project ~/git/other/sdk
-}
-
-# korn shell stuff
-parse-ast() {
-  _parse-project ~/git/other/ast
-}
-
-parse-bazel() {
-  _parse-project ~/git/other/bazel
-}
-
-parse-bash-completion() {
-  local src=~/git/other/bash-completion
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/bash-completion-parsed \
+  #
+  # Bash stuff
+  #
+  src=~/git/other/bash-completion
+  _manifest $(basename $src) $src \
     $(find $src/completions -type f -a -printf 'completions/%P\n')
-}
 
-parse-protobuf() {
-  _parse-project ~/git/other/protobuf
-}
+  # Bats bash test framework.  It appears to be fairly popular.
+  src=~/git/other/bats
+  _manifest $(basename $src) $src \
+    $(find $src \
+      \( -wholename '*/libexec/*' -a -type f -a \
+         -executable -a -printf '%P\n' \) )
 
-parse-mksh() {
-  _parse-project ~/src/mksh
-}
-
-parse-exp() {
-  _parse-project ~/git/other/exp
-}
-
-parse-minimal-linux() {
-  _parse-project ~/git/other/minimal
-}
-
-parse-micropython() {
-  _parse-project ~/git/other/micropython
-}
-
-parse-staticpython() {
-  _parse-project ~/git/other/staticpython
-}
-
-parse-linuxkit() {
-  _parse-project ~/git/other/linuxkit
-}
-
-# NOTE:
-# Find executable scripts, since they don't end in sh.
-# net/tcpretrans is written in Perl.
-parse-perf-tools() {
-  local src=~/git/other/perf-tools
-  local files=$(find $src \
-                \( -name .git -a -prune \) -o \
-                \( -name tcpretrans -a -prune \) -o \
-                \( -type f -a -executable -a -printf '%P\n' \) )
-  #echo $files
-  time _parse-many \
-    $src \
-    $RESULT_DIR/perf-tools-parsed \
-    $files
-}
-
-# Bats bash test framework.  It appears to be fairly popular.
-parse-bats() {
-  local src=~/git/other/bats
-  local files=$(find $src \
-                \( -wholename '*/libexec/*' -a -type f -a \
-                   -executable -a -printf '%P\n' \) )
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/bats \
-    $files
-}
-
-parse-bashdb() {
-  local src=~/src/bashdb-4.4-0.92
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/bashdb \
+  # Bash debugger?
+  src=~/src/bashdb-4.4-0.92
+  _manifest bashdb $src \
     $(find $src -name '*.sh' -a -printf '%P\n')
-}
 
-parse-bash-snippets() {
-  local src=~/git/other/Bash-Snippets
-  local files=$(find $src \
-                \( -name .git -a -prune \) -o \
-                \( -type f -a -executable -a -printf '%P\n' \) )
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/bash-snippets \
-    $files
-}
-
-# ASDF meta package/version manager.
-# Note that the language-specific plugins are specified (as remote repos) here:
-# https://github.com/asdf-vm/asdf-plugins/tree/master/plugins
-# They could be used for more tests.
-
-parse-asdf() {
-  local src=~/git/other/asdf
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/asdf \
-    $(find $src \( -name '*.sh' -o -name '*.bash' \) -a -printf '%P\n' )
-}
-
-parse-scripts-to-rule-them-all() {
-  local src=~/git/other/scripts-to-rule-them-all
-
-  time _parse-many \
-    $src \
-    $RESULT_DIR/scripts-to-rule-them-all \
+  src=~/git/other/Bash-Snippets
+  _manifest $(basename $src) $src \
     $(find $src \
       \( -name .git -a -prune \) -o \
       \( -type f -a -executable -a -printf '%P\n' \) )
+
+  #
+  # Shell Frameworks/Collections
+  #
+
+  # Brendan Gregg's performance scripts.
+  # Find executable scripts, since they don't end in sh.
+  # net/tcpretrans is written in Perl.
+  src=~/git/other/perf-tools
+  _manifest $(basename $src) $src \
+    $(find $src \
+      \( -name .git -a -prune \) -o \
+      \( -name tcpretrans -a -prune \) -o \
+      \( -type f -a -executable -a -printf '%P\n' \) )
+
+  # ASDF meta package/version manager.
+  # Note that the language-specific plugins are specified (as remote repos)
+  # here: https://github.com/asdf-vm/asdf-plugins/tree/master/plugins
+  # They # could be used for more tests.
+
+  src=~/git/other/asdf
+  _manifest $(basename $src) $src \
+    $(find $src \( -name '*.sh' -o -name '*.bash' \) -a -printf '%P\n' )
+
+  src=~/git/other/scripts-to-rule-them-all
+  _manifest $(basename $src) $src \
+    $(find $src \
+      \( -name .git -a -prune \) -o \
+      \( -type f -a -executable -a -printf '%P\n' \) )
+
+  #
+  # Linux Distros
+  #
+
+  _sh-manifest ~/git/other/minimal
+  _sh-manifest ~/git/other/linuxkit
+
+  src=~/git/alpine/aports
+  _manifest $(basename $src) $src \
+    $(find $src -name APKBUILD -a -printf '%P\n')
+
+  src=$ABORIGINAL_DIR
+  _manifest aboriginal $src \
+    $(find $src -name '*.sh' -printf '%P\n')
+
+  src=/etc/init.d
+  _manifest initd $src \
+    $(find $src -type f -a -executable -a -printf '%P\n')
+
+  src=/usr/bin
+  _manifest usr-bin $src \
+    $(find $src -name '*.sh' -a -printf '%P\n')
+
+  # Version 1.0.89 extracts to a version-less dir.
+  src=~/git/basis-build/_tmp/debootstrap
+  _manifest debootstrap $src \
+    $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
+    $(find $src/scripts -type f -a -printf 'scripts/%P\n')
+
+  # Kernel
+  _sh-manifest ~/src/linux-4.8.7
+
+  # Git
+  _sh-manifest ~/git/other/git
+
+  #
+  # Cloud Stuff
+  #
+  _sh-manifest ~/git/other/mesos
+  _sh-manifest ~/git/other/chef-bcpc
+  _sh-manifest ~/git/other/sandstorm
+  _sh-manifest ~/git/other/kubernetes
+
+  src=~/git/other/dokku
+  _manifest dokku $src \
+    $(find $src '(' -name '*.sh' -o -name dokku ')' -a -printf '%P\n')
+
+  #
+  # Google
+  #
+  _sh-manifest ~/git/other/bazel
+  _sh-manifest ~/git/other/protobuf
+
+  #
+  # Other shells
+  #
+
+  _sh-manifest ~/git/other/ast  # korn shell stuff
+  _sh-manifest ~/src/mksh
+
+  #
+  # Other Languages
+  #
+
+  _sh-manifest ~/git/other/julia
+  _sh-manifest ~/git/other/sdk  # Dart SDK?
+
+  _sh-manifest ~/git/other/micropython
+  _sh-manifest ~/git/other/staticpython  # statically linked build
+
+  _sh-manifest ~/git/other/exp  # Go experimental repo
+
+  #
+  # Esoteric
+  #
+
+  _sh-manifest ~/git/other/wwwoosh
+  _sh-manifest ~/git/scratch/shasm
+  _sh-manifest ~/git/other/lishp
+
+  src=~/git/other/mal/bash
+  _manifest make-a-lisp-bash $src \
+    $(find $src '(' -name '*.sh' ')' -a -printf '%P\n')
+
+  src=~/git/other/gherkin
+  _manifest $(basename $src) $src \
+    $(find $src '(' -name '*.sh' -o -name 'gherkin' ')' -a -printf '%P\n')
+
+  src=~/git/other/balls
+  _manifest $(basename $src) $src \
+    $(find $src '(' -name '*.sh' -o -name balls -o -name esh ')' -a \
+                -printf '%P\n')
+
+  src=~/git/other/bashcached
+  _manifest $(basename $src) $src \
+    $(find $src '(' -name '*.sh' -o -name 'bashcached' ')' -a -printf '%P\n')
+
+  src=~/git/other/quinedb
+  _manifest $(basename $src) $src \
+    $(find $src '(' -name '*.sh' -o -name 'quinedb' ')' -a -printf '%P\n')
+
+  src=~/git/other/bashttpd
+  _manifest $(basename $src) $src \
+    $(find $src -name 'bashttpd' -a -printf '%P\n')
+
+
+  #
+  # Parsers
+  #
+
+  local src=~/git/other/j
+  _manifest $(basename $src) $src \
+    $(find $src -type f -a  -name j -a -printf '%P\n')
+
+  _sh-manifest ~/git/other/JSON.sh
+
+  #
+  # Grab Bag
+  #
+
+  # This overlaps with git too much
+  #src=~/git/other
+  #local depth=3
+  #_manifest git-other $src \
+  #  $(find $src -maxdepth $depth -name '*.sh' -a -printf '%P\n')
+
+  src=~/hg/other
+  _manifest hg-other $src \
+    $(find $src -name '*.sh' -a -printf '%P\n')
+
+  #
+  # Misc Scripts
+  #
+
+  # NOTE: These scripts don't end with *.sh
+  src=~/git/other/pixelb-scripts
+  _manifest pixelb-scripts $src \
+    $(find $src \( -name .git -a -prune \) -o \
+                \( -type f -a -executable -a -printf '%P\n' \) )
+
+
+  # Something related to WebDriver
+  # Doesn't parse because of extended glob.
+  src=~/git/other/wd
+  _manifest $(basename $src) $src \
+    $(find $src -type f -a  -name wd -a -printf '%P\n')
+
+  #
+  # Big
+  #
+
+  return
+  log "Finding Files in Big Projects"
+  readonly BIG_BUILD_ROOT=/media/andy/hdd-8T/big-build/ssd-backup/sdb/build
+
+  # 2m 18s the first time.
+  # 2 seconds the second time.  This is a big slow drive.
+  time {
+    _sh-manifest $BIG_BUILD_ROOT/hg/other/mozilla-central/
+
+    _sh-manifest $BIG_BUILD_ROOT/chrome
+    _configure-manifest $BIG_BUILD_ROOT/chrome
+
+    _sh-manifest $BIG_BUILD_ROOT/android
+    _configure-manifest $BIG_BUILD_ROOT/android
+
+    _sh-manifest $BIG_BUILD_ROOT/openwrt
+    _sh-manifest $BIG_BUILD_ROOT/OpenWireless
+  }
+}
+
+write-manifest() {
+  mkdir -p _tmp/wild
+  local out=_tmp/wild/MANIFEST.txt
+  all-manifests > $out
+  wc -l $out
+}
+
+# 442K lines without "big" and without ltmain.sh
+# TODO: Include a few ltmain.sh.  Have to de-dupe them.
+#
+# 767K lines with aports (It's 250K lines by itself.)
+
+# 1.30 M lines with "big".
+# 760K lines without ltmain.sh.  Hm need to get up to 1M.
+
+# The biggest ones are all ltmain.sh though.
+count-lines() {
+  # We need this weird --files0-from because there are too many files.  xargs
+  # would split it into multiple invocations.
+  #
+  # It would be nicer if wc just had an option not to sum?
+  time awk '{print $2}' _tmp/wild/MANIFEST.txt | 
+    tr '\n' '\0' | wc -l --files0-from - | sort -n
+    #grep -v ltmain.sh |
+}
+
+all() {
+  test/wild-runner.sh all-parallel "$@"
 }
 
 #
-# Big projects
-#
-
-parse-linux() {
-  _parse-project ~/src/linux-4.8.7
-}
-
-parse-mozilla() {
-  _parse-project \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/hg/other/mozilla-central/
-}
-
-parse-chrome() {
-  _parse-project \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/chrome
-}
-
-parse-chrome2() {
-  _parse-configure-scripts \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/chrome
-}
-
-parse-android() {
-  _parse-project \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/android
-}
-
-parse-android2() {
-  _parse-configure-scripts \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/android
-}
-
-parse-openwrt() {
-  _parse-project \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/openwrt
-}
-
-parse-openwireless() {
-  _parse-project \
-    /mnt/ssd-1T/build/ssd-backup/sdb/build/OpenWireless
-}
-
-#
-# Search Aboriginal Packages
+# Find Biggest Shell Scripts in Aboriginal Source Tarballs
 #
 
 readonly AB_PACKAGES=~/hg/scratch/aboriginal/aboriginal-1.2.2/packages
@@ -675,4 +391,7 @@ aboriginal-biggest() {
 # 33972 gcc-4.2.1/ltcf-c.sh
 # 39048 gcc-4.2.1/ltcf-cxx.sh
 
-"$@"
+if test "$(basename $0)" = 'wild.sh'; then
+  "$@"
+fi
+

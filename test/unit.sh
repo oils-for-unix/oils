@@ -14,7 +14,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/spec-runner.sh  # TODO: Separate this?
+source test/common.sh
 
 export PYTHONPATH=.  # current dir
 
