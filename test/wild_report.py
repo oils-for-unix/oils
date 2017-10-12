@@ -1,37 +1,15 @@
-#!/usr/bin/python
-
+#!/usr/bin/env python
 """
 wild_report.py
 """
 
-#import csv
 import json
 import glob
 import os
 import sys
 from collections import defaultdict
 
-import urllib
 import jsontemplate
-
-# TODO:
-
-# - Add table-lib.js so we can sort the results!
-#   - this will identify the 2 failures in Alpine!
-
-# - Measure internal process time
-# - Show totals for the directory underneath the tables?
-#   - or at least you want a top level dir, above WILD
-
-# - Maybe organize it into dirs
-#   - shlib/  # shell libraries
-#   - os/    # kernel and distros
-#   - langs/
-#   - esoteric/
-#   - cloud/
-#   - google/
-#   - scripts/  # misc scripts
-#   - other/
 
 # JSON Template Evaluation:
 #
@@ -56,8 +34,7 @@ T = jsontemplate.Template
 
 F = {
     'commas': lambda n: '{:,}'.format(n),
-    # NOTE: matches urlesc in handlers/lists.py
-    'urlesc': urllib.quote_plus,
+    #'urlesc': urllib.quote_plus,
     }
 
 def MakeHtmlGroup(title_str, body_str):
@@ -74,10 +51,14 @@ BODY_STYLE = jsontemplate.Template("""\
   <head>
     <title>{.template TITLE}</title>
 
+    <script type="text/javascript" src="{base_url}ajax.js"></script>
+    <script type="text/javascript" src="{base_url}table-sort.js"></script>
     <link rel="stylesheet" type="text/css" href="{base_url}wild.css" />
   </head>
 
-  <body>
+  <body onload="initPage(gUrlHash, gTableStates, kStatusElem);"
+        onhashchange="onHashChange(gUrlHash, gTableStates, kStatusElem);">
+    <p id="status"></p>
 {.template NAV}
 
 {.template BODY}
@@ -110,7 +91,17 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
     'WILD/{rel_path}',
 """\
 {.section dirs}
-<table>
+<table id="dirs">
+  <colgroup> <!-- for table-sort.js -->
+    <col type="number">
+    <col type="number">
+    <col type="number">
+    <col type="number">
+    <col type="number">
+    <col type="number">
+    <col type="number">
+    <col type="case-insensitive">
+  </colgroup>
   <thead>
     <tr>
       <td>Files</td>
@@ -158,7 +149,16 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
 </p>
 
 {.section files}
-<table>
+<table id="files">
+  <colgroup> <!-- for table-sort.js -->
+    <col type="number">
+    <col type="case-insensitive">
+    <col type="number">
+    <col type="number">
+    <col type="number">
+    <col type="case-insensitive">
+    <col type="case-insensitive">
+  </colgroup>
   <thead>
     <tr>
       <td>Lines</td>
@@ -234,6 +234,27 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
 
   </table>
 {.end}
+
+<!-- page globals -->
+<script type="text/javascript">
+  var gUrlHash = new UrlHash(location.hash);
+  var gTableStates = {};
+  var kStatusElem = document.getElementById('status');
+
+  function initPage(urlHash, tableStates, statusElem) {
+    var e1 = document.getElementById('dirs');
+    var e2 = document.getElementById('files');
+    var t = [];
+    if (e1) { t.push(e1); }
+    if (e2) { t.push(e2); }
+    makeTablesSortable(urlHash, t, tableStates);
+    updateTables(urlHash, tableStates, statusElem);
+  }
+
+  function onHashChange(urlHash, tableStates, statusElem) {
+    updateTables(urlHash, tableStates, statusElem);
+  }
+</script>
 """)
 
 
@@ -249,6 +270,10 @@ class DirNode:
   def __init__(self):
     self.files = {}  # filename -> stats for success/failure, time, etc.
     self.dirs = {}  # subdir name -> Dir object
+
+    # Or should this be self.totals?  So the root node has it.
+    # Then you can show self.dirs.totals in WriteHtmlFiles.  Yes.
+
     self.dir_totals = {}  # subdir -> summed stats
 
     # show all the non-empty stderr here?

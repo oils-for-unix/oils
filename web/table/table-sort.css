@@ -1,0 +1,39 @@
+/* sort indicator in column headings */
+.sortArrow {
+  color: grey;
+}
+
+thead {
+  font-weight: bold;
+  text-align: center;
+}
+
+table {
+  padding: 10px;  /* Padding makes it look nicer. */
+  margin: 0 auto;  /* center table on the page */
+  border-collapse: collapse;  /* this is like old cellpadding */
+}
+
+/* like cellspacing? */
+td {
+  padding: 5px;
+}
+
+/* Built-in support for R NA values */
+.na {
+  color: darkred;
+}
+
+/* Numbers aligned on the right, like Excel */
+.num {
+  text-align: right;
+}
+
+.highlight {
+  background-color: #f0f0f0;
+}
+
+tbody tr:hover {
+  background-color: lightcyan;
+}
+

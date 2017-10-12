@@ -54,9 +54,10 @@ print-manifest() {
   #egrep '^dokku|^wwwoosh|^oil' _tmp/wild/MANIFEST.txt
   #head -n $NUM_TASKS _tmp/wild/MANIFEST.txt
   #egrep -- 'mesos' _tmp/wild/MANIFEST.txt
-  #cat _tmp/wild/MANIFEST.txt
+  cat _tmp/wild/MANIFEST.txt
   #egrep -- '^aports' _tmp/wild/MANIFEST.txt
-  egrep -- '^gherkin' _tmp/wild/MANIFEST.txt
+  #egrep -- '^gherkin' _tmp/wild/MANIFEST.txt
+  #egrep -- '^bash' _tmp/wild/MANIFEST.txt
 }
 
 parse-all() {
@@ -93,6 +94,8 @@ make-report() {
   _link \
     $PWD/web/wild.css \
     $PWD/web/osh-to-oil.{html,js,css} \
+    $PWD/web/ajax.js \
+    $PWD/web/table/table-sort.js \
     _tmp/wild/www
 }
 
