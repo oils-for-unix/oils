@@ -345,7 +345,12 @@ write-manifest() {
 # 760K lines without ltmain.sh.  Hm need to get up to 1M.
 
 abspaths() {
-  awk '{print $2}' _tmp/wild/MANIFEST.txt 
+  local proj=${1:-}
+  if test -n "$proj"; then
+    awk -v proj=$proj '$1 == proj {print $2}' _tmp/wild/MANIFEST.txt 
+  else
+    awk '{print $2}' _tmp/wild/MANIFEST.txt 
+  fi
 }
 
 # The biggest ones are all ltmain.sh though.
@@ -359,8 +364,11 @@ count-lines() {
     #grep -v ltmain.sh |
 }
 
-# Ideas: find shebang
-find-unicode() {
+# Takes ~15 seconds for 8,000+ files.
+#
+# NOTE: APKBUILD don't have shebang lines!  So there are a bunch of false
+# detections, e.g. APKBUILD as Makefile, C, etc.
+detect-all-types() {
   time abspaths | xargs file | pv > _tmp/wild/file-types.txt
 }
 

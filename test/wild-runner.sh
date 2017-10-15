@@ -85,15 +85,27 @@ _link() {
   ln -s -f -v "$@"
 }
 
-make-report() {
-  print-manifest | wild-report summarize-dirs
+link-static() {
+  local dest=${1:-_tmp/wild}
+  local dest_ajax=${1:-_tmp/wild/www}
 
   _link \
     $PWD/web/wild.css \
-    $PWD/web/osh-to-oil.{html,js,css} \
     $PWD/web/ajax.js \
     $PWD/web/table/table-sort.{js,css} \
+    $dest
+}
+
+make-report() {
+  print-manifest | wild-report summarize-dirs
+
+  # This has to go inside the www dir because of the way that relative links
+  # are calculated.
+  _link \
+    $PWD/web/osh-to-oil.{html,js} \
     _tmp/wild/www
+
+  link-static
 }
 
 test-wild-report() {

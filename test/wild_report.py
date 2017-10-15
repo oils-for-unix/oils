@@ -51,17 +51,17 @@ BODY_STYLE = jsontemplate.Template("""\
   <head>
     <title>{.template TITLE}</title>
 
-    <script type="text/javascript" src="{base_url}ajax.js"></script>
-    <script type="text/javascript" src="{base_url}table-sort.js"></script>
-    <link rel="stylesheet" type="text/css" href="{base_url}table-sort.css" />
-    <link rel="stylesheet" type="text/css" href="{base_url}wild.css" />
+    <script type="text/javascript" src="{base_url}../ajax.js"></script>
+    <script type="text/javascript" src="{base_url}../table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="{base_url}../table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="{base_url}../wild.css" />
   </head>
 
-  <body onload="initPage(gUrlHash, gTableStates, kStatusElem);"
+  <body onload="initPage(gUrlHash, gTables, gTableStates, kStatusElem);"
         onhashchange="onHashChange(gUrlHash, gTableStates, kStatusElem);">
     <p id="status"></p>
 
-    <p style="text-align: right"><a href="//www.oilshell.org/">oilshell.org</a></p>
+    <p style="text-align: right"><a href="/">oilshell.org</a></p>
 {.template NAV}
 
 {.template BODY}
@@ -185,7 +185,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       {.end}
 
       <td class="name">
-        <a href="{name|htmltag}/listing.html">{name|html}/</a>
+        <a href="{name|htmltag}/index.html">{name|html}/</a>
       </td>
     </tr>
   {.end}
@@ -294,13 +294,30 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   var gTableStates = {};
   var kStatusElem = document.getElementById('status');
 
-  function initPage(urlHash, tableStates, statusElem) {
-    var e1 = document.getElementById('dirs');
-    var e2 = document.getElementById('files');
-    var t = [];
-    if (e1) { t.push(e1); }
-    if (e2) { t.push(e2); }
-    makeTablesSortable(urlHash, t, tableStates);
+  var gTables = [];
+  var e1 = document.getElementById('dirs');
+  var e2 = document.getElementById('files');
+
+  // If no hash, "redirect" to a state where we sort ascending by dir name and
+  // filename.  TODO: These column numbers are a bit fragile.
+  var params = [];
+  if (e1) {
+    gTables.push(e1);
+    params.push('t:dirs=8a');
+  }
+  if (e2) {
+    gTables.push(e2);
+    params.push('t:files=7a');
+  }
+
+  function initPage(urlHash, gTables, tableStates, statusElem) {
+    makeTablesSortable(urlHash, gTables, tableStates);
+    /* Disable for now, this seems odd?  Think about mutability of gUrlHash.
+    if (location.hash === '') {
+      document.location = '#' + params.join('&');
+      gUrlHash = new UrlHash(location.hash);
+    }
+    */
     updateTables(urlHash, tableStates, statusElem);
   }
 
@@ -399,8 +416,8 @@ def DebugPrint(node, indent=0):
 
 
 def WriteJsonFiles(node, out_dir):
-  """Write a listing.json file for every directory."""
-  path = os.path.join(out_dir, 'INDEX.json')
+  """Write a index.json file for every directory."""
+  path = os.path.join(out_dir, 'index.json')
   with open(path, 'w') as f:
     raise AssertionError  # fix dir_totals
     d = {'files': node.files, 'dirs': node.dir_totals}
@@ -423,17 +440,42 @@ def _MakeNav(rel_path):
     if i == n - 1:
       link = None  # Current page shouldn't have link
     else:
-      link = '../' * (n - 1 - i) + 'listing.html'
+      link = '../' * (n - 1 - i) + 'index.html'
     data.append({'anchor': p, 'link': link})
   return data
 
 
+def _Lower(s):
+  return s.lower()
+
+
 def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
-  """Write a listing.html file for every directory."""
-  path = os.path.join(out_dir, 'listing.html')
+  """Write a index.html file for every directory.
+
+  NOTE:
+  - osh-to-oil.html lives at $base_url
+  - table-sort.js lives at $base_url/../table-sort.js
+
+  wild/
+    table-sort.js
+    table-sort.css
+    www/
+      index.html
+      osh-to-oil.html
+
+  wild/
+    table-sort.js
+    table-sort.css
+    wild.wwz/  # Zip file
+      index.html
+      osh-to-oil.html
+
+  wwz latency is subject to caching headers.
+  """
+  path = os.path.join(out_dir, 'index.html')
   with open(path, 'w') as f:
     files = []
-    for name in sorted(node.files):
+    for name in sorted(node.files, key=_Lower):
       stats = node.files[name]
       entry = dict(stats)
       entry['name'] = name
@@ -443,7 +485,7 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
       files.append(entry)
 
     dirs = []
-    for name in sorted(node.dirs):
+    for name in sorted(node.dirs, key=_Lower):
       entry = dict(node.dirs[name].subtree_stats)
       entry['name'] = name
       # TODO: This should be internal time
