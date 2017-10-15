@@ -176,7 +176,14 @@ all-manifests() {
   _sh-manifest ~/src/linux-4.8.7
 
   # Git
-  _sh-manifest ~/git/other/git
+  # git-gui.sh and po2msg.sh are actually Tcl!  We could stop parsing at 'exec'
+  # but there's no point right now.
+  src=~/git/other/git
+  _manifest $(basename $src) $src \
+    $(find $src -name '*.sh' -a \
+      ! -name 'git-gui.sh' \
+      ! -name 'po2msg.sh' \
+      -a -printf '%P\n')
 
   #
   # Cloud Stuff
@@ -195,6 +202,7 @@ all-manifests() {
   #
   _sh-manifest ~/git/other/bazel
   _sh-manifest ~/git/other/protobuf
+  _sh-manifest ~/git/other/kythe
 
   #
   # Other shells
@@ -277,12 +285,19 @@ all-manifests() {
   # Misc Scripts
   #
 
-  # NOTE: These scripts don't end with *.sh
+  # Most of these scripts have no extension.  So look at executable ones and
+  # then see if the shebang ends with sh!
+
+  # NOTE: In Oil it would be nice if shebang-is-shell could be a function call.
+  # Don't need to fork every time.
   src=~/git/other/pixelb-scripts
   _manifest pixelb-scripts $src \
     $(find $src \( -name .git -a -prune \) -o \
-                \( -type f -a -executable -a -printf '%P\n' \) )
-
+                \( -type f -a \
+                   -executable -a \
+                   ! -name '*.py' -a \
+                   -exec test/shebang.sh is-shell {} ';' -a \
+                   -printf '%P\n' \) )
 
   # Something related to WebDriver
   # Doesn't parse because of extended glob.
@@ -329,15 +344,28 @@ write-manifest() {
 # 1.30 M lines with "big".
 # 760K lines without ltmain.sh.  Hm need to get up to 1M.
 
+abspaths() {
+  awk '{print $2}' _tmp/wild/MANIFEST.txt 
+}
+
 # The biggest ones are all ltmain.sh though.
 count-lines() {
   # We need this weird --files0-from because there are too many files.  xargs
   # would split it into multiple invocations.
   #
   # It would be nicer if wc just had an option not to sum?
-  time awk '{print $2}' _tmp/wild/MANIFEST.txt | 
+  time abspaths | 
     tr '\n' '\0' | wc -l --files0-from - | sort -n
     #grep -v ltmain.sh |
+}
+
+# Ideas: find shebang
+find-unicode() {
+  time abspaths | xargs file | pv > _tmp/wild/file-types.txt
+}
+
+wild-types() {
+  cat _tmp/wild/file-types.txt | test/wild_types.py
 }
 
 all() {

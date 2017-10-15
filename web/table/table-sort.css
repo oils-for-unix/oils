@@ -5,12 +5,10 @@
 
 thead {
   font-weight: bold;
-  text-align: center;
 }
 
 table {
   padding: 10px;  /* Padding makes it look nicer. */
-  margin: 0 auto;  /* center table on the page */
   border-collapse: collapse;  /* this is like old cellpadding */
 }
 
@@ -22,11 +20,6 @@ td {
 /* Built-in support for R NA values */
 .na {
   color: darkred;
-}
-
-/* Numbers aligned on the right, like Excel */
-.num {
-  text-align: right;
 }
 
 .highlight {

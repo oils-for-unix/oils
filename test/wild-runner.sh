@@ -50,14 +50,11 @@ process-file() {
 readonly NUM_TASKS=200
 
 print-manifest() {
-  #head _tmp/wild/MANIFEST.txt 
-  #egrep '^dokku|^wwwoosh|^oil' _tmp/wild/MANIFEST.txt
   #head -n $NUM_TASKS _tmp/wild/MANIFEST.txt
-  #egrep -- 'mesos' _tmp/wild/MANIFEST.txt
+  #egrep '^dokku|^wwwoosh|^oil' _tmp/wild/MANIFEST.txt
+  #egrep -- '^pixelb' _tmp/wild/MANIFEST.txt
+  #egrep -- '^oil' _tmp/wild/MANIFEST.txt
   cat _tmp/wild/MANIFEST.txt
-  #egrep -- '^aports' _tmp/wild/MANIFEST.txt
-  #egrep -- '^gherkin' _tmp/wild/MANIFEST.txt
-  #egrep -- '^bash' _tmp/wild/MANIFEST.txt
 }
 
 parse-all() {
@@ -95,8 +92,12 @@ make-report() {
     $PWD/web/wild.css \
     $PWD/web/osh-to-oil.{html,js,css} \
     $PWD/web/ajax.js \
-    $PWD/web/table/table-sort.js \
+    $PWD/web/table/table-sort.{js,css} \
     _tmp/wild/www
+}
+
+test-wild-report() {
+  egrep -- '^oil|^perf-tools' _tmp/wild/MANIFEST.txt | wild-report summarize-dirs
 }
 
 if test "$(basename $0)" = 'wild-runner.sh'; then

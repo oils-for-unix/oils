@@ -53,12 +53,15 @@ BODY_STYLE = jsontemplate.Template("""\
 
     <script type="text/javascript" src="{base_url}ajax.js"></script>
     <script type="text/javascript" src="{base_url}table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="{base_url}table-sort.css" />
     <link rel="stylesheet" type="text/css" href="{base_url}wild.css" />
   </head>
 
   <body onload="initPage(gUrlHash, gTableStates, kStatusElem);"
         onhashchange="onHashChange(gUrlHash, gTableStates, kStatusElem);">
     <p id="status"></p>
+
+    <p style="text-align: right"><a href="//www.oilshell.org/">oilshell.org</a></p>
 {.template NAV}
 
 {.template BODY}
@@ -70,7 +73,7 @@ BODY_STYLE = jsontemplate.Template("""\
 # NOTE: {.link} {.or id?} {.or} {.end} doesn't work?  That is annoying.
 NAV_TEMPLATE = jsontemplate.Template("""\
 {.section nav}
-<div id="nav">
+<p id="nav">
 {.repeated section @}
   {.link?}
     <a href="{link|htmltag}">{anchor}</a>
@@ -80,19 +83,62 @@ NAV_TEMPLATE = jsontemplate.Template("""\
 {.alternates with}
   /
 {.end}
-</div>
+</p>
 {.end}
 """, default_formatter='html')
 
 
 PAGE_TEMPLATES = {}
 
+# One is used for sort order.  One is used for alignment.
+# type="string"
+# should we use the column css class as the sort order?  Why not?
+
+# NOTES on columns:
+# - The col is used to COLOR the column when it's being sorted by
+#   - But it can't be use to align text right.  See
+#   https://stackoverflow.com/questions/1238115/using-text-align-center-in-colgroup
+# - type="number" is used in table-sort.js for the sort order.
+# - We use CSS classes on individual cells like <td class="name"> to align
+#   columns.  That seems to be the only way to do it?
+
 PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
-    'WILD/{rel_path}',
+    'WILD/{rel_path} - Parsing and Translating Shell Scripts with Oil',
 """\
+
+{.section subtree_stats}
+<div id="summary">
+<ul>
+{.parse_failed?}
+  <li>
+    Attempted to parse <b>{num_files|commas}</b> shell scripts totalling
+    <b>{num_lines|commas}</b> lines.
+  </li>
+  <li>
+    Failed to parse <b>{parse_failed|commas}</b> scripts, leaving
+    <b>{lines_parsed|commas}</b> lines parsed in <b>{parse_proc_secs}</b> seconds
+    (<b>{lines_per_sec}</b> lines/sec).
+  </li>
+{.or}
+  <li>
+    Successfully parsed <b>{num_files|commas}</b> shell scripts totalling
+    <b>{num_lines|commas}</b> lines
+    in <b>{parse_proc_secs}</b> seconds
+    (<b>{lines_per_sec}</b> lines/sec).
+  </li>
+{.end}
+
+<li><b>{osh2oil_failed|commas}</b> OSH-to-Oil translations failed.</li>
+</ul>
+</div>
+
+<p></p>
+{.end}
+
 {.section dirs}
 <table id="dirs">
   <colgroup> <!-- for table-sort.js -->
+    <col type="number">
     <col type="number">
     <col type="number">
     <col type="number">
@@ -105,11 +151,12 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   <thead>
     <tr>
       <td>Files</td>
+      <td>Max Lines</td>
       <td>Total Lines</td>
       <!-- <td>Lines Parsed</td> -->
       <td>Parse Failures</td>
+      <td>Max Parse Time (secs)</td>
       <td>Total Parse Time (secs)</td>
-      <td>Internal Parse Time (secs)</td>
       <td>Parsed Lines/sec</td>
       <td>Translation Failures</td>
       <td class="name">Directory</td>
@@ -119,6 +166,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   {.repeated section @}
     <tr>
       <td>{num_files|commas}</td>
+      <td>{max_lines|commas}</td>
       <td>{num_lines|commas}</td>
       <!-- <td>{lines_parsed|commas}</td> -->
       {.parse_failed?}
@@ -126,7 +174,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       {.or}
         <td class="ok">{parse_failed|commas}</td>
       {.end}
-      <td>{parse_proc_secs}</td>
+      <td>{max_parse_secs}</td>
       <td>{parse_proc_secs}</td>
       <td>{lines_per_sec}</td>
 
@@ -151,6 +199,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
 {.section files}
 <table id="files">
   <colgroup> <!-- for table-sort.js -->
+    <col type="case-insensitive">
     <col type="number">
     <col type="case-insensitive">
     <col type="number">
@@ -161,6 +210,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   </colgroup>
   <thead>
     <tr>
+      <td>Side By Side</td>
       <td>Lines</td>
       <td>Parsed?</td>
       <td>Parse Process Time (secs)</td>
@@ -173,6 +223,9 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   <tbody>
   {.repeated section @}
     <tr>
+      <td>
+        <a href="{base_url}osh-to-oil.html#{rel_path|htmltag}/{name|htmltag}">view</a>
+     </td>
       <td>{num_lines|commas}</td>
       <td>
         {.section parse_failed}
@@ -197,7 +250,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
         {.end}
       </td>
       <td class="name">
-        <a href="{base_url}osh-to-oil.html#{rel_path|htmltag}/{name|htmltag}">{name|html}</a>
+        <a href="{name|htmltag}.txt">{name|html}</a>
       </td>
     </tr>
   {.end}
@@ -271,10 +324,7 @@ class DirNode:
     self.files = {}  # filename -> stats for success/failure, time, etc.
     self.dirs = {}  # subdir name -> Dir object
 
-    # Or should this be self.totals?  So the root node has it.
-    # Then you can show self.dirs.totals in WriteHtmlFiles.  Yes.
-
-    self.dir_totals = {}  # subdir -> summed stats
+    self.subtree_stats = {}  # name -> value
 
     # show all the non-empty stderr here?
     # __osh2oil.stderr.txt
@@ -290,23 +340,28 @@ def UpdateNodes(node, path_parts, file_stats):
   first = path_parts[0]
   rest = path_parts[1:]
 
-  if rest:
+  for name, value in file_stats.iteritems():
+    # Sum numerical properties, but not strings
+    if isinstance(value, int) or isinstance(value, float):
+      if name in node.subtree_stats:
+        node.subtree_stats[name] += value
+      else:
+        # NOTE: Could be int or float!!!
+        node.subtree_stats[name] = value
+
+  # Calculate maximums
+  m = node.subtree_stats.get('max_parse_secs', 0.0)
+  node.subtree_stats['max_parse_secs'] = max(m, file_stats['parse_proc_secs'])
+
+  m = node.subtree_stats.get('max_lines', 0)  # integer
+  node.subtree_stats['max_lines'] = max(m, file_stats['num_lines'])
+
+  if rest:  # update an intermediate node
     if first in node.dirs:
       child = node.dirs[first]
     else:
       child = DirNode()
       node.dirs[first] = child
-      node.dir_totals[first] = {}  # Empty
-
-    sums = node.dir_totals[first]
-    for name, value in file_stats.iteritems():
-      # Sum numerical properties, but not strings
-      if isinstance(value, int) or isinstance(value, float):
-        if name in sums:
-          sums[name] += value
-        else:
-          # NOTE: Could be int or float!!!
-          sums[name] = value
 
     UpdateNodes(child, rest, file_stats)
   else:
@@ -332,21 +387,22 @@ def UpdateNodes(node, path_parts, file_stats):
     node.files[first] = file_stats
 
 
-def PrintNodes(node, indent=0):
+def DebugPrint(node, indent=0):
   """Debug print."""
   ind = indent * '    '
   #print('FILES', node.files.keys())
   for name in node.files:
     print '%s%s - %s' % (ind, name, node.files[name])
   for name, child in node.dirs.iteritems():
-    print '%s%s/ - %s' % (ind, name, node.dir_totals[name])
-    PrintNodes(child, indent=indent+1)
+    print '%s%s/ - %s' % (ind, name, child.subtree_stats)
+    DebugPrint(child, indent=indent+1)
 
 
 def WriteJsonFiles(node, out_dir):
   """Write a listing.json file for every directory."""
   path = os.path.join(out_dir, 'INDEX.json')
   with open(path, 'w') as f:
+    raise AssertionError  # fix dir_totals
     d = {'files': node.files, 'dirs': node.dir_totals}
     json.dump(d, f)
 
@@ -387,17 +443,27 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
       files.append(entry)
 
     dirs = []
-    for name in sorted(node.dir_totals):
-      stats = node.dir_totals[name]
-      entry = dict(stats)
+    for name in sorted(node.dirs):
+      entry = dict(node.dirs[name].subtree_stats)
       entry['name'] = name
       # TODO: This should be internal time
       lines_per_sec = entry['lines_parsed'] / entry['parse_proc_secs']
       entry['lines_per_sec'] = '%.1f' % lines_per_sec
       dirs.append(entry)
 
+    # TODO: Is there a way to make this less redundant?
+    st = node.subtree_stats
+    try:
+      lines_per_sec = st['lines_parsed'] / st['parse_proc_secs']
+      st['lines_per_sec'] = '%.1f' % lines_per_sec
+    except KeyError:
+      # This usually there were ZERO files.
+      print >>sys.stderr, node, st, repr(rel_path)
+      raise
+
     data = {
         'rel_path': rel_path,
+        'subtree_stats': node.subtree_stats,  # redundant totals
         'files': files,
         'dirs': dirs,
         'base_url': base_url,
@@ -479,7 +545,7 @@ def main(argv):
       UpdateNodes(root_node, path_parts, st)
 
     # Debug print
-    #PrintNodes(root_node)
+    #DebugPrint(root_node)
     #WriteJsonFiles(root_node, '_tmp/wild/www')
 
     WriteHtmlFiles(root_node, '_tmp/wild/www')
