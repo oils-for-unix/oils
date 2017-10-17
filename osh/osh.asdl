@@ -11,6 +11,7 @@
 --   * hidden behind set -o extglob
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
+-- * select block
 -- * &> redirect both stdout and stderr
 -- * 1>&2- to close redirect
 

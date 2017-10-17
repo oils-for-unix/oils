@@ -21,7 +21,7 @@ COMMAND LANGUAGE
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
-  [Other]         dparen ((   time   coproc
+  [Other]         dparen ((   time   X coproc   X select
 
 ASSIGNING VARIABLES
   [Keywords]      local   readonly   export   unset   shift
@@ -59,7 +59,7 @@ OTHER SHELL SUBLANGUAGES
 
 BUILTIN COMMANDS
   [I/O]           read   echo 
-                  X readarray   X mapfile   X select
+                  X readarray   X mapfile
   [Run Code]      source .   eval
   [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs

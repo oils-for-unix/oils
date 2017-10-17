@@ -16,8 +16,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/wild-runner.sh
-
 readonly RESULT_DIR=_tmp/wild
 
 #
@@ -91,9 +89,22 @@ all-manifests() {
   # Don't expose this repo for now
   #oil-sketch-manifest
 
+  #
+  # My Code
+  #
+
   oil-manifest
 
   local src
+
+  #
+  # Books
+  #
+  src=~/git/wild/books/wicked_cool_shell_scripts_2e
+  _manifest "books/$(basename $src)" $src \
+    $(find $src \
+      \( -name .git -a -prune \) -o \
+      \( -type f -a -executable -a -printf '%P\n' \) )
 
   #
   # Shell/Bash Frameworks/Collections
@@ -136,8 +147,12 @@ all-manifests() {
       \( -name .git -a -prune \) -o \
       \( -type f -a -executable -a -printf '%P\n' \) )
 
+  _sh-manifest ~/git/other/modernish shell
+  _sh-manifest ~/git/other/posixcube shell
+
   # Shells themselves
   _sh-manifest ~/git/other/ast shell  # korn shell stuff
+  _sh-manifest ~/git/other/mwc-sh shell
   _sh-manifest ~/src/mksh shell
 
   #
@@ -146,6 +161,7 @@ all-manifests() {
 
   _sh-manifest ~/git/other/minimal distro
   _sh-manifest ~/git/other/linuxkit distro
+  _sh-manifest ~/git/other/portage distro
 
   src=~/git/alpine/aports
   _manifest distro/alpine-aports $src \
@@ -170,12 +186,23 @@ all-manifests() {
     $(find $src/scripts -type f -a -printf 'scripts/%P\n')
 
   #
+  # Operating Systems
+  #
+
+  _sh-manifest ~/git/other/minix
+  _sh-manifest ~/git/other/illumos-gate
+  _sh-manifest ~/git/other/daemontools-encore
+
+  #
   # Cloud Stuff
   #
   _sh-manifest ~/git/other/mesos cloud
+  _sh-manifest ~/git/other/rocket cloud
+  _sh-manifest ~/git/other/docker cloud
   _sh-manifest ~/git/other/chef-bcpc cloud
   _sh-manifest ~/git/other/sandstorm cloud
   _sh-manifest ~/git/other/kubernetes cloud
+  _sh-manifest ~/git/other/manta-marlin cloud
 
   src=~/git/other/dokku
   _manifest cloud/dokku $src \
@@ -187,6 +214,9 @@ all-manifests() {
   _sh-manifest ~/git/other/bazel google
   _sh-manifest ~/git/other/protobuf google
   _sh-manifest ~/git/other/kythe google
+  _sh-manifest ~/git/other/tensorflow google
+  # Filenames with spaces!
+  #_sh-manifest ~/git/other/grpc google
 
   #
   # Esoteric
@@ -233,6 +263,7 @@ all-manifests() {
   #
 
   _sh-manifest ~/git/other/julia
+  _sh-manifest ~/git/other/reason
   _sh-manifest ~/git/other/sdk  # Dart SDK?
 
   _sh-manifest ~/git/other/micropython
@@ -271,9 +302,16 @@ all-manifests() {
       ! -name 'po2msg.sh' \
       -a -printf '%P\n')
 
+  _sh-manifest ~/git/other/liballocs
+  _sh-manifest ~/git/other/boringssl
+  _sh-manifest ~/git/other/arrow
+
   #
   # Uncategorized
   #
+
+  # Has filenames with spaces!
+  #_sh-manifest ~/git/other/linguist
 
   # Brendan Gregg's performance scripts.
   # Find executable scripts, since they don't end in sh.
@@ -329,9 +367,12 @@ all-manifests() {
   }
 }
 
+# TODO: Parameterize this; it's duplicated in wild-runner.txt.
+readonly MANIFEST=_tmp/wild/MANIFEST.txt
+
 write-manifest() {
   mkdir -p _tmp/wild
-  local out=_tmp/wild/MANIFEST.txt
+  local out=$MANIFEST
   all-manifests > $out
   wc -l $out
 }
@@ -347,21 +388,21 @@ write-manifest() {
 abspaths() {
   local proj=${1:-}
   if test -n "$proj"; then
-    awk -v proj=$proj '$1 == proj {print $2}' _tmp/wild/MANIFEST.txt 
+    awk -v proj=$proj '$1 == proj {print $2}' $MANIFEST
   else
-    awk '{print $2}' _tmp/wild/MANIFEST.txt 
+    awk '{print $2}' $MANIFEST
   fi
 }
 
-# The biggest ones are all ltmain.sh though.
+# Excluding ltmain.sh, goes from 910K lines to 830K.
 count-lines() {
   # We need this weird --files0-from because there are too many files.  xargs
   # would split it into multiple invocations.
   #
   # It would be nicer if wc just had an option not to sum?
   time abspaths | 
+    grep -v ltmain.sh |
     tr '\n' '\0' | wc -l --files0-from - | sort -n
-    #grep -v ltmain.sh |
 }
 
 # Takes ~15 seconds for 8,000+ files.
@@ -376,8 +417,9 @@ wild-types() {
   cat _tmp/wild/file-types.txt | test/wild_types.py
 }
 
+# Make a report for all, but only run some
 all() {
-  test/wild-runner.sh all-parallel "$@"
+  test/wild-runner.sh parse-and-report "$@"
 }
 
 #

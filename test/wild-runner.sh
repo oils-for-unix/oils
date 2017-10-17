@@ -48,21 +48,11 @@ process-file() {
 }
 
 readonly NUM_TASKS=200
+readonly MANIFEST=_tmp/wild/MANIFEST.txt
 
-print-manifest() {
-  #head -n $NUM_TASKS _tmp/wild/MANIFEST.txt
-  #egrep '^dokku|^wwwoosh|^oil' _tmp/wild/MANIFEST.txt
-  #egrep -- '^pixelb' _tmp/wild/MANIFEST.txt
-  #egrep -- '^oil' _tmp/wild/MANIFEST.txt
-  #egrep -- '^oil' _tmp/wild/MANIFEST.txt
-  #egrep -- '^esoteric' _tmp/wild/MANIFEST.txt
-  cat _tmp/wild/MANIFEST.txt
-}
-
-parse-all() {
+parse-in-parallel() {
   local failed=''
-  #head -n 20 _tmp/wild/MANIFEST.txt |
-  print-manifest | xargs -n 3 -P $JOBS -- $0 process-file || failed=1
+  xargs -n 3 -P $JOBS -- $0 process-file || failed=1
 
   # Limit the output depth
   tree -L 3 _tmp/wild
@@ -71,16 +61,24 @@ parse-all() {
 # Takes 3m 47s on 7 cores for 513K lines.
 # So that's like 230 seconds or so.  It should really take 1 second!
 
-all-parallel() {
+parse-and-report() {
+  local manifest_regex=${1:-}  # egrep regex for manifest line
+
   time {
     test/wild.sh write-manifest
-    parse-all
+
+    if test -n "$manifest_regex"; then
+      egrep -- "$manifest_regex" $MANIFEST | parse-in-parallel
+    else
+      cat $MANIFEST | parse-in-parallel
+    fi
+
     make-report
   }
 }
 
 wild-report() {
-  PYTHONPATH=~/hg/json-template/python test/wild_report.py "$@";
+  PYTHONPATH=~/hg/json-template/python test/wild_report.py "$@"
 }
 
 _link() {
@@ -99,7 +97,7 @@ link-static() {
 }
 
 make-report() {
-  print-manifest | wild-report summarize-dirs
+  cat $MANIFEST | wild-report summarize-dirs
 
   # This has to go inside the www dir because of the way that relative links
   # are calculated.
@@ -111,7 +109,7 @@ make-report() {
 }
 
 test-wild-report() {
-  egrep -- '^oil|^perf-tools' _tmp/wild/MANIFEST.txt | wild-report summarize-dirs
+  egrep -- '^oil|^perf-tools' $MANIFEST | wild-report summarize-dirs
 }
 
 if test "$(basename $0)" = 'wild-runner.sh'; then

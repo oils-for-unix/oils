@@ -308,10 +308,10 @@ def main(argv):
       TableOfContents(f)
 
   elif action == 'pages':
-    html_out, text_dir, py_out_path = argv[2:5]
+    pages_txt, text_dir, py_out_path = argv[2:5]
 
     topic_lookup = {}
-    with open(html_out) as f:
+    with open(pages_txt) as f:
       text_out = TextOutput(text_dir, topic_lookup)
       Pages(f, text_out)
 
@@ -322,8 +322,7 @@ def main(argv):
       f.write('TOPIC_LOOKUP = ')
       f.write(d)
 
-    print >>sys.stderr, 'Wrote %s, %s, and %s' % (
-        html_out, text_dir, py_out_path)
+    print >>sys.stderr, 'Wrote %s/ and %s' % (text_dir, py_out_path)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

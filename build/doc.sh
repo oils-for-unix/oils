@@ -37,6 +37,10 @@ set -o errexit
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 export OIL_VERSION  # for quick_ref.py
 
+log() {
+  echo "$@" 1>&2
+}
+
 _build-timestamp() {
   echo '<hr/>'
   echo "<i>Generated on $(date)</i>"
@@ -110,6 +114,7 @@ EOF
 </html>
 EOF
   } > $html_out
+  log "Wrote $html_out"
 }
 
 osh-quick-ref() {
