@@ -25,22 +25,28 @@ readonly RESULT_DIR=_tmp/wild
 #
 
 _manifest() {
-  local name=$1
+  local proj=$1
   local base_dir=$2
   shift 2
 
   for path in "$@"; do
-    echo $name $base_dir/$path $path
+    echo $proj $base_dir/$path $path
   done
 }
 
 # generic helper
 _sh-manifest() {
   local base_dir=$1
-  shift
+  local category=${2:-}
 
-  local name=$(basename $base_dir)
-  _manifest $name $base_dir \
+  local proj
+  if test -n "$category"; then
+    proj="$category/$(basename $base_dir)"
+  else
+    proj="$(basename $base_dir)"
+  fi
+
+  _manifest $proj $base_dir \
     $(find $base_dir -name '*.sh' -a -printf '%P\n')
 }
 
@@ -90,42 +96,29 @@ all-manifests() {
   local src
 
   #
-  # Bash stuff
+  # Shell/Bash Frameworks/Collections
   #
+
   src=~/git/other/bash-completion
-  _manifest $(basename $src) $src \
+  _manifest "shell/$(basename $src)" $src \
     $(find $src/completions -type f -a -printf 'completions/%P\n')
 
   # Bats bash test framework.  It appears to be fairly popular.
   src=~/git/other/bats
-  _manifest $(basename $src) $src \
+  _manifest "shell/$(basename $src)" $src \
     $(find $src \
       \( -wholename '*/libexec/*' -a -type f -a \
          -executable -a -printf '%P\n' \) )
 
   # Bash debugger?
   src=~/src/bashdb-4.4-0.92
-  _manifest bashdb $src \
+  _manifest shell/bashdb $src \
     $(find $src -name '*.sh' -a -printf '%P\n')
 
   src=~/git/other/Bash-Snippets
-  _manifest $(basename $src) $src \
+  _manifest "shell/$(basename $src)" $src \
     $(find $src \
       \( -name .git -a -prune \) -o \
-      \( -type f -a -executable -a -printf '%P\n' \) )
-
-  #
-  # Shell Frameworks/Collections
-  #
-
-  # Brendan Gregg's performance scripts.
-  # Find executable scripts, since they don't end in sh.
-  # net/tcpretrans is written in Perl.
-  src=~/git/other/perf-tools
-  _manifest $(basename $src) $src \
-    $(find $src \
-      \( -name .git -a -prune \) -o \
-      \( -name tcpretrans -a -prune \) -o \
       \( -type f -a -executable -a -printf '%P\n' \) )
 
   # ASDF meta package/version manager.
@@ -134,82 +127,106 @@ all-manifests() {
   # They # could be used for more tests.
 
   src=~/git/other/asdf
-  _manifest $(basename $src) $src \
+  _manifest "shell/$(basename $src)" $src \
     $(find $src \( -name '*.sh' -o -name '*.bash' \) -a -printf '%P\n' )
 
   src=~/git/other/scripts-to-rule-them-all
-  _manifest $(basename $src) $src \
+  _manifest "shell/$(basename $src)" $src \
     $(find $src \
       \( -name .git -a -prune \) -o \
       \( -type f -a -executable -a -printf '%P\n' \) )
+
+  # Shells themselves
+  _sh-manifest ~/git/other/ast shell  # korn shell stuff
+  _sh-manifest ~/src/mksh shell
 
   #
   # Linux Distros
   #
 
-  _sh-manifest ~/git/other/minimal
-  _sh-manifest ~/git/other/linuxkit
+  _sh-manifest ~/git/other/minimal distro
+  _sh-manifest ~/git/other/linuxkit distro
 
   src=~/git/alpine/aports
-  _manifest $(basename $src) $src \
+  _manifest distro/alpine-aports $src \
     $(find $src -name APKBUILD -a -printf '%P\n')
 
   src=$ABORIGINAL_DIR
-  _manifest aboriginal $src \
+  _manifest distro/aboriginal $src \
     $(find $src -name '*.sh' -printf '%P\n')
 
   src=/etc/init.d
-  _manifest initd $src \
+  _manifest distro/initd $src \
     $(find $src -type f -a -executable -a -printf '%P\n')
 
   src=/usr/bin
-  _manifest usr-bin $src \
+  _manifest distro/usr-bin $src \
     $(find $src -name '*.sh' -a -printf '%P\n')
 
   # Version 1.0.89 extracts to a version-less dir.
   src=~/git/basis-build/_tmp/debootstrap
-  _manifest debootstrap $src \
+  _manifest distro/debootstrap $src \
     $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
     $(find $src/scripts -type f -a -printf 'scripts/%P\n')
-
-  # Kernel
-  _sh-manifest ~/src/linux-4.8.7
-
-  # Git
-  # git-gui.sh and po2msg.sh are actually Tcl!  We could stop parsing at 'exec'
-  # but there's no point right now.
-  src=~/git/other/git
-  _manifest $(basename $src) $src \
-    $(find $src -name '*.sh' -a \
-      ! -name 'git-gui.sh' \
-      ! -name 'po2msg.sh' \
-      -a -printf '%P\n')
 
   #
   # Cloud Stuff
   #
-  _sh-manifest ~/git/other/mesos
-  _sh-manifest ~/git/other/chef-bcpc
-  _sh-manifest ~/git/other/sandstorm
-  _sh-manifest ~/git/other/kubernetes
+  _sh-manifest ~/git/other/mesos cloud
+  _sh-manifest ~/git/other/chef-bcpc cloud
+  _sh-manifest ~/git/other/sandstorm cloud
+  _sh-manifest ~/git/other/kubernetes cloud
 
   src=~/git/other/dokku
-  _manifest dokku $src \
+  _manifest cloud/dokku $src \
     $(find $src '(' -name '*.sh' -o -name dokku ')' -a -printf '%P\n')
 
   #
   # Google
   #
-  _sh-manifest ~/git/other/bazel
-  _sh-manifest ~/git/other/protobuf
-  _sh-manifest ~/git/other/kythe
+  _sh-manifest ~/git/other/bazel google
+  _sh-manifest ~/git/other/protobuf google
+  _sh-manifest ~/git/other/kythe google
 
   #
-  # Other shells
+  # Esoteric
   #
 
-  _sh-manifest ~/git/other/ast  # korn shell stuff
-  _sh-manifest ~/src/mksh
+  _sh-manifest ~/git/scratch/shasm esoteric
+  _sh-manifest ~/git/wild/esoteric/wwwoosh esoteric
+  _sh-manifest ~/git/wild/esoteric/lishp esoteric
+
+  src=~/git/wild/esoteric/mal/bash
+  _manifest esoteric/make-a-lisp-bash $src \
+    $(find $src '(' -name '*.sh' ')' -a -printf '%P\n')
+
+  src=~/git/wild/esoteric/gherkin
+  _manifest esoteric/gherkin $src \
+    $(find $src '(' -name '*.sh' -o -name 'gherkin' ')' -a -printf '%P\n')
+
+  src=~/git/wild/esoteric/balls
+  _manifest esoteric/balls $src \
+    $(find $src '(' -name '*.sh' -o -name balls -o -name esh ')' -a \
+                -printf '%P\n')
+
+  src=~/git/wild/esoteric/bashcached
+  _manifest esoteric/bashcached $src \
+    $(find $src '(' -name '*.sh' -o -name 'bashcached' ')' -a -printf '%P\n')
+
+  src=~/git/wild/esoteric/quinedb
+  _manifest esoteric/quinedb $src \
+    $(find $src '(' -name '*.sh' -o -name 'quinedb' ')' -a -printf '%P\n')
+
+  src=~/git/wild/esoteric/bashttpd
+  _manifest esoteric/bashttpd $src \
+    $(find $src -name 'bashttpd' -a -printf '%P\n')
+
+  # JSON Parsers
+  src=~/git/other/j
+  _manifest esoteric/j $src \
+    $(find $src -type f -a  -name j -a -printf '%P\n')
+
+  _sh-manifest ~/git/other/JSON.sh esoteric
 
   #
   # Other Languages
@@ -222,50 +239,6 @@ all-manifests() {
   _sh-manifest ~/git/other/staticpython  # statically linked build
 
   _sh-manifest ~/git/other/exp  # Go experimental repo
-
-  #
-  # Esoteric
-  #
-
-  _sh-manifest ~/git/other/wwwoosh
-  _sh-manifest ~/git/scratch/shasm
-  _sh-manifest ~/git/other/lishp
-
-  src=~/git/other/mal/bash
-  _manifest make-a-lisp-bash $src \
-    $(find $src '(' -name '*.sh' ')' -a -printf '%P\n')
-
-  src=~/git/other/gherkin
-  _manifest $(basename $src) $src \
-    $(find $src '(' -name '*.sh' -o -name 'gherkin' ')' -a -printf '%P\n')
-
-  src=~/git/other/balls
-  _manifest $(basename $src) $src \
-    $(find $src '(' -name '*.sh' -o -name balls -o -name esh ')' -a \
-                -printf '%P\n')
-
-  src=~/git/other/bashcached
-  _manifest $(basename $src) $src \
-    $(find $src '(' -name '*.sh' -o -name 'bashcached' ')' -a -printf '%P\n')
-
-  src=~/git/other/quinedb
-  _manifest $(basename $src) $src \
-    $(find $src '(' -name '*.sh' -o -name 'quinedb' ')' -a -printf '%P\n')
-
-  src=~/git/other/bashttpd
-  _manifest $(basename $src) $src \
-    $(find $src -name 'bashttpd' -a -printf '%P\n')
-
-
-  #
-  # Parsers
-  #
-
-  local src=~/git/other/j
-  _manifest $(basename $src) $src \
-    $(find $src -type f -a  -name j -a -printf '%P\n')
-
-  _sh-manifest ~/git/other/JSON.sh
 
   #
   # Grab Bag
@@ -282,8 +255,35 @@ all-manifests() {
     $(find $src -name '*.sh' -a -printf '%P\n')
 
   #
-  # Misc Scripts
+  # Top-Level
   #
+
+  # Kernel
+  _sh-manifest ~/src/linux-4.8.7
+
+  # Git
+  # git-gui.sh and po2msg.sh are actually Tcl!  We could stop parsing at 'exec'
+  # but there's no point right now.
+  src=~/git/other/git
+  _manifest $(basename $src) $src \
+    $(find $src -name '*.sh' -a \
+      ! -name 'git-gui.sh' \
+      ! -name 'po2msg.sh' \
+      -a -printf '%P\n')
+
+  #
+  # Uncategorized
+  #
+
+  # Brendan Gregg's performance scripts.
+  # Find executable scripts, since they don't end in sh.
+  # net/tcpretrans is written in Perl.
+  src=~/git/other/perf-tools
+  _manifest $(basename $src) $src \
+    $(find $src \
+      \( -name .git -a -prune \) -o \
+      \( -name tcpretrans -a -prune \) -o \
+      \( -type f -a -executable -a -printf '%P\n' \) )
 
   # Most of these scripts have no extension.  So look at executable ones and
   # then see if the shebang ends with sh!

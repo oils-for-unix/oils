@@ -582,7 +582,7 @@ def main(argv):
 
       st['num_files'] = 1
 
-      path_parts = [proj] + rel_path.split('/')
+      path_parts = proj.split('/') + rel_path.split('/')
       #print path_parts
       UpdateNodes(root_node, path_parts, st)
 

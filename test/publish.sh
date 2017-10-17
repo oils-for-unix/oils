@@ -12,15 +12,13 @@ log() {
 }
 
 versioned-dest() {
-  local label=${1:-$(hostname)}  # what machine we ran it on
-
   local branch=$(git rev-parse --abbrev-ref HEAD)
   log "branch $branch"
   local hash=$(git rev-parse $branch)
   local short_hash=${hash:0:8}
   log "hash $short_hash"
 
-  local dest="oilshell.org/git-branch/$branch/$short_hash/$label"
+  local dest="oilshell.org/git-branch/$branch/$short_hash"
   echo $dest
 }
 
@@ -28,8 +26,9 @@ spec() {
   local user=$1
   local host=$2
 
+  # Add hostname because spec tests aren't hermetic yet.
   local dest
-  dest="$(versioned-dest)/spec"
+  dest="$(versioned-dest)/$(hostname)/spec"
 
   ssh $user@$host mkdir -p $dest
 

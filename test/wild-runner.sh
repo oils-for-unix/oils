@@ -54,6 +54,8 @@ print-manifest() {
   #egrep '^dokku|^wwwoosh|^oil' _tmp/wild/MANIFEST.txt
   #egrep -- '^pixelb' _tmp/wild/MANIFEST.txt
   #egrep -- '^oil' _tmp/wild/MANIFEST.txt
+  #egrep -- '^oil' _tmp/wild/MANIFEST.txt
+  #egrep -- '^esoteric' _tmp/wild/MANIFEST.txt
   cat _tmp/wild/MANIFEST.txt
 }
 
