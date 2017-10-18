@@ -37,6 +37,7 @@ class _ErrorWithLocation(Exception):
     self.args = args
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
     # args.
+    self.span_id = kwargs.pop('span_id', None)
     self.token = kwargs.pop('token', None)
     self.part = kwargs.pop('part', None)
     self.word = kwargs.pop('word', None)

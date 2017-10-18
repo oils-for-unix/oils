@@ -112,7 +112,6 @@ class WordParser(object):
 
     self.error_stack = []
 
-  # TODO: Factor this into ErrorState class.  Each parser owns one.
   def AddErrorContext(self, msg, *args, **kwargs):
     err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
@@ -619,7 +618,9 @@ class WordParser(object):
         if here_doc:  # here docs will have an EOF in their token stream
           done = True
         else:
-          self.AddErrorContext('Unexpected EOF in double-quoted string')
+          self.AddErrorContext(
+              'Unexpected EOF reading double-quoted string that began here',
+              span_id=left_spid)
           return False
 
       else:

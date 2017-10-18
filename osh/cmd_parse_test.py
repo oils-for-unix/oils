@@ -1258,6 +1258,10 @@ EOF
     err = _assertParseCommandListError(self, 'x=1 >/dev/null')
     err = _assertParseCommandListError(self, 'declare  x=1 >/dev/null')
 
+  def testEofInDoubleQuoted(self):
+    """Enumerating errors in arith_parse.py."""
+    err = _assertParseCommandListError(self, 'foo="" echo "bar  ')
+
 
 if __name__ == '__main__':
   unittest.main()

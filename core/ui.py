@@ -91,7 +91,9 @@ def MakeStatusLines():
 
 def PrettyPrintError(parse_error, arena, f):
     #print(parse_error)
-    if parse_error.token:
+    if parse_error.span_id:
+      span_id = parse_error.span_id
+    elif parse_error.token:
       span_id = parse_error.token.span_id
     elif parse_error.part:
       span_id = word.LeftMostSpanForPart(parse_error.part)
