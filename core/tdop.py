@@ -10,13 +10,10 @@ from core import util
 from osh import ast_ as ast
 from osh.lex import LexMode
 
+p_die = util.p_die
 
 arith_expr_e = ast.arith_expr_e
 word_e = ast.word_e
-
-
-class TdopParseError(Exception):
-  pass
 
 
 def Assert(s, expected, tree):
@@ -75,8 +72,8 @@ def ToLValue(node):
         node.left.tag == arith_expr_e.ArithVarRef):
       return ast.LhsIndexedName(node.left.name, node.right)
 
-  # TODO: parse error context here.
-  raise TdopParseError("Can't assign to %r" % node)
+  # TODO: Location information needs token instead of op_id.
+  p_die("Can't assign to %r", node)
 
 
 #
@@ -86,7 +83,7 @@ def ToLValue(node):
 
 def NullError(p, t, bp):
   # TODO: I need position information
-  raise TdopParseError("Token %s can't be used in prefix position" % t)
+  p_die("Token can't be used in prefix position", word=t)
 
 
 def NullConstant(p, w, bp):
@@ -124,7 +121,7 @@ def NullPrefixOp(p, w, bp):
 
 def LeftError(p, t, left, rbp):
   # Hm is this not called because of binding power?
-  raise TdopParseError("Token %s can't be used in infix position" % t)
+  p_die("Token can't be used in infix position", word=t)
 
 
 def LeftBinaryOp(p, w, left, rbp):
@@ -201,7 +198,7 @@ class ParserSpec(object):
     try:
       nud = self.nud_lookup[token]
     except KeyError:
-      raise TdopParseError('No nud for token %r' % token)
+      raise AssertionError('No nud for token %r' % token)
     return nud
 
   def LookupLed(self, token):
@@ -244,7 +241,7 @@ class TdopParser(object):
     """ Eat()? """
     if not self.AtToken(token_type):
       t = IdName(token_type)
-      raise TdopParseError('TDOP expected %s, got %s' % (t, self.cur_word))
+      p_die('Parser expected %s, got %s', t, self.cur_word, word=self.cur_word)
 
     self.Next()
 
@@ -254,10 +251,7 @@ class TdopParser(object):
     if self.cur_word is None:
       error_stack = self.w_parser.Error()
       self.error_stack.extend(error_stack)
-      self.AddErrorContext('Error reading arith word in ArithParser',
-          word=self.cur_word)
-      #return False
-      raise TdopParseError()  # use exceptions for now
+      p_die('Error reading arith word in ArithParser')
     self.op_id = word.ArithId(self.cur_word)
     return True
 
@@ -268,7 +262,7 @@ class TdopParser(object):
     """
     # TODO: use Kind.Eof
     if self.op_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
-      raise TdopParseError('Unexpected end of input')
+      p_die('Unexpected end of input')
 
     t = self.cur_word
     self.Next()  # skip over the token, e.g. ! ~ + -
@@ -281,7 +275,7 @@ class TdopParser(object):
       try:
         left_info = self._Led(word.ArithId(t))
       except KeyError:
-        raise TdopParseError('Invalid token %s' % t)
+        raise AssertionError('Invalid token %s' % t)
 
       # Examples:
       # If we see 1*2+  , rbp = 27 and lbp = 25, so stop.
@@ -297,12 +291,10 @@ class TdopParser(object):
 
   def Parse(self):
     try:
-      self.Next()  # can raise TdopParseError
+      self.Next()  # may raise ParseError
       node = self.ParseUntil(0)
-    except TdopParseError as e:
-      # TODO: attribute to token or word
-      err = util.ParseError(str(e))
-      self.error_stack.append(err)
+    except util.ParseError as e:
+      self.error_stack.append(e)
       return None
     return node
 
