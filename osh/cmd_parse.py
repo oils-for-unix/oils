@@ -590,9 +590,11 @@ class CommandParser(object):
     prefix_bindings, suffix_words = self._SplitSimpleCommandPrefix(words)
 
     if not suffix_words:  # ONE=1 TWO=2  (with no other words)
-      # TODO: Have a strict mode to prevent this?
-      if redirects:  # >out.txt g=foo
-        util.warn('WARNING: Got redirects in assignment: %s', redirects)
+      if redirects:
+        # TODO: redirect ops should have a token with location info instead of
+        # an op_id.
+        self.AddErrorContext('Got redirects in global assignment')
+        return None
 
       pairs = []
       for lhs, op, rhs, spid in prefix_bindings:
@@ -611,7 +613,9 @@ class CommandParser(object):
     kind, kw_token = word.KeywordToken(suffix_words[0])
     if kind == Kind.Assign:
       if redirects:
-        self.AddErrorContext('Got redirects in assignment: %s', redirects)
+        # Attach the error location to the keyword.  It would be more precise
+        # to attach it to the
+        self.AddErrorContext('Got redirects in assignment', token=kw_token)
         return None
 
       if prefix_bindings:  # FOO=bar local spam=eggs not allowed
