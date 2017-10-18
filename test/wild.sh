@@ -422,6 +422,11 @@ all() {
   test/wild-runner.sh parse-and-report "$@"
 }
 
+find-tracebacks() {
+  find _tmp/wild/raw -name '*__parse.stderr.txt*' |
+    xargs grep -l 'Traceback'
+}
+
 #
 # Find Biggest Shell Scripts in Aboriginal Source Tarballs
 #

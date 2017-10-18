@@ -868,6 +868,8 @@ class WordParser(object):
     words = []
     while True:
       w = w_parser.ReadWord(LexMode.OUTER)
+      if not w:
+        return None
 
       if w.tag == word_e.TokenWord:
         word_id = word.CommandId(w) 
