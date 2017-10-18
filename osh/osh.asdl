@@ -85,6 +85,8 @@ module osh
   | BracedIntRangePart(int start, int end, int? step)
     -- {a..f} or {a..f..2} or {a..f..-2}
   | BracedCharRangePart(string start, string end, int? step)
+	-- extended globs are parsed statically, unlike globs
+  | ExtGlobPart(id op_id, word* arms)
 
   word = 
     TokenWord(token token)
@@ -98,7 +100,7 @@ module osh
   | BracedWordTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
   | StringWord(id id, string s)
- 
+
   -- TODO: Might want to preserve token here.
   lhs_expr =
     LhsName(string name)
