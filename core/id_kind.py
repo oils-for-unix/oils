@@ -238,7 +238,10 @@ def _AddKinds(spec):
       'FuncDef',       # )
       'CasePat',       # )
       'ArrayLiteral',  # )
+      'ExtGlob',       # )
   ])
+
+  spec.AddKind('ExtGlob', ['At', 'Star', 'Plus', 'QMark', 'Bang'])
 
   # First position of var sub ${
   # Id.VOp2_Pound -- however you can't tell the difference at first!  It could

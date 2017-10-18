@@ -27,7 +27,8 @@ ls /home/
 class LexerTest(unittest.TestCase):
 
   def assertTokensEqual(self, left, right):
-    self.assertTrue(TokensEqual(left, right))
+    self.assertTrue(
+        TokensEqual(left, right), 'Expected %r, got %r' % (left, right))
 
   def testRead(self):
     lexer = _InitLexer(CMD)
@@ -71,6 +72,43 @@ class LexerTest(unittest.TestCase):
     #self.assertTokensEqual(ast.token(Id.Eof_Real, ''), t)
     #t = l.Read(LexMode.VS_ARG_UNQ)
     print(t)
+
+  def testExtGlob(self):
+    lexer = _InitLexer('@(foo|bar)')
+
+    t = lexer.Read(LexMode.OUTER)
+    self.assertTokensEqual(ast.token(Id.ExtGlob_At, '@('), t)
+
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.Lit_Chars, 'foo'), t)
+
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.Op_Pipe, '|'), t)
+
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.Lit_Chars, 'bar'), t)
+
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.Op_RParen, ')'), t)
+
+    # Individual cases
+
+    lexer = _InitLexer('@(')
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.ExtGlob_At, '@('), t)
+
+    lexer = _InitLexer('*(')
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.ExtGlob_Star, '*('), t)
+
+    lexer = _InitLexer('?(')
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.ExtGlob_QMark, '?('), t)
+
+    lexer = _InitLexer('$')
+    t = lexer.Read(LexMode.EXTGLOB)
+    self.assertTokensEqual(ast.token(Id.Lit_Chars, '$'), t)
+
 
   def testBashRegexState(self):
     lexer = _InitLexer('(foo|bar)')

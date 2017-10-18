@@ -33,15 +33,32 @@ Very good articles on bash errexit:
   - http://mywiki.wooledge.org/BashFAQ/105
   - http://fvue.nl/wiki/Bash:_Error_handling
 
+## Notable Gotchas in Parsing
+
+Arith Sub vs. Command Sub:
+
+- Unlike bash, `$((` is always starts an arith sub.  `$( (echo hi) )` is a
+  subshell inside a command sub.  (This construct should be written
+  `({ echo hi;})` anyway.
+
+Extended Glob vs. Negation of Expression:
+
+- `[[ !(a == a) ]]` is always an extended glob.  
+- `[[ ! (a == a) ]]` is the negation of an equality test.
+  - In bash the rules are much more complicated, and depend on `shopt -s
+    extglob`.  That flag is a no-op in OSH.  OSH avoids dynamic parsing, while
+    bash does it in many places.
+
 ## Unicode
 
 Encoding of programs should be utf-8.
 
 But those programs can manipulate data in ANY encoding?
 
-echo $'[\u03bc]'  # C-escaped string
+    echo $'[\u03bc]'  # C-escaped string
 
-vs literal unicode vs. echo -e.  $'' is preferred because it's statically parsed.
+vs literal unicode vs. `echo -e`.  `$''` is preferred because it's statically
+parsed.
 
 
 List of operations that are Unicode-aware:
@@ -55,7 +72,6 @@ List of operations that are Unicode-aware:
   - ${s#.}  # remove one character
 - sorting [[ $a < $b ]] -- should use current locale?  I guess that is like the
   'sort' command.
-
 - prompt string has time, which is locale-specific.
 
 

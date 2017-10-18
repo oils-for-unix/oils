@@ -63,7 +63,7 @@ var='one two'
 # Notes on whitespace:
 # - 1 and == need space seprating them, but ! and ( don't.
 # - [[ needs whitesapce after it, but ]] doesn't need whitespace before it!
-[[ ''||!(1 == 2)&&(2 == 2)]] && echo true
+[[ ''||! (1 == 2)&&(2 == 2)]] && echo true
 # stdout: true
 
 # NOTE on the two cases below.  We're comparing

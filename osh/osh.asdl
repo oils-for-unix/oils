@@ -86,7 +86,7 @@ module osh
     -- {a..f} or {a..f..2} or {a..f..-2}
   | BracedCharRangePart(string start, string end, int? step)
 	-- extended globs are parsed statically, unlike globs
-  | ExtGlobPart(id op_id, word* arms)
+  | ExtGlobPart(token op, word* arms)
 
   word = 
     TokenWord(token token)

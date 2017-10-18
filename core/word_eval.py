@@ -902,7 +902,7 @@ class _WordPartEvaluator:
       return [runtime.StringPartValue(str(num), True, True)]
 
     else:
-      raise AssertionError(part.tag)
+      raise AssertionError(part.__class__.__name__)
 
 
 class _WordEvaluator:

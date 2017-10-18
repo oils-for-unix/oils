@@ -114,3 +114,9 @@ pat="^(a b)$"
 # stdout: true
 # N-I zsh stdout-json: ""
 # N-I zsh status: 1
+
+### Double quoted regex gets regex-escaped
+[[ { =~ "{" ]] && echo true
+# stdout: true
+# N-I zsh status: 1
+# N-I zsh stdout-json: ""

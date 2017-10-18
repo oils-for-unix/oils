@@ -53,6 +53,23 @@ touch _tmp/extglob2/{foo,bar}.cc _tmp/extglob2/{foo,bar,baz}.h
 echo _tmp/extglob2/!(*.h)
 # stdout: _tmp/extglob2/bar.cc _tmp/extglob2/foo.cc
 
+### glob spaces
+shopt -s extglob
+mkdir -p _tmp/eg4
+touch _tmp/eg4/a '_tmp/eg4/a b' _tmp/eg4/foo
+argv.py _tmp/eg4/@(a b|foo)
+# stdout: ['_tmp/eg4/a b', '_tmp/eg4/foo']
+
+### glob other punctuation chars (lexer mode)
+# mksh sorts them differently
+shopt -s extglob
+mkdir -p _tmp/eg5
+cd _tmp/eg5
+touch __{'<>','{}','|','#','&&'}
+argv.py @('__<>'|__{}|__\||__#|__&&)
+# stdout: ['__<>', '__|', '__{}', '__&&', '__#']
+# OK mksh stdout: ['__#', '__&&', '__<>', '__{}', '__|']
+
 ### @ matches exactly one
 [[ --verbose == --@(help|verbose) ]] && echo TRUE
 [[ --oops == --@(help|verbose) ]] || echo FALSE
@@ -137,6 +154,20 @@ quoted='--@(help|verbose)'
 # stdout-json: "TRUE\nTRUE\nFALSE\nFALSE\nFALSE\n"
 # N-I mksh stdout-json: "FALSE\nFALSE\nFALSE\n"
 
+### extglob empty string
+shopt -s extglob
+[[ '' == @(foo|bar) ]] || echo FALSE
+[[ '' == @(foo||bar) ]] && echo TRUE
+# stdout-json: "FALSE\nTRUE\n"
+
+### extglob empty pattern
+shopt -s extglob
+[[ '' == @() ]] && echo TRUE
+[[ '' == @(||) ]] && echo TRUE
+[[ X == @() ]] || echo FALSE
+[[ '|' == @(||) ]] || echo FALSE
+# stdout-json: "TRUE\nTRUE\nFALSE\nFALSE\n"
+
 ### printing extglob in variable
 # mksh does static parsing so it doesn't like this?
 shopt -s extglob
@@ -175,4 +206,29 @@ for word in --help --verbose --unmatched -- -zxzx -; do
 done
 # stdout-json: "A\nA\nU\nB\nC\nD\n"
 
+### Without shopt -s extglob
+empty=''
+str='x'
+[[ $empty == !($str) ]] && echo TRUE  # test glob match
+[[ $str == !($str) ]]   || echo FALSE
+# stdout-json: "TRUE\nFALSE\n"
 
+### Turning extglob on changes the meaning of [[ !(str) ]] in bash
+empty=''
+str='x'
+[[ !($empty) ]]  && echo TRUE   # test if $empty is empty
+[[ !($str) ]]    || echo FALSE  # test if $str is empty
+shopt -s extglob  # mksh doesn't have this
+[[ !($empty) ]]  && echo TRUE   # negated glob
+[[ !($str) ]]    && echo TRUE   # negated glob
+# stdout-json: "TRUE\nFALSE\nTRUE\nTRUE\n"
+# OK mksh stdout-json: "TRUE\nTRUE\nTRUE\n"
+
+### With extglob on, !($str) on the left or right of == has different meanings
+shopt -s extglob
+empty=''
+str='x'
+[[ 1 == !($str) ]]  && echo TRUE   # glob match
+[[ !($str) == 1 ]]  || echo FALSE  # test if empty
+# NOTE: There cannot be a space between ! and (?
+# stdout-json: "TRUE\nFALSE\n"

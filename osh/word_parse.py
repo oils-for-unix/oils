@@ -563,6 +563,57 @@ class WordParser(object):
 
     raise AssertionError('%s not handled' % self.cur_token)
 
+  def _ReadExtGlobPart(self):
+    """
+    Grammar:
+      Item         = CompoundWord | EPSILON  # important: @(foo|) is allowed
+      LEFT         = '@(' | '*(' | '+(' | '?(' | '!('
+      RIGHT        = ')'
+      ExtGlob      = LEFT (Item '|')* Item RIGHT  # ITEM may be empty
+      CompoundWord includes ExtGlobPart
+    """
+    left_token = self.cur_token
+    arms = []
+    #log('left %r', left_token)
+
+    self.lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
+    self._Next(LexMode.EXTGLOB)  # advance past LEFT
+
+    read_word = False  # did we just a read a word?  To handle @(||).
+
+    while True:
+      self._Peek()
+      #log('t %r', self.cur_token)
+
+      if self.token_type == Id.Right_ExtGlob:
+        if not read_word:
+          arms.append(ast.CompoundWord())
+        break
+
+      elif self.token_type == Id.Op_Pipe:
+        if not read_word:
+          arms.append(ast.CompoundWord())
+        read_word = False
+        self._Next(LexMode.EXTGLOB)
+
+      # lex mode EXTGLOB should only produce these 4 kinds of tokens
+      elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub, Kind.ExtGlob):
+        w = self._ReadCompoundWord(lex_mode=LexMode.EXTGLOB)
+        arms.append(w)
+        read_word = True
+
+      elif self.token_kind == Kind.Eof:
+        self.AddErrorContext(
+            'Unexpected EOF reading extended glob that began here',
+            token=left_token)
+        return None
+
+      else:
+        raise AssertionError('Unexpected token %r' % self.cur_token)
+
+    part = ast.ExtGlobPart(left_token, arms)
+    return part
+
   def _ReadDoubleQuotedPart(self, eof_type=Id.Undefined_Tok, here_doc=False):
     """
     Args:
@@ -894,6 +945,10 @@ class WordParser(object):
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
+
+    NOTE: eof_type is necessary because / is a literal, i.e. Lit_Slash, but it
+    could be an operator delimiting a compound word.  Can we change lexer modes
+    and remove this special case?
     """
     #print('_ReadCompoundWord', lex_mode)
     word = ast.CompoundWord()
@@ -905,7 +960,7 @@ class WordParser(object):
       self._Peek()
       #print('CW',self.cur_token)
       if allow_done and self.token_type == eof_type:
-        done = True  # e.g. for ${}
+        done = True  # e.g. for ${foo//pat/replace}
 
       # Keywords like "for" are treated like literals
       elif self.token_kind in (
@@ -935,6 +990,12 @@ class WordParser(object):
 
       elif self.token_kind == Kind.VSub:
         part = ast.SimpleVarSub(self.cur_token)
+        word.parts.append(part)
+
+      elif self.token_kind == Kind.ExtGlob:
+        part = self._ReadExtGlobPart()
+        if not part:
+          return None
         word.parts.append(part)
 
       elif self.token_kind == Kind.Left:
@@ -1077,7 +1138,7 @@ class WordParser(object):
 
     elif self.token_kind in (
         Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.ControlFlow,
-        Kind.BoolUnary, Kind.BoolBinary):
+        Kind.BoolUnary, Kind.BoolBinary, Kind.ExtGlob):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
       # LexMode.COMMENT and read until end of line.  (TODO: How to add comments
       # to AST?)

@@ -25,9 +25,9 @@ OUTER
 DBRACKET
 SQ DQ DOLLAR_SQ
 ARITH
+EXTGLOB
 VS_1 VS_2 VS_ARG_UNQ VS_ARG_DQ
-BASH_REGEX
-BASH_REGEX_CHARS
+BASH_REGEX BASH_REGEX_CHARS
 """.split())
 
 # In oil, I hope to have these lexer modes:
@@ -162,6 +162,15 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'.', Id.Lit_Other),  # any other single char is a literal
 ]
 
+# In OUTER and DBRACKET states.
+_EXTGLOB_BEGIN = [
+  C('@(', Id.ExtGlob_At),
+  C('*(', Id.ExtGlob_Star),
+  C('+(', Id.ExtGlob_Plus),
+  C('?(', Id.ExtGlob_QMark),
+  C('!(', Id.ExtGlob_Bang),
+]
+
 _KEYWORDS = [
   # NOTE: { is matched elsewhere
   C('[[',       Id.KW_DLeftBracket),
@@ -216,7 +225,7 @@ def IsKeyword(name):
 # of <Lit_Chars "if">.
 LEXER_DEF[LexMode.OUTER] = [
   C('((', Id.Op_DLeftParen),  # not allowed within [[
-] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED
+] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
 # DBRACKET: can be like OUTER, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
@@ -226,7 +235,21 @@ LEXER_DEF[LexMode.DBRACKET] = [
   C('!', Id.KW_Bang),
 ] + ID_SPEC.LexerPairs(Kind.BoolUnary) + \
     ID_SPEC.LexerPairs(Kind.BoolBinary) + \
-    _UNQUOTED
+    _UNQUOTED + _EXTGLOB_BEGIN
+
+# Inside an extended glob, most characters are literals, including spaces and
+# punctuation.  We also accept \, $var, ${var}, "", etc.  They can also be
+# nested, so _EXTGLOB_BEGIN appears here.
+#
+# Example: echo @(<> <>|&&|'foo'|$bar)
+LEXER_DEF[LexMode.EXTGLOB] = \
+    _BACKSLASH + _LEFT_SUBS + _VARS + _EXTGLOB_BEGIN + [
+  R(r'[^\\$`"\'|)@*+!?]+', Id.Lit_Chars),
+  C('|', Id.Op_Pipe),
+  C(')', Id.Op_RParen),  # maybe be translated to Id.ExtGlob_RParen
+  C('\0', Id.Eof_Real),
+  R('.', Id.Lit_Chars),  # everything else is literal
+]
 
 LEXER_DEF[LexMode.BASH_REGEX] = [
   # Match these literals first, and then the rest of the OUTER state I guess.
