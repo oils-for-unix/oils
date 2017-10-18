@@ -366,7 +366,7 @@ def _AddKinds(spec):
   # "None" could either be a global variable or assignment to a local.
   # NOTE: We're not parsing export here.  Although it sets a global variable,
   # and has the same syntax, too many scripts use it in a dynamic fashion.
-  spec.AddKind('Assign', ['Declare', 'Local', 'Readonly', 'None'])
+  spec.AddKind('Assign', ['Declare', 'Typeset', 'Local', 'Readonly', 'None'])
 
   # Unlike bash, we parse control flow statically.  They're not
   # dynamically-resolved builtins.

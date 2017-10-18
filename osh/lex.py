@@ -187,6 +187,7 @@ _KEYWORDS = [
 # main compatibility with bash for the 'type' builtin.
 _MORE_KEYWORDS = [
   C('declare',  Id.Assign_Declare),
+  C('typeset',  Id.Assign_Typeset),
   C('local',    Id.Assign_Local),
   C('readonly', Id.Assign_Readonly),
 

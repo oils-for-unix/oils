@@ -672,7 +672,8 @@ class Executor(object):
       if node.keyword == Id.Assign_Local:
         lookup_mode = scope.LocalOnly
         flags = ()
-      elif node.keyword == Id.Assign_Declare:
+      # typeset and declare are synonyms?  I see typeset -a a=() the most.
+      elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
         # declare is like local, except it can also be used outside functions?
         lookup_mode = scope.LocalOnly
         # TODO: Respect flags.  -r and -x matter, but -a and -A might be

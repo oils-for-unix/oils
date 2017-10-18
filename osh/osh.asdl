@@ -14,6 +14,7 @@
 -- * select block
 -- * &> redirect both stdout and stderr
 -- * 1>&2- to close redirect
+-- * case fallthrough ;& and ;;&
 
 -- Represented but Not Parsed:
 -- * LeftIndex -- LHS of assignment
