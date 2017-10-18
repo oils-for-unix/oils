@@ -316,13 +316,18 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
 # This is word characters, - and _, as well as path name characters . and /.
 _PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
 
+# NOTE: Turning JSON back on can be a cheap hack for detecting invalid unicode.
+# But we want to write our own AST walker for that.
+
 def _PrettyString(s):
   if '\n' in s:
-    return json.dumps(s)  # account for the fact that $ matches the newline
+    #return json.dumps(s)  # account for the fact that $ matches the newline
+    return repr(s)
   if _PLAIN_RE.match(s):
     return s
   else:
-    return json.dumps(s)
+    #return json.dumps(s)
+    return repr(s)
 
 
 INDENT = 2
