@@ -418,7 +418,7 @@ class CommandParser(object):
       if kov:
         _, _, v = kov
         if word.HasArrayPart(v):
-          self.AddErrorContext('Unexpected array literal: %s', v, word=v)
+          self.AddErrorContext('Unexpected array literal: %s', v, word=w)
           return None
 
     # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading

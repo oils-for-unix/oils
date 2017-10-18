@@ -1159,6 +1159,20 @@ $'abc\ndef'
 echo $(( 0x$foo ))
 """)
 
+  def testBacktickCommentHack(self):
+    # Found in sandstorm.
+    # The problem here is that the comment goes to the end of the line, which
+    # eats up the closing backtick!  We could change the mode of the lexer
+    # inside a command sub, or possibly just ignore this use case.
+    return
+
+    node = assertParseCommandList(self, r"""\
+openssl \
+    -newkey rsa:4096 `# Create a new RSA key of length 4096 bits.` \
+    `# Sandcats just needs the CN= (common name) in the request.` \
+    -subj "/CN=*.${SS_HOSTNAME}/"
+""")
+
 
 class ErrorLocationsTest(unittest.TestCase):
 
@@ -1234,6 +1248,10 @@ EOF
   def testArith(self):
     """Enumerating errors in arith_parse.py."""
     err = _assertParseCommandListError(self, '(( 1 + ))')
+
+  def testArraySyntax(self):
+    """Enumerating errors in arith_parse.py."""
+    err = _assertParseCommandListError(self, 'A= (1 2)')
 
 
 if __name__ == '__main__':

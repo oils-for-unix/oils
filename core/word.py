@@ -102,7 +102,10 @@ def LeftMostSpanForPart(part):
   #print(IdName(part.id))
 
   if part.tag == word_part_e.ArrayLiteralPart:
-    return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
+    if not part.words:
+      return -1
+    else:
+      return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
   elif part.tag == word_part_e.LiteralPart:
     # Just use the token

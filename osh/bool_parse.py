@@ -189,6 +189,7 @@ class BoolParser(object):
     if self.op_id == Id.KW_Bang:
       if not self._Next(): return None
       child = self.ParseFactor()
+      if not child: return None
       #return UnaryExprNode(Id.KW_Bang, child)
       return ast.LogicalNot(child)
     else:
@@ -234,7 +235,13 @@ class BoolParser(object):
 
         right = self.cur_word
         if is_regex:
+          # TODO: Quoted parts need to be regex-escaped, e.g. [[ $a =~ "{" ]].
+          # I don't think libc has a function to do this.  Escape these
+          # characters:
+          # https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html0
+
           ok, regex_str, unused_quoted = word.StaticEval(right)
+
           # doesn't contain $foo, etc.
           if ok and not libc.regex_parse(regex_str):
             self.AddErrorContext("Invalid regex: %r" % regex_str, word=right)

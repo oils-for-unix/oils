@@ -858,7 +858,9 @@ class WordParser(object):
   def _ReadArrayLiteralPart(self):
     self._Next(LexMode.OUTER)  # advance past (
     self._Peek()
-    assert self.cur_token.id == Id.Op_LParen, self.cur_token
+    if self.cur_token.id != Id.Op_LParen:
+      self.AddErrorContext('Expected ( after =', token=self.cur_token)
+      return None
 
     # MUST use a new word parser (with same lexer).
     w_parser = WordParser(self.lexer, self.line_reader)

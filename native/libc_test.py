@@ -49,10 +49,10 @@ class LibcTest(unittest.TestCase):
 
   def testRegex(self):
     #print(libc.regcomp(r'.*\.py'))
-    print(libc.regex_parse(r'.*\.py'))
-    print(libc.regex_parse(r'*'))
-    print(libc.regex_parse('\\'))
-
+    self.assertEqual(True, libc.regex_parse(r'.*\.py'))
+    self.assertEqual(False, libc.regex_parse(r'*'))
+    self.assertEqual(False, libc.regex_parse('\\'))
+    self.assertEqual(False, libc.regex_parse('{'))
 
     cases = [
         (r'.*\.py', 'foo.py', True),

@@ -179,9 +179,11 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       <td>{lines_per_sec}</td>
 
       {.osh2oil_failed?}
-        <td class="fail">{osh2oil_failed|commas}</td>
+        <!-- <td class="fail">{osh2oil_failed|commas}</td> -->
+        <td>{osh2oil_failed|commas}</td>
       {.or}
-        <td class="ok">{osh2oil_failed|commas}</td>
+        <!-- <td class="ok">{osh2oil_failed|commas}</td> -->
+        <td>{osh2oil_failed|commas}</td>
       {.end}
 
       <td class="name">
@@ -228,7 +230,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
      </td>
       <td>{num_lines|commas}</td>
       <td>
-        {.section parse_failed}
+        {.parse_failed?}
           <a class="fail" href="#stderr_parse_{name}">FAIL</a>
           <td>{parse_proc_secs}</td>
           <td>-</td>
@@ -242,11 +244,12 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       </td>
 
       <td>
-        {# not sure how to use if? }
-        {.section osh2oil_failed}
-          <a class="fail" href="#stderr_osh2oil_{name}">FAIL</a>
+        {.osh2oil_failed?}
+          <!-- <a class="fail" href="#stderr_osh2oil_{name}">FAIL</a> -->
+          FAIL
         {.or}
-          <a class="ok" href="{name}__oil.txt">OK</a>
+          <!-- <a class="ok" href="{name}__oil.txt">OK</a> -->
+          OK
         {.end}
       </td>
       <td class="name">
@@ -392,13 +395,16 @@ def UpdateNodes(node, path_parts, file_stats):
           'contents': parse_stderr,
       })
     osh2oil_stderr = file_stats.pop('osh2oil_stderr')
-    if osh2oil_stderr or file_stats['osh2oil_failed']:
-      node.stderr.append({
-          'parsing': False,
-          'action': 'osh2oil',
-          'name': first,
-          'contents': osh2oil_stderr,
-      })
+
+    # Concentrating on parsing failures for now.
+
+    #if osh2oil_stderr or file_stats['osh2oil_failed']:
+    #  node.stderr.append({
+    #      'parsing': False,
+    #      'action': 'osh2oil',
+    #      'name': first,
+    #      'contents': osh2oil_stderr,
+    #  })
 
     # Attach to this dir
     node.files[first] = file_stats
