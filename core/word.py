@@ -347,10 +347,9 @@ def AsFuncName(w):
   if not ok:
     return False, ''
   if quoted:
-    # TODO: Return False with error string
-    if len(self.parts) != 1:
-      raise RuntimeError(
-          "Function names should not have quotes, got: %s", self.parts)
+    # Function names should not have quotes
+    if len(w.parts) != 1:
+      return False, ''
   return True, s
 
 

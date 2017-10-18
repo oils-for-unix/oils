@@ -1250,17 +1250,21 @@ EOF
     err = _assertParseCommandListError(self, '(( 1 + ))')
 
   def testArraySyntax(self):
-    """Enumerating errors in arith_parse.py."""
     err = _assertParseCommandListError(self, 'A= (1 2)')
 
   def testRedirectsInAssignment(self):
-    """Enumerating errors in arith_parse.py."""
     err = _assertParseCommandListError(self, 'x=1 >/dev/null')
     err = _assertParseCommandListError(self, 'declare  x=1 >/dev/null')
 
   def testEofInDoubleQuoted(self):
-    """Enumerating errors in arith_parse.py."""
     err = _assertParseCommandListError(self, 'foo="" echo "bar  ')
+
+  def testQuotesInFunctionName(self):
+    err = _assertParseCommandListError(self, """\
+    foo"bar" () {
+      echo hi
+    }
+    """)
 
 
 if __name__ == '__main__':

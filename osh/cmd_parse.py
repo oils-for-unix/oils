@@ -1120,8 +1120,7 @@ class CommandParser(object):
 
     ok, name = word.AsFuncName(self.cur_word)
     if not ok:
-      self.AddErrorContext("Invalid function name: %r",
-          self.cur_word, word=self.cur_word)
+      self.AddErrorContext('Invalid function name', word=self.cur_word)
       return None
     self._Next()  # skip function name
 
