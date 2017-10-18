@@ -23,6 +23,7 @@ from osh.bool_parse import BoolParser
 
 log = util.log
 command_e = ast.command_e
+word_e = ast.word_e
 assign_op = ast.assign_op
 
 
@@ -720,6 +721,10 @@ class CommandParser(object):
       elif self.c_id == Id.Op_Newline:
         self._Next()
         break
+      if self.cur_word.tag != word_e.CompoundWord:
+        self.AddErrorContext('Invalid word in for loop', word=self.cur_word)
+        return None
+
       words.append(self.cur_word)
       self._Next()
     return words, semi_spid
