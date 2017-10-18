@@ -98,3 +98,8 @@ f() {
 }
 # status: 2
 # BUG dash/bash/mksh status: 0
+
+### misplaced parentheses are not a subshell
+echo a(b)
+# status: 2
+# OK mksh status: 1

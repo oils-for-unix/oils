@@ -23,17 +23,19 @@ echo status=$?
 # stdout: status=1
 # OK dash stdout: status=2
 
-### No command
-# Hm this is valid in bash and dash.  It's parsed as an assigment with a
-# redirect, which doesn't make sense.  But it's a mistake, and should be a W2
-# warning for us.
-FOO=bar 2>/dev/null
-
-### Redirect in subshell
+### Redirect in command sub
 FOO=$(echo foo 1>&2)
 echo $FOO
 # stdout:
 # stderr: foo
+
+### Redirect in assignment is invalid
+# Hm this is valid in bash and dash.  It's parsed as an assigment with a
+# redirect, which doesn't make sense.  But it's a mistake, and should be a W2
+# warning for us.
+FOO=bar 2>/dev/null
+# status: 2
+# OK bash/dash/mksh status: 0
 
 ### Redirect in assignment
 # dash captures stderr to a file here, which seems correct.  Bash doesn't and
@@ -44,8 +46,11 @@ FOO=$(echo foo 1>&2) 2>$TMP/no-command.txt
 echo FILE=
 cat $TMP/no-command.txt
 echo "FOO=$FOO"
-# stdout-json: "FILE=\nfoo\nFOO=\n"
+# status: 2
+# OK dash/mksh stdout-json: "FILE=\nfoo\nFOO=\n"
+# OK dash/mksh status: 0
 # BUG bash stdout-json: "FILE=\nFOO=\n"
+# OK bash status: 0
 
 ### Redirect in function body.
 func() { echo hi; } 1>&2

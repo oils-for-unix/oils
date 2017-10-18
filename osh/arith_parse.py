@@ -6,9 +6,12 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 import sys
 
 from core import tdop
+from core import util
 from core.id_kind import Id
 from core import word
 from osh import ast_ as ast
+
+p_die = util.p_die
 
 
 def NullIncDec(p, w, bp):
@@ -64,7 +67,7 @@ def LeftIndex(p, w, left, unused_bp):
   3. strings don't have mutable characters.
   """
   if not tdop.IsIndexable(left):
-    raise tdop.TdopParseError("%s can't be indexed" % left)
+    p_die("%s can't be indexed", left, word=w)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
