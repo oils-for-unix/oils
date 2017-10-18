@@ -72,8 +72,7 @@ def ToLValue(node):
         node.left.tag == arith_expr_e.ArithVarRef):
       return ast.LhsIndexedName(node.left.name, node.right)
 
-  # TODO: Location information needs token instead of op_id.
-  p_die("Can't assign to %r", node)
+  return None
 
 
 #
@@ -133,6 +132,8 @@ def LeftAssign(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
   lhs = ToLValue(left)
+  if lhs is None:
+    p_die("Can't assign to %r", lhs, word=w)
   return ast.BinaryAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
 
 
