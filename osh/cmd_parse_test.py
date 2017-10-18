@@ -1266,6 +1266,14 @@ EOF
     }
     """)
 
+  def testForLoopName(self):
+    err = _assertParseCommandListError(self, """\
+    for ( i = 1; i < 10; i++ )
+    """)
+    err = _assertParseCommandListError(self, """\
+    for = in a
+    """)
+
 
 if __name__ == '__main__':
   unittest.main()

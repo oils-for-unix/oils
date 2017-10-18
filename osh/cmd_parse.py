@@ -768,11 +768,11 @@ class CommandParser(object):
     ok, iter_name, quoted = word.StaticEval(self.cur_word)
     if not ok or quoted:
       self.AddErrorContext(
-          "Invalid for loop variable: %s", self.cur_word, word=self.cur_word)
+          "Invalid for loop variable", word=self.cur_word)
       return None
     if not VAR_NAME_RE.match(iter_name):
       self.AddErrorContext(
-          "Invalid for loop variable name: %s", self.cur_word, word=self.cur_word)
+          "Invalid for loop variable name", word=self.cur_word)
       return None
     node.iter_name = iter_name
     self._Next()  # skip past name

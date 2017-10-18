@@ -5,6 +5,9 @@ word.py -- Functions for using words as "tokens".
 import sys
 from osh import ast_ as ast
 from core.id_kind import Id, Kind, LookupKind
+from core import util
+
+p_die = util.p_die
 
 word_e = ast.word_e
 word_part_e = ast.word_part_e
@@ -85,6 +88,11 @@ def StaticEval(w):
   """
   ret = ''
   quoted = False
+
+  # e.g. for ( instead of for (( is a token word
+  if w.tag != word_e.CompoundWord:
+    return False, ret, quoted
+
   for part in w.parts:
     ok, s, q = _EvalWordPart(part)
     if not ok:
