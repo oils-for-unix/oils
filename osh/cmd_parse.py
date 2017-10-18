@@ -782,7 +782,10 @@ class CommandParser(object):
       self._Next()  # skip in
 
       in_spid = word.LeftMostSpanForWord(self.cur_word) + 1
-      iter_words, semi_spid = self.ParseForWords()
+      x = self.ParseForWords()
+      if x is None:
+        return None
+      iter_words, semi_spid = x
       words2 = braces.BraceDetectAll(iter_words)
       words3 = word.TildeDetectAll(words2)
 
