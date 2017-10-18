@@ -592,9 +592,10 @@ class CommandParser(object):
 
     if not suffix_words:  # ONE=1 TWO=2  (with no other words)
       if redirects:
-        # TODO: redirect ops should have a token with location info instead of
-        # an op_id.
-        self.AddErrorContext('Got redirects in global assignment')
+        binding1 = prefix_bindings[0]
+        _, _, _, spid = binding1
+        self.AddErrorContext('Got redirects in global assignment',
+                             span_id=spid)
         return None
 
       pairs = []

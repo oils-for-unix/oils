@@ -91,7 +91,7 @@ def MakeStatusLines():
 
 def PrettyPrintError(parse_error, arena, f):
     #print(parse_error)
-    if parse_error.span_id:
+    if parse_error.span_id is not None:
       span_id = parse_error.span_id
     elif parse_error.token:
       span_id = parse_error.token.span_id

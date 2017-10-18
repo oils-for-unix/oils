@@ -1254,6 +1254,7 @@ EOF
 
   def testRedirectsInAssignment(self):
     err = _assertParseCommandListError(self, 'x=1 >/dev/null')
+    err = _assertParseCommandListError(self, 'echo hi; x=1 >/dev/null')
     err = _assertParseCommandListError(self, 'declare  x=1 >/dev/null')
 
   def testEofInDoubleQuoted(self):
