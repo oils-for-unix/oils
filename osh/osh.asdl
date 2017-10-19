@@ -1,4 +1,4 @@
--- Data types for the osh AST.
+-- Data types for the osh AST, aka "Lossless Syntax Tree".
 --
 -- Invariant: the source text can be reconstructed byte-for-byte from this
 -- tree.
@@ -7,8 +7,6 @@
 -- application type 'id', which is core.id_kind.Id.
 
 -- Unrepresented:
--- * extended globs: unlike globs, these are parsed up front
---   * hidden behind set -o extglob
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
 -- * select block
