@@ -18,6 +18,8 @@ def NullIncDec(p, w, bp):
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
   child = tdop.ToLValue(right)
+  if child is None:
+    p_die("This value can't be assigned to", word=w)
   return ast.UnaryAssign(word.ArithId(w), child)
 
 
