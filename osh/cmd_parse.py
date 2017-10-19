@@ -510,6 +510,24 @@ class CommandParser(object):
 
     return node
 
+  # Flags that indicate an assignment should be parsed like a command.
+  _ASSIGN_COMMANDS = set([
+      (Id.Assign_Declare, '-f'),  # function defs
+      (Id.Assign_Declare, '-F'),  # function names
+      (Id.Assign_Declare, '-p'),  # print
+
+      (Id.Assign_Typeset, '-f'),
+      (Id.Assign_Typeset, '-F'),
+      (Id.Assign_Typeset, '-p'),
+
+      (Id.Assign_Local, '-p'),
+      (Id.Assign_Readonly, '-p'),
+      # Hm 'export -p' is more like a command.  But we're parsing it
+      # dynamically now because of some wrappers.
+      # Maybe we could change this.
+      #(Id.Assign_Export, '-p'),
+  ])
+
   def ParseSimpleCommand(self):
     """
     Fixed transcription of the POSIX grammar (TODO: port to grammar/Shell.g)
@@ -609,30 +627,45 @@ class CommandParser(object):
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node
 
-    # NOTE: Could also detect break/continue/return here?  Parse time or
-    # runtime?
-
     kind, kw_token = word.KeywordToken(suffix_words[0])
+
     if kind == Kind.Assign:
-      if redirects:
-        # Attach the error location to the keyword.  It would be more precise
-        # to attach it to the
-        self.AddErrorContext('Got redirects in assignment', token=kw_token)
-        return None
+      # Here we StaticEval suffix_words[1] to see if it's a command like
+      # 'typeset -p'.  Then it becomes a SimpleCommand node instead of an
+      # Assignment.  Note we're not handling duplicate flags like 'typeset
+      # -pf'.  I see this in bashdb (bash debugger) but it can just be changed
+      # to 'typeset -p -f'.
+      is_command = False
+      if len(suffix_words) > 1:
+        ok, val, _ = word.StaticEval(suffix_words[1])
+        if ok and (kw_token.id, val) in self._ASSIGN_COMMANDS:
+          is_command = True
 
-      if prefix_bindings:  # FOO=bar local spam=eggs not allowed
-        # Use the location of the first value.  TODO: Use the whole word before
-        # splitting.
-        _, _, v0, _ = prefix_bindings[0]
-        self.AddErrorContext(
-            'Invalid prefix bindings in assignment: %s', prefix_bindings,
-            word=v0)
-        return None
+      if is_command:  # declare -f, declare -p, typeset -p, etc.
+        node = self._MakeSimpleCommand(prefix_bindings, suffix_words,
+                                       redirects)
+        return node
 
-      node = self._MakeAssignment(kw_token.id, suffix_words)
-      if not node: return None
-      node.spids.append(kw_token.span_id)
-      return node
+      else:  # declare str='', declare -a array=()
+        if redirects:
+          # Attach the error location to the keyword.  It would be more precise
+          # to attach it to the
+          self.AddErrorContext('Got redirects in assignment', token=kw_token)
+          return None
+
+        if prefix_bindings:  # FOO=bar local spam=eggs not allowed
+          # Use the location of the first value.  TODO: Use the whole word before
+          # splitting.
+          _, _, v0, _ = prefix_bindings[0]
+          self.AddErrorContext(
+              'Invalid prefix bindings in assignment: %s', prefix_bindings,
+              word=v0)
+          return None
+
+        node = self._MakeAssignment(kw_token.id, suffix_words)
+        if not node: return None
+        node.spids.append(kw_token.span_id)
+        return node
 
     elif kind == Kind.ControlFlow:
       if redirects:
