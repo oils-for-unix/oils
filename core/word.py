@@ -151,8 +151,14 @@ def LeftMostSpanForPart(part):
     # begin, end
     return part.spids[0]
 
+  elif part.tag == word_part_e.ExtGlobPart:
+    # This is the smae as part.op.span_id, but we want to be consistent with
+    # left/right.  Not sure I want to add a right token just for the spid.
+    return part.spids[0]
+    #return part.op.span_id  # e.g. @( is the left-most token
+
   else:
-    raise AssertionError(part.tag)
+    raise AssertionError(part.__class__.__name__)
 
 
 def _RightMostSpanForPart(part):
@@ -201,6 +207,9 @@ def _RightMostSpanForPart(part):
 
   elif part.tag == word_part_e.ArithSubPart:
     return -1
+
+  elif part.tag == word_part_e.ExtGlobPart:
+    return part.spids[1]
 
   else:
     raise AssertionError(part.tag)

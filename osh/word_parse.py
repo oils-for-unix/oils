@@ -574,7 +574,8 @@ class WordParser(object):
     """
     left_token = self.cur_token
     arms = []
-    #log('left %r', left_token)
+    part = ast.ExtGlobPart(left_token, arms)  # return value
+    part.spids.append(left_token.span_id)
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
     self._Next(LexMode.EXTGLOB)  # advance past LEFT
@@ -588,6 +589,7 @@ class WordParser(object):
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
           arms.append(ast.CompoundWord())
+        part.spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
@@ -611,7 +613,6 @@ class WordParser(object):
       else:
         raise AssertionError('Unexpected token %r' % self.cur_token)
 
-    part = ast.ExtGlobPart(left_token, arms)
     return part
 
   def _ReadDoubleQuotedPart(self, eof_type=Id.Undefined_Tok, here_doc=False):
