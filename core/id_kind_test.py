@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 # Copyright 2016 Andy Chu. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,15 +34,18 @@ class TokensTest(unittest.TestCase):
     print(Kind.Eof)
     print(Kind.Left)
     print('--')
+    num_kinds = 0
     for name in dir(Kind):
       if name[0].isupper():
         print(name, getattr(Kind, name))
+        num_kinds += 1
+
+    print('Number of Kinds:', num_kinds)
+    # 233 out of 256 tokens now
+    print('Number of IDs:', len(id_kind._ID_NAMES))
 
     # Make sure we're not exporting too much
     print(dir(id_kind))
-
-    # 206 out of 256 tokens now
-    print(len(id_kind._ID_NAMES))
 
     t = ast.token(Id.Arith_Plus, '+')
     self.assertEqual(Kind.Arith, LookupKind(t.id))

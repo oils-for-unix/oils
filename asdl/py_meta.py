@@ -179,6 +179,8 @@ class CompoundObj(Obj):
         raise AssertionError('Duplicate assignment of field %r' % name)
       self.__setattr__(name, val)
 
+    # Disable type checking here
+    #return
     for name in self.FIELDS:
       if not self._assigned[name]:
         # If anything was set, then required fields raise an error.
@@ -195,22 +197,23 @@ class CompoundObj(Obj):
     if unassigned:
       raise ValueError("Fields %r were't be assigned" % unassigned)
 
-  def __setattr__(self, name, value):
-    if name == '_assigned':
+  if 1:  # Disable type checking here
+    def __setattr__(self, name, value):
+      if name == '_assigned':
+        self.__dict__[name] = value
+        return
+      try:
+        desc = self.DESCRIPTOR_LOOKUP[name]
+      except KeyError:
+        raise AttributeError('Object of type %r has no attribute %r' %
+                             (self.__class__.__name__, name))
+
+      if not _CheckType(value, desc):
+        raise AssertionError("Field %r should be of type %s, got %r (%s)" %
+                             (name, desc, value, value.__class__))
+
+      self._assigned[name] = True  # check this later when encoding
       self.__dict__[name] = value
-      return
-    try:
-      desc = self.DESCRIPTOR_LOOKUP[name]
-    except KeyError:
-      raise AttributeError('Object of type %r has no attribute %r' %
-                           (self.__class__.__name__, name))
-
-    if not _CheckType(value, desc):
-      raise AssertionError("Field %r should be of type %s, got %r (%s)" %
-                           (name, desc, value, value.__class__))
-
-    self._assigned[name] = True  # check this later when encoding
-    self.__dict__[name] = value
 
   def __repr__(self):
     ast_f = fmt.TextOutput(util.Buffer())  # No color by default.

@@ -15,10 +15,11 @@
 -- * case fallthrough ;& and ;;&
 
 -- Represented but Not Parsed:
--- * LeftIndex -- LHS of assignment
+-- * LeftIndex -- a[foo]=bar  (the arithmetic version is parsed)
 -- * ArrayPair -- ([foo]=bar)
 
 -- Parsed but Not Implemented
+-- * extended glob
 -- * Process sub -- <() and >()
 -- * <>, >| redirects
 

@@ -182,7 +182,7 @@ def OshMain(argv, login_shell):
   spec.LongFlag('--help')
   spec.LongFlag('--version')
   spec.LongFlag('--ast-format',
-                ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap'],
+                ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
                 default='abbrev-text')
   spec.LongFlag('--show-ast')  # execute and show
   spec.LongFlag('--fix')
@@ -352,8 +352,11 @@ def OshMain(argv, login_shell):
     if exec_opts.noexec:
       do_exec = False
 
-    if exec_opts.noexec or opts.show_ast:  # -n shows the AST
-      if opts.ast_format == 'oheap':
+    # -n prints AST, --show-ast prints and executes
+    if exec_opts.noexec or opts.show_ast:
+      if opts.ast_format == 'none':
+        print('AST not printed.', file=sys.stderr)
+      elif opts.ast_format == 'oheap':
         # TODO: Make this a separate flag?
         if sys.stdout.isatty():
           raise RuntimeError('ERROR: Not dumping binary data to a TTY.')

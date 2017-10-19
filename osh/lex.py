@@ -6,6 +6,25 @@ It consists of a series of lexical modes, each with regex -> Id mappings.
 TODO:
 - \0 should be Id.Op_Newline or Id.WS_Newline.  And then the higher level Lexer
   should return the Id.Eof_Real token, as it does now.
+
+Remaining constructs:
+
+Case terminators:
+  ;;&                  Op_DSemiAmp  for case
+  ;&                   Op_Semi
+
+Left Index:
+
+  _VAR_NAME_RE + '\['  Lit_LeftIndexLikeOpen
+  ]=                   Lit_LeftIndexLikeClose
+
+Indexed array and Associative array literals:
+  declare -A a=([key]=value [key2]=value2)
+  declare -a a=([1 + 2]=value [3 + 4]=value2)  # parsed!
+
+  Lit_LBracket Lit_RBracketEqual
+  Left_Bracket, Right_BracketEqual?
+  Op_LBracket Op_RBracketEqual
 """
 
 from core.id_kind import Id, Kind, ID_SPEC
@@ -248,7 +267,7 @@ LEXER_DEF[LexMode.EXTGLOB] = \
   C('|', Id.Op_Pipe),
   C(')', Id.Op_RParen),  # maybe be translated to Id.ExtGlob_RParen
   C('\0', Id.Eof_Real),
-  R('.', Id.Lit_Chars),  # everything else is literal
+  R('.', Id.Lit_Other),  # everything else is literal
 ]
 
 LEXER_DEF[LexMode.BASH_REGEX] = [

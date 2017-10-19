@@ -189,6 +189,11 @@ all-manifests() {
   # Operating Systems
   #
 
+  # Skip the autoconf stuff here.  Could skip it elsewhere too.
+  src=~/src/freebsd-11.1/usr/src
+  _manifest freebsd-11.1 $src \
+    $(find $src -name '*.sh' -a ! -name 'ltmain.sh' -a -printf '%P\n')
+
   _sh-manifest ~/git/other/minix
   _sh-manifest ~/git/other/illumos-gate
   _sh-manifest ~/git/other/daemontools-encore
@@ -405,6 +410,30 @@ count-lines() {
     tr '\n' '\0' | wc -l --files0-from - | sort -n
 }
 
+grep-features1() {
+  # Hm only 608 files out of 10,000 use a[x]=
+  # But it is used in
+  # /home/andy/src/linux-4.8.7/scripts/decode_stacktrace.sh
+  # portage, bash-completion, uses it
+  time abspaths | grep -v ltmain.sh |
+    xargs egrep '^[[:space:]]*[a-zA-Z0-9]+\[.*\]='
+}
+
+grep-features2() {
+  # Outside of illumos/ast/esoteric, there's only one real usage of associative
+  # array literals!
+  # /home/andy/git/other/tensorflow/tensorflow/tools/ci_build/builds/pip.sh:  WHL_TAGS=(["2.7"]="cp27-none" ["3.4"]="cp34-cp34m" ["3.5"]="cp35-cp35m")
+  time abspaths | grep -v ltmain.sh |
+    xargs grep -F '=(['
+}
+
+grep-features3() {
+  # Wow this is ONLY used in a handful of files in bash-completions!  And tests.
+  # That might be enough to justify it.
+  time abspaths | grep -v ltmain.sh |
+    xargs grep -F ';&'
+}
+
 # Takes ~15 seconds for 8,000+ files.
 #
 # NOTE: APKBUILD don't have shebang lines!  So there are a bunch of false
@@ -425,6 +454,57 @@ all() {
 find-tracebacks() {
   find _tmp/wild/raw -name '*__parse.stderr.txt*' |
     xargs grep -l 'Traceback'
+}
+
+find-with-shebang() {
+  local dir=$1
+
+  # Look for files without an extension that have shell shebang lines.
+
+  # Bad things about find:
+  # * -regextype is part of the expression that always returns true, and has a
+  # side effect that only affects later clauses!
+  # * there are TEN different kinds
+  # * emacs is the default regex type!
+  # * -regex matches the whole path, whereas -name only matches the name
+  #   - should be name ~ /regex/ and path ~ /regex/
+  #   - there is no way to search just the name for a regex
+  # * no character classes in the default type
+  #
+  # https://www.gnu.org/software/findutils/manual/html_node/find_html/Regular-Expressions.html#Regular-Expressions
+
+  # The regex matches the whole path, e.g. so freebsd-11.1 must be matched.
+
+  # What might be faster here is to find all the executables first, then put
+  # them in a text file.  test/shebang.sh can be invoked with stdin as a path
+  # list and filter them.  It's not horribly slow though.
+
+  # Looking for *.sh misses 590 files in FreeBSD.  There are 1088 .sh files.
+
+  # NOTE: Should get rid of most 'configure' scripts?
+
+  time find $dir \
+    \( -name .git -a -prune \) -o \
+    \( -regex '.+/[a-zA-Z0-9_\-]+' -a \
+       -type f -a \
+       -executable -a \
+       -exec test/shebang.sh is-shell {} ';' -a \
+       -printf '%p\n' \)
+}
+
+gentoo() {
+  # 38,000 ebuild files
+  local src
+  src=~/git/gentoo/gentoo
+
+  # 2M lines, because there are a lot of duplicate versions.
+
+  time find $src -name '*.ebuild' -a -print0 | 
+    wc -l --files0-from - | sort -n
+
+  return
+  _manifest distro/gentoo $src \
+    $(find $src . -name '*.ebuild')
 }
 
 #

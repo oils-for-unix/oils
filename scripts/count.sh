@@ -64,8 +64,10 @@ all() {
 
 # Just the parser
 parser() {
+  # I'm counting brace detection/expansion here because it doesn't depend on
+  # runtime info.
   echo 'Lexer/Parser'
-  wc -l osh/{*_parse.py,lex.py,parse_lib.py} core/word.py | sort -n
+  wc -l osh/{*_parse.py,lex.py,parse_lib.py} core/{word,braces}.py | sort -n
   echo
 
   echo 'AST and IDs'
@@ -74,6 +76,11 @@ parser() {
 
   echo 'Common Algorithms'
   wc -l core/{tdop,lexer}.py | sort -n
+  echo
+
+  echo 'Utilities'
+  wc -l core/{alloc,ui,reader}.py | sort -n
+  echo
 }
 
 # Stuff we might need to hand-port
@@ -83,9 +90,18 @@ parser-port() {
 
 runtime() {
   # NOTE: braces.py contains both parsing and runtime.  It is a  middle stage.
+  echo 'Core'
   wc -l \
-    core/*_{exec,eval}.py core/{builtin,glob_,process,state}.py \
-    core/runtime.asdl | sort -n
+    core/*_{exec,eval}.py core/{process,state}.py core/runtime.asdl | sort -n
+  echo
+
+  echo 'Builtins'
+  wc -l core/{builtin,test_builtin}.py
+  echo
+
+  echo 'Libraries'
+  wc -l core/{args,glob_}.py | sort -n
+  echo
 }
 
 # count instructions, for fun

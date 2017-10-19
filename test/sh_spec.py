@@ -762,7 +762,7 @@ class HtmlOutput(ColorOutput):
 
 def Options():
   """Returns an option parser instance."""
-  p = optparse.OptionParser('test_sh.py [options] TEST_FILE shell...')
+  p = optparse.OptionParser('sh_spec.py [options] TEST_FILE shell...')
   p.add_option(
       '-v', '--verbose', dest='verbose', action='store_true', default=False,
       help='Show details about test execution')

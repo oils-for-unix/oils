@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./shebang-is-shell.sh PATH
+#   ./shebang.sh is-shell PATH
 
 # Test if the first line ends with 'sh'.
 is-shell() {

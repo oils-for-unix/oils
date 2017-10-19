@@ -40,7 +40,7 @@ def CreateOptionsParser():
   p.add_option(
       '--def', dest='defs', metavar="'NAME VALUE'", type='str',
       default=[], action='append',
-      help='Define varaibles for use in format strings')
+      help='Define variables for use in format strings')
 
   p.add_option(
       '--as-percent', dest='percent_cols', metavar="COLNAME", type='str',
@@ -97,7 +97,8 @@ def PrintRow(row, col_names, col_formats, defs, percent_cols):
     except ValueError:
       pass
 
-    # Does it look lik an int?
+    # Does it look like an int?  Format like 3,000.
+    # TODO: Put this before the float test?
     try:
       cell_int = int(cell)
       cell_str = '{:,}'.format(cell_int)
