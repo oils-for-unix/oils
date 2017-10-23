@@ -2,6 +2,8 @@
 #
 # Use sys.setprofile() and maybe sys.settrace() to trace Oil execution.
 #
+# Problem: Python callbacks for sys.setprofile() are too slow I think.
+#
 # Usage:
 #   ./pytrace.sh <function name>
 
@@ -11,22 +13,26 @@ set -o errexit
 
 readonly ABUILD=~/git/alpine/abuild/abuild 
 readonly -a RUN_ABUILD=(bin/oil.py osh $ABUILD -h)
+readonly -a PARSE_ABUILD=(bin/oil.py osh --ast-format none -n $ABUILD)
 
 #
 # Use Python's cProfile, which uses _lsprof.  This is pretty fast.
 #
 
-# ~2.7 seconds without tracing
-abuild() {
+# ~2.7 seconds (no tracing)
+time-run-abuild() {
   time "${RUN_ABUILD[@]}"
+}
 
-  ls -l -h *.json
+# ~1.6 seconds (no tracing)
+time-parse-abuild() {
+  time "${PARSE_ABUILD[@]}"
 }
 
 # 3.8 seconds.  So less than 2x overhead.
-cprofile-abuild() {
+cprofile-parse-abuild() {
   local out=abuild.cprofile 
-  time python -m cProfile -o $out "${RUN_ABUILD[@]}"
+  time python -m cProfile -o $out "${PARSE_ABUILD[@]}"
   ls -l $out
 }
 
@@ -57,7 +63,7 @@ p.sort_stats("tottime").print_stats()
 # 14 bytes * 14.9M is 209 MB.
 
 abuild-trace() {
-  _PY_TRACE=abuild.pytrace time "${RUN_ABUILD[@]}"
+  _PY_TRACE=abuild.pytrace time "${PARSE_ABUILD[@]}"
 }
 
 #
@@ -68,7 +74,7 @@ abuild-trace() {
 parse() {
   #local script=$ABUILD 
   local script=$0
-  time bin/oil.py osh -n $script >/dev/null
+  time bin/oil.py osh --ast-format none -n $script >/dev/null
 }
 
 # Trace the execution

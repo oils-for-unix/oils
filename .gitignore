@@ -3,6 +3,7 @@
 _tmp
 _bin
 _build
+_devbuild
 _release
 libc.so
 # Python build support

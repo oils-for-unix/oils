@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# Measure how fast the OSH parser is.a
+#
 # Usage:
 #   ./osh-parser.sh <function name>
 
@@ -15,28 +17,25 @@ readonly LINES_CSV=$BASE_DIR/raw/line-counts.csv
 # NOTE --ast-format none eliminates print time!  That is more than half of it!
 # ( 60 seconds with serialization, 29 seconds without.)
 #
-# TODO: Lines per second is about 1700
-# Run each file twice and compare timing?
-
-# TODO: Use the compiled version without our Python, not system Python!
-# Compilation flags are different.
-# - Well maybe we want both.
+# TODO:
+# - Have OSH --parse-and-dump-path
+#   - it can dump /proc/self/meminfo
 
 osh-parse-one() {
-  local path=$1
+  local append_out=$1
+  local path=$2
   echo "--- $path ---"
 
-  TIMEFORMAT="%R osh $path"  # elapsed time
-
   benchmarks/time.py \
-    --output $TIMES_CSV \
+    --output $append_out \
     --field osh --field "$path" -- \
     bin/osh -n --ast-format none $path
 }
 
 sh-one() {
-  local sh=$1
-  local path=$2
+  local append_out=$1
+  local sh=$2
+  local path=$3
   echo "--- $sh -n $path ---"
 
   # Since we're running benchmarks serially, just append to the same file.
@@ -44,9 +43,14 @@ sh-one() {
 
   # exit code, time in seconds, sh, path.  \0 would have been nice here!
   benchmarks/time.py \
-    --output $TIMES_CSV \
+    --output $append_out \
     --field "$sh" --field "$path" -- \
     $sh -n $path || echo FAILED
+}
+
+import-files() {
+  grep -v '^#' benchmarks/osh-parser-originals.txt |
+    xargs --verbose -I {} -- cp {} benchmarks/testdata
 }
 
 write-sorted-manifest() {
@@ -77,25 +81,35 @@ run() {
   write-sorted-manifest
   local sorted=$SORTED
 
+  # This file is appended to
+  local out=$TIMES_CSV
+
   # Header 
   echo 'status,elapsed_secs,shell,path' > $TIMES_CSV
 
   # 20ms for ltmain.sh; 34ms for configure
-  cat $sorted | xargs -n 1 $0 sh-one bash || true
+  cat $sorted | xargs -n 1 $0 sh-one $out bash || true
 
   # Wow dash is a lot faster, 5 ms / 6 ms.  It even gives one syntax error.
-  cat $sorted | xargs -n 1 $0 sh-one dash || true
+  cat $sorted | xargs -n 1 $0 sh-one $out dash || true
 
   # mksh is in between: 11 / 23 ms.
-  cat $sorted | xargs -n 1 $0 sh-one mksh || true
+  cat $sorted | xargs -n 1 $0 sh-one $out mksh || true
 
   # zsh really slow: 45 ms and 124 ms.
-  cat $sorted | xargs -n 1 $0 sh-one zsh || true
+  cat $sorted | xargs -n 1 $0 sh-one $out zsh || true
+
+  # TODO:
+  # - Run OSH under OVM
+  # - Run OSH compiled with OPy
+  # Maybe these are gradual release upgrades?
+  return
 
   # 4 s and 15 s.  So 1000x speedup would be sufficient, not 10,000x!
-  time cat $sorted | xargs -n 1 $0 osh-parse-one
+  time cat $sorted | xargs -n 1 $0 osh-parse-one $out
 
   cat $TIMES_CSV
+  echo $TIMES_CSV
 }
 
 summarize() {
@@ -168,17 +182,111 @@ report() {
   echo "Wrote $out"
 }
 
+#
+# Record Provenance: Code, Data, Env
+#
+
+# - code: We will run against different shells (bash, dash, OSH).  The OSH
+# code will improve over time
+# - env: we test it on different machines (machine architecture, OS, distro,
+# etc.)
+# - data ID: (name, num_lines) is sufficient I think.  Don't bother with hash.
+#   - or does (name, hash) make sense?
+
 # TODO:
-# - Parse the test file -> csv.  Have to get rid of syntax errors?
-#   - I really want --output.  
-#   - benchmarks/time.py is probably appropriate now.
-# - reshape, total, and compute lines/sec
-#   - that is really a job for R
-#   - maybe you need awk to massage wc output into LINES_CSV
-# - csv_to_html.py
-# - Then a shell script here to put CSS and JS around it.
-#   - wild-static
-# - Publish to release/0.2.0/benchmarks/MACHINE/wild/
+# - add code_id to CSV (time.py), and code-id.txt?
+
+code-id() {
+  # columns for osh:
+  # vm,compiler
+
+  # columns for other:
+  # --version
+
+  # osh --version?
+  # git branch, etc.?
+
+  # running system python, or OVM?
+  echo TODO
+}
+
+# Just hash the files?
+data-id() {
+  echo TODO
+}
+
+# Events that will change the env for a given machine:
+# - kernel upgrade
+# - distro upgrade
+
+env-id() {
+  local out_dir=${1:-_tmp/env-id-$(hostname)}
+
+  mkdir -p $out_dir
+
+  hostname > $out_dir/hostname.txt
+
+  # does it make sense to do individual fields like -m?
+  # avoid parsing?
+  # We care about the kernel and the CPU architecture.
+  # There is a lot of redundant information there.
+  uname -m > $out_dir/machine.txt
+  # machine
+  { uname --kernel-release 
+    uname --kernel-version
+  } > $out_dir/kernel.txt
+
+  cat /proc/cpuinfo > $out_dir/cpuinfo.txt
+
+  # mem info doesn't make a difference?  I guess it's just nice to check that
+  # it's not swapping.  But shouldn't be part of the hash.
+  cat /proc/meminfo > $out_dir/meminfo.txt
+
+  cat /etc/lsb-release > $out_dir/lsb-release.txt
+  cat /etc/debian_version > $out_dir/debian_version.txt
+
+  head $out_dir/*
+
+  # Now should I create a hash from this?
+  # like x86_64__linux__distro?
+  # There is already concept of the triple?
+}
+
+_banner() {
+  echo -----
+  echo "$@"
+  echo -----
+}
+
+# Run the whole benchmark from a clean git checkout.
+#
+# Similar to scripts/release.sh build-and-test.
+auto() {
+  test/spec.sh install-shells
+
+  # Technically we need build-essential too?
+  sudo apt install python-dev
+
+  build/dev.sh all
+
+  _banner 'OSH dev build'
+  bin/osh -c 'echo OSH dev build'
+
+  build/prepare.sh configure
+  build/prepare.sh build-python
+
+  make _bin/oil.ovm
+  # This does what 'install' does.
+  scripts/run.sh make-bin-links
+
+  _banner 'OSH production build'
+
+  _bin/osh -c 'echo OSH production build'
+
+  run  # make observations
+
+  # Then summarize report can be done on a central machine?
+}
 
 time-test() {
   benchmarks/time.py \

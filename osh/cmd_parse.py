@@ -291,6 +291,9 @@ class CommandParser(object):
     else:
       fd = -1
 
+    # TODO: Set a flag here, and then _MaybeReadHereDocsAfterNewline can use
+    # it to short-circuit
+
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()
       node.op_id = self.c_id

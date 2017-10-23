@@ -1,11 +1,10 @@
-# These files were selected to be big with test/wild.sh count-lines
-/home/andy/git/alpine/abuild/abuild
-/home/andy/git/other/staticpython/build.sh
-/home/andy/git/other/git/t/t9300-fast-import.sh
-/home/andy/git/other/kubernetes/hack/make-rules/test-cmd-util.sh
-/home/andy/git/other/kubernetes/cluster/gce/gci/configure-helper.sh
-/home/andy/src/mksh/Build.sh
-/home/andy/git/basis-build/_tmp/debootstrap/functions
-/home/andy/git/other/git/t/t4014-format-patch.sh
-/home/andy/git/other/kythe/third_party/proto/configure
-/home/andy/git/other/kythe/third_party/proto/ltmain.sh
+benchmarks/testdata/abuild
+benchmarks/testdata/ltmain.sh
+benchmarks/testdata/build.sh
+benchmarks/testdata/functions
+benchmarks/testdata/configure-helper.sh
+benchmarks/testdata/t9300-fast-import.sh
+benchmarks/testdata/t4014-format-patch.sh
+benchmarks/testdata/configure
+benchmarks/testdata/Build.sh
+benchmarks/testdata/test-cmd-util.sh
