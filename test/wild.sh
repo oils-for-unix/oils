@@ -151,8 +151,8 @@ all-manifests() {
   _sh-manifest ~/git/other/posixcube shell
 
   # Shells themselves
-  _sh-manifest ~/git/other/ast shell  # korn shell stuff
-  _sh-manifest ~/git/other/mwc-sh shell
+  _sh-manifest ~/git/languages/ast shell  # korn shell stuff
+  _sh-manifest ~/git/languages/mwc-sh shell
   _sh-manifest ~/src/mksh shell
 
   #
@@ -231,6 +231,13 @@ all-manifests() {
   _sh-manifest ~/git/wild/esoteric/wwwoosh esoteric
   _sh-manifest ~/git/wild/esoteric/lishp esoteric
 
+  src=~/git/wild/esoteric/setup.shl
+  _manifest esoteric/setup.shl $src \
+    $(find $src \
+      -type f -a \
+      '(' -name '*.shl' -o -name setup -o -name Setup ')' -a \
+      -printf '%P\n')
+
   src=~/git/wild/esoteric/mal/bash
   _manifest esoteric/make-a-lisp-bash $src \
     $(find $src '(' -name '*.sh' ')' -a -printf '%P\n')
@@ -267,11 +274,11 @@ all-manifests() {
   # Other Languages
   #
 
-  _sh-manifest ~/git/other/julia
-  _sh-manifest ~/git/other/reason
-  _sh-manifest ~/git/other/sdk  # Dart SDK?
+  _sh-manifest ~/git/languages/julia
+  _sh-manifest ~/git/languages/reason
+  _sh-manifest ~/git/languages/sdk  # Dart SDK?
 
-  _sh-manifest ~/git/other/micropython
+  _sh-manifest ~/git/languages/micropython
   _sh-manifest ~/git/other/staticpython  # statically linked build
 
   _sh-manifest ~/git/other/exp  # Go experimental repo

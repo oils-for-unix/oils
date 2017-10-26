@@ -921,6 +921,7 @@ class WordParser(object):
     while True:
       w = w_parser.ReadWord(LexMode.OUTER)
       if not w:
+        self.error_stack.extend(w_parser.Error())
         return None
 
       if w.tag == word_e.TokenWord:
@@ -931,7 +932,8 @@ class WordParser(object):
         elif word_id == Id.Op_Newline:
           continue
         else:
-          self.AddErrorContext('Unexpected word in array literal: %s', w, word=w)
+          self.AddErrorContext(
+              'Unexpected word in array literal: %s', w, word=w)
           return None
 
       words.append(w)

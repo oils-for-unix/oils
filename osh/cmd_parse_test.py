@@ -1173,6 +1173,18 @@ openssl \
     -subj "/CN=*.${SS_HOSTNAME}/"
 """)
 
+  def testArrayLiteralFromSetup(self):
+    # Found in setup.shl/bin/setup -- this is the "Parsing Bash is
+    # Undecidable" problem.
+    err = _assertParseCommandListError(self, """\
+errcmd=( "${SETUP_STATE[$err.cmd]}" )
+""")
+
+    # Double quotes fix it.
+    node = assertParseCommandList(self, r"""\
+errcmd=( "${SETUP_STATE["$err.cmd"]}" )
+""")
+
 
 class ErrorLocationsTest(unittest.TestCase):
 
