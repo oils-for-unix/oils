@@ -1457,7 +1457,9 @@ def python_implementation():
           'PyPy' (Python implementation of Python).
 
     """
-    return _sys_version()[0]
+    # PATCH to identify OVM
+    return 'OVM'
+    #return _sys_version()[0]
 
 def python_version():
 

@@ -1,5 +1,7 @@
 *.swp
 *.pyc
+.vagrant
+_chroot
 _tmp
 _bin
 _build

@@ -171,6 +171,9 @@ def _ShowVersion():
   print('Arch: %s' % platform.machine())
   print('OS: %s' % platform.system())
   print('Platform: %s' % platform.version())
+  print('Compiler: %s' % platform.python_compiler())
+  print('Interpreter: %s' % platform.python_implementation())
+  print('Interpreter version: %s' % platform.python_version())
 
 
 def OshMain(argv, login_shell):
