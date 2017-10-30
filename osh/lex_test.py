@@ -107,8 +107,7 @@ class LexerTest(unittest.TestCase):
 
     lexer = _InitLexer('$')
     t = lexer.Read(LexMode.EXTGLOB)
-    self.assertTokensEqual(ast.token(Id.Lit_Chars, '$'), t)
-
+    self.assertTokensEqual(ast.token(Id.Lit_Other, '$'), t)
 
   def testBashRegexState(self):
     lexer = _InitLexer('(foo|bar)')

@@ -90,7 +90,7 @@ version-text() {
   echo "oil version: $hash on branch $branch"
   echo
 
-  python3 --version 2>&1
+  python --version 2>&1
   echo
 
   $BASH --version | head -n 1
