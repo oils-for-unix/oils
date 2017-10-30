@@ -9,43 +9,46 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# TODO: The raw files should be published.  In both
+# ~/git/oilshell/benchmarks-data and also in the /release/ hierarchy?
 readonly BASE_DIR=_tmp/osh-parser
-readonly SORTED=$BASE_DIR/input/sorted.txt
-readonly TIMES_CSV=$BASE_DIR/raw/times.csv
-readonly LINES_CSV=$BASE_DIR/raw/line-counts.csv
+readonly SORTED=$BASE_DIR/tmp/sorted.txt
 
-# NOTE --ast-format none eliminates print time!  That is more than half of it!
-# ( 60 seconds with serialization, 29 seconds without.)
+import-files() {
+  grep -v '^#' benchmarks/osh-parser-originals.txt |
+    xargs --verbose -I {} -- cp {} benchmarks/testdata
+}
+
+# NOTE --ast-format none eliminates print time!  That is more than
+# half of it!  ( 60 seconds with serialization, 29 seconds without.)
+# TODO: That is the only difference... hm.
 #
 # TODO:
 # - Have OSH --parse-and-dump-path
 #   - it can dump /proc/self/meminfo
 
-osh-parse-one() {
-  local append_out=$1
-  local path=$2
-  echo "--- $path ---"
-
-  benchmarks/time.py \
-    --output $append_out \
-    --field osh --field "$path" -- \
-    bin/osh -n --ast-format none $path
-}
-
 sh-one() {
   local append_out=$1
   local sh=$2
-  local path=$3
-  echo "--- $sh -n $path ---"
+  local platform_id=$3
+  local shell_id=$4
+  local path=$5
+  echo "--- $sh $path ---"
 
-  # Since we're running benchmarks serially, just append to the same file.
-  TIMEFORMAT="%R $sh $path"  # elapsed time
+  # Can't use array because of set -u bug!!!  Only fixed in bash
+  # 4.4.
+  extra_args=''
 
-  # exit code, time in seconds, sh, path.  \0 would have been nice here!
+  if [[ $sh == */osh ]]; then
+    extra_args='--ast-format none'
+  fi
+
+  # exit code, time in seconds, platform_id, shell_id, path.  \0
+  # would have been nice here!
   benchmarks/time.py \
     --output $append_out \
-    --field "$sh" --field "$path" -- \
-    $sh -n $path || echo FAILED
+    --field "$platform_id" --field "$shell_id" --field "$path" -- \
+    "$sh" -n $extra_args "$path" || echo FAILED
 }
 
 import-files() {
@@ -56,7 +59,7 @@ import-files() {
 write-sorted-manifest() {
   local files=${1:-benchmarks/osh-parser-files.txt}
   local counts=$BASE_DIR/raw/line-counts.txt
-  local csv=$LINES_CSV
+  local csv=$2
 
   # Remove comments and sort by line count
   grep -v '^#' $files | xargs wc -l | sort -n > $counts
@@ -75,47 +78,67 @@ write-sorted-manifest() {
   cat $csv
 }
 
-run() {
-  mkdir -p $BASE_DIR/{input,raw,stage1,www}
+# runtime_id, platform_id, toolchain_id (which sometimes you don't know)
 
-  write-sorted-manifest
+run() {
+  local preview=${1:-}
+
+  local job_id
+  job_id="$(hostname).$(date +%Y-%m-%d__%H-%M-%S)"
+
+  local out_dir='../benchmark-data/osh-parser/'
+  local out="$out_dir/$job_id.times.csv"
+  local lines_out="$out_dir/$job_id.lines.csv"
+
+  mkdir -p \
+    $(dirname $out) \
+    $BASE_DIR/{tmp,raw,stage1,www}
+
+  write-sorted-manifest '' $lines_out
   local sorted=$SORTED
 
-  # This file is appended to
-  local out=$TIMES_CSV
+  # Write Header of the CSV file that is appended to.
+  echo 'status,elapsed_secs,platform_id,shell_id,path' > $out
 
-  # Header 
-  echo 'status,elapsed_secs,shell,path' > $TIMES_CSV
+  local tmp_dir=_tmp/platform-id/$(hostname)
+  benchmarks/id.sh dump-platform-id $tmp_dir
 
-  # 20ms for ltmain.sh; 34ms for configure
-  cat $sorted | xargs -n 1 $0 sh-one $out bash || true
+  local shell_id
+  local platform_id
 
-  # Wow dash is a lot faster, 5 ms / 6 ms.  It even gives one syntax error.
-  cat $sorted | xargs -n 1 $0 sh-one $out dash || true
+  platform_id=$(benchmarks/id.sh publish-platform-id $tmp_dir)
+  echo $platform_id
 
-  # mksh is in between: 11 / 23 ms.
-  cat $sorted | xargs -n 1 $0 sh-one $out mksh || true
+  #for sh_path in bash dash mksh zsh; do
+  for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
+    # There will be two different OSH
+    local name=$(basename $sh_path)
 
-  # zsh really slow: 45 ms and 124 ms.
-  cat $sorted | xargs -n 1 $0 sh-one $out zsh || true
+    tmp_dir=_tmp/shell-id/$name
+    benchmarks/id.sh dump-shell-id $sh_path $tmp_dir
 
-  # TODO:
-  # - Run OSH under OVM
-  # - Run OSH compiled with OPy
-  # Maybe these are gradual release upgrades?
-  return
+    shell_id=$(benchmarks/id.sh publish-shell-id $tmp_dir)
 
-  # 4 s and 15 s.  So 1000x speedup would be sufficient, not 10,000x!
-  time cat $sorted | xargs -n 1 $0 osh-parse-one $out
+    echo "ID $shell_id"
 
-  cat $TIMES_CSV
-  echo $TIMES_CSV
+    # TODO: Shell ID should be separate columns?
+    # It's really shell_version_id?
+
+    if ! test -n "$preview"; then
+      # 20ms for ltmain.sh; 34ms for configure
+      cat $sorted | xargs -n 1 -- $0 \
+        sh-one $out $sh_path $platform_id $shell_id || true
+    fi
+  done
+
+  cat $out
+  echo "Wrote $out"
 }
 
 summarize() {
   local out=_tmp/osh-parser/stage1
   mkdir -p $out
-  benchmarks/osh-parser.R $LINES_CSV $TIMES_CSV $out
+  benchmarks/osh-parser.R $out ../benchmark-data/osh-parser/*.times.csv
 
   tree $BASE_DIR
 }
@@ -148,6 +171,13 @@ _print-report() {
     elapsed time measurements, but long files are chosen to minimize its
     effect.</p>
 
+    <h3>Summary</h3>
+
+    <table id="rate-summary">
+EOF
+  web/table/csv_to_html.py < $BASE_DIR/stage1/rate_summary.csv
+  cat <<EOF
+
     <h3>Elasped Time by File and Shell (milliseconds)</h3>
 
     <table id="elapsed">
@@ -164,12 +194,6 @@ EOF
   cat <<EOF
     </table>
 
-    <h3>Summary</h3>
-
-    <table id="rate-summary">
-EOF
-  web/table/csv_to_html.py < $BASE_DIR/stage1/rate_summary.csv
-  cat <<EOF
     </table>
   </body>
 </html>
@@ -180,76 +204,6 @@ report() {
   local out=$BASE_DIR/www/summary.html
   _print-report > $out
   echo "Wrote $out"
-}
-
-#
-# Record Provenance: Code, Data, Env
-#
-
-# - code: We will run against different shells (bash, dash, OSH).  The OSH
-# code will improve over time
-# - env: we test it on different machines (machine architecture, OS, distro,
-# etc.)
-# - data ID: (name, num_lines) is sufficient I think.  Don't bother with hash.
-#   - or does (name, hash) make sense?
-
-# TODO:
-# - add code_id to CSV (time.py), and code-id.txt?
-
-code-id() {
-  # columns for osh:
-  # vm,compiler
-
-  # columns for other:
-  # --version
-
-  # osh --version?
-  # git branch, etc.?
-
-  # running system python, or OVM?
-  echo TODO
-}
-
-# Just hash the files?
-data-id() {
-  echo TODO
-}
-
-# Events that will change the env for a given machine:
-# - kernel upgrade
-# - distro upgrade
-
-env-id() {
-  local out_dir=${1:-_tmp/env-id-$(hostname)}
-
-  mkdir -p $out_dir
-
-  hostname > $out_dir/hostname.txt
-
-  # does it make sense to do individual fields like -m?
-  # avoid parsing?
-  # We care about the kernel and the CPU architecture.
-  # There is a lot of redundant information there.
-  uname -m > $out_dir/machine.txt
-  # machine
-  { uname --kernel-release 
-    uname --kernel-version
-  } > $out_dir/kernel.txt
-
-  cat /proc/cpuinfo > $out_dir/cpuinfo.txt
-
-  # mem info doesn't make a difference?  I guess it's just nice to check that
-  # it's not swapping.  But shouldn't be part of the hash.
-  cat /proc/meminfo > $out_dir/meminfo.txt
-
-  cat /etc/lsb-release > $out_dir/lsb-release.txt
-  cat /etc/debian_version > $out_dir/debian_version.txt
-
-  head $out_dir/*
-
-  # Now should I create a hash from this?
-  # like x86_64__linux__distro?
-  # There is already concept of the triple?
 }
 
 _banner() {

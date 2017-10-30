@@ -1,0 +1,30 @@
+OSH 0.2 comparisons
+-------------------
+
+dimension: shell runtime
+- osh vs. bash vs. dash etc.
+
+dimension: Python runtime (including toolchain flags, which is -O3)  
+- _bin/osh vs bin/osh
+  ovm vs system-python
+
+dimension: machine (cpu, kernel, etc.)
+- flanders vs. lisa
+
+OSH 0.3 comparisons
+-------------------
+
+dimension: Python bytecode compiler
+- opy vs. cpython 
+
+dimension: C compiler 
+- clang vs gcc
+
+dimension: C compiler flags
+- -O2 vs. -O3
+- -m32 ?
+
+
+TODO:
+- Should add bytecode compiler version to oil --version
+- What about compiler flags?

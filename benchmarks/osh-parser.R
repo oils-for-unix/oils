@@ -1,11 +1,14 @@
 #!/usr/bin/Rscript
 #
-# osh-parser.R
+# osh-parser.R -- Analyze output from shell scripts.
 #
-# Analyze output from shell scripts.
+# Usage:
+#   osh-parser.R OUT_DIR [TIMES_CSV...]
 
 library(dplyr)
 library(tidyr)
+
+options(stringsAsFactors = F)
 
 Log = function(fmt, ...) {
   cat(sprintf(fmt, ...))
@@ -13,67 +16,75 @@ Log = function(fmt, ...) {
 }
 
 main = function(argv) {
-  # num_lines, path
-  lines = read.csv(argv[[1]])
+  out_dir = argv[[1]]
 
-  # status, elapsed, shell, path
-  times = read.csv(argv[[2]])
+  hosts = list()
+  for (i in 2:length(argv)) {
+    times_path = argv[[i]]
+    # Find it in the same directory
+    lines_path = gsub('.times.', '.lines.', times_path, fixed = T)
 
-  out_dir = argv[[3]]
+    Log('times: %s', times_path)
+    Log('lines: %s', lines_path)
 
-  # TODO:
-  # - compute lines per second for every cell?
+    times = read.csv(times_path)
+    lines = read.csv(lines_path)
 
-  #print(lines)
-  #print(times)
+    # Remove failures
+    times %>% filter(status == 0) %>% select(-c(status)) -> times
 
-  # Remove failures
-  times %>% filter(status == 0) %>% select(-c(status)) -> times
+    # Add the number of lines, joining on path, and compute lines/sec
+    # TODO: Is there a better way compute lines_per_ms and then drop
+    # lines_per_sec?
+    times %>%
+      left_join(lines, by = c('path')) %>%
+      mutate(elapsed_ms = elapsed_secs * 1000,
+             lines_per_ms = num_lines / elapsed_ms) %>%
+      select(-c(elapsed_secs)) ->
+      host_rows
 
-  # Add the number of lines, joining on path, and compute lines/sec
-  # TODO: Is there a better way compute lines_per_ms and then drop lines_per_sec?
-  times %>%
-    left_join(lines, by = c('path')) %>%
-    mutate(elapsed_ms = elapsed_secs * 1000,
-           lines_per_ms = num_lines / elapsed_ms) %>%
-    select(-c(elapsed_secs)) ->
-    joined
-  #print(joined)
+    hosts[[i-1]] = host_rows
+  }
+  all_times = bind_rows(hosts)
+  print(all_times)
 
-  # Summarize rates
-  joined %>%
-    group_by(shell) %>%
+  # Summarize rates by platform/shell
+  all_times %>%
+    group_by(shell_id, platform_id) %>%
     summarize(total_lines = sum(num_lines), total_ms = sum(elapsed_ms)) %>%
     mutate(lines_per_ms = total_lines / total_ms) ->
     rate_summary
 
-  # Put OSH last!
-  first = rate_summary %>% filter(shell != 'osh')
-  last = rate_summary %>% filter(shell == 'osh')
-  rate_summary = bind_rows(list(first, last))
   print(rate_summary)
 
-  # Elapsed seconds by file and shell
-  joined %>%
+  # Elapsed seconds for each shell by platform and file
+  all_times %>%
     select(-c(lines_per_ms)) %>% 
-    spread(key = shell, value = elapsed_ms) %>%
-    arrange(num_lines) %>%
-    select(c(bash, dash, mksh, zsh, osh, num_lines, path)) ->
+    spread(key = shell_id, value = elapsed_ms) %>%
+    arrange(platform_id, num_lines) ->
     elapsed
+    #select(c(bash, dash, mksh, zsh, osh, num_lines, path)) ->
+
+  Log('\n')
+  Log('ELAPSED')
   print(elapsed)
 
   # Rates by file and shell
-  joined %>%
+  all_times  %>%
     select(-c(elapsed_ms)) %>% 
-    spread(key = shell, value = lines_per_ms) %>%
-    arrange(num_lines) %>%
-    select(c(bash, dash, mksh, zsh, osh, num_lines, path)) ->
+    spread(key = shell_id, value = lines_per_ms) %>%
+    arrange(platform_id, num_lines) ->
     rate
+    #select(c(bash, dash, mksh, zsh, osh, num_lines, path)) ->
+
+  Log('\n')
+  Log('RATE')
   print(rate)
 
+  write.csv(rate_summary,
+            file.path(out_dir, 'rate_summary.csv'), row.names = F)
   write.csv(elapsed, file.path(out_dir, 'elapsed.csv'), row.names = F)
   write.csv(rate, file.path(out_dir, 'rate.csv'), row.names = F)
-  write.csv(rate_summary, file.path(out_dir, 'rate_summary.csv'), row.names = F)
 
   Log('Wrote %s', out_dir)
 
