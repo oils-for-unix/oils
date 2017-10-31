@@ -48,6 +48,13 @@ main = function(argv) {
   all_times = bind_rows(hosts)
   print(all_times)
 
+  all_times %>% distinct(platform_id) -> distinct_hosts
+  print(distinct_hosts)
+  all_times %>% distinct(shell_id) -> distinct_shells
+  print(distinct_shells)
+
+  return()
+
   # Summarize rates by platform/shell
   all_times %>%
     group_by(shell_id, platform_id) %>%

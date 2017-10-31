@@ -30,9 +30,10 @@ import-files() {
 sh-one() {
   local append_out=$1
   local sh=$2
-  local platform_id=$3
-  local shell_id=$4
-  local path=$5
+  local host=$3
+  local host_id=$4
+  local shell_id=$5
+  local path=$6
   echo "--- $sh $path ---"
 
   # Can't use array because of set -u bug!!!  Only fixed in bash
@@ -43,11 +44,12 @@ sh-one() {
     extra_args='--ast-format none'
   fi
 
-  # exit code, time in seconds, platform_id, shell_id, path.  \0
+  # exit code, time in seconds, host_id, shell_id, path.  \0
   # would have been nice here!
   benchmarks/time.py \
     --output $append_out \
-    --field "$platform_id" --field "$shell_id" --field "$path" -- \
+    --field "$host" --field "$host_id" \
+    --field "$sh" --field "$shell_id" --field "$path" -- \
     "$sh" -n $extra_args "$path" || echo FAILED
 }
 
@@ -78,13 +80,15 @@ write-sorted-manifest() {
   cat $csv
 }
 
-# runtime_id, platform_id, toolchain_id (which sometimes you don't know)
+# runtime_id, host_id, toolchain_id (which sometimes you don't know)
 
 run() {
   local preview=${1:-}
+  local host
+  host=$(hostname)
 
   local job_id
-  job_id="$(hostname).$(date +%Y-%m-%d__%H-%M-%S)"
+  job_id="$host.$(date +%Y-%m-%d__%H-%M-%S)"
 
   local out_dir='../benchmark-data/osh-parser/'
   local out="$out_dir/$job_id.times.csv"
@@ -98,16 +102,16 @@ run() {
   local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,platform_id,shell_id,path' > $out
+  echo 'status,elapsed_secs,host,host_id,shell,shell_id,path' > $out
 
-  local tmp_dir=_tmp/platform-id/$(hostname)
+  local tmp_dir=_tmp/platform-id/$host
   benchmarks/id.sh dump-platform-id $tmp_dir
 
-  local shell_id
-  local platform_id
+  local host_id
+  host_id=$(benchmarks/id.sh publish-platform-id $tmp_dir)
+  echo $host $host_id
 
-  platform_id=$(benchmarks/id.sh publish-platform-id $tmp_dir)
-  echo $platform_id
+  local shell_id
 
   #for sh_path in bash dash mksh zsh; do
   for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
@@ -119,7 +123,7 @@ run() {
 
     shell_id=$(benchmarks/id.sh publish-shell-id $tmp_dir)
 
-    echo "ID $shell_id"
+    echo "$sh_path ID: $shell_id"
 
     # TODO: Shell ID should be separate columns?
     # It's really shell_version_id?
@@ -127,7 +131,7 @@ run() {
     if ! test -n "$preview"; then
       # 20ms for ltmain.sh; 34ms for configure
       cat $sorted | xargs -n 1 -- $0 \
-        sh-one $out $sh_path $platform_id $shell_id || true
+        sh-one $out $sh_path $host $host_id $shell_id || true
     fi
   done
 
@@ -171,12 +175,25 @@ _print-report() {
     elapsed time measurements, but long files are chosen to minimize its
     effect.</p>
 
+    <h3>Labels</h3>
+
+    <!-- TODO:
+    host ID | host label
+    [lisa-1234] lisa
+    [flanders-1234] flanders
+
+    shell ID | shell label
+    [osh-1234] osh-ovm
+    [osh-abcd] osh-host-cpython
+    -->
+
     <h3>Summary</h3>
 
     <table id="rate-summary">
 EOF
   web/table/csv_to_html.py < $BASE_DIR/stage1/rate_summary.csv
   cat <<EOF
+    </table>
 
     <h3>Elasped Time by File and Shell (milliseconds)</h3>
 
@@ -192,8 +209,6 @@ EOF
 EOF
   web/table/csv_to_html.py < $BASE_DIR/stage1/rate.csv
   cat <<EOF
-    </table>
-
     </table>
   </body>
 </html>

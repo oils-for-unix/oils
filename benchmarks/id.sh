@@ -137,8 +137,8 @@ publish-shell-id() {
   # And use the commit hash or what?
   hash=$(_shell-id-hash $src | md5sum)  # not secure, an identifier
 
-  local id="$name-${hash:0:8}"
-  local dest="$dest_base/$id"
+  local id="${hash:0:8}"
+  local dest="$dest_base/$name-$id"
 
   mkdir -p $dest
   cp --no-target-directory --recursive $src/ $dest/
@@ -218,8 +218,8 @@ publish-platform-id() {
   local hash
   hash=$(_platform-id-hash $src | md5sum)  # not secure, an identifier
 
-  local id="$name-${hash:0:8}"
-  local dest="$dest_base/$id"
+  local id="${hash:0:8}"
+  local dest="$dest_base/$name-$id"
 
   mkdir -p $dest
   cp --no-target-directory --recursive $src/ $dest/
