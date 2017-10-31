@@ -35,7 +35,7 @@ set -o errexit
 #     dash/
 #       HASH.txt
 #       version.txt
-#   platform-id/
+#   host-id/
 #     lisa/
 #       HASH.txt
 #       cpuinfo.txt
@@ -47,7 +47,7 @@ set -o errexit
 #     osh-$HASH/   # osh-cpython, osh-ovm?   osh-opy-ovm?  Too many dimensions.
 #                # the other shells don't have this?
 #     zsh-$HASH/
-#   platform-id/
+#   host-id/
 #     lisa-$HASH/
 
 die() {
@@ -158,11 +158,11 @@ publish-shell-id() {
 # - kernel upgrade
 # - distro upgrade
 
-# How about ~/git/oilshell/benchmark-data/platform-id/lisa-$HASH
+# How about ~/git/oilshell/benchmark-data/host-id/lisa-$HASH
 # How to calculate the hash though?
 
-dump-platform-id() {
-  local out_dir=${1:-_tmp/platform-id/$(hostname)}
+dump-host-id() {
+  local out_dir=${1:-_tmp/host-id/$(hostname)}
 
   mkdir -p $out_dir
 
@@ -192,7 +192,7 @@ dump-platform-id() {
 # http://wiki.osdev.org/Target_Triplet
 # It's not exactly the same as what we need here, but close.
 
-_platform-id-hash() {
+_host-id-hash() {
   local src=$1
 
   # Don't hash CPU or memory
@@ -210,13 +210,13 @@ _platform-id-hash() {
 }
 
 # Writes a short ID to stdout.
-publish-platform-id() {
-  local src=$1  # e.g. _tmp/platform-id/lisa
-  local dest_base=${2:-../benchmark-data/platform-id}
+publish-host-id() {
+  local src=$1  # e.g. _tmp/host-id/lisa
+  local dest_base=${2:-../benchmark-data/host-id}
 
   local name=$(basename $src)
   local hash
-  hash=$(_platform-id-hash $src | md5sum)  # not secure, an identifier
+  hash=$(_host-id-hash $src | md5sum)  # not secure, an identifier
 
   local id="${hash:0:8}"
   local dest="$dest_base/$name-$id"

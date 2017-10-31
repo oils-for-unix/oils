@@ -7,6 +7,7 @@
 
 library(dplyr)
 library(tidyr)
+library(stringr)
 
 options(stringsAsFactors = F)
 
@@ -15,9 +16,14 @@ Log = function(fmt, ...) {
   cat('\n')
 }
 
+sourceUrl = function(path) {
+  sprintf('https://github.com/oilshell/oil/blob/master/%s', path)
+}
+
 main = function(argv) {
   out_dir = argv[[1]]
 
+  # Merge all the inputs
   hosts = list()
   for (i in 2:length(argv)) {
     times_path = argv[[i]]
@@ -45,32 +51,74 @@ main = function(argv) {
 
     hosts[[i-1]] = host_rows
   }
-  all_times = bind_rows(hosts)
-  print(all_times)
 
-  all_times %>% distinct(platform_id) -> distinct_hosts
+  all_times = bind_rows(hosts)
+  print(summary(all_times))
+
+  #
+  # Find distinct shells and hosts, and label them for readability.
+  #
+
+  all_times %>% distinct(host_name, host_hash) -> distinct_hosts
+  # Just use the name
+  distinct_hosts$host_label = distinct_hosts$host_name
   print(distinct_hosts)
-  all_times %>% distinct(shell_id) -> distinct_shells
+
+
+  all_times %>% distinct(shell_name, shell_hash) -> distinct_shells
   print(distinct_shells)
 
-  return()
+  distinct_shells$shell_label = NA  # the column we fill in below
+
+  Log('Labeling shells')
+
+  for (i in 1:nrow(distinct_shells)) {
+    row = distinct_shells[i, ]
+    if (row$shell_name == 'osh') {
+      path = sprintf('../benchmark-data/shell-id/osh-%s/osh-version.txt',
+                     row$shell_hash)
+      Log('Reading %s', path)
+      lines = readLines(path)
+      if (length(grep('OVM', lines)) > 0) {
+        label = 'osh-ovm'
+      } else if (length(grep('CPython', lines)) > 0) {
+        label = 'osh-cpython'
+      }
+    } else {  # same name for other shells
+      label = row$shell_name
+    }
+    distinct_shells[i, ]$shell_label = label
+  }               
+  print(distinct_shells)
+
+  # Replace name/hash combinations with labels.
+  all_times %>%
+    left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
+    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
+    select(-c(host_name, host_hash, shell_name, shell_hash)) ->
+    all_times
+
+  print(summary(all_times))
+  print(head(all_times))
 
   # Summarize rates by platform/shell
   all_times %>%
-    group_by(shell_id, platform_id) %>%
+    group_by(host_label, shell_label) %>%
     summarize(total_lines = sum(num_lines), total_ms = sum(elapsed_ms)) %>%
     mutate(lines_per_ms = total_lines / total_ms) ->
-    rate_summary
+    shell_summary
 
-  print(rate_summary)
+  print(shell_summary)
 
   # Elapsed seconds for each shell by platform and file
   all_times %>%
     select(-c(lines_per_ms)) %>% 
-    spread(key = shell_id, value = elapsed_ms) %>%
-    arrange(platform_id, num_lines) ->
+    spread(key = shell_label, value = elapsed_ms) %>%
+    arrange(host_label, num_lines) %>%
+    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
+    select(c(host_label, bash, dash, mksh, zsh, `osh-ovm`, `osh-cpython`,
+             num_lines, filename, filename_HREF)) ->
     elapsed
-    #select(c(bash, dash, mksh, zsh, osh, num_lines, path)) ->
 
   Log('\n')
   Log('ELAPSED')
@@ -79,23 +127,63 @@ main = function(argv) {
   # Rates by file and shell
   all_times  %>%
     select(-c(elapsed_ms)) %>% 
-    spread(key = shell_id, value = lines_per_ms) %>%
-    arrange(platform_id, num_lines) ->
+    spread(key = shell_label, value = lines_per_ms) %>%
+    arrange(host_label, num_lines) %>%
+    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
+    select(c(host_label, bash, dash, mksh, zsh, `osh-ovm`, `osh-cpython`,
+             num_lines, filename, filename_HREF)) ->
     rate
-    #select(c(bash, dash, mksh, zsh, osh, num_lines, path)) ->
 
   Log('\n')
   Log('RATE')
   print(rate)
 
-  write.csv(rate_summary,
-            file.path(out_dir, 'rate_summary.csv'), row.names = F)
-  write.csv(elapsed, file.path(out_dir, 'elapsed.csv'), row.names = F)
-  write.csv(rate, file.path(out_dir, 'rate.csv'), row.names = F)
+  # Should be:
+  # host_id_url
+  # And then csv_to_html will be smart enough?  It should take --url flag?
+  host_table = data_frame(
+    host_label = distinct_hosts$host_label,
+    host_id = paste(distinct_hosts$host_name,
+                    distinct_hosts$host_hash, sep='-'),
+    host_id_HREF = sprintf('../../../../benchmark-data/host-id/%s', host_id)
+  )
+  print(host_table)
+
+  shell_table = data_frame(
+    shell_label = distinct_shells$shell_label,
+    shell_id = paste(distinct_shells$shell_name,
+                     distinct_shells$shell_hash, sep='-'),
+    shell_id_HREF = sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
+  )
+  print(shell_table)
+
+  writeCsv(host_table, file.path(out_dir, 'hosts'))
+  writeCsv(shell_table, file.path(out_dir, 'shells'))
+  writeCsv(shell_summary, file.path(out_dir, 'summary'))
+  writeCsv(elapsed, file.path(out_dir, 'elapsed'))
+  writeCsv(rate, file.path(out_dir, 'rate'))
 
   Log('Wrote %s', out_dir)
 
   Log('PID %d done', Sys.getpid())
+}
+
+# Write a CSV file along with a schema.
+writeCsv = function(table, prefix) {
+  data_out_path = paste0(prefix, '.csv')
+  write.csv(table, data_out_path, row.names = F)
+
+  fieldType = function(field_name) { typeof(table[[field_name]]) }
+
+  types_list = lapply(names(table), fieldType)
+  types = as.character(types_list)
+
+  schema = data_frame(
+    column_name = names(table),
+    type = types
+  )
+  schema_out_path = paste0(prefix, '.schema.csv')
+  write.csv(schema, schema_out_path, row.names = F)
 }
 
 if (length(sys.frames()) == 0) {

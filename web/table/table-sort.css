@@ -22,6 +22,10 @@ td {
   color: darkred;
 }
 
+.num {
+  text-align: right;
+}
+
 .highlight {
   background-color: #f0f0f0;
 }
@@ -29,4 +33,5 @@ td {
 tbody tr:hover {
   background-color: lightcyan;
 }
+
 

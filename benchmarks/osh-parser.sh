@@ -29,28 +29,31 @@ import-files() {
 
 sh-one() {
   local append_out=$1
-  local sh=$2
-  local host=$3
-  local host_id=$4
-  local shell_id=$5
+  local sh_path=$2
+  local host_name=$3
+  local host_hash=$4
+  local shell_hash=$5
   local path=$6
-  echo "--- $sh $path ---"
+  echo "--- $sh_path $path ---"
+
+  local shell_name
+  shell_name=$(basename $sh_path)
 
   # Can't use array because of set -u bug!!!  Only fixed in bash
   # 4.4.
   extra_args=''
-
-  if [[ $sh == */osh ]]; then
+  if test "$shell_name" = 'osh'; then
     extra_args='--ast-format none'
   fi
 
-  # exit code, time in seconds, host_id, shell_id, path.  \0
+  # exit code, time in seconds, host_hash, shell_hash, path.  \0
   # would have been nice here!
   benchmarks/time.py \
     --output $append_out \
-    --field "$host" --field "$host_id" \
-    --field "$sh" --field "$shell_id" --field "$path" -- \
-    "$sh" -n $extra_args "$path" || echo FAILED
+    --field "$host_name" --field "$host_hash" \
+    --field "$shell_name" --field "$shell_hash" \
+    --field "$path" -- \
+    "$sh_path" -n $extra_args "$path" || echo FAILED
 }
 
 import-files() {
@@ -80,7 +83,7 @@ write-sorted-manifest() {
   cat $csv
 }
 
-# runtime_id, host_id, toolchain_id (which sometimes you don't know)
+# runtime_id, host_hash, toolchain_id (which sometimes you don't know)
 
 run() {
   local preview=${1:-}
@@ -102,16 +105,16 @@ run() {
   local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,host,host_id,shell,shell_id,path' > $out
+  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' > $out
 
-  local tmp_dir=_tmp/platform-id/$host
-  benchmarks/id.sh dump-platform-id $tmp_dir
+  local tmp_dir=_tmp/host-id/$host
+  benchmarks/id.sh dump-host-id $tmp_dir
 
-  local host_id
-  host_id=$(benchmarks/id.sh publish-platform-id $tmp_dir)
-  echo $host $host_id
+  local host_hash
+  host_hash=$(benchmarks/id.sh publish-host-id $tmp_dir)
+  echo $host $host_hash
 
-  local shell_id
+  local shell_hash
 
   #for sh_path in bash dash mksh zsh; do
   for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
@@ -121,9 +124,9 @@ run() {
     tmp_dir=_tmp/shell-id/$name
     benchmarks/id.sh dump-shell-id $sh_path $tmp_dir
 
-    shell_id=$(benchmarks/id.sh publish-shell-id $tmp_dir)
+    shell_hash=$(benchmarks/id.sh publish-shell-id $tmp_dir)
 
-    echo "$sh_path ID: $shell_id"
+    echo "$sh_path ID: $shell_hash"
 
     # TODO: Shell ID should be separate columns?
     # It's really shell_version_id?
@@ -131,7 +134,7 @@ run() {
     if ! test -n "$preview"; then
       # 20ms for ltmain.sh; 34ms for configure
       cat $sorted | xargs -n 1 -- $0 \
-        sh-one $out $sh_path $host $host_id $shell_id || true
+        sh-one $out $sh_path $host $host_hash $shell_hash || true
     fi
   done
 
@@ -142,10 +145,24 @@ run() {
 summarize() {
   local out=_tmp/osh-parser/stage1
   mkdir -p $out
-  benchmarks/osh-parser.R $out ../benchmark-data/osh-parser/*.times.csv
+
+  # Globs are in lexicographical order, which works for our dates.
+  local -a m1=(../benchmark-data/osh-parser/flanders.*.times.csv)
+  local -a m2=(../benchmark-data/osh-parser/lisa.*.times.csv)
+
+  # The last one
+  local -a latest=(${m1[-1]} ${m2[-1]})
+
+  benchmarks/osh-parser.R $out "${latest[@]}"
 
   tree $BASE_DIR
 }
+
+# TODO:
+# - maybe rowspan for hosts: flanders/lisa
+#   - does that interfere with sorting?
+#
+# NOTE: not bothering to make it sortable now.  Just using the CSS.
 
 _print-report() {
   local base_url='../../../web/table'
@@ -154,62 +171,83 @@ _print-report() {
 <!DOCTYPE html>
 <html>
   <head>
-    <title>OSH Parser Benchmark</title>
+    <title>OSH Parser Performance</title>
     <script type="text/javascript" src="$base_url/table-sort.js"></script>
     <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
 
     <style>
-      td { text-align: right; }
       body {
         margin: 0 auto;
         width: 60em;
       }
-      code { color: green; }
+      code {
+        color: green;
+      }
+      table {
+        margin-left: 3em;
+        font-family: sans-serif;
+      }
+      td {
+        padding: 8px;  /* override default of 5px */
+      }
+      h3, h4 {
+        color: darkgreen;
+      }
+
+      /* these two tables are side by side */
+      #shells, #hosts {
+        display: inline-block;
+        vertical-align: top;
+      }
+      #home-link {
+        text-align: right;
+      }
+
+      /* columns */
+      #osh-ovm, #osh-cpython {
+        background-color: oldlace;
+      }
+      /* rows */
+      .osh-row {
+        background-color: oldlace;
+      }
+
     </style>
   </head>
   <body>
-    <h2>OSH Parser Benchmark</h2>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>OSH Parser Performance</h2>
 
     <p>We run <code>\$sh -n \$file</code> for various files under various
     shells.  This means that shell startup time is included in the
     elapsed time measurements, but long files are chosen to minimize its
     effect.</p>
 
-    <h3>Labels</h3>
-
-    <!-- TODO:
-    host ID | host label
-    [lisa-1234] lisa
-    [flanders-1234] flanders
-
-    shell ID | shell label
-    [osh-1234] osh-ovm
-    [osh-abcd] osh-host-cpython
-    -->
-
     <h3>Summary</h3>
 
-    <table id="rate-summary">
 EOF
-  web/table/csv_to_html.py < $BASE_DIR/stage1/rate_summary.csv
+  web/table/csv2html.py $BASE_DIR/stage1/summary.csv
   cat <<EOF
-    </table>
 
-    <h3>Elasped Time by File and Shell (milliseconds)</h3>
-
-    <table id="elapsed">
+    <h3>Shell and Host Details</h3>
 EOF
-  web/table/csv_to_html.py < $BASE_DIR/stage1/elapsed.csv
-  cat <<EOF
-    </table>
+  web/table/csv2html.py $BASE_DIR/stage1/shells.csv
+  web/table/csv2html.py $BASE_DIR/stage1/hosts.csv
+cat <<EOF
 
-    <h3>Parsing Rate by File and Shell (lines/millisecond)</h3>
+    <h3>Per-File Breakdown</h3>
 
-    <table id="rate">
+    <h4>Elasped Time in milliseconds</h4>
 EOF
-  web/table/csv_to_html.py < $BASE_DIR/stage1/rate.csv
+  web/table/csv2html.py $BASE_DIR/stage1/elapsed.csv
   cat <<EOF
-    </table>
+
+    <h4>Parsing Rate in lines/millisecond</h4>
+EOF
+  web/table/csv2html.py $BASE_DIR/stage1/rate.csv
+  cat <<EOF
   </body>
 </html>
 EOF
