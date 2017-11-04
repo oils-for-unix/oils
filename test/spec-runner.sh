@@ -202,10 +202,10 @@ EOF
 }
 
 html-summary() {
-  _html-summary > _tmp/spec/RESULTS.html
+  _html-summary > _tmp/spec/index.html
 
   echo
-  echo "Results: file://$PWD/_tmp/spec/RESULTS.html"
+  echo "Results: file://$PWD/_tmp/spec/index.html"
 }
 
 link-web() {

@@ -157,7 +157,6 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       <td>Parse Failures</td>
       <td>Max Parse Time (secs)</td>
       <td>Total Parse Time (secs)</td>
-      <td>Parsed Lines/sec</td>
       <td>Translation Failures</td>
       <td class="name">Directory</td>
     </tr>
@@ -176,7 +175,6 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       {.end}
       <td>{max_parse_secs}</td>
       <td>{parse_proc_secs}</td>
-      <td>{lines_per_sec}</td>
 
       {.osh2oil_failed?}
         <!-- <td class="fail">{osh2oil_failed|commas}</td> -->
@@ -216,8 +214,6 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       <td>Lines</td>
       <td>Parsed?</td>
       <td>Parse Process Time (secs)</td>
-      <td>Internal Parse Time (secs)</td>
-      <td>Parsed Lines/sec</td>
       <td>Translated?</td>
       <td class="name">Filename</td>
     </tr>
@@ -233,13 +229,9 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
         {.parse_failed?}
           <a class="fail" href="#stderr_parse_{name}">FAIL</a>
           <td>{parse_proc_secs}</td>
-          <td>-</td>
-          <td>-</td>
         {.or}
           <a class="ok" href="{name}__ast.html">OK</a>
           <td>{parse_proc_secs}</td>
-          <td>{parse_proc_secs}</td>
-          <td>{lines_per_sec}</td>
         {.end}
       </td>
 

@@ -24,12 +24,12 @@ Oil Version 0.2.alpha1
 
 ### Links
 
-- [Spec Test Results](test/spec.wwz/RESULTS.html).  OSH behavior is tested against
-  the behavior of existing shells.
-- [Wild Test Results](test/wild.wwz/).  Parsing thousands of shell scripts
-  with OSH.
-- [OSH Parser Performance](benchmarks/osh-parser.wwz/).  How fast does OSH parse
-  shell scripts?
+- [Spec Test Results](test/spec.wwz/).  Test OSH behavior against
+  that of existing shells.
+- [Wild Test Results](test/wild.wwz/).  Parsing and translating thousands of
+  shell scripts with OSH.
+- [OSH Parser Performance](benchmarks/osh-parser.wwz/).  How fast does OSH
+  parse?
 - [Line Counts](metrics/line-counts.wwz/).  How much code is in Oil?
 
 <!-- TODO: 

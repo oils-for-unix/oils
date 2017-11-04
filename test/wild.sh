@@ -147,6 +147,14 @@ all-manifests() {
       \( -name .git -a -prune \) -o \
       \( -type f -a -executable -a -printf '%P\n' \) )
 
+  src=~/git/wild/shell/shflags
+  _manifest "shell/$(basename $src)" $src \
+    $(find $src \
+      '(' -name .git -a -prune ')' -o \
+      '(' -name '*.sh' -o \
+        -name shflags -o -name shlib -o -name shunit2 -o -name versions \
+      ')' -a -printf '%P\n')
+
   _sh-manifest ~/git/other/modernish shell
   _sh-manifest ~/git/other/posixcube shell
 
@@ -184,6 +192,18 @@ all-manifests() {
   _manifest distro/debootstrap $src \
     $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
     $(find $src/scripts -type f -a -printf 'scripts/%P\n')
+
+  src=~/src/grep-2.24
+  _sh-manifest $src gnu
+
+  src=~/src/coreutils-8.22
+  _sh-manifest $src gnu
+
+  src=~/src/glibc-2.23
+  _sh-manifest $src gnu
+
+  src=~/src/binutils-2.26
+  _sh-manifest $src gnu
 
   #
   # Operating Systems
