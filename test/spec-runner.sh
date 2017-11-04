@@ -64,11 +64,16 @@ readonly NUM_TASKS=400
 _html-summary() {
   # TODO: I think the style should be shared
   cat <<EOF
+<!DOCTYPE html>
 <html>
   <head>
     <link href="spec-tests.css" rel="stylesheet">
   </head>
   <body>
+
+<p id="home-link">
+  <a href="/">oilshell.org</a>
+</p>
 
 <h1>Spec Test Results Summary</h1>
 

@@ -1,14 +1,15 @@
 h1 {
-  text-align: center;
+  font-size: x-large;
 }
 
-h2 {
-  text-align: center;
+body {
+  margin: 0 auto;
+  width: 60em;
 }
 
 table {
-  margin: 0 auto;  /* center table on the page */
   border-collapse: collapse;
+  font-family: sans-serif;
 }
 p {
   text-align: center;
@@ -71,5 +72,9 @@ td {
 
 .osh-allow-fail {
   background-color: #ffffe0;
+}
+
+#home-link {
+  text-align: right;
 }
 

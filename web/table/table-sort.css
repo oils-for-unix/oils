@@ -5,11 +5,13 @@
 
 thead {
   font-weight: bold;
+  color: #444;
 }
 
 table {
   padding: 10px;  /* Padding makes it look nicer. */
   border-collapse: collapse;  /* this is like old cellpadding */
+  font-family: sans-serif;
 }
 
 /* like cellspacing? */

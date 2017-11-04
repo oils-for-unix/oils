@@ -640,13 +640,19 @@ class HtmlOutput(ColorOutput):
         self.spec_name, line_num, cgi.escape(desc))
 
   def BeginCases(self, test_file):
-    self.f.write('''
+    self.f.write('''\
+<!DOCTYPE html>
 <html>
   <head>
     <link href="spec-tests.css" rel="stylesheet">
   </head>
   <body>
-    <h2>Results for %s</h2>
+    <p id="home-link">
+      <a href="RESULTS.html">spec test index</a>
+      /
+      <a href="/">oilshell.org</a>
+    </p>
+    <h1>Results for %s</h1>
     <table>
     ''' % test_file)
 
