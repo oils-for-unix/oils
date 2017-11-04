@@ -1,6 +1,6 @@
 <!-- NOTE: This file is at /release/$VERSION/index.html -->
 
-Oil Version 0.1.0
+Oil Version 0.2.alpha1
 -----------------
 
 ### What's New
@@ -24,6 +24,18 @@ Oil Version 0.1.0
 
 ### Links
 
-- [Spec Test Results](test/spec/RESULTS.html).  OSH behavior is tested against
+- [Spec Test Results](test/spec.wwz/RESULTS.html).  OSH behavior is tested against
   the behavior of existing shells.
-- [Source Code Metrics](metrics/).  How much code is in Oil?
+- [Wild Test Results](test/wild.wwz/).  Parsing thousands of shell scripts
+  with OSH.
+- [OSH Parser Performance](benchmarks/osh-parser.wwz/).  How fast does OSH parse
+  shell scripts?
+- [Line Counts](metrics/line-counts.wwz/).  How much code is in Oil?
+
+<!-- TODO: 
+benchmarks/
+  virtual-memory/
+src/                       annotated/cross-referenced source code
+coverage/                  code coverage in Python and C
+metrics/                   line-counts, debug info size?
+-->

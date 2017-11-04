@@ -61,7 +61,7 @@ _quick-ref() {
 x-quick-ref() {
   local prog=$1
 
-  local html_out=_build/doc/$prog-quick-ref.html
+  local html_out=_release/VERSION/doc/$prog-quick-ref.html
   local text_out_dir=_build/$prog-quick-ref
   local py_out=_devbuild/${prog}_help.py
 
@@ -82,7 +82,7 @@ x-quick-ref() {
       }
       body {
         margin: 0 auto;
-        width: 50em;
+        width: 40em;
       }
       /* different color because they're links but not topics */
       .level1 {
@@ -95,9 +95,15 @@ x-quick-ref() {
       h1,h2,h3,h4 {
       /* color: darkcyan; */
       }
+      #home-link {
+        text-align: right;
+      }
     </style>
   </head>
   <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
     <p style="color: darkred; font-size: x-large;">
       NOTE: This document is a work in progress!
     </p>
@@ -145,9 +151,15 @@ markdown2html() {
         color: green;
         margin-left: 4em;
       }
+      #home-link {
+        text-align: right;
+      }
     </style>
   </head>
   <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
 EOF
   
     markdown < $src  # TODO: CommonMark
@@ -163,7 +175,7 @@ EOF
 readonly MONOSPACE='font-family: monospace;'
 
 install() {
-  markdown2html INSTALL.txt _build/doc/INSTALL.html "$MONOSPACE"
+  markdown2html INSTALL.txt _release/VERSION/doc/INSTALL.html "$MONOSPACE"
 }
 
 release-index() {

@@ -90,10 +90,27 @@ Directory Structure
     # Temporary Directories
 
     _bin/             # Native executables are put here
-    _release/         # Source release tarballs are put here
     _build/           # Temporary build files
     _devbuild/        # Developer build files not deleted upon 'make clean'
     _tmp/             # Temporary test files and the like
+      spec/
+      wild/
+        raw/
+        www/
+      osh-parser/
+      ...
+    _release/         # Source release tarballs are put here
+      VERSION/        # Published at oilshell.org/release/$VERSION/
+        benchmarks/
+        doc/
+        metrics/
+        test/
+          spec.wwz
+          wild.wwz
+          ...
+        web/          # Static files, copy of $REPO_ROOT/web
+          table/
+      
 
     # Dev Docs
 

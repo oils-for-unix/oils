@@ -85,17 +85,6 @@ _link() {
   ln -s -f -v "$@"
 }
 
-link-static() {
-  local dest=${1:-_tmp/wild}
-  local dest_ajax=${1:-_tmp/wild/www}
-
-  _link \
-    $PWD/web/wild.css \
-    $PWD/web/ajax.js \
-    $PWD/web/table/table-sort.{js,css} \
-    $dest
-}
-
 make-report() {
   cat $MANIFEST | wild-report summarize-dirs
 
@@ -105,7 +94,7 @@ make-report() {
     $PWD/web/osh-to-oil.{html,js} \
     _tmp/wild/www
 
-  link-static
+  _link $PWD/web _tmp
 }
 
 test-wild-report() {

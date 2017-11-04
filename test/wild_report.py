@@ -51,10 +51,10 @@ BODY_STYLE = jsontemplate.Template("""\
   <head>
     <title>{.template TITLE}</title>
 
-    <script type="text/javascript" src="{base_url}../ajax.js"></script>
-    <script type="text/javascript" src="{base_url}../table-sort.js"></script>
-    <link rel="stylesheet" type="text/css" href="{base_url}../table-sort.css" />
-    <link rel="stylesheet" type="text/css" href="{base_url}../wild.css" />
+    <script type="text/javascript" src="{base_url}../../web/ajax.js"></script>
+    <script type="text/javascript" src="{base_url}../../web/table/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="{base_url}../../web/table/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="{base_url}../../web/wild.css" />
   </head>
 
   <body onload="initPage(gUrlHash, gTables, gTableStates, kStatusElem);"

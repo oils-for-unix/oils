@@ -285,40 +285,141 @@ announcement-0.1() {
     > ../oilshell.org__deploy/release/$version/announcement.html
 }
 
+_link() {
+  ln -s -f -v --no-target-directory "$@"
+}
+
+compress() {
+  local root=$PWD/_release/VERSION/
+
+  log "--- test/spec"
+  local out="$root/test/spec.wwz"
+  pushd _tmp/spec
+  time zip -r -q $out .  # recursive, quiet
+  popd
+
+  log "--- test/wild"
+  local out="$root/test/wild.wwz"
+
+  pushd _tmp/wild/www
+  time zip -r -q $out .  # recursive, quiet
+  popd
+
+  log "--- metrics/line-counts"
+  local out="$root/metrics/line-counts.wwz"
+  pushd _tmp/metrics/line-counts
+  time zip -r -q $out .  # recursive, quiet
+  popd
+
+  log "--- benchmarks/osh-parser"
+  local out="$root/benchmarks/osh-parser.wwz"
+  pushd _tmp/osh-parser/
+  time zip -r -q $out .  # recursive, quiet
+  popd
+
+  tree _release/VERSION
+}
+
+metrics-index() {
+  # TODO: Have to write index.html so it will serve out of .wwz.
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Line Counts</title>
+    <style>
+      body {
+        margin: 0 auto;
+        width: 40em;
+      }
+      #home-link {
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h3>Line Counts</h3>
+    <p>
+EOF
+  find $out -name '*.txt' -a -printf '<a href="%P">%P</a> <br/>'
+cat <<EOF
+    </p>
+  </body>
+</html>
+EOF
+}
+
+line-counts() {
+  local out=_tmp/metrics/line-counts
+  mkdir -p $out
+
+  # Metrics.  TODO: It would be nicer to make this structured data somehow.
+  scripts/count.sh all > $out/src.txt  # Count repo lines
+  build/metrics.sh linecount-pydeps > $out/pydeps.txt
+  build/metrics.sh linecount-nativedeps > $out/nativedeps.txt
+
+  metrics-index > $out/index.html
+  tree $out
+}
+
+_copy-path() {
+  local src=$1 dest=$2
+  mkdir -p $(dirname $dest)
+  cp -v $src $dest
+}
+
+copy-web() {
+  find web \
+    \( -name _tmp -a -prune \) -o \
+    \( -name '*.css' -o -name '*.js' \) -a -printf '%p _release/VERSION/%p\n' |
+  xargs -n 2 -- $0 _copy-path
+}
+
+# TODO:
+# Test out web/ *.css,js,html
+# metrics/line-counts.wwz/
+#   src.txt
+#   pydeps.txt
+#   nativedeps.txt
+
+build-tree() {
+  local root=_release/VERSION
+  mkdir -p $root/{doc,test,benchmarks,metrics}
+
+  # Metadata
+  cp -v _build/release-date.txt oil-version.txt $root
+
+  # Docs
+  build/doc.sh osh-quick-ref
+  build/doc.sh install
+  build/doc.sh release-index $root/index.html
+
+  # Problem: You can't preview it without .wwz!
+  # Maybe have local redirects VERSION/test/wild/ to 
+  #
+  # Instead of linking, I should compress them all here.
+
+  copy-web
+
+  tree $root
+}
+
 deploy-doc() {
   local deploy_repo='../oilshell.org__deploy'
   local release_root_dir="$deploy_repo/release"
   local release_dir="$release_root_dir/$OIL_VERSION"
 
-  mkdir -p $release_dir/{doc,test,metrics}
-
-  # Metadata
-  cp -v _build/release-date.txt oil-version.txt $release_dir
-
-  # Line counts.  TODO: It would be nicer to make this structured data somehow.
-  scripts/count.sh all \
-    > $release_dir/metrics/linecount-src.txt  # Count repo lines
-  build/metrics.sh linecount-pydeps \
-    > $release_dir/metrics/linecount-pydeps.txt
-  build/metrics.sh linecount-nativedeps \
-    > $release_dir/metrics/linecount-nativedeps.txt
-
   # --dereference because test/spec has css symlinks that should be files.
   # rsync should just transfer raw files.
   cp -v -r --force --dereference --no-target-directory \
-    _tmp/spec/ $release_dir/test/spec
+    _release/VERSION/ $release_dir/
 
   # Generate release index.
   html-index $release_root_dir _tmp/releases.html
   cp -v _tmp/releases.html $deploy_repo
-
-  build/doc.sh osh-quick-ref
-  # Generate docs.
-  build/doc.sh install
-
-  cp -v -r --no-target-directory _build/doc/ $release_dir/doc
-
-  build/doc.sh release-index $release_dir/index.html
 
   tree -L 3 $release_root_dir
   
@@ -478,10 +579,15 @@ _releases-html-header() {
         color: #555;
         padding-left: 1em;
       }
+      #home-link {
+        text-align: right;
+      }
     </style>
   </head>
   <body>
-    <p></p>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
     <h1>Oil Releases</h1>
 EOF
 }

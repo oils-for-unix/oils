@@ -165,7 +165,7 @@ summarize() {
 # NOTE: not bothering to make it sortable now.  Just using the CSS.
 
 _print-report() {
-  local base_url='../../../web/table'
+  local base_url='../../web/table'
 
   cat <<EOF
 <!DOCTYPE html>
@@ -254,7 +254,8 @@ EOF
 }
 
 report() {
-  local out=$BASE_DIR/www/summary.html
+  local out=$BASE_DIR/index.html
+  mkdir -p $(dirname $out)
   _print-report > $out
   echo "Wrote $out"
 }

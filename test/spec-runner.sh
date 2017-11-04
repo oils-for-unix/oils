@@ -67,7 +67,7 @@ _html-summary() {
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="spec-tests.css" rel="stylesheet">
+    <link href="../../web/spec-tests.css" rel="stylesheet">
   </head>
   <body>
 
@@ -208,8 +208,8 @@ html-summary() {
   echo "Results: file://$PWD/_tmp/spec/RESULTS.html"
 }
 
-link-css() {
-  ln -s -f --verbose $PWD/web/{spec-tests,spec-code}.css _tmp/spec
+link-web() {
+  ln -s -f --verbose $PWD/web _tmp
 }
 
 _all-parallel() {
@@ -224,7 +224,7 @@ _all-parallel() {
 
   all-tests-to-html
 
-  link-css
+  link-web
 
   html-summary
 }

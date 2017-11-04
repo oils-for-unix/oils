@@ -644,7 +644,7 @@ class HtmlOutput(ColorOutput):
 <!DOCTYPE html>
 <html>
   <head>
-    <link href="spec-tests.css" rel="stylesheet">
+    <link href="../../web/spec-tests.css" rel="stylesheet">
   </head>
   <body>
     <p id="home-link">

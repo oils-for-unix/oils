@@ -47,22 +47,8 @@ unit() {
   echo 'Hello from publish.sh'
 }
 
-# Wild Tests.  NOTE: There's code for this in the oilshell.org repo.
-compress-wild() {
-  local dest=_tmp/wild-deploy
-  mkdir -p $dest
-
-  local out=$PWD/$dest/wild.wwz  # abs path for zip
-  rm -f -v $out
-
-  pushd _tmp/wild/www
-  time zip -r -q $out .  # recursive, quiet
-  popd
-
-  test/wild-runner.sh link-static $dest
-  ls -l -h $dest
-}
-
+# NOTE: Have to copy the web/ dir too?  For testing, use ./local.sh
+# test-release-tree.
 wild() {
   local user=$1
   local host=$2
@@ -72,8 +58,8 @@ wild() {
 
   ssh $user@$host mkdir -p $dest
 
-  rsync --archive --verbose --copy-links \
-    _tmp/wild-deploy/ $user@$host:$dest/
+  rsync --archive --verbose \
+    _release/VERSION/test/wild.wwz $user@$host:$dest/
 
   echo "Visit http://$dest/wild.wwz/"
 }
