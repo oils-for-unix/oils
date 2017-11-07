@@ -13,8 +13,8 @@
 #   $0 line-counts
 #   $0 build-tree
 #   $0 compress
-#   - Generate changelog.html
-#   - Generate announcment.html (link)
+#   $0 git-changelog-$VERSION
+#   $0 announcement-$VERSION
 #   MAYBE: ./local.sh test-release-tree if you want to preview it
 #   $0 deploy-tar
 #   $0 deploy-doc

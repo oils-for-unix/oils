@@ -264,9 +264,10 @@ _test-to-html() {
   #print "<td id=L" NR "><pre>" line "</pre></td>"
 
   cat <<EOF
+<!DOCTYPE html>
 <html>
   <head>
-    <link href="spec-code.css" rel="stylesheet">
+    <link href="../../web/spec-code.css" rel="stylesheet">
   </head>
   <body>
     <table>
