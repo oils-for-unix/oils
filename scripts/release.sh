@@ -91,6 +91,7 @@ build-and-test() {
   # Make sure
   test/spec.sh smoke
 
+  test/spec.sh link-busybox-ash  # in case we deleted _tmp
   test/spec.sh all
 
   # Build the oil tar

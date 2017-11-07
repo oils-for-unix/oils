@@ -33,11 +33,15 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 # Setup
 #
 
+link-busybox-ash() {
+  mkdir -p $(dirname $BUSYBOX_ASH)
+  ln -s -f --verbose "$(which busybox)" $BUSYBOX_ASH
+}
+
 # dash and bash should be there by default on Ubuntu.
 install-shells() {
   sudo apt-get install busybox-static mksh zsh
-  mkdir -p _tmp/shells
-  ln -s -f --verbose "$(which busybox)" $BUSYBOX_ASH
+  link-busybox-ash
 }
 
 # TODO: Maybe do this before running all tests.
