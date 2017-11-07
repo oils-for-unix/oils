@@ -243,6 +243,16 @@ static int RunMainFromImporter(char *filename)
 }
 
 
+// TODO: Stat the file and show its size?
+static void FatalAppBundleError(char* filename, int sts) {
+  fprintf(stderr, "FATAL: couldn't import from app bundle '%s' (%d)\n",
+      filename, sts);
+  fprintf(stderr, "Stripping the oil.ovm binary may cause this error.\n");
+  fprintf(stderr, "See https://github.com/oilshell/oil/issues/47\n");
+  exit(1);
+}
+
+
 /* Main program */
 
 #ifdef OVM_MAIN
@@ -344,14 +354,18 @@ Ovm_Main(int argc, char **argv)
         // NOTE: This seems like it could be simplified to RunModule(MAIN_NAME,
         // 0), but it caused a SystemError exception from runpy.
         sts = RunMainFromImporter(ovm_path);
-        assert(sts != -1);  // failed import
+        if (sts != 0) {  // failed import
+          FatalAppBundleError(ovm_path, sts);
+        }
         OVM_VERBOSE_LOG("status of RunMainFromImporter: %d\n", sts);
     } else {
         // Try detecting and running a directory or .zip file first.
         Py_InitializeEx(0 /*install_sigs*/, filename /*sys_path*/);
         PySys_SetArgv(argc-1, argv+1);
         sts = RunMainFromImporter(filename);
-        assert(sts != -1);  // failed import
+        if (sts != 0) {  // failed import
+          FatalAppBundleError(filename, sts);
+        }
 
         OVM_VERBOSE_LOG("(!run_self) status of RunMainFromImporter: %d\n", sts);
         // Not a .zip file.  Run a plain .pyc file.

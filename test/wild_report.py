@@ -145,7 +145,6 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
     <col type="number">
     <col type="number">
     <col type="number">
-    <col type="number">
     <col type="case-insensitive">
   </colgroup>
   <thead>
@@ -202,8 +201,6 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
     <col type="case-insensitive">
     <col type="number">
     <col type="case-insensitive">
-    <col type="number">
-    <col type="number">
     <col type="number">
     <col type="case-insensitive">
     <col type="case-insensitive">

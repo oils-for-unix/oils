@@ -40,6 +40,10 @@ all() {
   ls tools/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
+  echo 'WEB'
+  ls web/*.js web/*/*.{js,py} | xargs wc -l | sort --numeric
+  echo
+
   echo 'OTHER UNIT TESTS'
   wc -l {build,test,asdl,tools}/*_test.py | sort --numeric
   echo

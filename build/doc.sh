@@ -60,8 +60,9 @@ _quick-ref() {
 
 x-quick-ref() {
   local prog=$1
+  local out_dir=$2
 
-  local html_out=_release/VERSION/doc/$prog-quick-ref.html
+  local html_out=$out_dir/doc/$prog-quick-ref.html
   local text_out_dir=_build/$prog-quick-ref
   local py_out=_devbuild/${prog}_help.py
 
@@ -124,11 +125,13 @@ EOF
 }
 
 osh-quick-ref() {
-  x-quick-ref osh "$@"
+  local out_dir=${1:-_build}
+  x-quick-ref osh $out_dir
 }
 
 oil-quick-ref() {
-  x-quick-ref oil "$@"
+  local out_dir=${1:-_build}
+  x-quick-ref oil $out_dir
 }
 
 markdown2html() {

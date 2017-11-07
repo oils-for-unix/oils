@@ -393,7 +393,11 @@ build-tree() {
   cp -v _build/release-date.txt oil-version.txt $root
 
   # Docs
-  build/doc.sh osh-quick-ref
+
+  # NOTE: This action is also run in the build.  It generates code that goes in
+  # the binary.
+  build/doc.sh osh-quick-ref _release/VERSION
+
   build/doc.sh install
   build/doc.sh release-index $root/index.html
 
