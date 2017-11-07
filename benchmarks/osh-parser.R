@@ -25,6 +25,7 @@ main = function(argv) {
 
   # Merge all the inputs
   hosts = list()
+  raw_times_list = list()
   for (i in 2:length(argv)) {
     times_path = argv[[i]]
     # Find it in the same directory
@@ -50,6 +51,7 @@ main = function(argv) {
       host_rows
 
     hosts[[i-1]] = host_rows
+    raw_times_list[[i-1]] = times_path
   }
 
   all_times = bind_rows(hosts)
@@ -138,6 +140,13 @@ main = function(argv) {
   Log('RATE')
   print(rate)
 
+  # TODO: Set up cgit because Github links are slow.
+  benchmarkDataLink = function(subdir, name, suffix) {
+    #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
+    sprintf('https://github.com/oilshell/benchmark-data/blob/master/%s/%s%s',
+            subdir, name, suffix)
+  }
+
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
@@ -145,7 +154,7 @@ main = function(argv) {
     host_label = distinct_hosts$host_label,
     host_id = paste(distinct_hosts$host_name,
                     distinct_hosts$host_hash, sep='-'),
-    host_id_HREF = sprintf('../../../../benchmark-data/host-id/%s', host_id)
+    host_id_HREF = benchmarkDataLink('host-id', host_id, '/')
   )
   print(host_table)
 
@@ -153,12 +162,19 @@ main = function(argv) {
     shell_label = distinct_shells$shell_label,
     shell_id = paste(distinct_shells$shell_name,
                      distinct_shells$shell_hash, sep='-'),
-    shell_id_HREF = sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
+    shell_id_HREF = benchmarkDataLink('shell-id', shell_id, '/')
   )
   print(shell_table)
 
+  raw_times = data_frame(
+    filename = basename(as.character(raw_times_list)),
+    filename_HREF = benchmarkDataLink('osh-parser', filename, '')
+  )
+  print(raw_times)
+
   writeCsv(host_table, file.path(out_dir, 'hosts'))
   writeCsv(shell_table, file.path(out_dir, 'shells'))
+  writeCsv(raw_times, file.path(out_dir, 'raw_times'))
   writeCsv(shell_summary, file.path(out_dir, 'summary'))
   writeCsv(elapsed, file.path(out_dir, 'elapsed'))
   writeCsv(rate, file.path(out_dir, 'rate'))

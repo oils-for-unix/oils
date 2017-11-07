@@ -142,6 +142,7 @@ run() {
   echo "Wrote $out"
 }
 
+# TODO: 
 summarize() {
   local out=_tmp/osh-parser/stage1
   mkdir -p $out
@@ -195,7 +196,7 @@ _print-report() {
       }
 
       /* these two tables are side by side */
-      #shells, #hosts {
+      #shells, #hosts, #raw_times {
         display: inline-block;
         vertical-align: top;
       }
@@ -235,6 +236,11 @@ EOF
 EOF
   web/table/csv2html.py $BASE_DIR/stage1/shells.csv
   web/table/csv2html.py $BASE_DIR/stage1/hosts.csv
+
+cat <<EOF
+    <h3>Raw Timing Data</h3>
+EOF
+  web/table/csv2html.py $BASE_DIR/stage1/raw_times.csv
 cat <<EOF
 
     <h3>Per-File Breakdown</h3>
