@@ -4,11 +4,20 @@
 #   ./release.sh <function name>
 #
 # Steps:
-#   $0 build-and-test
-#   $0 deploy-tar
-#   $0 deploy-doc
+#   $0 build-and-test  (runs spec tests, etc.)
+#   test/wild.sh all
+#   benchmarks/osh-parser.sh
+#     - 'auto' on both flanders and lisa
+#     - summarize
+#     - report
+#   $0 line-counts
+#   $0 build-tree
+#   $0 compress
 #   - Generate changelog.html
 #   - Generate announcment.html (link)
+#   MAYBE: ./local.sh test-release-tree if you want to preview it
+#   $0 deploy-tar
+#   $0 deploy-doc
 # 
 # Then go to oilshell.org repo and do ./deploy.sh all.
 
@@ -259,6 +268,12 @@ git-changelog-0.1() {
     > ../oilshell.org__deploy/release/$version/changelog.html
 }
 
+git-changelog-0.2.alpha1() {
+  local version='0.2.alpha1'
+  _git-changelog release/0.1.0 release/0.2.alpha1 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -284,6 +299,12 @@ announcement-0.1() {
   local version='0.1.0'
 	html-redirect '/blog/2017/09/09.html' \
     > ../oilshell.org__deploy/release/$version/announcement.html
+}
+
+announcement-0.2.alpha1() {
+  local version='0.2.alpha1'
+	html-redirect '/blog/2017/11/08.html' \
+    > _release/VERSION/announcement.html
 }
 
 _link() {
