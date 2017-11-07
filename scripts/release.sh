@@ -438,9 +438,7 @@ deploy-doc() {
   local release_root_dir="$deploy_repo/release"
   local release_dir="$release_root_dir/$OIL_VERSION"
 
-  # --dereference because test/spec has css symlinks that should be files.
-  # rsync should just transfer raw files.
-  cp -v -r --force --dereference --no-target-directory \
+  cp -v -r --force --no-target-directory \
     _release/VERSION/ $release_dir/
 
   # Generate release index.
