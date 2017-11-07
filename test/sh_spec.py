@@ -648,7 +648,7 @@ class HtmlOutput(ColorOutput):
   </head>
   <body>
     <p id="home-link">
-      <a href="RESULTS.html">spec test index</a>
+      <a href=".">spec test index</a>
       /
       <a href="/">oilshell.org</a>
     </p>
