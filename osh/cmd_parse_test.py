@@ -12,6 +12,7 @@ from core import ui
 from core.id_kind import Id
 from core.alloc import Pool
 from core import word
+from core import test_lib
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -23,12 +24,10 @@ command_e = ast.command_e
 
 # TODO: Use parse_lib instead
 def InitCommandParser(code_str):
-  pool = Pool()
-  arena = pool.NewArena()
-  arena.PushSource('<unit test>')
+  arena = test_lib.MakeArena('<cmd_parse_test.py>')
   line_reader, lexer = parse_lib.InitLexer(code_str, arena=arena)
   w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader)
+  c_parser = CommandParser(w_parser, lexer, line_reader, arena=arena)
   return arena, c_parser  # arena is returned for printing errors
 
 
@@ -1286,6 +1285,19 @@ EOF
     err = _assertParseCommandListError(self, """\
     for = in a
     """)
+
+  def testHereDocCommandSub(self):
+    # Originall from spec/09-here-doc.sh.
+    err = _assertParseCommandListError(self, """\
+for x in 1 2 $(cat <<EOF
+THREE
+EOF); do
+  echo for word $x
+done
+""")
+
+  def testForLoopEof(self):
+    err = _assertParseCommandListError(self, "for x in 1 2 $(")
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ from core import util
 
 # Hm this doesn't use scope_e or var_flags_e
 scope = runtime.scope
+value_e = runtime.value_e
 var_flags = runtime.var_flags
 
 
@@ -76,7 +77,7 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         runtime.LhsName('g2'), None, (var_flags.Exported,),
         scope.Dynamic)
-    self.assertEqual('', mem.var_stack[0]['g2'].val.s)
+    self.assertEqual(value_e.Undef, mem.var_stack[0]['g2'].val.tag)
     self.assertEqual(True, mem.var_stack[0]['g2'].exported)
 
     # readonly myglobal
@@ -131,7 +132,7 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         runtime.LhsName('r2'), None, (var_flags.ReadOnly,),
         scope.Dynamic)
-    self.assertEqual('', mem.var_stack[0]['r2'].val.s)
+    self.assertEqual(value_e.Undef, mem.var_stack[0]['r2'].val.tag)
     self.assertEqual(True, mem.var_stack[0]['r2'].readonly)
 
     # export -n PYTHONPATH

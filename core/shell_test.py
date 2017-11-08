@@ -12,7 +12,9 @@ shell_test.py
 import unittest
 import sys
 
+from core import alloc
 from core import reader
+from core import test_lib
 
 # These may move around
 from osh import parse_lib
@@ -44,9 +46,11 @@ class LineReaderTest(unittest.TestCase):
 
 
 def ParseAndExecute(code_str):
-  line_reader, lexer = parse_lib.InitLexer(code_str)
+  arena = test_lib.MakeArena('<shell_test.py>')
+
+  line_reader, lexer = parse_lib.InitLexer(code_str, arena=arena)
   w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader)
+  c_parser = CommandParser(w_parser, lexer, line_reader, arena=arena)
 
   node = c_parser.ParseWholeFile()
   if not node:

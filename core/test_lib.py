@@ -9,6 +9,9 @@
 test_lib.py - Functions for testing.
 """
 
+from core import alloc
+
+
 def TokensEqual(left, right):
   # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
   return left.id == right.id and left.val == right.val
@@ -19,3 +22,10 @@ def TokenWordsEqual(left, right):
   # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
   return TokensEqual(left.token, right.token)
   #return left == right
+
+
+def MakeArena(source_name):
+  pool = alloc.Pool()
+  arena = pool.NewArena()
+  arena.PushSource('<lex_test.py>')
+  return arena

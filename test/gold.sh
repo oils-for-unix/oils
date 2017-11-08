@@ -100,9 +100,15 @@ readonly_() {
   _compare gold/readonly.sh
 }
 
+complex-here-docs() {
+  _compare gold/complex-here-docs.sh
+}
+
 all() {
-  readonly_
+  # This one differs by timestamp
   version-text
+
+  readonly_
   count
   one-spec-test
   html-summary
@@ -110,6 +116,8 @@ all() {
   no-op
   gen-module-init
   glob
+  complex-here-docs
+
   # This one takes a little long, but it's realistic.
   wild
 

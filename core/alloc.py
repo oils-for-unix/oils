@@ -109,6 +109,13 @@ class Arena(object):
     return path, line_num
 
 
+def CompletionArena(pool):
+  """A temporary arena that only exists for a function call?"""
+  arena = pool.NewArena()
+  arena.PushSource('<completion>')
+  return arena
+
+
 # In C++, InteractiveLineReader and StringLineReader should use the same
 # representation: std::string with internal NULs to terminate lines, and then
 # std::vector<char*> that points into to it.

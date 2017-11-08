@@ -322,7 +322,7 @@ def OshMain(argv, login_shell):
     if HAVE_READLINE:
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
       status_out = completion.StatusOutput(status_lines, exec_opts)
-      completion.Init(builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
+      completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
                       status_out, ev)
 
     # TODO: Could instantiate "printer" instead of showing ops

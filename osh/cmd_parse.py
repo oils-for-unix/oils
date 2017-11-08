@@ -206,7 +206,7 @@ class CommandParser(object):
     #print('')
     for h in here_docs:
       lines = []
-      #print(h.here_end)
+      #log('HERE %r' % h.here_end)
       while True:
         # If op is <<-, strip off all leading tabs (NOT spaces).
         # (in C++, just bump the start?)
@@ -214,8 +214,12 @@ class CommandParser(object):
 
         #print("LINE %r %r" % (line, h.here_end))
         if not line:  # EOF
-          print('WARNING: unterminated here doc', file=sys.stderr)
-          break
+          # An unterminated here doc is just a warning in bash.  We make it
+          # fatal because we want to be strict, and because it causes problems
+          # reporting other errors.
+          # Attribute it to the << in <<EOF for now.
+          self.AddErrorContext('Unterminated here doc', span_id=h.spids[0])
+          return False
 
         # NOTE: Could do this runtime to preserve LST.
         if h.op_id == Id.Redir_DLessDash:
@@ -264,7 +268,8 @@ class CommandParser(object):
       return False
     #print('_Maybe testing for newline', self.cur_word, node)
     if self.c_id == Id.Op_Newline:
-      self._MaybeReadHereDocs(node)
+      if not self._MaybeReadHereDocs(node):
+        return False
       #print('_Maybe read redirects', node)
       self._Next()
       if not self._Peek():
@@ -759,6 +764,7 @@ class CommandParser(object):
         self._Next()
         break
       if self.cur_word.tag != word_e.CompoundWord:
+        # TODO: Can we also show a pointer to the 'for' keyword?
         self.AddErrorContext('Invalid word in for loop', word=self.cur_word)
         return None
 
@@ -1399,7 +1405,7 @@ class CommandParser(object):
     # If the pipeline ended in a newline, we need to read here docs.
     if self.c_id == Id.Op_Newline:
       for child in children:
-        self._MaybeReadHereDocs(child)
+        if not self._MaybeReadHereDocs(child): return None
 
     node = ast.Pipeline(children, negated)
     node.stderr_indices = stderr_indices
@@ -1487,13 +1493,13 @@ class CommandParser(object):
 
         if not self._Peek(): return None
         if self.c_id == Id.Op_Newline:
-          self._MaybeReadHereDocs(child)
+          if not self._MaybeReadHereDocs(child): return None
           done = True
         elif self.c_id == Id.Eof_Real:
           done = True
 
       elif self.c_id == Id.Op_Newline:
-        self._MaybeReadHereDocs(child)
+        if not self._MaybeReadHereDocs(child): return None
         done = True
 
       elif self.c_id == Id.Eof_Real:
@@ -1558,8 +1564,9 @@ class CommandParser(object):
       if self.c_id == Id.Op_Newline:
         # Read ALL Here docs so far.  cat <<EOF; echo hi <newline>
         for c in children:
-          self._MaybeReadHereDocs(c)
-        self._MaybeReadHereDocs(child)  # Read last child's here docs
+          if not self._MaybeReadHereDocs(c): return None
+        # Read last child's here docs
+        if not self._MaybeReadHereDocs(child): return None
         self._Next()
 
         if not self._Peek(): return None
@@ -1573,8 +1580,9 @@ class CommandParser(object):
         if not self._Peek(): return None
         if self.c_id == Id.Op_Newline:
           for c in children:
-            self._MaybeReadHereDocs(c)
-          self._MaybeReadHereDocs(child)  # Read last child's
+            if not self._MaybeReadHereDocs(c): return None
+          # Read last child's
+          if not self._MaybeReadHereDocs(child): return None 
 
           self._Next()  # skip over newline
 
@@ -1598,7 +1606,7 @@ class CommandParser(object):
     if not self._Peek(): return None
     if self.c_id == Id.Op_Newline:
       for c in children:
-        self._MaybeReadHereDocs(c)
+        if not self._MaybeReadHereDocs(c): return None
 
     return ast.CommandList(children)
 
@@ -1614,6 +1622,8 @@ class CommandParser(object):
     easier.
     """
     if not self._NewlineOk(): return None
+    #if not self._MaybeReadHereDocsAfterNewline(node):
+    #  return None
 
     node = self.ParseCommandTerm()
     if node is None: return None

@@ -86,6 +86,29 @@ hi;})` anyway.
     extglob`.  That flag is a no-op in OSH.  OSH avoids dynamic parsing, while
     bash does it in many places.
 
+(6) **Here Doc Terminators Must Be On Their Own Line**
+
+NO:
+
+    a=$(cat <<EOF
+    abc
+    EOF)
+
+    a=$(cat <<EOF
+    abc
+    EOF  # not a comment, read as here doc delimiter
+    )
+
+YES:
+
+    a=$(cat <<EOF
+    abc
+    EOF
+    )  # newline
+
+Just like `EOF]` will not end the here doc, `EOF)` doesn't end it either.  It
+must be on its own line.
+
 ## set builtin
 
 ### errexit

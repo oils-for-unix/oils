@@ -978,7 +978,6 @@ class WordParser(object):
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:
-          #print('@', self.lexer.LookAhead())
           #print('@', self.cursor)
           #print('@', self.cur_token)
 

@@ -83,20 +83,38 @@ class LineLexer(object):
       self.arena_skip = True  # don't add the next token to the arena
       return True
 
+  def GetSpanIdForEof(self):
+    assert self.arena, self.arena  # This is mandatory now?
+    # zero length is special!
+    line_span = ast.line_span(self.line_id, self.line_pos, 0)
+    return self.arena.AddLineSpan(line_span)
+
   def LookAhead(self, lex_mode):
-    """Look ahead for a non-space token, using the given lexical state."""
+    """Look ahead for a non-space token, using the given lexer mode.
+
+    Does NOT advance self.line_pos.
+
+    Called with at least the following modes:
+      LexMode.ARITH -- for ${a[@]} vs ${a[1+2]}
+      LexMode.VS_1
+      LexMode.OUTER
+    """
     pos = self.line_pos
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
     while True:
       if pos == len(self.line):
-        t = ast.token(Id.Eof_Real, '')  # no location
+        # We don't allow lookahead while already at end of line, because it
+        # would involve interacting with the line reader, and we never need
+        # it.  In the OUTER mode, there is an explicit newline token, but
+        # ARITH doesn't have it.
+        t = ast.token(Id.Unknown_Tok, '', -1)  # no span ID
         return t
 
       re_list = self.lexer_def[lex_mode]
       end_index, tok_type, tok_val = FindLongestMatch(
           re_list, self.line, pos)
-      # NOTE: Instead of hard-coding this token, we could pass it in.  This one
-      # only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
+      # NOTE: Instead of hard-coding this token, we could pass it in.  This
+      # one only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
       if tok_type != Id.WS_Space:
         break
       pos = end_index
@@ -210,9 +228,8 @@ class Lexer(object):
       line_id, line = self.line_reader.GetLine()
 
       if line is None:  # no more lines
-        t = ast.token(Id.Eof_Real, '', -1)
-        # No line number.  I guess we are showing the last line of the file.
-        # TODO: Could keep track of previous position for this case?
+        span_id = self.line_lexer.GetSpanIdForEof()
+        t = ast.token(Id.Eof_Real, '', span_id)
         return t
 
       self.line_lexer.Reset(line, line_id)

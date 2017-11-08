@@ -142,7 +142,8 @@ echo
 
 for x in 1 2 $(cat <<EOF
 THREE
-EOF); do
+EOF
+); do
   echo for word $x
 done
 echo

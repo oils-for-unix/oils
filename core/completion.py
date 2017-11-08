@@ -40,6 +40,7 @@ import traceback
 
 from osh import ast_ as ast
 from osh import parse_lib
+from core import alloc
 from core import runtime
 from core import state
 from core import ui
@@ -583,8 +584,8 @@ class RootCompleter(object):
   """
   Provide completion of a buffer according to the configured rules.
   """
-  def __init__(self, make_parser, ev, comp_lookup, var_comp):
-    self.make_parser = make_parser
+  def __init__(self, pool, ev, comp_lookup, var_comp):
+    self.pool = pool
     self.ev = ev
     self.comp_lookup = comp_lookup
     # This can happen in any position, with any command
@@ -593,7 +594,8 @@ class RootCompleter(object):
     self.parser = DummyParser()  # TODO: remove
 
   def Matches(self, buf, status_out):
-    w_parser, c_parser = self.make_parser(buf)
+    arena = alloc.CompletionArena(self.pool)
+    w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena=arena)
     comp_type, prefix, comp_words = _GetCompletionType(
         w_parser, c_parser, self.ev, status_out)
 
@@ -747,7 +749,7 @@ class StatusOutput:
       self.status_lines[index].Write(msg, *args)
 
 
-def Init(builtins, mem, funcs, comp_lookup, status_out, ev):
+def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev):
 
   aliases_action = WordsAction(['TODO:alias'])
   commands_action = ExternalCommandAction(mem)
@@ -775,7 +777,7 @@ def Init(builtins, mem, funcs, comp_lookup, status_out, ev):
 
   make_parser = parse_lib.MakeParserForCompletion
   var_comp = VarAction(os.environ, mem)
-  root_comp = RootCompleter(make_parser, ev, comp_lookup, var_comp)
+  root_comp = RootCompleter(pool, ev, comp_lookup, var_comp)
 
   complete_cb = ReadlineCompleter(root_comp, status_out)
   InitReadline(complete_cb)
@@ -798,7 +800,8 @@ if __name__ == '__main__':
   comp_lookup = CompletionLookup()
   ev = None
 
-  Init(builtins, mem, funcs, comp_lookup, status_out, ev)
+  pool = None
+  Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev)
 
   # Disable it.  OK so this is how you go back and forth?  At least in Python.
   # Enable and disable custom completer?
@@ -815,5 +818,5 @@ if __name__ == '__main__':
     pass
 
   while True:
-    s = input('! ')
+    s = raw_input('! ')
     print(s)

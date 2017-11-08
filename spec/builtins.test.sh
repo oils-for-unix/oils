@@ -33,7 +33,7 @@ echo 'to stderr'
 ### exec builtin with here doc
 # This has in a separate file because both code and data can be read from
 # stdin.
-$SH spec/exec-here-doc.sh
+$SH spec/builtins-exec-here-doc-helper.sh
 # stdout-json: "x=one\ny=two\nDONE\n"
 
 ### cd and $PWD

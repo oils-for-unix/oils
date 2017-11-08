@@ -250,6 +250,14 @@ EOF
 # stdout: 0
 # N-I dash stdout: 127
 
+### Here Doc in if condition
+if cat <<EOF; then
+here doc in IF CONDITION
+EOF
+  echo THEN executed
+fi
+# stdout-json: "here doc in IF CONDITION\nTHEN executed\n"
+
 ### Multiple here docs in pipeline
 # SKIPPED: hangs with osh on Debian
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
@@ -270,4 +278,3 @@ read_from_fd.py 0 5 5<<EOF5
 fd5
 EOF5
 # stdout-json: "0: 3: fd3\n5: fd5\n"
-

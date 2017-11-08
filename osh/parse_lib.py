@@ -54,15 +54,15 @@ def MakeParser(line_reader, arena):
 #
 # NOTE: It probably needs to take a VirtualLineReader for $PS1, $PS2, ...
 # values.
-def MakeParserForCompletion(code_str):
+def MakeParserForCompletion(code_str, arena=None):
   """Parser for partial lines."""
   # NOTE: We don't need to use a arena here?  Or we need a "scratch arena" that
   # doesn't interfere with the rest of the program.
   line_reader = reader.StringLineReader(code_str)
-  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '')  # AtEnd() is true
+  line_lexer = lexer.LineLexer(lex.LEXER_DEF, '', arena=arena)  # AtEnd() is true
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
-  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader)
+  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena=arena)
   return w_parser, c_parser
 
 

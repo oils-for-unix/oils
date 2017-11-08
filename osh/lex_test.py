@@ -5,8 +5,10 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
+from core import alloc
 from core.id_kind import Id, Kind, LookupKind
 from core.lexer import CompileAll, Lexer, LineLexer, FindLongestMatch
+from core import test_lib
 from core.test_lib import TokensEqual
 
 from osh import parse_lib
@@ -15,7 +17,8 @@ from osh.lex import LEXER_DEF, LexMode
 
 
 def _InitLexer(s):
-  _, lexer = parse_lib.InitLexer(s)
+  arena = test_lib.MakeArena('<lex_test.py>')
+  _, lexer = parse_lib.InitLexer(s, arena=arena)
   return lexer
 
 
@@ -183,13 +186,13 @@ class LineLexerTest(unittest.TestCase):
     # Lines always end with '\n'
     l = LineLexer(LEXER_DEF, '')
     self.assertTokensEqual(
-        ast.token(Id.Eof_Real, ''), l.LookAhead(LexMode.OUTER))
+        ast.token(Id.Unknown_Tok, ''), l.LookAhead(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'foo')
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(LexMode.OUTER))
     self.assertTokensEqual(
-        ast.token(Id.Eof_Real, ''), l.LookAhead(LexMode.OUTER))
+        ast.token(Id.Unknown_Tok, ''), l.LookAhead(LexMode.OUTER))
 
     l = LineLexer(LEXER_DEF, 'foo  bar')
     self.assertTokensEqual(

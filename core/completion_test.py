@@ -11,11 +11,13 @@ completion_test.py: Tests for completion.py
 
 import unittest
 
+from core import alloc
 from core import cmd_exec
 from core import cmd_exec_test
 from core import completion  # module under test
 from core import lexer
 from core import state
+from core import test_lib
 from core import word_eval
 from core import ui
 from core.id_kind import Id
@@ -106,9 +108,9 @@ class CompletionTest(unittest.TestCase):
 
     ev = _MakeTestEvaluator()
 
+    pool = alloc.Pool()
     var_comp = V1
-    r = completion.RootCompleter(parse_lib.MakeParserForCompletion,
-        ev, comp_lookup, var_comp)
+    r = completion.RootCompleter(pool, ev, comp_lookup, var_comp)
 
     m = list(r.Matches('grep f', STATUS))
     self.assertEqual(['foo.py ', 'foo '], m)
@@ -147,7 +149,8 @@ def _MakeTestEvaluator():
 
 def _TestGetCompletionType(buf):
   ev = _MakeTestEvaluator()
-  w_parser, c_parser = parse_lib.MakeParserForCompletion(buf)
+  arena = test_lib.MakeArena('<completion_test.py>')
+  w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena=arena)
   print('---', buf)
   return completion._GetCompletionType(w_parser, c_parser, ev, STATUS)
 
