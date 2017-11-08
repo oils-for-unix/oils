@@ -104,10 +104,20 @@ complex-here-docs() {
   _compare gold/complex-here-docs.sh
 }
 
+comments() { _compare gold/comments.sh; }
+export() { _compare gold/export.sh; }
+
+# Needs declare -p
+declare() { _compare gold/declare.sh demo; }
+
+# Needs declare -p
+scope() { _compare gold/scope.sh; }
+
 all() {
   # This one differs by timestamp
   version-text
 
+  comments
   readonly_
   count
   one-spec-test

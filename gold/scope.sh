@@ -6,6 +6,10 @@
 set -o pipefail
 set -o errexit
 
+printenv() {
+  spec/bin/printenv.py "$@"
+}
+
 my_global=G1
 
 func() {
@@ -75,7 +79,7 @@ combined() {
   # This doesn't work!
   export readonly local __EIGHT=eight
 
-  printenv.py __ONE __TWO __THREE __FOUR __FIVE __SIX __SEVEN __EIGHT
+  printenv __ONE __TWO __THREE __FOUR __FIVE __SIX __SEVEN __EIGHT
   # export can come first, but local can't come first
 
   # These are both -a

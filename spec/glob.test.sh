@@ -31,8 +31,8 @@ echo [!bin
 # stdout: [!bin
 
 ### glob can expand to command and arg
-spec/echo.s[hz]
-# stdout: spec/echo.sz
+spec/testdata/echo.s[hz]
+# stdout: spec/testdata/echo.sz
 
 ### glob after var expansion
 touch _tmp/a.A _tmp/aa.A _tmp/b.B

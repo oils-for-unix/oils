@@ -92,4 +92,18 @@ test-fail-or() {
   echo DONE
 }
 
+succeed() {   
+  return 0
+}
+
+fail() {   
+  return 1
+}
+
+test-func-with-and() {
+  succeed && echo "OK 1"
+  fail && echo "OK 2"  # Swallos the error because of errexit, not good!
+  succeed && echo "OK 3"
+}
+
 "$@"
