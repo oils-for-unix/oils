@@ -410,7 +410,7 @@ class Mem(object):
           cell.readonly = True
       else:
         if value is None:
-          value = runtime.Str('')  # export foo, readonly foo
+          value = runtime.Undef()  # export foo, readonly foo
         cell = runtime.cell(value,
                             var_flags.Exported in new_flags ,
                             var_flags.ReadOnly in new_flags )

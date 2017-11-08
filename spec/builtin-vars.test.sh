@@ -218,3 +218,22 @@ echo "${a[@]}" len="${#a[@]}"
 # stdout: x z len=2
 # N-I dash status: 2
 # N-I dash stdout-json: ""
+
+### Use local twice
+f() {
+  local foo=bar
+  local foo
+  echo $foo
+}
+f
+# stdout: bar
+
+### Local without variable is still unset!
+set -o nounset
+f() {
+  local foo
+  echo "[$foo]"
+}
+f
+# status: 1
+# OK dash status: 2

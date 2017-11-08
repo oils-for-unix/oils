@@ -690,19 +690,17 @@ class Executor(object):
         raise NotImplementedError(node.keyword)
 
       for pair in node.pairs:
-        if pair.rhs:
-          # RHS can be a string or array.
-          val = self.ev.EvalWordToAny(pair.rhs)
-          assert isinstance(val, runtime.value), val
-        else:
-          # 'local x' is equivalent to local x=""
-          val = runtime.Str('')
-
         if pair.op == assign_op.PlusEqual:
+          assert pair.rhs, pair.rhs  # I don't think a+= is valid?
+          val = self.ev.EvalWordToAny(pair.rhs)
           old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
                                             self.exec_opts)
           sig = (old_val.tag, val.tag)
-          if sig == (value_e.Str, value_e.Str):
+          if sig == (value_e.Undef, value_e.Str):
+            pass  # val is RHS
+          elif sig == (value_e.Undef, value_e.StrArray):
+            pass  # val is RHS
+          elif sig == (value_e.Str, value_e.Str):
             val = runtime.Str(old_val.s + val.s)
           elif sig == (value_e.Str, value_e.StrArray):
             e_die("Can't append array to string")
@@ -710,10 +708,18 @@ class Executor(object):
             e_die("Can't append string to array")
           elif sig == (value_e.StrArray, value_e.StrArray):
             val = runtime.StrArray(old_val.strs + val.strs)
-        else:
+
+        else:  # plain assignment
           lval = self._EvalLhs(pair.lhs)
 
-        #log('ASSIGNING %s -> %s', lval, val)
+          # RHS can be a string or array.
+          if pair.rhs:
+            val = self.ev.EvalWordToAny(pair.rhs)
+            assert isinstance(val, runtime.value), val
+          else:
+            # e.g. 'readonly x' or 'local x'
+            val = None  # only changing flags
+
         self.mem.SetVar(lval, val, flags, lookup_mode)
 
       # TODO: This should be eval of RHS, unlike bash!

@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-#
-# Usage:
-#   ./readonly.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -14,6 +11,7 @@ f1() {
 
   readonly foo  # not anymore
   #foo=2  # would cause an exception
+  echo $foo
 
   echo done
 

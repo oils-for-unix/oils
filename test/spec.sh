@@ -420,7 +420,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 11 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 10 \
     $BASH $MKSH $OSH "$@"
 }
 

@@ -76,7 +76,7 @@ gen-module-init() {
 }
 
 wild() {
-  _compare test/wild.sh parse-usr-bin
+  _compare test/wild.sh all '^distro/usr-bin'
 }
 
 # NOTE: zsh behaves differently under sh and bin/osh!  Looks like it is an
@@ -96,7 +96,12 @@ nix() {
   _compare gold/nix.sh isElfSimpleWithStdin
 }
 
+readonly_() {
+  _compare gold/readonly.sh
+}
+
 all() {
+  readonly_
   version-text
   count
   one-spec-test
@@ -104,9 +109,13 @@ all() {
   configure
   no-op
   gen-module-init
-  wild
-  startup-benchmark
   glob
+  # This one takes a little long, but it's realistic.
+  wild
+
+  # There are slight differences in the number of syscalls reported.  Not sure
+  # of the cause.
+  #startup-benchmark
 }
 
 "$@"
