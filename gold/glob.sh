@@ -4,15 +4,15 @@
 #   ./03-glob.sh <function name>
 
 # Evaluates to command and arg
-spec/echo.s[h-j]
+spec/testdata/echo.s[h-j]
 
 # Negation
-spec/echo.s[!i-z]
-spec/echo.s[!i]
+spec/testdata/echo.s[!i-z]
+spec/testdata/echo.s[!i]
 
-spec/echo.*
+spec/testdata/echo.*
 
-spec/echo.s?
+spec/testdata/echo.s?
 
 # NOTE: bash also has extglob
 # http://mywiki.wooledge.org/glob
@@ -23,4 +23,4 @@ spec/echo.s?
 # globstar -- ** for directories
 
 echo classes
-spec/echo.s[[:alpha:]]
+spec/testdata/echo.s[[:alpha:]]
