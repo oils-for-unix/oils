@@ -269,8 +269,12 @@ git-changelog-0.1() {
 }
 
 git-changelog-0.2.alpha1() {
-  local version='0.2.alpha1'
   _git-changelog release/0.1.0 release/0.2.alpha1 \
+    > _release/VERSION/changelog.html
+}
+
+git-changelog-0.2.0() {
+  _git-changelog release/0.1.0 release/0.2.0 \
     > _release/VERSION/changelog.html
 }
 
@@ -301,10 +305,8 @@ announcement-0.1() {
     > ../oilshell.org__deploy/release/$version/announcement.html
 }
 
-announcement-0.2.alpha1() {
-  local version='0.2.alpha1'
-	html-redirect '/blog/2017/11/08.html' \
-    > _release/VERSION/announcement.html
+announcement-0.2() {
+	html-redirect '/blog/2017/11/10.html' > _release/VERSION/announcement.html
 }
 
 _link() {
