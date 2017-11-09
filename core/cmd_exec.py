@@ -393,7 +393,8 @@ class Executor(object):
         if val.tag != value_e.Str:
           util.warn("Here word body should be a string, got %s", val)
           return None
-        return runtime.HereRedirect(fd, val.s)
+        # NOTE: bash and mksh both add \n
+        return runtime.HereRedirect(fd, val.s + '\n')
       else:
         raise AssertionError('Unknown redirect op')
 

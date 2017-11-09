@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+### Here string
+cat <<< 'hi'
+# stdout-json: "hi\n"
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
+### Here string with $
+cat <<< $'one\ntwo\n'
+# stdout-json: "one\ntwo\n\n"
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### Here redirect with explicit descriptor
 # A space betwen 0 and <<EOF causes it to pass '0' as an arg to cat.
 cat 0<<EOF

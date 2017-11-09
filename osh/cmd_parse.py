@@ -10,6 +10,7 @@ from __future__ import print_function
 cmd_parse.py - Parse high level shell commands.
 """
 
+import collections
 import sys
 
 from core import braces
@@ -25,76 +26,6 @@ log = util.log
 command_e = ast.command_e
 word_e = ast.word_e
 assign_op = ast.assign_op
-
-
-def _UnfilledHereDocs(redirects):
-  return [
-      r for r in redirects
-      if r.op_id in (Id.Redir_DLess, Id.Redir_DLessDash) and not r.was_filled
-  ]
-
-
-def _GetHereDocsToFill(node):
-  """For CommandParser to fill here docs"""
-  # Has to be a POST ORDER TRAVERSAL of here docs, e.g.
-  #
-  # while read line; do cat <<EOF1; done <<EOF2
-  # body
-  # EOF1
-  # while
-  # EOF2
-
-  # Leaf nodes: no redirects and no children.
-  if node.tag in (command_e.NoOp, command_e.Assignment, command_e.ControlFlow):
-    return []
-
-  # Leaf nodes: these have redirects but not children.
-  if node.tag in (
-      command_e.SimpleCommand, command_e.DParen, command_e.DBracket):
-    return _UnfilledHereDocs(node.redirects)
-
-  # Interior nodes with children:
-  here_docs = []
-
-  if node.tag == command_e.If:
-    for arm in node.arms:
-      for child in arm.cond:
-        here_docs.extend(_GetHereDocsToFill(child))
-      for child in arm.action:
-        here_docs.extend(_GetHereDocsToFill(child))
-    for child in node.else_action:
-      here_docs.extend(_GetHereDocsToFill(child))
-
-  elif node.tag == command_e.Case:
-    for arm in node.arms:
-      for child in arm.action:
-        here_docs.extend(_GetHereDocsToFill(child))
-
-  elif node.tag in (command_e.ForEach, command_e.ForExpr, command_e.FuncDef):
-    here_docs.extend(_GetHereDocsToFill(node.body))
-
-  elif node.tag in (command_e.While, command_e.Until):
-    for child in node.cond:
-      here_docs.extend(_GetHereDocsToFill(child))
-    here_docs.extend(_GetHereDocsToFill(node.body))
-
-  elif node.tag in (command_e.Sentence, command_e.Subshell):
-    here_docs.extend(_GetHereDocsToFill(node.child))
-
-  elif node.tag == command_e.TimeBlock:
-    here_docs.extend(_GetHereDocsToFill(node.pipeline))
-
-  else:
-    for child in node.children:
-      here_docs.extend(_GetHereDocsToFill(child))
-
-  # && || and | don't have their own redirects, but have children that may.
-  if node.tag not in (
-      command_e.AndOr, command_e.Pipeline, command_e.CommandList,
-      command_e.Sentence, command_e.TimeBlock):
-    here_docs.extend(_UnfilledHereDocs(node.redirects))  # parent
-
-  return here_docs
 
 
 class CommandParser(object):
@@ -122,6 +53,8 @@ class CommandParser(object):
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
 
+    self.pending_here_docs = collections.deque()
+
   def Error(self):
     return self.error_stack
 
@@ -141,70 +74,13 @@ class CommandParser(object):
   def GetCompletionState(self):
     return self.completion_stack
 
-  def Peek(self):
-    """Public method for REPL."""
-    if not self._Peek():
-      return None
-    return self.cur_word
+  def _MaybeReadHereDocs(self):
+    while True:
+      try:
+        h = self.pending_here_docs.popleft()
+      except IndexError:
+        break
 
-  def _Peek(self):
-    """Helper method.
-
-    Returns True for success and False on error.  Error examples: bad command
-    sub word, or unterminated quoted string, etc.
-    """
-    if self.next_lex_mode != LexMode.NONE:
-      w = self.w_parser.ReadWord(self.next_lex_mode)
-      if w is None:
-        error_stack = self.w_parser.Error()
-        self.error_stack.extend(error_stack)
-        return False
-      self.cur_word = w
-
-      self.c_kind = word.CommandKind(self.cur_word)
-      self.c_id = word.CommandId(self.cur_word)
-      self.next_lex_mode = LexMode.NONE
-    #print('_Peek', self.cur_word)
-    return True
-
-  def _Next(self, lex_mode=LexMode.OUTER):
-    """Helper method."""
-    self.next_lex_mode = lex_mode
-
-  def _Eat(self, c_id):
-    """Consume a word of a type.  If it doesn't match, return False.
-
-    Args:
-      c_id: either EKeyword.* or a token type like Id.Right_Subshell.
-      TODO: Rationalize / type check this.
-    """
-    if not self._Peek():
-      return False
-    # TODO: It would be nicer to print the word type, right now we get a number
-    if self.c_id != c_id:
-      self.AddErrorContext(
-          "Expected word type %s, got %s", c_id, self.cur_word,
-          word=self.cur_word)
-      return False
-    self._Next()
-    return True
-
-  def _NewlineOk(self):
-    """Check for optional newline and consume it."""
-    if not self._Peek():
-      return False
-    if self.c_id == Id.Op_Newline:
-      self._Next()
-      if not self._Peek():
-        return False
-    return True
-
-  def _MaybeReadHereDocs(self, node):
-    here_docs = _GetHereDocsToFill(node)
-    #print('')
-    #print('--> FILLING', here_docs)
-    #print('')
-    for h in here_docs:
       lines = []
       #log('HERE %r' % h.here_end)
       while True:
@@ -262,15 +138,66 @@ class CommandParser(object):
     #print('')
     return True
 
-  def _MaybeReadHereDocsAfterNewline(self, node):
-    """Like _NewlineOk, but also reads here docs."""
+  def _Next(self, lex_mode=LexMode.OUTER):
+    """Helper method."""
+    self.next_lex_mode = lex_mode
+
+  def Peek(self):
+    """Public method for REPL."""
+    if not self._Peek():
+      return None
+    return self.cur_word
+
+  def _Peek(self):
+    """Helper method.
+
+    Returns True for success and False on error.  Error examples: bad command
+    sub word, or unterminated quoted string, etc.
+    """
+    if self.next_lex_mode != LexMode.NONE:
+      w = self.w_parser.ReadWord(self.next_lex_mode)
+      if w is None:
+        error_stack = self.w_parser.Error()
+        self.error_stack.extend(error_stack)
+        return False
+
+      # Here docs only happen in command mode, so other kinds of newlines don't
+      # count.
+      if w.tag == word_e.TokenWord and w.token.id == Id.Op_Newline:
+        if not self._MaybeReadHereDocs():
+          return False
+
+      self.cur_word = w
+
+      self.c_kind = word.CommandKind(self.cur_word)
+      self.c_id = word.CommandId(self.cur_word)
+      self.next_lex_mode = LexMode.NONE
+    #print('_Peek', self.cur_word)
+    return True
+
+  def _Eat(self, c_id):
+    """Consume a word of a type.  If it doesn't match, return False.
+
+    Args:
+      c_id: either EKeyword.* or a token type like Id.Right_Subshell.
+      TODO: Rationalize / type check this.
+    """
     if not self._Peek():
       return False
-    #print('_Maybe testing for newline', self.cur_word, node)
+    # TODO: It would be nicer to print the word type, right now we get a number
+    if self.c_id != c_id:
+      self.AddErrorContext(
+          "Expected word type %s, got %s", c_id, self.cur_word,
+          word=self.cur_word)
+      return False
+    self._Next()
+    return True
+
+  def _NewlineOk(self):
+    """Check for optional newline and consume it."""
+    if not self._Peek():
+      return False
     if self.c_id == Id.Op_Newline:
-      if not self._MaybeReadHereDocs(node):
-        return False
-      #print('_Maybe read redirects', node)
       self._Next()
       if not self._Peek():
         return False
@@ -296,9 +223,6 @@ class CommandParser(object):
     else:
       fd = -1
 
-    # TODO: Set a flag here, and then _MaybeReadHereDocsAfterNewline can use
-    # it to short-circuit
-
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()
       node.op_id = self.c_id
@@ -319,6 +243,8 @@ class CommandParser(object):
         return None
       node.do_expansion = not quoted
       self._Next()
+
+      self.pending_here_docs.append(node)  # will be filled on next newline.
 
     else:
       node = ast.Redir()
@@ -1382,8 +1308,7 @@ class CommandParser(object):
     while True:
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
 
-      # cat <<EOF | <newline>
-      if not self._MaybeReadHereDocsAfterNewline(child):
+      if not self._NewlineOk():
         return None
 
       child = self.ParseCommand()
@@ -1401,11 +1326,6 @@ class CommandParser(object):
       if self.c_id == Id.Op_PipeAmp:
         stderr_indices.append(pipe_index)
       pipe_index += 1
-
-    # If the pipeline ended in a newline, we need to read here docs.
-    if self.c_id == Id.Op_Newline:
-      for child in children:
-        if not self._MaybeReadHereDocs(child): return None
 
     node = ast.Pipeline(children, negated)
     node.stderr_indices = stderr_indices
@@ -1433,8 +1353,7 @@ class CommandParser(object):
     op = self.c_id
     self._Next()  # Skip past operator
 
-    # cat <<EOF || <newline>
-    if not self._MaybeReadHereDocsAfterNewline(left): return None
+    if not self._NewlineOk(): return None
 
     right = self.ParseAndOr()
     if not right: return None
@@ -1492,14 +1411,10 @@ class CommandParser(object):
         self._Next()
 
         if not self._Peek(): return None
-        if self.c_id == Id.Op_Newline:
-          if not self._MaybeReadHereDocs(child): return None
-          done = True
-        elif self.c_id == Id.Eof_Real:
+        if self.c_id in (Id.Op_Newline, Id.Eof_Real):
           done = True
 
       elif self.c_id == Id.Op_Newline:
-        if not self._MaybeReadHereDocs(child): return None
         done = True
 
       elif self.c_id == Id.Eof_Real:
@@ -1562,11 +1477,6 @@ class CommandParser(object):
 
       if not self._Peek(): return None
       if self.c_id == Id.Op_Newline:
-        # Read ALL Here docs so far.  cat <<EOF; echo hi <newline>
-        for c in children:
-          if not self._MaybeReadHereDocs(c): return None
-        # Read last child's here docs
-        if not self._MaybeReadHereDocs(child): return None
         self._Next()
 
         if not self._Peek(): return None
@@ -1579,11 +1489,6 @@ class CommandParser(object):
 
         if not self._Peek(): return None
         if self.c_id == Id.Op_Newline:
-          for c in children:
-            if not self._MaybeReadHereDocs(c): return None
-          # Read last child's
-          if not self._MaybeReadHereDocs(child): return None 
-
           self._Next()  # skip over newline
 
           # Test if we should keep going.  There might be another command after
@@ -1604,9 +1509,6 @@ class CommandParser(object):
       children.append(child)
 
     if not self._Peek(): return None
-    if self.c_id == Id.Op_Newline:
-      for c in children:
-        if not self._MaybeReadHereDocs(c): return None
 
     return ast.CommandList(children)
 
@@ -1622,8 +1524,6 @@ class CommandParser(object):
     easier.
     """
     if not self._NewlineOk(): return None
-    #if not self._MaybeReadHereDocsAfterNewline(node):
-    #  return None
 
     node = self.ParseCommandTerm()
     if node is None: return None
