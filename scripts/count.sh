@@ -24,6 +24,10 @@ all() {
   wc -l test/*.{sh,py} | filter-py | sort --numeric
   echo
 
+  echo 'RELEASE AUTOMATION'
+  wc -l scripts/release.sh | sort --numeric
+  echo
+
   echo 'BENCHMARKS'
   wc -l benchmarks/*.sh | sort --numeric
   echo
