@@ -28,8 +28,12 @@ all() {
   wc -l benchmarks/*.sh | sort --numeric
   echo
 
-  echo 'SHELL SPEC TESTS'
+  echo 'SPEC TESTS'
   wc -l spec/*.test.sh | sort --numeric
+  echo
+
+  echo 'GOLD TESTS'
+  wc -l gold/*.sh | sort --numeric
   echo
 
   echo 'ASDL'
