@@ -109,6 +109,14 @@ YES:
 Just like `EOF]` will not end the here doc, `EOF)` doesn't end it either.  It
 must be on its own line.
 
+<!-- 
+TODO: Add these
+
+- dynamic parsing of `$(( $a $op $b ))`.  OSH requires an explicit eval.
+- new one: `` as comments in sandstorm
+  # This relates to comments being EOL or not
+-->
+
 ## set builtin
 
 ### errexit
