@@ -282,7 +282,12 @@ LEXER_DEF[LexMode.BASH_REGEX] = [
   C('|', Id.Lit_Chars),
 ] + _UNQUOTED
 
-LEXER_DEF[LexMode.DQ] = _BACKSLASH + _LEFT_SUBS + _VARS + [
+LEXER_DEF[LexMode.DQ] = [
+  # Only 4 characters are backslash escaped inside "".
+  # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
+  R(r'\\[$`"\\]', Id.Lit_EscapedChar),
+  C('\\\n', Id.Ignored_LineCont),
+] + _LEFT_SUBS + _VARS + [
   R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
   # NOTE: When parsing here doc line, this token doesn't end it.
   C('"', Id.Right_DoubleQuote),

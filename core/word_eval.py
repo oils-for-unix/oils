@@ -851,17 +851,7 @@ class _WordPartEvaluator:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
-      c = val[1]
-      # TODO: This can be done at compile time instead!  Change _BACKSLASH
-      # definition in DQ state.
-      if quoted:
-        # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
-        if c in ('$', '`', '"', '\\'):
-          s = c
-        else:
-          s = val
-      else:
-        s = c
+      s = val[1]
       return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.SingleQuotedPart:
