@@ -542,9 +542,13 @@ def main(argv):
       #print proj, '-', abs_path, '-', rel_path
 
       def _ReadTaskFile(path):
-        with open(path) as f:
-          parts = f.read().split()
-          status, secs = parts
+        try:
+          with open(path) as f:
+            parts = f.read().split()
+            status, secs = parts
+        except ValueError as e:
+          log('ERROR reading %s: %s', path, e)
+          raise
         # Turn it into pass/fail
         num_failed = 1 if int(status) >= 1 else 0
         return num_failed, float(secs)

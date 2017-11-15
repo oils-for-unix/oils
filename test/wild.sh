@@ -155,6 +155,7 @@ all-manifests() {
         -name shflags -o -name shlib -o -name shunit2 -o -name versions \
       ')' -a -printf '%P\n')
 
+  _sh-manifest ~/hg/wild/shell-script-library shell
   _sh-manifest ~/git/other/modernish shell
   _sh-manifest ~/git/other/posixcube shell
 
@@ -170,6 +171,7 @@ all-manifests() {
   _sh-manifest ~/git/other/minimal distro
   _sh-manifest ~/git/other/linuxkit distro
   _sh-manifest ~/git/other/portage distro
+  _sh-manifest ~/git/wild/distro/woof-CE distro
 
   src=~/git/alpine/aports
   _manifest distro/alpine-aports $src \
