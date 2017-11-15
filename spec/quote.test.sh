@@ -81,6 +81,11 @@ echo foo\
 $
 # stdout: foo$
 
+### Line continuation inside double quotes
+echo "foo\
+$"
+# stdout: foo$
+
 ### $? split over multiple lines
 # Same with $$, etc.  OSH won't do this because $? is a single token.
 echo $\

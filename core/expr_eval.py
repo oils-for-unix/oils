@@ -485,7 +485,7 @@ class BoolEvaluator(_ExprEvaluator):
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
           return False
 
-        if op_id == Id.BoolUnary_e:
+        if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e
           return True
 
         if op_id == Id.BoolUnary_f:

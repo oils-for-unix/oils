@@ -852,6 +852,8 @@ class _WordPartEvaluator:
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       c = val[1]
+      # TODO: This can be done at compile time instead!  Change _BACKSLASH
+      # definition in DQ state.
       if quoted:
         # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
         if c in ('$', '`', '"', '\\'):

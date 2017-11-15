@@ -158,7 +158,8 @@ class BoolParser(object):
     Expr    : Term (OR Expr)?
     """
     left = self.ParseTerm()
-    if self.op_id == Id.Op_DPipe:
+    # [[ uses || while [ uses -o
+    if self.op_id in (Id.Op_DPipe, Id.BoolUnary_o):
       if not self._Next(): return None
       right = self.ParseExpr()
       return ast.LogicalOr(left, right)
@@ -175,7 +176,8 @@ class BoolParser(object):
     left = self.ParseNegatedFactor()
     if not left:
       return None  # TODO: An exception should handle this case.
-    if self.op_id == Id.Op_DAmp:
+    # [[ uses && while [ uses -a
+    if self.op_id in (Id.Op_DAmp, Id.BoolUnary_a):
       if not self._Next(): return None
       right = self.ParseTerm()
       return ast.LogicalAnd(left, right)

@@ -35,7 +35,7 @@ class _StringWordEmitter:
     self.i = 0
     self.n = len(argv)
 
-  def ReadWord(self, lex_mode):
+  def ReadWord(self, unused_lex_mode):
     if self.i == self.n:
       # NOTE: Could define something special
       return ast.StringWord(Id.Eof_Real, '')
@@ -187,3 +187,13 @@ def Test(argv, need_right_bracket):
   b = bool_ev.Eval(bool_node)
   status = 0 if b else 1
   return status
+
+
+if __name__ == '__main__':
+  # Test
+  e = _StringWordEmitter('-z X -o -z Y -a -z X'.split())
+  while True:
+    w = e.ReadWord(None)
+    print w
+    if w.id == Id.Eof_Real:
+      break

@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-#
-# NOTES:
-# - osh is using the external binary.
-# - because ! -a -o ( ) are the same, we can share logic with [[.
 
 ### zero args: [ ]
 [ ] || echo false
@@ -31,7 +27,7 @@ echo status=$?
 [ -a /nonexistent ]
 echo status=$?
 # stdout-json: "status=0\nstatus=1\n"
-# N-I dash/osh stdout-json: "status=2\nstatus=2\n"
+# N-I dash stdout-json: "status=2\nstatus=2\n"
 
 ### two args: -z with = ! ( ]
 [ -z = ]
@@ -85,8 +81,13 @@ test -n 'a'  && echo true
 test -n ''   || echo false
 # stdout-json: "true\nfalse\n"
 
-### ! -a -o
+### ! -a
 [ -z '' -a ! -z x ]
+echo status=$?
+# stdout: status=0
+
+### -o
+[ -z x -o ! -z x ]
 echo status=$?
 # stdout: status=0
 

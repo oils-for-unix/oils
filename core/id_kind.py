@@ -341,8 +341,6 @@ def _AddKinds(spec):
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
      'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
 
-     # TODO: Unify ExprNode and BNode under these Unary, Binary, Ternary nodes.
-     # They hold one, two, or three words.
      'UnaryExpr', 'BinaryExpr', 'TernaryExpr', 'FuncCall',
      'ConstInt',  # for arithmetic.  There is no ConstBool.
                   # Could be Lit_Digits?  But oil will need
@@ -385,12 +383,8 @@ TEST_OTHER_LOOKUP = {}
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
-_UNARY_OTHER_CHARS = 'ovR'
-# NOTE: In bash and mksh, -a is an alias for -e (exists).  For example, see
-# test.c in bash.  That causes an ambiguity with -a as the binary "and"
-# operator, so I just omit it.  BoolParser can be changed to deal with the
-# ambiguity later if necessary.
-_UNARY_PATH_CHARS = 'bcdefghLprsStuwxOGN'
+_UNARY_OTHER_CHARS = 'ovR'  # -o is overloaded 
+_UNARY_PATH_CHARS = 'abcdefghLprsStuwxOGN'  # -a is overloaded
 
 _BINARY_PATH = ['ef', 'nt', 'ot']
 _BINARY_INT = ['eq', 'ne', 'gt', 'ge', 'lt', 'le']
@@ -402,9 +396,6 @@ def _Dash(strs):
   # Gives a pair of (token name, string to match)
   return [(s, '-' + s) for s in strs]
 
-
-# TODO: Need to check for binary -o first, before unary -o.
-# Then you can fix unary -a too.
 
 def _AddBoolKinds(spec):
   spec.AddBoolKind('BoolUnary', {
@@ -449,7 +440,8 @@ def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
 
   # Like the [[ definition above, but without globbing and without =~ .
 
-  for token_name, token_str in [('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
+  for token_name, token_str in [
+      ('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
     id_val = id_spec.AddBoolBinaryForBuiltin(token_name)
     binary_lookup[token_str] = id_val
 
@@ -457,8 +449,8 @@ def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
   binary_lookup['<'] = Id.Redir_Less
   binary_lookup['>'] = Id.Redir_Great
 
-  other_lookup['-a'] = Id.Op_DAmp  # like [[ &&
-  other_lookup['-o'] = Id.Op_DPipe # like [[ ||
+  # NOTE: -a and -o overloaded as unary prefix operators BoolUnary_a and
+  # BoolUnary_o.  The parser rather than the tokenizer handles this.
   other_lookup['!'] = Id.KW_Bang  # like [[ !
   other_lookup['('] = Id.Op_LParen
   other_lookup[')'] = Id.Op_RParen
@@ -515,7 +507,7 @@ REDIR_TYPE = {
     Id.Redir_Great: RedirType.Path,
     Id.Redir_DGreat: RedirType.Path,
     Id.Redir_Clobber: RedirType.Path,
-    Id.Redir_LessGreat: RedirType.Path,  # TODO: What does echo <>foo do?
+    Id.Redir_LessGreat: RedirType.Path,
 
     # descriptor
     Id.Redir_GreatAnd: RedirType.Desc,
