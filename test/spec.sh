@@ -229,9 +229,9 @@ subshell() {
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
-# Need to fix $ tokens, and $''
+# Need to implement $'' escaping
 quote() {
-  sh-spec spec/quote.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/quote.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

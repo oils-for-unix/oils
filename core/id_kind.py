@@ -403,6 +403,9 @@ def _Dash(strs):
   return [(s, '-' + s) for s in strs]
 
 
+# TODO: Need to check for binary -o first, before unary -o.
+# Then you can fix unary -a too.
+
 def _AddBoolKinds(spec):
   spec.AddBoolKind('BoolUnary', {
       OperandType.Str: _Dash(list(_UNARY_STR_CHARS)),

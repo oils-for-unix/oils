@@ -851,7 +851,15 @@ class _WordPartEvaluator:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
-      s = val[1]
+      c = val[1]
+      if quoted:
+        # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
+        if c in ('$', '`', '"', '\\'):
+          s = c
+        else:
+          s = val
+      else:
+        s = c
       return [runtime.StringPartValue(s, False, False)]
 
     elif part.tag == word_part_e.SingleQuotedPart:
