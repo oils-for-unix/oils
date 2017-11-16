@@ -162,6 +162,7 @@ class BoolParser(object):
     if self.op_id in (Id.Op_DPipe, Id.BoolUnary_o):
       if not self._Next(): return None
       right = self.ParseExpr()
+      if not right: return None
       return ast.LogicalOr(left, right)
     else:
       return left
@@ -180,6 +181,7 @@ class BoolParser(object):
     if self.op_id in (Id.Op_DAmp, Id.BoolUnary_a):
       if not self._Next(): return None
       right = self.ParseTerm()
+      if not right: return None
       return ast.LogicalAnd(left, right)
     else:
       return left
