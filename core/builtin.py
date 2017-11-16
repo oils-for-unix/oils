@@ -864,8 +864,8 @@ def Help(argv, loader):
   else:
     try:
       section_id = osh_help.TOPIC_LOOKUP[topic]
-    except IndexError:
-      util.error('No help for topic %r', topic)
+    except KeyError:
+      util.error('No help topics match %r', topic)
       return 1
     else:
       try:

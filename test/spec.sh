@@ -271,9 +271,10 @@ builtin-test() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# Bash impleement type -t, but no other shell does.  For Nix.
-builtin-type() {
-  sh-spec spec/builtin-type.test.sh \
+# Bash implements type -t, but no other shell does.  For Nix.
+# zsh/mksh/dash don't have the 'help' builtin.
+builtin-bash() {
+  sh-spec spec/builtin-bash.test.sh \
     $BASH $OSH "$@"
 }
 

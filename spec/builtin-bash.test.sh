@@ -25,3 +25,15 @@ type -t find xargs
 type -t echo ZZZ find =
 echo status=$?
 # stdout-json: "builtin\nfile\nstatus=1\n"
+
+### help
+help
+help help
+# status: 0
+
+### bad help topic
+help ZZZ 2>$TMP/err.txt
+echo "help=$?"
+cat $TMP/err.txt | grep -i 'no help topics' >/dev/null
+echo "grep=$?"
+# stdout-json: "help=1\ngrep=0\n"
