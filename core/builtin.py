@@ -61,7 +61,7 @@ COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
 TEST BRACKET GETOPTS
-TYPE HELP
+COMMAND TYPE HELP
 """.split())
 
 
@@ -202,6 +202,9 @@ def Resolve(argv0):
 
   elif argv0 == "getopts":
     return EBuiltin.GETOPTS
+
+  elif argv0 == "command":
+    return EBuiltin.COMMAND
 
   elif argv0 == "type":
     return EBuiltin.TYPE
@@ -668,16 +671,66 @@ def Unset(argv, mem, funcs):
   return 0
 
 
+def _ResolveNames(names, funcs, path_val):
+  if path_val.tag == value_e.Str:
+    path_list = path_val.s.split(':')
+  else:
+    path_list = []  # treat as empty path
+
+  results = []
+  for name in names:
+    if name in funcs:
+      kind = ('function', name)
+    elif Resolve(name) != EBuiltin.NONE:
+      kind = ('builtin', name)
+    elif ResolveSpecial(name) != EBuiltin.NONE:
+      kind = ('builtin', name)
+    elif lex.IsOtherBuiltin(name):  # declare, continue, etc.
+      kind = ('builtin', name)
+    elif lex.IsKeyword(name):
+      kind = ('keyword', name)
+    else:
+      # Now look for files.
+      found = False
+      for path_dir in path_list:
+        full_path = os.path.join(path_dir, name)
+        if os.path.exists(full_path):
+          kind = ('file', full_path)
+          found = True
+          break
+      if not found:  # Nothing printed, but status is 1.
+        kind = (None, None)
+    results.append(kind)
+
+  return results
+    
+
+COMMAND_SPEC = _Register('command')
+COMMAND_SPEC.ShortFlag('-v')
+COMMAND_SPEC.ShortFlag('-V')
+
+def Command(argv, funcs, path_val):
+  arg, i = COMMAND_SPEC.Parse(argv)
+  status = 0
+  if arg.v:
+    for kind, arg in _ResolveNames(argv[i:], funcs, path_val):
+      if kind is None:
+        status = 1  # nothing printed, but we fail
+      else:
+        # This is for -v, -V is more detailed.
+        print(arg)
+  else:
+    util.warn('*** command without -v not not implemented ***')
+    status = 1
+
+  return status
+
+
 TYPE_SPEC = _Register('type')
 TYPE_SPEC.ShortFlag('-t')
 
 def Type(argv, funcs, path_val):
   arg, i = TYPE_SPEC.Parse(argv)
-
-  if path_val.tag == value_e.Str:
-    path_list = path_val.s.split(':')
-  else:
-    path_list = []  # treat as empty path
 
   status = 0
   if not arg.t:
@@ -685,28 +738,11 @@ def Type(argv, funcs, path_val):
     status = 1
     # Keep going anyway
 
-  for name in argv[i:]:
-    if name in funcs:
-      print('function')
-    elif Resolve(name) != EBuiltin.NONE:
-      print('builtin')
-    elif ResolveSpecial(name) != EBuiltin.NONE:
-      print('builtin')
-    elif lex.IsOtherBuiltin(name):  # declare, continue, etc.
-      print('builtin')
-    elif lex.IsKeyword(name):
-      print('keyword')
+  for kind, arg in _ResolveNames(argv[i:], funcs, path_val):
+    if kind is None:
+      status = 1  # nothing printed, but we fail
     else:
-      # Now look for files.
-      found = False
-      for path_dir in path_list:
-        full_path = os.path.join(path_dir, name)
-        if os.path.exists(full_path):
-          print('file')
-          found = True
-          break
-      if not found:  # Nothing printed, but status is 1.
-        status = 1
+      print(kind)
 
   return status
 

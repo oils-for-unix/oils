@@ -256,6 +256,11 @@ builtins() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+builtins2() {
+  sh-spec spec/builtins2.test.sh --osh-failures-allowed 0 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
 builtin-vars() {
   sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"

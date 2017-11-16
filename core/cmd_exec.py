@@ -303,6 +303,10 @@ class Executor(object):
     elif builtin_id == EBuiltin.GETOPTS:
       status = builtin.GetOpts(argv, self.mem)
 
+    elif builtin_id == EBuiltin.COMMAND:
+      path = self.mem.GetVar('PATH')
+      status = builtin.Command(argv, self.funcs, path)
+
     elif builtin_id == EBuiltin.TYPE:
       path = self.mem.GetVar('PATH')
       status = builtin.Type(argv, self.funcs, path)
@@ -315,7 +319,7 @@ class Executor(object):
       status = builtin.DebugLine(argv, self.status_lines)
 
     else:
-      raise AssertionError('Unhandled builtin: %d' % builtin_id)
+      raise AssertionError('Unhandled builtin: %s' % builtin_id)
 
     assert isinstance(status, int)
     return status
