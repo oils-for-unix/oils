@@ -10,7 +10,6 @@ from __future__ import print_function
 cmd_parse.py - Parse high level shell commands.
 """
 
-import collections
 import sys
 
 from core import braces
@@ -53,7 +52,7 @@ class CommandParser(object):
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
 
-    self.pending_here_docs = collections.deque()
+    self.pending_here_docs = []
 
   def Error(self):
     return self.error_stack
@@ -75,12 +74,7 @@ class CommandParser(object):
     return self.completion_stack
 
   def _MaybeReadHereDocs(self):
-    while True:
-      try:
-        h = self.pending_here_docs.popleft()
-      except IndexError:
-        break
-
+    for h in self.pending_here_docs:
       lines = []
       #log('HERE %r' % h.here_end)
       while True:
@@ -133,6 +127,7 @@ class CommandParser(object):
         h.body = ast.CompoundWord(parts)
         h.was_filled = True
 
+    self.pending_here_docs = []  # no .clear() until Python 3.3
     #print('')
     #print('--> FILLED', here_docs)
     #print('')
