@@ -127,10 +127,9 @@ class CommandParser(object):
         h.body = ast.CompoundWord(parts)
         h.was_filled = True
 
-    self.pending_here_docs = []  # no .clear() until Python 3.3
-    #print('')
-    #print('--> FILLED', here_docs)
-    #print('')
+    # No .clear() until Python 3.3.
+    del self.pending_here_docs[:]
+
     return True
 
   def _Next(self, lex_mode=LexMode.OUTER):
