@@ -29,11 +29,12 @@ import-files() {
 
 sh-one() {
   local append_out=$1
-  local sh_path=$2
-  local host_name=$3
-  local host_hash=$4
-  local shell_hash=$5
-  local path=$6
+  local vm_out_dir=$2
+  local sh_path=$3
+  local host_name=$4
+  local host_hash=$5
+  local shell_hash=$6
+  local path=$7
   echo "--- $sh_path $path ---"
 
   local shell_name
@@ -43,7 +44,17 @@ sh-one() {
   # 4.4.
   extra_args=''
   if test "$shell_name" = 'osh'; then
-    extra_args='--ast-format none'
+    #extra_args='--ast-format none'
+    local script_name
+    local vm_out_path
+    script_name=$(basename $path)
+    vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
+    extra_args="--dump-proc-status-to $vm_out_path"
+    # And then add that as --field?
+    # This adds 0.01 seconds?
+    # or shell_hash
+    # Then you need a Python or R script to make a CSV file out of VmPeak VmRSS
+    # etc.
   fi
 
   # exit code, time in seconds, host_hash, shell_hash, path.  \0
@@ -93,19 +104,22 @@ run() {
   local job_id
   job_id="$host.$(date +%Y-%m-%d__%H-%M-%S)"
 
-  local out_dir='../benchmark-data/osh-parser/'
-  local out="$out_dir/$job_id.times.csv"
+  local out_dir='../benchmark-data/osh-parser'
+  local times_out="$out_dir/$job_id.times.csv"
   local lines_out="$out_dir/$job_id.lines.csv"
+  local vm_out_dir="$out_dir/$job_id.virtual-memory"
 
   mkdir -p \
-    $(dirname $out) \
+    $(dirname $times_out) \
+    $vm_out_dir \
     $BASE_DIR/{tmp,raw,stage1,www}
 
   write-sorted-manifest '' $lines_out
   local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' > $out
+  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' \
+    > $times_out
 
   local tmp_dir=_tmp/host-id/$host
   benchmarks/id.sh dump-host-id $tmp_dir
@@ -134,12 +148,12 @@ run() {
     if ! test -n "$preview"; then
       # 20ms for ltmain.sh; 34ms for configure
       cat $sorted | xargs -n 1 -- $0 \
-        sh-one $out $sh_path $host $host_hash $shell_hash || true
+        sh-one $times_out $vm_out_dir $sh_path $host $host_hash $shell_hash || true
     fi
   done
 
-  cat $out
-  echo "Wrote $out"
+  cat $times_out
+  echo "Wrote $times_out, $lines_out, and $vm_out_dir/"
 }
 
 # TODO: 

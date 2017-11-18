@@ -55,6 +55,10 @@ die() {
   exit 1
 }
 
+log() {
+  echo "$@" 1>&2
+}
+
 _dump-if-exists() {
   local path=$1
   local out=$2
@@ -145,7 +149,8 @@ publish-shell-id() {
 
   echo $hash > $dest/HASH.txt
 
-  ls -l $dest 1>&2
+  #ls -l $dest 1>&2  # don't write to stdout
+  log "Published shell ID to $dest"
 
   echo $id
 }
@@ -185,7 +190,7 @@ dump-host-id() {
   # it's not swapping.  But shouldn't be part of the hash.
   cat /proc/meminfo > $out_dir/meminfo.txt
 
-  head $out_dir/*
+  #head $out_dir/* 1>&2  # don't write to stdout
 }
 
 # There is already concept of the triple?
@@ -226,7 +231,9 @@ publish-host-id() {
 
   echo $hash > $dest/HASH.txt
 
-  ls -l $dest 1>&2
+  #ls -l $dest 1>&2
+  log "Published host ID to $dest"
+
   echo $id
 }
 

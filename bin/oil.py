@@ -194,6 +194,9 @@ def OshMain(argv, login_shell):
   spec.LongFlag('--trace', ['cmd-parse', 'word-parse', 'lexer'])  # NOTE: can only trace one now
   spec.LongFlag('--hijack-shebang')
 
+  # For benchmarks/virtual-memory.sh.
+  spec.LongFlag('--dump-proc-status-to', args.Str)
+
   builtin.AddOptionsToArgSpec(spec)
 
   try:
@@ -354,6 +357,21 @@ def OshMain(argv, login_shell):
       do_exec = False
     if exec_opts.noexec:
       do_exec = False
+
+    # Do this after parsing the entire file.  There could be another option to
+    # do it before exiting runtime?
+    if opts.dump_proc_status_to:
+      import time
+      # This might be superstition, but we want to let the value stabilize
+      # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+      # with a sleep.
+      time.sleep(0.001)
+      input_path = '/proc/%d/status' % os.getpid()
+      with open(input_path) as f, open(opts.dump_proc_status_to, 'w') as f2:
+        contents = f.read()
+        f2.write(contents)
+        log('Wrote %s to %s', input_path, opts.dump_proc_status_to)
+      sys.exit(0)
 
     # -n prints AST, --show-ast prints and executes
     if exec_opts.noexec or opts.show_ast:
