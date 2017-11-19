@@ -484,7 +484,6 @@ def Cd(argv, mem):
 
 
 def Pushd(argv, dir_stack):
-  dir_stack.append(os.getcwd())
   num_args = len(argv)
 
   if num_args <= 0:
@@ -501,6 +500,7 @@ def Pushd(argv, dir_stack):
     util.error("cd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
+  dir_stack.append(os.getcwd())
   return 0
 
 
