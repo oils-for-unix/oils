@@ -492,6 +492,7 @@ def Pushd(argv, dir_stack):
     return 1
   elif num_args > 1:
     log("pushd: too many arguments")
+    return 1
 
   dest_dir = argv[0]
   if os.path.isdir(dest_dir):
