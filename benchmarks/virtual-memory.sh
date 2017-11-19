@@ -59,14 +59,12 @@ baseline-csv() {
   # The last one
   local -a latest=(${m1[-1]} ${m2[-1]})
 
-  benchmarks/virtual_memory.py baseline "${latest[@]}"
+  benchmarks/virtual_memory.py baseline "${latest[@]}" \
+    | tee $out/vm-baseline.csv
 }
 
-# TODO: parse 10 osh-parser files, measure virtual memory at the end.  However
-# this only applies to OSH, because you need a hook to dump the /proc/$$/status
-# file.
-
-demo() {
+# NOTE: Could also add Python introspection.
+dump-demo() {
   local out=_tmp/virtual-memory
   mkdir -p $out
 

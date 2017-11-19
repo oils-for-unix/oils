@@ -18,7 +18,12 @@ readonly ABUILD=~/git/alpine/abuild/abuild
 
 parse-abuild() {
   local vm=$1
-  time $vm bin/oil.py osh -n $ABUILD >/dev/null
+  local out=_tmp/pypy
+  mkdir -p $out
+
+  time $vm bin/oil.py osh \
+    --dump-proc-status-to $out/proc-status.txt \
+    -n $ABUILD >/dev/null
 }
 
 # ~3.5 seconds
