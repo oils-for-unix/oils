@@ -488,17 +488,17 @@ def Pushd(argv, dir_stack):
   num_args = len(argv)
 
   if num_args <= 0:
-    log("pushd: no other directory")
+    util.error('pushd: no other directory')
     return 1
   elif num_args > 1:
-    log("pushd: too many arguments")
+    util.error('pushd: too many arguments')
     return 1
 
   dest_dir = argv[0]
-  if os.path.isdir(dest_dir):
+  try:
     os.chdir(dest_dir)
-  else:
-    log("pushd: " + dest_dir + ": No such file or directory")
+  except OSError as e:
+    util.error("cd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
   return 0
@@ -508,13 +508,13 @@ def Popd(argv, dir_stack):
   try:
     dest_dir = dir_stack.pop()
   except IndexError:
-    log("popd: directory stack is empty")
+    log('popd: directory stack is empty')
     return 1
 
-  if os.path.isdir(dest_dir):
+  try:
     os.chdir(dest_dir)
-  else:
-    log("popd: " + dest_dir + ": No such file or directory")
+  except OSError as e:
+    util.error("cd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
   return 0
