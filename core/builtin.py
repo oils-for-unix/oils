@@ -497,7 +497,7 @@ def Pushd(argv, dir_stack):
   try:
     os.chdir(dest_dir)
   except OSError as e:
-    util.error("cd: %r: %s", dest_dir, os.strerror(e.errno))
+    util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
   dir_stack.append(os.getcwd())
@@ -508,13 +508,13 @@ def Popd(argv, dir_stack):
   try:
     dest_dir = dir_stack.pop()
   except IndexError:
-    log('popd: directory stack is empty')
+    util.error('popd: directory stack is empty')
     return 1
 
   try:
     os.chdir(dest_dir)
   except OSError as e:
-    util.error("cd: %r: %s", dest_dir, os.strerror(e.errno))
+    util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
   return 0
