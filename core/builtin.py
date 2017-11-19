@@ -485,8 +485,21 @@ def Cd(argv, mem):
 
 def Pushd(argv, dir_stack):
   dir_stack.append(os.getcwd())
+  num_args = len(argv)
+
+  if num_args <= 0:
+    log("pushd: no other directory")
+    return 1
+  elif num_args > 1:
+    log("pushd: too many arguments")
+
   dest_dir = argv[0]
-  os.chdir(dest_dir)  # TODO: error checking
+  if os.path.isdir(dest_dir):
+    os.chdir(dest_dir)
+  else:
+    log("pushd: " + dest_dir + ": No such file or directory")
+    return 1
+
   return 0
 
 
@@ -494,9 +507,15 @@ def Popd(argv, dir_stack):
   try:
     dest_dir = dir_stack.pop()
   except IndexError:
-    log('popd: directory stack is empty')
+    log("popd: directory stack is empty")
     return 1
-  os.chdir(dest_dir)  # TODO: error checking
+
+  if os.path.isdir(dest_dir):
+    os.chdir(dest_dir)
+  else:
+    log("popd: " + dest_dir + ": No such file or directory")
+    return 1
+
   return 0
 
 
