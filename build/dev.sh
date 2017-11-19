@@ -35,12 +35,14 @@ pylibc() {
   local arch=$(uname -m)
   build/setup.py build --build-lib _devbuild/pylibc/$arch
 
-  # Wildcard to match any Python 3 version.
   shopt -s failglob
-  local so=$(echo _devbuild/pylibc/$arch/libc.so)
+  local libc_so=$(echo _devbuild/pylibc/$arch/libc.so)
+  ln -s -f -v $libc_so libc.so
 
-  ln -s -f -v $so libc.so
-  file libc.so
+  local lex_so=$(echo _devbuild/pylibc/$arch/lex.so)
+  ln -s -f -v $lex_so lex.so
+
+  file libc.so lex.so
 }
 
 # Also done by unit.sh.
@@ -48,6 +50,7 @@ test-pylibc() {
   export PYTHONPATH=.
   pylibc
   native/libc_test.py
+  native/lex_test.py
 }
 
 clean-pylibc() {
