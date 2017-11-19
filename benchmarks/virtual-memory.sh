@@ -48,6 +48,20 @@ baseline() {
   done
 }
 
+baseline-csv() {
+  local out=_tmp/vm-baseline/stage1
+  mkdir -p $out
+
+  # Globs are in lexicographical order, which works for our dates.
+  local -a m1=(../benchmark-data/vm-baseline/flanders.*)
+  local -a m2=(../benchmark-data/vm-baseline/lisa.*)
+
+  # The last one
+  local -a latest=(${m1[-1]} ${m2[-1]})
+
+  benchmarks/virtual_memory.py baseline "${latest[@]}"
+}
+
 # TODO: parse 10 osh-parser files, measure virtual memory at the end.  However
 # this only applies to OSH, because you need a hook to dump the /proc/$$/status
 # file.
