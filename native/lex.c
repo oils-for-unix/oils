@@ -286,7 +286,16 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 }
 
+static PyObject *
+func_FindLongestMatch(PyObject *self, PyObject *args) {
+  return NULL;
+}
+
+// TODO: enlist core/id_kind_gen and osh/lex_gen.py
+
 PyMethodDef methods[] = {
+  {"FindLongestMatch", func_FindLongestMatch, METH_VARARGS,
+   "(lexer mode, line, pos) -> (end_index, tok_type, tok_val)."},
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
   // Python's glob doesn't have char classes
