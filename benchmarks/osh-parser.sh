@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # die
+
 # TODO: The raw files should be published.  In both
 # ~/git/oilshell/benchmarks-data and also in the /release/ hierarchy?
 readonly BASE_DIR=_tmp/osh-parser
@@ -156,19 +158,60 @@ run() {
   echo "Wrote $times_out, $lines_out, and $vm_out_dir/"
 }
 
-# TODO: 
-summarize() {
+#
+# Data Preparation and Analysis
+#
+
+csv-concat() {
+  tools/csv_concat.py "$@"
+}
+
+stage1() {
   local out=_tmp/osh-parser/stage1
   mkdir -p $out
 
+  local vm_csv=$out/virtual-memory.csv
+  local -a x=(../benchmark-data/osh-parser/flanders.*.virtual-memory)
+  local -a y=(../benchmark-data/osh-parser/lisa.*.virtual-memory)
+  benchmarks/virtual_memory.py osh-parser ${x[-1]} ${y[-1]} > $vm_csv
+
+  local times_csv=$out/times.csv
   # Globs are in lexicographical order, which works for our dates.
-  local -a m1=(../benchmark-data/osh-parser/flanders.*.times.csv)
-  local -a m2=(../benchmark-data/osh-parser/lisa.*.times.csv)
+  local -a a=(../benchmark-data/osh-parser/flanders.*.times.csv)
+  local -a b=(../benchmark-data/osh-parser/lisa.*.times.csv)
+  csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
-  # The last one
-  local -a latest=(${m1[-1]} ${m2[-1]})
+  # Construct a one-column CSV file
+  local raw_data_csv=$out/raw-data.csv
+  { echo 'path'
+    echo ${a[-1]}
+    echo ${b[-1]}
+  } > $raw_data_csv
 
-  benchmarks/osh-parser.R $out "${latest[@]}"
+  # Verify that the files are equal, and pass one of them.
+  local lines_csv=$out/lines.csv
+  local -a c=(../benchmark-data/osh-parser/flanders.*.lines.csv)
+  local -a d=(../benchmark-data/osh-parser/lisa.*.lines.csv)
+
+  local left=${c[-1]}
+  local right=${d[-1]}
+
+  if ! diff $left $right; then
+    die "Benchmarks were run on different files ($left != $right)"
+  fi
+
+  # They are the same, output one of them.
+  cat $left > $lines_csv 
+
+  head $out/*
+  wc -l $out/*
+}
+
+stage2() {
+  local out=_tmp/osh-parser/stage2
+  mkdir -p $out
+
+  benchmarks/osh-parser.R _tmp/osh-parser/stage1 $out
 
   tree $BASE_DIR
 }
@@ -180,6 +223,7 @@ summarize() {
 # NOTE: not bothering to make it sortable now.  Just using the CSS.
 
 _print-report() {
+  local in_dir=$1
   local base_url='../../web/table'
 
   cat <<EOF
@@ -240,44 +284,57 @@ _print-report() {
     elapsed time measurements, but long files are chosen to minimize its
     effect.</p>
 
-    <h3>Summary</h3>
-
+    <h3>Parse Time Summary</h3>
 EOF
-  web/table/csv2html.py $BASE_DIR/stage1/summary.csv
+  web/table/csv2html.py $in_dir/summary.csv
+
+  cat <<EOF
+    <h3>Memory Used to Parse</h3>
+
+    <p>For <code>osh-ovm</code>.</p>
+EOF
+  web/table/csv2html.py $in_dir/virtual-memory.csv
+
   cat <<EOF
 
     <h3>Shell and Host Details</h3>
 EOF
-  web/table/csv2html.py $BASE_DIR/stage1/shells.csv
-  web/table/csv2html.py $BASE_DIR/stage1/hosts.csv
+  web/table/csv2html.py $in_dir/shells.csv
+  web/table/csv2html.py $in_dir/hosts.csv
 
 cat <<EOF
-    <h3>Raw Timing Data</h3>
+    <h3>Raw Data</h3>
 EOF
-  web/table/csv2html.py $BASE_DIR/stage1/raw_times.csv
-cat <<EOF
+  web/table/csv2html.py $in_dir/raw-data.csv
 
-    <h3>Per-File Breakdown</h3>
+cat <<EOF
+    <h3>Parse Time Breakdown by File</h3>
 
     <h4>Elasped Time in milliseconds</h4>
 EOF
-  web/table/csv2html.py $BASE_DIR/stage1/elapsed.csv
+  web/table/csv2html.py $in_dir/elapsed.csv
   cat <<EOF
 
     <h4>Parsing Rate in lines/millisecond</h4>
 EOF
-  web/table/csv2html.py $BASE_DIR/stage1/rate.csv
+  web/table/csv2html.py $in_dir/rate.csv
   cat <<EOF
   </body>
 </html>
 EOF
 }
 
-report() {
+stage3() {
   local out=$BASE_DIR/index.html
   mkdir -p $(dirname $out)
-  _print-report > $out
+  _print-report $BASE_DIR/stage2 > $out
   echo "Wrote $out"
+}
+
+report() {
+  stage1
+  stage2
+  stage3
 }
 
 _banner() {

@@ -20,41 +20,46 @@ sourceUrl = function(path) {
   sprintf('https://github.com/oilshell/oil/blob/master/%s', path)
 }
 
+# Takes a filename, not a path.
+sourceUrl2 = function(filename) {
+  sprintf(
+      'https://github.com/oilshell/oil/blob/master/benchmarks/testdata/%s',
+      filename)
+}
+
 main = function(argv) {
-  out_dir = argv[[1]]
+  in_dir = argv[[1]]
+  out_dir = argv[[2]]
 
-  # Merge all the inputs
-  hosts = list()
-  raw_times_list = list()
-  for (i in 2:length(argv)) {
-    times_path = argv[[i]]
-    # Find it in the same directory
-    lines_path = gsub('.times.', '.lines.', times_path, fixed = T)
+  times = read.csv(file.path(in_dir, 'times.csv'))
+  lines = read.csv(file.path(in_dir, 'lines.csv'))
+  raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
+  vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
 
-    Log('times: %s', times_path)
-    Log('lines: %s', lines_path)
+  # For joining by filename
+  lines_by_filename = data_frame(
+      num_lines = lines$num_lines,
+      filename = basename(lines$path)
+  )
 
-    times = read.csv(times_path)
-    lines = read.csv(lines_path)
+  # Remove failures
+  times %>% filter(status == 0) %>% select(-c(status)) -> times
 
-    # Remove failures
-    times %>% filter(status == 0) %>% select(-c(status)) -> times
+  # Add the number of lines, joining on path, and compute lines/sec
+  # TODO: Is there a better way compute lines_per_ms and then drop
+  # lines_per_sec?
+  times %>%
+    left_join(lines, by = c('path')) %>%
+    mutate(elapsed_ms = elapsed_secs * 1000,
+           lines_per_ms = num_lines / elapsed_ms) %>%
+    select(-c(elapsed_secs)) ->
+    all_times
 
-    # Add the number of lines, joining on path, and compute lines/sec
-    # TODO: Is there a better way compute lines_per_ms and then drop
-    # lines_per_sec?
-    times %>%
-      left_join(lines, by = c('path')) %>%
-      mutate(elapsed_ms = elapsed_secs * 1000,
-             lines_per_ms = num_lines / elapsed_ms) %>%
-      select(-c(elapsed_secs)) ->
-      host_rows
+  #print(head(times))
+  #print(head(lines))
+  #print(head(vm))
+  #print(head(all_times))
 
-    hosts[[i-1]] = host_rows
-    raw_times_list[[i-1]] = times_path
-  }
-
-  all_times = bind_rows(hosts)
   print(summary(all_times))
 
   #
@@ -65,7 +70,6 @@ main = function(argv) {
   # Just use the name
   distinct_hosts$host_label = distinct_hosts$host_name
   print(distinct_hosts)
-
 
   all_times %>% distinct(shell_name, shell_hash) -> distinct_shells
   print(distinct_shells)
@@ -136,6 +140,20 @@ main = function(argv) {
              num_lines, filename, filename_HREF)) ->
     rate
 
+  # Just show osh-ovm because we know from the 'baseline' benchmark that it
+  # uses significantly less than osh-cpython.
+  vm %>%
+    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
+    select(-c(shell_name, shell_hash)) %>%
+    filter(shell_label == 'osh-ovm') %>%
+    select(-c(shell_label)) %>%
+    spread(key = metric_name, value = metric_value) %>%
+    left_join(lines_by_filename, by = c('filename')) %>%
+    arrange(host, num_lines) %>%
+    mutate(filename_HREF = sourceUrl2(filename)) %>% 
+    select(c(host, VmPeak, VmRSS, num_lines, filename, filename_HREF)) ->
+    vm_table
+
   Log('\n')
   Log('RATE')
   print(rate)
@@ -166,18 +184,20 @@ main = function(argv) {
   )
   print(shell_table)
 
-  raw_times = data_frame(
-    filename = basename(as.character(raw_times_list)),
+  raw_data_table = data_frame(
+    filename = basename(as.character(raw_data$path)),
     filename_HREF = benchmarkDataLink('osh-parser', filename, '')
   )
-  print(raw_times)
+  print(raw_data_table)
 
   writeCsv(host_table, file.path(out_dir, 'hosts'))
   writeCsv(shell_table, file.path(out_dir, 'shells'))
-  writeCsv(raw_times, file.path(out_dir, 'raw_times'))
+  writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
   writeCsv(shell_summary, file.path(out_dir, 'summary'))
   writeCsv(elapsed, file.path(out_dir, 'elapsed'))
   writeCsv(rate, file.path(out_dir, 'rate'))
+
+  writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
 
   Log('Wrote %s', out_dir)
 
