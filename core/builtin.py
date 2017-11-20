@@ -39,8 +39,8 @@ from osh import lex
 from _devbuild import osh_help  # generated file
 
 value_e = runtime.value_e
-scope = runtime.scope
-var_flags = runtime.var_flags
+scope_e = runtime.scope_e
+var_flags_e = runtime.var_flags_e
 log = util.log
 e_die = util.e_die
 
@@ -459,7 +459,7 @@ def Cd(argv, mem):
       return 1
 
   if dest_dir == '-':
-    old = mem.GetVar('OLDPWD', scope.GlobalOnly)
+    old = mem.GetVar('OLDPWD', scope_e.GlobalOnly)
     if old.tag == value_e.Undef:
       log('OLDPWD not set')
       return 1
@@ -539,7 +539,7 @@ def Export(argv, mem):
         raise args.UsageError('export: Invalid variable name %r' % name)
 
       # NOTE: bash does not care if it wasn't found
-      _ = mem.ClearFlag(name, var_flags.Exported, scope.Dynamic)
+      _ = mem.ClearFlag(name, var_flags_e.Exported, scope_e.Dynamic)
   else:
     for arg in argv[i:]:
       parts = arg.split('=', 1)
@@ -552,7 +552,7 @@ def Export(argv, mem):
 
       #log('%s %s', name, val)
       mem.SetVar(
-          runtime.LhsName(name), val, (var_flags.Exported,), scope.Dynamic)
+          runtime.LhsName(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
 
   return 0
 
@@ -679,10 +679,10 @@ def Unset(argv, mem, funcs):
       if name in funcs:
         del funcs[name]
     elif arg.v:
-      mem.Unset(runtime.LhsName(name), scope.Dynamic)
+      mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
     else:
       # Try to delete var first, then func.
-      found = mem.Unset(runtime.LhsName(name), scope.Dynamic)
+      found = mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
       #log('%s: %s', name, found)
       if not found:
         if name in funcs:

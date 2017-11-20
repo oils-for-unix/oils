@@ -14,12 +14,22 @@ from core.test_lib import TokensEqual
 from osh import parse_lib
 from osh import ast_ as ast
 from osh.lex import LEXER_DEF, LexMode
+from osh import ast_ as ast
+
+lex_mode_e = ast.lex_mode_e
 
 
 def _InitLexer(s):
   arena = test_lib.MakeArena('<lex_test.py>')
   _, lexer = parse_lib.InitLexer(s, arena=arena)
   return lexer
+
+
+class AsdlTest(unittest.TestCase):
+
+  def testLexMode(self):
+    print lex_mode_e.DQ
+
 
 
 CMD = """\

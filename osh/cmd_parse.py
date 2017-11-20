@@ -24,7 +24,7 @@ from osh.bool_parse import BoolParser
 log = util.log
 command_e = ast.command_e
 word_e = ast.word_e
-assign_op = ast.assign_op
+assign_op_e = ast.assign_op_e
 
 
 class CommandParser(object):
@@ -363,7 +363,7 @@ class CommandParser(object):
     node.words = words3
     node.redirects = redirects
     for name, op, val, left_spid in prefix_bindings:
-      if op != assign_op.Equal:
+      if op != assign_op_e.Equal:
         # NOTE: Using spid of RHS for now, since we don't have one for op.
         self.AddErrorContext('Expected = in environment binding, got +=',
             word=val)
@@ -422,7 +422,7 @@ class CommandParser(object):
         if not m:
           self.AddErrorContext('Invalid variable name %r', static_val, word=w)
           return None
-        a = (static_val, assign_op.Equal, None, left_spid)
+        a = (static_val, assign_op_e.Equal, None, left_spid)
 
       assignments.append(a)
       i += 1

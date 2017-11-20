@@ -216,4 +216,30 @@ module osh
 
   -- In-memory format for all the functions snipped out of a file.
   partial_file = (string path, arena* funcs)
+
+  --
+  -- These types are not used in the LST.  But they could be statically
+  -- from values in the LST.
+  --
+  -- NOTE: This is invalid: ASDL is case-sensitive!
+  -- OperandType = Undefined | Path | Int | Str | Other
+  -- RedirType = Path | Desc | Here
+
+  -- Also invalid because of duplicate 'Path' -- to fix
+  -- bool_operand_type = Undefined | Path | Int | Str | Other
+  -- redir_type = Path | Desc | Here
+
+  --
+  -- APIs
+  --
+  lex_mode =
+    NONE
+  | COMMENT
+  | OUTER
+  | DBRACKET
+  | SQ | DQ | DOLLAR_SQ
+  | ARITH
+  | EXTGLOB
+  | VS_1 | VS_2 | VS_ARG_UNQ | VS_ARG_DQ
+  | BASH_REGEX | BASH_REGEX_CHARS
 }

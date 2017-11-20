@@ -11,7 +11,7 @@ p_die = util.p_die
 
 word_e = ast.word_e
 word_part_e = ast.word_part_e
-assign_op = ast.assign_op
+assign_op_e = ast.assign_op_e
 
 
 def _LiteralPartId(p):
@@ -419,10 +419,10 @@ def LooksLikeAssignment(w):
   s = part0.token.val
   assert s.endswith('=')
   if s[-2] == '+':
-    op = assign_op.PlusEqual
+    op = assign_op_e.PlusEqual
     name = s[:-2]
   else:
-    op = assign_op.Equal
+    op = assign_op_e.Equal
     name = s[:-1]
 
   rhs = ast.CompoundWord()

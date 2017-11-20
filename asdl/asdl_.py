@@ -213,6 +213,9 @@ class Check(VisitorBase):
         if conflict is None:
             self.cons[key] = name
         else:
+            # Problem: This assumes a flat namespace, which we don't want!
+            # This check is more evidence that a flat namespace isn't
+            # desirable.
             print('Redefinition of constructor {}'.format(key))
             print('Defined in {} and {}'.format(conflict, name))
             self.errors += 1

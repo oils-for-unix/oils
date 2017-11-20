@@ -7,28 +7,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-replace() {
-  #sed -r -i 's/UNDEFINED_(.*)/Id.UNDEFINED_\1/g' */*.py
-
-  #sed -r -i 's/UNDEFINED_TOK/Id.UNDEFINED_Tok/g' */*.py
-
-  #sed -r -i 's/UNKNOWN_TOK/Id.UNKNOWN_Tok/g' */*.py
-
-  # http://stackoverflow.com/questions/1538676/uppercasing-first-letter-of-words-using-sed
-  # http://stackoverflow.com/questions/4569825/sed-one-liner-to-convert-all-uppercase-to-lowercase
-  # GNU extension: \u next character of match
-
-  # Finally, as a GNU `sed' extension, you can include a special sequence made
-  # of a backslash and one of the letters `L', `l', `U', `u', or `E'.  The
-  # meaning is as follows:
- 
-  # First make it all lower case
-  sed -r -i 's/Eof_([A-Z]+)/Id.Eof_\L\1/g' */*.py
-
-  # Now make the first one upper case
-  sed -r -i 's/Eof_([a-zA-Z]+)/Eof_\u\1/g' */*.py
-}
-
 # TODO:
 # Rparen -> RParen, Dgreat -> DGreat, Colon_Hyphen -> ColonHyphen, etc.
 # IGNORED_LINECONT -> IGNORED_LineCont
@@ -69,6 +47,7 @@ k2() {
 replace() {
   local file=$1
 
+  # NOTE: Escaping here is messed up.  sed doesn't have --name like awk?
   while read pat replace; do
     sed -r -i "s/${pat}/${replace}/g" */*.py
   done < $file

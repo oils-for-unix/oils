@@ -74,6 +74,13 @@ class EnumTest(unittest.TestCase):
     else:
       self.fail("Expected error")
 
+    d = {
+        Color.red: 'R',
+        Color.green: 'Blue',
+        Color.blue: 'B',
+    }
+    self.assertEqual('R', d[Color.red])
+
 
 if __name__ == '__main__':
   unittest.main()

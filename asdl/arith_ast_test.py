@@ -19,7 +19,7 @@ Const = arith_ast.Const
 Slice = arith_ast.Slice
 arith_expr = arith_ast.arith_expr
 source_location = arith_ast.source_location
-op_id = arith_ast.op_id
+op_id_e = arith_ast.op_id_e
 
 
 class ArithAstTest(unittest.TestCase):
@@ -42,13 +42,13 @@ class ArithAstTest(unittest.TestCase):
     # Integer is not allowed
     self.assertRaises(AssertionError, ArithVar, 1)
 
-    v = ArithUnary(op_id.Minus, Const(99))
+    v = ArithUnary(op_id_e.Minus, Const(99))
     # Raw integer is not allowed
-    self.assertRaises(AssertionError, ArithUnary, op_id.Minus, 99)
+    self.assertRaises(AssertionError, ArithUnary, op_id_e.Minus, 99)
 
-    v = ArithUnary(op_id.Minus, Const(99))
+    v = ArithUnary(op_id_e.Minus, Const(99))
     # Raw integer is not allowed
-    #self.assertRaises(AssertionError, ArithUnary, op_id.Minus, op_id.Plus)
+    #self.assertRaises(AssertionError, ArithUnary, op_id_e.Minus, op_id_e.Plus)
 
   def testExtraFields(self):
     v = ArithVar('z')
@@ -112,17 +112,17 @@ class ArithAstTest(unittest.TestCase):
 
     print(Slice(Const(1), Const(5), Const(2)))
 
-    print(op_id.Plus)
+    print(op_id_e.Plus)
 
     # Class for sum type
     print(arith_expr)
 
     # Invalid because only half were assigned
-    #print(ArithBinary(op_id.Plus, Const(5)))
+    #print(ArithBinary(op_id_e.Plus, Const(5)))
 
     n = ArithBinary()
     #n.CheckUnassigned()
-    n.op_id = op_id.Plus
+    n.op_id = op_id_e.Plus
     n.left = Const(5)
     #n.CheckUnassigned()
     n.right = Const(6)

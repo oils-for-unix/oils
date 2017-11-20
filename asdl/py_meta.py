@@ -279,9 +279,19 @@ def MakeTypes(module, root, app_types=None):
       if asdl.is_simple(sum_type):
         # An object without fields, which can be stored inline.
         class_attr = {'DESCRIPTOR': sum_type}  # asdl.Sum
-        cls = type(defn.name, (SimpleObj, ), class_attr)
-        #print('CLASS', cls)
-        setattr(root, defn.name, cls)
+        
+        # Create a class called foo_e.  Unlike the CompoundObj case, it doesn't
+        # have subtypes.  Instead if has attributes foo_e.Bar, which Bar is an
+        # instance of foo_e.
+        #
+        # Problem: This means you have a dichotomy between:
+        # cflow_e.Break vs. cflow_e.Break()
+        # If you add a non-simple type like cflow_e.Return(5), the usage will
+        # change.  I haven't run into this problem in practice yet.
+
+        class_name = defn.name + '_e'
+        cls = type(class_name, (SimpleObj, ), class_attr)
+        setattr(root, class_name, cls)
 
         for i, cons in enumerate(sum_type.types):
           enum_id = i + 1

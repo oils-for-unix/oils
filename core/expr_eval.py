@@ -35,7 +35,7 @@ word_e = ast.word_e
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 lvalue_e = runtime.lvalue_e
-scope = runtime.scope
+scope_e = runtime.scope_e
 
 
 def _StringToInteger(s, word=None):
@@ -231,7 +231,7 @@ class ArithEvaluator(_ExprEvaluator):
 
   def _Store(self, lval, new_int):
     val = runtime.Str(str(new_int))
-    self.mem.SetVar(lval, val, (), scope.Dynamic)
+    self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
   def Eval(self, node):
     """
@@ -476,7 +476,7 @@ class BoolEvaluator(_ExprEvaluator):
       s = self._EvalCompoundWord(node.child)
 
       # Now dispatch on arg type
-      arg_type = BOOL_OPS[op_id]
+      arg_type = BOOL_OPS[op_id]  # could be static in the LST?
       if arg_type == OperandType.Path:
         try:
           mode = os.stat(s).st_mode
