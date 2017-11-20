@@ -197,6 +197,11 @@ class Executor(object):
         line_reader = reader.FileLineReader(f, self.arena)
         _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
         return self._EvalHelper(c_parser, path)
+    except _ControlFlow as e:
+      if e.IsReturn():
+        return e.ReturnValue()
+      else:
+        raise
     except IOError as e:
       # TODO: Should point to the source statement that failed.
       util.error('source %r failed: %s', path, os.strerror(e.errno))
