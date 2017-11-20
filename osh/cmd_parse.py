@@ -18,13 +18,14 @@ from core.id_kind import Id, Kind
 from core import util
 
 from osh import ast_ as ast
-from osh.lex import LexMode, VAR_NAME_RE
+from osh.lex import VAR_NAME_RE
 from osh.bool_parse import BoolParser
 
 log = util.log
 command_e = ast.command_e
 word_e = ast.word_e
 assign_op_e = ast.assign_op_e
+lex_mode_e = ast.lex_mode_e
 
 
 class CommandParser(object):
@@ -47,7 +48,7 @@ class CommandParser(object):
     self.completion_stack = []
 
     # Cursor state set by _Peek()
-    self.next_lex_mode = LexMode.OUTER
+    self.next_lex_mode = lex_mode_e.OUTER
     self.cur_word = None  # current word
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
@@ -132,7 +133,7 @@ class CommandParser(object):
 
     return True
 
-  def _Next(self, lex_mode=LexMode.OUTER):
+  def _Next(self, lex_mode=lex_mode_e.OUTER):
     """Helper method."""
     self.next_lex_mode = lex_mode
 
@@ -148,7 +149,7 @@ class CommandParser(object):
     Returns True for success and False on error.  Error examples: bad command
     sub word, or unterminated quoted string, etc.
     """
-    if self.next_lex_mode != LexMode.NONE:
+    if self.next_lex_mode != lex_mode_e.NONE:
       w = self.w_parser.ReadWord(self.next_lex_mode)
       if w is None:
         error_stack = self.w_parser.Error()
@@ -165,7 +166,7 @@ class CommandParser(object):
 
       self.c_kind = word.CommandKind(self.cur_word)
       self.c_id = word.CommandId(self.cur_word)
-      self.next_lex_mode = LexMode.NONE
+      self.next_lex_mode = lex_mode_e.NONE
     #print('_Peek', self.cur_word)
     return True
 

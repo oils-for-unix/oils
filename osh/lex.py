@@ -27,27 +27,15 @@ Indexed array and Associative array literals:
   Op_LBracket Op_RBracketEqual
 """
 
+import re
+
 from core.id_kind import Id, Kind, ID_SPEC
 from core import util
 from core.lexer import C, R
 
-import re
+from osh import ast_ as ast
+lex_mode_e = ast.lex_mode_e
 
-# Thirteen lexer modes for osh.
-# Possible additional modes:
-# - extended glob?
-# - nested backticks: echo `echo \`echo foo\` bar`
-LexMode = util.Enum('LexMode', """
-NONE
-COMMENT
-OUTER
-DBRACKET
-SQ DQ DOLLAR_SQ
-ARITH
-EXTGLOB
-VS_1 VS_2 VS_ARG_UNQ VS_ARG_DQ
-BASH_REGEX BASH_REGEX_CHARS
-""".split())
 
 # In oil, I hope to have these lexer modes:
 # COMMAND
@@ -128,7 +116,7 @@ _LEFT_UNQUOTED = [
 LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 
 # Anything until the end of the line is a comment.
-LEXER_DEF[LexMode.COMMENT] = [
+LEXER_DEF[lex_mode_e.COMMENT] = [
   R(r'.*', Id.Ignored_Comment)  # does not match newline
 ]
 
@@ -242,14 +230,14 @@ def IsKeyword(name):
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
-LEXER_DEF[LexMode.OUTER] = [
+LEXER_DEF[lex_mode_e.OUTER] = [
   C('((', Id.Op_DLeftParen),  # not allowed within [[
 ] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
 # DBRACKET: can be like OUTER, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
 # - Id.Op_DLeftParen can't be nested inside.
-LEXER_DEF[LexMode.DBRACKET] = [
+LEXER_DEF[lex_mode_e.DBRACKET] = [
   C(']]', Id.Lit_DRightBracket),
   C('!', Id.KW_Bang),
 ] + ID_SPEC.LexerPairs(Kind.BoolUnary) + \
@@ -261,7 +249,7 @@ LEXER_DEF[LexMode.DBRACKET] = [
 # nested, so _EXTGLOB_BEGIN appears here.
 #
 # Example: echo @(<> <>|&&|'foo'|$bar)
-LEXER_DEF[LexMode.EXTGLOB] = \
+LEXER_DEF[lex_mode_e.EXTGLOB] = \
     _BACKSLASH + _LEFT_SUBS + _VARS + _EXTGLOB_BEGIN + [
   R(r'[^\\$`"\'|)@*+!?]+', Id.Lit_Chars),
   C('|', Id.Op_Pipe),
@@ -270,7 +258,7 @@ LEXER_DEF[LexMode.EXTGLOB] = \
   R('.', Id.Lit_Other),  # everything else is literal
 ]
 
-LEXER_DEF[LexMode.BASH_REGEX] = [
+LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   # Match these literals first, and then the rest of the OUTER state I guess.
   # That's how bash works.
   #
@@ -282,7 +270,7 @@ LEXER_DEF[LexMode.BASH_REGEX] = [
   C('|', Id.Lit_Chars),
 ] + _UNQUOTED
 
-LEXER_DEF[LexMode.DQ] = [
+LEXER_DEF[lex_mode_e.DQ] = [
   # Only 4 characters are backslash escaped inside "".
   # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
   R(r'\\[$`"\\]', Id.Lit_EscapedChar),
@@ -303,7 +291,7 @@ _VS_ARG_COMMON = _BACKSLASH + [
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[LexMode.VS_ARG_UNQ] = \
+LEXER_DEF[lex_mode_e.VS_ARG_UNQ] = \
   _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
@@ -312,7 +300,7 @@ LEXER_DEF[LexMode.VS_ARG_UNQ] = \
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[LexMode.VS_ARG_DQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
+LEXER_DEF[lex_mode_e.VS_ARG_DQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed
   C('"', Id.Left_DoubleQuote),
@@ -322,7 +310,7 @@ LEXER_DEF[LexMode.VS_ARG_DQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
 
 # NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ
 # state.
-LEXER_DEF[LexMode.SQ] = [
+LEXER_DEF[lex_mode_e.SQ] = [
   R(r"[^']+", Id.Lit_Chars),  # matches a line at most
   C("'", Id.Right_SingleQuote),
   C('\0', Id.Eof_Real),
@@ -330,14 +318,14 @@ LEXER_DEF[LexMode.SQ] = [
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!
-LEXER_DEF[LexMode.DOLLAR_SQ] = [
+LEXER_DEF[lex_mode_e.DOLLAR_SQ] = [
   R(r"[^'\\]+", Id.Lit_Chars),
   R(r"\\.", Id.Lit_EscapedChar),
   C("'", Id.Right_SingleQuote),
   C('\0', Id.Eof_Real),
 ]
 
-LEXER_DEF[LexMode.VS_1] = [
+LEXER_DEF[lex_mode_e.VS_1] = [
   R(_VAR_NAME_RE, Id.VSub_Name),
   #  ${11} is valid, compared to $11 which is $1 and then literal 1.
   R(r'[0-9]+', Id.VSub_Number),
@@ -358,7 +346,7 @@ LEXER_DEF[LexMode.VS_1] = [
   R(r'.', Id.Unknown_Tok),  # any char except newline
 ]
 
-LEXER_DEF[LexMode.VS_2] = \
+LEXER_DEF[lex_mode_e.VS_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
     ID_SPEC.LexerPairs(Kind.VOp2) + [
@@ -370,7 +358,7 @@ LEXER_DEF[LexMode.VS_2] = \
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
-LEXER_DEF[LexMode.ARITH] = \
+LEXER_DEF[lex_mode_e.ARITH] = \
     _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
   # newline is ignored space, unlike in OUTER
   R(r'[ \t\r\n]+', Id.Ignored_Space),

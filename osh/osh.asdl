@@ -232,6 +232,10 @@ module osh
   --
   -- APIs
   --
+
+  -- Fifteen lexer modes for osh.
+  -- Possible additional modes:
+  --   nested backticks: echo `echo \`echo foo\` bar`
   lex_mode =
     NONE
   | COMMENT

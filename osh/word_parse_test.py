@@ -18,10 +18,10 @@ from core.test_lib import TokenWordsEqual
 
 from osh import ast_ as ast
 from osh import parse_lib
-from osh.lex import LexMode
 from osh.word_parse import WordParser  # module under test
 
 arith_expr_e = ast.arith_expr_e
+lex_mode_e = ast.lex_mode_e
 
 
 def _InitWordParserWithArena(s):
@@ -41,7 +41,7 @@ def InitWordParser(s):
 def _assertReadWordWithArena(test, word_str):
   print('\n---', word_str)
   arena, w_parser = _InitWordParserWithArena(word_str)
-  w = w_parser.ReadWord(LexMode.OUTER)
+  w = w_parser.ReadWord(lex_mode_e.OUTER)
   if w:
     ast.PrettyPrint(w)
   else:
@@ -49,7 +49,7 @@ def _assertReadWordWithArena(test, word_str):
     test.fail("Couldn't parse %r: %s" % (word_str, err))
 
   # Next word must be \n
-  w2 = w_parser.ReadWord(LexMode.OUTER)
+  w2 = w_parser.ReadWord(lex_mode_e.OUTER)
   test.assertTrue(
       TokenWordsEqual(
         ast.TokenWord(ast.token(Id.Op_Newline, '\n')),
@@ -78,7 +78,7 @@ def _assertSpanForWord(test, code_str):
 def _assertReadWordFailure(test, word_str):
   print('\n---', word_str)
   w_parser = InitWordParser(word_str)
-  w = w_parser.ReadWord(LexMode.OUTER)
+  w = w_parser.ReadWord(lex_mode_e.OUTER)
   if w:
     ast.PrettyPrint(w)
     test.fail('Expected a parser error, got %r' % w)
@@ -109,7 +109,7 @@ class WordParserTest(unittest.TestCase):
   def testStaticEvalWord(self):
     expr = r'\EOF'  # Quoted here doc delimiter
     w_parser = InitWordParser(expr)
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     ok, s, quoted = word.StaticEval(w)
     self.assertEqual(True, ok)
     self.assertEqual('EOF', s)
@@ -340,7 +340,7 @@ class WordParserTest(unittest.TestCase):
       w_parser = InitWordParser(expr)
 
       while True:
-        w = w_parser.ReadWord(LexMode.OUTER)
+        w = w_parser.ReadWord(lex_mode_e.OUTER)
         if w is None:
           e = w_parser.Error()
           print('Error in word parser: %s' % e)
@@ -355,23 +355,23 @@ class WordParserTest(unittest.TestCase):
     # Test that we get Id.Op_Newline
     code = 'foo # comment\nbar #comment\n'
     w_parser = InitWordParser(code)
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
     self.assertEqual('foo', w.parts[0].token.val)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
     self.assertEqual(Id.Op_Newline, w.token.id)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
     self.assertEqual('bar', w.parts[0].token.val)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
     self.assertEqual(Id.Op_Newline, w.token.id)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
     self.assertEqual(Id.Eof_Real, w.token.id)
 
@@ -379,9 +379,9 @@ class WordParserTest(unittest.TestCase):
     # Test that we get Id.Op_Newline
     code = '(foo|bar)'
     w_parser = InitWordParser(code)
-    w_parser.next_lex_mode = LexMode.BASH_REGEX  # needed at beginning
+    w_parser.next_lex_mode = lex_mode_e.BASH_REGEX  # needed at beginning
 
-    w = w_parser.ReadWord(LexMode.BASH_REGEX)
+    w = w_parser.ReadWord(lex_mode_e.BASH_REGEX)
     assert w
     self.assertEqual('(', w.parts[0].token.val)
     self.assertEqual('foo', w.parts[1].token.val)
@@ -390,7 +390,7 @@ class WordParserTest(unittest.TestCase):
     self.assertEqual(')', w.parts[4].token.val)
     self.assertEqual(5, len(w.parts))
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
     self.assertEqual(Id.Op_Newline, w.token.id)
 
@@ -439,10 +439,10 @@ class WordParserTest(unittest.TestCase):
       print()
 
       w_parser = InitWordParser(expr)
-      w_parser._Next(LexMode.ARITH)  # Can we remove this requirement?
+      w_parser._Next(lex_mode_e.ARITH)  # Can we remove this requirement?
 
       while True:
-        w = w_parser.ReadWord(LexMode.ARITH)
+        w = w_parser.ReadWord(lex_mode_e.ARITH)
         if not w:
           err = w_parser.Error()
           print('ERROR', err)
@@ -461,31 +461,31 @@ ls foo
 ls bar
 """)
     print('--MULTI')
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]
     self.assertEqual(ast.CompoundWord(parts), w)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'foo'))]
     self.assertEqual(ast.CompoundWord(parts), w)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Op_Newline, '\n')
     self.assertEqual(ast.TokenWord(t), w)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]
     self.assertEqual(ast.CompoundWord(parts), w)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'bar'))]
     self.assertEqual(ast.CompoundWord(parts), w)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Op_Newline, '\n')
     self.assertEqual(ast.TokenWord(t), w)
 
-    w = w_parser.ReadWord(LexMode.OUTER)
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Eof_Real, '')
     self.assertEqual(ast.TokenWord(t), w)
 
