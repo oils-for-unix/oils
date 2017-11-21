@@ -52,6 +52,24 @@ def FindLongestMatch(re_list, s, pos):
   return end_index, tok_type, tok_val
 
 
+# TODO: LineLexer needs the matcher rather than lexer_def.
+
+class MatchTokenSlow(object):
+  """An abstract matcher that doesn't depend on OSH."""
+  def __init__(self, lexer_def):
+    self.lexer_def = lexer_def
+
+  def __call__(self, lex_mode, line, start_index):
+    """Returns (id, end_index)."""
+    return FindLongestMatch(self.lexer_def[lex_mode], line, start_index)
+
+
+def MatchTokenFast(lex_mode, line, start_index):
+  """Returns (id, end_index)."""
+  tok_type, end_index = lex.MatchToken(lex_mode.enum_id, line, start_index)
+  return Id(tok_type), end_index
+
+
 class LineLexer(object):
   def __init__(self, lexer_def, line, arena=None):
     # Compile all regexes

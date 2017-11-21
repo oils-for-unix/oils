@@ -9,10 +9,10 @@ setup(name = 'libc',
       description = 'Module for libc functions like fnmatch()',
       ext_modules = [module])
 
-module = Extension('lex',
-                    sources = ['native/lex.c'])
+module = Extension('fastlex',
+                    sources = ['native/fastlex.c'])
 
-setup(name = 'lex',
+setup(name = 'fastlex',
       version = '1.0',
       description = 'Module to speed up lexers',
       include_dirs = ['_build/gen'],

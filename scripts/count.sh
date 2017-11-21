@@ -44,6 +44,14 @@ all() {
   wc -l asdl/{asdl_,py_meta,gen_cpp,encode,format}.py | sort --numeric
   echo
 
+  echo 'CODE GENERATORS'
+  wc -l */*_gen.py | sort --numeric
+  echo
+
+  echo 'GENERATED CODE'
+  wc -l _devbuild/*.py _build/gen/* | sort --numeric
+  echo
+
   echo 'TOOLS'
   ls tools/*.py | filter-py | xargs wc -l | sort --numeric
   echo

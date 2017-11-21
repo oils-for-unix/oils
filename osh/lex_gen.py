@@ -65,11 +65,21 @@ def main(argv):
 
   print """
 
-inline void MatchToken(int lexer_mode, char* line, int line_len, int start_index,
+inline void MatchToken(int lex_mode, char* line, int line_len, int start_index,
                 int* id, int* end_index) {
-  *id = id__Lit_Chars;
-  //*id = id__Lit_Other;
-  *end_index = 3;
+  switch (lex_mode)  {
+  case lex_mode__OUTER:
+    *id = id__Lit_Chars;
+    //*id = id__Lit_Other;
+    *end_index = 3;
+    break;
+  case lex_mode__COMMENT:
+    *id = id__Lit_Other;
+    *end_index = 5;
+    break;
+  default:
+    assert(0);
+  }
 }
 """
   return

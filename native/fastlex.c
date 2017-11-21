@@ -25,7 +25,7 @@ void debug(const char* fmt, ...) {
 }
 
 static PyObject *
-lex_MatchToken(PyObject *self, PyObject *args) {
+fastlex_MatchToken(PyObject *self, PyObject *args) {
   int lex_mode;
   const char* line;
 
@@ -57,11 +57,11 @@ lex_MatchToken(PyObject *self, PyObject *args) {
 // FastTokenMatcher
 
 PyMethodDef methods[] = {
-  {"MatchToken", lex_MatchToken, METH_VARARGS,
+  {"MatchToken", fastlex_MatchToken, METH_VARARGS,
    "(lexer mode, line, start_index) -> (id, end_index)."},
   {NULL, NULL},
 };
 
-void initlex(void) {
-  Py_InitModule("lex", methods);
+void initfastlex(void) {
+  Py_InitModule("fastlex", methods);
 }

@@ -395,7 +395,7 @@ class CEnumVisitor(AsdlVisitor):
   def VisitSimpleSum(self, sum, name, depth):
     # Just use #define, since enums aren't namespaced.
     for i, variant in enumerate(sum.types):
-      self.Emit('#define %s__%s %d;' % (name, variant.name, i + 1), depth)
+      self.Emit('#define %s__%s %d' % (name, variant.name, i + 1), depth)
     self.Emit("", depth)
 
 
