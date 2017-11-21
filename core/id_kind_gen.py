@@ -82,7 +82,15 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  if action == 'cpp':
+  if action == 'c':
+    # Simple list of defines
+    from core.id_kind import ID_SPEC
+    ids = list(ID_SPEC.token_names.iteritems())
+    ids.sort(key=lambda pair: pair[0])  # Sort by ID
+    for i, name in ids:
+      print('#define id__%s %s' % (name, i))
+
+  elif action == 'cpp':
     # For blog post
     try:
       labels = argv[2]
