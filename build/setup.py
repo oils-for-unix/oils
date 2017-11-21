@@ -15,4 +15,5 @@ module = Extension('lex',
 setup(name = 'lex',
       version = '1.0',
       description = 'Module to speed up lexers',
+      include_dirs = ['_build/gen'],
       ext_modules = [module])

@@ -30,6 +30,13 @@ gen-help() {
   build/doc.sh oil-quick-ref
 }
 
+# TODO: should lex.c be part of the dev build?  It means you need re2c
+# installed?  I don't think it makes sense to have 3 builds, so yes I think we
+# can put it here for simplicity.
+# However one problem is that if the Python lexer definition is changed, then
+# you need to run re2c again!  I guess you should just provide a script to
+# download it.
+
 pylibc() {
   mkdir -p _devbuild/pylibc
   local arch=$(uname -m)

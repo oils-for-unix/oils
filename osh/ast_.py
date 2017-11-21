@@ -121,23 +121,22 @@ def PrettyPrint(node, f=sys.stdout):
   f.write('\n')
 
 
-def _ParseAndMakeTypes(f, root):
-  # TODO: A better syntax for this might be:
-  #
-  #     id = external
-  #
-  # in osh.asdl.  Then we can show an error if it's not provided.
+def LoadSchema(f):
   app_types = {'id': asdl.UserType(Id)}
 
-  module = asdl.parse(f)
+  asdl_module = asdl.parse(f)
+  # TODO: Need some metaprogramming here to add id and kind.
 
-  # Check for type errors
-  if not asdl.check(module, app_types):
+  # NOTE: This only checks for overlapping sum types, which will no longer be
+  # an error.
+  if not asdl.check(asdl_module, app_types):
     raise AssertionError('ASDL file is invalid')
-  py_meta.MakeTypes(module, root, app_types)
+
+  return asdl_module, app_types
 
 
 f = util.GetResourceLoader().open('osh/osh.asdl')
+asdl_module, app_types = LoadSchema(f)
 root = sys.modules[__name__]
-_ParseAndMakeTypes(f, root)
+py_meta.MakeTypes(asdl_module, root, app_types)
 f.close()

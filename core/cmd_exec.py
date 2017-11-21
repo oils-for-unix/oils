@@ -49,11 +49,11 @@ EBuiltin = builtin.EBuiltin
 command_e = ast.command_e
 redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
-assign_op = ast.assign_op
+assign_op_e = ast.assign_op_e
 
 value_e = runtime.value_e
-scope = runtime.scope
-var_flags = runtime.var_flags
+scope_e = runtime.scope_e
+var_flags_e = runtime.var_flags_e
 
 log = util.log
 e_die = util.e_die
@@ -197,6 +197,11 @@ class Executor(object):
         line_reader = reader.FileLineReader(f, self.arena)
         _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
         return self._EvalHelper(c_parser, path)
+    except _ControlFlow as e:
+      if e.IsReturn():
+        return e.ReturnValue()
+      else:
+        raise
     except IOError as e:
       # TODO: Should point to the source statement that failed.
       util.error('source %r failed: %s', path, os.strerror(e.errno))
@@ -357,7 +362,7 @@ class Executor(object):
   def _EvalRedirect(self, n):
     fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == -1 else n.fd
     if n.tag == redir_e.Redir:
-      redir_type = REDIR_TYPE[n.op_id]
+      redir_type = REDIR_TYPE[n.op_id]  # could be static in the LST?
 
       if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
@@ -454,7 +459,7 @@ class Executor(object):
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(ast.LhsName(name), val, (), scope.LocalOnly)
+      self.mem.SetVar(ast.LhsName(name), val, (), scope_e.LocalOnly)
 
       out_env[name] = val.s
     self.mem.PopTemp()
@@ -675,27 +680,27 @@ class Executor(object):
       check_errexit = True
       pairs = []
       if node.keyword == Id.Assign_Local:
-        lookup_mode = scope.LocalOnly
+        lookup_mode = scope_e.LocalOnly
         flags = ()
       # typeset and declare are synonyms?  I see typeset -a a=() the most.
       elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
         # declare is like local, except it can also be used outside functions?
-        lookup_mode = scope.LocalOnly
+        lookup_mode = scope_e.LocalOnly
         # TODO: Respect flags.  -r and -x matter, but -a and -A might be
         # implicit in the RHS?
         flags = ()
       elif node.keyword == Id.Assign_Readonly:
-        lookup_mode = scope.Dynamic
-        flags = (var_flags.ReadOnly,)
+        lookup_mode = scope_e.Dynamic
+        flags = (var_flags_e.ReadOnly,)
       elif node.keyword == Id.Assign_None:  # mutate existing local or global
-        lookup_mode = scope.Dynamic
+        lookup_mode = scope_e.Dynamic
         flags = ()
       else:
         # TODO: typeset, declare, etc.  Those are dynamic though.
         raise NotImplementedError(node.keyword)
 
       for pair in node.pairs:
-        if pair.op == assign_op.PlusEqual:
+        if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
           val = self.ev.EvalWordToAny(pair.rhs)
           old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,

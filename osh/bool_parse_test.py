@@ -16,15 +16,15 @@ from core.id_kind import Id
 from osh import ast_ as ast
 from osh import parse_lib
 from osh import bool_parse  # module under test
-from osh.lex import LexMode
 
 bool_expr_e = ast.bool_expr_e
+lex_mode_e = ast.lex_mode_e
 
 
 def _ReadWords(w_parser):
   words = []
   while True:
-    w = w_parser.ReadWord(LexMode.DBRACKET)
+    w = w_parser.ReadWord(lex_mode_e.DBRACKET)
     if w.Type() == Id.Eof_Real:
       break
     words.append(w)
@@ -37,7 +37,7 @@ def _ReadWords(w_parser):
 def _MakeParser(code_str):
   # NOTE: We need the extra ]] token
   w_parser, _ = parse_lib.MakeParserForCompletion(code_str + ' ]]')
-  w_parser._Next(LexMode.DBRACKET)  # for tests only
+  w_parser._Next(lex_mode_e.DBRACKET)  # for tests only
   p = bool_parse.BoolParser(w_parser)
   if not p._Next():
     raise AssertionError

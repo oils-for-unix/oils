@@ -40,13 +40,12 @@ from core import word
 from core.id_kind import Id, Kind, LookupKind, IdName
 from core import util
 
-from osh.lex import LexMode
-
 try:
   import libc  # for regex_parse
 except ImportError:
   from benchmarks import fake_libc as libc
 
+lex_mode_e = ast.lex_mode_e
 log = util.log
 
 
@@ -75,11 +74,11 @@ class BoolParser(object):
     err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
 
-  def _NextOne(self, lex_mode=LexMode.DBRACKET):
+  def _NextOne(self, lex_mode=lex_mode_e.DBRACKET):
     #print('_Next', self.cur_word)
     n = len(self.words)
     if n == 2:
-      assert lex_mode == LexMode.DBRACKET
+      assert lex_mode == lex_mode_e.DBRACKET
       self.words[0] = self.words[1]
       self.cur_word = self.words[0]
       del self.words[1]
@@ -100,7 +99,7 @@ class BoolParser(object):
     #print('---- word', self.cur_word, 'op_id', self.op_id, self.b_kind, lex_mode)
     return True
 
-  def _Next(self, lex_mode=LexMode.DBRACKET):
+  def _Next(self, lex_mode=lex_mode_e.DBRACKET):
     """Advance to the next token, skipping newlines.
 
     We don't handle newlines in the lexer because we want the newline after ]]
@@ -120,7 +119,7 @@ class BoolParser(object):
     if n != 1:
       raise AssertionError(self.words)
 
-    w = self.w_parser.ReadWord(LexMode.DBRACKET)
+    w = self.w_parser.ReadWord(lex_mode_e.DBRACKET)
     self.words.append(w)  # Save it for _Next()
     return w
 
@@ -229,11 +228,11 @@ class BoolParser(object):
         if not self._Next(): return None
         op = self.op_id
 
-        # TODO: Need to change to LexMode.BASH_REGEX.
+        # TODO: Need to change to lex_mode_e.BASH_REGEX.
         # _Next(lex_mode) then?
         is_regex = t2_op_id == Id.BoolBinary_EqualTilde
         if is_regex:
-          if not self._Next(lex_mode=LexMode.BASH_REGEX): return None
+          if not self._Next(lex_mode=lex_mode_e.BASH_REGEX): return None
         else:
           if not self._Next(): return None
 

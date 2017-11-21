@@ -27,7 +27,7 @@ class ExprSyntaxError(Exception):
 def ParseAndEval(code_str):
   w_parser, _ = parse_lib.MakeParserForCompletion(code_str)
   #spec = arith_parse.MakeShellSpec()
-  #a_parser = tdop.TdopParser(spec, w_parser)  # Calls ReadWord(LexMode.ARITH)
+  #a_parser = tdop.TdopParser(spec, w_parser)  # Calls ReadWord(lex_mode_e.ARITH)
   #anode = a_parser.Parse()
   anode = w_parser._ReadArithExpr()  # need the right lex state?
 

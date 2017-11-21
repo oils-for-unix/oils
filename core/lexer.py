@@ -95,9 +95,9 @@ class LineLexer(object):
     Does NOT advance self.line_pos.
 
     Called with at least the following modes:
-      LexMode.ARITH -- for ${a[@]} vs ${a[1+2]}
-      LexMode.VS_1
-      LexMode.OUTER
+      lex_mode_e.ARITH -- for ${a[@]} vs ${a[1+2]}
+      lex_mode_e.VS_1
+      lex_mode_e.OUTER
     """
     pos = self.line_pos
     #print('Look ahead from pos %d, line %r' % (pos,self.line))

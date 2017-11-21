@@ -131,10 +131,13 @@ class _EnumValue(object):
   def __repr__(self):
     return '<%s.%s %s>' % (self.namespace, self.name, self.value)
 
-  def __hash__(self):
-    # Needed for the LEXER_DEF dictionary
-    return hash(self.name)
+  # I think this is not needed?
+  #def __hash__(self):
+  #  # Needed for the LEXER_DEF dictionary
+  #  return hash(self.name)
 
+  # Why is this needed?  For ASDL serialization?  But we're not using it like
+  # that.
   def __eq__(self, other):
     if isinstance(other, int):
       return self.value == other

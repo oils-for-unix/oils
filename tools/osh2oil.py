@@ -356,7 +356,7 @@ class OilPrinter:
     defined_locally = False  # is it a local variable in this function?
                              # can't tell if global
     # We can change it from = to := or ::= (in pedantic mode)
-    new_assign_op = None
+    new_assign_op_e = None
 
     if node.keyword == Id.Assign_Local:
       # Assume that 'local' it's a declaration.  In osh, it's an error if
@@ -396,18 +396,18 @@ class OilPrinter:
       # Would be nice to assume that it's a local though.
       if at_top_level:
         self.f.write('global ')  # can't be redefined
-        new_assign_op = '::='
+        new_assign_op_e = '::='
         #self.f.write('global TODO := TODO')  # mutate global or define it
       elif defined_locally:
-        new_assign_op = ':='  # assume mutation of local
+        new_assign_op_e = ':='  # assume mutation of local
         #self.f.write('[local mutated]')
       else:
         # we're in a function, but it's not defined locally.
         self.f.write('global ')  # assume mutation of local
         if self.mode == PEDANTIC:  # assume globals defined
-          new_assign_op = '::='
+          new_assign_op_e = '::='
         else:
-          new_assign_op = ':='
+          new_assign_op_e = ':='
 
     elif node.keyword == Id.Assign_Readonly:
       # Explicit const.  Assume it can't be redefined.
@@ -452,7 +452,7 @@ class OilPrinter:
 
       # Replace name.  I guess it's Lit_Chars.
       self.f.write(pair.lhs.name)
-      op = new_assign_op if new_assign_op else '='
+      op = new_assign_op_e if new_assign_op_e else '='
       self.f.write(' %s ' % op)
 
       # foo=bar -> foo = 'bar'

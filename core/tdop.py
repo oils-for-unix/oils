@@ -8,12 +8,12 @@ from core import word
 from core import util
 
 from osh import ast_ as ast
-from osh.lex import LexMode
 
 p_die = util.p_die
 
 arith_expr_e = ast.arith_expr_e
 word_e = ast.word_e
+lex_mode_e = ast.lex_mode_e
 
 
 def Assert(s, expected, tree):
@@ -248,7 +248,7 @@ class TdopParser(object):
 
   def Next(self):
     """Preferred over Eat()? """
-    self.cur_word = self.w_parser.ReadWord(LexMode.ARITH)
+    self.cur_word = self.w_parser.ReadWord(lex_mode_e.ARITH)
     if self.cur_word is None:
       error_stack = self.w_parser.Error()
       self.error_stack.extend(error_stack)

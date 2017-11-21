@@ -22,8 +22,8 @@ from osh import ast_ as ast
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 lvalue_e = runtime.lvalue_e
-scope = runtime.scope
-var_flags = runtime.var_flags
+scope_e = runtime.scope_e
+var_flags_e = runtime.var_flags_e
 
 log = util.log
 e_die = util.e_die
@@ -254,7 +254,7 @@ class Mem(object):
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
       self.SetVar(ast.LhsName(n), runtime.Str(v),
-                 (var_flags.Exported,), scope.GlobalOnly)
+                 (var_flags_e.Exported,), scope_e.GlobalOnly)
 
   #
   # Stack
@@ -347,7 +347,7 @@ class Mem(object):
         None if it's not found.
       namespace: The namespace it should be set to or deleted from.
     """
-    if lookup_mode == scope.Dynamic:
+    if lookup_mode == scope_e.Dynamic:
       found = False
       for i in range(len(self.var_stack) - 1, -1, -1):
         namespace = self.var_stack[i]
@@ -356,11 +356,11 @@ class Mem(object):
           return cell, namespace
       return None, self.var_stack[0]
 
-    elif lookup_mode == scope.LocalOnly:
+    elif lookup_mode == scope_e.LocalOnly:
       namespace = self.var_stack[-1]
       return namespace.get(name), namespace
 
-    elif lookup_mode == scope.GlobalOnly:
+    elif lookup_mode == scope_e.GlobalOnly:
       namespace = self.var_stack[0]
       return namespace.get(name), namespace
 
@@ -404,16 +404,16 @@ class Mem(object):
             # TODO: error context
             e_die("Can't assign to readonly value %r", lval.name)
           cell.val = value
-        if var_flags.Exported in new_flags:
+        if var_flags_e.Exported in new_flags:
           cell.exported = True
-        if var_flags.ReadOnly in new_flags:
+        if var_flags_e.ReadOnly in new_flags:
           cell.readonly = True
       else:
         if value is None:
           value = runtime.Undef()  # export foo, readonly foo
         cell = runtime.cell(value,
-                            var_flags.Exported in new_flags ,
-                            var_flags.ReadOnly in new_flags )
+                            var_flags_e.Exported in new_flags ,
+                            var_flags_e.ReadOnly in new_flags )
         namespace[lval.name] = cell
 
       if (cell.val is not None and cell.val.tag == value_e.StrArray and
@@ -476,14 +476,14 @@ class Mem(object):
         new_value = runtime.StrArray(items)
         # arrays can't be exported
         cell = runtime.cell(new_value, False,
-                            var_flags.ReadOnly in new_flags)
+                            var_flags_e.ReadOnly in new_flags)
         namespace[lval.name] = cell
 
     else:
       raise AssertionError
 
   # NOTE: Have a default for convenience
-  def GetVar(self, name, lookup_mode=scope.Dynamic):
+  def GetVar(self, name, lookup_mode=scope_e.Dynamic):
     assert isinstance(name, str), name
 
     # Do lookup of system globals before looking at user variables.  Note: we
@@ -526,7 +526,7 @@ class Mem(object):
   def ClearFlag(self, name, flag, lookup_mode):
     cell, namespace = self._FindCellAndNamespace(name, lookup_mode)
     if cell:
-      if flag == var_flags.Exported:
+      if flag == var_flags_e.Exported:
         cell.exported = False
       else:
         raise AssertionError
@@ -555,22 +555,22 @@ def SetLocalString(mem, name, s):
   3) read builtin
   """
   assert isinstance(s, str)
-  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope.LocalOnly)
+  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope_e.LocalOnly)
 
 
 def SetGlobalString(mem, name, s):
   """Helper for completion, $PWD, etc."""
   assert isinstance(s, str)
   val = runtime.Str(s)
-  mem.SetVar(ast.LhsName(name), val, (), scope.GlobalOnly)
+  mem.SetVar(ast.LhsName(name), val, (), scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(ast.LhsName(name), runtime.StrArray(a), (), scope.GlobalOnly)
+  mem.SetVar(ast.LhsName(name), runtime.StrArray(a), (), scope_e.GlobalOnly)
 
 
 def GetGlobal(mem, name):
   assert isinstance(name, str), name
-  return mem.GetVar(name, scope.GlobalOnly)
+  return mem.GetVar(name, scope_e.GlobalOnly)

@@ -163,6 +163,16 @@ class AsdlVisitor:
     else:
       self.VisitCompoundSum(sum, name, depth)
 
+  # Optionally overridden.
+  def VisitProduct(self, value, name, depth):
+    pass
+  def VisitSimpleSum(self, value, name, depth):
+    pass
+  def VisitCompoundSum(self, value, name, depth):
+    pass
+  def EmitFooter(self):
+    pass
+
 
 class ForwardDeclareVisitor(AsdlVisitor):
   """Print forward declarations.
@@ -193,7 +203,7 @@ class ClassDefVisitor(AsdlVisitor):
     for line in self.footer:
       self.f.write(line)
 
-  def EmitEnum(self, sum, name, depth):
+  def _EmitEnum(self, sum, name, depth):
     enum = []
     for i in range(len(sum.types)):
       type = sum.types[i]
@@ -205,14 +215,14 @@ class ClassDefVisitor(AsdlVisitor):
     self.Emit("", depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    self.EmitEnum(sum, name, depth)
+    self._EmitEnum(sum, name, depth)
 
   def VisitCompoundSum(self, sum, name, depth):
     # This is a sign that Python needs string interpolation!!!
     def Emit(s, depth=depth):
       self.Emit(s % sys._getframe(1).f_locals, depth)
 
-    self.EmitEnum(sum, name, depth)
+    self._EmitEnum(sum, name, depth)
 
     Emit("class %(name)s_t : public Obj {")
     Emit(" public:")
@@ -379,6 +389,16 @@ class ClassDefVisitor(AsdlVisitor):
       self.Emit("}", depth)
 
 
+# Used by osh/ast_gen.py
+class CEnumVisitor(AsdlVisitor):
+
+  def VisitSimpleSum(self, sum, name, depth):
+    # Just use #define, since enums aren't namespaced.
+    for i, variant in enumerate(sum.types):
+      self.Emit('#define %s__%s %d;' % (name, variant.name, i + 1), depth)
+    self.Emit("", depth)
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -389,7 +409,8 @@ def main(argv):
   # debugging.  Might need to detect cycles though.
   if action == 'cpp':
     schema_path = argv[2]
-    module = asdl.parse(schema_path)
+    with open(schema_path) as input_f:
+      module = asdl.parse(input_f)
 
     f = sys.stdout
 
