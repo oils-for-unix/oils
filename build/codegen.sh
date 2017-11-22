@@ -67,10 +67,10 @@ all() {
   osh-lex-gen-native
 
   # Why do we need this?
-  rm -f _devbuild/pylibc/x86_64/fastlex.so
+  rm -f _devbuild/py-ext/x86_64/fastlex.so
 
   # Note: This also does pylibc, which we don't want.
-  build/dev.sh all
+  build/dev.sh fastlex
 }
 
 # Size profiler for binaries.  TODO: Fold this into benchmarks/

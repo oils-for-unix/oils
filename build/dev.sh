@@ -37,19 +37,28 @@ gen-help() {
 # you need to run re2c again!  I guess you should just provide a script to
 # download it.
 
-pylibc() {
-  mkdir -p _devbuild/pylibc
+py-ext() {
+  local name=$1
+  local setup_script=$2
+
+  mkdir -p _devbuild/py-ext
   local arch=$(uname -m)
-  build/setup.py build --build-lib _devbuild/pylibc/$arch
+  $setup_script build --build-lib _devbuild/py-ext/$arch
 
   shopt -s failglob
-  local libc_so=$(echo _devbuild/pylibc/$arch/libc.so)
-  ln -s -f -v $libc_so libc.so
+  local so=$(echo _devbuild/py-ext/$arch/$name.so)
+  ln -s -f -v $so $name.so
 
-  local fastlex_so=$(echo _devbuild/pylibc/$arch/fastlex.so)
-  ln -s -f -v $fastlex_so fastlex.so
+  file $name.so
+}
 
-  file libc.so fastlex.so
+pylibc() {
+  py-ext libc build/setup.py
+}
+
+fastlex() {
+  py-ext fastlex build/setup_fastlex.py
+  PYTHONPATH=. native/fastlex_test.py
 }
 
 # Also done by unit.sh.
@@ -57,12 +66,11 @@ test-pylibc() {
   export PYTHONPATH=.
   pylibc
   native/libc_test.py
-  native/fastlex_test.py
 }
 
-clean-pylibc() {
-  rm -f --verbose libc.so
-  rm -r -f --verbose _devbuild/pylibc
+clean() {
+  rm -f --verbose libc.so fastlex.so
+  rm -r -f --verbose _devbuild/py-ext
 }
 
 all() {
