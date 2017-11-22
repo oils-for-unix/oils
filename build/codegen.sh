@@ -60,14 +60,14 @@ all() {
   lex-gen-native
 
   # Why do we need this?
-  rm _devbuild/pylibc/x86_64/lex.so
+  rm -f _devbuild/pylibc/x86_64/fastlex.so
 
   # Note: This also does pylibc, which we don't want.
   build/dev.sh all
 }
 
 symbols() {
-  nm _devbuild/pylibc/x86_64/lex.so
+  nm _devbuild/pylibc/x86_64/fastlex.so
 }
 
 # Then the next step is build/dev.sh pylibc?

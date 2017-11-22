@@ -63,13 +63,64 @@ def main(argv):
   # This becomes osh-lex.re2c.c.  It is compiled to osh-lex.c and then
   # included.
 
-  print """
+  print r"""
+/* Common stuff */
 
-inline void MatchToken(int lexer_mode, char* line, int line_len, int start_index,
-                int* id, int* end_index) {
-  *id = id__Lit_Chars;
-  //*id = id__Lit_Other;
-  *end_index = 3;
+/*!re2c
+  re2c:define:YYCTYPE = "unsigned char";
+  re2c:yyfill:enable = 0;
+  re2c:define:YYCURSOR = p;
+  re2c:define:YYLIMIT = q;
+*/
+
+inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
+                       int start_pos, int* id, int* end_pos) {
+
+  unsigned char* p = line + start_pos;  /* modified by re2c */
+  unsigned char* q = line + line_len;   /* yylimit */
+
+  // bounds checking
+  assert(p < q);
+  //printf("p: %p q: %p\n", p, q);
+
+  switch (lex_mode)  {
+
+  case lex_mode__OUTER:
+    for (;;) {
+      /*!re2c
+      literal_chunk = [a-zA-Z0-9_/.-]+;
+      var_like    = [a-zA-Z_][a-zA-Z0-9_]* "=";  // might be NAME=val
+      comment     = [ \t\r]* "#" [^\000\r\n]*;
+      space       = [ \t\r]+;
+      nul = "\000";
+
+      literal_chunk { *id = id__Lit_Chars; break; }
+      var_like      { *id = id__Lit_VarLike; break; }
+
+      [ \t\r]* "\n" { *id = id__Op_Newline; break; }
+      space         { *id = id__WS_Space; break; }
+
+      nul           { *id = id__Eof_Real; break; }
+
+      // anything else
+      *             { *id = id__Lit_Other; break; }
+
+      */
+    }
+
+    //*id = id__Lit_Other;
+    *end_pos = p - line;  /* relative */
+    break;
+
+  case lex_mode__COMMENT:
+    *id = id__Lit_Other;
+    *end_pos = 6;
+    break;
+
+  default:
+    assert(0);
+
+  }
 }
 """
   return

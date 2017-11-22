@@ -36,33 +36,14 @@ def CompileAll(pat_list):
   return result
 
 
-def FindLongestMatch(re_list, s, pos):
-  """Finds the FIRST match.
-
-  NOTE: max() appears to find the FIRST max, which we rely on.
-  """
-  matches = []
-  for regex, tok_type in re_list:
-    m = regex.match(s, pos)  # left-anchored
-    if m:
-      matches.append((m.end(0), tok_type, m.group(0)))
-  if not matches:
-    raise AssertionError('no match at position %d: %r' % (pos, s))
-  end_index, tok_type, tok_val = max(matches, key=lambda m: m[0])
-  return end_index, tok_type, tok_val
-
-
 class LineLexer(object):
-  def __init__(self, lexer_def, line, arena=None):
+  def __init__(self, match_func, line, arena=None):
     # Compile all regexes
-    self.lexer_def = {}
+    self.match_func = match_func
     self.arena = arena
 
     self.arena_skip = False  # For MaybeUnreadOne
     self.last_span_id = -1  # For MaybeUnreadOne
-
-    for state, pat_list in lexer_def.items():
-      self.lexer_def[state] = CompileAll(pat_list)
 
     self.Reset(line, -1)  # Invalid arena index to start
 
@@ -110,14 +91,13 @@ class LineLexer(object):
         t = ast.token(Id.Unknown_Tok, '', -1)  # no span ID
         return t
 
-      re_list = self.lexer_def[lex_mode]
-      end_index, tok_type, tok_val = FindLongestMatch(
-          re_list, self.line, pos)
+      tok_type, end_pos = self.match_func(lex_mode, self.line, pos)
+      tok_val = self.line[pos:end_pos]
       # NOTE: Instead of hard-coding this token, we could pass it in.  This
       # one only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
       if tok_type != Id.WS_Space:
         break
-      pos = end_index
+      pos = end_pos
 
     return ast.token(tok_type, tok_val)  # no location
 
@@ -128,10 +108,8 @@ class LineLexer(object):
     if self.AtEnd():
       raise AssertionError('EOF')
 
-    re_list = self.lexer_def[lex_mode]
-
-    end_index, tok_type, tok_val = FindLongestMatch(
-        re_list, self.line, self.line_pos)
+    tok_type, end_pos = self.match_func(lex_mode, self.line, self.line_pos)
+    tok_val = self.line[self.line_pos:end_pos]
 
     # NOTE: tok_val is redundant, but even in osh.asdl we have some separation
     # between data needed for formatting and data needed for execution.  Could
@@ -160,7 +138,7 @@ class LineLexer(object):
 
     t = ast.token(tok_type, tok_val, span_id)
 
-    self.line_pos = end_index
+    self.line_pos = end_pos
     return t
 
 

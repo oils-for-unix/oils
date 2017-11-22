@@ -30,7 +30,7 @@ gen-help() {
   build/doc.sh oil-quick-ref
 }
 
-# TODO: should lex.c be part of the dev build?  It means you need re2c
+# TODO: should fastlex.c be part of the dev build?  It means you need re2c
 # installed?  I don't think it makes sense to have 3 builds, so yes I think we
 # can put it here for simplicity.
 # However one problem is that if the Python lexer definition is changed, then
@@ -46,10 +46,10 @@ pylibc() {
   local libc_so=$(echo _devbuild/pylibc/$arch/libc.so)
   ln -s -f -v $libc_so libc.so
 
-  local lex_so=$(echo _devbuild/pylibc/$arch/lex.so)
-  ln -s -f -v $lex_so lex.so
+  local fastlex_so=$(echo _devbuild/pylibc/$arch/fastlex.so)
+  ln -s -f -v $fastlex_so fastlex.so
 
-  file libc.so lex.so
+  file libc.so fastlex.so
 }
 
 # Also done by unit.sh.
@@ -57,7 +57,7 @@ test-pylibc() {
   export PYTHONPATH=.
   pylibc
   native/libc_test.py
-  native/lex_test.py
+  native/fastlex_test.py
 }
 
 clean-pylibc() {
