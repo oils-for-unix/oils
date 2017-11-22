@@ -49,7 +49,6 @@ def MatchToken_Fast(lex_mode, line, start_pos):
 
 def _MakeMatcher():
   # NOTE: Could have an environment variable to control this for speed?
-
   return MatchToken_Slow(lex.LEXER_DEF)
 
   if fastlex:
