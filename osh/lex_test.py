@@ -7,14 +7,13 @@ import unittest
 
 from core import alloc
 from core.id_kind import Id, Kind, LookupKind
-from core.lexer import CompileAll, Lexer, LineLexer, FindLongestMatch
+from core.lexer import CompileAll, Lexer, LineLexer
 from core import test_lib
 from core.test_lib import TokensEqual
 
 from osh import parse_lib
 from osh import ast_ as ast
 from osh.lex import LEXER_DEF
-from osh import ast_ as ast
 
 lex_mode_e = ast.lex_mode_e
 
@@ -175,7 +174,7 @@ class LineLexerTest(unittest.TestCase):
 
   def testReadOuter(self):
     # Lines always end with '\n'
-    l = LineLexer(LEXER_DEF, '')
+    l = LineLexer(parse_lib._MakeMatcher(), '')
     try:
       l.Read(lex_mode_e.OUTER)
     except AssertionError as e:
@@ -183,41 +182,41 @@ class LineLexerTest(unittest.TestCase):
     else:
       raise AssertionError('Expected error')
 
-    l = LineLexer(LEXER_DEF, '\n')
+    l = LineLexer(parse_lib._MakeMatcher(), '\n')
     self.assertTokensEqual(
         ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.OUTER))
 
   def testRead_VS_ARG_UNQ(self):
-    l = LineLexer(LEXER_DEF, "'hi'")
+    l = LineLexer(parse_lib._MakeMatcher(), "'hi'")
     t = l.Read(lex_mode_e.VS_ARG_UNQ)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
-    l = LineLexer(LEXER_DEF, '')
+    l = LineLexer(parse_lib._MakeMatcher(), '')
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(LEXER_DEF, 'foo')
+    l = LineLexer(parse_lib._MakeMatcher(), 'foo')
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(LEXER_DEF, 'foo  bar')
+    l = LineLexer(parse_lib._MakeMatcher(), 'foo  bar')
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertEqual(
         ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.OUTER))
 
     # No lookahead; using the cursor!
-    l = LineLexer(LEXER_DEF, 'func(')
+    l = LineLexer(parse_lib._MakeMatcher(), 'func(')
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(LEXER_DEF, 'func  (')
+    l = LineLexer(parse_lib._MakeMatcher(), 'func  (')
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
@@ -226,20 +225,6 @@ class LineLexerTest(unittest.TestCase):
 
 OUTER_RE = CompileAll(LEXER_DEF[lex_mode_e.OUTER])
 DOUBLE_QUOTED_RE = CompileAll(LEXER_DEF[lex_mode_e.DQ])
-
-
-class FunctionTest(unittest.TestCase):
-
-  def testFindLongestMatch(self):
-    e, tok_type, tok_val = FindLongestMatch(OUTER_RE, '  foo', 2)
-    self.assertEqual(e, 5)
-    self.assertEqual(tok_type, Id.Lit_Chars)
-    self.assertEqual(tok_val, 'foo')
-
-    e, tok_type, tok_val = FindLongestMatch(OUTER_RE, ' "foo"', 1)
-    self.assertEqual(e, 2)
-    self.assertEqual(tok_type, Id.Left_DoubleQuote)
-    self.assertEqual(tok_val, '"')
 
 
 class RegexTest(unittest.TestCase):
