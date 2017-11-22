@@ -17,7 +17,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from core.id_kind import BOOL_OPS, OperandType, Id, IdName
+from core.id_kind import BOOL_OPS, OperandType, Id
 from core import util
 from core import runtime
 
@@ -518,7 +518,6 @@ class BoolEvaluator(_ExprEvaluator):
 
       raise NotImplementedError(arg_type)
 
-    #if node.id == Id.Node_BinaryExpr:
     if node.tag == bool_expr_e.BoolBinary:
       op_id = node.op_id
 
@@ -602,5 +601,4 @@ class BoolEvaluator(_ExprEvaluator):
 
         raise NotImplementedError(op_id)
 
-    # We could have govered all node IDs
-    raise AssertionError(IdName(node.id))
+    raise AssertionError(node.tag)

@@ -3,7 +3,7 @@
 tdop.py - Library for expression parsing.
 """
 
-from core.id_kind import Id, IdName
+from core.id_kind import Id
 from core import word
 from core import util
 
@@ -241,9 +241,8 @@ class TdopParser(object):
   def Eat(self, token_type):
     """ Eat()? """
     if not self.AtToken(token_type):
-      t = IdName(token_type)
-      p_die('Parser expected %s, got %s', t, self.cur_word, word=self.cur_word)
-
+      p_die('Parser expected %s, got %s', token_type, self.cur_word,
+            word=self.cur_word)
     self.Next()
 
   def Next(self):

@@ -16,7 +16,7 @@
 #include <Python.h>
 
 // Log messages to stderr.
-void debug(const char* fmt, ...) {
+static void debug(const char* fmt, ...) {
 #ifdef LIBC_VERBOSE
   va_list args;
   va_start(args, fmt);
@@ -261,7 +261,7 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 }
 
-PyMethodDef methods[] = {
+static PyMethodDef methods[] = {
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
   // Python's glob doesn't have char classes

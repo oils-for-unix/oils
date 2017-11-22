@@ -12,7 +12,7 @@ lexer.py - Library for lexing.
 import re
 
 from core import util
-from core.id_kind import Id, IdName
+from core.id_kind import Id
 
 from osh import ast_ as ast
 
@@ -196,9 +196,6 @@ class Lexer(object):
       - precedence in [[,   e.g.  [[ (1 == 2) && (2 == 3) ]]
       - arrays: a=(1 2 3), a+=(4 5)
     """
-    old_s = IdName(old_id)
-    new_s = IdName(new_id)
-    #print('* Lexer.PushHint %s => %s' % (old_s, new_s))
     self.translation_stack.append((old_id, new_id))
 
   def _Read(self, lex_mode):
@@ -218,7 +215,6 @@ class Lexer(object):
     if self.translation_stack:
       old_id, new_id = self.translation_stack[-1]  # top
       if t.id == old_id:
-        new_s = IdName(new_id)
         #print('==> TRANSLATING %s ==> %s' % (t, new_s))
         self.translation_stack.pop()
         #print(self.translation_stack)

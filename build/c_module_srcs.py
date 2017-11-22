@@ -25,9 +25,9 @@ def main(argv):
 
       # Hard-coded special cases for now.
 
-      if mod_name == 'libc':  # Our own module
+      if mod_name in ('libc', 'fastlex'):  # Our own modules
         # Relative to Python-2.7.13 dir
-        print '../native/libc.c'
+        print '../native/%s.c' % mod_name
 
       elif mod_name == 'math':
         print 'Modules/mathmodule.c'

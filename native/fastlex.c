@@ -14,15 +14,15 @@
 
 // TODO: Should this be shared among all extensions?
 // Log messages to stderr.
-void debug(const char* fmt, ...) {
-#if 1
+#if 0
+static void debug(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
   va_end(args);
   fprintf(stderr, "\n");
-#endif
 }
+#endif
 
 static PyObject *
 fastlex_MatchToken(PyObject *self, PyObject *args) {
@@ -60,7 +60,7 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
 // SlowTokenMatcher
 // FastTokenMatcher
 
-PyMethodDef methods[] = {
+static PyMethodDef methods[] = {
   {"MatchToken", fastlex_MatchToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
   {NULL, NULL},
