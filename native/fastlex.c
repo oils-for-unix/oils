@@ -27,7 +27,7 @@ void debug(const char* fmt, ...) {
 static PyObject *
 fastlex_MatchToken(PyObject *self, PyObject *args) {
   int lex_mode;
-  const char* line;
+  unsigned char* line;
 
   int line_len;
   // Doesn't work!  signed/unsigned confused?
@@ -41,9 +41,11 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
   debug("lex_mode %d, line_len %d, start_pos %d\n",
         lex_mode, line_len, start_pos);
 
+  /*
   for (int i = 0; i < line_len; ++i) {
     printf("%d c: %c\n", i, line[i]);
   }
+  */
 
   int id;
   int end_pos;
