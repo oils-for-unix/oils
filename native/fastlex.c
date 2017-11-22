@@ -38,8 +38,10 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
                         &lex_mode, &line, &line_len, &start_pos)) {
     return NULL;
   }
+  /*
   debug("lex_mode %d, line_len %d, start_pos %d\n",
         lex_mode, line_len, start_pos);
+  */
 
   /*
   for (int i = 0; i < line_len; ++i) {

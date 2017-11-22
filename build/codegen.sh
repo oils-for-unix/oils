@@ -42,22 +42,29 @@ id-gen() {
   PYTHONPATH=. core/id_kind_gen.py c | tee _build/gen/id.h
 }
 
-# _gen/osh_lex.re2c.c
-# This includes osh_ast.h
-lex-gen() {
-  PYTHONPATH=. osh/lex_gen.py "$@" | tee _build/gen/osh-lex.re2c.h
+lexer-gen() {
+  PYTHONPATH=. core/lexer_gen.py "$@"
 }
 
+# _gen/osh_lex.re2c.c
+# This includes osh_ast.h
+osh-lex-gen() {
+  lexer-gen c | tee _build/gen/osh-lex.re2c.h
+}
+
+print-regex() { lexer-gen print-regex; }
+print-all() { lexer-gen print-all; }
+
 # re2c native.
-lex-gen-native() {
+osh-lex-gen-native() {
   re2c -o _build/gen/osh-lex.h _build/gen/osh-lex.re2c.h
 }
 
 all() {
   ast-gen
   id-gen
-  lex-gen
-  lex-gen-native
+  osh-lex-gen
+  osh-lex-gen-native
 
   # Why do we need this?
   rm -f _devbuild/pylibc/x86_64/fastlex.so
@@ -66,8 +73,26 @@ all() {
   build/dev.sh all
 }
 
+# Size profiler for binaries.  TODO: Fold this into benchmarks/
+bloaty() {
+  ~/git/other/bloaty/bloaty "$@"
+}
+
 symbols() {
-  nm _devbuild/pylibc/x86_64/fastlex.so
+  local obj=_devbuild/pylibc/x86_64/fastlex.so
+  nm $obj
+  echo
+
+  bloaty $obj
+  echo
+
+  # fastlex_MatchToken is 21.2 KiB.  That doesn't seem to large compared ot
+  # the 14K line output?
+  bloaty -d symbols $obj
+  echo
+
+  ls -l $obj
+  echo
 }
 
 # Then the next step is build/dev.sh pylibc?
