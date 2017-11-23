@@ -12,7 +12,7 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from core import alloc
-from core.id_kind import Id, IdName
+from core.id_kind import Id
 from core import word
 from core.test_lib import TokenWordsEqual
 

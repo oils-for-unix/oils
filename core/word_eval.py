@@ -9,7 +9,7 @@ import sys
 from core import braces
 from core import expr_eval
 from core import glob_
-from core.id_kind import Id, Kind, IdName, LookupKind
+from core.id_kind import Id, Kind, LookupKind
 from core import runtime
 from core import state
 from core import util

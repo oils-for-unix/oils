@@ -138,7 +138,7 @@ readonly PREPROC_FLAGS=(
   -D Py_BUILD_CORE
 )
 
-readonly INCLUDE_PATHS=(-I . -I Include)
+readonly INCLUDE_PATHS=(-I . -I Include -I ../_build/gen)
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 # BASE_CFLAGS is copied by observation from what configure.ac does on my Ubuntu
@@ -150,7 +150,7 @@ readonly CC=${CC:-cc}  # cc should be on POSIX systems
 # - gcc 4.x and Clang need -fwrapv
 
 # TODO:
-# - -DNDEBUG is also passed.  What is that?
+# - -DNDEBUG is also passed.  That turns off asserts.  Do we want that?
 # - We should auto-detect the flags in configure, or simplify the source so it
 # isn't necessary.  Python's configure.ac sometimes does it by compiling a test
 # file; at other times it does it by grepping $CC --help.

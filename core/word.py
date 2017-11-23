@@ -106,9 +106,6 @@ def StaticEval(w):
 def LeftMostSpanForPart(part):
   # TODO: Write unit tests in ui.py for error values
 
-  #from core.id_kind import IdName
-  #print(IdName(part.id))
-
   if part.tag == word_part_e.ArrayLiteralPart:
     if not part.words:
       return -1
@@ -163,9 +160,6 @@ def LeftMostSpanForPart(part):
 
 def _RightMostSpanForPart(part):
   # TODO: Write unit tests in ui.py for error values
-
-  #from core.id_kind import IdName
-  #print(IdName(part.id))
 
   if part.tag == word_part_e.ArrayLiteralPart:
     # TODO: Return )

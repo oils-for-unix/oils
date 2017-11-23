@@ -37,7 +37,7 @@ import sys
 from osh import ast_ as ast
 
 from core import word
-from core.id_kind import Id, Kind, LookupKind, IdName
+from core.id_kind import Id, Kind, LookupKind
 from core import util
 
 try:
@@ -205,7 +205,6 @@ class BoolParser(object):
             | WORD BINARY_OP WORD
             | '(' Expr ')'
     """
-    #print('ParseFactor %s %s' % (self.b_kind, IdName(self.op_id)))
     if self.b_kind == Kind.BoolUnary:
       # Just save the type and not the token itself?
       op = self.op_id
