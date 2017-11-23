@@ -1,0 +1,42 @@
+.TH OSH "1" "November 2017" "OSH version 0.2.0" "User Commands"
+.SH NAME
+osh \- A bash-compatible UNIX shell
+.SH SYNOPSIS
+.B osh
+[\fI\,options\/\fR] \fI\,script \/\fR[\fI\,args\/\fR]
+.br
+.B osh
+[\fI\,options\/\fR] -c [\fI\,command_string\/\fR] [\fI\,args\/\fR]
+.SH DESCRIPTION
+.PP
+OSH is a command-line shell. It behaves like busybox and `osh` is a symlink to it.
+.PP
+.SH OPTIONS
+OSH accepts POSIX \fBsh\fR flags, with the following differences:
+.TP
+\fB\-n\fR
+only validate the syntax.  Also prints the AST.
+.TP
+\fB\-\-show\-ast\fR
+print the AST in addition to executing.
+.TP
+\fB\-\-ast\-format\fR
+what format the AST should be in
+.SH AUTHOR
+Written by Andy Chu.
+.SH REPORTING BUGS
+Please report bugs to <https://github.com/oilshell/oil/issues>
+.SH COPYRIGHT
+Copyright © 2016 Andy Chu. All rights reserved.
+.br
+Licensed under the Apache License, Version 2.0 (the "License");
+.br
+You may not use this file except in compliance with the License. You may obtain a copy of the License at
+.IP
+http://www.apache.org/licenses/LICENSE-2.0
+.SH SEE ALSO
+Developer documentation for
+.B OSH
+may be found online at
+.IP
+http://www.oilshell.org/release/0.2.0/doc/osh-quick-ref.html
