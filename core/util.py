@@ -132,9 +132,9 @@ class _EnumValue(object):
     return '<%s.%s %s>' % (self.namespace, self.name, self.value)
 
   # I think this is not needed?
-  #def __hash__(self):
-  #  # Needed for the LEXER_DEF dictionary
-  #  return hash(self.name)
+  def __hash__(self):
+    # Needed for the LEXER_DEF dictionary
+    return hash(self.name)
 
   # Why is this needed?  For ASDL serialization?  But we're not using it like
   # that.

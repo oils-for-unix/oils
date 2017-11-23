@@ -14,15 +14,16 @@ set -o errexit
 source build/common.sh
 
 configure() {
-  local dir=$PREPARE_DIR
+  local dir=${1:-$PREPARE_DIR}
 
   rm -r -f $dir
   mkdir -p $dir
 
   local conf=$PWD/$PY27/configure 
 
-  cd $dir 
+  pushd $dir 
   time $conf --without-threads
+  popd
 }
 
 # Clang makes this faster.  We have to build all modules so that we can
@@ -37,13 +38,24 @@ readonly NPROC=$(nproc)
 readonly JOBS=$(( NPROC == 1 ? NPROC : NPROC-1 ))
 
 build-python() {
-  cd $PREPARE_DIR
+  local dir=${1:-$PREPARE_DIR}
+  local extra_cflags=${2:-'-O0'}
+
+  pushd $dir
   make clean
   # Speed it up with -O0.
   # NOTE: CFLAGS clobbers some Python flags, so use EXTRA_CFLAGS.
 
-  time make -j $JOBS EXTRA_CFLAGS='-O0'
+  time make -j $JOBS EXTRA_CFLAGS="$extra_cflags"
   #time make -j 7 CFLAGS='-O0'
+  popd
+}
+
+
+# For uftrace.
+cpython-instrumented() {
+  configure _devbuild/cpython-instrumented
+  build-python _devbuild/cpython-instrumented '-O0 -pg'
 }
 
 "$@"

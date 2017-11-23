@@ -25,6 +25,7 @@ class Tracer(object):
     # After max_events we stop recording
     self.max_events = max_events
     self.num_events = 0
+    self.depth = 0
 
   # Python VM callback
   def OnEvent(self, frame, event_type, arg):
@@ -40,15 +41,28 @@ class Tracer(object):
     # cProfile output.
 
     self.num_events += 1
+    name = frame.f_code.co_name
+    filename = frame.f_code.co_filename
+    if event_type in ('call', 'c_call'):
+      self.depth += 1 
+
+    record = '%s%s\t%s\t%s\t%s\t%s\n' % ('  ' * self.depth,
+        event_type, filename, frame.f_lineno, name, arg)
+    self.event_strs.write(record)
+
+    if event_type in ('return', 'c_return'):
+      self.depth -= 1
+
     return
 
-    self.event_strs.write('')  # struct.pack(s)
-    # TODO:
+    # NOTE:  Do we want a struct.pack version eventually?
+    #self.event_strs.write('')
 
   def Start(self):
     sys.setprofile(self.OnEvent)
 
   def Stop(self, path):
+    sys.setprofile(None)
     # Only one process should write out the file!
     if os.getpid() != self.pid:
       return

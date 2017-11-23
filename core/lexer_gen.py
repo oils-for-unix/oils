@@ -183,11 +183,11 @@ def TranslateLexer(lexer_def):
 inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
                        int start_pos, int* id, int* end_pos) {
 
+  // bounds checking
+  assert(start_pos < line_len);
+
   unsigned char* p = line + start_pos;  /* modified by re2c */
   unsigned char* q = line + line_len;   /* yylimit */
-
-  // bounds checking
-  assert(p < q);
   //printf("p: %p q: %p\n", p, q);
 
   unsigned char* YYMARKER;  /* why do we need this? */
@@ -208,7 +208,10 @@ inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
         re2_pat = TranslateRegex(pat)
       else:
         re2_pat = TranslateConstant(pat)
-      print '      %-30s { *id = id__%s; break; }' % (re2_pat, token_id)
+      # TODO: Remove this after debugging Id problem
+      from core import id_kind
+      id_name = id_kind.IdName(token_id)
+      print '      %-30s { *id = id__%s; break; }' % (re2_pat, id_name)
     print '      */'
     print '    }'
     print '    break;'

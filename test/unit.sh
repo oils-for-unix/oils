@@ -24,7 +24,60 @@ one() {
 
 # For auto-complete
 unit() {
+  #$py "$@"
+
   "$@"
+}
+
+delete-pyc() {
+  find . -name '*.pyc' | xargs --no-run-if-empty -- rm || true
+}
+
+readonly PY_273=~/src/languages/Python-2.7.3/python
+readonly PY_272=~/src/languages/Python-2.7.2/python
+readonly PY_27=~/src/languages/Python-2.7/python
+
+# WTF, fixes native_test issue
+#export PYTHONDONTWRITEBYTECODE=1
+
+banner() {
+  echo -----
+  echo "$@"
+  echo ----
+}
+
+# geez wtf!
+repro() {
+  rm -v *.pytrace || true
+  delete-pyc
+
+  #local t=osh/cmd_parse_test.py
+  #local t='native/fastlex_test.py LexTest.testBug'
+  local t='core/id_kind_test.py TokensTest.testEquality'
+
+  # with shebang
+  #py=''
+  local py='_devbuild/cpython-instrumented/python'
+
+  #local prefix='uftrace record -d one.uftrace'
+  local prefix=''
+  #local prefix='gdb --args'
+
+  set +o errexit
+
+  banner 'FIRST'
+
+  $prefix $py $t
+  local first=$?
+
+  banner 'SECOND'
+
+  # Fails the second time
+  $prefix $py $t
+  local second=$?
+
+  echo "first $first  second $second"
+  #$PY_273 -V
 }
 
 _log-one() {

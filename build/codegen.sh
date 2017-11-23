@@ -30,8 +30,22 @@ set -o errexit
 #    osh-lex.re2c.c  
 #    osh-lex.c  
 
+download-re2c() {
+  mkdir -p _deps
+  wget --directory _deps \
+    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
+}
+
+install-re2c() {
+  cd _deps
+  tar -x -z < re2c-1.0.3.tar.gz
+  cd re2c-1.0.3
+  ./configure
+  make
+}
+
 re2c() {
-  ~/src/re2c-0.16/re2c "$@"
+  _deps/re2c-1.0.3/re2c "$@"
 }
 
 ast-gen() {
@@ -79,7 +93,7 @@ bloaty() {
 }
 
 symbols() {
-  local obj=_devbuild/pylibc/x86_64/fastlex.so
+  local obj=_devbuild/py-ext/x86_64/fastlex.so
   nm $obj
   echo
 

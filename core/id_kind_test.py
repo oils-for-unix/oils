@@ -57,6 +57,14 @@ class TokensTest(unittest.TestCase):
     t = ast.token(Id.BoolBinary_GlobDEqual, '==')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
+  def testEquality(self):
+    # OK WTF!!!!
+    left = Id(198)
+    right = Id(198)
+    print(left, right)
+    print(left == right)
+    self.assertEqual(left, right)
+
   def testLexerPairs(self):
     def MakeLookup(p):
       return dict((pat, tok) for _, pat, tok in p)

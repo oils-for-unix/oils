@@ -15,36 +15,37 @@ from core import util
 _ID_TO_KIND = {}  # type: dict
 
 def LookupKind(id_):
-  return _ID_TO_KIND[id_]
+  return _ID_TO_KIND[id_.enum_value]
 
 
 _ID_NAMES = {}  # type: dict
 
 def IdName(id_):
-  return _ID_NAMES[id_]
+  return _ID_NAMES[id_.enum_value]
 
 
 class Id(object):
   """Token and op type.
 
   The evaluator must consider all Ids.
+
+  NOTE: We add a bunch of class attributes that are INSTANCES of this class,
+  e.g. Id.Lit_Chars.
   """
   def __init__(self, enum_value):
     self.enum_value = enum_value
 
   def __eq__(self, other):
-    # NOTE: We need to compare to ints too because of the ID hash tables.  They
-    # are keyed by index, and then an equality test happens.
-    if isinstance(other, int):
-      return self.enum_value == other
-
     return self.enum_value == other.enum_value
+
+  def __ne__(self, other):
+    return self.enum_value != other.enum_value
 
   def __hash__(self):
     return hash(self.enum_value)
 
   def __repr__(self):
-    return IdName(self.enum_value)
+    return IdName(self)
 
 
 class Kind(object):

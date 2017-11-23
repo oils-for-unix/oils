@@ -6,6 +6,7 @@ _tmp
 _bin
 _build
 _devbuild
+_deps
 _release
 libc.so
 # Python build support
