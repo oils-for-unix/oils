@@ -169,25 +169,37 @@ def TranslateRegex(pat):
   return f.getvalue()
 
 
+# This explains the sentinel method, which we will use.
+# http://re2c.org/examples/example_01.html
+#
+# TODO: Change ParseTuple to use 's' rather than '#s' ?
+
+# I don't think we need this YYFILL mechanism, because we lex a line at a
+# time.
+# http://re2c.org/examples/example_03.html
+
+
 def TranslateLexer(lexer_def):
   print r"""
 /* Common stuff */
 
 /*!re2c
   re2c:define:YYCTYPE = "unsigned char";
-  re2c:yyfill:enable = 0;
   re2c:define:YYCURSOR = p;
-  re2c:define:YYLIMIT = q;
+  re2c:yyfill:enable = 0;  // generated code doesn't ask for more input
 */
 
 inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
                        int start_pos, int* id, int* end_pos) {
 
   // bounds checking
-  assert(start_pos < line_len);
+  if (start_pos >= line_len) {
+    fprintf(stderr, "start_pos %d  line_len %d\n", start_pos, line_len);
+    assert(0);
+  }
+  //assert(start_pos < line_len);
 
   unsigned char* p = line + start_pos;  /* modified by re2c */
-  unsigned char* q = line + line_len;   /* yylimit */
   //printf("p: %p q: %p\n", p, q);
 
   unsigned char* YYMARKER;  /* why do we need this? */
