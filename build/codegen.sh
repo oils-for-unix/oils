@@ -44,9 +44,7 @@ install-re2c() {
   make
 }
 
-re2c() {
-  _deps/re2c-1.0.3/re2c "$@"
-}
+re2c() { _deps/re2c-1.0.3/re2c "$@"; }
 
 ast-gen() {
   PYTHONPATH=. osh/ast_gen.py "$@" | tee _build/gen/osh-ast.h
@@ -71,7 +69,11 @@ print-all() { lexer-gen print-all; }
 
 # re2c native.
 osh-lex-gen-native() {
-  re2c -o _build/gen/osh-lex.h _build/gen/osh-lex.re2c.h
+  # Turn on all warnings and make them native.
+  # The COMMENT state can match an empty string at the end of a line, e.g.
+  # '#\n'.  So we have to turn that warning off.
+  re2c -W -Wno-match-empty-string -Werror \
+    -o _build/gen/osh-lex.h _build/gen/osh-lex.re2c.h
 }
 
 all() {
@@ -88,9 +90,7 @@ all() {
 }
 
 # Size profiler for binaries.  TODO: Fold this into benchmarks/
-bloaty() {
-  ~/git/other/bloaty/bloaty "$@"
-}
+bloaty() { ~/git/other/bloaty/bloaty "$@"; }
 
 symbols() {
   local obj=_devbuild/py-ext/x86_64/fastlex.so

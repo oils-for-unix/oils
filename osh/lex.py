@@ -88,7 +88,6 @@ lex_mode_e = ast.lex_mode_e
 # chain the groups in order.  It might make sense to experiment with the order
 # too.
 
-# Explicitly exclude newline, although '.' would work too
 _BACKSLASH = [
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
@@ -149,9 +148,11 @@ _LEFT_UNQUOTED = [
 
 LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 
-# Anything until the end of the line is a comment.
+# Anything until the end of the line is a comment.  Does not match the newline
+# itself.  We want to switch modes and possibly process Op_Newline for here
+# docs, etc.
 LEXER_DEF[lex_mode_e.COMMENT] = [
-  R(r'.*', Id.Ignored_Comment)  # does not match newline
+  R(r'[^\n\0]*', Id.Ignored_Comment)
 ]
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
@@ -199,7 +200,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[0-9]*<>', Id.Redir_LessGreat),
   R(r'[0-9]*>\|', Id.Redir_Clobber),
 
-  R(r'.', Id.Lit_Other),  # any other single char is a literal
+  R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]
 
 # In OUTER and DBRACKET states.
@@ -287,8 +288,9 @@ LEXER_DEF[lex_mode_e.EXTGLOB] = \
   R(r'[^\\$`"\'|)@*+!?\0]+', Id.Lit_Chars),
   C('|', Id.Op_Pipe),
   C(')', Id.Op_RParen),  # maybe be translated to Id.ExtGlob_RParen
-  R('.', Id.Lit_Other),  # everything else is literal
+  R(r'[^\0]', Id.Lit_Other),  # everything else is literal
 ]
+
 
 LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   # Match these literals first, and then the rest of the OUTER state I guess.
@@ -300,7 +302,13 @@ LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   C('(', Id.Lit_Chars),
   C(')', Id.Lit_Chars),
   C('|', Id.Lit_Chars),
-] + _UNQUOTED
+] + [
+  # Avoid "unreachable rule error"
+  (is_regex, pat, re_list) for 
+  (is_regex, pat, re_list) in _UNQUOTED
+  if not (is_regex == False and pat in ('(', ')', '|'))
+]
+
 
 LEXER_DEF[lex_mode_e.DQ] = [
   # Only 4 characters are backslash escaped inside "".
@@ -311,7 +319,7 @@ LEXER_DEF[lex_mode_e.DQ] = [
   R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
   # NOTE: When parsing here doc line, this token doesn't end it.
   C('"', Id.Right_DoubleQuote),
-  R(r'.', Id.Lit_Other),  # e.g. "$"
+  R(r'[^\0]', Id.Lit_Other),  # e.g. "$"
 ]
 
 _VS_ARG_COMMON = _BACKSLASH + [
@@ -326,7 +334,7 @@ LEXER_DEF[lex_mode_e.VS_ARG_UNQ] = \
   _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
-  R(r'.', Id.Lit_Other),  # e.g. "$", must be last
+  R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
@@ -334,7 +342,7 @@ LEXER_DEF[lex_mode_e.VS_ARG_DQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed
   C('"', Id.Left_DoubleQuote),
-  R(r'.', Id.Lit_Other),  # e.g. "$", must be last
+  R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ
@@ -345,11 +353,15 @@ LEXER_DEF[lex_mode_e.SQ] = [
 ]
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
-# point of it is that supports other backslash escapes like \n!
+# point of it is that supports other backslash escapes like \n!  It just
+# becomes a regular backslash.
 LEXER_DEF[lex_mode_e.DOLLAR_SQ] = [
   R(r"[^'\\\0]+", Id.Lit_Chars),
-  R(r"\\.", Id.Lit_EscapedChar),
   C("'", Id.Right_SingleQuote),
+  R(r"\\[^\0]", Id.Lit_EscapedChar),
+  # Backslash that ends the file!  Caught by re2c exhaustiveness check.  For
+  # now, make it Unknown.
+  C('\\\0', Id.Unknown_Tok),
 ]
 
 LEXER_DEF[lex_mode_e.VS_1] = [
@@ -369,7 +381,7 @@ LEXER_DEF[lex_mode_e.VS_1] = [
   C('\\\n', Id.Ignored_LineCont),
 
   C('\n', Id.Unknown_Tok),  # newline not allowed inside ${}
-  R(r'.', Id.Unknown_Tok),  # any char except newline
+  R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
 LEXER_DEF[lex_mode_e.VS_2] = \
@@ -380,7 +392,7 @@ LEXER_DEF[lex_mode_e.VS_2] = \
 
   C('\\\n', Id.Ignored_LineCont),
   C('\n', Id.Unknown_Tok),  # newline not allowed inside ${}
-  R(r'.', Id.Unknown_Tok),  # any char except newline
+  R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
@@ -403,7 +415,7 @@ LEXER_DEF[lex_mode_e.ARITH] = \
 # TODO: 64#@ interferes with VS_AT.  Hm.
 ] + ID_SPEC.LexerPairs(Kind.Arith) + [
   C('\\\n', Id.Ignored_LineCont),
-  R(r'.', Id.Unknown_Tok)  # any char.  This should be a syntax error.
+  R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
 ]
 
 # Notes on BASH_REGEX states

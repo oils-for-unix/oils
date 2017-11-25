@@ -224,6 +224,7 @@ inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
       from core import id_kind
       id_name = id_kind.IdName(token_id)
       print '      %-30s { *id = id__%s; break; }' % (re2_pat, id_name)
+    print '      %-30s { *id = id__%s; break; }' % (r'"\x00"', 'Eol_Tok')
     print '      */'
     print '    }'
     print '    break;'
