@@ -47,21 +47,19 @@ install-re2c() {
 re2c() { _deps/re2c-1.0.3/re2c "$@"; }
 
 ast-gen() {
-  PYTHONPATH=. osh/ast_gen.py "$@" | tee _build/gen/osh-ast.h
+  PYTHONPATH=. osh/ast_gen.py "$@" > _build/gen/osh-ast.h
 }
 
 id-gen() {
-  PYTHONPATH=. core/id_kind_gen.py c | tee _build/gen/id.h
+  PYTHONPATH=. core/id_kind_gen.py c > _build/gen/id.h
 }
 
-lexer-gen() {
-  PYTHONPATH=. core/lexer_gen.py "$@"
-}
+lexer-gen() { PYTHONPATH=. core/lexer_gen.py "$@"; }
 
 # _gen/osh_lex.re2c.c
 # This includes osh_ast.h
 osh-lex-gen() {
-  lexer-gen c | tee _build/gen/osh-lex.re2c.h
+  lexer-gen c > _build/gen/osh-lex.re2c.h
 }
 
 print-regex() { lexer-gen print-regex; }
@@ -76,7 +74,7 @@ osh-lex-gen-native() {
     -o _build/gen/osh-lex.h _build/gen/osh-lex.re2c.h
 }
 
-all() {
+lexer() {
   ast-gen
   id-gen
   osh-lex-gen
@@ -92,7 +90,7 @@ all() {
 # Size profiler for binaries.  TODO: Fold this into benchmarks/
 bloaty() { ~/git/other/bloaty/bloaty "$@"; }
 
-symbols() {
+stats() {
   local obj=_devbuild/py-ext/x86_64/fastlex.so
   nm $obj
   echo
@@ -109,17 +107,12 @@ symbols() {
   echo
 }
 
-# Then the next step is build/dev.sh pylibc?
-
-
 # NOTES:
 # - core/id_kind_gen.py generates the mapping from Id to Kind.
 #   - It needs a mapping output by the Python superoptimizatio script.
 # - asdl/gen_cpp.py generates oheap code in main().
 #   - It should probably be factored into a library and main driver.
-
-# This generates oheap code.
-# Also see asdl/run.sh.
+#   - Also see asdl/run.sh.
 
 gen-cpp() {
   PYTHONPATH=. asdl/gen_cpp.py cpp osh/osh.asdl
