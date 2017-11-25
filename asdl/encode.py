@@ -63,6 +63,7 @@ class Params:
     # also I guess steuff like SimpleCommand
     self.index_width = 2  # 16 bits, e.g. max 64K entries in an array
 
+    # TODO: check for negative too
     self.max_int = 1 << (self.ref_width * 8)
     self.max_index = 1 << (self.index_width * 8)
     self.max_tag = 1 << (self.tag_width * 8)
@@ -233,10 +234,11 @@ def EncodeObj(obj, enc, out):
       elif isinstance(item_desc, asdl.Product):
         ok = True
 
-      # TODO: Fix this for span_id.  Need to extract a method.
+      # TODO: We can catch this case when parsing the schema rather than on
+      # encoding.
       if not ok:
         raise AssertionError(
-            "Currently not encoding simple optional types: %s" % field_val)
+            "Simple types shouldn't be optional: %s %s" % (name, desc))
 
       if field_val is None:
         enc.Ref(0, this_chunk)

@@ -23,7 +23,8 @@ def main(argv):
   if action == 'py':
     schema_path = argv[2]
 
-    module = asdl.parse(schema_path)
+    with open(schema_path) as f:
+      module = asdl.parse(f)
     root = sys.modules[__name__]
     # NOTE: We shouldn't pass in app_types for arith.asdl, but this is just a
     # demo.

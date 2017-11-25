@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   }
   FILE *f = fopen(argv[1], "rb");
   if (!f) {
-    printf("Error opening %s", argv[1]);
+    fprintf(stderr, "Error opening %s\n", argv[1]);
     return 1;
   }
   fseek(f, 0, SEEK_END);

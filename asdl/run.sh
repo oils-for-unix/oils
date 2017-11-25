@@ -51,17 +51,8 @@ py-cpp() {
 # Test specific schemas
 #
 
-arith-both() {
-  py-cpp asdl/arith.asdl
-}
-
-osh-both() {
-  py-cpp osh/osh.asdl
-}
-
-ovm-both() {
-  py-cpp ovm/ovm.asdl
-}
+arith-both() { py-cpp asdl/arith.asdl; }
+osh-both() { py-cpp osh/osh.asdl; }
 
 #
 # Native Code
@@ -118,11 +109,16 @@ arith-demo() {
   #$bin $data 
 }
 
+# TODO: How big is oheap vs. the virtual memory size?
+
 osh-demo() {
   local name=osh
   local data=_tmp/${name}.bin
 
-  # TODO: Call bin/osh --ast-output _tmp/a.oheap --ast-format oheap -c 'echo # hi'
+  # TODO: Fix bug -- this is only 3 bytes?
+  bin/osh -n --ast-format oheap -c 'echo hi  # comment' > $data
+
+  ls -l $data
 
   core/id_kind_gen.py cpp > _tmp/id_kind.h
   build-demo osh/osh.asdl

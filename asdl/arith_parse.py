@@ -10,6 +10,9 @@ from asdl import tdop
 from asdl.tdop import Node, CompositeNode
 from asdl import arith_ast
 
+op_id = arith_ast.op_id_e  # TODO: Rename this back.
+
+
 #
 # Null Denotation -- token that takes nothing on the left
 #
@@ -102,14 +105,14 @@ def LeftTernary(p, token, left, bp):
 def LeftBinaryOp(p, token, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   if token.val == '+':
-    op_id = arith_ast.op_id.Plus
+    op_id_ = op_id.Plus
   elif token.val == '-':
-    op_id = arith_ast.op_id.Minus
+    op_id_ = op_id.Minus
   elif token.val == '*':
-    op_id = arith_ast.op_id.Star
+    op_id_ = op_id.Star
   else:
     raise AssertionError(token.val)
-  return arith_ast.ArithBinary(op_id, left, p.ParseUntil(rbp))
+  return arith_ast.ArithBinary(op_id_, left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, token, left, rbp):

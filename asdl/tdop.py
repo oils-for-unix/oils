@@ -184,7 +184,7 @@ class Parser(object):
   def Next(self):
     """Move to the next token."""
     try:
-      t = self.lexer.__next__()
+      t = self.lexer.next()
     except StopIteration:
       t = EOF_TOKEN
     self.token = t
