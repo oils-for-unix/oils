@@ -75,6 +75,8 @@ osh-lex-gen-native() {
 }
 
 lexer() {
+  mkdir -p _build/gen
+
   ast-gen
   id-gen
   osh-lex-gen
