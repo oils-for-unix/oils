@@ -12,16 +12,25 @@ id_kind.py - Id and Kind definitions, used for Token, Word, Nodes, etc.
 from core import util
 
 
-_ID_TO_KIND = {}  # type: dict
+_ID_TO_KIND = {}  # int -> Kind
 
 def LookupKind(id_):
   return _ID_TO_KIND[id_.enum_value]
 
 
-_ID_NAMES = {}  # type: dict
+_ID_NAMES = {}  # int -> string
 
 def IdName(id_):
   return _ID_NAMES[id_.enum_value]
+
+
+# Save memory by keeping one instance.
+# TODO: Fold this into ASDL, which will enforce this?
+
+_ID_INSTANCES = {}  # int -> Id
+
+def IdInstance(i):
+  return _ID_INSTANCES[i]
 
 
 class Id(object):
@@ -56,10 +65,11 @@ class Kind(object):
 class IdSpec(object):
   """Identifiers that form the "spine" of the shell program representation."""
 
-  def __init__(self, token_names, kind_lookup, bool_ops):
+  def __init__(self, token_names, instance_lookup, kind_lookup, bool_ops):
     self.id_enum = Id
     self.kind_enum = Kind
     self.token_names = token_names  # integer -> string Id
+    self.instance_lookup = instance_lookup
     self.kind_lookup = kind_lookup  # Id -> Kind
 
     self.kind_sizes = []  # stats
@@ -78,8 +88,11 @@ class IdSpec(object):
     self.token_index += 1  # leave out 0 I guess?
     id_val = Id(self.token_index)
     setattr(self.id_enum, token_name, id_val)
-    self.token_names[self.token_index] = token_name
-    self.kind_lookup[self.token_index] = self.kind_index
+
+    t = self.token_index
+    self.token_names[t] = token_name
+    self.instance_lookup[t] = id_val
+    self.kind_lookup[t] = self.kind_index
     return id_val
 
   def _AddKind(self, kind_name):
@@ -465,7 +478,7 @@ def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
 #
 
 
-ID_SPEC = IdSpec(_ID_NAMES, _ID_TO_KIND, BOOL_OPS)
+ID_SPEC = IdSpec(_ID_NAMES, _ID_INSTANCES, _ID_TO_KIND, BOOL_OPS)
 
 _AddKinds(ID_SPEC)
 _AddBoolKinds(ID_SPEC)  # must come second
