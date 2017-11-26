@@ -24,7 +24,7 @@ class AllocTest(unittest.TestCase):
     self.assertEqual(1, line_id)
 
     span_id = arena.AddLineSpan(None)
-    self.assertEqual(1, span_id)
+    self.assertEqual(0, span_id)
 
     arena.PopSource()
 

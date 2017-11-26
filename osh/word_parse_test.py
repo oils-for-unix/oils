@@ -11,6 +11,8 @@ word_parse_test.py: Tests for word_parse.py
 
 import unittest
 
+from asdl import const
+
 from core import alloc
 from core.id_kind import Id
 from core import word
@@ -70,7 +72,7 @@ def _assertSpanForWord(test, code_str):
   print(code_str)
   print(span_id)
 
-  if span_id != -1:
+  if span_id != const.NO_INTEGER:
     span = arena.GetLineSpan(span_id)
     print(span)
 

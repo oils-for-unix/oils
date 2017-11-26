@@ -21,6 +21,8 @@ import stat
 import sys
 import time
 
+from asdl import const
+
 from core import args
 from core import braces
 from core import expr_eval
@@ -360,7 +362,7 @@ class Executor(object):
     raise AssertionError(node.tag)
 
   def _EvalRedirect(self, n):
-    fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == -1 else n.fd
+    fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == const.NO_INTEGER else n.fd
     if n.tag == redir_e.Redir:
       redir_type = REDIR_TYPE[n.op_id]  # could be static in the LST?
 

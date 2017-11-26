@@ -6,11 +6,13 @@ arith_ast_test.py: Tests for arith_ast.py
 import io
 import unittest
 
-from asdl import arith_ast  # module under test
 from asdl import format as fmt
 from asdl import py_meta
-from asdl import encode
 from asdl import asdl_
+from asdl import const
+from asdl import encode
+
+from asdl import arith_ast  # module under test
 
 
 ArithVar = arith_ast.ArithVar
@@ -44,7 +46,7 @@ class ArithAstTest(unittest.TestCase):
     t = arith_ast.token(5, 'x')
     self.assertEqual(5, t.id)
     self.assertEqual('x', t.value)
-    self.assertEqual(0, t.span_id)
+    self.assertEqual(const.NO_INTEGER, t.span_id)
 
   def testTypeCheck(self):
     v = ArithVar('name')

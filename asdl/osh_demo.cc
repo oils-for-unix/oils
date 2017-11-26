@@ -76,6 +76,15 @@ void PrintCommand(const uint32_t* base, const command_t& e, int indent) {
     }
     break;
   }
+  case command_e::Assignment: {
+    auto& e2 = static_cast<const Assignment&>(e);
+    printf("Assignment flags: ");
+    for (int i = 0; i < e2.flags_size(base); ++i) {
+      printf("%s ", e2.flags(base, i));
+    }
+    printf("\n");
+    break;
+  }
   case command_e::CommandList: {
     auto& e2 = static_cast<const CommandList&>(e);
     printf("CommandList %d\n", e2.children_size(base));

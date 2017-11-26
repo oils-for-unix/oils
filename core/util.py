@@ -23,8 +23,9 @@ if not os.getenv('_OVM_DEPS'):
   import inspect
   import types
 
+from asdl import const
 
-Buffer = io.BytesIO
+Buffer = io.BytesIO  # used by asdl/format.py
 
 
 class _ErrorWithLocation(Exception):
@@ -37,7 +38,7 @@ class _ErrorWithLocation(Exception):
     self.args = args
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
     # args.
-    self.span_id = kwargs.pop('span_id', None)
+    self.span_id = kwargs.pop('span_id', const.NO_INTEGER)
     self.token = kwargs.pop('token', None)
     self.part = kwargs.pop('part', None)
     self.word = kwargs.pop('word', None)

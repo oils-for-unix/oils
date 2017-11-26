@@ -6,6 +6,7 @@ import sys
 
 from asdl import asdl_ as asdl
 from asdl import py_meta
+from asdl import const
 
 _DEFAULT_ALIGNMENT = 4
 
@@ -52,19 +53,18 @@ class Params:
   with 24 bit pointers.
   """
 
-  def __init__(self, alignment=_DEFAULT_ALIGNMENT):
+  def __init__(self, alignment=_DEFAULT_ALIGNMENT,
+               int_width=const.DEFAULT_INT_WIDTH):
     self.alignment = alignment
     self.pointer_type = 'uint32_t'
 
     self.tag_width = 1  # for ArithVar vs ArithWord.
-    self.ref_width = 3  # 24 bits
-    self.int_width = 3  # 24 bits
+    self.int_width = int_width
     # used for fd, line/col
     # also I guess steuff like SimpleCommand
     self.index_width = 2  # 16 bits, e.g. max 64K entries in an array
 
-    # TODO: check for negative too
-    self.max_int = 1 << (self.ref_width * 8)
+    self.max_int = 1 << (self.int_width * 8)
     self.max_index = 1 << (self.index_width * 8)
     self.max_tag = 1 << (self.tag_width * 8)
 
@@ -75,15 +75,17 @@ class Params:
 
   def Int(self, n, chunk):
     if n < 0:
-      raise Error('ASDL currently supports unsigned integers, got %d' % n)
+      raise RuntimeError(
+          "ASDL can't currently encode negative numbers.  Got %d" % n)
     if n > self.max_int:
-      raise Error('%d is too big to fit in %d bytes' % (n, self.int_width))
+      raise RuntimeError('%d is too big to fit in %d bytes' % (n, self.int_width))
 
     for i in range(self.int_width):
       chunk.append(n & 0xFF)
       n >>= 8
 
   def Ref(self, n, chunk):
+    # NOTE: ref width is currently the same as int width.  Could be different.
     self.Int(n, chunk)
 
   def _Pad(self, chunk):
@@ -147,12 +149,16 @@ def EncodeArray(obj_list, item_desc, enc, out):
     for item in obj_list:
       enc.Int(item, array_chunk)
 
+  elif isinstance(item_desc, asdl.StrType):
+    for item in obj_list:
+      ref = out.Write(enc.PaddedStr(item))
+      enc.Ref(ref, array_chunk)
+
   elif isinstance(item_desc, asdl.Sum) and asdl.is_simple(item_desc):
     for item in obj_list:
       enc.Int(item.enum_id, array_chunk)
 
   else:
-
     # A simple value is either an int, enum, or pointer.  (Later: Iter<Str>
     # might be possible for locality.)
     assert isinstance(item_desc, asdl.Sum) or isinstance(
@@ -165,7 +171,12 @@ def EncodeArray(obj_list, item_desc, enc, out):
     # Array<T>.  Array implies O(1) random access; List doesn't.
     for item in obj_list:
       # Recursive call.
-      ref = EncodeObj(item, enc, out)
+      from core import util
+      try:
+        ref = EncodeObj(item, enc, out)
+      except RuntimeError as e:
+        util.log("Error encoding array: %s (item %s)", e, item)
+        raise
       enc.Ref(ref, array_chunk)
 
   this_ref = out.Write(enc.PaddedBlock(array_chunk))
@@ -232,8 +243,11 @@ def EncodeObj(obj, enc, out):
       enc.Ref(ref, this_chunk)
 
     elif isinstance(desc, asdl.UserType):
-      # Assume Id for now
-      enc.Int(field_val.enum_value, this_chunk)
+      if is_maybe and field_val is None:  # e.g. id? prefix_op
+        enc.Ref(0, this_chunk)
+      else:
+        # Assume Id for now
+        enc.Int(field_val.enum_value, this_chunk)
 
     else:
       if is_maybe and field_val is None:
@@ -241,7 +255,12 @@ def EncodeObj(obj, enc, out):
       else:
         # Recursive call for CompoundObj children.  Write children before
         # parents.
-        ref = EncodeObj(field_val, enc, out)
+        from core import util
+        try:
+          ref = EncodeObj(field_val, enc, out)
+        except RuntimeError as e:
+          util.log("Error encoding %s : %s (val %s)", name, e, field_val)
+          raise
         enc.Ref(ref, this_chunk)
 
   # Write the parent record

@@ -116,6 +116,7 @@ osh-demo() {
   local data=_tmp/${name}.bin
 
   local code='echo hi; echo bye  # comment' 
+  local code='declare -r -x foo'  # for testing repeated array
   #local code='echo $(( 2 + 3 ))'
   #local code='echo $(( -2 * -3 ))'  # test negative integers
   bin/osh -n --ast-format oheap -c "$code" > $data

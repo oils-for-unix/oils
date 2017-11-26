@@ -12,6 +12,8 @@ cmd_parse.py - Parse high level shell commands.
 
 import sys
 
+from asdl import const
+
 from core import braces
 from core import word
 from core.id_kind import Id, Kind
@@ -216,7 +218,7 @@ class CommandParser(object):
     if first_char.isdigit():
       fd = int(first_char)
     else:
-      fd = -1
+      fd = const.NO_INTEGER
 
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()

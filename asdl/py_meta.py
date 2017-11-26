@@ -29,8 +29,9 @@ put: an op is Add() and not Add, an instance of a class, not an integer value.
 import io
 import sys
 
-from asdl import format as fmt
 from asdl import asdl_ as asdl
+from asdl import const
+from asdl import format as fmt
 from core import util
 
 
@@ -166,7 +167,7 @@ class CompoundObj(Obj):
       if isinstance(desc, asdl.MaybeType):
         child = desc.desc
         if isinstance(child, asdl.IntType):
-          value = 0
+          value = const.NO_INTEGER
         elif isinstance(child, asdl.StrType):
           value = ''
         else:
