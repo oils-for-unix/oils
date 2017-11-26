@@ -41,11 +41,11 @@ all() {
   echo
 
   echo 'ASDL'
-  wc -l asdl/{asdl_,py_meta,gen_cpp,encode,format}.py | sort --numeric
+  wc -l asdl/{asdl_,py_meta,encode,format}.py | sort --numeric
   echo
 
   echo 'CODE GENERATORS'
-  wc -l */*_gen.py | sort --numeric
+  wc -l asdl/gen_*.py */*_gen.py | sort --numeric
   echo
 
   echo 'GENERATED CODE'

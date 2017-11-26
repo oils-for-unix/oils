@@ -14,6 +14,10 @@ from asdl import encode
 
 from asdl import arith_ast  # module under test
 
+# Sanity check.  Doesn't pass because this unit test exposes implementatio
+# details, like the concrete classes.
+#from _tmp import arith_ast_asdl as arith_ast
+
 
 ArithVar = arith_ast.ArithVar
 ArithUnary = arith_ast.ArithUnary
@@ -96,7 +100,6 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99
 
   def testConstructorType(self):
-
     print(ArithVar)
     print('FIELDS', ArithVar.FIELDS)
     print('DESCRIPTOR_LOOKUP', ArithVar.DESCRIPTOR_LOOKUP)
@@ -124,7 +127,7 @@ class ArithAstTest(unittest.TestCase):
     n3 = ArithVar()
     try:
       n4 = ArithVar('x', name='X')
-    except AssertionError as e:
+    except TypeError as e:
       pass
     else:
       raise AssertionError("Should have failed")

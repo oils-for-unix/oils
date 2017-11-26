@@ -20,7 +20,7 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  if action == 'py':
+  if action == 'py':  # Prints the module
     schema_path = argv[2]
 
     with open(schema_path) as f:
@@ -29,7 +29,9 @@ def main(argv):
     # NOTE: We shouldn't pass in app_types for arith.asdl, but this is just a
     # demo.
     py_meta.MakeTypes(module, root, app_types={'id': asdl.UserType(Id)})
-    print(dir(root))
+    print('Dynamically created a Python module with these types:')
+    for name in dir(root):
+      print('\t' + name)
 
   elif action == 'arith-encode':
     expr = argv[2]
