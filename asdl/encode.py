@@ -205,7 +205,16 @@ def EncodeObj(obj, enc, out):
     # - Float would be inline, etc.
     # - Repeated value: write them all adjacent to each other?
 
-    # INLINE
+
+    is_maybe = False
+    if isinstance(desc, asdl.MaybeType):
+      is_maybe = True
+      desc = desc.desc  # descent
+
+    #
+    # Now look at types
+    #
+
     if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
       enc.Int(field_val, this_chunk)
 
@@ -225,35 +234,18 @@ def EncodeObj(obj, enc, out):
       ref = EncodeArray(field_val, item_desc, enc, out)
       enc.Ref(ref, this_chunk)
 
-    elif isinstance(desc, asdl.MaybeType):
-      item_desc = desc.desc
-      ok = False
-      if isinstance(item_desc, asdl.Sum):
-        if not asdl.is_simple(item_desc):
-          ok = True
-      elif isinstance(item_desc, asdl.Product):
-        ok = True
-
-      # TODO: We can catch this case when parsing the schema rather than on
-      # encoding.
-      if not ok:
-        raise AssertionError(
-            "Simple types shouldn't be optional: %s %s" % (name, desc))
-
-      if field_val is None:
-        enc.Ref(0, this_chunk)
-      else:
-        ref = EncodeObj(field_val, enc, out)
-        enc.Ref(ref, this_chunk)
-
     elif isinstance(desc, asdl.UserType):
       # Assume Id for now
       enc.Int(field_val.enum_value, this_chunk)
 
     else:
-      # Recursive call for child records.  Write children before parents.
-      ref = EncodeObj(field_val, enc, out)
-      enc.Ref(ref, this_chunk)
+      if is_maybe and field_val is None:
+        enc.Ref(0, this_chunk)
+      else:
+        # Recursive call for CompoundObj children.  Write children before
+        # parents.
+        ref = EncodeObj(field_val, enc, out)
+        enc.Ref(ref, this_chunk)
 
   # Write the parent record
   this_ref = out.Write(enc.PaddedBlock(this_chunk))
