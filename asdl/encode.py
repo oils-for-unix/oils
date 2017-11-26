@@ -8,8 +8,16 @@ from asdl import asdl_ as asdl
 from asdl import py_meta
 from asdl import const
 
-_DEFAULT_ALIGNMENT = 4
+from core import util
 
+
+class EncodeError(Exception):
+  def __init__(self, *args, **kwargs):
+    Exception.__init__(self, *args, **kwargs)
+    self.details_printed = False
+
+
+_DEFAULT_ALIGNMENT = 4
 
 class BinOutput:
   """Write aligned blocks here.  Keeps track of block indexes for refs."""
@@ -75,10 +83,11 @@ class Params:
 
   def Int(self, n, chunk):
     if n < 0:
-      raise RuntimeError(
+      raise EncodeError(
           "ASDL can't currently encode negative numbers.  Got %d" % n)
     if n > self.max_int:
-      raise RuntimeError('%d is too big to fit in %d bytes' % (n, self.int_width))
+      raise EncodeError(
+          '%d is too big to fit in %d bytes' % (n, self.int_width))
 
     for i in range(self.int_width):
       chunk.append(n & 0xFF)
@@ -101,7 +110,7 @@ class Params:
     # pre-compute and store a hash value.  They will be looked up in the stack
     # and so forth.
     # - You could also return a obj number or object ID.
-    chunk.extend(s.encode('utf-8'))
+    chunk.extend(s)
     chunk.append(0)  # NUL terminator
 
   def PaddedStr(self, s):
@@ -118,11 +127,11 @@ class Params:
   def Bytes(self, buf, chunk):
     n = len(buf)
     if n >= self.max_index:
-      raise RuntimeError("bytes object is too long (%d)" % n)
+      raise EncodeError("bytes object is too long (%d)" % n)
     for i in range(self.index_width):
       chunk.append(n & 0xFF)
       n >>= 8
-    chunk.extend(buf.encode('utf-8'))
+    chunk.extend(buf)
 
   def PaddedBytes(self, buf):
     chunk = bytearray()
@@ -170,12 +179,12 @@ def EncodeArray(obj_list, item_desc, enc, out):
     # - Sum types can even be put in line, if you have List<T> rather than
     # Array<T>.  Array implies O(1) random access; List doesn't.
     for item in obj_list:
-      # Recursive call.
-      from core import util
       try:
         ref = EncodeObj(item, enc, out)
-      except RuntimeError as e:
-        util.log("Error encoding array: %s (item %s)", e, item)
+      except EncodeError as e:
+        if not e.details_printed:
+          util.log("Error encoding array: %s (item %s)", e, item)
+          e.details_printed = True
         raise
       enc.Ref(ref, array_chunk)
 
@@ -253,13 +262,12 @@ def EncodeObj(obj, enc, out):
       if is_maybe and field_val is None:
         enc.Ref(0, this_chunk)
       else:
-        # Recursive call for CompoundObj children.  Write children before
-        # parents.
-        from core import util
         try:
           ref = EncodeObj(field_val, enc, out)
-        except RuntimeError as e:
-          util.log("Error encoding %s : %s (val %s)", name, e, field_val)
+        except EncodeError as e:
+          if not e.details_printed:
+            util.log("Error encoding %s : %s (val %s)", name, e, field_val)
+            e.details_printed = True
           raise
         enc.Ref(ref, this_chunk)
 

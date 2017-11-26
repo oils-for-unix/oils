@@ -156,6 +156,8 @@ LEXER_DEF[lex_mode_e.COMMENT] = [
 ]
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+  # NOTE: We could add anything 128 and above to this character class?  So
+  # utf-8 characters don't get split?
   R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars),
   # e.g. beginning of NAME=val, which will always be longer than the above
   # Id.Lit_Chars.
