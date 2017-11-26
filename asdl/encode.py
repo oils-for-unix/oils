@@ -74,6 +74,8 @@ class Params:
     chunk.append(i & 0xFF)
 
   def Int(self, n, chunk):
+    if n < 0:
+      raise Error('ASDL currently supports unsigned integers, got %d' % n)
     if n > self.max_int:
       raise Error('%d is too big to fit in %d bytes' % (n, self.int_width))
 
@@ -195,16 +197,11 @@ def EncodeObj(obj, enc, out):
 
   for name in obj.FIELDS:  # encode in order
     desc = obj.DESCRIPTOR_LOOKUP[name]
-    #print('\n\n------------')
-    #print('field DESC', name, desc)
-
     field_val = getattr(obj, name)
-    #print('VALUE', field_val)
 
     # TODO:
     # - Float would be inline, etc.
     # - Repeated value: write them all adjacent to each other?
-
 
     is_maybe = False
     if isinstance(desc, asdl.MaybeType):

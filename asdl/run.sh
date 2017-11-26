@@ -98,7 +98,7 @@ arith-demo() {
   local data=_tmp/${name}.bin
 
   # Write a binary
-  asdl-arith-encode '7 + 9' $data
+  asdl-arith-encode '7 * 9' $data
 
   local bin=_tmp/${name}_demo 
 
@@ -115,8 +115,10 @@ osh-demo() {
   local name=osh
   local data=_tmp/${name}.bin
 
-  # TODO: Fix bug -- this is only 3 bytes?
-  bin/osh -n --ast-format oheap -c 'echo hi  # comment' > $data
+  local code='echo hi; echo bye  # comment' 
+  #local code='echo $(( 2 + 3 ))'
+  #local code='echo $(( -2 * -3 ))'  # test negative integers
+  bin/osh -n --ast-format oheap -c "$code" > $data
 
   ls -l $data
 
