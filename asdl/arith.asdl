@@ -14,6 +14,9 @@ module arith {
   -- it has no tag?
   source_location = (string path, int line, int col, int length)
 
+  -- Optional int
+  token = (int id, string value, int? span_id)
+
   -- TODO:
   -- - Add optional.  For slicing maybe -- optional end.
   -- - Add repeated.  For function call maybe.

@@ -41,6 +41,11 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual([], func.args)
     print(func)
 
+    t = arith_ast.token(5, 'x')
+    self.assertEqual(5, t.id)
+    self.assertEqual('x', t.value)
+    self.assertEqual(0, t.span_id)
+
   def testTypeCheck(self):
     v = ArithVar('name')
     # Integer is not allowed

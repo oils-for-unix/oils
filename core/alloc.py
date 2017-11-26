@@ -32,8 +32,9 @@ class Arena(object):
     self.lines = []
     self.next_line_id = 0
 
-    self.spans = []
-    self.next_span_id = 0
+    # first real span is 1.  0 means undefined.
+    self.spans = [None]
+    self.next_span_id = 1
 
     # List of (src_path index, physical line number).  This is two integers for
     # every line read.  We could use a clever encoding of this.  (Although the
@@ -94,8 +95,8 @@ class Arena(object):
     return span_id
 
   def GetLineSpan(self, span_id):
-    assert span_id >= 0, span_id
-    return self.spans[span_id]
+    assert span_id > 0, span_id
+    return self.spans[span_id]  # span IDs start from 1
 
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
