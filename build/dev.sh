@@ -73,6 +73,9 @@ clean() {
   rm -r -f --verbose _devbuild/py-ext
 }
 
+# TODO: We should put the fastlex.so extension here.  But I don't want to
+# require re2c installation just yet.  Developers can use the slow lexer for
+# now.
 all() {
   gen-help
   pylibc

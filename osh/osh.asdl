@@ -47,6 +47,9 @@ module osh
   -- NOTE: identical strings can shared, if we care.
   token = (id id, string val, int? span_id)
 
+  -- Optional step for {100..50..-15}
+  braced_step = (int val, int negated)
+
   bracket_op = 
     WholeArray(id op_id)  -- * or @
   | ArrayIndex(arith_expr expr)
@@ -81,9 +84,9 @@ module osh
     -- {a,b,c}
   | BracedAltPart(word* words)
     -- {1..10} or {1..10..2}
-  | BracedIntRangePart(int start, int end, int? step)
+  | BracedIntRangePart(int start, int end, braced_step? step)
     -- {a..f} or {a..f..2} or {a..f..-2}
-  | BracedCharRangePart(string start, string end, int? step)
+  | BracedCharRangePart(string start, string end, braced_step? step)
 	-- extended globs are parsed statically, unlike globs
   | ExtGlobPart(token op, word* arms)
 

@@ -144,9 +144,6 @@ run() {
 
     echo "$sh_path ID: $shell_hash"
 
-    # TODO: Shell ID should be separate columns?
-    # It's really shell_version_id?
-
     if ! test -n "$preview"; then
       # 20ms for ltmain.sh; 34ms for configure
       cat $sorted | xargs -n 1 -- $0 \
@@ -353,6 +350,7 @@ auto() {
   sudo apt install python-dev
 
   build/dev.sh all
+  build/codegen.sh lexer
 
   _banner 'OSH dev build'
   bin/osh -c 'echo OSH dev build'

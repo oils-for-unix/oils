@@ -9,6 +9,8 @@
 word_parse.py - Parse the shell word language.
 """
 
+from asdl import const
+
 from core.id_kind import Id, Kind, LookupKind
 from core import braces
 from core import word
@@ -624,8 +626,8 @@ class WordParser(object):
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
     quoted_part = ast.DoubleQuotedPart()
-    left_spid = -1
-    right_spid = -1  # gets set later
+    left_spid = const.NO_INTEGER
+    right_spid = const.NO_INTEGER  # gets set later
 
     if self.cur_token is not None:  # None in here doc case
       left_spid = self.cur_token.span_id

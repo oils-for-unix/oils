@@ -93,4 +93,12 @@ print(repr(json.loads(sys.stdin.read())))
 '
 }
 
+# Right now it's split into (Lit_Other '\xce') and (Lit_Other '\xbc').  This is
+# fine for most purposes, although we could probably simplify this.
+osh-literal() {
+  bin/osh -n -c 'echo [μ]'
+  # This works fine
+  bin/osh -c 'echo [μ]'
+}
+
 "$@"

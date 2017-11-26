@@ -41,13 +41,16 @@ def is_simple(sum):
 
 
 class StrType:
-  pass
+  def __repr__(self):
+    return '<Str>'
 
 class IntType:
-  pass
+  def __repr__(self):
+    return '<Int>'
 
 class BoolType:
-  pass
+  def __repr__(self):
+    return '<Bool>'
 
 
 # NOTE: We might want to change this to PrimitiveType(int tag).  Then
@@ -65,9 +68,15 @@ class ArrayType:
   def __init__(self, desc):
     self.desc = desc
 
+  def __repr__(self):
+    return '<Array %s>' % self.desc
+
 class MaybeType:
   def __init__(self, desc):
     self.desc = desc  # another descriptor
+
+  def __repr__(self):
+    return '<Maybe %s>' % self.desc
 
 class UserType:
   def __init__(self, typ):

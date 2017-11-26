@@ -1,9 +1,21 @@
 module arith {
+  -- Simple Sum Type
   op_id = Plus | Minus | Star
+
+  -- Compound Sum Type
+  cflow =
+    Break
+  | Continue
+  | Return(int status)
+
+  -- Product Type
 
   -- why does source_location have to be lower case?  It's not a constructor?
   -- it has no tag?
   source_location = (string path, int line, int col, int length)
+
+  -- Optional int
+  token = (int id, string value, int? span_id)
 
   -- TODO:
   -- - Add optional.  For slicing maybe -- optional end.
@@ -32,5 +44,7 @@ module arith {
   | LogicalNot(bool_expr b)
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
+
+
 }
 

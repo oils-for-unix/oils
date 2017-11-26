@@ -10,9 +10,93 @@ int GetRootRef(uint8_t* image) {
   if (image[0] != 'O') return -1;
   if (image[1] != 'H') return -1;
   if (image[2] != 'P') return -1;
-  if (image[3] != 4) return -1;
+  if (image[3] != 1) return -1;  // version 1
+  if (image[4] != 4) return -1;  // alignment 4
 
-  return image[4] + (image[5] << 8) + (image[6] << 16) + (image[7] << 24);
+  return image[5] + (image[6] << 8) + (image[7] << 16);
+}
+
+void PrintToken(const uint32_t* base, const token_t& e, int indent) {
+  for (int i = 0; i < indent; ++i) {
+    putchar('\t');
+  }
+  printf("Token %hhu %s\n", e.id(), e.val(base));
+}
+
+void PrintWordPart(const uint32_t* base, const word_part_t& e, int indent) {
+  for (int i = 0; i < indent; ++i) {
+    putchar('\t');
+  }
+  printf("t%hhu ", e.tag());
+  switch (e.tag()) {
+  case word_part_e::LiteralPart: {
+    auto& e2 = static_cast<const LiteralPart&>(e);
+    printf("LiteralPart\n");
+    PrintToken(base, e2.token(base), indent+1);
+    break;
+  }
+  default:
+    printf("OTHER word_part\n");
+    break;
+  }
+}
+
+void PrintWord(const uint32_t* base, const word_t& e, int indent) {
+  for (int i = 0; i < indent; ++i) {
+    putchar('\t');
+  }
+  printf("t%hhu ", e.tag());
+  switch (e.tag()) {
+  case word_e::CompoundWord: {
+    auto& e2 = static_cast<const CompoundWord&>(e);
+    printf("CompoundWord %d\n", e2.parts_size(base));
+    for (int i = 0; i < e2.parts_size(base); ++i) {
+      PrintWordPart(base, e2.parts(base, i), indent+1);
+    }
+    break;
+  }
+  default:
+    printf("OTHER word\n");
+    break;
+  }
+}
+
+void PrintCommand(const uint32_t* base, const command_t& e, int indent) {
+  for (int i = 0; i < indent; ++i) {
+    putchar('\t');
+  }
+  printf("t%hhu ", e.tag());
+
+  switch (e.tag()) {
+  case command_e::SimpleCommand: {
+    auto& e2 = static_cast<const SimpleCommand&>(e);
+    printf("SimpleCommand %d\n", e2.words_size(base));
+    for (int i = 0; i < e2.words_size(base); ++i) {
+      PrintWord(base, e2.words(base, i), indent+1);
+    }
+    break;
+  }
+  case command_e::Assignment: {
+    auto& e2 = static_cast<const Assignment&>(e);
+    printf("Assignment flags: ");
+    for (int i = 0; i < e2.flags_size(base); ++i) {
+      printf("%s ", e2.flags(base, i));
+    }
+    printf("\n");
+    break;
+  }
+  case command_e::CommandList: {
+    auto& e2 = static_cast<const CommandList&>(e);
+    printf("CommandList %d\n", e2.children_size(base));
+    for (int i = 0; i < e2.children_size(base); ++i) {
+      PrintCommand(base, e2.children(base, i), indent+1);
+    }
+    break;
+  }
+  default:
+    printf("OTHER\n");
+    break;
+  }
 }
 
 int main(int argc, char **argv) {
@@ -22,7 +106,7 @@ int main(int argc, char **argv) {
   }
   FILE *f = fopen(argv[1], "rb");
   if (!f) {
-    printf("Error opening %s", argv[1]);
+    fprintf(stderr, "Error opening %s\n", argv[1]);
     return 1;
   }
   fseek(f, 0, SEEK_END);
@@ -48,6 +132,6 @@ int main(int argc, char **argv) {
   auto base = reinterpret_cast<uint32_t*>(image);
 
   size_t offset = alignment * root_ref;
-  auto expr = reinterpret_cast<arith_expr_t*>(image + offset);
-  //PrintExpr(base, *expr, 0);
+  auto expr = reinterpret_cast<command_t*>(image + offset);
+  PrintCommand(base, *expr, 0);
 }

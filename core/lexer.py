@@ -11,9 +11,9 @@ lexer.py - Library for lexing.
 
 import re
 
+from asdl import const
 from core import util
 from core.id_kind import Id
-
 from osh import ast_ as ast
 
 
@@ -43,7 +43,7 @@ class LineLexer(object):
     self.arena = arena
 
     self.arena_skip = False  # For MaybeUnreadOne
-    self.last_span_id = -1  # For MaybeUnreadOne
+    self.last_span_id = const.NO_INTEGER  # For MaybeUnreadOne
 
     self.Reset(line, -1)  # Invalid arena index to start
 
@@ -88,7 +88,7 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        t = ast.token(Id.Unknown_Tok, '', -1)  # no span ID
+        t = ast.token(Id.Unknown_Tok, '', const.NO_INTEGER)
         return t
 
       tok_type, end_pos = self.match_func(lex_mode, self.line, pos)
@@ -99,7 +99,7 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return ast.token(tok_type, tok_val)  # no location
+    return ast.token(tok_type, tok_val, const.NO_INTEGER)
 
   def AtEnd(self):
     return self.line_pos == len(self.line)
@@ -125,7 +125,7 @@ class LineLexer(object):
 
     if self.arena is not None:
       if self.arena_skip:
-        assert self.last_span_id != -1
+        assert self.last_span_id != const.NO_INTEGER
         span_id = self.last_span_id
         self.arena_skip = False
       else:
@@ -134,7 +134,7 @@ class LineLexer(object):
     else:
       # Completion parser might not have arena?
       # We should probably get rid of this.
-      span_id = -1
+      span_id = const.NO_INTEGER
 
     t = ast.token(tok_type, tok_val, span_id)
 

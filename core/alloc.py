@@ -11,6 +11,9 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
+from asdl import const
+
+
 class Arena(object):
   """A collection of lines and line spans.
 
@@ -32,6 +35,7 @@ class Arena(object):
     self.lines = []
     self.next_line_id = 0
 
+    # first real span is 1.  0 means undefined.
     self.spans = []
     self.next_span_id = 0
 
@@ -94,12 +98,12 @@ class Arena(object):
     return span_id
 
   def GetLineSpan(self, span_id):
-    assert span_id >= 0, span_id
-    return self.spans[span_id]
+    assert span_id != const.NO_INTEGER, span_id
+    return self.spans[span_id]  # span IDs start from 1
 
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
-    assert line_id >= 0
+    assert line_id != const.NO_INTEGER, line_id
     src_id , line_num = self.debug_info[line_id]
     try:
       path = self.src_paths[src_id]

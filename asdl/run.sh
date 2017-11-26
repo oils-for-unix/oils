@@ -51,17 +51,8 @@ py-cpp() {
 # Test specific schemas
 #
 
-arith-both() {
-  py-cpp asdl/arith.asdl
-}
-
-osh-both() {
-  py-cpp osh/osh.asdl
-}
-
-ovm-both() {
-  py-cpp ovm/ovm.asdl
-}
+arith-both() { py-cpp asdl/arith.asdl; }
+osh-both() { py-cpp osh/osh.asdl; }
 
 #
 # Native Code
@@ -107,7 +98,7 @@ arith-demo() {
   local data=_tmp/${name}.bin
 
   # Write a binary
-  asdl-arith-encode '7 + 9' $data
+  asdl-arith-encode '7 * 9' $data
 
   local bin=_tmp/${name}_demo 
 
@@ -118,11 +109,19 @@ arith-demo() {
   #$bin $data 
 }
 
+# TODO: How big is oheap vs. the virtual memory size?
+
 osh-demo() {
   local name=osh
   local data=_tmp/${name}.bin
 
-  # TODO: Call bin/osh --ast-output _tmp/a.oheap --ast-format oheap -c 'echo # hi'
+  local code='echo hi; echo bye  # comment' 
+  local code='declare -r -x foo'  # for testing repeated array
+  #local code='echo $(( 2 + 3 ))'
+  #local code='echo $(( -2 * -3 ))'  # test negative integers
+  bin/osh -n --ast-format oheap -c "$code" > $data
+
+  ls -l $data
 
   core/id_kind_gen.py cpp > _tmp/id_kind.h
   build-demo osh/osh.asdl

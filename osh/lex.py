@@ -1,13 +1,47 @@
 """
 lex.py -- Shell lexer.
 
-It consists of a series of lexical modes, each with regex -> Id mappings.
+It consists of a series of lexer modes, each with a regex -> Id mapping.
 
-TODO:
-- \0 should be Id.Op_Newline or Id.WS_Newline.  And then the higher level Lexer
-  should return the Id.Eof_Real token, as it does now.
+NOTE: Input Handling Affects Regular Expressions
+------------------------------------------------
 
-Remaining constructs:
+We pass one line at a time to the Lexer, via LineLexer.  We must be able to
+parse one line at a time because of interactive parsing (e.g. using the output
+of GNU readline.)
+
+There are two ways we could handle input:
+
+  1. Every line is NUL terminated:
+     'one\n\0' 'last line\0'
+  2. Every line is terminated by NUL, except the last:
+     'one\n' 'last line\0'
+
+The advantage of #2 is that in the common case of reading files, we don't have
+to do it one line at a time.  We could slurp the whole file in, or mmap() it,
+etc.
+
+The second option makes the regular expressions more complicated, so I'm
+punting on it for now.  We assume the first.
+
+That means:
+
+  - No regexes below should match \0.  They are added by
+    core/lexer_gen.py for re2c.
+
+For example, [^']+ is not valid.  [^'\0]+ is correct.  Otherwise we would read
+unitialized memory past the sentinel.
+
+Python's regex engine knows where the end of the input string is, so it
+doesn't require need a sentinel like \0.
+
+Note that re2c is not able to work in a mode with a strict length limit.  It
+would cause too many extra checks?  The language is then no longer regular!
+
+http://re2c.org/examples/example_03.html
+
+Remaining constructs
+--------------------
 
 Case terminators:
   ;;&                  Op_DSemiAmp  for case
@@ -54,9 +88,8 @@ lex_mode_e = ast.lex_mode_e
 # chain the groups in order.  It might make sense to experiment with the order
 # too.
 
-# Explicitly exclude newline, although '.' would work too
 _BACKSLASH = [
-  R(r'\\[^\n]', Id.Lit_EscapedChar),
+  R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
 ]
 
@@ -115,12 +148,16 @@ _LEFT_UNQUOTED = [
 
 LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 
-# Anything until the end of the line is a comment.
+# Anything until the end of the line is a comment.  Does not match the newline
+# itself.  We want to switch modes and possibly process Op_Newline for here
+# docs, etc.
 LEXER_DEF[lex_mode_e.COMMENT] = [
-  R(r'.*', Id.Ignored_Comment)  # does not match newline
+  R(r'[^\n\0]*', Id.Ignored_Comment)
 ]
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+  # NOTE: We could add anything 128 and above to this character class?  So
+  # utf-8 characters don't get split?
   R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars),
   # e.g. beginning of NAME=val, which will always be longer than the above
   # Id.Lit_Chars.
@@ -141,7 +178,6 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
   R(r'[ \t\r]+', Id.WS_Space),
 
-  C('\0', Id.Eof_Real),  # TODO: Remove?
   C('\n', Id.Op_Newline),
 
   C('&', Id.Op_Amp),
@@ -166,7 +202,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[0-9]*<>', Id.Redir_LessGreat),
   R(r'[0-9]*>\|', Id.Redir_Clobber),
 
-  R(r'.', Id.Lit_Other),  # any other single char is a literal
+  R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]
 
 # In OUTER and DBRACKET states.
@@ -251,12 +287,12 @@ LEXER_DEF[lex_mode_e.DBRACKET] = [
 # Example: echo @(<> <>|&&|'foo'|$bar)
 LEXER_DEF[lex_mode_e.EXTGLOB] = \
     _BACKSLASH + _LEFT_SUBS + _VARS + _EXTGLOB_BEGIN + [
-  R(r'[^\\$`"\'|)@*+!?]+', Id.Lit_Chars),
+  R(r'[^\\$`"\'|)@*+!?\0]+', Id.Lit_Chars),
   C('|', Id.Op_Pipe),
   C(')', Id.Op_RParen),  # maybe be translated to Id.ExtGlob_RParen
-  C('\0', Id.Eof_Real),
-  R('.', Id.Lit_Other),  # everything else is literal
+  R(r'[^\0]', Id.Lit_Other),  # everything else is literal
 ]
+
 
 LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   # Match these literals first, and then the rest of the OUTER state I guess.
@@ -268,7 +304,13 @@ LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   C('(', Id.Lit_Chars),
   C(')', Id.Lit_Chars),
   C('|', Id.Lit_Chars),
-] + _UNQUOTED
+] + [
+  # Avoid "unreachable rule error"
+  (is_regex, pat, re_list) for 
+  (is_regex, pat, re_list) in _UNQUOTED
+  if not (is_regex == False and pat in ('(', ')', '|'))
+]
+
 
 LEXER_DEF[lex_mode_e.DQ] = [
   # Only 4 characters are backslash escaped inside "".
@@ -279,8 +321,7 @@ LEXER_DEF[lex_mode_e.DQ] = [
   R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
   # NOTE: When parsing here doc line, this token doesn't end it.
   C('"', Id.Right_DoubleQuote),
-  C('\0', Id.Eof_Real),
-  R(r'.', Id.Lit_Other),  # e.g. "$"
+  R(r'[^\0]', Id.Lit_Other),  # e.g. "$"
 ]
 
 _VS_ARG_COMMON = _BACKSLASH + [
@@ -295,8 +336,7 @@ LEXER_DEF[lex_mode_e.VS_ARG_UNQ] = \
   _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
-  C('\0', Id.Eof_Real),
-  R(r'.', Id.Lit_Other),  # e.g. "$", must be last
+  R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
@@ -304,25 +344,26 @@ LEXER_DEF[lex_mode_e.VS_ARG_DQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed
   C('"', Id.Left_DoubleQuote),
-  C('\0', Id.Eof_Real),
-  R(r'.', Id.Lit_Other),  # e.g. "$", must be last
+  R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ
 # state.
 LEXER_DEF[lex_mode_e.SQ] = [
-  R(r"[^']+", Id.Lit_Chars),  # matches a line at most
+  R(r"[^'\0]+", Id.Lit_Chars),  # matches a line at most
   C("'", Id.Right_SingleQuote),
-  C('\0', Id.Eof_Real),
 ]
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
-# point of it is that supports other backslash escapes like \n!
+# point of it is that supports other backslash escapes like \n!  It just
+# becomes a regular backslash.
 LEXER_DEF[lex_mode_e.DOLLAR_SQ] = [
-  R(r"[^'\\]+", Id.Lit_Chars),
-  R(r"\\.", Id.Lit_EscapedChar),
+  R(r"[^'\\\0]+", Id.Lit_Chars),
   C("'", Id.Right_SingleQuote),
-  C('\0', Id.Eof_Real),
+  R(r"\\[^\0]", Id.Lit_EscapedChar),
+  # Backslash that ends the file!  Caught by re2c exhaustiveness check.  For
+  # now, make it Unknown.
+  C('\\\0', Id.Unknown_Tok),
 ]
 
 LEXER_DEF[lex_mode_e.VS_1] = [
@@ -341,9 +382,8 @@ LEXER_DEF[lex_mode_e.VS_1] = [
 
   C('\\\n', Id.Ignored_LineCont),
 
-  C('\0', Id.Eof_Real),  # not used?
   C('\n', Id.Unknown_Tok),  # newline not allowed inside ${}
-  R(r'.', Id.Unknown_Tok),  # any char except newline
+  R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
 LEXER_DEF[lex_mode_e.VS_2] = \
@@ -354,7 +394,7 @@ LEXER_DEF[lex_mode_e.VS_2] = \
 
   C('\\\n', Id.Ignored_LineCont),
   C('\n', Id.Unknown_Tok),  # newline not allowed inside ${}
-  R(r'.', Id.Unknown_Tok),  # any char except newline
+  R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
@@ -377,7 +417,7 @@ LEXER_DEF[lex_mode_e.ARITH] = \
 # TODO: 64#@ interferes with VS_AT.  Hm.
 ] + ID_SPEC.LexerPairs(Kind.Arith) + [
   C('\\\n', Id.Ignored_LineCont),
-  R(r'.', Id.Unknown_Tok)  # any char.  This should be a syntax error.
+  R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
 ]
 
 # Notes on BASH_REGEX states

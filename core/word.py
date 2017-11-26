@@ -6,6 +6,7 @@ import sys
 from osh import ast_ as ast
 from core.id_kind import Id, Kind, LookupKind
 from core import util
+from asdl import const
 
 p_die = util.p_die
 
@@ -108,7 +109,7 @@ def LeftMostSpanForPart(part):
 
   if part.tag == word_part_e.ArrayLiteralPart:
     if not part.words:
-      return -1
+      return const.NO_INTEGER
     else:
       return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
@@ -123,14 +124,14 @@ def LeftMostSpanForPart(part):
     if part.tokens:
       return part.tokens[0].span_id
     else:
-      return -1
+      return const.NO_INTEGER
 
   elif part.tag == word_part_e.DoubleQuotedPart:
     if part.parts:
       return LeftMostSpanForPart(part.parts[0])
     else:
       # We need the double quote location
-      return -1
+      return const.NO_INTEGER
 
   elif part.tag == word_part_e.SimpleVarSub:
     return part.token.span_id
@@ -142,7 +143,7 @@ def LeftMostSpanForPart(part):
     return part.spids[0]
 
   elif part.tag == word_part_e.TildeSubPart:
-    return -1
+    return const.NO_INTEGER
 
   elif part.tag == word_part_e.ArithSubPart:
     # begin, end
@@ -176,31 +177,31 @@ def _RightMostSpanForPart(part):
     if part.tokens:
       return part.tokens[-1].span_id
     else:
-      return -1
+      return const.NO_INTEGER
 
   elif part.tag == word_part_e.DoubleQuotedPart:
     if part.parts:
       return LeftMostSpanForPart(part.parts[-1])
     else:
       # We need the double quote location
-      return -1
+      return const.NO_INTEGER
 
   elif part.tag == word_part_e.SimpleVarSub:
     return part.token.span_id
 
   elif part.tag == word_part_e.BracedVarSub:
     spid = part.spids[0]
-    assert spid != -1
+    assert spid != const.NO_INTEGER
     return spid
 
   elif part.tag == word_part_e.CommandSubPart:
     return part.spids[1]
 
   elif part.tag == word_part_e.TildeSubPart:
-    return -1
+    return const.NO_INTEGER
 
   elif part.tag == word_part_e.ArithSubPart:
-    return -1
+    return const.NO_INTEGER
 
   elif part.tag == word_part_e.ExtGlobPart:
     return part.spids[1]
@@ -227,7 +228,7 @@ def LeftMostSpanForWord(w):
   # TODO: Really we should use par
   if w.tag == word_e.CompoundWord:
     if len(w.parts) == 0:
-      return -1
+      return const.NO_INTEGER
     elif len(w.parts) == 1:
       return LeftMostSpanForPart(w.parts[0])
     else:
@@ -245,7 +246,7 @@ def UNUSED_RightMostSpanForWord(w):
   # TODO: Really we should use par
   if w.tag == word_e.CompoundWord:
     if len(w.parts) == 0:
-      return -1
+      return const.NO_INTEGER
     elif len(w.parts) == 1:
       return _RightMostSpanForPart(w.parts[0])
     else:

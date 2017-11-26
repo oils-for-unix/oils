@@ -6,6 +6,7 @@ encode_test.py: Tests for encode.py
 import unittest
 
 from asdl import encode  # module under test
+from asdl import const
 
 
 class EncoderTest(unittest.TestCase):
@@ -16,6 +17,10 @@ class EncoderTest(unittest.TestCase):
     chunk = bytearray()
     p.Int(1, chunk)
     self.assertEqual(b'\x01\x00\x00', chunk)
+
+    chunk = bytearray()
+    p.Int(const.NO_INTEGER, chunk)
+    self.assertEqual(b'\xff\xff\xff', chunk)
 
     chunk = p.PaddedBytes('0123456789')
     # 2 byte length -- max 64K entries

@@ -29,8 +29,9 @@ put: an op is Add() and not Add, an instance of a class, not an integer value.
 import io
 import sys
 
-from asdl import format as fmt
 from asdl import asdl_ as asdl
+from asdl import const
+from asdl import format as fmt
 from core import util
 
 
@@ -161,11 +162,18 @@ class CompoundObj(Obj):
 
   def _SetDefaults(self):
     for name in self.FIELDS:
-      #print("%r wasn't assigned" % name)
       desc = self.DESCRIPTOR_LOOKUP[name]
-      # item_desc = desc.desc
+
       if isinstance(desc, asdl.MaybeType):
-        self.__setattr__(name, None)  # Maybe values can be None
+        child = desc.desc
+        if isinstance(child, asdl.IntType):
+          value = const.NO_INTEGER
+        elif isinstance(child, asdl.StrType):
+          value = ''
+        else:
+          value = None
+        self.__setattr__(name, value)  # Maybe values can be None
+
       elif isinstance(desc, asdl.ArrayType):
         self.__setattr__(name, [])
 

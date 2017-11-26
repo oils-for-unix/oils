@@ -12,6 +12,8 @@ cmd_parse.py - Parse high level shell commands.
 
 import sys
 
+from asdl import const
+
 from core import braces
 from core import word
 from core.id_kind import Id, Kind
@@ -216,7 +218,7 @@ class CommandParser(object):
     if first_char.isdigit():
       fd = int(first_char)
     else:
-      fd = -1
+      fd = const.NO_INTEGER
 
     if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()
@@ -671,11 +673,11 @@ class CommandParser(object):
                      ;
     """
     words = []
-    semi_spid = -1  # The span_id of any semi-colon, so we can remove it.
+    # The span_id of any semi-colon, so we can remove it.
+    semi_spid = const.NO_INTEGER  
 
     while True:
       if not self._Peek(): return None
-      # TODO: Add span ID of semi-colon or -1
       if self.c_id == Id.Op_Semi:
         semi_spid = self.cur_word.token.span_id  # TokenWord
         self._Next()
@@ -743,8 +745,8 @@ class CommandParser(object):
 
     if not self._NewlineOk(): return None
 
-    in_spid = -1
-    semi_spid = -1
+    in_spid = const.NO_INTEGER
+    semi_spid = const.NO_INTEGER
 
     if not self._Peek(): return None
     if self.c_id == Id.KW_In:
@@ -860,8 +862,8 @@ class CommandParser(object):
     else:
       action_children = []
 
-    dsemi_spid = -1
-    last_spid = -1
+    dsemi_spid = const.NO_INTEGER
+    last_spid = const.NO_INTEGER
     if not self._Peek(): return None
     if self.c_id == Id.KW_Esac:
       last_spid = word.LeftMostSpanForWord(self.cur_word)
@@ -963,7 +965,7 @@ class CommandParser(object):
       if not body: return None
       if_node.else_action = body.children
     else:
-      else_spid = -1
+      else_spid = const.NO_INTEGER
 
     if_node.spids.append(else_spid)
 
@@ -986,14 +988,14 @@ class CommandParser(object):
     if not body: return None
 
     arm = ast.if_arm(cond.children, body.children)
-    arm.spids.extend((-1, then_spid))  # no if spid at first?
+    arm.spids.extend((const.NO_INTEGER, then_spid))  # no if spid at first?
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       if not self._ParseElifElse(if_node):
         return None
     else:
-      if_node.spids.append(-1)  # no else spid
+      if_node.spids.append(const.NO_INTEGER)  # no else spid
 
     fi_spid = word.LeftMostSpanForWord(self.cur_word)
     if not self._Eat(Id.KW_Fi): return None

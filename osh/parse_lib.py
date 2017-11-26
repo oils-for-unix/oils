@@ -6,7 +6,7 @@ import sys
 
 from core import lexer
 from core import reader
-from core.id_kind import Id
+from core import id_kind
 
 from osh import lex
 from osh import word_parse
@@ -44,12 +44,14 @@ class MatchToken_Slow(object):
 def MatchToken_Fast(lex_mode, line, start_pos):
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchToken(lex_mode.enum_id, line, start_pos)
-  return Id(tok_type), end_pos
+  # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
+  # saves memory.
+  return id_kind.IdInstance(tok_type), end_pos
 
 
 def _MakeMatcher():
   # NOTE: Could have an environment variable to control this for speed?
-  return MatchToken_Slow(lex.LEXER_DEF)
+  #return MatchToken_Slow(lex.LEXER_DEF)
 
   if fastlex:
     return MatchToken_Fast

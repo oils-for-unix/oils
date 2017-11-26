@@ -6,10 +6,13 @@ arith_ast_test.py: Tests for arith_ast.py
 import io
 import unittest
 
-from asdl import arith_ast  # module under test
 from asdl import format as fmt
 from asdl import py_meta
+from asdl import asdl_
+from asdl import const
 from asdl import encode
+
+from asdl import arith_ast  # module under test
 
 
 ArithVar = arith_ast.ArithVar
@@ -20,6 +23,9 @@ Slice = arith_ast.Slice
 arith_expr = arith_ast.arith_expr
 source_location = arith_ast.source_location
 op_id_e = arith_ast.op_id_e
+
+cflow_e = arith_ast.cflow_e
+#cflow_t = arith_ast.cflow_t
 
 
 class ArithAstTest(unittest.TestCase):
@@ -36,6 +42,11 @@ class ArithAstTest(unittest.TestCase):
     func.name = 'f'
     self.assertEqual([], func.args)
     print(func)
+
+    t = arith_ast.token(5, 'x')
+    self.assertEqual(5, t.id)
+    self.assertEqual('x', t.value)
+    self.assertEqual(const.NO_INTEGER, t.span_id)
 
   def testTypeCheck(self):
     v = ArithVar('name')
@@ -58,7 +69,33 @@ class ArithAstTest(unittest.TestCase):
     # What about product types?
     #print(v.xspans)
 
-  def testTypes(self):
+  def testEncode(self):
+    obj = arith_ast.Const(99)
+    print('Encoding into binary:')
+    print(obj)
+
+    enc = encode.Params()
+    f = io.BytesIO()
+    out = encode.BinOutput(f)
+    encode.EncodeRoot(obj, enc, out)
+    e = f.getvalue()
+
+    #print(repr(e))
+    #print(e[0:4], e[4:8], e[8:])
+
+    # Header is OHP version 1
+    self.assertEqual(b'OHP\x01', e[0:4])
+
+    self.assertEqual(b'\x04', e[4:5])  # alignment 4
+
+    # TODO: Fix after spids
+    return
+    self.assertEqual(b'\x02\x00\x00', e[5:8])  # root ref 2
+
+    self.assertEqual(b'\x01', e[8:9])  # tag 1 is const
+    self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99
+
+  def testConstructorType(self):
 
     print(ArithVar)
     print('FIELDS', ArithVar.FIELDS)
@@ -92,7 +129,10 @@ class ArithAstTest(unittest.TestCase):
     else:
       raise AssertionError("Should have failed")
 
-    #n5 = ArithVar(None)
+  def testProductType(self):
+    print
+    print '-- PRODUCT --'
+    print
 
     s = source_location()
     s.path = 'hi'
@@ -101,14 +141,42 @@ class ArithAstTest(unittest.TestCase):
     s.length = 3
     print(s)
 
-    c = Const(66)
-    print(c)
-    # Test out hierarchy
-    assert isinstance(c, Const)
-    assert isinstance(c, arith_expr)
+    assert isinstance(s.DESCRIPTOR, asdl_.Product)
+
+    # Implementation detail for dynamic type checking
+    assert isinstance(s, py_meta.CompoundObj)
+
+  def testSimpleSumType(self):
+    # TODO: Should be op_id_i.Plus -- instance
+    # Should be op_id_s.Plus
+
+    print
+    print '-- SIMPLE SUM --'
+    print
+
+    o = op_id_e.Plus
+    assert isinstance(o, py_meta.SimpleObj)
+
+    # Implementation detail for dynamic type checking
+    assert isinstance(o.DESCRIPTOR, asdl_.Sum)
+
+  def testCompoundSumType(self):
+    print
+    print '-- COMPOUND SUM --'
+    print
+
+    # TODO: Should be cflow_t.Break() and cflow_i.Break
+    c = arith_ast.Break()
+    assert isinstance(c, arith_ast.Break)
+    assert isinstance(c, arith_ast.cflow)
     assert isinstance(c, py_meta.CompoundObj)
 
-    #print(Const('invalid'))
+    # Implementation detail for dynamic type checking
+    assert isinstance(c.DESCRIPTOR, asdl_.Constructor), c.DESCRIPTOR
+
+  def testOtherTypes(self):
+    c = Const(66)
+    print(c)
 
     print(Slice(Const(1), Const(5), Const(2)))
 
@@ -131,32 +199,6 @@ class ArithAstTest(unittest.TestCase):
     arith_expr_e = arith_ast.arith_expr_e
     self.assertEqual(arith_expr_e.Const, c.tag)
     self.assertEqual(arith_expr_e.ArithBinary, n.tag)
-
-  def testEncode(self):
-    obj = arith_ast.Const(99)
-    print('Encoding into binary:')
-    print(obj)
-
-    enc = encode.Params()
-    f = io.BytesIO()
-    out = encode.BinOutput(f)
-    encode.EncodeRoot(obj, enc, out)
-    e = f.getvalue()
-
-    #print(repr(e))
-    #print(e[0:4], e[4:8], e[8:])
-
-    # Header is OHP version 1
-    self.assertEqual(b'OHP\x01', e[0:4])
-
-    self.assertEqual(b'\x04', e[4:5])  # alignment 4
-
-    # TODO: Fix after spids
-    return
-    self.assertEqual(b'\x02\x00\x00', e[5:8])  # root ref 2
-
-    self.assertEqual(b'\x01', e[8:9])  # tag 1 is const
-    self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99
 
 
 if __name__ == '__main__':

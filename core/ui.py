@@ -12,6 +12,7 @@ ui.py - User interface constructs.
 
 import sys
 
+from asdl import const
 from core import word
 
 
@@ -91,19 +92,18 @@ def MakeStatusLines():
 
 def PrettyPrintError(parse_error, arena, f):
     #print(parse_error)
-    if parse_error.span_id is not None:
+    if parse_error.span_id != const.NO_INTEGER:
       span_id = parse_error.span_id
     elif parse_error.token:
       span_id = parse_error.token.span_id
     elif parse_error.part:
       span_id = word.LeftMostSpanForPart(parse_error.part)
     elif parse_error.word:
-      # Can be -1
       span_id = word.LeftMostSpanForWord(parse_error.word)
     else:
-      span_id = -1
+      span_id = const.NO_INTEGER  # invalid
 
-    if span_id == -1:
+    if span_id == const.NO_INTEGER:
       line = '<no position info for token>'
       path = '<unknown>'
       line_num = -1

@@ -23,8 +23,9 @@ if not os.getenv('_OVM_DEPS'):
   import inspect
   import types
 
+from asdl import const
 
-Buffer = io.BytesIO
+Buffer = io.BytesIO  # used by asdl/format.py
 
 
 class _ErrorWithLocation(Exception):
@@ -37,7 +38,7 @@ class _ErrorWithLocation(Exception):
     self.args = args
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
     # args.
-    self.span_id = kwargs.pop('span_id', None)
+    self.span_id = kwargs.pop('span_id', const.NO_INTEGER)
     self.token = kwargs.pop('token', None)
     self.part = kwargs.pop('part', None)
     self.word = kwargs.pop('word', None)
@@ -132,9 +133,9 @@ class _EnumValue(object):
     return '<%s.%s %s>' % (self.namespace, self.name, self.value)
 
   # I think this is not needed?
-  #def __hash__(self):
-  #  # Needed for the LEXER_DEF dictionary
-  #  return hash(self.name)
+  def __hash__(self):
+    # Needed for the LEXER_DEF dictionary
+    return hash(self.name)
 
   # Why is this needed?  For ASDL serialization?  But we're not using it like
   # that.
