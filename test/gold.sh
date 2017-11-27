@@ -106,6 +106,8 @@ complex-here-docs() {
 
 comments() { _compare gold/comments.sh; }
 export() { _compare gold/export.sh; }
+# Not implemented in osh.
+dollar-sq() { _compare gold/dollar-sq.sh; }
 
 # Needs declare -p
 declare() { _compare gold/declare.sh demo; }
