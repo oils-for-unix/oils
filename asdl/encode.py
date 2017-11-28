@@ -68,6 +68,8 @@ class Params:
 
     self.tag_width = 1  # for ArithVar vs ArithWord.
     self.int_width = int_width
+    self.ref_width = int_width  # Constant 3, used by gen_cpp
+
     # used for fd, line/col
     # also I guess steuff like SimpleCommand
     self.index_width = 2  # 16 bits, e.g. max 64K entries in an array

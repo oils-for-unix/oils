@@ -184,7 +184,7 @@ class CompoundObj(Obj):
 
     for name, val in kwargs.items():
       if self._assigned[name]:
-        raise AssertionError('Duplicate assignment of field %r' % name)
+        raise TypeError('Duplicate assignment of field %r' % name)
       self.__setattr__(name, val)
 
     # Disable type checking here
@@ -195,7 +195,10 @@ class CompoundObj(Obj):
         raise ValueError("Field %r is required and wasn't initialized" % name)
 
   def CheckUnassigned(self):
-    """See if there are unassigned fields, for later encoding."""
+    """See if there are unassigned fields, for later encoding.
+
+    This is currently only used in unit tests.
+    """
     unassigned = []
     for name in self.FIELDS:
       if not self._assigned[name]:
@@ -343,3 +346,11 @@ def MakeTypes(module, root, app_types=None):
 
     else:
       raise AssertionError(typ)
+
+
+def AssignTypes(src_module, dest_module):
+  for name in dir(src_module):
+    if not name.startswith('__'):
+      v = getattr(src_module, name)
+      setattr(dest_module, name, v)
+

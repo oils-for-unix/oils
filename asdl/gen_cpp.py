@@ -154,9 +154,6 @@ class AsdlVisitor:
     else:
       raise AssertionError(typ)
 
-  def VisitSimpleSum(self, sum, name, depth):
-    pass
-
   def VisitSum(self, sum, name, depth):
     if asdl.is_simple(sum):
       self.VisitSimpleSum(sum, name, depth)
@@ -192,11 +189,11 @@ class ForwardDeclareVisitor(AsdlVisitor):
 class ClassDefVisitor(AsdlVisitor):
   """Generate C++ classes and type-safe enums."""
 
-  def __init__(self, f, enc, enum_types=None):
+  def __init__(self, f, enc_params, enum_types=None):
     AsdlVisitor.__init__(self, f)
-    self.ref_width = enc.ref_width
+    self.ref_width = enc_params.ref_width
     self.enum_types = enum_types or {}
-    self.pointer_type = enc.pointer_type
+    self.pointer_type = enc_params.pointer_type
     self.footer = []  # lines
 
   def EmitFooter(self):

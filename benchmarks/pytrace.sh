@@ -13,38 +13,43 @@ set -o errexit
 
 readonly ABUILD=~/git/alpine/abuild/abuild 
 readonly -a RUN_ABUILD=(bin/oil.py osh $ABUILD -h)
-readonly -a PARSE_ABUILD=(bin/oil.py osh --ast-format none -n $ABUILD)
+readonly -a OSH_PARSE=(bin/oil.py osh --ast-format none -n)
 
 #
 # Use Python's cProfile, which uses _lsprof.  This is pretty fast.
 #
 
-# ~2.7 seconds (no tracing)
-time-run-abuild() {
-  time "${RUN_ABUILD[@]}"
-}
-
-# ~1.6 seconds (no tracing)
-time-parse-abuild() {
-  time "${PARSE_ABUILD[@]}"
-}
+# Old: ~2.7 seconds (no tracing)
+# 2017/11/27, After ASDL optimization: 0.72 seconds.
+time-run-abuild() { time "${RUN_ABUILD[@]}"; }
+time-parse-abuild() { time "${OSH_PARSE[@]}" $ABUILD; }
 
 # 3.8 seconds.  So less than 2x overhead.
-cprofile-parse-abuild() {
-  local out=abuild.cprofile 
-  time python -m cProfile -o $out "${PARSE_ABUILD[@]}"
+cprofile-osh-parse() {
+  local in=${1:-$ABUILD}
+  local out=${2:-abuild.cprofile}
+  time python -m cProfile -o $out "${OSH_PARSE[@]}" $in
   ls -l $out
+}
+
+cprofile-parse-abuild() {
+  cprofile-osh-parse $ABUILD _tmp/abuild.cprofile
+}
+cprofile-parse-configure() {
+  cprofile-osh-parse benchmarks/testdata/configure _tmp/configure.cprofile
 }
 
 # Yeah I understand from this why Chrome Tracing / Flame Graphs are better.
 # This format doesn't respect the stack!
 # cumtime: bin/oil.py is the top, obviously
 print-cprofile() {
+  local profile=${1:-_tmp/abuild.cprofile}
   python -c '
 import pstats
-p = pstats.Stats("abuild.cprofile")
+import sys
+p = pstats.Stats(sys.argv[1])
 p.sort_stats("tottime").print_stats()
-'
+' $profile
 }
 
 #

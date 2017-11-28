@@ -47,6 +47,27 @@ py-cpp() {
   asdl-cpp $schema _tmp/$(basename $schema).h
 }
 
+gen-python() {
+  local schema=${1:-asdl/arith.asdl}
+  asdl/gen_python.py $schema
+}
+
+gen-osh-python() {
+  touch _tmp/__init__.py
+  local out=_devbuild/osh_asdl.py
+  gen-python osh/osh.asdl > $out
+  wc -l $out
+}
+
+gen-arith-python() {
+  local out=_tmp/arith_ast_asdl.py
+  touch _tmp/__init__.py
+  gen-python asdl/arith.asdl > $out
+  wc -l $out
+
+  test/unit.sh unit asdl/arith_ast_test.py
+}
+
 #
 # Test specific schemas
 #

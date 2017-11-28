@@ -135,8 +135,16 @@ def LoadSchema(f):
   return asdl_module, app_types
 
 
-f = util.GetResourceLoader().open('osh/osh.asdl')
-asdl_module, app_types = LoadSchema(f)
+# TODO: This should be the only lines in this module?
+# PrettyPrint can go in osh/ast_lib ?  or ast_util?
+
 root = sys.modules[__name__]
-py_meta.MakeTypes(asdl_module, root, app_types)
-f.close()
+if 1:
+  f = util.GetResourceLoader().open('osh/osh.asdl')
+  asdl_module, app_types = LoadSchema(f)
+  py_meta.MakeTypes(asdl_module, root, app_types)
+  f.close()
+else:
+  # Get the types from elsewhere
+  from _devbuild import osh_asdl
+  py_meta.AssignTypes(osh_asdl, root)
