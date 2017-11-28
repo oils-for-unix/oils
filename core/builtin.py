@@ -496,11 +496,16 @@ def Pushd(argv, dir_stack):
   dest_dir = argv[0]
   try:
     os.chdir(dest_dir)
+    dir_stack.append(os.getcwd())
+    for entry in dir_stack:
+      sys.stdout.write(entry + " ")
+    if len(dir_stack):
+      sys.stdout.write("\n")
+    sys.stdout.flush()
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  dir_stack.append(os.getcwd())
   return 0
 
 
@@ -513,6 +518,11 @@ def Popd(argv, dir_stack):
 
   try:
     os.chdir(dest_dir)
+    for entry in dir_stack:
+      sys.stdout.write(entry + " ")
+    if len(dir_stack) > 0:
+      sys.stdout.write("\n")
+    sys.stdout.flush()
   except OSError as e:
     util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
@@ -520,8 +530,33 @@ def Popd(argv, dir_stack):
   return 0
 
 
+DIRS_SPEC = _Register('dirs')
+DIRS_SPEC.ShortFlag('-c')
+DIRS_SPEC.ShortFlag('-l')
+DIRS_SPEC.ShortFlag('-p')
+DIRS_SPEC.ShortFlag('-v')
+
 def Dirs(argv, dir_stack):
-  print(dir_stack)
+  arg, i = DIRS_SPEC.Parse(argv)
+  if arg.l:
+    util.warn('*** dirs -l not implemented ***')
+  # Following `bash` behavior for order of operations
+  if arg.c:
+    while len(dir_stack) > 0:
+      dir_stack.pop()
+  elif arg.v:
+    for i in range(0, len(dir_stack)):
+      print(" " + str(i) + " " + dir_stack[i])
+  elif arg.p:
+    for entry in dir_stack:
+      print(entry)
+  else:
+    for entry in dir_stack:
+      sys.stdout.write(entry + " ")
+    if len(dir_stack) > 0:
+      sys.stdout.write("\n")
+    sys.stdout.flush()
+
   return 0
 
 
