@@ -482,6 +482,12 @@ def Cd(argv, mem):
   state.SetGlobalString(mem, 'PWD', dest_dir)
   return 0
 
+def PrintDirStack(dir_stack):
+  for entry in dir_stack:
+    sys.stdout.write(entry + ' ')
+  if len(dir_stack):
+    sys.stdout.write('\n')
+  sys.stdout.flush()
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
@@ -497,11 +503,7 @@ def Pushd(argv, dir_stack):
   try:
     os.chdir(dest_dir)
     dir_stack.append(os.getcwd())
-    for entry in dir_stack:
-      sys.stdout.write(entry + " ")
-    if len(dir_stack):
-      sys.stdout.write("\n")
-    sys.stdout.flush()
+    PrintDirStack(dir_stack)
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
@@ -518,11 +520,7 @@ def Popd(argv, dir_stack):
 
   try:
     os.chdir(dest_dir)
-    for entry in dir_stack:
-      sys.stdout.write(entry + " ")
-    if len(dir_stack) > 0:
-      sys.stdout.write("\n")
-    sys.stdout.flush()
+    PrintDirStack(dir_stack)
   except OSError as e:
     util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
@@ -546,16 +544,12 @@ def Dirs(argv, dir_stack):
       dir_stack.pop()
   elif arg.v:
     for i in range(0, len(dir_stack)):
-      print(" " + str(i) + " " + dir_stack[i])
+      print(' ' + str(i) + ' ' + dir_stack[i])
   elif arg.p:
     for entry in dir_stack:
       print(entry)
   else:
-    for entry in dir_stack:
-      sys.stdout.write(entry + " ")
-    if len(dir_stack) > 0:
-      sys.stdout.write("\n")
-    sys.stdout.flush()
+    PrintDirStack(dir_stack)
 
   return 0
 
