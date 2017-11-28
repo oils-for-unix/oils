@@ -24,6 +24,37 @@ def TokenWordsEqual(left, right):
   #return left == right
 
 
+
+def AsdlEqual(left, right):
+  if isinstance(left, (int, str, bool)):
+    return left == right
+
+  if isinstance(left, list):
+    if len(left) != len(right):
+      return False
+    for a, b in zip(left, right):
+      if not AsdlEqual(a, b):
+        return False
+    return True
+
+  if isinstance(other, asdl.CompoundObj):
+    if left.tag != right.tag:
+      return False
+
+    for name in left.FIELDS:
+      # Special case: we are not testing locations right now.
+      if name == 'span_id':
+        continue
+      a = getattr(left, name)
+      b = getattr(right, name)
+      if not AsdlEqual(left, right):
+        return False
+
+    return True
+
+  raise AssertionError
+
+
 def MakeArena(source_name):
   pool = alloc.Pool()
   arena = pool.NewArena()

@@ -21,7 +21,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
   #     but also in _Init?
 
   def VisitSimpleSum(self, sum, name, depth):
-    self.Emit('class %s_e(SimpleObj):' % name, depth)
+    self.Emit('class %s_e(asdl_base.SimpleObj):' % name, depth)
     self.Emit('  pass', depth)
     self.Emit('', depth)
 
@@ -49,11 +49,14 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
     # rid of FIELDS?  Or you can just make it an alias.
     # FIELDS = self.__slots__.
     self.Emit('  FIELDS = %s' % quoted_fields, depth)
-    # Dummy values.
-    self.Emit('  DESCRIPTOR_LOOKUP = {}', depth)
-    self.Emit('  DESCRIPTOR = None', depth)
 
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
+
+    # TODO: 
+    # py_meta.MakeTypes and py_meta._MakeFieldDescriptors fill
+    # DESCRIPTOR_LOOKUP, which is used for pretty printing.
+    lookup = {}
+    self.Emit('  DESCRIPTOR_LOOKUP = %r' % lookup, depth)
     self.Emit('', depth)
 
     args = ', '.join('%s=None' % f.name for f in desc.fields)
@@ -102,7 +105,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       self.Emit('  %s = %d' % (variant.name, i + 1), depth)
     self.Emit('', depth)
 
-    self.Emit('class %s(object):' % name, depth)
+    self.Emit('class %s(asdl_base.CompoundObj):' % name, depth)
     self.Emit('  pass', depth)
     self.Emit('', depth)
 
@@ -113,7 +116,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       self.VisitConstructor(t, super_name, tag_num, depth)
 
   def VisitProduct(self, product, name, depth):
-    self._GenClass(product, name, 'object', depth)
+    self._GenClass(product, name, 'asdl_base.CompoundObj', depth)
 
   def EmitFooter(self):
     pass
@@ -127,24 +130,9 @@ def main(argv):
 
   f = sys.stdout
 
-  # For const.NO_INTEGER
   f.write("""\
-from asdl import const
-
-# Copied from py_meta
-class Obj(object):
-  # NOTE: We're using CAPS for these static fields, since they are constant at
-  # runtime after metaprogramming.
-  DESCRIPTOR = None  # Used for type checking
-
-class SimpleObj(Obj):
-  def __init__(self, enum_id, name):
-    self.enum_id = enum_id
-    self.name = name
-
-  def __repr__(self):
-    return '<%s %s %s>' % (self.__class__.__name__, self.name, self.enum_id)
-
+from asdl import const  # For const.NO_INTEGER
+from asdl import asdl_base
 """)
 
   v = GenClassesVisitor(f)

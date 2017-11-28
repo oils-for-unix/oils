@@ -24,11 +24,17 @@ readonly -a OSH_PARSE=(bin/oil.py osh --ast-format none -n)
 time-run-abuild() { time "${RUN_ABUILD[@]}"; }
 time-parse-abuild() { time "${OSH_PARSE[@]}" $ABUILD; }
 
+_cprofile() {
+  local out=$1
+  shift
+  time python -m cProfile -o $out "$@"
+}
+
 # 3.8 seconds.  So less than 2x overhead.
 cprofile-osh-parse() {
   local in=${1:-$ABUILD}
   local out=${2:-abuild.cprofile}
-  time python -m cProfile -o $out "${OSH_PARSE[@]}" $in
+  _cprofile $out "${OSH_PARSE[@]}" $in
   ls -l $out
 }
 
@@ -37,6 +43,9 @@ cprofile-parse-abuild() {
 }
 cprofile-parse-configure() {
   cprofile-osh-parse benchmarks/testdata/configure _tmp/configure.cprofile
+}
+cprofile-run-abuild() {
+  _cprofile _tmp/abuild-run.cprofile "${RUN_ABUILD[@]}"
 }
 
 # Yeah I understand from this why Chrome Tracing / Flame Graphs are better.

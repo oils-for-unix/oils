@@ -206,7 +206,7 @@ class LineLexerTest(unittest.TestCase):
     l = LineLexer(parse_lib._MakeMatcher(), 'foo  bar')
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
-    self.assertEqual(
+    self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.OUTER))
 
     # No lookahead; using the cursor!
