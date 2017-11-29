@@ -40,6 +40,39 @@ would cause too many extra checks?  The language is then no longer regular!
 
 http://re2c.org/examples/example_03.html
 
+UPDATE: Two More Options
+------------------------
+
+3. Change the \n at the end of every line to \0.  \0 becomes Id.Op_Newline, at
+least in lex_mode.OUTER.
+
+Advantage: This makes the regular expressions easier to generate, but allows
+you to read in the whole file at once instead of allocating lines.
+
+Disadvantages:
+- You can't mmap() the file because the data is mutated.  Or it will have to be
+  copy-on-write.
+- You can't get rid of comment lines if you read the whole file.
+
+4. Read a line at a time.  Throw away the lines, unless you're parsing a
+function, which should be obvious.
+
+After you parse the function, you can COPY all the tokens to another location.
+Very few tokens need their actual text data.  Most of them can just be
+identified by ID.
+
+Contents are relevant:
+
+- Lit_Chars, Lit_Other, Lit_EscapedChar, Lit_Digits
+- Id.Lit_VarLike -- for the name, and for = vs +=
+- Id.Lit_ArithVarLike
+- VSub_Name, VSub_Number
+- Id.Redir_* for the LHS file descriptor.  Although this is one or two bytes
+  that could be copied.
+
+You can also take this opportunity to enter the strings in an intern table.
+How much memory would that save?
+
 Remaining constructs
 --------------------
 
