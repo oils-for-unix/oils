@@ -18,6 +18,7 @@ EOF
 }
 
 readonly TAR_DIR=_tmp/benchmarks/runtime 
+readonly OSH=$PWD/bin/osh
 
 download() {
   files | xargs -n 1 -I {} --verbose -- \
@@ -29,6 +30,15 @@ extract() {
     tar -x --directory $TAR_DIR --file $f 
   done
   ls -l $TAR_DIR
+}
+
+# TODO: Run under bash and osh.  Look for all the files that changed?  Using
+# 'find'?  And then diff them.
+
+yash() {
+  pushd $TAR_DIR/yash-2.46
+  $OSH ./configure
+  popd
 }
 
 "$@"

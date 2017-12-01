@@ -537,7 +537,7 @@ gentoo() {
 }
 
 #
-# Find Biggest Shell Scripts in Aboriginal Source Tarballs
+# ANALYSIS: Find Biggest Shell Scripts in Aboriginal Source Tarballs
 #
 
 readonly AB_PACKAGES=~/hg/scratch/aboriginal/aboriginal-1.2.2/packages
@@ -582,6 +582,27 @@ aboriginal-biggest() {
 # 29666 gcc-4.2.1/ltcf-gcj.sh
 # 33972 gcc-4.2.1/ltcf-c.sh
 # 39048 gcc-4.2.1/ltcf-cxx.sh
+
+#
+# ANALYSIS: Number of comment lines
+#
+# TODO: Determine if we should try to save comment lines?  I think we should
+# save more than that.
+
+
+#
+# ANALYSIS: Which scripts use set -C / set -o noclobber?
+#
+
+# VERY rare, only 13 instances, in ast, freebsd, and illumos-gate.
+analyze-noclobber() {
+  local out=_tmp/noclobber.txt
+  # Ignore this script
+  time abspaths | grep -v 'test/wild.sh' |
+    xargs grep -E 'noclobber|^set -C|^set +C' > $out || true
+  wc -l $out
+}
+
 
 if test "$(basename $0)" = 'wild.sh'; then
   "$@"
