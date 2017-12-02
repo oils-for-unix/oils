@@ -206,7 +206,7 @@ class Mem(object):
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
 
-  def __init__(self, argv0, argv, environ):
+  def __init__(self, argv0, argv, environ, arena):
     top = {}  # string -> runtime.cell
     self.var_stack = [top]
     self.argv0 = argv0
@@ -224,6 +224,7 @@ class Mem(object):
 
     self._InitDefaults()
     self._InitEnviron(environ)
+    self.arena = arena
 
   def __repr__(self):
     parts = []
@@ -393,6 +394,24 @@ class Mem(object):
     assert new_flags is not None
 
     if lval.tag == lvalue_e.LhsName:
+      #if lval.name == 'ldflags':
+      # TODO: Turn this into a tracing feature.  Like osh --tracevar ldflags
+      # --tracevar foo.  Has to respect environment variables too.
+      if 0:
+        util.log('--- SETTING ldflags to %s', value)
+        if lval.spids:
+          span_id = lval.spids[0]
+          line_span = self.arena.GetLineSpan(span_id)
+          line_id = line_span.line_id
+          #line = arena.GetLine(line_id)
+          path, line_num = self.arena.GetDebugInfo(line_id)
+          col = line_span.col
+          #length = line_span.length
+          util.log('--- spid %s: %s, line %d, col %d', span_id, path,
+                   line_num+1, col)
+
+          # TODO: Need the arena to look it up the line spid and line number.
+
       # Maybe this should return one of (cell, scope).  existing cell, or the
       # scope to put it in?
       # _FindCellOrScope

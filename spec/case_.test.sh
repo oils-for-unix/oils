@@ -63,3 +63,12 @@ case "$x" in
   "$pat") echo match ;;
 esac
 # stdout: match
+
+### Multiple Patterns Match
+x=foo
+result='-'
+case "$x" in
+  f*|*o) result="$result X"
+esac
+echo $result
+# stdout: - X

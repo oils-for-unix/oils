@@ -238,7 +238,7 @@ def OshMain(argv, login_shell):
   # TODO: Maybe wrap this initialization sequence up in an oil_State, like
   # lua_State.
   status_lines = ui.MakeStatusLines()
-  mem = state.Mem(dollar0, argv[opt_index + 1:], os.environ)
+  mem = state.Mem(dollar0, argv[opt_index + 1:], os.environ, arena)
   funcs = {}
 
   # Passed to Executor for 'complete', and passed to completion.Init
