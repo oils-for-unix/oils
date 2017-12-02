@@ -57,6 +57,9 @@ class TokensTest(unittest.TestCase):
     t = ast.token(Id.BoolBinary_GlobDEqual, '==')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
+    t = ast.token(Id.BoolBinary_Equal, '=')
+    self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
+
   def testEquality(self):
     # OK WTF!!!!
     left = Id(198)

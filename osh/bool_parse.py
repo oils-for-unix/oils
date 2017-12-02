@@ -96,7 +96,8 @@ class BoolParser(object):
 
     self.op_id = word.BoolId(self.cur_word)
     self.b_kind = LookupKind(self.op_id)
-    #print('---- word', self.cur_word, 'op_id', self.op_id, self.b_kind, lex_mode)
+    #log('--- word %s', self.cur_word)
+    #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
     return True
 
   def _Next(self, lex_mode=lex_mode_e.DBRACKET):
@@ -143,7 +144,9 @@ class BoolParser(object):
 
     node = self.ParseExpr()
     if self.op_id != Id.Eof_Real:
-      self.AddErrorContext("Trailing words in test", self.cur_word)
+      self.AddErrorContext(
+          'Unexpected trailing word in test expression: %s',
+          self.cur_word)
       return None
 
     return node
@@ -193,7 +196,6 @@ class BoolParser(object):
       if not self._Next(): return None
       child = self.ParseFactor()
       if not child: return None
-      #return UnaryExprNode(Id.KW_Bang, child)
       return ast.LogicalNot(child)
     else:
       return self.ParseFactor()
@@ -220,7 +222,8 @@ class BoolParser(object):
       t2_op_id = word.BoolId(t2)
       t2_b_kind = LookupKind(t2_op_id)
 
-      # Redir PUN for < and >
+      #log('t2 %s / t2_op_id %s / t2_b_kind %s', t2, t2_op_id, t2_b_kind)
+      # Redir pun for < and >, -a and -o pun
       if t2_b_kind in (Kind.BoolBinary, Kind.Redir):
         left = self.cur_word
 
