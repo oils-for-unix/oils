@@ -24,7 +24,10 @@ EOF
 }
 
 readonly TAR_DIR=$PWD/_tmp/benchmarks/runtime 
-readonly OSH=$PWD/bin/osh
+
+# Use the compiled version.  Otherwise /proc/self/exe is the Python
+# interpreter, which matters for yash's configure script!
+readonly OSH=$PWD/_bin/osh
 
 download() {
   files | xargs -n 1 -I {} --verbose -- \
@@ -97,6 +100,24 @@ qemu-old() {
   local out_dir=$PWD/_tmp/qemu-old
   mkdir -p $out_dir
   configure-and-copy ~/src/qemu-1.6.0 $OSH $out_dir
+}
+
+# This doesn't work for ash either, because it uses the busybox pattern.  It
+# says "exe: applet not found".  I guess yash doesn't configure under ash!
+self-exe() {
+  set +o errexit
+  dash <<EOF
+/proc/self/exe -V
+EOF
+  echo
+
+  _bin/osh <<EOF
+/proc/self/exe -V
+EOF
+
+  _tmp/shells/ash <<EOF
+/proc/self/exe -V
+EOF
 }
 
 "$@"
