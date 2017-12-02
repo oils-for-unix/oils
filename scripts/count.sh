@@ -41,7 +41,7 @@ all() {
   echo
 
   echo 'ASDL'
-  wc -l asdl/{asdl_,py_meta,encode,format}.py | sort --numeric
+  wc -l asdl/{asdl_*,const,py_meta,encode,format}.py | sort --numeric
   echo
 
   echo 'CODE GENERATORS'

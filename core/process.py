@@ -102,6 +102,10 @@ class FdState:
 
     if r.tag == redirect_e.PathRedirect:
       if r.op_id == Id.Redir_Great:  # >
+        # NOTE: This is different than >| because it respects noclobber, but
+        # that option is almost never used.  See test/wild.sh.
+        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+      elif r.op_id == Id.Redir_Clobber:  # >|
         mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
       elif r.op_id == Id.Redir_DGreat:  # >>
         mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND

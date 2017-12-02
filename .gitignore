@@ -9,5 +9,6 @@ _devbuild
 _deps
 _release
 libc.so
+fastlex.so
 # Python build support
 build/temp.*
