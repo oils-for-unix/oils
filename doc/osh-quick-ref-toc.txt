@@ -75,8 +75,10 @@ X [Interactive]   alias   unalias   bind   history   fc
 X [Unsupported]   enable
 
 SHELL OPTIONS
-  [Parsing]
-  [Execution]     errors (nounset, errexit, pipefail, ...)
-                  globbing (noglob, failglob, ...)
-                  debugging (xtrace, verbose, ...)
-  [OSH Options]   strict   sane
+  [Errors]        nounset   errexit   pipefail
+  [Globbing]      noglob   failglob   nullglob
+  [Debugging]     xtrace   X verbose
+  [Other]         X noclobber
+  [Parsing]       TODO
+  [OSH Strict]    TODO
+  [OSH Sane]      TODO
