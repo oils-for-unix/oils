@@ -70,6 +70,7 @@ SET_OPTIONS = [
     ('u', 'nounset'),
     ('x', 'xtrace'),
     ('f', 'noglob'),
+    ('C', 'noclobber'),
     (None, 'pipefail'),
 
     (None, 'debug-completion'),
@@ -88,6 +89,7 @@ class ExecOpts(object):
     self.xtrace = False  # NOTE: uses PS4
     self.noglob = False  # -f
     self.noexec = False  # -n
+    self.noclobber = False  # -C
     self.debug_completion = False
 
     # shopt -s / -u

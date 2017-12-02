@@ -69,10 +69,6 @@ configure-twice() {
   configure-and-copy $dir $OSH $TAR_DIR/${label}__osh
 }
 
-
-# TODO: Run under bash and osh.  Look for all the files that changed?  Using
-# 'find'?  And then diff them.
-
 yash() {
   configure-twice $TAR_DIR/yash-2.46
 }
@@ -89,7 +85,7 @@ uftrace() {
   #configure-and-show-new $TAR_DIR/uftrace-0.8.1
 }
 
-# Flags are different.
+# Works for bash/dash/osh!
 ocaml() {
   configure-twice $TAR_DIR/ocaml-4.06.0
   #mkdir -p _tmp/ocaml
@@ -98,7 +94,9 @@ ocaml() {
 
 # Same problem as tcc
 qemu-old() {
-  configure-and-show-new ~/src/qemu-1.6.0
+  local out_dir=$PWD/_tmp/qemu-old
+  mkdir -p $out_dir
+  configure-and-copy ~/src/qemu-1.6.0 $OSH $out_dir
 }
 
 "$@"

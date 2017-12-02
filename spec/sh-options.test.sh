@@ -185,3 +185,24 @@ shopt -p nullglob
 # stdout-json: "shopt -u nullglob\nshopt -s nullglob\n"
 # N-I dash/mksh stdout-json: ""
 # N-I dash/mksh status: 127
+
+### noclobber off
+set -o errexit
+echo foo > $TMP/can-clobber
+set +C
+echo foo > $TMP/can-clobber
+set +o noclobber
+echo foo > $TMP/can-clobber
+cat $TMP/can-clobber
+# stdout: foo
+
+### noclobber on
+# Not implemented yet.
+rm $TMP/no-clobber
+set -C
+echo foo > $TMP/no-clobber
+echo $?
+echo foo > $TMP/no-clobber
+echo $?
+# stdout-json: "0\n1\n"
+# OK dash stdout-json: "0\n2\n"
