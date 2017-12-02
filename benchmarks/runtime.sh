@@ -37,6 +37,7 @@ configure-and-show-new() {
 
   pushd $dir >/dev/null
   touch __TIMESTAMP
+  #$OSH -x ./configure
   $OSH ./configure
 
   echo
