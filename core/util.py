@@ -34,6 +34,7 @@ class _ErrorWithLocation(Exception):
   Formatting is in ui.PrintError.
   """
   def __init__(self, msg, *args, **kwargs):
+    Exception.__init__(self)
     self.msg = msg
     self.args = args
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
@@ -46,8 +47,12 @@ class _ErrorWithLocation(Exception):
     if kwargs:
       raise AssertionError('Invalid keyword args %s' % kwargs)
 
-  #def __repr__(self):
-  #  return '<%s %s %r %r %d>' % (self.msg, self.args, self.token, self.word, self.exit_status)
+  def __repr__(self):
+    return '<%s %s %r %r %s>' % (self.msg, self.args, self.token, self.word, self.exit_status)
+
+  def __str__(self):
+    # The default doesn't work very well?
+    return repr(self)
 
   def UserErrorString(self):
     return self.msg % self.args

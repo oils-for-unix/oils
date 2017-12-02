@@ -168,8 +168,10 @@ def Test(argv, need_right_bracket):
 
       if bool_node is None:
         for e in b_parser.Error():
-          log("error %s", e)
-        log("Error parsing test/[ expression")
+          log("test: %s", e.UserErrorString())
+        # TODO: There should be a nice method to print argv.  And some way to
+        # point to the error.
+        log("Error parsing test/[ expression: %s", argv)
         return 2  # parse error is 2
 
   except util.ParseError as e:

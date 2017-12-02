@@ -55,8 +55,16 @@ func_fnmatch(PyObject *self, PyObject *args) {
 }
 
 // error callback to glob()
+//
+// Disabled because of spurious errors.  For example, sed -i s/.*// (without
+// quotes) is OK, but it would be treated as a glob, and prints an error if the
+// directory 's' doesn't exist.
+//
+// Bash does its own globbing -- it doesn't use libc.  Likewise, I think dash
+// and mksh do their own globbing.
+
 int globerr(const char *path, int eerrno) {
-  fprintf(stderr, "%s: %s\n", path, strerror(eerrno));
+  fprintf(stderr, "globerr: %s: %s\n", path, strerror(eerrno));
   return 0;  // let glob() keep going
 }
 
@@ -73,7 +81,7 @@ func_glob(PyObject *self, PyObject *args) {
   int flags = 0;
   // int flags = GLOB_APPEND;
   //flags |= GLOB_NOMAGIC;
-  int ret = glob(pattern, flags, globerr, &results);
+  int ret = glob(pattern, flags, NULL, &results);
 
   const char *err_str = NULL;
   switch (ret) {
@@ -95,7 +103,7 @@ func_glob(PyObject *self, PyObject *args) {
     break;
   }
   if (err_str) {
-    fprintf(stderr, "%s: %s\n", pattern, err_str);
+    fprintf(stderr, "func_glob: %s: %s\n", pattern, err_str);
   }
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak

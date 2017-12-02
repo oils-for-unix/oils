@@ -59,6 +59,9 @@ class Id(object):
 
 class Kind(object):
   """A coarser version of Id, used to make parsing decisions."""
+
+  # TODO: The Kind type should be folded into ASDL.  It can't print itself,
+  # which is inconsistent with Id.
   pass
 
 
@@ -84,7 +87,12 @@ class IdSpec(object):
   def LexerPairs(self, kind):
     return self.lexer_pairs[kind]
 
-  def _AddId(self, token_name):
+  def _AddId(self, token_name, kind=None):
+    """
+    Args:
+      token_name: e.g. BoolBinary_Equal
+      kind: override autoassignment.  For AddBoolBinaryForBuiltin
+    """
     self.token_index += 1  # leave out 0 I guess?
     id_val = Id(self.token_index)
     setattr(self.id_enum, token_name, id_val)
@@ -92,11 +100,14 @@ class IdSpec(object):
     t = self.token_index
     self.token_names[t] = token_name
     self.instance_lookup[t] = id_val
-    self.kind_lookup[t] = self.kind_index
+    if kind is None:
+      kind = self.kind_index
+    self.kind_lookup[t] = kind
     return id_val
 
   def _AddKind(self, kind_name):
     setattr(self.kind_enum, kind_name, self.kind_index)
+    #util.log('%s = %d', kind_name, self.kind_index)
     self.kind_index += 1
 
   def AddKind(self, kind_name, tokens):
@@ -152,13 +163,13 @@ class IdSpec(object):
     self._AddKind(kind_name)
     self.kind_sizes.append(num_tokens)  # debug info
 
-  def AddBoolBinaryForBuiltin(self, token_name):
+  def AddBoolBinaryForBuiltin(self, token_name, kind):
     """For [ = ] [ == ] and [ != ].
     
     These operators are NOT added to the lexer.  The are "lexed" as StringWord.
     """
     token_name = 'BoolBinary_%s' % token_name
-    id_val = self._AddId(token_name)
+    id_val = self._AddId(token_name, kind=kind)
     self.AddBoolOp(id_val, OperandType.Str)
     return id_val
 
@@ -457,7 +468,7 @@ def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
 
   for token_name, token_str in [
       ('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
-    id_val = id_spec.AddBoolBinaryForBuiltin(token_name)
+    id_val = id_spec.AddBoolBinaryForBuiltin(token_name, Kind.BoolBinary)
     binary_lookup[token_str] = id_val
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.

@@ -26,19 +26,52 @@ download() {
 }
 
 extract() {
-  time for f in $TAR_DIR/*z; do
+  time for f in $TAR_DIR/*.{xz,bz2}; do
     tar -x --directory $TAR_DIR --file $f 
   done
   ls -l $TAR_DIR
+}
+
+configure-and-show-new() {
+  local dir=$1
+
+  pushd $dir >/dev/null
+  touch __TIMESTAMP
+  #$OSH -x ./configure
+  $OSH ./configure
+
+  echo
+  echo "--- NEW FILES ---"
+  echo
+
+  find . -type f -newer __TIMESTAMP
+  popd >/dev/null
 }
 
 # TODO: Run under bash and osh.  Look for all the files that changed?  Using
 # 'find'?  And then diff them.
 
 yash() {
-  pushd $TAR_DIR/yash-2.46
-  $OSH ./configure
-  popd
+  configure-and-show-new $TAR_DIR/yash-2.46
+}
+
+# test expression problem
+tcc() {
+  configure-and-show-new $TAR_DIR/tcc-0.9.26
+}
+
+# What is the s:?
+uftrace() {
+  configure-and-show-new $TAR_DIR/uftrace-0.8.1
+}
+
+ocaml() {
+  configure-and-show-new $TAR_DIR/ocaml-4.06.0
+}
+
+# Same problem as tcc
+qemu-old() {
+  configure-and-show-new ~/src/qemu-1.6.0
 }
 
 "$@"
