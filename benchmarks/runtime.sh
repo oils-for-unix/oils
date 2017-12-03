@@ -1,7 +1,13 @@
 #!/bin/bash
 #
+# Test scripts found in the wild for both correctness and performance.
+#
 # Usage:
 #   ./runtime.sh <function name>
+#
+# TODO:
+# - Merge this with test/wild2.sh?  benchmarks/wild3.sh or test/wild3.sh?
+# - abuild -h -- time it
 
 set -o nounset
 set -o pipefail
@@ -17,8 +23,11 @@ uftrace-0.8.1.tar.gz
 EOF
 }
 
-readonly TAR_DIR=_tmp/benchmarks/runtime 
-readonly OSH=$PWD/bin/osh
+readonly TAR_DIR=$PWD/_tmp/benchmarks/runtime 
+
+# Use the compiled version.  Otherwise /proc/self/exe is the Python
+# interpreter, which matters for yash's configure script!
+readonly OSH=$PWD/_bin/osh
 
 download() {
   files | xargs -n 1 -I {} --verbose -- \
@@ -32,46 +41,83 @@ extract() {
   ls -l $TAR_DIR
 }
 
-configure-and-show-new() {
-  local dir=$1
+configure-and-copy() {
+  local src_dir=$1
+  local sh=$2
+  local out_dir=$3
 
-  pushd $dir >/dev/null
+  mkdir -p $out_dir
+
+  # These hand-written configure scripts must be run from their own directory,
+  # unlike autoconf's scripts.
+
+  pushd $src_dir >/dev/null
   touch __TIMESTAMP
   #$OSH -x ./configure
-  $OSH ./configure
+  $sh ./configure
 
   echo
   echo "--- NEW FILES ---"
   echo
 
-  find . -type f -newer __TIMESTAMP
+  find . -type f -newer __TIMESTAMP | xargs -I {} --verbose -- cp {} $out_dir
   popd >/dev/null
 }
 
-# TODO: Run under bash and osh.  Look for all the files that changed?  Using
-# 'find'?  And then diff them.
+configure-twice() {
+  local dir=$1
+  local label=$(basename $dir)
+  configure-and-copy $dir bash $TAR_DIR/${label}__bash
+  configure-and-copy $dir dash $TAR_DIR/${label}__dash
+  configure-and-copy $dir $OSH $TAR_DIR/${label}__osh
+}
 
 yash() {
-  configure-and-show-new $TAR_DIR/yash-2.46
+  configure-twice $TAR_DIR/yash-2.46
 }
 
-# test expression problem
+# Works for bash/dash/osh!
 tcc() {
-  configure-and-show-new $TAR_DIR/tcc-0.9.26
+  configure-twice $TAR_DIR/tcc-0.9.26
+  #configure-and-show-new $TAR_DIR/tcc-0.9.26
 }
 
-# What is the s:?
+# Works for bash/dash/osh!
 uftrace() {
-  configure-and-show-new $TAR_DIR/uftrace-0.8.1
+  configure-twice $TAR_DIR/uftrace-0.8.1
+  #configure-and-show-new $TAR_DIR/uftrace-0.8.1
 }
 
+# Works for bash/dash/osh!
 ocaml() {
-  configure-and-show-new $TAR_DIR/ocaml-4.06.0
+  configure-twice $TAR_DIR/ocaml-4.06.0
+  #mkdir -p _tmp/ocaml
+  #configure-and-copy $TAR_DIR/ocaml-4.06.0 $OSH $PWD/_tmp/ocaml
 }
 
 # Same problem as tcc
 qemu-old() {
-  configure-and-show-new ~/src/qemu-1.6.0
+  local out_dir=$PWD/_tmp/qemu-old
+  mkdir -p $out_dir
+  configure-and-copy ~/src/qemu-1.6.0 $OSH $out_dir
+}
+
+# This doesn't work for ash either, because it uses the busybox pattern.  It
+# says "exe: applet not found".  I guess yash doesn't configure under ash!
+self-exe() {
+  set +o errexit
+  dash <<EOF
+/proc/self/exe -V
+EOF
+  echo
+
+  _bin/osh <<EOF
+/proc/self/exe -V
+EOF
+
+  _tmp/shells/ash <<EOF
+/proc/self/exe -V
+EOF
 }
 
 "$@"

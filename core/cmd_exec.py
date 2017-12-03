@@ -348,12 +348,14 @@ class Executor(object):
         e_die('[%d] %r exited with status %d', os.getpid(),
               node.__class__.__name__, status, status=status)
 
-  def _EvalLhs(self, node):
+  def _EvalLhs(self, node, spid):
     """lhs_expr -> lvalue."""
     assert isinstance(node, ast.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
-      return runtime.LhsName(node.name)
+      node = runtime.LhsName(node.name)
+      node.spids.append(spid)
+      return node
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
       i = self.arith_ev.Eval(node.index)
@@ -461,6 +463,7 @@ class Executor(object):
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
+      # TODO: Could add spid to LhsName.
       self.mem.SetVar(ast.LhsName(name), val, (), scope_e.LocalOnly)
 
       out_env[name] = val.s
@@ -722,7 +725,8 @@ class Executor(object):
             val = runtime.StrArray(old_val.strs + val.strs)
 
         else:  # plain assignment
-          lval = self._EvalLhs(pair.lhs)
+          spid = pair.spids[0]  # Source location for tracing
+          lval = self._EvalLhs(pair.lhs, spid)
 
           # RHS can be a string or array.
           if pair.rhs:
@@ -885,6 +889,7 @@ class Executor(object):
           if libc.fnmatch(pat_val.s, to_match):
             status = self._ExecuteList(arm.action)
             done = True  # TODO: Parse ;;& and for fallthrough and such?
+            break  # Only execute action ONCE
         if done:
           break
 
