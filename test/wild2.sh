@@ -3,7 +3,8 @@
 # Wild tests that actually run code.
 #
 # TODO:
-# - Use a better name.
+# - Use a better name.  Maybe move Python's configure to conf-wild.  This could
+#   be misc-wild.
 # - There are a lot of hard-coded paths in this script.
 #
 # Usage:
@@ -13,7 +14,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly OSH=~/git/oil/bin/osh
+readonly OSH=~/git/oilshell/oil/bin/osh
 
 replace-shebang() {
   local dir=$1
@@ -33,6 +34,10 @@ build-toybox() {
   make
 }
 
+#
+# Debootstrap
+#
+
 readonly DE_DIR=~/git/basis-build/_tmp/debootstrap
 
 sh-debootstrap() {
@@ -42,7 +47,9 @@ sh-debootstrap() {
 }
 
 osh-de-help() {
-  sh-debootstrap $OSH --help
+  time sh-debootstrap $OSH --help
+  #time sh-debootstrap bash --help
+  #time sh-debootstrap dash --help
 }
 
 # Probably not great to run as root.
@@ -53,15 +60,16 @@ sh-de-xenial() {
   time sudo $0 debootstrap $sh xenial $target_dir || true
 }
 
+#
+# Configure
+#
+
 readonly PYTHON_DIR=$PWD/Python-2.7.13
 
 sh-py-configure() {
   local sh=${1:-bash}
   local out=_tmp/wild2/$(basename $sh)-py-configure
   mkdir -p $out
-
-  # Hm this seems to take a long time to parse.  TODO: Show parse timing with
-  # -v or xtrace or something.
 
   pushd $out
   time $sh $PYTHON_DIR/configure || true
@@ -70,13 +78,16 @@ sh-py-configure() {
   tree $out
 }
 
+# ~18 seconds vs ~10 seconds.
 osh-py-configure() {
   OIL_TIMING=1 sh-py-configure $OSH
 }
 
+# NOTE: These would compare more equally if we put them in the same dir, and
+# then copied it elsewhere.
 compare-pyconfig() {
-  #diff -u -r _tmp/wild2/{bash,osh}-py-configure
-  diff -u -r _tmp/wild2/{bash,osh}-py-configure/config.status
+  diff -u -r _tmp/wild2/{bash,osh}-py-configure
+  #diff -u -r _tmp/wild2/{bash,osh}-py-configure/config.status
 }
 
 # Hm this is behavior differently.  Ideas for better xtrace in osh:
@@ -101,10 +112,10 @@ sh-config-status() {
 }
 
 osh-config-status() {
-  OIL_TIMING=1 sh-config-status $OSH
+  #OIL_TIMING=1 
+  sh-config-status $OSH
 }
 
 # TODO: Save these files and make sure they are the same! 
-
 
 "$@"

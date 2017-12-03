@@ -22,6 +22,7 @@ def main(argv):
     out.writerow(
         ('host', 'shell_name', 'shell_hash', 'metric_name', 'metric_value'))
 
+    # Dir name looks like "$host.$job_id"
     for input_dir in input_dirs:
       d = os.path.basename(input_dir)
       host, job_id = d.split('.')

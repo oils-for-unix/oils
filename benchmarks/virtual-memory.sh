@@ -7,48 +7,47 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO: What format should this be recorded in?
-# I think a Python script can parse it to CSV / TSV2.
-# Use benchmark/id.sh too
+source test/common.sh  # log
 
-baseline() {
+# TODO: Call this from benchmarks/auto.sh.
+
+vm-baseline() {
+  local provenance=$1
+  local base_dir=${2:-_tmp/vm-baseline}
+  #local base_dir=${2:-../benchmark-data/vm-baseline}
+
+  # Strip everything after the first dot.
+  local name=$(basename $provenance)
+  local job_id=${name%%.*}
+
+  log "--- Job $job_id ---"
+
   local host=$(hostname)
-  local job_id="$host.$(date +%Y-%m-%d__%H-%M-%S)"
-  local out_dir="../benchmark-data/vm-baseline/$job_id"
+  local out_dir="$base_dir/$host.$job_id"
   mkdir -p $out_dir
 
-  local tmp_dir
-  tmp_dir=_tmp/host-id/$host
-  benchmarks/id.sh dump-host-id $tmp_dir
-
-  local host_hash=$(benchmarks/id.sh publish-host-id $tmp_dir)
-  echo $host $host_hash
-
-  local shell_hash
-
-  # NOTE: for some reason zsh when printing /proc/$$/status gets a cat process,
-  # not a zsh process?  Check out /proc/$$/maps too.  Omitting it for now.
-
-  for sh_path in bash dash mksh bin/osh _bin/osh; do
-    echo "--- $sh_path"
-
+  # Fourth column is the shell.
+  cat $provenance | while read _ _ _ sh_path shell_hash; do
     local sh_name=$(basename $sh_path)
-
-    tmp_dir=_tmp/shell-id/$sh_name
-    benchmarks/id.sh dump-shell-id $sh_path $tmp_dir
-
-    shell_hash=$(benchmarks/id.sh publish-shell-id $tmp_dir)
 
     # There is a race condition on the status but sleep helps.
     local out="$out_dir/${sh_name}-${shell_hash}.txt"
     $sh_path -c 'sleep 0.001; cat /proc/$$/status' > $out
-
-    echo "Wrote $out"
-    echo 
   done
+
+  echo
+  echo "$out_dir:"
+  ls -l $out_dir
 }
 
+csv-demo() {
+  local -a job_dirs=(_tmp/vm-baseline/lisa.2017-*)
+  benchmarks/virtual_memory.py baseline ${job_dirs[-1]}
+}
+
+# Combine CSV files.
 baseline-csv() {
+  local raw_dir=$1
   local out=_tmp/vm-baseline/stage1
   mkdir -p $out
 
@@ -63,6 +62,7 @@ baseline-csv() {
     | tee $out/vm-baseline.csv
 }
 
+# Demo of the --dump-proc-status-to flag.
 # NOTE: Could also add Python introspection.
 dump-demo() {
   local out=_tmp/virtual-memory

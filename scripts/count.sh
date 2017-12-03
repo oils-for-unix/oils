@@ -29,7 +29,7 @@ all() {
   echo
 
   echo 'BENCHMARKS'
-  wc -l benchmarks/*.sh | sort --numeric
+  wc -l benchmarks/*.{sh,py,R} | sort --numeric
   echo
 
   echo 'SPEC TESTS'
