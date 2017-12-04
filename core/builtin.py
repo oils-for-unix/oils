@@ -546,8 +546,8 @@ def Dirs(argv, dir_stack):
     while len(dir_stack) > 0:
       dir_stack.pop()
   elif arg.v:
-    for i in range(0, len(dir_stack)):
-      print(' ' + str(i) + ' ' + dir_stack[i])
+    for i, entry in enumerate(dir_stack):
+      print(' ' + str(i) + ' ' + entry)
   elif arg.p:
     for entry in dir_stack:
       print(entry)
