@@ -494,7 +494,6 @@ def PrintDirStack(dir_stack):
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
-
   if num_args <= 0:
     util.error('pushd: no other directory')
     return 1
@@ -505,11 +504,11 @@ def Pushd(argv, dir_stack):
   dest_dir = argv[0]
   try:
     os.chdir(dest_dir)
-    dir_stack.append(os.getcwd())
-    PrintDirStack(dir_stack)
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
+  dir_stack.append(dest_dir)
+  PrintDirStack(dir_stack)
 
   return 0
 
@@ -544,10 +543,6 @@ def Dirs(argv, dir_stack):
   # Following `bash` behavior for order of operations
   if arg.c:
     del dir_stack[:]
-    '''
-    while len(dir_stack) > 0:
-      dir_stack.pop()
-    '''
   elif arg.v:
     for i, entry in enumerate(dir_stack):
       print(' ' + str(i) + ' ' + entry)
