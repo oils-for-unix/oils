@@ -543,8 +543,11 @@ def Dirs(argv, dir_stack):
     util.warn('*** dirs -l not implemented ***')
   # Following `bash` behavior for order of operations
   if arg.c:
+    del dir_stack[:]
+    '''
     while len(dir_stack) > 0:
       dir_stack.pop()
+    '''
   elif arg.v:
     for i, entry in enumerate(dir_stack):
       print(' ' + str(i) + ' ' + entry)
