@@ -483,10 +483,13 @@ def Cd(argv, mem):
   return 0
 
 def PrintDirStack(dir_stack):
-  for entry in dir_stack:
-    sys.stdout.write(entry + ' ')
-  if len(dir_stack):
-    sys.stdout.write('\n')
+  stack_size = len(dir_stack)
+  for i in range(stack_size):
+    sys.stdout.write(dir_stack[i])
+    if i is not (stack_size - 1):
+      sys.stdout.write(' ')
+    else:
+      sys.stdout.write('\n')
   sys.stdout.flush()
 
 def Pushd(argv, dir_stack):
