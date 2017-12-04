@@ -59,8 +59,7 @@ parser-task() {
   local shell_name
   shell_name=$(basename $sh_path)
 
-  # Can't use array because of set -u bug!!!  Only fixed in bash
-  # 4.4.
+  # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   if test "$shell_name" = 'osh'; then
     #extra_args='--ast-format none'
@@ -93,8 +92,7 @@ print-tasks() {
   done
 }
 
-# 5 from provenance, 1 for file
-readonly NUM_COLUMNS=6
+readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
 # should be the ../benchmarks-data repo.
@@ -109,7 +107,7 @@ all() {
   local times_out="$raw_dir/$prefix.times.csv"
   local lines_out="$raw_dir/$prefix.lines.csv"
 
-  mkdir -p $BASE_DIR/{tmp,raw,stage1,www}
+  mkdir -p $BASE_DIR/{tmp,raw,stage1}
 
   write-sorted-manifest '' $lines_out
   local sorted=$SORTED

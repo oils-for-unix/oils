@@ -11,11 +11,16 @@ set -o errexit
 
 source test/common.sh
 
-readonly TAR_DIR=$PWD/_tmp/osh-runtime
+readonly BASE_DIR=_tmp/osh-runtime
+readonly TAR_DIR=$PWD/$BASE_DIR  # Make it absolute
 
 # Use the compiled version.  Otherwise /proc/self/exe is the Python
 # interpreter, which matters for yash's configure script!
 readonly OSH=$PWD/_bin/osh
+
+#
+# Dependencies
+#
 
 # NOTE: Same list in oilshell.org/blob/run.sh.
 files() {
@@ -36,6 +41,7 @@ $TAR_DIR/yash-2.46
 EOF
 }
 
+
 download() {
   files | xargs -n 1 -I {} --verbose -- \
     wget --directory $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
@@ -48,46 +54,63 @@ extract() {
   ls -l $TAR_DIR
 }
 
-configure-and-copy() {
-  local src_dir=$1
-  local sh_path=$2
-  local out_dir=$3
+#
+# Computation
+#
 
-  mkdir -p $out_dir
+conf-task() {
+  local raw_dir=$1  # output
+  local job_id=$2
+  local host=$3
+  local host_hash=$4
+  local sh_path=$5
+  local shell_hash=$6
+  local conf_dir=$7
 
-  # These hand-written configure scripts must be run from their own directory,
-  # unlike autoconf's scripts.
+  echo
+  echo "--- $sh_path $conf_dir ---"
+  echo
 
-  pushd $src_dir >/dev/null
+  local shell_name=$(basename $sh_path)
+  local dir_name=$(basename $conf_dir)
+
+  local task_label="${shell_name}-${shell_hash}__${dir_name}"
+
+  local times_out="$PWD/$raw_dir/$host.$job_id.times.csv"
+  local vm_out_dir="$PWD/$raw_dir/$host.$job_id.virtual-memory"
+  local conf_out_dir="$PWD/$raw_dir/$host.$job_id.files/$task_label"
+  mkdir -p $vm_out_dir $conf_out_dir
+
+  # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
+  extra_args=''
+  if test "$shell_name" = 'osh'; then
+    local vm_out_path
+    vm_out_path="${vm_out_dir}/$task_label.txt"
+    # TODO: Implement this flag
+    #extra_args="--runtime-dump-mem $vm_out_path"
+
+    # Should we add a field here to say it has VM stats?
+  fi
+
+  local time_tool=$PWD/benchmarks/time.py
+
+  pushd $conf_dir >/dev/null
   touch __TIMESTAMP
-  #$OSH -x ./configure
 
-  #benchmarks/time.py --output $out_csv
-  $sh_path ./configure >$out_dir/STDOUT.txt
+  # TODO: write timestamp
 
-  echo
-  echo "--- NEW FILES ---"
-  echo
+  # exit code, time in seconds, host_hash, shell_hash, path.  \0
+  # would have been nice here!
+  $time_tool \
+    --output $times_out \
+    --field "$host" --field "$host_hash" \
+    --field "$shell_name" --field "$shell_hash" \
+    --field "$conf_dir" -- \
+    "$sh_path" $extra_args ./configure >STDOUT.txt || echo FAILED
 
-  find . -type f -newer __TIMESTAMP | xargs -I {} --verbose -- cp {} $out_dir
+  find . -type f -newer __TIMESTAMP \
+    | xargs -I {} -- cp --verbose {} $conf_out_dir
   popd >/dev/null
-}
-
-configure-one() {
-  local append_out=$1  # times
-  local vm_out_dir=$2  # pass to virtual memory
-  local sh_path=$3
-  local shell_hash=$4
-  local conf_dir=$5
-
-  local prog_label=$(basename $conf_dir)
-  local sh_label=$(basename $sh_path)
-  local out_dir=$TAR_DIR/raw/${prog_label}__${sh_label}
-
-  # TODO: benchmarks/time.
-  # Except we don't want to time the copying.
-
-  configure-and-copy $conf_dir $sh_path $out_dir
 }
 
 # TODO:
@@ -115,31 +138,14 @@ configure-one() {
 #
 # And then auto.sh run-tasks?  Then you can have consistent logging?
 
-all() {
+# For each configure file.
+print-tasks() {
   local provenance=$1
-  local base_dir=${2:-_tmp/osh-runtime/raw}
-  #local base_dir=${2:-../benchmark-data/osh-parser}
 
-  # Job ID is everything up to the first dot in the filename.
-  local name=$(basename $provenance)
-  local job_id=${name%.provenance.txt}  # strip suffix
+  # Add 1 field for each of 5 fields.
+  cat $provenance | while read \
+    job_id host_name host_hash sh_path shell_hash; do
 
-  local times_out="$base_dir/$job_id.times.csv"
-  local vm_out_dir="$base_dir/$job_id.virtual-memory"
-
-  mkdir -p $vm_out_dir \
-
-  # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,shell_name,shell_hash,benchmark_name' \
-    > $times_out
-
-  # TODO: read the host and pass it
-
-  # job_id is a (host / host ID)?
-  # It's probably simpler just to thread through those 2 vars and keep it in the same format.
-
-
-  cat $provenance | while read _ _ _ sh_path shell_hash; do
     case $sh_path in
       mksh|zsh|bin/osh)
         log "--- Skipping $sh_path"
@@ -154,13 +160,37 @@ all() {
         ;;
     esac
 
-    log "--- Running task with $sh_path"
-
-    conf-dirs | xargs -n 1 -- $0 \
-      configure-one $times_out $vm_out_dir $sh_path $shell_hash || true
+    conf-dirs | xargs -n 1 -- \
+      echo $job_id $host_name $host_hash $sh_path $shell_hash
   done
+}
 
-  cp -v $provenance $base_dir
+readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,conf_dir'
+readonly NUM_COLUMNS=6  # 5 from provenence, 1 for dir
+
+all() {
+  local provenance=$1
+  local raw_dir=${2:-_tmp/osh-runtime/raw}
+  #local base_dir=${2:-../benchmark-data/osh-parser}
+
+  # Job ID is everything up to the first dot in the filename.
+  local name=$(basename $provenance)
+  local prefix=${name%.provenance.txt}  # strip suffix
+
+  local times_out="$raw_dir/$prefix.times.csv"
+  mkdir -p $BASE_DIR/{raw,stage1}
+
+  # Write Header of the CSV file that is appended to.
+  echo $HEADER > $times_out
+
+  local tasks=$raw_dir/tasks.txt
+  print-tasks $provenance > $tasks
+
+  # Run them all
+  #head -n 2 $tasks | xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir
+  cat $tasks | xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir
+
+  cp -v $provenance $raw_dir
 }
 
 #
