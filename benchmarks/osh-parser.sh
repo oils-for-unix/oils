@@ -63,12 +63,11 @@ parser-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   if test "$shell_name" = 'osh'; then
-    #extra_args='--ast-format none'
     local script_name
     local vm_out_path
     script_name=$(basename $script_path)
     vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
-    extra_args="--dump-proc-status-to $vm_out_path"
+    extra_args="--ast-format none --parser-mem-dump $vm_out_path"
 
     # Should we add a field here to say it has VM stats?
   fi

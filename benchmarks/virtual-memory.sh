@@ -64,21 +64,33 @@ baseline-csv() {
 
 # Demo of the --dump-proc-status-to flag.
 # NOTE: Could also add Python introspection.
-dump-demo() {
-  local out=_tmp/virtual-memory
-  mkdir -p $out
+parser-dump-demo() {
+  local out_dir=_tmp/virtual-memory
+  mkdir -p $out_dir
 
   # VmRSS: 46 MB for abuild, 200 MB for configure!  That is bad.  This
   # benchmark really is necessary.
-
   local input=benchmarks/testdata/abuild
-  #local input=benchmarks/testdata/configure
 
   bin/osh \
-    --dump-proc-status-to $out/demo.txt \
+    --parser-mem-dump $out_dir/parser.txt -n --ast-format none \
     $input
 
-  cat $out/demo.txt
+  grep '^Vm' $out_dir/parser.txt
+}
+
+runtime-dump-demo() {
+  # Multiple processes
+  #OIL_TIMING=1 bin/osh -c 'echo $(echo hi)'
+
+  local out_dir=_tmp/virtual-memory
+  mkdir -p $out_dir
+  bin/osh \
+    --parser-mem-dump $out_dir/parser.txt \
+    --runtime-mem-dump $out_dir/runtime.txt \
+    -c 'echo $(echo hi)'
+
+  grep '^Vm' $out_dir/parser.txt $out_dir/runtime.txt
 }
 
 "$@"

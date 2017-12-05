@@ -111,10 +111,9 @@ conf-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   if test "$shell_name" = 'osh'; then
-    local vm_out_path
-    vm_out_path="${vm_out_dir}/$task_label.txt"
-    # TODO: Implement this flag
-    #extra_args="--runtime-dump-mem $vm_out_path"
+    local pdump="${vm_out_dir}/${task_label}__parser.txt"
+    local rdump="${vm_out_dir}/${task_label}__runtime.txt"
+    extra_args="--parser-mem-dump $pdump --runtime-mem-dump $rdump"
 
     # Should we add a field here to say it has VM stats?
   fi

@@ -23,6 +23,7 @@ Builtins that can be exposed:
 
 import os
 import sys
+import time  # for perf measurement
 
 # TODO: Set PYTHONPATH from outside?
 this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -38,7 +39,6 @@ else:
 
 # Uncomment this to see startup time problems.
 if os.environ.get('OIL_TIMING'):
-  import time
   start_time = time.time()
   def _tlog(msg):
     pid = os.getpid()  # TODO: Maybe remove PID later.
@@ -52,7 +52,7 @@ _tlog('before imports')
 import errno
 import platform
 import re
-import traceback  # for debugging
+#import traceback  # for debugging
 
 # Set in Modules/main.c.
 HAVE_READLINE = os.getenv('_HAVE_READLINE') != ''
@@ -194,8 +194,9 @@ def OshMain(argv, login_shell):
   spec.LongFlag('--trace', ['cmd-parse', 'word-parse', 'lexer'])  # NOTE: can only trace one now
   spec.LongFlag('--hijack-shebang')
 
-  # For benchmarks/virtual-memory.sh.
-  spec.LongFlag('--dump-proc-status-to', args.Str)
+  # For benchmarks/*.sh
+  spec.LongFlag('--parser-mem-dump', args.Str)
+  spec.LongFlag('--runtime-mem-dump', args.Str)
 
   builtin.AddOptionsToArgSpec(spec)
 
@@ -360,18 +361,17 @@ def OshMain(argv, login_shell):
 
     # Do this after parsing the entire file.  There could be another option to
     # do it before exiting runtime?
-    if opts.dump_proc_status_to:
-      import time
+    if opts.parser_mem_dump:
       # This might be superstition, but we want to let the value stabilize
       # after parsing.  bash -c 'cat /proc/$$/status' gives different results
       # with a sleep.
       time.sleep(0.001)
       input_path = '/proc/%d/status' % os.getpid()
-      with open(input_path) as f, open(opts.dump_proc_status_to, 'w') as f2:
+      with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
         contents = f.read()
         f2.write(contents)
-        log('Wrote %s to %s', input_path, opts.dump_proc_status_to)
-      sys.exit(0)
+        log('Wrote %s to %s (--parser-mem-dump)', input_path,
+            opts.parser_mem_dump)
 
     # -n prints AST, --show-ast prints and executes
     if exec_opts.noexec or opts.show_ast:
@@ -410,6 +410,21 @@ def OshMain(argv, login_shell):
     if do_exec:
       _tlog('Execute(node)')
       status = ex.Execute(node)
+
+      # We only do this in the "happy" case for now.  ex.Execute() can raise
+      # exceptions.
+      if opts.runtime_mem_dump:
+        # This might be superstition, but we want to let the value stabilize
+        # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+        # with a sleep.
+        time.sleep(0.001)
+        input_path = '/proc/%d/status' % os.getpid()
+        with open(input_path) as f, open(opts.runtime_mem_dump, 'w') as f2:
+          contents = f.read()
+          f2.write(contents)
+          log('Wrote %s to %s (--runtime-mem-dump)', input_path,
+              opts.runtime_mem_dump)
+
     else:
       status = 0
 
