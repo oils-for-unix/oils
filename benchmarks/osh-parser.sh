@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Measure how fast the OSH parser is.a
+# Measure how fast the OSH parser is.
 #
 # Usage:
 #   ./osh-parser.sh <function name>
@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # die
+source benchmarks/common.sh  # die
 
 # TODO: The raw files should be published.  In both
 # ~/git/oilshell/benchmarks-data and also in the /release/ hierarchy?
@@ -92,6 +93,7 @@ print-tasks() {
   done
 }
 
+readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' 
 readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
@@ -113,7 +115,7 @@ all() {
   local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' > $times_out
+  echo $HEADER > $times_out
 
   local tasks=$raw_dir/tasks.txt
   print-tasks $provenance > $tasks
@@ -147,10 +149,6 @@ fake-other-host() {
 #
 # Data Preparation and Analysis
 #
-
-csv-concat() {
-  tools/csv_concat.py "$@"
-}
 
 stage1() {
   local raw_dir=${1:-_tmp/osh-parser/raw}
@@ -197,12 +195,12 @@ stage1() {
 }
 
 stage2() {
-  local out=_tmp/osh-parser/stage2
+  local out=$BASE_DIR/stage2
   mkdir -p $out
 
-  benchmarks/osh-parser.R _tmp/osh-parser/stage1 $out
+  benchmarks/report.R osh-parser $BASE_DIR/stage1 $out
 
-  tree $BASE_DIR
+  tree $out
 }
 
 # TODO:

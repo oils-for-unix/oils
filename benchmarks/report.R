@@ -27,10 +27,25 @@ sourceUrl2 = function(filename) {
       filename)
 }
 
-main = function(argv) {
-  in_dir = argv[[1]]
-  out_dir = argv[[2]]
+# Write a CSV file along with a schema.
+writeCsv = function(table, prefix) {
+  data_out_path = paste0(prefix, '.csv')
+  write.csv(table, data_out_path, row.names = F)
 
+  fieldType = function(field_name) { typeof(table[[field_name]]) }
+
+  types_list = lapply(names(table), fieldType)
+  types = as.character(types_list)
+
+  schema = data_frame(
+    column_name = names(table),
+    type = types
+  )
+  schema_out_path = paste0(prefix, '.schema.csv')
+  write.csv(schema, schema_out_path, row.names = F)
+}
+
+ParserReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
   lines = read.csv(file.path(in_dir, 'lines.csv'))
   raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
@@ -203,26 +218,35 @@ main = function(argv) {
   writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
 
   Log('Wrote %s', out_dir)
-
-  Log('PID %d done', Sys.getpid())
 }
 
-# Write a CSV file along with a schema.
-writeCsv = function(table, prefix) {
-  data_out_path = paste0(prefix, '.csv')
-  write.csv(table, data_out_path, row.names = F)
+RuntimeReport = function(in_dir, out_dir) {
+  times = read.csv(file.path(in_dir, 'times.csv'))
 
-  fieldType = function(field_name) { typeof(table[[field_name]]) }
+  print(summary(times))
+  print(head(times))
 
-  types_list = lapply(names(table), fieldType)
-  types = as.character(types_list)
+  #lines = read.csv(file.path(in_dir, 'lines.csv'))
+  #raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
+  #vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
 
-  schema = data_frame(
-    column_name = names(table),
-    type = types
-  )
-  schema_out_path = paste0(prefix, '.schema.csv')
-  write.csv(schema, schema_out_path, row.names = F)
+  #writeCsv(host_table, file.path(out_dir, 'hosts'))
+  Log('Wrote %s', out_dir)
+}
+
+main = function(argv) {
+  action = argv[[1]]
+  in_dir = argv[[2]]
+  out_dir = argv[[3]]
+  if (action == 'osh-parser') {
+    ParserReport(in_dir, out_dir)
+  } else if (action == 'osh-runtime') {
+    RuntimeReport(in_dir, out_dir)
+  } else {
+    Log("Invalid action '%s'", action)
+    quit(status = 1)
+  }
+  Log('PID %d done', Sys.getpid())
 }
 
 if (length(sys.frames()) == 0) {

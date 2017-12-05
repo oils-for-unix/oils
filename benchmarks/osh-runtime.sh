@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh
+source benchmarks/common.sh  # csv-concat
 
 readonly BASE_DIR=_tmp/osh-runtime
 readonly TAR_DIR=$PWD/$BASE_DIR  # Make it absolute
@@ -96,8 +97,6 @@ conf-task() {
 
   pushd $conf_dir >/dev/null
   touch __TIMESTAMP
-
-  # TODO: write timestamp
 
   # exit code, time in seconds, host_hash, shell_hash, path.  \0
   # would have been nice here!
@@ -191,6 +190,27 @@ all() {
   cat $tasks | xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir
 
   cp -v $provenance $raw_dir
+}
+
+stage1() {
+  local raw_dir=${1:-$BASE_DIR/raw}
+  local out_dir=$BASE_DIR/stage1
+
+  mkdir -p $out_dir
+
+  # Just copy for now
+  cp -v $raw_dir/*.times.csv $out_dir/times.csv
+
+  #local raw_dir=${1:-../benchmark-data/osh-parser}
+}
+
+stage2() {
+  local out=$BASE_DIR/stage2
+  mkdir -p $out
+
+  benchmarks/report.R osh-runtime $BASE_DIR/stage1 $out
+
+  tree $out
 }
 
 #
