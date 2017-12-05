@@ -9,6 +9,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh
+
+readonly BASE_DIR=_tmp/oheap
+
 encode-one() {
   local script=$1
   local oheap_out=$2
@@ -17,20 +21,78 @@ encode-one() {
 
 task-spec() {
   while read path; do
-    echo "$path _tmp/oheap/$(basename $path).oheap"
+    echo "$path _tmp/oheap/$(basename $path)__oheap"
   done < benchmarks/osh-parser-files.txt 
 }
 
-run() {
+encode-all() {
   mkdir -p _tmp/oheap
 
-  local results=_tmp/oheap/results.csv 
-  echo 'status,elapsed_secs' > $results
+  local times_csv=_tmp/oheap/times.csv
+  echo 'status,elapsed_secs' > $times_csv
 
   task-spec | xargs -n 2 --verbose -- \
-    benchmarks/time.py --output $results -- \
+    benchmarks/time.py --output $times_csv -- \
     $0 encode-one
 }
+
+
+# Out of curiousity, compress oheap and originals.
+
+compress-oheap() {
+  local c_dir=$BASE_DIR/oheap-compressed
+  mkdir -p $c_dir
+  for bin in _tmp/oheap/*__oheap; do
+    local name=$(basename $bin)
+    log "Compressing $name"
+    gzip --stdout $bin > $c_dir/$name.gz
+    xz --stdout $bin > $c_dir/$name.xz
+  done
+}
+
+compress-text() {
+  local c_dir=$BASE_DIR/src-compressed
+  mkdir -p $c_dir
+
+  while read src; do
+    local name=$(basename $src)
+    log "Compressing $name"
+    gzip --stdout $src > $c_dir/${name}__text.gz
+    xz --stdout $src > $c_dir/${name}__text.xz
+  done < benchmarks/osh-parser-files.txt 
+}
+
+print-size() {
+  local c1=$1
+  local c2=$2
+  shift 2
+
+  # depth 0: just the filename itself.
+  find "$@" -maxdepth 0 -printf "%s,$c1,$c2,%p\n"
+}
+
+print-csv() {
+  echo 'num_bytes,format,compression,path'
+  # TODO
+  print-size text none benchmarks/testdata/*
+  print-size text gz $BASE_DIR/src-compressed/*.gz
+  print-size text xz $BASE_DIR/src-compressed/*.xz
+
+  print-size oheap none $BASE_DIR/*__oheap
+  print-size oheap gz $BASE_DIR/oheap-compressed/*.gz
+  print-size oheap xz $BASE_DIR/oheap-compressed/*.xz 
+}
+
+report() {
+  local sizes=$BASE_DIR/sizes.csv
+  local out_dir=$BASE_DIR/stage1
+
+  mkdir -p $out_dir
+
+  print-csv > $sizes
+  benchmarks/report.R oheap $BASE_DIR $out_dir
+}
+
 
 # TODO: instead of running osh_demo, we should generate a C++ program that
 # visits every node and counts it.  The output might look like:
@@ -76,12 +138,6 @@ decode() {
   for bin in _tmp/oheap/*.oheap; do
     time _tmp/osh_demo $bin | wc -l
   done
-}
-
-stats() {
-  ls -l -h _tmp/oheap
-  echo
-  cat _tmp/oheap/results.csv
 }
 
 "$@"

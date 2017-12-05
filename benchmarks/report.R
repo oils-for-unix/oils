@@ -291,14 +291,62 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('Wrote %s', out_dir)
 }
 
+# foo/bar/name.sh__oheap -> name.sh
+filenameFromPath = function(path) {
+  # https://stackoverflow.com/questions/33683862/first-entry-from-string-split
+  # Not sure why [[1]] doesn't work?
+  parts = strsplit(basename(path), '__', fixed = T)
+  sapply(parts, head, 1)
+}
+
+OheapReport = function(in_dir, out_dir) {
+  sizes = read.csv(file.path(in_dir, 'sizes.csv'))
+
+  sizes %>%
+    mutate(filename = filenameFromPath(path),
+           metric_name = paste(format, compression, sep = '_'),
+           kilobytes = num_bytes / 1000) %>%
+    select(-c(path, format, compression, num_bytes)) %>%
+    spread(key = c(metric_name), value = kilobytes) %>%
+    select(c(text_none, text_gz, text_xz, oheap_none, oheap_gz, oheap_xz, filename)) %>%
+    arrange(text_none) ->
+    sizes
+  print(sizes)
+
+  # Interesting:
+  # - oheap is 2-7x bigger uncompressed, and 4-12x bigger compressed.
+  # - oheap is less compressible than text!
+
+  sizes %>%
+    transmute(oheap_to_text = oheap_none / text_none,
+              xz_text = text_xz / text_none,
+              xz_oheap = oheap_xz / oheap_none,
+              oheap_to_text_xz = oheap_xz / text_xz,
+              ) ->
+    ratios
+
+  print(ratios)
+
+  writeCsv(sizes, file.path(out_dir, 'encoding_size'))
+  writeCsv(ratios, file.path(out_dir, 'encoding_ratios'))
+
+  Log('Wrote %s', out_dir)
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
   out_dir = argv[[3]]
+
   if (action == 'osh-parser') {
     ParserReport(in_dir, out_dir)
+
   } else if (action == 'osh-runtime') {
     RuntimeReport(in_dir, out_dir)
+
+  } else if (action == 'oheap') {
+    OheapReport(in_dir, out_dir)
+
   } else {
     Log("Invalid action '%s'", action)
     quit(status = 1)
