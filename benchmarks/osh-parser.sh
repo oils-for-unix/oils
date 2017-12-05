@@ -220,45 +220,8 @@ _print-report() {
     <title>OSH Parser Performance</title>
     <script type="text/javascript" src="$base_url/table-sort.js"></script>
     <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="benchmarks.css" />
 
-    <style>
-      body {
-        margin: 0 auto;
-        width: 60em;
-      }
-      code {
-        color: green;
-      }
-      table {
-        margin-left: 3em;
-        font-family: sans-serif;
-      }
-      td {
-        padding: 8px;  /* override default of 5px */
-      }
-      h3, h4 {
-        color: darkgreen;
-      }
-
-      /* these two tables are side by side */
-      #shells, #hosts, #raw_times {
-        display: inline-block;
-        vertical-align: top;
-      }
-      #home-link {
-        text-align: right;
-      }
-
-      /* columns */
-      #osh-ovm, #osh-cpython {
-        background-color: oldlace;
-      }
-      /* rows */
-      .osh-row {
-        background-color: oldlace;
-      }
-
-    </style>
   </head>
   <body>
     <p id="home-link">
@@ -315,6 +278,7 @@ stage3() {
   local out=$BASE_DIR/index.html
   mkdir -p $(dirname $out)
   _print-report $BASE_DIR/stage2 > $out
+  cp -v benchmarks/benchmarks.css $BASE_DIR
   echo "Wrote $out"
 }
 

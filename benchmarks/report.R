@@ -27,6 +27,13 @@ sourceUrl2 = function(filename) {
       filename)
 }
 
+# TODO: Set up cgit because Github links are slow.
+benchmarkDataLink = function(subdir, name, suffix) {
+  #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
+  sprintf('https://github.com/oilshell/benchmark-data/blob/master/%s/%s%s',
+          subdir, name, suffix)
+}
+
 # Write a CSV file along with a schema.
 writeCsv = function(table, prefix) {
   data_out_path = paste0(prefix, '.csv')
@@ -176,13 +183,25 @@ ParserReport = function(in_dir, out_dir) {
   Log('RATE')
   print(rate)
 
-  # TODO: Set up cgit because Github links are slow.
-  benchmarkDataLink = function(subdir, name, suffix) {
-    #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
-    sprintf('https://github.com/oilshell/benchmark-data/blob/master/%s/%s%s',
-            subdir, name, suffix)
-  }
+  WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
+  raw_data_table = data_frame(
+    filename = basename(as.character(raw_data$path)),
+    filename_HREF = benchmarkDataLink('osh-parser', filename, '')
+  )
+  print(raw_data_table)
+
+  writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
+  writeCsv(shell_summary, file.path(out_dir, 'summary'))
+  writeCsv(elapsed, file.path(out_dir, 'elapsed'))
+  writeCsv(rate, file.path(out_dir, 'rate'))
+
+  writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
+
+  Log('Wrote %s', out_dir)
+}
+
+WriteDetails = function(distinct_hosts, distinct_shells, out_dir) {
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
@@ -202,29 +221,54 @@ ParserReport = function(in_dir, out_dir) {
   )
   print(shell_table)
 
-  raw_data_table = data_frame(
-    filename = basename(as.character(raw_data$path)),
-    filename_HREF = benchmarkDataLink('osh-parser', filename, '')
-  )
-  print(raw_data_table)
-
   writeCsv(host_table, file.path(out_dir, 'hosts'))
   writeCsv(shell_table, file.path(out_dir, 'shells'))
-  writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
-  writeCsv(shell_summary, file.path(out_dir, 'summary'))
-  writeCsv(elapsed, file.path(out_dir, 'elapsed'))
-  writeCsv(rate, file.path(out_dir, 'rate'))
-
-  writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
-
-  Log('Wrote %s', out_dir)
 }
 
 RuntimeReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
 
+  times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some tasks failed')
+  }
+
+  # Host label is the same as name
+  times %>% distinct(host_name, host_hash) -> distinct_hosts
+  distinct_hosts$host_label = distinct_hosts$host_name
+  print(distinct_hosts)
+
+  # Shell label is the same as name.  We only have one OSH build.
+  times %>% distinct(shell_name, shell_hash) -> distinct_shells
+  distinct_shells$shell_label = distinct_shells$shell_name
+  print(distinct_shells)
+
+  # Replace name/hash combinations with labels.
+  times %>%
+    left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
+    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
+    select(-c(host_name, host_hash, shell_name, shell_hash)) ->
+    times
+
+  print(times)
+
+  # Sort by osh elapsed ms.
+  times %>%
+    mutate(elapsed_ms = elapsed_secs * 1000,
+           arg_label = basename(task_arg)) %>%
+    select(-c(status, task_arg, elapsed_secs)) %>%
+    spread(key = shell_label, value = elapsed_ms) %>%
+    mutate(osh_to_bash_ratio = osh / bash) %>%
+    arrange(task_type, osh) %>%
+    select(c(host_label, task_type, arg_label, bash, dash, osh, osh_to_bash_ratio)) ->
+    times
+
   print(summary(times))
   print(head(times))
+
+  WriteDetails(distinct_hosts, distinct_shells, out_dir)
+  writeCsv(times, file.path(out_dir, 'times'))
 
   #lines = read.csv(file.path(in_dir, 'lines.csv'))
   #raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))

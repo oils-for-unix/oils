@@ -61,7 +61,7 @@ sh-de-xenial() {
 }
 
 #
-# Configure
+# Configure (NOTE: Subsumed by benchmarks/osh-runtime.sh)
 #
 
 readonly PYTHON_DIR=$PWD/Python-2.7.13

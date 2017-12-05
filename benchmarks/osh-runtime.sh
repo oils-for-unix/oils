@@ -59,6 +59,25 @@ extract() {
 # Computation
 #
 
+readonly PY27_DIR=$PWD/Python-2.7.13
+
+cpython-configure() {
+  local sh_path=${1:-bash}
+  local out_dir=${2:-$BASE_DIR/${sh_path}-cpython-configure}
+  mkdir -p $out_dir
+
+  pushd $out_dir
+  time $sh_path $PY27_DIR/configure || true
+  popd
+
+  tree $out_dir
+}
+
+# 18.9 seconds vs 11 seconds above.
+osh-cpython-configure() {
+  cpython-configure $PWD/_bin/osh $BASE_DIR/osh-cpython-configure
+}
+
 conf-task() {
   local raw_dir=$1  # output
   local job_id=$2
@@ -66,21 +85,28 @@ conf-task() {
   local host_hash=$4
   local sh_path=$5
   local shell_hash=$6
-  local conf_dir=$7
-
-  echo
-  echo "--- $sh_path $conf_dir ---"
-  echo
+  local task_type=$7
+  local task_arg=$8
 
   local shell_name=$(basename $sh_path)
-  local dir_name=$(basename $conf_dir)
 
-  local task_label="${shell_name}-${shell_hash}__${dir_name}"
+  # NOTE: For abuild, this isn't a directory name.
+  local x=$(basename $task_arg)
+  local task_label="${shell_name}-${shell_hash}__${x}"
 
   local times_out="$PWD/$raw_dir/$host.$job_id.times.csv"
   local vm_out_dir="$PWD/$raw_dir/$host.$job_id.virtual-memory"
-  local conf_out_dir="$PWD/$raw_dir/$host.$job_id.files/$task_label"
-  mkdir -p $vm_out_dir $conf_out_dir
+  local files_out_dir="$PWD/$raw_dir/$host.$job_id.files/$task_label"
+  mkdir -p $vm_out_dir $files_out_dir
+
+  local time_tool=$PWD/benchmarks/time.py
+  local -a TIME_PREFIX=(
+    $time_tool \
+    --output $times_out \
+    --field "$host" --field "$host_hash" \
+    --field "$shell_name" --field "$shell_hash" \
+    --field "$task_type" --field "$task_arg"
+  )
 
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
@@ -93,23 +119,37 @@ conf-task() {
     # Should we add a field here to say it has VM stats?
   fi
 
-  local time_tool=$PWD/benchmarks/time.py
+  echo
+  echo "--- $sh_path $task_type $task_arg ---"
+  echo
 
-  pushd $conf_dir >/dev/null
-  touch __TIMESTAMP
+  case $task_type in
+    abuild)
+      # NOTE: $task_arg unused.
 
-  # exit code, time in seconds, host_hash, shell_hash, path.  \0
-  # would have been nice here!
-  $time_tool \
-    --output $times_out \
-    --field "$host" --field "$host_hash" \
-    --field "$shell_name" --field "$shell_hash" \
-    --field "$conf_dir" -- \
-    "$sh_path" $extra_args ./configure >STDOUT.txt || echo FAILED
+      "${TIME_PREFIX[@]}" -- \
+        "$sh_path" $extra_args benchmarks/testdata/abuild -h \
+        > $files_out_dir/STDOUT.txt
+      ;;
 
-  find . -type f -newer __TIMESTAMP \
-    | xargs -I {} -- cp --verbose {} $conf_out_dir
-  popd >/dev/null
+    configure)
+      local conf_dir=$task_arg
+
+      pushd $conf_dir >/dev/null
+      touch __TIMESTAMP
+
+      "${TIME_PREFIX[@]}" -- "$sh_path" $extra_args ./configure \
+        > $files_out_dir/STDOUT.txt
+
+      find . -type f -newer __TIMESTAMP \
+        | xargs -I {} -- cp --verbose {} $files_out_dir
+      popd >/dev/null
+      ;;
+
+    *)
+      die "Invalid task type $task_type"
+      ;;
+  esac
 }
 
 # TODO:
@@ -159,13 +199,17 @@ print-tasks() {
         ;;
     esac
 
+    # NOTE: 'help' is a dummy label.
+    echo $job_id $host_name $host_hash $sh_path $shell_hash abuild help
+
     conf-dirs | xargs -n 1 -- \
-      echo $job_id $host_name $host_hash $sh_path $shell_hash
+      echo $job_id $host_name $host_hash $sh_path $shell_hash configure
+
   done
 }
 
-readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,conf_dir'
-readonly NUM_COLUMNS=6  # 5 from provenence, 1 for dir
+readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,task_type,task_arg'
+readonly NUM_COLUMNS=7  # 5 from provenence, then task_type / task_arg
 
 all() {
   local provenance=$1
@@ -186,8 +230,10 @@ all() {
   print-tasks $provenance > $tasks
 
   # Run them all
-  #head -n 2 $tasks | xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir
-  cat $tasks | xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir
+  #head -n 2 $tasks |
+  time cat $tasks |
+    xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir ||
+    die "Some tasks failed."
 
   cp -v $provenance $raw_dir
 }
@@ -211,6 +257,83 @@ stage2() {
   benchmarks/report.R osh-runtime $BASE_DIR/stage1 $out
 
   tree $out
+}
+
+_print-report() {
+  local in_dir=$1
+  local base_url='../../web/table'
+
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OSH Runtime Performance</title>
+    <script type="text/javascript" src="$base_url/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="benchmarks.css" />
+
+  </head>
+  <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>OSH Runtime Performance</h2>
+
+    <h3>Elapsed Time by Shell (milliseconds)</h3>
+
+    <p>Some benchmarks call many external tools, while some exercise the shell
+    interpreter itself.  Parse time is included.</p>
+EOF
+  csv2html $in_dir/times.csv
+
+  cat <<EOF
+    <h3>Memory Used to Run</h3>
+
+    <p>For <code>osh-ovm</code>.</p>
+EOF
+  #web/table/csv2html.py $in_dir/virtual-memory.csv
+
+  cat <<EOF
+
+    <h3>Shell and Host Details</h3>
+EOF
+  csv2html $in_dir/shells.csv
+  csv2html $in_dir/hosts.csv
+
+cat <<EOF
+    <h3>Raw Data</h3>
+EOF
+  #web/table/csv2html.py $in_dir/raw-data.csv
+
+cat <<EOF
+    <h3>Parse Time Breakdown by File</h3>
+
+    <h4>Elasped Time in milliseconds</h4>
+EOF
+  #web/table/csv2html.py $in_dir/elapsed.csv
+  cat <<EOF
+
+    <h4>Parsing Rate in lines/millisecond</h4>
+EOF
+  #web/table/csv2html.py $in_dir/rate.csv
+  cat <<EOF
+  </body>
+</html>
+EOF
+}
+
+stage3() {
+  local out=$BASE_DIR/index.html
+  mkdir -p $(dirname $out)
+  _print-report $BASE_DIR/stage2 > $out
+  cp -v benchmarks/benchmarks.css $BASE_DIR
+  echo "Wrote $out"
+}
+
+report() {
+  stage1
+  stage2
+  stage3
 }
 
 #
