@@ -93,12 +93,16 @@ Directory Structure
     _build/           # Temporary build files
     _devbuild/        # Developer build files not deleted upon 'make clean'
     _deps/            # build dependencies like re2c
-    _tmp/             # Temporary test files and the like
+    _tmp/             # Test suites and other temp files
       spec/
       wild/
         raw/
         www/
       osh-parser/
+      osh-runtime/
+      vm-baseline/
+      oheap/
+      startup/
       ...
     _release/         # Source release tarballs are put here
       VERSION/        # Published at oilshell.org/release/$VERSION/

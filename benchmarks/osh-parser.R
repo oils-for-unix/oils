@@ -104,7 +104,9 @@ main = function(argv) {
     select(-c(host_name, host_hash, shell_name, shell_hash)) ->
     all_times
 
+  Log('summary(all_times):')
   print(summary(all_times))
+  Log('head(all_times):')
   print(head(all_times))
 
   # Summarize rates by platform/shell
@@ -114,6 +116,7 @@ main = function(argv) {
     mutate(lines_per_ms = total_lines / total_ms) ->
     shell_summary
 
+  Log('shell_summary:')
   print(shell_summary)
 
   # Elapsed seconds for each shell by platform and file

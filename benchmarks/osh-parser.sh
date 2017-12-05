@@ -16,59 +16,7 @@ source test/common.sh  # die
 readonly BASE_DIR=_tmp/osh-parser
 readonly SORTED=$BASE_DIR/tmp/sorted.txt
 
-import-files() {
-  grep -v '^#' benchmarks/osh-parser-originals.txt |
-    xargs --verbose -I {} -- cp {} benchmarks/testdata
-}
-
-# NOTE --ast-format none eliminates print time!  That is more than
-# half of it!  ( 60 seconds with serialization, 29 seconds without.)
-# TODO: That is the only difference... hm.
-#
-# TODO:
-# - Have OSH --parse-and-dump-path
-#   - it can dump /proc/self/meminfo
-
-sh-one() {
-  local append_out=$1
-  local vm_out_dir=$2
-  local sh_path=$3
-  local host_name=$4
-  local host_hash=$5
-  local shell_hash=$6
-  local path=$7
-  echo "--- $sh_path $path ---"
-
-  local shell_name
-  shell_name=$(basename $sh_path)
-
-  # Can't use array because of set -u bug!!!  Only fixed in bash
-  # 4.4.
-  extra_args=''
-  if test "$shell_name" = 'osh'; then
-    #extra_args='--ast-format none'
-    local script_name
-    local vm_out_path
-    script_name=$(basename $path)
-    vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
-    extra_args="--dump-proc-status-to $vm_out_path"
-    # And then add that as --field?
-    # This adds 0.01 seconds?
-    # or shell_hash
-    # Then you need a Python or R script to make a CSV file out of VmPeak VmRSS
-    # etc.
-  fi
-
-  # exit code, time in seconds, host_hash, shell_hash, path.  \0
-  # would have been nice here!
-  benchmarks/time.py \
-    --output $append_out \
-    --field "$host_name" --field "$host_hash" \
-    --field "$shell_name" --field "$shell_hash" \
-    --field "$path" -- \
-    "$sh_path" -n $extra_args "$path" || echo FAILED
-}
-
+# Where we copied them from.
 import-files() {
   grep -v '^#' benchmarks/osh-parser-originals.txt |
     xargs --verbose -I {} -- cp {} benchmarks/testdata
@@ -76,8 +24,8 @@ import-files() {
 
 write-sorted-manifest() {
   local files=${1:-benchmarks/osh-parser-files.txt}
-  local counts=$BASE_DIR/raw/line-counts.txt
-  local csv=$2
+  local counts=$BASE_DIR/tmp/line-counts.txt
+  local csv_out=$2
 
   # Remove comments and sort by line count
   grep -v '^#' $files | xargs wc -l | sort -n > $counts
@@ -85,74 +33,115 @@ write-sorted-manifest() {
   # Raw list of paths
   cat $counts | awk '$2 != "total" { print $2 }' > $SORTED
 
-  # Make a LINES_CSV from wc output
+  # Make a CSV file from wc output
   cat $counts | awk '
       BEGIN { print "num_lines,path" }
       $2 != "total" { print $1 "," $2 }' \
-      > $csv
-
-  cat $SORTED
-  echo ---
-  cat $csv
+      > $csv_out
 }
 
-# runtime_id, host_hash, toolchain_id (which sometimes you don't know)
+# Calls by xargs with a task row.
+parser-task() {
+  local raw_dir=$1  # output
+  local job_id=$2
+  local host=$3
+  local host_hash=$4
+  local sh_path=$5
+  local shell_hash=$6
+  local script_path=$7
 
-run() {
-  local preview=${1:-}
-  local host
-  host=$(hostname)
+  echo "--- $sh_path $script_path ---"
 
-  local job_id
-  job_id="$host.$(date +%Y-%m-%d__%H-%M-%S)"
+  local times_out="$raw_dir/$host.$job_id.times.csv"
+  local vm_out_dir="$raw_dir/$host.$job_id.virtual-memory"
+  mkdir -p $vm_out_dir
 
-  local out_dir='../benchmark-data/osh-parser'
-  local times_out="$out_dir/$job_id.times.csv"
-  local lines_out="$out_dir/$job_id.lines.csv"
-  local vm_out_dir="$out_dir/$job_id.virtual-memory"
+  local shell_name
+  shell_name=$(basename $sh_path)
 
-  mkdir -p \
-    $(dirname $times_out) \
-    $vm_out_dir \
-    $BASE_DIR/{tmp,raw,stage1,www}
+  # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
+  extra_args=''
+  if test "$shell_name" = 'osh'; then
+    #extra_args='--ast-format none'
+    local script_name
+    local vm_out_path
+    script_name=$(basename $script_path)
+    vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
+    extra_args="--dump-proc-status-to $vm_out_path"
+
+    # Should we add a field here to say it has VM stats?
+  fi
+
+  # exit code, time in seconds, host_hash, shell_hash, path.  \0
+  # would have been nice here!
+  benchmarks/time.py \
+    --output $times_out \
+    --field "$host" --field "$host_hash" \
+    --field "$shell_name" --field "$shell_hash" \
+    --field "$script_path" -- \
+    "$sh_path" -n $extra_args "$script_path" || echo FAILED
+}
+
+# For each shell, print 10 script paths.
+print-tasks() {
+  local provenance=$1
+
+  # Add 1 field for each of 5 fields.
+  cat $provenance | while read fields; do
+    cat $sorted | xargs -n 1 -- echo $fields
+  done
+}
+
+readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
+
+# Figure out all tasks to run, and run them.  When called from auto.sh, $2
+# should be the ../benchmarks-data repo.
+all() {
+  local provenance=$1
+  local raw_dir=${2:-$BASE_DIR/raw}
+
+  # Job ID is everything up to the first dot in the filename.
+  local name=$(basename $provenance)
+  local prefix=${name%.provenance.txt}  # strip suffix
+
+  local times_out="$raw_dir/$prefix.times.csv"
+  local lines_out="$raw_dir/$prefix.lines.csv"
+
+  mkdir -p $BASE_DIR/{tmp,raw,stage1}
 
   write-sorted-manifest '' $lines_out
   local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' \
-    > $times_out
+  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' > $times_out
 
-  local tmp_dir=_tmp/host-id/$host
-  benchmarks/id.sh dump-host-id $tmp_dir
+  local tasks=$raw_dir/tasks.txt
+  print-tasks $provenance > $tasks
 
-  local host_hash
-  host_hash=$(benchmarks/id.sh publish-host-id $tmp_dir)
-  echo $host $host_hash
+  # Run them all
+  cat $tasks | xargs -n $NUM_COLUMNS -- $0 parser-task $raw_dir
 
-  local shell_hash
+  cp -v $provenance $raw_dir
+}
 
-  #for sh_path in bash dash mksh zsh; do
-  for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
-    # There will be two different OSH
-    local name=$(basename $sh_path)
+#
+# Testing
+#
 
-    tmp_dir=_tmp/shell-id/$name
-    benchmarks/id.sh dump-shell-id $sh_path $tmp_dir
+# Copy data so it looks like it's from another host
+fake-other-host() {
+  local dir=${1:-_tmp/osh-parser/raw}
+  for entry in $dir/lisa*; do
+    local fake=${entry/lisa/flanders}
+    #echo $entry $fake
+    mv -v $entry $fake
 
-    shell_hash=$(benchmarks/id.sh publish-shell-id $tmp_dir)
-
-    echo "$sh_path ID: $shell_hash"
-
-    if ! test -n "$preview"; then
-      # 20ms for ltmain.sh; 34ms for configure
-      cat $sorted | xargs -n 1 -- $0 \
-        sh-one $times_out $vm_out_dir $sh_path $host $host_hash $shell_hash || true
+    # The host ID isn't changed, but that's OK.
+    # provencence.txt has host names.
+    if test -f $fake; then
+      sed -i 's/lisa/flanders/g' $fake
     fi
   done
-
-  cat $times_out
-  echo "Wrote $times_out, $lines_out, and $vm_out_dir/"
 }
 
 #
@@ -164,18 +153,21 @@ csv-concat() {
 }
 
 stage1() {
+  local raw_dir=${1:-_tmp/osh-parser/raw}
+  #local raw_dir=${1:-../benchmark-data/osh-parser}
+
   local out=_tmp/osh-parser/stage1
   mkdir -p $out
 
   local vm_csv=$out/virtual-memory.csv
-  local -a x=(../benchmark-data/osh-parser/flanders.*.virtual-memory)
-  local -a y=(../benchmark-data/osh-parser/lisa.*.virtual-memory)
+  local -a x=($raw_dir/flanders.*.virtual-memory)
+  local -a y=($raw_dir/lisa.*.virtual-memory)
   benchmarks/virtual_memory.py osh-parser ${x[-1]} ${y[-1]} > $vm_csv
 
   local times_csv=$out/times.csv
   # Globs are in lexicographical order, which works for our dates.
-  local -a a=(../benchmark-data/osh-parser/flanders.*.times.csv)
-  local -a b=(../benchmark-data/osh-parser/lisa.*.times.csv)
+  local -a a=($raw_dir/flanders.*.times.csv)
+  local -a b=($raw_dir/lisa.*.times.csv)
   csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
   # Construct a one-column CSV file
@@ -187,8 +179,8 @@ stage1() {
 
   # Verify that the files are equal, and pass one of them.
   local lines_csv=$out/lines.csv
-  local -a c=(../benchmark-data/osh-parser/flanders.*.lines.csv)
-  local -a d=(../benchmark-data/osh-parser/lisa.*.lines.csv)
+  local -a c=($raw_dir/flanders.*.lines.csv)
+  local -a d=($raw_dir/lisa.*.lines.csv)
 
   local left=${c[-1]}
   local right=${d[-1]}
@@ -332,43 +324,6 @@ report() {
   stage1
   stage2
   stage3
-}
-
-_banner() {
-  echo -----
-  echo "$@"
-  echo -----
-}
-
-# Run the whole benchmark from a clean git checkout.
-#
-# Similar to scripts/release.sh build-and-test.
-auto() {
-  test/spec.sh install-shells
-
-  # Technically we need build-essential too?
-  sudo apt install python-dev
-
-  build/dev.sh all
-  build/codegen.sh lexer
-
-  _banner 'OSH dev build'
-  bin/osh -c 'echo OSH dev build'
-
-  build/prepare.sh configure
-  build/prepare.sh build-python
-
-  make _bin/oil.ovm
-  # This does what 'install' does.
-  scripts/run.sh make-bin-links
-
-  _banner 'OSH production build'
-
-  _bin/osh -c 'echo OSH production build'
-
-  run  # make observations
-
-  # Then summarize report can be done on a central machine?
 }
 
 time-test() {
