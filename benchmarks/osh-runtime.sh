@@ -246,6 +246,11 @@ stage1() {
   # Just copy for now
   cp -v $raw_dir/*.times.csv $out_dir/times.csv
 
+  local vm_csv=$out_dir/virtual-memory.csv
+
+  local -a x=($raw_dir/lisa.*.virtual-memory)
+  benchmarks/virtual_memory.py osh-runtime ${x[-1]} > $vm_csv
+
   #local raw_dir=${1:-../benchmark-data/osh-parser}
 }
 
@@ -288,9 +293,9 @@ EOF
   cat <<EOF
     <h3>Memory Used to Run</h3>
 
-    <p>For <code>osh-ovm</code>.</p>
+    <p>Running under <code>osh-ovm</code>.</p>
 EOF
-  #web/table/csv2html.py $in_dir/virtual-memory.csv
+  web/table/csv2html.py $in_dir/virtual-memory.csv
 
   cat <<EOF
 
@@ -299,22 +304,6 @@ EOF
   csv2html $in_dir/shells.csv
   csv2html $in_dir/hosts.csv
 
-cat <<EOF
-    <h3>Raw Data</h3>
-EOF
-  #web/table/csv2html.py $in_dir/raw-data.csv
-
-cat <<EOF
-    <h3>Parse Time Breakdown by File</h3>
-
-    <h4>Elasped Time in milliseconds</h4>
-EOF
-  #web/table/csv2html.py $in_dir/elapsed.csv
-  cat <<EOF
-
-    <h4>Parsing Rate in lines/millisecond</h4>
-EOF
-  #web/table/csv2html.py $in_dir/rate.csv
   cat <<EOF
   </body>
 </html>

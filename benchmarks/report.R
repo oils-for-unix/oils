@@ -227,6 +227,7 @@ WriteDetails = function(distinct_hosts, distinct_shells, out_dir) {
 
 RuntimeReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
+  vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
 
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -267,14 +268,26 @@ RuntimeReport = function(in_dir, out_dir) {
   print(summary(times))
   print(head(times))
 
+  Log('VM:')
+  print(vm)
+
+  # This is a separate analysis.  We record virtual memory for both the parser
+  # and runtime.  The parser takes all the memory, which is not too surprising.
+  vm %>%
+    filter(shell_name == 'osh') %>%
+    select(-c(shell_name, shell_hash)) %>%
+    mutate(mem_name = paste(metric_name, event, sep = '_')) %>%
+    select(-c(metric_name, event)) %>%
+    spread(key = c(mem_name), value = metric_value) ->
+    vm
+
+  Log('VM:')
+  print(vm)
+
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
   writeCsv(times, file.path(out_dir, 'times'))
+  writeCsv(vm, file.path(out_dir, 'virtual-memory'))
 
-  #lines = read.csv(file.path(in_dir, 'lines.csv'))
-  #raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
-  #vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
-
-  #writeCsv(host_table, file.path(out_dir, 'hosts'))
   Log('Wrote %s', out_dir)
 }
 
