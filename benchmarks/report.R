@@ -172,11 +172,15 @@ ParserReport = function(in_dir, out_dir) {
     select(-c(shell_name, shell_hash)) %>%
     filter(shell_label == 'osh-ovm') %>%
     select(-c(shell_label)) %>%
-    spread(key = metric_name, value = metric_value) %>%
+    rename(kib = metric_value) %>%
+    mutate(megabytes = kib * 1024 / 1e6) %>%
+    select(-c(kib)) %>%
+    spread(key = metric_name, value = megabytes) %>%
     left_join(lines_by_filename, by = c('filename')) %>%
     arrange(host, num_lines) %>%
     mutate(filename_HREF = sourceUrl2(filename)) %>% 
-    select(c(host, VmPeak, VmRSS, num_lines, filename, filename_HREF)) ->
+    rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
+    select(c(host, VmRSS_MB, VmPeak_MB, num_lines, filename, filename_HREF)) ->
     vm_table
 
   Log('\n')
@@ -276,9 +280,15 @@ RuntimeReport = function(in_dir, out_dir) {
   vm %>%
     filter(shell_name == 'osh') %>%
     select(-c(shell_name, shell_hash)) %>%
-    mutate(mem_name = paste(metric_name, event, sep = '_')) %>%
-    select(-c(metric_name, event)) %>%
-    spread(key = c(mem_name), value = metric_value) ->
+    rename(kib = metric_value) %>%
+    mutate(megabytes = kib * 1024 / 1e6) %>%
+    select(-c(kib)) %>%
+    mutate(mem_name = paste(event, metric_name, 'MB', sep = '_')) %>%
+    select(-c(event, metric_name)) %>%
+    spread(key = c(mem_name), value = megabytes) %>%
+    select(c(host, task_arg,
+             parser_VmRSS_MB, parser_VmPeak_MB,
+             runtime_VmRSS_MB, runtime_VmPeak_MB)) ->
     vm
 
   Log('VM:')
@@ -333,6 +343,27 @@ OheapReport = function(in_dir, out_dir) {
   Log('Wrote %s', out_dir)
 }
 
+VmBaselineReport = function(in_dir, out_dir) {
+  vm = read.csv(file.path(in_dir, 'vm-baseline.csv'))
+  #print(vm)
+
+  # TODO: Should label osh-ovm and osh-cpython, like above.
+
+  vm %>%
+    rename(kib = metric_value) %>%
+    mutate(megabytes = kib * 1024 / 1e6) %>%
+    select(-c(kib)) %>%
+    spread(key = c(metric_name), value = megabytes) %>%
+    rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
+    select(c(host, shell_name, shell_hash, VmRSS_MB, VmPeak_MB)) %>%
+    arrange(VmPeak_MB) ->
+    vm
+
+  print(vm)
+
+  writeCsv(vm, file.path(out_dir, 'vm-baseline'))
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
@@ -343,6 +374,9 @@ main = function(argv) {
 
   } else if (action == 'osh-runtime') {
     RuntimeReport(in_dir, out_dir)
+
+  } else if (action == 'vm-baseline') {
+    VmBaselineReport(in_dir, out_dir)
 
   } else if (action == 'oheap') {
     OheapReport(in_dir, out_dir)

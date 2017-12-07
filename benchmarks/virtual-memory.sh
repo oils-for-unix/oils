@@ -9,6 +9,8 @@ set -o errexit
 
 source test/common.sh  # log
 
+readonly BASE_DIR=_tmp/vm-baseline
+
 # TODO: Call this from benchmarks/auto.sh.
 
 vm-baseline() {
@@ -16,14 +18,11 @@ vm-baseline() {
   local base_dir=${2:-_tmp/vm-baseline}
   #local base_dir=${2:-../benchmark-data/vm-baseline}
 
-  # Strip everything after the first dot.
   local name=$(basename $provenance)
-  local job_id=${name%%.*}
-
-  log "--- Job $job_id ---"
+  local prefix=${name%.provenance.txt}  # strip suffix
 
   local host=$(hostname)
-  local out_dir="$base_dir/$host.$job_id"
+  local out_dir="$base_dir/$prefix"
   mkdir -p $out_dir
 
   # Fourth column is the shell.
@@ -40,15 +39,24 @@ vm-baseline() {
   ls -l $out_dir
 }
 
-csv-demo() {
-  local -a job_dirs=(_tmp/vm-baseline/lisa.2017-*)
-  benchmarks/virtual_memory.py baseline ${job_dirs[-1]}
+# Run a single file through stage 1 and report.
+demo() {
+  local -a job_dirs=($BASE_DIR/lisa.2017-*)
+  local dir1=$BASE_DIR/stage1
+  local dir2=$BASE_DIR/stage2
+
+  mkdir -p $dir1 $dir2
+  
+  benchmarks/virtual_memory.py baseline ${job_dirs[-1]} \
+    > $dir1/vm-baseline.csv
+
+  benchmarks/report.R vm-baseline $dir1 $dir2
 }
 
 # Combine CSV files.
-baseline-csv() {
-  local raw_dir=$1
-  local out=_tmp/vm-baseline/stage1
+stage1() {
+  local raw_dir=${1:-$BASE_DIR/raw}
+  local out=$BASE_DIR/stage1
   mkdir -p $out
 
   # Globs are in lexicographical order, which works for our dates.

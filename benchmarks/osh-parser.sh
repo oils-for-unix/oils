@@ -193,22 +193,13 @@ stage1() {
   wc -l $out/*
 }
 
-stage2() {
-  local out=$BASE_DIR/stage2
-  mkdir -p $out
-
-  benchmarks/report.R osh-parser $BASE_DIR/stage1 $out
-
-  tree $out
-}
-
 # TODO:
 # - maybe rowspan for hosts: flanders/lisa
 #   - does that interfere with sorting?
 #
 # NOTE: not bothering to make it sortable now.  Just using the CSS.
 
-_print-report() {
+print-report() {
   local in_dir=$1
   local base_url='../../web/table'
 
@@ -240,7 +231,8 @@ EOF
   cat <<EOF
     <h3>Memory Used to Parse</h3>
 
-    <p>For <code>osh-ovm</code>.</p>
+    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
+    (powers of 10), not MiB (powers of 2).</p>
 EOF
   web/table/csv2html.py $in_dir/virtual-memory.csv
 
@@ -271,20 +263,6 @@ EOF
   </body>
 </html>
 EOF
-}
-
-stage3() {
-  local out=$BASE_DIR/index.html
-  mkdir -p $(dirname $out)
-  _print-report $BASE_DIR/stage2 > $out
-  cp -v benchmarks/benchmarks.css $BASE_DIR
-  echo "Wrote $out"
-}
-
-report() {
-  stage1
-  stage2
-  stage3
 }
 
 time-test() {
