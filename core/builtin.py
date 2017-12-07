@@ -507,7 +507,7 @@ def Pushd(argv, dir_stack):
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
-  dir_stack.append(dest_dir)
+  dir_stack.append(os.getcwd())
   PrintDirStack(dir_stack)
 
   return 0
@@ -545,7 +545,7 @@ def Dirs(argv, dir_stack):
     del dir_stack[:]
   elif arg.v:
     for i, entry in enumerate(dir_stack):
-      print(' ' + str(i) + ' ' + entry)
+      print('%2d %s' % (i, entry)) #print(' ' + str(i) + ' ' + entry)
   elif arg.p:
     for entry in dir_stack:
       print(entry)
