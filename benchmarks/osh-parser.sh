@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Measure how fast the OSH parser is.a
+# Measure how fast the OSH parser is.
 #
 # Usage:
 #   ./osh-parser.sh <function name>
@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # die
+source benchmarks/common.sh  # die
 
 # TODO: The raw files should be published.  In both
 # ~/git/oilshell/benchmarks-data and also in the /release/ hierarchy?
@@ -62,12 +63,11 @@ parser-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   if test "$shell_name" = 'osh'; then
-    #extra_args='--ast-format none'
     local script_name
     local vm_out_path
     script_name=$(basename $script_path)
     vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
-    extra_args="--dump-proc-status-to $vm_out_path"
+    extra_args="--ast-format none --parser-mem-dump $vm_out_path"
 
     # Should we add a field here to say it has VM stats?
   fi
@@ -92,6 +92,7 @@ print-tasks() {
   done
 }
 
+readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' 
 readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
@@ -113,7 +114,7 @@ all() {
   local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
-  echo 'status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' > $times_out
+  echo $HEADER > $times_out
 
   local tasks=$raw_dir/tasks.txt
   print-tasks $provenance > $tasks
@@ -147,10 +148,6 @@ fake-other-host() {
 #
 # Data Preparation and Analysis
 #
-
-csv-concat() {
-  tools/csv_concat.py "$@"
-}
 
 stage1() {
   local raw_dir=${1:-_tmp/osh-parser/raw}
@@ -197,12 +194,12 @@ stage1() {
 }
 
 stage2() {
-  local out=_tmp/osh-parser/stage2
+  local out=$BASE_DIR/stage2
   mkdir -p $out
 
-  benchmarks/osh-parser.R _tmp/osh-parser/stage1 $out
+  benchmarks/report.R osh-parser $BASE_DIR/stage1 $out
 
-  tree $BASE_DIR
+  tree $out
 }
 
 # TODO:
@@ -222,45 +219,8 @@ _print-report() {
     <title>OSH Parser Performance</title>
     <script type="text/javascript" src="$base_url/table-sort.js"></script>
     <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="benchmarks.css" />
 
-    <style>
-      body {
-        margin: 0 auto;
-        width: 60em;
-      }
-      code {
-        color: green;
-      }
-      table {
-        margin-left: 3em;
-        font-family: sans-serif;
-      }
-      td {
-        padding: 8px;  /* override default of 5px */
-      }
-      h3, h4 {
-        color: darkgreen;
-      }
-
-      /* these two tables are side by side */
-      #shells, #hosts, #raw_times {
-        display: inline-block;
-        vertical-align: top;
-      }
-      #home-link {
-        text-align: right;
-      }
-
-      /* columns */
-      #osh-ovm, #osh-cpython {
-        background-color: oldlace;
-      }
-      /* rows */
-      .osh-row {
-        background-color: oldlace;
-      }
-
-    </style>
   </head>
   <body>
     <p id="home-link">
@@ -317,6 +277,7 @@ stage3() {
   local out=$BASE_DIR/index.html
   mkdir -p $(dirname $out)
   _print-report $BASE_DIR/stage2 > $out
+  cp -v benchmarks/benchmarks.css $BASE_DIR
   echo "Wrote $out"
 }
 

@@ -295,18 +295,18 @@ EOF
 }
 
 announcement-0.0() {
-	html-redirect '/blog/2017/07/23.html' \
+  html-redirect '/blog/2017/07/23.html' \
     > ../oilshell.org__deploy/release/0.0.0/announcement.html
 }
 
 announcement-0.1() {
   local version='0.1.0'
-	html-redirect '/blog/2017/09/09.html' \
+  html-redirect '/blog/2017/09/09.html' \
     > ../oilshell.org__deploy/release/$version/announcement.html
 }
 
 announcement-0.2() {
-	html-redirect '/blog/2017/11/10.html' > _release/VERSION/announcement.html
+  html-redirect '/blog/2017/11/10.html' > _release/VERSION/announcement.html
 }
 
 _link() {

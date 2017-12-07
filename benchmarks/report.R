@@ -27,10 +27,32 @@ sourceUrl2 = function(filename) {
       filename)
 }
 
-main = function(argv) {
-  in_dir = argv[[1]]
-  out_dir = argv[[2]]
+# TODO: Set up cgit because Github links are slow.
+benchmarkDataLink = function(subdir, name, suffix) {
+  #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
+  sprintf('https://github.com/oilshell/benchmark-data/blob/master/%s/%s%s',
+          subdir, name, suffix)
+}
 
+# Write a CSV file along with a schema.
+writeCsv = function(table, prefix) {
+  data_out_path = paste0(prefix, '.csv')
+  write.csv(table, data_out_path, row.names = F)
+
+  fieldType = function(field_name) { typeof(table[[field_name]]) }
+
+  types_list = lapply(names(table), fieldType)
+  types = as.character(types_list)
+
+  schema = data_frame(
+    column_name = names(table),
+    type = types
+  )
+  schema_out_path = paste0(prefix, '.schema.csv')
+  write.csv(schema, schema_out_path, row.names = F)
+}
+
+ParserReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
   lines = read.csv(file.path(in_dir, 'lines.csv'))
   raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
@@ -161,13 +183,25 @@ main = function(argv) {
   Log('RATE')
   print(rate)
 
-  # TODO: Set up cgit because Github links are slow.
-  benchmarkDataLink = function(subdir, name, suffix) {
-    #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
-    sprintf('https://github.com/oilshell/benchmark-data/blob/master/%s/%s%s',
-            subdir, name, suffix)
-  }
+  WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
+  raw_data_table = data_frame(
+    filename = basename(as.character(raw_data$path)),
+    filename_HREF = benchmarkDataLink('osh-parser', filename, '')
+  )
+  print(raw_data_table)
+
+  writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
+  writeCsv(shell_summary, file.path(out_dir, 'summary'))
+  writeCsv(elapsed, file.path(out_dir, 'elapsed'))
+  writeCsv(rate, file.path(out_dir, 'rate'))
+
+  writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
+
+  Log('Wrote %s', out_dir)
+}
+
+WriteDetails = function(distinct_hosts, distinct_shells, out_dir) {
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
@@ -187,42 +221,137 @@ main = function(argv) {
   )
   print(shell_table)
 
-  raw_data_table = data_frame(
-    filename = basename(as.character(raw_data$path)),
-    filename_HREF = benchmarkDataLink('osh-parser', filename, '')
-  )
-  print(raw_data_table)
-
   writeCsv(host_table, file.path(out_dir, 'hosts'))
   writeCsv(shell_table, file.path(out_dir, 'shells'))
-  writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
-  writeCsv(shell_summary, file.path(out_dir, 'summary'))
-  writeCsv(elapsed, file.path(out_dir, 'elapsed'))
-  writeCsv(rate, file.path(out_dir, 'rate'))
-
-  writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
-
-  Log('Wrote %s', out_dir)
-
-  Log('PID %d done', Sys.getpid())
 }
 
-# Write a CSV file along with a schema.
-writeCsv = function(table, prefix) {
-  data_out_path = paste0(prefix, '.csv')
-  write.csv(table, data_out_path, row.names = F)
+RuntimeReport = function(in_dir, out_dir) {
+  times = read.csv(file.path(in_dir, 'times.csv'))
+  vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
 
-  fieldType = function(field_name) { typeof(table[[field_name]]) }
+  times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some tasks failed')
+  }
 
-  types_list = lapply(names(table), fieldType)
-  types = as.character(types_list)
+  # Host label is the same as name
+  times %>% distinct(host_name, host_hash) -> distinct_hosts
+  distinct_hosts$host_label = distinct_hosts$host_name
+  print(distinct_hosts)
 
-  schema = data_frame(
-    column_name = names(table),
-    type = types
-  )
-  schema_out_path = paste0(prefix, '.schema.csv')
-  write.csv(schema, schema_out_path, row.names = F)
+  # Shell label is the same as name.  We only have one OSH build.
+  times %>% distinct(shell_name, shell_hash) -> distinct_shells
+  distinct_shells$shell_label = distinct_shells$shell_name
+  print(distinct_shells)
+
+  # Replace name/hash combinations with labels.
+  times %>%
+    left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
+    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
+    select(-c(host_name, host_hash, shell_name, shell_hash)) ->
+    times
+
+  print(times)
+
+  # Sort by osh elapsed ms.
+  times %>%
+    mutate(elapsed_ms = elapsed_secs * 1000,
+           arg_label = basename(task_arg)) %>%
+    select(-c(status, task_arg, elapsed_secs)) %>%
+    spread(key = shell_label, value = elapsed_ms) %>%
+    mutate(osh_to_bash_ratio = osh / bash) %>%
+    arrange(task_type, osh) %>%
+    select(c(host_label, task_type, arg_label, bash, dash, osh, osh_to_bash_ratio)) ->
+    times
+
+  print(summary(times))
+  print(head(times))
+
+  Log('VM:')
+  print(vm)
+
+  # This is a separate analysis.  We record virtual memory for both the parser
+  # and runtime.  The parser takes all the memory, which is not too surprising.
+  vm %>%
+    filter(shell_name == 'osh') %>%
+    select(-c(shell_name, shell_hash)) %>%
+    mutate(mem_name = paste(metric_name, event, sep = '_')) %>%
+    select(-c(metric_name, event)) %>%
+    spread(key = c(mem_name), value = metric_value) ->
+    vm
+
+  Log('VM:')
+  print(vm)
+
+  WriteDetails(distinct_hosts, distinct_shells, out_dir)
+  writeCsv(times, file.path(out_dir, 'times'))
+  writeCsv(vm, file.path(out_dir, 'virtual-memory'))
+
+  Log('Wrote %s', out_dir)
+}
+
+# foo/bar/name.sh__oheap -> name.sh
+filenameFromPath = function(path) {
+  # https://stackoverflow.com/questions/33683862/first-entry-from-string-split
+  # Not sure why [[1]] doesn't work?
+  parts = strsplit(basename(path), '__', fixed = T)
+  sapply(parts, head, 1)
+}
+
+OheapReport = function(in_dir, out_dir) {
+  sizes = read.csv(file.path(in_dir, 'sizes.csv'))
+
+  sizes %>%
+    mutate(filename = filenameFromPath(path),
+           metric_name = paste(format, compression, sep = '_'),
+           kilobytes = num_bytes / 1000) %>%
+    select(-c(path, format, compression, num_bytes)) %>%
+    spread(key = c(metric_name), value = kilobytes) %>%
+    select(c(text_none, text_gz, text_xz, oheap_none, oheap_gz, oheap_xz, filename)) %>%
+    arrange(text_none) ->
+    sizes
+  print(sizes)
+
+  # Interesting:
+  # - oheap is 2-7x bigger uncompressed, and 4-12x bigger compressed.
+  # - oheap is less compressible than text!
+
+  sizes %>%
+    transmute(oheap_to_text = oheap_none / text_none,
+              xz_text = text_xz / text_none,
+              xz_oheap = oheap_xz / oheap_none,
+              oheap_to_text_xz = oheap_xz / text_xz,
+              ) ->
+    ratios
+
+  print(ratios)
+
+  writeCsv(sizes, file.path(out_dir, 'encoding_size'))
+  writeCsv(ratios, file.path(out_dir, 'encoding_ratios'))
+
+  Log('Wrote %s', out_dir)
+}
+
+main = function(argv) {
+  action = argv[[1]]
+  in_dir = argv[[2]]
+  out_dir = argv[[3]]
+
+  if (action == 'osh-parser') {
+    ParserReport(in_dir, out_dir)
+
+  } else if (action == 'osh-runtime') {
+    RuntimeReport(in_dir, out_dir)
+
+  } else if (action == 'oheap') {
+    OheapReport(in_dir, out_dir)
+
+  } else {
+    Log("Invalid action '%s'", action)
+    quit(status = 1)
+  }
+  Log('PID %d done', Sys.getpid())
 }
 
 if (length(sys.frames()) == 0) {
