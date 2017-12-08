@@ -107,6 +107,9 @@ all() {
   # Technically we need build-essential too?
   sudo apt install python-dev
 
+  # Ideally I wouldn't need this, but the build process is not great now.
+  make clean
+
   build/dev.sh all
   build/codegen.sh lexer
 
