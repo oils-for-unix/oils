@@ -198,8 +198,8 @@ print-tasks() {
         ;;
     esac
 
-    # NOTE: 'help' is a dummy label.
-    echo $job_id $host_name $host_hash $sh_path $shell_hash abuild help
+    # NOTE: 'abuild-help' is a dummy label.
+    echo $job_id $host_name $host_hash $sh_path $shell_hash abuild abuild-help
 
     conf-dirs | xargs -n 1 -- \
       echo $job_id $host_name $host_hash $sh_path $shell_hash configure
