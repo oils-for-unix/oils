@@ -93,9 +93,9 @@ measure-all() {
   local provenance=$1
   local base_dir=${2:-../benchmark-data}
 
-  benchmarks/vm-baseline.sh measure $provenence $base_dir/vm-baseline
-  benchmarks/osh-runtime.sh measure $provenence $base_dir/osh-runtime
-  benchmarks/osh-parser.sh measure $provenence $base_dir/osh-parser
+  benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
+  benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
+  benchmarks/osh-parser.sh measure $provenance $base_dir/osh-parser
 }
 
 # Run the whole benchmark from a clean git checkout.
