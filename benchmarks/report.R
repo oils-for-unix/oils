@@ -356,7 +356,7 @@ VmBaselineReport = function(in_dir, out_dir) {
     spread(key = c(metric_name), value = megabytes) %>%
     rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
     select(c(host, shell_name, shell_hash, VmRSS_MB, VmPeak_MB)) %>%
-    arrange(VmPeak_MB) ->
+    arrange(host, VmPeak_MB) ->
     vm
 
   print(vm)

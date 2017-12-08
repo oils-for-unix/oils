@@ -8,12 +8,13 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # log
+source benchmarks/common.sh
 
 readonly BASE_DIR=_tmp/vm-baseline
 
 # TODO: Call this from benchmarks/auto.sh.
 
-vm-baseline() {
+measure() {
   local provenance=$1
   local base_dir=${2:-_tmp/vm-baseline}
   #local base_dir=${2:-../benchmark-data/vm-baseline}
@@ -69,6 +70,52 @@ stage1() {
   benchmarks/virtual_memory.py baseline "${latest[@]}" \
     | tee $out/vm-baseline.csv
 }
+
+print-report() {
+  local in_dir=$1
+  local base_url='../../web/table'
+
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Virtual Memory Baseline</title>
+    <script type="text/javascript" src="$base_url/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="benchmarks.css" />
+
+  </head>
+  <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>Virtual Memory Baseline</h2>
+
+    <h3>Memory Used at Startup (MB)</h3>
+
+    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
+    (powers of 10), not MiB (powers of 2).</p>
+
+EOF
+  csv2html $in_dir/vm-baseline.csv
+
+  # TODO: This could be shared with osh-parser and osh-runtime?
+  cat <<EOF
+    <!-- <h3>Shell and Host Details</h3> -->
+EOF
+  #csv2html $in_dir/shells.csv
+  #csv2html $in_dir/hosts.csv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
+}
+
+
+#
+# Other
+#
 
 # Demo of the --dump-proc-status-to flag.
 # NOTE: Could also add Python introspection.

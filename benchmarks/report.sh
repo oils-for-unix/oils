@@ -59,9 +59,11 @@ osh-runtime() {
 
 # NOTE: This is just processing
 vm-baseline() {
-  local base_dir=_tmp/vm-baseine
+  local base_dir=_tmp/vm-baseline
 
-  benchmarks/virtual-memory.sh stage1
+  benchmarks/vm-baseline.sh stage1
+  stage2 $base_dir
+  stage3 $base_dir
 }
 
 # This is one is specific to a particular machine.
@@ -69,6 +71,8 @@ oheap() {
   local base_dir=_tmp/oheap
 
   benchmarks/oheap.sh report
+  stage2 $base_dir
+  stage3 $base_dir
 }
 
 "$@"

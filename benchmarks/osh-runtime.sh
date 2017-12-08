@@ -78,7 +78,7 @@ osh-cpython-configure() {
   cpython-configure $PWD/_bin/osh $BASE_DIR/osh-cpython-configure
 }
 
-conf-task() {
+runtime-task() {
   local raw_dir=$1  # output
   local job_id=$2
   local host=$3
@@ -210,7 +210,7 @@ print-tasks() {
 readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,task_type,task_arg'
 readonly NUM_COLUMNS=7  # 5 from provenence, then task_type / task_arg
 
-all() {
+measure() {
   local provenance=$1
   local raw_dir=${2:-_tmp/osh-runtime/raw}
   #local base_dir=${2:-../benchmark-data/osh-parser}
@@ -231,7 +231,7 @@ all() {
   # Run them all
   #head -n 2 $tasks |
   time cat $tasks |
-    xargs -n $NUM_COLUMNS -- $0 conf-task $raw_dir ||
+    xargs -n $NUM_COLUMNS -- $0 runtime-task $raw_dir ||
     die "Some tasks failed."
 
   cp -v $provenance $raw_dir
@@ -288,7 +288,7 @@ EOF
     (powers of 10), not MiB (powers of 2).</p>
 
 EOF
-  web/table/csv2html.py $in_dir/virtual-memory.csv
+  csv2html $in_dir/virtual-memory.csv
 
   cat <<EOF
 

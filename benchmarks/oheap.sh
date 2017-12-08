@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh
+source benchmarks/common.sh
 
 readonly BASE_DIR=_tmp/oheap
 
@@ -35,7 +36,6 @@ encode-all() {
     benchmarks/time.py --output $times_csv -- \
     $0 encode-one
 }
-
 
 # Out of curiousity, compress oheap and originals.
 

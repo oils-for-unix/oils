@@ -97,7 +97,7 @@ readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
 # should be the ../benchmarks-data repo.
-all() {
+measure() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
 
