@@ -17,12 +17,6 @@ source benchmarks/common.sh  # die
 readonly BASE_DIR=_tmp/osh-parser
 readonly SORTED=$BASE_DIR/tmp/sorted.txt
 
-# Where we copied them from.
-import-files() {
-  grep -v '^#' benchmarks/osh-parser-originals.txt |
-    xargs --verbose -I {} -- cp {} benchmarks/testdata
-}
-
 write-sorted-manifest() {
   local files=${1:-benchmarks/osh-parser-files.txt}
   local counts=$BASE_DIR/tmp/line-counts.txt

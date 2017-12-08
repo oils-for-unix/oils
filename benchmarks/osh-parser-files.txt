@@ -1,6 +1,6 @@
 benchmarks/testdata/abuild
 benchmarks/testdata/ltmain.sh
-benchmarks/testdata/build.sh
+benchmarks/testdata/configure-coreutils
 benchmarks/testdata/functions
 benchmarks/testdata/configure-helper.sh
 benchmarks/testdata/t9300-fast-import.sh

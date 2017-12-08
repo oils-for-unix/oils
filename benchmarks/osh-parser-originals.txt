@@ -1,6 +1,5 @@
 # These files were selected to be big with test/wild.sh count-lines
 /home/andy/git/alpine/abuild/abuild
-/home/andy/git/other/staticpython/build.sh
 /home/andy/git/other/git/t/t9300-fast-import.sh
 /home/andy/git/other/kubernetes/hack/make-rules/test-cmd-util.sh
 /home/andy/git/other/kubernetes/cluster/gce/gci/configure-helper.sh
@@ -9,3 +8,9 @@
 /home/andy/git/other/git/t/t4014-format-patch.sh
 /home/andy/git/other/kythe/third_party/proto/configure
 /home/andy/git/other/kythe/third_party/proto/ltmain.sh
+
+# 12/2017: Removed:
+/home/andy/git/other/staticpython/build.sh
+
+# Added:
+~/src/coreutils-8.28/configure
