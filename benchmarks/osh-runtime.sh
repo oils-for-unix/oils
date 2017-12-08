@@ -127,7 +127,7 @@ runtime-task() {
       # NOTE: $task_arg unused.
 
       "${TIME_PREFIX[@]}" -- \
-        "$sh_path" $extra_args benchmarks/testdata/abuild -h \
+        "$sh_path" $extra_args testdata/osh-runtime/abuild -h \
         > $files_out_dir/STDOUT.txt
       ;;
 
