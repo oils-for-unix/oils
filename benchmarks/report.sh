@@ -70,7 +70,7 @@ vm-baseline() {
 oheap() {
   local base_dir=_tmp/oheap
 
-  benchmarks/oheap.sh report
+  benchmarks/oheap.sh stage1
   stage2 $base_dir
   stage3 $base_dir
 }

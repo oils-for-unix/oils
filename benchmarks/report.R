@@ -327,6 +327,8 @@ OheapReport = function(in_dir, out_dir) {
   # - oheap is 2-7x bigger uncompressed, and 4-12x bigger compressed.
   # - oheap is less compressible than text!
 
+  # TODO: The ratio needs 2 digits of precision.
+
   sizes %>%
     transmute(oheap_to_text = oheap_none / text_none,
               xz_text = text_xz / text_none,

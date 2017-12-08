@@ -83,14 +83,54 @@ print-csv() {
   print-size oheap xz $BASE_DIR/oheap-compressed/*.xz 
 }
 
-report() {
-  local sizes=$BASE_DIR/sizes.csv
+# This can be done on any host.
+measure() {
+  encode-all
+  compress-oheap
+  compress-text
+}
+
+stage1() {
   local out_dir=$BASE_DIR/stage1
-
   mkdir -p $out_dir
+  print-csv > $out_dir/sizes.csv
+}
 
-  print-csv > $sizes
-  benchmarks/report.R oheap $BASE_DIR $out_dir
+print-report() {
+  local in_dir=$1
+  local base_url='../../web/table'
+
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OHeap Encoding</title>
+    <script type="text/javascript" src="$base_url/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="benchmarks.css" />
+
+  </head>
+  <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>OHeap Encoding</h2>
+
+    <h3>Encoding Size (KB)</h3>
+
+    <p>Sizes are in KB (powers of 10), not KiB (powers of 2).</p>
+EOF
+  csv2html $in_dir/encoding_size.csv
+
+  cat <<EOF
+    <h3>Encoding Ratios</h3>
+EOF
+  csv2html $in_dir/encoding_ratios.csv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
 }
 
 

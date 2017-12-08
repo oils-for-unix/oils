@@ -27,44 +27,6 @@ _banner() {
   echo -----
 }
 
-# Run the whole benchmark from a clean git checkout.
-#
-# Similar to scripts/release.sh build-and-test.
-all() {
-  test/spec.sh install-shells
-
-  # Technically we need build-essential too?
-  sudo apt install python-dev
-
-  build/dev.sh all
-  build/codegen.sh lexer
-
-  _banner 'OSH dev build'
-  bin/osh -c 'echo OSH dev build'
-
-  build/prepare.sh configure
-  build/prepare.sh build-python
-
-  make _bin/oil.ovm
-  # This does what 'install' does.
-  scripts/run.sh make-bin-links
-
-  _banner 'OSH production build'
-
-  _bin/osh -c 'echo OSH production build'
-
-  # Make observations.
-  # TODO: Factor shell-id / host-id here.  Every benchmark will use that.
-
-  # Just write a task file, like _tmp/benchmark-tasks.txt?
-  # And then have a function to execute the tasks.
-  # It has to make the write CSV files?
-
-  benchmarks/osh-parser.sh run
-
-  # Now osh-parser.sh report is run on a single machine.
-}
-
 # Writes a table of host and shells to stdout.  Writes text files and
 # calculates IDs for them as a side effect.
 #
@@ -107,22 +69,81 @@ record-provenance() {
   done
 }
 
-write-provenance-txt() {
-  local job_id
-  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+gen-prefix() {
+  local job_id=$1
 
   local host
   host=$(hostname)
 
-  # NOTE: This could be a TSV file?
+  echo _tmp/${host}.${job_id}.provenance.txt
+}
 
-  local out=_tmp/${host}.${job_id}.provenance.txt
+write-provenance-txt() {
+  local job_id
+  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
-  # Job ID should be here
+  local out=${1:-$(gen-prefix $job_id)}
+
   record-provenance $job_id > $out
 
-  echo "Wrote $out"
+  log "Wrote $out"
 }
+
+measure-all() {
+  local provenance=$1
+  local base_dir=${2:-../benchmark-data}
+
+  benchmarks/vm-baseline.sh measure $provenence $base_dir/vm-baseline
+  benchmarks/osh-runtime.sh measure $provenence $base_dir/osh-runtime
+  benchmarks/osh-parser.sh measure $provenence $base_dir/osh-parser
+}
+
+# Run the whole benchmark from a clean git checkout.
+#
+# Similar to scripts/release.sh build-and-test.
+all() {
+  test/spec.sh install-shells
+
+  # Technically we need build-essential too?
+  sudo apt install python-dev
+
+  build/dev.sh all
+  build/codegen.sh lexer
+
+  _banner 'OSH dev build'
+  bin/osh -c 'echo OSH dev build'
+
+  build/prepare.sh configure
+  build/prepare.sh build-python
+
+  make _bin/oil.ovm
+  # This does what 'install' does.
+  scripts/run.sh make-bin-links
+
+  _banner 'OSH production build'
+
+  _bin/osh -c 'echo OSH production build'
+
+  # Make observations.
+  # TODO: Factor shell-id / host-id here.  Every benchmark will use that.
+
+  # Just write a task file, like _tmp/benchmark-tasks.txt?
+  # And then have a function to execute the tasks.
+  # It has to make the write CSV files?
+
+  local job_id
+  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+
+  local provenance=$(gen-prefix $job_id)
+
+  record-provenance $job_id > $provenance
+
+  measure-all $provenance
+}
+
+#
+# Other
+#
 
 demo-tasks() {
   local provenance=$1
