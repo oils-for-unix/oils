@@ -29,7 +29,6 @@ files() {
 tcc-0.9.26.tar.bz2
 yash-2.46.tar.xz
 ocaml-4.06.0.tar.xz
-uftrace-0.8.1.tar.gz
 EOF
 }
 
@@ -37,11 +36,9 @@ conf-dirs() {
   cat <<EOF
 $TAR_DIR/ocaml-4.06.0
 $TAR_DIR/tcc-0.9.26
-$TAR_DIR/uftrace-0.8.1
 $TAR_DIR/yash-2.46
 EOF
 }
-
 
 download() {
   files | xargs -n 1 -I {} --verbose -- \
@@ -126,9 +123,23 @@ runtime-task() {
     abuild)
       # NOTE: $task_arg unused.
 
+
       "${TIME_PREFIX[@]}" -- \
         "$sh_path" $extra_args testdata/osh-runtime/abuild -h \
         > $files_out_dir/STDOUT.txt
+      ;;
+
+    cpython)
+      # NOTE: $task_arg unused.
+
+      # autoconf supports running configure from a different directory.
+      pushd $files_out_dir >/dev/null
+
+      "${TIME_PREFIX[@]}" -- \
+        "$sh_path" $extra_args $PY27_DIR/configure \
+        > $files_out_dir/STDOUT.txt
+
+      popd >/dev/null
       ;;
 
     configure)
@@ -197,12 +208,13 @@ print-tasks() {
         sh_path=$PWD/$sh_path
         ;;
     esac
+    local prefix="$job_id $host_name $host_hash $sh_path $shell_hash"
 
     # NOTE: 'abuild-help' is a dummy label.
-    echo $job_id $host_name $host_hash $sh_path $shell_hash abuild abuild-help
+    echo "$prefix" abuild abuild-help
+    echo "$prefix" cpython cpython-configure
 
-    conf-dirs | xargs -n 1 -- \
-      echo $job_id $host_name $host_hash $sh_path $shell_hash configure
+    conf-dirs | xargs -n 1 -- echo "$prefix" configure
 
   done
 }
@@ -213,6 +225,8 @@ readonly NUM_COLUMNS=7  # 5 from provenence, then task_type / task_arg
 measure() {
   local provenance=$1
   local raw_dir=${2:-_tmp/osh-runtime/raw}
+  local pattern=${3:-}
+
   #local base_dir=${2:-../benchmark-data/osh-parser}
 
   # Job ID is everything up to the first dot in the filename.
@@ -228,9 +242,8 @@ measure() {
   local tasks=$raw_dir/tasks.txt
   print-tasks $provenance > $tasks
 
-  # Run them all
-  #head -n 2 $tasks |
-  time cat $tasks |
+  # An empty pattern matches every line.
+  time egrep "$pattern" $tasks |
     xargs -n $NUM_COLUMNS -- $0 runtime-task $raw_dir ||
     die "Some tasks failed."
 
