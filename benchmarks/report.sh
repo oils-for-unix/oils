@@ -7,6 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # log
 
 # TODO: Move stuff from osh-parser.sh, osh-runtime.sh, etc.
 #
@@ -73,6 +74,15 @@ oheap() {
   benchmarks/oheap.sh stage1 
   stage2 $base_dir
   stage3 $base_dir
+}
+
+# For view
+dev-index() {
+  local out=_tmp/benchmarks.html
+  for name in osh-parser osh-runtime vm-baseline oheap; do
+    echo "<a href=\"$name/index.html\">$name</a> <br/>"
+  done > $out
+  log "Wrote $out"
 }
 
 "$@"

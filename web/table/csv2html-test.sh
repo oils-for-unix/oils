@@ -44,11 +44,33 @@ EOF
   ./csv2html.py _tmp/bar.csv
 }
 
+test-precision() {
+  cat >_tmp/prec.csv <<EOF
+name,age
+andy,1.2345
+bob,2.3456789
+EOF
+
+  # NOTE: Columns are out of order, which is OK.
+
+  # type: could be html-anchor:shell-id, html-href:shell-id
+
+  cat >_tmp/prec.schema.csv <<EOF
+column_name,type,precision
+name,string,1
+age,double,3
+EOF
+
+  ./csv2html.py _tmp/prec.csv
+}
+
 
 if test $# -eq 0; then
   test-no-schema
   echo '--'
   test-schema
+  echo '--'
+  test-precision
 else
   "$@"
 fi

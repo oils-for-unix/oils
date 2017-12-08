@@ -172,7 +172,7 @@ print re.sub(
 '
 }
 
-# TODO: It would be nice to column of bugs fixed / addressed!
+# TODO: It would be nice to have a column of bugs fixed / addressed!
 
 _git-changelog-body() {
   local prev_branch=$1
@@ -334,6 +334,8 @@ compress() {
   pushd _tmp/metrics/line-counts
   time zip -r -q $out .  # recursive, quiet
   popd
+
+  # TODO: _tmp/*/raw/ should't be included.  Raw data is in ../benchmarks-data.
 
   log "--- benchmarks/osh-parser"
   local out="$root/benchmarks/osh-parser.wwz"

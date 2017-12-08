@@ -34,19 +34,46 @@ benchmarkDataLink = function(subdir, name, suffix) {
           subdir, name, suffix)
 }
 
+# Same precision for all columns.
+SamePrecision = function(precision = 1) {
+  return(function(column_name) {
+    precision
+  })
+}
+
+# Precision by column.
+ColumnPrecision = function(precision_map, default = 1) {
+  return(function(column_name) {
+    p = precision_map[[column_name]]
+    if (is.null(p)) {
+      default
+    } else {
+      p
+    }
+  })
+}
+
 # Write a CSV file along with a schema.
-writeCsv = function(table, prefix) {
+#
+# precision: list(column name -> integer precision)
+writeCsv = function(table, prefix, precision_func = NULL) {
   data_out_path = paste0(prefix, '.csv')
   write.csv(table, data_out_path, row.names = F)
 
-  fieldType = function(field_name) { typeof(table[[field_name]]) }
+  getFieldType = function(field_name) { typeof(table[[field_name]]) }
 
-  types_list = lapply(names(table), fieldType)
-  types = as.character(types_list)
+  if (is.null(precision_func)) {
+    precision_func = function(column_name) { 1 }
+  }
+
+  types_list = lapply(names(table), getFieldType)
+  precision_list = lapply(names(table), precision_func)
+  print(precision_list)
 
   schema = data_frame(
     column_name = names(table),
-    type = types
+    type = as.character(types_list),
+    precision = as.character(precision_list)
   )
   schema_out_path = paste0(prefix, '.schema.csv')
   write.csv(schema, schema_out_path, row.names = F)
@@ -196,8 +223,12 @@ ParserReport = function(in_dir, out_dir) {
   print(raw_data_table)
 
   writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
-  writeCsv(shell_summary, file.path(out_dir, 'summary'))
-  writeCsv(elapsed, file.path(out_dir, 'elapsed'))
+
+  precision = ColumnPrecision(list(total_ms = 0))  # round to nearest millisecond
+  writeCsv(shell_summary, file.path(out_dir, 'summary'), precision)
+
+  precision = SamePrecision(0)  # round to nearest millisecond
+  writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(rate, file.path(out_dir, 'rate'))
 
   writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
@@ -295,7 +326,9 @@ RuntimeReport = function(in_dir, out_dir) {
   print(vm)
 
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
-  writeCsv(times, file.path(out_dir, 'times'))
+
+  precision = ColumnPrecision(list(bash = 0, dash = 0, osh = 0))
+  writeCsv(times, file.path(out_dir, 'times'), precision)
   writeCsv(vm, file.path(out_dir, 'virtual-memory'))
 
   Log('Wrote %s', out_dir)
@@ -339,8 +372,10 @@ OheapReport = function(in_dir, out_dir) {
 
   print(ratios)
 
-  writeCsv(sizes, file.path(out_dir, 'encoding_size'))
-  writeCsv(ratios, file.path(out_dir, 'encoding_ratios'))
+  precision = SamePrecision(0)
+  writeCsv(sizes, file.path(out_dir, 'encoding_size'), precision)
+  precision = SamePrecision(2)
+  writeCsv(ratios, file.path(out_dir, 'encoding_ratios'), precision)
 
   Log('Wrote %s', out_dir)
 }

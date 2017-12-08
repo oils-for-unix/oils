@@ -74,11 +74,31 @@ NUMERIC_TYPES = ('double', 'number') + INTEGER_TYPES
 class Schema:
   def __init__(self, rows):
     schema_col_names = rows[0]
-    assert schema_col_names[0] == 'column_name', schema_col_names[0]
-    assert schema_col_names[1] == 'type', schema_col_names[1]
+    assert 'column_name' in schema_col_names, schema_col_names
+    assert 'type' in schema_col_names, schema_col_names
 
-    body = rows[1:]
-    self.type_lookup = dict((row[0], row[1]) for row in body)
+    # Schema columns
+    s_cols = {}
+    s_cols['column_name'] = []
+    s_cols['type'] = []
+    s_cols['precision'] = []
+    for row in rows[1:]:
+      for i, cell in enumerate(row):
+        name = schema_col_names[i]
+        s_cols[name].append(cell)
+
+    self.type_lookup = dict(
+        (name, t) for (name, t) in
+        zip(s_cols['column_name'], s_cols['type']))
+
+    # NOTE: it's OK if precision is missing.
+    self.precision_lookup = dict(
+        (name, p) for (name, p) in
+        zip(s_cols['column_name'], s_cols['precision']))
+
+    #log('SCHEMA %s', schema_col_names)
+    #log('type_lookup %s', self.type_lookup)
+    #log('precision_lookup %s', self.precision_lookup)
 
     self.col_names = None
     self.col_has_href = None
@@ -114,6 +134,10 @@ class Schema:
     Is the next one?
     """
     return self.col_has_href[index]
+
+  def ColumnPrecision(self, index):
+    col_name = self.col_names[index]
+    return self.precision_lookup.get(col_name, 1)  # default is arbitrary
   
 
 def PrintRow(row, schema):
@@ -152,8 +176,9 @@ def PrintRow(row, schema):
       except ValueError:
         pass  # NA
       else:
-        # commas AND floating point
-        cell_str = '{:,.1f}'.format(cell_float)
+        # commas AND floating point to a given precision
+        precision = schema.ColumnPrecision(i)
+        cell_str = '{0:,.{precision}f}'.format(cell_float, precision=precision)
 
       # Percentage
       #cell_str = '{:.1f}%'.format(cell_float * 100)

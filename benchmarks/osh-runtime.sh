@@ -239,7 +239,7 @@ measure() {
   # Write Header of the CSV file that is appended to.
   echo $HEADER > $times_out
 
-  local tasks=$raw_dir/tasks.txt
+  local tasks=$BASE_DIR/tasks.txt
   print-tasks $provenance > $tasks
 
   # An empty pattern matches every line.
