@@ -256,13 +256,17 @@ stage1() {
 
   mkdir -p $out_dir
 
-  # Just copy for now
-  cp -v $raw_dir/*.times.csv $out_dir/times.csv
+  local times_csv=$out_dir/times.csv
+  # Globs are in lexicographical order, which works for our dates.
+  local -a a=($raw_dir/flanders.*.times.csv)
+  local -a b=($raw_dir/lisa.*.times.csv)
+  csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
   local vm_csv=$out_dir/virtual-memory.csv
 
-  local -a x=($raw_dir/lisa.*.virtual-memory)
-  benchmarks/virtual_memory.py osh-runtime ${x[-1]} > $vm_csv
+  local -a c=($raw_dir/flanders.*.virtual-memory)
+  local -a d=($raw_dir/lisa.*.virtual-memory)
+  benchmarks/virtual_memory.py osh-runtime ${c[-1]} ${d[-1]} > $vm_csv
 
   #local raw_dir=${1:-../benchmark-data/osh-parser}
 }

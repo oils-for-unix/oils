@@ -44,7 +44,7 @@ stage3() {
 osh-parser() {
   local base_dir=_tmp/osh-parser
 
-  benchmarks/osh-parser.sh stage1
+  benchmarks/osh-parser.sh stage1 ../benchmark-data/osh-parser
   stage2 $base_dir
   stage3 $base_dir
 }
@@ -52,7 +52,7 @@ osh-parser() {
 osh-runtime() {
   local base_dir=_tmp/osh-runtime
 
-  benchmarks/osh-runtime.sh stage1
+  benchmarks/osh-runtime.sh stage1 ../benchmark-data/osh-runtime
   stage2 $base_dir
   stage3 $base_dir
 }
@@ -61,7 +61,7 @@ osh-runtime() {
 vm-baseline() {
   local base_dir=_tmp/vm-baseline
 
-  benchmarks/vm-baseline.sh stage1
+  benchmarks/vm-baseline.sh stage1 ../benchmark-data/vm-baseline
   stage2 $base_dir
   stage3 $base_dir
 }
@@ -70,7 +70,7 @@ vm-baseline() {
 oheap() {
   local base_dir=_tmp/oheap
 
-  benchmarks/oheap.sh stage1
+  benchmarks/oheap.sh stage1 
   stage2 $base_dir
   stage3 $base_dir
 }

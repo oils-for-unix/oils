@@ -261,12 +261,12 @@ RuntimeReport = function(in_dir, out_dir) {
   # Sort by osh elapsed ms.
   times %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
-           arg_label = basename(task_arg)) %>%
-    select(-c(status, task_arg, elapsed_secs)) %>%
+           task_arg = basename(task_arg)) %>%
+    select(-c(status, elapsed_secs)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
     mutate(osh_to_bash_ratio = osh / bash) %>%
-    arrange(task_type, osh) %>%
-    select(c(host_label, task_type, arg_label, bash, dash, osh, osh_to_bash_ratio)) ->
+    arrange(host_label, task_arg, osh) %>%
+    select(c(host_label, task_arg, bash, dash, osh, osh_to_bash_ratio)) ->
     times
 
   print(summary(times))
