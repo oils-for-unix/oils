@@ -482,10 +482,12 @@ def Cd(argv, mem):
   state.SetGlobalString(mem, 'PWD', dest_dir)
   return 0
 
+def PrintDirStack(dir_stack):
+  if len(dir_stack) > 0:
+    sys.stdout.write(' '.join(dir_stack) + '\n');
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
-
   if num_args <= 0:
     util.error('pushd: no other directory')
     return 1
@@ -499,8 +501,9 @@ def Pushd(argv, dir_stack):
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
-
   dir_stack.append(os.getcwd())
+  PrintDirStack(dir_stack)
+
   return 0
 
 
@@ -513,6 +516,7 @@ def Popd(argv, dir_stack):
 
   try:
     os.chdir(dest_dir)
+    PrintDirStack(dir_stack)
   except OSError as e:
     util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
@@ -520,8 +524,28 @@ def Popd(argv, dir_stack):
   return 0
 
 
+DIRS_SPEC = _Register('dirs')
+DIRS_SPEC.ShortFlag('-c')
+DIRS_SPEC.ShortFlag('-l')
+DIRS_SPEC.ShortFlag('-p')
+DIRS_SPEC.ShortFlag('-v')
+
 def Dirs(argv, dir_stack):
-  print(dir_stack)
+  arg, i = DIRS_SPEC.Parse(argv)
+  if arg.l:
+    util.warn('*** dirs -l not implemented ***')
+  # Following `bash` behavior for order of operations
+  if arg.c:
+    del dir_stack[:]
+  elif arg.v:
+    for i, entry in enumerate(dir_stack):
+      print('%2d %s' % (i, entry))
+  elif arg.p:
+    for entry in dir_stack:
+      print(entry)
+  else:
+    PrintDirStack(dir_stack)
+
   return 0
 
 

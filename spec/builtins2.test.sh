@@ -24,3 +24,31 @@ echo status=$?
 # BUG bash stdout-json: "echo\nmyfunc\nfor\nstatus=0\n"
 # BUG dash stdout-json: "echo\nstatus=0\n"
 # OK mksh stdout-json: "echo\nmyfunc\nstatus=1\n"
+
+### dirs builtin
+dirs
+# stdout-json: ""
+# status: 0
+
+### dirs -c
+pushd /
+dirs
+dirs -c
+dirs
+# stdout-json: "/\n/\n"
+# status: 0
+
+### dirs -v
+pushd /
+dirs -v
+pushd /
+dirs -v
+# stdout-json: "/\n 0 /\n/ /\n 0 /\n 1 /\n"
+# status: 0
+
+### dirs -p
+pushd /
+dirs -p
+pushd /
+dirs -p
+# stdout-json: "/\n/\n/ /\n/\n/\n"
