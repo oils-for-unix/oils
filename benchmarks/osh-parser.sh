@@ -195,16 +195,16 @@ stage1() {
 
 print-report() {
   local in_dir=$1
-  local base_url='../../web/table'
+  local base_url='../../web'
 
   cat <<EOF
 <!DOCTYPE html>
 <html>
   <head>
     <title>OSH Parser Performance</title>
-    <script type="text/javascript" src="$base_url/table-sort.js"></script>
-    <link rel="stylesheet" type="text/css" href="$base_url/table-sort.css" />
-    <link rel="stylesheet" type="text/css" href="benchmarks.css" />
+    <script type="text/javascript" src="$base_url/table/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="$base_url/table/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="$base_url/benchmarks.css" />
 
   </head>
   <body>

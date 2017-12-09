@@ -38,7 +38,6 @@ stage3() {
 
   $script print-report $base_dir/stage2 > $out
 
-  cp -v benchmarks/benchmarks.css $base_dir
   echo "Wrote $out"
 }
 
@@ -74,6 +73,13 @@ oheap() {
   benchmarks/oheap.sh stage1 
   stage2 $base_dir
   stage3 $base_dir
+}
+
+all() {
+  osh-parser
+  osh-runtime
+  vm-baseline
+  oheap
 }
 
 # For view

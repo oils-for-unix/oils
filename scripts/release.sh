@@ -6,10 +6,8 @@
 # Steps:
 #   $0 build-and-test  (runs spec tests, etc.)
 #   test/wild.sh all
-#   benchmarks/osh-parser.sh
-#     - 'auto' on both flanders and lisa
-#     - summarize
-#     - report
+#   benchmarks/auto.sh all on both flanders and lisa
+#   benchmarks/report.sh all
 #   $0 line-counts
 #   $0 build-tree
 #   $0 compress
@@ -67,7 +65,7 @@ log() {
 #       coverage/  # coverage of all spec tests?  And gold tests maybe?
 #         python/  # python stdlib coverage  with pycoverage
 #         c/       # c coverage with gcc/clang
-#       benchmarks/
+#       benchmarks.wwz/
 #         machine-lisa/
 #           proc/meminfo etc.
 #           compile time on my machine (serial, optimized, etc.)
@@ -335,15 +333,31 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
-  # TODO: _tmp/*/raw/ should't be included.  Raw data is in ../benchmarks-data.
-
-  log "--- benchmarks/osh-parser"
-  local out="$root/benchmarks/osh-parser.wwz"
-  pushd _tmp/osh-parser/
-  time zip -r -q $out .  # recursive, quiet
-  popd
+  compress-benchmarks
 
   tree _release/VERSION
+}
+
+compress-benchmarks() {
+  local root=$PWD/_release/VERSION/
+  mkdir -p $root
+
+  log "--- benchmarks"
+
+  local out="$root/benchmarks.wwz"
+
+  # Technically we only need index.html.  But it's nice to have stage1 and
+  # stage2 in case we need backup.
+
+  pushd _tmp
+  find \
+    osh-parser/{stage1,stage2,index.html} \
+    osh-runtime/{stage1,stage2,index.html} \
+    vm-baseline/{stage1,stage2,index.html} \
+    oheap/{stage1,stage2,index.html} \
+    -type f \
+    | xargs --verbose -- zip -q $out 
+  popd
 }
 
 metrics-index() {
@@ -413,7 +427,7 @@ copy-web() {
 
 build-tree() {
   local root=_release/VERSION
-  mkdir -p $root/{doc,test,benchmarks,metrics}
+  mkdir -p $root/{doc,test,metrics}
 
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root

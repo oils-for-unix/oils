@@ -22,15 +22,24 @@ Oil Version 0.2.0
 
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
-### Links
+### Tests and Metrics
 
 - [Spec Test Results](test/spec.wwz/).  Test OSH behavior against
   that of existing shells.
 - [Wild Test Results](test/wild.wwz/).  Parsing and translating thousands of
   shell scripts with OSH.
-- [OSH Parser Performance](benchmarks/osh-parser.wwz/).  How fast does OSH
-  parse?
 - [Line Counts](metrics/line-counts.wwz/).  How much code is in Oil?
+
+### Benchmarks
+
+- [OSH Parser Performance](benchmarks.wwz/osh-parser/).  How fast does OSH
+  parse compared to other shells?
+- [OSH Runtime](benchmarks.wwz/osh-runtime/).  How fast does OSH
+  run compared to other shells?
+- [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory to
+  shells use at startup?
+- [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format.
+
 
 <!-- TODO: 
 benchmarks/
