@@ -29,6 +29,8 @@ echo status=$?
 dirs
 # stdout-json: ""
 # status: 0
+# N-I dash/mksh status: 127
+# N-I dash/mksh stdout-json: ""
 
 ### dirs -c
 pushd /
@@ -37,6 +39,8 @@ dirs -c
 dirs
 # stdout-json: "/\n/\n"
 # status: 0
+# N-I dash/mksh status: 127
+# N-I dash/mksh stdout-json: ""
 
 ### dirs -v
 pushd /
@@ -45,6 +49,8 @@ pushd /
 dirs -v
 # stdout-json: "/\n 0 /\n/ /\n 0 /\n 1 /\n"
 # status: 0
+# N-I dash/mksh status: 127
+# N-I dash/mksh stdout-json: ""
 
 ### dirs -p
 pushd /
@@ -52,3 +58,5 @@ dirs -p
 pushd /
 dirs -p
 # stdout-json: "/\n/\n/ /\n/\n/\n"
+# N-I dash/mksh status: 127
+# N-I dash/mksh stdout-json: ""
