@@ -4,6 +4,7 @@
 #   ./release.sh <function name>
 #
 # Steps:
+#   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (runs spec tests, etc.)
 #   test/wild.sh all
 #   benchmarks/auto.sh all on both flanders and lisa
@@ -37,7 +38,7 @@ log() {
 #   opy-releases.html  (later)
 #   release/
 #     $VERSION/
-#       index.html  # links to all this stuff
+#       index.html  # release page, from doc/release-index.md
 #       oil-version.txt
 #       release-date.txt
 #       announcement.html  # HTML redirect
@@ -46,19 +47,18 @@ log() {
 #         INSTALL.html
 #         osh-quick-ref.html
 #       test/  # results
-#         spec/
+#         spec.wwz/
 #           machine-lisa/
+#         wild.wwz/
 #         unit/
-#         wild/
 #         gold/
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
 #       metrics/  # static metrics on source code?
 #                 # could also do cloc?
-#         loc-src.txt  # oil, tools, etc.
-#         loc-pydeps.txt  (build/stats.sh line counts)
-#         loc-nativedeps.txt
+#         line-counts.wwz/
+#           nativedeps.txt (build/stats.sh line counts)
 #         number of functions, classes, etc.?
 #         bytecode/bundle size, binary size on x86_64
 #         tarball size?
@@ -66,20 +66,26 @@ log() {
 #         python/  # python stdlib coverage  with pycoverage
 #         c/       # c coverage with gcc/clang
 #       benchmarks.wwz/
-#         machine-lisa/
-#           proc/meminfo etc.
-#           compile time on my machine (serial, optimized, etc.)
-#           startup time for hello world
-#           osh speed test, opy compiling, etc.
-#         machine-pizero/
+#         osh-parser/
+#         osh-runtime/
+#         vm-baseline/
+#         oheap/
+#         ...
+#         startup/
 #   download/
 #     0.0.0/  # TODO: Add version here, so we can have binaries too?
 #       oil-0.0.0.tar.xz 
 
-# NOTE: Also need build/doc.sh update-src-versions to change doc/index.md, etc.
+remove-files() {
+  rm -r -f \
+    _devbuild _build _release \
+    _tmp/{spec,wild,unit} \
+    _tmp/{osh-parser,osh-runtime,vm-baseline,oheap} \
+    _tmp/metrics
+}
 
 build-and-test() {
-  rm -r -f _devbuild _build _release
+  remove-files
   rm -f _bin/oil.*
 
   build/dev.sh pylibc  # for libc.so, needed to crawl deps

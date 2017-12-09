@@ -13,7 +13,7 @@ source test/common.sh
 source benchmarks/common.sh  # csv-concat
 
 readonly BASE_DIR=_tmp/osh-runtime
-readonly TAR_DIR=$PWD/$BASE_DIR  # Make it absolute
+readonly TAR_DIR=$PWD/_deps/osh-runtime  # Make it absolute
 
 # Use the compiled version.  Otherwise /proc/self/exe is the Python
 # interpreter, which matters for yash's configure script!
@@ -41,12 +41,13 @@ EOF
 }
 
 download() {
+  mkdir -p $TAR_DIR
   files | xargs -n 1 -I {} --verbose -- \
     wget --directory $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
 }
 
 extract() {
-  time for f in $TAR_DIR/*.{gz,bz2,xz}; do
+  time for f in $TAR_DIR/*.{bz2,xz}; do
     tar -x --directory $TAR_DIR --file $f 
   done
   ls -l $TAR_DIR
