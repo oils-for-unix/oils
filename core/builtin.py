@@ -483,14 +483,8 @@ def Cd(argv, mem):
   return 0
 
 def PrintDirStack(dir_stack):
-  stack_size = len(dir_stack)
-  for i in range(stack_size):
-    sys.stdout.write(dir_stack[i])
-    if i is not (stack_size - 1):
-      sys.stdout.write(' ')
-    else:
-      sys.stdout.write('\n')
-  sys.stdout.flush()
+  if len(dir_stack) > 0:
+    sys.stdout.write(' '.join(dir_stack) + '\n');
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
@@ -545,7 +539,7 @@ def Dirs(argv, dir_stack):
     del dir_stack[:]
   elif arg.v:
     for i, entry in enumerate(dir_stack):
-      print('%2d %s' % (i, entry)) #print(' ' + str(i) + ' ' + entry)
+      print('%2d %s' % (i, entry))
   elif arg.p:
     for entry in dir_stack:
       print(entry)
