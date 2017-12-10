@@ -111,7 +111,6 @@ all() {
   make clean
 
   build/dev.sh all
-  build/codegen.sh lexer
 
   _banner 'OSH dev build'
   bin/osh -c 'echo OSH dev build'

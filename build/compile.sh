@@ -138,7 +138,7 @@ readonly PREPROC_FLAGS=(
   -D Py_BUILD_CORE
 )
 
-readonly INCLUDE_PATHS=(-I . -I Include -I ../_build/gen)
+readonly INCLUDE_PATHS=(-I . -I Include -I ../_devbuild/gen)
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 # BASE_CFLAGS is copied by observation from what configure.ac does on my Ubuntu

@@ -59,6 +59,7 @@ pylibc() {
 }
 
 fastlex() {
+  build/codegen.sh ast-id-lex
   py-ext fastlex build/setup_fastlex.py
   PYTHONPATH=. native/fastlex_test.py
 }
@@ -78,8 +79,6 @@ minimal() {
 all() {
   minimal
   build/codegen.sh
-
-  build/codegen.sh ast-id-lex
   fastlex
 }
 

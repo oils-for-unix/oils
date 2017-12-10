@@ -49,7 +49,7 @@ all() {
   echo
 
   echo 'GENERATED CODE'
-  wc -l _devbuild/*.py _build/gen/* | sort --numeric
+  wc -l _devbuild/*.py _devbuild/gen/* | sort --numeric
   echo
 
   echo 'TOOLS'

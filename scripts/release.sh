@@ -81,17 +81,17 @@ remove-files() {
     _devbuild _build _release \
     _tmp/{spec,wild,unit} \
     _tmp/{osh-parser,osh-runtime,vm-baseline,oheap} \
-    _tmp/metrics
+    _tmp/metrics \
+    _tmp/oil-tar-test
 }
 
 build-and-test() {
   remove-files
-  rm -f _bin/oil.*
+  rm -f -v _bin/oil.* *.so
 
-  build/dev.sh pylibc  # for libc.so, needed to crawl deps
-  build/doc.sh osh-quick-ref  # for _devbuild/osh_help.py
+  build/dev.sh all  # for {libc,fastlex}.so, needed to crawl deps
 
-  # TODO: publish these
+  # TODO: publish unit tests.
   test/unit.sh all
 
   build/prepare.sh configure

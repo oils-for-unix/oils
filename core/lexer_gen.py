@@ -180,6 +180,12 @@ def TranslateRegex(pat):
 
 
 def TranslateLexer(lexer_def):
+  # https://stackoverflow.com/questions/12836171/difference-between-an-inline-function-and-static-inline-function
+  # Has to be 'static inline' rather than 'inline', otherwise the
+  # _bin/oil.ovm-dbg build fails (but the _bin/oil.ovm doesn't!).
+  # Since we reference this function in exactly one translation unit --
+  # fastlex.c, the difference is moot, and we just satisfy the compiler.
+
   print r"""
 /* Common stuff */
 
@@ -189,7 +195,7 @@ def TranslateLexer(lexer_def):
   re2c:yyfill:enable = 0;  // generated code doesn't ask for more input
 */
 
-inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
+static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
                        int start_pos, int* id, int* end_pos) {
 
   // bounds checking

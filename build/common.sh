@@ -17,8 +17,12 @@ readonly PY27=Python-2.7.13
 
 readonly PREPARE_DIR=_devbuild/cpython-full
 
+log() {
+  echo "$@" >&2
+}
+
 die() {
-  echo "FATAL: $@" 1>&2
+  log "FATAL: $@"
   exit 1
 }
 

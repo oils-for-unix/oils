@@ -16,6 +16,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/common.sh
+
 # Files
 #
 # native/lex.c -- calls generated function?
@@ -24,7 +26,10 @@ set -o errexit
 #
 #  ReadToken(lexer_mode, line, s) -> (t, e)
 
-# _build/gen/
+# NOTE: These are in _devbuild because fastlex.so need them, and fastlex.so is
+# needed for the Makefile to properly crawl dependencies.
+#
+# _devbuild/gen/
 #    osh-ast.h - lex_mode_e for now
 #    id_kind.h - id_e for now
 #    osh-lex.re2c.c  
@@ -47,11 +52,11 @@ install-re2c() {
 re2c() { _deps/re2c-1.0.3/re2c "$@"; }
 
 ast-gen() {
-  PYTHONPATH=. osh/ast_gen.py "$@" > _build/gen/osh-ast.h
+  PYTHONPATH=. osh/ast_gen.py "$@" > _devbuild/gen/osh-ast.h
 }
 
 id-gen() {
-  PYTHONPATH=. core/id_kind_gen.py c > _build/gen/id.h
+  PYTHONPATH=. core/id_kind_gen.py c > _devbuild/gen/id.h
 }
 
 lexer-gen() { PYTHONPATH=. core/lexer_gen.py "$@"; }
@@ -59,7 +64,7 @@ lexer-gen() { PYTHONPATH=. core/lexer_gen.py "$@"; }
 # _gen/osh_lex.re2c.c
 # This includes osh_ast.h
 osh-lex-gen() {
-  lexer-gen c > _build/gen/osh-lex.re2c.h
+  lexer-gen c > _devbuild/gen/osh-lex.re2c.h
 }
 
 print-regex() { lexer-gen print-regex; }
@@ -71,13 +76,14 @@ osh-lex-gen-native() {
   # The COMMENT state can match an empty string at the end of a line, e.g.
   # '#\n'.  So we have to turn that warning off.
   re2c -W -Wno-match-empty-string -Werror \
-    -o _build/gen/osh-lex.h _build/gen/osh-lex.re2c.h
+    -o _devbuild/gen/osh-lex.h _devbuild/gen/osh-lex.re2c.h
 }
 
 # Called by build/dev.sh for fastlex.so.
 ast-id-lex() {
-  mkdir -p _build/gen
+  mkdir -p _devbuild/gen
 
+  log "-- Generating AST, IDs, and lexer in _devbuild/gen"
   ast-gen
   id-gen
   osh-lex-gen
