@@ -74,13 +74,18 @@ osh-lex-gen-native() {
     -o _build/gen/osh-lex.h _build/gen/osh-lex.re2c.h
 }
 
-lexer() {
+# Called by build/dev.sh for fastlex.so.
+ast-id-lex() {
   mkdir -p _build/gen
 
   ast-gen
   id-gen
   osh-lex-gen
   osh-lex-gen-native
+}
+
+lexer() {
+  ast-id-lex
 
   # Why do we need this?
   rm -f _devbuild/py-ext/x86_64/fastlex.so

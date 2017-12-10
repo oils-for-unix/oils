@@ -27,7 +27,8 @@ ubuntu-deps() {
 # These produce _devbuild/{osh,oil}_help.py
 gen-help() {
   build/doc.sh osh-quick-ref
-  build/doc.sh oil-quick-ref
+  # I believe this will be obsolete
+  #build/doc.sh oil-quick-ref
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
@@ -54,6 +55,7 @@ py-ext() {
 
 pylibc() {
   py-ext libc build/setup.py
+  PYTHONPATH=. native/libc_test.py
 }
 
 fastlex() {
@@ -61,25 +63,24 @@ fastlex() {
   PYTHONPATH=. native/fastlex_test.py
 }
 
-# Also done by unit.sh.
-test-pylibc() {
-  export PYTHONPATH=.
-  pylibc
-  native/libc_test.py
-}
-
 clean() {
   rm -f --verbose libc.so fastlex.so
   rm -r -f --verbose _devbuild/py-ext
 }
 
-# TODO: We should put the fastlex.so extension here.  But I don't want to
-# require re2c installation just yet.  Developers can use the slow lexer for
-# now.
-all() {
+# No fastlex, because we don't want to require re2c installation.
+minimal() {
   gen-help
   pylibc
-  test-pylibc
+}
+
+# Prerequisites: build/codegen.sh {download,install}-re2c
+all() {
+  minimal
+  build/codegen.sh
+
+  build/codegen.sh ast-id-lex
+  fastlex
 }
 
 "$@"

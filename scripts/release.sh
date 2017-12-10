@@ -72,8 +72,8 @@ log() {
 #         oheap/
 #         ...
 #         startup/
-#   download/
-#     0.0.0/  # TODO: Add version here, so we can have binaries too?
+#   download/  # What about native binaries?
+#     0.0.0/  
 #       oil-0.0.0.tar.xz 
 
 remove-files() {
