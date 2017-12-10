@@ -6,8 +6,11 @@
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (runs spec tests, etc.)
+#     prereq: build/codegen.sh {download,install}-re2c
 #   test/wild.sh all
 #   benchmarks/auto.sh all on both flanders and lisa
+#     prereq: benchmarks/osh-runtime.sh {download,extract}
+#   benchmarks/oheap.sh measure
 #   benchmarks/report.sh all
 #   $0 line-counts
 #   $0 build-tree
