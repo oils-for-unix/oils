@@ -895,21 +895,27 @@ def main(argv):
       f.write('\n')  # bash 'read' requires a newline
 
   if stats['num_failed'] == 0:
-    #if stats['osh_num_passed'] == 0:
-    #  print('*** Exit with status 2 because osh not tested', file=sys.stderr)
-    #  return 2  # Change success to exit code 2 if we didn't run osh
     return 0
-  else:
-    allowed = opts.osh_failures_allowed
-    all_count = stats['num_failed'] 
-    osh_count = stats['osh_num_failed']
-    # If we got the allowed number of failures, exit 0.
-    if allowed != 0 and allowed == all_count and all_count == osh_count:
-      print('*** Got %d allowed osh failures, exit with status 0' % allowed,
-          file=sys.stderr)
-      return 0
 
-    return 1
+  allowed = opts.osh_failures_allowed
+  all_count = stats['num_failed'] 
+  osh_count = stats['osh_num_failed']
+  if allowed == 0:
+    log('')
+    log('FATAL: %d tests failed (%d osh failures)', all_count, osh_count)
+    log('')
+  else:
+    # If we got EXACTLY the allowed number of failures, exit 0.
+    if allowed == all_count and all_count == osh_count:
+      log('note: Got %d allowed osh failures (exit with code 0)', allowed)
+      return 0
+    else:
+      log('')
+      log('FATAL: Got %d failures (%d osh failures), but %d are allowed',
+          all_count, osh_count, allowed)
+      log('')
+
+  return 1
 
 
 if __name__ == '__main__':
