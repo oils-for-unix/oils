@@ -100,6 +100,10 @@ lexer() {
   build/dev.sh fastlex
 }
 
+# TODO:
+# asdl/run.sh gen-osh-python
+
+
 # Size profiler for binaries.  TODO: Fold this into benchmarks/
 bloaty() { ~/git/other/bloaty/bloaty "$@"; }
 

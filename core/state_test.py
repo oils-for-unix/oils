@@ -14,17 +14,22 @@ value_e = runtime.value_e
 var_flags_e = runtime.var_flags_e
 
 
+def _InitMem():
+  # empty environment, no arena.
+  return state.Mem('', [], {}, None)
+
+
 class MemTest(unittest.TestCase):
 
   def testGet(self):
-    mem = state.Mem('', [], {})
+    mem = _InitMem()
     mem.PushCall('my-func', ['a', 'b'])
     print(mem.GetVar('HOME'))
     mem.PopCall()
     print(mem.GetVar('NONEXISTENT'))
 
   def testSetVarClearFlag(self):
-    mem = state.Mem('', [], {})
+    mem = _InitMem()
     print(mem)
 
     mem.PushCall('my-func', ['ONE'])
@@ -179,7 +184,7 @@ class MemTest(unittest.TestCase):
       self.fail("Expected failure")
 
   def testGetVar(self):
-    mem = state.Mem('', [], {})
+    mem = _InitMem()
 
     # readonly a=x
     mem.SetVar(
@@ -194,7 +199,7 @@ class MemTest(unittest.TestCase):
 
   def testExportThenAssign(self):
     """Regression Test"""
-    mem = state.Mem('', [], {})
+    mem = _InitMem()
 
     # export U
     mem.SetVar(
@@ -209,7 +214,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual({'U': 'u'}, e)
 
   def testUnset(self):
-    mem = state.Mem('', [], {})
+    mem = _InitMem()
     # unset a
     mem.Unset(runtime.LhsName('a'), scope_e.Dynamic)
 
@@ -219,7 +224,7 @@ class MemTest(unittest.TestCase):
     mem.Unset(runtime.LhsIndexedName('a', 1), scope_e.Dynamic)
 
   def testArgv(self):
-    mem = state.Mem('', [], {})
+    mem = _InitMem()
     mem.PushCall('my-func', ['a', 'b'])
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
@@ -242,7 +247,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
   def testArgv2(self):
-    mem = state.Mem('', ['x', 'y'], {})
+    mem = state.Mem('', ['x', 'y'], {}, None)
 
     mem.Shift(1)
     self.assertEqual(['y'], mem.GetArgv())

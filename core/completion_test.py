@@ -60,7 +60,7 @@ class CompletionTest(unittest.TestCase):
     print(list(A1.Matches(['f'], 0, 'f')))
 
   def testExternalCommandAction(self):
-    mem = state.Mem('dummy', [], {})
+    mem = state.Mem('dummy', [], {}, None)
     a = completion.ExternalCommandAction(mem)
     print(list(a.Matches([], 0, 'f')))
 
@@ -82,7 +82,9 @@ class CompletionTest(unittest.TestCase):
     w.parts.append(a)
 
     # Set global COMPREPLY=(f1 f2)
-    pairs = [ast.assign_pair(ast.LhsName('COMPREPLY'), assign_op_e.Equal, w)]
+    pair = ast.assign_pair(ast.LhsName('COMPREPLY'), assign_op_e.Equal, w)
+    pair.spids.append(0)  # dummy
+    pairs = [pair]
     body_node = ast.Assignment(Id.Assign_None, [], pairs)
 
     func_node.name = 'myfunc'
@@ -141,7 +143,7 @@ class CompletionTest(unittest.TestCase):
 
 
 def _MakeTestEvaluator():
-  mem = state.Mem('', [], {})
+  mem = state.Mem('', [], {}, None)
   exec_opts = state.ExecOpts()
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
   return ev

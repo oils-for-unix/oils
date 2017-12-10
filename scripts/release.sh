@@ -122,18 +122,6 @@ build-and-test() {
   test/alpine.sh test-tar oil
 }
 
-# Release procedure after build-and-test:
-#
-# ./local.sh publish-doc
-# ./local.sh publish-release
-# ./local.sh publish-releases-html
-# ./local.sh publish-spec
-
-# TODO:
-# - publish-unit
-# - Update the doc/ "latest" redirect?
-# - Publish Alpine test log?  (along with build stats?)
-
 _compressed-tarball() {
   local name=${1:-hello}
   local version=${2:-0.0.0}
@@ -603,11 +591,10 @@ _html-index() {
 
     echo "<p class="date">$date</p>"
 
-    echo '<p>                 <a href="release/'$version'/announcement.html">Release Announcment</a>
+    echo '<p>                 <a href="release/'$version'/announcement.html">Release Announcement</a>
               &nbsp; | &nbsp; <a href="release/'$version'/doc/INSTALL.html">INSTALL</a>
               &nbsp; | &nbsp; <a href="release/'$version'/">Docs and Details</a>
           </p>'
-              #&nbsp; | &nbsp; <a href="/release/'$version'/test/">Test Results</a>
 
     _release-files-html $version
   done < _tmp/sorted-releases.txt

@@ -37,7 +37,7 @@ def InitCommandParser(code_str):
 
 
 def InitExecutor():
-  mem = state.Mem('', [], {})
+  mem = state.Mem('', [], {}, None)
   status_lines = None  # not needed for what we're testing
   builtins = builtin.BUILTIN_DEF
   funcs = {}
@@ -50,7 +50,7 @@ def InitExecutor():
 
 
 def InitEvaluator():
-  mem = state.Mem('', [], {})
+  mem = state.Mem('', [], {}, None)
   state.SetLocalString(mem, 'x', 'xxx')
   state.SetLocalString(mem, 'y', 'yyy')
 

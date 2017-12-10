@@ -123,6 +123,8 @@ _html-summary() {
     if (num_failed == 0) {
       print ""
       print "ALL " num_passed " TESTS PASSED"
+    } else {
+      exit(1)  # Fail
     }
   }
   '
