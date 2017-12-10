@@ -285,6 +285,12 @@ git-changelog-0.2.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.3.alpha1() {
+  _git-changelog release/0.2.0 release/0.3.alpha1 \
+    > _release/VERSION/changelog.html
+}
+
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -296,6 +302,19 @@ html-redirect() {
   </head>
   <body>
     <p>Redirect to<a href="$url">$url</a></p>
+  </body>
+</html>  
+EOF
+}
+
+no-announcement() {
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <p>No announcement for this release.</p>
   </body>
 </html>  
 EOF
@@ -314,6 +333,11 @@ announcement-0.1() {
 
 announcement-0.2() {
   html-redirect '/blog/2017/11/10.html' > _release/VERSION/announcement.html
+}
+
+announcement-0.3() {
+  #html-redirect '/blog/2017/12/10.html' > _release/VERSION/announcement.html
+  no-announcement > _release/VERSION/announcement.html
 }
 
 _link() {
