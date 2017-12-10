@@ -26,37 +26,43 @@ echo status=$?
 # OK mksh stdout-json: "echo\nmyfunc\nstatus=1\n"
 
 ### dirs builtin
+cd /
 dirs
-# stdout-json: ""
+# stdout-json: "/\n"
 # status: 0
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
 
-### dirs -c
-pushd /
+### dirs -c to clear the stack
+cd /
+pushd /tmp >/dev/null  # zsh pushd doesn't print anything, but bash does
 dirs
 dirs -c
 dirs
-# stdout-json: "/\n/\n"
+# stdout-json: "/tmp /\n/tmp\n"
 # status: 0
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
 
-### dirs -v
-pushd /
+### dirs -v to print numbered stack, one entry per line
+cd /
+pushd / >/dev/null
 dirs -v
-pushd /
+pushd / >/dev/null
 dirs -v
-# stdout-json: "/\n 0 /\n/ /\n 0 /\n 1 /\n"
+# stdout-json: " 0  /\n 1  /\n 0  /\n 1  /\n 2  /\n"
 # status: 0
+# zsh uses tabs
+# OK zsh stdout-json: "0\t/\n1\t/\n0\t/\n1\t/\n2\t/\n"
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
 
-### dirs -p
-pushd /
+### dirs -p to print one entry per line
+cd /
+pushd / >/dev/null
 dirs -p
-pushd /
+pushd / >/dev/null
 dirs -p
-# stdout-json: "/\n/\n/ /\n/\n/\n"
+# stdout-json: "/\n/\n/\n/\n/\n"
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
