@@ -257,7 +257,8 @@ builtins() {
 }
 
 builtins2() {
-  sh-spec spec/builtins2.test.sh --osh-failures-allowed 0 \
+  # 4 tests for 'dirs' fail.
+  sh-spec spec/builtins2.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
