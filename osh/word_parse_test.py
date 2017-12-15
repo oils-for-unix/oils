@@ -16,7 +16,7 @@ from asdl import const
 from core import alloc
 from core.id_kind import Id
 from core import word
-from core.test_lib import TokenWordsEqual
+from core import test_lib
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -53,7 +53,7 @@ def _assertReadWordWithArena(test, word_str):
   # Next word must be \n
   w2 = w_parser.ReadWord(lex_mode_e.OUTER)
   test.assertTrue(
-      TokenWordsEqual(
+      test_lib.TokenWordsEqual(
         ast.TokenWord(ast.token(Id.Op_Newline, '\n')),
         w2))
 
@@ -465,31 +465,31 @@ ls bar
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]
-    self.assertEqual(ast.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'foo'))]
-    self.assertEqual(ast.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Op_Newline, '\n')
-    self.assertEqual(ast.TokenWord(t), w)
+    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]
-    self.assertEqual(ast.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'bar'))]
-    self.assertEqual(ast.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Op_Newline, '\n')
-    self.assertEqual(ast.TokenWord(t), w)
+    test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Eof_Real, '')
-    self.assertEqual(ast.TokenWord(t), w)
+    test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
 
   def testParseErrorLocation(self):
     from core import word
