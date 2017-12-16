@@ -540,11 +540,17 @@ def Dirs(argv, dir_stack):
   if arg.c:
     del dir_stack[:]
   elif arg.v:
-    for i, entry in enumerate(dir_stack):
-      print('%2d %s' % (i, entry))
+    temp_stack = dir_stack[:]
+    temp_stack.insert(0, os.getcwd())
+    for i, entry in enumerate(temp_stack):
+      print('%2d  %s' % (i, entry))
+    sys.stdout.flush()
   elif arg.p:
-    for entry in dir_stack:
+    temp_stack = dir_stack[:]
+    temp_stack.insert(0, os.getcwd())
+    for entry in temp_stack:
       print(entry)
+    sys.stdout.flush()
   else:
     PrintDirStack(dir_stack)
 
