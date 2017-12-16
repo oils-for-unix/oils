@@ -484,9 +484,8 @@ def Cd(argv, mem):
 
 
 def PrintDirStack(dir_stack):
-  if dir_stack:
-    print(' '.join(dir_stack))
-
+  print(os.getcwd() + ((' ' + ' '.join(dir_stack)) if dir_stack else ''))
+  sys.stdout.flush()
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
@@ -498,13 +497,14 @@ def Pushd(argv, dir_stack):
     return 1
 
   dest_dir = argv[0]
+  current_dir = os.getcwd()
   try:
     os.chdir(dest_dir)
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  dir_stack.append(os.getcwd())
+  dir_stack.append(current_dir)
   PrintDirStack(dir_stack)
   return 0
 
