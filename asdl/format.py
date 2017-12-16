@@ -223,6 +223,9 @@ class _Obj:
                               # problem: CompoundWord just has word_part though
                               # List of Obj or ColoredString
 
+  def __repr__(self):
+    return '<_Obj %s %s>' % (self.node_type, self.fields)
+
 
 class _ColoredString:
   """Node for pretty-printing."""
@@ -230,8 +233,11 @@ class _ColoredString:
     self.s = s
     self.str_type = str_type
 
+  def __repr__(self):
+    return '<_ColoredString %s %s>' % (self.s, self.str_type)
 
-def FormatField(obj, field_name, abbrev_hook, omit_empty=True):
+
+def MakeFieldSubtree(obj, field_name, abbrev_hook, omit_empty=True):
   try:
     field_val = getattr(obj, field_name)
   except AttributeError:
@@ -293,8 +299,8 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
     fields = out_node.fields
 
     for field_name in obj.FIELDS:
-      out_val = FormatField(obj, field_name, abbrev_hook,
-                            omit_empty=omit_empty)
+      out_val = MakeFieldSubtree(obj, field_name, abbrev_hook,
+                                 omit_empty=omit_empty)
 
       if out_val is not None:
         out_node.fields.append((field_name, out_val))
@@ -302,6 +308,9 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
     # Call user-defined hook to abbreviate compound objects.
     if abbrev_hook:
       abbrev_hook(obj, out_node)
+
+  elif isinstance(obj, str):  # Could be an array of strings
+    return _ColoredString(obj, _STRING_LITERAL)
 
   else:
     # Id uses this now.  TODO: Should we have plugins?  Might need it for
@@ -542,7 +551,9 @@ def _TrySingleLine(node, f, max_chars):
 
   elif isinstance(node, list):  # Can we fit the WHOLE list on the line?
     f.write('[')
-    for item in node:
+    for i, item in enumerate(node):
+      if i != 0:
+        f.write(' ')
       if not _TrySingleLine(item, f, max_chars):
         return False
     f.write(']')

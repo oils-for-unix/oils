@@ -17,6 +17,9 @@ module arith {
   -- Optional int
   token = (int id, string value, int? span_id)
 
+  -- Repeated string
+  assign = (string name, string* flags)
+
   -- TODO:
   -- - Add optional.  For slicing maybe -- optional end.
   -- - Add repeated.  For function call maybe.

@@ -33,6 +33,10 @@ asdl-py() {
   asdl/asdl_demo.py py $schema
 }
 
+repr() {
+  asdl/asdl_demo.py repr
+}
+
 asdl-cpp() {
   local schema=${1:-asdl/arith.asdl}
   local src=${2:-_tmp/arith.asdl.h}

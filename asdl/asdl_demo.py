@@ -25,6 +25,13 @@ def main(argv):
 
     with open(schema_path) as f:
       module = asdl.parse(f)
+
+    # Note this is a big tree.  But we really want a graph of pointers to
+    # instances.
+    # Type(name, Product(...))
+    # Type(name, Sum([Constructor(...), ...]))
+    print(module)
+
     root = sys.modules[__name__]
     # NOTE: We shouldn't pass in app_types for arith.asdl, but this is just a
     # demo.
@@ -53,10 +60,20 @@ def main(argv):
     #out = fmt.TextOutput(sys.stdout)
     tree = fmt.MakeTree(obj)
     #treee= ['hi', 'there', ['a', 'b'], 'c']
-    fmt.PrintTree(tree, sys.stdout)
+    f = fmt.DetectConsoleOutput(sys.stdout)
+    fmt.PrintTree(tree, f)
 
     # Might need to print the output?
     # out.WriteToFile?
+
+  elif action == 'repr':
+    # Hm this isn't valid Python code, but we can change it to be as a hack.
+    field1 = asdl.Field('str', 'name')
+    field2 = asdl.Field('int', 'age')
+    print(repr(field1))
+    s = asdl.Sum([field1, field2])
+    print(repr(s))
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 
