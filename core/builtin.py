@@ -486,22 +486,19 @@ def Cd(argv, mem):
 WITH_PREFIX = 1
 WITHOUT_PREFIX = 2
 SINGLE_LINE = 3
-def PrintDirStack(dir_stack, mode = 3):
+
+def PrintDirStack(dir_stack, mode):
   dirs = [os.getcwd()]
   dirs.extend(dir_stack)
-  if mode == 1:
+  if mode == WITH_PREFIX:
     for i, entry in enumerate(dirs):
       print('%2d  %s' % (i, entry))
-    sys.stdout.flush()
-  elif mode == 2:
+  elif mode == WITHOUT_PREFIX:
     for entry in dirs:
       print(entry)
-    sys.stdout.flush()
-  elif mode == 3:
-    if dirs:
-      print(' '.join(dirs))
-      sys.stdout.flush()
-
+  elif mode == SINGLE_LINE:
+    print(' '.join(dirs))
+  sys.stdout.flush()
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
@@ -521,7 +518,7 @@ def Pushd(argv, dir_stack):
     return 1
 
   dir_stack.append(current_dir)
-  PrintDirStack(dir_stack)
+  PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
@@ -538,7 +535,7 @@ def Popd(argv, dir_stack):
     util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  PrintDirStack(dir_stack)
+  PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
