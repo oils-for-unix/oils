@@ -480,11 +480,8 @@ def Cd(argv, mem, dir_stack):
     util.error("cd %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  # Set $PWD.
-  state.SetGlobalString(mem, 'PWD', dest_dir)
-
-  # Truncate the directory stack.
-  dir_stack[:] = [dest_dir]
+  state.SetGlobalString(mem, 'PWD', dest_dir)  # Set $PWD.
+  dir_stack.Reset()  # for pushd/popd/dirs
 
   return 0
 
@@ -493,19 +490,19 @@ WITH_PREFIX = 1
 WITHOUT_PREFIX = 2
 SINGLE_LINE = 3
 
-def _PrintDirStack(dir_stack, mode):
-  to_print = list(reversed(dir_stack))
+def _PrintDirStack(dir_stack, style):
+  """Helper for 'dirs'."""
 
-  if mode == WITH_PREFIX:
-    for i, entry in enumerate(to_print):
+  if style == WITH_PREFIX:
+    for i, entry in enumerate(dir_stack.Iter()):
       print('%2d  %s' % (i, entry))
 
-  elif mode == WITHOUT_PREFIX:
-    for entry in to_print:
+  elif style == WITHOUT_PREFIX:
+    for entry in dir_stack.Iter():
       print(entry)
 
-  elif mode == SINGLE_LINE:
-    print(' '.join(to_print))
+  elif style == SINGLE_LINE:
+    print(' '.join(dir_stack.Iter()))
 
   sys.stdout.flush()
 
@@ -526,17 +523,17 @@ def Pushd(argv, dir_stack):
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  dir_stack.append(dest_dir)
+  dir_stack.Push(dest_dir)
   _PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
 def Popd(argv, dir_stack):
-  if len(dir_stack) <= 1:
+  dest_dir = dir_stack.Pop()
+  if dest_dir is None:
     util.error('popd: directory stack is empty')
     return 1
 
-  dest_dir = dir_stack.pop()
   try:
     os.chdir(dest_dir)
   except OSError as e:
@@ -559,8 +556,7 @@ def Dirs(argv, dir_stack):
     util.warn('*** dirs -l not implemented ***')
   # Following bash behavior
   if arg.c:
-    # This initialization is also in the executor.
-    dir_stack[:] = [os.getcwd()]
+    dir_stack.Reset()
   elif arg.v:
     _PrintDirStack(dir_stack, WITH_PREFIX)
   elif arg.p:

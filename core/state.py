@@ -194,6 +194,29 @@ class _ArgFrame(object):
     self.num_shifted = 0
 
 
+class DirStack(object):
+  """For pushd/popd/dirs."""
+
+  def __init__(self):
+    self.stack = []
+    self.Reset()
+    
+  def Reset(self):
+    self.stack[:] = [os.getcwd()]
+
+  def Push(self, entry):
+    self.stack.append(entry)
+
+  def Pop(self):
+    if len(self.stack) <= 1:
+      return None
+    return self.stack.pop()
+
+  def Iter(self):
+    """Iterate in reverse order."""
+    return reversed(self.stack)
+
+
 class Mem(object):
   """For storing variables.
 

@@ -124,7 +124,7 @@ class Executor(object):
 
     self.traps = {}
     self.fd_state = process.FdState()
-    self.dir_stack = [os.getcwd()]
+    self.dir_stack = state.DirStack()
 
     # TODO: Pass these in from main()
     self.aliases = {}  # alias name -> string
