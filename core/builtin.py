@@ -574,12 +574,11 @@ def Export(argv, mem):
   arg, i = EXPORT_SPEC.Parse(argv)
   if arg.n:
     for name in argv[i:]:
-      # TODO: Validate variable name
       m = lex.VAR_NAME_RE.match(name)
       if not m:
         raise args.UsageError('export: Invalid variable name %r' % name)
 
-      # NOTE: bash does not care if it wasn't found
+      # NOTE: bash doesn't care if it wasn't found.
       _ = mem.ClearFlag(name, var_flags_e.Exported, scope_e.Dynamic)
   else:
     for arg in argv[i:]:
@@ -590,6 +589,10 @@ def Export(argv, mem):
       else:
         name, s = parts
         val = runtime.Str(s)
+
+      m = lex.VAR_NAME_RE.match(name)
+      if not m:
+        raise args.UsageError('export: Invalid variable name %r' % name)
 
       #log('%s %s', name, val)
       mem.SetVar(
