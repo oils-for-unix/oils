@@ -483,10 +483,22 @@ def Cd(argv, mem):
   return 0
 
 
-def PrintDirStack(dir_stack):
-  if dir_stack:
-    print(' '.join(dir_stack))
+WITH_PREFIX = 1
+WITHOUT_PREFIX = 2
+SINGLE_LINE = 3
 
+def PrintDirStack(dir_stack, mode):
+  dirs = [os.getcwd()]
+  dirs.extend(dir_stack)
+  if mode == WITH_PREFIX:
+    for i, entry in enumerate(dirs):
+      print('%2d  %s' % (i, entry))
+  elif mode == WITHOUT_PREFIX:
+    for entry in dirs:
+      print(entry)
+  elif mode == SINGLE_LINE:
+    print(' '.join(dirs))
+  sys.stdout.flush()
 
 def Pushd(argv, dir_stack):
   num_args = len(argv)
@@ -498,14 +510,15 @@ def Pushd(argv, dir_stack):
     return 1
 
   dest_dir = argv[0]
+  current_dir = os.getcwd()
   try:
     os.chdir(dest_dir)
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  dir_stack.append(os.getcwd())
-  PrintDirStack(dir_stack)
+  dir_stack.append(current_dir)
+  PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
@@ -522,7 +535,7 @@ def Popd(argv, dir_stack):
     util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  PrintDirStack(dir_stack)
+  PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
@@ -540,14 +553,11 @@ def Dirs(argv, dir_stack):
   if arg.c:
     del dir_stack[:]
   elif arg.v:
-    for i, entry in enumerate(dir_stack):
-      print('%2d %s' % (i, entry))
+    PrintDirStack(dir_stack, WITH_PREFIX)
   elif arg.p:
-    for entry in dir_stack:
-      print(entry)
+    PrintDirStack(dir_stack, WITHOUT_PREFIX)
   else:
-    PrintDirStack(dir_stack)
-
+    PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
