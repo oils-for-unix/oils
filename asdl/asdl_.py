@@ -88,6 +88,59 @@ class UserType:
     return '<UserType %s>' % self.typ
 
 
+class TypeLookup(object):
+  """Look up types by name.
+
+  The names in a flat namespace.
+  """
+
+  def __init__(self, module, app_types=None):
+    self.types = {}
+
+    for typ in module.dfns:
+      self.types[typ.name] = typ.value
+
+    if app_types is not None:
+      self.types.update(app_types)
+
+    # TODO: Fold this in
+    self.types.update(DESCRIPTORS_BY_NAME)
+
+  def Get(self, type_name):
+    return self.types[type_name]
+
+  def __repr__(self):
+    return repr(self.types)
+
+
+def _CheckFieldsAndWire(typ, type_lookup):
+  for f in typ.fields:
+    # Will fail if it doesn't exist
+    _ = type_lookup.Get(f.type)
+  typ.type_lookup = type_lookup  # wire it for lookup
+
+
+def ResolveTypes(module, app_types=None):
+  # Walk the module, checking types, and adding the type_lookup attribute
+  # everywhere.
+  type_lookup = TypeLookup(module, app_types=app_types)
+
+  for node in module.dfns:
+    assert isinstance(node, Type), node
+    v = node.value
+    if isinstance(v, Product):
+      _CheckFieldsAndWire(v, type_lookup)
+
+    elif isinstance(v, Sum):
+      for cons in v.types:
+        _CheckFieldsAndWire(cons, type_lookup)
+
+    else:
+      raise AssertionError(typ)
+
+  return type_lookup
+
+
 # The following classes define nodes into which the ASDL description is parsed.
 # Note: this is a "meta-AST". ASDL files (such as Python.asdl) describe the AST
 # structure used by a programming language. But ASDL files themselves need to be
@@ -111,6 +164,8 @@ class Module(AST):
     def __init__(self, name, dfns):
         self.name = name
         self.dfns = dfns
+
+        # NOTE: This is used for type checking.
         self.types = {type.name: type.value for type in dfns}
 
     def Print(self, f, indent):
@@ -121,6 +176,9 @@ class Module(AST):
           d.Print(f, indent+1)
           f.write('\n')
         f.write('%s}\n' % ind)
+
+    def LookupFieldType(self, name):
+        return self.types.get(name)
 
 
 class Type(AST):
@@ -135,18 +193,45 @@ class Type(AST):
         f.write('%s}\n' % ind)
 
 
-class Constructor(AST):
-    def __init__(self, name, fields=None):
-        self.name = name
+
+class _CompoundType(AST):
+    """Either a Product or Constructor.
+    
+    encode.py and format.py need a reflection API.
+    """
+
+    def __init__(self, fields):
         self.fields = fields or []
+        self.field_lookup = {f.name: f.type for f in self.fields}
+        self.type_lookup = None  # for runtime reflection
+
+    def GetFields(self):
+        for f in self.fields:
+          field_name = f.name
+          yield field_name, self.LookupFieldType(field_name)
+
+    def LookupFieldType(self, field_name):
+        type_name = self.field_lookup[field_name]
+        return self.type_lookup.Get(type_name)
+
+
+
+class Constructor(_CompoundType):
+    def __init__(self, name, fields=None):
+        _CompoundType.__init__(self, fields)
+        self.name = name
 
     def Print(self, f, indent):
         ind = indent * '  '
-        f.write('%sConstructor %s {\n' % (ind, self.name))
+        f.write('%sConstructor %s' % (ind, self.name))
 
-        for field in self.fields:
-          field.Print(f, indent+1)
-        f.write('%s}\n' % ind)
+        if self.fields:
+          f.write(' {\n')
+          for field in self.fields:
+            field.Print(f, indent+1)
+          f.write('%s}' % ind)
+
+        f.write('\n')
 
 
 class Field(AST):
@@ -168,7 +253,7 @@ class Field(AST):
         ind = indent * '  '
         f.write('%sField %s %s' % (ind, self.name, self.type))
         if extra:
-          f.write('(')
+          f.write(' (')
           f.write(', '.join(extra))
           f.write(')')
         f.write('\n')
@@ -189,9 +274,9 @@ class Sum(AST):
         f.write('%s}\n' % ind)
 
 
-class Product(AST):
+class Product(_CompoundType):
     def __init__(self, fields, attributes=None):
-        self.fields = fields
+        _CompoundType.__init__(self, fields)
         self.attributes = attributes or []
 
     def Print(self, f, indent):
@@ -237,7 +322,7 @@ class Check(VisitorBase):
         super(Check, self).__init__()
         self.cons = {}
         self.errors = 0
-        self.types = {}
+        self.types = {}  # list of declared field types
 
     def visitModule(self, mod):
         for dfn in mod.dfns:

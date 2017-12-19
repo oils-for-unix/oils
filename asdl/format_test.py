@@ -16,6 +16,22 @@ from asdl import arith_ast  # module under test
 
 class FormatTest(unittest.TestCase):
 
+  def testSimpleSum(self):
+    node = arith_ast.op_id_e.Plus
+    print(node)
+
+    f = cStringIO.StringIO()
+    ast_f = fmt.TextOutput(f)
+
+    tree = fmt.MakeTree(node)
+    fmt.PrintTree(tree, ast_f)
+
+    # Hm this prints 'Plus'.  Doesn't print the class or the number.
+    # But those aren't intrinsic.  These are mostly used for ther IDENTITY.
+    # I think the ASDL_TYPE field contains the relevant info.  Yes!
+    pretty_str = f.getvalue()
+    print(pretty_str)
+
   def testRepeatedString(self):
     node = arith_ast.assign('declare', ['-r', '-x'])
 

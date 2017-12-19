@@ -33,8 +33,15 @@ asdl-py() {
   asdl/asdl_demo.py py $schema
 }
 
-repr() {
-  asdl/asdl_demo.py repr
+smoke-test() {
+  # Print Schema (asdl_.py, py_meta.py)
+  asdl-py asdl/arith.asdl
+
+  # Parse real values and pretty print (format.py)
+  asdl-arith-format '1+2*3'
+
+  # encode.py
+  arith-demo
 }
 
 asdl-cpp() {
@@ -123,15 +130,15 @@ arith-demo() {
   local data=_tmp/${name}.bin
 
   # Write a binary
-  asdl-arith-encode '7 * 9' $data
+  asdl-arith-encode '1 + 2 * 3' $data
 
   local bin=_tmp/${name}_demo 
 
   build-demo asdl/arith.asdl
 
   set -x
-  gdb-trace $bin $data
-  #$bin $data 
+  #gdb-trace $bin $data
+  $bin $data 
 }
 
 # TODO: How big is oheap vs. the virtual memory size?

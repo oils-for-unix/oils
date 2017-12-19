@@ -132,7 +132,8 @@ def LoadSchema(f):
   if not asdl.check(asdl_module, app_types):
     raise AssertionError('ASDL file is invalid')
 
-  return asdl_module, app_types
+  type_lookup = asdl.ResolveTypes(asdl_module, app_types)
+  return asdl_module, type_lookup
 
 
 # TODO: This should be the only lines in this module?
@@ -141,8 +142,8 @@ def LoadSchema(f):
 root = sys.modules[__name__]
 if 1:
   f = util.GetResourceLoader().open('osh/osh.asdl')
-  asdl_module, app_types = LoadSchema(f)
-  py_meta.MakeTypes(asdl_module, root, app_types)
+  asdl_module, type_lookup = LoadSchema(f)
+  py_meta.MakeTypes(asdl_module, root, type_lookup)
   f.close()
 else:
   # Get the types from elsewhere

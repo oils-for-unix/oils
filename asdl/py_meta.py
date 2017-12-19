@@ -235,19 +235,20 @@ class CompoundObj(Obj):
     return s
 
 
-def _MakeFieldDescriptors(module, fields, app_types, add_spids=True):
+def _MakeFieldDescriptors(module, fields, type_lookup, add_spids=True):
+  """
+  Args:
+    module: asdl.Module
+      It must have a types attribute for lookup.
+    fields: list of asdl.Field instances
+    app_types: {string: <app-specific type}
+
+    add_spids: TODO this should be replaced by attributes?
+  """
   desc_lookup = {}
   for f in fields:
-    # look up type by name
-    primitive_desc = asdl.DESCRIPTORS_BY_NAME.get(f.type)
-    app_desc = app_types.get(f.type)
-
     # Lookup order: primitive, defined in the ASDL file, passed by the app
-    desc = primitive_desc or module.types.get(f.type) or app_desc
-    # It's either a primitive type or sum type
-    if primitive_desc is None and app_desc is None:
-      assert (isinstance(desc, asdl.Sum) or
-          isinstance(desc, asdl.Product)), 'field %s has descriptor %s' % (f, desc)
+    desc = type_lookup.Get(f.type)
 
     # Wrap descriptor here.  Then we can type check.
     # And then encode too.
@@ -274,13 +275,12 @@ def _MakeFieldDescriptors(module, fields, app_types, add_spids=True):
   return class_attr
 
 
-def MakeTypes(module, root, app_types=None):
+def MakeTypes(module, root, type_lookup):
   """
   Args:
     module: asdl.Module
     root: an object/package to add types to
   """
-  app_types = app_types or {}
   for defn in module.dfns:
     typ = defn.value
 
@@ -304,10 +304,12 @@ def MakeTypes(module, root, app_types=None):
         cls = type(class_name, (SimpleObj, ), class_attr)
         setattr(root, class_name, cls)
 
+        # TODO: cons needs ASDL_TYPE?
         for i, cons in enumerate(sum_type.types):
           enum_id = i + 1
           name = cons.name
           val = cls(enum_id, cons.name)  # Instantiate SimpleObj subtype
+
           # Set a static attribute like op_id.Plus, op_id.Minus.
           setattr(cls, name, val)
       else:
@@ -324,8 +326,11 @@ def MakeTypes(module, root, app_types=None):
           tag_num[cons.name] = tag  # for enum
 
           # Add 'int* spids' to every constructor.
-          class_attr = _MakeFieldDescriptors(module, cons.fields, app_types)
+          class_attr = _MakeFieldDescriptors(module, cons.fields, type_lookup)
 
+          class_attr['ASDL_TYPE'] = cons  # asdl.Constructor
+
+          # TODO: remove these
           class_attr['DESCRIPTOR'] = cons  # asdl.Constructor
           class_attr['tag'] = tag
 
@@ -338,7 +343,10 @@ def MakeTypes(module, root, app_types=None):
         setattr(root, enum_name, tag_enum)
 
     elif isinstance(typ, asdl.Product):
-      class_attr = _MakeFieldDescriptors(module, typ.fields, app_types)
+      class_attr = _MakeFieldDescriptors(module, typ.fields, type_lookup)
+      class_attr['ASDL_TYPE'] = typ
+
+      # TODO: remove
       class_attr['DESCRIPTOR'] = typ
 
       cls = type(defn.name, (CompoundObj, ), class_attr)
@@ -349,6 +357,7 @@ def MakeTypes(module, root, app_types=None):
 
 
 def AssignTypes(src_module, dest_module):
+  """For generated code."""
   for name in dir(src_module):
     if not name.startswith('__'):
       v = getattr(src_module, name)
