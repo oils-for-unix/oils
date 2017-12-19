@@ -22,7 +22,7 @@ Try it
 Clone the repo, build the Python extension, and run `bin/osh`.  Basic things
 like pipelines, variables, functions, etc. should work.
 
-    bash$ build/dev.sh all
+    bash$ build/dev.sh minimal
     ...
     # Now you should have a libc.so symlink in the repository root directory
 
@@ -31,8 +31,8 @@ like pipelines, variables, functions, etc. should work.
     osh$ echo "hello $name"
     hello world
 
-You can also try the [Oil 0.0
-release](https://www.oilshell.org/blog/2017/07/23.html).
+You can also download the latest release and build it, which is linked from the
+[home page](https://www.oilshell.org/).
 
 Contributing
 ------------
