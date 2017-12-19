@@ -443,7 +443,7 @@ def Shift(argv, mem):
   return mem.Shift(n)
 
 
-def Cd(argv, mem):
+def Cd(argv, mem, dir_stack):
   # TODO: Parse flags, error checking, etc.
   try:
     dest_dir = argv[0]
@@ -479,7 +479,13 @@ def Cd(argv, mem):
     # TODO: Add line number, etc.
     util.error("cd %r: %s", dest_dir, os.strerror(e.errno))
     return 1
+
+  # Set $PWD.
   state.SetGlobalString(mem, 'PWD', dest_dir)
+
+  # Truncate the directory stack.
+  dir_stack[:] = [dest_dir]
+
   return 0
 
 
@@ -488,19 +494,18 @@ WITHOUT_PREFIX = 2
 SINGLE_LINE = 3
 
 def _PrintDirStack(dir_stack, mode):
-  dirs = [os.getcwd()]
-  dirs.extend(dir_stack)
+  to_print = list(reversed(dir_stack))
 
   if mode == WITH_PREFIX:
-    for i, entry in enumerate(dirs):
+    for i, entry in enumerate(to_print):
       print('%2d  %s' % (i, entry))
 
   elif mode == WITHOUT_PREFIX:
-    for entry in dirs:
+    for entry in to_print:
       print(entry)
 
   elif mode == SINGLE_LINE:
-    print(' '.join(dirs))
+    print(' '.join(to_print))
 
   sys.stdout.flush()
 
@@ -515,25 +520,23 @@ def Pushd(argv, dir_stack):
     return 1
 
   dest_dir = argv[0]
-  current_dir = os.getcwd()
   try:
     os.chdir(dest_dir)
   except OSError as e:
     util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  dir_stack.append(current_dir)
+  dir_stack.append(dest_dir)
   _PrintDirStack(dir_stack, SINGLE_LINE)
   return 0
 
 
 def Popd(argv, dir_stack):
-  try:
-    dest_dir = dir_stack.pop()
-  except IndexError:
+  if len(dir_stack) <= 1:
     util.error('popd: directory stack is empty')
     return 1
 
+  dest_dir = dir_stack.pop()
   try:
     os.chdir(dest_dir)
   except OSError as e:
@@ -554,9 +557,10 @@ def Dirs(argv, dir_stack):
   arg, i = DIRS_SPEC.Parse(argv)
   if arg.l:
     util.warn('*** dirs -l not implemented ***')
-  # Following `bash` behavior for order of operations
+  # Following bash behavior
   if arg.c:
-    del dir_stack[:]
+    # This initialization is also in the executor.
+    dir_stack[:] = [os.getcwd()]
   elif arg.v:
     _PrintDirStack(dir_stack, WITH_PREFIX)
   elif arg.p:

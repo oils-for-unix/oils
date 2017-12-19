@@ -124,7 +124,7 @@ class Executor(object):
 
     self.traps = {}
     self.fd_state = process.FdState()
-    self.dir_stack = []
+    self.dir_stack = [os.getcwd()]
 
     # TODO: Pass these in from main()
     self.aliases = {}  # alias name -> string
@@ -242,7 +242,7 @@ class Executor(object):
       status = builtin.Shift(argv, self.mem)
 
     elif builtin_id == EBuiltin.CD:
-      status = builtin.Cd(argv, self.mem)
+      status = builtin.Cd(argv, self.mem, self.dir_stack)
 
     elif builtin_id == EBuiltin.SET:
       status = builtin.Set(argv, self.exec_opts, self.mem)
