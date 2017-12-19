@@ -19,6 +19,7 @@
 # [1] "The Zephyr Abstract Syntax Description Language" by Wang, et. al. See
 #     http://asdl.sourceforge.net/
 #-------------------------------------------------------------------------------
+import cStringIO
 import re
 
 __all__ = [
@@ -94,14 +95,17 @@ class UserType:
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
 
-# TODO:
-# - Add id type -- or should it be py(id) or something?
-
 builtin_types = {'string', 'int', 'bool'}
 
 class AST:
-    def __repr__(self):
+    def Print(self, f, indent):
         raise NotImplementedError
+
+    def __repr__(self):
+        f = cStringIO.StringIO()
+        self.Print(f, 0)
+        return f.getvalue()
+
 
 class Module(AST):
     def __init__(self, name, dfns):
@@ -109,24 +113,41 @@ class Module(AST):
         self.dfns = dfns
         self.types = {type.name: type.value for type in dfns}
 
-    def __repr__(self):
-        return 'Module({0.name}, {0.dfns})'.format(self)
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sModule %s {\n' % (ind, self.name))
+
+        for d in self.dfns:
+          d.Print(f, indent+1)
+          f.write('\n')
+        f.write('%s}\n' % ind)
+
 
 class Type(AST):
     def __init__(self, name, value):
         self.name = name
         self.value = value
 
-    def __repr__(self):
-        return 'Type({0.name}, {0.value})'.format(self)
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sType %s {\n' % (ind, self.name))
+        self.value.Print(f, indent+1)
+        f.write('%s}\n' % ind)
+
 
 class Constructor(AST):
     def __init__(self, name, fields=None):
         self.name = name
         self.fields = fields or []
 
-    def __repr__(self):
-        return 'Constructor({0.name}, {0.fields})'.format(self)
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sConstructor %s {\n' % (ind, self.name))
+
+        for field in self.fields:
+          field.Print(f, indent+1)
+        f.write('%s}\n' % ind)
+
 
 class Field(AST):
     def __init__(self, type, name=None, seq=False, opt=False):
@@ -135,39 +156,52 @@ class Field(AST):
         self.seq = seq
         self.opt = opt
 
-    def __repr__(self):
+    def Print(self, f, indent):
+        extra = []
         if self.seq:
-            extra = ", seq=True"
+            extra.append('seq=True')
         elif self.opt:
-            extra = ", opt=True"
+            extra.append('opt=True')
         else:
             extra = ""
-        if self.name is None:
-            return 'Field({0.type}{1})'.format(self, extra)
-        else:
-            return 'Field({0.type}, {0.name}{1})'.format(self, extra)
+
+        ind = indent * '  '
+        f.write('%sField %s %s' % (ind, self.name, self.type))
+        if extra:
+          f.write('(')
+          f.write(', '.join(extra))
+          f.write(')')
+        f.write('\n')
+
 
 class Sum(AST):
     def __init__(self, types, attributes=None):
         self.types = types
         self.attributes = attributes or []
 
-    def __repr__(self):
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sSum {\n' % ind)
+        for t in self.types:
+          t.Print(f, indent+1)
         if self.attributes:
-            return 'Sum({0.types}, {0.attributes})'.format(self)
-        else:
-            return 'Sum({0.types})'.format(self)
+          f.write('%s\n' % self.attributes)
+        f.write('%s}\n' % ind)
+
 
 class Product(AST):
     def __init__(self, fields, attributes=None):
         self.fields = fields
         self.attributes = attributes or []
 
-    def __repr__(self):
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sProduct {\n' % ind)
+        for field in self.fields:
+          field.Print(f, indent+1)
         if self.attributes:
-            return 'Product({0.fields}, {0.attributes})'.format(self)
-        else:
-            return 'Product({0.fields})'.format(self)
+          f.write('%s\n' % self.attributes)
+        f.write('%s}\n' % ind)
 
 # A generic visitor for the meta-AST that describes ASDL. This can be used by
 # emitters. Note that this visitor does not provide a generic visit method, so a

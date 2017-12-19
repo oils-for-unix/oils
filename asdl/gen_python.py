@@ -1,6 +1,10 @@
 #!/usr/bin/python
 """
 gen_python.py
+
+Generate Python code from and ASDL schema.
+
+TODO: What about Id?  app_types?
 """
 
 import sys

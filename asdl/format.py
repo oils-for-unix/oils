@@ -315,7 +315,6 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
   else:
     # Id uses this now.  TODO: Should we have plugins?  Might need it for
     # color.
-    #print('OTHER', obj.__class__, isinstance(obj, py_meta.CompoundObj))
     return _ColoredString(repr(obj), _OTHER_TYPE)
 
   return out_node
