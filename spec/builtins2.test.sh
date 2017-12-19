@@ -46,23 +46,23 @@ dirs
 
 ### dirs -v to print numbered stack, one entry per line
 cd /
-pushd / >/dev/null
+pushd /tmp >/dev/null
 dirs -v
-pushd / >/dev/null
+pushd /lib >/dev/null
 dirs -v
-# stdout-json: " 0  /\n 1  /\n 0  /\n 1  /\n 2  /\n"
+# stdout-json: " 0  /tmp\n 1  /\n 0  /lib\n 1  /tmp\n 2  /\n"
 # status: 0
 # zsh uses tabs
-# OK zsh stdout-json: "0\t/\n1\t/\n0\t/\n1\t/\n2\t/\n"
+# OK zsh stdout-json: "0\t/tmp\n1\t/\n0\t/lib\n1\t/tmp\n2\t/\n"
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
 
 ### dirs -p to print one entry per line
 cd /
-pushd / >/dev/null
+pushd /tmp >/dev/null
 dirs -p
-pushd / >/dev/null
+pushd /lib >/dev/null
 dirs -p
-# stdout-json: "/\n/\n/\n/\n/\n"
+# stdout-json: "/tmp\n/\n/lib\n/tmp\n/\n"
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
