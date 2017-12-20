@@ -473,7 +473,7 @@ ls bar
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     t = ast.token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]

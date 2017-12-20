@@ -10,6 +10,8 @@ test_lib.py - Functions for testing.
 """
 
 from core import alloc
+from core.id_kind import Id
+from asdl import py_meta
 
 
 def TokensEqual(left, right):
@@ -29,7 +31,7 @@ def AsdlEqual(left, right):
 
   We don't use equality in the actual code, so this is relegated to test_lib.
   """
-  if isinstance(left, (int, str, bool)):
+  if isinstance(left, (int, str, bool, Id)):  # little hack for Id
     return left == right
 
   if isinstance(left, list):
@@ -40,26 +42,26 @@ def AsdlEqual(left, right):
         return False
     return True
 
-  if isinstance(other, asdl.CompoundObj):
+  if isinstance(left, py_meta.CompoundObj):
     if left.tag != right.tag:
       return False
 
-    for name in left.FIELDS:
+    for name in left.ASDL_TYPE.GetFieldNames():
       # Special case: we are not testing locations right now.
-      #if name == 'span_id':
-      #  continue
+      if name == 'span_id':
+        continue
       a = getattr(left, name)
       b = getattr(right, name)
-      if not AsdlEqual(left, right):
+      if not AsdlEqual(a, b):
         return False
 
     return True
 
-  raise AssertionError
+  raise AssertionError(left)
 
 
 def AssertAsdlEqual(test, left, right):
-  test.assertTrue(left, right)
+  test.assertTrue(AsdlEqual(left, right), 'Expected %s, got %s' % (left, right))
 
 
 def MakeArena(source_name):

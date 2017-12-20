@@ -8,6 +8,7 @@ import unittest
 from core import runtime
 from core import state  # module under test
 from core import util
+from core import test_lib
 
 scope_e = runtime.scope_e
 value_e = runtime.value_e
@@ -192,10 +193,10 @@ class MemTest(unittest.TestCase):
         scope_e.Dynamic)
 
     val = mem.GetVar('a', scope_e.Dynamic)
-    self.assertEqual(runtime.Str('x'), val)
+    test_lib.AssertAsdlEqual(self, runtime.Str('x'), val)
 
     val = mem.GetVar('undef', scope_e.Dynamic)
-    self.assertEqual(runtime.Undef(), val)
+    test_lib.AssertAsdlEqual(self, runtime.Undef(), val)
 
   def testExportThenAssign(self):
     """Regression Test"""

@@ -103,7 +103,7 @@ class TypeLookup(object):
     if app_types is not None:
       self.types.update(app_types)
 
-    # TODO: Fold this in
+    # TODO: Don't need a public constant.
     self.types.update(DESCRIPTORS_BY_NAME)
 
   def Get(self, field):
@@ -125,6 +125,7 @@ def _CheckFieldsAndWire(typ, type_lookup):
     # Will fail if it doesn't exist
     _ = type_lookup.Get(f)
   typ.type_lookup = type_lookup  # wire it for lookup
+
 
 
 def ResolveTypes(module, app_types=None):
@@ -209,6 +210,12 @@ class _CompoundType(AST):
 
     def __init__(self, fields):
         self.fields = fields or []
+
+        # Add fake spids field.
+        # TODO: Only do this if 'attributes' are set.
+        if self.fields:
+          self.fields.append(Field('int', 'spids', seq=True))
+
         self.field_lookup = {f.name: f for f in self.fields}
         self.type_lookup = None  # for runtime reflection
 
@@ -216,6 +223,11 @@ class _CompoundType(AST):
         for f in self.fields:
           field_name = f.name
           yield field_name, self.LookupFieldType(field_name)
+
+    def GetFieldNames(self):
+        """Only used by core/test_lib.py."""
+        for f in self.fields:
+          yield f.name
 
     def LookupFieldType(self, field_name):
         field = self.field_lookup[field_name]

@@ -136,33 +136,8 @@ class CompoundObj(Obj):
     if args or kwargs:
       self._Init(args, kwargs)
 
-  def __eq__(self, other):
-    if not isinstance(other, CompoundObj):
-      return False
-
-    if self.tag != other.tag:
-      return False
-
-    for name in self.FIELDS:
-      # Special case: we are not testing locations right now.
-      if name == 'span_id':
-        continue
-      left = getattr(self, name)
-      right = getattr(other, name)
-      if left != right:
-        return False
-
-    return True
-
-  # Interesting difference: Python 3 automatically fills in __ne__ for you!
-  # https://docs.python.org/2/reference/datamodel.html
-  # https://docs.python.org/3/reference/datamodel.html#object.__ne__
-  def __ne__(self, other):
-    return not self.__eq__(other)
-
   def _SetDefaults(self):
-    for name in self.FIELDS:
-      desc = self.DESCRIPTOR_LOOKUP[name]
+    for name, desc in self.ASDL_TYPE.GetFields():
 
       if isinstance(desc, asdl.MaybeType):
         child = desc.desc
@@ -178,8 +153,9 @@ class CompoundObj(Obj):
         self.__setattr__(name, [])
 
   def _Init(self, args, kwargs):
+    field_names = list(self.ASDL_TYPE.GetFieldNames())
     for i, val in enumerate(args):
-      name = self.FIELDS[i]
+      name = field_names[i]
       self.__setattr__(name, val)
 
     for name, val in kwargs.items():
@@ -189,7 +165,7 @@ class CompoundObj(Obj):
 
     # Disable type checking here
     #return
-    for name in self.FIELDS:
+    for name in field_names:
       if not self._assigned[name]:
         # If anything was set, then required fields raise an error.
         raise ValueError("Field %r is required and wasn't initialized" % name)
@@ -200,7 +176,7 @@ class CompoundObj(Obj):
     This is currently only used in unit tests.
     """
     unassigned = []
-    for name in self.FIELDS:
+    for name in self.ASDL_TYPE.GetFieldNames():
       if not self._assigned[name]:
         desc = self.DESCRIPTOR_LOOKUP[name]
         if not isinstance(desc, asdl.MaybeType):
@@ -214,7 +190,7 @@ class CompoundObj(Obj):
         self.__dict__[name] = value
         return
       try:
-        desc = self.DESCRIPTOR_LOOKUP[name]
+        desc = self.ASDL_TYPE.LookupFieldType(name)
       except KeyError:
         raise AttributeError('Object of type %r has no attribute %r' %
                              (self.__class__.__name__, name))
