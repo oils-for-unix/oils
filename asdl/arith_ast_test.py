@@ -100,17 +100,6 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual(b'\x63\x00\x00', e[9:12])  # 0x63 = 99
 
   def testConstructorType(self):
-    print(ArithVar)
-    print('FIELDS', ArithVar.FIELDS)
-    print('DESCRIPTOR_LOOKUP', ArithVar.DESCRIPTOR_LOOKUP)
-    print('DESCRIPTOR', ArithVar.DESCRIPTOR)
-
-    print(ArithUnary)
-    print(ArithUnary.FIELDS)
-
-    print(ArithBinary)
-    print(ArithBinary.FIELDS)
-
     n1 = ArithVar('x')
     n2 = ArithVar(name='y')
     print(n1)
@@ -144,7 +133,7 @@ class ArithAstTest(unittest.TestCase):
     s.length = 3
     print(s)
 
-    assert isinstance(s.DESCRIPTOR, asdl_.Product)
+    assert isinstance(s.ASDL_TYPE, asdl_.Product)
 
     # Implementation detail for dynamic type checking
     assert isinstance(s, py_meta.CompoundObj)
@@ -161,7 +150,7 @@ class ArithAstTest(unittest.TestCase):
     assert isinstance(o, py_meta.SimpleObj)
 
     # Implementation detail for dynamic type checking
-    assert isinstance(o.DESCRIPTOR, asdl_.Sum)
+    assert isinstance(o.ASDL_TYPE, asdl_.Sum)
 
   def testCompoundSumType(self):
     print
@@ -175,7 +164,7 @@ class ArithAstTest(unittest.TestCase):
     assert isinstance(c, py_meta.CompoundObj)
 
     # Implementation detail for dynamic type checking
-    assert isinstance(c.DESCRIPTOR, asdl_.Constructor), c.DESCRIPTOR
+    assert isinstance(c.ASDL_TYPE, asdl_.Constructor), c.ASDL_TYPE
 
   def testOtherTypes(self):
     c = Const(66)

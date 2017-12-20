@@ -214,7 +214,7 @@ def EncodeObj(obj, enc, out):
     '%r is not a compound obj (%r)' % (obj, obj.__class__)
 
   # Constructor objects have a tag.
-  if isinstance(obj.DESCRIPTOR, asdl.Constructor):
+  if isinstance(obj.ASDL_TYPE, asdl.Constructor):
     enc.Tag(obj.tag, this_chunk)
 
   for name, desc in obj.ASDL_TYPE.GetFields():  # encode in order

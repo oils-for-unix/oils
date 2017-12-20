@@ -76,7 +76,7 @@ def _CheckType(value, expected_desc):
     return isinstance(value, expected_desc.typ)
 
   try:
-    actual_desc = value.__class__.DESCRIPTOR
+    actual_desc = value.__class__.ASDL_TYPE
   except AttributeError:
     return False  # it's not of the right type
 
@@ -89,7 +89,10 @@ def _CheckType(value, expected_desc):
     else:
       for cons in expected_desc.types:
         #print("CHECKING desc %s against %s" % (desc, cons))
+
         # It has to be one of the alternatives
+        from core.util import log
+        #log('Checking %s against %s', actual_desc, cons)
         if actual_desc is cons:
           return True
       return False
@@ -101,7 +104,7 @@ def _CheckType(value, expected_desc):
 class Obj(object):
   # NOTE: We're using CAPS for these static fields, since they are constant at
   # runtime after metaprogramming.
-  DESCRIPTOR = None  # Used for type checking
+  ASDL_TYPE = None  # Used for type checking
 
 
 class SimpleObj(Obj):
@@ -122,16 +125,13 @@ class CompoundObj(Obj):
 
   Uses some metaprogramming.
   """
-  FIELDS = []  # ordered list of field names
-  DESCRIPTOR_LOOKUP = {}  # field name: (asdl.Type | int | str)
-
   # Always set for constructor types, which are subclasses of sum types.  Never
   # set for product types.
   tag = None
 
   def __init__(self, *args, **kwargs):
     # The user must specify ALL required fields or NONE.
-    self._assigned = {f: False for f in self.FIELDS}
+    self._assigned = {f: False for f in self.ASDL_TYPE.GetFieldNames()}
     self._SetDefaults()
     if args or kwargs:
       self._Init(args, kwargs)
@@ -178,7 +178,7 @@ class CompoundObj(Obj):
     unassigned = []
     for name in self.ASDL_TYPE.GetFieldNames():
       if not self._assigned[name]:
-        desc = self.DESCRIPTOR_LOOKUP[name]
+        desc = self.ASDL_TYPE.LookupFieldType(name)
         if not isinstance(desc, asdl.MaybeType):
           unassigned.append(name)
     if unassigned:
@@ -211,39 +211,6 @@ class CompoundObj(Obj):
     return s
 
 
-def _MakeFieldDescriptors(module, fields, type_lookup, add_spids=True):
-  """
-  Args:
-    module: asdl.Module
-      It must have a types attribute for lookup.
-    fields: list of asdl.Field instances
-    app_types: {string: <app-specific type}
-
-    add_spids: TODO this should be replaced by attributes?
-  """
-  desc_lookup = {}
-  for f in fields:
-    # Lookup order: primitive, defined in the ASDL file, passed by the app
-    desc = type_lookup.Get(f)
-
-    desc_lookup[f.name] = desc
-
-  field_names = [f.name for f in fields]
-
-  # Add 'int* spids' if requested.
-  # TODO: Use ASDL attributes for this!
-  if add_spids:
-    field_names.append('spids')
-    desc_lookup['spids'] = asdl.ArrayType(asdl.IntType())
-
-  # TODO: remove these
-  class_attr = {
-      'FIELDS': field_names,
-      'DESCRIPTOR_LOOKUP': desc_lookup,
-  }
-  return class_attr
-
-
 def MakeTypes(module, root, type_lookup):
   """
   Args:
@@ -258,7 +225,6 @@ def MakeTypes(module, root, type_lookup):
       sum_type = typ
       if asdl.is_simple(sum_type):
         # An object without fields, which can be stored inline.
-        class_attr = {'DESCRIPTOR': sum_type}  # asdl.Sum
         
         # Create a class called foo_e.  Unlike the CompoundObj case, it doesn't
         # have subtypes.  Instead if has attributes foo_e.Bar, which Bar is an
@@ -270,6 +236,7 @@ def MakeTypes(module, root, type_lookup):
         # change.  I haven't run into this problem in practice yet.
 
         class_name = defn.name + '_e'
+        class_attr = {'ASDL_TYPE': sum_type}  # asdl.Sum
         cls = type(class_name, (SimpleObj, ), class_attr)
         setattr(root, class_name, cls)
 
@@ -295,13 +262,10 @@ def MakeTypes(module, root, type_lookup):
           tag_num[cons.name] = tag  # for enum
 
           # Add 'int* spids' to every constructor.
-          class_attr = _MakeFieldDescriptors(module, cons.fields, type_lookup)
-
-          class_attr['ASDL_TYPE'] = cons  # asdl.Constructor
-
-          # TODO: remove these
-          class_attr['DESCRIPTOR'] = cons  # asdl.Constructor
-          class_attr['tag'] = tag
+          class_attr = {
+              'ASDL_TYPE': cons,  # asdl.Constructor
+              'tag': tag,  # Does this API change?
+          }
 
           cls = type(cons.name, (base_class, ), class_attr)
           setattr(root, cons.name, cls)
@@ -312,12 +276,7 @@ def MakeTypes(module, root, type_lookup):
         setattr(root, enum_name, tag_enum)
 
     elif isinstance(typ, asdl.Product):
-      class_attr = _MakeFieldDescriptors(module, typ.fields, type_lookup)
-      class_attr['ASDL_TYPE'] = typ
-
-      # TODO: remove
-      class_attr['DESCRIPTOR'] = typ
-
+      class_attr = {'ASDL_TYPE': typ}
       cls = type(defn.name, (CompoundObj, ), class_attr)
       setattr(root, defn.name, cls)
 
