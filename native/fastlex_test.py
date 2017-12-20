@@ -33,7 +33,7 @@ def TokenizeLineOuter(line):
     print('TOK: %s %r\n' % (tok_type, tok_val))
     start_pos = end_pos
 
-    if end_pos == len(line):
+    if tok_type == Id.Eol_Tok:
       break
 
 

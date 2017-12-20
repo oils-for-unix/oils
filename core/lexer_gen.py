@@ -197,13 +197,7 @@ def TranslateLexer(lexer_def):
 
 static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
                        int start_pos, int* id, int* end_pos) {
-
-  // bounds checking
-  if (start_pos >= line_len) {
-    fprintf(stderr, "start_pos %d  line_len %d\n", start_pos, line_len);
-    assert(0);
-  }
-  //assert(start_pos < line_len);
+  assert(start_pos <= line_len);  /* caller should have checked */
 
   unsigned char* p = line + start_pos;  /* modified by re2c */
   //printf("p: %p q: %p\n", p, q);
@@ -212,7 +206,8 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
   switch (lex_mode)  {
 """
 
-  # TODO: Should be ordered by most common?
+  # TODO: Should be ordered by most common?  Or will profile-directed feedback
+  # help?
 
   for state, pat_list in lexer_def.iteritems():
     # HACK: strip off '_e'
@@ -261,8 +256,7 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
       */
     }
 
-    //*id = id__Lit_Other;
-    *end_pos = p - line;  /* relative */
+    *end_pos = p - line;
     break;
 
   case lex_mode__COMMENT:
@@ -276,7 +270,12 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
     assert(0);
 
   }
-  *end_pos = p - line;  /* relative */
+  if (*id == id__Eol_Tok) {
+    /* don't move past if Eol_Tok */
+    *end_pos = start_pos;
+  } else {
+    *end_pos = p - line;  /* relative */
+  }
 }
 """
 

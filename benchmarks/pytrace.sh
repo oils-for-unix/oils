@@ -11,7 +11,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly ABUILD=~/git/alpine/abuild/abuild 
+readonly BIGGEST=benchmarks/testdata/configure-coreutils
+readonly ABUILD=benchmarks/testdata/abuild
 readonly -a RUN_ABUILD=(bin/oil.py osh $ABUILD -h)
 readonly -a OSH_PARSE=(bin/oil.py osh --ast-format none -n)
 
@@ -23,6 +24,8 @@ readonly -a OSH_PARSE=(bin/oil.py osh --ast-format none -n)
 # 2017/11/27, After ASDL optimization: 0.72 seconds.
 time-run-abuild() { time "${RUN_ABUILD[@]}"; }
 time-parse-abuild() { time "${OSH_PARSE[@]}" $ABUILD; }
+
+time-parse-biggest() { time "${OSH_PARSE[@]}" $BIGGEST; }
 
 _cprofile() {
   local out=$1
@@ -41,8 +44,8 @@ cprofile-osh-parse() {
 cprofile-parse-abuild() {
   cprofile-osh-parse $ABUILD _tmp/abuild.cprofile
 }
-cprofile-parse-configure() {
-  cprofile-osh-parse benchmarks/testdata/configure _tmp/configure.cprofile
+cprofile-parse-biggest() {
+  cprofile-osh-parse $BIGGEST _tmp/biggest.cprofile
 }
 cprofile-run-abuild() {
   _cprofile _tmp/abuild-run.cprofile "${RUN_ABUILD[@]}"

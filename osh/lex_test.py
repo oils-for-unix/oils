@@ -173,15 +173,6 @@ class LineLexerTest(unittest.TestCase):
     self.assertTrue(TokensEqual(left, right))
 
   def testReadOuter(self):
-    # Lines always end with '\n'
-    l = LineLexer(parse_lib._MakeMatcher(), '')
-    try:
-      l.Read(lex_mode_e.OUTER)
-    except AssertionError as e:
-      print(e)
-    else:
-      raise AssertionError('Expected error')
-
     l = LineLexer(parse_lib._MakeMatcher(), '\n')
     self.assertTokensEqual(
         ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.OUTER))

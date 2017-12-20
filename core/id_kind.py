@@ -176,7 +176,7 @@ def _AddKinds(spec):
   # TODO: Unknown_Tok is OK, but Undefined_Id is better
   spec.AddKind('Undefined', ['Tok'])  # for initial state
   spec.AddKind('Unknown',   ['Tok'])  # for when nothing matches
-  spec.AddKind('Eol',       ['Tok'])      # no more tokens on line (\0)
+  spec.AddKind('Eol',       ['Tok'])  # no more tokens on line (\0)
 
   spec.AddKind('Eof', ['Real', 'RParen', 'Backtick'])
 

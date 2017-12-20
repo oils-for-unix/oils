@@ -15,14 +15,6 @@ from asdl import asdl_ as asdl
 
 
 class GenClassesVisitor(gen_cpp.AsdlVisitor):
-  # TODO:
-  # - DESCRIPTOR  and FIELDS are dummies right now.
-  # - I think FIELDS is used for encoding.
-  #
-  # - Debug mode:
-  #   - _CheckType(value, desc) on initialization and __setattr__.
-  #   - check unassigned.  Why is it done with unit tests with CheckUnassigned,
-  #     but also in _Init?
 
   def VisitSimpleSum(self, sum, name, depth):
     self.Emit('class %s_e(py_meta.SimpleObj):' % name, depth)
@@ -86,10 +78,6 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
     if add_spids:
       self.Emit('    self.spids = []', depth)
 
-    self.Emit('', depth)
-
-    self.Emit('  def CheckUnassigned(self):', depth)
-    self.Emit('    pass', depth)
     self.Emit('', depth)
 
   def VisitConstructor(self, cons, def_name, tag_num, depth):

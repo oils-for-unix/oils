@@ -38,6 +38,16 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
                         &lex_mode, &line, &line_len, &start_pos)) {
     return NULL;
   }
+
+  // bounds checking.  It's OK to be called with a start_pos looking at \0.
+  // Eol_Tok is inserted everywhere.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchToken call (start_pos = %d, line_len =%d)",
+                 start_pos, line_len);
+    return NULL;
+  }
+
   /*
   debug("lex_mode %d, line_len %d, start_pos %d\n",
         lex_mode, line_len, start_pos);

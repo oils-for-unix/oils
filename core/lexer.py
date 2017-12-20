@@ -45,9 +45,10 @@ class LineLexer(object):
     self.arena_skip = False  # For MaybeUnreadOne
     self.last_span_id = const.NO_INTEGER  # For MaybeUnreadOne
 
-    self.Reset(line, -1)  # Invalid arena index to start
+    self.Reset(line, -1)  # Invalid line_id to start
 
   def Reset(self, line, line_id):
+    #assert line, repr(line)  # can't be empty or None
     self.line = line
     self.line_pos = 0
     self.line_id = line_id
@@ -101,14 +102,11 @@ class LineLexer(object):
 
     return ast.token(tok_type, tok_val, const.NO_INTEGER)
 
-  def AtEnd(self):
-    return self.line_pos == len(self.line)
-
   def Read(self, lex_mode):
-    if self.AtEnd():
-      raise AssertionError('EOF')
-
+    #assert self.line_pos <= len(self.line), (self.line, self.line_pos)
     tok_type, end_pos = self.match_func(lex_mode, self.line, self.line_pos)
+    #assert end_pos <= len(self.line)
+
     tok_val = self.line[self.line_pos:end_pos]
 
     # NOTE: tok_val is redundant, but even in osh.asdl we have some separation
@@ -199,7 +197,8 @@ class Lexer(object):
     self.translation_stack.append((old_id, new_id))
 
   def _Read(self, lex_mode):
-    if self.line_lexer.AtEnd():
+    t = self.line_lexer.Read(lex_mode)
+    if t.id == Id.Eol_Tok:  # hit \0
       line_id, line = self.line_reader.GetLine()
 
       if line is None:  # no more lines
@@ -208,8 +207,7 @@ class Lexer(object):
         return t
 
       self.line_lexer.Reset(line, line_id)
-
-    t = self.line_lexer.Read(lex_mode)
+      t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF
     if self.translation_stack:
@@ -217,7 +215,6 @@ class Lexer(object):
       if t.id == old_id:
         #print('==> TRANSLATING %s ==> %s' % (t, new_s))
         self.translation_stack.pop()
-        #print(self.translation_stack)
         t.id = new_id
 
     return t
