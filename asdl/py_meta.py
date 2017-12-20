@@ -248,7 +248,9 @@ def MakeTypes(module, root, type_lookup):
         cls = type(class_name, (SimpleObj, ), class_attr)
         setattr(root, class_name, cls)
 
-        # TODO: cons needs ASDL_TYPE?
+        # NOTE: Right now the ASDL_TYPE for for an enum value is the Sum type,
+        # not the Constructor type.  We may want to change this if we need
+        # reflection.
         for i, cons in enumerate(sum_type.types):
           enum_id = i + 1
           name = cons.name

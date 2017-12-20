@@ -225,7 +225,11 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
       from core import id_kind
       id_name = id_kind.IdName(token_id)
       print '      %-30s { *id = id__%s; break; }' % (re2_pat, id_name)
-    print '      %-30s { *id = id__%s; break; }' % (r'"\x00"', 'Eol_Tok')
+
+    # EARLY RETURN: Do NOT advance past the NUL terminator.
+    print '      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
+        r'"\x00"'
+
     print '      */'
     print '    }'
     print '    break;'
@@ -270,12 +274,7 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
     assert(0);
 
   }
-  if (*id == id__Eol_Tok) {
-    /* don't move past if Eol_Tok */
-    *end_pos = start_pos;
-  } else {
-    *end_pos = p - line;  /* relative */
-  }
+  *end_pos = p - line;  /* relative */
 }
 """
 
