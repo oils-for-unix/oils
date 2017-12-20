@@ -33,7 +33,13 @@ gen-help() {
 
 gen-osh-asdl() {
   local out=_devbuild/gen/osh_asdl.py
-  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl > $out
+  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl 'osh.ast_' > $out
+  echo "Wrote $out"
+}
+
+gen-runtime-asdl() {
+  local out=_devbuild/gen/runtime_asdl.py
+  PYTHONPATH=. asdl/gen_python.py core/runtime.asdl 'core.runtime' > $out
   echo "Wrote $out"
 }
 
@@ -83,6 +89,7 @@ minimal() {
 
   gen-help
   gen-osh-asdl
+  gen-runtime-asdl
   pylibc
 }
 

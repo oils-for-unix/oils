@@ -128,6 +128,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
 def main(argv):
 
   schema_path = argv[1]
+  type_lookup_module = argv[2]
   with open(schema_path) as input_f:
     module = asdl.parse(input_f)
 
@@ -136,9 +137,9 @@ def main(argv):
   f.write("""\
 from asdl import const  # For const.NO_INTEGER
 from asdl import py_meta
-from osh.ast_ import TYPE_LOOKUP
+from %s import TYPE_LOOKUP
 
-""")
+""" % type_lookup_module)
 
   v = GenClassesVisitor(f)
   v.VisitModule(module)

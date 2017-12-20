@@ -13,7 +13,7 @@ from core import util
 from core.id_kind import Id
 
 
-def _ParseAndMakeTypes(f, root):
+def _LoadSchema(f):
   module = asdl.parse(f)
 
   app_types = {'id': asdl.UserType(Id)}
@@ -22,10 +22,21 @@ def _ParseAndMakeTypes(f, root):
   # Check for type errors
   if not asdl.check(module, app_types):
     raise AssertionError('ASDL file is invalid')
-  py_meta.MakeTypes(module, root, type_lookup)
+  return module, type_lookup
 
 
 f = util.GetResourceLoader().open('core/runtime.asdl')
 root = sys.modules[__name__]
-_ParseAndMakeTypes(f, root)
+module, type_lookup = _LoadSchema(f)
+
+if 0:
+  py_meta.MakeTypes(module, root, type_lookup)
+else:
+  # Exported for the generated code to use
+  TYPE_LOOKUP = type_lookup
+
+  # Get the types from elsewhere
+  from _devbuild.gen import runtime_asdl
+  py_meta.AssignTypes(runtime_asdl, root)
+
 f.close()
