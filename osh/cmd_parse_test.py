@@ -25,9 +25,9 @@ command_e = ast.command_e
 # TODO: Use parse_lib instead
 def InitCommandParser(code_str):
   arena = test_lib.MakeArena('<cmd_parse_test.py>')
-  line_reader, lexer = parse_lib.InitLexer(code_str, arena=arena)
+  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
   w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader, arena=arena)
+  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
   return arena, c_parser  # arena is returned for printing errors
 
 

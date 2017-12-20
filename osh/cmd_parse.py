@@ -37,7 +37,7 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, w_parser, lexer, line_reader, arena=None):
+  def __init__(self, w_parser, lexer, line_reader, arena):
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer  # for fast lookahead to (, for function defs
     self.line_reader = line_reader  # for here docs

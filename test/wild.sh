@@ -570,6 +570,21 @@ aboriginal-biggest() {
   cat $AB_OUT/*.txt | awk '{print $3 " " $6}' | sort -n
 }
 
+readonly AB_TIMES=_tmp/parse-aboriginal.csv 
+
+parse-aboriginal() {
+  #find $ABORIGINAL_DIR -name '*.sh' | xargs wc -l | sort -n
+  #return
+
+  find $ABORIGINAL_DIR -name '*.sh' | xargs -n1 -- \
+    benchmarks/time.py --output $AB_TIMES -- bin/osh -n --ast-format none
+}
+
+# 80 ms max.  That is good enough for sure.
+ab-times() {
+  awk -F ',' '{ if ($2 > max_elapsed) max_elapsed = $2 } END { print(max_elapsed) }' $AB_TIMES
+}
+
 # biggest scripts besides ltmain:
 #
 # 8406 binutils-397a64b3/binutils/embedspu.sh

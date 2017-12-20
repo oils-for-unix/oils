@@ -14,11 +14,15 @@ set -o errexit
 readonly BIGGEST=benchmarks/testdata/configure-coreutils
 readonly ABUILD=benchmarks/testdata/abuild
 readonly -a RUN_ABUILD=(bin/oil.py osh $ABUILD -h)
+# Slightly faster but not significantly.
+#readonly -a RUN_ABUILD=(_bin/osh $ABUILD -h)
 readonly -a OSH_PARSE=(bin/oil.py osh --ast-format none -n)
 
 #
 # Use Python's cProfile, which uses _lsprof.  This is pretty fast.
 #
+
+time-bash-run-abuild() { time bash $ABUILD -h; }
 
 # Old: ~2.7 seconds (no tracing)
 # 2017/11/27, After ASDL optimization: 0.72 seconds.
@@ -49,6 +53,15 @@ cprofile-parse-biggest() {
 }
 cprofile-run-abuild() {
   _cprofile _tmp/abuild-run.cprofile "${RUN_ABUILD[@]}"
+}
+
+# TODO: Try uftrace?  I guess you can compare wait4() call duration with bash
+# vs. osh?
+strace-run-abuild() {
+  #local filter='read,wait4' 
+  local filter='execve,wait4' 
+  time strace -ff -e "$filter" "${RUN_ABUILD[@]}"
+  #time strace -c "${RUN_ABUILD[@]}"
 }
 
 # Yeah I understand from this why Chrome Tracing / Flame Graphs are better.

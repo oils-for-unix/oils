@@ -595,7 +595,7 @@ class RootCompleter(object):
 
   def Matches(self, buf, status_out):
     arena = alloc.CompletionArena(self.pool)
-    w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena=arena)
+    w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena)
     comp_type, prefix, comp_words = _GetCompletionType(
         w_parser, c_parser, self.ev, status_out)
 

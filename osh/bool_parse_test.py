@@ -12,6 +12,7 @@ bool_parse_test.py: Tests for bool_parse.py
 import unittest
 
 from core.id_kind import Id
+from core import test_lib
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -36,7 +37,8 @@ def _ReadWords(w_parser):
 
 def _MakeParser(code_str):
   # NOTE: We need the extra ]] token
-  w_parser, _ = parse_lib.MakeParserForCompletion(code_str + ' ]]')
+  arena = test_lib.MakeArena('<bool_parse_test.py>')
+  w_parser, _ = parse_lib.MakeParserForCompletion(code_str + ' ]]', arena)
   w_parser._Next(lex_mode_e.DBRACKET)  # for tests only
   p = bool_parse.BoolParser(w_parser)
   if not p._Next():

@@ -263,7 +263,7 @@ def OshMain(argv, login_shell):
     rc_path = 'oilrc'
     arena.PushSource(rc_path)
     with open(rc_path) as f:
-      rc_line_reader = reader.FileLineReader(f, arena=arena)
+      rc_line_reader = reader.FileLineReader(f, arena)
       _, rc_c_parser = parse_lib.MakeParser(rc_line_reader, arena)
       try:
         rc_node = rc_c_parser.ParseWholeFile()
@@ -285,11 +285,11 @@ def OshMain(argv, login_shell):
 
   if opts.c is not None:
     arena.PushSource('<command string>')
-    line_reader = reader.StringLineReader(opts.c, arena=arena)
+    line_reader = reader.StringLineReader(opts.c, arena)
     interactive = False
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
-    line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
+    line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
     interactive = True
   else:
     try:
@@ -297,11 +297,11 @@ def OshMain(argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
-        line_reader = reader.InteractiveLineReader(OSH_PS1, arena=arena)
+        line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
         interactive = True
       else:
         arena.PushSource('<stdin>')
-        line_reader = reader.FileLineReader(sys.stdin, arena=arena)
+        line_reader = reader.FileLineReader(sys.stdin, arena)
         interactive = False
     else:
       arena.PushSource(script_name)
@@ -313,7 +313,7 @@ def OshMain(argv, login_shell):
       except IOError as e:
         util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
         return 1
-      line_reader = reader.FileLineReader(f, arena=arena)
+      line_reader = reader.FileLineReader(f, arena)
       interactive = False
 
   # TODO: assert arena.NumSourcePaths() == 1

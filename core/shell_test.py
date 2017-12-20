@@ -36,9 +36,10 @@ if trace:
 class LineReaderTest(unittest.TestCase):
 
   def testGetLine(self):
-    r = reader.StringLineReader('foo\nbar')  # no trailing newline
-    self.assertEqual((-1, 'foo\n'), r.GetLine())
-    self.assertEqual((-1, 'bar\n'), r.GetLine())
+    arena = test_lib.MakeArena('<shell_test.py>')
+    r = reader.StringLineReader('foo\nbar', arena)  # no trailing newline
+    self.assertEqual((0, 'foo\n'), r.GetLine())
+    self.assertEqual((1, 'bar\n'), r.GetLine())
 
     # Keep returning EOF after exhausted
     self.assertEqual((-1, None), r.GetLine())
@@ -48,9 +49,9 @@ class LineReaderTest(unittest.TestCase):
 def ParseAndExecute(code_str):
   arena = test_lib.MakeArena('<shell_test.py>')
 
-  line_reader, lexer = parse_lib.InitLexer(code_str, arena=arena)
+  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
   w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader, arena=arena)
+  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
 
   node = c_parser.ParseWholeFile()
   if not node:

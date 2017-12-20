@@ -40,7 +40,7 @@ _PS2 = '> '
 
 
 class InteractiveLineReader(_Reader):
-  def __init__(self, ps1, arena=None):
+  def __init__(self, ps1, arena):
     _Reader.__init__(self, arena)
     self.ps1 = ps1
     self.prompt_str = ps1
@@ -64,7 +64,7 @@ class InteractiveLineReader(_Reader):
 class FileLineReader(_Reader):
   """For -c and stdin?"""
 
-  def __init__(self, f, arena=None):
+  def __init__(self, f, arena):
     """
     Args:
       lines: List of (line_id, line) pairs
@@ -85,8 +85,8 @@ class FileLineReader(_Reader):
     return line
 
 
-def StringLineReader(s, arena=None):
-  return FileLineReader(cStringIO.StringIO(s), arena=arena)
+def StringLineReader(s, arena):
+  return FileLineReader(cStringIO.StringIO(s), arena)
 
 
 # C++ ownership notes:

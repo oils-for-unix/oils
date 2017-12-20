@@ -37,7 +37,7 @@ def CompileAll(pat_list):
 
 
 class LineLexer(object):
-  def __init__(self, match_func, line, arena=None):
+  def __init__(self, match_func, line, arena):
     # Compile all regexes
     self.match_func = match_func
     self.arena = arena

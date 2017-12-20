@@ -22,6 +22,7 @@ from core import ui
 from core import word_eval
 from core import runtime
 from core import process
+from core import test_lib
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -30,9 +31,10 @@ from osh import parse_lib
 def InitCommandParser(code_str):
   from osh.word_parse import WordParser
   from osh.cmd_parse import CommandParser
-  line_reader, lexer = parse_lib.InitLexer(code_str)
+  arena = test_lib.MakeArena('<cmd_exec_test.py>')
+  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
   w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader)
+  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
   return c_parser
 
 

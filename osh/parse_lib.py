@@ -59,11 +59,11 @@ def _MakeMatcher():
     return MatchToken_Slow(lex.LEXER_DEF)
 
 
-def InitLexer(s, arena=None):
+def InitLexer(s, arena):
   """For tests only."""
   match_func = _MakeMatcher()
-  line_lexer = lexer.LineLexer(match_func, '', arena=arena)
-  line_reader = reader.StringLineReader(s, arena=arena)
+  line_lexer = lexer.LineLexer(match_func, '', arena)
+  line_reader = reader.StringLineReader(s, arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx
 
@@ -88,10 +88,10 @@ def InitLexer(s, arena=None):
 def MakeParser(line_reader, arena):
   """Top level parser."""
   # AtEnd() is true
-  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena=arena)
+  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
-  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena=arena)
+  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena)
   return w_parser, c_parser
 
 
@@ -102,21 +102,21 @@ def MakeParser(line_reader, arena):
 #
 # NOTE: It probably needs to take a VirtualLineReader for $PS1, $PS2, ...
 # values.
-def MakeParserForCompletion(code_str, arena=None):
+def MakeParserForCompletion(code_str, arena):
   """Parser for partial lines."""
   # NOTE: We don't need to use a arena here?  Or we need a "scratch arena" that
   # doesn't interfere with the rest of the program.
-  line_reader = reader.StringLineReader(code_str)
-  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena=arena)  # AtEnd() is true
+  line_reader = reader.StringLineReader(code_str, arena)
+  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena)  # AtEnd() is true
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
-  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena=arena)
+  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena)
   return w_parser, c_parser
 
 
 def MakeWordParserForHereDoc(lines, arena):
   line_reader = reader.VirtualLineReader(lines, arena)
-  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena=arena)
+  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return word_parse.WordParser(lx, line_reader)
 

@@ -152,7 +152,7 @@ def _MakeTestEvaluator():
 def _TestGetCompletionType(buf):
   ev = _MakeTestEvaluator()
   arena = test_lib.MakeArena('<completion_test.py>')
-  w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena=arena)
+  w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena)
   print('---', buf)
   return completion._GetCompletionType(w_parser, c_parser, ev, STATUS)
 
