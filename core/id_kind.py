@@ -24,7 +24,11 @@ def IdName(id_):
   return _ID_NAMES[id_.enum_value]
 
 
-# Save memory by keeping one instance.
+
+# Keep one instance of each Id, to save memory and enable comparison by
+# OBJECT IDENTITY.
+# Do NOT create any any more instances of them!  Always used IdInstance().
+
 # TODO: Fold this into ASDL, which will enforce this?
 
 _ID_INSTANCES = {}  # int -> Id
@@ -43,15 +47,6 @@ class Id(object):
   """
   def __init__(self, enum_value):
     self.enum_value = enum_value
-
-  def __eq__(self, other):
-    return self.enum_value == other.enum_value
-
-  def __ne__(self, other):
-    return self.enum_value != other.enum_value
-
-  def __hash__(self):
-    return hash(self.enum_value)
 
   def __repr__(self):
     return IdName(self)

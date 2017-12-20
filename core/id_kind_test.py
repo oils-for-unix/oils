@@ -61,9 +61,8 @@ class TokensTest(unittest.TestCase):
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
   def testEquality(self):
-    # OK WTF!!!!
-    left = Id(198)
-    right = Id(198)
+    left = id_kind.IdInstance(198)
+    right = id_kind.IdInstance(198)
     print(left, right)
     print(left == right)
     self.assertEqual(left, right)

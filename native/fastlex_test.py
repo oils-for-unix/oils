@@ -11,6 +11,7 @@ libc_test.py: Tests for libc.py
 
 import unittest
 
+from core import id_kind
 from core.id_kind import Id
 from osh import ast_ as ast
 
@@ -21,7 +22,7 @@ lex_mode_e = ast.lex_mode_e
 
 def MatchToken(lex_mode, line, start_pos):
   tok_type, end_pos = fastlex.MatchToken(lex_mode.enum_id, line, start_pos)
-  return Id(tok_type), end_pos
+  return id_kind.IdInstance(tok_type), end_pos
 
 
 def TokenizeLineOuter(line):
