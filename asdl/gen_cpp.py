@@ -112,36 +112,12 @@ _BUILTINS = {
 class AsdlVisitor:
   def __init__(self, f):
     self.f = f
-    self.module = None
-
-  def GetCppType(self, field):
-    """Return a string for the C++ name of the type."""
-    type_name = field.type
-
-    cpp_type = _BUILTINS.get(type_name)
-    if cpp_type is not None:
-      return cpp_type
-
-    typ = self.module.types[type_name]
-    if isinstance(typ, asdl.Sum) and asdl.is_simple(typ):
-      # Use the enum instead of the class.
-      return "%s_e" % type_name
-
-    # - Pointer for optional type.
-    # - ints and strings should generally not be optional?  We don't have them
-    # in osh yet, so leave it out for now.
-    if field.opt:
-      return "%s_t*" % type_name
-
-    return "%s_t&" % type_name
 
   def Emit(self, s, depth, reflow=True):
     for line in FormatLines(s, depth):
       self.f.write(line)
 
   def VisitModule(self, mod):
-    self.module = mod  # Save it for GetCppType to look up types.
-
     for dfn in mod.dfns:
       self.VisitType(dfn)
     self.EmitFooter()
@@ -189,12 +165,34 @@ class ForwardDeclareVisitor(AsdlVisitor):
 class ClassDefVisitor(AsdlVisitor):
   """Generate C++ classes and type-safe enums."""
 
-  def __init__(self, f, enc_params, enum_types=None):
+  def __init__(self, f, enc_params, type_lookup, enum_types=None):
     AsdlVisitor.__init__(self, f)
     self.ref_width = enc_params.ref_width
+    self.type_lookup = type_lookup
     self.enum_types = enum_types or {}
     self.pointer_type = enc_params.pointer_type
     self.footer = []  # lines
+
+  def _GetCppType(self, field):
+    """Return a string for the C++ name of the type."""
+    type_name = field.type
+
+    cpp_type = _BUILTINS.get(type_name)
+    if cpp_type is not None:
+      return cpp_type
+
+    typ = self.type_lookup.ByTypeName(type_name)
+    if isinstance(typ, asdl.Sum) and asdl.is_simple(typ):
+      # Use the enum instead of the class.
+      return "%s_e" % type_name
+
+    # - Pointer for optional type.
+    # - ints and strings should generally not be optional?  We don't have them
+    # in osh yet, so leave it out for now.
+    if field.opt:
+      return "%s_t*" % type_name
+
+    return "%s_t&" % type_name
 
   def EmitFooter(self):
     for line in self.footer:
@@ -278,7 +276,7 @@ class ClassDefVisitor(AsdlVisitor):
 
     http://stackoverflow.com/questions/5808758/why-is-a-static-cast-from-a-pointer-to-base-to-a-pointer-to-derived-invalid
     """
-    ctype = self.GetCppType(field)
+    ctype = self._GetCppType(field)
     name = field.name
     pointer_type = self.pointer_type
     # Either 'left' or 'BoolBinary::left', depending on whether it's inline.
@@ -408,6 +406,7 @@ def main(argv):
     schema_path = argv[2]
     with open(schema_path) as input_f:
       module = asdl.parse(input_f)
+    type_lookup = asdl.ResolveTypes(module)
 
     f = sys.stdout
 
@@ -448,7 +447,7 @@ class Obj {
     # Id should be treated as an enum.
     c = ChainOfVisitors(
         ForwardDeclareVisitor(f),
-        ClassDefVisitor(f, enc, enum_types=['Id']))
+        ClassDefVisitor(f, enc, type_lookup, enum_types=['Id']))
     c.VisitModule(module)
 
     f.write("""\

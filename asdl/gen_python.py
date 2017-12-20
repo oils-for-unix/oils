@@ -4,7 +4,8 @@ gen_python.py
 
 Generate Python code from and ASDL schema.
 
-TODO: What about Id?  app_types?
+TODO:
+- What about Id?  app_types?
 """
 
 import sys
@@ -15,7 +16,6 @@ from asdl import asdl_ as asdl
 
 class GenClassesVisitor(gen_cpp.AsdlVisitor):
   # TODO:
-  # - __eq__ isn't the same
   # - DESCRIPTOR  and FIELDS are dummies right now.
   # - I think FIELDS is used for encoding.
   #
@@ -25,8 +25,8 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
   #     but also in _Init?
 
   def VisitSimpleSum(self, sum, name, depth):
-    self.Emit('class %s_e(asdl_base.SimpleObj):' % name, depth)
-    self.Emit('  pass', depth)
+    self.Emit('class %s_e(py_meta.SimpleObj):' % name, depth)
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
     self.Emit('', depth)
 
     # Just use #define, since enums aren't namespaced.
@@ -52,15 +52,13 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
     # oheap serialization.  TODO: measure the effect of __slots__, and then get
     # rid of FIELDS?  Or you can just make it an alias.
     # FIELDS = self.__slots__.
-    self.Emit('  FIELDS = %s' % quoted_fields, depth)
-
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
 
     # TODO: 
     # py_meta.MakeTypes and py_meta._MakeFieldDescriptors fill
     # DESCRIPTOR_LOOKUP, which is used for pretty printing.
     lookup = {}
-    self.Emit('  DESCRIPTOR_LOOKUP = %r' % lookup, depth)
     self.Emit('', depth)
 
     args = ', '.join('%s=None' % f.name for f in desc.fields)
@@ -99,6 +97,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       self._GenClass(cons, cons.name, def_name, depth, tag_num=tag_num)
     else:
       self.Emit("class %s(%s):" % (cons.name, def_name), depth)
+      self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % cons.name, depth)
       self.Emit('  tag = %d'  % tag_num, depth)
       self.Emit('', depth)
 
@@ -109,8 +108,8 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       self.Emit('  %s = %d' % (variant.name, i + 1), depth)
     self.Emit('', depth)
 
-    self.Emit('class %s(asdl_base.CompoundObj):' % name, depth)
-    self.Emit('  pass', depth)
+    self.Emit('class %s(py_meta.CompoundObj):' % name, depth)
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
     self.Emit('', depth)
 
     # define command_t, and then make subclasses
@@ -120,7 +119,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       self.VisitConstructor(t, super_name, tag_num, depth)
 
   def VisitProduct(self, product, name, depth):
-    self._GenClass(product, name, 'asdl_base.CompoundObj', depth)
+    self._GenClass(product, name, 'py_meta.CompoundObj', depth)
 
   def EmitFooter(self):
     pass
@@ -136,7 +135,9 @@ def main(argv):
 
   f.write("""\
 from asdl import const  # For const.NO_INTEGER
-from asdl import asdl_base
+from asdl import py_meta
+from osh.ast_ import TYPE_LOOKUP
+
 """)
 
   v = GenClassesVisitor(f)

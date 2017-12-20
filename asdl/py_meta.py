@@ -121,9 +121,17 @@ class SimpleObj(Obj):
 
 
 class CompoundObj(Obj):
-  """A compound object with fields, e.g. a Product or Constructor.
+  # TODO: Remove this?
 
-  Uses some metaprogramming.
+  # Always set for constructor types, which are subclasses of sum types.  Never
+  # set for product types.
+  tag = None
+
+
+class DebugCompoundObj(CompoundObj):
+  """A CompoundObj that does dynamic type checks.
+
+  Used by MakeTypes().
   """
   # Always set for constructor types, which are subclasses of sum types.  Never
   # set for product types.
@@ -253,7 +261,7 @@ def MakeTypes(module, root, type_lookup):
 
         # e.g. for arith_expr
         # Should this be arith_expr_t?  It is in C++.
-        base_class = type(defn.name, (CompoundObj, ), {})
+        base_class = type(defn.name, (DebugCompoundObj, ), {})
         setattr(root, defn.name, base_class)
 
         # Make a type and a enum tag for each alternative.
@@ -277,7 +285,7 @@ def MakeTypes(module, root, type_lookup):
 
     elif isinstance(typ, asdl.Product):
       class_attr = {'ASDL_TYPE': typ}
-      cls = type(defn.name, (CompoundObj, ), class_attr)
+      cls = type(defn.name, (DebugCompoundObj, ), class_attr)
       setattr(root, defn.name, cls)
 
     else:

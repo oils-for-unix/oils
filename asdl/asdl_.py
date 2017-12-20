@@ -54,17 +54,6 @@ class BoolType:
     return '<Bool>'
 
 
-# NOTE: We might want to change this to PrimitiveType(int tag).  Then
-# ArrayType, MaybeType, Sum, and Product are expressions involving primitives.
-
-# The type that should be passed.
-DESCRIPTORS_BY_NAME = {
-    'string': StrType(),
-    'int': IntType(),
-    'bool': BoolType(),
-}
-
-
 class ArrayType:
   def __init__(self, desc):
     self.desc = desc
@@ -95,19 +84,40 @@ class TypeLookup(object):
   """
 
   def __init__(self, module, app_types=None):
-    self.types = {}
+    # types that fields are declared with: int, id, word_part, etc.
+    # Fields are not declared with constructor names.
+    self.declared_types = {}
 
-    for typ in module.dfns:
-      self.types[typ.name] = typ.value
+    for d in module.dfns:
+      self.declared_types[d.name] = d.value
 
     if app_types is not None:
-      self.types.update(app_types)
+      self.declared_types.update(app_types)
 
-    # TODO: Don't need a public constant.
-    self.types.update(DESCRIPTORS_BY_NAME)
+    # Primitive types.
+    self.declared_types['string'] = StrType()
+    self.declared_types['int'] =  IntType()
+    self.declared_types['bool'] = BoolType()
 
-  def Get(self, field):
-    t = self.types[field.type]
+    # Types with fields that need to be reflected on: Product and Constructor.
+    self.compound_types = {}
+    for d in module.dfns:
+      typ = d.value
+      if isinstance(typ, Product):
+        self.compound_types[d.name] = typ
+      elif isinstance(typ, Sum):
+        # e.g. 'assign_op' is simple, or 'bracket_op' is not simple.
+        self.compound_types[d.name] = typ
+
+        for cons in typ.types:
+          self.compound_types[cons.name] = cons
+
+  def ByFieldInstance(self, field):
+    """
+    Args:
+      field: Field() instance
+    """
+    t = self.declared_types[field.type]
     if field.seq:
       return ArrayType(t)
 
@@ -116,14 +126,23 @@ class TypeLookup(object):
 
     return t
 
+  def ByTypeName(self, type_name):
+    """
+    Args:
+      type_name: string, e.g. 'word_part' or 'LiteralPart'
+    """
+    if not type_name in self.compound_types:
+      print 'FATAL', self.compound_types.keys()
+    return self.compound_types[type_name]
+
   def __repr__(self):
-    return repr(self.types)
+    return repr(self.declared_types)
 
 
 def _CheckFieldsAndWire(typ, type_lookup):
   for f in typ.fields:
     # Will fail if it doesn't exist
-    _ = type_lookup.Get(f)
+    _ = type_lookup.ByFieldInstance(f)
   typ.type_lookup = type_lookup  # wire it for lookup
 
 
@@ -173,9 +192,6 @@ class Module(AST):
         self.name = name
         self.dfns = dfns
 
-        # NOTE: This is used for type checking.
-        self.types = {type.name: type.value for type in dfns}
-
     def Print(self, f, indent):
         ind = indent * '  '
         f.write('%sModule %s {\n' % (ind, self.name))
@@ -184,9 +200,6 @@ class Module(AST):
           d.Print(f, indent+1)
           f.write('\n')
         f.write('%s}\n' % ind)
-
-    def LookupFieldType(self, name):
-        return self.types.get(name)
 
 
 class Type(AST):
@@ -217,22 +230,29 @@ class _CompoundType(AST):
           self.fields.append(Field('int', 'spids', seq=True))
 
         self.field_lookup = {f.name: f for f in self.fields}
-        self.type_lookup = None  # for runtime reflection
+        self.type_lookup = None  # set by ResolveTypes()
+
+        self.type_cache = {}
+
+    def GetFieldNames(self):
+        for f in self.fields:
+          yield f.name
 
     def GetFields(self):
         for f in self.fields:
           field_name = f.name
           yield field_name, self.LookupFieldType(field_name)
 
-    def GetFieldNames(self):
-        """Only used by core/test_lib.py."""
-        for f in self.fields:
-          yield f.name
-
     def LookupFieldType(self, field_name):
-        field = self.field_lookup[field_name]
-        return self.type_lookup.Get(field)
-
+        # Cache and return it.  We don't want to create new instances every
+        # time we iterate over the fields.
+        try:
+          return self.type_cache[field_name]
+        except KeyError:
+          field = self.field_lookup[field_name]
+          desc = self.type_lookup.ByFieldInstance(field)
+          self.type_cache[field_name] = desc
+          return desc
 
 
 class Constructor(_CompoundType):
@@ -387,13 +407,6 @@ def check(mod, app_types=None):
     app_types = app_types or {}
     v = Check()
     v.visit(mod)
-
-    for t in v.types:
-        if t in mod.types or t in builtin_types or t in app_types:
-            continue
-        v.errors += 1
-        uses = ", ".join(v.types[t])
-        print('Undefined type {}, used in {}'.format(t, uses))
     return not v.errors
 
 # The ASDL parser itself comes next. The only interesting external interface

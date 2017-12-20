@@ -114,10 +114,7 @@ def LoadSchema(f):
   app_types = {'id': asdl.UserType(Id)}
 
   asdl_module = asdl.parse(f)
-  # TODO: Need some metaprogramming here to add id and kind.
 
-  # NOTE: This only checks for overlapping sum types, which will no longer be
-  # an error.
   if not asdl.check(asdl_module, app_types):
     raise AssertionError('ASDL file is invalid')
 
@@ -128,13 +125,17 @@ def LoadSchema(f):
 # TODO: This should be the only lines in this module?
 # PrettyPrint can go in osh/ast_lib ?  or ast_util?
 
+f = util.GetResourceLoader().open('osh/osh.asdl')
+asdl_module, type_lookup = LoadSchema(f)
+
 root = sys.modules[__name__]
 if 1:
-  f = util.GetResourceLoader().open('osh/osh.asdl')
-  asdl_module, type_lookup = LoadSchema(f)
   py_meta.MakeTypes(asdl_module, root, type_lookup)
   f.close()
 else:
+  # Export for generated code to look at
+  TYPE_LOOKUP = type_lookup
+
   # Get the types from elsewhere
   from _devbuild import osh_asdl
   py_meta.AssignTypes(osh_asdl, root)
