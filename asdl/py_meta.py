@@ -248,26 +248,19 @@ def _MakeFieldDescriptors(module, fields, type_lookup, add_spids=True):
   desc_lookup = {}
   for f in fields:
     # Lookup order: primitive, defined in the ASDL file, passed by the app
-    desc = type_lookup.Get(f.type)
-
-    # Wrap descriptor here.  Then we can type check.
-    # And then encode too.
-    assert not (f.opt and f.seq), f
-    if f.opt:
-      desc = asdl.MaybeType(desc)
-
-    if f.seq:
-      desc = asdl.ArrayType(desc)
+    desc = type_lookup.Get(f)
 
     desc_lookup[f.name] = desc
 
   field_names = [f.name for f in fields]
 
   # Add 'int* spids' if requested.
+  # TODO: Use ASDL attributes for this!
   if add_spids:
     field_names.append('spids')
     desc_lookup['spids'] = asdl.ArrayType(asdl.IntType())
 
+  # TODO: remove these
   class_attr = {
       'FIELDS': field_names,
       'DESCRIPTOR_LOOKUP': desc_lookup,

@@ -34,14 +34,15 @@ asdl-py() {
 }
 
 smoke-test() {
+  local arith_expr=${1:-"2 + 3 * 4"}
   # Print Schema (asdl_.py, py_meta.py)
   asdl-py asdl/arith.asdl
 
   # Parse real values and pretty print (format.py)
-  asdl-arith-format '1+2*3'
+  asdl-arith-format "$arith_expr"
 
   # encode.py
-  arith-demo
+  asdl-arith-oheap "$arith_expr"
 }
 
 asdl-cpp() {
@@ -125,12 +126,13 @@ build-demo() {
   chmod +x $bin
 }
 
-arith-demo() {
+asdl-arith-oheap() {
+  local arith_expr=${1:-"1 + 2 * 3"}
   local name=arith
   local data=_tmp/${name}.bin
 
   # Write a binary
-  asdl-arith-encode '1 + 2 * 3' $data
+  asdl-arith-encode "$arith_expr" $data
 
   local bin=_tmp/${name}_demo 
 

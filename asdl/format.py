@@ -230,6 +230,7 @@ class _Obj:
 class _ColoredString:
   """Node for pretty-printing."""
   def __init__(self, s, str_type):
+    assert isinstance(s, str), s
     self.s = s
     self.str_type = str_type
 
@@ -237,7 +238,7 @@ class _ColoredString:
     return '<_ColoredString %s %s>' % (self.s, self.str_type)
 
 
-def MakeFieldSubtree(obj, field_name, abbrev_hook, omit_empty=True):
+def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
   try:
     field_val = getattr(obj, field_name)
   except AttributeError:
@@ -246,7 +247,6 @@ def MakeFieldSubtree(obj, field_name, abbrev_hook, omit_empty=True):
     raise AssertionError(
         '%s is missing field %r' % (obj.__class__, field_name))
 
-  desc = obj.DESCRIPTOR_LOOKUP[field_name]
   if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
     out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
 
@@ -298,8 +298,8 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
     out_node = _Obj(obj.__class__.__name__)
     fields = out_node.fields
 
-    for field_name in obj.FIELDS:
-      out_val = MakeFieldSubtree(obj, field_name, abbrev_hook,
+    for field_name, desc in obj.ASDL_TYPE.GetFields():
+      out_val = MakeFieldSubtree(obj, field_name, desc, abbrev_hook,
                                  omit_empty=omit_empty)
 
       if out_val is not None:

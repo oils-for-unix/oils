@@ -102,17 +102,6 @@ def AbbreviateNodes(obj, node):
       # Well actually then the printer needs to recursively handle it
       node.unnamed_fields.append(MakeTree(w, AbbreviateNodes))
 
-  else:
-    # Do generic abbreviation here if none of the specific ones applied.
-    field_names = getattr(obj, 'FIELDS', None)
-    if field_names is not None and len(field_names) == 1:
-      field_name = field_names[0]
-      actual_desc = obj.DESCRIPTOR_LOOKUP[field_name]
-      if not isinstance(actual_desc, asdl.ArrayType):  # Arrays can't be abbreviated
-        node.abbrev = True
-        out_val = fmt.FormatField(obj, field_name, AbbreviateNodes)
-        node.unnamed_fields.append(out_val)
-
 
 def PrettyPrint(node, f=sys.stdout):
   ast_f = fmt.DetectConsoleOutput(f)

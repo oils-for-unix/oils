@@ -106,8 +106,15 @@ class TypeLookup(object):
     # TODO: Fold this in
     self.types.update(DESCRIPTORS_BY_NAME)
 
-  def Get(self, type_name):
-    return self.types[type_name]
+  def Get(self, field):
+    t = self.types[field.type]
+    if field.seq:
+      return ArrayType(t)
+
+    if field.opt:
+      return MaybeType(t)
+
+    return t
 
   def __repr__(self):
     return repr(self.types)
@@ -116,7 +123,7 @@ class TypeLookup(object):
 def _CheckFieldsAndWire(typ, type_lookup):
   for f in typ.fields:
     # Will fail if it doesn't exist
-    _ = type_lookup.Get(f.type)
+    _ = type_lookup.Get(f)
   typ.type_lookup = type_lookup  # wire it for lookup
 
 
@@ -202,7 +209,7 @@ class _CompoundType(AST):
 
     def __init__(self, fields):
         self.fields = fields or []
-        self.field_lookup = {f.name: f.type for f in self.fields}
+        self.field_lookup = {f.name: f for f in self.fields}
         self.type_lookup = None  # for runtime reflection
 
     def GetFields(self):
@@ -211,8 +218,8 @@ class _CompoundType(AST):
           yield field_name, self.LookupFieldType(field_name)
 
     def LookupFieldType(self, field_name):
-        type_name = self.field_lookup[field_name]
-        return self.type_lookup.Get(type_name)
+        field = self.field_lookup[field_name]
+        return self.type_lookup.Get(field)
 
 
 

@@ -217,8 +217,7 @@ def EncodeObj(obj, enc, out):
   if isinstance(obj.DESCRIPTOR, asdl.Constructor):
     enc.Tag(obj.tag, this_chunk)
 
-  for name in obj.FIELDS:  # encode in order
-    desc = obj.DESCRIPTOR_LOOKUP[name]
+  for name, desc in obj.ASDL_TYPE.GetFields():  # encode in order
     field_val = getattr(obj, name)
 
     # TODO:
