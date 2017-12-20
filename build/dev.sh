@@ -31,6 +31,12 @@ gen-help() {
   #build/doc.sh oil-quick-ref
 }
 
+gen-osh-asdl() {
+  local out=_devbuild/gen/osh_asdl.py
+  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl > $out
+  echo "Wrote $out"
+}
+
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
 # installed?  I don't think it makes sense to have 3 builds, so yes I think we
 # can put it here for simplicity.
@@ -71,7 +77,12 @@ clean() {
 
 # No fastlex, because we don't want to require re2c installation.
 minimal() {
+  mkdir -p _devbuild/gen
+  # so osh_help.py and osh_asdl.py are importable
+  touch _devbuild/__init__.py  _devbuild/gen/__init__.py
+
   gen-help
+  gen-osh-asdl
   pylibc
 }
 

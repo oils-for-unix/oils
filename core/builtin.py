@@ -36,7 +36,7 @@ from core import state
 
 from osh import lex
 
-from _devbuild import osh_help  # generated file
+from _devbuild.gen import osh_help  # generated file
 
 value_e = runtime.value_e
 scope_e = runtime.scope_e

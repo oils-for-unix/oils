@@ -92,6 +92,7 @@ Directory Structure
     _bin/             # Native executables are put here
     _build/           # Temporary build files
     _devbuild/        # Developer build files not deleted upon 'make clean'
+      gen/            # Generated Python and C code
     _deps/            # build dependencies like re2c
     _tmp/             # Test suites and other temp files
       spec/

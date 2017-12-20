@@ -64,9 +64,10 @@ gen-python() {
   asdl/gen_python.py $schema
 }
 
+# For testing only, build/dev.sh has it
 gen-osh-python() {
-  touch _tmp/__init__.py
-  local out=_devbuild/osh_asdl.py
+  local out=_devbuild/gen/osh_asdl.py
+  mkdir -p _devbuild/gen
   gen-python osh/osh.asdl > $out
   wc -l $out
 }
