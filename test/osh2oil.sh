@@ -885,7 +885,7 @@ time {
 OIL
 }
 
-all-passing() {
+readonly -a PASSING=(
   simple-command
   more-env
   line-breaks
@@ -919,6 +919,26 @@ all-passing() {
 
   # Builtins
   bracket-builtin
+)
+
+all-passing() {
+  for t in "${PASSING[@]}"; do
+    # fail calls 'exit 1' i this fails.
+    $t
+    echo "OK  $t"
+  done
+
+  echo
+  echo "All osh2oil tests passed."
+}
+
+run-for-release() {
+  local out_dir=_tmp/osh2oil
+  mkdir -p $out_dir
+
+  all-passing | tee $out_dir/log.txt
+
+  echo "Wrote $out_dir/log.txt"
 }
 
 "$@"

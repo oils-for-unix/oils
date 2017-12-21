@@ -54,6 +54,7 @@ log() {
 #           machine-lisa/
 #         wild.wwz/
 #         unit/
+#         osh2oil/
 #         gold/
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
@@ -82,7 +83,7 @@ log() {
 remove-files() {
   rm -r -f \
     _devbuild _build _release \
-    _tmp/{spec,wild,unit} \
+    _tmp/{spec,wild,unit,osh2oil} \
     _tmp/{osh-parser,osh-runtime,vm-baseline,oheap} \
     _tmp/metrics \
     _tmp/oil-tar-test
@@ -94,8 +95,8 @@ build-and-test() {
 
   build/dev.sh all  # for {libc,fastlex}.so, needed to crawl deps
 
-  # TODO: publish unit tests.
   test/unit.sh all
+  test/osh2oil.sh run-for-release
 
   build/prepare.sh configure
   build/prepare.sh build-python
@@ -334,6 +335,10 @@ _link() {
 
 compress() {
   local root=$PWD/_release/VERSION/
+
+  # TODO:
+  #log "--- test/unit"
+  #log "--- test/osh2oil"
 
   log "--- test/spec"
   local out="$root/test/spec.wwz"

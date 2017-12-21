@@ -116,7 +116,7 @@ declare() { _compare gold/declare.sh demo; }
 scope() { _compare gold/scope.sh; }
 
 all() {
-  # This one differs by timestamp
+  # FLAKY: This one differs by timestamp
   version-text
 
   comments
