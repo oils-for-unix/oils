@@ -28,16 +28,13 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       self.Emit(attr, depth)
     self.Emit('', depth)
 
-  def _GenClass(self, desc, name, super_name, depth, tag_num=None,
-                add_spids=True):
+  def _GenClass(self, desc, name, super_name, depth, tag_num=None):
     self.Emit('class %s(%s):' % (name, super_name), depth)
 
     if tag_num is not None:
       self.Emit('  tag = %d' % tag_num, depth)
 
     field_names = [f.name for f in desc.fields]
-    if add_spids:
-      field_names.append('spids')
 
     quoted_fields = repr(tuple(field_names))
     # NOTE: FIELDS is a duplicate of __slots__, used for pretty printing and
@@ -53,6 +50,7 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
     lookup = {}
     self.Emit('', depth)
 
+    # TODO: leave out spids?  Mark it as an attribute?
     args = ', '.join('%s=None' % f.name for f in desc.fields)
     self.Emit('  def __init__(self, %s):' % args, depth)
 
@@ -72,11 +70,6 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
 
       default_str = (' or %s' % default) if default else ''
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str), depth)
-
-    # Like add_spids in _MakeFieldDescriptors.  TODO: This should be optional
-    # for token and span!  Also for runtime.asdl.  We need to make it optional.
-    if add_spids:
-      self.Emit('    self.spids = []', depth)
 
     self.Emit('', depth)
 

@@ -121,11 +121,18 @@ class SimpleObj(Obj):
 
 
 class CompoundObj(Obj):
-  # TODO: Remove this?
-
-  # Always set for constructor types, which are subclasses of sum types.  Never
-  # set for product types.
+  # TODO: Remove tag?
+  # The tag is always set for constructor types, which are subclasses of sum
+  # types.  Never set for product types.
   tag = None
+
+  # NOTE: SimpleObj could share this.
+  def __repr__(self):
+    ast_f = fmt.TextOutput(util.Buffer())  # No color by default.
+    tree = fmt.MakeTree(self)
+    fmt.PrintTree(tree, ast_f)
+    s, _ = ast_f.GetRaw()
+    return s
 
 
 class DebugCompoundObj(CompoundObj):
@@ -210,14 +217,6 @@ class DebugCompoundObj(CompoundObj):
       self._assigned[name] = True  # check this later when encoding
       self.__dict__[name] = value
 
-  def __repr__(self):
-    ast_f = fmt.TextOutput(util.Buffer())  # No color by default.
-    #ast_f = fmt.AnsiOutput(io.StringIO())
-    tree = fmt.MakeTree(self)
-    fmt.PrintTree(tree, ast_f)
-    s, _ = ast_f.GetRaw()
-    return s
-
 
 def MakeTypes(module, root, type_lookup):
   """
@@ -271,7 +270,6 @@ def MakeTypes(module, root, type_lookup):
           tag = i + 1  # zero reserved?
           tag_num[cons.name] = tag  # for enum
 
-          # Add 'int* spids' to every constructor.
           class_attr = {
               'ASDL_TYPE': cons,  # asdl.Constructor
               'tag': tag,  # Does this API change?

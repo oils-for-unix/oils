@@ -111,9 +111,7 @@ class CommandParser(object):
         # echo 3) 4
         # EOF
 
-        # TODO: Move this import
-        from osh import parse_lib
-        # TODO: Thread arena.  need self.arena
+        from osh import parse_lib  # Avoid circular import
         w_parser = parse_lib.MakeWordParserForHereDoc(lines, self.arena)
         word = w_parser.ReadHereDocBody()
         if not word:

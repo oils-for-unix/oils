@@ -85,7 +85,7 @@ def InitLexer(s, arena):
 #   - line_id = arena.AddLine()
 
 
-# TODO:
+# NOTE:
 # - Does it make sense to create ParseState objects?  They have no dependencies
 #   -- just pure data.  Or just recreate them every time?  One issue is that
 #   you need somewhere to store the side effects -- errors for parsers, and the
@@ -93,7 +93,6 @@ def InitLexer(s, arena):
 
 def MakeParser(line_reader, arena):
   """Top level parser."""
-  # AtEnd() is true
   line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
@@ -138,5 +137,6 @@ def MakeParserForCommandSub(line_reader, lexer):
   return c_parser
 
 
-# More parser instantiations
-# - For Array Literal -- instantiate WordParser
+# Another parser instantiation:
+# - For Array Literal in word_parse.py WordParser:
+#   w_parser = WordParser(self.lexer, self.line_reader)

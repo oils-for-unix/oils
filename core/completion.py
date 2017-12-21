@@ -775,7 +775,6 @@ def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev):
   C1 = ChainedCompleter([A1, A2])
   comp_lookup.RegisterName('grep', C1)
 
-  make_parser = parse_lib.MakeParserForCompletion
   var_comp = VarAction(os.environ, mem)
   root_comp = RootCompleter(pool, ev, comp_lookup, var_comp)
 
