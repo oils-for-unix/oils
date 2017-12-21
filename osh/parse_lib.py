@@ -19,6 +19,8 @@ try:
 except ImportError:
   fastlex = None
 
+Id = id_kind.Id
+
 
 class MatchToken_Slow(object):
   """An abstract matcher that doesn't depend on OSH."""
@@ -29,6 +31,10 @@ class MatchToken_Slow(object):
 
   def __call__(self, lex_mode, line, start_pos):
     """Returns (id, end_pos)."""
+    # Simulate the EOL handling in re2c.
+    if start_pos >= len(line):
+      return Id.Eol_Tok, start_pos
+
     re_list = self.lexer_def[lex_mode]
     matches = []
     for regex, tok_type in re_list:
