@@ -121,18 +121,13 @@ class LineLexer(object):
     # want it to be "low level".  The only thing fabricated here is a newline
     # added at the last line, so we don't end with \0.
 
-    if self.arena is not None:
-      if self.arena_skip:
-        assert self.last_span_id != const.NO_INTEGER
-        span_id = self.last_span_id
-        self.arena_skip = False
-      else:
-        span_id = self.arena.AddLineSpan(line_span)
-        self.last_span_id = span_id
+    if self.arena_skip:
+      assert self.last_span_id != const.NO_INTEGER
+      span_id = self.last_span_id
+      self.arena_skip = False
     else:
-      # Completion parser might not have arena?
-      # We should probably get rid of this.
-      span_id = const.NO_INTEGER
+      span_id = self.arena.AddLineSpan(line_span)
+      self.last_span_id = span_id
 
     t = ast.token(tok_type, tok_val, span_id)
 
