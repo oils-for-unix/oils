@@ -246,7 +246,7 @@ class OilPrinter:
     # - >> becomes >+ or >-, or maybe >>>
 
     if node.tag == redir_e.Redir:
-      if node.fd == -1:
+      if node.fd == const.NO_INTEGER:
         if node.op_id == Id.Redir_Great:
           self.f.write('>')  # Allow us to replace the operator
           self.cursor.SkipUntil(node.spids[0] + 1)
