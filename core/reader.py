@@ -47,7 +47,7 @@ class InteractiveLineReader(_Reader):
 
   def _GetLine(self):
     try:
-      ret = raw_input(self.prompt_str) + '\n'
+      ret = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
       ret = None
     self.prompt_str = _PS2
@@ -77,8 +77,9 @@ class FileLineReader(_Reader):
     if not line:
       return None
 
-    # The last line should be passed to the Lexer with a '\n', even if it
-    # didn't have one.
+    # TODO: Remove this anachonism.  We no longer need every line to end with a
+    # newline.  See input handling comment at the top of osh/lex.py.  (I tried
+    # and it made a bunch of tests fail.)
     if not line.endswith('\n'):
       line += '\n'
 
