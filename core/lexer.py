@@ -16,6 +16,8 @@ from core import util
 from core.id_kind import Id
 from osh import ast_ as ast
 
+from core.util import log
+
 
 def C(pat, tok_type):
   """ Create a constant mapping like C('$*', VSub_Star) """
@@ -106,6 +108,8 @@ class LineLexer(object):
     #assert self.line_pos <= len(self.line), (self.line, self.line_pos)
     tok_type, end_pos = self.match_func(lex_mode, self.line, self.line_pos)
     #assert end_pos <= len(self.line)
+    if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
+      return ast.token(tok_type, '', const.NO_INTEGER)
 
     tok_val = self.line[self.line_pos:end_pos]
 
@@ -129,6 +133,7 @@ class LineLexer(object):
       span_id = self.arena.AddLineSpan(line_span)
       self.last_span_id = span_id
 
+    #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
     t = ast.token(tok_type, tok_val, span_id)
 
     self.line_pos = end_pos
@@ -226,5 +231,5 @@ class Lexer(object):
       if t.id != Id.Ignored_LineCont:
         break
 
-    #print("T", t, lex_mode)
+    #log('Read() Returning %s', t)
     return t

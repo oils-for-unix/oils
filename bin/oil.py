@@ -354,6 +354,7 @@ def OshMain(argv, login_shell):
 
     do_exec = True
     if opts.fix:
+      #log('SPANS: %s', arena.spans)
       osh2oil.PrintAsOil(arena, node, opts.debug_spans)
       do_exec = False
     if exec_opts.noexec:

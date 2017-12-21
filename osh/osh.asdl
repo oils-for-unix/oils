@@ -45,7 +45,7 @@ module osh
   -- rewrite the parser in C++, we might care for memory footprint.  But for 
   -- now this is convenient.
   -- NOTE: identical strings can shared, if we care.
-  token = (id id, string val, int? span_id)
+  token = (id id, string val, int span_id)
 
   -- Optional step for {100..50..-15}
   braced_step = (int val, int negated)

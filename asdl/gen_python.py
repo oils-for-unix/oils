@@ -68,6 +68,11 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
       elif f.seq:  # Array
         default = '[]'
 
+      # PROBLEM: Optional ints can't be zero!
+      # self.span_id = span_id or const.NO_INTEGER
+      # I don't want to add if statements checking against None?
+      # For now don't use optional ints.  We don't need it.
+
       default_str = (' or %s' % default) if default else ''
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str), depth)
 

@@ -10,6 +10,7 @@ import sys
 from core import util
 from core import word
 from core.id_kind import Id
+from asdl import const
 
 from osh import ast_ as ast
 
@@ -35,8 +36,14 @@ class Cursor:
     self.next_span_id = 0
 
   def PrintUntil(self, until_span_id):
+    # Sometimes we add +1
+    assert until_span_id < const.NO_INTEGER, 'Missing span ID, got %d' % until_span_id
+    #log('PrintUntil %d', until_span_id)
     for span_id in range(self.next_span_id, until_span_id):
+      #log('Looking up span id %d', span_id)
       span = self.arena.GetLineSpan(span_id)
+      #log('SPAN %s', span)
+
       line = self.arena.GetLine(span.line_id)
       piece = line[span.col : span.col + span.length]
       self.f.write(piece)
@@ -50,7 +57,7 @@ class Cursor:
     """Skip everything before next_span_id.
     Printing will start at next_span_id
     """
-    assert next_span_id >= 0, next_span_id
+    assert next_span_id != const.NO_INTEGER, next_span_id
     self.next_span_id = next_span_id
 
 
@@ -663,7 +670,7 @@ class OilPrinter:
 
       in_spid, semi_spid = node.spids
 
-      if in_spid == -1:
+      if in_spid == const.NO_INTEGER:
         #self.cursor.PrintUntil()  # 'for x' and then space
         self.f.write('for %s in @Argv ' % node.iter_name)
         self.cursor.SkipUntil(node.body.spids[0])
@@ -675,7 +682,7 @@ class OilPrinter:
         self.f.write(']')
         #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
 
-      if semi_spid != -1:
+      if semi_spid != const.NO_INTEGER:
         self.cursor.PrintUntil(semi_spid)
         self.cursor.SkipUntil(semi_spid + 1)
 
@@ -701,7 +708,7 @@ class OilPrinter:
       # elif foo; then -> } elif foo {
       for arm in node.arms:
         elif_spid, then_spid = arm.spids
-        if elif_spid != -1:
+        if elif_spid != const.NO_INTEGER:
           self.cursor.PrintUntil(elif_spid)
           self.f.write('} ')
 
@@ -781,13 +788,13 @@ class OilPrinter:
         for child in arm.action:
           self.DoCommand(child, local_symbols)
 
-        if dsemi_spid != -1:
+        if dsemi_spid != const.NO_INTEGER:
           self.cursor.PrintUntil(dsemi_spid)
           self.cursor.SkipUntil(dsemi_spid + 1)
           # NOTE: indentation here will be off because ;; is likely indented
           # with body.
           self.f.write('}')
-        elif last_spid != -1:
+        elif last_spid != const.NO_INTEGER:
           self.cursor.PrintUntil(last_spid)
           # NOTE: Indentation is also off here.  Arbitrarily put 4 spaces.
           self.f.write('    }\n')
@@ -928,7 +935,7 @@ class OilPrinter:
 
         # TODO: Double quoted part needs left and right IDs
         left_spid, right_spid = dq_part.spids
-        assert right_spid != -1, right_spid
+        assert right_spid != const.NO_INTEGER, right_spid
 
         if len(dq_part.parts) == 1:
           part0 = dq_part.parts[0]
@@ -997,7 +1004,7 @@ class OilPrinter:
 
   def DoWordPart(self, node, local_symbols, quoted=False):
     span_id = word.LeftMostSpanForPart(node)
-    if span_id is not None and span_id >= 0:
+    if span_id is not None and span_id != const.NO_INTEGER:
       span = self.arena.GetLineSpan(span_id)
       #print(span)
 
@@ -1173,7 +1180,6 @@ class OilPrinter:
       self.cursor.SkipUntil(right_spid + 1)
 
     else:
-      #log('WordPart not handled: %s', node)
       raise AssertionError(node.__class__.__name__)
 
   def DoArithExpr(self, node, local_symbols):
@@ -1192,7 +1198,6 @@ class OilPrinter:
       self.DoWordInCommand(node.w, local_symbols)
 
     else:
-      #log("Unhandled: %s", node)
       raise AssertionError(node.__class__.__name__)
 
   def DoBoolExpr(self, node):
