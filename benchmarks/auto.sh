@@ -27,6 +27,12 @@ _banner() {
   echo -----
 }
 
+# Check that the code is correct before measuring performance!
+prereq() {
+  test/unit.sh all
+  test/spec.sh all
+}
+
 # Writes a table of host and shells to stdout.  Writes text files and
 # calculates IDs for them as a side effect.
 #
