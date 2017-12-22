@@ -22,15 +22,19 @@ Oil Version 0.3.alpha1
 
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
-### Tests and Metrics
+### Tests Results
 
-- [Spec Test Results](test/spec.wwz/).  Test OSH behavior against
-  that of existing shells.
-- [Wild Test Results](test/wild.wwz/).  Parsing and translating thousands of
-  shell scripts with OSH.
-- [Line Counts](metrics/line-counts.wwz/).  How much code is in Oil?
+- [Spec Tests](test/spec.wwz/).  Test OSH behavior against that of existing
+  shells.
+- [Wild Tests](test/wild.wwz/).  Parsing and translating thousands of shell
+  scripts with OSH.
+- [Unit Tests](test/unit.wwz/).  Python unit test results.
+- [Gold Tests](test/gold.wwz/log.txt).  Comparisons against bash (using
+  implicit assertions, no golden output.)
+- [osh2oil Tests](test/osh2oil.wwz/log.txt).  Test the conversion of OSH to
+  Oil.
 
-### Benchmarks
+### Benchmarks and Metrics
 
 - [OSH Parser Performance](benchmarks.wwz/osh-parser/).  How fast does OSH
   parse compared to other shells?
@@ -39,6 +43,7 @@ Oil Version 0.3.alpha1
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory to
   shells use at startup?
 - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format.
+- [Line Counts](metrics/line-counts.wwz/).  How much code is in Oil?
 
 
 <!-- TODO: 

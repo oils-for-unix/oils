@@ -25,15 +25,14 @@ _compare() {
 
   if ! diff -u _tmp/left.txt _tmp/right.txt; then
     echo FAIL
-    return 1
+    exit 1
   fi
 
   if test $left_status != $right_status; then
     echo "FAIL: Got status $right_status but expected $left_status"
-    return 1
+    exit 1
   fi
 
-  echo PASS
   return 0
 }
 
@@ -115,7 +114,8 @@ declare() { _compare gold/declare.sh demo; }
 # Needs declare -p
 scope() { _compare gold/scope.sh; }
 
-all() {
+
+readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
   version-text
 
@@ -136,6 +136,26 @@ all() {
   # There are slight differences in the number of syscalls reported.  Not sure
   # of the cause.
   #startup-benchmark
+)
+
+all-passing() {
+  for t in "${PASSING[@]}"; do
+    # fail calls 'exit 1'
+    $t
+    echo "OK  $t"
+  done
+
+  echo
+  echo "All gold tests passed."
+}
+
+run-for-release() {
+  local out_dir=_tmp/gold
+  mkdir -p $out_dir
+
+  all-passing | tee $out_dir/log.txt
+
+  echo "Wrote $out_dir/log.txt"
 }
 
 "$@"

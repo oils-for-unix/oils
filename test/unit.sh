@@ -73,10 +73,9 @@ all() {
   echo "All unit tests passed."
 }
 
-# TODO: Use benchmarks/time.py to make a table.
-# all should just enumerate tasks
 #
-# tests-to-run | xargs -n 1 $0 check-for-success
+# For _release/VERSION
+#
 
 run-test-and-log() {
   local tasks_csv=$1
@@ -88,15 +87,15 @@ run-test-and-log() {
 
   benchmarks/time.py --out $tasks_csv \
     --field $t --field "$t.txt" -- \
-    $t > $log
+    $t >$log 2>&1
 }
 
-run-for-release() {
+run-all-and-log() {
   local out_dir=_tmp/unit
   mkdir -p $out_dir
   rm -r -f $out_dir/*
 
-  local tasks_csv=$out_dir/TASKS.csv
+  local tasks_csv=$out_dir/tasks.csv
 
   local status=0
 
@@ -119,6 +118,7 @@ run-for-release() {
   echo
   echo "All unit tests passed."
 }
+
 
 source benchmarks/common.sh
 
@@ -147,7 +147,7 @@ print-report() {
     <h2>Unit Test Results</h2>
 
 EOF
-  csv2html $in_dir/TASKS.csv
+  csv2html $in_dir/report.csv
 
   cat <<EOF
   </body>
@@ -165,8 +165,15 @@ EOF
 
 write-report() {
   local out=_tmp/unit/index.html
+  test/report.R unit _tmp/unit _tmp/unit
   print-report > $out
   echo "Wrote $out"
+}
+
+# Called by scripts/release.sh.
+run-for-release() {
+  run-all-and-log
+  write-report
 }
 
 "$@"

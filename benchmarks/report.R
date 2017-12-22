@@ -13,11 +13,6 @@ source('benchmarks/common.R')
 
 options(stringsAsFactors = F)
 
-Log = function(fmt, ...) {
-  cat(sprintf(fmt, ...))
-  cat('\n')
-}
-
 sourceUrl = function(path) {
   sprintf('https://github.com/oilshell/oil/blob/master/%s', path)
 }

@@ -95,8 +95,9 @@ build-and-test() {
 
   build/dev.sh all  # for {libc,fastlex}.so, needed to crawl deps
 
-  test/unit.sh all
+  test/unit.sh run-for-release
   test/osh2oil.sh run-for-release
+  test/gold.sh run-for-release
 
   build/prepare.sh configure
   build/prepare.sh build-python
@@ -333,12 +334,28 @@ _link() {
   ln -s -f -v --no-target-directory "$@"
 }
 
+compress-txt() {
+  local name=$1
+
+  log "--- test/$name"
+  local out="$root/test/$name.wwz"
+  pushd _tmp/$name
+  time zip -r -q $out .  # recursive, quiet
+  popd
+}
+
 compress() {
   local root=$PWD/_release/VERSION/
 
-  # TODO:
-  #log "--- test/unit"
-  #log "--- test/osh2oil"
+  # There is a single log.txt file in _tmp/{osh2oil,gold}
+  compress-txt osh2oil
+  compress-txt gold
+
+  log "--- test/unit"
+  local out="$root/test/unit.wwz"
+  pushd _tmp/unit
+  time zip -r -q $out .  # recursive, quiet
+  popd
 
   log "--- test/spec"
   local out="$root/test/spec.wwz"

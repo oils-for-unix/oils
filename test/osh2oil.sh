@@ -923,7 +923,7 @@ readonly -a PASSING=(
 
 all-passing() {
   for t in "${PASSING[@]}"; do
-    # fail calls 'exit 1' i this fails.
+    # fail calls 'exit 1'
     $t
     echo "OK  $t"
   done
