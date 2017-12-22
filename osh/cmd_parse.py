@@ -121,9 +121,10 @@ class CommandParser(object):
         h.body = word
         h.was_filled = True
       else:
-        # TODO: Add span_id to token
-        # Each line is a single span.
-        tokens = [ast.token(Id.Lit_Chars, line) for _, line in lines]
+        # Each line is a single span.  TODO: Add span_id to token.
+        tokens = [
+            ast.token(Id.Lit_Chars, line, const.NO_INTEGER)
+            for _, line in lines]
         parts = [ast.LiteralPart(t) for t in tokens]
         h.body = ast.CompoundWord(parts)
         h.was_filled = True

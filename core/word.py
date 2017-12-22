@@ -311,9 +311,10 @@ def TildeDetect(word):
       pre, post = val[:p], val[p:]
       prefix += pre
       tilde_part = ast.TildeSubPart(prefix)
-      # TODO: Need a span_id here.  Or use different algorithm.
-      #print('SPLITTING %s p = %d' % (word.parts[i], p), file=sys.stderr)
-      remainder_part = ast.LiteralPart(ast.token(Id.Lit_Chars, post))
+      # NOTE: no span_id here.  It would be nicer to use a different algorithm
+      # that didn't require this.
+      t = ast.token(Id.Lit_Chars, post, const.NO_INTEGER)
+      remainder_part = ast.LiteralPart(t)
       found_slash = True
       break
 
