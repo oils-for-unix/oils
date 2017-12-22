@@ -83,7 +83,7 @@ log() {
 remove-files() {
   rm -r -f \
     _devbuild _build _release \
-    _tmp/{spec,wild,unit,osh2oil} \
+    _tmp/{spec,wild,unit,gold,osh2oil} \
     _tmp/{osh-parser,osh-runtime,vm-baseline,oheap} \
     _tmp/metrics \
     _tmp/oil-tar-test
