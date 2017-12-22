@@ -21,7 +21,8 @@
 #   $0 deploy-tar
 #   $0 deploy-doc
 # 
-# Then go to oilshell.org repo and do ./deploy.sh all.
+# - Go to oilshell.org__deploy and "git add release/$VERSION".
+# - Go to oilshell.org repo and do ./deploy.sh all.
 
 set -o nounset
 set -o pipefail
@@ -280,6 +281,11 @@ git-changelog-0.3.alpha1() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.3.0() {
+  _git-changelog release/0.2.0 release/0.3.0 \
+    > _release/VERSION/changelog.html
+}
+
 
 # For announcement.html
 html-redirect() {
@@ -326,8 +332,8 @@ announcement-0.2() {
 }
 
 announcement-0.3() {
-  #html-redirect '/blog/2017/12/10.html' > _release/VERSION/announcement.html
-  no-announcement > _release/VERSION/announcement.html
+  html-redirect '/blog/2017/12/22.html' > _release/VERSION/announcement.html
+  #no-announcement > _release/VERSION/announcement.html
 }
 
 _link() {

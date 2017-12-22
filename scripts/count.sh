@@ -21,7 +21,7 @@ all() {
   echo
 
   echo 'TEST AUTOMATION'
-  wc -l test/*.{sh,py} | filter-py | sort --numeric
+  wc -l test/*.{sh,py,R} | filter-py | sort --numeric
   echo
 
   echo 'RELEASE AUTOMATION'
