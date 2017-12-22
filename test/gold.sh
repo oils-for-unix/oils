@@ -117,7 +117,7 @@ scope() { _compare gold/scope.sh; }
 
 readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
-  version-text
+  #version-text
 
   comments
   readonly_
