@@ -380,7 +380,7 @@ var-op-test() {
 }
 
 var-op-other() {
-  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -422,12 +422,12 @@ errexit() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/arith-context.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $ZSH $OSH "$@"
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 7 \
     $BASH $MKSH $OSH "$@"
 }
 

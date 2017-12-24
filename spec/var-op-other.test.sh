@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
 # Test combination of var ops.
+#
+# NOTE: There are also slice tests in {array,arith-context}.test.sh.
 
 ### String length
 v=foo
@@ -22,6 +24,7 @@ echo ${#undef}
 v=abcde
 echo ${#v:1:3}
 # status: 1
+# OK osh status: 2
 # N-I dash status: 0
 # N-I dash stdout: 5
 
@@ -128,3 +131,13 @@ echo ${foo: i-3-2 : i + 2}
 # stdout: def
 # N-I dash status: 2
 # N-I dash stdout-json: ""
+
+### Slice String with Unicode
+# mksh slices by bytes.
+foo='--μ--'
+echo ${foo:1:3}
+# stdout: -μ-
+# BUG mksh stdout: -μ
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+

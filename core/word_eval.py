@@ -815,10 +815,29 @@ class _WordPartEvaluator:
           raise AssertionError(val.__class__.__name__)
 
       elif op.tag == suffix_op_e.Slice:
-        # Either string slicing or array slicing.  However string slicing has
-        # a unicode problem? 
-        # Or maybe have a different operator for byte slice and char slice.
-        raise NotImplementedError(op)
+        # NOTE: The beginning can be negative, but Python handles this.  Might
+        # want to make it explicit.
+        # TODO: Check out of bounds errors?  begin > end?
+        if op.begin:
+          begin = self.arith_ev.Eval(op.begin)
+        else:
+          begin = 0
+
+        if op.length:
+          length = self.arith_ev.Eval(op.length)
+          end = begin + length
+        else:
+          end = None  # Python supports None as the end
+
+        if val.tag == value_e.Str:  # Slice characters in a string.
+          # TODO: Need to support unicode?  Write spec # tests.
+          val = runtime.Str(val.s[begin : end])
+
+        elif val.tag == value_e.StrArray:  # Slice array entries.
+          val = runtime.StrArray(val.strs[begin : end])
+
+        else:
+          raise AssertionError(val.__class__.__name__)
 
     # After applying suffixes, process decay_array here.
     if decay_array:
