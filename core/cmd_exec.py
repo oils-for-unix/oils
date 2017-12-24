@@ -984,12 +984,12 @@ class Executor(object):
     try:
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
-      # TODO: pretty print error with e.token
+      # NOTE: in bash return is a warning.  Maybe have a sane-* option?
+      ui.PrintFilenameAndLine(e.token.span_id, self.arena)
       log('osh failed: Unexpected %r at top level' % e.token.val)
       status = 1
     except util.FatalRuntimeError as e:
-      # TODO:
-      ui.PrettyPrintError(e, self.arena, sys.stderr)
+      ui.PrettyPrintError(e, self.arena)
       print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1
 
