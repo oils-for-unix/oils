@@ -91,42 +91,42 @@ def MakeStatusLines():
 
 
 def PrettyPrintError(parse_error, arena, f):
-    #print(parse_error)
-    if parse_error.span_id != const.NO_INTEGER:
-      span_id = parse_error.span_id
-    elif parse_error.token:
-      span_id = parse_error.token.span_id
-    elif parse_error.part:
-      span_id = word.LeftMostSpanForPart(parse_error.part)
-    elif parse_error.word:
-      span_id = word.LeftMostSpanForWord(parse_error.word)
-    else:
-      span_id = const.NO_INTEGER  # invalid
+  #print(parse_error)
+  if parse_error.span_id != const.NO_INTEGER:
+    span_id = parse_error.span_id
+  elif parse_error.token:
+    span_id = parse_error.token.span_id
+  elif parse_error.part:
+    span_id = word.LeftMostSpanForPart(parse_error.part)
+  elif parse_error.word:
+    span_id = word.LeftMostSpanForWord(parse_error.word)
+  else:
+    span_id = const.NO_INTEGER  # invalid
 
-    if span_id == const.NO_INTEGER:
-      line = '<no position info for token>'
-      path = '<unknown>'
-      line_num = -1
-      col = -1
-      length = -1
-    else:
-      line_span = arena.GetLineSpan(span_id)
-      line_id = line_span.line_id
-      line = arena.GetLine(line_id)
-      path, line_num = arena.GetDebugInfo(line_id)
-      col = line_span.col
-      length = line_span.length
+  if span_id == const.NO_INTEGER:
+    line = '<no position info for token>'
+    path = '<unknown>'
+    line_num = -1
+    col = -1
+    length = -1
+  else:
+    line_span = arena.GetLineSpan(span_id)
+    line_id = line_span.line_id
+    line = arena.GetLine(line_id)
+    path, line_num = arena.GetDebugInfo(line_id)
+    col = line_span.col
+    length = line_span.length
 
-    print('Line %d of %r' % (line_num+1, path), file=f)
-    print('  ' + line.rstrip(), file=f)
-    if col != -1:
-      f.write('  ')
-      # preserve tabs
-      for c in line[:col]:
-        f.write('\t' if c == '\t' else ' ')
-      f.write('^')
-      f.write('~' * (length-1))
-      f.write('\n')
+  print('Line %d of %r' % (line_num+1, path), file=f)
+  print('  ' + line.rstrip(), file=f)
+  if col != -1:
+    f.write('  ')
+    # preserve tabs
+    for c in line[:col]:
+      f.write('\t' if c == '\t' else ' ')
+    f.write('^')
+    f.write('~' * (length-1))
+    f.write('\n')
 
   #print(error_stack, file=f)
 
