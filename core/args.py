@@ -72,6 +72,8 @@ class _Attributes(object):
     for name, v in defaults.iteritems():
       setattr(self, name, v)
 
+  # TODO: Instead of setattr(), use Set(name, val), and change '-' to '_'?
+
   def __repr__(self):
     return '<_Attributes %s>' % self.__dict__
 

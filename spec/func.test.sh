@@ -26,15 +26,6 @@ f
 # stdout: one
 # status: 42
 
-### Return at top level is error
-return
-echo bad
-# N-I dash/mksh status: 0
-# N-I bash status: 0
-# N-I bash stdout: bad
-# status: 1
-# stdout-json: ""
-
 ### Dynamic Scope
 f() {
   echo $g_var

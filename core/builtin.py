@@ -614,7 +614,7 @@ AddOptionsToArgSpec(SET_SPEC)
 def SetExecOpts(exec_opts, opt_changes):
   """Used by bin/oil.py too."""
   for opt_name, b in opt_changes:
-    exec_opts.SetOption(opt_name, b)
+    exec_opts.SetOption(opt_name.replace('-', '_'), b)
 
 
 def Set(argv, exec_opts, mem):
@@ -631,7 +631,6 @@ def Set(argv, exec_opts, mem):
 
   arg, i = SET_SPEC.Parse(argv)
 
-  # TODO: exec_opts.SetOption()
   SetExecOpts(exec_opts, arg.opt_changes)
   if arg.saw_double_dash or i != len(argv):  # set -u shouldn't affect argv
     mem.SetArgv(argv[i:])

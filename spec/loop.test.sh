@@ -72,23 +72,6 @@ done
 # status: 0
 # stdout-json: "a\nb\n"
 
-### continue at top level is error
-# NOTE: bash and mksh both print warnings, but don't exit with an error.
-continue
-echo bad
-# N-I bash/dash/mksh status: 0
-# N-I bash/dash/mksh stdout: bad
-# stdout-json: ""
-# status: 1
-
-### break at top level is error
-break
-echo bad
-# N-I bash/dash/mksh status: 0
-# N-I bash/dash/mksh stdout: bad
-# stdout-json: ""
-# status: 1
-
 ### while in while condition
 # This is a consequence of the grammar
 while while true; do echo cond; break; done

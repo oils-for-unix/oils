@@ -88,6 +88,9 @@ class _ControlFlow(RuntimeError):
     assert self.IsReturn()
     return self.arg
 
+  def __repr__(self):
+    return '<_ControlFlow %s>' % self.token
+
 
 class Executor(object):
   """Executes the program by tree-walking.
@@ -136,6 +139,8 @@ class Executor(object):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = process.JobState()
 
+    self.loop_level = 0  # for detecting bad top-level break/continue
+
   def _Complete(self, argv):
     """complete builtin - register a completion function.
 
@@ -174,8 +179,10 @@ class Executor(object):
         err = c_parser.Error()
         ui.PrintErrorStack(err, self.arena, sys.stderr)
         return 1
+
       status = self._Execute(node)
       return status
+
     finally:
       self.arena.PopSource()
 
@@ -194,10 +201,12 @@ class Executor(object):
       # TODO: Should point to the source statement that failed.
       util.error('source: missing required argument')
       return 1
+
     try:
       with open(path) as f:
         line_reader = reader.FileLineReader(f, self.arena)
         _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+        # TODO: We have to set a bit to know that we are in 'source'
         return self._EvalHelper(c_parser, path)
     except _ControlFlow as e:
       if e.IsReturn():
@@ -749,8 +758,27 @@ class Executor(object):
       else:
         arg = 0  # return 0, break 0 levels, etc.
 
-      # NOTE: always raises so we don't set status.
-      raise _ControlFlow(node.token, arg)
+      # NOTE: We don't do anything about a top-level 'return' here.  Unlike in
+      # bash, that is OK.  If you can return from a sourced script, it makes
+      # sense to return from a main script.
+      ok = True
+      tok = node.token
+      if (tok.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
+          self.loop_level == 0):
+        ok = False
+        msg = 'Invalid control flow at top level'
+      
+      if ok:
+        raise _ControlFlow(tok, arg)
+
+      if self.exec_opts.strict_control_flow:
+        e_die(msg, token=tok)
+      else:
+        # Only print warnings, never fatal.
+        # Bash oddly only exits 1 for 'return', but no other shell does.
+        ui.PrintFilenameAndLine(tok.span_id, self.arena)
+        util.warn(msg)
+        status = 0
 
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
@@ -791,27 +819,32 @@ class Executor(object):
         _DonePredicate = lambda status: status == 0
 
       status = 0
-      while True:
-        self._PushErrExit()
-        try:
-          cond_status = self._ExecuteList(node.cond)
-        finally:
-          self._PopErrExit()
 
-        done = cond_status != 0
-        if _DonePredicate(cond_status):
-          break
-        try:
-          status = self._Execute(node.body)  # last one wins
-        except _ControlFlow as e:
-          if e.IsBreak():
-            status = 0
+      self.loop_level += 1
+      try:
+        while True:
+          self._PushErrExit()
+          try:
+            cond_status = self._ExecuteList(node.cond)
+          finally:
+            self._PopErrExit()
+
+          done = cond_status != 0
+          if _DonePredicate(cond_status):
             break
-          elif e.IsContinue():
-            status = 0
-            continue
-          else:  # return needs to pop up more
-            raise
+          try:
+            status = self._Execute(node.body)  # last one wins
+          except _ControlFlow as e:
+            if e.IsBreak():
+              status = 0
+              break
+            elif e.IsContinue():
+              status = 0
+              continue
+            else:  # return needs to pop up more
+              raise
+      finally:
+        self.loop_level -= 1
 
     elif node.tag == command_e.ForEach:
       iter_name = node.iter_name
@@ -823,23 +856,28 @@ class Executor(object):
         # We need word splitting and so forth
         # NOTE: This expands globs too.  TODO: We should pass in a Globber()
         # object.
-      status = 0  # in case we don't loop
-      for x in iter_list:
-        #log('> ForEach setting %r', x)
-        state.SetLocalString(self.mem, iter_name, x)
-        #log('<')
 
-        try:
-          status = self._Execute(node.body)  # last one wins
-        except _ControlFlow as e:
-          if e.IsBreak():
-            status = 0
-            break
-          elif e.IsContinue():
-            status = 0
-            continue
-          else:  # return needs to pop up more
-            raise
+      status = 0  # in case we don't loop
+      self.loop_level += 1
+      try:
+        for x in iter_list:
+          #log('> ForEach setting %r', x)
+          state.SetLocalString(self.mem, iter_name, x)
+          #log('<')
+
+          try:
+            status = self._Execute(node.body)  # last one wins
+          except _ControlFlow as e:
+            if e.IsBreak():
+              status = 0
+              break
+            elif e.IsContinue():
+              status = 0
+              continue
+            else:  # return needs to pop up more
+              raise
+      finally:
+        self.loop_level -= 1
 
     elif node.tag == command_e.ForExpr:
       raise NotImplementedError(node.tag)
@@ -984,10 +1022,11 @@ class Executor(object):
     try:
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
-      # NOTE: in bash return is a warning.  Maybe have a sane-* option?
-      ui.PrintFilenameAndLine(e.token.span_id, self.arena)
-      log('osh failed: Unexpected %r at top level' % e.token.val)
-      status = 1
+      # Return at top level is OK, unlike in bash.
+      if e.IsReturn():
+        status = e.ReturnValue()
+      else:
+        raise
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena)
       print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)

@@ -72,6 +72,9 @@ Directory Structure
       smoke.sh
       sh_spec.py      # shell spec test framework
     spec/             # spec test cases
+      bin/            # tools used in many spec tests
+      testdata/       # scripts for specific test cases
+      errors/         # TODO: migrate these bad shell scripts
     scripts/          # Other development scripts
     web/              # HTML/JS/CSS for tests and tools
 

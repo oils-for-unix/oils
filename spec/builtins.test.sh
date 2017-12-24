@@ -95,13 +95,6 @@ echo status=$?
 # OK bash stdout: status=2
 # OK dash stdout: status=127
 
-### Source script that returns
-echo one
-. spec/return-helper.sh
-echo $?
-echo two
-# stdout-json: "one\nreturn-helper.sh\n42\ntwo\n"
-
 ### Exit builtin
 exit 3
 # status: 3

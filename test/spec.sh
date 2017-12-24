@@ -344,7 +344,7 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec spec/here-doc.test.sh --osh-failures-allowed 3 --range 0-30 \
+  sh-spec spec/here-doc.test.sh --osh-failures-allowed 2 --range 0-30 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -408,6 +408,11 @@ var-sub-quote() {
 
 sh-options() {
   sh-spec spec/sh-options.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+strict-options() {
+  sh-spec spec/strict-options.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

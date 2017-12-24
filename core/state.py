@@ -74,9 +74,14 @@ SET_OPTIONS = [
     (None, 'pipefail'),
 
     (None, 'debug-completion'),
+
+    (None, 'strict-control-flow'),
 ]
 
-_SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
+# NOTE: We have to change - to _ here, because we need to match _Attributes in
+# core/args.py.
+
+_SET_OPTION_NAMES = set(name.replace('-', '_') for _, name in SET_OPTIONS)
 
 
 class ExecOpts(object):
@@ -91,6 +96,7 @@ class ExecOpts(object):
     self.noexec = False  # -n
     self.noclobber = False  # -C
     self.debug_completion = False
+    self.strict_control_flow = False
 
     # shopt -s / -u
     self.nullglob = False 
@@ -131,11 +137,14 @@ class ExecOpts(object):
 
   def SetOption(self, opt_name, b):
     """ For set -o, set +o, or shopt -s/-u -o. """
+    assert '-' not in opt_name, 'Option names should have _, not -'
     if opt_name not in _SET_OPTION_NAMES:
       raise args.UsageError('Invalid option %r' % opt_name)
     if opt_name == 'errexit':
       self.errexit.Set(b)
     else:
+      # strict-control-flow -> strict_control_flow
+      opt_name = opt_name.replace('-', '_')
       setattr(self, opt_name, b)
 
   SHOPT_OPTIONS = ('nullglob', 'failglob')
