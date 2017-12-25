@@ -70,9 +70,11 @@ class _Attributes(object):
     self.opt_changes = []  # special name
     self.saw_double_dash = False  # for set --
     for name, v in defaults.iteritems():
-      setattr(self, name, v)
+      self.Set(name, v)
 
-  # TODO: Instead of setattr(), use Set(name, val), and change '-' to '_'?
+  def Set(self, name, value):
+    # debug-completion -> debug_completion
+    setattr(self, name.replace('-', '_'), value)
 
   def __repr__(self):
     return '<_Attributes %s>' % self.__dict__
@@ -152,7 +154,7 @@ class SetToArg(_Action):
       else:
         raise AssertionError
 
-    setattr(out, self.name, value)
+    out.Set(self.name, value)
     return self.quit_parsing_flags
 
 
@@ -163,7 +165,7 @@ class SetToTrue(_Action):
 
   def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches."""
-    setattr(out, self.name, True)
+    out.Set(self.name, True)
 
 
 class SetOption(_Action):
@@ -197,7 +199,7 @@ class SetNamedOption(_Action):
     except IndexError:
       raise UsageError('Expected argument for option')
 
-    attr_name = arg.replace('-', '_')
+    attr_name = arg
     # Validate the option name against a list of valid names.
     if attr_name not in self.names:
       raise UsageError('Invalid option name %r' % arg)
@@ -252,7 +254,7 @@ class FlagsAndOptions(object):
     """ --rcfile """
     assert long_name.startswith('--'), long_name
 
-    name = long_name[2:].replace('-', '_')
+    name = long_name[2:]
     if arg_type is None:
       self.actions_long[long_name] = SetToTrue(name)
     else:
@@ -266,7 +268,7 @@ class FlagsAndOptions(object):
       short_flag: 'e'
       name: errexit
     """
-    attr_name = name.replace('-', '_')  # debug-completion -> debug_completion
+    attr_name = name
     if short_flag:
       assert not short_flag.startswith('-'), short_flag
       self.actions_short[short_flag] = SetOption(attr_name)

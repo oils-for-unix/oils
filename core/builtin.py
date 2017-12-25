@@ -614,7 +614,7 @@ AddOptionsToArgSpec(SET_SPEC)
 def SetExecOpts(exec_opts, opt_changes):
   """Used by bin/oil.py too."""
   for opt_name, b in opt_changes:
-    exec_opts.SetOption(opt_name.replace('-', '_'), b)
+    exec_opts.SetOption(opt_name, b)
 
 
 def Set(argv, exec_opts, mem):

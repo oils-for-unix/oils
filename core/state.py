@@ -78,10 +78,7 @@ SET_OPTIONS = [
     (None, 'strict-control-flow'),
 ]
 
-# NOTE: We have to change - to _ here, because we need to match _Attributes in
-# core/args.py.
-
-_SET_OPTION_NAMES = set(name.replace('-', '_') for _, name in SET_OPTIONS)
+_SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 
 class ExecOpts(object):
@@ -137,7 +134,7 @@ class ExecOpts(object):
 
   def SetOption(self, opt_name, b):
     """ For set -o, set +o, or shopt -s/-u -o. """
-    assert '-' not in opt_name, 'Option names should have _, not -'
+    assert '_' not in opt_name
     if opt_name not in _SET_OPTION_NAMES:
       raise args.UsageError('Invalid option %r' % opt_name)
     if opt_name == 'errexit':
