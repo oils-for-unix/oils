@@ -77,8 +77,19 @@ X [Unsupported]   enable
 SHELL OPTIONS
   [Errors]        nounset   errexit   pipefail
   [Globbing]      noglob   failglob   nullglob
-  [Debugging]     xtrace   X verbose
+  [Debugging]     xtrace   X verbose   X extdebug
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    TODO
+  [OSH Strict]    STRICT   strict-control-flow
   [OSH Sane]      TODO
+
+ENVIRONMENT VARIABLES
+  [Shell Options] X SHELLOPTS   X BASHOPTS
+  [Process State] UID   EUID   
+  [cd]            PWD   OLDPWD
+  [getopts]       OPTIND   OPTARG
+  [read]          REPLY
+  [Other]         IFS
+  [Libaries]      X RANDOM  TODO:TIMESTAMP
+
+

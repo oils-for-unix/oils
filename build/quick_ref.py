@@ -14,10 +14,10 @@ import sys
 CAPS_RE = re.compile(r'^[A-Z ]+$')
 
 # 1. Optional X, then a SINGLE space
-# 2. lower-case topic
+# 2. lower-case or upper-case topic
 # 3. Optional: A SINGLE space, then punctuation
 
-TOPIC_RE = re.compile(r'\b(X[ ])?([a-z\-]+)([ ]\S+)?', re.VERBOSE)
+TOPIC_RE = re.compile(r'\b(X[ ])?([a-zA-Z\-]+)([ ]\S+)?', re.VERBOSE)
 
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.

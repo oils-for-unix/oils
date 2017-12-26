@@ -125,7 +125,7 @@ class Executor(object):
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.ev)
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.ev)
 
-    self.traps = {}
+    self.traps = {}  # signal/hook -> LST node
     self.fd_state = process.FdState()
     self.dir_stack = state.DirStack()
 
@@ -618,7 +618,7 @@ class Executor(object):
     if node.tag == command_e.SimpleCommand:
       check_errexit = True
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
-      # redirected here, which screws up loggnig.  For example, 'echo hi
+      # redirected here, which screws up logging.  For example, 'echo hi
       # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
       # redirects.
 

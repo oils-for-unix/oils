@@ -252,7 +252,12 @@ if_() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+builtin-io() {
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
