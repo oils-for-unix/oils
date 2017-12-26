@@ -66,3 +66,37 @@ dirs -p
 # stdout-json: "/tmp\n/\n/lib\n/tmp\n/\n"
 # N-I dash/mksh status: 127
 # N-I dash/mksh stdout-json: ""
+
+### dirs -l to print in long format, no tilde prefix
+# Can't use the OSH test harness for this because
+# /home/<username> may be included in a path.
+cd /
+HOME=/tmp
+mkdir -p $HOME/oil_test
+pushd $HOME/oil_test >/dev/null
+dirs
+dirs -l
+# stdout-json: "~/oil_test /\n/tmp/oil_test /\n"
+# status: 0
+
+### dirs to print using tilde-prefix format
+cd /
+HOME=$TMP
+mkdir -p $HOME/oil_test
+pushd $HOME/oil_test >/dev/null
+dirs
+# stdout-json: "~/oil_test /\n"
+# status: 0
+
+### dirs test of path alias `..`
+cd /tmp
+pushd .. >/dev/null
+dirs
+# stdout-json: "/ /tmp\n"
+# status: 0
+
+### dirs test of path alias `.`
+cd /tmp
+pushd . >/dev/null
+dirs
+# stdout-json: "/tmp /tmp\n"
