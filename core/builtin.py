@@ -229,6 +229,7 @@ C = lexer.C
 
 ECHO_LEXER = lexer.SimpleLexer([
   R(r'\\[0abeEfrtnv]', Id.Char_OneChar),
+  C(r'\c', Id.Char_Stop),
 
   # Note: tokens above \0377 can either be truncated or be flagged a syntax
   # error in strict mode.
@@ -276,6 +277,9 @@ def _EvalStringPart(id_, value):
     c = value[1]
     return _ONE_CHAR[c]
 
+  elif id_ == Id.Char_Stop:  # \c returns a special sentinel
+    return None
+
   elif id_ == Id.Char_Octal:
     # TODO: Error checking for \0777
     s = value[2:]
@@ -315,21 +319,38 @@ echo_spec.ShortFlag('-n')
 
 def Echo(argv):
   """
-  echo builtin.  Doesn't depend on executor state.
+  echo builtin.
 
-  TODO: Where to put help?  docstring?
+  set -o sane-echo could do the following:
+  - only one arg, no implicit joining.
+  - no -e: should be echo c'one\ttwo\t'
+  - no -n: should be write 'one'
+
+  multiple args on a line:
+  echo-lines one two three
   """
   # NOTE: both getopt and optparse are unsuitable for 'echo' because:
   # - 'echo -c' should print '-c', not fail
   # - echo '---' should print ---, not fail
 
-  arg, i = echo_spec.ParseLikeEcho(argv)
+  arg, arg_index = echo_spec.ParseLikeEcho(argv)
+  argv = argv[arg_index:]
   if arg.e:
     new_argv = []
     for a in argv:
       parts = []
       for id_, value in ECHO_LEXER.Tokens(a):
         p = _EvalStringPart(id_, value)
+
+        # Unusual behavior: '\c' prints what is there and aborts processing!
+        if p is None:
+          new_argv.append(''.join(parts))
+          for i, a in enumerate(new_argv):
+            if i != 0:
+              sys.stdout.write(' ')  # arg separator
+            sys.stdout.write(a)
+          return 0  # EARLY RETURN
+
         parts.append(p)
       new_argv.append(''.join(parts))
 
@@ -337,12 +358,10 @@ def Echo(argv):
     argv = new_argv
 
   #log('echo argv %s', argv)
-  n = len(argv)
-  for i in xrange(i, n-1):
-    sys.stdout.write(argv[i])
-    sys.stdout.write(' ')  # arg separator
-  if argv:
-    sys.stdout.write(argv[-1])
+  for i, a in enumerate(argv):
+    if i != 0:
+      sys.stdout.write(' ')  # arg separator
+    sys.stdout.write(a)
   if not arg.n:
     sys.stdout.write('\n')
 

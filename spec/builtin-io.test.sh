@@ -43,6 +43,12 @@ echo -e 'ab\0cd'
 # dash truncates it
 # BUG dash stdout-json: "-e ab\n"
 
+### \c stops processing input
+echo -e xy  'ab\cde'  'ab\cde'
+# stdout-json: "xy ab"
+# OK dash stdout-json: "-e xy ab"
+# N-I mksh stdout-json: "xy abde abde"
+
 ### echo -e with hex escape
 echo -e 'abcd\x65f'
 # stdout-json: "abcdef\n"

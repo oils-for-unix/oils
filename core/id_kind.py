@@ -399,7 +399,7 @@ def _AddKinds(spec):
 
   # For C-escaped strings.
   spec.AddKind('Char', [
-      'OneChar', 'Hex', 'Octal', 'Unicode4', 'Unicode8', 'Literals'
+      'OneChar', 'Stop', 'Hex', 'Octal', 'Unicode4', 'Unicode8', 'Literals'
   ])
 
 
