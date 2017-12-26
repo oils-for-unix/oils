@@ -30,9 +30,11 @@ import os
 import sys
 
 from core import args
+from core import lexer
 from core import runtime
 from core import util
 from core import state
+from core.id_kind import Id
 
 from osh import lex
 
@@ -218,6 +220,94 @@ def Resolve(argv0):
   return EBuiltin.NONE
 
 
+R = lexer.R
+C = lexer.C
+
+# TODO:
+# - See if re2c supports {1,2} etc.
+# - the DOLLAR_SQ lex state needs most of this logic.
+
+ECHO_LEXER = lexer.SimpleLexer([
+  R(r'\\[0abeEfrtnv]', Id.Char_OneChar),
+
+  # Note: tokens above \0377 can either be truncated or be flagged a syntax
+  # error in strict mode.
+  R(r'\\0[0-7]{1,3}', Id.Char_Octal),
+
+  # \x6 is valid in bash
+  R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
+  R(r'\\u[0-9]{1,4}', Id.Char_Unicode4),
+  R(r'\\U[0-9]{1,8}', Id.Char_Unicode8),
+
+  R(r'[^\\]+', Id.Char_Literals),
+  R(r'\\.', Id.Char_Literals),
+
+  # Backslash that ends the string.
+  R('\\$', Id.Char_Literals),
+  # For re2c.  TODO: need to make that translation.
+  C('\\\0', Id.Char_Literals),
+])
+
+
+_ONE_CHAR = {
+    '0': '\0',
+    'a': '\a',
+    'b': '\b',
+    'e': '\x1b',
+    'E': '\x1b',
+    'f': '\f',
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'v': '\v',
+}
+
+
+# Strict mode syntax errors:
+#
+# \x is a syntax error -- needs two digits (It's like this in C)
+# \0777 is a syntax error -- we shouldn't do modulus
+# \d could be a syntax error -- it is better written as \\d
+
+def _EvalStringPart(id_, value):
+  # TODO: This has to go in the compile stage for DOLLAR_SQ strings.
+
+  if id_ == Id.Char_OneChar:
+    c = value[1]
+    return _ONE_CHAR[c]
+
+  elif id_ == Id.Char_Octal:
+    # TODO: Error checking for \0777
+    s = value[2:]
+    i = int(s, 8)
+    if i >= 256:
+      i = i % 256
+      # NOTE: This is for strict mode
+      #raise AssertionError('Out of range')
+    return chr(i)
+
+  elif id_ == Id.Char_Hex:
+    s = value[2:]
+    i = int(s, 16)
+    return chr(i)
+
+  elif id_ == Id.Char_Unicode4:
+    s = value[2:]
+    i = int(s, 16)
+    return unichr(i)
+
+  elif id_ == Id.Char_Unicode8:
+    s = value[2:]
+    i = int(s, 16)
+    return unichr(i)
+
+  elif id_ == Id.Char_Literals:
+    return value
+
+  else:
+    raise AssertionError
+
+
 echo_spec = _Register('echo')
 echo_spec.ShortFlag('-e')  # no backslash escapes
 echo_spec.ShortFlag('-n')
@@ -235,7 +325,16 @@ def Echo(argv):
 
   arg, i = echo_spec.ParseLikeEcho(argv)
   if arg.e:
-    util.warn('*** echo -e not implemented ***')
+    new_argv = []
+    for a in argv:
+      parts = []
+      for id_, value in ECHO_LEXER.Tokens(a):
+        p = _EvalStringPart(id_, value)
+        parts.append(p)
+      new_argv.append(''.join(parts))
+
+    # Replace it
+    argv = new_argv
 
   #log('echo argv %s', argv)
   n = len(argv)

@@ -257,8 +257,8 @@ builtins() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 builtins2() {

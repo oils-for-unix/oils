@@ -7,6 +7,9 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 id_kind.py - Id and Kind definitions, used for Token, Word, Nodes, etc.
+
+NOTE: If this changes, the lexer may need to be recompiled with
+build/codegen.sh lexer.
 """
 
 from core import util
@@ -393,6 +396,11 @@ def _AddKinds(spec):
   # Unlike bash, we parse control flow statically.  They're not
   # dynamically-resolved builtins.
   spec.AddKind('ControlFlow', ['Break', 'Continue', 'Return'])
+
+  # For C-escaped strings.
+  spec.AddKind('Char', [
+      'OneChar', 'Hex', 'Octal', 'Unicode4', 'Unicode8', 'Literals'
+  ])
 
 
 # Id -> OperandType
