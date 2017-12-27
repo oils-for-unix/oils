@@ -44,7 +44,7 @@ def InitExecutor():
   builtins = builtin.BUILTIN_DEF
   funcs = {}
   comp_funcs = {}
-  exec_opts = state.ExecOpts()
+  exec_opts = state.ExecOpts(mem)
   pool = alloc.Pool()
   arena = pool.NewArena()
   return cmd_exec.Executor(mem, status_lines, funcs, completion, comp_funcs,
@@ -56,7 +56,7 @@ def InitEvaluator():
   state.SetLocalString(mem, 'x', 'xxx')
   state.SetLocalString(mem, 'y', 'yyy')
 
-  exec_opts = state.ExecOpts()
+  exec_opts = state.ExecOpts(mem)
   # Don't need side effects for most things
   return word_eval.CompletionWordEvaluator(mem, exec_opts)
 

@@ -248,7 +248,8 @@ def OshMain(argv, login_shell):
   else:
     # TODO: NullLookup?
     comp_lookup = None
-  exec_opts = state.ExecOpts()
+
+  exec_opts = state.ExecOpts(mem)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
 
   # TODO: How to get a handle to initialized builtins here?

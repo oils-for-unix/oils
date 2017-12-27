@@ -83,7 +83,13 @@ _SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 class ExecOpts(object):
 
-  def __init__(self):
+  def __init__(self, mem):
+    """
+    Args:
+      mem: state.Mem, for SHELLOPTS
+    """
+    self.mem = mem
+
     # set -o / set +o
     self.errexit = _ErrExit()  # -e
     self.nounset = False  # -u
@@ -94,6 +100,10 @@ class ExecOpts(object):
     self.noclobber = False  # -C
     self.debug_completion = False
     self.strict_control_flow = False
+
+    shellopts = self.mem.GetVar('SHELLOPTS')
+    assert shellopts.tag == value_e.Str, shellopts
+    self._InitFromEnv(shellopts.s)
 
     # shopt -s / -u
     self.nullglob = False 
@@ -107,6 +117,13 @@ class ExecOpts(object):
     self.strict_scope = False  # disable dynamic scope
 
     # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
+
+  def _InitFromEnv(self, shellopts):
+    # e.g. errexit:nounset:pipefail
+    lookup = set(shellopts.split(':'))
+    for _, name in SET_OPTIONS:
+      if name in lookup:
+        self._SetOption(name, True)
 
   def ErrExit(self):
     return self.errexit.errexit
@@ -129,11 +146,8 @@ class ExecOpts(object):
     # - B for brace expansion
     return ''.join(chars)
 
-  # TODO: Share with the other spec
-  SET_OPTIONS = ('errexit',)
-
-  def SetOption(self, opt_name, b):
-    """ For set -o, set +o, or shopt -s/-u -o. """
+  def _SetOption(self, opt_name, b):
+    """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
     if opt_name not in _SET_OPTION_NAMES:
       raise args.UsageError('Invalid option %r' % opt_name)
@@ -143,6 +157,34 @@ class ExecOpts(object):
       # strict-control-flow -> strict_control_flow
       opt_name = opt_name.replace('-', '_')
       setattr(self, opt_name, b)
+
+  def SetOption(self, opt_name, b):
+    """ For set -o, set +o, or shopt -s/-u -o. """
+    self._SetOption(opt_name, b)
+
+    val = self.mem.GetVar('SHELLOPTS')
+    assert val.tag == value_e.Str
+    shellopts = val.s
+
+    # Now check if SHELLOPTS needs to be updated.  It may be exported.
+    #
+    # NOTE: It might be better to skip rewriting SEHLLOPTS in the common case
+    # where it is not used.  We could do it lazily upon GET.
+
+    # Also, it would be slightly more efficient to update SHELLOPTS if
+    # settings were batched, Examples:
+    # - set -eu
+    # - shopt -s foo bar
+    if b:
+      if opt_name not in shellopts:
+        new_val = runtime.Str('%s:%s' % (shellopts, opt_name))
+        self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+    else:
+      if opt_name in shellopts:
+        names = shellopts.split(':')
+        names = [n for n in names if n != opt_name]
+        new_val = runtime.Str(':'.join(names))
+        self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
   SHOPT_OPTIONS = ('nullglob', 'failglob')
 
@@ -287,6 +329,16 @@ class Mem(object):
     for n, v in environ.iteritems():
       self.SetVar(ast.LhsName(n), runtime.Str(v),
                  (var_flags_e.Exported,), scope_e.GlobalOnly)
+
+    # If it's not in the environment, initialize it.  This makes it easier to
+    # update later in ExecOpts.
+    v = self.GetVar('SHELLOPTS')
+    if v.tag == value_e.Undef:
+      SetGlobalString(self, 'SHELLOPTS', '')
+    # Now make it readonly
+    self.SetVar(
+        ast.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
+        scope_e.GlobalOnly)
 
   #
   # Stack
@@ -532,6 +584,20 @@ class Mem(object):
     else:
       raise AssertionError
 
+  def InternalSetGlobal(self, name, new_val):
+    """For setting read-only globals internally.
+
+    Args:
+      name: string (not Lhs)
+      new_val: value
+
+    The variable must already exist.
+
+    Use case: SHELLOPTS.
+    """
+    cell = self.var_stack[0][name]
+    cell.val = new_val
+
   # NOTE: Have a default for convenience
   def GetVar(self, name, lookup_mode=scope_e.Dynamic):
     assert isinstance(name, str), name
@@ -586,6 +652,11 @@ class Mem(object):
 
   def GetExported(self):
     """Get all the variables that are marked exported."""
+    # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?
+    # We have to notice these things:
+    # - If an exported variable is changed.
+    # - If the set of exported variables changes.  
+
     exported = {}
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.

@@ -815,7 +815,6 @@ def Shopt(argv, exec_opts):
   if b is None:
     raise NotImplementedError  # Display options
 
-  # TODO: exec_opts.SetShoptOption()
   for opt_name in argv[i:]:
     if arg.o:
       exec_opts.SetOption(opt_name, b)

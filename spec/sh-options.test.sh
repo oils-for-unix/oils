@@ -206,3 +206,21 @@ echo foo > $TMP/no-clobber
 echo $?
 # stdout-json: "0\n1\n"
 # OK dash stdout-json: "0\n2\n"
+
+### SHELLOPTS is updated when options are changed
+echo $SHELLOPTS | grep -q xtrace
+echo $?
+set -x
+echo $SHELLOPTS | grep -q xtrace
+echo $?
+set +x
+echo $SHELLOPTS | grep -q xtrace
+echo $?
+# stdout-json: "1\n0\n1\n"
+# N-I dash/mksh stdout-json: "1\n1\n1\n"
+
+### SHELLOPTS is readonly
+SHELLOPTS=x
+echo status=$?
+# stdout: status=1
+# N-I dash/mksh stdout: status=0

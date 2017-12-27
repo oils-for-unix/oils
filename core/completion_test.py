@@ -33,7 +33,8 @@ A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
 C1 = completion.ChainedCompleter([A1])
 
 status_lines = [ui.TestStatusLine()] * 10  # A bunch of dummies
-exec_opts = state.ExecOpts()
+mem = state.Mem('', [], {}, None)
+exec_opts = state.ExecOpts(mem)
 STATUS = completion.StatusOutput(status_lines, exec_opts)
 
 
@@ -144,7 +145,7 @@ class CompletionTest(unittest.TestCase):
 
 def _MakeTestEvaluator():
   mem = state.Mem('', [], {}, None)
-  exec_opts = state.ExecOpts()
+  exec_opts = state.ExecOpts(mem)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
   return ev
 
