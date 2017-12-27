@@ -25,10 +25,10 @@ COMMAND LANGUAGE
 
 ASSIGNING VARIABLES
   [Keywords]      local   readonly   export   unset   shift
-                  X declare   X typeset   X let
+                  declare   typeset   X let
   [Operators]     assign        str='xyz'
                   append        str+='abc'
-  [Compound Data] array         array=(a b c)   array[x]=b
+  [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
                   X assoc       declare -A assoc=([a]=1 [b]=2)
 
 WORD LANGUAGE
@@ -42,7 +42,7 @@ WORD LANGUAGE
   [Var Ops]       op-test       ${x:-default}  
                   op-unary      ${x%%suffix}  etc.
                   op-str        ${x/y/z}
-                  X op-slice    ${a[@]:0:1}
+                  op-slice      ${a[@]:0:1}
 
 OTHER SHELL SUBLANGUAGES
   [Arithmetic]    arith-intro   Contexts where math is allowed
@@ -80,27 +80,33 @@ SHELL OPTIONS
   [Debugging]     xtrace   X verbose   X extdebug
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    STRICT   strict-control-flow
-  [OSH Sane]      TODO
+  [OSH Strict]    STRICT   strict-control-flow   X strict-arith
+  [OSH Sane]      SANE   X sane-no-word-split   X sane-glob
 
 ENVIRONMENT VARIABLES
 X [Prompts]       PS1   PS2
+X [select]        PS3
+  [xtrace]        PS4
   [Shell Options] X SHELLOPTS   X BASHOPTS
+  [Other]         HOME   IFS
+
+SPECIAL VARIABLES
+X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
+X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
+                  @BASH_ARGV   @BASH_ARGC   LINENO
   [Process State] X BASHPID   X PPID   UID   EUID   
+X [Process Stack] BASH_SUBSHELL   SHLVL
+X [Shell State]   BASH_CMDS   DIRSTACK
   [cd]            PWD   OLDPWD
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
-X [select]        PS3
-  [xtrace]        PS4
-  [Platform]      HOME   X HOSTNAME   X OSTYPE
   [Functions]     X RANDOM   X SECONDS
-X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
-                  @BASH_ARGV   @BASH_ARGC   LINENO
-X [Process Stack] BASH_SUBSHELL   SHLVL
-X [Shell State]   BASH_CMDS   DIRSTACK
-  [Other]         IFS   X BASH_REMATCH   @PIPESTATUS
+  [Other]         BASH_REMATCH   @PIPESTATUS
 
-TRAPS
+PLUGINS AND HOOKS
 X [Signals]       SIGINT   SIGABRT   SIGTODO
-X [Debugging]     ERR   DEBUG   RETURN   EXIT
+X [Traps]         ERR   DEBUG   RETURN   EXIT
+X [Words]         PS1   PS2   PS4
+X [Completion]    
+X [Other]         command_not_found
 
