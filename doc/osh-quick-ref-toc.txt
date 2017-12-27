@@ -84,12 +84,23 @@ SHELL OPTIONS
   [OSH Sane]      TODO
 
 ENVIRONMENT VARIABLES
+X [Prompts]       PS1   PS2
   [Shell Options] X SHELLOPTS   X BASHOPTS
-  [Process State] UID   EUID   
+  [Process State] X BASHPID   X PPID   UID   EUID   
   [cd]            PWD   OLDPWD
-  [getopts]       OPTIND   OPTARG
+  [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
-  [Other]         IFS
-  [Libaries]      X RANDOM  TODO:TIMESTAMP
+X [select]        PS3
+  [xtrace]        PS4
+  [Platform]      HOME   X HOSTNAME   X OSTYPE
+  [Functions]     X RANDOM   X SECONDS
+X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
+                  @BASH_ARGV   @BASH_ARGC   LINENO
+X [Process Stack] BASH_SUBSHELL   SHLVL
+X [Shell State]   BASH_CMDS   DIRSTACK
+  [Other]         IFS   X BASH_REMATCH   @PIPESTATUS
 
+TRAPS
+X [Signals]       SIGINT   SIGABRT   SIGTODO
+X [Debugging]     ERR   DEBUG   RETURN   EXIT
 

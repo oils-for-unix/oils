@@ -17,7 +17,7 @@ CAPS_RE = re.compile(r'^[A-Z ]+$')
 # 2. lower-case or upper-case topic
 # 3. Optional: A SINGLE space, then punctuation
 
-TOPIC_RE = re.compile(r'\b(X[ ])?([a-zA-Z\-]+)([ ]\S+)?', re.VERBOSE)
+TOPIC_RE = re.compile(r'\b(X[ ])?\@?([a-zA-Z0-9_\-]+)([ ]\S+)?', re.VERBOSE)
 
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.
@@ -76,7 +76,7 @@ def HighlightLine(line):
       parts.append(RED_X)
 
     # Topics on the same line must be separated by exactly THREE spaces
-    if found_one and prior_piece != '   ':
+    if found_one and prior_piece not in ('   ', '   @'):
       last_end = start
       break  # stop linking
 

@@ -638,10 +638,14 @@ class Executor(object):
       self._EvalEnv(node.more_env, environ)
 
       if self.exec_opts.xtrace:
+        # TODO: Eval PS4.  Using what evaluator?  I guess the same state.
+        # self.ev.
         log('+ %s', argv)
-        #print('+ %s' % argv, file=sys.stderr)
-        #print('+ %s' % argv, file=self.XFILE)
-        #os.write(2, '+ %s\n' % argv)
+        # TODO:
+        #
+        # This is good enough for xtrace.
+        # But the tracer is more general than that.
+        # self.tracer.BeginSimpleCommand()
 
       status = self._RunSimpleCommand(argv, environ, fork_external)
 

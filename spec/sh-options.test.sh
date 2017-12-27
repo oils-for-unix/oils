@@ -149,14 +149,6 @@ echo 3
 # stdout-json: "1\n"
 # status: 0
 
-### xtrace
-echo 1
-set -o xtrace
-echo 2
-# stdout-json: "1\n2\n"
-# stderr: + echo 2
-
-
 ### pipefail
 # NOTE: the sleeps are because osh can fail non-deterministically because of a
 # bug.  Same problem as PIPESTATUS.

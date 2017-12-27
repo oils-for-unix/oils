@@ -103,7 +103,7 @@ class ExecOpts(object):
 
     shellopts = self.mem.GetVar('SHELLOPTS')
     assert shellopts.tag == value_e.Str, shellopts
-    self._InitFromEnv(shellopts.s)
+    self._InitOptionsFromEnv(shellopts.s)
 
     # shopt -s / -u
     self.nullglob = False 
@@ -118,7 +118,7 @@ class ExecOpts(object):
 
     # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
 
-  def _InitFromEnv(self, shellopts):
+  def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail
     lookup = set(shellopts.split(':'))
     for _, name in SET_OPTIONS:
@@ -181,8 +181,7 @@ class ExecOpts(object):
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
     else:
       if opt_name in shellopts:
-        names = shellopts.split(':')
-        names = [n for n in names if n != opt_name]
+        names = [n for n in shellopts.split(':') if n != opt_name]
         new_val = runtime.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
@@ -296,7 +295,7 @@ class Mem(object):
     self.root_pid = os.getpid()
 
     self._InitDefaults()
-    self._InitEnviron(environ)
+    self._InitVarsFromEnv(environ)
     self.arena = arena
 
   def __repr__(self):
@@ -322,7 +321,10 @@ class Mem(object):
     # For getopts builtin
     SetGlobalString(self, 'OPTIND', '1')
 
-  def _InitEnviron(self, environ):
+    # For xtrace
+    SetGlobalString(self, 'PS4', '+ ')
+
+  def _InitVarsFromEnv(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
