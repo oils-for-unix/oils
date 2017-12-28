@@ -17,7 +17,7 @@ CAPS_RE = re.compile(r'^[A-Z ]+$')
 # 2. lower-case or upper-case topic
 # 3. Optional: A SINGLE space, then punctuation
 
-TOPIC_RE = re.compile(r'\b(X[ ])?\@?([a-zA-Z0-9_\-]+)([ ]\S+)?', re.VERBOSE)
+TOPIC_RE = re.compile(r'\b(X[ ])?\@?([a-z\-]+|[A-Z0-9_]+)([ ]\S+)?', re.VERBOSE)
 
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.

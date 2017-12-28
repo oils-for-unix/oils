@@ -88,7 +88,7 @@ X [Prompts]       PS1   PS2
 X [select]        PS3
   [xtrace]        PS4
   [Shell Options] X SHELLOPTS   X BASHOPTS
-  [Other]         HOME   IFS
+  [Other]         HOME   PATH   IFS
 
 SPECIAL VARIABLES
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
@@ -96,8 +96,8 @@ X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO
                   @BASH_ARGV   @BASH_ARGC   LINENO
   [Process State] X BASHPID   X PPID   UID   EUID   
 X [Process Stack] BASH_SUBSHELL   SHLVL
-X [Shell State]   BASH_CMDS   DIRSTACK
-  [cd]            PWD   OLDPWD
+X [Shell State]   BASH_CMDS   @DIRSTACK
+  [cd]            PWD   OLDPWD   X CDPATH
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
   [Functions]     X RANDOM   X SECONDS
