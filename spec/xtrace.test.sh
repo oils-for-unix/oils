@@ -23,6 +23,14 @@ echo two >&2
 one
 + echo two
 two
+## OK mksh STDERR:
+# mksh traces redirects!
++ >&2 
++ echo one
+one
++ >&2 
++ echo two
+two
 ## END
 
 ### PS4 is scoped
@@ -38,6 +46,21 @@ echo two
 + echo one
 + f
 + local 'PS4=- '
+- echo func
++ echo two
+## OK dash STDERR:
+# dash loses information about spaces!  There is a trailing space, but you
+# can't see it.
++ echo one
++ f
++ local PS4=- 
+- echo func
++ echo two
+## OK mksh STDERR:
+# local gets turned into typeset
++ echo one
++ f
++ typeset 'PS4=- '
 - echo func
 + echo two
 ## END

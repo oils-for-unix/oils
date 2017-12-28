@@ -141,7 +141,7 @@ def LineIter(f):
     # Non-empty line that doesn't start with '#'
     # NOTE: We need the original line to test the whitespace sensitive <<-.
     # And we need rstrip because we add newlines back below.
-    yield line_num, PLAIN_LINE, line.rstrip()
+    yield line_num, PLAIN_LINE, line.rstrip('\n')
 
   yield line_num, EOF, None
 
