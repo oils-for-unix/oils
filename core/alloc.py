@@ -120,6 +120,15 @@ def CompletionArena(pool):
   return arena
 
 
+def PluginArena():
+  """For PS4, etc."""
+  # TODO: Should there only be one pool?  This isn't worked out yet.
+  pool = Pool()
+  arena = pool.NewArena()
+  arena.PushSource('<plugin>')
+  return arena
+
+
 # In C++, InteractiveLineReader and StringLineReader should use the same
 # representation: std::string with internal NULs to terminate lines, and then
 # std::vector<char*> that points into to it.

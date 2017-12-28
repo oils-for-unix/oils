@@ -13,6 +13,30 @@ echo 2
 + echo 2
 ## END
 
+### xtrace with whitespace and quotes
+set -o xtrace
+echo '1 2' \' \"
+## STDOUT:
+1 2 ' "
+## STDERR:
++ echo '1 2' \' '"'
+## BUG dash STDERR:
++ echo 1 2 ' "
+## END
+
+### CASE: xtrace with newlines
+# bash and dash trace this badly.  They print literal newlines, which I don't
+# want.
+set -x
+echo $'[\n]'
+# STDOUT:
+[
+]
+# stderr-json: "+ echo $'[\\n]'\n"
+# OK bash stderr-json: "+ echo '[\n]'\n"
+# N-I dash stdout-json: "$[\n]\n"
+# N-I dash stderr-json: "+ echo $[\\n]\n"
+
 ### xtrace written before command executes
 set -x
 echo one >&2
@@ -63,4 +87,69 @@ echo two
 + typeset 'PS4=- '
 - echo func
 + echo two
+## BUG osh STDERR:
+# local gets turned into typeset
++ echo one
++ f
+- echo func
++ echo two
 ## END
+
+### xtrace with variables in PS4
+PS4='+$x:'
+set -o xtrace
+x=1
+echo one
+x=2
+echo two
+## STDOUT:
+one
+two
+## STDERR:
++:x=1
++1:echo one
++1:x=2
++2:echo two
+## OK mksh STDERR:
+# mksh has trailing spaces
++:x=1 
++1:echo one
++1:x=2 
++2:echo two
+## OK dash STDERR:
+# dash evaluates it earlier
++1:x=1
++1:echo one
++2:x=2
++2:echo two
+## OK osh STDERR:
+# dash evaluates it earlier
++1:echo one
++2:echo two
+## END
+
+### PS4 with unterminated ${
+x=1
+PS4='+${x'
+set -o xtrace
+echo one
+echo status=$?
+## STDOUT:
+one
+status=0
+## END
+# mksh and dash both fail.  bash prints errors to stderr.
+# OK dash stdout-json: ""
+# OK dash status: 2
+# OK mksh stdout-json: ""
+# OK mksh status: 1
+
+### PS4 with unterminated $(
+# osh is not making this a proper syntax error
+x=1
+PS4='+$(x'
+set -o xtrace
+echo one
+# stdout: one
+# stderr: + echo one
+

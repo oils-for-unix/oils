@@ -22,7 +22,7 @@ class ReaderTest(unittest.TestCase):
 
     r = reader.StringLineReader('one\ntwo', arena)
     self.assertEqual((0, 'one\n'), r.GetLine())
-    self.assertEqual((1, 'two\n'), r.GetLine())
+    self.assertEqual((1, 'two'), r.GetLine())
     self.assertEqual((-1, None), r.GetLine())
 
   def testLineReadersAreEquivalent(self):
@@ -34,7 +34,7 @@ class ReaderTest(unittest.TestCase):
     r2 = reader.FileLineReader(f, a2)
 
     a3 = self.pool.NewArena()
-    lines = [(0, 'one\n'), (1, 'two\n')]
+    lines = [(0, 'one\n'), (1, 'two')]
     r3 = reader.VirtualLineReader(lines, a3)
 
     for a in [a1, a2, a3]:
@@ -44,7 +44,7 @@ class ReaderTest(unittest.TestCase):
       print(r)
       # Lines are added to the arena with a line_id.
       self.assertEqual((0, 'one\n'), r.GetLine())
-      self.assertEqual((1, 'two\n'), r.GetLine())
+      self.assertEqual((1, 'two'), r.GetLine())
       self.assertEqual((-1, None), r.GetLine())
 
 

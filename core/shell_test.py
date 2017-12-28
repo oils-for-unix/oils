@@ -33,19 +33,6 @@ if trace:
   #util.WrapMethods(Lexer, state)
 
 
-class LineReaderTest(unittest.TestCase):
-
-  def testGetLine(self):
-    arena = test_lib.MakeArena('<shell_test.py>')
-    r = reader.StringLineReader('foo\nbar', arena)  # no trailing newline
-    self.assertEqual((0, 'foo\n'), r.GetLine())
-    self.assertEqual((1, 'bar\n'), r.GetLine())
-
-    # Keep returning EOF after exhausted
-    self.assertEqual((-1, None), r.GetLine())
-    self.assertEqual((-1, None), r.GetLine())
-
-
 def ParseAndExecute(code_str):
   arena = test_lib.MakeArena('<shell_test.py>')
 

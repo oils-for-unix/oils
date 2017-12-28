@@ -50,12 +50,11 @@ def _assertReadWordWithArena(test, word_str):
     err = w_parser.Error()
     test.fail("Couldn't parse %r: %s" % (word_str, err))
 
-  # Next word must be \n
+  # Next word must be Eof_Real
   w2 = w_parser.ReadWord(lex_mode_e.OUTER)
   test.assertTrue(
-      test_lib.TokenWordsEqual(
-        ast.TokenWord(ast.token(Id.Op_Newline, '\n')),
-        w2))
+      test_lib.TokenWordsEqual(ast.TokenWord(ast.token(Id.Eof_Real, '')), w2),
+      w2)
 
   return arena, w
 
@@ -394,7 +393,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.OUTER)
     assert w
-    self.assertEqual(Id.Op_Newline, w.token.id)
+    self.assertEqual(Id.Eof_Real, w.token.id)
 
   def testReadArithWord(self):
     w = _assertReadWord(self, '$(( f(x) ))')

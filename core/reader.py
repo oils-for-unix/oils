@@ -77,12 +77,6 @@ class FileLineReader(_Reader):
     if not line:
       return None
 
-    # TODO: Remove this anachonism.  We no longer need every line to end with a
-    # newline.  See input handling comment at the top of osh/lex.py.  (I tried
-    # and it made a bunch of tests fail.)
-    if not line.endswith('\n'):
-      line += '\n'
-
     return line
 
 
