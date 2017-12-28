@@ -9,7 +9,6 @@ echo 2
 ## STDOUT:
 1
 2
-## END
 ## STDERR:
 + echo 2
 ## END

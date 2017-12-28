@@ -6,63 +6,127 @@ command -v echo
 echo $?
 command -v myfunc
 echo $?
-command -v nonexistent  # doesn't print anything?
+command -v nonexistent  # doesn't print anything
 echo $?
 command -v for
 echo $?
-# stdout-json: "echo\n0\nmyfunc\n0\n1\nfor\n0\n"
-# OK dash stdout-json: "echo\n0\nmyfunc\n0\n127\nfor\n0\n"
+## STDOUT:
+echo
+0
+myfunc
+0
+1
+for
+0
+## OK dash STDOUT:
+echo
+0
+myfunc
+0
+127
+for
+0
+## END
 
 ### command -v with multiple names
+# ALL FOUR SHELLS behave differently here!
+#
 # bash chooses to swallow the error!  We agree with zsh if ANY word lookup
 # fails, then the whole thing fails.
-# All four shells behave differently here!
+
 myfunc() { echo x; }
 command -v echo myfunc ZZZ for
 echo status=$?
-# stdout-json: "echo\nmyfunc\nfor\nstatus=1\n"
-# BUG bash stdout-json: "echo\nmyfunc\nfor\nstatus=0\n"
-# BUG dash stdout-json: "echo\nstatus=0\n"
-# OK mksh stdout-json: "echo\nmyfunc\nstatus=1\n"
+
+## STDOUT:
+echo
+myfunc
+for
+status=1
+## BUG bash STDOUT:
+echo
+myfunc
+for
+status=0
+## BUG dash STDOUT: 
+echo
+status=0
+## OK mksh STDOUT: 
+echo
+myfunc
+status=1
+## END
 
 ### dirs builtin
 cd /
 dirs
-# stdout-json: "/\n"
 # status: 0
-# N-I dash/mksh status: 127
-# N-I dash/mksh stdout-json: ""
+## STDOUT:
+/
+## END
+## N-I dash/mksh status: 127
+## N-I dash/mksh stdout-json: ""
 
 ### dirs -c to clear the stack
+set -o errexit
 cd /
 pushd /tmp >/dev/null  # zsh pushd doesn't print anything, but bash does
+echo --
 dirs
 dirs -c
+echo --
 dirs
-# stdout-json: "/tmp /\n/tmp\n"
-# status: 0
-# N-I dash/mksh status: 127
-# N-I dash/mksh stdout-json: ""
+## status: 0
+## STDOUT:
+--
+/tmp /
+--
+/tmp
+## N-I dash/mksh status: 127
+## N-I dash/mksh stdout-json: ""
 
 ### dirs -v to print numbered stack, one entry per line
+set -o errexit
 cd /
 pushd /tmp >/dev/null
+echo --
 dirs -v
 pushd /lib >/dev/null
+echo --
 dirs -v
-# stdout-json: " 0  /tmp\n 1  /\n 0  /lib\n 1  /tmp\n 2  /\n"
-# status: 0
-# zsh uses tabs
-# OK zsh stdout-json: "0\t/tmp\n1\t/\n0\t/lib\n1\t/tmp\n2\t/\n"
-# N-I dash/mksh status: 127
-# N-I dash/mksh stdout-json: ""
+## status: 0
+## STDOUT:
+--
+ 0  /tmp
+ 1  /
+--
+ 0  /lib
+ 1  /tmp
+ 2  /
+## END
+#
+#  zsh uses tabs
+## OK zsh stdout-json: "--\n0\t/tmp\n1\t/\n--\n0\t/lib\n1\t/tmp\n2\t/\n"
+#
+## N-I dash/mksh status: 127
+## N-I dash/mksh stdout-json: ""
 
 ### dirs -p to print one entry per line
+set -o errexit
 cd /
 pushd /tmp >/dev/null
+echo --
 dirs -p
 pushd /lib >/dev/null
+echo --
 dirs -p
-# stdout-json: "/tmp\n/\n/lib\n/tmp\n/\n"
-# N-I dash/mksh status: 127
-# N-I dash/mksh stdout-json: ""
+## STDOUT:
+--
+/tmp
+/
+--
+/lib
+/tmp
+/
+## N-I dash/mksh status: 127
+## N-I dash/mksh stdout-json: ""

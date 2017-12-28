@@ -33,10 +33,13 @@ echo two
 # STDOUT:
 one
 two
-# END
 # OK dash STDOUT:
 dash1
 dash2
+# END
+# OK mksh STDOUT:
+mksh1
+mksh2
 # END
 """)
 TOKENS2 = list(LineIter(TEST2))
@@ -59,6 +62,7 @@ class ShSpecTest(unittest.TestCase):
     self.assertEqual(
         [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE, 
           KEY_VALUE, KEY_VALUE,
+          KEY_VALUE_MULTILINE, PLAIN_LINE, PLAIN_LINE,
           KEY_VALUE_MULTILINE, PLAIN_LINE, PLAIN_LINE, END_MULTILINE,
           KEY_VALUE_MULTILINE, PLAIN_LINE, PLAIN_LINE, END_MULTILINE,
           EOF], types2)
@@ -73,14 +77,18 @@ class ShSpecTest(unittest.TestCase):
     self.assertEqual(expected, CASE1['dash'])
     self.assertEqual(expected, CASE1['mksh'])
     self.assertEqual('2', CASE1['status'])
-    self.assertEqual('Env binding in readonly/declare disallowed', CASE1['desc'])
+    self.assertEqual(
+        'Env binding in readonly/declare disallowed', CASE1['desc'])
 
     print('CASE2')
     pprint.pprint(CASE2)
     print()
     print(CreateAssertions(CASE2, 'bash'))
     self.assertEqual('one\ntwo\n', CASE2['stdout'])
-    self.assertEqual({'qualifier': 'OK', 'stdout': 'dash1\ndash2\n'}, CASE2['dash'])
+    self.assertEqual(
+        {'qualifier': 'OK', 'stdout': 'dash1\ndash2\n'}, CASE2['dash'])
+    self.assertEqual(
+        {'qualifier': 'OK', 'stdout': 'mksh1\nmksh2\n'}, CASE2['mksh'])
 
   def testCreateAssertions(self):
     print(CreateAssertions(CASE1, 'bash'))

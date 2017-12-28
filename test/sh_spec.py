@@ -203,7 +203,6 @@ def ParseKeyValue(tokens, case):
 
     if kind == KEY_VALUE_MULTILINE:
       qualifier, shells, name, empty_value = item
-      print('item', item)
       if empty_value:
         raise ParseError(
             'Line %d: got value %r for %r, but the value should be on the '
@@ -217,9 +216,6 @@ def ParseKeyValue(tokens, case):
           break
         value_lines.append(item2)
 
-      if kind2 != END_MULTILINE:
-        raise ParseError('Expected END token, got %r %r' % (kind2, item2))
-
       value = '\n'.join(value_lines) + '\n'
 
       name = name.lower()  # STDOUT -> stdout
@@ -227,6 +223,10 @@ def ParseKeyValue(tokens, case):
         AddMetadataToCase(case, qualifier, shells, name, value)
       else:
         case[name] = value
+
+      # END token is optional.
+      if kind2 == END_MULTILINE:
+        tokens.next()
 
     elif kind == KEY_VALUE:
       qualifier, shells, name, value = item
@@ -236,10 +236,11 @@ def ParseKeyValue(tokens, case):
       else:
         case[name] = value
 
+      tokens.next()
+
     else:  # Unknown token type
       break
 
-    tokens.next()
 
 
 def ParseCodeLines(tokens, case):
@@ -266,7 +267,7 @@ def ParseTestCase(tokens):
   if kind == EOF:
     return None
 
-  assert kind == TEST_CASE_BEGIN, kind  # Invariant
+  assert kind == TEST_CASE_BEGIN, (line_num, kind, item)  # Invariant
   tokens.next()
 
   case = {'desc': item, 'line_num': line_num}
