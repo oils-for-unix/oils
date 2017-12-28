@@ -3,8 +3,14 @@ lex.py -- Shell lexer.
 
 It consists of a series of lexer modes, each with a regex -> Id mapping.
 
-NOTE: Input Handling Affects Regular Expressions
-------------------------------------------------
+NOTE: If this changes, the lexer may need to be recompiled with
+build/codegen.sh lexer.
+
+Input Handling
+--------------
+
+Note that our style of input Handling affects the regular expressions in the
+lexer.
 
 We pass one line at a time to the Lexer, via LineLexer.  We must be able to
 parse one line at a time because of interactive parsing (e.g. using the output

@@ -788,7 +788,8 @@ if __name__ == '__main__':
   from core import state
 
   status_lines = ui.MakeStatusLines()
-  exec_opts = state.ExecOpts()
+  mem = state.Mem('', [], {}, None)
+  exec_opts = state.ExecOpts(mem)
   status_out = StatusOutput(status_lines, exec_opts)
 
   builtins = builtin.BUILTIN_DEF

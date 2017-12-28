@@ -83,16 +83,23 @@ ls /nonexistent
 
 ### subshell
 (echo 1; echo 2)
-# stdout-json: "1\n2\n"
-# status: 0
+## status: 0
+## STDOUT:
+1
+2
+## END
 
 ### for loop
 for i in a b c
 do
   echo $i
 done
-# stdout-json: "a\nb\nc\n"
-# status: 0
+## status: 0
+# STDOUT:
+a
+b
+c
+## END
 
 ### vars
 a=5

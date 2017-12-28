@@ -233,3 +233,31 @@ class Lexer(object):
 
     #log('Read() Returning %s', t)
     return t
+
+
+# Based on osh/parse_lib.py MatchToken_Slow.
+class SimpleLexer(object):
+  """
+  Use Cases:
+  - echo -e, which interprets C-escaped strings.
+  - read -r
+  """
+  def __init__(self, pat_list):
+    self.pat_list = CompileAll(pat_list)
+
+  def Tokens(self, line):
+    """Yields tokens."""
+    pos = 0
+    n = len(line)
+    while pos < n:
+      matches = []
+      for regex, tok_type in self.pat_list:
+        m = regex.match(line, pos)  # left-anchored
+        if m:
+          matches.append((m.end(0), tok_type, m.group(0)))
+      if not matches:
+        raise AssertionError(
+            'no match at position %d: %r (%r)' % (pos, line, line[pos]))
+      end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
+      yield tok_type, line[pos:end_pos]
+      pos = end_pos

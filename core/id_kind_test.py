@@ -78,6 +78,7 @@ class TokensTest(unittest.TestCase):
 
     lookup2 = MakeLookup(id_kind.ID_SPEC.LexerPairs(Kind.BoolBinary))
     self.assertEqual(Id.BoolBinary_eq, lookup2['-eq'])
+    #print(lookup2)
 
   def testPrintStats(self):
     k = id_kind._kind_sizes

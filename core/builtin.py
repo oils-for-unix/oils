@@ -30,9 +30,11 @@ import os
 import sys
 
 from core import args
+from core import lexer
 from core import runtime
 from core import util
 from core import state
+from core.id_kind import Id
 
 from osh import lex
 
@@ -218,6 +220,98 @@ def Resolve(argv0):
   return EBuiltin.NONE
 
 
+R = lexer.R
+C = lexer.C
+
+# TODO:
+# - See if re2c supports {1,2} etc.
+# - the DOLLAR_SQ lex state needs most of this logic.
+
+ECHO_LEXER = lexer.SimpleLexer([
+  R(r'\\[0abeEfrtnv]', Id.Char_OneChar),
+  C(r'\c', Id.Char_Stop),
+
+  # Note: tokens above \0377 can either be truncated or be flagged a syntax
+  # error in strict mode.
+  R(r'\\0[0-7]{1,3}', Id.Char_Octal),
+
+  # \x6 is valid in bash
+  R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
+  R(r'\\u[0-9]{1,4}', Id.Char_Unicode4),
+  R(r'\\U[0-9]{1,8}', Id.Char_Unicode8),
+
+  R(r'[^\\]+', Id.Char_Literals),
+  R(r'\\.', Id.Char_Literals),
+
+  # Backslash that ends the string.
+  R('\\$', Id.Char_Literals),
+  # For re2c.  TODO: need to make that translation.
+  C('\\\0', Id.Char_Literals),
+])
+
+
+_ONE_CHAR = {
+    '0': '\0',
+    'a': '\a',
+    'b': '\b',
+    'e': '\x1b',
+    'E': '\x1b',
+    'f': '\f',
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'v': '\v',
+}
+
+
+# Strict mode syntax errors:
+#
+# \x is a syntax error -- needs two digits (It's like this in C)
+# \0777 is a syntax error -- we shouldn't do modulus
+# \d could be a syntax error -- it is better written as \\d
+
+def _EvalStringPart(id_, value):
+  # TODO: This has to go in the compile stage for DOLLAR_SQ strings.
+
+  if id_ == Id.Char_OneChar:
+    c = value[1]
+    return _ONE_CHAR[c]
+
+  elif id_ == Id.Char_Stop:  # \c returns a special sentinel
+    return None
+
+  elif id_ == Id.Char_Octal:
+    # TODO: Error checking for \0777
+    s = value[2:]
+    i = int(s, 8)
+    if i >= 256:
+      i = i % 256
+      # NOTE: This is for strict mode
+      #raise AssertionError('Out of range')
+    return chr(i)
+
+  elif id_ == Id.Char_Hex:
+    s = value[2:]
+    i = int(s, 16)
+    return chr(i)
+
+  elif id_ == Id.Char_Unicode4:
+    s = value[2:]
+    i = int(s, 16)
+    return unichr(i)
+
+  elif id_ == Id.Char_Unicode8:
+    s = value[2:]
+    i = int(s, 16)
+    return unichr(i)
+
+  elif id_ == Id.Char_Literals:
+    return value
+
+  else:
+    raise AssertionError
+
+
 echo_spec = _Register('echo')
 echo_spec.ShortFlag('-e')  # no backslash escapes
 echo_spec.ShortFlag('-n')
@@ -225,25 +319,49 @@ echo_spec.ShortFlag('-n')
 
 def Echo(argv):
   """
-  echo builtin.  Doesn't depend on executor state.
+  echo builtin.
 
-  TODO: Where to put help?  docstring?
+  set -o sane-echo could do the following:
+  - only one arg, no implicit joining.
+  - no -e: should be echo c'one\ttwo\t'
+  - no -n: should be write 'one'
+
+  multiple args on a line:
+  echo-lines one two three
   """
   # NOTE: both getopt and optparse are unsuitable for 'echo' because:
   # - 'echo -c' should print '-c', not fail
   # - echo '---' should print ---, not fail
 
-  arg, i = echo_spec.ParseLikeEcho(argv)
+  arg, arg_index = echo_spec.ParseLikeEcho(argv)
+  argv = argv[arg_index:]
   if arg.e:
-    util.warn('*** echo -e not implemented ***')
+    new_argv = []
+    for a in argv:
+      parts = []
+      for id_, value in ECHO_LEXER.Tokens(a):
+        p = _EvalStringPart(id_, value)
+
+        # Unusual behavior: '\c' prints what is there and aborts processing!
+        if p is None:
+          new_argv.append(''.join(parts))
+          for i, a in enumerate(new_argv):
+            if i != 0:
+              sys.stdout.write(' ')  # arg separator
+            sys.stdout.write(a)
+          return 0  # EARLY RETURN
+
+        parts.append(p)
+      new_argv.append(''.join(parts))
+
+    # Replace it
+    argv = new_argv
 
   #log('echo argv %s', argv)
-  n = len(argv)
-  for i in xrange(i, n-1):
-    sys.stdout.write(argv[i])
-    sys.stdout.write(' ')  # arg separator
-  if argv:
-    sys.stdout.write(argv[-1])
+  for i, a in enumerate(argv):
+    if i != 0:
+      sys.stdout.write(' ')  # arg separator
+    sys.stdout.write(a)
   if not arg.n:
     sys.stdout.write('\n')
 
@@ -697,7 +815,6 @@ def Shopt(argv, exec_opts):
   if b is None:
     raise NotImplementedError  # Display options
 
-  # TODO: exec_opts.SetShoptOption()
   for opt_name in argv[i:]:
     if arg.o:
       exec_opts.SetOption(opt_name, b)

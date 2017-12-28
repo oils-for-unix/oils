@@ -252,8 +252,13 @@ if_() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH "$@"
+}
+
+builtin-io() {
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 builtins2() {
@@ -408,6 +413,11 @@ var-sub-quote() {
 
 sh-options() {
   sh-spec spec/sh-options.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
+xtrace() {
+  sh-spec spec/xtrace.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
