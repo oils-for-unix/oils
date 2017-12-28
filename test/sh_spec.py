@@ -34,6 +34,22 @@ implementation will be PASS.)  But if the behavior is NOT POSIX compliant, then
 it will be a BUG.
 
 If one shell disagrees with others, that is generally a BUG.
+
+Example test case:
+
+### hello and fail
+echo hello
+echo world
+exit 1
+## status: 1
+#
+# ignored comment
+#
+## STDOUT
+hello
+world
+## END
+
 """
 
 import collections
@@ -58,29 +74,31 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-# Example:
+# EXAMPLES:
 # stdout: foo
-#
-# TODO: Also support
-# mksh: status: 2
-# bash/mksh status: 2
-# bash/mksh stdout: hi there
+# stdout-json: ""
 #
 # In other words, it could be (name, value) or (qualifier, name, value)
 
 KEY_VALUE_RE = re.compile(r'''
-   [#] \s+
+   [#][#]? \s+
    (?: (OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?   # optional prefix
    ([\w\-]+)              # key
    :
    \s* (.*)               # value
 ''', re.VERBOSE)
 
+END_MULTILINE_RE = re.compile(r'''
+    [#][#]? \s+ END
+''', re.VERBOSE)
+
 # Line types
 TEST_CASE_BEGIN = 0  # Starts with ###
 KEY_VALUE = 1  # Metadata
-CODE = 2  # Unquoted
-EOF = 3
+KEY_VALUE_MULTILINE = 2  # STDOUT STDERR
+END_MULTILINE = 3  # STDOUT STDERR
+PLAIN_LINE = 4  # Uncommented
+EOF = 5
 
 
 def LineIter(f):
@@ -102,7 +120,17 @@ def LineIter(f):
       # HACK: Expected data should have the newline.
       if name in ('stdout', 'stderr'):
         value += '\n'
-      yield line_num, KEY_VALUE, (qualifier, shells, name, value)
+
+      if name in ('STDOUT', 'STDERR'):
+        token_type = KEY_VALUE_MULTILINE
+      else:
+        token_type = KEY_VALUE
+      yield line_num, token_type, (qualifier, shells, name, value)
+      continue
+
+    m = END_MULTILINE_RE.match(line)
+    if m:
+      yield line_num, END_MULTILINE, None
       continue
 
     if line.lstrip().startswith('#'):
@@ -113,13 +141,14 @@ def LineIter(f):
     # Non-empty line that doesn't start with '#'
     # NOTE: We need the original line to test the whitespace sensitive <<-.
     # And we need rstrip because we add newlines back below.
-    yield line_num, CODE, line.rstrip()
+    yield line_num, PLAIN_LINE, line.rstrip()
 
   yield line_num, EOF, None
 
 
 class Tokenizer(object):
   """Wrap a token iterator in a Tokenizer interface."""
+
   def __init__(self, it):
     self.it = it
     self.cursor = None
@@ -148,25 +177,67 @@ class Tokenizer(object):
 # 
 # -- Should be a blank line after each test case.  Leading comments and code
 # -- are OK.
-# test_file = (COMMENT | CODE)* (test_case '\n')*  
+# test_file = (COMMENT | PLAIN_LINE)* (test_case '\n')*  
+
+
+def AddMetadataToCase(case, qualifier, shells, name, value):
+  shells = shells.split('/')  # bash/dash/mksh
+  for shell in shells:
+    if shell not in case:
+      case[shell] = {}
+    case[shell][name] = value
+    case[shell]['qualifier'] = qualifier
 
 
 def ParseKeyValue(tokens, case):
-  """Parse commented-out metadata in a test case."""
+  """Parse commented-out metadata in a test case.
+
+  The metadata must be contiguous.
+
+  Args:
+    tokens: Tokenizer
+    case: dictionary to add to
+  """
   while True:
-    _, kind, item = tokens.peek()
-    if kind != KEY_VALUE:
+    line_num, kind, item = tokens.peek()
+
+    if kind == KEY_VALUE_MULTILINE:
+      qualifier, shells, name, empty_value = item
+      print('item', item)
+      if empty_value:
+        raise ParseError(
+            'Line %d: got value %r for %r, but the value should be on the '
+            'following lines' % (line_num, empty_value, name))
+
+      value_lines = []
+      while True:
+        tokens.next()
+        _, kind2, item2 = tokens.peek()
+        if kind2 != PLAIN_LINE:
+          break
+        value_lines.append(item2)
+
+      if kind2 != END_MULTILINE:
+        raise ParseError('Expected END token, got %r %r' % (kind2, item2))
+
+      value = '\n'.join(value_lines) + '\n'
+
+      name = name.lower()  # STDOUT -> stdout
+      if qualifier:
+        AddMetadataToCase(case, qualifier, shells, name, value)
+      else:
+        case[name] = value
+
+    elif kind == KEY_VALUE:
+      qualifier, shells, name, value = item
+
+      if qualifier:
+        AddMetadataToCase(case, qualifier, shells, name, value)
+      else:
+        case[name] = value
+
+    else:  # Unknown token type
       break
-    qualifier, shells, name, value = item
-    if qualifier:
-      shells = shells.split('/')  # bash/dash/mksh
-      for shell in shells:
-        if shell not in case:
-          case[shell] = {}
-        case[shell][name] = value
-        case[shell]['qualifier'] = qualifier
-    else:
-      case[name] = value
 
     tokens.next()
 
@@ -174,12 +245,12 @@ def ParseKeyValue(tokens, case):
 def ParseCodeLines(tokens, case):
   """Parse uncommented code in a test case."""
   _, kind, item = tokens.peek()
-  if kind != CODE:
+  if kind != PLAIN_LINE:
     raise ParseError('Expected a line of code (got %r, %r)' % (kind, item))
   code_lines = []
   while True:
     _, kind, item = tokens.peek()
-    if kind != CODE:
+    if kind != PLAIN_LINE:
       case['code'] = '\n'.join(code_lines) + '\n'
       return
     code_lines.append(item)
@@ -202,7 +273,9 @@ def ParseTestCase(tokens):
   #print case
 
   ParseKeyValue(tokens, case)
+
   #print 'KV1', case
+  # For broken code
   if 'code' in case:  # Got it through a key value pair
     return case
 
