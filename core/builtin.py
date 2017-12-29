@@ -604,28 +604,48 @@ def Cd(argv, mem, dir_stack):
   return 0
 
 
-WITH_PREFIX = 1
-WITHOUT_PREFIX = 2
+WITH_LINE_NUMBERS = 1
+WITHOUT_LINE_NUMBERS = 2
 SINGLE_LINE = 3
+TILDE_PREFIX_FORM = 1
+LONG_FORM = 2
 
-def _PrintDirStack(dir_stack, style):
+def _PrintDirStack(dir_stack, mem, style, form):
   """Helper for 'dirs'."""
 
-  if style == WITH_PREFIX:
+  if style == WITH_LINE_NUMBERS:
     for i, entry in enumerate(dir_stack.Iter()):
-      print('%2d  %s' % (i, entry))
+      if form == TILDE_PREFIX_FORM:
+        print('%2d  %s' % (i, _TranslateHomePrefix(entry, mem)))
+      elif form == LONG_FORM:
+        print('%2d  %s' % (i, entry))
 
-  elif style == WITHOUT_PREFIX:
+  elif style == WITHOUT_LINE_NUMBERS:
     for entry in dir_stack.Iter():
-      print(entry)
+      if form == TILDE_PREFIX_FORM:
+        print(_TranslateHomePrefix(entry, mem))
+      elif form == LONG_FORM:
+        print(entry)
 
   elif style == SINGLE_LINE:
-    print(' '.join(dir_stack.Iter()))
+    if form == TILDE_PREFIX_FORM:
+      for i, entry in enumerate(dir_stack.Iter()):
+        sys.stdout.write(_TranslateHomePrefix(entry, mem) + \
+          (' ' if (i < dir_stack.Size() - 1) else ''))
+      sys.stdout.write('\n')
+    elif form == LONG_FORM:
+      print(' '.join(dir_stack.Iter()))
 
   sys.stdout.flush()
 
 
-def Pushd(argv, dir_stack):
+def _TranslateHomePrefix(dir_name, mem):
+  val = mem.GetVar('HOME')
+  if val.tag == value_e.Str:
+    return dir_name.replace(val.s, '~', 1)
+  return dir_name
+
+def Pushd(argv, mem, dir_stack):
   num_args = len(argv)
   if num_args <= 0:
     util.error('pushd: no other directory')
@@ -642,11 +662,11 @@ def Pushd(argv, dir_stack):
     return 1
 
   dir_stack.Push(dest_dir)
-  _PrintDirStack(dir_stack, SINGLE_LINE)
+  _PrintDirStack(dir_stack, mem, SINGLE_LINE, TILDE_PREFIX_FORM)
   return 0
 
 
-def Popd(argv, dir_stack):
+def Popd(argv, mem, dir_stack):
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
     util.error('popd: directory stack is empty')
@@ -658,7 +678,7 @@ def Popd(argv, dir_stack):
     util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  _PrintDirStack(dir_stack, SINGLE_LINE)
+  _PrintDirStack(dir_stack, mem, SINGLE_LINE, TILDE_PREFIX_FORM)
   return 0
 
 
@@ -668,19 +688,24 @@ DIRS_SPEC.ShortFlag('-l')
 DIRS_SPEC.ShortFlag('-p')
 DIRS_SPEC.ShortFlag('-v')
 
-def Dirs(argv, dir_stack):
+def Dirs(argv, mem, dir_stack):
   arg, i = DIRS_SPEC.Parse(argv)
+  style = SINGLE_LINE
+  form = TILDE_PREFIX_FORM
+
+  # Following bash order of flag priority
   if arg.l:
-    util.warn('*** dirs -l not implemented ***')
-  # Following bash behavior
+    #util.warn('*** dirs -l not implemented ***')
+    form = LONG_FORM
   if arg.c:
     dir_stack.Reset()
+    return 0
   elif arg.v:
-    _PrintDirStack(dir_stack, WITH_PREFIX)
+    style = WITH_LINE_NUMBERS
   elif arg.p:
-    _PrintDirStack(dir_stack, WITHOUT_PREFIX)
-  else:
-    _PrintDirStack(dir_stack, SINGLE_LINE)
+    style = WITHOUT_LINE_NUMBERS
+
+  _PrintDirStack(dir_stack, mem, style, form)
   return 0
 
 

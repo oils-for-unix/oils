@@ -263,6 +263,8 @@ class DirStack(object):
     """Iterate in reverse order."""
     return reversed(self.stack)
 
+  def Size(self):
+    return len(self.stack)
 
 class Mem(object):
   """For storing variables.
