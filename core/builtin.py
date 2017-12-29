@@ -630,6 +630,8 @@ def _PrintDirStack(dir_stack, mem, style, form):
   elif style == SINGLE_LINE:
     if form == TILDE_PREFIX_FORM:
       for i, entry in enumerate(dir_stack.Iter()):
+        # Don't add a space after printing the path if it's
+        # the last entry being printed.
         sys.stdout.write(_TranslateHomePrefix(entry, mem) + \
           (' ' if (i < dir_stack.Size() - 1) else ''))
       sys.stdout.write('\n')
@@ -644,6 +646,7 @@ def _TranslateHomePrefix(dir_name, mem):
   if val.tag == value_e.Str:
     return dir_name.replace(val.s, '~', 1)
   return dir_name
+
 
 def Pushd(argv, mem, dir_stack):
   num_args = len(argv)
@@ -695,7 +698,6 @@ def Dirs(argv, mem, dir_stack):
 
   # Following bash order of flag priority
   if arg.l:
-    #util.warn('*** dirs -l not implemented ***')
     form = LONG_FORM
   if arg.c:
     dir_stack.Reset()
