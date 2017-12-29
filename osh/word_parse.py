@@ -1196,7 +1196,8 @@ class WordParser(object):
       if lex_mode == lex_mode_e.ARITH:
         # TODO: Can this be unified?
         w, need_more = self._ReadArithWord()
-      elif lex_mode in (lex_mode_e.OUTER, lex_mode_e.DBRACKET, lex_mode_e.BASH_REGEX):
+      elif lex_mode in (
+          lex_mode_e.OUTER, lex_mode_e.DBRACKET, lex_mode_e.BASH_REGEX):
         w, need_more = self._ReadWord(lex_mode)
       else:
         raise AssertionError('Invalid lex state %s' % lex_mode)

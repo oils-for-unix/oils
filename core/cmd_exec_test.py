@@ -38,15 +38,16 @@ def InitCommandParser(code_str):
   return c_parser
 
 
-def InitExecutor():
+def InitExecutor(arena=None):
+  if not arena:
+    arena = test_lib.MakeArena('<InitExecutor>')
+
   mem = state.Mem('', [], {}, None)
   status_lines = None  # not needed for what we're testing
   builtins = builtin.BUILTIN_DEF
   funcs = {}
   comp_funcs = {}
   exec_opts = state.ExecOpts(mem)
-  pool = alloc.Pool()
-  arena = pool.NewArena()
   return cmd_exec.Executor(mem, status_lines, funcs, completion, comp_funcs,
                            exec_opts, arena)
 
@@ -69,7 +70,8 @@ class ExpansionTest(unittest.TestCase):
     node = c_parser.ParseCommandLine()
     print(node)
 
-    ex = InitExecutor()
+    arena = test_lib.MakeArena('<cmd_exec_test.py>')
+    ex = InitExecutor(arena)
     #print(ex.Execute(node))
 
     #print(ex._ExpandWords(node.words))
@@ -94,6 +96,35 @@ class VarOpTest(unittest.TestCase):
 
     print(ev.part_ev._EvalWordPart(unset_sub))
     print(ev.part_ev._EvalWordPart(set_sub))
+
+
+def ParseAndExecute(code_str):
+  arena = test_lib.MakeArena('<shell_test.py>')
+
+  # TODO: Unify with InitCommandParser above.
+  from osh.word_parse import WordParser
+  from osh.cmd_parse import CommandParser
+
+  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
+  w_parser = WordParser(lexer, line_reader)
+  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
+
+  node = c_parser.ParseWholeFile()
+  if not node:
+    raise AssertionError()
+
+  print(node)
+  ex = InitExecutor(arena)
+  status = ex.Execute(node)
+
+  # TODO: Can we capture output here?
+  return status
+
+
+class ExecutorTest(unittest.TestCase):
+
+  def testBuiltin(self):
+    print(ParseAndExecute('echo hi'))
 
 
 if __name__ == '__main__':

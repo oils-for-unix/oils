@@ -285,10 +285,15 @@ class Mem(object):
     self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
-    # NOTE: could use deque and appendleft/popleft, but
+    # NOTE: could use deque and appendleft/popleft, but:
     # 1. ASDL type checking of StrArray doesn't allow it (could be fixed)
     # 2. We don't otherwise depend on the collections module
     self.func_name_stack = []
+
+    # Note: we're reusing these objects because they change on every single
+    # line!  Don't want to allocate more than necsesary.
+    self.source_name = runtime.Str('')
+    self.line_num = runtime.Str('')
 
     self.last_status = 0  # Mutable public variable
     self.last_job_id = -1  # Uninitialized value mutable public variable
@@ -299,6 +304,7 @@ class Mem(object):
     self._InitDefaults()
     self._InitVarsFromEnv(environ)
     self.arena = arena
+
 
   def __repr__(self):
     parts = []
@@ -336,6 +342,10 @@ class Mem(object):
 
     # If it's not in the environment, initialize it.  This makes it easier to
     # update later in ExecOpts.
+
+    # TODO: IFS, PWD, etc. should follow this pattern.  Maybe need a SysCall
+    # interface?  self.syscall.getcwd() etc.
+
     v = self.GetVar('SHELLOPTS')
     if v.tag == value_e.Undef:
       SetGlobalString(self, 'SHELLOPTS', '')
@@ -343,6 +353,11 @@ class Mem(object):
     self.SetVar(
         ast.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
         scope_e.GlobalOnly)
+
+  def SetSourceLocation(self, source_name, line_num):
+    # Mutate Str() objects.
+    self.source_name.s = source_name
+    self.line_num.s = str(line_num)
 
   #
   # Stack
@@ -613,7 +628,15 @@ class Mem(object):
       # bash wants it in reverse order.  This is a little inefficient but we're
       # not depending on deque().
       strs = list(reversed(self.func_name_stack))
+      # TODO: Reuse this object too?
       return runtime.StrArray(strs)
+
+    if name == 'LINENO':
+      return self.line_num
+
+    # Instead of BASH_SOURCE.  Using Oil _ convnetion.
+    if name == 'SOURCE_NAME':
+      return self.source_name
 
     cell, _ = self._FindCellAndNamespace(name, lookup_mode)
 
@@ -625,17 +648,21 @@ class Mem(object):
   def Unset(self, lval, lookup_mode):
     """
     Returns:
-      Success or failure.  A non-existent variable is still considered success.
+      ok bool, found bool.
+
+      ok is false if the cell is read-only.
+      found is false if the name is not there.
     """
     if lval.tag == lvalue_e.LhsName:  # unset x
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
+        found = True
         if cell.readonly:
-          e_die("Can't unset readonly variable %r", lval.name)
+          return False, found
         del namespace[lval.name]  # it must be here
-        return True  # found
+        return True, found # found
       else:
-        return False
+        return True, False
 
     elif lval.tag == lvalue_e.LhsIndexedName:  # unset a[1]
       raise NotImplementedError

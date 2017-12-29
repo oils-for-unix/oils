@@ -866,10 +866,16 @@ def Unset(argv, mem, funcs):
       if name in funcs:
         del funcs[name]
     elif arg.v:
-      mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
+      ok, _  = mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
+      if not ok:
+        util.error("Can't unset readonly variable %r", name)
+        return 1
     else:
       # Try to delete var first, then func.
-      found = mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
+      ok, found = mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
+      if not ok:
+        util.error("Can't unset readonly variable %r", name)
+        return 1
       #log('%s: %s', name, found)
       if not found:
         if name in funcs:

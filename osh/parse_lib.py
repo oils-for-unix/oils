@@ -126,6 +126,13 @@ def MakeWordParserForHereDoc(lines, arena):
   return word_parse.WordParser(lx, line_reader)
 
 
+def MakeWordParserForPlugin(code_str, arena):
+  line_reader = reader.StringLineReader(code_str, arena)
+  line_lexer = lexer.LineLexer(_MakeMatcher(), '', arena)
+  lx = lexer.Lexer(line_lexer, line_reader)
+  return word_parse.WordParser(lx, line_reader)
+
+
 def MakeParserForCommandSub(line_reader, lexer):
   """To parse command sub, we want a fresh word parser state.
 

@@ -17,7 +17,7 @@ from core import util
 class _Reader(object):
   def __init__(self, arena):
     self.arena = arena
-    self.line_num = 0  # physical line number
+    self.line_num = 1  # physical line numbers start from 1
 
   def GetLine(self):
     line = self._GetLine()
@@ -76,12 +76,6 @@ class FileLineReader(_Reader):
     line = self.f.readline()
     if not line:
       return None
-
-    # TODO: Remove this anachonism.  We no longer need every line to end with a
-    # newline.  See input handling comment at the top of osh/lex.py.  (I tried
-    # and it made a bunch of tests fail.)
-    if not line.endswith('\n'):
-      line += '\n'
 
     return line
 

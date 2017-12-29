@@ -338,7 +338,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -370,7 +370,7 @@ special-vars() {
 
 # dash/mksh don't implement this.
 introspect() {
-  sh-spec spec/introspect.test.sh \
+  sh-spec spec/introspect.test.sh --osh-failures-allowed 3 \
     $BASH $OSH "$@"
 }
 

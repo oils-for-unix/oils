@@ -155,6 +155,9 @@ def LeftMostSpanForPart(part):
     return part.spids[0]
     #return part.op.span_id  # e.g. @( is the left-most token
 
+  elif part.tag == word_part_e.BracedAltPart:
+    return const.NO_INTEGER
+
   else:
     raise AssertionError(part.__class__.__name__)
 
@@ -229,16 +232,27 @@ def LeftMostSpanForWord(w):
   if w.tag == word_e.CompoundWord:
     if len(w.parts) == 0:
       return const.NO_INTEGER
-    elif len(w.parts) == 1:
-      return LeftMostSpanForPart(w.parts[0])
     else:
       begin = w.parts[0]
       # TODO: We need to combine LineSpan()?  If they're both on the same line,
       # return them both.  If they're not, then just use "begin"?
       return LeftMostSpanForPart(begin)
 
-  # It's a TokenWord?
-  return w.token.span_id
+  elif w.tag == word_e.TokenWord:
+    return w.token.span_id
+
+  elif w.tag == word_e.BracedWordTree:
+    if len(w.parts) == 0:
+      return const.NO_INTEGER
+    else:
+      begin = w.parts[0]
+      # TODO: We need to combine LineSpan()?  If they're both on the same line,
+      # return them both.  If they're not, then just use "begin"?
+      return LeftMostSpanForPart(begin)
+
+  elif w.tag == word_e.StringWord:
+    # There is no place to store this now?
+    return const.NO_INTEGER
 
 
 # This is needed for DoWord I guess?  IT makes it easier to write the fixer.

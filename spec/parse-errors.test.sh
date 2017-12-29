@@ -103,3 +103,16 @@ f() {
 echo a(b)
 # status: 2
 # OK mksh status: 1
+
+### incomplete command sub
+$(x
+# status: 2
+# OK mksh status: 1
+
+### misplaced ;;
+echo 1 ;; echo 2
+# stdout-json: ""
+# status: 2
+# OK mksh status: 1
+
+

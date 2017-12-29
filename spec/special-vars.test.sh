@@ -3,6 +3,14 @@
 # NOTE:
 # - $! is tested in background.test.sh
 # - $- is tested in sh-options
+#
+# TODO: It would be nice to make a table, like:
+#
+# $$  $BASHPID  $PPID   $SHLVL   $BASH_SUBSHELL
+#  X 
+# (Subshell,  Command Sub,  Pipeline,  Spawn $0)
+#
+# And see whether the variable changed.
 
 ### $PWD
 # Just test that it has a slash for now.
@@ -39,7 +47,7 @@ echo $_
 echo $$ | egrep '[0-9]+'
 # status: 0
 
-### $$ doesn't change with subshell
+### $$ doesn't change with subshell or command sub
 # Just test that it has decimal digits
 set -o errexit
 die() {
@@ -48,14 +56,23 @@ die() {
 parent=$$
 test -n "$parent" || die "empty PID in parent"
 ( child=$$
-  test -n "$child" || die "empty PID in child"
+  test -n "$child" || die "empty PID in subshell"
   test "$parent" = "$child" || die "should be equal: $parent != $child"
+  echo 'subshell OK'
 )
+echo $( child=$$
+        test -n "$child" || die "empty PID in command sub"
+        test "$parent" = "$child" || die "should be equal: $parent != $child"
+        echo 'command sub OK'
+      )
 exit 3  # make sure we got here
-# stdout-json: ""
 # status: 3
+## STDOUT:
+subshell OK
+command sub OK
+## END
 
-### $BASHPID DOES change with subshell
+### $BASHPID DOES change with subshell and command sub
 set -o errexit
 die() {
   echo 1>&2 "$@"; exit 1
@@ -63,13 +80,24 @@ die() {
 parent=$BASHPID
 test -n "$parent" || die "empty BASHPID in parent"
 ( child=$BASHPID
-  test -n "$child" || die "empty BASHPID in child"
+  test -n "$child" || die "empty BASHPID in subshell"
   test "$parent" != "$child" || die "should not be equal: $parent = $child"
+  echo 'subshell OK'
 )
+echo $( child=$BASHPID
+        test -n "$child" || die "empty BASHPID in command sub"
+        test "$parent" != "$child" ||
+          die "should not be equal: $parent = $child"
+        echo 'command sub OK'
+      )
 exit 3  # make sure we got here
-# stdout-json: ""
-# status: 3
-# N-I dash status: 1
+## status: 3
+## STDOUT:
+subshell OK
+command sub OK
+## END
+## N-I dash status: 1
+## N-I dash stdout-json: ""
 
 ### Background PID $! looks like a PID
 sleep 0.01 &

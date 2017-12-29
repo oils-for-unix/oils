@@ -23,11 +23,13 @@ import time
 
 from asdl import const
 
+from core import alloc
 from core import args
 from core import braces
 from core import expr_eval
 from core import reader
 from core import test_builtin
+from core import word
 from core import word_eval
 from core import ui
 from core import util
@@ -52,6 +54,7 @@ command_e = ast.command_e
 redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 assign_op_e = ast.assign_op_e
+lex_mode_e = ast.lex_mode_e
 
 value_e = runtime.value_e
 scope_e = runtime.scope_e
@@ -121,9 +124,9 @@ class Executor(object):
     self.exec_opts = exec_opts
     self.arena = arena
 
-    self.ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.ev)
-    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.ev)
+    self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
+    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
     self.traps = {}  # signal/hook -> LST node
     self.fd_state = process.FdState()
@@ -140,6 +143,8 @@ class Executor(object):
     self.job_state = process.JobState()
 
     self.loop_level = 0  # for detecting bad top-level break/continue
+
+    self.tracer = Tracer(exec_opts, mem, self.word_ev)
 
   def _Complete(self, argv):
     """complete builtin - register a completion function.
@@ -173,7 +178,8 @@ class Executor(object):
     try:
       node = c_parser.ParseWholeFile()
       # NOTE: We could model a parse error as an exception, like Python, so we
-      # get a traceback.  (This won't be applicable for a static module system.)
+      # get a traceback.  (This won't be applicable for a static module
+      # system.)
       if not node:
         util.error('Parse error in %r:', source_name)
         err = c_parser.Error()
@@ -379,8 +385,8 @@ class Executor(object):
 
       if redir_type == RedirType.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
-        val = self.ev.EvalWordToString(n.arg_word)
-        if val.tag != value_e.Str:
+        val = self.word_ev.EvalWordToString(n.arg_word)
+        if val.tag != value_e.Str:  # TODO: This error never fires
           util.warn("Redirect filename must be a string, got %s", val)
           return None
         filename = val.s
@@ -392,8 +398,8 @@ class Executor(object):
         return runtime.PathRedirect(n.op_id, fd, filename)
 
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
-        val = self.ev.EvalWordToString(n.arg_word)
-        if val.tag != value_e.Str:
+        val = self.word_ev.EvalWordToString(n.arg_word)
+        if val.tag != value_e.Str:  # TODO: This error never fires
           util.warn("Redirect descriptor should be a string, got %s", val)
           return None
         t = val.s
@@ -411,8 +417,8 @@ class Executor(object):
 
       elif redir_type == RedirType.Here:  # here word
         # TODO: decay should be controlled by an option
-        val = self.ev.EvalWordToString(n.arg_word, decay=True)
-        if val.tag != value_e.Str:
+        val = self.word_ev.EvalWordToString(n.arg_word, decay=True)
+        if val.tag != value_e.Str:   # TODO: This error never fires
           util.warn("Here word body should be a string, got %s", val)
           return None
         # NOTE: bash and mksh both add \n
@@ -422,8 +428,8 @@ class Executor(object):
 
     elif n.tag == redir_e.HereDoc:
       # TODO: decay shoudl be controlled by an option
-      val = self.ev.EvalWordToString(n.body, decay=True)
-      if val.tag != value_e.Str:
+      val = self.word_ev.EvalWordToString(n.body, decay=True)
+      if val.tag != value_e.Str:   # TODO: This error never fires
         util.warn("Here doc body should be a string, got %s", val)
         return None
       return runtime.HereRedirect(fd, val.s)
@@ -468,7 +474,7 @@ class Executor(object):
       rhs = env_pair.val
 
       # Could pass extra bindings like out_env here?  But PushTemp should work?
-      val = self.ev.EvalWordToString(rhs)
+      val = self.word_ev.EvalWordToString(rhs)
 
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
@@ -606,11 +612,6 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
-  # TODO: This causes "bad descriptor errors"
-  #XFILE = open('/tmp/xtrace.log', 'w')
-  # typically fd 4, not sure why it interferes?
-  #log('*** XFILE %d', XFILE.fileno())
-
   def _Dispatch(self, node, fork_external):
     argv0 = None  # for error message
     check_errexit = False  # for errexit
@@ -630,22 +631,45 @@ class Executor(object):
       # to print the filename too.
 
       words = braces.BraceExpandWords(node.words)
-      argv = self.ev.EvalWordSequence(words)
+      argv = self.word_ev.EvalWordSequence(words)
       if argv:
         argv0 = argv[0]
 
       environ = self.mem.GetExported()
       self._EvalEnv(node.more_env, environ)
 
-      if self.exec_opts.xtrace:
-        # TODO: Eval PS4.  Using what evaluator?  I guess the same state.
-        # self.ev.
-        log('+ %s', argv)
-        # TODO:
-        #
-        # This is good enough for xtrace.
-        # But the tracer is more general than that.
-        # self.tracer.BeginSimpleCommand()
+      # This is a very basic implementation for PS4='+$SOURCE_NAME:$LINENO:'
+
+      # TODO:
+      # - It should be a stack eventually.  So if there is an exception we can
+      # print the full stack trace.  Python has a list of frame objects, and
+      # each one has a location?
+      # - The API to get DebugInfo is overly long.
+      # - Maybe just do a simple thing like osh-o line-trace without any PS4?
+
+      # NOTE: osh2oil uses node.more_env, but we don't need that.
+      found = False
+      if node.words:
+        first_word = node.words[0]
+        span_id = word.LeftMostSpanForWord(first_word)
+        if span_id == const.NO_INTEGER:
+          log('Warning: word has no location information: %s', first_word)
+        else:
+          found = True
+
+      if found:
+        # NOTE: This is what we want to expose as variables for PS4.
+        #ui.PrintFilenameAndLine(span_id, self.arena)
+
+        line_span = self.arena.GetLineSpan(span_id)
+        line_id = line_span.line_id
+        line = self.arena.GetLine(line_id)
+        source_name, line_num = self.arena.GetDebugInfo(line_id)
+        self.mem.SetSourceLocation(source_name, line_num)
+      else:
+        self.mem.SetSourceLocation('<unknown>', -1)
+
+      self.tracer.OnSimpleCommand(argv)
 
       status = self._RunSimpleCommand(argv, environ, fork_external)
 
@@ -720,7 +744,7 @@ class Executor(object):
       for pair in node.pairs:
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-          val = self.ev.EvalWordToAny(pair.rhs)
+          val = self.word_ev.EvalWordToAny(pair.rhs)
           old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
                                             self.exec_opts)
           sig = (old_val.tag, val.tag)
@@ -743,7 +767,7 @@ class Executor(object):
 
           # RHS can be a string or array.
           if pair.rhs:
-            val = self.ev.EvalWordToAny(pair.rhs)
+            val = self.word_ev.EvalWordToAny(pair.rhs)
             assert isinstance(val, runtime.value), val
           else:
             # e.g. 'readonly x' or 'local x'
@@ -756,7 +780,7 @@ class Executor(object):
 
     elif node.tag == command_e.ControlFlow:
       if node.arg_word:  # Evaluate the argument
-        val = self.ev.EvalWordToString(node.arg_word)
+        val = self.word_ev.EvalWordToString(node.arg_word)
         assert val.tag == value_e.Str
         arg = int(val.s)  # They all take integers
       else:
@@ -856,7 +880,7 @@ class Executor(object):
         iter_list = self.mem.GetArgv()
       else:
         words = braces.BraceExpandWords(node.iter_words)
-        iter_list = self.ev.EvalWordSequence(words)
+        iter_list = self.word_ev.EvalWordSequence(words)
         # We need word splitting and so forth
         # NOTE: This expands globs too.  TODO: We should pass in a Globber()
         # object.
@@ -917,7 +941,7 @@ class Executor(object):
       status = 0  # make it true
 
     elif node.tag == command_e.Case:
-      val = self.ev.EvalWordToString(node.to_match)
+      val = self.word_ev.EvalWordToString(node.to_match)
       to_match = val.s
 
       status = 0  # If there are no arms, it should be zero?
@@ -926,7 +950,7 @@ class Executor(object):
       for arm in node.arms:
         for pat_word in arm.pat_list:
           # NOTE: Is it OK that we're evaluating these as we go?
-          pat_val = self.ev.EvalWordToString(pat_word, do_fnmatch=True)
+          pat_val = self.word_ev.EvalWordToString(pat_word, do_fnmatch=True)
           #log('Matching word %r against pattern %r', to_match, pat_val.s)
           if libc.fnmatch(pat_val.s, to_match):
             status = self._ExecuteList(arm.action)
@@ -1097,3 +1121,115 @@ class Executor(object):
       self.fd_state.Pop()
 
     return status
+
+
+class Tracer(object):
+  """A tracer for this process.
+  
+  TODO: Connect it somehow to tracers for other processes.  So you can make an
+  HTML report offline.
+
+  https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
+
+  Bare minimum to debug problems:
+    - argv and span ID of the SimpleCommand that corresponds to that
+    - then print line number using arena
+    - set -x doesn't print line numbers!  OH but you can do that with
+      PS4=$LINENO 
+  """
+  def __init__(self, exec_opts, mem, word_ev):
+    """
+    Args:
+      exec_opts: For xtrace setting
+      mem: for retrieving PS4
+      word_ev: for evaluating PS4
+    """
+    self.exec_opts = exec_opts
+    self.mem = mem
+    self.word_ev = word_ev
+
+    self.arena = alloc.PluginArena('<$PS4>')
+    self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
+
+  def OnSimpleCommand(self, argv):
+    """For set -x."""
+
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    val = self.mem.GetVar('PS4')
+    assert val.tag == value_e.Str
+
+    s = val.s
+    if s:
+      first_char, ps4 = s[0], s[1:]
+    else:
+      first_char, ps4 = '+', ' '  # default
+
+    try:
+      ps4_word = self.parse_cache[ps4]
+    except KeyError:
+      # We have to parse this at runtime.  PS4 should usually remain constant.
+      w_parser = parse_lib.MakeWordParserForPlugin(ps4, self.arena)
+
+      # NOTE: Reading PS4 is just like reading a here doc line.  "\n" is
+      # allowed too.  The OUTER mode would stop at spaces, and ReadWord
+      # doesn't allow lex_mode_e.DQ.
+      ps4_word = w_parser.ReadHereDocBody()
+
+      if not ps4_word:
+        error_str = '<ERROR: cannot parse PS4>'
+        t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        ps4_word = ast.CompoundWord([ast.LiteralPart(t)])
+      self.parse_cache[ps4] = ps4_word
+
+    #print(ps4_word)
+
+    # TODO: Repeat first character according process stack depth.  Where is
+    # that stored?  In the executor itself?  It should be stored along with
+    # the PID.  Need some kind of ShellProcessState or something.
+    #
+    # We should come up with a better mechanism.  Something like $PROC_INDENT
+    # and $OIL_XTRACE_PREFIX.
+
+    # TODO: Handle runtime errors!  For example, you could PS4='$(( 1 / 0 ))'
+    # <ERROR: cannot evaluate PS4>
+    prefix = self.word_ev.EvalWordToString(ps4_word)
+
+    print('%s%s%s' % (
+        first_char, prefix.s, ' '.join(_PrettyString(a) for a in argv)),
+        file=sys.stderr)
+
+  def Event(self):
+    """
+    Other events:
+
+    - Function call events.  As opposed to external commands.
+    - Process Forks.  Subshell, command sub, pipeline,
+    - Command Completion -- you get the status code.
+    - Assignments
+      - We should desugar to SetVar like mksh
+    """
+    pass
+
+
+# Copied from asdl/format.py.  We're not using it directly because that is
+# debug output, and this is real input.
+# TODO: Is this slow?
+
+# NOTE: bash prints \' for single quote, repr() prints "'".  Gah.  This is also
+# used for printf %q and ${var@q} (bash 4.4).
+
+import re
+_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
+
+def _PrettyString(s):
+  if '\n' in s:
+    #return json.dumps(s)  # account for the fact that $ matches the newline
+    return repr(s)
+  if _PLAIN_RE.match(s):
+    return s
+  else:
+    #return json.dumps(s)
+    return repr(s)

@@ -13,6 +13,8 @@ Also, we don't want to save comment lines.
 
 from asdl import const
 
+from core import util
+
 
 class Arena(object):
   """A collection of lines and line spans.
@@ -99,7 +101,11 @@ class Arena(object):
 
   def GetLineSpan(self, span_id):
     assert span_id != const.NO_INTEGER, span_id
-    return self.spans[span_id]  # span IDs start from 1
+    try:
+      return self.spans[span_id]
+    except IndexError:
+      util.log('Span ID out of range: %d', span_id)
+      raise
 
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
@@ -116,7 +122,16 @@ class Arena(object):
 def CompletionArena(pool):
   """A temporary arena that only exists for a function call?"""
   arena = pool.NewArena()
-  arena.PushSource('<completion>')
+  arena.PushSource('<temp completion buffer>')
+  return arena
+
+
+def PluginArena(source_name):
+  """For PS4, etc."""
+  # TODO: Should there only be one pool?  This isn't worked out yet.
+  pool = Pool()
+  arena = pool.NewArena()
+  arena.PushSource(source_name)
   return arena
 
 
