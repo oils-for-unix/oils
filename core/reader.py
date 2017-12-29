@@ -17,7 +17,7 @@ from core import util
 class _Reader(object):
   def __init__(self, arena):
     self.arena = arena
-    self.line_num = 0  # physical line number
+    self.line_num = 1  # physical line numbers start from 1
 
   def GetLine(self):
     line = self._GetLine()

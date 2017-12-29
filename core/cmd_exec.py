@@ -29,6 +29,7 @@ from core import braces
 from core import expr_eval
 from core import reader
 from core import test_builtin
+from core import word
 from core import word_eval
 from core import ui
 from core import util
@@ -177,7 +178,8 @@ class Executor(object):
     try:
       node = c_parser.ParseWholeFile()
       # NOTE: We could model a parse error as an exception, like Python, so we
-      # get a traceback.  (This won't be applicable for a static module system.)
+      # get a traceback.  (This won't be applicable for a static module
+      # system.)
       if not node:
         util.error('Parse error in %r:', source_name)
         err = c_parser.Error()
@@ -635,6 +637,37 @@ class Executor(object):
 
       environ = self.mem.GetExported()
       self._EvalEnv(node.more_env, environ)
+
+      # This is a very basic implementation for PS4='+$SOURCE_NAME:$LINENO:'
+
+      # TODO:
+      # - It should be a stack eventually.  So if there is an exception we can
+      # print the full stack trace.  Python has a list of frame objects, and
+      # each one has a location?
+      # - The API to get DebugInfo is overly long.
+      # - Maybe just do a simple thing like osh-o line-trace without any PS4?
+
+      # NOTE: osh2oil uses node.more_env, but we don't need that.
+      found = False
+      if node.words:
+        first_word = node.words[0]
+        span_id = word.LeftMostSpanForWord(first_word)
+        if span_id == const.NO_INTEGER:
+          log('Warning: word has no location information: %s', first_word)
+        else:
+          found = True
+
+      if found:
+        # NOTE: This is what we want to expose as variables for PS4.
+        #ui.PrintFilenameAndLine(span_id, self.arena)
+
+        line_span = self.arena.GetLineSpan(span_id)
+        line_id = line_span.line_id
+        line = self.arena.GetLine(line_id)
+        source_name, line_num = self.arena.GetDebugInfo(line_id)
+        self.mem.SetSourceLocation(source_name, line_num)
+      else:
+        self.mem.SetSourceLocation('<unknown>', -1)
 
       self.tracer.OnSimpleCommand(argv)
 

@@ -2,15 +2,26 @@
 #
 # xtrace test.  Test PS4 and line numbers, etc.
 
-### basic xtrace
-echo 1
-set -o xtrace
-echo 2
+### set -o verbose prints unevaluated code
+set -o verbose
+x=foo
+y=bar
+echo $x
+echo $(echo $y)
 ## STDOUT:
-1
-2
+foo
+bar
 ## STDERR:
-+ echo 2
+x=foo
+y=bar
+echo $x
+echo $(echo $y)
+## OK bash STDERR:
+x=foo
+y=bar
+echo $x
+echo $(echo $y)
+echo $y
 ## END
 
 ### xtrace with whitespace and quotes
@@ -150,6 +161,14 @@ x=1
 PS4='+$(x'
 set -o xtrace
 echo one
-# stdout: one
-# stderr: + echo one
+echo status=$?
+## STDOUT:
+one
+status=0
+## END
+# mksh and dash both fail.  bash prints errors to stderr.
+# OK dash stdout-json: ""
+# OK dash status: 2
+# OK mksh stdout-json: ""
+# OK mksh status: 1
 
