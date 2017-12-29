@@ -623,17 +623,21 @@ class Mem(object):
   def Unset(self, lval, lookup_mode):
     """
     Returns:
-      Success or failure.  A non-existent variable is still considered success.
+      ok bool, found bool.
+
+      ok is false if the cell is read-only.
+      found is false if the name is not there.
     """
     if lval.tag == lvalue_e.LhsName:  # unset x
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
+        found = True
         if cell.readonly:
-          e_die("Can't unset readonly variable %r", lval.name)
+          return False, found
         del namespace[lval.name]  # it must be here
-        return True  # found
+        return True, found # found
       else:
-        return False
+        return True, False
 
     elif lval.tag == lvalue_e.LhsIndexedName:  # unset a[1]
       raise NotImplementedError

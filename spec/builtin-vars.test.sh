@@ -153,11 +153,10 @@ echo status=$?
 readonly R=foo
 unset R
 echo status=$?
-# status: 1
-# stdout-json: ""
+# status: 0
+# stdout: status=1
 # OK dash status: 2
-# BUG mksh/bash stdout-json: "status=1\n"
-# BUG mksh/bash status: 0
+# OK dash stdout-json: ""
 
 ### Unset a function without -f
 f() {
