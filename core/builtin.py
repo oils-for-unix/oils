@@ -654,7 +654,7 @@ def Pushd(argv, mem, dir_stack):
     util.error('pushd: too many arguments')
     return 1
 
-  dest_dir = argv[0]
+  dest_dir = os.path.abspath(argv[0])
   try:
     os.chdir(dest_dir)
   except OSError as e:
