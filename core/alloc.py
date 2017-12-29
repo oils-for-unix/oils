@@ -116,16 +116,16 @@ class Arena(object):
 def CompletionArena(pool):
   """A temporary arena that only exists for a function call?"""
   arena = pool.NewArena()
-  arena.PushSource('<completion>')
+  arena.PushSource('<temp completion buffer>')
   return arena
 
 
-def PluginArena():
+def PluginArena(source_name):
   """For PS4, etc."""
   # TODO: Should there only be one pool?  This isn't worked out yet.
   pool = Pool()
   arena = pool.NewArena()
-  arena.PushSource('<plugin>')
+  arena.PushSource(source_name)
   return arena
 
 
