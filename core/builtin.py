@@ -627,7 +627,7 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
 
 def _FormatDir(dir_name, home_dir):
-  if home_dir and home_dir.tag == value_e.Str:
+  if home_dir and home_dir.tag == value_e.Str and dir_name.startswith(home_dir.s):
     return dir_name.replace(home_dir.s, '~', 1)
   return dir_name
 
