@@ -281,13 +281,13 @@ class Executor(object):
       status = builtin.Jobs(argv, self.job_state)
 
     elif builtin_id == EBuiltin.PUSHD:
-      status = builtin.Pushd(argv, self.mem, self.dir_stack)
+      status = builtin.Pushd(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
     elif builtin_id == EBuiltin.POPD:
-      status = builtin.Popd(argv, self.mem, self.dir_stack)
+      status = builtin.Popd(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
     elif builtin_id == EBuiltin.DIRS:
-      status = builtin.Dirs(argv, self.mem, self.dir_stack)
+      status = builtin.Dirs(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
     elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
       status = self._Source(argv)
