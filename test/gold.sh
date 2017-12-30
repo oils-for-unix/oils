@@ -61,14 +61,6 @@ html-summary() {
   _compare test/spec-runner.sh html-summary
 }
 
-configure() {
-  _compare ./configure
-}
-
-no-op() {
-  _compare scripts/count.sh
-}
-
 gen-module-init() {
   local modules='time datetime'
   _compare build/actions.sh gen-module-init $modules
@@ -87,24 +79,18 @@ startup-benchmark() {
   _compare benchmarks/startup.sh compare-strace
 }
 
-glob() {
-  _compare gold/glob.sh
-}
-
-nix() {
-  _compare gold/nix.sh isElfSimpleWithStdin
-}
-
-readonly_() {
-  _compare gold/readonly.sh
-}
-
-complex-here-docs() {
-  _compare gold/complex-here-docs.sh
-}
+configure() { _compare ./configure; }
+nix() { _compare gold/nix.sh isElfSimpleWithStdin; }
+and-or() { _compare gold/and-or.sh test-simple; }
 
 comments() { _compare gold/comments.sh; }
+readonly_() { _compare gold/readonly.sh; }
 export() { _compare gold/export.sh; }
+glob() { _compare gold/glob.sh; }
+no-op() { _compare scripts/count.sh; }
+complex-here-docs() { _compare gold/complex-here-docs.sh; }
+
+
 # Not implemented in osh.
 dollar-sq() { _compare gold/dollar-sq.sh; }
 
@@ -119,19 +105,24 @@ readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
   #version-text
 
+  configure
+  nix
+  and-or
+
   comments
   readonly_
+  export
+  glob
+  no-op
+  complex-here-docs
+
   count
   one-spec-test
   html-summary
-  configure
-  no-op
   gen-module-init
-  glob
-  complex-here-docs
 
   # This one takes a little long, but it's realistic.
-  wild
+  #wild
 
   # There are slight differences in the number of syscalls reported.  Not sure
   # of the cause.

@@ -22,6 +22,23 @@ hostname | wc -l
 echo hi | wc -l
 # stdout: 1
 
+### and-or chains
+echo 1 && echo 2 || echo 3 && echo 4
+echo --
+false || echo A
+false || false || echo B
+false || false || echo C && echo D || echo E
+## STDOUT:
+1
+2
+4
+--
+A
+B
+C
+D
+## END
+
 ### here doc with var
 v=one
 tac <<EOF

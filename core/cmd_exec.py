@@ -815,29 +815,46 @@ class Executor(object):
       check_errexit = False
 
     elif node.tag == command_e.AndOr:
-      # TODO: We have to fix && || precedence.  See case #13 in
-      # dbracket.test.sh.
+      # NOTE: && and || have EQUAL precedence in command mode.  See case #13
+      # in dbracket.test.sh.
 
-      #print(node.children)
-      left, right = node.children
+      left = node.children[0]
 
-      # This is everything except the last one.
+      # Suppress failure for every child except the last one.
       self._PushErrExit()
       try:
         status = self._Execute(left)
       finally:
         self._PopErrExit()
 
-      if node.op_id == Id.Op_DPipe:
-        if status != 0:
-          status = self._Execute(right)
-          check_errexit = True  # only check last condition
-      elif node.op_id == Id.Op_DAmp:
-        if status == 0:
-          status = self._Execute(right)
-          check_errexit = True  # only check last condition
-      else:
-        raise AssertionError
+      i = 1
+      n = len(node.children)
+      while i < n:
+        #log('i %d status %d', i, status)
+        child = node.children[i]
+        op_id = node.ops[i-1]
+
+        #log('child %s op_id %s', child, op_id)
+
+        if op_id == Id.Op_DPipe and status == 0:
+          i += 1
+          continue  # short circuit
+
+        elif op_id == Id.Op_DAmp and status != 0:
+          i += 1
+          continue  # short circuit
+
+        if i == n - 1:  # errexit handled differently for last child
+          status = self._Execute(child)
+          check_errexit = True
+        else:
+          self._PushErrExit()
+          try:
+            status = self._Execute(child)
+          finally:
+            self._PopErrExit()
+
+        i += 1
 
     elif node.tag in (command_e.While, command_e.Until):
       # TODO: Compile this out?

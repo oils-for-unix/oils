@@ -1329,35 +1329,40 @@ class CommandParser(object):
 
   def ParseAndOr(self):
     """
-    and_or           : pipeline (( AND_IF | OR_IF ) newline_ok pipeline)* ;
-
-    Left recursive / associative:
-
     and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline
                      | pipeline
 
-    TODO: Make it left recursive -- results are wrong otherwise.  I guess you
-    have to do it iteratively, and add operators?  It's similar to the  | and
-    |& issue.
+    Note that it is left recursive and left associative.  We parse it
+    iteratively with a token of lookahead.
     """
-    left = self.ParsePipeline()
-    if not left: return None
+    child = self.ParsePipeline()
+    if not child: return None
 
-    if not self._Peek(): return None  # because ParsePipeline need not _Peek()
+    if not self._Peek(): return None
     if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
-      return left
-    op = self.c_id
-    self._Next()  # Skip past operator
+      return child
 
-    if not self._NewlineOk(): return None
+    ops = []
+    children = [child]
 
-    right = self.ParseAndOr()
-    if not right: return None
+    while True:
+      ops.append(self.c_id)
 
-    node = ast.AndOr()
-    node.children = [left, right]
-    #node.ops = [op]
-    node.op_id = op
+      self._Next()  # skip past || &&
+
+      if not self._NewlineOk():
+        return None
+
+      child = self.ParsePipeline()
+      if not child: return None
+
+      children.append(child)
+
+      if not self._Peek(): return None
+      if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
+        break
+
+    node = ast.AndOr(ops, children)
     return node
 
   def ParseCommandLine(self):
