@@ -3,17 +3,20 @@ OSH Quick Reference
 - Below is a list of topics, organized into [Sections].
 - Features not yet implemented have an X prefix.
 - View it on the web at https://www.oilshell.org/TODO
+- NOTE: Oil features are all unimplemented!
 
 INTRO
-  [Overview]      overview
+  [Overview]      overview   osh-vs-oil   command-vs-expr
   [Usage]         osh-usage   oil-usage   config   startup   line-editing
                   prompt
+  [Lexing]        comments #   line-continuation \
+  [Oil Lexing]    single-line $   docstring?
 
 COMMAND LANGUAGE
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
-  [Iteration]     while   until   for   for-expr ((
+  [Iteration]     while   until   for   for-expr-sh ((
   [Control Flow]  break   continue   return
   [Grouping]      function   block {   subshell (
   [Concurrency]   pipe   |   X |&
@@ -23,6 +26,15 @@ COMMAND LANGUAGE
                   here-doc    <<  <<-  <<<
   [Other]         dparen ((   time   X coproc   X select
 
+OIL COMMAND LANGUAGE
+
+X [Conditional]   switch   match   if-expr (
+X [Iteration]     for-expr (   while-expr (
+X [Grouping]      proc   func   lazy   pure   do {   shell {  
+X [Context]       with-cd   with-redir   with-env   with-vars   with-file
+X [Concurrency]   fork
+X [Redirects]     multiline-string '''_"""   file-descriptor !0
+
 ASSIGNING VARIABLES
   [Keywords]      local   readonly   export   unset   shift
                   declare   typeset   X let
@@ -30,6 +42,16 @@ ASSIGNING VARIABLES
                   append        str+='abc'
   [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
                   X assoc       declare -A assoc=([a]=1 [b]=2)
+
+OIL VARIABLES
+
+X [Keywords]      var   const   set   setglobal
+                  setargv   setoption
+X [Operators]     pass ->   rhs-assign =>
+X [Compound Data] oil-array     array = [a b c]
+                  splice        a = [a @middle b]
+X [Data Types]    Str   Int   Float   Bool   Array<>   Map<>    Table
+                  (JSON compat: Null, List)
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
@@ -43,6 +65,8 @@ WORD LANGUAGE
                   op-unary      ${x%%suffix}  etc.
                   op-str        ${x/y/z}
                   op-slice      ${a[@]:0:1}
+X [Oil Quotes]    c-string      c'1\t2\n'    c"1\t$two\n"
+                  safe-subst    h"<p>$[name]</p>"
 
 OTHER SHELL SUBLANGUAGES
   [Arithmetic]    arith-intro   Contexts where math is allowed
@@ -74,6 +98,10 @@ X [Word Lookup]   command   builtin
 X [Interactive]   alias   unalias   bind   history   fc
 X [Unsupported]   enable
 
+OIL BUILTINS
+  [I/O]           write   readline
+  [External]      dirname   basename   env ?
+
 SHELL OPTIONS
   [Errors]        nounset   errexit   pipefail
   [Globbing]      noglob   failglob   nullglob
@@ -102,6 +130,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [read]          REPLY   IFS
   [Functions]     X RANDOM   X SECONDS
   [Other]         BASH_REMATCH   @PIPESTATUS
+  [Oil]           SOURCE_NAME
 
 PLUGINS AND HOOKS
 X [Signals]       SIGINT   SIGABRT   SIGTODO
@@ -109,4 +138,19 @@ X [Traps]         ERR   DEBUG   RETURN   EXIT
 X [Words]         PS1   PS2   PS4
 X [Completion]    
 X [Other]         command_not_found
+
+OIL EXTENSIONS
+
+X [Static]        :use   :option
+X [awk]           BEGIN   END   when
+X [make]          rule
+X [find]          fs
+X [xargs]         each
+
+OIL LIBRARIES
+
+X [getopts]       ?
+X [Testing]       ?
+X [Data Formats]  json   csv   tsv2
+
 
