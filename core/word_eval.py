@@ -790,6 +790,8 @@ class _WordPartEvaluator:
           val = self._ApplyUnarySuffixOp(val, part.suffix_op)
 
       elif op.tag == suffix_op_e.PatSub:  # PatSub, vectorized
+        val = self._EmptyStrOrError(val)
+
         pat_val = self.word_ev.EvalWordToString(op.pat, do_fnmatch=True)
         assert pat_val.tag == value_e.Str, pat_val
 
