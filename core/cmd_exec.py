@@ -459,31 +459,6 @@ class Executor(object):
       redirects.append(r)
     return redirects
 
-  def _EvalEnv(self, node_env, out_env):
-    """Evaluate environment variable bindings.
-
-    Args:
-      node_env: list of ast.env_pair
-      out_env: mutated.
-    """
-    # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
-    # pushes argv.  Don't need that?
-    self.mem.PushTemp()
-    for env_pair in node_env:
-      name = env_pair.name
-      rhs = env_pair.val
-
-      # Could pass extra bindings like out_env here?  But PushTemp should work?
-      val = self.word_ev.EvalWordToString(rhs)
-
-      # Set each var so the next one can reference it.  Example:
-      # FOO=1 BAR=$FOO ls /
-      # TODO: Could add spid to LhsName.
-      self.mem.SetVar(ast.LhsName(name), val, (), scope_e.LocalOnly)
-
-      out_env[name] = val.s
-    self.mem.PopTemp()
-
   def _MakeProcess(self, node, job_state=None):
     """
     Assume we will run the node in another process.  Return a process.
@@ -509,7 +484,7 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, environ, fork_external):
+  def _RunSimpleCommand(self, argv, fork_external):
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
@@ -543,6 +518,8 @@ class Executor(object):
         util.usage(str(e))
         status = 2  # consistent error code for usage error
       return status
+
+    environ = self.mem.GetExported()  # Include temporary variables
 
     if fork_external:
       thunk = process.ExternalThunk(argv, environ)
@@ -612,6 +589,14 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
+  def _SetSourceLocation(self, span_id):
+    # TODO: This API should be simplified
+    line_span = self.arena.GetLineSpan(span_id)
+    line_id = line_span.line_id
+    line = self.arena.GetLine(line_id)
+    source_name, line_num = self.arena.GetDebugInfo(line_id)
+    self.mem.SetSourceLocation(source_name, line_num)
+
   def _Dispatch(self, node, fork_external):
     argv0 = None  # for error message
     check_errexit = False  # for errexit
@@ -632,11 +617,6 @@ class Executor(object):
 
       words = braces.BraceExpandWords(node.words)
       argv = self.word_ev.EvalWordSequence(words)
-      if argv:
-        argv0 = argv[0]
-
-      environ = self.mem.GetExported()
-      self._EvalEnv(node.more_env, environ)
 
       # This is a very basic implementation for PS4='+$SOURCE_NAME:$LINENO:'
 
@@ -660,18 +640,30 @@ class Executor(object):
       if found:
         # NOTE: This is what we want to expose as variables for PS4.
         #ui.PrintFilenameAndLine(span_id, self.arena)
-
-        line_span = self.arena.GetLineSpan(span_id)
-        line_id = line_span.line_id
-        line = self.arena.GetLine(line_id)
-        source_name, line_num = self.arena.GetDebugInfo(line_id)
-        self.mem.SetSourceLocation(source_name, line_num)
+        self._SetSourceLocation(span_id)
       else:
         self.mem.SetSourceLocation('<unknown>', -1)
 
+      # This comes before evaluating env, in case there are problems evaluating
+      # it.  We could trace the env separately?  Also trace unevaluated code
+      # with set-o verbose?
       self.tracer.OnSimpleCommand(argv)
 
-      status = self._RunSimpleCommand(argv, environ, fork_external)
+      if node.more_env:
+        self.mem.PushTemp()
+      try:
+        for env_pair in node.more_env:
+          val = self.word_ev.EvalWordToString(env_pair.val)
+          # Set each var so the next one can reference it.  Example:
+          # FOO=1 BAR=$FOO ls /
+          self.mem.SetVar(ast.LhsName(env_pair.name), val,
+                          (var_flags_e.Exported,), scope_e.TempEnv)
+
+        # NOTE: This might never return!  In the case of fork_external=False.
+        status = self._RunSimpleCommand(argv, fork_external)
+      finally:
+        if node.more_env:
+          self.mem.PopTemp()
 
       if self.exec_opts.xtrace:
         #log('+ %s -> %d', argv, status)
@@ -774,6 +766,15 @@ class Executor(object):
             val = None  # only changing flags
 
         self.mem.SetVar(lval, val, flags, lookup_mode)
+
+        # Assignment always appears to have a spid.
+        if node.spids:
+          self._SetSourceLocation(node.spids[0])
+        else:
+          # TODO: when does this happen?  Warn.
+          #log('Warning: assignment has no location information: %s', node)
+          self.mem.SetSourceLocation('<unknown>', -1)
+        self.tracer.OnAssignment(lval, val, flags, lookup_mode)
 
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
@@ -1168,12 +1169,8 @@ class Tracer(object):
     self.arena = alloc.PluginArena('<$PS4>')
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
 
-  def OnSimpleCommand(self, argv):
+  def _EvalPS4(self):
     """For set -x."""
-
-    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
-    if not self.exec_opts.xtrace:
-      return
 
     val = self.mem.GetVar('PS4')
     assert val.tag == value_e.Str
@@ -1214,9 +1211,25 @@ class Tracer(object):
     # <ERROR: cannot evaluate PS4>
     prefix = self.word_ev.EvalWordToString(ps4_word)
 
-    print('%s%s%s' % (
-        first_char, prefix.s, ' '.join(_PrettyString(a) for a in argv)),
-        file=sys.stderr)
+    return first_char, prefix.s
+
+  def OnSimpleCommand(self, argv):
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    first_char, prefix = self._EvalPS4()
+    cmd = ' '.join(_PrettyString(a) for a in argv)
+    print('%s%s%s' % (first_char, prefix, cmd), file=sys.stderr)
+
+  def OnAssignment(self, lval, val, flags, lookup_mode):
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    # Now we have to get the prefix
+    first_char, prefix = self._EvalPS4()
+    print('%s%s%s = %s' % (first_char, prefix, lval, val), file=sys.stderr)
 
   def Event(self):
     """

@@ -805,6 +805,7 @@ class _WordPartEvaluator:
         if val.tag == value_e.Str:
           s = _PatSub(val.s, op, pat, replace_str)
           val = runtime.Str(s)
+
         elif val.tag == value_e.StrArray:
           strs = []
           for s in val.strs:
