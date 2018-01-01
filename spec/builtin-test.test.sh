@@ -197,3 +197,16 @@ chmod -w $TMP/testw_no  # remove write permission
 test -w $TMP/testw_yes && echo 'yes'
 test -w $TMP/testw_no || echo 'no'
 # stdout-json: "yes\nno\n"
+
+### -h and -L test for symlink
+ln -s -f $TMP/zz $TMP/symlink
+test -L $TMP/zz || echo no
+test -h $TMP/zz || echo no
+test -L $TMP/symlink && echo yes
+test -h $TMP/symlink && echo yes
+## STDOUT:
+no
+no
+yes
+yes
+## END

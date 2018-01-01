@@ -479,7 +479,7 @@ class BoolEvaluator(_ExprEvaluator):
       arg_type = BOOL_OPS[op_id]  # could be static in the LST?
       if arg_type == OperandType.Path:
         try:
-          mode = os.stat(s).st_mode
+          mode = os.lstat(s).st_mode
         except OSError as e:  # Python 3: FileNotFoundError
           # TODO: Signal extra debug information?
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
@@ -503,7 +503,7 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_w:
           return os.access(s, os.W_OK)
 
-        if op_id == Id.BoolUnary_h:
+        if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
           return stat.S_ISLNK(mode)
 
         raise NotImplementedError(op_id)
