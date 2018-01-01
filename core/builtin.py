@@ -589,8 +589,12 @@ def Cd(argv, mem, dir_stack):
       # can't even set it at all.)
       raise AssertionError('Invalid OLDPWD')
 
-  # Save OLDPWD.
-  state.SetGlobalString(mem, 'OLDPWD', os.getcwd())
+  # NOTE: We can't call os.getcwd() because it can raise OSError if the
+  # directory was removed (ENOENT.)
+
+  pwd = mem.GetVar('PWD')
+  assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
+  state.SetGlobalString(mem, 'OLDPWD', pwd.s)
   try:
     os.chdir(dest_dir)
   except OSError as e:
