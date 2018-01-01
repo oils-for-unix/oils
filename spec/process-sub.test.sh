@@ -3,8 +3,21 @@
 ### Process sub input
 f=_tmp/process-sub.txt
 { echo 1; echo 2; echo 3; } > $f
-comm <(head -n 2 $f) <(tail -n 2 $f)
-# stdout-json: "1\n\t\t2\n\t3\n"
+cat <(head -n 2 $f) <(tail -n 2 $f)
+## STDOUT:
+1
+2
+2
+3
+## END
+
+### Process sub output
+{ echo 1; echo 2; echo 3; } > >(tac)
+## STDOUT:
+3
+2
+1
+## END
 
 ### Non-linear pipeline with >()
 stdout_stderr() {
@@ -25,4 +38,9 @@ cat $TMP/out.txt
 # PROBLEM -- OUT comes first, and then 'warning: e2', and then 'o2 o1'.  It
 # looks like it's because nobody waits for the proc sub.
 # http://lists.gnu.org/archive/html/help-bash/2017-06/msg00018.html
-# stdout-json: "OUT\nwarning: e2\no2\no1\n"
+## STDOUT:
+OUT
+warning: e2
+o2
+o1
+## END

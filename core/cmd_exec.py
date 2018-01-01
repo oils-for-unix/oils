@@ -1110,6 +1110,100 @@ class Executor(object):
 
     return ''.join(chunks).rstrip('\n')
 
+  def RunProcessSub(self, node, op_id):
+    """Process sub creates a forks a process connected to a pipe.
+
+    The pipe is typically passed to another process via a /dev/fd/$FD path.
+
+    TODO:
+
+    sane-proc-sub:
+    - wait for all the words
+
+    Otherwise, set $!  (mem.last_job_id)
+
+    strict-proc-sub:
+    - Don't allow it anywhere except SimpleCommand, any redirect, or
+    Assignment?  And maybe not even assignment?
+
+    Should you put return codes in @PROCESS_SUB_STATUS?  You need two of them.
+    """
+    p = self._MakeProcess(node)
+
+    r, w = os.pipe()
+
+    if op_id == Id.Left_ProcSubIn:
+      # Example: cat < <(head foo.txt)
+      #
+      # The head process should write its stdout to a pipe.
+      redir = process.StdoutToPipe(r, w)
+
+    elif op_id == Id.Left_ProcSubOut:
+      # Example: head foo.txt > >(tac)
+      #
+      # The tac process should read its stdin from a pipe.
+      #
+      # NOTE: This appears to hang in bash?  At least when done interactively.
+      # It doesn't work at all in osh interactively?
+      redir = process.StdinFromPipe(r, w)
+
+    else:
+      raise AssertionError
+
+    p.AddStateChange(redir)
+
+    # Fork, letting the child inherit the pipe file descriptors.
+    pid = p.Start()
+
+    # TODO: Set $!
+
+    # After forking, close the end of the pipe we're not using.
+    if op_id == Id.Left_ProcSubIn:
+      os.close(w)
+    elif op_id == Id.Left_ProcSubOut:
+      os.close(r)
+    else:
+      raise AssertionError
+
+    #log('I am %d', os.getpid())
+    #log('Process sub started %d', pid)
+    self.waiter.Register(pid, p.WhenDone)
+
+    # Is /dev Linux-specific?
+    if op_id == Id.Left_ProcSubIn:
+      return '/dev/fd/%d' % r
+
+    elif op_id == Id.Left_ProcSubOut:
+      return '/dev/fd/%d' % w
+
+    else:
+      raise AssertionError
+
+    # Generalize?
+    #
+    # - Make it work first, bare minimum.
+    # - Then Make something like Pipeline()?
+    #   - you add all the argument processes
+    #   - then you add the main processes, with those as args
+    #   - then p.Wait()
+    #     - get status for all of them?
+    #
+    # Problem is that you don't see this until word_eval?
+    # You can scan a simple command for these though.
+
+    # TODO:
+    # - Do we need to somehow register a waiter?  After SimpleCommand,
+    #   argv and redirect words need to wait?
+    # - what about for loops?  case?  ControlFlow?  temp binding,
+    #   assignments, etc. They all have words
+    #   - disallow those?
+    # I guess you need it at the end of every command sub loop?
+    # But you want to detect statically if you need to wait?
+    # Maybe just have a dirty flag?  needs_wait
+      # - Make a pipe
+      # - Start another process connected to the write end of the pipe.
+      # - Return [/dev/fd/FD] as the read end of the pipe.
+
   def RunFunc(self, func_node, argv):
     """Used by completion engine."""
     # These are redirects at DEFINITION SITE.  You can also have redirects at

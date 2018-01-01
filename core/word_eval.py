@@ -401,6 +401,17 @@ class _WordPartEvaluator:
     """
     raise NotImplementedError
 
+  def _EvalProcessSub(self, part, id_):
+    """Abstract since it has a side effect.
+
+    Args:
+      part: CommandSubPart
+
+    Returns:
+       part_value
+    """
+    raise NotImplementedError
+
   def _EvalTildeSub(self, prefix):
     """Evaluates ~ and ~user.
 
@@ -884,12 +895,15 @@ class _WordPartEvaluator:
       return [self._EvalDoubleQuotedPart(part)]
 
     elif part.tag == word_part_e.CommandSubPart:
-      if part.left_token.id not in (Id.Left_CommandSub, Id.Left_Backtick):
-        # TODO: If token is Id.Left_ProcSubIn or Id.Left_ProcSubOut, we have to
-        # supply something like /dev/fd/63.
-        raise NotImplementedError(part.left_token.id)
+      id_ = part.left_token.id
+      if id_ in (Id.Left_CommandSub, Id.Left_Backtick):
+        return [self._EvalCommandSub(part.command_list, quoted)]
 
-      return [self._EvalCommandSub(part.command_list, quoted)]
+      elif id_ in (Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+        return [self._EvalProcessSub(part.command_list, id_)]
+
+      else:
+        raise AssertionError(id_)
 
     elif part.tag == word_part_e.SimpleVarSub:
       decay_array = False
@@ -1144,6 +1158,11 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
     return runtime.StringPartValue(stdout, not quoted, not quoted)
 
+  def _EvalProcessSub(self, node, id_):
+    dev_path = self.ex.RunProcessSub(node, id_)
+    # no split or glob
+    return runtime.StringPartValue(dev_path, False, False)
+
 
 class NormalWordEvaluator(_WordEvaluator):
 
@@ -1170,6 +1189,10 @@ class _CompletionPartEvaluator(_WordPartEvaluator):
     # Just  return a dummy string?
     return runtime.StringPartValue(
         '__COMMAND_SUB_NOT_EXECUTED__', not quoted, not quoted)
+
+  def _EvalProcessSub(self, node, id_):
+    return runtime.StringPartValue(
+        '__PROCESS_SUB_NOT_EXECUTED__', False, False)
 
 
 class CompletionWordEvaluator(_WordEvaluator):
