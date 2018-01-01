@@ -478,9 +478,18 @@ class BoolEvaluator(_ExprEvaluator):
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]  # could be static in the LST?
       if arg_type == OperandType.Path:
+        # Only use lstat if we're testing for a symlink.
+        if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
+          try:
+            mode = os.lstat(s).st_mode
+          except OSError as e:
+            return False
+
+          return stat.S_ISLNK(mode)
+
         try:
-          mode = os.lstat(s).st_mode
-        except OSError as e:  # Python 3: FileNotFoundError
+          mode = os.stat(s).st_mode
+        except OSError as e:
           # TODO: Signal extra debug information?
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
           return False
@@ -502,9 +511,6 @@ class BoolEvaluator(_ExprEvaluator):
 
         if op_id == Id.BoolUnary_w:
           return os.access(s, os.W_OK)
-
-        if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
-          return stat.S_ISLNK(mode)
 
         raise NotImplementedError(op_id)
 
