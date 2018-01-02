@@ -43,6 +43,7 @@ def _ValueToPartValue(val, quoted):
     raise AssertionError
 
 
+# TODO: Move to RootSplitter?
 def _GetJoinChar(mem):
   """
   For decaying arrays by joining, eg. "$@" -> $@.
@@ -66,30 +67,58 @@ def _GetJoinChar(mem):
     raise AssertionError("IFS shouldn't be an array")
 
 
-def _SplitPartsIntoFragments(part_vals, ifs):
+# Problem:
+#
+# argv.py 1${undefined:-"2 3" "4 5"}6
+#
+# This is a CompoundWord (DQ '2 3')(LiteralPart ' ')(DQ '4 5')
+#
+# echo [$FOO]
+
+def _SplitPartsIntoFragments(part_vals, splitter):
   """
-  part_value[] -> part_value[]
-  Depends on no_glob
+  Args:
+    part_vals: array of runtime.part_value
+    splitter: RootSplitter() instance
+
+  Returns:
+    An array of arrays of runtime.fragment()
   """
   # Every part yields a single fragment array.
   frag_arrays = []
   for p in part_vals:
+    #log('p %s', p)
     if p.tag == part_value_e.StringPartValue:
       #log("SPLITTING %s with ifs %r", p, ifs)
       if p.do_split_elide:
-        frags = legacy.IfsSplit(p.s, ifs)
-        res = [runtime.fragment(f, True, p.do_glob) for f in frags]
+        split_strs = splitter.SplitForWordEval(p.s)
+
+        #log('split_strs %s', split_strs)
+
+        # NOTE:
+        # 'echo [$FOO]' passes with this
+        # argv ${x:-"1 2" "3 4"} fails
+        if not split_strs:
+          continue
+
+        #frags = legacy.IfsSplit(p.s, ifs)
+        frags = [runtime.fragment(f, True, p.do_glob) for f in split_strs]
         #log("RES %s", res)
       else:
         # Example: 'a b' and "a b" don't need to be split.
-        res = [runtime.fragment(p.s, p.do_split_elide, p.do_glob)]
+        frags = [runtime.fragment(p.s, p.do_split_elide, p.do_glob)]
+
     elif p.tag == part_value_e.ArrayPartValue:
       # "$@" and "${a[@]}" don't need to be split or globbed
-      res = [runtime.fragment(f, False, False) for f in p.strs]
+      frags = [runtime.fragment(f, False, False) for f in p.strs]
+
     else:
       raise AssertionError(p.tag)
 
-    frag_arrays.append(res)
+    #log("frags %s\n", frags)
+    frag_arrays.append(frags)
+
+  #log("==> frag_arrays %s\n", frag_arrays)
 
   return frag_arrays
 
@@ -119,6 +148,9 @@ def _Reframe(frag_arrays):
 
 def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
   """Join parts without globbing or eliding.
+
+  Args:
+    frag_arrays: Array of array of runtime.fragment
 
   Returns:
     arg_value[]
@@ -859,11 +891,12 @@ class _WordEvaluator:
     EvalWordSequence
     Error
   """
-  def __init__(self, mem, exec_opts, part_ev):
+  def __init__(self, mem, exec_opts, part_ev, splitter):
     self.mem = mem
     self.exec_opts = exec_opts
 
     self.part_ev = part_ev
+    self.splitter = splitter
     self.globber = glob_.Globber(exec_opts)
 
   def _EvalParts(self, word, quoted=False):
@@ -983,20 +1016,16 @@ class _WordEvaluator:
     """
     part_vals = self._EvalParts(word)
     #log('part_vals after _EvalParts %s', part_vals)
-    ifs = legacy.GetIfs(self.mem)
-    frag_arrays = _SplitPartsIntoFragments(part_vals, ifs)
+    #ifs = legacy.GetIfs(self.mem)
+    frag_arrays = _SplitPartsIntoFragments(part_vals, self.splitter)
     #log('Fragments after split: %s', frag_arrays)
     frag_arrays = _Reframe(frag_arrays)
     #log('Fragments after reframe: %s', frag_arrays)
 
     glob_escape = not self.exec_opts.noglob
 
-    # NOTE: Empirically, elision depends on IFS.  I don't see it in the POSIX
-    # spec though.  This may need to be revised to have ' \t\n'.
-    elide_empty = True
-    for c in ifs:
-      if c not in ' \t\n':
-        elide_empty = False
+    # Empirically, elision depends on IFS.  I don't see it in the POSIX spec?
+    elide_empty = self.splitter.ShouldElide()
 
     args = _JoinElideEscape(frag_arrays, elide_empty, glob_escape)
     #log('After _JoinElideEscape %s', args)
@@ -1075,9 +1104,9 @@ class _NormalPartEvaluator(_WordPartEvaluator):
 
 class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, ex):
+  def __init__(self, mem, exec_opts, splitter, ex):
     part_ev = _NormalPartEvaluator(mem, exec_opts, ex, self)
-    _WordEvaluator.__init__(self, mem, exec_opts, part_ev)
+    _WordEvaluator.__init__(self, mem, exec_opts, part_ev, splitter)
 
 
 class _CompletionPartEvaluator(_WordPartEvaluator):
@@ -1105,7 +1134,11 @@ class _CompletionPartEvaluator(_WordPartEvaluator):
 
 
 class CompletionWordEvaluator(_WordEvaluator):
+  """
+  Difference from NormalWordEvaluator: No access to executor!  But they both
+  have a splitter.
+  """
 
-  def __init__(self, mem, exec_opts):
+  def __init__(self, mem, exec_opts, splitter):
     part_ev = _CompletionPartEvaluator(mem, exec_opts, self)
-    _WordEvaluator.__init__(self, mem, exec_opts, part_ev)
+    _WordEvaluator.__init__(self, mem, exec_opts, part_ev, splitter)

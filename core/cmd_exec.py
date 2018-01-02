@@ -27,6 +27,7 @@ from core import alloc
 from core import args
 from core import braces
 from core import expr_eval
+from core import legacy
 from core import reader
 from core import test_builtin
 from core import word
@@ -124,7 +125,9 @@ class Executor(object):
     self.exec_opts = exec_opts
     self.arena = arena
 
-    self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
+    self.splitter = legacy.RootSplitter(self.mem)
+    self.word_ev = word_eval.NormalWordEvaluator(
+        mem, exec_opts, self.splitter, self)
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
@@ -248,7 +251,7 @@ class Executor(object):
       self.fd_state.MakePermanent()
 
     elif builtin_id == EBuiltin.READ:
-      status = builtin.Read(argv, self.mem)
+      status = builtin.Read(argv, self.splitter, self.mem)
 
     elif builtin_id == EBuiltin.ECHO:
       status = builtin.Echo(argv)

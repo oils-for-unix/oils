@@ -30,6 +30,7 @@ import os
 import sys
 
 from core import args
+from core import legacy
 from core import lexer
 from core import runtime
 from core import util
@@ -521,21 +522,7 @@ READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
 
 
-def _SplitLine(line, ifs, allow_escape):
-  continued = False
-
-  # Or should I just return a list of indices?
-  parts = []
-
-  n = len(line)
-  for i in xrange(n):
-    c = line[i]
-
-  return parts, continued
-
-
-def Read(argv, mem):
-
+def Read(argv, splitter, mem):
   arg, i = READ_SPEC.Parse(argv)
 
   if not arg.r:
@@ -570,6 +557,18 @@ def Read(argv, mem):
   # leftover words assigned to the last name
   n = len(names)
 
+  #ifs = legacy.GetIfs(mem)
+  parts = splitter.SplitForRead(line, not arg.r)
+
+  # If the last part is ignored and it consists of a single \, then we need to
+  # read another line!  And we need to JOIN the other non-ignored segments on
+  # adjacent lines!!!
+
+  continued = False
+  #log('split: %s %s', parts, continued)
+  #
+
+  # TODO: replace this with the above
   strs = line.split(None, n-1)
 
   # TODO: Use REPLY variable here too?

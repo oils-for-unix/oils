@@ -71,6 +71,7 @@ from core import args
 from core import builtin
 from core import cmd_exec
 from core.id_kind import Id
+from core import legacy
 from core import lexer  # for tracing
 from core import reader
 from core import state
@@ -325,7 +326,8 @@ def OshMain(argv, login_shell):
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
+      splitter = legacy.CompletionSplitter()
+      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
       status_out = completion.StatusOutput(status_lines, exec_opts)
       completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
                       status_out, ev)

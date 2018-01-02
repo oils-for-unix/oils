@@ -78,6 +78,18 @@ s1='_a_b_'
 argv.py $s1
 # stdout: ['', 'a', 'b']
 
+### Leading ' ' vs leading ' _ '
+# This behavior is weird, but all shells agree.
+IFS='_ '
+s1='_ a  b _ '
+s2='  a  b _ '
+argv.py $s1
+argv.py $s2
+## STDOUT:
+['', 'a', 'b']
+['a', 'b']
+## END
+
 ### Multiple non-whitespace IFS chars.
 IFS=_-
 s1='a__b---c_d'

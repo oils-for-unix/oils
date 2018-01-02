@@ -18,6 +18,7 @@ from core import cmd_exec  # module under test
 from core.cmd_exec import *
 from core.id_kind import Id
 from core import completion
+from core import legacy
 from core import ui
 from core import word_eval
 from core import runtime
@@ -59,7 +60,8 @@ def InitEvaluator():
 
   exec_opts = state.ExecOpts(mem)
   # Don't need side effects for most things
-  return word_eval.CompletionWordEvaluator(mem, exec_opts)
+  splitter = legacy.CompletionSplitter()
+  return word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
 
 
 class ExpansionTest(unittest.TestCase):

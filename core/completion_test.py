@@ -15,6 +15,7 @@ from core import alloc
 from core import cmd_exec
 from core import cmd_exec_test
 from core import completion  # module under test
+from core import legacy
 from core import lexer
 from core import state
 from core import test_lib
@@ -146,7 +147,8 @@ class CompletionTest(unittest.TestCase):
 def _MakeTestEvaluator():
   mem = state.Mem('', [], {}, None)
   exec_opts = state.ExecOpts(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
+  splitter = legacy.CompletionSplitter()
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
   return ev
 
 
