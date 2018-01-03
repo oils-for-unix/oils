@@ -662,14 +662,14 @@ def _PrintDirStack(dir_stack, style, home_dir):
       print(_FormatDir(entry, home_dir))
 
   elif style == SINGLE_LINE:
-    print(' '.join(_FormatDir(entry, home_dir) \
-      for entry in dir_stack.Iter()))
+    print(' '.join(_FormatDir(entry, home_dir)
+        for entry in dir_stack.Iter()))
 
   sys.stdout.flush()
 
 
 def _FormatDir(dir_name, home_dir):
-  if home_dir and home_dir.tag == value_e.Str and dir_name.startswith(home_dir.s):
+  if home_dir and home_dir.tag == value_e.Str and dir_name.startswith(home_dir.s + '/'):
     return dir_name.replace(home_dir.s, '~', 1)
   return dir_name
 
