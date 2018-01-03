@@ -492,13 +492,49 @@ def Jobs(argv, job_state):
   return 0
 
 
+# Summary:
+# - Split with IFS, except \ can escape them!  This is different than the
+# algorithm for splitting words (at least the way I've represented it.)
+# - And
+
+# Bash manual:
+# - If there are more words than names, the remaining words and their
+# intervening delimiters are assigned to the last name.
+# - If there are fewer words read from the input stream than names, the
+# remaining names are assigned empty values. 
+# - The characters in the value of the IFS variable are used to split the line
+# into words using the same rules the shell uses for expansion (described
+# above in Word Splitting).
+# - The backslash character '\' may be used to remove any special meaning for
+# the next character read and for line continuation.
+#
+# Hm but word splitting isn't affected by \<space>
+#
+# I think I have to make two passes.
+#
+# 1. Process backslashes (or don't if it's -r)
+# 2. Split.
+
+
 READ_SPEC = _Register('read')
 READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
 
+
+def _SplitLine(line, ifs, allow_escape):
+  continued = False
+
+  # Or should I just return a list of indices?
+  parts = []
+
+  n = len(line)
+  for i in xrange(n):
+    c = line[i]
+
+  return parts, continued
+
+
 def Read(argv, mem):
-  # TODO:
-  # - Use IFS instead of Python's split().
 
   arg, i = READ_SPEC.Parse(argv)
 
@@ -506,7 +542,7 @@ def Read(argv, mem):
     util.warn('*** read without -r not implemented ***')
 
   names = argv[i:]
-  if arg.n is not None:
+  if arg.n is not None:  # read a certain number of bytes
     try:
       name = names[0]
     except IndexError:
@@ -518,6 +554,8 @@ def Read(argv, mem):
     # NOTE: Even if we don't get n bytes back, there is no error?
     return 0
 
+  # We have to read more than one line if there is a line continuation (and
+  # it's not -r).
   line = sys.stdin.readline()
   if not line:  # EOF
     return 1
@@ -589,8 +627,12 @@ def Cd(argv, mem, dir_stack):
       # can't even set it at all.)
       raise AssertionError('Invalid OLDPWD')
 
-  # Save OLDPWD.
-  state.SetGlobalString(mem, 'OLDPWD', os.getcwd())
+  # NOTE: We can't call os.getcwd() because it can raise OSError if the
+  # directory was removed (ENOENT.)
+
+  pwd = mem.GetVar('PWD')
+  assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
+  state.SetGlobalString(mem, 'OLDPWD', pwd.s)
   try:
     os.chdir(dest_dir)
   except OSError as e:

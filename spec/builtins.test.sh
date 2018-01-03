@@ -41,6 +41,19 @@ echo status=$?
 # stdout: status=1
 # OK dash/mksh stdout: status=2
 
+### cd away from dir that was deleted
+dir=$TMP/cd-nonexistent
+mkdir -p $dir
+cd $dir
+rmdir $dir
+cd $TMP
+echo $(basename $OLDPWD)
+echo status=$?
+## STDOUT:
+cd-nonexistent
+status=0
+## END
+
 ### pushd/popd
 set -o errexit
 cd /

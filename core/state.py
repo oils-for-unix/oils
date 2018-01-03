@@ -10,6 +10,7 @@ from __future__ import print_function
 state.py -- Interpreter state
 """
 
+import cStringIO
 import os
 
 from core import args
@@ -241,6 +242,22 @@ class _ArgFrame(object):
     self.num_shifted = 0
 
 
+class _StackFrame(object):
+  def __init__(self, readonly=False):
+    self.vars = {}  # string -> runtime.cell
+    self.readonly = readonly
+
+  def __repr__(self):
+    f = cStringIO.StringIO()
+    f.write('<_StackFrame readonly:%s' % self.readonly)
+    for name, cell in self.vars.iteritems():
+      f.write('  %s = ' % name)
+      f.write('  %s' % cell)
+      f.write('\n')
+    f.write('>')
+    return f.getvalue()
+
+
 class DirStack(object):
   """For pushd/popd/dirs."""
 
@@ -264,6 +281,18 @@ class DirStack(object):
     return reversed(self.stack)
 
 
+def _FormatStack(var_stack):
+  """Temporary debugging.
+
+  TODO: Turn this into a real JSON dump or something.
+  """
+  f = cStringIO.StringIO()
+  for i, entry in enumerate(var_stack):
+    f.write('[%d] %s' % (i, entry))
+    f.write('\n')
+  return f.getvalue()
+
+
 class Mem(object):
   """For storing variables.
 
@@ -279,7 +308,7 @@ class Mem(object):
   """
 
   def __init__(self, argv0, argv, environ, arena):
-    top = {}  # string -> runtime.cell
+    top = _StackFrame()
     self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
@@ -303,13 +332,12 @@ class Mem(object):
     self._InitVarsFromEnv(environ)
     self.arena = arena
 
-
   def __repr__(self):
     parts = []
     parts.append('<Mem')
     for i, frame in enumerate(self.var_stack):
       parts.append('  -- %d --' % i)
-      for n, v in frame.iteritems():
+      for n, v in frame.vars.iteritems():
         parts.append('  %s %s' % (n, v))
     parts.append('>')
     return '\n'.join(parts) + '\n'
@@ -366,7 +394,7 @@ class Mem(object):
     # bash uses this order: top of stack first.
     self.func_name_stack.append(func_name)
 
-    self.var_stack.append({})
+    self.var_stack.append(_StackFrame())
     self.argv_stack.append(_ArgFrame(argv))
 
   def PopCall(self):
@@ -377,10 +405,12 @@ class Mem(object):
 
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
-    self.var_stack.append({})
+    # We don't want the 'read' builtin to write to this frame!
+    self.var_stack.append(_StackFrame(readonly=True))
 
   def PopTemp(self):
     self.var_stack.pop()
+    #util.log('**** PopTemp()')
 
   #
   # Argv
@@ -441,8 +471,15 @@ class Mem(object):
   # Named Vars
   #
 
-  def _FindCellAndNamespace(self, name, lookup_mode):
-    """
+  def _FindCellAndNamespace(self, name, lookup_mode, is_read=False):
+    """Helper for getting and setting variable.
+
+    Need a mode to skip Temp scopes.  For Setting.
+
+    Args:
+      name: the variable name
+      lookup_mode: scope_e
+
     Returns:
       cell: The cell corresponding to looking up 'name' with the given mode, or
         None if it's not found.
@@ -451,18 +488,32 @@ class Mem(object):
     if lookup_mode == scope_e.Dynamic:
       found = False
       for i in range(len(self.var_stack) - 1, -1, -1):
-        namespace = self.var_stack[i]
+        frame = self.var_stack[i]
+        if frame.readonly and not is_read:
+          continue
+        namespace = frame.vars
         if name in namespace:
           cell = namespace[name]
           return cell, namespace
-      return None, self.var_stack[0]
+      return None, self.var_stack[0].vars  # set in global namespace
 
     elif lookup_mode == scope_e.LocalOnly:
-      namespace = self.var_stack[-1]
+      frame = self.var_stack[-1]
+      if frame.readonly and not is_read:
+        frame = self.var_stack[-2]
+        # The frame below a readonly one shouldn't be readonly.
+        assert not frame.readonly, frame
+        #assert not frame.readonly, self._Format(self.var_stack)
+      namespace = frame.vars
+      return namespace.get(name), namespace
+
+    elif lookup_mode == scope_e.TempEnv:
+      frame = self.var_stack[-1]
+      namespace = frame.vars
       return namespace.get(name), namespace
 
     elif lookup_mode == scope_e.GlobalOnly:
-      namespace = self.var_stack[0]
+      namespace = self.var_stack[0].vars
       return namespace.get(name), namespace
 
     else: 
@@ -612,7 +663,7 @@ class Mem(object):
 
     Use case: SHELLOPTS.
     """
-    cell = self.var_stack[0][name]
+    cell = self.var_stack[0].vars[name]
     cell.val = new_val
 
   # NOTE: Have a default for convenience
@@ -636,7 +687,7 @@ class Mem(object):
     if name == 'SOURCE_NAME':
       return self.source_name
 
-    cell, _ = self._FindCellAndNamespace(name, lookup_mode)
+    cell, _ = self._FindCellAndNamespace(name, lookup_mode, is_read=True)
 
     if cell:
       return cell.val
@@ -690,7 +741,7 @@ class Mem(object):
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.
     for scope in self.var_stack:
-      for name, cell in scope.items():
+      for name, cell in scope.vars.items():
         if cell.exported and cell.val.tag == value_e.Str:
           exported[name] = cell.val.s
     return exported

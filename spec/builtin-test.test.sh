@@ -197,3 +197,26 @@ chmod -w $TMP/testw_no  # remove write permission
 test -w $TMP/testw_yes && echo 'yes'
 test -w $TMP/testw_no || echo 'no'
 # stdout-json: "yes\nno\n"
+
+### -h and -L test for symlink
+touch $TMP/zz
+ln -s -f $TMP/zz $TMP/symlink
+ln -s -f $TMP/__nonexistent_ZZ__ $TMP/dangling
+test -L $TMP/zz || echo no
+test -h $TMP/zz || echo no
+test -f $TMP/symlink && echo is-file
+test -L $TMP/symlink && echo symlink
+test -h $TMP/symlink && echo symlink
+test -L $TMP/dangling && echo dangling
+test -h $TMP/dangling  && echo dangling
+test -f $TMP/dangling  || echo 'dangling is not file'
+## STDOUT:
+no
+no
+is-file
+symlink
+symlink
+dangling
+dangling
+dangling is not file
+## END

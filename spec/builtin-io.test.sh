@@ -181,6 +181,14 @@ argv "$escaped" "$raw"
 # stdout: ['one twox65three', 'one\\ two\\x65three']
 # BUG mksh/zsh stdout: ['one twoethree', 'one\\ twoethree']
 
+### read with line continuation reads multiple physical lines
+echo -e 'one\\\ntwo\n' > $TMP/readr.txt
+read escaped < $TMP/readr.txt
+read -r raw < $TMP/readr.txt
+argv "$escaped" "$raw"
+# stdout: ['onetwo', 'one\\']
+# N-I dash stdout: ['-e onetwo', '-e one\\']
+
 ### read -r with \n
 echo '\nline' > $TMP/readr.txt
 read escaped < $TMP/readr.txt
@@ -190,4 +198,45 @@ argv "$escaped" "$raw"
 # literal \n.
 # stdout: ['nline', '\\nline']
 # BUG dash/mksh/zsh stdout: ['', '']
+
+### Read with IFS=$'\n'
+# The leading spaces are stripped if they appear in IFS.
+IFS=$(echo -e '\n')
+read var <<EOF
+  a b c
+  d e f
+EOF
+echo "[$var]"
+# stdout: [  a b c]
+# N-I dash stdout: [a b c]
+
+### Read with IFS=:
+# The leading spaces are stripped if they appear in IFS.
+# IFS chars are escaped with :.
+IFS=:
+{ echo '  \\a :b\: c:d\';
+  echo '  e'
+} > $TMP/read-ifs.txt
+read a b c d < $TMP/read-ifs.txt
+echo "[$a|$b|$c|$d]"
+# stdout: [  a |b: c|d  e|]
+# BUG bash stdout: [  \a |b: c|d  e|]
+
+### Read with IFS=''
+IFS=''
+read x y <<EOF
+  a b c d
+EOF
+echo "[$x|$y]"
+# stdout: [  a b c d|]
+
+### Read should not respect C escapes.
+# bash doesn't respect these, but other shells do.  Gah!  I think bash
+# behavior makes more sense.  It only escapes IFS.
+echo '\a \b \c \d \e \f \g \h \x65 \145 \i' > $TMP/read-c.txt
+read line < $TMP/read-c.txt
+echo $line
+# stdout-json: "a b c d e f g h x65 145 i\n"
+# BUG dash/zsh stdout-json: "\u0007 \u0008\n"
+# BUG mksh stdout-json: "\u0007 \u0008 d \u001b \u000c g h e 145 i\n"
 

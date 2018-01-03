@@ -459,31 +459,6 @@ class Executor(object):
       redirects.append(r)
     return redirects
 
-  def _EvalEnv(self, node_env, out_env):
-    """Evaluate environment variable bindings.
-
-    Args:
-      node_env: list of ast.env_pair
-      out_env: mutated.
-    """
-    # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
-    # pushes argv.  Don't need that?
-    self.mem.PushTemp()
-    for env_pair in node_env:
-      name = env_pair.name
-      rhs = env_pair.val
-
-      # Could pass extra bindings like out_env here?  But PushTemp should work?
-      val = self.word_ev.EvalWordToString(rhs)
-
-      # Set each var so the next one can reference it.  Example:
-      # FOO=1 BAR=$FOO ls /
-      # TODO: Could add spid to LhsName.
-      self.mem.SetVar(ast.LhsName(name), val, (), scope_e.LocalOnly)
-
-      out_env[name] = val.s
-    self.mem.PopTemp()
-
   def _MakeProcess(self, node, job_state=None):
     """
     Assume we will run the node in another process.  Return a process.
@@ -509,7 +484,7 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, environ, fork_external):
+  def _RunSimpleCommand(self, argv, fork_external):
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
@@ -543,6 +518,8 @@ class Executor(object):
         util.usage(str(e))
         status = 2  # consistent error code for usage error
       return status
+
+    environ = self.mem.GetExported()  # Include temporary variables
 
     if fork_external:
       thunk = process.ExternalThunk(argv, environ)
@@ -612,6 +589,14 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
+  def _SetSourceLocation(self, span_id):
+    # TODO: This API should be simplified
+    line_span = self.arena.GetLineSpan(span_id)
+    line_id = line_span.line_id
+    line = self.arena.GetLine(line_id)
+    source_name, line_num = self.arena.GetDebugInfo(line_id)
+    self.mem.SetSourceLocation(source_name, line_num)
+
   def _Dispatch(self, node, fork_external):
     argv0 = None  # for error message
     check_errexit = False  # for errexit
@@ -632,11 +617,6 @@ class Executor(object):
 
       words = braces.BraceExpandWords(node.words)
       argv = self.word_ev.EvalWordSequence(words)
-      if argv:
-        argv0 = argv[0]
-
-      environ = self.mem.GetExported()
-      self._EvalEnv(node.more_env, environ)
 
       # This is a very basic implementation for PS4='+$SOURCE_NAME:$LINENO:'
 
@@ -660,18 +640,30 @@ class Executor(object):
       if found:
         # NOTE: This is what we want to expose as variables for PS4.
         #ui.PrintFilenameAndLine(span_id, self.arena)
-
-        line_span = self.arena.GetLineSpan(span_id)
-        line_id = line_span.line_id
-        line = self.arena.GetLine(line_id)
-        source_name, line_num = self.arena.GetDebugInfo(line_id)
-        self.mem.SetSourceLocation(source_name, line_num)
+        self._SetSourceLocation(span_id)
       else:
         self.mem.SetSourceLocation('<unknown>', -1)
 
+      # This comes before evaluating env, in case there are problems evaluating
+      # it.  We could trace the env separately?  Also trace unevaluated code
+      # with set-o verbose?
       self.tracer.OnSimpleCommand(argv)
 
-      status = self._RunSimpleCommand(argv, environ, fork_external)
+      if node.more_env:
+        self.mem.PushTemp()
+      try:
+        for env_pair in node.more_env:
+          val = self.word_ev.EvalWordToString(env_pair.val)
+          # Set each var so the next one can reference it.  Example:
+          # FOO=1 BAR=$FOO ls /
+          self.mem.SetVar(ast.LhsName(env_pair.name), val,
+                          (var_flags_e.Exported,), scope_e.TempEnv)
+
+        # NOTE: This might never return!  In the case of fork_external=False.
+        status = self._RunSimpleCommand(argv, fork_external)
+      finally:
+        if node.more_env:
+          self.mem.PopTemp()
 
       if self.exec_opts.xtrace:
         #log('+ %s -> %d', argv, status)
@@ -775,6 +767,15 @@ class Executor(object):
 
         self.mem.SetVar(lval, val, flags, lookup_mode)
 
+        # Assignment always appears to have a spid.
+        if node.spids:
+          self._SetSourceLocation(node.spids[0])
+        else:
+          # TODO: when does this happen?  Warn.
+          #log('Warning: assignment has no location information: %s', node)
+          self.mem.SetSourceLocation('<unknown>', -1)
+        self.tracer.OnAssignment(lval, val, flags, lookup_mode)
+
       # TODO: This should be eval of RHS, unlike bash!
       status = 0
 
@@ -815,29 +816,46 @@ class Executor(object):
       check_errexit = False
 
     elif node.tag == command_e.AndOr:
-      # TODO: We have to fix && || precedence.  See case #13 in
-      # dbracket.test.sh.
+      # NOTE: && and || have EQUAL precedence in command mode.  See case #13
+      # in dbracket.test.sh.
 
-      #print(node.children)
-      left, right = node.children
+      left = node.children[0]
 
-      # This is everything except the last one.
+      # Suppress failure for every child except the last one.
       self._PushErrExit()
       try:
         status = self._Execute(left)
       finally:
         self._PopErrExit()
 
-      if node.op_id == Id.Op_DPipe:
-        if status != 0:
-          status = self._Execute(right)
-          check_errexit = True  # only check last condition
-      elif node.op_id == Id.Op_DAmp:
-        if status == 0:
-          status = self._Execute(right)
-          check_errexit = True  # only check last condition
-      else:
-        raise AssertionError
+      i = 1
+      n = len(node.children)
+      while i < n:
+        #log('i %d status %d', i, status)
+        child = node.children[i]
+        op_id = node.ops[i-1]
+
+        #log('child %s op_id %s', child, op_id)
+
+        if op_id == Id.Op_DPipe and status == 0:
+          i += 1
+          continue  # short circuit
+
+        elif op_id == Id.Op_DAmp and status != 0:
+          i += 1
+          continue  # short circuit
+
+        if i == n - 1:  # errexit handled differently for last child
+          status = self._Execute(child)
+          check_errexit = True
+        else:
+          self._PushErrExit()
+          try:
+            status = self._Execute(child)
+          finally:
+            self._PopErrExit()
+
+        i += 1
 
     elif node.tag in (command_e.While, command_e.Until):
       # TODO: Compile this out?
@@ -1092,6 +1110,100 @@ class Executor(object):
 
     return ''.join(chunks).rstrip('\n')
 
+  def RunProcessSub(self, node, op_id):
+    """Process sub creates a forks a process connected to a pipe.
+
+    The pipe is typically passed to another process via a /dev/fd/$FD path.
+
+    TODO:
+
+    sane-proc-sub:
+    - wait for all the words
+
+    Otherwise, set $!  (mem.last_job_id)
+
+    strict-proc-sub:
+    - Don't allow it anywhere except SimpleCommand, any redirect, or
+    Assignment?  And maybe not even assignment?
+
+    Should you put return codes in @PROCESS_SUB_STATUS?  You need two of them.
+    """
+    p = self._MakeProcess(node)
+
+    r, w = os.pipe()
+
+    if op_id == Id.Left_ProcSubIn:
+      # Example: cat < <(head foo.txt)
+      #
+      # The head process should write its stdout to a pipe.
+      redir = process.StdoutToPipe(r, w)
+
+    elif op_id == Id.Left_ProcSubOut:
+      # Example: head foo.txt > >(tac)
+      #
+      # The tac process should read its stdin from a pipe.
+      #
+      # NOTE: This appears to hang in bash?  At least when done interactively.
+      # It doesn't work at all in osh interactively?
+      redir = process.StdinFromPipe(r, w)
+
+    else:
+      raise AssertionError
+
+    p.AddStateChange(redir)
+
+    # Fork, letting the child inherit the pipe file descriptors.
+    pid = p.Start()
+
+    # TODO: Set $!
+
+    # After forking, close the end of the pipe we're not using.
+    if op_id == Id.Left_ProcSubIn:
+      os.close(w)
+    elif op_id == Id.Left_ProcSubOut:
+      os.close(r)
+    else:
+      raise AssertionError
+
+    #log('I am %d', os.getpid())
+    #log('Process sub started %d', pid)
+    self.waiter.Register(pid, p.WhenDone)
+
+    # Is /dev Linux-specific?
+    if op_id == Id.Left_ProcSubIn:
+      return '/dev/fd/%d' % r
+
+    elif op_id == Id.Left_ProcSubOut:
+      return '/dev/fd/%d' % w
+
+    else:
+      raise AssertionError
+
+    # Generalize?
+    #
+    # - Make it work first, bare minimum.
+    # - Then Make something like Pipeline()?
+    #   - you add all the argument processes
+    #   - then you add the main processes, with those as args
+    #   - then p.Wait()
+    #     - get status for all of them?
+    #
+    # Problem is that you don't see this until word_eval?
+    # You can scan a simple command for these though.
+
+    # TODO:
+    # - Do we need to somehow register a waiter?  After SimpleCommand,
+    #   argv and redirect words need to wait?
+    # - what about for loops?  case?  ControlFlow?  temp binding,
+    #   assignments, etc. They all have words
+    #   - disallow those?
+    # I guess you need it at the end of every command sub loop?
+    # But you want to detect statically if you need to wait?
+    # Maybe just have a dirty flag?  needs_wait
+      # - Make a pipe
+      # - Start another process connected to the write end of the pipe.
+      # - Return [/dev/fd/FD] as the read end of the pipe.
+
   def RunFunc(self, func_node, argv):
     """Used by completion engine."""
     # These are redirects at DEFINITION SITE.  You can also have redirects at
@@ -1151,12 +1263,8 @@ class Tracer(object):
     self.arena = alloc.PluginArena('<$PS4>')
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
 
-  def OnSimpleCommand(self, argv):
+  def _EvalPS4(self):
     """For set -x."""
-
-    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
-    if not self.exec_opts.xtrace:
-      return
 
     val = self.mem.GetVar('PS4')
     assert val.tag == value_e.Str
@@ -1197,9 +1305,25 @@ class Tracer(object):
     # <ERROR: cannot evaluate PS4>
     prefix = self.word_ev.EvalWordToString(ps4_word)
 
-    print('%s%s%s' % (
-        first_char, prefix.s, ' '.join(_PrettyString(a) for a in argv)),
-        file=sys.stderr)
+    return first_char, prefix.s
+
+  def OnSimpleCommand(self, argv):
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    first_char, prefix = self._EvalPS4()
+    cmd = ' '.join(_PrettyString(a) for a in argv)
+    print('%s%s%s' % (first_char, prefix, cmd), file=sys.stderr)
+
+  def OnAssignment(self, lval, val, flags, lookup_mode):
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    # Now we have to get the prefix
+    first_char, prefix = self._EvalPS4()
+    print('%s%s%s = %s' % (first_char, prefix, lval, val), file=sys.stderr)
 
   def Event(self):
     """

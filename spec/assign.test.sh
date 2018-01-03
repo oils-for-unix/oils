@@ -3,18 +3,28 @@
 ### Env value doesn't persist
 FOO=foo printenv.py FOO
 echo [$FOO]
-# stdout-json: "foo\n[]\n"
+# STDOUT:
+foo
+[]
+## END
 
 ### Env value with equals
 FOO=foo=foo printenv.py FOO
-# stdout: foo=foo
+## stdout: foo=foo
 
-### Env value using preceding Env binding
+### Env binding can use preceding bindings, but not subsequent ones
 # This means that for ASSIGNMENT_WORD, on the RHS you invoke the parser again!
 # Could be any kind of quoted string.
-FOO="foo" BAR="[$FOO]" printenv.py FOO BAR
-# stdout-json: "foo\n[foo]\n"
-# BUG mksh stdout-json: "foo\n[]\n"
+FOO="foo" BAR="[$FOO][$BAZ]" BAZ=baz printenv.py FOO BAR BAZ
+## STDOUT:
+foo
+[foo][]
+baz
+## BUG mksh STDOUT:
+foo
+[][]
+baz
+## END
 
 ### Env value with two quotes
 FOO='foo'"adjacent" printenv.py FOO
@@ -22,35 +32,110 @@ FOO='foo'"adjacent" printenv.py FOO
 
 ### Env value with escaped <
 FOO=foo\<foo printenv.py FOO
-# stdout: foo<foo
+## stdout: foo<foo
+
+### FOO=foo echo [foo]
+FOO=foo echo "[$foo]"
+## stdout: []
+
+### FOO=foo func
+func() {
+  echo "[$FOO]"
+}
+FOO=foo func
+## stdout: [foo]
+
+### Multiple temporary envs on the stack
+g() {
+  echo "$F" "$G1" "$G2"
+  echo '--- g() ---'
+  P=p printenv.py F G1 G2 A P
+}
+f() {
+  # NOTE: G1 doesn't pick up binding f, but G2 picks up a.
+  # I don't quite understand why this is, but bash and OSH agree!
+  G1=[$f] G2=[$a] g
+  echo '--- f() ---'
+  printenv.py F G1 G2 A P
+}
+a=A
+F=f f
+## STDOUT:
+f [] [A]
+--- g() ---
+f
+[]
+[A]
+None
+p
+--- f() ---
+f
+None
+None
+None
+None
+## END
+## OK mksh STDOUT:
+# G1 and G2 somehow persist.  I think that is a bug.  They should be local to
+# the G call.
+f [] [A]
+--- g() ---
+f
+[]
+[A]
+None
+p
+--- f() ---
+f
+[]
+[A]
+None
+None
+## END
+## BUG dash STDOUT:
+# dash sets even less stuff.  Doesn't appear correct.
+f [] [A]
+--- g() ---
+None
+None
+None
+None
+p
+--- f() ---
+None
+None
+None
+None
+None
+## END
 
 ### Escaped = in command name
 # foo=bar is in the 'spec/bin' dir.
 foo\=bar
-# stdout: HI
+## stdout: HI
 
 ### Env binding not allowed before compound command
 # bash gives exit code 2 for syntax error, because of 'do'.
 # dash gives 0 because there is stuff after for?  Should really give an error.
 # mksh gives acceptable error of 1.
 FOO=bar for i in a b; do printenv.py $FOO; done
-# BUG dash status: 0
-# OK  mksh status: 1
-# status: 2
+## BUG dash status: 0
+## OK  mksh status: 1
+## status: 2
 
 ### Trying to run keyword 'for'
 FOO=bar for
-# status: 127
+## status: 127
 
 ### Empty env binding
 EMPTY= printenv.py EMPTY
-# stdout:
+## stdout:
 
 ### Assignment doesn't do word splitting
 words='one two'
 a=$words
 argv.py "$a"
-# stdout: ['one two']
+## stdout: ['one two']
 
 ### Assignment doesn't do glob expansion
 touch _tmp/z.Z _tmp/zz.Z

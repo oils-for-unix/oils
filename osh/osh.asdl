@@ -167,8 +167,7 @@ module osh
   | Assignment(id keyword, string* flags, assign_pair* pairs)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
-    -- TODO: Should be left and right
-  | AndOr(command* children, id op_id)
+  | AndOr(id* ops, command* children)
     -- Part of for/while/until.  Can have one or more children.
   | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.  Can have one or

@@ -35,6 +35,24 @@ echo ${v/c*/XX}
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
+### Pattern replacement on unset variable
+echo [${v/x/y}]
+echo status=$?
+set -o nounset  # make sure this fails
+echo [${v/x/y}]
+## STDOUT:
+[]
+status=0
+## BUG mksh STDOUT:
+# patsub disrespects nounset!
+[]
+status=0
+[]
+## status: 1
+## BUG mksh status: 0
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
 ### Global Pattern replacement with /
 s=xx_xx_xx
 echo ${s/xx?/yy_} ${s//xx?/yy_}
