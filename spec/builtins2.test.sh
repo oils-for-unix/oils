@@ -148,12 +148,29 @@ dirs -l
 
 ### dirs to print using tilde-prefix format
 cd /
-HOME=$TMP
+HOME=/tmp
 mkdir -p $HOME/oil_test
 pushd $HOME/oil_test >/dev/null
 dirs
 # stdout: ~/oil_test /
 # status: 0
+
+### dirs test converting true home directory to tilde
+cd /
+HOME=/tmp
+mkdir -p $HOME/oil_test/$HOME
+pushd $HOME/oil_test/$HOME >/dev/null
+dirs
+# stdout: ~/oil_test/tmp /
+# status: 0
+
+### dirs don't convert to tilde when $HOME is substring
+cd /
+mkdir -p /tmp/oil_test
+mkdir -p /tmp/oil_tests
+HOME=/tmp/oil_test
+pushd /tmp/oil_tests
+dirs
 
 ### dirs test of path alias `..`
 cd /tmp
