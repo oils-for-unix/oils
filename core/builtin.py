@@ -43,6 +43,7 @@ from _devbuild.gen import osh_help  # generated file
 
 value_e = runtime.value_e
 scope_e = runtime.scope_e
+span_e = runtime.span_e
 var_flags_e = runtime.var_flags_e
 log = util.log
 e_die = util.e_die
@@ -229,7 +230,7 @@ C = lexer.C
 # - the DOLLAR_SQ lex state needs most of this logic.
 
 ECHO_LEXER = lexer.SimpleLexer([
-  R(r'\\[0abeEfrtnv]', Id.Char_OneChar),
+  R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
   C(r'\c', Id.Char_Stop),
 
   # Note: tokens above \0377 can either be truncated or be flagged a syntax
@@ -245,7 +246,7 @@ ECHO_LEXER = lexer.SimpleLexer([
   R(r'\\.', Id.Char_Literals),
 
   # Backslash that ends the string.
-  R('\\$', Id.Char_Literals),
+  R(r'\\$', Id.Char_Literals),
   # For re2c.  TODO: need to make that translation.
   C('\\\0', Id.Char_Literals),
 ])
@@ -262,6 +263,7 @@ _ONE_CHAR = {
     'r': '\r',
     't': '\t',
     'v': '\v',
+    '\\': '\\',
 }
 
 
@@ -516,6 +518,58 @@ def Jobs(argv, job_state):
 # 1. Process backslashes (or don't if it's -r)
 # 2. Split.
 
+def _AppendParts(s, spans, max_results, join_next, parts):
+  """
+  Args:
+    s: The original string
+    spans: List of (span, end_index)
+    max_results: the maximum number of parts we want
+    join_next: Whether to join the next span to the previous part.  This
+    happens in two cases:
+      - when we have '\ '
+      - and when we have more spans # than max_results.
+  """
+  start_index = 0
+  # If the last span was black, and we get a backslash, set join_next to merge
+  # two black spans.
+  last_span_was_black = False
+
+  for span_type, end_index in spans:
+    if span_type == span_e.Black:
+      if join_next and parts:
+        parts[-1] += s[start_index:end_index]
+        join_next = False
+      else:
+        parts.append(s[start_index:end_index])
+      last_span_was_black = True
+
+    elif span_type == span_e.Delim:
+      if join_next:
+        parts[-1] += s[start_index:end_index]
+        join_next = False
+      last_span_was_black = False
+
+    elif span_type == span_e.Backslash:
+      if last_span_was_black:
+        join_next = True
+      last_span_was_black = False
+
+    if len(parts) >= max_results:
+      join_next = True
+
+    start_index = end_index
+
+  done = True
+  if spans:
+    #log('%s %s', s, spans)
+    #log('%s', spans[-1])
+    last_span_type, _ = spans[-1]
+    if last_span_type == span_e.Backslash:
+      done = False
+
+  #log('PARTS %s', parts)
+  return done, join_next
+
 
 READ_SPEC = _Register('read')
 READ_SPEC.ShortFlag('-r')
@@ -524,9 +578,6 @@ READ_SPEC.ShortFlag('-n', args.Int)
 
 def Read(argv, splitter, mem):
   arg, i = READ_SPEC.Parse(argv)
-
-  if not arg.r:
-    util.warn('*** read without -r not implemented ***')
 
   names = argv[i:]
   if arg.n is not None:  # read a certain number of bytes
@@ -541,40 +592,41 @@ def Read(argv, splitter, mem):
     # NOTE: Even if we don't get n bytes back, there is no error?
     return 0
 
-  # We have to read more than one line if there is a line continuation (and
-  # it's not -r).
-  line = sys.stdin.readline()
-  if not line:  # EOF
-    return 1
-
-  if line.endswith('\n'):  # strip trailing newline
-    line = line[:-1]
-    status = 0
-  else:
-    # odd bash behavior: fail even if we can set variables.
-    status = 1
+  if not names:
+    names.append('REPLY')
 
   # leftover words assigned to the last name
-  n = len(names)
+  max_results = len(names)
 
-  #ifs = legacy.GetIfs(mem)
-  parts = splitter.SplitForRead(line, not arg.r)
+  # We have to read more than one line if there is a line continuation (and
+  # it's not -r).
 
-  # If the last part is ignored and it consists of a single \, then we need to
-  # read another line!  And we need to JOIN the other non-ignored segments on
-  # adjacent lines!!!
+  parts = []
+  join_next = False
+  while True:
+    line = sys.stdin.readline()
+    #log('LINE %r', line)
+    if not line:  # EOF
+      status = 1
+      break
 
-  continued = False
-  #log('split: %s %s', parts, continued)
-  #
+    if line.endswith('\n'):  # strip trailing newline
+      line = line[:-1]
+      status = 0
+    else:
+      # odd bash behavior: fail even if we can set variables.
+      status = 1
 
-  # TODO: replace this with the above
-  strs = line.split(None, n-1)
+    spans = splitter.SplitForRead(line, not arg.r)
+    done, join_next = _AppendParts(line, spans, max_results, join_next, parts)
 
-  # TODO: Use REPLY variable here too?
-  for i in xrange(n):
+    #log('PARTS %s continued %s', parts, continued)
+    if done:
+      break
+
+  for i in xrange(max_results):
     try:
-      s = strs[i]
+      s = parts[i]
     except IndexError:
       s = ''  # if there are too many variables
     #log('read: %s = %s', names[i], s)

@@ -17,8 +17,11 @@ Other notes:
 import re
 
 from core import runtime
+from core import util
 
 value_e = runtime.value_e
+span_e = runtime.span_e
+log = util.log
 
 
 DEFAULT_IFS = ' \t\n'
@@ -36,102 +39,7 @@ class CompletionSplitter:
   # NOTE: Doesn't need to implement SplitForRead
 
 
-def _Split(s, ifs):
-  """Helper function for IFS split."""
-  parts = ['']
-  for c in s:
-    if c in ifs:
-      parts.append('')
-    else:
-      parts[-1] += c
-  return parts
-
-
-def IfsSplit(s, ifs):
-  """
-  http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_05
-  https://www.gnu.org/software/bash/manual/bashref.html#Word-Splitting
-
-  Summary:
-  1. ' \t\n' is special.  Whitespace is trimmed off the front and back.
-  2. if IFS is '', no field splitting is performed.
-  3. Otherwise, suppose IFS = ' ,\t'.  Then IFS whitespace is space or comma.
-    a.  IFS whitespace isgnored at beginning and end.
-    b. any other IFS char delimits the field, along with adjacent IFS
-       whitespace.
-    c. IFS whitespace shall delimit a field.
-
-  # Can we do this be regex or something?  Use regex match?
-  """
-  assert isinstance(ifs, str), ifs
-  if not ifs:
-    return [s]  # no splitting
-
-  # print("IFS SPLIT %r %r" % (s, ifs))
-  # TODO: This detect if it's ALL whitespace?  If ifs_other is empty?
-  if ifs == ' \t\n':
-    return _Split(s, ifs)
-
-  # Detect IFS whitespace
-  # TODO: This should be cached.  In Mem?  Or Splitter?
-  ifs_whitespace = ''
-  ifs_other = ''
-  for c in ifs:
-    if c in ' \t\n':
-      ifs_whitespace += c
-    else:
-      ifs_other += c
-
-  # TODO: Rule 3a. Ignore leading and trailing IFS whitespace?
-
-  # hack to make an RE
-
-  # Hm this escapes \t as \\\t?  I guess that works.
-  ws_re = re.escape(ifs_whitespace)
-
-  other_re = re.escape(ifs_other)
-  #print('chars', repr(ifs_whitespace), repr(ifs_other))
-  #print('RE', repr(ws_re), repr(other_re))
-
-  # BUG: re.split() is the wrong model.  It works with the 'delimiting' model.
-  # Forward iteration.  TODO: grep for IFS in dash/mksh/bash/ash.
-
-  # ifs_ws | ifs_ws* non_ws_ifs ifs_ws*
-  if ifs_whitespace and ifs_other:
-    # first alternative is rule 3c.
-    # BUG: It matches the whitespace first?
-    pat = '[%s]+|[%s]*[%s][%s]*' % (ws_re, ws_re, other_re, ws_re)
-  elif ifs_whitespace:
-    pat = '[%s]+' % ws_re
-  elif ifs_other:
-    pat = '[%s]' % other_re
-  else:
-    raise AssertionError
-
-  #print('PAT', repr(pat))
-  regex = re.compile(pat)
-  frags = regex.split(s)
-  #log('split %r by %r -> frags %s', s, pat, frags)
-  return frags
-
-
-# Split operation:
-#
-# Max to allocate: the length of the string?  That's the worst case.  Every
-# character is a different split.
-#
-# or use end_index?
-#
-# word_eval: Makes runtime.fragment out of it.  Only takes the parts that are
-# not delimiters.
-#
-# read: assigns it to variables, except for the trailing ones.  Don't need
-# to split them.
-
-
 # TODO:
-# - Executor holds a splitter.  Passes it to word_eval and to the read
-# builtin.
 #
 # Do we have different splitters?  Awk splitter might be useful.  Regex
 # splitter later.  CSV splitter?  TSV?  the TSV one transforms?  Beacuse of
@@ -147,6 +55,38 @@ def IfsSplit(s, ifs):
 # }
 #
 # Yes this is nice.  How does perl do it?
+
+
+def _SpansToParts(s, spans):
+  """Helper for SplitForWordEval."""
+  parts = []
+  start_index = 0
+
+  # If the last span was black, and we get a backslash, set join_next to merge
+  # two black spans.
+  join_next = False
+  last_span_was_black = False
+
+  for span_type, end_index in spans:
+    if span_type == span_e.Black:
+      if parts and join_next:
+        parts[-1] += s[start_index:end_index]
+        join_next = False
+      else:
+        parts.append(s[start_index:end_index])
+      last_span_was_black = True
+
+    elif span_type == span_e.Backslash:
+      if last_span_was_black:
+        join_next = True
+      last_span_was_black = False
+
+    else:
+      last_span_was_black = False
+
+    start_index = end_index
+
+  return parts
 
 
 class RootSplitter(object):
@@ -188,10 +128,7 @@ class RootSplitter(object):
         else:
           ifs_other += c
 
-      if ifs_other:
-        sp = MixedSplitter(ifs_whitespace, ifs_other)
-      else:
-        sp = WhitespaceSplitter(ifs_whitespace)
+      sp = IfsSplitter(ifs_whitespace, ifs_other)
 
       # NOTE: Technically, we could make the key more precise.  IFS=$' \t' is
       # the same as IFS=$'\t '.  But most programs probably don't do that, and
@@ -200,10 +137,10 @@ class RootSplitter(object):
 
     return sp
 
-  def ShouldElide(self):
-    # HACK for now
+  def Escape(self, s):
+    """Escape IFS chars."""
     sp = self._GetSplitter()
-    return isinstance(sp, WhitespaceSplitter)
+    return sp.Escape(s)
 
   def SplitForWordEval(self, s):
     """Split the string into slices, some of which are marked ignored.
@@ -223,59 +160,39 @@ class RootSplitter(object):
       Array of (ignored Bool, start_index Int) tuples.
     """
     sp = self._GetSplitter()
-    spans = sp.Split(s, False)
-    parts = []
-    start_index = 0
-    for ignored, end_index in spans:
-      if not ignored:
-        parts.append(s[start_index:end_index])
-      start_index = end_index
-    return parts
+    spans = sp.Split(s, True)
+    return _SpansToParts(s, spans)
 
-  def SplitForRead(self, s, allow_escape):
-    # Does this give you back the exact number you need?
-    # Removes ignored ones
-
-    sp = WhitespaceSplitter(DEFAULT_IFS)
-    spans = sp.Split(s, allow_escape)
-    parts = ['TODO']
-    return parts
+  def SplitForRead(self, line, allow_escape):
+    sp = self._GetSplitter()
+    return sp.Split(line, allow_escape)
 
 
-# We detect state changes.  WHITE is for whitespace, BLACK is for significant
-# chars.
-STATE_WHITE, STATE_BLACK = 0, 2
+class _BaseSplitter(object):
+  def __init__(self, escape_chars):
+    # Backslash is always escaped
+    self.escape_chars = escape_chars + '\\'
 
-class WhitespaceSplitter(object):
+  # NOTE: This is pretty much the same as GlobEscape.
+  def Escape(self, s):
+    escaped = ''
+    for c in s:
+      if c in self.escape_chars:
+        escaped += '\\'
+      escaped += c
+    return escaped
+
+
+# TODO: Used this when IFS='' or IFS isn't set?  This is the fast path for Oil!
+
+class NullSplitter(_BaseSplitter):
 
   def __init__(self, ifs_whitespace):
+    _BaseSplitter.__init__(self, ifs_whitespace)
     self.ifs_whitespace = ifs_whitespace
 
   def Split(self, s, allow_escape):
-    ws_chars = self.ifs_whitespace
-
-    n = len(s)
-    spans = []  # NOTE: in C, could reserve() this to len(s)
-
-    if n == 0:
-      return spans  # empty
-
-    state = STATE_WHITE if s[0] in ws_chars else STATE_BLACK
-    prev_state = state
-
-    i = 1
-    while i < n:
-      state = STATE_WHITE if s[i] in ws_chars else STATE_BLACK
-
-      if state != prev_state:
-        spans.append((prev_state == STATE_WHITE, i))
-        prev_state = state
-
-      i += 1
-
-    spans.append((prev_state == STATE_WHITE, i))
-
-    return spans
+    raise NotImplementedError
 
 
 # IFS splitting is complicated in general.  We handle it with three concepts:
@@ -355,14 +272,16 @@ TRANSITIONS = {
     (ST_BACKSLASH, CH_DE_WHITE):  (ST_BLACK,     EMIT_ESCAPE),  # '\ '
     (ST_BACKSLASH, CH_DE_GRAY):   (ST_BLACK,     EMIT_ESCAPE),  # '\_'
     (ST_BACKSLASH, CH_BLACK):     (ST_BLACK,     EMIT_ESCAPE),  # '\a'
-    (ST_BACKSLASH, CH_BACKSLASH): (ST_BACKSLASH, EMIT_ESCAPE),  # '\\'
+    # NOTE: second character is a backslash, but new state is ST_BLACK!
+    (ST_BACKSLASH, CH_BACKSLASH): (ST_BLACK,     EMIT_ESCAPE),  # '\\'
 }
 
 
-class MixedSplitter(object):
+class IfsSplitter(_BaseSplitter):
   """Split a string when IFS has non-whitespace characters."""
 
   def __init__(self, ifs_whitespace, ifs_other):
+    _BaseSplitter.__init__(self, ifs_whitespace + ifs_other)
     self.ifs_whitespace = ifs_whitespace
     self.ifs_other = ifs_other
 
@@ -386,7 +305,7 @@ class MixedSplitter(object):
 
     # Append an ignored span.
     if i != 0:
-      spans.append((True, i))
+      spans.append((span_e.Delim, i))
 
     # String is ONLY whitespace.  We want to skip the last span after the
     # while loop.
@@ -400,6 +319,8 @@ class MixedSplitter(object):
         ch = CH_DE_WHITE
       elif c in other_chars:
         ch = CH_DE_GRAY
+      elif allow_escape and c == '\\':
+        ch = CH_BACKSLASH
       else:
         ch = CH_BLACK
 
@@ -409,21 +330,34 @@ class MixedSplitter(object):
       #log('i %d c %r ch %s state %s new_state %s action %s', i, c, ch, state, new_state, action)
 
       if action == EMIT_PART:
-        spans.append((False, i))
+        spans.append((span_e.Black, i))
+
       elif action == EMIT_DE:
-        spans.append((True, i))  # ignored delimiter
+        spans.append((span_e.Delim, i))  # ignored delimiter
+
       elif action == EMIT_EMPTY:
-        spans.append((True, i))  # ignored delimiter
-        spans.append((False, i))  # EMPTY part that is NOT ignored
+        spans.append((span_e.Delim, i))  # ignored delimiter
+        spans.append((span_e.Black, i))  # EMPTY part that is NOT ignored
+
+      elif action == EMIT_ESCAPE:
+        spans.append((span_e.Backslash, i))  # \
+
       else:
         pass  # Emit nothing 
 
       state = new_state
       i += 1
 
-    # Last span
-    ignored = state in (ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2)
-    spans.append((ignored, n))
+    # Last span.  TODO: Put this in the state machine as the \0 char?
+    if state == ST_BLACK:
+      span_type = span_e.Black
+    elif state == ST_BACKSLASH:
+      span_type = span_e.Backslash
+    elif state in (ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2):
+      span_type = span_e.Delim 
+    else:
+      raise AssertionError(state)  # shouldn't be in START state
+    spans.append((span_type, n))
 
     return spans
 

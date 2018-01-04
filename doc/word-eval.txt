@@ -1,0 +1,270 @@
+Notes on Word Evaluation
+========================
+
+There are a few contexts for word evaluation.
+
+EvalWordSequence:
+
+  echo $s "${a[@]}"
+  declare -a a=( $s "${a[@]}" )
+
+EvalWordToAny
+
+  a="$s ${a[@]}"   (Although bash decays this)
+
+EvalWordToString
+
+  echo foo > "$s ${a[@]}"  # error because it should be a string
+
+Glossary
+--------
+
+Unevaluated:
+  word
+  word_part
+
+Evaluated:
+
+  part_value
+
+  fragment
+
+  fragment_groups?  groups have one-on-one correspondence with words?
+                    Every word should be a flat list of fragments?
+
+  frame
+  arg
+
+Schema Changes
+
+  | StringPartValue(string s, bool quoted)
+
+  | fragment(string s, bool quoted)
+
+Or maybe it should just be a flat array of StringPartValue?
+
+Simpler Way?
+--------
+
+If the goal is just to elide $empty and not $empty""
+And you never elide ANYTHING in "${a[@]}" or "$@"
+
+This is just all in one word.
+
+Logic: if the word consists of all StringPartValue which are unquoted and
+IFS splitting gives NOTHING, then omit the whole word?  That can come first?
+
+I still need _Reframe  : fargment groups into frames
+
+fragment groups are things not separated by a hard barrier.  "${a[@]}" has
+internal barriers that can never be broken (they will never be joined)
+
+
+EvalWordSequence
+----------------
+
+Let's talk about the hard case first.  EvalWordSequence gets a list of words
+from the parser (and after brace expansion), and it calls _EvalSplitGlob in a
+loop on each word.
+
+So the processing of each word is separate.  Each word results in ZERO or more
+argv entries.  I'll call each entry an "arg" from now on.
+
+Each CompoundWord is composed of an array of word_part.  But this is actually
+a tree, because of cases like this:
+
+    $ argv x${a:-"1 2" "3 4"}x
+
+The ${a} substitution is a word part, but it might expand into an ARRAY of
+word_part:
+
+   [ (DQ '1 2') (LiteralPart ' ') (DQ '3 4') ]
+
+### Step 1: _EvalParts
+
+This evaluates part, and then flattens out the part_value.CompoundPartValue
+instances.  So we're left with a flat list of StringPartValue and
+ArrayPartValue.  (Could this be encoded in the type system?)
+
+The only way to get an ArrayPartValue is "$@" or "${a[@]}".  These are not
+split or globbed, so we don't have to worry about them.  We just have to "pass
+them through" unchanged.
+
+### Step 2: FrameFragments
+
+A fragment is either a StringPartValue or once PIECE of an ArrayPartValue.
+
+You need to do the reframing, but preserve whether each StringPartValue is
+quoted.  ArrayPartValues are always quoted.
+
+
+So now we have an array of fragments.  Should be
+
+[ fragment(s Str, quoted Bool), ... ]
+
+Should we call these Frames?
+
+
+### Elide Frames if IFS has whitespace
+
+These are elided:
+
+    empty=''
+    argv $empty 
+    argv ${empty:-} 
+
+These are not:
+
+    argv "${empty}"
+    argv ${empty:-''}
+    argv ${empty:-""}
+    argv ""
+    argv $empty""  # joining two parts
+
+
+### Step 3: Maybe Glob Escape Frames
+
+Now go over each frame.  If no fragment in the frame is quoted, it's like this:
+
+    "$s"
+    "${a[@]}"
+
+We can just pass these through as
+
+
+
+any fragment in the frame is not quoted, then we
+need to both split it and glob it.
+
+Splitting comes first, and globbing comes second.  So we have to eescape in
+the OPPOSITE order.
+
+### Step 4: Maybe IFS Escape Frames
+
+
+### Step 5: Split Frames with IFS
+
+Rules: IFS is split into other.  State machine is very complex!
+
+### Step 6: Glob Frames with Globber
+
+Respect options: noglob, failglob, etc.
+
+
+NOTE: globs inside strings are respected!
+
+a='*.py'
+same as:
+a=*.py  # no globbing yet
+
+echo $a 
+
+
+Moral of the Story
+------------------
+
+This algorithm is horrible!  It's almost impossible to reason about, and the
+syntax is bad too.  Oil will have something much simpler.
+
+
+
+
+PROBLEMS:
+
+How to avoid eliding ""?
+
+I think if everything is quoted, then we can just
+
+These become fragments.
+
+
+
+
+
+Another Algorithm
+-----------------
+
+FOR EACH WORD
+
+1. Eval - word_part
+2. Flatten - word_part but no CompoundWordPart
+  (note: could combine these two steps if 
+  _EvalWordPart(part, quoted=False) had an accumulator argument.
+
+
+3. MakeFrames(word_parts) -- handle StringPartValue and ArrayValue
+
+   a=(1 '2 3' 4)
+   $x"${a[@]}"$y
+
+   This has three frames.
+   The middle frame is just appended.
+   The first and last frame have to undergo splitting.
+
+   This has one frame:
+
+   $empty""
+
+   One frame:
+
+   ${empty:-}
+
+
+   A frame is zero or more args.  It will never be joined with anything else.
+
+
+   # fragment is the same as StringPartvalue though.
+
+   fragment = (string s, bool quoted)
+   frame = (fragment* frags)
+
+   
+4. Elide certain frames.  IFS is whitespace && everything is unquoted and
+everythign is IFS
+
+  $a$b
+
+CHOICE:
+
+(A)  5.  If everything in the frame is quoted, just join it end to end, and
+  emit it.  Skip the next steps.
+
+
+(B)  5. Join fragments in a frame, doing glob escaping and IFS escaping,
+  depending on "quoted" and depending on "noglob".
+
+  6. Split with IFS
+
+  7. Glob, appending to argv.
+
+
+
+POSIX on "$@":
+------------
+
+  Expands to the positional parameters, starting from one. When the expansion
+  occurs within double-quotes, and where field splitting (see Field Splitting)
+  is performed, each positional parameter shall expand as a separate field,
+  with the provision that the expansion of the first parameter shall still be
+  joined with the beginning part of the original word (assuming that the
+  expanded parameter was embedded within a word), and the expansion of the last
+  parameter shall still be joined with the last part of the original word. If
+  there are no positional parameters, the expansion of '@' shall generate zero
+  fields, even when '@' is double-quoted.
+
+
+POSIX on Field Splitting
+-------------------------
+
+  http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_05
+  https://www.gnu.org/software/bash/manual/bashref.html#Word-Splitting
+
+  Summary:
+  1. ' \t\n' is special.  Whitespace is trimmed off the front and back.
+  2. if IFS is '', no field splitting is performed.
+  3. Otherwise, suppose IFS = ' ,\t'.  Then IFS whitespace is space or comma.
+    a.  IFS whitespace isgnored at beginning and end.
+    b. any other IFS char delimits the field, along with adjacent IFS
+       whitespace.
+    c. IFS whitespace shall delimit a field.
+

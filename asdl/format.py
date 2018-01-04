@@ -247,8 +247,11 @@ def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
     raise AssertionError(
         '%s is missing field %r' % (obj.__class__, field_name))
 
-  if isinstance(desc, asdl.IntType) or isinstance(desc, asdl.BoolType):
+  if isinstance(desc, asdl.IntType):
     out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
+
+  elif isinstance(desc, asdl.BoolType):
+    out_val = _ColoredString('T' if field_val else 'F', _OTHER_LITERAL)
 
   elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
     out_val = field_val.name

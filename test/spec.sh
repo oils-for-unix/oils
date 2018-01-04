@@ -204,7 +204,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec spec/word-split.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/word-split.test.sh \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -257,7 +257,7 @@ builtins() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
@@ -417,7 +417,7 @@ sh-options() {
 }
 
 xtrace() {
-  sh-spec spec/xtrace.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/xtrace.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -497,7 +497,7 @@ regex() {
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/process-sub.test.sh \
     $BASH $ZSH $OSH "$@"
 }
 

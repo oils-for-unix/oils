@@ -16,7 +16,6 @@ from core import state
 from core import util
 from osh import ast_ as ast
 
-arg_value_e = runtime.arg_value_e
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
 
@@ -67,62 +66,7 @@ def _GetJoinChar(mem):
     raise AssertionError("IFS shouldn't be an array")
 
 
-# Problem:
-#
-# argv.py 1${undefined:-"2 3" "4 5"}6
-#
-# This is a CompoundWord (DQ '2 3')(LiteralPart ' ')(DQ '4 5')
-#
-# echo [$FOO]
-
-def _SplitPartsIntoFragments(part_vals, splitter):
-  """
-  Args:
-    part_vals: array of runtime.part_value
-    splitter: RootSplitter() instance
-
-  Returns:
-    An array of arrays of runtime.fragment()
-  """
-  # Every part yields a single fragment array.
-  frag_arrays = []
-  for p in part_vals:
-    #log('p %s', p)
-    if p.tag == part_value_e.StringPartValue:
-      #log("SPLITTING %s with ifs %r", p, ifs)
-      if p.do_split_elide:
-        split_strs = splitter.SplitForWordEval(p.s)
-
-        #log('split_strs %s', split_strs)
-
-        # NOTE:
-        # 'echo [$FOO]' passes with this
-        # argv ${x:-"1 2" "3 4"} fails
-        if not split_strs:
-          continue
-
-        #frags = legacy.IfsSplit(p.s, ifs)
-        frags = [runtime.fragment(f, True, p.do_glob) for f in split_strs]
-        #log("RES %s", res)
-      else:
-        # Example: 'a b' and "a b" don't need to be split.
-        frags = [runtime.fragment(p.s, p.do_split_elide, p.do_glob)]
-
-    elif p.tag == part_value_e.ArrayPartValue:
-      # "$@" and "${a[@]}" don't need to be split or globbed
-      frags = [runtime.fragment(f, False, False) for f in p.strs]
-
-    else:
-      raise AssertionError(p.tag)
-
-    #log("frags %s\n", frags)
-    frag_arrays.append(frags)
-
-  #log("==> frag_arrays %s\n", frag_arrays)
-
-  return frag_arrays
-
-
+# TODO: Unify this with _MakeWordFrames
 def _Reframe(frag_arrays):
   """
   frag_arrays -> frag_arrays
@@ -146,50 +90,53 @@ def _Reframe(frag_arrays):
   return res
 
 
-def _JoinElideEscape(frag_arrays, elide_empty, glob_escape):
-  """Join parts without globbing or eliding.
+def _MakeWordFrames(part_vals):
+  """
+  A word evaluates to a flat list of word parts (StringPartValue or
+  ArrayPartValue).  A frame is a portion that results in zero or more args.  It
+  can never be joined.  This idea exists because of arrays like "$@" and
+  "${a[@]}".
 
   Args:
-    frag_arrays: Array of array of runtime.fragment
+    part_vals: array of part_value.  Either StringPartValue or ArrayPartValue.
 
   Returns:
-    arg_value[]
+    An array of frames.  Each frame is a tuple.
+
+  Example:
+
+    a=(1 '2 3' 4)
+    x=x
+    y=y
+    $x"${a[@]}"$y
+
+    Three frames:
+      [ ('x', False), ('1', True) ]
+      [ ('2 3', True) ]
+      [ ('4', True), ('y', False ]
   """
-  args = []
-  #log('_JoinElideEscape frag_arrays %s', frag_arrays)
-  for frag_array in frag_arrays:
-    if glob_escape:
-      #log('frag_array: %s', frag_array)
-      escaped_frags = []
-      any_glob = False
-      for frag in frag_array:
-        if frag.do_glob:  # *.py should be literal
-          escaped_frags.append(frag.s)
-          any_glob = True
+  current = []
+  frames = [current]
+
+  for p in part_vals:
+    if p.tag == part_value_e.StringPartValue:
+      # TODO: Change to p.quoted
+      current.append((p.s, not p.do_split_elide))
+      #current.append((p.s, p.quoted))
+
+    elif p.tag == part_value_e.ArrayPartValue:
+      for i, s in enumerate(p.strs):
+        if i == 0:
+          current.append((s, True))
         else:
-          # "*.py" should be glob-escaped to \*.py
-          escaped_frags.append(glob_.GlobEscape(frag.s))
+          new = (s, True)
+          current = [new]
+          frames.append(current)  # singleton frame
 
-      arg_str = ''.join(escaped_frags)
-      #log('ARG STR %s', arg_str)
-      if any_glob:
-        arg = runtime.GlobArg(arg_str)
-      else:
-        # e.g. 'foo'"${var}" shouldn't be globbed
-        # TODO: combine with below:
-        arg = runtime.ConstArg(''.join(frag.s for frag in frag_array))
     else:
-      arg = runtime.ConstArg(''.join(frag.s for frag in frag_array))
+      raise AssertionError(p.__class__.__name__)
 
-    # Elide $a$b, but not $a"$b" or $a''
-    if (elide_empty and
-        not arg.s and all(frag.do_elide for frag in frag_array)):
-      #log('eliding frag_array %s', frag_array)
-      continue
-
-    args.append(arg)
-
-  return args
+  return frames
 
 
 def _DecayPartValuesToString(part_vals, join_char):
@@ -534,6 +481,11 @@ class _WordPartEvaluator:
     return new_val
 
   def _EvalDoubleQuotedPart(self, part):
+    """DoubleQuotedPart -> part_value
+
+    TODO: This is pretty similar to EvalWordToAny?  Consolidate?
+    Should share _EvalParts, which does flattening.
+    """
     # Example of returning array:
     # $ a=(1 2); b=(3); $ c=(4 5)
     # $ argv "${a[@]}${b[@]}${c[@]}"
@@ -550,18 +502,30 @@ class _WordPartEvaluator:
     if not part.parts:
       return runtime.StringPartValue('', False, False)
 
-    frag_arrays = [[]]
+    part_vals = []
     for p in part.parts:
-      for part_val in self._EvalWordPart(p, quoted=True):
-        assert isinstance(part_val, runtime.part_value), (p, part_val)
-        if part_val.tag == part_value_e.StringPartValue:
-          frag_arrays[-1].append(part_val.s)
-        else:
-          for i, s in enumerate(part_val.strs):
-            if i == 0:
-              frag_arrays[-1].append(s)
-            else:
-              frag_arrays.append([s])
+      part_val = self._EvalWordPart(p, quoted=True)
+      part_vals.append(part_val)
+
+    flat = []
+    _FlattenPartValues(part_vals, flat)
+
+    frag_arrays = [[]]
+    for part_val in flat:
+      assert isinstance(part_val, runtime.part_value), (p, part_val)
+
+      if part_val.tag == part_value_e.StringPartValue:
+        frag_arrays[-1].append(part_val.s)
+
+      elif part_val.tag == part_value_e.ArrayPartValue:
+        for i, s in enumerate(part_val.strs):
+          if i == 0:
+            frag_arrays[-1].append(s)
+          else:
+            frag_arrays.append([s])
+
+      else:
+        raise AssertionError(part_val.__class__.__name__)
 
     #log('frag_arrays %s', frag_arrays)
 
@@ -701,7 +665,6 @@ class _WordPartEvaluator:
       # At least for length, we can't have a test or suffix afterward.
 
     elif part.suffix_op:
-      out_part_vals = []
       op = part.suffix_op
       if op.tag == suffix_op_e.StringUnary:
         if LookupKind(part.suffix_op.op_id) == Kind.VTest:
@@ -713,7 +676,7 @@ class _WordPartEvaluator:
           # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
           # do_glob/do_elide setting.
           if effect == Effect.SpliceParts:
-            return new_part_vals  # EARLY RETURN
+            return runtime.CompoundPartValue(new_part_vals)  # EARLY RETURN
 
           elif effect == Effect.SpliceAndAssign:
             if var_name is None:
@@ -725,7 +688,7 @@ class _WordPartEvaluator:
               rhs_str = _DecayPartValuesToString(new_part_vals,
                                                  _GetJoinChar(self.mem))
               state.SetLocalString(self.mem, var_name, rhs_str)
-            return new_part_vals
+            return runtime.CompoundPartValue(new_part_vals)
 
           elif effect == Effect.Error:
             raise NotImplementedError
@@ -733,7 +696,6 @@ class _WordPartEvaluator:
           else:
             # The old one
             #val = self._EmptyStringPartOrError(part_val, quoted)
-            #out_part_vals.append(part_val)
             pass  # do nothing, may still be undefined
 
         else:
@@ -801,7 +763,7 @@ class _WordPartEvaluator:
     # No prefix or suffix ops
     val = self._EmptyStrOrError(val)
 
-    return [_ValueToPartValue(val, quoted)]
+    return _ValueToPartValue(val, quoted)
 
   def _EvalWordPart(self, part, quoted=False):
     """Evaluate a word part.
@@ -818,30 +780,32 @@ class _WordPartEvaluator:
     elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
       do_split_elide = not quoted
-      do_glob = True
-      return [runtime.StringPartValue(s, do_split_elide, do_glob)]
+      # TODO: Should this be "not quoted" too?
+      #do_glob = True
+      do_glob = not quoted
+      return runtime.StringPartValue(s, do_split_elide, do_glob)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      return [runtime.StringPartValue(s, False, False)]
+      return runtime.StringPartValue(s, False, False)
 
     elif part.tag == word_part_e.SingleQuotedPart:
       s = ''.join(t.val for t in part.tokens)
-      return [runtime.StringPartValue(s, False, False)]
+      return runtime.StringPartValue(s, False, False)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
-      return [self._EvalDoubleQuotedPart(part)]
+      return self._EvalDoubleQuotedPart(part)
 
     elif part.tag == word_part_e.CommandSubPart:
       id_ = part.left_token.id
       if id_ in (Id.Left_CommandSub, Id.Left_Backtick):
-        return [self._EvalCommandSub(part.command_list, quoted)]
+        return self._EvalCommandSub(part.command_list, quoted)
 
       elif id_ in (Id.Left_ProcSubIn, Id.Left_ProcSubOut):
-        return [self._EvalProcessSub(part.command_list, id_)]
+        return self._EvalProcessSub(part.command_list, id_)
 
       else:
         raise AssertionError(id_)
@@ -863,7 +827,7 @@ class _WordPartEvaluator:
       if decay_array:
         val = self._DecayArray(val)
       part_val = _ValueToPartValue(val, quoted)
-      return [part_val]
+      return part_val
 
     elif part.tag == word_part_e.BracedVarSub:
       return self._EvalBracedVarSub(part, quoted)
@@ -872,14 +836,22 @@ class _WordPartEvaluator:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
       s = self._EvalTildeSub(part.prefix)
-      return [runtime.StringPartValue(s, False, False)]
+      return runtime.StringPartValue(s, False, False)
 
     elif part.tag == word_part_e.ArithSubPart:
       num = self.arith_ev.Eval(part.anode)
-      return [runtime.StringPartValue(str(num), True, True)]
+      return runtime.StringPartValue(str(num), True, True)
 
     else:
       raise AssertionError(part.__class__.__name__)
+
+
+def _FlattenPartValues(part_vals, out):
+  for pval in part_vals:
+    if pval.tag == part_value_e.CompoundPartValue:
+      _FlattenPartValues(pval.children, out)
+    else:
+      out.append(pval)
 
 
 class _WordEvaluator:
@@ -900,18 +872,29 @@ class _WordEvaluator:
     self.globber = glob_.Globber(exec_opts)
 
   def _EvalParts(self, word, quoted=False):
-    """Helper for EvalWordToAny and _EvalWordAndReframe.
+    """Helper for EvalWordToAny and _EvalSplitGlob.
 
-    Returns part_value[]."""
+    Returns:
+      List of part_value.
+      But note that this is a TREE.
+    """
     assert isinstance(word, ast.CompoundWord), \
         "Expected CompoundWord, got %s" % word
 
     part_vals = []
     for p in word.parts:
-      for v in self.part_ev._EvalWordPart(p, quoted=quoted):
+      # TODO: This shouldn't be a sequence!
+      # It should be a CompoundPartValue, which we might need to invoke the
+      # splitter on!
+      v = self.part_ev._EvalWordPart(p, quoted=quoted)
         #log('_EvalParts %s -> %s (q=%s)', p, v, quoted)
-        part_vals.append(v)
-    return part_vals
+      #log('_EvalParts -> %s (q=%s)', v, quoted)
+      part_vals.append(v)
+
+    flat = []
+    _FlattenPartValues(part_vals, flat)
+
+    return flat
 
   def EvalWordToString(self, word, do_fnmatch=False, decay=False):
     """
@@ -925,28 +908,37 @@ class _WordEvaluator:
       "$pat") echo 'equal to glob string' ;;  // must be glob escaped
     esac
     """
-    strs = []
+    part_vals = []
     for part in word.parts:
-      for part_val in self.part_ev._EvalWordPart(part, quoted=False):
-        # TODO: if decay, then allow string part.  e.g. for here word or here
-        # doc with "$@".
+      v = self.part_ev._EvalWordPart(part, quoted=False)
+      part_vals.append(v)
 
-        if part_val.tag != part_value_e.StringPartValue:
-          # Example: echo f > "$@".  TODO: Add proper context.  
-          e_die("Expected string, got %s", part)
-        if do_fnmatch:
-          if part_val.do_glob:
-            strs.append(part_val.s)
-          else:
-            strs.append(glob_.GlobEscape(part_val.s))
-        else:
+    flat = []
+    _FlattenPartValues(part_vals, flat)
+
+    strs = []
+    for part_val in flat:
+      # TODO: if decay, then allow string part.  e.g. for here word or here
+      # doc with "$@".
+
+      if part_val.tag != part_value_e.StringPartValue:
+        # Example: echo f > "$@".  TODO: Add proper context.  
+        e_die("Expected string, got %s", part_val)
+      if do_fnmatch:
+        if part_val.do_glob:
           strs.append(part_val.s)
+        else:
+          strs.append(glob_.GlobEscape(part_val.s))
+      else:
+        strs.append(part_val.s)
 
     return runtime.Str(''.join(strs))
 
   def EvalWordToAny(self, word, glob_escape=False):
-    """
-    Used for RHS of assignment
+    """word_t -> value_t.
+
+    Used for RHS of assignment.  Note: There is no splitting!  But there is
+    reframing and joining, because of array values.
 
     Also used for default value?  e.g. "${a:-"a" "b"}" and so forth.
 
@@ -1004,32 +996,63 @@ class _WordEvaluator:
 
     return val
 
-  def _EvalWordAndReframe(self, word):
-    """Helper for _EvalWordSequence.
+  def _EvalWordFrame(self, frame, argv):
+    all_empty = True
+    all_quoted = True
+    any_quoted = False
 
-    Used in command, array, and foreach context.
+    for s, quoted in frame:
+      if s:
+        all_empty = False
 
-    Args:
-      word: CompoundWord
-    Returns:
-      val: runtime.value
-    """
-    part_vals = self._EvalParts(word)
-    #log('part_vals after _EvalParts %s', part_vals)
-    #ifs = legacy.GetIfs(self.mem)
-    frag_arrays = _SplitPartsIntoFragments(part_vals, self.splitter)
-    #log('Fragments after split: %s', frag_arrays)
-    frag_arrays = _Reframe(frag_arrays)
-    #log('Fragments after reframe: %s', frag_arrays)
+      if quoted:
+        any_quoted = True
+      else:
+        all_quoted = False
 
-    glob_escape = not self.exec_opts.noglob
+    # Elision of ${empty}${empty} but not $empty"$empty" or $empty""
+    if all_empty and not any_quoted:
+      return
 
-    # Empirically, elision depends on IFS.  I don't see it in the POSIX spec?
-    elide_empty = self.splitter.ShouldElide()
+    # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
+    # don't do word splitting or globbing.
+    if all_quoted:
+      a = ''.join(s for s, _ in frame)
+      argv.append(a)
+      return
 
-    args = _JoinElideEscape(frag_arrays, elide_empty, glob_escape)
-    #log('After _JoinElideEscape %s', args)
-    return args
+    will_glob = not self.exec_opts.noglob
+
+    # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
+    frags = []
+    for frag, quoted in frame:
+      if will_glob and quoted:
+        frag = glob_.GlobEscape(frag)
+        #log('GLOB ESCAPED %r', p2)
+
+      if quoted:
+        frag = self.splitter.Escape(frag)
+        #log('IFS ESCAPED %r', p2)
+
+      frags.append(frag)
+
+    flat = ''.join(frags)
+    #log('flat: %r', flat)
+
+    args = self.splitter.SplitForWordEval(flat)
+
+    # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
+    # Add it back and don't bother globbing.
+    if not args and any_quoted:
+      argv.append('')
+      return
+
+    #log('split args: %r', args)
+    #out = []
+    for a in args:
+      results = self.globber.Expand(a)
+      #out.extend(results)
+      argv.extend(results)
 
   def _EvalWordSequence(self, words):
     """Turns a list of Words into a list of strings.
@@ -1057,17 +1080,24 @@ class _WordEvaluator:
     #log('W %s', words)
     argv = []
     for w in words:
-      args = self._EvalWordAndReframe(w)
-      #log('A %s', args)
-      for arg in args:
-        if arg.tag == arg_value_e.ConstArg:
-          argv.append(arg.s)
-        elif arg.tag == arg_value_e.GlobArg:
-          results = self.globber.Expand(arg.s)
-          #log('Glob Expand %s to %s', arg.s, results)
-          argv.extend(results)
-        else:
-          raise AssertionError(arg.tag)
+      part_vals = self._EvalParts(w)
+
+      if 0:
+        log('')
+        log('part_vals after _EvalParts:')
+        for entry in part_vals:
+          log('  %s', entry)
+
+      frames = _MakeWordFrames(part_vals)
+      if 0:
+        log('')
+        log('frames after _MakeWordFrames:')
+        for entry in frames:
+          log('  %s', entry)
+
+      # Now each frame will append zero or more args.
+      for frame in frames:
+        self._EvalWordFrame(frame, argv)
 
     #log('ARGV %s', argv)
     return argv
