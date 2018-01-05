@@ -457,7 +457,7 @@ class _WordPartEvaluator:
   def _EvalDoubleQuotedPart(self, part):
     """DoubleQuotedPart -> part_value
 
-    TODO: This is pretty similar to EvalWordToAny?  Consolidate?
+    TODO: This is pretty similar to EvalRhsWord?  Consolidate?
     Should share _EvalParts, which does flattening.
     """
     # Example of returning array:
@@ -742,10 +742,10 @@ class _WordPartEvaluator:
   def _EvalWordPart(self, part, quoted=False):
     """Evaluate a word part.
 
+    TODO: This append to part_vals=[]
+
     Returns:
-      A LIST of part_value, rather than just a single part_value, because of
-      the quirk where ${a:-'x'y} is a single WordPart, but yields two
-      part_values.
+      None
     """
     if part.tag == word_part_e.ArrayLiteralPart:
       raise AssertionError(
@@ -829,7 +829,7 @@ class _WordEvaluator:
 
   Public entry points:
     EvalWordToString
-    EvalWordToAny
+    EvalRhsWord
     EvalWordSequence
     Error
   """
@@ -842,7 +842,7 @@ class _WordEvaluator:
     self.globber = glob_.Globber(exec_opts)
 
   def _EvalParts(self, word, quoted=False):
-    """Helper for EvalWordToAny, EvalWordSequence, etc.
+    """Helper for EvalRhsWord, EvalWordSequence, etc.
 
     Returns:
       List of part_value.
@@ -894,17 +894,21 @@ class _WordEvaluator:
       if part_val.tag != part_value_e.StringPartValue:
         # Example: echo f > "$@".  TODO: Add proper context.  
         e_die("Expected string, got %s", part_val)
-      if do_fnmatch:
-        if part_val.do_split_glob:
-          strs.append(part_val.s)
-        else:
-          strs.append(glob_.GlobEscape(part_val.s))
+
+        # TODO: Maybe add detail like this.
+        #e_die('RHS of assignment should only have strings.  '
+        #      'To assign arrays, using b=( "${a[@]}" )')
+
+      # [[ foo == */"*".py ]] or case *.py) ... esac
+      if do_fnmatch and not part_val.do_split_glob:
+        s = glob_.GlobEscape(part_val.s)
       else:
-        strs.append(part_val.s)
+        s = part_val.s
+      strs.append(s)
 
     return runtime.Str(''.join(strs))
 
-  def EvalWordToAny(self, word):
+  def EvalRhsWord(self, word):
     """word_t -> value_t.
 
     Used for RHS of assignment.  There is no splitting.
@@ -919,24 +923,15 @@ class _WordEvaluator:
     # don't look like assignments.
     if (len(word.parts) == 1 and
         word.parts[0].tag == word_part_e.ArrayLiteralPart):
+
       array_words = word.parts[0].words
       words = braces.BraceExpandWords(array_words)
       strs = self._EvalWordSequence(words)
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
       return runtime.StrArray(strs)
 
-    part_vals = self._EvalParts(word)
-    #log('EvalWordToAny part_vals %s', part_vals)
-
-    for p in part_vals:
-      if p.tag != part_value_e.StringPartValue:
-        # TODO: strict-array should cause this; otherwise
-        # _DecayPartValuesToString.
-        e_die('RHS of assignment should only have strings.  '
-              'To assign arrays, using b=( "${a[@]}" )')
-
-    # Just join all the parts.  No funny business.
-    return runtime.Str(''.join(p.s for p in part_vals))
+    # If RHS doens't look like a=( ... ), then it must be a string.
+    return self.EvalWordToString(word)
 
   def _EvalWordFrame(self, frame, argv):
     all_empty = True

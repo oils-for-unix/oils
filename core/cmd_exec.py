@@ -739,7 +739,7 @@ class Executor(object):
       for pair in node.pairs:
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-          val = self.word_ev.EvalWordToAny(pair.rhs)
+          val = self.word_ev.EvalRhsWord(pair.rhs)
           old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
                                             self.exec_opts)
           sig = (old_val.tag, val.tag)
@@ -762,7 +762,7 @@ class Executor(object):
 
           # RHS can be a string or array.
           if pair.rhs:
-            val = self.word_ev.EvalWordToAny(pair.rhs)
+            val = self.word_ev.EvalRhsWord(pair.rhs)
             assert isinstance(val, runtime.value), val
           else:
             # e.g. 'readonly x' or 'local x'

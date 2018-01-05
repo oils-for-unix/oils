@@ -120,7 +120,7 @@ runtime() {
   echo
 
   echo 'Libraries'
-  wc -l core/{args,glob_}.py | sort -n
+  wc -l core/{args,glob_,legacy}.py | sort -n
   echo
 }
 
