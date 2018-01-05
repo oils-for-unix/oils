@@ -27,18 +27,20 @@ e_die = util.e_die
 
 
 def _ValueToPartValue(val, quoted):
-  """Helper for VarSub evaluation."""
-  assert isinstance(val, runtime.value), val
-  if val.tag == value_e.Undef:
-    return runtime.UndefPartValue()
+  """Helper for VarSub evaluation.
 
-  elif val.tag == value_e.Str:
+  Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
+  """
+  assert isinstance(val, runtime.value), val
+
+  if val.tag == value_e.Str:
     return runtime.StringPartValue(val.s, not quoted)
 
   elif val.tag == value_e.StrArray:
     return runtime.ArrayPartValue(val.strs)
 
   else:
+    # Undef should be caught by _EmptyStrOrError().
     raise AssertionError
 
 
@@ -484,7 +486,7 @@ class _WordPartEvaluator:
       return
 
     for p in part.parts:
-      self._EvalWordPart(p, part_vals, quoted=True)
+      self.EvalWordPart(p, part_vals, quoted=True)
 
   def _DecayArray(self, val):
     sep = _GetJoinChar(self.mem)
@@ -711,10 +713,12 @@ class _WordPartEvaluator:
     # No prefix or suffix ops
     val = self._EmptyStrOrError(val)
 
+    # For example, ${a} evaluates to value_t.Str(), but we want a
+    # part_value.StringPartValue.
     part_val = _ValueToPartValue(val, quoted)
     part_vals.append(part_val)
 
-  def _EvalWordPart(self, part, part_vals, quoted=False):
+  def EvalWordPart(self, part, part_vals, quoted=False):
     """Evaluate a word part.
 
     Args:
@@ -798,14 +802,6 @@ class _WordPartEvaluator:
       raise AssertionError(part.__class__.__name__)
 
 
-def _FlattenPartValues(part_vals, out):
-  for pval in part_vals:
-    if pval.tag == part_value_e.CompoundPartValue:
-      _FlattenPartValues(pval.children, out)
-    else:
-      out.append(pval)
-
-
 class _WordEvaluator:
   """Abstract base class for word evaluators.
 
@@ -834,7 +830,7 @@ class _WordEvaluator:
         "Expected CompoundWord, got %s" % word
 
     for p in word.parts:
-      v = self.part_ev._EvalWordPart(p, part_vals, quoted=quoted)
+      v = self.part_ev.EvalWordPart(p, part_vals, quoted=quoted)
 
   def EvalWordToString(self, word, do_fnmatch=False, decay=False):
     """
@@ -850,7 +846,7 @@ class _WordEvaluator:
     """
     part_vals = []
     for part in word.parts:
-      self.part_ev._EvalWordPart(part, part_vals, quoted=False)
+      self.part_ev.EvalWordPart(part, part_vals, quoted=False)
 
     strs = []
     for part_val in part_vals:

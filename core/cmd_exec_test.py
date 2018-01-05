@@ -85,12 +85,12 @@ class VarOpTest(unittest.TestCase):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
     unset_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'unset'))
     part_vals = []
-    ev.part_ev._EvalWordPart(unset_sub, part_vals)
+    ev.part_ev.EvalWordPart(unset_sub, part_vals)
     print(part_vals)
 
     set_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'x'))
     part_vals = []
-    ev.part_ev._EvalWordPart(set_sub, part_vals)
+    ev.part_ev.EvalWordPart(set_sub, part_vals)
     print(part_vals)
 
     # Now add some ops
@@ -101,11 +101,11 @@ class VarOpTest(unittest.TestCase):
     set_sub.suffix_op = test_op
 
     part_vals = []
-    ev.part_ev._EvalWordPart(unset_sub, part_vals)
+    ev.part_ev.EvalWordPart(unset_sub, part_vals)
     print(part_vals)
 
     part_vals = []
-    ev.part_ev._EvalWordPart(set_sub, part_vals)
+    ev.part_ev.EvalWordPart(set_sub, part_vals)
     print(part_vals)
 
 

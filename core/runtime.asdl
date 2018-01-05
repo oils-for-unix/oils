@@ -8,19 +8,15 @@
 
 module runtime
 {
-  -- A static word_part from os.asdl is evaluated to a dynamic part_value.
+  -- A static word_part from osh.asdl is evaluated to a dynamic part_value.
   part_value = 
-    -- UndefPartValue is for internal processing only.
-    UndefPartValue
-    -- Substitutions get split/elided/globbed.  Unquoted literals also get
-    -- globbed.
-  | StringPartValue(string s, bool do_split_glob)
+    -- Substitutions and unquoted literals get split/elided/globbed.
+    StringPartValue(string s, bool do_split_glob)
     -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
   | ArrayPartValue(string* strs)
-  | CompoundPartValue(part_value* children)
 
   -- A static word from osh.asdl is evaluted to a dynamic value.  value
-  -- instances are stored in memory.
+  -- instances are stored in state.Mem().
   value =
     -- Undef isn't visible at the language level.  We model it as a value
     -- rather than an error code because it's manipulated with ${a:-default}
