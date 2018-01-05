@@ -33,7 +33,7 @@ def _ValueToPartValue(val, quoted):
     return runtime.UndefPartValue()
 
   elif val.tag == value_e.Str:
-    return runtime.StringPartValue(val.s, not quoted, not quoted)
+    return runtime.StringPartValue(val.s, not quoted)
 
   elif val.tag == value_e.StrArray:
     return runtime.ArrayPartValue(val.strs)
@@ -66,30 +66,6 @@ def _GetJoinChar(mem):
     raise AssertionError("IFS shouldn't be an array")
 
 
-# TODO: Unify this with _MakeWordFrames
-def _Reframe(frag_arrays):
-  """
-  frag_arrays -> frag_arrays
-
-  Example:
-  [a b][c][d e] -> [a] [bcd] [e]
-  """
-  res = [[]]
-  for frag_array in frag_arrays:
-    if len(frag_array) == 0:
-      res.append([])
-    elif len(frag_array) == 1:
-      frag = frag_array[0]
-      res[-1].append(frag)
-    else:
-      for i, frag in enumerate(frag_array):
-        if i == 0:
-          res[-1].append(frag)
-        else:
-          res.append([frag])  # singleton frag
-  return res
-
-
 def _MakeWordFrames(part_vals):
   """
   A word evaluates to a flat list of word parts (StringPartValue or
@@ -120,16 +96,14 @@ def _MakeWordFrames(part_vals):
 
   for p in part_vals:
     if p.tag == part_value_e.StringPartValue:
-      # TODO: Change to p.quoted
-      current.append((p.s, not p.do_split_elide))
-      #current.append((p.s, p.quoted))
+      current.append((p.s, p.do_split_glob))
 
     elif p.tag == part_value_e.ArrayPartValue:
       for i, s in enumerate(p.strs):
         if i == 0:
-          current.append((s, True))
+          current.append((s, False))  # don't split or glob
         else:
-          new = (s, True)
+          new = (s, False)
           current = [new]
           frames.append(current)  # singleton frame
 
@@ -500,7 +474,7 @@ class _WordPartEvaluator:
     # of (DoubleQuotedPart [LiteralPart '']).  This is better but it means we
     # have to check for it.
     if not part.parts:
-      return runtime.StringPartValue('', False, False)
+      return runtime.StringPartValue('', False)
 
     part_vals = []
     for p in part.parts:
@@ -538,7 +512,7 @@ class _WordPartEvaluator:
     # This should be able to evaluate to EMPTY ARRAY!
     #log('strs %s', strs)
     if len(strs) == 1:
-      val = runtime.StringPartValue(strs[0], False, False)
+      val = runtime.StringPartValue(strs[0], False)
     else:
       val = runtime.ArrayPartValue(strs)
     return val
@@ -779,22 +753,18 @@ class _WordPartEvaluator:
 
     elif part.tag == word_part_e.LiteralPart:
       s = part.token.val
-      do_split_elide = not quoted
-      # TODO: Should this be "not quoted" too?
-      #do_glob = True
-      do_glob = not quoted
-      return runtime.StringPartValue(s, do_split_elide, do_glob)
+      return runtime.StringPartValue(s, not quoted)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      return runtime.StringPartValue(s, False, False)
+      return runtime.StringPartValue(s, False)
 
     elif part.tag == word_part_e.SingleQuotedPart:
       s = ''.join(t.val for t in part.tokens)
-      return runtime.StringPartValue(s, False, False)
+      return runtime.StringPartValue(s, False)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
       return self._EvalDoubleQuotedPart(part)
@@ -836,11 +806,11 @@ class _WordPartEvaluator:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
       s = self._EvalTildeSub(part.prefix)
-      return runtime.StringPartValue(s, False, False)
+      return runtime.StringPartValue(s, False)
 
     elif part.tag == word_part_e.ArithSubPart:
       num = self.arith_ev.Eval(part.anode)
-      return runtime.StringPartValue(str(num), True, True)
+      return runtime.StringPartValue(str(num), False)
 
     else:
       raise AssertionError(part.__class__.__name__)
@@ -872,7 +842,7 @@ class _WordEvaluator:
     self.globber = glob_.Globber(exec_opts)
 
   def _EvalParts(self, word, quoted=False):
-    """Helper for EvalWordToAny and _EvalSplitGlob.
+    """Helper for EvalWordToAny, EvalWordSequence, etc.
 
     Returns:
       List of part_value.
@@ -925,7 +895,7 @@ class _WordEvaluator:
         # Example: echo f > "$@".  TODO: Add proper context.  
         e_die("Expected string, got %s", part_val)
       if do_fnmatch:
-        if part_val.do_glob:
+        if part_val.do_split_glob:
           strs.append(part_val.s)
         else:
           strs.append(glob_.GlobEscape(part_val.s))
@@ -934,19 +904,16 @@ class _WordEvaluator:
 
     return runtime.Str(''.join(strs))
 
-  def EvalWordToAny(self, word, glob_escape=False):
+  def EvalWordToAny(self, word):
     """word_t -> value_t.
 
-    Used for RHS of assignment.  Note: There is no splitting!  But there is
-    reframing and joining, because of array values.
+    Used for RHS of assignment.  There is no splitting.
 
-    Also used for default value?  e.g. "${a:-"a" "b"}" and so forth.
+    Args:
+      word.CompoundWord
 
     Returns:
-      arg_value
-      Or maybe just string?  Whatever would go in ConstArg and GlobArg.
-      But you don't need to distinguish it later.
-      You could also have EvalWord and EvalGlobWord methods or EvalPatternWord
+      value
     """
     # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
     # don't look like assignments.
@@ -961,62 +928,37 @@ class _WordEvaluator:
     part_vals = self._EvalParts(word)
     #log('EvalWordToAny part_vals %s', part_vals)
 
-    # Instead of splitting, do a trivial transformation to frag array.
-    # Example:
-    # foo="-$@-${a[@]}-" requires fragment, reframe, and simple join
-    frag_arrays = []
     for p in part_vals:
-      if p.tag == part_value_e.StringPartValue:
-        frag_arrays.append([runtime.fragment(p.s, False, False)])
-      elif p.tag == part_value_e.ArrayPartValue:
-        frag_arrays.append(
-            [runtime.fragment(s, False, False) for s in p.strs])
-      else:
-        raise AssertionError
+      if p.tag != part_value_e.StringPartValue:
+        # TODO: strict-array should cause this; otherwise
+        # _DecayPartValuesToString.
+        e_die('RHS of assignment should only have strings.  '
+              'To assign arrays, using b=( "${a[@]}" )')
 
-    frag_arrays = _Reframe(frag_arrays)
-    #log('frag_arrays %s', frag_arrays)
-
-    # Simple join
-    args = []
-    for frag_array in frag_arrays:
-      args.append(''.join(frag.s for frag in frag_array))
-
-    # Example:
-    # a=(1 2)
-    # b=$a  # one word
-    # c="${a[@]}"  # two words
-    if len(args) == 1:
-      val = runtime.Str(args[0])
-    else:
-      # NOTE: For bash compatibility, could have an option to join them here.
-      # foo="-$@-${a[@]}-"  -- join with IFS again, like "$*" ?
-      # Or maybe do that in cmd_exec in assignment.
-      val = runtime.StrArray(args)
-
-    return val
+    # Just join all the parts.  No funny business.
+    return runtime.Str(''.join(p.s for p in part_vals))
 
   def _EvalWordFrame(self, frame, argv):
     all_empty = True
-    all_quoted = True
-    any_quoted = False
+    all_split_glob = True
+    any_split_glob = False
 
-    for s, quoted in frame:
+    for s, do_split_glob in frame:
       if s:
         all_empty = False
 
-      if quoted:
-        any_quoted = True
+      if do_split_glob:
+        any_split_glob = True
       else:
-        all_quoted = False
+        all_split_glob = False
 
     # Elision of ${empty}${empty} but not $empty"$empty" or $empty""
-    if all_empty and not any_quoted:
+    if all_empty and all_split_glob:
       return
 
     # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
     # don't do word splitting or globbing.
-    if all_quoted:
+    if not any_split_glob:
       a = ''.join(s for s, _ in frame)
       argv.append(a)
       return
@@ -1025,12 +967,13 @@ class _WordEvaluator:
 
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []
-    for frag, quoted in frame:
-      if will_glob and quoted:
+    for frag, do_split_glob in frame:
+      #log('do_split_glob %s', do_split_glob)
+      if will_glob and not do_split_glob:
         frag = glob_.GlobEscape(frag)
         #log('GLOB ESCAPED %r', p2)
 
-      if quoted:
+      if not do_split_glob:
         frag = self.splitter.Escape(frag)
         #log('IFS ESCAPED %r', p2)
 
@@ -1043,7 +986,7 @@ class _WordEvaluator:
 
     # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
     # Add it back and don't bother globbing.
-    if not args and any_quoted:
+    if not args and not all_split_glob:
       argv.append('')
       return
 

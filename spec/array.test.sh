@@ -358,3 +358,14 @@ default=('1 2' '3')
 argv.py "${undef[@]:-${default[@]}}"
 # stdout: ['1 2', '3']
 
+### Singleton Array Copy and Assign
+a=( '12 3' )
+b=( "${a[@]}" )
+c="${a[@]}"  # This decays it to a string
+d=$a  # This decays it to a string
+echo ${#a[0]} ${#b[0]} ${#c[0]} ${#d[0]}
+echo ${#a[@]} ${#b[@]} ${#c[@]} ${#d[@]}
+## STDOUT:
+4 4 4 4
+1 1 1 1
+## END

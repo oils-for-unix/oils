@@ -8,16 +8,13 @@
 
 module runtime
 {
-  -- TODO: remove this after _Reframe is rewritten
-  fragment = (string s, bool do_elide, bool do_glob)
-
   -- A static word_part from os.asdl is evaluated to a dynamic part_value.
   part_value = 
     -- UndefPartValue is for internal processing only.
     UndefPartValue
     -- Substitutions get split/elided/globbed.  Unquoted literals also get
     -- globbed.
-  | StringPartValue(string s, bool do_split_elide, bool do_glob)
+  | StringPartValue(string s, bool do_split_glob)
     -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
   | ArrayPartValue(string* strs)
   | CompoundPartValue(part_value* children)
