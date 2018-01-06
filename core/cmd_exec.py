@@ -125,7 +125,7 @@ class Executor(object):
     self.exec_opts = exec_opts
     self.arena = arena
 
-    self.splitter = legacy.RootSplitter(self.mem)
+    self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(
         mem, exec_opts, self.splitter, self)
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)

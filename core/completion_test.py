@@ -147,7 +147,7 @@ class CompletionTest(unittest.TestCase):
 def _MakeTestEvaluator():
   mem = state.Mem('', [], {}, None)
   exec_opts = state.ExecOpts(mem)
-  splitter = legacy.CompletionSplitter()
+  splitter = legacy.SplitContext(mem)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
   return ev
 

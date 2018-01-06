@@ -27,18 +27,6 @@ log = util.log
 DEFAULT_IFS = ' \t\n'
 
 
-class CompletionSplitter:
-  def __init__(self):
-    pass
-  
-  def SplitForWordEval(self, s):
-    # Return a span that is the whole thing?
-    # Honestly do I even need this?
-    return (False, len(s))
-
-  # NOTE: Doesn't need to implement SplitForRead
-
-
 # TODO:
 #
 # Do we have different splitters?  Awk splitter might be useful.  Regex
@@ -89,7 +77,7 @@ def _SpansToParts(s, spans):
   return parts
 
 
-class RootSplitter(object):
+class SplitContext(object):
   """ A polymorphic interface to field splitting.
   
   It respects a STACK of IFS values, for example:
@@ -136,6 +124,28 @@ class RootSplitter(object):
       self.splitters[ifs] = sp
 
     return sp
+
+  def GetJoinChar(self):
+    """
+    For decaying arrays by joining, eg. "$@" -> $@.
+    array
+    """
+    # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
+    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
+    # "When the expansion occurs within a double-quoted string (see
+    # Double-Quotes), it shall expand to a single field with the value of
+    # each parameter separated by the first character of the IFS variable, or
+    # by a <space> if IFS is unset. If IFS is set to a null string, this is
+    # not equivalent to unsetting it; its first character does not exist, so
+    # the parameter values are concatenated."
+    val = self.mem.GetVar('IFS')
+    if val.tag == value_e.Undef:
+      return ''
+    elif val.tag == value_e.Str:
+      return val.s[0]
+    else:
+      # TODO: Raise proper error
+      raise AssertionError("IFS shouldn't be an array")
 
   def Escape(self, s):
     """Escape IFS chars."""
@@ -362,7 +372,7 @@ class IfsSplitter(_BaseSplitter):
     return spans
 
 
-# self.splitter = RootSplitter()
+# self.splitter = SplitContext()
 # SplitManager
 #   Has the cache from IFS -> splitter
 #   Split(s, allow_escape)

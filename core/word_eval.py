@@ -29,7 +29,7 @@ e_die = util.e_die
 def _ValueToPartValue(val, quoted):
   """Helper for VarSub evaluation.
 
-  Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
+  Called by _EvalBracedVarSub and __EvalWordPart for SimpleVarSub.
   """
   assert isinstance(val, runtime.value), val
 
@@ -42,30 +42,6 @@ def _ValueToPartValue(val, quoted):
   else:
     # Undef should be caught by _EmptyStrOrError().
     raise AssertionError
-
-
-# TODO: Move to RootSplitter?
-def _GetJoinChar(mem):
-  """
-  For decaying arrays by joining, eg. "$@" -> $@.
-  array
-  """
-  # https://www.gnu.org/software/bash/manual/bashref.html#Special-Parameters
-  # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_05_02
-  # "When the expansion occurs within a double-quoted string (see
-  # Double-Quotes), it shall expand to a single field with the value of
-  # each parameter separated by the first character of the IFS variable, or
-  # by a <space> if IFS is unset. If IFS is set to a null string, this is
-  # not equivalent to unsetting it; its first character does not exist, so
-  # the parameter values are concatenated."
-  val = mem.GetVar('IFS')
-  if val.tag == value_e.Undef:
-    return ''
-  elif val.tag == value_e.Str:
-    return val.s[0]
-  else:
-    # TODO: Raise proper error
-    raise AssertionError("IFS shouldn't be an array")
 
 
 def _MakeWordFrames(part_vals):
@@ -115,6 +91,7 @@ def _MakeWordFrames(part_vals):
   return frames
 
 
+# TODO: This could be _MakeWordFrames and then sep.join().  It's redunant.
 def _DecayPartValuesToString(part_vals, join_char):
   # Decay ${a=x"$@"x} to string.
   out = []
@@ -181,7 +158,8 @@ def _DoUnarySuffixOp(s, op, arg):
         return s
 
     elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-      # NOTE: This is different than re.search, which will find the longest suffix.
+      # NOTE: This is different than re.search, which will find the longest
+      # suffix.
       r = re.compile('^(.*)' + pat_re + '$')
       m = r.match(s)
       if m:
@@ -239,20 +217,27 @@ def _PatSub(s, op, pat, replace_str):
     return pat_re.sub(replace_str, s, count)
 
 
-# Eval is for ${a-} and ${a+}, Error is for ${a?}, and Assign is for ${a=}
+# SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and SliceAndAssign is
+# for ${a=}.
 
 Effect = util.Enum('Effect', 'SpliceParts Error SpliceAndAssign NoOp'.split())
 
 
-class _WordPartEvaluator:
-  """Abstract base class."""
+class _WordEvaluator:
+  """Abstract base class for word evaluators.
 
-  def __init__(self, mem, exec_opts, word_ev):
+  Public entry points:
+    EvalWordToString
+    EvalRhsWord
+    EvalWordSequence
+  """
+  def __init__(self, mem, exec_opts, splitter):
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
-    self.word_ev = word_ev  # for arith words, var op words
+    self.splitter = splitter
+    self.globber = glob_.Globber(exec_opts)
     # NOTE: Executor also instantiates one.
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self)
 
   def _EvalCommandSub(self, part, quoted):
     """Abstract since it has a side effect.
@@ -371,7 +356,7 @@ class _WordPartEvaluator:
     #print('!!',id, is_falsey)
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
-        self.word_ev._EvalWordToParts(op.arg_word, quoted, part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, part_vals)
         return None, Effect.SpliceParts
       else:
         return None, Effect.NoOp
@@ -381,14 +366,14 @@ class _WordPartEvaluator:
       if is_falsey:
         return None, Effect.NoOp
       else:
-        self.word_ev._EvalWordToParts(op.arg_word, quoted, part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, part_vals)
         return None, Effect.SpliceParts
 
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
         # Collect new part vals.
         assign_part_vals = []
-        self.word_ev._EvalWordToParts(op.arg_word, quoted, assign_part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, assign_part_vals)
 
         # Append them to out param and return them.
         part_vals.extend(assign_part_vals)
@@ -443,7 +428,7 @@ class _WordPartEvaluator:
 
     if op_kind == Kind.VOp1:
       #log('%s', op)
-      arg_val = self.word_ev.EvalWordToString(op.arg_word, do_fnmatch=True)
+      arg_val = self.EvalWordToString(op.arg_word, do_fnmatch=True)
       assert arg_val.tag == value_e.Str
 
       if val.tag == value_e.Str:
@@ -486,11 +471,11 @@ class _WordPartEvaluator:
       return
 
     for p in part.parts:
-      self.EvalWordPart(p, part_vals, quoted=True)
+      self._EvalWordPart(p, part_vals, quoted=True)
 
   def _DecayArray(self, val):
-    sep = _GetJoinChar(self.mem)
     assert val.tag == value_e.StrArray, val
+    sep = self.splitter.GetJoinChar()
     return runtime.Str(sep.join(val.strs))
 
   def _EmptyStrOrError(self, val, token=None):
@@ -636,7 +621,7 @@ class _WordPartEvaluator:
               # NOTE: This decays arrays too!  'set -o strict_array' could
               # avoid it.
               rhs_str = _DecayPartValuesToString(assign_part_vals,
-                                                 _GetJoinChar(self.mem))
+                                                 self.splitter.GetJoinChar())
               state.SetLocalString(self.mem, var_name, rhs_str)
             return  # EARLY RETURN, part_vals mutated
 
@@ -656,12 +641,11 @@ class _WordPartEvaluator:
       elif op.tag == suffix_op_e.PatSub:  # PatSub, vectorized
         val = self._EmptyStrOrError(val)
 
-        pat_val = self.word_ev.EvalWordToString(op.pat, do_fnmatch=True)
+        pat_val = self.EvalWordToString(op.pat, do_fnmatch=True)
         assert pat_val.tag == value_e.Str, pat_val
 
         if op.replace:
-          replace_val = self.word_ev.EvalWordToString(op.replace,
-              do_fnmatch=True)
+          replace_val = self.EvalWordToString(op.replace, do_fnmatch=True)
           assert replace_val.tag == value_e.Str, replace_val
           replace_str = replace_val.s
         else:
@@ -718,7 +702,7 @@ class _WordPartEvaluator:
     part_val = _ValueToPartValue(val, quoted)
     part_vals.append(part_val)
 
-  def EvalWordPart(self, part, part_vals, quoted=False):
+  def _EvalWordPart(self, part, part_vals, quoted=False):
     """Evaluate a word part.
 
     Args:
@@ -801,24 +785,6 @@ class _WordPartEvaluator:
     else:
       raise AssertionError(part.__class__.__name__)
 
-
-class _WordEvaluator:
-  """Abstract base class for word evaluators.
-
-  Public entry points:
-    EvalWordToString
-    EvalRhsWord
-    EvalWordSequence
-    Error
-  """
-  def __init__(self, mem, exec_opts, part_ev, splitter):
-    self.mem = mem
-    self.exec_opts = exec_opts
-
-    self.part_ev = part_ev
-    self.splitter = splitter
-    self.globber = glob_.Globber(exec_opts)
-
   def _EvalWordToParts(self, word, quoted, part_vals):
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
@@ -830,7 +796,7 @@ class _WordEvaluator:
         "Expected CompoundWord, got %s" % word
 
     for p in word.parts:
-      v = self.part_ev.EvalWordPart(p, part_vals, quoted=quoted)
+      v = self._EvalWordPart(p, part_vals, quoted=quoted)
 
   def EvalWordToString(self, word, do_fnmatch=False, decay=False):
     """
@@ -846,7 +812,7 @@ class _WordEvaluator:
     """
     part_vals = []
     for part in word.parts:
-      self.part_ev.EvalWordPart(part, part_vals, quoted=False)
+      self._EvalWordPart(part, part_vals, quoted=False)
 
     strs = []
     for part_val in part_vals:
@@ -1012,11 +978,10 @@ class _WordEvaluator:
     return self._EvalWordSequence(words)
 
 
-class _NormalPartEvaluator(_WordPartEvaluator):
-  """The Executor uses this to evaluate words."""
+class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, ex, word_ev):
-    _WordPartEvaluator.__init__(self, mem, exec_opts, word_ev)
+  def __init__(self, mem, exec_opts, splitter, ex):
+    _WordEvaluator.__init__(self, mem, exec_opts, splitter)
     self.ex = ex
 
   def _EvalCommandSub(self, node, quoted):
@@ -1034,26 +999,14 @@ class _NormalPartEvaluator(_WordPartEvaluator):
     return runtime.StringPartValue(dev_path, False, False)
 
 
-class NormalWordEvaluator(_WordEvaluator):
-
-  def __init__(self, mem, exec_opts, splitter, ex):
-    part_ev = _NormalPartEvaluator(mem, exec_opts, ex, self)
-    _WordEvaluator.__init__(self, mem, exec_opts, part_ev, splitter)
-
-
-class _CompletionPartEvaluator(_WordPartEvaluator):
-  """For completion.
-
-  We are disabling command substitution for now.
-
-  TODO: Also disable side effects!  Like ${a:=b} rather than ${a:-b}
-  And also $(( a+=1 ))
-
-  TODO: Unify with static_eval?  Completion allows more stuff like var names,
-  and maybe words within arrays as well.
+class CompletionWordEvaluator(_WordEvaluator):
   """
-  def __init__(self, mem, exec_opts, word_ev):
-    _WordPartEvaluator.__init__(self, mem, exec_opts, word_ev)
+  Difference from NormalWordEvaluator: No access to executor!  But they both
+  have a splitter.
+  """
+
+  def __init__(self, mem, exec_opts, splitter):
+    _WordEvaluator.__init__(self, mem, exec_opts, splitter)
 
   def _EvalCommandSub(self, node, quoted):
     # Just  return a dummy string?
@@ -1063,14 +1016,3 @@ class _CompletionPartEvaluator(_WordPartEvaluator):
   def _EvalProcessSub(self, node, id_):
     return runtime.StringPartValue(
         '__PROCESS_SUB_NOT_EXECUTED__', False, False)
-
-
-class CompletionWordEvaluator(_WordEvaluator):
-  """
-  Difference from NormalWordEvaluator: No access to executor!  But they both
-  have a splitter.
-  """
-
-  def __init__(self, mem, exec_opts, splitter):
-    part_ev = _CompletionPartEvaluator(mem, exec_opts, self)
-    _WordEvaluator.__init__(self, mem, exec_opts, part_ev, splitter)
