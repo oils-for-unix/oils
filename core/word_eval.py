@@ -986,17 +986,11 @@ class NormalWordEvaluator(_WordEvaluator):
 
   def _EvalCommandSub(self, node, quoted):
     stdout = self.ex.RunCommandSub(node)
-
-    # Runtime errors test case: # $("echo foo > $@")
-
-    # Why rstrip()?
-    # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
-    return runtime.StringPartValue(stdout, not quoted, not quoted)
+    return runtime.StringPartValue(stdout, not quoted)
 
   def _EvalProcessSub(self, node, id_):
     dev_path = self.ex.RunProcessSub(node, id_)
-    # no split or glob
-    return runtime.StringPartValue(dev_path, False, False)
+    return runtime.StringPartValue(dev_path, False)  # no split or glob
 
 
 class CompletionWordEvaluator(_WordEvaluator):
@@ -1004,15 +998,11 @@ class CompletionWordEvaluator(_WordEvaluator):
   Difference from NormalWordEvaluator: No access to executor!  But they both
   have a splitter.
   """
-
   def __init__(self, mem, exec_opts, splitter):
     _WordEvaluator.__init__(self, mem, exec_opts, splitter)
 
   def _EvalCommandSub(self, node, quoted):
-    # Just  return a dummy string?
-    return runtime.StringPartValue(
-        '__COMMAND_SUB_NOT_EXECUTED__', not quoted, not quoted)
+    return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
 
   def _EvalProcessSub(self, node, id_):
-    return runtime.StringPartValue(
-        '__PROCESS_SUB_NOT_EXECUTED__', False, False)
+    return runtime.StringPartValue('__PROCESS_SUB_NOT_EXECUTED__', False)

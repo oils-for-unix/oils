@@ -11,10 +11,10 @@ python-dev doesn't want to touch it anymore!
 
 Other notes:
 - How does this compare to awk -F?
-- re.split() ?  This appears not to work.
-"""
 
-import re
+Idea: This is discouraged/legacy, so write it in Oil rather than C++?
+Problem: Need both classes and algebraic data types.
+"""
 
 from core import runtime
 from core import util

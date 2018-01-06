@@ -1111,6 +1111,9 @@ class Executor(object):
       e_die('Command sub exited with status %d (%r)', status,
             node.__class__.__name__)
 
+    # Runtime errors test case: # $("echo foo > $@")
+    # Why rstrip()?
+    # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
     return ''.join(chunks).rstrip('\n')
 
   def RunProcessSub(self, node, op_id):
