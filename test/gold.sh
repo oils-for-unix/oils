@@ -90,6 +90,8 @@ glob() { _compare gold/glob.sh; }
 no-op() { _compare scripts/count.sh; }
 complex-here-docs() { _compare gold/complex-here-docs.sh; }
 
+strip-op-char-class() { _compare gold/strip-op-char-class.sh; }
+
 
 # Not implemented in osh.
 dollar-sq() { _compare gold/dollar-sq.sh; }

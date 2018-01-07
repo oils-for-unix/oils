@@ -1,0 +1,40 @@
+-- LST for globs.  Globs must be dynamically parsed.
+--
+-- NOTE: This schema is currently unused.  It would be useful for parsing
+-- and translating globs to Python's regex engine, which supports non-greedy
+-- matches.  But we don't want to depend on Python regexes, so we use a 
+-- quadratic loop like bash/mksh.  This is unfortunate, but strings are 
+-- generally short.
+--
+-- The schema could still be used for some kind of automatic glob translation.
+
+-- Pattern Matching Notation:
+-- http://pubs.opengroup.org/onlinepubs/9699919799/
+--
+-- RE Bracket Expression.
+-- NOTE: negation is [!abc] for POSIX glob, but [^abc] for POSIX regexp!
+-- http://pubs.opengroup.org/onlinepubs/9699919799/
+
+module glob {
+
+  glob = (glob_part* parts)
+
+  -- Example: *.[ch] is Star, Literal('.'), CharClass(False, ...)
+  glob_part = 
+    Literal(string s) 
+  | EscapedChar(string c)  -- \* \? \[
+  | Star    -- * is 0 or more characters, like the regex .* 
+  | QMark   -- ? is a single character
+  | BracketExpr(bool negated, char_clause* clauses)
+
+  char_clause = 
+    LiteralChar(string c)
+    -- NOTE: Name conflict with above.  Should be namespaced.
+  | EscapedChar2(string c)  -- \! \-
+  | CharRange(string begin, string end)  -- a-z 0-9
+  | CharClass(string name)  -- [:alpha:]
+
+  -- TODO:
+  -- * Collating symbols are [. .]
+  -- * Equivalence classes are [=
+}

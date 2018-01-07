@@ -84,14 +84,14 @@ all() {
 
 # Just the parser
 parser() {
+  echo 'AST and IDs'
+  wc -l osh/osh.asdl core/id_kind.py | sort -n
+  echo
+
   # I'm counting brace detection/expansion here because it doesn't depend on
   # runtime info.
   echo 'Lexer/Parser'
   wc -l osh/{*_parse.py,lex.py,parse_lib.py} core/{word,braces}.py | sort -n
-  echo
-
-  echo 'AST and IDs'
-  wc -l osh/osh.asdl core/id_kind.py | sort -n
   echo
 
   echo 'Common Algorithms'
@@ -125,7 +125,7 @@ runtime() {
   echo
 
   echo 'Libraries'
-  wc -l core/{args,glob_,legacy}.py | sort -n
+  wc -l core/{args,glob_,legacy,libstr}.py | sort -n
   echo
 }
 

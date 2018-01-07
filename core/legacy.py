@@ -241,13 +241,14 @@ class NullSplitter(_BaseSplitter):
 CH_DE_WHITE, CH_DE_GRAY, CH_BLACK, CH_BACKSLASH = range(4)
 
 # Nodes are states
-ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2, ST_BLACK, ST_BACKSLASH = range(6)
+ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2, ST_BLACK, ST_BACKSLASH = range(7)
 
 # Actions control what spans to emit.
 EMIT_PART, EMIT_DE, EMIT_EMPTY, EMIT_ESCAPE, NO_EMIT = range(5)
 
 TRANSITIONS = {
-    (ST_START, CH_DE_WHITE):  (ST_DE_WHITE1, NO_EMIT),    # ' '
+    # Whitespace should have been stripped
+    (ST_START, CH_DE_WHITE):  (ST_INVALID,   NO_EMIT),      # ' '
     (ST_START, CH_DE_GRAY):   (ST_DE_GRAY,   EMIT_EMPTY), # '_'
     (ST_START, CH_BLACK):     (ST_BLACK,     NO_EMIT),    # 'a'
     (ST_START, CH_BACKSLASH): (ST_BACKSLASH, NO_EMIT),    # '\'
@@ -335,6 +336,9 @@ class IfsSplitter(_BaseSplitter):
         ch = CH_BLACK
 
       new_state, action = TRANSITIONS[state, ch]
+      if new_state == ST_INVALID:
+        raise AssertionError(
+            'Invalid transition from %r with %r' % (state, ch))
 
       #from core.util  import log
       #log('i %d c %r ch %s state %s new_state %s action %s', i, c, ch, state, new_state, action)

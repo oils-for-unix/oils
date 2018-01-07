@@ -52,8 +52,6 @@ module runtime
     ProcessStatus(int status)
   | PipelineStatus(int* statuses)
 
-
   -- Word splitting in legacy.py
   span = Black | Delim | Backslash
 }
-
