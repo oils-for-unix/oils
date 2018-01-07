@@ -172,6 +172,17 @@ HOME=/tmp/oil_test
 pushd /tmp/oil_tests
 dirs
 
+### dirs tilde test when $HOME is exactly $PWD
+cd /
+mkdir -p /tmp/oil_test
+HOME=/tmp/oil_test
+pushd $HOME
+dirs
+# STDOUT:
+~ /
+~ /
+# status: 0
+
 ### dirs test of path alias `..`
 cd /tmp
 pushd .. >/dev/null
