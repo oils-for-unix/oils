@@ -199,6 +199,10 @@ blog-other1() {
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
+alias() {
+  sh-spec spec/alias.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
 comments() {
   sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
 }
