@@ -14,6 +14,7 @@ import cStringIO
 import os
 
 from core import args
+from core import legacy
 from core import runtime
 from core import util
 from core.id_kind import Id
@@ -346,7 +347,7 @@ class Mem(object):
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
-    SetGlobalString(self, 'IFS', ' \t\n')
+    SetGlobalString(self, 'IFS', legacy.DEFAULT_IFS)
     SetGlobalString(self, 'PWD', os.getcwd())
 
     # NOTE: Should we put these in a namespace for Oil?

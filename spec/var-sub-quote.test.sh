@@ -24,6 +24,25 @@ empty=
 argv.py ${empty:-}
 # stdout: []
 
+### array with empty values
+declare -a A=('' x "" '')
+argv.py "${A[@]}"
+# stdout: ['', 'x', '', '']
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+# N-I mksh stdout-json: ""
+# N-I mksh status: 1
+
+### substitution of IFS character, quoted and unquoted
+IFS=:
+s=:
+argv.py $s
+argv.py "$s"
+## STDOUT:
+['']
+[':']
+## END
+
 ### :-
 empty=''
 argv.py ${empty:-a} ${Unset:-b}
@@ -84,6 +103,15 @@ argv.py ${Unset:-"a b" c}
 ### Mixed inner quotes with outer quotes
 argv.py "${Unset:-"a b" c}"
 # stdout: ['a b c']
+
+### part_value tree with multiple words
+argv ${a:-${a:-"1 2" "3 4"}5 "6 7"}
+# stdout: ['1 2', '3 45', '6 7']
+
+### part_value tree on RHS
+v=${a:-${a:-"1 2" "3 4"}5 "6 7"}
+argv "${v}"
+# stdout: ['1 2 3 45 6 7']
 
 ### Var with multiple words: no quotes
 var='a b c'

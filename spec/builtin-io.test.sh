@@ -10,6 +10,40 @@ echo ---
 # stdout-json: "-\n--\n---\n"
 # BUG zsh stdout-json: "\n--\n---\n"
 
+### echo backslashes
+echo \\
+echo '\'
+echo '\\'
+echo "\\"
+## STDOUT:
+\
+\
+\\
+\
+## BUG dash/mksh/zsh STDOUT:
+\
+\
+\
+\
+## END
+
+### echo -e backslashes
+echo -e \\
+echo -e '\'
+echo -e '\\'
+echo -e "\\"
+## STDOUT:
+\
+\
+\
+\
+## N-I dash STDOUT:
+-e \
+-e \
+-e \
+-e \
+## END
+
 ### echo -en
 echo -en 'abc\ndef\n'
 # stdout-json: "abc\ndef\n"
@@ -130,6 +164,13 @@ echo "[$x]"
 # stdout: [A		B C D E]
 # status: 0
 
+### Read from empty file
+echo -n '' > $TMP/empty.txt
+read x < $TMP/empty.txt
+argv "status=$?" "$x"
+# stdout: ['status=1', '']
+# status: 0
+
 ### Read builtin with no newline.
 # This is odd because the variable is populated successfully.  OSH/Oil might
 # need a separate put reading feature that doesn't use IFS.
@@ -165,6 +206,13 @@ argv.py $x $REPLY
 # stdout: ['1234', '12']
 # N-I dash/zsh stdout: []
 
+### Read uses $REPLY (without -n)
+echo 123 > $TMP/readreply.txt
+read < $TMP/readreply.txt
+echo $REPLY
+# stdout: 123
+# N-I dash stdout:
+
 ### read -r ignores backslashes
 echo 'one\ two' > $TMP/readr.txt
 read escaped < $TMP/readr.txt
@@ -182,12 +230,23 @@ argv "$escaped" "$raw"
 # BUG mksh/zsh stdout: ['one twoethree', 'one\\ twoethree']
 
 ### read with line continuation reads multiple physical lines
-echo -e 'one\\\ntwo\n' > $TMP/readr.txt
-read escaped < $TMP/readr.txt
-read -r raw < $TMP/readr.txt
+tmp=$TMP/$(basename $SH)-readr.txt
+echo -e 'one\\\ntwo\n' > $tmp
+read escaped < $tmp
+read -r raw < $tmp
 argv "$escaped" "$raw"
 # stdout: ['onetwo', 'one\\']
 # N-I dash stdout: ['-e onetwo', '-e one\\']
+
+### read multiple vars spanning many lines
+read x y << 'EOF'
+one-\
+two three-\
+four five-\
+six
+EOF
+argv "$x" "$y" "$z"
+# stdout: ['one-two', 'three-four five-six', '']
 
 ### read -r with \n
 echo '\nline' > $TMP/readr.txt
@@ -210,7 +269,7 @@ echo "[$var]"
 # stdout: [  a b c]
 # N-I dash stdout: [a b c]
 
-### Read with IFS=:
+### Read multiple lines with IFS=:
 # The leading spaces are stripped if they appear in IFS.
 # IFS chars are escaped with :.
 IFS=:

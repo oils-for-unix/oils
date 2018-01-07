@@ -110,9 +110,14 @@ parser-port() {
 
 runtime() {
   # NOTE: braces.py contains both parsing and runtime.  It is a  middle stage.
-  echo 'Core'
-  wc -l \
-    core/*_{exec,eval}.py core/{process,state}.py core/runtime.asdl | sort -n
+
+  echo 'Runtime'
+  wc -l core/{process,state}.py core/runtime.asdl | sort -n
+  echo
+
+  # NOTE: These may turn into compilers
+  echo 'Evaluators'
+  wc -l core/*_{exec,eval}.py | sort -n
   echo
 
   echo 'Builtins'
@@ -120,7 +125,7 @@ runtime() {
   echo
 
   echo 'Libraries'
-  wc -l core/{args,glob_}.py | sort -n
+  wc -l core/{args,glob_,legacy}.py | sort -n
   echo
 }
 
@@ -134,6 +139,13 @@ instructions() {
 
 imports() {
   grep --no-filename import */*.py | sort | uniq -c | sort -n
+}
+
+# For the compiler, see what's at the top level.
+top-level() {
+  grep '^[a-zA-Z]' {core,osh}/*.py \
+    | grep -v '_test.py'  \
+    | egrep -v ':import|from|class|def'  # note: colon is from grep output
 }
 
 "$@"

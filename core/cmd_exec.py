@@ -27,6 +27,7 @@ from core import alloc
 from core import args
 from core import braces
 from core import expr_eval
+from core import legacy
 from core import reader
 from core import test_builtin
 from core import word
@@ -124,7 +125,9 @@ class Executor(object):
     self.exec_opts = exec_opts
     self.arena = arena
 
-    self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self)
+    self.splitter = legacy.SplitContext(self.mem)
+    self.word_ev = word_eval.NormalWordEvaluator(
+        mem, exec_opts, self.splitter, self)
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
@@ -248,7 +251,7 @@ class Executor(object):
       self.fd_state.MakePermanent()
 
     elif builtin_id == EBuiltin.READ:
-      status = builtin.Read(argv, self.mem)
+      status = builtin.Read(argv, self.splitter, self.mem)
 
     elif builtin_id == EBuiltin.ECHO:
       status = builtin.Echo(argv)
@@ -736,7 +739,7 @@ class Executor(object):
       for pair in node.pairs:
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-          val = self.word_ev.EvalWordToAny(pair.rhs)
+          val = self.word_ev.EvalRhsWord(pair.rhs)
           old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
                                             self.exec_opts)
           sig = (old_val.tag, val.tag)
@@ -759,7 +762,7 @@ class Executor(object):
 
           # RHS can be a string or array.
           if pair.rhs:
-            val = self.word_ev.EvalWordToAny(pair.rhs)
+            val = self.word_ev.EvalRhsWord(pair.rhs)
             assert isinstance(val, runtime.value), val
           else:
             # e.g. 'readonly x' or 'local x'
@@ -1108,6 +1111,9 @@ class Executor(object):
       e_die('Command sub exited with status %d (%r)', status,
             node.__class__.__name__)
 
+    # Runtime errors test case: # $("echo foo > $@")
+    # Why rstrip()?
+    # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
     return ''.join(chunks).rstrip('\n')
 
   def RunProcessSub(self, node, op_id):

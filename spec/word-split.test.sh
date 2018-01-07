@@ -66,10 +66,18 @@ argv.py $s1
 
 ### Word elision with non-whitespace IFS
 # Treated differently than the default IFS.  What is the rule here?
-IFS=_
-s1='_'
-argv.py $s1
-# stdout: ['']
+IFS='_'
+char='_'
+space=' '
+empty=''
+argv.py $char
+argv.py $space
+argv.py $empty
+## STDOUT:
+['']
+[' ']
+[]
+## END
 
 ### Leading/trailing word elision with non-whitespace IFS
 # This behavior is weird.
@@ -77,6 +85,18 @@ IFS=_
 s1='_a_b_'
 argv.py $s1
 # stdout: ['', 'a', 'b']
+
+### Leading ' ' vs leading ' _ '
+# This behavior is weird, but all shells agree.
+IFS='_ '
+s1='_ a  b _ '
+s2='  a  b _ '
+argv.py $s1
+argv.py $s2
+## STDOUT:
+['', 'a', 'b']
+['a', 'b']
+## END
 
 ### Multiple non-whitespace IFS chars.
 IFS=_-

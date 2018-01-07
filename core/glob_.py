@@ -160,7 +160,7 @@ def _GlobUnescape(s):  # used by cmd_exec
   while i < n:
     c = s[i]
     if c == '\\':
-      assert i != n - 1, 'There should be no trailing single backslash!'
+      assert i != n - 1, 'Trailing backslash: %r' % s
       i += 1
       c2 = s[i]
       if c2 in GLOB_META_CHARS:

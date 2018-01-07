@@ -474,7 +474,9 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
       argv = []
       for w in node.words:
         try:
-          val = ev.EvalWordToAny(w)
+          # TODO: Should we call EvalWordSequence?  But turn globbing off?  It
+          # can do splitting and such.
+          val = ev.EvalWordToString(w)
         except util.FatalRuntimeError:
           # Why would it fail?
           continue

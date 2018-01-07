@@ -8,84 +8,152 @@ import unittest
 from core import legacy  # module under test
 
 
+def _RunSplitCases(test, sp, cases):
+
+  for expected_parts, s, allow_escape in cases:
+    spans = sp.Split(s, allow_escape)
+    if 0:
+      print('%r: %s' % (s, spans))
+    else:
+      # Verbose for debugging
+      print(repr(s))
+      for span in spans:
+        print('  %s %s' % span)
+
+    parts = legacy._SpansToParts(s, spans)
+    print('PARTS %s' % parts)
+
+    test.assertEqual(expected_parts, parts,
+        '%r: %s != %s' % (s, expected_parts, parts))
+
+
 class SplitTest(unittest.TestCase):
 
-  def testIfsSplitEmpty(self):
-    self.assertEqual(
-        [''], legacy.IfsSplit('', ' \t\n'))
-    self.assertEqual(
-        ['', ''], legacy.IfsSplit(' ', ' \t\n'))
-    self.assertEqual(
-        [''], legacy.IfsSplit('', ' '))
+  def testSpansToParts(self):
+    sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
 
-    # No word splitting when no IFS.  Hm.
-    self.assertEqual(
-        [''], legacy.IfsSplit('', ''))
+    s = 'one\\ two'
+    spans = sp.Split(s, False)
+    print(spans)
 
-  def testIfsSplit(self):
-    self.assertEqual(
-        ['', 'foo', 'bar', ''],
-        legacy.IfsSplit('\tfoo bar\n', ' \t\n'))
+    parts = legacy._SpansToParts(s, spans)
+    self.assertEqual(['one\\', 'two'], parts)
 
-    self.assertEqual(
-        ['\tfoo bar\n'],
-        legacy.IfsSplit('\tfoo bar\n', ''))
+    spans = sp.Split(s, True)  # allow_escape
+    parts = legacy._SpansToParts(s, spans)
+    self.assertEqual(['one two'], parts)
 
-    self.assertEqual(
-        ['a', '', 'd'],
-        legacy.IfsSplit('abcd', 'bc'))
-
-  def testIfsSplit_Mixed(self):
-    self.assertEqual(
-        ['a', 'cd'],
-        legacy.IfsSplit('abcd', ' b'))
-
-    # IFS whitespace rule
-    self.assertEqual(
-        ['a', 'c'],
-        legacy.IfsSplit('abc', 'b '))
-
-    self.assertEqual(
-        ['a', 'c'],
-        legacy.IfsSplit('a c', 'b '))
-
-    self.assertEqual(
-        ['a', '', 'c'],
-        legacy.IfsSplit('abbc', 'b '))
-
-    self.assertEqual(
-        ['', 'a', '', '', 'cd', ''],
-        legacy.IfsSplit('\ta b\tb cd\n', 'b \t\n'))
-
-    self.assertEqual(
-        ['', 'a', 'cd', ''],
-        legacy.IfsSplit('\tabcd\n', 'b \t\n'))
-
-  def testIfsSplit_Mixed2(self):
-    # Doesn't work yet
+    # NOTE: Only read builtin supports max_results
     return
-    self.assertEqual(
-        ['a', '', '', 'b'],
-        legacy.IfsSplit('a _  _ _  b', '_ '))
 
-  def testIfsSplitWhitespaceOnly(self):
-    # No non-whitespace IFS
-    self.assertEqual(
-        ['', 'a', 'c', ''],
-        legacy.IfsSplit(' a c ', ' '))
+    parts = legacy._SpansToParts(s, spans, max_results=1)
+    self.assertEqual(['one\\ two'], parts)
 
-    self.assertEqual(
-        ['', 'c'],
-        legacy.IfsSplit(' c', ' \t\n'))
+    print(spans)
 
-  def testIfsSplitNonWhitespaceOnly(self):
-    self.assertEqual(
-        ['a', 'c'],
-        legacy.IfsSplit('a_c', '_'))
+    parts = legacy._SpansToParts(s, spans, max_results=1)
+    self.assertEqual(['one two'], parts)
 
-    self.assertEqual(
-        ['', ''],
-        legacy.IfsSplit('_', '_'))
+  def testDefaultIfs(self):
+    CASES = [
+        ([], '', True),
+        (['a'], 'a', True),
+        (['a'], ' a ', True),
+        (['ab'], '\tab\n', True),
+        (['a', 'b'], 'a  b\n', True),
+
+        (['a b'], r'a\ b', True),
+        (['a\\', 'b'], r'a\ b', False),
+
+        ([r'\*.sh'], r'\\*.sh', True),
+
+        (['Aa', 'b', ' a b'], 'Aa b \\ a\\ b', True),
+    ]
+
+    #sp = legacy.WhitespaceSplitter(legacy.DEFAULT_IFS)
+    sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
+    _RunSplitCases(self, sp, CASES)
+
+    self.assertEqual('a\ _b', sp.Escape('a _b'))
+
+  def testMixedIfs(self):
+    CASES = [
+        ([], '', True),
+        (['a', 'b'], 'a_b', True),
+        (['a', 'b'], ' a b ', True),
+        (['a', 'b'], 'a _ b', True),
+        (['a', 'b'], '  a _ b  ', True),
+        (['a', '', 'b'], 'a _ _ b', True),
+        (['a', '', 'b'], 'a __ b', True),
+        (['a', '', '', 'b'], 'a _  _ _  b', True),
+
+        (['a'], '  a _ ', True),
+
+        # NOTES:
+        # - This cases REQUIRES ignoring leading whitespace.  The state machine
+        # can't handle it.  Contrast with the case above.
+        # - We get three spans with index 1 because of the initial rule to
+        # ignore whitespace, and then EMIT_EMPTY.  Seems harmless for now?
+        (['', 'a'], ' _ a _ ', True),
+
+        # Backslash escape
+        (['a b'], r'a\ b', True),
+        (['a\\', 'b'], r'a\ b', False),
+    ]
+
+    # IFS='_ '
+    sp = legacy.IfsSplitter(' ', '_')
+    _RunSplitCases(self, sp, CASES)
+
+    self.assertEqual('a\ \_b', sp.Escape('a _b'))
+
+  def testWhitespaceOnly(self):
+    CASES = [
+        ([], '', True),
+        ([], '\t', True),
+        (['a'], 'a\t', True),
+        (['a', 'b'], '\t\ta\tb\t', True),
+
+        # Backslash escape
+        (['a\tb'], 'a\\\tb', True),
+        (['a\\', 'b'], 'a\\\tb', False),
+    ]
+
+    # IFS='_ '
+    sp = legacy.IfsSplitter('\t', '')
+    _RunSplitCases(self, sp, CASES)
+
+    self.assertEqual('a b', sp.Escape('a b'))
+    self.assertEqual('a\\\tb', sp.Escape('a\tb'))
+
+  def testOtherOnly(self):
+    CASES = [
+        ([], '', True),
+        ([''], '_', True),
+        (['a'], 'a_', True),
+        (['', '', 'a', 'b'], '__a_b_', True),
+
+        # Backslash escape
+        (['a_b'], r'a\_b', True),
+        (['a\\', 'b'], r'a\_b', False),
+    ]
+
+    # IFS='_ '
+    sp = legacy.IfsSplitter('', '_')
+    _RunSplitCases(self, sp, CASES)
+
+  def testTwoOther(self):
+    CASES = [
+        (['a', '', 'b', '', '', 'c', 'd'], 'a__b---c_d', True),
+
+        # Backslash escape
+        (['a_-b'], r'a\_\-b', True),
+        (['a\\', '\\', 'b'], r'a\_\-b', False),
+    ]
+
+    # IFS='_ '
+    sp = legacy.IfsSplitter('', '_-')
+    _RunSplitCases(self, sp, CASES)
 
 
 if __name__ == '__main__':

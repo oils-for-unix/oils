@@ -1,6 +1,6 @@
 -- Data types for evaluating an AST (or LST at the moment.)
 
--- TODO: add ASDL option to put constructors under the vraitn namespace:
+-- TODO: add ASDL option to put constructors under the variant namespace:
 --   part_value.String, part_value.Array
 --   fragment
 --   arg.Const, arg.Glob
@@ -8,30 +8,15 @@
 
 module runtime
 {
-  -- A static word_part from os.asdl is evaluated to a dynamic part_value.
+  -- A static word_part from osh.asdl is evaluated to a dynamic part_value.
   part_value = 
-    -- UndefPartValue is for internal processing only.
-    UndefPartValue
-    -- Substitutions get split/elided/globbed.  Unquoted literals also get
-    -- globbed.
-  | StringPartValue(string s, bool do_split_elide, bool do_glob)
+    -- Substitutions and unquoted literals get split/elided/globbed.
+    StringPartValue(string s, bool do_split_glob)
     -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
   | ArrayPartValue(string* strs)
 
-  -- part_values are split into fragments.  Fragments may still be elided
-  -- and globbed.
-  fragment = (string s, bool do_elide, bool do_glob)
-
-  -- We reframe and join fragments into an array of arg_value.  If any
-  -- fragment in an arg had do_glob set, the whole arg is globbed, with
-  -- quoted fragments being glob-escaped.
-  -- e.g. "my[]dir/"*.py -> my\[\]dir/*.py.
-  arg_value = 
-    ConstArg(string s)
-  | GlobArg(string s)  -- non-glob parts glob-escaped
-
   -- A static word from osh.asdl is evaluted to a dynamic value.  value
-  -- instances are stored in memory.
+  -- instances are stored in state.Mem().
   value =
     -- Undef isn't visible at the language level.  We model it as a value
     -- rather than an error code because it's manipulated with ${a:-default}
@@ -66,5 +51,9 @@ module runtime
   job_status =
     ProcessStatus(int status)
   | PipelineStatus(int* statuses)
+
+
+  -- Word splitting in legacy.py
+  span = Black | Delim | Backslash
 }
 
