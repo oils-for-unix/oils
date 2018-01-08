@@ -117,6 +117,7 @@ readonly -a PASSING=(
   glob
   no-op
   complex-here-docs
+  strip-op-char-class
 
   count
   one-spec-test

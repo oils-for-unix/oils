@@ -200,7 +200,8 @@ blog-other1() {
 }
 
 alias() {
-  sh-spec spec/alias.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec spec/alias.test.sh --osh-failures-allowed 10 \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
 comments() {

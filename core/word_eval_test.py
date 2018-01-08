@@ -16,5 +16,7 @@ import word_eval  # module under test
 
 class WordEvalTest(unittest.TestCase):
   pass
+
+
 if __name__ == '__main__':
   unittest.main()

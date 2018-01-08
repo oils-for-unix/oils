@@ -15,8 +15,14 @@ var y = x -> sub( g/a*/, 'b', :ALL)
 
 import re
 
-from core import glob_
+import libc
+
 from core.id_kind import Id
+from core import glob_
+from core import util
+
+log = util.log
+e_die = util.e_die
 
 # Implementation without Python regex:
 #
@@ -49,11 +55,8 @@ from core.id_kind import Id
 def DoUnarySuffixOp(s, op, arg):
   """Helper for ${x#prefix} and family."""
 
-  pat_re, err = glob_.GlobToPythonRegex(arg)
-  if err:
-    e_die("Can't convert glob to regex: %r", arg)
-
-  if pat_re is None:  # simple/fast path for fixed strings
+  # Fast path for constant strings.
+  if not glob_.LooksLikeGlob(arg):
     if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
       if s.startswith(arg):
         return s[len(arg):]
@@ -70,46 +73,48 @@ def DoUnarySuffixOp(s, op, arg):
     else:  # e.g. ^ ^^ , ,,
       raise AssertionError(op.op_id)
 
-  else:  # glob pattern
-    # Extract the group from the regex and return it
-    if op.op_id == Id.VOp1_Pound:  # shortest prefix
-      # Need non-greedy match
-      pat_re2, err = glob_.GlobToPythonRegex(arg, greedy=False)
-      r = re.compile(pat_re2)
-      m = r.match(s)
-      if m:
-        return s[m.end(0):]
-      else:
-        return s
+  # For patterns, do fnmatch() in a loop.
+  #
+  # TODO: Check another fast path first?
+  #
+  # v=aabbccdd
+  # echo ${v#*b}  # strip shortest prefix
+  #
+  # If the whole thing doesn't match '*b*', then no test can succeed.  So we
+  # can fail early.  Conversely echo ${v%%c*} and '*c*'.
 
-    elif op.op_id == Id.VOp1_DPound:  # longest prefix
-      r = re.compile(pat_re)
-      m = r.match(s)
-      if m:
-        return s[m.end(0):]
-      else:
-        return s
-
-    elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-      # NOTE: This is different than re.search, which will find the longest
-      # suffix.
-      r = re.compile('^(.*)' + pat_re + '$')
-      m = r.match(s)
-      if m:
-        return m.group(1)
-      else:
-        return s
-      
-    elif op.op_id == Id.VOp1_DPercent:  # longest suffix
-      r = re.compile('^(.*?)' + pat_re + '$')  # non-greedy
-      m = r.match(s)
-      if m:
-        return m.group(1)
-      else:
-        return s
-
+  n = len(s)
+  if op.op_id == Id.VOp1_Pound:  # shortest prefix
+    for i in xrange(1, n):
+      #log('Matching pattern %r with %r', arg, s[:i])
+      if libc.fnmatch(arg, s[:i]):
+        return s[i:]
     else:
-      raise AssertionError(op.op_id)
+      return s
+
+  elif op.op_id == Id.VOp1_DPound:  # longest prefix
+    for i in xrange(-1, -n, -1):
+      #log('Matching pattern %r with %r', arg, s[:i])
+      if libc.fnmatch(arg, s[:i]):
+        return s[i:]
+    else:
+      return s
+
+  elif op.op_id == Id.VOp1_Percent:  # shortest suffix
+    for i in xrange(-1, -n, -1):
+      #log('Matching pattern %r with %r', arg, s[:i])
+      if libc.fnmatch(arg, s[i:]):
+        return s[:i]
+    else:
+      return s
+    
+  elif op.op_id == Id.VOp1_DPercent:  # longest suffix
+    for i in xrange(1, n):
+      #log('Matching pattern %r with %r', arg, s[:i])
+      if libc.fnmatch(arg, s[i:]):
+        return s[:i]
+    else:
+      return s
 
 
 def PatSub(s, op, pat, replace_str):
