@@ -552,8 +552,13 @@ class BoolEvaluator(_ExprEvaluator):
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
+        # TODO: test newer than (mtime)
         if op_id == Id.BoolBinary_nt:
-          return True  # TODO: test newer than (mtime)
+          return st1[stat.ST_MTIME] > st2[stat.ST_MTIME]
+        if op_id == Id.BoolBinary_ot:
+          return st1[stat.ST_MTIME] < st2[stat.ST_MTIME]
+
+        raise NotImplementedError(op_id)
 
       if arg_type == OperandType.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
