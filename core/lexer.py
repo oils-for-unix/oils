@@ -235,12 +235,10 @@ class Lexer(object):
     return t
 
 
-# Based on osh/parse_lib.py MatchToken_Slow.
 class SimpleLexer(object):
-  """
-  Use Cases:
-  - echo -e, which interprets C-escaped strings.
-  - read -r
+  """Lexer for echo -e, which interprets C-escaped strings.
+
+  Based on osh/parse_lib.py MatchToken_Slow.
   """
   def __init__(self, pat_list):
     self.pat_list = CompileAll(pat_list)

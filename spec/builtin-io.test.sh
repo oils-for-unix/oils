@@ -78,9 +78,11 @@ echo -e 'ab\0cd'
 # BUG dash stdout-json: "-e ab\n"
 
 ### \c stops processing input
-echo -e xy  'ab\cde'  'ab\cde'
+flags='-e'
+case $SH in */dash) flags='' ;; esac
+
+echo $flags xy  'ab\cde'  'ab\cde'
 # stdout-json: "xy ab"
-# OK dash stdout-json: "-e xy ab"
 # N-I mksh stdout-json: "xy abde abde"
 
 ### echo -e with hex escape
@@ -89,19 +91,27 @@ echo -e 'abcd\x65f'
 # N-I dash stdout-json: "-e abcd\\x65f\n"
 
 ### echo -e with octal escape
-echo -e 'abcd\044e'
+flags='-e'
+case $SH in */dash) flags='' ;; esac
+
+echo $flags 'abcd\044e'
 # stdout-json: "abcd$e\n"
-# OK dash stdout-json: "-e abcd$e\n"
 
 ### echo -e with 4 digit unicode escape
-echo -e 'abcd\u0065f'
+flags='-e'
+case $SH in */dash) flags='' ;; esac
+
+echo $flags 'abcd\u0065f'
 # stdout-json: "abcdef\n"
-# OK dash stdout-json: "-e abcd\\u0065f\n"
+# N-I dash/ash stdout-json: "abcd\\u0065f\n"
 
 ### echo -e with 8 digit unicode escape
-echo -e 'abcd\U00000065f'
+flags='-e'
+case $SH in */dash) flags='' ;; esac
+
+echo $flags 'abcd\U00000065f'
 # stdout-json: "abcdef\n"
-# OK dash stdout-json: "-e abcd\\U00000065f\n"
+# N-I dash/ash stdout-json: "abcd\\U00000065f\n"
 
 ### \0377 is the highest octal byte
 echo -en '\03777' | od -A n -t x1 | sed 's/ \+/ /g'
@@ -112,13 +122,17 @@ echo -en '\03777' | od -A n -t x1 | sed 's/ \+/ /g'
 # It is 256 % 256 which gets interpreted as a NUL byte.
 echo -en '\04000' | od -A n -t x1 | sed 's/ \+/ /g'
 # stdout-json: " 00 30\n"
+# BUG ash stdout-json: " 20 30 30\n"
 # N-I dash stdout-json: " 2d 65 6e 20\n"
 
 ### \0777 is out of range
-echo -en '\0777' | od -A n -t x1 | sed 's/ \+/ /g'
+flags='-en'
+case $SH in */dash) flags='-n' ;; esac
+
+echo $flags '\0777' | od -A n -t x1 | sed 's/ \+/ /g'
 # stdout-json: " ff\n"
-# OK mksh stdout-json: " c3 bf\n"
-# OK dash stdout-json: " 2d 65 6e 20 ff 0a\n"
+# BUG mksh stdout-json: " c3 bf\n"
+# BUG ash stdout-json: " 3f 37\n"
 
 ### incomplete hex escape
 echo -en 'abcd\x6' | od -A n -c | sed 's/ \+/ /g'
@@ -133,26 +147,36 @@ echo -e '\x' '\xg' | od -A n -c | sed 's/ \+/ /g'
 # BUG mksh/zsh stdout-json: " \\0 \\0 g \\n\n"
 
 ### incomplete octal escape
-echo -en 'abcd\04' | od -A n -c | sed 's/ \+/ /g'
+flags='-en'
+case $SH in */dash) flags='-n' ;; esac
+
+echo $flags 'abcd\04' | od -A n -c | sed 's/ \+/ /g'
 # stdout-json: " a b c d 004\n"
-# OK dash stdout-json: " - e n a b c d 004 \\n\n"
 
 ### incomplete unicode escape
 echo -en 'abcd\u006' | od -A n -c | sed 's/ \+/ /g'
 # stdout-json: " a b c d 006\n"
 # N-I dash stdout-json: " - e n a b c d \\ u 0 0 6 \\n\n"
+# BUG ash stdout-json: " a b c d \\ u 0 0 6\n"
 
 ### \u6
-echo -e '\u6' | od -A n -c | sed 's/ \+/ /g'
-# stdout-json: " 006 \\n\n"
-# N-I dash stdout-json: " - e \\ u 6 \\n\n"
+flags='-en'
+case $SH in */dash) flags='-n' ;; esac
+
+echo $flags '\u6' | od -A n -c | sed 's/ \+/ /g'
+# stdout-json: " 006\n"
+# N-I dash/ash stdout-json: " \\ u 6\n"
 
 ### \0 \1 \8
 # \0 is special, but \1 isn't in bash
 # \1 is special in dash!  geez
-echo -e '\0' '\1' '\8' | od -A n -c | sed 's/ \+/ /g'
-# stdout-json: " \\0 \\ 1 \\ 8 \\n\n"
-# BUG dash stdout-json: " - e 001 \\ 8 \\n\n"
+flags='-en'
+case $SH in */dash) flags='-n' ;; esac
+
+echo $flags '\0' '\1' '\8' | od -A n -c | sed 's/ \+/ /g'
+# stdout-json: " \\0 \\ 1 \\ 8\n"
+# BUG dash stdout-json: " 001 \\ 8\n"
+# BUG ash stdout-json: " \\0 001 \\ 8\n"
 
 ### Read builtin
 # NOTE: there are TABS below
@@ -300,6 +324,7 @@ echo '\a \b \c \d \e \f \g \h \x65 \145 \i' > $TMP/read-c.txt
 read line < $TMP/read-c.txt
 echo $line
 # stdout-json: "a b c d e f g h x65 145 i\n"
+# BUG ash stdout-json: "abcdefghx65 145 i\n"
 # BUG dash/zsh stdout-json: "\u0007 \u0008\n"
 # BUG mksh stdout-json: "\u0007 \u0008 d \u001b \u000c g h e 145 i\n"
 

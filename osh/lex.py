@@ -393,6 +393,37 @@ LEXER_DEF[lex_mode_e.SQ] = [
   C("'", Id.Right_SingleQuote),
 ]
 
+# TODO:
+# - See if re2c supports {1,2} etc.
+# - the DOLLAR_SQ lex state needs most of this logic.
+
+# Differences:
+# - $'' ends at a single quote, so \' is escaped
+# - echo -e ends at \0
+
+# Used by ECHO_LEXER in core/builtin.py.
+C_STRING_DEF = [
+  R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
+  C(r'\c', Id.Char_Stop),
+
+  # Note: tokens above \0377 can either be truncated or be flagged a syntax
+  # error in strict mode.
+  R(r'\\0[0-7]{1,3}', Id.Char_Octal),
+
+  # \x6 is valid in bash
+  R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
+  R(r'\\u[0-9]{1,4}', Id.Char_Unicode4),
+  R(r'\\U[0-9]{1,8}', Id.Char_Unicode8),
+
+  R(r'[^\\]+', Id.Char_Literals),
+  R(r'\\.', Id.Char_Literals),
+
+  # Backslash that ends the string.
+  R(r'\\$', Id.Char_Literals),
+  # For re2c.  TODO: need to make that translation.
+  C('\\\0', Id.Char_Literals),
+]
+
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
