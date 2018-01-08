@@ -220,3 +220,15 @@ dangling
 dangling
 dangling is not file
 ## END
+
+### -t 1 for stdout
+# There isn't way to get a terminal in the test environment?
+[ -t 1 ]
+echo status=$?
+## stdout: status=1
+
+### [ -t invalid ]
+[ -t invalid ]
+echo status=$?
+## stdout: status=2
+## BUG bash stdout: status=1

@@ -74,7 +74,10 @@ class ParseError(_ErrorWithLocation):
 
 
 class FatalRuntimeError(_ErrorWithLocation):
-  """Used in the evaluators."""
+  """Used in the evaluators.
+
+  Also used in test builtin for invalid argument.
+  """
   pass
 
 

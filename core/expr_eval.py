@@ -477,6 +477,7 @@ class BoolEvaluator(_ExprEvaluator):
 
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]  # could be static in the LST?
+
       if arg_type == OperandType.Path:
         # Only use lstat if we're testing for a symlink.
         if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
@@ -519,6 +520,17 @@ class BoolEvaluator(_ExprEvaluator):
           return not bool(s)
         if op_id == Id.BoolUnary_n:
           return bool(s)
+
+        raise NotImplementedError(op_id)
+
+      if arg_type == OperandType.Other:
+        if op_id == Id.BoolUnary_t:
+          try:
+            fd = int(s)
+          except ValueError:
+            # TODO: Need location information of [
+            e_die('Invalid file descriptor %r', s)
+          return os.isatty(fd)
 
         raise NotImplementedError(op_id)
 

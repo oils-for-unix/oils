@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 """
 test_builtin.py
 """
@@ -186,7 +187,14 @@ def Test(argv, need_right_bracket):
   word_ev = _WordEvaluator()
 
   bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev)
-  b = bool_ev.Eval(bool_node)
+  try:
+    b = bool_ev.Eval(bool_node)
+  except util.FatalRuntimeError as e:
+    # e.g. [ -t xxx ]
+    # TODO: Printing the location would be nice.
+    print('test: %s' % e.UserErrorString(), file=sys.stderr)
+    return 2
+
   status = 0 if b else 1
   return status
 
@@ -196,6 +204,6 @@ if __name__ == '__main__':
   e = _StringWordEmitter('-z X -o -z Y -a -z X'.split())
   while True:
     w = e.ReadWord(None)
-    print w
+    print(w)
     if w.id == Id.Eof_Real:
       break
