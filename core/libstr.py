@@ -13,6 +13,8 @@ Or maybe:
 var y = x -> sub( g/a*/, 'b', :ALL)
 """
 
+import re
+
 from core import glob_
 from core.id_kind import Id
 
