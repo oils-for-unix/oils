@@ -393,19 +393,8 @@ LEXER_DEF[lex_mode_e.SQ] = [
   C("'", Id.Right_SingleQuote),
 ]
 
-# TODO:
-# - See if re2c supports {1,2} etc.
-# - the DOLLAR_SQ lex state needs most of this logic.
-
-# Differences:
-# - $'' ends at a single quote, so \' is escaped
-# - echo -e ends at \0
-
-# Used by ECHO_LEXER in core/builtin.py.
-C_STRING_DEF = [
-  R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
-  C(r'\c', Id.Char_Stop),
-
+# Shared between echo -e and $''.
+_C_STRING_COMMON = [
   # Note: tokens above \0377 can either be truncated or be flagged a syntax
   # error in strict mode.
   R(r'\\0[0-7]{1,3}', Id.Char_Octal),
@@ -415,11 +404,30 @@ C_STRING_DEF = [
   R(r'\\u[0-9]{1,4}', Id.Char_Unicode4),
   R(r'\\U[0-9]{1,8}', Id.Char_Unicode8),
 
-  R(r'[^\\]+', Id.Char_Literals),
+  R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
+
+  # Backslash that ends a line.  Note '.' doesn't match a newline character.
+  C('\\\n', Id.Char_Literals),
+]
+
+# Used by ECHO_LEXER in core/builtin.py.
+ECHO_E_DEF = _C_STRING_COMMON + [
+  C(r'\c', Id.Char_Stop),
+
+  # e.g. \A -> \A, is not a backslash escape.
+  # This has to come AFTER the \c and so forth.
+  #
+  # This includes embedded \n?  Is that possible with echo -e?
   R(r'\\.', Id.Char_Literals),
 
   # Backslash that ends the string.
   R(r'\\$', Id.Char_Literals),
+
+  # e.g. 'foo', anything that's not a backslash escape
+  R(r'[^\\]+', Id.Char_Literals),
+]
+
+UNUSED = [
   # For re2c.  TODO: need to make that translation.
   C('\\\0', Id.Char_Literals),
 ]
@@ -427,12 +435,21 @@ C_STRING_DEF = [
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
-LEXER_DEF[lex_mode_e.DOLLAR_SQ] = [
-  R(r"[^'\\\0]+", Id.Lit_Chars),
+LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
+  # \' is escaped in $'' mode, but not echo -e
+  C(r'\'', Id.Char_OneChar),
+
+  # e.g. 'foo', anything that's not a backslash escape.  Need to exclude ' as
+  # well.
+  R(r"[^\\'\0]+", Id.Char_Literals),
+
+  # e.g. \x doesn't match a hex escape.  This could be an error.
+  C('\\', Id.Char_Literals),
+
   C("'", Id.Right_SingleQuote),
-  R(r"\\[^\0]", Id.Lit_EscapedChar),
-  # Backslash that ends the file!  Caught by re2c exhaustiveness check.  For
-  # now, make it Unknown.
+
+  # Backslash that ends the file!  Caught by re2c exhaustiveness check.  Parser
+  # will assert; should give a better syntax error.
   C('\\\0', Id.Unknown_Tok),
 ]
 

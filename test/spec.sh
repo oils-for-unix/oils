@@ -234,9 +234,8 @@ subshell() {
     ${REF_SHELLS[@]} $OSH "$@" 
 }
 
-# Need to implement $'' escaping
 quote() {
-  sh-spec spec/quote.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/quote.test.sh \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 

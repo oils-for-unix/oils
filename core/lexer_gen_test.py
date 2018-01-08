@@ -33,6 +33,8 @@ class LexerGenTest(unittest.TestCase):
         (r'[^a-z]', r'[^a-z]'),
         # . isn't special inside
         (r'[a\.]', r'[a.]'),
+
+        (r'[0-7]{1,3}', r'[0-7]{1,3} '),
     ]
     for py, expected in PAIRS:
       #self.assertEqual(expected, lexer_gen.TranslateRegex(py))

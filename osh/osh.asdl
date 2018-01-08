@@ -70,7 +70,9 @@ module osh
     ArrayLiteralPart(word* words)
   | LiteralPart(token token)
   | EscapedLiteralPart(token token)
-  | SingleQuotedPart(token* tokens)
+    -- for 'foo=' and "${a:-}"
+  | EmptyPart()
+  | SingleQuotedPart(token left, token* tokens)
   | DoubleQuotedPart(word_part* parts)
   | SimpleVarSub(token token)
   | BracedVarSub(token token,

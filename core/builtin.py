@@ -35,6 +35,7 @@ from core import lexer
 from core import runtime
 from core import util
 from core import state
+from core import word_compile
 from core.id_kind import Id
 
 from osh import lex
@@ -47,7 +48,6 @@ span_e = runtime.span_e
 var_flags_e = runtime.var_flags_e
 log = util.log
 e_die = util.e_die
-
 
 
 # NOTE: NONE is a special value.
@@ -222,73 +222,11 @@ def Resolve(argv0):
   return EBuiltin.NONE
 
 
-ECHO_LEXER = lexer.SimpleLexer(lex.C_STRING_DEF)
+ECHO_LEXER = lexer.SimpleLexer(lex.ECHO_E_DEF)
 
-_ONE_CHAR = {
-    '0': '\0',
-    'a': '\a',
-    'b': '\b',
-    'e': '\x1b',
-    'E': '\x1b',
-    'f': '\f',
-    'n': '\n',
-    'r': '\r',
-    't': '\t',
-    'v': '\v',
-    '\\': '\\',
-}
-
-# Strict mode syntax errors:
-#
-# \x is a syntax error -- needs two digits (It's like this in C)
-# \0777 is a syntax error -- we shouldn't do modulus
-# \d could be a syntax error -- it is better written as \\d
-
-def _EvalStringPart(id_, value):
-  # TODO: This has to go in the compile stage for DOLLAR_SQ strings.
-
-  if id_ == Id.Char_OneChar:
-    c = value[1]
-    return _ONE_CHAR[c]
-
-  elif id_ == Id.Char_Stop:  # \c returns a special sentinel
-    return None
-
-  elif id_ == Id.Char_Octal:
-    # TODO: Error checking for \0777
-    s = value[2:]
-    i = int(s, 8)
-    if i >= 256:
-      i = i % 256
-      # NOTE: This is for strict mode
-      #raise AssertionError('Out of range')
-    return chr(i)
-
-  elif id_ == Id.Char_Hex:
-    s = value[2:]
-    i = int(s, 16)
-    return chr(i)
-
-  elif id_ == Id.Char_Unicode4:
-    s = value[2:]
-    i = int(s, 16)
-    return unichr(i)
-
-  elif id_ == Id.Char_Unicode8:
-    s = value[2:]
-    i = int(s, 16)
-    return unichr(i)
-
-  elif id_ == Id.Char_Literals:
-    return value
-
-  else:
-    raise AssertionError
-
-
-echo_spec = _Register('echo')
-echo_spec.ShortFlag('-e')  # no backslash escapes
-echo_spec.ShortFlag('-n')
+ECHO_SPEC = _Register('echo')
+ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
+ECHO_SPEC.ShortFlag('-n')
 
 
 def Echo(argv):
@@ -307,14 +245,14 @@ def Echo(argv):
   # - 'echo -c' should print '-c', not fail
   # - echo '---' should print ---, not fail
 
-  arg, arg_index = echo_spec.ParseLikeEcho(argv)
+  arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
   argv = argv[arg_index:]
   if arg.e:
     new_argv = []
     for a in argv:
       parts = []
       for id_, value in ECHO_LEXER.Tokens(a):
-        p = _EvalStringPart(id_, value)
+        p = word_compile.EvalCStringToken(id_, value)
 
         # Unusual behavior: '\c' prints what is there and aborts processing!
         if p is None:

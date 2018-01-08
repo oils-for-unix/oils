@@ -153,7 +153,7 @@ class WordParser(object):
     # return a CompoundWord with no parts, which is explicitly checked with a
     # custom error message.
     if not w.parts and arg_lex_mode == lex_mode_e.VS_ARG_DQ and empty_ok:
-      w.parts.append(ast.SingleQuotedPart())
+      w.parts.append(ast.EmptyPart())
     return w
 
   def _ReadSliceArg(self):
@@ -492,29 +492,31 @@ class WordParser(object):
     return part
 
   def _ReadSingleQuotedPart(self, lex_mode):
-    quoted_part = ast.SingleQuotedPart()
+    left = self.cur_token
+    tokens = []
 
     done = False
     while not done:
       self._Next(lex_mode)
       self._Peek()
 
-      if self.token_kind == Kind.Lit:
-        quoted_part.tokens.append(self.cur_token)
+      # Kind.Char emitted in DOLLAR_SQ state
+      if self.token_kind in (Kind.Lit, Kind.Char):
+        tokens.append(self.cur_token)
 
       elif self.token_kind == Kind.Eof:
         self.AddErrorContext('Unexpected EOF in single-quoted string')
         return False
 
       elif self.token_kind == Kind.Right:
-        done = True  # assume Id.Right_S_QUOTE
+        done = True  # assume Id.Right_SingleQuote
 
       else:
         raise AssertionError(
             'Unhandled token in single-quoted part %s (%d)' %
             (self.cur_token, self.token_kind))
 
-    return quoted_part
+    return ast.SingleQuotedPart(left, tokens)
 
   def _ReadDoubleQuotedLeftParts(self):
     """Read substitution parts in a double quoted context."""

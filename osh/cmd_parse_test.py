@@ -1144,9 +1144,9 @@ $'abc\ndef'
     self.assertEqual(1, len(w.parts))
     p = w.parts[0]
     self.assertEqual(3, len(p.tokens))
-    self.assertEqual(Id.Lit_Chars, p.tokens[0].id)
-    self.assertEqual(Id.Lit_EscapedChar, p.tokens[1].id)
-    self.assertEqual(Id.Lit_Chars, p.tokens[2].id)
+    self.assertEqual(Id.Char_Literals, p.tokens[0].id)
+    self.assertEqual(Id.Char_OneChar, p.tokens[1].id)
+    self.assertEqual(Id.Char_Literals, p.tokens[2].id)
 
   def testArithConstants(self):
     # Found in Gherkin

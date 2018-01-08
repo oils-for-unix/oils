@@ -138,6 +138,17 @@ class LexerTest(unittest.TestCase):
     self.assertTokensEqual(ast.token(Id.BoolUnary_z, '-z'), t)
     self.assertEqual(Kind.BoolUnary, LookupKind(t.id))
 
+  def testDollarSqState(self):
+    lexer = _InitLexer(r'foo bar\n \x00 \000 \u0065')
+
+    t = lexer.Read(lex_mode_e.DOLLAR_SQ)
+    print(t)
+    self.assertTokensEqual(ast.token(Id.Char_Literals, 'foo bar'), t)
+
+    t = lexer.Read(lex_mode_e.DOLLAR_SQ)
+    print(t)
+    self.assertTokensEqual(ast.token(Id.Char_OneChar, r'\n'), t)
+
   def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
     # the function; then Peek() the next token.  Then Lookahead in that state.

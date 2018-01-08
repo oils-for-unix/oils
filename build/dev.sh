@@ -72,6 +72,10 @@ pylibc() {
 
 fastlex() {
   build/codegen.sh ast-id-lex
+
+  # Why do we need this?  It gets stail otherwise.
+  rm -f _devbuild/py-ext/x86_64/fastlex.so
+
   py-ext fastlex build/setup_fastlex.py
   PYTHONPATH=. native/fastlex_test.py
 }

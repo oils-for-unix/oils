@@ -440,7 +440,7 @@ def LooksLikeAssignment(w):
     # This fake SingleQuotedPart is necesssary so that EmptyUnquoted elision
     # isn't applied.  EMPTY= is like EMPTY=''.
     # TODO: This part doesn't have spids, so it might break some invariants.
-    rhs.parts.append(ast.SingleQuotedPart())
+    rhs.parts.append(ast.EmptyPart())
   else:
     for p in w.parts[1:]:
       rhs.parts.append(p)

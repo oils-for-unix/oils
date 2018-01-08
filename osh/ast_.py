@@ -73,7 +73,8 @@ def AbbreviateNodes(obj, node):
     for part in obj.parts:
       node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
 
-  elif node.node_type == 'SingleQuotedPart':
+  # Only abbreviate 'foo', not $'foo\n'
+  elif node.node_type == 'SingleQuotedPart' and obj.left.id == Id.Left_SingleQuote:
     node.abbrev = True
     node.node_type = 'SQ'
 

@@ -90,20 +90,6 @@ ast-id-lex() {
   osh-lex-gen-native
 }
 
-lexer() {
-  ast-id-lex
-
-  # Why do we need this?
-  rm -f _devbuild/py-ext/x86_64/fastlex.so
-
-  # Note: This also does pylibc, which we don't want.
-  build/dev.sh fastlex
-}
-
-# TODO:
-# asdl/run.sh gen-osh-python
-
-
 # Size profiler for binaries.  TODO: Fold this into benchmarks/
 bloaty() { ~/git/other/bloaty/bloaty "$@"; }
 

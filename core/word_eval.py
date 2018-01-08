@@ -12,6 +12,7 @@ from core import glob_
 from core.id_kind import Id, Kind, LookupKind
 from core import runtime
 from core import state
+from core import word_compile
 from core import util
 from osh import ast_ as ast
 
@@ -616,8 +617,19 @@ class _WordEvaluator:
       v = runtime.StringPartValue(s, False)
       part_vals.append(v)
 
+    elif part.tag == word_part_e.EmptyPart:
+      part_vals.append(runtime.StringPartValue('', False))
+
     elif part.tag == word_part_e.SingleQuotedPart:
-      s = ''.join(t.val for t in part.tokens)
+      if part.left.id == Id.Left_SingleQuote:
+        s = ''.join(t.val for t in part.tokens)
+      elif part.left.id == Id.Left_DollarSingleQuote:
+        # NOTE: This could be done at compile time
+        s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
+                    for t in part.tokens)
+      else:
+        raise AssertionError(part.left.id)
+
       v = runtime.StringPartValue(s, False)
       part_vals.append(v)
 

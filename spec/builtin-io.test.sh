@@ -58,6 +58,28 @@ echo -ez 'abc\n'
 # stdout-json: "-ez abc\\n\n"
 # OK dash/mksh/zsh stdout-json: "-ez abc\n\n"
 
+### echo -e with embedded newline 
+flags='-e'
+case $SH in */dash) flags='' ;; esac
+
+echo $flags 'foo
+bar'
+## STDOUT:
+foo
+bar
+## END
+
+### echo -e line continuation
+flags='-e'
+case $SH in */dash) flags='' ;; esac
+
+echo $flags 'foo\
+bar'
+## STDOUT:
+foo\
+bar
+## END
+
 ### echo -e with C escapes
 # https://www.gnu.org/software/bash/manual/bashref.html#Bourne-Shell-Builtins
 # not sure why \c is like NUL?

@@ -6,6 +6,7 @@ lex_gen.py
 import cStringIO
 import sys
 import sre_parse
+import sre_constants
 
 from osh import lex
 
@@ -104,6 +105,7 @@ def TranslateConstant(pat):
   return '"' + ''.join(_Literal(ord(c)) for c in pat) + '"'
 
 
+
 def TranslateTree(re_tree, f, in_char_class=False):
   """
   re_tree: List of children
@@ -120,15 +122,20 @@ def TranslateTree(re_tree, f, in_char_class=False):
       # min = 0 means *, min = 1 means +
       assert min_ in (0, 1), min_
       TranslateTree(children, f)
-      if min_ == 0:
-        if max_ == 1:
-          f.write('? ')
+
+      if min_ == 0 and max_ == 1:
+        f.write('? ')
+
+      elif max_ == sre_constants.MAXREPEAT:
+        if min_ == 0:
+            f.write('* ')
+        elif min_ == 1:
+          f.write('+ ')
         else:
-          f.write('* ')
-      elif min_ == 1:
-        f.write('+ ')
-      else:
-        assert 0, min_
+          assert 0, min_
+
+      else:  # re2c also supports [0-7]{1,2} syntax
+        f.write('{%d,%d} ' % (min_, max_))
 
     elif name == 'negate':  # ^ in [^a-z]
       assert arg is None

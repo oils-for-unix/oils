@@ -15,21 +15,21 @@ set -o errexit
 _compare() {
   set +o errexit
 
-  "$@" >_tmp/left.txt
-  local left_status=$?
+  "$@" >_tmp/shebang.txt
+  local expected_status=$?
 
-  bin/osh "$@" >_tmp/right.txt
-  local right_status=$?
+  bin/osh "$@" >_tmp/osh.txt
+  local osh_status=$?
 
   set -o errexit
 
-  if ! diff -u _tmp/left.txt _tmp/right.txt; then
+  if ! diff -u _tmp/shebang.txt _tmp/osh.txt; then
     echo FAIL
     exit 1
   fi
 
-  if test $left_status != $right_status; then
-    echo "FAIL: Got status $right_status but expected $left_status"
+  if test $expected_status != $osh_status; then
+    echo "FAIL: Got status $osh_status but expected $expected_status"
     exit 1
   fi
 
@@ -92,8 +92,8 @@ complex-here-docs() { _compare gold/complex-here-docs.sh; }
 
 strip-op-char-class() { _compare gold/strip-op-char-class.sh; }
 
-
-# Not implemented in osh.
+# Similar tests for backslash escaping.
+echo-e() { _compare gold/echo-e.sh; }
 dollar-sq() { _compare gold/dollar-sq.sh; }
 
 # Needs declare -p
