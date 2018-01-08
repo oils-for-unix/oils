@@ -266,9 +266,12 @@ builtin-io() {
 }
 
 builtins2() {
-  # 4 tests for 'dirs' fail.
-  sh-spec spec/builtins2.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec spec/builtins2.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
+# dash and mksh don't implement 'dirs'
+builtin-dirs() {
+  sh-spec spec/builtin-dirs.test.sh $BASH $ZSH $OSH "$@"
 }
 
 builtin-vars() {
