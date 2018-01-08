@@ -148,7 +148,7 @@ echo $'col1\ncol2\ncol3'
 ### $""
 echo $"foo"
 # stdout: foo
-# N-I dash stdout: $foo
+# N-I dash/ash stdout: $foo
 
 ### printf
 # This accepts \t by itself, hm.

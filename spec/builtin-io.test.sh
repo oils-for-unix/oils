@@ -230,6 +230,7 @@ argv "$escaped" "$raw"
 # BUG mksh/zsh stdout: ['one twoethree', 'one\\ twoethree']
 
 ### read with line continuation reads multiple physical lines
+# NOTE: osh failing because of file descriptor issue.  stdin has to be closed!
 tmp=$TMP/$(basename $SH)-readr.txt
 echo -e 'one\\\ntwo\n' > $tmp
 read escaped < $tmp
@@ -272,14 +273,17 @@ echo "[$var]"
 ### Read multiple lines with IFS=:
 # The leading spaces are stripped if they appear in IFS.
 # IFS chars are escaped with :.
+tmp=$TMP/$(basename $SH)-read-ifs.txt
 IFS=:
-{ echo '  \\a :b\: c:d\';
-  echo '  e'
-} > $TMP/read-ifs.txt
-read a b c d < $TMP/read-ifs.txt
-echo "[$a|$b|$c|$d]"
-# stdout: [  a |b: c|d  e|]
-# BUG bash stdout: [  \a |b: c|d  e|]
+cat >$tmp <<'EOF'
+  \\a :b\: c:d\
+  e
+EOF
+read a b c d < $tmp
+# Use printf because echo in dash/mksh interprets escapes, while it doesn't in
+# bash.
+printf "%s\n" "[$a|$b|$c|$d]"
+# stdout: [  \a |b: c|d  e|]
 
 ### Read with IFS=''
 IFS=''

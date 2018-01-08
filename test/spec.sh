@@ -237,7 +237,7 @@ subshell() {
 # Need to implement $'' escaping
 quote() {
   sh-spec spec/quote.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
 loop() {
@@ -262,7 +262,7 @@ builtins() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH "$@"
 }
 
