@@ -42,7 +42,16 @@ def EvalCStringToken(id_, value):
   elif id_ == Id.Char_Stop:  # \c returns a special sentinel
     return None
 
-  elif id_ == Id.Char_Octal:
+  elif id_ == Id.Char_Octal3:  # $'\377'
+    s = value[1:]
+    i = int(s, 8)
+    if i >= 256:
+      i = i % 256
+      # NOTE: This is for strict mode
+      #raise AssertionError('Out of range')
+    return chr(i)
+
+  elif id_ == Id.Char_Octal4:  # \0377 for echo -e
     # TODO: Error checking for \0777
     s = value[2:]
     i = int(s, 8)

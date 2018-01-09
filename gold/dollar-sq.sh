@@ -17,10 +17,15 @@ echo $'abcd\x65f'
 echo $'abcd\044e'
 echo $'abcd\u0065f'
 echo $'abcd\U00000065f'
-# In bash, these are different than echo -e.  I'm not sure why yet.
-#echo $'\03777' | od -A n -t x1 | sed 's/ \+/ /g'
-#echo $'\04000' | od -A n -t x1 | sed 's/ \+/ /g'
-#echo $'\0777' | od -A n -t x1 | sed 's/ \+/ /g'
+
+# NOTE: $'\377' is echo -e '\0377', with leading 0
+echo $'\3777' | od -A n -t x1 | sed 's/ \+/ /g'
+echo $'\4010' | od -A n -t x1 | sed 's/ \+/ /g'
+echo $'\777' | od -A n -t x1 | sed 's/ \+/ /g'
+
+# This wraps to \0, so it's not used.
+#echo $'\4000' | od -A n -t x1 | sed 's/ \+/ /g'
+
 echo $'abcd\x6' | od -A n -c | sed 's/ \+/ /g'
 echo $'\x' $'\xg' | od -A n -c | sed 's/ \+/ /g'
 echo $'abcd\04' | od -A n -c | sed 's/ \+/ /g'

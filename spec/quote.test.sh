@@ -145,6 +145,19 @@ echo $'col1\ncol2\ncol3'
 # In dash, \n is special within single quotes
 # N-I dash stdout-json: "$col1\ncol2\ncol3\n"
 
+### $'' octal escapes don't have leading 0
+# echo -e syntax is echo -e \0377
+echo -n $'\001' $'\377' | od -A n -c | sed 's/ \+/ /g'
+## STDOUT:
+ 001 377
+## END
+## N-I dash STDOUT:
+ $ 001 $ 377
+## END
+## BUG ash STDOUT:
+ 001 0O7
+## END
+
 ### $""
 echo $"foo"
 # stdout: foo

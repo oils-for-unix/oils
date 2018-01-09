@@ -395,9 +395,6 @@ LEXER_DEF[lex_mode_e.SQ] = [
 
 # Shared between echo -e and $''.
 _C_STRING_COMMON = [
-  # Note: tokens above \0377 can either be truncated or be flagged a syntax
-  # error in strict mode.
-  R(r'\\0[0-7]{1,3}', Id.Char_Octal),
 
   # \x6 is valid in bash
   R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
@@ -412,6 +409,10 @@ _C_STRING_COMMON = [
 
 # Used by ECHO_LEXER in core/builtin.py.
 ECHO_E_DEF = _C_STRING_COMMON + [
+  # Note: tokens above \0377 can either be truncated or be flagged a syntax
+  # error in strict mode.
+  R(r'\\0[0-7]{1,3}', Id.Char_Octal4),
+
   C(r'\c', Id.Char_Stop),
 
   # e.g. \A -> \A, is not a backslash escape.
@@ -427,15 +428,14 @@ ECHO_E_DEF = _C_STRING_COMMON + [
   R(r'[^\\]+', Id.Char_Literals),
 ]
 
-UNUSED = [
-  # For re2c.  TODO: need to make that translation.
-  C('\\\0', Id.Char_Literals),
-]
-
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
 LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
+  # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
+  # with no leading 0.
+  R(r'\\[0-7]{1,3}', Id.Char_Octal3),
+
   # \' is escaped in $'' mode, but not echo -e
   C(r'\'', Id.Char_OneChar),
 
