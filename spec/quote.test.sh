@@ -158,6 +158,15 @@ echo -n $'\001' $'\377' | od -A n -c | sed 's/ \+/ /g'
  001 0O7
 ## END
 
+### $'' octal escapes with fewer than 3 chars
+echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
+## STDOUT:
+ 001 \t \t I \n
+## END
+## N-I dash STDOUT:
+ $ 001 \t \t I \n
+## END
+
 ### $""
 echo $"foo"
 # stdout: foo

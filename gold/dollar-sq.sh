@@ -33,6 +33,8 @@ echo $'abcd\u006' | od -A n -c | sed 's/ \+/ /g'
 echo $'\u6' | od -A n -c | sed 's/ \+/ /g'
 #echo $'\0' '\1' '\8' | od -A n -c | sed 's/ \+/ /g'
 
+echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
+
 echo $'foo
 bar'
 
