@@ -67,12 +67,7 @@ def EvalCStringToken(id_, value):
     i = int(s, 16)
     return chr(i)
 
-  elif id_ == Id.Char_Unicode4:
-    s = value[2:]
-    i = int(s, 16)
-    return unichr(i)
-
-  elif id_ == Id.Char_Unicode8:
+  elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
     s = value[2:]
     i = int(s, 16)
     return unichr(i)

@@ -77,3 +77,30 @@ argv "$s"
 s=$(python -c 'print "ab\ncd\n "')
 argv "$s"
 # stdout: ['ab\ncd\n ']
+
+### Command Sub and exit code
+# A command resets the exit code, but an assignment doesn't.
+echo $(echo x; exit 33)
+echo $?
+x=$(echo x; exit 33)
+echo $?
+## STDOUT:
+x
+0
+33
+## END
+
+### Command Sub in local sets exit code
+# A command resets the exit code, but an assignment doesn't.
+f() {
+  echo $(echo x; exit 33)
+  echo $?
+  local x=$(echo x; exit 33)
+  echo $?
+}
+f
+## STDOUT:
+x
+0
+0
+## END

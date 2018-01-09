@@ -292,12 +292,15 @@ class ExternalThunk:
 class SubProgramThunk:
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, ex, node):
+  def __init__(self, ex, node, disable_errexit=False):
     self.ex = ex
     self.node = node
+    self.disable_errexit = disable_errexit  # for bash errexit compatibility
 
   def Run(self):
     # NOTE: may NOT return due to exec().
+    if self.disable_errexit:
+      self.ex.exec_opts.errexit.Disable()
     status = self.ex.Execute(self.node, fork_external=False)
     sys.exit(status)  # Must exit!
 
@@ -310,12 +313,6 @@ class _HereDocWriterThunk(Thunk):
   def __init__(self, w, body_str):
     self.w = w
     self.body_str = body_str
-
-  #def RunInParent(self):
-  #  byte_str = self.body_str.encode('utf-8')
-  #  os.write(self.w, byte_str)
-  #  # Don't bother to close, since the process will die
-  #  #os.close(self.w)
 
   def Run(self):
     """

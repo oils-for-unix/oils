@@ -148,6 +148,7 @@ class Executor(object):
     self.loop_level = 0  # for detecting bad top-level break/continue
 
     self.tracer = Tracer(exec_opts, mem, self.word_ev)
+    self.check_command_sub_status = False  # a hack
 
   def _Complete(self, argv):
     """complete builtin - register a completion function.
@@ -356,15 +357,24 @@ class Executor(object):
     self.exec_opts.errexit.Pop()
 
   def _CheckStatus(self, status, node, argv0=None):
+    """ErrExitFailure with location info attached."""
     if self.exec_opts.ErrExit() and status != 0:
       # Add context based on node type
       if node.tag == command_e.SimpleCommand:
         argv0 = argv0 or '<unknown>'
-        e_die('[%d] %r command exited with status %d', os.getpid(), argv0,
-              status, word=node.words[0], status=status)
+        raise util.ErrExitFailure(
+            '[%d] %r command exited with status %d', os.getpid(), argv0,
+            status, word=node.words[0], status=status)
+      elif node.tag == command_e.Assignment:
+        span_id = self._SpanIdForAssignment(node)
+        raise util.ErrExitFailure(
+            '[%d] assignment exited with status %d', os.getpid(), 
+            status, span_id=span_id, status=status)
+
       else:
-        e_die('[%d] %r exited with status %d', os.getpid(),
-              node.__class__.__name__, status, status=status)
+        raise util.ErrExitFailure(
+            '[%d] %r exited with status %d', os.getpid(),
+            node.__class__.__name__, status, status=status)
 
   def _EvalLhs(self, node, spid):
     """lhs_expr -> lvalue."""
@@ -462,7 +472,7 @@ class Executor(object):
       redirects.append(r)
     return redirects
 
-  def _MakeProcess(self, node, job_state=None):
+  def _MakeProcess(self, node, job_state=None, disable_errexit=False):
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -472,8 +482,8 @@ class Executor(object):
       # - continue | less
       # - ( return )
       # NOTE: This could be done at parse time too.
-      e_die('Invalid control flow %r in pipeline / subshell / background', node.token.val,
-            token=node.token)
+      e_die('Invalid control flow %r in pipeline / subshell / background',
+            node.token.val, token=node.token)
 
     # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
     # only really matters when executing 'exit 42', because the child shell
@@ -483,7 +493,8 @@ class Executor(object):
     # interleaved.
     # - We could return the `exit` builtin into a FatalRuntimeError exception
     # and get this check for "free".
-    thunk = process.SubProgramThunk(self, node)
+    thunk = process.SubProgramThunk(self, node,
+                                    disable_errexit=disable_errexit)
     p = process.Process(thunk, job_state=job_state)
     return p
 
@@ -600,7 +611,18 @@ class Executor(object):
     source_name, line_num = self.arena.GetDebugInfo(line_id)
     self.mem.SetSourceLocation(source_name, line_num)
 
+  # TODO: Also change to BareAssign (set global or mutate local) and
+  # KeywordAssign.  The latter may have flags too.
+  def _SpanIdForAssignment(self, node):
+    # TODO: Share with tracing (SetSourceLocation) and _CheckStatus
+    return node.spids[0]
+
   def _Dispatch(self, node, fork_external):
+    # If we call RunCommandSub in a recursive call to the executor, this will
+    # be set true (if strict-errexit is false).  But it only lasts for one
+    # command.
+    self.check_command_sub_status = False
+
     argv0 = None  # for error message
     check_errexit = False  # for errexit
 
@@ -710,7 +732,6 @@ class Executor(object):
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
-      check_errexit = True
       pairs = []
       if node.keyword == Id.Assign_Local:
         lookup_mode = scope_e.LocalOnly
@@ -775,8 +796,31 @@ class Executor(object):
           self.mem.SetSourceLocation('<unknown>', -1)
         self.tracer.OnAssignment(lval, val, flags, lookup_mode)
 
-      # TODO: This should be eval of RHS, unlike bash!
-      status = 0
+      # PATCH to be compatible with existing shells: If the assignment had a
+      # command sub like:
+      #
+      # s=$(echo one; false)
+      #
+      # then its status will be in mem.last_status, and we can check it here.
+      # If there was NOT a command sub in the assignment, then we don't want to
+      # check it.
+      if node.keyword == Id.Assign_None:  # mutate existing local or global
+        # Only do this if there was a command sub?  How?  Look at node?
+        # Set a flag in mem?   self.mem.last_status or
+        if self.check_command_sub_status:
+          self._CheckStatus(self.mem.last_status, node)
+          # A global assignment shouldn't clear $?.
+          status = self.mem.last_status
+        else:
+          status = 0
+      else:
+        # To be compatible with existing shells, local assignments DO clear
+        # $?.  Even in strict mode, we don't need to bother setting
+        # check_errexit = True, because we would have already checked the
+        # command sub in RunCommandSub.
+        status = 0
+        # TODO: maybe we should have a "sane-status" that respects this:
+        # false; echo $?; local f=x; echo $?
 
     elif node.tag == command_e.ControlFlow:
       if node.arg_word:  # Evaluate the argument
@@ -1025,6 +1069,7 @@ class Executor(object):
       redirects = self._EvalRedirects(node)
 
     check_errexit = True
+
     if redirects is not None:
       assert isinstance(redirects, list), redirects
       if self.fd_state.Push(redirects, self.waiter):
@@ -1083,7 +1128,8 @@ class Executor(object):
     return status
 
   def RunCommandSub(self, node):
-    p = self._MakeProcess(node)
+    p = self._MakeProcess(node,
+                          disable_errexit=not self.exec_opts.strict_errexit)
 
     r, w = os.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
@@ -1102,10 +1148,22 @@ class Executor(object):
 
     status = p.WaitUntilDone(self.waiter)
 
-    # TODO: Add context
-    if self.exec_opts.ErrExit() and status != 0:
-      e_die('Command sub exited with status %d (%r)', status,
+    # OSH has the concept of aborting in the middle of a WORD.  We're not
+    # waiting until the command is over!
+    if self.exec_opts.strict_errexit:
+      if self.exec_opts.ErrExit() and status != 0:
+        raise util.ErrExitFailure(
+            'Command sub exited with status %d (%r)', status,
             node.__class__.__name__)
+    else:
+      # Set a flag so we check errexit at the same time as bash.  Example:
+      #
+      # a=$(false)
+      # echo foo  # no matter what comes here, the flag is reset
+      #
+      # Set ONLY until this command node has finished executing.
+      self.check_command_sub_status = True
+      self.mem.last_status = status
 
     # Runtime errors test case: # $("echo foo > $@")
     # Why rstrip()?
@@ -1157,8 +1215,6 @@ class Executor(object):
     # Fork, letting the child inherit the pipe file descriptors.
     pid = p.Start()
 
-    # TODO: Set $!
-
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
       os.close(w)
@@ -1170,6 +1226,9 @@ class Executor(object):
     #log('I am %d', os.getpid())
     #log('Process sub started %d', pid)
     self.waiter.Register(pid, p.WhenDone)
+
+    # NOTE: Like bash, we never actually wait on it!
+    # TODO: At least set $! ?
 
     # Is /dev Linux-specific?
     if op_id == Id.Left_ProcSubIn:

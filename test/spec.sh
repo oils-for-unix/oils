@@ -438,6 +438,11 @@ errexit() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 
+errexit-strict() {
+  sh-spec spec/errexit-strict.test.sh \
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+}
+
 # 
 # Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
 #

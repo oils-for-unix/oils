@@ -37,8 +37,13 @@ if { echo one; false; echo two; }; then
   echo three
 fi
 echo four
-# stdout-json: "one\ntwo\nthree\nfour\n"
-# status: 0
+## status: 0
+## STDOUT:
+one
+two
+three
+four
+## END
 
 ### errexit with ||
 set -o errexit
@@ -92,14 +97,20 @@ echo one
 echo two
 ! false
 echo three
-# stdout-json: "one\ntwo\nthree\n"
-# status: 0
+## STDOUT:
+one
+two
+three
+## END
 
 ### errexit with ! and ;
 # AST has extra Sentence nodes; there was a REGRESSION here.
 set -o errexit; echo one; ! true; echo two; ! false; echo three
-# stdout-json: "one\ntwo\nthree\n"
-# status: 0
+## STDOUT:
+one
+two
+three
+## END
 
 ### errexit with while/until
 set -o errexit
@@ -134,32 +145,6 @@ set -o errexit
 # stdout: one
 # status: 1
 
-### errexit with command sub
-# This is the bash-specific bug here:
-# https://blogs.janestreet.com/when-bash-scripts-bite/
-set -o errexit
-s=$(echo one; false; echo two;)
-echo "$s"
-# stdout-json: ""
-# status: 1
-# BUG ash/bash status: 0
-# BUG ash/bash stdout-json: "one\ntwo\n"
-
-### errexit with local
-# I've run into this problem a lot.
-# https://blogs.janestreet.com/when-bash-scripts-bite/
-set -o errexit
-f() {
-  echo good
-  local x=$(echo bad; false)
-  echo $x
-}
-f
-# stdout-json: "good\n"
-# status: 1
-# BUG bash/dash/mksh/ash stdout-json: "good\nbad\n"
-# BUG bash/dash/mksh/ash status: 0
-
 ### setting errexit while it's being ignored
 # ignored and then set again
 set -o errexit
@@ -170,17 +155,32 @@ fi
 echo 6
 false  # this is the one that makes other shells fail
 echo 7
-# status: 1
-# stdout-json: "1\n2\n"
-# OK dash/bash/mksh/ash stdout-json: "1\n2\n3\n4\n5\n6\n"
+## status: 1
+## STDOUT:
+1
+2
+## END
+## OK dash/bash/mksh/ash STDOUT:
+1
+2
+3
+4
+5
+6
+## END
 
 ### setting errexit in a subshell works but doesn't affect parent shell
 ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4; )
 echo 5
 false
 echo 6
-# stdout-json: "1\n2\n3\n5\n6\n"
-# status: 0
+## STDOUT:
+1
+2
+3
+5
+6
+## END
 
 ### setting errexit while it's being ignored in a subshell
 set -o errexit
@@ -190,9 +190,19 @@ fi
 echo 6  # This is executed because the subshell just returns false
 false 
 echo 7
-# status: 1
-# stdout-json: "1\n2\n6\n"
-# OK dash/bash/mksh/ash stdout-json: "1\n2\n3\n4\n5\n6\n"
+## status: 1
+## STDOUT:
+1
+2
+6
+## OK dash/bash/mksh/ash STDOUT:
+1
+2
+3
+4
+5
+6
+## END
 
 ### errexit double quard
 # OSH bug fix.  ErrExit needs a counter, not a boolean.
@@ -202,5 +212,7 @@ if { ! false; false; true; } then
 fi
 false
 echo done
-# status: 1
-# stdout-json: "true\n"
+## status: 1
+## STDOUT:
+true
+## END

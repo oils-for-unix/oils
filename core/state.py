@@ -58,11 +58,16 @@ class _ErrExit:
     self.errexit = self.stack.pop()
 
   def Set(self, b):
+    """User code calls this."""
     if True in self.stack:  # are we in a temporary state?
       # TODO: Add error context.
       e_die("Can't set 'errexit' in a context where it's disabled "
             "(if, !, && ||, while/until conditions)")
     self.errexit = b
+
+  def Disable(self):
+    """For bash compatibility in command sub."""
+    self.errexit = False
 
 
 # Used by builtin
@@ -79,6 +84,7 @@ SET_OPTIONS = [
     (None, 'debug-completion'),
 
     (None, 'strict-control-flow'),
+    (None, 'strict-errexit'),
 ]
 
 _SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
@@ -101,29 +107,45 @@ class ExecOpts(object):
     self.noglob = False  # -f
     self.noexec = False  # -n
     self.noclobber = False  # -C
-
     # We don't do anything with this yet.  But Aboriginal calls 'set +h'.
     self.hashall = True  # -h is true by default.
 
+    # OSH-specific options.
     self.debug_completion = False
     self.strict_control_flow = False
 
+    # strict_errexit makes 'local foo=$(false)' and echo $(false) fail.
+    # By default, we have mimic bash's undesirable behavior of ignoring
+    # these failures, since ash copied it, and Alpine's abuild relies on it.
+    #
+    # bash 4.4 also has shopt -s inherit_errexit, which says that command subs
+    # inherit the value of errexit.  # I don't believe it is strict enough --
+    # local still needs to fail.
+    self.strict_errexit = False
+
+    # This comes after all the 'set' options.
     shellopts = self.mem.GetVar('SHELLOPTS')
     assert shellopts.tag == value_e.Str, shellopts
     self._InitOptionsFromEnv(shellopts.s)
 
-    # shopt -s / -u
+    # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for these.
     self.nullglob = False 
     self.failglob = False 
 
-    # OSH-specific
+    #
+    # OSH-specific options that are not yet implemented.
+    #
+
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
     self.strict_array = False  # ${a} not ${a[0]}, require double quotes, etc.
-    self.strict_command = False  # break at top level.
+                               # compare array for equality?  Or just use a
+                               # different syntax.
     self.strict_word = False  # word splitting, etc.
     self.strict_scope = False  # disable dynamic scope
-
     # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
+
+    # Don't need flags -e and -n.  -e is $'\n', and -n is write.
+    self.sane_echo = False
 
   def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail

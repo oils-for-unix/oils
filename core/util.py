@@ -81,6 +81,14 @@ class FatalRuntimeError(_ErrorWithLocation):
   pass
 
 
+class ErrExitFailure(FatalRuntimeError):
+  """For set -e.
+  
+  Travels between WordEvaluator and Executor.
+  """
+  pass
+
+
 def p_die(msg, *args, **kwargs):
   """Convenience wrapper for parse errors."""
   raise ParseError(msg, *args, **kwargs)
