@@ -406,9 +406,9 @@ _C_STRING_COMMON = [
   # Backslash that ends a line.  Note '.' doesn't match a newline character.
   C('\\\n', Id.Char_Literals),
 
-  # e.g. \A is not an escape, and \x doesn't match a hex escape.  This could be
-  # an error.
-  C('\\', Id.Char_Literals),
+  # e.g. \A is not an escape, and \x doesn't match a hex escape.  We allow it,
+  # but a lint tool could warn about it.
+  C('\\', Id.Char_BadBackslash),
 ]
 
 # Used by ECHO_LEXER in core/builtin.py.
@@ -419,8 +419,9 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 
   C(r'\c', Id.Char_Stop),
 
-  # Backslash that ends the string.
-  R(r'\\$', Id.Char_Literals),
+  # Bad Backslash should not end the string.  We allow it, but a lint tool
+  # should warn about it.
+  R(r'\\$', Id.Char_BadBackslash),
 
   # e.g. 'foo', anything that's not a backslash escape
   R(r'[^\\]+', Id.Char_Literals),
@@ -434,8 +435,9 @@ LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
   # with no leading 0.
   R(r'\\[0-7]{1,3}', Id.Char_Octal3),
 
-  # \' is escaped in $'' mode, but not echo -e
-  C(r'\'', Id.Char_OneChar),
+  # ' is escaped in $'' mode, but not echo -e.  Ditto fr ", not sure why.
+  C(r"\'", Id.Char_OneChar),
+  C(r'\"', Id.Char_OneChar),
 
   # e.g. 'foo', anything that's not a backslash escape.  Need to exclude ' as
   # well.

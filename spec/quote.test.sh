@@ -139,6 +139,12 @@ echo $'foo'
 # stdout: foo
 # N-I dash stdout: $foo
 
+### $'' with quotes
+echo $'single \' double \"'
+# stdout: single ' double "
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### $'' with newlines
 echo $'col1\ncol2\ncol3'
 # stdout-json: "col1\ncol2\ncol3\n"

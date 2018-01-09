@@ -20,6 +20,8 @@ _ONE_CHAR = {
     't': '\t',
     'v': '\v',
     '\\': '\\',
+    "'": "'",  # for $'' only, not echo -e
+    '"': '"',  # not sure why this is escaped within $''
 }
 
 # TODO: Strict mode syntax errors:
@@ -34,8 +36,13 @@ def EvalCStringToken(id_, value):
 
   $'' could use it at compile time, much like brace expansion in braces.py.
   """
+  if id_ == Id.Char_Literals:
+    return value
 
-  if id_ == Id.Char_OneChar:
+  elif id_ == Id.Char_BadBackslash:  # TODO: error in strict mode
+    return value
+
+  elif id_ == Id.Char_OneChar:
     c = value[1]
     return _ONE_CHAR[c]
 
@@ -69,9 +76,6 @@ def EvalCStringToken(id_, value):
     s = value[2:]
     i = int(s, 16)
     return unichr(i)
-
-  elif id_ == Id.Char_Literals:
-    return value
 
   else:
     raise AssertionError
