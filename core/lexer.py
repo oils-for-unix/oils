@@ -256,6 +256,7 @@ class SimpleLexer(object):
       if not matches:
         raise AssertionError(
             'no match at position %d: %r (%r)' % (pos, line, line[pos]))
+      # NOTE: Need longest-match semantics to find \377 vs \.
       end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
       yield tok_type, line[pos:end_pos]
       pos = end_pos

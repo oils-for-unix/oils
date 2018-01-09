@@ -405,6 +405,10 @@ _C_STRING_COMMON = [
 
   # Backslash that ends a line.  Note '.' doesn't match a newline character.
   C('\\\n', Id.Char_Literals),
+
+  # e.g. \A is not an escape, and \x doesn't match a hex escape.  This could be
+  # an error.
+  C('\\', Id.Char_Literals),
 ]
 
 # Used by ECHO_LEXER in core/builtin.py.
@@ -414,12 +418,6 @@ ECHO_E_DEF = _C_STRING_COMMON + [
   R(r'\\0[0-7]{1,3}', Id.Char_Octal4),
 
   C(r'\c', Id.Char_Stop),
-
-  # e.g. \A -> \A, is not a backslash escape.
-  # This has to come AFTER the \c and so forth.
-  #
-  # This includes embedded \n?  Is that possible with echo -e?
-  R(r'\\.', Id.Char_Literals),
 
   # Backslash that ends the string.
   R(r'\\$', Id.Char_Literals),
@@ -442,9 +440,6 @@ LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
   # e.g. 'foo', anything that's not a backslash escape.  Need to exclude ' as
   # well.
   R(r"[^\\'\0]+", Id.Char_Literals),
-
-  # e.g. \x doesn't match a hex escape.  This could be an error.
-  C('\\', Id.Char_Literals),
 
   C("'", Id.Right_SingleQuote),
 
