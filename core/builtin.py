@@ -931,16 +931,21 @@ def Type(argv, funcs, path_val):
   arg, i = TYPE_SPEC.Parse(argv)
 
   status = 0
-  if not arg.t:
-    util.warn("*** 'type' builtin called without -t ***")
-    status = 1
-    # Keep going anyway
-
-  for kind, arg in _ResolveNames(argv[i:], funcs, path_val):
+  for kind, name in _ResolveNames(argv[i:], funcs, path_val):
     if kind is None:
       status = 1  # nothing printed, but we fail
     else:
-      print(kind)
+      if arg.t:
+        print(kind)
+      else:
+        # Alpine's abuild relies on this text because busybox ash doesn't have
+        # -t!
+        # ash prints "is a shell function" instead of "is a function", but the
+        # regex accouts for that.
+        print('%s is a %s' % (name, kind))
+        if kind == 'function':
+          # bash prints the function body, busybox ash doesn't.
+          pass
 
   return status
 

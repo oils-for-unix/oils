@@ -96,6 +96,10 @@ strip-op-char-class() { _compare gold/strip-op-char-class.sh; }
 echo-e() { _compare gold/echo-e.sh; }
 dollar-sq() { _compare gold/dollar-sq.sh; }
 
+abuild() {
+  _compare gold/abuild.sh is_function is_function
+}
+
 # Needs declare -p
 declare() { _compare gold/declare.sh demo; }
 
@@ -118,6 +122,7 @@ readonly -a PASSING=(
   no-op
   complex-here-docs
   strip-op-char-class
+  abuild
 
   count
   one-spec-test

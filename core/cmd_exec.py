@@ -668,10 +668,6 @@ class Executor(object):
         if node.more_env:
           self.mem.PopTemp()
 
-      if self.exec_opts.xtrace:
-        #log('+ %s -> %d', argv, status)
-        pass
-
     elif node.tag == command_e.Sentence:
       # Don't check_errexit since this isn't a real node!
       if node.terminator.id == Id.Op_Semi:
