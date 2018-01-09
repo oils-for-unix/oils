@@ -73,6 +73,7 @@ SET_OPTIONS = [
     ('x', 'xtrace'),
     ('f', 'noglob'),
     ('C', 'noclobber'),
+    ('h', 'hashall'),
     (None, 'pipefail'),
 
     (None, 'debug-completion'),
@@ -100,6 +101,10 @@ class ExecOpts(object):
     self.noglob = False  # -f
     self.noexec = False  # -n
     self.noclobber = False  # -C
+
+    # We don't do anything with this yet.  But Aboriginal calls 'set +h'.
+    self.hashall = True  # -h is true by default.
+
     self.debug_completion = False
     self.strict_control_flow = False
 
