@@ -721,8 +721,8 @@ class _WordEvaluator:
       # doc with "$@".
 
       if part_val.tag != part_value_e.StringPartValue:
-        # Example: echo f > "$@".  TODO: Add proper context.  
-        e_die("Expected string, got %s", part_val)
+        # Examples: echo f > "$@"; local foo="$@"
+        e_die("Expected string, got %s", part_val, word=word)
 
         # TODO: Maybe add detail like this.
         #e_die('RHS of assignment should only have strings.  '
