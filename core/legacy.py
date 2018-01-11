@@ -96,7 +96,7 @@ class SplitContext(object):
     """Based on the current stack frame, get the splitter."""
     val = self.mem.GetVar('IFS')
     if val.tag == value_e.Undef:
-      ifs = ''
+      ifs = DEFAULT_IFS
     elif val.tag == value_e.Str:
       ifs = val.s
     else:

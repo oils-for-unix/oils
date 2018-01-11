@@ -1121,10 +1121,8 @@ class Executor(object):
       ui.PrettyPrintError(e, self.arena)
       print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1
+      # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
 
-    # TODO: Hook this up
-    #print('break / continue can only be used inside loop')
-    #status = 129  # TODO: Fix this.  Use correct macros
     return status
 
   def RunCommandSub(self, node):

@@ -150,6 +150,29 @@ IFS=_
 argv.py 1${undefined:-"2_3"x_x"4_5"}6
 # stdout: ['12_3x', 'x4_56']
 
+### IFS empty doesn't do splitting
+IFS=''
+x=$(echo -e ' a b\tc\n')
+argv $x
+## STDOUT:
+[' a b\tc']
+## END
+## N-I dash STDOUT:
+['-e  a b\tc']
+## END
+
+
+### IFS unset behaves like $' \t\n'
+unset IFS
+x=$(echo -e ' a b\tc\n')
+argv $x
+## STDOUT:
+['a', 'b', 'c']
+## END
+## N-I dash STDOUT:
+['-e', 'a', 'b', 'c']
+## END
+
 
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)
@@ -171,3 +194,4 @@ space=" "
 AB="A B"
 X="X"
 Yspaces=" Y "
+
