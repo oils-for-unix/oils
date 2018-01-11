@@ -142,8 +142,15 @@ echo done
 ### errexit with subshell
 set -o errexit
 ( echo one; false; echo two; )
-# stdout: one
-# status: 1
+echo three
+## status: 1
+## STDOUT:
+one
+## BUG ash status: 0
+## BUG ash STDOUT:
+one
+three
+## END
 
 ### setting errexit while it's being ignored
 # ignored and then set again
