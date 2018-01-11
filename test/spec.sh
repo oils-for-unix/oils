@@ -361,7 +361,7 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 8 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
@@ -486,7 +486,7 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/dbracket.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
 }

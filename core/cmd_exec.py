@@ -400,12 +400,12 @@ class Executor(object):
         # NOTE: no globbing.  You can write to a file called '*.py'.
         val = self.word_ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:  # TODO: This error never fires
-          util.warn("Redirect filename must be a string, got %s", val)
+          util.error("Redirect filename must be a string, got %s", val)
           return None
         filename = val.s
         if not filename:
           # Whether this is fatal depends on errexit.
-          util.warn("Redirect filename can't be empty")
+          util.error("Redirect filename can't be empty")
           return None
 
         return runtime.PathRedirect(n.op_id, fd, filename)
@@ -413,16 +413,16 @@ class Executor(object):
       elif redir_type == RedirType.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:  # TODO: This error never fires
-          util.warn("Redirect descriptor should be a string, got %s", val)
+          util.error("Redirect descriptor should be a string, got %s", val)
           return None
         t = val.s
         if not t:
-          util.warn("Redirect descriptor can't be empty")
+          util.error("Redirect descriptor can't be empty")
           return None
         try:
           target_fd = int(t)
         except ValueError:
-          util.warn(
+          util.error(
               "Redirect descriptor should look like an integer, got %s", val)
           return None
 
@@ -466,9 +466,7 @@ class Executor(object):
     for redir in node.redirects:
       r = self._EvalRedirect(redir)
       if r is None:
-        # Ignore it for now.  TODO: We might want to skip JUST the command.
-        # Give it status 1, and then errexit will take care of it.
-        continue
+        return None  # bad redirect
       redirects.append(r)
     return redirects
 
@@ -1272,6 +1270,8 @@ class Executor(object):
     # f 2>&1
 
     def_redirects = self._EvalRedirects(func_node)
+    if def_redirects is None:
+      return None
     if not self.fd_state.Push(def_redirects, self.waiter):
       return 1  # error
 

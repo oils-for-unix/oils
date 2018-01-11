@@ -5,7 +5,17 @@
 
 ### Assignment Causes Array Decay
 set -- x y z
-#argv "[$@]"  # NOT DECAYED here.
+argv.py "[$@]"
+var="[$@]"
+argv.py "$var"
+## STDOUT:
+['[x', 'y', 'z]']
+['[x y z]']
+## END
+
+### Array Decay with IFS
+IFS=x
+set -- x y z
 var="[$@]"
 argv.py "$var"
 # stdout: ['[x y z]']
@@ -16,8 +26,14 @@ a=(x y z)
 b="${a[@]}"  # this collapses to a string
 c=("${a[@]}")  # this preserves the array
 c[1]=YYY  # mutate a copy -- doesn't affect the original
-argv.py "${a[@]}" "${b[@]}" "${c[@]}"
-# stdout: ['x', 'y', 'z', 'x y z', 'x', 'YYY', 'z']
+argv.py "${a[@]}"
+argv.py "${b[@]}"
+argv.py "${c[@]}"
+## STDOUT:
+['x', 'y', 'z']
+['x y z']
+['x', 'YYY', 'z']
+## END
 
 ### $a gives first element of array
 a=(1 '2 3')
@@ -43,7 +59,10 @@ a=('1 2' '3 4')
 s='1 2 3 4'  # length 2, length 4
 echo ${#a[@]} ${#s}
 [[ "${a[@]}" = "$s" ]] && echo EQUAL
-# stdout-json: "2 7\nEQUAL\n"
+## STDOUT:
+2 7
+EQUAL
+## END
 
 ### Increment array variables
 a=(1 2)
@@ -51,3 +70,13 @@ a=(1 2)
 echo "${a[@]}"
 # stdout: 2 2
 
+### Apply vectorized operations on ${a[*]}
+a=('-x-' 'y-y' '-z-')
+
+# This does the prefix stripping FIRST, and then it joins.
+argv.py "${a[*]#-}"
+## STDOUT:
+['x- y-y z-']
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""

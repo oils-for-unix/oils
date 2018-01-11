@@ -85,6 +85,7 @@ SET_OPTIONS = [
 
     (None, 'strict-control-flow'),
     (None, 'strict-errexit'),
+    (None, 'strict-array'),
 ]
 
 _SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
@@ -123,6 +124,13 @@ class ExecOpts(object):
     # local still needs to fail.
     self.strict_errexit = False
 
+    # Several problems:
+    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
+    # - ${a} not ${a[0]}
+    # - possibly disallow $* "$*" altogether.
+    # - do not allow [[ "$@" == "${a[@]}" ]]
+    self.strict_array = False
+
     # This comes after all the 'set' options.
     shellopts = self.mem.GetVar('SHELLOPTS')
     assert shellopts.tag == value_e.Str, shellopts
@@ -137,9 +145,6 @@ class ExecOpts(object):
     #
 
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
-    self.strict_array = False  # ${a} not ${a[0]}, require double quotes, etc.
-                               # compare array for equality?  Or just use a
-                               # different syntax.
     self.strict_word = False  # word splitting, etc.
     self.strict_scope = False  # disable dynamic scope
     # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.

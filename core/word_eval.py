@@ -720,19 +720,24 @@ class _WordEvaluator:
       # TODO: if decay, then allow string part.  e.g. for here word or here
       # doc with "$@".
 
-      if part_val.tag != part_value_e.StringPartValue:
-        # Examples: echo f > "$@"; local foo="$@"
-        e_die("Expected string, got %s", part_val, word=word)
-
-        # TODO: Maybe add detail like this.
-        #e_die('RHS of assignment should only have strings.  '
-        #      'To assign arrays, using b=( "${a[@]}" )')
-
-      # [[ foo == */"*".py ]] or case *.py) ... esac
-      if do_fnmatch and not part_val.do_split_glob:
-        s = glob_.GlobEscape(part_val.s)
+      if part_val.tag == part_value_e.StringPartValue:
+        # [[ foo == */"*".py ]] or case *.py) ... esac
+        if do_fnmatch and not part_val.do_split_glob:
+          s = glob_.GlobEscape(part_val.s)
+        else:
+          s = part_val.s
       else:
-        s = part_val.s
+        if self.exec_opts.strict_array:
+          # Examples: echo f > "$@"; local foo="$@"
+          e_die("Expected string, got %s", part_val, word=word)
+
+          # TODO: Maybe add detail like this.
+          #e_die('RHS of assignment should only have strings.  '
+          #      'To assign arrays, using b=( "${a[@]}" )')
+        else:
+          # It appears to not respect IFS
+          s = ' '.join(part_val.strs)
+
       strs.append(s)
 
     return runtime.Str(''.join(strs))

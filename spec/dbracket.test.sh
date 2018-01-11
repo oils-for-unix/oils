@@ -175,18 +175,26 @@ FOO=bar [[ foo == foo ]]
 ### Does user array equal "$@" ?
 # Oh it coerces both to a string.  Lame.
 # I think it disobeys "${a[@]}", and treats it like an UNQUOTED ${a[@]}.
+# NOTE: set -o strict-array should make this invalid
 a=(1 3 5)
 b=(1 2 3)
 set -- 1 3 5
 [[ "$@" = "${a[@]}" ]] && echo true
 [[ "$@" = "${b[@]}" ]] || echo false
-# stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 ### Array coerces to string
+# NOTE: set -o strict-array should make this invalid
 a=(1 3 5)
 [[ '1 3 5' = "${a[@]}" ]] && echo true
 [[ '1 3 4' = "${a[@]}" ]] || echo false
-# stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 ### Quotes don't matter in comparison
 [[ '3' = 3 ]] && echo true
