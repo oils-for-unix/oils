@@ -227,11 +227,12 @@ echo -n ZZZ | { read x; echo $?; echo $x; }
 ### Read builtin with multiple variables
 # NOTE: there are TABS below
 read x y z <<EOF
-A		B C D E
+A		B C D E 
 FG
 EOF
-echo "$x/$y/$z"
-# stdout: A/B/C D E
+echo "[$x/$y/$z]"
+# stdout: [A/B/C D E]
+# BUG dash stdout: [A/B/C D E ]
 # status: 0
 
 ### Read builtin with not enough variables

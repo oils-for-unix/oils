@@ -323,6 +323,11 @@ class IfsSplitter(_BaseSplitter):
     if i == n:
       return spans
 
+    # Ignore trailing IFS whitespace too.  This is necessary for the case:
+    # IFS=':' ; read x y z <<< 'a : b : c :'.  We don't want
+    while s[n-1] in self.ifs_whitespace:
+      n -= 1
+
     state = ST_START
     while i < n:
       c = s[i]
