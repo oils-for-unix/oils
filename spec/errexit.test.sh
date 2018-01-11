@@ -211,7 +211,7 @@ echo 7
 6
 ## END
 
-### errexit double quard
+### errexit double guard
 # OSH bug fix.  ErrExit needs a counter, not a boolean.
 set -o errexit
 if { ! false; false; true; } then
@@ -222,4 +222,30 @@ echo done
 ## status: 1
 ## STDOUT:
 true
+## END
+
+### background processes respect errexit
+set -o errexit
+{ echo one; false; echo two; exit 42; } &
+wait $!
+## status: 1
+## STDOUT:
+one
+## END
+
+### pipeline process respects errexit
+set -o errexit
+# It is respected here.
+{ echo one; false; echo two; } | cat
+
+# Also respected here.
+{ echo three; echo four; } | while read line; do
+  echo "[$line]"
+  false
+done
+echo four
+# status: 1
+## STDOUT:
+one
+[three]
 ## END
