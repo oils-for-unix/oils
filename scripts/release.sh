@@ -433,7 +433,7 @@ metrics-index() {
     <h3>Line Counts</h3>
     <p>
 EOF
-  find $out -name '*.txt' -a -printf '<a href="%P">%P</a> <br/>'
+  find $out -name '*.txt' -a -printf '<a href="%P">%P</a> <br/>\n'
 cat <<EOF
     </p>
   </body>
@@ -445,10 +445,16 @@ line-counts() {
   local out=_tmp/metrics/line-counts
   mkdir -p $out
 
-  # Metrics.  TODO: It would be nicer to make this structured data somehow.
-  scripts/count.sh all > $out/src.txt  # Count repo lines
+  # Counting directly from the build.
   build/metrics.sh linecount-pydeps > $out/pydeps.txt
   build/metrics.sh linecount-nativedeps > $out/nativedeps.txt
+
+  # My arbitrrary categorization.
+  scripts/count.sh all > $out/src.txt  # Count repo lines
+
+  # A couple other categorizations.
+  scripts/count.sh parser > $out/parser.txt
+  scripts/count.sh runtime > $out/runtime.txt
 
   metrics-index > $out/index.html
   tree $out
