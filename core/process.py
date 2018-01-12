@@ -124,7 +124,10 @@ class FdState:
       if not self._PushDup(target_fd, r.fd):
         ok = False
 
-      self._PushClose(target_fd)
+      os.close(target_fd)  # We already made a copy of it.
+      # I don't think we need to close(0) because it will be restored from its
+      # saved position (10), which closes it.
+      #self._PushClose(r.fd)
 
     elif r.tag == redirect_e.DescRedirect:
       if r.op_id == Id.Redir_GreatAnd:  # 1>&2
@@ -139,7 +142,9 @@ class FdState:
         raise NotImplementedError
 
     elif r.tag == redirect_e.HereRedirect:
+      # NOTE: Do these descriptors have to be moved out of the range 0-9?
       read_fd, write_fd = os.pipe()
+
       if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
         ok = False
       self._PushClose(read_fd)
