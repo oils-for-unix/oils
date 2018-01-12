@@ -770,10 +770,12 @@ class HtmlOutput(ColorOutput):
         # We output utf-8-encoded HTML.  If we get invalid utf-8 as stdout
         # (which is very possible), then show the ASCII repr().
         try:
-          s2 = s.decode('utf-8')
+          s.decode('utf-8')
         except UnicodeDecodeError:
-          s2 = repr(s)  # ASCII representation
-        self.f.write(cgi.escape(s2))
+          valid_utf8 = repr(s)  # ASCII representation
+        else:
+          valid_utf8 = s
+        self.f.write(cgi.escape(valid_utf8))
         self.f.write('</pre>')
 
       self.f.write('<i>stdout:</i> <br/>\n')
