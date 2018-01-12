@@ -70,7 +70,7 @@ def EvalCStringToken(id_, value):
   elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
     s = value[2:]
     i = int(s, 16)
-    return unichr(i)
+    return unichr(i).encode('utf-8')  # Stay in the realm of bytes
 
   else:
     raise AssertionError
