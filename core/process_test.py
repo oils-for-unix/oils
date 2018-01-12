@@ -8,9 +8,11 @@ import sys
 import unittest
 
 from core.id_kind import Id
+from core import builtin
 from osh import ast_ as ast
 
 from core import process  # module under test
+from core import runtime
 from core import util
 from core.cmd_exec_test import InitExecutor  # helper
 
@@ -33,6 +35,32 @@ def _ExtProc(argv):
 
 
 class ProcessTest(unittest.TestCase):
+
+  def testStdinRedirect(self):
+    waiter = process.Waiter()
+    fd_state = process.FdState()
+
+    PATH = '_tmp/one-two.txt'
+    # Write two lines
+    with open(PATH, 'w') as f:
+      f.write('one\ntwo\n')
+
+    # Should get the first line twice, because Pop() closes it!
+
+    r = runtime.PathRedirect(Id.Redir_Less, 0, PATH)
+    fd_state.Push([r], waiter)
+    #line1 = sys.stdin.readline()
+    line1 = builtin.ReadLineFromStdin()
+    fd_state.Pop()
+
+    fd_state.Push([r], waiter)
+    #line2 = sys.stdin.readline()
+    line2 = builtin.ReadLineFromStdin()
+    fd_state.Pop()
+
+    # sys.stdin.readline() would erroneously return 'two' because of buffering.
+    self.assertEqual('one\n', line1)
+    self.assertEqual('one\n', line2)
 
   def testProcess(self):
 

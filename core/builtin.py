@@ -485,6 +485,23 @@ READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
 
 
+# sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
+# in C?  Less garbage probably.
+# NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
+# to be required by POSIX?  Could try libc getline and make this an option.
+def ReadLineFromStdin():
+  chars = []
+  while True:
+    c = os.read(0, 1)
+    if not c:
+      break
+    chars.append(c)
+
+    if c == '\n':
+      break
+  return ''.join(chars)
+
+
 def Read(argv, splitter, mem):
   arg, i = READ_SPEC.Parse(argv)
 
@@ -513,7 +530,7 @@ def Read(argv, splitter, mem):
   parts = []
   join_next = False
   while True:
-    line = sys.stdin.readline()
+    line = ReadLineFromStdin()
     #log('LINE %r', line)
     if not line:  # EOF
       status = 1

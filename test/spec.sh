@@ -261,7 +261,7 @@ builtins() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-io.test.sh \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH "$@"
 }
 
