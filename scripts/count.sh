@@ -13,6 +13,20 @@ filter-py() {
   grep -E -v '__init__.py$|_test.py$' 
 }
 
+oil-core-files() {
+  { ls {bin,osh,core}/*.py native/*.c osh/osh.asdl core/runtime.asdl; } |
+    filter-py | grep -E -v '_gen.py$|test_lib.py'
+}
+
+cloc-oil-core() {
+  oil-core-files | xargs cloc
+
+  # cloc doesn't understand ASDL files.
+  echo
+  echo 'ASDL SCHEMAS'
+  wc -l core/runtime.asdl osh/osh.asdl
+}
+
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
 # everything into an array.  An hash table of arrays would be useful here.
 all() {
@@ -69,8 +83,7 @@ all() {
   echo
 
   echo 'OIL'
-  { ls {bin,osh,core}/*.py native/*.c osh/osh.asdl core/runtime.asdl; } |
-    filter-py | grep -E -v '_gen.py$|test_lib.py' |
+  oil-core-files |
     xargs wc -l | sort --numeric
   echo
 
