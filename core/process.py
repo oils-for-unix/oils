@@ -18,11 +18,11 @@ import sys
 
 from core import runtime
 from core import util
-from core.util import log
 from core.id_kind import Id, REDIR_DEFAULT_FD
 
 redirect_e = runtime.redirect_e
 e_die = util.e_die
+log = util.log
 
 
 class _FdFrame:
@@ -71,14 +71,19 @@ class FdState:
     """
     Save fd2 and dup fd1 onto fd2.
     """
-    #log('---- _PushDup %s %s\n', fd1, fd2)
+    #log('---- _PushDup %s %s', fd1, fd2)
+    need_restore = True
     try:
+      #log('DUPFD %s %s', fd2, self.next_fd)
       fcntl.fcntl(fd2, fcntl.F_DUPFD, self.next_fd)
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
       # This seems to be ignored in dash too in savefd()?
-      if e.errno != errno.EBADF:
+      if e.errno == errno.EBADF:
+        #log('ERROR %s', e)
+        need_restore = False
+      else:
         raise
     else:
       os.close(fd2)
@@ -96,10 +101,8 @@ class FdState:
       # Undo it
       return False
 
-    # Oh this is wrong?
-    #os.close(fd1)
-
-    self.cur_frame.saved.append((self.next_fd, fd2))
+    if need_restore:
+      self.cur_frame.saved.append((self.next_fd, fd2))
     self.next_fd += 1
     return True
 
@@ -110,10 +113,6 @@ class FdState:
     self.cur_frame.need_wait.append((proc, waiter))
 
   def _ApplyRedirect(self, r, waiter):
-    # NOTE: We only use self for self.waiter.
-
-    # TODO: r.fd needs to be opened?  if it's not stdin or stdout
-    # https://stackoverflow.com/questions/3425021/specifying-file-descriptor-number
     ok = True
 
     if r.tag == redirect_e.PathRedirect:
@@ -145,7 +144,8 @@ class FdState:
       # saved position (10), which closes it.
       #self._PushClose(r.fd)
 
-    elif r.tag == redirect_e.DescRedirect:
+    elif r.tag == redirect_e.DescRedirect:  # e.g. echo hi 1>&2
+
       if r.op_id == Id.Redir_GreatAnd:  # 1>&2
         if not self._PushDup(r.target_fd, r.fd):
           ok = False
@@ -164,14 +164,14 @@ class FdState:
       if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
         ok = False
 
-      # We can't close liek we do in the filename case above?  The writer can
+      # We can't close like we do in the filename case above?  The writer can
       # get a "broken pipe".
       self._PushClose(read_fd)
 
       thunk = _HereDocWriterThunk(write_fd, r.body)
 
       # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
-      # which are the common case.
+      # which are the common case.  (dash does this.)
       start_process = True
       #start_process = False
 
@@ -197,7 +197,7 @@ class FdState:
     return ok
 
   def Push(self, redirects, waiter):
-    #log('> PushFrame')
+    #log('> fd_state.Push %s', redirects)
     new_frame = _FdFrame()
     self.stack.append(new_frame)
     self.cur_frame = new_frame
@@ -221,6 +221,8 @@ class FdState:
         os.dup2(saved, orig)
       except OSError as e:
         log('dup2(%d, %d) error: %s', saved, orig, e)
+        #log('fd state:')
+        #os.system('ls -l /proc/%s/fd' % os.getpid())
         raise
       os.close(saved)
       #log('dup2 %s %s', saved, orig)

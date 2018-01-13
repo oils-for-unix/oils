@@ -34,7 +34,6 @@ from core import word
 from core import word_eval
 from core import ui
 from core import util
-
 from core import builtin
 from core.id_kind import Id, RedirType, REDIR_TYPE, REDIR_DEFAULT_FD
 from core import process
@@ -1073,19 +1072,21 @@ class Executor(object):
 
     check_errexit = True
 
-    if redirects is not None:
-      assert isinstance(redirects, list), redirects
+    if redirects is None:  # evaluation error
+      status = 1  
+
+    elif redirects:
       if self.fd_state.Push(redirects, self.waiter):
         try:
           status, check_errexit = self._Dispatch(node, fork_external)
         finally:
           self.fd_state.Pop()
-        check_status = False
         #log('_dispatch returned %d', status)
       else:  # Error applying redirects, e.g. bad file descriptor.
         status = 1
-    else:  # Error evaluating redirects
-      status = 1
+
+    else:  # No redirects
+      status, check_errexit = self._Dispatch(node, fork_external)
 
     self.mem.last_status = status
 
@@ -1241,7 +1242,7 @@ class Executor(object):
     else:
       raise AssertionError
 
-    # Generalize?
+    # TODO: Generalize process sub?
     #
     # - Make it work first, bare minimum.
     # - Then Make something like Pipeline()?
@@ -1275,10 +1276,11 @@ class Executor(object):
     # f 2>&1
 
     def_redirects = self._EvalRedirects(func_node)
-    if def_redirects is None:
+    if def_redirects is None:  # error
       return None
-    if not self.fd_state.Push(def_redirects, self.waiter):
-      return 1  # error
+    if def_redirects:
+      if not self.fd_state.Push(def_redirects, self.waiter):
+        return 1  # error
 
     self.mem.PushCall(func_node.name, argv[1:])
 
@@ -1294,7 +1296,8 @@ class Executor(object):
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
     finally:
       self.mem.PopCall()
-      self.fd_state.Pop()
+      if def_redirects:
+        self.fd_state.Pop()
 
     return status
 

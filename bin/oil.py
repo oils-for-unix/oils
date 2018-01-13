@@ -135,9 +135,7 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
       if opts.print_status:
         print('STATUS', repr(status))
 
-    # Reset prompt and clear memory.  TODO: If there are any function
-    # definitions ANYWHERE in the node, you should not clear the underlying
-    # memory.  We still need to execute those strings!
+    # Reset prompt to PS1.
     line_reader.Reset()
 
     # Reset internal newline state.
@@ -254,9 +252,6 @@ def OshMain(argv, login_shell):
   exec_opts = state.ExecOpts(mem)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
 
-  # TODO: How to get a handle to initialized builtins here?
-  # tokens.py has it.  I think you just make a separate table, with
-  # metaprogramming.
   fd_state = process.FdState()
   ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, completion,
                          comp_lookup, exec_opts, arena)
@@ -272,8 +267,6 @@ def OshMain(argv, login_shell):
       try:
         rc_node = rc_c_parser.ParseWholeFile()
         if not rc_node:
-          # TODO: Error should return a token, and then the token should have a
-          # arena index, and then look that up in the arena.
           err = rc_c_parser.Error()
           ui.PrintErrorStack(err, arena, sys.stderr)
           return 2  # parse error is code 2
@@ -331,9 +324,10 @@ def OshMain(argv, login_shell):
       completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
                       status_out, ev)
 
-    # TODO: Could instantiate "printer" instead of showing ops
     InteractiveLoop(opts, ex, c_parser, w_parser, line_reader)
-    status = 0  # TODO: set code
+    # TODO: status should be last command.  Start bash, type "f() { return 33;
+    # }; f"
+    status = 0
   else:
     # Parse the whole thing up front
     #print('Parsing file')
