@@ -964,6 +964,9 @@ def Type(argv, funcs, path_val):
           # bash prints the function body, busybox ash doesn't.
           pass
 
+  # REQUIRED because of Python's buffering.  A command sub may give the wrong
+  # result otherwise.
+  sys.stdout.flush()
   return status
 
 
