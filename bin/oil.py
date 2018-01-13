@@ -73,6 +73,7 @@ from core import cmd_exec
 from core.id_kind import Id
 from core import legacy
 from core import lexer  # for tracing
+from core import process
 from core import reader
 from core import state
 from core import word
@@ -256,8 +257,9 @@ def OshMain(argv, login_shell):
   # TODO: How to get a handle to initialized builtins here?
   # tokens.py has it.  I think you just make a separate table, with
   # metaprogramming.
-  ex = cmd_exec.Executor(
-      mem, status_lines, funcs, completion, comp_lookup, exec_opts, arena)
+  fd_state = process.FdState()
+  ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, completion,
+                         comp_lookup, exec_opts, arena)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
@@ -307,12 +309,9 @@ def OshMain(argv, login_shell):
         interactive = False
     else:
       arena.PushSource(script_name)
-      # TODO: Does this open file descriptor need to be moved beyond 3..9 ?
-      # Yes!  See dash input.c setinputfile.  It calls savefd().
-      # TODO: It also needs to be closed later.
       try:
-        f = open(script_name)
-      except IOError as e:
+        f = fd_state.Open(script_name)
+      except OSError as e:
         util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)

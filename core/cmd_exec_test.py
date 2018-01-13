@@ -44,13 +44,14 @@ def InitExecutor(arena=None):
     arena = test_lib.MakeArena('<InitExecutor>')
 
   mem = state.Mem('', [], {}, None)
+  fd_state = process.FdState()
   status_lines = None  # not needed for what we're testing
   builtins = builtin.BUILTIN_DEF
   funcs = {}
   comp_funcs = {}
   exec_opts = state.ExecOpts(mem)
-  return cmd_exec.Executor(mem, status_lines, funcs, completion, comp_funcs,
-                           exec_opts, arena)
+  return cmd_exec.Executor(mem, fd_state, status_lines, funcs, completion,
+                           comp_funcs, exec_opts, arena)
 
 
 def InitEvaluator():

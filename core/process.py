@@ -51,6 +51,22 @@ class FdState:
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
 
+  def Open(self, path):
+    """Opens a path for read, but moves it out of the reserved 3-9 fd range.
+
+    Returns:
+      A Python file object.  The caller is responsible for Close().
+
+    Raises:
+      OSError if the path can't be found.
+    """
+    fd = os.open(path, os.O_RDONLY, 0666)
+    new_fd = self.next_fd
+    os.dup2(fd, new_fd)
+    self.next_fd += 1
+    os.close(fd)
+    return os.fdopen(new_fd)
+
   def _PushDup(self, fd1, fd2):
     """
     Save fd2 and dup fd1 onto fd2.
@@ -147,6 +163,9 @@ class FdState:
 
       if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
         ok = False
+
+      # We can't close liek we do in the filename case above?  The writer can
+      # get a "broken pipe".
       self._PushClose(read_fd)
 
       thunk = _HereDocWriterThunk(write_fd, r.body)

@@ -102,11 +102,12 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, status_lines, funcs, completion, comp_lookup,
-               exec_opts, arena):
+  def __init__(self, mem, fd_state, status_lines, funcs, completion,
+               comp_lookup, exec_opts, arena):
     """
     Args:
       mem: Mem instance for storing variables
+      fd_state: FdState() for managing descriptors
       status_lines: shared with completion.  TODO: Move this to the end.
       funcs: registry of functions (these names are completed)
       completion: completion module, if available
@@ -115,6 +116,7 @@ class Executor(object):
       arena: for printing error locations
     """
     self.mem = mem
+    self.fd_state = fd_state
     self.status_lines = status_lines  
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
@@ -132,7 +134,6 @@ class Executor(object):
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
     self.traps = {}  # signal/hook -> LST node
-    self.fd_state = process.FdState()
     self.dir_stack = state.DirStack()
 
     # TODO: Pass these in from main()
@@ -213,20 +214,24 @@ class Executor(object):
       return 1
 
     try:
-      with open(path) as f:
-        line_reader = reader.FileLineReader(f, self.arena)
-        _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
-        # TODO: We have to set a bit to know that we are in 'source'
-        return self._EvalHelper(c_parser, path)
+      f = self.fd_state.Open(path)  # Shell can't use descriptors 3-9
+    except OSError as e:
+      # TODO: Should point to the source statement that failed.
+      util.error('source %r failed: %s', path, os.strerror(e.errno))
+      return 1
+
+    try:
+      line_reader = reader.FileLineReader(f, self.arena)
+      _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+      return self._EvalHelper(c_parser, path)
+
     except _ControlFlow as e:
       if e.IsReturn():
         return e.ReturnValue()
       else:
         raise
-    except IOError as e:
-      # TODO: Should point to the source statement that failed.
-      util.error('source %r failed: %s', path, os.strerror(e.errno))
-      return 1
+    finally:
+      f.close()
 
   def _Exec(self, argv):
     # Either execute command with redirects, or apply redirects in this shell.

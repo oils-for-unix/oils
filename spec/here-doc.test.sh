@@ -33,7 +33,10 @@ fd0
 EOF
 fd3
 EOF3
-# stdout-json: "0: fd0\n3: fd3\n"
+## STDOUT:
+0: fd0
+3: fd3
+## END
 
 ### Here doc with bad var delimiter
 cat <<${a}
@@ -72,7 +75,11 @@ var: ${var}
 command: $(echo hi)
 arith: $((1+2))
 EOF
-# stdout-json: "var: v\ncommand: hi\narith: 3\n"
+## STDOUT:
+var: v
+command: hi
+arith: 3
+## END
 
 ### Here doc in middle.  And redirects in the middle.
 # This isn't specified by the POSIX grammar, but it's accepted by both dash and
@@ -82,14 +89,21 @@ echo bar > _tmp/bar.txt
 cat <<EOF 1>&2 _tmp/foo.txt - _tmp/bar.txt
 here
 EOF
-# stderr-json: "foo\nhere\nbar\n"
+## STDERR:
+foo
+here
+bar
+## END
 
 ### Here doc line continuation
 cat <<EOF \
 ; echo two
 one
 EOF
-# stdout-json: "one\ntwo\n"
+## STDOUT:
+one
+two
+## END
 
 ### Here doc with quote expansion in terminator
 cat <<'EOF'"2"
@@ -103,7 +117,11 @@ cat <<EOF; echo "two
 three"
 one
 EOF
-# stdout-json: "one\ntwo\nthree\n"
+## STDOUT:
+one
+two
+three
+## END
 
 ### Two here docs -- first is ignored; second ones wins!
 <<EOF1 cat <<EOF2
@@ -129,7 +147,11 @@ cat <<EOF | tac
 2
 3
 EOF
-# stdout-json: "3\n2\n1\n"
+## STDOUT:
+3
+2
+1
+## END
 
 ### Here doc with pipe continued on last line
 cat <<EOF |
@@ -138,7 +160,11 @@ cat <<EOF |
 3
 EOF
 tac
-# stdout-json: "3\n2\n1\n"
+## STDOUT:
+3
+2
+1
+## END
 
 ### Here doc with builtin 'read'
 # read can't be run in a subshell.
@@ -156,7 +182,11 @@ done <<EOF
 2
 3
 EOF
-# stdout-json: "X 1\nX 2\nX 3\n"
+## STDOUT:
+X 1
+X 2
+X 3
+## END
 
 
 ### Here doc in while condition and here doc in body
@@ -167,7 +197,11 @@ E1
 E2
 3
 E3
-# stdout-json: "1\n2\n3\n"
+## STDOUT:
+1
+2
+3
+## END
 
 ### Here doc in while condition and here doc in body on multiple lines
 while cat <<E1 && cat <<E2
@@ -181,7 +215,11 @@ do
 E3
   break
 done
-# stdout-json: "1\n2\n3\n"
+## STDOUT:
+1
+2
+3
+## END
 
 ### Here doc in while loop split up more
 while cat <<E1
@@ -198,7 +236,11 @@ do
 E3
   break
 done
-# stdout-json: "1\n2\n3\n"
+## STDOUT:
+1
+2
+3
+## END
 
 ### Mixing << and <<-
 cat <<-EOF; echo --; cat <<EOF2
@@ -252,7 +294,11 @@ cat <<-EOF
 	2
   3
 EOF
-# stdout-json: "1\n2\n  3\n"
+## STDOUT:
+1
+2
+  3
+## END
 
 ### Here doc within subshell with boolean
 [[ $(cat <<EOF
@@ -268,7 +314,10 @@ here doc in IF CONDITION
 EOF
   echo THEN executed
 fi
-# stdout-json: "here doc in IF CONDITION\nTHEN executed\n"
+## STDOUT:
+here doc in IF CONDITION
+THEN executed
+## END
 
 ### Multiple here docs in pipeline
 # SKIPPED: hangs with osh on Debian
@@ -278,7 +327,10 @@ fd3
 EOF3
 fd5
 EOF5
-# stdout-json: "0: 3: fd3\n5: fd5\n"
+## STDOUT:
+0: 3: fd3
+5: fd5
+## END
 
 ### Multiple here docs in pipeline on multiple lines
 # SKIPPED: hangs with osh on Debian
@@ -289,4 +341,7 @@ EOF3
 read_from_fd.py 0 5 5<<EOF5
 fd5
 EOF5
-# stdout-json: "0: 3: fd3\n5: fd5\n"
+## STDOUT:
+0: 3: fd3
+5: fd5
+## END
