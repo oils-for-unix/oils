@@ -4,16 +4,21 @@
 # mksh implements most too.
 
 ### C-style for loop
-n=5
+n=10
 for ((a=1; a <= n ; a++))  # Double parentheses, and naked 'n'
 do
+  if test $a = 3; then
+    continue
+  fi
+  if test $a = 6; then
+    break
+  fi
   echo $a
 done  # A construct borrowed from ksh93.
 ## status: 0
 ## STDOUT:
 1
 2
-3
 4
 5
 ## N-I mksh status: 1

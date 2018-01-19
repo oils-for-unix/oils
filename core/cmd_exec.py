@@ -964,7 +964,6 @@ class Executor(object):
               break
             elif e.IsContinue():
               status = 0
-              continue
             else:  # return needs to pop up more
               raise
       finally:
@@ -973,13 +972,30 @@ class Executor(object):
     elif node.tag == command_e.ForExpr:
       status = 0
       self.arith_ev.Eval(node.init)
-      while True:
-        b = self.arith_ev.Eval(node.cond)
-        if not b:
-          break
 
-        status = self._Execute(node.body)
-        self.arith_ev.Eval(node.update)
+      self.loop_level += 1
+      try:
+        while True:
+          b = self.arith_ev.Eval(node.cond)
+          if not b:
+            break
+
+          do_continue = False
+          try:
+            status = self._Execute(node.body)
+          except _ControlFlow as e:
+            if e.IsBreak():
+              status = 0
+              break
+            elif e.IsContinue():
+              status = 0
+            else:  # return needs to pop up more
+              raise
+
+          self.arith_ev.Eval(node.update)
+
+      finally:
+        self.loop_level -= 1
 
     elif node.tag == command_e.DoGroup:
       status = self._ExecuteList(node.children)
