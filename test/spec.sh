@@ -529,7 +529,7 @@ let() {
 }
 
 for-expr() {
-  sh-spec spec/for-expr.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/for-expr.test.sh \
     $MKSH $BASH $OSH "$@"
 }
 

@@ -971,7 +971,15 @@ class Executor(object):
         self.loop_level -= 1
 
     elif node.tag == command_e.ForExpr:
-      raise NotImplementedError(node.tag)
+      status = 0
+      self.arith_ev.Eval(node.init)
+      while True:
+        b = self.arith_ev.Eval(node.cond)
+        if not b:
+          break
+
+        status = self._Execute(node.body)
+        self.arith_ev.Eval(node.update)
 
     elif node.tag == command_e.DoGroup:
       status = self._ExecuteList(node.children)
@@ -1045,7 +1053,7 @@ class Executor(object):
       print('sys\t%.3f' % sys_, file=sys.stderr)
 
     else:
-      raise AssertionError(node.tag)
+      raise NotImplementedError(node.__class__.__name__)
 
     return status, check_errexit
 

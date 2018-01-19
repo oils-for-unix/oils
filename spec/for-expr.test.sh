@@ -9,10 +9,15 @@ for ((a=1; a <= n ; a++))  # Double parentheses, and naked 'n'
 do
   echo $a
 done  # A construct borrowed from ksh93.
-# status: 0
-# stdout-json: "1\n2\n3\n4\n5\n"
-# N-I mksh status: 1
-# N-I mksh stdout-json: ""
+## status: 0
+## STDOUT:
+1
+2
+3
+4
+5
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
 
 ### For loop with and without semicolon
 for ((a=1; a <= 3; a++)); do
@@ -21,8 +26,13 @@ done  # A construct borrowed from ksh93.
 for ((a=1; a <= 3; a++)) do
   echo $a
 done  # A construct borrowed from ksh93.
-# status: 0
-# stdout-json: "1\n2\n3\n1\n2\n3\n"
-# N-I mksh status: 1
-# N-I mksh stdout-json: ""
-
+## status: 0
+## STDOUT:
+1
+2
+3
+1
+2
+3
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
