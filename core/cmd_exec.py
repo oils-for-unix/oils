@@ -39,6 +39,7 @@ from core.id_kind import Id, RedirType, REDIR_TYPE, REDIR_DEFAULT_FD
 from core import process
 from core import runtime
 from core import state
+from core import word_compile
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -738,25 +739,23 @@ class Executor(object):
 
     elif node.tag == command_e.Assignment:
       pairs = []
+      flags = word_compile.ParseAssignFlags(node.flags)
+
       if node.keyword == Id.Assign_Local:
         lookup_mode = scope_e.LocalOnly
-        flags = ()
       # typeset and declare are synonyms?  I see typeset -a a=() the most.
       elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
         # declare is like local, except it can also be used outside functions?
         lookup_mode = scope_e.LocalOnly
         # TODO: Respect flags.  -r and -x matter, but -a and -A might be
         # implicit in the RHS?
-        flags = ()
       elif node.keyword == Id.Assign_Readonly:
         lookup_mode = scope_e.Dynamic
-        flags = (var_flags_e.ReadOnly,)
+        flags.append(var_flags_e.ReadOnly)
       elif node.keyword == Id.Assign_None:  # mutate existing local or global
         lookup_mode = scope_e.Dynamic
-        flags = ()
       else:
-        # TODO: typeset, declare, etc.  Those are dynamic though.
-        raise NotImplementedError(node.keyword)
+        raise AssertionError(node.keyword)
 
       for pair in node.pairs:
         if pair.op == assign_op_e.PlusEqual:
@@ -789,6 +788,9 @@ class Executor(object):
           else:
             # e.g. 'readonly x' or 'local x'
             val = None  # only changing flags
+
+        # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
+        # Undef value, but the 'array' attribute.
 
         self.mem.SetVar(lval, val, flags, lookup_mode)
 

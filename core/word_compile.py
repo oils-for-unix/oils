@@ -7,6 +7,10 @@ doesn't depend on any values at runtime.
 """
 
 from core.id_kind import Id
+from core import runtime
+
+var_flags_e = runtime.var_flags_e
+
 
 _ONE_CHAR = {
     '0': '\0',
@@ -74,4 +78,32 @@ def EvalCStringToken(id_, value):
 
   else:
     raise AssertionError
+
+
+#
+# Assignment
+#
+
+def ParseAssignFlags(flag_args):
+  """
+  Args:
+    flag_args looks like ['-r', '-x'] or ['-rx'], etc.
+
+  Returns:
+    A list of var_flags_e
+
+  NOTE: Any errors should be caught at PARSE TIME, not compile time.
+  """
+  flags = []
+  for arg in flag_args:
+    assert arg[0] == '-', arg
+    for char in arg[1:]:
+      if char == 'x':
+        flags.append(var_flags_e.Exported)
+      elif char == 'r':
+        flags.append(var_flags_e.ReadOnly)
+      else:
+        # -a is ignored right now?
+        pass
+  return flags
 

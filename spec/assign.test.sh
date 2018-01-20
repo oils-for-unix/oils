@@ -290,3 +290,88 @@ echo $?
 127
 127
 ## END
+
+### typeset -r makes a string readonly
+typeset -r s1='12'
+typeset -r s2='34'
+
+s1='c'
+echo status=$?
+s2='d'
+echo status=$?
+
+s1+='e'
+echo status=$?
+s2+='f'
+echo status=$?
+
+unset s1
+echo status=$?
+unset s2
+echo status=$?
+
+## status: 1
+## stdout-json: ""
+## OK mksh status: 2
+## OK bash status: 0
+## OK bash STDOUT:
+status=1
+status=1
+status=1
+status=1
+status=1
+status=1
+## END
+## OK dash status: 0
+## N-I dash STDOUT:
+status=0
+status=0
+status=127
+status=127
+status=0
+status=0
+## END
+
+### typeset -ar makes it readonly
+typeset -a -r array1=(1 2)
+typeset -ar array2=(3 4)
+
+array1=('c')
+echo status=$?
+array2=('d')
+echo status=$?
+
+array1+=('e')
+echo status=$?
+array2+=('f')
+echo status=$?
+
+unset array1
+echo status=$?
+unset array2
+echo status=$?
+
+## status: 1
+## stdout-json: ""
+## OK bash status: 0
+## OK bash STDOUT:
+status=1
+status=1
+status=1
+status=1
+status=1
+status=1
+## END
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+# N-I mksh status: 1
+# N-I mksh stdout-json: ""
+
+### typeset -x makes it exported
+typeset -rx PYTHONPATH=lib/
+printenv.py PYTHONPATH
+## STDOUT:
+lib/
+## END
+# N-I dash stdout: None
+

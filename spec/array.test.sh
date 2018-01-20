@@ -369,3 +369,24 @@ echo ${#a[@]} ${#b[@]} ${#c[@]} ${#d[@]}
 4 4 4 4
 1 1 1 1
 ## END
+
+### declare -a / local -a is empty array
+declare -a myarray
+argv.py "${myarray[@]}"
+myarray+=('x')
+argv.py "${myarray[@]}"
+
+f() {
+  local -a myarray
+  argv.py "${myarray[@]}"
+  myarray+=('x')
+  argv.py "${myarray[@]}"
+}
+f
+## STDOUT:
+[]
+['x']
+[]
+['x']
+## END
+
