@@ -136,7 +136,7 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
-def EvalLhs(node, arith_ev, mem, exec_opts):
+def _EvalLhs(node, arith_ev, mem, exec_opts):
   """Evaluate the operand for a++ a[0]++ as an R-value.
 
   Args:
@@ -225,7 +225,7 @@ class ArithEvaluator(_ExprEvaluator):
     Returns:
       int or list of strings, runtime.lvalue
     """
-    val, lval = EvalLhs(node, self, self.mem, self.exec_opts)
+    val, lval = _EvalLhs(node, self, self.mem, self.exec_opts)
     #log('Evaluating node %r -> %r', node, val)
     return self._ValToArithOrError(val), lval
 

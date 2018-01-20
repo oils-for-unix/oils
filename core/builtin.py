@@ -66,6 +66,7 @@ TRUE FALSE
 COLON
 TEST BRACKET GETOPTS
 COMMAND TYPE HELP
+DECLARE TYPESET
 """.split())
 
 
@@ -212,6 +213,11 @@ def Resolve(argv0):
 
   elif argv0 == "type":
     return EBuiltin.TYPE
+
+  elif argv0 == "declare":
+    return EBuiltin.DECLARE
+  elif argv0 == "typeset":
+    return EBuiltin.TYPESET
 
   elif argv0 == "help":
     return EBuiltin.HELP
@@ -968,6 +974,47 @@ def Type(argv, funcs, path_val):
   # result otherwise.
   sys.stdout.flush()
   return status
+
+
+DECLARE_SPEC = _Register('declare')
+DECLARE_SPEC.ShortFlag('-f')
+DECLARE_SPEC.ShortFlag('-F')
+DECLARE_SPEC.ShortFlag('-p')
+
+
+def DeclareTypeset(argv, mem, funcs):
+  arg, i = DECLARE_SPEC.Parse(argv)
+
+  status = 0
+
+  # NOTE: in bash, -f shows the function body, while -F shows the name.  In
+  # osh, they're identical and behave like -F.
+
+  if arg.f or arg.F:  # Lookup and print functions.
+    for name in argv[i:]:
+      if name in funcs:
+        print(name)
+        # TODO: Could print LST, or render LST.  Bash does this.
+        #print(funcs[name])
+      else:
+        status = 1
+
+  elif arg.p:  # Lookup and print variables.
+
+    for name in argv[i:]:
+      val = mem.GetVar(name)
+      if val.tag != value_e.Undef:
+        # TODO: Print flags.
+        print(name)
+      else:
+        status = 1
+
+  else:
+    raise NotImplementedError
+
+  sys.stdout.flush()
+  return status
+
 
 
 def Trap(argv, traps):

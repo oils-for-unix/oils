@@ -341,6 +341,10 @@ class Executor(object):
       path = self.mem.GetVar('PATH')
       status = builtin.Type(argv, self.funcs, path)
 
+    elif builtin_id in (EBuiltin.DECLARE, EBuiltin.TYPESET):
+      # These are synonyms
+      status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
+
     elif builtin_id == EBuiltin.HELP:
       loader = util.GetResourceLoader()
       status = builtin.Help(argv, loader)
@@ -505,7 +509,6 @@ class Executor(object):
     if not argv:
       return 0  # status 0, or skip it?
 
-    # TODO: respect the special builtin order too
     arg0 = argv[0]
 
     builtin_id = builtin.ResolveSpecial(arg0)

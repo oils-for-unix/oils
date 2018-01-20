@@ -457,6 +457,7 @@ class CommandParser(object):
       # Maybe we could change this.
       #(Id.Assign_Export, '-p'),
   ])
+  # Flags to parse like assignments: -a -r -x (and maybe -i)
 
   def ParseSimpleCommand(self):
     """

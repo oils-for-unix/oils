@@ -192,3 +192,101 @@ argv.py "${a[@]}"
 # stdout: ['x', 'z']
 # N-I dash stdout-json: ""
 # N-I dash status: 2
+
+### declare -f 
+func2=x  # var names are NOT found
+declare -f myfunc func2
+echo $?
+
+myfunc() { echo myfunc; }
+# This prints the source code.
+declare -f myfunc func2 > /dev/null
+echo $?
+
+func2() { echo func2; }
+declare -f myfunc func2 > /dev/null
+echo $?
+## STDOUT:
+1
+1
+0
+## END
+## N-I dash/mksh STDOUT:
+127
+127
+127
+## END
+
+### declare -p 
+var1() { echo func; }  # function names are NOT found.
+declare -p var1 var2 >/dev/null
+echo $?
+
+var1=x
+declare -p var1 var2 >/dev/null
+echo $?
+
+var2=y
+declare -p var1 var2 >/dev/null
+echo $?
+## STDOUT:
+1
+1
+0
+## N-I dash/mksh STDOUT:
+127
+127
+127
+## END
+
+### typeset -f 
+# mksh implement typeset but not declare
+typeset  -f myfunc func2
+echo $?
+
+myfunc() { echo myfunc; }
+# This prints the source code.
+typeset  -f myfunc func2 > /dev/null
+echo $?
+
+func2() { echo func2; }
+typeset  -f myfunc func2 > /dev/null
+echo $?
+## STDOUT:
+1
+1
+0
+## END
+## N-I dash STDOUT:
+127
+127
+127
+## END
+
+### typeset -p 
+var1() { echo func; }  # function names are NOT found.
+typeset -p var1 var2 >/dev/null
+echo $?
+
+var1=x
+typeset -p var1 var2 >/dev/null
+echo $?
+
+var2=y
+typeset -p var1 var2 >/dev/null
+echo $?
+## STDOUT:
+1
+1
+0
+## BUG mksh STDOUT:
+# mksh doesn't respect exit codes
+0
+0
+0
+## END
+## N-I dash STDOUT:
+127
+127
+127
+## END
