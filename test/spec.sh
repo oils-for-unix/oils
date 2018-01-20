@@ -289,6 +289,11 @@ builtin-test() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+builtin-trap() {
+  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 5 \
+    ${REF_SHELLS[@]} $OSH "$@"
+}
+
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {

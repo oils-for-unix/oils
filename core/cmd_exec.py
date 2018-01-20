@@ -198,12 +198,33 @@ class Executor(object):
       self.arena.PopSource()
 
   def _Eval(self, argv):
-    # NOTE: in oil, eval shouldn't take multiple args.  For clarity, 'eval ls
-    # foo' will be an "extra arg" error.
+    # TODO: set -o sane-eval should change eval to
     code_str = ' '.join(argv)
     line_reader = reader.StringLineReader(code_str, self.arena)
     _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
     return self._EvalHelper(c_parser, '<eval string>')
+
+  def ParseTrapCode(self, code_str):
+    """
+    Returns:
+      A node, or None if the code is invalid.
+    """
+    line_reader = reader.StringLineReader(code_str, self.arena)
+    _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+
+    source_name = '<trap string>'
+    self.arena.PushSource(source_name)
+    try:
+      node = c_parser.ParseWholeFile()
+      if not node:
+        util.error('Parse error in %r:', source_name)
+        err = c_parser.Error()
+        ui.PrintErrorStack(err, self.arena, sys.stderr)
+        return None
+    finally:
+      self.arena.PopSource()
+
+    return node
 
   def _Source(self, argv):
     try:
@@ -302,7 +323,7 @@ class Executor(object):
       status = self._Source(argv)
 
     elif builtin_id == EBuiltin.TRAP:
-      status = builtin.Trap(argv, self.traps)
+      status = builtin.Trap(argv, self.traps, self)
 
     elif builtin_id == EBuiltin.UMASK:
       status = builtin.Umask(argv)

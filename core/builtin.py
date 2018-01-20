@@ -980,19 +980,97 @@ def DeclareTypeset(argv, mem, funcs):
   return status
 
 
-def Trap(argv, traps):
-  # TODO: register trap
+import signal
+
+
+def _MakeSignals():
+  """Piggy-back on CPython to get a list of portable signals.
+
+  When Oil is ported to C, we might want to do something like bash/dash.
+  """
+  names = {}
+  for name in dir(signal):
+    # don't want SIG_DFL or SIG_IGN
+    if name.startswith('SIG') and not name.startswith('SIG_'):
+      int_val = getattr(signal, name)
+      names[name] = int_val
+  return names
+
+
+_SIGNAL_NAMES = _MakeSignals()
+
+_HOOK_NAMES = ('EXIT', 'ERR', 'RETURN', 'DEBUG')
+
+
+TRAP_SPEC = _Register('trap')
+TRAP_SPEC.ShortFlag('-p')
+TRAP_SPEC.ShortFlag('-l')
+
+
+def Trap(argv, traps, ex):
+  arg, i = TRAP_SPEC.Parse(argv)
+  status = 0
+
+  if arg.p:  # Print registered handlers
+    for name, value in traps.iteritems():
+      print(name)
+      print(value)
+      print()
+
+    sys.stdout.flush()
+    return 0
+
+  if arg.l:  # List valid signals and hooks
+    ordered = _SIGNAL_NAMES.items()
+    ordered.sort(key=lambda x: x[1])
+
+    for name in _HOOK_NAMES:
+      print('   %s' % name)
+    for name, int_val in ordered:
+      print('%02d %s' % (int_val, name))
+
+    sys.stdout.flush()
+    return 0
+
+  try:
+    code_str = argv[0]
+    sig_spec = argv[1]
+  except IndexError:
+    util.usage('trap CODE SIGNAL_SPEC')
+    return 1
+
+  # NOTE: sig_spec isn't validated when removing handlers.
+  if code_str == '-':
+    try:
+      del traps[sig_spec]
+    except KeyError:
+      pass
+    return 0
+
+  # Try parsing code first.
+  node = ex.ParseTrapCode(code_str)
+  if node is None:
+    return 1  # ParseTrapCode() prints an error for us.
+
+  # Register a hook
+  if sig_spec in _HOOK_NAMES:
+    traps[sig_spec] = node
+    return 0
+
+  # Register a signal
+  sig_val = _SIGNAL_NAMES.get(sig_spec)
+  if sig_val is not None:
+    traps[sig_spec] = node
+    # TODO: call signal.signal()
+    return 0
+
+  util.error('Invalid signal %r' % sig_spec)
+  return 1
 
   # Example:
   # trap -- 'echo "hi  there" | wc ' SIGINT
   #
   # Then hit Ctrl-C.
-  #
-  # Yeah you need the EvalHelper.  traps is a list of signals to parsed
-  # NODES.
-
-  util.warn('*** trap not implemented ***')
-  return 0
 
 
 def Umask(argv):

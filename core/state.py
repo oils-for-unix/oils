@@ -86,6 +86,10 @@ SET_OPTIONS = [
     (None, 'strict-control-flow'),
     (None, 'strict-errexit'),
     (None, 'strict-array'),
+
+    # TODO: Add strict-arg-parse?  For example, 'trap 1 2 3' shouldn't be
+    # valid, because it has an extra argument.  Builtins are inconsistent about
+    # checking this.
 ]
 
 _SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)

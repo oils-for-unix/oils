@@ -1,5 +1,5 @@
 #!/bin/bash
 
-. gold/open-fds.sh
+. demo/open-fds.sh
 count_func
 
