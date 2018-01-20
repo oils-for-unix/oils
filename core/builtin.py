@@ -947,23 +947,31 @@ def DeclareTypeset(argv, mem, funcs):
   # osh, they're identical and behave like -F.
 
   if arg.f or arg.F:  # Lookup and print functions.
-    for name in argv[i:]:
-      if name in funcs:
-        print(name)
-        # TODO: Could print LST, or render LST.  Bash does this.
-        #print(funcs[name])
-      else:
-        status = 1
+    names = argv[i:]
+    if names:
+      for name in names:
+        if name in funcs:
+          print(name)
+          # TODO: Could print LST, or render LST.  Bash does this.
+          #print(funcs[name])
+        else:
+          status = 1
+    else:
+      raise NotImplementedError('declare/typeset -f without args')
 
   elif arg.p:  # Lookup and print variables.
 
-    for name in argv[i:]:
-      val = mem.GetVar(name)
-      if val.tag != value_e.Undef:
-        # TODO: Print flags.
-        print(name)
-      else:
-        status = 1
+    names = argv[i:]
+    if names:
+      for name in names:
+        val = mem.GetVar(name)
+        if val.tag != value_e.Undef:
+          # TODO: Print flags.
+          print(name)
+        else:
+          status = 1
+    else:
+      raise NotImplementedError('declare/typeset -p without args')
 
   else:
     raise NotImplementedError
