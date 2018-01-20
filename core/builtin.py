@@ -51,9 +51,6 @@ e_die = util.e_die
 
 
 # NOTE: NONE is a special value.
-# TODO:
-# - Make a table of name to enum?  source, dot, etc.
-# - So you can just add "complete" and have it work.
 
 EBuiltin = util.Enum('EBuiltin', """
 NONE READ ECHO SHIFT
@@ -70,24 +67,70 @@ DECLARE TYPESET
 """.split())
 
 
-# These can't be redefined by functions.
-# http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
-# On the other hand, 'cd' CAN be redefined.
+# Special builtins can't be redefined by functions.  On the other hand, 'cd'
+# CAN be redefined.
 #
-# NOTE: OSH treats these specially:
-# - break/continue/return
-# - local/readonly
-_SPECIAL_BUILTINS = [
-    'break', ':', 'continue', '.', 'eval', 'exec', 'exit', 'export',
-    'readonly', 'return', 'set', 'shift', 'times', 'trap', 'unset',
+# http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 
-    # local and declare are not POSIX, but should be here since export and
-    # readonly are.
-    'local', 'declare',
-]
+_SPECIAL_BUILTINS = {
+    ":": EBuiltin.COLON,
+    ".": EBuiltin.DOT,
+    "eval": EBuiltin.EVAL,
+    "exec": EBuiltin.EXEC,
+    "exit": EBuiltin.EXIT,
+    "export": EBuiltin.EXPORT,
 
-# TODO: Add a way to register.
-_BUILTINS = ['echo', 'read']
+    "set": EBuiltin.SET,
+    "shift": EBuiltin.SHIFT,
+    #"times": EBuiltin.TIMES,  # no implemented
+    "trap": EBuiltin.TRAP,
+    "unset": EBuiltin.UNSET,
+
+    # May be a builtin or an assignment
+    #"readonly": EBuiltin.READONLY,
+    #"local": EBuiltin.LOCAL,
+    "declare": EBuiltin.DECLARE,
+    "typeset": EBuiltin.TYPESET,
+
+    # Not treated as builtins by OSH.  TODO: Need to auto-complete these
+    # break continue return
+}
+
+_NORMAL_BUILTINS = {
+    "read": EBuiltin.READ,
+    "echo": EBuiltin.ECHO,
+    "cd": EBuiltin.CD,
+    "pushd": EBuiltin.PUSHD,
+    "popd": EBuiltin.POPD,
+    "dirs": EBuiltin.DIRS,
+
+    "source": EBuiltin.SOURCE,  # note that . alias is special
+
+    "umask": EBuiltin.UMASK,
+    "wait": EBuiltin.WAIT,
+    "jobs": EBuiltin.JOBS,
+
+    "shopt": EBuiltin.SHOPT,
+    "complete": EBuiltin.COMPLETE,
+    "compgen": EBuiltin.COMPGEN,
+
+    "true": EBuiltin.TRUE,
+    "false": EBuiltin.FALSE,
+
+    "test": EBuiltin.TEST,
+    "[": EBuiltin.BRACKET,
+
+    "getopts": EBuiltin.GETOPTS,
+
+    "command": EBuiltin.COMMAND,
+    "type": EBuiltin.TYPE,
+
+    "declare": EBuiltin.DECLARE,
+    "typeset": EBuiltin.TYPESET,
+
+    "help": EBuiltin.HELP,
+    "debug-line": EBuiltin.DEBUG_LINE,
+}
 
 
 class BuiltinDef(object):
@@ -97,8 +140,8 @@ class BuiltinDef(object):
   def __init__(self):
     # Is this what we want?
     names = set()
-    names.update(_BUILTINS)
-    names.update(_SPECIAL_BUILTINS)
+    names.update(_NORMAL_BUILTINS.keys())
+    names.update(_SPECIAL_BUILTINS.keys())
     # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
     # all do this.  Also do/done
 
@@ -124,109 +167,17 @@ def _Register(name, help_topic=None):
   return BUILTIN_DEF.Register(name, help_topic=help_topic)
 
 
-
-# TODO: Resolve() and EBuiltin kind of useless?  We could just test for string
-# equality directly.  Or do we want to cache this lookup so it isn't done on
-# say every iteration of a loop?
-
 def ResolveSpecial(argv0):
-  # TODO: Add more special builtins here
-  if argv0 == "export":
-    return EBuiltin.EXPORT
-  elif argv0 == "exit":
-    return EBuiltin.EXIT
-  elif argv0 == ":":
-    return EBuiltin.COLON
-
-  return EBuiltin.NONE
+  return _SPECIAL_BUILTINS.get(argv0, EBuiltin.NONE)
 
 
 def Resolve(argv0):
-  # TODO: ResolveSpecialBuiltin first, then ResolveFunction, then
-  # ResolveOtherBuiltin.  In other words, you can't redefine special builtins
-  # with functions, but you can redefine other builtins.
+  return _NORMAL_BUILTINS.get(argv0, EBuiltin.NONE)
 
-  # For completion, this is a flat list of names.  Although coloring them
-  # would be nice.
 
-  # TODO: Use Buitlins to initialize.
-
-  if argv0 == "read":
-    return EBuiltin.READ
-  elif argv0 == "echo":
-    return EBuiltin.ECHO
-  elif argv0 == "cd":
-    return EBuiltin.CD
-  elif argv0 == "shift":
-    return EBuiltin.SHIFT
-  elif argv0 == "pushd":
-    return EBuiltin.PUSHD
-  elif argv0 == "popd":
-    return EBuiltin.POPD
-  elif argv0 == "dirs":
-    return EBuiltin.DIRS
-
-  elif argv0 == "source":
-    return EBuiltin.SOURCE
-  elif argv0 == ".":
-    return EBuiltin.DOT
-
-  elif argv0 == "trap":
-    return EBuiltin.TRAP
-  elif argv0 == "umask":
-    return EBuiltin.UMASK
-  elif argv0 == "eval":
-    return EBuiltin.EVAL
-  elif argv0 == "exec":
-    return EBuiltin.EXEC
-  elif argv0 == "wait":
-    return EBuiltin.WAIT
-  elif argv0 == "jobs":
-    return EBuiltin.JOBS
-
-  elif argv0 == "set":
-    return EBuiltin.SET
-  elif argv0 == "shopt":
-    return EBuiltin.SHOPT
-  elif argv0 == "unset":
-    return EBuiltin.UNSET
-  elif argv0 == "complete":
-    return EBuiltin.COMPLETE
-  elif argv0 == "compgen":
-    return EBuiltin.COMPGEN
-
-  elif argv0 == "true":
-    return EBuiltin.TRUE
-  elif argv0 == "false":
-    return EBuiltin.FALSE
-
-  elif argv0 == "test":
-    return EBuiltin.TEST
-  elif argv0 == "[":
-    return EBuiltin.BRACKET
-
-  elif argv0 == "getopts":
-    return EBuiltin.GETOPTS
-
-  elif argv0 == "command":
-    return EBuiltin.COMMAND
-
-  elif argv0 == "type":
-    return EBuiltin.TYPE
-
-  elif argv0 == "declare":
-    return EBuiltin.DECLARE
-  elif argv0 == "typeset":
-    return EBuiltin.TYPESET
-
-  elif argv0 == "help":
-    return EBuiltin.HELP
-
-  elif argv0 == "debug-line":
-    return EBuiltin.DEBUG_LINE
-
-  return EBuiltin.NONE
-
+#
+# Implementation of builtins.
+#
 
 ECHO_LEXER = lexer.SimpleLexer(lex.ECHO_E_DEF)
 
@@ -236,8 +187,7 @@ ECHO_SPEC.ShortFlag('-n')
 
 
 def Echo(argv):
-  """
-  echo builtin.
+  """echo builtin.
 
   set -o sane-echo could do the following:
   - only one arg, no implicit joining.
@@ -310,6 +260,7 @@ def Exit(argv):
   sys.exit(code)
 
 
+# TODO: remove getopt
 import getopt
 
 def Wait(argv, waiter, job_state, mem):
@@ -652,8 +603,10 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
 
 def _FormatDir(dir_name, home_dir):
-  if home_dir and home_dir.tag == value_e.Str and (dir_name == home_dir.s or dir_name.startswith(home_dir.s + '/')):
+  if home_dir and home_dir.tag == value_e.Str and (
+      dir_name == home_dir.s or dir_name.startswith(home_dir.s + '/')):
     return dir_name.replace(home_dir.s, '~', 1)
+
   return dir_name
 
 
@@ -699,6 +652,7 @@ DIRS_SPEC.ShortFlag('-c')
 DIRS_SPEC.ShortFlag('-l')
 DIRS_SPEC.ShortFlag('-p')
 DIRS_SPEC.ShortFlag('-v')
+
 
 def Dirs(argv, home_dir, dir_stack):
   arg, i = DIRS_SPEC.Parse(argv)
@@ -930,6 +884,7 @@ COMMAND_SPEC = _Register('command')
 COMMAND_SPEC.ShortFlag('-v')
 COMMAND_SPEC.ShortFlag('-V')
 
+
 def Command(argv, funcs, path_val):
   arg, i = COMMAND_SPEC.Parse(argv)
   status = 0
@@ -949,6 +904,7 @@ def Command(argv, funcs, path_val):
 
 TYPE_SPEC = _Register('type')
 TYPE_SPEC.ShortFlag('-t')
+
 
 def Type(argv, funcs, path_val):
   arg, i = TYPE_SPEC.Parse(argv)
@@ -1014,7 +970,6 @@ def DeclareTypeset(argv, mem, funcs):
 
   sys.stdout.flush()
   return status
-
 
 
 def Trap(argv, traps):
