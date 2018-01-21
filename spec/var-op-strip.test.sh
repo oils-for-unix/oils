@@ -67,3 +67,23 @@ echo ${v#?}  # ? is a glob that stands for one character
 # stdout: -
 # BUG dash/mksh stdout-repr: '\xbc-\n'
 # BUG zsh stdout-repr: '\n'
+
+### Bug fix: Test that you can remove everything with glob
+s='--x--'
+argv "${s%%-*}" "${s%-*}" "${s#*-}" "${s##*-}"
+## STDOUT:
+['', '--x-', '-x--', '']
+## END
+
+### Test that you can remove everything with const
+s='abcd'
+argv "${s%%abcd}" "${s%abcd}" "${s#abcd}" "${s##abcd}"
+# failure case:
+argv "${s%%abcde}" "${s%abcde}" "${s#abcde}" "${s##abcde}"
+## STDOUT:
+['', '', '', '']
+['abcd', 'abcd', 'abcd', 'abcd']
+## END
+
+
+

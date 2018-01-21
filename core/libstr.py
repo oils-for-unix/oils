@@ -85,7 +85,8 @@ def DoUnarySuffixOp(s, op, arg):
 
   n = len(s)
   if op.op_id == Id.VOp1_Pound:  # shortest prefix
-    for i in xrange(1, n):
+    # 'abcd': match 'a', 'ab', 'abc', ...
+    for i in xrange(1, n+1):
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
@@ -93,7 +94,8 @@ def DoUnarySuffixOp(s, op, arg):
       return s
 
   elif op.op_id == Id.VOp1_DPound:  # longest prefix
-    for i in xrange(-1, -n, -1):
+    # 'abcd': match 'abc', 'ab', 'a'
+    for i in xrange(n, 0, -1):
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
@@ -101,7 +103,8 @@ def DoUnarySuffixOp(s, op, arg):
       return s
 
   elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-    for i in xrange(-1, -n, -1):
+    # 'abcd': match 'abc', 'ab', 'a'
+    for i in xrange(n-1, -1, -1):
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
@@ -109,7 +112,8 @@ def DoUnarySuffixOp(s, op, arg):
       return s
     
   elif op.op_id == Id.VOp1_DPercent:  # longest suffix
-    for i in xrange(1, n):
+    # 'abcd': match 'abc', 'bc', 'c', ...
+    for i in xrange(0, n):
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
