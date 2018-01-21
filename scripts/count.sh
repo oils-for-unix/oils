@@ -18,13 +18,28 @@ oil-core-files() {
     filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 
+asdl-filter() {
+  python -c '
+import sys
+for line in sys.stdin:
+  line = line.strip()
+  if not line or line.startswith("--"):
+    continue
+  print line
+'
+}
+
 cloc-oil-core() {
   oil-core-files | xargs cloc
 
   # cloc doesn't understand ASDL files.
   echo
   echo 'ASDL SCHEMAS'
-  wc -l core/runtime.asdl osh/osh.asdl
+  for name in osh/osh.asdl core/runtime.asdl; do
+    #cat $name | asdl-filter 
+    local count=$(cat $name | asdl-filter | wc -l)
+    echo "$count  $name"
+  done
 }
 
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
