@@ -456,6 +456,8 @@ line-counts() {
   scripts/count.sh parser > $out/parser.txt
   scripts/count.sh runtime > $out/runtime.txt
 
+  scripts/count.sh oil-osh-cloc > $out/oil-osh-cloc.txt
+
   metrics-index > $out/index.html
   tree $out
 }

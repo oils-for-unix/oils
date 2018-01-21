@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Count lines ofcode in various ways.
+# Count lines of code in various ways.
 #
 # Usage:
 #   ./count.sh <function name>
@@ -10,36 +10,49 @@ set -o pipefail
 set -o errexit
 
 filter-py() {
-  grep -E -v '__init__.py$|_test.py$' 
+  grep -E -v '__init__.py$|_test.py$'
 }
 
-oil-core-files() {
+# Oil-only would exclude core/legacy.py, etc.
+oil-osh-files() {
   { ls {bin,osh,core}/*.py native/*.c osh/osh.asdl core/runtime.asdl; } |
     filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 
-asdl-filter() {
+# cloc doesn't understand ASDL files.
+# Use a wc-like format, filtering out blank lines and comments.
+asdl-cloc() {
   python -c '
 import sys
-for line in sys.stdin:
-  line = line.strip()
-  if not line or line.startswith("--"):
-    continue
-  print line
-'
+
+total = 0
+for path in sys.argv[1:]:
+  num_lines = 0
+  with open(path) as f:
+    for line in f:
+      line = line.strip()
+      if not line or line.startswith("--"):
+        continue
+      num_lines += 1
+
+  print "%5d %s" % (num_lines, path)
+  total += num_lines
+
+print "%5d %s" % (total, "total")
+' "$@"
 }
 
-cloc-oil-core() {
-  oil-core-files | xargs cloc
-
-  # cloc doesn't understand ASDL files.
+oil-osh-cloc() {
+  echo 'OIL AND OSH (non-blank non-comment lines)'
   echo
-  echo 'ASDL SCHEMAS'
-  for name in osh/osh.asdl core/runtime.asdl; do
-    #cat $name | asdl-filter 
-    local count=$(cat $name | asdl-filter | wc -l)
-    echo "$count  $name"
-  done
+  oil-osh-files | xargs cloc --quiet "$@"
+
+  # NOTE: --csv option could be parsed into HTML.
+  # Or just sum with asdl-cloc!
+
+  echo
+  echo 'ASDL SCHEMAS (non-blank non-comment lines)'
+  asdl-cloc osh/osh.asdl core/runtime.asdl
 }
 
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
@@ -97,8 +110,8 @@ all() {
   wc -l {osh,core,native,tools}/*_test.py | sort --numeric
   echo
 
-  echo 'OIL'
-  oil-core-files |
+  echo 'OIL AND OSH'
+  oil-osh-files |
     xargs wc -l | sort --numeric
   echo
 
