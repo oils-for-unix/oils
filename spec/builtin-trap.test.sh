@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### trap -l
-trap -l | grep SIGINT >/dev/null
+trap -l | grep INT >/dev/null
 ## status: 0
 ## N-I dash/mksh status: 1
 
@@ -18,6 +18,20 @@ trap 'foo' SIGINVALID
 ### Remove invalid trap
 trap - SIGINVALID
 ## status: 1
+
+### SIGINT and INT are aliases
+trap - SIGINT
+echo $?
+trap - INT
+echo $?
+## STDOUT:
+0
+0
+## END
+## N-I dash STDOUT:
+1
+0
+## END
 
 ### Invalid trap invocation
 trap 'foo'

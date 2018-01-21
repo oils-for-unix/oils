@@ -57,7 +57,7 @@ NONE READ ECHO SHIFT
 CD PUSHD POPD DIRS
 EXPORT UNSET SET SHOPT
 TRAP UMASK
-EXIT SOURCE DOT EVAL EXEC WAIT JOBS 
+EXIT SOURCE DOT EVAL EXEC WAIT JOBS
 COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
@@ -1017,8 +1017,16 @@ def _MakeSignals():
     # don't want SIG_DFL or SIG_IGN
     if name.startswith('SIG') and not name.startswith('SIG_'):
       int_val = getattr(signal, name)
-      names[name] = int_val
+      abbrev = name[3:]
+      names[abbrev] = int_val
   return names
+
+
+def _GetSignalValue(sig_spec):
+  # INT is an alias for SIGINT
+  if sig_spec.startswith('SIG'):
+    sig_spec = sig_spec[3:]
+  return _SIGNAL_NAMES.get(sig_spec)
 
 
 _SIGNAL_NAMES = _MakeSignals()
@@ -1037,7 +1045,7 @@ TRAP_SPEC.ShortFlag('-l')
 # trap -- '' SIGTTIN
 # trap -- '' SIGTTOU
 #
-# CPython registers different default handlers.  Wait until C++ rewrite to 
+# CPython registers different default handlers.  Wait until C++ rewrite to
 
 def Trap(argv, traps, ex):
   arg, i = TRAP_SPEC.Parse(argv)
@@ -1058,7 +1066,7 @@ def Trap(argv, traps, ex):
     for name in _HOOK_NAMES:
       print('   %s' % name)
     for name, int_val in ordered:
-      print('%02d %s' % (int_val, name))
+      print('%2d %s' % (int_val, name))
 
     sys.stdout.flush()
     return 0
@@ -1079,7 +1087,7 @@ def Trap(argv, traps, ex):
         pass
       return 0
 
-    sig_val = _SIGNAL_NAMES.get(sig_spec)
+    sig_val = _GetSignalValue(sig_spec)
     if sig_val is not None:
       try:
         del traps[sig_spec]
@@ -1106,7 +1114,7 @@ def Trap(argv, traps, ex):
     return 0
 
   # Register a signal.
-  sig_val = _SIGNAL_NAMES.get(sig_spec)
+  sig_val = _GetSignalValue(sig_spec)
   if sig_val is not None:
     handler = _TrapThunk(ex, node)
     # For signal handlers, the traps dictionary is used only for debugging.
