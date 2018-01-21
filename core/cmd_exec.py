@@ -133,7 +133,7 @@ class Executor(object):
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
-    self.traps = {}  # signal/hook -> LST node
+    self.traps = {}  # signal/hook name -> callable
     self.dir_stack = state.DirStack()
 
     # TODO: Pass these in from main()
@@ -1100,7 +1100,8 @@ class Executor(object):
     return status, check_errexit
 
   def _Execute(self, node, fork_external=True):
-    """
+    """Does redirects, calls _Dispatch(), and does errexit check.
+
     Args:
       node: of type AstNode
       fork_external: if we get a SimpleCommand that is an external command,
@@ -1160,9 +1161,28 @@ class Executor(object):
       status = self._Execute(child)  # last status wins
     return status
 
-  def Execute(self, node, fork_external=True):
-    """Execute a top level LST node."""
-    # Use exceptions internally, but exit codes externally.
+  def Execute(self, node, fork_external=True, run_exit_trap=False):
+    """Execute a subprogram, handling _ControlFlow and fatal exceptions.
+
+    Callers:
+    - SubProgramThunk for pipelines, subshell, command sub, process sub
+    - .oilrc
+    - _TrapThunk
+    - Interactive loop
+    - main program
+
+    Most other clients call _Execute():
+    - _Source() for source builtin
+    - _Eval() for eval builtin
+    - RunFunc() for function call
+
+    Args:
+      node: LST subtree
+      fork_external: whether external commands require forking
+
+    Returns:
+      status: numeric exit code
+    """
     try:
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
@@ -1176,7 +1196,14 @@ class Executor(object):
       print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1
       # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
+    finally:
+      if run_exit_trap:
+        # NOTE: The trap itself can call exit!
+        thunk = self.traps.get('EXIT')
+        if thunk:
+          thunk.Run()
 
+    # Other exceptions: SystemExit for sys.exit()
     return status
 
   def RunCommandSub(self, node):

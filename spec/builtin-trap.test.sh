@@ -6,12 +6,17 @@ trap -l | grep SIGINT >/dev/null
 ## N-I dash/mksh status: 1
 
 ### trap -p
-trap -p | grep trap >/dev/null
+trap 'echo exit' EXIT
+trap -p | grep EXIT >/dev/null
 ## status: 0
 ## N-I dash/mksh status: 1
 
 ### Register invalid trap
 trap 'foo' SIGINVALID
+## status: 1
+
+### Remove invalid trap
+trap - SIGINVALID
 ## status: 1
 
 ### Invalid trap invocation

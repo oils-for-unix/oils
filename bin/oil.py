@@ -406,7 +406,7 @@ def OshMain(argv, login_shell):
 
     if do_exec:
       _tlog('Execute(node)')
-      status = ex.Execute(node)
+      status = ex.Execute(node, run_exit_trap=True)
 
       # We only do this in the "happy" case for now.  ex.Execute() can raise
       # exceptions.

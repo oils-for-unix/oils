@@ -983,6 +983,30 @@ def DeclareTypeset(argv, mem, funcs):
 import signal
 
 
+class _TrapThunk(object):
+  """A function that is called by Python's signal module.
+
+  Similar to process.SubProgramThunk."""
+
+  def __init__(self, ex, node):
+    self.ex = ex
+    self.node = node
+
+  def __call__(self, unused_signalnum, unused_frame):
+    """For Python's signal module."""
+    self.Run()
+
+  def Run(self):
+    """For hooks."""
+    unused_status = self.ex.Execute(self.node)
+
+  def __str__(self):
+    # Used by trap -p
+
+    # TODO: Abbreviate with fmt.PrettyPrint?
+    return str(self.node)
+
+
 def _MakeSignals():
   """Piggy-back on CPython to get a list of portable signals.
 
@@ -1006,10 +1030,17 @@ TRAP_SPEC = _Register('trap')
 TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
 
+# TODO:
+#
+# bash's default -p looks like this:
+# trap -- '' SIGTSTP
+# trap -- '' SIGTTIN
+# trap -- '' SIGTTOU
+#
+# CPython registers different default handlers.  Wait until C++ rewrite to 
 
 def Trap(argv, traps, ex):
   arg, i = TRAP_SPEC.Parse(argv)
-  status = 0
 
   if arg.p:  # Print registered handlers
     for name, value in traps.iteritems():
@@ -1041,30 +1072,50 @@ def Trap(argv, traps, ex):
 
   # NOTE: sig_spec isn't validated when removing handlers.
   if code_str == '-':
-    try:
-      del traps[sig_spec]
-    except KeyError:
-      pass
-    return 0
+    if sig_spec in _HOOK_NAMES:
+      try:
+        del traps[sig_spec]
+      except KeyError:
+        pass
+      return 0
 
-  # Try parsing code first.
+    sig_val = _SIGNAL_NAMES.get(sig_spec)
+    if sig_val is not None:
+      try:
+        del traps[sig_spec]
+      except KeyError:
+        pass
+
+      # Restore default
+      signal.signal(sig_val, signal.SIG_DFL)
+      return 0
+
+    util.error("Can't remove invalid trap %r" % sig_spec)
+    return 1
+
+  # Try parsing the code first.
   node = ex.ParseTrapCode(code_str)
   if node is None:
     return 1  # ParseTrapCode() prints an error for us.
 
-  # Register a hook
+  # Register a hook.
   if sig_spec in _HOOK_NAMES:
-    traps[sig_spec] = node
+    if sig_spec in ('ERR', 'RETURN', 'DEBUG'):
+      util.warn("*** The %r isn't yet implemented in OSH ***", sig_spec)
+    traps[sig_spec] = _TrapThunk(ex, node)
     return 0
 
-  # Register a signal
+  # Register a signal.
   sig_val = _SIGNAL_NAMES.get(sig_spec)
   if sig_val is not None:
-    traps[sig_spec] = node
-    # TODO: call signal.signal()
+    handler = _TrapThunk(ex, node)
+    # For signal handlers, the traps dictionary is used only for debugging.
+    traps[sig_spec] = handler
+
+    signal.signal(sig_val, handler)
     return 0
 
-  util.error('Invalid signal %r' % sig_spec)
+  util.error('Invalid trap %r' % sig_spec)
   return 1
 
   # Example:
