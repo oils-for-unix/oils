@@ -42,13 +42,13 @@ wait
 # stdout-json: ""
 
 ### Pipeline in Background
-echo hi | exit 99 &
+echo hi | { exit 99; } &
 wait $!
 echo status=$?
 # stdout: status=99
 
 ### Wait sets PIPESTATUS
-{ echo hi; exit 55; } | exit 99 &
+{ echo hi; exit 55; } | { exit 99; } &
 echo "pipestatus=${PIPESTATUS[@]}"
 wait $!
 echo status=$?

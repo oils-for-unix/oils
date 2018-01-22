@@ -57,7 +57,7 @@ NONE READ ECHO SHIFT
 CD PUSHD POPD DIRS
 EXPORT UNSET SET SHOPT
 TRAP UMASK
-EXIT SOURCE DOT EVAL EXEC WAIT JOBS
+SOURCE DOT EVAL EXEC WAIT JOBS
 COMPLETE COMPGEN DEBUG_LINE
 TRUE FALSE
 COLON
@@ -77,7 +77,6 @@ _SPECIAL_BUILTINS = {
     ".": EBuiltin.DOT,
     "eval": EBuiltin.EVAL,
     "exec": EBuiltin.EXEC,
-    "exit": EBuiltin.EXIT,
     "export": EBuiltin.EXPORT,
 
     "set": EBuiltin.SET,
@@ -245,21 +244,6 @@ def Echo(argv):
   return 0
 
 
-def Exit(argv):
-  if len(argv) > 1:
-    util.error('exit: too many arguments')
-    return 1
-  try:
-    code = int(argv[0])
-  except IndexError:
-    code = 0
-  except ValueError as e:
-    print("Invalid argument %r" % argv[0], file=sys.stderr)
-    code = 1  # Runtime Error
-  # TODO: Should this be turned into our own SystemExit exception?
-  sys.exit(code)
-
-
 # TODO: remove getopt
 import getopt
 
@@ -296,8 +280,9 @@ def Wait(argv, waiter, job_state, mem):
   try:
     opts, args = getopt.getopt(argv, 'n')
   except getopt.GetoptError as e:
+    # TODO: Should be args.UsageError()
     util.usage(str(e))
-    sys.exit(2)
+    return 2
   for name, val in opts:
     if name == '-n':
       opt_n = True
@@ -994,10 +979,13 @@ class _TrapThunk(object):
 
   def __call__(self, unused_signalnum, unused_frame):
     """For Python's signal module."""
+    # TODO: set -o xtrace/verbose should enable this.
+    #log('*** RUNNING TRAP for %d ***', unused_signalnum)
     self.Run()
 
   def Run(self):
     """For hooks."""
+    #log('*** RUNNING TRAP for hook')
     unused_status = self.ex.Execute(self.node)
 
   def __str__(self):

@@ -99,10 +99,13 @@ exit invalid
 # OK dash/bash status: 2
 
 ### Exit builtin with too many args
+# This is a parse error in OSH.
 exit 7 8 9
-echo "no exit: $?"
-# status: 0
-# stdout-json: "no exit: 1\n"
+echo status=$?
+# status: 2
+# stdout-json: ""
+# BUG bash status: 0
+# BUG bash stdout: status=1
 # BUG dash status: 7
 # BUG dash stdout-json: ""
 # OK mksh status: 1

@@ -406,10 +406,9 @@ def OshMain(argv, login_shell):
 
     if do_exec:
       _tlog('Execute(node)')
-      status = ex.Execute(node, run_exit_trap=True)
-
-      # We only do this in the "happy" case for now.  ex.Execute() can raise
-      # exceptions.
+      status = ex.ExecuteAndRunExitTrap(node)
+      # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
+      # don't because they call sys.exit().
       if opts.runtime_mem_dump:
         # This might be superstition, but we want to let the value stabilize
         # after parsing.  bash -c 'cat /proc/$$/status' gives different results

@@ -395,7 +395,7 @@ def _AddKinds(spec):
 
   # Unlike bash, we parse control flow statically.  They're not
   # dynamically-resolved builtins.
-  spec.AddKind('ControlFlow', ['Break', 'Continue', 'Return'])
+  spec.AddKind('ControlFlow', ['Break', 'Continue', 'Return', 'Exit'])
 
   # For C-escaped strings.
   spec.AddKind('Char', [

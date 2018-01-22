@@ -285,6 +285,7 @@ _MORE_KEYWORDS = [
   C('break',    Id.ControlFlow_Break),
   C('continue', Id.ControlFlow_Continue),
   C('return',   Id.ControlFlow_Return),
+  C('exit',     Id.ControlFlow_Exit),
 ]
 
 

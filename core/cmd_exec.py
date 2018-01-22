@@ -82,14 +82,17 @@ class _ControlFlow(RuntimeError):
   def IsReturn(self):
     return self.token.id == Id.ControlFlow_Return
 
+  def IsExit(self):
+    return self.token.id == Id.ControlFlow_Exit
+
   def IsBreak(self):
     return self.token.id == Id.ControlFlow_Break
 
   def IsContinue(self):
     return self.token.id == Id.ControlFlow_Continue
 
-  def ReturnValue(self):
-    assert self.IsReturn()
+  def StatusCode(self):
+    assert self.IsReturn() or self.IsExit()
     return self.arg
 
   def __repr__(self):
@@ -248,7 +251,7 @@ class Executor(object):
 
     except _ControlFlow as e:
       if e.IsReturn():
-        return e.ReturnValue()
+        return e.StatusCode()
       else:
         raise
     finally:
@@ -300,9 +303,6 @@ class Executor(object):
 
     elif builtin_id == EBuiltin.EXPORT:
       status = builtin.Export(argv, self.mem)
-
-    elif builtin_id == EBuiltin.EXIT:
-      status = builtin.Exit(argv)
 
     elif builtin_id == EBuiltin.WAIT:
       status = builtin.Wait(argv, self.waiter, self.job_state, self.mem)
@@ -856,7 +856,7 @@ class Executor(object):
         assert val.tag == value_e.Str
         arg = int(val.s)  # They all take integers
       else:
-        arg = 0  # return 0, break 0 levels, etc.
+        arg = 0  # return 0, exit 0, break 0 levels, etc.
 
       # NOTE: We don't do anything about a top-level 'return' here.  Unlike in
       # bash, that is OK.  If you can return from a sourced script, it makes
@@ -1187,8 +1187,8 @@ class Executor(object):
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
       # Return at top level is OK, unlike in bash.
-      if e.IsReturn():
-        status = e.ReturnValue()
+      if e.IsReturn() or e.IsExit():
+        status = e.StatusCode()
       else:
         raise
     except util.FatalRuntimeError as e:
@@ -1196,14 +1196,27 @@ class Executor(object):
       print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1
       # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
-    finally:
-      if run_exit_trap:
-        # NOTE: The trap itself can call exit!
-        thunk = self.traps.get('EXIT')
-        if thunk:
-          thunk.Run()
 
     # Other exceptions: SystemExit for sys.exit()
+    return status
+
+  def ExecuteAndRunExitTrap(self, node):
+    """For the top level program, called by bin/oil.py."""
+    status = self.Execute(node)
+    # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
+    # don't because they call sys.exit().
+
+    # NOTE: --runtime-mem-dump runs in a similar place.
+
+    #log('-- EXIT pid %d', os.getpid())
+    #import traceback
+    #traceback.print_stack()
+
+    # NOTE: The trap itself can call exit!
+    thunk = self.traps.get('EXIT')
+    if thunk:
+      thunk.Run()
+
     return status
 
   def RunCommandSub(self, node):
@@ -1367,7 +1380,7 @@ class Executor(object):
       status = self._Execute(func_node.body)
     except _ControlFlow as e:
       if e.IsReturn():
-        status = e.ReturnValue()
+        status = e.StatusCode()
       else:
         # break/continue used in the wrong place
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
