@@ -14,6 +14,27 @@ Other notes:
 
 Idea: This is discouraged/legacy, so write it in Oil rather than C++?
 Problem: Need both classes and algebraic data types.
+
+Do we have different splitters?  Awk splitter might be useful.  Regex
+splitter later.  CSV splitter?  
+LiteralSlice.
+
+Other kinds of splitters:
+
+- RegexSplitter
+- CsvSplitter 
+- TSV2Splitter -- this transforms because of # \u0065 in JSON.  So it's not a
+  pure slice, but neither is IFS splitting because of backslashes.
+- AwkSplitter
+- Perl?
+  - does perl have a spilt context?
+
+with SPLIT_REGEX = / digit+ / {
+  echo $#  
+  echo $len(argv)
+  echo $1 $2
+  echo @argv
+}
 """
 
 from core import runtime
@@ -25,25 +46,6 @@ log = util.log
 
 
 DEFAULT_IFS = ' \t\n'
-
-
-# TODO:
-#
-# Do we have different splitters?  Awk splitter might be useful.  Regex
-# splitter later.  CSV splitter?  TSV?  the TSV one transforms?  Beacuse of
-# \u0065 in JSON.  I guess you can have another kind of slice -- a
-# LiteralSlice.
-#
-#
-# with SPLIT_REGEX = / digit+ / {
-#   echo $#  
-#   echo $len(argv)
-#   echo $1 $2
-#   echo @argv
-# }
-#
-# Yes this is nice.  How does perl do it?
-
 
 def _SpansToParts(s, spans):
   """Helper for SplitForWordEval."""
@@ -379,21 +381,3 @@ class IfsSplitter(_BaseSplitter):
     spans.append((span_type, n))
 
     return spans
-
-
-# self.splitter = SplitContext()
-# SplitManager
-#   Has the cache from IFS -> splitter
-#   Split(s, allow_escape)
-#
-# _DefaultIfsSplitter -- \t\n\n
-# _WhitespaceIfsSplitter
-# _OtherIfsSplitter
-# _MixedIfsSplitter -- ifs and other
-#   Split(s, allow_escape)
-#
-# RegexSplitter
-# CsvSplitter (TSV2Splitter maybe)
-# AwkSplitter
-#
-# Any other kind of tokenizing?  This is based on lines.  So TSV2 does fit in.

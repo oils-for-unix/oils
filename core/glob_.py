@@ -63,19 +63,9 @@ def GlobEscape(s):
 # We need to handle glob patterns, but fnmatch doesn't give you the positions
 # of matches.  So we convert globs to regexps.
 
-# There are two regex engines we can use.  Each has advantages and
-# disadvantages:
-
-# Python regex:
-# - Supports Greedy vs. Non-greedy (necessary for strip ops, but not patsub)
-# - Doesn't rely on global variables for unicode.  I think libc string
-#   functions use LOCALE?
-
-# ERE:
-# - Linear time algorithm
-# - Save code space
-# - Supports the same character classes as glob.
-
+# TODO: Use this for ${s//pat*/__}
+# NOTE: Is [!abc] negation rather than [^abc] ?
+# What about unicode?  Do we have to set any global variables.
 
 def GlobToExtendedRegex(g):
   """Convert a glob to a libc extended regexp.
@@ -84,8 +74,6 @@ def GlobToExtendedRegex(g):
     A ERE string, or None if it's the pattern is a constant string rather than
     a glob.
   """
-  # Could be used for ${s//pat*/__}, but NOT # ## % %%.
-  # We'll use Python everywhere for simplicity.
   raise NotImplementedError
 
 

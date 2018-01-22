@@ -51,6 +51,21 @@ FOO=bar
 echo "foo${#FOO}"
 # stdout: foo3
 
+### Storing backslashes and then echoing them
+# This is a bug fix; it used to cause problems with unescaping.
+one='\'
+two='\\'
+echo $one $two
+echo "$one" "$two"
+## STDOUT:
+\ \\
+\ \\
+## END
+## BUG dash/mksh STDOUT:
+\ \
+\ \
+# END
+
 ### Backslash escapes
 echo \$ \| \a \b \c \d \\
 # stdout: $ | a b c d \

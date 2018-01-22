@@ -26,6 +26,21 @@ log = util.log
 e_die = util.e_die
 
 
+def _BackslashEscape(s):
+  """Double up backslashes.
+
+  Useful for strings about to be globbed and strings about to be IFS escaped.
+  """
+  return s.replace('\\', '\\\\')
+  # Similar to GlobEscape and splitter.Escape().
+  escaped = ''
+  for c in s:
+    if c == '\\':
+      escaped += '\\'
+    escaped += c
+  return escaped
+
+
 def _ValueToPartValue(val, quoted):
   """Helper for VarSub evaluation.
 
@@ -772,6 +787,8 @@ class _WordEvaluator:
     all_split_glob = True
     any_split_glob = False
 
+    #log('--- frame %s', frame)
+
     for s, do_split_glob in frame:
       #log('-- %r %r', s, do_split_glob)
       if s:
@@ -798,12 +815,27 @@ class _WordEvaluator:
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []
     for frag, do_split_glob in frame:
-      #log('do_split_glob %s', do_split_glob)
-      if will_glob and not do_split_glob:
-        frag = glob_.GlobEscape(frag)
-        #log('GLOB ESCAPED %r', p2)
+      #log('frag %s do_split_glob %s', frag, do_split_glob)
 
-      if not do_split_glob:
+      # If it was quoted, then
+
+      if do_split_glob:
+        # We're going to both split and glob.  So we want to backslash
+        # escape twice?
+
+        # Suppose we get a literal \.
+        # \ -> \\
+        # \\ -> \\\\
+        # Splitting takes \\\\ -> \\
+        # Globbing takes \\ to \ if it doesn't match
+        if will_glob:
+          frag = _BackslashEscape(frag)
+        frag = _BackslashEscape(frag)
+      else:
+        if will_glob:
+          frag = glob_.GlobEscape(frag)
+          #log('GLOB ESCAPED %r', p2)
+
         frag = self.splitter.Escape(frag)
         #log('IFS ESCAPED %r', p2)
 
@@ -821,10 +853,9 @@ class _WordEvaluator:
       return
 
     #log('split args: %r', args)
-    #out = []
     for a in args:
+      # TODO: Expand() should take out parameter.
       results = self.globber.Expand(a)
-      #out.extend(results)
       argv.extend(results)
 
   def _EvalWordSequence(self, words):
