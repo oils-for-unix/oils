@@ -89,7 +89,9 @@ echo status=$?
 # OK dash stdout: status=127
 
 ### Exit builtin
-exit 3
+f() { exit 3; }
+f
+exit 4
 # status: 3
 
 ### Exit builtin with invalid arg 

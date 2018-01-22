@@ -246,7 +246,7 @@ measure() {
   # An empty pattern matches every line.
   time egrep "$pattern" $tasks |
     xargs -n $NUM_COLUMNS -- $0 runtime-task $raw_dir ||
-    die "Some tasks failed."
+    die "*** Some tasks failed. ***"
 
   cp -v $provenance $raw_dir
 }

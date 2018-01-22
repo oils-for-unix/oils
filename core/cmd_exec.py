@@ -1381,8 +1381,10 @@ class Executor(object):
     except _ControlFlow as e:
       if e.IsReturn():
         status = e.StatusCode()
+      elif e.IsExit():
+        raise
       else:
-        # break/continue used in the wrong place
+        # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
     finally:
       self.mem.PopCall()
