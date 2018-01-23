@@ -308,7 +308,7 @@ class ClassDefVisitor(AsdlVisitor):
         body_line1 = ARRAY_OFFSET
         inline_body = 'return Ref(base, %(offset)d).Int(a);'
 
-      elif ctype.endswith('_e'):
+      elif ctype.endswith('_e') or ctype in self.enum_types:
         func_header = A_POINTER + ' {'
         body_line1 = ARRAY_OFFSET
         inline_body = (
@@ -406,7 +406,15 @@ def main(argv):
     schema_path = argv[2]
     with open(schema_path) as input_f:
       module = asdl.parse(input_f)
-    type_lookup = asdl.ResolveTypes(module)
+
+    # TODO: gen_cpp.py should be a library and the application should add Id?
+    # Or we should enable ASDL metaprogramming, and let Id be a metaprogrammed
+    # simple sum type.
+
+    from core.id_kind import Id
+    app_types = {'id': asdl.UserType(Id)}
+
+    type_lookup = asdl.ResolveTypes(module, app_types)
 
     f = sys.stdout
 

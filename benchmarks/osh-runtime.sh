@@ -133,6 +133,9 @@ runtime-task() {
     cpython)
       # NOTE: $task_arg unused.
 
+      # This configure script defeats --runtime-mem-dump, I think because of:
+      # exec $CONFIG_SHELL $as_opts "$as_myself" ${1+"$@"}
+
       # autoconf supports running configure from a different directory.
       pushd $files_out_dir >/dev/null
 

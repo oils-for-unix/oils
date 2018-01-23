@@ -85,6 +85,19 @@ void PrintCommand(const uint32_t* base, const command_t& e, int indent) {
     printf("\n");
     break;
   }
+  case command_e::AndOr: {
+    auto& e2 = static_cast<const AndOr&>(e);
+    printf("Ops: ");
+    for (int i = 0; i < e2.ops_size(base); ++i) {
+      printf("%hhu ", e2.ops(base, i));
+    }
+    printf("\n");
+    for (int i = 0; i < e2.children_size(base); ++i) {
+      PrintCommand(base, e2.children(base, i), indent+1);
+    }
+    printf("\n");
+    break;
+  }
   case command_e::CommandList: {
     auto& e2 = static_cast<const CommandList&>(e);
     printf("CommandList %d\n", e2.children_size(base));

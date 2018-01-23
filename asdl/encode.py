@@ -160,6 +160,11 @@ def EncodeArray(obj_list, item_desc, enc, out):
     for item in obj_list:
       enc.Int(item, array_chunk)
 
+  elif isinstance(item_desc, asdl.UserType):
+    # Assume Id for now
+    for item in obj_list:
+      enc.Int(item.enum_value, array_chunk)
+
   elif isinstance(item_desc, asdl.StrType):
     for item in obj_list:
       ref = out.Write(enc.PaddedStr(item))
@@ -172,8 +177,8 @@ def EncodeArray(obj_list, item_desc, enc, out):
   else:
     # A simple value is either an int, enum, or pointer.  (Later: Iter<Str>
     # might be possible for locality.)
-    assert isinstance(item_desc, asdl.Sum) or isinstance(
-        item_desc, asdl.Product), item_desc
+    assert isinstance(item_desc, asdl.Sum) or \
+        isinstance(item_desc, asdl.Product), item_desc
 
     # This is like vector<T*>
     # Later:
