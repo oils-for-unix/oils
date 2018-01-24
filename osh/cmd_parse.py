@@ -618,7 +618,9 @@ class CommandParser(object):
       elif len(suffix_words) == 2:
         arg_word = suffix_words[1]
       else:
-        self.AddErrorContext('Too many arguments')
+        # Underline the extra word.
+        self.AddErrorContext(
+            'Unexpected argument to %r', kw_token.val, word=suffix_words[2])
         return None
 
       return ast.ControlFlow(kw_token, arg_word)
