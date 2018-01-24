@@ -244,8 +244,9 @@ def Echo(argv):
   return 0
 
 
-# TODO: remove getopt
-import getopt
+WAIT_SPEC = _Register('wait')
+WAIT_SPEC.ShortFlag('-n')
+
 
 def Wait(argv, waiter, job_state, mem):
   """
@@ -271,25 +272,10 @@ def Wait(argv, waiter, job_state, mem):
 
   This is different than a PID?  But it does have a PID.
   """
-  # NOTE: echo can't use getopt because of 'echo ---'
-  # But that's a special case; the rest of the builtins can use it.
-  # We must respect -- everywhere, EXCEPT echo.  'wait -- -n' should work must work.
+  arg, i = WAIT_SPEC.Parse(argv)
+  pids = argv[i:]
 
-  opt_n = False
-
-  try:
-    opts, args = getopt.getopt(argv, 'n')
-  except getopt.GetoptError as e:
-    # TODO: Should be args.UsageError()
-    util.usage(str(e))
-    return 2
-  for name, val in opts:
-    if name == '-n':
-      opt_n = True
-    else:
-      raise AssertionError
-
-  if opt_n:
+  if arg.n:
     # wait -n returns the exit status of the process.  But how do you know
     # WHICH process?  That doesn't seem useful.
     log('wait next')
@@ -298,7 +284,7 @@ def Wait(argv, waiter, job_state, mem):
     else:
       return 127  # nothing to wait for
 
-  if not args:
+  if not pids:
     log('wait all')
     # TODO: get all background jobs from JobState?
     i = 0
@@ -317,12 +303,12 @@ def Wait(argv, waiter, job_state, mem):
   # code of last one to FINSIH.
 
   status = 1  # error
-  for a in args:
+  for pid in pids:
     # NOTE: osh doesn't accept 'wait %1' yet
     try:
-      jid = int(a)
+      jid = int(pid)
     except ValueError:
-      util.error('Invalid argument %r', a)
+      util.error('Invalid argument %r', pid)
       return 127
 
     job = job_state.jobs.get(jid)
