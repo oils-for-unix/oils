@@ -137,6 +137,7 @@ class Executor(object):
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
     self.traps = {}  # signal/hook name -> callable
+    self.nodes_to_run = []  # list of nodes, appended to by signal handlers
     self.dir_stack = state.DirStack()
 
     # TODO: Pass these in from main()
@@ -323,7 +324,7 @@ class Executor(object):
       status = self._Source(argv)
 
     elif builtin_id == EBuiltin.TRAP:
-      status = builtin.Trap(argv, self.traps, self)
+      status = builtin.Trap(argv, self.traps, self.nodes_to_run, self)
 
     elif builtin_id == EBuiltin.UMASK:
       status = builtin.Umask(argv)
@@ -1100,17 +1101,27 @@ class Executor(object):
     return status, check_errexit
 
   def _Execute(self, node, fork_external=True):
-    """Does redirects, calls _Dispatch(), and does errexit check.
+    """Apply redirects, call _Dispatch(), and performs the errexit check.
 
     Args:
-      node: of type AstNode
+      node: ast.command
       fork_external: if we get a SimpleCommand that is an external command,
         should we fork first?  This is disabled in the context of a pipeline
         process and a subshell.
     """
-    # No redirects to evaluate.
-    # NOTE: Function definitions have redirects, but we do NOT want to evaluate
-    # redirects them yet!  They are evaluated on every invocation instead!
+    # See core/builtin.py for the Python signal handler that appends to this
+    # list.
+
+    if self.nodes_to_run:
+      # Make a copy and clear it so we don't cause an infinite loop.
+      to_run = list(self.nodes_to_run)
+      del self.nodes_to_run[:]
+      for node in to_run:
+        self._Execute(node)
+
+    # These nodes have no redirects.  NOTE: Function definitions have
+    # redirects, but we do NOT want to evaluate them yet!  They're evaluated
+    # on every invocation.
     if node.tag in (
         command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
         command_e.Pipeline, command_e.AndOr, command_e.CommandList,
@@ -1212,10 +1223,10 @@ class Executor(object):
     #import traceback
     #traceback.print_stack()
 
-    # NOTE: The trap itself can call exit!
-    thunk = self.traps.get('EXIT')
-    if thunk:
-      thunk.Run()
+    # NOTE: The trap handler itself can call exit!
+    handler = self.traps.get('EXIT')
+    if handler:
+      self.Execute(handler.node)
 
     return status
 

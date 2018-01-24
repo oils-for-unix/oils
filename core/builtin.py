@@ -142,7 +142,7 @@ class BuiltinDef(object):
     names.update(_NORMAL_BUILTINS.keys())
     names.update(_SPECIAL_BUILTINS.keys())
     # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
-    # all do this.  Also do/done
+    # all do this.  See osh/lex/{_KEYWORDS, _MORE_KEYWORDS}.
 
     self.arg_specs = {}
     self.to_complete = sorted(names)
@@ -937,7 +937,7 @@ def DeclareTypeset(argv, mem, funcs):
       for name in names:
         if name in funcs:
           print(name)
-          # TODO: Could print LST, or render LST.  Bash does this.
+          # TODO: Could print LST, or render LST.  Bash does this.  'trap' too.
           #print(funcs[name])
         else:
           status = 1
@@ -968,29 +968,23 @@ def DeclareTypeset(argv, mem, funcs):
 import signal
 
 
-class _TrapThunk(object):
+class _TrapHandler(object):
   """A function that is called by Python's signal module.
 
   Similar to process.SubProgramThunk."""
 
-  def __init__(self, ex, node):
-    self.ex = ex
+  def __init__(self, node, nodes_to_run):
     self.node = node
+    self.nodes_to_run = nodes_to_run
 
   def __call__(self, unused_signalnum, unused_frame):
     """For Python's signal module."""
     # TODO: set -o xtrace/verbose should enable this.
-    #log('*** RUNNING TRAP for %d ***', unused_signalnum)
-    self.Run()
-
-  def Run(self):
-    """For hooks."""
-    #log('*** RUNNING TRAP for hook')
-    unused_status = self.ex.Execute(self.node)
+    #log('*** SETTING TRAP for %d ***', unused_signalnum)
+    self.nodes_to_run.append(self.node)
 
   def __str__(self):
     # Used by trap -p
-
     # TODO: Abbreviate with fmt.PrettyPrint?
     return str(self.node)
 
@@ -1033,9 +1027,10 @@ TRAP_SPEC.ShortFlag('-l')
 # trap -- '' SIGTTIN
 # trap -- '' SIGTTOU
 #
-# CPython registers different default handlers.  Wait until C++ rewrite to
+# CPython registers different default handlers.  The C++ rewrite should make
+# OVM match sh/bash more closely.
 
-def Trap(argv, traps, ex):
+def Trap(argv, traps, nodes_to_run, ex):
   arg, i = TRAP_SPEC.Parse(argv)
 
   if arg.p:  # Print registered handlers
@@ -1098,13 +1093,13 @@ def Trap(argv, traps, ex):
   if sig_spec in _HOOK_NAMES:
     if sig_spec in ('ERR', 'RETURN', 'DEBUG'):
       util.warn("*** The %r isn't yet implemented in OSH ***", sig_spec)
-    traps[sig_spec] = _TrapThunk(ex, node)
+    traps[sig_spec] = _TrapHandler(node, nodes_to_run)
     return 0
 
   # Register a signal.
   sig_val = _GetSignalValue(sig_spec)
   if sig_val is not None:
-    handler = _TrapThunk(ex, node)
+    handler = _TrapHandler(node, nodes_to_run)
     # For signal handlers, the traps dictionary is used only for debugging.
     traps[sig_spec] = handler
 

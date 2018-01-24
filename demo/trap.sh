@@ -56,4 +56,57 @@ start-and-kill() {
   echo status=$?
 }
 
+num_signals=0
+
+ignore-n-times() {
+  (( num_signals++ ))
+
+  if [[ $num_signals -le 2 ]]; then
+    echo "Received signal $num_signals -- IGNORING"
+  else
+    echo "Removing this signal handler; next one will be the default"
+    trap - TERM
+  fi
+}
+
+# In bash: Run this and hit Ctrl-C four times to see the handler in action!
+#
+# NOTE: Ctrl-C doesn't work in Python because Python does stuff with SIGINT!
+# We could disable KeyboardInterrupt entirely in the OVM build?  But still need
+# the signal module!
+
+sleep-and-ignore() {
+  trap ignore-n-times TERM
+  for i in $(seq 10); do
+    echo $i
+    sleep 0.2
+  done
+}
+
+# NOTE: osh has EINTR problems here!
+#
+# File "/home/andy/git/oilshell/oil/bin/../core/process.py", line 440, in WaitUntilDone
+# if not waiter.Wait():
+# File "/home/andy/git/oilshell/oil/bin/../core/process.py", line 632, in Wait
+#   pid, status = os.wait()
+# OSError: [Errno 4] Interrupted system call
+
+kill-sleep-and-ignore() {
+  sleep-and-ignore &
+  local last_pid=$!
+
+  echo "Started $last_pid"
+
+  # Hm sometimes the signal gets ignored?  You can't just kill it 3 times?
+  for i in $(seq 5); do
+    kill -s SIGTERM $last_pid
+    echo kill status=$?
+    sleep 0.1
+  done
+
+  wait
+  echo wait status=$?
+}
+
 "$@"
+
