@@ -10,17 +10,17 @@ INTRO
   [Usage]         osh-usage   oil-usage   config   startup   line-editing
                   prompt
   [Lexing]        comments #   line-continuation \
-  [Oil Lexing]    single-line $   docstring?
+  [Oil Lexing]    single-command %   docstring?
 
 COMMAND LANGUAGE
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
   [Iteration]     while   until   for   for-expr-sh ((
-  [Control Flow]  break   continue   return
+  [Control Flow]  break   continue   return   exit
   [Grouping]      function   block {   subshell (
   [Concurrency]   pipe   |   X |&
-                  ampersand &   X proc-sub
+                  ampersand &
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
@@ -59,11 +59,11 @@ WORD LANGUAGE
                   var-sub       ${var}
                   arith-sub     $((1 + 2))  $[1 + 2]
                   tilde-sub     ~/src
-                  X proc-sub    diff <(sort L.txt) <(sort R.txt)
-  [Special Vars]  special-vars  $?  $#  $PPID  $IFS  ...
+                  proc-sub      diff <(sort L.txt) <(sort R.txt)
+  [Special Vars]  special-vars  $@  $*  $#     $?  $-     $$  $!
   [Var Ops]       op-test       ${x:-default}  
                   op-unary      ${x%%suffix}  etc.
-                  op-str        ${x/y/z}
+                  op-str        ${x//y/z}
                   op-slice      ${a[@]:0:1}
 X [Oil Quotes]    c-string      c'1\t2\n'    c"1\t$two\n"
                   safe-subst    h"<p>$[name]</p>"
@@ -75,7 +75,13 @@ OTHER SHELL SUBLANGUAGES
                   arith-logical !a && b
                   bitwise       ~a ^ b
                   arith-assign  a *= 2
-  [Boolean]       dbracket      [[ $a == $b ]]
+  [Boolean]       dbracket      [[ vs. the test builtin
+                  bool-expr       [[ ! $x && $y || $z ]]
+                                test ! $x -a $y -o $z
+                  bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
+                  bool-path     [[ -d /etc ]]
+                  bool-str      [[ -z '' ]]
+                  bool-other    [[ -o errexit ]]
   [Patterns]      glob          *.py
                   X extglob     @(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
@@ -84,12 +90,12 @@ OTHER SHELL SUBLANGUAGES
 BUILTIN COMMANDS
   [I/O]           read   echo 
                   X readarray   X mapfile
-  [Run Code]      source .   eval
+  [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs
   [Completion]    complete   X compgen   X compopt
-  [Shell Process] exec   exit   X logout 
-                  umask   X ulimit   X trap   X times
+  [Shell Process] exec   X logout 
+                  umask   X ulimit   X times
   [Child Process] jobs   wait   ampersand &
                   X fg   X bg   X disown 
   [External]      test [   X printf   getopts   X kill
@@ -99,7 +105,7 @@ X [Interactive]   alias   unalias   bind   history   fc
 X [Unsupported]   enable
 
 OIL BUILTINS
-  [I/O]           write   readline
+  [I/O]           write   readline   sh-builtin
   [External]      dirname   basename   env ?
 
 SHELL OPTIONS
@@ -108,20 +114,23 @@ SHELL OPTIONS
   [Debugging]     xtrace   X verbose   X extdebug
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    STRICT   strict-control-flow   X strict-arith
+  [OSH Strict]    STRICT   strict-array   strict-control-flow   
+                  strict-errexit   X strict-arith
   [OSH Sane]      SANE   X sane-no-word-split   X sane-glob
+                  X sane-echo   X sane-read   X sane-eval   X sane-trap
 
 ENVIRONMENT VARIABLES
 X [Prompts]       PS1   PS2
 X [select]        PS3
   [xtrace]        PS4
-  [Shell Options] X SHELLOPTS   X BASHOPTS
+  [Shell Options] SHELLOPTS   X BASHOPTS
   [Other]         HOME   PATH   IFS
 
 SPECIAL VARIABLES
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
 X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
-                  @BASH_ARGV   @BASH_ARGC   LINENO
+                  @BASH_ARGV   @BASH_ARGC
+  [Tracing]       LINENO   SOURCE_NAME
   [Process State] X BASHPID   X PPID   UID   EUID   
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
@@ -130,7 +139,6 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [read]          REPLY   IFS
   [Functions]     X RANDOM   X SECONDS
   [Other]         BASH_REMATCH   @PIPESTATUS
-  [Oil]           SOURCE_NAME
 
 PLUGINS AND HOOKS
 X [Signals]       SIGINT   SIGABRT   SIGTODO
@@ -152,5 +160,5 @@ OIL LIBRARIES
 X [getopts]       ?
 X [Testing]       ?
 X [Data Formats]  json   csv   tsv2
-
+X [Hash Functions]
 

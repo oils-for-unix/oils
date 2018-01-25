@@ -96,6 +96,49 @@ first argument, e.g.:
 
 ### <prompt> Customizing the Prompt String
 
+#### <Lexing> Lexing
+
+#### <Oil Lexing> Oil Lexing
+
+### <single-command> The % Prefix Starts a Single Command Over Multiple Lines
+
+This special lexer mode has several use cases:
+
+Long command lines without trailing \
+
+    % chromium-browser
+      --no-proxy-server
+      # comments allowed
+      --incognito
+
+Long pipelines or and-or chains without trailing \ 
+
+    % find .
+    # exclude tests
+    | grep -v '_test.py'
+    | xargs wc -l
+    | sort -n
+
+    %  ls /
+    && ls /bin
+    && ls /lib
+    || error "oops"
+
+Using {} for brace expansion, rather than the start of a block:
+
+    % echo {alice,bob}@example.com
+    %
+    echo next   # blank line or bare % required to end the command
+
+NOTE: This should be valid without % :
+
+    ls *.[ch]
+
+Using Oil syntax at an OSH shell prompt:
+
+    $   echo hi >&2    # POSIX sh syntax
+    $ % echo hi > !2   # Oil syntax
+
 ##### <COMMAND-LANGUAGE> Command Language
 
 The command language is specified by the POSIX shell grammar.
