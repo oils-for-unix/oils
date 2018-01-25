@@ -286,6 +286,11 @@ git-changelog-0.3.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.4.alpha1() {
+  _git-changelog release/0.3.0 release/0.4.alpha1 \
+    > _release/VERSION/changelog.html
+}
+
 
 # For announcement.html
 html-redirect() {
@@ -334,6 +339,10 @@ announcement-0.2() {
 announcement-0.3() {
   html-redirect '/blog/2017/12/22.html' > _release/VERSION/announcement.html
   #no-announcement > _release/VERSION/announcement.html
+}
+
+announcement-0.4() {
+  no-announcement > _release/VERSION/announcement.html
 }
 
 _link() {
