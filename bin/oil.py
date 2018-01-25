@@ -345,6 +345,7 @@ def OshMain(argv, login_shell):
       # TODO: Remove this older form of error handling.
       if not node:
         err = c_parser.Error()
+        assert err, err  # can't be empty
         ui.PrintErrorStack(err, arena, sys.stderr)
         return 2  # parse error is code 2
 

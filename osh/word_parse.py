@@ -1154,16 +1154,20 @@ class WordParser(object):
       if self.token_type == Id.Lit_Pound:
         self._Next(lex_mode_e.COMMENT)
         self._Peek()
-        assert self.token_type == Id.Ignored_Comment, self.cur_token
-        # The next iteration will go into Kind.Ignored and set lex state
-        # to lex_mode_e.OUTER/etc.
+
+        # NOTE: The # could be the last character in the file.  It can't be
+        # Eof_{RParen,Backtick} because #) and #` are comments.
+        assert self.token_type in (Id.Ignored_Comment, Id.Eof_Real), self.cur_token
+
+        # The next iteration will go into Kind.Ignored and set lex state to
+        # lex_mode_e.OUTER/etc.
         return None, True  # tell Read() to try again after comment
 
       else:
         w = self._ReadCompoundWord(lex_mode=lex_mode)
         if not w:
-          self.AddErrorContext('Error reading command word',
-              token=self.cur_token)
+          self.AddErrorContext(
+              'Error reading command word', token=self.cur_token)
           return None, False
         return w, False
 
@@ -1206,7 +1210,7 @@ class WordParser(object):
       if not need_more:
         break
 
-    if not w:
+    if not w:  # Assumes AddErrorContext was already called
       return None
 
     self.cursor = w
