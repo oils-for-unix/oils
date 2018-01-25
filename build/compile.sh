@@ -102,9 +102,9 @@ Modules/main.c
 Modules/gcmodule.c
 '
 
-# The stuff in Modules/Setup.dist, plus zlibmodule.c and signalmodule.c.
-# NOTE: In Pyhon, signalmodule.c is specified in Modules/Setup.config, which
-# comes from 'configure' output.
+# The stuff in Modules/Setup.dist, signalmodule.c.  NOTE: In Python,
+# signalmodule.c is specified in Modules/Setup.config, which comes from
+# 'configure' output.
 MODOBJS='
 Modules/posixmodule.c
 Modules/errnomodule.c  
@@ -228,9 +228,9 @@ build() {
   # NOTE:
   # -l readline -l termcap -- for Python readline.  Hm it builds without -l
   # termcap.
-  # -l z , for zlibmodule.c, for zipimport
-  # I think zlib is a statically linked dependency only, but it's still better
-  # not to have it.
+  # -l z WOULD be needed for zlibmodule.c, but we don't need it because our zip
+  # file has no compression -- see build/make_zip.py with ZIP_STORED.
+  # zipimport works fine without this.
 }
 
 # build the optimized one.  Makefile uses -O3.
