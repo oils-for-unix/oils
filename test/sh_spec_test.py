@@ -3,13 +3,13 @@
 sh_spec_test.py: Tests for sh_spec.py
 """
 
-import io
+import cStringIO
 import pprint
 import unittest
 
 from sh_spec import *  # module under test
 
-TEST1 = io.BytesIO("""\
+TEST1 = cStringIO.StringIO("""\
 ### Env binding in readonly/declare disallowed
 FOO=foo readonly v=$(tests/printenv.py FOO)
 echo "v=$v"
@@ -24,7 +24,7 @@ TOKENS1 = list(LineIter(TEST1))
 CASE1 = ParseTestCase(Tokenizer(iter(TOKENS1)))
 
 
-TEST2 = io.BytesIO("""\
+TEST2 = cStringIO.StringIO("""\
 ### Multiline test case
 echo one
 echo two

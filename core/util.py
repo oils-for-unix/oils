@@ -13,7 +13,7 @@ In some cases, we're using C++ idioms in Python, so the code translates more
 easily to C++.
 """
 
-import io
+import cStringIO
 import os
 import pwd
 import sys
@@ -25,7 +25,7 @@ if not os.getenv('_OVM_DEPS'):
 
 from asdl import const
 
-Buffer = io.BytesIO  # used by asdl/format.py
+Buffer = cStringIO.StringIO  # used by asdl/format.py
 
 
 class _ErrorWithLocation(Exception):

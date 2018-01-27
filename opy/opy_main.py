@@ -5,7 +5,6 @@ opy_main.py
 from __future__ import print_function
 
 import cStringIO
-import io
 import optparse
 import os
 import sys
@@ -86,8 +85,6 @@ class Pgen2PythonParser:
     self.start_symbol = start_symbol
 
   def suite(self, text):
-    # Python 3
-    #f = io.StringIO(text)
     f = cStringIO.StringIO(text)
     tokens = tokenize.generate_tokens(f.readline)
     tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)

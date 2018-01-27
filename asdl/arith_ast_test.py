@@ -3,7 +3,7 @@
 arith_ast_test.py: Tests for arith_ast.py
 """
 
-import io
+import cStringIO
 import unittest
 
 from asdl import format as fmt
@@ -79,7 +79,7 @@ class ArithAstTest(unittest.TestCase):
     print(obj)
 
     enc = encode.Params()
-    f = io.BytesIO()
+    f = cStringIO.StringIO()
     out = encode.BinOutput(f)
     encode.EncodeRoot(obj, enc, out)
     e = f.getvalue()

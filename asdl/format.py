@@ -15,7 +15,6 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
-import io
 import re
 import sys
 
