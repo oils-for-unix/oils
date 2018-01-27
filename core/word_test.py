@@ -5,7 +5,7 @@ word_test.py: Tests for word.py
 
 import unittest
 
-import word  # module under test
+from core import word  # module under test
 
 
 class WordTest(unittest.TestCase):

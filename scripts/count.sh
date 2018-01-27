@@ -180,8 +180,16 @@ instructions() {
   objdump -d $bin | cut -f3 | grep -oE "^[a-z]+" | sort | uniq -c | sort -n
 }
 
+hist() {
+  sort | uniq -c | sort -n
+}
+
+stdlib-imports() {
+  oil-osh-files | xargs grep --no-filename '^import' | hist
+}
+
 imports() {
-  grep --no-filename import */*.py | sort | uniq -c | sort -n
+  oil-osh-files | xargs grep --no-filename -w import | hist
 }
 
 # For the compiler, see what's at the top level.

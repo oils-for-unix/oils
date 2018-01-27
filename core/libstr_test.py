@@ -5,7 +5,7 @@ libstr_test.py: Tests for libstr.py
 
 import unittest
 
-import libstr  # module under test
+from core import libstr  # module under test
 
 
 class LibStrTest(unittest.TestCase):

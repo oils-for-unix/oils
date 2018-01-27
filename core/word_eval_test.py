@@ -11,7 +11,7 @@ word_eval_test.py: Tests for word_eval.py
 
 import unittest
 
-import word_eval  # module under test
+from core import word_eval  # module under test
 
 
 class WordEvalTest(unittest.TestCase):

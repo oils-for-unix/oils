@@ -5,7 +5,7 @@ alloc_test.py: Tests for alloc.py
 
 import unittest
 
-import alloc  # module under test
+from core import alloc  # module under test
 
 
 class AllocTest(unittest.TestCase):
