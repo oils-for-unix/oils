@@ -1,7 +1,9 @@
 Oil
 ===
 
-Oil is a new Unix shell, still in its early stages.
+Oil is a new Unix shell.  [Why Create a New Unix Shell?][why]
+
+[why]: http://www.oilshell.org/blog/2018/01/28.html
 
 This repo contains a bash-compatible shell called OSH, written in Python.
 
