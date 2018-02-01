@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 libstr.py - String library functions that can be exposed with a saner syntax.
 

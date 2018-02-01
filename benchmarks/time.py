@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 time.py -- Replacement for coreutils 'time'.
 
