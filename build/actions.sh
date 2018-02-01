@@ -177,9 +177,9 @@ clean-pyc() {
 # NOTE: Not deleting cpython-full.  Maybe we should, or we should put it in a
 # diffent directory?
 clean() {
-	rm -r -f _build _release
-	rm -f _bin/oil.* _bin/hello.*
-	clean-pyc
+  rm -r -f _build _release
+  rm -f _bin/oil.* _bin/hello.*
+  clean-pyc
 }
 
 "$@"

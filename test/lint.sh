@@ -53,21 +53,36 @@ format-demo() {
 
 # yapf: was useful, but might cause big diffs
 
+# After 'pip install pep8' on Ubunu, it's in ~/.local.
+bin-pep8() {
+  ~/.local/bin/pep8 "$@"
+}
+
 # disable:
 # E226: missing whitespace around arithmetic -- I want to do i+1
 # E302: expected two blank lines, found 1 (sometimes one is useful).
+# E265: Although I agree with this style, some comments don't start with '# '
+# E111,E114: we use 2 space indents, not 4
 oil-pep8() {
-  local temp=E501  # line too long
-  pep8 --ignore E125,E701,E241,E121,E111,E128,E262,E226,E302,$temp "$@"
+  # These could be enabled.
+  local temp=W291,E501,E303  # trailing whitespace, line too long, blank lines
+  bin-pep8 --ignore E125,E701,E241,E121,E111,E114,E128,E262,E226,E302,E265,$temp "$@"
 }
 
 pep8-all() {
-  oil-pep8 {asdl,bin,core,osh,oil,opy}/*.py "$@"
+  oil-pep8 {asdl,bin,core,osh}/*.py "$@"
 }
 
 # Language independent
 find-tabs() {
-  find . '(' -name _tmp -o -name $PY27 ')' -a -prune -o \
+  # benchmarks/testdata should be excluded
+  find . '(' -name _tmp \
+          -o -name _chroot \
+          -o -name _deps \
+          -o -name testdata \
+          -o -name $PY27 \
+         ')' \
+         -a -prune -o \
          '(' -name '*.py' -o -name '*.sh' ')' -a -print |
     xargs grep -n $'\t'
 }
