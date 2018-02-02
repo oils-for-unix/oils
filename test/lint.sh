@@ -87,4 +87,30 @@ find-tabs() {
     xargs grep -n $'\t'
 }
 
+bin-flake8() {
+  local ubuntu_flake8=~/.local/bin/flake8 
+  if test -f "$ubuntu_flake8"; then
+    $ubuntu_flake8 "$@"
+  else
+    # Assume it's in $PATH, like on Travis.
+    flake8 "$@"
+  fi
+}
+
+flake8-all() {
+  local -a dirs=(asdl bin core osh)
+  # stop the build if there are Python syntax errors or undefined names
+  bin-flake8 "${dirs[@]}" \
+    --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+
+  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+  bin-flake8 "${dirs[@]}" \
+    --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+}
+
+# Hook for travis
+travis() {
+  flake8-all
+}
+
 "$@"

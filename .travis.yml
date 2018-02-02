@@ -2,23 +2,11 @@ language: python
 cache: pip
 python:
     - 2.7
-    - 3.6
-    #- nightly
-    #- pypy
-    #- pypy3
-matrix:
-    allow_failures:
-        - python: 3.6
 install:
     #- pip install -r requirements.txt
     - pip install flake8  # pytest  # add another testing frameworks later
-before_script:
-    # stop the build if there are Python syntax errors or undefined names
-    - flake8 . --count --exclude=./Python-2.7.13 --select=E901,E999,F821,F822,F823 --show-source --statistics
-    # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
-    - flake8 . --count --exclude=./Python-2.7.13 --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 script:
-    - test/lint.sh
+    - test/lint.sh travis
 notifications:
     on_success: change
     on_failure: change  # `always` will be the setting once code changes slow down
