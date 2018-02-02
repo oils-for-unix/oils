@@ -2,8 +2,6 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-import sys
-
 from core import lexer
 from core import reader
 from core import id_kind

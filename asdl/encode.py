@@ -2,8 +2,6 @@
 encode.py
 """
 
-import sys
-
 from asdl import asdl_ as asdl
 from asdl import py_meta
 from asdl import const

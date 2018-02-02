@@ -51,7 +51,6 @@ _tlog('before imports')
 
 import errno
 import platform
-import re
 #import traceback  # for debugging
 
 # Set in Modules/main.c.

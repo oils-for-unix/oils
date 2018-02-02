@@ -429,9 +429,7 @@ class WordParser(object):
     self._Next(lex_mode_e.VS_1)
     self._Peek()
 
-    debug_token = self.cur_token
     ty = self.token_type
-    #print("T", debug_token)
 
     if ty == Id.VSub_Pound:
       # Disambiguate

@@ -7,7 +7,7 @@ arith_parse.py: Parse shell-like and C-like arithmetic.
 import sys
 
 from asdl import tdop
-from asdl.tdop import Node, CompositeNode
+from asdl.tdop import CompositeNode
 from asdl import arith_ast
 
 op_id = arith_ast.op_id_e  # TODO: Rename this back.

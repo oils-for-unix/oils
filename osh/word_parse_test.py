@@ -15,8 +15,8 @@ from asdl import const
 
 from core import alloc
 from core.id_kind import Id
-from core import word
 from core import test_lib
+from core import word
 
 from osh import ast_ as ast
 from osh import parse_lib
@@ -491,8 +491,6 @@ ls bar
     test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
 
   def testParseErrorLocation(self):
-    from core import word
-
     w = _assertSpanForWord(self, 'a=(1 2 3)')
 
     w = _assertSpanForWord(self, 'foo')

@@ -33,7 +33,6 @@ import atexit
 import fnmatch
 import readline
 import os
-import stat
 import sys
 import time
 import traceback
@@ -45,7 +44,6 @@ from core import runtime
 from core import state
 from core import ui
 from core import util
-from core.id_kind import Id
 
 command_e = ast.command_e
 value_e = runtime.value_e
@@ -786,7 +784,6 @@ def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev):
 
 if __name__ == '__main__':
   from core import builtin
-  from core import cmd_exec
   from core import state
 
   status_lines = ui.MakeStatusLines()

@@ -12,11 +12,9 @@ completion_test.py: Tests for completion.py
 import unittest
 
 from core import alloc
-from core import cmd_exec
 from core import cmd_exec_test
 from core import completion  # module under test
 from core import legacy
-from core import lexer
 from core import state
 from core import test_lib
 from core import word_eval

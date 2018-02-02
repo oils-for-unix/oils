@@ -12,6 +12,7 @@ reader.py - Read lines of input.
 import cStringIO
 
 from core import util
+log = util.log
 
 
 class _Reader(object):

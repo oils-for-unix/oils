@@ -6,7 +6,6 @@ builtin_test.py: Tests for builtin.py
 import unittest
 
 from core import legacy
-from core import lexer
 from core import builtin  # module under test
 
 

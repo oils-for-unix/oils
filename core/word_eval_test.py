@@ -15,7 +15,9 @@ from core import word_eval  # module under test
 
 
 class WordEvalTest(unittest.TestCase):
-  pass
+
+  def testWordEval(self):
+    print word_eval
 
 
 if __name__ == '__main__':

@@ -5,7 +5,6 @@ ast_gen.py
 
 import sys
 
-from core import util
 from osh import ast_ as ast
 from asdl import gen_cpp
 

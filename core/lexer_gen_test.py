@@ -1,11 +1,10 @@
 #!/usr/bin/python -S
 """
-lex_gen_test.py: Tests for lex_gen.py
+lexer_gen_test.py: Tests for lexer_gen.py
 """
 
 import unittest
 
-from osh import lex
 from core import lexer_gen  # module under test
 
 

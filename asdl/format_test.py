@@ -4,12 +4,9 @@ format_test.py: Tests for format.py
 """
 
 import cStringIO
-import sys
 import unittest
 
-
 from asdl import format as fmt
-from asdl import asdl_
 
 from asdl import arith_ast  # module under test
 

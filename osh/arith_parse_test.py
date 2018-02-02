@@ -13,9 +13,7 @@ import unittest
 
 from core import expr_eval
 from core import legacy
-from core import tdop
 from core import word_eval
-from core import cmd_exec
 from core import state
 from core import test_lib
 
@@ -30,9 +28,6 @@ class ExprSyntaxError(Exception):
 def ParseAndEval(code_str):
   arena = test_lib.MakeArena('<arith_parse_test.py>')
   w_parser, _ = parse_lib.MakeParserForCompletion(code_str, arena)
-  #spec = arith_parse.MakeShellSpec()
-  #a_parser = tdop.TdopParser(spec, w_parser)  # Calls ReadWord(lex_mode_e.ARITH)
-  #anode = a_parser.Parse()
   anode = w_parser._ReadArithExpr()  # need the right lex state?
 
   if not anode:

@@ -12,7 +12,9 @@ from asdl import encode
 from asdl import format as fmt
 
 from core.id_kind import Id
-from core.util import log
+from core import util
+
+log = util.log
 
 
 def main(argv):
@@ -41,7 +43,7 @@ def main(argv):
     # demo.
     py_meta.MakeTypes(module, root, type_lookup)
 
-    print('Dynamically created a Python module with these types:')
+    log('Dynamically created a Python module with these types:')
     for name in dir(root):
       print('\t' + name)
 

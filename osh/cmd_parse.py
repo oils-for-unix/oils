@@ -10,8 +10,6 @@ from __future__ import print_function
 cmd_parse.py - Parse high level shell commands.
 """
 
-import sys
-
 from asdl import const
 
 from core import braces

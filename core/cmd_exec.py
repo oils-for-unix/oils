@@ -17,7 +17,6 @@ This just does head?  Last one wins.
 
 import os
 import resource
-import stat
 import sys
 import time
 
@@ -1007,7 +1006,6 @@ class Executor(object):
           if not b:
             break
 
-          do_continue = False
           try:
             status = self._Execute(node.body)
           except _ControlFlow as e:

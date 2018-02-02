@@ -11,6 +11,8 @@ from core import libstr  # module under test
 class LibStrTest(unittest.TestCase):
 
   def testUnarySuffixOpDemo(self):
+    print libstr
+
     s = 'abcd'
     n = len(s)
 

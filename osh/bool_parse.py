@@ -32,8 +32,6 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-import sys
-
 from osh import ast_ as ast
 
 from core import word

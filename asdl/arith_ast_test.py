@@ -6,7 +6,6 @@ arith_ast_test.py: Tests for arith_ast.py
 import cStringIO
 import unittest
 
-from asdl import format as fmt
 from asdl import py_meta
 from asdl import asdl_
 from asdl import const

@@ -10,7 +10,8 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from core.util import log
+from core import util
+log = util.log
 
 
 def LooksLikeGlob(s):

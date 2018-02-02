@@ -99,12 +99,19 @@ bin-flake8() {
 
 flake8-all() {
   local -a dirs=(asdl bin core osh)
-  # stop the build if there are Python syntax errors or undefined names
+
+  # Step 1: Stop the build if there are Python syntax errors or undefined names
   bin-flake8 "${dirs[@]}" \
-    --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+    --count --select=E901,E999,F821,F822,F823,F401 --show-source --statistics
+
+  # Step 2: Style errors as warnings.
+  local ignored='E125,E701,E241,E121,E111,E114,E128,E262,E226,E302,E265,E290,E202,E203,C901'
+  # trailing whitespace, line too long, blank lines
+  local ignored_for_now='W291,E501,E303'
 
   # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
   bin-flake8 "${dirs[@]}" \
+    --ignore="$ignored,$ignored_for_now" \
     --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 }
 

@@ -16,7 +16,7 @@ from core import util
 from core.id_kind import Id
 from osh import ast_ as ast
 
-from core.util import log
+log = util.log
 
 
 def C(pat, tok_type):

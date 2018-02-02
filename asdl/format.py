@@ -16,7 +16,6 @@ Places where we try a single line:
 """
 
 import re
-import sys
 
 from asdl import asdl_ as asdl
 from core import util

@@ -4,7 +4,6 @@ process_test.py: Tests for process.py
 """
 
 import os
-import sys
 import unittest
 
 from core.id_kind import Id
@@ -49,12 +48,10 @@ class ProcessTest(unittest.TestCase):
 
     r = runtime.PathRedirect(Id.Redir_Less, 0, PATH)
     fd_state.Push([r], waiter)
-    #line1 = sys.stdin.readline()
     line1 = builtin.ReadLineFromStdin()
     fd_state.Pop()
 
     fd_state.Push([r], waiter)
-    #line2 = sys.stdin.readline()
     line2 = builtin.ReadLineFromStdin()
     fd_state.Pop()
 

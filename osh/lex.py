@@ -103,10 +103,10 @@ Indexed array and Associative array literals:
 import re
 
 from core.id_kind import Id, Kind, ID_SPEC
-from core import util
 from core.lexer import C, R
 
 from osh import ast_ as ast
+
 lex_mode_e = ast.lex_mode_e
 
 

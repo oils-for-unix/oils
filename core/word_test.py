@@ -11,7 +11,7 @@ from core import word  # module under test
 class WordTest(unittest.TestCase):
 
   def testFoo(self):
-    print('Hello from word_test.py')
+    print word
 
 
 if __name__ == '__main__':

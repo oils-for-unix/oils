@@ -5,9 +5,8 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
-from core import alloc
 from core.id_kind import Id, Kind, LookupKind
-from core.lexer import CompileAll, Lexer, LineLexer
+from core.lexer import CompileAll, LineLexer
 from core import test_lib
 
 from osh import parse_lib

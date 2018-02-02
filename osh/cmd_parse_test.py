@@ -6,11 +6,8 @@ cmd_parse_test.py: Tests for cmd_parse.py
 import sys
 import unittest
 
-from asdl import py_meta
-
 from core import ui
 from core.id_kind import Id
-from core.alloc import Pool
 from core import word
 from core import test_lib
 

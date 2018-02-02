@@ -7,7 +7,6 @@ import sys
 
 from core import braces
 from core import expr_eval
-from core import legacy
 from core import libstr
 from core import glob_
 from core.id_kind import Id, Kind, LookupKind

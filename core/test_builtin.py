@@ -8,7 +8,6 @@ import sys
 
 from core import id_kind
 from core import expr_eval
-from core import word
 from core import runtime
 from core import util
 
