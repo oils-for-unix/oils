@@ -417,6 +417,11 @@ class Mem(object):
         ast.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
         scope_e.GlobalOnly)
 
+    v = self.GetVar('HOME')
+    if v.tag == value_e.Undef:
+      home_dir = util.GetHomeDir() or '~'  # No expansion if not found?
+      SetGlobalString(self, 'HOME', home_dir)
+
   def SetSourceLocation(self, source_name, line_num):
     # Mutate Str() objects.
     self.source_name.s = source_name

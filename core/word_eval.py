@@ -176,16 +176,10 @@ class _WordEvaluator:
     if prefix == '':
       # First look up the HOME var, and then env var
       val = self.mem.GetVar('HOME')
-      if val.tag == value_e.Str:
-        return val.s
-      elif val.tag == value_e.StrArray:
-        raise AssertionError
+      assert val.tag == value_e.Str, val
+      return val.s
 
-      s = util.GetHomeDir()
-      if s is None:
-        s = '~' + prefix  # No expansion I guess
-      return s
-
+    # For ~otheruser/src.  TODO: Should this be cached?
     # http://linux.die.net/man/3/getpwnam
     try:
       e = pwd.getpwnam(prefix)
