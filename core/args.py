@@ -376,8 +376,8 @@ class BuiltinFlags(object):
     This is very similar to ShortFlag for FlagsAndOptions, except we have
     separate arity0 and arity1 dicts.
     """
-    assert short_name.startswith('-'), short_flag
-    assert len(short_name) == 2, short_flag
+    assert short_name.startswith('-'), short_name
+    assert len(short_name) == 2, short_name
 
     char = short_name[1]
     if arg_type is None:
