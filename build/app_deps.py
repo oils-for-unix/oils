@@ -16,6 +16,7 @@ import sys
 OLD_MODULES = dict(sys.modules)  # Make a copy
 
 import os  # Do it here so we don't mess up analysis
+import optparse
 
 
 class Error(Exception):
