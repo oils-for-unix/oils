@@ -30,7 +30,6 @@ Uses ITEMLIST with a bunch of flags.
 """
 
 import atexit
-import fnmatch
 import readline
 import os
 import sys
@@ -44,6 +43,8 @@ from core import runtime
 from core import state
 from core import ui
 from core import util
+
+import libc
 
 command_e = ast.command_e
 value_e = runtime.value_e
@@ -128,7 +129,8 @@ class CompletionLookup(object):
       return chain
 
     for glob_pat, chain in self.patterns:
-      if fnmatch.fnmatch(key, glob_pat):
+      #log('Matching %r %r', key, glob_pat)
+      if libc.fnmatch(glob_pat, key):
         return chain
 
     return self.lookup['__default__']
@@ -326,7 +328,7 @@ class GlobPredicate(object):
     self.glob_pat = glob_pat
 
   def __call__(self, match):
-    return fnmatch.fnmatch(match, self.glob_pat)
+    return libc.fnmatch(self.glob_pat, match)
 
 
 class ChainedCompleter(object):
@@ -362,6 +364,10 @@ class ChainedCompleter(object):
     # That's OK -- we just truncate the line at the cursor?
     # Hm actually zsh does something smarter, and which is probably preferable.
     # It completes the word that
+
+  def __str__(self):
+    return '<ChainedCompleter %s %s %r %r>' % (
+        self.actions, self.predicate, self.prefix, self.suffix)
 
 
 class DummyParser(object):

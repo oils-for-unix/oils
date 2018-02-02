@@ -8,6 +8,7 @@
 """
 completion_test.py: Tests for completion.py
 """
+from __future__ import print_function
 
 import unittest
 
@@ -52,9 +53,15 @@ class CompletionTest(unittest.TestCase):
     print(c.GetCompleterForName('/usr/bin/grep'))
 
     c.RegisterGlob('*.py', C1)
-    print(c.GetCompleterForName('/usr/bin/foo.py'))
+    comp = c.GetCompleterForName('/usr/bin/foo.py')
+    print('py', comp)
+    # NOTE: This is an implementation detail
+    self.assertEqual(1, len(comp.actions))
 
-    print(c.GetCompleterForName('foo.rb'))
+    comp_rb = c.GetCompleterForName('foo.rb')
+    print('rb', comp_rb)
+    # NOTE: This is an implementation detail
+    self.assertEqual(0, len(comp_rb.actions))
 
   def testWordsAction(self):
     print(list(A1.Matches(['f'], 0, 'f')))
@@ -95,11 +102,13 @@ class CompletionTest(unittest.TestCase):
     self.assertEqual(['f1 ', 'f2 '], matches)
 
   def testChainedCompleter(self):
-    print(list(C1.Matches(['f'], 0, 'f')))
+    matches = list(C1.Matches(['f'], 0, 'f'))
+    self.assertEqual(['foo.py ', 'foo '], matches)
 
     p = completion.GlobPredicate('*.py')
     c2 = completion.ChainedCompleter([A1], predicate=p)
-    print(list(c2.Matches(['f'], 0, 'f')))
+    matches = list(c2.Matches(['f'], 0, 'f'))
+    self.assertEqual([], matches)
 
   def testRootCompleter(self):
     comp_lookup = completion.CompletionLookup()
