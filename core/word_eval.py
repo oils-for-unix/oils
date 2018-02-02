@@ -2,6 +2,7 @@
 word_eval.py - Evaluator for the word language.
 """
 
+import pwd
 import sys
 
 from core import braces

@@ -30,3 +30,7 @@ echo hi > ~/tilde1.txt
 cat $HOME/tilde1.txt | wc -c
 # stdout: 3
 # status: 0
+
+### other user
+echo ~nonexistent
+# stdout: ~nonexistent
