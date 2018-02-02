@@ -21,7 +21,8 @@ hasfree = []
 
 opmap = {}
 opname = [''] * 256
-for op in range(256): opname[op] = '<%r>' % (op,)
+for op in range(256):
+    opname[op] = '<%r>' % (op,)
 del op
 
 def def_op(name, op):
@@ -189,4 +190,5 @@ EXTENDED_ARG = 145
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 
-del def_op, name_op, jrel_op, jabs_op
+del name_op, jrel_op, jabs_op
+# del def_op
