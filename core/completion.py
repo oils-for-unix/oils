@@ -29,7 +29,6 @@ bash note: most of this stuff is in pcomplete.c and bashline.c (4K lines!).
 Uses ITEMLIST with a bunch of flags.
 """
 
-import atexit
 import readline
 import os
 import sys
@@ -725,7 +724,9 @@ def InitReadline(complete_cb):
   except IOError:
     pass
 
-  atexit.register(readline.write_history_file, history_filename)
+  # TODO: This should go at the end of main()?  atexit is Python-specific
+  # control flow, which we're avoiding.
+  #atexit.register(readline.write_history_file, history_filename)
   readline.parse_and_bind("tab: complete")
 
   # How does this map to C?
