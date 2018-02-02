@@ -12,9 +12,12 @@ arith_parse_test.py: Tests for arith_parse.py
 import unittest
 
 from core import expr_eval
+from core import legacy
 from core import tdop
 from core import word_eval
 from core import cmd_exec
+from core import state
+from core import test_lib
 
 from osh import parse_lib
 #from osh import arith_parse
@@ -25,7 +28,8 @@ class ExprSyntaxError(Exception):
 
 
 def ParseAndEval(code_str):
-  w_parser, _ = parse_lib.MakeParserForCompletion(code_str)
+  arena = test_lib.MakeArena('<arith_parse_test.py>')
+  w_parser, _ = parse_lib.MakeParserForCompletion(code_str, arena)
   #spec = arith_parse.MakeShellSpec()
   #a_parser = tdop.TdopParser(spec, w_parser)  # Calls ReadWord(lex_mode_e.ARITH)
   #anode = a_parser.Parse()
@@ -36,18 +40,13 @@ def ParseAndEval(code_str):
 
   print('node:', anode)
 
-  mem = state.Mem('', [])
+  mem = state.Mem('', [], {}, None)
   exec_opts = state.ExecOpts(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts)
+  splitter = legacy.SplitContext(mem)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
 
-  arith_ev = expr_eval.ArithEvaluator(mem, ev, exec_opts)
-  ok = arith_ev.Eval(anode)
-  if ok:
-    value = arith_ev.Result()
-    print('value:', value)
-  else:
-    raise AssertionError(code_str)
-
+  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev)
+  value = arith_ev.Eval(anode)
   return value
 
 

@@ -44,9 +44,9 @@ banner() {
 
 tests-to-run() {
   # TODO: Add opy.
-  for t in {build,test,native,asdl,core,osh,tools}/*_test.py; do
-    # NOTE: This test hasn't passed in awhile.  It uses strings as output.
-    if [[ $t == *arith_parse_test.py ]]; then
+  for t in {build,test,native,asdl,core,osh,test,tools}/*_test.py; do
+    # This test doesn't pass because it uses strings.  Maybe remove it.
+    if [[ $t == asdl/arith_parse_test.py ]]; then
       continue
     fi
     echo $t

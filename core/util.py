@@ -254,7 +254,7 @@ class _ZipResourceLoader:
 
   def open(self, rel_path):
     contents = self.z.get_data(rel_path)
-    return io.BytesIO(contents)
+    return cStringIO.StringIO(contents)
 
 
 _loader = None

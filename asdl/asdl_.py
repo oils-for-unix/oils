@@ -163,7 +163,7 @@ def ResolveTypes(module, app_types=None):
         _CheckFieldsAndWire(cons, type_lookup)
 
     else:
-      raise AssertionError(typ)
+      raise AssertionError(v)
 
   return type_lookup
 

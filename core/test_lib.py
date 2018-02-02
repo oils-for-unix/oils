@@ -67,5 +67,5 @@ def AssertAsdlEqual(test, left, right):
 def MakeArena(source_name):
   pool = alloc.Pool()
   arena = pool.NewArena()
-  arena.PushSource('<lex_test.py>')
+  arena.PushSource(source_name)
   return arena
