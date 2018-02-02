@@ -4,10 +4,6 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
-__all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
-           "haslocal", "hascompare", "hasfree", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG"]
-
 cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is',
         'is not', 'exception match', 'BAD')
 
@@ -21,7 +17,8 @@ hasfree = []
 
 opmap = {}
 opname = [''] * 256
-for op in range(256): opname[op] = '<%r>' % (op,)
+for op in range(256):
+    opname[op] = '<%r>' % (op,)
 del op
 
 def def_op(name, op):
@@ -190,3 +187,7 @@ def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 
 del def_op, name_op, jrel_op, jabs_op
+
+__all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
+           "haslocal", "hascompare", "hasfree", "opname", "opmap",
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
