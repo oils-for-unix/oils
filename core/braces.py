@@ -221,7 +221,6 @@ def _BraceExpand(parts):
     return [parts]
 
   elif num_alts == 1:
-    out = []
     suffix = parts[first_alt_index+1 : ]
     return _BraceExpandOne(parts, first_alt_index, [suffix])
 

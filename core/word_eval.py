@@ -706,7 +706,7 @@ class _WordEvaluator:
         "Expected CompoundWord, got %s" % word
 
     for p in word.parts:
-      v = self._EvalWordPart(p, part_vals, quoted=quoted)
+      self._EvalWordPart(p, part_vals, quoted=quoted)
 
   def EvalWordToString(self, word, do_fnmatch=False, decay=False):
     """

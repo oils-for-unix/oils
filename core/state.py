@@ -528,7 +528,6 @@ class Mem(object):
       namespace: The namespace it should be set to or deleted from.
     """
     if lookup_mode == scope_e.Dynamic:
-      found = False
       for i in range(len(self.var_stack) - 1, -1, -1):
         frame = self.var_stack[i]
         if frame.readonly and not is_read:

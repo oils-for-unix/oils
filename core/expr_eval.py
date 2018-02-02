@@ -485,14 +485,14 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
           try:
             mode = os.lstat(s).st_mode
-          except OSError as e:
+          except OSError:
             return False
 
           return stat.S_ISLNK(mode)
 
         try:
           mode = os.stat(s).st_mode
-        except OSError as e:
+        except OSError:
           # TODO: Signal extra debug information?
           #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
           return False

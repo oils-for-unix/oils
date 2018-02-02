@@ -202,7 +202,6 @@ class FdState:
     self.stack.append(new_frame)
     self.cur_frame = new_frame
 
-    ok = True
     for r in redirects:
       #log('apply %s', r)
       if not self._ApplyRedirect(r, waiter):

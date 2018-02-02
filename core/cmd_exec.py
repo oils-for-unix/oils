@@ -267,8 +267,6 @@ class Executor(object):
       return 0
 
   def _RunBuiltin(self, builtin_id, argv):
-    restore_fd_state = True
-
     # NOTE: Builtins don't need to know their own name.
     argv = argv[1:]
 
@@ -634,7 +632,6 @@ class Executor(object):
     # TODO: This API should be simplified
     line_span = self.arena.GetLineSpan(span_id)
     line_id = line_span.line_id
-    line = self.arena.GetLine(line_id)
     source_name, line_num = self.arena.GetDebugInfo(line_id)
     self.mem.SetSourceLocation(source_name, line_num)
 
@@ -650,7 +647,7 @@ class Executor(object):
     # command.
     self.check_command_sub_status = False
 
-    argv0 = None  # for error message
+    #argv0 = None  # for error message
     check_errexit = False  # for errexit
 
     if node.tag == command_e.SimpleCommand:
@@ -759,7 +756,6 @@ class Executor(object):
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
-      pairs = []
       flags = word_compile.ParseAssignFlags(node.flags)
 
       if node.keyword == Id.Assign_Local:

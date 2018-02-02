@@ -18,7 +18,6 @@ import os
 import pwd
 import sys
 
-import os
 if not os.getenv('_OVM_DEPS'):
   import inspect
   import types

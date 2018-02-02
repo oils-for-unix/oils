@@ -495,7 +495,7 @@ def Shift(argv, mem):
     n = int(argv[0])
   except IndexError:
     n = 1
-  except ValueError as e:
+  except ValueError:
     print("Invalid shift argument %r" % argv[1], file=sys.stderr)
     return 1  # runtime error
 
@@ -655,7 +655,7 @@ def Export(argv, mem):
         raise args.UsageError('export: Invalid variable name %r' % name)
 
       # NOTE: bash doesn't care if it wasn't found.
-      _ = mem.ClearFlag(name, var_flags_e.Exported, scope_e.Dynamic)
+      mem.ClearFlag(name, var_flags_e.Exported, scope_e.Dynamic)
   else:
     for arg in argv[i:]:
       parts = arg.split('=', 1)
