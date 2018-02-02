@@ -784,7 +784,6 @@ def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev):
 
 if __name__ == '__main__':
   from core import builtin
-  from core import state
 
   status_lines = ui.MakeStatusLines()
   mem = state.Mem('', [], {}, None)

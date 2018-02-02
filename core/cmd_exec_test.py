@@ -11,7 +11,6 @@ cmd_exec_test.py: Tests for cmd_exec.py
 
 import unittest
 
-from core import builtin
 from core import cmd_exec  # module under test
 from core.cmd_exec import *
 from core.id_kind import Id
@@ -42,7 +41,6 @@ def InitExecutor(arena=None):
   mem = state.Mem('', [], {}, None)
   fd_state = process.FdState()
   status_lines = None  # not needed for what we're testing
-  builtins = builtin.BUILTIN_DEF
   funcs = {}
   comp_funcs = {}
   exec_opts = state.ExecOpts(mem)

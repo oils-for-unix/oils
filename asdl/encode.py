@@ -37,7 +37,6 @@ class BinOutput:
     Return a block pointer/index.
     """
     # Input should be padded
-    a = self.alignment
     assert len(chunk) % self.alignment == 0
     self.f.write(chunk)
 

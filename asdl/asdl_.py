@@ -96,7 +96,7 @@ class TypeLookup(object):
 
     # Primitive types.
     self.declared_types['string'] = StrType()
-    self.declared_types['int'] =  IntType()
+    self.declared_types['int'] = IntType()
     self.declared_types['bool'] = BoolType()
 
     # Types with fields that need to be reflected on: Product and Constructor.
@@ -511,7 +511,7 @@ class ASDLParser:
             # Otherwise it's a sum. Look for ConstructorId
             sumlist = [Constructor(self._match(TokenKind.ConstructorId),
                                    self._parse_optional_fields())]
-            while self.cur_token.kind  == TokenKind.Pipe:
+            while self.cur_token.kind == TokenKind.Pipe:
                 # More constructors
                 self._advance()
                 sumlist.append(Constructor(

@@ -19,7 +19,7 @@ class BuiltinTest(unittest.TestCase):
 
   def testAppendParts(self):
     # allow_escape is True by default, but False when the user passes -r.
-    CASES =  [
+    CASES = [
         (['Aa', 'b', ' a b'], 100, 'Aa b \\ a\\ b'),
         (['a', 'b', 'c'], 3, 'a b c '),
     ]

@@ -297,7 +297,6 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
     # These lines can be possibly COMBINED all into one.  () can replace
     # indentation?
     out_node = _Obj(obj.__class__.__name__)
-    fields = out_node.fields
 
     for field_name, desc in obj.ASDL_TYPE.GetFields():
       out_val = MakeFieldSubtree(obj, field_name, desc, abbrev_hook,
@@ -518,7 +517,6 @@ def _TrySingleLineObj(node, f, max_chars):
     f.write(node.node_type)
     f.PopColor()
 
-    n = len(node.fields)
     for name, val in node.fields:
       f.write(' %s:' % name)
       if not _TrySingleLine(val, f, max_chars):

@@ -102,7 +102,7 @@ flake8-all() {
   # E265: Although I agree with this style, some comments don't start with '# '
   # E111,E114: we use 2 space indents, not 4
 
-  local ignored='E125,E701,E241,E121,E111,E114,E128,E262,E226,E302,E265,E290,E202,E203,C901,E261'
+  local ignored='E125,E701,E241,E121,E111,E114,E128,E262,E226,E302,E265,E290,E202,E203,C901,E261,E301,W293,E402,E116,E741,W391,E127'
   # trailing whitespace, line too long, blank lines
   local ignored_for_now='W291,E501,E303'
 

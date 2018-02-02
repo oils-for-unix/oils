@@ -44,10 +44,6 @@ class GenClassesVisitor(gen_cpp.AsdlVisitor):
     self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
 
-    # TODO: 
-    # py_meta.MakeTypes and py_meta._MakeFieldDescriptors fill
-    # DESCRIPTOR_LOOKUP, which is used for pretty printing.
-    lookup = {}
     self.Emit('', depth)
 
     # TODO: leave out spids?  Mark it as an attribute?
