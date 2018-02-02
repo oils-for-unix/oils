@@ -432,7 +432,7 @@ class EqualAssertion(object):
     return Result.PASS, ''  # ideal behavior
 
 
-"""
+'''
 # UNUSED
 class NonzeroAssertion(object):
   """Check that an integer is not zero.
@@ -452,7 +452,7 @@ class NonzeroAssertion(object):
     if self.qualified:
       return Result.OK, ''
     return Result.PASS, ''
-"""
+'''
 
 
 PIPE = subprocess.PIPE
