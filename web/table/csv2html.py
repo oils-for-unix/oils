@@ -299,8 +299,8 @@ def main(argv):
   if opts.schema:
     try:
       schema_f = open(opts.schema)
-    except IOError:
-      raise RuntimeError('Error opening %s: %s' % (opts.schema, f))
+    except IOError as e:
+      raise RuntimeError('Error opening %s: %s' % (opts.schema, e))
   else:
     schema_path = csv_path.replace('.csv', '.schema.csv')
     log('schema path %s', schema_path)
