@@ -432,27 +432,6 @@ class EqualAssertion(object):
     return Result.PASS, ''  # ideal behavior
 
 
-# UNUSED
-class NonzeroAssertion(object):
-  """Check that an integer is not zero.
-
-  NOTE: Do we need this now that we have qualifiers?
-  """
-  def __init__(self, key):
-    self.key = key
-    self.qualified = qualified  # whether this was a special case?
-
-  def Check(self, shell, record):
-    actual = record[self.key]
-    if actual != 0:
-      msg = '%s %s: Expected nonzero status, got %r' % (shell, self.key,
-          actual)
-      return Result.FAIL, msg
-    if self.qualified:
-      return Result.OK, ''
-    return Result.PASS, ''
-
-
 PIPE = subprocess.PIPE
 
 def RunCases(cases, case_predicate, shells, env, out):
