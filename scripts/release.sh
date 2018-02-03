@@ -287,8 +287,8 @@ git-changelog-0.3.0() {
     > _release/VERSION/changelog.html
 }
 
-git-changelog-0.4.alpha1() {
-  _git-changelog release/0.3.0 release/0.4.alpha1 \
+git-changelog-0.4.0() {
+  _git-changelog release/0.3.0 release/0.4.0 \
     > _release/VERSION/changelog.html
 }
 
@@ -343,7 +343,7 @@ announcement-0.3() {
 }
 
 announcement-0.4() {
-  no-announcement > _release/VERSION/announcement.html
+  html-redirect '/blog/2018/02/03.html' > _release/VERSION/announcement.html
 }
 
 _link() {
