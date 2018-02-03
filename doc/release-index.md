@@ -1,6 +1,6 @@
 <!-- NOTE: This file is at /release/$VERSION/index.html -->
 
-Oil Version 0.4.alpha1
+Oil Version 0.4.0
 -----------------
 
 ### What's New
