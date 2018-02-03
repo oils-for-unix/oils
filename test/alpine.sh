@@ -15,7 +15,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly ROOTFS_URL=http://dl-cdn.alpinelinux.org/alpine/v3.6/releases/x86_64/alpine-minirootfs-3.6.2-x86_64.tar.gz
+readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.6/releases/x86_64/alpine-minirootfs-3.6.2-x86_64.tar.gz'
 readonly CHROOT_DIR=_chroot/alpine1
 
 readonly DISTRO_BUILD_CHROOT_DIR=_chroot/alpine-distro-build
@@ -103,13 +103,13 @@ interactive() {
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 _copy-tar() {
-  local name=${1:-oil}
-  local version=${2:-$OIL_VERSION}
+  local chroot_dir=${1:-$CHROOT_DIR}
+  local name=${2:-oil}
+  local version=${3:-$OIL_VERSION}
 
-  local dest=$CHROOT_DIR/src
+  local dest=$chroot_dir/src
   mkdir -p $dest
-  cp _release/$name-$version.tar.gz $dest
-  ls -l $CHROOT_DIR/src
+  cp -v _release/$name-$version.tar.gz $dest
 }
 copy-tar() { sudo $0 _copy-tar "$@"; }
 

@@ -65,8 +65,9 @@ setup-portage() { sudo $0 _setup-portage "$@"; }
 
 # Don't need chmod-chroot, I guess the tarball handles it.
 #
-# setup-dns _chroot/gentoo
-# enter-chroot _chroot/gentoo
+# test/alpine.sh setup-dns _chroot/gentoo
+# test/alpine.sh copy-tar _chroot/gentoo
+# test/alpine.sh enter-chroot _chroot/gentoo
 
 # emerge --sync -- Ran it manually
 
