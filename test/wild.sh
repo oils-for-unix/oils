@@ -195,6 +195,12 @@ all-manifests() {
     $(find $src '(' -name debootstrap -o -name functions ')' -a -printf '%P\n') \
     $(find $src/scripts -type f -a -printf 'scripts/%P\n')
 
+  # There are lot of dietpi-* bash scripts that aren't executable, for some
+  # reason.  Big hairy shell scripts here.
+  src=~/git/wild/distro/DietPi
+  _manifest distro/DietPi $src \
+    $(find $src '(' -name '*.sh' -o -name 'dietpi-*' ')' -a -printf '%P\n') \
+
   src=~/src/grep-2.24
   _sh-manifest $src gnu
 
