@@ -121,8 +121,9 @@ build-and-test() {
 
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps, etc.
 
-  test/alpine.sh copy-tar oil
-  test/alpine.sh test-tar oil
+  # TODO: Factor out test/alpine.sh to test/chroot.sh
+  test/alpine.sh copy-tar '' oil
+  test/alpine.sh test-tar '' oil
 }
 
 _compressed-tarball() {

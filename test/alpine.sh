@@ -102,6 +102,9 @@ interactive() {
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
+# TODO: Factor these out into test/chroot.sh.  You can test it in a Gentoo
+# chroot too.
+
 _copy-tar() {
   local chroot_dir=${1:-$CHROOT_DIR}
   local name=${2:-oil}
@@ -113,17 +116,15 @@ _copy-tar() {
 }
 copy-tar() { sudo $0 _copy-tar "$@"; }
 
-
-# TODO: tarball needs to have a root directory like oil-$VERSION/.
-
 _test-tar() {
-  local name=${1:-oil}
-  local version=${2:-$OIL_VERSION}
+  local chroot_dir=${1:-$CHROOT_DIR}
+  local name=${2:-oil}
+  local version=${3:-$OIL_VERSION}
 
   local target=_bin/${name}.ovm
   #local target=_bin/${name}.ovm-dbg
 
-  enter-chroot '' /bin/sh <<EOF
+  enter-chroot "$chroot_dir" /bin/sh <<EOF
 set -e
 cd src
 tar --extract -z < $name-$version.tar.gz
