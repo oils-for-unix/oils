@@ -32,6 +32,7 @@ X [Conditional]   switch   match   if-expr (
 X [Iteration]     for-expr (   while-expr (
 X [Grouping]      proc   func   lazy   pure   do {   shell {  
 X [Context]       with-cd   with-redir   with-env   with-vars   with-file
+                  with-logger
 X [Concurrency]   fork
 X [Redirects]     multiline-string '''_"""   file-descriptor !0
 
@@ -157,6 +158,7 @@ X [xargs]         each
 
 OIL LIBRARIES
 
+X [Builtin Procs] log   die
 X [Builtin Funcs] shEvalArith()   shEvalWord()
 X [getopts]       ?
 X [Testing]       ?

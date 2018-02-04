@@ -65,16 +65,29 @@ test -n x ]
 echo status=$?
 test -n x y
 echo status=$?
-# stdout-json: "status=2\nstatus=2\n"
+## STDOUT:
+status=2
+status=2
+## END
 
 ### ] syntax errors
+[
+echo status=$?
+test  # not a syntax error
+echo status=$?
 [ -n x  # missing ]
 echo status=$?
 [ -n x ] y  # extra arg after ]
 echo status=$?
 [ -n x y  # extra arg
 echo status=$?
-# stdout-json: "status=2\nstatus=2\nstatus=2\n"
+## STDOUT:
+status=2
+status=1
+status=2
+status=2
+status=2
+## END
 
 ### -n
 test -n 'a'  && echo true

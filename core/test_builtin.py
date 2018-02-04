@@ -119,7 +119,7 @@ def Test(argv, need_right_bracket):
   The only difference between test and [ is that [ needs a matching ].
   """
   if need_right_bracket:
-    if argv[-1] != ']':
+    if not argv or argv[-1] != ']':
       util.error('[: missing closing ]')
       return 2
     del argv[-1]
