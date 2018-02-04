@@ -140,7 +140,8 @@ class ExecOpts(object):
     assert shellopts.tag == value_e.Str, shellopts
     self._InitOptionsFromEnv(shellopts.s)
 
-    # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for these.
+    # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
+    # these.
     self.nullglob = False 
     self.failglob = False 
 

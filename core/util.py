@@ -47,7 +47,8 @@ class _ErrorWithLocation(Exception):
       raise AssertionError('Invalid keyword args %s' % kwargs)
 
   def __repr__(self):
-    return '<%s %s %r %r %s>' % (self.msg, self.args, self.token, self.word, self.exit_status)
+    return '<%s %s %r %r %s>' % (
+        self.msg, self.args, self.token, self.word, self.exit_status)
 
   def __str__(self):
     # The default doesn't work very well?

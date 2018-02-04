@@ -28,7 +28,6 @@ class AsdlTest(unittest.TestCase):
     print lex_mode_e.DQ
 
 
-
 CMD = """\
 ls /
 ls /home/
@@ -38,7 +37,8 @@ class LexerTest(unittest.TestCase):
 
   def assertTokensEqual(self, left, right):
     self.assertTrue(
-        test_lib.TokensEqual(left, right), 'Expected %r, got %r' % (left, right))
+        test_lib.TokensEqual(left, right),
+        'Expected %r, got %r' % (left, right))
 
   def testRead(self):
     lexer = _InitLexer(CMD)

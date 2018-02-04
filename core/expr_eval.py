@@ -543,8 +543,8 @@ class BoolEvaluator(_ExprEvaluator):
 
       s1 = self._EvalCompoundWord(node.left)
       # Whehter to glob escape
-      do_fnmatch = op_id in (
-          Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual, Id.BoolBinary_GlobNEqual)
+      do_fnmatch = op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
+                             Id.BoolBinary_GlobNEqual)
       s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)
 
       # Now dispatch on arg type

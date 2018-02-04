@@ -185,7 +185,8 @@ def _AddKinds(spec):
 
   spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
 
-  # Id.WS_Space is for lex_mode_e.OUTER; Id.Ignored_Space is for lex_mode_e.ARITH
+  # Id.WS_Space is for lex_mode_e.OUTER; Id.Ignored_Space is for
+  # lex_mode_e.ARITH
   spec.AddKind('WS', ['Space'])
 
   spec.AddKind('Lit', [
@@ -500,7 +501,8 @@ ID_SPEC = IdSpec(_ID_NAMES, _ID_INSTANCES, _ID_TO_KIND, BOOL_OPS)
 
 _AddKinds(ID_SPEC)
 _AddBoolKinds(ID_SPEC)  # must come second
-_SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP)
+_SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
+                  TEST_OTHER_LOOKUP)
 
 
 # Debug

@@ -354,8 +354,8 @@ class CommandParser(object):
     # character of the initial word.
     # However, this means we must do tilde detection AFTER brace EXPANSION, not
     # just after brace DETECTION like we're doing here.
-    # The BracedWordTree instances have to be expanded into CompoundWord instances
-    # for the tilde detection to work.
+    # The BracedWordTree instances have to be expanded into CompoundWord
+    # instances for the tilde detection to work.
     words2 = braces.BraceDetectAll(suffix_words)
     words3 = word.TildeDetectAll(words2)
 
@@ -583,8 +583,8 @@ class CommandParser(object):
           return None
 
         if prefix_bindings:  # FOO=bar local spam=eggs not allowed
-          # Use the location of the first value.  TODO: Use the whole word before
-          # splitting.
+          # Use the location of the first value.  TODO: Use the whole word
+          # before splitting.
           _, _, v0, _ = prefix_bindings[0]
           self.AddErrorContext(
               'Invalid prefix bindings in assignment: %s', prefix_bindings,

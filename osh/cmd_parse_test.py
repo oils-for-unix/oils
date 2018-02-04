@@ -1214,7 +1214,8 @@ class ErrorLocationsTest(unittest.TestCase):
     err = _assertParseCommandListError(self, r'ENV1=A ENV2=B local foo=bar')
 
     # This needs more context
-    err = _assertParseCommandListError(self, 'for ((i=1; i<)); do echo $i; done')
+    err = _assertParseCommandListError(self,
+        'for ((i=1; i<)); do echo $i; done')
 
     err = _assertParseCommandListError(self,
         'for ((i=1; i<5; ++i)) OOPS echo $i; ERR')

@@ -57,7 +57,8 @@ class _WordEvaluator:
   def EvalWordToString(self, w, do_fnmatch=False):
     # do_fnmatch: for the [[ == ]] semantics which we don't have!
     # I think I need another type of node
-    # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a different tree.
+    # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a
+    # different tree.
     return runtime.Str(w.s)
 
 

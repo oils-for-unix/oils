@@ -262,11 +262,13 @@ class BoolParser(object):
       if not self._Next(): return None
       node = self.ParseExpr()
       if self.op_id != Id.Op_RParen:
-        self.AddErrorContext("Expected ), got %s", self.cur_word, word=self.cur_word)
+        self.AddErrorContext(
+            'Expected ), got %s', self.cur_word, word=self.cur_word)
         return None
       if not self._Next(): return None
       return node
 
     # TODO: A proper error, e.g. for [[ && ]] or [[ ]]
-    self.AddErrorContext("Unexpected token: %s" % self.cur_word, word=self.cur_word)
+    self.AddErrorContext(
+        'Unexpected token: %s' % self.cur_word, word=self.cur_word)
     return None

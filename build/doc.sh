@@ -198,6 +198,9 @@ update-src-versions() {
 
   _sed-ext \
     "s/oil-[0-9]+.[0-9]+.[a-z0-9]+/oil-$OIL_VERSION/g" INSTALL.txt
+
+  _sed-ext \
+    "s;/release/[0-9]+.[0-9]+.[a-z0-9]+/;/release/$OIL_VERSION/;g" doc/osh-quick-ref-toc.txt
 }
 
 "$@"

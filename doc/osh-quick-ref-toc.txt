@@ -2,8 +2,8 @@ OSH Quick Reference
 
 - Below is a list of topics, organized into [Sections].
 - Features not yet implemented have an X prefix.
-- View it on the web at https://www.oilshell.org/TODO
-- NOTE: Oil features are all unimplemented!
+  - Oil features are all unimplemented!
+- View it on the web at https://www.oilshell.org/release/0.4.0/doc/osh-quick-ref.html
 
 INTRO
   [Overview]      overview   osh-vs-oil   command-vs-expr
@@ -159,7 +159,7 @@ X [xargs]         each
 OIL LIBRARIES
 
 X [Builtin Procs] log   die
-X [Builtin Funcs] shEvalArith()   shEvalWord()
+X [Builtin Funcs] shEvalArith()   shEvalWord()   strftime()
 X [getopts]       ?
 X [Testing]       ?
 X [Data Formats]  json   csv   tsv2

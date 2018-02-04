@@ -1084,7 +1084,8 @@ class OilPrinter:
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Star:  # $*
-        self.f.write('$ifsjoin(Argv)')  # PEDANTIC: Depends if quoted or unquoted
+        # PEDANTIC: Depends if quoted or unquoted
+        self.f.write('$ifsjoin(Argv)')
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Hyphen:  # $*

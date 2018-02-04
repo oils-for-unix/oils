@@ -35,7 +35,8 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
   Emit('', f)
   Emit('enum class Kind : uint8_t {', f)
   if kind_labels:
-    Emit(', '.join(['%s=%s' % (k, kind_labels[k]) for k in kind_names]) + ',', f, 1)
+    s = ', '.join(['%s=%s' % (k, kind_labels[k]) for k in kind_names]) + ','
+    Emit(s, f, 1)
   else:
     Emit(', '.join(kind_names), f, 1)
   Emit('};\n', f)
@@ -43,7 +44,8 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
   Emit('enum class Id : uint8_t {', f)
   for names_in_kind in id_names:
     if id_labels:
-      Emit(', '.join(['%s=%s' % (i, id_labels[i]) for i in names_in_kind]) + ',', f, 1)
+      s = ', '.join(['%s=%s' % (i, id_labels[i]) for i in names_in_kind]) + ','
+      Emit(s, f, 1)
     else:
       Emit(', '.join(names_in_kind) + ',', f, 1)
     Emit('', f)
@@ -64,7 +66,9 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
       if id_labels:
         for id_name in names_in_kind:
           kind_name = id_name.split('_')[0]
-          test = 'if (LookupKind(Id::%s) != Kind::%s) return 1;' % (id_name, kind_name)
+          test = (
+              'if (LookupKind(Id::%s) != Kind::%s) return 1;' %
+              (id_name, kind_name))
           Emit(test, f, 1)
       else:
         pass

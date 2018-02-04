@@ -59,17 +59,30 @@ bin-pep8() {
 }
 
 # Language independent
-find-tabs() {
+find-src() {
   # benchmarks/testdata should be excluded
   find . '(' -name _tmp \
           -o -name _chroot \
           -o -name _deps \
+          -o -name _devbuild \
           -o -name testdata \
           -o -name $PY27 \
-         ')' \
-         -a -prune -o \
-         '(' -name '*.py' -o -name '*.sh' ')' -a -print |
-    xargs grep -n $'\t'
+         ')' -a -prune \
+         -o \
+         '(' -name '*.py' \
+          -o -name '*.sh' \
+          -o -name '*.asdl' \
+          -o -name '*.[ch]' \
+         ')' -a -print 
+}
+
+find-tabs() {
+  find-src | xargs grep -n $'\t'
+}
+
+find-long-lines() {
+  # Exclude URLs
+  find-src | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
 bin-flake8() {

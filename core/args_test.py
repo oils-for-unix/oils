@@ -24,7 +24,8 @@ class ArgsTest(unittest.TestCase):
     s.Option('u', 'nounset')
     s.Option(None, 'pipefail')
 
-    argv = ['-c', 'echo hi', '-e', '-o', 'nounset', 'foo', '--help']  # don't parse args afterward
+    # don't parse args afterward
+    argv = ['-c', 'echo hi', '-e', '-o', 'nounset', 'foo', '--help']
     arg, i = s.Parse(argv)
     print(arg, argv[i:])
 

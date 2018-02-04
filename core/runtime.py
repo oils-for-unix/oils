@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """
-core/runtime.py -- Parse runtime.asdl and dynamically create classes on this module.
+core/runtime.py 
 
-Similar to osh/ast_.py.
+Parse runtime.asdl and dynamically create classes on this module.  Similar to
+osh/ast_.py.
 """
 
 import sys

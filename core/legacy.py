@@ -243,7 +243,8 @@ class NullSplitter(_BaseSplitter):
 CH_DE_WHITE, CH_DE_GRAY, CH_BLACK, CH_BACKSLASH = range(4)
 
 # Nodes are states
-ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2, ST_BLACK, ST_BACKSLASH = range(7)
+(ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2, 
+ ST_BLACK, ST_BACKSLASH) = range(7)
 
 # Actions control what spans to emit.
 EMIT_PART, EMIT_DE, EMIT_EMPTY, EMIT_ESCAPE, NO_EMIT = range(5)
@@ -347,8 +348,8 @@ class IfsSplitter(_BaseSplitter):
         raise AssertionError(
             'Invalid transition from %r with %r' % (state, ch))
 
-      #from core.util  import log
-      #log('i %d c %r ch %s state %s new_state %s action %s', i, c, ch, state, new_state, action)
+      #log('i %d c %r ch %s state %s new_state %s action %s',
+      #     i, c, ch, state, new_state, action)
 
       if action == EMIT_PART:
         spans.append((span_e.Black, i))

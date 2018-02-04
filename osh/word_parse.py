@@ -945,8 +945,8 @@ class WordParser(object):
 
     return ast.ArrayLiteralPart(words3)
 
-  def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok, lex_mode=lex_mode_e.OUTER,
-                       empty_ok=True):
+  def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
+                        lex_mode=lex_mode_e.OUTER, empty_ok=True):
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -1144,8 +1144,8 @@ class WordParser(object):
         Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.ControlFlow,
         Kind.BoolUnary, Kind.BoolBinary, Kind.ExtGlob):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
-      # lex_mode_e.COMMENT and read until end of line.  (TODO: How to add comments
-      # to AST?)
+      # lex_mode_e.COMMENT and read until end of line.  (TODO: How to add
+      # comments to AST?)
 
       # TODO: Can we do the same thing for Tilde here?  Enter a state where we
       # look for / too.
@@ -1155,7 +1155,8 @@ class WordParser(object):
 
         # NOTE: The # could be the last character in the file.  It can't be
         # Eof_{RParen,Backtick} because #) and #` are comments.
-        assert self.token_type in (Id.Ignored_Comment, Id.Eof_Real), self.cur_token
+        assert self.token_type in (Id.Ignored_Comment, Id.Eof_Real), \
+            self.cur_token
 
         # The next iteration will go into Kind.Ignored and set lex state to
         # lex_mode_e.OUTER/etc.

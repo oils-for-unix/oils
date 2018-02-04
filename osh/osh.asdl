@@ -89,7 +89,7 @@ module osh
   | BracedIntRangePart(int start, int end, braced_step? step)
     -- {a..f} or {a..f..2} or {a..f..-2}
   | BracedCharRangePart(string start, string end, braced_step? step)
-	-- extended globs are parsed statically, unlike globs
+  -- extended globs are parsed statically, unlike globs
   | ExtGlobPart(token op, word* arms)
 
   word = 

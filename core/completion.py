@@ -505,8 +505,9 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
     pass
 
   # TODO: Need to show buf... Need a multiline display for debugging?
-  status_out.Write(1, 'prev_token %s  cur_token %s  cur_word %s', prev_token, cur_token,
-                    cur_word)
+  status_out.Write(1,
+      'prev_token %s  cur_token %s  cur_word %s',
+      prev_token, cur_token, cur_word)
   status_out.Write(2, 'comp_state %s  error %s', comp_state, c_parser.Error())
   # This one can be multiple lines
   status_out.Write(3, 'node: %s %s', repr(node) if node else '<Parse Error>',

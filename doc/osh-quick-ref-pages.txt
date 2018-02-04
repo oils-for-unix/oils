@@ -316,4 +316,21 @@ Bash has this, but OSH won't implement it.
 
 #### <OSH-Options> Options Only in OSH
 
+##### <ENVIRONMENT-VARIABLES> Environment Variables
 
+##### <SPECIAL-VARIABLES> Special Variables
+
+##### <PLUGINS-AND-HOOKS> Plugins and Hooks
+
+##### <OIL-EXTENSINOS> Oil Extensions
+
+##### <OIL-LIBRARIES> Oil Libraries
+
+#### <Builtin-Procs> Builtins Procs
+
+#### <Builtin-Procs> Builtins Funcs
+
+### <strftime> strftime()
+
+Useful for logging callbacks.  NOTE: bash has this with the obscure 
+printf '%(...)' syntax.
