@@ -18,11 +18,11 @@ from core import tdop
 from core import util
 
 from osh import arith_parse
-from osh.meta import ast
+from osh.meta import ast, types
 
 word_part_e = ast.word_part_e
 word_e = ast.word_e
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 
 p_die = util.p_die
 log = util.log

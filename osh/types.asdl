@@ -1,0 +1,21 @@
+-- Types that don't depend on Id.  (To break dependency)
+
+module types {
+  -- Also invalid because of duplicate 'Path' -- to fix
+  -- bool_operand_type = Undefined | Path | Int | Str | Other
+  redir_type = Path | Desc | Here
+
+  -- Fifteen lexer modes for osh.
+  -- Possible additional modes:
+  --   nested backticks: echo `echo \`echo foo\` bar`
+  lex_mode =
+    NONE
+  | COMMENT
+  | OUTER
+  | DBRACKET
+  | SQ | DQ | DOLLAR_SQ
+  | ARITH
+  | EXTGLOB
+  | VS_1 | VS_2 | VS_ARG_UNQ | VS_ARG_DQ
+  | BASH_REGEX | BASH_REGEX_CHARS
+}

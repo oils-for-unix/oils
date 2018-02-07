@@ -6,14 +6,11 @@ test_builtin.py
 
 import sys
 
-from core import id_kind
 from core import expr_eval
-from osh.meta import runtime
 from core import util
 
 from osh import bool_parse
-from osh.meta import ast
-from osh.meta import Id
+from osh.meta import ast, Id, runtime
 from osh import meta
 
 log = util.log

@@ -14,17 +14,16 @@ import unittest
 from asdl import const
 
 from core import alloc
-from osh.meta import Id
 from core import test_lib
 from core import word
 
-from osh.meta import ast
+from osh.meta import ast, Id, types
 from osh import ast_lib
 from osh import parse_lib
 from osh.word_parse import WordParser  # module under test
 
 arith_expr_e = ast.arith_expr_e
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 
 
 def _InitWordParserWithArena(s):

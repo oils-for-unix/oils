@@ -75,6 +75,27 @@ def IdInstance(i):
   return _ID_INSTANCES[i]
 
 
+#
+# Instantiate osh/types.asdl
+#
+
+f = util.GetResourceLoader().open('osh/types.asdl')
+_asdl_module, _type_lookup = asdl.LoadSchema(f, {})  # no app_types
+
+types = _AsdlModule()
+if 0:
+  py_meta.MakeTypes(_asdl_module, ast, _type_lookup)
+else:
+  # Exported for the generated code to use
+  TYPES_TYPE_LOOKUP = _type_lookup
+
+  # Get the types from elsewhere
+  from _devbuild.gen import types_asdl
+  py_meta.AssignTypes(types_asdl, types)
+
+f.close()
+
+
 # Id -> OperandType
 BOOL_OPS = {}  # type: dict
 
@@ -105,7 +126,7 @@ _kind_sizes = ID_SPEC.kind_sizes
 APP_TYPES = {'id': asdl.UserType(Id)}
 
 #
-# Instantiate the AST
+# Instantiate osh/osh.asdl
 #
 
 f = util.GetResourceLoader().open('osh/osh.asdl')
@@ -125,7 +146,7 @@ else:
 f.close()
 
 #
-# Instantiate runtime
+# Instantiate core/runtime.asdl
 #
 
 f = util.GetResourceLoader().open('core/runtime.asdl')
@@ -133,7 +154,7 @@ _asdl_module, _type_lookup = asdl.LoadSchema(f, APP_TYPES)
 
 runtime = _AsdlModule()
 if 0:
-  py_meta.MakeTypes(module, runtime, _type_lookup)
+  py_meta.MakeTypes(_asdl_module, runtime, _type_lookup)
 else:
   # Exported for the generated code to use
   RUNTIME_TYPE_LOOKUP = _type_lookup
@@ -143,7 +164,6 @@ else:
   py_meta.AssignTypes(runtime_asdl, runtime)
 
 f.close()
-
 
 #
 # Redirect Tables associated with IDs
@@ -170,7 +190,7 @@ REDIR_DEFAULT_FD = {
     Id.Redir_DLessDash: 0,
 }
 
-redir_type_e = ast.redir_type_e
+redir_type_e = types.redir_type_e
 
 REDIR_TYPE = {
     # filename

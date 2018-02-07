@@ -8,7 +8,7 @@
 #include <Python.h>
 
 #include "id.h"
-#include "osh-ast.h"
+#include "osh-types.h"  // for lex_mode_e
 // this is generated C code, but we want a single translation unit
 #include "osh-lex.h"
 

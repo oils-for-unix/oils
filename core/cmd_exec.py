@@ -35,11 +35,10 @@ from core import ui
 from core import util
 from core import builtin
 from core import process
-from osh.meta import runtime
 from core import state
 from core import word_compile
 
-from osh.meta import ast, Id, REDIR_TYPE, REDIR_DEFAULT_FD
+from osh.meta import ast, Id, REDIR_TYPE, REDIR_DEFAULT_FD, runtime, types
 from osh import parse_lib
 
 try:
@@ -49,12 +48,13 @@ except ImportError:
 
 EBuiltin = builtin.EBuiltin
 
+lex_mode_e = types.lex_mode_e
+redir_type_e = types.redir_type_e
+
 command_e = ast.command_e
 redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 assign_op_e = ast.assign_op_e
-redir_type_e = ast.redir_type_e
-lex_mode_e = ast.lex_mode_e
 
 value_e = runtime.value_e
 scope_e = runtime.scope_e

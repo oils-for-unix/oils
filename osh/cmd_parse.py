@@ -14,10 +14,9 @@ from asdl import const
 
 from core import braces
 from core import word
-from osh.meta import Id, Kind
 from core import util
 
-from osh.meta import ast
+from osh.meta import ast, Id, Kind, types
 from osh.lex import VAR_NAME_RE
 from osh.bool_parse import BoolParser
 
@@ -25,7 +24,7 @@ log = util.log
 command_e = ast.command_e
 word_e = ast.word_e
 assign_op_e = ast.assign_op_e
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 
 
 class CommandParser(object):

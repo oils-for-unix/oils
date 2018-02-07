@@ -20,8 +20,7 @@
 
 -- Parsed but Not Implemented
 -- * extended glob
--- * Process sub -- <() and >()
--- * <>, >| redirects
+-- * <> &> redirects
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
@@ -198,8 +197,6 @@ module osh
     -- this is useful for type safety.
   | CommandList(command* children)
 
-  and_or = DAmp | DPipe
-
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.
   -- pipe_op = Pipe | PipeAndStderr
@@ -225,26 +222,4 @@ module osh
   -- These types are not used in the LST.  But they could be statically
   -- derived from values in the LST.
   --
-
-  -- Also invalid because of duplicate 'Path' -- to fix
-  -- bool_operand_type = Undefined | Path | Int | Str | Other
-  redir_type = Path | Desc | Here
-
-  --
-  -- APIs
-  --
-
-  -- Fifteen lexer modes for osh.
-  -- Possible additional modes:
-  --   nested backticks: echo `echo \`echo foo\` bar`
-  lex_mode =
-    NONE
-  | COMMENT
-  | OUTER
-  | DBRACKET
-  | SQ | DQ | DOLLAR_SQ
-  | ARITH
-  | EXTGLOB
-  | VS_1 | VS_2 | VS_ARG_UNQ | VS_ARG_DQ
-  | BASH_REGEX | BASH_REGEX_CHARS
 }

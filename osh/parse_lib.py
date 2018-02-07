@@ -4,7 +4,6 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from core import lexer
 from core import reader
-from core import id_kind
 
 from osh import lex
 from osh import word_parse

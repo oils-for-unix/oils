@@ -5,15 +5,14 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
-from osh.meta import Id, Kind, LookupKind
 from core.lexer import CompileAll, LineLexer
 from core import test_lib
 
 from osh import parse_lib
-from osh.meta import ast
+from osh.meta import ast, Id, Kind, LookupKind, types
 from osh.lex import LEXER_DEF
 
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 
 
 def _InitLexer(s):

@@ -30,7 +30,7 @@ source build/common.sh
 # needed for the Makefile to properly crawl dependencies.
 #
 # _devbuild/gen/
-#    osh-ast.h - lex_mode_e for now
+#    osh-types.h - lex_mode_e for now
 #    id_kind.h - id_e for now
 #    osh-lex.re2c.c  
 #    osh-lex.c  
@@ -51,8 +51,8 @@ install-re2c() {
 
 re2c() { _deps/re2c-1.0.3/re2c "$@"; }
 
-ast-gen() {
-  PYTHONPATH=. osh/ast_gen.py "$@" > _devbuild/gen/osh-ast.h
+types-gen() {
+  PYTHONPATH=. osh/ast_gen.py "$@" > _devbuild/gen/osh-types.h
 }
 
 id-gen() {
@@ -84,7 +84,7 @@ ast-id-lex() {
   mkdir -p _devbuild/gen
 
   log "-- Generating AST, IDs, and lexer in _devbuild/gen"
-  ast-gen
+  types-gen
   id-gen
   osh-lex-gen
   osh-lex-gen-native

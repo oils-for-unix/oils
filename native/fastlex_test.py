@@ -11,12 +11,11 @@ libc_test.py: Tests for libc.py
 
 import unittest
 
-from osh.meta import Id, IdInstance
-from osh.meta import ast
+from osh.meta import Id, IdInstance, types
 
 import fastlex  # module under test
 
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 
 
 def MatchToken(lex_mode, line, start_pos):

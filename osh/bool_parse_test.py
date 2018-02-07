@@ -11,15 +11,14 @@ bool_parse_test.py: Tests for bool_parse.py
 
 import unittest
 
-from osh.meta import Id
 from core import test_lib
 
-from osh.meta import ast
+from osh.meta import ast, Id, types
 from osh import parse_lib
 from osh import bool_parse  # module under test
 
 bool_expr_e = ast.bool_expr_e
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 
 
 def _ReadWords(w_parser):

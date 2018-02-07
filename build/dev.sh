@@ -31,6 +31,13 @@ gen-help() {
   #build/doc.sh oil-quick-ref
 }
 
+gen-types-asdl() {
+  local out=_devbuild/gen/types_asdl.py
+  local import='from osh.meta import TYPES_TYPE_LOOKUP as TYPE_LOOKUP'
+  PYTHONPATH=. asdl/gen_python.py osh/types.asdl "$import" > $out
+  echo "Wrote $out"
+}
+
 gen-osh-asdl() {
   local out=_devbuild/gen/osh_asdl.py
   local import='from osh.meta import OSH_TYPE_LOOKUP as TYPE_LOOKUP'
@@ -94,6 +101,7 @@ minimal() {
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
 
   gen-help
+  gen-types-asdl
   gen-osh-asdl
   gen-runtime-asdl
   pylibc

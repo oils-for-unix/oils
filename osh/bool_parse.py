@@ -32,18 +32,16 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-from osh.meta import ast
-
 from core import word
-from osh.meta import Id, Kind, LookupKind
 from core import util
+from osh.meta import ast, Id, Kind, LookupKind, types
 
 try:
   import libc  # for regex_parse
 except ImportError:
   from benchmarks import fake_libc as libc
 
-lex_mode_e = ast.lex_mode_e
+lex_mode_e = types.lex_mode_e
 log = util.log
 
 
