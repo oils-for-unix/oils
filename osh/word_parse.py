@@ -18,7 +18,7 @@ from core import tdop
 from core import util
 
 from osh import arith_parse
-from osh import ast_ as ast
+from osh.meta import ast
 
 word_part_e = ast.word_part_e
 word_e = ast.word_e

@@ -12,7 +12,7 @@ from core import word
 from osh.meta import Id
 from asdl import const
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 log = util.log
 

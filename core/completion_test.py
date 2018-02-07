@@ -22,7 +22,7 @@ from core import word_eval
 from core import ui
 from osh.meta import Id
 
-from osh import ast_ as ast
+from osh.meta import ast
 from osh import parse_lib
 
 assign_op_e = ast.assign_op_e

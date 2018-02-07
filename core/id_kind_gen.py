@@ -13,7 +13,7 @@ id_kind_gen.py - Code generation for id_kind.py.
 import sys
 
 from asdl.gen_cpp import FormatLines
-from osh.meta import Id, Kind, LookupKind
+from osh.meta import Id, Kind, LookupKind, ID_SPEC
 
 
 def Emit(s, f, depth=0):
@@ -87,8 +87,6 @@ def main(argv):
     raise RuntimeError('Action required')
 
   if action == 'c':
-    # Simple list of defines
-    from core.id_kind import ID_SPEC
     ids = list(ID_SPEC.token_names.iteritems())
     ids.sort(key=lambda pair: pair[0])  # Sort by ID
     for i, name in ids:

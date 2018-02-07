@@ -7,7 +7,7 @@ from core import tdop
 from core import util
 from osh.meta import Id
 from core import word
-from osh import ast_ as ast
+from osh.meta import ast
 
 p_die = util.p_die
 

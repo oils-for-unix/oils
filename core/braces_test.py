@@ -9,7 +9,7 @@ import unittest
 
 from core import braces  # module under test
 from osh import word_parse_test
-from osh import ast_ as ast
+from osh.meta import ast
 
 word_part_e = ast.word_part_e
 

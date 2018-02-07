@@ -4,7 +4,7 @@ word.py -- Functions for using words as "tokens".
 
 from osh.meta import Id, Kind, LookupKind
 from core import util
-from osh import ast_ as ast
+from osh.meta import ast
 from asdl import const
 
 p_die = util.p_die

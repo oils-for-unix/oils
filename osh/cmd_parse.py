@@ -17,7 +17,7 @@ from core import word
 from osh.meta import Id, Kind
 from core import util
 
-from osh import ast_ as ast
+from osh.meta import ast
 from osh.lex import VAR_NAME_RE
 from osh.bool_parse import BoolParser
 

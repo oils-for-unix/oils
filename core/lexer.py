@@ -14,7 +14,7 @@ import re
 from asdl import const
 from core import util
 from osh.meta import Id
-from osh import ast_ as ast
+from osh.meta import ast
 
 log = util.log
 

@@ -9,6 +9,7 @@ import sre_parse
 import sre_constants
 
 from osh import lex
+from osh import meta
 
 
 def PrintTree(re_tree, depth=2):
@@ -228,9 +229,7 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
         re2_pat = TranslateRegex(pat)
       else:
         re2_pat = TranslateConstant(pat)
-      # TODO: Remove this after debugging Id problem
-      from core import id_kind
-      id_name = id_kind.IdName(token_id)
+      id_name = meta.IdName(token_id)
       print '      %-30s { *id = id__%s; break; }' % (re2_pat, id_name)
 
     # EARLY RETURN: Do NOT advance past the NUL terminator.

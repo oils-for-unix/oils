@@ -12,7 +12,7 @@ from core import runtime
 from core import util
 
 from osh import bool_parse
-from osh import ast_ as ast
+from osh.meta import ast
 from osh.meta import Id
 from osh import meta
 

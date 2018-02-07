@@ -105,7 +105,7 @@ import re
 from osh.meta import Id, Kind, ID_SPEC
 from core.lexer import C, R
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 lex_mode_e = ast.lex_mode_e
 

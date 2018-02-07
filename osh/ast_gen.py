@@ -5,7 +5,8 @@ ast_gen.py
 
 import sys
 
-from osh import ast_ as ast
+from osh.meta import ast, Id
+from osh import ast_
 from asdl import gen_cpp
 
 lex_mode_e = ast.lex_mode_e
@@ -16,7 +17,7 @@ def main(argv):
   #print dir(lex_mode_e)
 
   with open('osh/osh.asdl') as f:
-    asdl_module, _ = ast.LoadSchema(f)
+    asdl_module, _ = ast_.LoadSchema(Id, f)
 
   # TODO: Generate C files for lex_mode_e, id_e, etc.
 

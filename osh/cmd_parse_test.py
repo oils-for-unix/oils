@@ -11,7 +11,7 @@ from osh.meta import Id
 from core import word
 from core import test_lib
 
-from osh import ast_ as ast
+from osh.meta import ast
 from osh import ast_lib
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test

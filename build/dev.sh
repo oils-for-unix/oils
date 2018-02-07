@@ -33,7 +33,7 @@ gen-help() {
 
 gen-osh-asdl() {
   local out=_devbuild/gen/osh_asdl.py
-  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl 'osh.ast_' > $out
+  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl 'osh.meta' > $out
   echo "Wrote $out"
 }
 

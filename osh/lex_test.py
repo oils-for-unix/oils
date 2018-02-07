@@ -10,7 +10,7 @@ from core.lexer import CompileAll, LineLexer
 from core import test_lib
 
 from osh import parse_lib
-from osh import ast_ as ast
+from osh.meta import ast
 from osh.lex import LEXER_DEF
 
 lex_mode_e = ast.lex_mode_e

@@ -14,7 +14,7 @@ from core import runtime
 from core import state
 from core import word_compile
 from core import util
-from osh import ast_ as ast
+from osh.meta import ast
 
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e

@@ -35,7 +35,7 @@ import sys
 import time
 import traceback
 
-from osh import ast_ as ast
+from osh.meta import ast
 from osh import parse_lib
 from core import alloc
 from core import runtime

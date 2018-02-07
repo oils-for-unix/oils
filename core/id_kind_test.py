@@ -18,7 +18,7 @@ from osh.meta import (
     Kind, LookupKind,
     ID_SPEC, BOOL_OPS, _ID_NAMES, _kind_sizes)
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 
 class TokensTest(unittest.TestCase):

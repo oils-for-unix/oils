@@ -17,7 +17,10 @@ import sys
 # Could move these to a dir like meta?  From meta import id_kind?  From meta
 # import asdl?
 from core import id_kind 
-#from osh import ast_  # TODO: could be ast_lib?
+from osh import ast_
+from asdl import py_meta
+
+from core import util
 
 
 class Id(object):
@@ -40,6 +43,11 @@ class Kind(object):
 
   # TODO: The Kind type should be folded into ASDL.  It can't print itself,
   # which is inconsistent with Id.
+  pass
+
+
+class _AsdlModule(object):
+  """Dummy object to copy attributes onto."""
   pass
 
 
@@ -97,6 +105,27 @@ _kind_sizes = ID_SPEC.kind_sizes
 
 
 #
+# Instantiate the AST
+#
+
+f = util.GetResourceLoader().open('osh/osh.asdl')
+_asdl_module, _type_lookup = ast_.LoadSchema(Id, f)
+
+ast = _AsdlModule()
+if 0:
+  py_meta.MakeTypes(_asdl_module, ast, _type_lookup)
+else:
+  # Exported for the generated code to use
+  TYPE_LOOKUP = _type_lookup
+
+  # Get the types from elsewhere
+  from _devbuild.gen import osh_asdl
+  py_meta.AssignTypes(osh_asdl, ast)
+
+f.close()
+
+
+#
 # Redirect Tables associated with IDs
 #
 # These might be osh specific.
@@ -125,7 +154,6 @@ REDIR_DEFAULT_FD = {
 def _InitRedirType():
   # To break circular import.  TODO: Id should really be metaprogrammed in the
   # same module!
-  from osh import ast_ as ast
   redir_type_e = ast.redir_type_e
 
   return {
@@ -143,3 +171,5 @@ def _InitRedirType():
       Id.Redir_TLess: redir_type_e.Here,  # here word
       # note: here docs aren't included
   }
+
+REDIR_TYPE = _InitRedirType()

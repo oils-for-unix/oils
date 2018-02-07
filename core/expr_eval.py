@@ -22,7 +22,7 @@ from core.id_kind import OperandType
 from core import util
 from core import runtime
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 log = util.log
 warn = util.warn

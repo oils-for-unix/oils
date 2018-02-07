@@ -20,7 +20,7 @@ from core import word_eval
 from core import process
 from core import test_lib
 
-from osh import ast_ as ast
+from osh.meta import ast
 from osh import parse_lib
 
 

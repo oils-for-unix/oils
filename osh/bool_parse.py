@@ -32,7 +32,7 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 from core import word
 from osh.meta import Id, Kind, LookupKind

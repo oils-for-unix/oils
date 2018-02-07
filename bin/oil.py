@@ -62,7 +62,7 @@ from asdl import encode
 from osh import word_parse  # for tracing
 from osh import cmd_parse  # for tracing
 
-from osh import ast_ as ast
+from osh.meta import ast
 from osh import ast_lib
 from osh import parse_lib
 

@@ -8,7 +8,7 @@ import unittest
 
 from osh.meta import Id
 from core import builtin
-from osh import ast_ as ast
+from osh.meta import ast
 
 from core import process  # module under test
 from core import runtime

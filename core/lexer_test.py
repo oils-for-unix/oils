@@ -8,7 +8,7 @@ import unittest
 from osh.meta import Id
 from osh.lex import LEXER_DEF
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 
 class TokenTest(unittest.TestCase):

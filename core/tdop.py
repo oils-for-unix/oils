@@ -7,7 +7,7 @@ from osh.meta import Id
 from core import word
 from core import util
 
-from osh import ast_ as ast
+from osh.meta import ast
 
 p_die = util.p_die
 

@@ -108,5 +108,3 @@ def PrettyPrint(node, f=sys.stdout):
   tree = fmt.MakeTree(node, AbbreviateNodes)
   fmt.PrintTree(tree, ast_f)
   f.write('\n')
-
-
