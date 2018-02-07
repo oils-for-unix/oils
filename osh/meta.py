@@ -5,7 +5,7 @@ meta.py
 Another "thin waist" of the interpreter.  It can be happen at compile time!
 
 We are following the code <-> data pattern, and this is the "data" module.
-id_kind and ASDL are the code.
+id_kind and asdl are the "code" modules.
 
 Usage:
   from osh.meta import Id, Kind, ast, ID_SPEC
@@ -14,12 +14,7 @@ Usage:
 from asdl import py_meta
 from asdl import asdl_ as asdl
 
-# These are metaprogramming libraries.  Everything can happen at compile time.
-# Could move these to a dir like meta?  From meta import id_kind?  From meta
-# import asdl?
 from core import id_kind 
-from osh import ast_
-
 from core import util
 
 
@@ -84,7 +79,7 @@ _asdl_module, _type_lookup = asdl.LoadSchema(f, {})  # no app_types
 
 types = _AsdlModule()
 if 0:
-  py_meta.MakeTypes(_asdl_module, ast, _type_lookup)
+  py_meta.MakeTypes(_asdl_module, types, _type_lookup)
 else:
   # Exported for the generated code to use
   TYPES_TYPE_LOOKUP = _type_lookup
