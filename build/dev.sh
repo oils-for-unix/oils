@@ -33,13 +33,15 @@ gen-help() {
 
 gen-osh-asdl() {
   local out=_devbuild/gen/osh_asdl.py
-  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl 'osh.meta' > $out
+  local import='from osh.meta import OSH_TYPE_LOOKUP as TYPE_LOOKUP'
+  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl "$import" > $out
   echo "Wrote $out"
 }
 
 gen-runtime-asdl() {
   local out=_devbuild/gen/runtime_asdl.py
-  PYTHONPATH=. asdl/gen_python.py core/runtime.asdl 'core.runtime' > $out
+  local import='from osh.meta import RUNTIME_TYPE_LOOKUP as TYPE_LOOKUP'
+  PYTHONPATH=. asdl/gen_python.py core/runtime.asdl "$import" > $out
   echo "Wrote $out"
 }
 

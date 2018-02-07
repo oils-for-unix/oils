@@ -11,7 +11,7 @@ from core import builtin
 from osh.meta import ast
 
 from core import process  # module under test
-from core import runtime
+from osh.meta import runtime
 from core import util
 from core.cmd_exec_test import InitExecutor  # helper
 

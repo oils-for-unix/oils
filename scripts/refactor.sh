@@ -55,7 +55,8 @@ replace() {
 
 replace2() {
   #sed -r -i "s/^from core.id_kind import/from osh.meta import/g" */*.py
-  sed -r -i "s/^from osh import ast_ as ast/from osh.meta import ast/g" */*.py
+  #sed -r -i "s/^from osh import ast_ as ast/from osh.meta import ast/g" */*.py
+  sed -r -i "s/^from core import runtime/from osh.meta import runtime/g" */*.py
 }
 
 trailing-ws() {

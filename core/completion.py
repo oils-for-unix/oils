@@ -38,7 +38,7 @@ import traceback
 from osh.meta import ast
 from osh import parse_lib
 from core import alloc
-from core import runtime
+from osh.meta import runtime
 from core import state
 from core import ui
 from core import util

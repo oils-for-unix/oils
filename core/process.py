@@ -16,7 +16,7 @@ import fcntl
 import os
 import sys
 
-from core import runtime
+from osh.meta import runtime
 from core import util
 from osh.meta import Id
 

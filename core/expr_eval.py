@@ -20,7 +20,7 @@ except ImportError:
 from osh.meta import BOOL_OPS, Id
 from core.id_kind import OperandType
 from core import util
-from core import runtime
+from osh.meta import runtime
 
 from osh.meta import ast
 

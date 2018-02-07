@@ -31,7 +31,7 @@ import sys
 
 from core import args
 from core import lexer
-from core import runtime
+from osh.meta import runtime
 from core import util
 from core import state
 from core import word_compile

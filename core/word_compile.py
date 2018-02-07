@@ -7,7 +7,7 @@ doesn't depend on any values at runtime.
 """
 
 from osh.meta import Id
-from core import runtime
+from osh.meta import runtime
 
 var_flags_e = runtime.var_flags_e
 

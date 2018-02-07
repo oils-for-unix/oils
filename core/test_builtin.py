@@ -8,7 +8,7 @@ import sys
 
 from core import id_kind
 from core import expr_eval
-from core import runtime
+from osh.meta import runtime
 from core import util
 
 from osh import bool_parse

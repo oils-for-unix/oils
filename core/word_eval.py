@@ -10,7 +10,7 @@ from core import expr_eval
 from core import libstr
 from core import glob_
 from osh.meta import Id, Kind, LookupKind
-from core import runtime
+from osh.meta import runtime
 from core import state
 from core import word_compile
 from core import util

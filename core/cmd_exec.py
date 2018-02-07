@@ -35,7 +35,7 @@ from core import ui
 from core import util
 from core import builtin
 from core import process
-from core import runtime
+from osh.meta import runtime
 from core import state
 from core import word_compile
 

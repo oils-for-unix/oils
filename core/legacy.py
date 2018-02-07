@@ -37,7 +37,7 @@ with SPLIT_REGEX = / digit+ / {
 }
 """
 
-from core import runtime
+from osh.meta import runtime
 from core import util
 
 value_e = runtime.value_e

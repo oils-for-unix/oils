@@ -15,7 +15,7 @@ import os
 
 from core import args
 from core import legacy
-from core import runtime
+from osh.meta import runtime
 from core import util
 from osh.meta import Id
 

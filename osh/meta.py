@@ -102,24 +102,45 @@ id_kind.SetupTestBuiltin(Id, Kind, ID_SPEC,
 _kind_sizes = ID_SPEC.kind_sizes
 
 
+APP_TYPES = {'id': asdl.UserType(Id)}
+
 #
 # Instantiate the AST
 #
 
 f = util.GetResourceLoader().open('osh/osh.asdl')
-app_types = {'id': asdl.UserType(Id)}
-_asdl_module, _type_lookup = asdl.LoadSchema(f, app_types)
+_asdl_module, _type_lookup = asdl.LoadSchema(f, APP_TYPES)
 
 ast = _AsdlModule()
 if 0:
   py_meta.MakeTypes(_asdl_module, ast, _type_lookup)
 else:
   # Exported for the generated code to use
-  TYPE_LOOKUP = _type_lookup
+  OSH_TYPE_LOOKUP = _type_lookup
 
   # Get the types from elsewhere
   from _devbuild.gen import osh_asdl
   py_meta.AssignTypes(osh_asdl, ast)
+
+f.close()
+
+#
+# Instantiate runtime
+#
+
+f = util.GetResourceLoader().open('core/runtime.asdl')
+_asdl_module, _type_lookup = asdl.LoadSchema(f, APP_TYPES)
+
+runtime = _AsdlModule()
+if 0:
+  py_meta.MakeTypes(module, runtime, _type_lookup)
+else:
+  # Exported for the generated code to use
+  RUNTIME_TYPE_LOOKUP = _type_lookup
+
+  # Get the types from elsewhere
+  from _devbuild.gen import runtime_asdl
+  py_meta.AssignTypes(runtime_asdl, runtime)
 
 f.close()
 
