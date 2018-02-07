@@ -138,58 +138,6 @@ def GetHomeDir():
     return e.pw_dir
 
 
-class _EnumValue(object):
-  """A unique name."""
-  def __init__(self, namespace, name, value):
-    self.namespace = namespace
-    self.name = name
-    self.value = value
-
-  def __repr__(self):
-    return '<%s.%s %s>' % (self.namespace, self.name, self.value)
-
-  # I think this is not needed?
-  def __hash__(self):
-    # Needed for the LEXER_DEF dictionary
-    return hash(self.name)
-
-  # Why is this needed?  For ASDL serialization?  But we're not using it like
-  # that.
-  def __eq__(self, other):
-    if isinstance(other, int):
-      return self.value == other
-    elif isinstance(other, _EnumValue):
-      return self is other
-    else:
-      raise ValueError('%r is not comparable with %r' % (self, other))
-
-
-class Enum(object):
-  def __init__(self, enum_name, spec):
-    self._values = []
-    self._lookup = {}
-
-    counter = 0
-    for item in spec:
-      if isinstance(item, tuple):
-        name, i = item
-        v = _EnumValue(enum_name, name, i)
-        counter = i + 1
-      else:
-        name = item
-        v = _EnumValue(enum_name, name, counter)
-        counter += 1
-      self._values.append(v)
-      self._lookup[name] = v
-
-  def __getattr__(self, name):
-    """Get a value by name, e.g. Color.red."""
-    val = self._lookup.get(name)
-    if val is None:
-      raise AttributeError(name)
-    return val
-
-
 # Mutate the class after defining it:
 #
 # http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class

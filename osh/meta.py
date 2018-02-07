@@ -92,7 +92,7 @@ f.close()
 
 
 # Id -> bool_arg_type_e
-BOOL_OPS = {}  # type: dict
+BOOL_ARG_TYPES = {}  # type: dict
 
 # Used by test_builtin.py
 TEST_UNARY_LOOKUP = {}
@@ -106,7 +106,7 @@ TEST_OTHER_LOOKUP = {}
 
 ID_SPEC = id_kind.IdSpec(Id, Kind,
                          _ID_NAMES, _ID_INSTANCES, _ID_TO_KIND,
-                         BOOL_OPS)
+                         BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
 id_kind.AddBoolKinds(ID_SPEC, Id, types.bool_arg_type_e)  # must come second
@@ -188,7 +188,7 @@ REDIR_DEFAULT_FD = {
 
 redir_arg_type_e = types.redir_arg_type_e
 
-REDIR_TYPE = {
+REDIR_ARG_TYPES = {
     # filename
     Id.Redir_Less: redir_arg_type_e.Path,
     Id.Redir_Great: redir_arg_type_e.Path,

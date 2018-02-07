@@ -15,7 +15,7 @@ filter-py() {
 
 # Oil-only would exclude core/legacy.py, etc.
 oil-osh-files() {
-  { ls {bin,osh,core}/*.py native/*.c osh/osh.asdl core/runtime.asdl; } |
+  { ls {bin,osh,core}/*.py native/*.c osh/{osh,types}.asdl core/runtime.asdl; } |
     filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 

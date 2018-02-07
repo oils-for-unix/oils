@@ -16,7 +16,7 @@ from core import id_kind
 from osh.meta import (
     Id, IdName, IdInstance,
     Kind, LookupKind,
-    ID_SPEC, BOOL_OPS, _ID_NAMES, _kind_sizes)
+    ID_SPEC, BOOL_ARG_TYPES, _ID_NAMES, _kind_sizes)
 
 from osh.meta import ast
 
@@ -94,7 +94,7 @@ class TokensTest(unittest.TestCase):
 
 
 def PrintBoolTable():
-  for i, arg_type in BOOL_OPS.items():
+  for i, arg_type in BOOL_ARG_TYPES.items():
     row = (IdName(i), arg_type)
     print('\t'.join(str(c) for c in row))
 

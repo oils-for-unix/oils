@@ -31,11 +31,11 @@ import sys
 
 from core import args
 from core import lexer
-from osh.meta import runtime
 from core import util
 from core import state
 from core import word_compile
 
+from osh.meta import runtime
 from osh import lex
 
 from _devbuild.gen import osh_help  # generated file
@@ -44,26 +44,9 @@ value_e = runtime.value_e
 scope_e = runtime.scope_e
 span_e = runtime.span_e
 var_flags_e = runtime.var_flags_e
+builtin_e = runtime.builtin_e
 log = util.log
 e_die = util.e_die
-
-
-# NOTE: NONE is a special value.
-
-EBuiltin = util.Enum('EBuiltin', """
-NONE READ ECHO SHIFT
-CD PUSHD POPD DIRS
-EXPORT UNSET SET SHOPT
-TRAP UMASK
-SOURCE DOT EVAL EXEC WAIT JOBS
-COMPLETE COMPGEN DEBUG_LINE
-TRUE FALSE
-COLON
-TEST BRACKET GETOPTS
-COMMAND TYPE HELP
-DECLARE TYPESET
-""".split())
-
 
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
@@ -71,62 +54,62 @@ DECLARE TYPESET
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 
 _SPECIAL_BUILTINS = {
-    ":": EBuiltin.COLON,
-    ".": EBuiltin.DOT,
-    "eval": EBuiltin.EVAL,
-    "exec": EBuiltin.EXEC,
-    "export": EBuiltin.EXPORT,
+    ":": builtin_e.COLON,
+    ".": builtin_e.DOT,
+    "eval": builtin_e.EVAL,
+    "exec": builtin_e.EXEC,
+    "export": builtin_e.EXPORT,
 
-    "set": EBuiltin.SET,
-    "shift": EBuiltin.SHIFT,
-    #"times": EBuiltin.TIMES,  # no implemented
-    "trap": EBuiltin.TRAP,
-    "unset": EBuiltin.UNSET,
+    "set": builtin_e.SET,
+    "shift": builtin_e.SHIFT,
+    #"times": builtin_e.TIMES,  # no implemented
+    "trap": builtin_e.TRAP,
+    "unset": builtin_e.UNSET,
 
     # May be a builtin or an assignment
-    #"readonly": EBuiltin.READONLY,
-    #"local": EBuiltin.LOCAL,
-    "declare": EBuiltin.DECLARE,
-    "typeset": EBuiltin.TYPESET,
+    #"readonly": builtin_e.READONLY,
+    #"local": builtin_e.LOCAL,
+    "declare": builtin_e.DECLARE,
+    "typeset": builtin_e.TYPESET,
 
     # Not treated as builtins by OSH.  TODO: Need to auto-complete these
     # break continue return
 }
 
 _NORMAL_BUILTINS = {
-    "read": EBuiltin.READ,
-    "echo": EBuiltin.ECHO,
-    "cd": EBuiltin.CD,
-    "pushd": EBuiltin.PUSHD,
-    "popd": EBuiltin.POPD,
-    "dirs": EBuiltin.DIRS,
+    "read": builtin_e.READ,
+    "echo": builtin_e.ECHO,
+    "cd": builtin_e.CD,
+    "pushd": builtin_e.PUSHD,
+    "popd": builtin_e.POPD,
+    "dirs": builtin_e.DIRS,
 
-    "source": EBuiltin.SOURCE,  # note that . alias is special
+    "source": builtin_e.SOURCE,  # note that . alias is special
 
-    "umask": EBuiltin.UMASK,
-    "wait": EBuiltin.WAIT,
-    "jobs": EBuiltin.JOBS,
+    "umask": builtin_e.UMASK,
+    "wait": builtin_e.WAIT,
+    "jobs": builtin_e.JOBS,
 
-    "shopt": EBuiltin.SHOPT,
-    "complete": EBuiltin.COMPLETE,
-    "compgen": EBuiltin.COMPGEN,
+    "shopt": builtin_e.SHOPT,
+    "complete": builtin_e.COMPLETE,
+    "compgen": builtin_e.COMPGEN,
 
-    "true": EBuiltin.TRUE,
-    "false": EBuiltin.FALSE,
+    "true": builtin_e.TRUE,
+    "false": builtin_e.FALSE,
 
-    "test": EBuiltin.TEST,
-    "[": EBuiltin.BRACKET,
+    "test": builtin_e.TEST,
+    "[": builtin_e.BRACKET,
 
-    "getopts": EBuiltin.GETOPTS,
+    "getopts": builtin_e.GETOPTS,
 
-    "command": EBuiltin.COMMAND,
-    "type": EBuiltin.TYPE,
+    "command": builtin_e.COMMAND,
+    "type": builtin_e.TYPE,
 
-    "declare": EBuiltin.DECLARE,
-    "typeset": EBuiltin.TYPESET,
+    "declare": builtin_e.DECLARE,
+    "typeset": builtin_e.TYPESET,
 
-    "help": EBuiltin.HELP,
-    "debug-line": EBuiltin.DEBUG_LINE,
+    "help": builtin_e.HELP,
+    "debug-line": builtin_e.DEBUG_LINE,
 }
 
 
@@ -165,11 +148,11 @@ def _Register(name, help_topic=None):
 
 
 def ResolveSpecial(argv0):
-  return _SPECIAL_BUILTINS.get(argv0, EBuiltin.NONE)
+  return _SPECIAL_BUILTINS.get(argv0, builtin_e.NONE)
 
 
 def Resolve(argv0):
-  return _NORMAL_BUILTINS.get(argv0, EBuiltin.NONE)
+  return _NORMAL_BUILTINS.get(argv0, builtin_e.NONE)
 
 
 #
@@ -825,9 +808,9 @@ def _ResolveNames(names, funcs, path_val):
   for name in names:
     if name in funcs:
       kind = ('function', name)
-    elif Resolve(name) != EBuiltin.NONE:
+    elif Resolve(name) != builtin_e.NONE:
       kind = ('builtin', name)
-    elif ResolveSpecial(name) != EBuiltin.NONE:
+    elif ResolveSpecial(name) != builtin_e.NONE:
       kind = ('builtin', name)
     elif lex.IsOtherBuiltin(name):  # declare, continue, etc.
       kind = ('builtin', name)

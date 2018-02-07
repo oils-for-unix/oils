@@ -18,10 +18,12 @@ from osh.meta import ast
 
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
+effect_e = runtime.effect_e
 
 bracket_op_e = ast.bracket_op_e
 suffix_op_e = ast.suffix_op_e
 word_part_e = ast.word_part_e
+
 log = util.log
 e_die = util.e_die
 
@@ -122,12 +124,6 @@ def _DecayPartValuesToString(part_vals, join_char):
   return ''.join(out)
 
 
-# SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and SliceAndAssign is
-# for ${a=}.
-
-Effect = util.Enum('Effect', 'SpliceParts Error SpliceAndAssign NoOp'.split())
-
-
 class _WordEvaluator:
   """Abstract base class for word evaluators.
 
@@ -219,7 +215,7 @@ class _WordEvaluator:
   def _ApplyTestOp(self, val, op, quoted, part_vals):
     """
     Returns:
-      assign_part_vals, Effect
+      assign_part_vals, effect_e
 
       ${a:-} returns part_value[]
       ${a:+} returns part_value[]
@@ -256,17 +252,17 @@ class _WordEvaluator:
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
         self._EvalWordToParts(op.arg_word, quoted, part_vals)
-        return None, Effect.SpliceParts
+        return None, effect_e.SpliceParts
       else:
-        return None, Effect.NoOp
+        return None, effect_e.NoOp
 
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       # Inverse of the above.
       if is_falsey:
-        return None, Effect.NoOp
+        return None, effect_e.NoOp
       else:
         self._EvalWordToParts(op.arg_word, quoted, part_vals)
-        return None, Effect.SpliceParts
+        return None, effect_e.SpliceParts
 
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
@@ -276,9 +272,9 @@ class _WordEvaluator:
 
         # Append them to out param and return them.
         part_vals.extend(assign_part_vals)
-        return assign_part_vals, Effect.SpliceAndAssign
+        return assign_part_vals, effect_e.SpliceAndAssign
       else:
-        return None, Effect.NoOp
+        return None, effect_e.NoOp
 
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       # TODO: Construct error
@@ -509,10 +505,10 @@ class _WordEvaluator:
           # NOTE: Splicing part_values is necessary because of code like
           # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
           # do_glob/do_elide setting.
-          if effect == Effect.SpliceParts:
+          if effect == effect_e.SpliceParts:
             return  # EARLY RETURN, part_vals mutated
 
-          elif effect == Effect.SpliceAndAssign:
+          elif effect == effect_e.SpliceAndAssign:
             if var_name is None:
               # TODO: error context
               e_die("Can't assign to special variable")
@@ -524,7 +520,7 @@ class _WordEvaluator:
               state.SetLocalString(self.mem, var_name, rhs_str)
             return  # EARLY RETURN, part_vals mutated
 
-          elif effect == Effect.Error:
+          elif effect == effect_e.Error:
             raise NotImplementedError
 
           else:

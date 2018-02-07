@@ -35,10 +35,9 @@ import sys
 import time
 import traceback
 
-from osh.meta import ast
+from osh.meta import ast, runtime
 from osh import parse_lib
 from core import alloc
-from osh.meta import runtime
 from core import state
 from core import ui
 from core import util
@@ -47,6 +46,7 @@ import libc
 
 command_e = ast.command_e
 value_e = runtime.value_e
+completion_state_e = runtime.completion_state_e
 
 log = util.log
 
@@ -411,19 +411,6 @@ def _FindLastSimpleCommand(node):
   return _FindLastSimpleCommand(node.children[-1])
 
 
-ECompletionType = util.Enum('ECompletionState',
-    'NONE FIRST REST VAR_NAME HASH_KEY REDIR_FILENAME'.split())
-# REDIR_FILENAME: stdin only
-# HASH_KEY: do this later
-# NONE: nothing detected, should we default to filenames/directories?
-
-# Note: this could also be a CompRequest
-# CompRequest(FIRST, prefix)
-# CompRequest(REST, prefix, comp_words)  # use the full contact
-# CompRequest(VAR_NAME, prefix)
-# CompRequest(HASH_KEY, prefix, hash_name)  # use var name
-# CompRequest(REDIR_FILENAME, prefix)
-
 # Or it could just be a Completer / Chain?
 # CommandCompleter
 
@@ -438,7 +425,7 @@ ECompletionType = util.Enum('ECompletionState',
 def _GetCompletionType(w_parser, c_parser, ev, status_out):
   """
   Parser returns completion state.
-  Then we translate that into ECompletionType.
+  Then we translate that into completion_state_e.
 
   Returns:
     comp_type
@@ -516,7 +503,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
   status_out.Write(6, 'com_node: %s', repr(com_node) if com_node else '<None>')
 
   # TODO: Fill these in
-  comp_type = ECompletionType.FIRST
+  comp_type = completion_state_e.FIRST
   prefix = ''
   words = []
 
@@ -568,18 +555,18 @@ def _GetCompletionType1(parser, buf):
   # state.  And also we didn't see $${, which would be a special var.  Oil
   # rules are almost the same.
   if n > 0 and words[-1].startswith('$'):
-    comp_type = ECompletionType.VAR_NAME
+    comp_type = completion_state_e.VAR_NAME
     prefix = words[-1]
 
   # Otherwise complete words
   elif n == 0:
-    comp_type = ECompletionType.FIRST
+    comp_type = completion_state_e.FIRST
     prefix = ''
   elif n == 1:
-    comp_type = ECompletionType.FIRST
+    comp_type = completion_state_e.FIRST
     prefix = words[-1]
   else:
-    comp_type = ECompletionType.REST
+    comp_type = completion_state_e.REST
     prefix = words[-1]
 
   comp_index = len(words) - 1
@@ -609,22 +596,22 @@ class RootCompleter(object):
 
     # TODO: I don't get bash -D vs -E.  Might need to write a test program.
 
-    if comp_type == ECompletionType.VAR_NAME:
+    if comp_type == completion_state_e.VAR_NAME:
       # Non-user chain
       chain = self.var_comp
-    elif comp_type == ECompletionType.HASH_KEY:
+    elif comp_type == completion_state_e.HASH_KEY:
       # Non-user chain
       chain = 'TODO'
-    elif comp_type == ECompletionType.REDIR_FILENAME:
+    elif comp_type == completion_state_e.REDIR_FILENAME:
       # Non-user chain
       chain = 'TODO'
 
-    elif comp_type == ECompletionType.FIRST:
+    elif comp_type == completion_state_e.FIRST:
       chain = self.comp_lookup.GetFirstCompleter()
-    elif comp_type == ECompletionType.REST:
+    elif comp_type == completion_state_e.REST:
       chain = self.comp_lookup.GetCompleterForName(comp_words[0])
 
-    elif comp_type == ECompletionType.NONE:
+    elif comp_type == completion_state_e.NONE:
       # Null chain?  No completion?  For example,
       # ${a:- <TAB>  -- we have no idea what to put here
       chain = 'TODO'

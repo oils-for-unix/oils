@@ -54,4 +54,42 @@ module runtime
 
   -- Word splitting in legacy.py
   span = Black | Delim | Backslash
+
+  builtin = 
+    NONE | READ | ECHO | SHIFT
+  | CD | PUSHD | POPD | DIRS
+  | EXPORT | UNSET | SET | SHOPT
+  | TRAP | UMASK
+  | SOURCE | DOT | EVAL | EXEC | WAIT | JOBS
+  | COMPLETE | COMPGEN | DEBUG_LINE
+  | TRUE | FALSE
+  | COLON
+  | TEST | BRACKET | GETOPTS
+  | COMMAND | TYPE | HELP
+  | DECLARE | TYPESET
+
+  -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
+  -- SliceAndAssign is for ${a=}.
+  effect = SpliceParts | Error | SpliceAndAssign | NoOp
+
+  -- core/process.py
+  process_state = Init | Done
+
+  -- core/completion.py
+  -- NONE: nothing detected, should we default to filenames/directories?
+  -- REDIR_FILENAME: stdin only
+  -- HASH_KEY: do this later
+
+  -- Note: this could also be a CompRequest
+  -- CompRequest(FIRST, prefix)
+  -- CompRequest(REST, prefix, comp_words)  # use the full contact
+  -- CompRequest(VAR_NAME, prefix)
+  -- CompRequest(HASH_KEY, prefix, hash_name)  # use var name
+  -- CompRequest(REDIR_FILENAME, prefix)
+
+  completion_state = 
+    NONE | FIRST | REST | VAR_NAME | HASH_KEY | REDIR_FILENAME
+
+  -- tools/osh2oil.py
+  word_style = Expr | Unquoted | DQ | SQ
 }

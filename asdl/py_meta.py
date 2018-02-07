@@ -121,6 +121,7 @@ class SimpleObj(Obj):
   # bool_arg_type_e.Undefined = bool_arg_type_e(1, 'Undefined')
 
   def __hash__(self):
+    # Could it be the integer self.enum_id?
     return hash(self.__class__.__name__ + self.name)
 
   def __repr__(self):

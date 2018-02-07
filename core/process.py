@@ -21,6 +21,7 @@ from core import util
 from osh.meta import Id
 
 redirect_e = runtime.redirect_e
+process_state_e = runtime.process_state_e
 e_die = util.e_die
 log = util.log
 
@@ -352,12 +353,9 @@ class _HereDocWriterThunk(Thunk):
     sys.exit(0)  # Could this fail?
 
 
-ProcessState = util.Enum('ProcessState', """Init Done""".split())
-
-
 class Job(object):
   def __init__(self):
-    self.state = ProcessState.Init
+    self.state = process_state_e.Init
 
   def State(self):
     return self.state
@@ -438,7 +436,7 @@ class Process(Job):
       #log('WAITING')
       if not waiter.Wait():
         break
-      if self.state == ProcessState.Done:
+      if self.state == process_state_e.Done:
         break
     return self.status
 
@@ -446,7 +444,7 @@ class Process(Job):
     #log('WhenDone %d %d', pid, status)
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
-    self.state = ProcessState.Done
+    self.state = process_state_e.Done
     if self.job_state:
       self.job_state.WhenDone(pid)
 
@@ -525,7 +523,7 @@ class Pipeline(Job):
       #log('WAIT pipeline')
       if not waiter.Wait():
         break
-      if self.state == ProcessState.Done:
+      if self.state == process_state_e.Done:
         #log('Pipeline DONE')
         break
 
@@ -543,7 +541,7 @@ class Pipeline(Job):
     self.pipe_status[i] = status
     if all(status != -1 for status in self.pipe_status):
       self.status = self.pipe_status[-1]  # last one
-      self.state = ProcessState.Done
+      self.state = process_state_e.Done
       if self.job_state:
         self.job_state.WhenDone(self.pipe_status[-1])
 
@@ -578,12 +576,12 @@ class JobState:
     if jid not in self.jobs:
       return False, False
     job = self.jobs[jid]
-    return True, job.State() == ProcessState.Done
+    return True, job.State() == process_state_e.Done
 
   def AllDone(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
     for job in self.jobs.itervalues():
-      if job.State() != ProcessState.Done:
+      if job.State() != process_state_e.Done:
         return False
     return True
 

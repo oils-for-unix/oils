@@ -7,9 +7,12 @@ import unittest
 
 from core import word
 from tools import osh2oil  # module under test
-WordStyle = osh2oil.WordStyle
+
+from _devbuild.gen import runtime_asdl
 
 from osh.word_parse_test import _assertReadWord
+
+word_style_e = runtime_asdl.word_style_e
 
 
 def assertStyle(test, expected_style, word_str):
@@ -26,28 +29,28 @@ def assertStyle(test, expected_style, word_str):
 class FixTest(unittest.TestCase):
 
   def testGetRhsStyle(self):
-    w = assertStyle(self, WordStyle.SQ, 'foo')
-    w = assertStyle(self, WordStyle.SQ, "'hi'")
+    w = assertStyle(self, word_style_e.SQ, 'foo')
+    w = assertStyle(self, word_style_e.SQ, "'hi'")
 
-    w = assertStyle(self, WordStyle.Expr, '$var')
-    w = assertStyle(self, WordStyle.Expr, '${var}')
+    w = assertStyle(self, word_style_e.Expr, '$var')
+    w = assertStyle(self, word_style_e.Expr, '${var}')
 
-    w = assertStyle(self, WordStyle.Expr, ' "$var" ')
-    w = assertStyle(self, WordStyle.Expr, ' "${var}" ')
+    w = assertStyle(self, word_style_e.Expr, ' "$var" ')
+    w = assertStyle(self, word_style_e.Expr, ' "${var}" ')
 
-    w = assertStyle(self, WordStyle.Unquoted, ' $((1+2)) ')
-    w = assertStyle(self, WordStyle.Unquoted, ' $(echo hi) ')
+    w = assertStyle(self, word_style_e.Unquoted, ' $((1+2)) ')
+    w = assertStyle(self, word_style_e.Unquoted, ' $(echo hi) ')
 
-    w = assertStyle(self, WordStyle.Unquoted, ' "$((1+2))" ')
-    w = assertStyle(self, WordStyle.Unquoted, ' "$(echo hi)" ')
+    w = assertStyle(self, word_style_e.Unquoted, ' "$((1+2))" ')
+    w = assertStyle(self, word_style_e.Unquoted, ' "$(echo hi)" ')
 
-    w = assertStyle(self, WordStyle.DQ, ' $src/file ')
-    w = assertStyle(self, WordStyle.DQ, ' ${src}/file ')
+    w = assertStyle(self, word_style_e.DQ, ' $src/file ')
+    w = assertStyle(self, word_style_e.DQ, ' ${src}/file ')
 
-    w = assertStyle(self, WordStyle.DQ, ' "$src/file" ')
-    w = assertStyle(self, WordStyle.DQ, ' "${src}/file" ')
+    w = assertStyle(self, word_style_e.DQ, ' "$src/file" ')
+    w = assertStyle(self, word_style_e.DQ, ' "${src}/file" ')
 
-    w = assertStyle(self, WordStyle.DQ, ' $((1+2))$(echo hi) ')
+    w = assertStyle(self, word_style_e.DQ, ' $((1+2))$(echo hi) ')
 
     # PROBLEM: How do you express it quoted?
     # "$~/src"
@@ -66,13 +69,13 @@ class FixTest(unittest.TestCase):
 
 
 
-    w = assertStyle(self, WordStyle.DQ, ' ~/src ')
-    w = assertStyle(self, WordStyle.DQ, ' ~bob/foo ')
-    w = assertStyle(self, WordStyle.SQ, 'notleading~')
+    w = assertStyle(self, word_style_e.DQ, ' ~/src ')
+    w = assertStyle(self, word_style_e.DQ, ' ~bob/foo ')
+    w = assertStyle(self, word_style_e.SQ, 'notleading~')
 
     # These tildes are quoted
-    w = assertStyle(self, WordStyle.SQ, ' "~/src" ')
-    w = assertStyle(self, WordStyle.SQ, ' "~bob/foo" ')
+    w = assertStyle(self, word_style_e.SQ, ' "~/src" ')
+    w = assertStyle(self, word_style_e.SQ, ' "~bob/foo" ')
 
 
 if __name__ == '__main__':

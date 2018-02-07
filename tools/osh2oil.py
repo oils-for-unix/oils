@@ -7,12 +7,14 @@ TODO: Change := to =, and var/const/set
 
 import sys
 
+from asdl import const
 from core import util
 from core import word
-from osh.meta import Id
-from asdl import const
+from osh.meta import ast, Id
 
-from osh.meta import ast
+from _devbuild.gen import runtime_asdl
+
+word_style_e = runtime_asdl.word_style_e
 
 log = util.log
 
@@ -110,13 +112,6 @@ def PrintAsOil(arena, node, debug_spans):
     # Or only at the front?
 
 
-SPLIT, EXPR, UNQUOTED, DQ, SQ = range(5)  # 5 modes of expression
-
-# DQ: \$ \\ \"
-# SQ: \\ \'
-
-WordStyle = util.Enum('WordStyle', 'Expr Unquoted DQ SQ'.split())
-
 # QEFS is wrong?  Because RHS never gets split!  It can always be foo=$1/foo.
 # Not used because RHS not split:
 # $x -> @-x  and  ${x} -> @-x
@@ -146,29 +141,29 @@ def _GetRhsStyle(w):
       # ~andy -> homedir('andy')
       # tilde()
       # tilde('andy') ?
-      return WordStyle.Expr
+      return word_style_e.Expr
     elif part0.tag in OTHER_SUBS:
-      return WordStyle.Unquoted
+      return word_style_e.Unquoted
 
     elif part0.tag == word_part_e.DoubleQuotedPart:
       if len(part0.parts) == 1:
         dq_part0 = part0.parts[0]
         # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
         if dq_part0.tag in VAR_SUBS:
-          return WordStyle.Expr
+          return word_style_e.Expr
         elif dq_part0.tag in OTHER_SUBS:
-          return WordStyle.Unquoted
+          return word_style_e.Unquoted
 
   # Tilde subs also cause double quoted style.
   for part in w.parts:
     if part.tag == word_part_e.DoubleQuotedPart:
       for dq_part in part.parts:
         if dq_part.tag in ALL_SUBS:
-          return WordStyle.DQ
+          return word_style_e.DQ
     elif part.tag in ALL_SUBS:
-      return WordStyle.DQ
+      return word_style_e.DQ
 
-  return WordStyle.SQ
+  return word_style_e.SQ
 
 
 # TODO: Change to --assume, and have a default for each one?
@@ -822,11 +817,11 @@ class OilPrinter:
 
   def DoWordAsExpr(self, node, local_symbols):
     style = _GetRhsStyle(node)
-    if style == WordStyle.SQ:
+    if style == word_style_e.SQ:
       self.f.write("'")
       self.DoWordInCommand(node, local_symbols)
       self.f.write("'")
-    elif style == WordStyle.DQ:
+    elif style == word_style_e.DQ:
       self.f.write('"')
       self.DoWordInCommand(node, local_symbols)
       self.f.write('"')

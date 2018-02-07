@@ -42,45 +42,5 @@ class TraceTest(unittest.TestCase):
     print(p.ParseCommandList({}))
 
 
-class EnumTest(unittest.TestCase):
-
-  def testEnum(self):
-    Color = util.Enum('Color', 'red green blue'.split())
-    print(Color._values)
-    print(Color._lookup)
-
-    Color = util.Enum('Color', ['red', ('green', 3), 'blue'])
-    print(Color._values)
-    print(Color._lookup)
-
-    print(Color.red)
-    print(Color.green)
-    try:
-      print(Color.BAD)
-    except AttributeError as e:
-      self.assertEqual('BAD', e.args[0])
-    else:
-      self.fail("Expected error")
-
-    self.assertEqual(Color.red, Color.red)
-    self.assertNotEqual(Color.red, Color.green)
-
-    self.assertEqual(Color.red, 0)
-    self.assertEqual(Color.blue, 4)
-    try:
-      print(Color.blue == '')
-    except ValueError as e:
-      pass
-    else:
-      self.fail("Expected error")
-
-    d = {
-        Color.red: 'R',
-        Color.green: 'Blue',
-        Color.blue: 'B',
-    }
-    self.assertEqual('R', d[Color.red])
-
-
 if __name__ == '__main__':
   unittest.main()

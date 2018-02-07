@@ -38,7 +38,7 @@ from core import process
 from core import state
 from core import word_compile
 
-from osh.meta import ast, Id, REDIR_TYPE, REDIR_DEFAULT_FD, runtime, types
+from osh.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
 from osh import parse_lib
 
 try:
@@ -46,7 +46,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-EBuiltin = builtin.EBuiltin
+builtin_e = builtin.builtin_e
 
 lex_mode_e = types.lex_mode_e
 redir_arg_type_e = types.redir_arg_type_e
@@ -272,104 +272,104 @@ class Executor(object):
 
     # TODO: figure out a quicker dispatch mechanism.  Just make a table of
     # builtins I guess.
-    if builtin_id == EBuiltin.EXEC:
+    if builtin_id == builtin_e.EXEC:
       status = self._Exec(argv)  # may never return
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
 
-    elif builtin_id == EBuiltin.READ:
+    elif builtin_id == builtin_e.READ:
       status = builtin.Read(argv, self.splitter, self.mem)
 
-    elif builtin_id == EBuiltin.ECHO:
+    elif builtin_id == builtin_e.ECHO:
       status = builtin.Echo(argv)
 
-    elif builtin_id == EBuiltin.SHIFT:
+    elif builtin_id == builtin_e.SHIFT:
       status = builtin.Shift(argv, self.mem)
 
-    elif builtin_id == EBuiltin.CD:
+    elif builtin_id == builtin_e.CD:
       status = builtin.Cd(argv, self.mem, self.dir_stack)
 
-    elif builtin_id == EBuiltin.SET:
+    elif builtin_id == builtin_e.SET:
       status = builtin.Set(argv, self.exec_opts, self.mem)
 
-    elif builtin_id == EBuiltin.SHOPT:
+    elif builtin_id == builtin_e.SHOPT:
       status = builtin.Shopt(argv, self.exec_opts)
 
-    elif builtin_id == EBuiltin.UNSET:
+    elif builtin_id == builtin_e.UNSET:
       status = builtin.Unset(argv, self.mem, self.funcs)
 
-    elif builtin_id == EBuiltin.EXPORT:
+    elif builtin_id == builtin_e.EXPORT:
       status = builtin.Export(argv, self.mem)
 
-    elif builtin_id == EBuiltin.WAIT:
+    elif builtin_id == builtin_e.WAIT:
       status = builtin.Wait(argv, self.waiter, self.job_state, self.mem)
 
-    elif builtin_id == EBuiltin.JOBS:
+    elif builtin_id == builtin_e.JOBS:
       status = builtin.Jobs(argv, self.job_state)
 
-    elif builtin_id == EBuiltin.PUSHD:
+    elif builtin_id == builtin_e.PUSHD:
       status = builtin.Pushd(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
-    elif builtin_id == EBuiltin.POPD:
+    elif builtin_id == builtin_e.POPD:
       status = builtin.Popd(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
-    elif builtin_id == EBuiltin.DIRS:
+    elif builtin_id == builtin_e.DIRS:
       status = builtin.Dirs(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
-    elif builtin_id in (EBuiltin.SOURCE, EBuiltin.DOT):
+    elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
       status = self._Source(argv)
 
-    elif builtin_id == EBuiltin.TRAP:
+    elif builtin_id == builtin_e.TRAP:
       status = builtin.Trap(argv, self.traps, self.nodes_to_run, self)
 
-    elif builtin_id == EBuiltin.UMASK:
+    elif builtin_id == builtin_e.UMASK:
       status = builtin.Umask(argv)
 
-    elif builtin_id == EBuiltin.EVAL:
+    elif builtin_id == builtin_e.EVAL:
       status = self._Eval(argv)
 
-    elif builtin_id == EBuiltin.COMPLETE:
+    elif builtin_id == builtin_e.COMPLETE:
       status = self._Complete(argv)
 
-    elif builtin_id == EBuiltin.COMPGEN:
+    elif builtin_id == builtin_e.COMPGEN:
       status = self._CompGen(argv)
 
-    elif builtin_id == EBuiltin.COLON:  # special builtin like 'true'
+    elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
 
-    elif builtin_id == EBuiltin.TRUE:
+    elif builtin_id == builtin_e.TRUE:
       status = 0
 
-    elif builtin_id == EBuiltin.FALSE:
+    elif builtin_id == builtin_e.FALSE:
       status = 1
 
-    elif builtin_id == EBuiltin.TEST:
+    elif builtin_id == builtin_e.TEST:
       status = test_builtin.Test(argv, False)
 
-    elif builtin_id == EBuiltin.BRACKET:
+    elif builtin_id == builtin_e.BRACKET:
       status = test_builtin.Test(argv, True)  # need_right_bracket
 
-    elif builtin_id == EBuiltin.GETOPTS:
+    elif builtin_id == builtin_e.GETOPTS:
       status = builtin.GetOpts(argv, self.mem)
 
-    elif builtin_id == EBuiltin.COMMAND:
+    elif builtin_id == builtin_e.COMMAND:
       path = self.mem.GetVar('PATH')
       status = builtin.Command(argv, self.funcs, path)
 
-    elif builtin_id == EBuiltin.TYPE:
+    elif builtin_id == builtin_e.TYPE:
       path = self.mem.GetVar('PATH')
       status = builtin.Type(argv, self.funcs, path)
 
-    elif builtin_id in (EBuiltin.DECLARE, EBuiltin.TYPESET):
+    elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):
       # These are synonyms
       status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
 
-    elif builtin_id == EBuiltin.HELP:
+    elif builtin_id == builtin_e.HELP:
       loader = util.GetResourceLoader()
       status = builtin.Help(argv, loader)
 
-    elif builtin_id == EBuiltin.DEBUG_LINE:
+    elif builtin_id == builtin_e.DEBUG_LINE:
       status = builtin.DebugLine(argv, self.status_lines)
 
     else:
@@ -422,7 +422,7 @@ class Executor(object):
   def _EvalRedirect(self, n):
     fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == const.NO_INTEGER else n.fd
     if n.tag == redir_e.Redir:
-      redir_type = REDIR_TYPE[n.op_id]  # could be static in the LST?
+      redir_type = REDIR_ARG_TYPES[n.op_id]  # could be static in the LST?
 
       if redir_type == redir_arg_type_e.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
@@ -532,7 +532,7 @@ class Executor(object):
     arg0 = argv[0]
 
     builtin_id = builtin.ResolveSpecial(arg0)
-    if builtin_id != EBuiltin.NONE:
+    if builtin_id != builtin_e.NONE:
       try:
         status = self._RunBuiltin(builtin_id, argv)
       except args.UsageError as e:
@@ -549,7 +549,7 @@ class Executor(object):
       return status
 
     builtin_id = builtin.Resolve(arg0)
-    if builtin_id != EBuiltin.NONE:
+    if builtin_id != builtin_e.NONE:
       try:
         status = self._RunBuiltin(builtin_id, argv)
       except args.UsageError as e:

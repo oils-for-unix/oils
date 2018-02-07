@@ -17,7 +17,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from osh.meta import BOOL_OPS, Id, types
+from osh.meta import BOOL_ARG_TYPES, Id, types
 from core import util
 from osh.meta import runtime
 
@@ -480,7 +480,7 @@ class BoolEvaluator(_ExprEvaluator):
       s = self._EvalCompoundWord(node.child)
 
       # Now dispatch on arg type
-      arg_type = BOOL_OPS[op_id]  # could be static in the LST?
+      arg_type = BOOL_ARG_TYPES[op_id]  # could be static in the LST?
 
       if arg_type == bool_arg_type_e.Path:
         # Only use lstat if we're testing for a symlink.
@@ -550,7 +550,7 @@ class BoolEvaluator(_ExprEvaluator):
       s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)
 
       # Now dispatch on arg type
-      arg_type = BOOL_OPS[op_id]
+      arg_type = BOOL_ARG_TYPES[op_id]
 
       if arg_type == bool_arg_type_e.Path:
         st1 = os.stat(s1)
