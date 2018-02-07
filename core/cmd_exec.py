@@ -49,7 +49,7 @@ except ImportError:
 EBuiltin = builtin.EBuiltin
 
 lex_mode_e = types.lex_mode_e
-redir_type_e = types.redir_type_e
+redir_arg_type_e = types.redir_arg_type_e
 
 command_e = ast.command_e
 redir_e = ast.redir_e
@@ -424,7 +424,7 @@ class Executor(object):
     if n.tag == redir_e.Redir:
       redir_type = REDIR_TYPE[n.op_id]  # could be static in the LST?
 
-      if redir_type == redir_type_e.Path:
+      if redir_type == redir_arg_type_e.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
         val = self.word_ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:  # TODO: This error never fires
@@ -438,7 +438,7 @@ class Executor(object):
 
         return runtime.PathRedirect(n.op_id, fd, filename)
 
-      elif redir_type == redir_type_e.Desc:  # e.g. 1>&2
+      elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:  # TODO: This error never fires
           util.error("Redirect descriptor should be a string, got %s", val)
@@ -456,7 +456,7 @@ class Executor(object):
 
         return runtime.DescRedirect(n.op_id, fd, target_fd)
 
-      elif redir_type == redir_type_e.Here:  # here word
+      elif redir_type == redir_arg_type_e.Here:  # here word
         # TODO: decay should be controlled by an option
         val = self.word_ev.EvalWordToString(n.arg_word, decay=True)
         if val.tag != value_e.Str:   # TODO: This error never fires

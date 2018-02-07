@@ -111,6 +111,18 @@ class SimpleObj(Obj):
     self.enum_id = enum_id
     self.name = name
 
+  # TODO: Why is __hash__ needed?  Otherwise native/fastlex_test.py fails.
+  # util.Enum required it too.  I thought that instances would hash by
+  # identity?
+  #
+  # Example:
+  # class bool_arg_type_e(py_meta.SimpleObj):
+  #   ASDL_TYPE = TYPE_LOOKUP.ByTypeName('bool_arg_type')
+  # bool_arg_type_e.Undefined = bool_arg_type_e(1, 'Undefined')
+
+  def __hash__(self):
+    return hash(self.__class__.__name__ + self.name)
+
   def __repr__(self):
     return '<%s %s %s>' % (self.__class__.__name__, self.name, self.enum_id)
 

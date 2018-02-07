@@ -13,6 +13,7 @@ build/codegen.sh lexer.
 """
 
 from core import util
+log = util.log
 
 
 class IdSpec(object):
@@ -60,7 +61,7 @@ class IdSpec(object):
   def _AddKind(self, kind_name):
     # TODO: Should be instantiated or folded into ASDL.
     setattr(self.kind_enum, kind_name, self.kind_index)
-    #util.log('%s = %d', kind_name, self.kind_index)
+    #log('%s = %d', kind_name, self.kind_index)
     self.kind_index += 1
 
   def AddKind(self, kind_name, tokens):
@@ -93,6 +94,8 @@ class IdSpec(object):
   def AddBoolKind(self, kind_name, arg_type_pairs):
     """
     Args:
+      kind_name: string
+      arg_type_pairs: dictionary of bool_arg_type_e -> []
     """
     lexer_pairs = []
     num_tokens = 0
@@ -116,14 +119,14 @@ class IdSpec(object):
     self._AddKind(kind_name)
     self.kind_sizes.append(num_tokens)  # debug info
 
-  def AddBoolBinaryForBuiltin(self, token_name, kind):
+  def AddBoolBinaryForBuiltin(self, token_name, kind, bool_arg_type_e):
     """For [ = ] [ == ] and [ != ].
     
     These operators are NOT added to the lexer.  The are "lexed" as StringWord.
     """
     token_name = 'BoolBinary_%s' % token_name
     id_val = self._AddId(token_name, kind=kind)
-    self.AddBoolOp(id_val, OperandType.Str)
+    self.AddBoolOp(id_val, bool_arg_type_e.Str)
     return id_val
 
   def AddBoolOp(self, id_, arg_type):
@@ -371,41 +374,40 @@ _UNARY_PATH_CHARS = 'abcdefghLprsSuwxOGN'  # -a is overloaded
 _BINARY_PATH = ['ef', 'nt', 'ot']
 _BINARY_INT = ['eq', 'ne', 'gt', 'ge', 'lt', 'le']
 
-OperandType = util.Enum('OperandType', 'Undefined Path Int Str Other'.split())
-
 
 def _Dash(strs):
   # Gives a pair of (token name, string to match)
   return [(s, '-' + s) for s in strs]
 
 
-def AddBoolKinds(spec, Id):
+def AddBoolKinds(spec, Id, bool_arg_type_e):
   spec.AddBoolKind('BoolUnary', {
-      OperandType.Str: _Dash(list(_UNARY_STR_CHARS)),
-      OperandType.Other: _Dash(list(_UNARY_OTHER_CHARS)),
-      OperandType.Path: _Dash(list(_UNARY_PATH_CHARS)),
+      bool_arg_type_e.Str: _Dash(list(_UNARY_STR_CHARS)),
+      bool_arg_type_e.Other: _Dash(list(_UNARY_OTHER_CHARS)),
+      bool_arg_type_e.Path: _Dash(list(_UNARY_PATH_CHARS)),
   })
 
   spec.AddBoolKind('BoolBinary', {
-      OperandType.Str: [
+      bool_arg_type_e.Str: [
           ('GlobEqual', '='), ('GlobDEqual', '=='), ('GlobNEqual', '!='),
           ('EqualTilde', '=~'),
       ],
-      OperandType.Path: _Dash(_BINARY_PATH),
-      OperandType.Int: _Dash(_BINARY_INT),
+      bool_arg_type_e.Path: _Dash(_BINARY_PATH),
+      bool_arg_type_e.Int: _Dash(_BINARY_INT),
   })
 
   # logical, arity, arg_type
-  spec.AddBoolOp(Id.Op_DAmp, OperandType.Undefined)
-  spec.AddBoolOp(Id.Op_DPipe, OperandType.Undefined)
-  spec.AddBoolOp(Id.KW_Bang, OperandType.Undefined)
+  spec.AddBoolOp(Id.Op_DAmp, bool_arg_type_e.Undefined)
+  spec.AddBoolOp(Id.Op_DPipe, bool_arg_type_e.Undefined)
+  spec.AddBoolOp(Id.KW_Bang, bool_arg_type_e.Undefined)
 
-  spec.AddBoolOp(Id.Redir_Less, OperandType.Str)
-  spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
+  spec.AddBoolOp(Id.Redir_Less, bool_arg_type_e.Str)
+  spec.AddBoolOp(Id.Redir_Great, bool_arg_type_e.Str)
 
 
 def SetupTestBuiltin(Id, Kind, id_spec,
-                     unary_lookup, binary_lookup, other_lookup):
+                     unary_lookup, binary_lookup, other_lookup,
+                     bool_arg_type_e):
   """Setup tokens for test/[.
 
   Similar to _AddBoolKinds above.  Differences:
@@ -425,7 +427,9 @@ def SetupTestBuiltin(Id, Kind, id_spec,
 
   for token_name, token_str in [
       ('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
-    id_val = id_spec.AddBoolBinaryForBuiltin(token_name, Kind.BoolBinary)
+    id_val = id_spec.AddBoolBinaryForBuiltin(token_name, Kind.BoolBinary,
+                                             bool_arg_type_e)
+
     binary_lookup[token_str] = id_val
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.

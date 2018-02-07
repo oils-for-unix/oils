@@ -371,6 +371,9 @@ class Check(VisitorBase):
 
     def visitSum(self, sum, name):
         for t in sum.types:
+            # Simple sum types can't conflict
+            if is_simple(sum):
+                continue
             self.visit(t, name)
 
     def visitConstructor(self, cons, name):

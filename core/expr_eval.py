@@ -17,8 +17,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from osh.meta import BOOL_OPS, Id
-from core.id_kind import OperandType
+from osh.meta import BOOL_OPS, Id, types
 from core import util
 from osh.meta import runtime
 
@@ -27,6 +26,8 @@ from osh.meta import ast
 log = util.log
 warn = util.warn
 e_die = util.e_die
+
+bool_arg_type_e = types.bool_arg_type_e
 
 arith_expr_e = ast.arith_expr_e
 lhs_expr_e = ast.lhs_expr_e
@@ -481,7 +482,7 @@ class BoolEvaluator(_ExprEvaluator):
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]  # could be static in the LST?
 
-      if arg_type == OperandType.Path:
+      if arg_type == bool_arg_type_e.Path:
         # Only use lstat if we're testing for a symlink.
         if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
           try:
@@ -518,7 +519,7 @@ class BoolEvaluator(_ExprEvaluator):
 
         raise NotImplementedError(op_id)
 
-      if arg_type == OperandType.Str:
+      if arg_type == bool_arg_type_e.Str:
         if op_id == Id.BoolUnary_z:
           return not bool(s)
         if op_id == Id.BoolUnary_n:
@@ -526,7 +527,7 @@ class BoolEvaluator(_ExprEvaluator):
 
         raise NotImplementedError(op_id)
 
-      if arg_type == OperandType.Other:
+      if arg_type == bool_arg_type_e.Other:
         if op_id == Id.BoolUnary_t:
           try:
             fd = int(s)
@@ -551,7 +552,7 @@ class BoolEvaluator(_ExprEvaluator):
       # Now dispatch on arg type
       arg_type = BOOL_OPS[op_id]
 
-      if arg_type == OperandType.Path:
+      if arg_type == bool_arg_type_e.Path:
         st1 = os.stat(s1)
         st2 = os.stat(s2)
 
@@ -563,7 +564,7 @@ class BoolEvaluator(_ExprEvaluator):
 
         raise NotImplementedError(op_id)
 
-      if arg_type == OperandType.Int:
+      if arg_type == bool_arg_type_e.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
         # Bash also allows [[ 1+2 -eq 3 ]].
         i1 = self._StringToIntegerOrError(s1)
@@ -584,7 +585,7 @@ class BoolEvaluator(_ExprEvaluator):
 
         raise NotImplementedError(op_id)
 
-      if arg_type == OperandType.Str:
+      if arg_type == bool_arg_type_e.Str:
         # TODO:
         # - Compare arrays.  (Although bash coerces them to string first)
 

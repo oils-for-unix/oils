@@ -2,8 +2,8 @@
 
 module types {
   -- Also invalid because of duplicate 'Path' -- to fix
-  -- bool_operand_type = Undefined | Path | Int | Str | Other
-  redir_type = Path | Desc | Here
+  bool_arg_type = Undefined | Path | Int | Str | Other
+  redir_arg_type = Path | Desc | Here
 
   -- Fifteen lexer modes for osh.
   -- Possible additional modes:

@@ -14,7 +14,7 @@ Usage:
 from asdl import py_meta
 from asdl import asdl_ as asdl
 
-from core import id_kind 
+from core import id_kind
 from core import util
 
 
@@ -91,7 +91,7 @@ else:
 f.close()
 
 
-# Id -> OperandType
+# Id -> bool_arg_type_e
 BOOL_OPS = {}  # type: dict
 
 # Used by test_builtin.py
@@ -109,10 +109,11 @@ ID_SPEC = id_kind.IdSpec(Id, Kind,
                          BOOL_OPS)
 
 id_kind.AddKinds(ID_SPEC)
-id_kind.AddBoolKinds(ID_SPEC, Id)  # must come second
+id_kind.AddBoolKinds(ID_SPEC, Id, types.bool_arg_type_e)  # must come second
 id_kind.SetupTestBuiltin(Id, Kind, ID_SPEC,
                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                         TEST_OTHER_LOOKUP)
+                         TEST_OTHER_LOOKUP,
+                         types.bool_arg_type_e)
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes
@@ -185,20 +186,20 @@ REDIR_DEFAULT_FD = {
     Id.Redir_DLessDash: 0,
 }
 
-redir_type_e = types.redir_type_e
+redir_arg_type_e = types.redir_arg_type_e
 
 REDIR_TYPE = {
     # filename
-    Id.Redir_Less: redir_type_e.Path,
-    Id.Redir_Great: redir_type_e.Path,
-    Id.Redir_DGreat: redir_type_e.Path,
-    Id.Redir_Clobber: redir_type_e.Path,
-    Id.Redir_LessGreat: redir_type_e.Path,
+    Id.Redir_Less: redir_arg_type_e.Path,
+    Id.Redir_Great: redir_arg_type_e.Path,
+    Id.Redir_DGreat: redir_arg_type_e.Path,
+    Id.Redir_Clobber: redir_arg_type_e.Path,
+    Id.Redir_LessGreat: redir_arg_type_e.Path,
 
     # descriptor
-    Id.Redir_GreatAnd: redir_type_e.Desc,
-    Id.Redir_LessAnd: redir_type_e.Desc,
+    Id.Redir_GreatAnd: redir_arg_type_e.Desc,
+    Id.Redir_LessAnd: redir_arg_type_e.Desc,
 
-    Id.Redir_TLess: redir_type_e.Here,  # here word
+    Id.Redir_TLess: redir_arg_type_e.Here,  # here word
     # note: here docs aren't included
 }
