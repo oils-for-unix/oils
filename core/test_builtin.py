@@ -13,14 +13,15 @@ from core import util
 
 from osh import bool_parse
 from osh import ast_ as ast
+from osh.meta import Id
+from osh import meta
 
-Id = id_kind.Id
 log = util.log
 
 
-_UNARY_LOOKUP = id_kind.TEST_UNARY_LOOKUP
-_BINARY_LOOKUP = id_kind.TEST_BINARY_LOOKUP
-_OTHER_LOOKUP = id_kind.TEST_OTHER_LOOKUP
+_UNARY_LOOKUP = meta.TEST_UNARY_LOOKUP
+_BINARY_LOOKUP = meta.TEST_BINARY_LOOKUP
+_OTHER_LOOKUP = meta.TEST_OTHER_LOOKUP
 
 
 class _StringWordEmitter:

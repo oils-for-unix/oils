@@ -5,7 +5,7 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 
 from core import tdop
 from core import util
-from core.id_kind import Id
+from osh.meta import Id
 from core import word
 from osh import ast_ as ast
 

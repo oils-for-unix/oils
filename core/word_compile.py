@@ -6,7 +6,7 @@ This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
 
-from core.id_kind import Id
+from osh.meta import Id
 from core import runtime
 
 var_flags_e = runtime.var_flags_e

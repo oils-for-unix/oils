@@ -17,7 +17,8 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from core.id_kind import BOOL_OPS, OperandType, Id
+from osh.meta import BOOL_OPS, Id
+from core.id_kind import OperandType
 from core import util
 from core import runtime
 

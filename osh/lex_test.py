@@ -5,7 +5,7 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
-from core.id_kind import Id, Kind, LookupKind
+from osh.meta import Id, Kind, LookupKind
 from core.lexer import CompileAll, LineLexer
 from core import test_lib
 

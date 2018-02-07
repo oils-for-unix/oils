@@ -35,7 +35,7 @@ BINARY_OP: -gt, -ot, ==, etc.
 from osh import ast_ as ast
 
 from core import word
-from core.id_kind import Id, Kind, LookupKind
+from osh.meta import Id, Kind, LookupKind
 from core import util
 
 try:

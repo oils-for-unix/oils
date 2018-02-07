@@ -20,7 +20,7 @@ from core import state
 from core import test_lib
 from core import word_eval
 from core import ui
-from core.id_kind import Id
+from osh.meta import Id
 
 from osh import ast_ as ast
 from osh import parse_lib

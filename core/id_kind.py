@@ -15,60 +15,13 @@ build/codegen.sh lexer.
 from core import util
 
 
-_ID_TO_KIND = {}  # int -> Kind
-
-def LookupKind(id_):
-  return _ID_TO_KIND[id_.enum_value]
-
-
-_ID_NAMES = {}  # int -> string
-
-def IdName(id_):
-  return _ID_NAMES[id_.enum_value]
-
-
-
-# Keep one instance of each Id, to save memory and enable comparison by
-# OBJECT IDENTITY.
-# Do NOT create any any more instances of them!  Always used IdInstance().
-
-# TODO: Fold this into ASDL, which will enforce this?
-
-_ID_INSTANCES = {}  # int -> Id
-
-def IdInstance(i):
-  return _ID_INSTANCES[i]
-
-
-class Id(object):
-  """Token and op type.
-
-  The evaluator must consider all Ids.
-
-  NOTE: We add a bunch of class attributes that are INSTANCES of this class,
-  e.g. Id.Lit_Chars.
-  """
-  def __init__(self, enum_value):
-    self.enum_value = enum_value
-
-  def __repr__(self):
-    return IdName(self)
-
-
-class Kind(object):
-  """A coarser version of Id, used to make parsing decisions."""
-
-  # TODO: The Kind type should be folded into ASDL.  It can't print itself,
-  # which is inconsistent with Id.
-  pass
-
-
 class IdSpec(object):
   """Identifiers that form the "spine" of the shell program representation."""
 
-  def __init__(self, token_names, instance_lookup, kind_lookup, bool_ops):
-    self.id_enum = Id
-    self.kind_enum = Kind
+  def __init__(self, id_enum, kind_enum,
+               token_names, instance_lookup, kind_lookup, bool_ops):
+    self.id_enum = id_enum
+    self.kind_enum = kind_enum
     self.token_names = token_names  # integer -> string Id
     self.instance_lookup = instance_lookup
     self.kind_lookup = kind_lookup  # Id -> Kind
@@ -92,7 +45,8 @@ class IdSpec(object):
       kind: override autoassignment.  For AddBoolBinaryForBuiltin
     """
     self.token_index += 1  # leave out 0 I guess?
-    id_val = Id(self.token_index)
+    # The ONLY place that Id() is instantiated.
+    id_val = self.id_enum(self.token_index)
     setattr(self.id_enum, token_name, id_val)
 
     t = self.token_index
@@ -104,6 +58,7 @@ class IdSpec(object):
     return id_val
 
   def _AddKind(self, kind_name):
+    # TODO: Should be instantiated or folded into ASDL.
     setattr(self.kind_enum, kind_name, self.kind_index)
     #util.log('%s = %d', kind_name, self.kind_index)
     self.kind_index += 1
@@ -408,13 +363,6 @@ def _AddKinds(spec):
   ])
 
 
-# Id -> OperandType
-BOOL_OPS = {}  # type: dict
-
-TEST_UNARY_LOOKUP = {}
-TEST_BINARY_LOOKUP = {}
-TEST_OTHER_LOOKUP = {}
-
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
 _UNARY_OTHER_CHARS = 'otvR'  # -o is overloaded 
@@ -431,7 +379,7 @@ def _Dash(strs):
   return [(s, '-' + s) for s in strs]
 
 
-def _AddBoolKinds(spec):
+def _AddBoolKinds(spec, Id):
   spec.AddBoolKind('BoolUnary', {
       OperandType.Str: _Dash(list(_UNARY_STR_CHARS)),
       OperandType.Other: _Dash(list(_UNARY_OTHER_CHARS)),
@@ -456,7 +404,8 @@ def _AddBoolKinds(spec):
   spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
 
 
-def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
+def _SetupTestBuiltin(Id, Kind, id_spec,
+                      unary_lookup, binary_lookup, other_lookup):
   """Setup tokens for test/[.
 
   Similar to _AddBoolKinds above.  Differences:
@@ -490,64 +439,3 @@ def _SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup):
   other_lookup[')'] = Id.Op_RParen
 
   other_lookup[']'] = Id.Arith_RBracket  # For closing ]
-
-
-#
-# Instantiate the spec
-#
-
-
-ID_SPEC = IdSpec(_ID_NAMES, _ID_INSTANCES, _ID_TO_KIND, BOOL_OPS)
-
-_AddKinds(ID_SPEC)
-_AddBoolKinds(ID_SPEC)  # must come second
-_SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                  TEST_OTHER_LOOKUP)
-
-
-# Debug
-_kind_sizes = ID_SPEC.kind_sizes
-
-
-#
-# Redirect Tables associated with IDs
-#
-# These might be osh specific.
-#
-
-REDIR_DEFAULT_FD = {
-    # filename
-    Id.Redir_Less: 0,  # cat <input.txt means cat 0<input.txt
-    Id.Redir_Great: 1,
-    Id.Redir_DGreat: 1,
-    Id.Redir_Clobber: 1,
-    Id.Redir_LessGreat: 1,  # TODO: What does echo <>foo do?
-
-    # descriptor
-    Id.Redir_GreatAnd: 1,  # echo >&2  means echo 1>&2
-    Id.Redir_LessAnd: 0,   # echo <&3 means echo 0<&3, I think
-
-    Id.Redir_TLess: 0,  # here word
-
-    # here docs included
-    Id.Redir_DLess: 0,
-    Id.Redir_DLessDash: 0,
-}
-
-RedirType = util.Enum('RedirType', 'Path Desc Here'.split())
-
-REDIR_TYPE = {
-    # filename
-    Id.Redir_Less: RedirType.Path,
-    Id.Redir_Great: RedirType.Path,
-    Id.Redir_DGreat: RedirType.Path,
-    Id.Redir_Clobber: RedirType.Path,
-    Id.Redir_LessGreat: RedirType.Path,
-
-    # descriptor
-    Id.Redir_GreatAnd: RedirType.Desc,
-    Id.Redir_LessAnd: RedirType.Desc,
-
-    Id.Redir_TLess: RedirType.Here,  # here word
-    # note: here docs aren't included
-}

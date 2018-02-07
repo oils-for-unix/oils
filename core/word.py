@@ -2,9 +2,9 @@
 word.py -- Functions for using words as "tokens".
 """
 
-from osh import ast_ as ast
-from core.id_kind import Id, Kind, LookupKind
+from osh.meta import Id, Kind, LookupKind
 from core import util
+from osh import ast_ as ast
 from asdl import const
 
 p_die = util.p_die

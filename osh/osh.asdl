@@ -223,15 +223,12 @@ module osh
 
   --
   -- These types are not used in the LST.  But they could be statically
-  -- from values in the LST.
+  -- derived from values in the LST.
   --
-  -- NOTE: This is invalid: ASDL is case-sensitive!
-  -- OperandType = Undefined | Path | Int | Str | Other
-  -- RedirType = Path | Desc | Here
 
   -- Also invalid because of duplicate 'Path' -- to fix
   -- bool_operand_type = Undefined | Path | Int | Str | Other
-  -- redir_type = Path | Desc | Here
+  redir_type = Path | Desc | Here
 
   --
   -- APIs

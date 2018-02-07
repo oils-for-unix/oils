@@ -6,7 +6,7 @@ process_test.py: Tests for process.py
 import os
 import unittest
 
-from core.id_kind import Id
+from osh.meta import Id
 from core import builtin
 from osh import ast_ as ast
 

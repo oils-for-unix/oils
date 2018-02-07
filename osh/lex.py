@@ -102,7 +102,7 @@ Indexed array and Associative array literals:
 
 import re
 
-from core.id_kind import Id, Kind, ID_SPEC
+from osh.meta import Id, Kind, ID_SPEC
 from core.lexer import C, R
 
 from osh import ast_ as ast

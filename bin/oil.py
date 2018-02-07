@@ -63,13 +63,14 @@ from osh import word_parse  # for tracing
 from osh import cmd_parse  # for tracing
 
 from osh import ast_ as ast
+from osh import ast_lib
 from osh import parse_lib
 
 from core import alloc
 from core import args
 from core import builtin
 from core import cmd_exec
-from core.id_kind import Id
+from osh.meta import Id
 from core import legacy
 from core import lexer  # for tracing
 from core import process
@@ -127,7 +128,7 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
         raise RuntimeError('failed parse: %s' % c_parser.Error())
 
       if ast_f:
-        ast.PrettyPrint(node)
+        ast_lib.PrettyPrint(node)
 
       status = ex.Execute(node)
 

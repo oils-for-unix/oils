@@ -14,7 +14,7 @@ from asdl import const
 
 from core import braces
 from core import word
-from core.id_kind import Id, Kind
+from osh.meta import Id, Kind
 from core import util
 
 from osh import ast_ as ast

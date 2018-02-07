@@ -5,7 +5,7 @@ lexer_test.py: Tests for lexer.py
 
 import unittest
 
-from core.id_kind import Id
+from osh.meta import Id
 from osh.lex import LEXER_DEF
 
 from osh import ast_ as ast

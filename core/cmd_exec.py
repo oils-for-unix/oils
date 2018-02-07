@@ -34,7 +34,7 @@ from core import word_eval
 from core import ui
 from core import util
 from core import builtin
-from core.id_kind import Id, RedirType, REDIR_TYPE, REDIR_DEFAULT_FD
+from osh.meta import Id, REDIR_DEFAULT_FD, _InitRedirType
 from core import process
 from core import runtime
 from core import state
@@ -42,6 +42,9 @@ from core import word_compile
 
 from osh import ast_ as ast
 from osh import parse_lib
+
+
+REDIR_TYPE = _InitRedirType()
 
 try:
   import libc  # for fnmatch
@@ -54,6 +57,7 @@ command_e = ast.command_e
 redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 assign_op_e = ast.assign_op_e
+redir_type_e = ast.redir_type_e
 lex_mode_e = ast.lex_mode_e
 
 value_e = runtime.value_e
@@ -424,7 +428,7 @@ class Executor(object):
     if n.tag == redir_e.Redir:
       redir_type = REDIR_TYPE[n.op_id]  # could be static in the LST?
 
-      if redir_type == RedirType.Path:
+      if redir_type == redir_type_e.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
         val = self.word_ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:  # TODO: This error never fires
@@ -438,7 +442,7 @@ class Executor(object):
 
         return runtime.PathRedirect(n.op_id, fd, filename)
 
-      elif redir_type == RedirType.Desc:  # e.g. 1>&2
+      elif redir_type == redir_type_e.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
         if val.tag != value_e.Str:  # TODO: This error never fires
           util.error("Redirect descriptor should be a string, got %s", val)
@@ -456,7 +460,7 @@ class Executor(object):
 
         return runtime.DescRedirect(n.op_id, fd, target_fd)
 
-      elif redir_type == RedirType.Here:  # here word
+      elif redir_type == redir_type_e.Here:  # here word
         # TODO: decay should be controlled by an option
         val = self.word_ev.EvalWordToString(n.arg_word, decay=True)
         if val.tag != value_e.Str:   # TODO: This error never fires

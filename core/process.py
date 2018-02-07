@@ -18,7 +18,7 @@ import sys
 
 from core import runtime
 from core import util
-from core.id_kind import Id
+from osh.meta import Id
 
 redirect_e = runtime.redirect_e
 e_die = util.e_die

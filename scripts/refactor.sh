@@ -53,6 +53,10 @@ replace() {
   done < $file
 }
 
+replace2() {
+  sed -r -i "s/^from core.id_kind import/from osh.meta import/g" */*.py
+}
+
 trailing-ws() {
   sed -r -i 's/[ ]+$//g' "$@"
 }

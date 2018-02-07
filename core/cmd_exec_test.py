@@ -13,7 +13,7 @@ import unittest
 
 from core import cmd_exec  # module under test
 from core.cmd_exec import *
-from core.id_kind import Id
+from osh.meta import Id
 from core import completion
 from core import legacy
 from core import word_eval

@@ -13,7 +13,7 @@ id_kind_gen.py - Code generation for id_kind.py.
 import sys
 
 from asdl.gen_cpp import FormatLines
-from core.id_kind import Id, Kind, LookupKind
+from osh.meta import Id, Kind, LookupKind
 
 
 def Emit(s, f, depth=0):

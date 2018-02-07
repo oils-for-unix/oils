@@ -13,7 +13,7 @@ import re
 
 from asdl import const
 from core import util
-from core.id_kind import Id
+from osh.meta import Id
 from osh import ast_ as ast
 
 log = util.log

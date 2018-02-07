@@ -13,7 +13,10 @@ id_kind_test.py: Tests for id_kind.py
 import unittest
 
 from core import id_kind
-from core.id_kind import Id, IdName, Kind, LookupKind
+from osh.meta import (
+    Id, IdName, IdInstance,
+    Kind, LookupKind,
+    ID_SPEC, BOOL_OPS, _ID_NAMES, _kind_sizes)
 
 from osh import ast_ as ast
 
@@ -42,7 +45,7 @@ class TokensTest(unittest.TestCase):
 
     print('Number of Kinds:', num_kinds)
     # 233 out of 256 tokens now
-    print('Number of IDs:', len(id_kind._ID_NAMES))
+    print('Number of IDs:', len(_ID_NAMES))
 
     # Make sure we're not exporting too much
     print(dir(id_kind))
@@ -61,8 +64,8 @@ class TokensTest(unittest.TestCase):
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
   def testEquality(self):
-    left = id_kind.IdInstance(198)
-    right = id_kind.IdInstance(198)
+    left = IdInstance(198)
+    right = IdInstance(198)
     print(left, right)
     print(left == right)
     self.assertEqual(left, right)
@@ -71,17 +74,17 @@ class TokensTest(unittest.TestCase):
     def MakeLookup(p):
       return dict((pat, tok) for _, pat, tok in p)
 
-    lookup = MakeLookup(id_kind.ID_SPEC.LexerPairs(Kind.BoolUnary))
+    lookup = MakeLookup(ID_SPEC.LexerPairs(Kind.BoolUnary))
     print(lookup)
     self.assertEqual(Id.BoolUnary_e, lookup['-e'])
     self.assertEqual(Id.BoolUnary_z, lookup['-z'])
 
-    lookup2 = MakeLookup(id_kind.ID_SPEC.LexerPairs(Kind.BoolBinary))
+    lookup2 = MakeLookup(ID_SPEC.LexerPairs(Kind.BoolBinary))
     self.assertEqual(Id.BoolBinary_eq, lookup2['-eq'])
     #print(lookup2)
 
   def testPrintStats(self):
-    k = id_kind._kind_sizes
+    k = _kind_sizes
     print('STATS: %d tokens in %d groups: %s' % (sum(k), len(k), k))
     # Thinking about switching
     big = [i for i in k if i > 8]
@@ -91,8 +94,8 @@ class TokensTest(unittest.TestCase):
 
 
 def PrintBoolTable():
-  for i, arg_type in id_kind.BOOL_OPS.items():
-    row = (id_kind.IdName(i), arg_type)
+  for i, arg_type in BOOL_OPS.items():
+    row = (IdName(i), arg_type)
     print('\t'.join(str(c) for c in row))
 
 

@@ -11,7 +11,7 @@ import sys
 from asdl import py_meta
 from asdl import asdl_ as asdl
 from core import util
-from core.id_kind import Id
+from osh.meta import Id
 
 
 def _LoadSchema(f):

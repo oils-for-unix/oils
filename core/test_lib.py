@@ -10,7 +10,7 @@ test_lib.py - Functions for testing.
 """
 
 from core import alloc
-from core.id_kind import Id
+from osh.meta import Id
 from asdl import py_meta
 
 

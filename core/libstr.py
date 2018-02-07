@@ -17,7 +17,7 @@ import re
 
 import libc
 
-from core.id_kind import Id
+from osh.meta import Id
 from core import glob_
 from core import util
 

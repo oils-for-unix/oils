@@ -9,7 +9,7 @@ from core import braces
 from core import expr_eval
 from core import libstr
 from core import glob_
-from core.id_kind import Id, Kind, LookupKind
+from osh.meta import Id, Kind, LookupKind
 from core import runtime
 from core import state
 from core import word_compile

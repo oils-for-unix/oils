@@ -17,7 +17,7 @@ Possible optimization flags for CompoundWord:
 
 import sys
 
-from core.id_kind import Id
+from osh.meta import Id
 from osh import ast_ as ast
 
 word_part_e = ast.word_part_e

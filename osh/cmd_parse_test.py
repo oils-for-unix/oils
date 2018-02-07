@@ -7,11 +7,12 @@ import sys
 import unittest
 
 from core import ui
-from core.id_kind import Id
+from osh.meta import Id
 from core import word
 from core import test_lib
 
 from osh import ast_ as ast
+from osh import ast_lib
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test
 from osh.word_parse import WordParser
@@ -34,7 +35,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   node = m()
 
   if node:
-    ast.PrettyPrint(node)
+    ast_lib.PrettyPrint(node)
     if not expect_success:
       test.fail('Expected %r to fail ' % code_str)
   else:
@@ -52,7 +53,7 @@ def _assertParseCommandListError(test, code_str):
   node = c_parser.ParseCommandLine()
   if node:
     print('UNEXPECTED:')
-    ast.PrettyPrint(node)
+    ast_lib.PrettyPrint(node)
     test.fail("Expected %r to fail" % code_str)
     return
   err = c_parser.Error()

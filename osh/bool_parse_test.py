@@ -11,7 +11,7 @@ bool_parse_test.py: Tests for bool_parse.py
 
 import unittest
 
-from core.id_kind import Id
+from osh.meta import Id
 from core import test_lib
 
 from osh import ast_ as ast

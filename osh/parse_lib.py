@@ -9,6 +9,7 @@ from core import id_kind
 from osh import lex
 from osh import word_parse
 from osh import cmd_parse
+from osh.meta import Id, IdInstance
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
@@ -16,8 +17,6 @@ try:
   import fastlex
 except ImportError:
   fastlex = None
-
-Id = id_kind.Id
 
 
 class MatchToken_Slow(object):
@@ -50,7 +49,7 @@ def MatchToken_Fast(lex_mode, line, start_pos):
   tok_type, end_pos = fastlex.MatchToken(lex_mode.enum_id, line, start_pos)
   # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
   # saves memory.
-  return id_kind.IdInstance(tok_type), end_pos
+  return IdInstance(tok_type), end_pos
 
 
 def _MakeMatcher():

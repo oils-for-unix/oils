@@ -3,7 +3,7 @@
 tdop.py - Library for expression parsing.
 """
 
-from core.id_kind import Id
+from osh.meta import Id
 from core import word
 from core import util
 

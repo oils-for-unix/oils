@@ -17,7 +17,7 @@ from core import args
 from core import legacy
 from core import runtime
 from core import util
-from core.id_kind import Id
+from osh.meta import Id
 
 from osh import ast_ as ast
 

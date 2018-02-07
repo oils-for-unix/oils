@@ -9,7 +9,7 @@ import sys
 
 from core import util
 from core import word
-from core.id_kind import Id
+from osh.meta import Id
 from asdl import const
 
 from osh import ast_ as ast

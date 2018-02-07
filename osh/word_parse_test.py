@@ -14,11 +14,12 @@ import unittest
 from asdl import const
 
 from core import alloc
-from core.id_kind import Id
+from osh.meta import Id
 from core import test_lib
 from core import word
 
 from osh import ast_ as ast
+from osh import ast_lib
 from osh import parse_lib
 from osh.word_parse import WordParser  # module under test
 
@@ -45,7 +46,7 @@ def _assertReadWordWithArena(test, word_str):
   arena, w_parser = _InitWordParserWithArena(word_str)
   w = w_parser.ReadWord(lex_mode_e.OUTER)
   if w:
-    ast.PrettyPrint(w)
+    ast_lib.PrettyPrint(w)
   else:
     err = w_parser.Error()
     test.fail("Couldn't parse %r: %s" % (word_str, err))
@@ -81,7 +82,7 @@ def _assertReadWordFailure(test, word_str):
   w_parser = InitWordParser(word_str)
   w = w_parser.ReadWord(lex_mode_e.OUTER)
   if w:
-    ast.PrettyPrint(w)
+    ast_lib.PrettyPrint(w)
     test.fail('Expected a parser error, got %r' % w)
   else:
     print(w_parser.Error())
@@ -347,7 +348,7 @@ class WordParserTest(unittest.TestCase):
           print('Error in word parser: %s' % e)
           self.fail(e)
 
-        ast.PrettyPrint(w)
+        ast_lib.PrettyPrint(w)
 
         if word.CommandId(w) == Id.Eof_Real:
           break
@@ -449,7 +450,7 @@ class WordParserTest(unittest.TestCase):
           print('ERROR', err)
           self.fail(err)
           break
-        ast.PrettyPrint(w)
+        ast_lib.PrettyPrint(w)
         if word.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break
 
