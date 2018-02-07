@@ -130,7 +130,7 @@ class IdSpec(object):
     self.bool_ops[id_] = arg_type
 
 
-def _AddKinds(spec):
+def AddKinds(spec):
   # TODO: Unknown_Tok is OK, but Undefined_Id is better
   spec.AddKind('Undefined', ['Tok'])  # for initial state
   spec.AddKind('Unknown',   ['Tok'])  # for when nothing matches
@@ -379,7 +379,7 @@ def _Dash(strs):
   return [(s, '-' + s) for s in strs]
 
 
-def _AddBoolKinds(spec, Id):
+def AddBoolKinds(spec, Id):
   spec.AddBoolKind('BoolUnary', {
       OperandType.Str: _Dash(list(_UNARY_STR_CHARS)),
       OperandType.Other: _Dash(list(_UNARY_OTHER_CHARS)),
@@ -404,8 +404,8 @@ def _AddBoolKinds(spec, Id):
   spec.AddBoolOp(Id.Redir_Great, OperandType.Str)
 
 
-def _SetupTestBuiltin(Id, Kind, id_spec,
-                      unary_lookup, binary_lookup, other_lookup):
+def SetupTestBuiltin(Id, Kind, id_spec,
+                     unary_lookup, binary_lookup, other_lookup):
   """Setup tokens for test/[.
 
   Similar to _AddBoolKinds above.  Differences:

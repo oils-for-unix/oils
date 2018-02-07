@@ -11,14 +11,14 @@ Usage:
   from osh.meta import Id, Kind, ast, ID_SPEC
 """
 
-import sys
+from asdl import py_meta
+from asdl import asdl_ as asdl
 
 # These are metaprogramming libraries.  Everything can happen at compile time.
 # Could move these to a dir like meta?  From meta import id_kind?  From meta
 # import asdl?
 from core import id_kind 
 from osh import ast_
-from asdl import py_meta
 
 from core import util
 
@@ -67,7 +67,7 @@ def IdName(id_):
 # OBJECT IDENTITY.
 # Do NOT create any any more instances of them!  Always used IdInstance().
 
-# TODO: Fold this into ASDL, which will enforce this?
+# TODO: Fold Id into ASDL, which will enforce uniqueness?
 
 _ID_INSTANCES = {}  # int -> Id
 
@@ -84,21 +84,19 @@ TEST_BINARY_LOOKUP = {}
 TEST_OTHER_LOOKUP = {}
 
 
-
 #
 # Instantiate the spec
 #
-
 
 ID_SPEC = id_kind.IdSpec(Id, Kind,
                          _ID_NAMES, _ID_INSTANCES, _ID_TO_KIND,
                          BOOL_OPS)
 
-id_kind._AddKinds(ID_SPEC)
-id_kind._AddBoolKinds(ID_SPEC, Id)  # must come second
-id_kind._SetupTestBuiltin(Id, Kind, ID_SPEC,
-                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                          TEST_OTHER_LOOKUP)
+id_kind.AddKinds(ID_SPEC)
+id_kind.AddBoolKinds(ID_SPEC, Id)  # must come second
+id_kind.SetupTestBuiltin(Id, Kind, ID_SPEC,
+                         TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
+                         TEST_OTHER_LOOKUP)
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes
@@ -109,7 +107,8 @@ _kind_sizes = ID_SPEC.kind_sizes
 #
 
 f = util.GetResourceLoader().open('osh/osh.asdl')
-_asdl_module, _type_lookup = ast_.LoadSchema(Id, f)
+app_types = {'id': asdl.UserType(Id)}
+_asdl_module, _type_lookup = asdl.LoadSchema(f, app_types)
 
 ast = _AsdlModule()
 if 0:
@@ -150,26 +149,20 @@ REDIR_DEFAULT_FD = {
     Id.Redir_DLessDash: 0,
 }
 
+redir_type_e = ast.redir_type_e
 
-def _InitRedirType():
-  # To break circular import.  TODO: Id should really be metaprogrammed in the
-  # same module!
-  redir_type_e = ast.redir_type_e
+REDIR_TYPE = {
+    # filename
+    Id.Redir_Less: redir_type_e.Path,
+    Id.Redir_Great: redir_type_e.Path,
+    Id.Redir_DGreat: redir_type_e.Path,
+    Id.Redir_Clobber: redir_type_e.Path,
+    Id.Redir_LessGreat: redir_type_e.Path,
 
-  return {
-      # filename
-      Id.Redir_Less: redir_type_e.Path,
-      Id.Redir_Great: redir_type_e.Path,
-      Id.Redir_DGreat: redir_type_e.Path,
-      Id.Redir_Clobber: redir_type_e.Path,
-      Id.Redir_LessGreat: redir_type_e.Path,
+    # descriptor
+    Id.Redir_GreatAnd: redir_type_e.Desc,
+    Id.Redir_LessAnd: redir_type_e.Desc,
 
-      # descriptor
-      Id.Redir_GreatAnd: redir_type_e.Desc,
-      Id.Redir_LessAnd: redir_type_e.Desc,
-
-      Id.Redir_TLess: redir_type_e.Here,  # here word
-      # note: here docs aren't included
-  }
-
-REDIR_TYPE = _InitRedirType()
+    Id.Redir_TLess: redir_type_e.Here,  # here word
+    # note: here docs aren't included
+}

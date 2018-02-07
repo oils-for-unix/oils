@@ -34,13 +34,12 @@ from core import word_eval
 from core import ui
 from core import util
 from core import builtin
-from osh.meta import Id, REDIR_TYPE, REDIR_DEFAULT_FD, _InitRedirType
 from core import process
 from core import runtime
 from core import state
 from core import word_compile
 
-from osh.meta import ast
+from osh.meta import ast, Id, REDIR_TYPE, REDIR_DEFAULT_FD
 from osh import parse_lib
 
 try:

@@ -146,7 +146,6 @@ def _CheckFieldsAndWire(typ, type_lookup):
   typ.type_lookup = type_lookup  # wire it for lookup
 
 
-
 def ResolveTypes(module, app_types=None):
   # Walk the module, checking types, and adding the type_lookup attribute
   # everywhere.
@@ -596,3 +595,14 @@ class ASDLParser:
     def _at_keyword(self, keyword):
         return (self.cur_token.kind == TokenKind.TypeId and
                 self.cur_token.value == keyword)
+
+
+def LoadSchema(f, app_types):
+  """Parse an ASDL schema.  Used for code gen and metaprogramming."""
+  asdl_module = parse(f)
+
+  if not check(asdl_module, app_types):
+    raise AssertionError('ASDL file is invalid')
+
+  type_lookup = ResolveTypes(asdl_module, app_types)
+  return asdl_module, type_lookup
