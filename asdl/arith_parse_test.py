@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from asdl import tdop
-from asdl import arith_parse
+from asdl import arith_ast
+from asdl import arith_parse   # module under test
 
 
 def _assertParseError(make_parser, s, error_substring=''):
@@ -22,6 +23,7 @@ def TestArith(t_parse):
   t_parse('1+2*3', '(+ 1 (* 2 3))')
   t_parse('4*(2+3)', '(* 4 (+ 2 3))')
   t_parse('(2+3)*4', '(* (+ 2 3) 4)')
+  return
   t_parse('1<2', '(< 1 2)')
   t_parse('x=3', '(= x 3)')
   t_parse('x = 2*3', '(= x (* 2 3))')
@@ -155,11 +157,58 @@ def TestErrors(p):
   _assertParseError(p, '1 [ 2 ]', "can't be indexed")
 
 
+arith_expr_e = arith_ast.arith_expr_e
+#source_location = arith_ast.source_location
+#op_id_e = arith_ast.op_id_e
+
+class Visitor(object):
+  def __init__(self):
+    pass
+
+  # In Python, they do introspection on method names.
+  # method = 'visit_' + node.__class__.__name__
+  # I'm not going to bother, because I have ASDL!  I want the generic visitor.
+
+  def Visit(self, node):
+    raise NotImplementedError
+
+  # Like ast.NodeVisitor().generic_visit!
+  def VisitChildren(self, node):
+      #print dir(node)
+
+    # TODO: Use node.ASDL_TYPE.GetFields()
+    # Only compound children get visited?
+    print [name for name in dir(node) if not name.startswith('_')]
+    # Call self.Visit()!
+
+
+class PrettyPrinter(Visitor):
+
+  def Visit(self, node):
+    if node.tag == arith_expr_e.ArithUnary:
+      print 'ArithUnary %s' % node.child
+    else:
+      self.VisitChildren(node)
+
+
+def t_parse(s, expected=None):
+  p = arith_parse.MakeParser(s)
+  tree = p.Parse()
+
+  print(tree)
+
+  #v = PrettyPrinter()
+  #v.Visit(tree)
+
+  #print('%-40s %s' % (s, sexpr))
+  return tree
+
+
 def main():
-  t_parse = arith_parse.ParseShell
   p = arith_parse.MakeParser
 
   TestArith(t_parse)
+  return
   TestBitwise(t_parse)
   TestLogical(t_parse)
   TestUnary(t_parse)

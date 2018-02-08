@@ -79,7 +79,12 @@ def ReflowLines(s, depth):
 
 
 def FormatLines(s, depth, reflow=True):
-  """Format lines."""
+  """Make the generated code readable.
+
+  Args:
+    depth: controls indentation
+    reflow: line wrapping.
+  """
   if reflow:
     lines = ReflowLines(s, depth)
   else:
@@ -109,6 +114,14 @@ _BUILTINS = {
 }
 
 class AsdlVisitor:
+  """Base class for visitors.
+
+  TODO:
+  - It might be useful to separate this into VisitChildren() / generic_visit()
+    like Python's ast.NodeVisitor  does.
+  - Also remove self.f and self.Emit.  Those can go in self.output?
+  - Move to common location, since gen_python uses it as well.
+  """
   def __init__(self, f):
     self.f = f
 
@@ -227,6 +240,8 @@ class ClassDefVisitor(AsdlVisitor):
     Emit("};")
     Emit("")
 
+    # TODO: This should be replaced with a call to the generic
+    # self.VisitChildren()
     super_name = "%s_t" % name
     for t in sum.types:
       self.VisitConstructor(t, super_name, depth)
@@ -403,6 +418,8 @@ def main(argv):
   # debugging.  Might need to detect cycles though.
   if action == 'cpp':
     schema_path = argv[2]
+
+    # TODO: Use asdl.LoadSchema here.
     with open(schema_path) as input_f:
       module = asdl.parse(input_f)
 

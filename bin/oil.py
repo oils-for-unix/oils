@@ -62,7 +62,6 @@ from asdl import encode
 from osh import word_parse  # for tracing
 from osh import cmd_parse  # for tracing
 
-from osh.meta import ast
 from osh import ast_lib
 from osh import parse_lib
 
@@ -392,7 +391,7 @@ def OshMain(argv, login_shell):
         else:
           raise AssertionError
         abbrev_hook = (
-            ast.AbbreviateNodes if 'abbrev-' in opts.ast_format else None)
+            ast_lib.AbbreviateNodes if 'abbrev-' in opts.ast_format else None)
         tree = fmt.MakeTree(node, abbrev_hook=abbrev_hook)
         ast_f.FileHeader()
         fmt.PrintTree(tree, ast_f)
@@ -460,25 +459,84 @@ def BoilMain(main_argv):
 
 
 # TODO: Hook up to completion.
-SUBCOMMANDS = ['translate', 'analyze-bin']
+SUBCOMMANDS = ['translate', 'format', 'deps', 'undefined-vars']
 
-def OilCommandMain(main_argv):
+def OilCommandMain(argv):
   """Run an 'oilc' tool.
 
   'oilc' is short for "oil compiler" or "oil command".
+
+  TODO:
+  - oilc --help
+
+  oilc deps 
+    --path: the $PATH to use to find executables.  What about libraries?
+
+    NOTE: we're leaving out su -c, find, xargs, etc.?  Those should generally
+    run functions using the $0 pattern.
+    --chained-command sudo
   """
   try:
-    action = main_argv[0]
+    action = argv[0]
   except IndexError:
     raise args.UsageError('oilc: Missing required subcommand.')
 
-  log('action %s', action)
+  # NOTE: Does every oilc subcommand take a source path?  For now we assume it.
+  # TODO: fall back to stdin
+  try:
+    source_path = argv[1]
+  except IndexError:
+    raise args.UsageError('oilc: Missing required source path.')
+
+  pool = alloc.Pool()
+  arena = pool.NewArena()
+  arena.PushSource(source_path)
+
+  with open(source_path) as f:
+    line_reader = reader.FileLineReader(f, arena)
+    _, c_parser = parse_lib.MakeParser(line_reader, arena)
+
+    try:
+      node = c_parser.ParseWholeFile()
+    except util.ParseError as e:
+      ui.PrettyPrintError(e, arena, sys.stderr)
+      print('parse error: %s' % e.UserErrorString(), file=sys.stderr)
+      return 2
+    else:
+      # TODO: Remove this older form of error handling.
+      if not node:
+        err = c_parser.Error()
+        assert err, err  # can't be empty
+        ui.PrintErrorStack(err, arena, sys.stderr)
+        return 2  # parse error is code 2
+
+  # Columns for list-*
+  # path line name
+  # where name is the binary path, variable name, or library path.
+
+  # bin-deps and lib-deps can be used to make an app bundle.
+  # Maybe I should list them together?  'deps' can show 4 columns?
+  #
+  # path, line, type, name
+  #
+  # --pretty can show the LST location.
+
+  # stderr: show how we're following imports?
+
+  from tools import deps
+
   if action == 'translate':
-    # TODO: osh2oil
+    # TODO: osh2oil.  Remove opts.fix
     pass
 
-  elif action == 'analyze-bin':
-    # TODO: tools/analyze.py
+  elif action == 'format':
+    # TODO: autoformat code
+    raise NotImplementedError(action)
+
+  elif action == 'deps':
+    deps.Deps(node)
+
+  elif action == 'undefined-vars':  # could be environment variables
     pass
 
   else:

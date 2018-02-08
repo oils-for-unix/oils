@@ -158,7 +158,8 @@ X [xargs]         each
 OIL LIBRARIES
 
 X [Builtin Procs] log   die
-X [Builtin Funcs] shEvalArith()   shEvalWord()   strftime()
+X [Builtin Funcs] join()   split()   strftime()
+                  shEvalArith()   shEvalWord()   
 X [getopts]       ?
 X [Testing]       ?
 X [Data Formats]  json   csv   tsv2
