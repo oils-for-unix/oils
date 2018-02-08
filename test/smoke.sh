@@ -109,9 +109,18 @@ ast() {
 help() {
   set +o errexit
 
-  bin/oil osh --help
+  # Bundle usage.
+  bin/oil.py --help
   assert $? -eq 0
 
+  # Pass applet as first name.
+  bin/oil.py osh --help
+  assert $? -eq 0
+
+  bin/oil.py oil --help
+  assert $? -eq 0
+
+  # Symlinks.
   bin/osh --help
   assert $? -eq 0
 

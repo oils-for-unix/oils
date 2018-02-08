@@ -204,7 +204,7 @@ def OshMain(argv, login_shell):
     return 2
 
   if opts.help:
-    loader = util.GetResourceLoader()  # TOOD: Use Global
+    loader = util.GetResourceLoader()
     builtin.Help(['osh-usage'], loader)
     return 0
   if opts.version:
@@ -425,6 +425,32 @@ def OshMain(argv, login_shell):
   return status
 
 
+def OilMain(argv):
+  spec = args.FlagsAndOptions()
+  # TODO: -h too
+  spec.LongFlag('--help')
+  spec.LongFlag('--version')
+  #builtin.AddOptionsToArgSpec(spec)
+
+  try:
+    opts, opt_index = spec.Parse(argv)
+  except args.UsageError as e:
+    util.usage(str(e))
+    return 2
+
+  if opts.help:
+    loader = util.GetResourceLoader()
+    builtin.Help(['oil-usage'], loader)
+    return 0
+  if opts.version:
+    # OSH version is the only binary in Oil right now, so it's all one version.
+    _ShowVersion()
+    return 0
+
+  raise NotImplementedError('oil')
+  return 0
+
+
 def WokMain(main_argv):
   raise NotImplementedError('wok')
 
@@ -432,6 +458,9 @@ def WokMain(main_argv):
 def BoilMain(main_argv):
   raise NotImplementedError('boil')
 
+
+# TODO: Hook up to completion.
+SUBCOMMANDS = ['translate', 'analyze-bin']
 
 def OilCommandMain(main_argv):
   """Run an 'oilc' tool.
@@ -441,7 +470,7 @@ def OilCommandMain(main_argv):
   try:
     action = main_argv[0]
   except IndexError:
-    raise args.UsageError('oilc: Missing required subcommand')
+    raise args.UsageError('oilc: Missing required subcommand.')
 
   log('action %s', action)
   if action == 'translate':
@@ -453,28 +482,33 @@ def OilCommandMain(main_argv):
     pass
 
   else:
-    raise args.UsageError('oilc: Invalid subcommand %r' % action)
+    raise args.UsageError('oilc: Invalid subcommand %r.' % action)
 
   return 0
 
 
-def OilMain(argv):
+# The valid applets right now.
+# TODO: Hook up to completion.
+APPLETS = ['osh', 'oilc']
+
+
+def AppBundleMain(argv):
   login_shell = False
 
   b = os.path.basename(argv[0])
-  main_name, _ = os.path.splitext(b)
+  main_name, ext = os.path.splitext(b)
   if main_name.startswith("-"):
     login_shell = True
     main_name = main_name[1:]
 
-  if main_name in ('oil', 'oil_main'):
+  if main_name == 'oil' and ext:  # oil.py or oil.ovm
     try:
       first_arg = argv[1]
     except IndexError:
-      raise args.UsageError('Missing required applet name')
+      raise args.UsageError('Missing required applet name.')
 
     if first_arg in ('-h', '--help'):
-      builtin.Help(['oil-usage'], util.GetResourceLoader())
+      builtin.Help(['bundle-usage'], util.GetResourceLoader())
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):
@@ -495,21 +529,26 @@ def OilMain(argv):
     return status
   elif main_name == 'oilc':
     return OilCommandMain(main_argv)
+
+  elif main_name == 'oil':
+    return OilMain(main_argv)
   elif main_name == 'wok':
     return WokMain(main_argv)
   elif main_name == 'boil':
     return BoilMain(main_argv)
+
+  # For testing latency
   elif main_name == 'true':
     return 0
   elif main_name == 'false':
     return 1
   else:
-    raise args.UsageError('Invalid applet name %r' % main_name)
+    raise args.UsageError('Invalid applet name %r.' % main_name)
 
 
 def main(argv):
   try:
-    sys.exit(OilMain(argv))
+    sys.exit(AppBundleMain(argv))
   except NotImplementedError as e:
     raise
   except args.UsageError as e:

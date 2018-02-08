@@ -6,8 +6,8 @@ OSH Quick Reference
 
 INTRO
   [Overview]      overview   osh-vs-oil   command-vs-expr
-  [Usage]         osh-usage   oil-usage   config   startup   line-editing
-                  prompt
+  [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
+                  line-editing   prompt
   [Lexing]        comments #   line-continuation \
   [Oil Lexing]    single-command %   docstring?
 

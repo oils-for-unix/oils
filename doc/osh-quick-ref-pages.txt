@@ -64,6 +64,16 @@ OSH is a shell.
 
 #### <Usage> Usage
 
+### <bundle-usage> Usage of the Oil App Bundle
+Usage: oil.ovm MAIN_NAME [ARG]...
+       MAIN_NAME [ARG]...
+
+oil.ovm behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
+then it behaves like that binary.  Otherwise the binary name can be passed as
+the first argument, e.g.:
+
+    oil.ovm osh -c 'echo hi'
+
 ### <osh-usage> Usage of the OSH Binary
 Usage: osh [OPTION]... SCRIPT [ARG]...
        osh [OPTION]... -c COMMAND [ARG]...
@@ -77,15 +87,10 @@ osh accepts POSIX sh flags, with the following differences:
 ## Same as osh --help, man osh
 
 ### <oil-usage> Usage of the Oil Binary
-Usage: oil MAIN_NAME [ARG]...
-       MAIN_NAME [ARG]...
+Usage: oil [OPTION]... SCRIPT [ARG]...
+       oil [OPTION]... -c COMMAND [ARG]...
 
-oil behaves like busybox.  If it's invoked through a symlink, e.g. 'osh', then
-it behaves like that binary.  Otherwise the binary name can be passed as the
-first argument, e.g.:
-
-    oil osh -c 'echo hi'
-
+TODO: any changes?
 ## Same as oil --help, man oil
 
 ### <config> Configuration Files

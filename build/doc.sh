@@ -128,11 +128,6 @@ osh-quick-ref() {
   x-quick-ref osh $out_dir
 }
 
-oil-quick-ref() {
-  local out_dir=${1:-_build}
-  x-quick-ref oil $out_dir
-}
-
 markdown2html() {
   local src=$1
   local out=$2
