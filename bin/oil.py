@@ -92,9 +92,6 @@ log = util.log
 
 _tlog('after imports')
 
-class OilUsageError(RuntimeError):
-  """ Exception for incorrect command line usage. """
-
 
 def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
   if opts.show_ast:
@@ -436,6 +433,31 @@ def BoilMain(main_argv):
   raise NotImplementedError('boil')
 
 
+def OilCommandMain(main_argv):
+  """Run an 'oilc' tool.
+
+  'oilc' is short for "oil compiler" or "oil command".
+  """
+  try:
+    action = main_argv[0]
+  except IndexError:
+    raise args.UsageError('oilc: Missing required subcommand')
+
+  log('action %s', action)
+  if action == 'translate':
+    # TODO: osh2oil
+    pass
+
+  elif action == 'analyze-bin':
+    # TODO: tools/analyze.py
+    pass
+
+  else:
+    raise args.UsageError('oilc: Invalid subcommand %r' % action)
+
+  return 0
+
+
 def OilMain(argv):
   login_shell = False
 
@@ -449,7 +471,7 @@ def OilMain(argv):
     try:
       first_arg = argv[1]
     except IndexError:
-      raise OilUsageError('Missing name of main()')
+      raise args.UsageError('Missing required applet name')
 
     if first_arg in ('-h', '--help'):
       builtin.Help(['oil-usage'], util.GetResourceLoader())
@@ -471,6 +493,8 @@ def OilMain(argv):
     status = OshMain(main_argv, login_shell)
     _tlog('done osh main')
     return status
+  elif main_name == 'oilc':
+    return OilCommandMain(main_argv)
   elif main_name == 'wok':
     return WokMain(main_argv)
   elif main_name == 'boil':
@@ -480,7 +504,7 @@ def OilMain(argv):
   elif main_name == 'false':
     return 1
   else:
-    raise OilUsageError('Invalid main %r' % main_name)
+    raise args.UsageError('Invalid applet name %r' % main_name)
 
 
 def main(argv):
@@ -488,9 +512,9 @@ def main(argv):
     sys.exit(OilMain(argv))
   except NotImplementedError as e:
     raise
-  except OilUsageError as e:
-    builtin.Help(['oil-usage'], util.GetResourceLoader())
-    print(str(e), file=sys.stderr)
+  except args.UsageError as e:
+    #builtin.Help(['oil-usage'], util.GetResourceLoader())
+    print('oil: %s' % e, file=sys.stderr)
     sys.exit(2)
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
