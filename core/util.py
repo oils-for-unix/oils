@@ -111,6 +111,8 @@ def warn(msg, *args):
   print('osh warning: ' + msg, file=sys.stderr)
 
 
+# NOTE: This should say 'oilc error' or 'oil error', instead of 'osh error' in
+# some cases.
 def error(msg, *args):
   if args:
     msg = msg % args

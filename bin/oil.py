@@ -481,34 +481,43 @@ def OilCommandMain(argv):
   except IndexError:
     raise args.UsageError('oilc: Missing required subcommand.')
 
-  # NOTE: Does every oilc subcommand take a source path?  For now we assume it.
-  # TODO: fall back to stdin
+  if action not in SUBCOMMANDS:
+    raise args.UsageError('oilc: Invalid subcommand %r.' % action)
+
   try:
-    source_path = argv[1]
+    script_name = argv[1]
   except IndexError:
-    raise args.UsageError('oilc: Missing required source path.')
+    script_name = '<stdin>'
+    f = sys.stdin
+  else:
+    try:
+      f = open(script_name)
+    except IOError as e:
+      util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
+      return 2
 
   pool = alloc.Pool()
   arena = pool.NewArena()
-  arena.PushSource(source_path)
+  arena.PushSource(script_name)
 
-  with open(source_path) as f:
-    line_reader = reader.FileLineReader(f, arena)
-    _, c_parser = parse_lib.MakeParser(line_reader, arena)
+  line_reader = reader.FileLineReader(f, arena)
+  _, c_parser = parse_lib.MakeParser(line_reader, arena)
 
-    try:
-      node = c_parser.ParseWholeFile()
-    except util.ParseError as e:
-      ui.PrettyPrintError(e, arena, sys.stderr)
-      print('parse error: %s' % e.UserErrorString(), file=sys.stderr)
-      return 2
-    else:
-      # TODO: Remove this older form of error handling.
-      if not node:
-        err = c_parser.Error()
-        assert err, err  # can't be empty
-        ui.PrintErrorStack(err, arena, sys.stderr)
-        return 2  # parse error is code 2
+  try:
+    node = c_parser.ParseWholeFile()
+  except util.ParseError as e:
+    ui.PrettyPrintError(e, arena, sys.stderr)
+    print('parse error: %s' % e.UserErrorString(), file=sys.stderr)
+    return 2
+  else:
+    # TODO: Remove this older form of error handling.
+    if not node:
+      err = c_parser.Error()
+      assert err, err  # can't be empty
+      ui.PrintErrorStack(err, arena, sys.stderr)
+      return 2  # parse error is code 2
+
+  f.close()
 
   # Columns for list-*
   # path line name
@@ -540,7 +549,7 @@ def OilCommandMain(argv):
     pass
 
   else:
-    raise args.UsageError('oilc: Invalid subcommand %r.' % action)
+    raise AssertionError  # Checked above
 
   return 0
 
