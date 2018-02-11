@@ -33,68 +33,6 @@ prereq() {
   test/spec.sh all
 }
 
-# Writes a table of host and shells to stdout.  Writes text files and
-# calculates IDs for them as a side effect.
-#
-# The table can be passed to other benchmarks to ensure that their provenance
-# is recorded.
-#
-# TODO: Move to id.sh/provenance.sh?
-
-record-provenance() {
-  local job_id=$1
-
-  local host
-  host=$(hostname)
-
-  # Write Header of the CSV file that is appended to.
-  #echo 'host_name,host_hash,shell_name,shell_hash'
-
-  local tmp_dir=_tmp/host-id/$host
-  benchmarks/id.sh dump-host-id $tmp_dir
-
-  local host_hash
-  host_hash=$(benchmarks/id.sh publish-host-id $tmp_dir)
-  #echo $host $host_hash
-
-  local shell_hash
-
-  #for sh_path in bash dash mksh zsh; do
-  for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
-    # There will be two different OSH
-    local name=$(basename $sh_path)
-
-    tmp_dir=_tmp/shell-id/$name
-    benchmarks/id.sh dump-shell-id $sh_path $tmp_dir
-
-    shell_hash=$(benchmarks/id.sh publish-shell-id $tmp_dir)
-
-    #echo "$sh_path ID: $shell_hash"
-
-    echo "$job_id $host $host_hash $sh_path $shell_hash"
-  done
-}
-
-gen-prefix() {
-  local job_id=$1
-
-  local host
-  host=$(hostname)
-
-  echo _tmp/${host}.${job_id}.provenance.txt
-}
-
-write-provenance-txt() {
-  local job_id
-  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
-
-  local out=${1:-$(gen-prefix $job_id)}
-
-  record-provenance $job_id > $out
-
-  log "Wrote $out"
-}
-
 measure-all() {
   local provenance=$1
   local base_dir=${2:-../benchmark-data}
@@ -132,19 +70,8 @@ all() {
 
   _bin/osh -c 'echo OSH production build'
 
-  # Make observations.
-  # TODO: Factor shell-id / host-id here.  Every benchmark will use that.
-
-  # Just write a task file, like _tmp/benchmark-tasks.txt?
-  # And then have a function to execute the tasks.
-  # It has to make the write CSV files?
-
-  local job_id
-  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
-
-  local provenance=$(gen-prefix $job_id)
-
-  record-provenance $job_id > $provenance
+  local provenance
+  provenance=$(benchmarks/id.sh shell-provenance)  # capture the filename
 
   measure-all $provenance
 

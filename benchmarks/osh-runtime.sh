@@ -228,7 +228,7 @@ readonly NUM_COLUMNS=7  # 5 from provenence, then task_type / task_arg
 
 measure() {
   local provenance=$1
-  local raw_dir=${2:-_tmp/osh-runtime/raw}
+  local raw_dir=${2:-$BASE_DIR/raw}
   local pattern=${3:-}
 
   #local base_dir=${2:-../benchmark-data/osh-parser}

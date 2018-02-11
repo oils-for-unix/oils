@@ -95,6 +95,7 @@ strip-op-char-class() { _compare gold/strip-op-char-class.sh; }
 # Similar tests for backslash escaping.
 echo-e() { _compare gold/echo-e.sh; }
 dollar-sq() { _compare gold/dollar-sq.sh; }
+word-eval() { _compare gold/word-eval.sh; }
 
 abuild() {
   _compare gold/abuild.sh is_function is_function
@@ -121,6 +122,11 @@ readonly -a PASSING=(
   glob
   no-op
   complex-here-docs
+
+  echo-e
+  dollar-sq
+  word-eval
+
   strip-op-char-class
   abuild
 

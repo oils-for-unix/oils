@@ -11,6 +11,8 @@ set -o errexit
 
 source build/common.sh  # for $CLANG
 
+readonly BASE_DIR=_tmp/ovm-build
+
 # NOTE: build/test.sh measures the time already.
 
 # Coarse Size and Time Benchmarks
@@ -84,24 +86,7 @@ clang() {
 #
 # It would be possible, but it complicates the makefile.
 
-readonly HEADER='status,elapsed_secs,host_name,host_hash,compiler_name,compiler_hash,tarball,target,target_num_bytes'
-
-# I think I want to do this for every version.  Save it in
-# ~/git/oil/benchmarks-data.
-
-expand-tasks() {
-  while read host_name compiler_name; do
-    #local prefix="$job_id $host_name $host_hash $sh_path $shell_hash"
-    local prefix="$host_name $compiler_name"
-
-    # NOTE: it MUST be a tarball and not the git repo, because we do the build
-    # of bytecode.zip!  We care about the "package experience".
-    local tarball=_release/oil.tar
-
-    echo "$prefix" $tarball _build/oil/ovm
-    echo "$prefix" $tarball _build/oil/ovm-dbg
-  done
-}
+#readonly HEADER='status,elapsed_secs,host_name,host_hash,compiler_name,compiler_hash,tarball,target,target_num_bytes'
 
 # 5 releases: 0.0.0 to 0.4.0.  Or we could just do the 0.5.alpha1 release?
 # Then you can show the drop.
@@ -119,28 +104,66 @@ other-shells() {
   echo
 }
 
-print-tasks() {
-  local h=$(hostname) 
-  { echo $h gcc;
-    echo $h clang;
-  } | expand-tasks
+build-task() {
+  local raw_dir=$1  # output
+  local job_id=$2
+  local host=$3
+  local host_hash=$4
+  local compiler_path=$5
+  local compiler_hash=$6
+  local tarball=$7
+  local target=$8
+
+  # Really we should just measure "make", and then the ovm-dbg target can be
+  # separate?
+  # We also want to do ./configure.  Do that for bash/dash too.
+
+  # time them with benchmarks/time.py
+  echo TODO $tarball $target
 }
+
+print-tasks() {
+  local provenance=$1
+
+  # NOTE: it MUST be a tarball and not the git repo, because we do the build
+  # of bytecode.zip!  We care about the "package experience".
+  local tarball='_release/oil.0.5.alpha1.gz'
+
+  # Add 1 field for each of 5 fields.
+  cat $provenance | while read line; do
+    echo "$line" $tarball _build/oil/ovm
+    echo "$line" $tarball _build/oil/ovm-dbg
+  done
+}
+
+
+readonly HEADER='status,elapsed_secs,host_name,host_hash,compiler_path,compiler_hash,tarball,target'
+readonly NUM_COLUMNS=7  # 5 from provenence, then tarball/target
 
 measure() {
-  print-tasks
-}
+  local provenance=$1  # from benchmarks/id.sh compiler-provenance
+  local raw_dir=${2:-$BASE_DIR/raw}
 
-# TODO: Move to benchmarks/id.
+  #local base_dir=${2:-../benchmark-data/osh-parser}
 
-gcc-hash() {
-  #gcc --version
-  gcc -v
-}
+  # Job ID is everything up to the first dot in the filename.
+  local name=$(basename $provenance)
+  local prefix=${name%.compiler-provenance.txt}  # strip suffix
 
-clang-hash() {
-  #$CLANG -v
-  # -v has some output we don't want.
-  $CLANG --version | grep -v InstalledDir
+  local times_out="$raw_dir/$prefix.times.csv"
+  mkdir -p $BASE_DIR/{raw,stage1}
+
+  # Write Header of the CSV file that is appended to.
+  echo $HEADER > $times_out
+
+  local tasks=$BASE_DIR/tasks.txt
+  print-tasks $provenance > $tasks
+
+  time cat $tasks |
+    xargs -n $NUM_COLUMNS -- $0 build-task $raw_dir ||
+    die "*** Some tasks failed. ***"
+
+  cp -v $provenance $raw_dir
 }
 
 "$@"

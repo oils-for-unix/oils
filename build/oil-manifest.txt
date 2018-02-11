@@ -1,2 +1,3 @@
 osh/osh.asdl osh/osh.asdl
+osh/types.asdl osh/types.asdl
 core/runtime.asdl core/runtime.asdl

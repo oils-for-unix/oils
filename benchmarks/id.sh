@@ -9,6 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/common.sh  # for $CLANG
+source benchmarks/common.sh
+
 # TODO: add benchmark labels/hashes for osh and all other shells
 #
 # Need to archive labels too.
@@ -49,15 +52,6 @@ set -o errexit
 #     zsh-$HASH/
 #   host-id/
 #     lisa-$HASH/
-
-die() {
-  echo "FATAL: $@" 1>&2
-  exit 1
-}
-
-log() {
-  echo "$@" 1>&2
-}
 
 _dump-if-exists() {
   local path=$1
@@ -235,6 +229,139 @@ publish-host-id() {
   log "Published host ID to $dest"
 
   echo $id
+}
+
+#
+# Compilers
+# 
+
+dump-compiler-id() {
+  local cc=$1  # path to the compiler
+  local out_dir=${2:-_tmp/compiler-id/$(basename $cc)}
+
+  mkdir -p $out_dir
+
+  case $cc in
+    gcc)
+      $cc --version 2>&1
+      # -v has more details, but they might be overkill.
+      ;;
+    */clang)
+      $cc --version
+      # -v has stuff we don't want
+      ;;
+  esac > $out_dir/version.txt
+}
+
+test-compiler-id() {
+  dump-compiler-id gcc
+  dump-compiler-id $CLANG
+  head _tmp/compiler-id/*/version.txt
+}
+
+_compiler-id-hash() {
+  local src=$1
+
+  # Remove some extraneous information from clang.
+  cat $src/version.txt | grep -v InstalledDir 
+}
+
+# Writes a short ID to stdout.
+publish-compiler-id() {
+  local src=$1  # e.g. _tmp/compiler-id/clang
+  local dest_base=${2:-../benchmark-data/compiler-id}
+
+  local name=$(basename $src)
+  local hash
+  hash=$(_compiler-id-hash $src | md5sum)  # not secure, an identifier
+
+  local id="${hash:0:8}"
+  local dest="$dest_base/$name-$id"
+
+  mkdir -p $dest
+  cp --no-target-directory --recursive $src/ $dest/
+
+  echo $hash > $dest/HASH.txt
+
+  log "Published compiler ID to $dest"
+
+  echo $id
+}
+
+#
+# Table Output
+#
+
+# Writes a table of host and shells to stdout.  Writes text files and
+# calculates IDs for them as a side effect.
+#
+# The table can be passed to other benchmarks to ensure that their provenance
+# is recorded.
+#
+# TODO: Move to id.sh/provenance.sh?
+
+shell-provenance() {
+  local job_id
+  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+  local host
+  host=$(hostname)
+
+  # Filename
+  local out=_tmp/${host}.${job_id}.provenance.txt
+
+  local tmp_dir=_tmp/host-id/$host
+  dump-host-id $tmp_dir
+
+  local host_hash
+  host_hash=$(publish-host-id $tmp_dir)
+
+  local shell_hash
+
+  for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
+    # There will be two different OSH
+    local name=$(basename $sh_path)
+
+    tmp_dir=_tmp/shell-id/$name
+    dump-shell-id $sh_path $tmp_dir
+
+    shell_hash=$(publish-shell-id $tmp_dir)
+
+    echo "$job_id $host $host_hash $sh_path $shell_hash"
+  done > $out
+
+  log "Wrote $out"
+}
+
+compiler-provenance() {
+  local job_id
+  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+  local host
+  host=$(hostname)
+
+  # Filename
+  local out=_tmp/${host}.${job_id}.compiler-provenance.txt
+
+  local tmp_dir=_tmp/host-id/$host
+  dump-host-id $tmp_dir
+
+  local host_hash
+  host_hash=$(publish-host-id $tmp_dir)
+
+  local compiler_hash
+
+  # gcc is assumed to be in the $PATH.
+  for compiler_path in $(which gcc) $CLANG; do
+    local name=$(basename $compiler_path)
+
+    tmp_dir=_tmp/compiler-id/$name
+    dump-compiler-id $compiler_path $tmp_dir
+
+    compiler_hash=$(publish-compiler-id $tmp_dir)
+
+    echo "$job_id $host $host_hash $compiler_path $compiler_hash"
+  done > $out
+
+  log "Wrote $out"
 }
 
 "$@"

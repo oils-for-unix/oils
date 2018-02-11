@@ -300,6 +300,14 @@ class IfsSplitter(_BaseSplitter):
     self.ifs_other = ifs_other
 
   def Split(self, s, allow_escape):
+    """
+    Args:
+      s: string to split
+      allow_escape: False for read -r, this means \ doesn't do anything.
+
+    TODO: This should be (frag, do_split) pairs, to avoid IFS='\'
+    double-escaping issue.
+    """
     ws_chars = self.ifs_whitespace
     other_chars = self.ifs_other
 

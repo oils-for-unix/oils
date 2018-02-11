@@ -153,7 +153,7 @@ argv.py 1${undefined:-"2_3"x_x"4_5"}6
 ### IFS empty doesn't do splitting
 IFS=''
 x=$(echo -e ' a b\tc\n')
-argv $x
+argv.py $x
 ## STDOUT:
 [' a b\tc']
 ## END
@@ -165,7 +165,7 @@ argv $x
 ### IFS unset behaves like $' \t\n'
 unset IFS
 x=$(echo -e ' a b\tc\n')
-argv $x
+argv.py $x
 ## STDOUT:
 ['a', 'b', 'c']
 ## END
@@ -173,6 +173,42 @@ argv $x
 ['-e', 'a', 'b', 'c']
 ## END
 
+### IFS='\'
+# NOTE: OSH fails this because of double backslash escaping issue!
+IFS='\'
+s='a\b'
+argv.py $s
+## STDOUT:
+['a', 'b']
+## END
+
+### IFS='\ '
+# NOTE: OSH fails this because of double backslash escaping issue!
+# When IFS is \, then you're no longer using backslash escaping.
+IFS='\ '
+s='a\b \\ c d\'
+argv.py $s
+## STDOUT:
+['a', 'b', '', 'c', 'd']
+## END
+
+### IFS characters are glob metacharacters
+IFS='* '
+s='a*b c'
+argv.py $s
+
+IFS='?'
+s='?x?y?z?'
+argv.py $s
+
+IFS='['
+s='[x[y[z['
+argv.py $s
+## STDOUT:
+['a', 'b', 'c']
+['', 'x', 'y', 'z']
+['', 'x', 'y', 'z']
+## END
 
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)
