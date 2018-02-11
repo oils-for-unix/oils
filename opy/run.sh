@@ -337,12 +337,20 @@ for n in names:
 # 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
 # transformer -> ast -> compiler -> byte code
 count() {
+  echo PARSER GENERATOR
   wc -l *.py pgen2/*.py | sort -n
   echo
 
-  wc -l compiler2/*.py | sort -n
+  # ast is generated
+  echo COMPILER2
+  ls compiler2/*.py | grep -v ast.py | xargs wc -l | sort -n
   echo
 
+  echo GENERATED CODE
+  wc -l compiler2/ast.py
+  echo
+
+  echo BYTERUN
   ls byterun/*.py | grep -v 'test' | xargs wc -l | sort -n
   echo
 }

@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/common.sh  # for clang
+
 export PYTHONPATH=.
 
 asdl-arith-encode() {
@@ -92,11 +94,9 @@ osh-both() { py-cpp osh/osh.asdl; }
 # Native Code
 #
 
-readonly CLANG=~/install/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04/bin/clang++
-
 cxx() {
   #local CXX=c++ 
-  local CXX=$CLANG
+  local CXX=$CLANGXX
   local opt_flag='-O2'
   local opt_flag='-O0'
 
@@ -193,7 +193,7 @@ a4() {
 disassemble() {
   local opt_flag=${1:-'-O0'}
   local out=_tmp/arith_demo$opt_flag.S 
-  $CLANG -std='c++11' $opt_flag -I _tmp -o $out -S \
+  $CLANGXX -std='c++11' $opt_flag -I _tmp -o $out -S \
     -mllvm --x86-asm-syntax=intel asdl/arith_demo.cc
   #cat $out
 }
@@ -201,7 +201,7 @@ disassemble() {
 llvm() {
   local opt_flag=${1:-'-O0'}
   local out=_tmp/arith_demo$opt_flag.ll 
-  $CLANG -std='c++11' $opt_flag -I _tmp -o $out -S \
+  $CLANGXX -std='c++11' $opt_flag -I _tmp -o $out -S \
     -emit-llvm asdl/arith_demo.cc
   #cat $out
 }

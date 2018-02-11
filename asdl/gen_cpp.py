@@ -30,6 +30,8 @@ import sys
 from asdl import asdl_ as asdl
 from asdl import encode
 
+from osh.meta import Id
+
 TABSIZE = 2
 MAX_COL = 80
 
@@ -419,18 +421,13 @@ def main(argv):
   if action == 'cpp':
     schema_path = argv[2]
 
-    # TODO: Use asdl.LoadSchema here.
+    app_types = {'id': asdl.UserType(Id)}
     with open(schema_path) as input_f:
-      module = asdl.parse(input_f)
+      module, type_lookup = asdl.LoadSchema(input_f, app_types)
 
     # TODO: gen_cpp.py should be a library and the application should add Id?
     # Or we should enable ASDL metaprogramming, and let Id be a metaprogrammed
     # simple sum type.
-
-    from core.id_kind import Id
-    app_types = {'id': asdl.UserType(Id)}
-
-    type_lookup = asdl.ResolveTypes(module, app_types)
 
     f = sys.stdout
 

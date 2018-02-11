@@ -147,6 +147,11 @@ all() {
   record-provenance $job_id > $provenance
 
   measure-all $provenance
+
+  # TODO:
+  # record-compiler-provenance
+  # benchmarks/ovm-build.sh measure $compiler_prov $base_dir/ovm-build
+  # Note this has to happen AFTER a tarball is built.
 }
 
 #
