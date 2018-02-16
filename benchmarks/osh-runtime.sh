@@ -23,8 +23,10 @@ readonly OSH=$PWD/_bin/osh
 # Dependencies
 #
 
+readonly -a TAR_SUBDIRS=( ocaml-4.06.0 tcc-0.9.26 yash-2.46 )
+
 # NOTE: Same list in oilshell.org/blob/run.sh.
-files() {
+tarballs() {
   cat <<EOF
 tcc-0.9.26.tar.bz2
 yash-2.46.tar.xz
@@ -32,17 +34,9 @@ ocaml-4.06.0.tar.xz
 EOF
 }
 
-conf-dirs() {
-  cat <<EOF
-$TAR_DIR/ocaml-4.06.0
-$TAR_DIR/tcc-0.9.26
-$TAR_DIR/yash-2.46
-EOF
-}
-
 download() {
   mkdir -p $TAR_DIR
-  files | xargs -n 1 -I {} --verbose -- \
+  tarballs | xargs -n 1 -I {} --verbose -- \
     wget --directory $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
 }
 
@@ -97,9 +91,8 @@ runtime-task() {
   local files_out_dir="$PWD/$raw_dir/$host.$job_id.files/$task_label"
   mkdir -p $vm_out_dir $files_out_dir
 
-  local time_tool=$PWD/benchmarks/time.py
   local -a TIME_PREFIX=(
-    $time_tool \
+    $PWD/benchmarks/time.py \
     --output $times_out \
     --field "$host" --field "$host_hash" \
     --field "$shell_name" --field "$shell_hash" \
@@ -218,8 +211,9 @@ print-tasks() {
     echo "$prefix" abuild abuild-help
     echo "$prefix" cpython cpython-configure
 
-    conf-dirs | xargs -n 1 -- echo "$prefix" configure
-
+    for dir in "${TAR_SUBDIRS[@]}"; do
+      echo "$prefix" configure $TAR_DIR/$dir
+    done
   done
 }
 

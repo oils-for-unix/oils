@@ -85,8 +85,13 @@ all: \
 	_bin/hello.ovm-dbg _bin/oil.ovm-dbg \
 	_release/hello.tar _release/oil.tar
 
+# For the release tarball.
 clean:
-	$(ACTIONS_SH) clean
+	$(ACTIONS_SH) clean-source-tarball-build
+
+# For developers in a repo.
+clean-repo:
+	$(ACTIONS_SH) clean-repo
 
 .PHONY: default all clean install
 

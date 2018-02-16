@@ -176,10 +176,17 @@ clean-pyc() {
 
 # NOTE: Not deleting cpython-full.  Maybe we should, or we should put it in a
 # diffent directory?
-clean() {
+clean-repo() {
+  clean-source-tarball-build
   rm -r -f _build _release
-  rm -f _bin/oil.* _bin/hello.*
+  rm -f _bin/hello.*
   clean-pyc
+}
+
+# 'make clean'.  NOTE: There are no object files written now.
+clean-source-tarball-build() {
+  rm -f -v _bin/oil.* 
+  rm -f -v _build/oil/ovm _build/oil/ovm-dbg
 }
 
 "$@"
