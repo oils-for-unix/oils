@@ -242,8 +242,8 @@ dump-compiler-id() {
   mkdir -p $out_dir
 
   case $cc in
-    gcc)
-      $cc --version 2>&1
+    */gcc)
+      $cc --version
       # -v has more details, but they might be overkill.
       ;;
     */clang)

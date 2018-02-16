@@ -66,6 +66,14 @@ vm-baseline() {
   stage3 $base_dir
 }
 
+ovm-build() {
+  local base_dir=_tmp/ovm-build
+
+  benchmarks/ovm-build.sh stage1 ../benchmark-data/ovm-build
+  stage2 $base_dir
+  stage3 $base_dir
+}
+
 # This is one is specific to a particular machine.
 oheap() {
   local base_dir=_tmp/oheap
@@ -79,6 +87,7 @@ all() {
   osh-parser
   osh-runtime
   vm-baseline
+  ovm-build
   oheap
 }
 

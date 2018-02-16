@@ -221,7 +221,7 @@ RuntimeReport = function(in_dir, out_dir) {
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
     print(failed)
-    stop('Some tasks failed')
+    stop('Some osh-runtime tasks failed')
   }
 
   # Host label is the same as name
@@ -355,6 +355,71 @@ VmBaselineReport = function(in_dir, out_dir) {
   writeCsv(vm, file.path(out_dir, 'vm-baseline'))
 }
 
+WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {
+  host_table = data_frame(
+    host_label = distinct_hosts$host_label,
+    host_id = paste(distinct_hosts$host_name,
+                    distinct_hosts$host_hash, sep='-'),
+    host_id_HREF = benchmarkDataLink('host-id', host_id, '/')
+  )
+  print(host_table)
+
+  dc = distinct_compilers
+  compiler_table = data_frame(
+    compiler_label = dc$compiler_label,
+    compiler_id = paste(dc$compiler_label, dc$compiler_hash, sep='-'),
+    compiler_id_HREF = benchmarkDataLink('compiler-id', compiler_id, '/')
+  )
+  print(compiler_table)
+
+  writeCsv(host_table, file.path(out_dir, 'hosts'))
+  writeCsv(compiler_table, file.path(out_dir, 'compilers'))
+}
+
+OvmBuildReport = function(in_dir, out_dir) {
+  times = read.csv(file.path(in_dir, 'times.csv'))
+  raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
+
+  times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some ovm-build tasks failed')
+  }
+  #print(vm)
+
+  #times %>%
+  #  arrange(host, VmPeak_MB) ->
+  #  vm
+
+  times %>% distinct(host_name, host_hash) -> distinct_hosts
+  distinct_hosts$host_label = distinct_hosts$host_name
+
+  times %>% distinct(compiler_path, compiler_hash) -> distinct_compilers
+  distinct_compilers$compiler_label = basename(distinct_compilers$compiler_path)
+
+  print(distinct_hosts)
+  print(distinct_compilers)
+
+  WriteOvmBuildDetails(distinct_hosts, distinct_compilers, out_dir)
+
+  times %>%
+    select(-c(status)) %>%
+    left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
+    left_join(distinct_compilers, by = c('compiler_path', 'compiler_hash')) %>%
+    select(-c(host_name, host_hash, compiler_path, compiler_hash)) %>%
+    mutate(src_dir = basename(src_dir)) %>%
+    arrange(host_label, src_dir) %>%
+    select(host_label, compiler_label, src_dir, action, elapsed_secs) ->
+    times
+
+  #print(times)
+
+  writeCsv(times, file.path(out_dir, 'times'))
+
+  # TODO: I want a size report too
+  #writeCsv(sizes, file.path(out_dir, 'sizes'))
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
@@ -368,6 +433,9 @@ main = function(argv) {
 
   } else if (action == 'vm-baseline') {
     VmBaselineReport(in_dir, out_dir)
+
+  } else if (action == 'ovm-build') {
+    OvmBuildReport(in_dir, out_dir)
 
   } else if (action == 'oheap') {
     OheapReport(in_dir, out_dir)

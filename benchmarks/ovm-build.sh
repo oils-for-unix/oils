@@ -67,6 +67,11 @@ extract() {
   extract-other
 }
 
+#
+# Measure Size of Binaries.
+# NOTE: This only needs to be done on one machine?
+#
+
 # NOTE: build/test.sh measures the time already.
 
 # Coarse Size and Time Benchmarks
@@ -120,6 +125,10 @@ clang-oil-dbg() {
   make clean
   CC=$CLANG make _build/oil/ovm-dbg
 }
+
+#
+# Measure Elapsed Time
+#
 
 # Add --target-size?  Add that functionality to benchmarks/time.py?
 #
@@ -281,6 +290,55 @@ stage1() {
 
   head $out/*
   wc -l $out/*
+}
+
+print-report() {
+  local in_dir=$1
+  local base_url='../../web'
+
+  cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OVM Build Performance</title>
+    <script type="text/javascript" src="$base_url/table/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="$base_url/table/table-sort.css" />
+    <link rel="stylesheet" type="text/css" href="$base_url/benchmarks.css" />
+
+  </head>
+  <body>
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>OVM Build Performance</h2>
+
+    <h3>Elapsed Time by Host and Compiler</h3>
+
+    <p>Some benchmarks call many external tools, while some exercise the shell
+    interpreter itself.  Parse time is included.</p>
+EOF
+  csv2html $in_dir/times.csv
+
+  cat <<EOF
+    <h3>Binary Size</h3>
+
+    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
+    (powers of 10), not MiB (powers of 2).</p>
+
+EOF
+  #csv2html $in_dir/virtual-memory.csv
+
+  cat <<EOF
+
+    <h3>Host and Compiler Details</h3>
+EOF
+  csv2html $in_dir/hosts.csv
+  csv2html $in_dir/compilers.csv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
 }
 
 "$@"
