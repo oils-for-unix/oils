@@ -232,7 +232,7 @@ measure() {
   local prefix=${name%.provenance.txt}  # strip suffix
 
   local times_out="$raw_dir/$prefix.times.csv"
-  mkdir -p $BASE_DIR/{raw,stage1}
+  mkdir -p $BASE_DIR/{raw,stage1} $raw_dir
 
   # Write Header of the CSV file that is appended to.
   echo $HEADER > $times_out

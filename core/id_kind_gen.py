@@ -12,7 +12,7 @@ id_kind_gen.py - Code generation for id_kind.py.
 
 import sys
 
-from asdl.gen_cpp import FormatLines
+from asdl.visitor import FormatLines
 from osh.meta import Id, Kind, LookupKind, ID_SPEC
 
 

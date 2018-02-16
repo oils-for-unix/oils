@@ -7,7 +7,7 @@ set -o errexit
 # TODO: This changes depending on the version.  Maybe there should be a 'clang'
 # function for things that really require clang, like code coverage and so
 # forth.
-readonly CLANG_DIR=~/install/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04
+readonly CLANG_DIR=$PWD/_deps/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04
 readonly CLANG=$CLANG_DIR/bin/clang
 readonly CLANGXX=$CLANG_DIR/bin/clang++
 

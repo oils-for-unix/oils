@@ -81,6 +81,15 @@ all() {
   # Note this has to happen AFTER a tarball is built.
 }
 
+ovm-build() {
+  local base_dir=${1:-../benchmark-data}
+
+  local provenance
+  provenance=$(benchmarks/id.sh compiler-provenance)  # capture the filename
+
+  benchmarks/ovm-build.sh measure $provenance $base_dir/ovm-build
+}
+
 #
 # Other
 #

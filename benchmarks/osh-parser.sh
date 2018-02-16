@@ -102,7 +102,7 @@ measure() {
   local times_out="$raw_dir/$prefix.times.csv"
   local lines_out="$raw_dir/$prefix.lines.csv"
 
-  mkdir -p $BASE_DIR/{tmp,raw,stage1}
+  mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
 
   write-sorted-manifest '' $lines_out
   local sorted=$SORTED
@@ -144,10 +144,9 @@ fake-other-host() {
 #
 
 stage1() {
-  local raw_dir=${1:-_tmp/osh-parser/raw}
-  #local raw_dir=${1:-../benchmark-data/osh-parser}
+  local raw_dir=${1:-$BASE_DIR/raw}
 
-  local out=_tmp/osh-parser/stage1
+  local out=$BASE_DIR/stage1
   mkdir -p $out
 
   local vm_csv=$out/virtual-memory.csv

@@ -51,6 +51,16 @@ install-re2c() {
 
 re2c() { _deps/re2c-1.0.3/re2c "$@"; }
 
+download-clang() {
+  wget --directory _deps \
+    http://releases.llvm.org/5.0.1/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+}
+
+extract-clang() {
+  cd _deps
+  time tar -x --xz < clang*.tar.xz
+}
+
 types-gen() {
   PYTHONPATH=. osh/ast_gen.py "$@" > _devbuild/gen/osh-types.h
 }

@@ -53,7 +53,6 @@ extract-other() {
   time for f in $TAR_DIR/*gz; do
     tar -x --directory $TAR_DIR --file $f 
   done
-  ls -l $TAR_DIR
 }
 
 extract-oil() {
@@ -61,7 +60,11 @@ extract-oil() {
   rm -f -v $target
   make $target
   tar -x --directory $TAR_DIR --file $target
-  ls -l $TAR_DIR
+}
+
+extract() {
+  extract-oil
+  extract-other
 }
 
 # NOTE: build/test.sh measures the time already.
@@ -153,10 +156,13 @@ build-task() {
 
   case $action in
     configure)
+      "${TIME_PREFIX[@]}" -- ./configure
+
       # Cleaning here relies on the ORDER of tasks.txt.  configure happens
       # before build.  The Clang build shouldn't reuse GCC objects!
+      # It has to be done after configure, because the Makefile must exist!
+
       make clean
-      "${TIME_PREFIX[@]}" -- ./configure
       ;;
     make)
       "${TIME_PREFIX[@]}" -- make CC=$compiler_path
@@ -230,7 +236,7 @@ measure() {
   local prefix=${name%.compiler-provenance.txt}  # strip suffix
 
   local times_out="$raw_dir/$prefix.times.csv"
-  mkdir -p $BASE_DIR/{raw,stage1}
+  mkdir -p $BASE_DIR/{raw,stage1} $raw_dir
 
   # TODO: the $times_out calculation is duplicated in build-task()0
 
@@ -248,6 +254,33 @@ measure() {
     die "*** Some tasks failed. ***"
 
   cp -v $provenance $raw_dir
+}
+
+#
+# Data Preparation and Analysis
+#
+
+stage1() {
+  local raw_dir=${1:-$BASE_DIR/raw}
+
+  local out=$BASE_DIR/stage1
+  mkdir -p $out
+
+  local times_csv=$out/times.csv
+  # Globs are in lexicographical order, which works for our dates.
+  local -a a=($raw_dir/flanders.*.times.csv)
+  local -a b=($raw_dir/lisa.*.times.csv)
+  csv-concat ${a[-1]} ${b[-1]} > $times_csv
+
+  # Construct a one-column CSV file
+  local raw_data_csv=$out/raw-data.csv
+  { echo 'path'
+    echo ${a[-1]}
+    echo ${b[-1]}
+  } > $raw_data_csv
+
+  head $out/*
+  wc -l $out/*
 }
 
 "$@"

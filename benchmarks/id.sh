@@ -330,6 +330,9 @@ shell-provenance() {
   done > $out
 
   log "Wrote $out"
+
+  # Return value used in command sub
+  echo $out
 }
 
 compiler-provenance() {
@@ -362,6 +365,9 @@ compiler-provenance() {
   done > $out
 
   log "Wrote $out"
+
+  # Return value used in command sub
+  echo $out
 }
 
 "$@"

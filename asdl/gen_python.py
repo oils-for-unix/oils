@@ -10,11 +10,11 @@ TODO:
 
 import sys
 
-from asdl import gen_cpp
 from asdl import asdl_ as asdl
+from asdl import visitor
 
 
-class GenClassesVisitor(gen_cpp.AsdlVisitor):
+class GenClassesVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
     self.Emit('class %s_e(py_meta.SimpleObj):' % name, depth)
