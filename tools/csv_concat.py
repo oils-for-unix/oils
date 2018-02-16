@@ -10,7 +10,7 @@ def main(argv):
   first_header = None
   for path in argv[1:]:
     with open(path) as f:
-      # Assume
+      # Assume there's no quoting or escaping.
       header = f.readline()
       if first_header is None:
         sys.stdout.write(header)

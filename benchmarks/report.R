@@ -372,13 +372,13 @@ WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {
   )
   print(compiler_table)
 
-  writeCsv(host_table, file.path(out_dir, 'hosts'))
-  writeCsv(compiler_table, file.path(out_dir, 'compilers'))
+  writeTsv(host_table, file.path(out_dir, 'hosts'))
+  writeTsv(compiler_table, file.path(out_dir, 'compilers'))
 }
 
 OvmBuildReport = function(in_dir, out_dir) {
-  times = read.csv(file.path(in_dir, 'times.csv'))
-  raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
+  times = readTsv(file.path(in_dir, 'times.tsv'))
+  raw_data = readTsv(file.path(in_dir, 'raw-data.tsv'))
 
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -414,7 +414,7 @@ OvmBuildReport = function(in_dir, out_dir) {
 
   #print(times)
 
-  writeCsv(times, file.path(out_dir, 'times'))
+  writeTsv(times, file.path(out_dir, 'times'))
 
   # TODO: I want a size report too
   #writeCsv(sizes, file.path(out_dir, 'sizes'))

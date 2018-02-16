@@ -20,6 +20,11 @@ die() {
   exit 1
 }
 
+fail() {
+  echo 'TEST FAILURE  ' "$@"
+  exit 1
+}
+
 run-task-with-status() {
   local out_file=$1
   shift

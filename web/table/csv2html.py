@@ -262,9 +262,14 @@ def PrintTable(css_id, schema, col_names, rows):
   print '</table>'
 
 
-def ReadCsv(f):
+def ReadFile(f, tsv=False):
   """Read the CSV file, returning the column names and rows."""
-  c = csv.reader(f)
+
+  if tsv:
+    c = csv.reader(f, delimiter='\t', doublequote=False,
+                   quoting=csv.QUOTE_NONE)
+  else:
+    c = csv.reader(f)
 
   # The first row of the CSV is assumed to be a header.  The rest are data.
   col_names = []
@@ -284,6 +289,9 @@ def CreateOptionsParser():
   p.add_option(
       '--schema', dest='schema', metavar="PATH", type='str',
       help='Path to the schema.')
+  p.add_option(
+      '--tsv', dest='tsv', default=False, action='store_true',
+      help='Read input in TSV format')
   return p
 
 
@@ -302,7 +310,13 @@ def main(argv):
     except IOError as e:
       raise RuntimeError('Error opening schema: %s' %  e)
   else:
-    schema_path = csv_path.replace('.csv', '.schema.csv')
+    if csv_path.endswith('.csv'):
+      schema_path = csv_path.replace('.csv', '.schema.csv')
+    elif csv_path.endswith('.tsv'):
+      schema_path = csv_path.replace('.tsv', '.schema.tsv')
+    else:
+      raise AssertionError(csv_path)
+
     log('schema path %s', schema_path)
     try:
       schema_f = open(schema_path)
@@ -310,7 +324,12 @@ def main(argv):
       schema_f = None  # allowed to have no schema
 
   if schema_f:
-    r = csv.reader(schema_f)
+    if opts.tsv:
+      r = csv.reader(schema_f, delimiter='\t', doublequote=False,
+                     quoting=csv.QUOTE_NONE)
+    else:
+      r = csv.reader(schema_f)
+
     schema = Schema(list(r))
   else:
     schema = NullSchema()
@@ -319,7 +338,7 @@ def main(argv):
   log('schema %s', schema)
 
   with open(csv_path) as f:
-    col_names, rows = ReadCsv(f)
+    col_names, rows = ReadFile(f, opts.tsv)
 
   schema.VerifyColumnNames(col_names)
 

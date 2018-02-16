@@ -28,6 +28,9 @@ def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('time.py [options] ARGV...')
   p.add_option(
+      '--tsv', dest='tsv', default=False, action='store_true',
+      help='Write output in TSV format')
+  p.add_option(
       '-o', '--output', dest='output', default=None,
       help='Name of output file to write to')
   p.add_option(
@@ -45,7 +48,12 @@ def main(argv):
 
   fields = tuple(opts.fields)
   with open(opts.output, 'a') as f:
-    out = csv.writer(f)
+    if opts.tsv:
+      # TSV output.
+      out = csv.writer(f, delimiter='\t', doublequote=False,
+                       quoting=csv.QUOTE_NONE)
+    else:
+      out = csv.writer(f)
     row = (exit_code, '%.4f' % elapsed) + fields
     out.writerow(row)
 

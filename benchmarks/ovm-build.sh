@@ -1,18 +1,29 @@
 #!/bin/bash
 #
-# Measure the time it takes to build a binary, and the size of the binary.
+# Measure the time it takes to build a binary with different compilers on
+# different machines, and measure the binary size.
 #
 # Usage:
 #   ./ovm-build.sh <function name>
 
 # Directories used:
 #
-# _tmp/
-#   ovm-build/  
-#     raw/     # output CSV
-#     stage1
-# _deps/
-#   ovm-build  # tarballs and extracted source
+# oilshell.org/blob/
+#  ovm-build/
+#
+# ~/git/oilshell/
+#   oil/
+#     _deps/
+#       ovm-build  # tarballs and extracted source
+#     _tmp/
+#       ovm-build/  
+#         raw/     # output CSV
+#         stage1
+#   benchmark-data/
+#     ovm-build/
+#       raw/
+#     compiler-id/
+#     host-id/
 
 set -o nounset
 set -o pipefail
@@ -69,40 +80,42 @@ extract() {
 
 #
 # Measure Size of Binaries.
-# NOTE: This only needs to be done on one machine?
 #
 
-# NOTE: build/test.sh measures the time already.
-
-# Coarse Size and Time Benchmarks
-# --------------------------------
-# 
-# RUN:
-#   compiler: CC=gcc or CC=clang
-#   host: lisa or flanders
-#   target: oil.ovm vs. oil.ovm-dbg
-#   Then do benchmarks/time.py of "make CC=$CC"
-# 
-# Measure:
-#   bytecode.zip size vs. ovm size
-#   (Forget about individual files for now)
-#   end-to-end build time in seconds
-# 
-# After optimization:
-#   ovm should be a lot smaller
-#   build time should be lower, as long as you did the #if 0
-# 
-# LATER:
-#   reduce the amount of code.
-#   do more fine-grained coverage?  I don't think you necessarily need it to
-# reduce code.  You can do it by COMPILE TIME slicing, not runtime! 
-# 
-# I think doing it function-by-function at compile time is easier.  I need to
-# modify Opy to spit out all references though?
-#
 # Other tools:
 # - bloaty to look inside elf file
+# - nm?  Just a flat list of symbols?  Counting them would be nice.
 # - zipfile.py to look inside bytecode.zip
+
+sizes-tsv() {
+  echo $'num_bytes\tpath'
+  find "$@" -maxdepth 0 -printf $'%s\t%p\n'
+}
+
+# NOTE: This should be the same on all x64 machines.  But I want to run it on
+# x64 machines.
+measure-sizes() {
+  local prefix=${1:-$BASE_DIR/raw/demo}
+
+  # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
+  # in R.
+
+  sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode.zip \
+    > ${prefix}.bytecode-size.tsv
+
+  sizes-tsv $BASE_DIR/bin/*/* \
+    > ${prefix}.bin-sizes.tsv
+
+  log "Wrote ${prefix}.*.tsv"
+
+  # Native portion, but it's not separated out by compiler.  We can just
+  # subtract.
+  #$TAR_DIR/oil-$OIL_VERSION/_build/oil/ovm* \
+}
+
+#
+# Unused Demos
+#
 
 bytecode-size() {
   local zip=_build/oil/bytecode.zip
@@ -112,12 +125,6 @@ bytecode-size() {
 
   # 1.88 MB, so there's 30K of header overhead.
   ls -l $zip
-}
-
-# NOTE: ovm-dbg is not stripped, so it's not super meaningful.
-binary-size() {
-  make _build/oil/ovm{,-dbg}
-  ls -l _build/oil/ovm{,-dbg}
 }
 
 # 6.8 seconds for debug build, instead of 8 seconds.
@@ -148,15 +155,17 @@ build-task() {
   local src_dir=$7
   local action=$8
 
-  local times_out="$PWD/$raw_dir/$host.$job_id.times.csv"
+  local times_out="$PWD/$raw_dir/$host.$job_id.times.tsv"
 
+  # Definitions that depends on $PWD.
   local -a TIME_PREFIX=(
-    $PWD/benchmarks/time.py \
+    time-tsv \
     --output $times_out \
     --field "$host" --field "$host_hash" \
     --field "$compiler_path" --field "$compiler_hash" \
     --field "$src_dir" --field "$action"
   )
+  local bin_base_dir=$PWD/$BASE_DIR/bin
 
   pushd $src_dir >/dev/null
 
@@ -177,8 +186,13 @@ build-task() {
       "${TIME_PREFIX[@]}" -- make CC=$compiler_path
       ;;
     *)
-      # Assume it's a target.
-      "${TIME_PREFIX[@]}" -- make CC=$compiler_path $action
+      local target=$action  # Assume it's a target like _bin/oil.ovm
+
+      "${TIME_PREFIX[@]}" -- make CC=$compiler_path $target
+
+      local bin_dir=$bin_base_dir/$(basename $compiler_path)
+      mkdir -p $bin_dir
+      cp -v $target $bin_dir
       ;;
   esac
 
@@ -231,7 +245,7 @@ oil-historical-tasks() {
 }
 
 # action is 'configure', a target name, etc.
-readonly HEADER='status,elapsed_secs,host_name,host_hash,compiler_path,compiler_hash,src_dir,action'
+readonly HEADER=$'status\telapsed_secs\thost_name\thost_hash\tcompiler_path\tcompiler_hash\tsrc_dir\taction'
 readonly NUM_COLUMNS=7  # 5 from provenence, then tarball/target
 
 measure() {
@@ -244,8 +258,9 @@ measure() {
   local name=$(basename $provenance)
   local prefix=${name%.compiler-provenance.txt}  # strip suffix
 
-  local times_out="$raw_dir/$prefix.times.csv"
-  mkdir -p $BASE_DIR/{raw,stage1} $raw_dir
+  local times_out="$raw_dir/$prefix.times.tsv"
+  # NOTE: Do we need two raw dirs?
+  mkdir -p $BASE_DIR/{raw,stage1,bin} $raw_dir
 
   # TODO: the $times_out calculation is duplicated in build-task()0
 
@@ -262,6 +277,8 @@ measure() {
     xargs -n $NUM_COLUMNS -- $0 build-task $raw_dir ||
     die "*** Some tasks failed. ***"
 
+  measure-sizes $raw_dir/$prefix
+
   cp -v $provenance $raw_dir
 }
 
@@ -275,18 +292,18 @@ stage1() {
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  local times_csv=$out/times.csv
+  local times_tsv=$out/times.tsv
   # Globs are in lexicographical order, which works for our dates.
-  local -a a=($raw_dir/flanders.*.times.csv)
-  local -a b=($raw_dir/lisa.*.times.csv)
-  csv-concat ${a[-1]} ${b[-1]} > $times_csv
+  local -a a=($raw_dir/flanders.*.times.tsv)
+  local -a b=($raw_dir/lisa.*.times.tsv)
+  tsv-concat ${a[-1]} ${b[-1]} > $times_tsv
 
-  # Construct a one-column CSV file
-  local raw_data_csv=$out/raw-data.csv
+  # Construct a one-column TSV file
+  local raw_data_tsv=$out/raw-data.tsv
   { echo 'path'
     echo ${a[-1]}
     echo ${b[-1]}
-  } > $raw_data_csv
+  } > $raw_data_tsv
 
   head $out/*
   wc -l $out/*
@@ -314,16 +331,21 @@ print-report() {
 
     <h3>Elapsed Time by Host and Compiler</h3>
 
-    <p>Some benchmarks call many external tools, while some exercise the shell
-    interpreter itself.  Parse time is included.</p>
+    <p>We measure the build speed of <code>bash</code> and <code>dash</code>
+    for comparison.
+    </p>
 EOF
-  csv2html $in_dir/times.csv
+  tsv2html $in_dir/times.tsv
 
   cat <<EOF
     <h3>Binary Size</h3>
 
-    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
-    (powers of 10), not MiB (powers of 2).</p>
+    <p>The oil binary has two portions:
+      <ol>
+        <li>Architecture-independent <code>bytecode.zip</code></li>
+        <li>Architecture- and compiler- dependent <code>_build/oil/ovm*</code></li>
+      </ol>
+    </p>
 
 EOF
   #csv2html $in_dir/virtual-memory.csv
@@ -332,8 +354,8 @@ EOF
 
     <h3>Host and Compiler Details</h3>
 EOF
-  csv2html $in_dir/hosts.csv
-  csv2html $in_dir/compilers.csv
+  tsv2html $in_dir/hosts.tsv
+  tsv2html $in_dir/compilers.tsv
 
   cat <<EOF
   </body>

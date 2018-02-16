@@ -7,14 +7,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh
+
 # TODO: We need a common test framework for command-line syntax of bin/*.  The
 # spec tests are doing that now with $SH.
 # osh2oil should be oilc translate.
-
-fail() {
-  echo 'TEST FAILED'
-  exit 1
-}
 
 # Compare osh code on stdin (fd 0) and expected oil code on fd 3.
 assert-deps() {

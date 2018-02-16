@@ -29,9 +29,14 @@ ColumnPrecision = function(precision_map, default = 1) {
 # Write a CSV file along with a schema.
 #
 # precision: list(column name -> integer precision)
-writeCsv = function(table, prefix, precision_func = NULL) {
-  data_out_path = paste0(prefix, '.csv')
-  write.csv(table, data_out_path, row.names = F)
+writeCsv = function(table, prefix, precision_func = NULL, tsv = F) {
+  if (tsv) {
+    data_out_path = paste0(prefix, '.tsv')
+    write.table(table, data_out_path, row.names = F, sep = '\t', quote = F)
+  } else {
+    data_out_path = paste0(prefix, '.csv')
+    write.csv(table, data_out_path, row.names = F)
+  }
 
   getFieldType = function(field_name) { typeof(table[[field_name]]) }
 
@@ -48,8 +53,21 @@ writeCsv = function(table, prefix, precision_func = NULL) {
     type = as.character(types_list),
     precision = as.character(precision_list)
   )
-  schema_out_path = paste0(prefix, '.schema.csv')
-  write.csv(schema, schema_out_path, row.names = F)
+  if (tsv) {
+    schema_out_path = paste0(prefix, '.schema.tsv')
+    write.table(schema, schema_out_path, row.names = F, sep = '\t', quote = F)
+  } else {
+    schema_out_path = paste0(prefix, '.schema.csv')
+    write.csv(schema, schema_out_path, row.names = F)
+  }
 }
 
+readTsv = function(path) {
+  # quote = '' means disable quoting
+  read.table(path, header = T, sep = '\t', quote = '')
+}
+
+writeTsv = function(table, prefix, precision_func = NULL) {
+  writeCsv(table, prefix, precision_func = precision_func, tsv = T)
+}
 
