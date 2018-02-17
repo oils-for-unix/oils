@@ -255,7 +255,7 @@ def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
     row_class = ''
     if cell_regex:
       for cell in row:
-        if cell_regex.match(cell):
+        if cell_regex.search(cell):
           row_class = 'class="%s"' % css_class
           break
 

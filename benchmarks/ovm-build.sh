@@ -267,7 +267,7 @@ measure() {
   # TODO: the $times_out calculation is duplicated in build-task()0
 
   # Write Header of the CSV file that is appended to.
-  echo $HEADER > $times_out
+  echo "$HEADER" > $times_out
 
   local t1=$BASE_DIR/oil-tasks.txt
   local t2=$BASE_DIR/other-shell-tasks.txt
@@ -358,13 +358,15 @@ EOF
     <p>The oil binary has two portions:
       <ol>
         <li>Architecture-independent <code>bytecode.zip</code></li>
-        <li>Architecture- and compiler- dependent <code>_build/oil/ovm*</code></li>
+        <li>Architecture- and compiler- dependent native code
+            (<code>_build/oil/ovm*</code>)
+        </li>
       </ol>
     </p>
 
 EOF
-  tsv2html $in_dir/bytecode-size.tsv
-  tsv2html $in_dir/bin-sizes.tsv
+  # Highlight the "default" production build
+  tsv2html --css-class-pattern 'special /gcc/oil.ovm$' $in_dir/sizes.tsv
 
   cat <<EOF
 

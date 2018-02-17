@@ -394,8 +394,8 @@ OvmBuildReport = function(in_dir, out_dir) {
   times %>% distinct(compiler_path, compiler_hash) -> distinct_compilers
   distinct_compilers$compiler_label = basename(distinct_compilers$compiler_path)
 
-  print(distinct_hosts)
-  print(distinct_compilers)
+  #print(distinct_hosts)
+  #print(distinct_compilers)
 
   WriteOvmBuildDetails(distinct_hosts, distinct_compilers, out_dir)
 
@@ -411,11 +411,21 @@ OvmBuildReport = function(in_dir, out_dir) {
 
   #print(times)
 
+  bytecode_size %>%
+    rename(bytecode_size = num_bytes) %>%
+    select(-c(path)) ->
+    bytecode_size
+
+  bin_sizes %>%
+	  # reorder
+		select(c(host_label, path, num_bytes)) %>%
+		left_join(bytecode_size, by = c('host_label')) %>%
+		mutate(native_code_size = num_bytes - bytecode_size) ->
+  	sizes
+
   # NOTE: These don't have the host and compiler.
   writeTsv(bytecode_size, file.path(out_dir, 'bytecode-size'))
-  writeTsv(bin_sizes, file.path(out_dir, 'bin-sizes'))
-
-  writeTsv(times, file.path(out_dir, 'times'))
+  writeTsv(sizes, file.path(out_dir, 'sizes'))
 
   # TODO: I want a size report too
   #writeCsv(sizes, file.path(out_dir, 'sizes'))
