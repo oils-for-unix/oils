@@ -105,8 +105,11 @@ measure-sizes() {
   sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode.zip \
     > ${prefix}.bytecode-size.tsv
 
-  sizes-tsv $BASE_DIR/bin/*/* \
+  sizes-tsv $BASE_DIR/bin/*/oil.* \
     > ${prefix}.bin-sizes.tsv
+
+  sizes-tsv $BASE_DIR/bin/*/*sh \
+    > ${prefix}.other-shell-sizes.tsv
 
   log "Wrote ${prefix}.*.tsv"
 
@@ -168,6 +171,8 @@ build-task() {
     --field "$src_dir" --field "$action"
   )
   local bin_base_dir=$PWD/$BASE_DIR/bin
+  local bin_dir="$bin_base_dir/$(basename $compiler_path)"
+  mkdir -p $bin_dir
 
   pushd $src_dir >/dev/null
 
@@ -181,19 +186,31 @@ build-task() {
       # Cleaning here relies on the ORDER of tasks.txt.  configure happens
       # before build.  The Clang build shouldn't reuse GCC objects!
       # It has to be done after configure, because the Makefile must exist!
-
       make clean
       ;;
+
     make)
       "${TIME_PREFIX[@]}" -- make CC=$compiler_path
+
+      local target
+      case $src_dir in
+        */bash*)
+          target=bash
+          ;;
+        */dash*)
+          target=src/dash
+          ;;
+      esac
+
+      strip $target
+      cp -v $target $bin_dir
       ;;
+
     *)
       local target=$action  # Assume it's a target like _bin/oil.ovm
 
       "${TIME_PREFIX[@]}" -- make CC=$compiler_path $target
 
-      local bin_dir=$bin_base_dir/$(basename $compiler_path)
-      mkdir -p $bin_dir
       cp -v $target $bin_dir
       ;;
   esac
@@ -275,6 +292,7 @@ measure() {
   oil-tasks $provenance > $t1
   other-shell-tasks $provenance > $t2
 
+  #grep dash $t2 |
   time cat $t1 $t2 |
     xargs -n $NUM_COLUMNS -- $0 build-task $raw_dir ||
     die "*** Some tasks failed. ***"
