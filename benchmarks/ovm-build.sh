@@ -88,8 +88,10 @@ extract() {
 # - zipfile.py to look inside bytecode.zip
 
 sizes-tsv() {
-  echo $'num_bytes\tpath'
-  find "$@" -maxdepth 0 -printf $'%s\t%p\n'
+  # host_label matches the times.tsv file output by report.R
+  echo $'host_label\tnum_bytes\tpath'
+  local host=$(hostname)
+  find "$@" -maxdepth 0 -printf "$host\t%s\t%p\n"
 }
 
 # NOTE: This should be the same on all x64 machines.  But I want to run it on
@@ -292,11 +294,24 @@ stage1() {
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  local times_tsv=$out/times.tsv
+  local x
+  local -a a b
+
   # Globs are in lexicographical order, which works for our dates.
-  local -a a=($raw_dir/flanders.*.times.tsv)
-  local -a b=($raw_dir/lisa.*.times.tsv)
-  tsv-concat ${a[-1]} ${b[-1]} > $times_tsv
+  x=$out/times.tsv
+  a=($raw_dir/flanders.*.times.tsv)
+  b=($raw_dir/lisa.*.times.tsv)
+  tsv-concat ${a[-1]} ${b[-1]} > $x
+
+  x=$out/bytecode-size.tsv
+  a=($raw_dir/flanders.*.bytecode-size.tsv)
+  b=($raw_dir/lisa.*.bytecode-size.tsv)
+  tsv-concat ${a[-1]} ${b[-1]} > $x
+
+  x=$out/bin-sizes.tsv
+  a=($raw_dir/flanders.*.bin-sizes.tsv)
+  b=($raw_dir/lisa.*.bin-sizes.tsv)
+  tsv-concat ${a[-1]} ${b[-1]} > $x
 
   # Construct a one-column TSV file
   local raw_data_tsv=$out/raw-data.tsv
@@ -335,7 +350,7 @@ print-report() {
     for comparison.
     </p>
 EOF
-  tsv2html $in_dir/times.tsv
+  tsv2html --css-class-pattern 'special ^oil' $in_dir/times.tsv
 
   cat <<EOF
     <h3>Binary Size</h3>
@@ -348,7 +363,8 @@ EOF
     </p>
 
 EOF
-  #csv2html $in_dir/virtual-memory.csv
+  tsv2html $in_dir/bytecode-size.tsv
+  tsv2html $in_dir/bin-sizes.tsv
 
   cat <<EOF
 

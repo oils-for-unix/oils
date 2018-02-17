@@ -39,6 +39,7 @@ import cgi
 import csv
 import optparse
 import os
+import re
 import sys
 
 
@@ -224,7 +225,14 @@ def PrintColGroup(col_names, schema):
   print '  </colgroup>'
 
 
-def PrintTable(css_id, schema, col_names, rows):
+def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
+  if css_class_pattern:
+    css_class, r = css_class_pattern.split(None, 2)
+    cell_regex = re.compile(r)
+  else:
+    css_class = None
+    cell_regex = None
+
   print '<table id="%s">' % css_id
   print '  <thead>'
   print '    <tr>'
@@ -244,12 +252,12 @@ def PrintTable(css_id, schema, col_names, rows):
 
     # TODO: There should be a special column called CSS_CLASS.  Output that
     # from R.
-    for cell in row:
-      if cell.startswith('osh'):
-        row_class = 'class="osh-row"'
-        break
-    else:
-      row_class = ''
+    row_class = ''
+    if cell_regex:
+      for cell in row:
+        if cell_regex.match(cell):
+          row_class = 'class="%s"' % css_class
+          break
 
     print '    <tr {}>'.format(row_class)
 
@@ -292,6 +300,11 @@ def CreateOptionsParser():
   p.add_option(
       '--tsv', dest='tsv', default=False, action='store_true',
       help='Read input in TSV format')
+  p.add_option(
+      '--css-class-pattern', dest='css_class_pattern', type='str',
+      help='A string of the form CSS_CLASS:PATTERN.  If the cell contents '
+           'matches the pattern, then apply the given CSS class. '
+           'Example: osh:^osh')
   return p
 
 
@@ -344,7 +357,7 @@ def main(argv):
 
   filename = os.path.basename(csv_path)
   css_id, _ = os.path.splitext(filename)
-  PrintTable(css_id, schema, col_names, rows)
+  PrintTable(css_id, schema, col_names, rows, opts.css_class_pattern)
 
 
 if __name__ == '__main__':

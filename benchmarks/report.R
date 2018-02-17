@@ -378,6 +378,8 @@ WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {
 
 OvmBuildReport = function(in_dir, out_dir) {
   times = readTsv(file.path(in_dir, 'times.tsv'))
+  bytecode_size = readTsv(file.path(in_dir, 'bytecode-size.tsv'))
+  bin_sizes = readTsv(file.path(in_dir, 'bin-sizes.tsv'))
   raw_data = readTsv(file.path(in_dir, 'raw-data.tsv'))
 
   times %>% filter(status != 0) -> failed
@@ -385,11 +387,6 @@ OvmBuildReport = function(in_dir, out_dir) {
     print(failed)
     stop('Some ovm-build tasks failed')
   }
-  #print(vm)
-
-  #times %>%
-  #  arrange(host, VmPeak_MB) ->
-  #  vm
 
   times %>% distinct(host_name, host_hash) -> distinct_hosts
   distinct_hosts$host_label = distinct_hosts$host_name
@@ -413,6 +410,10 @@ OvmBuildReport = function(in_dir, out_dir) {
     times
 
   #print(times)
+
+  # NOTE: These don't have the host and compiler.
+  writeTsv(bytecode_size, file.path(out_dir, 'bytecode-size'))
+  writeTsv(bin_sizes, file.path(out_dir, 'bin-sizes'))
 
   writeTsv(times, file.path(out_dir, 'times'))
 

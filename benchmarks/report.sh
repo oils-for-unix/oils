@@ -94,7 +94,7 @@ all() {
 # For view
 dev-index() {
   local out=_tmp/benchmarks.html
-  for name in osh-parser osh-runtime vm-baseline oheap; do
+  for name in osh-parser osh-runtime vm-baseline ovm-build oheap; do
     echo "<a href=\"$name/index.html\">$name</a> <br/>"
   done > $out
   log "Wrote $out"
