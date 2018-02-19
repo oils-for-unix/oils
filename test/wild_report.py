@@ -4,10 +4,8 @@ wild_report.py
 """
 
 import json
-import glob
 import os
 import sys
-from collections import defaultdict
 
 import jsontemplate
 

@@ -420,35 +420,13 @@ compress-benchmarks() {
 }
 
 metrics-index() {
-  # TODO: Have to write index.html so it will serve out of .wwz.
-  cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Line Counts</title>
-    <style>
-      body {
-        margin: 0 auto;
-        width: 40em;
-      }
-      #home-link {
-        text-align: right;
-      }
-    </style>
-  </head>
-  <body>
-    <p id="home-link">
-      <a href="/">oilshell.org</a>
-    </p>
-    <h3>Line Counts</h3>
-    <p>
-EOF
-  find $out -name '*.txt' -a -printf '<a href="%P">%P</a> <br/>\n'
-cat <<EOF
-    </p>
-  </body>
-</html>
-EOF
+  local dir=$1
+
+  scripts/html.sh basic-head "Line Counts"
+  echo '<p>'
+  find $dir -name '*.txt' -a -printf '<a href="%P">%P</a> <br/>\n'
+  echo '</p>'
+  scripts/html.sh basic-tail "Line Counts"
 }
 
 line-counts() {
@@ -468,7 +446,7 @@ line-counts() {
 
   scripts/count.sh oil-osh-cloc > $out/oil-osh-cloc.txt
 
-  metrics-index > $out/index.html
+  metrics-index $out > $out/index.html
   tree $out
 }
 
