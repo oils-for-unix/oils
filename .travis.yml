@@ -3,11 +3,6 @@ cache: pip
 python:
     - 2.7
 
-# TODO: remove on merge with master.
-branches:
-    only:
-        travis-ci # Where I'm trying to make the build and run the tests.
-
 addons:
     apt:
         packages:
