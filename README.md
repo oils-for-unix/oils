@@ -1,6 +1,9 @@
 Oil
 ===
 
+[![Build
+Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/oil)
+
 Oil is a new Unix shell.  [Why Create a New Unix Shell?][why]
 
 [why]: http://www.oilshell.org/blog/2018/01/28.html
@@ -70,7 +73,7 @@ Directory Structure
     test/             # Test automation
       unit.sh         ## Types of test runner: unit, spec, wild, smoke
       spec.sh
-      wild.sh        
+      wild.sh
       smoke.sh
       sh_spec.py      # shell spec test framework
     spec/             # spec test cases
@@ -121,7 +124,7 @@ Directory Structure
           ...
         web/          # Static files, copy of $REPO_ROOT/web
           table/
-      
+
 
     # Dev Docs
 

@@ -2,11 +2,37 @@ language: python
 cache: pip
 python:
     - 2.7
+
+addons:
+    apt:
+        packages:
+            # build/dev.sh ubuntu-deps
+            - python-dev
+            - gawk
+            - time
+            - libreadline-dev
+            # test/spec.sh install-shells
+            - busybox-static
+            - mksh
+            - zsh
+
+before_install:
+    - test/spec.sh link-busybox-ash
+    - mkdir -p _tmp
+
 install:
-    #- pip install -r requirements.txt
+    # - pip install -r requirements.txt
     - pip install flake8  # pytest  # add another testing frameworks later
+    - build/dev.sh minimal
+
 script:
     - test/lint.sh travis
+    # Unit tests
+    - test/unit.sh all
+    # Spec tests
+    - test/spec.sh smoke
+    - test/spec.sh all
+
 notifications:
     on_success: change
     on_failure: change  # `always` will be the setting once code changes slow down
