@@ -45,6 +45,11 @@ banner() {
 tests-to-run() {
   # TODO: Add opy.
   for t in {build,test,native,asdl,core,osh,test,tools}/*_test.py; do
+    # For Travis after build/dev.sh minimal: if we didn't build fastlex.so,
+    # then skip a unit test that will fail.
+    if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
+      continue
+    fi
     echo $t
   done
 }
