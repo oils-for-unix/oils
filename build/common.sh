@@ -18,6 +18,10 @@ readonly PY27=Python-2.7.13
 
 readonly PREPARE_DIR=_devbuild/cpython-full
 
+# Used by scripts/run.sh and opy/build.sh
+readonly OIL_SYMLINKS=(oil oilc osh sh wok boil true false)
+
+
 log() {
   echo "$@" >&2
 }

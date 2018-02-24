@@ -13,15 +13,17 @@ readonly MKSH=$(which mksh)
 readonly ZSH=$(which zsh)
 readonly BUSYBOX_ASH=_tmp/shells/ash
 
-if test -f _bin/osh; then
+readonly OSH_PYTHON=${OSH_PYTHON:-bin/osh}
+readonly OSH_OVM=${OSH_OVM:-_bin/osh}
+
+if test -f $OSH_OVM; then
   # TODO: Does it make sense to copy the binary to an unrelated to directory,
   # like /tmp?  /tmp/{oil.ovm,osh}.
-  readonly OSH_BIN=_bin/osh
 
   # HACK that relies on word splitting.  TODO: Use ${OSH[@]} everywhere
-  readonly OSH="bin/osh $OSH_BIN"
+  readonly OSH="$OSH_PYTHON $OSH_OVM"
 else
-  readonly OSH="bin/osh"
+  readonly OSH="$OSH_PYTHON"
 fi
 
 

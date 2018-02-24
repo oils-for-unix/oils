@@ -10,16 +10,22 @@ Getting started / smoke test:
 
 Compiling Oil:
 
-    ./smoke.sh compile-osh-tree   # makes _tmp/osh-opy and _tmp/osh-ccompile
-    ./smoke.sh test-unit  # Run Oil unit tests
+    ./build.sh oil-repo  # makes _tmp/osh-opy and _tmp/osh-ccompile
 
-TODO:
+Testing:
 
-Move important stuff to build.sh.  smoke.sh doesn't make sense.
+    ./test.sh unit  # Run Oil unit tests
+
+Test the binary:
+
+    ./test.sh osh-help 
+    ./test.sh osh-version 
+    ./test.sh spec smoke
+    ./test.sh spec all  # Failures due to $0
 
 Notes
 -----
 
 OSH tests don't run under byterun.  I probably don't care.
 
-    ./smoke.sh test-osh-tree '' byterun
+    ./test.sh unit '' byterun

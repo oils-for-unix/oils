@@ -12,48 +12,6 @@ set -o errexit
 source common.sh
 source compare.sh  # for DIFF
 
-md5-manifest() {
-  local tree=$1
-  pushd $tree
-  # size and name
-  find . -type f | sort | xargs stat --format '%s %n' | tee SIZES.txt
-  find . -type f | sort | xargs md5sum | tee MD5.txt
-  popd
-}
-
-_compile-tree() {
-  local src_tree=$1
-  local dest_tree=$2
-  local version=$3
-  shift 3
-
-  rm -r -f $dest_tree
-
-  #local ext=opyc
-  local ext=pyc
-
-  for rel_path in "$@"; do
-    echo $rel_path
-    local dest=${dest_tree}/${rel_path%.py}.${ext}
-    mkdir -p $(dirname $dest)
-
-    if test $version = stdlib; then
-      _stdlib-compile-one $src_tree/${rel_path} $dest
-    elif test $version = compiler2; then
-      _compile2-one $src_tree/${rel_path} $dest
-    elif test $version = ccompile; then
-      _ccompile-one $src_tree/${rel_path} $dest
-    elif test $version = opy; then
-      _compile-one $src_tree/${rel_path} $dest
-    else
-      die "bad"
-    fi
-  done
-
-  tree $dest_tree
-  md5-manifest $dest_tree
-}
-
 _fill-opy-tree() {
   echo TODO: grammar pickle
 }
@@ -73,105 +31,12 @@ compile-opy-tree() {
   _compile-tree $src _tmp/opy-opy/ opy "${files[@]}"
 }
 
-make-links() {
-  local dir=${1:-_tmp/osh-opy}
-
-  local run=$PWD/../scripts/run.sh 
-
-  pushd $dir
-  $run make-pyc-links
-  popd
-  #tree $dir
-}
-
-_fill-osh-tree() {
-  local dir=${1:-_tmp/osh-opy}
-  cp -v ../osh/{osh,types}.asdl $dir/osh
-  cp -v ../core/runtime.asdl $dir/core
-  cp -v ../asdl/arith.asdl $dir/asdl
-  ln -v -s -f $PWD/../{libc,fastlex}.so $dir
-
-  # Needed for help text.
-  ln -v -s -f --no-target-directory $PWD/../_build $dir/_build
-
-  make-links $dir
-}
-
-osh-opy() {
-  python _tmp/osh-opy/bin/osh "$@"
-}
-
-test-help() {
-  osh-opy --help
-}
-
-# Compile with both compile() and OPy.
-# TODO:
-# - What about the standard library?  The whole app bundle should be
-# compiled with OPy.
-# - This could be part of the Travis build.  It will ensure no Python 2
-# print statements sneak in.
-compile-osh-tree() {
-  local src=$(cd .. && echo $PWD)
-
-  # NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
-  local files=( $(find $src \
-              -name _tmp -a -prune -o \
-              -name _chroot -a -prune -o \
-              -name cpython-full -a -prune -o \
-              -name _deps -a -prune -o \
-              -name Python-2.7.13 -a -prune -o \
-              -name opy -a -prune -o \
-              -name 'test' -a -prune -o \
-              -name '*.py' -a -printf '%P\n') )
-
-  _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"
-  _compile-tree $src _tmp/osh-opy/ opy "${files[@]}"
-
-  _fill-osh-tree _tmp/osh-ccompile/ 
-  _fill-osh-tree _tmp/osh-opy/
-
-  #_compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
-
-  # Not deterministic!
-  #_compile-tree $src _tmp/osh-compile2.gold/ compiler2 "${files[@]}"
-  #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
-}
-
 zip-oil-tree() {
   #pushd _tmp/osh-opy
   rm -f _tmp/oil.zip
   pushd _tmp/osh-ccompile
   zip ../oil.zip -r .
   popd
-}
-
-# TODO:
-# - Run with oil.ovm{,-dbg}
-test-unit() {
-  local dir=${1:-_tmp/osh-opy}
-  local vm=${2:-cpython}  # byterun or cpython
-
-  pushd $dir
-  mkdir -p _tmp
-  #for t in {build,test,native,asdl,core,osh,test,tools}/*_test.py; do
-  for t in {asdl,core,osh}/*_test.pyc; do
-
-    echo $t
-    if test $vm = byterun; then
-      PYTHONPATH=. opy_ run $t
-    elif test $vm = cpython; then
-      PYTHONPATH=. python $t
-    else
-      die "Invalid VM $vm"
-    fi
-  done
-  popd
-}
-
-test-osh-smoke() {
-  local dir=${1:-_tmp/osh-opy}
-  local vm=${2:-cpython}  # byterun or cpython
 }
 
 write-speed() {
