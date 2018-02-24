@@ -34,9 +34,11 @@ main() {
   fi
 
   cd $PREFIX/bin
-  if ! ln -s -f $exec_filename osh; then  # -f to overwrite
-    die "Couldn't create osh symlink"
-  fi
+  for link in osh oilc; do
+    if ! ln -s -f $exec_filename $link; then  # -f to overwrite
+      die "Couldn't create $link symlink"
+    fi
+  done
 }
 
 main "$@"
