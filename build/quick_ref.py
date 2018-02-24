@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 quick_ref.py
 """
@@ -166,11 +167,11 @@ def TableOfContents(f):
 
   # TODO: Add version and so forht?
   title_line = f.readline()
-  print '<h1>%s</h1>' % cgi.escape(title_line)
-  print '<a name="toc"></a>'
+  print('<h1>%s</h1>' % cgi.escape(title_line))
+  print('<a name="toc"></a>')
   # doc/run.sh must set environment.
-  print '<i>Version %s</i>' % os.environ['OIL_VERSION']
-  print '<pre>'
+  print('<i>Version %s</i>' % os.environ['OIL_VERSION'])
+  print('<pre>')
 
   for line in f:
     if not line.strip():
@@ -193,7 +194,7 @@ def TableOfContents(f):
 
     sys.stdout.write(html_line)
 
-  print '</pre>'
+  print('</pre>')
 
 # TODO:
 # - group 1: # prefix determines h1, h2, h3
@@ -240,7 +241,7 @@ class TextOutput:
 HEADING_RE = re.compile(r'(#+) <(.*)>(.*)')
 
 def Pages(f, text_out):
-  print '<pre>'
+  print('<pre>')
 
   section_id = [0, 0, 0]  # L1, L2, L3
   topics = []
@@ -279,12 +280,12 @@ def Pages(f, text_out):
         else:
           raise RuntimeError('Invalid level %r' % level)
 
-        print '</pre>'
+        print('</pre>')
         for topic in topics:
-          print '<a name="%s"></a>' % topic
-        print '<h%d>%s</h%d>' % (htag, text, htag)
-        print '<!-- %d.%d.%d -->' % tuple(section_id)
-        print '<pre>'
+          print('<a name="%s"></a>' % topic)
+        print('<h%d>%s</h%d>' % (htag, text, htag))
+        print('<!-- %d.%d.%d -->' % tuple(section_id))
+        print('<pre>')
 
         prev_topics = topics
         
@@ -298,7 +299,7 @@ def Pages(f, text_out):
       prev_lines.append(line)
       continue
 
-  print '</pre>'
+  print('</pre>')
 
 
 
@@ -323,7 +324,7 @@ def main(argv):
       f.write('TOPIC_LOOKUP = ')
       f.write(d)
 
-    print >>sys.stderr, 'Wrote %s/ and %s' % (text_dir, py_out_path)
+    print('Wrote %s/ and %s' % (text_dir, py_out_path), file=sys.stderr)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
@@ -333,5 +334,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

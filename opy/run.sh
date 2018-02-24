@@ -12,18 +12,13 @@ source compare.sh
 
 readonly PY=$PY36
 
-die() {
-  echo "FATAL: $@" 1>&2
-  exit 1
-}
-
 _parse-one() {
   #PYTHONPATH=. ./opy_main.py 2to3.grammar parse "$@"
   opyg parse "$@"
 }
 
 parse-test() {
-  _parse-one testdata/hello_py3.py
+  _parse-one testdata/hello_py3.py  # Python 3 print syntax
   echo ---
   _parse-one testdata/hello_py2.py
 }
@@ -37,17 +32,6 @@ stdlib-parse-test() {
   _stdlib-parse-one testdata/hello_py3.py
   echo ---
   _stdlib-parse-one testdata/hello_py2.py
-}
-
-# Generate .pyc using the Python interpreter.
-compile-gold() {
-  pushd testdata
-  python3 -c 'import hello_py3'
-
-  ls -l __pycache__
-  xxd __pycache__/hello_py3.cpython-34.pyc
-
-  popd
 }
 
 _compile-and-run() {
@@ -119,7 +103,6 @@ stdlib-determinism() {
 stdlib-determinism-loop() {
   determinism-loop _stdlib-compile-one 
 }
-
 
 # We want to fix the bug here.  Hm not able to hit it?
 compile2-determinism() {
@@ -194,7 +177,7 @@ unit-osh() {
   popd
 }
 
-# Combinatios of {ccompile, compiler2} x {cpython, byterun}
+# Combinations of {ccompile, compiler2} x {cpython, byterun}
 compile-run-one() {
   local compiler=${1:-ccompile}  # or compile2
   local vm=${2:-byterun}  # or cpython
@@ -257,6 +240,7 @@ parse-with-pgen2() {
   done
 }
 
+# This fails due to some files not using __future__ print_function.
 parse-oil() {
   parse-with-pgen2 *.py ../*.py ../osh/*.py ../core/*.py ../asdl/*.py
 }

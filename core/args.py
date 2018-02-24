@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 args.py - Flag, option, and arg parsing for the shell.
 
@@ -366,10 +367,10 @@ class BuiltinFlags(object):
   def PrintHelp(self, f):
     print('[0]')
     for ch in self.arity0:
-      print ch
+      print(ch)
     print('[1]')
     for ch in self.arity1:
-      print ch
+      print(ch)
 
   def ShortFlag(self, short_name, arg_type=None):
     """ 

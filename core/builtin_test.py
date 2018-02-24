@@ -1,4 +1,5 @@
 #!/usr/bin/python -S
+from __future__ import print_function
 """
 builtin_test.py: Tests for builtin.py
 """
@@ -13,9 +14,9 @@ class BuiltinTest(unittest.TestCase):
 
   def testEchoLexer(self):
     lex = builtin.ECHO_LEXER
-    print list(lex.Tokens(r'newline \n NUL \0 octal \0377 hex \x00'))
-    print list(lex.Tokens(r'unicode \u0065 \U00000065'))
-    print list(lex.Tokens(r'\d \e \f \g'))
+    print(list(lex.Tokens(r'newline \n NUL \0 octal \0377 hex \x00')))
+    print(list(lex.Tokens(r'unicode \u0065 \U00000065')))
+    print(list(lex.Tokens(r'\d \e \f \g')))
 
   def testAppendParts(self):
     # allow_escape is True by default, but False when the user passes -r.

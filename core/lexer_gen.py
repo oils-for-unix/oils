@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 lex_gen.py
 """
@@ -22,31 +23,31 @@ def PrintTree(re_tree, depth=2):
     sys.stdout.write(name)
     sys.stdout.write(' ')
     if name == 'in':  # character class
-      print '{'
+      print('{')
       PrintTree(arg, depth=depth+1)
       sys.stdout.write(depth * '\t')
-      print '}'
+      print('}')
     elif name == 'max_repeat':  # repetition
       min_, max_, children = arg
       # min = 0 means *, min = 1 means +
       assert min_ in (0, 1), min_
-      print min_, max_, '{'
+      print(min_, max_, '{')
       PrintTree(children, depth=depth+1)
       sys.stdout.write(depth * '\t')
-      print
+      print()
     elif name == 'negate':  # Oh this is a ^.  It doesn't form a node.
       assert arg is None
-      print
+      print()
     elif name == 'literal':  # Quote \ and " in re2c syntax
-      print repr(chr(arg))
+      print(repr(chr(arg)))
     elif name == 'not_literal':  # ditto
-      print repr(chr(arg))
+      print(repr(chr(arg)))
     elif name == 'range':  # ascii range
       begin, end = arg
-      print repr(chr(begin)), repr(chr(end))
+      print(repr(chr(begin)), repr(chr(end)))
     elif name == 'any':  # This is the '.' character
       assert arg is None
-      print
+      print()
     else:
       raise AssertionError(name)
 
@@ -55,9 +56,9 @@ def PrintTree(re_tree, depth=2):
 
 def PrintRegex(pat):
   re_tree = sre_parse.parse(pat)
-  print '\t\t['
+  print('\t\t[')
   PrintTree(re_tree)
-  print '\t\t]'
+  print('\t\t]')
 
 
 # ^ means negation, - means range
@@ -194,7 +195,7 @@ def TranslateLexer(lexer_def):
   # Since we reference this function in exactly one translation unit --
   # fastlex.c, the difference is moot, and we just satisfy the compiler.
 
-  print r"""
+  print(r"""
 /* Common stuff */
 
 /*!re2c
@@ -212,7 +213,7 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
 
   unsigned char* YYMARKER;  /* why do we need this? */
   switch (lex_mode)  {
-"""
+""")
 
   # TODO: Should be ordered by most common?  Or will profile-directed feedback
   # help?
@@ -220,9 +221,9 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
   for state, pat_list in lexer_def.iteritems():
     # HACK: strip off '_e'
     prefix = state.__class__.__name__[:-2]
-    print '  case %s__%s:' % (prefix, state.name)
-    print '    for (;;) {'
-    print '      /*!re2c'
+    print('  case %s__%s:' % (prefix, state.name))
+    print('    for (;;) {')
+    print('      /*!re2c')
 
     for is_regex, pat, token_id in pat_list:
       if is_regex:
@@ -230,16 +231,16 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
       else:
         re2_pat = TranslateConstant(pat)
       id_name = meta.IdName(token_id)
-      print '      %-30s { *id = id__%s; break; }' % (re2_pat, id_name)
+      print('      %-30s { *id = id__%s; break; }' % (re2_pat, id_name))
 
     # EARLY RETURN: Do NOT advance past the NUL terminator.
-    print '      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
-        r'"\x00"'
+    print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
+        r'"\x00"')
 
-    print '      */'
-    print '    }'
-    print '    break;'
-    print
+    print('      */')
+    print('    }')
+    print('    break;')
+    print()
 
   # This is literal code without generation:
   """
@@ -275,14 +276,14 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
     break;
   """
 
-  print """\
+  print("""\
   default:
     assert(0);
 
   }
   *end_pos = p - line;  /* relative */
 }
-"""
+""")
 
 
   # note: use YYCURSOR and YYLIMIT
@@ -299,44 +300,44 @@ def main(argv):
   elif action == 'print-all':
     # Top level is a switch statement.
     for state, pat_list in lex.LEXER_DEF.iteritems():
-      print state
+      print(state)
       # This level is re2c patterns.
       for is_regex, pat, token_id in pat_list:
-        print '\t%r  ->  %r' % (pat, token_id)
+        print('\t%r  ->  %r' % (pat, token_id))
         if is_regex:
           #print re_tree
           out_pat = TranslateRegex(pat)
           #print out_pat
 
-      print
+      print()
 
   elif action == 'print-regex':
     unique = set()
 
     num_regexes = 0
     for state, pat_list in lex.LEXER_DEF.iteritems():
-      print state
+      print(state)
       # This level is re2c patterns.
       for is_regex, pat, token_id in pat_list:
         #print '\t%r  ->  %r' % (pat, token_id)
         if is_regex:
-          print '\t' + pat
-          print '\t' + TranslateRegex(pat)
-          print
+          print('\t' + pat)
+          print('\t' + TranslateRegex(pat))
+          print()
           #PrintRegex(pat)
           num_regexes += 1
           unique.add(pat)
         else:
-          print '\t' + TranslateConstant(pat)
+          print('\t' + TranslateConstant(pat))
 
-      print
+      print()
 
-    print 'Printed %d regexes (%d unique)' % (num_regexes, len(unique))
+    print('Printed %d regexes (%d unique)' % (num_regexes, len(unique)))
 
 
 if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

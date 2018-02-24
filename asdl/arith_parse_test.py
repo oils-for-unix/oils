@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from asdl import tdop
 from asdl import arith_ast
 from asdl import arith_parse   # module under test
@@ -178,7 +179,7 @@ class Visitor(object):
 
     # TODO: Use node.ASDL_TYPE.GetFields()
     # Only compound children get visited?
-    print [name for name in dir(node) if not name.startswith('_')]
+    print([name for name in dir(node) if not name.startswith('_')])
     # Call self.Visit()!
 
 
@@ -186,7 +187,7 @@ class PrettyPrinter(Visitor):
 
   def Visit(self, node):
     if node.tag == arith_expr_e.ArithUnary:
-      print 'ArithUnary %s' % node.child
+      print('ArithUnary %s' % node.child)
     else:
       self.VisitChildren(node)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 lex_test.py: Tests for lex.py
 """
@@ -24,7 +25,7 @@ def _InitLexer(s):
 class AsdlTest(unittest.TestCase):
 
   def testLexMode(self):
-    print lex_mode_e.DQ
+    print(lex_mode_e.DQ)
 
 
 CMD = """\

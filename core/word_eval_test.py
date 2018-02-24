@@ -5,6 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+from __future__ import print_function
 """
 word_eval_test.py: Tests for word_eval.py
 """
@@ -17,7 +18,7 @@ from core import word_eval  # module under test
 class WordEvalTest(unittest.TestCase):
 
   def testWordEval(self):
-    print word_eval
+    print(word_eval)
 
 
 if __name__ == '__main__':

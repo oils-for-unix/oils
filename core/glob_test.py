@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 glob_test.py: Tests for glob.py
 """
@@ -111,7 +112,7 @@ class GlobEscapeTest(unittest.TestCase):
     print(r)
 
     # It matches.  But we need to get the positions out!
-    print libc.regex_match('^(.*)git.*(.*)', '~/git/oil')
+    print(libc.regex_match('^(.*)git.*(.*)', '~/git/oil'))
 
     # Or should we make a match in a loop?
     # We have to keep advancing the string until there are no more matches.

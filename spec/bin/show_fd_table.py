@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 show_fd_table.py -- Uses Linux-specific proc interface
 """
@@ -14,9 +15,9 @@ def main(argv):
     try:
       connected_to = os.readlink(path)
     except OSError as e:
-      print fd, str(e)
+      print('%s %s' % (fd, e))
     else:
-      print fd, connected_to
+      print('%s %s' % (fd, connected_to))
 
 
 if __name__ == '__main__':

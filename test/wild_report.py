@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 wild_report.py
 """
@@ -321,7 +322,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
 def log(msg, *args):
   if msg:
     msg = msg % args
-  print >>sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 
 class DirNode:
@@ -402,9 +403,9 @@ def DebugPrint(node, indent=0):
   ind = indent * '    '
   #print('FILES', node.files.keys())
   for name in node.files:
-    print '%s%s - %s' % (ind, name, node.files[name])
+    print('%s%s - %s' % (ind, name, node.files[name]))
   for name, child in node.dirs.iteritems():
-    print '%s%s/ - %s' % (ind, name, child.subtree_stats)
+    print('%s%s/ - %s' % (ind, name, child.subtree_stats))
     DebugPrint(child, indent=indent+1)
 
 
@@ -493,7 +494,7 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
       st['lines_per_sec'] = '%.1f' % lines_per_sec
     except KeyError:
       # This usually there were ZERO files.
-      print >>sys.stderr, node, st, repr(rel_path)
+      print(node, st, repr(rel_path), file=sys.stderr)
       raise
 
     data = {
@@ -597,5 +598,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

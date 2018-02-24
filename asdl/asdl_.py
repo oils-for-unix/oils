@@ -19,6 +19,8 @@
 # [1] "The Zephyr Abstract Syntax Description Language" by Wang, et. al. See
 #     http://asdl.sourceforge.net/
 #-------------------------------------------------------------------------------
+from __future__ import print_function
+
 import cStringIO
 import re
 
@@ -132,7 +134,7 @@ class TypeLookup(object):
       type_name: string, e.g. 'word_part' or 'LiteralPart'
     """
     if not type_name in self.compound_types:
-      print 'FATAL', self.compound_types.keys()
+      print('FATAL: %s' % self.compound_types.keys())
     return self.compound_types[type_name]
 
   def __repr__(self):

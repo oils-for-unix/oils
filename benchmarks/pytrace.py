@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 pytrace.py
 """
@@ -70,8 +71,8 @@ class Tracer(object):
     # TODO:
     # - report number of events?
     # - report number of bytes?
-    print >>sys.stderr, 'num_events: %d' % self.num_events
-    print >>sys.stderr, 'Writing to %r' % path
+    print('num_events: %d' % self.num_events, file=sys.stderr)
+    print('Writing to %r' % path, file=sys.stderr)
     with open(path, 'w') as f:
       f.write(self.event_strs.getvalue())
 
@@ -80,7 +81,7 @@ def main(argv):
   t = Tracer()
   import urlparse
   t.Start()
-  print urlparse.urlparse('http://example.com/foo')
+  print(urlparse.urlparse('http://example.com/foo'))
   t.Stop('demo.pytrace')
 
 

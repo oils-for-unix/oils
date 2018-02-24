@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 arith_ast_test.py: Tests for arith_ast.py
 """
@@ -121,9 +122,9 @@ class ArithAstTest(unittest.TestCase):
       raise AssertionError("Should have failed")
 
   def testProductType(self):
-    print
-    print '-- PRODUCT --'
-    print
+    print()
+    print('-- PRODUCT --')
+    print()
 
     s = source_location()
     s.path = 'hi'
@@ -141,9 +142,9 @@ class ArithAstTest(unittest.TestCase):
     # TODO: Should be op_id_i.Plus -- instance
     # Should be op_id_s.Plus
 
-    print
-    print '-- SIMPLE SUM --'
-    print
+    print()
+    print('-- SIMPLE SUM --')
+    print()
 
     o = op_id_e.Plus
     assert isinstance(o, py_meta.SimpleObj)
@@ -152,9 +153,9 @@ class ArithAstTest(unittest.TestCase):
     assert isinstance(o.ASDL_TYPE, asdl_.Sum)
 
   def testCompoundSumType(self):
-    print
-    print '-- COMPOUND SUM --'
-    print
+    print()
+    print('-- COMPOUND SUM --')
+    print()
 
     # TODO: Should be cflow_t.Break() and cflow_i.Break
     c = arith_ast.Break()
@@ -169,9 +170,9 @@ class ArithAstTest(unittest.TestCase):
     c = Const(66)
     print(c)
 
-    print(Slice(Const(1), Const(5), Const(2)))
+    print((Slice(Const(1), Const(5), Const(2))))
 
-    print(op_id_e.Plus)
+    print((op_id_e.Plus))
 
     # Class for sum type
     print(arith_expr)

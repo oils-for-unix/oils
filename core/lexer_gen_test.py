@@ -1,4 +1,5 @@
 #!/usr/bin/python -S
+from __future__ import print_function
 """
 lexer_gen_test.py: Tests for lexer_gen.py
 """
@@ -37,12 +38,12 @@ class LexerGenTest(unittest.TestCase):
     ]
     for py, expected in PAIRS:
       #self.assertEqual(expected, lexer_gen.TranslateRegex(py))
-      print '---', py
+      print('---', py)
       actual = lexer_gen.TranslateRegex(py)
-      print repr(actual)
+      print(repr(actual))
       self.assertEqual(expected, actual)
-      print
-      print
+      print()
+      print()
 
 
 if __name__ == '__main__':
