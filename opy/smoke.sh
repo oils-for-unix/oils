@@ -73,12 +73,36 @@ compile-opy-tree() {
   _compile-tree $src _tmp/opy-opy/ opy "${files[@]}"
 }
 
+make-links() {
+  local dir=${1:-_tmp/osh-opy}
+
+  local run=$PWD/../scripts/run.sh 
+
+  pushd $dir
+  $run make-pyc-links
+  popd
+  #tree $dir
+}
+
 _fill-osh-tree() {
-  local dir=${1:-_tmp/osh-stdlib}
+  local dir=${1:-_tmp/osh-opy}
   cp -v ../osh/{osh,types}.asdl $dir/osh
   cp -v ../core/runtime.asdl $dir/core
   cp -v ../asdl/arith.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
+
+  # Needed for help text.
+  ln -v -s -f --no-target-directory $PWD/../_build $dir/_build
+
+  make-links $dir
+}
+
+osh-opy() {
+  python _tmp/osh-opy/bin/osh "$@"
+}
+
+test-help() {
+  osh-opy --help
 }
 
 # Compile with both compile() and OPy.
@@ -124,7 +148,7 @@ zip-oil-tree() {
 
 # TODO:
 # - Run with oil.ovm{,-dbg}
-test-osh-tree() {
+test-unit() {
   local dir=${1:-_tmp/osh-opy}
   local vm=${2:-cpython}  # byterun or cpython
 
@@ -143,6 +167,11 @@ test-osh-tree() {
     fi
   done
   popd
+}
+
+test-osh-smoke() {
+  local dir=${1:-_tmp/osh-opy}
+  local vm=${2:-cpython}  # byterun or cpython
 }
 
 write-speed() {

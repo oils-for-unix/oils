@@ -11,7 +11,7 @@ Getting started / smoke test:
 Compiling Oil:
 
     ./smoke.sh compile-osh-tree   # makes _tmp/osh-opy and _tmp/osh-ccompile
-    ./smoke.sh test-osh-tree   # Run Oil unit tests
+    ./smoke.sh test-unit  # Run Oil unit tests
 
 TODO:
 
