@@ -75,21 +75,26 @@ compile-opy-tree() {
 
 _fill-osh-tree() {
   local dir=${1:-_tmp/osh-stdlib}
-  cp -v ../osh/osh.asdl $dir/osh
+  cp -v ../osh/{osh,types}.asdl $dir/osh
   cp -v ../core/runtime.asdl $dir/core
   cp -v ../asdl/arith.asdl $dir/asdl
-  ln -v -s -f $PWD/../core/libc.so $dir/core
+  ln -v -s -f $PWD/../{libc,fastlex}.so $dir
 }
 
-# TODO: This could be part of the Travis build.  It will ensure no Python 2
+# Compile with both compile() and OPy.
+# TODO:
+# - What about the standard library?  The whole app bundle should be
+# compiled with OPy.
+# - This could be part of the Travis build.  It will ensure no Python 2
 # print statements sneak in.
-
 compile-osh-tree() {
   local src=$(cd .. && echo $PWD)
+
+  # NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
   local files=( $(find $src \
               -name _tmp -a -prune -o \
               -name _chroot -a -prune -o \
-              -name _devbuild -a -prune -o \
+              -name cpython-full -a -prune -o \
               -name _deps -a -prune -o \
               -name Python-2.7.13 -a -prune -o \
               -name opy -a -prune -o \
@@ -117,25 +122,24 @@ zip-oil-tree() {
   popd
 }
 
+# TODO:
+# - Run with oil.ovm{,-dbg}
 test-osh-tree() {
   local dir=${1:-_tmp/osh-opy}
-  local vm=${2:-byterun}  # byterun or cpython
+  local vm=${2:-cpython}  # byterun or cpython
 
   pushd $dir
   mkdir -p _tmp
+  #for t in {build,test,native,asdl,core,osh,test,tools}/*_test.py; do
   for t in {asdl,core,osh}/*_test.pyc; do
-    if [[ $t == *arith_parse_test.pyc ]]; then
-      continue
-    fi
-    #if [[ $t == *libc_test.pyc ]]; then
-    #  continue
-    #fi
 
     echo $t
     if test $vm = byterun; then
       PYTHONPATH=. opy_ run $t
-    else
+    elif test $vm = cpython; then
       PYTHONPATH=. python $t
+    else
+      die "Invalid VM $vm"
     fi
   done
   popd

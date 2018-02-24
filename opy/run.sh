@@ -23,6 +23,13 @@ parse-test() {
   _parse-one testdata/hello_py2.py
 }
 
+# It has problems without EOL!
+parser-bug() {
+  local out=_tmp/opy_parser_bug.py
+  echo -n 'foo = {}' > $out
+  _parse-one $out
+}
+
 # This might not work
 _stdlib-parse-one() {
   PYTHONPATH=. ./opy_main.py 2to3.grammar stdlib-parse "$@"

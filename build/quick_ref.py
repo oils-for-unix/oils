@@ -323,6 +323,8 @@ def main(argv):
     with open(py_out_path, 'w') as f:
       f.write('TOPIC_LOOKUP = ')
       f.write(d)
+      # BUG WORKAROUND: The OPy parser requires an EOL!  See opy/run.sh parser-bug.
+      f.write('\n')
 
     print('Wrote %s/ and %s' % (text_dir, py_out_path), file=sys.stderr)
 
