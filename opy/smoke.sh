@@ -81,18 +81,19 @@ _fill-osh-tree() {
   ln -v -s -f $PWD/../core/libc.so $dir/core
 }
 
-# Hm should we support Python 2 print?  It will be useful for converting
-# many old files.  Otherwise, we need a quick '2to3' alias that only does
-# the conversion.
+# TODO: This could be part of the Travis build.  It will ensure no Python 2
+# print statements sneak in.
+
 compile-osh-tree() {
   local src=$(cd .. && echo $PWD)
   local files=( $(find $src \
               -name _tmp -a -prune -o \
               -name _chroot -a -prune -o \
               -name _devbuild -a -prune -o \
+              -name _deps -a -prune -o \
               -name Python-2.7.13 -a -prune -o \
               -name opy -a -prune -o \
-              -name tests -a -prune -o \
+              -name 'test' -a -prune -o \
               -name '*.py' -a -printf '%P\n') )
 
   _compile-tree $src _tmp/osh-ccompile/ ccompile "${files[@]}"

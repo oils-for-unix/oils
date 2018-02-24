@@ -5,6 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+from __future__ import print_function
 """
 libc_test.py: Tests for libc.py
 """
@@ -39,8 +40,8 @@ class LexTest(unittest.TestCase):
 
   def testMatchToken(self):
     print(dir(fastlex))
-    print MatchToken(lex_mode_e.COMMENT, 'line', 3)
-    print
+    print(MatchToken(lex_mode_e.COMMENT, 'line', 3))
+    print()
 
     # Need to be able to pass NUL bytes for EOF.
     line = 'end of line\n'
@@ -49,19 +50,19 @@ class LexTest(unittest.TestCase):
     TokenizeLineOuter(line)
 
   def testOutOfBounds(self):
-    print MatchToken(lex_mode_e.OUTER, 'line', 3)
+    print(MatchToken(lex_mode_e.OUTER, 'line', 3))
     # It's an error to point to the end of the buffer!  Have to be one behind
     # it.
     return
-    print MatchToken(lex_mode_e.OUTER, 'line', 4)
-    print MatchToken(lex_mode_e.OUTER, 'line', 5)
+    print(MatchToken(lex_mode_e.OUTER, 'line', 4))
+    print(MatchToken(lex_mode_e.OUTER, 'line', 5))
 
   def testBug(self):
     code_str = '-n'
     expected = Id.BoolUnary_n
 
     tok_type, end_pos = MatchToken(lex_mode_e.DBRACKET, code_str, 0)
-    print '---', 'expected', expected.enum_value, 'got', tok_type.enum_value
+    print('---', 'expected', expected.enum_value, 'got', tok_type.enum_value)
 
     self.assertEqual(expected, tok_type)
 

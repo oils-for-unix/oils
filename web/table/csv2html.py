@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 csv2html.py
 
@@ -46,7 +47,7 @@ import sys
 def log(msg, *args):
   if args:
     msg = msg % args
-  print >>sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 
 class NullSchema:
@@ -189,9 +190,9 @@ def PrintRow(row, schema):
       css_classes.append('na')  # make it red
 
     if css_classes:
-      print '      <td class="{}">'.format(' '.join(css_classes)),
+      print('      <td class="{}">'.format(' '.join(css_classes)), end=' ')
     else:
-      print '      <td>',
+      print('      <td>', end=' ')
 
     # Advance to next row if it's an _HREF.
     if schema.ColumnIndexHasHref(i):
@@ -201,15 +202,15 @@ def PrintRow(row, schema):
     else:
       s = cgi.escape(cell_str)
     
-    print s,
-    print '</td>'
+    print(s, end=' ')
+    print('</td>')
 
     i += 1
 
 
 def PrintColGroup(col_names, schema):
   """Print HTML colgroup element, used for JavaScript sorting."""
-  print '  <colgroup>'
+  print('  <colgroup>')
   for i, col in enumerate(col_names):
     if col.endswith('_HREF'):
       continue
@@ -221,8 +222,8 @@ def PrintColGroup(col_names, schema):
       css_class = 'case-insensitive'
 
     # NOTE: id is a comment only; not used
-    print '    <col id="{}" type="{}" />'.format(col, css_class)
-  print '  </colgroup>'
+    print('    <col id="{}" type="{}" />'.format(col, css_class))
+  print('  </colgroup>')
 
 
 def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
@@ -233,21 +234,21 @@ def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
     css_class = None
     cell_regex = None
 
-  print '<table id="%s">' % css_id
-  print '  <thead>'
-  print '    <tr>'
+  print('<table id="%s">' % css_id)
+  print('  <thead>')
+  print('    <tr>')
   for i, col in enumerate(col_names):
     if col.endswith('_HREF'):
       continue
     heading_str = cgi.escape(col.replace('_', ' '))
     if schema.ColumnIndexIsNumeric(i):
-      print '    <td class="num">%s</td>' % heading_str
+      print('    <td class="num">%s</td>' % heading_str)
     else:
-      print '    <td>%s</td>' % heading_str
-  print '    </tr>'
-  print '  </thead>'
+      print('    <td>%s</td>' % heading_str)
+  print('    </tr>')
+  print('  </thead>')
 
-  print '  <tbody>'
+  print('  <tbody>')
   for row in rows:
 
     # TODO: There should be a special column called CSS_CLASS.  Output that
@@ -259,15 +260,15 @@ def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
           row_class = 'class="%s"' % css_class
           break
 
-    print '    <tr {}>'.format(row_class)
+    print('    <tr {}>'.format(row_class))
 
     PrintRow(row, schema)
-    print '    </tr>'
-  print '  </tbody>'
+    print('    </tr>')
+  print('  </tbody>')
 
   PrintColGroup(col_names, schema)
 
-  print '</table>'
+  print('</table>')
 
 
 def ReadFile(f, tsv=False):
@@ -364,5 +365,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

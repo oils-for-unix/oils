@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 """
 deps.py
 """
@@ -147,7 +148,7 @@ class DepsVisitor(Visitor):
     # TODO: Use self.Emit(), make it TSV.
     for name in self.progs_used:
       if name not in self.funcs_defined:
-        print name
+        print(name)
 
 
 def Deps(node):
