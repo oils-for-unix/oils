@@ -139,4 +139,22 @@ oil-repo() {
   #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
 }
 
+oil-bin() {
+  # This gets us the absolute path of all the .py files we put in bytecode.zip.
+  #awk '$1 ~ /\.py$/ { print $1 }' ../_build/oil/app-deps-py.txt
+  # We actually need a mode for app-deps that prints python deps with relative
+  # paths only.
+
+  pushd ..
+  build/actions.sh py-to-compile oil '.' 'bin.oil'
+  popd
+}
+
+opy-bin() {
+  pushd ..
+  build/actions.sh py-to-compile opy_ '.' 'bin.opy_'
+  popd
+}
+
 "$@"
+

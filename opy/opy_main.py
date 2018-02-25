@@ -25,7 +25,8 @@ from .compiler2 import transformer
 from .compiler2 import pycodegen
 from .compiler2 import opcode
 
-from .byterun import execfile
+# Disabled for now because byterun imports 'six', and that breaks the build.
+#from .byterun import execfile
 
 from .util_opy import log
 

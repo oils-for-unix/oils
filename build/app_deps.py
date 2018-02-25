@@ -61,8 +61,12 @@ def ImportMain(main_module, old_modules):
     yield name, full_path
 
 
-def PrintManifest(modules, py_out, c_out):
-  """Print Python and C modules."""
+PY_MODULE = 0
+C_MODULE = 1
+
+
+def FilterModules(modules):
+  """Look at __file__ of each module, and classify them as Python or C."""
 
   for module, full_path in modules:
     #print 'OLD', module, full_path
@@ -77,17 +81,15 @@ def PrintManifest(modules, py_out, c_out):
     #print i, full_path[i+1:]
     rel_path = full_path[i + 1:]
 
-    # Depending on whether it's cached, we get '.py' or '.pyc'.
+    # Depending on whether it's cached, the __file__ attribute on the module
+    # ends with '.py' or '.pyc'.
     if full_path.endswith('.py'):
-      print >>py_out, full_path, rel_path
-      print >>py_out, full_path + 'c', rel_path + 'c'
+      yield PY_MODULE, full_path, rel_path
     elif full_path.endswith('.pyc'):
-      # .pyc file
-      print >>py_out, full_path, rel_path
-      print >>py_out, full_path[:-1], rel_path[:-1]
+      yield PY_MODULE, full_path[:-1], rel_path[:-1]
     else:
       # .so file
-      print >>c_out, module, full_path
+      yield C_MODULE, module, full_path
 
 
 # TODO: Get rid of this?
@@ -106,22 +108,44 @@ def main(argv):
   # Set an environment variable so dependencies in debug mode can be excluded.
   os.environ['_OVM_DEPS'] = '1'
 
-  main_module = argv[0]
-  prefix = argv[1]
+  action = argv[1]
+  main_module = argv[2]
   log('Before importing: %d modules', len(OLD_MODULES))
 
-  py_out_path = prefix + '-py.txt'
-  c_out_path = prefix + '-c.txt'
+  if action == 'both':  # Write files for both .py and .so dependencies
+    prefix = argv[3]
+    py_out_path = prefix + '-py.txt'
+    c_out_path = prefix + '-c.txt'
 
-  modules = ImportMain(main_module, OLD_MODULES)
+    modules = ImportMain(main_module, OLD_MODULES)
 
-  with open(py_out_path, 'w') as py_out, open(c_out_path, 'w') as c_out:
-    PrintManifest(modules, py_out, c_out)
+    with open(py_out_path, 'w') as py_out, open(c_out_path, 'w') as c_out:
+      for mod_type, x, y in FilterModules(modules):
+        if mod_type == PY_MODULE:
+          print >>py_out, x, y
+          print >>py_out, x + 'c', y + 'c'  # .pyc goes in bytecode.zip too
+
+        elif mod_type == C_MODULE:
+          print >>c_out, x, y  # mod_name, full_path
+
+        else:
+          raise AssertionError(mod_type)
+
+  elif action == 'py':  # Just .py files
+    modules = ImportMain(main_module, OLD_MODULES)
+    for mod_type, full_path, rel_path in FilterModules(modules):
+      if mod_type == PY_MODULE:
+        opy_input = full_path
+        opy_output = rel_path + 'c'  # output is .pyc
+        print opy_input, opy_output
+
+  else:
+    raise AssertionError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':
   try:
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv))
   except Error, e:
-    print >> sys.stderr, 'py-deps:', e.args[0]
+    print >>sys.stderr, 'py-deps:', e.args[0]
     sys.exit(1)

@@ -11,4 +11,5 @@ sys.path.append(os.path.join(this_dir, '..'))
 
 from opy import opy_main
 
-opy_main.main(sys.argv)
+if __name__ == '__main__':
+  opy_main.main(sys.argv)
