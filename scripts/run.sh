@@ -32,4 +32,12 @@ make-bin-links() {
   done
 }
 
+# Hm all of the solutions involve grep --perl or perl itself?
+# https://stackoverflow.com/questions/3001177/how-do-i-grep-for-all-non-ascii-characters-in-unix
+
+# Found a latin-1 character in Python-2.7.13/Lib/heapq.py.  Had to add LC_ALL=C.
+grep-unicode() {
+  LC_ALL=C grep --color='auto' --perl -n '[^\x00-\x7F]'  "$@"
+}
+
 "$@"
