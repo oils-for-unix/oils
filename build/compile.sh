@@ -293,7 +293,8 @@ python-headers() {
 
 make-tar() {
   local app_name=${1:-hello}
-  local out=${2:-_release/hello.tar}
+  local bytecode_zip=${2:-bytecode-cpython.zip}
+  local out=${3:-_release/hello.tar}
 
   local version_file
   case $app_name in
@@ -323,6 +324,9 @@ make-tar() {
   # Add oil-0.0.0/ to the beginning of every path.
   local sed_expr="s,^,${app_name}-${version}/,"
 
+  # TODO: Remove portable-rules.mk from Makefile.  Or maybe conditionally
+  # detect it?
+
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \
     INSTALL.txt \
@@ -333,7 +337,7 @@ make-tar() {
     build/actions.sh \
     build/common.sh \
     build/detect-*.c \
-    _build/$app_name/bytecode-cpython.zip \
+    _build/$app_name/$bytecode_zip \
     _build/$app_name/*.c \
     $PY27/LICENSE \
     $PY27/Modules/ovm.c \

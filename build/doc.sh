@@ -63,7 +63,7 @@ x-quick-ref() {
   local out_dir=$2
 
   local html_out=$out_dir/doc/$prog-quick-ref.html
-  local text_out_dir=_build/$prog-quick-ref
+  local text_out_dir=_devbuild/$prog-quick-ref
   local py_out=_devbuild/gen/${prog}_help.py
 
   mkdir -p _build/doc $text_out_dir

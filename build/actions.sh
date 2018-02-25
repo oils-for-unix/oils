@@ -187,8 +187,8 @@ clean-pyc() {
   find $PY27/Lib -name '*.pyc' | xargs --no-run-if-empty -- rm --verbose
 }
 
-# NOTE: Not deleting cpython-full.  Maybe we should, or we should put it in a
-# diffent directory?
+# NOTE: Not deleting _devbuild, including cpython-full.  Maybe we should, or
+# we should put it in a different directory?
 clean-repo() {
   clean-source-tarball-build
   rm -r -f _build _release

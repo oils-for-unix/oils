@@ -137,6 +137,7 @@ _compressed-tarball() {
   # out of date.)
   build/actions.sh write-release-date
 
+  #make -d -r $in  # To debug
   make $in
   time gzip -c $in > $out
   ls -l $out

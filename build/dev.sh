@@ -24,11 +24,9 @@ ubuntu-deps() {
   test/spec.sh install-shells
 }
 
-# These produce _devbuild/{osh,oil}_help.py
+# Produces _devbuild/gen/osh_help.py
 gen-help() {
   build/doc.sh osh-quick-ref
-  # I believe this will be obsolete
-  #build/doc.sh oil-quick-ref
 }
 
 gen-types-asdl() {
