@@ -333,7 +333,7 @@ make-tar() {
     build/actions.sh \
     build/common.sh \
     build/detect-*.c \
-    _build/$app_name/bytecode.zip \
+    _build/$app_name/bytecode-cpython.zip \
     _build/$app_name/*.c \
     $PY27/LICENSE \
     $PY27/Modules/ovm.c \

@@ -39,7 +39,11 @@ c-module-toc() {
 
 # Modules needed to 'import runpy'.
 runpy-deps() {
-  $PREPARE_DIR/python -S build/runpy_deps.py "$@"
+  $PREPARE_DIR/python -S build/runpy_deps.py both "$@"
+}
+
+runpy-py-to-compile() {
+  $PREPARE_DIR/python -S build/runpy_deps.py py
 }
 
 # This version gets the paths out of the repo.  But it requires that we
@@ -70,9 +74,8 @@ app-deps() {
 
 # .py files to compile
 py-to-compile() {
-  local app_name=${1:-hello}
-  local pythonpath=${2:-build/testdata}
-  local main_module=${3:-hello}
+  local pythonpath=${1:-build/testdata}
+  local main_module=${2:-hello}
 
   PYTHONPATH=$pythonpath \
     $PREPARE_DIR/python -S build/app_deps.py py $main_module

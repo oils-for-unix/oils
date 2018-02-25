@@ -18,10 +18,6 @@ OLD_MODULES = dict(sys.modules)  # Make a copy
 import os  # Do it here so we don't mess up analysis
 
 
-class Error(Exception):
-  pass
-
-
 def log(msg, *args):
   if args:
     msg = msg % args
@@ -114,7 +110,7 @@ def main(argv):
 
   if action == 'both':  # Write files for both .py and .so dependencies
     prefix = argv[3]
-    py_out_path = prefix + '-py.txt'
+    py_out_path = prefix + '-cpython.txt'
     c_out_path = prefix + '-c.txt'
 
     modules = ImportMain(main_module, OLD_MODULES)
@@ -140,12 +136,12 @@ def main(argv):
         print opy_input, opy_output
 
   else:
-    raise AssertionError('Invalid action %r' % action)
+    raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv))
-  except Error, e:
-    print >>sys.stderr, 'py-deps:', e.args[0]
+  except RuntimeError as e:
+    print >>sys.stderr, '%s: %s' % (sys.argv[0], e.args[0])
     sys.exit(1)

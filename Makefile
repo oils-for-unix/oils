@@ -12,7 +12,7 @@
 #   Makefile
 #   _build/                 # Intermediate files
 #     oil/                  # The app name
-#       bytecode.zip        # Arch-independent
+#       bytecode-opy.zip        # Arch-independent
 #       main_name.c
 #       module_init.c       # Python module initializer
 #       c-module-srcs.txt   # List of Modules/ etc.
@@ -36,11 +36,17 @@
 #   cpython-full/           # Full CPython build, for dynamically
 #                           # discovering Python/C dependencies
 #   c-module-toc.txt        # What files each module is in
+#   py-to-compile.txt
+#   runpy-deps-c.txt
+#   runpy-deps-cpython.txt
+#   runpy-deps-opy.txt
 #   oil/                    # App-specific dir
+#     py-to-compile.txt
 #     all-deps-c.txt        # App deps plus CPython platform deps
-#     app-deps-c.txt
-#     app-deps-py.txt
-#     bytecode.zip
+#     app-deps-cpython.txt  # compiled with CPython
+#     opy-app-deps.txt      # compiled with OPy, does NOT match app-deps-% !
+#     bytecode-cpython.zip
+#     bytecode-opy.zip
 #     c-module-srcs.txt
 #     main_name.c
 #     module_init.c
@@ -124,6 +130,9 @@ _build/c-module-toc.txt: build/c_module_toc.py
 _build/runpy-deps-%.txt: build/runpy_deps.py
 	$(ACTIONS_SH) runpy-deps _build
 
+_build/py-to-compile.txt: build/runpy_deps.py
+	$(ACTIONS_SH) runpy-py-to-compile > $@
+
 #
 # Hello App.  Everything below here is app-specific.
 #
@@ -137,10 +146,15 @@ _build/hello/main_name.c:
 
 # Dependencies calculated by importing main.  The guard is because ovm.d
 # depends on it.  Is that correct?  We'll skip it before 'make dirs'.
-_build/hello/app-deps-%.txt: $(HELLO_SRCS) _build/detected-config.sh \
-	                           build/app_deps.py
+_build/hello/app-deps-%.txt: $(HELLO_SRCS) \
+	_build/detected-config.sh build/app_deps.py
 	test -d _build/hello && \
 	  $(ACTIONS_SH) app-deps hello build/testdata hello
+
+_build/hello/py-to-compile.txt: \
+	_build/detected-config.sh build/app_deps.py
+	test -d _build/hello && \
+	  $(ACTIONS_SH) py-to-compile build/testdata hello > $@
 
 # NOTE: We could use src/dest paths pattern instead of _build/app?
 #
@@ -148,17 +162,28 @@ _build/hello/app-deps-%.txt: $(HELLO_SRCS) _build/detected-config.sh \
 # - Deps need to be better.  Depend on .pyc and .py.    I guess
 #   app-deps hello will compile the .pyc files.  Don't need a separate action.
 #   %.pyc : %py
-_build/hello/bytecode.zip: $(HELLO_SRCS) \
-                           build/testdata/hello-version.txt \
-                           _build/release-date.txt \
-                           _build/hello/app-deps-py.txt \
-                           _build/runpy-deps-py.txt \
-                           build/testdata/hello-manifest.txt
+
+HELLO_BYTECODE_DEPS := \
+	build/testdata/hello-version.txt \
+        _build/release-date.txt \
+	build/testdata/hello-manifest.txt
+
+_build/hello/bytecode-cpython.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
+                           _build/hello/app-deps-cpython.txt \
+                           _build/runpy-deps-cpython.txt
 	{ echo 'build/testdata/hello-version.txt hello-version.txt'; \
 	  echo '_build/release-date.txt release-date.txt'; \
 	  cat build/testdata/hello-manifest.txt \
-	      _build/hello/app-deps-py.txt \
-	      _build/runpy-deps-py.txt; \
+	      _build/hello/app-deps-cpython.txt \
+	      _build/runpy-deps-cpython.txt; \
+	} | build/make_zip.py $@
+
+_build/hello/bytecode-opy.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
+                           _build/hello/opy-app-deps.txt
+	{ echo 'build/testdata/hello-version.txt hello-version.txt'; \
+	  echo '_build/release-date.txt release-date.txt'; \
+	  cat build/testdata/hello-manifest.txt \
+	      _build/hello/opy-app-deps.txt; \
 	} | build/make_zip.py $@
 
 #
@@ -191,6 +216,10 @@ _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
 	  $(ACTIONS_SH) app-deps oil $(REPO_ROOT) bin.oil
 
+_build/oil/py-to-compile.txt: _build/detected-config.sh build/app_deps.py
+	test -d _build/oil && \
+	  $(ACTIONS_SH) py-to-compile $(REPO_ROOT) bin.oil > $@
+
 _build/osh_help.py: doc/osh-quick-ref-pages.txt
 	build/doc.sh osh-quick-ref
 
@@ -201,19 +230,34 @@ _build/osh_help.py: doc/osh-quick-ref-pages.txt
 # action.
 # - release-date is at a different location on purpose, so we don't show it in
 #   dev mode.
-_build/oil/bytecode.zip: oil-version.txt \
-                         _build/release-date.txt \
-                         _build/oil/app-deps-py.txt \
-                         _build/runpy-deps-py.txt \
-                         build/oil-manifest.txt \
-                         _build/osh_help.py \
-                         doc/osh-quick-ref-toc.txt
+
+OIL_BYTECODE_DEPS := \
+	oil-version.txt \
+	_build/release-date.txt \
+	build/oil-manifest.txt \
+	_build/osh_help.py \
+	doc/osh-quick-ref-toc.txt
+
+_build/oil/bytecode-cpython.zip: $(OIL_BYTECODE_DEPS) \
+                         _build/oil/app-deps-cpython.txt \
+                         _build/runpy-deps-cpython.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
 	  $(ACTIONS_SH) files-manifest oil-version.txt \
 	                               doc/osh-quick-ref-toc.txt; \
 	  cat build/oil-manifest.txt \
-	      _build/oil/app-deps-py.txt \
-	      _build/runpy-deps-py.txt; \
+	      _build/oil/app-deps-cpython.txt \
+	      _build/runpy-deps-cpython.txt; \
+	  $(ACTIONS_SH) quick-ref-manifest _build/osh-quick-ref; \
+	} | build/make_zip.py $@ 
+
+# NOTE: runpy deps are inncluded in opy-app-deps.txt.
+_build/oil/bytecode-opy.zip: $(OIL_BYTECODE_DEPS) \
+                         _build/oil/opy-app-deps.txt
+	{ echo '_build/release-date.txt release-date.txt'; \
+	  $(ACTIONS_SH) files-manifest oil-version.txt \
+	                               doc/osh-quick-ref-toc.txt; \
+	  cat build/oil-manifest.txt \
+	      _build/oil/opy-app-deps.txt; \
 	  $(ACTIONS_SH) quick-ref-manifest _build/osh-quick-ref; \
 	} | build/make_zip.py $@ 
 
@@ -235,6 +279,13 @@ _build/%/c-module-srcs.txt: \
 _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 	$(ACTIONS_SH) join-modules $^ > $@
 
+# NOTE: This should really depend on all the .py files.
+# I should make a _build/oil/py.d file and include it?
+_build/%/opy-app-deps.txt: \
+	_build/py-to-compile.txt _build/%/py-to-compile.txt
+	sort $^ | uniq | opy/build.sh compile-manifest _build/%-with-opy > $@
+
+
 PY27 := Python-2.7.13
 
 # Per-app extension module initialization.
@@ -250,7 +301,7 @@ _build/%/module_init.c: $(PY27)/Modules/config.c.in _build/%/all-deps-c.txt
 # Contain Makefile and associated shell scripts, discovered .c and .py deps,
 # app source.
 
-_release/%.tar: _build/%/bytecode.zip \
+_release/%.tar: _build/%/bytecode-cpython.zip \
                 _build/%/module_init.c \
                 _build/%/main_name.c \
                 _build/%/c-module-srcs.txt
@@ -278,11 +329,11 @@ _build/%/ovm-cov: _build/%/module_init.c _build/%/main_name.c \
 	$(COMPILE_SH) build $@ $(filter-out $(COMPILE_SH),$^)
 
 # Make bundles quickly.
-_bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/bytecode.zip
+_bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/bytecode-cpython.zip
 	cat $^ > $@
 	chmod +x $@
 
-_bin/%.ovm: _build/%/ovm _build/%/bytecode.zip
+_bin/%.ovm: _build/%/ovm _build/%/bytecode-cpython.zip
 	cat $^ > $@
 	chmod +x $@
 

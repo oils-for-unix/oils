@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 #
+# Common functions.
+# NOTE: The module that sources this must initialize THIS_DIR.
+#
 # Usage:
 #   ./common.sh <function name>
 
@@ -7,8 +10,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly GRAMMAR=$THIS_DIR/_tmp/py27.grammar.pickle
+readonly GRAMMAR=_tmp/py27.grammar.pickle
 
 log() {
   echo "$@" >&2
@@ -24,7 +26,7 @@ opy_() {
 }
 
 opyg() {
-  opy_ -g $GRAMMAR -- "$@"
+  opy_ -g $THIS_DIR/$GRAMMAR -- "$@"
 }
 
 # The old compile path

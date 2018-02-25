@@ -12,12 +12,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source common.sh
-source ../build/common.sh  # for OIL_SYMLINKS
+readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+
+source $THIS_DIR/common.sh
+source $THIS_DIR/../build/common.sh  # for OIL_SYMLINKS
 
 grammar() {
   mkdir -p _tmp
-  opy_ pgen2 py27.grammar $GRAMMAR
+  opy_ pgen2 $THIS_DIR/py27.grammar $THIS_DIR/$GRAMMAR
 }
 
 md5-manifest() {
@@ -63,13 +65,19 @@ _compile-tree() {
 }
 
 # Like _compile-tree, but takes pairs on stdin.
-_compile-manifest() {
+compile-manifest() {
   local dest_dir=$1
   while read full_src_path rel_dest_path; do
     local dest=$dest_dir/$rel_dest_path
     mkdir -p $(dirname $dest)
     log "     $full_src_path"
     _compile-one $full_src_path $dest
+
+    local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
+
+    # .pyc manifest to include in zip files
+    echo $dest $rel_dest_path
+    echo $full_src_path $rel_py_path
   done
 }
 
@@ -151,27 +159,28 @@ oil-repo() {
 }
 
 _oil-bin-manifest() {
-  # This gets us the absolute path of all the .py files we put in bytecode.zip.
-  #awk '$1 ~ /\.py$/ { print $1 }' ../_build/oil/app-deps-py.txt
-  # We actually need a mode for app-deps that prints python deps with relative
-  # paths only.
+  # NOTE: These need to be made unique.  build/make_zip.py, but our shell
+  # alias doesn't.
+  # For some reason sys.modules has different modules with the same __file__.
 
-  build/actions.sh py-to-compile oil '.' 'bin.oil'
+  { build/actions.sh runpy-py-to-compile
+    build/actions.sh py-to-compile '.' 'bin.oil'
+  } | sort | uniq
 }
 
 oil-bin() {
-  pushd .. >/dev/null
-  _oil-bin-manifest | _compile-manifest _tmp/oil-with-opy
+  pushd $THIS_DIR/.. >/dev/null
+  _oil-bin-manifest | compile-manifest _tmp/oil-with-opy
   popd >/dev/null
 }
 
 _opy-bin-manifest() {
-  build/actions.sh py-to-compile opy_ '.' 'bin.opy_'
+  build/actions.sh py-to-compile '.' 'bin.opy_'
 }
 
 opy-bin() {
   pushd .. >/dev/null
-  _opy-bin-manifest | _compile-manifest _tmp/opy-with-opy
+  _opy-bin-manifest | compile-manifest _tmp/opy-with-opy
   popd >/dev/null
 }
 

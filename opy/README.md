@@ -26,6 +26,13 @@ Test the binary:
 Notes
 -----
 
-OSH tests don't run under byterun.  I probably don't care.
+- The OPy bytecode is bigger than the CPython bytecode!
+  - Why is that?
+
+- One difference: I think there are no `LOAD_FAST` bytecodes generated?
+  - TODO: Make a bytecode histogram using `opy/misc/inspect_pyc`.
+
+
+- OSH tests don't run under byterun.  I probably don't care.
 
     ./test.sh unit '' byterun
