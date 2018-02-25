@@ -10,8 +10,12 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly GRAMMAR=$THIS_DIR/_tmp/py27.grammar.pickle
 
+log() {
+  echo "$@" >&2
+}
+
 die() {
-  echo "FATAL: $@" 1>&2
+  log "FATAL: $@"
   exit 1
 }
 

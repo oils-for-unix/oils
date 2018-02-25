@@ -62,6 +62,17 @@ _compile-tree() {
   md5-manifest $dest_tree
 }
 
+# Like _compile-tree, but takes pairs on stdin.
+_compile-manifest() {
+  local dest_dir=$1
+  while read full_src_path rel_dest_path; do
+    local dest=$dest_dir/$rel_dest_path
+    mkdir -p $(dirname $dest)
+    log "     $full_src_path"
+    _compile-one $full_src_path $dest
+  done
+}
+
 make-mains() {
   local dir=${1:-_tmp/oil-opy}
 
@@ -139,21 +150,29 @@ oil-repo() {
   #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
 }
 
-oil-bin() {
+_oil-bin-manifest() {
   # This gets us the absolute path of all the .py files we put in bytecode.zip.
   #awk '$1 ~ /\.py$/ { print $1 }' ../_build/oil/app-deps-py.txt
   # We actually need a mode for app-deps that prints python deps with relative
   # paths only.
 
-  pushd ..
   build/actions.sh py-to-compile oil '.' 'bin.oil'
-  popd
+}
+
+oil-bin() {
+  pushd .. >/dev/null
+  _oil-bin-manifest | _compile-manifest _tmp/oil-with-opy
+  popd >/dev/null
+}
+
+_opy-bin-manifest() {
+  build/actions.sh py-to-compile opy_ '.' 'bin.opy_'
 }
 
 opy-bin() {
-  pushd ..
-  build/actions.sh py-to-compile opy_ '.' 'bin.opy_'
-  popd
+  pushd .. >/dev/null
+  _opy-bin-manifest | _compile-manifest _tmp/opy-with-opy
+  popd >/dev/null
 }
 
 "$@"

@@ -18,7 +18,8 @@ class AppDepsTest(unittest.TestCase):
         ('simplejson',
          '/home/andy/dev/simplejson-2.1.5/simplejson/__init__.py')
     ]
-    app_deps.PrintManifest(pairs, sys.stdout, sys.stdout)
+    for mod_type, x, y in app_deps.FilterModules(pairs):
+      print mod_type, x, y
 
 
 if __name__ == '__main__':

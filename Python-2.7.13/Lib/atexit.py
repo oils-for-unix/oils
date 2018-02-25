@@ -1,3 +1,4 @@
+from __future__ import print_function  # for OPy compiler
 """
 atexit.py - allow programmer to define multiple exit functions to be executed
 upon normal program termination.
@@ -26,7 +27,7 @@ def _run_exitfuncs():
             exc_info = sys.exc_info()
         except:
             import traceback
-            print >> sys.stderr, "Error in atexit._run_exitfuncs:"
+            print("Error in atexit._run_exitfuncs:", file=sys.stderr)
             traceback.print_exc()
             exc_info = sys.exc_info()
 
@@ -53,11 +54,11 @@ sys.exitfunc = _run_exitfuncs
 
 if __name__ == "__main__":
     def x1():
-        print "running x1"
+        print("running x1")
     def x2(n):
-        print "running x2(%r)" % (n,)
+        print("running x2(%r)" % (n,))
     def x3(n, kwd=None):
-        print "running x3(%r, kwd=%r)" % (n, kwd)
+        print("running x3(%r, kwd=%r)" % (n, kwd))
 
     register(x1)
     register(x2, 12)

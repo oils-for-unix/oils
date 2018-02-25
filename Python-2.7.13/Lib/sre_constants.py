@@ -260,4 +260,5 @@ if __name__ == "__main__":
     f.write("#define SRE_INFO_CHARSET %d\n" % SRE_INFO_CHARSET)
 
     f.close()
-    print "done"
+    # Commented out because OPy compiler doesn't like print statements.
+    #print "done"

@@ -1,3 +1,4 @@
+from __future__ import print_function  # for OPy compiler
 # -*- coding: latin-1 -*-
 
 """Heap queue algorithm (a.k.a. priority queue).
@@ -479,7 +480,7 @@ if __name__ == "__main__":
     sort = []
     while heap:
         sort.append(heappop(heap))
-    print sort
+    print(sort)
 
     import doctest
     doctest.testmod()
