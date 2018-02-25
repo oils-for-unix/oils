@@ -150,6 +150,7 @@ _build/oil/bytecode-cpython.zip: $(OIL_BYTECODE_DEPS) \
 	      _build/oil/app-deps-cpython.txt \
 	      _build/runpy-deps-cpython.txt; \
 	  $(ACTIONS_SH) quick-ref-manifest _devbuild/osh-quick-ref; \
+	  $(ACTIONS_SH) pyc-version-manifest $@; \
 	} | build/make_zip.py $@ 
 
 # NOTE: runpy deps are included in opy-app-deps.txt.
@@ -161,6 +162,7 @@ _build/oil/bytecode-opy.zip: $(OIL_BYTECODE_DEPS) \
 	  cat build/oil-manifest.txt \
 	      _build/oil/opy-app-deps.txt; \
 	  $(ACTIONS_SH) quick-ref-manifest _devbuild/osh-quick-ref; \
+	  $(ACTIONS_SH) pyc-version-manifest $@; \
 	} | build/make_zip.py $@ 
 
 #

@@ -161,6 +161,10 @@ def _ShowVersion():
   finally:
     f.close()
 
+  f = loader.open('pyc-version.txt')
+  pyc_version = f.readline().strip()
+  f.close()
+
   # What C functions do these come from?
   print('Oil version %s' % version)
   print('Release Date: %s' % release_date)
@@ -170,6 +174,7 @@ def _ShowVersion():
   print('Compiler: %s' % platform.python_compiler())
   print('Interpreter: %s' % platform.python_implementation())
   print('Interpreter version: %s' % platform.python_version())
+  print('Bytecode: %s' % pyc_version)
 
 
 def OshMain(argv, login_shell):

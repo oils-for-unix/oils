@@ -313,19 +313,18 @@ make-tar() {
 
   echo "Creating $app_name version $version"
 
-  # compile.sh is for the command line
-  # actions.sh for concatenation
-  #
-  # NOTE: We include the intermediate file c-module-srcs.txt, so we don't have
-  # to ship app_deps.py.  We don't want the build to depend on Python.
-
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 
   # Add oil-0.0.0/ to the beginning of every path.
   local sed_expr="s,^,${app_name}-${version}/,"
 
-  # TODO: Remove portable-rules.mk from Makefile.  Or maybe conditionally
-  # detect it?
+  # Differences between tarball and repo:
+  #
+  # - portable-rules.mk is intentionally not included in the release tarball.
+  #   The Makefile can and should operate without it.
+  #
+  # - We include intermediate files like c-module-srcs.txt, so we don't have to
+  #   ship tools app_deps.py.  The end-user build shouldn't depend on Python.
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \

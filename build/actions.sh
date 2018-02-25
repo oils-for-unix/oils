@@ -95,6 +95,20 @@ quick-ref-manifest() {
   done
 }
 
+pyc-version-manifest() {
+  local zip_path=${1:-_build/oil/bytecode-opy.zip}  # For example
+
+  # Just show a string like "bytecode-opy.zip" for now.  There is no OPy
+  # version yet.
+  local user_str=$(basename $zip_path) 
+  local dir=$(dirname $zip_path)
+
+  echo $user_str > $dir/pyc-version.txt
+
+  # Put it at the root, like release-date and oil-version.txt.
+  echo $dir/pyc-version.txt pyc-version.txt
+}
+
 # Make .d file
 make-dotd() {
   local app_name=${1:-hello}
