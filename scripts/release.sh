@@ -5,11 +5,12 @@
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
-#   $0 build-and-test  (runs spec tests, etc.)
+#   $0 build-and-test  (builds tarball, runs spec tests, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
 #   test/wild.sh all
 #   benchmarks/auto.sh all on both flanders and lisa
-#     prereq: benchmarks/osh-runtime.sh {download,extract}
+#     - for stability, restart flanders
+#     - prereq: benchmarks/osh-runtime.sh {download,extract}
 #   benchmarks/oheap.sh measure
 #   benchmarks/report.sh all
 #   $0 metrics
@@ -303,6 +304,11 @@ git-changelog-0.4.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.5.alpha1() {
+  _git-changelog release/0.4.0 release/0.5.alpha1 \
+    > _release/VERSION/changelog.html
+}
+
 
 # For announcement.html
 html-redirect() {
@@ -331,6 +337,10 @@ no-announcement() {
   </body>
 </html>  
 EOF
+}
+
+write-no-announcement() {
+  no-announcement > _release/VERSION/announcement.html
 }
 
 announcement-0.0() {
@@ -424,6 +434,7 @@ compress-benchmarks() {
     osh-parser/{stage1,stage2,index.html} \
     osh-runtime/{stage1,stage2,index.html} \
     vm-baseline/{stage1,stage2,index.html} \
+    ovm-build/{stage1,stage2,index.html} \
     oheap/{stage1,stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 
@@ -450,10 +461,11 @@ line-counts() {
 
 metrics() {
   local out=_tmp/metrics
+  mkdir -p $out
 
-	build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
+  build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
 
-  line-counts	$out/line-counts
+  line-counts $out/line-counts
 
   tree $out
 }
@@ -480,7 +492,7 @@ copy-web() {
 
 build-tree() {
   local root=_release/VERSION
-  mkdir -p $root/{doc,test,metrics}
+  mkdir -p $root/{doc,test}
 
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root
