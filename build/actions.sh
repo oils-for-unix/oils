@@ -95,7 +95,7 @@ pyc-version-manifest() {
   # Just show a string like "bytecode-opy.zip" for now.  There is no OPy
   # version yet.
   local filename=$(basename $manifest_path) 
-  local user_str=${filename%-manifest.txt}
+  local user_str=${filename%-manifest.txt}.zip
   local dir=$(dirname $manifest_path)
 
   echo $user_str > $dir/pyc-version.txt

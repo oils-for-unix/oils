@@ -30,7 +30,7 @@ linecount-pydeps() {
 }
 
 # Print table of [num_bytes pyc path]
-pyc-size() {
+pyc-bytes() {
   local app_name=${1:-oil}
 
   awk '/\.pyc$/ { print $1 }' _build/$app_name/bytecode-cpython-manifest.txt |

@@ -12,7 +12,7 @@
 #     prereq: benchmarks/osh-runtime.sh {download,extract}
 #   benchmarks/oheap.sh measure
 #   benchmarks/report.sh all
-#   $0 line-counts
+#   $0 metrics
 #   $0 build-tree
 #   $0 compress
 #   $0 git-changelog-$VERSION
@@ -60,12 +60,12 @@ log() {
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
-#       metrics/  # static metrics on source code?
-#                 # could also do cloc?
-#         line-counts.wwz/
+#       metrics.wwz/  # static metrics on source code?
+#         line-counts/
 #           nativedeps.txt (build/stats.sh line counts)
+#         bytecode size, number of PyCodeObject
 #         number of functions, classes, etc.?
-#         bytecode/bundle size, binary size on x86_64
+#         bytecode/bundle size (binary size on x86_64 is in ovm-build.sh)
 #         tarball size?
 #       coverage/  # coverage of all spec tests?  And gold tests maybe?
 #         python/  # python stdlib coverage  with pycoverage
@@ -397,9 +397,9 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
-  log "--- metrics/line-counts"
-  local out="$root/metrics/line-counts.wwz"
-  pushd _tmp/metrics/line-counts
+  log "--- metrics"
+  local out="$root/metrics.wwz"
+  pushd _tmp/metrics
   time zip -r -q $out .  # recursive, quiet
   popd
 
@@ -430,18 +430,8 @@ compress-benchmarks() {
   popd
 }
 
-metrics-index() {
-  local dir=$1
-
-  scripts/html.sh basic-head "Line Counts"
-  echo '<p>'
-  find $dir -name '*.txt' -a -printf '<a href="%P">%P</a> <br/>\n'
-  echo '</p>'
-  scripts/html.sh basic-tail "Line Counts"
-}
-
 line-counts() {
-  local out=_tmp/metrics/line-counts
+  local out=$1
   mkdir -p $out
 
   # Counting directly from the build.
@@ -456,8 +446,15 @@ line-counts() {
   scripts/count.sh runtime > $out/runtime.txt
 
   scripts/count.sh oil-osh-cloc > $out/oil-osh-cloc.txt
+}
 
-  metrics-index $out > $out/index.html
+metrics() {
+  local out=_tmp/metrics
+
+	build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
+
+  line-counts	$out/line-counts
+
   tree $out
 }
 

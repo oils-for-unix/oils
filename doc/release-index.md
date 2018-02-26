@@ -22,6 +22,24 @@ Oil Version 0.5.alpha1
 
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
+### Metrics
+
+- Count lines of source code in different ways:
+  - [oil-osh-cloc](metrics.wwz/line-counts/oil-osh-cloc.txt).  The core of Oil,
+    as measured by the [cloc][] tool.
+  - [src](metrics.wwz/line-counts/src.txt).  The whole Oil repo organized by
+    type of source file.
+  - [parser](metrics.wwz/line-counts/parser.txt).  How big is the parser?
+  - [runtime](metrics.wwz/line-counts/runtime.txt).  How big is the runtime?
+- Count lines of dependencies:
+  - [pydeps](metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
+    standard library.
+  - [nativedeps](metrics.wwz/line-counts/nativedeps.txt).  Oil code plus A
+    slice of CPython.
+- [Bytecode Size](metrics.wwz/pyc-bytes.txt)
+
+[cloc]: https://github.com/AlDanial/cloc
+
 ### Tests Results
 
 - [Spec Tests](test/spec.wwz/).  Test OSH behavior against that of existing
@@ -34,7 +52,7 @@ Oil Version 0.5.alpha1
 - [osh2oil Tests](test/osh2oil.wwz/log.txt).  Test the conversion of OSH to
   Oil.
 
-### Benchmarks and Metrics
+### Benchmarks
 
 - [OSH Parser Performance](benchmarks.wwz/osh-parser/).  How fast does OSH
   parse compared to other shells?
@@ -43,13 +61,10 @@ Oil Version 0.5.alpha1
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory to
   shells use at startup?
 - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format.
-- [Line Counts](metrics/line-counts.wwz/).  How much code is in Oil?
-
+- [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
+  to build Oil?  How big is the resulting binary?
 
 <!-- TODO: 
-benchmarks/
-  virtual-memory/
-src/                       annotated/cross-referenced source code
+/src/                       annotated/cross-referenced source code
 coverage/                  code coverage in Python and C
-metrics/                   line-counts, debug info size?
 -->
