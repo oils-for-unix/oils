@@ -182,7 +182,7 @@ def _ShowVersion():
   print('Bytecode: %s' % pyc_version)
 
 
-def OshMain(argv, login_shell):
+def OshMain(argv0, argv, login_shell):
   spec = args.FlagsAndOptions()
   spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
   spec.ShortFlag('-i')  # interactive
@@ -230,7 +230,7 @@ def OshMain(argv, login_shell):
     util.WrapMethods(lexer.Lexer, trace_state)
 
   if opt_index == len(argv):
-    dollar0 = sys.argv[0]  # e.g. bin/osh
+    dollar0 = argv0
   else:
     dollar0 = argv[opt_index]  # the script name, or the arg after -c
 
@@ -596,12 +596,14 @@ def AppBundleMain(argv):
     if main_name.startswith("-"):
       login_shell = True
       main_name = main_name[1:]
+    argv0 = argv[1]
     main_argv = argv[2:]
   else:
+    argv0 = argv[0]
     main_argv = argv[1:]
 
   if main_name in ('osh', 'sh'):
-    status = OshMain(main_argv, login_shell)
+    status = OshMain(argv0, main_argv, login_shell)
     _tlog('done osh main')
     return status
   elif main_name == 'oilc':
