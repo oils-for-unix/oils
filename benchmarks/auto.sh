@@ -33,13 +33,24 @@ prereq() {
   test/spec.sh all
 }
 
-measure-all() {
-  local provenance=$1
-  local base_dir=${2:-../benchmark-data}
+measure-shells() {
+  local base_dir=${1:-../benchmark-data}
+
+  local provenance
+  provenance=$(benchmarks/id.sh shell-provenance)  # capture the filename
 
   benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
   benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
   benchmarks/osh-parser.sh measure $provenance $base_dir/osh-parser
+}
+
+measure-builds() {
+  local base_dir=${1:-../benchmark-data}
+
+  local provenance
+  provenance=$(benchmarks/id.sh compiler-provenance)  # capture the filename
+
+  benchmarks/ovm-build.sh measure $provenance $base_dir/ovm-build
 }
 
 # Run the whole benchmark from a clean git checkout.
@@ -70,24 +81,8 @@ all() {
 
   _bin/osh -c 'echo OSH production build'
 
-  local provenance
-  provenance=$(benchmarks/id.sh shell-provenance)  # capture the filename
-
-  measure-all $provenance
-
-  # TODO:
-  # record-compiler-provenance
-  # benchmarks/ovm-build.sh measure $compiler_prov $base_dir/ovm-build
-  # Note this has to happen AFTER a tarball is built.
-}
-
-ovm-build() {
-  local base_dir=${1:-../benchmark-data}
-
-  local provenance
-  provenance=$(benchmarks/id.sh compiler-provenance)  # capture the filename
-
-  benchmarks/ovm-build.sh measure $provenance $base_dir/ovm-build
+  measure-shells
+  measure-builds
 }
 
 #
