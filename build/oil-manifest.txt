@@ -1,3 +1,5 @@
 osh/osh.asdl osh/osh.asdl
 osh/types.asdl osh/types.asdl
 core/runtime.asdl core/runtime.asdl
+oil-version.txt oil-version.txt 
+doc/osh-quick-ref-toc.txt doc/osh-quick-ref-toc.txt

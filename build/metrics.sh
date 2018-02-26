@@ -3,7 +3,7 @@
 # Stats about build artifacts.
 #
 # Usage:
-#   ./stats.sh <function name>
+#   ./metrics.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -14,19 +14,27 @@ set -o errexit
 # hello: 1.41 MB native + 145 KB = 1.56 MB bundle
 # oil:   1.65 MB native + 642 KB = 2.30 MB bundle
 bundle-size() {
-  ls -l _build/*/bytecode.zip _build/*/ovm _bin/*.ovm
+  ls -l _build/*/bytecode-*.zip _build/*/ovm _bin/*.ovm
 }
 
 linecount-nativedeps() {
   local app_name=${1:-oil}
-  find _tmp/$app_name-tar-test -name '*.[ch]' | xargs wc -l | sort -n
+  find _tmp/${app_name}-tar-test -name '*.[ch]' | xargs wc -l | sort -n
 }
 
 linecount-pydeps() {
   local app_name=${1:-oil}
-  awk '/\.py$/ { print $1 }' \
-    _build/runpy-deps-py.txt _build/$app_name/app-deps-py.txt |
-  sort | uniq | xargs wc -l | sort -n
+
+  awk '/\.py$/ { print $1 }' _build/$app_name/bytecode-cpython-manifest.txt |
+    sort | uniq | xargs wc -l | sort -n
+}
+
+# Print table of [num_bytes pyc path]
+pyc-size() {
+  local app_name=${1:-oil}
+
+  awk '/\.pyc$/ { print $1 }' _build/$app_name/bytecode-cpython-manifest.txt |
+    sort | uniq | xargs wc --bytes | sort -n
 }
 
 _tar-lines() {

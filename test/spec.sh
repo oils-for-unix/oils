@@ -91,10 +91,20 @@ version-text() {
   date
   echo
 
-  local branch=$(git rev-parse --abbrev-ref HEAD)
-  local hash=$(git rev-parse $branch)
-  echo "oil version: $hash on branch $branch"
+  if test -d .git; then
+    local branch=$(git rev-parse --abbrev-ref HEAD)
+    local hash=$(git rev-parse $branch)
+    echo "oil repo: $hash on branch $branch"
+  else
+    echo "(not running from git repository)"
+  fi
   echo
+
+  for bin in $OSH; do
+    echo "\$ $bin --version"
+    $bin --version
+    echo
+  done
 
   python --version 2>&1
   echo

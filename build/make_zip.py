@@ -32,7 +32,7 @@ def main(argv):
     if rel_path in seen:
       expected = seen[rel_path]
       if expected != full_path:
-        print >>sys.sterr, 'WARNING: expected %r, got %r' % (expected,
+        print >>sys.stderr, 'WARNING: expected %r, got %r' % (expected,
             full_path)
       continue
 

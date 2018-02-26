@@ -161,9 +161,14 @@ def _ShowVersion():
   finally:
     f.close()
 
-  f = loader.open('pyc-version.txt')
-  pyc_version = f.readline().strip()
-  f.close()
+  try:
+    f = loader.open('pyc-version.txt')
+  except IOError:
+    pyc_version = '-'  # in dev tree
+  else:
+    pyc_version = f.readline().strip()
+  finally:
+    f.close()
 
   # What C functions do these come from?
   print('Oil version %s' % version)

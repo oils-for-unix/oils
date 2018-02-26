@@ -81,12 +81,6 @@ py-to-compile() {
     $PREPARE_DIR/python -S build/app_deps.py py $main_module
 }
 
-files-manifest() {
-  for path in "$@"; do
-    echo "$path $path"
-  done
-}
-
 # For embedding in oil/bytecode.zip.
 quick-ref-manifest() {
   local dir=$1
@@ -96,12 +90,13 @@ quick-ref-manifest() {
 }
 
 pyc-version-manifest() {
-  local zip_path=${1:-_build/oil/bytecode-opy.zip}  # For example
+  local manifest_path=${1:-_build/oil/bytecode-opy-manifest.txt}  # For example
 
   # Just show a string like "bytecode-opy.zip" for now.  There is no OPy
   # version yet.
-  local user_str=$(basename $zip_path) 
-  local dir=$(dirname $zip_path)
+  local filename=$(basename $manifest_path) 
+  local user_str=${filename%-manifest.txt}
+  local dir=$(dirname $manifest_path)
 
   echo $user_str > $dir/pyc-version.txt
 
