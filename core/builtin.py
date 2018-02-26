@@ -1225,7 +1225,7 @@ def Help(argv, loader):
       return 1
     else:
       try:
-        f = loader.open('_build/osh-quick-ref/%s' % section_id)
+        f = loader.open('_devbuild/osh-quick-ref/%s' % section_id)
       except IOError as e:
         util.error(str(e))
         raise AssertionError('Should have found %r' % section_id)

@@ -90,6 +90,15 @@ remove-files() {
     _tmp/oil-tar-test
 }
 
+# Run the spec tests with the binary we built out of the tarball.  This can
+# catch errors with embedded data, etc.
+spec-tests-with-tar-build() {
+  local bin_dir=_tmp/oil-tar-test/oil-$OIL_VERSION/_bin
+
+  ln -s -f --no-target-directory -v oil.ovm "$bin_dir/osh"
+  OSH_OVM="$bin_dir/osh" test/spec.sh all
+}
+
 build-and-test() {
   remove-files
   rm -f -v _bin/oil.* *.so
@@ -107,17 +116,18 @@ build-and-test() {
   make clean
   make
 
-  # Make sure
   test/spec.sh smoke
 
   test/spec.sh link-busybox-ash  # in case we deleted _tmp
-  test/spec.sh all
+  #test/spec.sh all
 
   # Build the oil tar
   $0 oil
 
   # Test the oil tar
   build/test.sh oil-tar
+
+  spec-tests-with-tar-build
 
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps, etc.
 

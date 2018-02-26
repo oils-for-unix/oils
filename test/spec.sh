@@ -16,7 +16,7 @@ readonly BUSYBOX_ASH=_tmp/shells/ash
 readonly OSH_PYTHON=${OSH_PYTHON:-bin/osh}
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
-if test -f $OSH_OVM; then
+if test -e $OSH_OVM; then
   # TODO: Does it make sense to copy the binary to an unrelated to directory,
   # like /tmp?  /tmp/{oil.ovm,osh}.
 

@@ -45,8 +45,9 @@ _tarball() {
 
   # Build the fast one for a test.
   # TODO: Maybe edit the Makefile to change the top target.
-  time make _bin/${name}.ovm-dbg
-  _bin/${name}.ovm-dbg --version
+  local bin=_bin/${name}.ovm  # not dbg
+  time make $bin
+  $bin --version
 }
 
 hello-tar() {
