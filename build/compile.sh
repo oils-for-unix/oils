@@ -285,8 +285,19 @@ _headers() {
 
 python-headers() {
   local c_module_srcs=$1
-  # remove Python/.. -- it causes problems with tar.
-  _headers $c_module_srcs | egrep --only-matching '[^ ]+\.h' \
+
+  # 1. -MM outputs Makefile fragments, so egrep turns those into proper lines.
+  #
+  # 2. The user should generated detected-config.h, so remove it.
+  #
+  # 3. # gcc outputs paths like
+  # Python-2.7.13/Python/../Objects/stringlib/stringdefs.h
+  # but 'Python/..' causes problems for tar.
+  #
+
+  _headers $c_module_srcs \
+    | egrep --only-matching '[^ ]+\.h' \
+    | grep -v '_build/detected-config.h' \
     | sed 's|^Python/../||' \
     | sort | uniq | add-py27
 }
