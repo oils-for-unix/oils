@@ -63,7 +63,7 @@ all() {
   sudo apt install python-dev
 
   # Ideally I wouldn't need this, but the build process is not great now.
-  make clean
+  make clean-repo
 
   build/dev.sh all
 

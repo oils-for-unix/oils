@@ -102,7 +102,7 @@ measure-sizes() {
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
 
-  sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode.zip \
+  sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-cpython.zip \
     > ${prefix}.bytecode-size.tsv
 
   sizes-tsv $BASE_DIR/bin/*/oil.* \
