@@ -417,13 +417,14 @@ OvmBuildReport = function(in_dir, out_dir) {
     bytecode_size
 
   bin_sizes %>%
-	  # reorder
-		select(c(host_label, path, num_bytes)) %>%
-		left_join(bytecode_size, by = c('host_label')) %>%
-		mutate(native_code_size = num_bytes - bytecode_size) ->
-  	sizes
+    # reorder
+    select(c(host_label, path, num_bytes)) %>%
+    left_join(bytecode_size, by = c('host_label')) %>%
+    mutate(native_code_size = num_bytes - bytecode_size) ->
+    sizes
 
   # NOTE: These don't have the host and compiler.
+  writeTsv(times, file.path(out_dir, 'times'))
   writeTsv(bytecode_size, file.path(out_dir, 'bytecode-size'))
   writeTsv(sizes, file.path(out_dir, 'sizes'))
 
