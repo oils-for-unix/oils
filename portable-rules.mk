@@ -185,7 +185,7 @@ _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 # I should make a _build/oil/py.d file and include it?
 _build/%/opy-app-deps.txt: \
 	_build/py-to-compile.txt _build/%/py-to-compile.txt
-	sort $^ | uniq | opy/build.sh compile-manifest _build/%-with-opy > $@
+	sort $^ | uniq | opy/build.sh compile-manifest _build/$*-with-opy > $@
 
 
 PY27 := Python-2.7.13
