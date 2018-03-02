@@ -12,13 +12,15 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # for $OSH
+
 _compare() {
   set +o errexit
 
   "$@" >_tmp/shebang.txt
   local expected_status=$?
 
-  bin/osh "$@" >_tmp/osh.txt
+  $OSH "$@" >_tmp/osh.txt
   local osh_status=$?
 
   set -o errexit

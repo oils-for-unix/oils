@@ -7,8 +7,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# For xargs -P in spec-runner.sh, wild-runner.sh.
+# TODO: Release process can use the release binary.  This is like $OSH_OVM
+# in benchmarks/common.sh.
+readonly OSH=${OSH:-bin/osh}
 
+# For xargs -P in spec-runner.sh, wild-runner.sh.
 readonly JOBS=$(( $(nproc) - 1 ))
 
 log() {

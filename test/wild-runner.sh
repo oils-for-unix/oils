@@ -43,7 +43,7 @@ process-file() {
   out_file=${www_base}__oil.txt
 
   run-task-with-status $task_file \
-    bin/osh -n --fix $abs_path \
+    $OSH -n --fix $abs_path \
     > $out_file 2> $stderr_file
 }
 

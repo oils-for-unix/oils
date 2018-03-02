@@ -10,7 +10,7 @@ set -o errexit
 source test/common.sh
 
 osh-to-oil() {
-  bin/osh --fix "$@"
+  $OSH --fix "$@"
 }
 
 # Compare osh code on stdin (fd 0) and expected oil code on fd 3.
