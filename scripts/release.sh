@@ -364,6 +364,12 @@ git-changelog-0.5.alpha1() {
     > _release/VERSION/changelog.html
 }
 
+# Alpha release logs are relative to last minor release
+git-changelog-0.5.alpha2() {
+  _git-changelog release/0.5.alpha1 release/0.5.alpha2 \
+    > _release/VERSION/changelog.html
+}
+
 
 # For announcement.html
 html-redirect() {
