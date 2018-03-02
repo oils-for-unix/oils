@@ -8,10 +8,13 @@
 #   $0 build-and-test  (builds tarball, runs spec tests, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
 #   test/wild.sh all
-#   benchmarks/auto.sh all on both flanders and lisa
+#   benchmarks:
+#     Sync up oilshell/benchmark-data repo.
+#     flanders: $0 benchmark-build, then $0 benchmark-run
 #     - for stability, restart flanders
 #     - prereq: benchmarks/osh-runtime.sh {download,extract}
-#   benchmarks/oheap.sh measure
+#     lisa: $0 benchmark-run, then $0 benchmark-run-on-1-machine (oheap)
+#     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 metrics
 #   $0 build-tree

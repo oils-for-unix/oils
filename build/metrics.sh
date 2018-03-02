@@ -22,10 +22,12 @@ linecount-nativedeps() {
   find _tmp/${app_name}-tar-test -name '*.[ch]' | xargs wc -l | sort -n
 }
 
+readonly BYTECODE='bytecode-opy'
+
 linecount-pydeps() {
   local app_name=${1:-oil}
 
-  awk '/\.py$/ { print $1 }' _build/$app_name/bytecode-cpython-manifest.txt |
+  awk '/\.py$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt |
     sort | uniq | xargs wc -l | sort -n
 }
 
@@ -33,7 +35,7 @@ linecount-pydeps() {
 pyc-bytes() {
   local app_name=${1:-oil}
 
-  awk '/\.pyc$/ { print $1 }' _build/$app_name/bytecode-cpython-manifest.txt |
+  awk '/\.pyc$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt |
     sort | uniq | xargs wc --bytes | sort -n
 }
 
