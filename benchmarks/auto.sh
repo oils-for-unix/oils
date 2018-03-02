@@ -54,33 +54,9 @@ measure-builds() {
 }
 
 # Run the whole benchmark from a clean git checkout.
-#
-# Similar to scripts/release.sh build-and-test.
+# Before this, run scripts/release.sh benchmark-build.
+
 all() {
-  test/spec.sh install-shells
-
-  # Technically we need build-essential too?
-  sudo apt install python-dev
-
-  # Ideally I wouldn't need this, but the build process is not great now.
-  make clean
-
-  build/dev.sh all
-
-  _banner 'OSH dev build'
-  bin/osh -c 'echo OSH dev build'
-
-  build/prepare.sh configure
-  build/prepare.sh build-python
-
-  make _bin/oil.ovm
-  # This does what 'install' does.
-  scripts/run.sh make-bin-links
-
-  _banner 'OSH production build'
-
-  _bin/osh -c 'echo OSH production build'
-
   measure-shells
   measure-builds
 }

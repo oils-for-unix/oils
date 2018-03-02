@@ -75,7 +75,7 @@ dump-shell-id() {
 
   # Add extra repository info for osh.
   case $sh in
-    bin/osh|_bin/osh)
+    */osh)
       local branch
       branch=$(git rev-parse --abbrev-ref HEAD)
       echo $branch > $out_dir/git-branch.txt
@@ -317,7 +317,7 @@ shell-provenance() {
 
   local shell_hash
 
-  for sh_path in bash dash mksh zsh bin/osh _bin/osh; do
+  for sh_path in bash dash mksh zsh bin/osh $OSH_OVM; do
     # There will be two different OSH
     local name=$(basename $sh_path)
 

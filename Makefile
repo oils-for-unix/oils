@@ -80,8 +80,8 @@ ACTIONS_SH := build/actions.sh
 COMPILE_SH := build/compile.sh
 
 # Change the bytecode compiler here.
-BYTECODE_ZIP := bytecode-cpython.zip
-#BYTECODE_ZIP := bytecode-opy.zip
+#BYTECODE_ZIP := bytecode-cpython.zip
+BYTECODE_ZIP := bytecode-opy.zip
 
 # For faster tesing of builds
 #default: _bin/oil.ovm-dbg

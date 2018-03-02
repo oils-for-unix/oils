@@ -34,7 +34,7 @@ _tarball() {
   local name=${1:-hello}
   local version=${2:-0.0.0}
 
-  local tmp=_tmp/$name-tar-test
+  local tmp=_tmp/${name}-tar-test
   rm -r -f $tmp
   mkdir -p $tmp
   cd $tmp

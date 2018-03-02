@@ -60,22 +60,21 @@ download() {
     wget --directory $TAR_DIR 'https://www.oilshell.org/blob/ovm-build/{}'
 }
 
+# Done MANUALLY.
 extract-other() {
   time for f in $TAR_DIR/*gz; do
     tar -x --directory $TAR_DIR --file $f 
   done
 }
 
+# Done automatically by 'measure' function.
+#
+# NOTE: We assume that _release/oil.tar exists.  It should be made by
+# scripts/release.sh build-and-test or benchmark-build.
 extract-oil() {
-  local target=_release/oil.tar
-  rm -f -v $target
-  make $target
-  tar -x --directory $TAR_DIR --file $target
-}
-
-extract() {
-  extract-oil
-  extract-other
+  # This is different than the others tarballs.
+  rm -r -f -v $TAR_DIR/oil-*
+  tar -x --directory $TAR_DIR --file _release/oil.tar
 }
 
 #
@@ -102,7 +101,7 @@ measure-sizes() {
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
 
-  sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode.zip \
+  sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
     > ${prefix}.bytecode-size.tsv
 
   sizes-tsv $BASE_DIR/bin/*/oil.* \
@@ -221,8 +220,8 @@ build-task() {
 oil-tasks() {
   local provenance=$1
 
-  # NOTE: it MUST be a tarball and not the git repo, because we do the build
-  # of bytecode.zip!  We care about the "package experience".
+  # NOTE: it MUST be a tarball and not the git repo, because we don't build
+  # bytecode-*.zip!  We care about the "packager's experience".
   local dir="$TAR_DIR/oil-$OIL_VERSION"
 
   # Add 1 field for each of 5 fields.
@@ -271,7 +270,7 @@ measure() {
   local provenance=$1  # from benchmarks/id.sh compiler-provenance
   local raw_dir=${2:-$BASE_DIR/raw}
 
-  #local base_dir=${2:-../benchmark-data/osh-parser}
+  extract-oil
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)

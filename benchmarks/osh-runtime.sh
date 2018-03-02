@@ -15,10 +15,6 @@ source benchmarks/common.sh  # csv-concat
 readonly BASE_DIR=_tmp/osh-runtime
 readonly TAR_DIR=$PWD/_deps/osh-runtime  # Make it absolute
 
-# Use the compiled version.  Otherwise /proc/self/exe is the Python
-# interpreter, which matters for yash's configure script!
-readonly OSH=$PWD/_bin/osh
-
 #
 # Dependencies
 #
@@ -67,7 +63,7 @@ cpython-configure() {
 
 # 18.9 seconds vs 11 seconds above.
 osh-cpython-configure() {
-  cpython-configure $PWD/_bin/osh $BASE_DIR/osh-cpython-configure
+  cpython-configure $OSH_OVM $BASE_DIR/osh-cpython-configure
 }
 
 runtime-task() {
@@ -330,7 +326,7 @@ abuild-h() {
   local out=$out_dir/abuild-h-times.csv
 
   echo 'status,elapsed_secs,sh_path' > $out
-  for sh_path in bash dash mksh zsh $OSH; do
+  for sh_path in bash dash mksh zsh $OSH_OVM; do
     benchmarks/time.py --output $out --field "$sh_path" -- \
       $sh_path benchmarks/testdata/abuild -h
   done
@@ -344,7 +340,7 @@ abuild-h() {
 qemu-old() {
   local out_dir=$PWD/_tmp/qemu-old
   mkdir -p $out_dir
-  configure-and-copy ~/src/qemu-1.6.0 $OSH $out_dir
+  configure-and-copy ~/src/qemu-1.6.0 $OSH_OVM $out_dir
 }
 
 # This doesn't work for ash either, because it uses the busybox pattern.  It

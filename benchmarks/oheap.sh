@@ -17,7 +17,7 @@ readonly BASE_DIR=_tmp/oheap
 encode-one() {
   local script=$1
   local oheap_out=$2
-  bin/osh -n --ast-format oheap "$script" > $oheap_out
+  $OSH_OVM -n --ast-format oheap "$script" > $oheap_out
 }
 
 task-spec() {

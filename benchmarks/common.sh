@@ -3,6 +3,9 @@
 # Common functions for benchmarks.
 #
 
+# What binary the benchmarks will run.
+readonly OSH_OVM=${OSH_OVM:-$PWD/_bin/osh}
+
 # NOTE: This is in {build,test}/common.sh too.
 die() {
   echo "FATAL: $@" 1>&2

@@ -31,6 +31,9 @@ set -o errexit
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
+# Dir is defined in build/test.sh.
+readonly OSH_RELEASE_BINARY=_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
+
 log() {
   echo "$@" 1>&2
 }
@@ -82,59 +85,108 @@ log() {
 #     0.0.0/  
 #       oil-0.0.0.tar.xz 
 
-remove-files() {
+_clean-tmp-dirs() {
   rm -r -f \
-    _devbuild _build _release \
     _tmp/{spec,wild,unit,gold,osh2oil} \
-    _tmp/{osh-parser,osh-runtime,vm-baseline,oheap} \
+    _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap} \
     _tmp/metrics \
     _tmp/oil-tar-test
 }
 
-# Run the spec tests with the binary we built out of the tarball.  This can
-# catch errors with embedded data, etc.
-spec-tests-with-tar-build() {
-  local bin_dir=_tmp/oil-tar-test/oil-$OIL_VERSION/_bin
-
-  ln -s -f --no-target-directory -v oil.ovm "$bin_dir/osh"
-  OSH_OVM="$bin_dir/osh" test/spec.sh all
+_clean() {
+  _clean-tmp-dirs   # Remove benchmark stuff
+  rm -r -f _devbuild  # We're redoing the dev build
+  build/actions.sh clean-repo
 }
 
-build-and-test() {
-  remove-files
-  rm -f -v _bin/oil.* *.so
-
+_dev-build() {
   build/dev.sh all  # for {libc,fastlex}.so, needed to crawl deps
+}
 
-  test/unit.sh run-for-release
-  test/osh2oil.sh run-for-release
-  test/gold.sh run-for-release
-
+_release-build() {
   build/prepare.sh configure
   build/prepare.sh build-python
-
-  # Could do build/prepare.sh test too?
-  make clean
-  make
-
-  test/spec.sh smoke
-
-  test/spec.sh link-busybox-ash  # in case we deleted _tmp
-  #test/spec.sh all
 
   # Build the oil tar
   $0 oil
 
-  # Test the oil tar
+  # Build the binary out of the tar.
   build/test.sh oil-tar
 
-  spec-tests-with-tar-build
+  ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
 
-  # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps, etc.
+  # TODO: Move these?
+
+  # _pending/oil-alpha1
+  # _tmp/pending/
+  #    oil-0.5.alpha2.tar.gz
+  #    osh ->
+  #    oil-0.5.alpha2/
+  #      _bin/
+  #         oil.ovm
+}
+
+_test-release-build() {
+  # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
+  # etc.
 
   # TODO: Factor out test/alpine.sh to test/chroot.sh
   test/alpine.sh copy-tar '' oil
   test/alpine.sh test-tar '' oil
+
+  test/spec.sh link-busybox-ash  # in case we deleted _tmp
+
+  test/spec.sh smoke  # Initial smoke test, slightly redundant.
+
+  test/osh2oil.sh run-for-release
+  test/gold.sh run-for-release
+
+  # spec-tests-with-tar-build
+  OSH_OVM=$OSH_RELEASE_BINARY test/spec.sh all
+}
+
+# TODO: Log this whole thing?  Include logs with the /release/ page?
+build-and-test() {
+  # 5 steps: clean, dev build, unit tests, release build, end-to-end tests.
+
+  _clean
+  _dev-build
+  test/unit.sh run-for-release
+  _release-build
+  _test-release-build
+
+  # We're now ready to run 'benchmarks/auto.sh all'.
+}
+
+_install() {
+  test/spec.sh install-shells
+
+  # A subset of build/dev.sh ubuntu-deps.  (Do we need build-essential?)
+  sudo apt install python-dev
+}
+
+# Run before benchmarks/auto.sh all.  We just build, and assume we tested.
+benchmark-build() {
+  _install
+  _clean
+  _dev-build
+
+  # TODO: Remove this when OPy automatically does it.  Maybe have a stub that
+  # calls the Makefile.
+  pushd opy
+  ./build.sh grammar
+  popd
+
+  _release-build
+}
+
+# Run benchmarks with the binary built out of the tarball.
+benchmark-run() {
+  OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all
+}
+
+benchmark-run-on-1-machine() {
+  OSH_OVM=$OSH_RELEASE_BINARY benchmarks/oheap.sh measure
 }
 
 _compressed-tarball() {
