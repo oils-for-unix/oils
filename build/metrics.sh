@@ -24,11 +24,12 @@ linecount-nativedeps() {
 
 readonly BYTECODE='bytecode-opy'
 
+# NOTE: Copy to _tmp/{pydeps,pycdeps}.txt for ad hoc analysis.
 linecount-pydeps() {
   local app_name=${1:-oil}
 
   awk '/\.py$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt |
-    sort | uniq | xargs wc -l | sort -n
+    tee _tmp/pydeps.txt | sort | uniq | xargs wc -l | sort -n
 }
 
 # Print table of [num_bytes pyc path]
@@ -36,7 +37,7 @@ pyc-bytes() {
   local app_name=${1:-oil}
 
   awk '/\.pyc$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt |
-    sort | uniq | xargs wc --bytes | sort -n
+    tee _tmp/pycdeps.txt | sort | uniq | xargs wc --bytes | sort -n
 }
 
 _tar-lines() {

@@ -307,50 +307,6 @@ copy-pycompiler-tools() {
   cp -v ~/src/Python-2.7.6/Tools/compiler/{ast.txt,ACKS,README,*.py} tools/
 }
 
-compare-emitted() {
-  # 67 opcodes emitted
-  grep emit compiler/pycodegen.py | egrep -o '[A-Z][A-Z_]+' |
-    sort | uniq > _tmp/opcodes-emitted.txt
-
-  # 119 ops?
-  PYTHONPATH=. python3 > _tmp/opcodes-defined.txt -c '
-from compiler import opcode27
-names = sorted(opcode27.opmap)
-for n in names:
-  print(n)
-'
-
-  wc -l _tmp/opcodes-defined.txt
-
-  diff -u _tmp/opcodes-{emitted,defined}.txt
-}
-
-# 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
-# transformer -> ast -> compiler -> byte code
-count() {
-  echo PARSER GENERATOR
-  wc -l *.py pgen2/*.py | sort -n
-  echo
-
-  # ast is generated
-  echo COMPILER2
-  ls compiler2/*.py | grep -v ast.py | xargs wc -l | sort -n
-  echo
-
-  echo GENERATED CODE
-  wc -l compiler2/ast.py
-  echo
-
-  echo BYTERUN
-  ls byterun/*.py | grep -v 'test' | xargs wc -l | sort -n
-  echo
-}
-
-# We don't want print statements.
-2to3-print() {
-  2to3 --fix print --write "$@" 
-}
-
 # Features from Python 3 used?  Static types?  I guess Python 3.6 has locals with
 # foo: str = 1
 # 
