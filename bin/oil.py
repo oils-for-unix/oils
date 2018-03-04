@@ -85,6 +85,7 @@ if HAVE_READLINE:
 else:
   completion = None
 
+from tools import deps
 from tools import osh2oil
 
 log = util.log
@@ -195,7 +196,7 @@ def OshMain(argv0, argv, login_shell):
                 default='abbrev-text')
   spec.LongFlag('--show-ast')  # execute and show
   spec.LongFlag('--fix')
-  spec.LongFlag('--debug-spans')
+  spec.LongFlag('--debug-spans')  # For oshc translate
   spec.LongFlag('--print-status')
   spec.LongFlag('--trace', ['cmd-parse', 'word-parse', 'lexer'])  # NOTE: can only trace one now
   spec.LongFlag('--hijack-shebang')
@@ -471,15 +472,15 @@ def BoilMain(main_argv):
 # TODO: Hook up to completion.
 SUBCOMMANDS = ['translate', 'format', 'deps', 'undefined-vars']
 
-def OilCommandMain(argv):
-  """Run an 'oilc' tool.
+def OshCommandMain(argv):
+  """Run an 'oshc' tool.
 
-  'oilc' is short for "oil compiler" or "oil command".
+  'osh' is short for "osh compiler" or "osh command".
 
   TODO:
-  - oilc --help
+  - oshc --help
 
-  oilc deps 
+  oshc deps 
     --path: the $PATH to use to find executables.  What about libraries?
 
     NOTE: we're leaving out su -c, find, xargs, etc.?  Those should generally
@@ -489,10 +490,10 @@ def OilCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise args.UsageError('oilc: Missing required subcommand.')
+    raise args.UsageError('oshc: Missing required subcommand.')
 
   if action not in SUBCOMMANDS:
-    raise args.UsageError('oilc: Invalid subcommand %r.' % action)
+    raise args.UsageError('oshc: Invalid subcommand %r.' % action)
 
   try:
     script_name = argv[1]
@@ -542,11 +543,11 @@ def OilCommandMain(argv):
 
   # stderr: show how we're following imports?
 
-  from tools import deps
-
   if action == 'translate':
-    # TODO: osh2oil.  Remove opts.fix
-    pass
+    # TODO: FIx this invocation up.
+    #debug_spans = opt.debug_spans
+    debug_spans = False
+    osh2oil.PrintAsOil(arena, node, debug_spans)
 
   elif action == 'format':
     # TODO: autoformat code
@@ -566,7 +567,7 @@ def OilCommandMain(argv):
 
 # The valid applets right now.
 # TODO: Hook up to completion.
-APPLETS = ['osh', 'oilc']
+APPLETS = ['osh', 'oshc']
 
 
 def AppBundleMain(argv):
@@ -606,8 +607,8 @@ def AppBundleMain(argv):
     status = OshMain(argv0, main_argv, login_shell)
     _tlog('done osh main')
     return status
-  elif main_name == 'oilc':
-    return OilCommandMain(main_argv)
+  elif main_name == 'oshc':
+    return OshCommandMain(main_argv)
 
   elif main_name == 'oil':
     return OilMain(main_argv)
