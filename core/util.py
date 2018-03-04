@@ -15,7 +15,8 @@ easily to C++.
 
 import cStringIO
 import os
-import pwd
+import platform
+import pwd  # TODO: Move this dependency to Oil?
 import sys
 
 if not os.getenv('_OVM_DEPS'):
@@ -223,3 +224,42 @@ def GetResourceLoader():
     _loader = _FileResourceLoader(sys.argv[0])
 
   return _loader
+
+
+def ShowAppVersion(app_name):
+  """For Oil and OPy."""
+  loader = GetResourceLoader()
+  f = loader.open('oil-version.txt')
+  version = f.readline().strip()
+  f.close()
+
+  try:
+    f = loader.open('release-date.txt')
+  except IOError:
+    release_date = '-'  # in dev tree
+  else:
+    release_date = f.readline().strip()
+  finally:
+    f.close()
+
+  try:
+    f = loader.open('pyc-version.txt')
+  except IOError:
+    pyc_version = '-'  # in dev tree
+  else:
+    pyc_version = f.readline().strip()
+  finally:
+    f.close()
+
+  # What C functions do these come from?
+  print('%s version %s' % (app_name, version))
+  print('Release Date: %s' % release_date)
+  print('Arch: %s' % platform.machine())
+  print('OS: %s' % platform.system())
+  print('Platform: %s' % platform.version())
+  print('Compiler: %s' % platform.python_compiler())
+  print('Interpreter: %s' % platform.python_implementation())
+  print('Interpreter version: %s' % platform.python_version())
+  print('Bytecode: %s' % pyc_version)
+
+

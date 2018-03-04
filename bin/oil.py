@@ -50,7 +50,6 @@ else:
 _tlog('before imports')
 
 import errno
-import platform
 #import traceback  # for debugging
 
 # Set in Modules/main.c.
@@ -148,39 +147,7 @@ OSH_PS1 = 'osh$ '
 
 
 def _ShowVersion():
-  loader = util.GetResourceLoader()
-  f = loader.open('oil-version.txt')
-  version = f.readline().strip()
-  f.close()
-
-  try:
-    f = loader.open('release-date.txt')
-  except IOError:
-    release_date = '-'  # in dev tree
-  else:
-    release_date = f.readline().strip()
-  finally:
-    f.close()
-
-  try:
-    f = loader.open('pyc-version.txt')
-  except IOError:
-    pyc_version = '-'  # in dev tree
-  else:
-    pyc_version = f.readline().strip()
-  finally:
-    f.close()
-
-  # What C functions do these come from?
-  print('Oil version %s' % version)
-  print('Release Date: %s' % release_date)
-  print('Arch: %s' % platform.machine())
-  print('OS: %s' % platform.system())
-  print('Platform: %s' % platform.version())
-  print('Compiler: %s' % platform.python_compiler())
-  print('Interpreter: %s' % platform.python_implementation())
-  print('Interpreter version: %s' % platform.python_version())
-  print('Bytecode: %s' % pyc_version)
+  util.ShowAppVersion('Oil')
 
 
 def OshMain(argv0, argv, login_shell):

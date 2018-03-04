@@ -15,6 +15,9 @@ usage() {
   bin/opy_.py
   test $? -eq 2 || fail
 
+  bin/opy_.py --version
+  test $? -eq 0 || fail
+
   #bin/opy
   #test $? -eq 2 || fail
 
@@ -23,6 +26,23 @@ usage() {
 
   bin/opyc invalid
   test $? -eq 2 || fail
+
+  # TODO: --help, --version everywhere.
+
+  #bin/opy_.py --help
+  #test $? -eq 0 || fail
+
+  #bin/opy --help
+  #test $? -eq 0 || fail
+
+  #bin/opy --version
+  #test $? -eq 0 || fail
+
+  bin/opyc --help
+  test $? -eq 0 || fail
+
+  #bin/opyc --version
+  #test $? -eq 0 || fail
 }
 
 readonly -a PASSING=(
