@@ -59,7 +59,7 @@ oil-osh-cloc() {
 # everything into an array.  An hash table of arrays would be useful here.
 all() {
   echo 'BUILD AUTOMATION'
-  wc -l build/*.{sh,py} Makefile *.mk configure install |
+  wc -l build/*.{mk,sh,py} Makefile *.mk configure install |
     filter-py | sort --numeric
   echo
 

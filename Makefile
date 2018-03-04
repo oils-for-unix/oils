@@ -74,7 +74,7 @@
 # handling directories but I don't know it.
 # NOTE: _devbuild is made by build/dev.sh.  That directory is NOT cleaned with
 # 'make clean'.
-$(shell mkdir -p _bin _release _tmp _build/hello _build/oil)
+$(shell mkdir -p _bin _release _tmp _build/hello _build/oil _build/opy)
 
 ACTIONS_SH := build/actions.sh
 COMPILE_SH := build/compile.sh
@@ -113,12 +113,15 @@ install:
 print-%:
 	@echo $*=$($*)
 
-# This file is intentionally NOT included in the release tarball.  This is so
-# that we don't try to rebuild say _build/oil/bytecode-opy.zip, which is
-# already pre-built and included in the release tarball.  Portable rules can be
-# done on the developer machine rather than on the end-user machine.
+# These files is intentionally NOT included in release tarballs.  For example,
+# we don't want try to rebuild _build/oil/bytecode-opy.zip, which is already
+# included in the release tarball.  Portable rules can be run on the developer
+# machine rather than on the end-user machine.
 
--include portable-rules.mk
+-include portable-rules.mk  # Must come first
+-include build/hello.mk
+-include build/oil.mk
+-include build/opy.mk
 
 #
 # Native Builds

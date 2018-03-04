@@ -30,6 +30,8 @@ from .compiler2 import opcode
 
 from .util_opy import log
 
+from core import args
+
 
 # From lib2to3/pygram.py.  This takes the place of the 'symbol' module.
 # compiler/transformer module needs this.
@@ -191,7 +193,10 @@ def OpyMain(argv):
 
   dr = driver.Driver(gr, convert=convert)
 
-  action = argv[0]
+  try:
+    action = argv[0]
+  except IndexError:
+    raise args.UsageError('opy: Missing required subcommand.')
 
   if action == 'pgen2':
     grammar_path = argv[1]
@@ -325,22 +330,3 @@ def OpyMain(argv):
   # yes.
 
   # Node(prefix, children)
-
-
-class UsageError(RuntimeError):
-  """ Exception for incorrect command line usage. """
-
-
-_OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'
-
-
-def main(argv):
-  try:
-    OpyMain(argv[1:])
-  except UsageError as e:
-    print(_OPY_USAGE, file=sys.stderr)
-    print(str(e), file=sys.stderr)
-    sys.exit(2)
-  except RuntimeError as e:
-    log('FATAL: %s', e)
-    sys.exit(1)
