@@ -145,7 +145,7 @@ def Options():
   return p
 
 
-def OpyMain(argv):
+def OpyCommandMain(argv):
   """Dispatch to the right action."""
 
   opts, argv = Options().parse_args(argv)
@@ -317,10 +317,10 @@ def OpyMain(argv):
       execfile.run_code_object(co, opy_argv)
 
     else:
-      raise RuntimeError('Invalid path %r' % py_path)
+      raise args.UsageError('Invalid path %r' % py_path)
 
   else:
-    raise RuntimeError('Invalid action %r' % action)
+    raise args.UsageError('Invalid action %r' % action)
 
   # Examples of nodes Leaf(type, value):
   #   Leaf(1, 'def')

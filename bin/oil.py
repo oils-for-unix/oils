@@ -575,7 +575,7 @@ def AppBundleMain(argv):
 
   b = os.path.basename(argv[0])
   main_name, ext = os.path.splitext(b)
-  if main_name.startswith("-"):
+  if main_name.startswith('-'):
     login_shell = True
     main_name = main_name[1:]
 
@@ -594,7 +594,7 @@ def AppBundleMain(argv):
       sys.exit(0)
 
     main_name = first_arg
-    if main_name.startswith("-"):
+    if main_name.startswith('-'):  # TODO: Remove duplication above
       login_shell = True
       main_name = main_name[1:]
     argv0 = argv[1]
@@ -633,10 +633,10 @@ def main(argv):
     raise
   except args.UsageError as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
-    print('oil: %s' % e, file=sys.stderr)
+    log('oil: %s', e)
     sys.exit(2)
   except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
+    log('FATAL: %s', e)
     sys.exit(1)
   finally:
     _tlog('Exiting main()')

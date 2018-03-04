@@ -30,6 +30,11 @@ make-bin-links() {
   for link in "${OIL_SYMLINKS[@]}"; do
     ln -s -f --verbose oil.ovm _bin/$link
   done
+
+  for link in "${OPY_SYMLINKS[@]}"; do
+    ln -s -f --verbose opy_.py bin/$link
+    ln -s -f --verbose opy.ovm _bin/$link
+  done
 }
 
 # Hm all of the solutions involve grep --perl or perl itself?

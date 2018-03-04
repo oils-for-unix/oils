@@ -20,14 +20,53 @@ from opy import opy_main
 _OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'
 
 
-# TODO: Make this more consistent with bin/oil.py.
+# Run the bytecode too.  Should this have an option to use byterun?
+def OpyMain(argv0, main_argv):
+  raise NotImplementedError('opy not implemented')
+
+
+def AppBundleMain(argv):
+  b = os.path.basename(argv[0])
+  main_name, ext = os.path.splitext(b)
+
+  if main_name in ('opy_', 'opy') and ext:  # opy_.py or opy.ovm
+    try:
+      first_arg = argv[1]
+    except IndexError:
+      raise args.UsageError('Missing required applet name.')
+
+    # TODO: We don't have this
+    if first_arg in ('-h', '--help'):
+      builtin.Help(['bundle-usage'], util.GetResourceLoader())
+      sys.exit(0)
+
+    if first_arg in ('-V', '--version'):
+      _ShowVersion()
+      sys.exit(0)
+
+    main_name = first_arg
+    argv0 = argv[1]
+    main_argv = argv[2:]
+  else:
+    argv0 = argv[0]
+    main_argv = argv[1:]
+
+  if main_name == 'opy':
+    status = OpyMain(argv0, main_argv)
+    return status
+  elif main_name == 'opyc':
+    return opy_main.OpyCommandMain(main_argv)
+
+  else:
+    raise args.UsageError('Invalid applet name %r.' % main_name)
+
 
 def main(argv):
   try:
-    opy_main.OpyMain(argv[1:])
+    sys.exit(AppBundleMain(argv))
   except args.UsageError as e:
-    print(_OPY_USAGE, file=sys.stderr)
-    print(str(e), file=sys.stderr)
+    #print(_OPY_USAGE, file=sys.stderr)
+    log('opy: %s', e)
     sys.exit(2)
   except RuntimeError as e:
     log('FATAL: %s', e)

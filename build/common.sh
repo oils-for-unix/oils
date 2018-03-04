@@ -20,6 +20,7 @@ readonly PREPARE_DIR=_devbuild/cpython-full
 
 # Used by scripts/run.sh and opy/build.sh
 readonly OIL_SYMLINKS=(oil osh oshc sh wok boil true false)
+readonly OPY_SYMLINKS=(opy opyc)
 
 
 log() {
