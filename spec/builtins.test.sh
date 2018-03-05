@@ -88,7 +88,7 @@ echo status=$?
 # OK bash stdout: status=2
 # OK dash stdout: status=127
 
-### Exit builtin
+### Exit out of function
 f() { exit 3; }
 f
 exit 4

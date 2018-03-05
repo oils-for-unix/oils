@@ -146,14 +146,7 @@ readonly -a PASSING=(
 )
 
 all-passing() {
-  for t in "${PASSING[@]}"; do
-    # fail calls 'exit 1'
-    $t
-    echo "OK  $t"
-  done
-
-  echo
-  echo "All gold tests passed."
+  run-all "${PASSING[@]}"
 }
 
 run-for-release() {

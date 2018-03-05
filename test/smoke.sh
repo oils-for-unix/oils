@@ -9,7 +9,28 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly OSH=bin/osh
+source test/common.sh
+
+assert() {
+  test "$@" || die "$@ failed"
+}
+
+ast() {
+  bin/osh -n -c 'echo hi'
+  bin/osh -n --ast-format text -c 'echo hi'
+  bin/osh -n --ast-format abbrev-html -c 'echo hi'
+  bin/osh -n --ast-format html -c 'echo hi'
+
+  # Not dumping to terminal
+  if bin/osh -n --ast-format oheap -c 'echo hi'; then
+    die "Should have failed"
+  fi
+  local ast_bin=_tmp/smoke-ast.bin 
+  bin/osh -n --ast-format oheap -c 'echo hi' > $ast_bin
+  ls -l $ast_bin
+  hexdump -C $ast_bin
+}
+
 
 # Read from a file.
 osh-file() {
@@ -81,31 +102,6 @@ osh-interactive() {
   echo 'exit' | $OSH -i
 }
 
-die() {
-  echo 1>&2 "$@"
-  exit 1
-}
-
-assert() {
-  test "$@" || die "$@ failed"
-}
-
-ast() {
-  bin/osh -n -c 'echo hi'
-  bin/osh -n --ast-format text -c 'echo hi'
-  bin/osh -n --ast-format abbrev-html -c 'echo hi'
-  bin/osh -n --ast-format html -c 'echo hi'
-
-  # Not dumping to terminal
-  if bin/osh -n --ast-format oheap -c 'echo hi'; then
-    die "Should have failed"
-  fi
-  local ast_bin=_tmp/smoke-ast.bin 
-  bin/osh -n --ast-format oheap -c 'echo hi' > $ast_bin
-  ls -l $ast_bin
-  hexdump -C $ast_bin
-}
-
 help() {
   set +o errexit
 
@@ -142,6 +138,18 @@ parse-errors() {
   _error-case '$(( 1 +  ))'
   _error-case 'echo $( echo > >>  )'
   #_error-case 'echo ${'
+}
+
+readonly -a PASSING=(
+  ast
+  osh-file
+  osh-stdin
+  osh-interactive
+  help
+)
+
+all-passing() {
+  run-all "${PASSING[@]}"
 }
 
 "$@"

@@ -54,6 +54,18 @@ run-task-with-status-test() {
   test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
 }
 
+# Each test file should define PASSING
+run-all() {
+  for t in "$@"; do
+    # fail calls 'exit 1'
+    $t
+    echo "OK  $t"
+  done
+
+  echo
+  echo "All $0 tests passed."
+}
+
 if test "$(basename $0)" = 'common.sh'; then
   "$@"
 fi
