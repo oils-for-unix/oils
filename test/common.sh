@@ -28,6 +28,11 @@ fail() {
   exit 1
 }
 
+# NOTE: Could use BASH_SOURCE and so forth for a better error message.
+assert() {
+  test "$@" || die "'$@' failed"
+}
+
 run-task-with-status() {
   local out_file=$1
   shift

@@ -98,6 +98,7 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
   else:
     ast_f = None
 
+  status = 0
   while True:
     try:
       w = c_parser.Peek()
@@ -126,7 +127,9 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
       if ast_f:
         ast_lib.PrettyPrint(node)
 
-      status = ex.Execute(node)
+      status, is_control_flow = ex.ExecuteAndCatch(node)
+      if is_control_flow:  # exit or return
+        break
 
       if opts.print_status:
         print('STATUS', repr(status))
@@ -140,6 +143,8 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
     # that needs to be reset, for now.
     w_parser.Reset()
     c_parser.Reset()
+
+  return status
 
 
 # bash --noprofile --norc uses 'bash-4.3$ '
@@ -298,10 +303,7 @@ def OshMain(argv0, argv, login_shell):
       completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
                       status_out, ev)
 
-    InteractiveLoop(opts, ex, c_parser, w_parser, line_reader)
-    # TODO: status should be last command.  Start bash, type "f() { return 33;
-    # }; f"
-    status = 0
+    return InteractiveLoop(opts, ex, c_parser, w_parser, line_reader)
   else:
     # Parse the whole thing up front
     #print('Parsing file')

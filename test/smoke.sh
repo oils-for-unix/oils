@@ -11,10 +11,6 @@ set -o errexit
 
 source test/common.sh
 
-assert() {
-  test "$@" || die "$@ failed"
-}
-
 ast() {
   bin/osh -n -c 'echo hi'
   bin/osh -n --ast-format text -c 'echo hi'
@@ -140,11 +136,18 @@ parse-errors() {
   #_error-case 'echo ${'
 }
 
+exit-builtin-interactive() {
+  set +o errexit
+  echo 'echo one; exit 42; echo two' | bin/osh -i
+  assert $? -eq 42
+}
+
 readonly -a PASSING=(
   ast
   osh-file
   osh-stdin
   osh-interactive
+  exit-builtin-interactive
   help
 )
 

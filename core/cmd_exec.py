@@ -1166,8 +1166,31 @@ class Executor(object):
       status = self._Execute(child)  # last status wins
     return status
 
-  def Execute(self, node, fork_external=True, run_exit_trap=False):
+  def ExecuteAndCatch(self, node, fork_external=True):
+    """Used directly by the interactive loop."""
+    is_control_flow = False
+    try:
+      status = self._Execute(node, fork_external=fork_external)
+    except _ControlFlow as e:
+      # Return at top level is OK, unlike in bash.
+      if e.IsReturn() or e.IsExit():
+        is_control_flow = True
+        status = e.StatusCode()
+      else:
+        raise  # Invalid
+    except util.FatalRuntimeError as e:
+      ui.PrettyPrintError(e, self.arena)
+      print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
+      status = e.exit_status if e.exit_status is not None else 1
+      # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
+
+    # Other exceptions: SystemExit for sys.exit()
+    return status, is_control_flow
+
+  def Execute(self, node, fork_external=True):
     """Execute a subprogram, handling _ControlFlow and fatal exceptions.
+
+    This is just like ExecuteAndCatch, but we don't return is_control_flow.
 
     Callers:
     - SubProgramThunk for pipelines, subshell, command sub, process sub
@@ -1188,21 +1211,8 @@ class Executor(object):
     Returns:
       status: numeric exit code
     """
-    try:
-      status = self._Execute(node, fork_external=fork_external)
-    except _ControlFlow as e:
-      # Return at top level is OK, unlike in bash.
-      if e.IsReturn() or e.IsExit():
-        status = e.StatusCode()
-      else:
-        raise
-    except util.FatalRuntimeError as e:
-      ui.PrettyPrintError(e, self.arena)
-      print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
-      status = e.exit_status if e.exit_status is not None else 1
-      # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
-
-    # Other exceptions: SystemExit for sys.exit()
+    # Ignore is_control_flow
+    status, _ = self.ExecuteAndCatch(node, fork_external=fork_external)
     return status
 
   def ExecuteAndRunExitTrap(self, node):
