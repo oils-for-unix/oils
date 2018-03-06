@@ -31,6 +31,7 @@ from .compiler2 import opcode
 from .util_opy import log
 
 from core import args
+from core import util
 
 
 # From lib2to3/pygram.py.  This takes the place of the 'symbol' module.
@@ -61,13 +62,6 @@ def HostStdlibNames():
   for k, v in token.tok_name.items():
     names[k] = v
   return names
-
-
-def LoadGrammar(pickle_path):
-  """Load the grammar (maybe from a pickle)."""
-  g = grammar.Grammar()
-  g.load(pickle_path)  # pickle.load()
-  return g
 
 
 def WriteGrammar(grammar_path, pickle_path):
@@ -139,34 +133,35 @@ def Options():
   p.add_option(
       '-c', dest='command', default=None,
       help='Python command to run')
-  p.add_option(
-      '-g', dest='grammar', default=None,
-      help='Grammar pickle file to use for parsing')
   return p
 
+
+# Made by the Makefile.
+PICKLE_REL_PATH = '_build/opy/py27.grammar.pickle'
 
 def OpyCommandMain(argv):
   """Dispatch to the right action."""
 
+  # TODO: Use core/args.
   opts, argv = Options().parse_args(argv)
 
-  if opts.grammar:
-    gr = LoadGrammar(opts.grammar)
-    # In Python 2 code, always use from __future__ import print_function.
-    try:
-      del gr.keywords["print"]
-    except KeyError:
-      pass
+  loader = util.GetResourceLoader()
+  f = loader.open(PICKLE_REL_PATH)
+  gr = grammar.Grammar()
+  gr.load(f)
+  f.close()
 
-    FILE_INPUT = gr.symbol2number['file_input']
+  # In Python 2 code, always use from __future__ import print_function.
+  try:
+    del gr.keywords["print"]
+  except KeyError:
+    pass
 
-    symbols = Symbols(gr)
-    pytree.Init(symbols)  # for type_repr() pretty printing
-    transformer.Init(symbols)  # for _names and other dicts
-  else:
-    gr = None
-    FILE_INPUT = None
-    symbols = None
+  FILE_INPUT = gr.symbol2number['file_input']
+
+  symbols = Symbols(gr)
+  pytree.Init(symbols)  # for type_repr() pretty printing
+  transformer.Init(symbols)  # for _names and other dicts
 
   #do_glue = False
   do_glue = True
@@ -234,6 +229,31 @@ def OpyCommandMain(argv):
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
+  elif action == 'compile':
+    # 'opy compile' is pgen2 + compiler2
+
+    py_path = argv[1]
+    out_path = argv[2]
+
+    if do_glue:
+      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
+      printer = TupleTreePrinter(transformer._names)
+      tr = transformer.Pgen2Transformer(py_parser, printer)
+    else:
+      tr = transformer.Transformer()
+
+    with open(py_path) as f:
+      contents = f.read()
+    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+    log("Code length: %d", len(co.co_code))
+
+    # Write the .pyc file
+    with open(out_path, 'wb') as out_f:
+      h = pycodegen.getPycHeader(py_path)
+      out_f.write(h)
+      marshal.dump(co, out_f)
+
+  # NOTE: Unused
   elif action == 'old-compile':
     py_path = argv[1]
     out_path = argv[2]
@@ -256,31 +276,7 @@ def OpyCommandMain(argv):
       out_f.write(h)
       marshal.dump(co, out_f)
 
-  elif action == 'compile':
-    # 'opy compile' is pgen2 + compiler2
-    # TODO: import compiler2
-    #raise NotImplementedError
-    py_path = argv[1]
-    out_path = argv[2]
-
-    if do_glue:
-      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-      printer = TupleTreePrinter(transformer._names)
-      tr = transformer.Pgen2Transformer(py_parser, printer)
-    else:
-      tr = transformer.Transformer()
-
-    with open(py_path) as f:
-      contents = f.read()
-    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-    log("Code length: %d", len(co.co_code))
-
-    # Write the .pyc file
-    with open(out_path, 'wb') as out_f:
-      h = pycodegen.getPycHeader(py_path)
-      out_f.write(h)
-      marshal.dump(co, out_f)
-
+  # TODO: Not used
   elif action == 'compile2':
     in_path = argv[1]
     out_path = argv[2]

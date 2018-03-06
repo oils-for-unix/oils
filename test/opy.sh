@@ -9,6 +9,12 @@ set -o errexit
 
 source test/common.sh
 
+readonly OPYC=${OPYC:-bin/opyc}
+
+readonly TMP_DIR=_tmp/opy-test
+mkdir -p $TMP_DIR
+
+
 usage() {
   set +o errexit
 
@@ -45,22 +51,39 @@ usage() {
   #test $? -eq 0 || fail
 }
 
-readonly -a PASSING=(
-  usage
-)
-
-# TODO: Consolidate this
-
-all-passing() {
-  for t in "${PASSING[@]}"; do
-    # fail calls 'exit 1'
-    $t
-    echo "OK  $t"
-  done
-
-  echo
-  echo "All $0 tests passed."
+parse() {
+  cat >$TMP_DIR/hello.py <<EOF
+print(1+2)
+EOF
+  $OPYC parse $TMP_DIR/hello.py
 }
 
+compile() {
+  cat >$TMP_DIR/loop.py <<EOF
+for i in xrange(4):
+  print(i*i)
+EOF
+
+  $OPYC compile $TMP_DIR/loop.py $TMP_DIR/loop.opyc
+
+  # We can run it with CPython now, but later we won't able to.
+  python $TMP_DIR/loop.opyc > out.txt
+  diff out.txt - <<EOF || fail
+0
+1
+4
+9
+EOF
+}
+
+readonly -a PASSING=(
+  usage
+  parse
+  compile
+)
+
+all-passing() {
+  run-all "${PASSING[@]}"
+}
 
 "$@"

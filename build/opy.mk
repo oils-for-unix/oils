@@ -9,6 +9,9 @@
 
 -include _build/opy/ovm.d
 
+_build/opy/py27.grammar.pickle:
+	bin/opyc pgen2 opy/py27.grammar $@
+
 _build/opy/main_name.c:
 	$(ACTIONS_SH) main-name bin.opy_ opy.ovm > $@
 

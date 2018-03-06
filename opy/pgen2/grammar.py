@@ -119,11 +119,8 @@ class Grammar(object):
               s += marshal.dumps(self.start)
               print('Marshalled bytes: %d' % len(s))
 
-    def load(self, filename):
-        """Load the grammar tables from a pickle file."""
-        with open(filename, "rb") as f:
-            d = pickle.load(f)
-            #d = marshal.load(f)
+    def load(self, f):
+        d = pickle.load(f)
         self.__dict__.update(d)
 
     def copy(self):
