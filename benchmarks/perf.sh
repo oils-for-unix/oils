@@ -7,6 +7,21 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# TODO:
+# - kernel symbols.  Is that why there are a lot of [unknown] in opt mode?
+# - grep for call_function in collapsed.  I don't see it?
+#   - it's inlined I guess?
+
+# Question: PyEval_EvalFrameEx doesn't appear recursive in opt mode?  At least
+# according to 'perf'.  Or maybe you don't have enough samples to catch it?
+
+# NOTES:
+# - dbg vs. opt matters a lot
+# - function-level performance categorization is bad for bytecode interpreters,
+#   which have a single function and a big switch statement.
+# - a longer file like configure-coreutils hit garbage collection!  collect()
+# - reference counting functions: visit_decref, visit_reachable
+
 install() {
   # linux-tools-generic is the kernel module
   # Apparently you need a package specific to the kernel, not sure why.
@@ -75,11 +90,15 @@ _record() {
   # everything is PyEval_EvalFrameEx.
   local flag='-g'
   local bin=_bin/oil.ovm-opt 
+  #local bin=_bin/oil.ovm-dbg  # This shows more details
 
-  # This shows more details
-  #local bin=_bin/oil.ovm-dbg
+  local freq=1000  # 1000 Hz
 
-  perf record $flag -o perf.data -- $bin osh --ast-format none -n benchmarks/testdata/abuild
+  #local file=benchmarks/testdata/abuild  # small file
+
+  local file=benchmarks/testdata/configure-coreutils  # big file
+
+  time perf record $flag -F $freq -o perf.data -- $bin osh --ast-format none -n $file
   #perf record -o perf.data -- _bin/osh --ast-format none -n benchmarks/testdata/abuild
 }
 record() { sudo $0 _record; }
@@ -95,14 +114,14 @@ report() {
   perf report -n --stdio "$@"
 }
 
-_perf-data() {
+_make-readable() {
   # This gets run as root
   chmod 644 perf.data
   chown andy perf.data
   file perf.data
   ls -l perf.data
 }
-perf-data() { sudo $0 _perf-data; }
+make-readable() { sudo $0 _make-readable; }
 
 # Wow 11 billion instructions!  9 billion cycles.  2.3 billion branches.  Crazy.
 # Only 21M branch misses, or 0.9%.  Interesting.

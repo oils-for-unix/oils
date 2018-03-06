@@ -248,7 +248,11 @@ build-dbg() {
 
 # This will be stripped later.
 build-opt() {
-  build "$@" -O3
+  # frame pointer for perf.  Otherwise stack traces are messed up!
+  # http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html#C  But why
+  # isn't debuginfo enough?  Because it's a recursive function?
+  # Does this make things slower?  Do I need a "perf" build?
+  build "$@" -O3 -fno-omit-frame-pointer
 }
 
 #
