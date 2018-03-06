@@ -25,27 +25,6 @@ opy_() {
   PYTHONPATH=$THIS_DIR $THIS_DIR/../bin/opy_.py "$@"
 }
 
-opyg() {
-  opy_ -g $THIS_DIR/$GRAMMAR -- "$@"
-}
-
-# The old compile path
-_compile-one() {
-  # The production testlist_starexpr is unhandled in the compiler package.
-  # Python 2.7 doesn't have it.
-  #local g=2to3.grammar 
-  local g=py27.grammar
-  # pgen2 + old compiler/
-  #PYTHONPATH=. ./opy_main.py $g old-compile "$@"
-
-  # opy is pgen2 + compiler2
-  opyg compile "$@"
-}
-
-_compile2-one() {
-  opyg compile2 "$@"
-}
-
 _stdlib-compile-one() {
   # Run it from source, so we can patch.  Bug still appears.
 

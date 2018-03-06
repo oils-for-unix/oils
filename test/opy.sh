@@ -9,7 +9,9 @@ set -o errexit
 
 source test/common.sh
 
-readonly OPYC=${OPYC:-bin/opyc}
+# Can't be readonly because we override it below?  Gah.
+#readonly OPYC=${OPYC:-bin/opyc}
+OPYC=${OPYC:-bin/opyc}
 
 readonly TMP_DIR=_tmp/opy-test
 mkdir -p $TMP_DIR
@@ -84,6 +86,11 @@ readonly -a PASSING=(
 
 all-passing() {
   run-all "${PASSING[@]}"
+}
+
+# Use the release binary
+run-for-release() {
+  OPYC=_bin/opyc $0 run-all "${PASSING[@]}"
 }
 
 "$@"

@@ -145,23 +145,35 @@ def OpyCommandMain(argv):
   # TODO: Use core/args.
   opts, argv = Options().parse_args(argv)
 
-  loader = util.GetResourceLoader()
-  f = loader.open(PICKLE_REL_PATH)
-  gr = grammar.Grammar()
-  gr.load(f)
-  f.close()
-
-  # In Python 2 code, always use from __future__ import print_function.
   try:
-    del gr.keywords["print"]
-  except KeyError:
-    pass
+    action = argv[0]
+  except IndexError:
+    raise args.UsageError('opy: Missing required subcommand.')
 
-  FILE_INPUT = gr.symbol2number['file_input']
+  if action in ('parse', 'compile'):
+    loader = util.GetResourceLoader()
+    f = loader.open(PICKLE_REL_PATH)
+    gr = grammar.Grammar()
+    gr.load(f)
+    f.close()
 
-  symbols = Symbols(gr)
-  pytree.Init(symbols)  # for type_repr() pretty printing
-  transformer.Init(symbols)  # for _names and other dicts
+    # In Python 2 code, always use from __future__ import print_function.
+    try:
+      del gr.keywords["print"]
+    except KeyError:
+      pass
+
+    FILE_INPUT = gr.symbol2number['file_input']
+
+    symbols = Symbols(gr)
+    pytree.Init(symbols)  # for type_repr() pretty printing
+    transformer.Init(symbols)  # for _names and other dicts
+  else:
+    # e.g. pgen2 doesn't use any of these.  Maybe we should make a different
+    # tool.
+    gr = None
+    FILE_INPUT = None
+    symbols = None
 
   #do_glue = False
   do_glue = True
@@ -187,11 +199,6 @@ def OpyCommandMain(argv):
     convert = pytree.convert
 
   dr = driver.Driver(gr, convert=convert)
-
-  try:
-    action = argv[0]
-  except IndexError:
-    raise args.UsageError('opy: Missing required subcommand.')
 
   if action == 'pgen2':
     grammar_path = argv[1]

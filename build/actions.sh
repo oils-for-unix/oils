@@ -200,8 +200,8 @@ clean-pyc() {
 # we should put it in a different directory?
 clean-repo() {
   clean-source-tarball-build
-  rm -r -f _build _release
-  rm -f _bin/hello.*
+  rm -r -f -v _build _release
+  rm -f -v _bin/hello.* _bin/opy.*
   clean-pyc
 }
 

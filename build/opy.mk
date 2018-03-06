@@ -24,14 +24,19 @@ _build/opy/py-to-compile.txt: _build/detected-config.sh build/app_deps.py
 	  $(ACTIONS_SH) py-to-compile $(REPO_ROOT) bin.opy_ > $@
 
 
+# TODO: oil-version can be like this too.
+GRAMMAR = _build/opy/py27.grammar.pickle
+
 OPY_BYTECODE_DEPS := \
 	_build/release-date.txt \
-	build/opy-manifest.txt
+	build/opy-manifest.txt \
+	$(GRAMMAR)
 
 # NOTE: runpy deps are included in opy-app-deps.txt.
-_build/opy/bytecode-opy-manifest.txt: $(OPY_BYTECODE_DEPS) \
-                         _build/opy/opy-app-deps.txt
+_build/opy/bytecode-opy-manifest.txt: \
+	$(OPY_BYTECODE_DEPS) _build/opy/opy-app-deps.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
+	  echo $(GRAMMAR) $(GRAMMAR); \
 	  cat build/opy-manifest.txt \
 	      _build/opy/opy-app-deps.txt; \
 	  $(ACTIONS_SH) pyc-version-manifest $@; \
