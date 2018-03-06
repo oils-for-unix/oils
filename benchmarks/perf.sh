@@ -62,6 +62,7 @@ debug-symbols() {
 #
 # Wow.
 # Maybe I need counters in optimized mode?
+# Yeah what I really want is per opcode total!
 
 _record() {
 
@@ -70,7 +71,15 @@ _record() {
   # work?
   #perf record -o perf.data -- _bin/oil.ovm-dbg osh -n benchmarks/testdata/abuild | wc -l
 
-  perf record -o perf.data -- _bin/oil.ovm-opt osh --ast-format none -n benchmarks/testdata/abuild
+  # call graph recording.  This helps it be less "flat" in opt mode.  Otherwise
+  # everything is PyEval_EvalFrameEx.
+  local flag='-g'
+  local bin=_bin/oil.ovm-opt 
+
+  # This shows more details
+  #local bin=_bin/oil.ovm-dbg
+
+  perf record $flag -o perf.data -- $bin osh --ast-format none -n benchmarks/testdata/abuild
   #perf record -o perf.data -- _bin/osh --ast-format none -n benchmarks/testdata/abuild
 }
 record() { sudo $0 _record; }
@@ -81,6 +90,10 @@ record() { sudo $0 _record; }
 
 # After recording, run perf-data, then 'perf report'.  It automatically shows
 # perf.data.
+
+report() {
+  perf report -n --stdio "$@"
+}
 
 _perf-data() {
   # This gets run as root
@@ -98,5 +111,20 @@ _stat() {
   # -e cache-misses only shows that stat
 }
 stat() { sudo $0 _stat; }
+
+# NOTE: I used this before with python-flamegraph too.
+flamegraph() {
+  ~/git/other/FlameGraph/flamegraph.pl "$@"
+}
+
+stackcollapse-perf() {
+  ~/git/other/FlameGraph/stackcollapse-perf.pl "$@"
+}
+
+# http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
+make-graph() {
+  perf script | stackcollapse-perf > out.perf-folded
+  flamegraph out.perf-folded > perf-kernel.svg
+}
 
 "$@"
