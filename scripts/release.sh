@@ -174,11 +174,7 @@ benchmark-build() {
   _clean
   _dev-build
 
-  # TODO: Remove this when OPy automatically does it.  Maybe have a stub that
-  # calls the Makefile.
-  pushd opy
-  ./build.sh grammar
-  popd
+  make _build/opy/py27.grammar.pickle
 
   _release-build
 }
