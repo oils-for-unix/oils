@@ -129,9 +129,21 @@ print-%:
 
 # Release build.
 # This depends on the static modules
-_build/%/ovm: _build/%/module_init.c _build/%/main_name.c \
-              _build/%/c-module-srcs.txt $(COMPILE_SH)
+_build/%/ovm-opt: _build/%/module_init.c _build/%/main_name.c \
+                  _build/%/c-module-srcs.txt $(COMPILE_SH)
 	$(COMPILE_SH) build-opt $@ $(filter-out $(COMPILE_SH),$^)
+
+# NOTE: This gets run on the end user's machine!  It requires binutils for now?
+_build/%/ovm-opt.stripped: _build/%/ovm-opt
+	#strip -o $@ --strip-debug $^ 
+	strip -o $@ $^   # What's the difference with debug symbols?
+	# We need a relative path since it will be _bin/oil.ovm
+	objcopy --add-gnu-debuglink=_build/$*/ovm-opt.symbols $@
+
+# Distro packagers might use this to create symbols packages?  On the dev
+# machine, we just use _bin/oil.ovm-opt.
+_build/%/ovm-opt.symbols: _build/%/ovm-opt
+	objcopy --only-keep-debug $^ $@
 
 # Fast build, with symbols for debugging.
 _build/%/ovm-dbg: _build/%/module_init.c _build/%/main_name.c \
@@ -149,7 +161,11 @@ _bin/%.ovm-dbg: _build/%/ovm-dbg _build/%/$(BYTECODE_ZIP)
 	cat $^ > $@
 	chmod +x $@
 
-_bin/%.ovm: _build/%/ovm _build/%/$(BYTECODE_ZIP)
+_bin/%.ovm: _build/%/ovm-opt.stripped _build/%/$(BYTECODE_ZIP)
 	cat $^ > $@
 	chmod +x $@
 
+# Optimized version with symbols.
+_bin/%.ovm-opt: _build/%/ovm-opt _build/%/$(BYTECODE_ZIP)
+	cat $^ > $@
+	chmod +x $@

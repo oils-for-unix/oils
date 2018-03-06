@@ -246,10 +246,9 @@ build-dbg() {
   build "$@" -O0 -g -D OVM_DEBUG
 }
 
-# http://stackoverflow.com/questions/1349166/what-is-the-difference-between-gcc-s-and-a-strip-command
-# Generate a stripped binary rather than running strip separately.
+# This will be stripped later.
 build-opt() {
-  build "$@" -O3 -s
+  build "$@" -O3
 }
 
 #
