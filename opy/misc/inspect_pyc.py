@@ -19,7 +19,7 @@ But that doesn't give all the metadata.  It's also nicer than
 tools/dumppyc.py, which came with the 'compiler2' package.
 """
 
-import cStringIO, dis, marshal, struct, sys, time, types
+import collections, cStringIO, dis, marshal, struct, sys, time, types
 from ..compiler2 import consts
 
 
@@ -88,15 +88,15 @@ def unpack_pyc(f):
 # - Print a histogram of byte codes.  Print toal number of bytecodes.
 #   - Copy of the
 
-def disassemble(co, indent, f):
+def disassemble(co, indent, op_counts, f):
   """Copied from dis module.
+
+  Args:
+    co: code object
+    indent: indentation to print with
 
   It doesn't do the indent we want.
   """
-  def ind(*args, **kwargs):
-    print(indent, end='')
-    print(*args, file=f, **kwargs)
-
   def out(*args, **kwargs):
     print(*args, file=f, **kwargs)
 
@@ -111,12 +111,16 @@ def disassemble(co, indent, f):
   while i < n:
       c = code[i]
       op = ord(c)
+
+      op_counts[op] += 1
+
       if i in linestarts:
           if i > 0:
               out()
-          ind("%3d" % linestarts[i], end=' ')
+          prefix = linestarts[i]
       else:
-          ind('   ', end=' ')
+          prefix = ''
+      out('%s%3s' % (indent, prefix), end=' ')
 
       out('   ', end=' ')
       if i in labels:  # Jump targets get a special symbol
@@ -156,6 +160,7 @@ class Visitor(object):
 
   def __init__(self, dis_bytecode=True):
     self.dis_bytecode = dis_bytecode  # Whether to show disassembly.
+    self.op_counts = collections.Counter()
 
   def show_consts(self, consts, level=0):
     indent = INDENT * level
@@ -177,7 +182,7 @@ class Visitor(object):
 
     if self.dis_bytecode:
       print(indent + "disassembled:")
-      disassemble(code, indent, sys.stdout)
+      disassemble(code, indent, self.op_counts, sys.stdout)
 
   def show_code(self, code, level=0):
     """Print a code object, e.g. metadata, bytecode, and consts."""
@@ -216,3 +221,9 @@ class Visitor(object):
     print("code")
     self.show_code(code, level=1)
     print("  ## done inspecting pyc file ##")
+
+  def Report(self):
+    print()
+    print('Opcode Histogram:')
+    for op, count in self.op_counts.most_common():
+      print('%5d %s' % (count, dis.opname[op]))

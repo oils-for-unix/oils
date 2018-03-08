@@ -270,6 +270,8 @@ def OpyCommandMain(argv):
       v = inspect_pyc.Visitor()
       v.Visit(f)
 
+    v.Report()
+
   # NOTE: Unused
   elif action == 'old-compile':
     py_path = argv[1]
