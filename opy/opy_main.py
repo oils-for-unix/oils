@@ -25,6 +25,8 @@ from .compiler2 import transformer
 from .compiler2 import pycodegen
 from .compiler2 import opcode
 
+from .misc import inspect_pyc
+
 # Disabled for now because byterun imports 'six', and that breaks the build.
 #from .byterun import execfile
 
@@ -259,6 +261,11 @@ def OpyCommandMain(argv):
       h = pycodegen.getPycHeader(py_path)
       out_f.write(h)
       marshal.dump(co, out_f)
+
+  elif action == 'dis':
+    pyc_path = argv[1]
+    with open(pyc_path, 'rb') as f:
+      inspect_pyc.show_file(f)
 
   # NOTE: Unused
   elif action == 'old-compile':

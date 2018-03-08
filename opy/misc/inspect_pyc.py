@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from __future__ import print_function
 """inspect_pyc module
 
 This is a refactor of a recipe from Ned Batchelder's blog.  He has
@@ -9,22 +10,27 @@ following URL:
 
 You may use this module as a script: "./inspect_pyc.py <PYC_FILE>".
 
+NOTE:
+You can also see bytecode with:
+import os, dis
+dis.dis(os)
+
+But that doesn't give all the metadata.  It's also nicer than
+tools/dumppyc.py, which came with the 'compiler2' package.
 """
 
-import dis, marshal, struct, sys, time, types, warnings
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+import dis, marshal, struct, sys, time, types
+from ..compiler2 import consts
+from cStringIO import StringIO
 
 
-INDENT = " " * 3
+INDENT = '  '
 MAX_HEX_LEN = 16
 NAME_OFFSET = 20
 
 
 def to_hexstr(bytes_value, level=0, wrap=False):
-    indent = INDENT*level
+    indent = INDENT * level
     line = " ".join(("%02x",) * MAX_HEX_LEN)
     last = " ".join(("%02x",) * (len(bytes_value) % MAX_HEX_LEN))
     lines = (line,) * (len(bytes_value) // MAX_HEX_LEN)
@@ -39,36 +45,31 @@ def to_hexstr(bytes_value, level=0, wrap=False):
     except TypeError:
         return template % tuple(ord(char) for char in bytes_value)
 
-def unpack_pyc(filename):
-    f = open(filename, "rb")
-    magic = f.read(4)
-    unixtime = struct.unpack("I", f.read(4))[0]
-    timestamp = time.asctime(time.localtime(unixtime))
-    code = marshal.load(f)
-    f.close()
-    return filename, magic, unixtime, timestamp, code
 
 def show_consts(consts, level=0):
-    indent = INDENT*level
+    indent = INDENT * level
     i = 0
     for obj in consts:
         if isinstance(obj, types.CodeType):
             print(indent+"%s (code object)" % i)
+            # RECURSIVE CALL.
             show_code(obj, level=level+1)
         else:
             print(indent+"%s %r" % (i, obj))
         i += 1
 
+
 def show_bytecode(code, level=0):
-    indent = INDENT*level
+    """Call dis.disassemble() to show bytecode."""
+    indent = INDENT * level
     print(to_hexstr(code.co_code, level, wrap=True))
     print(indent+"disassembled:")
-    buffer = StringIO()
-    sys.stdout = buffer
+    buf = StringIO()
+    sys.stdout = buf
     # NOTE: This format has addresses in it, disable for now
     dis.disassemble(code)
     sys.stdout = sys.__stdout__
-    print(indent + buffer.getvalue().replace("\n", "\n"+indent))
+    print(indent + buf.getvalue().replace("\n", "\n"+indent))
 
 
 # TODO: Do this in a cleaner way.  Right now I'm avoiding modifying the
@@ -78,9 +79,10 @@ def build_flags_def(consts, co_flags_def):
     if name.startswith('CO_'):
       co_flags_def[name] = getattr(consts, name)
 
-from compiler2 import consts
+
 _CO_FLAGS_DEF = {}
 build_flags_def(consts, _CO_FLAGS_DEF)
+
 
 def show_flags(value):
     names = []
@@ -94,8 +96,10 @@ def show_flags(value):
     else:
       return h
 
+
 def show_code(code, level=0):
-    indent = INDENT*level
+    """Print a code object, e.g. metadata, bytecode, and consts."""
+    indent = INDENT * level
 
     for name in dir(code):
         if not name.startswith("co_"):
@@ -115,28 +119,31 @@ def show_code(code, level=0):
     print("%sco_code" % indent)
     show_bytecode(code, level=level+1)
 
-def show_file(filename):
-    filename, magic, unixtime, timestamp, code = unpack_pyc(filename)
+
+def unpack_pyc(f):
+    magic = f.read(4)
+    unixtime = struct.unpack("I", f.read(4))[0]
+    timestamp = time.asctime(time.localtime(unixtime))
+    code = marshal.load(f)
+    f.close()
+    return magic, unixtime, timestamp, code
+
+
+# NOTE:
+# - We could change this into a bytecode visitor.  It's a tree of code
+# objects.  Each code object contains constants, and a constant can be another
+# code object.
+
+
+def show_file(f):
+    """Write a readable listing of a .pyc file to stdout."""
+    magic, unixtime, timestamp, code = unpack_pyc(f)
+
     magic = "0x(%s)" % to_hexstr(magic)
 
     print("  ## inspecting pyc file ##")
-    print("filename:     %s" % filename)
     print("magic number: %s" % magic)
     print("timestamp:    %s (%s)" % (unixtime, timestamp))
     print("code")
     show_code(code, level=1)
     print("  ## done inspecting pyc file ##")
-
-
-if __name__ == "__main__":
-    USAGE = "  usage: %s <PYC FILENAME>" % sys.argv[0]
-
-    if len(sys.argv) == 1:
-        sys.exit("Error: Too few arguments\n%s" % USAGE)
-    if len(sys.argv) > 2:
-        warnings.warn("Ignoring extra arguments: %s" % (sys.argv[2:],))
-
-    if sys.argv[1] == "-h":
-        print(USAGE)
-    else:
-        show_file(sys.argv[1])
