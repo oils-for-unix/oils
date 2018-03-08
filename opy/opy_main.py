@@ -265,7 +265,10 @@ def OpyCommandMain(argv):
   elif action == 'dis':
     pyc_path = argv[1]
     with open(pyc_path, 'rb') as f:
-      inspect_pyc.show_file(f)
+      # TODO: Make this a flag.
+      #v = inspect_pyc.Visitor(dis_bytecode=False)
+      v = inspect_pyc.Visitor()
+      v.Visit(f)
 
   # NOTE: Unused
   elif action == 'old-compile':

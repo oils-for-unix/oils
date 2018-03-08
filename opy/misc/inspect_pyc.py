@@ -19,9 +19,8 @@ But that doesn't give all the metadata.  It's also nicer than
 tools/dumppyc.py, which came with the 'compiler2' package.
 """
 
-import dis, marshal, struct, sys, time, types
+import cStringIO, dis, marshal, struct, sys, time, types
 from ..compiler2 import consts
-from cStringIO import StringIO
 
 
 INDENT = '  '
@@ -44,32 +43,6 @@ def to_hexstr(bytes_value, level=0, wrap=False):
         return template % tuple(bytes_value)
     except TypeError:
         return template % tuple(ord(char) for char in bytes_value)
-
-
-def show_consts(consts, level=0):
-    indent = INDENT * level
-    i = 0
-    for obj in consts:
-        if isinstance(obj, types.CodeType):
-            print(indent+"%s (code object)" % i)
-            # RECURSIVE CALL.
-            show_code(obj, level=level+1)
-        else:
-            print(indent+"%s %r" % (i, obj))
-        i += 1
-
-
-def show_bytecode(code, level=0):
-    """Call dis.disassemble() to show bytecode."""
-    indent = INDENT * level
-    print(to_hexstr(code.co_code, level, wrap=True))
-    print(indent+"disassembled:")
-    buf = StringIO()
-    sys.stdout = buf
-    # NOTE: This format has addresses in it, disable for now
-    dis.disassemble(code)
-    sys.stdout = sys.__stdout__
-    print(indent + buf.getvalue().replace("\n", "\n"+indent))
 
 
 # TODO: Do this in a cleaner way.  Right now I'm avoiding modifying the
@@ -97,35 +70,11 @@ def show_flags(value):
       return h
 
 
-def show_code(code, level=0):
-    """Print a code object, e.g. metadata, bytecode, and consts."""
-    indent = INDENT * level
-
-    for name in dir(code):
-        if not name.startswith("co_"):
-            continue
-        if name in ("co_code", "co_consts"):
-            continue
-        value = getattr(code, name)
-        if isinstance(value, str):
-            value = repr(value)
-        elif name == "co_flags":
-            value = show_flags(value)
-        elif name == "co_lnotab":
-            value = "0x(%s)" % to_hexstr(value)
-        print("%s%s%s" % (indent, (name+":").ljust(NAME_OFFSET), value))
-    print("%sco_consts" % indent)
-    show_consts(code.co_consts, level=level+1)
-    print("%sco_code" % indent)
-    show_bytecode(code, level=level+1)
-
-
 def unpack_pyc(f):
     magic = f.read(4)
     unixtime = struct.unpack("I", f.read(4))[0]
     timestamp = time.asctime(time.localtime(unixtime))
     code = marshal.load(f)
-    f.close()
     return magic, unixtime, timestamp, code
 
 
@@ -134,16 +83,136 @@ def unpack_pyc(f):
 # objects.  Each code object contains constants, and a constant can be another
 # code object.
 
+# Enhancements:
+# - Actually print the line of code!  That will be very helpful.
+# - Print a histogram of byte codes.  Print toal number of bytecodes.
+#   - Copy of the
 
-def show_file(f):
+def disassemble(co, indent, f):
+  """Copied from dis module.
+
+  It doesn't do the indent we want.
+  """
+  def ind(*args, **kwargs):
+    print(indent, end='')
+    print(*args, file=f, **kwargs)
+
+  def out(*args, **kwargs):
+    print(*args, file=f, **kwargs)
+
+  code = co.co_code
+  labels = dis.findlabels(code)
+  linestarts = dict(dis.findlinestarts(co))
+  n = len(code)
+  i = 0
+  extended_arg = 0
+  free = None
+
+  while i < n:
+      c = code[i]
+      op = ord(c)
+      if i in linestarts:
+          if i > 0:
+              out()
+          ind("%3d" % linestarts[i], end=' ')
+      else:
+          ind('   ', end=' ')
+
+      out('   ', end=' ')
+      if i in labels:  # Jump targets get a special symbol
+        out('>>', end=' ')
+      else:
+        out('  ', end=' ')
+
+      out(repr(i).rjust(4), end=' ')
+      out(dis.opname[op].ljust(20), end=' ')
+      i += 1
+      if op >= dis.HAVE_ARGUMENT:
+          oparg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
+          extended_arg = 0
+          i += 2
+          if op == dis.EXTENDED_ARG:
+              extended_arg = oparg*65536L
+
+          out(repr(oparg).rjust(5), end=' ')
+          if op in dis.hasconst:
+              out('(' + repr(co.co_consts[oparg]) + ')', end=' ')
+          elif op in dis.hasname:
+              out('(' + co.co_names[oparg] + ')', end=' ')
+          elif op in dis.hasjrel:
+              out('(to ' + repr(i + oparg) + ')', end=' ')
+          elif op in dis.haslocal:
+              out('(' + co.co_varnames[oparg] + ')', end=' ')
+          elif op in dis.hascompare:
+              out('(' + dis.cmp_op[oparg] + ')', end=' ')
+          elif op in dis.hasfree:
+              if free is None:
+                  free = co.co_cellvars + co.co_freevars
+              out('(' + free[oparg] + ')', end=' ')
+      out()
+
+
+class Visitor(object):
+
+  def __init__(self, dis_bytecode=True):
+    self.dis_bytecode = dis_bytecode  # Whether to show disassembly.
+
+  def show_consts(self, consts, level=0):
+    indent = INDENT * level
+    i = 0
+    for obj in consts:
+      if isinstance(obj, types.CodeType):
+        print(indent+"%s (code object)" % i)
+        # RECURSIVE CALL.
+        self.show_code(obj, level=level+1)
+      else:
+        print(indent+"%s %r" % (i, obj))
+      i += 1
+
+  def show_bytecode(self, code, level=0):
+    """Call dis.disassemble() to show bytecode."""
+
+    indent = INDENT * level
+    print(to_hexstr(code.co_code, level, wrap=True))
+
+    if self.dis_bytecode:
+      print(indent + "disassembled:")
+      disassemble(code, indent, sys.stdout)
+
+  def show_code(self, code, level=0):
+    """Print a code object, e.g. metadata, bytecode, and consts."""
+
+    indent = INDENT * level
+
+    for name in dir(code):
+      if not name.startswith("co_"):
+        continue
+      if name in ("co_code", "co_consts"):
+        continue
+      value = getattr(code, name)
+      if isinstance(value, str):
+        value = repr(value)
+      elif name == "co_flags":
+        value = show_flags(value)
+      elif name == "co_lnotab":
+        value = "0x(%s)" % to_hexstr(value)
+      print("%s%s%s" % (indent, (name+":").ljust(NAME_OFFSET), value))
+
+    print("%sco_consts" % indent)
+    self.show_consts(code.co_consts, level=level+1)
+
+    print("%sco_code" % indent)
+    self.show_bytecode(code, level=level+1)
+
+  def Visit(self, f):
     """Write a readable listing of a .pyc file to stdout."""
+
     magic, unixtime, timestamp, code = unpack_pyc(f)
 
     magic = "0x(%s)" % to_hexstr(magic)
-
     print("  ## inspecting pyc file ##")
     print("magic number: %s" % magic)
     print("timestamp:    %s (%s)" % (unixtime, timestamp))
     print("code")
-    show_code(code, level=1)
+    self.show_code(code, level=1)
     print("  ## done inspecting pyc file ##")
