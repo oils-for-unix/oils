@@ -227,3 +227,6 @@ class Visitor(object):
     print('Opcode Histogram:')
     for op, count in self.op_counts.most_common():
       print('%5d %s' % (count, dis.opname[op]))
+
+    print()
+    print('%d unique opcodes' % len(self.op_counts))

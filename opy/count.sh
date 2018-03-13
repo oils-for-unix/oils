@@ -44,4 +44,20 @@ all() {
   echo
 }
 
+# Hm there are 119 total opcodes, but these files only use 38, 37, 36, and 23.
+# Interesting.
+
+# With opy: 39, 38, 35, 24.  Oh so there's 1 more or one less.  Interesting!
+# TODO: diff them.
+
+opcodes() {
+  for prefix in '' _tmp/oil-with-opy/; do
+    for pyc in \
+      ${prefix}osh/{cmd,bool,word,arith}_parse.pyc; do
+      echo $pyc
+      bin/opyc dis $pyc | tail -n 1 
+    done
+  done
+}
+
 "$@"
