@@ -264,13 +264,19 @@ def OpyCommandMain(argv):
 
   elif action == 'dis':
     pyc_path = argv[1]
+    try:
+      report_path = argv[2]
+      report_f = open(report_path, 'w')
+    except IndexError:
+      report_f = sys.stdout
+
     with open(pyc_path, 'rb') as f:
       # TODO: Make this a flag.
       #v = inspect_pyc.Visitor(dis_bytecode=False)
       v = inspect_pyc.Visitor()
       v.Visit(f)
 
-    v.Report()
+    v.Report(report_f)
 
   # NOTE: Unused
   elif action == 'old-compile':

@@ -120,16 +120,14 @@ def disassemble(co, indent, op_counts, f):
           prefix = linestarts[i]
       else:
           prefix = ''
-      out('%s%3s' % (indent, prefix), end=' ')
+      out('%s%4s' % (indent, prefix), end=' ')
 
-      out('   ', end=' ')
       if i in labels:  # Jump targets get a special symbol
-        out('>>', end=' ')
+        arrow = '>>'
       else:
-        out('  ', end=' ')
+        arrow = '  '
 
-      out(repr(i).rjust(4), end=' ')
-      out(dis.opname[op].ljust(20), end=' ')
+      out(' %s %4r %-20s ' % (arrow, i, dis.opname[op]), end=' ')
       i += 1
       if op >= dis.HAVE_ARGUMENT:
           oparg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
@@ -138,21 +136,33 @@ def disassemble(co, indent, op_counts, f):
           if op == dis.EXTENDED_ARG:
               extended_arg = oparg*65536L
 
-          out(repr(oparg).rjust(5), end=' ')
+          oparg_str = None
+
           if op in dis.hasconst:
-              out('(' + repr(co.co_consts[oparg]) + ')', end=' ')
+            oparg_str = '(%r)' % (co.co_consts[oparg],)
+
           elif op in dis.hasname:
-              out('(' + co.co_names[oparg] + ')', end=' ')
+            oparg_str = '(%s)' % (co.co_names[oparg],)
+
           elif op in dis.hasjrel:
-              out('(to ' + repr(i + oparg) + ')', end=' ')
+            oparg_str = '(to %r)' % (i + oparg,)
+
           elif op in dis.haslocal:
-              out('(' + co.co_varnames[oparg] + ')', end=' ')
+            oparg_str = '(%s)' % (co.co_varnames[oparg],)
+
           elif op in dis.hascompare:
-              out('(' + dis.cmp_op[oparg] + ')', end=' ')
+            oparg_str = '(%s)' % (dis.cmp_op[oparg],)
+
           elif op in dis.hasfree:
-              if free is None:
-                  free = co.co_cellvars + co.co_freevars
-              out('(' + free[oparg] + ')', end=' ')
+            if free is None:
+              free = co.co_cellvars + co.co_freevars
+            oparg_str = '(%s)' % (free[oparg],)
+
+          if oparg_str:
+            out('%5r %s' % (oparg, oparg_str), end=' ')
+          else:
+            out('%5r' % oparg, end=' ')
+
       out()
 
 
@@ -222,11 +232,11 @@ class Visitor(object):
     self.show_code(code, level=1)
     print("  ## done inspecting pyc file ##")
 
-  def Report(self):
+  def Report(self, f=sys.stdout):
     print()
-    print('Opcode Histogram:')
+    print('Opcode Histogram:', file=f)
     for op, count in self.op_counts.most_common():
-      print('%5d %s' % (count, dis.opname[op]))
+      print('%5d %s' % (count, dis.opname[op]), file=f)
 
-    print()
-    print('%d unique opcodes' % len(self.op_counts))
+    print('', file=f)
+    print('%d unique opcodes' % len(self.op_counts), file=f)

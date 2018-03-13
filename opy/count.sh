@@ -50,13 +50,33 @@ all() {
 # With opy: 39, 38, 35, 24.  Oh so there's 1 more or one less.  Interesting!
 # TODO: diff them.
 
+# differences: 
+# PRINT_ITEM, PRINT_NEWLINE
+# UNARY_NEGATIVE
+# UNARY_NOT: big differences in magnitudes!  Is this a bug?
+
+readonly PARSER=(osh/{cmd,bool,word,arith}_parse.pyc)
+
+opcodes-comparison() {
+  for pyc in "${PARSER[@]}"; do
+    echo
+    echo "=== $pyc ==="
+    echo
+
+    bin/opyc dis $pyc cpython.txt >/dev/null
+    bin/opyc dis _tmp/oil-with-opy/$pyc opy.txt >/dev/null
+    local diff=${DIFF:-diff -u}
+    $diff {cpython,opy}.txt
+  done
+}
+
 opcodes() {
-  for prefix in '' _tmp/oil-with-opy/; do
-    for pyc in \
-      ${prefix}osh/{cmd,bool,word,arith}_parse.pyc; do
-      echo $pyc
-      bin/opyc dis $pyc | tail -n 1 
-    done
+  for pyc in "${PARSER[@]}"; do
+    echo
+    echo "=== $pyc ==="
+    echo
+
+    bin/opyc dis _tmp/oil-with-opy/$pyc
   done
 }
 
