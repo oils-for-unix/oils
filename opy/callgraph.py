@@ -141,26 +141,37 @@ def _Walk(func, module, seen, out):
     while True:
       op, const, var = g.next()
 
-      #log('\top %2d %s', j, op)
-
       if op == 'LOAD_GLOBAL':
         val = _GetAttr(module, var)
-
-        if callable(val):
-          # Recursive call.
-          _Walk(val, sys.modules[val.__module__], seen, out)
 
       elif op == 'LOAD_ATTR':
         if last_val is not None and isinstance(last_val, types.ModuleType):
           #log('%s %s', op, var)
           val = _GetAttr(last_val, var)
+        else:
+          val = None
 
-          if callable(val):
-            # Recursive call.
-            _Walk(val, sys.modules[val.__module__], seen, out)
-
-      else:  # Someo ther opcode
+      else:  # Some other opcode
         val = None
+
+      if callable(val):
+        # Recursive call.
+        _Walk(val, sys.modules[val.__module__], seen, out)
+
+      # If the value is a class, walk its methods.  Note that we assume ALL
+      # methods are used.  It's possible to narrow this down a bit and detect
+      # unused methods.
+      if isinstance(val, type):
+        #log('type %s', val)
+        for name in dir(val):
+          # prevent error with __abstractmethods__ attribute
+          if name.startswith('__'):
+            continue
+          field_val = getattr(val, name)
+          #log('field_val %s', field_val)
+          if isinstance(field_val, types.MethodType):
+            func_obj = field_val.im_func
+            _Walk(func_obj, sys.modules[func_obj.__module__], seen, out)
 
       last_val = val  # Used on next iteration
 
