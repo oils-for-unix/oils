@@ -15,12 +15,11 @@ from core import util
 log = util.log
 
 
-def Disassemble(co, of_interest):
+def Disassemble(co):
   """Given a code object, yield instructions of interest.
 
   Args:
     co: __code__ attribute
-    of_interest: names of opcodes that are interesting.
 
   Structure copied from misc/inspect_pyc.py, which was copied from
   dis.disassemble().
@@ -121,20 +120,14 @@ def _Walk(func, module, seen, out):
   if not hasattr(func, '__code__'):  # Builtins don't have bytecode.
     return
 
-    #log('\tNAME %s', val.__code__.co_name)
-    #log('\tNAMES %s', val.__code__.co_names)
+  #log('\tNAME %s', val.__code__.co_name)
+  #log('\tNAMES %s', val.__code__.co_names)
 
   # Most functions and classes we call are globals!
-
-  of_interest = ('LOAD_GLOBAL', 'LOAD_ATTR', 'CALL_FUNCTION')
-
   #log('\t_Walk %s %s', func, module)
   #log('\t%s', sorted(dir(module)))
 
-  # PROBLEM with this algorithm.  Need to analyze MODULES.  foo.Bar.
-  # foo.Bar() is the common case!
-
-  # Have to account for this sequence:
+  # Have to account for foo.Bar(), which gives this sequence:
   # 2           0 LOAD_GLOBAL              0 (foo)
   #             3 LOAD_ATTR                1 (Bar)
   #             6 CALL_FUNCTION            0
@@ -142,8 +135,8 @@ def _Walk(func, module, seen, out):
   # Also: os.path.join().
 
   try:
-    g = Disassemble(func.__code__, of_interest)
-    last_module = None
+    last_val = None  # value from previous LOAD_GLOBAL or LOAD_ATTR
+    g = Disassemble(func.__code__)
 
     while True:
       op, const, var = g.next()
@@ -156,29 +149,20 @@ def _Walk(func, module, seen, out):
         if callable(val):
           # Recursive call.
           _Walk(val, sys.modules[val.__module__], seen, out)
-        elif isinstance(val, types.ModuleType):
-          last_module = val
-        else:
-          last_module = None
 
       elif op == 'LOAD_ATTR':
-        if last_module is not None:
+        if last_val is not None and isinstance(last_val, types.ModuleType):
           #log('%s %s', op, var)
-          val = _GetAttr(last_module, var)
+          val = _GetAttr(last_val, var)
 
           if callable(val):
             # Recursive call.
             _Walk(val, sys.modules[val.__module__], seen, out)
-          elif isinstance(val, types.ModuleType):
-            last_module = val
-          else:
-            last_module = None
-        else:
-          last_module = None
 
-      else:
-        last_module = None
+      else:  # Someo ther opcode
+        val = None
 
+      last_val = val  # Used on next iteration
 
   except StopIteration:
     pass
