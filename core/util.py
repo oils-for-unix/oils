@@ -183,7 +183,7 @@ class TraceState(object):
     self.indent = self.indent[:-self.num_spaces]
 
 
-class _FileResourceLoader:
+class _FileResourceLoader(object):
   """Open resources relative to argv[0]."""
 
   def __init__(self, argv0):
@@ -197,7 +197,7 @@ class _FileResourceLoader:
 
 import zipimport  # NOT the zipfile module.
 
-class _ZipResourceLoader:
+class _ZipResourceLoader(object):
   """Open resources INSIDE argv[0] as a zip file."""
 
   def __init__(self, argv0):

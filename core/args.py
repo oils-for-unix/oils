@@ -81,7 +81,7 @@ class _Attributes(object):
     return '<_Attributes %s>' % self.__dict__
 
 
-class _ArgState:
+class _ArgState(object):
   """Modified by both the parsing loop and various actions."""
 
   def __init__(self, argv):

@@ -33,7 +33,7 @@ def DetectConsoleOutput(f):
     return TextOutput(f)
 
 
-class ColorOutput:
+class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
 
   def __init__(self, f):
@@ -206,7 +206,7 @@ class AnsiOutput(ColorOutput):
 #
 
 
-class _Obj:
+class _Obj(object):
   """Node for pretty-printing."""
   def __init__(self, node_type):
     self.node_type = node_type
@@ -225,7 +225,7 @@ class _Obj:
     return '<_Obj %s %s>' % (self.node_type, self.fields)
 
 
-class _ColoredString:
+class _ColoredString(object):
   """Node for pretty-printing."""
   def __init__(self, s, str_type):
     assert isinstance(s, str), s

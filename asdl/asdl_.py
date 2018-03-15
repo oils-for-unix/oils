@@ -43,34 +43,34 @@ def is_simple(sum):
   return True
 
 
-class StrType:
+class StrType(object):
   def __repr__(self):
     return '<Str>'
 
-class IntType:
+class IntType(object):
   def __repr__(self):
     return '<Int>'
 
-class BoolType:
+class BoolType(object):
   def __repr__(self):
     return '<Bool>'
 
 
-class ArrayType:
+class ArrayType(object):
   def __init__(self, desc):
     self.desc = desc
 
   def __repr__(self):
     return '<Array %s>' % self.desc
 
-class MaybeType:
+class MaybeType(object):
   def __init__(self, desc):
     self.desc = desc  # another descriptor
 
   def __repr__(self):
     return '<Maybe %s>' % self.desc
 
-class UserType:
+class UserType(object):
   def __init__(self, typ):
     assert isinstance(typ, type), typ
     self.typ = typ
@@ -178,7 +178,7 @@ def ResolveTypes(module, app_types=None):
 
 builtin_types = {'string', 'int', 'bool'}
 
-class AST:
+class AST(object):
     def Print(self, f, indent):
         raise NotImplementedError
 

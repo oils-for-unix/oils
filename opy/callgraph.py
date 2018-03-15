@@ -84,7 +84,12 @@ def Disassemble(co):
     #log('\t==> i = %d, n = %d', i, n)
 
 
+import sre_compile
 def _GetAttr(module, name):
+  # Hack for bug in _fixup_range() !  (No longer in Python 3.6 head.)
+  if module is sre_compile and name == 'l':
+    return None
+
   try:
     val = getattr(module, name)
   except AttributeError:

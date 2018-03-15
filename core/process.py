@@ -26,7 +26,7 @@ e_die = util.e_die
 log = util.log
 
 
-class _FdFrame:
+class _FdFrame(object):
   def __init__(self):
     self.saved = []
     self.need_close = []
@@ -42,7 +42,7 @@ class _FdFrame:
     return '<_FdFrame %s %s>' % (self.saved, self.need_close)
 
 
-class FdState:
+class FdState(object):
   """This is for the current process, as opposed to child processes.
 
   For example, you can do 'myfunc > out.txt' without forking.
@@ -241,7 +241,7 @@ class FdState:
       unused_status = proc.WaitUntilDone(waiter)
 
 
-class ChildStateChange:
+class ChildStateChange(object):
 
   def Apply(self):
     raise NotImplementedError
@@ -301,7 +301,7 @@ def ExecExternalProgram(argv, environ):
   # no return
 
 
-class ExternalThunk:
+class ExternalThunk(object):
   """An external executable."""
 
   def __init__(self, argv, environ):
@@ -315,7 +315,7 @@ class ExternalThunk:
     ExecExternalProgram(self.argv, self.environ)
 
 
-class SubProgramThunk:
+class SubProgramThunk(object):
   """A subprogram that can be executed in another process."""
 
   def __init__(self, ex, node, disable_errexit=False):

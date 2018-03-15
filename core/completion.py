@@ -733,7 +733,7 @@ def InitReadline(complete_cb):
   readline.set_completer_delims(' ')
 
 
-class StatusOutput:
+class StatusOutput(object):
   def __init__(self, status_lines, exec_opts):
     self.status_lines = status_lines
     self.exec_opts = exec_opts

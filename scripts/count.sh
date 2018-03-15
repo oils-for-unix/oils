@@ -200,4 +200,12 @@ top-level() {
     | egrep -v ':import|from|class|def'  # note: colon is from grep output
 }
 
+py-symbols() {
+  CALLGRAPH=1 bin/oil.py | sort
+}
+
+old-style-classes() {
+  py-symbols | grep -v '<'
+}
+
 "$@"

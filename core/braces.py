@@ -24,7 +24,7 @@ word_part_e = ast.word_part_e
 word_e = ast.word_e
 
 
-class _StackFrame:
+class _StackFrame(object):
   def __init__(self, cur_parts):
     self.cur_parts = cur_parts
     self.alt_part = ast.BracedAltPart()

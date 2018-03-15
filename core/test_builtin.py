@@ -21,7 +21,7 @@ _BINARY_LOOKUP = meta.TEST_BINARY_LOOKUP
 _OTHER_LOOKUP = meta.TEST_OTHER_LOOKUP
 
 
-class _StringWordEmitter:
+class _StringWordEmitter(object):
   """For test/[, we need a word parser that returns StringWord.
   
   The BoolParser calls word.BoolId(w), and deals with Kind.BoolUnary,
@@ -50,7 +50,7 @@ class _StringWordEmitter:
     return ast.StringWord(id_, s)
 
 
-class _WordEvaluator:
+class _WordEvaluator(object):
 
   def EvalWordToString(self, w, do_fnmatch=False):
     # do_fnmatch: for the [[ == ]] semantics which we don't have!

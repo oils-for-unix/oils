@@ -17,7 +17,7 @@ class EncodeError(Exception):
 
 _DEFAULT_ALIGNMENT = 4
 
-class BinOutput:
+class BinOutput(object):
   """Write aligned blocks here.  Keeps track of block indexes for refs."""
 
   def __init__(self, f, alignment=_DEFAULT_ALIGNMENT):
@@ -49,7 +49,7 @@ class BinOutput:
     return ref
 
 
-class Params:
+class Params(object):
   """Encoding parameters.
 
   Hm most of these settings should be per-field, expressed in the schema.  The

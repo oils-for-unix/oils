@@ -124,7 +124,7 @@ def _DecayPartValuesToString(part_vals, join_char):
   return ''.join(out)
 
 
-class _WordEvaluator:
+class _WordEvaluator(object):
   """Abstract base class for word evaluators.
 
   Public entry points:

@@ -27,7 +27,7 @@ bool_expr_e = ast.bool_expr_e
 lhs_expr_e = ast.lhs_expr_e
 
 
-class Cursor:
+class Cursor(object):
   """
   Wrapper for printing/transforming a complete source file stored in a single
   arena.
@@ -203,7 +203,7 @@ NICE = 0
 PEDANTIC = 1
 
 
-class OilPrinter:
+class OilPrinter(object):
   """
   Convert osh code to oil.
 

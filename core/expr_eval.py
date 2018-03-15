@@ -107,7 +107,7 @@ def _StringToInteger(s, word=None):
   return integer
 
 
-class _ExprEvaluator:
+class _ExprEvaluator(object):
   """
   For now the arith and bool evaluators share some logic.
   """
