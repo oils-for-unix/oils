@@ -162,7 +162,7 @@ def _GlobUnescape(s):  # used by cmd_exec
   return unescaped
 
 
-class Globber:
+class Globber(object):
   def __init__(self, exec_opts):
     self.exec_opts = exec_opts
 

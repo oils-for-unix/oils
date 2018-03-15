@@ -31,7 +31,7 @@ log = util.log
 e_die = util.e_die
 
 
-class _ErrExit:
+class _ErrExit(object):
   """Manages the errexit setting.
 
   - The user can change it with builtin 'set' at any point in the code.

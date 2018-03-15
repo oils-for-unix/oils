@@ -546,7 +546,7 @@ class Pipeline(Job):
         self.job_state.WhenDone(self.pipe_status[-1])
 
 
-class JobState:
+class JobState(object):
   """Global list of jobs, used by a few builtins."""
 
   def __init__(self):
@@ -591,7 +591,7 @@ class JobState:
     # TODO: Update the list
 
 
-class Waiter:
+class Waiter(object):
   """A capability to wait for processes.
 
   This must be a singleton (and is because Executor is a singleton).

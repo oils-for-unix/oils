@@ -201,7 +201,7 @@ top-level() {
 }
 
 py-symbols() {
-  CALLGRAPH=1 bin/oil.py | sort
+  CALLGRAPH=1 bin/oil.py
 }
 
 old-style-classes() {

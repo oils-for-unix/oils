@@ -4,8 +4,10 @@ from __future__ import print_function
 callgraph.py
 """
 
-import sys
+import collections
 import dis
+import os
+import sys
 
 import __builtin__  # For looking up names
 import types
@@ -85,9 +87,13 @@ def Disassemble(co):
 
 
 import sre_compile
+
 def _GetAttr(module, name):
   # Hack for bug in _fixup_range() !  (No longer in Python 3.6 head.)
   if module is sre_compile and name == 'l':
+    return None
+  # traceback.py has a hasattr() test
+  if module is sys and name == 'tracebacklimit':
     return None
 
   try:
@@ -99,37 +105,36 @@ def _GetAttr(module, name):
   return val
 
 
-def _Walk(func, module, seen, out):
+def _Walk(obj, cls, module, syms):
   """
   Discover statically what (globally-accessible) functions and classes are
   used.
 
   Something like this is OK:
-
-  def Adder(x):
-    def f(y):
-      return x + y
-    return f
+  # def Adder(x):
+  #   def f(y):
+  #     return x + y
+  #   return f
 
   Because we'll still have access to the inner code object.  We probably won't
   compile it though.
   """
-  id_ = id(func)  # Prevent recursion like word.LeftMostSpanForPart
-  if id_ in seen:
+  if syms.Seen(obj):
     return
-  seen.add(id_)
 
-  out.append(func)
-
-  #print(func)
-  if not hasattr(func, '__code__'):  # Builtins don't have bytecode.
+  #print(obj)
+  if hasattr(obj, '__code__'):  # Builtins don't have bytecode.
+    co = obj.__code__
+    syms.Add(obj, cls, co.co_filename, co.co_firstlineno)
+  else:
+    syms.Add(obj, cls, None, None)
     return
 
   #log('\tNAME %s', val.__code__.co_name)
   #log('\tNAMES %s', val.__code__.co_names)
 
   # Most functions and classes we call are globals!
-  #log('\t_Walk %s %s', func, module)
+  #log('\t_Walk %s %s', obj, module)
   #log('\t%s', sorted(dir(module)))
 
   # Have to account for foo.Bar(), which gives this sequence:
@@ -141,7 +146,7 @@ def _Walk(func, module, seen, out):
 
   try:
     last_val = None  # value from previous LOAD_GLOBAL or LOAD_ATTR
-    g = Disassemble(func.__code__)
+    g = Disassemble(obj.__code__)
 
     while True:
       op, const, var = g.next()
@@ -161,29 +166,155 @@ def _Walk(func, module, seen, out):
 
       if callable(val):
         # Recursive call.
-        _Walk(val, sys.modules[val.__module__], seen, out)
+        _Walk(val, None, sys.modules[val.__module__], syms)
 
       # If the value is a class, walk its methods.  Note that we assume ALL
       # methods are used.  It's possible to narrow this down a bit and detect
       # unused methods.
       if isinstance(val, type):
+        cls = val
         #log('type %s', val)
         for name in dir(val):
           # prevent error with __abstractmethods__ attribute
-          if name.startswith('__'):
+          #if name.startswith('__'):
+          if name == '__abstractmethods__':
             continue
           field_val = getattr(val, name)
           #log('field_val %s', field_val)
           if isinstance(field_val, types.MethodType):
             func_obj = field_val.im_func
-            _Walk(func_obj, sys.modules[func_obj.__module__], seen, out)
+            _Walk(func_obj, cls, sys.modules[func_obj.__module__], syms)
 
       last_val = val  # Used on next iteration
 
   except StopIteration:
     pass
 
-  #log('\tDone _Walk %s %s', func, module)
+  #log('\tDone _Walk %s %s', obj, module)
+
+
+class Class(object):
+
+  def __init__(self, cls):
+    self.cls = cls
+    self.methods = []
+
+  def Name(self):
+    return self.cls.__name__
+
+  def Path(self):
+    if self.methods:
+      _, path, _ = self.methods[0]
+      return path
+    else:
+      return None
+
+  def AddMethod(self, m, path, line_num):
+    # Just assume the method is in the same file as the class itself.
+    self.methods.append((m, path, line_num))
+
+  def Print(self):
+    base_names = ' '.join(c.__name__ for c in self.cls.__bases__)
+    print('  %s(%s)' % (self.cls.__name__, base_names))
+
+    methods = [(m.__name__, m) for (m, _, _) in self.methods]
+    methods.sort()
+    for name, m in methods:
+      print('    %s' % name)
+
+
+class Symbols(object):
+  """A sink for discovered symbols.
+
+  TODO: Need module namespaces.
+  """
+
+  def __init__(self):
+    self.seen = set()
+
+    self.classes = {}  # integer id() -> Class
+    self.functions = []  # list of callables
+
+    self.paths = {}  # path -> list of functions
+
+  def Seen(self, c):
+    """c: a callable."""
+    id_ = id(c)
+    if id_ in self.seen:
+      return True
+    self.seen.add(id_)
+    return False
+
+  def Add(self, obj, cls, path, line_num):
+    """Could be a function, class Constructor, or method.
+    Can also be native (C) or interpreted (Python with __code__ attribute.)
+
+    Returns:
+      True if we haven't yet seen it.
+    """
+    if path is not None:
+      path = os.path.normpath(path)
+
+    if isinstance(obj, type):
+      id_ = id(obj)
+
+      # NOTE: Python's classes don't have a __code__ object, which appears to
+      # be an irregularity.  So we have to get location information from the
+      # METHODS.
+      assert not hasattr(obj, '__code__'), obj
+      assert path is None
+      assert line_num is None
+
+      self.classes[id_] = Class(obj)
+
+    elif cls is not None:
+      id_ = id(cls)
+      descriptor = self.classes[id_]
+      descriptor.AddMethod(obj, path, line_num)
+
+    else:
+      self.functions.append((obj, path, line_num))
+
+    return True
+
+  def Report(self, f=sys.stdout):
+    # Now categorize into files.  We couldn't do that earlier because classes
+    # don't know where they are located!
+
+    # TODO:
+    # - ASDL classes don't know where they are, because they don't have
+    # methods!
+    # - Builtin methods like os.fork() doesn't know what module it's in
+    # either!
+
+    srcs = collections.defaultdict(SourceFile)
+    for func, path, line_num in self.functions:
+      srcs[path].functions.append((func, line_num))
+
+    for cls in self.classes.values():
+      srcs[cls.Path()].classes.append(cls)
+
+    for path in sorted(srcs):
+      src = srcs[path]
+      print('%s' % path)
+
+      for func, _ in src.functions:
+        has_code = hasattr(func, '__code__')
+        print('  %s' % func.__name__)
+
+      classes = [(c.Name(), c) for c in src.classes]
+      classes.sort()
+      for c in src.classes:
+        c.Print()
+
+      print()
+
+
+class SourceFile(object):
+
+  def __init__(self):
+    self.classes = []
+    self.functions = []
 
 
 def Walk(main, modules):
@@ -206,26 +337,13 @@ def Walk(main, modules):
   Returns:
     TODO: callgraph?  Flat dict of all functions called?  Or edges?
   """
-  out = []
-  seen = set()  # Set of id() values
-  _Walk(main, modules['__main__'], seen, out)
-  print('---')
-  for o in out:
-    print(o)
+  syms = Symbols()
+  _Walk(main, None, modules['__main__'], syms)
 
+  # TODO:
+  # - co_consts should be unified?  So we know how big the const pool is.
+  # - organize callables by CLASSES
+  #   - I want a two level hierarchy
 
-def main(argv):
-  from core import util
-  out = []
-  seen = set()
-  #_Walk(util.log, util, out)
-  _Walk(util.ShowAppVersion, util, seen, out)
+  syms.Report()
 
-  #_Walk(util.log, sys.modules['core.util'], out)
-  print('---')
-  for o in out:
-    print(o)
-
-
-if __name__ == '__main__':
-  main(sys.argv)

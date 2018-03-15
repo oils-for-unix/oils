@@ -6,15 +6,33 @@ callgraph_demo.py
 
 import sys
 
+from opy import callgraph
+
 _private = '_PRIVATE'
 private = 'PRIVATE'
 
 
-def g():
+def f():
   sys.settrace(sys.settrace)  # Try passing a type to a type.
 
 
-def main(argv):
+def h():
+  import dis
+  dis.dis(f)
+
+  from core import util
+  out = []
+  seen = set()
+  #_Walk(util.log, util, out)
+  callgraph._Walk(util.ShowAppVersion, util, seen, out)
+
+  #_Walk(util.log, sys.modules['core.util'], out)
+  print('---')
+  for o in out:
+    print(o)
+
+
+def g(argv):
   print(dir(sys))
 
   g()
@@ -23,16 +41,15 @@ def main(argv):
   print(_private)
 
 
-if __name__ == '__main__':
-  import dis
-  dis.dis(g)
+def main(argv):
+  callgraph.Walk(g, sys.modules)
 
-  if 1:
-    from opy import callgraph
-    callgraph.Walk(main, sys.modules)
-  else:
-    try:
-      main(sys.argv)
-    except RuntimeError as e:
-      print >>sys.stderr, 'FATAL: %s' % e
-      sys.exit(1)
+  h()
+
+
+if __name__ == '__main__':
+  try:
+    main(sys.argv)
+  except RuntimeError as e:
+    print >>sys.stderr, 'FATAL: %s' % e
+    sys.exit(1)
