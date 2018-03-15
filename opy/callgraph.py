@@ -8,6 +8,7 @@ import sys
 import dis
 
 import __builtin__  # For looking up names
+import types
 #import exceptions  
 
 from core import util
@@ -53,9 +54,6 @@ def Disassemble(co, of_interest):
       const_name = None
       var_name = None
 
-      if op_name not in of_interest:
-        continue  # don't try to interpret the argument
-
       if op in dis.hasconst:
         const_name = co.co_consts[oparg]
 
@@ -68,22 +66,36 @@ def Disassemble(co, of_interest):
           raise
 
       elif op in dis.hasjrel:
-        raise AssertionError(op_name)
+        #raise AssertionError(op_name)
+        pass
 
       elif op in dis.haslocal:
-        raise AssertionError(op_name)
+        #raise AssertionError(op_name)
+        pass
 
       elif op in dis.hascompare:
-        raise AssertionError(op_name)
+        #raise AssertionError(op_name)
+        pass
 
       elif op in dis.hasfree:
-        raise AssertionError(op_name)
+        #raise AssertionError(op_name)
+        pass
 
     yield op_name, const_name, var_name
     #log('\t==> i = %d, n = %d', i, n)
 
 
-def _Walk(func, module, out):
+def _GetAttr(module, name):
+  try:
+    val = getattr(module, name)
+  except AttributeError:
+    #log('%r not on %r', name, module)
+    # This could raise too
+    val = getattr(__builtin__, name)
+  return val
+
+
+def _Walk(func, module, seen, out):
   """
   Discover statically what (globally-accessible) functions and classes are
   used.
@@ -98,12 +110,25 @@ def _Walk(func, module, out):
   Because we'll still have access to the inner code object.  We probably won't
   compile it though.
   """
+  id_ = id(func)  # Prevent recursion like word.LeftMostSpanForPart
+  if id_ in seen:
+    return
+  seen.add(id_)
+
+  out.append(func)
+
+  #print(func)
+  if not hasattr(func, '__code__'):  # Builtins don't have bytecode.
+    return
+
+    #log('\tNAME %s', val.__code__.co_name)
+    #log('\tNAMES %s', val.__code__.co_names)
+
   # Most functions and classes we call are globals!
 
   of_interest = ('LOAD_GLOBAL', 'LOAD_ATTR', 'CALL_FUNCTION')
 
-  log('\t_Walk %s %s', func, module)
-
+  #log('\t_Walk %s %s', func, module)
   #log('\t%s', sorted(dir(module)))
 
   # PROBLEM with this algorithm.  Need to analyze MODULES.  foo.Bar.
@@ -113,34 +138,52 @@ def _Walk(func, module, out):
   # 2           0 LOAD_GLOBAL              0 (foo)
   #             3 LOAD_ATTR                1 (Bar)
   #             6 CALL_FUNCTION            0
+  #
+  # Also: os.path.join().
+
+  try:
+    g = Disassemble(func.__code__, of_interest)
+    last_module = None
+
+    while True:
+      op, const, var = g.next()
+
+      #log('\top %2d %s', j, op)
+
+      if op == 'LOAD_GLOBAL':
+        val = _GetAttr(module, var)
+
+        if callable(val):
+          # Recursive call.
+          _Walk(val, sys.modules[val.__module__], seen, out)
+        elif isinstance(val, types.ModuleType):
+          last_module = val
+        else:
+          last_module = None
+
+      elif op == 'LOAD_ATTR':
+        if last_module is not None:
+          #log('%s %s', op, var)
+          val = _GetAttr(last_module, var)
+
+          if callable(val):
+            # Recursive call.
+            _Walk(val, sys.modules[val.__module__], seen, out)
+          elif isinstance(val, types.ModuleType):
+            last_module = val
+          else:
+            last_module = None
+        else:
+          last_module = None
+
+      else:
+        last_module = None
 
 
-  # TODO: Look for a sequence.  How to do that?
-  # It probably breaks with stuff like foo.Bar(foo.Baz)
-  # The you have two sequences for CALL_FUNCTION
-  # You have to respect the nargs argument to CALL_FUNCTION.
+  except StopIteration:
+    pass
 
-  for op, const, var in Disassemble(func.__code__, of_interest):
-
-    #log('\top %2d %s', j, op)
-
-    if op == 'LOAD_GLOBAL':
-      try:
-        val = getattr(module, var)
-      except AttributeError:
-        # This could raise too
-        val = getattr(__builtin__, var)
-
-      if callable(val):
-        print(val)
-        if hasattr(val, '__code__'):  # Builtins don't have bytecode.
-          out.append(val)
-          log('\tNAME %s', val.__code__.co_name)
-          log('\tNAMES %s', val.__code__.co_names)
-
-          _Walk(val, sys.modules[val.__module__], out)   # Recursive call.
-
-  log('\tDone _Walk %s %s', func, module)
+  #log('\tDone _Walk %s %s', func, module)
 
 
 def Walk(main, modules):
@@ -164,7 +207,8 @@ def Walk(main, modules):
     TODO: callgraph?  Flat dict of all functions called?  Or edges?
   """
   out = []
-  _Walk(main, modules['__main__'], out)
+  seen = set()  # Set of id() values
+  _Walk(main, modules['__main__'], seen, out)
   print('---')
   for o in out:
     print(o)
@@ -173,8 +217,9 @@ def Walk(main, modules):
 def main(argv):
   from core import util
   out = []
+  seen = set()
   #_Walk(util.log, util, out)
-  _Walk(util.ShowAppVersion, util, out)
+  _Walk(util.ShowAppVersion, util, seen, out)
 
   #_Walk(util.log, sys.modules['core.util'], out)
   print('---')
