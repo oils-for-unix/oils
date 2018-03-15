@@ -614,5 +614,10 @@ def main(argv):
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+  # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
+  if os.getenv('CALLGRAPH') == '1':
+    from opy import callgraph
+    callgraph.Walk(main, sys.modules)
+  else:
+    main(sys.argv)
 
