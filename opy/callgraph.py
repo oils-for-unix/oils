@@ -6,6 +6,7 @@ callgraph.py
 
 import collections
 import dis
+import inspect
 import os
 import sys
 
@@ -105,7 +106,7 @@ def _GetAttr(module, name):
   return val
 
 
-def _Walk(obj, cls, module, syms):
+def _Walk(obj, cls, ref, syms):
   """
   Discover statically what (globally-accessible) functions and classes are
   used.
@@ -113,7 +114,7 @@ def _Walk(obj, cls, module, syms):
   Args:
     obj: a callable object
     cls: an optional class that it was attached to, could be None
-    module: the module it was discovered in.
+    ref: the way the object was referenced from another place in the code
     syms: output Symbols()
 
   Something like this is OK:
@@ -128,6 +129,25 @@ def _Walk(obj, cls, module, syms):
   if syms.Seen(obj):
     return
 
+  module_name = getattr(obj, '__module__', None)
+  # NOTE: We get duplicate objects like this, due to bound methods on different
+  # objects.  Not sure how to fix it.
+  #
+  # OBJ <function Parse at 0x7fcd270b4de8>
+  # OBJ <function Parse at 0x7fcd2709e500>
+  # OBJ <built-in method get of dict object at 0x7fcd28c53280>
+  # OBJ <built-in method get of dict object at 0x7fcd28c53398>
+
+  if obj.__name__ in ('get', 'Parse'):
+    #log('OBJ %s', obj)
+    pass
+   
+  if module_name is None:
+    syms.Add(obj, None, ref, None, None, None)
+    return  # Can't walk anything
+
+  module = sys.modules[obj.__module__]
+
   #print(obj)
   if hasattr(obj, '__code__'):  # Builtins don't have bytecode.
     co = obj.__code__
@@ -136,14 +156,11 @@ def _Walk(obj, cls, module, syms):
     mod_name = None
     mod_path = co.co_filename
 
-    syms.Add(obj, cls, mod_name, mod_path, co.co_firstlineno)
+    syms.Add(obj, cls, ref, mod_name, mod_path, co.co_firstlineno)
   else:
-    mod = sys.modules[obj.__module__]
-
-    mod = sys.modules[obj.__module__]
-    mod_name = mod.__name__
+    mod_name = module.__name__
     try:
-      mod_path = mod.__file__
+      mod_path = module.__file__
       if mod_path.endswith('.pyc'):
         mod_path = mod_path[:-1]
     except AttributeError:
@@ -155,7 +172,7 @@ def _Walk(obj, cls, module, syms):
     #mod_name = None
     #mod_path = None
 
-    syms.Add(obj, cls, mod_name, mod_path, None)
+    syms.Add(obj, cls, ref, mod_name, mod_path, None)
     return
 
   #log('\tNAME %s', val.__code__.co_name)
@@ -174,6 +191,7 @@ def _Walk(obj, cls, module, syms):
 
   try:
     last_val = None  # value from previous LOAD_GLOBAL or LOAD_ATTR
+    ref = []
     g = Disassemble(obj.__code__)
 
     while True:
@@ -181,20 +199,26 @@ def _Walk(obj, cls, module, syms):
 
       if op == 'LOAD_GLOBAL':
         val = _GetAttr(module, var)
+        ref = [var]  # reset it
 
       elif op == 'LOAD_ATTR':
-        if last_val is not None and isinstance(last_val, types.ModuleType):
+        #if last_val is not None and isinstance(last_val, types.ModuleType):
+        if last_val is not None: 
           #log('%s %s', op, var)
           val = _GetAttr(last_val, var)
+          ref.append(var)
         else:
           val = None
+          ref = []
 
       else:  # Some other opcode
         val = None
+        ref = []
 
       if callable(val):
+        #log('VAL %s module %s', val, val.__module__)
         # Recursive call.
-        _Walk(val, None, sys.modules[val.__module__], syms)
+        _Walk(val, None, ref, syms)
 
       # If the value is a class, walk its methods.  Note that we assume ALL
       # methods are used.  It's possible to narrow this down a bit and detect
@@ -211,7 +235,7 @@ def _Walk(obj, cls, module, syms):
           #log('field_val %s', field_val)
           if isinstance(field_val, types.MethodType):
             func_obj = field_val.im_func
-            _Walk(func_obj, cls, sys.modules[func_obj.__module__], syms)
+            _Walk(func_obj, cls, ref, syms)
 
       last_val = val  # Used on next iteration
 
@@ -219,6 +243,27 @@ def _Walk(obj, cls, module, syms):
     pass
 
   #log('\tDone _Walk %s %s', obj, module)
+
+
+def PrintSig(fmt, func):
+  #return
+  try:
+    argspec = inspect.getargspec(func)
+  except TypeError:
+    return
+  parts = [':%s' % ' '.join(argspec.args)]
+  # These are keyword-only args?
+  if argspec.varargs:
+    parts.append('varargs=%s' % (argspec.varargs,))
+  if argspec.keywords:
+    parts.append('kw=%s' % (argspec.keywords,))
+  # Hm the default of 'None' is bad -- you can't distinguish a default of None,
+  # which is very common!
+  # It's better to get this by parsing the AST.
+  if argspec.defaults and any(d is not None for d in argspec.defaults):
+    parts.append('defaults=%s' % (argspec.defaults,))
+
+  print(fmt % ' '.join(parts))
 
 
 class Class(object):
@@ -244,6 +289,7 @@ class Class(object):
     methods.sort()
     for name, m in methods:
       print('    %s' % name)
+      PrintSig('      %s', m)
 
   def __repr__(self):
     return '<Class %s %s %s %s>' % (
@@ -251,10 +297,7 @@ class Class(object):
 
 
 class Symbols(object):
-  """A sink for discovered symbols.
-
-  TODO: Need module namespaces.
-  """
+  """A sink for discovered symbols."""
 
   def __init__(self):
     self.seen = set()
@@ -272,7 +315,7 @@ class Symbols(object):
     self.seen.add(id_)
     return False
 
-  def Add(self, obj, cls, mod_name, mod_path, line_num):
+  def Add(self, obj, cls, ref, mod_name, mod_path, line_num):
     """Could be a function, class Constructor, or method.
     Can also be native (C) or interpreted (Python with __code__ attribute.)
 
@@ -300,7 +343,7 @@ class Symbols(object):
       descriptor.AddMethod(obj, mod_name, mod_path, line_num)
 
     else:
-      self.functions.append((obj, mod_name, mod_path, line_num))
+      self.functions.append((obj, ref, mod_name, mod_path, line_num))
 
     return True
 
@@ -311,11 +354,11 @@ class Symbols(object):
     py_srcs = collections.defaultdict(SourceFile)
     c_srcs = collections.defaultdict(SourceFile)
 
-    for func, mod_name, mod_path, line_num in self.functions:
+    for func, ref, mod_name, mod_path, line_num in self.functions:
       if mod_path:
-        py_srcs[mod_path].functions.append((func, line_num))
+        py_srcs[mod_path].functions.append((func, ref, line_num))
       else:
-        c_srcs[mod_name].functions.append((func, line_num))
+        c_srcs[mod_name].functions.append((func, ref, line_num))
 
     for cls in self.classes.values():
       #if cls.cls.__name__ == 'lex_mode_e':
@@ -334,6 +377,12 @@ class Symbols(object):
 
     #return
 
+    # Still missing: non-enum ASDL types?  Why?  CompoundObj?
+    # command_e is there, but command and SimpleCommmand aren't.
+    # it's because we do 
+    # ast.command_e vs. ast.SimpleCommand
+    # in both cases ast is a osh/meta _AsdlModule?
+
     print('PYTHON CODE')
     print()
 
@@ -345,12 +394,9 @@ class Symbols(object):
 
       print('%s' % path)
 
-      for func, _ in src.functions:
-        if path is None:
-          extra = ' [%s]' % sys.modules[func.__module__].__name__
-        else:
-          extra = ''
-        print('  %s%s' % (func.__name__, extra))
+      for func, ref, _ in src.functions:
+        print('  %s [%s]' % (func.__name__, '.'.join(ref)))
+        PrintSig('    %s', func)
 
       classes = [(c.Name(), c) for c in src.classes]
       classes.sort()
@@ -367,8 +413,8 @@ class Symbols(object):
 
       print('%s' % mod_name)
 
-      for func, _ in src.functions:
-        print('  %s' % func.__name__)
+      for func, ref, _ in src.functions:
+        print('  %s [%s]' % (func.__name__, '.'.join(ref)))
 
       classes = [(c.Name(), c) for c in src.classes]
       classes.sort()
@@ -401,17 +447,12 @@ def Walk(main, modules):
   Args:
     main: function
     modules: Dict[str, module]
-
-  Returns:
-    TODO: callgraph?  Flat dict of all functions called?  Or edges?
   """
   syms = Symbols()
-  _Walk(main, None, modules['__main__'], syms)
+  _Walk(main, None, ['main'], syms)
 
   # TODO:
   # - co_consts should be unified?  So we know how big the const pool is.
-  # - organize callables by CLASSES
-  #   - I want a two level hierarchy
 
   syms.Report()
 
