@@ -78,7 +78,7 @@ def WriteGrammar(grammar_path, pickle_path):
 
 
 # Emulate the interface that Transformer expects from parsermodule.c.
-class Pgen2PythonParser:
+class Pgen2PythonParser(object):
   def __init__(self, driver, start_symbol):
     self.driver = driver
     self.start_symbol = start_symbol
@@ -105,7 +105,7 @@ def CountTupleTree(tu):
     raise AssertionError(tu)
 
 
-class TupleTreePrinter:
+class TupleTreePrinter(object):
   def __init__(self, names):
     self._names = names
 
@@ -217,7 +217,7 @@ def OpyCommandMain(argv):
 
     tree = st.totuple()
 
-    n = transformer.CountTupleTree(tree)
+    n = CountTupleTree(tree)
     log('COUNT %d', n)
     printer = TupleTreePrinter(HostStdlibNames())
     printer.Print(tree)
@@ -329,13 +329,13 @@ def OpyCommandMain(argv):
       with open(py_path) as f:
         contents = f.read()
       co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-      execfile.run_code_object(co, opy_argv)
+      #execfile.run_code_object(co, opy_argv)
 
     elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
       with open(py_path) as f:
         f.seek(8)  # past header.  TODO: validate it!
         co = marshal.load(f)
-      execfile.run_code_object(co, opy_argv)
+      #execfile.run_code_object(co, opy_argv)
 
     else:
       raise args.UsageError('Invalid path %r' % py_path)

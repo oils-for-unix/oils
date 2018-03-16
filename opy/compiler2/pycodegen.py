@@ -71,7 +71,7 @@ def compile(source, filename, mode, flags=None, dont_inherit=None, transformer=N
     gen.compile(transformer=transformer)
     return gen.code
 
-class AbstractCompileMode:
+class AbstractCompileMode(object):
 
     mode = None # defined by subclass
 

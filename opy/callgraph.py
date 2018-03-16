@@ -12,7 +12,6 @@ import sys
 
 import __builtin__  # For looking up names
 import types
-#import exceptions  
 
 from core import util
 log = util.log
@@ -138,9 +137,9 @@ def _Walk(obj, cls, ref, syms):
   # OBJ <built-in method get of dict object at 0x7fcd28c53280>
   # OBJ <built-in method get of dict object at 0x7fcd28c53398>
 
-  if obj.__name__ in ('get', 'Parse'):
-    #log('OBJ %s', obj)
-    pass
+  #if obj.__name__ in ('write', 'get', 'Parse'):
+  #  log('OBJ %s %d', obj, id(obj))
+  #  pass
    
   if module_name is None:
     syms.Add(obj, None, ref, None, None, None)
@@ -207,6 +206,19 @@ def _Walk(obj, cls, ref, syms):
           #log('%s %s', op, var)
           val = _GetAttr(last_val, var)
           ref.append(var)
+
+          # Crawl the methods below.  Otherwise we get duplicate bound/unbound
+          # methods, which have unique addresses.
+          # Examples: WAIT_SPEC.Parse, sys.stdout.write
+
+          # BUG: os.fork and sys.stdout.write are the same? 
+          # I thought os.fork is types.BuiltinFunctionType, and
+          # sys.stdout.write is types.BuiltinMethodType, but why not?
+
+          if isinstance(val, (types.MethodType, types.BuiltinMethodType)):
+            val = None
+            ref = []
+
         else:
           val = None
           ref = []
@@ -246,7 +258,8 @@ def _Walk(obj, cls, ref, syms):
 
 
 def PrintSig(fmt, func):
-  #return
+  if os.getenv('CALLGRAPH_SIG') != '1':
+    return
   try:
     argspec = inspect.getargspec(func)
   except TypeError:
@@ -395,7 +408,10 @@ class Symbols(object):
       print('%s' % path)
 
       for func, ref, _ in src.functions:
-        print('  %s [%s]' % (func.__name__, '.'.join(ref)))
+        #third = func
+        third = ''
+        #print('  %s [%s] %s' % (func.__name__, '.'.join(ref), third))
+        print('  %s' % func.__name__)
         PrintSig('    %s', func)
 
       classes = [(c.Name(), c) for c in src.classes]
@@ -414,7 +430,10 @@ class Symbols(object):
       print('%s' % mod_name)
 
       for func, ref, _ in src.functions:
-        print('  %s [%s]' % (func.__name__, '.'.join(ref)))
+        #third = func
+        third = ''
+        #print('  %s [%s] %s' % (func.__name__, '.'.join(ref), third))
+        print('  %s' % func.__name__)
 
       classes = [(c.Name(), c) for c in src.classes]
       classes.sort()

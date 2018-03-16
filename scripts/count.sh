@@ -200,12 +200,29 @@ top-level() {
     | egrep -v ':import|from|class|def'  # note: colon is from grep output
 }
 
-py-symbols() {
-  CALLGRAPH=1 bin/oil.py
+_python-symbols() {
+  local main=$1
+  local name=$2
+
+  local out=_tmp/${name}-python-symbols.txt
+
+  CALLGRAPH=1 $main | tee $out
+
+  wc -l $out
+  echo 
+  echo "Wrote $out"
+}
+
+oil-python-symbols() {
+  _python-symbols bin/oil.py oil
+}
+
+opy-python-symbols() {
+  _python-symbols bin/opy_.py opy
 }
 
 old-style-classes() {
-  py-symbols | grep -v '<'
+  oil-python-symbols | grep -v '<'
 }
 
 "$@"
