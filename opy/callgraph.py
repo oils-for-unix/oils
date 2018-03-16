@@ -110,6 +110,12 @@ def _Walk(obj, cls, module, syms):
   Discover statically what (globally-accessible) functions and classes are
   used.
 
+  Args:
+    obj: a callable object
+    cls: an optional class that it was attached to, could be None
+    module: the module it was discovered in.
+    syms: output Symbols()
+
   Something like this is OK:
   # def Adder(x):
   #   def f(y):
@@ -125,9 +131,31 @@ def _Walk(obj, cls, module, syms):
   #print(obj)
   if hasattr(obj, '__code__'):  # Builtins don't have bytecode.
     co = obj.__code__
-    syms.Add(obj, cls, co.co_filename, co.co_firstlineno)
+    #path = co.co_filename
+
+    mod_name = None
+    mod_path = co.co_filename
+
+    syms.Add(obj, cls, mod_name, mod_path, co.co_firstlineno)
   else:
-    syms.Add(obj, cls, None, None)
+    mod = sys.modules[obj.__module__]
+
+    mod = sys.modules[obj.__module__]
+    mod_name = mod.__name__
+    try:
+      mod_path = mod.__file__
+      if mod_path.endswith('.pyc'):
+        mod_path = mod_path[:-1]
+    except AttributeError:
+      mod_path = None
+
+    #if obj.__name__ == 'lex_mode_e':
+    #  log('!!! %s name %s path %s', obj, mod.__name__, mod.__file__)
+
+    #mod_name = None
+    #mod_path = None
+
+    syms.Add(obj, cls, mod_name, mod_path, None)
     return
 
   #log('\tNAME %s', val.__code__.co_name)
@@ -195,32 +223,31 @@ def _Walk(obj, cls, module, syms):
 
 class Class(object):
 
-  def __init__(self, cls):
+  def __init__(self, cls, mod_name, mod_path):
     self.cls = cls
+    self.mod_name = mod_name
+    self.mod_path = mod_path
     self.methods = []
 
   def Name(self):
     return self.cls.__name__
 
-  def Path(self):
-    if self.methods:
-      _, path, _ = self.methods[0]
-      return path
-    else:
-      return None
-
-  def AddMethod(self, m, path, line_num):
+  def AddMethod(self, m, mod_name, mod_path, line_num):
     # Just assume the method is in the same file as the class itself.
-    self.methods.append((m, path, line_num))
+    self.methods.append((m, mod_name, mod_path, line_num))
 
   def Print(self):
     base_names = ' '.join(c.__name__ for c in self.cls.__bases__)
     print('  %s(%s)' % (self.cls.__name__, base_names))
 
-    methods = [(m.__name__, m) for (m, _, _) in self.methods]
+    methods = [(m.__name__, m) for (m, _, _, _) in self.methods]
     methods.sort()
     for name, m in methods:
       print('    %s' % name)
+
+  def __repr__(self):
+    return '<Class %s %s %s %s>' % (
+        self.cls, self.mod_name, self.mod_path, self.methods)
 
 
 class Symbols(object):
@@ -245,15 +272,15 @@ class Symbols(object):
     self.seen.add(id_)
     return False
 
-  def Add(self, obj, cls, path, line_num):
+  def Add(self, obj, cls, mod_name, mod_path, line_num):
     """Could be a function, class Constructor, or method.
     Can also be native (C) or interpreted (Python with __code__ attribute.)
 
     Returns:
       True if we haven't yet seen it.
     """
-    if path is not None:
-      path = os.path.normpath(path)
+    if mod_path is not None:
+      mod_path = os.path.normpath(mod_path)
 
     if isinstance(obj, type):
       id_ = id(obj)
@@ -262,18 +289,18 @@ class Symbols(object):
       # be an irregularity.  So we have to get location information from the
       # METHODS.
       assert not hasattr(obj, '__code__'), obj
-      assert path is None
+      #assert path is None
       assert line_num is None
 
-      self.classes[id_] = Class(obj)
+      self.classes[id_] = Class(obj, mod_name, mod_path)
 
     elif cls is not None:
       id_ = id(cls)
       descriptor = self.classes[id_]
-      descriptor.AddMethod(obj, path, line_num)
+      descriptor.AddMethod(obj, mod_name, mod_path, line_num)
 
     else:
-      self.functions.append((obj, path, line_num))
+      self.functions.append((obj, mod_name, mod_path, line_num))
 
     return True
 
@@ -281,25 +308,66 @@ class Symbols(object):
     # Now categorize into files.  We couldn't do that earlier because classes
     # don't know where they are located!
 
-    # TODO:
-    # - ASDL classes don't know where they are, because they don't have
-    # methods!
-    # - Builtin methods like os.fork() doesn't know what module it's in
-    # either!
+    py_srcs = collections.defaultdict(SourceFile)
+    c_srcs = collections.defaultdict(SourceFile)
 
-    srcs = collections.defaultdict(SourceFile)
-    for func, path, line_num in self.functions:
-      srcs[path].functions.append((func, line_num))
+    for func, mod_name, mod_path, line_num in self.functions:
+      if mod_path:
+        py_srcs[mod_path].functions.append((func, line_num))
+      else:
+        c_srcs[mod_name].functions.append((func, line_num))
 
     for cls in self.classes.values():
-      srcs[cls.Path()].classes.append(cls)
+      #if cls.cls.__name__ == 'lex_mode_e':
+      #  log('!!! %s', cls)
 
-    for path in sorted(srcs):
-      src = srcs[path]
+      if cls.mod_path:
+        py_srcs[cls.mod_path].classes.append(cls)
+      else:
+        c_srcs[cls.mod_name].classes.append(cls)
+
+    prefix = os.getcwd()
+    n = len(prefix) + 1
+
+    #for name in sorted(py_srcs):
+    #  print(name)
+
+    #return
+
+    print('PYTHON CODE')
+    print()
+
+    for path in sorted(py_srcs):
+      src = py_srcs[path]
+
+      if path is not None and path.startswith(prefix):
+        path = path[n:]
+
       print('%s' % path)
 
       for func, _ in src.functions:
-        has_code = hasattr(func, '__code__')
+        if path is None:
+          extra = ' [%s]' % sys.modules[func.__module__].__name__
+        else:
+          extra = ''
+        print('  %s%s' % (func.__name__, extra))
+
+      classes = [(c.Name(), c) for c in src.classes]
+      classes.sort()
+      for c in src.classes:
+        c.Print()
+
+      print()
+
+    print('NATIVE CODE')
+    print()
+
+    for mod_name in sorted(c_srcs):
+      src = c_srcs[mod_name]
+
+      print('%s' % mod_name)
+
+      for func, _ in src.functions:
         print('  %s' % func.__name__)
 
       classes = [(c.Name(), c) for c in src.classes]
