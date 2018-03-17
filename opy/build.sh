@@ -17,11 +17,6 @@ readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 source $THIS_DIR/common.sh
 source $THIS_DIR/../build/common.sh  # for OIL_SYMLINKS
 
-grammar() {
-  mkdir -p _tmp
-  opy_ pgen2 $THIS_DIR/py27.grammar $THIS_DIR/$GRAMMAR
-}
-
 md5-manifest() {
   local tree=$1
   pushd $tree
@@ -47,6 +42,9 @@ _compile-tree() {
     local dest=${dest_tree}/${rel_path%.py}.${ext}
     mkdir -p $(dirname $dest)
 
+    # TODO: Get rid of stdlib (compile) and compiler2.  Now that OPy works, we
+    # just want opy and ccompile.
+
     if test $version = stdlib; then
       _stdlib-compile-one $src_tree/${rel_path} $dest
     elif test $version = compiler2; then
@@ -65,6 +63,7 @@ _compile-tree() {
 }
 
 # Like _compile-tree, but takes pairs on stdin.
+# Used by the Makefile.
 compile-manifest() {
   local dest_dir=$1
   while read full_src_path rel_dest_path; do
@@ -97,18 +96,13 @@ make-mains() {
   done
 }
 
-# TODO: Consolidate with the normal build.  This is like
-# build/oil-manifest.txt.  The Makefile rule for _build/oil/bytecode.zip calls
-# actions.sh files-manifest.
+# TODO: This should be for unit tests only.  Probably don't need "mains".
+#
+# It overlaps with the normal build.  This is like build/oil-manifest.txt, but
+# it's missing some stuff like the help.  The Makefile rule for
+# _build/oil/bytecode.zip calls actions.sh files-manifest.
 #
 # Instead of printing .pyc, modify build/app_deps.py to print _tmp/oil/*.pyc !
-#
-# And then write a script to run spec tests against the oil-opy.ovm debug
-# oil1.ovm
-# oil1.ovm-dbg
-#
-# oil-with-cpython.ovm
-# oil-with-cpython.ovm-dbg
 
 _fill-oil-tree() {
   local dir=${1:-_tmp/oil-opy}
@@ -122,7 +116,19 @@ _fill-oil-tree() {
   # Needed for help text.
   ln -v -s -f --no-target-directory $PWD/../_build $dir/_build
 
-  make-mains $dir
+  #make-mains $dir
+}
+
+# NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
+# Has some similiarity to test/lint.sh, but not the same.
+oil-repo-files() {
+  local src=$1
+  find $src -name _tmp -a -prune -o \
+            -name _chroot -a -prune -o \
+            -name _deps -a -prune -o \
+            -name cpython-full -a -prune -o \
+            -name Python-2.7.13 -a -prune -o \
+            -name '*.py' -a -printf '%P\n'
 }
 
 # Compile with both compile() and OPy.
@@ -132,18 +138,8 @@ _fill-oil-tree() {
 # - This could be part of the Travis build.  It will ensure no Python 2
 # print statements sneak in.
 oil-repo() {
-  local src=$(cd .. && echo $PWD)
-
-  # NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
-  local files=( $(find $src \
-              -name _tmp -a -prune -o \
-              -name _chroot -a -prune -o \
-              -name cpython-full -a -prune -o \
-              -name _deps -a -prune -o \
-              -name Python-2.7.13 -a -prune -o \
-              -name opy -a -prune -o \
-              -name 'test' -a -prune -o \
-              -name '*.py' -a -printf '%P\n') )
+  local src=$(cd $THIS_DIR/.. && pwd)
+  local files=( $(oil-repo-files $src) )  # array
 
   _compile-tree $src _tmp/oil-ccompile/ ccompile "${files[@]}"
   _compile-tree $src _tmp/oil-opy/ opy "${files[@]}"

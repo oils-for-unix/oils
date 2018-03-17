@@ -35,7 +35,7 @@ osh-version() {
 
 # TODO:
 # - Run with oil.ovm{,-dbg}
-unit() {
+oil-unit() {
   local dir=${1:-_tmp/oil-opy}
   local vm=${2:-cpython}  # byterun or cpython
 
@@ -54,6 +54,10 @@ unit() {
     fi
   done
   popd
+}
+
+unit() {
+  PYTHONPATH=. "$@"
 }
 
 # NOTE: I checked with set -x that it's being run.  It might be nicer to be

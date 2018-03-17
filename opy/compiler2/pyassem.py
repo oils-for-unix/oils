@@ -6,8 +6,7 @@ import types
 import sys
 
 from . import misc
-from .consts \
-     import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
+from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
 class FlowGraph:
     def __init__(self):
