@@ -54,7 +54,7 @@ _compile-tree() {
     elif test $version = ccompile; then
       _ccompile-one $src_tree/${rel_path} $dest
     elif test $version = opy; then
-      _compile-one $src_tree/${rel_path} $dest
+      $THIS_DIR/../bin/opyc compile $src_tree/${rel_path} $dest
     else
       die "bad"
     fi

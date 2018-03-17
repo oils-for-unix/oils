@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 app_deps_test.py: Tests for app_deps.py
 """
@@ -19,7 +20,7 @@ class AppDepsTest(unittest.TestCase):
          '/home/andy/dev/simplejson-2.1.5/simplejson/__init__.py')
     ]
     for mod_type, x, y in app_deps.FilterModules(pairs):
-      print mod_type, x, y
+      print(mod_type, x, y)
 
 
 if __name__ == '__main__':

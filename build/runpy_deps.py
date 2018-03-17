@@ -1,4 +1,5 @@
 #!/usr/bin/python -S
+from __future__ import print_function
 """
 runpy_deps.py
 
@@ -64,17 +65,17 @@ def main(argv):
     with open(py_out_path, 'w') as py_out, open(c_out_path, 'w') as c_out:
       for mod_type, x, y in FilterModules(sys.modules, stdlib_dir):
         if mod_type == PY_MODULE:
-          print >>py_out, x, y
-          print >>py_out, x + 'c', y + 'c'  # .pyc goes in bytecode.zip too
+          print(x, y, file=py_out)
+          print(x + 'c', y + 'c', file=py_out)  # .pyc goes in bytecode.zip too
           pass
 
         elif mod_type == C_MODULE:
-          print >>c_out, x, y  # mod_name, full_path
+          print(x, y, file=c_out)  # mod_name, full_path
 
         else:
           raise AssertionError(mod_type)
 
-    print >>sys.stderr, '-- Wrote %s and %s' % (py_out_path, c_out_path)
+    print('-- Wrote %s and %s' % (py_out_path, c_out_path), file=sys.stderr)
 
   elif action == 'py':
     for mod_type, full_path, rel_path in \
@@ -82,7 +83,7 @@ def main(argv):
       if mod_type == PY_MODULE:
         opy_input = full_path
         opy_output = rel_path + 'c'  # output is .pyc
-        print opy_input, opy_output
+        print(opy_input, opy_output)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
@@ -92,5 +93,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, '%s: %s' % (sys.argv[0], e.args[0])
+    print('%s: %s' % (sys.argv[0], e.args[0]), file=sys.stderr)
     sys.exit(1)
