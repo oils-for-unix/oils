@@ -430,7 +430,7 @@ class PyFlowGraph(FlowGraph):
         self.cellvars = self.cellvars + cells.keys()
         self.closure = self.cellvars + self.freevars
 
-    def _lookupName(self, name, list):
+    def _lookupName(self, name, L):
         """Return index of name in list, appending if necessary
 
         This routine uses a list instead of a dictionary, because a
@@ -440,11 +440,11 @@ class PyFlowGraph(FlowGraph):
         comparison before comparing the values.
         """
         t = type(name)
-        for i in range(len(list)):
-            if t == type(list[i]) and list[i] == name:
+        for i in xrange(len(L)):
+            if t == type(L[i]) and L[i] == name:
                 return i
-        end = len(list)
-        list.append(name)
+        end = len(L)
+        L.append(name)
         return end
 
     _converters = {}
