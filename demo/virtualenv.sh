@@ -16,8 +16,8 @@ create() {
 }
 
 under-bash() {
-	# You can see PS1 change here.
-	bash -i <<EOF
+  # You can see PS1 change here.
+  bash -i <<EOF
 source $DIR/bin/activate
 echo DONE
 EOF
@@ -25,7 +25,7 @@ EOF
 
 # Hm there seem to be multiple things that don't work here.
 under-osh() {
-	bin/osh -i <<EOF
+  bin/osh -i <<EOF
 source $DIR/bin/activate
 echo DONE
 EOF

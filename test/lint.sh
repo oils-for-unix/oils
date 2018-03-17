@@ -61,10 +61,9 @@ bin-pep8() {
 # Language independent
 find-src() {
   # benchmarks/testdata should be excluded
-  find . '(' -name _tmp \
-          -o -name _chroot \
-          -o -name _deps \
-          -o -name _devbuild \
+  # excluding _build, _devbuild.  Although it might be OK to test generated
+  # code for tabs.
+  find . '(' -type d -a -name '_*' \
           -o -name testdata \
           -o -name $PY27 \
          ')' -a -prune \
