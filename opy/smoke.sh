@@ -154,10 +154,6 @@ opy-hello3() {
 # Doesn't suffice for for compiler2 determinism.
 #export PYTHONHASHSEED=0
 
-inspect-pyc() {
-  PYTHONPATH=. misc/inspect_pyc.py "$@"
-}
-
 # For comparing different bytecode.
 compare-bytecode() {
   local left=$1
@@ -166,8 +162,8 @@ compare-bytecode() {
   md5sum "$@"
   ls -l "$@"
 
-  inspect-pyc $left > _tmp/pyc-left.txt
-  inspect-pyc $right > _tmp/pyc-right.txt
+  opyc-dis $left > _tmp/pyc-left.txt
+  opyc-dis $right > _tmp/pyc-right.txt
   $DIFF _tmp/pyc-{left,right}.txt || true
 
   return
@@ -214,8 +210,22 @@ determinism-loop() {
   done
 }
 
+opyc-dis() { ../bin/opyc dis "$@"; }
+opyc-compile() { ../bin/opyc compile "$@"; }
+stdlib-compile() { misc/stdlib_compile.py "$@"; }
+
+# FAILS
 opy-determinism-loop() {
-  determinism-loop _compile-one ../core/lexer.py
+  #local file=../core/lexer.py
+  local file=../core/word_compile.py  # flanders has issue
+  determinism-loop opyc-compile $file
+}
+
+# FAILS
+stdlib-determinism-loop() {
+  #local file=../core/lexer.py
+  local file=../core/word_compile.py  # flanders has issue
+  determinism-loop stdlib-compile $file
 }
 
 # Not able to reproduce the non-determinism with d.keys()?  Why not?
