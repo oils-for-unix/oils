@@ -5,6 +5,7 @@ opy_main.py
 from __future__ import print_function
 
 import cStringIO
+import hashlib
 import optparse
 import os
 import sys
@@ -277,6 +278,24 @@ def OpyCommandMain(argv):
       v.Visit(f)
 
     v.Report(report_f)
+
+  elif action == 'dis-md5':
+    pyc_paths = argv[1:]
+    if not pyc_paths:
+      raise args.UsageError('dis-md5: At least one .pyc path is required.')
+
+    for path in pyc_paths:
+      h = hashlib.md5()
+      with open(path) as f:
+        magic = f.read(4)
+        h.update(magic)
+        ignored_timestamp = f.read(4)
+        while True:
+          b = f.read(64 * 1024)
+          if not b:
+            break
+          h.update(b)
+      print('%s %s' % (h.hexdigest(), path))
 
   # NOTE: Unused
   elif action == 'old-compile':

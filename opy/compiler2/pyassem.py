@@ -120,7 +120,7 @@ def order_blocks(start_block, exit_block):
     # A block is dominated by another block if that block must be emitted
     # before it.
     dominators = {}
-    for b in remaining:
+    for b in sorted(remaining):  # ANDY FIX: sorted() determinism
         if __debug__ and b.next:
             assert b is b.next[0].prev[0], (b, b.next)
         # Make sure every block appears in dominators, even if no
@@ -140,8 +140,8 @@ def order_blocks(start_block, exit_block):
 
     def find_next():
         # Find a block that can be emitted next.
-        for b in remaining:
-            for c in dominators[b]:
+        for b in sorted(remaining):  # ANDY FIX: sorted determinism
+            for c in sorted(dominators[b]):  # ditto
                 if c in remaining:
                     break # can't emit yet, dominated by a remaining block
             else:

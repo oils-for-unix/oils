@@ -198,20 +198,44 @@ determinism-loop() {
     $func $file _tmp/det/$name.1
     $func $file _tmp/det/$name.2
 
-    local size1=$(stat --format '%s' _tmp/det/$name.1)
-    local size2=$(stat --format '%s' _tmp/det/$name.2)
-    if test $size1 != $size2; then
-      echo "mismatched sizes: $size1 $size2"
-      # TODO: Import from run.sh
+    opyc-dis-md5 _tmp/det/$name.{1,2} | tee _tmp/det/md5.txt
+    awk '
+    NR == 1 { left = $1 } 
+    NR == 2 { right = $1 } 
+    END     { if (NR != 2) {
+                print "Expected two rows, got " NR
+                exit(1)
+              }
+              if (left != right) { 
+                print "FATAL: .pyc files are different!"
+                exit(1)
+              }
+            }
+    ' _tmp/det/md5.txt
+    local status=$?
+
+    if test $status != 0; then
       compare-bytecode _tmp/det/$name.{1,2}
       echo "Found problem after $i iterations"
       break
     fi
+
+    #local size1=$(stat --format '%s' _tmp/det/$name.1)
+    #local size2=$(stat --format '%s' _tmp/det/$name.2)
+
+    #if test $size1 != $size2; then
+    #  echo "mismatched sizes: $size1 $size2"
+    #  # TODO: Import from run.sh
+    #  compare-bytecode _tmp/det/$name.{1,2}
+    #  echo "Found problem after $i iterations"
+    #  break
+    #fi
   done
 }
 
-opyc-dis() { ../bin/opyc dis "$@"; }
 opyc-compile() { ../bin/opyc compile "$@"; }
+opyc-dis() { ../bin/opyc dis "$@"; }
+opyc-dis-md5() { ../bin/opyc dis-md5 "$@"; }
 stdlib-compile() { misc/stdlib_compile.py "$@"; }
 
 # FAILS
@@ -227,6 +251,9 @@ stdlib-determinism-loop() {
   local file=../core/word_compile.py  # flanders has issue
   determinism-loop stdlib-compile $file
 }
+
+# BUG: FlowGraph flattening was non-deterministic.  It's a graph that is
+# correct in several orders.  See order_blocks() in pyassem.py.
 
 # Not able to reproduce the non-determinism with d.keys()?  Why not?
 hash-determinism() {
