@@ -193,7 +193,9 @@ join-modules() {
 
 # To test building stdlib.
 clean-pyc() {
-  find $PY27/Lib -name '*.pyc' | xargs --no-run-if-empty -- rm --verbose
+  # skip _chroot, _tmp, etc.  But delete __init__.pyc
+  find . \( -type d -a -name '_*' -a -prune \) -o -name '*.pyc' -a -print |
+    xargs --no-run-if-empty -- rm --verbose
 }
 
 # NOTE: Not deleting _devbuild, including cpython-full.  Maybe we should, or

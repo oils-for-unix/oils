@@ -295,7 +295,7 @@ def OpyCommandMain(argv):
           if not b:
             break
           h.update(b)
-      print('%s %s' % (h.hexdigest(), path))
+      print('%6d %s %s' % (os.path.getsize(path), h.hexdigest(), path))
 
   # NOTE: Unused
   elif action == 'old-compile':

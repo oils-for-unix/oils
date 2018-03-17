@@ -139,7 +139,13 @@ def disassemble(co, indent, op_counts, f):
           oparg_str = None
 
           if op in dis.hasconst:
-            oparg_str = '(%r)' % (co.co_consts[oparg],)
+            c = co.co_consts[oparg]
+            if isinstance(c, types.CodeType):
+              # %r prints a memory address, which inhibits diffing
+              oparg_str = '(code object %s %s %s)' % (
+                  c.co_name, c.co_filename, c.co_firstlineno)
+            else:
+              oparg_str = '(%r)' % (c,)
 
           elif op in dis.hasname:
             oparg_str = '(%s)' % (co.co_names[oparg],)

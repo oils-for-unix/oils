@@ -32,12 +32,20 @@ linecount-pydeps() {
     tee _tmp/pydeps.txt | sort | uniq | xargs wc -l | sort -n
 }
 
-# Print table of [num_bytes pyc path]
-pyc-bytes() {
+pyc-files() {
   local app_name=${1:-oil}
+  awk '/\.pyc$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt
+}
 
-  awk '/\.pyc$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt |
+# Print table of [num_bytes pyc_path]
+pyc-bytes() {
+  pyc-files "$@" |
     tee _tmp/pycdeps.txt | sort | uniq | xargs wc --bytes | sort -n
+}
+
+# Print table of [md5 pyc path]
+pyc-md5() {
+  pyc-files "$@" | xargs bin/opyc dis-md5
 }
 
 _tar-lines() {

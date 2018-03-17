@@ -200,8 +200,8 @@ determinism-loop() {
 
     opyc-dis-md5 _tmp/det/$name.{1,2} | tee _tmp/det/md5.txt
     awk '
-    NR == 1 { left = $1 } 
-    NR == 2 { right = $1 } 
+    NR == 1 { left = $2 } 
+    NR == 2 { right = $2 } 
     END     { if (NR != 2) {
                 print "Expected two rows, got " NR
                 exit(1)
@@ -241,7 +241,8 @@ stdlib-compile() { misc/stdlib_compile.py "$@"; }
 # FAILS
 opy-determinism-loop() {
   #local file=../core/lexer.py
-  local file=../core/word_compile.py  # flanders has issue
+  #local file=../core/word_compile.py  # FIXED
+  local file=../Python-2.7.13/Lib/genericpath.py
   determinism-loop opyc-compile $file
 }
 
@@ -268,6 +269,41 @@ hash-determinism() {
 
 hash-determinism-loop() {
   determinism-loop hash-determinism
+}
+
+rebuild-and-md5() {
+  cd ..
+  make clean-repo
+  make _build/opy/py27.grammar.pickle
+  make _bin/oil.ovm-dbg
+  local out=_tmp/pyc-md5.txt
+  build/metrics.sh pyc-md5 | sort -n | tee $out
+
+  log ""
+  log "Wrote $out"
+}
+
+copy-left-right() {
+  local src=flanders.local:~/git/oilshell/oil
+  mkdir -p _tmp/flanders _tmp/lisa
+  scp $src/_build/oil/bytecode-opy.zip $src/_tmp/flanders.pyc-md5.txt _tmp/flanders
+  src=..
+  cp -v $src/_build/oil/bytecode-opy.zip $src/_tmp/lisa.pyc-md5.txt _tmp/lisa
+}
+
+unzip-left-right() {
+  for host in lisa flanders; do
+    pushd _tmp/$host
+    unzip bytecode-opy.zip core/word_compile.pyc
+    popd
+  done
+}
+
+diff-left-right() {
+  for host in lisa flanders; do
+    opyc-dis _tmp/$host/core/word_compile.pyc > _tmp/$host/word_compile.dis
+  done
+  diff -u _tmp/{lisa,flanders}/word_compile.dis
 }
 
 if test $(basename $0) = 'smoke.sh'; then
