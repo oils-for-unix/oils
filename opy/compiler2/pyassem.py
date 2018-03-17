@@ -120,7 +120,7 @@ def order_blocks(start_block, exit_block):
     # A block is dominated by another block if that block must be emitted
     # before it.
     dominators = {}
-    for b in sorted(remaining):  # ANDY FIX: sorted() determinism
+    for b in remaining:
         if __debug__ and b.next:
             assert b is b.next[0].prev[0], (b, b.next)
         # Make sure every block appears in dominators, even if no
@@ -140,8 +140,8 @@ def order_blocks(start_block, exit_block):
 
     def find_next():
         # Find a block that can be emitted next.
-        for b in sorted(remaining):  # ANDY FIX: sorted determinism
-            for c in sorted(dominators[b]):  # ditto
+        for b in remaining:
+            for c in dominators[b]:
                 if c in remaining:
                     break # can't emit yet, dominated by a remaining block
             else:
@@ -174,6 +174,12 @@ class Block:
         self.next = []
         self.prev = []
         Block._count = Block._count + 1
+
+    # BUG FIX: This is needed for deterministic order in sets (and dicts?).
+    # See order_blocks() below.  remaining is set() of blocks.  If we rely on
+    # the default id(), then the output bytecode is NONDETERMINISTIC.
+    def __hash__(self):
+        return self.bid
 
     def __repr__(self):
         if self.label:

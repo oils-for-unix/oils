@@ -241,8 +241,8 @@ stdlib-compile() { misc/stdlib_compile.py "$@"; }
 # FAILS
 opy-determinism-loop() {
   #local file=../core/lexer.py
-  #local file=../core/word_compile.py  # FIXED
-  local file=../Python-2.7.13/Lib/genericpath.py
+  local file=../core/word_compile.py  # FIXED
+  #local file=../Python-2.7.13/Lib/genericpath.py
   determinism-loop opyc-compile $file
 }
 
@@ -286,9 +286,17 @@ rebuild-and-md5() {
 copy-left-right() {
   local src=flanders.local:~/git/oilshell/oil
   mkdir -p _tmp/flanders _tmp/lisa
-  scp $src/_build/oil/bytecode-opy.zip $src/_tmp/flanders.pyc-md5.txt _tmp/flanders
+  scp $src/_build/oil/bytecode-opy.zip $src/_tmp/pyc-md5.txt _tmp/flanders
   src=..
-  cp -v $src/_build/oil/bytecode-opy.zip $src/_tmp/lisa.pyc-md5.txt _tmp/lisa
+  cp -v $src/_build/oil/bytecode-opy.zip $src/_tmp/pyc-md5.txt _tmp/lisa
+}
+
+diff-left-right() {
+  if diff _tmp/{lisa,flanders}/pyc-md5.txt; then
+    echo SAME
+  else
+    echo DIFFERENT
+  fi
 }
 
 unzip-left-right() {
@@ -299,7 +307,7 @@ unzip-left-right() {
   done
 }
 
-diff-left-right() {
+diff-one-left-right() {
   for host in lisa flanders; do
     opyc-dis _tmp/$host/core/word_compile.pyc > _tmp/$host/word_compile.dis
   done
