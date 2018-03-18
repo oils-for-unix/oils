@@ -125,16 +125,17 @@ class Module(AbstractCompileMode):
 class LocalNameFinder:
     """Find local names in scope"""
     def __init__(self, names=()):
-        self.names = misc.Set()
-        self.globals = misc.Set()
+        self.names = set()
+        self.globals = set()
         for name in names:
             self.names.add(name)
 
     # XXX list comprehensions and for loops
 
     def getLocals(self):
-        for elt in self.globals.elements():
-            if self.names.has_elt(elt):
+        # TODO: set difference
+        for elt in self.globals:
+            if elt in self.names:
                 self.names.remove(elt)
         return self.names
 

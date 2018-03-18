@@ -12,7 +12,7 @@ class FlowGraph:
     def __init__(self):
         self.current = self.entry = Block()
         self.exit = Block("exit")
-        self.blocks = misc.Set()
+        self.blocks = set()
         self.blocks.add(self.entry)
         self.blocks.add(self.exit)
 
@@ -82,7 +82,7 @@ class FlowGraph:
         return order
 
     def getBlocks(self):
-        return self.blocks.elements()
+        return self.blocks
 
     def getRoot(self):
         """Return nodes appropriate for use with dominator"""

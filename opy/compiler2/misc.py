@@ -8,41 +8,6 @@ def flatten(tup):
             elts.append(elt)
     return elts
 
-class Set:
-    def __init__(self):
-        self.elts = {}
-    def __len__(self):
-        return len(self.elts)
-    def __contains__(self, elt):
-        return elt in self.elts
-    def add(self, elt):
-        self.elts[elt] = elt
-
-    def elements(self):
-        # BUG FIX: bytecode is NON-DETERMINISTIC without this.
-        #
-        # This fixes ./smoke.sh opy-determinism-loop.  It runs for 100
-        # iterations successfully with this fix.  It always fails within 100
-        # without this fix.
-        
-        # I thought that Python 2.7's dictionary order was arbitrary but
-        # deterministic.  PYTHONHASHSEED=random is opt-in; the default should
-        # be PYTHONHASHSEED=0.
-
-        # TODO: What happens if we get rid of Set() and use the builtin set()?
-
-        #return self.elts.keys()
-        return sorted(self.elts.iterkeys())
-
-    def has_elt(self, elt):
-        return elt in self.elts
-    def remove(self, elt):
-        del self.elts[elt]
-    def copy(self):
-        c = Set()
-        c.elts.update(self.elts)
-        return c
-
 class Stack:
     def __init__(self):
         self.stack = []
