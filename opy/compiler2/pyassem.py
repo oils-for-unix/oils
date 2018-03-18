@@ -15,6 +15,24 @@ HAS_JABS = set(dis.opname[op] for op in dis.hasjabs)
 OPNUM = dict((name, i) for i, name in enumerate(dis.opname))
 
 
+def _NameToIndex(name, L):
+    """Return index of name in list, appending if necessary
+
+    This routine uses a list instead of a dictionary, because a
+    dictionary can't store two different keys if the keys have the
+    same value but different types, e.g. 2 and 2L.  The compiler
+    must treat these two separately, so it does an explicit type
+    comparison before comparing the values.
+    """
+    t = type(name)
+    for i in xrange(len(L)):
+        if t == type(L[i]) and L[i] == name:
+            return i
+    end = len(L)
+    L.append(name)
+    return end
+
+
 # NOTE: Similar to ast.flatten().
 def flatten(tup):
     elts = []
@@ -24,6 +42,15 @@ def flatten(tup):
         else:
             elts.append(elt)
     return elts
+
+
+def getArgCount(args):
+    n = len(args)
+    if args:
+        for arg in args:
+            if isinstance(arg, TupleArg):
+                n -= len(flatten(arg.names))
+    return n
 
 
 def ComputeStackDepth(graph):
@@ -36,7 +63,7 @@ def ComputeStackDepth(graph):
     depth = {}
     exit = None
     for b in graph.getBlocks():
-        depth[b] = findDepth(b.getInstructions())
+        depth[b] = TRACKER.findDepth(b.getInstructions())
 
     seen = {}
 
@@ -89,7 +116,29 @@ def FlattenGraph(blocks):
     return insts
 
 
+def MakeLineAddrTable(insts):
+    lnotab = LineAddrTable()
+    for t in insts:
+        opname = t[0]
+        if len(t) == 1:
+            lnotab.addCode(OPNUM[opname])
+        else:
+            oparg = t[1]
+            if opname == "SET_LINENO":
+                lnotab.nextLine(oparg)
+                continue
+            hi, lo = divmod(oparg, 256)
+            try:
+                lnotab.addCode(OPNUM[opname], lo, hi)
+            except ValueError:
+                print(opname, oparg)
+                print(OPNUM[opname], lo, hi)
+                raise
+    return lnotab
+
+
 class FlowGraph(object):
+
     def __init__(self):
         self.current = self.entry = Block()
         self.exit = Block("exit")
@@ -245,7 +294,7 @@ class Block(object):
         self.bid = Block._count
         self.next = []
         self.prev = []
-        Block._count = Block._count + 1
+        Block._count += 1
 
     # BUG FIX: This is needed for deterministic order in sets (and dicts?).
     # See order_blocks() below.  remaining is set() of blocks.  If we rely on
@@ -322,29 +371,41 @@ class Block(object):
                 contained.append(op.graph)
         return contained
 
-# flags for code objects
 
 # the FlowGraph is transformed in place; it exists in one of these states
 RAW = "RAW"
-FLAT = "FLAT"
 CONV = "CONV"
-DONE = "DONE"
 
 class PyFlowGraph(FlowGraph):
-    super_init = FlowGraph.__init__
+    """Something that gets turned into a single code object.
+
+    Code objects and consts are mutually recursive.
+
+    Instantiated by compile() (3 cases), and by AbstractFunctionCode and
+    AbstractClassCode.
+
+    TODO: Separate FlowGraph from PyFlowGraph.
+    Make a function
+
+    code_object = Assemble(flow_graph)
+    """
 
     def __init__(self, name, filename, args=(), optimized=0, klass=None):
-        self.super_init()
+        FlowGraph.__init__(self)
+
         self.name = name  # name that is put in the code object
         self.filename = filename
         self.docstring = None
-        self.args = args # XXX
+        self.args = args
         self.argcount = getArgCount(args)
         self.klass = klass
         if optimized:
             self.flags = CO_OPTIMIZED | CO_NEWLOCALS
         else:
             self.flags = 0
+
+        # TODO: All of these go in the code object.  Might want to separate
+        # them.
         self.consts = []
         self.names = []
         # Free variables found by the symbol table scan, including
@@ -357,10 +418,10 @@ class PyFlowGraph(FlowGraph):
         # kinds of variables.
         self.closure = []
         self.varnames = list(args) or []
-        for i in range(len(self.varnames)):
-            var = self.varnames[i]
+        for i, var in enumerate(self.varnames):
             if isinstance(var, TupleArg):
                 self.varnames[i] = var.getName()
+
         self.stage = RAW
 
     def setDocstring(self, doc):
@@ -369,7 +430,7 @@ class PyFlowGraph(FlowGraph):
     def setFlag(self, flag):
         self.flags = self.flags | flag
         if flag == CO_VARARGS:
-            self.argcount = self.argcount - 1
+            self.argcount -= 1
 
     def checkFlag(self, flag):
         if self.flags & flag:
@@ -382,15 +443,57 @@ class PyFlowGraph(FlowGraph):
         self.cellvars = names
 
     def getCode(self, stacksize):
-        """Get a Python code object"""
+        """Assemble a Python code object."""
+
+        # TODO: Split into two representations?
+        # Graph and insts?
+
+        # walk(gen, as_tree) produces a graph, with varnames mutated
+        # Then we assemble graph into a flattened representation.  But we have
+        # to look up varnames.
+        #
+        # Really we need a shared varnames representation.
+
         assert self.stage == RAW
-        self.flattenGraph()
-        assert self.stage == FLAT
-        self.convertArgs()
+
+        blocks = order_blocks(self.entry, self.exit)
+        insts = FlattenGraph(blocks)
+
+        self.consts.insert(0, self.docstring)
+
+        # NOTE: overwrites self.cellvars, self.closure
+        self._sort_cellvars()
+
+        # Mutates insts, as well as self.names, varnames, etc.
+        self.convertArgs(insts)
         assert self.stage == CONV
-        self.makeByteCode()
-        assert self.stage == DONE
-        return self.newCodeObject(stacksize)
+
+        lnotab = MakeLineAddrTable(insts)
+
+        if (self.flags & CO_NEWLOCALS) == 0:
+            nlocals = 0
+        else:
+            nlocals = len(self.varnames)
+
+        if self.flags & CO_VARKEYWORDS:
+            self.argcount -= 1
+
+        consts = []
+        for elt in self.consts:
+            if isinstance(elt, PyFlowGraph):
+                elt = elt.getCode()
+            consts.append(elt)
+
+        return types.CodeType(
+            self.argcount, nlocals, stacksize, self.flags,
+            lnotab.getCode(),
+            tuple(consts),
+            tuple(self.names),
+            tuple(self.varnames),
+            self.filename, self.name, lnotab.firstline,
+            lnotab.getTable(),
+            tuple(self.freevars),
+            tuple(self.cellvars))
 
     def dump(self, io=None):
         if io:
@@ -410,28 +513,18 @@ class PyFlowGraph(FlowGraph):
         if io:
             sys.stdout = save
 
-    def flattenGraph(self):
-        """Arrange the blocks in order and resolve jumps"""
-        assert self.stage == RAW
-        blocks = order_blocks(self.entry, self.exit)
-        self.insts = FlattenGraph(blocks)
-        self.stage = FLAT
+    def convertArgs(self, insts):
+        """Convert arguments from symbolic to concrete form
 
-    def convertArgs(self):
-        """Convert arguments from symbolic to concrete form"""
-        assert self.stage == FLAT
-
-        self.consts.insert(0, self.docstring)
-
-        # NOTE: overwrites self.cellvars, self.closure
-        self._sort_cellvars()
-
-        for i, t in enumerate(self.insts):
+        Mutates the insts argument.  The converters mutate self.names,
+        self.varnames, etc.
+        """
+        for i, t in enumerate(insts):
             if len(t) == 2:
                 opname, oparg = t
                 conv = self._converters.get(opname, None)
                 if conv:
-                    self.insts[i] = opname, conv(self, oparg)
+                    insts[i] = opname, conv(self, oparg)
 
         self.stage = CONV
 
@@ -447,44 +540,27 @@ class PyFlowGraph(FlowGraph):
         self.cellvars = self.cellvars + cells.keys()
         self.closure = self.cellvars + self.freevars
 
-    def _lookupName(self, name, L):
-        """Return index of name in list, appending if necessary
-
-        This routine uses a list instead of a dictionary, because a
-        dictionary can't store two different keys if the keys have the
-        same value but different types, e.g. 2 and 2L.  The compiler
-        must treat these two separately, so it does an explicit type
-        comparison before comparing the values.
-        """
-        t = type(name)
-        for i in xrange(len(L)):
-            if t == type(L[i]) and L[i] == name:
-                return i
-        end = len(L)
-        L.append(name)
-        return end
-
     _converters = {}
     def _convert_LOAD_CONST(self, arg):
         if hasattr(arg, 'getCode'):
             arg = arg.getCode()
-        return self._lookupName(arg, self.consts)
+        return _NameToIndex(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):
-        self._lookupName(arg, self.names)
-        return self._lookupName(arg, self.varnames)
+        _NameToIndex(arg, self.names)
+        return _NameToIndex(arg, self.varnames)
     _convert_STORE_FAST = _convert_LOAD_FAST
     _convert_DELETE_FAST = _convert_LOAD_FAST
 
     def _convert_LOAD_NAME(self, arg):
         if self.klass is None:
-            self._lookupName(arg, self.varnames)
-        return self._lookupName(arg, self.names)
+            _NameToIndex(arg, self.varnames)
+        return _NameToIndex(arg, self.names)
 
     def _convert_NAME(self, arg):
         if self.klass is None:
-            self._lookupName(arg, self.varnames)
-        return self._lookupName(arg, self.names)
+            _NameToIndex(arg, self.varnames)
+        return _NameToIndex(arg, self.names)
     _convert_STORE_NAME = _convert_NAME
     _convert_DELETE_NAME = _convert_NAME
     _convert_IMPORT_NAME = _convert_NAME
@@ -497,15 +573,15 @@ class PyFlowGraph(FlowGraph):
     _convert_DELETE_GLOBAL = _convert_NAME
 
     def _convert_DEREF(self, arg):
-        self._lookupName(arg, self.names)
-        self._lookupName(arg, self.varnames)
-        return self._lookupName(arg, self.closure)
+        _NameToIndex(arg, self.names)
+        _NameToIndex(arg, self.varnames)
+        return _NameToIndex(arg, self.closure)
     _convert_LOAD_DEREF = _convert_DEREF
     _convert_STORE_DEREF = _convert_DEREF
 
     def _convert_LOAD_CLOSURE(self, arg):
-        self._lookupName(arg, self.varnames)
-        return self._lookupName(arg, self.closure)
+        _NameToIndex(arg, self.varnames)
+        return _NameToIndex(arg, self.closure)
 
     _cmp = list(dis.cmp_op)
     def _convert_COMPARE_OP(self, arg):
@@ -519,60 +595,7 @@ class PyFlowGraph(FlowGraph):
             _converters[opname] = obj
     del name, obj, opname
 
-    def makeByteCode(self):
-        assert self.stage == CONV
-        self.lnotab = lnotab = LineAddrTable()
-        for t in self.insts:
-            opname = t[0]
-            if len(t) == 1:
-                lnotab.addCode(OPNUM[opname])
-            else:
-                oparg = t[1]
-                if opname == "SET_LINENO":
-                    lnotab.nextLine(oparg)
-                    continue
-                hi, lo = twobyte(oparg)
-                try:
-                    lnotab.addCode(OPNUM[opname], lo, hi)
-                except ValueError:
-                    print(opname, oparg)
-                    print(OPNUM[opname], lo, hi)
-                    raise
-        self.stage = DONE
 
-    def newCodeObject(self, stacksize):
-        assert self.stage == DONE
-        if (self.flags & CO_NEWLOCALS) == 0:
-            nlocals = 0
-        else:
-            nlocals = len(self.varnames)
-        argcount = self.argcount
-        if self.flags & CO_VARKEYWORDS:
-            argcount = argcount - 1
-        return types.CodeType(
-            argcount, nlocals, stacksize, self.flags,
-            self.lnotab.getCode(), self.getConsts(),
-            tuple(self.names), tuple(self.varnames),
-            self.filename, self.name, self.lnotab.firstline,
-            self.lnotab.getTable(), tuple(self.freevars),
-            tuple(self.cellvars))
-
-    def getConsts(self):
-        """Return a tuple for the const slot of the code object
-
-        Must convert references to code (MAKE_FUNCTION) to code
-        objects recursively.
-        """
-        l = []
-        for elt in self.consts:
-            if isinstance(elt, PyFlowGraph):
-                elt = elt.getCode()
-            l.append(elt)
-        return tuple(l)
-
-def isJump(opname):
-    if opname[:4] == 'JUMP':
-        return 1
 
 class TupleArg(object):
     """Helper for marking func defs with nested tuples in arglist"""
@@ -584,19 +607,6 @@ class TupleArg(object):
     def getName(self):
         return ".%d" % self.count
 
-def getArgCount(args):
-    argcount = len(args)
-    if args:
-        for arg in args:
-            if isinstance(arg, TupleArg):
-                numNames = len(flatten(arg.names))
-                argcount = argcount - numNames
-    return argcount
-
-def twobyte(val):
-    """Convert an int argument into high and low bytes"""
-    assert isinstance(val, int)
-    return divmod(val, 256)
 
 class LineAddrTable(object):
     """lnotab
@@ -664,7 +674,8 @@ class LineAddrTable(object):
     def getTable(self):
         return ''.join(map(chr, self.lnotab))
 
-class StackDepthTracker:
+
+class StackDepthTracker(object):
     # XXX 1. need to keep track of stack depth on jumps
     # XXX 2. at least partly as a result, this code is broken
 
@@ -774,4 +785,7 @@ class StackDepthTracker:
     def DUP_TOPX(self, argc):
         return argc
 
-findDepth = StackDepthTracker().findDepth
+
+TRACKER = StackDepthTracker()
+
+

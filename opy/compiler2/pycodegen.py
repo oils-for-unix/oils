@@ -1250,6 +1250,23 @@ class InteractiveCodeGenerator(TopLevelCodeGenerator):
         self.emit('PRINT_EXPR')
 
 
+def _GenerateArgList(arglist):
+    """Generate an arg list marking TupleArgs"""
+    args = []
+    extra = []
+    count = 0
+    for i, elt in enumerate(arglist):
+        if isinstance(elt, str):
+            args.append(elt)
+        elif isinstance(elt, tuple):
+            args.append(pyassem.TupleArg(i * 2, elt))
+            extra.extend(misc.flatten(elt))
+            count += 1
+        else:
+            raise ValueError("unexpect argument type: %s" % elt)
+    return args + extra, count
+
+
 class AbstractFunctionCode(object):
     optimized = 1
     lambdaCount = 0
@@ -1264,7 +1281,7 @@ class AbstractFunctionCode(object):
         else:
             name = func.name
 
-        args, hasTupleArg = generateArgList(func.argnames)
+        args, hasTupleArg = _GenerateArgList(func.argnames)
         self.graph = pyassem.PyFlowGraph(name, func.filename, args,
                                          optimized=1)
         self.isLambda = isLambda
@@ -1309,6 +1326,7 @@ class AbstractFunctionCode(object):
 
     unpackTuple = unpackSequence
 
+
 class FunctionCodeGenerator(AbstractFunctionCode, CodeGenerator):
     super_init = CodeGenerator.__init__ # call be other init
     scopes = None
@@ -1324,8 +1342,8 @@ class FunctionCodeGenerator(AbstractFunctionCode, CodeGenerator):
         if self.scope.generator is not None:
             self.graph.setFlag(CO_GENERATOR)
 
-class GenExprCodeGenerator(AbstractFunctionCode,
-                           CodeGenerator):
+
+class GenExprCodeGenerator(AbstractFunctionCode, CodeGenerator):
     super_init = CodeGenerator.__init__ # call be other init
     scopes = None
 
@@ -1344,7 +1362,8 @@ class GenExprCodeGenerator(AbstractFunctionCode,
         self.graph.setCellVars(self.scope.get_cell_vars())
         self.graph.setFlag(CO_GENERATOR)
 
-class AbstractClassCode:
+
+class AbstractClassCode(object):
 
     def __init__(self, klass, scopes, module):
         self.class_name = klass.name
@@ -1366,6 +1385,7 @@ class AbstractClassCode:
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
 
+
 class ClassCodeGenerator(AbstractClassCode, CodeGenerator):
     super_init = CodeGenerator.__init__
     scopes = None
@@ -1385,22 +1405,6 @@ class ClassCodeGenerator(AbstractClassCode, CodeGenerator):
             self.emit("LOAD_CONST", klass.doc)
             self.storeName('__doc__')
 
-def generateArgList(arglist):
-    """Generate an arg list marking TupleArgs"""
-    args = []
-    extra = []
-    count = 0
-    for i in range(len(arglist)):
-        elt = arglist[i]
-        if isinstance(elt, str):
-            args.append(elt)
-        elif isinstance(elt, tuple):
-            args.append(pyassem.TupleArg(i * 2, elt))
-            extra.extend(misc.flatten(elt))
-            count = count + 1
-        else:
-            raise ValueError, "unexpect argument type:", elt
-    return args + extra, count
 
 def findOp(node):
     """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
@@ -1411,6 +1415,7 @@ def findOp(node):
 class OpFinder(object):
     def __init__(self):
         self.op = None
+
     def visitAssName(self, node):
         if self.op is None:
             self.op = node.flags
@@ -1419,7 +1424,8 @@ class OpFinder(object):
     visitAssAttr = visitAssName
     visitSubscript = visitAssName
 
-class Delegator:
+
+class Delegator(object):
     """Base class to support delegation for augmented assignment nodes
 
     To generator code for augmented assignments, we use the following
