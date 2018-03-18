@@ -89,8 +89,8 @@ class Expression(AbstractCompileMode):
 
     mode = "eval"
 
-    def compile(self):
-        tree = self._get_tree()
+    def compile(self, transformer=None):
+        tree = self._get_tree(transformer=transformer)
         gen = ExpressionCodeGenerator(tree)
         self.code = gen.getCode()
 
@@ -98,8 +98,8 @@ class Interactive(AbstractCompileMode):
 
     mode = "single"
 
-    def compile(self):
-        tree = self._get_tree()
+    def compile(self, transformer=None):
+        tree = self._get_tree(transformer=transformer)
         gen = InteractiveCodeGenerator(tree)
         self.code = gen.getCode()
 

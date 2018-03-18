@@ -25,9 +25,6 @@ parseFile(path) -> AST
 #   http://www.opensource.org/licenses/bsd-license.html
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
-# NOTE: For the unused parser.suite() and parser.expr()
-import parser
-
 from .ast import *
 from .consts import CO_VARARGS, CO_VARKEYWORDS
 from .consts import OP_ASSIGN, OP_DELETE, OP_APPLY
@@ -261,11 +258,13 @@ class Transformer(object):
 
     def parsesuite(self, text):
         """Return a modified parse tree for the given suite text."""
-        return self.transform(parser.suite(text))
+        raise AssertionError("Shouldn't use stdlib parser")
+        #return self.transform(parser.suite(text))
 
     def parseexpr(self, text):
         """Return a modified parse tree for the given expression text."""
-        return self.transform(parser.expr(text))
+        raise AssertionError("Shouldn't use stdlib parser")
+        #return self.transform(parser.expr(text))
 
     def parsefile(self, file):
         """Return a modified parse tree for the contents of the given file."""
@@ -1566,6 +1565,11 @@ class Pgen2Transformer(Transformer):
 
   def parsesuite(self, text):
     tree = self.py_parser.suite(text)
+    #self.printer.Print(tree)
+    return self.transform(tree)
+
+  def parseexpr(self, text):
+    tree = self.py_parser.expr(text)
     #self.printer.Print(tree)
     return self.transform(tree)
 

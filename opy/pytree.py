@@ -365,24 +365,6 @@ class Leaf(Base):
 
     prefix = property(_prefix_getter, _prefix_setter)
 
-def convert(gr, raw_node):
-    """
-    Convert raw node information to a Node or Leaf instance.
-
-    This is passed to the parser driver which calls it whenever a reduction of a
-    grammar rule produces a new complete node, so that the tree is build
-    strictly bottom-up.
-    """
-    type, value, context, children = raw_node
-    if children or type in gr.number2symbol:
-        # If there's exactly one child, return that child instead of
-        # creating a new node.
-        if len(children) == 1:
-            return children[0]
-        return Node(type, children, context=context)
-    else:
-        return Leaf(type, value, context=context)
-
 
 class BasePattern(object):
 

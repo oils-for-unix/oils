@@ -19,6 +19,7 @@ import marshal
 #sys.path.append(os.path.join(this_dir))
 
 from .pgen2 import driver, pgen, grammar
+from .pgen2 import token
 from .pgen2 import tokenize
 from . import pytree
 
@@ -81,7 +82,14 @@ class Pgen2PythonParser(object):
     self.driver = driver
     self.start_symbol = start_symbol
 
+  # TODO: Remove this redundancy
   def suite(self, text):
+    f = cStringIO.StringIO(text)
+    tokens = tokenize.generate_tokens(f.readline)
+    tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
+    return tree
+
+  def expr(self, text):
     f = cStringIO.StringIO(text)
     tokens = tokenize.generate_tokens(f.readline)
     tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
@@ -136,6 +144,25 @@ def Options():
   return p
 
 
+# Emulating parser.st structures from parsermodule.c.
+# They have a totuple() method, which outputs tuples like this.
+def py2st(gr, raw_node):
+  typ, value, context, children = raw_node
+  # See pytree.Leaf
+  if context:
+    _, (lineno, column) = context
+  else:
+    lineno = 0  # default in Leaf
+    column = 0
+
+  if children:
+    return (typ,) + tuple(children)
+  else:
+    return (typ, value, lineno, column)
+
+# TODO: more actions:
+# - lex, parse, ast, cfg, compile/eval/repl
+
 # Made by the Makefile.
 PICKLE_REL_PATH = '_build/opy/py27.grammar.pickle'
 
@@ -150,7 +177,7 @@ def OpyCommandMain(argv):
   except IndexError:
     raise args.UsageError('opy: Missing required subcommand.')
 
-  if action in ('parse', 'compile'):
+  if action in ('parse', 'compile', 'eval', 'repl'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -175,30 +202,7 @@ def OpyCommandMain(argv):
     FILE_INPUT = None
     symbols = None
 
-  #do_glue = False
-  do_glue = True
-
-  if do_glue:  # Make it a flag
-    # Emulating parser.st structures from parsermodule.c.
-    # They have a totuple() method, which outputs tuples like this.
-    def py2st(gr, raw_node):
-      type, value, context, children = raw_node
-      # See pytree.Leaf
-      if context:
-        _, (lineno, column) = context
-      else:
-        lineno = 0  # default in Leaf
-        column = 0
-
-      if children:
-        return (type,) + tuple(children)
-      else:
-        return (type, value, lineno, column)
-    convert = py2st
-  else:
-    convert = pytree.convert
-
-  dr = driver.Driver(gr, convert=convert)
+  dr = driver.Driver(gr, convert=py2st)
 
   if action == 'pgen2':
     grammar_path = argv[1]
@@ -220,6 +224,13 @@ def OpyCommandMain(argv):
     printer = TupleTreePrinter(HostStdlibNames())
     printer.Print(tree)
 
+  elif action == 'lex':
+    py_path = argv[1]
+    with open(py_path) as f:
+      tokens = tokenize.generate_tokens(f.readline)
+      for typ, val, start, end, unused_line in tokens:
+        print('%10s %10s %-10s %r' % (start, end, token.tok_name[typ], val))
+
   elif action == 'parse':
     py_path = argv[1]
     with open(py_path) as f:
@@ -236,19 +247,15 @@ def OpyCommandMain(argv):
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
-  elif action == 'compile':
-    # 'opy compile' is pgen2 + compiler2
-
+  elif action == 'compile':  # 'opyc compile' is pgen2 + compiler2
     py_path = argv[1]
     out_path = argv[2]
 
-    if do_glue:
-      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-      printer = TupleTreePrinter(transformer._names)
-      tr = transformer.Pgen2Transformer(py_parser, printer)
-    else:
-      tr = transformer.Transformer()
+    py_parser = Pgen2PythonParser(dr, FILE_INPUT)
+    printer = TupleTreePrinter(transformer._names)
+    tr = transformer.Pgen2Transformer(py_parser, printer)
 
+    # TODO: It shouldn't suck the whole file in!  It should read it line by line.
     with open(py_path) as f:
       contents = f.read()
     co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
@@ -259,6 +266,34 @@ def OpyCommandMain(argv):
       h = pycodegen.getPycHeader(py_path)
       out_f.write(h)
       marshal.dump(co, out_f)
+
+  elif action == 'eval':  # Like compile, but parses to a code object and prints it
+    py_expr = argv[1]
+
+    py_parser = Pgen2PythonParser(dr, gr.symbol2number['eval_input'])
+    printer = TupleTreePrinter(transformer._names)
+    tr = transformer.Pgen2Transformer(py_parser, printer)
+
+    co = pycodegen.compile(py_expr, '<eval input>', 'eval', transformer=tr)
+
+    v = dis_tool.Visitor()
+    v.show_code(co)
+    print()
+    print('RESULT:')
+    print(eval(co))
+
+  elif action == 'repl':  # Like eval in a loop
+    while True:
+      py_expr = raw_input('opy> ')
+      py_parser = Pgen2PythonParser(dr, gr.symbol2number['eval_input'])
+      printer = TupleTreePrinter(transformer._names)
+      tr = transformer.Pgen2Transformer(py_parser, printer)
+
+      co = pycodegen.compile(py_expr, '<eval input>', 'eval', transformer=tr)
+
+      v = dis_tool.Visitor()
+      v.show_code(co)
+      print(eval(co))
 
   elif action == 'dis':
     pyc_path = argv[1]
@@ -293,29 +328,6 @@ def OpyCommandMain(argv):
             break
           h.update(b)
       print('%6d %s %s' % (os.path.getsize(path), h.hexdigest(), path))
-
-  # NOTE: Unused
-  elif action == 'old-compile':
-    py_path = argv[1]
-    out_path = argv[2]
-
-    if do_glue:
-      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-      printer = TupleTreePrinter(transformer._names)
-      tr = transformer.Pgen2Transformer(py_parser, printer)
-    else:
-      tr = transformer.Transformer()
-
-    f = open(py_path)
-    contents = f.read()
-    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-    log("Code length: %d", len(co.co_code))
-
-    # Write the .pyc file
-    with open(out_path, 'wb') as out_f:
-      h = pycodegen.getPycHeader(py_path)
-      out_f.write(h)
-      marshal.dump(co, out_f)
 
   # TODO: Not used
   elif action == 'compile2':
