@@ -34,7 +34,7 @@
    823 5a440f929760bbd1f36d3bfa4b3779f8 _tmp/regtest/core/word_eval_test.pyc
    834 4a3120879710a4fd9f9d6039e4dade55 _tmp/regtest/opy/compiler2/consts.pyc
    845 0eea196e032e82f3ddc932265ce3b640 _tmp/regtest/asdl/arith_ast.pyc
-   909 b82e6bdb2652220742231fbe2bd14221 _tmp/regtest/opy/util_opy.pyc
+   899 0dd9d5f5018f43b257a438ad9680d1c1 _tmp/regtest/opy/util_opy.pyc
   1010 338f3f9966140f857e952f610a3918db _tmp/regtest/spec/bin/read_from_fd.pyc
   1055 651a2aa19c35c6a1c53b70ee16e37fd8 _tmp/regtest/spec/bin/show_fd_table.pyc
   1087 e71ef76eb83b1759818169d3e070d474 _tmp/regtest/opy/callgraph_test.pyc
