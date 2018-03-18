@@ -8,7 +8,7 @@ import sys
 from . import misc
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
-class FlowGraph:
+class FlowGraph(object):
     def __init__(self):
         self.current = self.entry = Block()
         self.exit = Block("exit")
@@ -162,7 +162,7 @@ def order_blocks(start_block, exit_block):
     return order
 
 
-class Block:
+class Block(object):
     _count = 0
 
     def __init__(self, label=''):
@@ -566,7 +566,7 @@ def isJump(opname):
     if opname[:4] == 'JUMP':
         return 1
 
-class TupleArg:
+class TupleArg(object):
     """Helper for marking func defs with nested tuples in arglist"""
     def __init__(self, count, names):
         self.count = count
@@ -590,7 +590,7 @@ def twobyte(val):
     assert isinstance(val, int)
     return divmod(val, 256)
 
-class LineAddrTable:
+class LineAddrTable(object):
     """lnotab
 
     This class builds the lnotab, which is documented in compile.c.

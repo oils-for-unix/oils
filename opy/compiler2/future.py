@@ -15,7 +15,7 @@ def is_future(stmt):
     else:
         return 0
 
-class FutureParser:
+class FutureParser(object):
 
     features = ("nested_scopes", "generators", "division",
                 "absolute_import", "with_statement", "print_function",
@@ -46,7 +46,7 @@ class FutureParser:
         """Return list of features enabled by future statements"""
         return self.found.keys()
 
-class BadFutureParser:
+class BadFutureParser(object):
     """Check for invalid future statements"""
 
     def visitFrom(self, node):

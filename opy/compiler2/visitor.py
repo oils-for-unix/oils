@@ -2,7 +2,7 @@
 # XXX should probably rename ASTVisitor to ASTWalker
 # XXX can it be made even more generic?
 
-class ASTVisitor:
+class ASTVisitor(object):
     """Performs a depth-first walk of the AST
 
     The ASTVisitor will walk the AST, performing either a preorder or

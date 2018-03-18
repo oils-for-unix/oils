@@ -8,7 +8,7 @@ def flatten(tup):
             elts.append(elt)
     return elts
 
-class Stack:
+class Stack(object):
     def __init__(self):
         self.stack = []
         self.pop = self.stack.pop

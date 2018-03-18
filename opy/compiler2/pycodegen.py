@@ -123,7 +123,7 @@ class Module(AbstractCompileMode):
             print(pprint.pprint(tree))
         self.code = gen.getCode()
 
-class LocalNameFinder:
+class LocalNameFinder(object):
     """Find local names in scope"""
     def __init__(self, names=()):
         self.names = set()
@@ -173,7 +173,7 @@ def is_constant_false(node):
             return 1
     return 0
 
-class CodeGenerator:
+class CodeGenerator(object):
     """Defines basic code generator for Python bytecode
 
     This class is an abstract base class.  Concrete subclasses must
@@ -1278,7 +1278,7 @@ class CodeGenerator:
             self.emit('ROT_THREE')
             self.emit('STORE_SUBSCR')
 
-class NestedScopeMixin:
+class NestedScopeMixin(object):
     """Defines initClass() for nested scoping (Python 2.2-compatible)"""
     def initClass(self):
         self.__class__.NameFinder = LocalNameFinder
@@ -1498,7 +1498,7 @@ def findOp(node):
     walk(node, v, verbose=0)
     return v.op
 
-class OpFinder:
+class OpFinder(object):
     def __init__(self):
         self.op = None
     def visitAssName(self, node):

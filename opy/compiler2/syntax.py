@@ -17,7 +17,7 @@ def check(tree, multi=None):
     walk(tree, v)
     return v.errors
 
-class SyntaxErrorChecker:
+class SyntaxErrorChecker(object):
     """A visitor to find syntax errors in the AST."""
 
     def __init__(self, multi=None):

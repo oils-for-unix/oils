@@ -230,6 +230,10 @@ def _Walk(obj, cls, ref, syms):
       if callable(val):
         #log('VAL %s module %s', val, val.__module__)
         # Recursive call.
+
+        # Check for old style:
+        #if isinstance(val, types.ClassType):
+        #  print('OLD %s' % val)
         _Walk(val, None, ref, syms)
 
       # If the value is a class, walk its methods.  Note that we assume ALL
@@ -408,8 +412,8 @@ class Symbols(object):
       print('%s' % path)
 
       for func, ref, _ in src.functions:
-        #third = func
-        third = ''
+        third = func
+        #third = ''
         #print('  %s [%s] %s' % (func.__name__, '.'.join(ref), third))
         print('  %s' % func.__name__)
         PrintSig('    %s', func)

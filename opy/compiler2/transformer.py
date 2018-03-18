@@ -25,12 +25,16 @@ parseFile(path) -> AST
 #   http://www.opensource.org/licenses/bsd-license.html
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
+# NOTE: For the unused parser.suite() and parser.expr()
+import parser
+
 from .ast import *
 from .consts import CO_VARARGS, CO_VARKEYWORDS
 from .consts import OP_ASSIGN, OP_DELETE, OP_APPLY
 
 from ..pgen2 import token
 from ..pytree import type_repr
+
 
 
 symbol = None
@@ -222,7 +226,7 @@ def Node(*args):
         raise WalkerError, "Can't find appropriate Node type: %s" % str(args)
         #return apply(ast.Node, args)
 
-class Transformer:
+class Transformer(object):
     """Utility object for transforming Python parse trees.
 
     Exposes the following methods:

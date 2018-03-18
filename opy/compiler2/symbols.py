@@ -12,7 +12,7 @@ import sys
 
 MANGLE_LEN = 256
 
-class Scope:
+class Scope(object):
     # XXX how much information do I need about each name?
     def __init__(self, name, module, klass=None):
         self.name = name
@@ -210,7 +210,7 @@ class ClassScope(Scope):
     def __init__(self, name, module):
         self.__super_init(name, module, name)
 
-class SymbolVisitor:
+class SymbolVisitor(object):
     def __init__(self):
         self.scopes = {}
         self.klass = None
