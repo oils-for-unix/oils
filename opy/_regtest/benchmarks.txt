@@ -29,3 +29,15 @@ lisa:     3.46 lines / ms
 Slower than OSH parser!
 
 
+2018/03/18
+----------
+
+Did a bunch of major simplifications.  Hm seems to be no faster?  Slightly
+slower.  Not sure if this is signifiant.
+
+Lisa.
+
+real    0m20.079s
+user    0m18.280s
+sys     0m1.633s
+

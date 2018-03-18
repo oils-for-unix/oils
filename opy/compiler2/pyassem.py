@@ -5,8 +5,19 @@ import dis
 import types
 import sys
 
-from . import misc
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
+
+
+# NOTE: Similar to ast.flatten().
+def flatten(tup):
+    elts = []
+    for elt in tup:
+        if isinstance(elt, tuple):
+            elts.extend(flatten(elt))
+        else:
+            elts.append(elt)
+    return elts
+
 
 class FlowGraph(object):
     def __init__(self):
@@ -581,7 +592,7 @@ def getArgCount(args):
     if args:
         for arg in args:
             if isinstance(arg, TupleArg):
-                numNames = len(misc.flatten(arg.names))
+                numNames = len(flatten(arg.names))
                 argcount = argcount - numNames
     return argcount
 

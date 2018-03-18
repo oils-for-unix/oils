@@ -1,25 +1,4 @@
-
-def flatten(tup):
-    elts = []
-    for elt in tup:
-        if isinstance(elt, tuple):
-            elts = elts + flatten(elt)
-        else:
-            elts.append(elt)
-    return elts
-
-class Stack(object):
-    def __init__(self):
-        self.stack = []
-        self.pop = self.stack.pop
-    def __len__(self):
-        return len(self.stack)
-    def push(self, elt):
-        self.stack.append(elt)
-    def top(self):
-        return self.stack[-1]
-    def __getitem__(self, index): # needed by visitContinue()
-        return self.stack[index]
+# mangle() is used by both symbols and pycodegen.
 
 MANGLE_LEN = 256 # magic constant from compile.c
 

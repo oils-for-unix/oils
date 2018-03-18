@@ -231,13 +231,12 @@ def OpyCommandMain(argv):
     py_path = argv[1]
     out_path = argv[2]
 
-    # TODO: It shouldn't suck the whole file in!  It should read it line by line.
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
       parse_tree = dr.parse_tokens(tokens, start_symbol=FILE_INPUT)
       tr = transformer.Transformer()
       co = pycodegen.compile(parse_tree, py_path, 'exec', transformer=tr)
-    log("Code length: %d", len(co.co_code))
+    log("Compiled to %d bytes of bytecode", len(co.co_code))
 
     # Write the .pyc file
     with open(out_path, 'wb') as out_f:

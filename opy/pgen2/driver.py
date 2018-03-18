@@ -80,25 +80,3 @@ class Driver(object):
             raise parse.ParseError("incomplete input",
                                    type, value, (prefix, start))
         return p.rootnode
-
-    def parse_stream_raw(self, stream, debug=False):
-        """Parse a stream and return the syntax tree."""
-        tokens = tokenize.generate_tokens(stream.readline)
-        return self.parse_tokens(tokens, debug)
-
-    def parse_stream(self, stream, debug=False):
-        """Parse a stream and return the syntax tree."""
-        return self.parse_stream_raw(stream, debug)
-
-    def parse_file(self, filename, encoding=None, debug=False):
-        """Parse a file and return the syntax tree."""
-        stream = codecs.open(filename, "r", encoding)
-        try:
-            return self.parse_stream(stream, debug)
-        finally:
-            stream.close()
-
-    def parse_string(self, text, debug=False):
-        """Parse a string and return the syntax tree."""
-        tokens = tokenize.generate_tokens(io.StringIO(text).readline)
-        return self.parse_tokens(tokens, debug)

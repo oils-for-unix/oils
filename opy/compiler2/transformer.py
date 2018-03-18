@@ -203,11 +203,7 @@ def Node(*args):
         #return apply(ast.Node, args)
 
 class Transformer(object):
-    """Utility object for transforming Python parse trees.
-
-    Exposes the following methods:
-        tree = transform(ast_tree)
-    """
+    """Transform a parse tree into an AST."""
 
     def __init__(self):
         self._dispatch = {}
@@ -225,19 +221,7 @@ class Transformer(object):
                                }
         self.encoding = None
 
-    def transform(self, tree):
-        """Transform an AST into a modified parse tree."""
-        # We only use Pgen2Transformer
-        # if not (isinstance(tree, tuple) or isinstance(tree, list)):
-        #    tree = parser.st2tuple(tree, line_info=1)
-        return self.compile_node(tree)
-
-    # --------------------------------------------------------------
-    #
-    # PRIVATE METHODS
-    #
-
-    def compile_node(self, node):
+    def transform(self, node):
         ### emit a line-number node?
         n = node[0]
 
@@ -260,6 +244,11 @@ class Transformer(object):
             return self.classdef(node[1:])
 
         raise WalkerError('unexpected node type %r' % type_repr(n))
+
+    # --------------------------------------------------------------
+    #
+    # PRIVATE METHODS
+    #
 
     def single_input(self, node):
         ### do we want to do anything about being "interactive" ?

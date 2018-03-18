@@ -128,6 +128,16 @@ def is_constant_false(node):
             return 1
     return 0
 
+
+class Stack(list):
+
+    def push(self, elt):
+        self.append(elt)
+
+    def top(self):
+        return self[-1]
+
+
 class CodeGenerator(object):
     """Defines basic code generator for Python bytecode
 
@@ -151,8 +161,8 @@ class CodeGenerator(object):
             self.initClass()
             self.__class__.__initialized = 1
         self.checkClass()
-        self.locals = misc.Stack()
-        self.setups = misc.Stack()
+        self.locals = Stack()
+        self.setups = Stack()
         self.last_lineno = None
         self._setupGraphDelegation()
         self._div_op = "BINARY_DIVIDE"
