@@ -13,8 +13,6 @@ from .consts import (
     CO_GENERATOR, CO_FUTURE_DIVISION,
     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
 
-from .pyassem import TupleArg
-
 callfunc_opcode_info = {
     # (Have *args, Have **args) : opcode
     (0,0) : "CALL_FUNCTION",
@@ -67,10 +65,10 @@ def compile(as_tree, filename, mode):
     elif mode == "exec":
         graph = pyassem.PyFlowGraph("<module>", as_tree.filename)
         futures = future.find_futures(as_tree)
-        gen = ModuleCodeGenerator(futures, graph)
+        gen = TopLevelCodeGenerator(graph, futures=futures)
     elif mode == "eval":
         graph = pyassem.PyFlowGraph("<expression>", as_tree.filename)
-        gen = ExpressionCodeGenerator(graph)
+        gen = TopLevelCodeGenerator(graph)
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
@@ -84,7 +82,8 @@ def compile(as_tree, filename, mode):
     if mode == "single":
       gen.emit('RETURN_VALUE')
 
-    return graph.getCode()
+    stacksize = pyassem.ComputeStackDepth(graph)
+    return graph.getCode(stacksize)
 
 
 class LocalNameFinder(object):
@@ -206,7 +205,8 @@ class CodeGenerator(object):
         polymorphism of things that can be serialized to code objects.  Consts
         can be code objects!
         """
-        return self.graph.getCode()
+        stacksize = pyassem.ComputeStackDepth(self.graph)
+        return self.graph.getCode(stacksize)
 
     def mangle(self, name):
         if self.class_name is not None:
@@ -1226,51 +1226,29 @@ class CodeGenerator(object):
             self.emit('ROT_THREE')
             self.emit('STORE_SUBSCR')
 
-class ModuleCodeGenerator(CodeGenerator):
-    __super_init = CodeGenerator.__init__
 
+class TopLevelCodeGenerator(CodeGenerator):
     scopes = None
 
-    def __init__(self, futures, graph):
-        self.futures = futures
+    def __init__(self, graph, futures=None):
         self.graph = graph
-        self.__super_init()
+        self.futures = futures or ()
+
+        # This is hacky: graph has to be initialized
+        CodeGenerator.__init__(self)
 
     def get_module(self):
         return self
 
-class ExpressionCodeGenerator(CodeGenerator):
-    __super_init = CodeGenerator.__init__
 
-    scopes = None
-    futures = ()
-
-    def __init__(self, graph):
-        self.graph = graph
-        self.__super_init()
-
-    def get_module(self):
-        return self
-
-class InteractiveCodeGenerator(CodeGenerator):
-
-    __super_init = CodeGenerator.__init__
-
-    scopes = None
-    futures = ()
-
-    def __init__(self, graph):
-        self.graph = graph
-        self.__super_init()
-
-    def get_module(self):
-        return self
+class InteractiveCodeGenerator(TopLevelCodeGenerator):
 
     def visitDiscard(self, node):
         # XXX Discard means it's an expression.  Perhaps this is a bad
         # name.
         self.visit(node.expr)
         self.emit('PRINT_EXPR')
+
 
 class AbstractFunctionCode(object):
     optimized = 1
@@ -1417,7 +1395,7 @@ def generateArgList(arglist):
         if isinstance(elt, str):
             args.append(elt)
         elif isinstance(elt, tuple):
-            args.append(TupleArg(i * 2, elt))
+            args.append(pyassem.TupleArg(i * 2, elt))
             extra.extend(misc.flatten(elt))
             count = count + 1
         else:

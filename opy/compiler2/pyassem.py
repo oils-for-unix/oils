@@ -8,6 +8,10 @@ import sys
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
 
+HAS_JREL = set(dis.opname[op] for op in dis.hasjrel)
+HAS_JABS = set(dis.opname[op] for op in dis.hasjabs)
+
+
 # NOTE: Similar to ast.flatten().
 def flatten(tup):
     elts = []
@@ -17,6 +21,69 @@ def flatten(tup):
         else:
             elts.append(elt)
     return elts
+
+
+def ComputeStackDepth(graph):
+    """Compute the max stack depth.
+
+    Approach is to compute the stack effect of each basic block.
+    Then find the path through the code with the largest total
+    effect.
+    """
+    depth = {}
+    exit = None
+    for b in graph.getBlocks():
+        depth[b] = findDepth(b.getInstructions())
+
+    seen = {}
+
+    def max_depth(b, d):
+        if b in seen:
+            return d
+        seen[b] = 1
+        d = d + depth[b]
+        children = b.get_children()
+        if children:
+            return max([max_depth(c, d) for c in children])
+        else:
+            if not b.label == "exit":
+                return max_depth(graph.exit, d)
+            else:
+                return d
+
+    return max_depth(graph.entry, 0)
+
+
+def FlattenGraph(blocks):
+    insts = []
+    pc = 0
+    begin = {}
+    end = {}
+    for b in blocks:
+        begin[b] = pc
+        for inst in b.getInstructions():
+            insts.append(inst)
+            if len(inst) == 1:
+                pc = pc + 1
+            elif inst[0] != "SET_LINENO":
+                # arg takes 2 bytes
+                pc = pc + 3
+        end[b] = pc
+    pc = 0
+    for i in range(len(insts)):
+        inst = insts[i]
+        if len(inst) == 1:
+            pc = pc + 1
+        elif inst[0] != "SET_LINENO":
+            pc = pc + 3
+        opname = inst[0]
+        if opname in HAS_JREL:
+            oparg = inst[1]
+            offset = begin[oparg] - pc
+            insts[i] = opname, offset
+        elif opname in HAS_JABS:
+            insts[i] = opname, begin[inst[1]]
+    return insts
 
 
 class FlowGraph(object):
@@ -241,7 +308,7 @@ class Block(object):
         # Blocks that must be emitted *after* this one, because of
         # bytecode offsets (e.g. relative jumps) pointing to them.
         for inst in self.insts:
-            if inst[0] in PyFlowGraph.hasjrel:
+            if inst[0] in HAS_JREL:
                 followers.add(inst[1])
         return followers
 
@@ -319,17 +386,16 @@ class PyFlowGraph(FlowGraph):
     def setCellVars(self, names):
         self.cellvars = names
 
-    def getCode(self):
+    def getCode(self, stacksize):
         """Get a Python code object"""
         assert self.stage == RAW
-        self.computeStackDepth()
         self.flattenGraph()
         assert self.stage == FLAT
         self.convertArgs()
         assert self.stage == CONV
         self.makeByteCode()
         assert self.stage == DONE
-        return self.newCodeObject()
+        return self.newCodeObject(stacksize)
 
     def dump(self, io=None):
         if io:
@@ -349,75 +415,11 @@ class PyFlowGraph(FlowGraph):
         if io:
             sys.stdout = save
 
-    def computeStackDepth(self):
-        """Compute the max stack depth.
-
-        Approach is to compute the stack effect of each basic block.
-        Then find the path through the code with the largest total
-        effect.
-        """
-        depth = {}
-        exit = None
-        for b in self.getBlocks():
-            depth[b] = findDepth(b.getInstructions())
-
-        seen = {}
-
-        def max_depth(b, d):
-            if b in seen:
-                return d
-            seen[b] = 1
-            d = d + depth[b]
-            children = b.get_children()
-            if children:
-                return max([max_depth(c, d) for c in children])
-            else:
-                if not b.label == "exit":
-                    return max_depth(self.exit, d)
-                else:
-                    return d
-
-        self.stacksize = max_depth(self.entry, 0)
-
     def flattenGraph(self):
         """Arrange the blocks in order and resolve jumps"""
         assert self.stage == RAW
-        self.insts = insts = []
-        pc = 0
-        begin = {}
-        end = {}
-        for b in self.getBlocksInOrder():
-            begin[b] = pc
-            for inst in b.getInstructions():
-                insts.append(inst)
-                if len(inst) == 1:
-                    pc = pc + 1
-                elif inst[0] != "SET_LINENO":
-                    # arg takes 2 bytes
-                    pc = pc + 3
-            end[b] = pc
-        pc = 0
-        for i in range(len(insts)):
-            inst = insts[i]
-            if len(inst) == 1:
-                pc = pc + 1
-            elif inst[0] != "SET_LINENO":
-                pc = pc + 3
-            opname = inst[0]
-            if opname in self.hasjrel:
-                oparg = inst[1]
-                offset = begin[oparg] - pc
-                insts[i] = opname, offset
-            elif opname in self.hasjabs:
-                insts[i] = opname, begin[inst[1]]
+        self.insts = FlattenGraph(self.getBlocksInOrder())
         self.stage = FLAT
-
-    hasjrel = set()
-    for i in dis.hasjrel:
-        hasjrel.add(dis.opname[i])
-    hasjabs = set()
-    for i in dis.hasjabs:
-        hasjabs.add(dis.opname[i])
 
     def convertArgs(self):
         """Convert arguments from symbolic to concrete form"""
@@ -544,7 +546,7 @@ class PyFlowGraph(FlowGraph):
         opnum[dis.opname[num]] = num
     del num
 
-    def newCodeObject(self):
+    def newCodeObject(self, stacksize):
         assert self.stage == DONE
         if (self.flags & CO_NEWLOCALS) == 0:
             nlocals = 0
@@ -553,12 +555,13 @@ class PyFlowGraph(FlowGraph):
         argcount = self.argcount
         if self.flags & CO_VARKEYWORDS:
             argcount = argcount - 1
-        return types.CodeType(argcount, nlocals, self.stacksize, self.flags,
-                        self.lnotab.getCode(), self.getConsts(),
-                        tuple(self.names), tuple(self.varnames),
-                        self.filename, self.name, self.lnotab.firstline,
-                        self.lnotab.getTable(), tuple(self.freevars),
-                        tuple(self.cellvars))
+        return types.CodeType(
+            argcount, nlocals, stacksize, self.flags,
+            self.lnotab.getCode(), self.getConsts(),
+            tuple(self.names), tuple(self.varnames),
+            self.filename, self.name, self.lnotab.firstline,
+            self.lnotab.getTable(), tuple(self.freevars),
+            tuple(self.cellvars))
 
     def getConsts(self):
         """Return a tuple for the const slot of the code object
