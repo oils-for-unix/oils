@@ -55,26 +55,29 @@ def set_filename(filename, tree):
         worklist.extend(node.getChildNodes())
 
 
-def compile(parse_tree, filename, mode, flags=None, dont_inherit=None,
-            transformer=None):
+def compile(as_tree, filename, mode):
     """Replacement for builtin compile() function"""
-    if flags is not None or dont_inherit is not None:
-        raise RuntimeError("not implemented yet")
-
-    as_tree = transformer.transform(parse_tree)
-
     set_filename(filename, as_tree)
     syntax.check(as_tree)
 
     if mode == "single":
-        gen = InteractiveCodeGenerator(as_tree)
+        gen = InteractiveCodeGenerator(as_tree.filename)
+        gen.set_lineno(as_tree)
     elif mode == "exec":
-        gen = ModuleCodeGenerator(as_tree)
+        futures = future.find_futures(as_tree)
+        gen = ModuleCodeGenerator(as_tree.filename, futures)
     elif mode == "eval":
-        gen = ExpressionCodeGenerator(as_tree)
+        gen = ExpressionCodeGenerator(as_tree.filename)
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
+
+    walk(as_tree, gen)
+
+    # Not sure why I need this, copied from InteractiveCodeGenerator
+    if mode == "single":
+      gen.emit('RETURN_VALUE')
+
     return gen.getCode()
 
 
@@ -1243,11 +1246,10 @@ class ModuleCodeGenerator(NestedScopeMixin, CodeGenerator):
 
     scopes = None
 
-    def __init__(self, tree):
-        self.graph = pyassem.PyFlowGraph("<module>", tree.filename)
-        self.futures = future.find_futures(tree)
+    def __init__(self, filename, futures):
+        self.graph = pyassem.PyFlowGraph("<module>", filename)
+        self.futures = futures
         self.__super_init()
-        walk(tree, self)
 
     def get_module(self):
         return self
@@ -1258,10 +1260,9 @@ class ExpressionCodeGenerator(NestedScopeMixin, CodeGenerator):
     scopes = None
     futures = ()
 
-    def __init__(self, tree):
-        self.graph = pyassem.PyFlowGraph("<expression>", tree.filename)
+    def __init__(self, filename):
+        self.graph = pyassem.PyFlowGraph("<expression>", filename)
         self.__super_init()
-        walk(tree, self)
 
     def get_module(self):
         return self
@@ -1273,12 +1274,9 @@ class InteractiveCodeGenerator(NestedScopeMixin, CodeGenerator):
     scopes = None
     futures = ()
 
-    def __init__(self, tree):
-        self.graph = pyassem.PyFlowGraph("<interactive>", tree.filename)
+    def __init__(self, filename):
+        self.graph = pyassem.PyFlowGraph("<interactive>", filename)
         self.__super_init()
-        self.set_lineno(tree)
-        walk(tree, self)
-        self.emit('RETURN_VALUE')
 
     def get_module(self):
         return self

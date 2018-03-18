@@ -175,12 +175,14 @@ def OpyCommandMain(argv):
     symbols = Symbols(gr)
     pytree.Init(symbols)  # for type_repr() pretty printing
     transformer.Init(symbols)  # for _names and other dicts
+    tr = transformer.Transformer()
   else:
     # e.g. pgen2 doesn't use any of these.  Maybe we should make a different
     # tool.
     gr = None
     FILE_INPUT = None
     symbols = None
+    tr = None
 
   dr = driver.Driver(gr, convert=py2st)
 
@@ -234,8 +236,8 @@ def OpyCommandMain(argv):
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
       parse_tree = dr.parse_tokens(tokens, start_symbol=FILE_INPUT)
-      tr = transformer.Transformer()
-      co = pycodegen.compile(parse_tree, py_path, 'exec', transformer=tr)
+      as_tree = tr.transform(parse_tree)
+      co = pycodegen.compile(as_tree, py_path, 'exec')
     log("Compiled to %d bytes of bytecode", len(co.co_code))
 
     # Write the .pyc file
@@ -248,9 +250,11 @@ def OpyCommandMain(argv):
     py_expr = argv[1]
     f = cStringIO.StringIO(py_expr)
     tokens = tokenize.generate_tokens(f.readline)
-    parse_tree = dr.parse_tokens(tokens, start_symbol=gr.symbol2number['eval_input'])
-    tr = transformer.Transformer()
-    co = pycodegen.compile(parse_tree, '<eval input>', 'eval', transformer=tr)
+    parse_tree = dr.parse_tokens(tokens,
+                                 start_symbol=gr.symbol2number['eval_input'])
+    as_tree = tr.transform(parse_tree)
+    co = pycodegen.compile(as_tree, '<eval input>', 'eval')
+
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -264,9 +268,10 @@ def OpyCommandMain(argv):
       f = cStringIO.StringIO(py_expr)
       tokens = tokenize.generate_tokens(f.readline)
       # TODO: change this to 'single input'?  Why doesn't this work?
-      parse_tree = dr.parse_tokens(tokens, start_symbol=gr.symbol2number['eval_input'])
-      tr = transformer.Transformer()
-      co = pycodegen.compile(parse_tree, '<REPL input>', 'single', transformer=tr)
+      parse_tree = dr.parse_tokens(tokens,
+                                   start_symbol=gr.symbol2number['eval_input'])
+      as_tree = tr.transform(parse_tree)
+      co = pycodegen.compile(as_tree, '<REPL input>', 'single')
 
       v = dis_tool.Visitor()
       v.show_code(co)

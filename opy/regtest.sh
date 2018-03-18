@@ -85,4 +85,19 @@ lines() {
   find _regtest/src -type f | xargs wc -l | sort -n
 }
 
+compare-one() {
+  local rel_path='opy/compiler2/transformer.pyc'
+
+  ls -l _tmp/regtest/$rel_path
+
+  # TODO: Copy zip from flanders?
+  unzip -p $rel_path _tmp/flanders/bytecode-opy.zip | od -c
+}
+
+smoke-three-modes() {
+  compile oil
+  $THIS_DIR/../bin/opyc eval '1+2*3'
+  echo '4+5*6' | $THIS_DIR/../bin/opyc repl
+}
+
 "$@"

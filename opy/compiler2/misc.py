@@ -1,6 +1,6 @@
 # mangle() is used by both symbols and pycodegen.
 
-MANGLE_LEN = 256 # magic constant from compile.c
+MANGLE_LEN = 256  # magic constant from compile.c
 
 def mangle(name, klass):
     if not name.startswith('__'):
