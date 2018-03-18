@@ -61,16 +61,22 @@ def compile(as_tree, filename, mode):
     syntax.check(as_tree)
 
     if mode == "single":
-        gen = InteractiveCodeGenerator(as_tree.filename)
+        graph = pyassem.PyFlowGraph("<interactive>", as_tree.filename)
+        gen = InteractiveCodeGenerator(graph)
         gen.set_lineno(as_tree)
     elif mode == "exec":
+        graph = pyassem.PyFlowGraph("<module>", as_tree.filename)
         futures = future.find_futures(as_tree)
-        gen = ModuleCodeGenerator(as_tree.filename, futures)
+        gen = ModuleCodeGenerator(futures, graph)
     elif mode == "eval":
-        gen = ExpressionCodeGenerator(as_tree.filename)
+        graph = pyassem.PyFlowGraph("<expression>", as_tree.filename)
+        gen = ExpressionCodeGenerator(graph)
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
+
+    # This has a side effect of populating the gen.graph data structure?
+    # The multiple inheritance implements some weird double-dispatch.
 
     walk(as_tree, gen)
 
@@ -78,7 +84,7 @@ def compile(as_tree, filename, mode):
     if mode == "single":
       gen.emit('RETURN_VALUE')
 
-    return gen.getCode()
+    return graph.getCode()
 
 
 class LocalNameFinder(object):
@@ -156,14 +162,17 @@ class CodeGenerator(object):
     """
 
     optimized = 0 # is namespace access optimized?
-    __initialized = None
     class_name = None # provide default for instance variable
 
+    NameFinder = LocalNameFinder
+    FunctionGen = None
+    ClassGen = None
+
     def __init__(self):
-        if self.__initialized is None:
-            self.initClass()
-            self.__class__.__initialized = 1
-        self.checkClass()
+        # Initialize after defined
+        self.FunctionGen = FunctionCodeGenerator
+        self.ClassGen = ClassCodeGenerator
+
         self.locals = Stack()
         self.setups = Stack()
         self.last_lineno = None
@@ -183,20 +192,6 @@ class CodeGenerator(object):
             elif feature == "print_function":
                 self.graph.setFlag(CO_FUTURE_PRINT_FUNCTION)
 
-    def initClass(self):
-        """This method is called once for each class"""
-
-    def checkClass(self):
-        """Verify that class is constructed correctly"""
-        try:
-            assert hasattr(self, 'graph')
-            assert getattr(self, 'NameFinder')
-            assert getattr(self, 'FunctionGen')
-            assert getattr(self, 'ClassGen')
-        except AssertionError, msg:
-            intro = "Bad class construction for %s" % self.__class__.__name__
-            raise AssertionError, intro
-
     def _setupGraphDelegation(self):
         self.emit = self.graph.emit
         self.newBlock = self.graph.newBlock
@@ -205,7 +200,12 @@ class CodeGenerator(object):
         self.setDocstring = self.graph.setDocstring
 
     def getCode(self):
-        """Return a code object"""
+        """Called by _convert_LOAD_CONST in pyassem in a weird way.
+
+        It checks hasattr(arg, 'getCode').  I guess that is the ad-hoc
+        polymorphism of things that can be serialized to code objects.  Consts
+        can be code objects!
+        """
         return self.graph.getCode()
 
     def mangle(self, name):
@@ -295,14 +295,6 @@ class CodeGenerator(object):
             self.last_lineno = lineno
             return True
         return False
-
-    # The first few visitor methods handle nodes that generator new
-    # code objects.  They use class attributes to determine what
-    # specialized code generators to use.
-
-    NameFinder = LocalNameFinder
-    FunctionGen = None
-    ClassGen = None
 
     def visitModule(self, node):
         self.scopes = self.parseSymbols(node)
@@ -1234,48 +1226,41 @@ class CodeGenerator(object):
             self.emit('ROT_THREE')
             self.emit('STORE_SUBSCR')
 
-class NestedScopeMixin(object):
-    """Defines initClass() for nested scoping (Python 2.2-compatible)"""
-    def initClass(self):
-        self.__class__.NameFinder = LocalNameFinder
-        self.__class__.FunctionGen = FunctionCodeGenerator
-        self.__class__.ClassGen = ClassCodeGenerator
-
-class ModuleCodeGenerator(NestedScopeMixin, CodeGenerator):
+class ModuleCodeGenerator(CodeGenerator):
     __super_init = CodeGenerator.__init__
 
     scopes = None
 
-    def __init__(self, filename, futures):
-        self.graph = pyassem.PyFlowGraph("<module>", filename)
+    def __init__(self, futures, graph):
         self.futures = futures
+        self.graph = graph
         self.__super_init()
 
     def get_module(self):
         return self
 
-class ExpressionCodeGenerator(NestedScopeMixin, CodeGenerator):
+class ExpressionCodeGenerator(CodeGenerator):
     __super_init = CodeGenerator.__init__
 
     scopes = None
     futures = ()
 
-    def __init__(self, filename):
-        self.graph = pyassem.PyFlowGraph("<expression>", filename)
+    def __init__(self, graph):
+        self.graph = graph
         self.__super_init()
 
     def get_module(self):
         return self
 
-class InteractiveCodeGenerator(NestedScopeMixin, CodeGenerator):
+class InteractiveCodeGenerator(CodeGenerator):
 
     __super_init = CodeGenerator.__init__
 
     scopes = None
     futures = ()
 
-    def __init__(self, filename):
-        self.graph = pyassem.PyFlowGraph("<interactive>", filename)
+    def __init__(self, graph):
+        self.graph = graph
         self.__super_init()
 
     def get_module(self):
@@ -1346,8 +1331,7 @@ class AbstractFunctionCode(object):
 
     unpackTuple = unpackSequence
 
-class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
-                            CodeGenerator):
+class FunctionCodeGenerator(AbstractFunctionCode, CodeGenerator):
     super_init = CodeGenerator.__init__ # call be other init
     scopes = None
 
@@ -1362,7 +1346,7 @@ class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
         if self.scope.generator is not None:
             self.graph.setFlag(CO_GENERATOR)
 
-class GenExprCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
+class GenExprCodeGenerator(AbstractFunctionCode,
                            CodeGenerator):
     super_init = CodeGenerator.__init__ # call be other init
     scopes = None
@@ -1404,7 +1388,7 @@ class AbstractClassCode:
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
 
-class ClassCodeGenerator(NestedScopeMixin, AbstractClassCode, CodeGenerator):
+class ClassCodeGenerator(AbstractClassCode, CodeGenerator):
     super_init = CodeGenerator.__init__
     scopes = None
 
