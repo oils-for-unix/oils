@@ -53,3 +53,19 @@ _stdlib-compile-one() {
 _ccompile-one() {
   misc/ccompile.py "$@"
 }
+
+# NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
+# Has some similiarity to test/lint.sh, but not the same.
+oil-python-sources() {
+  local repo_root=$1
+  local fmt=${2:-'%P\n'}
+
+  find $repo_root \
+    -name _tmp -a -prune -o \
+    -name _chroot -a -prune -o \
+    -name _deps -a -prune -o \
+    -name cpython-full -a -prune -o \
+    -name Python-2.7.13 -a -prune -o \
+    -name '*.py' -a -printf "$fmt"
+}
+

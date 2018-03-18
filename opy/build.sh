@@ -70,7 +70,7 @@ compile-manifest() {
     local dest=$dest_dir/$rel_dest_path
     mkdir -p $(dirname $dest)
     log "     $full_src_path"
-    bin/opyc compile $full_src_path $dest
+    $THIS_DIR/../bin/opyc compile $full_src_path $dest
 
     local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
 
@@ -119,18 +119,6 @@ _fill-oil-tree() {
   #make-mains $dir
 }
 
-# NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
-# Has some similiarity to test/lint.sh, but not the same.
-oil-repo-files() {
-  local src=$1
-  find $src -name _tmp -a -prune -o \
-            -name _chroot -a -prune -o \
-            -name _deps -a -prune -o \
-            -name cpython-full -a -prune -o \
-            -name Python-2.7.13 -a -prune -o \
-            -name '*.py' -a -printf '%P\n'
-}
-
 # Compile with both compile() and OPy.
 # TODO:
 # - What about the standard library?  The whole app bundle should be
@@ -138,8 +126,8 @@ oil-repo-files() {
 # - This could be part of the Travis build.  It will ensure no Python 2
 # print statements sneak in.
 oil-repo() {
-  local src=$(cd $THIS_DIR/.. && pwd)
-  local files=( $(oil-repo-files $src) )  # array
+  local repo_root=$(cd $THIS_DIR/.. && pwd)
+  local files=( $(oil-python-sources $repo_root) )  # array
 
   _compile-tree $src _tmp/oil-ccompile/ ccompile "${files[@]}"
   _compile-tree $src _tmp/oil-opy/ opy "${files[@]}"

@@ -1,13 +1,14 @@
 *.swp
 *.pyc
 .vagrant
-_chroot
-_tmp
-_bin
-_build
-_devbuild
-_deps
-_release
+_chroot/
+_tmp/
+_bin/
+_build/
+_devbuild/
+!opy/_regtest/src/_devbuild/
+_deps/
+_release/
 libc.so
 fastlex.so
 # Python build support
