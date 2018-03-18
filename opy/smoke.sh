@@ -274,7 +274,6 @@ hash-determinism-loop() {
 rebuild-and-md5() {
   cd ..
   make clean-repo
-  make _build/opy/py27.grammar.pickle
   make _bin/oil.ovm-dbg
   local out=_tmp/pyc-md5.txt
   build/metrics.sh pyc-md5 | sort -n | tee $out

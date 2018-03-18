@@ -174,8 +174,6 @@ benchmark-build() {
   _clean
   _dev-build
 
-  make _build/opy/py27.grammar.pickle
-
   _release-build
 }
 

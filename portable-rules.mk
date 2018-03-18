@@ -64,9 +64,11 @@ _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 
 # NOTE: This should really depend on all the .py files.
 # I should make a _build/oil/py.d file and include it?
+# This depends on the grammar pickle because it's the first one that calls opy compile.
 _build/%/opy-app-deps.txt: \
-	_build/py-to-compile.txt _build/%/py-to-compile.txt
-	sort $^ | uniq | opy/build.sh compile-manifest _build/$*/bytecode-opy > $@
+	_build/opy/py27.grammar.pickle _build/py-to-compile.txt _build/%/py-to-compile.txt 
+	# exclude the pickle
+	sort $(filter-out $<,$^) | uniq | opy/build.sh compile-manifest _build/$*/bytecode-opy > $@
 
 
 PY27 := Python-2.7.13

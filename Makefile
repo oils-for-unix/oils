@@ -134,9 +134,10 @@ _build/%/ovm-opt: _build/%/module_init.c _build/%/main_name.c \
 	$(COMPILE_SH) build-opt $@ $(filter-out $(COMPILE_SH),$^)
 
 # NOTE: This gets run on the end user's machine!  It requires binutils for now?
-_build/%/ovm-opt.stripped: _build/%/ovm-opt
+# NOTE: objcopy fails if the linked files does not exist!
+_build/%/ovm-opt.stripped: _build/%/ovm-opt _build/%/ovm-opt.symbols
 	#strip -o $@ --strip-debug $^ 
-	strip -o $@ $^   # What's the difference with debug symbols?
+	strip -o $@ _build/$*/ovm-opt  # What's the difference with debug symbols?
 	# We need a relative path since it will be _bin/oil.ovm
 	objcopy --add-gnu-debuglink=_build/$*/ovm-opt.symbols $@
 
