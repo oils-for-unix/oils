@@ -22,11 +22,9 @@ from .pgen2 import driver, pgen, grammar
 from .pgen2 import tokenize
 from . import pytree
 
+from .compiler2 import dis_tool
 from .compiler2 import transformer
 from .compiler2 import pycodegen
-#from .compiler2 import opcode
-
-from .misc import inspect_pyc
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
 #from .byterun import execfile
@@ -274,7 +272,7 @@ def OpyCommandMain(argv):
     with open(pyc_path, 'rb') as f:
       # TODO: Make this a flag.
       #v = inspect_pyc.Visitor(dis_bytecode=False)
-      v = inspect_pyc.Visitor()
+      v = dis_tool.Visitor()
       v.Visit(f)
 
     v.Report(report_f)
