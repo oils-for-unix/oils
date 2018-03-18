@@ -76,26 +76,6 @@ def WriteGrammar(grammar_path, pickle_path):
     log("Writing failed: %s", e)
 
 
-# Emulate the interface that Transformer expects from parsermodule.c.
-class Pgen2PythonParser(object):
-  def __init__(self, driver, start_symbol):
-    self.driver = driver
-    self.start_symbol = start_symbol
-
-  # TODO: Remove this redundancy
-  def suite(self, text):
-    f = cStringIO.StringIO(text)
-    tokens = tokenize.generate_tokens(f.readline)
-    tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
-    return tree
-
-  def expr(self, text):
-    f = cStringIO.StringIO(text)
-    tokens = tokenize.generate_tokens(f.readline)
-    tree = self.driver.parse_tokens(tokens, start_symbol=self.start_symbol)
-    return tree
-
-
 def CountTupleTree(tu):
   """Count the nodes in a tuple parse tree."""
   if isinstance(tu, tuple):
@@ -251,14 +231,12 @@ def OpyCommandMain(argv):
     py_path = argv[1]
     out_path = argv[2]
 
-    py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-    printer = TupleTreePrinter(transformer._names)
-    tr = transformer.Pgen2Transformer(py_parser, printer)
-
     # TODO: It shouldn't suck the whole file in!  It should read it line by line.
     with open(py_path) as f:
-      contents = f.read()
-    co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+      tokens = tokenize.generate_tokens(f.readline)
+      parse_tree = dr.parse_tokens(tokens, start_symbol=FILE_INPUT)
+      tr = transformer.Transformer()
+      co = pycodegen.compile(parse_tree, py_path, 'exec', transformer=tr)
     log("Code length: %d", len(co.co_code))
 
     # Write the .pyc file
@@ -269,12 +247,11 @@ def OpyCommandMain(argv):
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
     py_expr = argv[1]
-
-    py_parser = Pgen2PythonParser(dr, gr.symbol2number['eval_input'])
-    printer = TupleTreePrinter(transformer._names)
-    tr = transformer.Pgen2Transformer(py_parser, printer)
-
-    co = pycodegen.compile(py_expr, '<eval input>', 'eval', transformer=tr)
+    f = cStringIO.StringIO(py_expr)
+    tokens = tokenize.generate_tokens(f.readline)
+    parse_tree = dr.parse_tokens(tokens, start_symbol=gr.symbol2number['eval_input'])
+    tr = transformer.Transformer()
+    co = pycodegen.compile(parse_tree, '<eval input>', 'eval', transformer=tr)
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -285,11 +262,12 @@ def OpyCommandMain(argv):
   elif action == 'repl':  # Like eval in a loop
     while True:
       py_expr = raw_input('opy> ')
-      py_parser = Pgen2PythonParser(dr, gr.symbol2number['eval_input'])
-      printer = TupleTreePrinter(transformer._names)
-      tr = transformer.Pgen2Transformer(py_parser, printer)
-
-      co = pycodegen.compile(py_expr, '<eval input>', 'eval', transformer=tr)
+      f = cStringIO.StringIO(py_expr)
+      tokens = tokenize.generate_tokens(f.readline)
+      # TODO: change this to 'single input'?  Why doesn't this work?
+      parse_tree = dr.parse_tokens(tokens, start_symbol=gr.symbol2number['eval_input'])
+      tr = transformer.Transformer()
+      co = pycodegen.compile(parse_tree, '<REPL input>', 'single', transformer=tr)
 
       v = dis_tool.Visitor()
       v.show_code(co)
@@ -351,13 +329,14 @@ def OpyCommandMain(argv):
     opy_argv = argv[1:]
 
     if py_path.endswith('.py'):
-      py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-      printer = TupleTreePrinter(transformer._names)
-      tr = transformer.Pgen2Transformer(py_parser, printer)
-      with open(py_path) as f:
-        contents = f.read()
-      co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
+      #py_parser = Pgen2PythonParser(dr, FILE_INPUT)
+      #printer = TupleTreePrinter(transformer._names)
+      #tr = transformer.Pgen2Transformer(py_parser, printer)
+      #with open(py_path) as f:
+      #  contents = f.read()
+      #co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
       #execfile.run_code_object(co, opy_argv)
+      pass
 
     elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
       with open(py_path) as f:

@@ -3,7 +3,6 @@ import struct
 
 from . import ast, syntax
 from .visitor import walk
-from .transformer import parse
 from . import pyassem, misc, future, symbols
 from .consts import (
     SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, SC_FREE, SC_CELL)
@@ -47,73 +46,37 @@ def getPycHeader(filename):
     return PY27_MAGIC + mtime
 
 
-def compile(source, filename, mode, flags=None, dont_inherit=None, transformer=None):
+def set_filename(filename, tree):
+    """Set the filename attribute to filename on every node in tree"""
+    worklist = [tree]
+    while worklist:
+        node = worklist.pop(0)
+        node.filename = filename
+        worklist.extend(node.getChildNodes())
+
+
+def compile(parse_tree, filename, mode, flags=None, dont_inherit=None,
+            transformer=None):
     """Replacement for builtin compile() function"""
     if flags is not None or dont_inherit is not None:
-        raise RuntimeError, "not implemented yet"
+        raise RuntimeError("not implemented yet")
+
+    as_tree = transformer.transform(parse_tree)
+
+    set_filename(filename, as_tree)
+    syntax.check(as_tree)
 
     if mode == "single":
-        gen = Interactive(source, filename)
+        gen = InteractiveCodeGenerator(as_tree)
     elif mode == "exec":
-        gen = Module(source, filename)
+        gen = ModuleCodeGenerator(as_tree)
     elif mode == "eval":
-        gen = Expression(source, filename)
+        gen = ExpressionCodeGenerator(as_tree)
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
-    gen.compile(transformer=transformer)
-    return gen.code
+    return gen.getCode()
 
-class AbstractCompileMode(object):
-
-    mode = None # defined by subclass
-
-    def __init__(self, source, filename):
-        self.source = source
-        self.filename = filename
-        self.code = None
-
-    def _get_tree(self, transformer=None):
-        tree = parse(self.source, self.mode, transformer=transformer)
-        misc.set_filename(self.filename, tree)
-        syntax.check(tree)
-        return tree
-
-    def compile(self):
-        pass # implemented by subclass
-
-    def getCode(self):
-        return self.code
-
-class Expression(AbstractCompileMode):
-
-    mode = "eval"
-
-    def compile(self, transformer=None):
-        tree = self._get_tree(transformer=transformer)
-        gen = ExpressionCodeGenerator(tree)
-        self.code = gen.getCode()
-
-class Interactive(AbstractCompileMode):
-
-    mode = "single"
-
-    def compile(self, transformer=None):
-        tree = self._get_tree(transformer=transformer)
-        gen = InteractiveCodeGenerator(tree)
-        self.code = gen.getCode()
-
-class Module(AbstractCompileMode):
-
-    mode = "exec"
-
-    def compile(self, display=0, transformer=None):
-        tree = self._get_tree(transformer=transformer)
-        gen = ModuleCodeGenerator(tree)
-        if display:
-            import pprint
-            print(pprint.pprint(tree))
-        self.code = gen.getCode()
 
 class LocalNameFinder(object):
     """Find local names in scope"""

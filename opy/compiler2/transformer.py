@@ -33,7 +33,6 @@ from ..pgen2 import token
 from ..pytree import type_repr
 
 
-
 symbol = None
 
 def Init(sym):
@@ -167,26 +166,6 @@ class WalkerError(StandardError):
     pass
 
 
-def parseFile(path):
-    f = open(path, "U")
-    # XXX The parser API tolerates files without a trailing newline,
-    # but not strings without a trailing newline.  Always add an extra
-    # newline to the file contents, since we're going through the string
-    # version of the API.
-    src = f.read() + "\n"
-    f.close()
-    return parse(src)
-
-def parse(buf, mode="exec", transformer=None):
-    tr = transformer or Transformer()
-    if mode == "exec" or mode == "single":
-        return tr.parsesuite(buf)
-    elif mode == "eval":
-        return tr.parseexpr(buf)
-    else:
-        raise ValueError("compile() arg 3 must be"
-                         " 'exec' or 'eval' or 'single'")
-
 def asList(nodes):
     l = []
     for item in nodes:
@@ -228,9 +207,6 @@ class Transformer(object):
 
     Exposes the following methods:
         tree = transform(ast_tree)
-        tree = parsesuite(text)
-        tree = parseexpr(text)
-        tree = parsefile(fileob | filename)
     """
 
     def __init__(self):
@@ -255,22 +231,6 @@ class Transformer(object):
         # if not (isinstance(tree, tuple) or isinstance(tree, list)):
         #    tree = parser.st2tuple(tree, line_info=1)
         return self.compile_node(tree)
-
-    def parsesuite(self, text):
-        """Return a modified parse tree for the given suite text."""
-        raise AssertionError("Shouldn't use stdlib parser")
-        #return self.transform(parser.suite(text))
-
-    def parseexpr(self, text):
-        """Return a modified parse tree for the given expression text."""
-        raise AssertionError("Shouldn't use stdlib parser")
-        #return self.transform(parser.expr(text))
-
-    def parsefile(self, file):
-        """Return a modified parse tree for the contents of the given file."""
-        if type(file) == type(''):
-            file = open(file)
-        return self.parsesuite(file.read())
 
     # --------------------------------------------------------------
     #
@@ -1555,23 +1515,6 @@ class Transformer(object):
         if n in _doc_nodes and len(node) == 1:
             return self.get_docstring(node[0])
         return None
-
-
-class Pgen2Transformer(Transformer):
-  def __init__(self, py_parser, printer):
-    Transformer.__init__(self)
-    self.py_parser = py_parser
-    self.printer = printer
-
-  def parsesuite(self, text):
-    tree = self.py_parser.suite(text)
-    #self.printer.Print(tree)
-    return self.transform(tree)
-
-  def parseexpr(self, text):
-    tree = self.py_parser.expr(text)
-    #self.printer.Print(tree)
-    return self.transform(tree)
 
 
 def debug_tree(tree):
