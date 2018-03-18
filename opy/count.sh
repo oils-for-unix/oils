@@ -15,7 +15,7 @@ _count() {
 # transformer -> ast -> compiler -> byte code
 all() {
   echo COMMON
-  echo opy_main.py util_opy.py | _count
+  echo opy_main.py | _count
   echo
 
   echo LEXER, PARSER GENERATOR, AND GRAMMR

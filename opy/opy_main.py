@@ -29,10 +29,9 @@ from .compiler2 import pycodegen
 # Disabled for now because byterun imports 'six', and that breaks the build.
 #from .byterun import execfile
 
-from .util_opy import log
-
 from core import args
 from core import util
+log = util.log
 
 
 # From lib2to3/pygram.py.  This takes the place of the 'symbol' module.

@@ -63,9 +63,10 @@ manifest() {
 
 # 19 seconds on lisa.  This should be a benchmark.
 compile() {
+  local pat=${1:-}
   local dest=_tmp/regtest
   mkdir -p $dest
-  time manifest | ./build.sh compile-manifest $dest
+  time manifest | egrep "$pat" | ./build.sh compile-manifest $dest
 }
 
 checksum() {

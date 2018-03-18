@@ -13,9 +13,9 @@ sys.path.append(os.path.join(this_dir, '..'))
 from core import args
 from core import util
 
-from opy.util_opy import log
 from opy import opy_main
 
+log = util.log
 
 # TODO: move to quick ref?
 _OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'
