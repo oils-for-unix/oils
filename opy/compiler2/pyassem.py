@@ -464,6 +464,10 @@ class PyFlowGraph(FlowGraph):
         # NOTE: overwrites self.cellvars, self.closure
         self._sort_cellvars()
 
+        # TODO: Create
+        # c = ArgConverter(self.names, ...)
+        # c.Replace(insts)
+
         # Mutates insts, as well as self.names, varnames, etc.
         self.convertArgs(insts)
         assert self.stage == CONV
@@ -787,5 +791,3 @@ class StackDepthTracker(object):
 
 
 TRACKER = StackDepthTracker()
-
-

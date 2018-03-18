@@ -58,6 +58,9 @@ class ASTVisitor(object):
     def preorder(self, tree, visitor, *args):
         """Do preorder walk of tree using visitor"""
         self.visitor = visitor
+
+        # TODO: Remove this!  I don't like mutating the class.
+
         visitor.visit = self.dispatch
         self.dispatch(tree, *args) # XXX *args make sense?
 

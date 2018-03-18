@@ -152,26 +152,12 @@ class CodeGenerator(object):
     This class is an abstract base class.  Concrete subclasses must
     define an __init__() that defines self.graph and then calls the
     __init__() defined in this class.
-
-    The concrete class must also define the class attributes
-    NameFinder, FunctionGen, and ClassGen.  These attributes can be
-    defined in the initClass() method, which is a hook for
-    initializing these methods after all the classes have been
-    defined.
     """
 
     optimized = 0 # is namespace access optimized?
     class_name = None # provide default for instance variable
 
-    NameFinder = LocalNameFinder
-    FunctionGen = None
-    ClassGen = None
-
     def __init__(self):
-        # Initialize after defined
-        self.FunctionGen = FunctionCodeGenerator
-        self.ClassGen = ClassCodeGenerator
-
         self.locals = Stack()
         self.setups = Stack()
         self.last_lineno = None
@@ -303,7 +289,7 @@ class CodeGenerator(object):
         if node.doc:
             self.emit('LOAD_CONST', node.doc)
             self.storeName('__doc__')
-        lnf = walk(node.node, self.NameFinder(), verbose=0)
+        lnf = walk(node.node, LocalNameFinder(), verbose=0)
         self.locals.push(lnf.getLocals())
         self.visit(node.node)
         self.emit('LOAD_CONST', None)
@@ -333,8 +319,8 @@ class CodeGenerator(object):
         else:
             ndecorators = 0
 
-        gen = self.FunctionGen(node, self.scopes, isLambda,
-                               self.class_name, self.get_module())
+        gen = FunctionCodeGenerator(node, self.scopes, isLambda,
+                                    self.class_name, self.get_module())
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -345,8 +331,7 @@ class CodeGenerator(object):
             self.emit('CALL_FUNCTION', 1)
 
     def visitClass(self, node):
-        gen = self.ClassGen(node, self.scopes,
-                            self.get_module())
+        gen = ClassCodeGenerator(node, self.scopes, self.get_module())
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -1234,7 +1219,8 @@ class TopLevelCodeGenerator(CodeGenerator):
         self.graph = graph
         self.futures = futures or ()
 
-        # This is hacky: graph has to be initialized
+        # This is hacky: graph has to be initialized.
+        # TODO: Make another variant
         CodeGenerator.__init__(self)
 
     def get_module(self):
@@ -1267,7 +1253,7 @@ def _GenerateArgList(arglist):
     return args + extra, count
 
 
-class AbstractFunctionCode(object):
+class FunctionMixin(object):
     optimized = 1
     lambdaCount = 0
 
@@ -1285,12 +1271,12 @@ class AbstractFunctionCode(object):
         self.graph = pyassem.PyFlowGraph(name, func.filename, args,
                                          optimized=1)
         self.isLambda = isLambda
-        self.super_init()
+        CodeGenerator.__init__(self)
 
         if not isLambda and func.doc:
             self.setDocstring(func.doc)
 
-        lnf = walk(func.code, self.NameFinder(args), verbose=0)
+        lnf = walk(func.code, LocalNameFinder(args), verbose=0)
         self.locals.push(lnf.getLocals())
         if func.varargs:
             self.graph.setFlag(CO_VARARGS)
@@ -1327,27 +1313,21 @@ class AbstractFunctionCode(object):
     unpackTuple = unpackSequence
 
 
-class FunctionCodeGenerator(AbstractFunctionCode, CodeGenerator):
-    super_init = CodeGenerator.__init__ # call be other init
+class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
     scopes = None
-
-    __super_init = AbstractFunctionCode.__init__
 
     def __init__(self, func, scopes, isLambda, class_name, mod):
         self.scopes = scopes
         self.scope = scopes[func]
-        self.__super_init(func, scopes, isLambda, class_name, mod)
+        FunctionMixin.__init__(self, func, scopes, isLambda, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         if self.scope.generator is not None:
             self.graph.setFlag(CO_GENERATOR)
 
 
-class GenExprCodeGenerator(AbstractFunctionCode, CodeGenerator):
-    super_init = CodeGenerator.__init__ # call be other init
+class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
     scopes = None
-
-    __super_init = AbstractFunctionCode.__init__
 
     def __init__(self, gexp, scopes, class_name, mod):
         self.scopes = scopes
@@ -1357,21 +1337,21 @@ class GenExprCodeGenerator(AbstractFunctionCode, CodeGenerator):
         # name it "<genexpr>".  byterun has a hack due to 
         # http://bugs.python.org/issue19611 that relies on this.  But we worked
         # around it there.
-        self.__super_init(gexp, scopes, 1, class_name, mod)
+        FunctionMixin.__init__(self, gexp, scopes, 1, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         self.graph.setFlag(CO_GENERATOR)
 
 
-class AbstractClassCode(object):
+class ClassMixin(object):
 
     def __init__(self, klass, scopes, module):
         self.class_name = klass.name
         self.module = module
         self.graph = pyassem.PyFlowGraph(klass.name, klass.filename,
-                                           optimized=0, klass=1)
-        self.super_init()
-        lnf = walk(klass.code, self.NameFinder(), verbose=0)
+                                         optimized=0, klass=1)
+        CodeGenerator.__init__(self)
+        lnf = walk(klass.code, LocalNameFinder(), verbose=0)
         self.locals.push(lnf.getLocals())
         self.graph.setFlag(CO_NEWLOCALS)
         if klass.doc:
@@ -1386,16 +1366,13 @@ class AbstractClassCode(object):
         self.emit('RETURN_VALUE')
 
 
-class ClassCodeGenerator(AbstractClassCode, CodeGenerator):
-    super_init = CodeGenerator.__init__
+class ClassCodeGenerator(ClassMixin, CodeGenerator):
     scopes = None
-
-    __super_init = AbstractClassCode.__init__
 
     def __init__(self, klass, scopes, module):
         self.scopes = scopes
         self.scope = scopes[klass]
-        self.__super_init(klass, scopes, module)
+        ClassMixin.__init__(self, klass, scopes, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         self.set_lineno(klass)
