@@ -80,4 +80,8 @@ verify-golden() {
   fi
 }
 
+lines() {
+  find _regtest/src -type f | xargs wc -l | sort -n
+}
+
 "$@"

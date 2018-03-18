@@ -1,0 +1,31 @@
+Informal Notes Until I Have Real Benchmarks
+
+2018/03/17
+----------
+
+The first version that is deterministic!
+
+flanders:
+
+real    0m48.762s
+user    0m45.599s
+sys     0m3.177s
+
+lisa:
+
+real    0m19.454s
+user    0m17.855s
+sys     0m1.528s
+
+Total lines:
+
+   1744 _regtest/src/logging/__init__.py
+   2065 _regtest/src/locale.py
+  67099 total
+
+flanders: 1.38 lines / ms
+lisa:     3.46 lines / ms
+
+Slower than OSH parser!
+
+
