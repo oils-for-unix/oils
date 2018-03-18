@@ -1,6 +1,5 @@
 import os
 import struct
-import sys
 
 from . import ast, syntax
 from .visitor import walk
@@ -16,13 +15,6 @@ from .consts import (
     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
 
 from .pyassem import TupleArg
-
-# XXX The version-specific code can go, since this code only works with 2.x.
-# Do we have Python 1.x or Python 2.x?
-try:
-    VERSION = sys.version_info[0]
-except AttributeError:
-    VERSION = 1
 
 callfunc_opcode_info = {
     # (Have *args, Have **args) : opcode
@@ -896,9 +888,8 @@ class CodeGenerator(object):
         self.set_lineno(node)
         level = 0 if self.graph.checkFlag(CO_FUTURE_ABSIMPORT) else -1
         for name, alias in node.names:
-            if VERSION > 1:
-                self.emit('LOAD_CONST', level)
-                self.emit('LOAD_CONST', None)
+            self.emit('LOAD_CONST', level)
+            self.emit('LOAD_CONST', None)
             self.emit('IMPORT_NAME', name)
             mod = name.split(".")[0]
             if alias:
@@ -913,24 +904,20 @@ class CodeGenerator(object):
         if level == 0 and not self.graph.checkFlag(CO_FUTURE_ABSIMPORT):
             level = -1
         fromlist = tuple(name for (name, alias) in node.names)
-        if VERSION > 1:
-            self.emit('LOAD_CONST', level)
-            self.emit('LOAD_CONST', fromlist)
+        self.emit('LOAD_CONST', level)
+        self.emit('LOAD_CONST', fromlist)
         self.emit('IMPORT_NAME', node.modname)
         for name, alias in node.names:
-            if VERSION > 1:
-                if name == '*':
-                    self.namespace = 0
-                    self.emit('IMPORT_STAR')
-                    # There can only be one name w/ from ... import *
-                    assert len(node.names) == 1
-                    return
-                else:
-                    self.emit('IMPORT_FROM', name)
-                    self._resolveDots(name)
-                    self.storeName(alias or name)
+            if name == '*':
+                self.namespace = 0
+                self.emit('IMPORT_STAR')
+                # There can only be one name w/ from ... import *
+                assert len(node.names) == 1
+                return
             else:
                 self.emit('IMPORT_FROM', name)
+                self._resolveDots(name)
+                self.storeName(alias or name)
         self.emit('POP_TOP')
 
     def _resolveDots(self, name):
@@ -982,15 +969,8 @@ class CodeGenerator(object):
         for child in node.nodes:
             self.visit(child)
 
-    if VERSION > 1:
-        visitAssTuple = _visitAssSequence
-        visitAssList = _visitAssSequence
-    else:
-        def visitAssTuple(self, node):
-            self._visitAssSequence(node, 'UNPACK_TUPLE')
-
-        def visitAssList(self, node):
-            self._visitAssSequence(node, 'UNPACK_LIST')
+    visitAssTuple = _visitAssSequence
+    visitAssList = _visitAssSequence
 
     # augmented assignment
 
@@ -1336,7 +1316,7 @@ class InteractiveCodeGenerator(NestedScopeMixin, CodeGenerator):
         self.visit(node.expr)
         self.emit('PRINT_EXPR')
 
-class AbstractFunctionCode:
+class AbstractFunctionCode(object):
     optimized = 1
     lambdaCount = 0
 
@@ -1386,10 +1366,7 @@ class AbstractFunctionCode:
                 self.unpackSequence(arg)
 
     def unpackSequence(self, tup):
-        if VERSION > 1:
-            self.emit('UNPACK_SEQUENCE', len(tup))
-        else:
-            self.emit('UNPACK_TUPLE', len(tup))
+        self.emit('UNPACK_SEQUENCE', len(tup))
         for elt in tup:
             if isinstance(elt, tuple):
                 self.unpackSequence(elt)
