@@ -13,14 +13,12 @@ This provides a high-level interface to parse a file into a syntax tree.
 
 __author__ = "Guido van Rossum <guido@python.org>"
 
-__all__ = ["Driver", "load_grammar"]
+__all__ = ["Driver"]
 
 # Python imports
 import codecs
 import io
-import os
 import logging
-import sys
 
 # Pgen imports
 from . import grammar, parse, token, tokenize

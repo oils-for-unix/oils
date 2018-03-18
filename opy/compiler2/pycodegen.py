@@ -1,19 +1,20 @@
-import imp
 import os
-import marshal
 import struct
 import sys
-from cStringIO import StringIO
 
 from . import ast, syntax
 from .visitor import walk
 from .transformer import parse
 from . import pyassem, misc, future, symbols
-from .consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
-     SC_FREE, SC_CELL
-from .consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
-     CO_NESTED, CO_GENERATOR, CO_FUTURE_DIVISION,
-     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
+from .consts import (
+    SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, SC_FREE, SC_CELL)
+
+# NOTE: removed CO_NESTED because it is unused
+from .consts import (
+    CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
+    CO_GENERATOR, CO_FUTURE_DIVISION,
+    CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
+
 from .pyassem import TupleArg
 
 # XXX The version-specific code can go, since this code only works with 2.x.

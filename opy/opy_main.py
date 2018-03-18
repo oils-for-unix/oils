@@ -10,7 +10,7 @@ import optparse
 import os
 import sys
 import marshal
-import logging
+#import logging
 
 # Like oil.py, set PYTHONPATH internally?  So symlinks work?
 # Actually '.' is implicitly in PYTHONPATH, so we don't need it.
@@ -19,12 +19,12 @@ import logging
 #sys.path.append(os.path.join(this_dir))
 
 from .pgen2 import driver, pgen, grammar
-from .pgen2 import token, tokenize
+from .pgen2 import tokenize
 from . import pytree
 
 from .compiler2 import transformer
 from .compiler2 import pycodegen
-from .compiler2 import opcode
+#from .compiler2 import opcode
 
 from .misc import inspect_pyc
 

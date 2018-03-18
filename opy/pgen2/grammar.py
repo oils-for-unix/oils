@@ -13,13 +13,11 @@ fallback token code OP, but the parser needs the actual token code.
 """
 
 # Python imports
-import cStringIO
 import collections
 import pickle
 import marshal
 
-# Local imports
-from . import token, tokenize
+from . import token
 
 
 class Grammar(object):

@@ -9,7 +9,6 @@ But it seems clearer to write checkers that use the AST to detect
 errors.
 """
 
-from . import ast
 from .visitor import walk
 
 

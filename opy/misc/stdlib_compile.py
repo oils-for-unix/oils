@@ -6,7 +6,7 @@ stdlib_compile.py
 
 import compiler as stdlib_comp
 import imp
-import os
+#import os
 import marshal
 import struct
 import sys

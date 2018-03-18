@@ -13,8 +13,7 @@ There's also a pattern matching implementation here.
 __author__ = "Guido van Rossum <guido@python.org>"
 
 import sys
-import warnings
-from io import StringIO
+import cStringIO
 
 HUGE = 0x7FFFFFFF  # maximum repeat count, default max
 
@@ -687,7 +686,7 @@ class WildcardPattern(BasePattern):
             # implementations don't have this nasty bug in the first place.
             if hasattr(sys, "getrefcount"):
                 save_stderr = sys.stderr
-                sys.stderr = StringIO()
+                sys.stderr = cStringIO.StringIO()
             try:
                 for count, r in self._recursive_matches(nodes, 0):
                     if self.name:

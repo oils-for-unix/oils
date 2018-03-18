@@ -23,6 +23,8 @@ class CallgraphTest(unittest.TestCase):
     print(sys.modules[lex_mode_e.__module__])
     print(sys.modules[lex_mode_e.__module__].__file__)
 
+    print(callgraph)
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -7,7 +7,6 @@ Copied out of symbols.py.  You pass this some filenames.
 
 import sys
 import symtable
-import unittest
 
 from . import symbols
 from . import transformer 

@@ -95,12 +95,18 @@ bin-flake8() {
 }
 
 flake8-all() {
-  local -a dirs=(asdl bin core osh)
+  local -a dirs=(asdl bin core osh opy)
+
+  # astgen.py has a PROLOGUE which must have unused imports!
+  # opcode.py triggers a flake8 bug?  Complains about def_op() when it is
+  # defined.
+  local -a exclude=(
+    --exclude 'opy/_regtest,opy/byterun,opy/tools/astgen.py,opy/compiler2/opcode.py')
 
   # Step 1: Stop the build if there are Python syntax errors, undefined names,
   # unused imports
   local fatal_errors='E901,E999,F821,F822,F823,F401'
-  bin-flake8 "${dirs[@]}" \
+  bin-flake8 "${dirs[@]}" "${exclude[@]}" \
     --count --select "$fatal_errors" --show-source --statistics
 
   # Make unused variable fatal.  Hm there are some I want.
@@ -119,8 +125,8 @@ flake8-all() {
   local ignored_for_now='W291,E501,E303'
 
   # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
-  bin-flake8 "${dirs[@]}" \
-    --ignore="$ignored,$ignored_for_now" \
+  bin-flake8 "${dirs[@]}" "${exclude[@]}" \
+    --ignore "$ignored,$ignored_for_now" \
     --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 }
 
