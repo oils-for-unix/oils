@@ -12,6 +12,9 @@ HAS_JREL = set(dis.opname[op] for op in dis.hasjrel)
 HAS_JABS = set(dis.opname[op] for op in dis.hasjabs)
 
 
+OPNUM = dict((name, i) for i, name in enumerate(dis.opname))
+
+
 # NOTE: Similar to ast.flatten().
 def flatten(tup):
     elts = []
@@ -150,14 +153,6 @@ class FlowGraph(object):
         if len(inst) == 2 and isinstance(inst[1], Block):
             self.current.addOutEdge(inst[1])
         self.current.emit(inst)
-
-    def getBlocksInOrder(self):
-        """Return the blocks in reverse postorder
-
-        i.e. each node appears before all of its successors
-        """
-        order = order_blocks(self.entry, self.exit)
-        return order
 
     def getBlocks(self):
         return self.blocks
@@ -418,31 +413,35 @@ class PyFlowGraph(FlowGraph):
     def flattenGraph(self):
         """Arrange the blocks in order and resolve jumps"""
         assert self.stage == RAW
-        self.insts = FlattenGraph(self.getBlocksInOrder())
+        blocks = order_blocks(self.entry, self.exit)
+        self.insts = FlattenGraph(blocks)
         self.stage = FLAT
 
     def convertArgs(self):
         """Convert arguments from symbolic to concrete form"""
         assert self.stage == FLAT
+
         self.consts.insert(0, self.docstring)
-        self.sort_cellvars()
-        for i in range(len(self.insts)):
-            t = self.insts[i]
+
+        # NOTE: overwrites self.cellvars, self.closure
+        self._sort_cellvars()
+
+        for i, t in enumerate(self.insts):
             if len(t) == 2:
                 opname, oparg = t
                 conv = self._converters.get(opname, None)
                 if conv:
                     self.insts[i] = opname, conv(self, oparg)
+
         self.stage = CONV
 
-    def sort_cellvars(self):
+    def _sort_cellvars(self):
         """Sort cellvars in the order of varnames and prune from freevars.
         """
         cells = {}
         for name in self.cellvars:
             cells[name] = 1
-        self.cellvars = [name for name in self.varnames
-                         if name in cells]
+        self.cellvars = [name for name in self.varnames if name in cells]
         for name in self.cellvars:
             del cells[name]
         self.cellvars = self.cellvars + cells.keys()
@@ -526,7 +525,7 @@ class PyFlowGraph(FlowGraph):
         for t in self.insts:
             opname = t[0]
             if len(t) == 1:
-                lnotab.addCode(self.opnum[opname])
+                lnotab.addCode(OPNUM[opname])
             else:
                 oparg = t[1]
                 if opname == "SET_LINENO":
@@ -534,17 +533,12 @@ class PyFlowGraph(FlowGraph):
                     continue
                 hi, lo = twobyte(oparg)
                 try:
-                    lnotab.addCode(self.opnum[opname], lo, hi)
+                    lnotab.addCode(OPNUM[opname], lo, hi)
                 except ValueError:
                     print(opname, oparg)
-                    print(self.opnum[opname], lo, hi)
+                    print(OPNUM[opname], lo, hi)
                     raise
         self.stage = DONE
-
-    opnum = {}
-    for num in range(len(dis.opname)):
-        opnum[dis.opname[num]] = num
-    del num
 
     def newCodeObject(self, stacksize):
         assert self.stage == DONE
