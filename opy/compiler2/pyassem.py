@@ -391,6 +391,10 @@ class PyFlowGraph(FlowGraph):
     """
 
     def __init__(self, name, filename, args=(), optimized=0, klass=None):
+        """
+        Args:
+          klass: Whether we're compiling a class block.
+        """
         FlowGraph.__init__(self)
 
         self.name = name  # name that is put in the code object

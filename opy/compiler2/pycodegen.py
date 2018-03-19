@@ -88,11 +88,9 @@ def compile(as_tree, filename, mode):
 
 class LocalNameFinder(object):
     """Find local names in scope"""
-    def __init__(self, names=()):
-        self.names = set()
+    def __init__(self, names=None):
+        self.names = names or set()
         self.globals = set()
-        for name in names:
-            self.names.add(name)
 
     # XXX list comprehensions and for loops
 
@@ -129,6 +127,7 @@ class LocalNameFinder(object):
 
     def visitAssName(self, node):
         self.names.add(node.name)
+
 
 def is_constant_false(node):
     if isinstance(node, ast.Const):
@@ -289,7 +288,10 @@ class CodeGenerator(object):
         if node.doc:
             self.emit('LOAD_CONST', node.doc)
             self.storeName('__doc__')
-        lnf = walk(node.node, LocalNameFinder(), verbose=0)
+
+        lnf = LocalNameFinder()
+        walk(node.node, lnf, verbose=0)
+
         self.locals.push(lnf.getLocals())
         self.visit(node.node)
         self.emit('LOAD_CONST', None)
@@ -304,6 +306,11 @@ class CodeGenerator(object):
 
     def visitFunction(self, node):
         self._visitFuncOrLambda(node, isLambda=0)
+        # TODO: This seems like a bug.  We already setDocstring in 
+        # FindLocals() on the FunctionCodeGenerator below.  This seems to mean
+        # that the MODULE gets the docstring of the last function?
+        # But this changes the output.
+
         if node.doc:
             self.setDocstring(node.doc)
         self.storeName(node.name)
@@ -321,8 +328,10 @@ class CodeGenerator(object):
 
         gen = FunctionCodeGenerator(node, self.scopes, isLambda,
                                     self.class_name, self.get_module())
+        gen.FindLocals()
         walk(node.code, gen)
-        gen.finish()
+        gen.Finish()
+
         self.set_lineno(node)
         for default in node.defaults:
             self.visit(default)
@@ -332,8 +341,11 @@ class CodeGenerator(object):
 
     def visitClass(self, node):
         gen = ClassCodeGenerator(node, self.scopes, self.get_module())
+
+        gen.FindLocals()
         walk(node.code, gen)
-        gen.finish()
+        gen.Finish()
+
         self.set_lineno(node)
         self.emit('LOAD_CONST', node.name)
         for base in node.bases:
@@ -610,8 +622,10 @@ class CodeGenerator(object):
     def visitGenExpr(self, node):
         gen = GenExprCodeGenerator(node, self.scopes, self.class_name,
                                    self.get_module())
+        gen.FindLocals()
         walk(node.code, gen)
-        gen.finish()
+        gen.Finish()
+
         self.set_lineno(node)
         self._makeClosure(gen, 0)
         # precomputation of outmost iterable
@@ -1255,41 +1269,40 @@ def _GenerateArgList(arglist):
 
 class FunctionMixin(object):
     optimized = 1
-    lambdaCount = 0
 
-    def __init__(self, func, scopes, isLambda, class_name, mod):
+    def __init__(self, func, obj_name, isLambda, class_name, mod):
+        self.func = func
+        self.isLambda = isLambda
+
         self.class_name = class_name
         self.module = mod
-        if isLambda:
-            klass = FunctionCodeGenerator
-            name = "<lambda.%d>" % klass.lambdaCount
-            klass.lambdaCount = klass.lambdaCount + 1
-        else:
-            name = func.name
 
-        args, hasTupleArg = _GenerateArgList(func.argnames)
-        self.graph = pyassem.PyFlowGraph(name, func.filename, args,
+        self.args, self.hasTupleArg = _GenerateArgList(func.argnames)
+        self.graph = pyassem.PyFlowGraph(obj_name, func.filename, self.args,
                                          optimized=1)
-        self.isLambda = isLambda
         CodeGenerator.__init__(self)
 
-        if not isLambda and func.doc:
+    def FindLocals(self):
+        func = self.func 
+        if not self.isLambda and func.doc:
             self.setDocstring(func.doc)
 
-        lnf = walk(func.code, LocalNameFinder(args), verbose=0)
+        lnf = LocalNameFinder(set(self.args))
+        walk(func.code, lnf, verbose=0)
         self.locals.push(lnf.getLocals())
+
         if func.varargs:
             self.graph.setFlag(CO_VARARGS)
         if func.kwargs:
             self.graph.setFlag(CO_VARKEYWORDS)
         self.set_lineno(func)
-        if hasTupleArg:
+        if self.hasTupleArg:
             self.generateArgUnpack(func.argnames)
 
     def get_module(self):
         return self.module
 
-    def finish(self):
+    def Finish(self):
         self.graph.startExitBlock()
         if not self.isLambda:
             self.emit('LOAD_CONST', None)
@@ -1313,13 +1326,25 @@ class FunctionMixin(object):
     unpackTuple = unpackSequence
 
 
+# TODO: Move this mutable global somewhere.
+gLambdaCount = 0
+
+
 class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
     scopes = None
 
     def __init__(self, func, scopes, isLambda, class_name, mod):
         self.scopes = scopes
         self.scope = scopes[func]
-        FunctionMixin.__init__(self, func, scopes, isLambda, class_name, mod)
+
+        if isLambda:
+            global gLambdaCount
+            obj_name = "<lambda.%d>" % gLambdaCount
+            gLambdaCount += 1
+        else:
+            obj_name = func.name
+
+        FunctionMixin.__init__(self, func, obj_name, isLambda, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         if self.scope.generator is not None:
@@ -1332,12 +1357,23 @@ class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
     def __init__(self, gexp, scopes, class_name, mod):
         self.scopes = scopes
         self.scope = scopes[gexp]
-        # NOTE: isLambda=1, which causes the code object to be named
-        # "lambda.<n>".  To match Python, we can thread an argument through and
-        # name it "<genexpr>".  byterun has a hack due to 
-        # http://bugs.python.org/issue19611 that relies on this.  But we worked
-        # around it there.
-        FunctionMixin.__init__(self, gexp, scopes, 1, class_name, mod)
+
+        if 1:
+            global gLambdaCount
+            obj_name = "<lambda.%d>" % gLambdaCount
+            gLambdaCount += 1
+        else:
+            # TODO: enable this.  This is more like CPython.  Note that I worked
+            # worked around a bug in byterun due to NOT having this.
+            # http://bugs.python.org/issue19611
+            # That workaround may no longer be necessary if we switch.
+            obj_name = '<genexpr>'
+
+        # TODO: Remove isLambda?  Causes the docstring to be handled
+        # differently?
+        isLambda = 1
+        FunctionMixin.__init__(self, gexp, obj_name, isLambda, class_name, mod)
+
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         self.graph.setFlag(CO_GENERATOR)
@@ -1345,22 +1381,27 @@ class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
 
 class ClassMixin(object):
 
-    def __init__(self, klass, scopes, module):
+    def __init__(self, klass, module):
+        self.klass = klass
         self.class_name = klass.name
         self.module = module
         self.graph = pyassem.PyFlowGraph(klass.name, klass.filename,
                                          optimized=0, klass=1)
         CodeGenerator.__init__(self)
-        lnf = walk(klass.code, LocalNameFinder(), verbose=0)
+
+    def FindLocals(self):
+        lnf = LocalNameFinder()
+        walk(self.klass.code, lnf, verbose=0)
         self.locals.push(lnf.getLocals())
+
         self.graph.setFlag(CO_NEWLOCALS)
-        if klass.doc:
-            self.setDocstring(klass.doc)
+        if self.klass.doc:
+            self.setDocstring(self.klass.doc)
 
     def get_module(self):
         return self.module
 
-    def finish(self):
+    def Finish(self):
         self.graph.startExitBlock()
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
@@ -1372,7 +1413,7 @@ class ClassCodeGenerator(ClassMixin, CodeGenerator):
     def __init__(self, klass, scopes, module):
         self.scopes = scopes
         self.scope = scopes[klass]
-        ClassMixin.__init__(self, klass, scopes, module)
+        ClassMixin.__init__(self, klass, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         self.set_lineno(klass)
