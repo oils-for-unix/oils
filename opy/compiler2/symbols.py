@@ -37,6 +37,14 @@ class Scope(object):
     def __repr__(self):
         return "<%s: %s>" % (self.__class__.__name__, self.name)
 
+    def DebugDump(self):
+        print(self.name, self.nested and "nested" or "", file=sys.stderr)
+        print("\tglobals: ", self.globals, file=sys.stderr)
+        print("\tcells: ", self.cells, file=sys.stderr)
+        print("\tdefs: ", self.defs, file=sys.stderr)
+        print("\tuses: ", self.uses, file=sys.stderr)
+        print("\tfrees:", self.frees, file=sys.stderr)
+
     def mangle(self, name):
         if self.klass is None:
             return name
@@ -75,14 +83,6 @@ class Scope(object):
 
     def get_children(self):
         return self.children
-
-    def DEBUG(self):
-        print(self.name, self.nested and "nested" or "", file=sys.stderr)
-        print("\tglobals: ", self.globals, file=sys.stderr)
-        print("\tcells: ", self.cells, file=sys.stderr)
-        print("\tdefs: ", self.defs, file=sys.stderr)
-        print("\tuses: ", self.uses, file=sys.stderr)
-        print("\tfrees:", self.frees, file=sys.stderr)
 
     def check_name(self, name):
         """Return scope of name.

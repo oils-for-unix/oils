@@ -126,8 +126,10 @@ class FlowGraph(object):
         self.blocks.add(self.entry)
         self.blocks.add(self.exit)
 
+    DEBUG = False
+
     def startBlock(self, block):
-        if self._debug:
+        if self.DEBUG:
             if self.current:
                 print("end", repr(self.current))
                 print("    next", self.current.next)
@@ -168,29 +170,15 @@ class FlowGraph(object):
     def startExitBlock(self):
         self.startBlock(self.exit)
 
-    _debug = 0
-
-    def _enable_debug(self):
-        self._debug = 1
-
-    def _disable_debug(self):
-        self._debug = 0
-
     def emit(self, *inst):
-        if self._debug:
+        if self.DEBUG:
             print("\t", inst)
         if len(inst) == 2 and isinstance(inst[1], Block):
             self.current.addOutEdge(inst[1])
         self.current.emit(inst)
 
-    def getBlocks(self):
-        return self.blocks
-
-    def getRoot(self):
-        """Return nodes appropriate for use with dominator"""
-        return self.entry
-
     def getContainedGraphs(self):
+        raise AssertionError('unused')
         l = []
         for b in self.getBlocks():
             l.extend(b.getContainedGraphs())
@@ -347,6 +335,7 @@ class Block(object):
         For example, a MAKE_FUNCTION block will contain a reference to
         the graph for the function body.
         """
+        raise AssertionError('unused')
         contained = []
         for inst in self.insts:
             if len(inst) == 1:
@@ -494,24 +483,6 @@ class PyFlowGraph(FlowGraph):
             lnotab.getTable(),
             tuple(self.freevars),
             tuple(self.cellvars))
-
-    def dump(self, io=None):
-        if io:
-            save = sys.stdout
-            sys.stdout = io
-        pc = 0
-        for t in self.insts:
-            opname = t[0]
-            if opname == "SET_LINENO":
-                print()
-            if len(t) == 1:
-                print("\t", "%3d" % pc, opname)
-                pc = pc + 1
-            else:
-                print("\t", "%3d" % pc, opname, t[1])
-                pc = pc + 3
-        if io:
-            sys.stdout = save
 
 
 class ArgConverter(object):

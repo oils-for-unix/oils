@@ -210,9 +210,6 @@ class CodeGenerator(object):
 
     # Next five methods handle name access
 
-    def isLocalName(self, name):
-        return self.locals.top().has_elt(name)
-
     def storeName(self, name):
         self._nameOp('STORE', name)
 
