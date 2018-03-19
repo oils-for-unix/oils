@@ -529,8 +529,9 @@ class ArgConverter(object):
         self.closure = closure
 
     def _convert_LOAD_CONST(self, arg):
-        if hasattr(arg, 'getCode'):
-            arg = arg.getCode()
+        from . import pycodegen
+        if isinstance(arg, pycodegen.CodeGenerator):
+            arg = arg.graph.getCode()
         return _NameToIndex(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):

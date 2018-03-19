@@ -197,15 +197,6 @@ class CodeGenerator(object):
         self.nextBlock = self.graph.nextBlock
         self.setDocstring = self.graph.setDocstring
 
-    def getCode(self):
-        """Called by _convert_LOAD_CONST in pyassem in a weird way.
-
-        It checks hasattr(arg, 'getCode').  I guess that is the ad-hoc
-        polymorphism of things that can be serialized to code objects.  Consts
-        can be code objects!
-        """
-        return self.graph.getCode()
-
     def mangle(self, name):
         if self.class_name is not None:
             return misc.mangle(name, self.class_name)
