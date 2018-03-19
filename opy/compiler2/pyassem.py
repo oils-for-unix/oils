@@ -372,10 +372,6 @@ class Block(object):
         return contained
 
 
-# the FlowGraph is transformed in place; it exists in one of these states
-RAW = "RAW"
-CONV = "CONV"
-
 class PyFlowGraph(FlowGraph):
     """Something that gets turned into a single code object.
 
@@ -409,7 +405,7 @@ class PyFlowGraph(FlowGraph):
             self.flags = 0
 
         # TODO: All of these go in the code object.  Might want to separate
-        # them.
+        # them.  CodeContext.
         self.consts = []
         self.names = []
         # Free variables found by the symbol table scan, including
@@ -425,8 +421,6 @@ class PyFlowGraph(FlowGraph):
         for i, var in enumerate(self.varnames):
             if isinstance(var, TupleArg):
                 self.varnames[i] = var.getName()
-
-        self.stage = RAW
 
     def setDocstring(self, doc):
         self.docstring = doc
@@ -458,8 +452,6 @@ class PyFlowGraph(FlowGraph):
         #
         # Really we need a shared varnames representation.
 
-        assert self.stage == RAW
-
         blocks = order_blocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
@@ -468,13 +460,18 @@ class PyFlowGraph(FlowGraph):
         # NOTE: overwrites self.cellvars, self.closure
         self._sort_cellvars()
 
-        # TODO: Create
-        # c = ArgConverter(self.names, ...)
-        # c.Replace(insts)
+        # Convert arguments from symbolic to concrete form
+        # Mutates the insts argument.  The converters mutate self.names,
+        # self.varnames, etc.
+        conv = ArgConverter(self.klass, self.consts, self.names, self.varnames,
+                            self.closure)
 
-        # Mutates insts, as well as self.names, varnames, etc.
-        self.convertArgs(insts)
-        assert self.stage == CONV
+        for i, t in enumerate(insts):
+            if len(t) == 2:
+                opname, oparg = t
+                method = conv.Get(opname)
+                if method:
+                    insts[i] = opname, method(conv, oparg)
 
         lnotab = MakeLineAddrTable(insts)
 
@@ -521,21 +518,6 @@ class PyFlowGraph(FlowGraph):
         if io:
             sys.stdout = save
 
-    def convertArgs(self, insts):
-        """Convert arguments from symbolic to concrete form
-
-        Mutates the insts argument.  The converters mutate self.names,
-        self.varnames, etc.
-        """
-        for i, t in enumerate(insts):
-            if len(t) == 2:
-                opname, oparg = t
-                conv = self._converters.get(opname, None)
-                if conv:
-                    insts[i] = opname, conv(self, oparg)
-
-        self.stage = CONV
-
     def _sort_cellvars(self):
         """Sort cellvars in the order of varnames and prune from freevars.
         """
@@ -548,7 +530,21 @@ class PyFlowGraph(FlowGraph):
         self.cellvars = self.cellvars + cells.keys()
         self.closure = self.cellvars + self.freevars
 
-    _converters = {}
+
+class ArgConverter(object):
+    """ TODO: This should just be a simple switch ."""
+
+    def __init__(self, klass, consts, names, varnames, closure):
+        """
+        Args:
+          consts ... closure are all potentially mutated!
+        """
+        self.klass = klass
+        self.consts = consts
+        self.names = names
+        self.varnames = varnames
+        self.closure = closure
+
     def _convert_LOAD_CONST(self, arg):
         if hasattr(arg, 'getCode'):
             arg = arg.getCode()
@@ -595,6 +591,8 @@ class PyFlowGraph(FlowGraph):
     def _convert_COMPARE_OP(self, arg):
         return self._cmp.index(arg)
 
+    _converters = {}
+
     # similarly for other opcodes...
 
     for name, obj in locals().items():
@@ -603,6 +601,8 @@ class PyFlowGraph(FlowGraph):
             _converters[opname] = obj
     del name, obj, opname
 
+    def Get(self, opname):
+      return self._converters.get(opname, None)
 
 
 class TupleArg(object):

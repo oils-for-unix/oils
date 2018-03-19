@@ -311,6 +311,7 @@ class CodeGenerator(object):
     # - lambdas need an auto-generated name for the code object
     # - lamdbda don't have docstrings
     # - lambdas can't have decorators
+    # - code gen: non-lambdas need an extra LOAD_CONST at the end, see Finish()
 
     def visitFunction(self, node):
         if node.decorators:
@@ -1349,14 +1350,6 @@ class _FunctionCodeGenerator(CodeGenerator):
                 self.unpackSequence(elt)
             else:
                 self._nameOp('STORE', elt)
-
-
-# TODO: _FunctionCodeGenerator takes graph(obj_name), args, hasTupleArg
-# remove objName
-# call _GenerateArgList
-#
-# Then you will properly initialize base class.  Every CodeGenerator can have a
-# graph!
 
 
 class FunctionCodeGenerator(_FunctionCodeGenerator):
