@@ -30,10 +30,9 @@ class Scope(object):
         self.generator = None
         self.klass = None
         if klass is not None:
-            for i in range(len(klass)):
-                if klass[i] != '_':
-                    self.klass = klass[i:]
-                    break
+            # Strip leading _.  I guess this is for name mangling; you don't
+            # want more than one _.
+            self.klass = klass.lstrip('_')
 
     def __repr__(self):
         return "<%s: %s>" % (self.__class__.__name__, self.name)
@@ -170,45 +169,40 @@ class Scope(object):
     def get_cell_vars(self):
         return self.cells.keys()
 
+
 class ModuleScope(Scope):
-    __super_init = Scope.__init__
 
     def __init__(self):
-        self.__super_init("global", self)
+        Scope.__init__(self, "global", self)
+
 
 class FunctionScope(Scope):
     pass
 
+
 class GenExprScope(Scope):
-    __super_init = Scope.__init__
 
-    __counter = 1
-
-    def __init__(self, module, klass=None):
-        i = self.__counter
-        self.__counter += 1
-        self.__super_init("generator expression<%d>"%i, module, klass)
+    def __init__(self, name, module, klass=None):
+        Scope.__init__(self, name, module, klass)
         self.add_param('.0')
 
     def get_names(self):
         keys = Scope.get_names(self)
         return keys
 
+
 class LambdaScope(FunctionScope):
-    __super_init = Scope.__init__
+    pass
 
-    __counter = 1
-
-    def __init__(self, module, klass=None):
-        i = self.__counter
-        self.__counter += 1
-        self.__super_init("lambda.%d" % i, module, klass)
 
 class ClassScope(Scope):
-    __super_init = Scope.__init__
+    pass
 
-    def __init__(self, name, module):
-        self.__super_init(name, module, name)
+
+
+gLambdaCounter = 1
+gGenExprCounter = 1
+
 
 class SymbolVisitor(object):
     def __init__(self):
@@ -238,9 +232,13 @@ class SymbolVisitor(object):
         self.handle_free_vars(scope, parent)
 
     def visitGenExpr(self, node, parent):
-        scope = GenExprScope(self.module, self.klass);
-        if parent.nested or isinstance(parent, FunctionScope) \
-                or isinstance(parent, GenExprScope):
+        global gGenExprCounter
+        obj_name = "generator expression<%d>" % gGenExprCounter
+        gGenExprCounter += 1 
+
+        scope = GenExprScope(obj_name, self.module, self.klass)
+
+        if parent.nested or isinstance(parent, (FunctionScope, GenExprScope)):
             scope.nested = 1
 
         self.scopes[node] = scope
@@ -271,7 +269,13 @@ class SymbolVisitor(object):
 
         for n in node.defaults:
             self.visit(n, parent)
-        scope = LambdaScope(self.module, self.klass)
+
+        global gLambdaCounter
+        obj_name = "lambda.%d" % gLambdaCounter
+        gLambdaCounter += 1
+
+        scope = LambdaScope(obj_name, self.module, klass=self.klass)
+
         if parent.nested or isinstance(parent, FunctionScope):
             scope.nested = 1
         self.scopes[node] = scope
