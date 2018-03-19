@@ -5,6 +5,7 @@ from . import ast
 from . import misc
 from .consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
     SC_FREE, SC_CELL, SC_UNKNOWN
+from .visitor import ASTVisitor
 
 import sys
 import types
@@ -200,8 +201,9 @@ gLambdaCounter = 1
 gGenExprCounter = 1
 
 
-class SymbolVisitor(object):
+class SymbolVisitor(ASTVisitor):
     def __init__(self):
+        ASTVisitor.__init__(self)
         self.scopes = {}  # The "return value" of walk()
         self.klass = None
 

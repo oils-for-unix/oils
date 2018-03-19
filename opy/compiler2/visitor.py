@@ -31,38 +31,27 @@ class ASTVisitor(object):
     VERBOSE = 0
 
     def __init__(self):
-        self.node = None
-        self._cache = {}
+        self._method_cache = {}
 
-    def default(self, node, *args):
+    def _Default(self, node, *args):
+        """If a visitClassName method isn't provided, visit children."""
         for child in node.getChildNodes():
-            self.dispatch(child, *args)
+            self.Dispatch(child, *args)
 
-    def dispatch(self, node, *args):
-        self.node = node
+    def Dispatch(self, node, *args):
         klass = node.__class__
-        meth = self._cache.get(klass, None)
+
+        # TODO: Shouldn't it be keyed by string rather than class instance?
+        # This would probably change the bytecode order.
+        meth = self._method_cache.get(klass, None)
         if meth is None:
             className = klass.__name__
-            meth = getattr(self.visitor, 'visit' + className, self.default)
-            self._cache[klass] = meth
-##        if self.VERBOSE > 0:
-##            className = klass.__name__
-##            if self.VERBOSE == 1:
-##                if meth == 0:
-##                    print "dispatch", className
-##            else:
-##                print "dispatch", className, (meth and meth.__name__ or '')
+            meth = getattr(self, 'visit' + className, self._Default)
+            self._method_cache[klass] = meth
         return meth(node, *args)
 
-    def preorder(self, tree, visitor, *args):
-        """Do preorder walk of tree using visitor"""
-        self.visitor = visitor
-
-        # TODO: Remove this!  I don't like mutating the class.
-
-        visitor.visit = self.dispatch
-        self.dispatch(tree, *args) # XXX *args make sense?
+    # Subclasses call self.visit().  TODO: Rename?
+    visit = Dispatch
 
 
 class ExampleASTVisitor(ASTVisitor):
@@ -74,15 +63,15 @@ class ExampleASTVisitor(ASTVisitor):
     """
     examples = {}
 
-    def dispatch(self, node, *args):
+    def Dispatch(self, node, *args):
         self.node = node
-        meth = self._cache.get(node.__class__, None)
+        meth = self._method_cache.get(node.__class__, None)
         className = node.__class__.__name__
         if meth is None:
             meth = getattr(self.visitor, 'visit' + className, 0)
-            self._cache[node.__class__] = meth
+            self._method_cache[node.__class__] = meth
         if self.VERBOSE > 1:
-            print("dispatch", className, (meth and meth.__name__ or ''))
+            print("Dispatch", className, (meth and meth.__name__ or ''))
         if meth:
             meth(node, *args)
         elif self.VERBOSE > 0:
@@ -96,9 +85,4 @@ class ExampleASTVisitor(ASTVisitor):
                     if attr[0] != '_':
                         print("\t", "%-12.12s" % attr, getattr(node, attr))
                 print()
-            return self.default(node, *args)
-
-
-def walk(tree, visitor):
-    walker = ASTVisitor()
-    walker.preorder(tree, visitor)
+            return self._Default(node, *args)

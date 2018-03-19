@@ -281,9 +281,9 @@ class Block(object):
             return "<block id=%d>" % (self.bid)
 
     def __str__(self):
-        insts = map(str, self.insts)
-        return "<block %s %d:\n%s>" % (self.label, self.bid,
-                                       '\n'.join(insts))
+        return "<block %s %d:\n%s>" % (
+            self.label, self.bid,
+            '\n'.join(str(inst) for inst in self.insts))
 
     def emit(self, inst):
         op = inst[0]
@@ -297,9 +297,9 @@ class Block(object):
 
     def addNext(self, block):
         self.next.append(block)
-        assert len(self.next) == 1, map(str, self.next)
+        assert len(self.next) == 1, [str(b) for b in self.next]
         block.prev.append(self)
-        assert len(block.prev) == 1, map(str, block.prev)
+        assert len(block.prev) == 1, [str(b) for b in block.prev]
 
     _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
                         'JUMP_ABSOLUTE', 'JUMP_FORWARD', 'CONTINUE_LOOP',
@@ -621,7 +621,7 @@ class Assembler(object):
         return ''.join(self.code)
 
     def LineNumberTable(self):
-        return ''.join(map(chr, self.lnotab))
+        return ''.join(chr(c) for c in self.lnotab)
 
 
 class StackDepthTracker(object):

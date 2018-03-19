@@ -1,6 +1,7 @@
 """Parser for future statements"""
 
 from . import ast
+from .visitor import ASTVisitor
 
 
 def is_future(stmt):
@@ -13,13 +14,14 @@ def is_future(stmt):
         return 0
 
 
-class FutureParser(object):
+class FutureParser(ASTVisitor):
 
     features = ("nested_scopes", "generators", "division",
                 "absolute_import", "with_statement", "print_function",
                 "unicode_literals")
 
     def __init__(self):
+        ASTVisitor.__init__(self)
         self.found = {}  # set
 
     def visitModule(self, node):
@@ -45,7 +47,7 @@ class FutureParser(object):
         return self.found.keys()
 
 
-class BadFutureParser(object):
+class BadFutureParser(ASTVisitor):
     """Check for invalid future statements"""
 
     def visitFrom(self, node):

@@ -2,7 +2,7 @@ import os
 import struct
 
 from . import ast, syntax
-from .visitor import walk
+from .visitor import ASTVisitor
 from . import pyassem, misc, future, symbols
 from .consts import (
     SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, SC_FREE, SC_CELL)
@@ -63,7 +63,7 @@ def compile(as_tree, filename, mode):
 
     # NOTE: This currently does nothing!
     v = syntax.SyntaxErrorChecker()
-    walk(as_tree, v)
+    v.Dispatch(as_tree)
 
     if mode == "single":
         graph = pyassem.PyFlowGraph("<interactive>", as_tree.filename)
@@ -76,8 +76,8 @@ def compile(as_tree, filename, mode):
         # TODO: Does this need to be made more efficient?
         p1 = future.FutureParser()
         p2 = future.BadFutureParser()
-        walk(as_tree, p1)
-        walk(as_tree, p2)
+        p1.Dispatch(as_tree)
+        p2.Dispatch(as_tree)
 
         gen = TopLevelCodeGenerator(graph, p1.get_features())
     elif mode == "eval":
@@ -88,9 +88,9 @@ def compile(as_tree, filename, mode):
                          "'eval' or 'single'")
 
     # This has a side effect of populating the gen.graph data structure?
-    # The multiple inheritance implements some weird double-dispatch.
+    # The multiple inheritance implements some weird double-Dispatch.
 
-    walk(as_tree, gen)
+    gen.Dispatch(as_tree)
 
     # Not sure why I need this, copied from InteractiveCodeGenerator
     if mode == "single":
@@ -99,9 +99,10 @@ def compile(as_tree, filename, mode):
     return graph.MakeCodeObject()
 
 
-class LocalNameFinder(object):
+class LocalNameFinder(ASTVisitor):
     """Find local names in scope"""
     def __init__(self, names=None):
+        ASTVisitor.__init__(self)
         self.names = names or set()
         self.globals = set()
 
@@ -158,7 +159,7 @@ class Stack(list):
         return self[-1]
 
 
-class CodeGenerator(object):
+class CodeGenerator(ASTVisitor):
     """Defines basic code generator for Python bytecode
 
     This class is an abstract base class.  Concrete subclasses must
@@ -169,6 +170,7 @@ class CodeGenerator(object):
     class_name = None  # provide default for instance variable
 
     def __init__(self, graph, futures):
+        ASTVisitor.__init__(self)
         self.graph = graph
         self.futures = futures  # passed down to child CodeGenerator instances
 
@@ -202,7 +204,7 @@ class CodeGenerator(object):
 
     def parseSymbols(self, tree):
         s = symbols.SymbolVisitor()
-        walk(tree, s)
+        s.Dispatch(tree)
         return s.scopes
 
     # Next five methods handle name access
@@ -285,7 +287,7 @@ class CodeGenerator(object):
             self.storeName('__doc__')
 
         lnf = LocalNameFinder()
-        walk(node.node, lnf)
+        lnf.Dispatch(node.node)
 
         self.locals.push(lnf.getLocals())
         self.visit(node.node)
@@ -350,7 +352,7 @@ class CodeGenerator(object):
             gen.setDocstring(node.doc)
         gen.FindLocals()
 
-        walk(node.code, gen)
+        gen.Dispatch(node.code)
         gen.Finish(isLambda=isLambda)
 
         self.set_lineno(node)
@@ -367,7 +369,7 @@ class CodeGenerator(object):
 
         gen.Start()
         gen.FindLocals()
-        walk(node.code, gen)
+        gen.Dispatch(node.code)
         gen.Finish()
 
         self.set_lineno(node)
@@ -663,7 +665,7 @@ class CodeGenerator(object):
 
         gen.Start()
         gen.FindLocals()
-        walk(node.code, gen)
+        gen.Dispatch(node.code)
         gen.Finish(isLambda=isLambda)
 
         self.set_lineno(node)
@@ -1309,7 +1311,7 @@ class _FunctionCodeGenerator(CodeGenerator):
         func = self.func 
 
         lnf = LocalNameFinder(set(self.func.argnames))
-        walk(func.code, lnf)
+        lnf.Dispatch(func.code)
         self.locals.push(lnf.getLocals())
 
         if func.varargs:
@@ -1365,7 +1367,7 @@ class ClassCodeGenerator(CodeGenerator):
 
     def FindLocals(self):
         lnf = LocalNameFinder()
-        walk(self.klass.code, lnf)
+        lnf.Dispatch(self.klass.code)
         self.locals.push(lnf.getLocals())
 
         self.graph.setFlag(CO_NEWLOCALS)
@@ -1381,11 +1383,14 @@ class ClassCodeGenerator(CodeGenerator):
 def findOp(node):
     """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
     v = OpFinder()
-    walk(node, v)
+    v.Dispatch(node)
     return v.op
 
-class OpFinder(object):
+
+class OpFinder(ASTVisitor):
+
     def __init__(self):
+        ASTVisitor.__init__(self)
         self.op = None
 
     def visitAssName(self, node):

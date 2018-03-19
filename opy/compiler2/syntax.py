@@ -9,7 +9,11 @@ But it seems clearer to write checkers that use the AST to detect
 errors.
 """
 
-class SyntaxErrorChecker(object):
+
+from .visitor import ASTVisitor
+
+
+class SyntaxErrorChecker(ASTVisitor):
     """A visitor to find syntax errors in the AST."""
 
     def __init__(self, multi=None):
@@ -19,6 +23,7 @@ class SyntaxErrorChecker(object):
         for each error rather than raising a SyntaxError for the
         first.
         """
+        ASTVisitor.__init__(self)
         self.multi = multi
         self.errors = 0
 

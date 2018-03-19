@@ -100,8 +100,8 @@
   4157 08e3878abd23a8093d252c7044df727b _tmp/regtest/core/braces_test.pyc
   4194 f9d417154a0bf0da679fb957bc3eeadc _tmp/regtest/core/reader.pyc
   4238 09a4df5015792a7770ee7eace0145892 _tmp/regtest/osh/arith_parse_test.pyc
+  4273 200f27a5d3bfb96400806da917025a37 _tmp/regtest/opy/compiler2/misc.pyc
   4276 75a15eecc1e82fb6ac0e52c14e62744d _tmp/regtest/osh/meta.pyc
-  4280 2b8de5aaffcfae89d942e9417932294c _tmp/regtest/opy/compiler2/misc.pyc
   4330 0b4f35f0d70efef473f2e0d80b1adf48 _tmp/regtest/build/app_deps.pyc
   4371 9a488d36ee8a24b3bd483831ad8c2db0 _tmp/regtest/__future__.pyc
   4473 a73808c9bb4cef1c5179d9283c5a5736 _tmp/regtest/tools/deps.pyc
@@ -109,8 +109,8 @@
   4618 866a47cb6e9d0800a8081478081c113f _tmp/regtest/asdl/visitor.pyc
   4632 b08545054821d40c7572a735daddbc4c _tmp/regtest/osh/bool_parse_test.pyc
   4645 1900cb9e8fe71d0a72e5e3e4374f4500 _tmp/regtest/core/id_kind_test.pyc
+  4651 c20ea304f2be7b5564b5cc74447c168c _tmp/regtest/opy/compiler2/visitor.pyc
   4653 ae0eb21dabefb51d94ce1752f3af2e17 _tmp/regtest/core/process_test.pyc
-  4659 902e5d679038e216ce598a203d2806a0 _tmp/regtest/opy/compiler2/visitor.pyc
   4817 858dba6b07633e3501b2aea59416c706 _tmp/regtest/core/id_kind_gen.pyc
   4897 3dac8304d0cbcb247c6f573899b7d5c0 _tmp/regtest/asdl/gen_python.pyc
   5062 b805c171f95636e88a4f4a664c995b82 _tmp/regtest/core/args_test.pyc
@@ -202,7 +202,7 @@
  28978 581863c0d28c4f23d0eaaaab3a525f33 _tmp/regtest/test/sh_spec.pyc
  29159 58e8951b48374c0368253e32c9550075 _tmp/regtest/_abcoll.pyc
  29440 5ae214959a39478444778fa9800f4dd6 _tmp/regtest/collections.pyc
- 30277 ded6882e1a9b49987f487a89baf4a124 _tmp/regtest/opy/compiler2/pyassem.pyc
+ 30243 9a54545f2f70fc1b265676e07f4f258c _tmp/regtest/opy/compiler2/pyassem.pyc
  30811 02d4a38a06b87bc1875e62ffe18bb88a _tmp/regtest/core/builtin.pyc
  32295 29b6c155971a78b46cae1c83500f7efb _tmp/regtest/osh/word_parse.pyc
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc
@@ -217,6 +217,6 @@
  56695 dc4402957b8a978b829a9dd196550908 _tmp/regtest/opy/compiler2/transformer.pyc
  57165 2c07e6823dbcee196553599c9d6ea8d4 _tmp/regtest/locale.pyc
  59976 7ea8b29a98a017ee6aba911d78c3d599 _tmp/regtest/optparse.pyc
- 64835 eb41bafad353397b0c5646707e1e0603 _tmp/regtest/opy/compiler2/pycodegen.pyc
+ 64817 1b56dfdd2dd91031be7e312bc8d3d7a7 _tmp/regtest/opy/compiler2/pycodegen.pyc
  65309 f51234057020da7d30eafc509482a21a _tmp/regtest/logging/__init__.pyc
  81561 fc68aabb67bc1ca842d3bd2fff1c746d _tmp/regtest/opy/compiler2/ast.pyc
