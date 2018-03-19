@@ -83,7 +83,7 @@
   2769 e5153445e33077d2995ddceae21140ad _tmp/regtest/build/runpy_deps.pyc
   2819 3913c2dac884ee9d0a7697b4cf8d844e _tmp/regtest/bin/opy_.pyc
   2855 554887965c5d231df3d319796db90bcd _tmp/regtest/benchmarks/virtual_memory.pyc
-  2894 87e294fa123a0f47dc1d790a31905402 _tmp/regtest/benchmarks/pytrace.pyc
+  2899 a15f7809e60769f62fa855de874f2ab3 _tmp/regtest/benchmarks/pytrace.pyc
   3064 a62398950ae44c26b8fb530a999ffd18 _tmp/regtest/types.pyc
   3119 90c03f81caaa9c794f3dc506b3c1565a _tmp/regtest/_devbuild/gen/osh_help.pyc
   3168 78024d0158f0b23375ff101a729a3fe9 _tmp/regtest/opy/byterun/vmtest.pyc
@@ -202,7 +202,7 @@
  28982 abe90a58297303456ac3eafa363f025f _tmp/regtest/test/sh_spec.pyc
  29159 58e8951b48374c0368253e32c9550075 _tmp/regtest/_abcoll.pyc
  29440 5ae214959a39478444778fa9800f4dd6 _tmp/regtest/collections.pyc
- 30299 9d959fe8385433fd493c6b2fff53e285 _tmp/regtest/opy/compiler2/pyassem.pyc
+ 30277 ded6882e1a9b49987f487a89baf4a124 _tmp/regtest/opy/compiler2/pyassem.pyc
  30811 02d4a38a06b87bc1875e62ffe18bb88a _tmp/regtest/core/builtin.pyc
  32295 29b6c155971a78b46cae1c83500f7efb _tmp/regtest/osh/word_parse.pyc
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc

@@ -328,7 +328,7 @@ class CodeGenerator(object):
 
         gen = FunctionCodeGenerator(node, self.scopes, isLambda,
                                     self.class_name, self.get_module())
-        gen.Start_()
+        gen.Start()
         gen.FindLocals()
         walk(node.code, gen)
         gen.Finish()
@@ -623,7 +623,7 @@ class CodeGenerator(object):
     def visitGenExpr(self, node):
         gen = GenExprCodeGenerator(node, self.scopes, self.class_name,
                                    self.get_module())
-        gen.Start_()
+        gen.Start()
         gen.FindLocals()
         walk(node.code, gen)
         gen.Finish()
@@ -1348,7 +1348,7 @@ class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
 
         FunctionMixin.__init__(self, func, obj_name, isLambda, class_name, mod)
 
-    def Start_(self):
+    def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         if self.scope.generator is not None:
@@ -1378,7 +1378,7 @@ class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
         isLambda = 1
         FunctionMixin.__init__(self, gexp, obj_name, isLambda, class_name, mod)
 
-    def Start_(self):
+    def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         self.graph.setFlag(CO_GENERATOR)
