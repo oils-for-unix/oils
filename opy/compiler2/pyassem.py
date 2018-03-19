@@ -46,14 +46,13 @@ def flatten(tup):
 
 def getArgCount(args):
     n = len(args)
-    if args:
-        for arg in args:
-            if isinstance(arg, TupleArg):
-                n -= len(flatten(arg.names))
+    for arg in args:
+        if isinstance(arg, TupleArg):
+            n -= len(flatten(arg.names))
     return n
 
 
-def ComputeStackDepth(graph):
+def ComputeStackDepth(blocks, entry_block, exit_block):
     """Compute the max stack depth.
 
     Approach is to compute the stack effect of each basic block.
@@ -62,7 +61,7 @@ def ComputeStackDepth(graph):
     """
     depth = {}
     exit = None
-    for b in graph.getBlocks():
+    for b in blocks:
         depth[b] = TRACKER.findDepth(b.getInstructions())
 
     seen = {}
@@ -77,11 +76,11 @@ def ComputeStackDepth(graph):
             return max([max_depth(c, d) for c in children])
         else:
             if not b.label == "exit":
-                return max_depth(graph.exit, d)
+                return max_depth(exit_block, d)
             else:
                 return d
 
-    return max_depth(graph.entry, 0)
+    return max_depth(entry_block, 0)
 
 
 def FlattenGraph(blocks):
@@ -217,7 +216,7 @@ class FlowGraph(object):
         return l
 
 
-def order_blocks(start_block, exit_block):
+def OrderBlocks(start_block, exit_block):
     """Order blocks so that they are emitted in the right order"""
     # Rules:
     # - when a block has a next block, the next block must be emitted just after
@@ -297,7 +296,7 @@ class Block(object):
         Block._count += 1
 
     # BUG FIX: This is needed for deterministic order in sets (and dicts?).
-    # See order_blocks() below.  remaining is set() of blocks.  If we rely on
+    # See OrderBlocks() below.  remaining is set() of blocks.  If we rely on
     # the default id(), then the output bytecode is NONDETERMINISTIC.
     def __hash__(self):
         return self.bid
@@ -386,7 +385,7 @@ class PyFlowGraph(FlowGraph):
     code_object = Assemble(flow_graph)
     """
 
-    def __init__(self, name, filename, args=(), optimized=0, klass=None):
+    def __init__(self, name, filename, optimized=0, klass=None):
         """
         Args:
           klass: Whether we're compiling a class block.
@@ -396,8 +395,6 @@ class PyFlowGraph(FlowGraph):
         self.name = name  # name that is put in the code object
         self.filename = filename
         self.docstring = None
-        self.args = args
-        self.argcount = getArgCount(args)
         self.klass = klass
         if optimized:
             self.flags = CO_OPTIMIZED | CO_NEWLOCALS
@@ -417,10 +414,20 @@ class PyFlowGraph(FlowGraph):
         # The offsets used by LOAD_CLOSURE/LOAD_DEREF refer to both
         # kinds of variables.
         self.closure = []
-        self.varnames = list(args) or []
-        for i, var in enumerate(self.varnames):
-            if isinstance(var, TupleArg):
-                self.varnames[i] = var.getName()
+
+        # Mutated by setArgs()
+        self.varnames = []
+        self.argcount = 0
+
+    def setArgs(self, args):
+        """Only called by functions, not modules or classes."""
+        assert not self.varnames   # Nothing should have been added
+        if args:
+            self.varnames = list(args)
+            for i, var in enumerate(self.varnames):
+                if isinstance(var, TupleArg):
+                    self.varnames[i] = var.getName()
+            self.argcount = getArgCount(args)
 
     def setDocstring(self, doc):
         self.docstring = doc
@@ -440,7 +447,7 @@ class PyFlowGraph(FlowGraph):
     def setCellVars(self, names):
         self.cellvars = names
 
-    def getCode(self, stacksize):
+    def getCode(self):
         """Assemble a Python code object."""
         # TODO: Split into two representations?  Graph and insts?
 
@@ -449,7 +456,8 @@ class PyFlowGraph(FlowGraph):
         # up varnames.
         # Really we need a shared varnames representation.
 
-        blocks = order_blocks(self.entry, self.exit)
+        stacksize = ComputeStackDepth(self.blocks, self.entry, self.exit)
+        blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
         self.consts.insert(0, self.docstring)

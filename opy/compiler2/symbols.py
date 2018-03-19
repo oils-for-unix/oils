@@ -212,7 +212,7 @@ class ClassScope(Scope):
 
 class SymbolVisitor(object):
     def __init__(self):
-        self.scopes = {}
+        self.scopes = {}  # The "return value" of walk()
         self.klass = None
 
     # node that define new scopes

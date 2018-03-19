@@ -86,8 +86,7 @@ def compile(as_tree, filename, mode):
     if mode == "single":
       gen.emit('RETURN_VALUE')
 
-    stacksize = pyassem.ComputeStackDepth(graph)
-    return graph.getCode(stacksize)
+    return graph.getCode()
 
 
 class LocalNameFinder(object):
@@ -193,8 +192,7 @@ class CodeGenerator(object):
         polymorphism of things that can be serialized to code objects.  Consts
         can be code objects!
         """
-        stacksize = pyassem.ComputeStackDepth(self.graph)
-        return self.graph.getCode(stacksize)
+        return self.graph.getCode()
 
     def mangle(self, name):
         if self.class_name is not None:
@@ -338,6 +336,8 @@ class CodeGenerator(object):
         obj_name = "<lambda.%d>" % gLambdaCount
         gLambdaCount += 1
 
+        # TODO: _GenerateArgList -> _AssertNoTupleArgs, instantiate graph, pass
+        # args
         gen = FunctionCodeGenerator(node, self.scopes, obj_name,
                                     self.class_name, self.get_module())
         self._funcOrLambda(node, gen, 0, isLambda=True)
@@ -347,6 +347,7 @@ class CodeGenerator(object):
         if not isLambda and node.doc:
             gen.setDocstring(node.doc)
         gen.FindLocals()
+
         walk(node.code, gen)
         gen.Finish(isLambda=isLambda)
 
@@ -1281,6 +1282,12 @@ class InteractiveCodeGenerator(TopLevelCodeGenerator):
         self.emit('PRINT_EXPR')
 
 
+# NOTE: This feature removed in Python 3!  I didn't even know about it!
+#
+# https://www.python.org/dev/peps/pep-3113/
+# def fxn(a, (b, c), d):
+#    pass
+
 def _GenerateArgList(arglist):
     """Generate an arg list marking TupleArgs"""
     args = []
@@ -1312,8 +1319,9 @@ class _FunctionCodeGenerator(CodeGenerator):
         self.module = mod
 
         self.args, self.hasTupleArg = _GenerateArgList(func.argnames)
-        self.graph = pyassem.PyFlowGraph(obj_name, func.filename, self.args,
+        self.graph = pyassem.PyFlowGraph(obj_name, func.filename,
                                          optimized=1)
+        self.graph.setArgs(self.args)
         CodeGenerator.__init__(self)
 
     def get_module(self):

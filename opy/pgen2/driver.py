@@ -16,8 +16,6 @@ __author__ = "Guido van Rossum <guido@python.org>"
 __all__ = ["Driver"]
 
 # Python imports
-import codecs
-import io
 import logging
 
 # Pgen imports
@@ -40,10 +38,10 @@ class Driver(object):
         p.setup(start=start_symbol)
         lineno = 1
         column = 0
-        type = value = start = end = line_text = None
+        type_ = value = start = end = line_text = None
         prefix = ""
         for quintuple in tokens:
-            type, value, start, end, line_text = quintuple
+            type_, value, start, end, line_text = quintuple
             if start != (lineno, column):
                 assert (lineno, column) <= start, ((lineno, column), start)
                 s_lineno, s_column = start
@@ -54,19 +52,19 @@ class Driver(object):
                 if column < s_column:
                     prefix += line_text[column:s_column]
                     column = s_column
-            if type in (tokenize.COMMENT, tokenize.NL):
+            if type_ in (tokenize.COMMENT, tokenize.NL):
                 prefix += value
                 lineno, column = end
                 if value.endswith("\n"):
                     lineno += 1
                     column = 0
                 continue
-            if type == token.OP:
-                type = grammar.opmap[value]
+            if type_ == token.OP:
+                type_ = grammar.opmap[value]
             if debug:
                 self.logger.debug("%s %r (prefix=%r)",
-                                  token.tok_name[type], value, prefix)
-            if p.addtoken(type, value, (prefix, start)):
+                                  token.tok_name[type_], value, prefix)
+            if p.addtoken(type_, value, (prefix, start)):
                 if debug:
                     self.logger.debug("Stop.")
                 break
@@ -78,5 +76,5 @@ class Driver(object):
         else:
             # We never broke out -- EOF is too soon (how can this happen???)
             raise parse.ParseError("incomplete input",
-                                   type, value, (prefix, start))
+                                   type_, value, (prefix, start))
         return p.rootnode
