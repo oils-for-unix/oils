@@ -96,7 +96,7 @@ def compile(as_tree, filename, mode):
     if mode == "single":
       gen.emit('RETURN_VALUE')
 
-    return graph.getCode()
+    return graph.MakeCodeObject()
 
 
 class LocalNameFinder(object):

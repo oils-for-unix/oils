@@ -3,7 +3,6 @@ from __future__ import print_function
 
 import dis
 import types
-import sys
 
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
@@ -96,25 +95,25 @@ def FlattenGraph(blocks):
     return insts
 
 
-def MakeLineAddrTable(insts):
-    lnotab = LineAddrTable()
+def Assemble(insts):
+    ass = Assembler()
     for t in insts:
         opname = t[0]
         if len(t) == 1:
-            lnotab.addCode(OPNUM[opname])
+            ass.addCode(OPNUM[opname])
         else:
             oparg = t[1]
             if opname == "SET_LINENO":
-                lnotab.nextLine(oparg)
+                ass.nextLine(oparg)
                 continue
             hi, lo = divmod(oparg, 256)
             try:
-                lnotab.addCode(OPNUM[opname], lo, hi)
+                ass.addCode(OPNUM[opname], lo, hi)
             except ValueError:
                 print(opname, oparg)
                 print(OPNUM[opname], lo, hi)
                 raise
-    return lnotab
+    return ass
 
 
 class FlowGraph(object):
@@ -419,7 +418,7 @@ class PyFlowGraph(FlowGraph):
     def setCellVars(self, names):
         self.cellvars = names
 
-    def getCode(self):
+    def MakeCodeObject(self):
         """Assemble a Python code object."""
         # TODO: Split into two representations?  Graph and insts?
 
@@ -457,7 +456,7 @@ class PyFlowGraph(FlowGraph):
                 if method:
                     insts[i] = opname, method(conv, oparg)
 
-        lnotab = MakeLineAddrTable(insts)
+        ass = Assemble(insts)
 
         if (self.flags & CO_NEWLOCALS) == 0:
             nlocals = 0
@@ -470,17 +469,17 @@ class PyFlowGraph(FlowGraph):
         consts = []
         for elt in self.consts:
             if isinstance(elt, PyFlowGraph):
-                elt = elt.getCode()
+                elt = elt.MakeCodeObject()
             consts.append(elt)
 
         return types.CodeType(
             self.argcount, nlocals, stacksize, self.flags,
-            lnotab.getCode(),
+            ass.Bytecode(),
             tuple(consts),
             tuple(self.names),
             tuple(self.varnames),
-            self.filename, self.name, lnotab.firstline,
-            lnotab.getTable(),
+            self.filename, self.name, ass.firstline,
+            ass.LineNumberTable(),
             tuple(self.freevars),
             tuple(self.cellvars))
 
@@ -502,7 +501,7 @@ class ArgConverter(object):
     def _convert_LOAD_CONST(self, arg):
         from . import pycodegen
         if isinstance(arg, pycodegen.CodeGenerator):
-            arg = arg.graph.getCode()
+            arg = arg.graph.MakeCodeObject()
         return _NameToIndex(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):
@@ -560,21 +559,19 @@ class ArgConverter(object):
       return self._converters.get(opname, None)
 
 
-class LineAddrTable(object):
-    """lnotab
+class Assembler(object):
+    """Builds co_code and lnotab.
 
-    This class builds the lnotab, which is documented in compile.c.
-    Here's a brief recap:
+    This class builds the lnotab, which is documented in compile.c.  Here's a
+    brief recap:
 
-    For each SET_LINENO instruction after the first one, two bytes are
-    added to lnotab.  (In some cases, multiple two-byte entries are
-    added.)  The first byte is the distance in bytes between the
-    instruction for the last SET_LINENO and the current SET_LINENO.
-    The second byte is offset in line numbers.  If either offset is
-    greater than 255, multiple two-byte entries are added -- see
-    compile.c for the delicate details.
+    For each SET_LINENO instruction after the first one, two bytes are added to
+    lnotab.  (In some cases, multiple two-byte entries are added.)  The first
+    byte is the distance in bytes between the instruction for the last
+    SET_LINENO and the current SET_LINENO.  The second byte is offset in line
+    numbers.  If either offset is greater than 255, multiple two-byte entries
+    are added -- see compile.c for the delicate details.
     """
-
     def __init__(self):
         self.code = []
         self.codeOffset = 0
@@ -586,7 +583,7 @@ class LineAddrTable(object):
     def addCode(self, *args):
         for arg in args:
             self.code.append(chr(arg))
-        self.codeOffset = self.codeOffset + len(args)
+        self.codeOffset += len(args)
 
     def nextLine(self, lineno):
         if self.firstline == 0:
@@ -620,10 +617,10 @@ class LineAddrTable(object):
                 self.lastline = lineno
                 self.lastoff = self.codeOffset
 
-    def getCode(self):
+    def Bytecode(self):
         return ''.join(self.code)
 
-    def getTable(self):
+    def LineNumberTable(self):
         return ''.join(map(chr, self.lnotab))
 
 
