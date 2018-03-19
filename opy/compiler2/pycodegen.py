@@ -198,10 +198,7 @@ class CodeGenerator(object):
         self.setDocstring = self.graph.setDocstring
 
     def mangle(self, name):
-        if self.class_name is not None:
-            return misc.mangle(name, self.class_name)
-        else:
-            return name
+        return misc.mangle(name, self.class_name)
 
     def parseSymbols(self, tree):
         s = symbols.SymbolVisitor()

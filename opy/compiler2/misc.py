@@ -3,8 +3,11 @@
 MANGLE_LEN = 256  # magic constant from compile.c
 
 def mangle(name, klass):
-    if not name.startswith('__'):
+    if klass is None:  # nothing to mangle
         return name
+    if not name.startswith('__'):  # not a private var
+        return name
+
     if len(name) + 2 >= MANGLE_LEN:
         return name
     if name.endswith('__'):

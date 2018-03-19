@@ -2,15 +2,13 @@
 from __future__ import print_function
 
 from . import ast
+from . import misc
 from .consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
     SC_FREE, SC_CELL, SC_UNKNOWN
-from .misc import mangle
-import types
-
 
 import sys
+import types
 
-MANGLE_LEN = 256
 
 class Scope(object):
     # XXX how much information do I need about each name?
@@ -46,9 +44,7 @@ class Scope(object):
         print("\tfrees:", self.frees, file=sys.stderr)
 
     def mangle(self, name):
-        if self.klass is None:
-            return name
-        return mangle(name, self.klass)
+        return misc.mangle(name, self.klass)
 
     def add_def(self, name):
         self.defs[self.mangle(name)] = 1
