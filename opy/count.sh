@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 _count() {
-  xargs wc -l | sort -n
+  grep -v '_test.py$' | xargs wc -l | sort -n
 }
 
 # 8700 lines for tokenizer -> tokens -> parser -> homogeneous nodes ->
@@ -24,7 +24,7 @@ all() {
 
   # ast is generated
   echo COMPILER2
-  ls compiler2/*.py | grep -v ast.py | xargs wc -l | sort -n
+  ls compiler2/*.py | grep -v ast.py | _count
   echo
 
   echo GENERATED CODE
@@ -32,11 +32,15 @@ all() {
   echo
 
   echo BYTERUN
-  ls byterun/*.py | grep -v 'test' | xargs wc -l | sort -n
+  ls byterun/*.py | grep -v 'test' | _count
   echo
 
   echo MISC
   echo {misc,tools}/*.py | _count
+  echo
+
+  echo UNIT TESTS
+  echo */*_test.py | xargs wc -l | sort -n
   echo
 
   echo SCRIPTS

@@ -388,9 +388,7 @@ class CodeGenerator(ASTVisitor):
 
     def visitIf(self, node):
         end = self.newBlock()
-        numtests = len(node.tests)
-        for i in range(numtests):
-            test, suite = node.tests[i]
+        for i, (test, suite) in enumerate(node.tests):
             if is_constant_false(test):
                 # XXX will need to check generator stuff here
                 continue
@@ -547,7 +545,7 @@ class CodeGenerator(ASTVisitor):
         self.emit('BUILD_LIST', 0)
 
         stack = []
-        for i, for_ in zip(range(len(node.quals)), node.quals):
+        for i, for_ in enumerate(node.quals):
             start, anchor = self.visit(for_)
             cont = None
             for if_ in for_.ifs:
@@ -571,7 +569,7 @@ class CodeGenerator(ASTVisitor):
         self.emit('BUILD_SET', 0)
 
         stack = []
-        for i, for_ in zip(range(len(node.quals)), node.quals):
+        for i, for_ in enumerate(node.quals):
             start, anchor = self.visit(for_)
             cont = None
             for if_ in for_.ifs:
@@ -595,7 +593,7 @@ class CodeGenerator(ASTVisitor):
         self.emit('BUILD_MAP', 0)
 
         stack = []
-        for i, for_ in zip(range(len(node.quals)), node.quals):
+        for i, for_ in enumerate(node.quals):
             start, anchor = self.visit(for_)
             cont = None
             for if_ in for_.ifs:
@@ -680,7 +678,7 @@ class CodeGenerator(ASTVisitor):
         # setup list
 
         stack = []
-        for i, for_ in zip(range(len(node.quals)), node.quals):
+        for i, for_ in enumerate(node.quals):
             start, anchor, end = self.visit(for_)
             cont = None
             for if_ in for_.ifs:
@@ -787,7 +785,7 @@ class CodeGenerator(ASTVisitor):
         self.startBlock(handlers)
 
         last = len(node.handlers) - 1
-        for i in range(len(node.handlers)):
+        for i, (expr, target, body) in enumerate(node.handlers):
             expr, target, body = node.handlers[i]
             self.set_lineno(expr)
             if expr:
@@ -946,8 +944,7 @@ class CodeGenerator(ASTVisitor):
         self.set_lineno(node)
         self.visit(node.expr)
         dups = len(node.nodes) - 1
-        for i in range(len(node.nodes)):
-            elt = node.nodes[i]
+        for i, elt in enumerate(node.nodes):
             if i < dups:
                 self.emit('DUP_TOP')
             if isinstance(elt, ast.Node):
@@ -1402,6 +1399,8 @@ class OpFinder(ASTVisitor):
     visitSubscript = visitAssName
 
 
+# TODO: I don't understand this.  It looks like it does nothing, but removing
+# wrap_aug() breaks.
 class Delegator(object):
     """Base class to support delegation for augmented assignment nodes
 
@@ -1431,7 +1430,7 @@ class AugSlice(Delegator):
 class AugSubscript(Delegator):
     pass
 
-wrapper = {
+AUG_WRAPPER = {
     ast.Getattr: AugGetattr,
     ast.Name: AugName,
     ast.Slice: AugSlice,
@@ -1439,4 +1438,4 @@ wrapper = {
     }
 
 def wrap_aug(node):
-    return wrapper[node.__class__](node)
+    return AUG_WRAPPER[node.__class__](node)

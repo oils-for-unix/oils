@@ -24,8 +24,8 @@ def _NameToIndex(name, L):
     comparison before comparing the values.
     """
     t = type(name)
-    for i in xrange(len(L)):
-        if t == type(L[i]) and L[i] == name:
+    for i, item in enumerate(L):
+        if t == type(item) and item == name:
             return i
     end = len(L)
     L.append(name)
@@ -79,8 +79,7 @@ def FlattenGraph(blocks):
                 pc = pc + 3
         end[b] = pc
     pc = 0
-    for i in range(len(insts)):
-        inst = insts[i]
+    for i, inst in enumerate(insts):
         if len(inst) == 1:
             pc = pc + 1
         elif inst[0] != "SET_LINENO":
