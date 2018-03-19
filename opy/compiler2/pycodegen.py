@@ -1309,7 +1309,7 @@ def _GenerateArgList(arglist):
             args.append(elt)
         elif isinstance(elt, tuple):
             args.append(pyassem.TupleArg(i * 2, elt))
-            extra.extend(misc.flatten(elt))
+            extra.extend(pyassem.flatten(elt))
             count += 1
         else:
             raise ValueError("unexpect argument type: %s" % elt)
