@@ -343,6 +343,7 @@ class CodeGenerator(object):
     def visitClass(self, node):
         gen = ClassCodeGenerator(node, self.scopes, self.get_module())
 
+        gen.Start()
         gen.FindLocals()
         walk(node.code, gen)
         gen.Finish()
@@ -1229,7 +1230,6 @@ class CodeGenerator(object):
 
 
 class TopLevelCodeGenerator(CodeGenerator):
-    scopes = None
 
     def __init__(self, graph, futures=None):
         self.graph = graph
@@ -1299,7 +1299,10 @@ class FunctionMixin(object):
             self.graph.setFlag(CO_VARKEYWORDS)
         self.set_lineno(func)
         if self.hasTupleArg:
-            self.generateArgUnpack(func.argnames)
+            for i, arg in enumerate(func.argnames):
+                if isinstance(arg, tuple):
+                    self.emit('LOAD_FAST', '.%d' % (i * 2))
+                    self.unpackSequence(arg)
 
     def get_module(self):
         return self.module
@@ -1310,12 +1313,6 @@ class FunctionMixin(object):
             self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
 
-    def generateArgUnpack(self, args):
-        for i in range(len(args)):
-            arg = args[i]
-            if isinstance(arg, tuple):
-                self.emit('LOAD_FAST', '.%d' % (i * 2))
-                self.unpackSequence(arg)
 
     def unpackSequence(self, tup):
         self.emit('UNPACK_SEQUENCE', len(tup))
@@ -1325,15 +1322,12 @@ class FunctionMixin(object):
             else:
                 self._nameOp('STORE', elt)
 
-    unpackTuple = unpackSequence
-
 
 # TODO: Move this mutable global somewhere.
 gLambdaCount = 0
 
 
 class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
-    scopes = None
 
     def __init__(self, func, scopes, isLambda, class_name, mod):
         self.scopes = scopes
@@ -1356,7 +1350,6 @@ class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
 
 
 class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
-    scopes = None
 
     def __init__(self, gexp, scopes, class_name, mod):
         self.scopes = scopes
@@ -1384,15 +1377,32 @@ class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
         self.graph.setFlag(CO_GENERATOR)
 
 
-class ClassMixin(object):
+class ClassCodeGenerator(CodeGenerator):
 
-    def __init__(self, klass, module):
+    def __init__(self, klass, scopes, module):
+        self.scopes = scopes
+        self.scope = scopes[klass]
+
         self.klass = klass
         self.class_name = klass.name
+
         self.module = module
         self.graph = pyassem.PyFlowGraph(klass.name, klass.filename,
                                          optimized=0, klass=1)
-        CodeGenerator.__init__(self)
+        CodeGenerator.__init__(self)  # TODO: Make it first
+
+    def get_module(self):
+        return self.module
+
+    def Start(self):
+        self.graph.setFreeVars(self.scope.get_free_vars())
+        self.graph.setCellVars(self.scope.get_cell_vars())
+        self.set_lineno(self.klass)
+        self.emit("LOAD_GLOBAL", "__name__")
+        self.storeName("__module__")
+        if self.klass.doc:
+            self.emit("LOAD_CONST", self.klass.doc)
+            self.storeName('__doc__')
 
     def FindLocals(self):
         lnf = LocalNameFinder()
@@ -1403,30 +1413,10 @@ class ClassMixin(object):
         if self.klass.doc:
             self.setDocstring(self.klass.doc)
 
-    def get_module(self):
-        return self.module
-
     def Finish(self):
         self.graph.startExitBlock()
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
-
-
-class ClassCodeGenerator(ClassMixin, CodeGenerator):
-    scopes = None
-
-    def __init__(self, klass, scopes, module):
-        self.scopes = scopes
-        self.scope = scopes[klass]
-        ClassMixin.__init__(self, klass, module)
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
-        self.set_lineno(klass)
-        self.emit("LOAD_GLOBAL", "__name__")
-        self.storeName("__module__")
-        if klass.doc:
-            self.emit("LOAD_CONST", klass.doc)
-            self.storeName('__doc__')
 
 
 def findOp(node):
