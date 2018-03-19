@@ -394,12 +394,12 @@ class SymbolVisitor(object):
 
     # prune if statements if tests are false
 
-    _const_types = types.StringType, types.IntType, types.FloatType
+    _CONST_TYPES = (types.StringType, types.IntType, types.FloatType)
 
     def visitIf(self, node, scope):
         for test, body in node.tests:
             if isinstance(test, ast.Const):
-                if type(test.value) in self._const_types:
+                if isinstance(test.value, self._CONST_TYPES):
                     if not test.value:
                         continue
             self.visit(test, scope)

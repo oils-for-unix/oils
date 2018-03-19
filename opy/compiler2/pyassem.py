@@ -264,17 +264,22 @@ def OrderBlocks(start_block, exit_block):
     return order
 
 
+gBlockCounter = 0
+
+
 class Block(object):
-    _count = 0
 
     def __init__(self, label=''):
+        self.label = label
+
+        global gBlockCounter
+        self.bid = gBlockCounter
+        gBlockCounter += 1
+
         self.insts = []
         self.outEdges = set()
-        self.label = label
-        self.bid = Block._count
         self.next = []
         self.prev = []
-        Block._count += 1
 
     # BUG FIX: This is needed for deterministic order in sets (and dicts?).
     # See OrderBlocks() below.  remaining is set() of blocks.  If we rely on

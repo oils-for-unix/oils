@@ -28,7 +28,7 @@ END_FINALLY = 4
 
 
 # TODO: Move this mutable global somewhere.
-gLambdaCount = 0
+gLambdaCounter = 0
 
 
 PY27_MAGIC = b'\x03\xf3\r\n'  # removed host dep imp.get_magic()
@@ -346,9 +346,9 @@ class CodeGenerator(object):
         self.storeName(node.name)
 
     def visitLambda(self, node):
-        global gLambdaCount
-        obj_name = "<lambda.%d>" % gLambdaCount
-        gLambdaCount += 1
+        global gLambdaCounter
+        obj_name = "<lambda.%d>" % gLambdaCounter
+        gLambdaCounter += 1
 
         _CheckNoTupleArgs(node)
         graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
@@ -661,9 +661,9 @@ class CodeGenerator(object):
     def visitGenExpr(self, node):
         isLambda = 1  # TODO: Shouldn't be a lambda?  Note Finish().
         if isLambda:
-            global gLambdaCount
-            obj_name = "<lambda.%d>" % gLambdaCount
-            gLambdaCount += 1
+            global gLambdaCounter
+            obj_name = "<lambda.%d>" % gLambdaCounter
+            gLambdaCounter += 1
         else:
             # TODO: enable this.  This is more like CPython.  Note that I worked
             # worked around a bug in byterun due to NOT having this.
