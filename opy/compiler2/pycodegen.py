@@ -27,6 +27,10 @@ TRY_FINALLY = 3
 END_FINALLY = 4
 
 
+# TODO: Move this mutable global somewhere.
+gLambdaCount = 0
+
+
 PY27_MAGIC = b'\x03\xf3\r\n'  # removed host dep imp.get_magic()
 
 def getPycHeader(filename):
@@ -303,40 +307,53 @@ class CodeGenerator(object):
         self.visit(node.node)
         self.emit('RETURN_VALUE')
 
+    # Differences between functions and lambdas:
+    # - lambdas need an auto-generated name for the code object
+    # - lamdbda don't have docstrings
+    # - lambdas can't have decorators
+
     def visitFunction(self, node):
-        self._visitFuncOrLambda(node, isLambda=0)
-        # TODO: This seems like a bug.  We already setDocstring in 
-        # FindLocals() on the FunctionCodeGenerator below.  This seems to mean
-        # that the MODULE gets the docstring of the last function?
-        # But this changes the output.
-
-        if node.doc:
-            self.setDocstring(node.doc)
-        self.storeName(node.name)
-
-    def visitLambda(self, node):
-        self._visitFuncOrLambda(node, isLambda=1)
-
-    def _visitFuncOrLambda(self, node, isLambda=0):
-        if not isLambda and node.decorators:
+        if node.decorators:
             for decorator in node.decorators.nodes:
                 self.visit(decorator)
             ndecorators = len(node.decorators.nodes)
         else:
             ndecorators = 0
 
-        gen = FunctionCodeGenerator(node, self.scopes, isLambda,
+        gen = FunctionCodeGenerator(node, self.scopes, node.name,
                                     self.class_name, self.get_module())
+        self._funcOrLambda(node, gen, ndecorators, isLambda=False)
+
+        # TODO: This seems like a bug.  We already setDocstring in FindLocals()
+        # on the FunctionCodeGenerator below.  This seems to mean that the
+        # MODULE gets the docstring of the last function?  But this changes the
+        # output.
+        if node.doc:
+            self.setDocstring(node.doc)
+        self.storeName(node.name)
+
+    def visitLambda(self, node):
+        global gLambdaCount
+        obj_name = "<lambda.%d>" % gLambdaCount
+        gLambdaCount += 1
+
+        gen = FunctionCodeGenerator(node, self.scopes, obj_name,
+                                    self.class_name, self.get_module())
+        self._funcOrLambda(node, gen, 0, isLambda=True)
+
+    def _funcOrLambda(self, node, gen, ndecorators, isLambda=False):
         gen.Start()
+        if not isLambda and node.doc:
+            gen.setDocstring(node.doc)
         gen.FindLocals()
         walk(node.code, gen)
-        gen.Finish()
+        gen.Finish(isLambda=isLambda)
 
         self.set_lineno(node)
         for default in node.defaults:
             self.visit(default)
         self._makeClosure(gen, len(node.defaults))
-        for i in range(ndecorators):
+        for i in xrange(ndecorators):
             self.emit('CALL_FUNCTION', 1)
 
     def visitClass(self, node):
@@ -621,12 +638,24 @@ class CodeGenerator(object):
             self.emit('MAKE_FUNCTION', args)
 
     def visitGenExpr(self, node):
-        gen = GenExprCodeGenerator(node, self.scopes, self.class_name,
-                                   self.get_module())
+        isLambda = 1  # TODO: Shouldn't be a lambda?  Note Finish().
+        if isLambda:
+            global gLambdaCount
+            obj_name = "<lambda.%d>" % gLambdaCount
+            gLambdaCount += 1
+        else:
+            # TODO: enable this.  This is more like CPython.  Note that I worked
+            # worked around a bug in byterun due to NOT having this.
+            # http://bugs.python.org/issue19611
+            # That workaround may no longer be necessary if we switch.
+            obj_name = '<genexpr>'
+
+        gen = GenExprCodeGenerator(node, self.scopes, obj_name,
+                                   self.class_name, self.get_module())
         gen.Start()
         gen.FindLocals()
         walk(node.code, gen)
-        gen.Finish()
+        gen.Finish(isLambda=isLambda)
 
         self.set_lineno(node)
         self._makeClosure(gen, 0)
@@ -1272,13 +1301,11 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, func, scopes, obj_name, isLambda, class_name, mod):
+    def __init__(self, func, scopes, obj_name, class_name, mod):
         self.func = func
 
         self.scopes = scopes
         self.scope = scopes[func]
-
-        self.isLambda = isLambda
 
         self.class_name = class_name
         self.module = mod
@@ -1293,8 +1320,6 @@ class _FunctionCodeGenerator(CodeGenerator):
 
     def FindLocals(self):
         func = self.func 
-        if not self.isLambda and func.doc:
-            self.setDocstring(func.doc)
 
         lnf = LocalNameFinder(set(self.args))
         walk(func.code, lnf, verbose=0)
@@ -1311,12 +1336,11 @@ class _FunctionCodeGenerator(CodeGenerator):
                     self.emit('LOAD_FAST', '.%d' % (i * 2))
                     self.unpackSequence(arg)
 
-    def Finish(self):
+    def Finish(self, isLambda=False):
         self.graph.startExitBlock()
-        if not self.isLambda:
+        if not isLambda:
             self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
-
 
     def unpackSequence(self, tup):
         self.emit('UNPACK_SEQUENCE', len(tup))
@@ -1327,22 +1351,15 @@ class _FunctionCodeGenerator(CodeGenerator):
                 self._nameOp('STORE', elt)
 
 
-# TODO: Move this mutable global somewhere.
-gLambdaCount = 0
+# TODO: _FunctionCodeGenerator takes graph(obj_name), args, hasTupleArg
+# remove objName
+# call _GenerateArgList
+#
+# Then you will properly initialize base class.  Every CodeGenerator can have a
+# graph!
 
 
 class FunctionCodeGenerator(_FunctionCodeGenerator):
-
-    def __init__(self, func, scopes, isLambda, class_name, mod):
-        if isLambda:
-            global gLambdaCount
-            obj_name = "<lambda.%d>" % gLambdaCount
-            gLambdaCount += 1
-        else:
-            obj_name = func.name
-
-        _FunctionCodeGenerator.__init__(
-            self, func, scopes, obj_name, isLambda, class_name, mod)
 
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
@@ -1352,24 +1369,6 @@ class FunctionCodeGenerator(_FunctionCodeGenerator):
 
 
 class GenExprCodeGenerator(_FunctionCodeGenerator):
-
-    def __init__(self, gexp, scopes, class_name, mod):
-        if 1:
-            global gLambdaCount
-            obj_name = "<lambda.%d>" % gLambdaCount
-            gLambdaCount += 1
-        else:
-            # TODO: enable this.  This is more like CPython.  Note that I worked
-            # worked around a bug in byterun due to NOT having this.
-            # http://bugs.python.org/issue19611
-            # That workaround may no longer be necessary if we switch.
-            obj_name = '<genexpr>'
-
-        # TODO: Remove isLambda?  Causes the docstring to be handled
-        # differently?
-        isLambda = 1
-        _FunctionCodeGenerator.__init__(
-            self, gexp, scopes, obj_name, isLambda, class_name, mod)
 
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())

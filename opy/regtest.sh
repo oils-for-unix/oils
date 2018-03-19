@@ -62,6 +62,10 @@ manifest() {
 }
 
 # 19 seconds on lisa.  This should be a benchmark.
+
+# TODO: Parallelize with xargs.  compile-manifest in build.sh is serial.  Just
+# needs a mkdir.
+
 compile() {
   local pat=${1:-}
   local dest=_tmp/regtest
