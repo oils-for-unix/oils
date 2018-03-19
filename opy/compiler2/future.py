@@ -1,9 +1,6 @@
-"""Parser for future statements
-
-"""
+"""Parser for future statements"""
 
 from . import ast
-from .visitor import walk
 
 
 def is_future(stmt):
@@ -15,6 +12,7 @@ def is_future(stmt):
     else:
         return 0
 
+
 class FutureParser(object):
 
     features = ("nested_scopes", "generators", "division",
@@ -22,7 +20,7 @@ class FutureParser(object):
                 "unicode_literals")
 
     def __init__(self):
-        self.found = {} # set
+        self.found = {}  # set
 
     def visitModule(self, node):
         stmt = node.node
@@ -46,6 +44,7 @@ class FutureParser(object):
         """Return list of features enabled by future statements"""
         return self.found.keys()
 
+
 class BadFutureParser(object):
     """Check for invalid future statements"""
 
@@ -55,22 +54,3 @@ class BadFutureParser(object):
         if node.modname != "__future__":
             return
         raise SyntaxError, "invalid future statement " + repr(node)
-
-def find_futures(node):
-    p1 = FutureParser()
-    p2 = BadFutureParser()
-    walk(node, p1)
-    walk(node, p2)
-    return p1.get_features()
-
-if __name__ == "__main__":
-    import sys
-    from compiler import parseFile, walk
-
-    for file in sys.argv[1:]:
-        print(file)
-        tree = parseFile(file)
-        v = FutureParser()
-        walk(tree, v)
-        print(v.found)
-        print()

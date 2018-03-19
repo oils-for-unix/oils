@@ -9,14 +9,6 @@ But it seems clearer to write checkers that use the AST to detect
 errors.
 """
 
-from .visitor import walk
-
-
-def check(tree, multi=None):
-    v = SyntaxErrorChecker(multi)
-    walk(tree, v)
-    return v.errors
-
 class SyntaxErrorChecker(object):
     """A visitor to find syntax errors in the AST."""
 

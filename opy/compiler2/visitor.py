@@ -64,6 +64,7 @@ class ASTVisitor(object):
         visitor.visit = self.dispatch
         self.dispatch(tree, *args) # XXX *args make sense?
 
+
 class ExampleASTVisitor(ASTVisitor):
     """Prints examples of the nodes that aren't visited
 
@@ -97,19 +98,7 @@ class ExampleASTVisitor(ASTVisitor):
                 print()
             return self.default(node, *args)
 
-# XXX this is an API change
 
-_walker = ASTVisitor
-def walk(tree, visitor, walker=None, verbose=None):
-    if walker is None:
-        walker = _walker()
-    if verbose is not None:
-        walker.VERBOSE = verbose
+def walk(tree, visitor):
+    walker = ASTVisitor()
     walker.preorder(tree, visitor)
-    return walker.visitor
-
-def dumpNode(node):
-    print(node.__class__)
-    for attr in dir(node):
-        if attr[0] != '_':
-            print("\t", "%-10.10s" % attr, getattr(node, attr))

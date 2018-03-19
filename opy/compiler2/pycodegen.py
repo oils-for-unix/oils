@@ -60,15 +60,26 @@ def set_filename(filename, tree):
 def compile(as_tree, filename, mode):
     """Replacement for builtin compile() function"""
     set_filename(filename, as_tree)
-    syntax.check(as_tree)
+
+    # NOTE: This currently does nothing!
+    v = syntax.SyntaxErrorChecker()
+    walk(as_tree, v)
 
     if mode == "single":
         graph = pyassem.PyFlowGraph("<interactive>", as_tree.filename)
         gen = InteractiveCodeGenerator(graph)
         gen.set_lineno(as_tree)
+
     elif mode == "exec":
         graph = pyassem.PyFlowGraph("<module>", as_tree.filename)
-        futures = future.find_futures(as_tree)
+
+        # TODO: Does this need to be made more efficient?
+        p1 = future.FutureParser()
+        p2 = future.BadFutureParser()
+        walk(as_tree, p1)
+        walk(as_tree, p2)
+        futures = p1.get_features()
+
         gen = TopLevelCodeGenerator(graph, futures=futures)
     elif mode == "eval":
         graph = pyassem.PyFlowGraph("<expression>", as_tree.filename)
@@ -291,7 +302,7 @@ class CodeGenerator(object):
             self.storeName('__doc__')
 
         lnf = LocalNameFinder()
-        walk(node.node, lnf, verbose=0)
+        walk(node.node, lnf)
 
         self.locals.push(lnf.getLocals())
         self.visit(node.node)
@@ -1331,7 +1342,7 @@ class _FunctionCodeGenerator(CodeGenerator):
         func = self.func 
 
         lnf = LocalNameFinder(set(self.args))
-        walk(func.code, lnf, verbose=0)
+        walk(func.code, lnf)
         self.locals.push(lnf.getLocals())
 
         if func.varargs:
@@ -1406,7 +1417,7 @@ class ClassCodeGenerator(CodeGenerator):
 
     def FindLocals(self):
         lnf = LocalNameFinder()
-        walk(self.klass.code, lnf, verbose=0)
+        walk(self.klass.code, lnf)
         self.locals.push(lnf.getLocals())
 
         self.graph.setFlag(CO_NEWLOCALS)
@@ -1422,7 +1433,7 @@ class ClassCodeGenerator(CodeGenerator):
 def findOp(node):
     """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
     v = OpFinder()
-    walk(node, v, verbose=0)
+    walk(node, v)
     return v.op
 
 class OpFinder(object):
