@@ -1299,21 +1299,12 @@ class InteractiveCodeGenerator(TopLevelCodeGenerator):
 # def fxn(a, (b, c), d):
 #    pass
 
-def _GenerateArgList(arglist):
-    """Generate an arg list marking TupleArgs"""
-    args = []
-    extra = []
-    count = 0
-    for i, elt in enumerate(arglist):
-        if isinstance(elt, str):
-            args.append(elt)
-        elif isinstance(elt, tuple):
-            args.append(pyassem.TupleArg(i * 2, elt))
-            extra.extend(pyassem.flatten(elt))
-            count += 1
-        else:
-            raise ValueError("unexpect argument type: %s" % elt)
-    return args + extra, count
+def _CheckNoTupleArgs(func):
+    for i, arg in enumerate(func.argnames):
+        if isinstance(arg, tuple):
+            raise RuntimeError(
+                'Tuple args are not supported: %s in function %s' %
+                (arg, func.name))
 
 
 class _FunctionCodeGenerator(CodeGenerator):
@@ -1329,10 +1320,10 @@ class _FunctionCodeGenerator(CodeGenerator):
         self.class_name = class_name
         self.module = mod
 
-        self.args, self.hasTupleArg = _GenerateArgList(func.argnames)
+        _CheckNoTupleArgs(func)
         self.graph = pyassem.PyFlowGraph(obj_name, func.filename,
                                          optimized=1)
-        self.graph.setArgs(self.args)
+        self.graph.setArgs(func.argnames)
         CodeGenerator.__init__(self)
 
     def get_module(self):
@@ -1341,7 +1332,7 @@ class _FunctionCodeGenerator(CodeGenerator):
     def FindLocals(self):
         func = self.func 
 
-        lnf = LocalNameFinder(set(self.args))
+        lnf = LocalNameFinder(set(self.func.argnames))
         walk(func.code, lnf)
         self.locals.push(lnf.getLocals())
 
@@ -1350,25 +1341,12 @@ class _FunctionCodeGenerator(CodeGenerator):
         if func.kwargs:
             self.graph.setFlag(CO_VARKEYWORDS)
         self.set_lineno(func)
-        if self.hasTupleArg:
-            for i, arg in enumerate(func.argnames):
-                if isinstance(arg, tuple):
-                    self.emit('LOAD_FAST', '.%d' % (i * 2))
-                    self.unpackSequence(arg)
 
     def Finish(self, isLambda=False):
         self.graph.startExitBlock()
         if not isLambda:
             self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
-
-    def unpackSequence(self, tup):
-        self.emit('UNPACK_SEQUENCE', len(tup))
-        for elt in tup:
-            if isinstance(elt, tuple):
-                self.unpackSequence(elt)
-            else:
-                self._nameOp('STORE', elt)
 
 
 class FunctionCodeGenerator(_FunctionCodeGenerator):

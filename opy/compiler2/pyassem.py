@@ -33,25 +33,6 @@ def _NameToIndex(name, L):
     return end
 
 
-# NOTE: Similar to ast.flatten().
-def flatten(tup):
-    elts = []
-    for elt in tup:
-        if isinstance(elt, tuple):
-            elts.extend(flatten(elt))
-        else:
-            elts.append(elt)
-    return elts
-
-
-def getArgCount(args):
-    n = len(args)
-    for arg in args:
-        if isinstance(arg, TupleArg):
-            n -= len(flatten(arg.names))
-    return n
-
-
 def ComputeStackDepth(blocks, entry_block, exit_block):
     """Compute the max stack depth.
 
@@ -424,10 +405,7 @@ class PyFlowGraph(FlowGraph):
         assert not self.varnames   # Nothing should have been added
         if args:
             self.varnames = list(args)
-            for i, var in enumerate(self.varnames):
-                if isinstance(var, TupleArg):
-                    self.varnames[i] = var.getName()
-            self.argcount = getArgCount(args)
+            self.argcount = len(args)
 
     def setDocstring(self, doc):
         self.docstring = doc
@@ -603,17 +581,6 @@ class ArgConverter(object):
 
     def Get(self, opname):
       return self._converters.get(opname, None)
-
-
-class TupleArg(object):
-    """Helper for marking func defs with nested tuples in arglist"""
-    def __init__(self, count, names):
-        self.count = count
-        self.names = names
-    def __repr__(self):
-        return "TupleArg(%s, %s)" % (self.count, self.names)
-    def getName(self):
-        return ".%d" % self.count
 
 
 class LineAddrTable(object):
