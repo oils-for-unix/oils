@@ -19,9 +19,9 @@ class PyAssemTest(unittest.TestCase):
     pass
 
   def testFoo(self):
-    return
-    g = pyassem.FlowGraph()
-    print(g)
+    #g = pyassem.FlowGraph()
+    #print(g)
+    pass
 
 
 if __name__ == '__main__':

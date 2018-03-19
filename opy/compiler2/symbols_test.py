@@ -32,7 +32,8 @@ if __name__ == "__main__":
         syms = symtable.symtable(buf, file, "exec")
         mod_names = get_names(syms)
 
-        tree = parseFile(file)
+        #tree = parseFile(file)
+        tree = None
         s = symbols.SymbolVisitor()
         s.Dispatch(tree)
 

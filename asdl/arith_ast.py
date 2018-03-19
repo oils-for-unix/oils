@@ -3,7 +3,6 @@
 arith_ast.py
 """
 
-import os
 import sys
 
 from asdl import asdl_ as asdl
