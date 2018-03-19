@@ -67,7 +67,7 @@ def compile(as_tree, filename, mode):
 
     if mode == "single":
         graph = pyassem.PyFlowGraph("<interactive>", as_tree.filename)
-        gen = InteractiveCodeGenerator(graph)
+        gen = InteractiveCodeGenerator(graph, ())
         gen.set_lineno(as_tree)
 
     elif mode == "exec":
@@ -78,12 +78,11 @@ def compile(as_tree, filename, mode):
         p2 = future.BadFutureParser()
         walk(as_tree, p1)
         walk(as_tree, p2)
-        futures = p1.get_features()
 
-        gen = TopLevelCodeGenerator(graph, futures=futures)
+        gen = TopLevelCodeGenerator(graph, p1.get_features())
     elif mode == "eval":
         graph = pyassem.PyFlowGraph("<expression>", as_tree.filename)
-        gen = TopLevelCodeGenerator(graph)
+        gen = TopLevelCodeGenerator(graph, ())
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
@@ -169,15 +168,17 @@ class CodeGenerator(object):
     optimized = 0  # is namespace access optimized?
     class_name = None  # provide default for instance variable
 
-    def __init__(self):
+    def __init__(self, graph, futures):
+        self.graph = graph
+        self.futures = futures  # passed down to child CodeGenerator instances
+
         self.locals = Stack()
         self.setups = Stack()
         self.last_lineno = None
         self._setupGraphDelegation()
         self._div_op = "BINARY_DIVIDE"
 
-        # XXX set flags based on future features
-        futures = self.get_module().futures
+        # Set flags based on future features
         for feature in futures:
             if feature == "division":
                 self.graph.setFlag(CO_FUTURE_DIVISION)
@@ -215,9 +216,6 @@ class CodeGenerator(object):
         s = symbols.SymbolVisitor()
         walk(tree, s)
         return s.scopes
-
-    def get_module(self):
-        raise RuntimeError, "should be implemented by subclasses"
 
     # Next five methods handle name access
 
@@ -334,8 +332,8 @@ class CodeGenerator(object):
         graph = pyassem.PyFlowGraph(node.name, node.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = FunctionCodeGenerator(graph, node, self.scopes, self.class_name,
-                                    self.get_module())
+        gen = FunctionCodeGenerator(graph, self.futures, node, self.scopes,
+                                    self.class_name)
 
         self._funcOrLambda(node, gen, ndecorators, isLambda=False)
 
@@ -356,8 +354,8 @@ class CodeGenerator(object):
         graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = FunctionCodeGenerator(graph, node, self.scopes, self.class_name,
-                                    self.get_module())
+        gen = FunctionCodeGenerator(graph, self.futures, node, self.scopes,
+                                    self.class_name)
 
         self._funcOrLambda(node, gen, 0, isLambda=True)
 
@@ -378,7 +376,9 @@ class CodeGenerator(object):
             self.emit('CALL_FUNCTION', 1)
 
     def visitClass(self, node):
-        gen = ClassCodeGenerator(node, self.scopes, self.get_module())
+        graph = pyassem.PyFlowGraph(node.name, node.filename,
+                                    optimized=0, klass=1)
+        gen = ClassCodeGenerator(graph, self.futures, node, self.scopes)
 
         gen.Start()
         gen.FindLocals()
@@ -673,8 +673,8 @@ class CodeGenerator(object):
 
         graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
         graph.setArgs(node.argnames)
-        gen = GenExprCodeGenerator(graph, node, self.scopes, self.class_name,
-                                   self.get_module())
+        gen = GenExprCodeGenerator(graph, self.futures, node, self.scopes,
+                                   self.class_name)
 
         gen.Start()
         gen.FindLocals()
@@ -1282,17 +1282,7 @@ class CodeGenerator(object):
 
 
 class TopLevelCodeGenerator(CodeGenerator):
-
-    def __init__(self, graph, futures=None):
-        self.graph = graph
-        self.futures = futures or ()
-
-        # This is hacky: graph has to be initialized.
-        # TODO: Make another variant
-        CodeGenerator.__init__(self)
-
-    def get_module(self):
-        return self
+    pass
 
 
 class InteractiveCodeGenerator(TopLevelCodeGenerator):
@@ -1322,18 +1312,13 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, graph, func, scopes, class_name, module):
-        self.graph = graph
+    def __init__(self, graph, futures, func, scopes, class_name):
+        CodeGenerator.__init__(self, graph, futures)
         self.func = func
         self.scopes = scopes
-        self.scope = scopes[func]
         self.class_name = class_name
-        self.module = module
 
-        CodeGenerator.__init__(self)
-
-    def get_module(self):
-        return self.module
+        self.scope = scopes[func]
 
     def FindLocals(self):
         func = self.func 
@@ -1374,20 +1359,14 @@ class GenExprCodeGenerator(_FunctionCodeGenerator):
 
 class ClassCodeGenerator(CodeGenerator):
 
-    def __init__(self, klass, scopes, module):
-        self.scopes = scopes
-        self.scope = scopes[klass]
+    def __init__(self, graph, futures, klass, scopes):
+        CodeGenerator.__init__(self, graph, futures)
 
         self.klass = klass
+        self.scopes = scopes
+
         self.class_name = klass.name
-
-        self.module = module
-        self.graph = pyassem.PyFlowGraph(klass.name, klass.filename,
-                                         optimized=0, klass=1)
-        CodeGenerator.__init__(self)  # TODO: Make it first
-
-    def get_module(self):
-        return self.module
+        self.scope = scopes[klass]
 
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
