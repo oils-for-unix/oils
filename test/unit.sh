@@ -74,6 +74,24 @@ all() {
   echo "All unit tests passed."
 }
 
+# Run all unit tests in one process.
+all-in-one() {
+  # -s: start dir -t: top level are defaults
+  # NOTE: without the pattern, it finds byterun unit tests called 'test*'.
+  _OVM_RESOURCE_ROOT=$PWD python -m unittest discover \
+    --failfast --verbose --pattern '*_test.py'
+
+  # This style fails due to the arguments being filenames and not Python module
+  # names.
+  #tests-to-run | xargs python -m unittest
+
+}
+
+# NOTE: Show options like this:
+# python -m unittest discover -h
+
+
+
 #
 # For _release/VERSION
 #

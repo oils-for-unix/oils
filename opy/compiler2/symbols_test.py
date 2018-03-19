@@ -10,8 +10,6 @@ import symtable
 
 from . import symbols
 from . import transformer 
-from .transformer import parseFile
-from .visitor import walk
 
 
 def list_eq(l1, l2):
@@ -36,7 +34,7 @@ if __name__ == "__main__":
 
         tree = parseFile(file)
         s = symbols.SymbolVisitor()
-        walk(tree, s)
+        s.Dispatch(tree)
 
         # compare module-level symbols
         names2 = s.scopes[tree].get_names()

@@ -186,9 +186,8 @@ class TraceState(object):
 class _FileResourceLoader(object):
   """Open resources relative to argv[0]."""
 
-  def __init__(self, argv0):
-    bin_dir = os.path.dirname(os.path.abspath(argv0))  # ~/git/oil/bin
-    self.root_dir = os.path.join(bin_dir, '..')  # ~/git/oil/osh
+  def __init__(self, root_dir):
+    self.root_dir = root_dir
 
   # TODO: Make this a context manager?
   def open(self, rel_path):
@@ -220,8 +219,15 @@ def GetResourceLoader():
     ovm_path = os.getenv('_OVM_PATH')
     #log('! OVM_PATH = %s', ovm_path)
     _loader = _ZipResourceLoader(ovm_path)
+  elif os.getenv('_OVM_RESOURCE_ROOT'):  # Unit tests set this
+    root_dir = os.getenv('_OVM_RESOURCE_ROOT')
+    _loader = _FileResourceLoader(root_dir)
   else:
-    _loader = _FileResourceLoader(sys.argv[0])
+    # NOTE: This assumes all unit tests are one directory deep, e.g.
+    # core/util_test.py.
+    bin_dir = os.path.dirname(os.path.abspath(sys.argv[0]))  # ~/git/oil/bin
+    root_dir = os.path.join(bin_dir, '..')  # ~/git/oil/osh
+    _loader = _FileResourceLoader(root_dir)
 
   return _loader
 

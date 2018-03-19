@@ -8,12 +8,11 @@ import sys
 
 from asdl import asdl_ as asdl
 from asdl import py_meta
+from core import util
 
-this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-schema_path = os.path.join(this_dir, 'arith.asdl')
+f = util.GetResourceLoader().open('asdl/arith.asdl')
+_asdl_module, _type_lookup = asdl.LoadSchema(f, {})  # no app_types
+f.close()
 
-with open(schema_path) as f:
-  module = asdl.parse(f)
-type_lookup = asdl.ResolveTypes(module)
 root = sys.modules[__name__]
-py_meta.MakeTypes(module, root, type_lookup)
+py_meta.MakeTypes(_asdl_module, root, _type_lookup)
