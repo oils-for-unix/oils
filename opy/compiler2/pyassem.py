@@ -442,14 +442,11 @@ class PyFlowGraph(FlowGraph):
 
     def getCode(self, stacksize):
         """Assemble a Python code object."""
+        # TODO: Split into two representations?  Graph and insts?
 
-        # TODO: Split into two representations?
-        # Graph and insts?
-
-        # walk(gen, as_tree) produces a graph, with varnames mutated
-        # Then we assemble graph into a flattened representation.  But we have
-        # to look up varnames.
-        #
+        # walk(gen, as_tree) produces a graph, with varnames mutated Then we
+        # assemble graph into a flattened representation.  But we have to look
+        # up varnames.
         # Really we need a shared varnames representation.
 
         blocks = order_blocks(self.entry, self.exit)
@@ -457,8 +454,15 @@ class PyFlowGraph(FlowGraph):
 
         self.consts.insert(0, self.docstring)
 
-        # NOTE: overwrites self.cellvars, self.closure
-        self._sort_cellvars()
+        # Rearrange self.cellvars so the ones in self.varnames are first.
+        # And prune from freevars (?)
+        lookup = set(self.cellvars)
+        remaining = lookup - set(self.varnames)
+
+        self.cellvars = [n for n in self.varnames if n in lookup]
+        self.cellvars.extend(remaining)
+
+        self.closure = self.cellvars + self.freevars
 
         # Convert arguments from symbolic to concrete form
         # Mutates the insts argument.  The converters mutate self.names,
@@ -517,18 +521,6 @@ class PyFlowGraph(FlowGraph):
                 pc = pc + 3
         if io:
             sys.stdout = save
-
-    def _sort_cellvars(self):
-        """Sort cellvars in the order of varnames and prune from freevars.
-        """
-        cells = {}
-        for name in self.cellvars:
-            cells[name] = 1
-        self.cellvars = [name for name in self.varnames if name in cells]
-        for name in self.cellvars:
-            del cells[name]
-        self.cellvars = self.cellvars + cells.keys()
-        self.closure = self.cellvars + self.freevars
 
 
 class ArgConverter(object):
