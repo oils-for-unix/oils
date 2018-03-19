@@ -330,8 +330,13 @@ class CodeGenerator(object):
         else:
             ndecorators = 0
 
-        gen = FunctionCodeGenerator(node, self.scopes, node.name,
-                                    self.class_name, self.get_module())
+        _CheckNoTupleArgs(node)
+        graph = pyassem.PyFlowGraph(node.name, node.filename, optimized=1)
+        graph.setArgs(node.argnames)
+
+        gen = FunctionCodeGenerator(graph, node, self.scopes, self.class_name,
+                                    self.get_module())
+
         self._funcOrLambda(node, gen, ndecorators, isLambda=False)
 
         # TODO: This seems like a bug.  We already setDocstring in FindLocals()
@@ -347,10 +352,13 @@ class CodeGenerator(object):
         obj_name = "<lambda.%d>" % gLambdaCount
         gLambdaCount += 1
 
-        # TODO: _GenerateArgList -> _AssertNoTupleArgs, instantiate graph, pass
-        # args
-        gen = FunctionCodeGenerator(node, self.scopes, obj_name,
-                                    self.class_name, self.get_module())
+        _CheckNoTupleArgs(node)
+        graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
+        graph.setArgs(node.argnames)
+
+        gen = FunctionCodeGenerator(graph, node, self.scopes, self.class_name,
+                                    self.get_module())
+
         self._funcOrLambda(node, gen, 0, isLambda=True)
 
     def _funcOrLambda(self, node, gen, ndecorators, isLambda=False):
@@ -663,8 +671,11 @@ class CodeGenerator(object):
             # That workaround may no longer be necessary if we switch.
             obj_name = '<genexpr>'
 
-        gen = GenExprCodeGenerator(node, self.scopes, obj_name,
-                                   self.class_name, self.get_module())
+        graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
+        graph.setArgs(node.argnames)
+        gen = GenExprCodeGenerator(graph, node, self.scopes, self.class_name,
+                                   self.get_module())
+
         gen.Start()
         gen.FindLocals()
         walk(node.code, gen)
@@ -1311,19 +1322,14 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, func, scopes, obj_name, class_name, mod):
+    def __init__(self, graph, func, scopes, class_name, module):
+        self.graph = graph
         self.func = func
-
         self.scopes = scopes
         self.scope = scopes[func]
-
         self.class_name = class_name
-        self.module = mod
+        self.module = module
 
-        _CheckNoTupleArgs(func)
-        self.graph = pyassem.PyFlowGraph(obj_name, func.filename,
-                                         optimized=1)
-        self.graph.setArgs(func.argnames)
         CodeGenerator.__init__(self)
 
     def get_module(self):
