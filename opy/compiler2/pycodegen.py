@@ -152,9 +152,8 @@ class CodeGenerator(object):
     define an __init__() that defines self.graph and then calls the
     __init__() defined in this class.
     """
-
-    optimized = 0 # is namespace access optimized?
-    class_name = None # provide default for instance variable
+    optimized = 0  # is namespace access optimized?
+    class_name = None  # provide default for instance variable
 
     def __init__(self):
         self.locals = Stack()
@@ -1269,11 +1268,16 @@ def _GenerateArgList(arglist):
     return args + extra, count
 
 
-class FunctionMixin(object):
+class _FunctionCodeGenerator(CodeGenerator):
+    """Abstract class."""
     optimized = 1
 
-    def __init__(self, func, obj_name, isLambda, class_name, mod):
+    def __init__(self, func, scopes, obj_name, isLambda, class_name, mod):
         self.func = func
+
+        self.scopes = scopes
+        self.scope = scopes[func]
+
         self.isLambda = isLambda
 
         self.class_name = class_name
@@ -1283,6 +1287,9 @@ class FunctionMixin(object):
         self.graph = pyassem.PyFlowGraph(obj_name, func.filename, self.args,
                                          optimized=1)
         CodeGenerator.__init__(self)
+
+    def get_module(self):
+        return self.module
 
     def FindLocals(self):
         func = self.func 
@@ -1304,9 +1311,6 @@ class FunctionMixin(object):
                     self.emit('LOAD_FAST', '.%d' % (i * 2))
                     self.unpackSequence(arg)
 
-    def get_module(self):
-        return self.module
-
     def Finish(self):
         self.graph.startExitBlock()
         if not self.isLambda:
@@ -1327,12 +1331,9 @@ class FunctionMixin(object):
 gLambdaCount = 0
 
 
-class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
+class FunctionCodeGenerator(_FunctionCodeGenerator):
 
     def __init__(self, func, scopes, isLambda, class_name, mod):
-        self.scopes = scopes
-        self.scope = scopes[func]
-
         if isLambda:
             global gLambdaCount
             obj_name = "<lambda.%d>" % gLambdaCount
@@ -1340,7 +1341,8 @@ class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
         else:
             obj_name = func.name
 
-        FunctionMixin.__init__(self, func, obj_name, isLambda, class_name, mod)
+        _FunctionCodeGenerator.__init__(
+            self, func, scopes, obj_name, isLambda, class_name, mod)
 
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
@@ -1349,12 +1351,9 @@ class FunctionCodeGenerator(FunctionMixin, CodeGenerator):
             self.graph.setFlag(CO_GENERATOR)
 
 
-class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
+class GenExprCodeGenerator(_FunctionCodeGenerator):
 
     def __init__(self, gexp, scopes, class_name, mod):
-        self.scopes = scopes
-        self.scope = scopes[gexp]
-
         if 1:
             global gLambdaCount
             obj_name = "<lambda.%d>" % gLambdaCount
@@ -1369,7 +1368,8 @@ class GenExprCodeGenerator(FunctionMixin, CodeGenerator):
         # TODO: Remove isLambda?  Causes the docstring to be handled
         # differently?
         isLambda = 1
-        FunctionMixin.__init__(self, gexp, obj_name, isLambda, class_name, mod)
+        _FunctionCodeGenerator.__init__(
+            self, gexp, scopes, obj_name, isLambda, class_name, mod)
 
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
