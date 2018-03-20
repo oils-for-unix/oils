@@ -46,7 +46,7 @@ def py2st(unused_gr, raw_node):
 def MakeCodeObject(frame, graph):
     """Order blocks, encode instructions, and create types.CodeType().
 
-    Called by RunCompiler below, and also recursively by ArgEncoder.
+    Called by Compile below, and also recursively by ArgEncoder.
     """
     # Compute stack depth per basic block.
     depths = {}
@@ -60,7 +60,8 @@ def MakeCodeObject(frame, graph):
 
     # Order blocks so jump offsets can be encoded.
     blocks = pyassem.OrderBlocks(graph.entry, graph.exit)
-    insts = pyassem.FlattenGraph(blocks)
+    insts, block_offsets = pyassem.FlattenGraph(blocks)
+    pyassem.PatchJumps(insts, block_offsets)
 
     cellvars = pyassem.ReorderCellVars(frame)
     consts = [frame.docstring]
@@ -91,11 +92,17 @@ def MakeCodeObject(frame, graph):
         tuple(cellvars))
 
 
-def RunCompiler(f, filename, gr, start_symbol, mode):
+def Compile(f, filename, gr, start_symbol, mode):
   """Run the full compiler pipeline.
 
-  TODO: Expose this as a library?
+  Args:
+    f: file handle with input source code
+    filename: filename for debugging
+    gr: Grammar
+    start_symbol: name of the grammar start symbol
+    mode: 'exec', 'eval', or 'single', like Python's builtin compile()
   """
+
   tokens = tokenize.generate_tokens(f.readline)
 
   p = parse.Parser(gr, convert=py2st)
@@ -137,13 +144,10 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
       gen = pycodegen.TopLevelCodeGenerator(ctx, frame, graph)
 
   else:
-      raise ValueError("compile() 3rd arg must be 'exec' or "
-                       "'eval' or 'single'")
+      raise AssertionError('Invalid mode %r' % mode)
 
   # NOTE: There is no Start() or FindLocals() at the top level.
   gen.Dispatch(as_tree)  # mutates graph
   gen.Finish()
 
-  # NOTE: This method has a pretty long pipeline too.
-  co = MakeCodeObject(frame, graph)
-  return co
+  return MakeCodeObject(frame, graph)

@@ -218,7 +218,7 @@ def OpyCommandMain(argv):
     out_path = argv[2]
 
     with open(py_path) as f:
-      co = skeleton.RunCompiler(f, py_path, gr, 'file_input', 'exec')
+      co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
 
     log("Compiled to %d bytes of bytecode", len(co.co_code))
 
@@ -231,7 +231,7 @@ def OpyCommandMain(argv):
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
     py_expr = argv[1]
     f = cStringIO.StringIO(py_expr)
-    co = skeleton.RunCompiler(f, '<eval input>', gr, 'eval_input', 'eval')
+    co = skeleton.Compile(f, '<eval input>', gr, 'eval_input', 'eval')
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -245,7 +245,7 @@ def OpyCommandMain(argv):
       f = cStringIO.StringIO(py_expr)
 
       # TODO: change this to 'single input'?  Why doesn't this work?
-      co = skeleton.RunCompiler(f, '<REPL input>', gr, 'eval_input', 'eval')
+      co = skeleton.Compile(f, '<REPL input>', gr, 'eval_input', 'eval')
 
       v = dis_tool.Visitor()
       v.show_code(co)

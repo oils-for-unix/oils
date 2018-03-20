@@ -80,34 +80,38 @@ def OrderBlocks(start_block, exit_block):
 
 def FlattenGraph(blocks):
     insts = []
+
     pc = 0
-    begin = {}
-    end = {}
+    offsets = {}  # block -> bytecode offset
     for b in blocks:
-        begin[b] = pc
+        offsets[b] = pc
         for inst in b.getInstructions():
             insts.append(inst)
             if len(inst) == 1:
                 pc += 1
-            elif inst[0] != "SET_LINENO":
-                # arg takes 2 bytes
+            elif inst[0] != "SET_LINENO":  # arg takes 2 bytes
                 pc += 3
-        end[b] = pc
+    return insts, offsets
 
+
+def PatchJumps(insts, offsets):
     pc = 0
     for i, inst in enumerate(insts):
         if len(inst) == 1:
             pc += 1
         elif inst[0] != "SET_LINENO":
             pc += 3
+
         opname = inst[0]
+
+        # Compute jump locations
         if opname in HAS_JREL:
-            oparg = inst[1]
-            offset = begin[oparg] - pc
-            insts[i] = opname, offset
+            block_arg = inst[1]
+            insts[i] = (opname, offsets[block_arg] - pc)
+
         elif opname in HAS_JABS:
-            insts[i] = opname, begin[inst[1]]
-    return insts
+            block_arg = inst[1]
+            insts[i] = (opname, offsets[block_arg])
 
 
 gBlockCounter = 0
