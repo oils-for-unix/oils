@@ -16,12 +16,14 @@ class Scope(object):
     def __init__(self, name, module, klass=None):
         self.name = name
         self.module = module
-        self.defs = {}
-        self.uses = {}
-        self.globals = {}
-        self.params = {}
-        self.frees = {}
-        self.cells = {}
+
+        self.defs = set()
+        self.uses = set()
+        self.globals = set()
+        self.params = set()
+        self.frees = set()
+        self.cells = set()
+
         self.children = []
         # nested is true if the class could contain free variables,
         # i.e. if it is nested within another function.
@@ -48,10 +50,10 @@ class Scope(object):
         return misc.mangle(name, self.klass)
 
     def add_def(self, name):
-        self.defs[self.mangle(name)] = 1
+        self.defs.add(self.mangle(name))
 
     def add_use(self, name):
-        self.uses[self.mangle(name)] = 1
+        self.uses.add(self.mangle(name))
 
     def add_global(self, name):
         name = self.mangle(name)
@@ -60,20 +62,16 @@ class Scope(object):
         if name in self.params:
             raise SyntaxError, "%s in %s is global and parameter" % \
                   (name, self.name)
-        self.globals[name] = 1
+        self.globals.add(name)
         self.module.add_def(name)
 
     def add_param(self, name):
         name = self.mangle(name)
-        self.defs[name] = 1
-        self.params[name] = 1
+        self.defs.add(name)
+        self.params.add(name)
 
     def get_names(self):
-        d = {}
-        d.update(self.defs)
-        d.update(self.uses)
-        d.update(self.globals)
-        return d.keys()
+        return list(self.defs | self.uses | self.globals)  # union
 
     def add_child(self, child):
         self.children.append(child)
@@ -100,20 +98,31 @@ class Scope(object):
             return SC_GLOBAL_IMPLICIT
 
     def get_free_vars(self):
+        """Variables not defined in this scope, and that are not globals either.
+
+        It must be like this:
+        # def MakeAdder(inc):
+        #  def Adder(x):
+        #    return x + inc  # x is a local, inc is a free var?
+        #  return Adder
+        """
         if not self.nested:
             return ()
-        free = {}
+        free = set()
         free.update(self.frees)
-        for name in self.uses.keys():
+        for name in self.uses:
             if name not in self.defs and name not in self.globals:
-                free[name] = 1
-        return free.keys()
+                free.add(name)
+        return list(free)
+
+    def get_cell_vars(self):
+        return list(self.cells)
 
     def handle_children(self):
         for child in self.children:
             frees = child.get_free_vars()
-            globals = self.add_frees(frees)
-            for name in globals:
+            globals_ = self.add_frees(frees)
+            for name in globals_:
                 child.force_global(name)
 
     def force_global(self, name):
@@ -129,9 +138,9 @@ class Scope(object):
         Be careful to stop if a child does not think the name is
         free.
         """
-        self.globals[name] = 1
+        self.globals.add(name)
         if name in self.frees:
-            del self.frees[name]
+            self.frees.remove(name)
         for child in self.children:
             if child.check_name(name) == SC_FREE:
                 child.force_global(name)
@@ -149,22 +158,19 @@ class Scope(object):
             if self.nested:
                 if sc == SC_UNKNOWN or sc == SC_FREE \
                    or isinstance(self, ClassScope):
-                    self.frees[name] = 1
+                    self.frees.add(name)
                 elif sc == SC_GLOBAL_IMPLICIT:
                     child_globals.append(name)
                 elif isinstance(self, FunctionScope) and sc == SC_LOCAL:
-                    self.cells[name] = 1
+                    self.cells.add(name)
                 elif sc != SC_CELL:
                     child_globals.append(name)
             else:
                 if sc == SC_LOCAL:
-                    self.cells[name] = 1
+                    self.cells.add(name)
                 elif sc != SC_CELL:
                     child_globals.append(name)
         return child_globals
-
-    def get_cell_vars(self):
-        return self.cells.keys()
 
 
 class ModuleScope(Scope):

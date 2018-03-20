@@ -392,12 +392,21 @@ class PyFlowGraph(FlowGraph):
         self.varnames = []
         self.argcount = 0
 
+    # TODO: setArgs, setFreeVars, setCellVars can be done in constructor.  The
+    # scope is available.
+
     def setArgs(self, args):
         """Only called by functions, not modules or classes."""
         assert not self.varnames   # Nothing should have been added
         if args:
             self.varnames = list(args)
             self.argcount = len(args)
+
+    def setFreeVars(self, names):
+        self.freevars = list(names)
+
+    def setCellVars(self, names):
+        self.cellvars = names
 
     def setDocstring(self, doc):
         self.docstring = doc
@@ -411,20 +420,10 @@ class PyFlowGraph(FlowGraph):
         if self.flags & flag:
             return 1
 
-    def setFreeVars(self, names):
-        self.freevars = list(names)
-
-    def setCellVars(self, names):
-        self.cellvars = names
-
     def MakeCodeObject(self):
         """Assemble a Python code object."""
         # TODO: Split into two representations?  Graph and insts?
-
-        # walk(gen, as_tree) produces a graph, with varnames mutated Then we
-        # assemble graph into a flattened representation.  But we have to look
-        # up varnames.
-        # Really we need a shared varnames representation.
+        # Do we need a shared varnames representation?
 
         stacksize = ComputeStackDepth(self.blocks, self.entry, self.exit)
         blocks = OrderBlocks(self.entry, self.exit)
