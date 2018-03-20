@@ -185,7 +185,7 @@ def OpyCommandMain(argv):
     symbols = None
     tr = None
 
-  dr = driver.Driver(gr, convert=py2st)
+  dr = driver.Driver(gr)
 
   if action == 'pgen2':
     grammar_path = argv[1]
@@ -218,7 +218,7 @@ def OpyCommandMain(argv):
     py_path = argv[1]
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
-      tree = dr.parse_tokens(tokens, start_symbol=FILE_INPUT)
+      tree = dr.parse_tokens(tokens, convert=py2st, start_symbol=FILE_INPUT)
 
     if isinstance(tree, tuple):
       n = CountTupleTree(tree)
@@ -236,7 +236,7 @@ def OpyCommandMain(argv):
 
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
-      parse_tree = dr.parse_tokens(tokens, start_symbol=FILE_INPUT)
+      parse_tree = dr.parse_tokens(tokens, convert=py2st, start_symbol=FILE_INPUT)
       as_tree = tr.transform(parse_tree)
       co = pycodegen.compile(as_tree, py_path, 'exec')
     log("Compiled to %d bytes of bytecode", len(co.co_code))
@@ -252,6 +252,7 @@ def OpyCommandMain(argv):
     f = cStringIO.StringIO(py_expr)
     tokens = tokenize.generate_tokens(f.readline)
     parse_tree = dr.parse_tokens(tokens,
+                                 convert=py2st,
                                  start_symbol=gr.symbol2number['eval_input'])
     as_tree = tr.transform(parse_tree)
     co = pycodegen.compile(as_tree, '<eval input>', 'eval')
@@ -270,6 +271,7 @@ def OpyCommandMain(argv):
       tokens = tokenize.generate_tokens(f.readline)
       # TODO: change this to 'single input'?  Why doesn't this work?
       parse_tree = dr.parse_tokens(tokens,
+                                   convert=py2st,
                                    start_symbol=gr.symbol2number['eval_input'])
       as_tree = tr.transform(parse_tree)
       co = pycodegen.compile(as_tree, '<REPL input>', 'single')

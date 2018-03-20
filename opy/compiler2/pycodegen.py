@@ -1329,6 +1329,7 @@ class FunctionCodeGenerator(_FunctionCodeGenerator):
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
 
+
 class LambdaCodeGenerator(_FunctionCodeGenerator):
 
     def _Start(self):

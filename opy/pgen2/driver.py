@@ -4,38 +4,40 @@
 # Modifications:
 # Copyright 2006 Google, Inc. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
+from __future__ import print_function
 
 """Parser driver.
 
-This provides a high-level interface to parse a file into a syntax tree.
-
+A high-level interface to parse a file into a syntax tree.
 """
 
 __author__ = "Guido van Rossum <guido@python.org>"
 
-__all__ = ["Driver"]
 
-# Python imports
-import logging
+import sys
 
-# Pgen imports
 from . import grammar, parse, token, tokenize
+
+
+def log(msg, *args):
+    if args:
+        msg = msg % args
+    print(msg, file=sys.stderr)
 
 
 class Driver(object):
 
-    def __init__(self, grammar, convert=None, logger=None):
+    def __init__(self, grammar):
         self.grammar = grammar
-        if logger is None:
-            logger = logging.getLogger()
-        self.logger = logger
-        self.convert = convert
 
-    def parse_tokens(self, tokens, start_symbol=None, debug=False):
+    def parse_tokens(self, tokens, start_symbol=None, convert=None, debug=False):
         """Parse a series of tokens and return the syntax tree."""
         # XXX Move the prefix computation into a wrapper around tokenize.
-        p = parse.Parser(self.grammar, self.convert)
+
+        p = parse.Parser(self.grammar, convert=convert)
         p.setup(start=start_symbol)
+
+        # What is all this for?
         lineno = 1
         column = 0
         type_ = value = start = end = line_text = None
@@ -62,11 +64,10 @@ class Driver(object):
             if type_ == token.OP:
                 type_ = grammar.opmap[value]
             if debug:
-                self.logger.debug("%s %r (prefix=%r)",
-                                  token.tok_name[type_], value, prefix)
+                log("%s %r (prefix=%r)", token.tok_name[type_], value, prefix)
             if p.addtoken(type_, value, (prefix, start)):
                 if debug:
-                    self.logger.debug("Stop.")
+                    log("Stop.")
                 break
             prefix = ""
             lineno, column = end
