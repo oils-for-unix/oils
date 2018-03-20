@@ -444,15 +444,15 @@ class PyFlowGraph(FlowGraph):
         # Convert arguments from symbolic to concrete form
         # Mutates the insts argument.  The converters mutate self.names,
         # self.varnames, etc.
-        conv = ArgConverter(self.klass, self.consts, self.names, self.varnames,
-                            self.closure)
+        enc = ArgEncoder(self.klass, self.consts, self.names, self.varnames,
+                         self.closure)
 
         for i, t in enumerate(insts):
             if len(t) == 2:
                 opname, oparg = t
-                method = conv.Get(opname)
+                method = enc.Get(opname)
                 if method:
-                    insts[i] = opname, method(conv, oparg)
+                    insts[i] = opname, method(enc, oparg)
 
         ass = Assemble(insts)
 
@@ -463,12 +463,6 @@ class PyFlowGraph(FlowGraph):
 
         if self.flags & CO_VARKEYWORDS:
             self.argcount -= 1
-
-        consts = []
-        for elt in self.consts:
-            if isinstance(elt, PyFlowGraph):
-                elt = elt.MakeCodeObject()
-            consts.append(elt)
 
         return types.CodeType(
             self.argcount, nlocals, stacksize, self.flags,
@@ -482,7 +476,7 @@ class PyFlowGraph(FlowGraph):
             tuple(self.cellvars))
 
 
-class ArgConverter(object):
+class ArgEncoder(object):
     """ TODO: This should just be a simple switch ."""
 
     def __init__(self, klass, consts, names, varnames, closure):
