@@ -205,7 +205,7 @@ class Block(object):
         return contained
 
 
-class FlowGraph(object):
+class _FlowGraph(object):
 
     def __init__(self):
         self.current = self.entry = Block()
@@ -273,8 +273,13 @@ class FlowGraph(object):
         return l
 
 
+# Placeholder
+class FlowGraph(object):
+  pass
+
+
 # TODO: Unify FlowGraph and PyFlowGraph.
-class PyFlowGraph(FlowGraph):
+class Frame(_FlowGraph):
     """Something that gets turned into a single code object.
 
     Code objects and consts are mutually recursive.
@@ -285,7 +290,7 @@ class PyFlowGraph(FlowGraph):
         Args:
           klass: Whether we're compiling a class block.
         """
-        FlowGraph.__init__(self)
+        _FlowGraph.__init__(self)
         self.name = name  # name that is put in the code object
         self.filename = filename
         self.flags = (CO_OPTIMIZED | CO_NEWLOCALS) if optimized else 0
@@ -337,12 +342,14 @@ class PyFlowGraph(FlowGraph):
     def MakeCodeObject(self):
         """Order blocks, encode instructions, and create types.CodeType()."""
 
+        # Compute stack depth per basic block.
         depths = {}
         for b in self.blocks:
-            depths[b] = TRACKER.findDepth(b.getInstructions())
+            depths[b] = BLOCK_STACK_DEPTH.Sum(b.getInstructions())
 
-        b = BlockStackDepth(depths, self.exit)
-        stacksize = b.Max(self.entry, 0)
+        # Compute maximum stack depth for any control flow.
+        g = GraphStackDepth(depths, self.exit)
+        stacksize = g.Max(self.entry, 0)
 
         blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
@@ -432,7 +439,8 @@ class ArgEncoder(object):
     def _convert_LOAD_CONST(self, arg):
         from . import pycodegen
         if isinstance(arg, pycodegen.CodeGenerator):
-            arg = arg.graph.MakeCodeObject()
+            arg = arg.frame.MakeCodeObject()
+            # arg.code
         return _NameToIndex(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):
@@ -568,11 +576,11 @@ class Assembler(object):
         return bytecode, self.firstline, lnotab
 
 
-class StackDepthTracker(object):
+class BlockStackDepth(object):
     # XXX 1. need to keep track of stack depth on jumps
     # XXX 2. at least partly as a result, this code is broken
 
-    def findDepth(self, insts, debug=0):
+    def Sum(self, insts, debug=0):
         depth = 0
         maxDepth = 0
 
@@ -685,17 +693,15 @@ class StackDepthTracker(object):
         return argc
 
 
-TRACKER = StackDepthTracker()
+BLOCK_STACK_DEPTH = BlockStackDepth()
 
 
-class BlockStackDepth(object):
+class GraphStackDepth(object):
     """Walk the CFG, computing the maximum stack depth.
 
-    Approach is to compute the stack effect of each basic block.
-    Then find the path through the code with the largest total
-    effect.
+    'depths' is the stack effect of each basic block.  Then find the path
+    through the code with the largest total effect.
     """
-
     def __init__(self, depths, exit_block):
         self.depths = depths
         self.exit_block = exit_block
@@ -705,9 +711,10 @@ class BlockStackDepth(object):
         if block in self.seen:
             return d
         self.seen.add(block)
-        d += self.depths[block]
-        children = block.get_children()
 
+        d += self.depths[block]
+
+        children = block.get_children()
         if children:
             return max(self.Max(c, d) for c in children)
 

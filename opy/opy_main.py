@@ -177,15 +177,16 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   s = symbols.SymbolVisitor()
   s.Dispatch(as_tree)
 
+  graph = pyassem.FlowGraph()
   if mode == "single":
       # NOTE: the name of the flow graph is a comment, not exposed to users.
-      graph = pyassem.PyFlowGraph("<interactive>", filename)
+      frame = pyassem.Frame("<interactive>", filename)
       ctx = _ModuleContext(filename, s.scopes)
-      gen = pycodegen.InteractiveCodeGenerator(graph, ctx)
+      gen = pycodegen.InteractiveCodeGenerator(frame, graph, ctx)
       gen.set_lineno(as_tree)
 
   elif mode == "exec":
-      graph = pyassem.PyFlowGraph("<module>", filename)
+      frame = pyassem.Frame("<module>", filename)
 
       # TODO: Does this need to be made more efficient?
       p1 = future.FutureParser()
@@ -194,12 +195,12 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
       p2.Dispatch(as_tree)
 
       ctx = _ModuleContext(filename, s.scopes, futures=p1.get_features())
-      gen = pycodegen.TopLevelCodeGenerator(graph, ctx)
+      gen = pycodegen.TopLevelCodeGenerator(frame, graph, ctx)
 
   elif mode == "eval":
-      graph = pyassem.PyFlowGraph("<expression>", filename)
+      frame = pyassem.Frame("<expression>", filename)
       ctx = _ModuleContext(filename, s.scopes)
-      gen = pycodegen.TopLevelCodeGenerator(graph, ctx)
+      gen = pycodegen.TopLevelCodeGenerator(frame, graph, ctx)
 
   else:
       raise ValueError("compile() 3rd arg must be 'exec' or "
@@ -210,7 +211,7 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   gen.Finish()
 
   # NOTE: This method has a pretty long pipeline too.
-  co = graph.MakeCodeObject()
+  co = frame.MakeCodeObject()
   return co
 
 

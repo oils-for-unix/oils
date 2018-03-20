@@ -88,17 +88,14 @@ class Stack(list):
 
 
 class CodeGenerator(ASTVisitor):
-    """Defines basic code generator for Python bytecode
+    """Abstract class for modules, classes, functions."""
 
-    This class is an abstract base class.  Concrete subclasses must
-    define an __init__() that defines self.graph and then calls the
-    __init__() defined in this class.
-    """
     optimized = 0  # is namespace access optimized?
     class_name = None  # provide default for instance variable
 
-    def __init__(self, graph, ctx):
+    def __init__(self, frame, graph, ctx):
         ASTVisitor.__init__(self)
+        self.frame = frame
         self.graph = graph
         self.ctx = ctx  # passed down to child CodeGenerator instances
 
@@ -112,23 +109,23 @@ class CodeGenerator(ASTVisitor):
         self._div_op = "BINARY_DIVIDE"
 
         # Set up methods
-        self.emit = self.graph.emit
-        self.newBlock = self.graph.newBlock
-        self.startBlock = self.graph.startBlock
-        self.nextBlock = self.graph.nextBlock
-        self.setDocstring = self.graph.setDocstring
+        self.emit = self.frame.emit
+        self.newBlock = self.frame.newBlock
+        self.startBlock = self.frame.startBlock
+        self.nextBlock = self.frame.nextBlock
+        self.setDocstring = self.frame.setDocstring
 
         # Set flags based on future features
         for feature in ctx.futures:
             if feature == "division":
-                self.graph.setFlag(CO_FUTURE_DIVISION)
+                self.frame.setFlag(CO_FUTURE_DIVISION)
                 self._div_op = "BINARY_TRUE_DIVIDE"
             elif feature == "absolute_import":
-                self.graph.setFlag(CO_FUTURE_ABSIMPORT)
+                self.frame.setFlag(CO_FUTURE_ABSIMPORT)
             elif feature == "with_statement":
-                self.graph.setFlag(CO_FUTURE_WITH_STATEMENT)
+                self.frame.setFlag(CO_FUTURE_WITH_STATEMENT)
             elif feature == "print_function":
-                self.graph.setFlag(CO_FUTURE_PRINT_FUNCTION)
+                self.frame.setFlag(CO_FUTURE_PRINT_FUNCTION)
 
     #
     # Two methods that subclasses must implement.
@@ -141,7 +138,7 @@ class CodeGenerator(ASTVisitor):
         raise NotImplementedError
 
     def Start(self):
-        self.graph.setVars(self.scope.get_free_vars(),
+        self.frame.setVars(self.scope.get_free_vars(),
                            self.scope.get_cell_vars())
         self._Start()
 
@@ -258,10 +255,12 @@ class CodeGenerator(ASTVisitor):
             ndecorators = 0
 
         _CheckNoTupleArgs(node)
-        graph = pyassem.PyFlowGraph(node.name, self.ctx.filename, optimized=1)
-        graph.setArgs(node.argnames)
 
-        gen = FunctionCodeGenerator(graph, self.ctx, node, self.class_name)
+        frame = pyassem.Frame(node.name, self.ctx.filename, optimized=1)
+        frame.setArgs(node.argnames)
+        graph = pyassem.FlowGraph()
+
+        gen = FunctionCodeGenerator(frame, graph, self.ctx, node, self.class_name)
 
         self._funcOrLambda(node, gen, ndecorators)
 
@@ -279,10 +278,11 @@ class CodeGenerator(ASTVisitor):
         gLambdaCounter += 1
 
         _CheckNoTupleArgs(node)
-        graph = pyassem.PyFlowGraph(obj_name, self.ctx.filename, optimized=1)
-        graph.setArgs(node.argnames)
+        frame = pyassem.Frame(obj_name, self.ctx.filename, optimized=1)
+        frame.setArgs(node.argnames)
+        graph = pyassem.FlowGraph()
 
-        gen = LambdaCodeGenerator(graph, self.ctx, node, self.class_name)
+        gen = LambdaCodeGenerator(frame, graph, self.ctx, node, self.class_name)
 
         self._funcOrLambda(node, gen, 0)
 
@@ -300,9 +300,9 @@ class CodeGenerator(ASTVisitor):
             self.emit('CALL_FUNCTION', 1)
 
     def visitClass(self, node):
-        graph = pyassem.PyFlowGraph(node.name, self.ctx.filename,
-                                    optimized=0, klass=1)
-        gen = ClassCodeGenerator(graph, self.ctx, node)
+        frame = pyassem.Frame(node.name, self.ctx.filename, optimized=0, klass=1)
+        graph = pyassem.FlowGraph()
+        gen = ClassCodeGenerator(frame, graph, self.ctx, node)
 
         gen.Start()
         gen.FindLocals()
@@ -567,6 +567,11 @@ class CodeGenerator(ASTVisitor):
         self.newBlock()
 
     def _makeClosure(self, gen, args):
+        """Emit LOAD_CONST of this generator.
+
+        ArgEncoder calls MakeCodeObject on it.  There are a few instructions
+        afterward, so I guess we can't do that here?
+        """
         frees = gen.scope.get_free_vars()
         if frees:
             for name in frees:
@@ -591,9 +596,11 @@ class CodeGenerator(ASTVisitor):
             # That workaround may no longer be necessary if we switch.
             obj_name = '<genexpr>'
 
-        graph = pyassem.PyFlowGraph(obj_name, self.ctx.filename, optimized=1)
-        graph.setArgs(node.argnames)
-        gen = GenExprCodeGenerator(graph, self.ctx, node, self.class_name)
+        frame = pyassem.Frame(obj_name, self.ctx.filename, optimized=1)
+        frame.setArgs(node.argnames)
+        graph = pyassem.FlowGraph()
+        gen = GenExprCodeGenerator(frame, graph, self.ctx, node,
+                                   self.class_name)
 
         gen.Start()
         gen.FindLocals()
@@ -827,7 +834,7 @@ class CodeGenerator(ASTVisitor):
 
     def visitImport(self, node):
         self.set_lineno(node)
-        level = 0 if self.graph.checkFlag(CO_FUTURE_ABSIMPORT) else -1
+        level = 0 if self.frame.checkFlag(CO_FUTURE_ABSIMPORT) else -1
         for name, alias in node.names:
             self.emit('LOAD_CONST', level)
             self.emit('LOAD_CONST', None)
@@ -842,7 +849,7 @@ class CodeGenerator(ASTVisitor):
     def visitFrom(self, node):
         self.set_lineno(node)
         level = node.level
-        if level == 0 and not self.graph.checkFlag(CO_FUTURE_ABSIMPORT):
+        if level == 0 and not self.frame.checkFlag(CO_FUTURE_ABSIMPORT):
             level = -1
         fromlist = tuple(name for (name, alias) in node.names)
         self.emit('LOAD_CONST', level)
@@ -1239,8 +1246,8 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, graph, ctx, func, class_name):
-        CodeGenerator.__init__(self, graph, ctx)
+    def __init__(self, frame, graph, ctx, func, class_name):
+        CodeGenerator.__init__(self, frame, graph, ctx)
         self.func = func
         self.class_name = class_name
 
@@ -1254,9 +1261,9 @@ class _FunctionCodeGenerator(CodeGenerator):
         self.locals.push(lnf.getLocals())
 
         if func.varargs:
-            self.graph.setFlag(CO_VARARGS)
+            self.frame.setFlag(CO_VARARGS)
         if func.kwargs:
-            self.graph.setFlag(CO_VARKEYWORDS)
+            self.frame.setFlag(CO_VARKEYWORDS)
         self.set_lineno(func)
 
 
@@ -1264,12 +1271,12 @@ class FunctionCodeGenerator(_FunctionCodeGenerator):
 
     def _Start(self):
         if self.scope.generator is not None:  # does it have yield in it?
-            self.graph.setFlag(CO_GENERATOR)
+            self.frame.setFlag(CO_GENERATOR)
         if self.func.doc:
-            self.setDocstring(self.func.doc)
+            self.frame.setDocstring(self.func.doc)
 
     def Finish(self):
-        self.graph.startExitBlock()
+        self.frame.startExitBlock()
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
 
@@ -1278,27 +1285,27 @@ class LambdaCodeGenerator(_FunctionCodeGenerator):
 
     def _Start(self):
         if self.scope.generator is not None:  # does it have yield in it?
-            self.graph.setFlag(CO_GENERATOR)
+            self.frame.setFlag(CO_GENERATOR)
 
     def Finish(self):
-        self.graph.startExitBlock()
+        self.frame.startExitBlock()
         self.emit('RETURN_VALUE')
 
 
 class GenExprCodeGenerator(_FunctionCodeGenerator):
 
     def _Start(self):
-        self.graph.setFlag(CO_GENERATOR)  # It's always a generator
+        self.frame.setFlag(CO_GENERATOR)  # It's always a generator
 
     def Finish(self):
-        self.graph.startExitBlock()
+        self.frame.startExitBlock()
         self.emit('RETURN_VALUE')
 
 
 class ClassCodeGenerator(CodeGenerator):
 
-    def __init__(self, graph, ctx, klass):
-        CodeGenerator.__init__(self, graph, ctx)
+    def __init__(self, frame, graph, ctx, klass):
+        CodeGenerator.__init__(self, frame, graph, ctx)
         self.klass = klass
 
         self.class_name = klass.name
@@ -1317,12 +1324,12 @@ class ClassCodeGenerator(CodeGenerator):
         lnf.Dispatch(self.klass.code)
         self.locals.push(lnf.getLocals())
 
-        self.graph.setFlag(CO_NEWLOCALS)
+        self.frame.setFlag(CO_NEWLOCALS)
         if self.klass.doc:
             self.setDocstring(self.klass.doc)
 
     def Finish(self):
-        self.graph.startExitBlock()
+        self.frame.startExitBlock()
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
 
