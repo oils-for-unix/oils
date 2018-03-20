@@ -1,3 +1,5 @@
+import itertools
+
 from . import ast, pyassem, misc
 from .visitor import ASTVisitor
 from .consts import (
@@ -9,7 +11,7 @@ from .consts import (
     CO_GENERATOR, CO_FUTURE_DIVISION,
     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT, CO_FUTURE_PRINT_FUNCTION)
 
-callfunc_opcode_info = {
+_CALLFUNC_OPCODE_INFO = {
     # (Have *args, Have **args) : opcode
     (0,0) : "CALL_FUNCTION",
     (1,0) : "CALL_FUNCTION_VAR",
@@ -17,14 +19,30 @@ callfunc_opcode_info = {
     (1,1) : "CALL_FUNCTION_VAR_KW",
 }
 
+_AUGMENTED_OPCODE = {
+    '+=' : 'INPLACE_ADD',
+    '-=' : 'INPLACE_SUBTRACT',
+    '*=' : 'INPLACE_MULTIPLY',
+    '/=' : 'INPLACE_DIVIDE',
+    '//=': 'INPLACE_FLOOR_DIVIDE',
+    '%=' : 'INPLACE_MODULO',
+    '**=': 'INPLACE_POWER',
+    '>>=': 'INPLACE_RSHIFT',
+    '<<=': 'INPLACE_LSHIFT',
+    '&=' : 'INPLACE_AND',
+    '^=' : 'INPLACE_XOR',
+    '|=' : 'INPLACE_OR',
+}
+
+
 LOOP = 1
 EXCEPT = 2
 TRY_FINALLY = 3
 END_FINALLY = 4
 
 
-# TODO: Move this mutable global somewhere.
-gLambdaCounter = 0
+# TODO: Move this to _ModuleContext so it's not a mutable global?
+gLambdaCounter = itertools.count()
 
 
 class LocalNameFinder(ASTVisitor):
@@ -72,10 +90,7 @@ class LocalNameFinder(ASTVisitor):
 
 
 def is_constant_false(node):
-    if isinstance(node, ast.Const):
-        if not node.value:
-            return 1
-    return 0
+    return isinstance(node, ast.Const) and not node.value
 
 
 class Stack(list):
@@ -105,6 +120,7 @@ class CodeGenerator(ASTVisitor):
 
         self.locals = Stack()
         self.setups = Stack()
+        self.__with_count = 0
         self.last_lineno = None
         self._div_op = "BINARY_DIVIDE"
 
@@ -273,9 +289,7 @@ class CodeGenerator(ASTVisitor):
         self.storeName(node.name)
 
     def visitLambda(self, node):
-        global gLambdaCounter
-        obj_name = "<lambda.%d>" % gLambdaCounter
-        gLambdaCounter += 1
+        obj_name = "<lambda.%d>" % gLambdaCounter.next()
 
         _CheckNoTupleArgs(node)
         frame = pyassem.Frame(obj_name, self.ctx.filename, optimized=1)
@@ -574,22 +588,25 @@ class CodeGenerator(ASTVisitor):
         afterward, so I guess we can't do that here?
         """
         frees = gen.scope.get_free_vars()
+
+        # Recursive call!
+        from . import skeleton
+        co = skeleton.MakeCodeObject(gen.frame, gen.graph)
+
         if frees:
             for name in frees:
                 self.emit('LOAD_CLOSURE', name)
             self.emit('BUILD_TUPLE', len(frees))
-            self.emit('LOAD_CONST', gen)
+            self.emit('LOAD_CONST', co)
             self.emit('MAKE_CLOSURE', args)
         else:
-            self.emit('LOAD_CONST', gen)
+            self.emit('LOAD_CONST', co)
             self.emit('MAKE_FUNCTION', args)
 
     def visitGenExpr(self, node):
         isLambda = 1  # TODO: Shouldn't be a lambda?  Note Finish().
         if isLambda:
-            global gLambdaCounter
-            obj_name = "<lambda.%d>" % gLambdaCounter
-            gLambdaCounter += 1
+            obj_name = "<lambda.%d>" % gLambdaCounter.next()
         else:
             # TODO: enable this.  This is more like CPython.  Note that I worked
             # worked around a bug in byterun due to NOT having this.
@@ -772,8 +789,6 @@ class CodeGenerator(ASTVisitor):
         self.emit('END_FINALLY')
         self.setups.pop()
 
-    __with_count = 0
-
     def visitWith(self, node):
         body = self.newBlock()
         final = self.newBlock()
@@ -930,23 +945,8 @@ class CodeGenerator(ASTVisitor):
         aug_node = wrap_aug(node.node)
         self.visit(aug_node, "load")
         self.visit(node.expr)
-        self.emit(self._augmented_opcode[node.op])
+        self.emit(_AUGMENTED_OPCODE[node.op])
         self.visit(aug_node, "store")
-
-    _augmented_opcode = {
-        '+=' : 'INPLACE_ADD',
-        '-=' : 'INPLACE_SUBTRACT',
-        '*=' : 'INPLACE_MULTIPLY',
-        '/=' : 'INPLACE_DIVIDE',
-        '//=': 'INPLACE_FLOOR_DIVIDE',
-        '%=' : 'INPLACE_MODULO',
-        '**=': 'INPLACE_POWER',
-        '>>=': 'INPLACE_RSHIFT',
-        '<<=': 'INPLACE_LSHIFT',
-        '&=' : 'INPLACE_AND',
-        '^=' : 'INPLACE_XOR',
-        '|=' : 'INPLACE_OR',
-        }
 
     def visitAugName(self, node, mode):
         if mode == "load":
@@ -1016,7 +1016,7 @@ class CodeGenerator(ASTVisitor):
             self.visit(node.dstar_args)
         have_star = node.star_args is not None
         have_dstar = node.dstar_args is not None
-        opcode = callfunc_opcode_info[have_star, have_dstar]
+        opcode = _CALLFUNC_OPCODE_INFO[have_star, have_dstar]
         self.emit(opcode, kw << 8 | pos)
 
     def visitPrint(self, node, newline=0):
@@ -1347,6 +1347,7 @@ class OpFinder(ASTVisitor):
             self.op = node.flags
         elif self.op != node.flags:
             raise ValueError, "mixed ops in stmt"
+
     visitAssAttr = visitAssName
     visitSubscript = visitAssName
 
@@ -1369,6 +1370,7 @@ class Delegator(object):
 
     def __getattr__(self, attr):
         return getattr(self.obj, attr)
+
 
 class AugGetattr(Delegator):
     pass

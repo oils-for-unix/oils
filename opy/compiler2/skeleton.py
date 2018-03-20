@@ -49,19 +49,23 @@ def MakeCodeObject(frame, graph):
     Called by Compile below, and also recursively by ArgEncoder.
     """
     # Compute stack depth per basic block.
-    depths = {}
     b = pyassem.BlockStackDepth()
-    for block in graph.blocks:
-        depths[block] = b.Sum(block.getInstructions())
+    block_depths = {
+        block: b.Sum(block.Instructions()) for block in graph.blocks
+    }
 
-    # Compute maximum stack depth for any path through the CFG.
-    g = pyassem.GraphStackDepth(depths, graph.exit)
-    stacksize = g.Max(graph.entry, 0)
+    stacksize = pyassem.MaxStackDepth(block_depths, graph.entry, graph.exit)
 
     # Order blocks so jump offsets can be encoded.
     blocks = pyassem.OrderBlocks(graph.entry, graph.exit)
-    insts, block_offsets = pyassem.FlattenGraph(blocks)
+
+    # Produce a stream of initial instructions.
+    insts, block_offsets = pyassem.FlattenBlocks(blocks)
+
+    # Now that we know the offsets, make another pass.
     pyassem.PatchJumps(insts, block_offsets)
+
+    # What variables should be available at runtime?
 
     cellvars = pyassem.ReorderCellVars(frame)
     consts = [frame.docstring]
@@ -74,9 +78,10 @@ def MakeCodeObject(frame, graph):
     # Convert arguments from symbolic to concrete form.
     enc = pyassem.ArgEncoder(frame.klass, consts, names, frame.varnames,
                              closure)
-    # Mutates not only insts, but also consts, names, etc.
+    # Mutates not only insts, but also appends to consts, names, etc.
     enc.Run(insts)
 
+    # Binary encoding.
     a = pyassem.Assembler()
     bytecode, firstline, lnotab = a.Run(insts)
 
@@ -150,4 +155,8 @@ def Compile(f, filename, gr, start_symbol, mode):
   gen.Dispatch(as_tree)  # mutates graph
   gen.Finish()
 
-  return MakeCodeObject(frame, graph)
+  co = MakeCodeObject(frame, graph)
+
+  # TODO: Could call marshal.dump here?
+  return co
+

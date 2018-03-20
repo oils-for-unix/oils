@@ -78,14 +78,14 @@ def OrderBlocks(start_block, exit_block):
     return order
 
 
-def FlattenGraph(blocks):
+def FlattenBlocks(blocks):
     insts = []
 
     pc = 0
     offsets = {}  # block -> bytecode offset
     for b in blocks:
         offsets[b] = pc
-        for inst in b.getInstructions():
+        for inst in b.Instructions():
             insts.append(inst)
             if len(inst) == 1:
                 pc += 1
@@ -152,7 +152,7 @@ class Block(object):
         op = inst[0]
         self.insts.append(inst)
 
-    def getInstructions(self):
+    def Instructions(self):
         return self.insts
 
     def addOutEdge(self, block):
@@ -393,10 +393,6 @@ class ArgEncoder(object):
     # TODO: This should just be a simple switch
 
     def _convert_LOAD_CONST(self, arg):
-        from . import pycodegen
-        from . import skeleton
-        if isinstance(arg, pycodegen.CodeGenerator):
-            arg = skeleton.MakeCodeObject(arg.frame, arg.graph)
         return _NameToIndex(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):
@@ -649,13 +645,15 @@ class BlockStackDepth(object):
         return argc
 
 
-class GraphStackDepth(object):
-    """Walk the CFG, computing the maximum stack depth.
+class _GraphStackDepth(object):
+    """Walk the CFG, computing the maximum stack depth."""
 
-    'depths' is the stack effect of each basic block.  Then find the path
-    through the code with the largest total effect.
-    """
     def __init__(self, depths, exit_block):
+        """
+        Args:
+           depths: is the stack effect of each basic block.  Then find the path
+           through the code with the largest total effect.
+        """
         self.depths = depths
         self.exit_block = exit_block
         self.seen = set()
@@ -675,3 +673,10 @@ class GraphStackDepth(object):
             return d
 
         return self.Max(self.exit_block, d)
+
+
+def MaxStackDepth(block_depths, entry_block, exit_block):
+    """Compute maximum stack depth for any path through the CFG."""
+    g = _GraphStackDepth(block_depths, exit_block)
+    return g.Max(entry_block, 0)
+
