@@ -335,36 +335,21 @@ class PyFlowGraph(FlowGraph):
           klass: Whether we're compiling a class block.
         """
         FlowGraph.__init__(self)
-
         self.name = name  # name that is put in the code object
         self.filename = filename
-        self.docstring = None
+        self.flags = (CO_OPTIMIZED | CO_NEWLOCALS) if optimized else 0
         self.klass = klass
-        if optimized:
-            self.flags = CO_OPTIMIZED | CO_NEWLOCALS
-        else:
-            self.flags = 0
-
-        # TODO: All of these go in the code object.  Might want to separate
-        # them.  CodeContext.
-        self.consts = []
-        self.names = []
-        # Free variables found by the symbol table scan, including
-        # variables used only in nested scopes, are included here.
-        self.freevars = []
-        self.cellvars = []
-        # The closure list is used to track the order of cell
-        # variables and free variables in the resulting code object.
-        # The offsets used by LOAD_CLOSURE/LOAD_DEREF refer to both
-        # kinds of variables.
-        self.closure = []
 
         # Mutated by setArgs()
         self.varnames = []
         self.argcount = 0
 
-    # TODO: setArgs, setFreeVars, setCellVars can be done in constructor.  The
-    # scope is available.
+        # Mutated by setVars().  Free variables found by the symbol table scan,
+        # including variables used only in nested scopes, are included here.
+        self.freevars = []
+        self.cellvars = []
+
+        self.docstring = None
 
     def setArgs(self, args):
         """Only called by functions, not modules or classes."""
@@ -373,51 +358,46 @@ class PyFlowGraph(FlowGraph):
             self.varnames = list(args)
             self.argcount = len(args)
 
-    def setFreeVars(self, names):
-        self.freevars = list(names)
-
-    def setCellVars(self, names):
-        self.cellvars = names
+    def setVars(self, freevars, cellvars):
+        self.freevars = freevars
+        self.cellvars = cellvars
 
     def setDocstring(self, doc):
         self.docstring = doc
 
     def setFlag(self, flag):
-        self.flags = self.flags | flag
-        if flag == CO_VARARGS:
-            self.argcount -= 1
+        self.flags |= flag
 
     def checkFlag(self, flag):
-        if self.flags & flag:
-            return 1
+        return bool(self.flags & flag)
 
     def MakeCodeObject(self):
         """Assemble a Python code object."""
-        # NOTE: It would be nice to split this into two representations: graph
-        # and insts.  Maybe VarContext?
 
         stacksize = ComputeStackDepth(self.blocks, self.entry, self.exit)
         blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
-        assert len(self.consts) == 0, self.consts
-        self.consts.append(self.docstring)
-
-        # Rearrange self.cellvars so the ones in self.varnames are first.
-        # And prune from freevars (?)
+        # Sort self.cellvars so the ones in self.varnames are first.  And prune
+        # from freevars (?)
         lookup = set(self.cellvars)
         remaining = lookup - set(self.varnames)
 
-        self.cellvars = [n for n in self.varnames if n in lookup]
-        self.cellvars.extend(remaining)
+        cellvars = [n for n in self.varnames if n in lookup]
+        cellvars.extend(remaining)
 
-        self.closure = self.cellvars + self.freevars
+        consts = [self.docstring]
+        names = []
+
+        # The closure list is used to track the order of cell variables and
+        # free variables in the resulting code object.  The offsets used by
+        # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
+        closure = self.cellvars + self.freevars
 
         # Convert arguments from symbolic to concrete form
         # Mutates the insts argument.  The converters mutate self.names,
         # self.varnames, etc.
-        enc = ArgEncoder(self.klass, self.consts, self.names, self.varnames,
-                         self.closure)
+        enc = ArgEncoder(self.klass, consts, names, self.varnames, closure)
 
         for i, t in enumerate(insts):
             if len(t) == 2:
@@ -434,6 +414,8 @@ class PyFlowGraph(FlowGraph):
 
         if self.flags & CO_VARKEYWORDS:
             self.argcount -= 1
+        if self.flags & CO_VARARGS:
+            self.argcount -= 1
 
         a = Assembler()
         bytecode, firstline, lnotab = a.Run(insts)
@@ -441,13 +423,13 @@ class PyFlowGraph(FlowGraph):
         return types.CodeType(
             self.argcount, nlocals, stacksize, self.flags,
             bytecode,
-            tuple(self.consts),
-            tuple(self.names),
+            tuple(consts),
+            tuple(names),
             tuple(self.varnames),
             self.filename, self.name, firstline,
             lnotab,
             tuple(self.freevars),
-            tuple(self.cellvars))
+            tuple(cellvars))
 
 
 class ArgEncoder(object):

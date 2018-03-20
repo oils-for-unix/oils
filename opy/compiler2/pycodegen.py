@@ -141,8 +141,8 @@ class CodeGenerator(ASTVisitor):
         raise NotImplementedError
 
     def Start(self):
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
+        self.graph.setVars(self.scope.get_free_vars(),
+                           self.scope.get_cell_vars())
         self._Start()
 
     def mangle(self, name):

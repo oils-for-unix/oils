@@ -107,7 +107,7 @@ class Scope(object):
         #  return Adder
         """
         if not self.nested:
-            return ()
+            return []
         free = set()
         free.update(self.frees)
         for name in self.uses:
