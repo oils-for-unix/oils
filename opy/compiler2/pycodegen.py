@@ -268,8 +268,7 @@ class CodeGenerator(ASTVisitor):
         then, this method works around missing line numbers.
         """
         lineno = getattr(node, 'lineno', None)
-        if lineno is not None and (lineno != self.last_lineno
-                                   or force):
+        if lineno is not None and (lineno != self.last_lineno or force):
             self.emit('SET_LINENO', lineno)
             self.last_lineno = lineno
             return True
@@ -435,7 +434,7 @@ class CodeGenerator(ASTVisitor):
         self.emit('GET_ITER')
 
         self.nextBlock(start)
-        self.set_lineno(node, force=1)
+        self.set_lineno(node, force=True)
         self.emit('FOR_ITER', anchor)
         self.visit(node.assign)
         self.visit(node.body)

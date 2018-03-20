@@ -217,7 +217,7 @@ def OpyCommandMain(argv):
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
       p = parse.Parser(gr, convert=py2st)
-      parses_tree = driver.PushTokens(p, tokens, FILE_INPUT)
+      parse_tree = driver.PushTokens(p, tokens, FILE_INPUT)
 
     if isinstance(parse_tree, tuple):
       n = CountTupleTree(parse_tree)
