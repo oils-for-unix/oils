@@ -337,7 +337,13 @@ class PyFlowGraph(FlowGraph):
     def MakeCodeObject(self):
         """Order blocks, encode instructions, and create types.CodeType()."""
 
-        stacksize = ComputeStackDepth(self.blocks, self.entry, self.exit)
+        depths = {}
+        for b in self.blocks:
+            depths[b] = TRACKER.findDepth(b.getInstructions())
+
+        b = BlockStackDepth(depths, self.exit)
+        stacksize = b.Max(self.entry, 0)
+
         blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
@@ -682,33 +688,30 @@ class StackDepthTracker(object):
 TRACKER = StackDepthTracker()
 
 
-def ComputeStackDepth(blocks, entry_block, exit_block):
-    """Compute the max stack depth.
+class BlockStackDepth(object):
+    """Walk the CFG, computing the maximum stack depth.
 
     Approach is to compute the stack effect of each basic block.
     Then find the path through the code with the largest total
     effect.
     """
-    depth = {}
-    for b in blocks:
-        depth[b] = TRACKER.findDepth(b.getInstructions())
 
-    seen = set()
+    def __init__(self, depths, exit_block):
+        self.depths = depths
+        self.exit_block = exit_block
+        self.seen = set()
 
-    def max_depth(b, d):
-        if b in seen:
+    def Max(self, block, d):
+        if block in self.seen:
             return d
-        seen.add(b)
-        d += depth[b]
-        children = b.get_children()
+        self.seen.add(block)
+        d += self.depths[block]
+        children = block.get_children()
+
         if children:
-            return max(max_depth(c, d) for c in children)
-        else:
-            if not b.label == "exit":
-                return max_depth(exit_block, d)
-            else:
-                return d
+            return max(self.Max(c, d) for c in children)
 
-    return max_depth(entry_block, 0)
+        if block.label == "exit":
+            return d
 
-
+        return self.Max(self.exit_block, d)
