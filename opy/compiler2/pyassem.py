@@ -9,157 +9,7 @@ from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
 HAS_JREL = set(dis.opname[op] for op in dis.hasjrel)
 HAS_JABS = set(dis.opname[op] for op in dis.hasjabs)
-
-
 OPNUM = dict((name, i) for i, name in enumerate(dis.opname))
-
-
-def _NameToIndex(name, L):
-    """Return index of name in list, appending if necessary
-
-    This routine uses a list instead of a dictionary, because a
-    dictionary can't store two different keys if the keys have the
-    same value but different types, e.g. 2 and 2L.  The compiler
-    must treat these two separately, so it does an explicit type
-    comparison before comparing the values.
-    """
-    t = type(name)
-    for i, item in enumerate(L):
-        if t == type(item) and item == name:
-            return i
-    end = len(L)
-    L.append(name)
-    return end
-
-
-def ComputeStackDepth(blocks, entry_block, exit_block):
-    """Compute the max stack depth.
-
-    Approach is to compute the stack effect of each basic block.
-    Then find the path through the code with the largest total
-    effect.
-    """
-    depth = {}
-    exit = None
-    for b in blocks:
-        depth[b] = TRACKER.findDepth(b.getInstructions())
-
-    seen = {}
-
-    def max_depth(b, d):
-        if b in seen:
-            return d
-        seen[b] = 1
-        d = d + depth[b]
-        children = b.get_children()
-        if children:
-            return max([max_depth(c, d) for c in children])
-        else:
-            if not b.label == "exit":
-                return max_depth(exit_block, d)
-            else:
-                return d
-
-    return max_depth(entry_block, 0)
-
-
-def FlattenGraph(blocks):
-    insts = []
-    pc = 0
-    begin = {}
-    end = {}
-    for b in blocks:
-        begin[b] = pc
-        for inst in b.getInstructions():
-            insts.append(inst)
-            if len(inst) == 1:
-                pc = pc + 1
-            elif inst[0] != "SET_LINENO":
-                # arg takes 2 bytes
-                pc = pc + 3
-        end[b] = pc
-    pc = 0
-    for i, inst in enumerate(insts):
-        if len(inst) == 1:
-            pc = pc + 1
-        elif inst[0] != "SET_LINENO":
-            pc = pc + 3
-        opname = inst[0]
-        if opname in HAS_JREL:
-            oparg = inst[1]
-            offset = begin[oparg] - pc
-            insts[i] = opname, offset
-        elif opname in HAS_JABS:
-            insts[i] = opname, begin[inst[1]]
-    return insts
-
-
-class FlowGraph(object):
-
-    def __init__(self):
-        self.current = self.entry = Block()
-        self.exit = Block("exit")
-        self.blocks = set()
-        self.blocks.add(self.entry)
-        self.blocks.add(self.exit)
-
-    DEBUG = False
-
-    def startBlock(self, block):
-        if self.DEBUG:
-            if self.current:
-                print("end", repr(self.current))
-                print("    next", self.current.next)
-                print("    prev", self.current.prev)
-                print("   ", self.current.get_children())
-            print(repr(block))
-        self.current = block
-
-    def nextBlock(self, block=None):
-        # XXX think we need to specify when there is implicit transfer
-        # from one block to the next.  might be better to represent this
-        # with explicit JUMP_ABSOLUTE instructions that are optimized
-        # out when they are unnecessary.
-        #
-        # I think this strategy works: each block has a child
-        # designated as "next" which is returned as the last of the
-        # children.  because the nodes in a graph are emitted in
-        # reverse post order, the "next" block will always be emitted
-        # immediately after its parent.
-        # Worry: maintaining this invariant could be tricky
-        if block is None:
-            block = self.newBlock()
-
-        # Note: If the current block ends with an unconditional control
-        # transfer, then it is techically incorrect to add an implicit
-        # transfer to the block graph. Doing so results in code generation
-        # for unreachable blocks.  That doesn't appear to be very common
-        # with Python code and since the built-in compiler doesn't optimize
-        # it out we don't either.
-        self.current.addNext(block)
-        self.startBlock(block)
-
-    def newBlock(self):
-        b = Block()
-        self.blocks.add(b)
-        return b
-
-    def startExitBlock(self):
-        self.startBlock(self.exit)
-
-    def emit(self, *inst):
-        if self.DEBUG:
-            print("\t", inst)
-        if len(inst) == 2 and isinstance(inst[1], Block):
-            self.current.addOutEdge(inst[1])
-        self.current.emit(inst)
-
-    def getContainedGraphs(self):
-        raise AssertionError('unused')
-        l = []
-        for b in self.getBlocks():
-            l.extend(b.getContainedGraphs())
-        return l
 
 
 def OrderBlocks(start_block, exit_block):
@@ -227,6 +77,38 @@ def OrderBlocks(start_block, exit_block):
             break
         b = find_next()
     return order
+
+
+def FlattenGraph(blocks):
+    insts = []
+    pc = 0
+    begin = {}
+    end = {}
+    for b in blocks:
+        begin[b] = pc
+        for inst in b.getInstructions():
+            insts.append(inst)
+            if len(inst) == 1:
+                pc += 1
+            elif inst[0] != "SET_LINENO":
+                # arg takes 2 bytes
+                pc += 3
+        end[b] = pc
+
+    pc = 0
+    for i, inst in enumerate(insts):
+        if len(inst) == 1:
+            pc += 1
+        elif inst[0] != "SET_LINENO":
+            pc += 3
+        opname = inst[0]
+        if opname in HAS_JREL:
+            oparg = inst[1]
+            offset = begin[oparg] - pc
+            insts[i] = opname, offset
+        elif opname in HAS_JABS:
+            insts[i] = opname, begin[inst[1]]
+    return insts
 
 
 gBlockCounter = 0
@@ -323,6 +205,75 @@ class Block(object):
         return contained
 
 
+class FlowGraph(object):
+
+    def __init__(self):
+        self.current = self.entry = Block()
+        self.exit = Block("exit")
+        self.blocks = set()
+        self.blocks.add(self.entry)
+        self.blocks.add(self.exit)
+
+    DEBUG = False
+
+    def startBlock(self, block):
+        if self.DEBUG:
+            if self.current:
+                print("end", repr(self.current))
+                print("    next", self.current.next)
+                print("    prev", self.current.prev)
+                print("   ", self.current.get_children())
+            print(repr(block))
+        self.current = block
+
+    def nextBlock(self, block=None):
+        # XXX think we need to specify when there is implicit transfer
+        # from one block to the next.  might be better to represent this
+        # with explicit JUMP_ABSOLUTE instructions that are optimized
+        # out when they are unnecessary.
+        #
+        # I think this strategy works: each block has a child
+        # designated as "next" which is returned as the last of the
+        # children.  because the nodes in a graph are emitted in
+        # reverse post order, the "next" block will always be emitted
+        # immediately after its parent.
+        # Worry: maintaining this invariant could be tricky
+        if block is None:
+            block = self.newBlock()
+
+        # Note: If the current block ends with an unconditional control
+        # transfer, then it is techically incorrect to add an implicit
+        # transfer to the block graph. Doing so results in code generation
+        # for unreachable blocks.  That doesn't appear to be very common
+        # with Python code and since the built-in compiler doesn't optimize
+        # it out we don't either.
+        self.current.addNext(block)
+        self.startBlock(block)
+
+    def newBlock(self):
+        b = Block()
+        self.blocks.add(b)
+        return b
+
+    def startExitBlock(self):
+        self.startBlock(self.exit)
+
+    def emit(self, *inst):
+        if self.DEBUG:
+            print("\t", inst)
+        if len(inst) == 2 and isinstance(inst[1], Block):
+            self.current.addOutEdge(inst[1])
+        self.current.emit(inst)
+
+    def getContainedGraphs(self):
+        raise AssertionError('unused')
+        l = []
+        for b in self.getBlocks():
+            l.extend(b.getContainedGraphs())
+        return l
+
+
+# TODO: Unify FlowGraph and PyFlowGraph.
 class PyFlowGraph(FlowGraph):
     """Something that gets turned into a single code object.
 
@@ -426,6 +377,24 @@ class PyFlowGraph(FlowGraph):
             lnotab,
             tuple(self.freevars),
             tuple(cellvars))
+
+
+def _NameToIndex(name, L):
+    """Return index of name in list, appending if necessary
+
+    This routine uses a list instead of a dictionary, because a
+    dictionary can't store two different keys if the keys have the
+    same value but different types, e.g. 2 and 2L.  The compiler
+    must treat these two separately, so it does an explicit type
+    comparison before comparing the values.
+    """
+    t = type(name)
+    for i, item in enumerate(L):
+        if t == type(item) and item == name:
+            return i
+    end = len(L)
+    L.append(name)
+    return end
 
 
 class ArgEncoder(object):
@@ -600,29 +569,35 @@ class StackDepthTracker(object):
     def findDepth(self, insts, debug=0):
         depth = 0
         maxDepth = 0
-        for i in insts:
-            opname = i[0]
+
+        for inst in insts:
+            opname = inst[0]
             if debug:
-                print(i, end=' ')
+                print(inst, end=' ')
+
             delta = self.effect.get(opname, None)
-            if delta is not None:
-                depth = depth + delta
-            else:
+            if delta is None:
                 # now check patterns
                 for pat, pat_delta in self.patterns:
                     if opname[:len(pat)] == pat:
                         delta = pat_delta
-                        depth = depth + delta
                         break
-                # if we still haven't found a match
-                if delta is None:
-                    meth = getattr(self, opname, None)
-                    if meth is not None:
-                        depth = depth + meth(i[1])
-            if depth > maxDepth:
-                maxDepth = depth
+
+            if delta is None:
+                meth = getattr(self, opname, None)
+                if meth is not None:
+                    delta = meth(inst[1])
+
+            if delta is None:
+                # Jumps missing here.
+                #assert opname in ('POP_JUMP_IF_FALSE', 'SET_LINENO'), opname
+                delta = 0
+
+            depth += delta
+            maxDepth = max(depth, maxDepth)
+
             if debug:
-                print(depth, maxDepth)
+                print('%s %s' % (depth, maxDepth))
         return maxDepth
 
     effect = {
@@ -705,3 +680,35 @@ class StackDepthTracker(object):
 
 
 TRACKER = StackDepthTracker()
+
+
+def ComputeStackDepth(blocks, entry_block, exit_block):
+    """Compute the max stack depth.
+
+    Approach is to compute the stack effect of each basic block.
+    Then find the path through the code with the largest total
+    effect.
+    """
+    depth = {}
+    for b in blocks:
+        depth[b] = TRACKER.findDepth(b.getInstructions())
+
+    seen = set()
+
+    def max_depth(b, d):
+        if b in seen:
+            return d
+        seen.add(b)
+        d += depth[b]
+        children = b.get_children()
+        if children:
+            return max(max_depth(c, d) for c in children)
+        else:
+            if not b.label == "exit":
+                return max_depth(exit_block, d)
+            else:
+                return d
+
+    return max_depth(entry_block, 0)
+
+
