@@ -181,8 +181,20 @@ class CodeGenerator(ASTVisitor):
             elif feature == "print_function":
                 self.graph.setFlag(CO_FUTURE_PRINT_FUNCTION)
 
+    #
+    # Two methods that subclasses must implement.
+    #
+
+    def _Start(self):
+        raise NotImplementedError
+
     def Finish(self):
         raise NotImplementedError
+
+    def Start(self):
+        self.graph.setFreeVars(self.scope.get_free_vars())
+        self.graph.setCellVars(self.scope.get_cell_vars())
+        self._Start()
 
     def mangle(self, name):
         return misc.mangle(name, self.class_name)
@@ -1306,9 +1318,7 @@ class _FunctionCodeGenerator(CodeGenerator):
 
 class FunctionCodeGenerator(_FunctionCodeGenerator):
 
-    def Start(self):
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
+    def _Start(self):
         if self.scope.generator is not None:  # does it have yield in it?
             self.graph.setFlag(CO_GENERATOR)
         if self.func.doc:
@@ -1319,12 +1329,9 @@ class FunctionCodeGenerator(_FunctionCodeGenerator):
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
 
-
 class LambdaCodeGenerator(_FunctionCodeGenerator):
 
-    def Start(self):
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
+    def _Start(self):
         if self.scope.generator is not None:  # does it have yield in it?
             self.graph.setFlag(CO_GENERATOR)
 
@@ -1335,9 +1342,7 @@ class LambdaCodeGenerator(_FunctionCodeGenerator):
 
 class GenExprCodeGenerator(_FunctionCodeGenerator):
 
-    def Start(self):
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
+    def _Start(self):
         self.graph.setFlag(CO_GENERATOR)  # It's always a generator
 
     def Finish(self):
@@ -1356,9 +1361,7 @@ class ClassCodeGenerator(CodeGenerator):
         self.class_name = klass.name
         self.scope = scopes[klass]
 
-    def Start(self):
-        self.graph.setFreeVars(self.scope.get_free_vars())
-        self.graph.setCellVars(self.scope.get_cell_vars())
+    def _Start(self):
         self.set_lineno(self.klass)
         self.emit("LOAD_GLOBAL", "__name__")
         self.storeName("__module__")
