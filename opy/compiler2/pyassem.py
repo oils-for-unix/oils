@@ -398,17 +398,10 @@ class PyFlowGraph(FlowGraph):
         # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
         closure = cellvars + self.freevars
 
-        # Convert arguments from symbolic to concrete form.  Mutates
-        # self.consts, self.names, etc.
+        # Convert arguments from symbolic to concrete form.
         enc = ArgEncoder(self.klass, consts, names, self.varnames, closure)
-
-        for i, t in enumerate(insts):
-            if len(t) == 2:
-                opname, oparg = t
-                method = enc.Get(opname)
-                if method:
-                    arg_index = method(enc, oparg)
-                    insts[i] = opname, arg_index
+        # Mutates not only insts, but also self.consts, self.names, etc.
+        enc.Run(insts)
 
         if self.flags & CO_NEWLOCALS:
             nlocals = len(self.varnames)
@@ -436,7 +429,7 @@ class PyFlowGraph(FlowGraph):
 
 
 class ArgEncoder(object):
-    """ TODO: This should just be a simple switch ."""
+    """Replaces arg objects with indices."""
 
     def __init__(self, klass, consts, names, varnames, closure):
         """
@@ -448,6 +441,18 @@ class ArgEncoder(object):
         self.names = names
         self.varnames = varnames
         self.closure = closure
+
+    def Run(self, insts):
+        """Mutates insts."""
+        for i, t in enumerate(insts):
+            if len(t) == 2:
+                opname, oparg = t
+                method = self._converters.get(opname, None)
+                if method:
+                    arg_index = method(self, oparg)
+                    insts[i] = opname, arg_index
+
+    # TODO: This should just be a simple switch
 
     def _convert_LOAD_CONST(self, arg):
         from . import pycodegen
@@ -505,9 +510,6 @@ class ArgEncoder(object):
             opname = name[9:]
             _converters[opname] = obj
     del name, obj, opname
-
-    def Get(self, opname):
-      return self._converters.get(opname, None)
 
 
 class Assembler(object):
