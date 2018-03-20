@@ -24,8 +24,11 @@ from .pgen2 import tokenize
 from . import pytree
 
 from .compiler2 import dis_tool
+from .compiler2 import future
 from .compiler2 import misc
+from .compiler2 import pyassem
 from .compiler2 import pycodegen
+from .compiler2 import syntax
 from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
@@ -141,6 +144,69 @@ def py2st(unused_gr, raw_node):
   else:
     return (typ, value, lineno, column)
 
+
+class _ModuleContext(object):
+  """Module-level data for the CodeGenerator tree."""
+
+  def __init__(self, filename, futures=()):
+    self.filename = filename
+    self.futures = futures
+
+
+def RunCompiler(f, filename, gr, start_symbol, mode):
+  """Run the full compiler pipeline.
+
+  TODO: Expose this as a library?
+  """
+  tokens = tokenize.generate_tokens(f.readline)
+
+  p = parse.Parser(gr, convert=py2st)
+  parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
+
+  tr = transformer.Transformer()
+  as_tree = tr.transform(parse_tree)
+
+  # NOTE: This currently does nothing!
+  v = syntax.SyntaxErrorChecker()
+  v.Dispatch(as_tree)
+
+  if mode == "single":
+      # NOTE: the name of the flow graph is a comment, not exposed to users.
+      graph = pyassem.PyFlowGraph("<interactive>", filename)
+      ctx = _ModuleContext(filename)
+      gen = pycodegen.InteractiveCodeGenerator(graph, ctx)
+      gen.set_lineno(as_tree)
+
+  elif mode == "exec":
+      graph = pyassem.PyFlowGraph("<module>", filename)
+
+      # TODO: Does this need to be made more efficient?
+      p1 = future.FutureParser()
+      p2 = future.BadFutureParser()
+      p1.Dispatch(as_tree)
+      p2.Dispatch(as_tree)
+
+      ctx = _ModuleContext(filename, futures=p1.get_features())
+      gen = pycodegen.TopLevelCodeGenerator(graph, ctx)
+
+  elif mode == "eval":
+      graph = pyassem.PyFlowGraph("<expression>", filename)
+      ctx = _ModuleContext(filename)
+      gen = pycodegen.TopLevelCodeGenerator(graph, ctx)
+
+  else:
+      raise ValueError("compile() 3rd arg must be 'exec' or "
+                       "'eval' or 'single'")
+
+  # NOTE: There is no Start() or FindLocals() at the top level.
+  gen.Dispatch(as_tree)  # mutates graph
+  gen.Finish()
+
+  # NOTE: This method has a pretty long pipeline too.
+  co = graph.MakeCodeObject()
+  return co
+
+
 # TODO: more actions:
 # - lex, parse, ast, cfg, compile/eval/repl
 
@@ -171,8 +237,6 @@ def OpyCommandMain(argv):
     except KeyError:
       pass
 
-    FILE_INPUT = gr.symbol2number['file_input']
-
     symbols = Symbols(gr)
     pytree.Init(symbols)  # for type_repr() pretty printing
     transformer.Init(symbols)  # for _names and other dicts
@@ -181,9 +245,9 @@ def OpyCommandMain(argv):
     # e.g. pgen2 doesn't use any of these.  Maybe we should make a different
     # tool.
     gr = None
-    FILE_INPUT = None
     symbols = None
     tr = None
+
 
   if action == 'pgen2':
     grammar_path = argv[1]
@@ -217,7 +281,7 @@ def OpyCommandMain(argv):
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
       p = parse.Parser(gr, convert=py2st)
-      parse_tree = driver.PushTokens(p, tokens, FILE_INPUT)
+      parse_tree = driver.PushTokens(p, tokens, gr.symbol2number['file_input'])
 
     if isinstance(parse_tree, tuple):
       n = CountTupleTree(parse_tree)
@@ -234,11 +298,8 @@ def OpyCommandMain(argv):
     out_path = argv[2]
 
     with open(py_path) as f:
-      tokens = tokenize.generate_tokens(f.readline)
-      p = parse.Parser(gr, convert=py2st)
-      parse_tree = driver.PushTokens(p, tokens, FILE_INPUT)
-      as_tree = tr.transform(parse_tree)
-      co = pycodegen.compile(as_tree, py_path, 'exec')
+      co = RunCompiler(f, py_path, gr, 'file_input', 'exec')
+
     log("Compiled to %d bytes of bytecode", len(co.co_code))
 
     # Write the .pyc file
@@ -250,11 +311,7 @@ def OpyCommandMain(argv):
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
     py_expr = argv[1]
     f = cStringIO.StringIO(py_expr)
-    tokens = tokenize.generate_tokens(f.readline)
-    p = parse.Parser(gr, convert=py2st)
-    parse_tree = driver.PushTokens(p, tokens, gr.symbol2number['eval_input'])
-    as_tree = tr.transform(parse_tree)
-    co = pycodegen.compile(as_tree, '<eval input>', 'eval')
+    co = RunCompiler(f, '<eval input>', gr, 'eval_input', 'eval')
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -266,14 +323,9 @@ def OpyCommandMain(argv):
     while True:
       py_expr = raw_input('opy> ')
       f = cStringIO.StringIO(py_expr)
-      tokens = tokenize.generate_tokens(f.readline)
 
-      p = parse.Parser(gr, convert=py2st)
       # TODO: change this to 'single input'?  Why doesn't this work?
-      parse_tree = driver.PushTokens(p, tokens, gr.symbol2number['eval_input'])
-
-      as_tree = tr.transform(parse_tree)
-      co = pycodegen.compile(as_tree, '<REPL input>', 'single')
+      co = RunCompiler(f, '<REPL input>', gr, 'eval_input', 'eval')
 
       v = dis_tool.Visitor()
       v.show_code(co)

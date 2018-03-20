@@ -1,4 +1,4 @@
-from . import ast, syntax, pyassem, misc, future, symbols
+from . import ast, pyassem, misc, symbols
 from .visitor import ASTVisitor
 from .consts import (
     SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, SC_FREE, SC_CELL)
@@ -25,56 +25,6 @@ END_FINALLY = 4
 
 # TODO: Move this mutable global somewhere.
 gLambdaCounter = 0
-
-
-class _ModuleContext(object):
-  """Module-level data for the CodeGenerator tree."""
-
-  def __init__(self, filename, futures=()):
-    self.filename = filename
-    self.futures = futures
-
-
-def compile(as_tree, filename, mode):
-    """Replacement for builtin compile() function"""
-
-    # NOTE: This currently does nothing!
-    v = syntax.SyntaxErrorChecker()
-    v.Dispatch(as_tree)
-
-    # NOTE: the name of the flow graph is a comment, not exposed to users.
-    if mode == "single":
-        graph = pyassem.PyFlowGraph("<interactive>", filename)
-        ctx = _ModuleContext(filename)
-        gen = InteractiveCodeGenerator(graph, ctx)
-        gen.set_lineno(as_tree)
-
-    elif mode == "exec":
-        graph = pyassem.PyFlowGraph("<module>", filename)
-
-        # TODO: Does this need to be made more efficient?
-        p1 = future.FutureParser()
-        p2 = future.BadFutureParser()
-        p1.Dispatch(as_tree)
-        p2.Dispatch(as_tree)
-
-        ctx = _ModuleContext(filename, futures=p1.get_features())
-        gen = TopLevelCodeGenerator(graph, ctx)
-
-    elif mode == "eval":
-        graph = pyassem.PyFlowGraph("<expression>", filename)
-        ctx = _ModuleContext(filename)
-        gen = TopLevelCodeGenerator(graph, ctx)
-
-    else:
-        raise ValueError("compile() 3rd arg must be 'exec' or "
-                         "'eval' or 'single'")
-
-    # NOTE: There is no Start() or FindLocals() at the top level.
-    gen.Dispatch(as_tree)
-    gen.Finish()
-
-    return graph.MakeCodeObject()
 
 
 class LocalNameFinder(ASTVisitor):
