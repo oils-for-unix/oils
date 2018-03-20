@@ -3,6 +3,8 @@
 skeleton.py: The compiler pipeline.
 """
 
+import types
+
 from ..pgen2 import tokenize
 from ..pgen2 import driver
 from ..pgen2 import parse
@@ -13,6 +15,15 @@ from . import pycodegen
 from . import syntax
 from . import symbols
 from . import transformer
+
+
+class _ModuleContext(object):
+  """Module-level data for the CodeGenerator tree."""
+
+  def __init__(self, filename, scopes, futures=()):
+    self.filename = filename
+    self.scopes = scopes
+    self.futures = futures
 
 
 # Emulating parser.st structures from parsermodule.c.
@@ -32,13 +43,52 @@ def py2st(unused_gr, raw_node):
     return (typ, value, lineno, column)
 
 
-class _ModuleContext(object):
-  """Module-level data for the CodeGenerator tree."""
+def MakeCodeObject(frame, graph):
+    """Order blocks, encode instructions, and create types.CodeType().
 
-  def __init__(self, filename, scopes, futures=()):
-    self.filename = filename
-    self.scopes = scopes
-    self.futures = futures
+    Called by RunCompiler below, and also recursively by ArgEncoder.
+    """
+    # Compute stack depth per basic block.
+    depths = {}
+    b = pyassem.BlockStackDepth()
+    for block in graph.blocks:
+        depths[block] = b.Sum(block.getInstructions())
+
+    # Compute maximum stack depth for any path through the CFG.
+    g = pyassem.GraphStackDepth(depths, graph.exit)
+    stacksize = g.Max(graph.entry, 0)
+
+    # Order blocks so jump offsets can be encoded.
+    blocks = pyassem.OrderBlocks(graph.entry, graph.exit)
+    insts = pyassem.FlattenGraph(blocks)
+
+    cellvars = pyassem.ReorderCellVars(frame)
+    consts = [frame.docstring]
+    names = []
+    # The closure list is used to track the order of cell variables and
+    # free variables in the resulting code object.  The offsets used by
+    # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
+    closure = cellvars + frame.freevars
+
+    # Convert arguments from symbolic to concrete form.
+    enc = pyassem.ArgEncoder(frame.klass, consts, names, frame.varnames,
+                             closure)
+    # Mutates not only insts, but also consts, names, etc.
+    enc.Run(insts)
+
+    a = pyassem.Assembler()
+    bytecode, firstline, lnotab = a.Run(insts)
+
+    return types.CodeType(
+        frame.ArgCount(), frame.NumLocals(), stacksize, frame.flags,
+        bytecode,
+        tuple(consts),
+        tuple(names),
+        tuple(frame.varnames),
+        frame.filename, frame.name, firstline,
+        lnotab,
+        tuple(frame.freevars),
+        tuple(cellvars))
 
 
 def RunCompiler(f, filename, gr, start_symbol, mode):
@@ -54,8 +104,6 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   tr = transformer.Transformer()
   as_tree = tr.transform(parse_tree)
 
-  #log('AST: %s', as_tree)
-
   # NOTE: This currently does nothing!
   v = syntax.SyntaxErrorChecker()
   v.Dispatch(as_tree)
@@ -63,17 +111,15 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   s = symbols.SymbolVisitor()
   s.Dispatch(as_tree)
 
-  graph = pyassem.FlowGraph()
+  graph = pyassem.FlowGraph()  # Mutated by code generator
   if mode == "single":
-      # NOTE: the name of the flow graph is a comment, not exposed to users.
-      frame = pyassem.Frame("<interactive>", filename)
       ctx = _ModuleContext(filename, s.scopes)
-      gen = pycodegen.InteractiveCodeGenerator(frame, graph, ctx)
+      # NOTE: the name of the Frame is a comment, not exposed to users.
+      frame = pyassem.Frame("<interactive>", filename)  # mutated
+      gen = pycodegen.InteractiveCodeGenerator(ctx, frame, graph)
       gen.set_lineno(as_tree)
 
   elif mode == "exec":
-      frame = pyassem.Frame("<module>", filename)
-
       # TODO: Does this need to be made more efficient?
       p1 = future.FutureParser()
       p2 = future.BadFutureParser()
@@ -81,12 +127,14 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
       p2.Dispatch(as_tree)
 
       ctx = _ModuleContext(filename, s.scopes, futures=p1.get_features())
-      gen = pycodegen.TopLevelCodeGenerator(frame, graph, ctx)
+      frame = pyassem.Frame("<module>", filename)  # mutated
+
+      gen = pycodegen.TopLevelCodeGenerator(ctx, frame, graph)
 
   elif mode == "eval":
-      frame = pyassem.Frame("<expression>", filename)
       ctx = _ModuleContext(filename, s.scopes)
-      gen = pycodegen.TopLevelCodeGenerator(frame, graph, ctx)
+      frame = pyassem.Frame("<expression>", filename)  # mutated
+      gen = pycodegen.TopLevelCodeGenerator(ctx, frame, graph)
 
   else:
       raise ValueError("compile() 3rd arg must be 'exec' or "
@@ -97,7 +145,5 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   gen.Finish()
 
   # NOTE: This method has a pretty long pipeline too.
-  co = pyassem.MakeCodeObject(gen.frame, gen.graph)
+  co = MakeCodeObject(frame, graph)
   return co
-
-

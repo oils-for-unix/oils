@@ -150,11 +150,11 @@
   9249 ff523d9b89278d6ed3f57247ea1f8fe7 _tmp/regtest/asdl/py_meta.pyc
   9316 64bd9b485abd8deafd992c1558b89ca9 _tmp/regtest/asdl/tdop.pyc
   9430 55c117fa40d8b65b5caf648db19bab2c _tmp/regtest/osh/lex_test.pyc
-  9568 983c982a13d92b8ea80e3e0544bcc4bb _tmp/regtest/opy/byterun/pyobj.pyc
+  9573 f4b5773c8ba0471ba81467e99b12ae47 _tmp/regtest/opy/byterun/pyobj.pyc
   9874 6a7451da64ece36368705f98005046ac _tmp/regtest/core/legacy.pyc
   9926 235ebfb8f8a106983664f358ee4579cb _tmp/regtest/core/util.pyc
  10513 54a627997dabacb3c7c668b3b493d22e _tmp/regtest/runpy.pyc
- 10574 844c3e8279a3c7be9ef97e014ec1e99b _tmp/regtest/opy/opy_main.pyc
+ 10560 5f30d8c99b518534251459804d8e6af2 _tmp/regtest/opy/opy_main.pyc
  10802 41b4b7f7c82b5975c2b78f9726befd1e _tmp/regtest/UserDict.pyc
  11111 516ad8bd7dddeab5dcfe1cca2bbf2b94 _tmp/regtest/core/id_kind.pyc
  11118 c012a0c4650a7b80d6b3c51962a3221c _tmp/regtest/_weakrefset.pyc
@@ -202,7 +202,7 @@
  28978 581863c0d28c4f23d0eaaaab3a525f33 _tmp/regtest/test/sh_spec.pyc
  29159 58e8951b48374c0368253e32c9550075 _tmp/regtest/_abcoll.pyc
  29440 5ae214959a39478444778fa9800f4dd6 _tmp/regtest/collections.pyc
- 30243 9a54545f2f70fc1b265676e07f4f258c _tmp/regtest/opy/compiler2/pyassem.pyc
+ 30204 7b90326a7eab1a0f0d42f21382c966e3 _tmp/regtest/opy/compiler2/pyassem.pyc
  30811 02d4a38a06b87bc1875e62ffe18bb88a _tmp/regtest/core/builtin.pyc
  32295 29b6c155971a78b46cae1c83500f7efb _tmp/regtest/osh/word_parse.pyc
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc

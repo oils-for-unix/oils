@@ -93,11 +93,11 @@ class CodeGenerator(ASTVisitor):
     optimized = 0  # is namespace access optimized?
     class_name = None  # provide default for instance variable
 
-    def __init__(self, frame, graph, ctx):
+    def __init__(self, ctx, frame, graph):
         ASTVisitor.__init__(self)
+        self.ctx = ctx  # passed down to child CodeGenerator instances
         self.frame = frame
         self.graph = graph
-        self.ctx = ctx  # passed down to child CodeGenerator instances
 
         # Set by visitModule, visitExpression (for eval), or by subclass
         # constructor.
@@ -259,7 +259,8 @@ class CodeGenerator(ASTVisitor):
         frame.setArgs(node.argnames)
         graph = pyassem.FlowGraph()
 
-        gen = FunctionCodeGenerator(frame, graph, self.ctx, node, self.class_name)
+        gen = FunctionCodeGenerator(self.ctx, frame, graph, node,
+                                    self.class_name)
 
         self._funcOrLambda(node, gen, ndecorators)
 
@@ -281,7 +282,8 @@ class CodeGenerator(ASTVisitor):
         frame.setArgs(node.argnames)
         graph = pyassem.FlowGraph()
 
-        gen = LambdaCodeGenerator(frame, graph, self.ctx, node, self.class_name)
+        gen = LambdaCodeGenerator(self.ctx, frame, graph, node,
+                                  self.class_name)
 
         self._funcOrLambda(node, gen, 0)
 
@@ -301,7 +303,7 @@ class CodeGenerator(ASTVisitor):
     def visitClass(self, node):
         frame = pyassem.Frame(node.name, self.ctx.filename, optimized=0, klass=1)
         graph = pyassem.FlowGraph()
-        gen = ClassCodeGenerator(frame, graph, self.ctx, node)
+        gen = ClassCodeGenerator(self.ctx, frame, graph, node)
 
         gen.Start()
         gen.FindLocals()
@@ -598,7 +600,7 @@ class CodeGenerator(ASTVisitor):
         frame = pyassem.Frame(obj_name, self.ctx.filename, optimized=1)
         frame.setArgs(node.argnames)
         graph = pyassem.FlowGraph()
-        gen = GenExprCodeGenerator(frame, graph, self.ctx, node,
+        gen = GenExprCodeGenerator(self.ctx, frame, graph, node,
                                    self.class_name)
 
         gen.Start()
@@ -1245,8 +1247,8 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, frame, graph, ctx, func, class_name):
-        CodeGenerator.__init__(self, frame, graph, ctx)
+    def __init__(self, ctx, frame, graph, func, class_name):
+        CodeGenerator.__init__(self, ctx, frame, graph)
         self.func = func
         self.class_name = class_name
 
@@ -1303,8 +1305,8 @@ class GenExprCodeGenerator(_FunctionCodeGenerator):
 
 class ClassCodeGenerator(CodeGenerator):
 
-    def __init__(self, frame, graph, ctx, klass):
-        CodeGenerator.__init__(self, frame, graph, ctx)
+    def __init__(self, ctx, frame, graph, klass):
+        CodeGenerator.__init__(self, ctx, frame, graph)
         self.klass = klass
 
         self.class_name = klass.name
