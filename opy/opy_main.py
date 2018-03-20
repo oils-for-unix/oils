@@ -24,8 +24,9 @@ from .pgen2 import tokenize
 from . import pytree
 
 from .compiler2 import dis_tool
-from .compiler2 import transformer
+from .compiler2 import misc
 from .compiler2 import pycodegen
+from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
 #from .byterun import execfile
@@ -126,7 +127,7 @@ def Options():
 
 # Emulating parser.st structures from parsermodule.c.
 # They have a totuple() method, which outputs tuples like this.
-def py2st(gr, raw_node):
+def py2st(unused_gr, raw_node):
   typ, value, context, children = raw_node
   # See pytree.Leaf
   if context:
@@ -242,7 +243,7 @@ def OpyCommandMain(argv):
 
     # Write the .pyc file
     with open(out_path, 'wb') as out_f:
-      h = pycodegen.getPycHeader(py_path)
+      h = misc.getPycHeader(py_path)
       out_f.write(h)
       marshal.dump(co, out_f)
 

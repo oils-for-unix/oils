@@ -1,9 +1,5 @@
-import os
-import struct
-
-from . import ast, syntax
+from . import ast, syntax, pyassem, misc, future, symbols
 from .visitor import ASTVisitor
-from . import pyassem, misc, future, symbols
 from .consts import (
     SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, SC_FREE, SC_CELL)
 
@@ -31,25 +27,12 @@ END_FINALLY = 4
 gLambdaCounter = 0
 
 
-PY27_MAGIC = b'\x03\xf3\r\n'  # removed host dep imp.get_magic()
+def _SetFilenameOnAllNodes(filename, tree):
+    """Set the filename attribute to filename on every node in tree.
 
-def getPycHeader(filename):
-    # compile.c uses marshal to write a long directly, with
-    # calling the interface that would also generate a 1-byte code
-    # to indicate the type of the value.  simplest way to get the
-    # same effect is to call marshal and then skip the code.
-    mtime = os.path.getmtime(filename)
-    mtime = struct.pack('<i', int(mtime))
-
-    # Update for Python 3:
-    # https://nedbatchelder.com/blog/200804/the_structure_of_pyc_files.html
-    # https://gist.github.com/anonymous/35c08092a6eb70cdd723
-
-    return PY27_MAGIC + mtime
-
-
-def set_filename(filename, tree):
-    """Set the filename attribute to filename on every node in tree"""
+    It's used a lot in the codegen below.  There is probably a better way to do
+    this.  Maybe self.ctx.{futures,filename,lambda_counter}.
+    """
     worklist = [tree]
     while worklist:
         node = worklist.pop(0)
@@ -59,19 +42,20 @@ def set_filename(filename, tree):
 
 def compile(as_tree, filename, mode):
     """Replacement for builtin compile() function"""
-    set_filename(filename, as_tree)
+    _SetFilenameOnAllNodes(filename, as_tree)
 
     # NOTE: This currently does nothing!
     v = syntax.SyntaxErrorChecker()
     v.Dispatch(as_tree)
 
+    # NOTE: the name of the flow graph is a comment, not exposed to users.
     if mode == "single":
-        graph = pyassem.PyFlowGraph("<interactive>", as_tree.filename)
+        graph = pyassem.PyFlowGraph("<interactive>", filename)
         gen = InteractiveCodeGenerator(graph, ())
         gen.set_lineno(as_tree)
 
     elif mode == "exec":
-        graph = pyassem.PyFlowGraph("<module>", as_tree.filename)
+        graph = pyassem.PyFlowGraph("<module>", filename)
 
         # TODO: Does this need to be made more efficient?
         p1 = future.FutureParser()
@@ -80,9 +64,11 @@ def compile(as_tree, filename, mode):
         p2.Dispatch(as_tree)
 
         gen = TopLevelCodeGenerator(graph, p1.get_features())
+
     elif mode == "eval":
-        graph = pyassem.PyFlowGraph("<expression>", as_tree.filename)
+        graph = pyassem.PyFlowGraph("<expression>", filename)
         gen = TopLevelCodeGenerator(graph, ())
+
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
@@ -91,10 +77,7 @@ def compile(as_tree, filename, mode):
     # The multiple inheritance implements some weird double-Dispatch.
 
     gen.Dispatch(as_tree)
-
-    # Not sure why I need this, copied from InteractiveCodeGenerator
-    if mode == "single":
-      gen.emit('RETURN_VALUE')
+    gen.Finish()
 
     return graph.MakeCodeObject()
 
@@ -177,8 +160,14 @@ class CodeGenerator(ASTVisitor):
         self.locals = Stack()
         self.setups = Stack()
         self.last_lineno = None
-        self._setupGraphDelegation()
         self._div_op = "BINARY_DIVIDE"
+
+        # Set up methods
+        self.emit = self.graph.emit
+        self.newBlock = self.graph.newBlock
+        self.startBlock = self.graph.startBlock
+        self.nextBlock = self.graph.nextBlock
+        self.setDocstring = self.graph.setDocstring
 
         # Set flags based on future features
         for feature in futures:
@@ -192,12 +181,8 @@ class CodeGenerator(ASTVisitor):
             elif feature == "print_function":
                 self.graph.setFlag(CO_FUTURE_PRINT_FUNCTION)
 
-    def _setupGraphDelegation(self):
-        self.emit = self.graph.emit
-        self.newBlock = self.graph.newBlock
-        self.startBlock = self.graph.startBlock
-        self.nextBlock = self.graph.nextBlock
-        self.setDocstring = self.graph.setDocstring
+    def Finish(self):
+        raise NotImplementedError
 
     def mangle(self, name):
         return misc.mangle(name, self.class_name)
@@ -322,7 +307,7 @@ class CodeGenerator(ASTVisitor):
         gen = FunctionCodeGenerator(graph, self.futures, node, self.scopes,
                                     self.class_name)
 
-        self._funcOrLambda(node, gen, ndecorators, isLambda=False)
+        self._funcOrLambda(node, gen, ndecorators)
 
         # TODO: This seems like a bug.  We already setDocstring in FindLocals()
         # on the FunctionCodeGenerator below.  This seems to mean that the
@@ -341,19 +326,16 @@ class CodeGenerator(ASTVisitor):
         graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = FunctionCodeGenerator(graph, self.futures, node, self.scopes,
-                                    self.class_name)
+        gen = LambdaCodeGenerator(graph, self.futures, node, self.scopes,
+                                  self.class_name)
 
-        self._funcOrLambda(node, gen, 0, isLambda=True)
+        self._funcOrLambda(node, gen, 0)
 
-    def _funcOrLambda(self, node, gen, ndecorators, isLambda=False):
+    def _funcOrLambda(self, node, gen, ndecorators):
         gen.Start()
-        if not isLambda and node.doc:
-            gen.setDocstring(node.doc)
         gen.FindLocals()
-
         gen.Dispatch(node.code)
-        gen.Finish(isLambda=isLambda)
+        gen.Finish()
 
         self.set_lineno(node)
         for default in node.defaults:
@@ -381,8 +363,6 @@ class CodeGenerator(ASTVisitor):
         self.emit('CALL_FUNCTION', 0)
         self.emit('BUILD_CLASS')
         self.storeName(node.name)
-
-    # The rest are standard visitor methods
 
     # The next few implement control-flow statements
 
@@ -664,7 +644,7 @@ class CodeGenerator(ASTVisitor):
         gen.Start()
         gen.FindLocals()
         gen.Dispatch(node.code)
-        gen.Finish(isLambda=isLambda)
+        gen.Finish()
 
         self.set_lineno(node)
         self._makeClosure(gen, 0)
@@ -1266,7 +1246,9 @@ class CodeGenerator(ASTVisitor):
 
 
 class TopLevelCodeGenerator(CodeGenerator):
-    pass
+
+    def Finish(self):
+        pass
 
 
 class InteractiveCodeGenerator(TopLevelCodeGenerator):
@@ -1276,6 +1258,10 @@ class InteractiveCodeGenerator(TopLevelCodeGenerator):
         # name.
         self.visit(node.expr)
         self.emit('PRINT_EXPR')
+
+    def Finish(self):
+        # Not sure why I need this?
+        self.emit('RETURN_VALUE')
 
 
 # NOTE: This feature removed in Python 3!  I didn't even know about it!
@@ -1317,20 +1303,34 @@ class _FunctionCodeGenerator(CodeGenerator):
             self.graph.setFlag(CO_VARKEYWORDS)
         self.set_lineno(func)
 
-    def Finish(self, isLambda=False):
-        self.graph.startExitBlock()
-        if not isLambda:
-            self.emit('LOAD_CONST', None)
-        self.emit('RETURN_VALUE')
-
 
 class FunctionCodeGenerator(_FunctionCodeGenerator):
 
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-        if self.scope.generator is not None:
+        if self.scope.generator is not None:  # does it have yield in it?
             self.graph.setFlag(CO_GENERATOR)
+        if self.func.doc:
+            self.setDocstring(self.func.doc)
+
+    def Finish(self):
+        self.graph.startExitBlock()
+        self.emit('LOAD_CONST', None)
+        self.emit('RETURN_VALUE')
+
+
+class LambdaCodeGenerator(_FunctionCodeGenerator):
+
+    def Start(self):
+        self.graph.setFreeVars(self.scope.get_free_vars())
+        self.graph.setCellVars(self.scope.get_cell_vars())
+        if self.scope.generator is not None:  # does it have yield in it?
+            self.graph.setFlag(CO_GENERATOR)
+
+    def Finish(self):
+        self.graph.startExitBlock()
+        self.emit('RETURN_VALUE')
 
 
 class GenExprCodeGenerator(_FunctionCodeGenerator):
@@ -1338,7 +1338,11 @@ class GenExprCodeGenerator(_FunctionCodeGenerator):
     def Start(self):
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-        self.graph.setFlag(CO_GENERATOR)
+        self.graph.setFlag(CO_GENERATOR)  # It's always a generator
+
+    def Finish(self):
+        self.graph.startExitBlock()
+        self.emit('RETURN_VALUE')
 
 
 class ClassCodeGenerator(CodeGenerator):
