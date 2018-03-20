@@ -1,4 +1,4 @@
-from . import ast, pyassem, misc, symbols
+from . import ast, pyassem, misc
 from .visitor import ASTVisitor
 from .consts import (
     SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, SC_FREE, SC_CELL)
@@ -102,6 +102,10 @@ class CodeGenerator(ASTVisitor):
         self.graph = graph
         self.ctx = ctx  # passed down to child CodeGenerator instances
 
+        # Set by visitModule, visitExpression (for eval), or by subclass
+        # constructor.
+        self.scope = None
+
         self.locals = Stack()
         self.setups = Stack()
         self.last_lineno = None
@@ -143,11 +147,6 @@ class CodeGenerator(ASTVisitor):
 
     def mangle(self, name):
         return misc.mangle(name, self.class_name)
-
-    def parseSymbols(self, tree):
-        s = symbols.SymbolVisitor()
-        s.Dispatch(tree)
-        return s.scopes
 
     # Next five methods handle name access
 
@@ -220,8 +219,7 @@ class CodeGenerator(ASTVisitor):
         return False
 
     def visitModule(self, node):
-        self.scopes = self.parseSymbols(node)
-        self.scope = self.scopes[node]
+        self.scope = self.ctx.scopes[node]
         self.emit('SET_LINENO', 0)
         if node.doc:
             self.emit('LOAD_CONST', node.doc)
@@ -236,10 +234,12 @@ class CodeGenerator(ASTVisitor):
         self.emit('RETURN_VALUE')
 
     def visitExpression(self, node):
-        """Expression is an artificial node to support "eval". """
+        """Expression is an artificial node to support "eval".
+
+        TODO: Could be renamed EvalModule?
+        """
         self.set_lineno(node)
-        self.scopes = self.parseSymbols(node)
-        self.scope = self.scopes[node]
+        self.scope = self.ctx.scopes[node]
         self.visit(node.node)
         self.emit('RETURN_VALUE')
 
@@ -261,8 +261,7 @@ class CodeGenerator(ASTVisitor):
         graph = pyassem.PyFlowGraph(node.name, self.ctx.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = FunctionCodeGenerator(graph, self.ctx, node, self.scopes,
-                                    self.class_name)
+        gen = FunctionCodeGenerator(graph, self.ctx, node, self.class_name)
 
         self._funcOrLambda(node, gen, ndecorators)
 
@@ -283,8 +282,7 @@ class CodeGenerator(ASTVisitor):
         graph = pyassem.PyFlowGraph(obj_name, self.ctx.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = LambdaCodeGenerator(graph, self.ctx, node, self.scopes,
-                                  self.class_name)
+        gen = LambdaCodeGenerator(graph, self.ctx, node, self.class_name)
 
         self._funcOrLambda(node, gen, 0)
 
@@ -304,7 +302,7 @@ class CodeGenerator(ASTVisitor):
     def visitClass(self, node):
         graph = pyassem.PyFlowGraph(node.name, self.ctx.filename,
                                     optimized=0, klass=1)
-        gen = ClassCodeGenerator(graph, self.ctx, node, self.scopes)
+        gen = ClassCodeGenerator(graph, self.ctx, node)
 
         gen.Start()
         gen.FindLocals()
@@ -595,8 +593,7 @@ class CodeGenerator(ASTVisitor):
 
         graph = pyassem.PyFlowGraph(obj_name, self.ctx.filename, optimized=1)
         graph.setArgs(node.argnames)
-        gen = GenExprCodeGenerator(graph, self.ctx, node, self.scopes,
-                                   self.class_name)
+        gen = GenExprCodeGenerator(graph, self.ctx, node, self.class_name)
 
         gen.Start()
         gen.FindLocals()
@@ -907,7 +904,10 @@ class CodeGenerator(ASTVisitor):
             print(node)
 
     def _visitAssSequence(self, node, op='UNPACK_SEQUENCE'):
-        if findOp(node) != 'OP_DELETE':
+        v = OpFinder()
+        v.Dispatch(node)
+
+        if v.op != 'OP_DELETE':
             self.emit(op, len(node.nodes))
         for child in node.nodes:
             self.visit(child)
@@ -1239,13 +1239,12 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, graph, ctx, func, scopes, class_name):
+    def __init__(self, graph, ctx, func, class_name):
         CodeGenerator.__init__(self, graph, ctx)
         self.func = func
-        self.scopes = scopes
         self.class_name = class_name
 
-        self.scope = scopes[func]
+        self.scope = self.ctx.scopes[func]
 
     def FindLocals(self):
         func = self.func 
@@ -1298,14 +1297,12 @@ class GenExprCodeGenerator(_FunctionCodeGenerator):
 
 class ClassCodeGenerator(CodeGenerator):
 
-    def __init__(self, graph, ctx, klass, scopes):
+    def __init__(self, graph, ctx, klass):
         CodeGenerator.__init__(self, graph, ctx)
-
         self.klass = klass
-        self.scopes = scopes
 
         self.class_name = klass.name
-        self.scope = scopes[klass]
+        self.scope = self.ctx.scopes[klass]
 
     def _Start(self):
         self.set_lineno(self.klass)
@@ -1330,14 +1327,8 @@ class ClassCodeGenerator(CodeGenerator):
         self.emit('RETURN_VALUE')
 
 
-def findOp(node):
-    """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
-    v = OpFinder()
-    v.Dispatch(node)
-    return v.op
-
-
 class OpFinder(ASTVisitor):
+    """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
 
     def __init__(self):
         ASTVisitor.__init__(self)

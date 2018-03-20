@@ -29,6 +29,7 @@ from .compiler2 import misc
 from .compiler2 import pyassem
 from .compiler2 import pycodegen
 from .compiler2 import syntax
+from .compiler2 import symbols
 from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
@@ -148,8 +149,9 @@ def py2st(unused_gr, raw_node):
 class _ModuleContext(object):
   """Module-level data for the CodeGenerator tree."""
 
-  def __init__(self, filename, futures=()):
+  def __init__(self, filename, scopes, futures=()):
     self.filename = filename
+    self.scopes = scopes
     self.futures = futures
 
 
@@ -166,14 +168,19 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   tr = transformer.Transformer()
   as_tree = tr.transform(parse_tree)
 
+  #log('AST: %s', as_tree)
+
   # NOTE: This currently does nothing!
   v = syntax.SyntaxErrorChecker()
   v.Dispatch(as_tree)
 
+  s = symbols.SymbolVisitor()
+  s.Dispatch(as_tree)
+
   if mode == "single":
       # NOTE: the name of the flow graph is a comment, not exposed to users.
       graph = pyassem.PyFlowGraph("<interactive>", filename)
-      ctx = _ModuleContext(filename)
+      ctx = _ModuleContext(filename, s.scopes)
       gen = pycodegen.InteractiveCodeGenerator(graph, ctx)
       gen.set_lineno(as_tree)
 
@@ -186,12 +193,12 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
       p1.Dispatch(as_tree)
       p2.Dispatch(as_tree)
 
-      ctx = _ModuleContext(filename, futures=p1.get_features())
+      ctx = _ModuleContext(filename, s.scopes, futures=p1.get_features())
       gen = pycodegen.TopLevelCodeGenerator(graph, ctx)
 
   elif mode == "eval":
       graph = pyassem.PyFlowGraph("<expression>", filename)
-      ctx = _ModuleContext(filename)
+      ctx = _ModuleContext(filename, s.scopes)
       gen = pycodegen.TopLevelCodeGenerator(graph, ctx)
 
   else:

@@ -210,10 +210,10 @@ gGenExprCounter = 1
 class SymbolVisitor(ASTVisitor):
     def __init__(self):
         ASTVisitor.__init__(self)
-        self.scopes = {}  # The "return value" of walk()
+        self.scopes = {}  # node -> Scope instance, the "return value".
         self.klass = None
 
-    # node that define new scopes
+    # Nodes that define new scopes
 
     def visitModule(self, node):
         scope = self.module = self.scopes[node] = ModuleScope()
