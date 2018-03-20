@@ -371,6 +371,18 @@ class PyFlowGraph(FlowGraph):
     def checkFlag(self, flag):
         return bool(self.flags & flag)
 
+    def _ReorderCellVars(self):
+        """Reorder cellvars so the ones in self.varnames are first.
+
+        And prune from freevars (?)
+        """
+        lookup = set(self.cellvars)
+        remaining = lookup - set(self.varnames)
+
+        cellvars = [n for n in self.varnames if n in lookup]
+        cellvars.extend(remaining)
+        return cellvars
+
     def MakeCodeObject(self):
         """Assemble a Python code object."""
 
@@ -378,13 +390,7 @@ class PyFlowGraph(FlowGraph):
         blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
-        # Sort self.cellvars so the ones in self.varnames are first.  And prune
-        # from freevars (?)
-        lookup = set(self.cellvars)
-        remaining = lookup - set(self.varnames)
-
-        cellvars = [n for n in self.varnames if n in lookup]
-        cellvars.extend(remaining)
+        cellvars = self._ReorderCellVars()
 
         consts = [self.docstring]
         names = []
@@ -392,11 +398,10 @@ class PyFlowGraph(FlowGraph):
         # The closure list is used to track the order of cell variables and
         # free variables in the resulting code object.  The offsets used by
         # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
-        closure = self.cellvars + self.freevars
+        closure = cellvars + self.freevars
 
-        # Convert arguments from symbolic to concrete form
-        # Mutates the insts argument.  The converters mutate self.names,
-        # self.varnames, etc.
+        # Convert arguments from symbolic to concrete form.  Mutates
+        # self.consts, self.names, etc.
         enc = ArgEncoder(self.klass, consts, names, self.varnames, closure)
 
         for i, t in enumerate(insts):
@@ -407,10 +412,10 @@ class PyFlowGraph(FlowGraph):
                     arg_index = method(enc, oparg)
                     insts[i] = opname, arg_index
 
-        if (self.flags & CO_NEWLOCALS) == 0:
-            nlocals = 0
-        else:
+        if self.flags & CO_NEWLOCALS:
             nlocals = len(self.varnames)
+        else:
+            nlocals = 0
 
         if self.flags & CO_VARKEYWORDS:
             self.argcount -= 1
