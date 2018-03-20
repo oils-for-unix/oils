@@ -78,8 +78,8 @@
   2640 31e838293b2caf82fdafabbd3c9c64f4 _tmp/regtest/core/libstr.pyc
   2640 d98186573237c6762f571c45816a2459 _tmp/regtest/native/fastlex_test.pyc
   2666 f743f2da8f9330956a0d0e4ece52a0f0 _tmp/regtest/native/libc_test.pyc
+  2733 a5abe69ff71d12e9375e6bfffd025f3b _tmp/regtest/atexit.pyc
   2746 9942a106fc298536b214f611fc2f49d0 _tmp/regtest/opy/pgen2/token.pyc
-  2747 63323ced2f8efc7fd175c0d4e326a0eb _tmp/regtest/atexit.pyc
   2769 e5153445e33077d2995ddceae21140ad _tmp/regtest/build/runpy_deps.pyc
   2819 3913c2dac884ee9d0a7697b4cf8d844e _tmp/regtest/bin/opy_.pyc
   2855 554887965c5d231df3d319796db90bcd _tmp/regtest/benchmarks/virtual_memory.pyc
@@ -100,7 +100,7 @@
   4157 08e3878abd23a8093d252c7044df727b _tmp/regtest/core/braces_test.pyc
   4194 f9d417154a0bf0da679fb957bc3eeadc _tmp/regtest/core/reader.pyc
   4238 09a4df5015792a7770ee7eace0145892 _tmp/regtest/osh/arith_parse_test.pyc
-  4273 200f27a5d3bfb96400806da917025a37 _tmp/regtest/opy/compiler2/misc.pyc
+  4261 acbdc931c4df3ada5597720b5d5b8eed _tmp/regtest/opy/compiler2/misc.pyc
   4276 75a15eecc1e82fb6ac0e52c14e62744d _tmp/regtest/osh/meta.pyc
   4330 0b4f35f0d70efef473f2e0d80b1adf48 _tmp/regtest/build/app_deps.pyc
   4371 9a488d36ee8a24b3bd483831ad8c2db0 _tmp/regtest/__future__.pyc
@@ -206,7 +206,7 @@
  30811 02d4a38a06b87bc1875e62ffe18bb88a _tmp/regtest/core/builtin.pyc
  32295 29b6c155971a78b46cae1c83500f7efb _tmp/regtest/osh/word_parse.pyc
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc
- 38761 2d30da7e24ca6a1d0f7ca547f308ce92 _tmp/regtest/core/cmd_exec.pyc
+ 38756 66112f1a992091ab7e8a769803470e48 _tmp/regtest/core/cmd_exec.pyc
  39060 b56c485f31eaedc39637a7e5dccc1a8d _tmp/regtest/opy/byterun/pyvm2.pyc
  40804 4ed3a455de33717be93b724aced8c489 _tmp/regtest/platform.pyc
  40808 32563c5dd8f47f81e23745fcd3e3d82a _tmp/regtest/codecs.pyc
@@ -218,5 +218,5 @@
  57165 2c07e6823dbcee196553599c9d6ea8d4 _tmp/regtest/locale.pyc
  59976 7ea8b29a98a017ee6aba911d78c3d599 _tmp/regtest/optparse.pyc
  64817 1b56dfdd2dd91031be7e312bc8d3d7a7 _tmp/regtest/opy/compiler2/pycodegen.pyc
- 65309 f51234057020da7d30eafc509482a21a _tmp/regtest/logging/__init__.pyc
+ 65169 17e417185a586f2c50aa8753b34f7e4d _tmp/regtest/logging/__init__.pyc
  81561 fc68aabb67bc1ca842d3bd2fff1c746d _tmp/regtest/opy/compiler2/ast.pyc

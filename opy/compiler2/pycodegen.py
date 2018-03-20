@@ -27,22 +27,16 @@ END_FINALLY = 4
 gLambdaCounter = 0
 
 
-def _SetFilenameOnAllNodes(filename, tree):
-    """Set the filename attribute to filename on every node in tree.
+class _ModuleContext(object):
+  """Module-level data for the CodeGenerator tree."""
 
-    It's used a lot in the codegen below.  There is probably a better way to do
-    this.  Maybe self.ctx.{futures,filename,lambda_counter}.
-    """
-    worklist = [tree]
-    while worklist:
-        node = worklist.pop(0)
-        node.filename = filename
-        worklist.extend(node.getChildNodes())
+  def __init__(self, filename, futures=()):
+    self.filename = filename
+    self.futures = futures
 
 
 def compile(as_tree, filename, mode):
     """Replacement for builtin compile() function"""
-    _SetFilenameOnAllNodes(filename, as_tree)
 
     # NOTE: This currently does nothing!
     v = syntax.SyntaxErrorChecker()
@@ -51,7 +45,8 @@ def compile(as_tree, filename, mode):
     # NOTE: the name of the flow graph is a comment, not exposed to users.
     if mode == "single":
         graph = pyassem.PyFlowGraph("<interactive>", filename)
-        gen = InteractiveCodeGenerator(graph, ())
+        ctx = _ModuleContext(filename)
+        gen = InteractiveCodeGenerator(graph, ctx)
         gen.set_lineno(as_tree)
 
     elif mode == "exec":
@@ -63,19 +58,19 @@ def compile(as_tree, filename, mode):
         p1.Dispatch(as_tree)
         p2.Dispatch(as_tree)
 
-        gen = TopLevelCodeGenerator(graph, p1.get_features())
+        ctx = _ModuleContext(filename, futures=p1.get_features())
+        gen = TopLevelCodeGenerator(graph, ctx)
 
     elif mode == "eval":
         graph = pyassem.PyFlowGraph("<expression>", filename)
-        gen = TopLevelCodeGenerator(graph, ())
+        ctx = _ModuleContext(filename)
+        gen = TopLevelCodeGenerator(graph, ctx)
 
     else:
         raise ValueError("compile() 3rd arg must be 'exec' or "
                          "'eval' or 'single'")
 
-    # This has a side effect of populating the gen.graph data structure?
-    # The multiple inheritance implements some weird double-Dispatch.
-
+    # NOTE: There is no Start() or FindLocals() at the top level.
     gen.Dispatch(as_tree)
     gen.Finish()
 
@@ -152,10 +147,10 @@ class CodeGenerator(ASTVisitor):
     optimized = 0  # is namespace access optimized?
     class_name = None  # provide default for instance variable
 
-    def __init__(self, graph, futures):
+    def __init__(self, graph, ctx):
         ASTVisitor.__init__(self)
         self.graph = graph
-        self.futures = futures  # passed down to child CodeGenerator instances
+        self.ctx = ctx  # passed down to child CodeGenerator instances
 
         self.locals = Stack()
         self.setups = Stack()
@@ -170,7 +165,7 @@ class CodeGenerator(ASTVisitor):
         self.setDocstring = self.graph.setDocstring
 
         # Set flags based on future features
-        for feature in futures:
+        for feature in ctx.futures:
             if feature == "division":
                 self.graph.setFlag(CO_FUTURE_DIVISION)
                 self._div_op = "BINARY_TRUE_DIVIDE"
@@ -312,10 +307,10 @@ class CodeGenerator(ASTVisitor):
             ndecorators = 0
 
         _CheckNoTupleArgs(node)
-        graph = pyassem.PyFlowGraph(node.name, node.filename, optimized=1)
+        graph = pyassem.PyFlowGraph(node.name, self.ctx.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = FunctionCodeGenerator(graph, self.futures, node, self.scopes,
+        gen = FunctionCodeGenerator(graph, self.ctx, node, self.scopes,
                                     self.class_name)
 
         self._funcOrLambda(node, gen, ndecorators)
@@ -334,10 +329,10 @@ class CodeGenerator(ASTVisitor):
         gLambdaCounter += 1
 
         _CheckNoTupleArgs(node)
-        graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
+        graph = pyassem.PyFlowGraph(obj_name, self.ctx.filename, optimized=1)
         graph.setArgs(node.argnames)
 
-        gen = LambdaCodeGenerator(graph, self.futures, node, self.scopes,
+        gen = LambdaCodeGenerator(graph, self.ctx, node, self.scopes,
                                   self.class_name)
 
         self._funcOrLambda(node, gen, 0)
@@ -356,9 +351,9 @@ class CodeGenerator(ASTVisitor):
             self.emit('CALL_FUNCTION', 1)
 
     def visitClass(self, node):
-        graph = pyassem.PyFlowGraph(node.name, node.filename,
+        graph = pyassem.PyFlowGraph(node.name, self.ctx.filename,
                                     optimized=0, klass=1)
-        gen = ClassCodeGenerator(graph, self.futures, node, self.scopes)
+        gen = ClassCodeGenerator(graph, self.ctx, node, self.scopes)
 
         gen.Start()
         gen.FindLocals()
@@ -449,14 +444,14 @@ class CodeGenerator(ASTVisitor):
     def visitBreak(self, node):
         if not self.setups:
             raise SyntaxError, "'break' outside loop (%s, %d)" % \
-                  (node.filename, node.lineno)
+                  (self.ctx.filename, node.lineno)
         self.set_lineno(node)
         self.emit('BREAK_LOOP')
 
     def visitContinue(self, node):
         if not self.setups:
             raise SyntaxError, "'continue' outside loop (%s, %d)" % \
-                  (node.filename, node.lineno)
+                  (self.ctx.filename, node.lineno)
         kind, block = self.setups.top()
         if kind == LOOP:
             self.set_lineno(node)
@@ -473,12 +468,12 @@ class CodeGenerator(ASTVisitor):
                     break
             if kind != LOOP:
                 raise SyntaxError, "'continue' outside loop (%s, %d)" % \
-                      (node.filename, node.lineno)
+                      (self.ctx.filename, node.lineno)
             self.emit('CONTINUE_LOOP', loop_block)
             self.nextBlock()
         elif kind == END_FINALLY:
             msg = "'continue' not allowed inside 'finally' clause (%s, %d)"
-            raise SyntaxError, msg % (node.filename, node.lineno)
+            raise SyntaxError, msg % (self.ctx.filename, node.lineno)
 
     def visitTest(self, node, jump):
         end = self.newBlock()
@@ -647,9 +642,9 @@ class CodeGenerator(ASTVisitor):
             # That workaround may no longer be necessary if we switch.
             obj_name = '<genexpr>'
 
-        graph = pyassem.PyFlowGraph(obj_name, node.filename, optimized=1)
+        graph = pyassem.PyFlowGraph(obj_name, self.ctx.filename, optimized=1)
         graph.setArgs(node.argnames)
-        gen = GenExprCodeGenerator(graph, self.futures, node, self.scopes,
+        gen = GenExprCodeGenerator(graph, self.ctx, node, self.scopes,
                                    self.class_name)
 
         gen.Start()
@@ -1293,8 +1288,8 @@ class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
     optimized = 1
 
-    def __init__(self, graph, futures, func, scopes, class_name):
-        CodeGenerator.__init__(self, graph, futures)
+    def __init__(self, graph, ctx, func, scopes, class_name):
+        CodeGenerator.__init__(self, graph, ctx)
         self.func = func
         self.scopes = scopes
         self.class_name = class_name
@@ -1352,8 +1347,8 @@ class GenExprCodeGenerator(_FunctionCodeGenerator):
 
 class ClassCodeGenerator(CodeGenerator):
 
-    def __init__(self, graph, futures, klass, scopes):
-        CodeGenerator.__init__(self, graph, futures)
+    def __init__(self, graph, ctx, klass, scopes):
+        CodeGenerator.__init__(self, graph, ctx)
 
         self.klass = klass
         self.scopes = scopes
