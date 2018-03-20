@@ -236,6 +236,7 @@ class CodeGenerator(ASTVisitor):
         self.emit('RETURN_VALUE')
 
     def visitExpression(self, node):
+        """Expression is an artificial node to support "eval". """
         self.set_lineno(node)
         self.scopes = self.parseSymbols(node)
         self.scope = self.scopes[node]

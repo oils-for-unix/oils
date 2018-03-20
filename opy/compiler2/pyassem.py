@@ -467,7 +467,7 @@ class PyFlowGraph(FlowGraph):
         return types.CodeType(
             self.argcount, nlocals, stacksize, self.flags,
             ass.Bytecode(),
-            tuple(consts),
+            tuple(self.consts),
             tuple(self.names),
             tuple(self.varnames),
             self.filename, self.name, ass.firstline,
