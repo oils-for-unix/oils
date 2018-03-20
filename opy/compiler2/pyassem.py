@@ -94,27 +94,6 @@ def FlattenGraph(blocks):
     return insts
 
 
-def Assemble(insts):
-    ass = Assembler()
-    for t in insts:
-        opname = t[0]
-        if len(t) == 1:
-            ass.addCode(OPNUM[opname])
-        else:
-            oparg = t[1]
-            if opname == "SET_LINENO":
-                ass.nextLine(oparg)
-                continue
-            hi, lo = divmod(oparg, 256)
-            try:
-                ass.addCode(OPNUM[opname], lo, hi)
-            except ValueError:
-                print(opname, oparg)
-                print(OPNUM[opname], lo, hi)
-                raise
-    return ass
-
-
 class FlowGraph(object):
 
     def __init__(self):
@@ -348,14 +327,6 @@ class PyFlowGraph(FlowGraph):
     """Something that gets turned into a single code object.
 
     Code objects and consts are mutually recursive.
-
-    Instantiated by compile() (3 cases), and by AbstractFunctionCode and
-    AbstractClassCode.
-
-    TODO: Separate FlowGraph from PyFlowGraph.
-    Make a function
-
-    code_object = Assemble(flow_graph)
     """
 
     def __init__(self, name, filename, optimized=0, klass=None):
@@ -452,9 +423,8 @@ class PyFlowGraph(FlowGraph):
                 opname, oparg = t
                 method = enc.Get(opname)
                 if method:
-                    insts[i] = opname, method(enc, oparg)
-
-        ass = Assemble(insts)
+                    arg_index = method(enc, oparg)
+                    insts[i] = opname, arg_index
 
         if (self.flags & CO_NEWLOCALS) == 0:
             nlocals = 0
@@ -464,14 +434,17 @@ class PyFlowGraph(FlowGraph):
         if self.flags & CO_VARKEYWORDS:
             self.argcount -= 1
 
+        a = Assembler()
+        bytecode, firstline, lnotab = a.Run(insts)
+
         return types.CodeType(
             self.argcount, nlocals, stacksize, self.flags,
-            ass.Bytecode(),
+            bytecode,
             tuple(self.consts),
             tuple(self.names),
             tuple(self.varnames),
-            self.filename, self.name, ass.firstline,
-            ass.LineNumberTable(),
+            self.filename, self.name, firstline,
+            lnotab,
             tuple(self.freevars),
             tuple(self.cellvars))
 
@@ -609,11 +582,27 @@ class Assembler(object):
                 self.lastline = lineno
                 self.lastoff = self.codeOffset
 
-    def Bytecode(self):
-        return ''.join(self.code)
+    def Run(self, insts):
+        for t in insts:
+            opname = t[0]
+            if len(t) == 1:
+                self.addCode(OPNUM[opname])
+            else:
+                oparg = t[1]
+                if opname == "SET_LINENO":
+                    self.nextLine(oparg)
+                    continue
+                hi, lo = divmod(oparg, 256)
+                try:
+                    self.addCode(OPNUM[opname], lo, hi)
+                except ValueError:
+                    print(opname, oparg)
+                    print(OPNUM[opname], lo, hi)
+                    raise
 
-    def LineNumberTable(self):
-        return ''.join(chr(c) for c in self.lnotab)
+        bytecode = ''.join(self.code)
+        lnotab = ''.join(chr(c) for c in self.lnotab)
+        return bytecode, self.firstline, lnotab
 
 
 class StackDepthTracker(object):
