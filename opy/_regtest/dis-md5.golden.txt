@@ -192,7 +192,7 @@
  21796 a74a8eb36df7fc545c32c5d701e38343 _tmp/regtest/tools/osh2oil.pyc
  22097 c6fd4a05622d86589afbfcf44ca35539 _tmp/regtest/sre_parse.pyc
  22612 ec17564464fe966907c394a15822e422 _tmp/regtest/string.pyc
- 23097 68b5610e6c0213d0817468389b3f7870 _tmp/regtest/core/process.pyc
+ 23100 bbdb014b37ecca3485e01533c1d15e0c _tmp/regtest/core/process.pyc
  23289 fd442b90b743fc6cb5285d56bed13c06 _tmp/regtest/core/completion.pyc
  23686 ae954683df01986a8d54a289703b79ca _tmp/regtest/opy/byterun/test_basic.pyc
  24100 0eeedc4798d57ee8e66eb31b25619923 _tmp/regtest/core/state.pyc

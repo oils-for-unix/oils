@@ -393,14 +393,15 @@ class PyFlowGraph(FlowGraph):
 
     def MakeCodeObject(self):
         """Assemble a Python code object."""
-        # TODO: Split into two representations?  Graph and insts?
-        # Do we need a shared varnames representation?
+        # NOTE: It would be nice to split this into two representations: graph
+        # and insts.  Maybe VarContext?
 
         stacksize = ComputeStackDepth(self.blocks, self.entry, self.exit)
         blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
-        self.consts.insert(0, self.docstring)
+        assert len(self.consts) == 0, self.consts
+        self.consts.append(self.docstring)
 
         # Rearrange self.cellvars so the ones in self.varnames are first.
         # And prune from freevars (?)
