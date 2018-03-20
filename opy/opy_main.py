@@ -18,7 +18,7 @@ import marshal
 #this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 #sys.path.append(os.path.join(this_dir))
 
-from .pgen2 import driver, pgen, grammar
+from .pgen2 import driver, parse, pgen, grammar
 from .pgen2 import token
 from .pgen2 import tokenize
 from . import pytree
@@ -185,8 +185,6 @@ def OpyCommandMain(argv):
     symbols = None
     tr = None
 
-  dr = driver.Driver(gr)
-
   if action == 'pgen2':
     grammar_path = argv[1]
     pickle_path = argv[2]
@@ -218,14 +216,15 @@ def OpyCommandMain(argv):
     py_path = argv[1]
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
-      tree = dr.parse_tokens(tokens, convert=py2st, start_symbol=FILE_INPUT)
+      p = parse.Parser(gr, convert=py2st)
+      parses_tree = driver.PushTokens(p, tokens, FILE_INPUT)
 
-    if isinstance(tree, tuple):
-      n = CountTupleTree(tree)
+    if isinstance(parse_tree, tuple):
+      n = CountTupleTree(parse_tree)
       log('COUNT %d', n)
 
       printer = TupleTreePrinter(transformer._names)
-      printer.Print(tree)
+      printer.Print(parse_tree)
     else:
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
@@ -236,7 +235,8 @@ def OpyCommandMain(argv):
 
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
-      parse_tree = dr.parse_tokens(tokens, convert=py2st, start_symbol=FILE_INPUT)
+      p = parse.Parser(gr, convert=py2st)
+      parse_tree = driver.PushTokens(p, tokens, FILE_INPUT)
       as_tree = tr.transform(parse_tree)
       co = pycodegen.compile(as_tree, py_path, 'exec')
     log("Compiled to %d bytes of bytecode", len(co.co_code))
@@ -251,12 +251,10 @@ def OpyCommandMain(argv):
     py_expr = argv[1]
     f = cStringIO.StringIO(py_expr)
     tokens = tokenize.generate_tokens(f.readline)
-    parse_tree = dr.parse_tokens(tokens,
-                                 convert=py2st,
-                                 start_symbol=gr.symbol2number['eval_input'])
+    p = parse.Parser(gr, convert=py2st)
+    parse_tree = driver.PushTokens(p, tokens, gr.symbol2number['eval_input'])
     as_tree = tr.transform(parse_tree)
     co = pycodegen.compile(as_tree, '<eval input>', 'eval')
-
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -269,10 +267,11 @@ def OpyCommandMain(argv):
       py_expr = raw_input('opy> ')
       f = cStringIO.StringIO(py_expr)
       tokens = tokenize.generate_tokens(f.readline)
+
+      p = parse.Parser(gr, convert=py2st)
       # TODO: change this to 'single input'?  Why doesn't this work?
-      parse_tree = dr.parse_tokens(tokens,
-                                   convert=py2st,
-                                   start_symbol=gr.symbol2number['eval_input'])
+      parse_tree = driver.PushTokens(p, tokens, gr.symbol2number['eval_input'])
+
       as_tree = tr.transform(parse_tree)
       co = pycodegen.compile(as_tree, '<REPL input>', 'single')
 
