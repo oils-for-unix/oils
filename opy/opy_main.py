@@ -25,7 +25,6 @@ from . import pytree
 
 from .compiler2 import dis_tool
 from .compiler2 import misc
-from .compiler2 import pycodegen
 from .compiler2 import skeleton
 from .compiler2 import transformer
 
@@ -201,7 +200,7 @@ def OpyCommandMain(argv):
     py_path = argv[1]
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
-      p = parse.Parser(gr, convert=py2st)
+      p = parse.Parser(gr, convert=skeleton.py2st)
       parse_tree = driver.PushTokens(p, tokens, gr.symbol2number['file_input'])
 
     if isinstance(parse_tree, tuple):
@@ -285,16 +284,6 @@ def OpyCommandMain(argv):
             break
           h.update(b)
       print('%6d %s %s' % (os.path.getsize(path), h.hexdigest(), path))
-
-  # TODO: Not used
-  elif action == 'compile2':
-    in_path = argv[1]
-    out_path = argv[2]
-
-    from compiler2 import pycodegen as pycodegen2
-    from misc import stdlib_compile
-
-    stdlib_compile.compileAndWrite(in_path, out_path, pycodegen2.compile)
 
   elif action == 'run':
     # TODO: Add an option like -v in __main__

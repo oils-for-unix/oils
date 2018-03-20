@@ -97,7 +97,7 @@ def RunCompiler(f, filename, gr, start_symbol, mode):
   gen.Finish()
 
   # NOTE: This method has a pretty long pipeline too.
-  co = frame.MakeCodeObject()
+  co = pyassem.MakeCodeObject(gen.frame, gen.graph)
   return co
 
 

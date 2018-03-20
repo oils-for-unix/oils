@@ -108,12 +108,11 @@ class CodeGenerator(ASTVisitor):
         self.last_lineno = None
         self._div_op = "BINARY_DIVIDE"
 
-        # Set up methods
-        self.emit = self.frame.emit
-        self.newBlock = self.frame.newBlock
-        self.startBlock = self.frame.startBlock
-        self.nextBlock = self.frame.nextBlock
-        self.setDocstring = self.frame.setDocstring
+        # Delegate methods to graph object
+        self.emit = self.graph.emit
+        self.newBlock = self.graph.newBlock
+        self.startBlock = self.graph.startBlock
+        self.nextBlock = self.graph.nextBlock
 
         # Set flags based on future features
         for feature in ctx.futures:
@@ -269,7 +268,7 @@ class CodeGenerator(ASTVisitor):
         # MODULE gets the docstring of the last function?  But this changes the
         # output.
         if node.doc:
-            self.setDocstring(node.doc)
+            self.frame.setDocstring(node.doc)
         self.storeName(node.name)
 
     def visitLambda(self, node):
@@ -1276,7 +1275,7 @@ class FunctionCodeGenerator(_FunctionCodeGenerator):
             self.frame.setDocstring(self.func.doc)
 
     def Finish(self):
-        self.frame.startExitBlock()
+        self.graph.startExitBlock()
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
 
@@ -1288,7 +1287,7 @@ class LambdaCodeGenerator(_FunctionCodeGenerator):
             self.frame.setFlag(CO_GENERATOR)
 
     def Finish(self):
-        self.frame.startExitBlock()
+        self.graph.startExitBlock()
         self.emit('RETURN_VALUE')
 
 
@@ -1298,7 +1297,7 @@ class GenExprCodeGenerator(_FunctionCodeGenerator):
         self.frame.setFlag(CO_GENERATOR)  # It's always a generator
 
     def Finish(self):
-        self.frame.startExitBlock()
+        self.graph.startExitBlock()
         self.emit('RETURN_VALUE')
 
 
@@ -1326,10 +1325,10 @@ class ClassCodeGenerator(CodeGenerator):
 
         self.frame.setFlag(CO_NEWLOCALS)
         if self.klass.doc:
-            self.setDocstring(self.klass.doc)
+            self.frame.setDocstring(self.klass.doc)
 
     def Finish(self):
-        self.frame.startExitBlock()
+        self.graph.startExitBlock()
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
 

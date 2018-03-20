@@ -205,7 +205,7 @@ class Block(object):
         return contained
 
 
-class _FlowGraph(object):
+class FlowGraph(object):
 
     def __init__(self):
         self.current = self.entry = Block()
@@ -273,13 +273,7 @@ class _FlowGraph(object):
         return l
 
 
-# Placeholder
-class FlowGraph(object):
-  pass
-
-
-# TODO: Unify FlowGraph and PyFlowGraph.
-class Frame(_FlowGraph):
+class Frame(object):
     """Something that gets turned into a single code object.
 
     Code objects and consts are mutually recursive.
@@ -290,7 +284,6 @@ class Frame(_FlowGraph):
         Args:
           klass: Whether we're compiling a class block.
         """
-        _FlowGraph.__init__(self)
         self.name = name  # name that is put in the code object
         self.filename = filename
         self.flags = (CO_OPTIMIZED | CO_NEWLOCALS) if optimized else 0
@@ -327,69 +320,72 @@ class Frame(_FlowGraph):
     def checkFlag(self, flag):
         return bool(self.flags & flag)
 
-    def _ReorderCellVars(self):
-        """Reorder cellvars so the ones in self.varnames are first.
 
-        And prune from freevars (?)
-        """
-        lookup = set(self.cellvars)
-        remaining = lookup - set(self.varnames)
+def _ReorderCellVars(frame):
+    """Reorder cellvars so the ones in self.varnames are first.
 
-        cellvars = [n for n in self.varnames if n in lookup]
-        cellvars.extend(remaining)
-        return cellvars
+    And prune from freevars (?)
+    """
+    lookup = set(frame.cellvars)
+    remaining = lookup - set(frame.varnames)
 
-    def MakeCodeObject(self):
-        """Order blocks, encode instructions, and create types.CodeType()."""
+    cellvars = [n for n in frame.varnames if n in lookup]
+    cellvars.extend(remaining)
+    return cellvars
 
-        # Compute stack depth per basic block.
-        depths = {}
-        for b in self.blocks:
-            depths[b] = BLOCK_STACK_DEPTH.Sum(b.getInstructions())
 
-        # Compute maximum stack depth for any control flow.
-        g = GraphStackDepth(depths, self.exit)
-        stacksize = g.Max(self.entry, 0)
+def MakeCodeObject(frame, graph):
+    """Order blocks, encode instructions, and create types.CodeType()."""
 
-        blocks = OrderBlocks(self.entry, self.exit)
-        insts = FlattenGraph(blocks)
+    # Compute stack depth per basic block.
+    depths = {}
+    for b in graph.blocks:
+        depths[b] = BLOCK_STACK_DEPTH.Sum(b.getInstructions())
 
-        cellvars = self._ReorderCellVars()
-        consts = [self.docstring]
-        names = []
-        # The closure list is used to track the order of cell variables and
-        # free variables in the resulting code object.  The offsets used by
-        # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
-        closure = cellvars + self.freevars
+    # Compute maximum stack depth for any control flow.
+    g = GraphStackDepth(depths, graph.exit)
+    stacksize = g.Max(graph.entry, 0)
 
-        # Convert arguments from symbolic to concrete form.
-        enc = ArgEncoder(self.klass, consts, names, self.varnames, closure)
-        # Mutates not only insts, but also self.consts, self.names, etc.
-        enc.Run(insts)
+    blocks = OrderBlocks(graph.entry, graph.exit)
+    insts = FlattenGraph(blocks)
 
-        if self.flags & CO_NEWLOCALS:
-            nlocals = len(self.varnames)
-        else:
-            nlocals = 0
+    cellvars = _ReorderCellVars(frame)
+    consts = [frame.docstring]
+    names = []
+    # The closure list is used to track the order of cell variables and
+    # free variables in the resulting code object.  The offsets used by
+    # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
+    closure = cellvars + frame.freevars
 
-        if self.flags & CO_VARKEYWORDS:
-            self.argcount -= 1
-        if self.flags & CO_VARARGS:
-            self.argcount -= 1
+    # Convert arguments from symbolic to concrete form.
+    enc = ArgEncoder(frame.klass, consts, names, frame.varnames, closure)
+    # Mutates not only insts, but also consts, names, etc.
+    enc.Run(insts)
 
-        a = Assembler()
-        bytecode, firstline, lnotab = a.Run(insts)
+    if frame.flags & CO_NEWLOCALS:
+        nlocals = len(frame.varnames)
+    else:
+        nlocals = 0
 
-        return types.CodeType(
-            self.argcount, nlocals, stacksize, self.flags,
-            bytecode,
-            tuple(consts),
-            tuple(names),
-            tuple(self.varnames),
-            self.filename, self.name, firstline,
-            lnotab,
-            tuple(self.freevars),
-            tuple(cellvars))
+    argcount = frame.argcount
+    if frame.flags & CO_VARKEYWORDS:
+        argcount -= 1
+    if frame.flags & CO_VARARGS:
+        argcount -= 1
+
+    a = Assembler()
+    bytecode, firstline, lnotab = a.Run(insts)
+
+    return types.CodeType(
+        argcount, nlocals, stacksize, frame.flags,
+        bytecode,
+        tuple(consts),
+        tuple(names),
+        tuple(frame.varnames),
+        frame.filename, frame.name, firstline,
+        lnotab,
+        tuple(frame.freevars),
+        tuple(cellvars))
 
 
 def _NameToIndex(name, L):
@@ -439,7 +435,7 @@ class ArgEncoder(object):
     def _convert_LOAD_CONST(self, arg):
         from . import pycodegen
         if isinstance(arg, pycodegen.CodeGenerator):
-            arg = arg.frame.MakeCodeObject()
+            arg = MakeCodeObject(arg.frame, arg.graph)
             # arg.code
         return _NameToIndex(arg, self.consts)
 
