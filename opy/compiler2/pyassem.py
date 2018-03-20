@@ -384,17 +384,15 @@ class PyFlowGraph(FlowGraph):
         return cellvars
 
     def MakeCodeObject(self):
-        """Assemble a Python code object."""
+        """Order blocks, encode instructions, and create types.CodeType()."""
 
         stacksize = ComputeStackDepth(self.blocks, self.entry, self.exit)
         blocks = OrderBlocks(self.entry, self.exit)
         insts = FlattenGraph(blocks)
 
         cellvars = self._ReorderCellVars()
-
         consts = [self.docstring]
         names = []
-
         # The closure list is used to track the order of cell variables and
         # free variables in the resulting code object.  The offsets used by
         # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
