@@ -24,12 +24,9 @@ from .pgen2 import tokenize
 from . import pytree
 
 from .compiler2 import dis_tool
-from .compiler2 import future
 from .compiler2 import misc
-from .compiler2 import pyassem
 from .compiler2 import pycodegen
-from .compiler2 import syntax
-from .compiler2 import symbols
+from .compiler2 import skeleton
 from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
@@ -45,18 +42,17 @@ log = util.log
 
 class Symbols(object):
 
-    def __init__(self, gr):
-        """Initializer.
-
-        Creates an attribute for each grammar symbol (nonterminal),
-        whose value is the symbol's type (an int >= 256).
-        """
-        for name, symbol in gr.symbol2number.items():
-            setattr(self, name, symbol)
-            #log('%s -> %d' % (name, symbol))
-        # For transformer to use
-        self.number2symbol = gr.number2symbol
-        #assert 0
+  def __init__(self, gr):
+    """
+    Creates an attribute for each grammar symbol (nonterminal), whose value is
+    the symbol's type (an int >= 256).
+    """
+    for name, symbol in gr.symbol2number.items():
+        setattr(self, name, symbol)
+        #log('%s -> %d' % (name, symbol))
+    # For transformer to use
+    self.number2symbol = gr.number2symbol
+    #assert 0
 
 
 def HostStdlibNames():
@@ -129,92 +125,6 @@ def Options():
   return p
 
 
-# Emulating parser.st structures from parsermodule.c.
-# They have a totuple() method, which outputs tuples like this.
-def py2st(unused_gr, raw_node):
-  typ, value, context, children = raw_node
-  # See pytree.Leaf
-  if context:
-    _, (lineno, column) = context
-  else:
-    lineno = 0  # default in Leaf
-    column = 0
-
-  if children:
-    return (typ,) + tuple(children)
-  else:
-    return (typ, value, lineno, column)
-
-
-class _ModuleContext(object):
-  """Module-level data for the CodeGenerator tree."""
-
-  def __init__(self, filename, scopes, futures=()):
-    self.filename = filename
-    self.scopes = scopes
-    self.futures = futures
-
-
-def RunCompiler(f, filename, gr, start_symbol, mode):
-  """Run the full compiler pipeline.
-
-  TODO: Expose this as a library?
-  """
-  tokens = tokenize.generate_tokens(f.readline)
-
-  p = parse.Parser(gr, convert=py2st)
-  parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
-
-  tr = transformer.Transformer()
-  as_tree = tr.transform(parse_tree)
-
-  #log('AST: %s', as_tree)
-
-  # NOTE: This currently does nothing!
-  v = syntax.SyntaxErrorChecker()
-  v.Dispatch(as_tree)
-
-  s = symbols.SymbolVisitor()
-  s.Dispatch(as_tree)
-
-  graph = pyassem.FlowGraph()
-  if mode == "single":
-      # NOTE: the name of the flow graph is a comment, not exposed to users.
-      frame = pyassem.Frame("<interactive>", filename)
-      ctx = _ModuleContext(filename, s.scopes)
-      gen = pycodegen.InteractiveCodeGenerator(frame, graph, ctx)
-      gen.set_lineno(as_tree)
-
-  elif mode == "exec":
-      frame = pyassem.Frame("<module>", filename)
-
-      # TODO: Does this need to be made more efficient?
-      p1 = future.FutureParser()
-      p2 = future.BadFutureParser()
-      p1.Dispatch(as_tree)
-      p2.Dispatch(as_tree)
-
-      ctx = _ModuleContext(filename, s.scopes, futures=p1.get_features())
-      gen = pycodegen.TopLevelCodeGenerator(frame, graph, ctx)
-
-  elif mode == "eval":
-      frame = pyassem.Frame("<expression>", filename)
-      ctx = _ModuleContext(filename, s.scopes)
-      gen = pycodegen.TopLevelCodeGenerator(frame, graph, ctx)
-
-  else:
-      raise ValueError("compile() 3rd arg must be 'exec' or "
-                       "'eval' or 'single'")
-
-  # NOTE: There is no Start() or FindLocals() at the top level.
-  gen.Dispatch(as_tree)  # mutates graph
-  gen.Finish()
-
-  # NOTE: This method has a pretty long pipeline too.
-  co = frame.MakeCodeObject()
-  return co
-
-
 # TODO: more actions:
 # - lex, parse, ast, cfg, compile/eval/repl
 
@@ -256,6 +166,9 @@ def OpyCommandMain(argv):
     symbols = None
     tr = None
 
+  #
+  # Actions
+  #
 
   if action == 'pgen2':
     grammar_path = argv[1]
@@ -306,7 +219,7 @@ def OpyCommandMain(argv):
     out_path = argv[2]
 
     with open(py_path) as f:
-      co = RunCompiler(f, py_path, gr, 'file_input', 'exec')
+      co = skeleton.RunCompiler(f, py_path, gr, 'file_input', 'exec')
 
     log("Compiled to %d bytes of bytecode", len(co.co_code))
 
@@ -319,7 +232,7 @@ def OpyCommandMain(argv):
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
     py_expr = argv[1]
     f = cStringIO.StringIO(py_expr)
-    co = RunCompiler(f, '<eval input>', gr, 'eval_input', 'eval')
+    co = skeleton.RunCompiler(f, '<eval input>', gr, 'eval_input', 'eval')
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -333,7 +246,7 @@ def OpyCommandMain(argv):
       f = cStringIO.StringIO(py_expr)
 
       # TODO: change this to 'single input'?  Why doesn't this work?
-      co = RunCompiler(f, '<REPL input>', gr, 'eval_input', 'eval')
+      co = skeleton.RunCompiler(f, '<REPL input>', gr, 'eval_input', 'eval')
 
       v = dis_tool.Visitor()
       v.show_code(co)
