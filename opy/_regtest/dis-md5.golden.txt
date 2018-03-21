@@ -202,7 +202,7 @@
  28978 581863c0d28c4f23d0eaaaab3a525f33 _tmp/regtest/test/sh_spec.pyc
  29159 58e8951b48374c0368253e32c9550075 _tmp/regtest/_abcoll.pyc
  29440 5ae214959a39478444778fa9800f4dd6 _tmp/regtest/collections.pyc
- 30204 7b90326a7eab1a0f0d42f21382c966e3 _tmp/regtest/opy/compiler2/pyassem.pyc
+ 30189 f35996cd972c094ecaad6088af2c72b6 _tmp/regtest/opy/compiler2/pyassem.pyc
  30811 02d4a38a06b87bc1875e62ffe18bb88a _tmp/regtest/core/builtin.pyc
  32295 29b6c155971a78b46cae1c83500f7efb _tmp/regtest/osh/word_parse.pyc
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc

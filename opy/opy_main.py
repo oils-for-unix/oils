@@ -10,13 +10,6 @@ import optparse
 import os
 import sys
 import marshal
-#import logging
-
-# Like oil.py, set PYTHONPATH internally?  So symlinks work?
-# Actually '.' is implicitly in PYTHONPATH, so we don't need it.
-# If we were in bin/oil.py, then we would need this.
-#this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-#sys.path.append(os.path.join(this_dir))
 
 from . import pytree
 from . import skeleton
@@ -52,7 +45,6 @@ class Symbols(object):
         #log('%s -> %d' % (name, symbol))
     # For transformer to use
     self.number2symbol = gr.number2symbol
-    #assert 0
 
 
 def HostStdlibNames():
@@ -185,10 +177,10 @@ def OpyCommandMain(argv):
 
     tree = st.totuple()
 
-    n = CountTupleTree(tree)
-    log('COUNT %d', n)
     printer = TupleTreePrinter(HostStdlibNames())
     printer.Print(tree)
+    n = CountTupleTree(tree)
+    log('COUNT %d', n)
 
   elif action == 'lex':
     py_path = argv[1]
@@ -318,12 +310,3 @@ def OpyCommandMain(argv):
 
   else:
     raise args.UsageError('Invalid action %r' % action)
-
-  # Examples of nodes Leaf(type, value):
-  #   Leaf(1, 'def')
-  #   Leaf(4, '\n')
-  #   Leaf(8, ')')
-  # Oh are these just tokens?
-  # yes.
-
-  # Node(prefix, children)

@@ -178,19 +178,15 @@ class CodeGenerator(ASTVisitor):
         scope = self.scope.check_name(name)
 
         if scope == SC_LOCAL:
-            if self._optimized():
-                self.emit(prefix + '_FAST', name)
-            else:
-                self.emit(prefix + '_NAME', name)
+            suffix = 'FAST' if self._optimized() else 'NAME'
+            self.emit('%s_%s' % (prefix, suffix), name)
 
         elif scope == SC_GLOBAL_EXPLICIT:
             self.emit(prefix + '_GLOBAL', name)
 
         elif scope == SC_GLOBAL_IMPLICIT:
-            if self._optimized():
-                self.emit(prefix + '_GLOBAL', name)
-            else:
-                self.emit(prefix + '_NAME', name)
+            suffix = 'GLOBAL' if self._optimized() else 'NAME'
+            self.emit('%s_%s' % (prefix, suffix), name)
 
         elif scope == SC_FREE or scope == SC_CELL:
             self.emit(prefix + '_DEREF', name)
@@ -206,10 +202,8 @@ class CodeGenerator(ASTVisitor):
         dollar sign.  The symbol table ignores these names because
         they aren't present in the program text.
         """
-        if self._optimized():
-            self.emit(prefix + '_FAST', name)
-        else:
-            self.emit(prefix + '_NAME', name)
+        suffix = 'FAST' if self._optimized() else 'NAME'
+        self.emit('%s_%s' % (prefix, suffix), name)
 
     # The set_lineno() function and the explicit emit() calls for
     # SET_LINENO below are only used to generate the line number table.
