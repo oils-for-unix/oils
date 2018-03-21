@@ -105,9 +105,6 @@ class Stack(list):
 class CodeGenerator(ASTVisitor):
     """Abstract class for modules, classes, functions."""
 
-    optimized = 0  # is namespace access optimized?
-    class_name = None  # provide default for instance variable
-
     def __init__(self, ctx, frame, graph):
         ASTVisitor.__init__(self)
         self.ctx = ctx  # passed down to child CodeGenerator instances
@@ -117,6 +114,7 @@ class CodeGenerator(ASTVisitor):
         # Set by visitModule, visitExpression (for eval), or by subclass
         # constructor.
         self.scope = None
+        self.class_name = None  # For name mangling; set by subclasses.
 
         self.locals = Stack()
         self.setups = Stack()
@@ -157,8 +155,12 @@ class CodeGenerator(ASTVisitor):
                            self.scope.get_cell_vars())
         self._Start()
 
-    def mangle(self, name):
+    def _mangle(self, name):
         return misc.mangle(name, self.class_name)
+
+    def _optimized(self):
+        """Is namespace access optimized?"""
+        return False
 
     # Next five methods handle name access
 
@@ -172,22 +174,27 @@ class CodeGenerator(ASTVisitor):
         self._nameOp('DELETE', name)
 
     def _nameOp(self, prefix, name):
-        name = self.mangle(name)
+        name = self._mangle(name)
         scope = self.scope.check_name(name)
+
         if scope == SC_LOCAL:
-            if not self.optimized:
-                self.emit(prefix + '_NAME', name)
-            else:
+            if self._optimized():
                 self.emit(prefix + '_FAST', name)
+            else:
+                self.emit(prefix + '_NAME', name)
+
         elif scope == SC_GLOBAL_EXPLICIT:
             self.emit(prefix + '_GLOBAL', name)
+
         elif scope == SC_GLOBAL_IMPLICIT:
-            if not self.optimized:
-                self.emit(prefix + '_NAME', name)
-            else:
+            if self._optimized():
                 self.emit(prefix + '_GLOBAL', name)
+            else:
+                self.emit(prefix + '_NAME', name)
+
         elif scope == SC_FREE or scope == SC_CELL:
             self.emit(prefix + '_DEREF', name)
+
         else:
             raise RuntimeError, "unsupported scope for var %s: %d" % \
                   (name, scope)
@@ -199,7 +206,7 @@ class CodeGenerator(ASTVisitor):
         dollar sign.  The symbol table ignores these names because
         they aren't present in the program text.
         """
-        if self.optimized:
+        if self._optimized():
             self.emit(prefix + '_FAST', name)
         else:
             self.emit(prefix + '_NAME', name)
@@ -302,6 +309,7 @@ class CodeGenerator(ASTVisitor):
         self._funcOrLambda(node, gen, 0)
 
     def _funcOrLambda(self, node, gen, ndecorators):
+        """Helper for visitFunction and visitLambda."""
         gen.Start()
         gen.FindLocals()
         gen.Dispatch(node.code)
@@ -892,7 +900,7 @@ class CodeGenerator(ASTVisitor):
 
     def visitGetattr(self, node):
         self.visit(node.expr)
-        self.emit('LOAD_ATTR', self.mangle(node.attrname))
+        self.emit('LOAD_ATTR', self._mangle(node.attrname))
 
     # next five implement assignments
 
@@ -918,9 +926,9 @@ class CodeGenerator(ASTVisitor):
     def visitAssAttr(self, node):
         self.visit(node.expr)
         if node.flags == 'OP_ASSIGN':
-            self.emit('STORE_ATTR', self.mangle(node.attrname))
+            self.emit('STORE_ATTR', self._mangle(node.attrname))
         elif node.flags == 'OP_DELETE':
-            self.emit('DELETE_ATTR', self.mangle(node.attrname))
+            self.emit('DELETE_ATTR', self._mangle(node.attrname))
         else:
             print("warning: unexpected flags:", node.flags)
             print(node)
@@ -957,10 +965,10 @@ class CodeGenerator(ASTVisitor):
         if mode == "load":
             self.visit(node.expr)
             self.emit('DUP_TOP')
-            self.emit('LOAD_ATTR', self.mangle(node.attrname))
+            self.emit('LOAD_ATTR', self._mangle(node.attrname))
         elif mode == "store":
             self.emit('ROT_TWO')
-            self.emit('STORE_ATTR', self.mangle(node.attrname))
+            self.emit('STORE_ATTR', self._mangle(node.attrname))
 
     def visitAugSlice(self, node, mode):
         if mode == "load":
@@ -1244,7 +1252,6 @@ def _CheckNoTupleArgs(func):
 
 class _FunctionCodeGenerator(CodeGenerator):
     """Abstract class."""
-    optimized = 1
 
     def __init__(self, ctx, frame, graph, func, class_name):
         CodeGenerator.__init__(self, ctx, frame, graph)
@@ -1252,6 +1259,9 @@ class _FunctionCodeGenerator(CodeGenerator):
         self.class_name = class_name
 
         self.scope = self.ctx.scopes[func]
+
+    def _optimized(self):
+        return True
 
     def FindLocals(self):
         func = self.func 
