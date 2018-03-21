@@ -590,8 +590,7 @@ class CodeGenerator(ASTVisitor):
         frees = gen.scope.get_free_vars()
 
         # Recursive call!
-        from . import skeleton
-        co = skeleton.MakeCodeObject(gen.frame, gen.graph)
+        co = pyassem.MakeCodeObject(gen.frame, gen.graph)
 
         if frees:
             for name in frees:

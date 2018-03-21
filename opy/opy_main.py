@@ -18,14 +18,15 @@ import marshal
 #this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 #sys.path.append(os.path.join(this_dir))
 
+from . import pytree
+from . import skeleton
+
 from .pgen2 import driver, parse, pgen, grammar
 from .pgen2 import token
 from .pgen2 import tokenize
-from . import pytree
 
 from .compiler2 import dis_tool
 from .compiler2 import misc
-from .compiler2 import skeleton
 from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.

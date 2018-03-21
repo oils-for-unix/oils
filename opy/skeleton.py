@@ -3,18 +3,16 @@
 skeleton.py: The compiler pipeline.
 """
 
-import types
+from .pgen2 import tokenize
+from .pgen2 import driver
+from .pgen2 import parse
 
-from ..pgen2 import tokenize
-from ..pgen2 import driver
-from ..pgen2 import parse
-
-from . import future
-from . import pyassem
-from . import pycodegen
-from . import syntax
-from . import symbols
-from . import transformer
+from .compiler2 import future
+from .compiler2 import pyassem
+from .compiler2 import pycodegen
+from .compiler2 import syntax
+from .compiler2 import symbols
+from .compiler2 import transformer
 
 
 class _ModuleContext(object):
@@ -41,60 +39,6 @@ def py2st(unused_gr, raw_node):
     return (typ,) + tuple(children)
   else:
     return (typ, value, lineno, column)
-
-
-def MakeCodeObject(frame, graph):
-    """Order blocks, encode instructions, and create types.CodeType().
-
-    Called by Compile below, and also recursively by ArgEncoder.
-    """
-    # Compute stack depth per basic block.
-    b = pyassem.BlockStackDepth()
-    block_depths = {
-        block: b.Sum(block.Instructions()) for block in graph.blocks
-    }
-
-    stacksize = pyassem.MaxStackDepth(block_depths, graph.entry, graph.exit)
-
-    # Order blocks so jump offsets can be encoded.
-    blocks = pyassem.OrderBlocks(graph.entry, graph.exit)
-
-    # Produce a stream of initial instructions.
-    insts, block_offsets = pyassem.FlattenBlocks(blocks)
-
-    # Now that we know the offsets, make another pass.
-    pyassem.PatchJumps(insts, block_offsets)
-
-    # What variables should be available at runtime?
-
-    cellvars = pyassem.ReorderCellVars(frame)
-    consts = [frame.docstring]
-    names = []
-    # The closure list is used to track the order of cell variables and
-    # free variables in the resulting code object.  The offsets used by
-    # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
-    closure = cellvars + frame.freevars
-
-    # Convert arguments from symbolic to concrete form.
-    enc = pyassem.ArgEncoder(frame.klass, consts, names, frame.varnames,
-                             closure)
-    # Mutates not only insts, but also appends to consts, names, etc.
-    enc.Run(insts)
-
-    # Binary encoding.
-    a = pyassem.Assembler()
-    bytecode, firstline, lnotab = a.Run(insts)
-
-    return types.CodeType(
-        frame.ArgCount(), frame.NumLocals(), stacksize, frame.flags,
-        bytecode,
-        tuple(consts),
-        tuple(names),
-        tuple(frame.varnames),
-        frame.filename, frame.name, firstline,
-        lnotab,
-        tuple(frame.freevars),
-        tuple(cellvars))
 
 
 def Compile(f, filename, gr, start_symbol, mode):
@@ -155,8 +99,7 @@ def Compile(f, filename, gr, start_symbol, mode):
   gen.Dispatch(as_tree)  # mutates graph
   gen.Finish()
 
-  co = MakeCodeObject(frame, graph)
+  co = pyassem.MakeCodeObject(frame, graph)
 
   # TODO: Could call marshal.dump here?
   return co
-

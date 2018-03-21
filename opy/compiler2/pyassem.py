@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import dis
 import itertools
+import types
 
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
@@ -677,3 +678,56 @@ def MaxStackDepth(block_depths, entry_block, exit_block):
     g = _GraphStackDepth(block_depths, exit_block)
     return g.Max(entry_block, 0)
 
+
+def MakeCodeObject(frame, graph):
+    """Order blocks, encode instructions, and create types.CodeType().
+
+    Called by Compile below, and also recursively by ArgEncoder.
+    """
+    # Compute stack depth per basic block.
+    b = BlockStackDepth()
+    block_depths = {
+        block: b.Sum(block.Instructions()) for block in graph.blocks
+    }
+
+    stacksize = MaxStackDepth(block_depths, graph.entry, graph.exit)
+
+    # Order blocks so jump offsets can be encoded.
+    blocks = OrderBlocks(graph.entry, graph.exit)
+
+    # Produce a stream of initial instructions.
+    insts, block_offsets = FlattenBlocks(blocks)
+
+    # Now that we know the offsets, make another pass.
+    PatchJumps(insts, block_offsets)
+
+    # What variables should be available at runtime?
+
+    cellvars = ReorderCellVars(frame)
+    consts = [frame.docstring]
+    names = []
+    # The closure list is used to track the order of cell variables and
+    # free variables in the resulting code object.  The offsets used by
+    # LOAD_CLOSURE/LOAD_DEREF refer to both kinds of variables.
+    closure = cellvars + frame.freevars
+
+    # Convert arguments from symbolic to concrete form.
+    enc = ArgEncoder(frame.klass, consts, names, frame.varnames,
+                             closure)
+    # Mutates not only insts, but also appends to consts, names, etc.
+    enc.Run(insts)
+
+    # Binary encoding.
+    a = Assembler()
+    bytecode, firstline, lnotab = a.Run(insts)
+
+    return types.CodeType(
+        frame.ArgCount(), frame.NumLocals(), stacksize, frame.flags,
+        bytecode,
+        tuple(consts),
+        tuple(names),
+        tuple(frame.varnames),
+        frame.filename, frame.name, firstline,
+        lnotab,
+        tuple(frame.freevars),
+        tuple(cellvars))
