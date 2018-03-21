@@ -7,6 +7,7 @@ from .consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
     SC_FREE, SC_CELL, SC_UNKNOWN
 from .visitor import ASTVisitor
 
+import itertools
 import sys
 import types
 
@@ -203,8 +204,8 @@ class ClassScope(Scope):
 
 
 
-gLambdaCounter = 1
-gGenExprCounter = 1
+gLambdaCounter = itertools.count()
+gGenExprCounter = itertools.count()
 
 
 class SymbolVisitor(ASTVisitor):
@@ -236,10 +237,7 @@ class SymbolVisitor(ASTVisitor):
         self.handle_free_vars(scope, parent)
 
     def visitGenExpr(self, node, parent):
-        global gGenExprCounter
-        obj_name = "generator expression<%d>" % gGenExprCounter
-        gGenExprCounter += 1 
-
+        obj_name = "generator expression<%d>" % gGenExprCounter.next()
         scope = GenExprScope(obj_name, self.module, self.klass)
 
         if parent.nested or isinstance(parent, (FunctionScope, GenExprScope)):
@@ -274,9 +272,7 @@ class SymbolVisitor(ASTVisitor):
         for n in node.defaults:
             self.visit(n, parent)
 
-        global gLambdaCounter
-        obj_name = "lambda.%d" % gLambdaCounter
-        gLambdaCounter += 1
+        obj_name = "lambda.%d" % gLambdaCounter.next()
 
         scope = LambdaScope(obj_name, self.module, klass=self.klass)
 

@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import dis
+import itertools
 
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
@@ -114,18 +115,14 @@ def PatchJumps(insts, offsets):
             insts[i] = (opname, offsets[block_arg])
 
 
-gBlockCounter = 0
+gBlockCounter = itertools.count()
 
 
 class Block(object):
 
     def __init__(self, label=''):
         self.label = label
-
-        global gBlockCounter
-        self.bid = gBlockCounter
-        gBlockCounter += 1
-
+        self.bid = gBlockCounter.next()
         self.insts = []
         self.outEdges = set()
         self.next = []
