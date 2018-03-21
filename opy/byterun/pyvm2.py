@@ -16,7 +16,9 @@ from six.moves import reprlib
 
 PY3, PY2 = six.PY3, not six.PY3
 
-from pyobj import Frame, Block, Method, Function, Generator
+# Function used in MAKE_FUNCTION, MAKE_CLOSURE
+# Generator used in YIELD_FROM, which we might not need.
+from pyobj import Frame, Block, Function, Generator
 
 log = logging.getLogger(__name__)
 
@@ -26,19 +28,65 @@ repr_obj.maxother = 120
 repper = repr_obj.repr
 
 
+# Different than log
+def debug(msg, *args):
+  return
+  if args: 
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 class VirtualMachineError(Exception):
     """For raising errors in the operation of the VM."""
     pass
 
 
+class GuestException(Exception):
+    """For errors raised by the interpreter program.
+
+    NOTE: I added this because the host traceback was conflated with the guest
+    traceback.
+    """
+  
+    def __init__(self, exctype, value, frames):
+        self.exctype = exctype
+        self.value = value
+        self.frames = frames
+
+    def __str__(self):
+        parts = []
+        parts.append('Guest Exception Traceback:')
+        parts.append('')
+        for f in self.frames:
+            filename = f.f_code.co_filename
+            lineno = f.line_number()
+            parts.append(
+                '  File "%s", line %d, in %s' %
+                (filename, lineno, f.f_code.co_name))
+            linecache.checkcache(filename)
+            line = linecache.getline(filename, lineno, f.f_globals)
+            if line:
+                parts.append('    ' + line.strip())
+        parts.append('')
+        parts.append('exctype: %s' % self.exctype)
+        parts.append('value: %s' % self.value)
+
+        return '\n'.join(parts) + '\n'
+
+
 class VirtualMachine(object):
-    def __init__(self):
+
+    def __init__(self, verbose=True):
         # The call stack of frames.
         self.frames = []
         # The current frame.
         self.frame = None
         self.return_value = None
+
         self.last_exception = None
+        self.except_frames = []  # Frames saved for GuestException
+
+        self.verbose = verbose
 
     def top(self):
         """Return the value at the top of the stack, with no changes."""
@@ -61,7 +109,6 @@ class VirtualMachine(object):
         """Pop a number of values from the value stack.
 
         A list of `n` values is returned, the deepest value first.
-
         """
         if n:
             ret = self.frame.stack[-n:]
@@ -119,6 +166,9 @@ class VirtualMachine(object):
 
     def print_frames(self):
         """Print the call stack, for debugging."""
+        # TODO: Remove, UNUSED
+        print('FRAMES:')
+        print('')
         for f in self.frames:
             filename = f.f_code.co_filename
             lineno = f.line_number()
@@ -170,6 +220,7 @@ class VirtualMachine(object):
         byteName = dis.opname[byteCode]
         arg = None
         arguments = []
+
         if byteCode >= dis.HAVE_ARGUMENT:
             arg = f.f_code.co_code[f.f_lasti:f.f_lasti+2]
             f.f_lasti += 2
@@ -196,7 +247,7 @@ class VirtualMachine(object):
 
         return byteName, arguments, opoffset
 
-    def log(self, byteName, arguments, opoffset):
+    def logTick(self, byteName, arguments, opoffset):
         """ Log arguments, block stack, and data stack for each opcode."""
         op = "%d: %s" % (opoffset, byteName)
         if arguments:
@@ -205,9 +256,9 @@ class VirtualMachine(object):
         stack_rep = repper(self.frame.stack)
         block_stack_rep = repper(self.frame.block_stack)
 
-        log.info("  %sdata: %s" % (indent, stack_rep))
-        log.info("  %sblks: %s" % (indent, block_stack_rep))
-        log.info("%s%s" % (indent, op))
+        debug("  %sdata: %s", indent, stack_rep)
+        debug("  %sblks: %s", indent, block_stack_rep)
+        debug("%s%s", indent, op)
 
     def dispatch(self, byteName, arguments):
         """ Dispatch by bytename to the corresponding methods.
@@ -236,6 +287,7 @@ class VirtualMachine(object):
             self.last_exception = sys.exc_info()[:2] + (None,)
             log.info("Caught exception during execution")
             why = 'exception'
+            self.except_frames = list(self.frames)
 
         return why
 
@@ -309,13 +361,24 @@ class VirtualMachine(object):
         Exceptions are raised, the return value is returned.
 
         """
+        # bytecode offset -> line number
+        #print('frame %s ' % frame)
+        # NOTE: Also done in Frmae.line_number()
+        linestarts = dict(dis.findlinestarts(frame.f_code))
+        #print('STARTS %s ' % linestarts)
+
         self.push_frame(frame)
         num_ticks = 0
         while True:
             num_ticks += 1
+
+            offset = frame.f_lasti
+            debug('Running bytecode at offset %d, line %s', offset,
+                  linestarts.get(offset, '<unknown>'))
+
             byteName, arguments, opoffset = self.parse_byte_and_args()
-            if log.isEnabledFor(logging.INFO):
-                self.log(byteName, arguments, opoffset)
+            if self.verbose:
+                self.logTick(byteName, arguments, opoffset)
 
             # When unwinding the block stack, we need to keep track of why we
             # are doing it.
@@ -339,12 +402,30 @@ class VirtualMachine(object):
 
         self.pop_frame()
 
+        # NOTE: We shouldn't even use exceptions to model control flow?
+
         if why == 'exception':
-            # Hm there is no third traceback part of the tuple?
-            #print('GOT', self.last_exception)
-            six.reraise(*self.last_exception)
+            if 0:
+              #self.print_frames()
+              exctype, value, tb = self.last_exception
+              debug('exctype: %s' % exctype)
+              debug('value: %s' % value)
+              debug('unused tb: %s' % tb)
+              # Raise an exception with the EMULATED (guest) stack frames.
+              raise GuestException(exctype, value, self.except_frames)
+
+            else:  # Original code that mixed up host and guest
+              #raise exctype, value
+              # Hm there is no third traceback part of the tuple?
+              six.reraise(*self.last_exception)
+
             # How to raise with_traceback?  Is that Python 3 only?
             #raise self.last_exception
+            #
+            # Six does a very gross thing to emulate this?
+            # exec_("""def reraise(tp, value, tb=None):
+            #         raise tp, value, tb
+            #         """)
 
         #print('num_ticks: %d' % num_ticks)
         return self.return_value
@@ -759,6 +840,7 @@ class VirtualMachine(object):
             val = self.pop()
             tb = self.pop()
             self.last_exception = (exctype, val, tb)
+
             why = 'reraise'
         else:       # pragma: no cover
             raise VirtualMachineError("Confused END_FINALLY")
@@ -840,6 +922,7 @@ class VirtualMachine(object):
             return 'exception'
 
     def byte_POP_EXCEPT(self):
+        # TODO: Remove.  This appears to be Python only.
         block = self.pop_block()
         if block.type != 'except-handler':
             raise Exception("popped block is not an except handler")
@@ -953,18 +1036,44 @@ class VirtualMachine(object):
         frame = self.frame
         if hasattr(func, 'im_func'):
             # Methods get self as an implicit first parameter.
+
+            debug('')
+            debug('im_self %r', (func.im_self,))
+            debug('posargs %r', (posargs,))
+
             if func.im_self:
                 posargs.insert(0, func.im_self)
+
+            debug('posargs AFTER %r', (posargs,))
+
+            # TODO: We have the frame here, but I also want the location.
+            # dis has it!
+
             # The first parameter must be the correct type.
             if not isinstance(posargs[0], func.im_class):
-                raise TypeError(
-                    'unbound method %s() must be called with %s instance '
-                    'as first argument (got %s instance instead)' % (
-                        func.im_func.func_name,
-                        func.im_class.__name__,
-                        type(posargs[0]).__name__,
+                # Must match Python interpreter to pass unit tests!
+                if 1:
+                    raise TypeError(
+                        'unbound method %s() must be called with %s instance '
+                        'as first argument (got %s instance instead)' % (
+                            func.im_func.func_name,
+                            func.im_class.__name__,
+                            type(posargs[0]).__name__,
+                        )
                     )
-                )
+                else:
+                    # FIX
+                    # More informative error that shows the frame.
+                    raise TypeError(
+                        'unbound method %s() must be called with %s instance '
+                        'as first argument, was called with %s instance'
+                        '(frame: %s)' % (
+                            func.im_func.func_name,
+                            func.im_class.__name__,
+                            type(posargs[0]).__name__,
+                            self.frame,
+                        )
+                    )
             func = func.im_func
 
         # BUG FIX: The callable must be a pyobj.Function, not a native Python

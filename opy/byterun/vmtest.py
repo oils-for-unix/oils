@@ -20,6 +20,7 @@ CAPTURE_EXCEPTION = 1
 
 def dis_code(code):
     """Disassemble `code` and all the code it refers to."""
+    return
     for const in code.co_consts:
         if isinstance(const, types.CodeType):
             dis_code(const)

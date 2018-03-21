@@ -62,11 +62,18 @@ speed.do_sum(n)
 EOF
 }
 
+opyc-run() {
+  ../bin/opyc run "$@"
+}
+opyc-compile() {
+  ../bin/opyc compile "$@"
+}
+
 opy-speed-test() {
   write-speed
 
-  _compile-one _tmp/speed.py _tmp/speed.pyc
-  _compile-one _tmp/speed_main.py _tmp/speed_main.pyc
+  opyc-compile _tmp/speed.py _tmp/speed.pyc
+  opyc-compile _tmp/speed_main.py _tmp/speed_main.pyc
 
   cp _tmp/speed.pyc _tmp/speed.opyc
 
@@ -80,7 +87,11 @@ opy-speed-test() {
 
   # 205 ms.  So it's 30x slower.  Makes sense.
   echo OPY
-  time opy_ run _tmp/speed.opyc $n
+  time opyc-run _tmp/speed.opyc $n
+
+  #
+  # byterun Import bug regression test!
+  #
 
   # 7 ms
   echo PYTHON
@@ -88,17 +99,8 @@ opy-speed-test() {
 
   # 205 ms.  So it's 30x slower.  Makes sense.
   echo OPY
-  time opy_ run _tmp/speed_main.pyc $n
+  time opyc-run _tmp/speed_main.pyc $n
 }
-
-byterun-speed-test() {
-  write-speed
-
-  echo OLD BYTERUN
-  time _byterun $PWD/_tmp/speed_main.py 10000
-  time _byterun $PWD/_tmp/speed.py 10000
-}
-
 
 _byterun() {
   # Wow this is SO confusing.
@@ -110,9 +112,17 @@ _byterun() {
   #PYTHONPATH=~/git/other/byterun 
 
   # WHY is this the only way to make it work?
-  pushd ~/git/other/byterun 
+  pushd ~/git/languages/byterun 
   python -m byterun.__main__ "$@"
   popd
+}
+
+byterun-speed-test() {
+  write-speed
+
+  echo OLD BYTERUN
+  time _byterun $PWD/_tmp/speed_main.py 10000
+  time _byterun $PWD/_tmp/speed.py 10000
 }
 
 #
@@ -124,24 +134,27 @@ _byterun() {
 opy-parse-on-byterun() {
   local arg=$PWD/testdata/hello_py2.py
   pushd _tmp/opy-opy
-  opyg run opy_main.pyc -g $GRAMMAR parse $arg
+  opyc-run opy_main.pyc parse $arg
   popd
 }
 
 osh-parse-on-byterun() {
-  cmd=(osh --ast-output - --no-exec -c 'echo "hello world"')
+  cmd=(osh -n -c 'echo "hello world"')
 
-  ../bin/oil.py "${cmd[@]}"
+  ../bin/oil.py "${cmd[@]}"  # Run with CPython
+
   echo ---
-  opyg run _tmp/osh-opy/bin/oil.pyc "${cmd[@]}"
+
+  # Run with byterun
+  opyc-run -- _tmp/oil-opy/bin/oil.pyc "${cmd[@]}"
 }
 
 opy-hello2() {
-  opyg run testdata/hello_py2.py
+  opyc-run testdata/hello_py2.py
 }
 
 opy-hello3() {
-  opyg run testdata/hello_py3.py
+  opyc-run testdata/hello_py3.py
 }
 
 #

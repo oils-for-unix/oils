@@ -23,7 +23,7 @@ from .compiler2 import misc
 from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
-#from .byterun import execfile
+from .byterun import execfile
 
 from core import args
 from core import util
@@ -134,7 +134,7 @@ def OpyCommandMain(argv):
   except IndexError:
     raise args.UsageError('opy: Missing required subcommand.')
 
-  if action in ('parse', 'compile', 'eval', 'repl'):
+  if action in ('parse', 'compile', 'eval', 'repl', 'run'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -290,20 +290,15 @@ def OpyCommandMain(argv):
     opy_argv = argv[1:]
 
     if py_path.endswith('.py'):
-      #py_parser = Pgen2PythonParser(dr, FILE_INPUT)
-      #printer = TupleTreePrinter(transformer._names)
-      #tr = transformer.Pgen2Transformer(py_parser, printer)
-      #with open(py_path) as f:
-      #  contents = f.read()
-      #co = pycodegen.compile(contents, py_path, 'exec', transformer=tr)
-      #execfile.run_code_object(co, opy_argv)
-      pass
+      with open(py_path) as f:
+        co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+      execfile.run_code_object(co, opy_argv)
 
     elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
       with open(py_path) as f:
         f.seek(8)  # past header.  TODO: validate it!
         co = marshal.load(f)
-      #execfile.run_code_object(co, opy_argv)
+      execfile.run_code_object(co, opy_argv)
 
     else:
       raise args.UsageError('Invalid path %r' % py_path)

@@ -23,7 +23,7 @@ def Disassemble(co):
   Args:
     co: __code__ attribute
 
-  Structure copied from misc/inspect_pyc.py, which was copied from
+  Structure copied from opy/compiler2/dis_tool.py, which was copied from
   dis.disassemble().
   """
   code = co.co_code
