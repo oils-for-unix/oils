@@ -277,3 +277,18 @@ echo second 1>&8
 echo CONTENTS
 cat $TMP/rw.txt
 # stdout-json: "line=first\nCONTENTS\nfirst\nsecond\n"
+
+### &>> appends stdout and stderr
+echo "ok" > $TMP/f.txt
+stdout_stderr.py &>> $TMP/f.txt
+grep ok $TMP/f.txt >/dev/null && echo 'ok'
+grep STDOUT $TMP/f.txt >/dev/null && echo 'ok'
+grep STDERR $TMP/f.txt >/dev/null && echo 'ok'
+## STDOUT:
+ok
+ok
+ok
+## END
+# N-I dash stdout: STDOUT
+# N-I dash stderr: STDERR
+# N-I dash status: 1
