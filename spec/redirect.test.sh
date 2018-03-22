@@ -289,6 +289,9 @@ ok
 ok
 ok
 ## END
-# N-I dash stdout: STDOUT
-# N-I dash stderr: STDERR
+## N-I dash STDOUT:
+ok
+STDOUT
+
+## END
 # N-I dash status: 1
