@@ -284,7 +284,11 @@ stdout_stderr.py &>> $TMP/f.txt
 grep ok $TMP/f.txt >/dev/null && echo 'ok'
 grep STDOUT $TMP/f.txt >/dev/null && echo 'ok'
 grep STDERR $TMP/f.txt >/dev/null && echo 'ok'
-# stdout-json: "ok\nok\nok\n"
+## STDOUT:
+ok
+ok
+ok
+## END
 # N-I dash stdout: STDOUT
 # N-I dash stderr: STDERR
 # N-I dash status: 1
