@@ -14,8 +14,6 @@ import types
 import six
 from six.moves import reprlib
 
-PY3, PY2 = six.PY3, not six.PY3
-
 # Function used in MAKE_FUNCTION, MAKE_CLOSURE
 # Generator used in YIELD_FROM, which we might not need.
 from pyobj import Frame, Block, Function, Generator
@@ -311,46 +309,19 @@ class VirtualMachine(object):
             self.jump(block.handler)
             return why
 
-        if PY2:
-            if (
-                block.type == 'finally' or
-                (block.type == 'setup-except' and why == 'exception') or
-                block.type == 'with'
-            ):
-                if why == 'exception':
-                    exctype, value, tb = self.last_exception
-                    self.push(tb, value, exctype)
-                else:
-                    if why in ('return', 'continue'):
-                        self.push(self.return_value)
-                    self.push(why)
-
-                why = None
-                self.jump(block.handler)
-                return why
-
-        elif PY3:
-            if (
-                why == 'exception' and
-                block.type in ['setup-except', 'finally']
-            ):
-                self.push_block('except-handler')
+        if (block.type in ('finally', 'with') or
+            block.type == 'setup-except' and why == 'exception'):
+            if why == 'exception':
                 exctype, value, tb = self.last_exception
                 self.push(tb, value, exctype)
-                # PyErr_Normalize_Exception goes here
-                self.push(tb, value, exctype)
-                why = None
-                self.jump(block.handler)
-                return why
-
-            elif block.type == 'finally':
+            else:
                 if why in ('return', 'continue'):
                     self.push(self.return_value)
                 self.push(why)
 
-                why = None
-                self.jump(block.handler)
-                return why
+            why = None
+            self.jump(block.handler)
+            return why
 
         return why
 
@@ -829,6 +800,7 @@ class VirtualMachine(object):
             if why in ('return', 'continue'):
                 self.return_value = self.pop()
             if why == 'silenced':       # PY3
+                raise AssertionError('PY3')
                 block = self.pop_block()
                 assert block.type == 'except-handler'
                 self.unwind_block(block)
@@ -849,93 +821,39 @@ class VirtualMachine(object):
     def byte_POP_BLOCK(self):
         self.pop_block()
 
-    if PY2:
-        def byte_RAISE_VARARGS(self, argc):
-            # NOTE: the dis docs are completely wrong about the order of the
-            # operands on the stack!
-            exctype = val = tb = None
-            if argc == 0:
-                exctype, val, tb = self.last_exception
-            elif argc == 1:
-                exctype = self.pop()
-            elif argc == 2:
-                val = self.pop()
-                exctype = self.pop()
-            elif argc == 3:
-                tb = self.pop()
-                val = self.pop()
-                exctype = self.pop()
+    def byte_RAISE_VARARGS(self, argc):
+        # NOTE: the dis docs are completely wrong about the order of the
+        # operands on the stack!
+        exctype = val = tb = None
+        if argc == 0:
+            exctype, val, tb = self.last_exception
+        elif argc == 1:
+            exctype = self.pop()
+        elif argc == 2:
+            val = self.pop()
+            exctype = self.pop()
+        elif argc == 3:
+            tb = self.pop()
+            val = self.pop()
+            exctype = self.pop()
 
-            # There are a number of forms of "raise", normalize them somewhat.
-            if isinstance(exctype, BaseException):
-                val = exctype
-                exctype = type(val)
+        # There are a number of forms of "raise", normalize them somewhat.
+        if isinstance(exctype, BaseException):
+            val = exctype
+            exctype = type(val)
 
-            self.last_exception = (exctype, val, tb)
+        self.last_exception = (exctype, val, tb)
 
-            if tb:
-                return 'reraise'
-            else:
-                return 'exception'
-
-    elif PY3:
-        def byte_RAISE_VARARGS(self, argc):
-            cause = exc = None
-            if argc == 2:
-                cause = self.pop()
-                exc = self.pop()
-            elif argc == 1:
-                exc = self.pop()
-            return self.do_raise(exc, cause)
-
-        def do_raise(self, exc, cause):
-            if exc is None:         # reraise
-                exc_type, val, tb = self.last_exception
-                if exc_type is None:
-                    return 'exception'      # error
-                else:
-                    return 'reraise'
-
-            elif type(exc) == type:
-                # As in `raise ValueError`
-                exc_type = exc
-                val = exc()             # Make an instance.
-            elif isinstance(exc, BaseException):
-                # As in `raise ValueError('foo')`
-                exc_type = type(exc)
-                val = exc
-            else:
-                return 'exception'      # error
-
-            # If you reach this point, you're guaranteed that
-            # val is a valid exception instance and exc_type is its class.
-            # Now do a similar thing for the cause, if present.
-            if cause:
-                if type(cause) == type:
-                    cause = cause()
-                elif not isinstance(cause, BaseException):
-                    return 'exception'  # error
-
-                val.__cause__ = cause
-
-            self.last_exception = exc_type, val, val.__traceback__
+        if tb:
+            return 'reraise'
+        else:
             return 'exception'
-
-    def byte_POP_EXCEPT(self):
-        # TODO: Remove.  This appears to be Python only.
-        block = self.pop_block()
-        if block.type != 'except-handler':
-            raise Exception("popped block is not an except handler")
-        self.unwind_block(block)
 
     def byte_SETUP_WITH(self, dest):
         ctxmgr = self.pop()
         self.push(ctxmgr.__exit__)
         ctxmgr_obj = ctxmgr.__enter__()
-        if PY2:
-            self.push_block('with', dest)
-        elif PY3:
-            self.push_block('finally', dest)
+        self.push_block('with', dest)
         self.push(ctxmgr_obj)
 
     def byte_WITH_CLEANUP(self):
@@ -953,39 +871,22 @@ class VirtualMachine(object):
                 exit_func = self.pop(1)
             u = None
         elif issubclass(u, BaseException):
-            if PY2:
-                w, v, u = self.popn(3)
-                exit_func = self.pop()
-                self.push(w, v, u)
-            elif PY3:
-                w, v, u = self.popn(3)
-                tp, exc, tb = self.popn(3)
-                exit_func = self.pop()
-                self.push(tp, exc, tb)
-                self.push(None)
-                self.push(w, v, u)
-                block = self.pop_block()
-                assert block.type == 'except-handler'
-                self.push_block(block.type, block.handler, block.level-1)
+            w, v, u = self.popn(3)
+            exit_func = self.pop()
+            self.push(w, v, u)
         else:       # pragma: no cover
             raise VirtualMachineError("Confused WITH_CLEANUP")
         exit_ret = exit_func(u, v, w)
         err = (u is not None) and bool(exit_ret)
         if err:
             # An error occurred, and was suppressed
-            if PY2:
-                self.popn(3)
-                self.push(None)
-            elif PY3:
-                self.push('silenced')
+            self.popn(3)
+            self.push(None)
 
     ## Functions
 
     def byte_MAKE_FUNCTION(self, argc):
-        if PY3:
-            name = self.pop()
-        else:
-            name = None
+        name = None
         code = self.pop()
         defaults = self.popn(argc)
         globs = self.frame.f_globals
@@ -996,11 +897,7 @@ class VirtualMachine(object):
         self.push(self.frame.cells[name])
 
     def byte_MAKE_CLOSURE(self, argc):
-        if PY3:
-            # TODO: the py3 docs don't mention this change.
-            name = self.pop()
-        else:
-            name = None
+        name = None
         closure, code = self.popn(2)
         defaults = self.popn(argc)
         globs = self.frame.f_globals
@@ -1156,20 +1053,6 @@ class VirtualMachine(object):
         stmt, globs, locs = self.popn(3)
         six.exec_(stmt, globs, locs)
 
-    if PY2:
-        def byte_BUILD_CLASS(self):
-            name, bases, methods = self.popn(3)
-            self.push(type(name, bases, methods))
-
-
-    elif PY3:
-        def byte_LOAD_BUILD_CLASS(self):
-            # New in py3
-            self.push(__build_class__)
-
-        def byte_STORE_LOCALS(self):
-            self.frame.f_locals = self.pop()
-
-    if 0:   # Not in py2.7
-        def byte_SET_LINENO(self, lineno):
-            self.frame.f_lineno = lineno
+    def byte_BUILD_CLASS(self):
+        name, bases, methods = self.popn(3)
+        self.push(type(name, bases, methods))
