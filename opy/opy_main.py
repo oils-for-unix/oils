@@ -254,8 +254,9 @@ def OpyCommandMain(argv):
 
     with open(pyc_path, 'rb') as f:
       # TODO: Make this a flag.
-      #v = inspect_pyc.Visitor(dis_bytecode=False)
+      #v = dis_tool.Visitor(dis_bytecode=False)
       v = dis_tool.Visitor()
+      #v = dis_tool.Visitor(co_name='_parse')
       v.Visit(f)
 
     v.Report(report_f)

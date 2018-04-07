@@ -72,7 +72,18 @@ class GuestException(Exception):
 
 class VirtualMachine(object):
 
-    def __init__(self, verbose=True):
+    def __init__(self, subset=False, verbose=True):
+        """
+        Args:
+          subset: turn off bytecodes that OPy doesn't need (e.g. print
+            statement, etc.)
+          verbose: turn on logging
+        """
+        self.subset = subset
+        self.more_info = False
+        #self.more_info = True
+        self.verbose = verbose
+
         # The call stack of frames.
         self.frames = []
         # The current frame.
@@ -82,7 +93,6 @@ class VirtualMachine(object):
         self.last_exception = None
         self.except_frames = []  # Frames saved for GuestException
 
-        self.verbose = verbose
 
     def top(self):
         """Return the value at the top of the stack, with no changes."""
@@ -159,22 +169,6 @@ class VirtualMachine(object):
             self.frame = self.frames[-1]
         else:
             self.frame = None
-
-    def print_frames(self):
-        """Print the call stack, for debugging."""
-        # TODO: Remove, UNUSED
-        print('FRAMES:')
-        print('')
-        for f in self.frames:
-            filename = f.f_code.co_filename
-            lineno = f.line_number()
-            print('  File "%s", line %d, in %s' % (
-                filename, lineno, f.f_code.co_name
-            ))
-            linecache.checkcache(filename)
-            line = linecache.getline(filename, lineno, f.f_globals)
-            if line:
-                print('    ' + line.strip())
 
     def resume_frame(self, frame):
         frame.f_back = self.frame
@@ -374,12 +368,11 @@ class VirtualMachine(object):
         # NOTE: We shouldn't even use exceptions to model control flow?
 
         if why == 'exception':
-            #self.print_frames()
             exctype, value, tb = self.last_exception
             debug('exctype: %s' % exctype)
             debug('value: %s' % value)
             debug('unused tb: %s' % tb)
-            if 0:
+            if self.more_info:
                 # Raise an exception with the EMULATED (guest) stack frames.
                 raise GuestException(exctype, value, self.except_frames)
             else:
@@ -936,17 +929,7 @@ class VirtualMachine(object):
             # The first parameter must be the correct type.
             if not isinstance(posargs[0], func.im_class):
                 # Must match Python interpreter to pass unit tests!
-                if 1:
-                    raise TypeError(
-                        'unbound method %s() must be called with %s instance '
-                        'as first argument (got %s instance instead)' % (
-                            func.im_func.func_name,
-                            func.im_class.__name__,
-                            type(posargs[0]).__name__,
-                        )
-                    )
-                else:
-                    # FIX
+                if self.more_info:
                     # More informative error that shows the frame.
                     raise TypeError(
                         'unbound method %s() must be called with %s instance '
@@ -956,6 +939,15 @@ class VirtualMachine(object):
                             func.im_class.__name__,
                             type(posargs[0]).__name__,
                             self.frame,
+                        )
+                    )
+                else:
+                    raise TypeError(
+                        'unbound method %s() must be called with %s instance '
+                        'as first argument (got %s instance instead)' % (
+                            func.im_func.func_name,
+                            func.im_class.__name__,
+                            type(posargs[0]).__name__,
                         )
                     )
             func = func.im_func

@@ -137,6 +137,31 @@ byterun-unit() {
   done
 }
 
+# Isolated failures.
+
+# File "/home/andy/git/oilshell/oil/bin/../opy/byterun/pyvm2.py", line 288, in manage_block_stack
+#   block = self.frame.block_stack[-1]
+# IndexError: list index out of range
+
+generator-exception() {
+  testdata/generator_exception.py
+  echo ---
+  ../bin/opyc run testdata/generator_exception.py
+}
+
+# TypeError: unbound method append() must be called with SubPattern instance as
+# first argument (got tuple instance instead) 
+
+regex-compile() {
+  testdata/regex_compile.py
+  echo ---
+  ../bin/opyc run testdata/regex_compile.py
+}
+
+re-dis() {
+  ../bin/opyc dis /usr/lib/python2.7/sre_parse.pyc
+}
+
 
 unit() {
   PYTHONPATH=. "$@"

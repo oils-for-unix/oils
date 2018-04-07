@@ -174,21 +174,31 @@ def disassemble(co, indent, op_counts, f):
 
 class Visitor(object):
 
-  def __init__(self, dis_bytecode=True):
-    self.dis_bytecode = dis_bytecode  # Whether to show disassembly.
+  def __init__(self, dis_bytecode=True, co_name=None):
+    """
+    Args:
+      dis_bytecode: Whether to show disassembly.
+      co_name: only print code object with exact name (and its children)
+    """
+    self.dis_bytecode = dis_bytecode
+    # Name of thing to print
+    self.co_name = co_name
     self.op_counts = collections.Counter()
 
   def show_consts(self, consts, level=0):
     indent = INDENT * level
-    i = 0
-    for obj in consts:
+    for i, obj in enumerate(consts):
       if isinstance(obj, types.CodeType):
-        print(indent+"%s (code object)" % i)
+        print("%s%s (code object)" % (indent, i))
         # RECURSIVE CALL.
         self.show_code(obj, level=level+1)
       else:
-        print(indent+"%s %r" % (i, obj))
-      i += 1
+        print("%s%s %r" % (indent, i, obj))
+
+  def maybe_show_consts(self, consts, level=0):
+    for obj in consts:
+      if isinstance(obj, types.CodeType):
+        self.show_code(obj, level=level+1)   # RECURSIVE CALL.
 
   def show_bytecode(self, code, level=0):
     """Call dis.disassemble() to show bytecode."""
@@ -202,6 +212,11 @@ class Visitor(object):
 
   def show_code(self, code, level=0):
     """Print a code object, e.g. metadata, bytecode, and consts."""
+
+    # Filter recursive call
+    if self.co_name and code.co_name != self.co_name:
+      self.maybe_show_consts(code.co_consts, level=level+1)
+      return
 
     indent = INDENT * level
 
