@@ -104,7 +104,6 @@ readonly -a FAILED=(
 
   # Any bytecode can raise an exception internally.
 
-
   core/glob_test.pyc  # unbound method append()
   core/lexer_gen_test.pyc  # ditto
   osh/lex_test.pyc  # ditto
@@ -145,8 +144,24 @@ byterun-unit() {
 
 generator-exception() {
   testdata/generator_exception.py
+  ../bin/opyc run testdata/generator_exception.py 
+}
+
+generator-exception-diff() {
+  rm -f -v testdata/generator_exception.pyc
+  testdata/generator_exception.py
+
+  pushd testdata 
+  python -c 'import generator_exception'
+  popd
+
   echo ---
-  ../bin/opyc run testdata/generator_exception.py
+  ../bin/opyc compile testdata/generator_exception.py _tmp/ge-opy.pyc
+
+  ../bin/opyc dis testdata/generator_exception.pyc > _tmp/ge-cpython.txt
+  ../bin/opyc dis _tmp/ge-opy.pyc > _tmp/ge-opy.txt
+
+  diff -u _tmp/ge-{cpython,opy}.txt
 }
 
 # TypeError: unbound method append() must be called with SubPattern instance as

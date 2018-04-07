@@ -23,10 +23,14 @@ repr_obj = repr.Repr()
 repr_obj.maxother = 120
 repper = repr_obj.repr
 
+VERBOSE = True
+VERBOSE = False
 
 # Different than log
 def debug(msg, *args):
-  return
+  if not VERBOSE:
+    return
+
   if args: 
     msg = msg % args
   print(msg, file=sys.stderr)
@@ -72,7 +76,7 @@ class GuestException(Exception):
 
 class VirtualMachine(object):
 
-    def __init__(self, subset=False, verbose=True):
+    def __init__(self, subset=False, verbose=VERBOSE):
         """
         Args:
           subset: turn off bytecodes that OPy doesn't need (e.g. print
@@ -92,52 +96,25 @@ class VirtualMachine(object):
 
         self.last_exception = None
         self.except_frames = []  # Frames saved for GuestException
-
+        self.cur_line = None  # current line number
 
     def top(self):
-        """Return the value at the top of the stack, with no changes."""
-        return self.frame.stack[-1]
+        return self.frame.top()
 
     def pop(self, i=0):
-        """Pop a value from the stack.
-
-        Default to the top of the stack, but `i` can be a count from the top
-        instead.
-
-        """
-        return self.frame.stack.pop(-1-i)
+        return self.frame.pop(i=i)
 
     def push(self, *vals):
-        """Push values onto the value stack."""
-        self.frame.stack.extend(vals)
+        self.frame.push(*vals)
 
     def popn(self, n):
-        """Pop a number of values from the value stack.
-
-        A list of `n` values is returned, the deepest value first.
-        """
-        if n:
-            ret = self.frame.stack[-n:]
-            self.frame.stack[-n:] = []
-            return ret
-        else:
-            return []
+        return self.frame.popn(n)
 
     def peek(self, n):
-        """Get a value `n` entries down in the stack, without changing the stack."""
-        return self.frame.stack[-n]
+        return self.frame.peek(n)
 
-    def jump(self, jump):
-        """Move the bytecode pointer to `jump`, so it will execute next."""
-        self.frame.f_lasti = jump
-
-    def push_block(self, type, handler=None, level=None):
-        if level is None:
-            level = len(self.frame.stack)
-        self.frame.block_stack.append(Block(type, handler, level))
-
-    def pop_block(self):
-        return self.frame.block_stack.pop()
+    def jump(self, offset):
+        self.frame.jump(offset)
 
     def make_frame(self, code, callargs={}, f_globals=None, f_locals=None):
         log.info("make_frame: code=%r, callargs=%s" % (code, repper(callargs)))
@@ -187,19 +164,6 @@ class VirtualMachine(object):
 
         return val
 
-    def unwind_block(self, block):
-        if block.type == 'except-handler':
-            offset = 3
-        else:
-            offset = 0
-
-        while len(self.frame.stack) > block.level + offset:
-            self.pop()
-
-        if block.type == 'except-handler':
-            tb, value, exctype = self.popn(3)
-            self.last_exception = exctype, value, tb
-
     def parse_byte_and_args(self):
         """ Parse 1 - 3 bytes of bytecode into
         an instruction and optionally arguments."""
@@ -237,18 +201,27 @@ class VirtualMachine(object):
 
         return byteName, arguments, opoffset
 
-    def logTick(self, byteName, arguments, opoffset):
+    def logTick(self, byteName, arguments, opoffset, linestarts):
         """ Log arguments, block stack, and data stack for each opcode."""
-        op = "%d: %s" % (opoffset, byteName)
-        if arguments:
-            op += " %r" % (arguments[0],)
-        indent = "    "*(len(self.frames)-1)
+        indent = "    " * (len(self.frames)-1)
         stack_rep = repper(self.frame.stack)
         block_stack_rep = repper(self.frame.block_stack)
 
-        debug("  %sdata: %s", indent, stack_rep)
-        debug("  %sblks: %s", indent, block_stack_rep)
-        debug("%s%s", indent, op)
+        if arguments:
+            arg_str = ' %r' % (arguments[0],)
+        else:
+            arg_str = ''
+        # TODO: Should increment
+
+        li = linestarts.get(opoffset, None)
+        if li is not None and self.cur_line != li:
+          self.cur_line = li
+
+        debug('%s%d: %s%s (line %s)', indent, opoffset, byteName, arg_str,
+            self.cur_line)
+        debug('  %sval stack: %s', indent, stack_rep)
+        debug('  %sblock stack: %s', indent, block_stack_rep)
+        debug('')
 
     def dispatch(self, byteName, arguments):
         """ Dispatch by bytename to the corresponding methods.
@@ -281,43 +254,6 @@ class VirtualMachine(object):
 
         return why
 
-    def manage_block_stack(self, why):
-        """ Manage a frame's block stack.
-        Manipulate the block stack and data stack for looping,
-        exception handling, or returning."""
-        assert why != 'yield'
-
-        block = self.frame.block_stack[-1]
-        if block.type == 'loop' and why == 'continue':
-            self.jump(self.return_value)
-            why = None
-            return why
-
-        self.pop_block()
-        self.unwind_block(block)
-
-        if block.type == 'loop' and why == 'break':
-            why = None
-            self.jump(block.handler)
-            return why
-
-        if (block.type in ('finally', 'with') or
-            block.type == 'setup-except' and why == 'exception'):
-            if why == 'exception':
-                exctype, value, tb = self.last_exception
-                self.push(tb, value, exctype)
-            else:
-                if why in ('return', 'continue'):
-                    self.push(self.return_value)
-                self.push(why)
-
-            why = None
-            self.jump(block.handler)
-            return why
-
-        return why
-
-
     def run_frame(self, frame):
         """Run a frame until it returns (somehow).
 
@@ -335,13 +271,9 @@ class VirtualMachine(object):
         while True:
             num_ticks += 1
 
-            offset = frame.f_lasti
-            debug('Running bytecode at offset %d, line %s', offset,
-                  linestarts.get(offset, '<unknown>'))
-
             byteName, arguments, opoffset = self.parse_byte_and_args()
             if self.verbose:
-                self.logTick(byteName, arguments, opoffset)
+                self.logTick(byteName, arguments, opoffset, linestarts)
 
             # When unwinding the block stack, we need to keep track of why we
             # are doing it.
@@ -355,8 +287,9 @@ class VirtualMachine(object):
 
             if why != 'yield':
                 while why and frame.block_stack:
-                    # Deal with any block management we need to do.
-                    why = self.manage_block_stack(why)
+                    debug('WHY %s', why)
+                    debug('STACK %s', frame.block_stack)
+                    why = self.frame.handle_block_stack(why, self)
 
             if why:
                 break
@@ -364,8 +297,6 @@ class VirtualMachine(object):
         # TODO: handle generator exception state
 
         self.pop_frame()
-
-        # NOTE: We shouldn't even use exceptions to model control flow?
 
         if why == 'exception':
             exctype, value, tb = self.last_exception
@@ -740,7 +671,7 @@ class VirtualMachine(object):
     ## Blocks
 
     def byte_SETUP_LOOP(self, dest):
-        self.push_block('loop', dest)
+        self.frame.push_block('loop', dest)
 
     def byte_GET_ITER(self):
         self.push(iter(self.pop()))
@@ -768,23 +699,18 @@ class VirtualMachine(object):
         return 'continue'
 
     def byte_SETUP_EXCEPT(self, dest):
-        self.push_block('setup-except', dest)
+        self.frame.push_block('setup-except', dest)
 
     def byte_SETUP_FINALLY(self, dest):
-        self.push_block('finally', dest)
+        self.frame.push_block('finally', dest)
 
     def byte_END_FINALLY(self):
         v = self.pop()
+        #debug('V %s', v)
         if isinstance(v, str):
             why = v
             if why in ('return', 'continue'):
                 self.return_value = self.pop()
-            if why == 'silenced':       # PY3
-                raise AssertionError('PY3')
-                block = self.pop_block()
-                assert block.type == 'except-handler'
-                self.unwind_block(block)
-                why = None
         elif v is None:
             why = None
         elif issubclass(v, BaseException):
@@ -799,7 +725,7 @@ class VirtualMachine(object):
         return why
 
     def byte_POP_BLOCK(self):
-        self.pop_block()
+        self.frame.pop_block()
 
     def byte_RAISE_VARARGS(self, argc):
         # NOTE: the dis docs are completely wrong about the order of the
@@ -833,7 +759,7 @@ class VirtualMachine(object):
         ctxmgr = self.pop()
         self.push(ctxmgr.__exit__)
         ctxmgr_obj = ctxmgr.__enter__()
-        self.push_block('with', dest)
+        self.frame.push_block('with', dest)
         self.push(ctxmgr_obj)
 
     def byte_WITH_CLEANUP(self):

@@ -134,6 +134,7 @@ class Cell(object):
         self.contents = value
 
 
+# PyTryBlock in CPython, for SETUP_EXCEPT, etc.
 Block = collections.namedtuple("Block", "type, handler, level")
 
 
@@ -180,6 +181,109 @@ class Frame(object):
         return '<Frame at 0x%08x: %r @ %d>' % (
             id(self), self.f_code.co_filename, self.f_lineno
         )
+
+    def top(self):
+        """Return the value at the top of the stack, with no changes."""
+        return self.stack[-1]
+
+    def pop(self, i=0):
+        """Pop a value from the stack.
+
+        Default to the top of the stack, but `i` can be a count from the top
+        instead.
+
+        """
+        return self.stack.pop(-1-i)
+
+    def push(self, *vals):
+        """Push values onto the value stack."""
+        self.stack.extend(vals)
+
+    def popn(self, n):
+        """Pop a number of values from the value stack.
+
+        A list of `n` values is returned, the deepest value first.
+        """
+        if n:
+            ret = self.stack[-n:]
+            del self.stack[-n:]
+            return ret
+        else:
+            return []
+
+    def peek(self, n):
+        """Get a value `n` entries down in the stack, without changing the stack."""
+        return self.stack[-n]
+
+    def jump(self, offset):
+        """Move the bytecode pointer to `offset`, so it will execute next."""
+        self.f_lasti = offset
+
+    def push_block(self, type, handler=None, level=None):
+        """Used for SETUP_{LOOP,EXCEPT,FINALLY,WITH}."""
+        if level is None:
+            level = len(self.stack)
+        self.block_stack.append(Block(type, handler, level))
+
+    def pop_block(self):
+        return self.block_stack.pop()
+
+    def _unwind_block(self, block, vm):
+        """
+        Args:
+          vm: VirtualMachineError to possibly mutate
+        """
+        if block.type == 'except-handler':
+            offset = 3
+        else:
+            offset = 0
+
+        while len(self.stack) > block.level + offset:
+            self.pop()
+
+        if block.type == 'except-handler':
+            tb, value, exctype = self.popn(3)
+            vm.last_exception = exctype, value, tb
+
+    def handle_block_stack(self, why, vm):
+        """
+        After every bytecode that returns why != None, handle everything on the
+        block stack.
+
+        The block stack and data stack are shuffled for looping, exception
+        handling, or returning.
+        """
+        assert why != 'yield'
+
+        block = self.block_stack[-1]
+        if block.type == 'loop' and why == 'continue':
+            self.jump(vm.return_value)
+            why = None
+            return why
+
+        self.pop_block()
+        self._unwind_block(block, vm)
+
+        if block.type == 'loop' and why == 'break':
+            why = None
+            self.jump(block.handler)
+            return why
+
+        if (block.type in ('finally', 'with') or
+            block.type == 'setup-except' and why == 'exception'):
+            if why == 'exception':
+                exctype, value, tb = vm.last_exception
+                self.push(tb, value, exctype)
+            else:
+                if why in ('return', 'continue'):
+                    self.push(vm.return_value)
+                self.push(why)
+
+            why = None
+            self.jump(block.handler)
+            return why
+
+        return why
 
     def line_number(self):
         """Get the current line number the frame is executing."""
