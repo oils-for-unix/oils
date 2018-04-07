@@ -2,13 +2,13 @@
 
 from __future__ import print_function
 
+import cStringIO
 import dis
 import sys
 import textwrap
 import types
 import unittest
 
-import six
 
 from pyvm2 import VirtualMachine, VirtualMachineError
 
@@ -45,7 +45,7 @@ class VmTestCase(unittest.TestCase):
 
         # Run the code through our VM.
 
-        vm_stdout = six.StringIO()
+        vm_stdout = cStringIO.StringIO()
         if CAPTURE_STDOUT:              # pragma: no branch
             sys.stdout = vm_stdout
         vm = VirtualMachine()
@@ -70,7 +70,7 @@ class VmTestCase(unittest.TestCase):
 
         # Run the code through the real Python interpreter, for comparison.
 
-        py_stdout = six.StringIO()
+        py_stdout = cStringIO.StringIO()
         sys.stdout = py_stdout
 
         py_value = py_exc = None

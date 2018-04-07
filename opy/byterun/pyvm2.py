@@ -8,11 +8,9 @@ import inspect
 import linecache
 import logging
 import operator
+import repr
 import sys
 import types
-
-import six
-from six.moves import reprlib
 
 # Function used in MAKE_FUNCTION, MAKE_CLOSURE
 # Generator used in YIELD_FROM, which we might not need.
@@ -21,7 +19,7 @@ from pyobj import Frame, Block, Function, Generator
 log = logging.getLogger(__name__)
 
 # Create a repr that won't overflow.
-repr_obj = reprlib.Repr()
+repr_obj = repr.Repr()
 repr_obj.maxother = 120
 repper = repr_obj.repr
 
@@ -376,27 +374,16 @@ class VirtualMachine(object):
         # NOTE: We shouldn't even use exceptions to model control flow?
 
         if why == 'exception':
+            #self.print_frames()
+            exctype, value, tb = self.last_exception
+            debug('exctype: %s' % exctype)
+            debug('value: %s' % value)
+            debug('unused tb: %s' % tb)
             if 0:
-              #self.print_frames()
-              exctype, value, tb = self.last_exception
-              debug('exctype: %s' % exctype)
-              debug('value: %s' % value)
-              debug('unused tb: %s' % tb)
-              # Raise an exception with the EMULATED (guest) stack frames.
-              raise GuestException(exctype, value, self.except_frames)
-
-            else:  # Original code that mixed up host and guest
-              #raise exctype, value
-              # Hm there is no third traceback part of the tuple?
-              six.reraise(*self.last_exception)
-
-            # How to raise with_traceback?  Is that Python 3 only?
-            #raise self.last_exception
-            #
-            # Six does a very gross thing to emulate this?
-            # exec_("""def reraise(tp, value, tb=None):
-            #         raise tp, value, tb
-            #         """)
+                # Raise an exception with the EMULATED (guest) stack frames.
+                raise GuestException(exctype, value, self.except_frames)
+            else:
+                raise exctype, value, tb
 
         #print('num_ticks: %d' % num_ticks)
         return self.return_value
@@ -1051,7 +1038,7 @@ class VirtualMachine(object):
 
     def byte_EXEC_STMT(self):
         stmt, globs, locs = self.popn(3)
-        six.exec_(stmt, globs, locs)
+        exec stmt in globs, locs
 
     def byte_BUILD_CLASS(self):
         name, bases, methods = self.popn(3)

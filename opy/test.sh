@@ -97,7 +97,7 @@ oil-unit-byterun() {
 }
 
 readonly -a FAILED=(
-  #asdl/arith_parse_test.pyc  # IndexError
+  asdl/arith_parse_test.pyc  # IndexError
   # I believe this is due to:
   # 'TODO: handle generator exception state' in pyvm2.py.  Open bug in
   # byterun.  asdl/tdop.py uses a generator Tokenize() with StopIteration
