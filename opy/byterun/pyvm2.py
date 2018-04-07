@@ -31,6 +31,10 @@ def debug(msg, *args):
   if not VERBOSE:
     return
 
+  debug1(msg, *args)
+
+
+def debug1(msg, *args):
   if args: 
     msg = msg % args
   print(msg, file=sys.stderr)
@@ -72,6 +76,17 @@ class GuestException(Exception):
         parts.append('value: %s' % self.value)
 
         return '\n'.join(parts) + '\n'
+
+
+def run_code(vm, code, f_globals=None):
+    """Main entry point.
+
+    Used by tests and by execfile.
+    """
+    frame = vm.make_frame(code, f_globals=f_globals)
+    val = vm.run_frame(frame)
+    vm.check_invariants()
+    return val
 
 
 class VirtualMachine(object):
@@ -146,18 +161,6 @@ class VirtualMachine(object):
         frame.f_back = None
         return val
 
-    def run_code(self, code, f_globals=None, f_locals=None):
-        """Main entry point."""
-        frame = self.make_frame(code, f_globals=f_globals, f_locals=f_locals)
-        val = self.run_frame(frame)
-        # Check some invariants
-        if self.frames:            # pragma: no cover
-            raise VirtualMachineError("Frames left over!")
-        if self.frame and self.frame.stack:             # pragma: no cover
-            raise VirtualMachineError("Data left on stack! %r" % self.frame.stack)
-
-        return val
-
     def logTick(self, byteName, arguments, opoffset, linestarts):
         """ Log arguments, block stack, and data stack for each opcode."""
         indent = "    " * (len(self.frames)-1)
@@ -224,10 +227,9 @@ class VirtualMachine(object):
             self.frame = None
 
     def run_frame(self, frame):
-        """Run a frame until it returns (somehow).
+        """Run a frame until it returns or raises an exception.
 
-        Exceptions are raised, the return value is returned.
-
+        This function raises GuestException or returns the return value.
         """
         # bytecode offset -> line number
         #print('frame %s ' % frame)
@@ -281,6 +283,13 @@ class VirtualMachine(object):
 
         #print('num_ticks: %d' % num_ticks)
         return self.return_value
+
+    def check_invariants(self):
+      # Check some invariants
+      if self.frames:            # pragma: no cover
+          raise VirtualMachineError("Frames left over!")
+      if self.frame and self.frame.stack:             # pragma: no cover
+          raise VirtualMachineError("Data left on stack! %r" % self.frame.stack)
 
     ## Stack manipulation
 
@@ -762,6 +771,7 @@ class VirtualMachine(object):
     ## Functions
 
     def byte_MAKE_FUNCTION(self, argc):
+        """Make a runtime object from a types.CodeObject, typically in a .pyc file."""
         name = None
         code = self.pop()
         defaults = self.popn(argc)
@@ -808,18 +818,22 @@ class VirtualMachine(object):
         posargs.extend(args)
 
         func = self.pop()
+        debug('*** call_function POPPED %s', func)
+        if getattr(func, 'func_name', None) == 'decode_next':
+            raise AssertionError('BAD: %s' % func)
+
         frame = self.frame
         if hasattr(func, 'im_func'):
             # Methods get self as an implicit first parameter.
 
-            debug('')
-            debug('im_self %r', (func.im_self,))
-            debug('posargs %r', (posargs,))
+            #debug('')
+            #debug('im_self %r', (func.im_self,))
+            #debug('posargs %r', (posargs,))
 
             if func.im_self:
                 posargs.insert(0, func.im_self)
 
-            debug('posargs AFTER %r', (posargs,))
+            #debug('posargs AFTER %r', (posargs,))
 
             # TODO: We have the frame here, but I also want the location.
             # dis has it!
@@ -862,6 +876,7 @@ class VirtualMachine(object):
         #    __import__, which yields a native function.
 
         if isinstance(func, types.FunctionType):
+            debug1('*** WRAPPING %s', func)
             defaults = func.func_defaults or ()
             byterun_func = Function(
                     func.func_name, func.func_code, func.func_globals,

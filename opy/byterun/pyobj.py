@@ -36,9 +36,11 @@ class Function(object):
         self.__doc__ = code.co_consts[0] if code.co_consts else None
 
         # Sometimes, we need a real Python function.  This is for that.
-        kw = {
-            'argdefs': self.func_defaults,
-        }
+        # For some reason types.FunctionType doesn't accept normal keyword
+        # args?  Like args=, closure= ?
+        # Is this only used for inspect.getcallargs?
+
+        kw = {'argdefs': self.func_defaults}
         if closure:
             kw['closure'] = tuple(make_cell(0) for _ in closure)
         self._func = types.FunctionType(code, globs, **kw)

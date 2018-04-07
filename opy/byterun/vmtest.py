@@ -10,7 +10,7 @@ import types
 import unittest
 
 
-from pyvm2 import VirtualMachine, VirtualMachineError
+import pyvm2
 
 # Make this false if you need to run the debugger inside a test.
 CAPTURE_STDOUT = ('-s' not in sys.argv)
@@ -48,12 +48,12 @@ class VmTestCase(unittest.TestCase):
         vm_stdout = cStringIO.StringIO()
         if CAPTURE_STDOUT:              # pragma: no branch
             sys.stdout = vm_stdout
-        vm = VirtualMachine()
+        vm = pyvm2.VirtualMachine()
 
         vm_value = vm_exc = None
         try:
-            vm_value = vm.run_code(code)
-        except VirtualMachineError:         # pragma: no cover
+            vm_value = pyvm2.run_code(vm, code)
+        except pyvm2.VirtualMachineError:         # pragma: no cover
             # If the VM code raises an error, show it.
             raise
         except AssertionError:              # pragma: no cover

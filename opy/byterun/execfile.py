@@ -4,7 +4,7 @@ import imp
 import os
 import sys
 
-from pyvm2 import VirtualMachine
+import pyvm2
 
 
 # In Py 2.x, the builtins were in __builtin__
@@ -30,10 +30,10 @@ def run_code_object(code, args, package=None):
     else:
         sys.path[0] = os.path.abspath(os.path.dirname(args[0]))
 
-    vm = VirtualMachine()
+    vm = pyvm2.VirtualMachine()
     try:
         # Execute the source file.
-        vm.run_code(code, f_globals=main_mod.__dict__)
+        pyvm2.run_code(vm, code, f_globals=main_mod.__dict__)
     finally:
         # Restore the old __main__
         sys.modules['__main__'] = old_main_mod
