@@ -874,9 +874,27 @@ class VirtualMachine(object):
         #    MAKE_FUNCTION, which properly turns them into pyobj.Function.
         # 3. User-defined function from another module.  These are created with
         #    __import__, which yields a native function.
+        # 4. pyobj.Generator is on the stack, and you get its next() value.
+        #    We should do something smarter.
 
+        # This check is broken!
+        # next() and send()  that is a native python function.  We dO NOt need
+        # to wrap it.
+
+        interpret_bytecode = False
         if isinstance(func, types.FunctionType):
-            debug1('*** WRAPPING %s', func)
+          interpret_bytecode = True
+
+        # Hack for case #4.
+        if getattr(func, '__doc__', None) == 'DO_NOT_INTERPRET':
+          interpret_bytecode = False
+          #raise AssertionError
+
+        if interpret_bytecode:
+            #debug1('*** WRAPPING %s', func)
+            #debug1('%s', dir(func))
+            #debug1('__doc__ %s', func.__doc__)
+
             defaults = func.func_defaults or ()
             byterun_func = Function(
                     func.func_name, func.func_code, func.func_globals,

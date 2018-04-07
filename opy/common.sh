@@ -69,3 +69,10 @@ oil-python-sources() {
     -name '*.py' -a -printf "$fmt"
 }
 
+opyc-run() {
+  ../bin/opyc run "$@"
+}
+opyc-compile() {
+  ../bin/opyc compile "$@"
+}
+

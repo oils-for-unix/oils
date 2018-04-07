@@ -39,69 +39,6 @@ zip-oil-tree() {
   popd
 }
 
-write-speed() {
-  cat >_tmp/speed.py <<EOF
-def do_sum(n):
-  sum = 0
-  for i in xrange(n):
-    sum += i
-  print(sum)
-
-if __name__ == '__main__':
-  import sys
-  n = int(sys.argv[1])
-  do_sum(n)
-
-EOF
-  cat >_tmp/speed_main.py <<EOF
-import sys 
-import speed
-
-n = int(sys.argv[1])
-speed.do_sum(n)
-EOF
-}
-
-opyc-run() {
-  ../bin/opyc run "$@"
-}
-opyc-compile() {
-  ../bin/opyc compile "$@"
-}
-
-opy-speed-test() {
-  write-speed
-
-  opyc-compile _tmp/speed.py _tmp/speed.pyc
-  opyc-compile _tmp/speed_main.py _tmp/speed_main.pyc
-
-  cp _tmp/speed.pyc _tmp/speed.opyc
-
-  # For logging
-  local n=10000
-  #local n=10
-
-  # 7 ms
-  echo PYTHON
-  time python _tmp/speed.opyc $n
-
-  # 205 ms.  So it's 30x slower.  Makes sense.
-  echo OPY
-  time opyc-run _tmp/speed.opyc $n
-
-  #
-  # byterun Import bug regression test!
-  #
-
-  # 7 ms
-  echo PYTHON
-  time python _tmp/speed_main.pyc $n
-
-  # 205 ms.  So it's 30x slower.  Makes sense.
-  echo OPY
-  time opyc-run _tmp/speed_main.pyc $n
-}
-
 _byterun() {
   # Wow this is SO confusing.
   # Not executable on master branch

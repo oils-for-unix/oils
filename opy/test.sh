@@ -10,6 +10,7 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly OPYC=$THIS_DIR/../bin/opyc
 
+source $THIS_DIR/common.sh
 
 osh-opy() {
   _tmp/oil-opy/bin/osh "$@"
@@ -197,6 +198,40 @@ spec() {
   # Could also export OSH_OVM
   test/spec.sh $action "$@"
   popd
+}
+
+# The way to tickle the 'import' bug.  We need to wrap SOME functions in
+# pyobj.Function.  Otherwise it will run too fast!
+
+opy-speed-test() {
+  opyc-compile testdata/speed.py _tmp/speed.pyc
+  opyc-compile testdata/speed_main.py _tmp/speed_main.pyc
+
+  cp _tmp/speed.pyc _tmp/speed.opyc
+
+  # For logging
+  local n=10000
+  #local n=10
+
+  # 7 ms
+  echo PYTHON
+  time python _tmp/speed.opyc $n
+
+  # 205 ms.  So it's 30x slower.  Makes sense.
+  echo OPY
+  time opyc-run _tmp/speed.opyc $n
+
+  #
+  # byterun Import bug regression test!
+  #
+
+  # 7 ms
+  echo PYTHON
+  time python _tmp/speed_main.pyc $n
+
+  # 205 ms.  So it's 30x slower.  Makes sense.
+  echo OPY
+  time opyc-run _tmp/speed_main.pyc $n
 }
 
 "$@"

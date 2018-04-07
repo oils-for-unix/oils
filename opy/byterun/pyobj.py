@@ -294,10 +294,8 @@ class Frame(object):
         """
         byteCode = ord(self.f_code.co_code[self.f_lasti])
         self.f_lasti += 1
-        byteName = dis.opname[byteCode]
-        arg = None
-        arguments = []
 
+        arguments = []
         if byteCode >= dis.HAVE_ARGUMENT:
             arg = self.f_code.co_code[self.f_lasti : self.f_lasti+2]
             self.f_lasti += 2
@@ -322,8 +320,8 @@ class Frame(object):
                 arg = intArg
             arguments = [arg]
 
+        byteName = dis.opname[byteCode]
         return byteName, arguments
-
 
     def line_number(self):
         """Get the current line number the frame is executing."""
@@ -350,25 +348,32 @@ class Frame(object):
 
 class Generator(object):
     def __init__(self, g_frame, vm):
-        self.gi_frame = g_frame
+        self.g_frame = g_frame
         self._vm = vm
         self.started = False
         self.finished = False
 
+    # Part of the iterator protocol.
     def __iter__(self):
+        """DO_NOT_INTERPRET"""
         return self
 
+    # Part of the iterator protocol.
     def next(self):
+        """DO_NOT_INTERPRET"""
+        # Docstring is a hack for pyvm2 !  Is there a better way?
+        # This is a THIRD path for a function.
+
         return self.send(None)
 
+    # Part of the iterator protocol.
     def send(self, value=None):
+        """DO_NOT_INTERPRET"""
         if not self.started and value is not None:
             raise TypeError("Can't send non-None value to a just-started generator")
-        self.gi_frame.stack.append(value)
+        self.g_frame.stack.append(value)
         self.started = True
-        val = self._vm.resume_frame(self.gi_frame)
+        val = self._vm.resume_frame(self.g_frame)
         if self.finished:
             raise StopIteration(val)
         return val
-
-    __next__ = next
