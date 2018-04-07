@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import collections
+import dis
 import inspect
 import sys
 import types
@@ -23,13 +24,13 @@ class Function(object):
         '_vm', '_func',
     ]
 
-    def __init__(self, name, code, globs, defaults, closure, vm):
+    def __init__(self, name, code, globs, locs, defaults, closure, vm):
         self._vm = vm
         self.func_code = code
         self.func_name = self.__name__ = name or code.co_name
         self.func_defaults = tuple(defaults)
         self.func_globals = globs
-        self.func_locals = self._vm.frame.f_locals
+        self.func_locals = locs
         self.__dict__ = {}
         self.func_closure = closure
         self.__doc__ = code.co_consts[0] if code.co_consts else None
@@ -73,9 +74,9 @@ class Function(object):
             callargs = inspect.getcallargs(self._func, *args, **kwargs)
         #print('-- func_name %s CALLS ARGS %s' % (self.func_name, callargs))
 
-        frame = self._vm.make_frame(
-            self.func_code, callargs, self.func_globals, {}
-        )
+        frame = self._vm.make_frame(self.func_code, callargs,
+                                    self.func_globals, {})
+
         CO_GENERATOR = 32           # flag for "this code uses yield"
         if self.func_code.co_flags & CO_GENERATOR:
             gen = Generator(frame, self._vm)
@@ -285,6 +286,43 @@ class Frame(object):
 
         return why
 
+    def decode_next(self):
+        """
+        Parse 1 - 3 bytes of bytecode into an instruction and maybe arguments.
+        """
+        byteCode = ord(self.f_code.co_code[self.f_lasti])
+        self.f_lasti += 1
+        byteName = dis.opname[byteCode]
+        arg = None
+        arguments = []
+
+        if byteCode >= dis.HAVE_ARGUMENT:
+            arg = self.f_code.co_code[self.f_lasti : self.f_lasti+2]
+            self.f_lasti += 2
+            intArg = ord(arg[0]) + (ord(arg[1]) << 8)
+            if byteCode in dis.hasconst:
+                arg = self.f_code.co_consts[intArg]
+            elif byteCode in dis.hasfree:
+                if intArg < len(self.f_code.co_cellvars):
+                    arg = self.f_code.co_cellvars[intArg]
+                else:
+                    var_idx = intArg - len(self.f_code.co_cellvars)
+                    arg = self.f_code.co_freevars[var_idx]
+            elif byteCode in dis.hasname:
+                arg = self.f_code.co_names[intArg]
+            elif byteCode in dis.hasjrel:
+                arg = self.f_lasti + intArg
+            elif byteCode in dis.hasjabs:
+                arg = intArg
+            elif byteCode in dis.haslocal:
+                arg = self.f_code.co_varnames[intArg]
+            else:
+                arg = intArg
+            arguments = [arg]
+
+        return byteName, arguments
+
+
     def line_number(self):
         """Get the current line number the frame is executing."""
         # We don't keep f_lineno up to date, so calculate it based on the
@@ -311,7 +349,7 @@ class Frame(object):
 class Generator(object):
     def __init__(self, g_frame, vm):
         self.gi_frame = g_frame
-        self.vm = vm
+        self._vm = vm
         self.started = False
         self.finished = False
 
@@ -326,7 +364,7 @@ class Generator(object):
             raise TypeError("Can't send non-None value to a just-started generator")
         self.gi_frame.stack.append(value)
         self.started = True
-        val = self.vm.resume_frame(self.gi_frame)
+        val = self._vm.resume_frame(self.gi_frame)
         if self.finished:
             raise StopIteration(val)
         return val

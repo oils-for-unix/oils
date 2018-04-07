@@ -12,6 +12,19 @@ def Tokenize(s):
     yield item
 
 
+class TokenizeClass(object):  # NOT a generator
+  def __init__(self, s):
+    self.s = s
+    self.i = 1
+
+  def next(self):
+    if self.i == 4:
+      raise StopIteration()
+    ret = str(self.i)
+    self.i += 1
+    return ret
+
+
 class Parser(object):
   """Recursive TDOP parser."""
 
@@ -29,9 +42,12 @@ class Parser(object):
 
 
 def main(argv):
-  lexer = Tokenize('1+2')
+  if 1:
+    lexer = Tokenize('1+2')  # does NOT work
+  else:
+    lexer = TokenizeClass('1+2')  # WORKS
+
   p = Parser(lexer)
-  p.Next()
   p.Next()
   print('Done')
 

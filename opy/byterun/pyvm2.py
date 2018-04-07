@@ -117,6 +117,9 @@ class VirtualMachine(object):
         self.frame.jump(offset)
 
     def make_frame(self, code, callargs={}, f_globals=None, f_locals=None):
+        """
+        Called by self.run_code and Function.__call__.
+        """
         log.info("make_frame: code=%r, callargs=%s" % (code, repper(callargs)))
         if f_globals is not None:
             f_globals = f_globals
@@ -136,24 +139,15 @@ class VirtualMachine(object):
         frame = Frame(code, f_globals, f_locals, self.frame)
         return frame
 
-    def push_frame(self, frame):
-        self.frames.append(frame)
-        self.frame = frame
-
-    def pop_frame(self):
-        self.frames.pop()
-        if self.frames:
-            self.frame = self.frames[-1]
-        else:
-            self.frame = None
-
     def resume_frame(self, frame):
+        """Called by Generator."""
         frame.f_back = self.frame
         val = self.run_frame(frame)
         frame.f_back = None
         return val
 
     def run_code(self, code, f_globals=None, f_locals=None):
+        """Main entry point."""
         frame = self.make_frame(code, f_globals=f_globals, f_locals=f_locals)
         val = self.run_frame(frame)
         # Check some invariants
@@ -163,43 +157,6 @@ class VirtualMachine(object):
             raise VirtualMachineError("Data left on stack! %r" % self.frame.stack)
 
         return val
-
-    def parse_byte_and_args(self):
-        """ Parse 1 - 3 bytes of bytecode into
-        an instruction and optionally arguments."""
-        f = self.frame
-        opoffset = f.f_lasti
-        byteCode = ord(f.f_code.co_code[opoffset])
-        f.f_lasti += 1
-        byteName = dis.opname[byteCode]
-        arg = None
-        arguments = []
-
-        if byteCode >= dis.HAVE_ARGUMENT:
-            arg = f.f_code.co_code[f.f_lasti:f.f_lasti+2]
-            f.f_lasti += 2
-            intArg = ord(arg[0]) + (ord(arg[1]) << 8)
-            if byteCode in dis.hasconst:
-                arg = f.f_code.co_consts[intArg]
-            elif byteCode in dis.hasfree:
-                if intArg < len(f.f_code.co_cellvars):
-                    arg = f.f_code.co_cellvars[intArg]
-                else:
-                    var_idx = intArg - len(f.f_code.co_cellvars)
-                    arg = f.f_code.co_freevars[var_idx]
-            elif byteCode in dis.hasname:
-                arg = f.f_code.co_names[intArg]
-            elif byteCode in dis.hasjrel:
-                arg = f.f_lasti + intArg
-            elif byteCode in dis.hasjabs:
-                arg = intArg
-            elif byteCode in dis.haslocal:
-                arg = f.f_code.co_varnames[intArg]
-            else:
-                arg = intArg
-            arguments = [arg]
-
-        return byteName, arguments, opoffset
 
     def logTick(self, byteName, arguments, opoffset, linestarts):
         """ Log arguments, block stack, and data stack for each opcode."""
@@ -254,6 +211,18 @@ class VirtualMachine(object):
 
         return why
 
+    # Helpers for run_frame
+    def _push_frame(self, frame):
+        self.frames.append(frame)
+        self.frame = frame
+
+    def _pop_frame(self):
+        self.frames.pop()
+        if self.frames:
+            self.frame = self.frames[-1]
+        else:
+            self.frame = None
+
     def run_frame(self, frame):
         """Run a frame until it returns (somehow).
 
@@ -266,12 +235,13 @@ class VirtualMachine(object):
         linestarts = dict(dis.findlinestarts(frame.f_code))
         #print('STARTS %s ' % linestarts)
 
-        self.push_frame(frame)
+        self._push_frame(frame)
         num_ticks = 0
         while True:
             num_ticks += 1
 
-            byteName, arguments, opoffset = self.parse_byte_and_args()
+            opoffset = self.frame.f_lasti  # For logging only
+            byteName, arguments = self.frame.decode_next()
             if self.verbose:
                 self.logTick(byteName, arguments, opoffset, linestarts)
 
@@ -296,7 +266,7 @@ class VirtualMachine(object):
 
         # TODO: handle generator exception state
 
-        self.pop_frame()
+        self._pop_frame()
 
         if why == 'exception':
             exctype, value, tb = self.last_exception
@@ -796,7 +766,8 @@ class VirtualMachine(object):
         code = self.pop()
         defaults = self.popn(argc)
         globs = self.frame.f_globals
-        fn = Function(name, code, globs, defaults, None, self)
+        locs = self.frame.f_locals
+        fn = Function(name, code, globs, locs, defaults, None, self)
         self.push(fn)
 
     def byte_LOAD_CLOSURE(self, name):
@@ -807,7 +778,8 @@ class VirtualMachine(object):
         closure, code = self.popn(2)
         defaults = self.popn(argc)
         globs = self.frame.f_globals
-        fn = Function(name, code, globs, defaults, closure, self)
+        locs = self.frame.f_locals
+        fn = Function(name, code, globs, locs, defaults, closure, self)
         self.push(fn)
 
     def byte_CALL_FUNCTION(self, arg):
@@ -893,6 +865,7 @@ class VirtualMachine(object):
             defaults = func.func_defaults or ()
             byterun_func = Function(
                     func.func_name, func.func_code, func.func_globals,
+                    self.frame.f_locals,  # Is this right?  How does it work?
                     defaults, func.func_closure, self)
         else:
             byterun_func = func
