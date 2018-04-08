@@ -7,7 +7,7 @@ used to translate Python source code in Oil to `.pyc` files.
 
 The `byterun/` directory is a fork of [byterun][].  It's an experiment for
 learning what it will take to write a minimal interpreter for Oil.  It can
-curretly run all the Oil unit tests, but isn't otherwise used.
+currently run all Oil unit tests, but isn't otherwise used.
 
 [oil-with-opy]: http://www.oilshell.org/blog/2018/03/04.html
 

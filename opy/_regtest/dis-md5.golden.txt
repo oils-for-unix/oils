@@ -46,8 +46,8 @@
   1216 27c294b47744e7f34358e7dfbc5fb5de _tmp/regtest/asdl/encode_test.pyc
   1220 21d76e6458e23d09e6558296f0849c99 _tmp/regtest/osh/ast_gen.pyc
   1238 b8c2fa257d0e341cfa8d52403fa4dd48 _tmp/regtest/build/c_module_toc.pyc
-  1267 a7751892124455587592a3a678dae412 _tmp/regtest/opy/byterun/execfile.pyc
   1268 1e6f991b811a055398db97a6bc5ae2ef _tmp/regtest/spec/coproc.pyc
+  1282 c8ec886871806842a034742d58292fb2 _tmp/regtest/opy/byterun/execfile.pyc
   1333 037b5cf002744b0f802e6866a8b1983f _tmp/regtest/build/make_zip.pyc
   1382 fe9e614fc726072aeb63a7e0c2f7aca5 _tmp/regtest/core/libstr_test.pyc
   1551 179f968ddf1efb04ab6c98735302cb41 _tmp/regtest/core/lexer_gen_test.pyc
@@ -150,7 +150,7 @@
   9249 ff523d9b89278d6ed3f57247ea1f8fe7 _tmp/regtest/asdl/py_meta.pyc
   9316 64bd9b485abd8deafd992c1558b89ca9 _tmp/regtest/asdl/tdop.pyc
   9430 55c117fa40d8b65b5caf648db19bab2c _tmp/regtest/osh/lex_test.pyc
-  9573 f4b5773c8ba0471ba81467e99b12ae47 _tmp/regtest/opy/byterun/pyobj.pyc
+  9584 9aa878a0ac026d6b54eaec9beefe2712 _tmp/regtest/opy/byterun/pyobj.pyc
   9874 6a7451da64ece36368705f98005046ac _tmp/regtest/core/legacy.pyc
   9926 235ebfb8f8a106983664f358ee4579cb _tmp/regtest/core/util.pyc
  10513 54a627997dabacb3c7c668b3b493d22e _tmp/regtest/runpy.pyc
@@ -199,7 +199,7 @@
  24635 eee5faed99a7118fd04b4f0ed8b56433 _tmp/regtest/core/word_eval.pyc
  25140 b04998c60e35a0a131b5a9168824a8c4 _tmp/regtest/asdl/asdl_.pyc
  28408 447bc9bfb31160b12f283fa79f3049a0 _tmp/regtest/os.pyc
- 28978 581863c0d28c4f23d0eaaaab3a525f33 _tmp/regtest/test/sh_spec.pyc
+ 28982 abe90a58297303456ac3eafa363f025f _tmp/regtest/test/sh_spec.pyc
  29159 58e8951b48374c0368253e32c9550075 _tmp/regtest/_abcoll.pyc
  29440 5ae214959a39478444778fa9800f4dd6 _tmp/regtest/collections.pyc
  30189 f35996cd972c094ecaad6088af2c72b6 _tmp/regtest/opy/compiler2/pyassem.pyc
@@ -207,7 +207,7 @@
  32295 29b6c155971a78b46cae1c83500f7efb _tmp/regtest/osh/word_parse.pyc
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc
  38756 66112f1a992091ab7e8a769803470e48 _tmp/regtest/core/cmd_exec.pyc
- 39060 b56c485f31eaedc39637a7e5dccc1a8d _tmp/regtest/opy/byterun/pyvm2.pyc
+ 40273 698babdbd80311cdcfec266815ca6ce8 _tmp/regtest/opy/byterun/pyvm2.pyc
  40804 4ed3a455de33717be93b724aced8c489 _tmp/regtest/platform.pyc
  40808 32563c5dd8f47f81e23745fcd3e3d82a _tmp/regtest/codecs.pyc
  41591 12ea1057ab21de139c9216476f70e715 _tmp/regtest/osh/cmd_parse_test.pyc
