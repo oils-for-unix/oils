@@ -1,29 +1,67 @@
-OPy Compiler
-============
+OPy Compiler and Byterun
+========================
 
-Getting started / smoke test:
+The OPy compiler is a Python bytecode compiler written in Python.  See
+[Building Oil with the OPy Bytecode Compiler][oil-with-opy].  It's currently
+used to translate Python source code in Oil to `.pyc` files.
 
-    ./build.sh grammar
-    ./run.sh parse-test
-    ./run.sh compile-hello2  # prints hello world
-    ./run.sh compile-hello3  # no __future__ print_function
+The `byterun/` directory is a fork of [byterun][].  It's an experiment for
+learning what it will take to write a minimal interpreter for Oil.  It can
+curretly run all the Oil unit tests, but isn't otherwise used.
 
-Compiling Oil:
+[oil-with-opy]: http://www.oilshell.org/blog/2018/03/04.html
 
-    ./build.sh oil-repo  # makes _tmp/osh-opy and _tmp/osh-ccompile
+[byterun]: http://aosabook.org/en/500L/a-python-interpreter-written-in-python.html
 
-Testing:
+Getting started
+---------------
 
-    ./test.sh unit  # Run Oil unit tests
+Start with https://github.com/oilshell/oil/wiki/Contributing .  This is
+necessary to build the `py27.grammar` file and so forth.
 
-Test the binary:
+Then:
 
-    ./test.sh osh-help 
-    ./test.sh osh-version 
-    ./test.sh spec smoke
-    ./test.sh spec all  # Failures due to $0
+    $ ./smoke.sh opy-hello2  # basic test of compiler and runtime
 
-OPy Divergences from CPython
+Compile Oil with the OPy compiler:
+
+    $ ./build.sh oil-repo  # makes _tmp/osh-opy and _tmp/osh-ccompile
+
+Run Oil unit tests, compiled with OPy, under CPython:
+
+    $ ./test.sh oil-unit
+
+Run Oil unit tests, compiled with OPy, under byterun (OPyPy):
+
+    $ ./test.sh oil-unit-byterun   # Run Oil unit tests, compiled with OPy, under CPython
+
+
+Another way I test it like this:
+
+    $ testdata/regex_compile.py  # run with CPython
+    $ ../bin/opyc run testdata/regex_compile.py
+
+(TODO: these should be gold tests)
+
+
+Demo: speed difference between OSH under CPython and OSH under byterun/OPyPy:
+
+    ./demo.sh opypy-speed
+
+TODO:
+
+- Spec tests
+  - ./test.sh spec all  # Some failures due to $0
+
+OPy Compiler Regtest
+--------------------
+
+This uses golden data in `_regtest/`.
+
+    ./regtest.sh compile  # note: different files than 'build.sh oil-repo'
+    ./regtest.sh verify-golden
+
+OPy Compiler Divergences from CPython
 ----------------------------
 
 ### Lexer
@@ -48,8 +86,3 @@ OPy Divergences from CPython
   histogram using `opy/misc/inspect_pyc`.
 - The OPy bytecode is bigger than the CPython bytecode!  Why is that?
 
-### Other
-
-OSH tests don't run under byterun.  I probably don't care.
-
-    ./test.sh unit '' byterun

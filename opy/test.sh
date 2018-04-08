@@ -12,30 +12,8 @@ readonly OPYC=$THIS_DIR/../bin/opyc
 
 source $THIS_DIR/common.sh
 
-osh-opy() {
-  _tmp/oil-opy/bin/osh "$@"
-}
-
 oil-opy() {
   _tmp/oil-opy/bin/oil "$@"
-}
-
-osh-help() {
-  osh-opy --help
-}
-
-# TODO: Add compiled with "OPy".
-# How will it know?  You can have a special function bin/oil.py:
-# def __GetCompilerName__():
-#   return "CPython"
-#
-# If the function name is opy stub, then Opy ret
-#
-# Or __COMPILER_NAME__ = "CPython"
-# The OPy compiler can rewrite this to "OPy".
-
-osh-version() {
-  osh-opy --version
 }
 
 # TODO:
