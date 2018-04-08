@@ -111,6 +111,9 @@ def Options():
   p = optparse.OptionParser()
 
   # NOTE: default command is None because empty string is valid.
+
+  # NOTE: In 'opy run oil.pyc -c', -c is an arg to opy, and not a flag.
+
   p.add_option(
       '-c', dest='command', default=None,
       help='Python command to run')
@@ -127,7 +130,7 @@ def OpyCommandMain(argv):
   """Dispatch to the right action."""
 
   # TODO: Use core/args.
-  opts, argv = Options().parse_args(argv)
+  #opts, argv = Options().parse_args(argv)
 
   try:
     action = argv[0]

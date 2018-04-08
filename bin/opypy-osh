@@ -7,5 +7,4 @@ readonly OIL_DIR=$THIS_DIR/..
 
 # Don't need PYTHONPATH because oil.py sets it
 #export PYTHONPATH=$OIL_DIR/opy/_tmp/osh-opy
-$OIL_DIR/opy/opy_main.py $OIL_DIR/opy/py27.grammar run \
-  $OIL_DIR/opy/_tmp/osh-opy/bin/oil.pyc osh "$@"
+$OIL_DIR/bin/opyc run $OIL_DIR/opy/_tmp/oil-opy/bin/oil.pyc osh "$@"
