@@ -830,7 +830,7 @@ class VirtualMachine(object):
             #debug('im_self %r', (func.im_self,))
             #debug('posargs %r', (posargs,))
 
-            if func.im_self:
+            if func.im_self is not None:
                 posargs.insert(0, func.im_self)
 
             #debug('posargs AFTER %r', (posargs,))
