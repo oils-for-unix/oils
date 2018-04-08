@@ -32,18 +32,17 @@ class Function(object):
 
     __slots__ = [
         'func_code', 'func_name', 'func_defaults', 'func_globals',
-        'func_locals', 'func_dict', 'func_closure',
+        'func_dict', 'func_closure',
         '__name__', '__dict__', '__doc__',
         '_vm', '_func',
     ]
 
-    def __init__(self, name, code, globs, locs, defaults, closure, vm):
+    def __init__(self, name, code, globs, defaults, closure, vm):
         self._vm = vm
         self.func_code = code
         self.func_name = self.__name__ = name or code.co_name
         self.func_defaults = tuple(defaults)
         self.func_globals = globs
-        self.func_locals = locs
         self.__dict__ = {}
         self.func_closure = closure
         self.__doc__ = code.co_consts[0] if code.co_consts else None

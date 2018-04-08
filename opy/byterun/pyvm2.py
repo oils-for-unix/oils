@@ -816,8 +816,7 @@ class VirtualMachine(object):
         code = self.pop()
         defaults = self.popn(argc)
         globs = self.frame.f_globals
-        locs = self.frame.f_locals
-        fn = Function(name, code, globs, locs, defaults, None, self)
+        fn = Function(name, code, globs, defaults, None, self)
         self.push(fn)
 
     def byte_LOAD_CLOSURE(self, name):
@@ -828,8 +827,7 @@ class VirtualMachine(object):
         closure, code = self.popn(2)
         defaults = self.popn(argc)
         globs = self.frame.f_globals
-        locs = self.frame.f_locals
-        fn = Function(name, code, globs, locs, defaults, closure, self)
+        fn = Function(name, code, globs, defaults, closure, self)
         self.push(fn)
 
     def byte_CALL_FUNCTION(self, arg):
@@ -944,7 +942,6 @@ class VirtualMachine(object):
             defaults = func.func_defaults or ()
             byterun_func = Function(
                     func.func_name, func.func_code, func.func_globals,
-                    self.frame.f_locals,  # Is this right?  How does it work?
                     defaults, func.func_closure, self)
         else:
             byterun_func = func
