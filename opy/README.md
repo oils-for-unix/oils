@@ -71,9 +71,9 @@ Another way I test it like this:
 (TODO: these should be gold tests)
 
 
-Demo: speed difference between OSH under CPython and OSH under byterun/OPyPy:
+Demo: speed difference between OSH under CPython and OSH under byterun:
 
-    ./demo.sh opypy-speed
+    ./demo.sh osh-byterun-speed
 
 TODO:
 
