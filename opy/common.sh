@@ -54,7 +54,9 @@ _ccompile-one() {
   misc/ccompile.py "$@"
 }
 
-# NOTE: Exclude _devbuild/cpython-full, but include _devbuild/gen.
+# NOTES:
+# - Exclude _devbuild/cpython-full, but include _devbuild/gen.
+# - must exclude opy/testdata/, because some of it can't be compiled
 # Has some similiarity to test/lint.sh, but not the same.
 oil-python-sources() {
   local repo_root=$1
@@ -66,6 +68,7 @@ oil-python-sources() {
     -name _deps -a -prune -o \
     -name _regtest -a -prune -o \
     -name cpython-full -a -prune -o \
+    -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
     -name '*.py' -a -printf "$fmt"
 }

@@ -223,8 +223,8 @@ class VirtualMachine(object):
             #tb = sys.exc_info()[2]
             #traceback.print_tb(tb)
 
-            debug1("Caught exception during execution of %s: %d", byteName,
-                   len(self.frames))
+            #debug1("Caught exception during execution of %s: %d", byteName,
+            #       len(self.frames))
             why = 'exception'
             self.except_frames = list(self.frames)
 
@@ -937,7 +937,7 @@ class VirtualMachine(object):
         #debug1('do_wrap: %s', do_wrap)
 
         if do_wrap:
-            debug1('*** WRAPPING %s', func)
+            #debug1('*** WRAPPING %s', func)
             #debug1('%s', dir(func))
             #debug1('__doc__ %s', func.__doc__)
 

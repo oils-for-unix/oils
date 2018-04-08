@@ -116,6 +116,9 @@ _fill-oil-tree() {
   # Needed for help text.
   ln -v -s -f --no-target-directory $PWD/../_build $dir/_build
 
+  # Running core/process_test.py depends on this existing!
+  mkdir -v -p $dir/_tmp
+
   #make-mains $dir
 }
 
@@ -134,12 +137,6 @@ oil-repo() {
 
   _fill-oil-tree _tmp/oil-ccompile/ 
   _fill-oil-tree _tmp/oil-opy/
-
-  #_compile-tree $src _tmp/osh-compile2/ compiler2 "${files[@]}"
-
-  # Not deterministic!
-  #_compile-tree $src _tmp/osh-compile2.gold/ compiler2 "${files[@]}"
-  #_compile-tree $src _tmp/osh-stdlib/ stdlib "${files[@]}"
 }
 
 _oil-bin-manifest() {
