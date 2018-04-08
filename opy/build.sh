@@ -129,8 +129,8 @@ oil-repo() {
   local repo_root=$(cd $THIS_DIR/.. && pwd)
   local files=( $(oil-python-sources $repo_root) )  # array
 
-  _compile-tree $src _tmp/oil-ccompile/ ccompile "${files[@]}"
-  _compile-tree $src _tmp/oil-opy/ opy "${files[@]}"
+  _compile-tree $repo_root _tmp/oil-ccompile/ ccompile "${files[@]}"
+  _compile-tree $repo_root _tmp/oil-opy/ opy "${files[@]}"
 
   _fill-oil-tree _tmp/oil-ccompile/ 
   _fill-oil-tree _tmp/oil-opy/

@@ -64,6 +64,7 @@ oil-python-sources() {
     -name _tmp -a -prune -o \
     -name _chroot -a -prune -o \
     -name _deps -a -prune -o \
+    -name _regtest -a -prune -o \
     -name cpython-full -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
     -name '*.py' -a -printf "$fmt"
