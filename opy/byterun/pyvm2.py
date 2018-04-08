@@ -6,20 +6,18 @@ from __future__ import print_function, division
 import dis
 import inspect
 import linecache
-import logging
 import operator
-import repr
+import repr as repr_lib  # Don't conflict with builtin repr()
 import sys
+import traceback
 import types
 
 # Function used in MAKE_FUNCTION, MAKE_CLOSURE
 # Generator used in YIELD_FROM, which we might not need.
 from pyobj import Frame, Block, Function, Generator
 
-log = logging.getLogger(__name__)
-
 # Create a repr that won't overflow.
-repr_obj = repr.Repr()
+repr_obj = repr_lib.Repr()
 repr_obj.maxother = 120
 repper = repr_obj.repr
 
@@ -54,6 +52,8 @@ class GuestException(Exception):
   
     def __init__(self, exctype, value, frames):
         self.exctype = exctype
+        if isinstance(value, GuestException):
+          raise AssertionError
         self.value = value
         self.frames = frames
 
@@ -65,7 +65,7 @@ class GuestException(Exception):
             filename = f.f_code.co_filename
             lineno = f.line_number()
             parts.append(
-                '  File "%s", line %d, in %s' %
+                '- File "%s", line %d, in %s' %
                 (filename, lineno, f.f_code.co_name))
             linecache.checkcache(filename)
             line = linecache.getline(filename, lineno, f.f_globals)
@@ -102,6 +102,10 @@ class VirtualMachine(object):
         self.more_info = False
         #self.more_info = True
         self.verbose = verbose
+        # some objects define __repr__, which means our debug() logging screws
+        # things up!  Even though they don't have side effects, this somehow
+        # matters.
+        self.repr_ok = True
 
         # The call stack of frames.
         self.frames = []
@@ -135,7 +139,8 @@ class VirtualMachine(object):
         """
         Called by self.run_code and Function.__call__.
         """
-        log.info("make_frame: code=%r, callargs=%s" % (code, repper(callargs)))
+        # NOTE: repper causes problems running code!  See testdata/repr_method.py
+        #debug("make_frame: code=%r, callargs=%s", code, repper(callargs))
         if f_globals is not None:
             f_globals = f_globals
             if f_locals is None:
@@ -165,12 +170,16 @@ class VirtualMachine(object):
         """ Log arguments, block stack, and data stack for each opcode."""
         indent = "    " * (len(self.frames)-1)
         stack_rep = repper(self.frame.stack)
-        block_stack_rep = repper(self.frame.block_stack)
+        #block_stack_rep = repper(self.frame.block_stack)
+        # repr_lib is causing problems
+        if self.repr_ok:
+            stack_rep = repr(self.frame.stack)
+            #block_stack_rep = repr(self.frame.block_stack)
 
-        if arguments:
+        arg_str = ''
+        if arguments and self.repr_ok:
             arg_str = ' %r' % (arguments[0],)
-        else:
-            arg_str = ''
+
         # TODO: Should increment
 
         li = linestarts.get(opoffset, None)
@@ -178,9 +187,10 @@ class VirtualMachine(object):
           self.cur_line = li
 
         debug('%s%d: %s%s (line %s)', indent, opoffset, byteName, arg_str,
-            self.cur_line)
-        debug('  %sval stack: %s', indent, stack_rep)
-        debug('  %sblock stack: %s', indent, block_stack_rep)
+              self.cur_line)
+        if self.repr_ok:
+            debug('  %sval stack: %s', indent, stack_rep)
+        #debug('  %sblock stack: %s', indent, block_stack_rep)
         debug('')
 
     def dispatch(self, byteName, arguments):
@@ -206,9 +216,15 @@ class VirtualMachine(object):
                 why = bytecode_fn(*arguments)
 
         except:
-            # deal with exceptions encountered while executing the op.
+            # Deal with exceptions encountered while executing the op.
             self.last_exception = sys.exc_info()[:2] + (None,)
-            log.info("Caught exception during execution")
+
+            # NOTE: Why doesn't byterun use this info?
+            #tb = sys.exc_info()[2]
+            #traceback.print_tb(tb)
+
+            debug1("Caught exception during execution of %s: %d", byteName,
+                   len(self.frames))
             why = 'exception'
             self.except_frames = list(self.frames)
 
@@ -230,6 +246,12 @@ class VirtualMachine(object):
         """Run a frame until it returns or raises an exception.
 
         This function raises GuestException or returns the return value.
+
+        Corresponds to PyEval_EvalFrameEx in ceval.c.  That returns 'PyObject*
+        retval' -- but how does it indicate an exception?
+
+        I think retval is NULL, and then
+
         """
         # bytecode offset -> line number
         #print('frame %s ' % frame)
@@ -249,6 +271,10 @@ class VirtualMachine(object):
 
             # When unwinding the block stack, we need to keep track of why we
             # are doing it.
+
+            # NOTE: In addition to returning why == 'exception', this can also
+            # RAISE GuestException from recursive call via call_function.
+
             why = self.dispatch(byteName, arguments)
             if why == 'exception':
                 # TODO: ceval calls PyTraceBack_Here, not sure what that does.
@@ -258,6 +284,12 @@ class VirtualMachine(object):
                 why = 'exception'
 
             if why != 'yield':
+
+                # NOTE: why is used in a frame INTERNALLY after bytecode dispatch.
+                # But what about ACROSS frames.  We need to unwind the call
+                # stack too!  How is that done?
+                # I don't want it to be done with GuestException!
+
                 while why and frame.block_stack:
                     debug('WHY %s', why)
                     debug('STACK %s', frame.block_stack)
@@ -272,16 +304,22 @@ class VirtualMachine(object):
 
         if why == 'exception':
             exctype, value, tb = self.last_exception
-            debug('exctype: %s' % exctype)
-            debug('value: %s' % value)
-            debug('unused tb: %s' % tb)
+
+            #debug('exctype: %s' % exctype)
+            #debug('value: %s' % value)
+            #debug('unused tb: %s' % tb)
+
             if self.more_info:
-                # Raise an exception with the EMULATED (guest) stack frames.
-                raise GuestException(exctype, value, self.except_frames)
+                # Recursive function calls can cause this I guess.
+                if isinstance(value, GuestException):
+                    raise value
+                else:
+                    # Raise an exception with the EMULATED (guest) stack frames.
+                    raise GuestException(exctype, value, self.except_frames)
             else:
                 raise exctype, value, tb
 
-        #print('num_ticks: %d' % num_ticks)
+        #debug1('num_ticks: %d' % num_ticks)
         return self.return_value
 
     def check_invariants(self):
@@ -490,6 +528,8 @@ class VirtualMachine(object):
 
     def byte_LOAD_ATTR(self, attr):
         obj = self.pop()
+        #debug1('obj=%s, attr=%s', obj, attr)
+        #debug1('dir(obj)=%s', dir(obj))
         val = getattr(obj, attr)
         self.push(val)
 
@@ -817,8 +857,10 @@ class VirtualMachine(object):
         posargs = self.popn(lenPos)
         posargs.extend(args)
 
+        #debug('*** call_function stack = %s', self.frame.stack)
+
         func = self.pop()
-        debug('*** call_function POPPED %s', func)
+        #debug1('*** call_function POPPED %s', func)
         if getattr(func, 'func_name', None) == 'decode_next':
             raise AssertionError('BAD: %s' % func)
 
@@ -845,11 +887,12 @@ class VirtualMachine(object):
                     # More informative error that shows the frame.
                     raise TypeError(
                         'unbound method %s() must be called with %s instance '
-                        'as first argument, was called with %s instance'
+                        'as first argument, was called with %s instance '
                         '(frame: %s)' % (
                             func.im_func.func_name,
                             func.im_class.__name__,
                             type(posargs[0]).__name__,
+                            #posargs[0],
                             self.frame,
                         )
                     )
@@ -881,17 +924,20 @@ class VirtualMachine(object):
         # next() and send()  that is a native python function.  We dO NOt need
         # to wrap it.
 
-        interpret_bytecode = False
+        do_wrap = False
+        #debug1('FUNC %s', dir(func))
         if isinstance(func, types.FunctionType):
-          interpret_bytecode = True
+          do_wrap = True
 
         # Hack for case #4.
         if getattr(func, '__doc__', None) == 'DO_NOT_INTERPRET':
-          interpret_bytecode = False
+          do_wrap = False
           #raise AssertionError
 
-        if interpret_bytecode:
-            #debug1('*** WRAPPING %s', func)
+        #debug1('do_wrap: %s', do_wrap)
+
+        if do_wrap:
+            debug1('*** WRAPPING %s', func)
             #debug1('%s', dir(func))
             #debug1('__doc__ %s', func.__doc__)
 
@@ -903,6 +949,7 @@ class VirtualMachine(object):
         else:
             byterun_func = func
          
+        #debug1('  Calling: %s', byterun_func)
         retval = byterun_func(*posargs, **namedargs)
         self.push(retval)
 
@@ -943,6 +990,9 @@ class VirtualMachine(object):
     def byte_IMPORT_NAME(self, name):
         level, fromlist = self.popn(2)
         frame = self.frame
+
+        # NOTE: This can read .pyc files not compiled with OPy!
+
         mod = __import__(name, frame.f_globals, frame.f_locals, fromlist, level)
         #print('-- IMPORTED %s -> %s' % (name, mod))
         self.push(mod)

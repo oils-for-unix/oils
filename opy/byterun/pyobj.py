@@ -8,6 +8,12 @@ import sys
 import types
 
 
+def debug1(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 def make_cell(value):
     # Thanks to Alex Gaynor for help with this bit of twistiness.
     # Construct an actual cell object by creating a closure right here,
@@ -17,6 +23,13 @@ def make_cell(value):
 
 
 class Function(object):
+    """
+    CPython equivalent:
+
+    x = PyFunction_New(v, f->f_globals);
+    PyFunction_SetClosure(x, v)
+    """
+
     __slots__ = [
         'func_code', 'func_name', 'func_defaults', 'func_globals',
         'func_locals', 'func_dict', 'func_closure',
@@ -46,14 +59,14 @@ class Function(object):
         self._func = types.FunctionType(code, globs, **kw)
 
     def __repr__(self):         # pragma: no cover
-        return '<byterun Function %s at 0x%08x>' % (
-            self.func_name, id(self)
-        )
+        return '<byterun Function %s at 0x%08x>' % (self.func_name, id(self))
 
     def __get__(self, instance, owner):
-        if instance is not None:
-            return Method(instance, owner, self)
-        return Method(None, owner, self)
+        # used in unit tests?  But I don't see it triggered in real code.
+        #raise AssertionError('Function.__get__')
+        m = Method(instance, owner, self)
+        #debug1('*** METHOD %s', m)
+        return m
 
     def __call__(self, *args, **kwargs):
         #if PY2 and self.func_name in ["<setcomp>", "<dictcomp>", "<genexpr>"]:
@@ -85,8 +98,10 @@ class Function(object):
             frame.generator = gen
             retval = gen
         else:
+            # NOTE: Can raise exceptions!
             retval = self._vm.run_frame(frame)
         return retval
+
 
 class Method(object):
     def __init__(self, obj, _class, func):
@@ -347,6 +362,8 @@ class Frame(object):
 
 
 class Generator(object):
+    """A wrapper around a Frame that can run for one generator tick."""
+
     def __init__(self, g_frame, vm):
         self.g_frame = g_frame
         self._vm = vm
@@ -373,6 +390,7 @@ class Generator(object):
             raise TypeError("Can't send non-None value to a just-started generator")
         self.g_frame.stack.append(value)
         self.started = True
+        # NOTE: Can raise exceptions!
         val = self._vm.resume_frame(self.g_frame)
         if self.finished:
             raise StopIteration(val)
