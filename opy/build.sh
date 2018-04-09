@@ -45,12 +45,8 @@ _compile-tree() {
     # TODO: Get rid of stdlib (compile) and compiler2.  Now that OPy works, we
     # just want opy and ccompile.
 
-    if test $version = stdlib; then
-      _stdlib-compile-one $src_tree/${rel_path} $dest
-    elif test $version = compiler2; then
-      _compile2-one $src_tree/${rel_path} $dest
-    elif test $version = ccompile; then
-      _ccompile-one $src_tree/${rel_path} $dest
+    if test $version = ccompile; then
+      misc/ccompile.py $src_tree/${rel_path} $dest
     elif test $version = opy; then
       $THIS_DIR/../bin/opyc compile $src_tree/${rel_path} $dest
     else
@@ -80,6 +76,7 @@ compile-manifest() {
   done
 }
 
+# UNUSED
 make-mains() {
   local dir=${1:-_tmp/oil-opy}
 
@@ -105,7 +102,7 @@ make-mains() {
 # Instead of printing .pyc, modify build/app_deps.py to print _tmp/oil/*.pyc !
 
 _fill-oil-tree() {
-  local dir=${1:-_tmp/oil-opy}
+  local dir=${1:-_tmp/repo-with-opy}
 
   cp -v ../osh/{osh,types}.asdl $dir/osh
   cp -v ../core/runtime.asdl $dir/core
@@ -118,6 +115,14 @@ _fill-oil-tree() {
 
   # Running core/process_test.py depends on this existing!
   mkdir -v -p $dir/_tmp
+
+  local stub=$dir/bin/osh-byterun
+  cat >$stub <<'EOF'
+#!/bin/bash
+readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+exec python $THIS_DIR/opy_.pyc opyc run $THIS_DIR/oil.pyc osh "$@"
+EOF
+  chmod +x $stub
 
   #make-mains $dir
 }
@@ -132,11 +137,11 @@ oil-repo() {
   local repo_root=$(cd $THIS_DIR/.. && pwd)
   local files=( $(oil-python-sources $repo_root) )  # array
 
-  _compile-tree $repo_root _tmp/oil-ccompile/ ccompile "${files[@]}"
-  _compile-tree $repo_root _tmp/oil-opy/ opy "${files[@]}"
+  _compile-tree $repo_root _tmp/repo-with-cpython/ ccompile "${files[@]}"
+  _compile-tree $repo_root _tmp/repo-with-opy/ opy "${files[@]}"
 
-  _fill-oil-tree _tmp/oil-ccompile/ 
-  _fill-oil-tree _tmp/oil-opy/
+  _fill-oil-tree _tmp/repo-with-cpython
+  _fill-oil-tree _tmp/repo-with-opy
 }
 
 _oil-bin-manifest() {

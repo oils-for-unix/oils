@@ -32,7 +32,7 @@ oil-opy() {
 #
 
 oil-unit() {
-  local dir=${1:-_tmp/oil-opy}
+  local dir=${1:-_tmp/repo-with-opy}
   local vm=${2:-cpython}  # byterun or cpython
 
   pushd $dir
@@ -162,11 +162,6 @@ re-dis() {
   ../bin/opyc dis /usr/lib/python2.7/sre_parse.pyc
 }
 
-
-unit() {
-  PYTHONPATH=. "$@"
-}
-
 # Spec tests under byterun.
 spec() { 
   local action=$1  # e.g. 'smoke' or 'all'
@@ -180,14 +175,7 @@ spec() {
 
   # HACK to get around __import__ problem with byterun.
 
-  local stub=opy/_tmp/oil-opy/bin/osh-byterun 
-  cat >$stub <<'EOF'
-#!/bin/bash
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-exec python $THIS_DIR/opy_.pyc opyc run $THIS_DIR/oil.pyc osh "$@"
-EOF
-  chmod +x $stub
-
+  local stub=opy/_tmp/repo-with-opy/bin/osh-byterun 
   OSH_OVM=$stub test/spec.sh $action "$@"
   popd
 }

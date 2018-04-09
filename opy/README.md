@@ -43,50 +43,62 @@ Also:
 Getting started
 ---------------
 
-Start with https://github.com/oilshell/oil/wiki/Contributing .  This is
-necessary to build the `py27.grammar` file and so forth.
+Do the "Quick Start" in "in https://github.com/oilshell/oil/wiki/Contributing .
+This is necessary to build the `py27.grammar` file and so forth.
 
-Then:
+After Oil is setup, we can try out OPy.  Run these commands (and let me know if
+any of them doesn't work):
 
     opy$ ../bin/opyc run gold/hello_py2.py  # basic test of compiler and runtime
 
 Compile Oil with the OPy compiler:
 
-    $ ./build.sh oil-repo  # makes _tmp/osh-opy and _tmp/osh-ccompile
+    $ ./build.sh oil-repo  # makes _tmp/repo-with-opy and _tmp/repo-with-cpython
 
-Run Oil unit tests, compiled with OPy, under CPython:
+Run Oil unit tests, compiled with OPy, under **CPython**:
 
     $ ./test.sh oil-unit
 
-Run Oil unit tests, compiled with OPy, under byterun (OPyPy):
+Run Oil unit tests, compiled with OPy, under **byterun**:
 
     $ ./test.sh oil-unit-byterun   # Run Oil unit tests, compiled with OPy, under CPython
 
-Gold tests in gold/:
+Gold tests in `gold/` compare the output of CPython vs. byterun:
 
     $ ./test.sh gold
 
-Oil spec tests (slow):
+Oil spec tests under byterun (slow):
 
     opy$ ./test.sh spec smoke  # like $REPO_ROOT/test/spec.sh smoke
     opy$ ./test.sh spec all    # like $REPO_ROOT/test/spec.sh all
 
-They can be run manually like this:
+FYI, they can be run manually like this:
 
     $ gold/regex_compile.py  # run with CPython
     $ ../bin/opyc run gold/regex_compile.py
 
-Demo: speed difference between OSH under CPython and OSH under byterun:
+Demo of the speed difference between OSH under CPython and OSH under byterun:
 
     ./demo.sh osh-byterun-speed
 
 OPy Compiler Regtest
 --------------------
 
-This uses golden data in `_regtest/`.
+This uses an old snapshot of the repo in `_regtest/`.
 
-    ./regtest.sh compile  # note: different files than 'build.sh oil-repo'
+    ./regtest.sh compile
     ./regtest.sh verify-golden
+
+Notes on Three OPy Builds
+-------------------------
+
+- `$REPO_ROOT/_build/oil/bytecode-opy`: Bytecode for the release binary.  Built
+  by `Makefile`.
+- `$REPO_ROOT/opy/_tmp/repo-with-opy`: The entire repo with OPy.  For running
+  Oil unit/spec tests under byterun, etc.  Built by `./build.sh oil-repo`.
+- `$REPO_ROOT/opy/_tmp/regtest`: The snapshot of Python files in `opy/_regtest`
+  are compiled, so we are insensitive to repo changes.  Built by `./regtest.sh
+  compile`.
 
 OPy Compiler Divergences from CPython
 ----------------------------
