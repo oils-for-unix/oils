@@ -141,15 +141,22 @@ def _Walk(obj, cls, ref, syms):
   #  log('OBJ %s %d', obj, id(obj))
   #  pass
    
-  if module_name is None:
+  # Oh is the namedtuple_ crap because of the Block class byterun/pyobj?
+  
+  if module_name is None or module_name in (
+      'namedtuple_Arguments', 'namedtuple_ArgSpec',
+      'namedtuple_Block'):
     syms.Add(obj, None, ref, None, None, None)
     return  # Can't walk anything
 
+  #log('OBJ %s %d', obj, id(obj))
   module = sys.modules[obj.__module__]
 
-  #print(obj)
-  if hasattr(obj, '__code__'):  # Builtins don't have bytecode.
+  co = getattr(obj, '__code__', None)
+  # For example, Builtins don't have bytecode.
+  if isinstance(co, types.CodeType):
     co = obj.__code__
+    #log('CO %s', co)
     #path = co.co_filename
 
     mod_name = None
@@ -348,7 +355,10 @@ class Symbols(object):
       # NOTE: Python's classes don't have a __code__ object, which appears to
       # be an irregularity.  So we have to get location information from the
       # METHODS.
-      assert not hasattr(obj, '__code__'), obj
+
+      # Exception: this type has a __code__ object that is not types.CodeType
+      if obj is not types.FunctionType:
+        assert not hasattr(obj, '__code__'), obj
       #assert path is None
       assert line_num is None
 
