@@ -66,6 +66,11 @@ Gold tests in gold/:
 
     $ ./test.sh gold
 
+Oil spec tests (slow):
+
+    opy$ ./test.sh spec smoke  # like $REPO_ROOT/test/spec.sh smoke
+    opy$ ./test.sh spec all    # like $REPO_ROOT/test/spec.sh all
+
 They can be run manually like this:
 
     $ gold/regex_compile.py  # run with CPython
@@ -74,11 +79,6 @@ They can be run manually like this:
 Demo: speed difference between OSH under CPython and OSH under byterun:
 
     ./demo.sh osh-byterun-speed
-
-TODO:
-
-- Spec tests
-  - ./test.sh spec all  # Some failures due to $0
 
 OPy Compiler Regtest
 --------------------

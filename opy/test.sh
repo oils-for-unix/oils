@@ -161,20 +161,17 @@ unit() {
   PYTHONPATH=. "$@"
 }
 
-# NOTE: I checked with set -x that it's being run.  It might be nicer to be
-# sure with --verison.
-
-export OSH_PYTHON=opy/_tmp/oil-opy/bin/osh
-
-# NOTE: Failures in 'var-num' and 'special-vars' due to $0.  That proves
-# we're running the right binary!
-spec() {
-  local action=${1:-smoke}
+# Spec tests under byterun.
+spec() { 
+  local action=$1  # e.g. 'smoke' or 'all'
   shift
 
-  pushd ..
-  # Could also export OSH_OVM
-  test/spec.sh $action "$@"
+  pushd $THIS_DIR/..
+
+  # TODO: Should be OSH_ALT instead of OSH_OVM?
+  # Usually it is dev build vs. release build, but here it is CPython vs.
+  # byterun.
+  OSH_OVM=bin/osh-byterun test/spec.sh $action "$@"
   popd
 }
 

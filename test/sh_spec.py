@@ -363,7 +363,7 @@ def CreateAssertions(case, sh_label):
   status = False
 
   # So the assertion are exactly the same for osh and osh_ALT
-  if sh_label == 'osh_ALT':
+  if sh_label in ('osh_ALT', 'osh-byterun'):
     sh_label = 'osh'
 
   if sh_label in case:
@@ -514,7 +514,7 @@ def RunCases(cases, case_predicate, shells, env, out):
       if cell_result == Result.FAIL:
         # Special logic: don't count osh_ALT beacuse its failures will be
         # counted in the delta.
-        if sh_label != 'osh_ALT':
+        if sh_label not in ('osh_ALT', 'osh-byterun'):
           stats['num_failed'] += 1
 
         if sh_label == 'osh':
@@ -532,7 +532,7 @@ def RunCases(cases, case_predicate, shells, env, out):
       else:
         raise AssertionError
 
-      if sh_label == 'osh_ALT':
+      if sh_label in ('osh_ALT', 'osh-byterun'):
         osh_alt_result = result_row[-1]
         cpython_result = result_row[-2]
         if osh_alt_result != cpython_result:
