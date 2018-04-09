@@ -21,4 +21,13 @@ osh-byterun-speed() {
   popd
 }
 
+osh-byterun-parse() {
+  local prog='echo "hello world"'
+
+  pushd $THIS_DIR/..
+  time bin/osh -n -c "$prog"
+  time bin/osh-byterun -n -c "$prog"
+  popd
+}
+
 "$@"

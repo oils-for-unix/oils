@@ -30,17 +30,6 @@ parser-bug() {
   _parse-one $out
 }
 
-# This might not work
-_stdlib-parse-one() {
-  PYTHONPATH=. ./opy_main.py 2to3.grammar stdlib-parse "$@"
-}
-
-stdlib-parse-test() {
-  _stdlib-parse-one testdata/hello_py3.py
-  echo ---
-  _stdlib-parse-one testdata/hello_py2.py
-}
-
 _compile-and-run() {
   local path=$1
   local basename=$(basename $path .py)

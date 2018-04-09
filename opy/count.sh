@@ -44,7 +44,7 @@ all() {
   echo
 
   echo SCRIPTS
-  echo *.sh */*.sh | _count
+  echo *.sh */*.sh | xargs ls | grep -v '^old/' | _count
   echo
 }
 

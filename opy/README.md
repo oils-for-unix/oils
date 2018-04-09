@@ -48,7 +48,7 @@ necessary to build the `py27.grammar` file and so forth.
 
 Then:
 
-    $ ./smoke.sh opy-hello2  # basic test of compiler and runtime
+    opy$ ../bin/opyc run gold/hello_py2.py  # basic test of compiler and runtime
 
 Compile Oil with the OPy compiler:
 
