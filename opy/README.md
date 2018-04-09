@@ -62,14 +62,14 @@ Run Oil unit tests, compiled with OPy, under byterun (OPyPy):
 
     $ ./test.sh oil-unit-byterun   # Run Oil unit tests, compiled with OPy, under CPython
 
+Gold tests in gold/:
 
-Another way I test it like this:
+    $ ./test.sh gold
 
-    $ testdata/regex_compile.py  # run with CPython
-    $ ../bin/opyc run testdata/regex_compile.py
+They can be run manually like this:
 
-(TODO: these should be gold tests)
-
+    $ gold/regex_compile.py  # run with CPython
+    $ ../bin/opyc run gold/regex_compile.py
 
 Demo: speed difference between OSH under CPython and OSH under byterun:
 

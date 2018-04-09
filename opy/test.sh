@@ -212,4 +212,19 @@ opy-speed-test() {
   time opyc-run _tmp/speed_main.pyc $n
 }
 
+gold() {
+  for script in gold/*.py; do
+
+    $script > _tmp/gold-cpython.txt 2>&1
+    ../bin/opyc run $script > _tmp/gold-opy-byterun.txt 2>&1
+
+    if diff -u _tmp/gold-{cpython,opy-byterun}.txt; then
+      echo "OK $script"
+    else
+      echo "FAIL $script"
+      return 1
+    fi
+  done
+}
+
 "$@"
