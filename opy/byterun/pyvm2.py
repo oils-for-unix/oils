@@ -989,9 +989,14 @@ class VirtualMachine(object):
         frame = self.frame
 
         # NOTE: This can read .pyc files not compiled with OPy!
+        # TODO: Respect OPY_PATH
+
+        #debug1('IMPORT name=%s fromlist=%s level=%s', name, fromlist, level)
 
         mod = __import__(name, frame.f_globals, frame.f_locals, fromlist, level)
-        #print('-- IMPORTED %s -> %s' % (name, mod))
+
+        #debug1('IMPORTED %s -> %s' % (name, mod))
+
         self.push(mod)
 
     def byte_IMPORT_STAR(self):

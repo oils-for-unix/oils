@@ -1,6 +1,8 @@
 #!/bin/bash
 #
-# OSH running on OPyPy.  OPyPy is the OPy front end with byterun.
+# OSH running under byterun.
+# Because of the $PYTHONPATH setting, this will import from the Oil repo.
+# See opy/test.sh for a different invocation.
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly OIL_DIR=$THIS_DIR/..

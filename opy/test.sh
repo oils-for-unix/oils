@@ -8,9 +8,15 @@ set -o pipefail
 set -o errexit
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly OPYC=$THIS_DIR/../bin/opyc
 
 source $THIS_DIR/common.sh
+
+# We have to invoke opyc like this because byterun uses __import__, which
+# respects PYTHONPATH.  If we use ../bin/opyc, it will use the CPython-compiled
+# bytecode in the repo, rather than the OPy-compiled bytecode in _tmp/oil-opy.
+opyc() {
+  python bin/opy_.pyc opyc "$@"
+}
 
 oil-opy() {
   _tmp/oil-opy/bin/oil "$@"
@@ -47,7 +53,7 @@ oil-unit() {
 
       # Note: adding PYTHONPATH screws things up, I guess because it's the HOST
       # interpreter pythonpath.
-      $OPYC run $t
+      opyc run $t
       status=$?
 
       if test $status -ne 0; then
@@ -99,7 +105,7 @@ oil-byterun-failed() {
     echo ---
 
     pushd _tmp/oil-opy
-    $OPYC run $t
+    opyc run $t
     popd
   done
 }
@@ -171,7 +177,18 @@ spec() {
   # TODO: Should be OSH_ALT instead of OSH_OVM?
   # Usually it is dev build vs. release build, but here it is CPython vs.
   # byterun.
-  OSH_OVM=bin/osh-byterun test/spec.sh $action "$@"
+
+  # HACK to get around __import__ problem with byterun.
+
+  local stub=opy/_tmp/oil-opy/bin/osh-byterun 
+  cat >$stub <<'EOF'
+#!/bin/bash
+readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+exec python $THIS_DIR/opy_.pyc opyc run $THIS_DIR/oil.pyc osh "$@"
+EOF
+  chmod +x $stub
+
+  OSH_OVM=$stub test/spec.sh $action "$@"
   popd
 }
 
