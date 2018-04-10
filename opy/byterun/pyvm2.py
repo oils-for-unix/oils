@@ -162,7 +162,10 @@ class VirtualMachine(object):
     def resume_frame(self, frame):
         """Called by Generator."""
         frame.f_back = self.frame
+
+        # NOTE: Could raise exceptions!
         val = self.run_frame(frame)
+
         frame.f_back = None
         return val
 
