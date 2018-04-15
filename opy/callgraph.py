@@ -6,12 +6,13 @@ callgraph.py
 
 import collections
 import dis
-import inspect
 import os
 import sys
 
 import __builtin__  # For looking up names
 import types
+
+from .lib import inspect
 
 from core import util
 log = util.log

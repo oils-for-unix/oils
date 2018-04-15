@@ -4,7 +4,6 @@
 
 from __future__ import print_function, division
 import dis
-import inspect
 import linecache
 import operator
 import repr as repr_lib  # Don't conflict with builtin repr()

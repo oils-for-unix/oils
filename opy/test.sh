@@ -110,15 +110,15 @@ oil-byterun-failed() {
   done
 }
 
-# TODO: byterun/run.sh has this too
 byterun-unit() {
-  pushd byterun
-  for t in test_*.py; do
+  pushd $THIS_DIR/..
+  for t in opy/byterun/test_*.py; do
     echo
     echo "*** $t"
     echo
-    PYTHONPATH=. ./$t
+    PYTHONPATH=. $t
   done
+  popd
 }
 
 # Isolated failures.
