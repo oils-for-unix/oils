@@ -27,6 +27,10 @@ all() {
   ls compiler2/*.py | grep -v ast.py | _count
   echo
 
+  echo STDLIB
+  echo lib/*.py | _count
+  echo
+
   echo GENERATED CODE
   wc -l compiler2/ast.py
   echo
