@@ -101,7 +101,7 @@ flake8-all() {
   # opcode.py triggers a flake8 bug?  Complains about def_op() when it is
   # defined.
   local -a exclude=(
-    --exclude 'opy/_regtest,opy/byterun,opy/tools/astgen.py,opy/compiler2/opcode.py')
+    --exclude 'opy/_regtest,opy/byterun,opy/tools/astgen.py,opy/lib/opcode.py')
 
   # Step 1: Stop the build if there are Python syntax errors, undefined names,
   # unused imports
