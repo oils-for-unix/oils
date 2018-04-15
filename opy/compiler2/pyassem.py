@@ -1,11 +1,11 @@
 """A flow graph representation for Python bytecode"""
 from __future__ import print_function
 
-import dis
 import itertools
 import types
 
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
+from opy.lib import dis
 
 
 HAS_JREL = set(dis.opname[op] for op in dis.hasjrel)

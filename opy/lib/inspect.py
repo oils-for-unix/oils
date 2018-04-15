@@ -34,12 +34,12 @@ import os
 import types
 import string
 import re
-import dis
 import imp
 import linecache
 from operator import attrgetter
 from collections import namedtuple
 
+from opy.lib import dis
 from opy.pgen2 import tokenize
 
 # These constants are from Include/code.h.

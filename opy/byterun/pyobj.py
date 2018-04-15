@@ -2,10 +2,10 @@
 from __future__ import print_function
 
 import collections
-import dis
 import sys
 import types
 
+from opy.lib import dis
 from opy.lib import inspect
 
 

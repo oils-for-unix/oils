@@ -3,7 +3,6 @@
 # pyvm2 by Paul Swartz (z3p), from http://www.twistedmatrix.com/users/z3p/
 
 from __future__ import print_function, division
-import dis
 import linecache
 import operator
 import repr as repr_lib  # Don't conflict with builtin repr()
@@ -14,6 +13,8 @@ import types
 # Function used in MAKE_FUNCTION, MAKE_CLOSURE
 # Generator used in YIELD_FROM, which we might not need.
 from pyobj import Frame, Block, Function, Generator
+
+from opy.lib import dis
 
 # Create a repr that won't overflow.
 repr_obj = repr_lib.Repr()

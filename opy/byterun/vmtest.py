@@ -3,13 +3,13 @@
 from __future__ import print_function
 
 import cStringIO
-import dis
 import sys
 import textwrap
 import types
 import unittest
 
 
+from opy.lib import dis
 import pyvm2
 
 # Make this false if you need to run the debugger inside a test.

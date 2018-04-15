@@ -19,8 +19,11 @@ But that doesn't give all the metadata.  It's also nicer than
 tools/dumppyc.py, which came with the 'compiler2' package.
 """
 
-import collections, dis, marshal, struct, sys, time, types
-from ..compiler2 import consts
+import collections, marshal, struct, sys, time, types
+
+import consts  # this package
+
+from opy.lib import dis
 
 
 INDENT = '  '
