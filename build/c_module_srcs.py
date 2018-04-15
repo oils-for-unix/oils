@@ -34,6 +34,17 @@ def main(argv):
         print('Modules/mathmodule.c')
         print('Modules/_math.c')
 
+      # Hm OPy needs these for hashlib in 'opy dis-md5'.  OK fine.
+      elif mod_name == '_md5':
+        print('Modules/md5module.c')
+        print('Modules/md5.c')
+      elif mod_name == '_sha':
+        print('Modules/shamodule.c')
+      elif mod_name == '_sha256':
+        print('Modules/sha256module.c')
+      elif mod_name == '_sha512':
+        print('Modules/sha512module.c')
+
       elif mod_name == '_io':
         # This data is in setup.py and Modules/Setup.dist.
         #_io -I$(srcdir)/Modules/_io _io/bufferedio.c _io/bytesio.c

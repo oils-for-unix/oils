@@ -183,7 +183,7 @@ join-modules() {
   #
   # TODO: I don't want to depend on egrep and GNU flags on the target sytems?
   # Ship this file I guess.
-  egrep --no-filename --only-matching '^[a-zA-Z_\.]+' $static $discovered \
+  egrep --no-filename --only-matching '^[a-zA-Z0-9_\.]+' $static $discovered \
     | sort | uniq
 }
 

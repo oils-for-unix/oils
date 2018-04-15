@@ -1,10 +1,10 @@
-from __future__ import print_function  # for OPy compiler
 """
 atexit.py - allow programmer to define multiple exit functions to be executed
 upon normal program termination.
 
 One public function, register, is defined.
 """
+from __future__ import print_function  # for OPy compiler
 
 __all__ = ["register"]
 
