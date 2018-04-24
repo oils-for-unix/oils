@@ -1,5 +1,6 @@
 *.swp
 *.pyc
+tags
 .vagrant
 _chroot/
 _tmp/
