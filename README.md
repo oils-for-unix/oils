@@ -42,16 +42,17 @@ You can also download the latest release and build it, which is linked from the
 Contributing
 ------------
 
-If you want to contribute, e-mail [oil-dev@oilshell.org][oil-dev].
-
-[oil-dev]: http://lists.oilshell.org/listinfo.cgi/oil-dev-oilshell.org
-
-[The blog](http://www.oilshell.org/blog/) has some general updates on the
-project status.
-
 For information on how to build and test Oil, see [Contributing][] on the wiki.
 
+If you'd like to contribute, please post a message on the `#oil-dev` channel of
+[oilshell.zulipchat.com][].  Let us know what you're thinking, or let us know
+if you're having problems getting started.
+
+[The blog][blog] has updates on the project status.
+
 [Contributing]: https://github.com/oilshell/oil/wiki/Contributing
+[oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
+[blog]: http://www.oilshell.org/blog/
 
 Code Overview
 -------------
