@@ -181,6 +181,6 @@ umask g-w,o-w
 echo two > $TMP/umask-two
 stat -c '%a' $TMP/umask-one $TMP/umask-two
 # status: 0
-# stdout-json: "664\n644\n"
+# stdout-json: "644\n644\n"
 # stderr-json: ""
 
