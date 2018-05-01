@@ -378,7 +378,7 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH "$@"
 }
 

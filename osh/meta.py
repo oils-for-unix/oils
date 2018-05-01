@@ -174,6 +174,9 @@ REDIR_DEFAULT_FD = {
     Id.Redir_DGreat: 1,
     Id.Redir_Clobber: 1,
     Id.Redir_LessGreat: 1,  # TODO: What does echo <>foo do?
+    # bash &> and &>>
+    Id.Redir_AndGreat: 1,
+    Id.Redir_AndDGreat: 1,
 
     # descriptor
     Id.Redir_GreatAnd: 1,  # echo >&2  means echo 1>&2
@@ -195,6 +198,9 @@ REDIR_ARG_TYPES = {
     Id.Redir_DGreat: redir_arg_type_e.Path,
     Id.Redir_Clobber: redir_arg_type_e.Path,
     Id.Redir_LessGreat: redir_arg_type_e.Path,
+    # bash &> and &>>
+    Id.Redir_AndGreat: redir_arg_type_e.Path,
+    Id.Redir_AndDGreat: redir_arg_type_e.Path,
 
     # descriptor
     Id.Redir_GreatAnd: redir_arg_type_e.Desc,

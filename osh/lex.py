@@ -240,6 +240,8 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[0-9]*<&', Id.Redir_LessAnd),
   R(r'[0-9]*<>', Id.Redir_LessGreat),
   R(r'[0-9]*>\|', Id.Redir_Clobber),
+  R(r'[0-9]*&>', Id.Redir_AndGreat),
+  R(r'[0-9]*&>>', Id.Redir_AndDGreat),
 
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]

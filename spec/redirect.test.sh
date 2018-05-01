@@ -253,7 +253,10 @@ stdout_stderr.py &> $TMP/f.txt
 # order is indeterminate
 grep STDOUT $TMP/f.txt >/dev/null && echo 'ok'
 grep STDERR $TMP/f.txt >/dev/null && echo 'ok'
-# stdout-json: "ok\nok\n"
+# STDOUT:
+ok
+ok
+# END
 # N-I dash stdout: STDOUT
 # N-I dash stderr: STDERR
 # N-I dash status: 1

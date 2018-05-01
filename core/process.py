@@ -69,8 +69,12 @@ class FdState(object):
     return os.fdopen(new_fd)
 
   def _PushDup(self, fd1, fd2):
-    """
-    Save fd2 and dup fd1 onto fd2.
+    """Save fd2, and dup fd1 onto fd2.
+
+    Mutates self.cur_frame.saved.
+
+    Returns:
+      success Bool
     """
     #log('---- _PushDup %s %s', fd1, fd2)
     need_restore = True
@@ -117,13 +121,13 @@ class FdState(object):
     ok = True
 
     if r.tag == redirect_e.PathRedirect:
-      if r.op_id == Id.Redir_Great:  # >
+      if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
         # NOTE: This is different than >| because it respects noclobber, but
         # that option is almost never used.  See test/wild.sh.
         mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
       elif r.op_id == Id.Redir_Clobber:  # >|
         mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-      elif r.op_id == Id.Redir_DGreat:  # >>
+      elif r.op_id in (Id.Redir_DGreat, Id.Redir_AndDGreat):  # >>   &>>
         mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
       elif r.op_id == Id.Redir_Less:  # <
         mode = os.O_RDONLY
@@ -137,8 +141,28 @@ class FdState(object):
         util.error("Can't open %r: %s", r.filename, os.strerror(e.errno))
         return False
 
+      # Apply redirect
       if not self._PushDup(target_fd, r.fd):
         ok = False
+
+      # Now handle the extra redirects for aliases &> and &>>.
+      #
+      # We can rewrite
+      #   stdout_stderr.py &> out-err.txt
+      # as
+      #   stdout_stderr.py > out-err.txt 2>&1
+      #
+      # And rewrite
+      #   stdout_stderr.py 3&> out-err.txt
+      # as
+      #   stdout_stderr.py 3> out-err.txt 2>&3
+      if ok:
+        if r.op_id == Id.Redir_AndGreat:
+          if not self._PushDup(r.fd, 2):
+            ok = False
+        elif r.op_id == Id.Redir_AndDGreat:
+          if not self._PushDup(r.fd, 2):
+            ok = False
 
       os.close(target_fd)  # We already made a copy of it.
       # I don't think we need to close(0) because it will be restored from its

@@ -187,6 +187,8 @@ def AddKinds(spec):
       'DLessDash',  # <<- here doc redirect for tabs?
       'LessGreat',  # <>
       'Clobber',    # >|  POSIX?
+      'AndGreat',   # bash &> stdout/stderr to file
+      'AndDGreat',  # bash &>> stdout/stderr append to file
   ])
 
   # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
