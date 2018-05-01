@@ -259,6 +259,16 @@ all-manifests() {
   _sh-manifest ~/git/wild/esoteric/wwwoosh esoteric
   _sh-manifest ~/git/wild/esoteric/lishp esoteric
 
+  # OpenGL for bash is interesting because there is a lot of arithmetic.
+  # Not surprisingly, there are 6 parse errors, almost all of which are due to
+  # "dynamic arithmetic".
+  src=~/git/other/CmdlineGL
+  _manifest esoteric/CmdlineGL $src \
+    $(find $src \
+      -type f -a \
+      '(' -name '*.sh' -o -name '*.lib' ')' -a \
+      -printf '%P\n')
+
   src=~/git/wild/esoteric/setup.shl
   _manifest esoteric/setup.shl $src \
     $(find $src \
