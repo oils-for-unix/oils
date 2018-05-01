@@ -175,12 +175,15 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 # stderr-json: ""
 
 ### set umask symbolically
+umask 0002  # begin in a known state for the test
 rm $TMP/umask-one $TMP/umask-two
 echo one > $TMP/umask-one
 umask g-w,o-w
 echo two > $TMP/umask-two
 stat -c '%a' $TMP/umask-one $TMP/umask-two
 # status: 0
-# stdout-json: "664\n644\n"
-# stderr-json: ""
-
+## STDOUT:
+664
+644
+## END
+## stderr-json: ""
