@@ -3,14 +3,13 @@
 -- Invariant: the source text can be reconstructed byte-for-byte from this
 -- tree.
 -- 
--- The AST is composed of the builtin ASDL types (string, int, bool) and our 
+-- The AST is composed of the builtin ASDL types (string, int, bool) and our
 -- application type 'id', which is core.id_kind.Id.
 
 -- Unrepresented:
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
 -- * select block
--- * &> redirect both stdout and stderr
 -- * 1>&2- to close redirect
 -- * case fallthrough ;& and ;;&
 
@@ -20,7 +19,7 @@
 
 -- Parsed but Not Implemented
 -- * extended glob
--- * <> &> redirects
+-- * <> redirect
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
@@ -32,7 +31,6 @@
 --
 -- Found to be not strictly necessary for oil conversion
 -- * foo() { } vs function foo { } -- ksh 
--- * $'n' vs 'n'  -- one of them just has EscapedLiteralPart
 
 module osh
 {

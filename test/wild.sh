@@ -10,7 +10,7 @@
 # published in a tarball or torrent.
 # - Add gentoo
 # - Add a quick smoke test that excludes distros and big ones, etc.
-#   - Just do a regex
+#   - 'all' accepts a regex
 
 set -o nounset
 set -o pipefail
@@ -425,6 +425,18 @@ write-manifest() {
   local out=$MANIFEST
   all-manifests > $out
   wc -l $out
+}
+
+# TODO: Publish this script
+multi() { ~/hg/tree-tools/bin/multi "$@"; }
+
+make-archive() {
+  # Format of manifest:
+  # $1 is project
+  # $2 is abspath of source
+  # $3 is rel path within project
+  awk '{print $2 " " $1 "/" $3 }' $MANIFEST \
+    | multi tar _tmp/wild/wild-source.tar.gz
 }
 
 # 442K lines without "big" and without ltmain.sh
