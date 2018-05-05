@@ -145,6 +145,9 @@ class WordParser(object):
 
     w = self._ReadCompoundWord(
         lex_mode=arg_lex_mode, eof_type=eof_type, empty_ok=empty_ok)
+    if not w:
+      return None
+
     # This is for "${s:-}", ${s/a//}, etc.  It is analogous to
     # LooksLikeAssignment where we turn x= into x=''.  It has the same
     # potential problem of not having spids.
