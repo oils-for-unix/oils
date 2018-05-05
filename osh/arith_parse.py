@@ -90,7 +90,7 @@ def LeftFuncCall(p, t, left, unused_bp):
   children = []
   # f(x) or f[i](x)
   if not tdop.IsCallable(left):
-    raise tdop.ParseError("%s can't be called" % left)
+    p_die("%s can't be called", left, word=t)
   while not p.AtToken(Id.Arith_RParen):
     # We don't want to grab the comma, e.g. it is NOT a sequence operator.  So
     # set the precedence to 5.
