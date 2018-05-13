@@ -172,6 +172,7 @@ all-manifests() {
   _sh-manifest ~/git/other/linuxkit distro
   _sh-manifest ~/git/other/portage distro
   _sh-manifest ~/git/wild/distro/woof-CE distro
+  _sh-manifest ~/git/wild/distro/crankshaft distro
 
   src=~/git/alpine/aports
   _manifest distro/alpine-aports $src \
@@ -435,8 +436,11 @@ make-archive() {
   # $1 is project
   # $2 is abspath of source
   # $3 is rel path within project
+  local out=_tmp/wild/wild-source.tar.gz
+  rm -f $out
   awk '{print $2 " " $1 "/" $3 }' $MANIFEST \
-    | multi tar _tmp/wild/wild-source.tar.gz
+    | multi tar $out
+  ls -l $out
 }
 
 # 442K lines without "big" and without ltmain.sh
