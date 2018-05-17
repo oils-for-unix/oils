@@ -322,7 +322,7 @@ def Jobs(argv, job_state):
 # - If there are more words than names, the remaining words and their
 # intervening delimiters are assigned to the last name.
 # - If there are fewer words read from the input stream than names, the
-# remaining names are assigned empty values. 
+# remaining names are assigned empty values.
 # - The characters in the value of the IFS variable are used to split the line
 # into words using the same rules the shell uses for expansion (described
 # above in Word Splitting).
@@ -484,11 +484,24 @@ def Shift(argv, mem):
 
   return mem.Shift(n)
 
+CD_SPEC = _Register('cd')
+CD_SPEC.ShortFlag('-L')
+CD_SPEC.ShortFlag('-P')
 
 def Cd(argv, mem, dir_stack):
-  # TODO: Parse flags, error checking, etc.
+  arg, i = CD_SPEC.Parse(argv)
+  # TODO: error checking, etc.
+
+  if arg.L:
+      # TODO: what should this do?
+      # `-L` is the default behavior.
+      # Whichever of `L` or `P` comes *last* determines the actual behavior.
+      pass
+  if arg.P:
+      # TODO `-P` should *not* follow symlinks.
+      raise NotImplementedError
   try:
-    dest_dir = argv[0]
+      dest_dir = argv[i]
   except IndexError:
     val = mem.GetVar('HOME')
     if val.tag == value_e.Undef:
@@ -830,7 +843,7 @@ def _ResolveNames(names, funcs, path_val):
     results.append(kind)
 
   return results
-    
+
 
 COMMAND_SPEC = _Register('command')
 COMMAND_SPEC.ShortFlag('-v')
@@ -1088,7 +1101,7 @@ def Umask(argv):
     # NOTE: dash disables interrupts around the two umask() calls, but that
     # shouldn't be a concern for us.  Signal handlers won't call umask().
     mask = os.umask(0)
-    os.umask(mask)  # 
+    os.umask(mask)  #
     print('0%03o' % mask)  # octal format
     return 0
 
