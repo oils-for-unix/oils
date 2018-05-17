@@ -59,6 +59,15 @@ cd -- /
 echo $PWD
 # stdout: /
 
+### cd to non-symlink with `-P`
+targ="$TMP"/cd-symtarget
+lnk="$TMP"/cd-symlink
+mkdir -p "$targ"
+ln -s "$targ" "$lnk"
+cd -P "$targ"
+test ${PWD} = "$TMP/cd-symtarget" && echo OK
+# stdout: OK
+
 ### cd to symlink default behavior
 targ="$TMP"/cd-symtarget
 lnk="$TMP"/cd-symlink
