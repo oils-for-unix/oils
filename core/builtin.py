@@ -492,16 +492,8 @@ def Cd(argv, mem, dir_stack):
   arg, i = CD_SPEC.Parse(argv)
   # TODO: error checking, etc.
 
-  if arg.L:
-      # TODO: what should this do?
-      # `-L` is the default behavior.
-      # Whichever of `L` or `P` comes *last* determines the actual behavior.
-      pass
-  if arg.P:
-      # TODO `-P` should *not* follow symlinks.
-      raise NotImplementedError
   try:
-      dest_dir = argv[i]
+    dest_dir = argv[i]
   except IndexError:
     val = mem.GetVar('HOME')
     if val.tag == value_e.Undef:
@@ -539,7 +531,13 @@ def Cd(argv, mem, dir_stack):
     util.error("cd %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  state.SetGlobalString(mem, 'PWD', dest_dir)  # Set $PWD.
+  # Set $PWD.
+  if arg.P:
+    state.SetGlobalString(mem, 'PWD', os.readlink(dest_dir))
+  else: # `-L` is the default behavior; no need to check it
+    # TODO: ensure that if multiple flags are provided, the *last* one overrides
+    # the others
+    state.SetGlobalString(mem, 'PWD', dest_dir)
   dir_stack.Reset()  # for pushd/popd/dirs
 
   return 0
