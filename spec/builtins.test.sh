@@ -60,20 +60,22 @@ echo $PWD
 # stdout: /
 
 ### cd to symlink with `-L`
-targ=$TMP/cd-symtarget
-lnk=$TMP/cd-symlink
-mkdir -p $targ
-ln -s $targ $link
-cd -L $dir
+TMP=/tmp    # XXX - why unset?
+targ="$TMP"/cd-symtarget
+lnk="$TMP"/cd-symlink
+mkdir -p "$targ"
+ln -s "$targ" "$lnk"
+cd -L "$lnk"
 test $(pwd) = "$TMP/cd-symlink" && echo OK
 # stdout: OK
 
 ### cd to symlink with `-P`
-targ=$TMP/cd-symtarget
-lnk=$TMP/cd-symlink
-mkdir -p $targ
-ln -s $targ $link
-cd -P $dir
+TMP=/tmp    # XXX - why unset?
+targ="$TMP"/cd-symtarget
+lnk="$TMP"/cd-symlink
+mkdir -p "$targ"
+ln -s "$targ" "$lnk"
+cd -P "$lnk"
 test $(pwd) = "$TMP/cd-symtarget" && echo OK
 # stdout: OK
 
