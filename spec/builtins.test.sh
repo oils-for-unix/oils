@@ -59,8 +59,16 @@ cd -- /
 echo $PWD
 # stdout: /
 
+### cd to symlink default behavior
+targ="$TMP"/cd-symtarget
+lnk="$TMP"/cd-symlink
+mkdir -p "$targ"
+ln -s "$targ" "$lnk"
+cd "$lnk"
+test $(pwd) = "$TMP/cd-symlink" && echo OK
+# stdout: OK
+
 ### cd to symlink with `-L`
-TMP=/tmp    # XXX - why unset?
 targ="$TMP"/cd-symtarget
 lnk="$TMP"/cd-symlink
 mkdir -p "$targ"
@@ -70,7 +78,6 @@ test $(pwd) = "$TMP/cd-symlink" && echo OK
 # stdout: OK
 
 ### cd to symlink with `-P`
-TMP=/tmp    # XXX - why unset?
 targ="$TMP"/cd-symtarget
 lnk="$TMP"/cd-symlink
 mkdir -p "$targ"
