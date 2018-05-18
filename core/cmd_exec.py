@@ -119,7 +119,7 @@ class Executor(object):
     """
     self.mem = mem
     self.fd_state = fd_state
-    self.status_lines = status_lines  
+    self.status_lines = status_lines
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
     self.completion = completion
@@ -317,6 +317,9 @@ class Executor(object):
     elif builtin_id == builtin_e.DIRS:
       status = builtin.Dirs(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
+    elif builtin_id == builtin_e.PWD:
+      status = builtin.Pwd(argv, self.mem)
+
     elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
       status = self._Source(argv)
 
@@ -396,7 +399,7 @@ class Executor(object):
       elif node.tag == command_e.Assignment:
         span_id = self._SpanIdForAssignment(node)
         raise util.ErrExitFailure(
-            '[%d] assignment exited with status %d', os.getpid(), 
+            '[%d] assignment exited with status %d', os.getpid(),
             status, span_id=span_id, status=status)
 
       else:
@@ -863,7 +866,7 @@ class Executor(object):
           self.loop_level == 0):
         ok = False
         msg = 'Invalid control flow at top level'
-      
+
       if ok:
         raise _ControlFlow(tok, arg)
 
@@ -1129,7 +1132,7 @@ class Executor(object):
     check_errexit = True
 
     if redirects is None:  # evaluation error
-      status = 1  
+      status = 1
 
     elif redirects:
       if self.fd_state.Push(redirects, self.waiter):
@@ -1411,7 +1414,7 @@ class Executor(object):
 
 class Tracer(object):
   """A tracer for this process.
-  
+
   TODO: Connect it somehow to tracers for other processes.  So you can make an
   HTML report offline.
 
@@ -1421,7 +1424,7 @@ class Tracer(object):
     - argv and span ID of the SimpleCommand that corresponds to that
     - then print line number using arena
     - set -x doesn't print line numbers!  OH but you can do that with
-      PS4=$LINENO 
+      PS4=$LINENO
   """
   def __init__(self, exec_opts, mem, word_ev):
     """
