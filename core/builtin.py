@@ -83,6 +83,7 @@ _NORMAL_BUILTINS = {
     "pushd": builtin_e.PUSHD,
     "popd": builtin_e.POPD,
     "dirs": builtin_e.DIRS,
+    "pwd": builtin_e.PWD,
 
     "source": builtin_e.SOURCE,  # note that . alias is special
 
@@ -624,6 +625,14 @@ def Dirs(argv, home_dir, dir_stack):
   _PrintDirStack(dir_stack, style, home_dir)
   return 0
 
+PWD_SPEC = _Register('pwd')
+PWD_SPEC.ShortFlag('-L')
+PWD_SPEC.ShortFlag('-P')
+
+def Pwd(argv, mem):
+  # XXX TODO add arg-parsing
+  print(mem.GetVar('PWD'))
+  return 0
 
 EXPORT_SPEC = _Register('export')
 EXPORT_SPEC.ShortFlag('-n')
