@@ -67,6 +67,7 @@ module runtime
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HELP
   | DECLARE | TYPESET
+  | PWD
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.

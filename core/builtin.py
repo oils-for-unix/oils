@@ -631,7 +631,7 @@ PWD_SPEC.ShortFlag('-P')
 
 def Pwd(argv, mem):
   # XXX TODO add arg-parsing
-  print(mem.GetVar('PWD'))
+  print(mem.GetVar('PWD').s)
   return 0
 
 EXPORT_SPEC = _Register('export')

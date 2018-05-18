@@ -217,7 +217,6 @@ builtin_e.TYPE = builtin_e(31, 'TYPE')
 builtin_e.HELP = builtin_e(32, 'HELP')
 builtin_e.DECLARE = builtin_e(33, 'DECLARE')
 builtin_e.TYPESET = builtin_e(34, 'TYPESET')
-builtin_e.PWD = builtin_e(35, 'PWD')
 
 class effect_e(py_meta.SimpleObj):
   ASDL_TYPE = TYPE_LOOKUP.ByTypeName('effect')
