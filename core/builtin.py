@@ -532,12 +532,12 @@ def Cd(argv, mem, dir_stack):
     return 1
 
   # Set $PWD.
-  if arg.P:
-    state.SetGlobalString(mem, 'PWD', os.path.realpath(dest_dir))
-  else: # `-L` is the default behavior; no need to check it
-    # TODO: ensure that if multiple flags are provided, the *last* one overrides
-    # the others
-    state.SetGlobalString(mem, 'PWD', dest_dir)
+  # `-L` is the default behavior; no need to check it
+  # TODO: ensure that if multiple flags are provided, the *last* one overrides
+  # the others
+  pwd = os.path.realpath(dest_dir) if arg.P else dest_dir
+  state.SetGlobalString(mem, 'PWD', pwd)
+
   dir_stack.Reset()  # for pushd/popd/dirs
 
   return 0
