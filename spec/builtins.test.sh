@@ -54,6 +54,59 @@ cd-nonexistent
 status=0
 ## END
 
+### cd permits double bare dash
+cd -- /
+echo $PWD
+# stdout: /
+
+### cd to non-symlink with `-P`
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+cd -P $targ
+test $PWD = "$TMP/cd-symtarget" && echo OK
+cd $TMP
+rmdir $targ
+rm $lnk
+# stdout: OK
+
+### cd to symlink default behavior
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+cd $lnk
+test $PWD = "$TMP/cd-symlink" && echo OK
+cd $TMP
+rmdir $targ
+rm $lnk
+# stdout: OK
+
+### cd to symlink with `-L`
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+cd -L $lnk
+test $PWD = "$TMP/cd-symlink" && echo OK
+cd $TMP
+rmdir $targ
+rm $lnk
+# stdout: OK
+
+### cd to symlink with `-P`
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+cd -P $lnk
+test $PWD = "$TMP/cd-symtarget" && echo OK
+cd $TMP
+rmdir $targ
+rm $lnk
+# stdout: OK
+
 ### pushd/popd
 set -o errexit
 cd /
