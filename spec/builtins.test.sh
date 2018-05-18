@@ -28,6 +28,21 @@ echo "old: $OLDPWD"
 cd -
 # stdout-json: "old: /\n/\n"
 
+### pwd
+cd /
+pwd
+# stdout: /
+
+### pwd -P
+mkdir -p $TMP/symtarg
+ln -s $TMP/symtarg $TMP/symlink
+cd $TMP/symlink
+basename $(pwd -P)
+cd $TMP
+rmdir $TMP/symtarg
+rm $TMP/symlink
+# stdout: symtarg
+
 ### cd with no arguments
 HOME=$TMP/home
 mkdir -p $HOME
