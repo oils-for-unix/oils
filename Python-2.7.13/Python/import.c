@@ -1149,7 +1149,9 @@ error_exit:
 static PyObject *load_module(char *, FILE *, char *, int, PyObject *);
 static struct filedescr *find_module(char *, char *, PyObject *,
                                      char *, size_t, FILE **, PyObject **);
+#ifndef OVM_MAIN
 static struct _frozen *find_frozen(char *name);
+#endif
 
 /* Load a package and return its module object WITH INCREMENTED
    REFERENCE COUNT */
@@ -1334,7 +1336,9 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
     char *filemode;
     FILE *fp = NULL;
     PyObject *path_hooks, *path_importer_cache;
+#ifndef OVM_MAIN
     static struct filedescr fd_frozen = {"", "", PY_FROZEN};
+#endif
     static struct filedescr fd_builtin = {"", "", C_BUILTIN};
     static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
     char *name;
@@ -1406,11 +1410,13 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
         strcat(buf, ".");
         strcat(buf, name);
         strcpy(name, buf);
+#ifndef OVM_MAIN
         if (find_frozen(name) != NULL) {
             strcpy(buf, name);
             PyMem_FREE(name);
             return &fd_frozen;
         }
+#endif
         PyErr_Format(PyExc_ImportError,
                      "No frozen submodule named %.200s", name);
         goto error_exit;
@@ -1421,11 +1427,13 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
             PyMem_FREE(name);
             return &fd_builtin;
         }
+#ifndef OVM_MAIN
         if ((find_frozen(name)) != NULL) {
             strcpy(buf, name);
             PyMem_FREE(name);
             return &fd_frozen;
         }
+#endif
 
 #ifdef MS_COREDLL
         fp = PyWin_FindRegisteredModule(name, &fdp, buf, buflen);
@@ -1967,7 +1975,11 @@ load_module(char *name, FILE *fp, char *pathname, int type, PyObject *loader)
         if (type == C_BUILTIN)
             err = init_builtin(name);
         else
+#ifdef OVM_MAIN
+            err = -1;  /* always an error */
+#else
             err = PyImport_ImportFrozenModule(name);
+#endif
         if (err < 0)
             return NULL;
         if (err == 0) {
@@ -2050,6 +2062,7 @@ init_builtin(char *name)
 
 /* Frozen modules */
 
+#ifndef OVM_MAIN
 static struct _frozen *
 find_frozen(char *name)
 {
@@ -2152,6 +2165,7 @@ err_return:
     Py_DECREF(co);
     return -1;
 }
+#endif
 
 
 /* Import a module, either built-in, frozen, or external, and return
@@ -3050,6 +3064,7 @@ imp_init_builtin(PyObject *self, PyObject *args)
     return m;
 }
 
+#ifndef OVM_MAIN
 static PyObject *
 imp_init_frozen(PyObject *self, PyObject *args)
 {
@@ -3079,6 +3094,7 @@ imp_get_frozen_object(PyObject *self, PyObject *args)
         return NULL;
     return get_frozen_object(name);
 }
+#endif
 
 static PyObject *
 imp_is_builtin(PyObject *self, PyObject *args)
@@ -3089,6 +3105,7 @@ imp_is_builtin(PyObject *self, PyObject *args)
     return PyInt_FromLong(is_builtin(name));
 }
 
+#ifndef OVM_MAIN
 static PyObject *
 imp_is_frozen(PyObject *self, PyObject *args)
 {
@@ -3099,6 +3116,7 @@ imp_is_frozen(PyObject *self, PyObject *args)
     p = find_frozen(name);
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
+#endif
 
 static FILE *
 get_file(char *pathname, PyObject *fob, char *mode)
@@ -3316,11 +3334,17 @@ static PyMethodDef imp_methods[] = {
     {"acquire_lock", imp_acquire_lock, METH_NOARGS,  doc_acquire_lock},
     {"release_lock", imp_release_lock, METH_NOARGS,  doc_release_lock},
     /* The rest are obsolete */
+#ifndef OVM_MAIN
     {"get_frozen_object",       imp_get_frozen_object,  METH_VARARGS},
+#endif
     {"init_builtin",            imp_init_builtin,       METH_VARARGS},
+#ifndef OVM_MAIN
     {"init_frozen",             imp_init_frozen,        METH_VARARGS},
+#endif
     {"is_builtin",              imp_is_builtin,         METH_VARARGS},
+#ifndef OVM_MAIN
     {"is_frozen",               imp_is_frozen,          METH_VARARGS},
+#endif
     {"load_compiled",           imp_load_compiled,      METH_VARARGS},
 #if defined HAVE_DYNAMIC_LOADING && !OVM_MAIN
     {"load_dynamic",            imp_load_dynamic,       METH_VARARGS},

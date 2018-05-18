@@ -22,8 +22,6 @@ Python/bltinmodule.c
 Python/ceval.c
 Python/codecs.c
 Python/errors.c
-Python/frozen.c
-Python/frozenmain.c
 Python/future.c
 Python/getargs.c
 Python/getcompiler.c
