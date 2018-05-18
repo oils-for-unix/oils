@@ -323,7 +323,7 @@ def Jobs(argv, job_state):
 # - If there are more words than names, the remaining words and their
 # intervening delimiters are assigned to the last name.
 # - If there are fewer words read from the input stream than names, the
-# remaining names are assigned empty values. 
+# remaining names are assigned empty values.
 # - The characters in the value of the IFS variable are used to split the line
 # into words using the same rules the shell uses for expansion (described
 # above in Word Splitting).
@@ -632,7 +632,7 @@ PWD_SPEC.ShortFlag('-P')
 
 
 def Pwd(argv, mem):
-  arg, i = CD_SPEC.Parse(argv)
+  arg, i = PWD_SPEC.Parse(argv)
 
   pwd = mem.GetVar('PWD').s
 
@@ -850,7 +850,7 @@ def _ResolveNames(names, funcs, path_val):
     results.append(kind)
 
   return results
-    
+
 
 COMMAND_SPEC = _Register('command')
 COMMAND_SPEC.ShortFlag('-v')
@@ -1108,7 +1108,7 @@ def Umask(argv):
     # NOTE: dash disables interrupts around the two umask() calls, but that
     # shouldn't be a concern for us.  Signal handlers won't call umask().
     mask = os.umask(0)
-    os.umask(mask)  # 
+    os.umask(mask)  #
     print('0%03o' % mask)  # octal format
     return 0
 
