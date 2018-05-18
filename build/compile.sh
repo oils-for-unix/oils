@@ -9,13 +9,6 @@ set -o errexit
 
 source build/common.sh
 
-# TODO:
-# - Can probably delete frozen*.c.  It might be more efficient in theory, but
-# it's not the bottleneck.  It's less debuggable uses the fairly complex
-# Tools/freeze.py and modulefinder module.  Have to remove hooks in import.c.
-# - getpath.c can be removed.  Has hooks in sys.exec_prefix, etc. which we
-# don't need.
-
 readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
 Python/bltinmodule.c
@@ -95,7 +88,6 @@ Objects/unicodectype.c
 
 # Non-standard lib stuff.
 MODULE_OBJS='
-Modules/getpath.c
 Modules/main.c
 Modules/gcmodule.c
 '

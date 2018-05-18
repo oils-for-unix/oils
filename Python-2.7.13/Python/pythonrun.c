@@ -248,8 +248,13 @@ Py_InitializeEx(int install_sigs, char* sys_path)
         Py_FatalError("Py_Initialize: can't initialize sys dict");
     Py_INCREF(interp->sysdict);
     _PyImport_FixupExtension("sys", "sys");
-    if (sys_path == NULL)
+    if (sys_path == NULL) {
+#ifdef OVM_MAIN
+        Py_FatalError("Py_Initialize: expected sys_path to be set");
+#else
         sys_path = Py_GetPath();
+#endif
+    }
     PySys_SetPath(sys_path);
 
     PyDict_SetItemString(interp->sysdict, "modules",
@@ -619,8 +624,12 @@ Py_NewInterpreter(void)
         if (interp->sysdict == NULL)
             goto handle_error;
         Py_INCREF(interp->sysdict);
-        fprintf(stderr, "OVM warning: got to a line that calls Py_GetPath()\n");
+#ifdef OVM_MAIN
+        fprintf(stderr, "OVM: Can't call Py_GetPath()\n");
+        assert(0);
+#else
         PySys_SetPath(Py_GetPath());
+#endif
         PyDict_SetItemString(interp->sysdict, "modules",
                              interp->modules);
         _PyImportHooks_Init();
