@@ -65,7 +65,10 @@ lnk="$TMP"/cd-symlink
 mkdir -p "$targ"
 ln -s "$targ" "$lnk"
 cd -P "$targ"
-test ${PWD} = "$TMP/cd-symtarget" && echo OK
+test "$PWD" = "$TMP/cd-symtarget" && echo OK
+cd "$TMP"
+rmdir "$targ"
+rm "$lnk"
 # stdout: OK
 
 ### cd to symlink default behavior
@@ -74,7 +77,10 @@ lnk="$TMP"/cd-symlink
 mkdir -p "$targ"
 ln -s "$targ" "$lnk"
 cd "$lnk"
-test ${PWD} = "$TMP/cd-symlink" && echo OK
+test "$PWD" = "$TMP/cd-symlink" && echo OK
+cd "$TMP"
+rmdir "$targ"
+rm "$lnk"
 # stdout: OK
 
 ### cd to symlink with `-L`
@@ -83,7 +89,10 @@ lnk="$TMP"/cd-symlink
 mkdir -p "$targ"
 ln -s "$targ" "$lnk"
 cd -L "$lnk"
-test ${PWD} = "$TMP/cd-symlink" && echo OK
+test "$PWD" = "$TMP/cd-symlink" && echo OK
+cd "$TMP"
+rmdir "$targ"
+rm "$lnk"
 # stdout: OK
 
 ### cd to symlink with `-P`
@@ -92,7 +101,10 @@ lnk="$TMP"/cd-symlink
 mkdir -p "$targ"
 ln -s "$targ" "$lnk"
 cd -P "$lnk"
-test ${PWD} = "$TMP/cd-symtarget" && echo OK
+test "$PWD" = "$TMP/cd-symtarget" && echo OK
+cd "$TMP"
+rmdir "$targ"
+rm "$lnk"
 # stdout: OK
 
 ### pushd/popd
