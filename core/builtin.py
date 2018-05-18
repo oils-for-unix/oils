@@ -625,14 +625,25 @@ def Dirs(argv, home_dir, dir_stack):
   _PrintDirStack(dir_stack, style, home_dir)
   return 0
 
+
 PWD_SPEC = _Register('pwd')
 PWD_SPEC.ShortFlag('-L')
 PWD_SPEC.ShortFlag('-P')
 
+
 def Pwd(argv, mem):
-  # XXX TODO add arg-parsing
-  print(mem.GetVar('PWD').s)
+  arg, i = CD_SPEC.Parse(argv)
+
+  pwd = mem.GetVar('PWD').s
+
+  # `-L` is the default behavior; no need to check it
+  # TODO: ensure that if multiple flags are provided, the *last* one overrides
+  # the others
+  if arg.P:
+    pwd = os.path.realpath(pwd)
+  print(pwd)
   return 0
+
 
 EXPORT_SPEC = _Register('export')
 EXPORT_SPEC.ShortFlag('-n')
