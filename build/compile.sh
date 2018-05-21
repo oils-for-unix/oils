@@ -55,7 +55,6 @@ Objects/cellobject.c
 Objects/classobject.c
 Objects/cobject.c
 Objects/codeobject.c
-Objects/complexobject.c
 Objects/descrobject.c
 Objects/enumobject.c
 Objects/exceptions.c
@@ -125,7 +124,9 @@ readonly PREPROC_FLAGS=(
   -D PYTHONPATH="$EMPTY_STR" \
   -D VERSION="$EMPTY_STR" \
   -D VPATH="$EMPTY_STR" \
-  -D Py_BUILD_CORE
+  -D Py_BUILD_CORE \
+  # Python already has support for disabling complex numbers!
+  -D WITHOUT_COMPLEX
 )
 
 readonly INCLUDE_PATHS=(-I . -I Include -I ../_devbuild/gen)
