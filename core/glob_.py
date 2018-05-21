@@ -3,8 +3,6 @@
 glob_.py
 """
 
-import re
-
 try:
   import libc
 except ImportError:
@@ -64,60 +62,56 @@ def GlobEscape(s):
 # We need to handle glob patterns, but fnmatch doesn't give you the positions
 # of matches.  So we convert globs to regexps.
 
-# TODO: Use this for ${s//pat*/__}
-# NOTE: Is [!abc] negation rather than [^abc] ?
-# What about unicode?  Do we have to set any global variables.
+# Problems:
+# - What about unicode?  Do we have to set any global variables?  We want it to
+# always use utf-8?
+# - Character class for glob is different than char class for regex?  According
+# to the standard, anyway.
+#   - Honestly I would like a more principled parser for globs!  Can re2c do
+#   better here?
 
-def GlobToExtendedRegex(g):
+def GlobToExtendedRegex(glob_pat):
   """Convert a glob to a libc extended regexp.
 
   Returns:
     A ERE string, or None if it's the pattern is a constant string rather than
     a glob.
   """
-  raise NotImplementedError
-
-
-def GlobToPythonRegex(s):
-  """Convert a glob to a libc extended regexp.
-
-  Args:
-    greedy: whether * should be '.*' (greedy) or '.*?' (non-greedy)
-
-  NOTE: character classes aren't supported.
-
-  Returns:
-    A Python regex string, or None if it's the pattern is a constant string
-    rather than a glob.
-
-    regex, err?
-  """
   is_glob = False
   err = None
 
   i = 0
-  n = len(s)
+  n = len(glob_pat)
   out = []
   while i < n:
-    c = s[i]
+    c = glob_pat[i]
     if c == '\\':  # glob escape like \* or \?
+      # BUG: This isn't correct because \* is escaping a glob character, but
+      # then it's also a regex metacharacter.  We should really parse the glob
+      # into a symbolic form first, not do text->text conversion.
+      # Hard test case: \** as a glob -> \*.* as a regex.
       i += 1
-      out.append(s[i])
+      out.append(glob_pat[i])
     elif c == '*':
       is_glob = True
       out.append('.*')
     elif c == '?':
       is_glob = True
       out.append('.')
-    # TODO: Should we enter a different state and parse these?
+    # TODO: Enter a different state and parse character classes
+    # NOTE: Is [!abc] negation rather than [^abc] ?
     elif c == '[':
       err = True  # TODO: better error
       break
     elif c == ']':
       err = True
+
+    # Escape a single character for extended regex literals.""
+    # https://www.gnu.org/software/findutils/manual/html_node/find_html/posix_002dextended-regular-expression-syntax.html
+    elif c in '.|^$()+':  # Already handled \ * ? []
+      out.append('\\' + c)
     else:
-      # e.g. . -> \.
-      out.append(re.escape(c))
+      out.append(c)
 
     i += 1
 

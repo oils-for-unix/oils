@@ -92,16 +92,27 @@ class GlobEscapeTest(unittest.TestCase):
     result = r2.sub('X', 'a-b-c', count=1)
     self.assertEqual('X-b-c', result)
 
-  def testGlobToPythonRegex(self):
+  def testGlobToExtendedRegex(self):
     CASES = [
         # glob input, (regex, err)
         ('*.py', '.*\.py', None),
         ('*.?', '.*\..', None),
-        ('abc', None, None),
+        ('<*>', '<.*>', None),
+
+        #('\\*', '\\*', None),  # not a glob, a string
+        # Hard case: a literal * and then a glob
+        #('\\**', '\\**', None),
+        #('c:\\foo', 'c:\\\\foo', None),
+
+        ('abc', None, None),  # not a glob
+
+        # TODO: These should be parsed
         ('[[:space:]]', None, True),
+        ('[abc]', None, True),
+        ('[abc\[]', None, True),
     ]
     for glob, expected_regex, expected_err in CASES:
-      regex, err = glob_.GlobToPythonRegex(glob)
+      regex, err = glob_.GlobToExtendedRegex(glob)
       self.assertEqual(expected_regex, regex,
           '%s: expected %r, got %r' % (glob, expected_regex, regex))
       self.assertEqual(expected_err, err,

@@ -231,7 +231,6 @@ func_regex_match(PyObject *self, PyObject *args) {
     fprintf(stderr, "Invalid regex at runtime\n");
     return PyLong_FromLong(-1);
   }
-  //regcomp(&pat, pattern, REG_EXTENDED);
 
   int ret;
   // must match at pos 0
@@ -269,6 +268,49 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 }
 
+// For ${//}, the number of groups is always 1, so we want 2 match position
+// results -- the whole regex (which we ignore), and then first group.
+// 
+// For [[ =~ ]], do we need to count how many matches the user gave?
+
+#define NMATCH 2
+
+static PyObject *
+func_regex_first_group_match(PyObject *self, PyObject *args) {
+  const char* pattern;
+  const char* str;
+  int pos;
+  if (!PyArg_ParseTuple(args, "ssi", &pattern, &str, &pos)) {
+    return NULL;
+  }
+
+  regex_t pat;
+  regmatch_t m[NMATCH];
+
+  // Could have been checked by regex_parse for [[ =~ ]], but not for glob
+  // patterns like ${foo/x*/y}.
+
+  if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
+    fprintf(stderr, "Invalid regex at runtime\n");
+    return PyLong_FromLong(-1);
+  }
+
+  debug("first_group_match pat %s str %s pos %d", pattern, str, pos);
+
+  // Match at offset 'pos'
+  int result = regexec(&pat, str + pos, NMATCH, m, 0 /*flags*/);
+  regfree(&pat);
+
+  if (result != 0) {
+    Py_RETURN_NONE;  // no match
+  }
+
+  // Assume there is a match
+  regoff_t start = m[1].rm_so;
+  regoff_t end = m[1].rm_eo;
+  return Py_BuildValue("(i,i)", pos + start, pos + end);
+}
+
 static PyMethodDef methods[] = {
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
@@ -280,6 +322,9 @@ static PyMethodDef methods[] = {
    "Compile a regex in ERE syntax, returning whether it is valid"},
   {"regex_match", func_regex_match, METH_VARARGS,
    "Match regex against a string, returning a list of matches"},
+  {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS,
+   "If matching, return the start and end position of the first group.  "
+    "Otherwise None."},
   {NULL, NULL},
 };
 

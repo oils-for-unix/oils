@@ -40,6 +40,29 @@ class LibStrTest(unittest.TestCase):
       print('%d test %06r return %06r' % (i, s[i:], s[:i]))
     print()
 
+  def testPatSubAllMatches(self):
+    s = 'oXooXoooX'
+
+    # Match positions
+    self.assertEqual(
+        [(1, 3), (4, 6)],
+        libstr._AllMatchPositions(s, '(X.)'))
+
+    # No match
+    self.assertEqual(
+        [],
+        libstr._AllMatchPositions(s, '(z)'))
+
+    # Replacement
+    self.assertEqual(
+        'o_o_ooX',
+        libstr._PatSubAll(s, '(X.)', '_'))
+
+    # Replacement with no match
+    self.assertEqual(
+        s,
+        libstr._PatSubAll(s, '(z)', '_'))
+
 
 if __name__ == '__main__':
   unittest.main()
