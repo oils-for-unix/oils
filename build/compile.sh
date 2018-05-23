@@ -9,21 +9,12 @@ set -o errexit
 
 source build/common.sh
 
-# TODO:
-# - Can probably delete frozen*.c.  It might be more efficient in theory, but
-# it's not the bottleneck.  It's less debuggable uses the fairly complex
-# Tools/freeze.py and modulefinder module.  Have to remove hooks in import.c.
-# - getpath.c can be removed.  Has hooks in sys.exec_prefix, etc. which we
-# don't need.
-
 readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
 Python/bltinmodule.c
 Python/ceval.c
 Python/codecs.c
 Python/errors.c
-Python/frozen.c
-Python/frozenmain.c
 Python/future.c
 Python/getargs.c
 Python/getcompiler.c
@@ -64,7 +55,6 @@ Objects/cellobject.c
 Objects/classobject.c
 Objects/cobject.c
 Objects/codeobject.c
-Objects/complexobject.c
 Objects/descrobject.c
 Objects/enumobject.c
 Objects/exceptions.c
@@ -97,7 +87,6 @@ Objects/unicodectype.c
 
 # Non-standard lib stuff.
 MODULE_OBJS='
-Modules/getpath.c
 Modules/main.c
 Modules/gcmodule.c
 '
@@ -135,7 +124,9 @@ readonly PREPROC_FLAGS=(
   -D PYTHONPATH="$EMPTY_STR" \
   -D VERSION="$EMPTY_STR" \
   -D VPATH="$EMPTY_STR" \
-  -D Py_BUILD_CORE
+  -D Py_BUILD_CORE \
+  # Python already has support for disabling complex numbers!
+  -D WITHOUT_COMPLEX
 )
 
 readonly INCLUDE_PATHS=(-I . -I Include -I ../_devbuild/gen)

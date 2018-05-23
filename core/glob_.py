@@ -78,7 +78,7 @@ def GlobToExtendedRegex(g):
   raise NotImplementedError
 
 
-def GlobToPythonRegex(s, greedy=True):
+def GlobToPythonRegex(s):
   """Convert a glob to a libc extended regexp.
 
   Args:
@@ -92,8 +92,6 @@ def GlobToPythonRegex(s, greedy=True):
 
     regex, err?
   """
-  star_pat = '.*' if greedy else '.*?'
-
   is_glob = False
   err = None
 
@@ -107,7 +105,7 @@ def GlobToPythonRegex(s, greedy=True):
       out.append(s[i])
     elif c == '*':
       is_glob = True
-      out.append(star_pat)
+      out.append('.*')
     elif c == '?':
       is_glob = True
       out.append('.')

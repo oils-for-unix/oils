@@ -1441,12 +1441,23 @@ _PySys_Init(void)
                         PyString_FromString(Py_GetCopyright()));
     SET_SYS_FROM_STRING("platform",
                         PyString_FromString(Py_GetPlatform()));
+    /* getpath.c was removed */
+#ifdef OVM_MAIN
+    /* 'import platform' uses sys.executable for a default arg to libc_ver().
+     * Stub it out with a dummy. */
+    SET_SYS_FROM_STRING("executable",
+                        PyString_FromString("OVM_DUMMY_STRING"));
+#else
     SET_SYS_FROM_STRING("executable",
                         PyString_FromString(Py_GetProgramFullPath()));
+#endif
+
+#ifndef OVM_MAIN
     SET_SYS_FROM_STRING("prefix",
                         PyString_FromString(Py_GetPrefix()));
     SET_SYS_FROM_STRING("exec_prefix",
                         PyString_FromString(Py_GetExecPrefix()));
+#endif
     SET_SYS_FROM_STRING("maxsize",
                         PyInt_FromSsize_t(PY_SSIZE_T_MAX));
     SET_SYS_FROM_STRING("maxint",
