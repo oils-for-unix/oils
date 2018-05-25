@@ -189,6 +189,10 @@ class _WordEvaluator(object):
     return self.mem.GetArgNum(var_num)
 
   def _EvalSpecialVar(self, op_id, quoted):
+    """Returns (val, bool maybe_decay_array).
+
+    TODO: Should that boolean be part of the value?
+    """
     # $@ is special -- it need to know whether it is in a double quoted
     # context.
     #
@@ -210,7 +214,7 @@ class _WordEvaluator(object):
       return runtime.Str(s), False
     else:
       val = self.mem.GetSpecialVar(op_id)
-      return val, False  # dont' decay
+      return val, False  # don't decay
 
   def _ApplyTestOp(self, val, op, quoted, part_vals):
     """
@@ -402,7 +406,7 @@ class _WordEvaluator(object):
     """
     # We have four types of operator that interact.
     #
-    # 1. Bracket: value -> (value, bool decay_array)
+    # 1. Bracket: value -> (value, bool maybe_decay_array)
     #
     # 2. Then these four cases are mutually exclusive:
     #
@@ -413,9 +417,9 @@ class _WordEvaluator(object):
     #
     # That is, we don't have both prefix and suffix operators.
     #
-    # 3. Process decay_array here before returning.
+    # 3. Process maybe_decay_array here before returning.
 
-    decay_array = False  # for $*, ${a[*]}, etc.
+    maybe_decay_array = False  # for $*, ${a[*]}, etc.
 
     var_name = None  # For ${foo=default}
 
@@ -430,10 +434,10 @@ class _WordEvaluator(object):
       val = self._EvalVarNum(var_num)
     else:
       # $* decays
-      val, decay_array = self._EvalSpecialVar(part.token.id, quoted)
+      val, maybe_decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
-    # 2. Bracket: value -> (value v, bool decay_array)
-    # decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER suffix ops
+    # 2. Bracket: value -> (value v, bool maybe_decay_array)
+    # maybe_decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER suffix ops
     # are applied.  If we take the length with a prefix op, the distinction is
     # ignored.
     if part.bracket_op:
@@ -442,7 +446,7 @@ class _WordEvaluator(object):
 
         if op_id == Id.Lit_At:
           if not quoted:
-            decay_array = True  # ${a[@]} decays but "${a[@]}" doesn't
+            maybe_decay_array = True  # ${a[@]} decays but "${a[@]}" doesn't
           if val.tag == value_e.Undef:
             val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
@@ -451,13 +455,13 @@ class _WordEvaluator(object):
             val = runtime.StrArray(val.strs)
 
         elif op_id == Id.Arith_Star:
-          decay_array = True  # both ${a[*]} and "${a[*]}" decay
+          maybe_decay_array = True  # both ${a[*]} and "${a[*]}" decay
           if val.tag == value_e.Undef:
             val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
             e_die("Can't index string with *: %r", val, part=part)
           elif val.tag == value_e.StrArray:
-            # Always decay_array with ${a[*]} or "${a[*]}"
+            # Always maybe_decay_array with ${a[*]} or "${a[*]}"
             val = runtime.StrArray(val.strs)
 
         else:
@@ -487,7 +491,8 @@ class _WordEvaluator(object):
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
       val = self._ApplyPrefixOp(val, part.prefix_op)
-      # At least for length, we can't have a test or suffix afterward.
+      # NOTE: When applying the length operator, we can't have a test or
+      # suffix afterward.  And we don't want to decay the array
 
     elif part.suffix_op:
       op = part.suffix_op
@@ -585,8 +590,8 @@ class _WordEvaluator(object):
         else:
           raise AssertionError(val.__class__.__name__)
 
-    # After applying suffixes, process decay_array here.
-    if decay_array:
+    # After applying suffixes, process maybe_decay_array here.
+    if maybe_decay_array and val.tag == value_e.StrArray:
       val = self._DecayArray(val)
 
     # No prefix or suffix ops
@@ -655,7 +660,7 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.SimpleVarSub:
-      decay_array = False
+      maybe_decay_array = False
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
       if part.token.id == Id.VSub_Name:
         var_name = part.token.val[1:]
@@ -664,11 +669,11 @@ class _WordEvaluator(object):
         var_num = int(part.token.val[1:])
         val = self._EvalVarNum(var_num)
       else:
-        val, decay_array = self._EvalSpecialVar(part.token.id, quoted)
+        val, maybe_decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
       #log('SIMPLE %s', part)
       val = self._EmptyStrOrError(val, token=part.token)
-      if decay_array:
+      if maybe_decay_array and val.tag == value_e.StrArray:
         val = self._DecayArray(val)
       v = _ValueToPartValue(val, quoted)
       part_vals.append(v)
