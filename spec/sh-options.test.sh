@@ -20,6 +20,14 @@ echo $-
 # N-I dash stdout-json: ""
 # N-I dash status: 2
 
+### $- with interactive shell
+$SH -c 'echo $-' | grep i || echo FALSE
+$SH -i -c 'echo $-' | grep -q i && echo TRUE
+## STDOUT:
+FALSE
+TRUE
+## END
+
 ### sh -c
 $SH -c 'echo hi'
 # stdout: hi
