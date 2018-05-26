@@ -44,8 +44,9 @@ def InitExecutor(arena=None):
   funcs = {}
   comp_funcs = {}
   exec_opts = state.ExecOpts(mem)
-  return cmd_exec.Executor(mem, fd_state, status_lines, funcs, completion,
-                           comp_funcs, exec_opts, arena)
+  # For the tests, we do not use 'readline'.
+  return cmd_exec.Executor(mem, fd_state, status_lines, funcs, None,
+                           completion, comp_funcs, exec_opts, arena)
 
 
 def InitEvaluator():

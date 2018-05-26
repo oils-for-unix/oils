@@ -533,7 +533,7 @@ def Cd(argv, mem, dir_stack):
     return 1
 
   # Set $PWD.
-  # `-L` is the default behavior; no need to check it
+  # '-L' is the default behavior; no need to check it
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
   # the others
   pwd = os.path.realpath(dest_dir) if arg.P else dest_dir
@@ -647,7 +647,7 @@ def Pwd(argv, mem):
 
   pwd = mem.GetVar('PWD').s
 
-  # `-L` is the default behavior; no need to check it
+  # '-L' is the default behavior; no need to check it
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
   # the others
   if arg.P:
