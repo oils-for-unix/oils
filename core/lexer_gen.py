@@ -205,7 +205,7 @@ def TranslateLexer(lexer_def):
 */
 
 static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
-                       int start_pos, int* id, int* end_pos) {
+                              int start_pos, int* id, int* end_pos) {
   assert(start_pos <= line_len);  /* caller should have checked */
 
   unsigned char* p = line + start_pos;  /* modified by re2c */
@@ -285,6 +285,21 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
 }
 """)
 
+def TranslateOther(var_name_re):
+  re2_pat = TranslateRegex(var_name_re)
+  print(r"""
+static inline int IsValidVarName(const char* s, int len) {
+  unsigned char* p = s;  /* modified by re2c */
+  unsigned char* end = s + len;
+
+  /*!re2c
+  re2c:define:YYCURSOR = p;
+  %-30s { return p == end; }  // Match must be anchored right, like $
+  *     { return 0; }
+  */
+}
+""" % re2_pat)
+
 
   # note: use YYCURSOR and YYLIMIT
   # limit should be the end of string
@@ -295,7 +310,9 @@ def main(argv):
 
   action = argv[1]
   if action == 'c':
+    # Print code to stdout.
     TranslateLexer(lex.LEXER_DEF)
+    TranslateOther(lex.VAR_NAME_RE)
 
   elif action == 'print-all':
     # Top level is a switch statement.

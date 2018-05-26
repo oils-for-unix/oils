@@ -9,6 +9,7 @@ import unittest
 from core.lexer import CompileAll, LineLexer
 from core import test_lib
 
+from osh import match
 from osh import parse_lib
 from osh.meta import ast, Id, Kind, LookupKind, types
 from osh.lex import LEXER_DEF
@@ -185,41 +186,41 @@ class LineLexerTest(unittest.TestCase):
     self.assertTrue(test_lib.TokensEqual(left, right))
 
   def testReadOuter(self):
-    l = LineLexer(parse_lib._MakeMatcher(), '\n', self.arena)
+    l = LineLexer(match.MakeMatcher(), '\n', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.OUTER))
 
   def testRead_VS_ARG_UNQ(self):
-    l = LineLexer(parse_lib._MakeMatcher(), "'hi'", self.arena)
+    l = LineLexer(match.MakeMatcher(), "'hi'", self.arena)
     t = l.Read(lex_mode_e.VS_ARG_UNQ)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
-    l = LineLexer(parse_lib._MakeMatcher(), '', self.arena)
+    l = LineLexer(match.MakeMatcher(), '', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(parse_lib._MakeMatcher(), 'foo', self.arena)
+    l = LineLexer(match.MakeMatcher(), 'foo', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(parse_lib._MakeMatcher(), 'foo  bar', self.arena)
+    l = LineLexer(match.MakeMatcher(), 'foo  bar', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.OUTER))
 
     # No lookahead; using the cursor!
-    l = LineLexer(parse_lib._MakeMatcher(), 'func(', self.arena)
+    l = LineLexer(match.MakeMatcher(), 'func(', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(parse_lib._MakeMatcher(), 'func  (', self.arena)
+    l = LineLexer(match.MakeMatcher(), 'func  (', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(

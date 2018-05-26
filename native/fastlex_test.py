@@ -66,6 +66,16 @@ class LexTest(unittest.TestCase):
 
     self.assertEqual(expected, tok_type)
 
+  def testIsValidVarName(self):
+    self.assertEqual(True, fastlex.IsValidVarName('abc'))
+    self.assertEqual(True, fastlex.IsValidVarName('foo_bar'))
+    self.assertEqual(True, fastlex.IsValidVarName('_'))
+
+    self.assertEqual(False, fastlex.IsValidVarName(''))
+    self.assertEqual(False, fastlex.IsValidVarName('-x'))
+    self.assertEqual(False, fastlex.IsValidVarName('x-'))
+    self.assertEqual(False, fastlex.IsValidVarName('var_name-foo'))
+
 
 if __name__ == '__main__':
   unittest.main()

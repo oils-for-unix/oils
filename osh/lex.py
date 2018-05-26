@@ -88,7 +88,7 @@ Case terminators:
 
 Left Index:
 
-  _VAR_NAME_RE + '\['  Lit_LeftIndexLikeOpen
+  VAR_NAME_RE + '\['  Lit_LeftIndexLikeOpen
   ]=                   Lit_LeftIndexLikeClose
 
 Indexed array and Associative array literals:
@@ -99,8 +99,6 @@ Indexed array and Associative array literals:
   Left_Bracket, Right_BracketEqual?
   Op_LBracket Op_RBracketEqual
 """
-
-import re
 
 from osh.meta import Id, Kind, ID_SPEC
 from core.lexer import C, R
@@ -132,16 +130,12 @@ _BACKSLASH = [
   C('\\\n', Id.Ignored_LineCont),
 ]
 
-_VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
-
-# Used by osh/cmd_parse.py to validate for loop name.  Note it must be
-# anchored on the right.
-VAR_NAME_RE = re.compile(_VAR_NAME_RE + '$')
+VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
 # All Kind.VSub
 _VARS = [
   # Unbraced variables
-  R(r'\$' + _VAR_NAME_RE, Id.VSub_Name),
+  R(r'\$' + VAR_NAME_RE, Id.VSub_Name),
   R(r'\$[0-9]', Id.VSub_Number),
   C(r'$!', Id.VSub_Bang),
   C(r'$@', Id.VSub_At),
@@ -205,7 +199,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   C('#', Id.Lit_Pound),  # For comments
 
   # Needs to be LONGER than any other
-  #(_VAR_NAME_RE + r'\[', Id.Lit_Maybe_LHS_ARRAY),
+  #(VAR_NAME_RE + r'\[', Id.Lit_Maybe_LHS_ARRAY),
   # Id.Lit_Maybe_LHS_ARRAY2
   #(r'\]\+?=', Id.Lit_Maybe_ARRAY_ASSIGN_RIGHT),
 
@@ -454,7 +448,7 @@ LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
 ]
 
 LEXER_DEF[lex_mode_e.VS_1] = [
-  R(_VAR_NAME_RE, Id.VSub_Name),
+  R(VAR_NAME_RE, Id.VSub_Name),
   #  ${11} is valid, compared to $11 which is $1 and then literal 1.
   R(r'[0-9]+', Id.VSub_Number),
   C('!', Id.VSub_Bang),
@@ -496,7 +490,7 @@ LEXER_DEF[lex_mode_e.ARITH] = \
   #   0123
   # A separate digits token makes this easier to parse STATICALLY.  But this
   # doesn't help with DYNAMIC parsing.
-  R(_VAR_NAME_RE, Id.Lit_ArithVarLike),  # for variable names or 64#_
+  R(VAR_NAME_RE, Id.Lit_ArithVarLike),  # for variable names or 64#_
   R(r'[0-9]+', Id.Lit_Digits),
   C('@', Id.Lit_At),  # for 64#@ or ${a[@]}
   C('#', Id.Lit_Pound),  # for 64#a

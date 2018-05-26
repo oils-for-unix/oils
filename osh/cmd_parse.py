@@ -16,8 +16,8 @@ from core import braces
 from core import word
 from core import util
 
+from osh import match
 from osh.meta import ast, Id, Kind, types
-from osh.lex import VAR_NAME_RE
 from osh.bool_parse import BoolParser
 
 log = util.log
@@ -417,8 +417,7 @@ class CommandParser(object):
            return None
 
         # No value is equivalent to ''
-        m = VAR_NAME_RE.match(static_val)
-        if not m:
+        if not match.IsValidVarName(static_val):
           self.AddErrorContext('Invalid variable name %r', static_val, word=w)
           return None
         a = (static_val, assign_op_e.Equal, None, left_spid)
@@ -735,7 +734,7 @@ class CommandParser(object):
       self.AddErrorContext(
           "Invalid for loop variable", word=self.cur_word)
       return None
-    if not VAR_NAME_RE.match(iter_name):
+    if not match.IsValidVarName(iter_name):
       self.AddErrorContext(
           "Invalid for loop variable name", word=self.cur_word)
       return None

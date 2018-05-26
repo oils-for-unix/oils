@@ -43,7 +43,7 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
   // Eol_Tok is inserted everywhere.
   if (start_pos > line_len) {
     PyErr_Format(PyExc_ValueError,
-                 "Invalid MatchToken call (start_pos = %d, line_len =%d)",
+                 "Invalid MatchToken call (start_pos = %d, line_len = %d)",
                  start_pos, line_len);
     return NULL;
   }
@@ -65,14 +65,22 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
   return Py_BuildValue("(ii)", id, end_pos);
 }
 
-// Rename to TokenMatcher?
-// LineLexer holds CharMatcher?  or TokenMatcher?
-// SlowTokenMatcher
-// FastTokenMatcher
+static PyObject *
+fastlex_IsValidVarName(PyObject *self, PyObject *args) {
+  const char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(IsValidVarName(name, len));
+}
 
 static PyMethodDef methods[] = {
   {"MatchToken", fastlex_MatchToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
+  {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
+   "Is it a valid var name?"},
   {NULL, NULL},
 };
 

@@ -131,7 +131,7 @@ parser() {
   echo
 
   echo 'Lexer / Parser'
-  wc -l osh/{*_parse.py,lex.py,parse_lib.py} core/word.py | sort -n
+  wc -l osh/{*_parse.py,lex.py,match.py,parse_lib.py} core/word.py | sort -n
   echo
 
   echo 'Compiler / Middle End'
