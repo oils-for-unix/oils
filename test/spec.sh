@@ -476,7 +476,7 @@ array() {
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/array-compat.test.sh --osh-failures-allowed 6 \
     $BASH $MKSH $OSH "$@"
 }
 

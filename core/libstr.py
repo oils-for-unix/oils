@@ -13,8 +13,6 @@ Or maybe:
 var y = x -> sub( g/a*/, 'b', :ALL)
 """
 
-import re
-
 import libc
 
 from osh.meta import Id
@@ -121,14 +119,48 @@ def DoUnarySuffixOp(s, op, arg):
       return s
 
 
+def _AllMatchPositions(s, regex):
+  """Returns a list of all (start, end) match positions of the regex against s.
+
+  (If there are no matches, it returns the empty list.)
+  """
+  matches = []
+  pos = 0
+  while True:
+    m = libc.regex_first_group_match(regex, s, pos)
+    if m is None:
+      break
+    matches.append(m)
+    start, end = m
+    log('m = %r, %r' % (start, end))
+    pos = end  # advance position
+  return matches
+
+
+def _PatSubAll(s, regex, replace_str):
+  parts = []
+  prev_end = 0
+  for start, end in _AllMatchPositions(s, regex):
+    parts.append(s[prev_end:start])
+    parts.append(replace_str)
+    prev_end = end
+  parts.append(s[prev_end:])
+  return ''.join(parts)
+
+
+# TODO: For patsub of arrays, it would be worth it to CACHE the constant part
+# of this computation.  Turn this into a class, which translates and regcomp()s
+# the regex exactly once.
+
 def PatSub(s, op, pat, replace_str):
   """Helper for ${x/pat/replace}."""
   #log('PAT %r REPLACE %r', pat, replace_str)
-  py_regex, err = glob_.GlobToPythonRegex(pat)
+
+  regex, err = glob_.GlobToExtendedRegex(pat)
   if err:
     e_die("Can't convert glob to regex: %r", pat)
 
-  if py_regex is None:  # Simple/fast path for fixed strings
+  if regex is None:  # Simple/fast path for fixed strings
     if op.do_all:
       return s.replace(pat, replace_str)
     elif op.do_prefix:
@@ -147,14 +179,19 @@ def PatSub(s, op, pat, replace_str):
       return s.replace(pat, replace_str, 1)  # just the first one
 
   else:
-    count = 1  # replace first occurrence only
+    regex = '(%s)' % regex  # make it a group
+
     if op.do_all:
-      count = 0  # replace all
-    elif op.do_prefix:
-      py_regex = '^' + py_regex
+      return _PatSubAll(s, regex, replace_str)  # loop over matches
+
+    if op.do_prefix:
+      regex = '^' + regex
     elif op.do_suffix:
-      py_regex = py_regex + '$'
+      regex = regex + '$'
 
-    pat_re = re.compile(py_regex)
-    return pat_re.sub(replace_str, s, count)
-
+    m = libc.regex_first_group_match(regex, s, 0)
+    log('regex = %r, s = %r, match = %r', regex, s, m)
+    if m is None:
+      return s
+    start, end = m
+    return s[:start] + replace_str + s[end:]

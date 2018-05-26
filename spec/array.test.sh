@@ -249,8 +249,8 @@ argv.py "${a[@]:i-4:2}"
 
 ### Number of elements
 a=(1 '2 3')
-echo "${#a[@]}"
-# stdout: 2
+echo "${#a[@]}" ${#a[@]}  # bug fix: also test without quotes
+# stdout: 2 2
 
 ### Length of an element
 a=(1 '2 3')

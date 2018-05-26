@@ -11,6 +11,12 @@ set -o errexit
 
 source build/common.sh
 
+# ubuntu names
+install-flake8() {
+  sudo apt install python-pip
+  pip install flake8
+}
+
 get-cpplint() {
   mkdir -p _tmp
   wget --directory _tmp \

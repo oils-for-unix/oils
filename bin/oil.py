@@ -262,11 +262,12 @@ def OshMain(argv0, argv, login_shell):
   if opts.c is not None:
     arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena)
-    interactive = False
+    if opts.i:  # -c and -i can be combined
+      exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
     line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
-    interactive = True
+    exec_opts.interactive = True
   else:
     try:
       script_name = argv[opt_index]
@@ -274,11 +275,10 @@ def OshMain(argv0, argv, login_shell):
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
         line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
-        interactive = True
+        exec_opts.interactive = True
       else:
         arena.PushSource('<stdin>')
         line_reader = reader.FileLineReader(sys.stdin, arena)
-        interactive = False
     else:
       arena.PushSource(script_name)
       try:
@@ -287,13 +287,12 @@ def OshMain(argv0, argv, login_shell):
         util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
-      interactive = False
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
   w_parser, c_parser = parse_lib.MakeParser(line_reader, arena)
 
-  if interactive:
+  if exec_opts.interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:

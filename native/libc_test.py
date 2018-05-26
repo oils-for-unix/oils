@@ -75,19 +75,21 @@ class LibcTest(unittest.TestCase):
     # Error.
     print(libc.regex_match(r'*', 'abcd'))
 
+  def testRegexFirstGroupMatch(self):
+    s='oXooXoooXoX'
+    self.assertEqual(
+        (1, 3),
+        libc.regex_first_group_match('(X.)', s, 0))
 
-  def testRegexReplace(self):
-    cases = [
-        (r'.\.py', 'X', 'foo.py', False, 'foX'),
-        (r'^\.py', 'X', 'foo.py', False, 'foo.py'),  # Anchored left
-        (r'foo$', 'X', 'foo.py', False, 'foo.py'),  # Anchored Right
-        (r'o', 'X', 'foo.py', False, 'fXo.py'),  # replace all
-        (r'o', 'X', 'foo.py', True, 'fXX.py'),  # replace all
-        ]
-    return
-    for pat, replace, s, do_all, expected in cases:
-      actual = libc.regex_replace(pat, replace, s, do_all)
-      self.assertEqual(expected, actual)
+    # Match from position 3
+    self.assertEqual(
+        (4, 6),
+        libc.regex_first_group_match('(X.)', s, 3))
+
+    # Match from position 3
+    self.assertEqual(
+        (8, 10),
+        libc.regex_first_group_match('(X.)', s, 6))
 
 
 if __name__ == '__main__':

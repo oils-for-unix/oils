@@ -1,4 +1,12 @@
-"""Module symbol-table generator"""
+"""Statically classify symbols by scope, for code generation.
+
+Great article about CPython's symbol tables, which are slightly different:
+
+https://eli.thegreenplace.net/2010/09/20/python-internals-symbol-tables-part-2
+
+In particular, see footnote 6: Why does CPython's algorithm have 2 passes,
+while there is only one pass here?
+"""
 from __future__ import print_function
 
 from . import ast

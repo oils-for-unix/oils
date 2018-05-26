@@ -74,7 +74,7 @@ py-ext() {
 
 pylibc() {
   py-ext libc build/setup.py
-  PYTHONPATH=. native/libc_test.py
+  PYTHONPATH=. native/libc_test.py "$@"
 }
 
 fastlex() {

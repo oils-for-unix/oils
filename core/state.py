@@ -107,6 +107,10 @@ class ExecOpts(object):
     """
     self.mem = mem
 
+    # Depends on the shell invocation (sh -i, etc.)  This is not technically an
+    # 'set' option, but it appears in $-.
+    self.interactive = False
+
     # set -o / set +o
     self.errexit = _ErrExit()  # -e
     self.nounset = False  # -u
@@ -172,6 +176,9 @@ class ExecOpts(object):
 
   def GetDollarHyphen(self):
     chars = []
+    if self.interactive:
+      chars.append('i')
+
     if self.ErrExit():
       chars.append('e')
     if self.nounset:
