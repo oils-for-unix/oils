@@ -87,6 +87,9 @@ SET_OPTIONS = [
     (None, 'strict-errexit'),
     (None, 'strict-array'),
 
+    (None, 'vi'),
+    (None, 'emacs'),
+
     # TODO: Add strict-arg-parse?  For example, 'trap 1 2 3' shouldn't be
     # valid, because it has an extra argument.  Builtins are inconsistent about
     # checking this.
@@ -142,8 +145,8 @@ class ExecOpts(object):
 
     # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
     # these.
-    self.nullglob = False 
-    self.failglob = False 
+    self.nullglob = False
+    self.failglob = False
 
     #
     # OSH-specific options that are not yet implemented.
@@ -192,6 +195,9 @@ class ExecOpts(object):
       raise args.UsageError('Invalid option %r' % opt_name)
     if opt_name == 'errexit':
       self.errexit.Set(b)
+    elif opt_name in ('vi', 'emacs'):
+      import readline   # XXX IMMEDIATE ensure this works, first...
+      readline.parse_and_bind("set editing-mode " + opt_name);
     else:
       # strict-control-flow -> strict_control_flow
       opt_name = opt_name.replace('-', '_')
@@ -302,7 +308,7 @@ class DirStack(object):
   def __init__(self):
     self.stack = []
     self.Reset()
-    
+
   def Reset(self):
     self.stack[:] = [os.getcwd()]
 
@@ -558,7 +564,7 @@ class Mem(object):
       namespace = self.var_stack[0].vars
       return namespace.get(name), namespace
 
-    else: 
+    else:
       raise AssertionError(lookup_mode)
 
   def SetVar(self, lval, value, new_flags, lookup_mode):
@@ -566,7 +572,7 @@ class Mem(object):
     Args:
       lval: lvalue
       val: value, or None if only changing flags
-      new_flags: tuple of flags to set: ReadOnly | Exported 
+      new_flags: tuple of flags to set: ReadOnly | Exported
         () means no flags to start with
         None means unchanged?
       scope:
@@ -777,7 +783,7 @@ class Mem(object):
     # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?
     # We have to notice these things:
     # - If an exported variable is changed.
-    # - If the set of exported variables changes.  
+    # - If the set of exported variables changes.
 
     exported = {}
     # Search from globals up.  Names higher on the stack will overwrite names
@@ -794,7 +800,7 @@ def SetLocalString(mem, name, s):
 
   Used for:
   1) for loop iteration variables
-  2) temporary environments like FOO=bar BAR=$FOO cmd, 
+  2) temporary environments like FOO=bar BAR=$FOO cmd,
   3) read builtin
   """
   assert isinstance(s, str)
