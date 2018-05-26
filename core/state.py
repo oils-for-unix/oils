@@ -164,6 +164,10 @@ class ExecOpts(object):
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
 
+    # Used for `set -o vi/emacs`
+    # Set by the Executor, if available
+    self.readline = None
+
   def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail
     lookup = set(shellopts.split(':'))
@@ -203,8 +207,11 @@ class ExecOpts(object):
     if opt_name == 'errexit':
       self.errexit.Set(b)
     elif opt_name in ('vi', 'emacs'):
-      import readline   # XXX IMMEDIATE ensure this works, first...
-      readline.parse_and_bind("set editing-mode " + opt_name);
+      if self.readline:
+        self.readline.parse_and_bind("set editing-mode " + opt_name);
+      else:
+        # TODO error message copied from `cmd_exec.py`; refactor?
+        util.error('Oil was not built with readline/completion.')
     else:
       # strict-control-flow -> strict_control_flow
       opt_name = opt_name.replace('-', '_')

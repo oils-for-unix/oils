@@ -104,7 +104,7 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, fd_state, status_lines, funcs, completion,
+  def __init__(self, mem, fd_state, status_lines, funcs, readline, completion,
                comp_lookup, exec_opts, arena):
     """
     Args:
@@ -127,6 +127,7 @@ class Executor(object):
     self.comp_lookup = comp_lookup
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
+    self.exec_opts.readline = readline
     self.arena = arena
 
     self.splitter = legacy.SplitContext(self.mem)

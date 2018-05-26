@@ -80,8 +80,10 @@ from core import ui
 from core import util
 
 if HAVE_READLINE:
+  import readline
   from core import completion
 else:
+  readline = None
   completion = None
 
 from tools import deps
@@ -232,8 +234,8 @@ def OshMain(argv0, argv, login_shell):
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
 
   fd_state = process.FdState()
-  ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, completion,
-                         comp_lookup, exec_opts, arena)
+  ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, readline,
+                         completion, comp_lookup, exec_opts, arena)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
