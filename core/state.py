@@ -164,7 +164,7 @@ class ExecOpts(object):
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
 
-    # Used for `set -o vi/emacs`
+    # Used for 'set -o vi/emacs'
     # Set by the Executor, if available
     self.readline = None
 
@@ -210,7 +210,7 @@ class ExecOpts(object):
       if self.readline:
         self.readline.parse_and_bind("set editing-mode " + opt_name);
       else:
-        # TODO error message copied from `cmd_exec.py`; refactor?
+        # TODO error message copied from 'cmd_exec.py'; refactor?
         util.error('Oil was not built with readline/completion.')
     else:
       # strict-control-flow -> strict_control_flow
