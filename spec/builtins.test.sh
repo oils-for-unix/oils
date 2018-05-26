@@ -136,6 +136,20 @@ eval "a=3"
 echo $a
 # stdout: 3
 
+### Set readline mode
+set -o emacs
+echo $?
+set -o vi
+echo $?
+## STDOUT:
+0
+0
+## END
+### Set invalid option
+set -o invalid 2>/dev/null
+## status: 2
+# OK mksh status: 1
+
 ### Source
 lib=$TMP/spec-test-lib.sh
 echo 'LIBVAR=libvar' > $lib
