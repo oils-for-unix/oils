@@ -12,7 +12,7 @@ from osh import word_parse
 
 def InitLexer(s, arena):
   """For tests only."""
-  match_func = match.MakeMatcher()
+  match_func = match.MATCHER
   line_lexer = lexer.LineLexer(match_func, '', arena)
   line_reader = reader.StringLineReader(s, arena)
   lx = lexer.Lexer(line_lexer, line_reader)
@@ -38,7 +38,7 @@ def InitLexer(s, arena):
 
 def MakeParser(line_reader, arena):
   """Top level parser."""
-  line_lexer = lexer.LineLexer(match.MakeMatcher(), '', arena)
+  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
   c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena)
@@ -57,7 +57,7 @@ def MakeParserForCompletion(code_str, arena):
   # NOTE: We don't need to use a arena here?  Or we need a "scratch arena" that
   # doesn't interfere with the rest of the program.
   line_reader = reader.StringLineReader(code_str, arena)
-  line_lexer = lexer.LineLexer(match.MakeMatcher(), '', arena)  # AtEnd() is true
+  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)  # AtEnd() is true
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
   c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena)
@@ -66,14 +66,14 @@ def MakeParserForCompletion(code_str, arena):
 
 def MakeWordParserForHereDoc(lines, arena):
   line_reader = reader.VirtualLineReader(lines, arena)
-  line_lexer = lexer.LineLexer(match.MakeMatcher(), '', arena)
+  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return word_parse.WordParser(lx, line_reader)
 
 
 def MakeWordParserForPlugin(code_str, arena):
   line_reader = reader.StringLineReader(code_str, arena)
-  line_lexer = lexer.LineLexer(match.MakeMatcher(), '', arena)
+  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return word_parse.WordParser(lx, line_reader)
 

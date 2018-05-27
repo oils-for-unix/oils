@@ -48,20 +48,15 @@ def _MatchToken_Fast(lex_mode, line, start_pos):
   return IdInstance(tok_type), end_pos
 
 
-def MakeMatcher():
-  if fastlex:
-    return _MatchToken_Fast
-  else:
-    return _MatchToken_Slow(lex.LEXER_DEF)
-
-
 if fastlex:
+  MATCHER = _MatchToken_Fast
   IsValidVarName = fastlex.IsValidVarName
 else:
-  import re
+  MATCHER = _MatchToken_Slow(lex.LEXER_DEF)
 
-# Used by osh/cmd_parse.py to validate for loop name.  Note it must be
-# anchored on the right.
+  # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
+  # anchored on the right.
+  import re
   _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')
 
   def IsValidVarName(s):

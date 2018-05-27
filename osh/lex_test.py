@@ -186,41 +186,41 @@ class LineLexerTest(unittest.TestCase):
     self.assertTrue(test_lib.TokensEqual(left, right))
 
   def testReadOuter(self):
-    l = LineLexer(match.MakeMatcher(), '\n', self.arena)
+    l = LineLexer(match.MATCHER, '\n', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.OUTER))
 
   def testRead_VS_ARG_UNQ(self):
-    l = LineLexer(match.MakeMatcher(), "'hi'", self.arena)
+    l = LineLexer(match.MATCHER, "'hi'", self.arena)
     t = l.Read(lex_mode_e.VS_ARG_UNQ)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
-    l = LineLexer(match.MakeMatcher(), '', self.arena)
+    l = LineLexer(match.MATCHER, '', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(match.MakeMatcher(), 'foo', self.arena)
+    l = LineLexer(match.MATCHER, 'foo', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(match.MakeMatcher(), 'foo  bar', self.arena)
+    l = LineLexer(match.MATCHER, 'foo  bar', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.OUTER))
 
     # No lookahead; using the cursor!
-    l = LineLexer(match.MakeMatcher(), 'func(', self.arena)
+    l = LineLexer(match.MATCHER, 'func(', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(match.MakeMatcher(), 'func  (', self.arena)
+    l = LineLexer(match.MATCHER, 'func  (', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
