@@ -74,7 +74,7 @@ cd -- /
 echo $PWD
 # stdout: /
 
-### cd to non-symlink with `-P`
+### cd to non-symlink with -P
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
@@ -98,7 +98,7 @@ rmdir $targ
 rm $lnk
 # stdout: OK
 
-### cd to symlink with `-L`
+### cd to symlink with -L
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
@@ -110,7 +110,7 @@ rmdir $targ
 rm $lnk
 # stdout: OK
 
-### cd to symlink with `-P`
+### cd to symlink with -P
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
@@ -135,20 +135,6 @@ pwd
 eval "a=3"
 echo $a
 # stdout: 3
-
-### Set readline mode
-set -o emacs
-echo $?
-set -o vi
-echo $?
-## STDOUT:
-0
-0
-## END
-### Set invalid option
-set -o invalid 2>/dev/null
-## status: 2
-# OK mksh status: 1
 
 ### Source
 lib=$TMP/spec-test-lib.sh
