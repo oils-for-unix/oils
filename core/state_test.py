@@ -179,19 +179,19 @@ class MemTest(unittest.TestCase):
     mem.ClearFlag('PYTHONPATH', var_flags_e.Exported, scope_e.Dynamic)
     self.assertEqual(False, mem.var_stack[0].vars['PYTHONPATH'].exported)
 
-    # a[2]=2
+    # a[1]=2
     mem.SetVar(
         runtime.LhsIndexedName('a', 1), runtime.Str('2'), (),
         scope_e.Dynamic)
-    self.assertEqual(['', '2'], mem.var_stack[0].vars['a'].val.strs)
+    self.assertEqual([None, '2'], mem.var_stack[0].vars['a'].val.strs)
 
-    # a[2]=3
+    # a[1]=3
     mem.SetVar(
         runtime.LhsIndexedName('a', 1), runtime.Str('3'), (),
         scope_e.Dynamic)
-    self.assertEqual(['', '3'], mem.var_stack[0].vars['a'].val.strs)
+    self.assertEqual([None, '3'], mem.var_stack[0].vars['a'].val.strs)
 
-    # a[2]=(x y z)  # illegal
+    # a[1]=(x y z)  # illegal
     try:
       mem.SetVar(
           runtime.LhsIndexedName('a', 1), runtime.StrArray(['x', 'y', 'z']),

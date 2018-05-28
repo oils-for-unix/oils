@@ -185,6 +185,9 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
       try:
         item = array[index]
       except IndexError:
+        item = None
+
+      if item is None:
         val = runtime.Str('')
       else:
         assert isinstance(item, str), item

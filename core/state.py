@@ -676,7 +676,7 @@ class Mem(object):
           # Then ${#a[@]} counts the entries that are not None.
           #
           # TODO: strict-array for Oil arrays won't auto-fill.
-          n = len(strs) - lval.index + 1
+          n = lval.index - len(strs) + 1
           strs.extend([None] * n)
           strs[lval.index] = value.s
       else:
@@ -703,7 +703,7 @@ class Mem(object):
         # ${!a[@]} - keys
         # That seems pretty minimal.
 
-        items = [''] * lval.index
+        items = [None] * lval.index
         items.append(value.s)
         new_value = runtime.StrArray(items)
         # arrays can't be exported
