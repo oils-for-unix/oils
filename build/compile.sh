@@ -96,12 +96,12 @@ Modules/gcmodule.c
 # 'configure' output.
 MODOBJS='
 Modules/posixmodule.c
-Modules/errnomodule.c  
+Modules/errnomodule.c
 Modules/pwdmodule.c
-Modules/_sre.c  
-Modules/_codecsmodule.c  
+Modules/_sre.c
+Modules/_codecsmodule.c
 Modules/_weakref.c
-Modules/zipimport.c  
+Modules/zipimport.c
 Modules/signalmodule.c
 '
 
@@ -111,7 +111,7 @@ OVM_LIBRARY_OBJS="
 Modules/getbuildinfo.c
 Parser/myreadline.c
 $OBJECT_OBJS
-$OVM_PYTHON_OBJS 
+$OVM_PYTHON_OBJS
 $MODULE_OBJS
 $MODOBJS
 "
@@ -171,22 +171,33 @@ build() {
 
   pushd $PY27
 
-  local compile_readline
-  local link_readline
+  if is_macos; then
+    cp pyconfig.macos.h pyconfig.h
+  else
+    cp pyconfig.linux.h pyconfig.h
+  fi
+
+  local readline_dir
+  local readline_flags
   if test "$HAVE_READLINE" = 1; then
     # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
     # We should create a special no_readline_raw_input().
 
     c_module_src_list=$(cat $abs_c_module_srcs)
+
     # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appear to use it?
-    compile_readline='-D HAVE_READLINE'
-    link_readline='-l readline'
+    readline_flags=(-D HAVE_READLINE)
+
+    if is_macos; then
+      readline_dir=$(brew --prefix readline)
+      readline_flags+=(-L "$readline_dir/lib" -I "$readline_dir/include")
+    fi
+    readline_flags+=(-l readline)
   else
     # don't fail
     c_module_src_list=$(grep -v '/readline.c' $abs_c_module_srcs || true)
-    compile_readline=''
-    link_readline=''
+    readline_flags=()
   fi
 
   # $PREFIX comes from ./configure and defaults to /usr/local.
@@ -206,9 +217,8 @@ build() {
     $abs_main_name \
     $c_module_src_list \
     Modules/ovm.c \
-    $compile_readline \
     -l m \
-    $link_readline \
+    "${readline_flags[@]}" \
     "$@" \
     || true
   popd
@@ -258,18 +268,36 @@ python-sources() {
   echo "$OVM_LIBRARY_OBJS" | add-py27
 }
 
-_headers() {
-  local c_module_srcs=${1:-_tmp/hello/c-module-srcs.txt}
-  local abs_c_module_srcs=$PWD/$c_module_srcs
-
+_gcc_extract_headers() {
   # -MM: no system headers
-  cd $PY27
+  local abs_c_module_srcs=$1
   gcc \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
     -MM $OVM_LIBRARY_OBJS \
     Modules/ovm.c \
-    $(cat $abs_c_module_srcs) 
+    $(cat $abs_c_module_srcs)
+}
+
+_headers() {
+  local c_module_srcs=${1:-_tmp/hello/c-module-srcs.txt}
+  local abs_c_module_srcs=$PWD/$c_module_srcs
+
+  cd $PY27
+
+  # HACK: We extract Python headers twice, once with a Linux pyconfig.h and
+  # again with a Mac OS pyconfig.h. This ensures that we package all
+  # headers required for either distribution. When we compile a binary in
+  # build(), we put the platform-specific pyconfig.h in place so that only
+  # platform-required source files are compiled.
+
+  cp pyconfig.linux.h pyconfig.h
+  _gcc_extract_headers "$abs_c_module_srcs"
+
+  cp pyconfig.macos.h pyconfig.h
+  _gcc_extract_headers "$abs_c_module_srcs"
+
+  rm pyconfig.h
 }
 
 # NOTE: 91 headers in Include, but only 81 referenced here.  So it's worth it.
@@ -292,6 +320,7 @@ python-headers() {
   _headers $c_module_srcs \
     | egrep --only-matching '[^ ]+\.h' \
     | grep -v '_build/detected-config.h' \
+    | grep -v 'pyconfig.h' \
     | sed 's|^Python/../||' \
     | sort | uniq | add-py27
 }
@@ -348,6 +377,8 @@ make-tar() {
     $c_module_srcs \
     $(cat $c_module_srcs | add-py27) \
     $(python-headers $c_module_srcs) \
+    $PY27/pyconfig.linux.h \
+    $PY27/pyconfig.macos.h \
     $(python-sources)
 
   ls -l $out

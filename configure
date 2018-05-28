@@ -15,6 +15,13 @@
 TMP=${TMP:-/tmp}  # Assume that any system has $TMP set or /tmp exists
 readonly TMP  # POSIX sh supports 'readonly'
 
+UNAME=$(uname)
+readonly UNAME
+
+is_macos() {
+  test "$UNAME" = 'Darwin'
+}
+
 log() {
   echo "$0: $@" 1>&2
 }
@@ -82,10 +89,14 @@ while true; do
   shift
 done
 
+quiet() {
+  "$@" >/dev/null 2>&1
+}
+
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
 cc_quiet() {
-  cc "$@" -o /dev/null >/dev/null 2>&1
+  quiet cc "$@" -o /dev/null
 }
 
 cc_or_die() {
@@ -115,15 +126,30 @@ EOF
   fi
 }
 
+_disable_readline() {
+  if test "$FLAG_with_readline" = 1; then
+    die 'readline was not detected on the system (--with-readline passed).'
+  fi
+  echo 'HAVE_READLINE='
+}
+
 # Write a shell script to standard out with variables, or fail.
 detect_readline() {
-  if cc_quiet build/detect-readline.c -l readline; then
-    echo 'HAVE_READLINE=1'
-  else
-    if test "$FLAG_with_readline" = 1; then
-      die 'readline was not detected on the system (--with-readline passed).'
+  if is_macos; then
+    if quiet command -v brew && quiet brew --prefix readline; then
+      echo 'HAVE_READLINE=1'
+    else
+      _disable_readline
+      log 'Homebrew readline not detected, building without readline.'
+      log 'To enable readline, install via: brew install readline'
     fi
-    echo 'HAVE_READLINE='
+
+  else  # Linux
+    if cc_quiet build/detect-readline.c -l readline; then
+      echo 'HAVE_READLINE=1'
+    else
+      _disable_readline
+    fi
   fi
 }
 
@@ -147,7 +173,7 @@ int main() {
   printf("%lu", $c_expr);
 }
 EOF
-  cc_or_die -o $TMP/print_expr $TMP/print_expr.c 
+  cc_or_die -o $TMP/print_expr $TMP/print_expr.c
   $TMP/print_expr > $TMP/print_expr.out
 }
 

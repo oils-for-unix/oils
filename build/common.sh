@@ -22,6 +22,18 @@ readonly PREPARE_DIR=_devbuild/cpython-full
 readonly OIL_SYMLINKS=(oil osh oshc sh wok boil true false)
 readonly OPY_SYMLINKS=(opy opyc)
 
+readonly UNAME=$(uname)
+
+is_macos() {
+  [[ "$UNAME" == "Darwin" ]] || return 1
+}
+
+if is_macos; then
+  readonly NPROC=$(sysctl -n hw.ncpu)
+else  # Linux
+  readonly NPROC=$(nproc)
+fi
+
 
 log() {
   echo "$@" >&2
