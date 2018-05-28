@@ -156,6 +156,8 @@ class BoolParser(object):
     Expr    : Term (OR Expr)?
     """
     left = self.ParseTerm()
+    if not left:
+      return None  # TODO: An exception should handle this case.
     # [[ uses || while [ uses -o
     if self.op_id in (Id.Op_DPipe, Id.BoolUnary_o):
       if not self._Next(): return None
