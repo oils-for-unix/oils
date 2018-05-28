@@ -9,6 +9,7 @@
 lexer.py - Library for lexing.
 """
 
+# CompileAll() used for SimpleLexer
 import re
 
 from asdl import const

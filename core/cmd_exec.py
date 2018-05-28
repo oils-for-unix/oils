@@ -16,6 +16,8 @@ This just does head?  Last one wins.
 """
 
 import os
+# Used to test whether we should repr() escape
+import re
 import resource
 import sys
 import time
@@ -1527,7 +1529,6 @@ class Tracer(object):
 # NOTE: bash prints \' for single quote, repr() prints "'".  Gah.  This is also
 # used for printf %q and ${var@q} (bash 4.4).
 
-import re
 _PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
 
 def _PrettyString(s):

@@ -14,7 +14,7 @@ esac
 echo empty
 # stdout: empty
 
-### empty then/fi
+### Empty then/fi
 if foo; then
 fi
 echo empty
