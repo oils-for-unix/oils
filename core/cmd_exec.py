@@ -997,17 +997,20 @@ class Executor(object):
 
     elif node.tag == command_e.ForExpr:
       status = 0
-      self.arith_ev.Eval(node.init)
+      init, cond, body, update = node.init, node.cond, node.body, node.update
+      if init:
+        self.arith_ev.Eval(init)
 
       self.loop_level += 1
       try:
         while True:
-          b = self.arith_ev.Eval(node.cond)
-          if not b:
-            break
+          if cond:
+            b = self.arith_ev.Eval(cond)
+            if not b:
+              break
 
           try:
-            status = self._Execute(node.body)
+            status = self._Execute(body)
           except _ControlFlow as e:
             if e.IsBreak():
               status = 0
@@ -1017,7 +1020,8 @@ class Executor(object):
             else:  # return needs to pop up more
               raise
 
-          self.arith_ev.Eval(node.update)
+          if update:
+            self.arith_ev.Eval(update)
 
       finally:
         self.loop_level -= 1
