@@ -6,7 +6,7 @@ lex_test.py: Tests for lex.py
 
 import unittest
 
-from core.lexer import CompileAll, LineLexer
+from core.lexer import LineLexer
 from core import test_lib
 
 from osh import match
@@ -227,8 +227,8 @@ class LineLexerTest(unittest.TestCase):
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
 
-OUTER_RE = CompileAll(LEXER_DEF[lex_mode_e.OUTER])
-DOUBLE_QUOTED_RE = CompileAll(LEXER_DEF[lex_mode_e.DQ])
+OUTER_RE = match.CompileAll(LEXER_DEF[lex_mode_e.OUTER])
+DOUBLE_QUOTED_RE = match.CompileAll(LEXER_DEF[lex_mode_e.DQ])
 
 
 class RegexTest(unittest.TestCase):

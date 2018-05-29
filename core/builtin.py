@@ -30,7 +30,6 @@ import os
 import sys
 
 from core import args
-from core import lexer
 from core import util
 from core import state
 from core import word_compile
@@ -161,7 +160,7 @@ def Resolve(argv0):
 # Implementation of builtins.
 #
 
-ECHO_LEXER = lexer.SimpleLexer(lex.ECHO_E_DEF)
+ECHO_LEXER = match.SimpleLexer(lex.ECHO_E_DEF)
 
 ECHO_SPEC = _Register('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes

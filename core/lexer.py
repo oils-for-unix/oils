@@ -9,9 +9,6 @@
 lexer.py - Library for lexing.
 """
 
-# CompileAll() used for SimpleLexer
-import re
-
 from asdl import const
 from core import util
 from osh.meta import Id
@@ -28,15 +25,6 @@ def C(pat, tok_type):
 def R(pat, tok_type):
   """ Create a constant mapping like C('$*', VSub_Star) """
   return (True, pat, tok_type)
-
-
-def CompileAll(pat_list):
-  result = []
-  for is_regex, pat, token_id in pat_list:
-    if not is_regex:
-      pat = re.escape(pat)  # turn $ into \$
-    result.append((re.compile(pat), token_id))
-  return result
 
 
 class LineLexer(object):
@@ -234,30 +222,3 @@ class Lexer(object):
 
     #log('Read() Returning %s', t)
     return t
-
-
-class SimpleLexer(object):
-  """Lexer for echo -e, which interprets C-escaped strings.
-
-  Based on osh/parse_lib.py MatchToken_Slow.
-  """
-  def __init__(self, pat_list):
-    self.pat_list = CompileAll(pat_list)
-
-  def Tokens(self, line):
-    """Yields tokens."""
-    pos = 0
-    n = len(line)
-    while pos < n:
-      matches = []
-      for regex, tok_type in self.pat_list:
-        m = regex.match(line, pos)  # left-anchored
-        if m:
-          matches.append((m.end(0), tok_type, m.group(0)))
-      if not matches:
-        raise AssertionError(
-            'no match at position %d: %r (%r)' % (pos, line, line[pos]))
-      # NOTE: Need longest-match semantics to find \377 vs \.
-      end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
-      yield tok_type, line[pos:end_pos]
-      pos = end_pos
