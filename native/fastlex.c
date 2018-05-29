@@ -76,11 +76,25 @@ fastlex_IsValidVarName(PyObject *self, PyObject *args) {
   return PyBool_FromLong(IsValidVarName(name, len));
 }
 
+static PyObject *
+fastlex_IsPlainWord(PyObject *self, PyObject *args) {
+  const char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(IsPlainWord(name, len));
+}
+
+
 static PyMethodDef methods[] = {
   {"MatchToken", fastlex_MatchToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
    "Is it a valid var name?"},
+  {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS,
+   "Can the string be pretty-printed without quotes?"},
   {NULL, NULL},
 };
 

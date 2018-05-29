@@ -9,10 +9,9 @@ except ImportError:
   fastlex = None
 
 # Word characters, - and _, as well as path name characters . and /.
-PLAIN_WORD_RE = r'^[a-zA-Z0-9\-_./]+'
+PLAIN_WORD_RE = r'[a-zA-Z0-9\-_./]+'
 
-if 0:
-#if fastlex:
+if fastlex:
   IsPlainWord = fastlex.IsPlainWord
 else:
   import re

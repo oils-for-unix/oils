@@ -16,8 +16,6 @@ This just does head?  Last one wins.
 """
 
 import os
-# Used to test whether we should repr() escape
-import re
 import resource
 import sys
 import time

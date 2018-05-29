@@ -5,10 +5,12 @@ lex_gen.py
 """
 
 import cStringIO
+import pprint
 import sys
 import sre_parse
 import sre_constants
 
+from asdl import pretty  # For PLAIN_WORD_RE
 from osh import lex
 from osh import meta
 
@@ -173,6 +175,8 @@ def TranslateTree(re_tree, f, in_char_class=False):
 
 def TranslateRegex(pat):
   re_tree = sre_parse.parse(pat)
+  # For debugging
+  #print(pprint.pformat(re_tree), file=sys.stderr)
   f = cStringIO.StringIO()
   TranslateTree(re_tree, f)
   return f.getvalue()
@@ -285,10 +289,10 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
 }
 """)
 
-def TranslateOther(var_name_re):
-  re2_pat = TranslateRegex(var_name_re)
+def TranslateRegexToPredicate(py_regex, func_name):
+  re2c_pat = TranslateRegex(py_regex)
   print(r"""
-static inline int IsValidVarName(const char* s, int len) {
+static inline int %s(const char* s, int len) {
   unsigned char* p = s;  /* modified by re2c */
   unsigned char* end = s + len;
 
@@ -298,7 +302,7 @@ static inline int IsValidVarName(const char* s, int len) {
   *     { return 0; }
   */
 }
-""" % re2_pat)
+""" % (func_name, re2c_pat))
 
 
   # note: use YYCURSOR and YYLIMIT
@@ -312,7 +316,8 @@ def main(argv):
   if action == 'c':
     # Print code to stdout.
     TranslateLexer(lex.LEXER_DEF)
-    TranslateOther(lex.VAR_NAME_RE)
+    TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
+    TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
 
   elif action == 'print-all':
     # Top level is a switch statement.
