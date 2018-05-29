@@ -3,7 +3,6 @@
 match.py - match with generated re2c code or Python regexes.
 """
 
-from core import lexer
 from osh import lex
 from osh.meta import Id, IdInstance
 
@@ -14,13 +13,27 @@ try:
 except ImportError:
   fastlex = None
 
+if fastlex:
+  re = None  # Shouldn't use re module in this case
+else:
+  import re
+
+
+def _CompileAll(pat_list):
+  result = []
+  for is_regex, pat, token_id in pat_list:
+    if not is_regex:
+      pat = re.escape(pat)  # turn $ into \$
+    result.append((re.compile(pat), token_id))
+  return result
+
 
 class _MatchOshToken_Slow(object):
   """An abstract matcher that doesn't depend on OSH."""
   def __init__(self, lexer_def):
     self.lexer_def = {}
     for lex_mode, pat_list in lexer_def.items():
-      self.lexer_def[lex_mode] = lexer.CompileAll(pat_list)
+      self.lexer_def[lex_mode] = _CompileAll(pat_list)
 
   def __call__(self, lex_mode, line, start_pos):
     """Returns (id, end_pos)."""
@@ -48,18 +61,6 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
   return IdInstance(tok_type), end_pos
 
 
-# CompileAll() used for SimpleLexer
-import re
-
-
-def CompileAll(pat_list):
-  result = []
-  for is_regex, pat, token_id in pat_list:
-    if not is_regex:
-      pat = re.escape(pat)  # turn $ into \$
-    result.append((re.compile(pat), token_id))
-  return result
-
 # TODO:
 #
 # MatchToken -> MatchOshToken()
@@ -75,7 +76,7 @@ class SimpleLexer(object):
   Based on osh/parse_lib.py MatchToken_Slow.
   """
   def __init__(self, pat_list):
-    self.pat_list = CompileAll(pat_list)
+    self.pat_list = _CompileAll(pat_list)
 
   def Tokens(self, line):
     """Yields tokens."""
@@ -104,7 +105,6 @@ else:
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
-  import re
   _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')
 
   def IsValidVarName(s):
