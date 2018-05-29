@@ -213,7 +213,7 @@ echo "[$x]"
 ### Read from empty file
 echo -n '' > $TMP/empty.txt
 read x < $TMP/empty.txt
-argv "status=$?" "$x"
+argv.py "status=$?" "$x"
 # stdout: ['status=1', '']
 # status: 0
 
@@ -264,14 +264,14 @@ echo $REPLY
 echo 'one\ two' > $TMP/readr.txt
 read escaped < $TMP/readr.txt
 read -r raw < $TMP/readr.txt
-argv "$escaped" "$raw"
+argv.py "$escaped" "$raw"
 # stdout: ['one two', 'one\\ two']
 
 ### read -r with other backslash escapes
 echo 'one\ two\x65three' > $TMP/readr.txt
 read escaped < $TMP/readr.txt
 read -r raw < $TMP/readr.txt
-argv "$escaped" "$raw"
+argv.py "$escaped" "$raw"
 # mksh respects the hex escapes here, but other shells don't!
 # stdout: ['one twox65three', 'one\\ two\\x65three']
 # BUG mksh/zsh stdout: ['one twoethree', 'one\\ twoethree']
@@ -282,7 +282,7 @@ tmp=$TMP/$(basename $SH)-readr.txt
 echo -e 'one\\\ntwo\n' > $tmp
 read escaped < $tmp
 read -r raw < $tmp
-argv "$escaped" "$raw"
+argv.py "$escaped" "$raw"
 # stdout: ['onetwo', 'one\\']
 # N-I dash stdout: ['-e onetwo', '-e one\\']
 
@@ -293,14 +293,14 @@ two three-\
 four five-\
 six
 EOF
-argv "$x" "$y" "$z"
+argv.py "$x" "$y" "$z"
 # stdout: ['one-two', 'three-four five-six', '']
 
 ### read -r with \n
 echo '\nline' > $TMP/readr.txt
 read escaped < $TMP/readr.txt
 read -r raw < $TMP/readr.txt
-argv "$escaped" "$raw"
+argv.py "$escaped" "$raw"
 # dash/mksh/zsh are bugs because at least the raw mode should let you read a
 # literal \n.
 # stdout: ['nline', '\\nline']
