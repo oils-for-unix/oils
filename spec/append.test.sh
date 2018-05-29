@@ -91,13 +91,13 @@ f
 f() {
   # NOTE: mksh doesn't like a=() after keyword.  Doesn't allow local arrays!
   local x+=(a b)
-  argv "${x[@]}"
+  argv.py "${x[@]}"
 
   y+=(c d)
-  argv "${y[@]}"
+  argv.py "${y[@]}"
 
   readonly z+=(e f)
-  argv "${z[@]}"
+  argv.py "${z[@]}"
 }
 f
 # stdout-json: "['a', 'b']\n['c', 'd']\n['e', 'f']\n"
