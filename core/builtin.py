@@ -37,6 +37,7 @@ from core import word_compile
 
 from osh.meta import runtime
 from osh import lex
+from osh import match
 
 from _devbuild.gen import osh_help  # generated file
 
@@ -664,7 +665,7 @@ def Export(argv, mem):
   arg, i = EXPORT_SPEC.Parse(argv)
   if arg.n:
     for name in argv[i:]:
-      m = lex.VAR_NAME_RE.match(name)
+      m = match.IsValidVarName(name)
       if not m:
         raise args.UsageError('export: Invalid variable name %r' % name)
 
@@ -680,7 +681,7 @@ def Export(argv, mem):
         name, s = parts
         val = runtime.Str(s)
 
-      m = lex.VAR_NAME_RE.match(name)
+      m = match.IsValidVarName(name)
       if not m:
         raise args.UsageError('export: Invalid variable name %r' % name)
 
