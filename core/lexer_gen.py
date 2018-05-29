@@ -5,7 +5,6 @@ lex_gen.py
 """
 
 import cStringIO
-import pprint
 import sys
 import sre_parse
 import sre_constants
@@ -176,6 +175,7 @@ def TranslateTree(re_tree, f, in_char_class=False):
 def TranslateRegex(pat):
   re_tree = sre_parse.parse(pat)
   # For debugging
+  #import pprint
   #print(pprint.pformat(re_tree), file=sys.stderr)
   f = cStringIO.StringIO()
   TranslateTree(re_tree, f)
