@@ -227,8 +227,8 @@ class LineLexerTest(unittest.TestCase):
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
 
-OUTER_RE = match.CompileAll(LEXER_DEF[lex_mode_e.OUTER])
-DOUBLE_QUOTED_RE = match.CompileAll(LEXER_DEF[lex_mode_e.DQ])
+OUTER_RE = match._CompileAll(LEXER_DEF[lex_mode_e.OUTER])
+DOUBLE_QUOTED_RE = match._CompileAll(LEXER_DEF[lex_mode_e.DQ])
 
 
 class RegexTest(unittest.TestCase):

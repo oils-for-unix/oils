@@ -13,7 +13,8 @@ try:
 except ImportError:
   fastlex = None
 
-if fastlex:
+#if fastlex:
+if 0:
   re = None  # Shouldn't use re module in this case
 else:
   import re
