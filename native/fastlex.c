@@ -25,13 +25,11 @@ static void debug(const char* fmt, ...) {
 #endif
 
 static PyObject *
-fastlex_MatchToken(PyObject *self, PyObject *args) {
+fastlex_MatchOshToken(PyObject *self, PyObject *args) {
   int lex_mode;
-  unsigned char* line;
 
+  unsigned char* line;
   int line_len;
-  // Doesn't work!  signed/unsigned confused?
-  //Py_ssize_t line_len;
 
   int start_pos;
   if (!PyArg_ParseTuple(args, "is#i",
@@ -43,25 +41,39 @@ fastlex_MatchToken(PyObject *self, PyObject *args) {
   // Eol_Tok is inserted everywhere.
   if (start_pos > line_len) {
     PyErr_Format(PyExc_ValueError,
-                 "Invalid MatchToken call (start_pos = %d, line_len = %d)",
+                 "Invalid MatchOshToken call (start_pos = %d, line_len = %d)",
                  start_pos, line_len);
     return NULL;
   }
 
-  /*
-  debug("lex_mode %d, line_len %d, start_pos %d\n",
-        lex_mode, line_len, start_pos);
-  */
+  int id;
+  int end_pos;
+  MatchOshToken(lex_mode, line, line_len, start_pos, &id, &end_pos);
+  return Py_BuildValue("(ii)", id, end_pos);
+}
 
-  /*
-  for (int i = 0; i < line_len; ++i) {
-    printf("%d c: %c\n", i, line[i]);
+static PyObject *
+fastlex_MatchEchoToken(PyObject *self, PyObject *args) {
+  unsigned char* line;
+  int line_len;
+
+  int start_pos;
+  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
+    return NULL;
   }
-  */
+
+  // bounds checking.  It's OK to be called with a start_pos looking at \0.
+  // Eol_Tok is inserted everywhere.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchEchoToken call (start_pos = %d, line_len = %d)",
+                 start_pos, line_len);
+    return NULL;
+  }
 
   int id;
   int end_pos;
-  MatchToken(lex_mode, line, line_len, start_pos, &id, &end_pos);
+  MatchEchoToken(line, line_len, start_pos, &id, &end_pos);
   return Py_BuildValue("(ii)", id, end_pos);
 }
 
@@ -89,8 +101,10 @@ fastlex_IsPlainWord(PyObject *self, PyObject *args) {
 
 
 static PyMethodDef methods[] = {
-  {"MatchToken", fastlex_MatchToken, METH_VARARGS,
+  {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
+  {"MatchEchoToken", fastlex_MatchEchoToken, METH_VARARGS,
+   "(line, start_pos) -> (id, end_pos)."},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
    "Is it a valid var name?"},
   {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS,

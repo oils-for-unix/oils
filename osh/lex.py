@@ -416,10 +416,6 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 
   C(r'\c', Id.Char_Stop),
 
-  # Bad Backslash should not end the string.  We allow it, but a lint tool
-  # should warn about it.
-  R(r'\\$', Id.Char_BadBackslash),
-
   # e.g. 'foo', anything that's not a backslash escape
   R(r'[^\\]+', Id.Char_Literals),
 ]

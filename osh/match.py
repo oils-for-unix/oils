@@ -56,16 +56,13 @@ class _MatchOshToken_Slow(object):
 
 def _MatchOshToken_Fast(lex_mode, line, start_pos):
   """Returns (id, end_pos)."""
-  tok_type, end_pos = fastlex.MatchToken(lex_mode.enum_id, line, start_pos)
+  tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
   # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
   # saves memory.
   return IdInstance(tok_type), end_pos
 
 
 # TODO:
-#
-# MatchToken -> MatchOshToken()
-# Add MatchEchoToken()
 #
 # MATCHER -> OSH_MATCHER
 # add ECHO_MATCHER
@@ -74,7 +71,7 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
 class SimpleLexer(object):
   """Lexer for echo -e, which interprets C-escaped strings.
 
-  Based on osh/parse_lib.py MatchToken_Slow.
+  Based on osh/parse_lib.py MatchOshToken_Slow.
   """
   def __init__(self, pat_list):
     self.pat_list = _CompileAll(pat_list)
