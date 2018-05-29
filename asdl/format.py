@@ -15,9 +15,8 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
-import re
-
 from asdl import asdl_ as asdl
+from asdl import pretty
 from core import util
 
 import os
@@ -320,23 +319,6 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
   return out_node
 
 
-# This is word characters, - and _, as well as path name characters . and /.
-_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
-
-# NOTE: Turning JSON back on can be a cheap hack for detecting invalid unicode.
-# But we want to write our own AST walker for that.
-
-def _PrettyString(s):
-  if '\n' in s:
-    #return json.dumps(s)  # account for the fact that $ matches the newline
-    return repr(s)
-  if _PLAIN_RE.match(s):
-    return s
-  else:
-    #return json.dumps(s)
-    return repr(s)
-
-
 INDENT = 2
 
 def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
@@ -483,11 +465,11 @@ def PrintTree(node, f, indent=0, max_col=100):
     return
 
   if isinstance(node, str):
-    f.write(ind + _PrettyString(node))
+    f.write(ind + pretty.Str(node))
 
   elif isinstance(node, _ColoredString):
     f.PushColor(node.str_type)
-    f.write(_PrettyString(node.s))
+    f.write(pretty.Str(node.s))
     f.PopColor()
 
   elif isinstance(node, _Obj):
@@ -540,11 +522,11 @@ def _TrySingleLine(node, f, max_chars):
       If False, you can't use the value of f.
   """
   if isinstance(node, str):
-    f.write(_PrettyString(node))
+    f.write(pretty.Str(node))
 
   elif isinstance(node, _ColoredString):
     f.PushColor(node.str_type)
-    f.write(_PrettyString(node.s))
+    f.write(pretty.Str(node.s))
     f.PopColor()
 
   elif isinstance(node, list):  # Can we fit the WHOLE list on the line?

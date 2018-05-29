@@ -23,6 +23,7 @@ import sys
 import time
 
 from asdl import const
+from asdl import pretty
 
 from core import alloc
 from core import args
@@ -1497,7 +1498,7 @@ class Tracer(object):
       return
 
     first_char, prefix = self._EvalPS4()
-    cmd = ' '.join(_PrettyString(a) for a in argv)
+    cmd = ' '.join(pretty.Str(a) for a in argv)
     print('%s%s%s' % (first_char, prefix, cmd), file=sys.stderr)
 
   def OnAssignment(self, lval, val, flags, lookup_mode):
@@ -1520,23 +1521,3 @@ class Tracer(object):
       - We should desugar to SetVar like mksh
     """
     pass
-
-
-# Copied from asdl/format.py.  We're not using it directly because that is
-# debug output, and this is real input.
-# TODO: Is this slow?
-
-# NOTE: bash prints \' for single quote, repr() prints "'".  Gah.  This is also
-# used for printf %q and ${var@q} (bash 4.4).
-
-_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
-
-def _PrettyString(s):
-  if '\n' in s:
-    #return json.dumps(s)  # account for the fact that $ matches the newline
-    return repr(s)
-  if _PLAIN_RE.match(s):
-    return s
-  else:
-    #return json.dumps(s)
-    return repr(s)
