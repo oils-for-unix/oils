@@ -15,13 +15,6 @@
 TMP=${TMP:-/tmp}  # Assume that any system has $TMP set or /tmp exists
 readonly TMP  # POSIX sh supports 'readonly'
 
-UNAME=$(uname)
-readonly UNAME
-
-is_macos() {
-  test "$UNAME" = 'Darwin'
-}
-
 log() {
   echo "$0: $@" 1>&2
 }
