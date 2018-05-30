@@ -3,21 +3,44 @@
 match.py - match with generated re2c code or Python regexes.
 """
 
+import os
+
+#from core import util
 from osh import lex
 from osh.meta import Id, IdInstance
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
-try:
-  import fastlex
-except ImportError:
+if os.environ.get('FASTLEX') == '0':  # For manual testing
   fastlex = None
+else:
+  try:
+    import fastlex
+  except ImportError:
+    fastlex = None
 
 #if fastlex:
 if 0:
   re = None  # Shouldn't use re module in this case
 else:
   import re
+
+
+def _LongestMatch(re_list, line, start_pos):
+  # Simulate the EOL handling in re2c.
+  if start_pos >= len(line):
+    return Id.Eol_Tok, start_pos
+
+  matches = []
+  for regex, tok_type in re_list:
+    m = regex.match(line, start_pos)  # left-anchored
+    if m:
+      matches.append((m.end(0), tok_type, m.group(0)))
+  if not matches:
+    raise AssertionError('no match at position %d: %r' % (start_pos, line))
+  end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
+  #util.log('%s %s', tok_type, end_pos)
+  return tok_type, end_pos
 
 
 def _CompileAll(pat_list):
@@ -38,21 +61,10 @@ class _MatchOshToken_Slow(object):
 
   def __call__(self, lex_mode, line, start_pos):
     """Returns (id, end_pos)."""
-    # Simulate the EOL handling in re2c.
-    if start_pos >= len(line):
-      return Id.Eol_Tok, start_pos
-
     re_list = self.lexer_def[lex_mode]
-    matches = []
-    for regex, tok_type in re_list:
-      m = regex.match(line, start_pos)  # left-anchored
-      if m:
-        matches.append((m.end(0), tok_type, m.group(0)))
-    if not matches:
-      raise AssertionError('no match at position %d: %r' % (start_pos, line))
-    end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
-    return tok_type, end_pos
 
+    return _LongestMatch(re_list, line, start_pos)
+  
 
 def _MatchOshToken_Fast(lex_mode, line, start_pos):
   """Returns (id, end_pos)."""
@@ -107,3 +119,8 @@ else:
 
   def IsValidVarName(s):
     return _VAR_NAME_RE.match(s)
+
+
+# TODO: Conditionally create it
+ECHO_LEXER = SimpleLexer(lex.ECHO_E_DEF)
+

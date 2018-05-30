@@ -160,8 +160,6 @@ def Resolve(argv0):
 # Implementation of builtins.
 #
 
-ECHO_LEXER = match.SimpleLexer(lex.ECHO_E_DEF)
-
 ECHO_SPEC = _Register('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
@@ -188,7 +186,7 @@ def Echo(argv):
     new_argv = []
     for a in argv:
       parts = []
-      for id_, value in ECHO_LEXER.Tokens(a):
+      for id_, value in match.ECHO_LEXER.Tokens(a):
         p = word_compile.EvalCStringToken(id_, value)
 
         # Unusual behavior: '\c' prints what is there and aborts processing!
