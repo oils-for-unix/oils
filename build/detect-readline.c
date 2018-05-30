@@ -4,8 +4,12 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-int main(void) {
-  char *line = readline("");
+static int test_event_hook(void) {
   return 0;
 }
 
+int main(void) {
+  char *line = readline("");
+  rl_event_hook = test_event_hook;  // ensure readline version is recent enough
+  return 0;
+}
