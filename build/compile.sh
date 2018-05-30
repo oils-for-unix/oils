@@ -171,9 +171,8 @@ build() {
 
   pushd $PY27
 
-  local readline_dir
   local readline_flags
-  if test "$HAVE_READLINE" = 1; then
+  if [[ "$HAVE_READLINE" -eq 1 ]]; then
     # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
     # We should create a special no_readline_raw_input().
@@ -183,11 +182,11 @@ build() {
     # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appear to use it?
     readline_flags=(-D HAVE_READLINE)
 
-    if is_macos; then
-      readline_dir=$(brew --prefix readline)
-      readline_flags+=(-L "$readline_dir/lib" -I "$readline_dir/include")
+    if [[ -n "$READLINE_DIR" ]]; then
+      readline_flags+=(-L "$READLINE_DIR/lib" -I "$READLINE_DIR/include")
     fi
     readline_flags+=(-l readline)
+
   else
     # don't fail
     c_module_src_list=$(grep -v '/readline.c' $abs_c_module_srcs || true)
