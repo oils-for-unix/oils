@@ -680,9 +680,13 @@ class Mem(object):
           strs.extend([None] * n)
           strs[lval.index] = value.s
       else:
-        # TODO:
-        # - This is a bug, because a[2]=2 creates an array of length ONE, even
-        # though the index is two.
+        # When the array doesn't exist yet, it is created filled with None.
+        # Access to the array needs to explicitly filter those sentinel values.
+        # It also wastes memory. But indexed access is fast.
+
+        # What should be optimized for? Bash uses a linked list. Random access
+        # takes linear time, but iteration skips unset entries automatically.
+
         # - Maybe represent as hash table?  Then it's not an ASDL type?
 
         # representations:
