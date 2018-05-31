@@ -10,6 +10,10 @@ static int test_event_hook(void) {
 
 int main(void) {
   char *line = readline("");
-  rl_event_hook = test_event_hook;  // ensure readline version is recent enough
+
+  /* Ensure readline version is recent enough.
+     This line will break the build otherwise: https://git.io/vhZ3B */
+  rl_event_hook = test_event_hook;
+
   return 0;
 }

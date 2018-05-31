@@ -34,7 +34,7 @@ Detects system settings before a build of Oil.
   --with-readline     Fail unless readline is available.
   --without-readline  Don't compile with readline, even if it's available.
 		      The shell won't have any interactive features.
-  --readline-dir      An alternative readline installation to link against
+  --readline          An alternative readline installation to link against
 EOF
 }
 
@@ -44,7 +44,7 @@ EOF
 FLAG_prefix='/usr/local'
 FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available>
-FLAG_readline_dir=''
+FLAG_readline=''
 
 while true; do
   case "$1" in
@@ -65,12 +65,15 @@ while true; do
       FLAG_without_readline=1
       ;;
 
-    --readline-dir)
+    --readline=*)
+      FLAG_readline=$(expr "$1" : '--readline=\(.*\)')
+      ;;
+    --readline)
       if test $# -eq 1; then
-        die "--readline-dir requires an argument"
+        die "--readline requires an argument"
       fi
       shift
-      FLAG_readline_dir=$1
+      FLAG_readline=$1
       ;;
 
     # TODO: Maybe prefix only needs to be part of the install step?  I'm not
@@ -137,12 +140,12 @@ cc_header_file() {
 
 # Write a shell script to standard out with variables, or fail.
 detect_readline() {
-  if test -n "$FLAG_readline_dir"; then
+  if test -n "$FLAG_readline"; then
     if cc_quiet build/detect-readline.c \
-	-L "$FLAG_readline_dir/lib" \
-	-I "$FLAG_readline_dir/include" \
+	-L "$FLAG_readline/lib" \
+	-I "$FLAG_readline/include" \
 	-l readline; then
-      echo "READLINE_DIR=$FLAG_readline_dir"
+      echo "READLINE_DIR=$FLAG_readline"
       echo 'HAVE_READLINE=1'
       return 0
     fi
