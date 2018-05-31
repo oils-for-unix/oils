@@ -301,7 +301,7 @@ class _WordEvaluator(object):
         length = len(val.s)
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.
-        length = sum(s is not None for s in val.strs)
+        length = sum(1 for s in val.strs if s is not None)
       return runtime.Str(str(length))
     elif op_id == Id.VSub_Bang:
       # NOTES:
