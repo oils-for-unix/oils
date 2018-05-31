@@ -44,13 +44,7 @@ EOF
 FLAG_prefix='/usr/local'
 FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available>
-
-assert_arg() {
-  local arg_name="$1"
-  if test $# -lt 3; then
-    die "--$arg_name requires an argument"
-  fi
-}
+FLAG_readline_dir=''
 
 while true; do
   case "$1" in
@@ -72,7 +66,9 @@ while true; do
       ;;
 
     --readline-dir)
-      assert_arg readline-dir "$@"
+      if test $# -eq 1; then
+        die "--readline-dir requires an argument"
+      fi
       shift
       FLAG_readline_dir=$1
       ;;
@@ -83,7 +79,9 @@ while true; do
       FLAG_prefix=$(expr "$1" : '--prefix=\(.*\)')
       ;;
     --prefix)
-      assert_arg prefix "$@"
+      if test $# -lt 1; then
+        die "--prefix requires an argument"
+      fi
       shift
       FLAG_prefix=$1
       ;;

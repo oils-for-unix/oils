@@ -83,7 +83,7 @@ COMPILE_SH := build/compile.sh
 #BYTECODE_ZIP := bytecode-cpython.zip
 BYTECODE_ZIP := bytecode-opy.zip
 
-UNAME := $(shell uname)
+HAVE_DSYMUTIL := $(shell command -v dsymutil 2>/dev/null)
 
 # For faster tesing of builds
 #default: _bin/oil.ovm-dbg
@@ -135,7 +135,7 @@ _build/%/ovm-opt: _build/%/module_init.c _build/%/main_name.c \
                   _build/%/c-module-srcs.txt $(COMPILE_SH)
 	$(COMPILE_SH) build-opt $@ $(filter-out $(COMPILE_SH),$^)
 
-ifeq ($(UNAME),Darwin)
+ifdef HAVE_DSYMUTIL
 
 # NOTE: Debug symbols work a bit different on Mac OS
 # NOTE: https://stackoverflow.com/a/33307778
@@ -148,7 +148,7 @@ else
 # NOTE: This gets run on the end user's machine!  It requires binutils for now?
 # NOTE: objcopy fails if the linked files does not exist!
 _build/%/ovm-opt.stripped: _build/%/ovm-opt _build/%/ovm-opt.symbols
-	#strip -o $@ --strip-debug $^ 
+	#strip -o $@ --strip-debug $^
 	strip -o $@ _build/$*/ovm-opt  # What's the difference with debug symbols?
 	# We need a relative path since it will be _bin/oil.ovm
 	objcopy --add-gnu-debuglink=_build/$*/ovm-opt.symbols $@
