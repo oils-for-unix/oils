@@ -79,7 +79,7 @@ while true; do
       FLAG_prefix=$(expr "$1" : '--prefix=\(.*\)')
       ;;
     --prefix)
-      if test $# -lt 1; then
+      if test $# -eq 1; then
         die "--prefix requires an argument"
       fi
       shift
@@ -278,10 +278,13 @@ EOF
     echo '#define VA_LIST_IS_ARRAY 1'
   fi
 
+  # TODO: are these feature checks really necessary, or can we
+  # strip these out of posixmodule.c entirely?
   cc_header_file HAVE_PTY_H 'pty.h'
   cc_header_file HAVE_LIBUTIL_H 'libutil.h'
   cc_header_file HAVE_UTIL_H 'util.h'
 
+  # TODO: are these feature checks really necessary?
   cc_statement HAVE_STAT_TV_NSEC \
     'struct stat st; st.st_mtim.tv_nsec = 1; return 0;' \
     '#include <sys/stat.h>'
