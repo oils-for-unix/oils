@@ -417,7 +417,7 @@ ECHO_E_DEF = _C_STRING_COMMON + [
   C(r'\c', Id.Char_Stop),
 
   # e.g. 'foo', anything that's not a backslash escape
-  R(r'[^\\]+', Id.Char_Literals),
+  R(r'[^\\\0]+', Id.Char_Literals),
 ]
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole

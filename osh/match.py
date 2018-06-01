@@ -67,51 +67,53 @@ class _MatchOshToken_Slow(object):
   
 
 def _MatchOshToken_Fast(lex_mode, line, start_pos):
-  """Returns (id, end_pos)."""
+  """Returns (Id, end_pos)."""
   tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
   # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
   # saves memory.
   return IdInstance(tok_type), end_pos
 
 
-# TODO:
-#
-# MATCHER -> OSH_MATCHER
-# add ECHO_MATCHER
-
-# TODO: Make this the slow path!
 class SimpleLexer(object):
   """Lexer for echo -e, which interprets C-escaped strings.
 
   Based on osh/parse_lib.py MatchOshToken_Slow.
   """
-  def __init__(self, pat_list):
-    self.pat_list = _CompileAll(pat_list)
+  def __init__(self, match_func):
+    self.match_func = match_func
 
   def Tokens(self, line):
     """Yields tokens."""
     pos = 0
     n = len(line)
-    while pos < n:
-      matches = []
-      for regex, tok_type in self.pat_list:
-        m = regex.match(line, pos)  # left-anchored
-        if m:
-          matches.append((m.end(0), tok_type, m.group(0)))
-      if not matches:
-        raise AssertionError(
-            'no match at position %d: %r (%r)' % (pos, line, line[pos]))
+    while pos != n:
       # NOTE: Need longest-match semantics to find \377 vs \.
-      end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
+      tok_type, end_pos = self.match_func(line, pos)
       yield tok_type, line[pos:end_pos]
       pos = end_pos
 
 
+class _MatchEchoToken_Slow(object):
+  def __init__(self, pat_list):
+    self.pat_list = _CompileAll(pat_list)
+
+  def __call__(self, line, start_pos):
+    return _LongestMatch(self.pat_list, line, start_pos)
+
+
+def _MatchEchoToken_Fast(line, start_pos):
+  """Returns (id, end_pos)."""
+  tok_type, end_pos = fastlex.MatchEchoToken(line, start_pos)
+  return IdInstance(tok_type), end_pos
+
+
 if fastlex:
   MATCHER = _MatchOshToken_Fast
+  ECHO_MATCHER = _MatchEchoToken_Fast
   IsValidVarName = fastlex.IsValidVarName
 else:
   MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
+  ECHO_MATCHER = _MatchEchoToken_Slow(lex.ECHO_E_DEF)
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
@@ -121,6 +123,4 @@ else:
     return _VAR_NAME_RE.match(s)
 
 
-# TODO: Conditionally create it
-ECHO_LEXER = SimpleLexer(lex.ECHO_E_DEF)
-
+ECHO_LEXER = SimpleLexer(ECHO_MATCHER)

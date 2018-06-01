@@ -252,6 +252,9 @@ class EchoLexerTest(unittest.TestCase):
     print(list(lex.Tokens(r'unicode \u0065 \U00000065')))
     print(list(lex.Tokens(r'\d \e \f \g')))
 
+    # NOTE: We only test with one of these.
+    print(match.ECHO_MATCHER)  # either fast or slow
+
 
 if __name__ == '__main__':
   unittest.main()

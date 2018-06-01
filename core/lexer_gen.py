@@ -218,6 +218,10 @@ static inline void MatchEchoToken(unsigned char* line, int line_len,
     id_name = meta.IdName(token_id)
     print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
 
+  # EARLY RETURN: Do NOT advance past the NUL terminator.
+  print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
+      r'"\x00"')
+
   print("""
     */
   }
