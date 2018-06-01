@@ -4,15 +4,16 @@ from __future__ import print_function
 lex_test.py: Tests for lex.py
 """
 
+import re
 import unittest
 
 from core.lexer import LineLexer
 from core import test_lib
 
+from osh import lex
 from osh import match
 from osh import parse_lib
 from osh.meta import ast, Id, Kind, LookupKind, types
-from osh.lex import LEXER_DEF
 
 lex_mode_e = types.lex_mode_e
 
@@ -227,21 +228,18 @@ class LineLexerTest(unittest.TestCase):
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
 
-OUTER_RE = match._CompileAll(LEXER_DEF[lex_mode_e.OUTER])
-DOUBLE_QUOTED_RE = match._CompileAll(LEXER_DEF[lex_mode_e.DQ])
-
-
 class RegexTest(unittest.TestCase):
 
-  def testOuter(self):
-    o = OUTER_RE
-    nul_pat, _ = o[3]
-    print(nul_pat.match('\0'))
+  def testNul(self):
+    nul_pat = re.compile(r'[\0]')
+    self.assertEqual(False, bool(nul_pat.match('x')))
+    self.assertEqual(True, bool(nul_pat.match('\0')))
 
-  def testDoubleQuoted(self):
-    d = DOUBLE_QUOTED_RE
-    nul_pat, _ = d[3]
-    print(nul_pat.match('\0'))
+    _, p, _ = lex.ECHO_E_DEF[-1]
+    print('P %r' % p)
+    last_echo_e_pat = re.compile(p)
+    self.assertEqual(True, bool(last_echo_e_pat.match('x')))
+    self.assertEqual(False, bool(last_echo_e_pat.match('\0')))
 
 
 class EchoLexerTest(unittest.TestCase):

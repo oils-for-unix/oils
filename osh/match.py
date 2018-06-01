@@ -19,8 +19,7 @@ else:
   except ImportError:
     fastlex = None
 
-#if fastlex:
-if 0:
+if fastlex:
   re = None  # Shouldn't use re module in this case
 else:
   import re
