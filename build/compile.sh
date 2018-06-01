@@ -171,7 +171,7 @@ build() {
 
   pushd $PY27
 
-  local -a readline_flags
+  local readline_flags=''
   if [[ "$HAVE_READLINE" -eq 1 ]]; then
     # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
@@ -180,15 +180,14 @@ build() {
     c_module_src_list=$(cat $abs_c_module_srcs)
 
     if [[ -n "$READLINE_DIR" ]]; then
-      readline_flags+=(-L "$READLINE_DIR/lib" -I "$READLINE_DIR/include")
+      readline_flags+="-L $READLINE_DIR/lib -I $READLINE_DIR/include"
     fi
 
     # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appear to use it?
-    readline_flags+=(-l readline -D HAVE_READLINE)
+    readline_flags+="-l readline -D HAVE_READLINE"
   else
     # don't fail
     c_module_src_list=$(grep -v '/readline.c' $abs_c_module_srcs || true)
-    readline_flags=()
   fi
 
   # $PREFIX comes from ./configure and defaults to /usr/local.
@@ -209,7 +208,7 @@ build() {
     $c_module_src_list \
     Modules/ovm.c \
     -l m \
-    "${readline_flags[@]}" \
+    $readline_flags \
     "$@" \
     || true
   popd
