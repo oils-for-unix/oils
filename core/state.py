@@ -676,13 +676,17 @@ class Mem(object):
           # Then ${#a[@]} counts the entries that are not None.
           #
           # TODO: strict-array for Oil arrays won't auto-fill.
-          n = len(strs) - lval.index + 1
+          n = lval.index - len(strs) + 1
           strs.extend([None] * n)
           strs[lval.index] = value.s
       else:
-        # TODO:
-        # - This is a bug, because a[2]=2 creates an array of length ONE, even
-        # though the index is two.
+        # When the array doesn't exist yet, it is created filled with None.
+        # Access to the array needs to explicitly filter those sentinel values.
+        # It also wastes memory. But indexed access is fast.
+
+        # What should be optimized for? Bash uses a linked list. Random access
+        # takes linear time, but iteration skips unset entries automatically.
+
         # - Maybe represent as hash table?  Then it's not an ASDL type?
 
         # representations:
@@ -703,7 +707,7 @@ class Mem(object):
         # ${!a[@]} - keys
         # That seems pretty minimal.
 
-        items = [''] * lval.index
+        items = [None] * lval.index
         items.append(value.s)
         new_value = runtime.StrArray(items)
         # arrays can't be exported

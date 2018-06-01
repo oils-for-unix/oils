@@ -94,7 +94,7 @@ def _MakeWordFrames(part_vals):
       current.append((p.s, p.do_split_glob))
 
     elif p.tag == part_value_e.ArrayPartValue:
-      for i, s in enumerate(p.strs):
+      for i, s in enumerate(s for s in p.strs if s is not None):
         if i == 0:
           current.append((s, False))  # don't split or glob
         else:
@@ -116,11 +116,7 @@ def _DecayPartValuesToString(part_vals, join_char):
     if p.tag == part_value_e.StringPartValue:
        out.append(p.s)
     else:
-      last = len(p.strs) - 1
-      for i, s in enumerate(p.strs):
-        out.append(s)
-        if i != last:
-          out.append(join_char)
+      out.append(join_char.join(s for s in p.strs if s is not None))
   return ''.join(out)
 
 
@@ -304,8 +300,8 @@ class _WordEvaluator(object):
       if val.tag == value_e.Str:
         length = len(val.s)
       elif val.tag == value_e.StrArray:
-        # TODO: There can be empty placeholder values in the array.
-        length = len(val.strs)
+        # There can be empty placeholder values in the array.
+        length = sum(1 for s in val.strs if s is not None)
       return runtime.Str(str(length))
     elif op_id == Id.VSub_Bang:
       # NOTES:
@@ -337,7 +333,8 @@ class _WordEvaluator(object):
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
         strs = []
         for s in val.strs:
-          strs.append(libstr.DoUnarySuffixOp(s, op, arg_val.s))
+          if s is not None:
+            strs.append(libstr.DoUnarySuffixOp(s, op, arg_val.s))
         new_val = runtime.StrArray(strs)
 
     else:
@@ -375,7 +372,7 @@ class _WordEvaluator(object):
   def _DecayArray(self, val):
     assert val.tag == value_e.StrArray, val
     sep = self.splitter.GetJoinChar()
-    return runtime.Str(sep.join(val.strs))
+    return runtime.Str(sep.join(s for s in val.strs if s is not None))
 
   def _EmptyStrOrError(self, val, token=None):
     assert isinstance(val, runtime.value), val
@@ -481,6 +478,9 @@ class _WordEvaluator(object):
           try:
             s = val.strs[index]
           except IndexError:
+            s = None
+
+          if s is None:
             val = runtime.Undef()
           else:
             val = runtime.Str(s)
@@ -559,7 +559,8 @@ class _WordEvaluator(object):
         elif val.tag == value_e.StrArray:
           strs = []
           for s in val.strs:
-            strs.append(libstr.PatSub(s, op, pat, replace_str))
+            if s is not None:
+              strs.append(libstr.PatSub(s, op, pat, replace_str))
           val = runtime.StrArray(strs)
 
         else:
@@ -578,6 +579,7 @@ class _WordEvaluator(object):
           length = self.arith_ev.Eval(op.length)
           end = begin + length
         else:
+          length = None
           end = None  # Python supports None as the end
 
         if val.tag == value_e.Str:  # Slice characters in a string.
@@ -585,7 +587,14 @@ class _WordEvaluator(object):
           val = runtime.Str(val.s[begin : end])
 
         elif val.tag == value_e.StrArray:  # Slice array entries.
-          val = runtime.StrArray(val.strs[begin : end])
+          # NOTE: unset elements don't count towards the length
+          strs = []
+          for s in val.strs[begin:]:
+            if s is not None:
+              strs.append(s)
+              if len(strs) == length: # never true for unspecified length
+                break
+          val = runtime.StrArray(strs)
 
         else:
           raise AssertionError(val.__class__.__name__)
@@ -746,7 +755,7 @@ class _WordEvaluator(object):
           #      'To assign arrays, using b=( "${a[@]}" )')
         else:
           # It appears to not respect IFS
-          s = ' '.join(part_val.strs)
+          s = ' '.join(s for s in part_val.strs if s is not None)
 
       strs.append(s)
 
