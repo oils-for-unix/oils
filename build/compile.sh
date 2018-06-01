@@ -209,7 +209,7 @@ build() {
     $c_module_src_list \
     Modules/ovm.c \
     -l m \
-    "${readline_flags[@]}" \
+    "${readline_flags[@]-}" \
     "$@" \
     || true
   popd
