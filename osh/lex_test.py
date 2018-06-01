@@ -244,5 +244,14 @@ class RegexTest(unittest.TestCase):
     print(nul_pat.match('\0'))
 
 
+class EchoLexerTest(unittest.TestCase):
+
+  def testEchoLexer(self):
+    lex = match.ECHO_LEXER
+    print(list(lex.Tokens(r'newline \n NUL \0 octal \0377 hex \x00')))
+    print(list(lex.Tokens(r'unicode \u0065 \U00000065')))
+    print(list(lex.Tokens(r'\d \e \f \g')))
+
+
 if __name__ == '__main__':
   unittest.main()
