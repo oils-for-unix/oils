@@ -96,12 +96,12 @@ Modules/gcmodule.c
 # 'configure' output.
 MODOBJS='
 Modules/posixmodule.c
-Modules/errnomodule.c  
+Modules/errnomodule.c
 Modules/pwdmodule.c
-Modules/_sre.c  
-Modules/_codecsmodule.c  
+Modules/_sre.c
+Modules/_codecsmodule.c
 Modules/_weakref.c
-Modules/zipimport.c  
+Modules/zipimport.c
 Modules/signalmodule.c
 '
 
@@ -111,7 +111,7 @@ OVM_LIBRARY_OBJS="
 Modules/getbuildinfo.c
 Parser/myreadline.c
 $OBJECT_OBJS
-$OVM_PYTHON_OBJS 
+$OVM_PYTHON_OBJS
 $MODULE_OBJS
 $MODOBJS
 "
@@ -171,22 +171,24 @@ build() {
 
   pushd $PY27
 
-  local compile_readline
-  local link_readline
-  if test "$HAVE_READLINE" = 1; then
+  local -a readline_flags
+  if [[ "$HAVE_READLINE" -eq 1 ]]; then
     # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
     # We should create a special no_readline_raw_input().
 
     c_module_src_list=$(cat $abs_c_module_srcs)
+
+    if [[ -n "$READLINE_DIR" ]]; then
+      readline_flags+=(-L "$READLINE_DIR/lib" -I "$READLINE_DIR/include")
+    fi
+
     # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appear to use it?
-    compile_readline='-D HAVE_READLINE'
-    link_readline='-l readline'
+    readline_flags+=(-l readline -D HAVE_READLINE)
   else
     # don't fail
     c_module_src_list=$(grep -v '/readline.c' $abs_c_module_srcs || true)
-    compile_readline=''
-    link_readline=''
+    readline_flags=()
   fi
 
   # $PREFIX comes from ./configure and defaults to /usr/local.
@@ -206,9 +208,8 @@ build() {
     $abs_main_name \
     $c_module_src_list \
     Modules/ovm.c \
-    $compile_readline \
     -l m \
-    $link_readline \
+    "${readline_flags[@]}" \
     "$@" \
     || true
   popd
@@ -262,14 +263,15 @@ _headers() {
   local c_module_srcs=${1:-_tmp/hello/c-module-srcs.txt}
   local abs_c_module_srcs=$PWD/$c_module_srcs
 
-  # -MM: no system headers
   cd $PY27
+
+  # -MM: no system headers
   gcc \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
     -MM $OVM_LIBRARY_OBJS \
     Modules/ovm.c \
-    $(cat $abs_c_module_srcs) 
+    $(cat $abs_c_module_srcs)
 }
 
 # NOTE: 91 headers in Include, but only 81 referenced here.  So it's worth it.
