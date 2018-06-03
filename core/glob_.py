@@ -125,9 +125,98 @@ def GlobToExtendedRegex(glob_pat):
     return regex, err
 
 
+class NotAGlob(Exception):
+  pass
+
+
+def GlobToAst(glob_pat):
+  """Convert a glob to AST form.
+
+  Returns:
+    A ERE string, or None if it's the pattern is a constant string rather than
+    a glob.
+  """
+  from osh.meta import glob as glob_ast
+
+  def ParseBracketExpr(glob_pat, i):
+    if glob_pat[i] != '[':
+      raise RuntimeError('invalid bracket_expr start!')
+
+    i += 1
+    negated = (glob_pat[i] == '!')
+    if negated:
+      i += 1
+
+    bracket_depth = 0
+    expr_body = []
+    n = len(glob_pat)
+    while i < n:
+      c = glob_pat[i]
+      if c == ']':
+        bracket_depth -= 1
+        if bracket_depth == -1:
+          break
+
+      elif c == '[':
+        bracket_depth += 1
+        if bracket_depth > 1:
+          raise RuntimeError('invalid character [ in bracket_expr')
+
+      elif c == '\\':
+        i += 1
+
+      expr_body.append(glob_pat[i])
+      i += 1
+
+    else:
+      raise RuntimeError('unclosed bracket_expr!')
+
+    return ''.join(expr_body), negated, i
+
+  try:
+    is_glob = False
+    i = 0
+    n = len(glob_pat)
+    parts = []
+    while i < n:
+      c = glob_pat[i]
+      if c == '\\':  # glob escape like \* or \?
+        i += 1
+        parts.append(glob_ast.EscapedChar(glob_pat[i]))
+
+      elif c == '*':
+        is_glob = True
+        parts.append(glob_ast.Star())
+
+      elif c == '?':
+        is_glob = True
+        parts.append(glob_ast.QMark())
+
+      elif c == '[':
+        is_glob = True
+        body, negated, i = ParseBracketExpr(glob_pat, i)
+        parts.append(glob_ast.BracketExpr(negated, body))
+
+      elif c == ']':
+        raise RuntimeError('illegal character ]')
+
+      else:
+        parts.append(glob_ast.Literal(c))
+
+      i += 1
+
+  except RuntimeError as e:
+    return None, str(e)
+
+  if is_glob:
+    return glob_ast.glob(parts), None
+
+  return None, None
+
+
 def _GlobUnescape(s):  # used by cmd_exec
   """Remove glob escaping from a string.
-  
+
   Used when there is no glob match.
   TODO: Can probably get rid of this, as long as you save the original word.
 
@@ -196,10 +285,10 @@ class Globber(object):
     if g:
       return g
     else:  # Nothing matched
-      if self.exec_opts.failglob: 
+      if self.exec_opts.failglob:
         # TODO: Make the command return status 1.
         raise NotImplementedError
-      if self.exec_opts.nullglob: 
+      if self.exec_opts.nullglob:
         return []
       else:
         # Return the original string

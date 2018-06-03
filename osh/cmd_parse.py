@@ -672,7 +672,7 @@ class CommandParser(object):
     """
     words = []
     # The span_id of any semi-colon, so we can remove it.
-    semi_spid = const.NO_INTEGER  
+    semi_spid = const.NO_INTEGER
 
     while True:
       if not self._Peek(): return None

@@ -118,6 +118,63 @@ class GlobEscapeTest(unittest.TestCase):
       self.assertEqual(expected_err, err,
           '%s: expected %r, got %r' % (glob, expected_err, err))
 
+  def testGlobToAST(self):
+    from osh.meta import glob as g
+    from asdl import py_meta
+
+    def assertASTEqual(expected_ast, ast):
+      expected_is_node = isinstance(expected_ast, py_meta.CompoundObj)
+      given_is_node = isinstance(ast, py_meta.CompoundObj)
+      if not expected_is_node and not given_is_node:
+        self.assertEqual(expected_ast, ast)
+        return
+
+      self.assertEqual(expected_ast.tag, ast.tag)
+      if not hasattr(expected_ast, '__slots__'):
+        return
+
+      self.assertEqual(expected_ast.__slots__, ast.__slots__)
+      for attr in expected_ast.__slots__:
+        exp_slot, slot = getattr(expected_ast, attr), getattr(ast, attr)
+        if isinstance(slot, list):
+          for exp_elem, elem in zip(exp_slot, slot):
+            assertASTEqual(exp_elem, elem)
+        else:
+          assertASTEqual(exp_slot, slot)
+
+
+    CASES = [
+        # # glob input, (regex, err)
+        ('*.py', [g.Star()] + [g.Literal(c) for c in '.py'], None),
+        ('*.?', [g.Star(), g.Literal('.'), g.QMark()], None),
+        ('<*>', [g.Literal('<'), g.Star(), g.Literal('>')], None),
+
+        # # not globs
+        ('abc', None, None),
+        ('\\*', None, None),
+        ('c:\\foo', None, None),
+
+        # character class globs
+        ('[[:space:]]', [g.BracketExpr(False, '[:space:]')], None),
+        ('[abc]', [g.BracketExpr(False, 'abc')], None),
+        ('[abc\[]', [g.BracketExpr(False, 'abc[')], None),
+        ('[!not]', [g.BracketExpr(True, 'not')], None),
+        ('[!*?!\]\[]', [g.BracketExpr(True, '*?!][')], None),
+
+        # a literal * and then a glob
+        # ('\\**', [g.EscapedChar('*'), g.Star()], None),
+    ]
+    for glob, expected_parts, expected_err in CASES:
+      if expected_parts:
+        expected_ast = g.glob(expected_parts)
+      else:
+        expected_ast = None
+
+      ast, err = glob_.GlobToAst(glob)
+      assertASTEqual(expected_ast, ast)
+      self.assertEqual(expected_err, err,
+          '%s: expected %r, got %r' % (glob, expected_err, err))
+
   def testPatSubRegexesLibc(self):
     r = libc.regex_parse('^(.*)git.*(.*)')
     print(r)
