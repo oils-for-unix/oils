@@ -8,7 +8,9 @@ import re
 import unittest
 
 import libc
+from asdl import py_meta
 from core import glob_
+from osh.meta import glob as g
 
 
 class GlobEscapeTest(unittest.TestCase):
@@ -118,51 +120,53 @@ class GlobEscapeTest(unittest.TestCase):
       self.assertEqual(expected_err, err,
           '%s: expected %r, got %r' % (glob, expected_err, err))
 
+  def assertASTEqual(self, expected_ast, ast):
+    """Asserts that 2 ASDL-defined ASTs are equal."""
+    expected_is_node = isinstance(expected_ast, py_meta.CompoundObj)
+    given_is_node = isinstance(ast, py_meta.CompoundObj)
+    if not expected_is_node and not given_is_node:
+      self.assertEqual(expected_ast, ast)
+      return
+
+    self.assertEqual(expected_ast.tag, ast.tag)
+    if not hasattr(expected_ast, '__slots__'):
+      return
+
+    self.assertEqual(expected_ast.__slots__, ast.__slots__)
+    for attr in expected_ast.__slots__:
+      exp_slot, slot = getattr(expected_ast, attr), getattr(ast, attr)
+      if isinstance(slot, list):
+        for exp_elem, elem in zip(exp_slot, slot):
+          self.assertASTEqual(exp_elem, elem)
+      else:
+        self.assertASTEqual(exp_slot, slot)
+
   def testGlobToAST(self):
-    from osh.meta import glob as g
-    from asdl import py_meta
-
-    def assertASTEqual(expected_ast, ast):
-      expected_is_node = isinstance(expected_ast, py_meta.CompoundObj)
-      given_is_node = isinstance(ast, py_meta.CompoundObj)
-      if not expected_is_node and not given_is_node:
-        self.assertEqual(expected_ast, ast)
-        return
-
-      self.assertEqual(expected_ast.tag, ast.tag)
-      if not hasattr(expected_ast, '__slots__'):
-        return
-
-      self.assertEqual(expected_ast.__slots__, ast.__slots__)
-      for attr in expected_ast.__slots__:
-        exp_slot, slot = getattr(expected_ast, attr), getattr(ast, attr)
-        if isinstance(slot, list):
-          for exp_elem, elem in zip(exp_slot, slot):
-            assertASTEqual(exp_elem, elem)
-        else:
-          assertASTEqual(exp_slot, slot)
-
-
     CASES = [
-        # # glob input, (regex, err)
-        ('*.py', [g.Star()] + [g.Literal(c) for c in '.py'], None),
-        ('*.?', [g.Star(), g.Literal('.'), g.QMark()], None),
-        ('<*>', [g.Literal('<'), g.Star(), g.Literal('>')], None),
+        # (glob input, expected ast, has error)
+        ('*.py', [g.Star()] + [g.Literal(c) for c in '.py'], False),
+        ('*.?', [g.Star(), g.Literal('.'), g.QMark()], False),
+        ('<*>', [g.Literal('<'), g.Star(), g.Literal('>')], False),
 
-        # # not globs
-        ('abc', None, None),
-        ('\\*', None, None),
-        ('c:\\foo', None, None),
+        # not globs
+        ('abc', None, False),
+        ('\\*', None, False),
+        ('c:\\foo', None, False),
 
         # character class globs
-        ('[[:space:]]', [g.BracketExpr(False, '[:space:]')], None),
-        ('[abc]', [g.BracketExpr(False, 'abc')], None),
-        ('[abc\[]', [g.BracketExpr(False, 'abc[')], None),
-        ('[!not]', [g.BracketExpr(True, 'not')], None),
-        ('[!*?!\]\[]', [g.BracketExpr(True, '*?!][')], None),
+        ('[[:space:]]', [g.CharClassExpr(False, '[:space:]')], False),
+        ('[abc]', [g.CharClassExpr(False, 'abc')], False),
+        ('[abc\[]', [g.CharClassExpr(False, 'abc[')], False),
+        ('[!not]', [g.CharClassExpr(True, 'not')], False),
+        ('[!*?!\]\[]', [g.CharClassExpr(True, '*?!][')], False),
 
         # a literal * and then a glob
-        # ('\\**', [g.EscapedChar('*'), g.Star()], None),
+        ('\\**', [g.EscapedChar('*'), g.Star()], False),
+
+        # invalid globs
+        ('bad_close]', None, True),
+        ('too_nested[[[]]]', None, True),
+        ('not_closed[a-z', None, True),
     ]
     for glob, expected_parts, expected_err in CASES:
       if expected_parts:
@@ -170,12 +174,12 @@ class GlobEscapeTest(unittest.TestCase):
       else:
         expected_ast = None
 
-      ast, err = glob_.GlobToAst(glob)
-      assertASTEqual(expected_ast, ast)
-      self.assertEqual(expected_err, err,
+      ast, err = glob_.GlobParser().Parse(glob)
+      self.assertASTEqual(expected_ast, ast)
+      self.assertEqual(expected_err, err is not None,
           '%s: expected %r, got %r' % (glob, expected_err, err))
 
-  def testPatSubRegexesLibc(self):
+  def disabled_testPatSubRegexesLibc(self):
     r = libc.regex_parse('^(.*)git.*(.*)')
     print(r)
 

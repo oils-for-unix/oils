@@ -8,6 +8,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
+from osh.meta import glob as glob_ast
 from core import util
 log = util.log
 
@@ -125,22 +126,70 @@ def GlobToExtendedRegex(glob_pat):
     return regex, err
 
 
-class NotAGlob(Exception):
-  pass
+class GlobParser(object):
+  """Parses a glob pattern into AST form (defined at osh/glob.asdl)."""
 
+  def Parse(self, glob_pat):
+    """Parses a glob pattern into AST form (defined at osh/glob.asdl).
 
-def GlobToAst(glob_pat):
-  """Convert a glob to AST form.
+    Returns:
+      A 2-tuple of (<glob AST>, <error message>).
 
-  Returns:
-    A ERE string, or None if it's the pattern is a constant string rather than
-    a glob.
-  """
-  from osh.meta import glob as glob_ast
+      If the pattern is not actually a glob, the first element is None. The
+      second element is None unless there was an error during parsing.
+    """
+    try:
+      is_glob = False
+      i = 0
+      n = len(glob_pat)
+      parts = []
+      while i < n:
+        c = glob_pat[i]
+        if c == '\\':  # glob escape like \* or \?
+          i += 1
+          parts.append(glob_ast.EscapedChar(glob_pat[i]))
 
-  def ParseBracketExpr(glob_pat, i):
+        elif c == '*':
+          is_glob = True
+          parts.append(glob_ast.Star())
+
+        elif c == '?':
+          is_glob = True
+          parts.append(glob_ast.QMark())
+
+        elif c == '[':
+          is_glob = True
+          char_class_expr, i = self.ParseCharClassExpr(glob_pat, i)
+          parts.append(char_class_expr)
+
+        elif c == ']':
+          raise RuntimeError('illegal character ] in glob pattern')
+
+        else:
+          parts.append(glob_ast.Literal(c))
+
+        i += 1
+
+    except RuntimeError as e:
+      return None, str(e)
+
+    if is_glob:
+      return glob_ast.glob(parts), None
+
+    return None, None
+
+  def ParseCharClassExpr(self, glob_pat, start_i):
+    """Parses a character class expression, e.g. [abc], [[:space:]], [!a-z]
+
+    Returns:
+      A 2-tuple of (<CharClassExpr instance>, <next parse index>)
+
+    Raises:
+      RuntimeError: If error during parsing the character class.
+    """
+    i = start_i
     if glob_pat[i] != '[':
-      raise RuntimeError('invalid bracket_expr start!')
+      raise RuntimeError('invalid CharClassExpr start!')
 
     i += 1
     negated = (glob_pat[i] == '!')
@@ -160,7 +209,7 @@ def GlobToAst(glob_pat):
       elif c == '[':
         bracket_depth += 1
         if bracket_depth > 1:
-          raise RuntimeError('invalid character [ in bracket_expr')
+          raise RuntimeError('invalid character [ in CharClassExpr')
 
       elif c == '\\':
         i += 1
@@ -169,49 +218,9 @@ def GlobToAst(glob_pat):
       i += 1
 
     else:
-      raise RuntimeError('unclosed bracket_expr!')
+      raise RuntimeError('unclosed CharClassExpr!')
 
-    return ''.join(expr_body), negated, i
-
-  try:
-    is_glob = False
-    i = 0
-    n = len(glob_pat)
-    parts = []
-    while i < n:
-      c = glob_pat[i]
-      if c == '\\':  # glob escape like \* or \?
-        i += 1
-        parts.append(glob_ast.EscapedChar(glob_pat[i]))
-
-      elif c == '*':
-        is_glob = True
-        parts.append(glob_ast.Star())
-
-      elif c == '?':
-        is_glob = True
-        parts.append(glob_ast.QMark())
-
-      elif c == '[':
-        is_glob = True
-        body, negated, i = ParseBracketExpr(glob_pat, i)
-        parts.append(glob_ast.BracketExpr(negated, body))
-
-      elif c == ']':
-        raise RuntimeError('illegal character ]')
-
-      else:
-        parts.append(glob_ast.Literal(c))
-
-      i += 1
-
-  except RuntimeError as e:
-    return None, str(e)
-
-  if is_glob:
-    return glob_ast.glob(parts), None
-
-  return None, None
+    return glob_ast.CharClassExpr(negated, ''.join(expr_body)), i
 
 
 def _GlobUnescape(s):  # used by cmd_exec
