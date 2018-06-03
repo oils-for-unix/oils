@@ -109,6 +109,7 @@ minimal() {
   gen-types-asdl
   gen-osh-asdl
   gen-runtime-asdl
+  gen-glob-asdl
   pylibc
 }
 
