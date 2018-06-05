@@ -39,40 +39,42 @@ def Utf8Encode(code):
     utf-8 encoded str
   """
   #print('Utf8Encode code %r' % code)
-  chars = [0] * 4
   if code <= 0x7F:
-      chars[0] = code & 0x7F
-      count = 0
+      bytes_ = [code & 0x7F]
+      # chars[0] = code & 0x7F
+      # count = 0
   elif code > 0x10FFFF:
       # unicode replacement character
-      chars[0] = 0xEF
-      chars[1] = 0xBF
-      chars[2] = 0xBD
-      chars[3] = 0
-      count = 2
+      bytes_ = [0xEF, 0xBF, 0xBD]
+      # chars[0] = 0xEF
+      # chars[1] = 0xBF
+      # chars[2] = 0xBD
+      # chars[3] = 0
+      # count = 2
   else:
       if code <= 0x7FF:
-          print('==== c=1')
-	  # one continuation byte
-	  count = 1
+	  num_continuation_bytes = 1
       elif code <= 0xFFFF:
-	  # two continuation bytes
-	  count = 2
+	  num_continuation_bytes = 2
       else:
-	  # three continuation bytes
-	  count = 3
-      for i in xrange(count):
-	  chars[count-i] = 0x80 | (code & 0x3F)
+	  num_continuation_bytes = 3
+      
+      bytes_ = []
+      for i in xrange(num_continuation_bytes):
+          bytes_.append(0x80 | (code & 0x3F))
+	  #bytes_[count-i] = 0x80 | (code & 0x3F)
 	  code >>= 6
-      chars[0] = (0x1E << (6-count)) | (code & (0x3F >> count))
+      bytes_.append((0x1E << (6-num_continuation_bytes)) | (code & (0x3F >> num_continuation_bytes)))
+      bytes_.reverse()
       #chars[1+count] = 0
 
-  print('chars %r' % chars)
-  s = ''
-  for i in xrange(count+1):
-    print('i = %d' % chars[i])
-    s += chr(chars[i] % 256)
-  return s
+  # print('chars %r' % chars)
+  return "".join(chr(b % 256) for b in bytes_)
+  # s = ''
+  # for i in xrange(count+1):
+  #   print('i = %d' % chars[i])
+  #   s += chr(chars[i] % 256)
+  # return s
 #return unichr(c).encode('utf-8')
 
 
