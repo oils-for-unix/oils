@@ -224,7 +224,6 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 
   regex_t pat;
-  regmatch_t m[2];
 
   // Should have been checked by regex_parse
   if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
@@ -232,45 +231,43 @@ func_regex_match(PyObject *self, PyObject *args) {
     return PyLong_FromLong(-1);
   }
 
-  int ret;
-  // must match at pos 0
-  if (regexec(&pat, str, 2, m, 0) == 0) {
-    debug("MATCH\n");
-  //if (regexec(&pat, str, 2, m, 0) == 0 && !m[0].rm_so) {
-    // Return first parenthesized subexpression as string, or length of match
 
-    /*
-    if (pat.re_nsub>0) {
-      ret->s = xmprintf("%.*s", m[1].rm_eo-m[1].rm_so, target+m[1].rm_so);
-      if (TT.refree) free(TT.refree);
-      TT.refree = ret->s;
-    } else assign_int(ret, m[0].rm_eo);
-    */
-    ret = 1;
 
-  } else {
-    debug("NO MATCH");
-    /*
-    if (pat.re_nsub>0) ret->s = "";
-    else assign_int(ret, 0);
-    */
-    ret = 0;
+  int outlen = pat.re_nsub + 1;
+  PyObject *ret = PyList_New(outlen);
+
+  if (ret == NULL) {
+    regfree(&pat);
+    return NULL;
   }
+
+  int len, i;
+  int match = 0;
+
+  regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * outlen);
+
+  if (match = (regexec(&pat, str, outlen, pmatch, 0) == 0)) {
+    for (i = 0; i < outlen; i++) {
+      len = pmatch[i].rm_eo - pmatch[i].rm_so;
+      PyObject *v = PyString_FromStringAndSize(str + pmatch[i].rm_so, len);
+      PyList_SetItem(ret, i, v);
+
+    }
+  }
+
+  free(pmatch);
   regfree(&pat);
 
-  // TODO: Return a list for BASH_REMATCH.
-
-  if (ret) {
-    return PyLong_FromLong(1);
+  if (!match) {
+    Py_RETURN_NONE;
   } else {
-    Py_RETURN_FALSE;
-    return PyLong_FromLong(0);
+    return ret;
   }
 }
 
 // For ${//}, the number of groups is always 1, so we want 2 match position
 // results -- the whole regex (which we ignore), and then first group.
-// 
+//
 // For [[ =~ ]], do we need to count how many matches the user gave?
 
 #define NMATCH 2

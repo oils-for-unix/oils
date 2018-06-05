@@ -60,12 +60,14 @@ class LibcTest(unittest.TestCase):
     self.assertEqual(False, libc.regex_parse('{'))
 
     cases = [
-        (r'.*\.py', 'foo.py', True),
-        (r'.*\.py', 'abcd', False),
+        ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
+        (r'.*\.py', 'foo.py', ['foo.py']),
+        (r'.*\.py', 'abcd', None),
         # The match is unanchored
-        (r'bc', 'abcd', True),
+        (r'bc', 'abcd', ['bc']),
         # The match is unanchored
-        (r'.c', 'abcd', True),
+        (r'.c', 'abcd', ['bc'])
+
         ]
 
     for pat, s, expected in cases:
