@@ -58,7 +58,8 @@ def Utf8Encode(code):
 
       bytes_.reverse()
 
-  return "".join(chr(b % 256) for b in bytes_)
+  # mod 256 because Python ints don't wrap around!
+  return "".join(chr(b & 0xFF) for b in bytes_)
 
 
 # TODO: Strict mode syntax errors:
