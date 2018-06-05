@@ -71,6 +71,7 @@ class LibcTest(unittest.TestCase):
         ]
 
     for pat, s, expected in cases:
+      print('CASE %s' % pat)
       actual = libc.regex_match(pat, s)
       self.assertEqual(expected, actual)
 
