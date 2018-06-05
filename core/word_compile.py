@@ -32,11 +32,9 @@ _ONE_CHAR = {
 
 
 def Utf8Encode(code):
-  """
-  Args:
-    code: Unicode code point (integer)
-  Returns:
-    utf-8 encoded str
+  """Return utf-8 encoded bytes from a unicode code point.
+
+  Based on https://stackoverflow.com/a/23502707
   """
   if code <= 0x7F:
       bytes_ = [code & 0x7F]
