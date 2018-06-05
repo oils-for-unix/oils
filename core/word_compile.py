@@ -30,6 +30,52 @@ _ONE_CHAR = {
     '"': '"',  # not sure why this is escaped within $''
 }
 
+
+def Utf8Encode(code):
+  """
+  Args:
+    code: Unicode code point (integer)
+  Returns:
+    utf-8 encoded str
+  """
+  #print('Utf8Encode code %r' % code)
+  chars = [0] * 4
+  if code <= 0x7F:
+      chars[0] = code & 0x7F
+      count = 0
+  elif code > 0x10FFFF:
+      # unicode replacement character
+      chars[0] = 0xEF
+      chars[1] = 0xBF
+      chars[2] = 0xBD
+      chars[3] = 0
+      count = 2
+  else:
+      if code <= 0x7FF:
+          print('==== c=1')
+	  # one continuation byte
+	  count = 1
+      elif code <= 0xFFFF:
+	  # two continuation bytes
+	  count = 2
+      else:
+	  # three continuation bytes
+	  count = 3
+      for i in xrange(count):
+	  chars[count-i] = 0x80 | (code & 0x3F)
+	  code >>= 6
+      chars[0] = (0x1E << (6-count)) | (code & (0x3F >> count))
+      #chars[1+count] = 0
+
+  print('chars %r' % chars)
+  s = ''
+  for i in xrange(count+1):
+    print('i = %d' % chars[i])
+    s += chr(chars[i] % 256)
+  return s
+#return unichr(c).encode('utf-8')
+
+
 # TODO: Strict mode syntax errors:
 #
 # \x is a syntax error -- needs two digits (It's like this in C)
@@ -79,6 +125,7 @@ def EvalCStringToken(id_, value):
   elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
     s = value[2:]
     i = int(s, 16)
+    #util.log('i = %d', i)
     return unichr(i).encode('utf-8')  # Stay in the realm of bytes
 
   else:
