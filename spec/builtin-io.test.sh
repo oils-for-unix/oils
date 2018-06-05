@@ -124,7 +124,9 @@ flags='-e'
 case $SH in */dash) flags='' ;; esac
 
 echo $flags 'abcd\u0065f'
-# stdout-json: "abcdef\n"
+## STDOUT:
+abcdef
+## END
 # N-I dash/ash stdout-json: "abcd\\u0065f\n"
 
 ### echo -e with 8 digit unicode escape
@@ -132,7 +134,9 @@ flags='-e'
 case $SH in */dash) flags='' ;; esac
 
 echo $flags 'abcd\U00000065f'
-# stdout-json: "abcdef\n"
+## STDOUT:
+abcdef
+## END
 # N-I dash/ash stdout-json: "abcd\\U00000065f\n"
 
 ### \0377 is the highest octal byte
