@@ -128,7 +128,7 @@ def EvalCStringToken(id_, value):
     s = value[2:]
     i = int(s, 16)
     #util.log('i = %d', i)
-    return unichr(i).encode('utf-8')  # Stay in the realm of bytes
+    return Utf8Encode(i)
 
   else:
     raise AssertionError
