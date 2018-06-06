@@ -82,7 +82,7 @@ def log(msg, *args):
 
 KEY_VALUE_RE = re.compile(r'''
    [#][#]? \s+
-   (?: (OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?   # optional prefix
+   (?: (PASS|OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?   # optional prefix
    ([\w\-]+)              # key
    :
    \s* (.*)               # value
@@ -181,12 +181,18 @@ class Tokenizer(object):
 
 
 def AddMetadataToCase(case, qualifier, shells, name, value):
-  shells = shells.split('/')  # bash/dash/mksh
-  for shell in shells:
-    if shell not in case:
-      case[shell] = {}
-    case[shell][name] = value
-    case[shell]['qualifier'] = qualifier
+  if shells:
+    shells = shells.split('/')  # bash/dash/mksh
+
+  outcomes = case['outcomes']
+
+  if (outcomes[-1]['shells'] != shells or
+      outcomes[-1]['qualifier'] != qualifier or
+      name in outcomes[-1]):
+    # new alternative outcome
+    outcomes.append({'shells': shells, 'qualifier': qualifier})
+
+  outcomes[-1][name] = value
 
 
 def ParseKeyValue(tokens, case):
@@ -219,10 +225,7 @@ def ParseKeyValue(tokens, case):
       value = '\n'.join(value_lines) + '\n'
 
       name = name.lower()  # STDOUT -> stdout
-      if qualifier:
-        AddMetadataToCase(case, qualifier, shells, name, value)
-      else:
-        case[name] = value
+      AddMetadataToCase(case, qualifier, shells, name, value)
 
       # END token is optional.
       if kind2 == END_MULTILINE:
@@ -231,10 +234,10 @@ def ParseKeyValue(tokens, case):
     elif kind == KEY_VALUE:
       qualifier, shells, name, value = item
 
-      if qualifier:
-        AddMetadataToCase(case, qualifier, shells, name, value)
-      else:
+      if name == 'code':
         case[name] = value
+      else:
+        AddMetadataToCase(case, qualifier, shells, name, value)
 
       tokens.next()
 
@@ -270,7 +273,11 @@ def ParseTestCase(tokens):
   assert kind == TEST_CASE_BEGIN, (line_num, kind, item)  # Invariant
   tokens.next()
 
-  case = {'desc': item, 'line_num': line_num}
+  case = {
+    'desc': item,
+    'line_num': line_num,
+    'outcomes': [{'qualifier': None, 'shells': None}],  # wildcard outcome
+  }
   #print case
 
   ParseKeyValue(tokens, case)
@@ -350,7 +357,7 @@ def CreateIntAssertion(d, key, assertions, qualifier=False):
   return False
 
 
-def CreateAssertions(case, sh_label):
+def CreateAssertions(outcome, sh_label):
   """
   Given a raw test case and a shell label, create EqualAssertion instances to
   run.
@@ -366,28 +373,21 @@ def CreateAssertions(case, sh_label):
   if sh_label in ('osh_ALT', 'osh-byterun'):
     sh_label = 'osh'
 
-  if sh_label in case:
-    q = case[sh_label]['qualifier']
-    if CreateStringAssertion(case[sh_label], 'stdout', assertions, qualifier=q):
-      stdout = True
-    if CreateStringAssertion(case[sh_label], 'stderr', assertions, qualifier=q):
-      stderr = True
-    if CreateIntAssertion(case[sh_label], 'status', assertions, qualifier=q):
-      status = True
+  if outcome['shells'] and not sh_label in outcome['shells']:
+    return None  # this outcome is only for shells other than this
 
-  if not stdout:
-    CreateStringAssertion(case, 'stdout', assertions)
-  if not stderr:
-    CreateStringAssertion(case, 'stderr', assertions)
-  if not status:
-    if 'status' in case:
-      CreateIntAssertion(case, 'status', assertions)
-    else:
-      # If the user didn't specify a 'status' assertion, assert that the exit
-      # code is 0.
-      a = EqualAssertion('status', 0)
-      assertions.append(a)
-    
+  q = outcome['qualifier']
+  CreateStringAssertion(outcome, 'stdout', assertions, qualifier=q)
+  CreateStringAssertion(outcome, 'stderr', assertions, qualifier=q)
+
+  if 'status' in outcome:
+    CreateIntAssertion(outcome, 'status', assertions, qualifier=q)
+  else:
+    # If the user didn't specify a 'status' assertion, assert that the exit
+    # code is 0.
+    a = EqualAssertion('status', 0)
+    assertions.append(a)
+
   #print 'SHELL', shell
   #pprint.pprint(case)
   #print(assertions)
@@ -491,19 +491,30 @@ def RunCases(cases, case_predicate, shells, env, out):
       actual['status'] = p.wait()
 
       messages = []
-      cell_result = Result.PASS
+      cell_result = Result.FAIL
 
-      # TODO: Warn about no assertions?  Well it will always test the error
-      # code.
-      assertions = CreateAssertions(case, sh_label)
-      for a in assertions:
-        result, msg = a.Check(sh_label, actual)
-        # The minimum one wins.
-        # If any failed, then the result is FAIL.
-        # If any are OK, but none are FAIL, the result is OK.
-        cell_result = min(cell_result, result)
-        if msg:
-          messages.append(msg)
+      outcomes = case['outcomes']
+      for outcome in outcomes:
+        worst_result = Result.PASS
+
+        assertions = CreateAssertions(outcome, sh_label)
+        if assertions is None:
+          continue  # outcome doesn't apply, skip it
+        # TODO: Warn about no assertions?  Well it will always test the error
+        # code.
+        for a in assertions:
+          result, msg = a.Check(sh_label, actual)
+          # The minimum one wins.
+          # If any failed, then the result is FAIL.
+          # If any are OK, but none are FAIL, the result is OK.
+          worst_result = min(worst_result, result)
+          if msg:
+            messages.append(msg)
+
+        # The maximum one wins.
+        # If any outcome played out as expected, take its result.
+        # If all failed, FAIL.
+        cell_result = max(cell_result, worst_result)
 
       if cell_result != Result.PASS:
         d = (i, sh_label, actual['stdout'], actual['stderr'], messages)
