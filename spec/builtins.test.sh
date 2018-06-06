@@ -170,6 +170,13 @@ echo status=$?
 # OK bash stdout: status=2
 # OK dash stdout: status=127
 
+### Source with extra arguments
+lib=$TMP/to-be-sourced
+echo 'echo $@' > $lib
+. $lib foo bar  # dash doesn't have source
+# stdout: foo bar
+# N-I dash stdout:
+
 ### Exit out of function
 f() { exit 3; }
 f
