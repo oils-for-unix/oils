@@ -72,26 +72,40 @@ class ShSpecTest(unittest.TestCase):
     pprint.pprint(CASE1)
     print()
 
-    expected = {'status': '0', 'stdout': 'v=None\n', 'qualifier': 'OK'}
-    self.assertEqual(expected, CASE1['bash'])
-    self.assertEqual(expected, CASE1['dash'])
-    self.assertEqual(expected, CASE1['mksh'])
-    self.assertEqual('2', CASE1['status'])
+    expected = {'qualifier': 'OK',
+                'shells': ['bash', 'dash', 'mksh'],
+                'status': '0',
+                'stdout': 'v=None\n'}
+    self.assertIn(expected, CASE1['outcomes'])
+    expected = {'qualifier': None,
+                'shells': None,
+                'status': '2'}
+    self.assertIn(expected, CASE1['outcomes'])
     self.assertEqual(
         'Env binding in readonly/declare disallowed', CASE1['desc'])
 
     print('CASE2')
     pprint.pprint(CASE2)
     print()
-    print(CreateAssertions(CASE2, 'bash'))
-    self.assertEqual('one\ntwo\n', CASE2['stdout'])
-    self.assertEqual(
-        {'qualifier': 'OK', 'stdout': 'dash1\ndash2\n'}, CASE2['dash'])
-    self.assertEqual(
-        {'qualifier': 'OK', 'stdout': 'mksh1\nmksh2\n'}, CASE2['mksh'])
+    print(CreateAssertions(CASE2['outcomes'][0], 'bash'))
+    expected = {'qualifier': None,
+                'shells': None,
+                'status': '1',
+                'stdout': 'one\ntwo\n',
+                'stderr-json': '""'}
+    self.assertIn(expected, CASE2['outcomes'])
+    expected = {'qualifier': 'OK',
+                'shells': ['dash'],
+                'stdout': 'dash1\ndash2\n'}
+    self.assertIn(expected, CASE2['outcomes'])
+    expected = {'qualifier': 'OK',
+                'shells': ['mksh'],
+                'stdout': 'mksh1\nmksh2\n'}
+    self.assertIn(expected, CASE2['outcomes'])
 
   def testCreateAssertions(self):
-    print(CreateAssertions(CASE1, 'bash'))
+    for outcome in CASE1['outcomes']:
+      print(CreateAssertions(outcome, 'bash'))
 
   def testRunCases(self):
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
