@@ -37,26 +37,26 @@ def Utf8Encode(code):
   Based on https://stackoverflow.com/a/23502707
   """
   if code <= 0x7F:
-      bytes_ = [code & 0x7F]
+    bytes_ = [code & 0x7F]
   elif code > 0x10FFFF:
-      bytes_ = [0xEF, 0xBF, 0xBD]  # unicode replacement character
+    bytes_ = [0xEF, 0xBF, 0xBD]  # unicode replacement character
   else:
-      if code <= 0x7FF:
-	  num_cont_bytes = 1
-      elif code <= 0xFFFF:
-	  num_cont_bytes = 2
-      else:
-	  num_cont_bytes = 3
-      
-      bytes_ = []
-      for i in xrange(num_cont_bytes):
-          bytes_.append(0x80 | (code & 0x3F))
-	  code >>= 6
+    if code <= 0x7FF:
+      num_cont_bytes = 1
+    elif code <= 0xFFFF:
+      num_cont_bytes = 2
+    else:
+      num_cont_bytes = 3
+    
+    bytes_ = []
+    for i in xrange(num_cont_bytes):
+      bytes_.append(0x80 | (code & 0x3F))
+      code >>= 6
 
-      b = (0x1E << (6-num_cont_bytes)) | (code & (0x3F >> num_cont_bytes))
-      bytes_.append(b)
+    b = (0x1E << (6-num_cont_bytes)) | (code & (0x3F >> num_cont_bytes))
+    bytes_.append(b)
 
-      bytes_.reverse()
+    bytes_.reverse()
 
   # mod 256 because Python ints don't wrap around!
   return "".join(chr(b & 0xFF) for b in bytes_)
