@@ -550,6 +550,10 @@ for-expr() {
     $MKSH $BASH $OSH "$@"
 }
 
+empty-bodies() {
+  sh-spec spec/empty-bodies.test.sh "${REF_SHELLS[@]}" $ZSH $OSH "$@"
+}
+
 # TODO: This is for the ANTLR grammars, in the oil-sketch repo.
 # osh has infinite loop?
 shell-grammar() {

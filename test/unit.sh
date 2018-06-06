@@ -69,6 +69,8 @@ run-test-and-maybe-abort() {
 }
 
 all() {
+  # For testing
+  #export FASTLEX=0
   time tests-to-run | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
   echo "All unit tests passed."

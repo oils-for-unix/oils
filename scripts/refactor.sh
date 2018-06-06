@@ -48,6 +48,9 @@ replace() {
   local file=$1
 
   # NOTE: Escaping here is messed up.  sed doesn't have --name like awk?
+  # To match literal parentheses I had to double-escape like this
+  # (shell-escape, then sed-escape).
+  # MakeMatcher\\(\\) MATCHER
   while read pat replace; do
     sed -r -i "s/${pat}/${replace}/g" */*.py
   done < $file

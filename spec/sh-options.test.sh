@@ -89,6 +89,16 @@ echo done
 # stdout: a b c
 # status: 1
 
+### set -o vi/emacs
+set -o vi
+echo $?
+set -o emacs
+echo $?
+## STDOUT:
+0
+0
+## END
+
 ### nounset
 echo "[$unset]"
 set -o nounset

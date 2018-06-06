@@ -19,15 +19,16 @@ import fastlex  # module under test
 lex_mode_e = types.lex_mode_e
 
 
-def MatchToken(lex_mode, line, start_pos):
-  tok_type, end_pos = fastlex.MatchToken(lex_mode.enum_id, line, start_pos)
+# NOTE: This is just like _MatchOshToken_Fast in osh/match.py
+def MatchOshToken(lex_mode, line, start_pos):
+  tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
   return IdInstance(tok_type), end_pos
 
 
 def TokenizeLineOuter(line):
   start_pos = 0
   while True:
-    tok_type, end_pos = MatchToken(lex_mode_e.OUTER, line, start_pos)
+    tok_type, end_pos = MatchOshToken(lex_mode_e.OUTER, line, start_pos)
     tok_val = line[start_pos:end_pos]
     print('TOK: %s %r\n' % (tok_type, tok_val))
     start_pos = end_pos
@@ -38,9 +39,9 @@ def TokenizeLineOuter(line):
 
 class LexTest(unittest.TestCase):
 
-  def testMatchToken(self):
+  def testMatchOshToken(self):
     print(dir(fastlex))
-    print(MatchToken(lex_mode_e.COMMENT, 'line', 3))
+    print(MatchOshToken(lex_mode_e.COMMENT, 'line', 3))
     print()
 
     # Need to be able to pass NUL bytes for EOF.
@@ -50,21 +51,31 @@ class LexTest(unittest.TestCase):
     TokenizeLineOuter(line)
 
   def testOutOfBounds(self):
-    print(MatchToken(lex_mode_e.OUTER, 'line', 3))
+    print(MatchOshToken(lex_mode_e.OUTER, 'line', 3))
     # It's an error to point to the end of the buffer!  Have to be one behind
     # it.
     return
-    print(MatchToken(lex_mode_e.OUTER, 'line', 4))
-    print(MatchToken(lex_mode_e.OUTER, 'line', 5))
+    print(MatchOshToken(lex_mode_e.OUTER, 'line', 4))
+    print(MatchOshToken(lex_mode_e.OUTER, 'line', 5))
 
   def testBug(self):
     code_str = '-n'
     expected = Id.BoolUnary_n
 
-    tok_type, end_pos = MatchToken(lex_mode_e.DBRACKET, code_str, 0)
+    tok_type, end_pos = MatchOshToken(lex_mode_e.DBRACKET, code_str, 0)
     print('---', 'expected', expected.enum_value, 'got', tok_type.enum_value)
 
     self.assertEqual(expected, tok_type)
+
+  def testIsValidVarName(self):
+    self.assertEqual(True, fastlex.IsValidVarName('abc'))
+    self.assertEqual(True, fastlex.IsValidVarName('foo_bar'))
+    self.assertEqual(True, fastlex.IsValidVarName('_'))
+
+    self.assertEqual(False, fastlex.IsValidVarName(''))
+    self.assertEqual(False, fastlex.IsValidVarName('-x'))
+    self.assertEqual(False, fastlex.IsValidVarName('x-'))
+    self.assertEqual(False, fastlex.IsValidVarName('var_name-foo'))
 
 
 if __name__ == '__main__':

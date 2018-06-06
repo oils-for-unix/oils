@@ -6,6 +6,8 @@ This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
 
+from core import util
+
 from osh.meta import Id
 from osh.meta import runtime
 
@@ -43,7 +45,10 @@ def EvalCStringToken(id_, value):
   if id_ == Id.Char_Literals:
     return value
 
-  elif id_ == Id.Char_BadBackslash:  # TODO: error in strict mode
+  elif id_ == Id.Char_BadBackslash:
+    if 1:  # TODO: error in strict mode
+      # Either \A or trailing \ (A is not a valid backslash escape)
+      util.warn('Invalid backslash escape')
     return value
 
   elif id_ == Id.Char_OneChar:

@@ -105,12 +105,12 @@ argv.py "${Unset:-"a b" c}"
 # stdout: ['a b c']
 
 ### part_value tree with multiple words
-argv ${a:-${a:-"1 2" "3 4"}5 "6 7"}
+argv.py ${a:-${a:-"1 2" "3 4"}5 "6 7"}
 # stdout: ['1 2', '3 45', '6 7']
 
 ### part_value tree on RHS
 v=${a:-${a:-"1 2" "3 4"}5 "6 7"}
-argv "${v}"
+argv.py "${v}"
 # stdout: ['1 2 3 45 6 7']
 
 ### Var with multiple words: no quotes

@@ -70,16 +70,16 @@ echo ${v#?}  # ? is a glob that stands for one character
 
 ### Bug fix: Test that you can remove everything with glob
 s='--x--'
-argv "${s%%-*}" "${s%-*}" "${s#*-}" "${s##*-}"
+argv.py "${s%%-*}" "${s%-*}" "${s#*-}" "${s##*-}"
 ## STDOUT:
 ['', '--x-', '-x--', '']
 ## END
 
 ### Test that you can remove everything with const
 s='abcd'
-argv "${s%%abcd}" "${s%abcd}" "${s#abcd}" "${s##abcd}"
+argv.py "${s%%abcd}" "${s%abcd}" "${s#abcd}" "${s##abcd}"
 # failure case:
-argv "${s%%abcde}" "${s%abcde}" "${s#abcde}" "${s##abcde}"
+argv.py "${s%%abcde}" "${s%abcde}" "${s#abcde}" "${s##abcde}"
 ## STDOUT:
 ['', '', '', '']
 ['abcd', 'abcd', 'abcd', 'abcd']

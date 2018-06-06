@@ -21,6 +21,7 @@ import sys
 import time
 
 from asdl import const
+from asdl import pretty
 
 from core import alloc
 from core import args
@@ -1002,17 +1003,20 @@ class Executor(object):
 
     elif node.tag == command_e.ForExpr:
       status = 0
-      self.arith_ev.Eval(node.init)
+      init, cond, body, update = node.init, node.cond, node.body, node.update
+      if init:
+        self.arith_ev.Eval(init)
 
       self.loop_level += 1
       try:
         while True:
-          b = self.arith_ev.Eval(node.cond)
-          if not b:
-            break
+          if cond:
+            b = self.arith_ev.Eval(cond)
+            if not b:
+              break
 
           try:
-            status = self._Execute(node.body)
+            status = self._Execute(body)
           except _ControlFlow as e:
             if e.IsBreak():
               status = 0
@@ -1022,7 +1026,8 @@ class Executor(object):
             else:  # return needs to pop up more
               raise
 
-          self.arith_ev.Eval(node.update)
+          if update:
+            self.arith_ev.Eval(update)
 
       finally:
         self.loop_level -= 1
@@ -1496,7 +1501,7 @@ class Tracer(object):
       return
 
     first_char, prefix = self._EvalPS4()
-    cmd = ' '.join(_PrettyString(a) for a in argv)
+    cmd = ' '.join(pretty.Str(a) for a in argv)
     print('%s%s%s' % (first_char, prefix, cmd), file=sys.stderr)
 
   def OnAssignment(self, lval, val, flags, lookup_mode):
@@ -1519,24 +1524,3 @@ class Tracer(object):
       - We should desugar to SetVar like mksh
     """
     pass
-
-
-# Copied from asdl/format.py.  We're not using it directly because that is
-# debug output, and this is real input.
-# TODO: Is this slow?
-
-# NOTE: bash prints \' for single quote, repr() prints "'".  Gah.  This is also
-# used for printf %q and ${var@q} (bash 4.4).
-
-import re
-_PLAIN_RE = re.compile(r'^[a-zA-Z0-9\-_./]+$')
-
-def _PrettyString(s):
-  if '\n' in s:
-    #return json.dumps(s)  # account for the fact that $ matches the newline
-    return repr(s)
-  if _PLAIN_RE.match(s):
-    return s
-  else:
-    #return json.dumps(s)
-    return repr(s)

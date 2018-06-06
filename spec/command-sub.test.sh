@@ -70,12 +70,12 @@ argv.py $(echo 'hi there') "$(echo 'hi there')"
 
 ### Command Sub trailing newline removed
 s=$(python -c 'print "ab\ncd\n"')
-argv "$s"
+argv.py "$s"
 # stdout: ['ab\ncd']
 
 ### Command Sub trailing whitespace not removed
 s=$(python -c 'print "ab\ncd\n "')
-argv "$s"
+argv.py "$s"
 # stdout: ['ab\ncd\n ']
 
 ### Command Sub and exit code

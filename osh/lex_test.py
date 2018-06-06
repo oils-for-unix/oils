@@ -4,14 +4,16 @@ from __future__ import print_function
 lex_test.py: Tests for lex.py
 """
 
+import re
 import unittest
 
-from core.lexer import CompileAll, LineLexer
+from core.lexer import LineLexer
 from core import test_lib
 
+from osh import lex
+from osh import match
 from osh import parse_lib
 from osh.meta import ast, Id, Kind, LookupKind, types
-from osh.lex import LEXER_DEF
 
 lex_mode_e = types.lex_mode_e
 
@@ -185,62 +187,71 @@ class LineLexerTest(unittest.TestCase):
     self.assertTrue(test_lib.TokensEqual(left, right))
 
   def testReadOuter(self):
-    l = LineLexer(parse_lib._MakeMatcher(), '\n', self.arena)
+    l = LineLexer(match.MATCHER, '\n', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.OUTER))
 
   def testRead_VS_ARG_UNQ(self):
-    l = LineLexer(parse_lib._MakeMatcher(), "'hi'", self.arena)
+    l = LineLexer(match.MATCHER, "'hi'", self.arena)
     t = l.Read(lex_mode_e.VS_ARG_UNQ)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
-    l = LineLexer(parse_lib._MakeMatcher(), '', self.arena)
+    l = LineLexer(match.MATCHER, '', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(parse_lib._MakeMatcher(), 'foo', self.arena)
+    l = LineLexer(match.MATCHER, 'foo', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(parse_lib._MakeMatcher(), 'foo  bar', self.arena)
+    l = LineLexer(match.MATCHER, 'foo  bar', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.OUTER))
 
     # No lookahead; using the cursor!
-    l = LineLexer(parse_lib._MakeMatcher(), 'func(', self.arena)
+    l = LineLexer(match.MATCHER, 'func(', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
 
-    l = LineLexer(parse_lib._MakeMatcher(), 'func  (', self.arena)
+    l = LineLexer(match.MATCHER, 'func  (', self.arena)
     self.assertTokensEqual(
         ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
     self.assertTokensEqual(
         ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
-
-
-OUTER_RE = CompileAll(LEXER_DEF[lex_mode_e.OUTER])
-DOUBLE_QUOTED_RE = CompileAll(LEXER_DEF[lex_mode_e.DQ])
 
 
 class RegexTest(unittest.TestCase):
 
-  def testOuter(self):
-    o = OUTER_RE
-    nul_pat, _ = o[3]
-    print(nul_pat.match('\0'))
+  def testNul(self):
+    nul_pat = re.compile(r'[\0]')
+    self.assertEqual(False, bool(nul_pat.match('x')))
+    self.assertEqual(True, bool(nul_pat.match('\0')))
 
-  def testDoubleQuoted(self):
-    d = DOUBLE_QUOTED_RE
-    nul_pat, _ = d[3]
-    print(nul_pat.match('\0'))
+    _, p, _ = lex.ECHO_E_DEF[-1]
+    print('P %r' % p)
+    last_echo_e_pat = re.compile(p)
+    self.assertEqual(True, bool(last_echo_e_pat.match('x')))
+    self.assertEqual(False, bool(last_echo_e_pat.match('\0')))
+
+
+class EchoLexerTest(unittest.TestCase):
+
+  def testEchoLexer(self):
+    lex = match.ECHO_LEXER
+    print(list(lex.Tokens(r'newline \n NUL \0 octal \0377 hex \x00')))
+    print(list(lex.Tokens(r'unicode \u0065 \U00000065')))
+    print(list(lex.Tokens(r'\d \e \f \g')))
+
+    # NOTE: We only test with one of these.
+    print(match.ECHO_MATCHER)  # either fast or slow
 
 
 if __name__ == '__main__':

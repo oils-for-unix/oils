@@ -226,9 +226,6 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
-/* Define if you have the 'fdatasync' function. */
-#define HAVE_FDATASYNC 1
-
 /* Define to 1 if you have the `finite' function. */
 #define HAVE_FINITE 1
 
@@ -341,12 +338,6 @@
 /* Define to 1 if you have the `getpwent' function. */
 #define HAVE_GETPWENT 1
 
-/* Define to 1 if you have the `getresgid' function. */
-#define HAVE_GETRESGID 1
-
-/* Define to 1 if you have the `getresuid' function. */
-#define HAVE_GETRESUID 1
-
 /* Define to 1 if you have the `getsid' function. */
 #define HAVE_GETSID 1
 
@@ -440,9 +431,6 @@
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 /* #undef HAVE_LIBRESOLV */
 
-/* Define to 1 if you have the <libutil.h> header file. */
-/* #undef HAVE_LIBUTIL_H */
-
 /* Define if you have the 'link' function. */
 #define HAVE_LINK 1
 
@@ -524,9 +512,6 @@
 /* Define if you have GNU PTH threads. */
 /* #undef HAVE_PTH */
 
-/* Define to 1 if you have the <pty.h> header file. */
-#define HAVE_PTY_H 1
-
 /* Define to 1 if you have the `putenv' function. */
 #define HAVE_PUTENV 1
 
@@ -605,12 +590,6 @@
 /* Define to 1 if you have the `setregid' function. */
 #define HAVE_SETREGID 1
 
-/* Define to 1 if you have the `setresgid' function. */
-#define HAVE_SETRESGID 1
-
-/* Define to 1 if you have the `setresuid' function. */
-#define HAVE_SETRESUID 1
-
 /* Define to 1 if you have the `setreuid' function. */
 #define HAVE_SETREUID 1
 
@@ -658,12 +637,6 @@
 
 /* Define to 1 if you have the `statvfs' function. */
 #define HAVE_STATVFS 1
-
-/* Define if you have struct stat.st_mtim.tv_nsec */
-#define HAVE_STAT_TV_NSEC 1
-
-/* Define if you have struct stat.st_mtimensec */
-/* #undef HAVE_STAT_TV_NSEC2 */
 
 /* Define if your compiler supports variable length function prototypes (e.g.
    void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
@@ -860,9 +833,6 @@
    wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h). */
 /* #undef HAVE_USABLE_WCHAR_T */
-
-/* Define to 1 if you have the <util.h> header file. */
-/* #undef HAVE_UTIL_H */
 
 /* Define to 1 if you have the `utimes' function. */
 #define HAVE_UTIMES 1

@@ -390,3 +390,53 @@ f
 ['x']
 ## END
 
+### Create sparse array
+a=()
+(( a[99]=1 )) # osh doesn't parse index assignment outside arithmetic yet
+echo len=${#a[@]}
+argv.py "${a[@]}"
+echo "unset=${a[33]}"
+echo len-of-unset=${#a[33]}
+## STDOUT:
+len=1
+['1']
+unset=
+len-of-unset=0
+## END
+
+### Create sparse array implicitly
+(( a[99]=1 ))
+echo len=${#a[@]}
+argv.py "${a[@]}"
+echo "unset=${a[33]}"
+echo len-of-unset=${#a[33]}
+## STDOUT:
+len=1
+['1']
+unset=
+len-of-unset=0
+## END
+
+### Append sparse arrays
+a=()
+(( a[99]=1 ))
+b=()
+(( b[33]=2 ))
+(( b[66]=3 ))
+a+=( "${b[@]}" )
+argv.py "${a[@]}"
+argv.py "${a[99]}" "${a[100]}" "${a[101]}"
+## STDOUT:
+['1', '2', '3']
+['1', '2', '3']
+## END
+
+### Slice of sparse array with [@]
+# mksh doesn't support this syntax!  It's a bash extension.
+(( a[33]=1 ))
+(( a[66]=2 ))
+(( a[99]=2 ))
+argv.py "${a[@]:15:2}"
+# stdout: ['1', '2']
+# N-I mksh status: 1
+# N-I mksh stdout-json: ""

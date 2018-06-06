@@ -41,3 +41,19 @@ done  # A construct borrowed from ksh93.
 3
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
+
+### For loop with empty head
+a=1
+for ((;;)); do
+  if test $a = 4; then
+    break
+  fi
+  echo $((a++))
+done  # A construct borrowed from ksh93.
+## status: 0
+## STDOUT:
+1
+2
+3
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""

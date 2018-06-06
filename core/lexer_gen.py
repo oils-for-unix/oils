@@ -9,6 +9,7 @@ import sys
 import sre_parse
 import sre_constants
 
+from asdl import pretty  # For PLAIN_WORD_RE
 from osh import lex
 from osh import meta
 
@@ -166,15 +167,22 @@ def TranslateTree(re_tree, f, in_char_class=False):
       f.write('.')
 
     else:
-      raise AssertionError(name)
+      raise RuntimeError("I don't understand regex construct: %r" % name)
 
   # NOTE: negate and not_literal are sort of duplicated
 
 
 def TranslateRegex(pat):
   re_tree = sre_parse.parse(pat)
+  # For debugging
+  #import pprint
+  #print(pprint.pformat(re_tree), file=sys.stderr)
   f = cStringIO.StringIO()
-  TranslateTree(re_tree, f)
+  try:
+    TranslateTree(re_tree, f)
+  except RuntimeError:
+    print('Error translating %r' % pat, file=sys.stderr)
+    raise
   return f.getvalue()
 
 
@@ -188,7 +196,41 @@ def TranslateRegex(pat):
 # http://re2c.org/examples/example_03.html
 
 
-def TranslateLexer(lexer_def):
+def TranslateEcholexer(echo_def):
+  print(r"""
+static inline void MatchEchoToken(unsigned char* line, int line_len,
+                                  int start_pos, int* id, int* end_pos) {
+  assert(start_pos <= line_len);  /* caller should have checked */
+
+  unsigned char* p = line + start_pos;  /* modified by re2c */
+
+  unsigned char* YYMARKER;  /* why do we need this? */
+
+  for (;;) {
+    /*!re2c
+""")
+
+  for is_regex, pat, token_id in echo_def:
+    if is_regex:
+      re2c_pat = TranslateRegex(pat)
+    else:
+      re2c_pat = TranslateConstant(pat)
+    id_name = meta.IdName(token_id)
+    print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
+
+  # EARLY RETURN: Do NOT advance past the NUL terminator.
+  print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
+      r'"\x00"')
+
+  print("""
+    */
+  }
+  *end_pos = p - line;  /* relative */
+}
+""")
+
+
+def TranslateOshLexer(lexer_def):
   # https://stackoverflow.com/questions/12836171/difference-between-an-inline-function-and-static-inline-function
   # Has to be 'static inline' rather than 'inline', otherwise the
   # _bin/oil.ovm-dbg build fails (but the _bin/oil.ovm doesn't!).
@@ -204,8 +246,8 @@ def TranslateLexer(lexer_def):
   re2c:yyfill:enable = 0;  // generated code doesn't ask for more input
 */
 
-static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
-                       int start_pos, int* id, int* end_pos) {
+static inline void MatchOshToken(int lex_mode, unsigned char* line, int line_len,
+                              int start_pos, int* id, int* end_pos) {
   assert(start_pos <= line_len);  /* caller should have checked */
 
   unsigned char* p = line + start_pos;  /* modified by re2c */
@@ -227,11 +269,11 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
 
     for is_regex, pat, token_id in pat_list:
       if is_regex:
-        re2_pat = TranslateRegex(pat)
+        re2c_pat = TranslateRegex(pat)
       else:
-        re2_pat = TranslateConstant(pat)
+        re2c_pat = TranslateConstant(pat)
       id_name = meta.IdName(token_id)
-      print('      %-30s { *id = id__%s; break; }' % (re2_pat, id_name))
+      print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
 
     # EARLY RETURN: Do NOT advance past the NUL terminator.
     print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
@@ -285,6 +327,21 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
 }
 """)
 
+def TranslateRegexToPredicate(py_regex, func_name):
+  re2c_pat = TranslateRegex(py_regex)
+  print(r"""
+static inline int %s(const char* s, int len) {
+  const char* p = s;  /* modified by re2c */
+  const char* end = s + len;
+
+  /*!re2c
+  re2c:define:YYCURSOR = p;
+  %-30s { return p == end; }  // Match must be anchored right, like $
+  *     { return 0; }
+  */
+}
+""" % (func_name, re2c_pat))
+
 
   # note: use YYCURSOR and YYLIMIT
   # limit should be the end of string
@@ -295,7 +352,11 @@ def main(argv):
 
   action = argv[1]
   if action == 'c':
-    TranslateLexer(lex.LEXER_DEF)
+    # Print code to stdout.
+    TranslateOshLexer(lex.LEXER_DEF)
+    TranslateEcholexer(lex.ECHO_E_DEF)
+    TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
+    TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
 
   elif action == 'print-all':
     # Top level is a switch statement.

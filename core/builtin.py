@@ -30,13 +30,13 @@ import os
 import sys
 
 from core import args
-from core import lexer
 from core import util
 from core import state
 from core import word_compile
 
 from osh.meta import runtime
 from osh import lex
+from osh import match
 
 from _devbuild.gen import osh_help  # generated file
 
@@ -160,8 +160,6 @@ def Resolve(argv0):
 # Implementation of builtins.
 #
 
-ECHO_LEXER = lexer.SimpleLexer(lex.ECHO_E_DEF)
-
 ECHO_SPEC = _Register('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
@@ -188,7 +186,7 @@ def Echo(argv):
     new_argv = []
     for a in argv:
       parts = []
-      for id_, value in ECHO_LEXER.Tokens(a):
+      for id_, value in match.ECHO_LEXER.Tokens(a):
         p = word_compile.EvalCStringToken(id_, value)
 
         # Unusual behavior: '\c' prints what is there and aborts processing!
@@ -664,7 +662,7 @@ def Export(argv, mem):
   arg, i = EXPORT_SPEC.Parse(argv)
   if arg.n:
     for name in argv[i:]:
-      m = lex.VAR_NAME_RE.match(name)
+      m = match.IsValidVarName(name)
       if not m:
         raise args.UsageError('export: Invalid variable name %r' % name)
 
@@ -680,7 +678,7 @@ def Export(argv, mem):
         name, s = parts
         val = runtime.Str(s)
 
-      m = lex.VAR_NAME_RE.match(name)
+      m = match.IsValidVarName(name)
       if not m:
         raise args.UsageError('export: Invalid variable name %r' % name)
 
