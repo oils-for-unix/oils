@@ -49,7 +49,7 @@ def Utf8Encode(code):
       num_cont_bytes = 3
     
     bytes_ = []
-    for i in xrange(num_cont_bytes):
+    for _ in xrange(num_cont_bytes):
       bytes_.append(0x80 | (code & 0x3F))
       code >>= 6
 
