@@ -38,6 +38,8 @@ echo ref ${!a}
 echo status=$?
 # stdout-json: "ref\nstatus=0\n"
 # BUG mksh stdout-json: "ref a\nstatus=0\n"
+# OK bash stdout: status=1
+
 ### pass array by reference
 show_value() {
   local -n array=$1

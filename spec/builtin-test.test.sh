@@ -223,6 +223,7 @@ test -h $TMP/symlink && echo symlink
 test -L $TMP/dangling && echo dangling
 test -h $TMP/dangling  && echo dangling
 test -f $TMP/dangling  || echo 'dangling is not file'
+rm $TMP/symlink  # interferes with builtins.test.sh otherwise
 ## STDOUT:
 no
 no

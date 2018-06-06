@@ -36,8 +36,9 @@ echo status=$?
 zero
 ## END
 ## status: 1
-## N-I dash status: 2
-## N-I dash stdout-json: ""
+## N-I dash/mksh status: 2
+## N-I dash/mksh stdout-json: ""
+## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 ## N-I ash/bash status: 0
 ## N-I ash/bash STDOUT:

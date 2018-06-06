@@ -128,3 +128,5 @@ shopt -s expand_aliases  # bash requires this
 alias e_.~x='echo'
 e_.~x X
 ## stdout: X
+## OK mksh status: 127
+## mksh R56 2017/08/08 only allows [][A-Za-z0-9_!%,.@:-] in aliases

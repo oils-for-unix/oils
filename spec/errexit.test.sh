@@ -167,6 +167,7 @@ echo 7
 1
 2
 ## END
+## OK dash/bash/mksh/ash status: 1
 ## OK dash/bash/mksh/ash STDOUT:
 1
 2
@@ -202,6 +203,7 @@ echo 7
 1
 2
 6
+## OK dash/bash/mksh/ash status: 1
 ## OK dash/bash/mksh/ash STDOUT:
 1
 2

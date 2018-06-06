@@ -94,6 +94,7 @@ s=xx_xx_xx
 echo ${s//[[:alpha:]]/y} ${s//[^[:alpha:]]/-}
 # stdout: yy_yy_yy xx-xx-xx
 # N-I mksh stdout: xx_xx_xx xx_xx_xx
+# BUG mksh stdout: yy_yy_yy --_--_--
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 

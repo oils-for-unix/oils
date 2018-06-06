@@ -24,6 +24,8 @@ a=([aa]=b [foo]=bar ['a+1']=c)
 argv.py "${!a[@]}"
 # Is this invalid on associative arrays?  Makes no sense.
 # stdout: ['aa', 'foo', 'a+1']
+# PASS bash stdout: ['foo', 'aa', 'a+1']
+# bash changed the ordering at some point?
 
 ### $a gives nothing
 declare -A a

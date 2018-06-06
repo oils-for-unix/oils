@@ -16,6 +16,7 @@ echo $-
 # stdout: u
 # status: 0
 # OK bash stdout: huB
+# OK bash stdout: huBs
 # OK mksh stdout: ush
 # N-I dash stdout-json: ""
 # N-I dash status: 2
