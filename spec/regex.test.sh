@@ -34,6 +34,16 @@
 # From bash code: ( | ) are treated special.  Normally they must be quoted, but
 # they can be UNQUOTED in BASH_REGEX state.  In fact they can't be quoted!
 
+### BASH_REMATCH
+[[ foo123 =~ ([a-z]+)([0-9]+) ]]
+argv.py "${BASH_REMATCH[@]}"
+## STDOUT:
+['foo123', 'foo', '123']
+## END
+## N-I zsh STDOUT:
+['']
+## END
+
 ### Match is unanchored at both ends
 [[ 'bar' =~ a ]] && echo true
 # stdout: true
