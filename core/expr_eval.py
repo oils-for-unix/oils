@@ -17,10 +17,10 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from osh.meta import BOOL_ARG_TYPES, Id, types
 from core import util
+from core import state
+from osh.meta import BOOL_ARG_TYPES, Id, types
 from osh.meta import runtime
-
 from osh.meta import ast
 
 log = util.log
@@ -444,7 +444,7 @@ class BoolEvaluator(_ExprEvaluator):
 
   def _SetRegexMatches(self, matches):
     """For ~= to set the BASH_REMATCH array."""
-    self.mem
+    state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 
   def _EvalCompoundWord(self, word, do_fnmatch=False):
     """
@@ -606,22 +606,19 @@ class BoolEvaluator(_ExprEvaluator):
           return s1 != s2
 
         if op_id == Id.BoolBinary_EqualTilde:
-          # NOTE: regex matching can't fail if compilation succeeds.
-          match = libc.regex_match(s2, s1)
-          # TODO: BASH_REMATCH or REGEX_MATCH
-          if match == 1:
-            self._SetRegexMatches('TODO')
-            is_match = True
-          elif match == 0:
-            is_match = False
-          elif match == -1:
+          matches = libc.regex_match(s2, s1)
+
+          # NOTE: regex matching shouldn't fail if compilation succeeds.
+          if matches == -1:
             raise AssertionError(
                 "Invalid regex %r: should have been caught at compile time" %
                 s2)
-          else:
-            raise AssertionError
 
-          return is_match
+          if matches is None:
+            return False
+
+          self._SetRegexMatches(matches)
+          return True
 
         if op_id == Id.Redir_Less:  # pun
           return s1 < s2
