@@ -107,6 +107,7 @@ g
 return-helper.sh
 profile [x y]
 ## END
+## N-I dash/mksh status: 42
 ## N-I dash/mksh STDOUT:
 --
 f

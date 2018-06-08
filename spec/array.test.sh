@@ -313,8 +313,8 @@ a=('123' '456')
 argv.py "${a[0]}" "${a[0][0]}"
 # stdout-json: ""
 # status: 2
-# OK mksh status: 1
-# bash is bad -- it IGNORES the bad subscript.
+# OK bash/mksh status: 1
+# old bash version is bad -- it IGNORES the bad subscript.
 # BUG bash status: 0
 # BUG bash stdout: ['123', '123']
 
@@ -323,8 +323,8 @@ a=('123' '456')
 echo "${#a[0]}" "${#a[0]/1/xxx}"
 # stdout-json: ""
 # status: 2
-# OK mksh status: 1
-# bash is bad -- it IGNORES the op at the end
+# OK bash/mksh status: 1
+# old bash version is bad -- it IGNORES the op at the end
 # BUG bash status: 0
 # BUG bash stdout: 3 3
 
