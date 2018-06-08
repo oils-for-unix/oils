@@ -9,6 +9,13 @@ v=foo
 echo ${#v}
 # stdout: 3
 
+### Unicode string length (UTF-8)
+v=$'_\u03bc_'
+echo ${#v}
+## stdout: 3
+## BUG dash stdout: 9
+## BUG mksh stdout: 4
+
 ### Length of undefined variable
 echo ${#undef}
 # stdout: 0
@@ -158,4 +165,3 @@ echo ${foo:1:3}
 # BUG mksh stdout: -μ
 # N-I dash status: 2
 # N-I dash stdout-json: ""
-
