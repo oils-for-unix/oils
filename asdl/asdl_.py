@@ -301,7 +301,7 @@ class Field(AST):
 
 class Sum(AST):
     def __init__(self, types, attributes=None):
-        self.types = types
+        self.types = types  # List[Constructor]
         self.attributes = attributes or []
 
     def Print(self, f, indent):

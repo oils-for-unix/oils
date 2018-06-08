@@ -395,8 +395,8 @@ _C_STRING_COMMON = [
 
   # \x6 is valid in bash
   R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
-  R(r'\\u[0-9]{1,4}', Id.Char_Unicode4),
-  R(r'\\U[0-9]{1,8}', Id.Char_Unicode8),
+  R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
+  R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
 
   R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
