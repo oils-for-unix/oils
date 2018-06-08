@@ -299,7 +299,7 @@ class _WordEvaluator(object):
     if op_id == Id.VSub_Pound:  # LENGTH
       if val.tag == value_e.Str:
         unicode_val = val.s.decode('utf-8')
-    	length = len(unicode_val)
+        length = len(unicode_val)
         # length = len(val.s)
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.
