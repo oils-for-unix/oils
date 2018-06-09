@@ -22,7 +22,6 @@ module glob {
   -- Example: *.[ch] is Star, Literal('.'), CharClassExpr(False, 'ch')
   glob_part =
     Literal(string s)
-  | EscapedChar(string c)  -- \* \? \[
   | Star    -- * is 0 or more characters, like the regex .*
   | QMark   -- ? is a single character
   | CharClassExpr(bool negated, string body)
