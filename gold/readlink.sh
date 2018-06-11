@@ -1,5 +1,11 @@
 #!/bin/bash
 #
+# Test case for OSH readlink.
+#
+# Note: there is also a demo to run like this:
+#
+# $ demo/readlink-demo.sh all
+#
 # Usage:
 #   ./readlink.sh <function name>
 
@@ -7,7 +13,7 @@ set -o nounset
 set -o pipefail
 #set -o errexit
 
-dir-does-not-exist() {
+test-readlink() {
   readlink -f _tmp/gold-bin/readlink
   echo $?
 
@@ -21,12 +27,28 @@ dir-does-not-exist() {
   echo $?
 }
 
+# For this readlink gold test, we need a custom test driver.
 compare() {
-  PATH="_tmp/gold-bin:$PATH" $0 dir-does-not-exist > _tmp/busybox-readlink.txt
+  mkdir -p _tmp/gold-bin
+  ln -s -f /bin/busybox _tmp/gold-bin/readlink
 
-  PATH="bin/:$PATH" $0 dir-does-not-exist > _tmp/osh-readlink.txt
+  _tmp/gold-bin/readlink --help 2>/dev/null
+  if test $? -ne 0; then
+    echo "busybox readlink not working"
+  fi
 
-  diff -u _tmp/busybox-readlink.txt _tmp/osh-readlink.txt
+  # Use the readlink in busybox.
+  PATH="_tmp/gold-bin:$PATH" $0 test-readlink > _tmp/busybox-readlink.txt
+
+  # Use the readlink in OSH.
+  PATH="bin/:$PATH" $0 test-readlink > _tmp/osh-readlink.txt
+
+  if diff -u _tmp/{busybox,osh}-readlink.txt; then
+    echo PASS
+  else
+    echo FAIL
+    return 1
+  fi
 }
 
 "$@"

@@ -115,7 +115,7 @@ declare() { _compare gold/declare.sh demo; }
 scope() { _compare gold/scope.sh; }
 
 readlink-case() {
-  _compare gold/readlink.sh dir-does-not-exist
+  gold/readlink.sh compare
 }
 
 readonly -a PASSING=(
@@ -144,6 +144,7 @@ readonly -a PASSING=(
   one-spec-test
   html-summary
   gen-module-init
+  readlink-case
 
   # This one takes a little long, but it's realistic.
   #wild
