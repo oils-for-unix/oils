@@ -35,10 +35,10 @@ func_readlinkf(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "s", &symlink)) {
     return NULL;
   }
+  char ret[PATH_MAX + 1];
+  char *retval = realpath(symlink, ret);
 
-  char *ret = realpath(symlink, NULL);
-
-  if (ret == NULL) {
+  if (retval == NULL) {
       debug("error occurred while resolving symlink");
       return PyLong_FromLong(-1);
   } else {
