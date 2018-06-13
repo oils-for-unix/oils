@@ -4,6 +4,8 @@
 
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
+#include <limits.h>
+#include <stdlib.h>
 
 #include <fnmatch.h>
 #include <glob.h>
@@ -24,6 +26,24 @@ static void debug(const char* fmt, ...) {
   va_end(args);
   fprintf(stderr, "\n");
 #endif
+}
+
+static PyObject *
+func_readlinkf(PyObject *self, PyObject *args) {
+  const char *symlink;
+
+  if (!PyArg_ParseTuple(args, "s", &symlink)) {
+    return NULL;
+  }
+
+  char *ret = realpath(symlink, NULL);
+
+  if (ret == NULL) {
+      debug("error occurred while resolving symlink");
+      return PyLong_FromLong(-1);
+  } else {
+      return PyString_FromStringAndSize(ret, strlen(ret));
+  }
 }
 
 static PyObject *
@@ -309,6 +329,8 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef methods[] = {
+  {"readlinkf", func_readlinkf, METH_VARARGS,
+   "Return canonical path of a symlink."},
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
   // Python's glob doesn't have char classes
