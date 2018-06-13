@@ -22,10 +22,10 @@ source test/common.sh  # for $OSH
 _compare() {
   set +o errexit
 
-  "$@" >_tmp/shebang.txt
+  PATH="$PWD/_tmp/gold-bin:$PATH" "$@" >_tmp/shebang.txt
   local expected_status=$?
 
-  PATH="$PWD/bin:$PATH" $OSH "$@" >_tmp/osh.txt
+  $OSH "$@" >_tmp/osh.txt
   local osh_status=$?
 
   set -o errexit

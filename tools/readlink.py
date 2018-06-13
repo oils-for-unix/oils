@@ -5,6 +5,7 @@ readlink.py
 """
 
 import os
+import libc
 from core import args, util
 
 SPEC = args.BuiltinFlags()
@@ -17,6 +18,8 @@ def main(argv):
     util.error("-f must be passed")
     return 1
   for arg in argv[i:]:
-    res = os.path.realpath(arg)
+    res = libc.readlinkf(arg)
+    if res == -1:
+        return 1
     print(res)
   return 0
