@@ -14,13 +14,18 @@ set -o errexit
 
 source test/common.sh  # for $OSH
 
+# Runs an command (argv) the normal way (with its shebang) and then with
+# OSH, and compares the stdout and exit code.
+#
+# Also puts $PWD/bin on the front of $PATH, in order to read bin/readlink
+# and so forth.
 _compare() {
   set +o errexit
 
   "$@" >_tmp/shebang.txt
   local expected_status=$?
 
-  $OSH "$@" >_tmp/osh.txt
+  PATH="$PWD/bin:$PATH" $OSH "$@" >_tmp/osh.txt
   local osh_status=$?
 
   set -o errexit
@@ -87,7 +92,7 @@ and-or() { _compare gold/and-or.sh test-simple; }
 
 comments() { _compare gold/comments.sh; }
 readonly_() { _compare gold/readonly.sh; }
-export() { _compare gold/export.sh; }
+export-case() { _compare gold/export.sh; }
 glob() { _compare gold/glob.sh; }
 no-op() { _compare scripts/count.sh; }
 complex-here-docs() { _compare gold/complex-here-docs.sh; }
@@ -109,6 +114,9 @@ declare() { _compare gold/declare.sh demo; }
 # Needs declare -p
 scope() { _compare gold/scope.sh; }
 
+readlink-case() {
+  _compare gold/readlink.sh dir-does-not-exist
+}
 
 readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
@@ -120,7 +128,7 @@ readonly -a PASSING=(
 
   comments
   readonly_
-  export
+  export-case
   glob
   no-op
   complex-here-docs

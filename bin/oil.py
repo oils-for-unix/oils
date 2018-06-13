@@ -88,6 +88,7 @@ else:
 
 from tools import deps
 from tools import osh2oil
+from tools import readlink
 
 log = util.log
 
@@ -592,6 +593,8 @@ def AppBundleMain(argv):
     return 0
   elif main_name == 'false':
     return 1
+  elif main_name == 'readlink':
+    return readlink.main(main_argv)
   else:
     raise args.UsageError('Invalid applet name %r.' % main_name)
 

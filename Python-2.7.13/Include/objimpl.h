@@ -255,7 +255,13 @@ typedef union _gc_head {
         union _gc_head *gc_prev;
         Py_ssize_t gc_refs;
     } gc;
-    long double dummy;  /* force worst-case alignment */
+/* OVM CHANGE
+Ported this commit from Python 3.  Python 2.7 uses a more complicated change
+for ABI compatibility.
+
+   https://github.com/python/cpython/commit/e348c8d154cf6342c79d627ebfe89dfe9de23817
+*/
+    double dummy;  /* force worst-case alignment */
 } PyGC_Head;
 
 extern PyGC_Head *_PyGC_generation0;
