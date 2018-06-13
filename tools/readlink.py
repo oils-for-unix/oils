@@ -4,7 +4,6 @@ from __future__ import print_function
 readlink.py
 """
 
-import os
 import libc
 from core import args, util
 
@@ -18,7 +17,7 @@ def main(argv):
     util.error("-f must be passed")
     return 1
   for arg in argv[i:]:
-    res = libc.readlinkf(arg)
+    res = libc.realpath(arg)
     if res == -1:
         return 1
     print(res)

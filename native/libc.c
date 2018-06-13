@@ -29,20 +29,20 @@ static void debug(const char* fmt, ...) {
 }
 
 static PyObject *
-func_readlinkf(PyObject *self, PyObject *args) {
+func_realpath(PyObject *self, PyObject *args) {
   const char *symlink;
 
   if (!PyArg_ParseTuple(args, "s", &symlink)) {
     return NULL;
   }
-  char ret[PATH_MAX + 1];
-  char *retval = realpath(symlink, ret);
+  char target[PATH_MAX + 1];
+  char *status = realpath(symlink, target);
 
-  if (retval == NULL) {
+  if (status== NULL) {
       debug("error occurred while resolving symlink");
       return PyLong_FromLong(-1);
   } else {
-      return PyString_FromStringAndSize(ret, strlen(ret));
+      return PyString_FromString(target);
   }
 }
 
@@ -329,7 +329,7 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef methods[] = {
-  {"readlinkf", func_readlinkf, METH_VARARGS,
+  {"realpath", func_realpath, METH_VARARGS,
    "Return canonical path of a symlink."},
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
