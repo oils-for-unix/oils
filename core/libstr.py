@@ -2,7 +2,7 @@
 """
 libstr.py - String library functions that can be exposed with a saner syntax.
 
-Instead of 
+Instead of
 
 local y=${x//a*/b}
 
@@ -27,7 +27,7 @@ e_die = util.e_die
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and
 # regexec.  in a loop.  fnmatch() does NOT given positions of matches.
 #
-# (2) Strip -- % %% # ## - 
+# (2) Strip -- % %% # ## -
 #
 # a. Fast path for constant strings.
 # b. Convert to POSIX extended regex, to see if it matches at ALL.  If it
@@ -108,7 +108,7 @@ def DoUnarySuffixOp(s, op, arg):
         return s[:i]
     else:
       return s
-    
+
   elif op.op_id == Id.VOp1_DPercent:  # longest suffix
     # 'abcd': match 'abc', 'bc', 'c', ...
     for i in xrange(0, n):
@@ -156,7 +156,7 @@ def PatSub(s, op, pat, replace_str):
   """Helper for ${x/pat/replace}."""
   #log('PAT %r REPLACE %r', pat, replace_str)
 
-  regex, err = glob_.GlobToExtendedRegex(pat)
+  regex, err = glob_.GlobParser().GlobToExtendedRegex(pat)
   if err:
     e_die("Can't convert glob to regex: %r", pat)
 

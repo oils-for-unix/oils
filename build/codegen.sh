@@ -32,8 +32,8 @@ source build/common.sh
 # _devbuild/gen/
 #    osh-types.h - lex_mode_e for now
 #    id_kind.h - id_e for now
-#    osh-lex.re2c.c  
-#    osh-lex.c  
+#    osh-lex.re2c.c
+#    osh-lex.c
 
 download-re2c() {
   mkdir -p _deps

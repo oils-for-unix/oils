@@ -8,8 +8,11 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
+from osh.meta import glob as glob_ast
 from core import util
 log = util.log
+
+glob_part_e = glob_ast.glob_part_e
 
 
 def LooksLikeGlob(s):
@@ -67,67 +70,157 @@ def GlobEscape(s):
 # always use utf-8?
 # - Character class for glob is different than char class for regex?  According
 # to the standard, anyway.
-#   - Honestly I would like a more principled parser for globs!  Can re2c do
-#   better here?
+# - Honestly I would like a more principled parser for globs!  Can re2c do
+# better here?
 
-def GlobToExtendedRegex(glob_pat):
-  """Convert a glob to a libc extended regexp.
-
-  Returns:
-    A ERE string, or None if it's the pattern is a constant string rather than
-    a glob.
+class GlobParser(object):
   """
-  is_glob = False
-  err = None
+  Parses glob patterns. Can convert directly to libc extended regexp or output
+  an intermediate AST (defined at osh/glob.asdl).
+  """
 
-  i = 0
-  n = len(glob_pat)
-  out = []
-  while i < n:
-    c = glob_pat[i]
-    if c == '\\':  # glob escape like \* or \?
-      # BUG: This isn't correct because \* is escaping a glob character, but
-      # then it's also a regex metacharacter.  We should really parse the glob
-      # into a symbolic form first, not do text->text conversion.
-      # Hard test case: \** as a glob -> \*.* as a regex.
+  def Parse(self, glob_pat):
+    """Parses a glob pattern into AST form (defined at osh/glob.asdl).
+
+    Returns:
+      A 2-tuple of (<glob AST>, <error message>).
+
+      If the pattern is not actually a glob, the first element is None. The
+      second element is None unless there was an error during parsing.
+    """
+    try:
+      return self._ParseUnsafe(glob_pat)
+
+    except RuntimeError as e:
+      return None, str(e)
+
+  def _ParseUnsafe(self, glob_pat):
+    """
+    Parses a glob pattern into AST form.
+
+    Raises:
+      RuntimeError: if glob is invalid
+    """
+    is_glob = False
+    i = 0
+    n = len(glob_pat)
+    parts = []
+    while i < n:
+      c = glob_pat[i]
+      if c == '\\':  # glob escape like \* or \?
+        i += 1
+        parts.append(glob_ast.Literal(glob_pat[i]))
+
+      elif c == '*':
+        is_glob = True
+        parts.append(glob_ast.Star())
+
+      elif c == '?':
+        is_glob = True
+        parts.append(glob_ast.QMark())
+
+      elif c == '[':
+        is_glob = True
+        char_class_expr, i = self.ParseCharClassExpr(glob_pat, i)
+        parts.append(char_class_expr)
+
+      else:
+        parts.append(glob_ast.Literal(c))
+
       i += 1
-      out.append(glob_pat[i])
-    elif c == '*':
-      is_glob = True
-      out.append('.*')
-    elif c == '?':
-      is_glob = True
-      out.append('.')
-    # TODO: Enter a different state and parse character classes
-    # NOTE: Is [!abc] negation rather than [^abc] ?
-    elif c == '[':
-      err = True  # TODO: better error
-      break
-    elif c == ']':
-      err = True
 
-    # Escape a single character for extended regex literals.""
-    # https://www.gnu.org/software/findutils/manual/html_node/find_html/posix_002dextended-regular-expression-syntax.html
-    elif c in '.|^$()+':  # Already handled \ * ? []
-      out.append('\\' + c)
-    else:
-      out.append(c)
+    if is_glob:
+      return glob_ast.glob(parts), None
+
+    return None, None
+
+  def ParseCharClassExpr(self, glob_pat, start_i):
+    """Parses a character class expression, e.g. [abc], [[:space:]], [!a-z]
+
+    Returns:
+      A 2-tuple of (<CharClassExpr instance>, <next parse index>)
+
+    Raises:
+      RuntimeError: If error during parsing the character class.
+    """
+    i = start_i
+    if glob_pat[i] != '[':
+      raise RuntimeError('invalid CharClassExpr start!')
 
     i += 1
+    # NOTE: Both ! and ^ work for negation in globs
+    # https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html#Pattern-Matching
+    negated = glob_pat[i] in '!^'
+    if negated:
+      i += 1
 
-  if err:
-    return None, err
-  else:
-    if is_glob:
-      regex = ''.join(out)
+    in_posix_class = False
+    expr_body = []
+    n = len(glob_pat)
+
+    # NOTE: special case: ] is matched iff it's the first char in the expression
+    if glob_pat[i] == ']':
+      expr_body.append(']')
+      i += 1
+
+    while i < n:
+      c = glob_pat[i]
+      if c == ']':
+        if not in_posix_class:
+          break
+        in_posix_class = False
+
+      elif c == '[':
+        if in_posix_class:
+          raise RuntimeError('invalid character [ in CharClassExpr')
+        in_posix_class = (glob_pat[i+1] == ':')
+
+      elif c == '\\':
+        expr_body.append(c)
+        i += 1
+        c = glob_pat[i]
+
+      expr_body.append(c)
+      i += 1
+
     else:
-      regex = None
-    return regex, err
+      raise RuntimeError('unclosed CharClassExpr!')
+
+    return glob_ast.CharClassExpr(negated, ''.join(expr_body)), i
+
+  def ASTToExtendedRegex(self, ast):
+    if not ast:
+      return None
+
+    out = []
+    for part in ast.parts:
+      if part.tag == glob_part_e.Literal:
+        if part.s in '.|^$()+*?[]{}\\':
+          out.append('\\')
+        out.append(part.s)
+
+      elif part.tag == glob_part_e.Star:
+        out.append('.*')
+
+      elif part.tag == glob_part_e.QMark:
+        out.append('.')
+
+      elif part.tag == glob_part_e.CharClassExpr:
+        out.append('[')
+        if part.negated:
+          out.append('^')
+        out.append(part.body + ']')
+
+    return ''.join(out)
+
+  def GlobToExtendedRegex(self, glob_pat):
+    ast, err = self.Parse(glob_pat)
+    return self.ASTToExtendedRegex(ast), err
 
 
 def _GlobUnescape(s):  # used by cmd_exec
   """Remove glob escaping from a string.
-  
+
   Used when there is no glob match.
   TODO: Can probably get rid of this, as long as you save the original word.
 
@@ -196,10 +289,10 @@ class Globber(object):
     if g:
       return g
     else:  # Nothing matched
-      if self.exec_opts.failglob: 
+      if self.exec_opts.failglob:
         # TODO: Make the command return status 1.
         raise NotImplementedError
-      if self.exec_opts.nullglob: 
+      if self.exec_opts.nullglob:
         return []
       else:
         # Return the original string
