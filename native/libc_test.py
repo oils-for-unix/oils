@@ -8,7 +8,6 @@
 """
 libc_test.py: Tests for libc.py
 """
-
 import unittest
 
 import libc  # module under test
@@ -93,6 +92,21 @@ class LibcTest(unittest.TestCase):
     self.assertEqual(
         (8, 10),
         libc.regex_first_group_match('(X.)', s, 6))
+
+  def testRealpathFailOnNonexistentDirectory(self):
+	# This behaviour is actually inconsistent with GNU readlink,
+	# but matches behaviour of busybox readlink
+	# (https://github.com/jgunthorpe/busybox)
+	self.assertEqual(
+		-1,
+		libc.realpath('_tmp/nonexistent')
+	)
+
+	# Consistent with GNU
+	self.assertEqual(
+		-1,
+		libc.realpath('_tmp/nonexistent/supernonexistent')
+	)
 
 
 if __name__ == '__main__':
