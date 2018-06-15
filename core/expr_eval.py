@@ -606,13 +606,10 @@ class BoolEvaluator(_ExprEvaluator):
           return s1 != s2
 
         if op_id == Id.BoolBinary_EqualTilde:
-          matches = libc.regex_match(s2, s1)
-
-          # NOTE: regex matching shouldn't fail if compilation succeeds.
-          if matches == -1:
-            raise AssertionError(
-                "Invalid regex %r: should have been caught at compile time" %
-                s2)
+          try:
+            matches = libc.regex_match(s2, s1)
+          except RuntimeError:
+            e_die("Invalid regex %r", s2, word=node.right)
 
           if matches is None:
             return False

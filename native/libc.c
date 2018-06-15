@@ -246,8 +246,8 @@ func_regex_match(PyObject *self, PyObject *args) {
   regex_t pat;
   if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
     // When the regex contains a variable, it can't be checked at compile-time.
-    fprintf(stderr, "Invalid regex at runtime\n");
-    return PyLong_FromLong(-1);
+    PyErr_SetString(PyExc_RuntimeError, "Invalid regex syntax (func_regex_match)");
+    return NULL;
   }
 
   int outlen = pat.re_nsub + 1;
@@ -334,8 +334,8 @@ static PyMethodDef methods[] = {
   {"regex_parse", func_regex_parse, METH_VARARGS,
    "Compile a regex in ERE syntax, returning whether it is valid"},
   {"regex_match", func_regex_match, METH_VARARGS,
-   "Match regex against a string.  Returns a list of matches, None if no match, or "
-    "-1 if the regex is invalid."},
+   "Match regex against a string.  Returns a list of matches, None if no match. "
+    "Raises RuntimeError if the regex is invalid."},
   {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS,
    "If the regex matches the string, return the start and end position of the "
    "first group.  None for no match; -1 for invalid regex."},

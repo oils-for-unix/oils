@@ -75,7 +75,8 @@ class LibcTest(unittest.TestCase):
       self.assertEqual(expected, actual)
 
     # Error.
-    print(libc.regex_match(r'*', 'abcd'))
+    self.assertRaises(
+        RuntimeError, libc.regex_match, r'*', 'abcd')
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'
