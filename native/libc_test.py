@@ -94,19 +94,13 @@ class LibcTest(unittest.TestCase):
         libc.regex_first_group_match('(X.)', s, 6))
 
   def testRealpathFailOnNonexistentDirectory(self):
-	# This behaviour is actually inconsistent with GNU readlink,
-	# but matches behaviour of busybox readlink
-	# (https://github.com/jgunthorpe/busybox)
-	self.assertEqual(
-		-1,
-		libc.realpath('_tmp/nonexistent')
-	)
+    # This behaviour is actually inconsistent with GNU readlink,
+    # but matches behaviour of busybox readlink
+    # (https://github.com/jgunthorpe/busybox)
+    self.assertEqual(None, libc.realpath('_tmp/nonexistent'))
 
-	# Consistent with GNU
-	self.assertEqual(
-		-1,
-		libc.realpath('_tmp/nonexistent/supernonexistent')
-	)
+    # Consistent with GNU
+    self.assertEqual(None, libc.realpath('_tmp/nonexistent/supernonexistent'))
 
 
 if __name__ == '__main__':

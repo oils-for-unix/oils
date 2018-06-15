@@ -16,9 +16,9 @@ def main(argv):
   if not arg.f:
     util.error("-f must be passed")
     return 1
-  for arg in argv[i:]:
-    res = libc.realpath(arg)
-    if res == -1:
+  for path in argv[i:]:
+    res = libc.realpath(path)
+    if res is None:
       return 1
     print(res)
   return 0

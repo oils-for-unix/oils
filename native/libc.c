@@ -40,7 +40,7 @@ func_realpath(PyObject *self, PyObject *args) {
 
   if (status == NULL) {
     debug("error from realpath()");
-    return PyLong_FromLong(-1);
+    Py_RETURN_NONE;
   }
 
   return PyString_FromString(target);
