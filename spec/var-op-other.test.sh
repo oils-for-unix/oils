@@ -104,6 +104,13 @@ echo ${s//[[:alpha:]]/y} ${s//[^[:alpha:]]/-}
 # N-I dash status: 2
 # N-I dash stdout-json: ""
 
+### Replace hard glob
+s='aa*bb+cc'
+echo ${s//\**+/__}  # Literal *, then any sequence of characters, then literal +
+# stdout: aa__cc
+# N-I dash status: 2
+# N-I dash stdout-json: ""
+
 ### Pattern replacement ${v/} is not valid
 v=abcde
 echo -${v/}-
