@@ -302,8 +302,9 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   // patterns like ${foo/x*/y}.
 
   if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
-    fprintf(stderr, "Invalid regex at runtime\n");
-    return PyLong_FromLong(-1);
+    PyErr_SetString(PyExc_RuntimeError,
+                    "Invalid regex syntax (func_regex_first_group_match)");
+    return NULL;
   }
 
   debug("first_group_match pat %s str %s pos %d", pattern, str, pos);
@@ -338,7 +339,8 @@ static PyMethodDef methods[] = {
     "Raises RuntimeError if the regex is invalid."},
   {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS,
    "If the regex matches the string, return the start and end position of the "
-   "first group.  None for no match; -1 for invalid regex."},
+   "first group.  Returns None if there is no match.  Raises RuntimeError if "
+   "the regex is invalid."},
   {NULL, NULL},
 };
 

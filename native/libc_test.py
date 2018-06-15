@@ -74,7 +74,7 @@ class LibcTest(unittest.TestCase):
       actual = libc.regex_match(pat, s)
       self.assertEqual(expected, actual)
 
-    # Error.
+    # Syntax Error
     self.assertRaises(
         RuntimeError, libc.regex_match, r'*', 'abcd')
 
@@ -93,6 +93,10 @@ class LibcTest(unittest.TestCase):
     self.assertEqual(
         (8, 10),
         libc.regex_first_group_match('(X.)', s, 6))
+
+    # Syntax Error
+    self.assertRaises(
+        RuntimeError, libc.regex_first_group_match, r'*', 'abcd', 0)
 
   def testRealpathFailOnNonexistentDirectory(self):
     # This behaviour is actually inconsistent with GNU readlink,
