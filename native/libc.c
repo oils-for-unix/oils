@@ -38,12 +38,12 @@ func_realpath(PyObject *self, PyObject *args) {
   char target[PATH_MAX + 1];
   char *status = realpath(symlink, target);
 
-  if (status== NULL) {
-      debug("error occurred while resolving symlink");
-      return PyLong_FromLong(-1);
-  } else {
-      return PyString_FromString(target);
+  if (status == NULL) {
+    debug("error from realpath()");
+    return PyLong_FromLong(-1);
   }
+
+  return PyString_FromString(target);
 }
 
 static PyObject *
@@ -244,14 +244,11 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 
   regex_t pat;
-
-  // Should have been checked by regex_parse
   if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
+    // When the regex contains a variable, it can't be checked at compile-time.
     fprintf(stderr, "Invalid regex at runtime\n");
     return PyLong_FromLong(-1);
   }
-
-
 
   int outlen = pat.re_nsub + 1;
   PyObject *ret = PyList_New(outlen);
@@ -261,17 +258,14 @@ func_regex_match(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  int len, i;
-  int match = 0;
-
+  int match;
   regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * outlen);
-
   if (match = (regexec(&pat, str, outlen, pmatch, 0) == 0)) {
+    int i;
     for (i = 0; i < outlen; i++) {
-      len = pmatch[i].rm_eo - pmatch[i].rm_so;
+      int len = pmatch[i].rm_eo - pmatch[i].rm_so;
       PyObject *v = PyString_FromStringAndSize(str + pmatch[i].rm_so, len);
       PyList_SetItem(ret, i, v);
-
     }
   }
 
@@ -280,9 +274,9 @@ func_regex_match(PyObject *self, PyObject *args) {
 
   if (!match) {
     Py_RETURN_NONE;
-  } else {
-    return ret;
   }
+
+  return ret;
 }
 
 // For ${//}, the number of groups is always 1, so we want 2 match position
@@ -330,20 +324,21 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
 
 static PyMethodDef methods[] = {
   {"realpath", func_realpath, METH_VARARGS,
-   "Return canonical path of a symlink."},
+   "Return the canonical version of a path with symlinks, or None if there is "
+   "an error."},
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
-  // Python's glob doesn't have char classes
+  // We need this since Python's glob doesn't have char classes. 
   {"glob", func_glob, METH_VARARGS,
-   "Return files that match a pattern."},
-  // https://docs.python.org/2/c-api/capsule.html#capsules
+   "Return a list of files that match a pattern."},
   {"regex_parse", func_regex_parse, METH_VARARGS,
    "Compile a regex in ERE syntax, returning whether it is valid"},
   {"regex_match", func_regex_match, METH_VARARGS,
-   "Match regex against a string, returning a list of matches"},
+   "Match regex against a string.  Returns a list of matches, None if no match, or "
+    "-1 if the regex is invalid."},
   {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS,
-   "If matching, return the start and end position of the first group.  "
-    "Otherwise None."},
+   "If the regex matches the string, return the start and end position of the "
+   "first group.  None for no match; -1 for invalid regex."},
   {NULL, NULL},
 };
 
