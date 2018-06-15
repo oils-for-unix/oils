@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 """
-readlink.py
+readlink.py - Minimal implementation of readlink -f, e.g. for OS X.
 """
 
 import libc
@@ -19,6 +19,6 @@ def main(argv):
   for arg in argv[i:]:
     res = libc.realpath(arg)
     if res == -1:
-        return 1
+      return 1
     print(res)
   return 0

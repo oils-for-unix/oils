@@ -25,6 +25,13 @@ test-readlink() {
 
   readlink -f /nonexistent/foo
   echo $?
+
+  return
+
+  # NOTE: busybox doesn't accept multiple arguments.
+  echo 'Multiple arguments with an error in the middle'
+  readlink -f _tmp/gold-bin/readlink /nonexistent/foo libc.so
+  echo $?
 }
 
 # For this readlink gold test, we need a custom test driver.
