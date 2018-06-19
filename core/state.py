@@ -479,9 +479,10 @@ class Mem(object):
     """For the scope of a file read with 'source' or '.'."""
     self.func_name_stack.append("source")
     self.argv_stack.append(_ArgFrame(argv))
-    # Bash treats 'locals' in the scope of the sourced file as local to the
-    # scope *from which* the file was sourced, so we do NOT create a new
-    # _StackFrame.
+    # Bash treats 'locals' in the top-level scope of the sourced file as
+    # local to the # scope *from which* the file was sourced, so we do NOT
+    # create a new # _StackFrame.
+    # See the spec test "Source from inside function."
 
   def PopSource(self):
     self.func_name_stack.pop()
