@@ -156,6 +156,38 @@ echo status=$?
 # OK bash stdout: status=2
 # OK dash stdout: status=127
 
+### Source with extra arguments
+lib=$TMP/to-be-sourced
+echo 'echo $@' > $lib
+. $lib foo bar  # dash doesn't have source
+# stdout: foo bar
+# N-I dash stdout:
+
+### Source from inside function
+lib=$TMP/to-be-sourced
+echo 'echo $@' > $lib
+echo 'local foo=foo_val' >> $lib
+f() { . $lib; . $lib args to src; echo $foo; }
+f args to func
+## STDOUT:
+args to func
+args to src
+foo_val
+## END
+## N-I dash STDOUT:
+args to func
+args to func
+foo_val
+## END
+
+### Nested function arguments
+f() { echo $@; }
+g() { f $@; }
+h() { f; }
+g foo bar
+h foo bar
+## stdout-json: "foo bar\n\n"
+
 ### Exit out of function
 f() { exit 3; }
 f

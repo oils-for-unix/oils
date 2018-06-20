@@ -249,7 +249,12 @@ class Executor(object):
     try:
       line_reader = reader.FileLineReader(f, self.arena)
       _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
-      return self._EvalHelper(c_parser, path)
+      self.mem.PushSource(argv[1:])
+      try:
+        status = self._EvalHelper(c_parser, path)
+        return status
+      finally:
+        self.mem.PopSource()
 
     except _ControlFlow as e:
       if e.IsReturn():
