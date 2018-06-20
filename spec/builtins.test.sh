@@ -174,7 +174,7 @@ args to func
 args to src
 foo_val
 ## END
-## BUG dash STDOUT:
+## N-I dash STDOUT:
 args to func
 args to func
 foo_val
