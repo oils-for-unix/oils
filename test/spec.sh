@@ -272,6 +272,11 @@ builtins() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
+builtin-eval-source() {
+  sh-spec spec/builtin-eval-source.test.sh \
+    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+}
+
 builtin-io() {
   sh-spec spec/builtin-io.test.sh \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH "$@"
