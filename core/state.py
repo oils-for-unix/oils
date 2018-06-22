@@ -466,6 +466,15 @@ class Mem(object):
     self.var_stack.pop()
     self.argv_stack.pop()
 
+  def PushSourceArgv(self, argv):
+    """For 'source foo.sh 1 2 3."""
+    self.func_name_stack.append('source')
+    self.argv_stack.append(_ArgFrame(argv))
+
+  def PopSourceArgv(self):
+    self.func_name_stack.pop()
+    self.argv_stack.pop()
+
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
     # We don't want the 'read' builtin to write to this frame!
@@ -473,7 +482,6 @@ class Mem(object):
 
   def PopTemp(self):
     self.var_stack.pop()
-    #util.log('**** PopTemp()')
 
   #
   # Argv

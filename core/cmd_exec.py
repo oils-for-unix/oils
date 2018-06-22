@@ -249,7 +249,20 @@ class Executor(object):
     try:
       line_reader = reader.FileLineReader(f, self.arena)
       _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
-      return self._EvalHelper(c_parser, path)
+
+      # A sourced module CAN have a new arguments array, but it always shares
+      # the same variable scope as the caller.  The caller could be at either a
+      # global or a local scope.
+      source_argv = argv[1:]
+      if source_argv:
+        self.mem.PushSourceArgv(source_argv)
+      try:
+        status = self._EvalHelper(c_parser, path)
+      finally:
+        if source_argv:
+          self.mem.PopSourceArgv()
+
+      return status
 
     except _ControlFlow as e:
       if e.IsReturn():
