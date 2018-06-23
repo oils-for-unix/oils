@@ -38,6 +38,22 @@ f
 ['f']
 ## END
 
+### FUNCNAME with source
+f() {
+  . spec/testdata/echo-funcname.sh
+}
+g() {
+  f
+}
+g
+. spec/testdata/echo-funcname.sh
+argv.py "${FUNCNAME[@]}"
+## STDOUT:
+['source', 'f', 'g']
+['source']
+[]
+## END
+
 ### ${BASH_SOURCE[@]} is a stack of source files for function calls
 $SH spec/testdata/bash-source.sh
 ## STDOUT: 
@@ -84,3 +100,4 @@ f
 ['2']
 ['7']
 ## END
+

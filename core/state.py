@@ -468,12 +468,16 @@ class Mem(object):
 
   def PushSourceArgv(self, argv):
     """For 'source foo.sh 1 2 3."""
+    # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
+    # the name of the script here?
     self.func_name_stack.append('source')
-    self.argv_stack.append(_ArgFrame(argv))
+    if argv:
+      self.argv_stack.append(_ArgFrame(argv))
 
-  def PopSourceArgv(self):
+  def PopSourceArgv(self, argv):
     self.func_name_stack.pop()
-    self.argv_stack.pop()
+    if argv:
+      self.argv_stack.pop()
 
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""

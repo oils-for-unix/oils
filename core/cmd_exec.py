@@ -254,13 +254,11 @@ class Executor(object):
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
       source_argv = argv[1:]
-      if source_argv:
-        self.mem.PushSourceArgv(source_argv)
+      self.mem.PushSourceArgv(source_argv)
       try:
         status = self._EvalHelper(c_parser, path)
       finally:
-        if source_argv:
-          self.mem.PopSourceArgv()
+        self.mem.PopSourceArgv(source_argv)
 
       return status
 
