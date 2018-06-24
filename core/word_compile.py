@@ -7,6 +7,7 @@ doesn't depend on any values at runtime.
 """
 
 from core import util
+from core import libstr
 
 from osh.meta import Id
 from osh.meta import runtime
@@ -29,39 +30,6 @@ _ONE_CHAR = {
     "'": "'",  # for $'' only, not echo -e
     '"': '"',  # not sure why this is escaped within $''
 }
-
-
-def Utf8Encode(code):
-  """Return utf-8 encoded bytes from a unicode code point.
-
-  Based on https://stackoverflow.com/a/23502707
-  """
-  num_cont_bytes = 0
-
-  if code <= 0x7F:
-    return chr(code & 0x7F)  # ASCII
-
-  elif code <= 0x7FF:
-    num_cont_bytes = 1
-  elif code <= 0xFFFF:
-    num_cont_bytes = 2
-  elif code <= 0x10FFFF:
-    num_cont_bytes = 3
-
-  else:
-    return '\xEF\xBF\xBD'  # unicode replacement character
-
-  bytes_ = []
-  for _ in xrange(num_cont_bytes):
-    bytes_.append(0x80 | (code & 0x3F))
-    code >>= 6
-
-  b = (0x1E << (6-num_cont_bytes)) | (code & (0x3F >> num_cont_bytes))
-  bytes_.append(b)
-  bytes_.reverse()
-
-  # mod 256 because Python ints don't wrap around!
-  return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
 # TODO: Strict mode syntax errors:
@@ -114,7 +82,7 @@ def EvalCStringToken(id_, value):
     s = value[2:]
     i = int(s, 16)
     #util.log('i = %d', i)
-    return Utf8Encode(i)
+    return libstr.Utf8Encode(i)
 
   else:
     raise AssertionError
