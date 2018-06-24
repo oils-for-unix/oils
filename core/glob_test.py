@@ -7,7 +7,6 @@ glob_test.py: Tests for glob.py
 import re
 import unittest
 
-from asdl import py_meta
 from core import glob_
 from osh import match
 
