@@ -256,7 +256,6 @@ loop() {
     ${REF_SHELLS[@]} $OSH "$@"
 }
 
-# Not implemented in osh at all.  Need glob matching of words.
 case_() {
   sh-spec spec/case_.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH "$@"
@@ -337,7 +336,7 @@ func() {
 }
 
 glob() {
-  sh-spec spec/glob.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
 }
 

@@ -514,3 +514,31 @@ LEXER_DEF[lex_mode_e.ARITH] = \
 # them with regcomp.  I've only seen constant regexes.
 #
 # From code: ( | ) are treated special.
+
+
+# A lexer for the parser that converts globs to extended regexes.  Since we're
+# only parsing character classes ([^[:space:][:alpha:]]) as opaque blobs, we
+# don't need lexer modes here.
+GLOB_DEF = [
+  # These could be operators in the glob, or just literals in a char class,
+  # e.g.  touch '?'; echo [?].
+  C('*', Id.Glob_Star),
+  C('?', Id.Glob_QMark),
+
+  # For negation.
+  C('!', Id.Glob_Bang),
+  C('^', Id.Glob_Caret),
+
+  # Character classes.
+  C('[', Id.Glob_LBracket),
+  C(']', Id.Glob_RBracket),
+
+  R(r'\\[^\0]', Id.Glob_EscapedChar),
+  C('\\', Id.Glob_BadBackslash),  # Trailing single backslash
+
+  # For efficiency, combine other characters into a single token,  e.g. '.py'
+  # or ':alpha:'.  TODO: re2c has the '*' clause; could we this in Python too?
+  # Although that only matches on character.
+  R(r'[a-zA-Z0-9_]+', Id.Glob_CleanLiterals),  # no regex escaping
+  R(r'[^\0]', Id.Glob_OtherLiteral),  # anything else -- examine the char
+]

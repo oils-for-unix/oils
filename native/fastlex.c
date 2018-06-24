@@ -37,7 +37,7 @@ fastlex_MatchOshToken(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  // bounds checking.  It's OK to be called with a start_pos looking at \0.
+  // Bounds checking.  It's OK to be called with a start_pos looking at \0.
   // Eol_Tok is inserted everywhere.
   if (start_pos > line_len) {
     PyErr_Format(PyExc_ValueError,
@@ -62,8 +62,7 @@ fastlex_MatchEchoToken(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  // bounds checking.  It's OK to be called with a start_pos looking at \0.
-  // Eol_Tok is inserted everywhere.
+  // Bounds checking.
   if (start_pos > line_len) {
     PyErr_Format(PyExc_ValueError,
                  "Invalid MatchEchoToken call (start_pos = %d, line_len = %d)",
@@ -74,6 +73,30 @@ fastlex_MatchEchoToken(PyObject *self, PyObject *args) {
   int id;
   int end_pos;
   MatchEchoToken(line, line_len, start_pos, &id, &end_pos);
+  return Py_BuildValue("(ii)", id, end_pos);
+}
+
+static PyObject *
+fastlex_MatchGlobToken(PyObject *self, PyObject *args) {
+  unsigned char* line;
+  int line_len;
+
+  int start_pos;
+  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
+    return NULL;
+  }
+
+  // Bounds checking.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchGlobToken call (start_pos = %d, line_len = %d)",
+                 start_pos, line_len);
+    return NULL;
+  }
+
+  int id;
+  int end_pos;
+  MatchGlobToken(line, line_len, start_pos, &id, &end_pos);
   return Py_BuildValue("(ii)", id, end_pos);
 }
 
@@ -104,6 +127,8 @@ static PyMethodDef methods[] = {
   {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
   {"MatchEchoToken", fastlex_MatchEchoToken, METH_VARARGS,
+   "(line, start_pos) -> (id, end_pos)."},
+  {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
    "Is it a valid var name?"},

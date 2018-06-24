@@ -50,13 +50,6 @@ gen-runtime-asdl() {
   echo "Wrote $out"
 }
 
-gen-glob-asdl() {
-  local out=_devbuild/gen/glob_asdl.py
-  local import='from osh.meta import GLOB_TYPE_LOOKUP as TYPE_LOOKUP'
-  PYTHONPATH=. asdl/gen_python.py osh/glob.asdl "$import" > $out
-  echo "Wrote $out"
-}
-
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
 # installed?  I don't think it makes sense to have 3 builds, so yes I think we
 # can put it here for simplicity.
@@ -109,7 +102,6 @@ minimal() {
   gen-types-asdl
   gen-osh-asdl
   gen-runtime-asdl
-  gen-glob-asdl
   pylibc
 }
 

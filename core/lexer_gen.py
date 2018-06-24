@@ -196,9 +196,9 @@ def TranslateRegex(pat):
 # http://re2c.org/examples/example_03.html
 
 
-def TranslateEcholexer(echo_def):
+def TranslateSimpleLexer(func_name, lexer_def):
   print(r"""
-static inline void MatchEchoToken(unsigned char* line, int line_len,
+static inline void %s(unsigned char* line, int line_len,
                                   int start_pos, int* id, int* end_pos) {
   assert(start_pos <= line_len);  /* caller should have checked */
 
@@ -208,9 +208,9 @@ static inline void MatchEchoToken(unsigned char* line, int line_len,
 
   for (;;) {
     /*!re2c
-""")
+""" % func_name)
 
-  for is_regex, pat, token_id in echo_def:
+  for is_regex, pat, token_id in lexer_def:
     if is_regex:
       re2c_pat = TranslateRegex(pat)
     else:
@@ -354,7 +354,8 @@ def main(argv):
   if action == 'c':
     # Print code to stdout.
     TranslateOshLexer(lex.LEXER_DEF)
-    TranslateEcholexer(lex.ECHO_E_DEF)
+    TranslateSimpleLexer('MatchEchoToken', lex.ECHO_E_DEF)
+    TranslateSimpleLexer('MatchGlobToken', lex.GLOB_DEF)
     TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
 

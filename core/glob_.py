@@ -8,11 +8,12 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from osh.meta import glob as glob_ast
+from osh.meta import ast, Id
+from osh import match
 from core import util
-log = util.log
 
-glob_part_e = glob_ast.glob_part_e
+log = util.log
+glob_part_e = ast.glob_part_e
 
 
 def LooksLikeGlob(s):
@@ -62,162 +63,6 @@ def GlobEscape(s):
   return escaped
 
 
-# We need to handle glob patterns, but fnmatch doesn't give you the positions
-# of matches.  So we convert globs to regexps.
-
-# Problems:
-# - What about unicode?  Do we have to set any global variables?  We want it to
-# always use utf-8?
-# - Character class for glob is different than char class for regex?  According
-# to the standard, anyway.
-# - Honestly I would like a more principled parser for globs!  Can re2c do
-# better here?
-
-class GlobParser(object):
-  """
-  Parses glob patterns. Can convert directly to libc extended regexp or output
-  an intermediate AST (defined at osh/glob.asdl).
-  """
-
-  def Parse(self, glob_pat):
-    """Parses a glob pattern into AST form (defined at osh/glob.asdl).
-
-    Returns:
-      A 2-tuple of (<glob AST>, <error message>).
-
-      If the pattern is not actually a glob, the first element is None. The
-      second element is None unless there was an error during parsing.
-    """
-    try:
-      return self._ParseUnsafe(glob_pat)
-
-    except RuntimeError as e:
-      return None, str(e)
-
-  def _ParseUnsafe(self, glob_pat):
-    """
-    Parses a glob pattern into AST form.
-
-    Raises:
-      RuntimeError: if glob is invalid
-    """
-    is_glob = False
-    i = 0
-    n = len(glob_pat)
-    parts = []
-    while i < n:
-      c = glob_pat[i]
-      if c == '\\':  # glob escape like \* or \?
-        i += 1
-        parts.append(glob_ast.Literal(glob_pat[i]))
-
-      elif c == '*':
-        is_glob = True
-        parts.append(glob_ast.Star())
-
-      elif c == '?':
-        is_glob = True
-        parts.append(glob_ast.QMark())
-
-      elif c == '[':
-        is_glob = True
-        char_class_expr, i = self.ParseCharClassExpr(glob_pat, i)
-        parts.append(char_class_expr)
-
-      else:
-        parts.append(glob_ast.Literal(c))
-
-      i += 1
-
-    if is_glob:
-      return glob_ast.glob(parts), None
-
-    return None, None
-
-  def ParseCharClassExpr(self, glob_pat, start_i):
-    """Parses a character class expression, e.g. [abc], [[:space:]], [!a-z]
-
-    Returns:
-      A 2-tuple of (<CharClassExpr instance>, <next parse index>)
-
-    Raises:
-      RuntimeError: If error during parsing the character class.
-    """
-    i = start_i
-    if glob_pat[i] != '[':
-      raise RuntimeError('invalid CharClassExpr start!')
-
-    i += 1
-    # NOTE: Both ! and ^ work for negation in globs
-    # https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html#Pattern-Matching
-    negated = glob_pat[i] in '!^'
-    if negated:
-      i += 1
-
-    in_posix_class = False
-    expr_body = []
-    n = len(glob_pat)
-
-    # NOTE: special case: ] is matched iff it's the first char in the expression
-    if glob_pat[i] == ']':
-      expr_body.append(']')
-      i += 1
-
-    while i < n:
-      c = glob_pat[i]
-      if c == ']':
-        if not in_posix_class:
-          break
-        in_posix_class = False
-
-      elif c == '[':
-        if in_posix_class:
-          raise RuntimeError('invalid character [ in CharClassExpr')
-        in_posix_class = (glob_pat[i+1] == ':')
-
-      elif c == '\\':
-        expr_body.append(c)
-        i += 1
-        c = glob_pat[i]
-
-      expr_body.append(c)
-      i += 1
-
-    else:
-      raise RuntimeError('unclosed CharClassExpr!')
-
-    return glob_ast.CharClassExpr(negated, ''.join(expr_body)), i
-
-  def ASTToExtendedRegex(self, ast):
-    if not ast:
-      return None
-
-    out = []
-    for part in ast.parts:
-      if part.tag == glob_part_e.Literal:
-        if part.s in '.|^$()+*?[]{}\\':
-          out.append('\\')
-        out.append(part.s)
-
-      elif part.tag == glob_part_e.Star:
-        out.append('.*')
-
-      elif part.tag == glob_part_e.QMark:
-        out.append('.')
-
-      elif part.tag == glob_part_e.CharClassExpr:
-        out.append('[')
-        if part.negated:
-          out.append('^')
-        out.append(part.body + ']')
-
-    return ''.join(out)
-
-  def GlobToExtendedRegex(self, glob_pat):
-    ast, err = self.Parse(glob_pat)
-    return self.ASTToExtendedRegex(ast), err
-
-
 def _GlobUnescape(s):  # used by cmd_exec
   """Remove glob escaping from a string.
 
@@ -245,6 +90,184 @@ def _GlobUnescape(s):  # used by cmd_exec
       unescaped += c
     i += 1
   return unescaped
+
+
+# For ${x//foo*/y}, we need to glob patterns, but fnmatch doesn't give you the
+# positions of matches.  So we convert globs to regexps.
+
+# Problems:
+# - What about unicode?  Do we have to set any global variables?  We want it to
+#   always use utf-8?
+
+class _GlobParser(object):
+
+  def __init__(self, lexer):
+    self.lexer = lexer
+    self.token_type = None
+    self.token_val = ''
+    self.warnings = []
+
+  def _Next(self):
+    """Move to the next token."""
+    try:
+      self.token_type, self.token_val = self.lexer.next()
+    except StopIteration:
+      self.token_type = Id.Glob_Eof
+      self.token_val = ''
+
+  def _ParseCharClass(self):
+    """
+    Returns:
+      a CharClass if the parse suceeds, or a GlobLit if fails.  In the latter
+      case, we also append a warning.
+    """
+    balance = 1  # We already saw a [
+    tokens = []
+
+    # NOTE: There is a special rule where []] and [[] are valid globs.  Also
+    # [^[] and sometimes [^]], although that one is ambiguous!
+    # And [[:space:]] and [[.class.]] has to be taken into account too.  I'm
+    # punting on this now because the rule isn't clear and consistent between
+    # shells.
+
+    while True:
+      self._Next()
+
+      if self.token_type == Id.Glob_Eof:
+        # TODO: location info
+        self.warnings.append('Malformed character class; treating as literal')
+        return [ast.GlobLit(id_, s) for (id_, s) in tokens]
+
+      if self.token_type == Id.Glob_LBracket:
+        balance += 1
+      elif self.token_type == Id.Glob_RBracket:
+        balance -= 1
+
+      if balance == 0:
+        break
+      tokens.append((self.token_type, self.token_val))  # Don't append the last ]
+
+    negated = False
+    if tokens:
+      id1, _ = tokens[0]
+      # NOTE: Both ! and ^ work for negation in globs
+      # https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html#Pattern-Matching
+      # TODO: Warn about the one that's not recommended?
+      if id1 in (Id.Glob_Bang, Id.Glob_Caret):
+        negated = True
+        tokens = tokens[1:]
+    return [ast.CharClass(negated, [s for _, s in tokens])]
+
+  def Parse(self):
+    """
+    Returns:
+      regex string (or None if it's not a glob)
+      A list of warnings about the syntax
+    """
+    parts = []
+
+    while True:
+      self._Next()
+      id_ = self.token_type
+      s = self.token_val
+
+      #util.log('%s %r', self.token_type, self.token_val)
+      if id_ == Id.Glob_Eof:
+        break
+
+      if id_ in (Id.Glob_Star, Id.Glob_QMark):
+        parts.append(ast.GlobOp(id_))
+
+      elif id_ == Id.Glob_LBracket:
+        # Could return a GlobLit or a CharClass
+        parts.extend(self._ParseCharClass())
+
+      else: # Glob_{Bang,Caret,CleanLiterals,OtherLiteral,RBracket,EscapedChar,
+            #       BadBackslash}
+        parts.append(ast.GlobLit(id_, s))
+
+      # Also check for warnings.  TODO: location info.
+      if id_ == Id.Glob_RBracket:
+        self.warnings.append('Got unescaped right bracket')
+      if id_ == Id.Glob_BadBackslash:
+        self.warnings.append('Got unescaped trailing backslash')
+
+    return parts, self.warnings
+
+
+_REGEX_CHARS_TO_ESCAPE = '.|^$()+*?[]{}\\'
+
+def _GenerateERE(parts):
+  out = []
+
+  for part in parts:
+    if part.tag == glob_part_e.GlobLit:
+      if part.id == Id.Glob_EscapedChar:
+        assert len(part.s) == 2, part.s
+        # The user could have escaped a char that doesn't need regex escaping,
+        # like \b or something.
+        c = part.s[1]
+        if c in _REGEX_CHARS_TO_ESCAPE:
+          out.append('\\')
+        out.append(c)
+
+      elif part.id == Id.Glob_CleanLiterals:
+        out.append(part.s)  # e.g. 'py' doesn't need to be escaped
+
+      elif part.id == Id.Glob_OtherLiteral:
+        assert len(part.s) == 1, part.s
+        c = part.s
+        if c in _REGEX_CHARS_TO_ESCAPE:
+          out.append('\\')
+        out.append(c)
+
+    elif part.tag == glob_part_e.GlobOp:
+      if part.op_id == Id.Glob_QMark:
+        out.append('.')
+      elif part.op_id == Id.Glob_Star:
+        out.append('.*')
+      else:
+        raise AssertionError
+
+    elif part.tag == glob_part_e.CharClass:
+      out.append('[')
+      if part.negated:
+        out.append('^')
+
+      # Important: the character class is LITERALLY preserved, because we
+      # assume glob char classes are EXACTLY the same as regex char classes,
+      # including the escaping rules.
+      for s in part.strs:
+        out.append(s)
+      out.append(']')
+
+  return ''.join(out)
+
+
+def GlobToERE(pat):
+  lexer = match.GLOB_LEXER.Tokens(pat)
+  p = _GlobParser(lexer)
+  parts, warnings = p.Parse()
+
+  # If there is nothing like * ? or [abc], then the whole string is a literal,
+  # and we can use a more efficient mechanism.
+  is_glob = False
+  for p in parts:
+    if p.tag in (glob_part_e.GlobOp, glob_part_e.CharClass):
+      is_glob = True
+
+  if not is_glob:
+    return None, warnings
+
+  if 0:
+    import sys
+    from asdl import format as fmt
+    print('---')
+    for p in parts:
+      print(p)
+
+  regex = _GenerateERE(parts)
+  return regex, warnings
 
 
 class Globber(object):

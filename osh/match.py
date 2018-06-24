@@ -74,16 +74,16 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
 
 
 class SimpleLexer(object):
-  """Lexer for echo -e, which interprets C-escaped strings.
-
-  Based on osh/parse_lib.py MatchOshToken_Slow.
-  """
+  """Lexer for echo -e, which interprets C-escaped strings."""
   def __init__(self, match_func):
     self.match_func = match_func
 
   def Tokens(self, line):
     """Yields tokens."""
     pos = 0
+    # NOTE: We're not using Eol_Tok like LineLexer.  We probably should.  And
+    # then the consumers of the ECHO_E_DEF and GLOB_DEF should use it.  Get rid
+    # of Glob_Eof.
     n = len(line)
     while pos != n:
       # NOTE: Need longest-match semantics to find \377 vs \.
@@ -92,7 +92,7 @@ class SimpleLexer(object):
       pos = end_pos
 
 
-class _MatchEchoToken_Slow(object):
+class _MatchTokenSlow(object):
   def __init__(self, pat_list):
     self.pat_list = _CompileAll(pat_list)
 
@@ -106,13 +106,21 @@ def _MatchEchoToken_Fast(line, start_pos):
   return IdInstance(tok_type), end_pos
 
 
+def _MatchGlobToken_Fast(line, start_pos):
+  """Returns (id, end_pos)."""
+  tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
+  return IdInstance(tok_type), end_pos
+
+
 if fastlex:
   MATCHER = _MatchOshToken_Fast
   ECHO_MATCHER = _MatchEchoToken_Fast
+  GLOB_MATCHER = _MatchGlobToken_Fast
   IsValidVarName = fastlex.IsValidVarName
 else:
   MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
-  ECHO_MATCHER = _MatchEchoToken_Slow(lex.ECHO_E_DEF)
+  ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
+  GLOB_MATCHER = _MatchTokenSlow(lex.GLOB_DEF)
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
@@ -121,5 +129,5 @@ else:
   def IsValidVarName(s):
     return _VAR_NAME_RE.match(s)
 
-
 ECHO_LEXER = SimpleLexer(ECHO_MATCHER)
+GLOB_LEXER = SimpleLexer(GLOB_MATCHER)

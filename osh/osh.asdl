@@ -216,8 +216,19 @@ module osh
   -- In-memory format for all the functions snipped out of a file.
   partial_file = (string path, arena* funcs)
 
-  --
-  -- These types are not used in the LST.  But they could be statically
-  -- derived from values in the LST.
-  --
+  -- Glob representation, for converting ${x//} to extended regexes.
+
+  -- Example: *.[ch] is:
+  --   GlobOp(<Glob_Star '*'>),
+  --   GlobLit(Glob_OtherLiteral, '.'),
+  --   CharClassExpr(False, 'ch')  # from Glob_CleanLiterals token
+
+  glob_part =
+    GlobLit(id id, string s)
+  | GlobOp(id op_id)  -- * or ?
+  | CharClass(bool negated, string* strs)
+
+  -- Char classes are opaque for now.  If we ever need them:
+  -- * Collating symbols are [. .]
+  -- * Equivalence classes are [=
 }

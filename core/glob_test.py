@@ -9,7 +9,7 @@ import unittest
 
 from asdl import py_meta
 from core import glob_
-from osh.meta import glob as g
+from osh import match
 
 
 class GlobEscapeTest(unittest.TestCase):
@@ -93,75 +93,70 @@ class GlobEscapeTest(unittest.TestCase):
     result = r2.sub('X', 'a-b-c', count=1)
     self.assertEqual('X-b-c', result)
 
-  def assertASTEqual(self, expected_ast, ast):
-    """Asserts that 2 ASDL-defined ASTs are equal."""
-    expected_is_node = isinstance(expected_ast, py_meta.CompoundObj)
-    given_is_node = isinstance(ast, py_meta.CompoundObj)
-    if not expected_is_node and not given_is_node:
-      self.assertEqual(expected_ast, ast)
-      return
 
-    self.assertEqual(expected_ast.tag, ast.tag)
-    if not hasattr(expected_ast, '__slots__'):
-      return
+def _ReadTokens(s):
+  lex = match.GLOB_LEXER
+  return list(lex.Tokens(s))
 
-    self.assertEqual(expected_ast.__slots__, ast.__slots__)
-    for attr in expected_ast.__slots__:
-      exp_slot, slot = getattr(expected_ast, attr), getattr(ast, attr)
-      if isinstance(slot, list):
-        for exp_elem, elem in zip(exp_slot, slot):
-          self.assertASTEqual(exp_elem, elem)
-      else:
-        self.assertASTEqual(exp_slot, slot)
+
+class GlobParserTest(unittest.TestCase):
+
+  def testGlobLexer(self):
+    print(_ReadTokens(''))
+    print(_ReadTokens('*.py'))
+    print(_ReadTokens('\*.py'))
+    print(_ReadTokens('[abc]'))
+    print(_ReadTokens('\\'))  # Enf
+    print(_ReadTokens('\\x'))
+    print(_ReadTokens(r'\\'))
+    print(_ReadTokens(r'[[:alpha:]]'))
+    print(_ReadTokens(r'[?]'))
 
   def testGlobParser(self):
     CASES = [
         # (glob input, expected AST, expected extended regexp, has error)
-        ('*.py', [g.Star()] + [g.Literal(c) for c in '.py'], '.*\.py', False),
-        ('*.?', [g.Star(), g.Literal('.'), g.QMark()], '.*\..', False),
-        ('<*>', [g.Literal('<'), g.Star(), g.Literal('>')], '<.*>', False),
-        ('\**+', [g.Literal('*'), g.Star(), g.Literal('+')], '\*.*\+', False),
-        ('\**', [g.Literal('*'), g.Star()], '\*.*', False),
+        ('*.py', '.*\.py', False),
+        ('*.?', '.*\..', False),
+        ('<*>', '<.*>', False),
+        ('\**+', '\*.*\+', False),
+        ('\**', '\*.*', False),
+        ('*.[ch]pp', '.*\.[ch]pp', False),
 
         # not globs
-        ('abc', None, None, False),
-        ('\\*', None, None, False),
-        ('c:\\foo', None, None, False),
-        ('strange]one', None, None, False),
+        ('abc', None, False),
+        ('\\*', None, False),
+        ('c:\\foo', None, False),
+        ('strange]one', None, False),
 
         # character class globs
-        ('[[:space:]abc]', [g.CharClassExpr(False, '[:space:]abc')], '[[:space:]abc]', False),
-        ('[abc]', [g.CharClassExpr(False, 'abc')], '[abc]', False),
-        ('[\a\b\c]', [g.CharClassExpr(False, '\a\b\c')], '[\a\b\c]', False),
-        ('[abc\[]', [g.CharClassExpr(False, 'abc\[')], '[abc\[]', False),
-        ('[!not]', [g.CharClassExpr(True, 'not')], '[^not]', False),
-        ('[^also_not]', [g.CharClassExpr(True, 'also_not')], '[^also_not]', False),
-        ('[]closed_bracket]', [g.CharClassExpr(False, ']closed_bracket')], '[]closed_bracket]', False),
-        ('[!]closed_bracket]', [g.CharClassExpr(True, ']closed_bracket')], '[^]closed_bracket]', False),
-        ('[!*?!\\[]', [g.CharClassExpr(True, '*?!\[')], '[^*?!\\[]', False),
-        ('[!\]foo]', [g.CharClassExpr(True, '\]foo')], '[^\]foo]', False),
-        ('wow[[[[]]]]', ([g.Literal(c) for c in 'wow'] +
-                         [g.CharClassExpr(False, '[[[')] +
-                         [g.Literal(c) for c in ']]']), 'wow[[[[]\]\]\]', False),
+        ('[[:space:]abc]', '[[:space:]abc]', False),
+        ('[abc]', '[abc]', False),
+        (r'[\a\b\c]', r'[\a\b\c]', False),
+        ('[abc\[]', '[abc\[]', False),
+        ('[!not]', '[^not]', False),
+        ('[^also_not]', '[^also_not]', False),
+        ('[!*?!\\[]', '[^*?!\\[]', False),
+        ('[!\]foo]', '[^\]foo]', False),
 
         # invalid globs
-        ('not_closed[a-z', None, None, True),
-        ('[[:spa[ce:]]', None, None, True),
+        ('not_closed[a-z', None, True),
+        ('[[:spa[ce:]]', None, True),
+
+        # Regression test for IndexError.
+        ('[', None, True),
+        ('\\', None, True),
+        (']', None, False),
     ]
-    for glob, expected_parts, expected_ere, expected_err in CASES:
-      if expected_parts:
-        expected_ast = g.glob(expected_parts)
-      else:
-        expected_ast = None
+    for glob, expected_ere, expected_err in CASES:
+      print('===')
+      print(glob)
+      regex, warnings = glob_.GlobToERE(glob)
+      self.assertEqual(
+          expected_ere, regex,
+          'Expected %r to translate to %r, got %r' % (glob, expected_ere, regex))
 
-      parser = glob_.GlobParser()
-      ast, err = parser.Parse(glob)
-      ere = parser.ASTToExtendedRegex(ast)
-
-      self.assertASTEqual(expected_ast, ast)
-      self.assertEqual(expected_ere, ere)
-      self.assertEqual(expected_err, err is not None,
-          '%s: expected %r, got %r' % (glob, expected_err, err))
+      print('regex   : %s' % regex)
+      print('warnings: %s' % warnings)
 
 
 if __name__ == '__main__':

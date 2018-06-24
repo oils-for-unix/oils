@@ -187,3 +187,62 @@ f 'void *'
 # stdout: void *
 # BUG dash stdout-json: ""
 # BUG dash status: 2
+
+### Glob of unescaped [[] and []]
+touch $TMP/[ $TMP/]
+cd $TMP
+echo [\[z] [\]z]  # the right way to do it
+echo [[z] []z]    # also accepted
+## STDOUT:
+[ ]
+[ ]
+## END
+
+### Glob of negated unescaped [[] and []]
+touch $TMP/_G
+cd $TMP
+echo _[^\[z] _[^\]z]  # the right way to do it
+echo _[^[z] _[^]z]    # also accepted
+## STDOUT:
+_G _G
+_G _G
+## END
+## BUG mksh STDOUT:
+_[^[z] _[^]z]
+_[^[z] _[^]z]
+## END
+
+### PatSub of unescaped [[] and []]
+x='[foo]'
+echo ${x//[\[z]/<}  # the right way to do it
+echo ${x//[\]z]/>}
+echo ${x//[[z]/<}  # also accepted
+echo ${x//[]z]/>}
+## STDOUT:
+<foo]
+[foo>
+<foo]
+[foo>
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+
+### PatSub of negated unescaped [[] and []]
+x='[foo]'
+echo ${x//[^\[z]/<}  # the right way to do it
+echo ${x//[^\]z]/>}
+echo ${x//[^[z]/<}  # also accepted
+#echo ${x//[^]z]/>}  # only busybox ash interprets as ^\]
+## STDOUT:
+[<<<<
+>>>>]
+[<<<<
+## END
+# mksh is doing something very odd, ignoring ^ altogether?
+## BUG mksh STDOUT:
+<foo]
+[foo>
+<foo]
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 2

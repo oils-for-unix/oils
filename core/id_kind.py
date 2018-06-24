@@ -367,6 +367,15 @@ def AddKinds(spec):
       'BadBackslash',  # \D or trailing \
   ])
 
+  # For parsing globs and converting them to regexes.
+  spec.AddKind('Glob', [
+      'LBracket', 'RBracket',
+      'Star', 'QMark', 'Bang', 'Caret',
+      'EscapedChar', 'BadBackslash',
+      'CleanLiterals', 'OtherLiteral',
+      'Eof',
+  ])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n

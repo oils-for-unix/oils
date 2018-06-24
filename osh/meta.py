@@ -142,26 +142,6 @@ else:
 f.close()
 
 #
-# Instantiate osh/glob.asdl
-#
-
-f = util.GetResourceLoader().open('osh/glob.asdl')
-_asdl_module, _type_lookup = asdl.LoadSchema(f, APP_TYPES)
-
-glob = _AsdlModule()
-if 0:
-  py_meta.MakeTypes(_asdl_module, glob, _type_lookup)
-else:
-  # Exported for the generated code to use
-  GLOB_TYPE_LOOKUP = _type_lookup
-
-  # Get the types from elsewhere
-  from _devbuild.gen import glob_asdl
-  py_meta.AssignTypes(glob_asdl, glob)
-
-f.close()
-
-#
 # Instantiate core/runtime.asdl
 #
 
