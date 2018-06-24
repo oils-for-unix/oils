@@ -148,42 +148,48 @@ def _PatSubAll(s, regex, replace_str):
   return ''.join(parts)
 
 
-# TODO: For patsub of arrays, it would be worth it to CACHE the constant part
-# of this computation.  Turn this into a class, which translates and regcomp()s
-# the regex exactly once.
+class _Replacer(object):
+  def Replace(self, s, op):
+    raise NotImplementedError
 
-def PatSub(s, op, pat, replace_str):
-  """Helper for ${x/pat/replace}."""
-  #log('PAT %r REPLACE %r', pat, replace_str)
 
-  regex, warnings = glob_.GlobToERE(pat)
-  if warnings:
-    # TODO: Add strict mode and expose warnings.
-    pass
+class _ConstStringReplacer(_Replacer):
+  def __init__(self, pat, replace_str):
+    self.pat = pat
+    self.replace_str = replace_str
 
-  if regex is None:  # Simple/fast path for fixed strings
+  def Replace(self, s, op):
     if op.do_all:
-      return s.replace(pat, replace_str)
+      return s.replace(self.pat, self.replace_str)
     elif op.do_prefix:
-      if s.startswith(pat):
-        n = len(pat)
-        return replace_str + s[n:]
+      if s.startswith(self.pat):
+        n = len(self.pat)
+        return self.replace_str + s[n:]
       else:
         return s
     elif op.do_suffix:
-      if s.endswith(pat):
-        n = len(pat)
-        return s[:-n] + replace_str
+      if s.endswith(self.pat):
+        n = len(self.pat)
+        return s[:-n] + self.replace_str
       else:
         return s
     else:
-      return s.replace(pat, replace_str, 1)  # just the first one
+      return s.replace(self.pat, self.replace_str, 1)  # just the first one
 
-  else:
-    regex = '(%s)' % regex  # make it a group
+
+class _GlobReplacer(_Replacer):
+  def __init__(self, regex, replace_str):
+    # TODO: It would be nice to cache the compilation of the regex here,
+    # instead of just the string.  That would require more sophisticated use of
+    # the Python/C API in libc.c, which we might want to avoid.
+    self.regex = regex
+    self.replace_str = replace_str
+
+  def Replace(self, s, op):
+    regex = '(%s)' % self.regex  # make it a group
 
     if op.do_all:
-      return _PatSubAll(s, regex, replace_str)  # loop over matches
+      return _PatSubAll(s, regex, self.replace_str)  # loop over matches
 
     if op.do_prefix:
       regex = '^' + regex
@@ -195,4 +201,22 @@ def PatSub(s, op, pat, replace_str):
     if m is None:
       return s
     start, end = m
-    return s[:start] + replace_str + s[end:]
+    return s[:start] + self.replace_str + s[end:]
+
+
+def MakeReplacer(pat, replace_str):
+  """Helper for ${x/pat/replace}
+
+  Parses 'pat' and returns either a _GlobReplacer or a _ConstStringReplacer.
+
+  Using these objects is more efficient when performing the same operation on
+  multiple strings.
+  """
+  regex, warnings = glob_.GlobToERE(pat)
+  if warnings:
+    # TODO: Add strict mode and expose warnings.
+    pass
+  if regex is None:
+    return _ConstStringReplacer(pat, replace_str)
+  else:
+    return _GlobReplacer(regex, replace_str)

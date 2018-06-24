@@ -553,16 +553,18 @@ class _WordEvaluator(object):
         else:
           replace_str = ''
 
-        pat = pat_val.s
+        # Either GlobReplacer or ConstStringReplacer
+        replacer = libstr.MakeReplacer(pat_val.s, replace_str)
+
         if val.tag == value_e.Str:
-          s = libstr.PatSub(val.s, op, pat, replace_str)
+          s = replacer.Replace(val.s, op)
           val = runtime.Str(s)
 
         elif val.tag == value_e.StrArray:
           strs = []
           for s in val.strs:
             if s is not None:
-              strs.append(libstr.PatSub(s, op, pat, replace_str))
+              strs.append(replacer.Replace(s, op))
           val = runtime.StrArray(strs)
 
         else:

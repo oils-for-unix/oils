@@ -536,9 +536,8 @@ GLOB_DEF = [
   R(r'\\[^\0]', Id.Glob_EscapedChar),
   C('\\', Id.Glob_BadBackslash),  # Trailing single backslash
 
-  # For efficiency, combine other characters into a single token,  e.g. '.py'
-  # or ':alpha:'.  TODO: re2c has the '*' clause; could we this in Python too?
-  # Although that only matches on character.
+  # For efficiency, combine other characters into a single token,  e.g. 'py' in
+  # '*.py' or 'alpha' in '[[:alpha:]]'.
   R(r'[a-zA-Z0-9_]+', Id.Glob_CleanLiterals),  # no regex escaping
   R(r'[^\0]', Id.Glob_OtherLiteral),  # anything else -- examine the char
 ]
