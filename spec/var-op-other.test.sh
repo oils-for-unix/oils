@@ -16,6 +16,13 @@ echo ${#v}
 ## BUG dash stdout: 9
 ## BUG mksh stdout: 4
 
+### Unicode string length (spec/testdata/utf8-chars.txt)
+v=$(cat spec/testdata/utf8-chars.txt)
+echo ${#v}
+## stdout: 7
+## BUG dash stdout: 13
+## BUG mksh stdout: 13
+
 ### Length of undefined variable
 echo ${#undef}
 # stdout: 0
