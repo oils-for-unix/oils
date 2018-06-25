@@ -102,7 +102,8 @@ def NumOfUtf8Chars(bytes):
   return num_of_utf8_chars
 
 
-# Implementation without Python regex: #
+# Implementation without Python regex:
+#
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and
 # regexec.  in a loop.  fnmatch() does NOT given positions of matches.
 #
