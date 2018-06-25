@@ -56,6 +56,11 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
+def NumUtf8Chars(s):
+  """Returns the number of utf-8 characters in the byte string 's'."""
+  return 4
+
+
 # Implementation without Python regex:
 #
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and

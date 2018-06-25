@@ -23,6 +23,24 @@ echo ${#v}
 ## BUG dash stdout: 13
 ## BUG mksh stdout: 13
 
+### String length with invalid utf-8
+s=$(head -c 11 spec/testdata/utf8-chars.txt)
+echo ${#s}
+s=$(head -c 12 spec/testdata/utf8-chars.txt)
+echo ${#s}
+## STDOUT:
+error: Invalid utf-8
+error: Invalid utf-8
+## END
+## BUG bash STDOUT:
+8
+9
+## END
+## BUG dash/mksh STDOUT:
+11
+12
+## END
+
 ### Length of undefined variable
 echo ${#undef}
 # stdout: 0
