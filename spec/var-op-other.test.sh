@@ -24,21 +24,57 @@ echo ${#v}
 ## BUG mksh stdout: 13
 
 ### String length with invalid utf-8
-s=$(head -c 11 spec/testdata/utf8-chars.txt)
-echo ${#s}
-s=$(head -c 12 spec/testdata/utf8-chars.txt)
-echo ${#s}
+for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+  s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)
+  echo ${#s}
+done
 ## STDOUT:
+0
+1
+2
+error: Invalid utf-8
+3
+4
 error: Invalid utf-8
 error: Invalid utf-8
+5
+6
+error: Invalid utf-8
+error: Invalid utf-8
+error: Invalid utf-8
+7
 ## END
 ## BUG bash STDOUT:
+0
+1
+2
+3
+3
+4
+5
+6
+5
+6
+7
 8
 9
+7
 ## END
 ## BUG dash/mksh STDOUT:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
 11
 12
+13
 ## END
 
 ### Length of undefined variable
