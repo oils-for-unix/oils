@@ -70,43 +70,35 @@ def NumUtf8Chars(bytes):
   while i < num_bytes:
     byte_as_int = ord(bytes[i])
 
-    if (byte_as_int >> 7) == 0b0:
-      num_utf8_chars += 1
-      i += 1
-    elif (byte_as_int >> 5) == 0b110:
-      try:
-        if starts_with_0b10(bytes[i+1]): 
-          num_utf8_chars += 1
-          i += 2
-        else:
-          return INVALID_CONT
-      except IndexError:
-        return INCOMPLETE
-    elif (byte_as_int >> 4) == 0b1110:
-      try:
-        if starts_with_0b10(bytes[i+1]) and starts_with_0b10(bytes[i+2]):
-          num_utf8_chars += 1
-          i += 3
-        else:
-          return INVALID_CONT
-      except IndexError:
-        return INCOMPLETE
-    elif (byte_as_int >> 3) == 0b11110:
-      try:
-        if starts_with_0b10(bytes[i+1]) and starts_with_0b10(bytes[i+2]) and starts_with_0b10(bytes[i+3]):
-          num_utf8_chars +=1
-          i += 4
-        else:
-          return INVALID_CONT
-      except IndexError:
-        return INCOMPLETE
-    else:
-      return INVALID_START
+    try:
+      if (byte_as_int >> 7) == 0b0:
+        i += 1
+      elif (byte_as_int >> 5) == 0b110:
+        starts_with_0b10(bytes[i+1]) 
+        i += 2
+      elif (byte_as_int >> 4) == 0b1110:
+        starts_with_0b10(bytes[i+1]) 
+        starts_with_0b10(bytes[i+2]) 
+        i += 3
+      elif (byte_as_int >> 3) == 0b11110:
+        starts_with_0b10(bytes[i+1]) 
+        starts_with_0b10(bytes[i+2]) 
+        starts_with_0b10(bytes[i+3])
+        i += 4
+      else:
+        return INVALID_START
+    except IndexError:
+      return INCOMPLETE
+    except RuntimeError:
+      return INVALID_CONT
+
+    num_utf8_chars += 1
 
   return num_utf8_chars
 
 def starts_with_0b10(byte):
-  return (ord(byte) >> 6) == 0b10
+  if (ord(byte) >> 6) != 0b10:
+    raise RuntimeError
 
 # Implementation without Python regex: #
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and
