@@ -298,7 +298,7 @@ class _WordEvaluator(object):
 
     if op_id == Id.VSub_Pound:  # LENGTH
       if val.tag == value_e.Str:
-        length = libstr.NumUtf8Chars(val.s)
+        length = libstr.NumOfUtf8Chars(val.s)
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.
         length = sum(1 for s in val.strs if s is not None)

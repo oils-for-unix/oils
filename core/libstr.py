@@ -61,9 +61,9 @@ INVALID_CONT = 'error: Invalid utf-8 continuation byte'
 INVALID_START = 'error: Invalid start of utf-8 char'
 
 
-def NumUtf8Chars(bytes):
+def NumOfUtf8Chars(bytes):
   """Returns the number of utf-8 characters in the byte string 's'."""
-  num_utf8_chars = 0
+  num_of_utf8_chars = 0
 
   num_bytes = len(bytes)
   i = 0
@@ -92,9 +92,9 @@ def NumUtf8Chars(bytes):
     except RuntimeError:
       return INVALID_CONT
 
-    num_utf8_chars += 1
+    num_of_utf8_chars += 1
 
-  return num_utf8_chars
+  return num_of_utf8_chars
 
 def starts_with_0b10(byte):
   if (ord(byte) >> 6) != 0b10:
