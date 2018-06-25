@@ -1,4 +1,5 @@
 #!/usr/bin/python -S
+from __future__ import print_function
 """
 completion.py
 """
@@ -29,7 +30,7 @@ def ParsePythonTest(f):
   
     match = METHOD_RE.match(line)
     if match and current_test is not None:
-      print '%s.%s' % (current_test, match.group(1))
+      print('%s.%s' % (current_test, match.group(1)))
 
 # e.g. foo() {
 FUNC_RE = re.compile(r'^\s* (\S+) \(\) \s* \{', re.VERBOSE)
@@ -50,7 +51,7 @@ def MaybeParseBashActions(f):
 
   if dispatch:
     for action in actions:
-      print action
+      print(action)
 
 
 def main(argv):
@@ -82,5 +83,5 @@ if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv))
   except Error, e:
-    print >> sys.stderr, e.args[0]
+    print(e.args[0], file=sys.stderr)
     sys.exit(1)
