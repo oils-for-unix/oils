@@ -56,10 +56,14 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
+INCOMPLETE = 'error: Incomplete utf-8'
+INVALID_CONT = 'error: Invalid utf-8 continuation byte'
+INVALID_START = 'error: Invalid start of utf-8 char'
+
+
 def NumUtf8Chars(bytes):
   """Returns the number of utf-8 characters in the byte string 's'."""
   num_utf8_chars = 0
-  error = 'error: Invalid utf-8'
 
   num_bytes = len(bytes)
   i = 0
@@ -75,29 +79,29 @@ def NumUtf8Chars(bytes):
           num_utf8_chars += 1
           i += 2
         else:
-          return error
+          return INVALID_CONT
       except IndexError:
-        return error
+        return INCOMPLETE
     elif (byte_as_int >> 4) == 0b1110:
       try:
         if starts_with_0b10(bytes[i+1]) and starts_with_0b10(bytes[i+2]):
           num_utf8_chars += 1
           i += 3
         else:
-          return error
+          return INVALID_CONT
       except IndexError:
-        return error
+        return INCOMPLETE
     elif (byte_as_int >> 3) == 0b11110:
       try:
         if starts_with_0b10(bytes[i+1]) and starts_with_0b10(bytes[i+2]) and starts_with_0b10(bytes[i+3]):
-            num_utf8_chars +=1
-            i += 4
+          num_utf8_chars +=1
+          i += 4
         else:
-            return error
+          return INVALID_CONT
       except IndexError:
-        return error
+        return INCOMPLETE
     else:
-      return error
+      return INVALID_START
 
   return num_utf8_chars
 
