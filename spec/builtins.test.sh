@@ -34,13 +34,15 @@ pwd
 # stdout: /
 
 ### pwd -P
-mkdir -p $TMP/symtarg
-ln -s $TMP/symtarg $TMP/symlink
-cd $TMP/symlink
+tmp=$TMP/builtins-pwd-1
+mkdir -p $tmp
+mkdir -p $tmp/symtarg
+ln -s $tmp/symtarg $tmp/symlink
+cd $tmp/symlink
 basename $(pwd -P)
-cd $TMP
-rmdir $TMP/symtarg
-rm $TMP/symlink
+cd $tmp
+rmdir $tmp/symtarg
+rm $tmp/symlink
 # stdout: symtarg
 
 ### cd with no arguments

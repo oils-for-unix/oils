@@ -7,6 +7,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# Duplicate definition since we can't source test/common.sh without clobbering
+# OSH!
+die() {
+  echo "$@" 1>&2
+  exit 1
+}
+
 readonly DASH=$(which dash 2>/dev/null || echo /bin/sh)
 readonly BASH=$(which bash)
 readonly MKSH=$(which mksh)
@@ -135,14 +142,22 @@ version-text() {
 #
 
 sh-spec() {
+  local test_file=$1
+  shift
+
+  if [[ $test_file != *.test.sh ]]; then
+    die "Test file should end with .test.sh"
+  fi
+
   local this_dir=$(cd $(dirname $0) && pwd)
 
-  local tmp_env=$this_dir/../_tmp/spec-tmp
+  local tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
   mkdir -p $tmp_env
 
   test/sh_spec.py \
       --tmp-env $tmp_env \
       --path-env "$this_dir/../spec/bin:$PATH" \
+      "$test_file" \
       "$@"
 }
 

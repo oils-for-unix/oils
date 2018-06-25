@@ -7,8 +7,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO: Release process can use the release binary.  This is like $OSH_OVM
-# in benchmarks/common.sh.
+# TODO: Remove/rename this.  The release process might use the release binary
+# instead of this dev binary.  test/spec.sh already has its own scheme.
+# This is analogous to $OSH_OVM in benchmarks/common.sh.  
 readonly OSH=${OSH:-bin/osh}
 
 # For xargs -P in spec-runner.sh, wild-runner.sh.

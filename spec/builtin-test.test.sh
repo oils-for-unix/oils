@@ -212,17 +212,19 @@ test -w $TMP/testw_no || echo 'no'
 # stdout-json: "yes\nno\n"
 
 ### -h and -L test for symlink
-touch $TMP/zz
-ln -s -f $TMP/zz $TMP/symlink
-ln -s -f $TMP/__nonexistent_ZZ__ $TMP/dangling
-test -L $TMP/zz || echo no
-test -h $TMP/zz || echo no
-test -f $TMP/symlink && echo is-file
-test -L $TMP/symlink && echo symlink
-test -h $TMP/symlink && echo symlink
-test -L $TMP/dangling && echo dangling
-test -h $TMP/dangling  && echo dangling
-test -f $TMP/dangling  || echo 'dangling is not file'
+tmp=$TMP/builtin-test-1
+mkdir -p $tmp
+touch $tmp/zz
+ln -s -f $tmp/zz $tmp/symlink
+ln -s -f $tmp/__nonexistent_ZZ__ $tmp/dangling
+test -L $tmp/zz || echo no
+test -h $tmp/zz || echo no
+test -f $tmp/symlink && echo is-file
+test -L $tmp/symlink && echo symlink
+test -h $tmp/symlink && echo symlink
+test -L $tmp/dangling && echo dangling
+test -h $tmp/dangling  && echo dangling
+test -f $tmp/dangling  || echo 'dangling is not file'
 ## STDOUT:
 no
 no
