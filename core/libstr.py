@@ -56,19 +56,55 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
-def NumUtf8Chars(s):
+def NumUtf8Chars(bytes):
   """Returns the number of utf-8 characters in the byte string 's'."""
-  try:
-    unicode_val = s.decode('utf-8')
-  except UnicodeDecodeError:
-    length = 'error: Invalid utf-8'
-  else:
-    length = len(unicode_val)
-  return length
+  num_utf8_chars = 0
+  error = 'error: Invalid utf-8'
 
+  num_bytes = len(bytes)
+  i = 0
+  while i < num_bytes:
+    byte_as_int = ord(bytes[i])
 
-# Implementation without Python regex:
-#
+    if (byte_as_int >> 7) == 0b0:
+      num_utf8_chars += 1
+      i += 1
+    elif (byte_as_int >> 5) == 0b110:
+      try:
+        if starts_with_0b10(bytes[i+1]): 
+          num_utf8_chars += 1
+          i += 2
+        else:
+          return error
+      except IndexError:
+        return error
+    elif (byte_as_int >> 4) == 0b1110:
+      try:
+        if starts_with_0b10(bytes[i+1]) and starts_with_0b10(bytes[i+2]):
+          num_utf8_chars += 1
+          i += 3
+        else:
+          return error
+      except IndexError:
+        return error
+    elif (byte_as_int >> 3) == 0b11110:
+      try:
+        if starts_with_0b10(bytes[i+1]) and starts_with_0b10(bytes[i+2]) and starts_with_0b10(bytes[i+3]):
+            num_utf8_chars +=1
+            i += 4
+        else:
+            return error
+      except IndexError:
+        return error
+    else:
+      return error
+
+  return num_utf8_chars
+
+def starts_with_0b10(byte):
+  return (ord(byte) >> 6) == 0b10
+
+# Implementation without Python regex: #
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and
 # regexec.  in a loop.  fnmatch() does NOT given positions of matches.
 #
