@@ -102,6 +102,15 @@ Notes on Three OPy Builds
 - `$REPO_ROOT/opy/_tmp/regtest`: The snapshot of Python files in `opy/_regtest`
   are compiled, so we are insensitive to repo changes.  Built by `./regtest.sh
   compile`.
+  
+opy/callgraph.py demo
+------------------
+
+This is currently completely separate than the rest of the OPy compiler.  The idea is to find the exact set of symbols that the compiler needs to handle by walking a static callgraph using bytecode disassembly heuristics.  This means that if we `import os`, we don't need to compile everything in `os.py`, etc.
+
+    oil$ scripts/count.sh oil-python-symbols
+    oil$ scripts/count.sh opy-python-symbols
+
 
 OPy Compiler Divergences from CPython
 ----------------------------
