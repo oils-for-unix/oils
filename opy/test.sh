@@ -229,4 +229,14 @@ gold() {
   done
 }
 
+#
+# Fibonacci test
+#
+
+fib-dis() {
+  local pyc=_tmp/fibonacci.pyc
+  ../bin/opyc compile gold/fibonacci.py $pyc
+  ../bin/opyc dis $pyc
+}
+
 "$@"
