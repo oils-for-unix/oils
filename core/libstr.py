@@ -58,7 +58,13 @@ def Utf8Encode(code):
 
 def NumUtf8Chars(s):
   """Returns the number of utf-8 characters in the byte string 's'."""
-  return 4
+  try:
+    unicode_val = s.decode('utf-8')
+  except UnicodeDecodeError:
+    length = 'error: Invalid utf-8'
+  else:
+    length = len(unicode_val)
+  return length
 
 
 # Implementation without Python regex:
