@@ -99,6 +99,56 @@ error: Invalid utf-8 continuation byte
 error: Invalid start of utf-8 char
 error: Invalid start of utf-8 char
 ## END
+## BUG bash STDOUT:
+1
+2
+3
+4
+4
+5
+6
+7
+6
+7
+8
+9
+10
+8
+8
+## BUG dash STDOUT:
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+20
+## END
+## BUG mksh STDOUT:
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+14
+## END
 
 ### Length of undefined variable
 echo ${#undef}
