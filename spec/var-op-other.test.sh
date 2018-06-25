@@ -16,6 +16,140 @@ echo ${#v}
 ## BUG dash stdout: 9
 ## BUG mksh stdout: 4
 
+### Unicode string length (spec/testdata/utf8-chars.txt)
+v=$(cat spec/testdata/utf8-chars.txt)
+echo ${#v}
+## stdout: 7
+## BUG dash stdout: 13
+## BUG mksh stdout: 13
+
+### String length with incomplete utf-8
+for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+  s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)
+  echo ${#s}
+done
+## STDOUT:
+0
+1
+2
+error: Incomplete utf-8
+3
+4
+error: Incomplete utf-8
+error: Incomplete utf-8
+5
+6
+error: Incomplete utf-8
+error: Incomplete utf-8
+error: Incomplete utf-8
+7
+## END
+## BUG bash STDOUT:
+0
+1
+2
+3
+3
+4
+5
+6
+5
+6
+7
+8
+9
+7
+## END
+## BUG dash/mksh STDOUT:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+## END
+
+### String length with invalid utf-8 continuation bytes
+for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+  s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)$(echo -e "\xFF")
+  echo ${#s}
+done
+## STDOUT:
+error: Invalid start of utf-8 char
+error: Invalid start of utf-8 char
+error: Invalid start of utf-8 char
+error: Invalid utf-8 continuation byte
+error: Invalid start of utf-8 char
+error: Invalid start of utf-8 char
+error: Invalid utf-8 continuation byte
+error: Invalid utf-8 continuation byte
+error: Invalid start of utf-8 char
+error: Invalid start of utf-8 char
+error: Invalid utf-8 continuation byte
+error: Invalid utf-8 continuation byte
+error: Invalid utf-8 continuation byte
+error: Invalid start of utf-8 char
+error: Invalid start of utf-8 char
+## END
+## BUG bash STDOUT:
+1
+2
+3
+4
+4
+5
+6
+7
+6
+7
+8
+9
+10
+8
+8
+## BUG dash STDOUT:
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+20
+## END
+## BUG mksh STDOUT:
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+14
+## END
+
 ### Length of undefined variable
 echo ${#undef}
 # stdout: 0

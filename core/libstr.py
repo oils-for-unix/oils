@@ -56,6 +56,52 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
+INCOMPLETE = 'error: Incomplete utf-8'
+INVALID_CONT = 'error: Invalid utf-8 continuation byte'
+INVALID_START = 'error: Invalid start of utf-8 char'
+
+
+def _CheckContinuationByte(byte):
+  if (ord(byte) >> 6) != 0b10:
+    raise RuntimeError
+
+
+def NumOfUtf8Chars(bytes):
+  """Returns the number of utf-8 characters in the byte string 's'."""
+  num_of_utf8_chars = 0
+
+  num_bytes = len(bytes)
+  i = 0
+  while i < num_bytes:
+    byte_as_int = ord(bytes[i])
+
+    try:
+      if (byte_as_int >> 7) == 0b0:
+        i += 1
+      elif (byte_as_int >> 5) == 0b110:
+        _CheckContinuationByte(bytes[i+1]) 
+        i += 2
+      elif (byte_as_int >> 4) == 0b1110:
+        _CheckContinuationByte(bytes[i+1]) 
+        _CheckContinuationByte(bytes[i+2]) 
+        i += 3
+      elif (byte_as_int >> 3) == 0b11110:
+        _CheckContinuationByte(bytes[i+1]) 
+        _CheckContinuationByte(bytes[i+2]) 
+        _CheckContinuationByte(bytes[i+3])
+        i += 4
+      else:
+        return INVALID_START
+    except IndexError:
+      return INCOMPLETE
+    except RuntimeError:
+      return INVALID_CONT
+
+    num_of_utf8_chars += 1
+
+  return num_of_utf8_chars
+
+
 # Implementation without Python regex:
 #
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and
