@@ -111,11 +111,11 @@ e X
 
 ### Alias detection happens before expansion
 shopt -s expand_aliases  # bash requires this
-alias e='echo'
-cmd=e
-e X
+alias echo_alias_='echo'
+cmd=echo_alias_
+echo_alias_ X
 $cmd X
-e status=$?
+echo_alias_ status=$?
 ## STDOUT:
 X
 status=127
