@@ -13,15 +13,15 @@ echo ${#v}
 v=$'_\u03bc_'
 echo ${#v}
 ## stdout: 3
-## BUG dash stdout: 9
-## BUG mksh stdout: 4
+## N-I dash stdout: 9
+## N-I mksh stdout: 4
 
 ### Unicode string length (spec/testdata/utf8-chars.txt)
 v=$(cat spec/testdata/utf8-chars.txt)
 echo ${#v}
 ## stdout: 7
-## BUG dash stdout: 13
-## BUG mksh stdout: 13
+## N-I dash stdout: 13
+## N-I mksh stdout: 13
 
 ### String length with incomplete utf-8
 for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
@@ -60,7 +60,7 @@ error: Incomplete utf-8
 9
 7
 ## END
-## BUG dash/mksh STDOUT:
+## N-I dash/mksh STDOUT:
 0
 1
 2
@@ -115,7 +115,7 @@ error: Invalid start of utf-8 char
 10
 8
 8
-## BUG dash STDOUT:
+## N-I dash STDOUT:
 7
 8
 9
@@ -132,7 +132,7 @@ error: Invalid start of utf-8 char
 20
 20
 ## END
-## BUG mksh STDOUT:
+## N-I mksh STDOUT:
 1
 2
 3
