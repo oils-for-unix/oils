@@ -298,6 +298,12 @@ class _WordEvaluator(object):
 
     if op_id == Id.VSub_Pound:  # LENGTH
       if val.tag == value_e.Str:
+        # NOTE: Whether bash counts bytes or chars is affected by LANG
+        # environment variables.
+        # Should we respect that, or another way to select?  set -o
+        # count-bytes?
+
+        # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
         length = libstr.NumOfUtf8Chars(val.s)
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.

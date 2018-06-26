@@ -67,7 +67,16 @@ def _CheckContinuationByte(byte):
 
 
 def NumOfUtf8Chars(bytes):
-  """Returns the number of utf-8 characters in the byte string 's'."""
+  """Returns the number of utf-8 characters in the byte string 's'.
+
+  TODO: Raise exception rather than returning a string, so we can set the exit
+  code of the command to 1 ?
+
+  $ echo ${#bad}
+  Invalid utf-8 at index 3 of string 'bad': 'ab\xffd'
+  $ echo $?
+  1
+  """
   num_of_utf8_chars = 0
 
   num_bytes = len(bytes)
