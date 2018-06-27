@@ -47,11 +47,15 @@ Getting started
 ---------------
 
 Do the "Quick Start" in "in https://github.com/oilshell/oil/wiki/Contributing .
-This is necessary to build the `py27.grammar` file and so forth.
+
+Then build the `py27.grammar` file:
+
+    $ make _build/opy/py27.grammar.pickle
 
 After Oil is setup, we can try out OPy.  Run these commands (and let me know if
 any of them doesn't work):
 
+    oil$ cd opy
     opy$ ../bin/opyc run gold/hello_py2.py  # basic test of compiler and runtime
 
 Compile Oil with the OPy compiler:
