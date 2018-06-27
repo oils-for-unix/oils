@@ -239,4 +239,23 @@ fib-dis() {
   ../bin/opyc dis $pyc
 }
 
+# TODO: Move this to the OVM dir
+run-ovm() {
+  local bin=_tmp/ovm_main
+
+  # generate code
+  PYTHONPATH=. lib/opcode_gen.py > _tmp/opcode.h
+
+  cc -I _tmp -o $bin ../ovm/ovm_main.cc
+  #cc -I ../Python-2.7.13/Include -o $bin ../ovm/ovm_main.cc
+  set -x
+  $bin "$@"
+}
+
+compile-fib() {
+  local bytecode=_tmp/fibonacci.bytecode
+  ../bin/opyc compile-fib gold/fibonacci.py $bytecode
+  run-ovm $bytecode
+}
+
 "$@"

@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 """
 class_vs_closure.py
 
@@ -71,5 +72,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

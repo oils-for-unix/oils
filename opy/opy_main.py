@@ -137,7 +137,7 @@ def OpyCommandMain(argv):
   except IndexError:
     raise args.UsageError('opy: Missing required subcommand.')
 
-  if action in ('parse', 'compile', 'eval', 'repl', 'run'):
+  if action in ('parse', 'compile', 'compile-fib', 'eval', 'repl', 'run'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -223,6 +223,19 @@ def OpyCommandMain(argv):
       h = misc.getPycHeader(py_path)
       out_f.write(h)
       marshal.dump(co, out_f)
+
+  elif action == 'compile-fib':
+    py_path = argv[1]
+    out_path = argv[2]
+
+    with open(py_path) as f:
+      co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+
+    log("Compiled to %d bytes of bytecode", len(co.co_code))
+    # Write the .pyc file
+    with open(out_path, 'wb') as out_f:
+      out_f.write(co.co_code)
+    log('Wrote only the bytecode to %r', out_path)
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
     py_expr = argv[1]
