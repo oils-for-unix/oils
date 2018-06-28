@@ -41,7 +41,11 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
     Emit(', '.join(kind_names), f, 1)
   Emit('};\n', f)
 
-  Emit('enum class Id : uint8_t {', f)
+  # TODO: Change this back to a uint8_t?  Right now we have a Glob_ Kind which
+  # pushes it over 256, but we don't really need it in Id.  It could easily be
+  # its own type GlobId.
+
+  Emit('enum class Id : uint16_t {', f)
   for names_in_kind in id_names:
     if id_labels:
       s = ', '.join(['%s=%s' % (i, id_labels[i]) for i in names_in_kind]) + ','
