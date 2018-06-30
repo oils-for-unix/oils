@@ -5,6 +5,7 @@
 from __future__ import print_function, division
 import linecache
 import operator
+import os
 import repr as repr_lib  # Don't conflict with builtin repr()
 import sys
 import traceback
@@ -86,6 +87,9 @@ def run_code(vm, code, f_globals=None):
     frame = vm.make_frame(code, f_globals=f_globals)
     val = vm.run_frame(frame)
     vm.check_invariants()
+    if os.getenv('BYTERUN_SUMMARY'):
+      debug1('*** Byterun executed for %d ticks', vm.num_ticks)
+    # If we return the number of ticks here, the unit tests break.
     return val
 
 
@@ -116,6 +120,7 @@ class VirtualMachine(object):
         self.last_exception = None
         self.except_frames = []  # Frames saved for GuestException
         self.cur_line = None  # current line number
+        self.num_ticks = 0
 
     def top(self):
         return self.frame.top()
@@ -169,7 +174,7 @@ class VirtualMachine(object):
         frame.f_back = None
         return val
 
-    def logTick(self, byteName, arguments, opoffset, linestarts):
+    def log_tick(self, byteName, arguments, opoffset, linestarts):
         """ Log arguments, block stack, and data stack for each opcode."""
         indent = "    " * (len(self.frames)-1)
         stack_rep = repper(self.frame.stack)
@@ -263,14 +268,13 @@ class VirtualMachine(object):
         #print('STARTS %s ' % linestarts)
 
         self._push_frame(frame)
-        num_ticks = 0
         while True:
-            num_ticks += 1
+            self.num_ticks += 1
 
             opoffset = self.frame.f_lasti  # For logging only
             byteName, arguments = self.frame.decode_next()
             if self.verbose:
-                self.logTick(byteName, arguments, opoffset, linestarts)
+                self.log_tick(byteName, arguments, opoffset, linestarts)
 
             # When unwinding the block stack, we need to keep track of why we
             # are doing it.
@@ -849,13 +853,13 @@ class VirtualMachine(object):
         return self.call_function(arg, args, kwargs)
 
     def call_function(self, arg, args, kwargs):
-        lenKw, lenPos = divmod(arg, 256)
+        len_kw, len_pos = divmod(arg, 256)
         namedargs = {}
-        for i in range(lenKw):
+        for i in xrange(len_kw):
             key, val = self.popn(2)
             namedargs[key] = val
         namedargs.update(kwargs)
-        posargs = self.popn(lenPos)
+        posargs = self.popn(len_pos)
         posargs.extend(args)
 
         #debug('*** call_function stack = %s', self.frame.stack)

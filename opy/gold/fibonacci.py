@@ -6,7 +6,13 @@ n = 10
 a = 0
 b = 1
 
-while True:
+while 1:  # Slightly easier to compile than 'while True:'
+
+  # Artifical change to test 'continue'
+  if i == 0:
+    i = i + 1
+    continue
+
   print(b)
 
   # NOTE: This would generate BUILD_TUPLE and UNPACK_SEQUENCE bytecodes.
@@ -16,6 +22,8 @@ while True:
   a = b
   b = tmp + b
 
-  i += 1
+  i = i + 1  # Don't use augmented assignment
   if i == n:
     break
+
+print('Done')  # To make sure we implemented 'break' properly

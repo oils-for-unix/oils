@@ -239,6 +239,11 @@ fib-dis() {
   ../bin/opyc dis $pyc
 }
 
+# TODO: Show graph output
+fib-cfg() {
+  ../bin/opyc cfg gold/fibonacci.py
+}
+
 # TODO: Move this to the OVM dir
 run-ovm() {
   local bin=_tmp/ovm_main
@@ -252,10 +257,21 @@ run-ovm() {
   $bin "$@"
 }
 
-compile-fib() {
+fib-ovm-prototype() {
   local bytecode=_tmp/fibonacci.bytecode
-  ../bin/opyc compile-fib gold/fibonacci.py $bytecode
+  VM_SUMMARY=1 ../bin/opyc run-ovm gold/fibonacci.py
+}
+
+fib-ovm-native() {
+  local bytecode=_tmp/fibonacci.bytecode
+  ../bin/opyc compile-ovm gold/fibonacci.py $bytecode
   run-ovm $bytecode
+}
+
+fib-byterun() {
+  local bytecode=_tmp/fibonacci.pyc
+  ../bin/opyc compile gold/fibonacci.py $bytecode
+  BYTERUN_SUMMARY=1 ../bin/opyc run $bytecode
 }
 
 "$@"

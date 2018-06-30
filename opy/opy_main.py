@@ -24,6 +24,7 @@ from .compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
 from .byterun import execfile
+from .byterun import ovm
 
 from core import args
 from core import util
@@ -121,7 +122,7 @@ def Options():
 
 
 # TODO: more actions:
-# - lex, parse, ast, cfg, compile/eval/repl
+# - lex, parse, ast, compile/eval/repl
 
 # Made by the Makefile.
 PICKLE_REL_PATH = '_build/opy/py27.grammar.pickle'
@@ -137,7 +138,9 @@ def OpyCommandMain(argv):
   except IndexError:
     raise args.UsageError('opy: Missing required subcommand.')
 
-  if action in ('parse', 'compile', 'compile-fib', 'eval', 'repl', 'run'):
+  if action in (
+      'parse', 'compile', 'cfg', 'compile-ovm', 'eval', 'repl', 'run',
+      'run-ovm'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -209,6 +212,14 @@ def OpyCommandMain(argv):
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
+  elif action == 'cfg':  # output fg
+    py_path = argv[1]
+    with open(py_path) as f:
+      graph = skeleton.Compile(f, py_path, gr, 'file_input', 'exec',
+                               return_cfg=True)
+
+    print(graph)
+
   elif action == 'compile':  # 'opyc compile' is pgen2 + compiler2
     py_path = argv[1]
     out_path = argv[2]
@@ -224,12 +235,13 @@ def OpyCommandMain(argv):
       out_f.write(h)
       marshal.dump(co, out_f)
 
-  elif action == 'compile-fib':
+  elif action == 'compile-ovm':
     py_path = argv[1]
     out_path = argv[2]
 
+    # Compile to OVM bytecode
     with open(py_path) as f:
-      co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+      co = skeleton.Compile(f, py_path, gr, 'file_input', 'ovm')
 
     log("Compiled to %d bytes of bytecode", len(co.co_code))
     # Write the .pyc file
@@ -309,13 +321,33 @@ def OpyCommandMain(argv):
     if py_path.endswith('.py'):
       with open(py_path) as f:
         co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
-      execfile.run_code_object(co, opy_argv)
+      num_ticks = execfile.run_code_object(co, opy_argv)
 
     elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
       with open(py_path) as f:
         f.seek(8)  # past header.  TODO: validate it!
         co = marshal.load(f)
-      execfile.run_code_object(co, opy_argv)
+      num_ticks = execfile.run_code_object(co, opy_argv)
+
+    else:
+      raise args.UsageError('Invalid path %r' % py_path)
+
+  elif action == 'run-ovm':
+    # Compile and run, without writing pyc file
+    py_path = argv[1]
+    opy_argv = argv[1:]
+
+    if py_path.endswith('.py'):
+      # TODO: use ovm mode
+      with open(py_path) as f:
+        co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+      num_ticks = ovm.run_code_object(co, opy_argv)
+
+    elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
+      with open(py_path) as f:
+        f.seek(8)  # past header.  TODO: validate it!
+        co = marshal.load(f)
+      num_ticks = ovm.run_code_object(co, opy_argv)
 
     else:
       raise args.UsageError('Invalid path %r' % py_path)

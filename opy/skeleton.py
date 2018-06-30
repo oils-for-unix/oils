@@ -10,6 +10,7 @@ from .pgen2 import parse
 from .compiler2 import future
 from .compiler2 import pyassem
 from .compiler2 import pycodegen
+from .compiler2 import ovm_codegen
 from .compiler2 import syntax
 from .compiler2 import symbols
 from .compiler2 import transformer
@@ -41,7 +42,7 @@ def py2st(unused_gr, raw_node):
     return (typ, value, lineno, column)
 
 
-def Compile(f, filename, gr, start_symbol, mode):
+def Compile(f, filename, gr, start_symbol, mode, return_cfg=False):
   """Run the full compiler pipeline.
 
   Args:
@@ -50,6 +51,7 @@ def Compile(f, filename, gr, start_symbol, mode):
     gr: Grammar
     start_symbol: name of the grammar start symbol
     mode: 'exec', 'eval', or 'single', like Python's builtin compile()
+    return_cfg: A little hack to stop at the CFG stage
   """
 
   tokens = tokenize.generate_tokens(f.readline)
@@ -92,6 +94,11 @@ def Compile(f, filename, gr, start_symbol, mode):
       frame = pyassem.Frame("<expression>", filename)  # mutated
       gen = pycodegen.TopLevelCodeGenerator(ctx, frame, graph)
 
+  elif mode == "ovm":
+      ctx = _ModuleContext(filename, s.scopes)
+      frame = ovm_codegen.Frame("<expression>", filename)  # mutated
+      gen = ovm_codegen.CodeGenerator(ctx, frame, graph)
+
   else:
       raise AssertionError('Invalid mode %r' % mode)
 
@@ -99,7 +106,10 @@ def Compile(f, filename, gr, start_symbol, mode):
   gen.Dispatch(as_tree)  # mutates graph
   gen.Finish()
 
+  if return_cfg:
+      return graph
+
   co = pyassem.MakeCodeObject(frame, graph)
 
-  # TODO: Could call marshal.dump here?
+  # NOTE: Could call marshal.dump here?
   return co
