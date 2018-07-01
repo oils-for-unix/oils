@@ -96,17 +96,17 @@ undefined
 
 ### Invalid syntax of alias
 shopt -s expand_aliases  # bash requires this
-alias e= 'echo --; echo'  # bad space here
-e x
+alias echo_alias_= 'echo --; echo'  # bad space here
+echo_alias_ x
 ## status: 127
 
 ### Dynamic alias definition
 shopt -s expand_aliases  # bash requires this
 x=x
-name='e'
+name='echo_alias_'
 val='=echo'
 alias "$name$val"
-e X
+echo_alias_ X
 ## stdout: X
 
 ### Alias detection happens before expansion
