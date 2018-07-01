@@ -52,6 +52,10 @@ all() {
   echo
 }
 
+ovm() {
+  wc -l */ovm*.py
+}
+
 # Hm there are 119 total opcodes, but these files only use 38, 37, 36, and 23.
 # Interesting.
 

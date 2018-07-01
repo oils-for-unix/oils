@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
+"""Iterative version if Fibonacci."""
 
 i = 0
 n = 10
@@ -26,4 +27,4 @@ while 1:  # Slightly easier to compile than 'while True:'
   if i == n:
     break
 
-print('Done')  # To make sure we implemented 'break' properly
+print('Done fib_iterative.py')  # To make sure we implemented 'break' properly

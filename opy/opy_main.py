@@ -246,7 +246,12 @@ def OpyCommandMain(argv):
     log("Compiled to %d bytes of bytecode", len(co.co_code))
     # Write the .pyc file
     with open(out_path, 'wb') as out_f:
-      out_f.write(co.co_code)
+      if 1:
+        out_f.write(co.co_code)
+      else:
+        h = misc.getPycHeader(py_path)
+        out_f.write(h)
+        marshal.dump(co, out_f)
     log('Wrote only the bytecode to %r', out_path)
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
@@ -338,9 +343,11 @@ def OpyCommandMain(argv):
     opy_argv = argv[1:]
 
     if py_path.endswith('.py'):
-      # TODO: use ovm mode
+      #mode = 'exec'
+      mode = 'ovm'  # OVM bytecode is different!
       with open(py_path) as f:
-        co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+        co = skeleton.Compile(f, py_path, gr, 'file_input', mode)
+      log('Compiled to %d bytes of OVM code', len(co.co_code))
       num_ticks = ovm.run_code_object(co, opy_argv)
 
     elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
