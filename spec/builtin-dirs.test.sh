@@ -1,14 +1,14 @@
 #!/bin/bash
 
-### dirs builtin
+#### dirs builtin
 cd /
 dirs
-# status: 0
+## status: 0
 ## STDOUT:
 /
 ## END
 
-### dirs -c to clear the stack
+#### dirs -c to clear the stack
 set -o errexit
 cd /
 pushd /tmp >/dev/null  # zsh pushd doesn't print anything, but bash does
@@ -25,7 +25,7 @@ dirs
 /tmp
 ## END
 
-### dirs -v to print numbered stack, one entry per line
+#### dirs -v to print numbered stack, one entry per line
 set -o errexit
 cd /
 pushd /tmp >/dev/null
@@ -48,7 +48,7 @@ dirs -v
 #  zsh uses tabs
 ## OK zsh stdout-json: "--\n0\t/tmp\n1\t/\n--\n0\t/lib\n1\t/tmp\n2\t/\n"
 
-### dirs -p to print one entry per line
+#### dirs -p to print one entry per line
 set -o errexit
 cd /
 pushd /tmp >/dev/null
@@ -67,7 +67,7 @@ dirs -p
 /
 ## END
 
-### dirs -l to print in long format, no tilde prefix
+#### dirs -l to print in long format, no tilde prefix
 # Can't use the OSH test harness for this because
 # /home/<username> may be included in a path.
 cd /
@@ -76,31 +76,31 @@ mkdir -p $HOME/oil_test
 pushd $HOME/oil_test >/dev/null
 dirs
 dirs -l
-# status: 0
+## status: 0
 ## STDOUT:
 ~/oil_test /
 /tmp/oil_test /
 ## END
 
-### dirs to print using tilde-prefix format
+#### dirs to print using tilde-prefix format
 cd /
 HOME=/tmp
 mkdir -p $HOME/oil_test
 pushd $HOME/oil_test >/dev/null
 dirs
-# stdout: ~/oil_test /
-# status: 0
+## stdout: ~/oil_test /
+## status: 0
 
-### dirs test converting true home directory to tilde
+#### dirs test converting true home directory to tilde
 cd /
 HOME=/tmp
 mkdir -p $HOME/oil_test/$HOME
 pushd $HOME/oil_test/$HOME >/dev/null
 dirs
-# stdout: ~/oil_test/tmp /
-# status: 0
+## stdout: ~/oil_test/tmp /
+## status: 0
 
-### dirs don't convert to tilde when $HOME is substring
+#### dirs don't convert to tilde when $HOME is substring
 cd /
 mkdir -p /tmp/oil_test
 mkdir -p /tmp/oil_tests
@@ -108,7 +108,7 @@ HOME=/tmp/oil_test
 pushd /tmp/oil_tests
 dirs
 
-### dirs tilde test when $HOME is exactly $PWD
+#### dirs tilde test when $HOME is exactly $PWD
 cd /
 mkdir -p /tmp/oil_test
 HOME=/tmp/oil_test
@@ -122,16 +122,16 @@ dirs
 ~ /
 ## END
 
-### dirs test of path alias `..`
+#### dirs test of path alias `..`
 cd /tmp
 pushd .. >/dev/null
 dirs
-# stdout: / /tmp
-# status: 0
+## stdout: / /tmp
+## status: 0
 
-### dirs test of path alias `.`
+#### dirs test of path alias `.`
 cd /tmp
 pushd . >/dev/null
 dirs
-# stdout: /tmp /tmp
-# status: 0
+## stdout: /tmp /tmp
+## status: 0

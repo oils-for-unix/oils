@@ -4,19 +4,19 @@
 # 
 # NOTE: Aliases don't work in batch mode!  Interactive only.
 
-### getopts empty
+#### getopts empty
 set -- 
 getopts 'a:' opt
 echo "status=$? opt=$opt OPTARG=$OPTARG"
-# stdout: status=1 opt=? OPTARG=
+## stdout: status=1 opt=? OPTARG=
 
-### getopts sees unknown arg
+#### getopts sees unknown arg
 set -- -Z
 getopts 'a:' opt
 echo "status=$? opt=$opt OPTARG=$OPTARG"
-# stdout: status=0 opt=? OPTARG=
+## stdout: status=0 opt=? OPTARG=
 
-### getopts three invocations
+#### getopts three invocations
 set -- -h -c foo
 getopts 'hc:' opt
 echo status=$? opt=$opt
@@ -24,17 +24,17 @@ getopts 'hc:' opt
 echo status=$? opt=$opt
 getopts 'hc:' opt
 echo status=$? opt=$opt
-# stdout-json: "status=0 opt=h\nstatus=0 opt=c\nstatus=1 opt=?\n"
+## stdout-json: "status=0 opt=h\nstatus=0 opt=c\nstatus=1 opt=?\n"
 
-### getopts resets OPTARG
+#### getopts resets OPTARG
 set -- -c foo -h
 getopts 'hc:' opt
 echo status=$? opt=$opt OPTARG=$OPTARG
 getopts 'hc:' opt
 echo status=$? opt=$opt OPTARG=$OPTARG
-# stdout-json: "status=0 opt=c OPTARG=foo\nstatus=0 opt=h OPTARG=\n"
+## stdout-json: "status=0 opt=c OPTARG=foo\nstatus=0 opt=h OPTARG=\n"
 
-### Basic getopts invocation
+#### Basic getopts invocation
 set -- -h -c foo x y z
 FLAG_h=0
 FLAG_c=''
@@ -46,9 +46,9 @@ while getopts "hc:" opt; do
 done
 shift $(( OPTIND - 1 ))
 echo h=$FLAG_h c=$FLAG_c optind=$OPTIND argv=$@
-# stdout: h=1 c=foo optind=4 argv=x y z
+## stdout: h=1 c=foo optind=4 argv=x y z
 
-### getopts with invalid flag
+#### getopts with invalid flag
 set -- -h -x
 while getopts "hc:" opt; do
   case $opt in
@@ -58,10 +58,10 @@ while getopts "hc:" opt; do
   esac
 done
 echo status=$?
-# stdout: ERROR 3
-# status: 2
+## stdout: ERROR 3
+## status: 2
 
-### getopts missing required argument
+#### getopts missing required argument
 set -- -h -c
 while getopts "hc:" opt; do
   case $opt in
@@ -71,10 +71,10 @@ while getopts "hc:" opt; do
   esac
 done
 echo status=$?
-# stdout: ERROR 3
-# status: 2
+## stdout: ERROR 3
+## status: 2
 
-### getopts doesn't look for flags after args
+#### getopts doesn't look for flags after args
 set -- x -h -c y
 FLAG_h=0
 FLAG_c=''
@@ -86,9 +86,9 @@ while getopts "hc:" opt; do
 done
 shift $(( OPTIND - 1 ))
 echo h=$FLAG_h c=$FLAG_c optind=$OPTIND argv=$@
-# stdout: h=0 c= optind=1 argv=x -h -c y
+## stdout: h=0 c= optind=1 argv=x -h -c y
 
-### getopts with explicit args
+#### getopts with explicit args
 # NOTE: Alpine doesn't appear to use this
 FLAG_h=0
 FLAG_c=''
@@ -100,13 +100,13 @@ while getopts "hc:" opt -h -c foo x y z; do
   esac
 done
 echo h=$FLAG_h c=$FLAG_c optind=$OPTIND argv=$@
-# stdout: h=1 c=foo optind=4 argv=
+## stdout: h=1 c=foo optind=4 argv=
 
-### OPTIND
+#### OPTIND
 echo $OPTIND
-# stdout: 1
+## stdout: 1
 
-### OPTIND after multiple getopts with same spec
+#### OPTIND after multiple getopts with same spec
 while getopts "hc:" opt; do
   echo '-'
 done
@@ -123,10 +123,10 @@ while getopts "hc:" opt; do
   echo '-'
 done
 echo $OPTIND
-# stdout-json: "1\n-\n-\n4\n1\n"
-# BUG mksh/osh stdout-json: "1\n-\n-\n4\n4\n"
+## stdout-json: "1\n-\n-\n4\n1\n"
+## BUG mksh/osh stdout-json: "1\n-\n-\n4\n4\n"
 
-### OPTIND after multiple getopts with different spec
+#### OPTIND after multiple getopts with different spec
 # Wow this is poorly specified!  A fundamental design problem with the global
 # variable OPTIND.
 set -- -a
@@ -146,11 +146,11 @@ while getopts "f:" opt; do
   echo '_'
 done
 echo $OPTIND
-# stdout-json: ".\n2\n-\n-\n5\n2\n"
-# BUG ash/dash stdout-json: ".\n2\n-\n-\n-\n5\n_\n2\n"
-# BUG mksh/osh stdout-json: ".\n2\n-\n-\n5\n5\n"
+## stdout-json: ".\n2\n-\n-\n5\n2\n"
+## BUG ash/dash stdout-json: ".\n2\n-\n-\n-\n5\n_\n2\n"
+## BUG mksh/osh stdout-json: ".\n2\n-\n-\n5\n5\n"
 
-### OPTIND narrowed down
+#### OPTIND narrowed down
 FLAG_a=
 FLAG_b=
 FLAG_c=
@@ -176,11 +176,11 @@ while getopts "cde:" opt; do
 done
 
 echo a=$FLAG_a b=$FLAG_b c=$FLAG_c d=$FLAG_d e=$FLAG_e
-# stdout: a=1 b= c=1 d=1 e=E
-# BUG bash/mksh/osh stdout: a=1 b= c= d=1 e=E
+## stdout: a=1 b= c=1 d=1 e=E
+## BUG bash/mksh/osh stdout: a=1 b= c= d=1 e=E
 
 
-### Getopts parses the function's arguments
+#### Getopts parses the function's arguments
 # NOTE: GLOBALS are set, not locals!  Bad interface.
 FLAG_h=0
 FLAG_c=''
@@ -195,5 +195,5 @@ myfunc() {
 set -- -h -c foo x y z
 myfunc -c bar
 echo h=$FLAG_h c=$FLAG_c opt=$opt optind=$OPTIND argv=$@
-# stdout: h=0 c=bar opt=? optind=3 argv=-h -c foo x y z
+## stdout: h=0 c=bar opt=? optind=3 argv=-h -c foo x y z
 

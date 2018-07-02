@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-### Env value doesn't persist
+#### Env value doesn't persist
 FOO=foo printenv.py FOO
 echo [$FOO]
-# STDOUT:
+## STDOUT:
 foo
 []
 ## END
 
-### Env value with equals
+#### Env value with equals
 FOO=foo=foo printenv.py FOO
 ## stdout: foo=foo
 
-### Env binding can use preceding bindings, but not subsequent ones
+#### Env binding can use preceding bindings, but not subsequent ones
 # This means that for ASSIGNMENT_WORD, on the RHS you invoke the parser again!
 # Could be any kind of quoted string.
 FOO="foo" BAR="[$FOO][$BAZ]" BAZ=baz printenv.py FOO BAR BAZ
@@ -26,26 +26,26 @@ foo
 baz
 ## END
 
-### Env value with two quotes
+#### Env value with two quotes
 FOO='foo'"adjacent" printenv.py FOO
-# stdout: fooadjacent
+## stdout: fooadjacent
 
-### Env value with escaped <
+#### Env value with escaped <
 FOO=foo\<foo printenv.py FOO
 ## stdout: foo<foo
 
-### FOO=foo echo [foo]
+#### FOO=foo echo [foo]
 FOO=foo echo "[$foo]"
 ## stdout: []
 
-### FOO=foo func
+#### FOO=foo func
 func() {
   echo "[$FOO]"
 }
 FOO=foo func
 ## stdout: [foo]
 
-### Multiple temporary envs on the stack
+#### Multiple temporary envs on the stack
 g() {
   echo "$F" "$G1" "$G2"
   echo '--- g() ---'
@@ -109,12 +109,12 @@ None
 None
 ## END
 
-### Escaped = in command name
+#### Escaped = in command name
 # foo=bar is in the 'spec/bin' dir.
 foo\=bar
 ## stdout: HI
 
-### Env binding not allowed before compound command
+#### Env binding not allowed before compound command
 # bash gives exit code 2 for syntax error, because of 'do'.
 # dash gives 0 because there is stuff after for?  Should really give an error.
 # mksh gives acceptable error of 1.
@@ -123,77 +123,77 @@ FOO=bar for i in a b; do printenv.py $FOO; done
 ## OK  mksh status: 1
 ## status: 2
 
-### Trying to run keyword 'for'
+#### Trying to run keyword 'for'
 FOO=bar for
 ## status: 127
 
-### Empty env binding
+#### Empty env binding
 EMPTY= printenv.py EMPTY
 ## stdout:
 
-### Assignment doesn't do word splitting
+#### Assignment doesn't do word splitting
 words='one two'
 a=$words
 argv.py "$a"
 ## stdout: ['one two']
 
-### Assignment doesn't do glob expansion
+#### Assignment doesn't do glob expansion
 touch _tmp/z.Z _tmp/zz.Z
 a=_tmp/*.Z
 argv.py "$a"
-# stdout: ['_tmp/*.Z']
+## stdout: ['_tmp/*.Z']
 
-### Env binding in readonly/declare disallowed
+#### Env binding in readonly/declare disallowed
 # I'm disallowing this in the oil shell, because it doesn't work in bash!
 # (v=None vs v=foo)
 # assert status 2 for parse error, but allow stdout v=None/status 0 for
 # existing implementations.
 FOO=foo readonly v=$(printenv.py FOO)
 echo "v=$v"
-# OK bash/dash/mksh stdout: v=None
-# OK bash/dash/mksh status: 0
-# status: 2
+## OK bash/dash/mksh stdout: v=None
+## OK bash/dash/mksh status: 0
+## status: 2
 
-### local -a
+#### local -a
 # nixpkgs setup.sh uses this (issue #26)
 f() {
   local -a array=(x y z)
   argv.py "${array[@]}"
 }
 f
-# stdout: ['x', 'y', 'z']
-# N-I dash stdout-json: ""
-# N-I dash status: 2
-# N-I mksh stdout-json: ""
-# N-I mksh status: 1
+## stdout: ['x', 'y', 'z']
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
 
-### declare -a
+#### declare -a
 # nixpkgs setup.sh uses this (issue #26)
 declare -a array=(x y z)
 argv.py "${array[@]}"
-# stdout: ['x', 'y', 'z']
-# N-I dash stdout-json: ""
-# N-I dash status: 2
-# N-I mksh stdout-json: ""
-# N-I mksh status: 1
+## stdout: ['x', 'y', 'z']
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
 
-### typeset -a a[1]=a a[3]=c
+#### typeset -a a[1]=a a[3]=c
 # declare works the same way in bash, but not mksh.
 # spaces are NOT allowed here.
 typeset -a a[1*1]=x a[1+2]=z
 argv.py "${a[@]}"
-# stdout: ['x', 'z']
-# N-I dash stdout-json: ""
-# N-I dash status: 2
+## stdout: ['x', 'z']
+## N-I dash stdout-json: ""
+## N-I dash status: 2
 
-### indexed LHS without spaces is allowed
+#### indexed LHS without spaces is allowed
 a[1 * 1]=x a[ 1 + 2 ]=z
 argv.py "${a[@]}"
-# stdout: ['x', 'z']
-# N-I dash stdout-json: ""
-# N-I dash status: 2
+## stdout: ['x', 'z']
+## N-I dash stdout-json: ""
+## N-I dash status: 2
 
-### declare -f 
+#### declare -f 
 func2=x  # var names are NOT found
 declare -f myfunc func2
 echo $?
@@ -217,7 +217,7 @@ echo $?
 127
 ## END
 
-### declare -p 
+#### declare -p 
 var1() { echo func; }  # function names are NOT found.
 declare -p var1 var2 >/dev/null
 echo $?
@@ -239,7 +239,7 @@ echo $?
 127
 ## END
 
-### typeset -f 
+#### typeset -f 
 # mksh implement typeset but not declare
 typeset  -f myfunc func2
 echo $?
@@ -263,7 +263,7 @@ echo $?
 127
 ## END
 
-### typeset -p 
+#### typeset -p 
 var1() { echo func; }  # function names are NOT found.
 typeset -p var1 var2 >/dev/null
 echo $?
@@ -291,7 +291,7 @@ echo $?
 127
 ## END
 
-### typeset -r makes a string readonly
+#### typeset -r makes a string readonly
 typeset -r s1='12'
 typeset -r s2='34'
 
@@ -332,7 +332,7 @@ status=0
 status=0
 ## END
 
-### typeset -ar makes it readonly
+#### typeset -ar makes it readonly
 typeset -a -r array1=(1 2)
 typeset -ar array2=(3 4)
 
@@ -362,16 +362,16 @@ status=1
 status=1
 status=1
 ## END
-# N-I dash status: 2
-# N-I dash stdout-json: ""
-# N-I mksh status: 1
-# N-I mksh stdout-json: ""
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
 
-### typeset -x makes it exported
+#### typeset -x makes it exported
 typeset -rx PYTHONPATH=lib/
 printenv.py PYTHONPATH
 ## STDOUT:
 lib/
 ## END
-# N-I dash stdout: None
+## N-I dash stdout: None
 

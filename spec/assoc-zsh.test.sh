@@ -7,48 +7,48 @@
 # - zsh allows $a[$k], not just ${a[$k]}
 
 
-### TODO: SETUP should be shared
+#### TODO: SETUP should be shared
 typeset -A a
 a=(aa b foo bar a+1 c)
 
-### retrieve key
+#### retrieve key
 typeset -A a
 a=(aa b foo bar a+1 c)
 echo ${a[aa]}
-# stdout: b
+## stdout: b
 
-### set key
+#### set key
 typeset -A a
 a=(aa b foo bar a+1 c)
 a[X]=XX
 argv.py "${a[@]}"
 # What order is this?
-# stdout: ['bar', 'b', 'c', 'XX']
+## stdout: ['bar', 'b', 'c', 'XX']
 
-### iterate over keys
+#### iterate over keys
 typeset -A assoc
 assoc=(k1 v1 k2 v2 k3 v3)
 for k in "${(@k)assoc}"; do
   echo "$k: $assoc[$k]"
 done
-# stdout-json: "k1: v1\nk2: v2\nk3: v3\n"
+## stdout-json: "k1: v1\nk2: v2\nk3: v3\n"
 
-### iterate over both keys and values
+#### iterate over both keys and values
 typeset -A assoc
 assoc=(k1 v1 k2 v2 k3 v3)
 for k v ("${(@kv)assoc}"); do
   echo "$k: $v"
 done
-# stdout-json: "k1: v1\nk2: v2\nk3: v3\n"
+## stdout-json: "k1: v1\nk2: v2\nk3: v3\n"
 
-### get length
+#### get length
 typeset -A assoc
 assoc=(k1 v1 k2 v2 k3 v3)
 echo ${#assoc} ${#assoc[k1]}
-# stdout: 3 2
+## stdout: 3 2
 
-### index by integer does not work
+#### index by integer does not work
 typeset -A assoc
 assoc=(k1 v1 k2 v2 k3 v3)
 argv.py "${assoc[1]}"
-# stdout: ['']
+## stdout: ['']

@@ -26,123 +26,123 @@
 # @(pattern-list): Matches exactly one of the patterns
 # !(pattern-list): Matches anything EXCEPT any of the patterns
 
-### @() extended glob
+#### @() extended glob
 shopt -s extglob
 touch _tmp/{foo,bar}.cc _tmp/{foo,bar,baz}.h
 echo _tmp/@(*.cc|*.h)
-# stdout: _tmp/bar.cc _tmp/bar.h _tmp/baz.h _tmp/foo.cc _tmp/foo.h
+## stdout: _tmp/bar.cc _tmp/bar.h _tmp/baz.h _tmp/foo.cc _tmp/foo.h
 
-### ?() extended glob
+#### ?() extended glob
 # matches the empty string too
 shopt -s extglob
 touch _tmp/{foo,bar}.cc _tmp/{foo,bar,baz}.h
 echo _tmp/?(*.cc|*.h)
-# stdout: _tmp/bar.cc _tmp/bar.h _tmp/baz.h _tmp/foo.cc _tmp/foo.h
+## stdout: _tmp/bar.cc _tmp/bar.h _tmp/baz.h _tmp/foo.cc _tmp/foo.h
 
-### *() matches multiple copies
+#### *() matches multiple copies
 shopt -s extglob
 mkdir -p _tmp/eg1
 touch _tmp/eg1/One _tmp/eg1/OneOne _tmp/eg1/TwoTwo _tmp/eg1/OneTwo
 echo _tmp/eg1/*(One|Two)
-# stdout: _tmp/eg1/One _tmp/eg1/OneOne _tmp/eg1/OneTwo _tmp/eg1/TwoTwo
+## stdout: _tmp/eg1/One _tmp/eg1/OneOne _tmp/eg1/OneTwo _tmp/eg1/TwoTwo
 
-### !(*.h) to match everything except headers
+#### !(*.h) to match everything except headers
 shopt -s extglob
 mkdir -p _tmp/extglob2
 touch _tmp/extglob2/{foo,bar}.cc _tmp/extglob2/{foo,bar,baz}.h
 echo _tmp/extglob2/!(*.h)
-# stdout: _tmp/extglob2/bar.cc _tmp/extglob2/foo.cc
+## stdout: _tmp/extglob2/bar.cc _tmp/extglob2/foo.cc
 
-### glob spaces
+#### glob spaces
 shopt -s extglob
 mkdir -p _tmp/eg4
 touch _tmp/eg4/a '_tmp/eg4/a b' _tmp/eg4/foo
 argv.py _tmp/eg4/@(a b|foo)
-# stdout: ['_tmp/eg4/a b', '_tmp/eg4/foo']
+## stdout: ['_tmp/eg4/a b', '_tmp/eg4/foo']
 
-### glob other punctuation chars (lexer mode)
+#### glob other punctuation chars (lexer mode)
 # mksh sorts them differently
 shopt -s extglob
 mkdir -p _tmp/eg5
 cd _tmp/eg5
 touch __{'<>','{}','|','#','&&'}
 argv.py @('__<>'|__{}|__\||__#|__&&)
-# stdout: ['__<>', '__|', '__{}', '__&&', '__#']
-# OK mksh stdout: ['__#', '__&&', '__<>', '__{}', '__|']
+## stdout: ['__<>', '__|', '__{}', '__&&', '__#']
+## OK mksh stdout: ['__#', '__&&', '__<>', '__{}', '__|']
 
-### @ matches exactly one
+#### @ matches exactly one
 [[ --verbose == --@(help|verbose) ]] && echo TRUE
 [[ --oops == --@(help|verbose) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### ? matches 0 or 1
+#### ? matches 0 or 1
 [[ -- == --?(help|verbose) ]] && echo TRUE
 [[ --oops == --?(help|verbose) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### + matches 1 or more
+#### + matches 1 or more
 [[ --helphelp == --+(help|verbose) ]] && echo TRUE
 [[ -- == --+(help|verbose) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### * matches 0 or more
+#### * matches 0 or more
 [[ -- == --*(help|verbose) ]] && echo TRUE
 [[ --oops == --*(help|verbose) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### simple repetition with *(foo) and +(Foo)
+#### simple repetition with *(foo) and +(Foo)
 [[ foofoo == *(foo) ]] && echo TRUE
 [[ foofoo == +(foo) ]] && echo TRUE
-# stdout-json: "TRUE\nTRUE\n"
+## stdout-json: "TRUE\nTRUE\n"
 
-### ! matches none
+#### ! matches none
 [[ --oops == --!(help|verbose) ]] && echo TRUE
 [[ --help == --!(help|verbose) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### @() with variable arms
+#### @() with variable arms
 choice1='help'
 choice2='verbose'
 [[ --verbose == --@($choice1|$choice2) ]] && echo TRUE
 [[ --oops == --@($choice1|$choice2) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### match is anchored
+#### match is anchored
 [[ foo_ == @(foo) ]] || echo FALSE
 [[ _foo == @(foo) ]] || echo FALSE
 [[ foo == @(foo) ]] && echo TRUE
-# stdout-json: "FALSE\nFALSE\nTRUE\n"
+## stdout-json: "FALSE\nFALSE\nTRUE\n"
 
-### repeated match is anchored
+#### repeated match is anchored
 [[ foofoo_ == +(foo) ]] || echo FALSE
 [[ _foofoo == +(foo) ]] || echo FALSE
 [[ foofoo == +(foo) ]] && echo TRUE
-# stdout-json: "FALSE\nFALSE\nTRUE\n"
+## stdout-json: "FALSE\nFALSE\nTRUE\n"
 
-### repetition with glob
+#### repetition with glob
 # NOTE that * means two different things here
 [[ foofoo_foo__foo___ == *(foo*) ]] && echo TRUE
 [[ Xoofoo_foo__foo___ == *(foo*) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### No brace expansion in ==
+#### No brace expansion in ==
 [[ --X{a,b}X == --@(help|X{a,b}X) ]] && echo TRUE
 [[ --oops == --@(help|X{a,b}X) ]] || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### adjacent extglob
+#### adjacent extglob
 [[ --help == @(--|++)@(help|verbose) ]] && echo TRUE
 [[ ++verbose == @(--|++)@(help|verbose) ]] && echo TRUE
-# stdout-json: "TRUE\nTRUE\n"
+## stdout-json: "TRUE\nTRUE\n"
 
-### nested extglob
+#### nested extglob
 [[ --help == --@(help|verbose=@(1|2)) ]] && echo TRUE
 [[ --verbose=1 == --@(help|verbose=@(1|2)) ]] && echo TRUE
 [[ --verbose=2 == --@(help|verbose=@(1|2)) ]] && echo TRUE
 [[ --verbose == --@(help|verbose=@(1|2)) ]] || echo FALSE
-# stdout-json: "TRUE\nTRUE\nTRUE\nFALSE\n"
+## stdout-json: "TRUE\nTRUE\nTRUE\nFALSE\n"
 
-### extglob in variable
+#### extglob in variable
 shopt -s extglob
 g=--@(help|verbose)
 quoted='--@(help|verbose)'
@@ -151,34 +151,34 @@ quoted='--@(help|verbose)'
 [[ -- == $g ]] || echo FALSE
 [[ --help == $q ]] || echo FALSE
 [[ -- == $q ]] || echo FALSE
-# stdout-json: "TRUE\nTRUE\nFALSE\nFALSE\nFALSE\n"
-# N-I mksh stdout-json: "FALSE\nFALSE\nFALSE\n"
+## stdout-json: "TRUE\nTRUE\nFALSE\nFALSE\nFALSE\n"
+## N-I mksh stdout-json: "FALSE\nFALSE\nFALSE\n"
 
-### extglob empty string
+#### extglob empty string
 shopt -s extglob
 [[ '' == @(foo|bar) ]] || echo FALSE
 [[ '' == @(foo||bar) ]] && echo TRUE
-# stdout-json: "FALSE\nTRUE\n"
+## stdout-json: "FALSE\nTRUE\n"
 
-### extglob empty pattern
+#### extglob empty pattern
 shopt -s extglob
 [[ '' == @() ]] && echo TRUE
 [[ '' == @(||) ]] && echo TRUE
 [[ X == @() ]] || echo FALSE
 [[ '|' == @(||) ]] || echo FALSE
-# stdout-json: "TRUE\nTRUE\nFALSE\nFALSE\n"
+## stdout-json: "TRUE\nTRUE\nFALSE\nFALSE\n"
 
-### printing extglob in variable
+#### printing extglob in variable
 # mksh does static parsing so it doesn't like this?
 shopt -s extglob
 mkdir -p _tmp/eg3
 touch _tmp/eg3/{foo,bar}
 g=_tmp/eg3/@(foo|bar)
 echo $g "$g"  # quoting inhibits globbing
-# stdout: _tmp/eg3/bar _tmp/eg3/foo _tmp/eg3/@(foo|bar)
-# N-I mksh stdout: _tmp/eg3/@(foo|bar) _tmp/eg3/@(foo|bar)
+## stdout: _tmp/eg3/bar _tmp/eg3/foo _tmp/eg3/@(foo|bar)
+## N-I mksh stdout: _tmp/eg3/@(foo|bar) _tmp/eg3/@(foo|bar)
 
-### case with extglob
+#### case with extglob
 shopt -s extglob
 for word in --help --verbose --unmatched -- -zxzx -; do
   case $word in
@@ -204,16 +204,16 @@ for word in --help --verbose --unmatched -- -zxzx -; do
       ;;
   esac
 done
-# stdout-json: "A\nA\nU\nB\nC\nD\n"
+## stdout-json: "A\nA\nU\nB\nC\nD\n"
 
-### Without shopt -s extglob
+#### Without shopt -s extglob
 empty=''
 str='x'
 [[ $empty == !($str) ]] && echo TRUE  # test glob match
 [[ $str == !($str) ]]   || echo FALSE
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"
 
-### Turning extglob on changes the meaning of [[ !(str) ]] in bash
+#### Turning extglob on changes the meaning of [[ !(str) ]] in bash
 empty=''
 str='x'
 [[ !($empty) ]]  && echo TRUE   # test if $empty is empty
@@ -221,14 +221,14 @@ str='x'
 shopt -s extglob  # mksh doesn't have this
 [[ !($empty) ]]  && echo TRUE   # negated glob
 [[ !($str) ]]    && echo TRUE   # negated glob
-# stdout-json: "TRUE\nFALSE\nTRUE\nTRUE\n"
-# OK mksh stdout-json: "TRUE\nTRUE\nTRUE\n"
+## stdout-json: "TRUE\nFALSE\nTRUE\nTRUE\n"
+## OK mksh stdout-json: "TRUE\nTRUE\nTRUE\n"
 
-### With extglob on, !($str) on the left or right of == has different meanings
+#### With extglob on, !($str) on the left or right of == has different meanings
 shopt -s extglob
 empty=''
 str='x'
 [[ 1 == !($str) ]]  && echo TRUE   # glob match
 [[ !($str) == 1 ]]  || echo FALSE  # test if empty
 # NOTE: There cannot be a space between ! and (?
-# stdout-json: "TRUE\nFALSE\n"
+## stdout-json: "TRUE\nFALSE\n"

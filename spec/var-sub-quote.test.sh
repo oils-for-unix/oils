@@ -14,26 +14,26 @@
 # LexState.OUTER.  If we have "${}", then it's parsed as LexState.DQ.  That
 # makes sense I guess.  Vim's syntax highlighting is throwing me off.
 
-### "${empty:-}"
+#### "${empty:-}"
 empty=
 argv.py "${empty:-}"
-# stdout: ['']
+## stdout: ['']
 
-### ${empty:-}
+#### ${empty:-}
 empty=
 argv.py ${empty:-}
-# stdout: []
+## stdout: []
 
-### array with empty values
+#### array with empty values
 declare -a A=('' x "" '')
 argv.py "${A[@]}"
-# stdout: ['', 'x', '', '']
-# N-I dash stdout-json: ""
-# N-I dash status: 2
-# N-I mksh stdout-json: ""
-# N-I mksh status: 1
+## stdout: ['', 'x', '', '']
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
 
-### substitution of IFS character, quoted and unquoted
+#### substitution of IFS character, quoted and unquoted
 IFS=:
 s=:
 argv.py $s
@@ -43,150 +43,150 @@ argv.py "$s"
 [':']
 ## END
 
-### :-
+#### :-
 empty=''
 argv.py ${empty:-a} ${Unset:-b}
-# stdout: ['a', 'b']
+## stdout: ['a', 'b']
 
-### -
+#### -
 empty=''
 argv.py ${empty-a} ${Unset-b}
 # empty one is still elided!
-# stdout: ['b']
+## stdout: ['b']
 
-### Inner single quotes
+#### Inner single quotes
 argv.py ${Unset:-'b'}
-# stdout: ['b']
+## stdout: ['b']
 
-### Inner single quotes, outer double quotes
+#### Inner single quotes, outer double quotes
 # This is the WEIRD ONE.  Single quotes appear outside.  But all shells agree!
 argv.py "${Unset:-'b'}"
-# stdout: ["'b'"]
+## stdout: ["'b'"]
 
-### Inner double quotes
+#### Inner double quotes
 argv.py ${Unset:-"b"}
-# stdout: ['b']
+## stdout: ['b']
 
-### Inner double quotes, outer double quotes
+#### Inner double quotes, outer double quotes
 argv.py "${Unset-"b"}"
-# stdout: ['b']
+## stdout: ['b']
 
-### Multiple words: no quotes
+#### Multiple words: no quotes
 argv.py ${Unset:-a b c}
-# stdout: ['a', 'b', 'c']
+## stdout: ['a', 'b', 'c']
 
-### Multiple words: no outer quotes, inner single quotes
+#### Multiple words: no outer quotes, inner single quotes
 argv.py ${Unset:-'a b c'}
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: no outer quotes, inner double quotes
+#### Multiple words: no outer quotes, inner double quotes
 argv.py ${Unset:-"a b c"}
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: outer double quotes, no inner quotes
+#### Multiple words: outer double quotes, no inner quotes
 argv.py "${Unset:-a b c}"
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: outer double quotes, inner double quotes
+#### Multiple words: outer double quotes, inner double quotes
 argv.py "${Unset:-"a b c"}"
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: outer double quotes, inner single quotes
+#### Multiple words: outer double quotes, inner single quotes
 argv.py "${Unset:-'a b c'}"
 # WEIRD ONE.
-# stdout: ["'a b c'"]
+## stdout: ["'a b c'"]
 
-### Mixed inner quotes
+#### Mixed inner quotes
 argv.py ${Unset:-"a b" c}
-# stdout: ['a b', 'c']
+## stdout: ['a b', 'c']
 
-### Mixed inner quotes with outer quotes
+#### Mixed inner quotes with outer quotes
 argv.py "${Unset:-"a b" c}"
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### part_value tree with multiple words
+#### part_value tree with multiple words
 argv.py ${a:-${a:-"1 2" "3 4"}5 "6 7"}
-# stdout: ['1 2', '3 45', '6 7']
+## stdout: ['1 2', '3 45', '6 7']
 
-### part_value tree on RHS
+#### part_value tree on RHS
 v=${a:-${a:-"1 2" "3 4"}5 "6 7"}
 argv.py "${v}"
-# stdout: ['1 2 3 45 6 7']
+## stdout: ['1 2 3 45 6 7']
 
-### Var with multiple words: no quotes
+#### Var with multiple words: no quotes
 var='a b c'
 argv.py ${Unset:-$var}
-# stdout: ['a', 'b', 'c']
+## stdout: ['a', 'b', 'c']
 
-### Multiple words: no outer quotes, inner single quotes
+#### Multiple words: no outer quotes, inner single quotes
 var='a b c'
 argv.py ${Unset:-'$var'}
-# stdout: ['$var']
+## stdout: ['$var']
 
-### Multiple words: no outer quotes, inner double quotes
+#### Multiple words: no outer quotes, inner double quotes
 var='a b c'
 argv.py ${Unset:-"$var"}
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: outer double quotes, no inner quotes
+#### Multiple words: outer double quotes, no inner quotes
 var='a b c'
 argv.py "${Unset:-$var}"
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: outer double quotes, inner double quotes
+#### Multiple words: outer double quotes, inner double quotes
 var='a b c'
 argv.py "${Unset:-"$var"}"
-# stdout: ['a b c']
+## stdout: ['a b c']
 
-### Multiple words: outer double quotes, inner single quotes
+#### Multiple words: outer double quotes, inner single quotes
 # WEIRD ONE.
 #
 # I think I should just disallow any word with single quotes inside double
 # quotes.
 var='a b c'
 argv.py "${Unset:-'$var'}"
-# stdout: ["'a b c'"]
+## stdout: ["'a b c'"]
 
-### No outer quotes, Multiple internal quotes
+#### No outer quotes, Multiple internal quotes
 # It's like a single command word.  Parts are joined directly.
 var='a b c'
 argv.py ${Unset:-A$var " $var"D E F}
-# stdout: ['Aa', 'b', 'c', ' a b cD', 'E', 'F']
+## stdout: ['Aa', 'b', 'c', ' a b cD', 'E', 'F']
 
-### Strip a string with single quotes, unquoted
+#### Strip a string with single quotes, unquoted
 foo="'a b c d'"
 argv.py ${foo%d\'}
-# stdout: ["'a", 'b', 'c']
+## stdout: ["'a", 'b', 'c']
 
-### Strip a string with single quotes, double quoted
+#### Strip a string with single quotes, double quoted
 foo="'a b c d'"
 argv.py "${foo%d\'}"
-# stdout: ["'a b c "]
+## stdout: ["'a b c "]
 
-### The string to strip is space sensitive
+#### The string to strip is space sensitive
 foo='a b c d'
 argv.py "${foo%c d}" "${foo%c  d}"
-# stdout: ['a b ', 'a b c d']
+## stdout: ['a b ', 'a b c d']
 
-### The string to strip can be single quoted, outer is unquoted
+#### The string to strip can be single quoted, outer is unquoted
 foo='a b c d'
 argv.py ${foo%'c d'} ${foo%'c  d'}
-# stdout: ['a', 'b', 'a', 'b', 'c', 'd']
+## stdout: ['a', 'b', 'a', 'b', 'c', 'd']
 
-### Strip a string with single quotes, double quoted, with unescaped '
+#### Strip a string with single quotes, double quoted, with unescaped '
 # We're in a double quoted context, so we should be able to use a literal
 # single quote.  This is very much the case with :-.
 foo="'a b c d'"
 argv.py "${foo%d'}"
-# stdout: ["'a b c "]
-# BUG bash/mksh stdout-json: ""
-# BUG bash status: 2
-# BUG mksh status: 1
+## stdout: ["'a b c "]
+## BUG bash/mksh stdout-json: ""
+## BUG bash status: 2
+## BUG mksh status: 1
 
-### The string to strip can be single quoted, outer is double quoted
+#### The string to strip can be single quoted, outer is double quoted
 # This is an inconsistency in bash/mksh because '' are treated as literals in
 # double quotes.  The correct ways are above.
 foo='a b c d'
 argv.py "${foo%'c d'}" "${foo%'c  d'}"
-# stdout: ['a b c d', 'a b c d']
-# BUG bash/mksh stdout: ['a b ', 'a b c d']
+## stdout: ['a b c d', 'a b c d']
+## BUG bash/mksh stdout: ['a b ', 'a b c d']
