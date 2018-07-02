@@ -81,7 +81,7 @@ def log(msg, *args):
 # In other words, it could be (name, value) or (qualifier, name, value)
 
 KEY_VALUE_RE = re.compile(r'''
-   [#][#]? \s+
+   [#][#] \s+
    (?: (OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?   # optional prefix
    ([\w\-]+)              # key
    :
@@ -89,7 +89,7 @@ KEY_VALUE_RE = re.compile(r'''
 ''', re.VERBOSE)
 
 END_MULTILINE_RE = re.compile(r'''
-    [#][#]? \s+ END
+    [#][#] \s+ END
 ''', re.VERBOSE)
 
 # Line types
@@ -109,8 +109,8 @@ def LineIter(f):
 
     line_num = i+1  # 1-based
 
-    if line.startswith('###'):
-      desc = line[3:].strip()
+    if line.startswith('####'):
+      desc = line[4:].strip()
       yield line_num, TEST_CASE_BEGIN, desc
       continue
 

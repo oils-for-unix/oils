@@ -9,7 +9,7 @@
 # different.
 # - ash has copied bash behavior!
 
-### command sub: errexit ignored
+#### command sub: errexit ignored
 # This is the bash-specific bug here:
 # https://blogs.janestreet.com/when-bash-scripts-bite/
 # In bash 4.4, inherit_errexit should fix this.
@@ -26,7 +26,7 @@ one
 status=0
 ## END
 
-### command sub: errexit not ignored with strict-errexit
+#### command sub: errexit not ignored with strict-errexit
 set -o errexit
 set -o strict-errexit || true
 echo zero
@@ -46,7 +46,7 @@ one two
 status=0
 ## END
 
-### command sub: last command fails but keeps going and exit code is 0
+#### command sub: last command fails but keeps going and exit code is 0
 set -o errexit
 echo $(echo one; false)  # we lost the exit code
 echo status=$?
@@ -55,7 +55,7 @@ one
 status=0
 ## END
 
-### global assignment with command sub: middle command fails
+#### global assignment with command sub: middle command fails
 set -o errexit
 s=$(echo one; false; echo two;)
 echo "$s"
@@ -68,14 +68,14 @@ two
 ## OK dash/mksh stdout-json: ""
 ## OK dash/mksh status: 1
 
-### global assignment with command sub: last command fails and it aborts
+#### global assignment with command sub: last command fails and it aborts
 set -o errexit
 s=$(echo one; false)
 echo status=$?
 ## stdout-json: ""
 ## status: 1
 
-### local: middle command fails and keeps going
+#### local: middle command fails and keeps going
 set -o errexit
 f() {
   echo good
@@ -96,7 +96,7 @@ status=0
 one
 ## END
 
-### local: last command fails and also keeps going
+#### local: last command fails and also keeps going
 set -o errexit
 f() {
   echo good
@@ -111,7 +111,7 @@ status=0
 one
 ## END
 
-### local and strict-errexit
+#### local and strict-errexit
 # I've run into this problem a lot.
 set -o errexit
 set -o strict-errexit || true  # ignore error
@@ -122,7 +122,7 @@ f() {
   echo $x
 }
 f
-# status: 1
+## status: 1
 ## STDOUT:
 good
 ## END
@@ -137,7 +137,7 @@ one two
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
-### global assignment when last status is failure
+#### global assignment when last status is failure
 # this is a bug I introduced
 set -o errexit
 [ -n "${BUILDDIR+x}" ] && _BUILDDIR=$BUILDDIR
@@ -147,7 +147,7 @@ echo status=$?
 status=0
 ## END
 
-### global assignment when last status is failure
+#### global assignment when last status is failure
 # this is a bug I introduced
 set -o errexit
 x=$(false) || true   # from abuild

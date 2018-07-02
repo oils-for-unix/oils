@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-### Process sub input
+#### Process sub input
 f=_tmp/process-sub.txt
 { echo 1; echo 2; echo 3; } > $f
 cat <(head -n 2 $f) <(tail -n 2 $f)
@@ -11,7 +11,7 @@ cat <(head -n 2 $f) <(tail -n 2 $f)
 3
 ## END
 
-### Process sub output
+#### Process sub output
 { echo 1; echo 2; echo 3; } > >(tac)
 ## STDOUT:
 3
@@ -19,7 +19,7 @@ cat <(head -n 2 $f) <(tail -n 2 $f)
 1
 ## END
 
-### Non-linear pipeline with >()
+#### Non-linear pipeline with >()
 stdout_stderr() {
   echo o1
   echo o2

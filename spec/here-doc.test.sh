@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 
-### Here string
+#### Here string
 cat <<< 'hi'
-# stdout-json: "hi\n"
-# N-I dash stdout-json: ""
-# N-I dash status: 2
+## stdout-json: "hi\n"
+## N-I dash stdout-json: ""
+## N-I dash status: 2
 
-### Here string with $
+#### Here string with $
 cat <<< $'one\ntwo\n'
-# stdout-json: "one\ntwo\n\n"
-# N-I dash stdout-json: ""
-# N-I dash status: 2
+## stdout-json: "one\ntwo\n\n"
+## N-I dash stdout-json: ""
+## N-I dash status: 2
 
-### Here redirect with explicit descriptor
+#### Here redirect with explicit descriptor
 # A space betwen 0 and <<EOF causes it to pass '0' as an arg to cat.
 cat 0<<EOF
 one
 EOF
-# stdout: one
+## stdout: one
 
-### Here doc from another input file descriptor
+#### Here doc from another input file descriptor
 # NOTE: OSH fails on descriptor 9, but not descriptor 8?  Is this because of
 # the Python VM?  How  to inspect state?
 read_from_fd.py 8  8<<EOF
 here doc on descriptor
 EOF
-# stdout: 8: here doc on descriptor
+## stdout: 8: here doc on descriptor
 
-### Multiple here docs with different descriptors
+#### Multiple here docs with different descriptors
 read_from_fd.py 0 3 <<EOF 3<<EOF3
 fd0
 EOF
@@ -38,37 +38,37 @@ EOF3
 3: fd3
 ## END
 
-### Here doc with bad var delimiter
+#### Here doc with bad var delimiter
 cat <<${a}
 here
 ${a}
-# stdout: here
+## stdout: here
 
-### Here doc with bad comsub delimiter
+#### Here doc with bad comsub delimiter
 # bash is OK with this; dash isn't.  Should be a parse error.
 cat <<$(a)
 here
 $(a)
-# stdout-json: ""
-# status: 2
-# BUG bash stdout: here
-# BUG bash status: 0
-# OK mksh status: 1
+## stdout-json: ""
+## status: 2
+## BUG bash stdout: here
+## BUG bash status: 0
+## OK mksh status: 1
 
-### Here doc and < redirect -- last one wins
+#### Here doc and < redirect -- last one wins
 echo hello >$TMP/hello.txt  # temporary fix
 cat <<EOF <$TMP/hello.txt
 here
 EOF
-# stdout: hello
+## stdout: hello
 
-### < redirect and here doc -- last one wins
+#### < redirect and here doc -- last one wins
 cat <$TMP/hello.txt <<EOF
 here
 EOF
-# stdout: here
+## stdout: here
 
-### Here doc with var sub, command sub, arith sub
+#### Here doc with var sub, command sub, arith sub
 var=v
 cat <<EOF
 var: ${var}
@@ -81,7 +81,7 @@ command: hi
 arith: 3
 ## END
 
-### Here doc in middle.  And redirects in the middle.
+#### Here doc in middle.  And redirects in the middle.
 # This isn't specified by the POSIX grammar, but it's accepted by both dash and
 # bash!
 echo foo > _tmp/foo.txt
@@ -95,7 +95,7 @@ here
 bar
 ## END
 
-### Here doc line continuation
+#### Here doc line continuation
 cat <<EOF \
 ; echo two
 one
@@ -105,14 +105,14 @@ one
 two
 ## END
 
-### Here doc with quote expansion in terminator
+#### Here doc with quote expansion in terminator
 cat <<'EOF'"2"
 one
 two
 EOF2
-# stdout-json: "one\ntwo\n"
+## stdout-json: "one\ntwo\n"
 
-### Here doc with multiline double quoted string
+#### Here doc with multiline double quoted string
 cat <<EOF; echo "two
 three"
 one
@@ -123,25 +123,25 @@ two
 three
 ## END
 
-### Two here docs -- first is ignored; second ones wins!
+#### Two here docs -- first is ignored; second ones wins!
 <<EOF1 cat <<EOF2
 hello
 EOF1
 there
 EOF2
-# stdout: there
+## stdout: there
 
-### Here doc with line continuation, then pipe.  Syntax error.
+#### Here doc with line continuation, then pipe.  Syntax error.
 cat <<EOF \
 1
 2
 3
 EOF
 | tac
-# status: 2
-# OK mksh status: 1
+## status: 2
+## OK mksh status: 1
 
-### Here doc with pipe on first line
+#### Here doc with pipe on first line
 cat <<EOF | tac
 1
 2
@@ -153,7 +153,7 @@ EOF
 1
 ## END
 
-### Here doc with pipe continued on last line
+#### Here doc with pipe continued on last line
 cat <<EOF |
 1
 2
@@ -166,15 +166,15 @@ tac
 1
 ## END
 
-### Here doc with builtin 'read'
+#### Here doc with builtin 'read'
 # read can't be run in a subshell.
 read v1 v2 <<EOF
 val1 val2
 EOF
 echo =$v1= =$v2=
-# stdout: =val1= =val2=
+## stdout: =val1= =val2=
 
-### Compound command here doc
+#### Compound command here doc
 while read line; do
   echo X $line
 done <<EOF
@@ -189,7 +189,7 @@ X 3
 ## END
 
 
-### Here doc in while condition and here doc in body
+#### Here doc in while condition and here doc in body
 while cat <<E1 && cat <<E2; do cat <<E3; break; done
 1
 E1
@@ -203,7 +203,7 @@ E3
 3
 ## END
 
-### Here doc in while condition and here doc in body on multiple lines
+#### Here doc in while condition and here doc in body on multiple lines
 while cat <<E1 && cat <<E2
 1
 E1
@@ -221,7 +221,7 @@ done
 3
 ## END
 
-### Here doc in while loop split up more
+#### Here doc in while loop split up more
 while cat <<E1
 1
 E1
@@ -242,17 +242,17 @@ done
 3
 ## END
 
-### Mixing << and <<-
+#### Mixing << and <<-
 cat <<-EOF; echo --; cat <<EOF2
 	one
 EOF
 two
 EOF2
-# stdout-json: "one\n--\ntwo\n"
+## stdout-json: "one\n--\ntwo\n"
 
 
 
-### Two compound commands with two here docs
+#### Two compound commands with two here docs
 while read line; do echo X $line; done <<EOF; echo ==;  while read line; do echo Y $line; done <<EOF2
 1
 2
@@ -260,35 +260,35 @@ EOF
 3
 4
 EOF2
-# stdout-json: "X 1\nX 2\n==\nY 3\nY 4\n"
+## stdout-json: "X 1\nX 2\n==\nY 3\nY 4\n"
 
-### Function def and execution with here doc
+#### Function def and execution with here doc
 func() { cat; } <<EOF; echo before; func; echo after 
 1
 2
 EOF
-# stdout-json: "before\n1\n2\nafter\n"
+## stdout-json: "before\n1\n2\nafter\n"
 
-### Here doc as command prefix
+#### Here doc as command prefix
 <<EOF tac
 1
 2
 3
 EOF
-# stdout-json: "3\n2\n1\n"
+## stdout-json: "3\n2\n1\n"
 
   # NOTE that you can have redirection AFTER the here doc thing.  And you don't
   # need a space!  Those are operators.
   #
   # POSIX doesn't seem to have this?  They have io_file, which is for
   # filenames, and io_here, which is here doc.  But about 1>&2 syntax?  Geez.
-### Redirect after here doc
+#### Redirect after here doc
 cat <<EOF 1>&2
 out
 EOF
-# stderr: out
+## stderr: out
 
-### here doc stripping tabs
+#### here doc stripping tabs
 cat <<-EOF
 	1
 	2
@@ -300,15 +300,15 @@ EOF
   3
 ## END
 
-### Here doc within subshell with boolean
+#### Here doc within subshell with boolean
 [[ $(cat <<EOF
 foo
 EOF
 ) == foo ]]; echo $?
-# stdout: 0
-# N-I dash stdout: 127
+## stdout: 0
+## N-I dash stdout: 127
 
-### Here Doc in if condition
+#### Here Doc in if condition
 if cat <<EOF; then
 here doc in IF CONDITION
 EOF
@@ -319,7 +319,7 @@ here doc in IF CONDITION
 THEN executed
 ## END
 
-### Multiple here docs in pipeline
+#### Multiple here docs in pipeline
 # SKIPPED: hangs with osh on Debian
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
 read_from_fd.py 3 3<<EOF3 | read_from_fd.py 0 5 5<<EOF5
@@ -332,7 +332,7 @@ EOF5
 5: fd5
 ## END
 
-### Multiple here docs in pipeline on multiple lines
+#### Multiple here docs in pipeline on multiple lines
 # SKIPPED: hangs with osh on Debian
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
 read_from_fd.py 3 3<<EOF3 |

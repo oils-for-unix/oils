@@ -2,21 +2,21 @@
 #
 # Test the if statement
 
-### If
+#### If
 if true; then
   echo if
 fi
-# stdout: if
+## stdout: if
 
-### else
+#### else
 if false; then
   echo if
 else
   echo else
 fi
-# stdout: else
+## stdout: else
 
-### elif
+#### elif
 if (( 0 )); then
   echo if
 elif true; then
@@ -24,9 +24,9 @@ elif true; then
 else
   echo else
 fi
-# stdout: elif
+## stdout: elif
 
-### Long style
+#### Long style
 if [[ 0 -eq 1 ]]
 then
   echo if
@@ -38,34 +38,34 @@ else
   echo else
   echo else
 fi
-# stdout: elif
+## stdout: elif
 
 # Weird case from bash-help mailing list.
 #
 # "Evaluations of backticks in if statements".  It doesn't relate to if
 # statements but to $?, since && and || behave the same way.
 
-### If empty command
+#### If empty command
 if ''; then echo TRUE; else echo FALSE; fi
-# stdout: FALSE
-# status: 0
+## stdout: FALSE
+## status: 0
 
-### If subshell true
+#### If subshell true
 if `true`; then echo TRUE; else echo FALSE; fi
-# stdout: TRUE
-# status: 0
+## stdout: TRUE
+## status: 0
 
-### If subshell true WITH OUTPUT is different
+#### If subshell true WITH OUTPUT is different
 if `sh -c 'echo X; true'`; then echo TRUE; else echo FALSE; fi
-# stdout: FALSE
-# status: 0
+## stdout: FALSE
+## status: 0
 
-### If subshell true WITH ARGUMENT
+#### If subshell true WITH ARGUMENT
 if `true` X; then echo TRUE; else echo FALSE; fi
-# stdout: FALSE
-# status: 0
+## stdout: FALSE
+## status: 0
 
-### If subshell false
+#### If subshell false
 if `false`; then echo TRUE; else echo FALSE; fi
-# stdout: FALSE
-# status: 0
+## stdout: FALSE
+## status: 0

@@ -1,25 +1,25 @@
 #!/bin/bash
 
-### trap -l
+#### trap -l
 trap -l | grep INT >/dev/null
 ## status: 0
 ## N-I dash/mksh status: 1
 
-### trap -p
+#### trap -p
 trap 'echo exit' EXIT
 trap -p | grep EXIT >/dev/null
 ## status: 0
 ## N-I dash/mksh status: 1
 
-### Register invalid trap
+#### Register invalid trap
 trap 'foo' SIGINVALID
 ## status: 1
 
-### Remove invalid trap
+#### Remove invalid trap
 trap - SIGINVALID
 ## status: 1
 
-### SIGINT and INT are aliases
+#### SIGINT and INT are aliases
 trap - SIGINT
 echo $?
 trap - INT
@@ -33,14 +33,14 @@ echo $?
 0
 ## END
 
-### Invalid trap invocation
+#### Invalid trap invocation
 trap 'foo'
 echo status=$?
 ## stdout: status=1
 ## OK bash stdout: status=2
 ## BUG mksh stdout: status=0
 
-### exit 1 when trap code string is invalid
+#### exit 1 when trap code string is invalid
 # All shells spew warnings to stderr, but don't actually exit!  Bad!
 trap 'echo <' EXIT
 echo status=$?
@@ -50,14 +50,14 @@ echo status=$?
 ## BUG dash/bash status: 0
 ## BUG dash/bash stdout: status=0
 
-### trap EXIT
+#### trap EXIT
 cleanup() {
   echo "cleanup [$@]"
 }
 trap 'cleanup x y z' EXIT
 ## stdout: cleanup [x y z]
 
-### trap DEBUG
+#### trap DEBUG
 debuglog() {
   echo "debuglog [$@]"
 }
@@ -75,7 +75,7 @@ debuglog [x y]
 2
 ## END
 
-### trap RETURN
+#### trap RETURN
 profile() {
   echo "profile [$@]"
 }
@@ -117,7 +117,7 @@ g
 return-helper.sh
 ## END
 
-### trap ERR and disable it
+#### trap ERR and disable it
 err() {
   echo "err [$@] $?"
 }
@@ -134,7 +134,7 @@ err [x y] 1
 2
 3
 ## END
-# N-I dash STDOUT:
+## N-I dash STDOUT:
 1
 2
 3

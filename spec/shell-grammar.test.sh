@@ -6,69 +6,69 @@
 # These tests should run under the normal shell.  But REAL shel tests won't run
 # under the fake shells grammar/shell*.sh
 
-### Simple command
+#### Simple command
 echo
 
-### Command with args
+#### Command with args
 echo word word
 
-### Command with trailer
+#### Command with trailer
 echo word word &
 
-### a & b
+#### a & b
 echo word_a & echo word_b
 
-### a & b &
+#### a & b &
 echo word_a & echo word_b &
 
-### a && b 
+#### a && b 
 echo word_a && echo word_b 
 
-### a || b 
+#### a || b 
 echo word_a || echo word_b 
 
-### a && b || c
+#### a && b || c
 echo word_a && echo word_b || echo
 
-### Invalid token
+#### Invalid token
 invalid
 # TODO: change these to qualifiers!
-# status: 99
+## status: 99
 
-### Filename Redirect
+#### Filename Redirect
 echo 2>filename
 
-### Append redirect
+#### Append redirect
 echo >>filename
 
-### Prefix redirect
+#### Prefix redirect
 <filename echo 
 
-### Var assignment
+#### Var assignment
 NAME=foo echo >>filename
 
-### Brace group
+#### Brace group
 { echo
   echo
 }
 
-### Brace group on oneline
+#### Brace group on oneline
 { echo word_a; echo word_b; }
 
-### Subshell
+#### Subshell
 (echo word_a; echo word_b;)
 
-### Command sub
+#### Command sub
 #echo $(echo word_a; echo word_b;)
 echo
 
-### Subshell on multiple lines
+#### Subshell on multiple lines
 (echo
 echo
 echo
 )
 
-### For loop
+#### For loop
 # TODO: need to add variables
 for name in word_a word_b word_c
 do
@@ -76,7 +76,7 @@ do
   echo word_y
 done
 
-### While loop with empty lines
+#### While loop with empty lines
 while ! echo word_a
 do
 
@@ -86,14 +86,14 @@ do
 
 done
 
-### Until loop
+#### Until loop
 until echo word_a
 do
   echo word_b
   echo word_c
 done
 
-### If
+#### If
 if echo
 then
   echo
@@ -101,26 +101,26 @@ else
   echo
 fi
 
-### If with then on same line
+#### If with then on same line
 if echo; then
   echo
 else
   echo
 fi
 
-### If with then on same line missing semicolon
+#### If with then on same line missing semicolon
 # My ANTLR parsers fail to flag this.  The 'else' keyword should be unexpected.
 if echo then
   echo
 else
   echo
 fi
-# status: 2
+## status: 2
 
-### If on one line
+#### If on one line
 if echo; then echo; else echo; fi
 
-### If pipe
+#### If pipe
 if echo | echo word_b; then
   echo
 else
@@ -128,44 +128,44 @@ else
 fi
 
 
-### Empty case
+#### Empty case
 case word_a in
 esac
 
-### Case without last dsemi
+#### Case without last dsemi
 case word_a in
   word_b) echo
 esac
 
-### Case with last dsemi
+#### Case with last dsemi
 case word_a in
   word_b) echo
     ;;
 esac
 
-### Case with empty clauses
+#### Case with empty clauses
 case word_a in
   word_b)
     ;;
   word_c)
 esac
 
-### case item without ;; is not allowed
+#### case item without ;; is not allowed
 case word_a in
   word_a)
   word_b)
     echo
     ;;
 esac
-# status: 99
+## status: 99
 
 
-### Case with last dsemi on same line
+#### Case with last dsemi on same line
 case word_a in
   word_b) echo ;;
 esac
 
-### Case with 2 options
+#### Case with 2 options
 case word_a in
   word_b|word_c)
     echo word_d
@@ -176,18 +176,18 @@ case word_a in
     ;;
 esac
 
-### Case all on one line
+#### Case all on one line
 case word_a in word_b) echo ;; word_c) echo ;; esac
 
-### Case all on one line without trailing ;;
+#### Case all on one line without trailing ;;
 case word_a in word_b) echo word_b;; word_c) echo word_c; esac
 
-### Case all on one line without trailing ;; or ;
+#### Case all on one line without trailing ;; or ;
 # My ANTLR parsers don't fail here and they should.
 case word_a in word_b) echo word_b;; word_c) echo word_c esac
-# status: 99
+## status: 99
 
-### case: Using ; instead of ;;
+#### case: Using ; instead of ;;
 case word_a in
   word_a)
     ;
@@ -195,10 +195,10 @@ case word_a in
     echo
     ;;
 esac
-# status: 99
+## status: 99
 
 
-### Function def
+#### Function def
 name_a() {
   echo word_a
   echo word_b

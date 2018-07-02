@@ -3,7 +3,7 @@
 # Constructs borrowed from ksh.  Hm I didn't realize zsh also implements these!
 # mksh implements most too.
 
-### C-style for loop
+#### C-style for loop
 n=10
 for ((a=1; a <= n ; a++))  # Double parentheses, and naked 'n'
 do
@@ -24,7 +24,7 @@ done  # A construct borrowed from ksh93.
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
-### For loop with and without semicolon
+#### For loop with and without semicolon
 for ((a=1; a <= 3; a++)); do
   echo $a
 done  # A construct borrowed from ksh93.
@@ -42,7 +42,7 @@ done  # A construct borrowed from ksh93.
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
-### For loop with empty head
+#### For loop with empty head
 a=1
 for ((;;)); do
   if test $a = 4; then

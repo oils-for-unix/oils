@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-### Subshell exit code
+#### Subshell exit code
 ( false; )
 echo $?
-# stdout: 1
-# status: 0
+## stdout: 1
+## status: 0

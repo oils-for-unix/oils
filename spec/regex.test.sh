@@ -34,7 +34,7 @@
 # From bash code: ( | ) are treated special.  Normally they must be quoted, but
 # they can be UNQUOTED in BASH_REGEX state.  In fact they can't be quoted!
 
-### BASH_REMATCH
+#### BASH_REMATCH
 [[ foo123 =~ ([a-z]+)([0-9]+) ]]
 argv.py "${BASH_REMATCH[@]}"
 ## STDOUT:
@@ -44,89 +44,89 @@ argv.py "${BASH_REMATCH[@]}"
 ['']
 ## END
 
-### Match is unanchored at both ends
+#### Match is unanchored at both ends
 [[ 'bar' =~ a ]] && echo true
-# stdout: true
+## stdout: true
 
-### Failed match
+#### Failed match
 [[ 'bar' =~ X ]] && echo true
-# status: 1
-# stdout-json: ""
+## status: 1
+## stdout-json: ""
 
-### Regex quoted with \ -- preferred in bash
+#### Regex quoted with \ -- preferred in bash
 [[ 'a b' =~ ^(a\ b)$ ]] && echo true
-# stdout: true
+## stdout: true
 
-### Regex quoted with single quotes
+#### Regex quoted with single quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ '^(a b)$' ]] && echo true
-# stdout: true
-# status: 0
-# OK bash stdout-json: ""
-# OK bash status: 1
+## stdout: true
+## status: 0
+## OK bash stdout-json: ""
+## OK bash status: 1
 
-### Regex quoted with double quotes
+#### Regex quoted with double quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ "^(a b)$" ]] && echo true
-# stdout: true
-# status: 0
-# OK bash stdout-json: ""
-# OK bash status: 1
+## stdout: true
+## status: 0
+## OK bash stdout-json: ""
+## OK bash status: 1
 
-### Fix single quotes by storing in variable
+#### Fix single quotes by storing in variable
 pat='^(a b)$'
 [[ 'a b' =~ $pat ]] && echo true
-# stdout: true
+## stdout: true
 
-### Fix single quotes by storing in variable
+#### Fix single quotes by storing in variable
 pat="^(a b)$"
 [[ 'a b' =~ $pat ]] && echo true
-# stdout: true
+## stdout: true
 
-### Double quoting pat variable -- again bash doesn't like it.
+#### Double quoting pat variable -- again bash doesn't like it.
 pat="^(a b)$"
 [[ 'a b' =~ "$pat" ]] && echo true
-# stdout: true
-# status: 0
-# OK bash stdout-json: ""
-# OK bash status: 1
+## stdout: true
+## status: 0
+## OK bash stdout-json: ""
+## OK bash status: 1
 
-### Regex with == and not =~ is parse error, different lexer mode required
+#### Regex with == and not =~ is parse error, different lexer mode required
 # They both give a syntax error.  This is lame.
 [[ '^(a b)$' == ^(a\ b)$ ]] && echo true
-# status: 2
-# OK zsh status: 1
+## status: 2
+## OK zsh status: 1
 
-### Omitting ( )
+#### Omitting ( )
 [[ '^a b$' == ^a\ b$ ]] && echo true
-# stdout: true
+## stdout: true
 
-### Malformed regex
+#### Malformed regex
 # Are they trying to PARSE the regex?  Do they feed the buffer directly to
 # regcomp()?
 [[ 'a b' =~ ^)a\ b($ ]] && echo true
-# status: 2
-# OK zsh status: 1
+## status: 2
+## OK zsh status: 1
 
-### Regex with char class
+#### Regex with char class
 # For some reason it doesn't work without parens?
 [[ 'ba ba ' =~ ([a b]+) ]] && echo true
-# stdout: true
+## stdout: true
 
-### Operators lose meaning in () in regex state (BASH_REGEX_CAHRS)
+#### Operators lose meaning in () in regex state (BASH_REGEX_CAHRS)
 [[ '< >' =~ (< >) ]] && echo true
-# stdout: true
-# N-I zsh stdout-json: ""
-# N-I zsh status: 1
+## stdout: true
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
 
-### Regex with |
+#### Regex with |
 [[ 'bar' =~ foo|bar ]] && echo true
-# stdout: true
-# N-I zsh stdout-json: ""
-# N-I zsh status: 1
+## stdout: true
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
 
-### Double quoted regex gets regex-escaped
+#### Double quoted regex gets regex-escaped
 [[ { =~ "{" ]] && echo true
-# stdout: true
-# N-I zsh status: 1
-# N-I zsh stdout-json: ""
+## stdout: true
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
