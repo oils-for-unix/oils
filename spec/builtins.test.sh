@@ -209,7 +209,7 @@ umask | grep '[0-9]\+'  # check for digits
 ## status: 0
 
 #### set umask in octal
-rm $TMP/umask-one $TMP/umask-two
+rm -f $TMP/umask-one $TMP/umask-two
 umask 0002
 echo one > $TMP/umask-one
 umask 0022
