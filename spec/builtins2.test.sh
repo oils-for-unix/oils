@@ -1,6 +1,6 @@
 #!/bin/bash
 
-### command -v
+#### command -v
 myfunc() { echo x; }
 command -v echo
 echo $?
@@ -28,7 +28,7 @@ for
 0
 ## END
 
-### command -v with multiple names
+#### command -v with multiple names
 # ALL FOUR SHELLS behave differently here!
 #
 # bash chooses to swallow the error!  We agree with zsh if ANY word lookup

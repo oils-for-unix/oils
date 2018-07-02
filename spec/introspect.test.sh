@@ -22,7 +22,7 @@
 # Geez.
 
 
-### ${FUNCNAME[@]} array
+#### ${FUNCNAME[@]} array
 g() {
   argv.py "${FUNCNAME[@]}"
 }
@@ -38,7 +38,7 @@ f
 ['f']
 ## END
 
-### FUNCNAME with source
+#### FUNCNAME with source
 f() {
   . spec/testdata/echo-funcname.sh
 }
@@ -54,7 +54,7 @@ argv.py "${FUNCNAME[@]}"
 []
 ## END
 
-### ${BASH_SOURCE[@]} is a stack of source files for function calls
+#### ${BASH_SOURCE[@]} is a stack of source files for function calls
 $SH spec/testdata/bash-source.sh
 ## STDOUT: 
 ['begin F funcs', 'f', 'main']
@@ -68,7 +68,7 @@ $SH spec/testdata/bash-source.sh
 ['end F lines', '21', '0']
 ## END
 
-### ${BASH_LINENO[@]} is a stack of line numbers for function calls
+#### ${BASH_LINENO[@]} is a stack of line numbers for function calls
 # note: it's CALLS, not DEFINITIONS.
 g() {
   argv.py G "${BASH_LINENO[@]}"
@@ -85,7 +85,7 @@ f  # line 9
 ['end F', '9']
 ## END
 
-### $LINENO is the current line, not line of function call
+#### $LINENO is the current line, not line of function call
 g() {
   argv.py $LINENO  # line 2
 }

@@ -3,35 +3,35 @@
 # Usage:
 #   ./errexit.test.sh <function name>
 
-### errexit aborts early
+#### errexit aborts early
 set -o errexit
 false
 echo done
-# stdout-json: ""
-# status: 1
+## stdout-json: ""
+## status: 1
 
-### errexit for nonexistent command
+#### errexit for nonexistent command
 set -o errexit
 nonexistent__ZZ
 echo done
-# stdout-json: ""
-# status: 127
+## stdout-json: ""
+## status: 127
 
-### errexit aborts early on pipeline
+#### errexit aborts early on pipeline
 set -o errexit
 echo hi | grep nonexistent
 echo two
-# stdout-json: ""
-# status: 1
+## stdout-json: ""
+## status: 1
 
-### errexit with { }
+#### errexit with { }
 # This aborts because it's not part of an if statement.
 set -o errexit
 { echo one; false; echo two; }
-# stdout: one
-# status: 1
+## stdout: one
+## status: 1
 
-### errexit with if and { }
+#### errexit with if and { }
 set -o errexit
 if { echo one; false; echo two; }; then
   echo three
@@ -45,52 +45,52 @@ three
 four
 ## END
 
-### errexit with ||
+#### errexit with ||
 set -o errexit
 echo hi | grep nonexistent || echo ok
-# stdout: ok
-# status: 0
+## stdout: ok
+## status: 0
 
-### errexit with &&
+#### errexit with &&
 set -o errexit
 echo ok && echo hi | grep nonexistent 
-# stdout: ok
-# status: 1
+## stdout: ok
+## status: 1
 
-### errexit test && -- from gen-module-init
+#### errexit test && -- from gen-module-init
 set -o errexit
 test "$mod" = readline && echo "#endif"
 echo status=$?
-# stdout: status=1
+## stdout: status=1
 
-### errexit test && and fail
+#### errexit test && and fail
 set -o errexit
 test -n X && false
 echo status=$?
-# stdout-json: ""
-# status: 1
+## stdout-json: ""
+## status: 1
 
-### errexit and loop
+#### errexit and loop
 set -o errexit
 for x in 1 2 3; do
   test $x = 2 && echo "hi $x"
 done
-# stdout: hi 2
-# status: 1
+## stdout: hi 2
+## status: 1
 
-### errexit and brace group { }
+#### errexit and brace group { }
 set -o errexit
 { test no = yes && echo hi; }
 echo status=$?
-# stdout: status=1
+## stdout: status=1
 
-### errexit and time { }
+#### errexit and time { }
 set -o errexit
 time false
 echo status=$?
-# status: 1
+## status: 1
 
-### errexit with !
+#### errexit with !
 set -o errexit
 echo one
 ! true
@@ -103,7 +103,7 @@ two
 three
 ## END
 
-### errexit with ! and ;
+#### errexit with ! and ;
 # AST has extra Sentence nodes; there was a REGRESSION here.
 set -o errexit; echo one; ! true; echo two; ! false; echo three
 ## STDOUT:
@@ -112,7 +112,7 @@ two
 three
 ## END
 
-### errexit with while/until
+#### errexit with while/until
 set -o errexit
 while false; do
   echo ok
@@ -121,10 +121,10 @@ until false; do
   echo ok  # do this once then exit loop
   break
 done
-# stdout: ok
-# status: 0
+## stdout: ok
+## status: 0
 
-### errexit with (( ))
+#### errexit with (( ))
 # from http://mywiki.wooledge.org/BashFAQ/105, this changed between verisons.
 # ash says that 'i++' is not found, but it doesn't exit.  I guess this is the 
 # subshell problem?
@@ -132,14 +132,14 @@ set -o errexit
 i=0
 (( i++ ))
 echo done
-# stdout-json: ""
-# status: 1
-# N-I dash status: 127
-# N-I dash stdout-json: ""
-# BUG ash status: 0
-# BUG ash stdout: done
+## stdout-json: ""
+## status: 1
+## N-I dash status: 127
+## N-I dash stdout-json: ""
+## BUG ash status: 0
+## BUG ash stdout: done
 
-### errexit with subshell
+#### errexit with subshell
 set -o errexit
 ( echo one; false; echo two; )
 echo three
@@ -152,7 +152,7 @@ one
 three
 ## END
 
-### setting errexit while it's being ignored
+#### setting errexit while it's being ignored
 # ignored and then set again
 set -o errexit
 # osh aborts early here
@@ -176,7 +176,7 @@ echo 7
 6
 ## END
 
-### setting errexit in a subshell works but doesn't affect parent shell
+#### setting errexit in a subshell works but doesn't affect parent shell
 ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4; )
 echo 5
 false
@@ -189,7 +189,7 @@ echo 6
 6
 ## END
 
-### setting errexit while it's being ignored in a subshell
+#### setting errexit while it's being ignored in a subshell
 set -o errexit
 if ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4 ); then
   echo 5;
@@ -211,7 +211,7 @@ echo 7
 6
 ## END
 
-### errexit double guard
+#### errexit double guard
 # OSH bug fix.  ErrExit needs a counter, not a boolean.
 set -o errexit
 if { ! false; false; true; } then
@@ -224,7 +224,7 @@ echo done
 true
 ## END
 
-### background processes respect errexit
+#### background processes respect errexit
 set -o errexit
 { echo one; false; echo two; exit 42; } &
 wait $!
@@ -233,7 +233,7 @@ wait $!
 one
 ## END
 
-### pipeline process respects errexit
+#### pipeline process respects errexit
 set -o errexit
 # It is respected here.
 { echo one; false; echo two; } | cat
@@ -244,7 +244,7 @@ set -o errexit
   false
 done
 echo four
-# status: 1
+## status: 1
 ## STDOUT:
 one
 [three]

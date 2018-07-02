@@ -3,7 +3,7 @@
 # Arrays decay upon assignment (without splicing) and equality.  This will not
 # be true in Oil -- arrays will be first class.
 
-### Assignment Causes Array Decay
+#### Assignment Causes Array Decay
 set -- x y z
 argv.py "[$@]"
 var="[$@]"
@@ -13,14 +13,14 @@ argv.py "$var"
 ['[x y z]']
 ## END
 
-### Array Decay with IFS
+#### Array Decay with IFS
 IFS=x
 set -- x y z
 var="[$@]"
 argv.py "$var"
-# stdout: ['[x y z]']
+## stdout: ['[x y z]']
 
-### User arrays decay
+#### User arrays decay
 declare -a a b
 a=(x y z)
 b="${a[@]}"  # this collapses to a string
@@ -35,26 +35,26 @@ argv.py "${c[@]}"
 ['x', 'YYY', 'z']
 ## END
 
-### $a gives first element of array
+#### $a gives first element of array
 a=(1 '2 3')
 echo $a
-# stdout: 1
+## stdout: 1
 
-### Assign to array index without initialization
+#### Assign to array index without initialization
 a[5]=5
 a[6]=6
 echo "${a[@]}" ${#a[@]}
-# stdout: 5 6 2
+## stdout: 5 6 2
 
-### a[40] grows array
+#### a[40] grows array
 a=(1 2 3)
 a[1]=5
 a[40]=30  # out of order
 a[10]=20
 echo "${a[@]}" "${#a[@]}"  # length is 1
-# stdout: 1 5 3 20 30 5
+## stdout: 1 5 3 20 30 5
 
-### array decays to string when comparing with [[ a = b ]]
+#### array decays to string when comparing with [[ a = b ]]
 a=('1 2' '3 4')
 s='1 2 3 4'  # length 2, length 4
 echo ${#a[@]} ${#s}
@@ -64,13 +64,13 @@ echo ${#a[@]} ${#s}
 EQUAL
 ## END
 
-### Increment array variables
+#### Increment array variables
 a=(1 2)
 (( a++ ))  # doesn't make sense
 echo "${a[@]}"
-# stdout: 2 2
+## stdout: 2 2
 
-### Apply vectorized operations on ${a[*]}
+#### Apply vectorized operations on ${a[*]}
 a=('-x-' 'y-y' '-z-')
 
 # This does the prefix stripping FIRST, and then it joins.

@@ -6,7 +6,7 @@
 #
 # Bash is the only one that doesn't support aliases!
 
-### basic alias
+#### basic alias
 shopt -s expand_aliases  # bash requires this
 alias hi='echo hello world'
 hi
@@ -16,7 +16,7 @@ hello world
 hi
 ## END
 
-### alias with trailing space causes second alias expansion
+#### alias with trailing space causes second alias expansion
 shopt -s expand_aliases  # bash requires this
 
 alias hi='echo hello world '
@@ -33,7 +33,7 @@ hello world !!!
 hello world punct
 ## END
 
-### iterative alias expansion of first word
+#### iterative alias expansion of first word
 shopt -s expand_aliases  # bash requires this
 alias hi='echo hello world'
 alias echo='echo --; echo '
@@ -44,7 +44,7 @@ hello world
 ## END
 
 
-### expansion of alias with value
+#### expansion of alias with value
 shopt -s expand_aliases  # bash requires this
 x=x
 alias echo-x='echo $x'  # nothing is evaluated here
@@ -55,7 +55,7 @@ y hi
 ## END
 
 
-### first and second word are the same
+#### first and second word are the same
 shopt -s expand_aliases  # bash requires this
 x=x
 alias echo-x='echo $x'  # nothing is evaluated here
@@ -67,7 +67,7 @@ x echo-x
 x echo x
 ## END
 
-### first and second word are the same with trailing space
+#### first and second word are the same with trailing space
 shopt -s expand_aliases  # bash requires this
 x=x
 alias echo-x='echo $x '  # nothing is evaluated here
@@ -76,7 +76,7 @@ echo-x echo-x
 x echo x
 ## END
 
-### defining multiple aliases, then unalias
+#### defining multiple aliases, then unalias
 shopt -s expand_aliases  # bash requires this
 x=x
 y=y
@@ -94,22 +94,22 @@ undefined
 ## END
 
 
-### Invalid syntax of alias
+#### Invalid syntax of alias
 shopt -s expand_aliases  # bash requires this
-alias e= 'echo --; echo'  # bad space here
-e x
+alias echo_alias_= 'echo --; echo'  # bad space here
+echo_alias_ x
 ## status: 127
 
-### Dynamic alias definition
+#### Dynamic alias definition
 shopt -s expand_aliases  # bash requires this
 x=x
-name='e'
+name='echo_alias_'
 val='=echo'
 alias "$name$val"
-e X
+echo_alias_ X
 ## stdout: X
 
-### Alias detection happens before expansion
+#### Alias detection happens before expansion
 shopt -s expand_aliases  # bash requires this
 alias echo_alias_='echo'
 cmd=echo_alias_
@@ -121,7 +121,7 @@ X
 status=127
 ## END
 
-### Alias name with punctuation
+#### Alias name with punctuation
 # NOTE: / is not OK in bash, but OK in other shells.  Must less restrictive
 # than var names.
 shopt -s expand_aliases  # bash requires this

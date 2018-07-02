@@ -2,7 +2,7 @@
 #
 # xtrace test.  Test PS4 and line numbers, etc.
 
-### set -o verbose prints unevaluated code
+#### set -o verbose prints unevaluated code
 set -o verbose
 x=foo
 y=bar
@@ -24,7 +24,7 @@ echo $(echo $y)
 echo $y
 ## END
 
-### xtrace with whitespace and quotes
+#### xtrace with whitespace and quotes
 set -o xtrace
 echo '1 2' \' \"
 ## STDOUT:
@@ -35,20 +35,20 @@ echo '1 2' \' \"
 + echo 1 2 ' "
 ## END
 
-### CASE: xtrace with newlines
+#### CASE: xtrace with newlines
 # bash and dash trace this badly.  They print literal newlines, which I don't
 # want.
 set -x
 echo $'[\n]'
-# STDOUT:
+## STDOUT:
 [
 ]
-# stderr-json: "+ echo $'[\\n]'\n"
-# OK bash stderr-json: "+ echo '[\n]'\n"
-# N-I dash stdout-json: "$[\n]\n"
-# N-I dash stderr-json: "+ echo $[\\n]\n"
+## stderr-json: "+ echo $'[\\n]'\n"
+## OK bash stderr-json: "+ echo '[\n]'\n"
+## N-I dash stdout-json: "$[\n]\n"
+## N-I dash stderr-json: "+ echo $[\\n]\n"
 
-### xtrace written before command executes
+#### xtrace written before command executes
 set -x
 echo one >&2
 echo two >&2
@@ -68,7 +68,7 @@ one
 two
 ## END
 
-### PS4 is scoped
+#### PS4 is scoped
 set -x
 echo one
 f() { 
@@ -106,7 +106,7 @@ echo two
 + echo two
 ## END
 
-### xtrace with variables in PS4
+#### xtrace with variables in PS4
 PS4='+$x:'
 set -o xtrace
 x=1
@@ -139,7 +139,7 @@ two
 +2:echo two
 ## END
 
-### PS4 with unterminated ${
+#### PS4 with unterminated ${
 x=1
 PS4='+${x'
 set -o xtrace
@@ -150,12 +150,12 @@ one
 status=0
 ## END
 # mksh and dash both fail.  bash prints errors to stderr.
-# OK dash stdout-json: ""
-# OK dash status: 2
-# OK mksh stdout-json: ""
-# OK mksh status: 1
+## OK dash stdout-json: ""
+## OK dash status: 2
+## OK mksh stdout-json: ""
+## OK mksh status: 1
 
-### PS4 with unterminated $(
+#### PS4 with unterminated $(
 # osh is not making this a proper syntax error
 x=1
 PS4='+$(x'
@@ -167,8 +167,8 @@ one
 status=0
 ## END
 # mksh and dash both fail.  bash prints errors to stderr.
-# OK dash stdout-json: ""
-# OK dash status: 2
-# OK mksh stdout-json: ""
-# OK mksh status: 1
+## OK dash stdout-json: ""
+## OK dash status: 2
+## OK mksh stdout-json: ""
+## OK mksh status: 1
 

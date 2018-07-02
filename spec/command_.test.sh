@@ -2,7 +2,7 @@
 #
 # Miscellaneous tests for the command language.
 
-### Command block
+#### Command block
 { which ls; }
 ## stdout: /bin/ls
 

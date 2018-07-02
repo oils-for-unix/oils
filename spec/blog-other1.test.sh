@@ -5,25 +5,25 @@
 # https://lobste.rs/s/xhtim1/problems_with_shells_test_builtin_what
 # http://alangrow.com/blog/shell-quirk-assign-from-heredoc
 
-### Blog Post Example
+#### Blog Post Example
 paths=`tr '\n' ':' | sed -e 's/:$//'`<<EOPATHS
 /foo
 /bar
 /baz
 EOPATHS
 echo "$paths"
-# stdout: /foo:/bar:/baz
+## stdout: /foo:/bar:/baz
 
-### Blog Post Example Fix
+#### Blog Post Example Fix
 paths=`tr '\n' ':' | sed -e 's/:$//'<<EOPATHS
 /foo
 /bar
 /baz
 EOPATHS`
 echo "$paths"
-# stdout-json: "/foo\n/bar\n/baz\n"
+## stdout-json: "/foo\n/bar\n/baz\n"
 
-### Rewrite of Blog Post Example
+#### Rewrite of Blog Post Example
 paths=$(tr '\n' ':' | sed -e 's/:$//' <<EOPATHS
 /foo
 /bar
@@ -31,26 +31,26 @@ paths=$(tr '\n' ':' | sed -e 's/:$//' <<EOPATHS
 EOPATHS
 )
 echo "$paths"
-# stdout-json: "/foo\n/bar\n/baz\n"
+## stdout-json: "/foo\n/bar\n/baz\n"
 
-### Simpler example
+#### Simpler example
 foo=`cat`<<EOM
 hello world
 EOM
 echo "$foo"
-# stdout: hello world
+## stdout: hello world
 
-### ` after here doc delimiter
+#### ` after here doc delimiter
 foo=`cat <<EOM
 hello world
 EOM`
 echo "$foo"
-# stdout: hello world
+## stdout: hello world
 
-### ` on its own line
+#### ` on its own line
 foo=`cat <<EOM
 hello world
 EOM
 `
 echo "$foo"
-# stdout: hello world
+## stdout: hello world
