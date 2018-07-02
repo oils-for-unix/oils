@@ -8,11 +8,14 @@ NOTE: This is a static subset of Python.
 Constructs to audit the code for:
 - **kwargs (I know I have *args)
 - yield -- there are a few
+  - StopIteration -- is that special?
 - 1 < x < 2 (probably not used)
 
 Static assumptions:
 - s % (a,) is (string, tuple)
 - a + b is int or float addition
+
+- "function pointers" like self.newBlock = self.graph.newBlock
 """
 
 
@@ -118,9 +121,11 @@ class CodeGenerator(ASTVisitor):
         loop = self.newBlock()
         else_ = self.newBlock()
 
+        # After is where 'break' should jump to!
         after = self.newBlock()
         self.emit('SETUP_LOOP', after)
 
+        # 'loop' is where 'continue' should jump to!
         self.nextBlock(loop)
         self.setups.push((LOOP, loop))
 
@@ -296,16 +301,16 @@ class CodeGenerator(ASTVisitor):
                 pos += 1
         self.emit('CALL_FUNCTION', pos)
 
-        # For f(*args, **kwargs)
         return
+        # Unused code for f(*args, **kwargs)
         if node.star_args is not None:
             self.visit(node.star_args)
         if node.dstar_args is not None:
             self.visit(node.dstar_args)
         have_star = node.star_args is not None
         have_dstar = node.dstar_args is not None
-        opcode = _CALLFUNC_OPCODE_INFO[have_star, have_dstar]
-        self.emit(opcode, kw << 8 | pos)
+        #opcode = _CALLFUNC_OPCODE_INFO[have_star, have_dstar]
+        #self.emit(opcode, kw << 8 | pos)
 
     def visitConst(self, node):
         print('Const')
