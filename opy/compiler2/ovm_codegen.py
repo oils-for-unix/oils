@@ -161,18 +161,19 @@ class CodeGenerator(ASTVisitor):
     def visitBreak(self, node):
         print('Break')
         if not self.setups:
-            raise SyntaxError(
-                "'break' outside loop (%s, %d)" % 
-                (self.ctx.filename, node.lineno))
+            raise SyntaxError("'break' outside loop (%s, %d)" % 
+                              (self.ctx.filename, node.lineno))
         self.set_lineno(node)
+
+        # TODO: Emit a jump here!  JUMP_FORWARD or something else?
+        # We need to know what the next block is!
         self.emit('BREAK_LOOP')
 
     def visitContinue(self, node):
         print('Continue')
         if not self.setups:
-            raise SyntaxError(
-                "'continue' outside loop (%s, %d)" %
-                (self.ctx.filename, node.lineno))
+            raise SyntaxError("'continue' outside loop (%s, %d)" %
+                              (self.ctx.filename, node.lineno))
 
         kind, block = self.setups.top()
         if kind == LOOP:
