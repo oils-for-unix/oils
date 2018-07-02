@@ -2,7 +2,20 @@
 from __future__ import print_function
 """
 ovm_codegen.py
+
+NOTE: This is a static subset of Python.
+
+Constructs to audit the code for:
+- **kwargs (I know I have *args)
+- yield -- there are a few
+- 1 < x < 2 (probably not used)
+
+Static assumptions:
+- s % (a,) is (string, tuple)
+- a + b is int or float addition
 """
+
+
 
 from . import ast
 from . import pyassem
@@ -84,9 +97,6 @@ class CodeGenerator(ASTVisitor):
         print('Module')
         self.scope = self.ctx.scopes[node]
         self.emit('SET_LINENO', 0)
-        if node.doc:
-            self.emit('LOAD_CONST', node.doc)
-            self.storeName('__doc__')
 
         lnf = LocalNameFinder()
         lnf.Dispatch(node.node)
