@@ -199,6 +199,7 @@ echo [[z] []z]    # also accepted
 ## END
 
 #### Glob of negated unescaped [[] and []]
+# osh does this "correctly" because it defers to libc!
 touch $TMP/_G
 cd $TMP
 echo _[^\[z] _[^\]z]  # the right way to do it
@@ -207,7 +208,7 @@ echo _[^[z] _[^]z]    # also accepted
 _G _G
 _G _G
 ## END
-## BUG mksh STDOUT:
+## BUG dash/mksh STDOUT:
 _[^[z] _[^]z]
 _[^[z] _[^]z]
 ## END

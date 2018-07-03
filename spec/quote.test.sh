@@ -175,9 +175,6 @@ echo -n $'\001' $'\377' | od -A n -c | sed 's/ \+/ /g'
 ## N-I dash STDOUT:
  $ 001 $ 377
 ## END
-## BUG ash STDOUT:
- 001 0O7
-## END
 
 #### $'' octal escapes with fewer than 3 chars
 echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'

@@ -14,11 +14,26 @@ die() {
   exit 1
 }
 
-readonly DASH=$(which dash 2>/dev/null || echo /bin/sh)
-readonly BASH=$(which bash)
-readonly MKSH=$(which mksh)
-readonly ZSH=$(which zsh)
-readonly BUSYBOX_ASH=_tmp/shells/ash
+# For now, fall back to the shell in $PATH.
+shell-path() {
+  local name=$1
+  if test -f _tmp/spec-bin/$name; then
+    echo _tmp/spec-bin/$name
+  else
+    which $name
+  fi
+}
+
+readonly DASH=$(shell-path dash)
+readonly BASH=$(shell-path bash)
+readonly MKSH=$(shell-path mksh)
+readonly ZSH=$(shell-path zsh)
+
+if test -f _tmp/spec-bin/ash; then
+  readonly BUSYBOX_ASH=_tmp/spec-bin/ash
+else
+  readonly BUSYBOX_ASH=_tmp/shells/ash
+fi
 
 readonly OSH_PYTHON=${OSH_PYTHON:-bin/osh}
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
