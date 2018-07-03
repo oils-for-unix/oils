@@ -37,7 +37,7 @@ If one shell disagrees with others, that is generally a BUG.
 
 Example test case:
 
-### hello and fail
+#### hello and fail
 echo hello
 echo world
 exit 1
@@ -75,8 +75,8 @@ def log(msg, *args):
 
 
 # EXAMPLES:
-# stdout: foo
-# stdout-json: ""
+## stdout: foo
+## stdout-json: ""
 #
 # In other words, it could be (name, value) or (qualifier, name, value)
 
@@ -167,13 +167,13 @@ class Tokenizer(object):
 #
 # -- Code is either literal lines, or a commented out code: value.
 # code = (? line of code ?)*
-#      | '# code:'  VALUE 
+#      | '## code:'  VALUE 
 #
 # -- Description, then key-value pairs surrounding code.
-# test_case = '###' DESC
-#             ( '#' KEY ':' VALUE )*
+# test_case = '####' DESC
+#             ( '##' KEY ':' VALUE )*
 #             code
-#             ( '#' KEY ':' VALUE )*
+#             ( '##' KEY ':' VALUE )*
 # 
 # -- Should be a blank line after each test case.  Leading comments and code
 # -- are OK.
