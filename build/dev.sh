@@ -14,6 +14,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # R_PATH
+
 ubuntu-deps() {
   # python-dev: for pylibc
   # gawk: used by spec-runner.sh for the special match() function.
@@ -22,6 +24,19 @@ ubuntu-deps() {
   sudo apt-get install python-dev gawk time libreadline-dev
 
   test/spec.sh install-shells
+
+  # TODO: For the release to run test/report.R, you need r-base-core too.
+}
+
+r-packages() {
+  # Install to a directory that doesn't require root.  This requires setting
+  # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
+  mkdir -p ~/R
+  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr"), lib=Sys.getenv("INSTALL_DEST"), repos="http://cran.us.r-project.org")'
+}
+
+test-r-packages() {
+  R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr)'
 }
 
 # Produces _devbuild/gen/osh_help.py

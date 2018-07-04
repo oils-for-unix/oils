@@ -3,7 +3,6 @@
 # report.R
 
 library(dplyr)
-library(ggplot2)
 
 options(stringsAsFactors = F)
 

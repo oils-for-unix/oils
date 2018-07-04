@@ -186,7 +186,7 @@ EOF
 
 write-report() {
   local out=_tmp/unit/index.html
-  test/report.R unit _tmp/unit _tmp/unit
+  R_LIBS_USER=$R_PATH test/report.R unit _tmp/unit _tmp/unit
   print-report > $out
   echo "Wrote $out"
 }

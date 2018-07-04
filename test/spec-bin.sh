@@ -77,18 +77,19 @@ build-all() {
   popd
 }
 
-link-all() {
+copy-all() {
   pushd $DIR
-  ln -s -f -v bash-4.3/bash .
-  ln -s -f -v dash-0.5.8/src/dash .
-  ln -s -f -v mksh-R52c/mksh .
-  ln -s -f -v busybox-1.22.0/busybox ./ash
+  cp -f -v bash-4.3/bash .
+  cp -f -v dash-0.5.8/src/dash .
+  cp -f -v mksh-R52c/mksh .
+  cp -f -v busybox-1.22.0/busybox .
+  ln -s -f -v busybox ash
 
   # In its own tree
   #ln -s -f -v zsh-out/bin/zsh .
 
   # Static binary
-  ln -s -f -v zsh-5.1.1/Src/zsh .
+  cp -f -v zsh-5.1.1/Src/zsh .
   popd
 }
 

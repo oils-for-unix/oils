@@ -123,29 +123,51 @@ version-text() {
   echo
 
   for bin in $OSH; do
+    echo ---
     echo "\$ $bin --version"
     $bin --version
     echo
   done
 
-  python --version 2>&1
-  echo
-
+  echo ---
   $BASH --version | head -n 1
+  ls -l $BASH
   echo
 
+  echo ---
   $ZSH --version | head -n 1
+  ls -l $ZSH
   echo
 
-  # These don't have versions
-  dpkg -s dash | egrep '^Package|Version'
+  # No -v or -V or --version.  TODO: Only use hermetic version on release.
+
+  echo ---
+  local my_dash=_tmp/spec-bin/dash
+  if test -f $my_dash; then
+    ls -l $my_dash
+  else
+    dpkg -s dash | egrep '^Package|Version'
+  fi
   echo
 
-  dpkg -s mksh | egrep '^Package|Version'
+  echo ---
+  local my_mksh=_tmp/spec-bin/mksh
+  if test -f $my_mksh; then
+    ls -l $my_mksh
+  else
+    dpkg -s mksh | egrep '^Package|Version'
+  fi
   echo
 
-  # Need || true because of pipefail
-  { busybox || true; } | head -n 1
+  echo ---
+  local my_busybox=_tmp/spec-bin/busybox-1.22.0/busybox
+  if test -f $my_busybox; then
+    { $my_busybox || true; } | head -n 1
+    ls -l $my_busybox
+  else
+    # Need || true because of pipefail
+    { busybox || true; } | head -n 1
+  fi
   echo
 
   maybe-show /etc/debian_version

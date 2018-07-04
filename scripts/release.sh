@@ -129,20 +129,24 @@ _release-build() {
   #         oil.ovm
 }
 
+readonly HAVE_ROOT=''
+
 _test-release-build() {
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
   # etc.
 
-  # TODO: Factor out test/alpine.sh to test/chroot.sh
-  test/alpine.sh copy-tar '' oil
-  test/alpine.sh test-tar '' oil
-
-  test/spec.sh link-busybox-ash  # in case we deleted _tmp
+  if test -n "$HAVE_ROOT"; then
+    # TODO: Factor out test/alpine.sh to test/chroot.sh
+    test/alpine.sh copy-tar '' oil
+    test/alpine.sh test-tar '' oil
+  fi
 
   test/spec.sh smoke  # Initial smoke test, slightly redundant.
 
   test/osh2oil.sh run-for-release
   test/gold.sh run-for-release
+
+  # TODO: Assert that this was done with hermetic binaries?
 
   # spec-tests-with-tar-build
   OSH_OVM=$OSH_RELEASE_BINARY test/spec.sh all
