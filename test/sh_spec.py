@@ -21,11 +21,6 @@ Results:
          it should be converted to BUG or OK.  Otherwise it should be made to
          PASS.
 
-TODO: maybe have KBUG and BUG?  KBUG is known bug, or intentional
-incompatibility.  Like dash interpreting escapes in 'foo\n'.  An unintentional
-bug is something else, like bash parsing errors.
-IBUG / BUG / N-I are all variants of the same thing.
-
 NOTE: The difference between OK and BUG is a matter of judgement.  If the ideal
 behavior is a compile time error (code 2), a runtime error is generally OK.
 
@@ -45,7 +40,7 @@ exit 1
 #
 # ignored comment
 #
-## STDOUT
+## STDOUT:
 hello
 world
 ## END
@@ -166,14 +161,18 @@ class Tokenizer(object):
 # Format of a test script.
 #
 # -- Code is either literal lines, or a commented out code: value.
-# code = (? line of code ?)*
+# code = PLAIN_LINE*
 #      | '## code:'  VALUE 
+#
+# -- Key value pairs can be single- or multi-line
+# key_value = '##' KEY ':' VALUE
+#             | KEY_VALUE_MULTILINE PLAIN_LINE* END_MULTILINE
 #
 # -- Description, then key-value pairs surrounding code.
 # test_case = '####' DESC
-#             ( '##' KEY ':' VALUE )*
+#             key_value*
 #             code
-#             ( '##' KEY ':' VALUE )*
+#             key_value*
 # 
 # -- Should be a blank line after each test case.  Leading comments and code
 # -- are OK.
@@ -242,7 +241,6 @@ def ParseKeyValue(tokens, case):
       break
 
 
-
 def ParseCodeLines(tokens, case):
   """Parse uncommented code in a test case."""
   _, kind, item = tokens.peek()
@@ -271,19 +269,15 @@ def ParseTestCase(tokens):
   tokens.next()
 
   case = {'desc': item, 'line_num': line_num}
-  #print case
 
   ParseKeyValue(tokens, case)
 
-  #print 'KV1', case
   # For broken code
   if 'code' in case:  # Got it through a key value pair
     return case
 
   ParseCodeLines(tokens, case)
-  #print 'AFTER CODE', case
   ParseKeyValue(tokens, case)
-  #print 'KV2', case
 
   return case
 
