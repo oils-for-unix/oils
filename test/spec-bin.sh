@@ -2,6 +2,10 @@
 #
 # Build binaries for the spec tests.
 #
+# TODO:
+# - coreutils
+# - re2c for the OSH build
+#
 # Usage:
 #   ./spec-bin.sh <function name>
 
@@ -9,7 +13,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly DIR=_tmp/spec-bin
+readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+readonly DIR=$THIS_DIR/../_tmp/spec-bin
 
 download() {
   mkdir -p $DIR
@@ -31,12 +36,43 @@ extract-all() {
   popd
 }
 
+build-zsh() {
+  local prefix=$DIR/zsh-out
+  pushd $DIR/zsh-5.1.1
+
+  # This builds config.modules
+  ./configure --disable-dynamic
+
+  # Build a static version of ZSH
+
+  # For some reason the regex module isn't included if we --disable-dynamic?
+  # name=zsh/regex modfile=Src/Modules/regex.mdd link=no
+  # ->
+  # name=zsh/regex modfile=Src/Modules/regex.mdd link=static
+
+  # INSTALL says I need this after editing config.modules.
+  sed -i 's/regex.mdd link=no/regex.mdd link=static/' config.modules
+  make prep
+
+  make
+
+  # This way works on a given machine, but the binaries can't be relocated!
+  #./configure --prefix $prefix
+  #make
+  #make install
+  popd
+}
+
 build-all() {
-  # bash/dash/zsh: ./configure; make
+  # bash/dash: ./configure; make
   # mksh: sh Build.sh
   # busybox: make defconfig (default config); make
 
+  # ZSH needs special builds
+  build-zsh
+
   pushd $DIR
+
   # TODO: Are they all different?
   popd
 }
@@ -45,9 +81,14 @@ link-all() {
   pushd $DIR
   ln -s -f -v bash-4.3/bash .
   ln -s -f -v dash-0.5.8/src/dash .
-  ln -s -f -v zsh-5.1.1/Src/zsh .
   ln -s -f -v mksh-R52c/mksh .
   ln -s -f -v busybox-1.22.0/busybox ./ash
+
+  # In its own tree
+  #ln -s -f -v zsh-out/bin/zsh .
+
+  # Static binary
+  ln -s -f -v zsh-5.1.1/Src/zsh .
   popd
 }
 
