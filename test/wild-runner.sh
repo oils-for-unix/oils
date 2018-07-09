@@ -10,16 +10,15 @@ set -o errexit
 source test/common.sh
 
 process-file() {
-  local proj=$1
+  local rel_path=$1
   local abs_path=$2
-  local rel_path=$3
 
-  local raw_base=_tmp/wild/raw/$proj/$rel_path
-  local www_base=_tmp/wild/www/$proj/$rel_path
+  local raw_base=_tmp/wild/raw/$rel_path
+  local www_base=_tmp/wild/www/$rel_path
   mkdir -p $(dirname $raw_base)
   mkdir -p $(dirname $www_base)
 
-  log "--- Processing $proj - $rel_path"
+  log "--- Processing $rel_path"
 
   # Count the number of lines.  This creates a tiny file, but we're doing
   # everything involving $abs_path at once so it's in the FS cache.
@@ -52,7 +51,7 @@ readonly MANIFEST=_tmp/wild/MANIFEST.txt
 
 parse-in-parallel() {
   local failed=''
-  xargs -n 3 -P $JOBS -- $0 process-file || failed=1
+  xargs -n 2 -P $JOBS -- $0 process-file || failed=1
 
   # Limit the output depth
   tree -L 3 _tmp/wild
@@ -65,7 +64,8 @@ parse-and-report() {
   local manifest_regex=${1:-}  # egrep regex for manifest line
 
   time {
-    test/wild.sh write-manifest
+    #test/wild.sh write-manifest
+    test/wild.sh manifest-from-archive
 
     if test -n "$manifest_regex"; then
       egrep -- "$manifest_regex" $MANIFEST | parse-in-parallel
@@ -77,8 +77,10 @@ parse-and-report() {
   }
 }
 
+# NOTE: This depends on test/jsontemplate.py.  Should we make that part of
+# 'deps'?
 wild-report() {
-  PYTHONPATH=~/hg/json-template/python test/wild_report.py "$@"
+  test/wild_report.py "$@"
 }
 
 _link() {

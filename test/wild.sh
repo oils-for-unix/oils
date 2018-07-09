@@ -443,6 +443,26 @@ make-archive() {
   ls -l $out
 }
 
+# Fetch the archive we published.
+fetch-archive() {
+  local dir=_tmp/wild
+  mkdir -p $dir
+  wget --directory $dir --no-clobber \
+    https://www.oilshell.org/blob/wild/wild-source.tar.gz
+}
+
+extract-archive() {
+  local out=_tmp/wild/src 
+  mkdir -p $out
+  tar --extract -z --directory $out < _tmp/wild/wild-source.tar.gz
+}
+
+# This is opposed to crawling the file system with 'find'.
+manifest-from-archive() {
+  # relative path then absolute path
+  find _tmp/wild/src -type f -a -printf '%P %p\n' > $MANIFEST
+}
+
 # 442K lines without "big" and without ltmain.sh
 # TODO: Include a few ltmain.sh.  Have to de-dupe them.
 #

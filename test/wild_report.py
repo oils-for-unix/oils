@@ -537,7 +537,7 @@ def main(argv):
     # Collect work into dirs
     for line in sys.stdin:
       #d = line.strip()
-      proj, abs_path, rel_path = line.split()
+      rel_path, abs_path = line.split()
       #print proj, '-', abs_path, '-', rel_path
 
       def _ReadTaskFile(path):
@@ -552,7 +552,7 @@ def main(argv):
         num_failed = 1 if int(status) >= 1 else 0
         return num_failed, float(secs)
 
-      raw_base = os.path.join('_tmp/wild/raw', proj, rel_path)
+      raw_base = os.path.join('_tmp/wild/raw', rel_path)
       st = {}
 
       # TODO:
@@ -580,7 +580,7 @@ def main(argv):
 
       st['num_files'] = 1
 
-      path_parts = proj.split('/') + rel_path.split('/')
+      path_parts = rel_path.split('/')
       #print path_parts
       UpdateNodes(root_node, path_parts, st)
 
