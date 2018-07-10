@@ -7,6 +7,7 @@ lexer_gen_test.py: Tests for lexer_gen.py
 import unittest
 
 from core import lexer_gen  # module under test
+from core import test_lib
 
 
 class LexerGenTest(unittest.TestCase):
@@ -38,7 +39,7 @@ class LexerGenTest(unittest.TestCase):
     ]
     for py, expected in PAIRS:
       #self.assertEqual(expected, lexer_gen.TranslateRegex(py))
-      print('---', py)
+      print('--- %s' % test_lib.PrintableString(py))
       actual = lexer_gen.TranslateRegex(py)
       print(repr(actual))
       self.assertEqual(expected, actual)

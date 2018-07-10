@@ -9,9 +9,18 @@
 test_lib.py - Functions for testing.
 """
 
+import string
+
 from core import alloc
 from osh.meta import Id
 from asdl import py_meta
+
+
+def PrintableString(s):
+  """For pretty-printing in tests."""
+  if all(c in string.printable for c in s):
+    return s
+  return repr(s)
 
 
 def TokensEqual(left, right):
