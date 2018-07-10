@@ -96,7 +96,11 @@ class ShSpecTest(unittest.TestCase):
   def testRunCases(self):
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
     env = {}
-    out = AnsiOutput(sys.stdout, False)
+    if 0:
+      out_f = sys.stdout
+    else:
+      out_f = cStringIO.StringIO()
+    out = AnsiOutput(out_f, False)
     RunCases([CASE1], lambda i, case: True, shells, env, out)
 
 
