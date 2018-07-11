@@ -254,7 +254,7 @@ dump-compiler-id() {
 }
 
 test-compiler-id() {
-  dump-compiler-id gcc
+  dump-compiler-id $(which gcc)
   dump-compiler-id $CLANG
   head _tmp/compiler-id/*/version.txt
 }

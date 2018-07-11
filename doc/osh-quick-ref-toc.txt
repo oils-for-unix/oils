@@ -2,7 +2,7 @@ OSH Quick Reference
 
 - Below is a list of topics, organized into [Sections].
 - The X prefix means "unimplemented".  Oil features are all unimplemented!
-- HTML version: https://www.oilshell.org/release/0.5.alpha4/doc/osh-quick-ref.html
+- HTML version: https://www.oilshell.org/release/0.5/doc/osh-quick-ref.html
 
 INTRO
   [Overview]      overview   osh-vs-oil   command-vs-expr

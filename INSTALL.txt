@@ -12,8 +12,8 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --xz < oil-0.5.alpha4.tar.xz
-    cd oil-0.5.alpha4
+    tar -x --xz < oil-0.5.tar.xz
+    cd oil-0.5
 
 Either install as /usr/local/bin/osh:
 
@@ -31,7 +31,7 @@ The latter doesn't require root access, but it requires ~/bin to be in your
 PATH.
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oil-0.5.alpha4 directory.
+oil-0.5 directory.
 
 Smoke Test
 ----------

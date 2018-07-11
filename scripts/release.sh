@@ -12,7 +12,10 @@
 #     Sync up oilshell/benchmark-data repo.
 #     flanders: $0 benchmark-build, then $0 benchmark-run
 #     - for stability, restart flanders
-#     - prereq: benchmarks/osh-runtime.sh {download,extract}
+#     - prereqs:
+#       - benchmarks/osh-runtime.sh {download,extract}
+#       - benchmarks/ovm-build.sh {download,extract-oil,extract-other}
+#       - build/codegen.sh {download,extract}-clang (for OVM build benchmarks)
 #     lisa: $0 benchmark-run, then $0 benchmark-run-on-1-machine (oheap)
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
