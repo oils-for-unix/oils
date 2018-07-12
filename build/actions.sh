@@ -213,7 +213,7 @@ clean-repo() {
 # - We're not cleaning _build/detect-config.* ?
 clean-source-tarball-build() {
   rm -f -v _bin/oil.* 
-  rm -f -v _build/oil/ovm _build/oil/ovm-dbg
+  rm -f -v _build/oil/ovm-opt.* _build/oil/ovm-dbg
 }
 
 "$@"
