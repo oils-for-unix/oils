@@ -212,8 +212,11 @@ clean-repo() {
 # - There are no object files written now.
 # - We're not cleaning _build/detect-config.* ?
 clean-source-tarball-build() {
-  rm -f -v _bin/oil.* 
-  rm -f -v _build/oil/ovm-opt.* _build/oil/ovm-dbg
+  rm -f -v _bin/oil.{ovm,ovm-dbg}
+  # NOTE: delete ovm-opt, ovm-opt.{stripped,symbols}
+  rm -f -v \
+      _build/oil/{ovm-opt,ovm-dbg} \
+      _build/oil/ovm-opt.{stripped,symbols}
 }
 
 "$@"
