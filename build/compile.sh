@@ -40,7 +40,6 @@ Python/getopt.c
 Python/pystrcmp.c
 Python/pystrtod.c
 Python/dtoa.c
-Python/formatter_unicode.c
 Python/formatter_string.c
 '
 
@@ -81,8 +80,6 @@ Objects/structseq.c
 Objects/tupleobject.c
 Objects/typeobject.c
 Objects/weakrefobject.c
-Objects/unicodeobject.c
-Objects/unicodectype.c
 '
 
 # Non-standard lib stuff.

@@ -805,6 +805,12 @@ r_object(RFILE *p)
 
     case TYPE_INTERNED:
     case TYPE_STRING:
+#ifdef OVM_MAIN
+    /* Treat unicode constants like string constants.  They are already
+     * utf-8 encoded.  TODO: change the output of the OPy compiler
+     * and turn this into an exception. */
+    case TYPE_UNICODE:
+#endif
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");

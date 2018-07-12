@@ -175,6 +175,7 @@ static int RunModule(char *module, int set_argv0)
     runpy = PyImport_ImportModule("runpy");
     if (runpy == NULL) {
         fprintf(stderr, "Could not import runpy module\n");
+        PyErr_Print();
         return -1;
     }
     runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
