@@ -77,6 +77,15 @@ checksum() {
   find _tmp/regtest -type f | xargs $THIS_DIR/../bin/opyc dis-md5 | sort -n
 }
 
+# NOTE: This doesn't work on Ubuntu 17.10 because it uses Python 2.7.14, and I
+# generated the golden file on Ubuntu 16.04 with Python 2.7.12.  (Although I
+# verified it on two different machines with Python 2.7.12.)  I'm not going to
+# worry about it for now because I think it's due to marshal / hashing
+# differences, and OPy will eventually not use marshal, and probably not
+# hashing either.
+#
+# See comments in 'build.sh compile-manifest'.
+
 verify-golden() {
   if checksum | diff -u _regtest/dis-md5.golden.txt -; then
     echo OK
@@ -89,13 +98,16 @@ lines() {
   find _regtest/src -type f | xargs wc -l | sort -n
 }
 
-compare-one() {
-  local rel_path='opy/compiler2/transformer.pyc'
+# For debugging golden differences.  We want it to be the same on multiple
+# machines.
+compare-other-machine() {
+  local rel_path=${1:-'opy/compiler2/transformer.pyc'}
+  # TODO: Copy zip from flanders?
+  local zip=_tmp/flanders/bytecode-opy.zip 
 
   ls -l _tmp/regtest/$rel_path
 
-  # TODO: Copy zip from flanders?
-  unzip -p $rel_path _tmp/flanders/bytecode-opy.zip | od -c
+  unzip -p $rel_path $zip | od -c
 }
 
 smoke-three-modes() {

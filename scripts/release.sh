@@ -5,7 +5,7 @@
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
-#   $0 build-and-test  (builds tarball, runs spec tests, etc.)
+#   $0 build-and-test  (builds tarball, runs unit/spec/gold tests, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
 #   test/wild.sh all
 #   benchmarks:
@@ -153,6 +153,46 @@ _test-release-build() {
 
   # spec-tests-with-tar-build
   OSH_OVM=$OSH_RELEASE_BINARY test/spec.sh all
+}
+
+# NOTE: Following opy/README.md.  Right now this is a quick and dirty
+# verification.  For example we found out something about the golden checksums
+# for the OPy regtest!
+test-opy() {
+  local out=$PWD/_tmp/opy-release
+  mkdir -p $out
+
+  pushd opy
+
+  local step=''
+
+  step='build-oil-repo'
+  echo "--- $step ---"
+  time ./build.sh oil-repo > $out/$step.txt 2>&1
+  echo $?
+
+  step='test-oil-unit-byterun'
+  echo "--- $step ---"
+  time ./test.sh oil-unit-byterun > $out/$step.txt 2>&1
+  echo $?
+
+  step='test-gold'
+  echo "--- $step ---"
+  time ./test.sh gold > $out/$step.txt 2>&1
+  echo $?
+
+  # Hm does this need its own table output?
+  step='test-spec-all'
+  echo "--- $step ---"
+  time ./test.sh spec all > $out/$step.txt 2>&1
+  echo $?
+
+  # NOTE: This is sensitive to Python 2.7.12 vs .13 vs .14, so don't bother
+  # publishing it for now.
+  #./regtest.sh compile > $out/regtest-compile.txt
+  #./regtest.sh verify-golden > $out/regtest-verify-golden.txt
+
+  popd
 }
 
 # TODO: Log this whole thing?  Include logs with the /release/ page?
@@ -548,6 +588,9 @@ metrics() {
   build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
 
   line-counts $out/line-counts
+
+  scripts/count.sh oil-python-symbols $out/symbols
+  scripts/count.sh opy-python-symbols $out/symbols
 
   tree $out
 }

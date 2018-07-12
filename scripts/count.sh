@@ -203,8 +203,10 @@ top-level() {
 _python-symbols() {
   local main=$1
   local name=$2
+  local out_dir=$3
 
-  local out=_tmp/${name}-python-symbols.txt
+  mkdir -p $out_dir
+  local out=${out_dir}/${name}.txt
 
   CALLGRAPH=1 $main | tee $out
 
@@ -214,11 +216,13 @@ _python-symbols() {
 }
 
 oil-python-symbols() {
-  _python-symbols bin/oil.py oil
+  local out_dir=${1:-_tmp/metrics/symbols}
+  _python-symbols bin/oil.py oil $out_dir
 }
 
 opy-python-symbols() {
-  _python-symbols bin/opy_.py opy
+  local out_dir=${1:-_tmp/metrics/symbols}
+  _python-symbols bin/opy_.py opy $out_dir
 }
 
 old-style-classes() {

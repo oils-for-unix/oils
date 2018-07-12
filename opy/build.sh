@@ -62,11 +62,22 @@ _compile-tree() {
 # Used by the Makefile.
 compile-manifest() {
   local dest_dir=$1
+
+  # Python 2.7.14 on Ubuntu 17.10: ./regtest.sh verify-golden doesn't work.
+  # Many diffs.
+  # Our own Python 2.7.13: doesn't work.
+  #local py=../_devbuild/cpython-full/python
+
+  # Our own Python 2.7.12: Just one diff in hashlib.pyc!
+  #local py=../_devbuild/cpython-full-2712/python
+
+  local py=''
+
   while read full_src_path rel_dest_path; do
     local dest=$dest_dir/$rel_dest_path
     mkdir -p $(dirname $dest)
     log "     $full_src_path"
-    $THIS_DIR/../bin/opyc compile $full_src_path $dest
+    $py $THIS_DIR/../bin/opyc compile $full_src_path $dest
 
     local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
 
