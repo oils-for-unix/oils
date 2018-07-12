@@ -6,7 +6,7 @@
 #   osh-parser.R OUT_DIR [TIMES_CSV...]
 
 library(dplyr)
-library(tidyr)
+library(tidyr)  # spread()
 library(stringr)
 
 source('benchmarks/common.R')

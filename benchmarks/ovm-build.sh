@@ -316,18 +316,18 @@ stage1() {
 
   # Globs are in lexicographical order, which works for our dates.
   x=$out/times.tsv
-  a=($raw_dir/flanders.*.times.tsv)
-  b=($raw_dir/lisa.*.times.tsv)
+  a=($raw_dir/$MACHINE1.*.times.tsv)
+  b=($raw_dir/$MACHINE2.*.times.tsv)
   tsv-concat ${a[-1]} ${b[-1]} > $x
 
   x=$out/bytecode-size.tsv
-  a=($raw_dir/flanders.*.bytecode-size.tsv)
-  b=($raw_dir/lisa.*.bytecode-size.tsv)
+  a=($raw_dir/$MACHINE1.*.bytecode-size.tsv)
+  b=($raw_dir/$MACHINE2.*.bytecode-size.tsv)
   tsv-concat ${a[-1]} ${b[-1]} > $x
 
   x=$out/bin-sizes.tsv
-  a=($raw_dir/flanders.*.bin-sizes.tsv)
-  b=($raw_dir/lisa.*.bin-sizes.tsv)
+  a=($raw_dir/$MACHINE1.*.bin-sizes.tsv)
+  b=($raw_dir/$MACHINE2.*.bin-sizes.tsv)
   tsv-concat ${a[-1]} ${b[-1]} > $x
 
   # Construct a one-column TSV file

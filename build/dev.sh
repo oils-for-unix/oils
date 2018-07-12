@@ -21,18 +21,25 @@ ubuntu-deps() {
   # gawk: used by spec-runner.sh for the special match() function.
   # time: used to collect the exit code and timing of a test
   # libreadline-dev: needed for the build/prepare.sh Python build.
-  sudo apt-get install python-dev gawk time libreadline-dev
+  sudo apt install python-dev gawk time libreadline-dev
 
   test/spec.sh install-shells
 
-  # TODO: For the release to run test/report.R, you need r-base-core too.
+}
+
+# Needed for the release process, but not the dev process.
+release-ubuntu-deps() {
+  # For the release to run test/report.R, you need r-base-core too.
+  # cloc is used for line counts
+  # TODO: switch to CommonMark rather than using markdown.pl.
+  sudo apt install r-base-core cloc markdown
 }
 
 r-packages() {
   # Install to a directory that doesn't require root.  This requires setting
   # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
   mkdir -p ~/R
-  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr"), lib=Sys.getenv("INSTALL_DEST"), repos="http://cran.us.r-project.org")'
+  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="http://cran.us.r-project.org")'
 }
 
 test-r-packages() {

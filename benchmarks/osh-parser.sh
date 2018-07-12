@@ -150,14 +150,14 @@ stage1() {
   mkdir -p $out
 
   local vm_csv=$out/virtual-memory.csv
-  local -a x=($raw_dir/flanders.*.virtual-memory)
-  local -a y=($raw_dir/lisa.*.virtual-memory)
+  local -a x=($raw_dir/$MACHINE1.*.virtual-memory)
+  local -a y=($raw_dir/$MACHINE2.*.virtual-memory)
   benchmarks/virtual_memory.py osh-parser ${x[-1]} ${y[-1]} > $vm_csv
 
   local times_csv=$out/times.csv
   # Globs are in lexicographical order, which works for our dates.
-  local -a a=($raw_dir/flanders.*.times.csv)
-  local -a b=($raw_dir/lisa.*.times.csv)
+  local -a a=($raw_dir/$MACHINE1.*.times.csv)
+  local -a b=($raw_dir/$MACHINE2.*.times.csv)
   csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
   # Construct a one-column CSV file
@@ -169,8 +169,8 @@ stage1() {
 
   # Verify that the files are equal, and pass one of them.
   local lines_csv=$out/lines.csv
-  local -a c=($raw_dir/flanders.*.lines.csv)
-  local -a d=($raw_dir/lisa.*.lines.csv)
+  local -a c=($raw_dir/$MACHINE1.*.lines.csv)
+  local -a d=($raw_dir/$MACHINE2.*.lines.csv)
 
   local left=${c[-1]}
   local right=${d[-1]}

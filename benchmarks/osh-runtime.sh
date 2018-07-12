@@ -252,14 +252,14 @@ stage1() {
 
   local times_csv=$out_dir/times.csv
   # Globs are in lexicographical order, which works for our dates.
-  local -a a=($raw_dir/flanders.*.times.csv)
-  local -a b=($raw_dir/lisa.*.times.csv)
+  local -a a=($raw_dir/$MACHINE1.*.times.csv)
+  local -a b=($raw_dir/$MACHINE2.*.times.csv)
   csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
   local vm_csv=$out_dir/virtual-memory.csv
 
-  local -a c=($raw_dir/flanders.*.virtual-memory)
-  local -a d=($raw_dir/lisa.*.virtual-memory)
+  local -a c=($raw_dir/$MACHINE1.*.virtual-memory)
+  local -a d=($raw_dir/$MACHINE2.*.virtual-memory)
   benchmarks/virtual_memory.py osh-runtime ${c[-1]} ${d[-1]} > $vm_csv
 
   #local raw_dir=${1:-../benchmark-data/osh-parser}

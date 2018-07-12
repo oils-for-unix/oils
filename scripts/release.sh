@@ -177,7 +177,9 @@ _install() {
 
 # Run before benchmarks/auto.sh all.  We just build, and assume we tested.
 benchmark-build() {
-  _install
+  if test -n "$HAVE_ROOT"; then
+    _install
+  fi
   _clean
   _dev-build
 
@@ -376,6 +378,11 @@ git-changelog-0.5.alpha3() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.5.0() {
+  # NOTE: release/0.5 branch should be sync'd up with master squashes.
+  _git-changelog release/0.5.0 release/0.5.alpha3 \
+    > _release/VERSION/changelog.html
+}
 
 # For announcement.html
 html-redirect() {
@@ -436,6 +443,10 @@ announcement-0.4() {
 
 announcement-0.5.alpha3() {
   html-redirect '/blog/2018/04/30.html' > _release/VERSION/announcement.html
+}
+
+announcement-0.5() {
+  html-redirect '/blog/2018/07/12.html' > _release/VERSION/announcement.html
 }
 
 _link() {
