@@ -20,6 +20,7 @@
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 metrics
+#   $0 test-opy (2 minutes)
 #   $0 build-tree
 #   $0 compress
 #   $0 git-changelog-$VERSION
@@ -93,9 +94,10 @@ log() {
 
 _clean-tmp-dirs() {
   rm -r -f \
-    _tmp/{spec,wild,unit,gold,osh2oil} \
-    _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap} \
+    _tmp/{spec,unit,gold,osh2oil,wild/www} \
     _tmp/metrics \
+    _tmp/opy-test \
+    _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap} \
     _tmp/oil-tar-test
 }
 
@@ -159,8 +161,12 @@ _test-release-build() {
 # verification.  For example we found out something about the golden checksums
 # for the OPy regtest!
 test-opy() {
-  local out=$PWD/_tmp/opy-release
+  local out=$PWD/_tmp/test-opy
+
   mkdir -p $out
+
+  scripts/count.sh oil-python-symbols $out
+  scripts/count.sh opy-python-symbols $out
 
   pushd opy
 
@@ -171,14 +177,14 @@ test-opy() {
   time ./build.sh oil-repo > $out/$step.txt 2>&1
   echo $?
 
-  step='test-oil-unit-byterun'
-  echo "--- $step ---"
-  time ./test.sh oil-unit-byterun > $out/$step.txt 2>&1
-  echo $?
-
   step='test-gold'
   echo "--- $step ---"
   time ./test.sh gold > $out/$step.txt 2>&1
+  echo $?
+
+  step='test-oil-unit-byterun'
+  echo "--- $step ---"
+  time ./test.sh oil-unit-byterun > $out/$step.txt 2>&1
   echo $?
 
   # Hm does this need its own table output?
@@ -524,8 +530,13 @@ compress() {
 
   log "--- test/wild"
   local out="$root/test/wild.wwz"
-
   pushd _tmp/wild/www
+  time zip -r -q $out .  # recursive, quiet
+  popd
+
+  log "--- test/opy"
+  local out="$root/test/opy.wwz"
+  pushd _tmp/test-opy
   time zip -r -q $out .  # recursive, quiet
   popd
 
@@ -588,9 +599,6 @@ metrics() {
   build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
 
   line-counts $out/line-counts
-
-  scripts/count.sh oil-python-symbols $out/symbols
-  scripts/count.sh opy-python-symbols $out/symbols
 
   tree $out
 }

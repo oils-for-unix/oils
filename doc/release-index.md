@@ -40,7 +40,7 @@ Oil Version 0.5.0
 
 [cloc]: https://github.com/AlDanial/cloc
 
-### Tests Results
+### Oil Tests
 
 - [Spec Tests](test/spec.wwz/).  Test OSH behavior against that of existing
   shells.
@@ -51,6 +51,26 @@ Oil Version 0.5.0
   implicit assertions, no golden output.)
 - [osh2oil Tests](test/osh2oil.wwz/log.txt).  Test the conversion of OSH to
   Oil.
+
+#### OPy Tests
+
+The OPy compiler is used to compile Oil, but it isn't technically part of the
+release.  Here is some rough evidence that it works.
+
+- [build-oil-repo](test/opy.wwz/build-oil-repo.txt)
+- [test-gold](test/opy.wwz/test-gold.txt)
+- [test-oil-unit-byterun](test/opy.wwz/test-oil-unit-byterun.txt)
+- [test-spec-all](test/opy.wwz/test-spec-all.txt)
+
+Tree-shaking:
+
+- [Symbols in Oil](test/opy.wwz/oil-symbols.txt)
+- [Symbols in OPy](test/opy.wwz/opy-symbols.txt)
+
+### Manual Tests
+
+- [ ] Test build and install on OS X
+- [ ] Test build and install on Alpine Linux
 
 ### Benchmarks
 
@@ -63,6 +83,7 @@ Oil Version 0.5.0
 - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format.
 - [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
   to build Oil?  How big is the resulting binary?
+
 
 <!-- TODO: 
 /src/                       annotated/cross-referenced source code

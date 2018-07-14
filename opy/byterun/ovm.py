@@ -443,7 +443,8 @@ class VirtualMachine(object):
               do_wrap = False
               if do_wrap:
                 # Hm there needs to be a better way of doing this?
-                callargs = inspect.getcallargs(func, *posargs, **namedargs)
+                #callargs = inspect.getcallargs(func, *posargs, **namedargs)
+                callargs = None
                 frame = self.make_frame(func.func_code, callargs)
                 retval = self.run_frame(frame)
               else:
