@@ -7,7 +7,9 @@
 #   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (builds tarball, runs unit/spec/gold tests, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
-#   test/wild.sh all
+#   test/wild.sh all (3-4 minutes on fast machine)
+#   $0 test-opy (2 minutes on fast machine)
+#   $0 metrics
 #   benchmarks:
 #     Sync up oilshell/benchmark-data repo.
 #     flanders: $0 benchmark-build, then $0 benchmark-run
@@ -19,8 +21,6 @@
 #     lisa: $0 benchmark-run, then $0 benchmark-run-on-1-machine (oheap)
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
-#   $0 metrics
-#   $0 test-opy (2 minutes)
 #   $0 build-tree
 #   $0 compress
 #   $0 git-changelog-$VERSION
