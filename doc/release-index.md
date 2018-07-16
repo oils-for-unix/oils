@@ -52,10 +52,10 @@ Oil Version 0.5.0
 - [osh2oil Tests](test/osh2oil.wwz/log.txt).  Test the conversion of OSH to
   Oil.
 
-#### OPy Tests
+### OPy Tests
 
-The OPy compiler is used to compile Oil, but it isn't technically part of the
-release.  Here is some rough evidence that it works.
+The OPy compiler is used to compile Oil to bytecode, but isn't itself part of
+the release.
 
 - [build-oil-repo](test/opy.wwz/build-oil-repo.txt)
 - [test-gold](test/opy.wwz/test-gold.txt)

@@ -424,9 +424,13 @@ git-changelog-0.5.alpha3() {
     > _release/VERSION/changelog.html
 }
 
+# Hm if you're not releasing on the same machine as the previous release, the
+# branch needs origin/ on the front?  Is this the best way to do it?
+# NOTE: 'git branch -a' shows all branches.
+
 git-changelog-0.5.0() {
   # NOTE: release/0.5 branch should be sync'd up with master squashes.
-  _git-changelog release/0.5.0 release/0.5.alpha3 \
+  _git-changelog origin/release/0.5.alpha3 release/0.5.0 \
     > _release/VERSION/changelog.html
 }
 
