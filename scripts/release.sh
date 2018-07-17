@@ -26,6 +26,7 @@
 #   $0 git-changelog-$VERSION
 #   $0 announcement-$VERSION
 #   MAYBE: ./local.sh test-release-tree if you want to preview it
+#   $0 sync-old-tar (for releases.html)
 #   $0 deploy-tar
 #   $0 deploy-doc
 # 
@@ -670,16 +671,24 @@ deploy-doc() {
   ls -l $deploy_repo/releases.html
 }
 
+readonly DOWNLOAD_DIR='../oilshell.org__deploy/download/'
+
+# Generating releases.html requires the old tarballs!
+sync-old-tar() {
+  local user=$1  # required username
+  rsync --archive --verbose \
+    $user@oilshell.org:oilshell.org/download/ $DOWNLOAD_DIR
+}
+
 # I think these aren't checked into git?  They can just be managed separately?
 # Or should you check in the sha checksums?  Those will be in releases.html,
 # but a CSV might be nice.
 deploy-tar() {
-  local download_dir='../oilshell.org__deploy/download/'
-  mkdir -p $download_dir
+  mkdir -p $DOWNLOAD_DIR
 
-  cp -v _release/oil-$OIL_VERSION.tar.* $download_dir
+  cp -v _release/oil-$OIL_VERSION.tar.* $DOWNLOAD_DIR
 
-  ls -l $download_dir
+  ls -l $DOWNLOAD_DIR
 }
 
 #
