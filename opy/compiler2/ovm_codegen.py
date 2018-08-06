@@ -166,7 +166,7 @@ class CodeGenerator(ASTVisitor):
     def visitBreak(self, node):
         print('Break')
         if not self.setups:
-            raise SyntaxError("'break' outside loop (%s, %d)" % 
+            raise SyntaxError("'break' outside loop (%s, %d)" %
                               (self.ctx.filename, node.lineno))
         self.set_lineno(node)
 
@@ -260,7 +260,7 @@ class CodeGenerator(ASTVisitor):
 
     def visitCompare(self, node):
         print('Compare')
-        # I guess this is 1 < x < y < 3 
+        # I guess this is 1 < x < y < 3
         self.visit(node.expr)
         cleanup = self.newBlock()
         for op, code in node.ops[:-1]:

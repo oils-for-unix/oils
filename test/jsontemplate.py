@@ -147,7 +147,7 @@ _SECTION_RE = re.compile(r'(repeated)?\s*section\s+(.+)')
 SIMPLE_FUNC, ENHANCED_FUNC = 0, 1
 
 # Templates are a third kind of function, but only for formatters currently
-TEMPLATE_FORMATTER = 2  
+TEMPLATE_FORMATTER = 2
 
 
 class FunctionRegistry(object):
@@ -212,7 +212,7 @@ class CallableRegistry(FunctionRegistry):
 
 class PrefixRegistry(FunctionRegistry):
   """Lookup functions with arguments.
-  
+
   The function name is identified by a prefix.  The character after the prefix,
   usually a space, is considered the argument delimiter (similar to sed/perl's
   s/foo/bar s|foo|bar syntax).
@@ -245,7 +245,7 @@ class PrefixRegistry(FunctionRegistry):
 
 class _TemplateRef(object):
   """A reference from one template to another.
-  
+
   The _TemplateRef sits statically in the program tree as one of the formatters.
   At runtime, _DoSubstitute calls Resolve() with the group being used.
   """
@@ -745,7 +745,7 @@ def _Reverse(x):
   strings too.
   """
   return list(reversed(x))
-  
+
 
 def _Pairs(data):
   """dictionary -> list of pairs"""
@@ -813,7 +813,7 @@ _DEFAULT_FORMATTERS = {
     'js-string': None,
 
     'reverse': _Reverse,
-    
+
     # Given a dictinonary, returns a *list* of key-value pairs.  Used for
     # section formatters.  See jsontemplate_test.py for usage.
     #
@@ -1527,7 +1527,7 @@ class Template(object):
 
 class Trace(object):
   """Trace of execution for JSON Template.
-  
+
   This object should be passed into the execute/expand() function.
 
   Useful for debugging, especially for templates which reference other
@@ -1582,7 +1582,7 @@ def MakeTemplateGroup(group):
   This function *mutates* all the templates, so you shouldn't call it multiple
   times on a single Template() instance.  It's possible to put a single template
   in multiple groups by creating multiple Template() instances from it.
-  
+
   Args:
     group: dictionary of template name -> compiled Template instance
   """
@@ -1827,7 +1827,7 @@ def expand_with_style(template, style, data, body_subtree='body'):
 
   Args:
     template: Template instance for the inner "page content"
-    style: Template instance for the outer "page style"  
+    style: Template instance for the outer "page style"
     data: Data dictionary, with a 'body' key (or body_subtree
   """
   if template.has_defines:

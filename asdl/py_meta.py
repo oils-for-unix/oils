@@ -240,7 +240,7 @@ def MakeTypes(module, root, type_lookup):
       sum_type = typ
       if asdl.is_simple(sum_type):
         # An object without fields, which can be stored inline.
-        
+
         # Create a class called foo_e.  Unlike the CompoundObj case, it doesn't
         # have subtypes.  Instead if has attributes foo_e.Bar, which Bar is an
         # instance of foo_e.

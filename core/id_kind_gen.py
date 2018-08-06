@@ -105,7 +105,7 @@ def main(argv):
     else:
       with open(labels) as f:
         label_lines = f.readlines()
-     
+
     from collections import defaultdict
 
     id_by_kind_index = defaultdict(list)  # Kind name -> [list of Id names]

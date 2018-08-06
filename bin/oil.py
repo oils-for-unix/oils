@@ -451,7 +451,7 @@ def OshCommandMain(argv):
   TODO:
   - oshc --help
 
-  oshc deps 
+  oshc deps
     --path: the $PATH to use to find executables.  What about libraries?
 
     NOTE: we're leaving out su -c, find, xargs, etc.?  Those should generally

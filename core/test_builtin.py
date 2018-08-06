@@ -23,7 +23,7 @@ _OTHER_LOOKUP = meta.TEST_OTHER_LOOKUP
 
 class _StringWordEmitter(object):
   """For test/[, we need a word parser that returns StringWord.
-  
+
   The BoolParser calls word.BoolId(w), and deals with Kind.BoolUnary,
   Kind.BoolBinary, etc.  This is instead of CompoundWord/TokenWord (as in the
   [[ case.

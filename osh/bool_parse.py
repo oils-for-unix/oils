@@ -253,7 +253,7 @@ class BoolParser(object):
         if not self._Next(): return None
         return ast.BoolBinary(op, left, right)
       else:
-        # [[ foo ]] 
+        # [[ foo ]]
         w = self.cur_word
         if not self._Next(): return None
         return ast.WordTest(w)

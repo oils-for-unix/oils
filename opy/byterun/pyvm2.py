@@ -34,7 +34,7 @@ def debug(msg, *args):
 
 
 def debug1(msg, *args):
-  if args: 
+  if args:
     msg = msg % args
   print(msg, file=sys.stderr)
 
@@ -50,7 +50,7 @@ class GuestException(Exception):
     NOTE: I added this because the host traceback was conflated with the guest
     traceback.
     """
-  
+
     def __init__(self, exctype, value, frames):
         self.exctype = exctype
         if isinstance(value, GuestException):
@@ -952,7 +952,7 @@ class VirtualMachine(object):
                     defaults, func.func_closure, self)
         else:
             byterun_func = func
-         
+
         #debug1('  Calling: %s', byterun_func)
         retval = byterun_func(*posargs, **namedargs)
         self.push(retval)

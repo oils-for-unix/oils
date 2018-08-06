@@ -20,7 +20,7 @@ class Tracer(object):
   # Limit to 10M events by default.
   def __init__(self, max_events=10e6):
     self.pid = os.getpid()
-    # append 
+    # append
     self.event_strs = cStringIO.StringIO()
 
     # After max_events we stop recording
@@ -45,7 +45,7 @@ class Tracer(object):
     name = frame.f_code.co_name
     filename = frame.f_code.co_filename
     if event_type in ('call', 'c_call'):
-      self.depth += 1 
+      self.depth += 1
 
     record = '%s%s\t%s\t%s\t%s\t%s\n' % ('  ' * self.depth,
         event_type, filename, frame.f_lineno, name, arg)

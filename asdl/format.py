@@ -445,7 +445,7 @@ def _PrintTreeObj(node, f, indent, max_col):
       f.write('\n')  # separate fields
 
     f.write(ind + node.right)
- 
+
 
 def PrintTree(node, f, indent=0, max_col=100):
   """Second step of printing: turn homogeneous tree into a colored string.

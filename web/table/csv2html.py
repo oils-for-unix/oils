@@ -10,7 +10,7 @@ Attempts to read foo_schema.csv.  If not it assumes everything is a string.
 
 Things it handles:
 
-- table-sort.js integration <colgroup> 
+- table-sort.js integration <colgroup>
   - <table id="foo"> for making columns sortable
   - for choosing the comparator to use!
   - for highlighting on sort
@@ -140,7 +140,7 @@ class Schema:
   def ColumnPrecision(self, index):
     col_name = self.col_names[index]
     return self.precision_lookup.get(col_name, 1)  # default is arbitrary
-  
+
 
 def PrintRow(row, schema):
   """Print a CSV row as HTML, using the given formatting.
@@ -201,7 +201,7 @@ def PrintRow(row, schema):
       s = '<a href="%s">%s</a>' % (cgi.escape(href), cgi.escape(cell_str))
     else:
       s = cgi.escape(cell_str)
-    
+
     print(s, end=' ')
     print('</td>')
 

@@ -13,7 +13,7 @@ Differences from getopt/optparse:
 - maybe: integrate with usage
 - maybe: integrate with flags
 
-optparse: 
+optparse:
   - has option groups
 
 NOTES about builtins:
@@ -373,7 +373,7 @@ class BuiltinFlags(object):
       print(ch)
 
   def ShortFlag(self, short_name, arg_type=None):
-    """ 
+    """
     This is very similar to ShortFlag for FlagsAndOptions, except we have
     separate arity0 and arity1 dicts.
     """
@@ -439,7 +439,7 @@ class BuiltinFlags(object):
     # So look up the first one
 
     # NOTE about -:
-    # 'set -' ignores it, vs set 
+    # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
 
     state = _ArgState(argv)

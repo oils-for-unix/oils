@@ -141,9 +141,9 @@ def _Walk(obj, cls, ref, syms):
   #if obj.__name__ in ('write', 'get', 'Parse'):
   #  log('OBJ %s %d', obj, id(obj))
   #  pass
-   
+
   # Oh is the namedtuple_ crap because of the Block class byterun/pyobj?
-  
+
   if module_name is None or module_name in (
       'namedtuple_Arguments', 'namedtuple_ArgSpec',
       'namedtuple_Block'):
@@ -210,7 +210,7 @@ def _Walk(obj, cls, ref, syms):
 
       elif op == 'LOAD_ATTR':
         #if last_val is not None and isinstance(last_val, types.ModuleType):
-        if last_val is not None: 
+        if last_val is not None:
           #log('%s %s', op, var)
           val = _GetAttr(last_val, var)
           ref.append(var)
@@ -219,7 +219,7 @@ def _Walk(obj, cls, ref, syms):
           # methods, which have unique addresses.
           # Examples: WAIT_SPEC.Parse, sys.stdout.write
 
-          # BUG: os.fork and sys.stdout.write are the same? 
+          # BUG: os.fork and sys.stdout.write are the same?
           # I thought os.fork is types.BuiltinFunctionType, and
           # sys.stdout.write is types.BuiltinMethodType, but why not?
 
@@ -407,7 +407,7 @@ class Symbols(object):
 
     # Still missing: non-enum ASDL types?  Why?  CompoundObj?
     # command_e is there, but command and SimpleCommmand aren't.
-    # it's because we do 
+    # it's because we do
     # ast.command_e vs. ast.SimpleCommand
     # in both cases ast is a osh/meta _AsdlModule?
 

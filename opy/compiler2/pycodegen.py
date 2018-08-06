@@ -1258,7 +1258,7 @@ class _FunctionCodeGenerator(CodeGenerator):
         return True
 
     def FindLocals(self):
-        func = self.func 
+        func = self.func
 
         lnf = LocalNameFinder(set(self.func.argnames))
         lnf.Dispatch(func.code)

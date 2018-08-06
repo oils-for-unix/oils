@@ -564,7 +564,7 @@ def main(argv):
 
       with open(raw_base + '__parse.stderr.txt') as f:
         st['parse_stderr'] = f.read()
-      
+
       osh2oil_task_path = raw_base + '__osh2oil.task.txt'
       st['osh2oil_failed'], st['osh2oil_proc_secs'] = _ReadTaskFile(
           osh2oil_task_path)

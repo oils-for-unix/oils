@@ -127,7 +127,7 @@ class DepsVisitor(Visitor):
 
         # Should we mark them behind 'sudo'?  e.g. "sudo apt install"?
         self.progs_used[argv1] = True
-        
+
     elif cls is ast.FuncDef:
       self.funcs_defined[node.name] = True
 

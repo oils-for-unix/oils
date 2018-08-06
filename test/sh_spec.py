@@ -162,7 +162,7 @@ class Tokenizer(object):
 #
 # -- Code is either literal lines, or a commented out code: value.
 # code = PLAIN_LINE*
-#      | '## code:'  VALUE 
+#      | '## code:'  VALUE
 #
 # -- Key value pairs can be single- or multi-line
 # key_value = '##' KEY ':' VALUE
@@ -173,10 +173,10 @@ class Tokenizer(object):
 #             key_value*
 #             code
 #             key_value*
-# 
+#
 # -- Should be a blank line after each test case.  Leading comments and code
 # -- are OK.
-# test_file = (COMMENT | PLAIN_LINE)* (test_case '\n')*  
+# test_file = (COMMENT | PLAIN_LINE)* (test_case '\n')*
 
 
 def AddMetadataToCase(case, qualifier, shells, name, value):
@@ -258,7 +258,7 @@ def ParseCodeLines(tokens, case):
 
 def ParseTestCase(tokens):
   """Parse a single test case and return it.
-  
+
   If at EOF, return None.
   """
   line_num, kind, item = tokens.peek()
@@ -381,7 +381,7 @@ def CreateAssertions(case, sh_label):
       # code is 0.
       a = EqualAssertion('status', 0)
       assertions.append(a)
-    
+
   #print 'SHELL', shell
   #pprint.pprint(case)
   #print(assertions)
@@ -947,7 +947,7 @@ def main(argv):
     return 0
 
   allowed = opts.osh_failures_allowed
-  all_count = stats['num_failed'] 
+  all_count = stats['num_failed']
   osh_count = stats['osh_num_failed']
   if allowed == 0:
     log('')

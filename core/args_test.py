@@ -80,7 +80,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(3, i)
 
     # Now this is an arg.  Gah.
-    argv = ['+o', 'pipefail', 'errexit'] 
+    argv = ['+o', 'pipefail', 'errexit']
     arg, i = s.Parse(argv)
     self.assertEqual([('pipefail', False)], arg.opt_changes)
     self.assertEqual(['errexit'], argv[i:])

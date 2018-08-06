@@ -930,7 +930,7 @@ class WordParser(object):
         return None
 
       if w.tag == word_e.TokenWord:
-        word_id = word.CommandId(w) 
+        word_id = word.CommandId(w)
         if word_id == Id.Right_ArrayLiteral:
           break
         # Unlike command parsing, array parsing allows embedded \n.
