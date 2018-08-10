@@ -53,7 +53,7 @@ def _BraceDetect(w):
     # alternatives, with optional prefix and suffix.
     brace_expr = part* '{' alt ',' alt (',' alt)* '}' part*
 
-  Problem this grammar: it's not LL(1) 
+  Problem this grammar: it's not LL(1)
   Is it indirect left-recursive?
   What's the best way to handle it?  LR(1) parser?
 

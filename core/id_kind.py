@@ -121,7 +121,7 @@ class IdSpec(object):
 
   def AddBoolBinaryForBuiltin(self, token_name, kind, bool_arg_type_e):
     """For [ = ] [ == ] and [ != ].
-    
+
     These operators are NOT added to the lexer.  The are "lexed" as StringWord.
     """
     token_name = 'BoolBinary_%s' % token_name
@@ -363,7 +363,7 @@ def AddKinds(spec):
       'OneChar', 'Stop', 'Hex',
       # Two variants of Octal: \377, and \0377.
       'Octal3', 'Octal4',
-      'Unicode4', 'Unicode8', 'Literals', 
+      'Unicode4', 'Unicode8', 'Literals',
       'BadBackslash',  # \D or trailing \
   ])
 
@@ -379,7 +379,7 @@ def AddKinds(spec):
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
-_UNARY_OTHER_CHARS = 'otvR'  # -o is overloaded 
+_UNARY_OTHER_CHARS = 'otvR'  # -o is overloaded
 _UNARY_PATH_CHARS = 'abcdefghLprsSuwxOGN'  # -a is overloaded
 
 _BINARY_PATH = ['ef', 'nt', 'ot']
@@ -425,7 +425,7 @@ def SetupTestBuiltin(Id, Kind, id_spec,
   - =~ doesn't exist
   - && -> -a, || -> -o
   - ( ) -> Op_LParen (they don't appear above)
-  """ 
+  """
   for letter in _UNARY_STR_CHARS + _UNARY_OTHER_CHARS + _UNARY_PATH_CHARS:
     token_name = 'BoolUnary_%s' % letter
     unary_lookup['-' + letter] = getattr(Id, token_name)

@@ -63,7 +63,7 @@ class _MatchOshToken_Slow(object):
     re_list = self.lexer_def[lex_mode]
 
     return _LongestMatch(re_list, line, start_pos)
-  
+
 
 def _MatchOshToken_Fast(lex_mode, line, start_pos):
   """Returns (Id, end_pos)."""

@@ -127,7 +127,7 @@ class ParserSpec(object):
 
   def Null(self, bp, nud, tokens):
     """Register a token that doesn't take anything on the left.
-    
+
     Examples: constant, prefix operator, error.
     """
     for token in tokens:

@@ -40,7 +40,7 @@ class ReaderTest(unittest.TestCase):
     for a in [a1, a2, a3]:
       a.PushSource('reader_test.py')
 
-    for r in [r1, r2, r3]: 
+    for r in [r1, r2, r3]:
       print(r)
       # Lines are added to the arena with a line_id.
       self.assertEqual((0, 'one\n'), r.GetLine())

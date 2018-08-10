@@ -329,7 +329,7 @@ static PyMethodDef methods[] = {
    "an error."},
   {"fnmatch", func_fnmatch, METH_VARARGS,
    "Return whether a string matches a pattern."},
-  // We need this since Python's glob doesn't have char classes. 
+  // We need this since Python's glob doesn't have char classes.
   {"glob", func_glob, METH_VARARGS,
    "Return a list of files that match a pattern."},
   {"regex_parse", func_regex_parse, METH_VARARGS,

@@ -16,13 +16,13 @@ Idea: This is discouraged/legacy, so write it in Oil rather than C++?
 Problem: Need both classes and algebraic data types.
 
 Do we have different splitters?  Awk splitter might be useful.  Regex
-splitter later.  CSV splitter?  
+splitter later.  CSV splitter?
 LiteralSlice.
 
 Other kinds of splitters:
 
 - RegexSplitter
-- CsvSplitter 
+- CsvSplitter
 - TSV2Splitter -- this transforms because of # \u0065 in JSON.  So it's not a
   pure slice, but neither is IFS splitting because of backslashes.
 - AwkSplitter
@@ -30,7 +30,7 @@ Other kinds of splitters:
   - does perl have a spilt context?
 
 with SPLIT_REGEX = / digit+ / {
-  echo $#  
+  echo $#
   echo $len(argv)
   echo $1 $2
   echo @argv
@@ -81,7 +81,7 @@ def _SpansToParts(s, spans):
 
 class SplitContext(object):
   """ A polymorphic interface to field splitting.
-  
+
   It respects a STACK of IFS values, for example:
 
   echo $x  # uses default shell IFS
@@ -160,7 +160,7 @@ class SplitContext(object):
     IGNORED can be used for two reasons:
     1. The slice is a delimiter.
     2. The slice is a a backslash escape.
-    
+
     Example: If you have one\:two, then there are four slices.  Only the
     backslash one is ignored.  In 'one:two', then you have three slices.  The
     colon is ignored.
@@ -243,7 +243,7 @@ class NullSplitter(_BaseSplitter):
 CH_DE_WHITE, CH_DE_GRAY, CH_BLACK, CH_BACKSLASH = range(4)
 
 # Nodes are states
-(ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2, 
+(ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2,
  ST_BLACK, ST_BACKSLASH) = range(7)
 
 # Actions control what spans to emit.
@@ -373,7 +373,7 @@ class IfsSplitter(_BaseSplitter):
         spans.append((span_e.Backslash, i))  # \
 
       else:
-        pass  # Emit nothing 
+        pass  # Emit nothing
 
       state = new_state
       i += 1
@@ -384,7 +384,7 @@ class IfsSplitter(_BaseSplitter):
     elif state == ST_BACKSLASH:
       span_type = span_e.Backslash
     elif state in (ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2):
-      span_type = span_e.Delim 
+      span_type = span_e.Delim
     else:
       raise AssertionError(state)  # shouldn't be in START state
     spans.append((span_type, n))

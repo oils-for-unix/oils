@@ -152,7 +152,7 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
   #log('lhs_expr NODE %s', node)
   assert isinstance(node, ast.lhs_expr), node
   if node.tag == lhs_expr_e.LhsName:  # a = b
-    # Problem: It can't be an array?  
+    # Problem: It can't be an array?
     # a=(1 2)
     # (( a++ ))
     lval = runtime.LhsName(node.name)
@@ -325,7 +325,7 @@ class ArithEvaluator(_ExprEvaluator):
         new_int = old_int ^ rhs
       else:
         raise AssertionError(op_id)  # shouldn't get here
- 
+
       self._Store(lval, new_int)
       return new_int
 

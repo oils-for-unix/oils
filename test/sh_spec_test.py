@@ -53,14 +53,14 @@ class ShSpecTest(unittest.TestCase):
 
     types = [type_ for line_num, type_, value in TOKENS1]
     self.assertEqual(
-        [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE, 
+        [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE,
           KEY_VALUE, KEY_VALUE, KEY_VALUE,
           EOF], types)
 
     #pprint.pprint(TOKENS2)
     types2 = [type_ for line_num, type_, value in TOKENS2]
     self.assertEqual(
-        [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE, 
+        [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE,
           KEY_VALUE, KEY_VALUE,
           KEY_VALUE_MULTILINE, PLAIN_LINE, PLAIN_LINE,
           KEY_VALUE_MULTILINE, PLAIN_LINE, PLAIN_LINE, END_MULTILINE,

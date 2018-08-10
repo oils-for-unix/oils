@@ -88,15 +88,15 @@ def NumOfUtf8Chars(bytes):
       if (byte_as_int >> 7) == 0b0:
         i += 1
       elif (byte_as_int >> 5) == 0b110:
-        _CheckContinuationByte(bytes[i+1]) 
+        _CheckContinuationByte(bytes[i+1])
         i += 2
       elif (byte_as_int >> 4) == 0b1110:
-        _CheckContinuationByte(bytes[i+1]) 
-        _CheckContinuationByte(bytes[i+2]) 
+        _CheckContinuationByte(bytes[i+1])
+        _CheckContinuationByte(bytes[i+2])
         i += 3
       elif (byte_as_int >> 3) == 0b11110:
-        _CheckContinuationByte(bytes[i+1]) 
-        _CheckContinuationByte(bytes[i+2]) 
+        _CheckContinuationByte(bytes[i+1])
+        _CheckContinuationByte(bytes[i+2])
         _CheckContinuationByte(bytes[i+3])
         i += 4
       else:

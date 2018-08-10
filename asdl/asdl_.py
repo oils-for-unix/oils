@@ -218,7 +218,7 @@ class Type(AST):
 
 class _CompoundType(AST):
     """Either a Product or Constructor.
-    
+
     encode.py and format.py need a reflection API.
     """
 

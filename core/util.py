@@ -84,7 +84,7 @@ class FatalRuntimeError(_ErrorWithLocation):
 
 class ErrExitFailure(FatalRuntimeError):
   """For set -e.
-  
+
   Travels between WordEvaluator and Executor.
   """
   pass

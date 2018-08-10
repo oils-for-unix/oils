@@ -648,7 +648,7 @@ class RootCompleter(object):
 class ReadlineCompleter(object):
   def __init__(self, root_comp, status_out, debug=False):
     self.root_comp = root_comp
-    self.status_out = status_out 
+    self.status_out = status_out
     self.debug = debug
 
     self.comp_iter = None  # current completion being processed

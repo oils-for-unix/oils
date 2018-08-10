@@ -27,7 +27,7 @@ def ParsePythonTest(f):
     if match:
       current_test = match.group(1)
       continue
-  
+
     match = METHOD_RE.match(line)
     if match and current_test is not None:
       print('%s.%s' % (current_test, match.group(1)))

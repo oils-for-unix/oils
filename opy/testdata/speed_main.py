@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys 
+import sys
 import speed
 
 n = int(sys.argv[1])

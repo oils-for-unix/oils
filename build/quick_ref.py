@@ -288,7 +288,7 @@ def Pages(f, text_out):
         print('<pre>')
 
         prev_topics = topics
-        
+
       else:
         # Three or more should be a heading, not a comment.
         if line.startswith('###'):

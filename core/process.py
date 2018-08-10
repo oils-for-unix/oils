@@ -452,7 +452,7 @@ class Process(Job):
     #log('STARTED process %s, pid = %d', self, pid)
 
     # Invariant, after the process is started, it stores its PID.
-    self.pid = pid 
+    self.pid = pid
     return pid
 
   def WaitUntilDone(self, waiter):

@@ -342,7 +342,7 @@ LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   C('|', Id.Lit_Chars),
 ] + [
   # Avoid "unreachable rule error"
-  (is_regex, pat, re_list) for 
+  (is_regex, pat, re_list) for
   (is_regex, pat, re_list) in _UNQUOTED
   if not (is_regex == False and pat in ('(', ')', '|'))
 ]

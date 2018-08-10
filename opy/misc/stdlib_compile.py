@@ -22,7 +22,7 @@ def getPycHeader(filename):
   #mtime = os.path.getmtime(filename)
   mtime = 0  # to make it deterministic for now
   mtime = struct.pack('<i', int(mtime))
-  return imp.get_magic() + mtime 
+  return imp.get_magic() + mtime
 
 
 def compileAndWrite(in_path, out_path, compile_func):

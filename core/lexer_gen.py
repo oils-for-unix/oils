@@ -76,11 +76,11 @@ def _CharClassLiteral(arg):
   if arg == 0:
     s = r'\x00'           # "\x00"
   elif arg == ord('\n'):
-    s = r'\n' 
+    s = r'\n'
   elif arg == ord('\r'):
-    s = r'\r' 
+    s = r'\r'
   elif arg == ord('\t'):
-    s = r'\t' 
+    s = r'\t'
   elif arg in CHAR_CLASS_META_CODES:
     s = '\\' + chr(arg)
   else:
@@ -92,11 +92,11 @@ def _Literal(arg):
   if arg == 0:
     s = r'\x00'           # "\000"
   elif arg == ord('\n'):
-    s = r'\n' 
+    s = r'\n'
   elif arg == ord('\r'):
-    s = r'\r' 
+    s = r'\r'
   elif arg == ord('\t'):
-    s = r'\t' 
+    s = r'\t'
   elif arg in LITERAL_META_CODES:
     s = '\\' + chr(arg)
   else:
@@ -142,7 +142,7 @@ def TranslateTree(re_tree, f, in_char_class=False):
 
     elif name == 'negate':  # ^ in [^a-z]
       assert arg is None
-      f.write('^') 
+      f.write('^')
 
     elif name == 'literal':  # Quote \ and " in re2c syntax
       # TODO: it matters if we're inside a character class

@@ -51,7 +51,7 @@ def to_hexstr(bytes_value, level=0, wrap=False):
 # TODO: Do this in a cleaner way.  Right now I'm avoiding modifying the
 # consts module.
 def build_flags_def(consts, co_flags_def):
-  for name in dir(consts): 
+  for name in dir(consts):
     if name.startswith('CO_'):
       co_flags_def[name] = getattr(consts, name)
 

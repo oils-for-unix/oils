@@ -9,7 +9,7 @@ import sys
 import symtable
 
 from . import symbols
-from . import transformer 
+from . import transformer
 
 
 def list_eq(l1, l2):

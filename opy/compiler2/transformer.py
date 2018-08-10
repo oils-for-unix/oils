@@ -40,7 +40,7 @@ def Init(sym):
 
   Args:
     sym: module
-  
+
   The stdlib module is generated from pgen.c's output data.  pgen2 derives it
   from the grammar directly.
 
