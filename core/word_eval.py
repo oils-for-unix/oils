@@ -7,14 +7,13 @@ import sys
 
 from core import braces
 from core import expr_eval
-from core import libstr
 from core import glob_
-from osh.meta import Id, Kind, LookupKind
-from osh.meta import runtime
+from core import libstr
+from core import ui
 from core import state
 from core import word_compile
 from core import util
-from osh.meta import ast
+from osh.meta import ast, runtime, Id, Kind, LookupKind
 
 word_e = ast.word_e
 bracket_op_e = ast.bracket_op_e
@@ -137,6 +136,7 @@ class _WordEvaluator(object):
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
     self.splitter = splitter
+
     self.globber = glob_.Globber(exec_opts)
     # NOTE: Executor also instantiates one.
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self, arena)
@@ -552,7 +552,16 @@ class _WordEvaluator(object):
 
     elif part.suffix_op:
       op = part.suffix_op
-      if op.tag == suffix_op_e.StringUnary:
+      if op.tag == suffix_op_e.StringNullary:
+        if op.op_id == Id.VOp0_P:
+          # TODO: Use dependency injection
+          #val = self.prompt._EvalPS1(val)
+          prompt = ui.PROMPT.EvalPS1(val)
+          val = runtime.Str(prompt)
+        else:
+          raise NotImplementedError(op.op_id)
+
+      elif op.tag == suffix_op_e.StringUnary:
         if LookupKind(part.suffix_op.op_id) == Kind.VTest:
           # TODO: Change style to:
           # if self._ApplyTestOp(...)

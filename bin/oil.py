@@ -192,6 +192,10 @@ def OshMain(argv0, argv, login_shell):
     if e.errno != errno.ENOENT:
       raise
 
+  # Needed in non-interactive shells for @P
+  prompt = ui.Prompt(OSH_PS1, arena, parse_ctx, ex)
+  ui.PROMPT = prompt
+
   if opts.c is not None:
     arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena)
@@ -199,7 +203,6 @@ def OshMain(argv0, argv, login_shell):
       exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
-    prompt = ui.Prompt(OSH_PS1, arena, parse_ctx, ex)
     line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:

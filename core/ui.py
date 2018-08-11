@@ -104,14 +104,14 @@ class Prompt(object):
     self.parse_cache = {}  # PS1 value -> CompoundWord.
 
   def Reset(self):
-    ps1 = "".join(self._EvalPS1())
-    decoded_string = self.ReplacePS1Variables(ps1)
-    self.prompt_str = decoded_string
+    self.prompt_str = self._EvalPS1()
 
   # copied from _EvalPS4
   def _EvalPS1(self):
     val = self.ex.mem.GetVar('PS1')
+    return self.EvalPS1(val)
 
+  def EvalPS1(self, val):
     if val.tag != runtime.value_e.Str:
       return "", self.ps1
 
@@ -135,9 +135,10 @@ class Prompt(object):
 
     self.parse_cache[ps1] = ps1_word
 
-    prefix = self.ex.word_ev.EvalWordToString(ps1_word)
-
-    return prefix.s
+    # e.g. "${debian_chroot}\u" -> '\u'
+    val = self.ex.word_ev.EvalWordToString(ps1_word)
+    decoded_string = self.ReplacePS1Variables(val.s)
+    return decoded_string
 
   def GetInput(self):
     try:
@@ -271,3 +272,7 @@ def usage(msg, *args):
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
+
+
+# Set by main()
+PROMPT = None
