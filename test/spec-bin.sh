@@ -19,7 +19,7 @@ readonly DIR=$THIS_DIR/../_tmp/spec-bin
 download() {
   mkdir -p $DIR
   wget --no-clobber --directory $DIR \
-    https://www.oilshell.org/blob/spec-bin/bash-4.3.tar.gz \
+    https://www.oilshell.org/blob/spec-bin/bash-4.4.tar.gz \
     https://www.oilshell.org/blob/spec-bin/busybox-1.22.0.tar.bz2 \
     https://www.oilshell.org/blob/spec-bin/dash-0.5.8.tar.gz \
     https://www.oilshell.org/blob/spec-bin/mksh-R52c.tgz \
@@ -68,7 +68,7 @@ build-zsh() {
 # busybox: make defconfig (default config); make
 
 build-bash() {
-  pushd $DIR/bash-4.3
+  pushd $DIR/bash-4.4
   ./configure
   make
   popd
@@ -106,7 +106,7 @@ build-all() {
 
 copy-all() {
   pushd $DIR
-  cp -f -v bash-4.3/bash .
+  cp -f -v bash-4.4/bash .
   cp -f -v dash-0.5.8/src/dash .
   cp -f -v mksh-R52c/mksh .
   cp -f -v busybox-1.22.0/busybox .
