@@ -5,7 +5,7 @@ state_test.py: Tests for state.py
 
 import unittest
 
-from osh.meta import runtime
+from osh.meta import ast, runtime
 from core import state  # module under test
 from core import util
 from core import test_lib
@@ -17,14 +17,18 @@ var_flags_e = runtime.var_flags_e
 
 def _InitMem():
   # empty environment, no arena.
-  return state.Mem('', [], {}, None)
+  arena = test_lib.MakeArena('<state_test.py>')
+  line_id = arena.AddLine(1, 'foo')
+  span = ast.line_span(line_id, 0, 1)  # dummy
+  arena.AddLineSpan(span)
+  return state.Mem('', [], {}, arena)
 
 
 class MemTest(unittest.TestCase):
 
   def testGet(self):
     mem = _InitMem()
-    mem.PushCall('my-func', ['a', 'b'])
+    mem.PushCall('my-func', 0, ['a', 'b'])
     print(mem.GetVar('HOME'))
     mem.PopCall()
     print(mem.GetVar('NONEXISTENT'))
@@ -65,7 +69,7 @@ class MemTest(unittest.TestCase):
     mem = _InitMem()
     print(mem)
 
-    mem.PushCall('my-func', ['ONE'])
+    mem.PushCall('my-func', 0, ['ONE'])
     self.assertEqual(2, len(mem.var_stack))  # internal details
 
     # local x=y
@@ -74,7 +78,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual('y', mem.var_stack[-1].vars['x'].val.s)
 
     # New frame
-    mem.PushCall('my-func', ['TWO'])
+    mem.PushCall('my-func', 0, ['TWO'])
     self.assertEqual(3, len(mem.var_stack))  # internal details
 
     # x=y -- test out dynamic scope
@@ -253,10 +257,10 @@ class MemTest(unittest.TestCase):
 
   def testArgv(self):
     mem = _InitMem()
-    mem.PushCall('my-func', ['a', 'b'])
+    mem.PushCall('my-func', 0, ['a', 'b'])
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
-    mem.PushCall('my-func', ['x', 'y'])
+    mem.PushCall('my-func', 0, ['x', 'y'])
     self.assertEqual(['x', 'y'], mem.GetArgv())
 
     status = mem.Shift(1)

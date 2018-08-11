@@ -105,7 +105,8 @@ hex=0x0f    # = 15 (decimal)
 
 # TODO: Add tests for this
 # https://www.gnu.org/software/bash/manual/bash.html#Bash-Conditional-Expressions
-# When used with [[, the ‘<’ and ‘>’ operators sort lexicographically using the current locale. The test command uses ASCII ordering.
+# When used with [[, the ‘<’ and ‘>’ operators sort lexicographically using the
+# current locale. The test command uses ASCII ordering.
 
 #### > on strings
 # NOTE: < doesn't need space, even though == does?  That's silly.

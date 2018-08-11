@@ -106,13 +106,17 @@ module osh
   | StringWord(id id, string s)
 
   -- TODO: Need more tokens/spids to translate a[x++]=1
+  -- These don't follow the LST design, because they're shared for
+  -- s['x']+='y' and (( s[ 42 ] ++ )).
+  -- It would be better runtime.lvalue were be the shared representation, and
+  -- there were 2 different lhs_expr types.  They both should contribute their
+  -- location information.
   lhs_expr =
     LhsName(string name)
   | LhsIndexedName(string name, arith_expr index)
 
   arith_expr =
-    -- TODO: need token
-    ArithVarRef(string name)  -- variable without $
+    ArithVarRef(token token)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
 
   | UnaryAssign(id op_id, lhs_expr child)

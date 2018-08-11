@@ -26,6 +26,28 @@ compgen -A foo
 echo status=$?
 ## stdout: status=2
 
+#### how compgen calls completion functions
+foo_complete() {
+  argv.py argv "$@"
+  argv.py COMP_WORDS "${COMP_WORDS[@]}"
+  argv.py COMP_CWORD "${COMP_CWORD}"
+  argv.py COMP_LINE "${COMP_LINE}"
+  argv.py COMP_POINT "${COMP_POINT}"
+  #return 124
+  COMPREPLY=(one two three)
+}
+compgen -F foo_complete foo a b c
+## STDOUT:
+['argv', 'compgen', 'foo', '']
+['COMP_WORDS']
+['COMP_CWORD', '-1']
+['COMP_LINE', '']
+['COMP_POINT', '0']
+one
+two
+three
+## END
+
 #### complete -o -F (git)
 foo() { echo foo; }
 wrapper=foo
@@ -119,6 +141,34 @@ compgen -A shopt -P [ -S ] nu
 compgen -A helptopic -S ___ fa
 ## STDOUT:
 false___
+## END
+
+#### compgen -A directory
+compgen -A directory b
+## STDOUT:
+bin
+benchmarks
+build
+## END
+
+#### compgen -W 'one two three'
+compgen -W 'one two three'
+echo --
+compgen -W 'w1 w2 three' -A directory w
+echo --
+compgen -A directory -W 'w1 w2 three' w  # order doesn't matter
+## STDOUT:
+one
+two
+three
+--
+web
+w1
+w2
+--
+web
+w1
+w2
 ## END
 
 #### complete with nonexistent function

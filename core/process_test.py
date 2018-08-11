@@ -6,14 +6,13 @@ process_test.py: Tests for process.py
 import os
 import unittest
 
-from osh.meta import Id
 from core import builtin
-from osh.meta import ast
-
 from core import process  # module under test
-from osh.meta import runtime
 from core import util
-from core.cmd_exec_test import InitExecutor  # helper
+from core import cmd_exec_test
+from core import test_lib
+
+from osh.meta import runtime, Id
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
@@ -27,6 +26,12 @@ def Banner(msg):
 
 
 _WAITER = process.Waiter()
+_FD_STATE = process.FdState()
+
+
+def _CommandNode(code_str, arena):
+  c_parser = cmd_exec_test.InitCommandParser(code_str, arena=arena)
+  return c_parser.ParseLogicalLine()
 
 
 def _ExtProc(argv):
@@ -79,54 +84,52 @@ class ProcessTest(unittest.TestCase):
     print('FDS AFTER', os.listdir('/dev/fd'))
 
   def testPipeline(self):
+    arena = test_lib.MakeArena('testPipeline')
+    node = _CommandNode('uniq -c', arena)
+    ex = cmd_exec_test.InitExecutor(arena=arena)
     print('BEFORE', os.listdir('/dev/fd'))
 
     p = process.Pipeline()
     p.Add(_ExtProc(['ls']))
     p.Add(_ExtProc(['cut', '-d', '.', '-f', '2']))
     p.Add(_ExtProc(['sort']))
-    p.Add(_ExtProc(['uniq', '-c']))
 
-    pipe_status = p.Run(_WAITER)
+    p.AddLast((ex, node))
+
+    pipe_status = p.Run(_WAITER, _FD_STATE)
     log('pipe_status: %s', pipe_status)
 
     print('AFTER', os.listdir('/dev/fd'))
 
   def testPipeline2(self):
+    arena = test_lib.MakeArena('testPipeline')
+    ex = cmd_exec_test.InitExecutor(arena=arena)
+
     Banner('ls | cut -d . -f 1 | head')
     p = process.Pipeline()
     p.Add(_ExtProc(['ls']))
     p.Add(_ExtProc(['cut', '-d', '.', '-f', '1']))
-    p.Add(_ExtProc(['head']))
 
-    print(p.Run(_WAITER))
+    node = _CommandNode('head', arena)
+    p.AddLast((ex, node))
 
-    ex = InitExecutor()
+    fd_state = process.FdState()
+    print(p.Run(_WAITER, _FD_STATE))
 
     # Simulating subshell for each command
-    w1 = ast.CompoundWord()
-    w1.parts.append(ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls')))
-    node1 = ast.SimpleCommand()
-    node1.words = [w1]
-
-    w2 = ast.CompoundWord()
-    w2.parts.append(ast.LiteralPart(ast.token(Id.Lit_Chars, 'head')))
-    node2 = ast.SimpleCommand()
-    node2.words = [w2]
-
-    w3 = ast.CompoundWord()
-    w3.parts.append(ast.LiteralPart(ast.token(Id.Lit_Chars, 'sort')))
-    w4 = ast.CompoundWord()
-    w4.parts.append(ast.LiteralPart(ast.token(Id.Lit_Chars, '--reverse')))
-    node3 = ast.SimpleCommand()
-    node3.words = [w3, w4]
+    node1 = _CommandNode('ls', arena)
+    node2 = _CommandNode('head', arena)
+    node3 = _CommandNode('sort --reverse', arena)
 
     p = process.Pipeline()
     p.Add(Process(process.SubProgramThunk(ex, node1)))
     p.Add(Process(process.SubProgramThunk(ex, node2)))
     p.Add(Process(process.SubProgramThunk(ex, node3)))
 
-    print(p.Run(_WAITER))
+    last_thunk = (ex, _CommandNode('cat', arena))
+    p.AddLast(last_thunk)
+
+    print(p.Run(_WAITER, _FD_STATE))
 
     # TODO: Combine pipelines for other things:
 

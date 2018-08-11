@@ -177,10 +177,29 @@ def DoUnarySuffixOp(s, op, arg):
 
     elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
       if s.endswith(arg):
-        # Mutate it so we preserve the flags.
         return s[:-len(arg)]
       else:
         return s
+
+    elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
+      if arg != '':
+        raise NotImplementedError("%s can't have an argument" % op.op_id)
+      return s[0].lower() + s[1:]
+
+    elif op.op_id == Id.VOp1_DComma:
+      if arg != '':
+        raise NotImplementedError("%s can't have an argument" % op.op_id)
+      return s.lower()
+
+    elif op.op_id == Id.VOp1_Caret:  # Only uppercase the first letter
+      if arg != '':
+        raise NotImplementedError("%s can't have an argument" % op.op_id)
+      return s[0].upper() + s[1:]
+
+    elif op.op_id == Id.VOp1_DCaret:
+      if arg != '':
+        raise NotImplementedError("%s can't have an argument" % op.op_id)
+      return s.upper()
 
     else:  # e.g. ^ ^^ , ,,
       raise AssertionError(op.op_id)
@@ -238,6 +257,9 @@ def DoUnarySuffixOp(s, op, arg):
         return s[:i]
     else:
       return s
+
+  else:
+    raise NotImplementedError("Can't use %s with pattern" % op.op_id)
 
 
 def _AllMatchPositions(s, regex):

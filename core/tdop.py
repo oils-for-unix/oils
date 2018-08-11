@@ -65,12 +65,16 @@ def ToLValue(node):
   """
   # foo = bar, foo[1] = bar
   if node.tag == arith_expr_e.ArithVarRef:
-    return ast.LhsName(node.name)
+    # For consistency with osh/cmd_parse.py, append a span_id.
+    # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
+    lhs_expr = ast.LhsName(node.token.val)
+    lhs_expr.spids.append(node.token.span_id)
+    return lhs_expr
   if node.tag == arith_expr_e.ArithBinary:
     # For example, a[0][0] = 1 is NOT valid.
     if (node.op_id == Id.Arith_LBracket and
         node.left.tag == arith_expr_e.ArithVarRef):
-      return ast.LhsIndexedName(node.left.name, node.right)
+      return ast.LhsIndexedName(node.left.token.val, node.right)
 
   return None
 
@@ -86,11 +90,10 @@ def NullError(p, t, bp):
 
 
 def NullConstant(p, w, bp):
-  # The word itself is a node
-  if w.tag == word_e.CompoundWord:
-    var_name = word.AsArithVarName(w)
-    if var_name:
-      return ast.ArithVarRef(var_name)
+  var_name_token = word.LooksLikeArithVar(w)
+  if var_name_token:
+    return ast.ArithVarRef(var_name_token)
+
   return ast.ArithWord(w)
 
 

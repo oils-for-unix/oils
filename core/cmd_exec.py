@@ -107,7 +107,7 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx,
-               dumper, debug_f):
+               devtools):
     """
     Args:
       mem: Mem instance for storing variables
@@ -127,14 +127,17 @@ class Executor(object):
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
-    self.dumper = dumper
-    self.debug_f = debug_f  # Used by ShellFuncAction too
+    self.dumper = devtools.dumper
+    self.debug_f = devtools.debug_f  # Used by ShellFuncAction too
 
     self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
-                                                 self)
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
-    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
+                                                 self.arena, self)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev,
+                                             self.arena)
+
+    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev,
+                                           self.arena)
 
     self.traps = {}  # signal/hook name -> callable
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers
@@ -147,13 +150,10 @@ class Executor(object):
     self.waiter = process.Waiter()
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = process.JobState()
+    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev,
+                         devtools.trace_f)
 
     self.loop_level = 0  # for detecting bad top-level break/continue
-    if 0:
-      trace_f = debug_f
-    else:
-      trace_f = util.DebugFile(sys.stderr)
-    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev, trace_f)
     self.check_command_sub_status = False  # a hack
 
   def _EvalHelper(self, c_parser, source_name):
@@ -405,20 +405,19 @@ class Executor(object):
     assert isinstance(node, ast.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
-      runtime_node = runtime.LhsName(node.name)
-      runtime_node.spids.append(spid)
-      return runtime_node
+      lval = runtime.LhsName(node.name)
+      lval.spids.append(spid)
+      return lval
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
-      # TODO: Look up node.name and check if the cell is AssocArray, or if the
-      # type is AssocArray.
+      # The index of StrArray needs to be coerced to int, but not the index of
+      # an AssocArray.
       int_coerce = not self.mem.IsAssocArray(node.name, lookup_mode)
-      #log('int_coerce %s', int_coerce)
       index = self.arith_ev.Eval(node.index, int_coerce=int_coerce)
 
-      runtime_node = runtime.LhsIndexedName(node.name, index)
-      runtime_node.spids.append(node.spids[0])  # copy left-most token over
-      return runtime_node
+      lval = runtime.LhsIndexedName(node.name, index)
+      lval.spids.append(node.spids[0])  # copy left-most token over
+      return lval
 
     raise AssertionError(node.tag)
 
@@ -516,8 +515,8 @@ class Executor(object):
     #
     # - We might want errors to fit on a single line so they don't get
     # interleaved.
-    # - We could return the `exit` builtin into a FatalRuntimeError exception
-    # and get this check for "free".
+    # - We could turn the `exit` builtin into a FatalRuntimeError exception and
+    # get this check for "free".
     thunk = process.SubProgramThunk(self, node,
                                     disable_errexit=disable_errexit)
     p = process.Process(thunk, job_state=job_state)
@@ -548,7 +547,7 @@ class Executor(object):
       func_node = self.funcs.get(arg0)
       if func_node is not None:
         # NOTE: Functions could call 'exit 42' directly, etc.
-        status = self._RunFunc(func_node, argv)
+        status = self._RunFunc(func_node, argv[1:])
         return status
 
     builtin_id = builtin.Resolve(arg0)
@@ -582,22 +581,19 @@ class Executor(object):
     # NOTE: Never returns!
     process.ExecExternalProgram(argv, environ)
 
-  def _MakePipeline(self, node, job_state=None):
-    # NOTE: First or last one could use the "main" shell thread.  Doesn't have
-    # to run in subshell.  Although I guess it's simpler if it always does.
-    # I think bash has an option to control this?  echo hi | read x; should
-    # test it.
-    pi = process.Pipeline(job_state=job_state)
-
-    for child in node.children:
-      p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
-      pi.Add(p)
-    return pi
-
   def _RunPipeline(self, node):
-    pi = self._MakePipeline(node)
+    pi = process.Pipeline()
 
-    pipe_status = pi.Run(self.waiter)
+    # First n-1 processes (which is empty when n == 1)
+    n = len(node.children)
+    for i in xrange(n - 1):
+      p = self._MakeProcess(node.children[i])
+      pi.Add(p)
+
+    # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
+    pi.AddLast((self, node.children[n-1]))
+
+    pipe_status = pi.Run(self.waiter, self.fd_state)
     state.SetGlobalArray(self.mem, 'PIPESTATUS', [str(p) for p in pipe_status])
 
     if self.exec_opts.pipefail:
@@ -621,8 +617,12 @@ class Executor(object):
     #  program presented in this chapter uses the first approach because it
     #  makes bookkeeping somewhat simpler."
     if node.tag == command_e.Pipeline:
-      pi = self._MakePipeline(node, job_state=self.job_state)
-      job_id = pi.Start(self.waiter)
+      pi = process.Pipeline()
+      for child in node.children:
+        pi.Add(self._MakeProcess(child, job_state=self.job_state))
+
+      job_id = pi.StartInBackground(self.waiter, self.job_state)
+
       self.mem.last_job_id = job_id  # for $!
       self.job_state.Register(job_id, pi)
       log('Started background pipeline with job ID %d', job_id)
@@ -754,7 +754,10 @@ class Executor(object):
       # typeset and declare are synonyms?  I see typeset -a a=() the most.
       elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
         # declare is like local, except it can also be used outside functions?
-        lookup_mode = scope_e.LocalOnly
+        if var_flags_e.Global in flags:
+          lookup_mode = scope_e.GlobalOnly
+        else:
+          lookup_mode = scope_e.LocalOnly
       elif node.keyword == Id.Assign_Readonly:
         lookup_mode = scope_e.Dynamic
         flags.append(var_flags_e.ReadOnly)
@@ -767,8 +770,8 @@ class Executor(object):
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
           val = self.word_ev.EvalRhsWord(pair.rhs)
-          old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
-                                            self.exec_opts)
+          old_val, lval = expr_eval.EvalLhsAndLookup(pair.lhs, self.arith_ev,
+                                                     self.mem, self.exec_opts)
           sig = (old_val.tag, val.tag)
           if sig == (value_e.Undef, value_e.Str):
             pass  # val is RHS
@@ -1369,7 +1372,7 @@ class Executor(object):
       if not self.fd_state.Push(def_redirects, self.waiter):
         return 1  # error
 
-    self.mem.PushCall(func_node.name, func_node.spids[0], argv[1:])
+    self.mem.PushCall(func_node.name, func_node.spids[0], argv)
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).
@@ -1393,9 +1396,9 @@ class Executor(object):
 
     return status
 
-  def RunFuncForCompletion(self, func_node):
+  def RunFuncForCompletion(self, func_node, argv):
     try:
-      status = self._RunFunc(func_node, [])
+      status = self._RunFunc(func_node, argv)
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena, sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1

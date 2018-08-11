@@ -12,6 +12,14 @@ from core import word
 
 # TODO: Move Tracer here.
 
+
+class DevTools(object):
+  def __init__(self, dumper, debug_f, trace_f):
+    self.dumper = dumper
+    self.debug_f = debug_f
+    self.trace_f = trace_f
+
+
 def SpanIdFromError(error):
   #print(parse_error)
   if error.span_id != const.NO_INTEGER:
@@ -77,19 +85,22 @@ class CrashDumper(object):
 
     self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
     span_id = SpanIdFromError(error)
-    span = ex.arena.GetLineSpan(span_id)
-    path, line_num = ex.arena.GetDebugInfo(span.line_id)
-    line = ex.arena.GetLine(span.line_id)
 
     self.error = {
-        # Could also do msg % args separately, but JavaScript won't be able to
-        # render that.
-        'msg': error.UserErrorString(),
-        'span_id': span_id,
-        'path': path,
-        'line_num': line_num,
-        'line': line,
+       'msg': error.UserErrorString(),
+       'span_id': span_id,
     }
+
+    if span_id != const.NO_INTEGER:
+      span = ex.arena.GetLineSpan(span_id)
+      path, line_num = ex.arena.GetDebugInfo(span.line_id)
+      line = ex.arena.GetLine(span.line_id)
+
+      # Could also do msg % args separately, but JavaScript won't be able to
+      # render that.
+      self.error['path'] = path
+      self.error['line_num'] = line_num
+      self.error['line'] = line
 
     # TODO: Collect functions, aliases, etc.
 

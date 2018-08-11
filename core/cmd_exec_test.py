@@ -14,8 +14,6 @@ import sys
 
 from core import cmd_exec  # module under test
 from core import dev
-from core import legacy
-from core import word_eval
 from core import process
 from core import state
 from core import test_lib
@@ -25,8 +23,8 @@ from osh.meta import ast, Id
 from osh import parse_lib
 
 
-def InitCommandParser(code_str):
-  arena = test_lib.MakeArena('<cmd_exec_test.py>')
+def InitCommandParser(code_str, arena=None):
+  arena = arena or test_lib.MakeArena('<cmd_exec_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
   _, c_parser = parse_ctx.MakeParser(line_reader)
@@ -34,8 +32,7 @@ def InitCommandParser(code_str):
 
 
 def InitExecutor(arena=None):
-  if not arena:
-    arena = test_lib.MakeArena('<InitExecutor>')
+  arena = arena or test_lib.MakeArena('<InitExecutor>')
 
   mem = state.Mem('', [], {}, arena)
   fd_state = process.FdState()
@@ -44,21 +41,19 @@ def InitExecutor(arena=None):
   # For the tests, we do not use 'readline'.
   exec_opts = state.ExecOpts(mem, None)
   parse_ctx = parse_lib.ParseContext(arena, {})
-  dumper = dev.CrashDumper('')
+
   debug_f = util.DebugFile(sys.stderr)
+  devtools = dev.DevTools(dev.CrashDumper(''), debug_f, debug_f)
+
   return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
-                           parse_ctx, dumper, debug_f)
+                           parse_ctx, devtools)
 
 
 def InitEvaluator():
-  mem = state.Mem('', [], {}, None)
-  state.SetLocalString(mem, 'x', 'xxx')
-  state.SetLocalString(mem, 'y', 'yyy')
-
-  exec_opts = state.ExecOpts(mem, None)
-  # Don't need side effects for most things
-  splitter = legacy.SplitContext(mem)
-  return word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
+  word_ev = test_lib.MakeTestEvaluator()
+  state.SetLocalString(word_ev.mem, 'x', 'xxx')
+  state.SetLocalString(word_ev.mem, 'y', 'yyy')
+  return word_ev
 
 
 class ExpansionTest(unittest.TestCase):

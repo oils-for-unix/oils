@@ -102,7 +102,7 @@ SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 SHOPT_OPTION_NAMES = (
     'nullglob', 'failglob', 'expand_aliases', 'extglob', 'progcomp',
-    'hostcomplete')
+    'hostcomplete', 'lastpipe')
 
 
 class ExecOpts(object):
@@ -167,6 +167,7 @@ class ExecOpts(object):
     self.extglob = False  # No-op for bash compatibility.
     self.progcomp = False  # ditto
     self.hostcomplete = False  # ditto, for words with '@'
+    self.lastpipe = False  # No-op because it's always on.
 
     #
     # OSH-specific options that are not yet implemented.
@@ -504,6 +505,10 @@ class Mem(object):
 
     # For xtrace
     SetGlobalString(self, 'PS4', '+ ')
+
+    # bash-completion uses this.  Value copied from bash.  It doesn't integrate
+    # with 'readline' yet.
+    SetGlobalString(self, 'COMP_WORDBREAKS', '"\'><=;|&(:')
 
   def _InitVarsFromEnv(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in

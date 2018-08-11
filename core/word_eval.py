@@ -133,13 +133,13 @@ class _WordEvaluator(object):
     EvalRhsWord
     EvalWordSequence
   """
-  def __init__(self, mem, exec_opts, splitter):
+  def __init__(self, mem, exec_opts, splitter, arena):
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
     self.splitter = splitter
     self.globber = glob_.Globber(exec_opts)
     # NOTE: Executor also instantiates one.
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self, arena)
 
   def _EvalCommandSub(self, part, quoted):
     """Abstract since it has a side effect.
@@ -342,7 +342,12 @@ class _WordEvaluator(object):
 
       # Treat the value of the variable as a variable name.
       if val.tag == value_e.Str:
-        return self.mem.GetVar(val.s)
+        try:
+          # e.g. ${!OPTIND} gives $1 when OPTIND is 1
+          arg_num = int(val.s)
+          return self.mem.GetArgNum(arg_num)
+        except ValueError:
+          return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
         raise NotImplementedError('${!a[@]}')  # bash gets keys this way
       else:
@@ -503,16 +508,20 @@ class _WordEvaluator(object):
 
       elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
         anode = part.bracket_op.expr
-        index = self.arith_ev.Eval(anode)
 
         if val.tag == value_e.Undef:
           pass  # it will be checked later
+
         elif val.tag == value_e.Str:
-          # TODO: Implement this as an extension. Requires unicode support.
-          # Bash treats it as an array.
-          e_die("Can't index string %r with integer", part.token.val)
+          # Bash treats any string as an array, so we can't add our own
+          # behavior here without making valid OSH invalid bash.
+          e_die("Can't index string %r with integer", part.token.val,
+                token=part.token)
+
         elif val.tag == value_e.StrArray:
+          index = self.arith_ev.Eval(anode)
           try:
+            # could be None because representation is sparse
             s = val.strs[index]
           except IndexError:
             s = None
@@ -521,6 +530,16 @@ class _WordEvaluator(object):
             val = runtime.Undef()
           else:
             val = runtime.Str(s)
+
+        elif val.tag == value_e.AssocArray:
+          key = self.arith_ev.Eval(anode, int_coerce=False)
+          try:
+            val = runtime.Str(val.d[key])
+          except KeyError:
+            val = runtime.Undef()
+
+        else:
+          raise AssertionError(val.__class__.__name__)
 
       else:
         raise AssertionError(part.bracket_op.tag)
@@ -1020,8 +1039,8 @@ class _WordEvaluator(object):
 
 class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, splitter, ex):
-    _WordEvaluator.__init__(self, mem, exec_opts, splitter)
+  def __init__(self, mem, exec_opts, splitter, arena, ex):
+    _WordEvaluator.__init__(self, mem, exec_opts, splitter, arena)
     self.ex = ex
 
   def _EvalCommandSub(self, node, quoted):
@@ -1038,9 +1057,6 @@ class CompletionWordEvaluator(_WordEvaluator):
   Difference from NormalWordEvaluator: No access to executor!  But they both
   have a splitter.
   """
-  def __init__(self, mem, exec_opts, splitter):
-    _WordEvaluator.__init__(self, mem, exec_opts, splitter)
-
   def _EvalCommandSub(self, node, quoted):
     return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
 

@@ -258,6 +258,19 @@ class FdState(object):
     #log('done applying %d redirects', len(redirects))
     return True
 
+  def PushStdinFromPipe(self, r):
+    """Save the current stdin and make it come from descriptor 'r'.
+
+    'r' is typically the read-end of a pipe.  For 'lastpipe'/ZSH semantics of
+
+    echo foo | read line; echo $line
+    """
+    new_frame = _FdFrame()
+    self.stack.append(new_frame)
+    self.cur_frame = new_frame
+
+    return self._PushDup(r, 0)
+
   def MakePermanent(self):
     self.cur_frame.Forget()
 
@@ -558,37 +571,58 @@ class Pipeline(Job):
   $(foo | bar)
   foo | bar | read v
   """
-  def __init__(self, job_state=None):
+  def __init__(self):
     Job.__init__(self)
-    self.job_state = job_state
     self.procs = []
     self.pids = []  # pids in order
     self.pipe_status = []  # status in order
     self.status = -1  # for 'wait' jobs
 
+    # optional for background
+    self.job_state = None
+
+    # Optional for foregroud
+    self.last_thunk = None
+    self.last_pipe = None
+
   def __repr__(self):
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
 
   def Add(self, p):
-    """Append a process to the pipeline.
-
-    NOTE: Are its descriptors already set up?
-    """
+    """Append a process to the pipeline."""
     if len(self.procs) == 0:
       self.procs.append(p)
       return
 
     r, w = os.pipe()
+    #log('pipe for %s: %d %d', p, r, w)
     prev = self.procs[-1]
 
-    #prev.AddRedirect(WritePipeRedirect(w))
-    #p.AddRedirect(ReadPipeRedirect(r))
-    prev.AddStateChange(StdoutToPipe(r, w))
-    p.AddStateChange(StdinFromPipe(r, w))
+    prev.AddStateChange(StdoutToPipe(r, w))  # applied on Start()
+    p.AddStateChange(StdinFromPipe(r, w))  # applied on Start()
 
-    p.AddPipeToClose(r, w)
+    p.AddPipeToClose(r, w)  # ClosePipe() on Start()
 
     self.procs.append(p)
+
+  def AddLast(self, thunk):
+    """Append the last node to the pipeline.
+
+    This is run in the CURRENT process.  It is OPTIONAL, because pipelines in
+    the background are run uniformly.
+    """
+    self.last_thunk = thunk
+
+    if len(self.procs) == 0:   # No pipe: if ! foo
+      return
+
+    r, w = os.pipe()
+    #log('last pipe %d %d', r, w)
+
+    prev = self.procs[-1]
+    prev.AddStateChange(StdoutToPipe(r, w))
+
+    self.last_pipe = (r, w)  # So we can connect it to last_thunk
 
   def Start(self, waiter):
     for i, proc in enumerate(self.procs):
@@ -600,6 +634,14 @@ class Pipeline(Job):
       # NOTE: This has to be done after every fork() call.  Otherwise processes
       # will have descriptors from non-adjacent pipes.
       proc.ClosePipe()
+
+    if self.last_thunk:
+      self.pipe_status.append(-1)  # for self.last_thunk
+
+  def StartInBackground(self, waiter, job_state):
+    """Returns a job ID."""
+    self.job_state = job_state
+    self.Start(waiter)
     return self.pids[-1]  # the last PID is the job ID
 
   def WaitUntilDone(self, waiter):
@@ -613,10 +655,33 @@ class Pipeline(Job):
 
     return self.pipe_status
 
-  def Run(self, waiter):
+  def Run(self, waiter, fd_state):
     """Run this pipeline synchronously."""
     self.Start(waiter)
-    return self.WaitUntilDone(waiter)
+
+    # Run our portion IN PARALLEL with other processes.  This may or may not
+    # fork:
+    # ls | wc -l
+    # echo foo | read line  # no need to fork
+
+    ex, node = self.last_thunk
+
+    #log('thunk %s', self.last_thunk)
+    if self.last_pipe is not None:
+      r, w = self.last_pipe  # set in AddLast()
+      os.close(w)  # we will not write here
+      fd_state.PushStdinFromPipe(r)
+      try:
+        ex.ExecuteAndCatch(node)
+      finally:
+        fd_state.Pop()
+    else:
+      ex.ExecuteAndCatch(node)
+
+    self.pipe_status[-1] = ex.LastStatus()
+    #log('pipestatus before all have finished = %s', self.pipe_status)
+
+    return self.WaitUntilDone(waiter)  # returns pipe_status
 
   def WhenDone(self, pid, status):
     #log('Pipeline WhenDone %d %d', pid, status)

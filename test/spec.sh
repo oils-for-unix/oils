@@ -251,7 +251,7 @@ word-eval() {
 }
 
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
@@ -298,6 +298,10 @@ builtin-eval-source() {
 builtin-io() {
   sh-spec spec/builtin-io.test.sh \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+}
+
+builtin-printf() {
+  sh-spec spec/builtin-printf.test.sh $BASH $OSH_LIST "$@"
 }
 
 builtins2() {
@@ -379,7 +383,7 @@ command_() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/pipeline.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -435,7 +439,7 @@ var-op-test() {
 }
 
 var-op-other() {
-  sh-spec spec/var-op-other.test.sh \
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -518,7 +522,7 @@ append() {
 
 # associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/assoc.test.sh --osh-failures-allowed 11 \
     $BASH $OSH_LIST "$@"
 }
 

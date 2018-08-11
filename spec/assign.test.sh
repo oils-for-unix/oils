@@ -478,3 +478,54 @@ echo ${foo["bar"]}
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
+
+#### declare -g (bash-specific; bash-completion uses it)
+f() {
+  declare -g G=42
+  declare L=99
+
+  declare -Ag dict
+  dict["foo"]=bar
+
+  declare -A localdict
+  localdict["spam"]=Eggs
+
+  # For bash-completion
+  eval 'declare -Ag ev'
+  ev["ev1"]=ev2
+}
+f
+argv.py "$G" "$L"
+argv.py "${dict["foo"]}" "${localdict["spam"]}"
+argv.py "${ev["ev1"]}"
+## STDOUT:
+['42', '']
+['bar', '']
+['ev2']
+## END
+## N-I dash STDOUT:
+['', '']
+
+## END
+## N-I dash status: 2
+## N-I mksh STDOUT:
+['', '']
+
+## END
+## N-I mksh status: 1
+
+#### declare in an if statement
+# bug caught by my feature detection snippet in bash-completion
+if ! foo=bar; then
+  echo BAD
+fi
+echo $foo
+if ! eval 'spam=eggs'; then
+  echo BAD
+fi
+echo $spam
+## STDOUT:
+bar
+eggs
+## END
+

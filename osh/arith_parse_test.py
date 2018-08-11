@@ -33,12 +33,12 @@ def ParseAndEval(code_str):
   anode = w_parser._ReadArithExpr()  # need the right lex state?
   print('node:', anode)
 
-  mem = state.Mem('', [], {}, None)
+  mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
   splitter = legacy.SplitContext(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
 
-  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev)
+  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)
   value = arith_ev.Eval(anode)
   return value
 

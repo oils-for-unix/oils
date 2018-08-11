@@ -17,12 +17,13 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from core import glob_
+from asdl import const
+from core import dev
 from core import util
 from core import state
-from osh.meta import BOOL_ARG_TYPES, Id, types
-from osh.meta import runtime
-from osh.meta import ast
+from core import ui
+from core import word
+from osh.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
 
 log = util.log
 warn = util.warn
@@ -41,7 +42,7 @@ lvalue_e = runtime.lvalue_e
 scope_e = runtime.scope_e
 
 
-def _StringToInteger(s, word=None):
+def _StringToInteger(s, span_id=const.NO_INTEGER):
   """Use bash-like rules to coerce a string to an integer.
 
   0xAB -- hex constant
@@ -60,14 +61,14 @@ def _StringToInteger(s, word=None):
       integer = int(s, 16)
     except ValueError:
       # TODO: Show line number
-      e_die('Invalid hex constant %r', s, word=word)
+      e_die('Invalid hex constant %r', s, span_id=span_id)
     return integer
 
   if s.startswith('0'):
     try:
       integer = int(s, 8)
     except ValueError:
-      e_die('Invalid octal constant %r', s, word=word)  # TODO: Show line number
+      e_die('Invalid octal constant %r', s, span_id=span_id)  # TODO: Show line number
     return integer
 
   if '#' in s:
@@ -75,7 +76,7 @@ def _StringToInteger(s, word=None):
     try:
       base = int(b)
     except ValueError:
-      e_die('Invalid base for numeric constant %r',  b, word=word)
+      e_die('Invalid base for numeric constant %r',  b, span_id=span_id)
 
     integer = 0
     n = 1
@@ -91,10 +92,10 @@ def _StringToInteger(s, word=None):
       elif char.isdigit():
         digit = int(char)
       else:
-        e_die('Invalid digits for numeric constant %r', digits, word=word)
+        e_die('Invalid digits for numeric constant %r', digits, span_id=span_id)
 
       if digit >= base:
-        e_die('Digits %r out of range for base %d', digits, base, word=word)
+        e_die('Digits %r out of range for base %d', digits, base, span_id=span_id)
 
       integer += digit * n
       n *= base
@@ -104,23 +105,33 @@ def _StringToInteger(s, word=None):
   try:
     integer = int(s)
   except ValueError:
-    e_die("Invalid integer constant %r", s, word=word)
+    e_die("Invalid integer constant %r", s, span_id=span_id)
   return integer
 
 
 class _ExprEvaluator(object):
-  """
-  For now the arith and bool evaluators share some logic.
+  """Shared between arith and bool evaluators.
+
+  They both:
+
+  1. Convert strings to integers, respecting set -o strict_arith.
+  2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, exec_opts, word_ev):
+  def __init__(self, mem, exec_opts, word_ev, arena):
     self.mem = mem
     self.exec_opts = exec_opts
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
+    self.arena = arena
 
-  def _StringToIntegerOrError(self, s):
+  def _StringToIntegerOrError(self, s, blame_word=None,
+                              span_id=const.NO_INTEGER):
+    """Used by both [[ $x -gt 3 ]] and (( $x ))."""
+    if span_id == const.NO_INTEGER and blame_word:
+      span_id = word.LeftMostSpanForWord(blame_word)
+
     try:
-      i = _StringToInteger(s)
+      i = _StringToInteger(s, span_id=span_id)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -141,13 +152,13 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
-def EvalLhs(node, arith_ev, mem, exec_opts):
-  """Evaluate the operand for a++ a[0]++ as an R-value.
+def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
+  """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
-  Used by Executor as well.
+  Also used by the Executor for s+='x' and a[42]+='x'.
 
   Args:
-    node: osh_ast.lhs_expr
+    node: ast.lhs_expr
 
   Returns:
     runtime.value, runtime.lvalue
@@ -179,10 +190,11 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
       # It would make more sense for 'nounset' to control this, but bash
       # doesn't work that way.
       #if self.exec_opts.strict_arith:
-      #  e_die('Undefined array %r', node.name)  # TODO: error location
+      #  e_die('Undefined array %r', node.name)
       val = runtime.Str('')
 
     elif val.tag == value_e.StrArray:
+
       #log('ARRAY %s -> %s, index %d', node.name, array, index)
       array = val.strs
       # NOTE: Similar logic in RHS Arith_LBracket
@@ -196,25 +208,53 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
       else:
         assert isinstance(item, str), item
         val = runtime.Str(item)
+
+    elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
+      # TODO: Also need IsAssocArray() check?
+      index = arith_ev.Eval(node.index, int_coerce=False)
+      lval = runtime.LhsIndexedName(node.name, index)
+      raise NotImplementedError
+
     else:
       raise AssertionError(val.tag)
+
   else:
     raise AssertionError(node.tag)
 
   return val, lval
 
 
-def _ValToArith(val, int_coerce=True, word=None):
-  """Convert runtime.value to a Python int or list of strings."""
-  assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+class ArithEvaluator(_ExprEvaluator):
 
-  if int_coerce:
+  def _ValToArith(self, val, span_id, int_coerce=True):
+    """Convert runtime.value to a Python int or list of strings."""
+    assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+
+    if int_coerce:
+      if val.tag == value_e.Undef:  # 'nounset' already handled before got here
+        # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
+        #log('blame_word %s   arena %s', blame_word, self.arena)
+        e_die('Coercing undefined value to 0 in arithmetic context',
+              span_id=span_id)
+        return 0
+
+      if val.tag == value_e.Str:
+        # may raise FatalRuntimeError
+        return _StringToInteger(val.s, span_id=span_id)
+
+      if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
+        return val.strs
+
+      if val.tag == value_e.AssocArray:
+        return val.d
+
+      raise AssertionError(val)
+
     if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-      warn('converting undefined variable to 0')
-      return 0
+      return ''  # I think nounset is handled elsewhere
 
     if val.tag == value_e.Str:
-      return _StringToInteger(val.s, word=word)  # may raise FatalRuntimeError
+      return val.s
 
     if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
       return val.strs
@@ -222,50 +262,74 @@ def _ValToArith(val, int_coerce=True, word=None):
     if val.tag == value_e.AssocArray:
       return val.d
 
-    raise AssertionError(val)
+  def _ValToArithOrError(self, val, int_coerce=True, blame_word=None,
+                         span_id=const.NO_INTEGER):
+    if span_id == const.NO_INTEGER and blame_word:
+      span_id = word.LeftMostSpanForWord(blame_word)
+    #log('_ValToArithOrError span=%s blame=%s', span_id, blame_word)
 
-  if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-    return ''  # I think nounset is handled elsewhere
-
-  if val.tag == value_e.Str:
-    return val.s
-
-  if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
-    return val.strs
-
-  if val.tag == value_e.AssocArray:
-    return val.d
-
-
-class ArithEvaluator(_ExprEvaluator):
-
-  def _ValToArithOrError(self, val, int_coerce=True, word=None):
     try:
-      i = _ValToArith(val, int_coerce=int_coerce, word=word)
-
+      i = self._ValToArith(val, span_id, int_coerce=int_coerce)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
       else:
         i = 0
+
+        span_id = dev.SpanIdFromError(e)
+        if self.arena:  # BoolEvaluator for test builtin doesn't have it.
+          if span_id != const.NO_INTEGER:
+            ui.PrintFilenameAndLine(span_id, self.arena)
+          else:
+            log('*** Warning has no location info ***')
         warn(e.UserErrorString())
     return i
 
   def _LookupVar(self, name):
     return _LookupVar(name, self.mem, self.exec_opts)
 
-  def _EvalLhsToArith(self, node):
+  def _EvalLhsAndLookupArith(self, node):
     """
+    Args:
+      node: lhs_expr
     Returns:
       int or list of strings, runtime.lvalue
     """
-    val, lval = EvalLhs(node, self, self.mem, self.exec_opts)
+    val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 
     if val.tag == value_e.StrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
-    i = self._ValToArithOrError(val)
+    # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
+    # and BinaryAssign.
+    span_id = word.SpanForLhsExpr(node)
+    i = self._ValToArithOrError(val, span_id=span_id)
     return i, lval
+
+  def _EvalLhsArith(self, node):
+    """lhs_expr -> lvalue.
+    
+    Very similar to _EvalLhs in core/cmd_exec."""
+    assert isinstance(node, ast.lhs_expr), node
+
+    if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
+      lval = runtime.LhsName(node.name)
+      # TODO: location info.  Use the = token?
+      #lval.spids.append(spid)
+      return lval
+
+    if node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
+      # The index of StrArray needs to be coerced to int, but not the index of
+      # an AssocArray.
+      int_coerce = not self.mem.IsAssocArray(node.name, scope_e.Dynamic)
+      index = self.Eval(node.index, int_coerce=int_coerce)
+
+      lval = runtime.LhsIndexedName(node.name, index)
+      # TODO: location info.  Use the = token?
+      #lval.spids.append(node.spids[0])
+      return lval
+
+    raise AssertionError(node.tag)
 
   def _Store(self, lval, new_int):
     val = runtime.Str(str(new_int))
@@ -284,17 +348,18 @@ class ArithEvaluator(_ExprEvaluator):
     # to handle that as a special case.
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
-      val = self._LookupVar(node.name)
-      return self._ValToArithOrError(val, int_coerce=int_coerce)
+      tok = node.token
+      val = self._LookupVar(tok.val)
+      return self._ValToArithOrError(val, int_coerce=int_coerce,
+                                     span_id=tok.span_id)
 
-    # $(( $x )) or $(( ${x}${y} )), etc.
-    if node.tag == arith_expr_e.ArithWord:
+    if node.tag == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
-      return self._ValToArithOrError(val, int_coerce=int_coerce, word=node.w)
+      return self._ValToArithOrError(val, int_coerce=int_coerce, blame_word=node.w)
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
-      old_int, lval = self._EvalLhsToArith(node.child)
+      old_int, lval = self._EvalLhsAndLookupArith(node.child)
 
       if op_id == Id.Node_PostDPlus:  # post-increment
         new_int = old_int + 1
@@ -321,15 +386,17 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
       op_id = node.op_id
-      old_int, lval = self._EvalLhsToArith(node.left)
-
-      rhs = self.Eval(node.right)
 
       if op_id == Id.Arith_Equal:
-        # NOTE: We don't need old_int for this case.  Evaluating it has no side
-        # effects, so it's harmless.
-        new_int = rhs
-      elif op_id == Id.Arith_PlusEqual:
+        rhs = self.Eval(node.right)
+        lval = self._EvalLhsArith(node.left)
+        self._Store(lval, rhs)
+        return rhs
+
+      old_int, lval = self._EvalLhsAndLookupArith(node.left)
+      rhs = self.Eval(node.right)
+
+      if op_id == Id.Arith_PlusEqual:
         new_int = old_int + rhs
       elif op_id == Id.Arith_MinusEqual:
         new_int = old_int - rhs
@@ -613,8 +680,8 @@ class BoolEvaluator(_ExprEvaluator):
       if arg_type == bool_arg_type_e.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
         # Bash also allows [[ 1+2 -eq 3 ]].
-        i1 = self._StringToIntegerOrError(s1)
-        i2 = self._StringToIntegerOrError(s2)
+        i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
+        i2 = self._StringToIntegerOrError(s2, blame_word=node.right)
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2

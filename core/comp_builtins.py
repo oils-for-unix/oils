@@ -16,6 +16,7 @@ log = util.log
 
 def _DefineFlags(spec):
   spec.ShortFlag('-F', args.Str, help='Complete with this function')
+  spec.ShortFlag('-W', args.Str, help='Complete with these words')
   spec.ShortFlag('-P', args.Str,
       help='Prefix is added at the beginning of each possible completion after '
            'all other options have been applied.')
@@ -76,9 +77,9 @@ class _SortedWordsAction(object):
   def __init__(self, d):
     self.d = d
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, comp):
     for name in sorted(self.d):
-      if name.startswith(prefix):
+      if name.startswith(comp.to_complete):
         #yield name + ' '  # full word
         yield name
 
@@ -86,20 +87,21 @@ class _SortedWordsAction(object):
 class _DirectoriesAction(object):
   """complete -A directory"""
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, comp):
     raise NotImplementedError('-A directory')
 
 
 class _UsersAction(object):
   """complete -A user"""
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, comp):
     raise NotImplementedError('-A user')
 
 
 def _BuildCompletionChain(argv, arg, ex):
   """Given flags to complete/compgen, built a ChainedCompleter."""
   actions = []
+
   # NOTE: bash doesn't actually check the name until completion time, but
   # obviously it's better to check here.
   if arg.F:
@@ -125,8 +127,7 @@ def _BuildCompletionChain(argv, arg, ex):
       a = completion.ExternalCommandAction(ex.mem)
 
     elif name == 'directory':
-      # TODO: This is FileSystemAction with a filter
-      a = _DirectoriesAction()
+      a = completion.FileSystemAction(dirs_only=True)
 
     elif name == 'file':
       a = completion.FileSystemAction()
@@ -162,6 +163,12 @@ def _BuildCompletionChain(argv, arg, ex):
       raise NotImplementedError(name)
 
     actions.append(a)
+
+  # e.g. -W comes after -A directory
+  if arg.W:
+    # TODO: Split with IFS.  Is that done at registration time or completion
+    # time?
+    actions.append(completion.WordsAction(arg.W.split()))
 
   if not actions:
     raise args.UsageError('No actions defined in completion: %s' % argv)
@@ -222,6 +229,7 @@ def Complete(argv, ex, comp_lookup):
 
 COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A
 
+# TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
 _DefineFlags(COMPGEN_SPEC)
 _DefineOptions(COMPGEN_SPEC)
 _DefineActions(COMPGEN_SPEC)
@@ -246,13 +254,19 @@ def CompGen(argv, ex):
 
   chain = _BuildCompletionChain(argv, arg, ex)
 
-  # TODO:
-  # - need to dedupe these, as in RootCompleter
-  # - what to pass for comp_words and index?
+  # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
+  # and also showing ALL COMPREPLY reuslts, not just the ones that start with
+  # the word to complete.
   matched = False 
-  for m in chain.Matches(None, None, to_complete):
+  comp = completion.CompletionApi()
+  comp.Update(words=['compgen', to_complete], index=-1,
+              to_complete=to_complete)
+  for m in chain.Matches(comp, filter_func_matches=False):
     matched = True
     print(m)
+
+  # TODO:
+  # - need to dedupe results.
 
   return 0 if matched else 1
 
@@ -268,5 +282,6 @@ def CompOpt(argv):
   # NOTE: This is supposed to fail if a completion isn't being generated?
   # The executor should have a mode?
 
-  log('arg %s', arg)
+  #log('compopt: %s', arg)
+  log('compopt %s', argv)
   return 0

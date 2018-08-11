@@ -49,9 +49,14 @@ completion_state_e = runtime.completion_state_e
 log = util.log
 
 
+class _RetryCompletion(Exception):
+  """For the 'exit 124' protocol."""
+  pass
+
+
 class NullCompleter(object):
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp):
     return []
 
 
@@ -59,17 +64,8 @@ _NULL_COMPLETER = NullCompleter()
 
 
 class CompletionLookup(object):
-  """
-  names -> list of actions
+  """Stores completion hooks registered by the user."""
 
-  -E -> list of actions
-  -D -> default list of actions, when we don't know
-
-  Maybe call those __DEFAULT__ and '' or something, -D and -E is
-  confusing.
-
-  But I also want to register patterns.
-  """
   def __init__(self):
     # command name -> ChainedCompleter
     # There are pseudo commands __first and __fallback for -E and -D.
@@ -127,6 +123,39 @@ class CompletionLookup(object):
     return self.lookup['__fallback']
 
 
+class CompletionApi(object):
+
+  def __init__(self, line='', begin=0, end=0):
+    """
+    Args:
+      index: if -1, then we're running through compgen
+    """
+    self.line = line
+    self.begin = begin
+    self.end = end
+
+    # NOTE: COMP_WORDBREAKS is initliazed in Mem().
+
+  def Update(self, words=None, index=0, to_complete=''):
+    """Added after we've done parsing."""
+    self.words = words or []  # COMP_WORDS
+    self.index = index  # COMP_CWORD
+    self.to_complete = to_complete  #
+
+  def GetApiInput(self):
+    """Returns argv and comp_words."""
+
+    command = self.words[0]
+    if self.index == -1:  # called directly by compgen, not by hitting TAB
+      prev = ''
+      comp_words = []  # not completing anything
+    else:
+      prev = '' if self.index == 0 else self.words[self.index - 1]
+      comp_words = self.words
+
+    return [command, self.to_complete, prev], comp_words
+
+
 #
 # Actions
 #
@@ -140,7 +169,7 @@ class CompletionAction(object):
   def __init__(self):
     pass
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp):
     pass
 
 
@@ -150,12 +179,12 @@ class WordsAction(CompletionAction):
     self.words = words
     self.delay = delay
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp):
     for w in self.words:
-      if w.startswith(to_complete):
+      if w.startswith(comp.to_complete):
         if self.delay:
           time.sleep(self.delay)
-        yield w + ' '
+        yield w
 
 
 class FileSystemAction(CompletionAction):
@@ -165,7 +194,11 @@ class FileSystemAction(CompletionAction):
   
   TODO: We need a variant that tests for an executable bit.
   """
-  def Matches(self, words, index, to_complete):
+  def __init__(self, dirs_only=False):
+    self.dirs_only = dirs_only
+
+  def Matches(self, comp):
+    to_complete = comp.to_complete
     i = to_complete.rfind('/')
     if i == -1:  # it looks like 'foo'
       to_list = '.'
@@ -186,13 +219,19 @@ class FileSystemAction(CompletionAction):
     for name in names:
       path = os.path.join(base, name)
       if path.startswith(to_complete):
-        if os.path.isdir(path):
-          yield path + '/'
+        if self.dirs_only:
+          if os.path.isdir(path):
+            yield path
         else:
-          yield path
+          if os.path.isdir(path):
+            yield path + '/'
+          else:
+            yield path
 
 
 class ShellFuncAction(CompletionAction):
+  """Call a user-defined function using bash's completion protocol."""
+
   def __init__(self, ex, func):
     self.ex = ex
     self.func = func
@@ -204,43 +243,38 @@ class ShellFuncAction(CompletionAction):
   def log(self, *args):
     self.ex.debug_f.log(*args)
 
-  def Matches(self, words, index, to_complete):
-    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', words)
-    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
-
-    self.log('Running completion function %r', self.func.name)
-
+  def Matches(self, comp):
     # TODO: Delete COMPREPLY here?  It doesn't seem to be defined in bash by
     # default.
+    argv, comp_words = comp.GetApiInput()
 
-    # TODO: We could catch FatalRuntimeError here instead of in RootCompleter?
-    # But we don't have the arena available.
-    status = self.ex.RunFuncForCompletion(self.func)
+    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
+    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp.index))
+    state.SetGlobalString(self.ex.mem, 'COMP_LINE', comp.line)
+    state.SetGlobalString(self.ex.mem, 'COMP_POINT', str(comp.end))
+
+    self.log('Running completion function %r with arguments %s',
+        self.func.name, argv)
+
+    status = self.ex.RunFuncForCompletion(self.func, argv)
     if status == 124:
       self.log('Got status 124 from %r', self.func.name)
-      # The previous run may have registered another function via 'complete',
-      # i.e. by sourcing a file.  Try it again.
-      status = self.ex.RunFuncForCompletion(self.func)
-      if status == 124:
-        util.warn('Got exit code 124 from function %r twice', self.func.name)
+      raise _RetryCompletion()
 
-    # Should be COMP_REPLY to follow naming convention!  Lame.
+    # Lame: COMP_REPLY would follow the naming convention!
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
       util.error('Ran function %s but COMPREPLY was not defined', self.func.name)
-      return
+      return []
 
     if val.tag != value_e.StrArray:
       log('ERROR: COMPREPLY should be an array, got %s', val)
-      return
-    reply = val.strs
+      return []
+    self.log('COMPREPLY %s', val)
 
-    self.log('COMPREPLY %s', reply)
-
-    #reply = ['g1', 'g2', 'h1', 'i1']
-    for name in sorted(reply):
-      if name.startswith(to_complete):
-        yield name + ' '  # full word
+    # Return this all at once so we don't have a generator.  COMPREPLY happens
+    # all at once anyway.
+    return val.strs
 
 
 class VariablesAction(object):
@@ -248,7 +282,7 @@ class VariablesAction(object):
   def __init__(self, mem):
     self.mem = mem
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp):
     for var_name in self.mem.VarNames():
       yield var_name
 
@@ -261,7 +295,8 @@ class VariablesActionInternal(object):
   def __init__(self, mem):
     self.mem = mem
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp):
+    to_complete = comp.to_complete
     assert to_complete.startswith('$')
     to_complete = to_complete[1:]
     for name in self.mem.VarNames():
@@ -299,7 +334,7 @@ class ExternalCommandAction(object):
     # huge, and will require lots of sys calls.
     self.cache = {}
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp):
     """
     TODO: Cache is never cleared.
 
@@ -330,7 +365,7 @@ class ExternalCommandAction(object):
     # TODO: Shouldn't do the prefix / space thing ourselves.  readline does
     # that at the END of the line.
     for word in listing:
-      if word.startswith(to_complete):
+      if word.startswith(comp.to_complete):
         yield word + ' '
 
 
@@ -367,12 +402,21 @@ class ChainedCompleter(object):
     self.prefix = prefix
     self.suffix = suffix
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, comp, filter_func_matches=True):
+    # NOTE: This has to be evaluated eagerly so we get the _RetryCompletion
+    # exception.
     for a in self.actions:
-      for match in a.Matches(words, index, to_complete):
+      for match in a.Matches(comp):
+        # Special case hack to match bash for compgen -F.  It doesn't filter by
+        # to_complete!
+        show = (
+            match.startswith(comp.to_complete) and self.predicate(match) or
+            (isinstance(a, ShellFuncAction) and not filter_func_matches)
+            )
+
         # There are two kinds of filters: changing the string, and filtering
         # the set of strings.  So maybe have modifiers AND filters?  A triple.
-        if match.startswith(to_complete) and self.predicate(match):
+        if show:
           yield self.prefix + match + self.suffix
 
     # Prefix is the current one?
@@ -556,8 +600,7 @@ def _GetCompletionType(w_parser, c_parser, ev, debug_f):
 
 
 def _GetCompletionType1(parser, buf):
-  words = parser.GetWords(buf)
-  comp_name = None
+  words = parser.GetWords(buf)  # just does a dummy split for now
 
   n = len(words)
   # Complete variables
@@ -566,21 +609,21 @@ def _GetCompletionType1(parser, buf):
   # rules are almost the same.
   if n > 0 and words[-1].startswith('$'):
     comp_type = completion_state_e.VAR_NAME
-    prefix = words[-1]
+    to_complete = words[-1]
 
   # Otherwise complete words
   elif n == 0:
     comp_type = completion_state_e.FIRST
-    prefix = ''
+    to_complete = ''
   elif n == 1:
     comp_type = completion_state_e.FIRST
-    prefix = words[-1]
+    to_complete = words[-1]
   else:
     comp_type = completion_state_e.REST
-    prefix = words[-1]
+    to_complete = words[-1]
 
   comp_index = len(words) - 1
-  return comp_type, prefix, words
+  return comp_type, to_complete, words
 
 
 class RootCompleter(object):
@@ -597,17 +640,51 @@ class RootCompleter(object):
     self.progress_f = progress_f
     self.debug_f = debug_f
 
+    # This simply splits words!
     self.parser = DummyParser()  # TODO: remove
 
-  def Matches(self, buf):
+  def Matches(self, comp):
     arena = alloc.SideArena('<completion>')
-    w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
-    comp_type, prefix, comp_words = _GetCompletionType(
-        w_parser, c_parser, self.ev, self.debug_f)
 
-    comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
+    # Two strategies:
+    # 1. COMP_WORDBREAKS like bash.  set_completer_delims()
+    # 2. Use the actual OSH parser.  Parse these cases:
+    #   - echo 
+    #   - $VA
+    #   - ${VA
+    #   - $(echo h)
+    #     - <(echo h)
+    #     - >(echo h)
+    #     - ``
+    #   - $(( VA    # This should be a variable name
+    #   - while false; do <TAB>
+    #   - if <TAB>
+    #   - while <TAB> -- bash gets this wrong!
+    #   - command <TAB> -- bash-completion fills this in
+    #   - alias completion?
+    #     - alias ll='ls -l'
+    #   - also var expansion?  
+    #     foo=ls
+    #     $foo <TAB>    (even ZSH doesn't seem to handle this)
+    #
+    # the empty completer is consistently wrong.  Only works in the first
+    # position.
+    #
+    # I think bash-completion is fighting with bash?
+    #
+    # completing aliases -- someone mentioned about zsh
 
-    # TODO: I don't get bash -D vs -E.  Might need to write a test program.
+    if 0:
+      w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
+      comp_type, to_complete, comp_words = _GetCompletionType(
+          w_parser, c_parser, self.ev, self.debug_f)
+    else:
+      comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, comp.line)
+
+    index = len(comp_words) - 1  # COMP_CWORD is -1 when it's empty
+
+    # After parsing
+    comp.Update(words=comp_words, index=index, to_complete=to_complete)
 
     if comp_type == completion_state_e.VAR_NAME:
       # Non-user chain
@@ -631,14 +708,13 @@ class RootCompleter(object):
     else:
       raise AssertionError(comp_type)
 
-    self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', buf)
+    self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
     self.debug_f.log('Using %s', chain)
 
-    index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
     i = 0
-    for m in chain.Matches(comp_words, index, to_complete):
+    for m in chain.Matches(comp):
       # TODO: need to dedupe these
       yield m
       i += 1
@@ -646,13 +722,14 @@ class RootCompleter(object):
       plural = '' if i == 1 else 'es'
       self.progress_f.Write(
           '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
-          plural, buf, elapsed)
+          plural, comp.line, elapsed)
 
     elapsed = time.time() - start_time
     plural = '' if i == 1 else 'es'
     self.progress_f.Write(
         'Found %d match%s for %r in %.2f seconds', i,
-        plural, buf, elapsed)
+        plural, comp.line, elapsed)
+    done = True
 
     # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
     # well as a command, and we don't want to show it twice.  Although then
@@ -683,19 +760,31 @@ class ReadlineCompleter(object):
       # The current position of the cursor.  The thing being completed.
       end = self.readline_mod.get_endidx()
 
+      comp = CompletionApi(line=buf, begin=begin, end=end)
       self.debug_f.log(
           'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
           buf[begin:end])
 
-      self.comp_iter = self.root_comp.Matches(buf)
+      self.comp_iter = self.root_comp.Matches(comp)
 
-    if self.comp_iter is None:
-      self.debug_f.log("ASSERT comp_iter shouldn't be None")
+    assert self.comp_iter is not None, self.comp_iter
 
-    try:
-      next_completion = self.comp_iter.next()
-    except StopIteration:
-      next_completion = None  # sentinel?
+    done = False
+    while not done:
+      self.debug_f.log('comp_iter.next()')
+      try:
+        next_completion = self.comp_iter.next()
+        done = True
+      except _RetryCompletion:
+        # TODO: Is it OK to retry here?  Shouldn't we retry in
+        # RootCompleter, after we already know the words?  That seems to run
+        # into some problems with Python generators and exceptions.
+        # I kind of want the 'g.send()' pattern to "prime the generator",
+        # revealing the first exception.
+        pass
+      except StopIteration:
+        next_completion = None  # sentinel?
+        done = True
 
     return next_completion
 
@@ -710,6 +799,9 @@ class ReadlineCompleter(object):
     except Exception as e:
       traceback.print_exc()
       self.debug_f.log('Unhandled exception while completing: %s', e)
+    except SystemExit as e:
+      # Because readline ignores SystemExit!
+      os._exit(e.code)
 
 
 def InitReadline(readline_mod, complete_cb):

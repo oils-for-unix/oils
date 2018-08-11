@@ -70,6 +70,11 @@ This isn't re-parsing, but it's re-reading.
 - ${s:1:2} -- offsets in code points
 - ${x#?} and family (not yet implemented)
 
+Where bash respects it:
+
+- [[ a < b ]] and [ a '<' b ] for sorting
+- ${foo,} and ${foo^} for lowercase / uppercase
+
 ## Parse-time and Runtime Pairs
 
 - echo -e '\x00\n' and echo $'\x00\n' (shared in OSH)
