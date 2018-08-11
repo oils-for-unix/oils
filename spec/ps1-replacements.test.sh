@@ -3,8 +3,18 @@
 # For testing the Python sketch
 
 #### constant string
-echo 'echo 1' | PS1='$ ' $SH --norc -i
+#'echo 1' | PS1='$ ' $SH --norc -i
+PS1='$ '
+echo "${PS1@P}"
 ## STDOUT:
-$ 1
-$ EOF when reading a line
+$ 
+## END
+
+#### hostname
+#'echo 1' | PS1='$ ' $SH --norc -i
+PS1='\h '
+test "${PS1@P}" = "$(hostname) "
+echo status=$?
+## STDOUT:
+status=0
 ## END
