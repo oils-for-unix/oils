@@ -497,6 +497,7 @@ LEXER_DEF[lex_mode_e.VS_1] = [
 
 LEXER_DEF[lex_mode_e.VS_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
+    ID_SPEC.LexerPairs(Kind.VOp0) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
     ID_SPEC.LexerPairs(Kind.VOp2) + [
   C('}', Id.Right_VarSub),

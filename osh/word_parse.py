@@ -269,6 +269,8 @@ class WordParser(object):
     if self.token_type == Id.Right_VarSub:
       return part  # no ops
 
+    log('%s', self.token_type)
+
     # Or maybe this is a VarOpKind
 
     op_kind = self.token_kind
@@ -279,6 +281,12 @@ class WordParser(object):
       assert self.token_type == Id.Right_VarSub, self.cur_token
 
       part.suffix_op = ast.StringUnary(op_id, arg_word)
+
+    elif op_kind == Kind.VOp0:
+      op_id = self.token_type
+      part.suffix_op = ast.StringNullary(op_id)
+      self._Next(lex_mode_e.VS_2)  # Expecting }
+      self._Peek()
 
     elif op_kind == Kind.VOp1:
       op_id = self.token_type
