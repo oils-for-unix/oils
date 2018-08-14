@@ -16,6 +16,23 @@ set -o errexit
 
 source test/common.sh  # R_PATH
 
+# In some distros, 'python' is python3, which confuses first-time developers.
+# https://github.com/oilshell/oil/issues/97
+readonly PYTHON_VERSION="$(python --version 2>&1)"
+
+# bash weirdness: VERSION_REGEX must NOT be inline in the expression, and must
+# NOT be quoted.
+readonly VERSION_REGEX='Python (2\.7\.[0-9]+)'
+
+if [[ "${PYTHON_VERSION}" =~ $VERSION_REGEX ]]; then
+  true
+else
+  echo >&2 'FATAL: Oil dev requires Python 2.7.*'
+  echo >&2 "But you have '${PYTHON_VERSION}'"
+  echo >&2 'Hint: Use virtualenv to create a Python 2.7 environment.'
+  exit 1
+fi
+
 ubuntu-deps() {
   # python-dev: for pylibc
   # gawk: used by spec-runner.sh for the special match() function.
