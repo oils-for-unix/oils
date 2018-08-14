@@ -54,7 +54,7 @@ fi
 readonly REF_SHELLS=($DASH $BASH $MKSH)
 
 #
-# Setup
+# Setup (TODO: Delete this once test/spec-bin.sh binaries are deployed)
 #
 
 link-busybox-ash() {
@@ -74,30 +74,6 @@ check-shells() {
     test -e $sh || { echo "ERROR: $sh does not exist"; break; }
     test -x $sh || { echo "ERROR: $sh isn't executable"; break; }
   done
-}
-
-_wget() {
-  wget --no-clobber --directory _tmp/src "$@"
-}
-
-# As of March 2017
-download-shell-source() {
-  mkdir -p _tmp/src
-
-  # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
-  # https://ftp.gnu.org/gnu/bash/
-  _wget https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz
-
-  # https://www.mirbsd.org/mksh.htm - no dates given
-  _wget https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R54.tgz
-
-  # https://tracker.debian.org/pkg/dash  -- old versions
-  # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
-  # Site seems down now.
-  # _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.9.1.tar.gz
-
-  # http://zsh.sourceforge.net/News/ - 12/2016 release
-  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
 }
 
 maybe-show() {

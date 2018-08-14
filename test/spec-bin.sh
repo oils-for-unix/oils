@@ -63,18 +63,45 @@ build-zsh() {
   popd
 }
 
-build-all() {
-  # bash/dash: ./configure; make
-  # mksh: sh Build.sh
-  # busybox: make defconfig (default config); make
+# bash/dash: ./configure; make
+# mksh: sh Build.sh
+# busybox: make defconfig (default config); make
 
-  # ZSH needs special builds
-  build-zsh
-
-  pushd $DIR
-
-  # TODO: Are they all different?
+build-bash() {
+  pushd $DIR/bash-4.3
+  ./configure
+  make
   popd
+}
+
+build-dash() {
+  pushd $DIR/dash-0.5.8
+  ./configure
+  make
+  popd
+}
+
+build-mksh() {
+  pushd $DIR/mksh-R52c
+  sh Build.sh
+  popd
+}
+
+build-busybox() {
+  pushd $DIR/busybox-1.22.0
+  make defconfig
+  make
+  popd
+}
+
+build-all() {
+  build-bash
+  build-dash
+  build-mksh
+  build-busybox
+
+  # ZSH is a bit special
+  build-zsh
 }
 
 copy-all() {
@@ -102,6 +129,34 @@ test-all() {
     # bash and zsh depend on libdl, but others don't
     ldd $DIR/$sh
   done
+}
+
+# 
+# NOTE: This is older stuff I saved.  We may want to use newer shell versions?
+#
+
+_wget() {
+  wget --no-clobber --directory _tmp/src "$@"
+}
+
+# As of March 2017
+download-shell-source() {
+  mkdir -p _tmp/src
+
+  # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
+  # https://ftp.gnu.org/gnu/bash/
+  _wget https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz
+
+  # https://www.mirbsd.org/mksh.htm - no dates given
+  _wget https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R54.tgz
+
+  # https://tracker.debian.org/pkg/dash  -- old versions
+  # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
+  # Site seems down now.
+  # _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.9.1.tar.gz
+
+  # http://zsh.sourceforge.net/News/ - 12/2016 release
+  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
 }
 
 "$@"

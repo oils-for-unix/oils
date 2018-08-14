@@ -188,7 +188,9 @@ test-opy() {
   time ./test.sh oil-unit-byterun > $out/$step.txt 2>&1
   echo $?
 
-  # Hm does this need its own table output?
+  # TODO: this need its own table output.  It overwrites the output of
+  # 'test/spec.sh all' from the previous run.
+
   step='test-spec-all'
   echo "--- $step ---"
   time ./test.sh spec all > $out/$step.txt 2>&1
