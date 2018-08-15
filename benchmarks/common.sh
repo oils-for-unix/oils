@@ -6,11 +6,11 @@
 # What binary the benchmarks will run.
 readonly OSH_OVM=${OSH_OVM:-$PWD/_bin/osh}
 
-#readonly MACHINE1=flanders
-#readonly MACHINE2=lisa
+readonly MACHINE1=flanders
+readonly MACHINE2=lisa
 
-readonly MACHINE1=broome
-readonly MACHINE2=spring
+#readonly MACHINE1=broome
+#readonly MACHINE2=spring
 
 # NOTE: This is in {build,test}/common.sh too.
 die() {
