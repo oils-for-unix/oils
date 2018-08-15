@@ -35,17 +35,29 @@ else
   readonly BUSYBOX_ASH=_tmp/shells/ash
 fi
 
-readonly OSH_PYTHON=${OSH_PYTHON:-bin/osh}
+# Usage: callers can override OSH_LIST to test on more than one version.
+#
+# Example:
+# OSH_LIST='bin/osh _bin/osh' test/spec.sh all
+
+readonly OSH_CPYTHON='bin/osh'
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
-if test -e $OSH_OVM; then
-  # TODO: Does it make sense to copy the binary to an unrelated to directory,
-  # like /tmp?  /tmp/{oil.ovm,osh}.
+readonly OSH_LIST=${OSH_LIST:-}  # A space-separated list.
 
-  # HACK that relies on word splitting.  TODO: Use ${OSH[@]} everywhere
-  readonly OSH="$OSH_PYTHON $OSH_OVM"
+# TODO: Would be nicer to use ${OSH[@]} everywhere.
+OSH=''
+if test -n "$OSH_LIST"; then
+  OSH="$OSH_LIST"
 else
-  readonly OSH="$OSH_PYTHON"
+  if test -e $OSH_OVM; then
+    # TODO: Does it make sense to copy the binary to an unrelated to directory,
+    # like /tmp?  /tmp/{oil.ovm,osh}.
+
+    OSH="$OSH_CPYTHON $OSH_OVM"
+  else
+    OSH="$OSH_CPYTHON"
+  fi
 fi
 
 

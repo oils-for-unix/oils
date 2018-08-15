@@ -175,8 +175,7 @@ spec() {
 
   # HACK to get around __import__ problem with byterun.
 
-  local stub=opy/_tmp/repo-with-opy/bin/osh-byterun 
-  OSH_OVM=$stub test/spec.sh $action "$@"
+  OSH_LIST="bin/osh $OSH_BYTERUN" test/spec.sh $action "$@"
   popd
 }
 
@@ -292,4 +291,6 @@ fib-callgraph() {
   PYTHONPATH=.. CALLGRAPH=1 gold/fib_recursive.py
 }
 
-"$@"
+if test $(basename $0) = 'test.sh'; then
+  "$@"
+fi

@@ -5,10 +5,11 @@
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
-#   $0 build-and-test  (builds tarball, runs unit/spec/gold tests, etc.)
+#   $0 build-and-test  (builds tarball, runs unit,gold, initial spec tests, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
 #   test/wild.sh all (3-4 minutes on fast machine)
 #   $0 test-opy (2 minutes on fast machine)
+#   $0 spec-all  # tests 3 OSH binaries
 #   $0 metrics
 #   benchmarks:
 #     Sync up oilshell/benchmark-data repo.
@@ -41,6 +42,8 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Dir is defined in build/test.sh.
 readonly OSH_RELEASE_BINARY=_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
+
+source opy/common.sh  # For OSH_BYTERUN
 
 log() {
   echo "$@" 1>&2
@@ -135,7 +138,7 @@ _release-build() {
   #         oil.ovm
 }
 
-readonly HAVE_ROOT=''
+readonly HAVE_ROOT=1
 
 _test-release-build() {
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
@@ -152,10 +155,8 @@ _test-release-build() {
   test/osh2oil.sh run-for-release
   test/gold.sh run-for-release
 
-  # TODO: Assert that this was done with hermetic binaries?
-
-  # spec-tests-with-tar-build
-  OSH_OVM=$OSH_RELEASE_BINARY test/spec.sh all
+  # Just test the release build (not under CPython or byterun.  That comes later.)
+  OSH_LIST="$OSH_RELEASE_BINARY" test/spec.sh all
 }
 
 # NOTE: Following opy/README.md.  Right now this is a quick and dirty
@@ -188,21 +189,18 @@ test-opy() {
   time ./test.sh oil-unit-byterun > $out/$step.txt 2>&1
   echo $?
 
-  # TODO: this need its own table output.  It overwrites the output of
-  # 'test/spec.sh all' from the previous run.
-
-  step='test-spec-all'
-  echo "--- $step ---"
-  time ./test.sh spec all > $out/$step.txt 2>&1
-  echo $?
-
-  # NOTE: This is sensitive to Python 2.7.12 vs .13 vs .14, so don't bother
-  # publishing it for now.
-  #./regtest.sh compile > $out/regtest-compile.txt
-  #./regtest.sh verify-golden > $out/regtest-verify-golden.txt
+  # NOTE: This is sensitive to Python 2.7.12 vs .13 vs .14.  Ideally we would
+  # remove that.
+  ./regtest.sh compile > $out/regtest-compile.txt
+  ./regtest.sh verify-golden > $out/regtest-verify-golden.txt
 
   popd
 }
+
+spec-all() {
+  OSH_LIST="bin/osh $OSH_RELEASE_BINARY $OSH_BYTERUN" test/spec.sh all
+}
+
 
 # TODO: Log this whole thing?  Include logs with the /release/ page?
 build-and-test() {

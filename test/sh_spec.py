@@ -59,6 +59,15 @@ import sys
 import time
 
 
+# Magic strings for other variants of OSH.
+
+# NOTE: osh_ALT is usually _bin/osh -- the release binary.
+# It would be better to rename these osh-cpython and osh-ovm.  Have the concept
+# of a suffix?  Then we can have osh-byterun too.
+
+OTHER_OSH = ('osh_ALT', 'osh-byterun') 
+
+
 class ParseError(Exception):
   pass
 
@@ -357,16 +366,15 @@ def CreateAssertions(case, sh_label):
   status = False
 
   # So the assertion are exactly the same for osh and osh_ALT
-  if sh_label in ('osh_ALT', 'osh-byterun'):
-    sh_label = 'osh'
+  case_sh = 'osh' if sh_label in OTHER_OSH else sh_label
 
-  if sh_label in case:
-    q = case[sh_label]['qualifier']
-    if CreateStringAssertion(case[sh_label], 'stdout', assertions, qualifier=q):
+  if case_sh in case:
+    q = case[case_sh]['qualifier']
+    if CreateStringAssertion(case[case_sh], 'stdout', assertions, qualifier=q):
       stdout = True
-    if CreateStringAssertion(case[sh_label], 'stderr', assertions, qualifier=q):
+    if CreateStringAssertion(case[case_sh], 'stderr', assertions, qualifier=q):
       stderr = True
-    if CreateIntAssertion(case[sh_label], 'status', assertions, qualifier=q):
+    if CreateIntAssertion(case[case_sh], 'status', assertions, qualifier=q):
       status = True
 
   if not stdout:
@@ -451,6 +459,15 @@ def RunCases(cases, case_predicate, shells, env, out):
     e['SH'] = sh_path
     sh_env.append(e)
 
+  # Determine which one (if any) is osh-cpython, for comparison against other
+  # shells.
+  osh_cpython_index = -1
+  for i, (sh_label, _) in enumerate(shells):
+    if sh_label == 'osh':
+      osh_cpython_index = i
+      break
+
+  # Now run each case, and print a table.
   for i, case in enumerate(cases):
     line_num = case['line_num']
     desc = case['desc']
@@ -508,7 +525,7 @@ def RunCases(cases, case_predicate, shells, env, out):
       if cell_result == Result.FAIL:
         # Special logic: don't count osh_ALT beacuse its failures will be
         # counted in the delta.
-        if sh_label not in ('osh_ALT', 'osh-byterun'):
+        if sh_label not in OTHER_OSH:
           stats['num_failed'] += 1
 
         if sh_label == 'osh':
@@ -526,10 +543,14 @@ def RunCases(cases, case_predicate, shells, env, out):
       else:
         raise AssertionError
 
-      if sh_label in ('osh_ALT', 'osh-byterun'):
-        osh_alt_result = result_row[-1]
-        cpython_result = result_row[-2]
-        if osh_alt_result != cpython_result:
+      if sh_label in OTHER_OSH:
+        # This is only an error if we tried to run ANY OSH.
+        if osh_cpython_index == -1:
+          raise RuntimeError("Couldn't determine index of osh-cpython")
+
+        other_result = result_row[shell_index]
+        cpython_result = result_row[osh_cpython_index]
+        if other_result != cpython_result:
           stats['osh_ALT_delta'] += 1
 
     out.WriteRow(i, line_num, result_row, desc)
@@ -880,8 +901,9 @@ def main(argv):
     name, _ = os.path.splitext(path)
     label = os.path.basename(name)
     if label == 'osh':
+      # change the second 'osh' to 'osh_ALT' so it's distinct
       if saw_osh:
-        label = 'osh_ALT'  # distinct label
+        label = 'osh_ALT'
       else:
         saw_osh = True
     shell_pairs.append((label, path))

@@ -102,6 +102,7 @@ class ShSpecTest(unittest.TestCase):
       out_f = cStringIO.StringIO()
     out = AnsiOutput(out_f, False)
     RunCases([CASE1], lambda i, case: True, shells, env, out)
+    print(repr(out.f.getvalue()))
 
 
 if __name__ == '__main__':

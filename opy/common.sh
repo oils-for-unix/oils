@@ -12,6 +12,9 @@ set -o errexit
 
 readonly GRAMMAR=_tmp/py27.grammar.pickle
 
+# Used by scripts/release.sh too.
+readonly OSH_BYTERUN=opy/_tmp/repo-with-opy/bin/osh-byterun 
+
 log() {
   echo "$@" >&2
 }
