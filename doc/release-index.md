@@ -71,7 +71,6 @@ Tree-shaking:
 ### Manual Tests
 
 - [ ] Test build and install on OS X
-- [ ] Test build and install on Alpine Linux
 
 ### Benchmarks
 
