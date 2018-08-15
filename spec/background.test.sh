@@ -90,12 +90,12 @@ echo "status=$?"  # third job I think
 
 #### wait -n
 { sleep 0.09; exit 9; } &
-{ sleep 0.07; exit 7; } &
+{ sleep 0.03; exit 3; } &
 wait -n
 echo "status=$?"
 wait -n
 echo "status=$?"
-## stdout-json: "status=7\nstatus=9\n"
+## stdout-json: "status=3\nstatus=9\n"
 ## N-I dash stdout-json: "status=2\nstatus=2\n"
 ## N-I mksh stdout-json: "status=1\nstatus=1\n"
 
