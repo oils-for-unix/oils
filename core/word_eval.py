@@ -309,6 +309,7 @@ class _WordEvaluator(object):
         # There can be empty placeholder values in the array.
         length = sum(1 for s in val.strs if s is not None)
       return runtime.Str(str(length))
+
     elif op_id == Id.VSub_Bang:
       # NOTES:
       # - Could translate to eval('$' + name) or eval("\$$name")
@@ -319,6 +320,7 @@ class _WordEvaluator(object):
 
       # Treat the value of the variable as a variable name.
       return self.mem.GetVar(val.s)
+
     else:
       raise AssertionError(op_id)
 
@@ -575,9 +577,7 @@ class _WordEvaluator(object):
           raise AssertionError(val.__class__.__name__)
 
       elif op.tag == suffix_op_e.Slice:
-        # NOTE: The beginning can be negative, but Python handles this.  Might
-        # want to make it explicit.
-        # TODO: Check out of bounds errors?  begin > end?
+        # TODO: Check out of bounds errors?  begin could be past the beginning.
         if op.begin:
           begin = self.arith_ev.Eval(op.begin)
         else:
@@ -585,22 +585,32 @@ class _WordEvaluator(object):
 
         if op.length:
           length = self.arith_ev.Eval(op.length)
-          end = begin + length
         else:
           length = None
-          end = None  # Python supports None as the end
 
-        if val.tag == value_e.Str:  # Slice characters in a string.
-          # TODO: Need to support unicode?  Write spec # tests.
-          val = runtime.Str(val.s[begin : end])
+        if val.tag == value_e.Str:  # Slice UTF-8 characters in a string.
+          s = val.s
+          if begin >= 0:
+            byte_begin = libstr.AdvanceChars(s, begin, 0)
+          else:
+            # How do we count characters from the end?  I guess we have to
+            # decode the whole thing.
+            raise NotImplementedError
+
+          if length is not None:
+            byte_end = libstr.AdvanceChars(s, length, byte_begin)
+          else:
+            byte_end = len(s)
+
+          val = runtime.Str(s[byte_begin : byte_end])
 
         elif val.tag == value_e.StrArray:  # Slice array entries.
-          # NOTE: unset elements don't count towards the length
+          # NOTE: unset elements don't count towards the length.
           strs = []
           for s in val.strs[begin:]:
             if s is not None:
               strs.append(s)
-              if len(strs) == length: # never true for unspecified length
+              if len(strs) == length:  # never true for unspecified length
                 break
           val = runtime.StrArray(strs)
 

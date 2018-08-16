@@ -111,6 +111,35 @@ def NumOfUtf8Chars(bytes):
   return num_of_utf8_chars
 
 
+def AdvanceChars(s, num_chars, byte_offset):
+  """
+  Advance a certain number of UTF-8 chars, beginning with the given byte
+  offset.  Returns a byte offset.
+  """
+  i = byte_offset  # mutated
+  for _ in xrange(num_chars):
+    byte_as_int = ord(s[i])
+
+    if (byte_as_int >> 7) == 0b0:
+      i += 1
+    elif (byte_as_int >> 5) == 0b110:
+      _CheckContinuationByte(s[i+1])
+      i += 2
+    elif (byte_as_int >> 4) == 0b1110:
+      _CheckContinuationByte(s[i+1])
+      _CheckContinuationByte(s[i+2])
+      i += 3
+    elif (byte_as_int >> 3) == 0b11110:
+      _CheckContinuationByte(s[i+1])
+      _CheckContinuationByte(s[i+2])
+      _CheckContinuationByte(s[i+3])
+      i += 4
+    else:
+      raise AssertionError
+
+  return i
+
+
 # Implementation without Python regex:
 #
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and

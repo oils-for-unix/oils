@@ -44,7 +44,8 @@ error: Incomplete utf-8
 error: Incomplete utf-8
 7
 ## END
-## BUG bash STDOUT:
+# zsh behavior actually matches bash!
+## BUG bash/zsh STDOUT:
 0
 1
 2
@@ -99,7 +100,7 @@ error: Invalid utf-8 continuation byte
 error: Invalid start of utf-8 char
 error: Invalid start of utf-8 char
 ## END
-## BUG bash STDOUT:
+## BUG bash/zsh STDOUT:
 1
 2
 3
@@ -168,6 +169,9 @@ echo ${#v:1:3}
 ## OK osh status: 2
 ## N-I dash status: 0
 ## N-I dash stdout: 5
+# zsh actually implements this!
+## OK zsh stdout: 3
+## OK zsh status: 0
 
 #### Pattern replacement
 v=abcde
@@ -177,18 +181,18 @@ echo ${v/c*/XX}
 ## N-I dash stdout-json: ""
 
 #### Pattern replacement on unset variable
-echo [${v/x/y}]
+echo -${v/x/y}-
 echo status=$?
 set -o nounset  # make sure this fails
-echo [${v/x/y}]
+echo -${v/x/y}-
 ## STDOUT:
-[]
+--
 status=0
 ## BUG mksh STDOUT:
 # patsub disrespects nounset!
-[]
+--
 status=0
-[]
+--
 ## status: 1
 ## BUG mksh status: 0
 ## N-I dash status: 2
@@ -253,8 +257,8 @@ echo status=$?
 ## stdout-json: ""
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
-## BUG bash/mksh status: 0
-## BUG bash/mksh stdout-json: "-abcde-\nstatus=0\n"
+## BUG bash/mksh/zsh status: 0
+## BUG bash/mksh/zsh stdout-json: "-abcde-\nstatus=0\n"
 
 #### Pattern replacement ${v//} is not valid
 v='a/b/c'
@@ -264,8 +268,8 @@ echo status=$?
 ## stdout-json: ""
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
-## BUG bash/mksh status: 0
-## BUG bash/mksh stdout-json: "-a/b/c-\nstatus=0\n"
+## BUG bash/mksh/zsh status: 0
+## BUG bash/mksh/zsh stdout-json: "-a/b/c-\nstatus=0\n"
 
 #### ${v/a} is the same as ${v/a/}  -- no replacement string
 v='aabb'
@@ -278,14 +282,51 @@ echo status=$?
 #### String slice
 foo=abcdefg
 echo ${foo:1:3}
-## stdout: bcd
+## STDOUT:
+bcd
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### Negative string slice
+#### Out of range string slice: begin
+# out of range begin doesn't raise error in bash, but in mksh it skips the
+# whole thing!
+foo=abcdefg
+echo _${foo:100:3}
+echo $?
+## STDOUT:
+_
+0
+## END
+## BUG mksh stdout-json: "\n0\n"
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### Out of range string slice: length
+# OK in both bash and mksh
+foo=abcdefg
+echo _${foo:3:100}
+echo $?
+## STDOUT:
+_defg
+0
+## END
+## BUG mksh stdout-json: "_defg\n0\n"
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### String slice: negative begin
 foo=abcdefg
 echo ${foo: -4:3}
 ## stdout: def
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### String slice: negative second arg is position, not length
+foo=abcdefg
+echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
+## stdout: def de d
+## BUG mksh stdout: defg defg defg
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
@@ -298,7 +339,7 @@ echo ${foo: i-3-2 : i + 2}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### Slice String with Unicode
+#### Slice UTF-8 String
 # mksh slices by bytes.
 foo='--μ--'
 echo ${foo:1:3}
@@ -306,3 +347,18 @@ echo ${foo:1:3}
 ## BUG mksh stdout: -μ
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### Slice UTF-8 string with invalid data
+# mksh slices by bytes.
+s=$(echo -e "\xFF")bcdef
+echo ${s:1:3}
+## status: 1
+## stdout-json: ""
+## stderr-json: "error: Invalid start of utf-8 char"
+## BUG bash/mksh/zsh status: 0
+## BUG bash/mksh/zsh stdout-json: "bcd\n"
+## BUG bash/mksh/zsh stderr-json: ""
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I dash stderr-json: "_tmp/spec-bin/dash: 2: Bad substitution\n"
+
