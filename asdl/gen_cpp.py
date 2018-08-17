@@ -29,6 +29,7 @@ import sys
 
 from asdl import asdl_ as asdl
 from asdl import encode
+from asdl import front_end
 from asdl import visitor
 
 from osh.meta import Id
@@ -311,7 +312,7 @@ def main(argv):
 
     app_types = {'id': asdl.UserType(Id)}
     with open(schema_path) as input_f:
-      module, type_lookup = asdl.LoadSchema(input_f, app_types)
+      module, type_lookup = front_end.LoadSchema(input_f, app_types)
 
     # TODO: gen_cpp.py should be a library and the application should add Id?
     # Or we should enable ASDL metaprogramming, and let Id be a metaprogrammed

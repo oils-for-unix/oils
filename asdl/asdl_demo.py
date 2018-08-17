@@ -6,6 +6,7 @@ asdl_demo.py
 
 import sys
 from asdl import asdl_ as asdl
+from asdl import front_end
 from asdl import arith_parse
 from asdl import py_meta
 from asdl import encode
@@ -24,19 +25,12 @@ def main(argv):
     raise RuntimeError('Action required')
 
   if action == 'py':  # Prints the module
+    # Called by asdl/run.sh py-cpp
+
     schema_path = argv[2]
-
-    with open(schema_path) as f:
-      module = asdl.parse(f)
-
     app_types = {'id': asdl.UserType(Id)}
-    type_lookup = asdl.ResolveTypes(module, app_types)
-
-    # Note this is a big tree.  But we really want a graph of pointers to
-    # instances.
-    # Type(name, Product(...))
-    # Type(name, Sum([Constructor(...), ...]))
-    #print(module)
+    with open(schema_path) as f:
+      module, type_lookup = front_end.LoadSchema(f, app_types)
 
     root = sys.modules[__name__]
     # NOTE: We shouldn't pass in app_types for arith.asdl, but this is just a

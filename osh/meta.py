@@ -11,8 +11,9 @@ Usage:
   from osh.meta import Id, Kind, ast, ID_SPEC
 """
 
-from asdl import py_meta
 from asdl import asdl_ as asdl
+from asdl import front_end
+from asdl import py_meta
 
 from core import id_kind
 from core import util
@@ -75,11 +76,11 @@ def IdInstance(i):
 #
 
 f = util.GetResourceLoader().open('osh/types.asdl')
-_asdl_module, _type_lookup = asdl.LoadSchema(f, {})  # no app_types
+_schema_ast, _type_lookup = front_end.LoadSchema(f, {})  # no app_types
 
 types = _AsdlModule()
 if 0:
-  py_meta.MakeTypes(_asdl_module, types, _type_lookup)
+  py_meta.MakeTypes(_schema_ast, types, _type_lookup)
 else:
   # Exported for the generated code to use
   TYPES_TYPE_LOOKUP = _type_lookup
@@ -126,11 +127,11 @@ APP_TYPES = {'id': asdl.UserType(Id)}
 #
 
 f = util.GetResourceLoader().open('osh/osh.asdl')
-_asdl_module, _type_lookup = asdl.LoadSchema(f, APP_TYPES)
+_schema_ast, _type_lookup = front_end.LoadSchema(f, APP_TYPES)
 
 ast = _AsdlModule()
 if 0:
-  py_meta.MakeTypes(_asdl_module, ast, _type_lookup)
+  py_meta.MakeTypes(_schema_ast, ast, _type_lookup)
 else:
   # Exported for the generated code to use
   OSH_TYPE_LOOKUP = _type_lookup
@@ -146,11 +147,11 @@ f.close()
 #
 
 f = util.GetResourceLoader().open('core/runtime.asdl')
-_asdl_module, _type_lookup = asdl.LoadSchema(f, APP_TYPES)
+_schema_ast, _type_lookup = front_end.LoadSchema(f, APP_TYPES)
 
 runtime = _AsdlModule()
 if 0:
-  py_meta.MakeTypes(_asdl_module, runtime, _type_lookup)
+  py_meta.MakeTypes(_schema_ast, runtime, _type_lookup)
 else:
   # Exported for the generated code to use
   RUNTIME_TYPE_LOOKUP = _type_lookup
