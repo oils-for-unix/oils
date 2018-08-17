@@ -14,6 +14,7 @@ Assertion help:
 Results:
   PASS - we got the ideal, expected value
   OK   - we got a value that was not ideal, but expected
+         For OSH this is behavior that was defined to be different?
   N-I  - Not implemented (e.g. $'').  Assertions still checked (in case it
          starts working)
   BUG  - we verified the value of a known bug

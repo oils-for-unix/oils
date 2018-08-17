@@ -32,16 +32,16 @@ done
 0
 1
 2
-error: Incomplete utf-8
+Incomplete UTF-8 character
 3
 4
-error: Incomplete utf-8
-error: Incomplete utf-8
+Incomplete UTF-8 character
+Incomplete UTF-8 character
 5
 6
-error: Incomplete utf-8
-error: Incomplete utf-8
-error: Incomplete utf-8
+Incomplete UTF-8 character
+Incomplete UTF-8 character
+Incomplete UTF-8 character
 7
 ## END
 # zsh behavior actually matches bash!
@@ -84,21 +84,21 @@ for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
   echo ${#s}
 done
 ## STDOUT:
-error: Invalid start of utf-8 char
-error: Invalid start of utf-8 char
-error: Invalid start of utf-8 char
-error: Invalid utf-8 continuation byte
-error: Invalid start of utf-8 char
-error: Invalid start of utf-8 char
-error: Invalid utf-8 continuation byte
-error: Invalid utf-8 continuation byte
-error: Invalid start of utf-8 char
-error: Invalid start of utf-8 char
-error: Invalid utf-8 continuation byte
-error: Invalid utf-8 continuation byte
-error: Invalid utf-8 continuation byte
-error: Invalid start of utf-8 char
-error: Invalid start of utf-8 char
+Invalid start of UTF-8 character
+Invalid start of UTF-8 character
+Invalid start of UTF-8 character
+Invalid UTF-8 continuation byte
+Invalid start of UTF-8 character
+Invalid start of UTF-8 character
+Invalid UTF-8 continuation byte
+Invalid UTF-8 continuation byte
+Invalid start of UTF-8 character
+Invalid start of UTF-8 character
+Invalid UTF-8 continuation byte
+Invalid UTF-8 continuation byte
+Invalid UTF-8 continuation byte
+Invalid start of UTF-8 character
+Invalid start of UTF-8 character
 ## END
 ## BUG bash/zsh STDOUT:
 1
@@ -318,6 +318,7 @@ _defg
 #### String slice: negative begin
 foo=abcdefg
 echo ${foo: -4:3}
+## OK osh stdout:
 ## stdout: def
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
@@ -325,16 +326,31 @@ echo ${foo: -4:3}
 #### String slice: negative second arg is position, not length
 foo=abcdefg
 echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
+## OK osh stdout:
 ## stdout: def de d
 ## BUG mksh stdout: defg defg defg
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
+#### strict-word-eval with string slice
+set -o strict-word-eval || true
+echo slice
+s='abc'
+echo -${s: -2}-
+## stdout-json: "slice\n"
+## status: 1
+## N-I bash status: 0
+## N-I bash stdout-json: "slice\n-bc-\n"
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout-json: ""
+
 #### String slice with math
 # I think this is the $(()) language inside?
 i=1
 foo=abcdefg
-echo ${foo: i-3-2 : i + 2}
+echo ${foo: i+4-2 : i + 2}
 ## stdout: def
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
@@ -367,17 +383,30 @@ echo ${foo:1:3}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### Slice UTF-8 string with invalid data
-# mksh slices by bytes.
+#### Slice string with invalid UTF-8 results in empty string and warning
 s=$(echo -e "\xFF")bcdef
-echo ${s:1:3}
-## status: 1
-## stdout-json: ""
-## stderr-json: "error: Invalid start of utf-8 char"
+echo -${s:1:3}-
+## status: 0
+## stdout-json: "--\n"
+## stderr-json: "osh warning: Invalid start of UTF-8 character\n"
 ## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh stdout-json: "bcd\n"
+## BUG bash/mksh/zsh stdout-json: "-bcd-\n"
 ## BUG bash/mksh/zsh stderr-json: ""
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I dash stderr-json: "_tmp/spec-bin/dash: 2: Bad substitution\n"
 
+
+#### Slice string with invalid UTF-8 with strict-word-eval
+set -o strict-word-eval || true
+echo slice
+s=$(echo -e "\xFF")bcdef
+echo -${s:1:3}-
+## status: 1
+## stdout-json: "slice\n"
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout-json: ""
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I bash status: 0
+## N-I bash stdout-json: "slice\n-bcd-\n"

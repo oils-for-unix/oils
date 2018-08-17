@@ -56,19 +56,14 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
-INCOMPLETE_CHAR = 'error: Incomplete utf-8'
-INVALID_CONT = 'error: Invalid utf-8 continuation byte'
-INVALID_START = 'error: Invalid start of utf-8 char'
-
-
-class InvalidUtf8(Exception):
-  def __init__(self, msg):
-    self.msg = msg
+INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
+INVALID_CONT = 'Invalid UTF-8 continuation byte'
+INVALID_START = 'Invalid start of UTF-8 character'
 
 
 def _CheckContinuationByte(byte):
   if (ord(byte) >> 6) != 0b10:
-    raise InvalidUtf8(INVALID_CONT)
+    raise util.InvalidUtf8(INVALID_CONT)
 
 
 def _NextUtf8Char(s, i):
@@ -94,9 +89,9 @@ def _NextUtf8Char(s, i):
       _CheckContinuationByte(s[i+3])
       i += 4
     else:
-      raise InvalidUtf8(INVALID_START)
+      raise util.InvalidUtf8(INVALID_START)
   except IndexError:
-    raise InvalidUtf8(INCOMPLETE_CHAR)
+    raise util.InvalidUtf8(INCOMPLETE_CHAR)
 
   return i
 

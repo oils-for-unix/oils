@@ -306,7 +306,7 @@ class _WordEvaluator(object):
         # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
         try:
           length = libstr.CountUtf8Chars(val.s)
-        except libstr.InvalidUtf8 as e:
+        except util.InvalidUtf8 as e:
           # EARLY RETURN.  TODO: Should print to stderr!
           return runtime.Str(str(e.msg))  
 
@@ -598,21 +598,46 @@ class _WordEvaluator(object):
         if val.tag == value_e.Str:  # Slice UTF-8 characters in a string.
           s = val.s
 
-          if begin < 0:
-            # How do we count characters from the end?  I guess we have to
-            # decode the whole thing.
-            raise NotImplementedError
+          try:
+            if begin < 0:
+              # It could be negative if we compute unicode length, but that's
+              # confusing.
 
-          byte_begin = libstr.AdvanceUtf8Chars(s, begin, 0)
+              # TODO: Instead of attributing it to the word part, it would be
+              # better if we attributed it to arith_expr begin.
+              raise util.InvalidSlice(
+                  "The start index of a string slice can't be negative: %d",
+                  begin, part=part)
 
-          if length is None:
-            byte_end = len(s)
+            byte_begin = libstr.AdvanceUtf8Chars(s, begin, 0)
+
+            if length is None:
+              byte_end = len(s)
+            else:
+              if length < 0:
+                # TODO: Instead of attributing it to the word part, it would be
+                # better if we attributed it to arith_expr begin.
+                raise util.InvalidSlice(
+                    "The length of a string slice can't be negative: %d",
+                    length, part=part)
+
+              byte_end = libstr.AdvanceUtf8Chars(s, length, byte_begin)
+
+          except (util.InvalidSlice, util.InvalidUtf8) as e:
+            if self.exec_opts.strict_word_eval:
+              raise
+            else:
+              # TODO:
+              # - We don't see the error location here, but we see it when set
+              #   -o strict-word-eval.
+              # - Doesn't make the command exit with 1.  It just sets the word
+              #   to empty string.
+              util.warn(e.UserErrorString())
+              substr = ''  # error condition
           else:
-            if length < 0:
-              raise NotImplementedError
-            byte_end = libstr.AdvanceUtf8Chars(s, length, byte_begin)
+            substr = s[byte_begin : byte_end]
 
-          val = runtime.Str(s[byte_begin : byte_end])
+          val = runtime.Str(substr)
 
         elif val.tag == value_e.StrArray:  # Slice array entries.
           # NOTE: unset elements don't count towards the length.

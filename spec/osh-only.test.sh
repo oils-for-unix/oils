@@ -11,3 +11,7 @@ set -o debug-completion
 #### debug-completion from command line
 $SH -o debug-completion
 ## status: 0
+
+# NOTE: strict-arith has one case in arith.test.sh), strict-word-eval has a case in var-op-other.
+
+

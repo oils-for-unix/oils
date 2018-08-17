@@ -82,6 +82,18 @@ class FatalRuntimeError(_ErrorWithLocation):
   pass
 
 
+class InvalidSlice(FatalRuntimeError):
+  """Whether this is fatal depends on set -o strict-word-eval.
+  """
+  pass
+
+
+class InvalidUtf8(FatalRuntimeError):
+  """Whether this is fatal depends on set -o strict-word-eval.
+  """
+  pass
+
+
 class ErrExitFailure(FatalRuntimeError):
   """For set -e.
 
