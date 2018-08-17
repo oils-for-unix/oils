@@ -304,10 +304,16 @@ class _WordEvaluator(object):
         # count-bytes?
 
         # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
-        length = libstr.NumOfUtf8Chars(val.s)
+        try:
+          length = libstr.CountUtf8Chars(val.s)
+        except libstr.InvalidUtf8 as e:
+          # EARLY RETURN.  TODO: Should print to stderr!
+          return runtime.Str(str(e.msg))  
+
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.
         length = sum(1 for s in val.strs if s is not None)
+
       return runtime.Str(str(length))
 
     elif op_id == Id.VSub_Bang:
@@ -591,14 +597,14 @@ class _WordEvaluator(object):
         if val.tag == value_e.Str:  # Slice UTF-8 characters in a string.
           s = val.s
           if begin >= 0:
-            byte_begin = libstr.AdvanceChars(s, begin, 0)
+            byte_begin = libstr.AdvanceUtf8Chars(s, begin, 0)
           else:
             # How do we count characters from the end?  I guess we have to
             # decode the whole thing.
             raise NotImplementedError
 
           if length is not None:
-            byte_end = libstr.AdvanceChars(s, length, byte_begin)
+            byte_end = libstr.AdvanceUtf8Chars(s, length, byte_begin)
           else:
             byte_end = len(s)
 

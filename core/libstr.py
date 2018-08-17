@@ -56,70 +56,29 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
-INCOMPLETE = 'error: Incomplete utf-8'
+INCOMPLETE_CHAR = 'error: Incomplete utf-8'
 INVALID_CONT = 'error: Invalid utf-8 continuation byte'
 INVALID_START = 'error: Invalid start of utf-8 char'
 
 
+class InvalidUtf8(Exception):
+  def __init__(self, msg):
+    self.msg = msg
+
+
 def _CheckContinuationByte(byte):
   if (ord(byte) >> 6) != 0b10:
-    raise RuntimeError
+    raise InvalidUtf8(INVALID_CONT)
 
 
-def NumOfUtf8Chars(bytes):
-  """Returns the number of utf-8 characters in the byte string 's'.
-
-  TODO: Raise exception rather than returning a string, so we can set the exit
-  code of the command to 1 ?
-
-  $ echo ${#bad}
-  Invalid utf-8 at index 3 of string 'bad': 'ab\xffd'
-  $ echo $?
-  1
+def _NextUtf8Char(s, i):
   """
-  num_of_utf8_chars = 0
-
-  num_bytes = len(bytes)
-  i = 0
-  while i < num_bytes:
-    byte_as_int = ord(bytes[i])
-
-    try:
-      if (byte_as_int >> 7) == 0b0:
-        i += 1
-      elif (byte_as_int >> 5) == 0b110:
-        _CheckContinuationByte(bytes[i+1])
-        i += 2
-      elif (byte_as_int >> 4) == 0b1110:
-        _CheckContinuationByte(bytes[i+1])
-        _CheckContinuationByte(bytes[i+2])
-        i += 3
-      elif (byte_as_int >> 3) == 0b11110:
-        _CheckContinuationByte(bytes[i+1])
-        _CheckContinuationByte(bytes[i+2])
-        _CheckContinuationByte(bytes[i+3])
-        i += 4
-      else:
-        return INVALID_START
-    except IndexError:
-      return INCOMPLETE
-    except RuntimeError:
-      return INVALID_CONT
-
-    num_of_utf8_chars += 1
-
-  return num_of_utf8_chars
-
-
-def AdvanceChars(s, num_chars, byte_offset):
+  Given a string and a byte offset, returns the byte position of the next char.
+  Validates UTF-8.
   """
-  Advance a certain number of UTF-8 chars, beginning with the given byte
-  offset.  Returns a byte offset.
-  """
-  i = byte_offset  # mutated
-  for _ in xrange(num_chars):
-    byte_as_int = ord(s[i])
+  byte_as_int = ord(s[i])  # Should never raise IndexError
 
+  try:
     if (byte_as_int >> 7) == 0b0:
       i += 1
     elif (byte_as_int >> 5) == 0b110:
@@ -135,7 +94,47 @@ def AdvanceChars(s, num_chars, byte_offset):
       _CheckContinuationByte(s[i+3])
       i += 4
     else:
-      raise AssertionError
+      raise InvalidUtf8(INVALID_START)
+  except IndexError:
+    raise InvalidUtf8(INCOMPLETE_CHAR)
+
+  return i
+
+
+def CountUtf8Chars(s):
+  """Returns the number of utf-8 characters in the byte string 's'.
+
+  TODO: Raise exception rather than returning a string, so we can set the exit
+  code of the command to 1 ?
+
+  $ echo ${#bad}
+  Invalid utf-8 at index 3 of string 'bad': 'ab\xffd'
+  $ echo $?
+  1
+  """
+  num_chars = 0
+  num_bytes = len(s)
+  i = 0
+  while i < num_bytes:
+    i = _NextUtf8Char(s, i)
+    num_chars += 1
+  return num_chars
+
+
+def AdvanceUtf8Chars(s, num_chars, byte_offset):
+  """
+  Advance a certain number of UTF-8 chars, beginning with the given byte
+  offset.  Returns a byte offset.
+
+  If we got past the end of the string
+  """
+  num_bytes = len(s)
+  i = byte_offset  # mutated
+
+  for _ in xrange(num_chars):
+    if i >= num_bytes:
+      raise RuntimeError('Out of bounds')
+    i = _NextUtf8Char(s, i)
 
   return i
 
