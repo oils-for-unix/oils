@@ -6,7 +6,10 @@ Parse Error:
   spec/parse-errors.test.sh
 
 
+
 TODO: See test/runtime-errors.sh.  Merge them here.
+
+### Fatal vs. Non-Fatal
 
 Fatal Error:
   terminates the interpreter unconditionally, e.g. divide by zero does this in
@@ -15,17 +18,80 @@ Fatal Error:
 Non-fatal error:
   terminates the current builtin and exits 1
 
-Strict modes:
-  Turns non-fatal errors into fatal errors.
+non-fatal errors can be turned into fatal errors.
+
+by Strict modes:
     set -o errexit
-  Turns things that are not errors at all into fatal errors
+
+strict modes can also things that are not errors at all into fatal errors
     set -o nounset
     set -o failglob
 
+Fatal errors can be turned into non-fatal ones!!!!
+
+by dparen:
+
+   (( 1 / 0 ))
+
+by command sub -- although this involves another process so it's
+understandable!
+
+   set -o errexit
+   echo $(exit 1)
+
+### Strict Modes
+
+strict-array
+strict-errexit
+strict-arith
+
+TODO: strict-word-eval?
+  for unicode errors
+  for subshell negative indices?  I think this is most consistent right now.
+
+
+### Parse Error API
+
+TODO:
+
+    p_die() internally
+
+
+    w = w_parser.ReadWord()
+    if w is None:
+      do something with w_parser.Error()
+
+Related to memory management API:
+
+    # arena is the out param
+    arena = pool.NewArena()
+    c_parser = cmd_parse.CommandParser(w_parser, arena)
+    bool ok = c_parser.Parse()
+    if ok:
+      arena.RootNode() #  turns indexes into pointers?
+      arena.Deallocate()  # d
+    else:
+      c_parser.Error()  # Is this still a stack?
+
+### Runtime Error API: error codes + error contexts?
+
+Idea:
 
 - Should we have a table of errors for metaprogramming?
   - assign each one of these a code, and decide what to do based on a table?
+  - then have an error CONTEXT
   - based on spec tests?
+
+  - and error context takes an error code, looks it up in a table, and decides
+    whether to catch or to reraise!
+
+List of contexts:
+
+- assignment   a=$()    exit code
+- command sub $()
+- subshell ()
+- pipeline?  ls | { foo; exit 1; }
+- dparen (( )) vs. arith sub $(( ))
 
 ### Problem in bash: Context affects a lot
 
@@ -156,6 +222,13 @@ fd=$(cat invalid.txt)
 echo foo 2>& $fd
 
 #### Builtins
+
+In core/builtins.py:
+
+    util.usage('...')
+    return 1
+
+A usage error is a runtime error that results in the builtin returning 1.
 
 Builtin has too many arguments -- but this falls under the errexit rule
   cd foo bar baz
