@@ -307,8 +307,14 @@ class _WordEvaluator(object):
         try:
           length = libstr.CountUtf8Chars(val.s)
         except util.InvalidUtf8 as e:
-          # EARLY RETURN.  TODO: Should print to stderr!
-          return runtime.Str(str(e.msg))  
+          # TODO: Add location info from 'part'?  Only the caller has it.
+          if self.exec_opts.strict_word_eval:
+            raise
+          else:
+            # NOTE: Doesn't make the command exit with 1; it just returns a
+            # length of -1.
+            util.warn(e.UserErrorString())
+            return runtime.Str('-1')
 
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.

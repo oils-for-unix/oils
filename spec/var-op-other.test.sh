@@ -32,19 +32,28 @@ done
 0
 1
 2
-Incomplete UTF-8 character
+-1
 3
 4
-Incomplete UTF-8 character
-Incomplete UTF-8 character
+-1
+-1
 5
 6
-Incomplete UTF-8 character
-Incomplete UTF-8 character
-Incomplete UTF-8 character
+-1
+-1
+-1
 7
 ## END
+## STDERR:
+osh warning: Incomplete UTF-8 character
+osh warning: Incomplete UTF-8 character
+osh warning: Incomplete UTF-8 character
+osh warning: Incomplete UTF-8 character
+osh warning: Incomplete UTF-8 character
+osh warning: Incomplete UTF-8 character
+## END
 # zsh behavior actually matches bash!
+## BUG bash/zsh stderr-json: ""
 ## BUG bash/zsh STDOUT:
 0
 1
@@ -61,6 +70,7 @@ Incomplete UTF-8 character
 9
 7
 ## END
+## BUG dash/mksh stderr-json: ""
 ## N-I dash/mksh STDOUT:
 0
 1
@@ -84,22 +94,40 @@ for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
   echo ${#s}
 done
 ## STDOUT:
-Invalid start of UTF-8 character
-Invalid start of UTF-8 character
-Invalid start of UTF-8 character
-Invalid UTF-8 continuation byte
-Invalid start of UTF-8 character
-Invalid start of UTF-8 character
-Invalid UTF-8 continuation byte
-Invalid UTF-8 continuation byte
-Invalid start of UTF-8 character
-Invalid start of UTF-8 character
-Invalid UTF-8 continuation byte
-Invalid UTF-8 continuation byte
-Invalid UTF-8 continuation byte
-Invalid start of UTF-8 character
-Invalid start of UTF-8 character
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+-1
 ## END
+## STDERR:
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid UTF-8 continuation byte
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid UTF-8 continuation byte
+osh warning: Invalid UTF-8 continuation byte
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid UTF-8 continuation byte
+osh warning: Invalid UTF-8 continuation byte
+osh warning: Invalid UTF-8 continuation byte
+osh warning: Invalid start of UTF-8 character
+osh warning: Invalid start of UTF-8 character
+## END
+## BUG bash/zsh stderr-json: ""
 ## BUG bash/zsh STDOUT:
 1
 2
@@ -116,6 +144,7 @@ Invalid start of UTF-8 character
 10
 8
 8
+## N-I dash stderr-json: ""
 ## N-I dash STDOUT:
 7
 8
@@ -133,6 +162,7 @@ Invalid start of UTF-8 character
 20
 20
 ## END
+## N-I mksh stderr-json: ""
 ## N-I mksh STDOUT:
 1
 2

@@ -56,6 +56,8 @@ def Utf8Encode(code):
   return ''.join(chr(b & 0xFF) for b in bytes_)
 
 
+# TODO: Add details of the invalid character/byte here?
+
 INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
 INVALID_CONT = 'Invalid UTF-8 continuation byte'
 INVALID_START = 'Invalid start of UTF-8 character'
