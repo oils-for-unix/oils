@@ -86,6 +86,7 @@ SET_OPTIONS = [
     (None, 'strict-control-flow'),
     (None, 'strict-errexit'),
     (None, 'strict-array'),
+    (None, 'strict-arith'),
 
     (None, 'vi'),
     (None, 'emacs'),
