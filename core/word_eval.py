@@ -553,7 +553,7 @@ class _WordEvaluator(object):
           val = self._ApplyUnarySuffixOp(val, part.suffix_op)
 
       elif op.tag == suffix_op_e.PatSub:  # PatSub, vectorized
-        val = self._EmptyStrOrError(val)
+        val = self._EmptyStrOrError(val)  # ${undef//x/y}
 
         pat_val = self.EvalWordToString(op.pat, do_fnmatch=True)
         assert pat_val.tag == value_e.Str, pat_val
@@ -583,7 +583,8 @@ class _WordEvaluator(object):
           raise AssertionError(val.__class__.__name__)
 
       elif op.tag == suffix_op_e.Slice:
-        # TODO: Check out of bounds errors?  begin could be past the beginning.
+        val = self._EmptyStrOrError(val)  # ${undef:3:1}
+
         if op.begin:
           begin = self.arith_ev.Eval(op.begin)
         else:
@@ -596,17 +597,20 @@ class _WordEvaluator(object):
 
         if val.tag == value_e.Str:  # Slice UTF-8 characters in a string.
           s = val.s
-          if begin >= 0:
-            byte_begin = libstr.AdvanceUtf8Chars(s, begin, 0)
-          else:
+
+          if begin < 0:
             # How do we count characters from the end?  I guess we have to
             # decode the whole thing.
             raise NotImplementedError
 
-          if length is not None:
-            byte_end = libstr.AdvanceUtf8Chars(s, length, byte_begin)
-          else:
+          byte_begin = libstr.AdvanceUtf8Chars(s, begin, 0)
+
+          if length is None:
             byte_end = len(s)
+          else:
+            if length < 0:
+              raise NotImplementedError
+            byte_end = libstr.AdvanceUtf8Chars(s, length, byte_begin)
 
           val = runtime.Str(s[byte_begin : byte_end])
 
@@ -621,13 +625,13 @@ class _WordEvaluator(object):
           val = runtime.StrArray(strs)
 
         else:
-          raise AssertionError(val.__class__.__name__)
+          raise AssertionError(val.__class__.__name__)  # Not possible
 
     # After applying suffixes, process maybe_decay_array here.
     if maybe_decay_array and val.tag == value_e.StrArray:
       val = self._DecayArray(val)
 
-    # No prefix or suffix ops
+    # For the case where there are no prefix or suffix ops.
     val = self._EmptyStrOrError(val)
 
     # For example, ${a} evaluates to value_t.Str(), but we want a

@@ -129,11 +129,15 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
   If we got past the end of the string
   """
   num_bytes = len(s)
-  i = byte_offset  # mutated
+  i = byte_offset  # current byte position
 
   for _ in xrange(num_chars):
+    # Neither bash or zsh checks out of bounds for slicing.  Either begin or
+    # length.
     if i >= num_bytes:
-      raise RuntimeError('Out of bounds')
+      return i
+      #raise RuntimeError('Out of bounds')
+
     i = _NextUtf8Char(s, i)
 
   return i

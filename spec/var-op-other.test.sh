@@ -339,6 +339,25 @@ echo ${foo: i-3-2 : i + 2}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
+#### Slice undefined
+echo -${undef:1:2}-
+set -o nounset
+echo -${undef:1:2}-
+echo -done-
+## STDOUT:
+--
+## END
+## status: 1
+# mksh doesn't respect nounset!
+## BUG mksh status: 0
+## BUG mksh STDOUT:
+--
+--
+-done-
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
 #### Slice UTF-8 String
 # mksh slices by bytes.
 foo='--μ--'
