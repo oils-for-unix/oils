@@ -1078,6 +1078,10 @@ class Executor(object):
       for arm in node.arms:
         for pat_word in arm.pat_list:
           # NOTE: Is it OK that we're evaluating these as we go?
+
+          # TODO: case "$@") shouldn't succeed?  That's a type error?
+          # That requires strict-array?
+
           pat_val = self.word_ev.EvalWordToString(pat_word, do_fnmatch=True)
           #log('Matching word %r against pattern %r', to_match, pat_val.s)
           if libc.fnmatch(pat_val.s, to_match):

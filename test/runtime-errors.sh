@@ -135,6 +135,48 @@ control_flow() {
   echo 'SHOULD NOT GET HERE'
 }
 
+ambiguous_redirect() {
+  echo foo > "$@"
+  echo 'ambiguous redirect not fatal unless errexit'
+
+  set -o errexit
+  echo foo > "$@"
+  echo 'should not get here'
+}
+
+# bash semantics.
+ambiguous_redirect_context() {
+  # Problem: A WORD cannot fail.  Only a COMMAND can fail.
+
+  # http://stackoverflow.com/questions/29532904/bash-subshell-errexit-semantics
+  # https://groups.google.com/forum/?fromgroups=#!topic/gnu.bash.bug/NCK_0GmIv2M
+
+  # http://unix.stackexchange.com/questions/23026/how-can-i-get-bash-to-exit-on-backtick-failure-in-a-similar-way-to-pipefail
+
+  echo $(echo hi > "$@")
+  echo 'ambiguous is NOT FATAL in command sub'
+  echo
+
+  foo=$(echo hi > "$@")
+  echo $foo
+  echo 'ambiguous is NOT FATAL in assignment in command sub'
+  echo
+
+  set -o errexit
+
+  # This is strict-errexit!
+  echo $(echo hi > "$@")
+  echo 'ambiguous is NOT FATAL in command sub, even if errexit'
+  echo
+
+  # OK this one works.  Because the exit code of the assignment is the exit
+  # code of the RHS?
+  echo 'But when the command sub is in an assignment, it is fatal'
+  foo=$(echo hi > "$@")
+  echo $foo
+  echo 'SHOULD NOT REACH HERE'
+}
+
 #
 # WORD ERRORS
 #
@@ -166,6 +208,17 @@ divzero() {
 divzero_var() {
   local zero=0
   echo $(( 1 / zero ))
+
+  echo 'SHOULD NOT GET HERE'
+}
+
+divzero_dparen() {
+  (( 1 / 0 ))
+
+  echo 'Divide by zero in dparen is non-fatal unless errexit!'
+
+  set -o errexit
+  (( 1 / 0 ))
 
   echo 'SHOULD NOT GET HERE'
 }
