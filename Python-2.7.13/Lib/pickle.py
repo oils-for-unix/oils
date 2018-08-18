@@ -32,7 +32,6 @@ from copy_reg import _extension_registry, _inverted_registry, _extension_cache
 import marshal
 import sys
 import struct
-import re
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -162,8 +161,10 @@ LONG4           = '\x8b'  # push really big long
 _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
 
-__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
-del x
+# OVM_MAIN patch: Remove dependency on re module.  We're not doing 'import *'
+# anywhere.
+#__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
+#del x
 
 
 # Pickling machinery
