@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 gen_python.py
 
@@ -105,33 +106,3 @@ class GenClassesVisitor(visitor.AsdlVisitor):
 
   def EmitFooter(self):
     pass
-
-
-def main(argv):
-
-  schema_path = argv[1]
-  type_lookup_import = argv[2]
-
-  p = front_end.ASDLParser()
-  with open(schema_path) as input_f:
-    module = p.parse(input_f)
-
-  f = sys.stdout
-
-  f.write("""\
-from asdl import const  # For const.NO_INTEGER
-from asdl import py_meta
-%s
-
-""" % type_lookup_import)
-
-  v = GenClassesVisitor(f)
-  v.VisitModule(module)
-
-
-if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
-    sys.exit(1)

@@ -61,6 +61,11 @@ py-cpp() {
   asdl-cpp $schema _tmp/$(basename $schema).h
 }
 
+inspect-pickle() {
+  # python2 doesn't have this?
+  python3 -m pickletools asdl/arith.asdl.pickle
+}
+
 gen-python() {
   local schema=${1:-asdl/arith.asdl}
   asdl/gen_python.py $schema

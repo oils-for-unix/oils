@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import print_function
 """
 front_end.py: Lexer and parser for the ASDL schema language.
 """
@@ -281,13 +282,11 @@ def _AppendFields(field_ast_nodes, type_lookup, out):
     out.append((field.name, runtime_type))
 
 
-def _MakeReflection(module, app_types=None):
+def _MakeReflection(module, app_types):
   # Types that fields are declared with: int, id, word_part, etc.
   # Fields are NOT declared with Constructor names.
   type_lookup  = dict(asdl.BUILTIN_TYPES)
-
-  if app_types is not None:
-    type_lookup.update(app_types)
+  type_lookup.update(app_types)
 
   # NOTE: We need two passes.  Types can be mutually recurisve.  See
   # asdl/arith.asdl.
@@ -328,7 +327,11 @@ def LoadSchema(f, app_types):
   
   Used for code gen and metaprogramming.
 
-  TODO: Break dependency on the parser.  Used for type_lookup.
+  Note: I think app_types is only used for dynamic type checking in
+  asdl/py_meta.py.  I guess it could be used for pretty-printing, but that uses
+  the actual value and not the type.
+
+  TODO: We should change pretty-printing to also verify the types!
   """
   p = ASDLParser()
   schema_ast = p.parse(f)

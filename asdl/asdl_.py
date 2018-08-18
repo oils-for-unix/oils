@@ -24,6 +24,10 @@ from __future__ import print_function
 import cStringIO
 
 
+# TODO: There should be SimpleSumType(_SumType) and CompoundSumType(_SumType)
+# That can be determined at compile time with this function.  is_simple()
+# should move to front_end.py.
+
 # PATCH: Moved this function from asdl_c.py.
 def is_simple(sum):
   """Return True if a sum is a simple.

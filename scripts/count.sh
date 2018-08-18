@@ -84,7 +84,8 @@ all() {
   echo
 
   echo 'ASDL'
-  wc -l asdl/{asdl_*,const,py_meta,encode,format}.py | sort --numeric
+  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' |
+    xargs wc -l | sort --numeric
   echo
 
   echo 'CODE GENERATORS'

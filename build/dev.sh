@@ -68,25 +68,34 @@ gen-help() {
   build/doc.sh osh-quick-ref
 }
 
-gen-types-asdl() {
-  local out=_devbuild/gen/types_asdl.py
-  local import='from osh.meta import TYPES_TYPE_LOOKUP as TYPE_LOOKUP'
-  PYTHONPATH=. asdl/gen_python.py osh/types.asdl "$import" > $out
+# Helper
+gen-asdl-py-pickle() {
+  local asdl_path=$1  # e.g. osh/osh.asdl
+
+  local name=$(basename $asdl_path .asdl)
+
+  local tmp=_tmp/${name}_asdl.py
+  local out=_devbuild/gen/${name}_asdl.py
+
+  PYTHONPATH=. osh/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
+  
+  # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
+  # import an empty file!
+  mv -v $tmp $out
+
   echo "Wrote $out"
+}
+
+gen-types-asdl() {
+  gen-asdl-py-pickle osh/types.asdl
 }
 
 gen-osh-asdl() {
-  local out=_devbuild/gen/osh_asdl.py
-  local import='from osh.meta import OSH_TYPE_LOOKUP as TYPE_LOOKUP'
-  PYTHONPATH=. asdl/gen_python.py osh/osh.asdl "$import" > $out
-  echo "Wrote $out"
+  gen-asdl-py-pickle osh/osh.asdl
 }
 
 gen-runtime-asdl() {
-  local out=_devbuild/gen/runtime_asdl.py
-  local import='from osh.meta import RUNTIME_TYPE_LOOKUP as TYPE_LOOKUP'
-  PYTHONPATH=. asdl/gen_python.py core/runtime.asdl "$import" > $out
-  echo "Wrote $out"
+  gen-asdl-py-pickle core/runtime.asdl
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
@@ -134,13 +143,19 @@ clean() {
 # No fastlex, because we don't want to require re2c installation.
 minimal() {
   mkdir -p _devbuild/gen
-  # so osh_help.py and osh_asdl.py are importable
+
+  rm -v _devbuild/gen/*
+
+  # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
 
   gen-help
-  gen-types-asdl
-  gen-osh-asdl
-  gen-runtime-asdl
+
+  # BOOTSTRAP_LEVEL is a hack for avoiding circular dependencies.
+  BOOTSTRAP_LEVEL=0 gen-types-asdl    # doesn't need Id
+  BOOTSTRAP_LEVEL=1 gen-osh-asdl      # needs Id, which needs types.asdl
+  BOOTSTRAP_LEVEL=2 gen-runtime-asdl  # ditto
+
   pylibc
 }
 

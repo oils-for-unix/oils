@@ -307,12 +307,3 @@ def MakeTypes(module, root, type_lookup):
 
     else:
       raise AssertionError(typ)
-
-
-def AssignTypes(src_module, dest_module):
-  """For generated code."""
-  for name in dir(src_module):
-    if not name.startswith('__'):
-      v = getattr(src_module, name)
-      setattr(dest_module, name, v)
-

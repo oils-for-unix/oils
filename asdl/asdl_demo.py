@@ -50,15 +50,18 @@ def main(argv):
       import marshal
       import cPickle
       print(dir(marshal))
-      with open('out.marshal', 'w') as f:
+      out_path = schema_path + '.pickle'
+      with open(out_path, 'w') as f:
         #marshal.dump(type_lookup, f)
-        cPickle.dump(type_lookup, f)
+        # Version 2 is the highest protocol for Python 2.7.
+        cPickle.dump(type_lookup.runtime_type_lookup, f, protocol=2)
 
       print('runtime_type_lookup:')
       for name, desc in type_lookup.runtime_type_lookup.items():
         print(name)
         print(desc)
       print()
+      print('Wrote %s' % out_path)
 
   elif action == 'arith-encode':  # oheap encoding
     expr = argv[2]

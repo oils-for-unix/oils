@@ -32,8 +32,6 @@ from asdl import encode
 from asdl import front_end
 from asdl import visitor
 
-from osh.meta import Id
-
 class ChainOfVisitors:
   def __init__(self, *visitors):
     self.visitors = visitors
@@ -310,6 +308,11 @@ def main(argv):
   if action == 'cpp':
     schema_path = argv[2]
 
+    # NOTE: This import can't be at the top level osh/asdl_gen.py depends on
+    # this gen_cpp.py module.  We should move all the main() functions out of
+    # asdl/ and into command line tools.
+
+    from osh.meta import Id
     app_types = {'id': asdl.UserType(Id)}
     with open(schema_path) as input_f:
       module, type_lookup = front_end.LoadSchema(input_f, app_types)
