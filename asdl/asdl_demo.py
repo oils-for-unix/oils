@@ -45,6 +45,27 @@ def main(argv):
     for name in dir(root):
       print('\t' + name)
 
+    if 1:
+      # NOTE: It can be pickled, but not marshaled
+      import marshal
+      import cPickle
+      print(dir(marshal))
+      with open('out.marshal', 'w') as f:
+        #marshal.dump(type_lookup, f)
+        cPickle.dump(type_lookup, f)
+
+      print('declared:')
+      for name, desc in type_lookup.declared_types.items():
+        print(name)
+        print(desc)
+      print()
+
+      print('compound:')
+      for name, desc in type_lookup.compound_types.items():
+        print(name)
+        print(desc)
+      print()
+
   elif action == 'arith-encode':  # oheap encoding
     expr = argv[2]
     out_path = argv[3]

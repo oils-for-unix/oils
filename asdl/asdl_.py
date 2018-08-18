@@ -79,9 +79,82 @@ class UserType(object):
   def __repr__(self):
     return '<UserType %s>' % self.typ
 
+
 # TODO:
 # Should we have our own ProductType, SumType, ConstructorType instead of
 # attaching them below?
+# It should be CompoundType.  ReflectNode.
+#
+# Two hierarchies:
+# - AST
+# - Reflection / ReflectNode / Mirror / _RuntimeType
+
+
+# TODO: Rename this to Reflection?
+class TypeLookup(object):
+  """Look up types by name.
+
+  They are put in a flat namespace.
+  """
+
+  def __init__(self, module, app_types=None):
+    # Types that fields are declared with: int, id, word_part, etc.
+    # Fields are NOT declared with Constructor names.
+    self.declared_types = {}
+
+    for d in module.dfns:
+      self.declared_types[d.name] = d.value
+
+    if app_types is not None:
+      self.declared_types.update(app_types)
+
+    # Primitive types.
+    self.declared_types.update(BUILTIN_TYPES)
+
+    # Types with fields that need to be reflected on: Product and Constructor.
+    self.compound_types = {}
+    for d in module.dfns:
+      typ = d.value
+      if isinstance(typ, Product):
+        self.compound_types[d.name] = typ
+      elif isinstance(typ, Sum):
+        # e.g. 'assign_op' is simple, or 'bracket_op' is not simple.
+        self.compound_types[d.name] = typ
+
+        for cons in typ.types:
+          self.compound_types[cons.name] = cons
+
+  def ByFieldInstance(self, field):
+    """
+    TODO: This is only used below?  And that part is only used by py_meta?
+    py_meta is still useful though, because it has some dynamic type checking.
+    I think I want to turn that back on.
+
+    Args:
+      field: Field() instance
+    """
+    t = self.declared_types[field.type]
+    if field.seq:
+      return ArrayType(t)
+
+    if field.opt:
+      return MaybeType(t)
+
+    return t
+
+  def ByTypeName(self, type_name):
+    """Given a string, return a type descriptor.
+
+    Used by generated code, e.g. in _devbuild/gen/osh_asdl.py.
+    Args:
+      type_name: string, e.g. 'word_part' or 'LiteralPart'
+    """
+    if not type_name in self.compound_types:
+      print('FATAL: %s' % self.compound_types.keys())
+    return self.compound_types[type_name]
+
+  def __repr__(self):
+    return repr(self.declared_types)
 
 
 # The following classes define nodes into which the ASDL description is parsed.

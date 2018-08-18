@@ -670,6 +670,17 @@ analyze-noclobber() {
   wc -l $out
 }
 
+# Quick golden test.  Test that pretty-printing doesn't regress.
+golden-subset() {
+  $0 all esoteric
+}
+
+# Make a copy of the output for comparison.
+copy-golden-ast() {
+  local dest=${1:-_tmp/wild-gold}
+  find _tmp/wild/www/esoteric/ -name '*__ast.html' -a -printf '%p %P\n' \
+    | ~/git/tree-tools/bin/multi cp $dest
+}
 
 if test "$(basename $0)" = 'wild.sh'; then
   "$@"

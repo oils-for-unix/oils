@@ -266,76 +266,8 @@ class Check(_VisitorBase):
             self.visit(f, name)
 
 
-class TypeLookup(object):
-  """Look up types by name.
-
-  The names in a flat namespace.
-  """
-
-  def __init__(self, module, app_types=None):
-    # types that fields are declared with: int, id, word_part, etc.
-    # Fields are not declared with constructor names.
-    self.declared_types = {}
-
-    for d in module.dfns:
-      self.declared_types[d.name] = d.value
-
-    if app_types is not None:
-      self.declared_types.update(app_types)
-
-    # Primitive types.
-    self.declared_types.update(asdl.BUILTIN_TYPES)
-
-    # Types with fields that need to be reflected on: Product and Constructor.
-    self.compound_types = {}
-    for d in module.dfns:
-      typ = d.value
-      if isinstance(typ, Product):
-        self.compound_types[d.name] = typ
-      elif isinstance(typ, Sum):
-        # e.g. 'assign_op' is simple, or 'bracket_op' is not simple.
-        self.compound_types[d.name] = typ
-
-        for cons in typ.types:
-          self.compound_types[cons.name] = cons
-
-  def ByFieldInstance(self, field):
-    """
-    TODO: This is only used below?  And that part is only used by py_meta?
-    py_meta is still useful though, because it has some dynamic type checking.
-    I think I want to turn that back on.
-
-    Args:
-      field: Field() instance
-    """
-    t = self.declared_types[field.type]
-    if field.seq:
-      return asdl.ArrayType(t)
-
-    if field.opt:
-      return asdl.MaybeType(t)
-
-    return t
-
-  def ByTypeName(self, type_name):
-    """Given a string, return a type descriptor.
-
-    Used by generated code, e.g. in _devbuild/gen/osh_asdl.py.
-    Args:
-      type_name: string, e.g. 'word_part' or 'LiteralPart'
-    """
-    if not type_name in self.compound_types:
-      print('FATAL: %s' % self.compound_types.keys())
-    return self.compound_types[type_name]
-
-  def __repr__(self):
-    return repr(self.declared_types)
-
-
 def _CheckFieldsAndWire(typ, type_lookup):
-  """
-  Given a compound type, iterate
-  """
+  """Create back pointers on a _CompoundType."""
   for f in typ.fields:
     # Will fail if it doesn't exist
     _ = type_lookup.ByFieldInstance(f)
@@ -353,20 +285,24 @@ def _MakeReflectionObject(module, app_types=None):
   Args:
     module: Module node, root of the AST for a schema.
   """
-  type_lookup = TypeLookup(module, app_types=app_types)
+  type_lookup = asdl.TypeLookup(module, app_types=app_types)
 
-  for node in module.dfns:
-    assert isinstance(node, Type), node
-    v = node.value
-    if isinstance(v, Product):
-      _CheckFieldsAndWire(v, type_lookup)
+  # MAKE BACK POINTERS.  From the _CompoundType instance to the type_lookup
+  # instance.
+  # TODO: Fix this because it makes it hard to serialize reflection metadata!
+  if 1:
+    for node in module.dfns:
+      assert isinstance(node, Type), node
+      v = node.value
+      if isinstance(v, Product):
+        _CheckFieldsAndWire(v, type_lookup)
 
-    elif isinstance(v, Sum):
-      for cons in v.types:
-        _CheckFieldsAndWire(cons, type_lookup)
+      elif isinstance(v, Sum):
+        for cons in v.types:
+          _CheckFieldsAndWire(cons, type_lookup)
 
-    else:
-      raise AssertionError(v)
+      else:
+        raise AssertionError(v)
 
   return type_lookup
 

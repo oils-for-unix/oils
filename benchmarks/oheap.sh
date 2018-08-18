@@ -174,8 +174,9 @@ EOF
 # This lets you figure out what the common types are, as well as the common
 # lengths.
 
-decode() {
-  for bin in _tmp/oheap/*.oheap; do
+decode-all() {
+  for bin in _tmp/oheap/*__oheap; do
+    echo $bin
     time _tmp/osh_demo $bin | wc -l
   done
 }
