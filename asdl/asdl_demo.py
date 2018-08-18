@@ -30,12 +30,16 @@ def main(argv):
     schema_path = argv[2]
     app_types = {'id': asdl.UserType(Id)}
     with open(schema_path) as f:
-      module, type_lookup = front_end.LoadSchema(f, app_types)
+      schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 
     root = sys.modules[__name__]
     # NOTE: We shouldn't pass in app_types for arith.asdl, but this is just a
     # demo.
-    py_meta.MakeTypes(module, root, type_lookup)
+    py_meta.MakeTypes(schema_ast, root, type_lookup)
+
+    log('AST for this ASDL schema:')
+    schema_ast.Print(sys.stdout, 0)
+    print()
 
     log('Dynamically created a Python module with these types:')
     for name in dir(root):

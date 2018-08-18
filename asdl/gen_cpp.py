@@ -139,9 +139,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     # rudimentary attribute handling
     for field in sum.attributes:
-      type = str(field.type)
-      assert type in asdl.builtin_types, type
-      Emit("%s %s;" % (type, field.name), depth + 1)
+      type_name = str(field.type)
+      assert type_name in asdl.BUILTIN_TYPES, type_name
+      Emit("%s %s;" % (type_name, field.name), depth + 1)
 
   def VisitConstructor(self, cons, def_name, depth):
     #print(dir(cons))
@@ -166,9 +166,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     for field in product.attributes:
       # rudimentary attribute handling
-      type = str(field.type)
-      assert type in asdl.builtin_types, type
-      self.Emit("%s %s;" % (type, field.name), depth + 1)
+      type_name = str(field.type)
+      assert type_name in asdl.BUILTIN_TYPES, type_name
+      self.Emit("%s %s;" % (type_name, field.name), depth + 1)
     self.Emit("};", depth)
     self.Emit("", depth)
 

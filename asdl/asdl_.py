@@ -36,6 +36,13 @@ def is_simple(sum):
       return False
   return True
 
+#
+# Type Descriptors
+#
+# These are more convenient than using the AST directly, since it still has
+# string type names?
+#
+# Although we share Product and Sum.
 
 class StrType(object):
   def __repr__(self):
@@ -72,6 +79,10 @@ class UserType(object):
   def __repr__(self):
     return '<UserType %s>' % self.typ
 
+# TODO:
+# Should we have our own ProductType, SumType, ConstructorType instead of
+# attaching them below?
+
 
 # The following classes define nodes into which the ASDL description is parsed.
 # Note: this is a "meta-AST". ASDL files (such as Python.asdl) describe the AST
@@ -80,7 +91,11 @@ class UserType(object):
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
 
-builtin_types = {'string', 'int', 'bool'}
+BUILTIN_TYPES = {
+    'string': StrType(),
+    'int': IntType(),
+    'bool': BoolType(),
+}
 
 class AST(object):
     def Print(self, f, indent):
@@ -119,6 +134,31 @@ class Type(AST):
         f.write('%s}\n' % ind)
 
 
+class Field(AST):
+    def __init__(self, type, name=None, seq=False, opt=False):
+        self.type = type
+        self.name = name
+        self.seq = seq
+        self.opt = opt
+
+    def Print(self, f, indent):
+        extra = []
+        if self.seq:
+            extra.append('seq=True')
+        elif self.opt:
+            extra.append('opt=True')
+        else:
+            extra = ""
+
+        ind = indent * '  '
+        f.write('%sField %s %s' % (ind, self.name, self.type))
+        if extra:
+          f.write(' (')
+          f.write(', '.join(extra))
+          f.write(')')
+        f.write('\n')
+
+
 class _CompoundType(AST):
     """Either a Product or Constructor.
 
@@ -136,7 +176,7 @@ class _CompoundType(AST):
         self.field_lookup = {f.name: f for f in self.fields}
         self.type_lookup = None  # set by ResolveTypes()
 
-        self.type_cache = {}
+        self.type_cache = {}  # field name -> type descriptor
 
     def GetFieldNames(self):
         for f in self.fields:
@@ -148,6 +188,9 @@ class _CompoundType(AST):
           yield field_name, self.LookupFieldType(field_name)
 
     def LookupFieldType(self, field_name):
+        """
+        NOTE: Only used by py_meta.py.
+        """
         # Cache and return it.  We don't want to create new instances every
         # time we iterate over the fields.
         try:
@@ -174,31 +217,6 @@ class Constructor(_CompoundType):
             field.Print(f, indent+1)
           f.write('%s}' % ind)
 
-        f.write('\n')
-
-
-class Field(AST):
-    def __init__(self, type, name=None, seq=False, opt=False):
-        self.type = type
-        self.name = name
-        self.seq = seq
-        self.opt = opt
-
-    def Print(self, f, indent):
-        extra = []
-        if self.seq:
-            extra.append('seq=True')
-        elif self.opt:
-            extra.append('opt=True')
-        else:
-            extra = ""
-
-        ind = indent * '  '
-        f.write('%sField %s %s' % (ind, self.name, self.type))
-        if extra:
-          f.write(' (')
-          f.write(', '.join(extra))
-          f.write(')')
         f.write('\n')
 
 
@@ -230,4 +248,3 @@ class Product(_CompoundType):
         if self.attributes:
           f.write('%s\n' % self.attributes)
         f.write('%s}\n' % ind)
-

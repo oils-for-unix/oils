@@ -10,7 +10,7 @@ from asdl.asdl_ import Module, Type, Constructor, Field, Sum, Product, is_simple
 
 
 # Types for describing tokens in an ASDL specification.
-class TokenKind:
+class TokenKind(object):
     """TokenKind is provides a scope for enumerated token kinds."""
     (ConstructorId, TypeId, Equals, Comma, Question, Pipe, Asterisk,
      LParen, RParen, LBrace, RBrace) = range(11)
@@ -19,7 +19,7 @@ class TokenKind:
         '=': Equals, ',': Comma,    '?': Question, '|': Pipe,    '(': LParen,
         ')': RParen, '*': Asterisk, '{': LBrace,   '}': RBrace}
 
-class Token:
+class Token(object):
     def __init__(self, kind, value, lineno):
         self.kind = kind
         self.value = value
@@ -33,7 +33,7 @@ class ASDLSyntaxError(Exception):
     def __str__(self):
         return 'Syntax error on line {0.lineno}: {0.msg}'.format(self)
 
-def tokenize_asdl(f):
+def _Tokenize(f):
     """Tokenize the given buffer. Yield Token objects."""
     for lineno, line in enumerate(f, 1):
         for m in re.finditer(r'\s*(\w+|--.*|.)', line.strip()):
@@ -55,11 +55,11 @@ def tokenize_asdl(f):
                     raise ASDLSyntaxError('Invalid operator %s' % c, lineno)
                 yield Token(op_kind, c, lineno)
 
-class ASDLParser:
+class ASDLParser(object):
     """Parser for ASDL files.
 
     Create, then call the parse method on a buffer containing ASDL.
-    This is a simple recursive descent parser that uses tokenize_asdl for the
+    This is a simple recursive descent parser that uses _Tokenize for the
     lexing.
     """
     def __init__(self):
@@ -69,7 +69,7 @@ class ASDLParser:
     def parse(self, f):
         """Parse the ASDL in the file and return an AST with a Module root.
         """
-        self._tokenizer = tokenize_asdl(f)
+        self._tokenizer = _Tokenize(f)
         self._advance()
         return self._parse_module()
 
@@ -266,18 +266,6 @@ class Check(_VisitorBase):
             self.visit(f, name)
 
 
-def _CheckSchema(mod, app_types=None):
-    """Check the parsed ASDL tree for correctness.
-
-    Return True if success. For failure, the errors are printed out and False
-    is returned.
-    """
-    app_types = app_types or {}
-    v = Check()
-    v.visit(mod)
-    return not v.errors
-
-
 class TypeLookup(object):
   """Look up types by name.
 
@@ -296,9 +284,7 @@ class TypeLookup(object):
       self.declared_types.update(app_types)
 
     # Primitive types.
-    self.declared_types['string'] = asdl.StrType()
-    self.declared_types['int'] = asdl.IntType()
-    self.declared_types['bool'] = asdl.BoolType()
+    self.declared_types.update(asdl.BUILTIN_TYPES)
 
     # Types with fields that need to be reflected on: Product and Constructor.
     self.compound_types = {}
@@ -315,6 +301,10 @@ class TypeLookup(object):
 
   def ByFieldInstance(self, field):
     """
+    TODO: This is only used below?  And that part is only used by py_meta?
+    py_meta is still useful though, because it has some dynamic type checking.
+    I think I want to turn that back on.
+
     Args:
       field: Field() instance
     """
@@ -328,7 +318,9 @@ class TypeLookup(object):
     return t
 
   def ByTypeName(self, type_name):
-    """
+    """Given a string, return a type descriptor.
+
+    Used by generated code, e.g. in _devbuild/gen/osh_asdl.py.
     Args:
       type_name: string, e.g. 'word_part' or 'LiteralPart'
     """
@@ -341,9 +333,15 @@ class TypeLookup(object):
 
 
 def _CheckFieldsAndWire(typ, type_lookup):
+  """
+  Given a compound type, iterate
+  """
   for f in typ.fields:
     # Will fail if it doesn't exist
     _ = type_lookup.ByFieldInstance(f)
+
+  # _CompoundType instances have this attribute
+  assert hasattr(typ, 'type_lookup'), typ
   typ.type_lookup = type_lookup  # wire it for lookup
 
 
@@ -383,8 +381,11 @@ def LoadSchema(f, app_types):
   p = ASDLParser()
   schema_ast = p.parse(f)
 
-  if not _CheckSchema(schema_ast, app_types):
-    raise AssertionError('ASDL file is invalid')
+  v = Check()
+  v.visit(schema_ast)
+
+  if v.errors:
+    raise AssertionError('ASDL file is invalid: %s' % v.errors)
 
   type_lookup = _MakeReflectionObject(schema_ast, app_types)
   return schema_ast, type_lookup

@@ -12,7 +12,10 @@ Usage:
 """
 
 from asdl import asdl_ as asdl
+
+# TODO: Remove this dependency!
 from asdl import front_end
+
 from asdl import py_meta
 
 from core import id_kind
