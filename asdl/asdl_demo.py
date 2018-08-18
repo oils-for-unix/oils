@@ -54,14 +54,8 @@ def main(argv):
         #marshal.dump(type_lookup, f)
         cPickle.dump(type_lookup, f)
 
-      print('declared:')
-      for name, desc in type_lookup.declared_types.items():
-        print(name)
-        print(desc)
-      print()
-
-      print('compound:')
-      for name, desc in type_lookup.compound_types.items():
+      print('runtime_type_lookup:')
+      for name, desc in type_lookup.runtime_type_lookup.items():
         print(name)
         print(desc)
       print()

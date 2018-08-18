@@ -36,6 +36,7 @@ def is_simple(sum):
       return False
   return True
 
+
 #
 # Type Descriptors
 #
@@ -44,34 +45,43 @@ def is_simple(sum):
 #
 # Although we share Product and Sum.
 
-class StrType(object):
+class _RuntimeType(object):
+  """A node hierarchy that exists at runtime."""
+  pass
+
+
+class StrType(_RuntimeType):
   def __repr__(self):
     return '<Str>'
 
-class IntType(object):
+
+class IntType(_RuntimeType):
   def __repr__(self):
     return '<Int>'
 
-class BoolType(object):
+
+class BoolType(_RuntimeType):
   def __repr__(self):
     return '<Bool>'
 
 
-class ArrayType(object):
+class ArrayType(_RuntimeType):
   def __init__(self, desc):
     self.desc = desc
 
   def __repr__(self):
     return '<Array %s>' % self.desc
 
-class MaybeType(object):
+
+class MaybeType(_RuntimeType):
   def __init__(self, desc):
     self.desc = desc  # another descriptor
 
   def __repr__(self):
     return '<Maybe %s>' % self.desc
 
-class UserType(object):
+
+class UserType(_RuntimeType):
   def __init__(self, typ):
     assert isinstance(typ, type), typ
     self.typ = typ
@@ -80,14 +90,51 @@ class UserType(object):
     return '<UserType %s>' % self.typ
 
 
-# TODO:
-# Should we have our own ProductType, SumType, ConstructorType instead of
-# attaching them below?
-# It should be CompoundType.  ReflectNode.
-#
-# Two hierarchies:
-# - AST
-# - Reflection / ReflectNode / Mirror / _RuntimeType
+class SumType(_RuntimeType):
+  """Dummy node that doesn't require any reflection.
+
+  obj.ASDL_TYPE points directly to the constructor, which you reflect on.
+  """
+  def __init__(self):
+    pass
+
+  def __repr__(self):
+    return '<SumType>'  # We need an entry for this but we don't use it?
+
+
+class CompoundType(_RuntimeType):
+  """A product or Constructor instance.  Both have fields."""
+  def __init__(self, fields):
+    # List of (name, _RuntimeType) tuples.
+    # NOTE: This list may be mutated after its set.
+    self.fields = fields
+
+  def __repr__(self):
+    return '<CompoundType %s>' % self.fields
+
+  def GetFieldNames(self):
+    for field_name, _ in self.fields:
+      yield field_name
+
+  def GetFields(self):
+    for field_name, descriptor in self.fields:
+      yield field_name, descriptor
+
+  def LookupFieldType(self, field_name):
+    """
+    NOTE: Only used by py_meta.py.
+    """
+    for n, descriptor in self.fields:
+      if n == field_name:
+        return descriptor
+    raise AssertionError(field_name)
+
+
+BUILTIN_TYPES = {
+    'string': StrType(),
+    'int': IntType(),
+    'bool': BoolType(),
+}
 
 
 # TODO: Rename this to Reflection?
@@ -96,51 +143,8 @@ class TypeLookup(object):
 
   They are put in a flat namespace.
   """
-
-  def __init__(self, module, app_types=None):
-    # Types that fields are declared with: int, id, word_part, etc.
-    # Fields are NOT declared with Constructor names.
-    self.declared_types = {}
-
-    for d in module.dfns:
-      self.declared_types[d.name] = d.value
-
-    if app_types is not None:
-      self.declared_types.update(app_types)
-
-    # Primitive types.
-    self.declared_types.update(BUILTIN_TYPES)
-
-    # Types with fields that need to be reflected on: Product and Constructor.
-    self.compound_types = {}
-    for d in module.dfns:
-      typ = d.value
-      if isinstance(typ, Product):
-        self.compound_types[d.name] = typ
-      elif isinstance(typ, Sum):
-        # e.g. 'assign_op' is simple, or 'bracket_op' is not simple.
-        self.compound_types[d.name] = typ
-
-        for cons in typ.types:
-          self.compound_types[cons.name] = cons
-
-  def ByFieldInstance(self, field):
-    """
-    TODO: This is only used below?  And that part is only used by py_meta?
-    py_meta is still useful though, because it has some dynamic type checking.
-    I think I want to turn that back on.
-
-    Args:
-      field: Field() instance
-    """
-    t = self.declared_types[field.type]
-    if field.seq:
-      return ArrayType(t)
-
-    if field.opt:
-      return MaybeType(t)
-
-    return t
+  def __init__(self, runtime_type_lookup):
+    self.runtime_type_lookup = runtime_type_lookup  # type name -> RuntimeType
 
   def ByTypeName(self, type_name):
     """Given a string, return a type descriptor.
@@ -149,26 +153,20 @@ class TypeLookup(object):
     Args:
       type_name: string, e.g. 'word_part' or 'LiteralPart'
     """
-    if not type_name in self.compound_types:
-      print('FATAL: %s' % self.compound_types.keys())
-    return self.compound_types[type_name]
+    #if not type_name in self.compound_types:
+    #  print('FATAL: %s' % self.compound_types.keys())
+    #return self.compound_types[type_name]
+    if not type_name in self.runtime_type_lookup:
+      print('FATAL: %s' % self.runtime_type_lookup.keys())
+    return self.runtime_type_lookup[type_name]
 
   def __repr__(self):
-    return repr(self.declared_types)
+    return repr(self.runtime_type_lookup)
 
 
-# The following classes define nodes into which the ASDL description is parsed.
-# Note: this is a "meta-AST". ASDL files (such as Python.asdl) describe the AST
-# structure used by a programming language. But ASDL files themselves need to be
-# parsed. This module parses ASDL files and uses a simple AST to represent them.
+# The following classes are the AST for the ASDL schema, i.e. the "meta-AST".
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
-
-BUILTIN_TYPES = {
-    'string': StrType(),
-    'int': IntType(),
-    'bool': BoolType(),
-}
 
 class AST(object):
     def Print(self, f, indent):
@@ -232,7 +230,7 @@ class Field(AST):
         f.write('\n')
 
 
-class _CompoundType(AST):
+class _CompoundAST(AST):
     """Either a Product or Constructor.
 
     encode.py and format.py need a reflection API.
@@ -246,38 +244,10 @@ class _CompoundType(AST):
         if self.fields:
           self.fields.append(Field('int', 'spids', seq=True))
 
-        self.field_lookup = {f.name: f for f in self.fields}
-        self.type_lookup = None  # set by ResolveTypes()
 
-        self.type_cache = {}  # field name -> type descriptor
-
-    def GetFieldNames(self):
-        for f in self.fields:
-          yield f.name
-
-    def GetFields(self):
-        for f in self.fields:
-          field_name = f.name
-          yield field_name, self.LookupFieldType(field_name)
-
-    def LookupFieldType(self, field_name):
-        """
-        NOTE: Only used by py_meta.py.
-        """
-        # Cache and return it.  We don't want to create new instances every
-        # time we iterate over the fields.
-        try:
-          return self.type_cache[field_name]
-        except KeyError:
-          field = self.field_lookup[field_name]
-          desc = self.type_lookup.ByFieldInstance(field)
-          self.type_cache[field_name] = desc
-          return desc
-
-
-class Constructor(_CompoundType):
+class Constructor(_CompoundAST):
     def __init__(self, name, fields=None):
-        _CompoundType.__init__(self, fields)
+        _CompoundAST.__init__(self, fields)
         self.name = name
 
     def Print(self, f, indent):
@@ -308,9 +278,9 @@ class Sum(AST):
         f.write('%s}\n' % ind)
 
 
-class Product(_CompoundType):
+class Product(_CompoundAST):
     def __init__(self, fields, attributes=None):
-        _CompoundType.__init__(self, fields)
+        _CompoundAST.__init__(self, fields)
         self.attributes = attributes or []
 
     def Print(self, f, indent):

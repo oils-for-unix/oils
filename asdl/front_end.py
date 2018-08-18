@@ -6,7 +6,7 @@ front_end.py: Lexer and parser for the ASDL schema language.
 import re
 
 from asdl import asdl_ as asdl
-from asdl.asdl_ import Module, Type, Constructor, Field, Sum, Product, is_simple
+from asdl.asdl_ import Module, Type, Constructor, Field, Sum, Product
 
 
 # Types for describing tokens in an ASDL specification.
@@ -266,45 +266,61 @@ class Check(_VisitorBase):
             self.visit(f, name)
 
 
-def _CheckFieldsAndWire(typ, type_lookup):
-  """Create back pointers on a _CompoundType."""
-  for f in typ.fields:
-    # Will fail if it doesn't exist
-    _ = type_lookup.ByFieldInstance(f)
+def _AppendFields(field_ast_nodes, type_lookup, out):
+  for field in field_ast_nodes:
+    #print(field)
+    runtime_type = type_lookup[field.type]
 
-  # _CompoundType instances have this attribute
-  assert hasattr(typ, 'type_lookup'), typ
-  typ.type_lookup = type_lookup  # wire it for lookup
+    # TODO: cache these under 'type*' and 'type?'.  Don't want duplicates!
+    if field.seq:
+      runtime_type = asdl.ArrayType(runtime_type)
+
+    if field.opt:
+      runtime_type = asdl.MaybeType(runtime_type)
+
+    out.append((field.name, runtime_type))
 
 
-def _MakeReflectionObject(module, app_types=None):
-  """Walk an ASDL module and return a reflection object.
+def _MakeReflection(module, app_types=None):
+  # Types that fields are declared with: int, id, word_part, etc.
+  # Fields are NOT declared with Constructor names.
+  type_lookup  = dict(asdl.BUILTIN_TYPES)
 
-  It lets you look up types by name.
+  if app_types is not None:
+    type_lookup.update(app_types)
 
-  Args:
-    module: Module node, root of the AST for a schema.
-  """
-  type_lookup = asdl.TypeLookup(module, app_types=app_types)
+  # NOTE: We need two passes.  Types can be mutually recurisve.  See
+  # asdl/arith.asdl.
 
-  # MAKE BACK POINTERS.  From the _CompoundType instance to the type_lookup
-  # instance.
-  # TODO: Fix this because it makes it hard to serialize reflection metadata!
-  if 1:
-    for node in module.dfns:
-      assert isinstance(node, Type), node
-      v = node.value
-      if isinstance(v, Product):
-        _CheckFieldsAndWire(v, type_lookup)
+  # First pass: collect declared types and make entries for them.
+  for d in module.dfns:
+    ast_node = d.value
+    if isinstance(ast_node, asdl.Product):
+      type_lookup[d.name] = asdl.CompoundType([])
 
-      elif isinstance(v, Sum):
-        for cons in v.types:
-          _CheckFieldsAndWire(cons, type_lookup)
+    elif isinstance(ast_node, asdl.Sum):
+      type_lookup[d.name] = asdl.SumType()
 
-      else:
-        raise AssertionError(v)
+    else:
+      raise AssertionError(ast_node)
 
-  return type_lookup
+  # Second pass: resolve type declarations in Product and constructor.
+  for d in module.dfns:
+    ast_node = d.value
+    if isinstance(ast_node, asdl.Product):
+      runtime_type = type_lookup[d.name] 
+      _AppendFields(ast_node.fields, type_lookup, runtime_type.fields)
+
+    elif isinstance(ast_node, asdl.Sum):
+      for cons in ast_node.types:
+        fields_out = []
+        type_lookup[cons.name] = asdl.CompoundType(fields_out)
+        _AppendFields(cons.fields, type_lookup, fields_out)
+
+    else:
+      raise AssertionError(ast_node)
+
+  return asdl.TypeLookup(type_lookup)
 
 
 def LoadSchema(f, app_types):
@@ -323,5 +339,5 @@ def LoadSchema(f, app_types):
   if v.errors:
     raise AssertionError('ASDL file is invalid: %s' % v.errors)
 
-  type_lookup = _MakeReflectionObject(schema_ast, app_types)
+  type_lookup = _MakeReflection(schema_ast, app_types)
   return schema_ast, type_lookup

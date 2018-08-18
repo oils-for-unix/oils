@@ -133,7 +133,7 @@ class ArithAstTest(unittest.TestCase):
     s.length = 3
     print(s)
 
-    assert isinstance(s.ASDL_TYPE, asdl_.Product)
+    assert isinstance(s.ASDL_TYPE, asdl_.CompoundType)
 
     # Implementation detail for dynamic type checking
     assert isinstance(s, py_meta.CompoundObj)
@@ -150,7 +150,7 @@ class ArithAstTest(unittest.TestCase):
     assert isinstance(o, py_meta.SimpleObj)
 
     # Implementation detail for dynamic type checking
-    assert isinstance(o.ASDL_TYPE, asdl_.Sum)
+    assert isinstance(o.ASDL_TYPE, asdl_.SumType)
 
   def testCompoundSumType(self):
     print()
@@ -164,7 +164,7 @@ class ArithAstTest(unittest.TestCase):
     assert isinstance(c, py_meta.CompoundObj)
 
     # Implementation detail for dynamic type checking
-    assert isinstance(c.ASDL_TYPE, asdl_.Constructor), c.ASDL_TYPE
+    assert isinstance(c.ASDL_TYPE, asdl_.CompoundType), c.ASDL_TYPE
 
   def testOtherTypes(self):
     c = Const(66)

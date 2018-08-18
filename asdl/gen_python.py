@@ -10,7 +10,7 @@ TODO:
 
 import sys
 
-from asdl import asdl_ as asdl
+from asdl import front_end
 from asdl import visitor
 
 
@@ -111,8 +111,10 @@ def main(argv):
 
   schema_path = argv[1]
   type_lookup_import = argv[2]
+
+  p = front_end.ASDLParser()
   with open(schema_path) as input_f:
-    module = asdl.parse(input_f)
+    module = p.parse(input_f)
 
   f = sys.stdout
 
