@@ -15,7 +15,6 @@ easily to C++.
 
 import cStringIO
 import os
-import platform
 import pwd  # TODO: Move this dependency to Oil?
 import sys
 
@@ -269,15 +268,30 @@ def ShowAppVersion(app_name):
   finally:
     f.close()
 
+  # node is like 'hostname'
+  # release is the kernel version
+  system, unused_node, unused_release, platform_version, machine = os.uname()
+
+  # The platform.py module has a big regex that parses sys.version, but we
+  # don't want to depend on regular expressions.  So we will do our own parsing
+  # here.
+  py_version, py_compiler = sys.version.splitlines()
+  assert py_compiler.startswith('['), py_compiler
+  assert py_compiler.endswith(']'), py_compiler
+  py_compiler = py_compiler[1:-1]
+
+  # This environment variable set in C code.
+  py_impl = 'OVM' if os.getenv('_OVM_IS_BUNDLE') else 'CPython'
+
   # What C functions do these come from?
   print('%s version %s' % (app_name, version))
   print('Release Date: %s' % release_date)
-  print('Arch: %s' % platform.machine())
-  print('OS: %s' % platform.system())
-  print('Platform: %s' % platform.version())
-  print('Compiler: %s' % platform.python_compiler())
-  print('Interpreter: %s' % platform.python_implementation())
-  print('Interpreter version: %s' % platform.python_version())
+  print('Arch: %s' % machine)
+  print('OS: %s' % system)
+  print('Platform: %s' % platform_version)
+  print('Compiler: %s' % py_compiler)
+  print('Interpreter: %s' % py_impl)
+  print('Interpreter version: %s' % py_version)
   print('Bytecode: %s' % pyc_version)
 
 

@@ -78,9 +78,9 @@ def maketrans(fromstr, tostr):
     return ''.join(L)
 
 
-
-####################################################################
-import re as _re
+# OVM_MAIN patch: Removed so we don't depend on 're' module.  We're not using
+# string.Template.
+#import re as _re
 
 class _multimap:
     """Helper class for combining multiple mappings.
@@ -123,7 +123,8 @@ class _TemplateMetaclass(type):
 
 class Template:
     """A string class for supporting $-substitutions."""
-    __metaclass__ = _TemplateMetaclass
+    # OVM_MAIN patch: avoid running constructor, which uses _re
+    #__metaclass__ = _TemplateMetaclass
 
     delimiter = '$'
     idpattern = r'[_a-z][_a-z0-9]*'
