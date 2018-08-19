@@ -115,8 +115,9 @@ make-mains() {
 _fill-oil-tree() {
   local dir=${1:-_tmp/repo-with-opy}
 
-  cp -v ../osh/{osh,types}.asdl $dir/osh
-  cp -v ../core/runtime.asdl $dir/core
+  mkdir -p $dir/_devbuild
+  cp -v ../_devbuild/*_asdl.pickle $dir/_devbuild
+
   cp -v ../asdl/arith.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
   ln -v -s -f $PWD/../oil-version.txt $dir
