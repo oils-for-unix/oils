@@ -15,6 +15,19 @@ import sys
 
 mloads = marshal.loads
 
+
+# Copied from types.py
+class _C:
+    def _m(self): pass
+
+ClassType = type(_C)
+
+
+# NOTE: I think INST and OBJ aren't used?  We want NEWOBJ.
+class _EmptyClass:
+    pass
+
+
 # Pickle opcodes.  See pickletools.py for extensive docs.  The listing
 # here is in kind-of alphabetical order of 1-character pickle code.
 # pickletools groups them by purpose.
@@ -201,26 +214,17 @@ class Unpickler(object):
         self.append(long(self.readline()[:-1], 0))
     dispatch[LONG] = load_long
 
-    def load_long1(self):
-        n = ord(self.read(1))
-        bytes = self.read(n)
-        self.append(decode_long(bytes))
-    dispatch[LONG1] = load_long1
+    # Commented out because decode_long() depends on _binascii.
+    #def load_long1(self):
 
-    def load_long4(self):
-        n = mloads('i' + self.read(4))
-        bytes = self.read(n)
-        self.append(decode_long(bytes))
-    dispatch[LONG4] = load_long4
+    #def load_long4(self):
 
     def load_float(self):
         self.append(float(self.readline()[:-1]))
     dispatch[FLOAT] = load_float
 
-    if 0:
-      def load_binfloat(self, unpack=struct.unpack):
-          self.append(unpack('>d', self.read(8))[0])
-      dispatch[BINFLOAT] = load_binfloat
+    # Commented out because of struct.unpack.
+    #def load_binfloat(self):
 
     def load_string(self):
         rep = self.readline()[:-1]
@@ -354,34 +358,6 @@ class Unpickler(object):
         klass = self.find_class(module, name)
         self.append(klass)
     dispatch[GLOBAL] = load_global
-
-    def load_ext1(self):
-        code = ord(self.read(1))
-        self.get_extension(code)
-    dispatch[EXT1] = load_ext1
-
-    def load_ext2(self):
-        code = mloads('i' + self.read(2) + '\000\000')
-        self.get_extension(code)
-    dispatch[EXT2] = load_ext2
-
-    def load_ext4(self):
-        code = mloads('i' + self.read(4))
-        self.get_extension(code)
-    dispatch[EXT4] = load_ext4
-
-    def get_extension(self, code):
-        nil = []
-        obj = _extension_cache.get(code, nil)
-        if obj is not nil:
-            self.append(obj)
-            return
-        key = _inverted_registry.get(code)
-        if not key:
-            raise ValueError("unregistered extension code %d" % code)
-        obj = self.find_class(*key)
-        _extension_cache[code] = obj
-        self.append(obj)
 
     def find_class(self, module, name):
         # Subclasses may override this

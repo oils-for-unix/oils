@@ -230,4 +230,19 @@ old-style-classes() {
   oil-python-symbols | grep -v '<'
 }
 
+show-pickle() {
+  # python2 doesn't have this?
+  python3 -m pickletools "$@"
+}
+
+# Looks like 18 bytecodes, but PROTO and STOP are trivial.
+pickle-bytecodes() {
+  # NOTE: 
+  # - This regex is very fragile.  It might be better to really parse the
+  # pickle stream.
+  # - -a is useful for showing what a bytecode does.
+  show-pickle _devbuild/*_asdl.pickle | egrep -o '[[:space:]][A-Z_]{2,}' | hist
+  #show-pickle _devbuild/*_asdl.pickle 
+}
+
 "$@"
