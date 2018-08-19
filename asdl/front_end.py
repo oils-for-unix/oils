@@ -319,7 +319,7 @@ def _MakeReflection(module, app_types):
     else:
       raise AssertionError(ast_node)
 
-  return asdl.TypeLookup(type_lookup)
+  return type_lookup
 
 
 def LoadSchema(f, app_types):

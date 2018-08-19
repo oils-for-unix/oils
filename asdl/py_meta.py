@@ -126,7 +126,7 @@ class SimpleObj(Obj):
   #
   # Example:
   # class bool_arg_type_e(py_meta.SimpleObj):
-  #   ASDL_TYPE = TYPE_LOOKUP.ByTypeName('bool_arg_type')
+  #   ASDL_TYPE = TYPE_LOOKUP['bool_arg_type']
   # bool_arg_type_e.Undefined = bool_arg_type_e(1, 'Undefined')
 
   def __hash__(self):
@@ -260,7 +260,7 @@ def MakeTypes(module, root, type_lookup):
         # change.  I haven't run into this problem in practice yet.
 
         class_name = defn.name + '_e'
-        class_attr = {'ASDL_TYPE': type_lookup.ByTypeName(defn.name)}
+        class_attr = {'ASDL_TYPE': type_lookup[defn.name]}
         cls = type(class_name, (SimpleObj, ), class_attr)
         setattr(root, class_name, cls)
 
@@ -288,7 +288,7 @@ def MakeTypes(module, root, type_lookup):
           tag_num[cons.name] = tag  # for enum
 
           class_attr = {
-              'ASDL_TYPE': type_lookup.ByTypeName(cons.name),
+              'ASDL_TYPE': type_lookup[cons.name],
               'tag': tag,  # Does this API change?
           }
 
@@ -301,7 +301,7 @@ def MakeTypes(module, root, type_lookup):
         setattr(root, enum_name, tag_enum)
 
     elif isinstance(typ, asdl.Product):
-      class_attr = {'ASDL_TYPE': type_lookup.ByTypeName(defn.name)}
+      class_attr = {'ASDL_TYPE': type_lookup[defn.name]}
       cls = type(defn.name, (DebugCompoundObj, ), class_attr)
       setattr(root, defn.name, cls)
 

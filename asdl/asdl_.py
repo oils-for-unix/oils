@@ -141,33 +141,6 @@ BUILTIN_TYPES = {
 }
 
 
-# TODO: Rename this to Reflection?
-class TypeLookup(object):
-  """Look up types by name.
-
-  They are put in a flat namespace.
-  """
-  def __init__(self, runtime_type_lookup):
-    self.runtime_type_lookup = runtime_type_lookup  # type name -> RuntimeType
-
-  def ByTypeName(self, type_name):
-    """Given a string, return a type descriptor.
-
-    Used by generated code, e.g. in _devbuild/gen/osh_asdl.py.
-    Args:
-      type_name: string, e.g. 'word_part' or 'LiteralPart'
-    """
-    #if not type_name in self.compound_types:
-    #  print('FATAL: %s' % self.compound_types.keys())
-    #return self.compound_types[type_name]
-    if not type_name in self.runtime_type_lookup:
-      print('FATAL: %s' % self.runtime_type_lookup.keys())
-    return self.runtime_type_lookup[type_name]
-
-  def __repr__(self):
-    return repr(self.runtime_type_lookup)
-
-
 # The following classes are the AST for the ASDL schema, i.e. the "meta-AST".
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.

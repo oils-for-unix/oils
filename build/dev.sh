@@ -144,7 +144,7 @@ clean() {
 minimal() {
   mkdir -p _devbuild/gen
 
-  rm -v _devbuild/gen/*
+  rm -v -f _devbuild/gen/*
 
   # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py

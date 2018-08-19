@@ -16,7 +16,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
     self.Emit('class %s_e(py_meta.SimpleObj):' % name, depth)
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('', depth)
 
     # Just use #define, since enums aren't namespaced.
@@ -39,7 +39,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     # oheap serialization.  TODO: measure the effect of __slots__, and then get
     # rid of FIELDS?  Or you can just make it an alias.
     # FIELDS = self.__slots__.
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
 
     self.Emit('', depth)
@@ -77,7 +77,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
       self._GenClass(cons, cons.name, def_name, depth, tag_num=tag_num)
     else:
       self.Emit("class %s(%s):" % (cons.name, def_name), depth)
-      self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % cons.name, depth)
+      self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % cons.name, depth)
       self.Emit('  tag = %d'  % tag_num, depth)
       self.Emit('', depth)
 
@@ -89,7 +89,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
     self.Emit('class %s(py_meta.CompoundObj):' % name, depth)
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP.ByTypeName(%r)' % name, depth)
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('', depth)
 
     # define command_t, and then make subclasses

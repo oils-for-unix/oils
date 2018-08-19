@@ -57,10 +57,8 @@ from asdl import unpickle
 from core import util
 
 f = util.GetResourceLoader().open('%s')
-type_lookup = unpickle.load_v2_subset(f)
+TYPE_LOOKUP = unpickle.load_v2_subset(f)
 f.close()
-
-TYPE_LOOKUP = asdl.TypeLookup(type_lookup)
 """ % pickle_out_path)
 
     v = gen_python.GenClassesVisitor(f)
@@ -71,7 +69,7 @@ TYPE_LOOKUP = asdl.TypeLookup(type_lookup)
       # s.decode('string-escape')! )
       # In version 2, now I have 16 opcodes + STOP.
       with open(pickle_out_path, 'w') as f:
-        pickle.dump(type_lookup.runtime_type_lookup, f, protocol=2)
+        pickle.dump(type_lookup, f, protocol=2)
       from core.util import log
       log('Wrote %s', pickle_out_path)
 
