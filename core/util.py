@@ -275,7 +275,11 @@ def ShowAppVersion(app_name):
   # The platform.py module has a big regex that parses sys.version, but we
   # don't want to depend on regular expressions.  So we will do our own parsing
   # here.
-  py_version, py_compiler = sys.version.splitlines()
+  version_line, py_compiler = sys.version.splitlines()
+
+  # Pick off the first part of '2.7.12 (default, ...)'
+  py_version = version_line.split()[0]
+
   assert py_compiler.startswith('['), py_compiler
   assert py_compiler.endswith(']'), py_compiler
   py_compiler = py_compiler[1:-1]
