@@ -1437,8 +1437,10 @@ _PySys_Init(void)
                          PyBool_FromLong(Py_DontWriteBytecodeFlag));
     SET_SYS_FROM_STRING("api_version",
                         PyInt_FromLong(PYTHON_API_VERSION));
+#ifndef OVM_MAIN
     SET_SYS_FROM_STRING("copyright",
                         PyString_FromString(Py_GetCopyright()));
+#endif
     SET_SYS_FROM_STRING("platform",
                         PyString_FromString(Py_GetPlatform()));
     /* getpath.c was removed */

@@ -17,6 +17,7 @@ source build/common.sh
 # stuff uses pythonrun.c.
 # pythonrun.c: lots interpreter flags and interpreter initialization caused
 # link errors.
+# pyctype.c: Tables needed for many string operations.
 
 # getargs.c: needed for Python-C API, e.g. PyArg_ParseTuple.
 # dtoa.c: not tried, but I assume that %.3f for 'time' uses it.
@@ -30,7 +31,6 @@ Python/codecs.c
 Python/errors.c
 Python/getargs.c
 Python/getcompiler.c
-Python/getcopyright.c
 Python/getplatform.c
 Python/getversion.c
 Python/import.c
