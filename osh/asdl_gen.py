@@ -49,19 +49,18 @@ def main(argv):
     f = sys.stdout
 
     f.write("""\
-import pickle
-
 from asdl import asdl_ as asdl
 from asdl import const  # For const.NO_INTEGER
 from asdl import py_meta
+from asdl import unpickle
 
 from core import util
 
 f = util.GetResourceLoader().open('%s')
-type_lookup = pickle.load(f)
-TYPE_LOOKUP = asdl.TypeLookup(type_lookup)
+type_lookup = unpickle.load_v2_subset(f)
 f.close()
 
+TYPE_LOOKUP = asdl.TypeLookup(type_lookup)
 """ % pickle_out_path)
 
     v = gen_python.GenClassesVisitor(f)
