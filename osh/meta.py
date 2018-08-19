@@ -13,7 +13,6 @@ Usage:
 
 import os
 
-from asdl import asdl_ as asdl
 from core import id_kind
 
 

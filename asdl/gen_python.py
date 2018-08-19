@@ -9,9 +9,6 @@ TODO:
 - What about Id?  app_types?
 """
 
-import sys
-
-from asdl import front_end
 from asdl import visitor
 
 
