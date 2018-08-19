@@ -3,7 +3,10 @@
 
 #include "Python.h"
 
+#ifndef OVM_MAIN
 #include "Python-ast.h"
+#endif
+
 #undef Yield /* undefine macro conflicting with winbase.h */
 #include "pyarena.h"
 #include "pythonrun.h"
