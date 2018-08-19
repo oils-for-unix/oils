@@ -80,10 +80,15 @@ set -o strict-arith || true
 s=foo
 echo $s
 echo $((s+5))
+echo 'should not get here'
 ## status: 1
 ## stdout-json: "foo\n"
 ## N-I bash status: 0
-## N-I bash stdout-json: "foo\n5\n"
+## N-I bash STDOUT:
+foo
+5
+should not get here
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1
