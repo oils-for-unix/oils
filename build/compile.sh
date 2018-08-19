@@ -18,7 +18,9 @@ source build/common.sh
 # pythonrun.c: lots interpreter flags and interpreter initialization caused
 # link errors.
 
+# getargs.c: needed for Python-C API, e.g. PyArg_ParseTuple.
 # dtoa.c: not tried, but I assume that %.3f for 'time' uses it.
+
 
 readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
@@ -46,7 +48,6 @@ Python/random.c
 Python/structmember.c
 Python/sysmodule.c
 Python/traceback.c
-Python/getopt.c
 Python/pystrcmp.c
 Python/pystrtod.c
 Python/dtoa.c
