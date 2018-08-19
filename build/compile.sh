@@ -95,7 +95,6 @@ MODOBJS='
 Modules/posixmodule.c
 Modules/errnomodule.c
 Modules/pwdmodule.c
-Modules/_sre.c
 Modules/_codecsmodule.c
 Modules/_weakref.c
 Modules/zipimport.c
