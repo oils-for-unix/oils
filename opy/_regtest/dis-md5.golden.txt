@@ -208,7 +208,7 @@
  32295 3f24a5980d6761b920977cfa7856a65d _tmp/regtest/opy/pytree.pyc
  38756 66112f1a992091ab7e8a769803470e48 _tmp/regtest/core/cmd_exec.pyc
  40273 698babdbd80311cdcfec266815ca6ce8 _tmp/regtest/opy/byterun/pyvm2.pyc
- 40804 4ed3a455de33717be93b724aced8c489 _tmp/regtest/platform.pyc
+ 40555 2a2ba88fa79454c4167269134d4d095b _tmp/regtest/platform.pyc
  40808 32563c5dd8f47f81e23745fcd3e3d82a _tmp/regtest/codecs.pyc
  41591 12ea1057ab21de139c9216476f70e715 _tmp/regtest/osh/cmd_parse_test.pyc
  41806 0af6b2c2951e2c2e7f04261b4d6de832 _tmp/regtest/osh/cmd_parse.pyc
