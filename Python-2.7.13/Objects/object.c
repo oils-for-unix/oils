@@ -2152,8 +2152,10 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyProperty_Type) < 0)
         Py_FatalError("Can't initialize property type");
 
+#ifndef OVM_MAIN
     if (PyType_Ready(&PyMemoryView_Type) < 0)
         Py_FatalError("Can't initialize memoryview type");
+#endif
 
     if (PyType_Ready(&PyTuple_Type) < 0)
         Py_FatalError("Can't initialize tuple type");

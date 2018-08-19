@@ -77,7 +77,6 @@ Objects/iterobject.c
 Objects/listobject.c
 Objects/longobject.c
 Objects/dictobject.c
-Objects/memoryobject.c
 Objects/methodobject.c
 Objects/moduleobject.c
 Objects/object.c
