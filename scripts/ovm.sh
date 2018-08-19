@@ -22,4 +22,15 @@ pp-vars() {
   gcc -E -dM - < $PY27/pyconfig.h
 }
 
+# Modify this function to trace imports.  It helped with 're'.
+# Where do codecs.c and codecs.py get imported?
+# codecs.py is from encodings, but I don't nkow where that gets imported.
+#
+# I think runpy use encodings.
+blame-import() {
+  PYTHONVERBOSE=9 \
+  _OVM_RESOURCE_ROOT=. PYTHONPATH=. \
+    python -S -c 'from bin import oil; import sys; print sys.modules["codecs"]'
+}
+
 "$@"

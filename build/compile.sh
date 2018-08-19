@@ -9,6 +9,17 @@ set -o errexit
 
 source build/common.sh
 
+# NOTES on trying to delete certain modules:
+#
+# _warnings.c: There weren't that many; it probably could be deleted.
+# bufferobject.c: the types.py module uses it.
+# Python-ast.h: pythonrun.c uses it in several places (mod_ty), and a lot of
+# stuff uses pythonrun.c.
+# pythonrun.c: lots interpreter flags and interpreter initialization caused
+# link errors.
+
+# dtoa.c: not tried, but I assume that %.3f for 'time' uses it.
+
 readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
 Python/bltinmodule.c
