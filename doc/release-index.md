@@ -80,10 +80,13 @@ Tree-shaking:
   run compared to other shells?
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory to
   shells use at startup?
-- [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format.
 - [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
   to build Oil?  How big is the resulting binary?
 
+<!-- - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format. -->
+
+NOTE: OHeap was broken in this release due to the removal of `bytearray`.  It
+may be back in the future.
 
 <!-- TODO: 
 /src/                       annotated/cross-referenced source code

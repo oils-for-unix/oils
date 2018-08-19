@@ -49,6 +49,18 @@ log() {
   echo "$@" 1>&2
 }
 
+# For redoing a release.  This is everything until you have to 'git pull' the
+# benchmark-data repo to make reports.
+auto-machine1() {
+  $0 build-and-test
+  test/wild.sh all
+  $0 test-opy
+  $0 spec-all
+  $0 metrics
+  $0 benchmark-run
+  $0 benchmark-run-on-1-machine
+}
+
 # TODO:
 # - enforce that there is a release/$VERSION branch?
 
