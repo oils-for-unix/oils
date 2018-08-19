@@ -1022,8 +1022,10 @@ string_concat(register PyStringObject *a, register PyObject *bb)
         if (PyUnicode_Check(bb))
             return PyUnicode_Concat((PyObject *)a, bb);
 #endif
+#ifndef OVM_MAIN
         if (PyByteArray_Check(bb))
             return PyByteArray_Concat((PyObject *)a, bb);
+#endif
         PyErr_Format(PyExc_TypeError,
                      "cannot concatenate 'str' and '%.200s' objects",
                      Py_TYPE(bb)->tp_name);

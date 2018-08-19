@@ -215,8 +215,10 @@ Py_InitializeEx(int install_sigs, char* sys_path)
     if (!_PyLong_Init())
         Py_FatalError("Py_Initialize: can't init longs");
 
+#ifndef OVM_MAIN
     if (!PyByteArray_Init())
         Py_FatalError("Py_Initialize: can't init bytearray");
+#endif
 
     _PyFloat_Init();
 
@@ -534,7 +536,9 @@ Py_Finalize(void)
     PyList_Fini();
     PySet_Fini();
     PyString_Fini();
+#ifndef OVM_MAIN
     PyByteArray_Fini();
+#endif
     PyInt_Fini();
     PyFloat_Fini();
     PyDict_Fini();

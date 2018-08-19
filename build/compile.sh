@@ -48,7 +48,6 @@ Objects/abstract.c
 Objects/boolobject.c
 Objects/bufferobject.c
 Objects/bytes_methods.c
-Objects/bytearrayobject.c
 Objects/capsule.c
 Objects/cellobject.c
 Objects/classobject.c
