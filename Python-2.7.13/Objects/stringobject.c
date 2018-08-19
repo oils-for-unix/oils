@@ -1609,7 +1609,11 @@ string_join(PyStringObject *self, PyObject *orig)
     }
     if (seqlen == 1) {
         item = PySequence_Fast_GET_ITEM(seq, 0);
+#ifdef OVM_MAIN
+        if (PyString_CheckExact(item)) {
+#else
         if (PyString_CheckExact(item) || PyUnicode_CheckExact(item)) {
+#endif
             Py_INCREF(item);
             Py_DECREF(seq);
             return item;

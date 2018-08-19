@@ -82,7 +82,12 @@
 
 #include "pydebug.h"
 
+#ifdef OVM_MAIN
+#define PyUnicode_Check(op)                 0
+#else
 #include "unicodeobject.h"
+#endif
+
 #include "intobject.h"
 #include "boolobject.h"
 #include "longobject.h"
