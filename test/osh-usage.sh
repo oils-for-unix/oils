@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Sanity checks for the shell.
+# Test osh usage "from the outside".
 #
 # Usage:
-#   ./smoke.sh <function name>
+#   ./osh-usage.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -11,16 +11,21 @@ set -o errexit
 
 source test/common.sh
 
+# Doesn't work in release automation!
+manual-oheap-test() {
+  # Not dumping to terminal
+  if bin/osh -n --ast-format oheap -c 'echo hi'; then
+    die "Should have failed"
+  fi
+  echo OK
+}
+
 ast-formats() {
   bin/osh -n -c 'echo hi'
   bin/osh -n --ast-format text -c 'echo hi'
   bin/osh -n --ast-format abbrev-html -c 'echo hi'
   bin/osh -n --ast-format html -c 'echo hi'
 
-  # Not dumping to terminal
-  if bin/osh -n --ast-format oheap -c 'echo hi'; then
-    die "Should have failed"
-  fi
   local ast_bin=_tmp/smoke-ast.bin 
   bin/osh -n --ast-format oheap -c 'echo hi' > $ast_bin
   ls -l $ast_bin
@@ -136,6 +141,10 @@ readonly -a PASSING=(
 
 all-passing() {
   run-all "${PASSING[@]}"
+}
+
+run-for-release() {
+  run-other-suite-for-release osh-usage all-passing
 }
 
 "$@"

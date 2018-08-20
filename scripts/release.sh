@@ -86,6 +86,8 @@ auto-machine1() {
 #           osh2oil.txt
 #           gold.txt
 #           parse-errors.txt
+#           runtime-errors.txt
+#           oshc-deps.txt
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
@@ -169,6 +171,8 @@ _test-release-build() {
   test/osh2oil.sh run-for-release
   test/gold.sh run-for-release
   test/parse-errors.sh run-for-release
+  test/runtime-errors.sh run-for-release
+  test/oshc-deps.sh run-for-release
 
   # Just test the release build (not under CPython or byterun.  That comes later.)
   OSH_LIST="$OSH_RELEASE_BINARY" test/spec.sh all

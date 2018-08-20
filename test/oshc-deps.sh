@@ -89,11 +89,15 @@ DEPS
 
 readonly -a PASSING=(
   usage
-  deps
+  #deps
 )
 
 all-passing() {
   run-all "${PASSING[@]}"
+}
+
+run-for-release() {
+  run-other-suite-for-release oshc-deps all-passing
 }
 
 "$@"

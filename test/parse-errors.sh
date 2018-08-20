@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh
+
 # Run with SH=bash too
 SH=${SH:-bin/osh}
 
@@ -55,14 +57,8 @@ all() {
   return 0
 }
 
-# TODO: 
 run-for-release() {
-  local out=_tmp/parse-errors/log.txt
-  mkdir -p $(dirname $out)
-
-  echo '1'
-  all >$out 2>&1
-  echo "Wrote $out"
+  run-other-suite-for-release parse-errors all
 }
 
 "$@"

@@ -3,10 +3,6 @@
 # Usage:
 #   ./common.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
 # TODO: Remove/rename this.  The release process might use the release binary
 # instead of this dev binary.  test/spec.sh already has its own scheme.
 # This is analogous to $OSH_OVM in benchmarks/common.sh.  
@@ -72,6 +68,27 @@ run-all() {
 
   echo
   echo "All $0 tests passed."
+}
+
+# A quick and dirty function to show logs
+run-other-suite-for-release() {
+  local suite_name=$1
+  local func_name=$2
+
+  local out=_tmp/other/${suite_name}.txt
+  mkdir -p $(dirname $out)
+
+  echo
+  echo "*** Running test suite '$suite_name' ***"
+  echo
+
+  if $func_name 2>&1 | tee $out; then
+    echo
+    log "Test suite '$suite_name' ran without errors.  Wrote $out"
+  else
+    echo
+    die "Test suite '$suite_name' failed (running $func_name)"
+  fi
 }
 
 if test "$(basename $0)" = 'common.sh'; then

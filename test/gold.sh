@@ -159,12 +159,7 @@ all-passing() {
 }
 
 run-for-release() {
-  local out_dir=_tmp/gold
-  mkdir -p $out_dir
-
-  all-passing | tee $out_dir/log.txt
-
-  echo "Wrote $out_dir/log.txt"
+  run-other-suite-for-release gold all-passing
 }
 
 "$@"

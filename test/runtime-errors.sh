@@ -5,6 +5,8 @@
 #
 # Run with bash/dash/mksh/zsh.
 
+source test/common.sh
+
 #
 # PARSE ERRORS
 #
@@ -300,6 +302,14 @@ all() {
 
     _run_test $t
   done
+}
+
+run-all-with-osh() {
+  bin/osh $0 all
+}
+
+run-for-release() {
+  run-other-suite-for-release runtime-errors run-all-with-osh
 }
 
 "$@"
