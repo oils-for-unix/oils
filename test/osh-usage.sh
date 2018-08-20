@@ -100,6 +100,10 @@ osh-interactive() {
 
   # Parse failure
   echo ';' | $OSH -i
+
+  # Bug fix: this shouldn't try execute 'echo OIL OIL'
+  # The line lexer wasn't getting reset on parse failures.
+  echo ';echo OIL OIL' | $OSH -i
 }
 
 help() {

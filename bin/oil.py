@@ -95,7 +95,7 @@ log = util.log
 _tlog('after imports')
 
 
-def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena):
+def InteractiveLoop(opts, ex, c_parser, arena):
   if opts.show_ast:
     ast_f = fmt.DetectConsoleOutput(sys.stdout)
   else:
@@ -103,14 +103,18 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena):
 
   status = 0
   while True:
+    # Why is this the way to handle Control-C?
+    # Also, we shouldn't exit the shell!
     try:
       w = c_parser.Peek()
     except KeyboardInterrupt:
       print('Ctrl-C')
       break
 
+    # TODO: When does this happen?
     if w is None:
       raise RuntimeError('Failed parse: %s' % c_parser.Error())
+
     c_id = word.CommandId(w)
     if c_id == Id.Op_Newline:
       #print('nothing to execute')
@@ -120,6 +124,7 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena):
       break
     else:
       node = c_parser.ParseCommandLine()
+      #log('parsed node: %s', node)
 
       # Failed parse.
       # TODO: Need an error for an empty command, which we ignore?  GetLine
@@ -129,8 +134,9 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena):
         e = c_parser.Error()
         # NOTE: This is a bit verbose.
         ui.PrintErrorStack(e, arena, sys.stderr)
-        w_parser.Reset()
+
         c_parser.Reset()
+        c_parser.ResetInputObjects()
         continue
 
       if ast_f:
@@ -143,15 +149,10 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena):
       if opts.print_status:
         print('STATUS', repr(status))
 
-    # Reset prompt to PS1.
-    line_reader.Reset()
-
-    # Reset internal newline state.
-    # NOTE: It would actually be correct to reinitialize all objects (except
-    # Env) on every iteration.  But we know that the w_parser is the only thing
-    # that needs to be reset, for now.
-    w_parser.Reset()
+    # Reset internal newline state.  NOTE: It would actually be correct to
+    # reinitialize all objects (except Env) on every iteration.
     c_parser.Reset()
+    c_parser.ResetInputObjects()
 
   return status
 
@@ -311,7 +312,7 @@ def OshMain(argv0, argv, login_shell):
       completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
                       status_out, ev)
 
-    return InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena)
+    return InteractiveLoop(opts, ex, c_parser, arena)
   else:
     # Parse the whole thing up front
     #print('Parsing file')

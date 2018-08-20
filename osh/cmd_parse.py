@@ -43,6 +43,10 @@ class CommandParser(object):
     self.Reset()
 
   def Reset(self):
+    """Reset our own internal state.
+
+    Called by the interactive loop.
+    """
     self.error_stack = []
     self.completion_stack = []
 
@@ -53,6 +57,21 @@ class CommandParser(object):
     self.c_id = Id.Undefined_Tok
 
     self.pending_here_docs = []
+
+  def ResetInputObjects(self):
+    """Reset the internal state of our inputs.
+
+    Called by the interactive loop.
+
+    TODO: Should we just make new objects on every iteration?
+    """
+    # All the stuff we read from
+    self.w_parser.Reset()
+    #self.lexer.Reset()
+    # TODO: This should be a method on Lexer.  But I'm not sure if we want to
+    # reuse objects at all.
+    self.lexer.line_lexer.Reset('', -1)
+    self.line_reader.Reset()
 
   def Error(self):
     return self.error_stack
