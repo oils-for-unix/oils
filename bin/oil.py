@@ -95,7 +95,7 @@ log = util.log
 _tlog('after imports')
 
 
-def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
+def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena):
   if opts.show_ast:
     ast_f = fmt.DetectConsoleOutput(sys.stdout)
   else:
@@ -113,19 +113,25 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
       raise RuntimeError('Failed parse: %s' % c_parser.Error())
     c_id = word.CommandId(w)
     if c_id == Id.Op_Newline:
-      print('nothing to execute')
+      #print('nothing to execute')
+      pass
     elif c_id == Id.Eof_Real:
       print('EOF')
       break
     else:
       node = c_parser.ParseCommandLine()
 
+      # Failed parse.
       # TODO: Need an error for an empty command, which we ignore?  GetLine
       # could do that in the first position?
       # ParseSimpleCommand fails with '\n' token?
       if not node:
-        # TODO: PrintError here
-        raise RuntimeError('failed parse: %s' % c_parser.Error())
+        e = c_parser.Error()
+        # NOTE: This is a bit verbose.
+        ui.PrintErrorStack(e, arena, sys.stderr)
+        w_parser.Reset()
+        c_parser.Reset()
+        continue
 
       if ast_f:
         ast_lib.PrettyPrint(node)
@@ -305,7 +311,7 @@ def OshMain(argv0, argv, login_shell):
       completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
                       status_out, ev)
 
-    return InteractiveLoop(opts, ex, c_parser, w_parser, line_reader)
+    return InteractiveLoop(opts, ex, c_parser, w_parser, line_reader, arena)
   else:
     # Parse the whole thing up front
     #print('Parsing file')
@@ -313,6 +319,10 @@ def OshMain(argv0, argv, login_shell):
     _tlog('ParseWholeFile')
     # TODO: Do I need ParseAndEvalLoop?  How is it different than
     # InteractiveLoop?
+
+    # TODO: InteractiveLoop above should use the same form of error handling.
+    # ParseWholeFile vs. ParseCommandLine
+    # I think ParseCommandLine should just be a loop
     try:
       node = c_parser.ParseWholeFile()
     except util.ParseError as e:

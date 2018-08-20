@@ -312,7 +312,12 @@ class Thunk(object):
 
 
 def ExecExternalProgram(argv, environ):
-  """
+  """Execute a program and exit this process.
+
+  Called by:
+  ls /
+  exec ls /
+  ( ls / )
   """
   # TODO: If there is an error, like the file isn't executable, then we should
   # exit, and the parent will reap it.  Should it capture stderr?
@@ -320,7 +325,12 @@ def ExecExternalProgram(argv, environ):
     os.execvpe(argv[0], argv, environ)
   except OSError as e:
     log('Unexpected error in execvpe(%r, %r, ...): %s', argv[0], argv, e)
-    # Command not found means 127.  TODO: Are there other cases?
+
+    # TODO:
+    # - Make this error look better.
+    # - What about permission errors?
+
+    # Command not found means 127.
     sys.exit(127)
   # no return
 

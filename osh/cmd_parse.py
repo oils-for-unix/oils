@@ -1537,6 +1537,9 @@ class CommandParser(object):
 
     TODO: This should be turned into a Parse and Execute loop, freeing arenas
     if they don't contain functions.
+
+    osh -n is a different loop -- it parses each line one at a time, but
+    doesn't execute!
     """
     if not self._NewlineOk(): return None
 
