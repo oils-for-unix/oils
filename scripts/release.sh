@@ -81,9 +81,11 @@ auto-machine1() {
 #         spec.wwz/
 #           machine-lisa/
 #         wild.wwz/
-#         unit/
-#         osh2oil/
-#         gold/
+#         unit.wwz/
+#         other.wwz/
+#           osh2oil.txt
+#           gold.txt
+#           parse-errors.txt
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
@@ -110,7 +112,7 @@ auto-machine1() {
 
 _clean-tmp-dirs() {
   rm -r -f \
-    _tmp/{spec,unit,gold,osh2oil,wild/www} \
+    _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
     _tmp/metrics \
     _tmp/opy-test \
     _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap} \
@@ -166,6 +168,7 @@ _test-release-build() {
 
   test/osh2oil.sh run-for-release
   test/gold.sh run-for-release
+  test/parse-errors.sh run-for-release
 
   # Just test the release build (not under CPython or byterun.  That comes later.)
   OSH_LIST="$OSH_RELEASE_BINARY" test/spec.sh all
@@ -546,6 +549,8 @@ compress-txt() {
 
 compress() {
   local root=$PWD/_release/VERSION/
+
+  # TODO: Change this to test/other.wwz/{gold,osh2oil,...}.txt
 
   # There is a single log.txt file in _tmp/{osh2oil,gold}
   compress-txt osh2oil

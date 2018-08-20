@@ -174,8 +174,9 @@ def EncodeArray(obj_list, item_desc, enc, out):
   else:
     # A simple value is either an int, enum, or pointer.  (Later: Iter<Str>
     # might be possible for locality.)
-    assert isinstance(item_desc, asdl.Sum) or \
-        isinstance(item_desc, asdl.Product), item_desc
+    assert \
+        isinstance(item_desc, asdl.SumType) or \
+        isinstance(item_desc, asdl.CompoundType), item_desc
 
     # This is like vector<T*>
     # Later:

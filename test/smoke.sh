@@ -11,7 +11,7 @@ set -o errexit
 
 source test/common.sh
 
-ast() {
+ast-formats() {
   bin/osh -n -c 'echo hi'
   bin/osh -n --ast-format text -c 'echo hi'
   bin/osh -n --ast-format abbrev-html -c 'echo hi'
@@ -27,14 +27,11 @@ ast() {
   hexdump -C $ast_bin
 }
 
-
 # Read from a file.
 osh-file() {
   echo ===== Hello
-  cat >_tmp/hi.sh <<EOF
-
+  cat >_tmp/smoke-prog.sh <<EOF
 echo hi
-echo bye
 
 func() {
   echo "inside func"
@@ -47,7 +44,7 @@ func 1 2 3
 echo \$(echo ComSub)
 
 EOF
-  $OSH _tmp/hi.sh
+  $OSH _tmp/smoke-prog.sh
 
   echo ===== EMPTY
   touch _tmp/empty.sh 
@@ -60,7 +57,7 @@ EOF
 
 # Read from stdin.
 osh-stdin() {
-  $OSH < _tmp/hi.sh 
+  $OSH < _tmp/smoke-prog.sh
 
   echo ===== EMPTY
   $OSH < _tmp/empty.sh
@@ -89,13 +86,15 @@ func() {
 }
 
 EOF
-# TODO: test while loop
 }
 
 osh-interactive() {
   echo 'echo hi' | $OSH -i
 
   echo 'exit' | $OSH -i
+
+  # Parse failure
+  echo ';' | $OSH -i
 }
 
 help() {
@@ -120,22 +119,6 @@ help() {
   assert $? -eq 0
 }
 
-_error-case() {
-  echo
-  echo "$@"
-  echo
-  bin/osh -c "$@"
-}
-
-parse-errors() {
-  set +o errexit
-  _error-case 'echo < <<'
-  _error-case '${foo:}'
-  _error-case '$(( 1 +  ))'
-  _error-case 'echo $( echo > >>  )'
-  #_error-case 'echo ${'
-}
-
 exit-builtin-interactive() {
   set +o errexit
   echo 'echo one; exit 42; echo two' | bin/osh -i
@@ -143,7 +126,7 @@ exit-builtin-interactive() {
 }
 
 readonly -a PASSING=(
-  ast
+  ast-formats
   osh-file
   osh-stdin
   osh-interactive
