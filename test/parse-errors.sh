@@ -79,6 +79,9 @@ word-parse() {
   _error-case 'for (( i = 0; i < 10; i++ /'
 
   _error-case 'echo @(extglob|foo'
+
+  # Array literal with invalid TokenWord.
+  _error-case 'a=(1 & 2)'
 }
 
 quoted-strings() {

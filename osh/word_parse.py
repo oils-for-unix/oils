@@ -923,9 +923,8 @@ class WordParser(object):
   def _ReadArrayLiteralPart(self):
     self._Next(lex_mode_e.OUTER)  # advance past (
     self._Peek()
-    if self.cur_token.id != Id.Op_LParen:
-      self.AddErrorContext('Expected ( after =', token=self.cur_token)
-      return None
+    # Checked by caller
+    assert self.cur_token.id == Id.Op_LParen, self.cur_token
 
     # MUST use a new word parser (with same lexer).
     w_parser = WordParser(self.lexer, self.line_reader)
@@ -944,9 +943,8 @@ class WordParser(object):
         elif word_id == Id.Op_Newline:
           continue
         else:
-          self.AddErrorContext(
-              'Unexpected word in array literal: %s', w, word=w)
-          return None
+          # TokenWord
+          p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
       words.append(w)
 
@@ -1077,9 +1075,6 @@ class WordParser(object):
       # Just return EOF token
       w = ast.TokenWord(self.cur_token)
       return w, False
-      #self.AddErrorContext("Unexpected EOF in arith context: %s",
-      #    self.cur_token, token=self.cur_token)
-      #return None, False
 
     elif self.token_kind == Kind.Ignored:
       # Space should be ignored.  TODO: change this to SPACE_SPACE and
