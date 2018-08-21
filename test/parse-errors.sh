@@ -24,14 +24,9 @@ _error-case() {
   $SH -c "$@"
 }
 
-cases-in-strings() {
+# All in osh/word_parse.py
+patsub() {
   set +o errexit
-
-  _error-case 'echo < <<'
-  _error-case '${foo:}'
-  _error-case '$(( 1 +  ))'
-  _error-case 'echo $( echo > >>  )'
-  _error-case 'echo ${'
 
   _error-case 'echo ${x/}'  # pattern must not be empty
 
@@ -50,6 +45,34 @@ cases-in-strings() {
   _error-case 'echo ${x//foo/replace
 }'
   _error-case 'echo ${x//foo/replace$foo}'
+}
+
+# osh/word_parse.py
+word-parse() {
+  set +o errexit
+  _error-case 'echo ${a[@Z'
+
+  _error-case 'echo ${x.}'
+  _error-case 'echo ${!x.}'
+
+  # NOTE: This is because of EOF
+  _error-case 'echo ${a:1;}'
+
+  # NOTE: Doesn't point to X
+  _error-case 'echo ${a:1:2;}'
+}
+
+cases-in-strings() {
+  set +o errexit
+
+  _error-case 'echo < <<'
+  _error-case '${foo:}'
+  _error-case '$(( 1 +  ))'
+  _error-case 'echo $( echo > >>  )'
+  _error-case 'echo ${'
+
+  patsub
+  word-parse
 }
 
 # Cases in their own file

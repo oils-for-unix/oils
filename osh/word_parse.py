@@ -189,8 +189,8 @@ class WordParser(object):
       return ast.Slice(begin, length)
 
     else:
-      self.AddErrorContext("Unexpected token in slice: %s", self.cur_token)
-      return None
+      p_die("Unexpected token in slice: %r", self.cur_token.val,
+            token=self.cur_token)
 
   def _ReadPatSubVarOp(self, lex_mode):
     """
@@ -232,8 +232,8 @@ class WordParser(object):
         do_suffix = True
         pat.parts.pop(0)
 
-    # TODO: Print the modifier better.
     if len(pat.parts) == 0:
+      # TODO: Print the modifier better.
       p_die('Pattern in ${x/pat/replace} must not be empty (got modifier %s)',
             first_part, token=self.cur_token)
 
@@ -258,9 +258,7 @@ class WordParser(object):
 
     else:
       # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
-
-      # TODO: Print the token better.
-      p_die("Expected } after pat sub, got %s", self.cur_token,
+      p_die("Expected } after pat sub, got %r", self.cur_token.val,
             token=self.cur_token)
 
   def _ReadSubscript(self):
@@ -282,10 +280,9 @@ class WordParser(object):
         return None
       op = ast.ArrayIndex(anode)
 
-    #self._Peek()    # Can't do this here.  Should the test go elsewhere?
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
-      self._BadToken('Expected ] after subscript, got %s', self.cur_token)
-      return None
+      p_die('Expected ] after subscript, got %r', self.cur_token.val,
+            token=self.cur_token)
 
     self._Next(lex_mode_e.VS_2)  # skip past ]
     self._Peek()  # Needed to be in the same spot as no subscript
@@ -333,6 +330,7 @@ class WordParser(object):
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
+        # NOTE: Not sure how to tickle this.  May not be possible.
         self._BadToken('Unexpected token after test arg: %s', self.cur_token)
         return None
 
@@ -351,16 +349,20 @@ class WordParser(object):
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:
         op = self._ReadPatSubVarOp(arg_lex_mode)
-        if not op: return None
+        if not op:
+          return None
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
 
       elif self.token_type == Id.VOp2_Colon:
         op = self._ReadSliceVarOp()
-        if not op: return None
-        if self.token_type != Id.Arith_RBrace:
-          self._BadToken('Unexpected token after slice: %s', self.cur_token)
+        if not op:
           return None
+        # NOTE: } in arithmetic mode.
+        if self.token_type != Id.Arith_RBrace:
+          # Token seems off; doesn't point to X in # ${a:1:2 X
+          p_die('Unexpected token after slice: %r', self.cur_token.val,
+                token=self.cur_token)
 
       else:
         p_die('Unexpected token %s', self.cur_token, token=self.cur_token)
@@ -370,8 +372,9 @@ class WordParser(object):
     # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
     # mode.  It's redundantly checked above.
     if self.token_type not in (Id.Right_VarSub, Id.Arith_RBrace):
-      self._BadToken('Unexpected token after var sub: %s', self.cur_token)
-      return None
+      # ${a.} or ${!a.}
+      p_die('Unexpected token after var sub: %r', self.cur_token.val,
+            token=self.cur_token)
 
     # Now look for ops
     return part
