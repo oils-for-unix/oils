@@ -123,7 +123,14 @@ def InteractiveLoop(opts, ex, c_parser, arena):
       print('EOF')
       break
     else:
-      node = c_parser.ParseCommandLine()
+      try:
+        node = c_parser.ParseCommandLine()
+      except util.ParseError as e:
+        ui.PrettyPrintError(e, arena)
+
+        c_parser.Reset()
+        c_parser.ResetInputObjects()
+        continue
       #log('parsed node: %s', node)
 
       # Failed parse.
@@ -133,7 +140,7 @@ def InteractiveLoop(opts, ex, c_parser, arena):
       if not node:
         e = c_parser.Error()
         # NOTE: This is a bit verbose.
-        ui.PrintErrorStack(e, arena, sys.stderr)
+        ui.PrintErrorStack(e, arena)
 
         c_parser.Reset()
         c_parser.ResetInputObjects()
@@ -257,7 +264,7 @@ def OshMain(argv0, argv, login_shell):
         rc_node = rc_c_parser.ParseWholeFile()
         if not rc_node:
           err = rc_c_parser.Error()
-          ui.PrintErrorStack(err, arena, sys.stderr)
+          ui.PrintErrorStack(err, arena)
           return 2  # parse error is code 2
       finally:
         arena.PopSource()
@@ -328,14 +335,13 @@ def OshMain(argv0, argv, login_shell):
       node = c_parser.ParseWholeFile()
     except util.ParseError as e:
       ui.PrettyPrintError(e, arena, sys.stderr)
-      print('parse error: %s' % e.UserErrorString(), file=sys.stderr)
       return 2
     else:
       # TODO: Remove this older form of error handling.
       if not node:
         err = c_parser.Error()
         assert err, err  # can't be empty
-        ui.PrintErrorStack(err, arena, sys.stderr)
+        ui.PrintErrorStack(err, arena)
         return 2  # parse error is code 2
 
     do_exec = True
@@ -500,14 +506,13 @@ def OshCommandMain(argv):
     node = c_parser.ParseWholeFile()
   except util.ParseError as e:
     ui.PrettyPrintError(e, arena, sys.stderr)
-    print('parse error: %s' % e.UserErrorString(), file=sys.stderr)
     return 2
   else:
     # TODO: Remove this older form of error handling.
     if not node:
       err = c_parser.Error()
       assert err, err  # can't be empty
-      ui.PrintErrorStack(err, arena, sys.stderr)
+      ui.PrintErrorStack(err, arena)
       return 2  # parse error is code 2
 
   f.close()

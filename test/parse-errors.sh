@@ -32,6 +32,15 @@ cases-in-strings() {
   _error-case '$(( 1 +  ))'
   _error-case 'echo $( echo > >>  )'
   _error-case 'echo ${'
+
+  # These are a little odd
+  _error-case 'echo ${x/}'
+  _error-case 'echo ${x//}'
+  _error-case 'echo ${x///}'
+
+  _error-case 'echo ${x/foo}'
+  _error-case 'echo ${x//foo}'
+  _error-case 'echo ${x///foo}'
 }
 
 # Cases in their own file

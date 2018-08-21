@@ -128,9 +128,10 @@ def PrettyPrintError(parse_error, arena, f=sys.stderr):
     return
 
   PrintFilenameAndLine(span_id, arena, f=f)
+  print(parse_error.UserErrorString(), file=f)
 
 
-def PrintErrorStack(error_stack, arena, f):
+def PrintErrorStack(error_stack, arena, f=sys.stderr):
   """
   NOTE:
   - Parse errors always occur within a single arena.  Actually NO, you want to
@@ -141,6 +142,5 @@ def PrintErrorStack(error_stack, arena, f):
   # - parse errors happen at runtime because of 'source'
   #   - should there be a distinction then?
   for err in error_stack:
-    PrettyPrintError(err, arena, f)
-    print(err.UserErrorString(), file=f)
+    PrettyPrintError(err, arena, f=f)
     print('---', file=f)

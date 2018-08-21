@@ -214,8 +214,8 @@ class WordParser(object):
         pat.parts.append(p)
 
     if len(pat.parts) == 0:
-      self._BadToken("Pattern must not be empty: %r", token=self.cur_token)
-      return None
+      p_die('Pattern in ${x/pat/replace} must not be empty',
+            token=self.cur_token)
     else:
       first_part = pat.parts[0]
       if first_part.tag == word_part_e.LiteralPart:
