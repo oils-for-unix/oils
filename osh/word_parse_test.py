@@ -16,6 +16,7 @@ from asdl import const
 from core import alloc
 from core import test_lib
 from core import word
+from core import util
 
 from osh.meta import ast, Id, types
 from osh import ast_lib
@@ -79,12 +80,17 @@ def _assertSpanForWord(test, code_str):
 def _assertReadWordFailure(test, word_str):
   print('\n---', word_str)
   w_parser = InitWordParser(word_str)
-  w = w_parser.ReadWord(lex_mode_e.OUTER)
-  if w:
-    ast_lib.PrettyPrint(w)
-    test.fail('Expected a parser error, got %r' % w)
-  else:
+  try:
+    w = w_parser.ReadWord(lex_mode_e.OUTER)
+  except util.ParseError as e:
+    print(e)
+    return
+  if not w:
     print(w_parser.Error())
+    return
+
+  ast_lib.PrettyPrint(w)
+  test.fail('Expected a parser error, got %r' % w)
 
 
 def _GetSuffixOp(test, w):

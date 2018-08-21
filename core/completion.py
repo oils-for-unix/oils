@@ -434,7 +434,15 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
 
     TODO: what about hash table name?
   """
-  node = c_parser.ParseCommandLine()
+  # TODO: Fill these in
+  comp_type = completion_state_e.FIRST
+  prefix = ''
+  words = []
+
+  try:
+    node = c_parser.ParseCommandLine()
+  except util.ParseError as e:
+    return comp_type, prefix, words  # EARLY RETURN
 
   # Inspect state after parsing.  Hm I'm getting the newline.  Can I view the
   # one before that?
@@ -501,11 +509,6 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
                     node.tag if node else '')
   # This one can be multiple lines
   status_out.Write(6, 'com_node: %s', repr(com_node) if com_node else '<None>')
-
-  # TODO: Fill these in
-  comp_type = completion_state_e.FIRST
-  prefix = ''
-  words = []
 
   # IMPORTANT: if the last token is Id.Ignored_Space, then we want to add a
   # dummy word!  empty word

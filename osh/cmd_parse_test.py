@@ -6,12 +6,11 @@ cmd_parse_test.py: Tests for cmd_parse.py
 import sys
 import unittest
 
-from core import ui
-from osh.meta import Id
-from core import word
 from core import test_lib
-
-from osh.meta import ast
+from core import word
+from core import ui
+from core import util
+from osh.meta import ast, Id
 from osh import ast_lib
 from osh import parse_lib
 from osh.cmd_parse import CommandParser  # module under test
@@ -50,15 +49,24 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
 
 def _assertParseCommandListError(test, code_str):
   arena, c_parser = InitCommandParser(code_str)
-  node = c_parser.ParseCommandLine()
-  if node:
-    print('UNEXPECTED:')
-    ast_lib.PrettyPrint(node)
-    test.fail("Expected %r to fail" % code_str)
+
+  try:
+    node = c_parser.ParseCommandLine()
+  except util.ParseError as e:
+    print(e)
     return
-  err = c_parser.Error()
-  #print(err)
-  ui.PrintErrorStack(err, arena, sys.stdout)
+
+  # TODO: Don't check two kinds of failures!
+  if not node:
+    err = c_parser.Error()
+    #print(err)
+    ui.PrintErrorStack(err, arena, sys.stdout)
+    return
+
+  print('UNEXPECTED:')
+  ast_lib.PrettyPrint(node)
+  test.fail("Expected %r to fail" % code_str)
+  return
 
 
 #

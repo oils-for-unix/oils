@@ -65,14 +65,6 @@ word-parse() {
 
   _error-case 'echo ${#a.'
 
-  # $(( ))
-  _error-case 'echo $(( 1 + 2 ;'
-  _error-case 'echo $(( 1 + 2 );'
-
-  # (( ))
-  _error-case '(( 1 + 2 /'
-  _error-case '(( 1 + 2 )/'
-
   # for (( ))
   _error-case 'for (( i = 0; i < 10; i++ ;'
   # Hm not sure about this
@@ -82,6 +74,61 @@ word-parse() {
 
   # Array literal with invalid TokenWord.
   _error-case 'a=(1 & 2)'
+  _error-case 'a= (1 2)'
+}
+
+arith-context() {
+  set +o errexit
+
+  # $(( ))
+  _error-case 'echo $(( 1 + 2 ;'
+  _error-case 'echo $(( 1 + 2 );'
+
+  # Non-standard arith sub $[1 + 2]
+  _error-case 'echo $[ 1 + 2 ;'
+
+  # What's going on here?   No location info?
+  _error-case 'echo $[ 1 + 2 /'
+
+  _error-case 'echo $[ 1 + 2 / 3'
+
+  # (( ))
+  _error-case '(( 1 + 2 /'
+  _error-case '(( 1 + 2 )/'
+}
+
+arith-expr() {
+  set +o errexit
+
+  # BUG: the token is off here
+  _error-case '$(( 1 + + ))'
+
+  # BUG: not a great error either
+  _error-case '$(( 1 2 ))'
+
+  # Triggered a crash!
+  _error-case '$(( - ; ))'
+}
+
+bool-expr() {
+  set +o errexit
+
+  # Extra word
+  _error-case '[[ a b ]]'
+  _error-case '[[ a "a"$(echo hi)"b" ]]'
+
+  # Wrong error message
+  _error-case '[[ a == ]]'
+
+  # Invalid regex
+  _error-case '[[ $var =~ * ]]'
+
+  # Unbalanced parens
+  _error-case '[[ ( 1 == 2 - ]]'
+
+  _error-case '[[ == ]]'
+  _error-case '[[ ) ]]'
+  _error-case '[[ ( ]]'
 }
 
 quoted-strings() {
@@ -112,10 +159,14 @@ cases-in-strings() {
   _error-case 'echo $( echo > >>  )'
   _error-case 'echo ${'
 
-  patsub
   word-parse
-
+  patsub
   quoted-strings
+
+  arith-context
+  arith-expr
+
+  bool-expr
 }
 
 # Cases in their own file

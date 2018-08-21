@@ -126,7 +126,7 @@ class BoolParser(object):
     node = self.ParseExpr()
     if self.op_id != Id.Lit_DRightBracket:
       self.AddErrorContext("Unexpected extra word %r", self.cur_word,
-          word=self.cur_word)
+                           word=self.cur_word)
       return None
     return node
 
