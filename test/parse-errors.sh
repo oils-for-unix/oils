@@ -33,14 +33,23 @@ cases-in-strings() {
   _error-case 'echo $( echo > >>  )'
   _error-case 'echo ${'
 
+  _error-case 'echo ${x/}'  # pattern must not be empty
+
+  _error-case 'echo ${x/%}'  # pattern must not be empty (only had modifier)
+  _error-case 'echo ${x/%/}'  # pattern must not be empty (only had modifier)
+
   # These are a little odd
-  _error-case 'echo ${x/}'
   _error-case 'echo ${x//}'
   _error-case 'echo ${x///}'
 
   _error-case 'echo ${x/foo}'
   _error-case 'echo ${x//foo}'
   _error-case 'echo ${x///foo}'
+
+  # Newline in replacement pattern
+  _error-case 'echo ${x//foo/replace
+}'
+  _error-case 'echo ${x//foo/replace$foo}'
 }
 
 # Cases in their own file

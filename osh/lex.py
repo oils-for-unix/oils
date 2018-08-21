@@ -110,7 +110,7 @@ lex_mode_e = types.lex_mode_e
 
 # In oil, I hope to have these lexer modes:
 # COMMAND
-# EXPRESSION (takes place of ARITH, VS_UNQ_ARG, VS_DQ_ARG)
+# EXPRESSION (takes place of ARITH, VS_ARG_UNQ, VS_ARG_DQ)
 # SQ  RAW_SQ  DQ  RAW_DQ
 # VS    -- a single state here?  Or switches into expression state, because }
 #          is an operator

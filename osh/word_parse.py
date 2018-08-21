@@ -203,7 +203,8 @@ class WordParser(object):
     do_suffix = False
 
     pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
-    if not pat: return None
+    if not pat:
+      return None
 
     if len(pat.parts) == 1:
       ok, s, quoted = word.StaticEval(pat)
@@ -216,40 +217,51 @@ class WordParser(object):
     if len(pat.parts) == 0:
       p_die('Pattern in ${x/pat/replace} must not be empty',
             token=self.cur_token)
-    else:
-      first_part = pat.parts[0]
-      if first_part.tag == word_part_e.LiteralPart:
-        lit_id = first_part.token.id
-        if lit_id == Id.Lit_Slash:
-          do_all = True
-          pat.parts.pop(0)
-        elif lit_id == Id.Lit_Pound:
-          do_prefix = True
-          pat.parts.pop(0)
-        elif lit_id == Id.Lit_Percent:
-          do_suffix = True
-          pat.parts.pop(0)
 
-    #self._Peek()
+    # Check for / # % modifier on pattern.
+    first_part = pat.parts[0]
+    if first_part.tag == word_part_e.LiteralPart:
+      lit_id = first_part.token.id
+      if lit_id == Id.Lit_Slash:
+        do_all = True
+        pat.parts.pop(0)
+      elif lit_id == Id.Lit_Pound:
+        do_prefix = True
+        pat.parts.pop(0)
+      elif lit_id == Id.Lit_Percent:
+        do_suffix = True
+        pat.parts.pop(0)
+
+    # TODO: Print the modifier better.
+    if len(pat.parts) == 0:
+      p_die('Pattern in ${x/pat/replace} must not be empty (got modifier %s)',
+            first_part, token=self.cur_token)
+
     if self.token_type == Id.Right_VarSub:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
       return ast.PatSub(pat, None, do_all, do_prefix, do_suffix)
 
     elif self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode)  # do not stop at /
-      if not replace: return None
-
-      self._Peek()
-      if self.token_type == Id.Right_VarSub:
-        return ast.PatSub(pat, replace, do_all, do_prefix, do_suffix)
-
-      else:
-        self._BadToken("Expected } after pat sub, got %s", self.cur_token)
+      if not replace:
         return None
 
+      self._Peek()
+      if self.token_type != Id.Right_VarSub:
+        # NOTE: I think this never happens.
+        # We're either in the VS_ARG_UNQ or VS_ARG_DQ lex state, and everything
+        # there is Lit_ or Left_, except for }.
+        p_die("Expected } after replacement string, got %s", self.cur_token,
+              token=self.cur_token)
+
+      return ast.PatSub(pat, replace, do_all, do_prefix, do_suffix)
+
     else:
-      self._BadToken("Expected } after pat sub, got %s", self.cur_token)
-      return None
+      # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
+
+      # TODO: Print the token better.
+      p_die("Expected } after pat sub, got %s", self.cur_token,
+            token=self.cur_token)
 
   def _ReadSubscript(self):
     """ Subscript = '[' ('@' | '*' | ArithExpr) ']'
