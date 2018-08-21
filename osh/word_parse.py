@@ -340,6 +340,7 @@ class WordParser(object):
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_VarSub:
+        # NOTE: Not sure how to tickle this.  May not be possible.
         self._BadToken('Unexpected token after unary op: %s', self.cur_token)
         return None
 
@@ -373,7 +374,7 @@ class WordParser(object):
     # mode.  It's redundantly checked above.
     if self.token_type not in (Id.Right_VarSub, Id.Arith_RBrace):
       # ${a.} or ${!a.}
-      p_die('Unexpected token after var sub: %r', self.cur_token.val,
+      p_die('Expected } after var sub, got %r', self.cur_token.val,
             token=self.cur_token)
 
     # Now look for ops
@@ -460,9 +461,8 @@ class WordParser(object):
 
         self._Peek()
         if self.token_type != Id.Right_VarSub:
-          self._BadToken("Expected } after length expression, got %r",
-              self.cur_token)
-          return None
+          p_die("Expected } after length expression, got %r",
+                self.cur_token.val, token=self.cur_token)
 
         part.prefix_op = Id.VSub_Pound  # length
 
@@ -521,8 +521,8 @@ class WordParser(object):
         tokens.append(self.cur_token)
 
       elif self.token_kind == Kind.Eof:
-        self.AddErrorContext('Unexpected EOF in single-quoted string')
-        return False
+        p_die('Unexpected EOF in single-quoted string that began here',
+              token=left)
 
       elif self.token_kind == Kind.Right:
         done = True  # assume Id.Right_SingleQuote
@@ -625,10 +625,8 @@ class WordParser(object):
         read_word = True
 
       elif self.token_kind == Kind.Eof:
-        self.AddErrorContext(
-            'Unexpected EOF reading extended glob that began here',
-            token=left_token)
-        return None
+        p_die('Unexpected EOF reading extended glob that began here',
+              token=left_token)
 
       else:
         raise AssertionError('Unexpected token %r' % self.cur_token)
@@ -648,7 +646,7 @@ class WordParser(object):
     right_spid = const.NO_INTEGER  # gets set later
 
     if self.cur_token is not None:  # None in here doc case
-      left_spid = self.cur_token.span_id
+      left_token = self.cur_token
 
     done = False
     while not done:
@@ -690,10 +688,8 @@ class WordParser(object):
         if here_doc:  # here docs will have an EOF in their token stream
           done = True
         else:
-          self.AddErrorContext(
-              'Unexpected EOF reading double-quoted string that began here',
-              span_id=left_spid)
-          return False
+          p_die('Unexpected EOF reading double-quoted string that began here',
+                token=left_token)
 
       else:
         raise AssertionError(self.cur_token)
@@ -800,9 +796,8 @@ class WordParser(object):
       return None
 
     if self.token_type != Id.Arith_RParen:
-      self._BadToken('Expected first paren to end arith sub, got %s',
-          self.cur_token)
-      return None
+      p_die('Expected first ) to end arith sub, got %r', self.cur_token.val,
+            token=self.cur_token)
 
     self._Next(lex_mode_e.OUTER)  # TODO: This could be DQ or ARITH too
 
@@ -810,9 +805,9 @@ class WordParser(object):
     # Two right parens break the Id.Eof_RParen scheme
     self._Peek()
     if self.token_type != Id.Right_ArithSub:
-      self._BadToken('Expected second paren to end arith sub, got %s',
-          self.cur_token)
-      return None
+      p_die('Expected second ) to end arith sub, got %r', self.cur_token.val,
+            token=self.cur_token)
+
     right_span_id = self.cur_token.span_id
 
     node = ast.ArithSubPart(anode)
@@ -857,17 +852,15 @@ class WordParser(object):
 
     #print('xx ((', self.cur_token)
     if self.token_type != Id.Arith_RParen:
-      self._BadToken('Expected first paren to end arith sub, got %s',
-          self.cur_token)
-      return None
+      p_die('Expected first ) to end arith statement, got %r',
+            self.cur_token.val, token=self.cur_token)
     self._Next(lex_mode_e.OUTER)
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     self._Peek()
     if self.token_type != Id.Op_DRightParen:
-      self._BadToken('Expected second paren to end arith sub, got %s',
-          self.cur_token)
-      return None
+      p_die('Expected second ) to end arith statement, got %r',
+            self.cur_token.val, token=self.cur_token)
     self._Next(lex_mode_e.OUTER)
 
     return anode
@@ -921,9 +914,8 @@ class WordParser(object):
     # Second paren
     self._Peek()
     if self.token_type != Id.Arith_RParen:
-      self._BadToken('Expected right paren to end for loop expression, got %s',
-          self.cur_token)
-      return None
+      p_die('Expected ) to end for loop expression, got %r',
+            self.cur_token.val, token=self.cur_token)
     self._Next(lex_mode_e.OUTER)
 
     return ast.ForExpr(init_node, cond_node, update_node)

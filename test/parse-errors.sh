@@ -55,12 +55,50 @@ word-parse() {
   _error-case 'echo ${x.}'
   _error-case 'echo ${!x.}'
 
-  # NOTE: This is because of EOF
+  # Slicing
   _error-case 'echo ${a:1;}'
-
-  # NOTE: Doesn't point to X
   _error-case 'echo ${a:1:2;}'
+
+  # I don't seem to be able to tickle errors here
+  #_error-case 'echo ${a:-}'
+  #_error-case 'echo ${a#}'
+
+  _error-case 'echo ${#a.'
+
+  # $(( ))
+  _error-case 'echo $(( 1 + 2 ;'
+  _error-case 'echo $(( 1 + 2 );'
+
+  # (( ))
+  _error-case '(( 1 + 2 /'
+  _error-case '(( 1 + 2 )/'
+
+  # for (( ))
+  _error-case 'for (( i = 0; i < 10; i++ ;'
+  # Hm not sure about this
+  _error-case 'for (( i = 0; i < 10; i++ /'
+
+  _error-case 'echo @(extglob|foo'
 }
+
+quoted-strings() {
+  set +o errexit
+
+  _error-case '"unterminated double'
+
+  _error-case "'unterminated single"
+
+  _error-case '
+  "unterminated double multiline
+  line 1
+  line 2'
+
+  _error-case "
+  'unterminated single multiline
+  line 1
+  line 2"
+}
+
 
 cases-in-strings() {
   set +o errexit
@@ -73,6 +111,8 @@ cases-in-strings() {
 
   patsub
   word-parse
+
+  quoted-strings
 }
 
 # Cases in their own file
