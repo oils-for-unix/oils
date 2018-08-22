@@ -259,6 +259,15 @@ string_to_intbase() {
 }
 
 #
+# Builtins
+#
+
+test_builtin() {
+  # xxx is not a valid file descriptor
+  [ -t xxx ]
+}
+
+#
 # BOOLEAN ERRORS
 #
 

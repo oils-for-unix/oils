@@ -151,6 +151,24 @@ bool-expr() {
   _error-case '[['
 }
 
+# These don't have any location information.
+test-builtin() {
+  set +o errexit
+
+  # Extra token
+  _error-case '[ x -a y f ]'
+  _error-case 'test x -a y f'
+
+  # Missing closing ]
+  _error-case '[ x '
+
+  # Hm some of these errors are wonky.  Need positions.
+  _error-case '[ x x ]'
+
+  # -o tests if an option is enabled.
+  #_error-case '[ -o x ]'
+}
+
 quoted-strings() {
   set +o errexit
 
@@ -192,6 +210,7 @@ cases-in-strings() {
   arith-expr
 
   bool-expr
+  test-builtin
 }
 
 # Cases in their own file

@@ -163,19 +163,13 @@ def Test(argv, need_right_bracket):
 
     if bool_node is None:
       bool_node = b_parser.ParseForBuiltin()
-      #log('Bool expr %s', bool_node)
-
-      if bool_node is None:
-        for e in b_parser.Error():
-          log("test: %s", e.UserErrorString())
-        # TODO: There should be a nice method to print argv.  And some way to
-        # point to the error.
-        log("Error parsing test/[ expression: %s", argv)
-        return 2  # parse error is 2
 
   except util.ParseError as e:
-    util.error(e.UserErrorString())
-    return 2
+    util.error("test: %s", e.UserErrorString())
+    # TODO: There should be a nice method to print argv.  And some way to point
+    # to the error.
+    log("Error parsing test expression: %s", argv)
+    return 2  # parse error is 2
 
   # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
   # exec_opts: don't need it, but might need it later
@@ -190,7 +184,7 @@ def Test(argv, need_right_bracket):
   except util.FatalRuntimeError as e:
     # e.g. [ -t xxx ]
     # TODO: Printing the location would be nice.
-    print('test: %s' % e.UserErrorString(), file=sys.stderr)
+    util.error('test: %s', e.UserErrorString())
     return 2
 
   status = 0 if b else 1

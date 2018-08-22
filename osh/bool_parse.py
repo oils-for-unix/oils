@@ -64,13 +64,6 @@ class BoolParser(object):
 
     self.error_stack = []
 
-  def Error(self):
-    return self.error_stack
-
-  def AddErrorContext(self, msg, *args, **kwargs):
-    err = util.ParseError(msg, *args, **kwargs)
-    self.error_stack.append(err)
-
   def _NextOne(self, lex_mode=lex_mode_e.DBRACKET):
     #print('_Next', self.cur_word)
     n = len(self.words)
@@ -140,10 +133,8 @@ class BoolParser(object):
 
     node = self.ParseExpr()
     if self.op_id != Id.Eof_Real:
-      self.AddErrorContext(
-          'Unexpected trailing word in test expression: %s',
-          self.cur_word)
-      return None
+      p_die('Unexpected trailing word in test expression: %s',
+            self.cur_word, word=self.cur_word)
 
     return node
 
@@ -261,9 +252,7 @@ class BoolParser(object):
       if not self._Next(): return None
       node = self.ParseExpr()
       if self.op_id != Id.Op_RParen:
-        self.AddErrorContext(
-            'Expected ), got %s', self.cur_word, word=self.cur_word)
-        return None
+        p_die('Expected ), got %s', self.cur_word, word=self.cur_word)
       if not self._Next(): return None
       return node
 
