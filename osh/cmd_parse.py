@@ -77,15 +77,6 @@ class CommandParser(object):
   def Error(self):
     return self.error_stack
 
-  def _BadWord(self, msg, w):
-    """Helper function for errors involving a word.
-
-    Args:
-      msg: format string with a single %s token
-      w: Word
-    """
-    self.AddErrorContext(msg, w, word=w)
-
   def AddErrorContext(self, msg, *args, **kwargs):
     err = util.ParseError(msg, *args, **kwargs)
     self.error_stack.append(err)
@@ -108,8 +99,8 @@ class CommandParser(object):
           # fatal because we want to be strict, and because it causes problems
           # reporting other errors.
           # Attribute it to the << in <<EOF for now.
-          self.AddErrorContext('Unterminated here doc', span_id=h.spids[0])
-          return False
+          p_die("Couldn't find terminator for here doc that starts here",
+                span_id=h.spids[0])
 
         # NOTE: Could do this runtime to preserve LST.
         if h.op_id == Id.Redir_DLessDash:
@@ -252,8 +243,7 @@ class CommandParser(object):
       # NOTE: \EOF counts, or even E\OF
       ok, node.here_end, quoted = word.StaticEval(self.cur_word)
       if not ok:
-        self._BadWord('Error evaluating here doc delimiter: %s', self.cur_word)
-        return None
+        p_die('Invalid here doc delimiter', word=self.cur_word)
       node.do_expansion = not quoted
       self._Next()
 
@@ -352,9 +342,7 @@ class CommandParser(object):
     # FOO=(1 2 3) ls is not allowed
     for k, _, v, _ in prefix_bindings:
       if word.HasArrayPart(v):
-        self.AddErrorContext(
-            'Unexpected array literal in binding: %s', v, word=v)
-        return None
+        p_die("Environment bindings can't contain array literals", word=v)
 
     # echo FOO=(1 2 3) is not allowed
     # NOTE: Other checks can be inserted here.  Can resolve builtins,
@@ -364,8 +352,7 @@ class CommandParser(object):
       if kov:
         _, _, v = kov
         if word.HasArrayPart(v):
-          self.AddErrorContext('Unexpected array literal: %s', v, word=w)
-          return None
+          p_die("Commands can't contain array literals", word=w)
 
     # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading
     # character of the initial word.
@@ -382,9 +369,7 @@ class CommandParser(object):
     for name, op, val, left_spid in prefix_bindings:
       if op != assign_op_e.Equal:
         # NOTE: Using spid of RHS for now, since we don't have one for op.
-        self.AddErrorContext('Expected = in environment binding, got +=',
-            word=val)
-        return None
+        p_die('Expected = in environment binding, got +=', word=val)
       pair = ast.env_pair(name, val)
       pair.spids.append(left_spid)
       node.more_env.append(pair)

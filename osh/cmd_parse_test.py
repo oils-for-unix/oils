@@ -31,7 +31,10 @@ def InitCommandParser(code_str):
 def _assertParseMethod(test, code_str, method, expect_success=True):
   arena, c_parser = InitCommandParser(code_str)
   m = getattr(c_parser, method)
-  node = m()
+  try:
+    node = m()
+  except util.ParseError as e:
+    node = None
 
   if node:
     ast_lib.PrettyPrint(node)

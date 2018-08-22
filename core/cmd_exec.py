@@ -203,7 +203,7 @@ class Executor(object):
       self.arena.PopSource()
 
   def _Eval(self, argv):
-    # TODO: set -o sane-eval should change eval to
+    # TODO: set -o sane-eval should change eval to take a single string.
     code_str = ' '.join(argv)
     line_reader = reader.StringLineReader(code_str, self.arena)
     _, c_parser = parse_lib.MakeParser(line_reader, self.arena)

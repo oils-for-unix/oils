@@ -196,10 +196,20 @@ cmd-parse() {
   _error-case 'echo $( echo > >>  )'
 }
 
+simple-command() {
+  set +o errexit
+
+  _error-case 'PYTHONPATH=. FOO=(1 2) python'
+  _error-case 'echo foo FOO=(1 2)'
+
+  _error-case 'PYTHONPATH+=1 python'
+}
+
 cases-in-strings() {
   set +o errexit
 
   cmd-parse
+  simple-command
 
   # Word
   word-parse
