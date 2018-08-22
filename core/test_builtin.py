@@ -4,8 +4,6 @@ from __future__ import print_function
 test_builtin.py
 """
 
-import sys
-
 from core import expr_eval
 from core import util
 
@@ -14,7 +12,6 @@ from osh.meta import ast, Id, runtime
 from osh import meta
 
 log = util.log
-
 
 _UNARY_LOOKUP = meta.TEST_UNARY_LOOKUP
 _BINARY_LOOKUP = meta.TEST_BINARY_LOOKUP
