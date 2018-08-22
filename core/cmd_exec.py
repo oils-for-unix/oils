@@ -1482,9 +1482,17 @@ class Tracer(object):
       # NOTE: Reading PS4 is just like reading a here doc line.  "\n" is
       # allowed too.  The OUTER mode would stop at spaces, and ReadWord
       # doesn't allow lex_mode_e.DQ.
-      ps4_word = w_parser.ReadHereDocBody()
+      ok = True
+      try:
+        ps4_word = w_parser.ReadHereDocBody()
+      except util.ParseError as e:
+        ok = False
+      else:
+        # TODO: Get rid of duplicate forms of error handling.
+        if not ps4_word:
+          ok = False
 
-      if not ps4_word:
+      if not ok:
         error_str = '<ERROR: cannot parse PS4>'
         t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
         ps4_word = ast.CompoundWord([ast.LiteralPart(t)])

@@ -122,14 +122,14 @@ def MakeShellSpec():
   # -1 precedence -- doesn't matter
   spec.Null(-1, tdop.NullConstant, [
       Id.Word_Compound,
-      Id.Arith_Semi,  # for loop
   ])
   spec.Null(-1, tdop.NullError, [
       Id.Arith_RParen, Id.Arith_RBracket, Id.Arith_Colon,
       Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick,
-      # Not in the arithmetic language, but is a common terminator, e.g.
-      # ${foo:1}
-      Id.Arith_RBrace,
+
+      # Not in the arithmetic language, but useful to define here.
+      Id.Arith_Semi,  # terminates loops like for (( i = 0 ; ... ))
+      Id.Arith_RBrace,  # terminates slices like ${foo:1}
   ])
 
   # 0 precedence -- doesn't bind until )

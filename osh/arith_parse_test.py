@@ -159,6 +159,10 @@ class ArithTest(unittest.TestCase):
     testSyntaxError('( 1')
     testSyntaxError('(1 + (3 * 4)')
     testSyntaxError('(1 + (3 * 4) 5')  # Not valid, expr also fails.
+
+    testSyntaxError(';')
+    testSyntaxError('- ;')
+
     #testSyntaxError('1 1')
     #testSyntaxError('( 1 ) ( 2 )')
 
