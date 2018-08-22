@@ -125,6 +125,7 @@ def LeftError(p, t, left, rbp):
 
 def LeftBinaryOp(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
+  # TODO: w shoudl be a TokenWord, and we should extract the token from it.
   return ast.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
 
 

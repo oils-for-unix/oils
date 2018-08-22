@@ -125,6 +125,8 @@ class _ExprEvaluator(object):
         raise
       else:
         i = 0
+        # TODO: Need the arena for printing this error?
+        #ui.PrettyPrintError(e)
         warn(e.UserErrorString())
     return i
 
@@ -394,10 +396,19 @@ class ArithEvaluator(_ExprEvaluator):
         try:
           return lhs / rhs
         except ZeroDivisionError:
-          # TODO: Instead of op_id, I should have the token
-          # node.right.w crashes if it's not a constant!
-          e_die('Divide by zero', word=node.right.w)
+          # TODO: _ErrorWithLocation should also accept arith_expr ?  I
+          # think I needed that for other stuff.
+          # Or I could blame the '/' token, instead of op_id.
+          error_expr = node.right  # node is ArithBinary
+          if error_expr.tag == arith_expr_e.ArithVarRef:
+            # TODO: ArithVarRef should store a token instead of a string!
+            e_die('Divide by zero (name)')
+          elif error_expr.tag == arith_expr_e.ArithWord:
+            e_die('Divide by zero', word=node.right.w)
+          else:
+            e_die('Divide by zero')
       if op_id == Id.Arith_Percent:
+
         return lhs % rhs
       if op_id == Id.Arith_DStar:
         return lhs ** rhs
