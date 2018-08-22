@@ -50,6 +50,13 @@ patsub() {
 # osh/word_parse.py
 word-parse() {
   set +o errexit
+
+  _error-case 'echo ${'
+
+  # This parses like a slice, but that's OK.  Maybe talk about arithmetic
+  # expression.  Maybe say where it started?
+  _error-case '${foo:}'
+
   _error-case 'echo ${a[@Z'
 
   _error-case 'echo ${x.}'
@@ -71,10 +78,15 @@ word-parse() {
   _error-case 'for (( i = 0; i < 10; i++ /'
 
   _error-case 'echo @(extglob|foo'
+}
+
+array-literal() {
+  set +o errexit
 
   # Array literal with invalid TokenWord.
   _error-case 'a=(1 & 2)'
   _error-case 'a= (1 2)'
+  _error-case 'a=(1 2'
 }
 
 arith-context() {
@@ -83,6 +95,8 @@ arith-context() {
   # $(( ))
   _error-case 'echo $(( 1 + 2 ;'
   _error-case 'echo $(( 1 + 2 );'
+  _error-case 'echo $(( '
+  _error-case 'echo $(( 1'
 
   # Non-standard arith sub $[1 + 2]
   _error-case 'echo $[ 1 + 2 ;'
@@ -91,10 +105,13 @@ arith-context() {
   _error-case 'echo $[ 1 + 2 /'
 
   _error-case 'echo $[ 1 + 2 / 3'
+  _error-case 'echo $['
 
   # (( ))
   _error-case '(( 1 + 2 /'
   _error-case '(( 1 + 2 )/'
+  _error-case '(( 1'
+  _error-case '(('
 }
 
 arith-expr() {
@@ -129,6 +146,9 @@ bool-expr() {
   _error-case '[[ == ]]'
   _error-case '[[ ) ]]'
   _error-case '[[ ( ]]'
+
+  _error-case '[[ ;;; ]]'
+  _error-case '[['
 }
 
 quoted-strings() {
@@ -149,20 +169,25 @@ quoted-strings() {
   line 2"
 }
 
+cmd-parse() {
+  set +o errexit
+
+  _error-case 'echo < <<'
+  _error-case 'echo $( echo > >>  )'
+}
 
 cases-in-strings() {
   set +o errexit
 
-  _error-case 'echo < <<'
-  _error-case '${foo:}'
-  _error-case '$(( 1 +  ))'
-  _error-case 'echo $( echo > >>  )'
-  _error-case 'echo ${'
+  cmd-parse
 
+  # Word
   word-parse
+  array-literal
   patsub
   quoted-strings
 
+  # Arith
   arith-context
   arith-expr
 

@@ -366,7 +366,7 @@ class WordParser(object):
                 token=self.cur_token)
 
       else:
-        p_die('Unexpected token %s', self.cur_token, token=self.cur_token)
+        p_die('Unexpected token %r', self.cur_token.val, token=self.cur_token)
 
       part.suffix_op = op
 
@@ -497,7 +497,7 @@ class WordParser(object):
 
     else:
       # e.g. ${^}
-      p_die('Unexpected token %s', self.cur_token, token=self.cur_token)
+      p_die('Unexpected token %r', self.cur_token.val, token=self.cur_token)
 
     part.spids.append(left_spid)
 
