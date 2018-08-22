@@ -120,6 +120,8 @@ class BoolParser(object):
     node = self.ParseExpr()
     if self.op_id != Id.Lit_DRightBracket:
       #p_die("Expected ]], got %r", self.cur_word, word=self.cur_word)
+      # NOTE: This might be better as unexpected token, since ]] doesn't always
+      # make sense.
       p_die('Expected ]]', word=self.cur_word)
     return node
 

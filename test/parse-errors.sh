@@ -165,6 +165,8 @@ test-builtin() {
   # Hm some of these errors are wonky.  Need positions.
   _error-case '[ x x ]'
 
+  _error-case '[ x x x ]'
+
   # -o tests if an option is enabled.
   #_error-case '[ -o x ]'
 }

@@ -1215,11 +1215,7 @@ class CommandParser(object):
 
     self._Next()  # skip [[
     b_parser = BoolParser(self.w_parser)
-    bnode = b_parser.Parse()
-    if not bnode:
-      error_stack = b_parser.Error()
-      self.error_stack.extend(error_stack)
-      return None
+    bnode = b_parser.Parse()  # May raise
     return ast.DBracket(bnode)
 
   def ParseDParen(self):

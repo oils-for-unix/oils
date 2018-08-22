@@ -75,7 +75,7 @@ def _TwoArgs(argv):
     # TODO:
     # - syntax error
     # - separate lookup by unary
-    util.p_die('Expected unary operator, got %r', a0)
+    util.p_die('Expected unary operator, got %r (2 args)', a0)
   child = ast.StringWord(Id.Word_Compound, a1)
   return ast.BoolUnary(unary_id, child)
 
@@ -109,7 +109,7 @@ def _ThreeArgs(argv):
   if a0 == '(' and a2 == ')':
     return _StringWordTest(a1)
 
-  util.p_die('Syntax error: binary operator expected')
+  util.p_die('Syntax error: binary operator expected, got %r (3 args)', a1)
 
 
 def Test(argv, need_right_bracket):
@@ -165,10 +165,10 @@ def Test(argv, need_right_bracket):
       bool_node = b_parser.ParseForBuiltin()
 
   except util.ParseError as e:
-    util.error("test: %s", e.UserErrorString())
     # TODO: There should be a nice method to print argv.  And some way to point
     # to the error.
-    log("Error parsing test expression: %s", argv)
+    log("Error parsing %s", argv)
+    util.error("test: %s", e.UserErrorString())
     return 2  # parse error is 2
 
   # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
@@ -185,7 +185,7 @@ def Test(argv, need_right_bracket):
     # e.g. [ -t xxx ]
     # TODO: Printing the location would be nice.
     util.error('test: %s', e.UserErrorString())
-    return 2
+    return 2  # because this is more like a parser error.
 
   status = 0 if b else 1
   return status
