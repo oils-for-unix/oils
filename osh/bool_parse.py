@@ -65,7 +65,6 @@ class BoolParser(object):
     self.error_stack = []
 
   def _NextOne(self, lex_mode=lex_mode_e.DBRACKET):
-    #print('_Next', self.cur_word)
     n = len(self.words)
     if n == 2:
       assert lex_mode == lex_mode_e.DBRACKET
@@ -73,17 +72,14 @@ class BoolParser(object):
       self.cur_word = self.words[0]
       del self.words[1]
     elif n in (0, 1):
-      w = self.w_parser.ReadWord(lex_mode)
-      if not w:
-        err = self.w_parser.Error()
-        self.error_stack.extend(err)
-        return False
+      w = self.w_parser.ReadWord(lex_mode)  # may raise
       if n == 0:
         self.words.append(w)
       else:
         self.words[0] = w
       self.cur_word = w
 
+    assert self.cur_word is not None
     self.op_id = word.BoolId(self.cur_word)
     self.b_kind = LookupKind(self.op_id)
     #log('--- word %s', self.cur_word)
@@ -98,9 +94,7 @@ class BoolParser(object):
     it's Id.WS_Newline -- we might have to unread tokens, etc.
     """
     while True:
-      w = self._NextOne(lex_mode=lex_mode)
-      if not w:
-        return False
+      self._NextOne(lex_mode=lex_mode)
       if self.op_id != Id.Op_Newline:
         break
     return True
@@ -110,12 +104,12 @@ class BoolParser(object):
     if n != 1:
       raise AssertionError(self.words)
 
-    w = self.w_parser.ReadWord(lex_mode_e.DBRACKET)
+    w = self.w_parser.ReadWord(lex_mode_e.DBRACKET)  # may raise
     self.words.append(w)  # Save it for _Next()
     return w
 
   def Parse(self):
-    if not self._Next(): return None
+    self._Next()
 
     node = self.ParseExpr()
     if self.op_id != Id.Lit_DRightBracket:
@@ -131,7 +125,7 @@ class BoolParser(object):
 
   def ParseForBuiltin(self):
     """For test builtin."""
-    if not self._Next(): return None
+    self._Next()
 
     node = self.ParseExpr()
     if self.op_id != Id.Eof_Real:
@@ -149,13 +143,10 @@ class BoolParser(object):
     Expr    : Term (OR Expr)?
     """
     left = self.ParseTerm()
-    if not left:
-      return None  # TODO: An exception should handle this case.
-    # [[ uses || while [ uses -o
+    # [[ uses || but [ uses -o
     if self.op_id in (Id.Op_DPipe, Id.BoolUnary_o):
-      if not self._Next(): return None
+      self._Next()
       right = self.ParseExpr()
-      if not right: return None
       return ast.LogicalOr(left, right)
     else:
       return left
@@ -168,13 +159,10 @@ class BoolParser(object):
     Term    : Negated (AND Term)?
     """
     left = self.ParseNegatedFactor()
-    if not left:
-      return None  # TODO: An exception should handle this case.
-    # [[ uses && while [ uses -a
+    # [[ uses && but [ uses -a
     if self.op_id in (Id.Op_DAmp, Id.BoolUnary_a):
-      if not self._Next(): return None
+      self._Next()
       right = self.ParseTerm()
-      if not right: return None
       return ast.LogicalAnd(left, right)
     else:
       return left
@@ -184,9 +172,8 @@ class BoolParser(object):
     Negated : '!'? Factor
     """
     if self.op_id == Id.KW_Bang:
-      if not self._Next(): return None
+      self._Next()
       child = self.ParseFactor()
-      if not child: return None
       return ast.LogicalNot(child)
     else:
       return self.ParseFactor()
@@ -201,9 +188,9 @@ class BoolParser(object):
     if self.b_kind == Kind.BoolUnary:
       # Just save the type and not the token itself?
       op = self.op_id
-      if not self._Next(): return None
+      self._Next()
       w = self.cur_word
-      if not self._Next(): return None
+      self._Next()
       node = ast.BoolUnary(op, w)
       return node
 
@@ -218,16 +205,16 @@ class BoolParser(object):
       if t2_b_kind in (Kind.BoolBinary, Kind.Redir):
         left = self.cur_word
 
-        if not self._Next(): return None
+        self._Next()
         op = self.op_id
 
         # TODO: Need to change to lex_mode_e.BASH_REGEX.
         # _Next(lex_mode) then?
         is_regex = t2_op_id == Id.BoolBinary_EqualTilde
         if is_regex:
-          if not self._Next(lex_mode=lex_mode_e.BASH_REGEX): return None
+          self._Next(lex_mode=lex_mode_e.BASH_REGEX)
         else:
-          if not self._Next(): return None
+          self._Next()
 
         right = self.cur_word
         if is_regex:
@@ -238,24 +225,25 @@ class BoolParser(object):
 
           ok, regex_str, unused_quoted = word.StaticEval(right)
 
+          # TODO: Should raise exception with error?
           # doesn't contain $foo, etc.
           if ok and not libc.regex_parse(regex_str):
             p_die("Invalid regex: %r" % regex_str, word=right)
 
-        if not self._Next(): return None
+        self._Next()
         return ast.BoolBinary(op, left, right)
       else:
         # [[ foo ]]
         w = self.cur_word
-        if not self._Next(): return None
+        self._Next()
         return ast.WordTest(w)
 
     if self.op_id == Id.Op_LParen:
-      if not self._Next(): return None
+      self._Next()
       node = self.ParseExpr()
       if self.op_id != Id.Op_RParen:
         p_die('Expected ), got %s', self.cur_word, word=self.cur_word)
-      if not self._Next(): return None
+      self._Next()
       return node
 
     # It's not WORD, UNARY_OP, or '('

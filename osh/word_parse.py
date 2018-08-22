@@ -1215,8 +1215,10 @@ class WordParser(object):
       if not need_more:
         break
 
+    # TODO: Just let it raise
     if not w:  # Assumes AddErrorContext was already called
-      return None
+      error_stack = self.Error()
+      p_die('ReadWord: %s', error_stack[-1])
 
     self.cursor = w
 
