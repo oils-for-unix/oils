@@ -219,13 +219,23 @@ class Executor(object):
 
     source_name = '<trap string>'
     self.arena.PushSource(source_name)
+
     try:
-      node = c_parser.ParseWholeFile()
-      if not node:
+      # TODO: Get rid of duplicate error handling:
+      err = None
+      try:
+        node = c_parser.ParseWholeFile()
+      except util.ParseError as e:
+        err = e
+      else:
+        if not node:
+          err = c_parser.Error()
+
+      if err:
         util.error('Parse error in %r:', source_name)
-        err = c_parser.Error()
         ui.PrintErrorStack(err, self.arena, sys.stderr)
         return None
+
     finally:
       self.arena.PopSource()
 

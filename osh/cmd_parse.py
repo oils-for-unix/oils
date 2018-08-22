@@ -21,6 +21,7 @@ from osh.meta import ast, Id, Kind, types
 from osh.bool_parse import BoolParser
 
 log = util.log
+p_die = util.p_die
 command_e = ast.command_e
 word_e = ast.word_e
 assign_op_e = ast.assign_op_e
@@ -267,9 +268,7 @@ class CommandParser(object):
 
       if not self._Peek(): return None
       if self.c_kind != Kind.Word:
-        self.AddErrorContext(
-            'Expected word after redirect operator', word=self.cur_word)
-        return None
+        p_die('Invalid token after redirect operator', word=self.cur_word)
 
       new_word = word.TildeDetect(self.cur_word)
       node.arg_word = new_word or self.cur_word
