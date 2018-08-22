@@ -1219,7 +1219,6 @@ class CommandParser(object):
     if not bnode:
       error_stack = b_parser.Error()
       self.error_stack.extend(error_stack)
-      self.AddErrorContext("Error parsing [[", word=maybe_error_word)
       return None
     return ast.DBracket(bnode)
 

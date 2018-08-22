@@ -43,6 +43,7 @@ except ImportError:
 
 lex_mode_e = types.lex_mode_e
 log = util.log
+p_die = util.p_die
 
 
 class BoolParser(object):
@@ -125,9 +126,8 @@ class BoolParser(object):
 
     node = self.ParseExpr()
     if self.op_id != Id.Lit_DRightBracket:
-      self.AddErrorContext("Unexpected extra word %r", self.cur_word,
-                           word=self.cur_word)
-      return None
+      #p_die("Expected ]], got %r", self.cur_word, word=self.cur_word)
+      p_die('Expected ]]', word=self.cur_word)
     return node
 
   def _TestAtEnd(self):
@@ -247,8 +247,7 @@ class BoolParser(object):
 
           # doesn't contain $foo, etc.
           if ok and not libc.regex_parse(regex_str):
-            self.AddErrorContext("Invalid regex: %r" % regex_str, word=right)
-            return None
+            p_die("Invalid regex: %r" % regex_str, word=right)
 
         if not self._Next(): return None
         return ast.BoolBinary(op, left, right)
@@ -268,7 +267,5 @@ class BoolParser(object):
       if not self._Next(): return None
       return node
 
-    # TODO: A proper error, e.g. for [[ && ]] or [[ ]]
-    self.AddErrorContext(
-        'Unexpected token: %s' % self.cur_word, word=self.cur_word)
-    return None
+    # It's not WORD, UNARY_OP, or '('
+    p_die('Unexpected token in boolean expression', word=self.cur_word)
