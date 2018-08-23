@@ -98,7 +98,7 @@ END_MULTILINE_RE = re.compile(r'''
 ''', re.VERBOSE)
 
 # Line types
-TEST_CASE_BEGIN = 0  # Starts with ###
+TEST_CASE_BEGIN = 0  # Starts with ####
 KEY_VALUE = 1  # Metadata
 KEY_VALUE_MULTILINE = 2  # STDOUT STDERR
 END_MULTILINE = 3  # STDOUT STDERR
