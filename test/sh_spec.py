@@ -80,8 +80,8 @@ def log(msg, *args):
 
 
 # EXAMPLES:
-# stdout: foo
-# stdout-json: ""
+## stdout: foo
+## stdout-json: ""
 #
 # In other words, it could be (name, value) or (qualifier, name, value)
 
