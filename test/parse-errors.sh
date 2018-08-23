@@ -125,6 +125,11 @@ arith-expr() {
 
   # Triggered a crash!
   _error-case '$(( - ; ))'
+
+  # NOTE: This is confusing, should point to ` for command context?
+  _error-case '$(( ` ))'
+
+  _error-case '$(( $ ))'
 }
 
 bool-expr() {

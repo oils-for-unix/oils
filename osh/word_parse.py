@@ -276,8 +276,6 @@ class WordParser(object):
       self._Peek()
     else:
       anode = self._ReadArithExpr()
-      if not anode:
-        return None
       op = ast.ArrayIndex(anode)
 
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
@@ -723,15 +721,7 @@ class WordParser(object):
     c_parser = parse_lib.MakeParserForCommandSub(self.line_reader, self.lexer)
 
     node = c_parser.ParseWholeFile()  # `` and $() allowed
-    if not node:
-      # Example of parse error:
-      # echo $(cat |)  OR
-      # echo `cat |`
-      error_stack = c_parser.Error()
-      self.error_stack.extend(error_stack)
-      print(self.error_stack)
-      self.AddErrorContext('Error parsing commmand list in command sub')
-      return None
+    assert node is not None
 
     # Hm this creates its own word parser, which is thrown away?
     #print('X', self.cur_token)
@@ -789,10 +779,6 @@ class WordParser(object):
     # $((echo / foo))  # looks like division
 
     anode = self._ReadArithExpr()
-    if not anode:
-      self.AddErrorContext("Error parsing arith sub part")
-      return None
-
     if self.token_type != Id.Arith_RParen:
       p_die('Expected first ) to end arith sub, got %r', self.cur_token.val,
             token=self.cur_token)
@@ -818,10 +804,6 @@ class WordParser(object):
     left_span_id = self.cur_token.span_id
 
     anode = self._ReadArithExpr()
-    if not anode:
-      self.AddErrorContext("Error parsing arith sub part")
-      return None
-
     if self.token_type != Id.Arith_RBracket:
       p_die('Expected ], got %r', self.cur_token.val, token=self.cur_token)
 
@@ -1040,14 +1022,11 @@ class WordParser(object):
 
   def _ReadArithWord(self):
     """Helper function for ReadArithWord."""
-    #assert self.token_type != Id.Undefined_Tok
+
     self._Peek()
-    #print('_ReadArithWord', self.cur_token)
 
     if self.token_kind == Kind.Unknown:
-      self.AddErrorContext("Unknown token in arith context: %s",
-          self.cur_token, token=self.cur_token)
-      return None, False
+      p_die('Unexpected token in arithmetic context', token=self.cur_token)
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
@@ -1079,8 +1058,7 @@ class WordParser(object):
       return w, False
 
     else:
-      self._BadToken("Unexpected token parsing arith sub: %s", self.cur_token)
-      return None, False
+      assert False, ("Unexpected token parsing arith sub: %s", self.cur_token)
 
     raise AssertionError("Shouldn't get here")
 
@@ -1192,8 +1170,10 @@ class WordParser(object):
       if not need_more:
         break
 
-    # TODO: Just let it raise
-    if not w:  # Assumes AddErrorContext was already called
+    # TODO: Change the interface of _ReadArithWord and _ReadWord.
+    # Error cases should raise ParseError.
+    # Then they should return either the word, or None to try again?
+    if not w:
       error_stack = self.Error()
       p_die('ReadWord: %s', error_stack[-1])
 

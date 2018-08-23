@@ -268,6 +268,7 @@ class PartialParseTest(unittest.TestCase):
     # CommandSubPart
     print(f('echo $('))
     print(f('echo $(ls '))
+    print(f('echo $(ls foo'))
 
     #print(f('echo `'))
     #print(f('echo `ls '))

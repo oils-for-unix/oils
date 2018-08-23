@@ -1498,7 +1498,7 @@ class CommandParser(object):
     # This calls ParseAndOr(), but I think it should be a loop that calls
     # ParseCommandLine(), like oil.InteractiveLoop.
     node = self.ParseCommandTerm()
-    if node is None: return None
+    assert node is not None
     assert node is not False
 
     return node
