@@ -192,8 +192,20 @@ quoted-strings() {
 cmd-parse() {
   set +o errexit
 
+  _error-case 'FOO=1 break'
+  _error-case 'break 1 2'
+}
+
+redirect() {
+  set +o errexit
+
   _error-case 'echo < <<'
   _error-case 'echo $( echo > >>  )'
+
+  _error-case 'FOO=1 BAR=2 > out'
+  _error-case '> out FOO=1 BAR=2'
+
+  _error-case 'local BAR=2 > out'
 }
 
 simple-command() {
@@ -207,8 +219,12 @@ simple-command() {
 
 assign() {
   set +o errexit
+  _error-case 'local name$x'
   _error-case 'local "ab"'
   _error-case 'local a.b'
+
+  _error-case 'FOO=1 local foo=1'
+
 }
 
 # I can't think of any other here doc error conditions except arith/var/command
@@ -239,6 +255,8 @@ cases-in-strings() {
 
   cmd-parse
   simple-command
+  redirect
+  here-doc
 
   # Word
   word-parse

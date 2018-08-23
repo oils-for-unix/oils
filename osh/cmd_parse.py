@@ -417,14 +417,12 @@ class CommandParser(object):
         # It sets global variables.
         ok, static_val, quoted = word.StaticEval(w)
         if not ok or quoted:
-           self.AddErrorContext(
-               'Variable names must be constant strings, got %s', w, word=w)
-           return None
+          p_die("Variable names must be unquoted constants", word=w)
 
         # No value is equivalent to ''
         if not match.IsValidVarName(static_val):
-          self.AddErrorContext('Invalid variable name %r', static_val, word=w)
-          return None
+          p_die('Invalid variable name %r', static_val, word=w)
+
         a = (static_val, assign_op_e.Equal, None, left_spid)
 
       assignments.append(a)
@@ -544,9 +542,7 @@ class CommandParser(object):
       if redirects:
         binding1 = prefix_bindings[0]
         _, _, _, spid = binding1
-        self.AddErrorContext('Got redirects in global assignment',
-                             span_id=spid)
-        return None
+        p_die("Global assignment shouldn't have redirects", span_id=spid)
 
       pairs = []
       for lhs, op, rhs, spid in prefix_bindings:
@@ -582,17 +578,13 @@ class CommandParser(object):
         if redirects:
           # Attach the error location to the keyword.  It would be more precise
           # to attach it to the
-          self.AddErrorContext('Got redirects in assignment', token=kw_token)
-          return None
+          p_die("Assignments shouldn't have redirects", token=kw_token)
 
         if prefix_bindings:  # FOO=bar local spam=eggs not allowed
           # Use the location of the first value.  TODO: Use the whole word
           # before splitting.
           _, _, v0, _ = prefix_bindings[0]
-          self.AddErrorContext(
-              'Invalid prefix bindings in assignment: %s', prefix_bindings,
-              word=v0)
-          return None
+          p_die("Assignments shouldn't have environment bindings", word=v0)
 
         node = self._MakeAssignment(kw_token.id, suffix_words)
         if not node: return None
@@ -605,13 +597,9 @@ class CommandParser(object):
         return None
 
       if prefix_bindings:  # FOO=bar local spam=eggs not allowed
-        # Use the location of the first value.  TODO: Use the whole word before
-        # splitting.
+        # TODO: Change location as above
         _, _, v0, _ = prefix_bindings[0]
-        self.AddErrorContext(
-            'Invalid prefix bindings in control flow: %s', prefix_bindings,
-            word=v0)
-        return None
+        p_die("Control flow shouldn't have environment bindings", word=v0)
 
       # Attach the token for errors.  (Assignment may not need it.)
       if len(suffix_words) == 1:
@@ -619,10 +607,7 @@ class CommandParser(object):
       elif len(suffix_words) == 2:
         arg_word = suffix_words[1]
       else:
-        # Underline the extra word.
-        self.AddErrorContext(
-            'Unexpected argument to %r', kw_token.val, word=suffix_words[2])
-        return None
+        p_die('Unexpected argument to %r', kw_token.val, word=suffix_words[2])
 
       return ast.ControlFlow(kw_token, arg_word)
 
