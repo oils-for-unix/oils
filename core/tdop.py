@@ -223,10 +223,6 @@ class TdopParser(object):
 
     self.error_stack = []
 
-  def AddErrorContext(self, msg, *args, **kwargs):
-    err = util.ParseError(msg, *args, **kwargs)
-    self.error_stack.append(err)
-
   def Error(self):
     return self.error_stack
 

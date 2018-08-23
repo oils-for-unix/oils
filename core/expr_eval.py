@@ -510,7 +510,7 @@ class BoolEvaluator(_ExprEvaluator):
           mode = os.stat(s).st_mode
         except OSError:
           # TODO: Signal extra debug information?
-          #self._AddErrorContext("Error from stat(%r): %s" % (s, e))
+          #log("Error from stat(%r): %s" % (s, e))
           return False
 
         if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e

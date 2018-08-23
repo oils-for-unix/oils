@@ -593,8 +593,7 @@ class CommandParser(object):
 
     elif kind == Kind.ControlFlow:
       if redirects:
-        self.AddErrorContext('Got redirects in control flow: %s', redirects)
-        return None
+        p_die("Control flow shouldn't have redirects", token=kw_token)
 
       if prefix_bindings:  # FOO=bar local spam=eggs not allowed
         # TODO: Change location as above
@@ -676,8 +675,7 @@ class CommandParser(object):
         break
       if self.cur_word.tag != word_e.CompoundWord:
         # TODO: Can we also show a pointer to the 'for' keyword?
-        self.AddErrorContext('Invalid word in for loop', word=self.cur_word)
-        return None
+        p_die('Invalid word in for loop', word=self.cur_word)
 
       words.append(self.cur_word)
       self._Next()
@@ -704,10 +702,7 @@ class CommandParser(object):
     elif self.c_id == Id.KW_Do:  # missing semicolon/newline allowed
       pass
     else:
-      self.AddErrorContext(
-          'Unexpected token after for expression: %s', self.cur_word,
-          word=self.cur_word)
-      return None
+      p_die('Invalid word after for expression', word=self.cur_word)
 
     body_node = self.ParseDoGroup()
     if not body_node: return None
@@ -721,13 +716,9 @@ class CommandParser(object):
 
     ok, iter_name, quoted = word.StaticEval(self.cur_word)
     if not ok or quoted:
-      self.AddErrorContext(
-          "Invalid for loop variable", word=self.cur_word)
-      return None
+      p_die("Loop variable name should be a constant", word=self.cur_word)
     if not match.IsValidVarName(iter_name):
-      self.AddErrorContext(
-          "Invalid for loop variable name", word=self.cur_word)
-      return None
+      p_die("Invalid loop variable name", word=self.cur_word)
     node.iter_name = iter_name
     self._Next()  # skip past name
 
@@ -761,8 +752,9 @@ class CommandParser(object):
       # do not advance
 
     else:
+      # Hm I think these never happens?
       self.AddErrorContext("Unexpected word in for loop: %s", self.cur_word,
-          word=self.cur_word)
+                           word=self.cur_word)
       return None
 
     node.spids.extend((in_spid, semi_spid))
@@ -859,8 +851,9 @@ class CommandParser(object):
       dsemi_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Next()
     else:
+      # This never happens?
       self.AddErrorContext('Expected DSEMI or ESAC, got %s', self.cur_word,
-          word=self.cur_word)
+                           word=self.cur_word)
       return None
 
     if not self._NewlineOk(): return None
@@ -910,7 +903,6 @@ class CommandParser(object):
 
     if self.c_id != Id.KW_Esac:  # empty case list
       if not self.ParseCaseList(case_node.arms):
-        self.AddErrorContext("ParseCase: error parsing case list")
         return None
       # TODO: should it return a list of nodes, and extend?
       if not self._Peek(): return None
@@ -1044,6 +1036,7 @@ class CommandParser(object):
     if self.c_id == Id.Op_DLeftParen:
       return self.ParseDParen()
 
+    # This never happens?
     self.AddErrorContext(
         "Expected a compound command (e.g. for while if case), got %s",
         self.cur_word, word=self.cur_word)
@@ -1082,8 +1075,8 @@ class CommandParser(object):
 
     ok, name = word.AsFuncName(self.cur_word)
     if not ok:
-      self.AddErrorContext('Invalid function name', word=self.cur_word)
-      return None
+      p_die('Invalid function name', word=self.cur_word)
+
     self._Next()  # skip function name
 
     # Must be true beacuse of lookahead
@@ -1119,8 +1112,8 @@ class CommandParser(object):
     if not self._Peek(): return None
     ok, name = word.AsFuncName(self.cur_word)
     if not ok:
-      self.AddErrorContext("Invalid function name: %r", self.cur_word)
-      return None
+      p_die('Invalid KSH-style function name', word=self.cur_word)
+
     after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
     self._Next()  # skip past 'function name
 
@@ -1233,8 +1226,7 @@ class CommandParser(object):
 
     # TODO: KW_Do is also invalid here.
     if self.c_id == Id.Lit_RBrace:
-      self.AddErrorContext('Unexpected }', word=self.cur_word)
-      return None
+      p_die('Unexpected right brace', word=self.cur_word)
 
     if self.c_kind == Kind.Redir:  # Leading redirect
       return self.ParseSimpleCommand()
@@ -1249,6 +1241,7 @@ class CommandParser(object):
 
       return self.ParseSimpleCommand()  # echo foo
 
+    # Does this ever happen?
     self.AddErrorContext(
         "ParseCommand: Expected to parse a command, got %s", self.cur_word,
         word=self.cur_word)

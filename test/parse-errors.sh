@@ -194,6 +194,21 @@ cmd-parse() {
 
   _error-case 'FOO=1 break'
   _error-case 'break 1 2'
+  _error-case 'break >out'
+
+  _error-case 'for x in &'
+
+  _error-case 'for (( i=0; i<10; i++ )) ls'
+
+  _error-case 'for $x in 1 2 3; do echo $i; done'
+  _error-case 'for x.y in 1 2 3; do echo $i; done'
+  _error-case 'for x in 1 2 3; &'
+
+  _error-case 'x"y"() { echo hi; }'
+
+  _error-case 'function x"y" { echo hi; }'
+
+  _error-case '}'
 }
 
 redirect() {
