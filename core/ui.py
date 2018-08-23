@@ -125,9 +125,9 @@ def PrettyPrintError(parse_error, arena, f=sys.stderr):
   if span_id == const.NO_INTEGER:  # Any clause above might return this.
     # This is usually a bug.
     print('*** Error has no source location info ***', file=f)
-    return
+  else:
+    PrintFilenameAndLine(span_id, arena, f=f)
 
-  PrintFilenameAndLine(span_id, arena, f=f)
   print(parse_error.UserErrorString(), file=f)
 
 

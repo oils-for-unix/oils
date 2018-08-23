@@ -205,6 +205,35 @@ simple-command() {
   _error-case 'PYTHONPATH+=1 python'
 }
 
+assign() {
+  set +o errexit
+  _error-case 'local "ab"'
+  _error-case 'local a.b'
+}
+
+# I can't think of any other here doc error conditions except arith/var/command
+# substitution, and unterminated.
+here-doc() {
+  set +o errexit
+
+  # Arith in here doc
+  _error-case 'cat <<EOF
+$(( 1 * ))  
+EOF
+'
+
+  # Varsub in here doc
+  _error-case 'cat <<EOF
+invalid: ${a!}
+EOF
+'
+
+  _error-case 'cat <<EOF
+$(for x in )
+EOF
+'
+}
+
 cases-in-strings() {
   set +o errexit
 

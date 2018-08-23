@@ -121,6 +121,8 @@ class CommandParser(object):
 
         from osh import parse_lib  # Avoid circular import
         w_parser = parse_lib.MakeWordParserForHereDoc(lines, self.arena)
+
+        # NOTE: There can be different kinds of parse errors in here docs.
         word = w_parser.ReadHereDocBody()
         if not word:
           self.AddErrorContext(
