@@ -47,11 +47,18 @@ unit() {
   echo 'Hello from publish.sh'
 }
 
+compress-wild() {
+  local out="$PWD/_tmp/wild/wild.wwz"
+  pushd _tmp/wild/www
+  time zip -r -q $out .  # recursive, quiet
+  ls -l $out
+}
+
 # NOTE: Have to copy the web/ dir too?  For testing, use ./local.sh
 # test-release-tree.
 wild() {
   local user=$1
-  local host=$2
+  local host=${2:-${user}.org}  # default host looks like the name
 
   local dest
   dest="$(versioned-dest)"  # no wild/ suffix, since it's wild.wwz/
@@ -59,7 +66,7 @@ wild() {
   ssh $user@$host mkdir -p $dest
 
   rsync --archive --verbose \
-    _release/VERSION/test/wild.wwz $user@$host:$dest/
+    _tmp/wild/wild.wwz $user@$host:$dest/
 
   echo "Visit http://$dest/wild.wwz/"
 }
