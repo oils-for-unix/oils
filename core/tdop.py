@@ -259,7 +259,7 @@ class TdopParser(object):
     """
     # TODO: use Kind.Eof
     if self.op_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
-      p_die('Unexpected end of input')
+      p_die('Unexpected end of input', word=self.cur_word)
 
     t = self.cur_word
     self.Next()  # skip over the token, e.g. ! ~ + -
@@ -287,13 +287,8 @@ class TdopParser(object):
     return node
 
   def Parse(self):
-    try:
-      self.Next()  # may raise ParseError
-      node = self.ParseUntil(0)
-    except util.ParseError as e:
-      self.error_stack.append(e)
-      return None
-    return node
+    self.Next()  # may raise ParseError
+    return self.ParseUntil(0)
 
 
 class DynamicTdopParser(TdopParser):

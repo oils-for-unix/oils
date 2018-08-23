@@ -767,9 +767,7 @@ class WordParser(object):
     # calls self.ReadWord(lex_mode_e.ARITH)
     a_parser = tdop.TdopParser(arith_parse.SPEC, self)
     anode = a_parser.Parse()
-    if not anode:
-      error_stack = a_parser.Error()
-      self.error_stack.extend(error_stack)
+    assert anode is not None
     return anode  # could be None
 
   def _ReadArithSubPart(self):
@@ -846,9 +844,7 @@ class WordParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
     anode = self._ReadArithExpr()
-    if not anode:
-      self.AddErrorContext("Error parsing dparen statement")
-      return None
+    assert anode is not None
 
     #print('xx ((', self.cur_token)
     if self.token_type != Id.Arith_RParen:
@@ -866,52 +862,33 @@ class WordParser(object):
     return anode
 
   def ReadForExpression(self):
-    """Read ((i=0; i<5; ++i)) -- part of command context.
-
-    """
+    """Read ((i=0; i<5; ++i)) -- part of command context."""
     # No PushHint because we're in arith state.
     #self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
     self._Next(lex_mode_e.ARITH)  # skip over ((
 
     self._Peek()
-    if self.token_type == Id.Arith_Semi:
-      #print('Got empty init')
+    if self.token_type == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
       init_node = None
     else:
       init_node = self._ReadArithExpr(do_next=False)
-      if not init_node:
-        self.AddErrorContext("Error parsing for init")
-        return None
     self._Next(lex_mode_e.ARITH)
-    #print('INIT',init_node)
 
     self._Peek()
-    if self.token_type == Id.Arith_Semi:
-      #print('Got empty condition')
+    if self.token_type == Id.Arith_Semi:  # for (( ; ; i++ ))
       cond_node = None
     else:
       cond_node = self._ReadArithExpr(do_next=False)
-      if not cond_node:
-        self.AddErrorContext("Error parsing for cond")
-        return None
     self._Next(lex_mode_e.ARITH)
-    #print('COND',cond_node)
 
     self._Peek()
-    if self.token_type == Id.Arith_RParen:
-      #print('Got empty update')
+    if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
       update_node = None
     else:
       update_node = self._ReadArithExpr(do_next=False)
-      if not update_node:
-        self.AddErrorContext("Error parsing for update")
-        return None
     self._Next(lex_mode_e.ARITH)
-    #print('UPDATE',update_node)
 
-    #print('TT', self.cur_token)
-    # Second paren
     self._Peek()
     if self.token_type != Id.Arith_RParen:
       p_die('Expected ) to end for loop expression, got %r',
@@ -1240,8 +1217,6 @@ class WordParser(object):
     """
     w = ast.CompoundWord()
     dq = self._ReadDoubleQuotedPart(here_doc=True)
-    if not dq:
-      self.AddErrorContext('Error parsing here doc body')
-      return False
+    assert dq is not None
     w.parts.append(dq)
     return w

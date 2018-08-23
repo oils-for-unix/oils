@@ -489,10 +489,7 @@ class CommandParserTest(unittest.TestCase):
     self.assertEqual(3, len(node.children))
     self.assertEqual(command_e.Pipeline, node.tag)
 
-    # Should be an error
-    _, c_parser = InitCommandParser('ls foo|')
-    self.assertEqual(None, c_parser.ParsePipeline())
-    print(c_parser.Error())
+    _assertParseMethod(self, 'ls foo|', 'ParsePipeline', expect_success=False)
 
   def testParsePipelineBash(self):
     node = assertParseCommandList(self, 'ls | cat |& cat')

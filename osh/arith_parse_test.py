@@ -16,23 +16,16 @@ from core import legacy
 from core import word_eval
 from core import state
 from core import test_lib
+from core import util
 
 from osh import parse_lib
 #from osh import arith_parse
-
-
-class ExprSyntaxError(Exception):
-  pass
 
 
 def ParseAndEval(code_str):
   arena = test_lib.MakeArena('<arith_parse_test.py>')
   w_parser, _ = parse_lib.MakeParserForCompletion(code_str, arena)
   anode = w_parser._ReadArithExpr()  # need the right lex state?
-
-  if not anode:
-    raise ExprSyntaxError("failed %s" % w_parser.Error())
-
   print('node:', anode)
 
   mem = state.Mem('', [], {}, None)
@@ -55,7 +48,7 @@ def testEvalExpr(e, expected):
 def testSyntaxError(ex):
   try:
     actual = ParseAndEval(ex)
-  except ExprSyntaxError as e:
+  except util.ParseError as e:
     print(ex, '\t\t', e)
   else:
     raise AssertionError('Expected parse error: %r, got %r' % (ex, actual))

@@ -77,10 +77,6 @@ class CommandParser(object):
   def Error(self):
     return self.error_stack
 
-  def AddErrorContext(self, msg, *args, **kwargs):
-    err = util.ParseError(msg, *args, **kwargs)
-    self.error_stack.append(err)
-
   def GetCompletionState(self):
     return self.completion_stack
 
@@ -124,10 +120,7 @@ class CommandParser(object):
 
         # NOTE: There can be different kinds of parse errors in here docs.
         word = w_parser.ReadHereDocBody()
-        if not word:
-          self.AddErrorContext(
-              'Error reading here doc body: %s', w_parser.Error())
-          return False
+        assert word is not None
         h.body = word
         h.was_filled = True
       else:
@@ -190,12 +183,10 @@ class CommandParser(object):
     """
     if not self._Peek():
       return False
-    # TODO: It would be nicer to print the word type, right now we get a number
+    # TODO: Printing something like KW_Do is not friendly.  We can map
+    # backwards using the _KEYWORDS list in osh/lex.py.
     if self.c_id != c_id:
-      self.AddErrorContext(
-          "Expected word type %s, got %s", c_id, self.cur_word,
-          word=self.cur_word)
-      return False
+      p_die("Expected word type %s", c_id, word=self.cur_word)
     self._Next()
     return True
 
@@ -686,11 +677,7 @@ class CommandParser(object):
     for (( init; cond; update )) for_sep? do_group
     """
     node = self.w_parser.ReadForExpression()
-    if not node:
-      error_stack = self.w_parser.Error()
-      self.error_stack.extend(error_stack)
-      self.AddErrorContext("Parsing for expression failed")
-      return None
+    assert node is not None
     self._Next()
 
     if not self._Peek(): return None
@@ -751,11 +738,8 @@ class CommandParser(object):
       node.do_arg_iter = True  # implicit for loop
       # do not advance
 
-    else:
-      # Hm I think these never happens?
-      self.AddErrorContext("Unexpected word in for loop: %s", self.cur_word,
-                           word=self.cur_word)
-      return None
+    else:  # for foo BAD
+      p_die('Unexpected word after for loop variable', word=self.cur_word)
 
     node.spids.extend((in_spid, semi_spid))
 
@@ -851,10 +835,8 @@ class CommandParser(object):
       dsemi_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Next()
     else:
-      # This never happens?
-      self.AddErrorContext('Expected DSEMI or ESAC, got %s', self.cur_word,
-                           word=self.cur_word)
-      return None
+      # Happens on EOF
+      p_die('Expected ;; or esac', word=self.cur_word)
 
     if not self._NewlineOk(): return None
 
@@ -1037,10 +1019,7 @@ class CommandParser(object):
       return self.ParseDParen()
 
     # This never happens?
-    self.AddErrorContext(
-        "Expected a compound command (e.g. for while if case), got %s",
-        self.cur_word, word=self.cur_word)
-    return None
+    p_die('Unexpected word while parsing compound command', word=self.cur_word)
 
   def ParseFunctionBody(self, func):
     """
@@ -1185,15 +1164,8 @@ class CommandParser(object):
   def ParseDParen(self):
     maybe_error_word = self.cur_word
     self._Next()  # skip ((
-    #print('1 ((', self.cur_word)
     anode = self.w_parser.ReadDParen()
-    if not anode:
-      error_stack = self.w_parser.Error()
-      self.error_stack.extend(error_stack)
-      self.AddErrorContext("Error parsing ((", word=maybe_error_word)
-      return None
-
-    #print('2 ((', self.cur_word)
+    assert anode is not None
     return ast.DParen(anode)
 
   def ParseCommand(self):
@@ -1241,11 +1213,11 @@ class CommandParser(object):
 
       return self.ParseSimpleCommand()  # echo foo
 
-    # Does this ever happen?
-    self.AddErrorContext(
-        "ParseCommand: Expected to parse a command, got %s", self.cur_word,
-        word=self.cur_word)
-    return None
+    if self.c_kind == Kind.Eof:
+      p_die("Unexpected EOF while parsing command", word=self.cur_word)
+
+    # e.g. )
+    p_die("Invalid word while parsing command", word=self.cur_word)
 
   def ParsePipeline(self):
     """
@@ -1286,7 +1258,6 @@ class CommandParser(object):
 
       child = self.ParseCommand()
       if not child:
-        self.AddErrorContext('Error parsing command after pipe')
         # TODO: Return partial pipeline here?  All signatures shouldbe (ok,
         # node).  Only the completion uses the node when ok is False.
         return None
@@ -1399,9 +1370,8 @@ class CommandParser(object):
         done = True
 
       else:
-        self.AddErrorContext(
-            'ParseCommandLine: Unexpected token %s', self.cur_word)
-        return None
+        # Shouldn't happen?
+        assert False, 'ParseCommandLine: Unexpected word %s' % self.cur_word
 
       children.append(child)
 
@@ -1450,7 +1420,6 @@ class CommandParser(object):
 
       child = self.ParseAndOr()
       if not child:
-        self.AddErrorContext('Error parsing AndOr in ParseCommandTerm')
         return None
 
       if not self._Peek(): return None

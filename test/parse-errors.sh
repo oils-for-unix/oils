@@ -203,12 +203,20 @@ cmd-parse() {
   _error-case 'for $x in 1 2 3; do echo $i; done'
   _error-case 'for x.y in 1 2 3; do echo $i; done'
   _error-case 'for x in 1 2 3; &'
+  _error-case 'for foo BAD'
 
   _error-case 'x"y"() { echo hi; }'
 
   _error-case 'function x"y" { echo hi; }'
 
   _error-case '}'
+
+  _error-case 'case foo in *) echo '
+
+  _error-case 'ls foo|'
+  _error-case 'ls foo&&'
+
+  _error-case 'foo()'
 }
 
 redirect() {
