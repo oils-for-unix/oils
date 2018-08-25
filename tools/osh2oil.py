@@ -1176,6 +1176,9 @@ class OilPrinter(object):
       self.f.write(')')
       self.cursor.SkipUntil(right_spid + 1)
 
+    elif node.tag == word_part_e.EmptyPart:
+      pass
+
     else:
       raise AssertionError(node.__class__.__name__)
 

@@ -157,6 +157,9 @@ def LeftMostSpanForPart(part):
   elif part.tag == word_part_e.BracedAltPart:
     return const.NO_INTEGER
 
+  elif part.tag == word_part_e.EmptyPart:
+    return const.NO_INTEGER
+
   else:
     raise AssertionError(part.__class__.__name__)
 
