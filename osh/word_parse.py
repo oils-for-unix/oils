@@ -232,10 +232,8 @@ class WordParser(object):
         do_suffix = True
         pat.parts.pop(0)
 
-    if len(pat.parts) == 0:
-      # TODO: Print the modifier better.
-      p_die('Pattern in ${x/pat/replace} must not be empty (got modifier %s)',
-            first_part, token=self.cur_token)
+    # NOTE: If there is a modifier, the pattern can be empty, e.g.
+    # ${s/#/foo} and ${a/%/foo}.
 
     if self.token_type == Id.Right_VarSub:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string

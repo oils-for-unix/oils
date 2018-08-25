@@ -274,6 +274,7 @@ class _Replacer(object):
 class _ConstStringReplacer(_Replacer):
   def __init__(self, pat, replace_str):
     self.pat = pat
+    self.pat_len = len(pat)
     self.replace_str = replace_str
 
   def Replace(self, s, op):
@@ -281,14 +282,14 @@ class _ConstStringReplacer(_Replacer):
       return s.replace(self.pat, self.replace_str)
     elif op.do_prefix:
       if s.startswith(self.pat):
-        n = len(self.pat)
-        return self.replace_str + s[n:]
+        return self.replace_str + s[self.pat_len:]
       else:
         return s
     elif op.do_suffix:
       if s.endswith(self.pat):
-        n = len(self.pat)
-        return s[:-n] + self.replace_str
+        # NOTE: This handles ${s/#/foo}.  See spec test in var-op-strip.
+        i = len(s) - self.pat_len
+        return s[:i] + self.replace_str
       else:
         return s
     else:

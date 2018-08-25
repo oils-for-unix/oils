@@ -130,6 +130,10 @@ arith-expr() {
   _error-case '$(( ` ))'
 
   _error-case '$(( $ ))'
+
+  # "Can't assign to None" is misleading.
+  # From wild/src/distro/portage/bin/helper-functions.sh
+  _error-case '$(( ${var} = fd ))'
 }
 
 bool-expr() {

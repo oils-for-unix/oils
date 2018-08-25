@@ -85,5 +85,25 @@ argv.py "${s%%abcde}" "${s%abcde}" "${s#abcde}" "${s##abcde}"
 ['abcd', 'abcd', 'abcd', 'abcd']
 ## END
 
+#### Prepend using replacement of #
+# This case was found in Kubernetes and others
+array=(aa bb '')
+argv.py ${array[@]/#/prefix-}
+## STDOUT:
+['prefix-aa', 'prefix-bb', 'prefix-']
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
 
-
+#### Append using replacement of %
+array=(aa bb '')
+argv.py ${array[@]/%/-suffix}
+## STDOUT:
+['aa-suffix', 'bb-suffix', '-suffix']
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
