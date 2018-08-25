@@ -191,13 +191,20 @@ def DoUnarySuffixOp(s, op, arg):
 
   # For patterns, do fnmatch() in a loop.
   #
-  # TODO: Check another fast path first?
+  # TODO: The loop needs to iterate over code points, not bytes!
+  # - The forward case can probably be handled in a similar manner.
+  # - The backward case might be handled by pre-calculating an array of start
+  #   positions with _NextUtf8Char.
+  #
+  # TODO: Another potential fast path:
   #
   # v=aabbccdd
   # echo ${v#*b}  # strip shortest prefix
   #
   # If the whole thing doesn't match '*b*', then no test can succeed.  So we
   # can fail early.  Conversely echo ${v%%c*} and '*c*'.
+  #
+  # (Although honestly this whole construct is nuts and should be deprecated.)
 
   n = len(s)
   if op.op_id == Id.VOp1_Pound:  # shortest prefix

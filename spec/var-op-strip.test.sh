@@ -60,8 +60,7 @@ echo ${v%[[:alpha:]]}
 ## N-I mksh stdout: abc
 
 #### Strip unicode prefix
-# NOTE: LANG is set to utf-8.  Problem: there is no way to represent the
-# invalid character!  Instead of stdout-json, how about stdout-bytes?
+# NOTE: LANG is set to utf-8.
 v='μ-'
 echo ${v#?}  # ? is a glob that stands for one character
 ## stdout: -
