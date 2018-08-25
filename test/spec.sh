@@ -591,7 +591,7 @@ let() {
 
 for-expr() {
   sh-spec spec/for-expr.test.sh \
-    $MKSH $BASH $OSH "$@"
+    $BASH $ZSH $OSH "$@"
 }
 
 empty-bodies() {

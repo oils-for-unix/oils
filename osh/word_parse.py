@@ -846,33 +846,38 @@ class WordParser(object):
 
     return anode
 
+  def _NextNonSpace(self):
+    """Same logic as _ReadWord, but for ReadForExpresion."""
+    while True:
+      self._Next(lex_mode_e.ARITH)
+      self._Peek()
+      if self.token_kind not in (Kind.Ignored, Kind.WS):
+        break
+
   def ReadForExpression(self):
     """Read ((i=0; i<5; ++i)) -- part of command context."""
-    # No PushHint because we're in arith state.
-    #self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
-
-    self._Next(lex_mode_e.ARITH)  # skip over ((
+    self._NextNonSpace()  # skip over ((
 
     self._Peek()
     if self.token_type == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
       init_node = None
     else:
       init_node = self._ReadArithExpr(do_next=False)
-    self._Next(lex_mode_e.ARITH)
+    self._NextNonSpace()
 
     self._Peek()
     if self.token_type == Id.Arith_Semi:  # for (( ; ; i++ ))
       cond_node = None
     else:
       cond_node = self._ReadArithExpr(do_next=False)
-    self._Next(lex_mode_e.ARITH)
+    self._NextNonSpace()
 
     self._Peek()
     if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
       update_node = None
     else:
       update_node = self._ReadArithExpr(do_next=False)
-    self._Next(lex_mode_e.ARITH)
+    self._NextNonSpace()
 
     self._Peek()
     if self.token_type != Id.Arith_RParen:

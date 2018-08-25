@@ -14,23 +14,22 @@ do
     break
   fi
   echo $a
-done  # A construct borrowed from ksh93.
+done
 ## status: 0
 ## STDOUT:
 1
 2
 4
 5
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
+## END
 
 #### For loop with and without semicolon
 for ((a=1; a <= 3; a++)); do
   echo $a
-done  # A construct borrowed from ksh93.
+done
 for ((a=1; a <= 3; a++)) do
   echo $a
-done  # A construct borrowed from ksh93.
+done
 ## status: 0
 ## STDOUT:
 1
@@ -39,21 +38,46 @@ done  # A construct borrowed from ksh93.
 1
 2
 3
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
+## END
 
-#### For loop with empty head
+#### Empty init
+i=1
+for ((  ;i < 4;  i++ )); do
+  echo $i
+done
+## status: 0
+## STDOUT:
+1
+2
+3
+## END
+
+#### Empty init and cond
+i=1
+for ((  ; ;  i++ )); do
+  if test $i = 4; then
+    break
+  fi
+  echo $i
+done
+## status: 0
+## STDOUT:
+1
+2
+3
+## END
+
+#### Infinite loop with ((;;))
 a=1
-for ((;;)); do
+for ((  ;  ;  )); do
   if test $a = 4; then
     break
   fi
   echo $((a++))
-done  # A construct borrowed from ksh93.
+done
 ## status: 0
 ## STDOUT:
 1
 2
 3
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
+## END
