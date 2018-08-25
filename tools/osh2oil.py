@@ -928,8 +928,9 @@ class OilPrinter(object):
           node.parts[0].tag == word_part_e.DoubleQuotedPart):
         dq_part = node.parts[0]
 
-        # TODO: Double quoted part needs left and right IDs
         left_spid, right_spid = dq_part.spids
+        # This is not set in the case of here docs?  Why not?
+        #assert left_spid != const.NO_INTEGER, left_spid
         assert right_spid != const.NO_INTEGER, right_spid
 
         if len(dq_part.parts) == 1:

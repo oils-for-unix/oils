@@ -638,11 +638,15 @@ class WordParser(object):
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
     quoted_part = ast.DoubleQuotedPart()
-    left_spid = const.NO_INTEGER
+
+    left_spid = const.NO_INTEGER  # gets set later
     right_spid = const.NO_INTEGER  # gets set later
 
     if self.cur_token is not None:  # None in here doc case
       left_token = self.cur_token
+      left_spid = left_token.span_id
+    else:
+      left_token = None
 
     done = False
     while not done:
@@ -684,6 +688,7 @@ class WordParser(object):
         if here_doc:  # here docs will have an EOF in their token stream
           done = True
         else:
+          assert left_token is not None  # See hacky condition above
           p_die('Unexpected EOF reading double-quoted string that began here',
                 token=left_token)
 
