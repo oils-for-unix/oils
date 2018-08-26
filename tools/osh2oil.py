@@ -397,19 +397,13 @@ class OilPrinter(object):
       # need semantic analysis.
       # Would be nice to assume that it's a local though.
       if at_top_level:
-        self.f.write('global ')  # can't be redefined
-        new_assign_op_e = '::='
-        #self.f.write('global TODO := TODO')  # mutate global or define it
+        self.f.write('setglobal ')
       elif defined_locally:
-        new_assign_op_e = ':='  # assume mutation of local
+        self.f.write('set ')
         #self.f.write('[local mutated]')
       else:
         # we're in a function, but it's not defined locally.
-        self.f.write('global ')  # assume mutation of local
-        if self.mode == PEDANTIC:  # assume globals defined
-          new_assign_op_e = '::='
-        else:
-          new_assign_op_e = ':='
+        self.f.write('setglobal ')  # assume mutation of local
 
     elif node.keyword == Id.Assign_Readonly:
       # Explicit const.  Assume it can't be redefined.
@@ -425,11 +419,14 @@ class OilPrinter(object):
       if at_top_level:
         self.cursor.PrintUntil(keyword_spid)
         self.cursor.SkipUntil(keyword_spid + 1)
-        self.f.write('const')  # can't be redefined
+        self.f.write('const')
       elif defined_locally:
-        self.f.write('setconst FOO = "bar"')
+        raise RuntimeError("Constant redefined locally")
       else:
-        self.f.write('setconst global FOO = "bar"')
+        # Same as global level
+        self.cursor.PrintUntil(keyword_spid)
+        self.cursor.SkipUntil(keyword_spid + 1)
+        self.f.write('const')
 
     elif node.keyword == Id.Assign_Declare:
       # declare -rx foo spam=eggs
@@ -459,6 +456,8 @@ class OilPrinter(object):
 
       # foo=bar -> foo = 'bar'
       #print('RHS', pair.rhs, file=sys.stderr)
+
+      # TODO: This should be translated from EmptyWord.
       if pair.rhs is None:
         self.f.write("''")  # local i -> var i = ''
       else:
@@ -472,7 +471,7 @@ class OilPrinter(object):
       # TODO: How to distinguish between echo hi; echo bye; and on separate
       # lines
       for child in node.children:
-        self.DoCommand(child, local_symbols)
+        self.DoCommand(child, local_symbols, at_top_level=at_top_level)
 
     elif node.tag == command_e.SimpleCommand:
       # How to preserve spaces between words?  Do you want to do it?

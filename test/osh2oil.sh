@@ -111,9 +111,17 @@ OIL
 
 suffix-ops() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
-echo ${s:-3} ${s##suffix}
+echo ${s:-3}
+echo ${s:-}
+echo ${s:-''}
+echo ${s:-""}
+echo ${s##suffix}
 OSH
-echo $(s or 3) $s.trimRight('suffix')
+echo $(s or '3')
+echo $(s or '')
+echo $(s or '')
+echo $(s or "")
+echo $s.trimRight('suffix')
 OIL
 }
 
@@ -318,46 +326,111 @@ env FOO=$(bar) BAR=$[echo hi] echo 2
 OIL
 }
 
-assign-common() {
-  # top level
-  osh-to-oil --fix -c 'foo=bar spam="$var"'
-  osh-to-oil --fix -c 'readonly foo=bar spam="${var}"'
-  osh-to-oil --fix -c 'export foo=bar spam="${var}/const"'
+assign2() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+foo=bar spam="$var"
+OSH
+setglobal foo = 'bar', spam = $var
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+readonly foo=bar spam="${var}"
+OSH
+const foo = 'bar', spam = $(var)
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() {
+  local foo=bar spam=eggs
+  foo=mutated
+  g=new
+}
+OSH
+proc f {
+  var foo = 'bar', spam = 'eggs'
+  set foo = 'mutated'
+  setglobal g = 'new'
+}
+OIL
+  return
 
   # Inside function
-  osh-to-oil --fix -c 'f() { foo=bar spam=${var:-default}; }'
-  osh-to-oil --fix -c 'f() { local foo=bar spam=eggs; foo=mutated; g=new; }'
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() { foo=bar spam=${var:-default}; }
+OSH
+proc f { setglobal foo = 'bar', spam = $(var or 'default'); }
+OIL
 
-  # TODO:
-  # - Test everything without a RHS.  export and readonly
-  # - Print RHS as expression
-  # - declare -- but this is more rare.  declare is usually 'var'.
+}
+
+# NOTE: This is probably wrong
+export-case() {  
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+export foo=bar spam="${var}/const"
+OSH
+export foo=bar spam="$(var)/const"
+OIL
 }
 
 # , and ; are similar.
 assign() {
+  # global variable.  Since we don't know if it's sourced, turn it into 
+  # 'setglobal'.
   osh0-oil3 << 'OSH' 3<< 'OIL'
-local foo=$(basename $1)
+g=
+g=x
 OSH
-var foo = $[basename $1]
-OIL
-  return
-
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-local one=1 two three=3
-OSH
-one = '1', two = '', three = '3'
+setglobal g = ''
+setglobal g = 'x'
 OIL
 
+  # Local variable
   osh0-oil3 << 'OSH' 3<< 'OIL'
-myStr=one
+f() {
+  local foo=$(basename $1)
+}
+OSH
+proc f {
+  var foo = $[basename $1]
+}
+OIL
+
+  # More than one local on a line
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() {
+  local one=1 two three=3
+}
+OSH
+proc f {
+  var one = '1', two = '', three = '3'
+}
+OIL
+
+  # local that is mutated
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() {
+  local one=1 two
+  one=x
+  two=y
+  g=z
+}
+OSH
+proc f {
+  var one = '1', two = ''
+  set one = 'x'
+  set two = 'y'
+  setglobal g = 'z'
+}
+OIL
+
+  # Top-level constant
+  osh0-oil3 << 'OSH' 3<< 'OIL'
 readonly myConstStr=two
 OSH
-var myStr = 'hi'
-myConstStr = 'hi'
+const myConstStr = 'two'
 OIL
 
+  # Local constant
   osh0-oil3 << 'OSH' 3<< 'OIL'
 f() {
   local myStr=one
@@ -365,8 +438,8 @@ f() {
 }
 OSH
 proc f {
-  var myStr = 'hi'
-  myConstStr = 'hi'
+  var myStr = 'one'
+  const myConstStr = 'two'
 }
 OIL
 
@@ -378,7 +451,7 @@ f() {
 OSH
 proc f {
   var myStr = $1
-  myConstStr = $(1 + 2)
+  const myConstStr = $(1 + 2)
 }
 OIL
 }
