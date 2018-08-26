@@ -80,15 +80,22 @@ OIL
 
 arg-array() {
   # Only "$@" goes to @Argv
-  # "__$@__" goes "$join(Argv)__"
+  # "__$@__" should be
+  #
+  # "__$Argv[0]" @Argv[1:-1] "$Argv[-1]__"
+  # 
+  # But this is probably too rare to really happen.  Just remove it.
+
   # Yeah the rest go to $join(Argv)
   # does join respect IFS though?  Have to work that out.
   # or maybe $ifsjoin(Argv) -- make explicit the global variable.
 
+  # NOTE: This is with autosplit?  What about without splitting?
+
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo $@ $* "$@" "$*" "__$@__" "__$*__"
 OSH
-echo $Status $len(Argv) @Argv
+echo $ifsjoin(Argv) $ifsjoin(Argv) @Argv "$ifsjoin(Argv)" "__$ifsjoin(Argv)__" "__$ifsjoin(Argv)__"
 OIL
 }
 
@@ -791,6 +798,8 @@ if true {
 OIL
 }
 
+# TODO: This should match $foo with ...
+
 case_() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 case $var in
@@ -802,13 +811,13 @@ case $var in
     ;;
 esac
 OSH
-matchstr $var {
-  foo|bar {
+match $var {
+  with foo|bar
     test -f foo && echo file
-    }
-  * {
+    
+  with *
     echo default
-    }
+    
 }
 OIL
 
@@ -819,11 +828,10 @@ case "$var" in
     echo bar  # no dsemi
 esac
 OSH
-matchstr $var {
-  * {
+match $var {
+  with *
     echo foo
     echo bar  # no dsemi
-    }
 }
 OIL
 }
@@ -962,7 +970,45 @@ echo $(( a << 1 .| b .& 1 ))
 OIL
 }
 
-# newerThan, olderThan, etc.
+dbracket-pattern() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+if [[ $foo == *.py ]]; then
+  echo Python
+fi
+OSH
+if (foo ~ *.py) {
+  echo Python
+}
+OIL
+
+  # Negated match
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+if [[ $foo != *.py ]]; then
+  echo Python
+fi
+OSH
+if (foo !~ *.py) {
+  echo Python
+}
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+regex='.*\.py'
+if [[ $foo =~ $regex ]]; then
+  echo Python
+fi
+OSH
+setglobal regex = '.*\.py'
+if (foo ~ ERE/$regex/) {
+  echo Python
+}
+OIL
+}
+
+# Honestly test -dir /  is OK?
+#
+# What about newerThan, olderThan, etc.
+
 dbracket() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 [[ -d / ]] && echo "is dir"

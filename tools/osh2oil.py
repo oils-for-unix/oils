@@ -739,7 +739,7 @@ class OilPrinter(object):
       case_spid, in_spid, esac_spid = node.spids
       self.cursor.PrintUntil(case_spid)
       self.cursor.SkipUntil(case_spid + 1)
-      self.f.write('matchstr')
+      self.f.write('match')
 
       # Reformat "$1" to $1
       self.DoWordInCommand(node.to_match, local_symbols)
@@ -768,24 +768,20 @@ class OilPrinter(object):
         for pat in arm.pat_list:
           pass
 
-        # Skip this
+        self.f.write('with ')
+        # Remove the )
         self.cursor.PrintUntil(rparen_spid)
         self.cursor.SkipUntil(rparen_spid + 1)
-        self.f.write(' {')  # surround it with { }
 
         for child in arm.action:
           self.DoCommand(child, local_symbols)
 
         if dsemi_spid != const.NO_INTEGER:
+          # Remove ;;
           self.cursor.PrintUntil(dsemi_spid)
           self.cursor.SkipUntil(dsemi_spid + 1)
-          # NOTE: indentation here will be off because ;; is likely indented
-          # with body.
-          self.f.write('}')
         elif last_spid != const.NO_INTEGER:
           self.cursor.PrintUntil(last_spid)
-          # NOTE: Indentation is also off here.  Arbitrarily put 4 spaces.
-          self.f.write('    }\n')
         else:
           raise AssertionError(
               "Expected with dsemi_spid or last_spid in case arm")
