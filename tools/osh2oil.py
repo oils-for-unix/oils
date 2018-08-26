@@ -1,8 +1,6 @@
 from __future__ import print_function
 """
-fix.py -- Do source transformations.  Somewhat like 'go fix'.
-
-TODO: Change := to =, and var/const/set
+osh2oil.py: Translate OSH to Oil.
 """
 
 import sys

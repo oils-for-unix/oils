@@ -305,7 +305,29 @@ single quoted
 '''
 OIL
 
-  # TODO: <<-
+  # <<- is indented
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+  cat <<-'ONE'
+  indented
+  body
+  ONE
+OSH
+  cat << '''
+  indented
+  body
+  '''
+OIL
+
+}
+
+here-string() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+cat <<< "double $foo"
+cat <<< 'single'
+OSH
+cat << "double $foo"
+cat << 'single'
+OIL
 }
 
 more-env() {
@@ -326,45 +348,8 @@ env FOO=$(bar) BAR=$[echo hi] echo 2
 OIL
 }
 
-assign2() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-foo=bar spam="$var"
-OSH
-setglobal foo = 'bar', spam = $var
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-readonly foo=bar spam="${var}"
-OSH
-const foo = 'bar', spam = $(var)
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-f() {
-  local foo=bar spam=eggs
-  foo=mutated
-  g=new
-}
-OSH
-proc f {
-  var foo = 'bar', spam = 'eggs'
-  set foo = 'mutated'
-  setglobal g = 'new'
-}
-OIL
-  return
-
-  # Inside function
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-f() { foo=bar spam=${var:-default}; }
-OSH
-proc f { setglobal foo = 'bar', spam = $(var or 'default'); }
-OIL
-
-}
-
 # NOTE: This is probably wrong
-export-case() {  
+export-case() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 export foo=bar spam="${var}/const"
 OSH
@@ -456,6 +441,44 @@ proc f {
 OIL
 }
 
+assign2() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+foo=bar spam="$var"
+OSH
+setglobal foo = 'bar', spam = $var
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+readonly foo=bar spam="${var}"
+OSH
+const foo = 'bar', spam = $(var)
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() {
+  local foo=bar spam=eggs
+  foo=mutated
+  g=new
+}
+OSH
+proc f {
+  var foo = 'bar', spam = 'eggs'
+  set foo = 'mutated'
+  setglobal g = 'new'
+}
+OIL
+  return
+
+  # Inside function
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() { foo=bar spam=${var:-default}; }
+OSH
+proc f { setglobal foo = 'bar', spam = $(var or 'default'); }
+OIL
+
+}
+
+
 array-literal() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 a=(1 2 3)
@@ -491,6 +514,38 @@ OIL
 ! echo hi | wc
 OSH
 not -- echo hi | wc
+OIL
+}
+
+# 'set' is a keyword in Oil, so the multiple usages of 'set' builtin have to
+# become something else.
+
+builtin-set() {
+  # option is a keyword like setglobal?  The RHS it optional; defaults to true?
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+set -o nounset
+set +o errexit
+OSH
+option nounset
+option errexit = false
+OIL
+
+  # We could do:
+  # setoption nounset = true, errexit = false
+
+  # Accept old syntax too
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+set -o nounset -o pipefail +o errexit
+OSH
+sh-builtin set -o nounset -o pipefail +o errexit
+OIL
+
+  # Mutating the arguments array is discouraged/deprecated in Oil.  Just 
+  # make a new first-class array instead of mutating the existing one.
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+set a b c
+OSH
+set -- a b c
 OIL
 }
 
@@ -957,6 +1012,8 @@ OIL
 
 readonly -a PASSING=(
   simple-command
+  assign
+  assign2
   more-env
   line-breaks
   redirect
@@ -990,6 +1047,10 @@ readonly -a PASSING=(
   # Builtins
   bracket-builtin
 )
+
+list-all-tests() {
+  egrep '^[a-z0-9_\-]+\(\) {' $0
+}
 
 all-passing() {
   run-all "${PASSING[@]}"
