@@ -794,6 +794,22 @@ def Shopt(argv, exec_opts):
   return 0
 
 
+COMPGEN_SPEC = _Register('compgen')
+COMPGEN_SPEC.ShortFlag('-A', args.Str)
+
+
+def Compgen(argv, funcs):
+  arg, i = COMPGEN_SPEC.Parse(argv)
+  status = 0
+  if arg.A:
+    for func_name in funcs:
+      print(func_name)
+  else:
+    util.warn('*** command without -A not implemented ***')
+    status = 1
+  return status
+
+
 UNSET_SPEC = _Register('unset')
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
