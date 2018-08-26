@@ -180,9 +180,6 @@ class Executor(object):
       util.error('Oil was not built with readline/completion.')
     return 0
 
-  #def _CompGen(self, argv):
-    #raise NotImplementedError
-
   def _EvalHelper(self, c_parser, source_name):
     self.arena.PushSource(source_name)
     try:
