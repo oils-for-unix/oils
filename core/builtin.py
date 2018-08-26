@@ -798,7 +798,7 @@ COMPGEN_SPEC = _Register('compgen')
 COMPGEN_SPEC.ShortFlag('-A', args.Str)
 
 
-def Compgen(argv, funcs):
+def CompGen(argv, funcs):
   arg, i = COMPGEN_SPEC.Parse(argv)
   status = 0
   if arg.A:
