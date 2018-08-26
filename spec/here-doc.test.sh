@@ -39,10 +39,13 @@ EOF3
 ## END
 
 #### Here doc with bad var delimiter
+# Most shells accept this, but OSH is stricter.
 cat <<${a}
 here
 ${a}
 ## stdout: here
+## OK osh stdout-json: ""
+## OK osh status: 2
 
 #### Here doc with bad comsub delimiter
 # bash is OK with this; dash isn't.  Should be a parse error.

@@ -88,6 +88,7 @@ SET_OPTIONS = [
     (None, 'strict-array'),
     (None, 'strict-arith'),
     (None, 'strict-word-eval'),
+    (None, 'strict-var-eval'),
 
     (None, 'vi'),
     (None, 'emacs'),
@@ -159,8 +160,11 @@ class ExecOpts(object):
     #
 
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
-    #self.strict_word = False  # word splitting, etc.
     self.strict_word_eval = False
+    # Whether we statically know variables, e.g. $PYTHONPATH vs.
+    # $ENV['PYTHONPATH'], and behavior of 'or' and 'if' expressions.
+    # This is off by default because we want the interactive shell to match.
+    self.strict_var_eval = False
     self.strict_scope = False  # disable dynamic scope
     # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
 

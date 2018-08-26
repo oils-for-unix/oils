@@ -96,10 +96,10 @@ class CommandParser(object):
           # reporting other errors.
           # Attribute it to the << in <<EOF for now.
           p_die("Couldn't find terminator for here doc that starts here",
-                span_id=h.spids[0])
+                token=h.op)
 
         # NOTE: Could do this runtime to preserve LST.
-        if h.op_id == Id.Redir_DLessDash:
+        if h.op.id == Id.Redir_DLessDash:
           line = line.lstrip('\t')
         if line.rstrip() == h.here_end:
           break
@@ -211,7 +211,7 @@ class CommandParser(object):
     if not self._Peek(): return None
     assert self.c_kind == Kind.Redir, self.cur_word
 
-    left_spid = self.cur_word.token.span_id
+    op = self.cur_word.token
 
     # For now only supporting single digit descriptor
     first_char = self.cur_word.token.val[0]
@@ -220,23 +220,23 @@ class CommandParser(object):
     else:
       fd = const.NO_INTEGER
 
-    if self.c_id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
+    if op.id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
       node = ast.HereDoc()
-      node.op_id = self.c_id
+      node.op = op
       node.body = None  # not read yet
       node.fd = fd
       node.was_filled = False
-      node.spids.append(left_spid)
       self._Next()
 
       if not self._Peek(): return None
+      node.here_begin = self.cur_word
       # "If any character in word is quoted, the delimiter shall be formed by
       # performing quote removal on word, and the here-document lines shall not
       # be expanded. Otherwise, the delimiter shall be the word itself."
       # NOTE: \EOF counts, or even E\OF
-      ok, node.here_end, quoted = word.StaticEval(self.cur_word)
+      ok, node.here_end, quoted = word.StaticEval(node.here_begin)
       if not ok:
-        p_die('Invalid here doc delimiter', word=self.cur_word)
+        p_die('Invalid here doc delimiter', word=node.here_begin)
       node.do_expansion = not quoted
       self._Next()
 
@@ -244,9 +244,8 @@ class CommandParser(object):
 
     else:
       node = ast.Redir()
-      node.op_id = self.c_id
+      node.op = op
       node.fd = fd
-      node.spids.append(left_spid)
       self._Next()
 
       if not self._Peek(): return None

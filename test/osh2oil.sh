@@ -232,6 +232,14 @@ OIL
 
 
 export-readonly() {
+  # Dynamic export falls back on sh-builtin
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+export "$@"
+OSH
+sh-builtin export @Argv
+OIL
+
   # Separate definition and attribute?
   osh0-oil3 << 'OSH' 3<< 'OIL'
 export FOO
@@ -545,7 +553,7 @@ OIL
   osh0-oil3 << 'OSH' 3<< 'OIL'
 set a b c
 OSH
-set -- a b c
+setargv a b c
 OIL
 }
 

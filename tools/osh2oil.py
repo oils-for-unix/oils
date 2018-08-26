@@ -231,7 +231,9 @@ class OilPrinter(object):
 
   def DoRedirect(self, node, local_symbols):
     #print(node, file=sys.stderr)
-    self.cursor.PrintUntil(node.spids[0])
+    op_spid = node.op.span_id
+    op_id = node.op.id
+    self.cursor.PrintUntil(op_spid)
 
     # TODO:
     # - Do < and <& the same way.
@@ -240,10 +242,10 @@ class OilPrinter(object):
 
     if node.tag == redir_e.Redir:
       if node.fd == const.NO_INTEGER:
-        if node.op_id == Id.Redir_Great:
+        if op_id == Id.Redir_Great:
           self.f.write('>')  # Allow us to replace the operator
-          self.cursor.SkipUntil(node.spids[0] + 1)
-        elif node.op_id == Id.Redir_GreatAnd:
+          self.cursor.SkipUntil(op_spid + 1)
+        elif op_id == Id.Redir_GreatAnd:
           self.f.write('> !')  # Replace >& 2 with > !2
           spid = word.LeftMostSpanForWord(node.arg_word)
           self.cursor.SkipUntil(spid)
@@ -253,10 +255,10 @@ class OilPrinter(object):
         # NOTE: Spacing like !2>err.txt vs !2 > err.txt can be done in the
         # formatter.
         self.f.write('!%d ' % node.fd)
-        if node.op_id == Id.Redir_Great:
+        if op_id == Id.Redir_Great:
           self.f.write('>')
-          self.cursor.SkipUntil(node.spids[0] + 1)
-        elif node.op_id == Id.Redir_GreatAnd:
+          self.cursor.SkipUntil(op_spid + 1)
+        elif op_id == Id.Redir_GreatAnd:
           self.f.write('> !')  # Replace 1>& 2 with !1 > !2
           spid = word.LeftMostSpanForWord(node.arg_word)
           self.cursor.SkipUntil(spid)

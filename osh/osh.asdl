@@ -140,9 +140,11 @@ module osh
   -- TODO : id -> token for translation?
 
   redir = 
-    Redir(id op_id, int fd, word arg_word)
-  | HereDoc(id op_id, int fd, word? body, int do_expansion,
-            string here_end, bool was_filled)
+    Redir(token op, int fd, word arg_word)
+  | HereDoc(token op, int fd,
+            word here_begin,  -- For translation
+            string here_end, bool do_expansion, -- Derived from here_begin
+            word? body, bool was_filled)
 
   assign_op = Equal | PlusEqual
   assign_pair = (lhs_expr lhs, assign_op op, word? rhs)

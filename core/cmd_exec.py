@@ -446,9 +446,9 @@ class Executor(object):
     raise AssertionError(node.tag)
 
   def _EvalRedirect(self, n):
-    fd = REDIR_DEFAULT_FD[n.op_id] if n.fd == const.NO_INTEGER else n.fd
+    fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == const.NO_INTEGER else n.fd
     if n.tag == redir_e.Redir:
-      redir_type = REDIR_ARG_TYPES[n.op_id]  # could be static in the LST?
+      redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
 
       if redir_type == redir_arg_type_e.Path:
         # NOTE: no globbing.  You can write to a file called '*.py'.
@@ -462,7 +462,7 @@ class Executor(object):
           util.error("Redirect filename can't be empty")
           return None
 
-        return runtime.PathRedirect(n.op_id, fd, filename)
+        return runtime.PathRedirect(n.op.id, fd, filename)
 
       elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
@@ -480,7 +480,7 @@ class Executor(object):
               "Redirect descriptor should look like an integer, got %s", val)
           return None
 
-        return runtime.DescRedirect(n.op_id, fd, target_fd)
+        return runtime.DescRedirect(n.op.id, fd, target_fd)
 
       elif redir_type == redir_arg_type_e.Here:  # here word
         # TODO: decay should be controlled by an option
