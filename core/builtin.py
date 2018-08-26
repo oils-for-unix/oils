@@ -877,7 +877,7 @@ def Command(argv, funcs, path_val):
         # This is for -v, -V is more detailed.
         print(arg)
   else:
-    util.warn('*** command without -v not not implemented ***')
+    util.warn('*** command without -v not implemented ***')
     status = 1
 
   return status
