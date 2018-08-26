@@ -801,12 +801,14 @@ COMPGEN_SPEC.ShortFlag('-A', args.Str)
 def CompGen(argv, funcs):
   arg, i = COMPGEN_SPEC.Parse(argv)
   status = 0
+
   if arg.A:
-    for func_name in funcs:
+    for func_name in sorted(funcs.iteritems()):
       print(func_name)
   else:
     util.warn('*** command without -A not implemented ***')
     status = 1
+
   return status
 
 

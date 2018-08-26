@@ -604,4 +604,8 @@ shell-grammar() {
   sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
 }
 
+compgen() {
+  sh-spec spec/compgen.test.sh $BASH $OSH "$@"
+}
+
 "$@"
