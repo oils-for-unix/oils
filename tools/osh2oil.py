@@ -341,10 +341,8 @@ class OilPrinter(object):
     # Oil keywords:
     # - global : scope qualifier
     # - var, const : mutability
-    # - setconst, export : state mutation
-    #
-    # Operators:
-    # = and :=
+    # - export : state mutation
+    # - setconst -- make a variable mutable.  or maybe freeze var?
     #
     # NOTE: Bash also has "unset".  Does anyone use it?
     # You can use "delete" like Python I guess.  It's not the opposite of
@@ -357,9 +355,6 @@ class OilPrinter(object):
     # files are in the program.
     defined_locally = False  # is it a local variable in this function?
                              # can't tell if global
-    # We can change it from = to := or ::= (in pedantic mode)
-    new_assign_op_e = None
-
     if node.keyword == Id.Assign_Local:
       # Assume that 'local' it's a declaration.  In osh, it's an error if
       # locals are redefined.  In bash, it's OK to do 'local f=1; local f=2'.
@@ -402,8 +397,9 @@ class OilPrinter(object):
         self.f.write('set ')
         #self.f.write('[local mutated]')
       else:
-        # we're in a function, but it's not defined locally.
-        self.f.write('setglobal ')  # assume mutation of local
+        # We're in a function, but it's not defined locally, so we must be
+        # mutatting a global.
+        self.f.write('setglobal ')
 
     elif node.keyword == Id.Assign_Readonly:
       # Explicit const.  Assume it can't be redefined.
@@ -421,6 +417,8 @@ class OilPrinter(object):
         self.cursor.SkipUntil(keyword_spid + 1)
         self.f.write('const')
       elif defined_locally:
+        # TODO: Actually we might want 'freeze here.  In bash, you can make a
+        # variable readonly after its defined.
         raise RuntimeError("Constant redefined locally")
       else:
         # Same as global level
@@ -451,11 +449,7 @@ class OilPrinter(object):
 
       # Replace name.  I guess it's Lit_Chars.
       self.f.write(pair.lhs.name)
-      op = new_assign_op_e if new_assign_op_e else '='
-      self.f.write(' %s ' % op)
-
-      # foo=bar -> foo = 'bar'
-      #print('RHS', pair.rhs, file=sys.stderr)
+      self.f.write(' = ')
 
       # TODO: This should be translated from EmptyWord.
       if pair.rhs is None:

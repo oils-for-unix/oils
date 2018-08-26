@@ -483,9 +483,39 @@ f() { foo=bar spam=${var:-default}; }
 OSH
 proc f { setglobal foo = 'bar', spam = $(var or 'default'); }
 OIL
-
 }
 
+assign-with-flags() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+declare -r foo=bar
+OSH
+const foo = 'bar'
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+declare -x foo=bar
+OSH
+export var foo = 'bar'
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+declare -rx foo
+declare -r -x foo
+OSH
+export const foo
+export const foo
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() {
+  local -r foo=bar
+}
+OSH
+proc f {
+  const foo = 'bar'
+}
+OIL
+}
 
 array-literal() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
@@ -966,6 +996,25 @@ echo \
 OIL
 }
 
+# Hm I still don't have a syntax for this.  I don't like $'' because it's
+# confusing with a var.  Use some other punctuation charater like %?
+# @'' and @"" ?  &''  &"" ?
+#
+# Or get rid of word joining?   'foo'"'" becomes c'foo\''
+# Glob/*.py/
+# C'foo'
+# List [1, 2, 'hi']  # JSON
+#
+# Yeah maybe capital C is better.
+
+c-literal() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo $'\tline\n'
+OSH
+echo c'\tline\n'
+OIL
+}
+
 words() {
   # I probably should drive this with specific cases, rather than making it
   # super general.  Most scripts don't use WordPart juxtaposition.
@@ -983,6 +1032,14 @@ OIL
 echo ~/'name with spaces'
 OSH
 echo "$HOME/name with spaces"
+OIL
+}
+
+word-joining() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+echo 'foo'"'" 
+OSH
+echo c'foo\''
 OIL
 }
 
