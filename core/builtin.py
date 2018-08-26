@@ -810,7 +810,7 @@ def CompGen(argv, funcs):
       for func_name,func_def in sorted(funcs.iteritems()):
         print('{}'.format(func_name))
   else:
-    util.warn('*** not implemented ***')
+    util.warn('*** command without -A not implemented ***')
     status = 1
 
   return status
