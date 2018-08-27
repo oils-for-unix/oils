@@ -295,12 +295,14 @@ EOF
 cat <<-EOF
 	1
 	2
-  3
+		3  # 2 tabs are both stripped
+  4  # spaces are preserved
 EOF
 ## STDOUT:
 1
 2
-  3
+3  # 2 tabs are both stripped
+  4  # spaces are preserved
 ## END
 
 #### Here doc within subshell with boolean

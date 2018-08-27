@@ -61,6 +61,12 @@ class Cursor(object):
     self.next_span_id = next_span_id
 
 
+def PrintArena(arena):
+  """For testing the invariant that the spans "add up" to the original doc."""
+  cursor = Cursor(arena, sys.stdout)
+  cursor.PrintUntil(arena.LastSpanId())
+
+
 def PrintAsOil(arena, node, debug_spans):
   #print node
   #print(spans)
@@ -226,8 +232,7 @@ class OilPrinter(object):
 
   def End(self):
     """Make sure we print until the end of the file."""
-    end_id = len(self.arena.spans)
-    self.cursor.PrintUntil(end_id)
+    self.cursor.PrintUntil(self.arena.LastSpanId())
 
   def DoRedirect(self, node, local_symbols):
     #print(node, file=sys.stderr)
@@ -266,10 +271,30 @@ class OilPrinter(object):
       self.DoWordInCommand(node.arg_word, local_symbols)
 
     elif node.tag == redir_e.HereDoc:
-      # TODO:
-      # If do_expansion, then """, else '''
-      # HereDoc LST node needs spids for both opening and closing delimiter.
-      raise NotImplementedError(node.__class__.__name__)
+      self.cursor.PrintUntil(node.op.span_id)
+      # Turn everything into <<.  We just change the quotes
+      self.f.write('<<')
+
+      here_begin_spid1 = word.LeftMostSpanForWord(node.here_begin)
+      #here_begin_spid2 = word.RightMostSpanForWord(node.here_begin)
+      if node.do_expansion:
+        self.f.write('"""')
+      else:
+        self.f.write("'''")
+
+      #self.cursor.SkipUntil(here_begin_spid2)
+      self.cursor.SkipUntil(here_begin_spid1 + 1)
+
+      # Now print the lines
+      self.DoWordInCommand(node.body, local_symbols)
+
+      if node.do_expansion:
+        self.f.write('"""')
+      else:
+        self.f.write("'''")
+
+      # Need
+      #self.cursor.SkipUntil(here_end_spid2)
 
     else:
       raise AssertionError(node.__class__.__name__)
@@ -916,6 +941,9 @@ class OilPrinter(object):
       if (len(node.parts) == 1 and
           node.parts[0].tag == word_part_e.DoubleQuotedPart):
         dq_part = node.parts[0]
+
+        # NOTE: In double quoted case, this is the begin and end quote.
+        # Do we need a HereDoc part?
 
         left_spid, right_spid = dq_part.spids
         # This is not set in the case of here docs?  Why not?

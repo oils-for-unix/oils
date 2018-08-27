@@ -184,8 +184,9 @@ def OshMain(argv0, argv, login_shell):
                 ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
                 default='abbrev-text')
   spec.LongFlag('--show-ast')  # execute and show
-  spec.LongFlag('--fix')
+  spec.LongFlag('--fix')  # oshc translate
   spec.LongFlag('--debug-spans')  # For oshc translate
+  spec.LongFlag('--parse-and-print-arena')  # Invariant for translation
   spec.LongFlag('--print-status')
   spec.LongFlag('--trace', ['cmd-parse', 'word-parse', 'lexer'])  # NOTE: can only trace one now
   spec.LongFlag('--hijack-shebang')
@@ -346,8 +347,10 @@ def OshMain(argv0, argv, login_shell):
 
     do_exec = True
     if opts.fix:
-      #log('SPANS: %s', arena.spans)
       osh2oil.PrintAsOil(arena, node, opts.debug_spans)
+      do_exec = False
+    if opts.parse_and_print_arena:
+      osh2oil.PrintArena(arena)
       do_exec = False
     if exec_opts.noexec:
       do_exec = False

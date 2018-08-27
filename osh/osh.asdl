@@ -135,16 +135,14 @@ module osh
   --   pass could StaticEval it to a string and set do_expansion.
   -- * To reprint the here doc, we need the here_end delimiter, but it doesn't
   --   matter at runtime.  do_expansion is calculated from it.
-  -- * was_filled is only used during the parse and should be eliminated from
-  --   serialization format.
   -- TODO : id -> token for translation?
 
   redir = 
     Redir(token op, int fd, word arg_word)
   | HereDoc(token op, int fd,
-            word here_begin,  -- For translation
-            string here_end, bool do_expansion, -- Derived from here_begin
-            word? body, bool was_filled)
+            word here_begin,  -- e.g. EOF or 'EOF'
+            int here_end_span_id,  -- this span is an entire line
+            word? body)
 
   assign_op = Equal | PlusEqual
   assign_pair = (lhs_expr lhs, assign_op op, word? rhs)

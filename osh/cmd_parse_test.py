@@ -228,7 +228,6 @@ EOF
     self.assertTrue(isinstance(dq, ast.DoubleQuotedPart))
     # 4 literal parts: VarSub, newline, right ", "two\n"
     self.assertEqual(4, len(dq.parts))
-    self.assertEqual(True, h.do_expansion)
 
   def testQuotedHereDocs(self):
     # Quoted here doc
@@ -241,7 +240,6 @@ EOF
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
     self.assertEqual(2, len(h.body.parts))  # 2 literal parts
-    self.assertEqual(False, h.do_expansion)
 
     node = assertParseCommandLine(self, """\
 cat <<'EOF'
@@ -251,7 +249,6 @@ EOF
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
     self.assertEqual(1, len(h.body.parts))  # 1 line, one literal part
-    self.assertEqual(False, h.do_expansion)
 
     # \ escape
     node = assertParseCommandLine(self, r"""\
@@ -262,7 +259,6 @@ EOF
     self.assertEqual(1, len(node.redirects))
     h = node.redirects[0]
     self.assertEqual(1, len(h.body.parts))  # 1 line, one literal part
-    self.assertEqual(False, h.do_expansion)
 
   def testLeadingTabs(self):
     node = assertParseCommandLine(self, """\
@@ -1199,21 +1195,6 @@ class ErrorLocationsTest(unittest.TestCase):
     err = _assertParseCommandListError(self, 'ls <')
 
     err = _assertParseCommandListError(self, 'ls < <')
-
-    # Invalid words as here docs
-    err = _assertParseCommandListError(self, 'cat << $(invalid here end)')
-
-    # TODO: Arith parser doesn't have location information
-    err = _assertParseCommandListError(self, 'cat << $((1+2))')
-    err = _assertParseCommandListError(self, 'cat << a=(1 2 3)')
-    err = _assertParseCommandListError(self, r'cat << \a$(invalid)')
-
-    # Actually the $invalid part should be highlighted... yeah an individual
-    # part is the problem.
-    err = _assertParseCommandListError(self, r"cat << 'single'$(invalid)")
-    err = _assertParseCommandListError(self, r'cat << "double"$(invalid)')
-    err = _assertParseCommandListError(self, r'cat << ~foo/$(invalid)')
-    err = _assertParseCommandListError(self, r'cat << $var/$(invalid)')
 
     # Word parse error in command parser
     err = _assertParseCommandListError(self, r'echo foo$(ls <)bar')

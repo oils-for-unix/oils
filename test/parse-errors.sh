@@ -282,6 +282,25 @@ EOF
 '
 }
 
+here-doc-delimiter() {
+  set +o errexit
+
+  # NOTE: This is more like the case where.
+  _error-case 'cat << $(invalid here end)'
+
+  # TODO: Arith parser doesn't have location information
+  _error-case 'cat << $((1+2))'
+  _error-case 'cat << a=(1 2 3)'
+  _error-case 'cat << \a$(invalid)'
+
+  # Actually the $invalid part should be highlighted... yeah an individual
+  # part is the problem.
+  #"cat << 'single'$(invalid)"
+  _error-case 'cat << "double"$(invalid)'
+  _error-case 'cat << ~foo/$(invalid)'
+  _error-case 'cat << $var/$(invalid)'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -289,6 +308,7 @@ cases-in-strings() {
   simple-command
   redirect
   here-doc
+  here-doc-delimiter
 
   # Word
   word-parse

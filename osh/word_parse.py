@@ -642,6 +642,7 @@ class WordParser(object):
     left_spid = const.NO_INTEGER  # gets set later
     right_spid = const.NO_INTEGER  # gets set later
 
+    # TODO: Use here doc.
     if self.cur_token is not None:  # None in here doc case
       left_token = self.cur_token
       left_spid = left_token.span_id
@@ -682,7 +683,7 @@ class WordParser(object):
           quoted_part.parts.append(ast.LiteralPart(self.cur_token))
         else:
           done = True  # assume Id.Right_DoubleQuote
-          right_spid = self.cur_token.span_id
+        right_spid = self.cur_token.span_id
 
       elif self.token_kind == Kind.Eof:
         if here_doc:  # here docs will have an EOF in their token stream
@@ -1203,8 +1204,13 @@ class WordParser(object):
       CompoundWord.  NOTE: We could also just use a DoubleQuotedPart for both
       cases?
     """
-    w = ast.CompoundWord()
     dq = self._ReadDoubleQuotedPart(here_doc=True)
     assert dq is not None
-    w.parts.append(dq)
-    return w
+    return ast.CompoundWord([dq])
+
+  # TODO: _ReadDQContext(parts) should be shared between
+  # _ReadDoubleQuotedPart() and ReadHereDocBody()
+  # Call with dq_part.parts
+  # and here_doc_node.body
+
+

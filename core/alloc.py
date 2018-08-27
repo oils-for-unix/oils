@@ -107,6 +107,10 @@ class Arena(object):
       util.log('Span ID out of range: %d', span_id)
       raise
 
+  def LastSpanId(self):
+    """Return one past the last span ID."""
+    return len(self.spans)
+
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
     assert line_id != const.NO_INTEGER, line_id

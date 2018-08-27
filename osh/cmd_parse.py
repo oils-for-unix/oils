@@ -82,14 +82,25 @@ class CommandParser(object):
 
   def _MaybeReadHereDocs(self):
     for h in self.pending_here_docs:
+      here_end_line = None
+      here_end_line_id = -1
       lines = []
+
+      # "If any character in word is quoted, the delimiter shall be formed by
+      # performing quote removal on word, and the here-document lines shall not
+      # be expanded. Otherwise, the delimiter shall be the word itself."
+      # NOTE: \EOF counts, or even E\OF
+      ok, delimiter, quoted = word.StaticEval(h.here_begin)
+      if not ok:
+        p_die('Invalid here doc delimiter', word=h.here_begin)
+      do_expansion = not quoted
+
       #log('HERE %r' % h.here_end)
       while True:
         # If op is <<-, strip off all leading tabs (NOT spaces).
         # (in C++, just bump the start?)
         line_id, line = self.line_reader.GetLine()
 
-        #print("LINE %r %r" % (line, h.here_end))
         if not line:  # EOF
           # An unterminated here doc is just a warning in bash.  We make it
           # fatal because we want to be strict, and because it causes problems
@@ -100,14 +111,17 @@ class CommandParser(object):
 
         # NOTE: Could do this runtime to preserve LST.
         if h.op.id == Id.Redir_DLessDash:
+          # NOTE: Stripping multiple leading tabs is correct!
           line = line.lstrip('\t')
-        if line.rstrip() == h.here_end:
+        if line.rstrip() == delimiter:
+          here_end_line = line
+          here_end_line_id = line_id
           break
 
         lines.append((line_id, line))
 
       parts = []
-      if h.do_expansion:
+      if do_expansion:
         # NOTE: We read all lines at once, instead of doing it line-by-line,
         # because of cases like this:
         # cat <<EOF
@@ -115,14 +129,19 @@ class CommandParser(object):
         # echo 3) 4
         # EOF
 
+        # NOTE: How to assign spids for these lines?
+        # VirtualLineReader needs to pick up the tokens somehow?
+
+        # self.arena.AddLineSpan() is the thing that assigns IDs.
+        # So here you just need to call self.AddLineSpan()!
+
         from osh import parse_lib  # Avoid circular import
         w_parser = parse_lib.MakeWordParserForHereDoc(lines, self.arena)
 
         # NOTE: There can be different kinds of parse errors in here docs.
-        word = w_parser.ReadHereDocBody()
-        assert word is not None
-        h.body = word
-        h.was_filled = True
+        w = w_parser.ReadHereDocBody()
+        assert w is not None
+        h.body = w
       else:
         # Each line is a single span.  TODO: Add span_id to token.
         tokens = [
@@ -130,10 +149,13 @@ class CommandParser(object):
             for _, line in lines]
         parts = [ast.LiteralPart(t) for t in tokens]
         h.body = ast.CompoundWord(parts)
-        h.was_filled = True
 
-    # No .clear() until Python 3.3.
-    del self.pending_here_docs[:]
+      # Create a span with the end terminator.  Maintains the invariant that
+      # the spans "add up".
+      line_span = ast.line_span(here_end_line_id, 0, len(here_end_line))
+      unused_spid = self.arena.AddLineSpan(line_span)
+
+    del self.pending_here_docs[:]  # No .clear() until Python 3.3.
 
     return True
 
@@ -225,19 +247,10 @@ class CommandParser(object):
       node.op = op
       node.body = None  # not read yet
       node.fd = fd
-      node.was_filled = False
       self._Next()
 
       if not self._Peek(): return None
       node.here_begin = self.cur_word
-      # "If any character in word is quoted, the delimiter shall be formed by
-      # performing quote removal on word, and the here-document lines shall not
-      # be expanded. Otherwise, the delimiter shall be the word itself."
-      # NOTE: \EOF counts, or even E\OF
-      ok, node.here_end, quoted = word.StaticEval(node.here_begin)
-      if not ok:
-        p_die('Invalid here doc delimiter', word=node.here_begin)
-      node.do_expansion = not quoted
       self._Next()
 
       self.pending_here_docs.append(node)  # will be filled on next newline.
@@ -1499,5 +1512,11 @@ class CommandParser(object):
     node = self.ParseCommandTerm()
     assert node is not None
     assert node is not False
+
+    # NOTE: This happens when there is no newline at the end of a file, like
+    # osh -c 'cat <<EOF'
+    if self.pending_here_docs:
+      node = self.pending_here_docs[0]  # Just show the first one?
+      p_die('Unterminated here doc began here', word=node.here_begin)
 
     return node
