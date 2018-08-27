@@ -794,6 +794,28 @@ def Shopt(argv, exec_opts):
   return 0
 
 
+COMPGEN_SPEC = _Register('compgen')
+COMPGEN_SPEC.ShortFlag('-A', args.Str)
+
+
+def CompGen(argv, funcs):
+  arg, i = COMPGEN_SPEC.Parse(argv)
+  status = 0
+
+  if arg.A:
+    if arg.A != 'function':
+        status = 1
+        raise args.UsageError('compgen: %s: invalid action name' % arg.A)
+    else:
+      for func_name in sorted(funcs):
+        print(func_name)
+  else:
+    util.warn('*** command without -A not implemented ***')
+    status = 1
+
+  return status
+
+
 UNSET_SPEC = _Register('unset')
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
@@ -877,7 +899,7 @@ def Command(argv, funcs, path_val):
         # This is for -v, -V is more detailed.
         print(arg)
   else:
-    util.warn('*** command without -v not not implemented ***')
+    util.warn('*** command without -v not implemented ***')
     status = 1
 
   return status

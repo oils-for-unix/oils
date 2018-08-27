@@ -180,9 +180,6 @@ class Executor(object):
       util.error('Oil was not built with readline/completion.')
     return 0
 
-  def _CompGen(self, argv):
-    raise NotImplementedError
-
   def _EvalHelper(self, c_parser, source_name):
     self.arena.PushSource(source_name)
     try:
@@ -359,7 +356,7 @@ class Executor(object):
       status = self._Complete(argv)
 
     elif builtin_id == builtin_e.COMPGEN:
-      status = self._CompGen(argv)
+      status = builtin.CompGen(argv, self.funcs)
 
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
