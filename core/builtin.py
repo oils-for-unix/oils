@@ -805,10 +805,10 @@ def CompGen(argv, funcs):
   if arg.A:
     if arg.A != 'function':
         status = 1
-        raise args.UsageError('compgen: {}: invalid action name'.format(arg.A))
+        raise args.UsageError('compgen: %s: invalid action name' % arg.A)
     else:
-      for func_name,func_def in sorted(funcs.iteritems()):
-        print('{}'.format(func_name))
+      for func_name in sorted(funcs):
+        print(func_name)
   else:
     util.warn('*** command without -A not implemented ***')
     status = 1
