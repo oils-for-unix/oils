@@ -81,6 +81,8 @@ class CommandParser(object):
     return self.completion_stack
 
   def _MaybeReadHereDocs(self):
+    """Fill the 'body' attribute of pending here doc nodes."""
+
     for h in self.pending_here_docs:
       here_end_line = None
       here_end_line_id = -1
@@ -95,10 +97,7 @@ class CommandParser(object):
         p_die('Invalid here doc delimiter', word=h.here_begin)
       do_expansion = not quoted
 
-      #log('HERE %r' % h.here_end)
       while True:
-        # If op is <<-, strip off all leading tabs (NOT spaces).
-        # (in C++, just bump the start?)
         line_id, line = self.line_reader.GetLine()
 
         if not line:  # EOF
@@ -109,9 +108,9 @@ class CommandParser(object):
           p_die("Couldn't find terminator for here doc that starts here",
                 token=h.op)
 
-        # NOTE: Could do this runtime to preserve LST.
+        # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
+        # the first tab.
         if h.op.id == Id.Redir_DLessDash:
-          # NOTE: Stripping multiple leading tabs is correct!
           line = line.lstrip('\t')
         if line.rstrip() == delimiter:
           here_end_line = line
@@ -143,12 +142,15 @@ class CommandParser(object):
         assert w is not None
         h.body = w
       else:
-        # Each line is a single span.  TODO: Add span_id to token.
-        tokens = [
-            ast.token(Id.Lit_Chars, line, const.NO_INTEGER)
-            for _, line in lines]
-        parts = [ast.LiteralPart(t) for t in tokens]
-        h.body = ast.CompoundWord(parts)
+        # Create a line_span and a token for each line.
+        tokens = []
+        for line_id, line in lines:
+          line_span = ast.line_span(line_id, 0, len(line))
+          span_id = self.arena.AddLineSpan(line_span)
+          t = ast.token(Id.Lit_Chars, line, span_id)
+          tokens.append(t)
+        # LiteralPart for each line.
+        h.body = ast.CompoundWord([ast.LiteralPart(t) for t in tokens])
 
       # Create a span with the end terminator.  Maintains the invariant that
       # the spans "add up".
