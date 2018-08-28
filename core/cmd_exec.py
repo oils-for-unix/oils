@@ -480,22 +480,18 @@ class Executor(object):
         return runtime.DescRedirect(n.op.id, fd, target_fd)
 
       elif redir_type == redir_arg_type_e.Here:  # here word
-        # TODO: decay should be controlled by an option
-        val = self.word_ev.EvalWordToString(n.arg_word, decay=True)
-        if val.tag != value_e.Str:   # TODO: This error never fires
-          util.warn("Here word body should be a string, got %s", val)
-          return None
+        val = self.word_ev.EvalWordToString(n.arg_word)
+        assert val.tag == value_e.Str, val
         # NOTE: bash and mksh both add \n
         return runtime.HereRedirect(fd, val.s + '\n')
       else:
         raise AssertionError('Unknown redirect op')
 
     elif n.tag == redir_e.HereDoc:
-      # TODO: decay shoudl be controlled by an option
-      val = self.word_ev.EvalWordToString(n.body, decay=True)
-      if val.tag != value_e.Str:   # TODO: This error never fires
-        util.warn("Here doc body should be a string, got %s", val)
-        return None
+      # HACK: Wrap it in a word to evaluate.
+      w = ast.CompoundWord(n.stdin_parts)
+      val = self.word_ev.EvalWordToString(w)
+      assert val.tag == value_e.Str, val
       return runtime.HereRedirect(fd, val.s)
 
     else:
@@ -1211,7 +1207,7 @@ class Executor(object):
         raise  # Invalid
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena)
-      print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
+      #print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1
       # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
 
@@ -1490,8 +1486,9 @@ class Tracer(object):
       # allowed too.  The OUTER mode would stop at spaces, and ReadWord
       # doesn't allow lex_mode_e.DQ.
       ok = True
+      ps4_word = ast.CompoundWord()
       try:
-        ps4_word = w_parser.ReadHereDocBody()
+        w_parser.ReadHereDocBody(ps4_word.parts)
       except util.ParseError as e:
         ok = False
       else:

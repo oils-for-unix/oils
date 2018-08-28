@@ -301,36 +301,36 @@ OIL
 
 here-doc() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
-cat <<ONE
+  cat <<ONE
 echo $hi
 ONE
 OSH
-cat << """
+  cat << """
 echo $hi
 """
 OIL
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
-cat <<'ONE'
+  cat <<'ONE'
 single quoted
 ONE
 OSH
-cat << '''
+  cat << '''
 single quoted
 '''
 OIL
 
   # <<- is indented
   osh0-oil3 << 'OSH' 3<< 'OIL'
-  cat <<-'ONE'
-  indented
-  body
-  ONE
+	cat <<-'ONE'
+	indented
+	body
+	ONE
 OSH
-  cat << '''
-  indented
-  body
-  '''
+	cat << '''
+	indented
+	body
+	'''
 OIL
 
 }

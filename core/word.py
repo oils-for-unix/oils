@@ -179,17 +179,10 @@ def _RightMostSpanForPart(part):
     return part.token.span_id
 
   elif part.tag == word_part_e.SingleQuotedPart:
-    if part.tokens:
-      return part.tokens[-1].span_id
-    else:
-      return const.NO_INTEGER
+    return part.spids[1]  # right '
 
   elif part.tag == word_part_e.DoubleQuotedPart:
-    if part.parts:
-      return LeftMostSpanForPart(part.parts[-1])
-    else:
-      # We need the double quote location
-      return const.NO_INTEGER
+    return part.spids[1]  # right "
 
   elif part.tag == word_part_e.SimpleVarSub:
     return part.token.span_id
@@ -258,13 +251,12 @@ def LeftMostSpanForWord(w):
 
 
 # This is needed for DoWord I guess?  IT makes it easier to write the fixer.
-def UNUSED_RightMostSpanForWord(w):
+def RightMostSpanForWord(w):
   # TODO: Really we should use par
   if w.tag == word_e.CompoundWord:
     if len(w.parts) == 0:
-      return const.NO_INTEGER
-    elif len(w.parts) == 1:
-      return _RightMostSpanForPart(w.parts[0])
+      # TODO: Use EmptyWord instead
+      raise AssertionError("CompoundWord shouldn't be empty")
     else:
       end = w.parts[-1]
       return _RightMostSpanForPart(end)

@@ -15,6 +15,7 @@ from _devbuild.gen import runtime_asdl
 word_style_e = runtime_asdl.word_style_e
 
 log = util.log
+p_die = util.p_die
 
 command_e = ast.command_e
 redir_e = ast.redir_e
@@ -271,27 +272,33 @@ class OilPrinter(object):
       self.DoWordInCommand(node.arg_word, local_symbols)
 
     elif node.tag == redir_e.HereDoc:
-      self.cursor.PrintUntil(node.op.span_id)
+      ok, delimiter, delim_quoted = word.StaticEval(node.here_begin)
+      if not ok:
+        p_die('Invalid here doc delimiter', word=node.here_begin)
+
       # Turn everything into <<.  We just change the quotes
       self.f.write('<<')
 
-      here_begin_spid1 = word.LeftMostSpanForWord(node.here_begin)
       #here_begin_spid2 = word.RightMostSpanForWord(node.here_begin)
-      if node.do_expansion:
-        self.f.write('"""')
+      if delim_quoted:
+        self.f.write(" '''")
       else:
-        self.f.write("'''")
+        self.f.write(' """')
 
-      #self.cursor.SkipUntil(here_begin_spid2)
-      self.cursor.SkipUntil(here_begin_spid1 + 1)
+      delim_end_spid = word.RightMostSpanForWord(node.here_begin)
+      self.cursor.SkipUntil(delim_end_spid + 1)
+
+      #self.cursor.SkipUntil(here_begin_spid + 1)
 
       # Now print the lines
-      self.DoWordInCommand(node.body, local_symbols)
+      for part in node.stdin_parts:
+        self.DoWordPart(part, local_symbols)
 
-      if node.do_expansion:
-        self.f.write('"""')
+      self.cursor.SkipUntil(node.here_end_span_id + 1)
+      if delim_quoted:
+        self.f.write("'''\n")
       else:
-        self.f.write("'''")
+        self.f.write('"""\n')
 
       # Need
       #self.cursor.SkipUntil(here_end_spid2)

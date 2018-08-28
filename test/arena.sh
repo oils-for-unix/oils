@@ -20,6 +20,7 @@ compare() {
 here-doc() {
   compare test/arena/here-dq.sh
   compare test/arena/here-sq.sh
+  compare test/arena/here-multiple.sh
 }
 
 readonly -a PASSING=(

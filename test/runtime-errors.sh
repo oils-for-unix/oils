@@ -281,6 +281,25 @@ string_to_int_bool() {
   echo 'SHOULD NOT GET HERE'
 }
 
+strict_array() {
+  set -- 1 2
+  echo foo > _tmp/"$@"
+  set -o strict-array
+  echo foo > _tmp/"$@"
+}
+
+strict_array_2() {
+  local foo="$@"
+  set -o strict-array
+  local foo="$@"
+}
+
+strict_array_3() {
+  local foo=${1:- "[$@]" }
+  set -o strict-array
+  local foo=${1:- "[$@]" }
+}
+
 #
 # TEST DRIVER
 #

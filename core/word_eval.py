@@ -46,7 +46,7 @@ def _BackslashEscape(s):
 def _ValueToPartValue(val, quoted):
   """Helper for VarSub evaluation.
 
-  Called by _EvalBracedVarSub and __EvalWordPart for SimpleVarSub.
+  Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
   """
   assert isinstance(val, runtime.value), val
 
@@ -454,9 +454,9 @@ class _WordEvaluator(object):
       val, maybe_decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
     # 2. Bracket: value -> (value v, bool maybe_decay_array)
-    # maybe_decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER suffix ops
-    # are applied.  If we take the length with a prefix op, the distinction is
-    # ignored.
+    # maybe_decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER
+    # suffix ops are applied.  If we take the length with a prefix op, the
+    # distinction is ignored.
     if part.bracket_op:
       if part.bracket_op.tag == bracket_op_e.WholeArray:
         op_id = part.bracket_op.op_id
@@ -469,6 +469,7 @@ class _WordEvaluator(object):
           elif val.tag == value_e.Str:
             e_die("Can't index string with @: %r", val, part=part)
           elif val.tag == value_e.StrArray:
+            # TODO: Is this a no-op?  Just leave 'val' alone.
             val = runtime.StrArray(val.strs)
 
         elif op_id == Id.Arith_Star:
@@ -478,7 +479,8 @@ class _WordEvaluator(object):
           elif val.tag == value_e.Str:
             e_die("Can't index string with *: %r", val, part=part)
           elif val.tag == value_e.StrArray:
-            # Always maybe_decay_array with ${a[*]} or "${a[*]}"
+            # TODO: Is this a no-op?  Just leave 'val' alone.
+            # ${a[*]} or "${a[*]}" :  maybe_decay_array is always true
             val = runtime.StrArray(val.strs)
 
         else:
@@ -777,8 +779,11 @@ class _WordEvaluator(object):
     for p in word.parts:
       self._EvalWordPart(p, part_vals, quoted=quoted)
 
-  def EvalWordToString(self, word, do_fnmatch=False, decay=False):
+  def EvalWordToString(self, word, do_fnmatch=False):
     """
+    Args:
+      word: CompoundWord
+
     Used for redirect arg, ControlFlow arg, ArithWord, BoolWord, etc.
 
     do_fnmatch is true for case $pat and RHS of [[ == ]].
@@ -786,18 +791,15 @@ class _WordEvaluator(object):
     pat="*.py"
     case $x in
       $pat) echo 'matches glob pattern' ;;
-      "$pat") echo 'equal to glob string' ;;  // must be glob escaped
+      "$pat") echo 'equal to glob string' ;;  # must be glob escaped
     esac
     """
     part_vals = []
-    for part in word.parts:
-      self._EvalWordPart(part, part_vals, quoted=False)
+    for p in word.parts:
+      self._EvalWordPart(p, part_vals, quoted=False)
 
     strs = []
     for part_val in part_vals:
-      # TODO: if decay, then allow string part.  e.g. for here word or here
-      # doc with "$@".
-
       if part_val.tag == part_value_e.StringPartValue:
         # [[ foo == */"*".py ]] or case *.py) ... esac
         if do_fnmatch and not part_val.do_split_glob:
@@ -807,11 +809,17 @@ class _WordEvaluator(object):
       else:
         if self.exec_opts.strict_array:
           # Examples: echo f > "$@"; local foo="$@"
-          e_die("Expected string, got %s", part_val, word=word)
+
+          # TODO: This attributes too coarsely, to the word rather than the
+          # parts.  Problem: the word is a TREE of parts, but we only have a
+          # flat list of part_vals.  The only case where we really get arrays
+          # is "$@", "${a[@]}", "${a[@]//pat/replace}", etc.
+          e_die("This word should evaluate to a string, but part of it was an "
+                "array", word=word)
 
           # TODO: Maybe add detail like this.
           #e_die('RHS of assignment should only have strings.  '
-          #      'To assign arrays, using b=( "${a[@]}" )')
+          #      'To assign arrays, use b=( "${a[@]}" )')
         else:
           # It appears to not respect IFS
           s = ' '.join(s for s in part_val.strs if s is not None)

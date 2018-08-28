@@ -142,7 +142,8 @@ module osh
   | HereDoc(token op, int fd,
             word here_begin,  -- e.g. EOF or 'EOF'
             int here_end_span_id,  -- this span is an entire line
-            word? body)
+            word_part* stdin_parts -- one for each line
+           )
 
   assign_op = Equal | PlusEqual
   assign_pair = (lhs_expr lhs, assign_op op, word? rhs)

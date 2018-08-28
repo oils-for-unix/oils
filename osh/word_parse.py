@@ -528,7 +528,10 @@ class WordParser(object):
             'Unhandled token in single-quoted part %s (%d)' %
             (self.cur_token, self.token_kind))
 
-    return ast.SingleQuotedPart(left, tokens)
+    node = ast.SingleQuotedPart(left, tokens)
+    node.spids.append(left.span_id)  # left '
+    node.spids.append(self.cur_token.span_id)  # right '
+    return node
 
   def _ReadDoubleQuotedLeftParts(self):
     """Read substitution parts in a double quoted context."""
@@ -629,7 +632,53 @@ class WordParser(object):
 
     return part
 
-  def _ReadDoubleQuotedPart(self, eof_type=Id.Undefined_Tok, here_doc=False):
+  def _ReadLikeDQ(self, left_dq_token, out_parts):
+    """
+    Args:
+      left_dq_token: A token if we are reading a double quoted part, or None if
+        we're reading a here doc.
+      out_parts: list of word_part to append to
+    """
+    done = False
+    while not done:
+      self._Next(lex_mode_e.DQ)
+      self._Peek()
+
+      if self.token_kind == Kind.Lit:
+        if self.token_type == Id.Lit_EscapedChar:
+          part = ast.EscapedLiteralPart(self.cur_token)
+        else:
+          part = ast.LiteralPart(self.cur_token)
+        out_parts.append(part)
+
+      elif self.token_kind == Kind.Left:
+        part = self._ReadDoubleQuotedLeftParts()
+        out_parts.append(part)
+
+      elif self.token_kind == Kind.VSub:
+        part = ast.SimpleVarSub(self.cur_token)
+        out_parts.append(part)
+
+      elif self.token_kind == Kind.Right:
+        assert self.token_type == Id.Right_DoubleQuote, self.token_type
+        if left_dq_token:
+          done = True
+        else:
+          # In a here doc, the right quote is literal!
+          out_parts.append(ast.LiteralPart(self.cur_token))
+
+      elif self.token_kind == Kind.Eof:
+        if left_dq_token:
+          p_die('Unexpected EOF reading double-quoted string that began here',
+                token=left_dq_token)
+        else:  # here docs will have an EOF in their token stream
+          done = True
+
+      else:
+        raise AssertionError(self.cur_token)
+    # Return nothing, since we appended to 'out_parts'
+
+  def _ReadDoubleQuotedPart(self):
     """
     Args:
       eof_type: for stopping at }, Id.Lit_RBrace
@@ -637,67 +686,15 @@ class WordParser(object):
 
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
-    quoted_part = ast.DoubleQuotedPart()
+    dq_part = ast.DoubleQuotedPart()
+    left_dq_token = self.cur_token
+    dq_part.spids.append(left_dq_token.span_id)  # Left "
 
-    left_spid = const.NO_INTEGER  # gets set later
-    right_spid = const.NO_INTEGER  # gets set later
+    self._ReadLikeDQ(left_dq_token, dq_part.parts)
 
-    # TODO: Use here doc.
-    if self.cur_token is not None:  # None in here doc case
-      left_token = self.cur_token
-      left_spid = left_token.span_id
-    else:
-      left_token = None
+    dq_part.spids.append(self.cur_token.span_id)  # Right "
 
-    done = False
-    while not done:
-      self._Next(lex_mode_e.DQ)
-      self._Peek()
-      #print(self.cur_token)
-
-      if self.token_type == eof_type:  # e.g. stop at }
-        done = True
-        continue
-
-      elif self.token_kind == Kind.Lit:
-        if self.token_type == Id.Lit_EscapedChar:
-          part = ast.EscapedLiteralPart(self.cur_token)
-        else:
-          part = ast.LiteralPart(self.cur_token)
-        quoted_part.parts.append(part)
-
-      elif self.token_kind == Kind.Left:
-        part = self._ReadDoubleQuotedLeftParts()
-        if not part:
-          return None
-        quoted_part.parts.append(part)
-
-      elif self.token_kind == Kind.VSub:
-        part = ast.SimpleVarSub(self.cur_token)
-        quoted_part.parts.append(part)
-
-      elif self.token_kind == Kind.Right:
-        assert self.token_type == Id.Right_DoubleQuote
-        if here_doc:
-          # Turn Id.Right_DoubleQuote into a literal part
-          quoted_part.parts.append(ast.LiteralPart(self.cur_token))
-        else:
-          done = True  # assume Id.Right_DoubleQuote
-        right_spid = self.cur_token.span_id
-
-      elif self.token_kind == Kind.Eof:
-        if here_doc:  # here docs will have an EOF in their token stream
-          done = True
-        else:
-          assert left_token is not None  # See hacky condition above
-          p_die('Unexpected EOF reading double-quoted string that began here',
-                token=left_token)
-
-      else:
-        raise AssertionError(self.cur_token)
-
-    quoted_part.spids.extend((left_spid, right_spid))
-    return quoted_part
+    return dq_part
 
   def _ReadCommandSubPart(self, token_type):
     """
@@ -1195,22 +1192,10 @@ class WordParser(object):
     self.cursor_was_newline = (word.CommandId(self.cursor) == Id.Op_Newline)
     return self.cursor
 
-  def ReadHereDocBody(self):
+  def ReadHereDocBody(self, parts):
     """
     Sort of like Read(), except we're in a double quoted context, but not using
     double quotes.
-
-    Returns:
-      CompoundWord.  NOTE: We could also just use a DoubleQuotedPart for both
-      cases?
     """
-    dq = self._ReadDoubleQuotedPart(here_doc=True)
-    assert dq is not None
-    return ast.CompoundWord([dq])
-
-  # TODO: _ReadDQContext(parts) should be shared between
-  # _ReadDoubleQuotedPart() and ReadHereDocBody()
-  # Call with dq_part.parts
-  # and here_doc_node.body
-
-
+    self._ReadLikeDQ(None, parts)
+    # Returns nothing
