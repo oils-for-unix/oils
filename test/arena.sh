@@ -23,8 +23,13 @@ here-doc() {
   compare test/arena/here-multiple.sh
 }
 
+tilde() {
+  compare test/arena/tilde.sh
+}
+
 readonly -a PASSING=(
   here-doc
+  tilde
 )
 
 all-passing() {

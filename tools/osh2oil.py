@@ -1053,10 +1053,10 @@ class OilPrinter(object):
       # TODO: We might want to do it all on the word level though.  For
       # example, foo"bar" becomes "foobar" in oil.
       spid = node.token.span_id
-      if spid is None:
+      if spid == const.NO_INTEGER:
         #raise RuntimeError('%s has no span_id' % node.token)
         # TODO: Fix word.TildeDetect to construct proper tokens.
-        print('WARNING:%s has no span_id' % node.token, file=sys.stderr)
+        log('WARNING: %s has no span_id' % node.token)
       else:
         self.cursor.PrintUntil(spid + 1)
 

@@ -149,20 +149,25 @@ HOME=/home/foo
 echo ~
 HOME=/home/bar
 echo ~
-## stdout-json: "/home/foo\n/home/bar\n"
+## STDOUT:
+/home/foo
+/home/bar
+## END
 
 #### Tilde expansion with brace expansion
+# NOTE: osh matches mksh.  Is that OK?
 # The brace expansion happens FIRST.  After that, the second token has tilde
 # FIRST, so it gets expanded.  The first token has an unexpanded tilde, because
 # it's not in the leading position.
 # NOTE: mksh gives different behavior!  So it probably doesn't matter that
-# much...
+# much
 HOME=/home/bob
 echo {foo~,~}/bar
 ## stdout: foo~/bar /home/bob/bar
 ## OK mksh stdout: foo~/bar ~/bar
 
 #### Two kinds of tilde expansion
+# NOTE: osh matches mksh.  Is that OK?
 # ~/foo and ~bar
 HOME=/home/bob
 echo ~{/src,root}
@@ -177,7 +182,10 @@ foo='~'
 echo $foo
 # In the second instance, we expand into a literal ~, and since var expansion
 # comes after tilde expansion, it is NOT tried again.
-## stdout-json: "/home/bob\n~\n"
+## STDOUT:
+/home/bob
+~
+## END
 
 #### Number range expansion
 echo -{1..8..3}-

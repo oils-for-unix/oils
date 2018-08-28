@@ -208,6 +208,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
   C('~', Id.Lit_Tilde),  # For tilde expansion
+                         # TODO: Add the rest of Lit_Chars minus / here.
 
   R(r'[ \t\r]+', Id.WS_Space),
 

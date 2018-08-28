@@ -1111,11 +1111,7 @@ class WordParser(object):
         Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.ControlFlow,
         Kind.BoolUnary, Kind.BoolBinary, Kind.ExtGlob):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
-      # lex_mode_e.COMMENT and read until end of line.  (TODO: How to add
-      # comments to AST?)
-
-      # TODO: Can we do the same thing for Tilde here?  Enter a state where we
-      # look for / too.
+      # lex_mode_e.COMMENT and read until end of line.
       if self.token_type == Id.Lit_Pound:
         self._Next(lex_mode_e.COMMENT)
         self._Peek()

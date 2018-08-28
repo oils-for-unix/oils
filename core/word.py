@@ -250,9 +250,8 @@ def LeftMostSpanForWord(w):
     return const.NO_INTEGER
 
 
-# This is needed for DoWord I guess?  IT makes it easier to write the fixer.
 def RightMostSpanForWord(w):
-  # TODO: Really we should use par
+  """Needed for here doc delimiters."""
   if w.tag == word_e.CompoundWord:
     if len(w.parts) == 0:
       # TODO: Use EmptyWord instead
@@ -264,6 +263,20 @@ def RightMostSpanForWord(w):
   # It's a TokenWord?
   return w.token.span_id
 
+
+# From bash, general.c, unquoted_tilde_word():
+# POSIX.2, 3.6.1:  A tilde-prefix consists of an unquoted tilde character at
+# the beginning of the word, followed by all of the characters preceding the
+# first unquoted slash in the word, or all the characters in the word if there
+# is no slash...If none of the characters in the tilde-prefix are quoted, the
+# characters in the tilde-prefix following the tilde shell be treated as a
+# possible login name. 
+#define TILDE_END(c)    ((c) == '\0' || (c) == '/' || (c) == ':')
+#
+# So an unquoted tilde can ALWAYS start a new lex mode?  You respect quotes and
+# substitutions.
+#
+# We only detect ~Lit_Chars and split.  So we might as well just write a regex.
 
 def TildeDetect(word):
   """Detect tilde expansion.
@@ -397,8 +410,8 @@ def LooksLikeAssignment(w):
   """Tests whether a word looks like FOO=bar.
 
   Returns:
-    (string, CompoundWord) if it looks like FOO=bar
-    False                  if it doesn't
+    (string, op, CompoundWord) if it looks like FOO=bar
+    False                      if it doesn't
 
   s=1
   s+=1
@@ -431,9 +444,9 @@ def LooksLikeAssignment(w):
 
   rhs = ast.CompoundWord()
   if len(w.parts) == 1:
-    # This fake SingleQuotedPart is necesssary so that EmptyUnquoted elision
-    # isn't applied.  EMPTY= is like EMPTY=''.
-    # TODO: This part doesn't have spids, so it might break some invariants.
+    # This is necessary so that EmptyUnquoted elision isn't applied.  EMPTY= is
+    # like EMPTY=''.
+    # TODO: Change to EmptyWord
     rhs.parts.append(ast.EmptyPart())
   else:
     for p in w.parts[1:]:
