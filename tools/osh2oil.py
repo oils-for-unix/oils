@@ -1024,6 +1024,10 @@ class OilPrinter(object):
         #self.cursor.PrintUntil(right_spid)
         #pass
 
+    elif node.tag == word_e.BracedWordTree:
+      # Not doing anything now
+      pass
+
     else:
       raise AssertionError(node.__class__.__name__)
 
