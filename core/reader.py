@@ -95,7 +95,7 @@ def StringLineReader(s, arena):
 # internally.
 
 
-class VirtualLineReader(_Reader):
+class HereDocLineReader(_Reader):
   """Used for here docs."""
   def __init__(self, lines, arena):
     """
@@ -110,7 +110,7 @@ class VirtualLineReader(_Reader):
   def GetLine(self):
     if self.pos == self.num_lines:
       return -1, None
-    line_id, line = self.lines[self.pos]
+    line_id, line, start_offset = self.lines[self.pos]
 
     self.pos += 1
-    return line_id, line
+    return line_id, line[start_offset:]

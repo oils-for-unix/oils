@@ -13,6 +13,7 @@ cmd_parse.py - Parse high level shell commands.
 from asdl import const
 
 from core import braces
+from core import reader
 from core import word
 from core import util
 
@@ -86,7 +87,8 @@ class CommandParser(object):
     for h in self.pending_here_docs:
       here_end_line = None
       here_end_line_id = -1
-      lines = []
+      here_end_start_offset = 0
+      here_lines = []
 
       # "If any character in word is quoted, the delimiter shall be formed by
       # performing quote removal on word, and the here-document lines shall not
@@ -115,37 +117,49 @@ class CommandParser(object):
 
         # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
         # the first tab.
+        start_offset = 0
         if h.op.id == Id.Redir_DLessDash:
-          line = line.lstrip('\t')
-        if line.rstrip() == delimiter:
-          here_end_line = line
+          n = len(line)
+          i = 0
+          while i < n:
+            if line[i] != '\t':
+              break
+            i += 1
+          start_offset = i
+
+        if line[start_offset:].rstrip() == delimiter:
           here_end_line_id = line_id
+          here_end_line = line
+          here_end_start_offset = start_offset
           break
 
-        lines.append((line_id, line))
+        here_lines.append((line_id, line, start_offset))
+
+      line_reader = reader.HereDocLineReader(here_lines, self.arena)
 
       parts = []
       if delim_quoted:  # << 'EOF'
         # Create a line_span and a token for each line.
         tokens = []
-        for line_id, line in lines:
-          line_span = ast.line_span(line_id, 0, len(line))
+        for line_id, line, start_offset in here_lines:
+          line_span = ast.line_span(line_id, start_offset, len(line))
           span_id = self.arena.AddLineSpan(line_span)
-          t = ast.token(Id.Lit_Chars, line, span_id)
+          t = ast.token(Id.Lit_Chars, line[start_offset:], span_id)
           tokens.append(t)
         # LiteralPart for each line.
         h.stdin_parts = [ast.LiteralPart(t) for t in tokens]
 
       else:
         from osh import parse_lib  # Avoid circular import
-        w_parser = parse_lib.MakeWordParserForHereDoc(lines, self.arena)
+        w_parser = parse_lib.MakeWordParserForHereDoc(line_reader, self.arena)
 
         # NOTE: There can be different kinds of parse errors in here docs.
         w = w_parser.ReadHereDocBody(h.stdin_parts)
 
       # Create a span with the end terminator.  Maintains the invariant that
       # the spans "add up".
-      line_span = ast.line_span(here_end_line_id, 0, len(here_end_line))
+      line_span = ast.line_span(
+          here_end_line_id, here_end_start_offset, len(here_end_line))
       h.here_end_span_id = self.arena.AddLineSpan(line_span)
 
     del self.pending_here_docs[:]  # No .clear() until Python 3.3.

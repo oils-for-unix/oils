@@ -2,7 +2,13 @@
 --
 -- Invariant: the source text can be reconstructed byte-for-byte from this
 -- tree.
--- 
+--
+-- Exceptions:
+-- * <<- here docs with leading tabs, since we don't want those for
+--   conversion.  We don't want files with mixed tabs and spaces.
+-- * Found to be not strictly necessary for oil conversion
+--   * foo() { } vs function foo { } -- ksh 
+--
 -- The AST is composed of the builtin ASDL types (string, int, bool) and our
 -- application type 'id', which is core.id_kind.Id.
 
@@ -28,9 +34,8 @@
 --   * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
 --   * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
 -- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
---
--- Found to be not strictly necessary for oil conversion
--- * foo() { } vs function foo { } -- ksh 
+-- TODO:
+-- * remove redundancy of 'string val' in token.  It should use the span.
 
 module osh
 {
@@ -38,7 +43,7 @@ module osh
   -- TODO: Need arena_id, for different files
   line_span = (int line_id, int col, int length)
 
-  -- A primitive token.  NOTE: val is redundant with 'loc' for now.  If we
+  -- A primitive token.  NOTE: val is redundant with 'span_id' for now.  If we
   -- rewrite the parser in C++, we might care for memory footprint.  But for 
   -- now this is convenient.
   -- NOTE: identical strings can shared, if we care.

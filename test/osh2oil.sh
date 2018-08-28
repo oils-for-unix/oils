@@ -300,6 +300,7 @@ OIL
 }
 
 here-doc() {
+  # DQ context
   osh0-oil3 << 'OSH' 3<< 'OIL'
   cat <<ONE
 echo $hi
@@ -310,6 +311,7 @@ echo $hi
 """
 OIL
 
+  # SQ context
   osh0-oil3 << 'OSH' 3<< 'OIL'
   cat <<'ONE'
 single quoted
@@ -320,7 +322,20 @@ single quoted
 '''
 OIL
 
-  # <<- is indented
+  # <<- in DQ context
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+	cat <<-ONE
+	indented
+	body
+	ONE
+OSH
+	cat << """
+indented
+body
+"""
+OIL
+
+  # <<- in SQ context
   osh0-oil3 << 'OSH' 3<< 'OIL'
 	cat <<-'ONE'
 	indented
@@ -328,11 +343,10 @@ OIL
 	ONE
 OSH
 	cat << '''
-	indented
-	body
-	'''
+indented
+body
+'''
 OIL
-
 }
 
 here-string() {

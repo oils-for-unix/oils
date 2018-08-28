@@ -34,8 +34,8 @@ class ReaderTest(unittest.TestCase):
     r2 = reader.FileLineReader(f, a2)
 
     a3 = self.pool.NewArena()
-    lines = [(0, 'one\n'), (1, 'two')]
-    r3 = reader.VirtualLineReader(lines, a3)
+    lines = [(0, 'one\n', 0), (1, 'two', 0)]
+    r3 = reader.HereDocLineReader(lines, a3)
 
     for a in [a1, a2, a3]:
       a.PushSource('reader_test.py')

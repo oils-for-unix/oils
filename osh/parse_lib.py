@@ -64,8 +64,7 @@ def MakeParserForCompletion(code_str, arena):
   return w_parser, c_parser
 
 
-def MakeWordParserForHereDoc(lines, arena):
-  line_reader = reader.VirtualLineReader(lines, arena)
+def MakeWordParserForHereDoc(line_reader, arena):
   line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return word_parse.WordParser(lx, line_reader)
