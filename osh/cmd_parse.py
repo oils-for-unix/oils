@@ -29,6 +29,90 @@ assign_op_e = ast.assign_op_e
 lex_mode_e = types.lex_mode_e
 
 
+def _ReadHereLines(line_reader, h, delimiter):
+  # NOTE: We read all lines at once, instead of parsing line-by-line,
+  # because of cases like this:
+  # cat <<EOF
+  # 1 $(echo 2
+  # echo 3) 4
+  # EOF
+  here_lines = []
+  last_line = None
+  while True:
+    line_id, line, unused_offset = line_reader.GetLine()
+    assert unused_offset == 0
+
+    if not line:  # EOF
+      # An unterminated here doc is just a warning in bash.  We make it
+      # fatal because we want to be strict, and because it causes problems
+      # reporting other errors.
+      # Attribute it to the << in <<EOF for now.
+      p_die("Couldn't find terminator for here doc that starts here",
+            token=h.op)
+
+    # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
+    # the first tab.
+    start_offset = 0
+    if h.op.id == Id.Redir_DLessDash:
+      n = len(line)
+      i = 0
+      while i < n:
+        if line[i] != '\t':
+          break
+        i += 1
+      start_offset = i
+
+    if line[start_offset:].rstrip() == delimiter:
+      last_line = (line_id, line, start_offset)
+      break
+
+    here_lines.append((line_id, line, start_offset))
+
+  return here_lines, last_line
+
+
+def _MakeLiteralParts(here_lines, arena):
+  """Create a line_span and a token for each line."""
+  tokens = []
+  for line_id, line, start_offset in here_lines:
+    line_span = ast.line_span(line_id, start_offset, len(line))
+    span_id = arena.AddLineSpan(line_span)
+    t = ast.token(Id.Lit_Chars, line[start_offset:], span_id)
+    tokens.append(t)
+  return [ast.LiteralPart(t) for t in tokens]
+
+
+def _ParseHereDocBody(h, line_reader, arena):
+  """Fill in attributes of a pending here doc node."""
+  # "If any character in word is quoted, the delimiter shall be formed by
+  # performing quote removal on word, and the here-document lines shall not
+  # be expanded. Otherwise, the delimiter shall be the word itself."
+  # NOTE: \EOF counts, or even E\OF
+  ok, delimiter, delim_quoted = word.StaticEval(h.here_begin)
+  if not ok:
+    p_die('Invalid here doc delimiter', word=h.here_begin)
+
+  here_lines, last_line = _ReadHereLines(line_reader, h, delimiter)
+
+  parts = []
+  if delim_quoted:  # << 'EOF'
+    # LiteralPart for each line.
+    h.stdin_parts = _MakeLiteralParts(here_lines, arena)
+  else:
+    from osh import parse_lib  # Avoid circular import
+
+    line_reader = reader.HereDocLineReader(here_lines, arena)
+    w_parser = parse_lib.MakeWordParserForHereDoc(line_reader, arena)
+    w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
+
+  end_line_id, end_line, end_pos = last_line
+
+  # Create a span with the end terminator.  Maintains the invariant that
+  # the spans "add up".
+  line_span = ast.line_span(end_line_id, end_pos, len(end_line))
+  h.here_end_span_id = arena.AddLineSpan(line_span)
+
+
 class CommandParser(object):
   """
   Args:
@@ -81,92 +165,6 @@ class CommandParser(object):
   def GetCompletionState(self):
     return self.completion_stack
 
-  def _MaybeReadHereDocs(self):
-    """Fill the 'body' attribute of pending here doc nodes."""
-
-    for h in self.pending_here_docs:
-      here_end_line = None
-      here_end_line_id = -1
-      here_end_start_offset = 0
-      here_lines = []
-
-      # "If any character in word is quoted, the delimiter shall be formed by
-      # performing quote removal on word, and the here-document lines shall not
-      # be expanded. Otherwise, the delimiter shall be the word itself."
-      # NOTE: \EOF counts, or even E\OF
-      ok, delimiter, delim_quoted = word.StaticEval(h.here_begin)
-      if not ok:
-        p_die('Invalid here doc delimiter', word=h.here_begin)
-
-      # NOTE: We read all lines at once, instead of parsing line-by-line,
-      # because of cases like this:
-      # cat <<EOF
-      # 1 $(echo 2
-      # echo 3) 4
-      # EOF
-      while True:
-        line_id, line, unused_offset = self.line_reader.GetLine()
-        assert unused_offset == 0
-
-        if not line:  # EOF
-          # An unterminated here doc is just a warning in bash.  We make it
-          # fatal because we want to be strict, and because it causes problems
-          # reporting other errors.
-          # Attribute it to the << in <<EOF for now.
-          p_die("Couldn't find terminator for here doc that starts here",
-                token=h.op)
-
-        # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
-        # the first tab.
-        start_offset = 0
-        if h.op.id == Id.Redir_DLessDash:
-          n = len(line)
-          i = 0
-          while i < n:
-            if line[i] != '\t':
-              break
-            i += 1
-          start_offset = i
-
-        if line[start_offset:].rstrip() == delimiter:
-          here_end_line_id = line_id
-          here_end_line = line
-          here_end_start_offset = start_offset
-          break
-
-        here_lines.append((line_id, line, start_offset))
-
-      parts = []
-      if delim_quoted:  # << 'EOF'
-        # Create a line_span and a token for each line.
-        tokens = []
-        for line_id, line, start_offset in here_lines:
-          line_span = ast.line_span(line_id, start_offset, len(line))
-          span_id = self.arena.AddLineSpan(line_span)
-          t = ast.token(Id.Lit_Chars, line[start_offset:], span_id)
-          tokens.append(t)
-        # LiteralPart for each line.
-        h.stdin_parts = [ast.LiteralPart(t) for t in tokens]
-
-      else:
-        from osh import parse_lib  # Avoid circular import
-
-        line_reader = reader.HereDocLineReader(here_lines, self.arena)
-        w_parser = parse_lib.MakeWordParserForHereDoc(line_reader, self.arena)
-
-        # NOTE: There can be different kinds of parse errors in here docs.
-        w = w_parser.ReadHereDocBody(h.stdin_parts)
-
-      # Create a span with the end terminator.  Maintains the invariant that
-      # the spans "add up".
-      line_span = ast.line_span(
-          here_end_line_id, here_end_start_offset, len(here_end_line))
-      h.here_end_span_id = self.arena.AddLineSpan(line_span)
-
-    del self.pending_here_docs[:]  # No .clear() until Python 3.3.
-
-    return True
-
   def _Next(self, lex_mode=lex_mode_e.OUTER):
     """Helper method."""
     self.next_lex_mode = lex_mode
@@ -193,8 +191,9 @@ class CommandParser(object):
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
       if w.tag == word_e.TokenWord and w.token.id == Id.Op_Newline:
-        if not self._MaybeReadHereDocs():
-          return False
+        for h in self.pending_here_docs:
+          _ParseHereDocBody(h, self.line_reader, self.arena)
+        del self.pending_here_docs[:]  # No .clear() until Python 3.3.
 
       self.cur_word = w
 

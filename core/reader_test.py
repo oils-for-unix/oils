@@ -21,9 +21,9 @@ class ReaderTest(unittest.TestCase):
     arena = test_lib.MakeArena('<reader_test.py>')
 
     r = reader.StringLineReader('one\ntwo', arena)
-    self.assertEqual((0, 'one\n'), r.GetLine())
-    self.assertEqual((1, 'two'), r.GetLine())
-    self.assertEqual((-1, None), r.GetLine())
+    self.assertEqual((0, 'one\n', 0), r.GetLine())
+    self.assertEqual((1, 'two', 0), r.GetLine())
+    self.assertEqual((-1, None, 0), r.GetLine())
 
   def testLineReadersAreEquivalent(self):
     a1 = self.pool.NewArena()
@@ -43,9 +43,9 @@ class ReaderTest(unittest.TestCase):
     for r in [r1, r2, r3]:
       print(r)
       # Lines are added to the arena with a line_id.
-      self.assertEqual((0, 'one\n'), r.GetLine())
-      self.assertEqual((1, 'two'), r.GetLine())
-      self.assertEqual((-1, None), r.GetLine())
+      self.assertEqual((0, 'one\n', 0), r.GetLine())
+      self.assertEqual((1, 'two', 0), r.GetLine())
+      self.assertEqual((-1, None, 0), r.GetLine())
 
 
 if __name__ == '__main__':

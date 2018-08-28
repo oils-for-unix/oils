@@ -9,8 +9,6 @@
 word_parse.py - Parse the shell word language.
 """
 
-from asdl import const
-
 from osh.meta import Id, Kind, LookupKind
 from core import braces
 from core import word
