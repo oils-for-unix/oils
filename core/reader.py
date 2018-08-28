@@ -23,14 +23,14 @@ class _Reader(object):
   def GetLine(self):
     line = self._GetLine()
     if line is None:
-      return -1, None
+      return -1, None, 0
 
     if self.arena:
       line_id = self.arena.AddLine(line, self.line_num)
     else:
       line_id = -1
     self.line_num += 1
-    return line_id, line
+    return line_id, line, 0
 
   def Reset(self):
     # Should never be called?
@@ -109,8 +109,12 @@ class HereDocLineReader(_Reader):
 
   def GetLine(self):
     if self.pos == self.num_lines:
-      return -1, None
+      return -1, None, 0
     line_id, line, start_offset = self.lines[self.pos]
 
     self.pos += 1
-    return line_id, line[start_offset:]
+
+    # NOTE: we return a partial line, but we also want the lexer to create
+    # tokens with the correct line_spans.  So we have to tell it 'start_offset'
+    # as well.
+    return line_id, line, start_offset

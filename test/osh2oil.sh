@@ -1142,6 +1142,7 @@ readonly -a PASSING=(
   more-env
   line-breaks
   redirect
+  here-doc
   pipeline
   and-or
 

@@ -105,7 +105,8 @@ class CommandParser(object):
       # echo 3) 4
       # EOF
       while True:
-        line_id, line = self.line_reader.GetLine()
+        line_id, line, unused_offset = self.line_reader.GetLine()
+        assert unused_offset == 0
 
         if not line:  # EOF
           # An unterminated here doc is just a warning in bash.  We make it
@@ -135,8 +136,6 @@ class CommandParser(object):
 
         here_lines.append((line_id, line, start_offset))
 
-      line_reader = reader.HereDocLineReader(here_lines, self.arena)
-
       parts = []
       if delim_quoted:  # << 'EOF'
         # Create a line_span and a token for each line.
@@ -151,6 +150,8 @@ class CommandParser(object):
 
       else:
         from osh import parse_lib  # Avoid circular import
+
+        line_reader = reader.HereDocLineReader(here_lines, self.arena)
         w_parser = parse_lib.MakeWordParserForHereDoc(line_reader, self.arena)
 
         # NOTE: There can be different kinds of parse errors in here docs.

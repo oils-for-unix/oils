@@ -1,7 +1,6 @@
 #!/bin/bash
 
-	cat <<-ONE
+	cat <<-EOF
 	indented
 	body
-	ONE
-OSH
+	EOF

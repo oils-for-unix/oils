@@ -27,7 +27,10 @@ here-doc() {
   _compare test/arena/here-dq.sh
   _compare test/arena/here-sq.sh
   _compare test/arena/here-multiple.sh
-  _compare test/arena/here-dq-indented.sh
+
+  # This is a known exception to the arena invariant.  The leading tabs aren't
+  # preserved, because we don't need them for osh2oil translation.
+  #_compare test/arena/here-dq-indented.sh
 }
 
 tilde() {
