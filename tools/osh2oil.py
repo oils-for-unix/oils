@@ -290,7 +290,12 @@ class OilPrinter(object):
 
       #self.cursor.SkipUntil(here_begin_spid + 1)
 
-      # Now print the lines
+      # Now print the lines.  TODO: Have a flag to indent these to the level of
+      # the owning command, e.g.
+      #   cat <<EOF
+      # EOF
+      # Or since most here docs are the top level, you could just have a hack
+      # for a fixed indent?  TODO: Look at real use cases.
       for part in node.stdin_parts:
         self.DoWordPart(part, local_symbols)
 

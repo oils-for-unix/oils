@@ -303,11 +303,11 @@ here-doc() {
   # DQ context
   osh0-oil3 << 'OSH' 3<< 'OIL'
   cat <<ONE
-echo $hi
+echo $hi ${varsub} $((1 + 2)) $(echo comsub)
 ONE
 OSH
   cat << """
-echo $hi
+echo $hi $(varsub) $(1 + 2) $[echo comsub]
 """
 OIL
 
@@ -325,13 +325,13 @@ OIL
   # <<- in DQ context
   osh0-oil3 << 'OSH' 3<< 'OIL'
 	cat <<-ONE
-	indented
-	body
+	indented ${varsub} $((1 + 2))
+	body $(echo comsub)
 	ONE
 OSH
 	cat << """
-indented
-body
+indented $(varsub) $(1 + 2)
+body $[echo comsub]
 """
 OIL
 
