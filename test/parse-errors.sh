@@ -22,6 +22,12 @@ _error-case() {
   banner "$@"
   echo
   $SH -c "$@"
+
+  # NOTE: This works with osh, not others.
+  local status=$?
+  if test $status != 2; then
+    die "Expected status 2, got $?"
+  fi
 }
 
 # All in osh/word_parse.py
