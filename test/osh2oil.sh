@@ -307,7 +307,7 @@ echo $hi ${varsub} $((1 + 2)) $(echo comsub)
 ONE
 OSH
   cat << """
-echo $hi $(varsub) $(1 + 2) $[echo comsub]
+echo $hi $(varsub) $shExpr('1 + 2') $[echo comsub]
 """
 OIL
 
@@ -330,7 +330,7 @@ OIL
 	ONE
 OSH
 	cat << """
-indented $(varsub) $(1 + 2)
+indented $(varsub) $shExpr('1 + 2')
 body $[echo comsub]
 """
 OIL
@@ -457,6 +457,7 @@ proc f {
 }
 OIL
 
+  # NOTE: This could be shExpr() instead of $shExpr, but both are allowed.
   osh0-oil3 << 'OSH' 3<< 'OIL'
 f() {
   local myStr=$1
@@ -465,7 +466,7 @@ f() {
 OSH
 proc f {
   var myStr = $1
-  const myConstStr = $(1 + 2)
+  const myConstStr = $shExpr('1 + 2')
 }
 OIL
 }
@@ -944,10 +945,11 @@ OIL
 }
 
 arith-sub() {
+  # NOTE: This probably needs double quotes?
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo __$((  1+ 2 ))__
 OSH
-echo __$(  1+ 2 )__
+echo __$shExpr('  1+ 2 ')__
 OIL
   return
 
