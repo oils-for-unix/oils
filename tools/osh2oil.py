@@ -638,7 +638,12 @@ class OilPrinter(object):
     elif node.tag == command_e.DParen:
       # Just change (( )) to ( )
       # Test it with while loop
-      self.DoArithExpr(node.child, local_symbols)
+
+      # NOTE: I have a (( n++ )) in one script.  That can be 'set n++' or
+      # 'set n += 1'.
+
+      #self.DoArithExpr(node.child, local_symbols)
+      raise NotImplementedError('DParen')
 
     elif node.tag == command_e.DBracket:
       # [[ 1 -eq 2 ]] to (1 == 2)
@@ -1194,19 +1199,22 @@ class OilPrinter(object):
       # change to $[echo hi]
 
     elif node.tag == word_part_e.ArithSubPart:
+      # We're not bothering to translate the arithmetic language.
+      # Just turn $(( x ? 0 : 1 )) into $shExpr('x ? 0 : 1').
+
       left_spid, right_spid = node.spids
 
       # Skip over left bracket and write our own.
-      self.f.write('$(')
+      self.f.write("$shExpr('")
       self.cursor.SkipUntil(left_spid + 1)
 
       # NOTE: This doesn't do anything yet.
-      self.DoArithExpr(node.anode, local_symbols)
+      #self.DoArithExpr(node.anode, local_symbols)
       # Placeholder for now
       self.cursor.PrintUntil(right_spid - 1)
 
       # Skip over right bracket and write our own.
-      self.f.write(')')
+      self.f.write("')")
       self.cursor.SkipUntil(right_spid + 1)
 
     elif node.tag == word_part_e.EmptyPart:
@@ -1215,27 +1223,12 @@ class OilPrinter(object):
     else:
       raise AssertionError(node.__class__.__name__)
 
-  def DoArithExpr(self, node, local_symbols):
-    if node.tag == arith_expr_e.ArithBinary:
-      # Maybe I should just write the left span and right span for each word?
-      #self.f.write(str(node.left))
-
-      if node.op_id == Id.Arith_Plus:
-        # NOTE: Right isn't necessarily a word!
-        r_id = word.LeftMostSpanForWord(node.right.w)
-        #self.cursor.SkipUntil(r_id)
-        #self.f.write('PLUS')
-
-      #self.f.write(str(node.right))
-    elif node.tag == arith_expr_e.ArithWord:
-      self.DoWordInCommand(node.w, local_symbols)
-
-    else:
-      raise AssertionError(node.__class__.__name__)
-
   def DoBoolExpr(self, node):
-    # TODO: switch on node.tag
+    # TODO:
+    # - Some are turned into '( x ~ *.py )'
+    # - Some are turned into 'test x -lt y'
     pass
+
 
 # WordPart?
 
