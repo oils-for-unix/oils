@@ -398,6 +398,22 @@ setglobal g = ''
 setglobal g = 'x'
 OIL
 
+  cat >/dev/null <<TODO_ENABLE
+  # empty quoted words
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+dq=""
+OSH
+setglobal dq = ""
+OIL
+
+  # empty quoted words
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+sq=''
+OSH
+setglobal sq = ''
+OIL
+TODO_ENABLE
+
   # Local variable
   osh0-oil3 << 'OSH' 3<< 'OIL'
 f() {
@@ -821,6 +837,9 @@ case $var in
   foo|bar)
     [ -f foo ] && echo file
     ;;
+  '')
+    echo empty
+    ;;
   *)
     echo default
     ;;
@@ -829,6 +848,9 @@ OSH
 match $var {
   with foo|bar
     test -f foo && echo file
+    
+  with ''
+    echo empty
     
   with *
     echo default

@@ -120,17 +120,10 @@ def LeftMostSpanForPart(part):
     return part.token.span_id
 
   elif part.tag == word_part_e.SingleQuotedPart:
-    if part.tokens:
-      return part.tokens[0].span_id
-    else:
-      return const.NO_INTEGER
+    return part.spids[0]  # single quote location
 
   elif part.tag == word_part_e.DoubleQuotedPart:
-    if part.parts:
-      return LeftMostSpanForPart(part.parts[0])
-    else:
-      # We need the double quote location
-      return const.NO_INTEGER
+    return part.spids[0]  # double quote location
 
   elif part.tag == word_part_e.SimpleVarSub:
     return part.token.span_id

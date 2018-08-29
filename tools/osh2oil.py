@@ -123,6 +123,36 @@ def PrintAsOil(arena, node, debug_spans):
 # ${x:-default}  ->  @-(x or 'default')
 
 def _GetRhsStyle(w):
+  """
+  Determine what style an assignment should use. '' or "", or an expression.
+
+  SQ      foo=         setglobal foo = ''
+  SQ      foo=''       setglobal foo = ''
+  DQ      foo=""       setglobal foo = ""  # Or we could normalize it if no subs?
+  DQ      foo=""       setglobal foo = ""  # Or we could normalize it if no subs?
+
+  # Need these too.
+  # Or honestly should C strings be the default?  And then raw strings are
+  # optional?  Because most usages of \n and \0 can turn into Oil?
+  # Yeah I want the default to be statically parseable, so we subvert the \t
+  # and \n of command line tools?
+  # As long as we are fully analyzing the strings, we might as well go all the
+  # way!
+  # I think I need a PartialStaticEval() to paper over this.
+  #
+  # The main issue is regex and globs, because they use escape for a different
+  # purpose.  I think just do
+  # grep r'foo\tbar' or something.
+
+  C_SQ    foo=$'\n'          setglobal foo = C'\n'
+  C_DQ    foo=$'\n'"$bar"    setglobal foo = C"\n$(bar)"
+
+  Expr    path=${1:-}             setglobal path = $1 or ''
+  Expr    host=${2:-$(hostname)}  setglobal host = $2 or $[hostname]
+
+  What's the difference between Expr and Unquoted?  I think they're the same/
+  """
+
   # NOTE: Pattern matching style would be a lot nicer for this...
 
   # Arith and command sub both retain $() and $[], so they are not pure
@@ -636,13 +666,14 @@ class OilPrinter(object):
       self.f.write('}')
 
     elif node.tag == command_e.DParen:
-      # Just change (( )) to ( )
-      # Test it with while loop
-
+      # TODO: (( a == 0 )) is sh-expr ' a == 0 '
+      #
       # NOTE: I have a (( n++ )) in one script.  That can be 'set n++' or
       # 'set n += 1'.
-
-      #self.DoArithExpr(node.child, local_symbols)
+      #
+      # Auto-translation is:
+      #
+      # sh-expr 'n++'
       raise NotImplementedError('DParen')
 
     elif node.tag == command_e.DBracket:
@@ -847,6 +878,7 @@ class OilPrinter(object):
       raise AssertionError(node.__class__.__name__)
 
   def DoWordAsExpr(self, node, local_symbols):
+    # TODO: This is wrong!
     style = _GetRhsStyle(node)
     if style == word_style_e.SQ:
       self.f.write("'")
@@ -856,6 +888,11 @@ class OilPrinter(object):
       self.f.write('"')
       self.DoWordInCommand(node, local_symbols)
       self.f.write('"')
+    # TODO: Put these back
+    #elif style == word_style_e.Expr:
+    #  pass
+    #elif style == word_style_e.Unquoted:
+    #  pass
     else:
       # "${foo:-default}" -> foo or 'default'
       # ${foo:-default} -> @split(foo or 'default')
