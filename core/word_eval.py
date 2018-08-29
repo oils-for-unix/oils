@@ -158,13 +158,13 @@ class _WordEvaluator(object):
     """
     raise NotImplementedError
 
-  def _EvalTildeSub(self, prefix):
+  def _EvalTildeSub(self, token):
     """Evaluates ~ and ~user.
 
     Args:
       prefix: The tilde prefix (possibly empty)
     """
-    if prefix == '':
+    if token.val == '~':
       # First look up the HOME var, and then env var
       val = self.mem.GetVar('HOME')
       assert val.tag == value_e.Str, val
@@ -172,13 +172,18 @@ class _WordEvaluator(object):
 
     # For ~otheruser/src.  TODO: Should this be cached?
     # http://linux.die.net/man/3/getpwnam
+    name = token.val[1:]
     try:
-      e = pwd.getpwnam(prefix)
+      e = pwd.getpwnam(name)
     except KeyError:
-      s = '~' + prefix
+      # If not found, it's ~nonexistente.  TODO: In strict mode, this should be
+      # an error, kind of like failglob and nounset.  Perhaps strict-tilde or
+      # even strict-word-eval.
+      result = token.val
     else:
-      s = e.pw_dir
-    return s
+      result = e.pw_dir
+
+    return result
 
   def _EvalVarNum(self, var_num):
     assert var_num >= 0
@@ -754,7 +759,7 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.TildeSubPart:
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
-      s = self._EvalTildeSub(part.prefix)
+      s = self._EvalTildeSub(part.token)
       v = runtime.StringPartValue(s, False)
       part_vals.append(v)
 

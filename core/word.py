@@ -279,78 +279,41 @@ def RightMostSpanForWord(w):
 # We only detect ~Lit_Chars and split.  So we might as well just write a regex.
 
 def TildeDetect(word):
-  """Detect tilde expansion.
+  """Detect tilde expansion in a word.
 
-  If it needs to include a TildeSubPart, return a new word.  Otherwise return
-  None.
+  It might begin with  LiteralPart that needs to be turned into a TildeSubPart.
+  (It depends on whether the second token begins with slash).
 
-  NOTE: This algorithm would be a simpler if
-  1. We could assume some regex for user names.
-  2. We didn't need to do brace expansion first, like {~foo,~bar}
-  OR
-  - If Lit_Slash were special (it is in the VAROP states, but not OUTER
-  state).  We could introduce another lexer mode after you hit Lit_Tilde?
+  If so, it return a new word.  Otherwise return None.
 
-  So we have to scan all LiteralPart instances until they contain a '/'.
-
-  http://unix.stackexchange.com/questions/157426/what-is-the-regex-to-validate-linux-users
-  "It is usually recommended to only use usernames that begin with a lower
-  case letter or an underscore, followed by lower case letters, digits,
-  underscores, or dashes. They can end with a dollar sign. In regular
-  expression terms: [a-z_][a-z0-9_-]*[$]?
-
-  On Debian, the only constraints are that usernames must neither start with
-  a dash ('-') nor contain a colon (':') or a whitespace (space: ' ', end
-  of line: '\n', tabulation: '\t', etc.). Note that using a slash ('/') may
-  break the default algorithm for the definition of the user's home
-  directory.
+  NOTE:
+  - The regex for Lit_TildeLike could be expanded.  Right now it's
+    conservative, like Lit_Chars without the /.
+  - It's possible to write this in a mutating style, since only the first token
+    is changed.  But note that we CANNOT know this during lexing.
   """
-  if not word.parts:
+  # NOTE: BracedWordTree, EmptyWord, etc. can't be tilde expanded
+  if word.tag != word_e.CompoundWord:
     return None
+
+  assert word.parts, word
+
   part0 = word.parts[0]
-  if _LiteralPartId(part0) != Id.Lit_Tilde:
+  if _LiteralPartId(part0) != Id.Lit_TildeLike:
     return None
 
-  prefix = ''
-  found_slash = False
-  # search for the next /
-  for i in range(1, len(word.parts)):
-    # Not a literal part, and we did NOT find a slash.  So there is no
-    # TildeSub applied.  This would be something like ~X$var, ~$var,
-    # ~$(echo), etc..  The slash is necessary.
-    if word.parts[i].tag != word_part_e.LiteralPart:
-      return None
-    val = word.parts[i].token.val
-    p = val.find('/')
+  if len(word.parts) == 1:  # can't be zero
+    tilde_part = ast.TildeSubPart(part0.token)
+    return ast.CompoundWord([tilde_part])
 
-    if p == -1:  # no slash yet
-      prefix += val
+  part1 = word.parts[1]
+  # NOTE: We could inspect the raw tokens.
+  if _LiteralPartId(part1) == Id.Lit_Chars and part1.token.val.startswith('/'):
+    tilde_part = ast.TildeSubPart(part0.token)
+    return ast.CompoundWord([tilde_part] + word.parts[1:])
 
-    elif p >= 0:
-      # e.g. for ~foo!bar/baz, extract "bar"
-      # NOTE: requires downcast to LiteralPart
-      pre, post = val[:p], val[p:]
-      prefix += pre
-      tilde_part = ast.TildeSubPart(prefix)
-      # NOTE: no span_id here.  It would be nicer to use a different algorithm
-      # that didn't require this.
-      t = ast.token(Id.Lit_Chars, post, const.NO_INTEGER)
-      remainder_part = ast.LiteralPart(t)
-      found_slash = True
-      break
-
-  w = ast.CompoundWord()
-  if found_slash:
-    w.parts.append(tilde_part)
-    w.parts.append(remainder_part)
-    j = i + 1
-    while j < len(word.parts):
-      w.parts.append(word.parts[j])
-      j += 1
-  else:
-    # The whole thing is a tilde sub, e.g. ~foo or ~foo!bar
-    w.parts.append(ast.TildeSubPart(prefix))
-  return w
+  # It could be something like '~foo:bar', which doesn't have a slash.
+  return None
 
 
 def TildeDetectAll(words):

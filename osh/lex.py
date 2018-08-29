@@ -196,6 +196,10 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # Id.Lit_Chars.
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
 
+  # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
+  # want the next token after the tilde TildeLike token start with a /.
+  R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike),
+
   C('#', Id.Lit_Pound),  # For comments
 
   # Needs to be LONGER than any other
@@ -207,8 +211,6 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   C('{', Id.Lit_LBrace),
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
-  C('~', Id.Lit_Tilde),  # For tilde expansion
-                         # TODO: Add the rest of Lit_Chars minus / here.
 
   R(r'[ \t\r]+', Id.WS_Space),
 

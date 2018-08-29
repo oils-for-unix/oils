@@ -152,7 +152,7 @@ def AddKinds(spec):
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
       'DRightBracket',     # the ]] that matches [[, NOT a keyword
-      'Tilde',             # tilde expansion
+      'TildeLike',         # tilde expansion
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
       'Digits',            # for lex_mode_e.ARITH

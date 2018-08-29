@@ -82,7 +82,7 @@ module osh
                 bracket_op? bracket_op
                 suffix_op? suffix_op)
     -- This should be token tilde, token rest
-  | TildeSubPart(string prefix)
+  | TildeSubPart(token token)
     -- For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSubPart(command command_list, token left_token)
   | ArithSubPart(arith_expr anode)

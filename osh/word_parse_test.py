@@ -313,6 +313,14 @@ class WordParserTest(unittest.TestCase):
   def testTestOp(self):
     w = _assertReadWord(self, '${var:-default]}')
 
+  def testTildeLike(self):
+    w = _assertReadWord(self, '~/git/oilshell/oil')
+    w = _assertReadWord(self, '~andy/git/oilshell/oil')
+    w = _assertReadWord(self, '~andy_c/git/oilshell/oil')
+    w = _assertReadWord(self, '~andy.c/git/oilshell/oil')
+    w = _assertReadWord(self, '~andy-c/git/oilshell/oil')
+    w = _assertReadWord(self, '~andy-c:git/oilshell/oil')
+
   def testRead(self):
     CASES = [
         'ls "foo"',
