@@ -112,20 +112,8 @@ class WordParser(object):
 
     self.error_stack = []
 
-  def AddErrorContext(self, msg, *args, **kwargs):
-    err = util.ParseError(msg, *args, **kwargs)
-    self.error_stack.append(err)
-
   def Error(self):
     return self.error_stack
-
-  def _BadToken(self, msg, token):
-    """
-      Args:
-        msg: format string with a single %s token
-        token: Token
-    """
-    self.AddErrorContext(msg, token, token=token)
 
   def PrevToken(self):
     """Inspect state.  Used by completion.
@@ -296,7 +284,7 @@ class WordParser(object):
     self._Peek()  # Check for []
     if self.token_type == Id.VOp2_LBracket:
       bracket_op = self._ReadSubscript()
-      if not bracket_op: return None
+      assert bracket_op is not None
     else:
       bracket_op = None
 
@@ -309,7 +297,7 @@ class WordParser(object):
     Start parsing at the op -- we already skipped past the name.
     """
     part = self._ParseVarOf()
-    if not part: return None
+    assert part is not None
 
     self._Peek()
     if self.token_type == Id.Right_VarSub:
@@ -322,36 +310,27 @@ class WordParser(object):
     if op_kind == Kind.VTest:
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
-      if self.token_type != Id.Right_VarSub:
-        # NOTE: Not sure how to tickle this.  May not be possible.
-        self._BadToken('Unexpected token after test arg: %s', self.cur_token)
-        return None
+      assert self.token_type == Id.Right_VarSub, self.cur_token
 
       part.suffix_op = ast.StringUnary(op_id, arg_word)
 
     elif op_kind == Kind.VOp1:
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
-      if self.token_type != Id.Right_VarSub:
-        # NOTE: Not sure how to tickle this.  May not be possible.
-        self._BadToken('Unexpected token after unary op: %s', self.cur_token)
-        return None
+      assert self.token_type == Id.Right_VarSub, self.cur_token
 
-      op = ast.StringUnary(op_id, arg_word)
-      part.suffix_op = op
+      part.suffix_op = ast.StringUnary(op_id, arg_word)
 
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:
         op = self._ReadPatSubVarOp(arg_lex_mode)
-        if not op:
-          return None
+        assert op is not None
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
 
       elif self.token_type == Id.VOp2_Colon:
         op = self._ReadSliceVarOp()
-        if not op:
-          return None
+        assert op is not None
         # NOTE: } in arithmetic mode.
         if self.token_type != Id.Arith_RBrace:
           # Token seems off; doesn't point to X in # ${a:1:2 X
