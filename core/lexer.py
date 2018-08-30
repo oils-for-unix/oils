@@ -147,6 +147,9 @@ class Lexer(object):
     self.line_id = -1  # Invalid one
     self.translation_stack = []
 
+  def ResetInputObjects(self):
+    self.line_lexer.Reset('', -1, 0)
+
   def MaybeUnreadOne(self):
     return self.line_lexer.MaybeUnreadOne()
 

@@ -153,10 +153,7 @@ class CommandParser(object):
     """
     # All the stuff we read from
     self.w_parser.Reset()
-    #self.lexer.Reset()
-    # TODO: This should be a method on Lexer.  But I'm not sure if we want to
-    # reuse objects at all.
-    self.lexer.line_lexer.Reset('', -1)
+    self.lexer.ResetInputObjects()
     self.line_reader.Reset()
 
   def Error(self):
