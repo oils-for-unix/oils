@@ -84,13 +84,9 @@ def _assertReadWordFailure(test, word_str):
     w = w_parser.ReadWord(lex_mode_e.OUTER)
   except util.ParseError as e:
     print(e)
-    return
-  if not w:
-    print(w_parser.Error())
-    return
-
-  ast_lib.PrettyPrint(w)
-  test.fail('Expected a parser error, got %r' % w)
+  else:
+    ast_lib.PrettyPrint(w)
+    test.fail('Expected a parser error, got %r' % w)
 
 
 def _GetSuffixOp(test, w):

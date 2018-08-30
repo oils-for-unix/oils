@@ -34,19 +34,15 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   try:
     node = m()
   except util.ParseError as e:
+    ui.PrettyPrintError(e, arena, sys.stdout)
+    if expect_success:
+      test.fail('%r failed' % code_str)
     node = None
-
-  if node:
+  else:
     ast_lib.PrettyPrint(node)
     if not expect_success:
       test.fail('Expected %r to fail ' % code_str)
-  else:
-    # TODO: Could copy PrettyPrintError from pysh.py
-    err = c_parser.Error()
-    print(err)
-    ui.PrintErrorStack(err, arena, sys.stdout)
-    if expect_success:
-      test.fail('%r failed' % code_str)
+
   return node
 
 
@@ -56,20 +52,11 @@ def _assertParseCommandListError(test, code_str):
   try:
     node = c_parser.ParseCommandLine()
   except util.ParseError as e:
-    print(e)
-    return
-
-  # TODO: Don't check two kinds of failures!
-  if not node:
-    err = c_parser.Error()
-    #print(err)
-    ui.PrintErrorStack(err, arena, sys.stdout)
-    return
-
-  print('UNEXPECTED:')
-  ast_lib.PrettyPrint(node)
-  test.fail("Expected %r to fail" % code_str)
-  return
+    ui.PrettyPrintError(e, arena, sys.stdout)
+  else:
+    print('UNEXPECTED:')
+    ast_lib.PrettyPrint(node)
+    test.fail("Expected %r to fail" % code_str)
 
 
 #
