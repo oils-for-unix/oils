@@ -141,10 +141,9 @@ class WordParser(object):
     self._Next(arg_lex_mode)
     self._Peek()
 
-    w = self._ReadCompoundWord(
-        lex_mode=arg_lex_mode, eof_type=eof_type, empty_ok=empty_ok)
-    if not w:
-      return None
+    w = self._ReadCompoundWord(lex_mode=arg_lex_mode, eof_type=eof_type,
+                               empty_ok=empty_ok)
+    assert w is not None
 
     # This is for "${s:-}", ${s/a//}, etc.  It is analogous to
     # LooksLikeAssignment where we turn x= into x=''.  It has the same
@@ -895,9 +894,7 @@ class WordParser(object):
     words = []
     while True:
       w = w_parser.ReadWord(lex_mode_e.OUTER)
-      if not w:
-        self.error_stack.extend(w_parser.Error())
-        return None
+      assert w is not None
 
       if w.tag == word_e.TokenWord:
         word_id = word.CommandId(w)
@@ -959,9 +956,7 @@ class WordParser(object):
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
-            if not part2:
-              self.AddErrorContext('_ReadArrayLiteralPart failed')
-              return False
+            assert part2 is not None
             word.parts.append(part2)
 
       elif self.token_kind == Kind.VSub:
@@ -970,15 +965,13 @@ class WordParser(object):
 
       elif self.token_kind == Kind.ExtGlob:
         part = self._ReadExtGlobPart()
-        if not part:
-          return None
+        assert part is not None
         word.parts.append(part)
 
       elif self.token_kind == Kind.Left:
         #print('_ReadLeftParts')
         part = self._ReadLeftParts()
-        if not part:
-          return None
+        assert part is not None
         word.parts.append(part)
 
       # NOT done yet, will advance below
@@ -1051,8 +1044,6 @@ class WordParser(object):
 
     elif self.token_kind in (Kind.Lit, Kind.Left):
       w = self._ReadCompoundWord(lex_mode=lex_mode_e.ARITH)
-      if not w:
-        return None, True
       return w, False
 
     elif self.token_kind == Kind.VSub:
@@ -1125,10 +1116,7 @@ class WordParser(object):
 
       else:
         w = self._ReadCompoundWord(lex_mode=lex_mode)
-        if not w:
-          self.AddErrorContext(
-              'Error reading command word', token=self.cur_token)
-          return None, False
+        assert w is not None
         return w, False
 
     else:

@@ -93,6 +93,7 @@ array-literal() {
   _error-case 'a=(1 & 2)'
   _error-case 'a= (1 2)'
   _error-case 'a=(1 2'
+  _error-case 'a=(1 ${2@} )'  # error in word inside array literal
 }
 
 arith-context() {
