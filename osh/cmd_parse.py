@@ -1181,10 +1181,17 @@ class CommandParser(object):
 
   def ParseDParen(self):
     maybe_error_word = self.cur_word
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
+
     self._Next()  # skip ((
-    anode = self.w_parser.ReadDParen()
+    anode, right_spid = self.w_parser.ReadDParen()
     assert anode is not None
-    return ast.DParen(anode)
+
+    node = ast.DParen(anode)
+    node.spids.append(left_spid)
+    node.spids.append(right_spid)
+
+    return node
 
   def ParseCommand(self):
     """

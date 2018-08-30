@@ -666,15 +666,17 @@ class OilPrinter(object):
       self.f.write('}')
 
     elif node.tag == command_e.DParen:
-      # TODO: (( a == 0 )) is sh-expr ' a == 0 '
+      # (( a == 0 )) is sh-expr ' a == 0 '
       #
-      # NOTE: I have a (( n++ )) in one script.  That can be 'set n++' or
-      # 'set n += 1'.
-      #
-      # Auto-translation is:
-      #
-      # sh-expr 'n++'
-      raise NotImplementedError('DParen')
+      # NOTE: (( n++ )) is auto-translated to sh-expr 'n++', but could be set
+      # n++.
+      left_spid, right_spid = node.spids
+      self.cursor.PrintUntil(left_spid)
+      self.cursor.SkipUntil(left_spid + 1)
+      self.f.write("sh-expr '")
+      self.cursor.PrintUntil(right_spid - 1)  # before ))
+      self.cursor.SkipUntil(right_spid + 1)  # after )) -- each one is a token
+      self.f.write("'")
 
     elif node.tag == command_e.DBracket:
       # [[ 1 -eq 2 ]] to (1 == 2)

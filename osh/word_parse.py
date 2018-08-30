@@ -840,7 +840,7 @@ class WordParser(object):
             self.cur_token.val, token=self.cur_token)
     self._Next(lex_mode_e.OUTER)
 
-    return anode
+    return anode, self.cur_token.span_id
 
   def _NextNonSpace(self):
     """Same logic as _ReadWord, but for ReadForExpresion."""

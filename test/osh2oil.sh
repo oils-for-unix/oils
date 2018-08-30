@@ -966,6 +966,16 @@ echo $<[echo hi] $>[echo hi]
 OIL
 }
 
+dparen() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+(( n++ ))
+echo done
+OSH
+sh-expr ' n++ '
+echo done
+OIL
+}
+
 arith-sub() {
   # NOTE: This probably needs double quotes?
   osh0-oil3 << 'OSH' 3<< 'OIL'
@@ -981,7 +991,6 @@ echo $[  1+ 2 ]
 OSH
 echo $(  1+ 2 )
 OIL
-
 }
 
 arith-ops() {
@@ -1169,6 +1178,7 @@ readonly -a PASSING=(
   here-doc
   pipeline
   and-or
+  dparen
 
   # Word stuff
   escaped-literal
