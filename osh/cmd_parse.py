@@ -168,8 +168,7 @@ class CommandParser(object):
 
   def Peek(self):
     """Public method for REPL."""
-    if not self._Peek():
-      return None
+    self._Peek()
     return self.cur_word
 
   def _Peek(self):
@@ -180,10 +179,7 @@ class CommandParser(object):
     """
     if self.next_lex_mode != lex_mode_e.NONE:
       w = self.w_parser.ReadWord(self.next_lex_mode)
-      if w is None:
-        error_stack = self.w_parser.Error()
-        self.error_stack.extend(error_stack)
-        return False
+      assert w is not None
 
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
@@ -197,8 +193,6 @@ class CommandParser(object):
       self.c_kind = word.CommandKind(self.cur_word)
       self.c_id = word.CommandId(self.cur_word)
       self.next_lex_mode = lex_mode_e.NONE
-    #print('_Peek', self.cur_word)
-    return True
 
   def _Eat(self, c_id):
     """Consume a word of a type.  If it doesn't match, return False.
@@ -207,24 +201,19 @@ class CommandParser(object):
       c_id: either EKeyword.* or a token type like Id.Right_Subshell.
       TODO: Rationalize / type check this.
     """
-    if not self._Peek():
-      return False
+    self._Peek()
     # TODO: Printing something like KW_Do is not friendly.  We can map
     # backwards using the _KEYWORDS list in osh/lex.py.
     if self.c_id != c_id:
       p_die("Expected word type %s", c_id, word=self.cur_word)
     self._Next()
-    return True
 
   def _NewlineOk(self):
     """Check for optional newline and consume it."""
-    if not self._Peek():
-      return False
+    self._Peek()
     if self.c_id == Id.Op_Newline:
       self._Next()
-      if not self._Peek():
-        return False
-    return True
+      self._Peek()
 
   def ParseRedirect(self):
     """
@@ -234,7 +223,7 @@ class CommandParser(object):
 
     You need different types.
     """
-    if not self._Peek(): return None
+    self._Peek()
     assert self.c_kind == Kind.Redir, self.cur_word
 
     op = self.cur_word.token
@@ -252,7 +241,7 @@ class CommandParser(object):
       node.fd = fd
       self._Next()
 
-      if not self._Peek(): return None
+      self._Peek()
       node.here_begin = self.cur_word
       self._Next()
 
@@ -264,7 +253,7 @@ class CommandParser(object):
       node.fd = fd
       self._Next()
 
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_kind != Kind.Word:
         p_die('Invalid token after redirect operator', word=self.cur_word)
 
@@ -283,7 +272,7 @@ class CommandParser(object):
     """
     redirects = []
     while True:
-      if not self._Peek(): return None
+      self._Peek()
 
       # This prediction needs to ONLY accept redirect operators.  Should we
       # make them a separate TokeNkind?
@@ -291,8 +280,7 @@ class CommandParser(object):
         break
 
       node = self.ParseRedirect()
-      if not node:
-        return None
+      assert node is not None
       redirects.append(node)
       self._Next()
     return redirects
@@ -302,10 +290,10 @@ class CommandParser(object):
     redirects = []
     words = []
     while True:
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_kind == Kind.Redir:
         node = self.ParseRedirect()
-        if not node: return None  # e.g. EOF
+        assert node is not None
         redirects.append(node)
 
       elif self.c_kind == Kind.Word:
@@ -534,7 +522,7 @@ class CommandParser(object):
     <<EOF vs <<'EOF'.
     """
     result = self._ScanSimpleCommand()
-    if not result: return None
+    assert result is not None
     redirects, words = result
 
     if not words:  # e.g.  >out.txt  # redirect without words
@@ -593,7 +581,7 @@ class CommandParser(object):
           p_die("Assignments shouldn't have environment bindings", word=v0)
 
         node = self._MakeAssignment(kw_token.id, suffix_words)
-        if not node: return None
+        assert node is not None
         node.spids.append(kw_token.span_id)
         return node
 
@@ -625,14 +613,14 @@ class CommandParser(object):
     brace_group      : LBrace command_list RBrace ;
     """
     left_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.Lit_LBrace): return None
+    self._Eat(Id.Lit_LBrace)
 
     c_list = self.ParseCommandList()
-    if not c_list: return None
+    assert c_list is not None
 
     # Not needed
     #right_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.Lit_RBrace): return None
+    self._Eat(Id.Lit_RBrace)
 
     node = ast.BraceGroup(c_list.children)
     node.spids.append(left_spid)
@@ -644,13 +632,13 @@ class CommandParser(object):
 
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
-    if not self._Eat(Id.KW_Do): return None
+    self._Eat(Id.KW_Do)
     do_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
     c_list = self.ParseCommandList()  # could be any thing
-    if not c_list: return None
+    assert c_list is not None
 
-    if not self._Eat(Id.KW_Done): return None
+    self._Eat(Id.KW_Done)
     done_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
     node = ast.DoGroup(c_list.children)
@@ -670,11 +658,11 @@ class CommandParser(object):
     semi_spid = const.NO_INTEGER
 
     while True:
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_id == Id.Op_Semi:
         semi_spid = self.cur_word.token.span_id  # TokenWord
         self._Next()
-        if not self._NewlineOk(): return None
+        self._NewlineOk()
         break
       elif self.c_id == Id.Op_Newline:
         self._Next()
@@ -695,10 +683,10 @@ class CommandParser(object):
     assert node is not None
     self._Next()
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id == Id.Op_Semi:
       self._Next()
-      if not self._NewlineOk(): return None
+      self._NewlineOk()
     elif self.c_id == Id.Op_Newline:
       self._Next()
     elif self.c_id == Id.KW_Do:  # missing semicolon/newline allowed
@@ -707,7 +695,7 @@ class CommandParser(object):
       p_die('Invalid word after for expression', word=self.cur_word)
 
     body_node = self.ParseDoGroup()
-    if not body_node: return None
+    assert body_node is not None
 
     node.body = body_node
     return node
@@ -724,25 +712,21 @@ class CommandParser(object):
     node.iter_name = iter_name
     self._Next()  # skip past name
 
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
 
     in_spid = const.NO_INTEGER
     semi_spid = const.NO_INTEGER
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id == Id.KW_In:
       self._Next()  # skip in
 
       in_spid = word.LeftMostSpanForWord(self.cur_word) + 1
-      x = self.ParseForWords()
-      if x is None:
-        return None
-      iter_words, semi_spid = x
+      iter_words, semi_spid = self.ParseForWords()
+      assert iter_words is not None
+
       words2 = braces.BraceDetectAll(iter_words)
       words3 = word.TildeDetectAll(words2)
-
-      if iter_words is None:  # empty list of words is OK
-        return None
       node.iter_words = words3
 
     elif self.c_id == Id.Op_Semi:
@@ -759,7 +743,7 @@ class CommandParser(object):
     node.spids.extend((in_spid, semi_spid))
 
     body_node = self.ParseDoGroup()
-    if not body_node: return None
+    assert body_node is not None
 
     node.body = body_node
     return node
@@ -769,9 +753,9 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
-    if not self._Eat(Id.KW_For): return None
+    self._Eat(Id.KW_For)
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id == Id.Op_DLeftParen:
       node = self._ParseForExprLoop()
     else:
@@ -786,10 +770,10 @@ class CommandParser(object):
     self._Next()  # skip while
 
     cond_node = self.ParseCommandList()
-    if not cond_node: return None
+    assert cond_node is not None
 
     body_node = self.ParseDoGroup()
-    if not body_node: return None
+    assert body_node is not None
 
     return ast.While(cond_node.children, body_node)
 
@@ -800,10 +784,10 @@ class CommandParser(object):
     self._Next()  # skip until
 
     cond_node = self.ParseCommandList()
-    if not cond_node: return None
+    assert cond_node is not None
 
     body_node = self.ParseDoGroup()
-    if not body_node: return None
+    assert body_node is not None
 
     return ast.Until(cond_node.children, body_node)
 
@@ -820,30 +804,30 @@ class CommandParser(object):
 
     pat_words = []
     while True:
-      if not self._Peek(): return None
+      self._Peek()
       pat_words.append(self.cur_word)
       self._Next()
 
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_id == Id.Op_Pipe:
         self._Next()
       else:
         break
 
     rparen_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.Right_CasePat): return None
-    if not self._NewlineOk(): return None
+    self._Eat(Id.Right_CasePat)
+    self._NewlineOk()
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
       c_list = self.ParseCommandTerm()
-      if not c_list: return None
+      assert c_list is not None
       action_children = c_list.children
     else:
       action_children = []
 
     dsemi_spid = const.NO_INTEGER
     last_spid = const.NO_INTEGER
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id == Id.KW_Esac:
       last_spid = word.LeftMostSpanForWord(self.cur_word)
     elif self.c_id == Id.Op_DSemi:
@@ -853,7 +837,7 @@ class CommandParser(object):
       # Happens on EOF
       p_die('Expected ;; or esac', word=self.cur_word)
 
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
 
     arm = ast.case_arm(pat_words, action_children)
     arm.spids.extend((left_spid, rparen_spid, dsemi_spid, last_spid))
@@ -863,7 +847,7 @@ class CommandParser(object):
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
-    if not self._Peek(): return None
+    self._Peek()
 
     while True:
       # case item begins with a command word or (
@@ -872,13 +856,11 @@ class CommandParser(object):
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
       arm = self.ParseCaseItem()
-      if not arm: return None
+      assert arm is not None
 
       arms.append(arm)
-      if not self._Peek(): return None
+      self._Peek()
       # Now look for DSEMI or ESAC
-
-    return True
 
   def ParseCase(self):
     """
@@ -889,23 +871,22 @@ class CommandParser(object):
     case_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip case
 
-    if not self._Peek(): return None
+    self._Peek()
     case_node.to_match = self.cur_word
     self._Next()
 
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
     in_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.KW_In): return None
-    if not self._NewlineOk(): return None
+    self._Eat(Id.KW_In)
+    self._NewlineOk()
 
     if self.c_id != Id.KW_Esac:  # empty case list
-      if not self.ParseCaseList(case_node.arms):
-        return None
+      self.ParseCaseList(case_node.arms)
       # TODO: should it return a list of nodes, and extend?
-      if not self._Peek(): return None
+      self._Peek()
 
     esac_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.KW_Esac): return None
+    self._Eat(Id.KW_Esac)
     self._Next()
 
     case_node.spids.extend((case_spid, in_spid, esac_spid))
@@ -923,13 +904,13 @@ class CommandParser(object):
 
       self._Next()  # skip elif
       cond = self.ParseCommandList()
-      if not cond: return None
+      assert cond is not None
 
       then_spid = word.LeftMostSpanForWord(self.cur_word)
-      if not self._Eat(Id.KW_Then): return None
+      self._Eat(Id.KW_Then)
 
       body = self.ParseCommandList()
-      if not body: return None
+      assert body is not None
 
       arm = ast.if_arm(cond.children, body.children)
       arm.spids.extend((elif_spid, then_spid))
@@ -939,14 +920,12 @@ class CommandParser(object):
       else_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Next()
       body = self.ParseCommandList()
-      if not body: return None
+      assert body is not None
       if_node.else_action = body.children
     else:
       else_spid = const.NO_INTEGER
 
     if_node.spids.append(else_spid)
-
-    return True
 
   def ParseIf(self):
     """
@@ -956,26 +935,25 @@ class CommandParser(object):
     self._Next()  # skip if
 
     cond = self.ParseCommandList()
-    if not cond: return None
+    assert cond is not None
 
     then_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.KW_Then): return None
+    self._Eat(Id.KW_Then)
 
     body = self.ParseCommandList()
-    if not body: return None
+    assert body is not None
 
     arm = ast.if_arm(cond.children, body.children)
     arm.spids.extend((const.NO_INTEGER, then_spid))  # no if spid at first?
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
-      if not self._ParseElifElse(if_node):
-        return None
+      self._ParseElifElse(if_node)
     else:
       if_node.spids.append(const.NO_INTEGER)  # no else spid
 
     fi_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.KW_Fi): return None
+    self._Eat(Id.KW_Fi)
 
     if_node.spids.append(fi_spid)
     return if_node
@@ -989,7 +967,7 @@ class CommandParser(object):
     self._Next()  # skip time
 
     pipeline = self.ParsePipeline()
-    if not pipeline: return None
+    assert pipeline is not None
     return ast.TimeBlock(pipeline)
 
   def ParseCompoundCommand(self):
@@ -1041,14 +1019,13 @@ class CommandParser(object):
     function_body    : compound_command io_redirect* ; /* Apply rule 9 */
     """
     body = self.ParseCompoundCommand()
-    if not body: return None
+    assert body is not None
 
     redirects = self._ParseRedirectList()
-    if redirects is None: return None
+    assert redirects is not None
 
     func.body = body
     func.redirects = redirects
-    return True
 
   def ParseFunctionDef(self):
     """
@@ -1074,22 +1051,21 @@ class CommandParser(object):
     self._Next()  # skip function name
 
     # Must be true beacuse of lookahead
-    if not self._Peek(): return None
+    self._Peek()
     assert self.c_id == Id.Op_LParen, self.cur_word
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
     self._Next()
 
-    if not self._Eat(Id.Right_FuncDef): return None
+    self._Eat(Id.Right_FuncDef)
     after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
 
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
 
     func = ast.FuncDef()
     func.name = name
 
-    if not self.ParseFunctionBody(func):
-      return None
+    self.ParseFunctionBody(func)
 
     func.spids.append(left_spid)
     func.spids.append(after_name_spid)
@@ -1103,7 +1079,7 @@ class CommandParser(object):
 
     self._Next()  # skip past 'function'
 
-    if not self._Peek(): return None
+    self._Peek()
     ok, name = word.AsFuncName(self.cur_word)
     if not ok:
       p_die('Invalid KSH-style function name', word=self.cur_word)
@@ -1111,21 +1087,20 @@ class CommandParser(object):
     after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
     self._Next()  # skip past 'function name
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id == Id.Op_LParen:
       self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
       self._Next()
-      if not self._Eat(Id.Right_FuncDef): return None
+      self._Eat(Id.Right_FuncDef)
       # Change it: after )
       after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
 
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
 
     func = ast.FuncDef()
     func.name = name
 
-    if not self.ParseFunctionBody(func):
-      return None
+    self.ParseFunctionBody(func)
 
     func.spids.append(left_spid)
     func.spids.append(after_name_spid)
@@ -1148,7 +1123,7 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
     c_list = self.ParseCommandList()
-    if not c_list: return None
+    assert c_list is not None
 
     # Remove singleton CommandList as an optimization.
     if len(c_list.children) == 1:
@@ -1158,7 +1133,7 @@ class CommandParser(object):
     node = ast.Subshell(child)
 
     right_spid = word.LeftMostSpanForWord(self.cur_word)
-    if not self._Eat(Id.Right_Subshell): return None
+    self._Eat(Id.Right_Subshell)
 
     node.spids.extend((left_spid, right_spid))
     return node
@@ -1198,7 +1173,7 @@ class CommandParser(object):
                      | ksh_function_def
                      ;
     """
-    if not self._Peek(): return None
+    self._Peek()
 
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
@@ -1207,11 +1182,10 @@ class CommandParser(object):
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time):
       node = self.ParseCompoundCommand()
-      if not node: return None
+      assert node is not None
       if node.tag != command_e.TimeBlock:  # The only one without redirects
         redirects = self._ParseRedirectList()
-        if redirects is None:
-          return None
+        assert redirects is not None
         node.redirects = redirects
       return node
 
@@ -1247,17 +1221,17 @@ class CommandParser(object):
     """
     negated = False
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id == Id.KW_Bang:
       negated = True
       self._Next()
 
     child = self.ParseCommand()
-    if not child: return None
+    assert child is not None
 
     children = [child]
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
       if negated:
         node = ast.Pipeline(children, negated)
@@ -1275,17 +1249,13 @@ class CommandParser(object):
     while True:
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
 
-      if not self._NewlineOk():
-        return None
+      self._NewlineOk()
 
       child = self.ParseCommand()
-      if not child:
-        # TODO: Return partial pipeline here?  All signatures shouldbe (ok,
-        # node).  Only the completion uses the node when ok is False.
-        return None
+      assert child is not None
       children.append(child)
 
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
         break
 
@@ -1306,9 +1276,9 @@ class CommandParser(object):
     iteratively with a token of lookahead.
     """
     child = self.ParsePipeline()
-    if not child: return None
+    assert child is not None
 
-    if not self._Peek(): return None
+    self._Peek()
     if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
       return child
 
@@ -1319,16 +1289,14 @@ class CommandParser(object):
       ops.append(self.c_id)
 
       self._Next()  # skip past || &&
-
-      if not self._NewlineOk():
-        return None
+      self._NewlineOk()
 
       child = self.ParsePipeline()
-      if not child: return None
+      assert child is not None
 
       children.append(child)
 
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
         break
 
@@ -1374,14 +1342,14 @@ class CommandParser(object):
     done = False
     while not done:
       child = self.ParseAndOr()
-      if not child: return None
+      assert child is not None
 
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
         child = ast.Sentence(child, self.cur_word.token)
         self._Next()
 
-        if not self._Peek(): return None
+        self._Peek()
         if self.c_id in (Id.Op_Newline, Id.Eof_Real):
           done = True
 
@@ -1430,7 +1398,7 @@ class CommandParser(object):
     children = []
     done = False
     while not done:
-      if not self._Peek(): return None
+      self._Peek()
       #print('====> ParseCommandTerm word', self.cur_word)
 
       # Most keywords are valid "first words".  But do/done/then do not BEGIN
@@ -1441,14 +1409,13 @@ class CommandParser(object):
         break
 
       child = self.ParseAndOr()
-      if not child:
-        return None
+      assert child is not None
 
-      if not self._Peek(): return None
+      self._Peek()
       if self.c_id == Id.Op_Newline:
         self._Next()
 
-        if not self._Peek(): return None
+        self._Peek()
         if self.c_id in END_LIST:
           done = True
 
@@ -1456,13 +1423,13 @@ class CommandParser(object):
         child = ast.Sentence(child, self.cur_word.token)
         self._Next()
 
-        if not self._Peek(): return None
+        self._Peek()
         if self.c_id == Id.Op_Newline:
           self._Next()  # skip over newline
 
           # Test if we should keep going.  There might be another command after
           # the semi and newline.
-          if not self._Peek(): return None
+          self._Peek()
           if self.c_id in END_LIST:
             done = True
 
@@ -1477,7 +1444,7 @@ class CommandParser(object):
 
       children.append(child)
 
-    if not self._Peek(): return None
+    self._Peek()
 
     return ast.CommandList(children)
 
@@ -1492,10 +1459,10 @@ class CommandParser(object):
     more like this: more like this: (and_or trailer)+.  It makes capture
     easier.
     """
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
 
     node = self.ParseCommandTerm()
-    if node is None: return None
+    assert node is not None
     assert node is not False
     return node
 
@@ -1510,7 +1477,7 @@ class CommandParser(object):
     osh -n is a different loop -- it parses each line one at a time, but
     doesn't execute!
     """
-    if not self._NewlineOk(): return None
+    self._NewlineOk()
 
     #print('ParseFile', self.c_kind, self.cur_word)
     # An empty node to execute
