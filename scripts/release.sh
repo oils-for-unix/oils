@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./release.sh <function name>
+#   scripts/release.sh <function name>
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
@@ -159,7 +159,11 @@ _release-build() {
 readonly HAVE_ROOT=1
 
 readonly -a OTHER_TESTS=(
-  osh-usage osh2oil gold parse-errors runtime-errors oshc-deps arena
+  gold 
+  osh2oil 
+  osh-usage oshc-deps
+  arena
+  parse-errors runtime-errors
 )
 
 run-other-tests() {
@@ -549,24 +553,14 @@ _link() {
   ln -s -f -v --no-target-directory "$@"
 }
 
-compress-txt() {
-  local name=$1
-
-  log "--- test/$name"
-  local out="$root/test/$name.wwz"
-  pushd _tmp/$name
-  time zip -r -q $out .  # recursive, quiet
-  popd
-}
-
 compress() {
   local root=$PWD/_release/VERSION/
 
-  # TODO: Change this to test/other.wwz/{gold,osh2oil,...}.txt
-
-  # There is a single log.txt file in _tmp/{osh2oil,gold}
-  compress-txt osh2oil
-  compress-txt gold
+  log "--- test/other"
+  local out="$root/test/other.wwz"
+  pushd _tmp/other
+  time zip -r -q $out .  # recursive, quiet
+  popd
 
   log "--- test/unit"
   local out="$root/test/unit.wwz"
@@ -620,10 +614,10 @@ compress-benchmarks() {
     osh-runtime/{stage1,stage2,index.html} \
     vm-baseline/{stage1,stage2,index.html} \
     ovm-build/{stage1,stage2,index.html} \
-    oheap/{stage1,stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 
   popd
+    #oheap/{stage1,stage2,index.html} \
 }
 
 line-counts() {

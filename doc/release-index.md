@@ -47,10 +47,20 @@ Oil Version 0.6.pre3
 - [Wild Tests](test/wild.wwz/).  Parsing and translating thousands of shell
   scripts with OSH.
 - [Unit Tests](test/unit.wwz/).  Python unit test results.
-- [Gold Tests](test/gold.wwz/log.txt).  Comparisons against bash (using
+
+More tests:
+
+- [Gold Tests](test/other.wwz/gold.txt).  Comparisons against bash (using
   implicit assertions, no golden output.)
-- [osh2oil Tests](test/osh2oil.wwz/log.txt).  Test the conversion of OSH to
+- [osh2oil Tests](test/other.wwz/osh2oil.txt).  Test the conversion of OSH to
   Oil.
+- [parse-errors](test/other.wwz/parse-errors.txt).  A list of all parse errors.
+- [runtime-errors](test/other.wwz/runtime-errors.txt).  A list of all runtime
+  errors.
+- [osh-usage](test/other.wwz/osh-usage.txt).  Misc tests of the `osh` binary.
+- [oshc-deps](test/other.wwz/oshc-deps.txt).  Tests for a subcommand in
+  progress.
+- [arena](test/other.wwz/arena.txt).  Testing an invariant for the parser.
 
 ### OPy Tests
 
