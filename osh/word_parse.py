@@ -1160,3 +1160,12 @@ class WordParser(object):
     """
     self._ReadLikeDQ(None, parts)
     # Returns nothing
+
+  def ReadPS(self):
+    """For $PS1, $PS4, etc."""
+    # NOTE: Reading PS4 is just like reading a here doc line.  "\n" is allowed
+    # too.  The OUTER mode would stop at spaces, and ReadWord doesn't allow
+    # lex_mode_e.DQ.
+    w = ast.CompoundWord()
+    self._ReadLikeDQ(None, w.parts)
+    return w

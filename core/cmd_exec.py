@@ -218,19 +218,11 @@ class Executor(object):
     self.arena.PushSource(source_name)
 
     try:
-      # TODO: Get rid of duplicate error handling:
-      err = None
       try:
         node = c_parser.ParseWholeFile()
       except util.ParseError as e:
-        err = e
-      else:
-        if not node:
-          err = c_parser.Error()
-
-      if err:
         util.error('Parse error in %r:', source_name)
-        ui.PrintErrorStack(err, self.arena, sys.stderr)
+        ui.PrettyPrintError(e, self.arena, sys.stderr)
         return None
 
     finally:
@@ -1482,21 +1474,9 @@ class Tracer(object):
       # We have to parse this at runtime.  PS4 should usually remain constant.
       w_parser = parse_lib.MakeWordParserForPlugin(ps4, self.arena)
 
-      # NOTE: Reading PS4 is just like reading a here doc line.  "\n" is
-      # allowed too.  The OUTER mode would stop at spaces, and ReadWord
-      # doesn't allow lex_mode_e.DQ.
-      ok = True
-      ps4_word = ast.CompoundWord()
       try:
-        w_parser.ReadHereDocBody(ps4_word.parts)
+        ps4_word = w_parser.ReadPS()
       except util.ParseError as e:
-        ok = False
-      else:
-        # TODO: Get rid of duplicate forms of error handling.
-        if not ps4_word:
-          ok = False
-
-      if not ok:
         error_str = '<ERROR: cannot parse PS4>'
         t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
         ps4_word = ast.CompoundWord([ast.LiteralPart(t)])

@@ -127,20 +127,7 @@ def InteractiveLoop(opts, ex, c_parser, arena):
         c_parser.Reset()
         c_parser.ResetInputObjects()
         continue
-      #log('parsed node: %s', node)
-
-      # Failed parse.
-      # TODO: Need an error for an empty command, which we ignore?  GetLine
-      # could do that in the first position?
-      # ParseSimpleCommand fails with '\n' token?
-      if not node:
-        e = c_parser.Error()
-        # NOTE: This is a bit verbose.
-        ui.PrintErrorStack(e, arena)
-
-        c_parser.Reset()
-        c_parser.ResetInputObjects()
-        continue
+      assert node is not None
 
       if ast_f:
         ast_lib.PrettyPrint(node)
@@ -333,13 +320,7 @@ def OshMain(argv0, argv, login_shell):
     except util.ParseError as e:
       ui.PrettyPrintError(e, arena, sys.stderr)
       return 2
-    else:
-      # TODO: Remove this older form of error handling.
-      if not node:
-        err = c_parser.Error()
-        assert err, err  # can't be empty
-        ui.PrintErrorStack(err, arena)
-        return 2  # parse error is code 2
+    assert node is not None
 
     do_exec = True
     if opts.fix:
@@ -506,13 +487,7 @@ def OshCommandMain(argv):
   except util.ParseError as e:
     ui.PrettyPrintError(e, arena, sys.stderr)
     return 2
-  else:
-    # TODO: Remove this older form of error handling.
-    if not node:
-      err = c_parser.Error()
-      assert err, err  # can't be empty
-      ui.PrintErrorStack(err, arena)
-      return 2  # parse error is code 2
+  assert node is not None
 
   f.close()
 
