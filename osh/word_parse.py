@@ -77,6 +77,23 @@ class WordParser(object):
     self.line_reader = line_reader
     self.Reset(lex_mode=lex_mode)
 
+  def Reset(self, lex_mode=lex_mode_e.OUTER):
+    """Called by interactive loop."""
+    # For _Peek()
+    self.prev_token = None  # for completion
+    self.cur_token = None
+    self.token_kind = Kind.Undefined
+    self.token_type = Id.Undefined_Tok
+
+    self.next_lex_mode = lex_mode
+
+    # For newline.  TODO: I think we can do this iteratively, without member
+    # state.
+    self.cursor = None
+    self.cursor_was_newline = False
+
+    self.error_stack = []
+
   def _Peek(self):
     """Helper method."""
     if self.next_lex_mode is not None:
@@ -94,23 +111,6 @@ class WordParser(object):
     We need this for proper interactive parsing.
     """
     self.next_lex_mode = lex_mode
-
-  def Reset(self, lex_mode=lex_mode_e.OUTER):
-    """Called by interactive loop."""
-    # For _Peek()
-    self.prev_token = None  # for completion
-    self.cur_token = None
-    self.token_kind = Kind.Undefined
-    self.token_type = Id.Undefined_Tok
-
-    self.next_lex_mode = lex_mode
-
-    # For newline.  TODO: I think we can do this iteratively, without member
-    # state.
-    self.cursor = None
-    self.cursor_was_newline = False
-
-    self.error_stack = []
 
   def Error(self):
     return self.error_stack
@@ -152,25 +152,18 @@ class WordParser(object):
       begin = None  # no beginning specified
     else:
       begin = self._ReadArithExpr()
-      if not begin: return None
-      #print('BEGIN', begin)
-      #print('BVS2', self.cur_token)
 
     if self.token_type == Id.Arith_RBrace:
       return ast.Slice(begin, None)  # No length specified
 
     # Id.Arith_Colon is a pun for Id.VOp2_Colon
-    elif self.token_type == Id.Arith_Colon:
+    if self.token_type == Id.Arith_Colon:
       self._Next(lex_mode_e.ARITH)
       length = self._ReadArithExpr()
-      if not length: return None
-
-      #print('after colon', self.cur_token)
       return ast.Slice(begin, length)
 
-    else:
-      p_die("Unexpected token in slice: %r", self.cur_token.val,
-            token=self.cur_token)
+    p_die("Unexpected token in slice: %r", self.cur_token.val,
+          token=self.cur_token)
 
   def _ReadPatSubVarOp(self, lex_mode):
     """
@@ -183,8 +176,6 @@ class WordParser(object):
     do_suffix = False
 
     pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
-    if not pat:
-      return None
 
     if len(pat.parts) == 1:
       ok, s, quoted = word.StaticEval(pat)
@@ -219,10 +210,8 @@ class WordParser(object):
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
       return ast.PatSub(pat, None, do_all, do_prefix, do_suffix)
 
-    elif self.token_type == Id.Lit_Slash:
+    if self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode)  # do not stop at /
-      if not replace:
-        return None
 
       self._Peek()
       if self.token_type != Id.Right_VarSub:
@@ -234,10 +223,9 @@ class WordParser(object):
 
       return ast.PatSub(pat, replace, do_all, do_prefix, do_suffix)
 
-    else:
-      # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
-      p_die("Expected } after pat sub, got %r", self.cur_token.val,
-            token=self.cur_token)
+    # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
+    p_die("Expected } after pat sub, got %r", self.cur_token.val,
+          token=self.cur_token)
 
   def _ReadSubscript(self):
     """ Subscript = '[' ('@' | '*' | ArithExpr) ']'
@@ -436,7 +424,6 @@ class WordParser(object):
 
       else:  # not a prefix, '#' is the variable
         part = self._ParseVarExpr(arg_lex_mode)
-        if not part: return None
 
     elif ty == Id.VSub_Bang:
       t = self.lexer.LookAhead(lex_mode_e.VS_1)
@@ -450,18 +437,15 @@ class WordParser(object):
         # No lookahead -- do it in a second step, or at runtime
         self._Next(lex_mode_e.VS_1)
         part = self._ParseVarExpr(arg_lex_mode)
-        if not part: return None
 
         part.prefix_op = Id.VSub_Bang
 
       else:  # not a prefix, '!' is the variable
         part = self._ParseVarExpr(arg_lex_mode)
-        if not part: return None
 
     # VS_NAME, VS_NUMBER, symbol that isn't # or !
     elif self.token_kind == Kind.VSub:
       part = self._ParseVarExpr(arg_lex_mode)
-      if not part: return None
 
     else:
       # e.g. ${^}
@@ -665,7 +649,6 @@ class WordParser(object):
     self._ReadLikeDQ(left_dq_token, dq_part.parts)
 
     dq_part.spids.append(self.cur_token.span_id)  # Right "
-
     return dq_part
 
   def _ReadCommandSubPart(self, token_type):
@@ -800,7 +783,6 @@ class WordParser(object):
 
     self._Next(lex_mode_e.ARITH)
     anode = self._ReadArithExpr()
-    assert anode is not None
 
     #print('xx ((', self.cur_token)
     if self.token_type != Id.Arith_RParen:
@@ -995,7 +977,6 @@ class WordParser(object):
 
   def _ReadArithWord(self):
     """Helper function for ReadArithWord."""
-
     self._Peek()
 
     if self.token_kind == Kind.Unknown:
@@ -1151,18 +1132,16 @@ class WordParser(object):
     return self.cursor
 
   def ReadHereDocBody(self, parts):
-    """
-    Sort of like Read(), except we're in a double quoted context, but not using
-    double quotes.
-    """
+    """A here doc is like a double quoted context, except " isn't special."""
     self._ReadLikeDQ(None, parts)
     # Returns nothing
 
   def ReadPS(self):
-    """For $PS1, $PS4, etc."""
-    # NOTE: Reading PS4 is just like reading a here doc line.  "\n" is allowed
-    # too.  The OUTER mode would stop at spaces, and ReadWord doesn't allow
-    # lex_mode_e.DQ.
+    """For $PS1, $PS4, etc.
+
+    This is just like reading a here doc line.  "\n" is allowed, as well as the
+    typical substitutions ${x} $(echo hi) $((1 + 2)).
+    """
     w = ast.CompoundWord()
     self._ReadLikeDQ(None, w.parts)
     return w
