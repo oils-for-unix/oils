@@ -109,11 +109,7 @@ def InteractiveLoop(opts, ex, c_parser, arena):
       w = c_parser.Peek()
     except KeyboardInterrupt:
       print('Ctrl-C')
-      break
-
-    # TODO: When does this happen?
-    if w is None:
-      raise RuntimeError('Failed parse: %s' % c_parser.Error())
+      continue
 
     c_id = word.CommandId(w)
     if c_id == Id.Op_Newline:
