@@ -5,6 +5,7 @@ wild_report.py
 """
 
 import json
+import optparse
 import os
 import sys
 
@@ -89,6 +90,20 @@ NAV_TEMPLATE = jsontemplate.Template("""\
 
 PAGE_TEMPLATES = {}
 
+# <a href="{base_url}osh-to-oil.html#{rel_path|htmltag}/{name|htmltag}">view</a>
+PAGE_TEMPLATES['FAILED'] = MakeHtmlGroup(
+    '{task}_failed',
+"""\
+<h1>{failures|size} {task} failures</h1>
+
+{.repeated section failures}
+  <a href="{base_url}osh-to-oil.html#{rel_path|htmltag}">{rel_path|html}</a>
+  <pre>
+  {stderr}
+  </pre>
+{.end}
+""")
+
 # One is used for sort order.  One is used for alignment.
 # type="string"
 # should we use the column css class as the sort order?  Why not?
@@ -117,6 +132,10 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
     Failed to parse <b>{parse_failed|commas}</b> scripts, leaving
     <b>{lines_parsed|commas}</b> lines parsed in <b>{parse_proc_secs}</b> seconds
     (<b>{lines_per_sec}</b> lines/sec).
+    {.if test top_level_links}
+      (<a href="parse-failed.html">all failures</a>,
+       <a href="parse-failed.txt">text</a>)
+    {.end}
   </li>
 {.or}
   <li>
@@ -127,12 +146,19 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   </li>
 {.end}
 
-<li><b>{osh2oil_failed|commas}</b> OSH-to-Oil translations failed.</li>
+<li>
+  <b>{osh2oil_failed|commas}</b> OSH-to-Oil translations failed.
+  {.if test top_level_links}
+    (<a href="osh2oil-failed.html">all failures</a>,
+     <a href="osh2oil-failed.txt">text</a>)
+  {.end}
+</li>
 </ul>
 </div>
 
 <p></p>
 {.end}
+
 
 {.section dirs}
 <table id="dirs">
@@ -277,6 +303,10 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   </table>
 {.end}
 
+{.if test top_level_links}
+<a href="version-info.txt">Date and OSH version<a>
+{.end}
+
 <!-- page globals -->
 <script type="text/javascript">
   var gUrlHash = new UrlHash(location.hash);
@@ -371,6 +401,8 @@ def UpdateNodes(node, path_parts, file_stats):
 
     UpdateNodes(child, rest, file_stats)
   else:
+    # TODO: Put these in different sections?  Or least one below the other?
+
     # Include stderr if non-empty, or if FAILED
     parse_stderr = file_stats.pop('parse_stderr')
     if parse_stderr or file_stats['parse_failed']:
@@ -505,6 +537,9 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
         'stderr': node.stderr,
         'nav': _MakeNav(rel_path),
     }
+    # Hack to add links for top level page:
+    if rel_path == '':
+      data['top_level_links'] = True
 
     group = PAGE_TEMPLATES['LISTING']
     body = BODY_STYLE.expand(data, group=group)
@@ -520,10 +555,153 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
     WriteHtmlFiles(child, child_out, rel_path=child_rel, base_url=child_base)
 
 
+def _ReadTaskFile(path):
+  """
+  Parses the a file that looks like '0 0.11', for the status code and timing.
+  This is output by test/common.sh run-task-with-status.
+  """
+  try:
+    with open(path) as f:
+      parts = f.read().split()
+      status, secs = parts
+  except ValueError as e:
+    log('ERROR reading %s: %s', path, e)
+    raise
+  # Turn it into pass/fail
+  num_failed = 1 if int(status) >= 1 else 0
+  return num_failed, float(secs)
+
+
+def _ReadLinesToSet(path):
+  result = set()
+  if not path:
+    return result
+
+  with open(path) as f:
+    for line in f:
+      result.add(line.strip())
+
+  return result
+
+
+def SumStats(stdin, in_dir, root_node, failures):
+  """Reads pairs of paths from stdin, and updates root_node."""
+  # Collect work into dirs
+  for line in stdin:
+    # TODO: Add a column for wild_-not-shell.txt wild-not-osh.  I guess it
+    # can just be an attribute on st, and then you can test for it.
+    # If it's not shell, omit it from the totals.  If it's not OSH, append it
+    # to a common page, like www/not-shell.html and www/not-osh.html.
+
+    rel_path, abs_path = line.split()
+    #print proj, '-', abs_path, '-', rel_path
+
+    raw_base = os.path.join(in_dir, rel_path)
+    st = {}
+
+    parse_task_path = raw_base + '__parse.task.txt'
+    parse_failed, st['parse_proc_secs'] = _ReadTaskFile(
+        parse_task_path)
+    st['parse_failed'] = parse_failed
+
+    with open(raw_base + '__parse.stderr.txt') as f:
+      st['parse_stderr'] = f.read()
+
+    if parse_failed:
+      failures.parse_failed.append(
+          {'rel_path': rel_path, 'stderr': st['parse_stderr']}
+      )
+
+    osh2oil_task_path = raw_base + '__osh2oil.task.txt'
+    osh2oil_failed, st['osh2oil_proc_secs'] = _ReadTaskFile(
+        osh2oil_task_path)
+
+    # Only count translation failures if the parse suceeded!
+    st['osh2oil_failed'] = osh2oil_failed if not parse_failed else 0
+
+    with open(raw_base + '__osh2oil.stderr.txt') as f:
+      st['osh2oil_stderr'] = f.read()
+
+    if st['osh2oil_failed']:
+      failures.osh2oil_failed.append(
+          {'rel_path': rel_path, 'stderr': st['osh2oil_stderr']}
+      )
+
+    wc_path = raw_base + '__wc.txt'
+    with open(wc_path) as f:
+      st['num_lines'] = int(f.read().split()[0])
+    # For lines per second calculation
+    st['lines_parsed'] = 0 if st['parse_failed'] else st['num_lines']
+
+    st['num_files'] = 1
+
+    path_parts = rel_path.split('/')
+    #print path_parts
+    UpdateNodes(root_node, path_parts, st)
+
+
+class Failures(object):
+  """Simple object that gets transformed to HTML and text."""
+  def __init__(self):
+    self.parse_failed = []
+    self.osh2oil_failed = []
+
+  def Write(self, out_dir):
+    with open(os.path.join(out_dir, 'parse-failed.txt'), 'w') as f:
+      for failure in self.parse_failed:
+        print(failure['rel_path'], file=f)
+
+    with open(os.path.join(out_dir, 'osh2oil-failed.txt'), 'w') as f:
+      for failure in self.osh2oil_failed:
+        print(failure['rel_path'], file=f)
+
+    base_url = ''
+    with open(os.path.join(out_dir, 'parse-failed.html'), 'w') as f:
+      data = {
+          'task': 'parse', 'failures': self.parse_failed, 'base_url': base_url
+      }
+      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+      f.write(body)
+
+    with open(os.path.join(out_dir, 'osh2oil-failed.html'), 'w') as f:
+      data = {
+          'task': 'osh2oil', 'failures': self.osh2oil_failed,
+          'base_url': base_url
+      }
+      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+      f.write(body)
+
+
+def Options():
+  """Returns an option parser instance."""
+  p = optparse.OptionParser('wild_report.py [options] ACTION...')
+  p.add_option(
+      '-v', '--verbose', dest='verbose', action='store_true', default=False,
+      help='Show details about test execution')
+  p.add_option(
+      '--not-shell', default=None,
+      help="A file that contains a list of files that are known to be invalid "
+           "shell")
+  p.add_option(
+      '--not-osh', default=None,
+      help="A file that contains a list of files that are known to be invalid "
+           "under the OSH language.")
+  return p
+
+
 def main(argv):
+  o = Options()
+  (opts, argv) = o.parse_args(argv)
+
   action = argv[1]
 
   if action == 'summarize-dirs':
+    in_dir = argv[2]
+    out_dir = argv[3]
+
+    not_shell = _ReadLinesToSet(opts.not_shell)
+    not_osh = _ReadLinesToSet(opts.not_osh)
+
     # lines and size, oops
 
     # TODO: Need read the manifest instead, and then go by dirname() I guess
@@ -532,62 +710,16 @@ def main(argv):
     # Or maybe you need the output files?
 
     root_node = DirNode()
+    failures = Failures()
+    SumStats(sys.stdin, in_dir, root_node, failures)
 
-    # Collect work into dirs
-    for line in sys.stdin:
-      #d = line.strip()
-      rel_path, abs_path = line.split()
-      #print proj, '-', abs_path, '-', rel_path
-
-      def _ReadTaskFile(path):
-        try:
-          with open(path) as f:
-            parts = f.read().split()
-            status, secs = parts
-        except ValueError as e:
-          log('ERROR reading %s: %s', path, e)
-          raise
-        # Turn it into pass/fail
-        num_failed = 1 if int(status) >= 1 else 0
-        return num_failed, float(secs)
-
-      raw_base = os.path.join('_tmp/wild/raw', rel_path)
-      st = {}
-
-      # TODO:
-      # - Open stderr to get internal time
-
-      parse_task_path = raw_base + '__parse.task.txt'
-      st['parse_failed'], st['parse_proc_secs'] = _ReadTaskFile(
-          parse_task_path)
-
-      with open(raw_base + '__parse.stderr.txt') as f:
-        st['parse_stderr'] = f.read()
-
-      osh2oil_task_path = raw_base + '__osh2oil.task.txt'
-      st['osh2oil_failed'], st['osh2oil_proc_secs'] = _ReadTaskFile(
-          osh2oil_task_path)
-
-      with open(raw_base + '__osh2oil.stderr.txt') as f:
-        st['osh2oil_stderr'] = f.read()
-
-      wc_path = raw_base + '__wc.txt'
-      with open(wc_path) as f:
-        st['num_lines'] = int(f.read().split()[0])
-      # For lines per second calculation
-      st['lines_parsed'] = 0 if st['parse_failed'] else st['num_lines']
-
-      st['num_files'] = 1
-
-      path_parts = rel_path.split('/')
-      #print path_parts
-      UpdateNodes(root_node, path_parts, st)
+    failures.Write(out_dir)
 
     # Debug print
     #DebugPrint(root_node)
-    #WriteJsonFiles(root_node, '_tmp/wild/www')
+    #WriteJsonFiles(root_node, out_dir)
 
-    WriteHtmlFiles(root_node, '_tmp/wild/www')
+    WriteHtmlFiles(root_node, out_dir)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

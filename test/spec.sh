@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./spec-file.sh <function name>
+#   test/spec.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-# Duplicate definition since we can't source test/common.sh without clobbering
-# OSH!
-die() {
-  echo "$@" 1>&2
-  exit 1
-}
+source test/common.sh
 
 # For now, fall back to the shell in $PATH.
 shell-path() {
@@ -43,20 +38,15 @@ fi
 readonly OSH_CPYTHON='bin/osh'
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
-readonly OSH_LIST=${OSH_LIST:-}  # A space-separated list.
+OSH_LIST=${OSH_LIST:-}  # A space-separated list.
 
-# TODO: Would be nicer to use ${OSH[@]} everywhere.
-OSH=''
-if test -n "$OSH_LIST"; then
-  OSH="$OSH_LIST"
-else
+if test -z "$OSH_LIST"; then
   if test -e $OSH_OVM; then
     # TODO: Does it make sense to copy the binary to an unrelated to directory,
     # like /tmp?  /tmp/{oil.ovm,osh}.
-
-    OSH="$OSH_CPYTHON $OSH_OVM"
+    OSH_LIST="$OSH_CPYTHON $OSH_OVM"
   else
-    OSH="$OSH_CPYTHON"
+    OSH_LIST="$OSH_CPYTHON"
   fi
 fi
 
@@ -82,7 +72,7 @@ install-shells() {
 
 # TODO: Maybe do this before running all tests.
 check-shells() {
-  for sh in "${REF_SHELLS[@]}" $ZSH $OSH; do
+  for sh in "${REF_SHELLS[@]}" $ZSH $OSH_LIST; do
     test -e $sh || { echo "ERROR: $sh does not exist"; break; }
     test -x $sh || { echo "ERROR: $sh isn't executable"; break; }
   done
@@ -98,19 +88,9 @@ maybe-show() {
 }
 
 version-text() {
-  date
-  echo
+  date-and-git-info
 
-  if test -d .git; then
-    local branch=$(git rev-parse --abbrev-ref HEAD)
-    local hash=$(git rev-parse $branch)
-    echo "oil repo: $hash on branch $branch"
-  else
-    echo "(not running from git repository)"
-  fi
-  echo
-
-  for bin in $OSH; do
+  for bin in $OSH_LIST; do
     echo ---
     echo "\$ $bin --version"
     $bin --version
@@ -224,190 +204,190 @@ all() {
 #
 
 smoke() {
-  sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 osh-only() {
-  sh-spec spec/osh-only.test.sh $OSH "$@"
+  sh-spec spec/osh-only.test.sh $OSH_LIST "$@"
 }
 
 # Regress bugs
 bugs() {
-  sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 blog1() {
   sh-spec spec/blog1.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 blog2() {
   sh-spec spec/blog2.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 blog-other1() {
   sh-spec spec/blog-other1.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 alias() {
   sh-spec spec/alias.test.sh --osh-failures-allowed 10 \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 comments() {
-  sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 word-split() {
   sh-spec spec/word-split.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 word-eval() {
   sh-spec spec/word-eval.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 # 'do' -- detected statically as syntax error?  hm.
 assign() {
   sh-spec spec/assign.test.sh --osh-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH "$@" 
+    ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
 background() {
   sh-spec spec/background.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@" 
+    ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
 subshell() {
   sh-spec spec/subshell.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@" 
+    ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
 quote() {
   sh-spec spec/quote.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 loop() {
   sh-spec spec/loop.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 case_() {
   sh-spec spec/case_.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 if_() {
   sh-spec spec/if_.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 builtins() {
   sh-spec spec/builtins.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 builtin-eval-source() {
   sh-spec spec/builtin-eval-source.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 builtin-io() {
   sh-spec spec/builtin-io.test.sh \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 builtins2() {
-  sh-spec spec/builtins2.test.sh ${REF_SHELLS[@]} $ZSH $OSH "$@"
+  sh-spec spec/builtins2.test.sh ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 # dash and mksh don't implement 'dirs'
 builtin-dirs() {
-  sh-spec spec/builtin-dirs.test.sh $BASH $ZSH $OSH "$@"
+  sh-spec spec/builtin-dirs.test.sh $BASH $ZSH $OSH_LIST "$@"
 }
 
 builtin-vars() {
   sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 builtin-getopts() {
   sh-spec spec/builtin-getopts.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 builtin-test() {
   sh-spec spec/builtin-test.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 builtin-trap() {
   sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
   sh-spec spec/builtin-bash.test.sh \
-    $BASH $OSH "$@"
+    $BASH $OSH_LIST "$@"
 }
 
 builtins-special() {
   sh-spec spec/builtins-special.test.sh --osh-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 command-parsing() {
-  sh-spec spec/command-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/command-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 func-parsing() {
-  sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 func() {
   sh-spec spec/func.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 glob() {
   sh-spec spec/glob.test.sh --osh-failures-allowed 4 \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 arith() {
   sh-spec spec/arith.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 command-sub() {
   sh-spec spec/command-sub.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 command_() {
   sh-spec spec/command_.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 pipeline() {
   sh-spec spec/pipeline.test.sh --osh-failures-allowed 3 \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 explore-parsing() {
   sh-spec spec/explore-parsing.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 parse-errors() {
   sh-spec spec/parse-errors.test.sh --osh-failures-allowed 5 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 here-doc() {
@@ -418,90 +398,90 @@ here-doc() {
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
   sh-spec spec/here-doc.test.sh --range 0-30 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 redirect() {
   sh-spec spec/redirect.test.sh --osh-failures-allowed 5 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 posix() {
   sh-spec spec/posix.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 special-vars() {
   sh-spec spec/special-vars.test.sh --osh-failures-allowed 4 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 # dash/mksh don't implement this.
 introspect() {
   sh-spec spec/introspect.test.sh --osh-failures-allowed 3 \
-    $BASH $OSH "$@"
+    $BASH $OSH_LIST "$@"
 }
 
 # DONE -- pysh is the most conformant!
 tilde() {
-  sh-spec spec/tilde.test.sh ${REF_SHELLS[@]} $OSH "$@"
+  sh-spec spec/tilde.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 var-op-test() {
   sh-spec spec/var-op-test.test.sh --osh-failures-allowed 5 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 var-op-other() {
   sh-spec spec/var-op-other.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 var-op-strip() {
   sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 1 \
-    ${REF_SHELLS[@]} $ZSH $OSH "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
   sh-spec spec/var-sub.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 var-num() {
   sh-spec spec/var-num.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 var-sub-quote() {
   sh-spec spec/var-sub-quote.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 sh-options() {
   sh-spec spec/sh-options.test.sh --osh-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 xtrace() {
   sh-spec spec/xtrace.test.sh --osh-failures-allowed 5 \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 strict-options() {
   sh-spec spec/strict-options.test.sh \
-    ${REF_SHELLS[@]} $OSH "$@"
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 errexit() {
   sh-spec spec/errexit.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 errexit-strict() {
   sh-spec spec/errexit-strict.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH "$@"
+    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 # 
@@ -511,17 +491,17 @@ errexit-strict() {
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
   sh-spec spec/arith-context.test.sh --osh-failures-allowed 3 \
-    $BASH $MKSH $ZSH $OSH "$@"
+    $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
 array() {
   sh-spec spec/array.test.sh --osh-failures-allowed 8 \
-    $BASH $MKSH $OSH "$@"
+    $BASH $MKSH $OSH_LIST "$@"
 }
 
 array-compat() {
   sh-spec spec/array-compat.test.sh --osh-failures-allowed 6 \
-    $BASH $MKSH $OSH "$@"
+    $BASH $MKSH $OSH_LIST "$@"
 }
 
 type-compat() {
@@ -531,7 +511,7 @@ type-compat() {
 # += is not POSIX and not in dash.
 append() {
   sh-spec spec/append.test.sh --osh-failures-allowed 4 \
-    $BASH $MKSH $OSH "$@" 
+    $BASH $MKSH $OSH_LIST "$@" 
 }
 
 # associative array -- mksh implements different associative arrays.
@@ -548,30 +528,30 @@ assoc-zsh() {
 # I guess.
 dbracket() {
   sh-spec spec/dbracket.test.sh --osh-failures-allowed 2 \
-    $BASH $MKSH $OSH "$@"
-  #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH $ZSH "$@"
+    $BASH $MKSH $OSH_LIST "$@"
+  #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
 }
 
 dparen() {
   sh-spec spec/dparen.test.sh \
-    $BASH $MKSH $ZSH $OSH "$@"
+    $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
 brace-expansion() {
   # TODO for osh: implement num ranges, mark char ranges unimplemented?
   sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 12 \
-    $BASH $MKSH $ZSH $OSH "$@"
+    $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
 regex() {
   sh-spec spec/regex.test.sh --osh-failures-allowed 3 \
-    $BASH $ZSH $OSH "$@"
+    $BASH $ZSH $OSH_LIST "$@"
 }
 
 process-sub() {
   # mksh and dash don't support it
   sh-spec spec/process-sub.test.sh \
-    $BASH $ZSH $OSH "$@"
+    $BASH $ZSH $OSH_LIST "$@"
 }
 
 extended-glob() {
@@ -582,7 +562,7 @@ extended-glob() {
 # ${!var} syntax -- oil should replace this with associative arrays.
 var-ref() {
   sh-spec spec/var-ref.test.sh --osh-failures-allowed 5 \
-    $BASH $MKSH $OSH "$@"
+    $BASH $MKSH $OSH_LIST "$@"
 }
 
 let() {
@@ -591,11 +571,11 @@ let() {
 
 for-expr() {
   sh-spec spec/for-expr.test.sh \
-    $BASH $ZSH $OSH "$@"
+    $BASH $ZSH $OSH_LIST "$@"
 }
 
 empty-bodies() {
-  sh-spec spec/empty-bodies.test.sh "${REF_SHELLS[@]}" $ZSH $OSH "$@"
+  sh-spec spec/empty-bodies.test.sh "${REF_SHELLS[@]}" $ZSH $OSH_LIST "$@"
 }
 
 # TODO: This is for the ANTLR grammars, in the oil-sketch repo.
@@ -605,7 +585,7 @@ shell-grammar() {
 }
 
 compgen() {
-  sh-spec spec/compgen.test.sh $BASH $OSH "$@"
+  sh-spec spec/compgen.test.sh $BASH $OSH_LIST "$@"
 }
 
 "$@"

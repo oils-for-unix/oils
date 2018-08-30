@@ -1,7 +1,12 @@
 #!/bin/bash
 #
 # Usage:
-#   ./common.sh <function name>
+#   source test/common.sh
+
+# Include guard.
+test -n "${__TEST_COMMON_SH:-}" && return
+readonly __TEST_COMMON_SH=1
+
 
 # TODO: Remove/rename this.  The release process might use the release binary
 # instead of this dev binary.  test/spec.sh already has its own scheme.
@@ -89,6 +94,20 @@ run-other-suite-for-release() {
     echo
     die "Test suite '$suite_name' failed (running $func_name)"
   fi
+}
+
+date-and-git-info() {
+  date
+  echo
+
+  if test -d .git; then
+    local branch=$(git rev-parse --abbrev-ref HEAD)
+    local hash=$(git rev-parse $branch)
+    echo "oil repo: $hash on branch $branch"
+  else
+    echo "(not running from git repository)"
+  fi
+  echo
 }
 
 if test "$(basename $0)" = 'common.sh'; then

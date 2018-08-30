@@ -87,15 +87,25 @@ _link() {
   ln -s -f -v "$@"
 }
 
+version-text() {
+  date-and-git-info
+  echo "\$ $OSH --version"
+  $OSH --version
+}
+
 make-report() {
-  cat $MANIFEST | wild-report summarize-dirs
+  local in_dir=_tmp/wild/raw
+  local out_dir=_tmp/wild/www
+
+  # TODO: This could also go in 'raw', and then be processed by Python?
+  version-text > $out_dir/version-info.txt
+
+  cat $MANIFEST | wild-report summarize-dirs $in_dir $out_dir
 
   # This has to go inside the www dir because of the way that relative links
   # are calculated.
-  _link \
-    $PWD/web/osh-to-oil.{html,js} \
-    _tmp/wild/www
-
+  # TODO: Isn't this redundant?
+  _link $PWD/web/osh-to-oil.{html,js} $out_dir
   _link $PWD/web _tmp
 }
 
