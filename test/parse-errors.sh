@@ -36,21 +36,20 @@ patsub() {
 
   _error-case 'echo ${x/}'  # pattern must not be empty
 
-  _error-case 'echo ${x/%}'  # pattern must not be empty (only had modifier)
-  _error-case 'echo ${x/%/}'  # pattern must not be empty (only had modifier)
-
   # These are a little odd
   _error-case 'echo ${x//}'
-  _error-case 'echo ${x///}'
+  #_error-case 'echo ${x///}'
 
-  _error-case 'echo ${x/foo}'
-  _error-case 'echo ${x//foo}'
+  #_error-case 'echo ${x/foo}'
+  #_error-case 'echo ${x//foo}'
+
+  # This should be a different error?  It should be an empty pattern?
   _error-case 'echo ${x///foo}'
 
   # Newline in replacement pattern
-  _error-case 'echo ${x//foo/replace
-}'
-  _error-case 'echo ${x//foo/replace$foo}'
+  #_error-case 'echo ${x//foo/replace
+#}'
+  #_error-case 'echo ${x//foo/replace$foo}'
 }
 
 # osh/word_parse.py

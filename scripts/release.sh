@@ -88,6 +88,8 @@ auto-machine1() {
 #           parse-errors.txt
 #           runtime-errors.txt
 #           oshc-deps.txt
+#           osh-usage.txt
+#           arena.txt
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
@@ -156,6 +158,16 @@ _release-build() {
 
 readonly HAVE_ROOT=1
 
+readonly -a OTHER_TESTS=(
+  osh-usage osh2oil gold parse-errors runtime-errors oshc-deps arena
+)
+
+run-other-tests() {
+  for name in "${OTHER_TESTS[@]}"; do
+    test/$name.sh run-for-release
+  done
+}
+
 _test-release-build() {
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
   # etc.
@@ -168,11 +180,7 @@ _test-release-build() {
 
   test/spec.sh smoke  # Initial smoke test, slightly redundant.
 
-  test/osh2oil.sh run-for-release
-  test/gold.sh run-for-release
-  test/parse-errors.sh run-for-release
-  test/runtime-errors.sh run-for-release
-  test/oshc-deps.sh run-for-release
+  run-other-tests
 
   # Just test the release build (not under CPython or byterun.  That comes later.)
   OSH_LIST="$OSH_RELEASE_BINARY" test/spec.sh all

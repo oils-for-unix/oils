@@ -1217,12 +1217,7 @@ all-passing() {
 }
 
 run-for-release() {
-  local out_dir=_tmp/osh2oil
-  mkdir -p $out_dir
-
-  all-passing | tee $out_dir/log.txt
-
-  echo "Wrote $out_dir/log.txt"
+  run-other-suite-for-release osh2oil all-passing
 }
 
 "$@"
