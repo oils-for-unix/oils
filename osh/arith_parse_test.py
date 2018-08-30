@@ -19,12 +19,16 @@ from core import test_lib
 from core import util
 
 from osh import parse_lib
+from osh.meta import types
 #from osh import arith_parse
+
+lex_mode_e = types.lex_mode_e
 
 
 def ParseAndEval(code_str):
   arena = test_lib.MakeArena('<arith_parse_test.py>')
   w_parser, _ = parse_lib.MakeParserForCompletion(code_str, arena)
+  w_parser._Next(lex_mode_e.ARITH)  # Calling private method
   anode = w_parser._ReadArithExpr()  # need the right lex state?
   print('node:', anode)
 

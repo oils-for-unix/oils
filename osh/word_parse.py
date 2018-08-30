@@ -144,11 +144,6 @@ class WordParser(object):
       w.parts.append(ast.EmptyPart())
     return w
 
-  def _ReadSliceArg(self):
-    """Read an arithmetic expression for either part of ${a : i+1 : i+2}."""
-    anode = self._ReadArithExpr(do_next=False)
-    return anode
-
   def _ReadSliceVarOp(self):
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
     self._Next(lex_mode_e.ARITH)
@@ -156,7 +151,7 @@ class WordParser(object):
     if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
       begin = None  # no beginning specified
     else:
-      begin = self._ReadSliceArg()
+      begin = self._ReadArithExpr()
       if not begin: return None
       #print('BEGIN', begin)
       #print('BVS2', self.cur_token)
@@ -167,7 +162,7 @@ class WordParser(object):
     # Id.Arith_Colon is a pun for Id.VOp2_Colon
     elif self.token_type == Id.Arith_Colon:
       self._Next(lex_mode_e.ARITH)
-      length = self._ReadSliceArg()
+      length = self._ReadArithExpr()
       if not length: return None
 
       #print('after colon', self.cur_token)
@@ -258,6 +253,7 @@ class WordParser(object):
       self._Next(lex_mode_e.ARITH)  # skip past @
       self._Peek()
     else:
+      self._Next(lex_mode_e.ARITH)  # skip past [
       anode = self._ReadArithExpr()
       op = ast.ArrayIndex(anode)
 
@@ -709,7 +705,7 @@ class WordParser(object):
     cs_part.spids.append(right_spid)
     return cs_part
 
-  def _ReadArithExpr(self, do_next=True):
+  def _ReadArithExpr(self):
     """Read and parse an arithmetic expression in various contexts.
 
     $(( 1+2 ))
@@ -729,8 +725,6 @@ class WordParser(object):
 
     See the assertion in ArithParser.Parse() -- unexpected extra input.
     """
-    if do_next:
-      self._Next(lex_mode_e.ARITH)
     # calls self.ReadWord(lex_mode_e.ARITH)
     a_parser = tdop.TdopParser(arith_parse.SPEC, self)
     anode = a_parser.Parse()
@@ -755,6 +749,7 @@ class WordParser(object):
     # $((echo * foo))  # looks like multiplication
     # $((echo / foo))  # looks like division
 
+    self._Next(lex_mode_e.ARITH)
     anode = self._ReadArithExpr()
     if self.token_type != Id.Arith_RParen:
       p_die('Expected first ) to end arith sub, got %r', self.cur_token.val,
@@ -780,6 +775,7 @@ class WordParser(object):
     """Non-standard arith sub $[a + 1]."""
     left_span_id = self.cur_token.span_id
 
+    self._Next(lex_mode_e.ARITH)
     anode = self._ReadArithExpr()
     if self.token_type != Id.Arith_RBracket:
       p_die('Expected ], got %r', self.cur_token.val, token=self.cur_token)
@@ -802,6 +798,7 @@ class WordParser(object):
     # Then you can get rid of this.
     self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
+    self._Next(lex_mode_e.ARITH)
     anode = self._ReadArithExpr()
     assert anode is not None
 
@@ -836,21 +833,21 @@ class WordParser(object):
     if self.token_type == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
       init_node = None
     else:
-      init_node = self._ReadArithExpr(do_next=False)
+      init_node = self._ReadArithExpr()
     self._NextNonSpace()
 
     self._Peek()
     if self.token_type == Id.Arith_Semi:  # for (( ; ; i++ ))
       cond_node = None
     else:
-      cond_node = self._ReadArithExpr(do_next=False)
+      cond_node = self._ReadArithExpr()
     self._NextNonSpace()
 
     self._Peek()
     if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
       update_node = None
     else:
-      update_node = self._ReadArithExpr(do_next=False)
+      update_node = self._ReadArithExpr()
     self._NextNonSpace()
 
     self._Peek()
@@ -1032,7 +1029,7 @@ class WordParser(object):
       return w, False
 
     else:
-      assert False, ("Unexpected token parsing arith sub: %s", self.cur_token)
+      assert False, ("Unexpected token parsing arith sub: %s" % self.cur_token)
 
     raise AssertionError("Shouldn't get here")
 
