@@ -1,5 +1,5 @@
 """
-word.py -- Functions for using words as "tokens".
+word.py - Utility functions for words, e.g. treating them as "tokens".
 """
 
 from osh.meta import Id, Kind, LookupKind

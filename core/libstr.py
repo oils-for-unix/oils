@@ -2,15 +2,11 @@
 """
 libstr.py - String library functions that can be exposed with a saner syntax.
 
-Instead of
+Instead of:
 
-local y=${x//a*/b}
-
-var y = x -> sub('a*', 'b', :ALL)
-
-Or maybe:
-
-var y = x -> sub( g/a*/, 'b', :ALL)
+    local y=${x//a*/b}
+    var y = x -> sub('a*', 'b', :ALL)
+    var y = x -> sub( Glob/a*/, 'b', :ALL)  # maybe a glob literal
 """
 
 import libc

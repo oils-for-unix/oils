@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 """
-braces.py
+braces.py - Implementation of {andy,bob}@example.com
 
 NOTE: bash implements brace expansion in the braces.c file (835 lines).  It
 uses goto!

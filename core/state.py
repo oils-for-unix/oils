@@ -7,7 +7,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-state.py -- Interpreter state
+state.py - Interpreter state
 """
 
 import cStringIO

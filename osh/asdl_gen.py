@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 """
-ast_gen.py: Generate the Id enum in C code.
-
-# TODO: This should be renamed to asdl_gen.py
+asdl_gen.py - Generate Python and C from OSH ASDL schemas.
 """
 
 import os

@@ -1,8 +1,6 @@
 #!/usr/bin/python
 """
-ast_lib.py
-
-Helpers for osh/osh.asdl
+ast_lib.py - Helpers for osh/osh.asdl
 """
 
 import sys

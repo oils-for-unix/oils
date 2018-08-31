@@ -7,8 +7,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-process.py - Runtime library for launching processes and manipulating file
-descriptors.
+process.py - Launch processes and manipulate file descriptors.
 """
 
 import errno

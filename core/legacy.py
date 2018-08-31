@@ -1,31 +1,21 @@
 #!/usr/bin/env python
 """
-legacy.py
+legacy.py - Word Splitting
 
-Nice blog post on the complexity/corner cases/difering intuition of splitting
+Nice blog post on the complexity/corner cases/differing intuition of splitting
 strings:
 
 https://chriszetter.com/blog/2017/10/29/splitting-strings/
 
 python-dev doesn't want to touch it anymore!
 
-Other notes:
-- How does this compare to awk -F?
+Other possible splitters:
 
-Idea: This is discouraged/legacy, so write it in Oil rather than C++?
-Problem: Need both classes and algebraic data types.
-
-Do we have different splitters?  Awk splitter might be useful.  Regex
-splitter later.  CSV splitter?
-LiteralSlice.
-
-Other kinds of splitters:
-
+- AwkSplitter -- how does this compare to awk -F?
 - RegexSplitter
 - CsvSplitter
-- TSV2Splitter -- this transforms because of # \u0065 in JSON.  So it's not a
-  pure slice, but neither is IFS splitting because of backslashes.
-- AwkSplitter
+- TSV2Splitter -- Data is transformed because of # \u0065 in JSON.  So it's not
+  a pure slice, but neither is IFS splitting because of backslashes.
 - Perl?
   - does perl have a spilt context?
 

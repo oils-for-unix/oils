@@ -7,10 +7,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-util.py -- Common infrastructure.
-
-In some cases, we're using C++ idioms in Python, so the code translates more
-easily to C++.
+util.py - Common infrastructure.
 """
 
 import cStringIO

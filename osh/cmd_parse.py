@@ -1119,7 +1119,6 @@ class CommandParser(object):
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
     # translation stack, we want to delay it.
 
-    #print('ParseSubshell lexer.PushHint ) -> )')
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
     c_list = self.ParseCommandList()
@@ -1399,7 +1398,6 @@ class CommandParser(object):
     done = False
     while not done:
       self._Peek()
-      #print('====> ParseCommandTerm word', self.cur_word)
 
       # Most keywords are valid "first words".  But do/done/then do not BEGIN
       # commands, so they are not valid.
@@ -1460,10 +1458,8 @@ class CommandParser(object):
     easier.
     """
     self._NewlineOk()
-
     node = self.ParseCommandTerm()
     assert node is not None
-    assert node is not False
     return node
 
   def ParseWholeFile(self):
@@ -1479,7 +1475,6 @@ class CommandParser(object):
     """
     self._NewlineOk()
 
-    #print('ParseFile', self.c_kind, self.cur_word)
     # An empty node to execute
     if self.c_kind == Kind.Eof:
       return ast.NoOp()
@@ -1488,7 +1483,6 @@ class CommandParser(object):
     # ParseCommandLine(), like oil.InteractiveLoop.
     node = self.ParseCommandTerm()
     assert node is not None
-    assert node is not False
 
     # NOTE: This happens when there is no newline at the end of a file, like
     # osh -c 'cat <<EOF'

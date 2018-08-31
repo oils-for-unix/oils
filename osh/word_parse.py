@@ -7,6 +7,45 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 word_parse.py - Parse the shell word language.
+
+Hairy example:
+
+hi$((1 + 2))"$(echo hi)"${var:-__"$(echo default)"__}
+
+Substitutions can be nested, but which inner subs are allowed depends on the
+outer sub.
+
+lex_mode_e.OUTER (_ReadLeftParts)
+  All subs and quotes are allowed:
+  $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
+
+lex_mode_e.DQ  (_ReadDoubleQuotedLeftParts)
+  Var, Command, Arith, but no quotes.
+  $v ${v}   $() ``   $(())
+  No process substitution.
+
+lex_mode_e.ARITH
+  Similar to DQ: Var, Command, and Arith sub, but no process sub.  bash doesn't
+  allow quotes, but OSH does.  We allow ALL FOUR kinds of quotes, because we
+  need those for associative array indexing.
+
+lex_mode_e.VS_ARG_UNQ
+  Like UNQUOTED, everything is allowed (even process substitutions), but we
+  stop at }, and space is SIGNIFICANT.
+  
+  Example: ${a:-  b   }
+
+  ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
+  ${X:-'single'}  ${X:-"double"}  ${X:-$'\n'}  ${X:-<(echo hi)}
+
+lex_mode_e.VS_ARG_DQ
+  In contrast to DQ, VS_ARG_DQ accepts nested "" and $'' and $"", e.g.
+  "${x:-"default"}".
+
+  In contrast, VS_ARG_UNQ respects single quotes and process substitution.
+
+  It's weird that double quotes are allowed.  Space is also significant here,
+  e.g. "${x:-a  "b"}".
 """
 
 from osh.meta import Id, Kind, LookupKind
@@ -25,50 +64,6 @@ lex_mode_e = types.lex_mode_e
 p_die = util.p_die
 log = util.log
 
-# Substitutions can be nested, but which inner subs are allowed depends on the
-# outer sub.  See _ReadLeftParts vs. _ReadDoubleQuotedLeftParts.
-
-# lex_mode_e.OUTER
-#   All subs and quotes are allowed --
-#   $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
-#
-# lex_mode_e.DQ
-#   Var, Command, Arith, but no quotes
-#   $v ${v}   $() ``   $(())
-#   No process substitution.
-#
-# lex_mode_e.ARITH:
-#   Similar to DQ: Var, Command, Arith sub.  No process sub.  bash has no
-#   quotes, but we are changing this in oil.  We are adding ALL FOUR kinds of
-#   quotes , because we need those for associtative array indexing.
-#
-# lex_mode_e.VS_ARG_UNQ
-#   Like UNQUOTED, except we stop at }.  Everything is allowed, even process
-#   substitution.
-#
-#   ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
-#   ${X:-'single'}  ${X:-"double"}  ${X:-$'\n'}  ${X:-<(echo hi)}
-#
-#   But space is SIGNIFICANT.  ${a:-  b   }
-#   So you should NOT just read a bunch of words after :-, unless you also
-#   preserve the space tokens between.
-#   In other words, like DS_VS_ARG, except SINGLE Quotes allowed?
-#
-# lex_mode_e.VS_ARG_DQ
-#   Can't be lex_mode_e.DQ because here we respect $' and $" tokens, while <(
-#   token is not respected.
-#
-#   Like VS_ARG_UNQ, but single quotes are NOT respected (they appear
-#   literally), and process substitution is not respected (ditto).
-#
-#   "" and $'' and $"" are respected, but not ''.  I need a matrix for this.
-#
-#   Like DQ, except nested "" and $'' and $"" are RESPECTED.
-#
-#   It's weird that double quotes are allowed.  Not sure why that would be.
-#   Unquoted is also allowed, so " a "b" c " $'' and $"" are lame, because they
-#   don't appear in the DQ context.  I think I should parse those but DISALLOW.
-#   You should always make $'' and $"" as a separate var!
 
 class WordParser(object):
 
@@ -409,7 +404,6 @@ class WordParser(object):
     if ty == Id.VSub_Pound:
       # Disambiguate
       t = self.lexer.LookAhead(lex_mode_e.VS_1)
-      #print("\t# LOOKAHEAD", t)
       if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
         # e.g. a name, '#' is the prefix
         self._Next(lex_mode_e.VS_1)
@@ -427,7 +421,6 @@ class WordParser(object):
 
     elif ty == Id.VSub_Bang:
       t = self.lexer.LookAhead(lex_mode_e.VS_1)
-      #print("\t! LOOKAHEAD", t)
       if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
         # e.g. a name, '!' is the prefix
         # ${!a} -- this is a ref
@@ -506,7 +499,7 @@ class WordParser(object):
     raise AssertionError(self.cur_token)
 
   def _ReadLeftParts(self):
-    """Read substitutions and quoted strings."""
+    """Read substitutions and quoted strings (for the OUTER context)."""
 
     if self.token_type == Id.Left_DoubleQuote:
       return self._ReadDoubleQuotedPart()
@@ -559,7 +552,6 @@ class WordParser(object):
 
     while True:
       self._Peek()
-      #log('t %r', self.cur_token)
 
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
@@ -660,11 +652,9 @@ class WordParser(object):
     left_token = self.cur_token
     left_spid = left_token.span_id
 
-    #print('_ReadCommandSubPart', self.cur_token)
     self._Next(lex_mode_e.OUTER)  # advance past $( or `
 
     # Set the lexer in a state so ) becomes the EOF token.
-    #print('_ReadCommandSubPart lexer.PushHint ) -> EOF')
     if token_type in (
         Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
       self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
@@ -680,7 +670,6 @@ class WordParser(object):
     assert node is not None
 
     # Hm this creates its own word parser, which is thrown away?
-    #print('X', self.cur_token)
     right_spid = c_parser.w_parser.cur_token.span_id
 
     cs_part = ast.CommandSubPart(node, left_token)
@@ -784,7 +773,6 @@ class WordParser(object):
     self._Next(lex_mode_e.ARITH)
     anode = self._ReadArithExpr()
 
-    #print('xx ((', self.cur_token)
     if self.token_type != Id.Arith_RParen:
       p_die('Expected first ) to end arith statement, got %r',
             self.cur_token.val, token=self.cur_token)
@@ -882,7 +870,6 @@ class WordParser(object):
     could be an operator delimiting a compound word.  Can we change lexer modes
     and remove this special case?
     """
-    #print('_ReadCompoundWord', lex_mode)
     word = ast.CompoundWord()
 
     num_parts = 0
@@ -890,7 +877,6 @@ class WordParser(object):
     while not done:
       allow_done = empty_ok or num_parts != 0
       self._Peek()
-      #print('CW',self.cur_token)
       if allow_done and self.token_type == eof_type:
         done = True  # e.g. for ${foo//pat/replace}
 
@@ -906,10 +892,7 @@ class WordParser(object):
 
         word.parts.append(part)
 
-        if self.token_type == Id.Lit_VarLike:
-          #print('@', self.cursor)
-          #print('@', self.cur_token)
-
+        if self.token_type == Id.Lit_VarLike:  # foo=
           t = self.lexer.LookAhead(lex_mode_e.OUTER)
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
@@ -927,7 +910,6 @@ class WordParser(object):
         word.parts.append(part)
 
       elif self.token_kind == Kind.Left:
-        #print('_ReadLeftParts')
         part = self._ReadLeftParts()
         assert part is not None
         word.parts.append(part)
@@ -1022,7 +1004,6 @@ class WordParser(object):
         word: Word, or None if there was an error, or need_more is set
         need_more: True if the caller should call us again
     """
-    #print('_Read', lex_mode, self.cur_token)
     self._Peek()
 
     if self.token_kind == Kind.Eof:
@@ -1034,13 +1015,11 @@ class WordParser(object):
       self._Next(lex_mode)
       if self.token_type == Id.Op_Newline:
         if self.cursor_was_newline:
-          #print('SKIP(nl)', self.cur_token)
           return None, True
 
       return ast.TokenWord(self.cur_token), False
 
     elif self.token_kind == Kind.Right:
-      #print('WordParser.Read: Kind.Right', self.cur_token)
       if self.token_type not in (
           Id.Right_Subshell, Id.Right_FuncDef, Id.Right_CasePat,
           Id.Right_ArrayLiteral):

@@ -12,8 +12,6 @@ In contrast to test / [, the parsing of [[ expressions is done BEFORE
 evaluation.  So we are parsing a list of Word instances to an AST, rather than
 a list of strings.
 
-TODO: If we implement "test / [", we should share the parsing.
-
 Grammar from http://compilers.iecc.com/crenshaw/tutor6.txt, adapted to ANTLR
 syntax.
 
