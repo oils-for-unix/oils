@@ -109,6 +109,9 @@ _NORMAL_BUILTINS = {
     "declare": builtin_e.DECLARE,
     "typeset": builtin_e.TYPESET,
 
+    "alias": builtin_e.ALIAS,
+    "unalias": builtin_e.UNALIAS,
+
     "help": builtin_e.HELP,
     "debug-line": builtin_e.DEBUG_LINE,
 }
@@ -980,6 +983,51 @@ def DeclareTypeset(argv, mem, funcs):
     raise NotImplementedError
 
   sys.stdout.flush()
+  return status
+
+
+ALIAS_SPEC = _Register('alias')
+
+
+# TODO: Test out all the details here
+def Alias(argv, aliases):
+  if not argv:
+    for name, alias_exp in aliases.iteritems():
+      # TODO: Print this better
+      print('%s %s' % (name, alias_exp))
+    return 0
+
+  for arg in argv:
+    parts = arg.split('=', 1)
+    log(' p %s', parts)
+    if len(parts) == 1:
+      name = parts[0]
+      alias_exp = aliases.get(name)
+      if alias_exp is None:
+        print('alias %r is not defined' % name)  # TODO: error?
+      else:
+        print('%s %s' % (name, alias_exp))
+    else:
+      name, alias_exp = parts
+      aliases[name] = alias_exp
+
+  print(argv)
+  print(aliases)
+  return 0
+
+
+UNALIAS_SPEC = _Register('unalias')
+
+
+# TODO: Test out all the details here
+def UnAlias(argv, aliases):
+  status = 0
+  for name in argv:
+    try:
+      del aliases[name]
+    except KeyError:
+      print('alias %r is not defined' % name)  # TODO: error?
+      status = 1
   return status
 
 

@@ -229,12 +229,13 @@ def OshMain(argv0, argv, login_shell):
     # TODO: NullLookup?
     comp_lookup = None
 
+  fd_state = process.FdState()
   exec_opts = state.ExecOpts(mem)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
+  aliases = {}  # feedback between runtime and parser
 
-  fd_state = process.FdState()
   ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, readline,
-                         completion, comp_lookup, exec_opts, arena)
+                         completion, comp_lookup, exec_opts, arena, aliases)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
@@ -243,7 +244,7 @@ def OshMain(argv0, argv, login_shell):
     arena.PushSource(rc_path)
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
-      _, rc_c_parser = parse_lib.MakeParser(rc_line_reader, arena)
+      _, rc_c_parser = parse_lib.MakeParser(rc_line_reader, arena, aliases)
       try:
         rc_node = rc_c_parser.ParseWholeFile()
         if not rc_node:
@@ -291,7 +292,7 @@ def OshMain(argv0, argv, login_shell):
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
-  w_parser, c_parser = parse_lib.MakeParser(line_reader, arena)
+  w_parser, c_parser = parse_lib.MakeParser(line_reader, arena, aliases)
 
   if exec_opts.interactive:
     # NOTE: We're using a different evaluator here.  The completion system can

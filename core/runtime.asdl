@@ -66,7 +66,7 @@ module runtime
   | COLON
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HELP
-  | DECLARE | TYPESET
+  | DECLARE | TYPESET | ALIAS | UNALIAS
   | PWD
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and

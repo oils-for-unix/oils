@@ -120,11 +120,12 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, w_parser, lexer, line_reader, arena):
+  def __init__(self, w_parser, lexer, line_reader, arena, aliases=None):
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer  # for fast lookahead to (, for function defs
     self.line_reader = line_reader  # for here docs
-    self.arena = arena
+    self.arena = arena  # for adding here doc spans
+    self.aliases = aliases or {}  # aliases to expand at parse time
 
     self.Reset()
 
@@ -301,6 +302,7 @@ class CommandParser(object):
 
       else:
         break
+
       self._Next()
     return redirects, words
 
@@ -1183,10 +1185,24 @@ class CommandParser(object):
       node = self.ParseCompoundCommand()
       assert node is not None
       if node.tag != command_e.TimeBlock:  # The only one without redirects
-        redirects = self._ParseRedirectList()
-        assert redirects is not None
-        node.redirects = redirects
+        node.redirects = self._ParseRedirectList()
+        assert node.redirects is not None
       return node
+
+    # TODO: Is this the natural place to check for aliases?  It's NOT a
+    # keyword.
+    # 1) check if self.cur_word is a plain word in self.aliases
+    # 2) Iteratively check next work based on trailing space
+    # 2) And then change state Then RECURSIVELY call ParseCommand?
+    #
+    # self.w_parser.PushAliasBuffer() -- this means the lexer reads from it?
+
+    # TODO: To this in a loop
+    ok, word_str, quoted = word.StaticEval(self.cur_word)
+    if ok and not quoted:
+      alias_exp = self.aliases.get(word_str)
+      if alias_exp is not None:
+        log('expand %s -> %s', word_str, alias_exp)
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.

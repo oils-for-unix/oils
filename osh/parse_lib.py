@@ -36,12 +36,13 @@ def InitLexer(s, arena):
 #   you need somewhere to store the side effects -- errors for parsers, and the
 #   actual values for the evaluators/executors.
 
-def MakeParser(line_reader, arena):
+def MakeParser(line_reader, arena, aliases):
   """Top level parser."""
   line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   w_parser = word_parse.WordParser(lx, line_reader)
-  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena)
+  c_parser = cmd_parse.CommandParser(w_parser, lx, line_reader, arena,
+                                     aliases=aliases)
   return w_parser, c_parser
 
 

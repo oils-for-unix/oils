@@ -43,10 +43,11 @@ def InitExecutor(arena=None):
   status_lines = None  # not needed for what we're testing
   funcs = {}
   comp_funcs = {}
+  aliases = {}
   exec_opts = state.ExecOpts(mem)
   # For the tests, we do not use 'readline'.
   return cmd_exec.Executor(mem, fd_state, status_lines, funcs, None,
-                           completion, comp_funcs, exec_opts, arena)
+                           completion, comp_funcs, exec_opts, arena, aliases)
 
 
 def InitEvaluator():

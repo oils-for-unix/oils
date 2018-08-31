@@ -106,7 +106,7 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, fd_state, status_lines, funcs, readline, completion,
-               comp_lookup, exec_opts, arena):
+               comp_lookup, exec_opts, arena, aliases):
     """
     Args:
       mem: Mem instance for storing variables
@@ -141,8 +141,7 @@ class Executor(object):
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers
     self.dir_stack = state.DirStack()
 
-    # TODO: Pass these in from main()
-    self.aliases = {}  # alias name -> string
+    self.aliases = aliases  # alias name -> string
     self.targets = []  # make syntax enters stuff here -- Target()
                        # metaprogramming or regular target syntax
                        # Whether argv[0] is make determines if it is executed
@@ -203,7 +202,7 @@ class Executor(object):
     # TODO: set -o sane-eval should change eval to take a single string.
     code_str = ' '.join(argv)
     line_reader = reader.StringLineReader(code_str, self.arena)
-    _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+    _, c_parser = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
     return self._EvalHelper(c_parser, '<eval string>')
 
   def ParseTrapCode(self, code_str):
@@ -379,6 +378,12 @@ class Executor(object):
     elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):
       # These are synonyms
       status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
+
+    elif builtin_id == builtin_e.ALIAS:
+      status = builtin.Alias(argv, self.aliases)
+
+    elif builtin_id == builtin_e.UNALIAS:
+      status = builtin.UnAlias(argv, self.aliases)
 
     elif builtin_id == builtin_e.HELP:
       loader = util.GetResourceLoader()
