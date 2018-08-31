@@ -19,7 +19,7 @@ class FooTest(unittest.TestCase):
     BODY_STYLE = wild_report.BODY_STYLE
     PAGE_TEMPLATES = wild_report.PAGE_TEMPLATES
 
-    data = {'base_url': '', 'paths': [], 'task': 'osh2oil'}
+    data = {'base_url': '', 'failures': [], 'task': 'osh2oil'}
 
     body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
     print(body)
