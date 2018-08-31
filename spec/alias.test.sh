@@ -44,7 +44,7 @@ hello world
 ## END
 
 
-#### expansion of alias with value
+#### expansion of alias with variable
 shopt -s expand_aliases  # bash requires this
 x=x
 alias echo-x='echo $x'  # nothing is evaluated here
@@ -115,7 +115,7 @@ alias echo_alias_='echo'
 cmd=echo_alias_
 echo_alias_ X
 $cmd X
-echo_alias_ status=$?
+echo status=$?
 ## STDOUT:
 X
 status=127
@@ -125,6 +125,31 @@ status=127
 # NOTE: / is not OK in bash, but OK in other shells.  Must less restrictive
 # than var names.
 shopt -s expand_aliases  # bash requires this
-alias e_.~x='echo'
-e_.~x X
+alias e_+.~x='echo'
+e_+.~x X
 ## stdout: X
+
+#### Syntax error after expansion
+shopt -s expand_aliases  # bash requires this
+alias e_=';; oops'
+e_ x
+## status: 2
+## OK mksh/zsh status: 1
+
+#### Loop split across alias and arg
+shopt -s expand_aliases  # bash requires this
+alias e_='for i in 1 2 3; do echo $i;'
+e_ done
+## STDOUT:
+1
+2
+3
+## END
+
+#### Loop split across alias and arg 2
+# For some reason this doesn't work, but the previous case does.
+shopt -s expand_aliases
+alias e_='for i in 1 2 3; do echo '
+e_ '$i done;'
+## status: 2
+## OK mksh/zsh status: 1
