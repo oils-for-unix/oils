@@ -454,6 +454,20 @@ class Process(Job):
 
   def Start(self):
     """Start this process with fork(), haandling redirects."""
+    # TODO: If OSH were a job control shell, we might need to call some of
+    # these here.  They control the distribution of signals, some of which
+    # originate from a terminal.  All the processes in a pipeline should be in
+    # a single process group.
+    #
+    # - os.setpgid()
+    # - os.setpgrp() 
+    # - os.tcsetpgrp()
+    #
+    # NOTE: os.setsid() isn't called by the shell; it's should be called by the
+    # login program that starts the shell.
+    #
+    # The whole job control mechanism is complicated and hacky.
+
     pid = os.fork()
     if pid < 0:
       # When does this happen?
@@ -666,15 +680,25 @@ class Waiter(object):
 
   def Wait(self):
     # This is a list of async jobs
-    try:
-      pid, status = os.wait()
-    except OSError as e:
-      if e.errno == errno.ECHILD:
-        #log('WAIT ECHILD')
-        return False  # nothing to wait for caller should stop
+    while True:
+      try:
+        pid, status = os.wait()
+      except OSError as e:
+        #log('wait() error: %s', e)
+        if e.errno == errno.ECHILD:
+          return False  # nothing to wait for caller should stop
+        elif e.errno == errno.EINTR:
+          # This happens when we register a handler for SIGINT, and thus never
+          # get the KeyboardInterrupt exception?  Not sure why.
+          # Try
+          # $ cat   # Now hit Ctrl-C
+          #log('Continuing')
+          continue  # try again
+        else:
+          # An error we don't know about.
+          raise
       else:
-        # What else can go wrong?
-        raise
+        break  # no exception thrown, so no need to retry
 
     #log('WAIT got %s %s', pid, status)
 

@@ -1033,6 +1033,26 @@ def UnAlias(argv, aliases):
 import signal
 
 
+def _SigIntHandler(unused, unused_frame):
+  """
+  Either this handler is installed, or the user's handler is installed.
+  Python's default handler of raising KeyboardInterrupt should never be
+  installed.
+  """
+  # TODO: It might be nice to write diagnostic messages when invokved with
+  # 'osh --debug-pipe=/path'.
+  #
+  # NOTE: I think dash and POSIX somehow set the exit code to 128 + exit code?
+
+  #print('Ctrl-C')
+  pass
+
+
+def RegisterSigIntHandler():
+  #log('Registering')
+  signal.signal(signal.SIGINT, _SigIntHandler)
+
+
 class _TrapHandler(object):
   """A function that is called by Python's signal module.
 
@@ -1143,7 +1163,10 @@ def Trap(argv, traps, nodes_to_run, ex):
         pass
 
       # Restore default
-      signal.signal(sig_val, signal.SIG_DFL)
+      if sig_val == signal.SIGINT:
+        RegisterSigIntHandler()
+      else:
+        signal.signal(sig_val, signal.SIG_DFL)
       return 0
 
     util.error("Can't remove invalid trap %r" % sig_spec)

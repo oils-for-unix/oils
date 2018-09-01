@@ -103,13 +103,9 @@ def InteractiveLoop(opts, ex, c_parser, arena):
 
   status = 0
   while True:
-    # Why is this the way to handle Control-C?
-    # Also, we shouldn't exit the shell!
-    try:
-      w = c_parser.Peek()
-    except KeyboardInterrupt:
-      print('Ctrl-C')
-      continue
+    # NOTE: We no longer need to catch KeyboardInterrupt here, because we
+    # handle SIGINT ourselves.
+    w = c_parser.Peek()
 
     c_id = word.CommandId(w)
     if c_id == Id.Op_Newline:
@@ -195,6 +191,8 @@ def OshMain(argv0, argv, login_shell):
     _ShowVersion()
     return 0
 
+  builtin.RegisterSigIntHandler()
+
   trace_state = util.TraceState()
   if 'cmd-parse' == opts.trace:
     util.WrapMethods(cmd_parse.CommandParser, trace_state)
@@ -207,11 +205,6 @@ def OshMain(argv0, argv, login_shell):
     dollar0 = argv0
   else:
     dollar0 = argv[opt_index]  # the script name, or the arg after -c
-
-  # TODO: Create a --parse action or 'osh parse' or 'oil osh-parse'
-  # osh-fix
-  # It uses a different memory-management model.  It's a batch program and not
-  # an interactive program.
 
   pool = alloc.Pool()
   arena = pool.NewArena()
