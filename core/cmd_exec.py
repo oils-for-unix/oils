@@ -211,7 +211,7 @@ class Executor(object):
       A node, or None if the code is invalid.
     """
     line_reader = reader.StringLineReader(code_str, self.arena)
-    _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+    _, c_parser = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
 
     source_name = '<trap string>'
     self.arena.PushSource(source_name)
@@ -246,7 +246,7 @@ class Executor(object):
 
     try:
       line_reader = reader.FileLineReader(f, self.arena)
-      _, c_parser = parse_lib.MakeParser(line_reader, self.arena)
+      _, c_parser = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
 
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a

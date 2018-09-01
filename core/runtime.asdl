@@ -53,7 +53,12 @@ module runtime
   | PipelineStatus(int* statuses)
 
   -- Word splitting in legacy.py
+  -- TODO: Rename these
   span = Black | Delim | Backslash
+  emit = EMIT_PART | EMIT_DE | EMIT_EMPTY | EMIT_ESCAPE | NO_EMIT
+  state = ST_INVALID | ST_START | ST_DE_WHITE1 | ST_DE_GRAY | ST_DE_WHITE2
+        | ST_BLACK | ST_BACKSLASH
+  char_kind = CH_DE_WHITE | CH_DE_GRAY | CH_BLACK | CH_BACKSLASH
 
   builtin = 
     NONE | READ | ECHO | SHIFT

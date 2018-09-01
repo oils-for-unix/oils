@@ -891,7 +891,7 @@ class _WordEvaluator(object):
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []
     for frag, do_split_glob in frame:
-      #log('frag %s do_split_glob %s', frag, do_split_glob)
+      #log('frag %r do_split_glob %s', frag, do_split_glob)
 
       # If it was quoted, then
 

@@ -210,6 +210,17 @@ argv.py $s
 ['', 'x', 'y', 'z']
 ## END
 
+#### Trailing space
+argv.py 'Xec  ho '
+argv.py X'ec  ho '
+argv.py X"ec  ho "
+## STDOUT:
+['Xec  ho ']
+['Xec  ho ']
+['Xec  ho ']
+## END
+
+
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)
 # - empty quoted args are kept
@@ -230,4 +241,5 @@ space=" "
 AB="A B"
 X="X"
 Yspaces=" Y "
+
 

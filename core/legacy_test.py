@@ -54,6 +54,16 @@ class SplitTest(unittest.TestCase):
     parts = legacy._SpansToParts(s, spans, max_results=1)
     self.assertEqual(['one two'], parts)
 
+  def testTrailingWhitespaceBug(self):
+    # Bug: these differed
+    CASES = [
+        (['x y'], ' x\ y', True),
+        (['ab '], ' ab\ ', True),
+        (['ab '], ' ab\  ', True),
+    ]
+    sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
+    _RunSplitCases(self, sp, CASES)
+
   def testDefaultIfs(self):
     CASES = [
         ([], '', True),
@@ -70,7 +80,6 @@ class SplitTest(unittest.TestCase):
         (['Aa', 'b', ' a b'], 'Aa b \\ a\\ b', True),
     ]
 
-    #sp = legacy.WhitespaceSplitter(legacy.DEFAULT_IFS)
     sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
     _RunSplitCases(self, sp, CASES)
 

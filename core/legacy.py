@@ -32,6 +32,9 @@ from core import util
 
 value_e = runtime.value_e
 span_e = runtime.span_e
+emit_e = runtime.emit_e
+state_e = runtime.state_e
+char_kind_e = runtime.char_kind_e
 log = util.log
 
 
@@ -163,6 +166,9 @@ class SplitContext(object):
     """
     sp = self._GetSplitter()
     spans = sp.Split(s, True)
+    if 0:
+      for span in spans:
+        log('SPAN %s', span)
     return _SpansToParts(s, spans)
 
   def SplitForRead(self, line, allow_escape):
@@ -227,17 +233,39 @@ class NullSplitter(_BaseSplitter):
 
 # SplitForRead() will check if the last two spans are a \ and \\n.  Easy.
 
+
+# TODO: Get rid of these redundant assignments.
+
 # Edges are characters.  CH_DE_ is the delimiter prefix.  WHITE is for
 # whitespace; GRAY is for other IFS chars; BLACK is for significant
 # characters.
-CH_DE_WHITE, CH_DE_GRAY, CH_BLACK, CH_BACKSLASH = range(4)
+CH_DE_WHITE, CH_DE_GRAY, CH_BLACK, CH_BACKSLASH = (
+  char_kind_e.CH_DE_WHITE,
+  char_kind_e.CH_DE_GRAY,
+  char_kind_e.CH_BLACK,
+  char_kind_e.CH_BACKSLASH)
+
 
 # Nodes are states
 (ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2,
- ST_BLACK, ST_BACKSLASH) = range(7)
+ ST_BLACK, ST_BACKSLASH) = (
+ state_e.ST_INVALID,
+ state_e.ST_START,
+ state_e.ST_DE_WHITE1, 
+ state_e.ST_DE_GRAY, 
+ state_e.ST_DE_WHITE2,
+ state_e.ST_BLACK, 
+ state_e.ST_BACKSLASH)
+
 
 # Actions control what spans to emit.
-EMIT_PART, EMIT_DE, EMIT_EMPTY, EMIT_ESCAPE, NO_EMIT = range(5)
+EMIT_PART, EMIT_DE, EMIT_EMPTY, EMIT_ESCAPE, NO_EMIT = (
+  emit_e.EMIT_PART,
+  emit_e.EMIT_DE,
+  emit_e.EMIT_EMPTY,
+  emit_e.EMIT_ESCAPE,
+  emit_e.NO_EMIT)
+
 
 TRANSITIONS = {
     # Whitespace should have been stripped
@@ -295,6 +323,9 @@ class IfsSplitter(_BaseSplitter):
       s: string to split
       allow_escape: False for read -r, this means \ doesn't do anything.
 
+    Returns:
+      List of (runtime.span, end_index) pairs
+
     TODO: This should be (frag, do_split) pairs, to avoid IFS='\'
     double-escaping issue.
     """
@@ -325,9 +356,21 @@ class IfsSplitter(_BaseSplitter):
       return spans
 
     # Ignore trailing IFS whitespace too.  This is necessary for the case:
-    # IFS=':' ; read x y z <<< 'a : b : c :'.  We don't want
+    # IFS=':' ; read x y z <<< 'a : b : c :'.
+    trimmed = False
     while s[n-1] in self.ifs_whitespace:
       n -= 1
+      trimmed = True
+    # BUG FIX: A hacky way to fix 'a\ ', but don't break 'a\'
+    # The alternative is to parse forward and collect into '\ ' pairs?  This
+    # might be OK?  It assumes that \ is not an IFS whitespace character, which
+    # is OK because other things break in that case.
+    #
+    # Another way to handle this is to POP the last span when it's all
+    # whitespace?
+
+    if trimmed and s[n-1] == '\\':
+      n += 1
 
     state = ST_START
     while i < n:
@@ -346,7 +389,7 @@ class IfsSplitter(_BaseSplitter):
         raise AssertionError(
             'Invalid transition from %r with %r' % (state, ch))
 
-      #log('i %d c %r ch %s state %s new_state %s action %s',
+      #log('i %d c %r ch %s current: %s next: %s %s',
       #     i, c, ch, state, new_state, action)
 
       if action == EMIT_PART:
