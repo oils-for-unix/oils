@@ -57,3 +57,14 @@ func
 foo=foo_val
 foo=
 ## END
+
+#### Source with syntax error
+# TODO: We should probably use dash behavior of a fatal error.
+echo 'echo >' > $TMP/syntax-error.sh
+. $TMP/syntax-error.sh
+echo status=$?
+## stdout: status=2
+## OK bash/mksh stdout: status=1
+## OK zsh stdout: status=126
+## OK dash stdout-json: ""
+## OK dash status: 2

@@ -182,15 +182,12 @@ class Executor(object):
   def _EvalHelper(self, c_parser, source_name):
     self.arena.PushSource(source_name)
     try:
-      node = c_parser.ParseWholeFile()
-      # NOTE: We could model a parse error as an exception, like Python, so we
-      # get a traceback.  (This won't be applicable for a static module
-      # system.)
-      if not node:
+      try:
+        node = c_parser.ParseWholeFile()
+      except util.ParseError as e:
         util.error('Parse error in %r:', source_name)
-        err = c_parser.Error()
-        ui.PrintErrorStack(err, self.arena, sys.stderr)
-        return 1
+        ui.PrettyPrintError(e, self.arena, sys.stderr)
+        return 2
 
       status = self._Execute(node)
       return status
