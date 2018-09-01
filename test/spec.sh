@@ -371,8 +371,7 @@ command-sub() {
 }
 
 command_() {
-  sh-spec spec/command_.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  sh-spec spec/command_.test.sh ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 pipeline() {

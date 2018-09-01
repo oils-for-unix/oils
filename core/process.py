@@ -323,14 +323,22 @@ def ExecExternalProgram(argv, environ):
   try:
     os.execvpe(argv[0], argv, environ)
   except OSError as e:
-    log('Unexpected error in execvpe(%r, %r, ...): %s', argv[0], argv, e)
+    util.error('%r: %s', argv[0], os.strerror(e.errno))
+    # POSIX mentions 126 and 127 for two specific errors.  The rest are
+    # unspecified.
+    #
+    # http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/utilities/V3_chap02.html#tag_18_08_02
 
-    # TODO:
-    # - Make this error look better.
-    # - What about permission errors?
+    if e.errno == errno.EACCES:
+      status = 126
+    elif e.errno == errno.ENOENT:
+      status = 127  # e.g. command not found should be 127.
+    else:
+      # dash uses 2, but we use that for parse errors.  This seems to be
+      # consistent with mksh and zsh.
+      status = 127
 
-    # Command not found means 127.
-    sys.exit(127)
+    sys.exit(status)
   # no return
 
 

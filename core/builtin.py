@@ -999,7 +999,6 @@ def Alias(argv, aliases):
 
   for arg in argv:
     parts = arg.split('=', 1)
-    log(' p %s', parts)
     if len(parts) == 1:
       name = parts[0]
       alias_exp = aliases.get(name)
@@ -1011,8 +1010,8 @@ def Alias(argv, aliases):
       name, alias_exp = parts
       aliases[name] = alias_exp
 
-  print(argv)
-  print(aliases)
+  #print(argv)
+  #log('AFTER ALIAS %s', aliases)
   return 0
 
 

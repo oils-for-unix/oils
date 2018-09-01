@@ -125,7 +125,10 @@ class CommandParser(object):
     self.lexer = lexer  # for fast lookahead to (, for function defs
     self.line_reader = line_reader  # for here docs
     self.arena = arena  # for adding here doc spans
-    self.aliases = aliases or {}  # aliases to expand at parse time
+    if aliases is None:
+      self.aliases = {}
+    else:
+      self.aliases = aliases  # aliases to expand at parse time
 
     self.Reset()
 
@@ -1201,6 +1204,7 @@ class CommandParser(object):
     ok, word_str, quoted = word.StaticEval(self.cur_word)
     if ok and not quoted:
       alias_exp = self.aliases.get(word_str)
+      #log('AT PARSE TIME %s', self.aliases)
       if alias_exp is not None:
         log('expand %s -> %s', word_str, alias_exp)
 
