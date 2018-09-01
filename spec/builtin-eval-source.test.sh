@@ -60,6 +60,9 @@ foo=
 
 #### Source with syntax error
 # TODO: We should probably use dash behavior of a fatal error.
+# Although set-o errexit handles this.  We don't want to break the invariant
+# that a builtin like 'source' behaves like an external program.  An external
+# program can't halt the shell!
 echo 'echo >' > $TMP/syntax-error.sh
 . $TMP/syntax-error.sh
 echo status=$?
@@ -68,3 +71,13 @@ echo status=$?
 ## OK zsh stdout: status=126
 ## OK dash stdout-json: ""
 ## OK dash status: 2
+
+#### Eval with syntax error
+eval 'echo >'
+echo status=$?
+## stdout: status=2
+## OK bash/zsh stdout: status=1
+## OK dash stdout-json: ""
+## OK dash status: 2
+## OK mksh stdout-json: ""
+## OK mksh status: 1
