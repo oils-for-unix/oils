@@ -308,6 +308,16 @@ TRANSITIONS = {
     (ST_BACKSLASH, CH_BACKSLASH): (ST_BLACK,     EMIT_ESCAPE),  # '\\'
 }
 
+LAST_SPAN_ACTION = {
+    ST_BLACK: EMIT_PART,
+    ST_BACKSLASH: EMIT_ESCAPE,
+    # Ignore trailing IFS whitespace too.  This is necessary for the case:
+    # IFS=':' ; read x y z <<< 'a : b : c :'.
+    ST_DE_WHITE1: NO_EMIT,
+    ST_DE_GRAY: EMIT_DE,
+    ST_DE_WHITE2: EMIT_DE,
+}
+
 
 class IfsSplitter(_BaseSplitter):
   """Split a string when IFS has non-whitespace characters."""
@@ -355,23 +365,6 @@ class IfsSplitter(_BaseSplitter):
     if i == n:
       return spans
 
-    # Ignore trailing IFS whitespace too.  This is necessary for the case:
-    # IFS=':' ; read x y z <<< 'a : b : c :'.
-    trimmed = False
-    while s[n-1] in self.ifs_whitespace:
-      n -= 1
-      trimmed = True
-    # BUG FIX: A hacky way to fix 'a\ ', but don't break 'a\'
-    # The alternative is to parse forward and collect into '\ ' pairs?  This
-    # might be OK?  It assumes that \ is not an IFS whitespace character, which
-    # is OK because other things break in that case.
-    #
-    # Another way to handle this is to POP the last span when it's all
-    # whitespace?
-
-    if trimmed and s[n-1] == '\\':
-      n += 1
-
     state = ST_START
     while i < n:
       c = s[i]
@@ -389,37 +382,39 @@ class IfsSplitter(_BaseSplitter):
         raise AssertionError(
             'Invalid transition from %r with %r' % (state, ch))
 
-      #log('i %d c %r ch %s current: %s next: %s %s',
-      #     i, c, ch, state, new_state, action)
+      if 0:
+        log('i %d c %r ch %s current: %s next: %s %s',
+             i, c, ch, state, new_state, action)
 
       if action == EMIT_PART:
         spans.append((span_e.Black, i))
-
       elif action == EMIT_DE:
         spans.append((span_e.Delim, i))  # ignored delimiter
-
       elif action == EMIT_EMPTY:
         spans.append((span_e.Delim, i))  # ignored delimiter
         spans.append((span_e.Black, i))  # EMPTY part that is NOT ignored
-
       elif action == EMIT_ESCAPE:
         spans.append((span_e.Backslash, i))  # \
-
+      elif action == NO_EMIT:
+        pass
       else:
-        pass  # Emit nothing
+        raise AssertionError
 
       state = new_state
       i += 1
 
-    # Last span.  TODO: Put this in the state machine as the \0 char?
-    if state == ST_BLACK:
-      span_type = span_e.Black
-    elif state == ST_BACKSLASH:
-      span_type = span_e.Backslash
-    elif state in (ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2):
-      span_type = span_e.Delim
+    last_action = LAST_SPAN_ACTION[state]
+    #log('n %d state %s last_action %s', n, state, last_action)
+
+    if last_action == EMIT_PART:
+      spans.append((span_e.Black, n))
+    elif last_action == EMIT_DE:
+      spans.append((span_e.Delim, n))
+    elif last_action == EMIT_ESCAPE:
+      spans.append((span_e.Backslash, n))
+    elif last_action == NO_EMIT:
+      pass
     else:
-      raise AssertionError(state)  # shouldn't be in START state
-    spans.append((span_type, n))
+      raise AssertionError
 
     return spans
