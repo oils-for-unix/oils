@@ -1322,26 +1322,32 @@ class CommandParser(object):
     node = ast.AndOr(ops, children)
     return node
 
+  """
+  NOTE: ParseCommandLine and ParseCommandTerm are similar, but different.
+
+  At the top level, We want to execute after every line:
+  - to process alias
+  - to process 'exit', because invalid syntax might appear after it
+
+  But for say a while loop body, we want to parse the whole thing at once, and
+  then execute it.  We don't want to parse it over and over again!
+
+  COMPARE
+  command_line     : and_or (sync_op and_or)* trailer? ;   # TOP LEVEL
+  command_term     : and_or (trailer and_or)* ;            # CHILDREN
+  """
+
   def ParseCommandLine(self):
     """
-    NOTE: This is only called in InteractiveLoop.  Oh crap I need to really
-    read and execute a line at a time then?
-
-    BUG: sleep 1 & sleep 1 &  doesn't work here, when written in REPL.   But it
-    does work with '-c', because that calls ParseFile and not ParseCommandLine
-    over and over.
-
-    TODO: Get rid of ParseFile and stuff?  Shouldn't be used for -c and so
-    forth.  Just have an ExecuteLoop for now.  But you still need
-    ParseCommandList, for internal nodes.
+    Called from the top level InteractiveLoop or ExecutionLoop.
 
     command_line     : and_or (sync_op and_or)* trailer? ;
     trailer          : sync_op newline_ok
                      | NEWLINES;
     sync_op          : '&' | ';';
 
-    This rule causes LL(k > 1) behavior.  We would have to peek to see if there
-    is another command word after the sync op.
+    NOTE: This rule causes LL(k > 1) behavior.  We would have to peek to see if
+    there is another command word after the sync op.
 
     But it's easier to express imperatively.  Do the following in a loop:
     1. ParseAndOr
@@ -1350,12 +1356,6 @@ class CommandParser(object):
           line.)
        b. If there's a sync_op, process it.  Then look for a newline and
           return.  Otherwise, parse another AndOr.
-
-    COMPARE
-    command_line     : and_or (sync_op and_or)* trailer? ;   # TOP LEVEL
-    command_term     : and_or (trailer and_or)* ;            # CHILDREN
-
-    I think you should be able to factor these out.
     """
     children = []
     done = False
@@ -1384,7 +1384,30 @@ class CommandParser(object):
 
       children.append(child)
 
-    return ast.CommandList(children)
+    # Simplify the AST.
+    if len(children) > 1:
+      return ast.CommandList(children)
+    else:
+      return children[0]
+
+  def ParseOne(self):
+    """A wrapper around ParseCommandLine for main_loop.
+
+    We want to be able catch ParseError all in one place.
+
+    Raises:
+      ParseError
+    """
+    self._NewlineOk()
+    self._Peek()
+
+    if self.c_id == Id.Eof_Real:
+      # TODO: Assert that there are no pending here docs
+      return None
+
+    node = self.ParseCommandLine()
+    assert node is not None
+    return node
 
   def ParseCommandTerm(self):
     """"
@@ -1405,14 +1428,12 @@ class CommandParser(object):
         Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell,
         Id.Lit_RBrace, Id.Op_DSemi)
 
-    # NOTE: This is similar to ParseCommandLine, except there is a lot of stuff
-    # about here docs.  Here docs are inherently line-oriented.
+    # NOTE: This is similar to ParseCommandLine.
     #
     # - Why aren't we doing END_LIST in ParseCommandLine?
     #   - Because you will never be inside $() at the top level.
     #   - We also know it will end in a newline.  It can't end in "fi"!
     #   - example: if true; then { echo hi; } fi
-    # - Why aren't we doing 'for c in children' too?
 
     children = []
     done = False
@@ -1448,7 +1469,7 @@ class CommandParser(object):
           # Test if we should keep going.  There might be another command after
           # the semi and newline.
           self._Peek()
-          if self.c_id in END_LIST:
+          if self.c_id in END_LIST:  # \n EOF
             done = True
 
         elif self.c_id in END_LIST:  # ; EOF
@@ -1481,6 +1502,13 @@ class CommandParser(object):
     node = self.ParseCommandTerm()
     assert node is not None
     return node
+
+  def CheckForPendingHereDocs(self):
+    # NOTE: This happens when there is no newline at the end of a file, like
+    # osh -c 'cat <<EOF'
+    if self.pending_here_docs:
+      node = self.pending_here_docs[0]  # Just show the first one?
+      p_die('Unterminated here doc began here', word=node.here_begin)
 
   def ParseWholeFile(self):
     """Entry point for main() in non-interactive shell.

@@ -74,11 +74,7 @@ def assertParseAndOr(test, code_str):
   return _assertParseMethod(test, code_str, 'ParseAndOr')
 
 def assertParseCommandLine(test, code_str):
-  node = _assertParseMethod(test, code_str, 'ParseCommandLine')
-  if len(node.children) == 1:
-    return node.children[0]
-  else:
-    return node
+  return _assertParseMethod(test, code_str, 'ParseCommandLine')
 
 def assertParseCommandList(test, code_str):
   node = _assertParseMethod(test, code_str, 'ParseCommandList')

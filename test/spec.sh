@@ -232,7 +232,7 @@ blog-other1() {
 }
 
 alias() {
-  sh-spec spec/alias.test.sh --osh-failures-allowed 18 \
+  sh-spec spec/alias.test.sh --osh-failures-allowed 20 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -385,7 +385,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

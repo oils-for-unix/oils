@@ -368,8 +368,8 @@ class SubProgramThunk(object):
     # NOTE: may NOT return due to exec().
     if self.disable_errexit:
       self.ex.exec_opts.errexit.Disable()
-    status = self.ex.Execute(self.node, fork_external=False)
-    sys.exit(status)  # Must exit!
+    self.ex.ExecuteAndCatch(self.node, fork_external=False)
+    sys.exit(self.ex.LastStatus())  # Must exit!
 
 
 class _HereDocWriterThunk(Thunk):

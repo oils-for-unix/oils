@@ -37,6 +37,7 @@ _compare() {
 
   if test $expected_status != $osh_status; then
     echo "FAIL: Got status $osh_status but expected $expected_status"
+    echo "in test case: $@"
     exit 1
   fi
 

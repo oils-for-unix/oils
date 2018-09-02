@@ -94,6 +94,7 @@ EOF
 }
 
 osh-interactive() {
+  set +o errexit
   echo 'echo hi' | $OSH -i
 
   echo 'exit' | $OSH -i

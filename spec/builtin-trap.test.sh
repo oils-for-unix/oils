@@ -53,9 +53,11 @@ echo status=$?
 #### trap EXIT
 cleanup() {
   echo "cleanup [$@]"
+  exit 42
 }
 trap 'cleanup x y z' EXIT
 ## stdout: cleanup [x y z]
+## status: 42
 
 #### trap DEBUG
 debuglog() {
@@ -139,3 +141,16 @@ err [x y] 1
 2
 3
 ## END
+
+#### trap with PARSE error (implicit exit)
+trap 'echo FAILED' EXIT
+for
+## stdout: FAILED
+## status: 2
+## OK mksh status: 1
+
+#### trap with PARSE error with explicit exit
+trap 'echo FAILED; exit 0' EXIT
+for
+## stdout: FAILED
+## status: 0

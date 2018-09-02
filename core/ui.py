@@ -13,7 +13,11 @@ ui.py - User interface constructs.
 import sys
 
 from asdl import const
+from asdl import encode
+from asdl import format as fmt
 from core import word
+from osh import ast_lib
+from osh.meta import ast
 
 
 def Clear():
@@ -144,3 +148,39 @@ def PrintErrorStack(error_stack, arena, f=sys.stderr):
   for err in error_stack:
     PrettyPrintError(err, arena, f=f)
     print('---', file=f)
+
+
+def PrintAst(nodes, opts):
+  if len(nodes) == 1:
+    node = nodes[0]
+  else:
+    node = ast.CommandList(nodes)
+
+  if opts.ast_format == 'none':
+    print('AST not printed.', file=sys.stderr)
+  elif opts.ast_format == 'oheap':
+    # TODO: Make this a separate flag?
+    if sys.stdout.isatty():
+      raise RuntimeError('ERROR: Not dumping binary data to a TTY.')
+    f = sys.stdout
+
+    enc = encode.Params()
+    out = encode.BinOutput(f)
+    encode.EncodeRoot(node, enc, out)
+
+  else:  # text output
+    f = sys.stdout
+
+    if opts.ast_format in ('text', 'abbrev-text'):
+      ast_f = fmt.DetectConsoleOutput(f)
+    elif opts.ast_format in ('html', 'abbrev-html'):
+      ast_f = fmt.HtmlOutput(f)
+    else:
+      raise AssertionError
+    abbrev_hook = (
+        ast_lib.AbbreviateNodes if 'abbrev-' in opts.ast_format else None)
+    tree = fmt.MakeTree(node, abbrev_hook=abbrev_hook)
+    ast_f.FileHeader()
+    fmt.PrintTree(tree, ast_f)
+    ast_f.FileFooter()
+    ast_f.write('\n')

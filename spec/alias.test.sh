@@ -273,3 +273,32 @@ LBRACE echo one; echo two; }
 one
 two
 ## END
+
+#### Alias not respected inside $()
+# This could be parsed correctly, but it is only defined in a child process.
+shopt -s expand_aliases
+echo $(alias sayhi='echo hello')
+sayhi
+## status: 127
+
+#### Alias doesn't work on a single line!
+alias sayhi='echo hello'; sayhi same line
+sayhi other line
+## STDOUT:
+hello other line
+## END
+## BUG bash stdout-json: ""
+## BUG bash status: 127
+
+#### Alias is respected inside eval
+shopt -s expand_aliases
+eval "alias sayhi='echo hello'
+sayhi inside"
+sayhi outside
+## STDOUT:
+hello inside
+hello outside
+## END
+## BUG zsh STDOUT:
+hello outside
+## END

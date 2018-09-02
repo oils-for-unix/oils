@@ -1187,9 +1187,33 @@ class Executor(object):
       status = self._Execute(child)  # last status wins
     return status
 
+  def LastStatus(self):
+    """For main_loop.py to determine the exit code of the shell itself."""
+    return self.mem.last_status
+
   def ExecuteAndCatch(self, node, fork_external=True):
-    """Used directly by the interactive loop."""
+    """Execute a subprogram, handling _ControlFlow and fatal exceptions.
+
+    Args:
+      node: LST subtree
+      fork_external: whether external commands require forking
+
+    Returns:
+      TODO: use enum 'why' instead of the 2 booleans
+
+    Used by main_loop.py.
+
+    Also:
+    - SubProgramThunk for pipelines, subshell, command sub, process sub
+    - TODO: Signals besides EXIT trap
+
+    Most other clients call _Execute():
+    - _Source() for source builtin
+    - _Eval() for eval builtin
+    - RunFunc() for function call
+    """
     is_control_flow = False
+    is_fatal = False
     try:
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
@@ -1201,59 +1225,40 @@ class Executor(object):
         raise  # Invalid
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena)
-      #print('osh failed: %s' % e.UserErrorString(), file=sys.stderr)
+      is_fatal = True
       status = e.exit_status if e.exit_status is not None else 1
       # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
 
-    # Other exceptions: SystemExit for sys.exit()
-    return status, is_control_flow
+    self.mem.last_status = status
+    return is_control_flow, is_fatal
 
+  # NOTE: Is this only used by tests?
   def Execute(self, node, fork_external=True):
     """Execute a subprogram, handling _ControlFlow and fatal exceptions.
 
-    This is just like ExecuteAndCatch, but we don't return is_control_flow.
-
-    Callers:
-    - SubProgramThunk for pipelines, subshell, command sub, process sub
-    - .oilrc
-    - _TrapThunk
-    - Interactive loop
-    - main program
-
-    Most other clients call _Execute():
-    - _Source() for source builtin
-    - _Eval() for eval builtin
-    - RunFunc() for function call
-
-    Args:
-      node: LST subtree
-      fork_external: whether external commands require forking
+    This is just like ExecuteAndCatch(), but we return a status.
 
     Returns:
       status: numeric exit code
     """
-    # Ignore is_control_flow
-    status, _ = self.ExecuteAndCatch(node, fork_external=fork_external)
-    return status
+    self.ExecuteAndCatch(node, fork_external=fork_external)
+    return self.LastStatus()
 
-  def ExecuteAndRunExitTrap(self, node):
-    """For the top level program, called by bin/oil.py."""
-    status = self.Execute(node)
-    # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
-    # don't because they call sys.exit().
+  def MaybeRunExitTrap(self):
+    """If an EXIT trap exists, run it.
+    
+    Returns:
+      Whether we should use the status of the handler.
 
-    # NOTE: --runtime-mem-dump runs in a similar place.
-
-    #log('-- EXIT pid %d', os.getpid())
-    #import traceback
-    #traceback.print_stack()
-
-    # NOTE: The trap handler itself can call exit!
+      This is odd behavior, but all bash/dash/mksh seem to agree on it.
+      See cases 11 and 12 in builtin-trap.test.sh.
+    """
     handler = self.traps.get('EXIT')
     if handler:
-      self.Execute(handler.node)
-
-    return status
+      is_control_flow, is_fatal = self.ExecuteAndCatch(handler.node)
+      return is_control_flow  # explicit exit/return in the trap handler!
+    else:
+      return False  # nothing run, don't use its status
 
   def RunCommandSub(self, node):
     p = self._MakeProcess(node,
