@@ -100,7 +100,10 @@ make-report() {
   # TODO: This could also go in 'raw', and then be processed by Python?
   version-text > $out_dir/version-info.txt
 
-  cat $MANIFEST | wild-report summarize-dirs $in_dir $out_dir
+  cat $MANIFEST | wild-report summarize-dirs \
+    --not-shell test/wild-not-shell.txt \
+    --not-osh test/wild-not-osh.txt \
+    $in_dir $out_dir
 
   # This has to go inside the www dir because of the way that relative links
   # are calculated.

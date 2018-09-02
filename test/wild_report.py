@@ -128,10 +128,26 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
     Attempted to parse <b>{num_files|commas}</b> shell scripts totalling
     <b>{num_lines|commas}</b> lines.
   </li>
+  {.not_shell?}
+    <li>
+      <b>{not_shell|commas}</b> files are known not to be shell.
+      {.if test top_level_links}
+        (<a href="not-shell.html">full list</a>)
+      {.end}
+    </li>
+  {.end}
+  {.not_osh?}
+    <li>
+      <b>{not_osh|commas}</b> files are known not to be OSH.
+      {.if test top_level_links}
+        (<a href="not-osh.html">full list</a>)
+      {.end}
+    </li>
+  {.end}
   <li>
     Failed to parse <b>{parse_failed|commas}</b> scripts, leaving
-    <b>{lines_parsed|commas}</b> lines parsed in <b>{parse_proc_secs}</b> seconds
-    (<b>{lines_per_sec}</b> lines/sec).
+    <b>{lines_parsed|commas}</b> lines parsed in <b>{parse_proc_secs}</b>
+    seconds (<b>{lines_per_sec}</b> lines/sec).
     {.if test top_level_links}
       (<a href="parse-failed.html">all failures</a>,
        <a href="parse-failed.txt">text</a>)
@@ -584,30 +600,41 @@ def _ReadLinesToSet(path):
   return result
 
 
-def SumStats(stdin, in_dir, root_node, failures):
+def SumStats(stdin, in_dir, not_shell, not_osh, root_node, failures):
   """Reads pairs of paths from stdin, and updates root_node."""
   # Collect work into dirs
   for line in stdin:
-    # TODO: Add a column for wild_-not-shell.txt wild-not-osh.  I guess it
-    # can just be an attribute on st, and then you can test for it.
-    # If it's not shell, omit it from the totals.  If it's not OSH, append it
-    # to a common page, like www/not-shell.html and www/not-osh.html.
-
     rel_path, abs_path = line.split()
     #print proj, '-', abs_path, '-', rel_path
 
     raw_base = os.path.join(in_dir, rel_path)
     st = {}
 
+    st['not_shell'] = 1 if rel_path in not_shell else 0
+    st['not_osh'] = 1 if rel_path in not_osh else 0
+    if st['not_shell'] and st['not_osh']:
+      raise RuntimeError(
+          "%r can't be in both not-shell.txt and not-osh.txt" % rel_path)
+
+    expected_failure = bool(st['not_shell'] or st['not_osh'])
+
     parse_task_path = raw_base + '__parse.task.txt'
     parse_failed, st['parse_proc_secs'] = _ReadTaskFile(
         parse_task_path)
-    st['parse_failed'] = parse_failed
+    st['parse_failed'] = 0 if expected_failure else parse_failed 
 
     with open(raw_base + '__parse.stderr.txt') as f:
       st['parse_stderr'] = f.read()
 
-    if parse_failed:
+    if st['not_shell']:
+      failures.not_shell.append(
+          {'rel_path': rel_path, 'stderr': st['parse_stderr']}
+      )
+    if st['not_osh']:
+      failures.not_osh.append(
+          {'rel_path': rel_path, 'stderr': st['parse_stderr']}
+      )
+    if st['parse_failed']:
       failures.parse_failed.append(
           {'rel_path': rel_path, 'stderr': st['parse_stderr']}
       )
@@ -645,6 +672,8 @@ class Failures(object):
   def __init__(self):
     self.parse_failed = []
     self.osh2oil_failed = []
+    self.not_shell = []
+    self.not_osh = []
 
   def Write(self, out_dir):
     with open(os.path.join(out_dir, 'parse-failed.txt'), 'w') as f:
@@ -656,6 +685,21 @@ class Failures(object):
         print(failure['rel_path'], file=f)
 
     base_url = ''
+
+    with open(os.path.join(out_dir, 'not-shell.html'), 'w') as f:
+      data = {
+          'task': 'not-shell', 'failures': self.not_shell, 'base_url': base_url
+      }
+      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+      f.write(body)
+
+    with open(os.path.join(out_dir, 'not-osh.html'), 'w') as f:
+      data = {
+          'task': 'not-osh', 'failures': self.not_osh, 'base_url': base_url
+      }
+      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+      f.write(body)
+
     with open(os.path.join(out_dir, 'parse-failed.html'), 'w') as f:
       data = {
           'task': 'parse', 'failures': self.parse_failed, 'base_url': base_url
@@ -711,7 +755,7 @@ def main(argv):
 
     root_node = DirNode()
     failures = Failures()
-    SumStats(sys.stdin, in_dir, root_node, failures)
+    SumStats(sys.stdin, in_dir, not_shell, not_osh, root_node, failures)
 
     failures.Write(out_dir)
 
