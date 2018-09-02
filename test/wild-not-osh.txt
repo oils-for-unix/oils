@@ -1,1 +1,6 @@
+# A list of files that are known not to conform to the OSH language.
+
 distro/crankshaft/rpi_buildsystem/7_build_gpio2kbd.sh
+esoteric/setup.shl/bin/setup  # associative array ambiguity (key should be quoted)
+exp/shootout/timing.sh  # the $(( )) ambiguity 
+linux-4.8.7/tools/perf/perf-with-kcore.sh  # another $(( )) ambiguity

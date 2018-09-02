@@ -589,13 +589,29 @@ def _ReadTaskFile(path):
 
 
 def _ReadLinesToSet(path):
+  """Read blacklist files like not-shell.txt and not-osh.txt.
+
+  TODO: Consider adding globs here?  There are a lot of FreeBSD and illumos
+  files we want to get rid of.
+
+  Or we could probably do that in the original 'find' expression.
+  """
   result = set()
   if not path:
     return result
 
   with open(path) as f:
     for line in f:
-      result.add(line.strip())
+      # Allow comments.  We assume filenames don't have #
+      i = line.find('#')
+      if i != -1:
+        line = line[:i]
+
+      line = line.strip()
+      if not line:  # Lines that are blank or only comments.
+        continue
+
+      result.add(line)
 
   return result
 

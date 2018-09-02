@@ -1,1 +1,20 @@
+# A list of files that are known not to be shell.
+#
+# Various reasons: ZSH constructs, other languages mixed in like emacs,
+# embedded shell DSLs, etc.
+
 books/wicked_cool_shell_scripts_2e/1/hilow_broken
+illumos-gate/usr/src/lib/libshell/common/data/bash_pre_rc.sh
+illumos-gate/usr/src/lib/libshell/common/scripts/shlint.sh
+illumos-gate/usr/src/lib/libshell/common/scripts/shtinyurl.sh
+illumos-gate/usr/src/lib/libshell/common/scripts/shcalc.sh
+illumos-gate/usr/src/lib/libshell/common/scripts/termclock.sh
+esoteric/shasm/shasm.sh
+gnu/glibc-2.23/posix/tst-getconf.sh
+gnu/glibc-2.23/posix/globtest.sh
+google/kythe/kythe/extractors/openjdk/extract.sh
+freebsd-11.1/usr.bin/uuencode/tests/regress.sh
+freebsd-11.1/usr.bin/tr/tests/regress.sh
+freebsd-11.1/usr.bin/sed/tests/regress.sh
+freebsd-11.1/usr.bin/join/tests/regress.sh
+linux-4.8.7/tools/perf/perf-completion.sh
