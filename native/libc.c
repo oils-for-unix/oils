@@ -227,9 +227,9 @@ func_regex_parse(PyObject *self, PyObject *args) {
   }
 
   if (err_str) {
-    // TODO: return a proper value?
-    fprintf(stderr, "Error compiling regex: %s\n", err_str);
-    Py_RETURN_FALSE;
+    // When the regex contains a variable, it can't be checked at compile-time.
+    PyErr_SetString(PyExc_RuntimeError, err_str);
+    return NULL;
   } else {
     Py_RETURN_TRUE;
   }

@@ -225,8 +225,11 @@ class BoolParser(object):
 
           # TODO: Should raise exception with error?
           # doesn't contain $foo, etc.
-          if ok and not libc.regex_parse(regex_str):
-            p_die("Invalid regex: %r" % regex_str, word=right)
+          if ok:
+            try:
+              libc.regex_parse(regex_str)
+            except RuntimeError as e:
+              p_die("Error parsing regex %r: %s", regex_str, e, word=right)
 
         self._Next()
         return ast.BoolBinary(op, left, right)

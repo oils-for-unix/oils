@@ -16,7 +16,7 @@ import libc  # module under test
 class LibcTest(unittest.TestCase):
 
   def testFnmatch(self):
-    print(dir(libc))
+    #print(dir(libc))
     # pattern, string, result
 
     cases = [
@@ -43,7 +43,6 @@ class LibcTest(unittest.TestCase):
       self.assertEqual(expected, actual)
 
   def testGlob(self):
-    print('GLOB')
     print(libc.glob('*.py'))
 
     # This will not match anything!
@@ -51,12 +50,13 @@ class LibcTest(unittest.TestCase):
     # This one will match a file named \
     print(libc.glob('\\\\'))
 
-  def testRegex(self):
-    #print(libc.regcomp(r'.*\.py'))
+  def testRegexParse(self):
     self.assertEqual(True, libc.regex_parse(r'.*\.py'))
-    self.assertEqual(False, libc.regex_parse(r'*'))
-    self.assertEqual(False, libc.regex_parse('\\'))
-    self.assertEqual(False, libc.regex_parse('{'))
+
+    # Syntax errors
+    self.assertRaises(RuntimeError, libc.regex_parse, r'*')
+    self.assertRaises(RuntimeError, libc.regex_parse, '\\')
+    self.assertRaises(RuntimeError, libc.regex_parse, '{')
 
     cases = [
         ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
@@ -66,17 +66,15 @@ class LibcTest(unittest.TestCase):
         (r'bc', 'abcd', ['bc']),
         # The match is unanchored
         (r'.c', 'abcd', ['bc'])
-
-        ]
+    ]
 
     for pat, s, expected in cases:
-      print('CASE %s' % pat)
+      #print('CASE %s' % pat)
       actual = libc.regex_match(pat, s)
       self.assertEqual(expected, actual)
 
-    # Syntax Error
-    self.assertRaises(
-        RuntimeError, libc.regex_match, r'*', 'abcd')
+  def testRegexMatch(self):
+    self.assertRaises(RuntimeError, libc.regex_match, r'*', 'abcd')
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'
