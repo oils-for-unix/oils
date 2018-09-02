@@ -973,6 +973,7 @@ def DeclareTypeset(argv, mem, funcs):
         val = mem.GetVar(name)
         if val.tag != value_e.Undef:
           # TODO: Print flags.
+
           print(name)
         else:
           status = 1
@@ -989,43 +990,48 @@ def DeclareTypeset(argv, mem, funcs):
 ALIAS_SPEC = _Register('alias')
 
 
-# TODO: Test out all the details here
 def Alias(argv, aliases):
   if not argv:
-    for name, alias_exp in aliases.iteritems():
-      # TODO: Print this better
-      print('%s %s' % (name, alias_exp))
+    for name in sorted(aliases):
+      alias_exp = aliases[name]
+      # This is somewhat like bash, except we use %r for ''.
+      print('alias %s=%r' % (name, alias_exp))
     return 0
 
+  status = 0
   for arg in argv:
     parts = arg.split('=', 1)
-    if len(parts) == 1:
+    if len(parts) == 1:  # if we get a plain word without, print alias
       name = parts[0]
       alias_exp = aliases.get(name)
       if alias_exp is None:
-        print('alias %r is not defined' % name)  # TODO: error?
+        util.error('alias %r is not defined', name)  # TODO: error?
+        status = 1
       else:
-        print('%s %s' % (name, alias_exp))
+        print('alias %s=%r' % (name, alias_exp))
     else:
       name, alias_exp = parts
       aliases[name] = alias_exp
 
   #print(argv)
   #log('AFTER ALIAS %s', aliases)
-  return 0
+  return status
 
 
 UNALIAS_SPEC = _Register('unalias')
 
 
-# TODO: Test out all the details here
 def UnAlias(argv, aliases):
+  if not argv:
+    util.usage('unalias NAME...')
+    return 2
+
   status = 0
   for name in argv:
     try:
       del aliases[name]
     except KeyError:
-      print('alias %r is not defined' % name)  # TODO: error?
+      util.error('alias %r is not defined', name)
       status = 1
   return status
 

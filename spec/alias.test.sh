@@ -18,6 +18,89 @@ hi
 expected failure
 ## END
 
+#### defining multiple aliases, then unalias
+shopt -s expand_aliases  # bash requires this
+x=x
+y=y
+alias echo-x='echo $x' echo-y='echo $y'
+echo status=$?
+echo-x X
+echo-y Y
+unalias echo-x echo-y
+echo status=$?
+echo-x X || echo undefined
+echo-y Y || echo undefined
+## STDOUT:
+status=0
+x X
+y Y
+status=0
+undefined
+undefined
+## END
+
+#### alias not defined
+alias e='echo' nonexistentZ
+echo status=$?
+## STDOUT:
+status=1
+## END
+## OK mksh STDOUT:
+nonexistentZ alias not found
+status=1
+## END
+
+#### unalias not defined
+alias e=echo ll='ls -l'
+unalias e nonexistentZ ll
+echo status=$?
+## STDOUT:
+status=1
+## END
+
+#### listing given aliases
+alias e=echo ll='ls -l'
+alias e ll
+## STDOUT:
+alias e='echo'
+alias ll='ls -l'
+## END
+## OK mksh/zsh STDOUT:
+e=echo
+ll='ls -l'
+## END
+## OK dash STDOUT:
+e='echo'
+ll='ls -l'
+## END
+
+#### alias without args lists all aliases
+alias ex=exit ll='ls -l'
+alias | grep -E 'ex=|ll='  # need to grep because mksh/zsh have builtin aliases
+echo status=$?
+## STDOUT:
+alias ex='exit'
+alias ll='ls -l'
+status=0
+## END
+## OK dash STDOUT:
+ex='exit'
+ll='ls -l'
+status=0
+## END
+## OK mksh/zsh STDOUT:
+ex=exit
+ll='ls -l'
+status=0
+## END
+
+#### unalias without args is a usage error
+unalias
+echo status=$?
+## stdout: status=2
+## BUG mksh/dash stdout: status=0
+## BUG zsh stdout: status=1
+
 #### alias with trailing space causes alias expansion on second word
 shopt -s expand_aliases  # bash requires this
 
@@ -87,23 +170,6 @@ alias echo-x='echo $x '  # nothing is evaluated here
 echo-x echo-x
 ## STDOUT:
 x echo x
-## END
-
-#### defining multiple aliases, then unalias
-shopt -s expand_aliases  # bash requires this
-x=x
-y=y
-alias echo-x='echo $x' echo-y='echo $y'
-echo-x X
-echo-y Y
-unalias echo-x echo-y
-echo-x X || echo undefined
-echo-y Y || echo undefined
-## STDOUT:
-x X
-y Y
-undefined
-undefined
 ## END
 
 
