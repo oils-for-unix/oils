@@ -107,7 +107,7 @@ def OshMain(argv0, argv, login_shell):
                 ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
                 default='abbrev-text')
 
-  spec.LongFlag('--print-status')
+  spec.LongFlag('--print-status')  # TODO: Replace with a shell hook
   spec.LongFlag('--hijack-shebang')  # TODO: Implement this
 
   # For benchmarks/*.sh
@@ -223,47 +223,48 @@ def OshMain(argv0, argv, login_shell):
                       status_out, ev)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
-  else:
-    # Parse the whole thing up front
-    #print('Parsing file')
 
-    # Do this after parsing the entire file.  There could be another option to
-    # do it before exiting runtime?
-    if opts.parser_mem_dump:
-      # This might be superstition, but we want to let the value stabilize
-      # after parsing.  bash -c 'cat /proc/$$/status' gives different results
-      # with a sleep.
-      time.sleep(0.001)
-      input_path = '/proc/%d/status' % os.getpid()
-      with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
-        contents = f.read()
-        f2.write(contents)
-        log('Wrote %s to %s (--parser-mem-dump)', input_path,
-            opts.parser_mem_dump)
+  # Parse the whole thing up front
+  #print('Parsing file')
 
-    nodes_out = [] if exec_opts.noexec else None
+  # Do this after parsing the entire file.  There could be another option to
+  # do it before exiting runtime?
+  if opts.parser_mem_dump:
+    # This might be superstition, but we want to let the value stabilize
+    # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+    # with a sleep.
+    time.sleep(0.001)
+    input_path = '/proc/%d/status' % os.getpid()
+    with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
+      contents = f.read()
+      f2.write(contents)
+      log('Wrote %s to %s (--parser-mem-dump)', input_path,
+          opts.parser_mem_dump)
 
-    _tlog('Execute(node)')
-    #status = ex.ExecuteAndRunExitTrap(node)
-    status = main_loop.Batch(opts, ex, c_parser, arena, nodes_out=nodes_out)
+  nodes_out = [] if exec_opts.noexec else None
 
-    if nodes_out is not None:
-      ui.PrintAst(nodes_out, opts)
+  _tlog('Execute(node)')
+  #status = ex.ExecuteAndRunExitTrap(node)
+  status = main_loop.Batch(opts, ex, c_parser, arena, nodes_out=nodes_out)
 
-    # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
-    # don't because they call sys.exit().
-    if opts.runtime_mem_dump:
-      # This might be superstition, but we want to let the value stabilize
-      # after parsing.  bash -c 'cat /proc/$$/status' gives different results
-      # with a sleep.
-      time.sleep(0.001)
-      input_path = '/proc/%d/status' % os.getpid()
-      with open(input_path) as f, open(opts.runtime_mem_dump, 'w') as f2:
-        contents = f.read()
-        f2.write(contents)
-        log('Wrote %s to %s (--runtime-mem-dump)', input_path,
-            opts.runtime_mem_dump)
+  if nodes_out is not None:
+    ui.PrintAst(nodes_out, opts)
 
+  # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
+  # don't because they call sys.exit().
+  if opts.runtime_mem_dump:
+    # This might be superstition, but we want to let the value stabilize
+    # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+    # with a sleep.
+    time.sleep(0.001)
+    input_path = '/proc/%d/status' % os.getpid()
+    with open(input_path) as f, open(opts.runtime_mem_dump, 'w') as f2:
+      contents = f.read()
+      f2.write(contents)
+      log('Wrote %s to %s (--runtime-mem-dump)', input_path,
+          opts.runtime_mem_dump)
+
+  # NOTE: We haven't closed the file opened with fd_state.Open
   return status
 
 
