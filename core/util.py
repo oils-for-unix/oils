@@ -14,6 +14,7 @@ import cStringIO
 import os
 import pwd  # TODO: Move this dependency to Oil?
 import sys
+import zipimport  # NOT the zipfile module.
 
 if not os.getenv('_OVM_DEPS'):
   import inspect
@@ -149,48 +150,6 @@ def GetHomeDir():
     return e.pw_dir
 
 
-# Mutate the class after defining it:
-#
-# http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
-
-# Other more complicated ways:
-#
-# http://code.activestate.com/recipes/366254-generic-proxy-object-with-beforeafter-method-hooks/
-# http://stackoverflow.com/questions/3467526/attaching-a-decorator-to-all-functions-within-a-class
-
-
-def TracedFunc(func, cls_name, state):
-  def traced(*args, **kwargs):
-    name_str = '%s.%s' % (cls_name, func.__name__)
-    print(state.indent + '>', name_str)  #, args[1:] #, kwargs
-    state.Push()
-    ret = func(*args, **kwargs)
-    state.Pop()
-    print(state.indent + '<', name_str, ret)
-    return ret
-  return traced
-
-
-def WrapMethods(cls, state):
-  for name, func in inspect.getmembers(cls):
-    # NOTE: This doesn't work in python 3?  Types module is different
-    if isinstance(func, types.UnboundMethodType):
-      setattr(cls, name, TracedFunc(func, cls.__name__, state))
-
-
-class TraceState(object):
-
-  def __init__(self):
-    self.indent = ''
-    self.num_spaces = 4
-
-  def Push(self):
-    self.indent += self.num_spaces * ' '
-
-  def Pop(self):
-    self.indent = self.indent[:-self.num_spaces]
-
-
 class _FileResourceLoader(object):
   """Open resources relative to argv[0]."""
 
@@ -201,8 +160,6 @@ class _FileResourceLoader(object):
   def open(self, rel_path):
     return open(os.path.join(self.root_dir, rel_path))
 
-
-import zipimport  # NOT the zipfile module.
 
 class _ZipResourceLoader(object):
   """Open resources INSIDE argv[0] as a zip file."""

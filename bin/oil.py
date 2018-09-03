@@ -114,8 +114,7 @@ def OshMain(argv0, argv, login_shell):
   spec.LongFlag('--debug-spans')  # For oshc translate
   spec.LongFlag('--parse-and-print-arena')  # Invariant for translation
   spec.LongFlag('--print-status')
-  spec.LongFlag('--trace', ['cmd-parse', 'word-parse', 'lexer'])  # NOTE: can only trace one now
-  spec.LongFlag('--hijack-shebang')
+  spec.LongFlag('--hijack-shebang')  # TODO:
 
   # For benchmarks/*.sh
   spec.LongFlag('--parser-mem-dump', args.Str)
@@ -138,15 +137,8 @@ def OshMain(argv0, argv, login_shell):
     _ShowVersion()
     return 0
 
+  # TODO: This should be in interactive mode only?
   builtin.RegisterSigIntHandler()
-
-  trace_state = util.TraceState()
-  if 'cmd-parse' == opts.trace:
-    util.WrapMethods(cmd_parse.CommandParser, trace_state)
-  if 'word-parse' == opts.trace:
-    util.WrapMethods(word_parse.WordParser, trace_state)
-  if 'lexer' == opts.trace:
-    util.WrapMethods(lexer.Lexer, trace_state)
 
   if opt_index == len(argv):
     dollar0 = argv0

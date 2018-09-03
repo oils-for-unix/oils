@@ -14,32 +14,10 @@ import unittest
 from core import util  # module under test
 
 
-class _Parser(object):
-  """Test class for tracing."""
+class UtilTest(unittest.TestCase):
 
-  def __init__(self, lexer):
-    self.lexer = lexer
-
-  def ParseTrailer(self, node):
-    return 'trailer'
-
-  def ParseCommandTerm(self, node):
-    return 'term'
-
-  def ParseCommandList(self, node):
-    self.ParseCommandTerm(node)
-    return self.ParseTrailer(node)
-
-
-class TraceTest(unittest.TestCase):
-
-  def testWrapMethods(self):
-    state = util.TraceState()
-    # TODO: Fix UnboundMethodType error
-    return
-    util.WrapMethods(_Parser, state)
-    p = _Parser('lexer')
-    print(p.ParseCommandList({}))
+  def testFoo(self):
+    pass
 
 
 if __name__ == '__main__':
