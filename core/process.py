@@ -51,6 +51,18 @@ class FdState(object):
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
 
+  def _NextFreeFileDescriptor(self):
+    done = False
+    while not done:
+      try:
+        fcntl.fcntl(self.next_fd, fcntl.F_GETFD)
+      except IOError as e:
+        if e.errno == errno.EBADF:
+          done = True
+      self.next_fd += 1
+
+    return self.next_fd
+
   def Open(self, path):
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
 
@@ -61,9 +73,8 @@ class FdState(object):
       OSError if the path can't be found.
     """
     fd = os.open(path, os.O_RDONLY, 0666)
-    new_fd = self.next_fd
+    new_fd = self._NextFreeFileDescriptor()
     os.dup2(fd, new_fd)
-    self.next_fd += 1
     os.close(fd)
     return os.fdopen(new_fd)
 
@@ -75,11 +86,12 @@ class FdState(object):
     Returns:
       success Bool
     """
+    new_fd = self._NextFreeFileDescriptor()
     #log('---- _PushDup %s %s', fd1, fd2)
     need_restore = True
     try:
       #log('DUPFD %s %s', fd2, self.next_fd)
-      fcntl.fcntl(fd2, fcntl.F_DUPFD, self.next_fd)
+      fcntl.fcntl(fd2, fcntl.F_DUPFD, new_fd)
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
@@ -91,7 +103,7 @@ class FdState(object):
         raise
     else:
       os.close(fd2)
-      fcntl.fcntl(self.next_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
+      fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
     #log('==== dup %s %s\n' % (fd1, fd2))
     try:
@@ -100,14 +112,13 @@ class FdState(object):
       # bash/dash give this error too, e.g. for 'echo hi 1>&3'
       util.error('%d: %s', fd1, os.strerror(e.errno))
       # Restore and return error
-      os.dup2(self.next_fd, fd2)
-      os.close(self.next_fd)
+      os.dup2(new_fd, fd2)
+      os.close(new_fd)
       # Undo it
       return False
 
     if need_restore:
-      self.cur_frame.saved.append((self.next_fd, fd2))
-    self.next_fd += 1
+      self.cur_frame.saved.append((new_fd, fd2))
     return True
 
   def _PushClose(self, fd):
@@ -249,6 +260,9 @@ class FdState(object):
         raise
       os.close(saved)
       #log('dup2 %s %s', saved, orig)
+
+      # NOTE: This balances the increments from _PushDup().  But it doesn't
+      # balance the ones from Open().
       self.next_fd -= 1  # Count down
 
     for fd in frame.need_close:

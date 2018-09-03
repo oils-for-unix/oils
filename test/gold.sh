@@ -88,6 +88,7 @@ startup-benchmark() {
 }
 
 configure() { _compare ./configure; }
+configure-bug() { _compare gold/configure-bug.sh; }
 nix() { _compare gold/nix.sh isElfSimpleWithStdin; }
 and-or() { _compare gold/and-or.sh test-simple; }
 
