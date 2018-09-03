@@ -17,7 +17,7 @@ from core import util  # module under test
 class UtilTest(unittest.TestCase):
 
   def testFoo(self):
-    pass
+    util.log('hello %d', 42)
 
 
 if __name__ == '__main__':

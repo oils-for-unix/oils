@@ -55,9 +55,6 @@ import errno
 # Set in Modules/main.c.
 HAVE_READLINE = os.getenv('_HAVE_READLINE') != ''
 
-from osh import word_parse  # for tracing
-from osh import cmd_parse  # for tracing
-
 from osh import parse_lib
 
 from core import alloc
@@ -65,7 +62,6 @@ from core import args
 from core import builtin
 from core import cmd_exec
 from core import legacy
-from core import lexer  # for tracing
 from core import main_loop
 from core import process
 from core import reader

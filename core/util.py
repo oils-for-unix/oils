@@ -16,10 +16,6 @@ import pwd  # TODO: Move this dependency to Oil?
 import sys
 import zipimport  # NOT the zipfile module.
 
-if not os.getenv('_OVM_DEPS'):
-  import inspect
-  import types
-
 from asdl import const
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
