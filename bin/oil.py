@@ -102,15 +102,13 @@ def OshMain(argv0, argv, login_shell):
   # TODO: -h too
   spec.LongFlag('--help')
   spec.LongFlag('--version')
+  # the output format when passing -n
   spec.LongFlag('--ast-format',
                 ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
                 default='abbrev-text')
-  spec.LongFlag('--show-ast')  # execute and show
-  spec.LongFlag('--fix')  # oshc translate
-  spec.LongFlag('--debug-spans')  # For oshc translate
-  spec.LongFlag('--parse-and-print-arena')  # Invariant for translation
+
   spec.LongFlag('--print-status')
-  spec.LongFlag('--hijack-shebang')  # TODO:
+  spec.LongFlag('--hijack-shebang')  # TODO: Implement this
 
   # For benchmarks/*.sh
   spec.LongFlag('--parser-mem-dump', args.Str)
@@ -229,13 +227,6 @@ def OshMain(argv0, argv, login_shell):
     # Parse the whole thing up front
     #print('Parsing file')
 
-    if opts.fix:
-      #osh2oil.PrintAsOil(arena, node, opts.debug_spans)
-      raise AssertionError
-    if opts.parse_and_print_arena:
-      osh2oil.PrintArena(arena)
-      raise AssertionError
-
     # Do this after parsing the entire file.  There could be another option to
     # do it before exiting runtime?
     if opts.parser_mem_dump:
@@ -311,7 +302,9 @@ def BoilMain(main_argv):
 
 
 # TODO: Hook up to completion.
-SUBCOMMANDS = ['translate', 'format', 'deps', 'undefined-vars']
+SUBCOMMANDS = [
+    'translate', 'arena', 'spans', 'format', 'deps', 'undefined-vars'
+]
 
 def OshCommandMain(argv):
   """Run an 'oshc' tool.
@@ -353,8 +346,10 @@ def OshCommandMain(argv):
   arena.PushSource(script_name)
 
   line_reader = reader.FileLineReader(f, arena)
-  _, c_parser = parse_lib.MakeParser(line_reader, arena)
+  aliases = {}  # Dummy value; not respecting aliases!
+  _, c_parser = parse_lib.MakeParser(line_reader, arena, aliases)
 
+  # TODO: Should I use main_loop.Batch() here?
   try:
     node = c_parser.ParseWholeFile()
   except util.ParseError as e:
@@ -383,6 +378,12 @@ def OshCommandMain(argv):
     debug_spans = False
     osh2oil.PrintAsOil(arena, node, debug_spans)
 
+  elif action == 'arena':  # for debugging
+    osh2oil.PrintArena(arena)
+
+  elif action == 'spans':  # for debugging
+    osh2oil.PrintSpans(arena)
+
   elif action == 'format':
     # TODO: autoformat code
     raise NotImplementedError(action)
@@ -391,7 +392,7 @@ def OshCommandMain(argv):
     deps.Deps(node)
 
   elif action == 'undefined-vars':  # could be environment variables
-    pass
+    raise NotImplementedError
 
   else:
     raise AssertionError  # Checked above

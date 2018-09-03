@@ -68,6 +68,15 @@ def PrintArena(arena):
   cursor.PrintUntil(arena.LastSpanId())
 
 
+def PrintSpans(arena):
+  """Just to see spans."""
+  for i, span in enumerate(arena.spans):
+    line = arena.GetLine(span.line_id)
+    piece = line[span.col : span.col + span.length]
+    print('%5d %r' % (i, piece), file=sys.stderr)
+  print('(%d spans)' % len(arena.spans), file=sys.stderr)
+
+
 def PrintAsOil(arena, node, debug_spans):
   #print node
   #print(spans)

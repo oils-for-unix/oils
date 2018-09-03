@@ -54,6 +54,9 @@ def Interactive(opts, ex, c_parser, arena):
     if is_fatal:  # e.g. divide by zero 
       continue
 
+    # TODO: Replace this with a shell hook?  with 'trap', or it could be just
+    # like command_not_found.  The hook can be 'echo $?' or something more
+    # complicated, i.e. with timetamps.
     if opts.print_status:
       print('STATUS', repr(status))
 
