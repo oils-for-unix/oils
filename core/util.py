@@ -249,3 +249,23 @@ def ShowAppVersion(app_name):
   print('Bytecode: %s' % pyc_version)
 
 
+# This was useful for debugging.
+def ShowFdState():
+  import subprocess
+  subprocess.call(['ls', '-l', '/proc/%d/fd' % os.getpid()])
+
+
+# NOTE: Should there be one of these per process?
+DEBUG_FILE = None
+
+def Debug(msg, *args):
+  if not DEBUG_FILE:
+    return
+  if args:
+    msg = msg % args
+  # TODO: Don't get pid every time
+  msg = '%d %s' % (os.getpid(), msg)
+  print(msg, file=DEBUG_FILE)
+
+
+

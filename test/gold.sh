@@ -125,6 +125,7 @@ readonly -a PASSING=(
   #version-text
 
   configure
+  configure-bug
   nix
   and-or
 

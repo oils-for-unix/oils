@@ -109,6 +109,7 @@ def OshMain(argv0, argv, login_shell):
 
   spec.LongFlag('--print-status')  # TODO: Replace with a shell hook
   spec.LongFlag('--hijack-shebang')  # TODO: Implement this
+  spec.LongFlag('--debug-file', args.Str)
 
   # For benchmarks/*.sh
   spec.LongFlag('--parser-mem-dump', args.Str)
@@ -159,6 +160,10 @@ def OshMain(argv0, argv, login_shell):
   exec_opts = state.ExecOpts(mem)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
+
+  if opts.debug_file:
+    util.DEBUG_FILE = fd_state.Open(opts.debug_file, mode='w')
+    util.Debug('Debug file is %s', util.DEBUG_FILE)
 
   ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, readline,
                          completion, comp_lookup, exec_opts, arena, aliases)

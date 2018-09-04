@@ -52,6 +52,13 @@ class FdState(object):
     self.stack = [self.cur_frame]
 
   def _NextFreeFileDescriptor(self):
+    """Return a free file descriptor above 10 that isn't used.
+
+    NOTE: This doesn't seem to solve all file descriptor problems, and I
+    don't understand why!  This fixed 'test/gold.sh configure-bug', I still
+    had ANOTHER bug with 'test/gold.sh nix' that wasn't fixed.  That required
+    removing the 'import cgi'.
+    """
     done = False
     while not done:
       try:
@@ -63,7 +70,7 @@ class FdState(object):
 
     return self.next_fd
 
-  def Open(self, path):
+  def Open(self, path, mode='r'):
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
 
     Returns:
@@ -72,11 +79,18 @@ class FdState(object):
     Raises:
       OSError if the path can't be found.
     """
-    fd = os.open(path, os.O_RDONLY, 0666)
+    if mode == 'r':
+      fd_mode = os.O_RDONLY
+    elif mode == 'w':
+      fd_mode = os.O_CREAT | os.O_RDWR
+    else:
+      raise AssertionError(mode)
+
+    fd = os.open(path, fd_mode, 0666)
     new_fd = self._NextFreeFileDescriptor()
     os.dup2(fd, new_fd)
     os.close(fd)
-    return os.fdopen(new_fd)
+    return os.fdopen(new_fd, mode)
 
   def _PushDup(self, fd1, fd2):
     """Save fd2, and dup fd1 onto fd2.
@@ -264,6 +278,7 @@ class FdState(object):
       # NOTE: This balances the increments from _PushDup().  But it doesn't
       # balance the ones from Open().
       self.next_fd -= 1  # Count down
+      assert self.next_fd >= 10, self.next_fd
 
     for fd in frame.need_close:
       #log('Close %d', fd)

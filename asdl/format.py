@@ -16,12 +16,9 @@ Places where we try a single line:
 """
 
 from asdl import asdl_ as asdl
+from asdl import cgi
 from asdl import pretty
 from core import util
-
-import os
-if not os.getenv('_OVM_DEPS'):
-  import cgi
 
 
 def DetectConsoleOutput(f):
