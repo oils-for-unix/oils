@@ -143,9 +143,11 @@ class Lexer(object):
     self.line_lexer = line_lexer
     self.line_reader = line_reader
     self.was_line_cont = False  # last token was line continuation?
+                                # TODO: unused?
 
     self.line_id = -1  # Invalid one
     self.translation_stack = []
+    self.buffers = []
 
   def ResetInputObjects(self):
     self.line_lexer.Reset('', -1, 0)
@@ -188,9 +190,10 @@ class Lexer(object):
     """
     self.translation_stack.append((old_id, new_id))
 
-  def _Read(self, lex_mode):
+  def _ReadNormalInput(self, lex_mode):
+    """Read from the normal line buffer, not an alias."""
     t = self.line_lexer.Read(lex_mode)
-    if t.id == Id.Eol_Tok:  # hit \0
+    if t.id == Id.Eol_Tok:  # hit \0, read a new line
       line_id, line, line_pos = self.line_reader.GetLine()
 
       if line is None:  # no more lines
@@ -198,7 +201,7 @@ class Lexer(object):
         t = ast.token(Id.Eof_Real, '', span_id)
         return t
 
-      self.line_lexer.Reset(line, line_id, line_pos)
+      self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
       t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF
@@ -214,7 +217,20 @@ class Lexer(object):
   # TODO: Collapse newlines here instead of in the WordParser?
   def Read(self, lex_mode):
     while True:
-      t = self._Read(lex_mode)
+      # Read from alias buffers first
+      if self.buffers:
+        if 0:
+          log('Reading from %r at %d',
+              self.buffers[-1].line, self.buffers[-1].line_pos)
+        t = self.buffers[-1].Read(lex_mode)
+        if t.id == Id.Eol_Tok:
+          self.buffers.pop()
+          continue  # read from next buffer or from the original line_Lexer
+
+        # TODO: Translate tokens here?
+        return t
+
+      t = self._ReadNormalInput(lex_mode)
 
       self.was_line_cont = (t.id == Id.Ignored_LineCont)
 
@@ -225,3 +241,7 @@ class Lexer(object):
 
     #log('Read() Returning %s', t)
     return t
+
+  def PushAliasBuffer(self, line_lexer):
+    """Read from this stack of buffer before resuming normal input."""
+    self.buffers.append(line_lexer)

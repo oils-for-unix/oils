@@ -13,6 +13,7 @@ cmd_parse.py - Parse high level shell commands.
 from asdl import const
 
 from core import braces
+from core import lexer  # alias needs LineLexer
 from core import reader
 from core import word
 from core import util
@@ -120,9 +121,9 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, w_parser, lexer, line_reader, arena, aliases=None):
+  def __init__(self, w_parser, lexer_, line_reader, arena, aliases=None):
     self.w_parser = w_parser  # for normal parsing
-    self.lexer = lexer  # for fast lookahead to (, for function defs
+    self.lexer = lexer_  # for fast lookahead to (, for function defs
     self.line_reader = line_reader  # for here docs
     self.arena = arena  # for adding here doc spans
     if aliases is None:
@@ -1164,12 +1165,35 @@ class CommandParser(object):
     assert anode is not None
 
     node = ast.DParen(anode)
+
     node.spids.append(left_spid)
     node.spids.append(right_spid)
 
     return node
 
-  def ParseCommand(self):
+  def _DoAlias(self, alias_exp):
+    line_lexer = self.lexer.line_lexer
+    log('%r %d %r', line_lexer.line, line_lexer.line_pos,
+        line_lexer.line[line_lexer.line_pos:])
+    if alias_exp.endswith(' '):
+      do_exp = True
+    else:
+      # alias e='echo [ ' is the same expansion as
+      # alias e='echo ['
+      # The trailing space indicates something else.
+      alias_exp += ' '
+
+    # NOTE: alias_exp might not end with a newline, but that's OK because it's
+    # NUL-terminated.
+    buf = lexer.LineLexer(match.MATCHER, alias_exp, self.arena)
+    self.lexer.PushAliasBuffer(buf)
+
+    # Need to prime it I guess.  This can get more than one word out.
+    self._Next()
+    # Call it recursively
+    return self.ParseCommand(do_alias=False)
+
+  def ParseCommand(self, do_alias=True):
     """
     command          : simple_command
                      | compound_command io_redirect*
@@ -1201,12 +1225,14 @@ class CommandParser(object):
     # self.w_parser.PushAliasBuffer() -- this means the lexer reads from it?
 
     # TODO: To this in a loop
-    ok, word_str, quoted = word.StaticEval(self.cur_word)
-    if ok and not quoted:
-      alias_exp = self.aliases.get(word_str)
-      #log('AT PARSE TIME %s', self.aliases)
-      if alias_exp is not None:
-        log('expand %s -> %s', word_str, alias_exp)
+    if do_alias:
+      ok, word_str, quoted = word.StaticEval(self.cur_word)
+      if ok and not quoted:
+        alias_exp = self.aliases.get(word_str)
+        #log('AT PARSE TIME %s', self.aliases)
+        if alias_exp is not None:
+          log('expand %s -> %r', word_str, alias_exp)
+          return self._DoAlias(alias_exp)
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.
