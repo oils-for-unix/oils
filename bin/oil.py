@@ -177,7 +177,7 @@ def OshMain(argv0, argv, login_shell):
       rc_line_reader = reader.FileLineReader(f, arena)
       _, rc_c_parser = parse_lib.MakeParser(rc_line_reader, arena, aliases)
       try:
-        status = main_loop.Batch(opts, ex, rc_c_parser, arena)
+        status = main_loop.Batch(ex, rc_c_parser, arena)
       finally:
         arena.PopSource()
   except IOError as e:
@@ -250,7 +250,7 @@ def OshMain(argv0, argv, login_shell):
 
   _tlog('Execute(node)')
   #status = ex.ExecuteAndRunExitTrap(node)
-  status = main_loop.Batch(opts, ex, c_parser, arena, nodes_out=nodes_out)
+  status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
 
   if nodes_out is not None:
     ui.PrintAst(nodes_out, opts)
@@ -355,9 +355,8 @@ def OshCommandMain(argv):
   aliases = {}  # Dummy value; not respecting aliases!
   _, c_parser = parse_lib.MakeParser(line_reader, arena, aliases)
 
-  # TODO: Should I use main_loop.Batch() here?
   try:
-    node = c_parser.ParseWholeFile()
+    node = main_loop.ParseWholeFile(c_parser)
   except util.ParseError as e:
     ui.PrettyPrintError(e, arena, sys.stderr)
     return 2

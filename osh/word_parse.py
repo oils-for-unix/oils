@@ -48,14 +48,13 @@ lex_mode_e.VS_ARG_DQ
   e.g. "${x:-a  "b"}".
 """
 
-from osh.meta import Id, Kind, LookupKind
 from core import braces
 from core import word
 from core import tdop
 from core import util
 
 from osh import arith_parse
-from osh.meta import ast, types
+from osh.meta import ast, types, Id, Kind, LookupKind
 
 word_part_e = ast.word_part_e
 word_e = ast.word_e
@@ -666,7 +665,9 @@ class WordParser(object):
     from osh import parse_lib
     c_parser = parse_lib.MakeParserForCommandSub(self.line_reader, self.lexer)
 
-    node = c_parser.ParseWholeFile()  # `` and $() allowed
+    # NOTE: This doesn't use something like main_loop because we don't want to
+    # interleave parsing and execution!  Unlike 'source' and 'eval'.
+    node = c_parser.ParseCommandSub()  # `` and $() allowed
     assert node is not None
 
     # Hm this creates its own word parser, which is thrown away?

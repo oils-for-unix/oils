@@ -1510,32 +1510,22 @@ class CommandParser(object):
       node = self.pending_here_docs[0]  # Just show the first one?
       p_die('Unterminated here doc began here', word=node.here_begin)
 
-  def ParseWholeFile(self):
-    """Entry point for main() in non-interactive shell.
+  def ParseCommandSub(self):
+    """Parse $(echo hi) and `echo hi`.
 
-    Very similar to ParseCommandList, but we allow empty files.
-
-    TODO: This should be turned into a Parse and Execute loop, freeing arenas
-    if they don't contain functions.
-
-    osh -n is a different loop -- it parses each line one at a time, but
-    doesn't execute!
+    They can have multiple lines, like this:
+    echo $(
+      echo one
+      echo two
+    )
     """
     self._NewlineOk()
 
-    # An empty node to execute
-    if self.c_kind == Kind.Eof:
+    if self.c_kind == Kind.Eof:  # e.g. $()
       return ast.NoOp()
 
     # This calls ParseAndOr(), but I think it should be a loop that calls
     # ParseCommandLine(), like oil.InteractiveLoop.
     node = self.ParseCommandTerm()
     assert node is not None
-
-    # NOTE: This happens when there is no newline at the end of a file, like
-    # osh -c 'cat <<EOF'
-    if self.pending_here_docs:
-      node = self.pending_here_docs[0]  # Just show the first one?
-      p_die('Unterminated here doc began here', word=node.here_begin)
-
     return node

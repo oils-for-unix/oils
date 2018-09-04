@@ -26,17 +26,18 @@ from asdl import pretty
 from core import alloc
 from core import args
 from core import braces
+from core import builtin
 from core import expr_eval
 from core import legacy
+from core import main_loop
+from core import process
 from core import reader
+from core import state
 from core import test_builtin
 from core import word
 from core import word_eval
 from core import ui
 from core import util
-from core import builtin
-from core import process
-from core import state
 from core import word_compile
 
 from osh.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
@@ -182,16 +183,7 @@ class Executor(object):
   def _EvalHelper(self, c_parser, source_name):
     self.arena.PushSource(source_name)
     try:
-      try:
-        node = c_parser.ParseWholeFile()
-      except util.ParseError as e:
-        util.error('Parse error in %r:', source_name)
-        ui.PrettyPrintError(e, self.arena, sys.stderr)
-        return 2
-
-      status = self._Execute(node)
-      return status
-
+      return main_loop.Batch(self, c_parser, self.arena)
     finally:
       self.arena.PopSource()
 
@@ -215,7 +207,7 @@ class Executor(object):
 
     try:
       try:
-        node = c_parser.ParseWholeFile()
+        node = main_loop.ParseWholeFile(c_parser)
       except util.ParseError as e:
         util.error('Parse error in %r:', source_name)
         ui.PrettyPrintError(e, self.arena, sys.stderr)

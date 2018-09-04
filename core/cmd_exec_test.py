@@ -106,34 +106,5 @@ class VarOpTest(unittest.TestCase):
     print(part_vals)
 
 
-def ParseAndExecute(code_str):
-  arena = test_lib.MakeArena('<shell_test.py>')
-
-  # TODO: Unify with InitCommandParser above.
-  from osh.word_parse import WordParser
-  from osh.cmd_parse import CommandParser
-
-  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
-
-  node = c_parser.ParseWholeFile()
-  if not node:
-    raise AssertionError()
-
-  print(node)
-  ex = InitExecutor(arena)
-  status = ex.Execute(node)
-
-  # TODO: Can we capture output here?
-  return status
-
-
-class ExecutorTest(unittest.TestCase):
-
-  def testBuiltin(self):
-    print(ParseAndExecute('echo hi'))
-
-
 if __name__ == '__main__':
   unittest.main()

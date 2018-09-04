@@ -3,26 +3,22 @@ from __future__ import print_function
 """
 main_loop.py
 
+Two variants:
+
 main_loop.Interactive()
 main_loop.Batch()
 
-They should call 
-
-ex.ExecuteOne() -- and catch FatalRuntimeError or ControlFlow?
-
-For interactive, you keep going on an error, but exit on 'exit'
-
-For batch, you fail at the first error
+They call CommandParser.ParseOne() and Executor.ExecuteAndCatch().
 
 Get rid of:
 
-ex.Execute() -- used for ExitTrap
-ex.ExecuteAndCatch()
-ParseWholeFile -- needs to check the here doc.
+ex.Execute() -- only used for tests
+ParseWholeFile() -- needs to check the here doc.
 """
 
 from core import ui
 from core import util
+from osh.meta import ast
 
 log = util.log
 
@@ -66,7 +62,7 @@ def Interactive(opts, ex, c_parser, arena):
     return status  # could be a parse error
 
 
-def Batch(opts, ex, c_parser, arena, nodes_out=None):
+def Batch(ex, c_parser, arena, nodes_out=None):
   """Loop for batch execution.
 
   Args:
@@ -117,3 +113,22 @@ def Batch(opts, ex, c_parser, arena, nodes_out=None):
     return ex.LastStatus()
   else:
     return status  # could be a parse error
+
+
+def ParseWholeFile(c_parser):
+  """Parse an entire shell script.
+
+  This uses the same logic as Batch().
+  """
+  children = []
+  while True:
+    node = c_parser.ParseOne()  # can raise ParseError
+    if node is None:  # EOF
+      c_parser.CheckForPendingHereDocs()  # can raise ParseError
+      break
+    children.append(node)
+
+  if len(children) == 1:
+    return children[0]
+  else:
+    return ast.CommandList(children)
