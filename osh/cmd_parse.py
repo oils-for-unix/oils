@@ -620,7 +620,7 @@ class CommandParser(object):
     left_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_LBrace)
 
-    c_list = self.ParseCommandList()
+    c_list = self._ParseCommandList()
     assert c_list is not None
 
     # Not needed
@@ -640,7 +640,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Do)
     do_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
-    c_list = self.ParseCommandList()  # could be any thing
+    c_list = self._ParseCommandList()  # could be any thing
     assert c_list is not None
 
     self._Eat(Id.KW_Done)
@@ -774,7 +774,7 @@ class CommandParser(object):
     """
     self._Next()  # skip while
 
-    cond_node = self.ParseCommandList()
+    cond_node = self._ParseCommandList()
     assert cond_node is not None
 
     body_node = self.ParseDoGroup()
@@ -788,7 +788,7 @@ class CommandParser(object):
     """
     self._Next()  # skip until
 
-    cond_node = self.ParseCommandList()
+    cond_node = self._ParseCommandList()
     assert cond_node is not None
 
     body_node = self.ParseDoGroup()
@@ -824,7 +824,7 @@ class CommandParser(object):
     self._NewlineOk()
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
-      c_list = self.ParseCommandTerm()
+      c_list = self._ParseCommandTerm()
       assert c_list is not None
       action_children = c_list.children
     else:
@@ -908,13 +908,13 @@ class CommandParser(object):
       elif_spid = word.LeftMostSpanForWord(self.cur_word)
 
       self._Next()  # skip elif
-      cond = self.ParseCommandList()
+      cond = self._ParseCommandList()
       assert cond is not None
 
       then_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Eat(Id.KW_Then)
 
-      body = self.ParseCommandList()
+      body = self._ParseCommandList()
       assert body is not None
 
       arm = ast.if_arm(cond.children, body.children)
@@ -924,7 +924,7 @@ class CommandParser(object):
     if self.c_id == Id.KW_Else:
       else_spid = word.LeftMostSpanForWord(self.cur_word)
       self._Next()
-      body = self.ParseCommandList()
+      body = self._ParseCommandList()
       assert body is not None
       if_node.else_action = body.children
     else:
@@ -939,13 +939,13 @@ class CommandParser(object):
     if_node = ast.If()
     self._Next()  # skip if
 
-    cond = self.ParseCommandList()
+    cond = self._ParseCommandList()
     assert cond is not None
 
     then_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
 
-    body = self.ParseCommandList()
+    body = self._ParseCommandList()
     assert body is not None
 
     arm = ast.if_arm(cond.children, body.children)
@@ -1126,7 +1126,7 @@ class CommandParser(object):
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
-    c_list = self.ParseCommandList()
+    c_list = self._ParseCommandList()
     assert c_list is not None
 
     # Remove singleton CommandList as an optimization.
@@ -1323,7 +1323,7 @@ class CommandParser(object):
     return node
 
   """
-  NOTE: ParseCommandLine and ParseCommandTerm are similar, but different.
+  NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
 
   At the top level, We want to execute after every line:
   - to process alias
@@ -1337,10 +1337,8 @@ class CommandParser(object):
   command_term     : and_or (trailer and_or)* ;            # CHILDREN
   """
 
-  def ParseCommandLine(self):
+  def _ParseCommandLine(self):
     """
-    Called from the top level InteractiveLoop or ExecutionLoop.
-
     command_line     : and_or (sync_op and_or)* trailer? ;
     trailer          : sync_op newline_ok
                      | NEWLINES;
@@ -1380,7 +1378,7 @@ class CommandParser(object):
 
       else:
         # Shouldn't happen?
-        assert False, 'ParseCommandLine: Unexpected word %s' % self.cur_word
+        assert False, '_ParseCommandLine: Unexpected word %s' % self.cur_word
 
       children.append(child)
 
@@ -1390,34 +1388,15 @@ class CommandParser(object):
     else:
       return children[0]
 
-  def ParseOne(self):
-    """A wrapper around ParseCommandLine for main_loop.
-
-    We want to be able catch ParseError all in one place.
-
-    Raises:
-      ParseError
-    """
-    self._NewlineOk()
-    self._Peek()
-
-    if self.c_id == Id.Eof_Real:
-      # TODO: Assert that there are no pending here docs
-      return None
-
-    node = self.ParseCommandLine()
-    assert node is not None
-    return node
-
-  def ParseCommandTerm(self):
+  def _ParseCommandTerm(self):
     """"
     command_term     : and_or (trailer and_or)* ;
     trailer          : sync_op newline_ok
                      | NEWLINES;
     sync_op          : '&' | ';';
 
-    This is handled in imperative style, like ParseCommandLine.
-    Called by ParseCommandList for all blocks, and also for ParseCaseItem,
+    This is handled in imperative style, like _ParseCommandLine.
+    Called by _ParseCommandList for all blocks, and also for ParseCaseItem,
     which is slightly different.  (HOW?  Is it the DSEMI?)
 
     Returns:
@@ -1428,9 +1407,9 @@ class CommandParser(object):
         Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell,
         Id.Lit_RBrace, Id.Op_DSemi)
 
-    # NOTE: This is similar to ParseCommandLine.
+    # NOTE: This is similar to _ParseCommandLine.
     #
-    # - Why aren't we doing END_LIST in ParseCommandLine?
+    # - Why aren't we doing END_LIST in _ParseCommandLine?
     #   - Because you will never be inside $() at the top level.
     #   - We also know it will end in a newline.  It can't end in "fi"!
     #   - example: if true; then { echo hi; } fi
@@ -1487,7 +1466,8 @@ class CommandParser(object):
 
     return ast.CommandList(children)
 
-  def ParseCommandList(self):
+  # TODO: Make this private.
+  def _ParseCommandList(self):
     """
     command_list     : newline_ok command_term trailer? ;
 
@@ -1499,19 +1479,34 @@ class CommandParser(object):
     easier.
     """
     self._NewlineOk()
-    node = self.ParseCommandTerm()
+    node = self._ParseCommandTerm()
     assert node is not None
     return node
 
-  def CheckForPendingHereDocs(self):
-    # NOTE: This happens when there is no newline at the end of a file, like
-    # osh -c 'cat <<EOF'
-    if self.pending_here_docs:
-      node = self.pending_here_docs[0]  # Just show the first one?
-      p_die('Unterminated here doc began here', word=node.here_begin)
+  def ParseLogicalLine(self):
+    """Parse a single line for main_loop.
+
+    A wrapper around _ParseCommandLine().  Similar but not identical to
+    _ParseCommandList() and ParseCommandSub().
+
+    Raises:
+      ParseError
+
+    We want to be able catch ParseError all in one place.
+    """
+    self._NewlineOk()
+    self._Peek()
+
+    if self.c_id == Id.Eof_Real:
+      # TODO: Assert that there are no pending here docs
+      return None
+
+    node = self._ParseCommandLine()
+    assert node is not None
+    return node
 
   def ParseCommandSub(self):
-    """Parse $(echo hi) and `echo hi`.
+    """Parse $(echo hi) and `echo hi` for word_parse.py.
 
     They can have multiple lines, like this:
     echo $(
@@ -1525,7 +1520,14 @@ class CommandParser(object):
       return ast.NoOp()
 
     # This calls ParseAndOr(), but I think it should be a loop that calls
-    # ParseCommandLine(), like oil.InteractiveLoop.
-    node = self.ParseCommandTerm()
+    # _ParseCommandLine(), like oil.InteractiveLoop.
+    node = self._ParseCommandTerm()
     assert node is not None
     return node
+
+  def CheckForPendingHereDocs(self):
+    # NOTE: This happens when there is no newline at the end of a file, like
+    # osh -c 'cat <<EOF'
+    if self.pending_here_docs:
+      node = self.pending_here_docs[0]  # Just show the first one?
+      p_die('Unterminated here doc began here', word=node.here_begin)

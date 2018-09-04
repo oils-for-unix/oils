@@ -46,11 +46,11 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   return node
 
 
-def _assertParseCommandListError(test, code_str):
+def _assert_ParseCommandListError(test, code_str):
   arena, c_parser = InitCommandParser(code_str)
 
   try:
-    node = c_parser.ParseCommandLine()
+    node = c_parser._ParseCommandLine()
   except util.ParseError as e:
     ui.PrettyPrintError(e, arena, sys.stdout)
   else:
@@ -73,11 +73,11 @@ def assertParsePipeline(test, code_str):
 def assertParseAndOr(test, code_str):
   return _assertParseMethod(test, code_str, 'ParseAndOr')
 
-def assertParseCommandLine(test, code_str):
-  return _assertParseMethod(test, code_str, 'ParseCommandLine')
+def assert_ParseCommandLine(test, code_str):
+  return _assertParseMethod(test, code_str, '_ParseCommandLine')
 
-def assertParseCommandList(test, code_str):
-  node = _assertParseMethod(test, code_str, 'ParseCommandList')
+def assert_ParseCommandList(test, code_str):
+  node = _assertParseMethod(test, code_str, '_ParseCommandList')
   if len(node.children) == 1:
     return node.children[0]
   else:
@@ -95,11 +95,11 @@ def assertParseRedirect(test, code_str):
 #      expect_success=False)
 #
 #def assertFailCommandLine(test, code_str):
-#  return _assertParseMethod(test, code_str, 'ParseCommandLine',
+#  return _assertParseMethod(test, code_str, '_ParseCommandLine',
 #      expect_success=False)
 
 def assertFailCommandList(test, code_str):
-  return _assertParseMethod(test, code_str, 'ParseCommandList',
+  return _assertParseMethod(test, code_str, '_ParseCommandList',
       expect_success=False)
 
 #def assertFailRedirect(test, code_str):
@@ -130,48 +130,48 @@ class SimpleCommandTest(unittest.TestCase):
     self.assertEqual(2, len(node.redirects))
 
   def testMultipleGlobalAssignments(self):
-    node = assertParseCommandList(self, 'ONE=1 TWO=2')
+    node = assert_ParseCommandList(self, 'ONE=1 TWO=2')
     self.assertEqual(command_e.Assignment, node.tag)
     self.assertEqual(2, len(node.pairs))
 
   def testExport(self):
     # This is the old static parsing.  Probably need to revisit.
     return
-    node = assertParseCommandList(self, 'export ONE=1 TWO=2 THREE')
+    node = assert_ParseCommandList(self, 'export ONE=1 TWO=2 THREE')
     self.assertEqual(command_e.Assignment, node.tag)
     self.assertEqual(3, len(node.pairs))
 
   def testReadonly(self):
-    node = assertParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
+    node = assert_ParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
     self.assertEqual(command_e.Assignment, node.tag)
     self.assertEqual(3, len(node.pairs))
 
   def testOnlyRedirect(self):
     # This just touches the file
-    node = assertParseCommandList(self, '>out.txt')
+    node = assert_ParseCommandList(self, '>out.txt')
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(0, len(node.words))
     self.assertEqual(1, len(node.redirects))
 
   def testParseRedirectInTheMiddle(self):
-    node = assertParseCommandList(self, 'echo >out.txt 1 2 3')
+    node = assert_ParseCommandList(self, 'echo >out.txt 1 2 3')
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(4, len(node.words))
     self.assertEqual(1, len(node.redirects))
 
   def testParseRedirectBeforeAssignment(self):
     # Write ENV to a file
-    node = assertParseCommandList(self, '>out.txt PYTHONPATH=. env')
+    node = assert_ParseCommandList(self, '>out.txt PYTHONPATH=. env')
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(1, len(node.words))
     self.assertEqual(1, len(node.redirects))
     self.assertEqual(1, len(node.more_env))
 
   def testParseAssignment(self):
-    node = assertParseCommandList(self, 'local foo=bar spam eggs one=1')
+    node = assert_ParseCommandList(self, 'local foo=bar spam eggs one=1')
     self.assertEqual(4, len(node.pairs))
 
-    node = assertParseCommandList(self, 'foo=bar')
+    node = assert_ParseCommandList(self, 'foo=bar')
     self.assertEqual(1, len(node.pairs))
 
     # This is not valid since env isn't respected
@@ -194,7 +194,7 @@ class HereDocTest(unittest.TestCase):
 
   def testUnquotedHereDoc(self):
     # Unquoted here docs use the double quoted context.
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<EOF
 $v
 "two
@@ -207,7 +207,7 @@ EOF
 
   def testQuotedHereDocs(self):
     # Quoted here doc
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<"EOF"
 $v
 "two
@@ -217,7 +217,7 @@ EOF
     h = node.redirects[0]
     self.assertEqual(2, len(h.stdin_parts))  # 2 literal parts
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<'EOF'
 single-quoted: $var
 EOF
@@ -227,7 +227,7 @@ EOF
     self.assertEqual(1, len(h.stdin_parts))  # 1 line, one literal part
 
     # \ escape
-    node = assertParseCommandLine(self, r"""\
+    node = assert_ParseCommandLine(self, r"""\
 cat <<EO\F
 single-quoted: $var
 EOF
@@ -237,7 +237,7 @@ EOF
     self.assertEqual(1, len(h.stdin_parts))  # 1 line, one literal part
 
   def testLeadingTabs(self):
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 \tcat <<-EOF
 \tone tab then foo: $foo
 \tEOF
@@ -248,7 +248,7 @@ echo hi
 
   def testHereDocInPipeline(self):
     # Pipe and command on SAME LINE
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<EOF | tac
 PIPE 1
 PIPE 2
@@ -258,7 +258,7 @@ EOF
     assertHereDocToken(self, 'PIPE 1\n', node.children[0])
 
     # Pipe command AFTER here doc
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<EOF |
 PIPE 1
 PIPE 2
@@ -270,7 +270,7 @@ tac
 
   def testTwoHereDocsInPipeline(self):
     # Pipeline with two here docs
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 cat <<EOF1 | tac <<EOF2
 PIPE A1
 PIPE A2
@@ -285,7 +285,7 @@ EOF2
 
   def testHereDocInAndOrChain(self):
     # || command AFTER here doc
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<EOF ||
 PIPE 1
 PIPE 2
@@ -296,7 +296,7 @@ echo hi
     assertHereDocToken(self, 'PIPE 1\n', node.children[0])
 
     # && and command on SAME LINE
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<EOF && echo hi
 PIPE 1
 PIPE 2
@@ -305,7 +305,7 @@ EOF
     self.assertEqual(2, len(node.children))
     assertHereDocToken(self, 'PIPE 1\n', node.children[0])
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 tac <<EOF1 && tac <<EOF2
 PIPE A1
 PIPE A2
@@ -320,12 +320,12 @@ echo
     assertHereDocToken(self, 'PIPE B1\n', node.children[1])
 
   def testHereDocInSequence(self):
-    # PROBLEM: ParseCommandList vs ParseCommandLine
-    # ParseCommandLine only used interactively.  ParseCommandList is used by
+    # PROBLEM: _ParseCommandList vs _ParseCommandLine
+    # _ParseCommandLine only used interactively.  _ParseCommandList is used by
     # ParseFile.
 
     # command AFTER here doc
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 cat <<EOF ;
 PIPE 1
 PIPE 2
@@ -338,7 +338,7 @@ echo hi
 
   def testHereDocInSequence2(self):
     # ; and command on SAME LINE
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 cat <<EOF ; echo hi
 PIPE 1
 PIPE 2
@@ -349,7 +349,7 @@ EOF
     assertHereDocToken(self, 'PIPE 1\n', node.children[0].child)
 
   def testCommandSubInHereDoc(self):
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 cat <<EOF
 1 $(echo 2
 echo 3) 4
@@ -363,14 +363,14 @@ class ArrayTest(unittest.TestCase):
 
   def testArrayLiteral(self):
     # Empty array
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'empty=()')
     self.assertEqual(['empty'], [p.lhs.name for p in node.pairs])
     self.assertEqual([], node.pairs[0].rhs.parts[0].words)  # No words
     self.assertEqual(command_e.Assignment, node.tag)
 
     # Array with 3 elements
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'array=(a b c)')
     self.assertEqual(['array'], [p.lhs.name for p in node.pairs])
     self.assertEqual(3, len(node.pairs[0].rhs.parts[0].words))
@@ -385,7 +385,7 @@ class ArrayTest(unittest.TestCase):
         'array=(a b c) ls')
 
     # Two array literals
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'array=(a b c); array2=(d e f)')
     self.assertEqual(2, len(node.children))
     a2 = node.children[1]
@@ -464,15 +464,15 @@ class CommandParserTest(unittest.TestCase):
     _assertParseMethod(self, 'ls foo|', 'ParsePipeline', expect_success=False)
 
   def testParsePipelineBash(self):
-    node = assertParseCommandList(self, 'ls | cat |& cat')
+    node = assert_ParseCommandList(self, 'ls | cat |& cat')
     self.assertEqual(command_e.Pipeline, node.tag)
     self.assertEqual([1], node.stderr_indices)
 
-    node = assertParseCommandList(self, 'ls |& cat | cat')
+    node = assert_ParseCommandList(self, 'ls |& cat | cat')
     self.assertEqual(command_e.Pipeline, node.tag)
     self.assertEqual([0], node.stderr_indices)
 
-    node = assertParseCommandList(self, 'ls |& cat |& cat')
+    node = assert_ParseCommandList(self, 'ls |& cat |& cat')
     self.assertEqual(command_e.Pipeline, node.tag)
     self.assertEqual([0, 1], node.stderr_indices)
 
@@ -503,29 +503,29 @@ class CommandParserTest(unittest.TestCase):
     print(node)
     self.assertEqual(command_e.FuncDef, node.tag)
 
-  def testParseCommandLine(self):
-    node = assertParseCommandLine(self, 'ls foo 2>/dev/null')
+  def test_ParseCommandLine(self):
+    node = assert_ParseCommandLine(self, 'ls foo 2>/dev/null')
     self.assertEqual(2, len(node.words))
 
-    node = assertParseCommandLine(self, 'ls foo|wc -l')
+    node = assert_ParseCommandLine(self, 'ls foo|wc -l')
     self.assertEqual(command_e.Pipeline, node.tag)
 
-    node = assertParseCommandLine(self, 'ls foo|wc -l || die')
+    node = assert_ParseCommandLine(self, 'ls foo|wc -l || die')
     self.assertEqual(command_e.AndOr, node.tag)
 
-    node = assertParseCommandLine(self, 'ls foo|wc -l || die; ls /')
+    node = assert_ParseCommandLine(self, 'ls foo|wc -l || die; ls /')
     self.assertEqual(command_e.CommandList, node.tag)
     self.assertEqual(2, len(node.children))  # two top level things
 
-  def testParseCommandList(self):
-    node = assertParseCommandList(self, 'ls foo')
+  def test_ParseCommandList(self):
+    node = assert_ParseCommandList(self, 'ls foo')
     self.assertEqual(2, len(node.words))
 
-    node = assertParseCommandList(self, 'ls foo|wc -l || die; ls /')
+    node = assert_ParseCommandList(self, 'ls foo|wc -l || die; ls /')
     self.assertEqual(command_e.CommandList, node.tag)
     self.assertEqual(2, len(node.children))
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 ls foo | wc -l || echo fail ;
 echo bar | wc -c || echo f2
 """)
@@ -537,7 +537,7 @@ echo bar | wc -c || echo f2
 
   def testParseCase(self):
     # Empty case
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case foo in
 esac
 """)
@@ -552,7 +552,7 @@ esac
 # case foo in foo) echo hi ;; esac
 # case foo in foo) echo hi; ;; esac
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case word in
   foo|foo2|foo3) echo hi ;;
 esac
@@ -560,13 +560,13 @@ esac
     self.assertEqual(command_e.Case, node.tag)
     self.assertEqual(1, len(node.arms))
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case word in foo) echo one-line ;; esac
 """)
     self.assertEqual(command_e.Case, node.tag)
     self.assertEqual(1, len(node.arms))
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case word in
   foo) echo foo ;;
   bar) echo bar ;;
@@ -575,7 +575,7 @@ esac
     self.assertEqual(command_e.Case, node.tag)
     self.assertEqual(2, len(node.arms))
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case word in
   foo) echo foo ;;    # NO TRAILING ;; but trailing ;
   bar) echo bar ;
@@ -584,7 +584,7 @@ esac
     self.assertEqual(command_e.Case, node.tag)
     self.assertEqual(2, len(node.arms))
 
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case word in
   foo) echo foo ;;    # NO TRAILING ;;
   bar) echo bar
@@ -594,14 +594,14 @@ esac
     self.assertEqual(2, len(node.arms))
 
   def testParseWhile(self):
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 while true; do
   echo hi
   break
 done
 """)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 while true  # comment
 do  # comment
   echo hi  # comment
@@ -610,7 +610,7 @@ done  # comment
 """)
 
   def testParseUntil(self):
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 until false; do
   echo hi
   break
@@ -618,7 +618,7 @@ done
 """)
 
   def testParseFor(self):
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for i in 1 2 3; do
   echo $i
 done
@@ -626,7 +626,7 @@ done
     self.assertEqual(3, len(node.iter_words))
 
     # Don't iterate over anything!
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for i in ; do
   echo $i
 done
@@ -635,13 +635,13 @@ done
     self.assertEqual(False, node.do_arg_iter)
 
     # Iterate over the default
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for i; do echo $i; done
 """)
     self.assertEqual(True, node.do_arg_iter)
 
     # Iterate over the default, over multiple lines
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for i
 do
   echo $i
@@ -650,7 +650,7 @@ done
     self.assertEqual(True, node.do_arg_iter)
 
   def testParseForExpression(self):
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for ((i=0; i<5; ++i)); do
   echo $i
 done
@@ -661,7 +661,7 @@ done
     self.assertEqual(command_e.DoGroup, node.body.tag)
 
     # Now without the ; OR a newline
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for ((i=0; i<5; ++i)) do
   echo $i
 done
@@ -671,7 +671,7 @@ done
     self.assertEqual(Id.Arith_DPlus, node.update.op_id)
     self.assertEqual(command_e.DoGroup, node.body.tag)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 for ((;;)); do
   echo $i
 done
@@ -688,20 +688,20 @@ done
     self.assertEqual(2, len(node.words))
 
   def testParseTildeSub(self):
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         "ls ~ ~root ~/src ~/src/foo ~root/src ~weird!name/blah!blah ")
 
   def testParseDBracket(self):
-    node = assertParseCommandList(self, '[[ $# -gt 1 ]]')
+    node = assert_ParseCommandList(self, '[[ $# -gt 1 ]]')
 
     # Bash allows embedded newlines in some places, but not all
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 [[ $# -gt 1 &&
 
 foo ]]""")
 
     # Newline needs to be Id.Op_Newline!
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 if [[ $# -gt 1 ]]
 then
   echo hi
@@ -713,13 +713,13 @@ fi
     # 0
 
   def testParseDParen(self):
-    node = assertParseCommandList(self, '(( 1 + 2 ))')
+    node = assert_ParseCommandList(self, '(( 1 + 2 ))')
 
   def testParseDBracketRegex(self):
-    node = assertParseCommandList(self, '[[ foo =~ foo ]]')
+    node = assert_ParseCommandList(self, '[[ foo =~ foo ]]')
     self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
 
-    node = assertParseCommandList(self, '[[ foo =~ (foo|bar) ]]')
+    node = assert_ParseCommandList(self, '[[ foo =~ (foo|bar) ]]')
     self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
     right = node.expr.right
     self.assertEqual(5, len(right.parts))
@@ -727,46 +727,46 @@ fi
 
     # TODO: Implement BASH_REGEX_CHARS
     return
-    node = assertParseCommandList(self, '[[ "< >" =~ (< >) ]]')
+    node = assert_ParseCommandList(self, '[[ "< >" =~ (< >) ]]')
     self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
 
-    node = assertParseCommandList(self, '[[ "ba ba" =~ ([a b]+) ]]')
+    node = assert_ParseCommandList(self, '[[ "ba ba" =~ ([a b]+) ]]')
     self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
 
   def testParseIf(self):
-    node = assertParseCommandList(self, 'if true; then echo yes; fi')
+    node = assert_ParseCommandList(self, 'if true; then echo yes; fi')
     # Subshell in condition
-    node = assertParseCommandList(self, 'if (true); then echo yes; fi')
+    node = assert_ParseCommandList(self, 'if (true); then echo yes; fi')
 
   def testParseFunction(self):
-    node = assertParseCommandList(self, 'foo() { echo hi; }')
+    node = assert_ParseCommandList(self, 'foo() { echo hi; }')
 
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'foo() ( echo hi )')
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'foo() for i in x; do echo $i; done')
 
     # KSH FUNCTION
-    node = assertParseCommandList(self, 'function foo { echo hi; }')
-    node = assertParseCommandList(self, 'function foo () { echo hi; }')
+    node = assert_ParseCommandList(self, 'function foo { echo hi; }')
+    node = assert_ParseCommandList(self, 'function foo () { echo hi; }')
 
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'function foo() ( echo hi )')
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'function foo() for i in x; do echo $i; done')
 
     # No () is OK here!
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'function foo for i in x; do echo $i; done')
 
     # Redirects
-    node = assertParseCommandList(self, 'foo() { echo hi; } 1>&2 2>/dev/null')
+    node = assert_ParseCommandList(self, 'foo() { echo hi; } 1>&2 2>/dev/null')
     self.assertEqual(2, len(node.redirects))
     self.assertEqual(command_e.BraceGroup, node.body.tag)
 
   def testParseKeyword(self):
     # NOTE: It chooses the longest match, which is Lit_Chars>
-    node = assertParseCommandList(self, 'ifFOO')
+    node = assert_ParseCommandList(self, 'ifFOO')
 
 
 class NestedParensTest(unittest.TestCase):
@@ -787,18 +787,18 @@ class NestedParensTest(unittest.TestCase):
   """
 
   def testParseSubshell(self):
-    node = assertParseCommandLine(self,
+    node = assert_ParseCommandLine(self,
         '(cd /; echo PWD 1); echo PWD 2')
     self.assertEqual(2, len(node.children))
     self.assertEqual(command_e.CommandList, node.tag)
 
   def testParseBraceGroup(self):
-    node = assertParseCommandLine(self,
+    node = assert_ParseCommandLine(self,
         '{ cd /; echo PWD; }')
     self.assertEqual(2, len(node.children))
     self.assertEqual(command_e.BraceGroup, node.tag)
 
-    node = assertParseCommandLine(self,
+    node = assert_ParseCommandLine(self,
         '{ cd /; echo PWD; }; echo PWD')
     self.assertEqual(2, len(node.children))
     self.assertEqual(command_e.CommandList, node.tag)
@@ -822,7 +822,7 @@ class NestedParensTest(unittest.TestCase):
     self.assertEqual(2, len(node.words))
 
     # Within subshell
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         '(echo $((1+2)))')
     self.assertEqual(command_e.Subshell, node.tag)
     self.assertEqual(command_e.SimpleCommand, node.child.tag)
@@ -835,7 +835,7 @@ class NestedParensTest(unittest.TestCase):
     self.assertEqual(2, len(node.words))
 
     # Within subshell
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         '(echo $((1*(2+3))) )')
     self.assertEqual(command_e.Subshell, node.tag)
     self.assertEqual(command_e.SimpleCommand, node.child.tag)
@@ -851,29 +851,29 @@ class NestedParensTest(unittest.TestCase):
     self.assertEqual(2, len(node.words))
 
   def testFuncDefWithin(self):
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'echo $(func() { echo hi; }; func)')
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(2, len(node.words))
 
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         '(func() { echo hi; }; func)')
     self.assertEqual(command_e.Subshell, node.tag)
     self.assertEqual(command_e.CommandList, node.child.tag)
 
   def testArrayLiteralWithin(self):
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'echo $(array=(a b c))')
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(2, len(node.words))
 
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         '(array=(a b c))')
     self.assertEqual(command_e.Subshell, node.tag)
     self.assertEqual(command_e.Assignment, node.child.tag)
 
   def testSubshellWithinComSub(self):
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'echo one; echo $( (cd /; echo subshell_PWD); echo comsub_PWD); echo two')
     self.assertEqual(command_e.CommandList, node.tag)
     self.assertEqual(3, len(node.children))   # 3 echo statements
@@ -883,11 +883,11 @@ class NestedParensTest(unittest.TestCase):
     #print(words)
 
   def testCaseWithinComSub(self):
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'echo $( case foo in one) echo comsub;; esac)')
     self.assertEqual(2, len(node.words))
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 echo $(
 case foo in one) echo comsub1;; esac
 case bar in two) echo comsub2;; esac
@@ -897,7 +897,7 @@ case bar in two) echo comsub2;; esac
 
   def testComsubWithinCaseWithinComSub(self):
     # Comsub within case within comsub
-    node = assertParseCommandList(self,
+    node = assert_ParseCommandList(self,
         'echo one; echo $( case one in $(echo one)) echo $(comsub);; esac ); echo two')
     self.assertEqual(command_e.CommandList, node.tag)
     # Top level should have 3 echo statements
@@ -910,7 +910,7 @@ case bar in two) echo comsub2;; esac
     self.assertEqual(3, len(node.words))
 
   def testEmptyCaseWithinSubshell(self):
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 ( case foo in
   esac
 )
@@ -920,7 +920,7 @@ case bar in two) echo comsub2;; esac
   def testBalancedCaseWithin(self):
     # With leading ( in case.  This one doesn't cause problems!   We don't need
     # the MaybeUnreadOne() lexer hack.
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 $( case foo in
   (one) echo hi ;;
   esac
@@ -928,7 +928,7 @@ $( case foo in
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 ( case foo in
   (one) echo hi ;;
   esac
@@ -939,7 +939,7 @@ $( case foo in
   def testUnbalancedCaseWithin(self):
     # With leading ( in case.  This one doesn't cause problems!   We don't need
     # the MaybeUnreadOne() lexer hack.
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 $( case foo in
   one) echo hi ;;
   esac
@@ -947,7 +947,7 @@ $( case foo in
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 ( case foo in
   one) echo hi ;;
   esac
@@ -958,7 +958,7 @@ $( case foo in
   def testForExpressionWithin(self):
     # With leading ( in case.  This one doesn't cause problems!   We don't need
     # the MaybeUnreadOne() lexer hack.
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 $( for ((i=0; i<3; ++i)); do
      echo hi
    done
@@ -966,7 +966,7 @@ $( for ((i=0; i<3; ++i)); do
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 ( for ((i=0; i<3; ++i)); do
     echo hi
   done
@@ -979,7 +979,7 @@ class RealBugsTest(unittest.TestCase):
 
   def testGitBug(self):
     # Original bug from git codebase.  Case in subshell.
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 ( cd "$PACKDIR" &&
   for e in $existing
   do
@@ -994,7 +994,7 @@ class RealBugsTest(unittest.TestCase):
 
   def testParseCase3(self):
     # Bug from git codebase.  NOT a comment token.
-    node = assertParseCommandLine(self, """\
+    node = assert_ParseCommandLine(self, """\
 case "$fd,$command" in
   3,#*|3,)
     # copy comments
@@ -1007,14 +1007,14 @@ esac
     # ;# is a comment!  Gah.
     # Conclusion: Comments are NOT LEXICAL.  They are part of word parsing.
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 . "$TEST_DIRECTORY"/diff-lib.sh ;# test-lib chdir's into trash
 """)
     self.assertEqual(command_e.Sentence, node.tag)
     self.assertEqual(2, len(node.child.words))
 
     # This is NOT a comment
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 echo foo#bar
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
@@ -1023,7 +1023,7 @@ echo foo#bar
     self.assertEqual('foo#bar', s)
 
     # This is a comment
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 echo foo #comment
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
@@ -1032,7 +1032,7 @@ echo foo #comment
     self.assertEqual('foo', s)
 
     # Empty comment
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 echo foo #
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
@@ -1041,7 +1041,7 @@ echo foo #
     self.assertEqual('foo', s)
 
   def testChromeIfSubshell(self):
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 if true; then (
   echo hi
 )
@@ -1049,7 +1049,7 @@ fi
 """)
     self.assertEqual(command_e.If, node.tag)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 while true; do {
   echo hi
   break
@@ -1057,7 +1057,7 @@ while true; do {
 """)
     self.assertEqual(command_e.While, node.tag)
 
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 if true; then (
   echo hi
 ) fi
@@ -1066,7 +1066,7 @@ if true; then (
 
     # Related: two fi's in a row, found in Chrome configure.  Compound commands
     # are special; don't need newlines.
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 if true; then
   if true; then
     echo hi
@@ -1079,32 +1079,32 @@ echo hi
     #return
 
     # Another empty command sub
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 echo $()
 """)
 
     # Simplest case
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 echo ``
 """)
 
     # Found in the wild.
     # Just a comment trick found in sandstorm
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 cmd \
   flag `# comment` \
   flag2
 """)
 
     # Empty should be allowed
-    node = assertParseCommandList(self, """\
+    node = assert_ParseCommandList(self, """\
 FOO="bar"`
     `"baz"
 """)
 
   def testQuineDb(self):
     # Need to handle the DOLLAR_SQ lex state
-    node = assertParseCommandList(self, r"""\
+    node = assert_ParseCommandList(self, r"""\
 case foo in
 $'\'')
   ret+="\\"\'
@@ -1113,7 +1113,7 @@ esac
 """)
     self.assertEqual(command_e.Case, node.tag)
 
-    node = assertParseCommandList(self, r"""\
+    node = assert_ParseCommandList(self, r"""\
 $'abc\ndef'
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
@@ -1128,11 +1128,11 @@ $'abc\ndef'
 
   def testArithConstants(self):
     # Found in Gherkin
-    node = assertParseCommandList(self, r"""\
+    node = assert_ParseCommandList(self, r"""\
  [[ -n "${marks[${tag_marker}002${cons_ptr}]}" ]];
 """)
     # Dynamic constant
-    node = assertParseCommandList(self, r"""\
+    node = assert_ParseCommandList(self, r"""\
 echo $(( 0x$foo ))
 """)
 
@@ -1143,7 +1143,7 @@ echo $(( 0x$foo ))
     # inside a command sub, or possibly just ignore this use case.
     return
 
-    node = assertParseCommandList(self, r"""\
+    node = assert_ParseCommandList(self, r"""\
 openssl \
     -newkey rsa:4096 `# Create a new RSA key of length 4096 bits.` \
     `# Sandcats just needs the CN= (common name) in the request.` \
@@ -1153,12 +1153,12 @@ openssl \
   def testArrayLiteralFromSetup(self):
     # Found in setup.shl/bin/setup -- this is the "Parsing Bash is
     # Undecidable" problem.
-    err = _assertParseCommandListError(self, """\
+    err = _assert_ParseCommandListError(self, """\
 errcmd=( "${SETUP_STATE[$err.cmd]}" )
 """)
 
     # Double quotes fix it.
-    node = assertParseCommandList(self, r"""\
+    node = assert_ParseCommandList(self, r"""\
 errcmd=( "${SETUP_STATE["$err.cmd"]}" )
 """)
 
@@ -1168,42 +1168,42 @@ class ErrorLocationsTest(unittest.TestCase):
   def testCommand(self):
     """Enumerating errors in cmd_parse.py."""
 
-    err = _assertParseCommandListError(self, 'ls <')
+    err = _assert_ParseCommandListError(self, 'ls <')
 
-    err = _assertParseCommandListError(self, 'ls < <')
+    err = _assert_ParseCommandListError(self, 'ls < <')
 
     # Word parse error in command parser
-    err = _assertParseCommandListError(self, r'echo foo$(ls <)bar')
+    err = _assert_ParseCommandListError(self, r'echo foo$(ls <)bar')
 
-    err = _assertParseCommandListError(self, r'BAD_ENV=(1 2 3) ls')
-    err = _assertParseCommandListError(self, r'ls BAD_ENV=(1 2 3)')
-    err = _assertParseCommandListError(self, r'ENV1=A ENV2=B local foo=bar')
+    err = _assert_ParseCommandListError(self, r'BAD_ENV=(1 2 3) ls')
+    err = _assert_ParseCommandListError(self, r'ls BAD_ENV=(1 2 3)')
+    err = _assert_ParseCommandListError(self, r'ENV1=A ENV2=B local foo=bar')
 
     # This needs more context
-    err = _assertParseCommandListError(self,
+    err = _assert_ParseCommandListError(self,
         'for ((i=1; i<)); do echo $i; done')
 
-    err = _assertParseCommandListError(self,
+    err = _assert_ParseCommandListError(self,
         'for ((i=1; i<5; ++i)) OOPS echo $i; ERR')
 
     # After semi
-    err = _assertParseCommandListError(self,
+    err = _assert_ParseCommandListError(self,
         'for ((i=1; i<5; ++i)); OOPS echo $i; ERR')
 
-    err = _assertParseCommandListError(self,
+    err = _assert_ParseCommandListError(self,
         'for $bad in 1 2; do echo hi; done')
 
-    err = _assertParseCommandListError(self, 'for foo BAD')
+    err = _assert_ParseCommandListError(self, 'for foo BAD')
 
-    err = _assertParseCommandListError(self, 'if foo; then echo hi; z')
+    err = _assert_ParseCommandListError(self, 'if foo; then echo hi; z')
 
-    err = _assertParseCommandListError(self, 'foo$(invalid) () { echo hi; }')
+    err = _assert_ParseCommandListError(self, 'foo$(invalid) () { echo hi; }')
 
   def testErrorInHereDoc(self):
     return
     # Here doc body.  Hm this should be failing.  Does it just fail to get
     # filled?
-    err = _assertParseCommandListError(self, """cat <<EOF
+    err = _assert_ParseCommandListError(self, """cat <<EOF
 $(echo <)
 EOF
 """)
@@ -1211,48 +1211,48 @@ EOF
 
   def testBool(self):
     """Enumerating errors in bool_parse.py."""
-    err = _assertParseCommandListError(self, '[[ foo bar ]]')
-    err = _assertParseCommandListError(self, '[[ foo -eq ]]')
+    err = _assert_ParseCommandListError(self, '[[ foo bar ]]')
+    err = _assert_ParseCommandListError(self, '[[ foo -eq ]]')
 
     # error in word
-    err = _assertParseCommandListError(self, '[[ foo$(echo <) -eq foo ]]')
+    err = _assert_ParseCommandListError(self, '[[ foo$(echo <) -eq foo ]]')
 
     # Invalid regex
-    err = _assertParseCommandListError(self, '[[ foo =~ \( ]]')
+    err = _assert_ParseCommandListError(self, '[[ foo =~ \( ]]')
 
   def testArith(self):
     """Enumerating errors in arith_parse.py."""
-    err = _assertParseCommandListError(self, '(( 1 + ))')
+    err = _assert_ParseCommandListError(self, '(( 1 + ))')
 
   def testArraySyntax(self):
-    err = _assertParseCommandListError(self, 'A= (1 2)')
+    err = _assert_ParseCommandListError(self, 'A= (1 2)')
 
   def testRedirectsInAssignment(self):
-    err = _assertParseCommandListError(self, 'x=1 >/dev/null')
-    err = _assertParseCommandListError(self, 'echo hi; x=1 >/dev/null')
-    err = _assertParseCommandListError(self, 'declare  x=1 >/dev/null')
+    err = _assert_ParseCommandListError(self, 'x=1 >/dev/null')
+    err = _assert_ParseCommandListError(self, 'echo hi; x=1 >/dev/null')
+    err = _assert_ParseCommandListError(self, 'declare  x=1 >/dev/null')
 
   def testEofInDoubleQuoted(self):
-    err = _assertParseCommandListError(self, 'foo="" echo "bar  ')
+    err = _assert_ParseCommandListError(self, 'foo="" echo "bar  ')
 
   def testQuotesInFunctionName(self):
-    err = _assertParseCommandListError(self, """\
+    err = _assert_ParseCommandListError(self, """\
     foo"bar" () {
       echo hi
     }
     """)
 
   def testForLoopName(self):
-    err = _assertParseCommandListError(self, """\
+    err = _assert_ParseCommandListError(self, """\
     for ( i = 1; i < 10; i++ )
     """)
-    err = _assertParseCommandListError(self, """\
+    err = _assert_ParseCommandListError(self, """\
     for = in a
     """)
 
   def testHereDocCommandSub(self):
     # Originall from spec/09-here-doc.sh.
-    err = _assertParseCommandListError(self, """\
+    err = _assert_ParseCommandListError(self, """\
 for x in 1 2 $(cat <<EOF
 THREE
 EOF); do
@@ -1261,7 +1261,7 @@ done
 """)
 
   def testForLoopEof(self):
-    err = _assertParseCommandListError(self, "for x in 1 2 $(")
+    err = _assert_ParseCommandListError(self, "for x in 1 2 $(")
 
 
 if __name__ == '__main__':

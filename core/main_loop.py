@@ -8,7 +8,7 @@ Two variants:
 main_loop.Interactive()
 main_loop.Batch()
 
-They call CommandParser.ParseOne() and Executor.ExecuteAndCatch().
+They call CommandParser.ParseLogicalLine() and Executor.ExecuteAndCatch().
 
 Get rid of:
 
@@ -32,7 +32,7 @@ def Interactive(opts, ex, c_parser, arena):
     c_parser.ResetInputObjects()
 
     try:
-      node = c_parser.ParseOne()
+      node = c_parser.ParseLogicalLine()
     except util.ParseError as e:
       ui.PrettyPrintError(e, arena)
       # NOTE: This should set the status interactively!  Bash does this.
@@ -88,7 +88,7 @@ def Batch(ex, c_parser, arena, nodes_out=None):
   status = 0
   while True:
     try:
-      node = c_parser.ParseOne()  # can raise ParseError
+      node = c_parser.ParseLogicalLine()  # can raise ParseError
       if node is None:  # EOF
         c_parser.CheckForPendingHereDocs()  # can raise ParseError
         break
@@ -122,7 +122,7 @@ def ParseWholeFile(c_parser):
   """
   children = []
   while True:
-    node = c_parser.ParseOne()  # can raise ParseError
+    node = c_parser.ParseLogicalLine()  # can raise ParseError
     if node is None:  # EOF
       c_parser.CheckForPendingHereDocs()  # can raise ParseError
       break

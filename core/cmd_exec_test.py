@@ -66,7 +66,7 @@ class ExpansionTest(unittest.TestCase):
   def testBraceExpand(self):
     # TODO: Move this to test_lib?
     c_parser = InitCommandParser('echo _{a,b}_')
-    node = c_parser.ParseCommandLine()
+    node = c_parser._ParseCommandLine()
     print(node)
 
     arena = test_lib.MakeArena('<cmd_exec_test.py>')

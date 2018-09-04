@@ -440,7 +440,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
   words = []
 
   try:
-    node = c_parser.ParseCommandLine()
+    node = c_parser.ParseLogicalLine()
   except util.ParseError as e:
     return comp_type, prefix, words  # EARLY RETURN
 
@@ -484,7 +484,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
           pass
           # Oh I have to handle $@ on the command line?
 
-      print(argv)
+      #print(argv)
       com_node = node
 
     elif node.tag == command_e.CommandList:  # echo a; echo b
