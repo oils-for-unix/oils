@@ -154,6 +154,8 @@ class ExecOpts(object):
     # these.
     self.nullglob = False
     self.failglob = False
+    # No-op for bash compatibility.  We always expand aliases.
+    self.expand_aliases = False
 
     #
     # OSH-specific options that are not yet implemented.
@@ -251,7 +253,7 @@ class ExecOpts(object):
         new_val = runtime.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-  SHOPT_OPTIONS = ('nullglob', 'failglob')
+  SHOPT_OPTIONS = ('nullglob', 'failglob', 'expand_aliases')
 
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """

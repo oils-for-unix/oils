@@ -4,7 +4,7 @@
 #
 # http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_03_01
 #
-# Bash is the only one that doesn't support aliases!
+# Bash is the only one that doesn't support aliases by default!
 
 #### Basic alias
 shopt -s expand_aliases  # bash requires this
@@ -17,6 +17,21 @@ hello world
 hi
 expected failure
 ## END
+
+#### define and use alias on a single line
+shopt -s expand_aliases
+alias e=echo; e one  # this is not alias-expanded because we parse lines at once
+e two; e three
+## STDOUT:
+two
+three
+## END
+
+#### alias can override builtin
+shopt -s expand_aliases
+alias echo='echo foo'
+echo bar
+## stdout: foo bar
 
 #### defining multiple aliases, then unalias
 shopt -s expand_aliases  # bash requires this
