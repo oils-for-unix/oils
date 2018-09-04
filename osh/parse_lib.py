@@ -19,22 +19,42 @@ def InitLexer(s, arena):
   return line_reader, lx
 
 
-# New API:
+# API:
 # - MakeParser(reader, arena) - for top level, 'source'
 #   - eval: MakeParser(StringLineReader(), arena)
 #   - source: MakeParser(FileLineReader(), arena)
-# - MakeParserForCommandSub(reader, lexer) -- arena is inside lexer/reader
-# - MakeParserForCompletion(code_str)  # no arena?  no errors?
-# - MakeWordParserForHereDoc(lines, arena)  # arena is lost
-#   - althoguh you want to AddLine
-#   - line_id = arena.AddLine()
+# - MakeParserForCommandSub(line_reader, lexer) -- arena is inside line_reader
+# - MakeParserForCompletion(code_str, arena)
+# - MakeWordParserForHereDoc(line_reader, arena)
+# - MakeWordParserForPlugin(code_str, arena)
+#
+# TODO:
+#
+# class ParseState
+#   def __init__(self):
+#      self.arena
+#      self.aliases  # need to be threaded through
+#      self.line_reader
+#
+#   def MakeParser(...)
+#   def MakeParserForCommandSub(...)
+#
+# When does line_reader change?
+# - here docs
+# - aliases
+#
+# WordParser gets the line_reader from either parse_state OR an explicit
+# argument!
+#
+# self.parse_state.MakeParser(...)
+#
+# instead of CommandParser and WordParser holding the arena.
+# NOTE: arith parser and bool parser never need to instantiate parsers
+# only word/command parser have this dependency.
+#
+# common thing: word parser does not use arena OR aliases.  But it needs to
+# create a command parser.
 
-
-# NOTE:
-# - Does it make sense to create ParseState objects?  They have no dependencies
-#   -- just pure data.  Or just recreate them every time?  One issue is that
-#   you need somewhere to store the side effects -- errors for parsers, and the
-#   actual values for the evaluators/executors.
 
 def MakeParser(line_reader, arena, aliases):
   """Top level parser."""

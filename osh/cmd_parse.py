@@ -72,7 +72,7 @@ def _ReadHereLines(line_reader, h, delimiter):
   return here_lines, last_line
 
 
-def _MakeLiteralParts(here_lines, arena):
+def _MakeLiteralHereLines(here_lines, arena):
   """Create a line_span and a token for each line."""
   tokens = []
   for line_id, line, start_offset in here_lines:
@@ -98,7 +98,7 @@ def _ParseHereDocBody(h, line_reader, arena):
   parts = []
   if delim_quoted:  # << 'EOF'
     # LiteralPart for each line.
-    h.stdin_parts = _MakeLiteralParts(here_lines, arena)
+    h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
   else:
     from osh import parse_lib  # Avoid circular import
 
@@ -114,6 +114,145 @@ def _ParseHereDocBody(h, line_reader, arena):
   h.here_end_span_id = arena.AddLineSpan(line_span)
 
 
+def _AppendMoreEnv(prefix_bindings, more_env):
+  """Helper to modify a SimpleCommand node."""
+  for name, op, val, left_spid in prefix_bindings:
+    if op != assign_op_e.Equal:
+      # NOTE: Attributing to RHS, since we don't have one for the op.
+      p_die('Expected = in environment binding, got +=', word=val)
+    pair = ast.env_pair(name, val)
+    pair.spids.append(left_spid)
+    more_env.append(pair)
+
+
+def _MakeAssignment(assign_kw, suffix_words):
+  """Create an ast.Assignment node from a keyword and a list of words."""
+
+  # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
+  flags = []
+  n = len(suffix_words)
+  i = 1
+  while i < n:
+    w = suffix_words[i]
+    ok, static_val, quoted = word.StaticEval(w)
+    if not ok or quoted:
+      break  # can't statically evaluate
+
+    if static_val.startswith('-'):
+      flags.append(static_val)
+    else:
+      break  # not a flag, rest are args
+    i += 1
+
+  # Now parse bindings or variable names
+  assignments = []
+  while i < n:
+    w = suffix_words[i]
+    left_spid = word.LeftMostSpanForWord(w)
+    kov = word.LooksLikeAssignment(w)
+    if kov:
+      k, op, v = kov
+      t = word.TildeDetect(v)
+      if t:
+        # t is an unevaluated word with TildeSubPart
+        a = (k, op, t, left_spid)
+      else:
+        a = (k, op, v, left_spid)  # v is unevaluated word
+    else:
+      # In aboriginal in variables/sources: export_if_blank does export "$1".
+      # We should allow that.
+
+      # Parse this differently then?
+      # dynamic-export?
+      # It sets global variables.
+      ok, static_val, quoted = word.StaticEval(w)
+      if not ok or quoted:
+        p_die("Variable names must be unquoted constants", word=w)
+
+      # No value is equivalent to ''
+      if not match.IsValidVarName(static_val):
+        p_die('Invalid variable name %r', static_val, word=w)
+
+      a = (static_val, assign_op_e.Equal, None, left_spid)
+
+    assignments.append(a)
+    i += 1
+
+  # TODO: Also make with LhsIndexedName
+  pairs = []
+  for lhs, op, rhs, spid in assignments:
+    p = ast.assign_pair(ast.LhsName(lhs), op, rhs)
+    p.spids.append(spid)
+    pairs.append(p)
+
+  node = ast.Assignment(assign_kw, flags, pairs)
+
+  return node
+
+
+def _SplitSimpleCommandPrefix(words):
+  """Second pass of SimpleCommand parsing: look for assignment words."""
+  prefix_bindings = []
+  suffix_words = []
+
+  done_prefix = False
+  for w in words:
+    if done_prefix:
+      suffix_words.append(w)
+      continue
+
+    left_spid = word.LeftMostSpanForWord(w)
+
+    kov = word.LooksLikeAssignment(w)
+    if kov:
+      k, op, v = kov
+      t = word.TildeDetect(v)
+      if t:
+        # t is an unevaluated word with TildeSubPart
+        prefix_bindings.append((k, op, t, left_spid))
+      else:
+        prefix_bindings.append((k, op, v, left_spid))  # v is unevaluated word
+    else:
+      done_prefix = True
+      suffix_words.append(w)
+
+  return prefix_bindings, suffix_words
+
+
+def _MakeSimpleCommand(prefix_bindings, suffix_words, redirects):
+  """Create an ast.SimpleCommand node."""
+
+  # FOO=(1 2 3) ls is not allowed
+  for k, _, v, _ in prefix_bindings:
+    if word.HasArrayPart(v):
+      p_die("Environment bindings can't contain array literals", word=v)
+
+  # echo FOO=(1 2 3) is not allowed
+  # NOTE: Other checks can be inserted here.  Can resolve builtins,
+  # functions, aliases, static PATH, etc.
+  for w in suffix_words:
+    kov = word.LooksLikeAssignment(w)
+    if kov:
+      _, _, v = kov
+      if word.HasArrayPart(v):
+        p_die("Commands can't contain array literals", word=w)
+
+  # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading
+  # character of the initial word.
+  # However, this means we must do tilde detection AFTER brace EXPANSION, not
+  # just after brace DETECTION like we're doing here.
+  # The BracedWordTree instances have to be expanded into CompoundWord
+  # instances for the tilde detection to work.
+  words2 = braces.BraceDetectAll(suffix_words)
+  words3 = word.TildeDetectAll(words2)
+
+  node = ast.SimpleCommand()
+  node.words = words3
+  node.redirects = redirects
+  _AppendMoreEnv(prefix_bindings, node.more_env)
+  return node
+
+
 class CommandParser(object):
   """
   Args:
@@ -123,9 +262,9 @@ class CommandParser(object):
   """
   def __init__(self, w_parser, lexer_, line_reader, arena, aliases=None):
     self.w_parser = w_parser  # for normal parsing
-    self.lexer = lexer_  # for fast lookahead to (, for function defs
+    self.lexer = lexer_  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
-    self.arena = arena  # for adding here doc spans
+    self.arena = arena  # for adding here doc and alias spans
     if aliases is None:
       self.aliases = {}
     else:
@@ -210,7 +349,9 @@ class CommandParser(object):
     # TODO: Printing something like KW_Do is not friendly.  We can map
     # backwards using the _KEYWORDS list in osh/lex.py.
     if self.c_id != c_id:
-      p_die("Expected word type %s", c_id, word=self.cur_word)
+      p_die('Expected word type %s, got %s', c_id,
+            word.CommandId(self.cur_word), word=self.cur_word)
+
     self._Next()
 
   def _NewlineOk(self):
@@ -310,133 +451,140 @@ class CommandParser(object):
       self._Next()
     return redirects, words
 
-  def _SplitSimpleCommandPrefix(self, words):
+  def _ExpandAliases(self, words, cur_aliases):
+    """Try to expand aliases.
+
+    Our implementation of alias has two design choices:
+    - Where to insert it in parsing.  We do it at the end of ParseSimpleCommand.
+    - What grammar rule to parse the expanded alias buffer with.  In our case
+      it's ParseCommand().
+
+    This doesn't quite match what other shells do, but I can't figure out a
+    better places.
+
+    Most test cases pass, except for ones like:
+
+    alias LBRACE='{'
+    LBRACE echo one; echo two; }
+
+    alias MULTILINE='echo 1
+    echo 2
+    echo 3'
+    MULTILINE
+
+    NOTE: dash handles aliases in a totally diferrent way.  It has a global
+    variable checkkwd in parser.c.  It assigns it all over the grammar, like
+    this:
+
+    checkkwd = CHKNL | CHKKWD | CHKALIAS;
+
+    The readtoken() function checks (checkkwd & CHKALIAS) and then calls
+    lookupalias().  This seems to provide a consistent behavior among shells,
+    but it's less modular and testable.
+
+    Bash also uses a global 'parser_state & PST_ALEXPNEXT'.
+
+    Returns:
+      A command node if any aliases were expanded, but None otherwise.
     """
-    Second pass of SimpleCommand parsing: look for assignment words.
-    """
-    prefix_bindings = []
-    suffix_words = []
+    #log('_ExpandAliases')
+    # The last char that we might parse.
+    right_spid = word.RightMostSpanForWord(words[-1])
+    first_word_str = None  # for error message
 
-    done_prefix = False
-    for w in words:
-      if done_prefix:
-        suffix_words.append(w)
-        continue
+    expanded = []
+    i = 0
+    n = len(words)
 
-      left_spid = word.LeftMostSpanForWord(w)
-
-      kov = word.LooksLikeAssignment(w)
-      if kov:
-        k, op, v = kov
-        t = word.TildeDetect(v)
-        if t:
-          # t is an unevaluated word with TildeSubPart
-          prefix_bindings.append((k, op, t, left_spid))
-        else:
-          prefix_bindings.append((k, op, v, left_spid))  # v is unevaluated word
-      else:
-        done_prefix = True
-        suffix_words.append(w)
-
-    return prefix_bindings, suffix_words
-
-  def _MakeSimpleCommand(self, prefix_bindings, suffix_words, redirects):
-    # FOO=(1 2 3) ls is not allowed
-    for k, _, v, _ in prefix_bindings:
-      if word.HasArrayPart(v):
-        p_die("Environment bindings can't contain array literals", word=v)
-
-    # echo FOO=(1 2 3) is not allowed
-    # NOTE: Other checks can be inserted here.  Can resolve builtins,
-    # functions, aliases, static PATH, etc.
-    for w in suffix_words:
-      kov = word.LooksLikeAssignment(w)
-      if kov:
-        _, _, v = kov
-        if word.HasArrayPart(v):
-          p_die("Commands can't contain array literals", word=w)
-
-    # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading
-    # character of the initial word.
-    # However, this means we must do tilde detection AFTER brace EXPANSION, not
-    # just after brace DETECTION like we're doing here.
-    # The BracedWordTree instances have to be expanded into CompoundWord
-    # instances for the tilde detection to work.
-    words2 = braces.BraceDetectAll(suffix_words)
-    words3 = word.TildeDetectAll(words2)
-
-    node = ast.SimpleCommand()
-    node.words = words3
-    node.redirects = redirects
-    for name, op, val, left_spid in prefix_bindings:
-      if op != assign_op_e.Equal:
-        # NOTE: Using spid of RHS for now, since we don't have one for op.
-        p_die('Expected = in environment binding, got +=', word=val)
-      pair = ast.env_pair(name, val)
-      pair.spids.append(left_spid)
-      node.more_env.append(pair)
-    return node
-
-  def _MakeAssignment(self, assign_kw, suffix_words):
-    # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
-    flags = []
-    n = len(suffix_words)
-    i = 1
     while i < n:
-      w = suffix_words[i]
-      ok, static_val, quoted = word.StaticEval(w)
+      w = words[i]
+
+      ok, word_str, quoted = word.StaticEval(w)
       if not ok or quoted:
-        break  # can't statically evaluate
+        break
 
-      if static_val.startswith('-'):
-        flags.append(static_val)
-      else:
-        break  # not a flag, rest are args
+      alias_exp = self.aliases.get(word_str)
+      if alias_exp is None:
+        break
+
+      # Prevent infinite loops.  This is subtle: we want to prevent infinite
+      # expansion of alias echo='echo x'.  But we don't want to prevent
+      # expansion of the second word in 'echo echo', so we add 'i' to
+      # "cur_aliases".
+      if (word_str, i) in cur_aliases:
+        break
+
+      if i == 0:
+        first_word_str = word_str  # for error message
+
+      #log('%r -> %r', word_str, alias_exp)
+      cur_aliases.append((word_str, i))
+      expanded.append(alias_exp)
       i += 1
 
-    # Now parse bindings or variable names
-    assignments = []
+
+      if not alias_exp.endswith(' '):
+        # alias e='echo [ ' is the same expansion as
+        # alias e='echo ['
+        # The trailing space indicates whether we should continue to expand
+        # aliases; it's not part of it.
+        expanded.append(' ')
+        break  # No more expansions
+
+    if not expanded:  # No expansions; caller does parsing.
+      return None
+
+    # We got some expansion.  Now copy the rest of the words.
+
+    # We need each NON-REDIRECT word separately!  For example:
+    # $ echo one >out two
+    # dash/mksh/zsh go beyond the first redirect!
     while i < n:
-      w = suffix_words[i]
+      w = words[i]
       left_spid = word.LeftMostSpanForWord(w)
-      kov = word.LooksLikeAssignment(w)
-      if kov:
-        k, op, v = kov
-        t = word.TildeDetect(v)
-        if t:
-          # t is an unevaluated word with TildeSubPart
-          a = (k, op, t, left_spid)
-        else:
-          a = (k, op, v, left_spid)  # v is unevaluated word
-      else:
-        # In aboriginal in variables/sources: export_if_blank does export "$1".
-        # We should allow that.
+      right_spid = word.RightMostSpanForWord(w)
 
-        # Parse this differently then?
-        # dynamic-export?
-        # It sets global variables.
-        ok, static_val, quoted = word.StaticEval(w)
-        if not ok or quoted:
-          p_die("Variable names must be unquoted constants", word=w)
+      # Adapted from tools/osh2oil.py Cursor.PrintUntil
+      for span_id in xrange(left_spid, right_spid + 1):
+        span = self.arena.GetLineSpan(span_id)
+        line = self.arena.GetLine(span.line_id)
+        piece = line[span.col : span.col + span.length]
+        expanded.append(piece)
 
-        # No value is equivalent to ''
-        if not match.IsValidVarName(static_val):
-          p_die('Invalid variable name %r', static_val, word=w)
-
-        a = (static_val, assign_op_e.Equal, None, left_spid)
-
-      assignments.append(a)
+      expanded.append(' ')  # Put space back between words.
       i += 1
 
-    # TODO: Also make with LhsIndexedName
-    pairs = []
-    for lhs, op, rhs, spid in assignments:
-      p = ast.assign_pair(ast.LhsName(lhs), op, rhs)
-      p.spids.append(spid)
-      pairs.append(p)
+    code_str = ''.join(expanded)
+    lines = code_str.splitlines(True)  # Keep newlines
 
-    node = ast.Assignment(assign_kw, flags, pairs)
+    line_info = []
+    # TODO: Add location information
+    self.arena.PushSource(
+        '<expansion of alias %r at line %d of %s>' %
+        (first_word_str, -1, 'TODO'))
+    try:
+      for i, line in enumerate(lines):
+        line_id = self.arena.AddLine(line, i+1)
+        line_info.append((line_id, line, 0))
+    finally:
+      self.arena.PopSource()
 
+    # TODO: Change name back to VirtualLineReader?
+    line_reader = reader.HereDocLineReader(line_info, self.arena)
+    from osh import parse_lib
+    _, cp = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
+
+    try:
+      node = cp.ParseCommand(cur_aliases=cur_aliases)
+    except util.ParseError as e:
+      # Failure to parse alias expansion is a fatal error
+      # We don't need more handling here/
+      raise
+
+    if 0:
+      log('AFTER expansion:')
+      from osh import ast_lib
+      ast_lib.PrettyPrint(node)
     return node
 
   # Flags that indicate an assignment should be parsed like a command.
@@ -458,7 +606,7 @@ class CommandParser(object):
   ])
   # Flags to parse like assignments: -a -r -x (and maybe -i)
 
-  def ParseSimpleCommand(self):
+  def ParseSimpleCommand(self, cur_aliases):
     """
     Fixed transcription of the POSIX grammar (TODO: port to grammar/Shell.g)
 
@@ -536,7 +684,7 @@ class CommandParser(object):
       node.redirects = redirects
       return node
 
-    prefix_bindings, suffix_words = self._SplitSimpleCommandPrefix(words)
+    prefix_bindings, suffix_words = _SplitSimpleCommandPrefix(words)
 
     if not suffix_words:  # ONE=1 TWO=2  (with no other words)
       if redirects:
@@ -570,7 +718,7 @@ class CommandParser(object):
           is_command = True
 
       if is_command:  # declare -f, declare -p, typeset -p, etc.
-        node = self._MakeSimpleCommand(prefix_bindings, suffix_words,
+        node = _MakeSimpleCommand(prefix_bindings, suffix_words,
                                        redirects)
         return node
 
@@ -586,7 +734,7 @@ class CommandParser(object):
           _, _, v0, _ = prefix_bindings[0]
           p_die("Assignments shouldn't have environment bindings", word=v0)
 
-        node = self._MakeAssignment(kw_token.id, suffix_words)
+        node = _MakeAssignment(kw_token.id, suffix_words)
         assert node is not None
         node.spids.append(kw_token.span_id)
         return node
@@ -611,7 +759,16 @@ class CommandParser(object):
       return ast.ControlFlow(kw_token, arg_word)
 
     else:
-      node = self._MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+      # If any expansions were detected, then parse again.
+      node = self._ExpandAliases(suffix_words, cur_aliases)
+      if node:
+        # NOTE: There are other types of nodes with redirects.  Do they matter?
+        if node.tag == command_e.SimpleCommand:
+          node.redirects = redirects
+          _AppendMoreEnv(prefix_bindings, node.more_env)
+        return node
+
+      node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
       return node
 
   def ParseBraceGroup(self):
@@ -1171,29 +1328,7 @@ class CommandParser(object):
 
     return node
 
-  def _DoAlias(self, alias_exp):
-    line_lexer = self.lexer.line_lexer
-    log('%r %d %r', line_lexer.line, line_lexer.line_pos,
-        line_lexer.line[line_lexer.line_pos:])
-    if alias_exp.endswith(' '):
-      do_exp = True
-    else:
-      # alias e='echo [ ' is the same expansion as
-      # alias e='echo ['
-      # The trailing space indicates something else.
-      alias_exp += ' '
-
-    # NOTE: alias_exp might not end with a newline, but that's OK because it's
-    # NUL-terminated.
-    buf = lexer.LineLexer(match.MATCHER, alias_exp, self.arena)
-    self.lexer.PushAliasBuffer(buf)
-
-    # Need to prime it I guess.  This can get more than one word out.
-    self._Next()
-    # Call it recursively
-    return self.ParseCommand(do_alias=False)
-
-  def ParseCommand(self, do_alias=True):
+  def ParseCommand(self, cur_aliases=None):
     """
     command          : simple_command
                      | compound_command io_redirect*
@@ -1201,6 +1336,8 @@ class CommandParser(object):
                      | ksh_function_def
                      ;
     """
+    cur_aliases = cur_aliases or []
+
     self._Peek()
 
     if self.c_id == Id.KW_Function:
@@ -1216,24 +1353,6 @@ class CommandParser(object):
         assert node.redirects is not None
       return node
 
-    # TODO: Is this the natural place to check for aliases?  It's NOT a
-    # keyword.
-    # 1) check if self.cur_word is a plain word in self.aliases
-    # 2) Iteratively check next work based on trailing space
-    # 2) And then change state Then RECURSIVELY call ParseCommand?
-    #
-    # self.w_parser.PushAliasBuffer() -- this means the lexer reads from it?
-
-    # TODO: To this in a loop
-    if do_alias:
-      ok, word_str, quoted = word.StaticEval(self.cur_word)
-      if ok and not quoted:
-        alias_exp = self.aliases.get(word_str)
-        #log('AT PARSE TIME %s', self.aliases)
-        if alias_exp is not None:
-          log('expand %s -> %r', word_str, alias_exp)
-          return self._DoAlias(alias_exp)
-
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.
 
@@ -1242,17 +1361,17 @@ class CommandParser(object):
       p_die('Unexpected right brace', word=self.cur_word)
 
     if self.c_kind == Kind.Redir:  # Leading redirect
-      return self.ParseSimpleCommand()
+      return self.ParseSimpleCommand(cur_aliases)
 
     if self.c_kind == Kind.Word:
       if self.w_parser.LookAhead() == Id.Op_LParen:  # (
         kov = word.LooksLikeAssignment(self.cur_word)
         if kov:
-          return self.ParseSimpleCommand()  # f=(a b c)  # array
+          return self.ParseSimpleCommand(cur_aliases)  # f=(a b c)  # array
         else:
           return self.ParseFunctionDef()  # f() { echo; }  # function
 
-      return self.ParseSimpleCommand()  # echo foo
+      return self.ParseSimpleCommand(cur_aliases)  # echo foo
 
     if self.c_kind == Kind.Eof:
       p_die("Unexpected EOF while parsing command", word=self.cur_word)

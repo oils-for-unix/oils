@@ -38,6 +38,10 @@ class LineLexer(object):
 
     self.Reset(line, -1, 0)  # Invalid line_id to start
 
+  def __repr__(self):
+    return '<LineLexer at pos %d of line %r (id = %d)>' % (
+        self.line_pos, self.line, self.line_id)
+
   def Reset(self, line, line_id, line_pos):
     #assert line, repr(line)  # can't be empty or None
     self.line = line
@@ -216,6 +220,7 @@ class Lexer(object):
 
   # TODO: Collapse newlines here instead of in the WordParser?
   def Read(self, lex_mode):
+    # TODO: Remove this whole section
     while True:
       # Read from alias buffers first
       if self.buffers:
@@ -226,7 +231,6 @@ class Lexer(object):
         if t.id == Id.Eol_Tok:
           self.buffers.pop()
           continue  # read from next buffer or from the original line_Lexer
-
         # TODO: Translate tokens here?
         return t
 

@@ -32,7 +32,11 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   arena, c_parser = InitCommandParser(code_str)
   m = getattr(c_parser, method)
   try:
-    node = m()
+    if method == 'ParseSimpleCommand':
+      node = m([])  # required cur_aliases arg
+    else:
+      node = m()
+
   except util.ParseError as e:
     ui.PrettyPrintError(e, arena, sys.stdout)
     if expect_success:

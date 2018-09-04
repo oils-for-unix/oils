@@ -135,12 +135,21 @@ hello world punct
 
 #### Recursive alias expansion of first word
 shopt -s expand_aliases  # bash requires this
-alias hi='echo hello world'
-alias echo='echo --; echo '
+alias hi='e_ hello world'
+alias e_='echo __'
 hi   # first hi is expanded to echo hello world; then echo is expanded.  gah.
 ## STDOUT:
---
-hello world
+__ hello world
+## END
+
+#### Recursive alias expansion of SECOND word
+shopt -s expand_aliases  # bash requires this
+alias one='ONE '
+alias two='TWO '
+alias e_='echo one '
+e_ two hello world
+## STDOUT:
+one TWO hello world
 ## END
 
 #### Expansion of alias with variable
@@ -165,8 +174,7 @@ X
 status=127
 ## END
 
-
-#### first and second word are the same
+#### first and second word are the same alias, but no trailing space
 shopt -s expand_aliases  # bash requires this
 x=x
 alias echo-x='echo $x'  # nothing is evaluated here
@@ -178,7 +186,7 @@ x echo-x
 x echo x
 ## END
 
-#### first and second word are the same with trailing space
+#### first and second word are the same alias, with trailing space
 shopt -s expand_aliases  # bash requires this
 x=x
 alias echo-x='echo $x '  # nothing is evaluated here
@@ -228,13 +236,15 @@ e_ done
 3
 ## END
 
-#### Loop split across alias in another way is syntax error
-# For some reason this doesn't work, but the previous case does.
+#### Loop split across alias in another way
 shopt -s expand_aliases
 alias e_='for i in 1 2 3; do echo '
-e_ '$i done;'
-## status: 2
-## OK mksh/zsh status: 1
+e_ $i; done
+## STDOUT:
+1
+2
+3
+## END
 
 #### Loop split across both iterative and recursive aliases
 shopt -s expand_aliases  # bash requires this
@@ -261,15 +271,38 @@ e_ '${var}"'
 ## status: 2
 ## OK mksh/zsh status: 1
 
-#### Alias with a newline
-# The second echo command is run in dash/mksh!
+#### Alias with internal newlines
 shopt -s expand_aliases
 alias e_='echo 1
+echo 2
+echo 3'
+var='echo foo'
+e_ ${var}
+## STDOUT:
+1
+2
+3 echo foo
+## END
+
+#### Alias trailing newline
+shopt -s expand_aliases
+alias e_='echo 1
+echo 2
+echo 3
 '
 var='echo foo'
 e_ ${var}
-## stdout-json: "1\nfoo\n"
-## OK zsh stdout-json: "1\n"
+## STDOUT:
+1
+2
+3
+foo
+## END
+## OK zsh STDOUT:
+1
+2
+3
+## END
 ## OK zsh status: 127
 
 #### Two aliases in pipeline
@@ -279,15 +312,6 @@ alias THREE='3 '
 alias WC='wc '
 SEQ THREE | WC -l
 ## stdout: 3
-
-#### Alias for { block
-shopt -s expand_aliases
-alias LBRACE='{ '
-LBRACE echo one; echo two; }
-## STDOUT:
-one
-two
-## END
 
 #### Alias not respected inside $()
 # This could be parsed correctly, but it is only defined in a child process.
@@ -316,4 +340,86 @@ hello outside
 ## END
 ## BUG zsh STDOUT:
 hello outside
+## END
+
+#### alias with redirects works
+alias e_=echo
+>$TMP/alias1.txt e_ 1
+e_ >$TMP/alias2.txt 2
+e_ 3 >$TMP/alias3.txt
+cat $TMP/alias1.txt $TMP/alias2.txt $TMP/alias3.txt
+## BUG bash stdout-json: ""
+## STDOUT:
+1
+2
+3
+## END
+
+#### alias with environment bindings works
+alias p_=printenv.py
+FOO=1 printenv.py FOO
+FOO=2 p_ FOO
+## STDOUT:
+1
+2
+## END
+## BUG bash status: 127
+## BUG bash STDOUT:
+1
+## END
+
+#### alias with line continuation in the middle
+shopt -s expand_aliases
+alias e_='echo '
+alias one='ONE '
+alias two='TWO '
+alias three='THREE'  # no trailing space
+e_ one \
+  two one \
+  two three two \
+  one
+## stdout: ONE TWO ONE TWO THREE two one
+
+#### alias for left brace 
+shopt -s expand_aliases
+alias LEFT='{'
+LEFT echo one; echo two; }
+## STDOUT:
+one
+two
+## END
+
+#### alias for left paren
+shopt -s expand_aliases
+alias LEFT='('
+LEFT echo one; echo two )
+## STDOUT:
+one
+two
+## END
+
+#### alias used in subshell and command sub
+# This spec seems to be contradictoary?
+# http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_03_01
+# "When used as specified by this volume of POSIX.1-2017, alias definitions
+# shall not be inherited by separate invocations of the shell or by the utility
+# execution environments invoked by the shell; see Shell Execution
+# Environment."
+shopt -s expand_aliases
+alias echo_='echo [ '
+( echo_ subshell; )
+echo $(echo_ commandsub)
+## STDOUT:
+[ subshell
+[ commandsub
+## END
+
+#### alias used in here doc
+shopt -s expand_aliases
+alias echo_='echo [ '
+cat <<EOF
+$(echo_ ])
+EOF
+## STDOUT:
+[ ]
 ## END
