@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#### Print function list
+#### -A function prints functions
 add () { expr 4 + 4; }
 div () { expr 6 / 2; }
 ek () { echo hello; }
@@ -15,3 +15,8 @@ add
 div
 ek
 ## END
+
+#### Invalid syntax
+compgen -A foo
+echo status=$?
+## stdout: status=2

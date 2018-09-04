@@ -232,7 +232,7 @@ blog-other1() {
 }
 
 alias() {
-  sh-spec spec/alias.test.sh --osh-failures-allowed 20 \
+  sh-spec spec/alias.test.sh --osh-failures-allowed 22 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -333,8 +333,12 @@ builtin-trap() {
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
-  sh-spec spec/builtin-bash.test.sh \
-    $BASH $OSH_LIST "$@"
+  sh-spec spec/builtin-bash.test.sh $BASH $OSH_LIST "$@"
+}
+
+# This is bash/OSH only
+builtin-compgen() {
+  sh-spec spec/builtin-compgen.test.sh $BASH $OSH_LIST "$@"
 }
 
 builtins-special() {
@@ -581,10 +585,6 @@ empty-bodies() {
 # osh has infinite loop?
 shell-grammar() {
   sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
-}
-
-compgen() {
-  sh-spec spec/compgen.test.sh $BASH $OSH_LIST "$@"
 }
 
 "$@"

@@ -36,8 +36,8 @@ echo $?
 #### Invalid trap invocation
 trap 'foo'
 echo status=$?
-## stdout: status=1
-## OK bash stdout: status=2
+## stdout: status=2
+## OK dash stdout: status=1
 ## BUG mksh stdout: status=0
 
 #### exit 1 when trap code string is invalid

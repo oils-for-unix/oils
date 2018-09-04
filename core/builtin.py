@@ -806,12 +806,11 @@ def CompGen(argv, funcs):
   status = 0
 
   if arg.A:
-    if arg.A != 'function':
-        status = 1
-        raise args.UsageError('compgen: %s: invalid action name' % arg.A)
-    else:
+    if arg.A == 'function':
       for func_name in sorted(funcs):
         print(func_name)
+    else:
+      raise args.UsageError('compgen: %s: invalid action name' % arg.A)
   else:
     util.warn('*** command without -A not implemented ***')
     status = 1
@@ -1023,8 +1022,7 @@ UNALIAS_SPEC = _Register('unalias')
 
 def UnAlias(argv, aliases):
   if not argv:
-    util.usage('unalias NAME...')
-    return 2
+    raise args.UsageError('unalias NAME...')
 
   status = 0
   for name in argv:
@@ -1149,8 +1147,7 @@ def Trap(argv, traps, nodes_to_run, ex):
     code_str = argv[0]
     sig_spec = argv[1]
   except IndexError:
-    util.usage('trap CODE SIGNAL_SPEC')
-    return 1
+    raise args.UsageError('trap CODE SIGNAL_SPEC')
 
   # NOTE: sig_spec isn't validated when removing handlers.
   if code_str == '-':
