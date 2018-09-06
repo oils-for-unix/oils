@@ -135,21 +135,6 @@ def PrettyPrintError(parse_error, arena, f=sys.stderr):
   print(parse_error.UserErrorString(), file=f)
 
 
-def PrintErrorStack(error_stack, arena, f=sys.stderr):
-  """
-  NOTE:
-  - Parse errors always occur within a single arena.  Actually NO, you want to
-    show the 'source' stack trace like Python shows the import stack trace.
-
-  - Runtime errors may span arenas (e.g. the function stack).
-  """
-  # - parse errors happen at runtime because of 'source'
-  #   - should there be a distinction then?
-  for err in error_stack:
-    PrettyPrintError(err, arena, f=f)
-    print('---', file=f)
-
-
 def PrintAst(nodes, opts):
   if len(nodes) == 1:
     node = nodes[0]

@@ -60,8 +60,6 @@ class BoolParser(object):
     self.op_id = Id.Undefined_Tok
     self.b_kind = Kind.Undefined
 
-    self.error_stack = []
-
   def _NextOne(self, lex_mode=lex_mode_e.DBRACKET):
     n = len(self.words)
     if n == 2:

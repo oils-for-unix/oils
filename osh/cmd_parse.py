@@ -272,7 +272,6 @@ class CommandParser(object):
 
     Called by the interactive loop.
     """
-    self.error_stack = []
     self.completion_stack = []
 
     # Cursor state set by _Peek()
@@ -283,6 +282,9 @@ class CommandParser(object):
 
     self.pending_here_docs = []
 
+  def Error(self):
+    return 'TODO: for completion'
+
   def ResetInputObjects(self):
     """Reset the internal state of our inputs.
 
@@ -291,9 +293,6 @@ class CommandParser(object):
     self.w_parser.Reset()
     self.lexer.ResetInputObjects()
     self.line_reader.Reset()
-
-  def Error(self):
-    return self.error_stack
 
   def GetCompletionState(self):
     return self.completion_stack
