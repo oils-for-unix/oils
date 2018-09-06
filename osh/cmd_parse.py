@@ -257,16 +257,13 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, parse_ctx, w_parser, lexer_, line_reader, arena, aliases=None):
+  def __init__(self, parse_ctx, w_parser, lexer_, line_reader, arena=None):
     self.parse_ctx = parse_ctx
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer_  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
-    self.arena = arena  # for adding here doc and alias spans
-    if aliases is None:
-      self.aliases = {}
-    else:
-      self.aliases = aliases  # aliases to expand at parse time
+    self.arena = arena or parse_ctx.arena  # for adding here doc and alias spans
+    self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
     self.Reset()
 

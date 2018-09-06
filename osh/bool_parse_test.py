@@ -41,8 +41,7 @@ def _MakeParser(code_str):
   w_parser, _ = parse_ctx.MakeParserForCompletion(code_str + ' ]]', arena)
   w_parser._Next(lex_mode_e.DBRACKET)  # for tests only
   p = bool_parse.BoolParser(w_parser)
-  if not p._Next():
-    raise AssertionError
+  p._Next()
   return p
 
 

@@ -82,7 +82,6 @@ class BoolParser(object):
     self.b_kind = LookupKind(self.op_id)
     #log('--- word %s', self.cur_word)
     #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
-    return True
 
   def _Next(self, lex_mode=lex_mode_e.DBRACKET):
     """Advance to the next token, skipping newlines.
@@ -95,7 +94,6 @@ class BoolParser(object):
       self._NextOne(lex_mode=lex_mode)
       if self.op_id != Id.Op_Newline:
         break
-    return True
 
   def _LookAhead(self):
     n = len(self.words)

@@ -19,26 +19,6 @@ def InitLexer(s, arena):
   return line_reader, lx
 
 
-# API:
-# - MakeParser(reader, arena) - for top level, 'source'
-#   - eval: MakeParser(StringLineReader(), arena)
-#   - source: MakeParser(FileLineReader(), arena)
-# - MakeParserForCommandSub(line_reader, lexer) -- arena is inside line_reader
-# - MakeParserForCompletion(code_str, arena)
-# - MakeWordParserForHereDoc(line_reader, arena)
-# - MakeWordParserForPlugin(code_str, arena)
-#
-# TODO:
-#
-# class ParseState
-#   def __init__(self):
-#      self.arena
-#      self.aliases  # need to be threaded through
-#      self.line_reader
-#
-#   def MakeParser(...)
-#   def MakeParserForCommandSub(...)
-#
 # When does line_reader change?
 # - here docs
 # - aliases
@@ -69,8 +49,7 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
     lx = lexer.Lexer(line_lexer, line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader, self.arena,
-                                       aliases=self.aliases)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
     return w_parser, c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):
@@ -84,8 +63,7 @@ class ParseContext(object):
     It's a new instance based on same lexer and arena.
     """
     w_parser = word_parse.WordParser(self, lexer, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader,
-                                      self.arena)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader)
     return c_parser
 
   def MakeWordParserForPlugin(self, code_str, arena):
@@ -114,7 +92,8 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)  # AtEnd() is true
     lx = lexer.Lexer(line_lexer, line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader, arena)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
+                                       arena=arena)
     return w_parser, c_parser
 
   # Another parser instantiation:
