@@ -13,7 +13,6 @@ cmd_parse.py - Parse high level shell commands.
 from asdl import const
 
 from core import braces
-from core import lexer  # alias needs LineLexer
 from core import reader
 from core import word
 from core import util
