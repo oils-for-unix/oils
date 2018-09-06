@@ -46,11 +46,8 @@ def _assertReadWordWithArena(test, word_str):
   print('\n---', word_str)
   arena, w_parser = _InitWordParserWithArena(word_str)
   w = w_parser.ReadWord(lex_mode_e.OUTER)
-  if w:
-    ast_lib.PrettyPrint(w)
-  else:
-    err = w_parser.Error()
-    test.fail("Couldn't parse %r: %s" % (word_str, err))
+  assert w is not None
+  ast_lib.PrettyPrint(w)
 
   # Next word must be Eof_Real
   w2 = w_parser.ReadWord(lex_mode_e.OUTER)
@@ -353,10 +350,7 @@ class WordParserTest(unittest.TestCase):
 
       while True:
         w = w_parser.ReadWord(lex_mode_e.OUTER)
-        if w is None:
-          e = w_parser.Error()
-          print('Error in word parser: %s' % e)
-          self.fail(e)
+        assert w is not None
 
         ast_lib.PrettyPrint(w)
 
@@ -455,11 +449,7 @@ class WordParserTest(unittest.TestCase):
 
       while True:
         w = w_parser.ReadWord(lex_mode_e.ARITH)
-        if not w:
-          err = w_parser.Error()
-          print('ERROR', err)
-          self.fail(err)
-          break
+        assert w is not None
         ast_lib.PrettyPrint(w)
         if word.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break

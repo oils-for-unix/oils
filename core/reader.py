@@ -95,8 +95,12 @@ def StringLineReader(s, arena):
 # internally.
 
 
-class HereDocLineReader(_Reader):
-  """Used for here docs."""
+class VirtualLineReader(_Reader):
+  """Read from lines we already read from the OS.
+  
+  Used for here docs and aliases.
+  """
+
   def __init__(self, lines, arena):
     """
     Args:

@@ -99,7 +99,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
     # LiteralPart for each line.
     h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
   else:
-    line_reader = reader.HereDocLineReader(here_lines, arena)
+    line_reader = reader.VirtualLineReader(here_lines, arena)
     w_parser = parse_ctx.MakeWordParserForHereDoc(line_reader)
     w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
 
@@ -523,7 +523,6 @@ class CommandParser(object):
       expanded.append(alias_exp)
       i += 1
 
-
       if not alias_exp.endswith(' '):
         # alias e='echo [ ' is the same expansion as
         # alias e='echo ['
@@ -571,7 +570,7 @@ class CommandParser(object):
       self.arena.PopSource()
 
     # TODO: Change name back to VirtualLineReader?
-    line_reader = reader.HereDocLineReader(line_info, self.arena)
+    line_reader = reader.VirtualLineReader(line_info, self.arena)
     _, cp = self.parse_ctx.MakeParser(line_reader)
 
     try:

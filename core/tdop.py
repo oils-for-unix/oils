@@ -221,11 +221,6 @@ class TdopParser(object):
     self.cur_word = None  # current token
     self.op_id = Id.Undefined_Tok
 
-    self.error_stack = []
-
-  def Error(self):
-    return self.error_stack
-
   def _Led(self, token):
     return self.spec.LookupLed(token)
 
@@ -245,10 +240,7 @@ class TdopParser(object):
   def Next(self):
     """Preferred over Eat()? """
     self.cur_word = self.w_parser.ReadWord(lex_mode_e.ARITH)
-    if self.cur_word is None:
-      error_stack = self.w_parser.Error()
-      self.error_stack.extend(error_stack)
-      p_die('Error reading arith word in ArithParser')
+    assert self.cur_word is not None
     self.op_id = word.ArithId(self.cur_word)
     return True
 

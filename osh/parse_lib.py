@@ -19,22 +19,6 @@ def InitLexer(s, arena):
   return line_reader, lx
 
 
-# When does line_reader change?
-# - here docs
-# - aliases
-#
-# WordParser gets the line_reader from either parse_state OR an explicit
-# argument!
-#
-# self.parse_state.MakeParser(...)
-#
-# instead of CommandParser and WordParser holding the arena.
-# NOTE: arith parser and bool parser never need to instantiate parsers
-# only word/command parser have this dependency.
-#
-# common thing: word parser does not use arena OR aliases.  But it needs to
-# create a command parser.
-
 class ParseContext(object):
   """Context shared between the mutually recursive Command and Word parsers.
 

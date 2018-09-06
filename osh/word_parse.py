@@ -87,8 +87,6 @@ class WordParser(object):
     self.cursor = None
     self.cursor_was_newline = False
 
-    self.error_stack = []
-
   def _Peek(self):
     """Helper method."""
     if self.next_lex_mode is not None:
@@ -106,9 +104,6 @@ class WordParser(object):
     We need this for proper interactive parsing.
     """
     self.next_lex_mode = lex_mode
-
-  def Error(self):
-    return self.error_stack
 
   def PrevToken(self):
     """Inspect state.  Used by completion.
@@ -1095,13 +1090,7 @@ class WordParser(object):
       if not need_more:
         break
 
-    # TODO: Change the interface of _ReadArithWord and _ReadWord.
-    # Error cases should raise ParseError.
-    # Then they should return either the word, or None to try again?
-    if not w:
-      error_stack = self.Error()
-      p_die('ReadWord: %s', error_stack[-1])
-
+    assert w is not None, w
     self.cursor = w
 
     # TODO: Do consolidation of newlines in the lexer?
