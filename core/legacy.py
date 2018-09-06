@@ -31,10 +31,13 @@ from osh.meta import runtime
 from core import util
 
 value_e = runtime.value_e
+
 span_e = runtime.span_e
-emit_e = runtime.emit_e
-state_e = runtime.state_e
-char_kind_e = runtime.char_kind_e
+# Enums for the state machine
+CH = runtime.char_kind_e
+EMIT = runtime.emit_e
+ST = runtime.state_e
+
 log = util.log
 
 
@@ -205,9 +208,9 @@ class NullSplitter(_BaseSplitter):
 
 # IFS splitting is complicated in general.  We handle it with three concepts:
 #
-# - CH_* - Kinds of characters (edge labels)
-# - ST_* - States (node labels)
-# - Actions: EMIT, etc.
+# - CH.* - Kinds of characters (edge labels)
+# - ST.* - States (node labels)
+# - EMIT.*  Actions
 #
 # The Split() loop below classifies characters, follows state transitions, and
 # emits spans.  A span is a (ignored Bool, end_index Int) pair.
@@ -218,14 +221,14 @@ class NullSplitter(_BaseSplitter):
 # The character classes are:
 #
 # a      ' '        _        ' '        b
-# BLACK  DE_WHITE   DE_GRAY  DE_WHITE   BLACK
+# Black  DE_White   DE_Gray  DE_White   Black
 #
 # The states are:
 #
 # a      ' '        _        ' '        b
-# BLACK  DE_WHITE1  DE_GRAY  DE_WHITE2  BLACK
+# Black  DE_White1  DE_Gray  DE_White2  Black
 #
-# DE_WHITE2 is whitespace that follows a "gray" non-whitespace IFS character.
+# DE_White2 is whitespace that follows a "gray" non-whitespace IFS character.
 #
 # The spans emitted are:
 #
@@ -234,65 +237,32 @@ class NullSplitter(_BaseSplitter):
 # SplitForRead() will check if the last two spans are a \ and \\n.  Easy.
 
 
-# TODO: Get rid of these redundant assignments.
-
-# Edges are characters.  CH_DE_ is the delimiter prefix.  WHITE is for
-# whitespace; GRAY is for other IFS chars; BLACK is for significant
-# characters.
-CH_DE_WHITE, CH_DE_GRAY, CH_BLACK, CH_BACKSLASH = (
-  char_kind_e.CH_DE_WHITE,
-  char_kind_e.CH_DE_GRAY,
-  char_kind_e.CH_BLACK,
-  char_kind_e.CH_BACKSLASH)
-
-
-# Nodes are states
-(ST_INVALID, ST_START, ST_DE_WHITE1, ST_DE_GRAY, ST_DE_WHITE2,
- ST_BLACK, ST_BACKSLASH) = (
- state_e.ST_INVALID,
- state_e.ST_START,
- state_e.ST_DE_WHITE1, 
- state_e.ST_DE_GRAY, 
- state_e.ST_DE_WHITE2,
- state_e.ST_BLACK, 
- state_e.ST_BACKSLASH)
-
-
-# Actions control what spans to emit.
-EMIT_PART, EMIT_DE, EMIT_EMPTY, EMIT_ESCAPE, NO_EMIT = (
-  emit_e.EMIT_PART,
-  emit_e.EMIT_DE,
-  emit_e.EMIT_EMPTY,
-  emit_e.EMIT_ESCAPE,
-  emit_e.NO_EMIT)
-
-
 TRANSITIONS = {
     # Whitespace should have been stripped
-    (ST_START, CH_DE_WHITE):  (ST_INVALID,   NO_EMIT),      # ' '
-    (ST_START, CH_DE_GRAY):   (ST_DE_GRAY,   EMIT_EMPTY), # '_'
-    (ST_START, CH_BLACK):     (ST_BLACK,     NO_EMIT),    # 'a'
-    (ST_START, CH_BACKSLASH): (ST_BACKSLASH, NO_EMIT),    # '\'
+    (ST.Start, CH.DE_White):  (ST.Invalid,   EMIT.Nothing),      # ' '
+    (ST.Start, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty), # '_'
+    (ST.Start, CH.Black):     (ST.Black,     EMIT.Nothing),    # 'a'
+    (ST.Start, CH.Backslash): (ST.Backslash, EMIT.Nothing),    # '\'
 
-    (ST_DE_WHITE1, CH_DE_WHITE):  (ST_DE_WHITE1, NO_EMIT),  # '  '
-    (ST_DE_WHITE1, CH_DE_GRAY):   (ST_DE_GRAY,   NO_EMIT),  # ' _'
-    (ST_DE_WHITE1, CH_BLACK):     (ST_BLACK,     EMIT_DE),  # ' a'
-    (ST_DE_WHITE1, CH_BACKSLASH): (ST_BACKSLASH, EMIT_DE),  # ' \'
+    (ST.DE_White1, CH.DE_White):  (ST.DE_White1, EMIT.Nothing),  # '  '
+    (ST.DE_White1, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Nothing),  # ' _'
+    (ST.DE_White1, CH.Black):     (ST.Black,     EMIT.Delim),  # ' a'
+    (ST.DE_White1, CH.Backslash): (ST.Backslash, EMIT.Delim),  # ' \'
 
-    (ST_DE_GRAY, CH_DE_WHITE):  (ST_DE_WHITE2, NO_EMIT),    # '_ '
-    (ST_DE_GRAY, CH_DE_GRAY):   (ST_DE_GRAY,   EMIT_EMPTY), # '__'
-    (ST_DE_GRAY, CH_BLACK):     (ST_BLACK,     EMIT_DE),    # '_a'
-    (ST_DE_GRAY, CH_BACKSLASH): (ST_BLACK,     EMIT_DE),    # '_\'
+    (ST.DE_Gray, CH.DE_White):  (ST.DE_White2, EMIT.Nothing),    # '_ '
+    (ST.DE_Gray, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty), # '__'
+    (ST.DE_Gray, CH.Black):     (ST.Black,     EMIT.Delim),    # '_a'
+    (ST.DE_Gray, CH.Backslash): (ST.Black,     EMIT.Delim),    # '_\'
 
-    (ST_DE_WHITE2, CH_DE_WHITE):  (ST_DE_WHITE2, NO_EMIT),    # '_  '
-    (ST_DE_WHITE2, CH_DE_GRAY):   (ST_DE_GRAY,   EMIT_EMPTY), # '_ _'
-    (ST_DE_WHITE2, CH_BLACK):     (ST_BLACK,     EMIT_DE),    # '_ a'
-    (ST_DE_WHITE2, CH_BACKSLASH): (ST_BACKSLASH, EMIT_DE),    # '_ \'
+    (ST.DE_White2, CH.DE_White):  (ST.DE_White2, EMIT.Nothing),    # '_  '
+    (ST.DE_White2, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty), # '_ _'
+    (ST.DE_White2, CH.Black):     (ST.Black,     EMIT.Delim),    # '_ a'
+    (ST.DE_White2, CH.Backslash): (ST.Backslash, EMIT.Delim),    # '_ \'
 
-    (ST_BLACK, CH_DE_WHITE):  (ST_DE_WHITE1, EMIT_PART),  # 'a '
-    (ST_BLACK, CH_DE_GRAY):   (ST_DE_GRAY,   EMIT_PART),  # 'a_'
-    (ST_BLACK, CH_BLACK):     (ST_BLACK,     NO_EMIT),    # 'aa'
-    (ST_BLACK, CH_BACKSLASH): (ST_BACKSLASH, EMIT_PART),  # 'a\'
+    (ST.Black, CH.DE_White):  (ST.DE_White1, EMIT.Part),  # 'a '
+    (ST.Black, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Part),  # 'a_'
+    (ST.Black, CH.Black):     (ST.Black,     EMIT.Nothing),    # 'aa'
+    (ST.Black, CH.Backslash): (ST.Backslash, EMIT.Part),  # 'a\'
 
     # Here we emit an ignored \ and the second character as well.
     # We're emitting TWO spans here; we don't wait until the subsequent
@@ -301,21 +271,21 @@ TRANSITIONS = {
     # Problem: if '\ ' is the last one, we don't want to emit a trailing span?
     # In all other cases we do.
 
-    (ST_BACKSLASH, CH_DE_WHITE):  (ST_BLACK,     EMIT_ESCAPE),  # '\ '
-    (ST_BACKSLASH, CH_DE_GRAY):   (ST_BLACK,     EMIT_ESCAPE),  # '\_'
-    (ST_BACKSLASH, CH_BLACK):     (ST_BLACK,     EMIT_ESCAPE),  # '\a'
-    # NOTE: second character is a backslash, but new state is ST_BLACK!
-    (ST_BACKSLASH, CH_BACKSLASH): (ST_BLACK,     EMIT_ESCAPE),  # '\\'
+    (ST.Backslash, CH.DE_White):  (ST.Black,     EMIT.Escape),  # '\ '
+    (ST.Backslash, CH.DE_Gray):   (ST.Black,     EMIT.Escape),  # '\_'
+    (ST.Backslash, CH.Black):     (ST.Black,     EMIT.Escape),  # '\a'
+    # NOTE: second character is a backslash, but new state is ST.Black!
+    (ST.Backslash, CH.Backslash): (ST.Black,     EMIT.Escape),  # '\\'
 }
 
 LAST_SPAN_ACTION = {
-    ST_BLACK: EMIT_PART,
-    ST_BACKSLASH: EMIT_ESCAPE,
+    ST.Black: EMIT.Part,
+    ST.Backslash: EMIT.Escape,
     # Ignore trailing IFS whitespace too.  This is necessary for the case:
     # IFS=':' ; read x y z <<< 'a : b : c :'.
-    ST_DE_WHITE1: NO_EMIT,
-    ST_DE_GRAY: EMIT_DE,
-    ST_DE_WHITE2: EMIT_DE,
+    ST.DE_White1: EMIT.Nothing,
+    ST.DE_Gray: EMIT.Delim,
+    ST.DE_White2: EMIT.Delim,
 }
 
 
@@ -365,20 +335,20 @@ class IfsSplitter(_BaseSplitter):
     if i == n:
       return spans
 
-    state = ST_START
+    state = ST.Start
     while i < n:
       c = s[i]
       if c in ws_chars:
-        ch = CH_DE_WHITE
+        ch = CH.DE_White
       elif c in other_chars:
-        ch = CH_DE_GRAY
+        ch = CH.DE_Gray
       elif allow_escape and c == '\\':
-        ch = CH_BACKSLASH
+        ch = CH.Backslash
       else:
-        ch = CH_BLACK
+        ch = CH.Black
 
       new_state, action = TRANSITIONS[state, ch]
-      if new_state == ST_INVALID:
+      if new_state == ST.Invalid:
         raise AssertionError(
             'Invalid transition from %r with %r' % (state, ch))
 
@@ -386,16 +356,16 @@ class IfsSplitter(_BaseSplitter):
         log('i %d c %r ch %s current: %s next: %s %s',
              i, c, ch, state, new_state, action)
 
-      if action == EMIT_PART:
+      if action == EMIT.Part:
         spans.append((span_e.Black, i))
-      elif action == EMIT_DE:
+      elif action == EMIT.Delim:
         spans.append((span_e.Delim, i))  # ignored delimiter
-      elif action == EMIT_EMPTY:
+      elif action == EMIT.Empty:
         spans.append((span_e.Delim, i))  # ignored delimiter
         spans.append((span_e.Black, i))  # EMPTY part that is NOT ignored
-      elif action == EMIT_ESCAPE:
+      elif action == EMIT.Escape:
         spans.append((span_e.Backslash, i))  # \
-      elif action == NO_EMIT:
+      elif action == EMIT.Nothing:
         pass
       else:
         raise AssertionError
@@ -406,13 +376,13 @@ class IfsSplitter(_BaseSplitter):
     last_action = LAST_SPAN_ACTION[state]
     #log('n %d state %s last_action %s', n, state, last_action)
 
-    if last_action == EMIT_PART:
+    if last_action == EMIT.Part:
       spans.append((span_e.Black, n))
-    elif last_action == EMIT_DE:
+    elif last_action == EMIT.Delim:
       spans.append((span_e.Delim, n))
-    elif last_action == EMIT_ESCAPE:
+    elif last_action == EMIT.Escape:
       spans.append((span_e.Backslash, n))
-    elif last_action == NO_EMIT:
+    elif last_action == EMIT.Nothing:
       pass
     else:
       raise AssertionError
