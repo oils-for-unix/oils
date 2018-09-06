@@ -27,7 +27,7 @@ COMMAND LANGUAGE
 
 OIL COMMAND LANGUAGE
 
-X [Conditional]   switch   match   if-expr (
+X [Conditional]   match-with   match-case   if-expr (
 X [Iteration]     for-expr (   while-expr (
 X [Grouping]      proc   func   lazy   pure   do {   shell {  
 X [Context]       with-cd   with-redir   with-env   with-vars   with-file
@@ -93,7 +93,7 @@ BUILTIN COMMANDS
   [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs
-  [Completion]    complete   X compgen   X compopt
+  [Completion]    complete   compgen   X compopt
   [Shell Process] exec   X logout 
                   umask   X ulimit   X times
   [Child Process] jobs   wait   ampersand &
@@ -101,11 +101,12 @@ BUILTIN COMMANDS
   [External]      test [   X printf   getopts   X kill
   [Introspection] help   X hash   type   X caller
 X [Word Lookup]   command   builtin
-X [Interactive]   alias   unalias   bind   history   fc
+  [Interactive]   alias   unalias   X bind   X history   X fc
 X [Unsupported]   enable
 
 OIL BUILTINS
-  [I/O]           write   readline   sh-builtin   sh-eval
+  [Compatibility] sh-builtin   sh-eval   sh-expr
+  [I/O]           write   readline
   [External]      dirname   basename   env ?
 
 SHELL OPTIONS
@@ -114,8 +115,9 @@ SHELL OPTIONS
   [Debugging]     xtrace   X verbose   X extdebug
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    STRICT   strict-array   strict-control-flow   
-                  strict-errexit   X strict-arith
+  [OSH Strict]    STRICT   strict-array   X strict-arith
+                  strict-errexit   strict-control-flow   X strict-scope
+                  strict-word-eval   strict-var-eval
   [OSH Sane]      SANE   X sane-no-word-split   X sane-glob
                   X sane-echo   X sane-read   X sane-eval   X sane-trap
 
@@ -157,9 +159,9 @@ X [xargs]         each
 
 OIL LIBRARIES
 
+X [Compatibility] shExpr()   shEval()   
 X [Builtin Procs] log   die
 X [Builtin Funcs] join()   split()   strftime()
-                  shEvalArith()   shEvalWord()   
 X [getopts]       ?
 X [Testing]       ?
 X [Data Formats]  json   csv   tsv2
