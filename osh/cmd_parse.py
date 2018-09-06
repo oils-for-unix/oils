@@ -292,10 +292,7 @@ class CommandParser(object):
     """Reset the internal state of our inputs.
 
     Called by the interactive loop.
-
-    TODO: Should we just make new objects on every iteration?
     """
-    # All the stuff we read from
     self.w_parser.Reset()
     self.lexer.ResetInputObjects()
     self.line_reader.Reset()
@@ -305,6 +302,15 @@ class CommandParser(object):
 
   def GetCompletionState(self):
     return self.completion_stack
+
+  # NOTE: If our approach to _ExpandAliases isn't sufficient, we could have an
+  # expand_alias=True flag here?  We would litter the parser with calls to this
+  # like dash and bash.
+  #
+  # Although it might be possible that you really need to mutate the parser
+  # state, and not just provide a parameter to _Next().
+  # You might also need a flag to indicate whether the previous expansion ends
+  # with ' '.  I didn't see that in dash or bash code.
 
   def _Next(self, lex_mode=lex_mode_e.OUTER):
     """Helper method."""
