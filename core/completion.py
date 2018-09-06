@@ -36,7 +36,6 @@ import time
 import traceback
 
 from osh.meta import ast, runtime
-from osh import parse_lib
 from core import alloc
 from core import state
 from core import ui
@@ -580,18 +579,19 @@ class RootCompleter(object):
   """
   Provide completion of a buffer according to the configured rules.
   """
-  def __init__(self, pool, ev, comp_lookup, var_comp):
+  def __init__(self, pool, ev, comp_lookup, var_comp, parse_ctx):
     self.pool = pool
     self.ev = ev
     self.comp_lookup = comp_lookup
     # This can happen in any position, with any command
     self.var_comp = var_comp
+    self.parse_ctx = parse_ctx
 
     self.parser = DummyParser()  # TODO: remove
 
   def Matches(self, buf, status_out):
     arena = alloc.CompletionArena(self.pool)
-    w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena)
+    w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
     comp_type, prefix, comp_words = _GetCompletionType(
         w_parser, c_parser, self.ev, status_out)
 
@@ -747,7 +747,7 @@ class StatusOutput(object):
       self.status_lines[index].Write(msg, *args)
 
 
-def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev):
+def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev, parse_ctx):
 
   aliases_action = WordsAction(['TODO:alias'])
   commands_action = ExternalCommandAction(mem)
@@ -774,7 +774,7 @@ def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev):
   comp_lookup.RegisterName('grep', C1)
 
   var_comp = VarAction(os.environ, mem)
-  root_comp = RootCompleter(pool, ev, comp_lookup, var_comp)
+  root_comp = RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx)
 
   complete_cb = ReadlineCompleter(root_comp, status_out)
   InitReadline(complete_cb)

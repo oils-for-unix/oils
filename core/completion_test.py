@@ -120,8 +120,10 @@ class CompletionTest(unittest.TestCase):
     ev = _MakeTestEvaluator()
 
     pool = alloc.Pool()
+    arena = pool.NewArena()
+    parse_ctx = parse_lib.ParseContext(arena, {})
     var_comp = V1
-    r = completion.RootCompleter(pool, ev, comp_lookup, var_comp)
+    r = completion.RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx)
 
     m = list(r.Matches('grep f', STATUS))
     self.assertEqual(['foo.py ', 'foo '], m)
@@ -162,7 +164,8 @@ def _MakeTestEvaluator():
 def _TestGetCompletionType(buf):
   ev = _MakeTestEvaluator()
   arena = test_lib.MakeArena('<completion_test.py>')
-  w_parser, c_parser = parse_lib.MakeParserForCompletion(buf, arena)
+  parse_ctx = parse_lib.ParseContext(arena, {})
+  w_parser, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
   print('---', buf)
   return completion._GetCompletionType(w_parser, c_parser, ev, STATUS)
 

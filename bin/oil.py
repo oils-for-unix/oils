@@ -161,12 +161,14 @@ def OshMain(argv0, argv, login_shell):
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
+  parse_ctx = parse_lib.ParseContext(arena, aliases)
+
   if opts.debug_file:
     util.DEBUG_FILE = fd_state.Open(opts.debug_file, mode='w')
     util.Debug('Debug file is %s', util.DEBUG_FILE)
 
   ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, readline,
-                         completion, comp_lookup, exec_opts, arena, aliases)
+                         completion, comp_lookup, exec_opts, parse_ctx)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
@@ -175,7 +177,7 @@ def OshMain(argv0, argv, login_shell):
     arena.PushSource(rc_path)
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
-      _, rc_c_parser = parse_lib.MakeParser(rc_line_reader, arena, aliases)
+      _, rc_c_parser = parse_ctx.MakeParser(rc_line_reader)
       try:
         status = main_loop.Batch(ex, rc_c_parser, arena)
       finally:
@@ -215,7 +217,7 @@ def OshMain(argv0, argv, login_shell):
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
-  w_parser, c_parser = parse_lib.MakeParser(line_reader, arena, aliases)
+  w_parser, c_parser = parse_ctx.MakeParser(line_reader)
 
   if exec_opts.interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
@@ -225,7 +227,7 @@ def OshMain(argv0, argv, login_shell):
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
       status_out = completion.StatusOutput(status_lines, exec_opts)
       completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
-                      status_out, ev)
+                      status_out, ev, parse_ctx)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 
@@ -353,7 +355,8 @@ def OshCommandMain(argv):
 
   line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!
-  _, c_parser = parse_lib.MakeParser(line_reader, arena, aliases)
+  parse_ctx = parse_lib.ParseContext(arena, aliases)
+  _, c_parser = parse_ctx.MakeParser(line_reader)
 
   try:
     node = main_loop.ParseWholeFile(c_parser)

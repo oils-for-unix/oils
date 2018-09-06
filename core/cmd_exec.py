@@ -41,7 +41,6 @@ from core import util
 from core import word_compile
 
 from osh.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
-from osh import parse_lib
 
 try:
   import libc  # for fnmatch
@@ -107,7 +106,7 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, fd_state, status_lines, funcs, readline, completion,
-               comp_lookup, exec_opts, arena, aliases):
+               comp_lookup, exec_opts, parse_ctx):
     """
     Args:
       mem: Mem instance for storing variables
@@ -130,7 +129,9 @@ class Executor(object):
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
     self.exec_opts.readline = readline
-    self.arena = arena
+    self.parse_ctx = parse_ctx
+    self.arena = parse_ctx.arena
+    self.aliases = parse_ctx.aliases  # alias name -> string
 
     self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(
@@ -142,7 +143,6 @@ class Executor(object):
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers
     self.dir_stack = state.DirStack()
 
-    self.aliases = aliases  # alias name -> string
     self.targets = []  # make syntax enters stuff here -- Target()
                        # metaprogramming or regular target syntax
                        # Whether argv[0] is make determines if it is executed
@@ -153,7 +153,7 @@ class Executor(object):
 
     self.loop_level = 0  # for detecting bad top-level break/continue
 
-    self.tracer = Tracer(exec_opts, mem, self.word_ev)
+    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev)
     self.check_command_sub_status = False  # a hack
 
   def _Complete(self, argv):
@@ -191,7 +191,7 @@ class Executor(object):
     # TODO: set -o sane-eval should change eval to take a single string.
     code_str = ' '.join(argv)
     line_reader = reader.StringLineReader(code_str, self.arena)
-    _, c_parser = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
+    _, c_parser = self.parse_ctx.MakeParser(line_reader)
     return self._EvalHelper(c_parser, '<eval string>')
 
   def ParseTrapCode(self, code_str):
@@ -200,7 +200,7 @@ class Executor(object):
       A node, or None if the code is invalid.
     """
     line_reader = reader.StringLineReader(code_str, self.arena)
-    _, c_parser = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
+    _, c_parser = self.parse_ctx.MakeParser(line_reader)
 
     source_name = '<trap string>'
     self.arena.PushSource(source_name)
@@ -235,7 +235,7 @@ class Executor(object):
 
     try:
       line_reader = reader.FileLineReader(f, self.arena)
-      _, c_parser = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
+      _, c_parser = self.parse_ctx.MakeParser(line_reader)
 
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a
@@ -1441,13 +1441,14 @@ class Tracer(object):
     - set -x doesn't print line numbers!  OH but you can do that with
       PS4=$LINENO
   """
-  def __init__(self, exec_opts, mem, word_ev):
+  def __init__(self, parse_ctx, exec_opts, mem, word_ev):
     """
     Args:
       exec_opts: For xtrace setting
       mem: for retrieving PS4
       word_ev: for evaluating PS4
     """
+    self.parse_ctx = parse_ctx
     self.exec_opts = exec_opts
     self.mem = mem
     self.word_ev = word_ev
@@ -1467,11 +1468,13 @@ class Tracer(object):
     else:
       first_char, ps4 = '+', ' '  # default
 
+    # NOTE: This cache is slightly broken because aliases are mutable!  I think
+    # thati s more or less harmless though.
     try:
       ps4_word = self.parse_cache[ps4]
     except KeyError:
       # We have to parse this at runtime.  PS4 should usually remain constant.
-      w_parser = parse_lib.MakeWordParserForPlugin(ps4, self.arena)
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4, self.arena)
 
       try:
         ps4_word = w_parser.ReadPS()

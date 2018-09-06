@@ -13,18 +13,15 @@ from core import util
 from osh.meta import ast, Id
 from osh import ast_lib
 from osh import parse_lib
-from osh.cmd_parse import CommandParser  # module under test
-from osh.word_parse import WordParser
 
 command_e = ast.command_e
 
 
-# TODO: Use parse_lib instead
 def InitCommandParser(code_str):
   arena = test_lib.MakeArena('<cmd_parse_test.py>')
+  parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
+  _, c_parser = parse_ctx.MakeParser(line_reader)
   return arena, c_parser  # arena is returned for printing errors
 
 

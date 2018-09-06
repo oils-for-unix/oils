@@ -21,7 +21,6 @@ from core import util
 from osh.meta import ast, Id, types
 from osh import ast_lib
 from osh import parse_lib
-from osh.word_parse import WordParser  # module under test
 
 arith_expr_e = ast.arith_expr_e
 lex_mode_e = types.lex_mode_e
@@ -31,8 +30,10 @@ def _InitWordParserWithArena(s):
   pool = alloc.Pool()
   arena = pool.NewArena()
   arena.PushSource('word_parse_test.py')
+
+  parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(s, arena)
-  w_parser = WordParser(lexer, line_reader)
+  w_parser, _ = parse_ctx.MakeParser(line_reader)
   return arena, w_parser
 
 

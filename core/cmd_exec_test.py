@@ -25,12 +25,10 @@ from osh import parse_lib
 
 
 def InitCommandParser(code_str):
-  from osh.word_parse import WordParser
-  from osh.cmd_parse import CommandParser
   arena = test_lib.MakeArena('<cmd_exec_test.py>')
+  parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  w_parser = WordParser(lexer, line_reader)
-  c_parser = CommandParser(w_parser, lexer, line_reader, arena)
+  _, c_parser = parse_ctx.MakeParser(line_reader)
   return c_parser
 
 
@@ -43,11 +41,11 @@ def InitExecutor(arena=None):
   status_lines = None  # not needed for what we're testing
   funcs = {}
   comp_funcs = {}
-  aliases = {}
   exec_opts = state.ExecOpts(mem)
+  parse_ctx = parse_lib.ParseContext(arena, {})
   # For the tests, we do not use 'readline'.
   return cmd_exec.Executor(mem, fd_state, status_lines, funcs, None,
-                           completion, comp_funcs, exec_opts, arena, aliases)
+                           completion, comp_funcs, exec_opts, parse_ctx)
 
 
 def InitEvaluator():

@@ -82,7 +82,7 @@ def _MakeLiteralHereLines(here_lines, arena):
   return [ast.LiteralPart(t) for t in tokens]
 
 
-def _ParseHereDocBody(h, line_reader, arena):
+def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
   """Fill in attributes of a pending here doc node."""
   # "If any character in word is quoted, the delimiter shall be formed by
   # performing quote removal on word, and the here-document lines shall not
@@ -99,10 +99,8 @@ def _ParseHereDocBody(h, line_reader, arena):
     # LiteralPart for each line.
     h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
   else:
-    from osh import parse_lib  # Avoid circular import
-
     line_reader = reader.HereDocLineReader(here_lines, arena)
-    w_parser = parse_lib.MakeWordParserForHereDoc(line_reader, arena)
+    w_parser = parse_ctx.MakeWordParserForHereDoc(line_reader)
     w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
 
   end_line_id, end_line, end_pos = last_line
@@ -259,7 +257,8 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, w_parser, lexer_, line_reader, arena, aliases=None):
+  def __init__(self, parse_ctx, w_parser, lexer_, line_reader, arena, aliases=None):
+    self.parse_ctx = parse_ctx
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer_  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
@@ -334,7 +333,7 @@ class CommandParser(object):
       # count.
       if w.tag == word_e.TokenWord and w.token.id == Id.Op_Newline:
         for h in self.pending_here_docs:
-          _ParseHereDocBody(h, self.line_reader, self.arena)
+          _ParseHereDocBody(self.parse_ctx, h, self.line_reader, self.arena)
         del self.pending_here_docs[:]  # No .clear() until Python 3.3.
 
       self.cur_word = w
@@ -576,8 +575,7 @@ class CommandParser(object):
 
     # TODO: Change name back to VirtualLineReader?
     line_reader = reader.HereDocLineReader(line_info, self.arena)
-    from osh import parse_lib
-    _, cp = parse_lib.MakeParser(line_reader, self.arena, self.aliases)
+    _, cp = self.parse_ctx.MakeParser(line_reader)
 
     try:
       node = cp.ParseCommand(cur_aliases=cur_aliases)

@@ -66,7 +66,8 @@ log = util.log
 
 class WordParser(object):
 
-  def __init__(self, lexer, line_reader, lex_mode=lex_mode_e.OUTER):
+  def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.OUTER):
+    self.parse_ctx = parse_ctx
     self.lexer = lexer
     self.line_reader = line_reader
     self.Reset(lex_mode=lex_mode)
@@ -662,8 +663,7 @@ class WordParser(object):
     else:
       raise AssertionError(self.token_type)
 
-    from osh import parse_lib
-    c_parser = parse_lib.MakeParserForCommandSub(self.line_reader, self.lexer)
+    c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader, self.lexer)
 
     # NOTE: This doesn't use something like main_loop because we don't want to
     # interleave parsing and execution!  Unlike 'source' and 'eval'.
@@ -837,7 +837,7 @@ class WordParser(object):
             token=self.cur_token)
 
     # MUST use a new word parser (with same lexer).
-    w_parser = WordParser(self.lexer, self.line_reader)
+    w_parser = WordParser(self.parse_ctx, self.lexer, self.line_reader)
     words = []
     while True:
       w = w_parser.ReadWord(lex_mode_e.OUTER)
