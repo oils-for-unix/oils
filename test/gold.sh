@@ -120,6 +120,11 @@ readlink-case() {
   gold/readlink.sh compare
 }
 
+# Hm this isn't tickling the bug?
+errexit-confusion() {
+  _compare gold/errexit-confusion.sh run-for-release
+}
+
 readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
   #version-text

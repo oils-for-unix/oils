@@ -14,7 +14,7 @@ _compare() {
   local path=$1
 
   mkdir -p _tmp/arena
-  bin/osh --parse-and-print-arena $path > _tmp/arena/left.txt
+  bin/oshc arena $path > _tmp/arena/left.txt
   if diff -u $path _tmp/arena/left.txt; then
 	  echo "$path"
   else
