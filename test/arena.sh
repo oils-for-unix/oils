@@ -7,8 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO: Need include guard in test/common.sh!  I ran into this before.
-#source test/common.sh  # for all-passing, etc.
+source test/common.sh  # for run-other-suite-for-release
 source test/wild-runner.sh  # For MANIFEST, etc.
 
 _compare() {

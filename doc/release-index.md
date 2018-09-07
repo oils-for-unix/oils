@@ -95,9 +95,6 @@ Tree-shaking:
 
 <!-- - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format. -->
 
-NOTE: OHeap was broken in this release due to the removal of `bytearray`.  It
-may be back in the future.
-
 <!-- TODO: 
 /src/                       annotated/cross-referenced source code
 coverage/                  code coverage in Python and C

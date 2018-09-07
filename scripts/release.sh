@@ -222,8 +222,7 @@ test-opy() {
 
   # NOTE: This is sensitive to Python 2.7.12 vs .13 vs .14.  Ideally we would
   # remove that.
-
-  # TODO: There is no indication if this fails!
+  # NOTE: There is no indication if this fails!
   ./regtest.sh compile > $out/regtest-compile.txt
   ./regtest.sh verify-golden > $out/regtest-verify-golden.txt
 
