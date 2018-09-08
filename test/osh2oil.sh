@@ -347,6 +347,15 @@ indented
 body
 '''
 OIL
+
+  # Bug fix: the combination of an empty here doc and a redirect afterward.
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+  cat <<EOF >expect
+EOF
+OSH
+  cat << """ >expect
+"""
+OIL
 }
 
 here-string() {

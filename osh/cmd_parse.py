@@ -492,7 +492,6 @@ class CommandParser(object):
     Returns:
       A command node if any aliases were expanded, but None otherwise.
     """
-    #log('_ExpandAliases')
     # The last char that we might parse.
     right_spid = word.RightMostSpanForWord(words[-1])
     first_word_str = None  # for error message
@@ -1637,7 +1636,6 @@ class CommandParser(object):
     self._Peek()
 
     if self.c_id == Id.Eof_Real:
-      # TODO: Assert that there are no pending here docs
       return None
 
     node = self._ParseCommandLine()

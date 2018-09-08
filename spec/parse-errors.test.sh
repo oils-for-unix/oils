@@ -109,6 +109,11 @@ $(x
 ## status: 2
 ## OK mksh status: 1
 
+#### incomplete backticks
+`x
+## status: 2
+## OK mksh status: 1
+
 #### misplaced ;;
 echo 1 ;; echo 2
 ## stdout-json: ""

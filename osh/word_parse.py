@@ -658,7 +658,8 @@ class WordParser(object):
     else:
       raise AssertionError(self.token_type)
 
-    c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader, self.lexer)
+    c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
+                                                      self.lexer)
 
     # NOTE: This doesn't use something like main_loop because we don't want to
     # interleave parsing and execution!  Unlike 'source' and 'eval'.

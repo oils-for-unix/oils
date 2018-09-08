@@ -102,6 +102,8 @@ def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
   col = line_span.col
   length = line_span.length
 
+  # TODO: If the line is blank, it would be nice to print the last non-blank
+  # line too?
   print('Line %d of %r' % (line_num+1, path), file=f)
   print('  ' + line.rstrip(), file=f)
   f.write('  ')
@@ -125,6 +127,14 @@ def PrettyPrintError(parse_error, arena, f=sys.stderr):
     span_id = word.LeftMostSpanForWord(parse_error.word)
   else:
     span_id = const.NO_INTEGER
+
+  # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
+  # means there is no location info, but 0 could mean that the location is EOF.
+  # So then you query the arena for the last line in that case?
+  # Eof_Real is the ONLY token with 0 span, because it's invisible!
+  # Well Eol_Tok is a sentinel with a span_id of const.NO_INTEGER.  I think
+  # that is OK.
+  # Problem: the column for Eof could be useful.
 
   if span_id == const.NO_INTEGER:  # Any clause above might return this.
     # This is usually a bug.

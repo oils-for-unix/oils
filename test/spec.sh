@@ -388,7 +388,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

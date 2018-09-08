@@ -45,6 +45,7 @@ class Cursor(object):
       span = self.arena.GetLineSpan(span_id)
       #log('SPAN %s', span)
 
+      assert span.line_id != -1, 'Invalid span %d: %s' % (span_id, span)
       line = self.arena.GetLine(span.line_id)
       piece = line[span.col : span.col + span.length]
       self.f.write(piece)
@@ -78,7 +79,7 @@ def PrintSpans(arena):
   for i, span in enumerate(arena.spans):
     line = arena.GetLine(span.line_id)
     piece = line[span.col : span.col + span.length]
-    print('%5d %r' % (i, piece), file=sys.stderr)
+    print('%5d %r' % (i, piece))
   print('(%d spans)' % len(arena.spans), file=sys.stderr)
 
 
