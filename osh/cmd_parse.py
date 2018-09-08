@@ -1486,6 +1486,10 @@ class CommandParser(object):
        b. If there's a sync_op, process it.  Then look for a newline and
           return.  Otherwise, parse another AndOr.
     """
+    # NOTE: This is slightly different than END_LIST in _ParseCommandTerm, and
+    # unfortunately somewhat ad hoc.
+    END_LIST = (Id.Op_Newline, Id.Eof_Real, Id.Op_RParen)
+
     children = []
     done = False
     while not done:
@@ -1498,13 +1502,10 @@ class CommandParser(object):
         self._Next()
 
         self._Peek()
-        if self.c_id in (Id.Op_Newline, Id.Eof_Real):
+        if self.c_id in END_LIST:
           done = True
 
-      elif self.c_id == Id.Op_Newline:
-        done = True
-
-      elif self.c_id == Id.Eof_Real:
+      elif self.c_id in END_LIST:
         done = True
 
       else:
