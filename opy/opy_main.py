@@ -139,7 +139,7 @@ def OpyCommandMain(argv):
     raise args.UsageError('opy: Missing required subcommand.')
 
   if action in (
-      'parse', 'compile', 'cfg', 'compile-ovm', 'eval', 'repl', 'run',
+      'parse', 'compile', 'dis', 'cfg', 'compile-ovm', 'eval', 'repl', 'run',
       'run-ovm'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
@@ -278,19 +278,25 @@ def OpyCommandMain(argv):
       print(eval(co))
 
   elif action == 'dis':
-    pyc_path = argv[1]
+    path = argv[1]
     try:
       report_path = argv[2]
       report_f = open(report_path, 'w')
     except IndexError:
       report_f = sys.stdout
 
-    with open(pyc_path, 'rb') as f:
-      # TODO: Make this a flag.
-      #v = dis_tool.Visitor(dis_bytecode=False)
-      v = dis_tool.Visitor()
-      #v = dis_tool.Visitor(co_name='_parse')
-      v.Visit(f)
+    v = dis_tool.Visitor()
+
+    if path.endswith('.py'):
+      with open(path) as f:
+        co = skeleton.Compile(f, path, gr, 'file_input', 'exec')
+
+      log("Compiled to %d bytes of bytecode", len(co.co_code))
+      v.show_code(co)
+
+    else:  # assume pyc_path
+      with open(path, 'rb') as f:
+        v.Visit(f)
 
     v.Report(report_f)
 
