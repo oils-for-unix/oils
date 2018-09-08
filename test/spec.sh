@@ -250,9 +250,8 @@ word-eval() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-# 'do' -- detected statically as syntax error?  hm.
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
@@ -370,7 +369,7 @@ arith() {
 }
 
 command-sub() {
-  sh-spec spec/command-sub.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/command-sub.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -389,7 +388,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -405,7 +404,7 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

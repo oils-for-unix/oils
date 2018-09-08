@@ -249,6 +249,12 @@ def _MakeSimpleCommand(prefix_bindings, suffix_words, redirects):
   return node
 
 
+NOT_FIRST_WORDS = (
+    Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif,
+    Id.KW_Else, Id.KW_Esac
+)
+
+
 class CommandParser(object):
   """
   Args:
@@ -1325,6 +1331,9 @@ class CommandParser(object):
 
     self._Peek()
 
+    if self.c_id in NOT_FIRST_WORDS:
+      p_die('Unexpected word when parsing cmomand', word=self.cur_word)
+
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
 
@@ -1508,8 +1517,9 @@ class CommandParser(object):
         done = True
 
       else:
-        # Shouldn't happen?
-        assert False, '_ParseCommandLine: Unexpected word %s' % self.cur_word
+        # e.g. echo a(b)
+        p_die('Unexpected word while parsing command line',
+              word=self.cur_word)
 
       children.append(child)
 
@@ -1552,9 +1562,7 @@ class CommandParser(object):
 
       # Most keywords are valid "first words".  But do/done/then do not BEGIN
       # commands, so they are not valid.
-      if self.c_id in (
-        Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else,
-        Id.KW_Esac):
+      if self.c_id in NOT_FIRST_WORDS:
         break
 
       child = self.ParseAndOr()
