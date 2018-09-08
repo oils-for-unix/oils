@@ -40,7 +40,6 @@ def _ReadHereLines(line_reader, h, delimiter):
   last_line = None
   while True:
     line_id, line, unused_offset = line_reader.GetLine()
-    assert unused_offset == 0
 
     if not line:  # EOF
       # An unterminated here doc is just a warning in bash.  We make it

@@ -324,6 +324,19 @@ here doc in IF CONDITION
 THEN executed
 ## END
 
+#### Nested here docs which are indented
+cat <<- EOF
+	outside
+	$(cat <<- INSIDE
+		inside
+INSIDE
+)
+EOF
+## STDOUT:
+outside
+inside
+## END
+
 #### Multiple here docs in pipeline
 # SKIPPED: hangs with osh on Debian
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
@@ -350,3 +363,4 @@ EOF5
 0: 3: fd3
 5: fd5
 ## END
+

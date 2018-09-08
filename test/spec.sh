@@ -400,7 +400,7 @@ here-doc() {
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
-  sh-spec spec/here-doc.test.sh --range 0-30 \
+  sh-spec spec/here-doc.test.sh --range 0-31 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
