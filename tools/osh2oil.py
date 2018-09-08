@@ -764,12 +764,21 @@ class OilPrinter(object):
       # Change (( )) to ( ), and then _FixDoGroup
       pass
 
-    elif node.tag == command_e.While:
+    elif node.tag == command_e.WhileUntil:
+
+      # Skip 'until', and replace it with 'while not'
+      if node.keyword.id == Id.KW_Until:
+        kw_spid = node.keyword.span_id
+        self.cursor.PrintUntil(kw_spid)
+        self.f.write('while not')
+        self.cursor.SkipUntil(kw_spid + 1)
+
       cond = node.cond
+      # Skip the semi-colon in the condition, which is ususally a Sentence
       if len(cond) == 1 and cond[0].tag == command_e.Sentence:
-        spid = cond[0].terminator.span_id
-        self.cursor.PrintUntil(spid)
-        self.cursor.SkipUntil(spid + 1)
+        self.DoCommand(cond[0].child, local_symbols)
+        semi_spid = cond[0].terminator.span_id
+        self.cursor.SkipUntil(semi_spid + 1)
 
       self.DoCommand(node.body, local_symbols)
 

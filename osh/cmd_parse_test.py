@@ -1056,7 +1056,8 @@ while true; do {
   break
 } done
 """)
-    self.assertEqual(command_e.While, node.tag)
+    self.assertEqual(command_e.WhileUntil, node.tag)
+    self.assertEqual(Id.KW_While, node.keyword.id)
 
     node = assert_ParseCommandList(self, """\
 if true; then (

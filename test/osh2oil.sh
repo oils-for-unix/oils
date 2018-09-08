@@ -783,6 +783,38 @@ while read \
 OIL
 }
 
+while-expr-loop() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+x=0
+while (( x < 3 )); do
+  (( x++ ))
+  echo $x
+done
+OSH
+setglobal x = '0'
+while sh-expr ' x < 3 ' {
+  sh-expr ' x++ '
+  echo $x
+}
+OIL
+}
+
+until-loop() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+x=0
+until  (( x == 3 )); do
+  (( x++ ))
+  echo $x
+done
+OSH
+setglobal x = '0'
+while not  sh-expr ' x == 3 ' {
+  sh-expr ' x++ '
+  echo $x
+}
+OIL
+}
+
 if_() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 if true; then
@@ -1197,6 +1229,8 @@ readonly -a PASSING=(
   brace-group
   subshell
   while-loop
+  while-expr-loop
+  until-loop
   if_
   case_
   for-loop

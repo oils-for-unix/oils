@@ -929,9 +929,8 @@ class Executor(object):
 
         i += 1
 
-    elif node.tag in (command_e.While, command_e.Until):
-      # TODO: Compile this out?
-      if node.tag == command_e.While:
+    elif node.tag == command_e.WhileUntil:
+      if node.keyword.id == Id.KW_While:
         _DonePredicate = lambda status: status != 0
       else:
         _DonePredicate = lambda status: status == 0

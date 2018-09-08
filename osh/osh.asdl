@@ -192,8 +192,7 @@ module osh
     -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
             command? body, redir* redirects)
-  | While(command* cond, command body, redir* redirects)
-  | Until(command* cond, command body, redir* redirects)
+  | WhileUntil(token keyword, command* cond, command body, redir* redirects)
   | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
   | FuncDef(string name, command body, redir* redirects)

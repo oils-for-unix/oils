@@ -924,10 +924,14 @@ class CommandParser(object):
 
     return node
 
-  def ParseWhile(self):
+  def ParseWhileUntil(self):
     """
     while_clause     : While command_list do_group ;
+    until_clause     : Until command_list do_group ;
     """
+    keyword = self.cur_word.parts[0].token
+    # This is ensured by the caller
+    assert keyword.id in (Id.KW_While, Id.KW_Until), keyword
     self._Next()  # skip while
 
     cond_node = self._ParseCommandList()
@@ -936,21 +940,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     assert body_node is not None
 
-    return ast.While(cond_node.children, body_node)
-
-  def ParseUntil(self):
-    """
-    until_clause     : Until command_list do_group ;
-    """
-    self._Next()  # skip until
-
-    cond_node = self._ParseCommandList()
-    assert cond_node is not None
-
-    body_node = self.ParseDoGroup()
-    assert body_node is not None
-
-    return ast.Until(cond_node.children, body_node)
+    return ast.WhileUntil(keyword, cond_node.children, body_node)
 
   def ParseCaseItem(self):
     """
@@ -1152,10 +1142,8 @@ class CommandParser(object):
 
     if self.c_id == Id.KW_For:
       return self.ParseFor()
-    if self.c_id == Id.KW_While:
-      return self.ParseWhile()
-    if self.c_id == Id.KW_Until:
-      return self.ParseUntil()
+    if self.c_id in (Id.KW_While, Id.KW_Until):
+      return self.ParseWhileUntil()
 
     if self.c_id == Id.KW_If:
       return self.ParseIf()
