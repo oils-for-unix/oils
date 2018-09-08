@@ -70,6 +70,11 @@ def PrintArena(arena):
 
 def PrintSpans(arena):
   """Just to see spans."""
+  if len(arena.spans) == 1:  # Special case for line_id == -1
+    print('Empty file with EOF span on invalid line:')
+    print('%s' % arena.spans[0])
+    return
+
   for i, span in enumerate(arena.spans):
     line = arena.GetLine(span.line_id)
     piece = line[span.col : span.col + span.length]
@@ -78,6 +83,10 @@ def PrintSpans(arena):
 
 
 def PrintAsOil(arena, node, debug_spans):
+  if len(arena.spans) == 1:  # Special case for line_id == -1
+    # Nothing to print; would crash otherwise.
+    return
+
   #print node
   #print(spans)
   if debug_spans:
@@ -1275,6 +1284,14 @@ class OilPrinter(object):
       self.cursor.SkipUntil(right_spid + 1)
 
     elif node.tag == word_part_e.EmptyPart:
+      pass
+
+    elif node.tag == word_part_e.ExtGlobPart:
+      # Change this into a function?  It depends whether it is used as
+      # a glob or fnmatch.
+      # 
+      # Example of glob:
+      # cloud/sandstorm/make-bundle.sh
       pass
 
     else:

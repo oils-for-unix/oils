@@ -11,3 +11,9 @@ esoteric/setup.shl/bin/setup  # associative array ambiguity (key should be quote
 exp/shootout/timing.sh  # the $(( )) ambiguity 
 
 linux-4.8.7/tools/perf/perf-with-kcore.sh  # another $(( )) ambiguity
+
+# These four have unexpected arguments to exit.  We statically parse that.
+shell/modernish/uninstall.sh
+shell/modernish/share/doc/modernish/examples/get-firefox.sh
+shell/modernish/share/doc/modernish/examples/copy-timestamps.sh
+shell/modernish/share/doc/modernish/examples/testshells.sh
