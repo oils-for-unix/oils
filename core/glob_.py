@@ -260,8 +260,6 @@ def GlobToERE(pat):
     return None, warnings
 
   if 0:
-    #import sys
-    #from asdl import format as fmt
     print('---')
     for p in parts:
       print(p)

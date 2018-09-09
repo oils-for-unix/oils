@@ -39,6 +39,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
+word_e = ast.word_e
 lex_mode_e = types.lex_mode_e
 log = util.log
 p_die = util.p_die
@@ -184,6 +185,9 @@ class BoolParser(object):
       op = self.op_id
       self._Next()
       w = self.cur_word
+      # e.g. [[ -f < ]].  But [[ -f '<' ]] is OK
+      if w.tag not in (word_e.CompoundWord, word_e.StringWord):
+        p_die('Invalid argument to unary operator', word=w)
       self._Next()
       node = ast.BoolUnary(op, w)
       return node

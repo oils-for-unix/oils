@@ -194,6 +194,10 @@ imports() {
   oil-osh-files | xargs grep --no-filename -w import | hist
 }
 
+imports-not-at-top() {
+  oil-osh-files | xargs grep -n -w import | awk -F : ' $2 > 100'
+}
+
 # For the compiler, see what's at the top level.
 top-level() {
   grep '^[a-zA-Z]' {core,osh}/*.py \
@@ -243,6 +247,11 @@ pickle-bytecodes() {
   # - -a is useful for showing what a bytecode does.
   show-pickle _devbuild/*_asdl.pickle | egrep -o '[[:space:]][A-Z_]{2,}' | hist
   #show-pickle _devbuild/*_asdl.pickle 
+}
+
+# Some of these are "abstract classes" like ChildStateChange
+NotImplementedError() {
+  grep NotImplementedError */*.py
 }
 
 "$@"

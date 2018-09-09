@@ -51,7 +51,6 @@ TODO:
 
 - NOTE: GNU getopt has fuzzy matching for long flags.  I think we should rely
   on good completion instead.
-
 """
 
 from core import util

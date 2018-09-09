@@ -82,20 +82,7 @@ def PrintSpans(arena):
   print('(%d spans)' % len(arena.spans), file=sys.stderr)
 
 
-def PrintAsOil(arena, node, debug_spans):
-  if len(arena.spans) == 1:  # Special case for line_id == -1
-    # Nothing to print; would crash otherwise.
-    return
-
-  #print node
-  #print(spans)
-  if debug_spans:
-    for i, span in enumerate(arena.spans):
-      line = arena.GetLine(span.line_id)
-      piece = line[span.col : span.col + span.length]
-      print('%5d %r' % (i, piece), file=sys.stderr)
-    print('(%d spans)' % len(arena.spans), file=sys.stderr)
-
+def PrintAsOil(arena, node):
   cursor = Cursor(arena, sys.stdout)
   fixer = OilPrinter(cursor, arena, sys.stdout)
   fixer.DoCommand(node, None, at_top_level=True)  # no local symbols yet

@@ -381,10 +381,7 @@ def OshCommandMain(argv):
   # stderr: show how we're following imports?
 
   if action == 'translate':
-    # TODO: FIx this invocation up.
-    #debug_spans = opt.debug_spans
-    debug_spans = False
-    osh2oil.PrintAsOil(arena, node, debug_spans)
+    osh2oil.PrintAsOil(arena, node)
 
   elif action == 'arena':  # for debugging
     osh2oil.PrintArena(arena)

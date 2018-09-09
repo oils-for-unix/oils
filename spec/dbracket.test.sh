@@ -168,7 +168,7 @@ FOO=bar [[ foo == foo ]]
 ## stdout-json: "false\nfalse\n"
 
 #### Argument that looks like a real operator
-[[ -f < ]]
+[[ -f < ]] && echo 'should be parse error'
 ## status: 2
 ## OK mksh status: 1
 
@@ -205,7 +205,10 @@ false
 [[ 1+2 -eq 3 ]] && echo true
 expr='1+2'
 [[ $expr -eq 3 ]] && echo true  # must be dynamically parsed
-## stdout-json: "true\ntrue\n"
+## STDOUT:
+true
+true
+## END
 
 #### -eq coercion produces weird results
 [[ '' -eq 0 ]] && echo true

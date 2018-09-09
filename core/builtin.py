@@ -27,6 +27,7 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 """
 
 import os
+import signal
 import sys
 
 from core import args
@@ -1032,9 +1033,6 @@ def UnAlias(argv, aliases):
       util.error('alias %r is not defined', name)
       status = 1
   return status
-
-
-import signal
 
 
 def _SigIntHandler(unused, unused_frame):
