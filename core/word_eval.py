@@ -336,7 +336,12 @@ class _WordEvaluator(object):
       #   arrays?
 
       # Treat the value of the variable as a variable name.
-      return self.mem.GetVar(val.s)
+      if val.tag == value_e.Str:
+        return self.mem.GetVar(val.s)
+      elif val.tag == value_e.StrArray:
+        raise NotImplementedError('${!a[@]}')  # bash gets keys this way
+      else:
+        raise AssertionError
 
     else:
       raise AssertionError(op_id)

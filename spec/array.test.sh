@@ -136,7 +136,7 @@ argv.py "${!a[1]}"
 ## stdout: ['bar']
 ## N-I mksh stdout: ['a[1]']
 
-#### Retrieve indices without []
+#### ${!a} on array
 # bash gives empty string?
 # mksh gives the name of the variable with !.  Very weird.
 a=(1 '2 3')
@@ -183,12 +183,14 @@ printenv.py PYTHONPATH
 ## OK osh stdout-json: ""
 ## OK osh status: 2
 
-#### Env with array
-# Hm it treats it as a string!
+#### Arrays can't be used as env bindings
+# Hm bash it treats it as a string!
 A=a B=(b b) printenv.py A B
-## stdout-json: "a\n(b b)\n"
-## BUG mksh stdout-json: ""
-## BUG mksh status: 1
+## status: 2
+## stdout-json: ""
+## OK bash stdout-json: "a\n(b b)\n"
+## OK bash status: 0
+## OK mksh status: 1
 
 #### Set element
 a=(1 '2 3')
@@ -358,16 +360,27 @@ default=('1 2' '3')
 argv.py "${undef[@]:-${default[@]}}"
 ## stdout: ['1 2', '3']
 
-#### Singleton Array Copy and Assign
+#### Singleton Array Copy and Assign.  Can't index string with int.
 a=( '12 3' )
 b=( "${a[@]}" )
 c="${a[@]}"  # This decays it to a string
 d=$a  # This decays it to a string
-echo ${#a[0]} ${#b[0]} ${#c[0]} ${#d[0]}
-echo ${#a[@]} ${#b[@]} ${#c[@]} ${#d[@]}
+echo ${#a[0]} ${#b[0]}
+echo ${#a[@]} ${#b[@]}
+# osh is intentionally stricter about arrays, and these fail.
+echo ${#c[0]} ${#d[0]}
+echo ${#c[@]} ${#d[@]}
+## status: 1
 ## STDOUT:
-4 4 4 4
-1 1 1 1
+4 4
+1 1
+## END
+## OK bash/mksh status: 0
+## OK bash/mksh STDOUT:
+4 4
+1 1
+4 4
+1 1
 ## END
 
 #### declare -a / local -a is empty array
