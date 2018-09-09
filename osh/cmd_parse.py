@@ -93,7 +93,6 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
 
   here_lines, last_line = _ReadHereLines(line_reader, h, delimiter)
 
-  parts = []
   if delim_quoted:  # << 'EOF'
     # LiteralPart for each line.
     h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
