@@ -38,20 +38,19 @@ class Cursor(object):
 
   def PrintUntil(self, until_span_id):
     # Sometimes we add +1
-    assert until_span_id < const.NO_INTEGER, 'Missing span ID, got %d' % until_span_id
-    #log('PrintUntil %d', until_span_id)
+    assert until_span_id < const.NO_INTEGER, \
+        'Missing span ID, got %d' % until_span_id
     for span_id in range(self.next_span_id, until_span_id):
-      #log('Looking up span id %d', span_id)
       span = self.arena.GetLineSpan(span_id)
-      #log('SPAN %s', span)
 
-      assert span.line_id != -1, 'Invalid span %d: %s' % (span_id, span)
+      # A span for Eof may have a line_id of -1 when the file is completely
+      # empty.
+      if span.line_id == -1:
+        continue
+
       line = self.arena.GetLine(span.line_id)
       piece = line[span.col : span.col + span.length]
       self.f.write(piece)
-      # Spacing
-      #self.f.write('%r' % piece)
-    #self.f.write('__')
 
     self.next_span_id = until_span_id
 
@@ -1107,7 +1106,6 @@ class OilPrinter(object):
     span_id = word.LeftMostSpanForPart(node)
     if span_id is not None and span_id != const.NO_INTEGER:
       span = self.arena.GetLineSpan(span_id)
-      #print(span)
 
       self.cursor.PrintUntil(span_id)
 

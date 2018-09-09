@@ -197,6 +197,9 @@ class Lexer(object):
       line_id, line, line_pos = self.line_reader.GetLine()
 
       if line is None:  # no more lines
+        # NOTE: Eof_Real has no contents, but it has a span_id because we want
+        # to retrieve the path and line number in ui.PrettyPrintError().
+        # The line_id might be -1.
         span_id = self.line_lexer.GetSpanIdForEof()
         t = ast.token(Id.Eof_Real, '', span_id)
         return t
