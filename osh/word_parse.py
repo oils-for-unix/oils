@@ -638,11 +638,14 @@ class WordParser(object):
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
 
-  def _ReadCommandSubPart(self, token_type):
+  def _ReadCommandSubPart(self, left_id):
     """
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
     command_sub = '$(' command_list ')'
+                | ` command_list `
+                | '<(' command_list ')'
+                | '>(' command_list ')'
     """
     left_token = self.cur_token
     left_spid = left_token.span_id
@@ -650,20 +653,23 @@ class WordParser(object):
     self._Next(lex_mode_e.OUTER)  # advance past $( or `
 
     # Set the lexer in a state so ) becomes the EOF token.
-    if token_type in (
-        Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
-      self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
-    elif token_type == Id.Left_Backtick:
-      self.lexer.PushHint(Id.Left_Backtick, Id.Eof_Backtick)
+    if left_id in (Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+      right_id = Id.Eof_RParen
+      self.lexer.PushHint(Id.Op_RParen, right_id)
+
+    elif left_id == Id.Left_Backtick:
+      right_id = Id.Eof_Backtick
+      self.lexer.PushHint(Id.Left_Backtick, right_id)
+
     else:
-      raise AssertionError(self.token_type)
+      raise AssertionError(self.left_id)
 
     c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
-                                                      self.lexer)
+                                                      self.lexer, right_id)
 
     # NOTE: This doesn't use something like main_loop because we don't want to
     # interleave parsing and execution!  Unlike 'source' and 'eval'.
-    node = c_parser.ParseCommandSub()  # `` and $() allowed
+    node = c_parser.ParseCommandSub()
     assert node is not None
 
     # Hm this creates its own word parser, which is thrown away?

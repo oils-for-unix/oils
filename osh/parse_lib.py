@@ -41,13 +41,14 @@ class ParseContext(object):
     lx = lexer.Lexer(line_lexer, line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def MakeParserForCommandSub(self, line_reader, lexer):
+  def MakeParserForCommandSub(self, line_reader, lexer, eof_id):
     """To parse command sub, we want a fresh word parser state.
 
     It's a new instance based on same lexer and arena.
     """
     w_parser = word_parse.WordParser(self, lexer, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader,
+                                       eof_id=eof_id)
     return c_parser
 
   def MakeWordParserForPlugin(self, code_str, arena):
@@ -70,8 +71,8 @@ class ParseContext(object):
 
     NOTE: Uses its own arena!
     """
-    # NOTE: We don't need to use a arena here?  Or we need a "scratch arena" that
-    # doesn't interfere with the rest of the program.
+    # NOTE: We don't need to use a arena here?  Or we need a "scratch arena"
+    # that doesn't interfere with the rest of the program.
     line_reader = reader.StringLineReader(code_str, arena)
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)  # AtEnd() is true
     lx = lexer.Lexer(line_lexer, line_reader)

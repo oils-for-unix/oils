@@ -262,13 +262,16 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, parse_ctx, w_parser, lexer_, line_reader, arena=None):
+  def __init__(self, parse_ctx, w_parser, lexer_, line_reader, arena=None,
+               eof_id=Id.Eof_Real):
     self.parse_ctx = parse_ctx
+    self.aliases = parse_ctx.aliases  # aliases to expand at parse time
+
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer_  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
     self.arena = arena or parse_ctx.arena  # for adding here doc and alias spans
-    self.aliases = parse_ctx.aliases  # aliases to expand at parse time
+    self.eof_id = eof_id
 
     self.Reset()
 
@@ -1542,10 +1545,8 @@ class CommandParser(object):
     Returns:
       ast.command
     """
-    # Word types that will end the command term.
-    END_LIST = (
-        Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick, Id.Right_Subshell,
-        Id.Lit_RBrace, Id.Op_DSemi)
+    # Token types that will end the command term.
+    END_LIST = (self.eof_id, Id.Right_Subshell, Id.Lit_RBrace, Id.Op_DSemi)
 
     # NOTE: This is similar to _ParseCommandLine.
     #
