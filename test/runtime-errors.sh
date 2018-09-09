@@ -258,6 +258,13 @@ string_to_intbase() {
   echo 'SHOULD NOT GET HERE'
 }
 
+array_arith() {
+  a=(1 2)
+  (( a++ ))  # doesn't make sense
+  echo "${a[@]}"
+}
+
+
 #
 # Builtins
 #
@@ -324,7 +331,7 @@ all() {
     failed_command \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
     nonexistent nounset \
-    nounset_arith divzero divzero_var \
+    nounset_arith divzero divzero_var array_arith \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool; do
 

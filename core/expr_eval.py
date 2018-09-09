@@ -205,12 +205,15 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
 def _ValToArith(val, word=None):
   """Convert runtime.value to a Python int or list of strings."""
   assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
-  if val.tag == value_e.Undef:
+
+  if val.tag == value_e.Undef:  # 'nounset' already handled before got here
     return 0
+
   if val.tag == value_e.Str:
-    return _StringToInteger(val.s, word=word)
-  if val.tag == value_e.StrArray:
-    return val.strs  # Python list of strings
+    return _StringToInteger(val.s, word=word)  # may raise FatalRuntimeError
+
+  if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
+    return val.strs
 
 
 class ArithEvaluator(_ExprEvaluator):
@@ -235,8 +238,12 @@ class ArithEvaluator(_ExprEvaluator):
       int or list of strings, runtime.lvalue
     """
     val, lval = EvalLhs(node, self, self.mem, self.exec_opts)
-    #log('Evaluating node %r -> %r', node, val)
-    return self._ValToArithOrError(val), lval
+
+    if val.tag == value_e.StrArray:
+      e_die("Can't use assignment like ++ or += on arrays")
+
+    i = self._ValToArithOrError(val)
+    return i, lval
 
   def _Store(self, lval, new_int):
     val = runtime.Str(str(new_int))
@@ -254,7 +261,7 @@ class ArithEvaluator(_ExprEvaluator):
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
     # to handle that as a special case.
 
-    if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))
+    if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
       val = self._LookupVar(node.name)
       return self._ValToArithOrError(val)
 
