@@ -121,6 +121,15 @@ byterun-unit() {
   popd
 }
 
+
+# TODO: Fix this!
+opy-unit() {
+ for t in compiler2/*_test.py; do
+   echo $t
+   $t
+ done
+}
+
 # Isolated failures.
 
 # File "/home/andy/git/oilshell/oil/bin/../opy/byterun/pyvm2.py", line 288, in manage_block_stack

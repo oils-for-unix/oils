@@ -19,7 +19,7 @@ But that doesn't give all the metadata.  It's also nicer than
 tools/dumppyc.py, which came with the 'compiler2' package.
 """
 
-import collections, marshal, struct, sys, time, types
+import marshal, struct, sys, time, types
 
 import consts  # this package
 
@@ -48,8 +48,7 @@ def to_hexstr(bytes_value, level=0, wrap=False):
         return template % tuple(ord(char) for char in bytes_value)
 
 
-# TODO: Do this in a cleaner way.  Right now I'm avoiding modifying the
-# consts module.
+# TODO: Unify this with _const() in consts.py.
 def build_flags_def(consts, co_flags_def):
   for name in dir(consts):
     if name.startswith('CO_'):
@@ -81,24 +80,17 @@ def unpack_pyc(f):
     return magic, unixtime, timestamp, code
 
 
-# NOTE:
-# - We could change this into a bytecode visitor.  It's a tree of code
-# objects.  Each code object contains constants, and a constant can be another
-# code object.
-
 # Enhancements:
 # - Actually print the line of code!  That will be very helpful.
-# - Print a histogram of byte codes.  Print toal number of bytecodes.
-#   - Copy of the
 
-def disassemble(co, indent, op_counts, f):
+def disassemble(co, indent, f):
   """Copied from dis module.
 
   Args:
     co: code object
     indent: indentation to print with
 
-  It doesn't do the indent we want.
+  NOTE: byterun/pyobj.py:Frame.decode_next does something very similar.
   """
   def out(*args, **kwargs):
     print(*args, file=f, **kwargs)
@@ -114,8 +106,6 @@ def disassemble(co, indent, op_counts, f):
   while i < n:
       c = code[i]
       op = ord(c)
-
-      op_counts[op] += 1
 
       if i in linestarts:
           if i > 0:
@@ -175,6 +165,28 @@ def disassemble(co, indent, op_counts, f):
       out()
 
 
+def ParseOps(code):
+  """A lightweight parser.  Does some of what disassemble() does.
+  """
+  n = len(code)
+  i = 0
+  extended_arg = 0
+
+  while i < n:
+      c = code[i]
+      op = ord(c)
+
+      i += 1
+      if op >= dis.HAVE_ARGUMENT:
+          oparg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
+          extended_arg = 0
+          i += 2
+          if op == dis.EXTENDED_ARG:
+              extended_arg = oparg*65536L
+
+      yield dis.opname[op], oparg
+
+
 class Visitor(object):
 
   def __init__(self, dis_bytecode=True, co_name=None):
@@ -186,7 +198,6 @@ class Visitor(object):
     self.dis_bytecode = dis_bytecode
     # Name of thing to print
     self.co_name = co_name
-    self.op_counts = collections.Counter()
 
   def show_consts(self, consts, level=0):
     indent = INDENT * level
@@ -211,7 +222,7 @@ class Visitor(object):
 
     if self.dis_bytecode:
       print(indent + "disassembled:")
-      disassemble(code, indent, self.op_counts, sys.stdout)
+      disassemble(code, indent, sys.stdout)
 
   def show_code(self, code, level=0):
     """Print a code object, e.g. metadata, bytecode, and consts."""
@@ -255,12 +266,3 @@ class Visitor(object):
     print("code")
     self.show_code(code, level=1)
     print("  ## done inspecting pyc file ##")
-
-  def Report(self, f=sys.stdout):
-    print()
-    print('Opcode Histogram:', file=f)
-    for op, count in self.op_counts.most_common():
-      print('%5d %s' % (count, dis.opname[op]), file=f)
-
-    print('', file=f)
-    print('%d unique opcodes' % len(self.op_counts), file=f)

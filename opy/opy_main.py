@@ -10,6 +10,7 @@ import optparse
 import os
 import sys
 import marshal
+import types
 
 from . import pytree
 from . import skeleton
@@ -18,6 +19,7 @@ from .pgen2 import driver, parse, pgen, grammar
 from .pgen2 import token
 from .pgen2 import tokenize
 
+from .compiler2 import consts
 from .compiler2 import dis_tool
 from .compiler2 import misc
 from .compiler2 import transformer
@@ -105,6 +107,98 @@ class TupleTreePrinter(object):
       f.write('\n')
     else:
       raise AssertionError(tu)
+
+
+class TableOutput(object):
+
+  def __init__(self, out_dir):
+    self.out_dir = out_dir
+    self.frames_f = open(os.path.join(out_dir, 'frames.tsv2'), 'w')
+    self.names_f = open(os.path.join(out_dir, 'names.tsv2'), 'w')
+    self.consts_f = open(os.path.join(out_dir, 'consts.tsv2'), 'w')
+    self.flags_f = open(os.path.join(out_dir, 'flags.tsv2'), 'w')
+    self.ops_f = open(os.path.join(out_dir, 'ops.tsv2'), 'w')
+
+    # NOTE: The opcode encoding is variable length, so bytecode_bytes is
+    # different than the number of instructions.
+    print('path\tcode_name\targcount\tnlocals\tstacksize\tbytecode_bytes',
+        file=self.frames_f)
+    print('path\tcode_name\tkind\tname', file=self.names_f)
+    print('path\tcode_name\ttype\tlen_or_val', file=self.consts_f)
+    print('path\tcode_name\tflag', file=self.flags_f)
+    print('path\tcode_name\top_name\top_arg', file=self.ops_f)
+
+  def WriteFrameRow(self, path, code_name, argcount, nlocals, stacksize,
+                    bytecode_bytes):
+    row = [path, code_name, str(argcount), str(nlocals), str(stacksize),
+           str(bytecode_bytes)]
+    print('\t'.join(row), file=self.frames_f)
+
+  def WriteNameRow(self, path, code_name, kind, name):
+    row = [path, code_name, kind, name]
+    print('\t'.join(row), file=self.names_f)
+
+  def WriteConstRow(self, path, code_name, type_, len_or_val):
+    row = [path, code_name, type_, str(len_or_val)]
+    print('\t'.join(row), file=self.consts_f)
+
+  def WriteFlagRow(self, path, code_name, flag_name):
+    row = [path, code_name, flag_name]
+    print('\t'.join(row), file=self.flags_f)
+
+  def WriteOpRow(self, path, code_name, op_name, op_arg):
+    row = [path, code_name, op_name, str(op_arg)]
+    print('\t'.join(row), file=self.ops_f)
+
+  def Close(self):
+    self.frames_f.close()
+    self.names_f.close()
+    self.consts_f.close()
+    self.flags_f.close()
+    self.ops_f.close()
+    log('Wrote 5 files in %s', self.out_dir)
+
+
+def WriteDisTables(pyc_path, co, out):
+  """Write 3 TSV files."""
+  #log('Disassembling %s in %s', co, pyc_path)
+  out.WriteFrameRow(pyc_path, co.co_name, co.co_argcount, co.co_nlocals,
+                    co.co_stacksize, len(co.co_code))
+
+  # Write a row for every name
+  for name in co.co_names:
+    out.WriteNameRow(pyc_path, co.co_name, 'name', name)
+  for name in co.co_varnames:
+    out.WriteNameRow(pyc_path, co.co_name, 'var', name)
+  for name in co.co_cellvars:
+    out.WriteNameRow(pyc_path, co.co_name, 'cell', name)
+  for name in co.co_freevars:
+    out.WriteNameRow(pyc_path, co.co_name, 'free', name)
+
+  # Write a row for every op.
+  for op_name, op_arg in dis_tool.ParseOps(co.co_code):
+    out.WriteOpRow(pyc_path, co.co_name, op_name, op_arg)
+
+  # TODO: Write a row for every flag.  OPy outputs these:
+  # CO_VARARGS, CO_VAR_KEYWORDS, CO_GENERATOR, CO_NEWLOCALS (we only support
+  # this?)  FUTURE_DIVISION, FUTURE_ABSOLUTE_IMPORT, etc.
+  for flag in sorted(consts.VALUE_TO_NAME):
+    flag_name = consts.VALUE_TO_NAME[flag]
+    if co.co_flags & flag:
+      out.WriteFlagRow(pyc_path, co.co_name, flag_name)
+
+  # Write a row for every constant
+  for const in co.co_consts:
+    if isinstance(const, int):
+      len_or_val = const
+    elif isinstance(const, (str, tuple)):
+      len_or_val = len(const)
+    else:
+      len_or_val = 'NA'
+    out.WriteConstRow(pyc_path, co.co_name, const.__class__.__name__, len_or_val)
+
+    if isinstance(const, types.CodeType):
+      WriteDisTables(pyc_path, const, out)
 
 
 def Options():
@@ -277,14 +371,21 @@ def OpyCommandMain(argv):
       v.show_code(co)
       print(eval(co))
 
+  elif action == 'dis-tables':
+    out_dir = argv[1]
+    pyc_paths = argv[2:]
+
+    out = TableOutput(out_dir)
+
+    for pyc_path in pyc_paths:
+      with open(pyc_path) as f:
+        magic, unixtime, timestamp, code = dis_tool.unpack_pyc(f)
+        WriteDisTables(pyc_path, code, out)
+
+    out.Close()
+
   elif action == 'dis':
     path = argv[1]
-    try:
-      report_path = argv[2]
-      report_f = open(report_path, 'w')
-    except IndexError:
-      report_f = sys.stdout
-
     v = dis_tool.Visitor()
 
     if path.endswith('.py'):
@@ -297,8 +398,6 @@ def OpyCommandMain(argv):
     else:  # assume pyc_path
       with open(path, 'rb') as f:
         v.Visit(f)
-
-    v.Report(report_f)
 
   elif action == 'dis-md5':
     pyc_paths = argv[1:]

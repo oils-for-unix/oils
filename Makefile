@@ -42,9 +42,11 @@
 #   runpy-deps-opy.txt
 #   oil/                    # App-specific dir
 #     py-to-compile.txt
+#     all-deps-py.txt       # input to compiler: _build/py-to-compile +
+                            # _build/oil/py-to-compile
+#     opy-app-deps.txt      # compiled with OPy, name DOESN'T match app-deps-% !
 #     all-deps-c.txt        # App deps plus CPython platform deps
 #     app-deps-cpython.txt  # compiled with CPython
-#     opy-app-deps.txt      # compiled with OPy, does NOT match app-deps-% !
 #     bytecode-cpython.zip
 #     bytecode-opy.zip
 #     c-module-srcs.txt
