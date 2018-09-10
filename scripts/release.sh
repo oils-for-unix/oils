@@ -510,7 +510,9 @@ no-announcement() {
   <head>
   </head>
   <body>
-    <p>No announcement for this release.</p>
+    <p>No announcement for this release.  Previous announcements are tagged
+    with #<a href="/blog/tags.html?tag=oil-release#oil-release">oil-release</a>.
+    </p>
   </body>
 </html>  
 EOF
@@ -765,26 +767,53 @@ deploy-tar() {
 # - Ruby: https://www.ruby-lang.org/en/downloads/releases/
 # - https://www.lua.org/download.html
 
-_release-files-html() {
+pretty-size() {
+  local path=$1
+  stat --format '%s' "$path" | python -c '
+import sys
+num_bytes = int(sys.stdin.read())
+print "{:,}".format(num_bytes)
+'
+}
+
+# NOTE: It might be better to link to files like this in the /release/ tree.
+# Although I am not signing them.
+
+# https://nodejs.org/dist/v8.11.4/SHASUMS256.txt.asc
+
+_tarball-links-row-html() {
   local version=$1
 
-  echo '<table class="file-table">'
-  echo '<tr><thead> <td>File</td> <td>Size</td> <td>SHA256 Checksum</td> </thead></tr>'
+  cat <<EOF
+<tr class="file-table-heading">
+  <td></td>
+  <td>File</td>
+  <td>Size and SHA256 Checksum</td>
+  <td></td>
+</tr>
+EOF
 
   for name in oil-$version.tar.{xz,gz}; do
     local url="download/$name"  # The server URL
     local path=../oilshell.org__deploy/download/$name
     local checksum=$(sha256sum $path | awk '{print $1}')
-    local size=$(stat --format '%s' $path)
+    local size=$(pretty-size $path)
 
     # TODO: Port this to oil with "commas" extension.
 
-    echo '<tr> <td class="filename"><a href="'$url'">'$name'</a></td>
-               <td class="size">'$size'</td>
-               <td class="checksum">'$checksum'</td>
-         </tr>'
+    cat <<EOF
+    <tr> 
+      <td></td>
+      <td class="filename"><a href="$url">$name</a></td>
+      <td class="size">$size</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td class="checksum">$checksum</td>
+    </tr>
+EOF
   done
-  echo '</table>'
 }
 
 # Columns: Date / Version / Docs /    / Files
@@ -836,17 +865,36 @@ _html-index() {
     log "Version: $version"
 
     # anchor
-    echo '<a name="'$version'"></a>'
-    echo "<h2>Version $version</h2>"
+    cat <<EOF
+<tr>
+  <td>
+    <span class="date">$date</span>
+  </td>
+  <td>
+    <a name="$version"></a>
+    <span class="version-number">$version</span>
+  </td>
+  <td>
+    <p>                <a href="release/$version/announcement.html">Release Announcement</a>
+       &nbsp; | &nbsp; <a href="release/$version/doc/INSTALL.html">INSTALL</a>
+       &nbsp; | &nbsp; <a href="release/$version/">Docs and Details</a>
+    </p>
+  </td>
+</tr>
+EOF
 
-    echo "<p class="date">$date</p>"
+    _tarball-links-row-html $version
 
-    echo '<p>                 <a href="release/'$version'/announcement.html">Release Announcement</a>
-              &nbsp; | &nbsp; <a href="release/'$version'/doc/INSTALL.html">INSTALL</a>
-              &nbsp; | &nbsp; <a href="release/'$version'/">Docs and Details</a>
-          </p>'
+    cat <<EOF
+<tr>
+  <td colspan="3">
+    <div style="padding: 1em;" >
+    </div>
+  </td>
+</tr>
 
-    _release-files-html $version
+EOF
+
   done < _tmp/sorted-releases.txt
 }
 
@@ -865,13 +913,13 @@ _releases-html-header() {
       h1 {
         text-align: center;
       }
-      thead {
-        font-weight: bold;
-      }
       /* Style for checksum, file size, etc. */
 
       .file-table {
         width: 100%;
+      }
+      .file-table-heading {
+        color: darkgreen;
       }
 
       .filename {
@@ -882,7 +930,13 @@ _releases-html-header() {
       }
       .checksum {
         font-family: monospace;
+        font-size: small;
         color: #555;
+      }
+
+      .version-number {
+        font-size: large;
+        font-weight: bold;
       }
 
       /* Copied from oilshell.org bundle.css */
@@ -901,11 +955,14 @@ _releases-html-header() {
       <a href="/">oilshell.org</a>
     </p>
     <h1>Oil Releases</h1>
+
+    <table class="file-table">
 EOF
 }
 
 _html-footer() {
   cat <<EOF
+    </table>
   </body>
 </html>
 EOF
