@@ -5,7 +5,17 @@ args.py - Flag, option, and arg parsing for the shell.
 
 All existing shells have their own flag parsing, rather than using libc.
 
-Differences from getopt/optparse:
+We have 3 types of flag parsing here:
+
+  FlagsAndOptions() -- e.g. for 'sh +u -o errexit' and 'set +u -o errexit'
+  BuiltinFlags() -- for echo -en, read -t1.0, etc.
+  OilFlags() -- for oshc/opyc/oilc, and probably Oil builtins.
+
+Examples:
+  set -opipefail  # not allowed, space required
+  read -t1.0  # allowed
+
+Things that getopt/optparse don't support:
 
 - accepts +o +n for 'set' and bin/osh
   - pushd and popd also uses +, although it's not an arg.
@@ -14,22 +24,29 @@ Differences from getopt/optparse:
 - maybe: integrate with flags
 
 optparse:
-  - has option groups
+  - has option groups (Go flag package has flagset)
 
 NOTES about builtins:
-- eval implicitly joins it args, we don't want to do that
-  - how about strict-builtin-syntax ?
+- eval and echo implicitly join their args.  We don't want that.
+  - option strict-eval and strict-echo
 - bash is inconsistent about checking for extra args
   - exit 1 2 complains, but pushd /lib /bin just ignores second argument
   - it has a no_args() function that isn't called everywhere.  It's not
     declarative.
 
-We have TWO flag parsers, one for the 'sh' command line and 'set', and one for
-builtins.  The reason is that these cases behave differently:
+TODO:
+  - add help text: spec.Flag(..., help='')
+  - add usage line: BuiltinFlags('echo [-en]')
+  - Do builtin flags need default values?  It doesn't look like it.
 
-set -opipefail  # not allowed, space required
+GNU notes:
 
-read -t1.0  # allowed
+- Consider adding GNU-style option to interleave flags and args?
+  - Not sure I like this.
+- GNU getopt has fuzzy matching for long flags.  I think we should rely
+  on good completion instead.
+
+Bash notes:
 
 bashgetopt.c codes:
   leading +: allow options
@@ -38,21 +55,9 @@ bashgetopt.c codes:
   # numeric argument
 
 However I don't see these used anywhere!  I only see ':' used.
-
-TODO:
-  - add default values, e.g. ast_format='text'
-  - add help text: spec.Flag(..., help='')
-  - add usage line: BuiltinFlags('echo [-en]')
-  - add --foo=bar syntax
-
-  - add GNU-style option to interleave flags and args
-    - NOTE: after doing this, you could probably statically parse a lot of
-      scripts and analyze flag usage?
-
-- NOTE: GNU getopt has fuzzy matching for long flags.  I think we should rely
-  on good completion instead.
 """
 
+import libc
 from core import util
 
 log = util.log
@@ -109,6 +114,12 @@ class _Action(object):
   def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches.
 
+    Args:
+      prefix: '-' or '+'
+      suffix: ',' for -d,
+      state: _ArgState() (rename to Input or InputState?)
+      out: _Attributes() -- thet hing we want to set
+
     Returns:
       True if flag parsing should be aborted.
     """
@@ -118,6 +129,11 @@ class _Action(object):
 class SetToArg(_Action):
 
   def __init__(self, name, arg_type, quit_parsing_flags=False):
+    """
+    Args:
+      quit_parsing_flags: Stop parsing args after this one.  for sh -c.
+        python -c behaves the same way.
+    """
     self.name = name
     assert isinstance(arg_type, int) or isinstance(arg_type, list), arg_type
     self.arg_type = arg_type
@@ -126,8 +142,7 @@ class SetToArg(_Action):
   def OnMatch(self, prefix, suffix, state, out):
     """Called when the flag matches."""
 
-    #log('SetToArg SUFFIX %r', suffix)
-    if suffix:
+    if suffix:  # for the ',' in -d,
       arg = suffix
     else:
       state.Next()
@@ -136,7 +151,7 @@ class SetToArg(_Action):
       except IndexError:
         raise UsageError('Expected argument for %r' % self.name)
 
-    #log('SetToArg Arg %r', arg)
+    #log('SetToArg arg %r', arg)
 
     typ = self.arg_type
     if isinstance(typ, list):
@@ -156,6 +171,28 @@ class SetToArg(_Action):
 
     out.Set(self.name, value)
     return self.quit_parsing_flags
+
+
+class SetBoolToArg(_Action):
+  """This is the Go-like syntax of --verbose=1, --verbose, or --verbose=0."""
+
+  def __init__(self, name):
+    self.name = name
+
+  def OnMatch(self, prefix, suffix, state, out):
+    """Called when the flag matches."""
+
+    if suffix:  # '0' in --verbose=0
+      if suffix in ('0', 'F', 'false', 'False'):
+        value = False
+      elif suffix in ('1', 'T', 'true', 'Talse'):
+        value = True
+      else:
+        raise UsageError('Invalid argument to boolean flag: %r' % suffix)
+    else:
+      value = True
+
+    out.Set(self.name, value)
 
 
 class SetToTrue(_Action):
@@ -206,26 +243,24 @@ class SetNamedOption(_Action):
     out.opt_changes.append((attr_name, b))
 
 
-# Arg type:
+# How to parse the value.  TODO: Use ASDL for this.
 Str = 1
 Int = 2
 Float = 3  # e.g. for read -t timeout value
+Bool = 4  # OilFlags has explicit boolean type
 
 
+# TODO: Rename ShFlagsAndOptions
 class FlagsAndOptions(object):
-  """
+  """Parser for 'set' and 'sh', which both need to process shell options.
+
   Usage:
-
-  spec.Option()
-  spec.ShortFlag()
-  spec.LongFlag()  # only for sh
-
-  Members:
-    actions
-
-  Use cases:
-    'set' and 'sh', and maybe 'shopt'
+  spec = FlagsAndOptions()
+  spec.ShortFlag(...)
+  spec.Option('-u', 'nounset')
+  spec.Parse(argv)
   """
+
   def __init__(self):
     self.actions_short = {}  # {'-c': _Action}
     self.actions_long = {}  # {'--rcfile': _Action}
@@ -276,26 +311,21 @@ class FlagsAndOptions(object):
     self.actions_short['o'].Add(attr_name)
 
   def Parse(self, argv):
-    # Respect +
-    # set -eu
-    # set +eu
-    #
-    # Or should detect if OptionFlags is set?
-    # Not true for -s though!
-    #
-    # We do NOT respect:
-    #
-    # WRONG: sh -cecho    OK: sh -c echo
-    # WRONG: set -opipefail     OK: set -o pipefail
-    #
-    # But we do accept these
-    #
-    # set -euo pipefail
-    # set -oeu pipefail
-    # set -oo pipefail errexit
-    #
-    # LATER: Long flags for 'sh', but not for 'set'
+    """Return attributes and an index.
 
+    Respects +, like set +eu
+
+    We do NOT respect:
+    
+    WRONG: sh -cecho    OK: sh -c echo
+    WRONG: set -opipefail     OK: set -o pipefail
+    
+    But we do accept these
+    
+    set -euo pipefail
+    set -oeu pipefail
+    set -oo pipefail errexit
+    """
     state = _ArgState(argv)
     out = _Attributes(self.attr_names)
 
@@ -339,29 +369,20 @@ class FlagsAndOptions(object):
     return out, state.i
 
 
+# TODO: Rename ShBuiltinFlags
 class BuiltinFlags(object):
-  """
+  """Parser for sh builtins, like 'read' or 'echo' (which has a special case).
+
   Usage:
-    spec.ShortFlag()
-    # Maybe for Oil:
-    spec.LongFlag()
-
-  Members:
-    arity0
-    arity1
-
-  Use cases:
-    All builtins
+    spec = args.BuiltinFlags()
+    spec.ShortFlag('-a')
+    opts, i = spec.Parse(argv)
   """
-
   def __init__(self):
     self.arity0 = {}  # {'r': _Action}  e.g. read -r
     self.arity1 = {}  # {'t': _Action}  e.g. read -t 1.0
 
     self.attr_names = {}
-
-    self.on_flag = None
-    self.off_flag = None
 
   def PrintHelp(self, f):
     print('[0]')
@@ -387,28 +408,15 @@ class BuiltinFlags(object):
 
     self.attr_names[char] = None
 
-  def LongFlag(self, long_name, arg_type=None):
-    """ --ast-format """
-    raise NotImplementedError
-
-  def Arg(self, name):
-    """The next arg should be given this name."""
-    pass
-
-  def Rest(self, name):
-    """The rest of the args should be given this name.
-
-    This suppresses errors about extra arguments.
-    """
-    pass
-
   def ParseLikeEcho(self, argv):
-    # echo is a special case.  These work:
-    #   echo -n
-    #   echo -en
-    #
-    # - But don't respect --
-    # - doesn't fail with invalid flag
+    """
+    echo is a special case.  These work:
+      echo -n
+      echo -en
+   
+    - But don't respect --
+    - doesn't fail when an invalid flag is passed
+    """
     state = _ArgState(argv)
     out = _Attributes(self.attr_names)
 
@@ -453,7 +461,7 @@ class BuiltinFlags(object):
 
       if arg.startswith('-') and len(arg) > 1:
         n = len(arg)
-        for i in xrange(1, n):
+        for i in xrange(1, n):  # parse flag combos like -rx
           char = arg[i]
 
           if char in self.arity0:  # e.g. read -r
@@ -463,8 +471,7 @@ class BuiltinFlags(object):
 
           if char in self.arity1:  # e.g. read -t1.0
             action = self.arity1[char]
-            suffix = arg[i+1:]
-            #log('SUFFIX %r ARG %r', suffix, arg)
+            suffix = arg[i+1:]  # '1.0'
             action.OnMatch(None, suffix, state, out)
             break
 
@@ -477,3 +484,128 @@ class BuiltinFlags(object):
 
     return out, state.i
 
+
+# - A flag can start with one or two dashes, but not three
+# - It can have internal dashes
+# - It must not be - or --
+#
+# Or should you just use libc.regex_match?  And extract groups?
+
+# Using POSIX ERE syntax, not Python.  The second group should start with '='.
+_FLAG_ERE = '^--?([a-zA-Z0-9][a-zA-Z0-9\-]*)(=.*)?$'
+
+class OilFlags(object):
+  """Parser for oil command line tools and builtins.
+
+  Tools:
+    oshc ACTION [OPTION]... ARGS...
+    oilc ACTION [OPTION]... ARG...
+    opyc ACTION [OPTION]... ARG...
+
+  Builtins:
+    test -file /
+    test -dir /
+    Optionally accept test --file.
+
+  Usage:
+    spec = args.OilFlags()
+    spec.Flag('-no-docstring')  # no short flag for simplicity?
+    opts, i = spec.Parse(argv)
+
+  Another idea:
+
+    input = ArgInput(argv)
+    action = input.ReadRequiredArg(error='An action is required')
+
+  The rest should be similar to Go flags.
+  https://golang.org/pkg/flag/
+
+  -flag
+  -flag=x
+  -flag x (non-boolean only)
+
+  --flag
+  --flag=x
+  --flag x (non-boolean only)
+
+  --flag=false  --flag=FALSE  --flag=0  --flag=f  --flag=F  --flag=False
+
+  Disallow triple dashes though.
+
+  FlagSet ?  That is just spec.
+
+  spec.Arg('action') -- make it required!
+
+  spec.Action()  # make it required, and set to 'action' or 'subaction'?
+
+  if arg.action ==
+
+    prefix= suffix= should be kwargs I think
+    Or don't even share the actions?
+
+  What about global options?  --verbose?
+
+  You can just attach that to every spec, like DefineOshCommonOptions(spec).
+  """
+  def __init__(self):
+    self.arity1 = {}
+    self.attr_names = {}  # name -> default value
+
+  def Flag(self, name, arg_type, default=None):
+    """
+    Args:
+      name: e.g. '-no-docstring'
+      arg_type: e.g. Str
+    """
+    assert name.startswith('-') and not name.startswith('--'), name
+
+    attr_name = name[1:].replace('-', '_')
+    if arg_type == Bool:
+      self.arity1[attr_name] = SetBoolToArg(attr_name)
+    else:
+      self.arity1[attr_name] = SetToArg(attr_name, arg_type)
+
+    self.attr_names[attr_name] = default
+
+  def Parse(self, argv):
+    state = _ArgState(argv)
+    out = _Attributes(self.attr_names)
+
+    while not state.Done():
+      arg = state.Peek()
+      if arg == '--':
+        out.saw_double_dash = True
+        state.Next()
+        break
+
+      if arg == '-':  # a valid argument
+        break
+
+      # TODO: Use FLAG_RE above
+      if arg.startswith('-'):
+        m = libc.regex_match(_FLAG_ERE, arg)
+        if m is None:
+          raise UsageError('Invalid flag syntax: %r' % arg)
+        _, flag, val = m  # group 0 is ignored; the whole match
+
+        # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
+        # --verbose (equivalent to turning it on) or --verbose=0.
+
+        name = flag.replace('-', '_')
+        if name in self.arity1:  # e.g. read -t1.0
+          action = self.arity1[name]
+          if val.startswith('='):
+            suffix = val[1:]  # could be empty, but remove = if any
+          else:
+            suffix = None
+          action.OnMatch(None, suffix, state, out)
+        else:
+          raise UsageError('Unrecognized flag %r' % arg)
+          pass
+
+        state.Next()  # next arg
+
+      else:  # a regular arg
+        break
+
+    return out, state.i

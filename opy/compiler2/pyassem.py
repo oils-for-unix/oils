@@ -4,6 +4,8 @@ from __future__ import print_function
 import itertools
 import types
 
+from core import util
+
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 from opy.lib import dis
 
@@ -679,7 +681,7 @@ def MaxStackDepth(block_depths, entry_block, exit_block):
     return g.Max(entry_block, 0)
 
 
-def MakeCodeObject(frame, graph):
+def MakeCodeObject(frame, graph, comp_opt):
     """Order blocks, encode instructions, and create types.CodeType().
 
     Called by Compile below, and also recursively by ArgEncoder.
@@ -704,7 +706,12 @@ def MakeCodeObject(frame, graph):
     # What variables should be available at runtime?
 
     cellvars = ReorderCellVars(frame)
-    consts = [frame.docstring]
+
+    # NOTE: Modules docstrings are assigned to __doc__ in pycodegen.py.visitModule.
+    consts = []
+    if comp_opt.emit_docstring:
+      consts.append(frame.docstring)
+
     names = []
     # The closure list is used to track the order of cell variables and
     # free variables in the resulting code object.  The offsets used by
@@ -713,7 +720,7 @@ def MakeCodeObject(frame, graph):
 
     # Convert arguments from symbolic to concrete form.
     enc = ArgEncoder(frame.klass, consts, names, frame.varnames,
-                             closure)
+                     closure)
     # Mutates not only insts, but also appends to consts, names, etc.
     enc.Run(insts)
 

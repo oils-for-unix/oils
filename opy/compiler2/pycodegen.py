@@ -234,7 +234,7 @@ class CodeGenerator(ASTVisitor):
     def visitModule(self, node):
         self.scope = self.ctx.scopes[node]
         self.emit('SET_LINENO', 0)
-        if node.doc:
+        if node.doc and self.ctx.comp_opt.emit_docstring:
             self.emit('LOAD_CONST', node.doc)
             self.storeName('__doc__')
 
@@ -592,7 +592,7 @@ class CodeGenerator(ASTVisitor):
         frees = gen.scope.get_free_vars()
 
         # Recursive call!
-        co = pyassem.MakeCodeObject(gen.frame, gen.graph)
+        co = pyassem.MakeCodeObject(gen.frame, gen.graph, self.ctx.comp_opt)
 
         if frees:
             for name in frees:

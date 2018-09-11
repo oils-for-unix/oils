@@ -9,6 +9,8 @@ set -o errexit
 
 source test/common.sh
 
+readonly SMALL_FILE='core/word_compile_test.py'
+
 # Can't be readonly because we override it below?  Gah.
 #readonly OPYC=${OPYC:-bin/opyc}
 OPYC=${OPYC:-bin/opyc}
@@ -78,10 +80,25 @@ EOF
 EOF
 }
 
+cfg() {
+  bin/opyc cfg $SMALL_FILE
+}
+
+run() {
+  bin/opyc run $SMALL_FILE
+}
+
+eval_() {
+  bin/opyc eval 'print(1+2)'
+}
+
 readonly -a PASSING=(
-  usage
+  #usage
   parse
   compile
+  eval_
+  run
+  cfg
 )
 
 all-passing() {

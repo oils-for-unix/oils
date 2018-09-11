@@ -48,28 +48,17 @@ def to_hexstr(bytes_value, level=0, wrap=False):
         return template % tuple(ord(char) for char in bytes_value)
 
 
-# TODO: Unify this with _const() in consts.py.
-def build_flags_def(consts, co_flags_def):
-  for name in dir(consts):
-    if name.startswith('CO_'):
-      co_flags_def[name] = getattr(consts, name)
+def ShowFlags(flags):
+  flag_names = []
+  for bit in sorted(consts.VALUE_TO_NAME):
+    if flags & bit:
+      flag_names.append(consts.VALUE_TO_NAME[bit])
 
-
-_CO_FLAGS_DEF = {}
-build_flags_def(consts, _CO_FLAGS_DEF)
-
-
-def show_flags(value):
-    names = []
-    for name, bit in _CO_FLAGS_DEF.items():
-      if value & bit:
-        names.append(name)
-
-    h = "0x%05x" % value
-    if names:
-      return '%s %s' % (h, ' '.join(names))
-    else:
-      return h
+  h = "0x%05x" % flags
+  if flag_names:
+    return '%s %s' % (h, ' '.join(flag_names))
+  else:
+    return h
 
 
 def unpack_pyc(f):
@@ -243,7 +232,7 @@ class Visitor(object):
       if isinstance(value, str):
         value = repr(value)
       elif name == "co_flags":
-        value = show_flags(value)
+        value = ShowFlags(value)
       elif name == "co_lnotab":
         value = "0x(%s)" % to_hexstr(value)
       print("%s%s%s" % (indent, (name+":").ljust(NAME_OFFSET), value))

@@ -4,7 +4,6 @@ opy_main.py
 """
 from __future__ import print_function
 
-import cStringIO
 import hashlib
 import optparse
 import os
@@ -183,8 +182,8 @@ def WriteDisTables(pyc_path, co, out):
   # CO_VARARGS, CO_VAR_KEYWORDS, CO_GENERATOR, CO_NEWLOCALS (we only support
   # this?)  FUTURE_DIVISION, FUTURE_ABSOLUTE_IMPORT, etc.
   for flag in sorted(consts.VALUE_TO_NAME):
-    flag_name = consts.VALUE_TO_NAME[flag]
     if co.co_flags & flag:
+      flag_name = consts.VALUE_TO_NAME[flag]
       out.WriteFlagRow(pyc_path, co.co_name, flag_name)
 
   # Write a row for every constant
@@ -232,6 +231,9 @@ def OpyCommandMain(argv):
   except IndexError:
     raise args.UsageError('opy: Missing required subcommand.')
 
+  argv = argv[1:]  # TODO: Should I do input.ReadRequiredArg()?
+                   # That will shift the input.
+
   if action in (
       'parse', 'compile', 'dis', 'cfg', 'compile-ovm', 'eval', 'repl', 'run',
       'run-ovm'):
@@ -250,21 +252,23 @@ def OpyCommandMain(argv):
     symbols = Symbols(gr)
     pytree.Init(symbols)  # for type_repr() pretty printing
     transformer.Init(symbols)  # for _names and other dicts
-    tr = transformer.Transformer()
+
+    compiler = skeleton.Compiler(gr)
   else:
     # e.g. pgen2 doesn't use any of these.  Maybe we should make a different
     # tool.
-    gr = None
-    symbols = None
-    tr = None
+    compiler = None
+
+  compile_spec = args.OilFlags()
+  compile_spec.Flag('-emit-docstring', args.Bool, default=True)
 
   #
   # Actions
   #
 
   if action == 'pgen2':
-    grammar_path = argv[1]
-    pickle_path = argv[2]
+    grammar_path = argv[0]
+    pickle_path = argv[1]
     WriteGrammar(grammar_path, pickle_path)
 
   elif action == 'stdlib-parse':
@@ -283,14 +287,14 @@ def OpyCommandMain(argv):
     log('COUNT %d', n)
 
   elif action == 'lex':
-    py_path = argv[1]
+    py_path = argv[0]
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
       for typ, val, start, end, unused_line in tokens:
         print('%10s %10s %-10s %r' % (start, end, token.tok_name[typ], val))
 
   elif action == 'parse':
-    py_path = argv[1]
+    py_path = argv[0]
     with open(py_path) as f:
       tokens = tokenize.generate_tokens(f.readline)
       p = parse.Parser(gr, convert=skeleton.py2st)
@@ -306,20 +310,25 @@ def OpyCommandMain(argv):
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
-  elif action == 'cfg':  # output fg
-    py_path = argv[1]
+  elif action == 'cfg':  # output Control Flow Graph
+    opt, i = compile_spec.Parse(argv)
+    py_path = argv[i]
     with open(py_path) as f:
-      graph = skeleton.Compile(f, py_path, gr, 'file_input', 'exec',
-                               return_cfg=True)
+      graph = compiler.Compile(f, opt, 'exec', return_cfg=True)
 
     print(graph)
 
   elif action == 'compile':  # 'opyc compile' is pgen2 + compiler2
-    py_path = argv[1]
-    out_path = argv[2]
+    # spec.Arg('action', ['foo', 'bar'])
+    # But that leads to some duplication.
+
+    opt, i = compile_spec.Parse(argv)
+
+    py_path = argv[i]
+    out_path = argv[i+1]
 
     with open(py_path) as f:
-      co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+      co = compiler.Compile(f, opt, 'exec')
 
     log("Compiled to %d bytes of bytecode", len(co.co_code))
 
@@ -330,12 +339,13 @@ def OpyCommandMain(argv):
       marshal.dump(co, out_f)
 
   elif action == 'compile-ovm':
-    py_path = argv[1]
-    out_path = argv[2]
+    opt, i = compile_spec.Parse(argv)
+    py_path = argv[i]
+    out_path = argv[i+1]
 
     # Compile to OVM bytecode
     with open(py_path) as f:
-      co = skeleton.Compile(f, py_path, gr, 'file_input', 'ovm')
+      co = compiler.Compile(f, opt, 'ovm')
 
     log("Compiled to %d bytes of bytecode", len(co.co_code))
     # Write the .pyc file
@@ -349,9 +359,10 @@ def OpyCommandMain(argv):
     log('Wrote only the bytecode to %r', out_path)
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
-    py_expr = argv[1]
-    f = cStringIO.StringIO(py_expr)
-    co = skeleton.Compile(f, '<eval input>', gr, 'eval_input', 'eval')
+    opt, i = compile_spec.Parse(argv)
+    py_expr = argv[i]
+    f = skeleton.StringInput(py_expr, '<eval input>')
+    co = compiler.Compile(f, opt, 'eval')
 
     v = dis_tool.Visitor()
     v.show_code(co)
@@ -362,10 +373,10 @@ def OpyCommandMain(argv):
   elif action == 'repl':  # Like eval in a loop
     while True:
       py_expr = raw_input('opy> ')
-      f = cStringIO.StringIO(py_expr)
+      f = skeleton.StringInput(py_expr, '<REPL input>')
 
       # TODO: change this to 'single input'?  Why doesn't this work?
-      co = skeleton.Compile(f, '<REPL input>', gr, 'eval_input', 'eval')
+      co = skeleton.Compile(f, gr, 'eval')
 
       v = dis_tool.Visitor()
       v.show_code(co)
@@ -390,7 +401,7 @@ def OpyCommandMain(argv):
 
     if path.endswith('.py'):
       with open(path) as f:
-        co = skeleton.Compile(f, path, gr, 'file_input', 'exec')
+        co = skeleton.Compile(f, gr, 'exec')
 
       log("Compiled to %d bytes of bytecode", len(co.co_code))
       v.show_code(co)
@@ -417,20 +428,21 @@ def OpyCommandMain(argv):
           h.update(b)
       print('%6d %s %s' % (os.path.getsize(path), h.hexdigest(), path))
 
-  elif action == 'run':
+  elif action == 'run':  # Compile and run, without writing pyc file
     # TODO: Add an option like -v in __main__
 
     #level = logging.DEBUG if args.verbose else logging.WARNING
     #logging.basicConfig(level=level)
     #logging.basicConfig(level=logging.DEBUG)
 
-    # Compile and run, without writing pyc file
-    py_path = argv[1]
-    opy_argv = argv[1:]
+    opt, i = compile_spec.Parse(argv)
+
+    py_path = argv[i]
+    opy_argv = argv[i:]
 
     if py_path.endswith('.py'):
       with open(py_path) as f:
-        co = skeleton.Compile(f, py_path, gr, 'file_input', 'exec')
+        co = compiler.Compile(f, opt, 'exec')
       num_ticks = execfile.run_code_object(co, opy_argv)
 
     elif py_path.endswith('.pyc') or py_path.endswith('.opyc'):
@@ -442,8 +454,8 @@ def OpyCommandMain(argv):
     else:
       raise args.UsageError('Invalid path %r' % py_path)
 
-  elif action == 'run-ovm':
-    # Compile and run, without writing pyc file
+  elif action == 'run-ovm':  # Compile and run, without writing pyc file
+    opt, i = compile_spec.Parse(argv)
     py_path = argv[1]
     opy_argv = argv[1:]
 
@@ -451,7 +463,7 @@ def OpyCommandMain(argv):
       #mode = 'exec'
       mode = 'ovm'  # OVM bytecode is different!
       with open(py_path) as f:
-        co = skeleton.Compile(f, py_path, gr, 'file_input', mode)
+        co = compiler.Compile(f, opt, mode)
       log('Compiled to %d bytes of OVM code', len(co.co_code))
       num_ticks = ovm.run_code_object(co, opy_argv)
 

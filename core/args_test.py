@@ -176,6 +176,72 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(None, arg.n)
     self.assertEqual(0, i)
 
+  def testOilFlags(self):
+    s = args.OilFlags()
+    s.Flag('-docstring', args.Bool, default=True)
+    s.Flag('-out-file', args.Str)
+    s.Flag('-retries', args.Int)
+
+    arg, i = s.Parse(['-docstring=0', 'x', 'y'])
+    self.assertEqual(False, arg.docstring)
+    self.assertEqual(None, arg.out_file)
+    self.assertEqual(1, i)
+
+    # This turns it on too
+    arg, i = s.Parse(['-docstring', '0', 'x', 'y'])
+    self.assertEqual(True, arg.docstring)
+    self.assertEqual(None, arg.out_file)
+    self.assertEqual(1, i)
+
+    arg, i = s.Parse(['-out-file', 'out', 'y'])
+    self.assertEqual(True, arg.docstring)
+    self.assertEqual('out', arg.out_file)
+    self.assertEqual(2, i)
+
+    arg, i = s.Parse(['-retries', '3'])
+    self.assertEqual(3, arg.retries)
+
+    arg, i = s.Parse(['-retries=3'])
+    self.assertEqual(3, arg.retries)
+
+    # Like GNU: anything that starts with -- is parsed like an option.
+    self.assertRaises(args.UsageError, s.Parse, ['---'])
+
+    self.assertRaises(args.UsageError, s.Parse, ['-oops'])
+
+    # Invalid boolean arg
+    self.assertRaises(args.UsageError, s.Parse, ['--docstring=YEAH'])
+
+    arg, i = s.Parse(['--'])
+    self.assertEqual(1, i)
+
+    arg, i = s.Parse(['-'])
+    self.assertEqual(0, i)
+
+    arg, i = s.Parse(['abc'])
+    self.assertEqual(0, i)
+
+  def testFlagRegex(self):
+    import libc
+    CASES = [
+        '-',
+        '--',
+        '--+',
+        '---',  # invalid flag but valid arg
+        '---invalid',  # invalid flag but valid arg?
+        '-port',
+        '--port',
+        '--port-num',
+        '--port-num=8000',
+        '--port-num=',  # empty value
+        '--port-num=x=y',  # only first = matters
+
+        # We should point out the bad +.  It should match but then become an
+        # error.  It shoudl NOT be an arg!
+        '--port-num+',  # invalid
+        ]
+    for case in CASES:
+      print('%s\t%s' % (case, libc.regex_match(args._FLAG_ERE, case)))
 
 
 if __name__ == '__main__':
