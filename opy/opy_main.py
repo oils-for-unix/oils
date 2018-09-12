@@ -383,8 +383,8 @@ def OpyCommandMain(argv):
       print(eval(co))
 
   elif action == 'dis-tables':
-    out_dir = argv[1]
-    pyc_paths = argv[2:]
+    out_dir = argv[0]
+    pyc_paths = argv[1:]
 
     out = TableOutput(out_dir)
 
@@ -411,7 +411,7 @@ def OpyCommandMain(argv):
         v.Visit(f)
 
   elif action == 'dis-md5':
-    pyc_paths = argv[1:]
+    pyc_paths = argv
     if not pyc_paths:
       raise args.UsageError('dis-md5: At least one .pyc path is required.')
 

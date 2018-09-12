@@ -16,7 +16,7 @@ lines() {
 # are ~131K rows in ~8.5 MB altogether.  The biggest table is the 'ops' table.
 
 dis-tables() {
-  local out_dir=_tmp/metrics/opy-dis-tables
+  local out_dir=_tmp/metrics/bytecode
   mkdir -p $out_dir
 
   # Pass the .pyc files in the bytecode-opy.zip file to 'opyc dis'

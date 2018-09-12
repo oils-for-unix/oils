@@ -22,9 +22,9 @@
    310 2bad7367836efd20df198413c1cf9dee _tmp/regtest/build/testdata/future_import.pyc
    392 20125a78f66e0cd06984f6164781c257 _tmp/regtest/spec/bin/printenv.pyc
    482 51c4c3477198796c6dd7e8c925bd594e _tmp/regtest/build/setup.pyc
-   517 b504f9f0b142d9f9cd6660908a8da664 _tmp/regtest/benchmarks/fake_libc.pyc
    527 2daa02a25b4f2598646f275e30b19764 _tmp/regtest/build/setup_fastlex.pyc
    528 b86ffa2a4b8fb6936d5180b3078a48dc _tmp/regtest/build/testdata/lib.pyc
+   535 d15858f4eb47788c0e0c2ab0f59bea50 _tmp/regtest/benchmarks/fake_libc.pyc
    607 8a67f929eaedeac8a18e9e52638c2dbf _tmp/regtest/opy/tests/genexpr_simple.pyc
    656 ced2ed2e11738285ebd68a84e55b637f _tmp/regtest/opy/misc/ccompile.pyc
    743 ec1d968ed3a79d81ef751b7583c3a35a _tmp/regtest/spec/bin/stdout_stderr.pyc
@@ -143,7 +143,7 @@
   8354 bdc6076283ddd6a7ea03a00d535e9e9a _tmp/regtest/osh/bool_parse.pyc
   8483 ed3a02b05c533f33a0295c4e8d6fccc6 _tmp/regtest/core/lexer_gen.pyc
   8772 dd457acd09a56788020dc6220938b37d _tmp/regtest/encodings/aliases.pyc
-  9016 5c837562f3e15b5ff592eb2e8004d58c _tmp/regtest/opy/misc/inspect_pyc.pyc
+  8995 f57d28ea261d4735ecc4d1e81ef3b3f6 _tmp/regtest/opy/misc/inspect_pyc.pyc
   9047 2c9296eb4e11b168e3b7e1157630e7ec _tmp/regtest/core/lexer.pyc
   9048 713097d305e3307700f5ae53cc861571 _tmp/regtest/asdl/encode.pyc
   9161 c5cd11e827b8701de0f0570bb3c7eb98 _tmp/regtest/core/completion_test.pyc
@@ -159,7 +159,7 @@
  11111 516ad8bd7dddeab5dcfe1cca2bbf2b94 _tmp/regtest/core/id_kind.pyc
  11118 c012a0c4650a7b80d6b3c51962a3221c _tmp/regtest/_weakrefset.pyc
  11546 b4c102a0167808b014c7f23c2f283c85 _tmp/regtest/osh/lex.pyc
- 11772 fd9923561d719766c9fbc29a2fee068c _tmp/regtest/opy/callgraph.pyc
+ 11766 22ec0df6b9675b13a9e6c73cc4d7a6d4 _tmp/regtest/opy/callgraph.pyc
  12165 295d695434e2d2fbd31f5983008d9c30 _tmp/regtest/web/table/csv2html.pyc
  12474 e94ce032309577e7f9ec9fee255c5185 _tmp/regtest/opy/tools/astgen.pyc
  12541 511ab59202bac6ea215ef4a7ac2d23b7 _tmp/regtest/opy/byterun/test_with.pyc
@@ -177,7 +177,7 @@
  14571 1a75f4a79dd39b24d6b275461645cd89 _tmp/regtest/core/word.pyc
  14598 6946887d52866e020fb73c92bff2349d _tmp/regtest/re.pyc
  15242 8cae99e745b4400b59a12029293f2787 _tmp/regtest/warnings.pyc
- 15462 a3ea85646d0fe77a06671fec92aee618 _tmp/regtest/core/args.pyc
+ 15455 74a6fd0855efaa12e06acf8463cc82ff _tmp/regtest/core/args.pyc
  15785 bfc72e6e6f4702ce4207fdb4c6100165 _tmp/regtest/test/wild_report.pyc
  15857 28500e30aa683759ec3d1c00e9ea1b84 _tmp/regtest/core/expr_eval.pyc
  15992 381b0af2d38222602346a36e3efce693 _tmp/regtest/heapq.pyc
