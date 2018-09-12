@@ -9,20 +9,7 @@ library(dplyr)
 library(tidyr)  # spread()
 library(stringr)
 
-#source('benchmarks/common.R')
-
-
-# Cool stats:
-#
-# > sum(fr$bytecode_bytes)
-# [1] 216200
-# 
-# That's the total number of bytecode bytes.  I can get that down by removing
-# unused code.
-#
-# Number of instructions:
-# > nrow(op)
-# [1] 80232
+source('benchmarks/common.R')
 
 # > op %>% count(op_name) %>% arrange(n) %>% tail(n=20)
 # # A tibble: 20 x 2
@@ -53,17 +40,67 @@ library(stringr)
 
 options(stringsAsFactors = F)
 
+Load = function(in_dir) {
+  list(
+       frames = read.table(file.path(in_dir, 'frames.tsv2'), header=T),
+       names = read.table(file.path(in_dir, 'names.tsv2'), header=T),
+       consts = read.table(file.path(in_dir, 'consts.tsv2'), header=T),
+       flags = read.table(file.path(in_dir, 'flags.tsv2'), header=T),
+       ops = read.table(file.path(in_dir, 'ops.tsv2'), header=T)
+       )
+}
+
+BigStrings = function(consts) {
+  strs = consts %>% filter(type == 'str') %>% arrange(desc(len_or_val))
+  strs %>% head(20) %>% print()
+  total_bytes = sum(strs$len_or_val)
+
+  # 184 KB of strings!  That's just the payload; the header is probably more.
+  Log('total string bytes: %d', total_bytes)
+
+  # This plot says:
+  #
+  # total bytes is 184 KB
+  # - the top 10 strings sum to 20K bytes
+  # - the top 100 strings sum to 30K bytes
+
+  cum = cumsum(strs$len_or_val)
+  plot(cum)
+
+  #plot(ecdf(strs$len_or_val))
+}
+
+Ops = function(ops) {
+  ops %>% count(op_name) %>% arrange(n) -> op_freq
+
+  Log('common:')
+  op_freq %>% tail(n=20) %>% print()
+  Log('rare:')
+  op_freq %>% head(n=20) %>% print()
+}
+
+Report = function(ctx) {
+  b = sum(ctx$frames$bytecode_bytes)
+  Log('Total bytecode bytes: %d', b)
+
+  num_insts = nrow(ctx$ops)
+  Log('Total instructions: %d', num_insts)
+
+  Ops(ctx$ops)
+
+  BigStrings(ctx$consts)
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
   out_dir = argv[[3]]
 
   # TODO: load the 4 tables
-  consts = read.table(foo, header=T)
+  ctx = Load(in_dir)
 
   if (action == 'big-strings') {
-    # arrange consts by size_or_len
-    ParserReport(in_dir, out_dir)
+    BigStrings(ctx$consts)
 
   } else if (action == 'osh-runtime') {
     RuntimeReport(in_dir, out_dir)
