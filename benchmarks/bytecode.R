@@ -1,9 +1,9 @@
 #!/usr/bin/Rscript
 #
-# osh-parser.R -- Analyze output from shell scripts.
+# bytecode.R -- Analyze output of opyc dis-tables.
 #
 # Usage:
-#   osh-parser.R OUT_DIR [TIMES_CSV...]
+#   bytecode.R ACTION IN_DIR OUT_DIR
 
 library(dplyr)
 library(tidyr)  # spread()
@@ -11,44 +11,7 @@ library(stringr)
 
 source('benchmarks/common.R')
 
-# > op %>% count(op_name) %>% arrange(n) %>% tail(n=20)
-# # A tibble: 20 x 2
-#    op_name               n
-#    <fct>             <int>
-#  1 BINARY_SUBSCR       533
-#  2 POP_BLOCK           720
-#  3 STORE_SUBSCR        721
-#  4 DUP_TOP             816
-#  5 STORE_ATTR          996
-#  6 BUILD_TUPLE        1076
-#  7 MAKE_FUNCTION      1738
-#  8 COMPARE_OP         1893
-#  9 POP_JUMP_IF_FALSE  2391
-# 10 JUMP_FORWARD       2534
-# 11 LOAD_NAME          2534
-# 12 POP_TOP            2897
-# 13 RETURN_VALUE       3141
-# 14 STORE_FAST         3484
-# 15 STORE_NAME         3566
-# 16 CALL_FUNCTION      5698
-# 17 LOAD_GLOBAL        5922
-# 18 LOAD_ATTR          8771
-# 19 LOAD_CONST        10209
-# 20 LOAD_FAST         12663
-
-
-
 options(stringsAsFactors = F)
-
-Load = function(in_dir) {
-  list(
-       frames = read.table(file.path(in_dir, 'frames.tsv2'), header=T),
-       names = read.table(file.path(in_dir, 'names.tsv2'), header=T),
-       consts = read.table(file.path(in_dir, 'consts.tsv2'), header=T),
-       flags = read.table(file.path(in_dir, 'flags.tsv2'), header=T),
-       ops = read.table(file.path(in_dir, 'ops.tsv2'), header=T)
-       )
-}
 
 BigStrings = function(consts) {
   strs = consts %>% filter(type == 'str') %>% arrange(desc(len_or_val))
@@ -70,6 +33,31 @@ BigStrings = function(consts) {
   #plot(ecdf(strs$len_or_val))
 }
 
+Consts = function(consts) {
+  # count of types of constants.  Strings dominate of course.
+  # But there are only 7 or so immutable types!
+
+  # - only 2 float constants.
+  # - get rid of the unicode constants in posixpath.
+
+  consts %>% count(type) %>% arrange(n) %>% tail(20)
+}
+
+# Frames by number of consts, number of ops, etc.
+Frames = function(ctx) {
+  Log('Frames with many consts')
+  ctx$consts %>% count(path, code_name, sort=T) %>% print()
+
+  Log('Frames with many ops')
+  ctx$ops %>% count(path, code_name, sort=T) %>% print()
+
+  Log('Frames with large stacksize')
+  ctx$frames %>% arrange(desc(stacksize)) %>% head(10) %>% print()
+
+  Log('Frames with many locals')
+  ctx$frames %>% arrange(desc(nlocals)) %>% head(10) %>% print()
+}
+
 Ops = function(ops) {
   ops %>% count(op_name) %>% arrange(n) -> op_freq
 
@@ -79,40 +67,98 @@ Ops = function(ops) {
   op_freq %>% head(n=20) %>% print()
 }
 
-Report = function(ctx) {
+Flags = function(flags) {
+  flags %>% count(flag) %>% arrange(n) %>% print()
+}
+
+Names = function(names) {
+  # Common types: free, cell, etc.
+  names %>% count(kind) %>% arrange(desc(n)) %>% print()
+
+  # Common names:
+  # self, None, True, False, append, len
+  names %>% count(name) %>% arrange(desc(n)) %>% print()
+}
+
+Basic = function(ctx) {
+  # Number of files
+  ctx$frames %>% count(path) -> by_path
+  Log('number of files: %d', nrow(by_path))
+
+  # Hm this isn't reliable because the code name isn't unique!  I think we need
+  # firstlineno
+  ctx$frames %>% count(path, code_name) %>% print()
+
+  # 216K
   b = sum(ctx$frames$bytecode_bytes)
   Log('Total bytecode bytes: %d', b)
 
   num_insts = nrow(ctx$ops)
   Log('Total instructions: %d', num_insts)
+}
+
+Report = function(ctx) {
 
   Ops(ctx$ops)
 
   BigStrings(ctx$consts)
 }
 
+Load = function(in_dir) {
+  list(
+       frames = read.table(file.path(in_dir, 'frames.tsv2'), header=T),
+       names = read.table(file.path(in_dir, 'names.tsv2'), header=T),
+       consts = read.table(file.path(in_dir, 'consts.tsv2'), header=T),
+       flags = read.table(file.path(in_dir, 'flags.tsv2'), header=T),
+       ops = read.table(file.path(in_dir, 'ops.tsv2'), header=T)
+       )
+}
+
+# TODO: Just take a table of (py_path, pyc_path, key) and then produce bytes
+# for py_path and pyc_path.  Does R have getsize?
+#
+# file.info()$size of both.  And then
+
+MeasureFileSizes = function(all_deps_py) {
+  py_pyc = read.table(all_deps_py, header=F)
+  colnames(py_pyc) = c('py_path', 'pyc_path')
+
+  py_pyc$py_bytes = file.info(py_pyc$py_path)$size
+
+  pyc_paths = file.path('_build/oil/bytecode-opy', py_pyc$pyc_path)
+  py_pyc$pyc_bytes = file.info(pyc_paths)$size
+
+  py_pyc %>% mutate(ratio = pyc_bytes / py_bytes) %>% arrange(ratio) -> py_pyc
+
+  Log('small .pyc files:')
+  py_pyc %>% head(10) %>% print()
+
+  Log('big .pyc files:')
+  py_pyc %>% tail(10) %>% print()
+
+  # This ratio is a ltitle misleading because it counts comments.
+  py_total = sum(py_pyc$py_bytes)
+  pyc_total =  sum(py_pyc$pyc_bytes)
+  Log('Overall: %d bytes of .py -> %d bytes of .pyc', py_total, pyc_total)
+  Log('Ratio: %f', pyc_total / py_total)
+
+  py_pyc
+}
+
 main = function(argv) {
   action = argv[[1]]
-  in_dir = argv[[2]]
-  out_dir = argv[[3]]
 
-  # TODO: load the 4 tables
-  ctx = Load(in_dir)
+  if (action == 'metrics') {
+    in_dir = argv[[2]]
 
-  if (action == 'big-strings') {
+    ctx = Load(in_dir)
+    #out_dir = argv[[3]]
+
     BigStrings(ctx$consts)
 
-  } else if (action == 'osh-runtime') {
-    RuntimeReport(in_dir, out_dir)
-
-  } else if (action == 'vm-baseline') {
-    VmBaselineReport(in_dir, out_dir)
-
-  } else if (action == 'ovm-build') {
-    OvmBuildReport(in_dir, out_dir)
-
-  } else if (action == 'oheap') {
-    OheapReport(in_dir, out_dir)
+  } else if (action == 'pyc-ratio') {  # This takes different inputs
+    all_deps_py = argv[[2]]
+    ctx = MeasureFileSizes(all_deps_py)
 
   } else {
     Log("Invalid action '%s'", action)
@@ -124,6 +170,5 @@ main = function(argv) {
 if (length(sys.frames()) == 0) {
   # increase ggplot font size globally
   #theme_set(theme_grey(base_size = 20))
-
   main(commandArgs(TRUE))
 }
