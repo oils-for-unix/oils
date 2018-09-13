@@ -178,8 +178,8 @@ runtime() {
 instructions() {
   # http://pepijndevos.nl/2016/08/24/x86-instruction-distribution.html
 
-  local bin=_tmp/oil
-  objdump -d $bin | cut -f3 | grep -oE "^[a-z]+" | sort | uniq -c | sort -n
+  local bin=_build/oil/ovm-opt.stripped
+  objdump -d $bin | cut -f3 | grep -oE "^[a-z]+" | hist
 }
 
 hist() {

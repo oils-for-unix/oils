@@ -97,11 +97,38 @@ Basic = function(ctx) {
   Log('Total instructions: %d', num_insts)
 }
 
+# Hm max unique ops is 58
+# _build/oil/bytecode-opy/core/cmd_exec.pyc     54
+# _build/oil/bytecode-opy/warnings.pyc          55
+# _build/oil/bytecode-opy/_abcoll.pyc           58
+#
+# But there are 119 total opcodes.  A lot of the math ones are uncommon.
+
+UniqueOpsByFile = function(ops) {
+  # This is a row for every path/op_name
+  u = ops %>% group_by(path) %>% distinct(op_name)
+  u
+  u %>% count(path) %>% arrange(n) -> ops_by_file
+
+  Log('files with few ops:')
+  ops_by_file %>% head(20) %>% print()
+
+  Log('files with many ops:')
+  ops_by_file %>% tail(10) %>% print()
+
+  Log('parsing:')  # 17, 23, 34, 34, 46
+  ops_by_file %>% filter(grepl('parse', path)) %>% print()
+}
+
 Report = function(ctx) {
-
-  Ops(ctx$ops)
-
+  Basic(ctx)
   BigStrings(ctx$consts)
+
+  Frames(ctx)
+  Names(ctx$names)
+  Consts(ctx$consts)
+  Flags(ctx$flags)
+  Ops(ctx$ops)
 }
 
 Load = function(in_dir) {
@@ -153,8 +180,7 @@ main = function(argv) {
 
     ctx = Load(in_dir)
     #out_dir = argv[[3]]
-
-    BigStrings(ctx$consts)
+    Report(ctx)
 
   } else if (action == 'pyc-ratio') {  # This takes different inputs
     all_deps_py = argv[[2]]

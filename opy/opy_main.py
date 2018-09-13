@@ -396,7 +396,7 @@ def OpyCommandMain(argv):
     out.Close()
 
   elif action == 'dis':
-    path = argv[1]
+    path = argv[0]
     v = dis_tool.Visitor()
 
     if path.endswith('.py'):
