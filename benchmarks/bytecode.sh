@@ -26,13 +26,16 @@ dis-tables() {
   wc -l $out_dir/*.tsv2
 }
 
-# TODO: Join py-bytes, pyc-bytes
 report() {
   R_LIBS_USER=$R_PATH benchmarks/bytecode.R "$@"
 }
 
-# TODO: Join py-bytes, pyc-bytes
-ratio-raport() {
+# Reads the 5 tables and produces some metrics
+metrics() {
+  report metrics $BASE_DIR
+}
+
+pyc-ratio() {
   report pyc-ratio _build/oil/all-deps-py.txt
 }
 

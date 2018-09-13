@@ -77,7 +77,9 @@ compile-manifest() {
     local dest=$dest_dir/$rel_dest_path
     mkdir -p $(dirname $dest)
     log "     $full_src_path"
-    $py $THIS_DIR/../bin/opyc compile $full_src_path $dest
+
+    # Save space by omitting docstring.
+    $py $THIS_DIR/../bin/opyc compile -emit-docstring=0 $full_src_path $dest
 
     local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
 
