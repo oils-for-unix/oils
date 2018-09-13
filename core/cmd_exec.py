@@ -27,6 +27,7 @@ from core import alloc
 from core import args
 from core import braces
 from core import builtin
+from core import comp_builtins
 from core import expr_eval
 from core import legacy
 from core import main_loop
@@ -155,30 +156,6 @@ class Executor(object):
 
     self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev)
     self.check_command_sub_status = False  # a hack
-
-  def _Complete(self, argv):
-    """complete builtin - register a completion function.
-
-    NOTE: It's a member of Executor because it creates a ShellFuncAction, which
-    needs an Executor.
-    """
-    command = argv[0]  # e.g. 'grep'
-    func_name = argv[1]
-
-    # NOTE: bash doesn't actually check the name until completion time, but
-    # obviously it's better to check here.
-    func = self.funcs.get(func_name)
-    if func is None:
-      print('Function %r not found' % func_name)
-      return 1
-
-    if self.completion:
-      chain = self.completion.ShellFuncAction(self, func)
-      self.comp_lookup.RegisterName(command, chain)
-      # TODO: Some feedback would be nice?
-    else:
-      util.error('Oil was not built with readline/completion.')
-    return 0
 
   def _EvalHelper(self, c_parser, source_name):
     self.arena.PushSource(source_name)
@@ -333,10 +310,11 @@ class Executor(object):
       status = self._Eval(argv)
 
     elif builtin_id == builtin_e.COMPLETE:
-      status = self._Complete(argv)
+      status = comp_builtins.Complete(argv, self, self.funcs, self.completion,
+                                      self.comp_lookup)
 
     elif builtin_id == builtin_e.COMPGEN:
-      status = builtin.CompGen(argv, self.funcs)
+      status = comp_builtins.CompGen(argv, self.funcs)
 
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0

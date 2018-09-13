@@ -259,8 +259,16 @@ def OpyCommandMain(argv):
     # tool.
     compiler = None
 
+  # TODO: Also have a run_spec for 'opyc run'.
   compile_spec = args.OilFlags()
-  compile_spec.Flag('-emit-docstring', args.Bool, default=True)
+  compile_spec.Flag('-emit-docstring', args.Bool, default=True,
+                    help='Whether to emit docstrings')
+  compile_spec.Flag('-fast-ops', args.Bool, default=True,
+                    help='Whether to emit LOAD_FAST, STORE_FAST, etc.')
+  compile_spec.Flag('-oil-subset', args.Bool, default=False,
+                    help='Only allow the constructs necessary to implement'
+                    'Oil. Example: using multiple inheritance will abort '
+                    'compilation.')
 
   #
   # Actions

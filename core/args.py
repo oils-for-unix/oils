@@ -270,7 +270,7 @@ class FlagsAndOptions(object):
     self.actions_short['o'] = SetNamedOption()  # -o and +o
 
   def ShortFlag(self, short_name, arg_type=None, default=None,
-                quit_parsing_flags=False):
+                quit_parsing_flags=False, help=None):
     """ -c """
     assert short_name.startswith('-'), short_name
     assert len(short_name) == 2, short_name
@@ -392,7 +392,7 @@ class BuiltinFlags(object):
     for ch in self.arity1:
       print(ch)
 
-  def ShortFlag(self, short_name, arg_type=None):
+  def ShortFlag(self, short_name, arg_type=None, help=None):
     """
     This is very similar to ShortFlag for FlagsAndOptions, except we have
     separate arity0 and arity1 dicts.
@@ -549,9 +549,10 @@ class OilFlags(object):
   """
   def __init__(self):
     self.arity1 = {}
-    self.attr_names = {}  # name -> default value
+    self.attr_names = {}  # attr name -> default value
+    self.help_strings = []  # (flag name, string) tuples, in order
 
-  def Flag(self, name, arg_type, default=None):
+  def Flag(self, name, arg_type, default=None, help=None):
     """
     Args:
       name: e.g. '-no-docstring'
