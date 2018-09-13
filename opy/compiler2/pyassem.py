@@ -4,8 +4,6 @@ from __future__ import print_function
 import itertools
 import types
 
-from core import util
-
 from .consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 from opy.lib import dis
 
