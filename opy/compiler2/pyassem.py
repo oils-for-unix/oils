@@ -400,6 +400,8 @@ class ArgEncoder(object):
     _convert_DELETE_FAST = _convert_LOAD_FAST
 
     def _convert_LOAD_NAME(self, arg):
+        # TODO: This is wrong.  It leads to too many files.
+        # https://github.com/oilshell/oil/issues/180
         if self.klass is None:
             _NameToIndex(arg, self.varnames)
         return _NameToIndex(arg, self.names)

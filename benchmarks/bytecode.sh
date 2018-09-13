@@ -11,6 +11,17 @@ source test/common.sh
 
 readonly BASE_DIR=_tmp/metrics/bytecode
 
+write-opcodes() {
+  # 119 ops?
+  PYTHONPATH=. python2 > _tmp/opcodes-defined.txt -c '
+from opy.lib import opcode
+names = sorted(opcode.opmap)
+for n in names:
+  print(n)
+'
+  wc -l _tmp/opcodes-defined.txt  # 119 defined
+}
+
 # NOTE: We analyze ~76 bytecode files.  This outputs produces 5 TSV2 files that
 # are ~131K rows in ~8.5 MB altogether.  The biggest table is the 'ops' table.
 

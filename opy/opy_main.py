@@ -376,7 +376,7 @@ def OpyCommandMain(argv):
       f = skeleton.StringInput(py_expr, '<REPL input>')
 
       # TODO: change this to 'single input'?  Why doesn't this work?
-      co = skeleton.Compile(f, gr, 'eval')
+      co = compiler.Compile(f, opt, 'eval')
 
       v = dis_tool.Visitor()
       v.show_code(co)
@@ -396,12 +396,13 @@ def OpyCommandMain(argv):
     out.Close()
 
   elif action == 'dis':
-    path = argv[0]
+    opt, i = compile_spec.Parse(argv)
+    path = argv[i]
     v = dis_tool.Visitor()
 
     if path.endswith('.py'):
       with open(path) as f:
-        co = skeleton.Compile(f, gr, 'exec')
+        co = compiler.Compile(f, opt, 'exec')
 
       log("Compiled to %d bytes of bytecode", len(co.co_code))
       v.show_code(co)
