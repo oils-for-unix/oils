@@ -722,11 +722,13 @@ def Set(argv, exec_opts, mem):
     exec_opts.ShowOptions([])
     return 0
 
-  arg, i = SET_SPEC.Parse(argv)
+  arg_r = args.Reader(argv)
+  arg = SET_SPEC.Parse(arg_r)
 
   SetExecOpts(exec_opts, arg.opt_changes)
-  if arg.saw_double_dash or i != len(argv):  # set -u shouldn't affect argv
-    mem.SetArgv(argv[i:])
+  # Hm do we need saw_double_dash?
+  if arg.saw_double_dash or not arg_r.AtEnd():
+    mem.SetArgv(arg_r.Rest())
   return 0
 
   # TODO:

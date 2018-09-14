@@ -25,11 +25,11 @@ class ArgsTest(unittest.TestCase):
     s.Option(None, 'pipefail')
 
     # don't parse args afterward
-    argv = ['-c', 'echo hi', '-e', '-o', 'nounset', 'foo', '--help']
-    arg, i = s.Parse(argv)
-    print(arg, argv[i:])
+    arg_r = args.Reader(
+        ['-c', 'echo hi', '-e', '-o', 'nounset', 'foo', '--help'])
+    arg = s.Parse(arg_r)
 
-    self.assertEqual(['foo', '--help'], argv[i:])
+    self.assertEqual(['foo', '--help'], arg_r.Rest())
     self.assertEqual('echo hi', arg.c)
     self.assertEqual(None, arg.help)
     self.assertEqual(None, arg.i)
@@ -37,53 +37,53 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(
         [('errexit', True), ('nounset', True)], arg.opt_changes)
 
-    argv = ['+e', '+o', 'nounset', '-o', 'pipefail', 'foo']
-    arg, i = s.Parse(argv)
-    print(arg, argv[i:])
+    arg_r = args.Reader(['+e', '+o', 'nounset', '-o', 'pipefail', 'foo'])
+    arg = s.Parse(arg_r)
 
-    self.assertEqual(['foo'], argv[i:])
+    self.assertEqual(['foo'], arg_r.Rest())
     self.assertEqual(None, arg.i)
     self.assertEqual(
         [('errexit', False), ('nounset', False), ('pipefail', True)],
         arg.opt_changes)
 
-    self.assertRaises(args.UsageError, s.Parse, ['-o', 'pipefailX'])
+    self.assertRaises(
+        args.UsageError, s.Parse, args.Reader(['-o', 'pipefailX']))
 
-    argv = ['-c', 'echo hi', '--help', '--rcfile', 'bashrc']
-    arg, i = s.Parse(argv)
+    arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc'])
+    arg = s.Parse(arg_r)
     self.assertEqual('echo hi', arg.c)
     self.assertEqual(True, arg.help)
     self.assertEqual('bashrc', arg.rcfile)
 
     # This is an odd syntax!
-    argv = ['-euo', 'pipefail']
-    arg, i = s.Parse(argv)
+    arg_r = args.Reader(['-euo', 'pipefail'])
+    arg = s.Parse(arg_r)
     self.assertEqual(
         [('errexit', True), ('nounset', True), ('pipefail', True)],
         arg.opt_changes)
-    self.assertEqual(2, i)
+    self.assertEqual(2, arg_r.i)
 
     # Even weirder!
-    argv = ['+oeu', 'pipefail']
-    arg, i = s.Parse(argv)
+    arg_r = args.Reader(['+oeu', 'pipefail'])
+    arg = s.Parse(arg_r)
     self.assertEqual(
         [('pipefail', False), ('errexit', False), ('nounset', False)],
         arg.opt_changes)
-    self.assertEqual(2, i)
+    self.assertEqual(2, arg_r.i)
 
     # Even weirder!
-    argv = ['+oo', 'pipefail', 'errexit']
-    arg, i = s.Parse(argv)
+    arg_r = args.Reader(['+oo', 'pipefail', 'errexit'])
+    arg = s.Parse(arg_r)
     self.assertEqual(
         [('pipefail', False), ('errexit', False)],
         arg.opt_changes)
-    self.assertEqual(3, i)
+    self.assertEqual(3, arg_r.i)
 
     # Now this is an arg.  Gah.
-    argv = ['+o', 'pipefail', 'errexit']
-    arg, i = s.Parse(argv)
+    arg_r = args.Reader(['+o', 'pipefail', 'errexit'])
+    arg = s.Parse(arg_r)
     self.assertEqual([('pipefail', False)], arg.opt_changes)
-    self.assertEqual(['errexit'], argv[i:])
+    self.assertEqual(['errexit'], arg_r.Rest())
 
     # NOTE: 'set -ooo' and 'set -o -o -o' bash runs 'set -o' three times!
     # We're not going to replicate that silly behavior.
@@ -92,10 +92,12 @@ class ArgsTest(unittest.TestCase):
     s = args.FlagsAndOptions()
     s.LongFlag('--ast-format', ['text', 'html'])
 
-    arg, i = s.Parse(['--ast-format', 'text'])
+    arg_r = args.Reader(['--ast-format', 'text'])
+    arg = s.Parse(arg_r)
     self.assertEqual('text', arg.ast_format)
 
-    self.assertRaises(args.UsageError, s.Parse, ['--ast-format', 'oops'])
+    self.assertRaises(
+        args.UsageError, s.Parse, args.Reader(['--ast-format', 'oops']))
 
   def testBuiltinFlags(self):
     s = args.BuiltinFlags()

@@ -86,39 +86,55 @@ class _Attributes(object):
     return '<_Attributes %s>' % self.__dict__
 
 
-class _ArgState(object):
-  """Modified by both the parsing loop and various actions."""
+class Reader(object):
+  """Wrapper for argv.
+  
+  Modified by both the parsing loop and various actions.
 
+  The caller of the flags parser can continue to use it after flag parsing is
+  done to get args.
+  """
   def __init__(self, argv):
     self.argv = argv
     self.n = len(argv)
     self.i = 0
 
   def __repr__(self):
-    return '<_ArgState %r %d>' % (self.argv, self.i)
+    return '<args.Reader %r %d>' % (self.argv, self.i)
 
   def Next(self):
-    """Get the next arg."""
+    """Advance."""
     self.i += 1
-    #assert self.i <= self.n, self.i
 
   def Peek(self):
     return self.argv[self.i]
 
-  def Done(self):
+  def ReadRequired(self, error_msg):
+    self.Next()
+    try:
+      return self.Peek()
+    except IndexError:
+      # TODO: Format it
+      raise UsageError(error_msg)
+
+  def Rest(self):
+    """Return the rest of the arguments."""
+    return self.argv[self.i:]
+
+  def AtEnd(self):
     return self.i == self.n
 
 
 class _Action(object):
   """What is done when a flag or option is detected."""
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches.
 
     Args:
       prefix: '-' or '+'
       suffix: ',' for -d,
-      state: _ArgState() (rename to Input or InputState?)
+      arg_r: Reader() (rename to Input or InputReader?)
       out: _Attributes() -- thet hing we want to set
 
     Returns:
@@ -140,15 +156,15 @@ class SetToArg(_Action):
     self.arg_type = arg_type
     self.quit_parsing_flags = quit_parsing_flags
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches."""
 
     if suffix:  # for the ',' in -d,
       arg = suffix
     else:
-      state.Next()
+      arg_r.Next()
       try:
-        arg = state.Peek()
+        arg = arg_r.Peek()
       except IndexError:
         raise UsageError('Expected argument for %r' % self.name)
 
@@ -180,7 +196,7 @@ class SetBoolToArg(_Action):
   def __init__(self, name):
     self.name = name
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches."""
 
     if suffix:  # '0' in --verbose=0
@@ -201,7 +217,7 @@ class SetToTrue(_Action):
   def __init__(self, name):
     self.name = name
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches."""
     out.Set(self.name, True)
 
@@ -212,7 +228,7 @@ class SetOption(_Action):
   def __init__(self, name):
     self.name = name
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches."""
     b = (prefix == '-')
     out.opt_changes.append((self.name, b))
@@ -227,13 +243,13 @@ class SetNamedOption(_Action):
   def Add(self, name):
     self.names.append(name)
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches."""
     b = (prefix == '-')
-    #log('SetNamedOption %r %r %r', prefix, suffix, state)
-    state.Next()  # always advance
+    #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
+    arg_r.Next()  # always advance
     try:
-      arg = state.Peek()
+      arg = arg_r.Peek()
     except IndexError:
       raise UsageError('Expected argument for option')
 
@@ -250,7 +266,7 @@ class SetAction(_Action):
   def __init__(self, name):
     self.name = name
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     out.actions.append(self.name)
 
 
@@ -263,12 +279,12 @@ class SetNamedAction(_Action):
   def Add(self, name):
     self.names.append(name)
 
-  def OnMatch(self, prefix, suffix, state, out):
+  def OnMatch(self, prefix, suffix, arg_r, out):
     """Called when the flag matches."""
-    #log('SetNamedOption %r %r %r', prefix, suffix, state)
-    state.Next()  # always advance
+    #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
+    arg_r.Next()  # always advance
     try:
-      arg = state.Peek()
+      arg = arg_r.Peek()
     except IndexError:
       raise UsageError('Expected argument for action')
 
@@ -366,7 +382,12 @@ class FlagsAndOptions(object):
 
     self.actions_short['A'].Add(attr_name)
 
-  def Parse(self, argv):
+  def Parse_OLD(self, argv):
+    arg_r = Reader(argv)
+    attrs = self.Parse(arg_r)
+    return attrs, arg_r.i
+
+  def Parse(self, arg_r):
     """Return attributes and an index.
 
     Respects +, like set +eu
@@ -382,15 +403,14 @@ class FlagsAndOptions(object):
     set -oeu pipefail
     set -oo pipefail errexit
     """
-    state = _ArgState(argv)
     out = _Attributes(self.attr_names)
 
     quit = False
-    while not state.Done():
-      arg = state.Peek()
+    while not arg_r.AtEnd():
+      arg = arg_r.Peek()
       if arg == '--':
         out.saw_double_dash = True
-        state.Next()
+        arg_r.Next()
         break
 
       # NOTE: We don't yet support --rcfile=foo.  Only --rcfile foo.
@@ -400,21 +420,21 @@ class FlagsAndOptions(object):
         except KeyError:
           raise UsageError('Invalid flag %r' % arg)
         # TODO: Suffix could be 'bar' for --foo=bar
-        action.OnMatch(None, None, state, out)
-        state.Next()
+        action.OnMatch(None, None, arg_r, out)
+        arg_r.Next()
         continue
 
       if arg.startswith('-') or arg.startswith('+'):
         char0 = arg[0]
         for char in arg[1:]:
-          #log('char %r state %s', char, state)
+          #log('char %r arg_r %s', char, arg_r)
           try:
             action = self.actions_short[char]
           except KeyError:
             #print(self.actions_short)
             raise UsageError('Invalid flag %r' % char)
-          quit = action.OnMatch(char0, None, state, out)
-        state.Next() # process the next flag
+          quit = action.OnMatch(char0, None, arg_r, out)
+        arg_r.Next() # process the next flag
         if quit:
           break
         else:
@@ -422,7 +442,7 @@ class FlagsAndOptions(object):
 
       break  # it's a regular arg
 
-    return out, state.i
+    return out
 
 
 # TODO: Rename ShBuiltinFlags
@@ -473,11 +493,11 @@ class BuiltinFlags(object):
     - But don't respect --
     - doesn't fail when an invalid flag is passed
     """
-    state = _ArgState(argv)
+    arg_r = Reader(argv)
     out = _Attributes(self.attr_names)
 
-    while not state.Done():
-      arg = state.Peek()
+    while not arg_r.AtEnd():
+      arg = arg_r.Peek()
       if arg.startswith('-') and len(arg) > 1:
         if not all(c in self.arity0 for c in arg[1:]):
           break  # looks like args
@@ -486,14 +506,14 @@ class BuiltinFlags(object):
         for i in xrange(1, n):
           char = arg[i]
           action = self.arity0[char]
-          action.OnMatch(None, None, state, out)
+          action.OnMatch(None, None, arg_r, out)
 
       else:
         break  # Looks like an arg
 
-      state.Next()  # next arg
+      arg_r.Next()  # next arg
 
-    return out, state.i
+    return out, arg_r.i
 
   def Parse(self, argv):
     # TODO: Parse -en into separate actions
@@ -505,14 +525,14 @@ class BuiltinFlags(object):
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
 
-    state = _ArgState(argv)
+    arg_r = Reader(argv)
     out = _Attributes(self.attr_names)
 
-    while not state.Done():
-      arg = state.Peek()
+    while not arg_r.AtEnd():
+      arg = arg_r.Peek()
       if arg == '--':
         out.saw_double_dash = True
-        state.Next()
+        arg_r.Next()
         break
 
       if arg.startswith('-') and len(arg) > 1:
@@ -522,23 +542,23 @@ class BuiltinFlags(object):
 
           if char in self.arity0:  # e.g. read -r
             action = self.arity0[char]
-            action.OnMatch(None, None, state, out)
+            action.OnMatch(None, None, arg_r, out)
             continue
 
           if char in self.arity1:  # e.g. read -t1.0
             action = self.arity1[char]
             suffix = arg[i+1:]  # '1.0'
-            action.OnMatch(None, suffix, state, out)
+            action.OnMatch(None, suffix, arg_r, out)
             break
 
           raise UsageError('Invalid flag %r' % char)
 
-        state.Next()  # next arg
+        arg_r.Next()  # next arg
 
       else:  # a regular arg
         break
 
-    return out, state.i
+    return out, arg_r.i
 
 
 # - A flag can start with one or two dashes, but not three
@@ -625,14 +645,14 @@ class OilFlags(object):
     self.attr_names[attr_name] = default
 
   def Parse(self, argv):
-    state = _ArgState(argv)
+    arg_r = Reader(argv)
     out = _Attributes(self.attr_names)
 
-    while not state.Done():
-      arg = state.Peek()
+    while not arg_r.AtEnd():
+      arg = arg_r.Peek()
       if arg == '--':
         out.saw_double_dash = True
-        state.Next()
+        arg_r.Next()
         break
 
       if arg == '-':  # a valid argument
@@ -655,14 +675,14 @@ class OilFlags(object):
             suffix = val[1:]  # could be empty, but remove = if any
           else:
             suffix = None
-          action.OnMatch(None, suffix, state, out)
+          action.OnMatch(None, suffix, arg_r, out)
         else:
           raise UsageError('Unrecognized flag %r' % arg)
           pass
 
-        state.Next()  # next arg
+        arg_r.Next()  # next arg
 
       else:  # a regular arg
         break
 
-    return out, state.i
+    return out, arg_r.i

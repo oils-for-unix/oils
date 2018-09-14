@@ -28,7 +28,7 @@ def Complete(argv, ex, funcs, completion, comp_lookup):
   NOTE: It's a member of Executor because it creates a ShellFuncAction, which
   needs an Executor.
   """
-  arg, i = COMPLETE_SPEC.Parse(argv)
+  arg, i = COMPLETE_SPEC.Parse_OLD(argv)
   # TODO: process arg.opt_changes
   log('arg %s', arg)
 
@@ -64,7 +64,11 @@ _DefineOptions(COMPGEN_SPEC)
 
 
 def CompGen(argv, funcs):
-  arg, i = COMPGEN_SPEC.Parse(argv)
+  # state = args.State(argv)
+  # state.Rest() -> []
+  # state.AtEnd()
+
+  arg, i = COMPGEN_SPEC.Parse_OLD(argv)
   status = 0
 
   if 'function' in arg.actions:
@@ -75,6 +79,8 @@ def CompGen(argv, funcs):
     # bash uses compgen -f, which is the same as compgen -A file
     raise NotImplementedError
 
+  # Useful command to see what bash has:
+  # env -i -- bash --norc --noprofile -c 'compgen -v'
   if 'variable' in arg.actions:
       # bash uses compgen -v, which is the same as compgen -A variable
       raise NotImplementedError
@@ -91,7 +97,7 @@ _DefineOptions(COMPOPT_SPEC)
 
 
 def CompOpt(argv):
-  arg, i = COMPOPT_SPEC.Parse(argv)
+  arg, i = COMPOPT_SPEC.Parse_OLD(argv)
   log('arg %s', arg)
   return 0
 

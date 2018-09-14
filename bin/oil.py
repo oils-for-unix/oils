@@ -117,8 +117,9 @@ def OshMain(argv0, argv, login_shell):
 
   builtin.AddOptionsToArgSpec(spec)
 
+  arg_r = args.Reader(argv)
   try:
-    opts, opt_index = spec.Parse(argv)
+    opts = spec.Parse(arg_r)
   except args.UsageError as e:
     util.usage(str(e))
     return 2
@@ -135,10 +136,10 @@ def OshMain(argv0, argv, login_shell):
   # TODO: This should be in interactive mode only?
   builtin.RegisterSigIntHandler()
 
-  if opt_index == len(argv):
+  if arg_r.AtEnd():
     dollar0 = argv0
   else:
-    dollar0 = argv[opt_index]  # the script name, or the arg after -c
+    dollar0 = arg_r.Peek()  # the script name, or the arg after -c
 
   pool = alloc.Pool()
   arena = pool.NewArena()
@@ -146,7 +147,7 @@ def OshMain(argv0, argv, login_shell):
   # TODO: Maybe wrap this initialization sequence up in an oil_State, like
   # lua_State.
   status_lines = ui.MakeStatusLines()
-  mem = state.Mem(dollar0, argv[opt_index + 1:], os.environ, arena)
+  mem = state.Mem(dollar0, argv[arg_r.i + 1:], os.environ, arena)
   funcs = {}
 
   # Passed to Executor for 'complete', and passed to completion.Init
@@ -197,7 +198,7 @@ def OshMain(argv0, argv, login_shell):
     exec_opts.interactive = True
   else:
     try:
-      script_name = argv[opt_index]
+      script_name = arg_r.Peek()
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
@@ -276,6 +277,8 @@ def OshMain(argv0, argv, login_shell):
 
 
 def OilMain(argv):
+  # TODO: Does oil have the same -o syntax?  I probably want something else.
+
   spec = args.FlagsAndOptions()
   # TODO: -h too
   spec.LongFlag('--help')

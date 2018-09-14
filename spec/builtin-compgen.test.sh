@@ -32,10 +32,57 @@ complete -o default -o nospace -F $wrapper git
 compopt -o filenames +o nospace
 ## status: 1
 
-#### compgen -f
+#### compgen -f on invalid  dir
 compgen -f /non-existing-dir/
 ## status: 1
+## stdout-json: ""
 
-#### compgen -v
-compgen -v __gitcomp_builtin
+#### compgen -f
+mkdir -p $TMP/compgen
+touch $TMP/compgen/{one,two,three}
+cd $TMP/compgen
+compgen -f | sort
+echo --
+compgen -f t | sort
+## STDOUT:
+one
+three
+two
+--
+three
+two
+## END
+
+#### compgen -v on unknown var
+compgen -v __nonexistent__
 ## status: 1
+## stdout-json: ""
+
+#### compgen -v P
+cd > /dev/null  # for some reason in bash, this makes PIPESTATUS appear!
+compgen -v P
+## STDOUT:
+PATH
+PIPESTATUS
+PPID
+PS4
+PWD
+## END
+
+#### Three compgens combined
+mkdir -p $TMP/compgen2
+touch $TMP/compgen2/{P1,P2}_FILE
+cd $TMP/compgen2  # depends on previous test above!
+P_FUNC() { echo P; }
+Q_FUNC() { echo Q; }
+compgen -A function -A file -A variable P
+## STDOUT:
+P_FUNC
+PATH
+PIPESTATUS
+PPID
+PS4
+PWD
+P1_FILE
+P2_FILE
+## END
