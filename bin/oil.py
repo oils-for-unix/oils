@@ -160,7 +160,7 @@ def OshMain(argv0, argv, login_shell):
     comp_lookup = None
 
   fd_state = process.FdState()
-  exec_opts = state.ExecOpts(mem)
+  exec_opts = state.ExecOpts(mem, readline)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
@@ -170,8 +170,8 @@ def OshMain(argv0, argv, login_shell):
     util.DEBUG_FILE = fd_state.Open(opts.debug_file, mode='w')
     util.Debug('Debug file is %s', util.DEBUG_FILE)
 
-  ex = cmd_exec.Executor(mem, fd_state, status_lines, funcs, readline,
-                         completion, comp_lookup, exec_opts, parse_ctx)
+  ex = cmd_exec.Executor(mem, fd_state, funcs, completion, comp_lookup,
+                         exec_opts, parse_ctx)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.

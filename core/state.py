@@ -103,12 +103,14 @@ _SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 class ExecOpts(object):
 
-  def __init__(self, mem):
+  def __init__(self, mem, readline):
     """
     Args:
       mem: state.Mem, for SHELLOPTS
     """
     self.mem = mem
+    # Used for 'set -o vi/emacs'
+    self.readline = readline
 
     # Depends on the shell invocation (sh -i, etc.)  This is not technically an
     # 'set' option, but it appears in $-.
@@ -172,10 +174,6 @@ class ExecOpts(object):
 
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
-
-    # Used for 'set -o vi/emacs'
-    # Set by the Executor, if available
-    self.readline = None
 
   def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail

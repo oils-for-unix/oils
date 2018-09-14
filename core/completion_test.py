@@ -34,7 +34,7 @@ C1 = completion.ChainedCompleter([A1])
 
 status_lines = [ui.TestStatusLine()] * 10  # A bunch of dummies
 mem = state.Mem('', [], {}, None)
-exec_opts = state.ExecOpts(mem)
+exec_opts = state.ExecOpts(mem, None)
 STATUS = completion.StatusOutput(status_lines, exec_opts)
 
 
@@ -155,7 +155,7 @@ class CompletionTest(unittest.TestCase):
 
 def _MakeTestEvaluator():
   mem = state.Mem('', [], {}, None)
-  exec_opts = state.ExecOpts(mem)
+  exec_opts = state.ExecOpts(mem, None)
   splitter = legacy.SplitContext(mem)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
   return ev

@@ -115,7 +115,6 @@ _NORMAL_BUILTINS = {
     "unalias": builtin_e.UNALIAS,
 
     "help": builtin_e.HELP,
-    "debug-line": builtin_e.DEBUG_LINE,
 }
 
 
@@ -1337,14 +1336,6 @@ def Help(argv, loader):
   for line in f:
     sys.stdout.write(line)
   f.close()
-  return 0
-
-
-def DebugLine(argv, status_lines):
-  # TODO: Maybe add a position flag?  Like debug-line -n 1 'foo'
-  # And enforce that you get a single arg?
-
-  status_lines[0].Write('DEBUG: %s', ' '.join(argv))
   return 0
 
 

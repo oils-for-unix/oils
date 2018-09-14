@@ -382,11 +382,6 @@ class FlagsAndOptions(object):
 
     self.actions_short['A'].Add(attr_name)
 
-  def Parse_OLD(self, argv):
-    arg_r = Reader(argv)
-    attrs = self.Parse(arg_r)
-    return attrs, arg_r.i
-
   def Parse(self, arg_r):
     """Return attributes and an index.
 

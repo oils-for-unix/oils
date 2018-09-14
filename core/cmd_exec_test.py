@@ -38,13 +38,12 @@ def InitExecutor(arena=None):
 
   mem = state.Mem('', [], {}, None)
   fd_state = process.FdState()
-  status_lines = None  # not needed for what we're testing
   funcs = {}
   comp_funcs = {}
-  exec_opts = state.ExecOpts(mem)
-  parse_ctx = parse_lib.ParseContext(arena, {})
   # For the tests, we do not use 'readline'.
-  return cmd_exec.Executor(mem, fd_state, status_lines, funcs, None,
+  exec_opts = state.ExecOpts(mem, None)
+  parse_ctx = parse_lib.ParseContext(arena, {})
+  return cmd_exec.Executor(mem, fd_state, funcs,
                            completion, comp_funcs, exec_opts, parse_ctx)
 
 
@@ -53,7 +52,7 @@ def InitEvaluator():
   state.SetLocalString(mem, 'x', 'xxx')
   state.SetLocalString(mem, 'y', 'yyy')
 
-  exec_opts = state.ExecOpts(mem)
+  exec_opts = state.ExecOpts(mem, None)
   # Don't need side effects for most things
   splitter = legacy.SplitContext(mem)
   return word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)

@@ -28,11 +28,15 @@ def Complete(argv, ex, funcs, completion, comp_lookup):
   NOTE: It's a member of Executor because it creates a ShellFuncAction, which
   needs an Executor.
   """
-  arg, i = COMPLETE_SPEC.Parse_OLD(argv)
+  arg_r = args.Reader(argv)
+  arg = COMPLETE_SPEC.Parse(arg_r)
   # TODO: process arg.opt_changes
   log('arg %s', arg)
 
-  command = argv[i]  # e.g. 'grep'
+  commands = arg_r.Rest()
+  if not commands:
+    raise args.UsageError('missing required commands')
+  command = commands[0]  # TODO: loop over commands
 
   # NOTE: bash doesn't actually check the name until completion time, but
   # obviously it's better to check here.
@@ -68,7 +72,8 @@ def CompGen(argv, funcs):
   # state.Rest() -> []
   # state.AtEnd()
 
-  arg, i = COMPGEN_SPEC.Parse_OLD(argv)
+  arg_r = args.Reader(argv)
+  arg = COMPGEN_SPEC.Parse(arg_r)
   status = 0
 
   if 'function' in arg.actions:
@@ -97,7 +102,8 @@ _DefineOptions(COMPOPT_SPEC)
 
 
 def CompOpt(argv):
-  arg, i = COMPOPT_SPEC.Parse_OLD(argv)
+  arg_r = args.Reader(argv)
+  arg = COMPOPT_SPEC.Parse(arg_r)
   log('arg %s', arg)
   return 0
 

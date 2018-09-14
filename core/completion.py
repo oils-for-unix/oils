@@ -49,6 +49,26 @@ completion_state_e = runtime.completion_state_e
 
 log = util.log
 
+class CompletionInterface(object):
+  """
+  Things we need to do:
+
+  - Register completion (complete builtin)
+    - including instantiate ShellFuncAction and so forth
+    - instantiate things for completing var names, filenames, etc.
+
+  - Look up completion (for the callback, set by Init())
+  - readline: set -o vi emacs
+  - Display debug info: add DEBUG_FILE instead of status_lines
+
+  - Should we just print a warning that readline isn't installed?  Otherwise
+    every completion hook should work the same way.  No if statements.
+
+  """
+  def __init__(self, readline_mod):
+    self.readline_mod = readline_mod
+    pass
+
 
 class CompletionLookup(object):
   """

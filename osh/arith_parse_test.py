@@ -34,7 +34,7 @@ def ParseAndEval(code_str):
   print('node:', anode)
 
   mem = state.Mem('', [], {}, None)
-  exec_opts = state.ExecOpts(mem)
+  exec_opts = state.ExecOpts(mem, None)
   splitter = legacy.SplitContext(mem)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
 

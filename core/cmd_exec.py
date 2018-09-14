@@ -106,13 +106,12 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, fd_state, status_lines, funcs, readline, completion,
+  def __init__(self, mem, fd_state, funcs, completion,
                comp_lookup, exec_opts, parse_ctx):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
-      status_lines: shared with completion.  TODO: Move this to the end.
       funcs: registry of functions (these names are completed)
       completion: completion module, if available
       comp_lookup: completion pattern/action
@@ -121,7 +120,6 @@ class Executor(object):
     """
     self.mem = mem
     self.fd_state = fd_state
-    self.status_lines = status_lines
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
     self.completion = completion
@@ -129,7 +127,6 @@ class Executor(object):
     self.comp_lookup = comp_lookup
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
-    self.exec_opts.readline = readline
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
@@ -358,9 +355,6 @@ class Executor(object):
     elif builtin_id == builtin_e.HELP:
       loader = util.GetResourceLoader()
       status = builtin.Help(argv, loader)
-
-    elif builtin_id == builtin_e.DEBUG_LINE:
-      status = builtin.DebugLine(argv, self.status_lines)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)

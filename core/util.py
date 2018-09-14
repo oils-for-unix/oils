@@ -266,6 +266,7 @@ def Debug(msg, *args):
   # TODO: Don't get pid every time
   msg = '%d %s' % (os.getpid(), msg)
   print(msg, file=DEBUG_FILE)
+  DEBUG_FILE.flush()  # so we can see it
 
 
 
