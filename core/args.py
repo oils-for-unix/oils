@@ -72,7 +72,8 @@ class _Attributes(object):
   """Object to hold flags"""
 
   def __init__(self, defaults):
-    self.opt_changes = []  # special name
+    self.opt_changes = []  # for set -o, etc.
+    self.actions = []  # for compgen -A
     self.saw_double_dash = False  # for set --
     for name, v in defaults.iteritems():
       self.Set(name, v)
@@ -243,6 +244,41 @@ class SetNamedOption(_Action):
     out.opt_changes.append((attr_name, b))
 
 
+class SetAction(_Action):
+  """ For compgen -f """
+
+  def __init__(self, name):
+    self.name = name
+
+  def OnMatch(self, prefix, suffix, state, out):
+    out.actions.append(self.name)
+
+
+class SetNamedAction(_Action):
+  """ For compgen -A file """
+
+  def __init__(self):
+    self.names = []
+
+  def Add(self, name):
+    self.names.append(name)
+
+  def OnMatch(self, prefix, suffix, state, out):
+    """Called when the flag matches."""
+    #log('SetNamedOption %r %r %r', prefix, suffix, state)
+    state.Next()  # always advance
+    try:
+      arg = state.Peek()
+    except IndexError:
+      raise UsageError('Expected argument for action')
+
+    attr_name = arg
+    # Validate the option name against a list of valid names.
+    if attr_name not in self.names:
+      raise UsageError('Invalid action name %r' % arg)
+    out.actions.append(attr_name)
+
+
 # How to parse the value.  TODO: Use ASDL for this.
 Str = 1
 Int = 2
@@ -257,7 +293,7 @@ class FlagsAndOptions(object):
   Usage:
   spec = FlagsAndOptions()
   spec.ShortFlag(...)
-  spec.Option('-u', 'nounset')
+  spec.Option('u', 'nounset')
   spec.Parse(argv)
   """
 
@@ -268,6 +304,9 @@ class FlagsAndOptions(object):
     self.defaults = {}
 
     self.actions_short['o'] = SetNamedOption()  # -o and +o
+
+  def InitActions(self):
+    self.actions_short['A'] = SetNamedAction()  # -A
 
   def ShortFlag(self, short_name, arg_type=None, default=None,
                 quit_parsing_flags=False, help=None):
@@ -298,7 +337,8 @@ class FlagsAndOptions(object):
     self.attr_names[name] = default
 
   def Option(self, short_flag, name):
-    """
+    """Register an option that can be -e or -o errexit.
+
     Args:
       short_flag: 'e'
       name: errexit
@@ -309,6 +349,22 @@ class FlagsAndOptions(object):
       self.actions_short[short_flag] = SetOption(attr_name)
 
     self.actions_short['o'].Add(attr_name)
+
+  def Action(self, short_flag, name):
+    """Register an action that can be -f or -A file.
+
+    For the compgen builtin.
+
+    Args:
+      short_flag: 'f'
+      name: 'file'
+    """
+    attr_name = name
+    if short_flag:
+      assert not short_flag.startswith('-'), short_flag
+      self.actions_short[short_flag] = SetAction(attr_name)
+
+    self.actions_short['A'].Add(attr_name)
 
   def Parse(self, argv):
     """Return attributes and an index.

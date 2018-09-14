@@ -95,6 +95,7 @@ _NORMAL_BUILTINS = {
     "shopt": builtin_e.SHOPT,
     "complete": builtin_e.COMPLETE,
     "compgen": builtin_e.COMPGEN,
+    "compopt": builtin_e.COMPOPT,
 
     "true": builtin_e.TRUE,
     "false": builtin_e.FALSE,

@@ -20,3 +20,22 @@ ek
 compgen -A foo
 echo status=$?
 ## stdout: status=2
+
+#### complete -o -F (git)
+foo() { echo foo; }
+wrapper=foo
+complete -o default -o nospace -F $wrapper git
+## status: 0
+
+#### compopt -o (git)
+# NOTE: Have to be executing a completion function
+compopt -o filenames +o nospace
+## status: 1
+
+#### compgen -f
+compgen -f /non-existing-dir/
+## status: 1
+
+#### compgen -v
+compgen -v __gitcomp_builtin
+## status: 1

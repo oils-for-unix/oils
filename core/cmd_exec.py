@@ -316,6 +316,9 @@ class Executor(object):
     elif builtin_id == builtin_e.COMPGEN:
       status = comp_builtins.CompGen(argv, self.funcs)
 
+    elif builtin_id == builtin_e.COMPOPT:
+      status = comp_builtins.CompOpt(argv)
+
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
 
