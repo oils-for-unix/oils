@@ -94,32 +94,34 @@ def _ShowVersion():
   util.ShowAppVersion('Oil')
 
 
+OSH_SPEC = args.FlagsAndOptions()
+OSH_SPEC.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
+OSH_SPEC.ShortFlag('-i')  # interactive
+
+# TODO: -h too
+OSH_SPEC.LongFlag('--help')
+OSH_SPEC.LongFlag('--version')
+# the output format when passing -n
+OSH_SPEC.LongFlag('--ast-format',
+              ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
+              default='abbrev-text')
+
+OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
+OSH_SPEC.LongFlag('--hijack-shebang')  # TODO: Implement this
+OSH_SPEC.LongFlag('--debug-file', args.Str)
+
+# For benchmarks/*.sh
+OSH_SPEC.LongFlag('--parser-mem-dump', args.Str)
+OSH_SPEC.LongFlag('--runtime-mem-dump', args.Str)
+
+builtin.AddOptionsToArgSpec(OSH_SPEC)
+
+
 def OshMain(argv0, argv, login_shell):
-  spec = args.FlagsAndOptions()
-  spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
-  spec.ShortFlag('-i')  # interactive
-
-  # TODO: -h too
-  spec.LongFlag('--help')
-  spec.LongFlag('--version')
-  # the output format when passing -n
-  spec.LongFlag('--ast-format',
-                ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
-                default='abbrev-text')
-
-  spec.LongFlag('--print-status')  # TODO: Replace with a shell hook
-  spec.LongFlag('--hijack-shebang')  # TODO: Implement this
-  spec.LongFlag('--debug-file', args.Str)
-
-  # For benchmarks/*.sh
-  spec.LongFlag('--parser-mem-dump', args.Str)
-  spec.LongFlag('--runtime-mem-dump', args.Str)
-
-  builtin.AddOptionsToArgSpec(spec)
 
   arg_r = args.Reader(argv)
   try:
-    opts = spec.Parse(arg_r)
+    opts = OSH_SPEC.Parse(arg_r)
   except args.UsageError as e:
     util.usage(str(e))
     return 2
@@ -276,17 +278,18 @@ def OshMain(argv0, argv, login_shell):
   return status
 
 
+# TODO: Does oil have the same -o syntax?  I probably want something else.
+
+OIL_SPEC = args.FlagsAndOptions()
+# TODO: -h too
+OIL_SPEC.LongFlag('--help')
+OIL_SPEC.LongFlag('--version')
+#builtin.AddOptionsToArgSpec(OIL_SPEC)
+
+
 def OilMain(argv):
-  # TODO: Does oil have the same -o syntax?  I probably want something else.
-
-  spec = args.FlagsAndOptions()
-  # TODO: -h too
-  spec.LongFlag('--help')
-  spec.LongFlag('--version')
-  #builtin.AddOptionsToArgSpec(spec)
-
   try:
-    opts, opt_index = spec.Parse(argv)
+    opts, opt_index = OIL_SPEC.Parse(argv)
   except args.UsageError as e:
     util.usage(str(e))
     return 2
@@ -496,4 +499,3 @@ if __name__ == '__main__':
     callgraph.Walk(main, sys.modules)
   else:
     main(sys.argv)
-
