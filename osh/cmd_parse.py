@@ -1333,11 +1333,13 @@ class CommandParser(object):
     self._Peek()
 
     if self.c_id in NOT_FIRST_WORDS:
-      p_die('Unexpected word when parsing cmomand', word=self.cur_word)
+      p_die('Unexpected word when parsing command', word=self.cur_word)
 
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
 
+    # NOTE: We should have another Kind for "initial keywords".  And then
+    # NOT_FIRST_WORDS are "secondary keywords".
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time):
@@ -1359,14 +1361,13 @@ class CommandParser(object):
       return self.ParseSimpleCommand(cur_aliases)
 
     if self.c_kind == Kind.Word:
-      if self.w_parser.LookAhead() == Id.Op_LParen:  # (
-        kov = word.LooksLikeAssignment(self.cur_word)
-        if kov:
-          return self.ParseSimpleCommand(cur_aliases)  # f=(a b c)  # array
-        else:
+      if (self.w_parser.LookAhead() == Id.Op_LParen and
+          not word.LooksLikeAssignment(self.cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
-
-      return self.ParseSimpleCommand(cur_aliases)  # echo foo
+      # echo foo
+      # f=(a b c)  # array
+      # array[1+2]+=1
+      return self.ParseSimpleCommand(cur_aliases)
 
     if self.c_kind == Kind.Eof:
       p_die("Unexpected EOF while parsing command", word=self.cur_word)

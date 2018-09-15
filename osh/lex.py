@@ -190,9 +190,6 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: We could add anything 128 and above to this character class?  So
   # utf-8 characters don't get split?
   R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars),
-  # e.g. beginning of NAME=val, which will always be longer than the above
-  # Id.Lit_Chars.
-  R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
 
   # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
   # want the next token after the tilde TildeLike token start with a /.
@@ -304,7 +301,15 @@ def IsKeyword(name):
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
 LEXER_DEF[lex_mode_e.OUTER] = [
-  C('((', Id.Op_DLeftParen),  # not allowed within [[
+  # These four are not allowed within [[, so they are in OUTER but not
+  # _UNQUOTED.
+
+  # e.g. beginning of NAME=val, which will always be longer than the above
+  # Id.Lit_Chars.
+  R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
+  R(r'[a-zA-Z_][a-zA-Z0-9_]*\[', Id.Lit_ArrayLhsOpen),
+  R(r'\]\+?=', Id.Lit_ArrayLhsClose),
+  C('((', Id.Op_DLeftParen),
 ] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
 # DBRACKET: can be like OUTER, except:

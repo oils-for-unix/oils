@@ -148,7 +148,8 @@ def AddKinds(spec):
   spec.AddKind('WS', ['Space'])
 
   spec.AddKind('Lit', [
-      'Chars', 'VarLike', 'Other', 'EscapedChar',
+      'Chars', 'VarLike', 'ArrayLhsOpen', 'ArrayLhsClose',
+      'Other', 'EscapedChar',
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
       'DRightBracket',     # the ]] that matches [[, NOT a keyword

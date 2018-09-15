@@ -8,7 +8,23 @@ set -o pipefail
 set -o errexit
 
 git-audit() {
-  grep -E -w 'complete|compgen|compopt' testdata/completion/git-completion.bash
+  local file=testdata/completion/git-completion.bash
+
+  echo
+  echo --
+  # Search for completion builtin usage
+  grep -E -w --color 'complete|compgen|compopt' $file
+
+  echo
+  echo --
+  # Search for special complation var usage
+  grep -E --color 'COMP_[A-Z]+' $file
+
+  echo
+  echo --
+  # Search for array usage
+  grep -E --color ']=' $file
+  grep -E --color ']+=' $file
 }
 
 "$@"
