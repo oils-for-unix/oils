@@ -316,9 +316,9 @@ class CommandParser(object):
   def GetCompletionState(self):
     return self.completion_stack
 
-  # NOTE: If our approach to _ExpandAliases isn't sufficient, we could have an
-  # expand_alias=True flag here?  We would litter the parser with calls to this
-  # like dash and bash.
+  # NOTE: If our approach to _MaybeExpandAliases isn't sufficient, we could
+  # have an expand_alias=True flag here?  We would litter the parser with calls
+  # to this like dash and bash.
   #
   # Although it might be possible that you really need to mutate the parser
   # state, and not just provide a parameter to _Next().
@@ -445,7 +445,6 @@ class CommandParser(object):
         break
 
       node = self.ParseRedirect()
-      assert node is not None
       redirects.append(node)
       self._Next()
     return redirects
@@ -458,7 +457,6 @@ class CommandParser(object):
       self._Peek()
       if self.c_kind == Kind.Redir:
         node = self.ParseRedirect()
-        assert node is not None
         redirects.append(node)
 
       elif self.c_kind == Kind.Word:
@@ -470,7 +468,7 @@ class CommandParser(object):
       self._Next()
     return redirects, words
 
-  def _ExpandAliases(self, words, cur_aliases):
+  def _MaybeExpandAliases(self, words, cur_aliases):
     """Try to expand aliases.
 
     Our implementation of alias has two design choices:
@@ -504,7 +502,7 @@ class CommandParser(object):
     Bash also uses a global 'parser_state & PST_ALEXPNEXT'.
 
     Returns:
-      A command node if any aliases were expanded, but None otherwise.
+      A command node if any aliases were expanded, or None otherwise.
     """
     # The last char that we might parse.
     right_spid = word.RightMostSpanForWord(words[-1])
@@ -691,10 +689,7 @@ class CommandParser(object):
     here_end vs filename is a matter of whether we test that it's quoted.  e.g.
     <<EOF vs <<'EOF'.
     """
-    # TODO: Refactor this method to 'early return' style, not if-elif.
-
     result = self._ScanSimpleCommand()
-    assert result is not None
     redirects, words = result
 
     if not words:  # e.g.  >out.txt  # redirect without words
@@ -740,24 +735,23 @@ class CommandParser(object):
                                        redirects)
         return node
 
-      else:  # declare str='', declare -a array=()
-        if redirects:
-          # Attach the error location to the keyword.  It would be more precise
-          # to attach it to the
-          p_die("Assignments shouldn't have redirects", token=kw_token)
+      if redirects:
+        # Attach the error location to the keyword.  It would be more precise
+        # to attach it to the
+        p_die("Assignments shouldn't have redirects", token=kw_token)
 
-        if prefix_bindings:  # FOO=bar local spam=eggs not allowed
-          # Use the location of the first value.  TODO: Use the whole word
-          # before splitting.
-          _, _, v0, _ = prefix_bindings[0]
-          p_die("Assignments shouldn't have environment bindings", word=v0)
+      if prefix_bindings:  # FOO=bar local spam=eggs not allowed
+        # Use the location of the first value.  TODO: Use the whole word
+        # before splitting.
+        _, _, v0, _ = prefix_bindings[0]
+        p_die("Assignments shouldn't have environment bindings", word=v0)
 
-        node = _MakeAssignment(kw_token.id, suffix_words)
-        assert node is not None
-        node.spids.append(kw_token.span_id)
-        return node
+      # declare str='', declare -a array=()
+      node = _MakeAssignment(kw_token.id, suffix_words)
+      node.spids.append(kw_token.span_id)
+      return node
 
-    elif kind == Kind.ControlFlow:
+    if kind == Kind.ControlFlow:
       if redirects:
         p_die("Control flow shouldn't have redirects", token=kw_token)
 
@@ -776,18 +770,17 @@ class CommandParser(object):
 
       return ast.ControlFlow(kw_token, arg_word)
 
-    else:
-      # If any expansions were detected, then parse again.
-      node = self._ExpandAliases(suffix_words, cur_aliases)
-      if node:
-        # NOTE: There are other types of nodes with redirects.  Do they matter?
-        if node.tag == command_e.SimpleCommand:
-          node.redirects = redirects
-          _AppendMoreEnv(prefix_bindings, node.more_env)
-        return node
-
-      node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+    # If any expansions were detected, then parse again.
+    node = self._MaybeExpandAliases(suffix_words, cur_aliases)
+    if node:
+      # NOTE: There are other types of nodes with redirects.  Do they matter?
+      if node.tag == command_e.SimpleCommand:
+        node.redirects = redirects
+        _AppendMoreEnv(prefix_bindings, node.more_env)
       return node
+
+    node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+    return node
 
   def ParseBraceGroup(self):
     """
