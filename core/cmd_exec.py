@@ -512,8 +512,7 @@ class Executor(object):
       try:
         status = self._RunBuiltin(builtin_id, argv)
       except args.UsageError as e:
-        # TODO: Make this message more consistent?
-        util.usage(str(e))
+        ui.usage('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
       return status
 
@@ -529,8 +528,7 @@ class Executor(object):
       try:
         status = self._RunBuiltin(builtin_id, argv)
       except args.UsageError as e:
-        # TODO: Make this message more consistent?
-        util.usage(str(e))
+        ui.usage('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
       return status
 

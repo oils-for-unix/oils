@@ -13,15 +13,26 @@ log = util.log
 
 
 def _DefineOptions(spec):
-  spec.Option(None, 'bashdefault')  # used in git
-  spec.Option(None, 'default')  # used in git
-  spec.Option(None, 'filenames')  # used in git
-  spec.Option(None, 'nospace')  # used in git
+  # bashdefault, default, filenames, nospace are used in git
+  spec.Option(None, 'bashdefault',
+      help='If nothing matches, perform default bash completions')
+  spec.Option(None, 'default',
+      help="If nothing matches, use readline's default filename completion")
+  spec.Option(None, 'filenames',
+      help="The completion function generates filenames and should be "
+           "post-processed")
+  spec.Option(None, 'nospace',
+      help="Don't append a space to words completed at the end of the line")
 
 
 # git-completion.sh uses complete -o and complete -F
 COMPLETE_SPEC = args.FlagsAndOptions()
-COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Register a completion function')
+COMPLETE_SPEC.ShortFlag('-E', args.Str,
+    help='Define the compspec for an empty line')
+COMPLETE_SPEC.ShortFlag('-D', args.Str,
+    help='Define the compspec that applies when nothing else matches')
+COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Complete with this function')
+
 _DefineOptions(COMPLETE_SPEC)
 
 

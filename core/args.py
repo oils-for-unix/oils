@@ -166,7 +166,7 @@ class SetToArg(_Action):
       try:
         arg = arg_r.Peek()
       except IndexError:
-        raise UsageError('Expected argument for %r' % self.name)
+        raise UsageError('Expected argument for %r' % ('-' + self.name))
 
     #log('SetToArg arg %r', arg)
 
@@ -352,7 +352,7 @@ class FlagsAndOptions(object):
 
     self.attr_names[name] = default
 
-  def Option(self, short_flag, name):
+  def Option(self, short_flag, name, help=None):
     """Register an option that can be -e or -o errexit.
 
     Args:

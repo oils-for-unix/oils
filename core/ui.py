@@ -179,3 +179,9 @@ def PrintAst(nodes, opts):
     fmt.PrintTree(tree, ast_f)
     ast_f.FileFooter()
     ast_f.write('\n')
+
+
+def usage(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)

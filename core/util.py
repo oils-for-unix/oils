@@ -125,12 +125,6 @@ def error(msg, *args):
   print('osh error: ' + msg, file=sys.stderr)
 
 
-def usage(msg, *args):
-  if args:
-    msg = msg % args
-  print('usage error: ' + msg, file=sys.stderr)
-
-
 def GetHomeDir():
   """Get the user's home directory from the /etc/passwd.
 

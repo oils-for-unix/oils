@@ -122,7 +122,7 @@ def OshMain(argv0, argv, login_shell):
   try:
     opts = OSH_SPEC.Parse(arg_r)
   except args.UsageError as e:
-    util.usage(str(e))
+    ui.usage('osh usage error: %s', e)
     return 2
 
   if opts.help:
@@ -285,7 +285,7 @@ def OilMain(argv):
   try:
     opts, opt_index = OIL_SPEC.Parse(argv)
   except args.UsageError as e:
-    util.usage(str(e))
+    ui.usage('oil usage error: %s', e)
     return 2
 
   if opts.help:
