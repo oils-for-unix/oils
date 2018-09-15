@@ -7,8 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-git-audit() {
-  local file=testdata/completion/git-completion.bash
+audit() {
+  local file=${1:-testdata/completion/git-completion.bash}
 
   echo
   echo --
@@ -25,6 +25,19 @@ git-audit() {
   # Search for array usage
   grep -E --color ']=' $file
   grep -E --color ']+=' $file
+}
+
+audit-git() {
+  audit
+}
+
+audit-distro() {
+  local path=/usr/share/bash-completion/bash_completion
+  audit $path
+}
+
+list-distro() {
+  find /usr/share/bash-completion/ -type f | xargs wc -l | sort -n
 }
 
 "$@"
