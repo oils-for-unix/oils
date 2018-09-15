@@ -13,6 +13,8 @@ log = util.log
 
 
 def _DefineOptions(spec):
+  """Common -o options for complete and compgen."""
+
   # bashdefault, default, filenames, nospace are used in git
   spec.Option(None, 'bashdefault',
       help='If nothing matches, perform default bash completions')
@@ -24,16 +26,38 @@ def _DefineOptions(spec):
   spec.Option(None, 'nospace',
       help="Don't append a space to words completed at the end of the line")
 
+def _DefineActions(spec):
+  """Common -A actions for complete and compgen."""
+
+  # NOTE: git-completion.bash uses -f and -v. 
+  # My ~/.bashrc on Ubuntu uses -d, -u, -j, -v, -a, -c, -b
+  spec.InitActions()
+  spec.Action(None, 'function')
+  spec.Action('a', 'alias')
+  spec.Action('b', 'binding')
+  spec.Action('c', 'command')
+  spec.Action('d', 'directory')
+  spec.Action('f', 'file')
+  spec.Action('j', 'job')
+  spec.Action('u', 'user')
+  spec.Action('v', 'variable')
+  spec.Action(None, 'helptopic')  # help
+  spec.Action(None, 'setopt')  # set -o
+  spec.Action(None, 'shopt')  # shopt -s
+  spec.Action(None, 'signal')  # kill -s
+
 
 # git-completion.sh uses complete -o and complete -F
 COMPLETE_SPEC = args.FlagsAndOptions()
-COMPLETE_SPEC.ShortFlag('-E', args.Str,
-    help='Define the compspec for an empty line')
-COMPLETE_SPEC.ShortFlag('-D', args.Str,
-    help='Define the compspec that applies when nothing else matches')
-COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Complete with this function')
 
 _DefineOptions(COMPLETE_SPEC)
+_DefineActions(COMPLETE_SPEC)
+
+COMPLETE_SPEC.ShortFlag('-E',
+    help='Define the compspec for an empty line')
+COMPLETE_SPEC.ShortFlag('-D',
+    help='Define the compspec that applies when nothing else matches')
+COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Complete with this function')
 
 
 def Complete(argv, ex, funcs, comp_lookup):
@@ -75,11 +99,9 @@ def Complete(argv, ex, funcs, comp_lookup):
 
 
 COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A
-COMPGEN_SPEC.InitActions()
-COMPGEN_SPEC.Action(None, 'function')
-COMPGEN_SPEC.Action('f', 'file')
-COMPGEN_SPEC.Action('v', 'variable')
+
 _DefineOptions(COMPGEN_SPEC)
+_DefineActions(COMPGEN_SPEC)
 
 
 def CompGen(argv, funcs, mem):
