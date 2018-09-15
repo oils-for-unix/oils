@@ -31,9 +31,17 @@ audit-git() {
   audit
 }
 
+
+# NOTE: there are a number of associative arrays in completion scripts.
+# e.g. localectl
+#        local -A VERBS=(
+#               [STANDALONE]='status list-locales list-keymaps'
+
 audit-distro() {
   local path=/usr/share/bash-completion/bash_completion
   audit $path
+
+  find /usr/share/bash-completion/ -type f | xargs grep -E --color ']\+?='
 }
 
 # Git completion is very big!
