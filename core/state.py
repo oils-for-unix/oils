@@ -826,10 +826,19 @@ class Mem(object):
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.
     for scope in self.var_stack:
-      for name, cell in scope.vars.items():
+      for name, cell in scope.vars.iteritems():
         if cell.exported and cell.val.tag == value_e.Str:
           exported[name] = cell.val.s
     return exported
+
+  def VarsWithPrefix(self, prefix):
+    """For compgen -A variable."""
+
+    # Look up the stack, yielding all variables.  Bash seems to do this.
+    for scope in self.var_stack:
+      for name, _ in scope.vars.iteritems():
+        if name.startswith(prefix):
+          yield name
 
 
 def SetLocalString(mem, name, s):

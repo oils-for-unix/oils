@@ -307,7 +307,7 @@ class Executor(object):
       status = comp_builtins.Complete(argv, self, self.funcs, self.comp_lookup)
 
     elif builtin_id == builtin_e.COMPGEN:
-      status = comp_builtins.CompGen(argv, self.funcs)
+      status = comp_builtins.CompGen(argv, self.funcs, self.mem)
 
     elif builtin_id == builtin_e.COMPOPT:
       status = comp_builtins.CompOpt(argv)

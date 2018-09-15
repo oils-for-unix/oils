@@ -2,8 +2,8 @@
 
 #### --debug-file
 $SH --debug-file $TMP/debug.txt -c 'true'
-wc -l < $TMP/debug.txt  # It prints one line
-## stdout: 1
+grep 'Debug file' $TMP/debug.txt >/dev/null && echo yes
+## stdout: yes
 
 #### debug-completion option
 set -o debug-completion

@@ -7,6 +7,8 @@ ek () { echo hello; }
 __ec () { echo hi; }
 _ab () { expr 10 % 3; }
 compgen -A function
+echo --
+compgen -A function _
 ## status: 0
 ## STDOUT:
 __ec
@@ -14,6 +16,9 @@ _ab
 add
 div
 ek
+--
+__ec
+_ab
 ## END
 
 #### Invalid syntax
@@ -53,6 +58,18 @@ three
 two
 ## END
 
+#### compgen -v with local vars
+v1_global=0
+f() {
+  local v2_local=0	 
+  compgen -v v
+}
+f
+## STDOUT:
+v1_global
+v2_local
+## END
+
 #### compgen -v on unknown var
 compgen -v __nonexistent__
 ## status: 1
@@ -60,29 +77,22 @@ compgen -v __nonexistent__
 
 #### compgen -v P
 cd > /dev/null  # for some reason in bash, this makes PIPESTATUS appear!
-compgen -v P
+compgen -v P | grep -E 'PATH|PWD' | sort
 ## STDOUT:
 PATH
-PIPESTATUS
-PPID
-PS4
 PWD
 ## END
 
 #### Three compgens combined
 mkdir -p $TMP/compgen2
-touch $TMP/compgen2/{P1,P2}_FILE
+touch $TMP/compgen2/PA_FILE_{1,2}
 cd $TMP/compgen2  # depends on previous test above!
-P_FUNC() { echo P; }
+PA_FUNC() { echo P; }
 Q_FUNC() { echo Q; }
-compgen -A function -A file -A variable P
+compgen -A function -A file -A variable PA
 ## STDOUT:
-P_FUNC
+PA_FUNC
 PATH
-PIPESTATUS
-PPID
-PS4
-PWD
-P1_FILE
-P2_FILE
+PA_FILE_1
+PA_FILE_2
 ## END
