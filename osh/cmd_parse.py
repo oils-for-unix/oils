@@ -144,15 +144,15 @@ def _MakeAssignment(assign_kw, suffix_words):
   while i < n:
     w = suffix_words[i]
     left_spid = word.LeftMostSpanForWord(w)
+    # declare x[y]=1 is valid
     kov = word.LooksLikeAssignment(w)
     if kov:
       k, op, v = kov
       t = word.TildeDetect(v)
       if t:
-        # t is an unevaluated word with TildeSubPart
-        a = (k, op, t, left_spid)
-      else:
-        a = (k, op, v, left_spid)  # v is unevaluated word
+        v = t
+      # t is an unevaluated word with TildeSubPart
+      a = (k, op, v, left_spid)
     else:
       # In aboriginal in variables/sources: export_if_blank does export "$1".
       # We should allow that.
@@ -196,17 +196,29 @@ def _SplitSimpleCommandPrefix(words):
       suffix_words.append(w)
       continue
 
+    # TODO: LooksLikeAssignment should give you this spid.
     left_spid = word.LeftMostSpanForWord(w)
+
+    # k, (spid1, spid2), op, v
+    #
+    # if bracketed:
+    #   spid1, spid2 = bracketed
+    #   Parse --> possibility of SYNTAX ERROR here, need to print it
+    #   If successful, we get an arith_expr
+    #   and then create LhsIndexedName(arith_expr)
+    #
+    # Problem: we have too many representations:
+    #    kov
+    # -> prefix_bindings
+    # -> assign_pair
 
     kov = word.LooksLikeAssignment(w)
     if kov:
       k, op, v = kov
       t = word.TildeDetect(v)
-      if t:
-        # t is an unevaluated word with TildeSubPart
-        prefix_bindings.append((k, op, t, left_spid))
-      else:
-        prefix_bindings.append((k, op, v, left_spid))  # v is unevaluated word
+      if t:  # t is an unevaluated word with TildeSubPart
+        v = t
+      prefix_bindings.append((k, op, v, left_spid))
     else:
       done_prefix = True
       suffix_words.append(w)
@@ -679,6 +691,8 @@ class CommandParser(object):
     here_end vs filename is a matter of whether we test that it's quoted.  e.g.
     <<EOF vs <<'EOF'.
     """
+    # TODO: Refactor this method to 'early return' style, not if-elif.
+
     result = self._ScanSimpleCommand()
     assert result is not None
     redirects, words = result
@@ -1362,7 +1376,7 @@ class CommandParser(object):
 
     if self.c_kind == Kind.Word:
       if (self.w_parser.LookAhead() == Id.Op_LParen and
-          not word.LooksLikeAssignment(self.cur_word)):
+          not word.IsVarLike(self.cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
       # echo foo
       # f=(a b c)  # array

@@ -362,12 +362,37 @@ def AsArithVarName(w):
   return part0.token.val
 
 
-def LooksLikeAssignment(w):
+def IsVarLike(w):
   """Tests whether a word looks like FOO=bar.
+
+  This is a quick test for the command parser to distinguish:
+  
+  func() { echo hi; }
+  func=(1 2 3)
+  """
+  assert w.tag == word_e.CompoundWord
+  if len(w.parts) == 0:
+    return False
+
+  part0 = w.parts[0]
+  return _LiteralPartId(w.parts[0]) == Id.Lit_VarLike
+
+
+def LooksLikeAssignment(w):
+  """Tests whether a word looks like FOO=bar or FOO[x]=bar.
 
   Returns:
     (string, op, CompoundWord) if it looks like FOO=bar
     False                      if it doesn't
+
+
+  TODO: could use assign_parse
+  Or (spid, k, (spid1, spid2), op, v)
+  spid1 and spid2 are [ and ]
+
+  Or do we reparse right here?  Create our own ArithParser.
+
+  Cases:
 
   s=1
   s+=1
@@ -376,10 +401,9 @@ def LooksLikeAssignment(w):
 
   a=()
   a+=()
-  a[x]=()
-  a[x]+=()  # Not valid because arrays can't be nested.
-
-  NOTE: a[ and s[ might be parsed separately?
+  a[x]=(
+  a[x]+=()  # We parse this (as bash does), but it's never valid because arrays
+            # can't be nested.
   """
   assert w.tag == word_e.CompoundWord
   if len(w.parts) == 0:
@@ -388,6 +412,11 @@ def LooksLikeAssignment(w):
   part0 = w.parts[0]
   if _LiteralPartId(part0) != Id.Lit_VarLike:
     return False
+
+  # TODO:
+  # if id0 == Id.Lit_ArrayLhsOpen:
+  # Look through for Id.Lit_ArrayLhsClose
+  # If you find it, then it is an array
 
   s = part0.token.val
   assert s.endswith('=')

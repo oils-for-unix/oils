@@ -113,6 +113,18 @@ module osh
     LhsName(string name)
   | LhsIndexedName(string name, arith_expr index)
 
+  -- s=1 a[x]=1 a=(1 2 3)
+  rhs_expr =
+    Scalar(word w)
+  | Array(word items)
+
+  -- The more principled thing to do
+  assign_parse = 
+    ScalarLocation(token var_like, assign_op op, rhs_expr rhs)
+	| ArrayLocation(token array_open, int spid1, int spid2, assign_op op,
+                  rhs_expr rhs)
+  | Not
+
   -- Need to preserve physical parens?  Maybe need Parens node.
   arith_expr =
     -- TODO: need token
