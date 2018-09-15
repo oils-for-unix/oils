@@ -229,20 +229,15 @@ def _SplitSimpleCommandPrefix(words):
 def _MakeSimpleCommand(prefix_bindings, suffix_words, redirects):
   """Create an ast.SimpleCommand node."""
 
-  # FOO=(1 2 3) ls is not allowed
+  # FOO=(1 2 3) ls is not allowed.
   for k, _, v, _ in prefix_bindings:
     if word.HasArrayPart(v):
       p_die("Environment bindings can't contain array literals", word=v)
 
-  # echo FOO=(1 2 3) is not allowed
-  # NOTE: Other checks can be inserted here.  Can resolve builtins,
-  # functions, aliases, static PATH, etc.
+  # echo FOO=(1 2 3) is not allowed (but we should NOT fail on echo FOO[x]=1).
   for w in suffix_words:
-    kov = word.LooksLikeAssignment(w)
-    if kov:
-      _, _, v = kov
-      if word.HasArrayPart(v):
-        p_die("Commands can't contain array literals", word=w)
+    if word.HasArrayPart(w):
+      p_die("Commands can't contain array literals", word=w)
 
   # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading
   # character of the initial word.
@@ -699,7 +694,7 @@ class CommandParser(object):
 
     prefix_bindings, suffix_words = _SplitSimpleCommandPrefix(words)
 
-    if not suffix_words:  # ONE=1 TWO=2  (with no other words)
+    if not suffix_words:  # ONE=1 a[x]=1 TWO=2  (with no other words)
       if redirects:
         binding1 = prefix_bindings[0]
         _, _, _, spid = binding1
@@ -711,6 +706,9 @@ class CommandParser(object):
         p.spids.append(spid)
         pairs.append(p)
 
+      # TODO: Invoke ArithParser, but not before, because the presence of
+      # a[...] could still lead to an error (when it's an environment binding.
+
       node = ast.Assignment(Id.Assign_None, [], pairs)
       left_spid = word.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
@@ -719,11 +717,13 @@ class CommandParser(object):
     kind, kw_token = word.KeywordToken(suffix_words[0])
 
     if kind == Kind.Assign:
-      # Here we StaticEval suffix_words[1] to see if it's a command like
-      # 'typeset -p'.  Then it becomes a SimpleCommand node instead of an
-      # Assignment.  Note we're not handling duplicate flags like 'typeset
-      # -pf'.  I see this in bashdb (bash debugger) but it can just be changed
-      # to 'typeset -p -f'.
+      # Here we StaticEval suffix_words[1] to see if we have an ASSIGNMENT COMMAND
+      # like 'typeset -p', which lists variables -- a SimpleCommand rather than
+      # an Assignment.
+      #
+      # Note we're not handling duplicate flags like 'typeset -pf'.  I see this
+      # in bashdb (bash debugger) but it can just be changed to 'typeset -p
+      # -f'.
       is_command = False
       if len(suffix_words) > 1:
         ok, val, _ = word.StaticEval(suffix_words[1])
@@ -731,8 +731,7 @@ class CommandParser(object):
           is_command = True
 
       if is_command:  # declare -f, declare -p, typeset -p, etc.
-        node = _MakeSimpleCommand(prefix_bindings, suffix_words,
-                                       redirects)
+        node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
         return node
 
       if redirects:
@@ -779,6 +778,9 @@ class CommandParser(object):
         _AppendMoreEnv(prefix_bindings, node.more_env)
       return node
 
+    # TODO check that we don't have env1=x x[1]=y env2=z here.
+
+    # FOO=bar printenv.py FOO
     node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
     return node
 

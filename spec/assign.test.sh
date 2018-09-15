@@ -375,3 +375,37 @@ lib/
 ## END
 ## N-I dash stdout: None
 
+#### Multiple assignments / array assignments on a line
+a=1 b[0+0]=2 c=3
+echo $a $b $c
+## stdout: 1 2 3
+## N-I dash stdout:
+
+#### assignments / array assignments not interpreted after 'echo'
+a=1 echo b[0]=2 c=3
+## stdout: b[0]=2 c=3
+
+#### Env bindings shouldn't contain array assignments
+a=1 b[0]=2 c=3 printenv.py a b c
+## STDOUT:
+1
+None
+3
+## END
+## BUG mksh STDOUT:
+1
+2
+3
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 127
+
+#### syntax error in array assignment
+a=x b[0+]=y c=z
+echo $a $b $c
+# status: 2
+## BUG bash stdout: x
+## BUG bash status: 0
+## OK mksh stdout-json: ""
+## OK mksh status: 1
+
