@@ -27,10 +27,7 @@ lex_mode_e = types.lex_mode_e
 
 
 def _InitWordParserWithArena(s):
-  pool = alloc.Pool()
-  arena = pool.NewArena()
-  arena.PushSource('word_parse_test.py')
-
+  arena = alloc.SideArena('word_parse_test.py')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(s, arena)
   w_parser, _ = parse_ctx.MakeParser(line_reader)

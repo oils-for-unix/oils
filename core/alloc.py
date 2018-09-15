@@ -104,7 +104,8 @@ class Arena(object):
     try:
       return self.spans[span_id]
     except IndexError:
-      util.log('Span ID out of range: %d', span_id)
+      util.log('Span ID out of range: %d is greater than %d', span_id,
+          len(self.spans))
       raise
 
   def LastSpanId(self):
@@ -123,16 +124,15 @@ class Arena(object):
     return path, line_num
 
 
-def CompletionArena(pool):
-  """A temporary arena that only exists for a function call?"""
-  arena = pool.NewArena()
-  arena.PushSource('<temp completion buffer>')
-  return arena
+def SideArena(source_name):
+  """A new arena outside the main one.
+  
+  For completion, $PS1 and $PS4, a[x++]=1, etc.
 
-
-def PluginArena(source_name):
-  """For PS4, etc."""
-  # TODO: Should there only be one pool?  This isn't worked out yet.
+  Translation takes advantage of the fact that arenas have contiguous span_ids.
+  """
+  # TODO: Should there only be one pool?  This isn't worked out yet.  Or just
+  # get rid of the pool concept?
   pool = Pool()
   arena = pool.NewArena()
   arena.PushSource(source_name)

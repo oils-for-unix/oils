@@ -12,6 +12,7 @@ cmd_parse.py - Parse high level shell commands.
 
 from asdl import const
 
+from core import alloc
 from core import braces
 from core import reader
 from core import word
@@ -109,7 +110,89 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
   h.here_end_span_id = arena.AddLineSpan(line_span)
 
 
-def _AppendMoreEnv(prefix_bindings, more_env):
+def _MakeAssignPair(parse_ctx, preparsed):
+  """Create an assign_pair from a 4-tuples from DetectAssignment."""
+
+  left_token, close_token, part_offset, w = preparsed
+
+  if left_token.id == Id.Lit_VarLike:  # s=1
+    if left_token.val[-2] == '+':
+      var_name = left_token.val[:-2]
+      op = assign_op_e.PlusEqual
+    else:
+      var_name = left_token.val[:-1]
+      op = assign_op_e.Equal
+
+    lhs_expr = ast.LhsName(var_name)
+
+  elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
+    var_name = left_token.val[:-1]
+    if close_token.val[-2] == '+':
+      op = assign_op_e.PlusEqual
+    else:
+      op = assign_op_e.Equal
+
+    # Adapted from tools/osh2oil.py Cursor.PrintUntil
+    # TODO: Make a method like arena.AppendPieces(start, end, []), and share
+    # with alias.
+    pieces = []
+    for span_id in xrange(left_token.span_id + 1, close_token.span_id):
+      span = parse_ctx.arena.GetLineSpan(span_id)
+      line = parse_ctx.arena.GetLine(span.line_id)
+      piece = line[span.col : span.col + span.length]
+      pieces.append(piece)
+
+    # Now reparse everything between here
+    code_str = ''.join(pieces)
+    arena = alloc.SideArena('<LHS array index at %d>' % 10)
+    a_parser = parse_ctx.MakeArithParser(code_str, arena)
+    expr = a_parser.Parse()  # raises util.ParseError
+    lhs_expr = ast.LhsIndexedName(var_name, expr)
+
+  else:
+    raise AssertionError
+
+  n = len(w.parts)
+  if part_offset == n:
+    val = ast.EmptyWord()
+  else:
+    val = ast.CompoundWord(w.parts[part_offset:])
+    val = word.TildeDetect(val) or val
+
+  pair = ast.assign_pair(lhs_expr, op, val)
+  pair.spids.append(left_token.span_id)  # Do we need this?
+  return pair
+
+
+def _AppendMoreEnv(preparsed_list, more_env):
+  """Helper to modify a SimpleCommand node.
+
+  Args:
+    preparsed: a list of 4-tuples from DetectAssignment
+    more_env: a list to append env_pairs to
+  """
+
+  for left_token, close_token, part_offset, w in preparsed_list:
+    if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
+      raise AssertionError(left_token)
+
+    if left_token.val[-2] == '+':
+      p_die('Expected = in environment binding, got +=', token=left_token)
+
+    var_name = left_token.val[:-1]
+    n = len(w.parts)
+    if part_offset == n:
+      val = ast.EmptyWord()
+    else:
+      val = ast.CompoundWord(w.parts[part_offset:])
+
+    pair = ast.env_pair(var_name, val)
+    pair.spids.append(left_token.span_id)  # Do we need this?
+
+    more_env.append(pair)
+
+
+def _AppendMoreEnv_OLD(prefix_bindings, more_env):
   """Helper to modify a SimpleCommand node."""
   for name, op, val, left_spid in prefix_bindings:
     if op != assign_op_e.Equal:
@@ -145,14 +228,17 @@ def _MakeAssignment(assign_kw, suffix_words):
     w = suffix_words[i]
     left_spid = word.LeftMostSpanForWord(w)
     # declare x[y]=1 is valid
-    kov = word.LooksLikeAssignment(w)
+    kov = word.DetectAssignment_OLD(w)
     if kov:
+      # TODO: Call _MakeAssignPair here, which invokes ArithParser.
+
       k, op, v = kov
       t = word.TildeDetect(v)
       if t:
         v = t
       # t is an unevaluated word with TildeSubPart
       a = (k, op, v, left_spid)
+
     else:
       # In aboriginal in variables/sources: export_if_blank does export "$1".
       # We should allow that.
@@ -196,7 +282,7 @@ def _SplitSimpleCommandPrefix(words):
       suffix_words.append(w)
       continue
 
-    # TODO: LooksLikeAssignment should give you this spid.
+    # TODO: DetectAssignment should give you this spid.
     left_spid = word.LeftMostSpanForWord(w)
 
     # k, (spid1, spid2), op, v
@@ -212,7 +298,7 @@ def _SplitSimpleCommandPrefix(words):
     # -> prefix_bindings
     # -> assign_pair
 
-    kov = word.LooksLikeAssignment(w)
+    kov = word.DetectAssignment_OLD(w)
     if kov:
       k, op, v = kov
       t = word.TildeDetect(v)
@@ -251,7 +337,7 @@ def _MakeSimpleCommand(prefix_bindings, suffix_words, redirects):
   node = ast.SimpleCommand()
   node.words = words3
   node.redirects = redirects
-  _AppendMoreEnv(prefix_bindings, node.more_env)
+  _AppendMoreEnv_OLD(prefix_bindings, node.more_env)
   return node
 
 
@@ -700,6 +786,8 @@ class CommandParser(object):
         _, _, _, spid = binding1
         p_die("Global assignment shouldn't have redirects", span_id=spid)
 
+      # TODO: Call _MakeAssignPair
+
       pairs = []
       for lhs, op, rhs, spid in prefix_bindings:
         p = ast.assign_pair(ast.LhsName(lhs), op, rhs)
@@ -775,7 +863,7 @@ class CommandParser(object):
       # NOTE: There are other types of nodes with redirects.  Do they matter?
       if node.tag == command_e.SimpleCommand:
         node.redirects = redirects
-        _AppendMoreEnv(prefix_bindings, node.more_env)
+        _AppendMoreEnv_OLD(prefix_bindings, node.more_env)
       return node
 
     # TODO check that we don't have env1=x x[1]=y env2=z here.

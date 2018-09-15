@@ -118,6 +118,13 @@ arith-context() {
   _error-case '(( 1 + 2 )/'
   _error-case '(( 1'
   _error-case '(('
+
+  # Should be an error
+  _error-case 'a[x+]=1'
+
+  # This is not an error, it just fails to detect?  Might want to be stricter
+  # about it.
+  _error-case 'a[]=1'
 }
 
 arith-expr() {

@@ -4,7 +4,9 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from core import lexer
 from core import reader
+from core import tdop
 
+from osh import arith_parse
 from osh import cmd_parse
 from osh import match
 from osh import word_parse
@@ -40,6 +42,18 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
     lx = lexer.Lexer(line_lexer, line_reader)
     return word_parse.WordParser(self, lx, line_reader)
+
+  def MakeArithParser(self, code_str, arena):
+    """
+    NOTE: We want to add tokens to a different arena, so we don't mess up the
+    translation.
+    """
+    line_reader = reader.StringLineReader(code_str, arena)
+    line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
+    lx = lexer.Lexer(line_lexer, line_reader)
+    w_parser = word_parse.WordParser(self, lx, line_reader)
+    a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
+    return a_parser
 
   def MakeParserForCommandSub(self, line_reader, lexer, eof_id):
     """To parse command sub, we want a fresh word parser state.

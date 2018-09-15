@@ -346,7 +346,7 @@ def AsFuncName(w):
 def AsArithVarName(w):
   """Returns a string if this word looks like an arith var; otherwise False.
 
-  NOTE: This can't be combined with LooksLikeAssignment because VarLike and
+  NOTE: This can't be combined with DetectAssignment because VarLike and
   ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
   confused between array assigments foo=(1 2) and function calls foo(1, 2).
   """
@@ -378,13 +378,17 @@ def IsVarLike(w):
   return _LiteralPartId(w.parts[0]) == Id.Lit_VarLike
 
 
-def LooksLikeAssignment(w):
+def DetectAssignment_OLD(w):
   """Tests whether a word looks like FOO=bar or FOO[x]=bar.
 
   Returns:
     (string, op, CompoundWord) if it looks like FOO=bar
     False                      if it doesn't
 
+
+  (token left,   # Lit_VarLike, Lit_ArrayLhsOpen, or Undefined_Tok
+   token? right, # Lit_ArrayLhsClose if it was detected
+   part_offset)  # where to start the token, 0
 
   TODO: could use assign_parse
   Or (spid, k, (spid1, spid2), op, v)
@@ -440,23 +444,28 @@ def LooksLikeAssignment(w):
   return name, op, rhs
 
 
-# TODO:
-# - local/declare should use this.
-# - Doesn't work with 'readonly' or 'export'
-# - global is parsed at the top level with LhsIndexedLike.
-def LooksLikeLhsIndex(s):
-  """Tests if a STRING looks like a[x + 1]=b
-
-  # After EvalStatic, do another around of lexing at runtime.
-  # Use osh/lex.py.
-
-  Returns:
-    (string, arith_expr) if it looks like a[x + 1]=b
-    LhsIndexedName?
-
-    False                  if it doesn't
+def DetectAssignment(w):
   """
-  # PROBLEM: What arena tokens to use?
+  """
+  assert w.tag == word_e.CompoundWord
+  n = len(w.parts)
+  if n == 0:
+    return None, None, 0
+
+  part0 = w.parts[0]
+  id0 = _LiteralPartId(part0)
+  if id0 == Id.Lit_VarLike:
+    return part0.token, None, 1  # everything after first token is the value
+
+  if id0 == Id.Lit_ArrayLhsOpen:
+    if n < 3:  # a[]= can't be valid
+      return None, None, 0
+    for i in xrange(2, n):
+      if _LiteralPartId(w.parts[i]) == Id.Lit_ArrayLhsClose:
+        return part0.token, w.parts[i].token, i+1
+
+  # Nothing detected.  Could be 'foobar' or a[x+1+2/' without the closing ].
+  return None, None, 0
 
 
 def KeywordToken(w):

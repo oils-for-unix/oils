@@ -1421,7 +1421,7 @@ class Tracer(object):
     self.mem = mem
     self.word_ev = word_ev
 
-    self.arena = alloc.PluginArena('<$PS4>')
+    self.arena = alloc.SideArena('<$PS4>')
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
 
   def _EvalPS4(self):

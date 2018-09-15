@@ -610,7 +610,7 @@ class RootCompleter(object):
     self.parser = DummyParser()  # TODO: remove
 
   def Matches(self, buf, status_out):
-    arena = alloc.CompletionArena(self.pool)
+    arena = alloc.SideArena('<completion>')
     w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
     comp_type, prefix, comp_words = _GetCompletionType(
         w_parser, c_parser, self.ev, status_out)

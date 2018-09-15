@@ -96,7 +96,9 @@ module osh
   | ExtGlobPart(token op, word* arms)
 
   word = 
-    TokenWord(token token)
+    -- for RHS of 'x=' and the argument in ${x:-}
+    EmptyWord
+  | TokenWord(token token)
     -- A CompoundWord can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
     -- overhead and seems like overkill.  Note that DoubleQuotedPart can't
