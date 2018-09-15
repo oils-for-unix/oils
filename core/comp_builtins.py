@@ -4,6 +4,7 @@ comp_builtins.py - Completion builtins
 """
 
 from core import args
+from core import completion
 from core import util
 
 log = util.log
@@ -22,7 +23,7 @@ COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Register a completion function')
 _DefineOptions(COMPLETE_SPEC)
 
 
-def Complete(argv, ex, funcs, completion, comp_lookup):
+def Complete(argv, ex, funcs, comp_lookup):
   """complete builtin - register a completion function.
 
   NOTE: It's a member of Executor because it creates a ShellFuncAction, which
@@ -47,12 +48,13 @@ def Complete(argv, ex, funcs, completion, comp_lookup):
       print('Function %r not found' % func_name)
       return 1
 
-    if completion:
-      chain = completion.ShellFuncAction(ex, func)
-      comp_lookup.RegisterName(command, chain)
-      # TODO: Some feedback would be nice?
-    else:
-      util.error('Oil was not built with readline/completion.')
+    chain = completion.ShellFuncAction(ex, func)
+    comp_lookup.RegisterName(command, chain)
+
+    # TODO: Some feedback would be nice?
+    # Should we show an error like this?  Or maybe a warning?  Maybe
+    # comp_lookup has readline_mod?
+    # util.error('Oil was not built with readline/completion.')
   else:
     pass
 

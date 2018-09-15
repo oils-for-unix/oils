@@ -29,7 +29,6 @@ bash note: most of this stuff is in pcomplete.c and bashline.c (4K lines!).
 Uses ITEMLIST with a bunch of flags.
 """
 
-import readline
 import os
 import sys
 import time
@@ -48,6 +47,7 @@ value_e = runtime.value_e
 completion_state_e = runtime.completion_state_e
 
 log = util.log
+
 
 class CompletionInterface(object):
   """
@@ -669,7 +669,8 @@ class RootCompleter(object):
 
 
 class ReadlineCompleter(object):
-  def __init__(self, root_comp, status_out, debug=False):
+  def __init__(self, readline_mod, root_comp, status_out, debug=False):
+    self.readline_mod = readline_mod
     self.root_comp = root_comp
     self.status_out = status_out
     self.debug = debug
@@ -681,15 +682,15 @@ class ReadlineCompleter(object):
       # TODO: Tokenize it according to our language.  If this is $PS2, we also
       # need previous lines!  Could make a VirtualLineReader instead of
       # StringLineReader?
-      buf = readline.get_line_buffer()
+      buf = self.readline_mod.get_line_buffer()
 
       # Begin: the index of the first char of the 'word' in the line.  Words
       # are parsed according to readline delims (which we won't use).
 
-      begin = readline.get_begidx()
+      begin = self.readline_mod.get_begidx()
 
       # The current position of the cursor.  The thing being completed.
-      end = readline.get_endidx()
+      end = self.readline_mod.get_endidx()
 
       if self.debug:
         self.status_out.Write(0,
@@ -721,7 +722,7 @@ class ReadlineCompleter(object):
       self.status_out.Write(0, 'Unhandled exception while completing: %s', e)
 
 
-def InitReadline(complete_cb):
+def InitReadline(readline_mod, complete_cb):
   home_dir = os.environ.get('HOME')
   if home_dir is None:
     home_dir = util.GetHomeDir()
@@ -731,19 +732,19 @@ def InitReadline(complete_cb):
   history_filename = os.path.join(home_dir, 'oil_history')
 
   try:
-    readline.read_history_file(history_filename)
+    readline_mod.read_history_file(history_filename)
   except IOError:
     pass
 
   # TODO: This should go at the end of main()?  atexit is Python-specific
   # control flow, which we're avoiding.
   #atexit.register(readline.write_history_file, history_filename)
-  readline.parse_and_bind("tab: complete")
+  readline_mod.parse_and_bind("tab: complete")
 
   # How does this map to C?
   # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
 
-  readline.set_completer(complete_cb)
+  readline_mod.set_completer(complete_cb)
 
   # NOTE: This apparently matters for -a -n completion -- why?  Is space the
   # right value?
@@ -753,7 +754,7 @@ def InitReadline(complete_cb):
   # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
   #
   # Hm I don't get this.
-  readline.set_completer_delims(' ')
+  readline_mod.set_completer_delims(' ')
 
 
 class StatusOutput(object):
@@ -767,7 +768,8 @@ class StatusOutput(object):
       self.status_lines[index].Write(msg, *args)
 
 
-def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev, parse_ctx):
+def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, status_out, ev,
+         parse_ctx):
 
   aliases_action = WordsAction(['TODO:alias'])
   commands_action = ExternalCommandAction(mem)
@@ -796,43 +798,5 @@ def Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev, parse_ctx):
   var_comp = VarAction(os.environ, mem)
   root_comp = RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx)
 
-  complete_cb = ReadlineCompleter(root_comp, status_out)
-  InitReadline(complete_cb)
-
-
-if __name__ == '__main__':
-  from core import builtin
-
-  status_lines = ui.MakeStatusLines()
-  mem = state.Mem('', [], {}, None)
-  exec_opts = state.ExecOpts(mem)
-  status_out = StatusOutput(status_lines, exec_opts)
-
-  builtins = builtin.BUILTIN_DEF
-
-  mem = state.Mem('dummy', [], {})
-
-  funcs = {'func1': None, 'func2': None, 'exfunc': None}
-  comp_lookup = CompletionLookup()
-  ev = None
-
-  pool = None
-  Init(pool, builtins, mem, funcs, comp_lookup, status_out, ev)
-
-  # Disable it.  OK so this is how you go back and forth?  At least in Python.
-  # Enable and disable custom completer?
-  # Is this an action then?  It doesn't really fit into the framework.
-  #
-  # -A file does this ... TODO: Look at bash source code for that?
-  # Yup, look at bashline.c.  It does save and restore.  This is pretty lame.
-
-  try:
-    if sys.argv[1] == 'filename':
-      print('Disabling completer')
-      readline.set_completer(None)
-  except IndexError:
-    pass
-
-  while True:
-    s = raw_input('! ')
-    print(s)
+  complete_cb = ReadlineCompleter(readline_mod, root_comp, status_out)
+  InitReadline(readline_mod, complete_cb)

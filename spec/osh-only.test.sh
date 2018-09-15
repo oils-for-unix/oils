@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-#### debug-line builtin
-debug-line 'hi there'
-## status: 0
+#### --debug-file
+$SH --debug-file $TMP/debug.txt -c 'true'
+wc -l < $TMP/debug.txt  # It prints one line
+## stdout: 1
 
 #### debug-completion option
 set -o debug-completion

@@ -60,6 +60,7 @@ from osh import parse_lib
 from core import alloc
 from core import args
 from core import builtin
+from core import completion
 from core import cmd_exec
 from core import legacy
 from core import main_loop
@@ -72,10 +73,8 @@ from core import util
 
 if HAVE_READLINE:
   import readline
-  from core import completion
 else:
   readline = None
-  completion = None
 
 from tools import deps
 from tools import osh2oil
@@ -152,12 +151,7 @@ def OshMain(argv0, argv, login_shell):
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], os.environ, arena)
   funcs = {}
 
-  # Passed to Executor for 'complete', and passed to completion.Init
-  if completion:
-    comp_lookup = completion.CompletionLookup()
-  else:
-    # TODO: NullLookup?
-    comp_lookup = None
+  comp_lookup = completion.CompletionLookup()
 
   fd_state = process.FdState()
   exec_opts = state.ExecOpts(mem, readline)
@@ -170,8 +164,8 @@ def OshMain(argv0, argv, login_shell):
     util.DEBUG_FILE = fd_state.Open(opts.debug_file, mode='w')
     util.Debug('Debug file is %s', util.DEBUG_FILE)
 
-  ex = cmd_exec.Executor(mem, fd_state, funcs, completion, comp_lookup,
-                         exec_opts, parse_ctx)
+  ex = cmd_exec.Executor(mem, fd_state, funcs, comp_lookup, exec_opts,
+                         parse_ctx)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
@@ -229,8 +223,8 @@ def OshMain(argv0, argv, login_shell):
       splitter = legacy.SplitContext(mem)
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
       status_out = completion.StatusOutput(status_lines, exec_opts)
-      completion.Init(pool, builtin.BUILTIN_DEF, mem, funcs, comp_lookup,
-                      status_out, ev, parse_ctx)
+      completion.Init(readline, pool, builtin.BUILTIN_DEF, mem, funcs,
+                      comp_lookup, status_out, ev, parse_ctx)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

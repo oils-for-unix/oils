@@ -43,8 +43,8 @@ def InitExecutor(arena=None):
   # For the tests, we do not use 'readline'.
   exec_opts = state.ExecOpts(mem, None)
   parse_ctx = parse_lib.ParseContext(arena, {})
-  return cmd_exec.Executor(mem, fd_state, funcs,
-                           completion, comp_funcs, exec_opts, parse_ctx)
+  return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
+                           parse_ctx)
 
 
 def InitEvaluator():

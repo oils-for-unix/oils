@@ -106,23 +106,20 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, fd_state, funcs, completion,
-               comp_lookup, exec_opts, parse_ctx):
+  def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
       funcs: registry of functions (these names are completed)
-      completion: completion module, if available
       comp_lookup: completion pattern/action
       exec_opts: ExecOpts
-      arena: for printing error locations
+      parse_ctx: for instantiating parsers
     """
     self.mem = mem
     self.fd_state = fd_state
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
-    self.completion = completion
     # Completion hooks, set by 'complete' builtin.
     self.comp_lookup = comp_lookup
     # This is for shopt and set -o.  They are initialized by flags.
@@ -307,8 +304,7 @@ class Executor(object):
       status = self._Eval(argv)
 
     elif builtin_id == builtin_e.COMPLETE:
-      status = comp_builtins.Complete(argv, self, self.funcs, self.completion,
-                                      self.comp_lookup)
+      status = comp_builtins.Complete(argv, self, self.funcs, self.comp_lookup)
 
     elif builtin_id == builtin_e.COMPGEN:
       status = comp_builtins.CompGen(argv, self.funcs)
