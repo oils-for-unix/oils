@@ -16,13 +16,14 @@ from core import word_compile
 from core import util
 from osh.meta import ast
 
-part_value_e = runtime.part_value_e
-value_e = runtime.value_e
-effect_e = runtime.effect_e
-
+word_e = ast.word_e
 bracket_op_e = ast.bracket_op_e
 suffix_op_e = ast.suffix_op_e
 word_part_e = ast.word_part_e
+
+part_value_e = runtime.part_value_e
+value_e = runtime.value_e
+effect_e = runtime.effect_e
 
 log = util.log
 e_die = util.e_die
@@ -804,6 +805,9 @@ class _WordEvaluator(object):
       "$pat") echo 'equal to glob string' ;;  # must be glob escaped
     esac
     """
+    if word.tag == word_e.EmptyWord:
+      return runtime.Str('')
+
     part_vals = []
     for p in word.parts:
       self._EvalWordPart(p, part_vals, quoted=False)
@@ -844,11 +848,14 @@ class _WordEvaluator(object):
     Used for RHS of assignment.  There is no splitting.
 
     Args:
-      word.CompoundWord
+      ast.word_t
 
     Returns:
-      value
+      runtime.value_t
     """
+    if word.tag == word_e.EmptyWord:
+      return runtime.Str('')
+
     # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
     # don't look like assignments.
     if (len(word.parts) == 1 and

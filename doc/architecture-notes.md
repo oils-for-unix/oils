@@ -1,6 +1,8 @@
 Notes on OSH Architecture
 -------------------------
 
+# Parse Time
+
 ## Where we (unfortunately) must re-parse previously parsed text
 
 - alias expansion
@@ -10,10 +12,19 @@ Notes on OSH Architecture
 Each of these cases has implications for translation, because we break the
 "arena invariant".
 
+### Extra Passes Over the LST
+
+These are handled up front, but not in a single pass.
+
+- Assignment / Env detection: `FOO=bar declare a[x]=1`
+  - s=1 doesn't cause reparsing, but a[x+1]=y does.
+- Brace Detection in a few places: `echo {a,b}`
+- Tilde Detection: `echo ~bob`, `home=~bob`
+
 ## Parser Lookahead
 
-- `func() { echo hi; }` vs.
-- `func=()  # an array`
+- `func() { echo hi; }` vs.  `func=()  # an array`
+- precedence parsing?  I think this is also a single token.
 
 ## Where the arena invariant is broken
 
@@ -30,6 +41,8 @@ This isn't re-parsing, but it's re-reading.
 ## Where parsers are instantiated
 
 - See `osh/parse_lib.py` and its callers.
+
+# Runtime
 
 ## Where code strings are evaluated
 
@@ -59,6 +72,7 @@ This isn't re-parsing, but it's re-reading.
 - expr and $(( )) (expr not in shell)
 - later: find and our own language
 
+# Build Time
 
 ## Dependencies
 

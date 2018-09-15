@@ -378,23 +378,14 @@ def IsVarLike(w):
   return _LiteralPartId(w.parts[0]) == Id.Lit_VarLike
 
 
-def DetectAssignment_OLD(w):
-  """Tests whether a word looks like FOO=bar or FOO[x]=bar.
+def DetectAssignment(w):
+  """Detects whether a word looks like FOO=bar or FOO[x]=bar.
 
   Returns:
-    (string, op, CompoundWord) if it looks like FOO=bar
-    False                      if it doesn't
-
-
-  (token left,   # Lit_VarLike, Lit_ArrayLhsOpen, or Undefined_Tok
-   token? right, # Lit_ArrayLhsClose if it was detected
-   part_offset)  # where to start the token, 0
-
-  TODO: could use assign_parse
-  Or (spid, k, (spid1, spid2), op, v)
-  spid1 and spid2 are [ and ]
-
-  Or do we reparse right here?  Create our own ArithParser.
+    left_token or None   # Lit_VarLike, Lit_ArrayLhsOpen, or None if it's not an
+                         # assignment
+    close_token,         # Lit_ArrayLhsClose if it was detected, or None
+    part_offset          # where to start the value word, 0 if not an assignment
 
   Cases:
 
@@ -408,44 +399,6 @@ def DetectAssignment_OLD(w):
   a[x]=(
   a[x]+=()  # We parse this (as bash does), but it's never valid because arrays
             # can't be nested.
-  """
-  assert w.tag == word_e.CompoundWord
-  if len(w.parts) == 0:
-    return False
-
-  part0 = w.parts[0]
-  if _LiteralPartId(part0) != Id.Lit_VarLike:
-    return False
-
-  # TODO:
-  # if id0 == Id.Lit_ArrayLhsOpen:
-  # Look through for Id.Lit_ArrayLhsClose
-  # If you find it, then it is an array
-
-  s = part0.token.val
-  assert s.endswith('=')
-  if s[-2] == '+':
-    op = assign_op_e.PlusEqual
-    name = s[:-2]
-  else:
-    op = assign_op_e.Equal
-    name = s[:-1]
-
-  rhs = ast.CompoundWord()
-  if len(w.parts) == 1:
-    # This is necessary so that EmptyUnquoted elision isn't applied.  EMPTY= is
-    # like EMPTY=''.
-    # TODO: Change to EmptyWord
-    rhs.parts.append(ast.EmptyPart())
-  else:
-    for p in w.parts[1:]:
-      rhs.parts.append(p)
-
-  return name, op, rhs
-
-
-def DetectAssignment(w):
-  """
   """
   assert w.tag == word_e.CompoundWord
   n = len(w.parts)

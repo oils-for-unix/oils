@@ -10,6 +10,9 @@ from osh import arith_parse
 from osh import cmd_parse
 from osh import match
 from osh import word_parse
+from osh.meta import types
+
+lex_mode_e = types.lex_mode_e
 
 
 def InitLexer(s, arena):
@@ -51,7 +54,8 @@ class ParseContext(object):
     line_reader = reader.StringLineReader(code_str, arena)
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
     lx = lexer.Lexer(line_lexer, line_reader)
-    w_parser = word_parse.WordParser(self, lx, line_reader)
+    w_parser = word_parse.WordParser(self, lx, line_reader,
+                                     lex_mode=lex_mode_e.ARITH)
     a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
     return a_parser
 

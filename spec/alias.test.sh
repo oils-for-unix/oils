@@ -423,3 +423,17 @@ EOF
 ## STDOUT:
 [ ]
 ## END
+
+#### Corner case: alias inside LHS array arithmetic expression
+shopt -s expand_aliases
+alias zero='echo 0'
+a[$(zero)]=ZERO
+a[1]=ONE
+argv.py "${a[@]}"
+## STDOUT:
+['ZERO', 'ONE']
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1

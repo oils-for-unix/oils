@@ -144,14 +144,22 @@ def _MakeAssignPair(parse_ctx, preparsed):
 
     # Now reparse everything between here
     code_str = ''.join(pieces)
-    arena = alloc.SideArena('<LHS array index at %d>' % 10)
+
+    # NOTE: It's possible that an alias expansion underlies this, not a real file!
+    line_num = 99
+    source_name = 'TODO'
+    arena = alloc.SideArena('<LHS array index at line %d of %s>' %
+                            (line_num, source_name))
+
     a_parser = parse_ctx.MakeArithParser(code_str, arena)
     expr = a_parser.Parse()  # raises util.ParseError
+                             # TODO: It reports from the wrong arena!
     lhs_expr = ast.LhsIndexedName(var_name, expr)
 
   else:
     raise AssertionError
 
+  # TODO: Should we also create a rhs_exp.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
     val = ast.EmptyWord()
@@ -192,18 +200,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     more_env.append(pair)
 
 
-def _AppendMoreEnv_OLD(prefix_bindings, more_env):
-  """Helper to modify a SimpleCommand node."""
-  for name, op, val, left_spid in prefix_bindings:
-    if op != assign_op_e.Equal:
-      # NOTE: Attributing to RHS, since we don't have one for the op.
-      p_die('Expected = in environment binding, got +=', word=val)
-    pair = ast.env_pair(name, val)
-    pair.spids.append(left_spid)
-    more_env.append(pair)
-
-
-def _MakeAssignment(assign_kw, suffix_words):
+def _MakeAssignment(parse_ctx, assign_kw, suffix_words):
   """Create an ast.Assignment node from a keyword and a list of words."""
 
   # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
@@ -223,29 +220,19 @@ def _MakeAssignment(assign_kw, suffix_words):
     i += 1
 
   # Now parse bindings or variable names
-  assignments = []
+  pairs = []
   while i < n:
     w = suffix_words[i]
-    left_spid = word.LeftMostSpanForWord(w)
     # declare x[y]=1 is valid
-    kov = word.DetectAssignment_OLD(w)
-    if kov:
-      # TODO: Call _MakeAssignPair here, which invokes ArithParser.
-
-      k, op, v = kov
-      t = word.TildeDetect(v)
-      if t:
-        v = t
-      # t is an unevaluated word with TildeSubPart
-      a = (k, op, v, left_spid)
-
+    left_token, close_token, part_offset = word.DetectAssignment(w)
+    if left_token:
+      pair = _MakeAssignPair(parse_ctx, (left_token, close_token, part_offset, w))
     else:
       # In aboriginal in variables/sources: export_if_blank does export "$1".
       # We should allow that.
 
-      # Parse this differently then?
-      # dynamic-export?
-      # It sets global variables.
+      # Parse this differently then?  # dynamic-export?  It sets global
+      # variables.
       ok, static_val, quoted = word.StaticEval(w)
       if not ok or quoted:
         p_die("Variable names must be unquoted constants", word=w)
@@ -254,26 +241,21 @@ def _MakeAssignment(assign_kw, suffix_words):
       if not match.IsValidVarName(static_val):
         p_die('Invalid variable name %r', static_val, word=w)
 
-      a = (static_val, assign_op_e.Equal, None, left_spid)
+      pair = ast.assign_pair(ast.LhsName(static_val), assign_op_e.Equal, None)
 
-    assignments.append(a)
+      left_spid = word.LeftMostSpanForWord(w)
+      pair.spids.append(left_spid)
+    pairs.append(pair)
+
     i += 1
 
-  # TODO: Also make with LhsIndexedName
-  pairs = []
-  for lhs, op, rhs, spid in assignments:
-    p = ast.assign_pair(ast.LhsName(lhs), op, rhs)
-    p.spids.append(spid)
-    pairs.append(p)
-
   node = ast.Assignment(assign_kw, flags, pairs)
-
   return node
 
 
 def _SplitSimpleCommandPrefix(words):
   """Second pass of SimpleCommand parsing: look for assignment words."""
-  prefix_bindings = []
+  preparsed_list = []
   suffix_words = []
 
   done_prefix = False
@@ -282,43 +264,23 @@ def _SplitSimpleCommandPrefix(words):
       suffix_words.append(w)
       continue
 
-    # TODO: DetectAssignment should give you this spid.
-    left_spid = word.LeftMostSpanForWord(w)
-
-    # k, (spid1, spid2), op, v
-    #
-    # if bracketed:
-    #   spid1, spid2 = bracketed
-    #   Parse --> possibility of SYNTAX ERROR here, need to print it
-    #   If successful, we get an arith_expr
-    #   and then create LhsIndexedName(arith_expr)
-    #
-    # Problem: we have too many representations:
-    #    kov
-    # -> prefix_bindings
-    # -> assign_pair
-
-    kov = word.DetectAssignment_OLD(w)
-    if kov:
-      k, op, v = kov
-      t = word.TildeDetect(v)
-      if t:  # t is an unevaluated word with TildeSubPart
-        v = t
-      prefix_bindings.append((k, op, v, left_spid))
+    left_token, close_token, part_offset = word.DetectAssignment(w)
+    if left_token:
+      preparsed_list.append((left_token, close_token, part_offset, w))
     else:
       done_prefix = True
       suffix_words.append(w)
 
-  return prefix_bindings, suffix_words
+  return preparsed_list, suffix_words
 
 
-def _MakeSimpleCommand(prefix_bindings, suffix_words, redirects):
+def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
   """Create an ast.SimpleCommand node."""
 
   # FOO=(1 2 3) ls is not allowed.
-  for k, _, v, _ in prefix_bindings:
-    if word.HasArrayPart(v):
-      p_die("Environment bindings can't contain array literals", word=v)
+  for _, _, _, w in preparsed_list:
+    if word.HasArrayPart(w):
+      p_die("Environment bindings can't contain array literals", word=w)
 
   # echo FOO=(1 2 3) is not allowed (but we should NOT fail on echo FOO[x]=1).
   for w in suffix_words:
@@ -337,7 +299,7 @@ def _MakeSimpleCommand(prefix_bindings, suffix_words, redirects):
   node = ast.SimpleCommand()
   node.words = words3
   node.redirects = redirects
-  _AppendMoreEnv_OLD(prefix_bindings, node.more_env)
+  _AppendMoreEnv(preparsed_list, node.more_env)
   return node
 
 
@@ -778,24 +740,16 @@ class CommandParser(object):
       node.redirects = redirects
       return node
 
-    prefix_bindings, suffix_words = _SplitSimpleCommandPrefix(words)
+    preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
 
     if not suffix_words:  # ONE=1 a[x]=1 TWO=2  (with no other words)
       if redirects:
-        binding1 = prefix_bindings[0]
-        _, _, _, spid = binding1
-        p_die("Global assignment shouldn't have redirects", span_id=spid)
-
-      # TODO: Call _MakeAssignPair
+        left_token, _, _, _ = preparsed_list[0]
+        p_die("Global assignment shouldn't have redirects", token=left_token)
 
       pairs = []
-      for lhs, op, rhs, spid in prefix_bindings:
-        p = ast.assign_pair(ast.LhsName(lhs), op, rhs)
-        p.spids.append(spid)
-        pairs.append(p)
-
-      # TODO: Invoke ArithParser, but not before, because the presence of
-      # a[...] could still lead to an error (when it's an environment binding.
+      for preparsed in preparsed_list:
+        pairs.append(_MakeAssignPair(self.parse_ctx, preparsed))
 
       node = ast.Assignment(Id.Assign_None, [], pairs)
       left_spid = word.LeftMostSpanForWord(words[0])
@@ -819,7 +773,7 @@ class CommandParser(object):
           is_command = True
 
       if is_command:  # declare -f, declare -p, typeset -p, etc.
-        node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+        node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects)
         return node
 
       if redirects:
@@ -827,14 +781,14 @@ class CommandParser(object):
         # to attach it to the
         p_die("Assignments shouldn't have redirects", token=kw_token)
 
-      if prefix_bindings:  # FOO=bar local spam=eggs not allowed
+      if preparsed_list:  # FOO=bar local spam=eggs not allowed
         # Use the location of the first value.  TODO: Use the whole word
         # before splitting.
-        _, _, v0, _ = prefix_bindings[0]
-        p_die("Assignments shouldn't have environment bindings", word=v0)
+        left_token, _, _, _ = preparsed_list[0]
+        p_die("Assignments shouldn't have environment bindings", token=left_token)
 
       # declare str='', declare -a array=()
-      node = _MakeAssignment(kw_token.id, suffix_words)
+      node = _MakeAssignment(self.parse_ctx, kw_token.id, suffix_words)
       node.spids.append(kw_token.span_id)
       return node
 
@@ -842,10 +796,11 @@ class CommandParser(object):
       if redirects:
         p_die("Control flow shouldn't have redirects", token=kw_token)
 
-      if prefix_bindings:  # FOO=bar local spam=eggs not allowed
+      if preparsed_list:  # FOO=bar local spam=eggs not allowed
         # TODO: Change location as above
-        _, _, v0, _ = prefix_bindings[0]
-        p_die("Control flow shouldn't have environment bindings", word=v0)
+        left_token, _, _, _ = preparsed_list[0]
+        p_die("Control flow shouldn't have environment bindings",
+              token=left_token)
 
       # Attach the token for errors.  (Assignment may not need it.)
       if len(suffix_words) == 1:
@@ -863,13 +818,13 @@ class CommandParser(object):
       # NOTE: There are other types of nodes with redirects.  Do they matter?
       if node.tag == command_e.SimpleCommand:
         node.redirects = redirects
-        _AppendMoreEnv_OLD(prefix_bindings, node.more_env)
+        _AppendMoreEnv(preparsed_list, node.more_env)
       return node
 
     # TODO check that we don't have env1=x x[1]=y env2=z here.
 
     # FOO=bar printenv.py FOO
-    node = _MakeSimpleCommand(prefix_bindings, suffix_words, redirects)
+    node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects)
     return node
 
   def ParseBraceGroup(self):

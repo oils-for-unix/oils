@@ -251,7 +251,7 @@ word-eval() {
 }
 
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
@@ -492,17 +492,17 @@ errexit-strict() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/arith-context.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/array-compat.test.sh --osh-failures-allowed 4 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
@@ -512,7 +512,7 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/append.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
