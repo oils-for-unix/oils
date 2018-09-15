@@ -36,6 +36,14 @@ audit-distro() {
   audit $path
 }
 
+# Git completion is very big!
+#
+#   1528 /usr/share/bash-completion/completions/nmcli
+#   1529 /usr/share/bash-completion/completions/svn
+#   1995 /usr/share/bash-completion/bash_completion
+#   2774 /usr/share/bash-completion/completions/git
+#  39354 total
+
 list-distro() {
   find /usr/share/bash-completion/ -type f | xargs wc -l | sort -n
 }
