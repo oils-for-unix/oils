@@ -182,7 +182,8 @@ def _AppendMoreEnv(preparsed_list, more_env):
 
   for left_token, close_token, part_offset, w in preparsed_list:
     if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
-      raise AssertionError(left_token)
+      p_die("Environment binding shouldn't look like an array assignment",
+            token=left_token)
 
     if left_token.val[-2] == '+':
       p_die('Expected = in environment binding, got +=', token=left_token)

@@ -387,16 +387,20 @@ a=1 echo b[0]=2 c=3
 
 #### Env bindings shouldn't contain array assignments
 a=1 b[0]=2 c=3 printenv.py a b c
-## STDOUT:
+## status: 2
+## stdout-json: ""
+## OK bash STDOUT:
 1
 None
 3
 ## END
+## OK bash status: 0
 ## BUG mksh STDOUT:
 1
 2
 3
 ## END
+## OK mksh status: 0
 ## N-I dash stdout-json: ""
 ## N-I dash status: 127
 
