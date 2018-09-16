@@ -104,7 +104,7 @@ def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
-  print('Line %d of %r' % (line_num+1, path), file=f)
+  print('Line %d of %r' % (line_num, path), file=f)
   print('  ' + line.rstrip(), file=f)
   f.write('  ')
   # preserve tabs

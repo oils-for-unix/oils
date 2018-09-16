@@ -350,7 +350,7 @@ all() {
     nounset_arith divzero divzero_var array_arith \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
-    array_assign_1 array_assign_2; do
+    array_assign_1 array_assign_2 patsub_bad_glob; do
 
     _run_test $t
   done
