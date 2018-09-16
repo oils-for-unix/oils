@@ -170,6 +170,9 @@ def _GetRhsStyle(w):
 
   # Actually splitting NEVER HAPPENS ON ASSIGNMENT.  LEAVE IT OFF.
 
+  if w.tag == word_e.EmptyWord:
+    return word_style_e.SQ
+
   if len(w.parts) == 0:
     raise AssertionError(w)
 
@@ -1086,6 +1089,14 @@ class OilPrinter(object):
       # Not doing anything now
       pass
 
+    elif node.tag == word_e.EmptyWord:
+      # Hm do I need to make it ''?
+      # This only happens for:
+      # s=
+      # a[x]=
+      # ${x:-}
+      pass
+
     else:
       raise AssertionError(node.__class__.__name__)
 
@@ -1268,9 +1279,6 @@ class OilPrinter(object):
       # Skip over right bracket and write our own.
       self.f.write("')")
       self.cursor.SkipUntil(right_spid + 1)
-
-    elif node.tag == word_part_e.EmptyPart:
-      pass
 
     elif node.tag == word_part_e.ExtGlobPart:
       # Change this into a function?  It depends whether it is used as

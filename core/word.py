@@ -150,9 +150,6 @@ def LeftMostSpanForPart(part):
   elif part.tag == word_part_e.BracedAltPart:
     return const.NO_INTEGER
 
-  elif part.tag == word_part_e.EmptyPart:
-    return const.NO_INTEGER
-
   else:
     raise AssertionError(part.__class__.__name__)
 
@@ -229,6 +226,9 @@ def LeftMostSpanForWord(w):
   elif w.tag == word_e.TokenWord:
     return w.token.span_id
 
+  elif w.tag == word_e.EmptyWord:
+    return const.NO_INTEGER
+
   elif w.tag == word_e.BracedWordTree:
     if len(w.parts) == 0:
       return const.NO_INTEGER
@@ -252,6 +252,9 @@ def RightMostSpanForWord(w):
     else:
       end = w.parts[-1]
       return _RightMostSpanForPart(end)
+
+  elif w.tag == word_e.EmptyWord:
+    return const.NO_INTEGER
 
   # It's a TokenWord?
   return w.token.span_id

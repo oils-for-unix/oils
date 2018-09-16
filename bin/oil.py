@@ -282,8 +282,9 @@ OIL_SPEC.LongFlag('--version')
 
 
 def OilMain(argv):
+  arg_r = args.Reader(argv)
   try:
-    opts, opt_index = OIL_SPEC.Parse(argv)
+    opts = OIL_SPEC.Parse(arg_r)
   except args.UsageError as e:
     ui.usage('oil usage error: %s', e)
     return 2

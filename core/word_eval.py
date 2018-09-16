@@ -708,9 +708,6 @@ class _WordEvaluator(object):
       v = runtime.StringPartValue(s, False)
       part_vals.append(v)
 
-    elif part.tag == word_part_e.EmptyPart:
-      part_vals.append(runtime.StringPartValue('', False))
-
     elif part.tag == word_part_e.SingleQuotedPart:
       if part.left.id == Id.Left_SingleQuote:
         s = ''.join(t.val for t in part.tokens)
@@ -784,11 +781,15 @@ class _WordEvaluator(object):
       List of part_value.
       But note that this is a TREE.
     """
-    assert isinstance(word, ast.CompoundWord), \
-        "Expected CompoundWord, got %s" % word
+    if word.tag == word_e.CompoundWord:
+      for p in word.parts:
+        self._EvalWordPart(p, part_vals, quoted=quoted)
 
-    for p in word.parts:
-      self._EvalWordPart(p, part_vals, quoted=quoted)
+    elif word.tag == word_e.EmptyWord:
+      part_vals.append(runtime.StringPartValue('', False))
+
+    else:
+      raise AssertionError(word.__class__.__name__)
 
   def EvalWordToString(self, word, do_fnmatch=False):
     """

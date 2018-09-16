@@ -131,7 +131,8 @@ class WordParser(object):
     # return a CompoundWord with no parts, which is explicitly checked with a
     # custom error message.
     if not w.parts and arg_lex_mode == lex_mode_e.VS_ARG_DQ and empty_ok:
-      w.parts.append(ast.EmptyPart())
+      return ast.EmptyWord()
+
     return w
 
   def _ReadSliceVarOp(self):
