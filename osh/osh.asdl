@@ -20,7 +20,6 @@
 -- * case fallthrough ;& and ;;&
 
 -- Represented but Not Parsed:
--- * LeftIndex -- a[foo]=bar  (the arithmetic version is parsed)
 -- * ArrayPair -- ([foo]=bar)
 
 -- Parsed but Not Implemented
@@ -109,7 +108,7 @@ module osh
     -- For dynamic parsing of test/[ -- the string is already evaluated.
   | StringWord(id id, string s)
 
-  -- TODO: Might want to preserve token here.
+  -- TODO: Need more tokens/spids to translate a[x++]=1
   lhs_expr =
     LhsName(string name)
   | LhsIndexedName(string name, arith_expr index)
@@ -136,14 +135,6 @@ module osh
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  -- Notes about here docs:
-  -- * 'body' is required, but must be initialized after construction.
-  -- * here_end could be a word at parse time for the LST.  Then the second
-  --   pass could StaticEval it to a string and set do_expansion.
-  -- * To reprint the here doc, we need the here_end delimiter, but it doesn't
-  --   matter at runtime.  do_expansion is calculated from it.
-  -- TODO : id -> token for translation?
-
   redir = 
     Redir(token op, int fd, word arg_word)
   | HereDoc(token op, int fd,
@@ -168,7 +159,7 @@ module osh
 
   command = 
     NoOp
-    -- TODO: respect order 
+    -- TODO: respect order of words and redirects
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
   | Assignment(id keyword, string* flags, assign_pair* pairs)

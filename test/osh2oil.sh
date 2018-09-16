@@ -565,6 +565,30 @@ proc f {
 OIL
 }
 
+# This isn't close to working.
+assign-array() {
+  return
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+f() {
+  local -a array
+  array[x++]=1
+}
+OSH
+proc f {
+  var array = []
+  set array[shExpr('x++')]=1
+}
+OIL
+
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+a[x++]=1
+OSH
+set a[shExpr('x++')]=1
+OIL
+
+}
+
+
 array-literal() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 a=(1 2 3)

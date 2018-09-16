@@ -515,25 +515,33 @@ class OilPrinter(object):
     # foo=bar spam=eggs -> foo = 'bar', spam = 'eggs'
     n = len(node.pairs)
     for i, pair in enumerate(node.pairs):
-      assert pair.lhs.tag == lhs_expr_e.LhsName
+      if pair.lhs.tag == lhs_expr_e.LhsName:
+        left_spid = pair.spids[0]
+        self.cursor.PrintUntil(left_spid)
+        # Assume skipping over one Lit_VarLike token
+        self.cursor.SkipUntil(left_spid + 1)
 
-      left_spid = pair.spids[0]
-      self.cursor.PrintUntil(left_spid)
-      # Assume skipping over one Lit_VarLike token
-      self.cursor.SkipUntil(left_spid + 1)
+        # Replace name.  I guess it's Lit_Chars.
+        self.f.write(pair.lhs.name)
+        self.f.write(' = ')
 
-      # Replace name.  I guess it's Lit_Chars.
-      self.f.write(pair.lhs.name)
-      self.f.write(' = ')
+        # TODO: This should be translated from EmptyWord.
+        if pair.rhs is None:
+          self.f.write("''")  # local i -> var i = ''
+        else:
+          self.DoWordAsExpr(pair.rhs, local_symbols)
 
-      # TODO: This should be translated from EmptyWord.
-      if pair.rhs is None:
-        self.f.write("''")  # local i -> var i = ''
-      else:
-        self.DoWordAsExpr(pair.rhs, local_symbols)
+        if i != n - 1:
+          self.f.write(',')
 
-      if i != n - 1:
-        self.f.write(',')
+      elif pair.lhs.tag == lhs_expr_e.LhsIndexedName:
+        # TODO: Just wrap whatever is inside [] with with shExpr(' ') ?
+        # - But also setglobal is not appropriate?  It should always be set?
+        #self.cursor.PrintUntil()
+        pass
+
+      else: 
+        raise AssertionError(pair.lhs.__class__.__name__)
 
   def DoCommand(self, node, local_symbols, at_top_level=False):
     if node.tag == command_e.CommandList:
