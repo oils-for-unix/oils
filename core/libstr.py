@@ -281,14 +281,14 @@ class _ConstStringReplacer(_Replacer):
     self.replace_str = replace_str
 
   def Replace(self, s, op):
-    if op.do_all:
+    if op.replace_mode == Id.Lit_Slash:  # replace all
       return s.replace(self.pat, self.replace_str)
-    elif op.do_prefix:
+    elif op.replace_mode == Id.Lit_Pound:  # replace prefix
       if s.startswith(self.pat):
         return self.replace_str + s[self.pat_len:]
       else:
         return s
-    elif op.do_suffix:
+    elif op.replace_mode == Id.Lit_Percent:  # replace suffix
       if s.endswith(self.pat):
         # NOTE: This handles ${s/#/foo}.  See spec test in var-op-strip.
         i = len(s) - self.pat_len
@@ -300,22 +300,26 @@ class _ConstStringReplacer(_Replacer):
 
 
 class _GlobReplacer(_Replacer):
-  def __init__(self, regex, replace_str):
+  def __init__(self, regex, replace_str, slash_spid):
     # TODO: It would be nice to cache the compilation of the regex here,
     # instead of just the string.  That would require more sophisticated use of
     # the Python/C API in libc.c, which we might want to avoid.
     self.regex = regex
     self.replace_str = replace_str
+    self.slash_spid = slash_spid
 
   def Replace(self, s, op):
     regex = '(%s)' % self.regex  # make it a group
 
-    if op.do_all:
-      return _PatSubAll(s, regex, self.replace_str)  # loop over matches
+    if op.replace_mode == Id.Lit_Slash:
+      try:
+        return _PatSubAll(s, regex, self.replace_str)  # loop over matches
+      except RuntimeError as e:
+        e_die('Error matching regex %r: %s', regex, e, span_id=self.slash_spid)
 
-    if op.do_prefix:
+    if op.replace_mode == Id.Lit_Pound:
       regex = '^' + regex
-    elif op.do_suffix:
+    elif op.replace_mode == Id.Lit_Percent:
       regex = regex + '$'
 
     m = libc.regex_first_group_match(regex, s, 0)
@@ -326,7 +330,7 @@ class _GlobReplacer(_Replacer):
     return s[:start] + self.replace_str + s[end:]
 
 
-def MakeReplacer(pat, replace_str):
+def MakeReplacer(pat, replace_str, slash_spid):
   """Helper for ${x/pat/replace}
 
   Parses 'pat' and returns either a _GlobReplacer or a _ConstStringReplacer.
@@ -341,4 +345,4 @@ def MakeReplacer(pat, replace_str):
   if regex is None:
     return _ConstStringReplacer(pat, replace_str)
   else:
-    return _GlobReplacer(regex, replace_str)
+    return _GlobReplacer(regex, replace_str, slash_spid)

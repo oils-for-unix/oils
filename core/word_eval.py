@@ -585,7 +585,7 @@ class _WordEvaluator(object):
           replace_str = ''
 
         # Either GlobReplacer or ConstStringReplacer
-        replacer = libstr.MakeReplacer(pat_val.s, replace_str)
+        replacer = libstr.MakeReplacer(pat_val.s, replace_str, op.spids[0])
 
         if val.tag == value_e.Str:
           s = replacer.Replace(val.s, op)

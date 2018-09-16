@@ -155,6 +155,7 @@ def _MakeAssignPair(parse_ctx, preparsed):
     expr = a_parser.Parse()  # raises util.ParseError
                              # TODO: It reports from the wrong arena!
     lhs_expr = ast.LhsIndexedName(var_name, expr)
+    lhs_expr.spids.append(left_token.span_id)
 
   else:
     raise AssertionError

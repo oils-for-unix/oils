@@ -48,8 +48,16 @@ This isn't re-parsing, but it's re-reading.
 
 - source and eval
 - trap
+  - exit
+  - debug
+  - err
+  - signals
 - PS1 and PS4 (WordParser is used)
+
+### Function Callbacks
+
 - completion hooks registered by `complete -F ls_complete_func ls`
+- bash has a `command_not_found` hook; osh doesn't yet
 
 ## Parse errors at runtime (need line numbers)
 

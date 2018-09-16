@@ -51,7 +51,8 @@ module osh
 
   suffix_op = 
     StringUnary(id op_id, word arg_word)  -- e.g. ${v:-default}
-  | PatSub(word pat, word? replace, bool do_all, bool do_prefix, bool do_suffix)
+    -- TODO: token for / to attribute errors
+  | PatSub(word pat, word? replace, id replace_mode)
   -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 

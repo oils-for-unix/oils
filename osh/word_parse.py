@@ -162,10 +162,6 @@ class WordParser(object):
     VarSub    = ...
               | VarOf '/' Match '/' WORD
     """
-    do_all = False
-    do_prefix = False
-    do_suffix = False
-
     pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
 
     if len(pat.parts) == 1:
@@ -180,26 +176,21 @@ class WordParser(object):
       p_die('Pattern in ${x/pat/replace} must not be empty',
             token=self.cur_token)
 
+    replace_mode = Id.Undefined_Tok
     # Check for / # % modifier on pattern.
     first_part = pat.parts[0]
     if first_part.tag == word_part_e.LiteralPart:
       lit_id = first_part.token.id
-      if lit_id == Id.Lit_Slash:
-        do_all = True
+      if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)
-      elif lit_id == Id.Lit_Pound:
-        do_prefix = True
-        pat.parts.pop(0)
-      elif lit_id == Id.Lit_Percent:
-        do_suffix = True
-        pat.parts.pop(0)
+        replace_mode = lit_id
 
     # NOTE: If there is a modifier, the pattern can be empty, e.g.
     # ${s/#/foo} and ${a/%/foo}.
 
     if self.token_type == Id.Right_VarSub:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
-      return ast.PatSub(pat, None, do_all, do_prefix, do_suffix)
+      return ast.PatSub(pat, None, replace_mode)
 
     if self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode)  # do not stop at /
@@ -212,7 +203,7 @@ class WordParser(object):
         p_die("Expected } after replacement string, got %s", self.cur_token,
               token=self.cur_token)
 
-      return ast.PatSub(pat, replace, do_all, do_prefix, do_suffix)
+      return ast.PatSub(pat, replace, replace_mode)
 
     # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
     p_die("Expected } after pat sub, got %r", self.cur_token.val,
@@ -298,7 +289,9 @@ class WordParser(object):
 
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:
+        op_spid = self.cur_token.span_id  # for attributing error to /
         op = self._ReadPatSubVarOp(arg_lex_mode)
+        op.spids.append(op_spid)
         assert op is not None
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token

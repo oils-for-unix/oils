@@ -264,6 +264,12 @@ array_arith() {
   echo "${a[@]}"
 }
 
+patsub_bad_glob() {
+  local x='abc'
+  # inspired by git-completion.bash
+  echo ${x//[^]}
+}
+
 
 #
 # Builtins
@@ -307,6 +313,16 @@ strict_array_3() {
   local foo=${1:- "[$@]" }
 }
 
+array_assign_1() {
+  s=1
+  s[0]=x  # can't assign value
+}
+
+array_assign_2() {
+  readonly -a array=(1 2 3)
+  array[0]=x
+}
+
 #
 # TEST DRIVER
 #
@@ -333,7 +349,8 @@ all() {
     nonexistent nounset \
     nounset_arith divzero divzero_var array_arith \
     string_to_int_arith string_to_hex string_to_octal \
-    string_to_intbase string_to_int_bool; do
+    string_to_intbase string_to_int_bool \
+    array_assign_1 array_assign_2; do
 
     _run_test $t
   done

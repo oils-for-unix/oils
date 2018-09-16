@@ -179,23 +179,19 @@ class MemTest(unittest.TestCase):
     mem.ClearFlag('PYTHONPATH', var_flags_e.Exported, scope_e.Dynamic)
     self.assertEqual(False, mem.var_stack[0].vars['PYTHONPATH'].exported)
 
+    lhs = runtime.LhsIndexedName('a', 1)
+    lhs.spids.append(0)
     # a[1]=2
-    mem.SetVar(
-        runtime.LhsIndexedName('a', 1), runtime.Str('2'), (),
-        scope_e.Dynamic)
+    mem.SetVar(lhs, runtime.Str('2'), (), scope_e.Dynamic)
     self.assertEqual([None, '2'], mem.var_stack[0].vars['a'].val.strs)
 
     # a[1]=3
-    mem.SetVar(
-        runtime.LhsIndexedName('a', 1), runtime.Str('3'), (),
-        scope_e.Dynamic)
+    mem.SetVar(lhs, runtime.Str('3'), (), scope_e.Dynamic)
     self.assertEqual([None, '3'], mem.var_stack[0].vars['a'].val.strs)
 
     # a[1]=(x y z)  # illegal
     try:
-      mem.SetVar(
-          runtime.LhsIndexedName('a', 1), runtime.StrArray(['x', 'y', 'z']),
-          (), scope_e.Dynamic)
+      mem.SetVar(lhs, runtime.StrArray(['x', 'y', 'z']), (), scope_e.Dynamic)
     except util.FatalRuntimeError as e:
       pass
     else:
@@ -208,10 +204,8 @@ class MemTest(unittest.TestCase):
     self.assertEqual(True, mem.var_stack[0].vars['a'].readonly)
 
     try:
-      # a[2]=3
-      mem.SetVar(
-          runtime.LhsIndexedName('a', 1), runtime.Str('3'), (),
-          scope_e.Dynamic)
+      # a[1]=3
+      mem.SetVar(lhs, runtime.Str('3'), (), scope_e.Dynamic)
     except util.FatalRuntimeError as e:
       pass
     else:

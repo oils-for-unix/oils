@@ -395,7 +395,9 @@ class Executor(object):
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
       i = self.arith_ev.Eval(node.index)
-      return runtime.LhsIndexedName(node.name, i)
+      runtime_node = runtime.LhsIndexedName(node.name, i)
+      runtime_node.spids.append(node.spids[0])  # copy left-most token over
+      return runtime_node
 
     raise AssertionError(node.tag)
 
@@ -1333,33 +1335,11 @@ class Executor(object):
     else:
       raise AssertionError
 
-    # TODO: Generalize process sub?
-    #
-    # - Make it work first, bare minimum.
-    # - Then Make something like Pipeline()?
-    #   - you add all the argument processes
-    #   - then you add the main processes, with those as args
-    #   - then p.Wait()
-    #     - get status for all of them?
-    #
-    # Problem is that you don't see this until word_eval?
-    # You can scan a simple command for these though.
-
-    # TODO:
-    # - Do we need to somehow register a waiter?  After SimpleCommand,
-    #   argv and redirect words need to wait?
-    # - what about for loops?  case?  ControlFlow?  temp binding,
-    #   assignments, etc. They all have words
-    #   - disallow those?
-    # I guess you need it at the end of every command sub loop?
-    # But you want to detect statically if you need to wait?
-    # Maybe just have a dirty flag?  needs_wait
-      # - Make a pipe
-      # - Start another process connected to the write end of the pipe.
-      # - Return [/dev/fd/FD] as the read end of the pipe.
-
   def RunFunc(self, func_node, argv):
-    """Used by completion engine."""
+    """Used by completion engine.
+
+    Also used to run SimpleCommand.  TODO: Need to catch FatalRuntimeError.
+    """
     # These are redirects at DEFINITION SITE.  You can also have redirects at
     # the CALLER.  For example:
 

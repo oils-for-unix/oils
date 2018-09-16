@@ -182,36 +182,34 @@ class WordParserTest(unittest.TestCase):
   def testPatSub(self):
     w = _assertReadWord(self, '${var/pat/replace}')
     op = _GetSuffixOp(self, w)
-    self.assertFalse(op.do_all)
-    self.assertFalse(op.do_prefix)
-    self.assertFalse(op.do_suffix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
+    self.assertEqual(Id.Undefined_Tok, op.replace_mode)
 
     w = _assertReadWord(self, '${var//pat/replace}')  # sub all
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_all)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
+    self.assertEqual(Id.Lit_Slash, op.replace_mode)
 
     w = _assertReadWord(self, '${var/%pat/replace}')  # prefix
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_suffix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
+    self.assertEqual(Id.Lit_Percent, op.replace_mode)
 
     w = _assertReadWord(self, '${var/#pat/replace}')  # suffix
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_prefix)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
+    self.assertEqual(Id.Lit_Pound, op.replace_mode)
 
     w = _assertReadWord(self, '${var/pat}')  # no replacement
     w = _assertReadWord(self, '${var//pat}')  # no replacement
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_all)
     self.assertUnquoted('pat', op.pat)
     self.assertEqual(None, op.replace)
+    self.assertEqual(Id.Lit_Slash, op.replace_mode)
 
     # replace with slash
     w = _assertReadWord(self, '${var/pat//}')
@@ -239,7 +237,7 @@ class WordParserTest(unittest.TestCase):
     # http://www.oilshell.org/blog/2016/11/07.html
     w = _assertReadWord(self, r'${var////\\/}')
     op = _GetSuffixOp(self, w)
-    self.assertTrue(op.do_all)
+    self.assertEqual(Id.Lit_Slash, op.replace_mode)
 
     self.assertUnquoted('/', op.pat)
 

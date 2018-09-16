@@ -13,13 +13,11 @@ state.py - Interpreter state
 import cStringIO
 import os
 
+from asdl import const
 from core import args
 from core import legacy
-from osh.meta import runtime
 from core import util
-from osh.meta import Id
-
-from osh.meta import ast
+from osh.meta import ast, runtime, Id
 
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e
@@ -676,19 +674,28 @@ class Mem(object):
         e_die("Can't export array")  # TODO: error context
 
     elif lval.tag == lvalue_e.LhsIndexedName:
+      # TODO: All paths should have this?  We can get here by a[x]=1 or
+      # (( a[ x ] = 1 )).  Maybe we should make them different?
+      if lval.spids:
+        left_spid = lval.spids[0]
+      else:
+        left_spid = const.NO_INTEGER
+
+      # TODO: This is a parse error!
       # a[1]=(1 2 3)
       if value.tag == value_e.StrArray:
-        e_die("Can't assign array to array member")  # TODO: error context
+        e_die("Can't assign array to array member", span_id=left_spid)
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
         if cell.val.tag != value_e.StrArray:
           # s=x
-          # s[1]=y
-          e_die("Can't index non-array")  # TODO: error context
+          # s[1]=y  # invalid
+          e_die("Entries in value of type %s can't be assigned to",
+                cell.val.__class__.__name__, span_id=left_spid)
 
         if cell.readonly:
-          e_die("Can't assign to readonly value")
+          e_die("Can't assign to readonly value", span_id=left_spid)
 
         strs = cell.val.strs
         try:
