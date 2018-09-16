@@ -29,23 +29,17 @@
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
 --   * In the printer, I want to preserve line breaks!  foo \bar?
--- * parens
---   * 1 + 2*3  vs.  1 + (2*3)  or even 1 + ((2*3))
---   * [[ (1 == 1) ]] vs [[ 1 == 1 ]]
--- * $(( 1 + 2 )) vs $[1 + 2]  (bash-specific, used by Aboriginal)
 -- TODO:
 -- * remove redundancy of 'string val' in token.  It should use the span.
+-- * rename this file to osh/syntax.asdl, and then we have oil/syntax.asdl.
+--   Nothing is shared?
 
 module osh
 {
-  -- A portion of a line, used for error messages.
-  -- TODO: Need arena_id, for different files
+  -- A portion of a line, used for error messages.  For translation to work,
+  -- the spans should "sum up" to the original file. 
   line_span = (int line_id, int col, int length)
-
-  -- A primitive token.  NOTE: val is redundant with 'span_id' for now.  If we
-  -- rewrite the parser in C++, we might care for memory footprint.  But for 
-  -- now this is convenient.
-  -- NOTE: identical strings can shared, if we care.
+  -- Redundant val, as noted above
   token = (id id, string val, int span_id)
 
   -- Optional step for {100..50..-15}
@@ -113,7 +107,6 @@ module osh
     LhsName(string name)
   | LhsIndexedName(string name, arith_expr index)
 
-  -- Need to preserve physical parens?  Maybe need Parens node.
   arith_expr =
     -- TODO: need token
     ArithVarRef(string name)  -- variable without $
@@ -196,23 +189,6 @@ module osh
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.
   -- pipe_op = Pipe | PipeAndStderr
-
-  --  NOTE: Do we even need these types?  Arena already has methods.  They can
-  --  We just need to go from text -> text.  For execution, we'll be compiling
-  -- to a different format.  We also won't bootstrap with osh code -- only oil
-  -- code.  shell can call oil builtins if necessary.
-
-  -- A node with full debug info
-  -- All other nodes should have span_id?  int _loc or int _begin, int _end.
-  -- It can be further compressed perhaps, like a varint.
-  arena = (string* lines, line_span* spans, command root)
-
-  -- On-disk format for an entire file.  Enough info so we can reconstruct the
-  -- text byte-for-byte.
-  whole_file = (string path, arena a)
-
-  -- In-memory format for all the functions snipped out of a file.
-  partial_file = (string path, arena* funcs)
 
   -- Glob representation, for converting ${x//} to extended regexes.
 
