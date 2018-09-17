@@ -106,7 +106,8 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx):
+  def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx,
+               dumper):
     """
     Args:
       mem: Mem instance for storing variables
@@ -127,6 +128,7 @@ class Executor(object):
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
+    self.dumper = dumper
 
     self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(
@@ -522,7 +524,7 @@ class Executor(object):
     func_node = self.funcs.get(arg0)
     if func_node is not None:
       # NOTE: Functions could call 'exit 42' directly, etc.
-      status = self.RunFunc(func_node, argv)
+      status = self._RunFunc(func_node, argv)
       return status
 
     builtin_id = builtin.Resolve(arg0)
@@ -1172,7 +1174,7 @@ class Executor(object):
     Most other clients call _Execute():
     - _Source() for source builtin
     - _Eval() for eval builtin
-    - RunFunc() for function call
+    - _RunFunc() for function call
     """
     is_control_flow = False
     is_fatal = False
@@ -1189,7 +1191,8 @@ class Executor(object):
       ui.PrettyPrintError(e, self.arena)
       is_fatal = True
       status = e.exit_status if e.exit_status is not None else 1
-      # TODO: dump self.mem if requested.  Maybe speify with OIL_DUMP_PREFIX.
+
+    self.dumper.MaybeDump(status)
 
     self.mem.last_status = status
     return is_control_flow, is_fatal
@@ -1335,11 +1338,8 @@ class Executor(object):
     else:
       raise AssertionError
 
-  def RunFunc(self, func_node, argv):
-    """Used by completion engine.
-
-    Also used to run SimpleCommand.  TODO: Need to catch FatalRuntimeError.
-    """
+  def _RunFunc(self, func_node, argv):
+    """Used to run SimpleCommand and to run registered completion hooks."""
     # These are redirects at DEFINITION SITE.  You can also have redirects at
     # the CALLER.  For example:
 
@@ -1367,12 +1367,24 @@ class Executor(object):
       else:
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
+    except (util.FatalRuntimeError, util.ParseError) as e:
+      self.dumper.MaybeCollect(self)  # Do this before unwinding stack
+      raise
     finally:
       self.mem.PopCall()
       if def_redirects:
         self.fd_state.Pop()
 
     return status
+
+  def RunFuncForCompletion(self, func_node):
+    try:
+      self._RunFunc(func_node, [])
+    except util.FatalRuntimeError as e:
+      ui.PrettyPrintError(e, self.arena, sys.stderr)
+    except _ControlFlow as e:
+       # shouldn't be able to exit the shell from a completion hook!
+      util.error('Attempted to exit from completion hook.')
 
 
 class Tracer(object):

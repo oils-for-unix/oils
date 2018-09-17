@@ -62,6 +62,7 @@ from core import args
 from core import builtin
 from core import completion
 from core import cmd_exec
+from core import dev
 from core import legacy
 from core import main_loop
 from core import process
@@ -164,8 +165,10 @@ def OshMain(argv0, argv, login_shell):
     util.DEBUG_FILE = fd_state.Open(opts.debug_file, mode='w')
     util.Debug('Debug file is %s', util.DEBUG_FILE)
 
+  # Controlled by env variable, flag, or hook?
+  dumper = dev.CrashDumper(os.getenv('OSH_CRASH_DUMP_DIR', ''))
   ex = cmd_exec.Executor(mem, fd_state, funcs, comp_lookup, exec_opts,
-                         parse_ctx)
+                         parse_ctx, dumper)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.

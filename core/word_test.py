@@ -6,9 +6,12 @@ word_test.py: Tests for word.py
 
 import unittest
 
-from osh import word_parse_test
+from osh import cmd_parse  # reparse input
+from osh import parse_lib
+from osh import word_parse_test  # parse words
 from osh.meta import Id
 from core.util import log
+
 
 from core import word  # module under test
 
@@ -37,11 +40,6 @@ def _Detect(test, word_str, expected):
     test.assertEqual(expected_left, left_token.id)
 
   test.assertEqual(expected_part_offset, part_offset)
-
-  # Test that we can reparse niput
-  from osh import cmd_parse
-  from osh import parse_lib
-  from core import alloc
 
   parse_ctx = parse_lib.ParseContext(arena, {})
 

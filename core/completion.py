@@ -37,7 +37,6 @@ import traceback
 from osh.meta import ast, runtime
 from core import alloc
 from core import state
-from core import ui
 from core import util
 
 import libc
@@ -229,8 +228,9 @@ class ShellFuncAction(CompletionAction):
     state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', words)
     state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
 
-    self.ex.RunFunc(self.func, [])  # call with no arguments
-    
+    # TODO: We could catch FatalRuntimeError here instead of in RootCompleter?
+    # But we don't have the arena available.
+    self.ex.RunFuncForCompletion(self.func)
 
     # Should be COMP_REPLY to follow naming convention!  Lame.
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
@@ -647,24 +647,21 @@ class RootCompleter(object):
 
     index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
     i = 0
-    try:
-      for m in chain.Matches(comp_words, index, prefix):
-        # TODO: need to dedupe these
-        yield m
-        i += 1
-        elapsed = time.time() - start_time
-        plural = '' if i == 1 else 'es'
-        status_out.Write(0,
-            '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
-            plural, buf, elapsed)
-
+    for m in chain.Matches(comp_words, index, prefix):
+      # TODO: need to dedupe these
+      yield m
+      i += 1
       elapsed = time.time() - start_time
       plural = '' if i == 1 else 'es'
       status_out.Write(0,
-          'Found %d match%s for %r in %.2f seconds', i,
+          '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
           plural, buf, elapsed)
-    except util.FatalRuntimeError as e:
-      ui.PrettyPrintError(e, self.parse_ctx.arena, sys.stderr)
+
+    elapsed = time.time() - start_time
+    plural = '' if i == 1 else 'es'
+    status_out.Write(0,
+        'Found %d match%s for %r in %.2f seconds', i,
+        plural, buf, elapsed)
 
     # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
     # well as a command, and we don't want to show it twice.  Although then

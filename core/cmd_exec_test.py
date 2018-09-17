@@ -12,15 +12,14 @@ cmd_exec_test.py: Tests for cmd_exec.py
 import unittest
 
 from core import cmd_exec  # module under test
-from core.cmd_exec import *
-from osh.meta import Id
-from core import completion
+from core import dev
 from core import legacy
 from core import word_eval
 from core import process
+from core import state
 from core import test_lib
 
-from osh.meta import ast
+from osh.meta import ast, Id
 from osh import parse_lib
 
 
@@ -43,8 +42,9 @@ def InitExecutor(arena=None):
   # For the tests, we do not use 'readline'.
   exec_opts = state.ExecOpts(mem, None)
   parse_ctx = parse_lib.ParseContext(arena, {})
+  dumper = dev.CrashDumper('')
   return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
-                           parse_ctx)
+                           parse_ctx, dumper)
 
 
 def InitEvaluator():
