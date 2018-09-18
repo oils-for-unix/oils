@@ -630,6 +630,27 @@ class Executor(object):
 
     if node.tag == command_e.SimpleCommand:
       check_errexit = True
+
+      # Find span_id for a basic implementation of $LINENO, e.g.
+      # PS4='+$SOURCE_NAME:$LINENO:'
+      # NOTE: osh2oil uses node.more_env, but we don't need that.
+      found = False
+      if node.words:
+        first_word = node.words[0]
+        span_id = word.LeftMostSpanForWord(first_word)
+        if span_id == const.NO_INTEGER:
+          log('Warning: word has no location information: %s', first_word)
+        else:
+          found = True
+
+      # TODO: Move this before word evaluation!
+      if found:
+        # NOTE: This is what we want to expose as variables for PS4.
+        #ui.PrintFilenameAndLine(span_id, self.arena)
+        self._SetSourceLocation(span_id)
+      else:
+        self.mem.SetSourceLocation('<unknown>', -1)
+
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up logging.  For example, 'echo hi
       # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
@@ -644,32 +665,6 @@ class Executor(object):
 
       words = braces.BraceExpandWords(node.words)
       argv = self.word_ev.EvalWordSequence(words)
-
-      # This is a very basic implementation for PS4='+$SOURCE_NAME:$LINENO:'
-
-      # TODO:
-      # - It should be a stack eventually.  So if there is an exception we can
-      # print the full stack trace.  Python has a list of frame objects, and
-      # each one has a location?
-      # - The API to get DebugInfo is overly long.
-      # - Maybe just do a simple thing like osh-o line-trace without any PS4?
-
-      # NOTE: osh2oil uses node.more_env, but we don't need that.
-      found = False
-      if node.words:
-        first_word = node.words[0]
-        span_id = word.LeftMostSpanForWord(first_word)
-        if span_id == const.NO_INTEGER:
-          log('Warning: word has no location information: %s', first_word)
-        else:
-          found = True
-
-      if found:
-        # NOTE: This is what we want to expose as variables for PS4.
-        #ui.PrintFilenameAndLine(span_id, self.arena)
-        self._SetSourceLocation(span_id)
-      else:
-        self.mem.SetSourceLocation('<unknown>', -1)
 
       # This comes before evaluating env, in case there are problems evaluating
       # it.  We could trace the env separately?  Also trace unevaluated code

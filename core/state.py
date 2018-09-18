@@ -291,6 +291,12 @@ class _ArgFrame(object):
   def __repr__(self):
     return '<_ArgFrame %s %d at %x>' % (self.argv, self.num_shifted, id(self))
 
+  def Dump(self):
+    return {
+        'argv': self.argv,
+        'num_shifted': self.num_shifted,
+    }
+
   def GetArgNum(self, arg_num):
     index = self.num_shifted + arg_num - 1
     if index >= len(self.argv):
@@ -313,6 +319,16 @@ class _StackFrame(object):
   def __init__(self, readonly=False):
     self.vars = {}  # string -> runtime.cell
     self.readonly = readonly
+
+  def Dump(self):
+    vars_ = {}
+    for name, cell in self.vars.iteritems():
+      # NOTE: We're using the ASDL representation.  Need to dump it as JSON too.
+      vars_[name] = str(cell)
+    return {
+        'vars': vars_,
+        'readonly': self.readonly
+    }
 
   def __repr__(self):
     f = cStringIO.StringIO()
@@ -408,6 +424,11 @@ class Mem(object):
         parts.append('  %s %s' % (n, v))
     parts.append('>')
     return '\n'.join(parts) + '\n'
+
+  def Dump(self):
+    var_stack = [frame.Dump() for frame in self.var_stack]
+    argv_stack = [frame.Dump() for frame in self.argv_stack]
+    return var_stack, argv_stack, list(self.func_name_stack)
 
   def _InitDefaults(self):
     # Default value; user may unset it.

@@ -86,18 +86,20 @@ f  # line 9
 ## END
 
 #### $LINENO is the current line, not line of function call
+echo $LINENO  # first line
 g() {
-  argv.py $LINENO  # line 2
+  argv.py $LINENO  # line 3
 }
 f() {
-  argv.py $LINENO  # line 5
+  argv.py $LINENO  # line 6
   g
-  argv.py $LINENO  # line 7
+  argv.py $LINENO  # line 8
 }
 f
 ## STDOUT: 
-['5']
-['2']
-['7']
+1
+['6']
+['3']
+['8']
 ## END
 

@@ -60,10 +60,11 @@ class CrashDumper(object):
     if not self.do_collect:  # Either we already did it, or there is no file
       return
 
-    # this is a string
-    ex.mem
-    self.func_name_stack = list(ex.mem.func_name_stack)
-    self.var_stack = state._FormatStack(ex.mem.var_stack)
+    # Copy stack
+    self.var_stack, self.argv_stack, self.func_name_stack = ex.mem.Dump()
+
+    # TODO: Also do functions, aliases, etc.
+
     self.do_collect = False
     self.collected = True
 
@@ -92,10 +93,13 @@ class CrashDumper(object):
       return
 
     d = {
-        #'var_stack': self.var_stack,
+        'var_stack': self.var_stack,
+        'argv_stack': self.argv_stack,
         'func_name_stack': self.func_name_stack,
     }
     path = os.path.join(self.crash_dump_dir, 'osh-crash-dump.json')
     with open(path, 'w') as f:
-      print(repr(d), file=f)
+      import json
+      json.dump(d, f, indent=2)
+      #print(repr(d), file=f)
     util.log('Wrote crash dump to %s', path)
