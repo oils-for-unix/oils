@@ -192,7 +192,8 @@ def OshMain(argv0, argv, login_shell):
       exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
-    line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
+    prompt = ui.Prompt(OSH_PS1, arena, parse_ctx, ex)
+    line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:
     try:
@@ -200,7 +201,8 @@ def OshMain(argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
-        line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
+        prompt = ui.Prompt(OSH_PS1, arena, parse_ctx, ex)
+        line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:
         arena.PushSource('<stdin>')

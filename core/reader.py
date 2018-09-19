@@ -37,28 +37,25 @@ class _Reader(object):
     pass
 
 
-_PS2 = '> '
-
-
 class InteractiveLineReader(_Reader):
-  def __init__(self, ps1, arena):
+  def __init__(self, arena, prompt):
     _Reader.__init__(self, arena)
-    self.ps1 = ps1
-    self.prompt_str = ps1
+    self.prompt = prompt
+
 
   def _GetLine(self):
     try:
-      ret = raw_input(self.prompt_str) + '\n'  # newline required
+      ret = self.prompt.GetInput()
     except EOFError:
       ret = None
-    self.prompt_str = _PS2
     return ret
 
   def Reset(self):
     """Call this after command execution, to free memory taken up by the lines,
     and reset prompt string back to PS1.
     """
-    self.prompt_str = self.ps1
+
+    self.prompt.Reset()
     # free vector...
 
 
@@ -97,7 +94,7 @@ def StringLineReader(s, arena):
 
 class VirtualLineReader(_Reader):
   """Read from lines we already read from the OS.
-  
+
   Used for here docs and aliases.
   """
 
