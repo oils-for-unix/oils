@@ -31,7 +31,21 @@ cd -
 #### pwd
 cd /
 pwd
-## stdout: /
+## STDOUT:
+/
+## END
+
+#### pwd after cd ..
+dir=dir-one/dir-two
+mkdir -p $dir
+cd $dir
+echo $(basename $(pwd))
+cd ..
+echo $(basename $(pwd))
+## STDOUT:
+dir-two
+dir-one
+## END
 
 #### pwd -P
 tmp=$TMP/builtins-pwd-1
