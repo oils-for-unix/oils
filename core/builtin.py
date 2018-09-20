@@ -39,6 +39,7 @@ from osh.meta import runtime
 from osh import lex
 from osh import match
 
+import libc
 from _devbuild.gen import osh_help  # generated file
 
 value_e = runtime.value_e
@@ -538,7 +539,7 @@ def Cd(argv, mem, dir_stack):
   # '-L' is the default behavior; no need to check it
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
   # the others
-  pwd = os.path.realpath(dest_dir) if arg.P else dest_dir
+  pwd = libc.realpath(dest_dir) if arg.P else dest_dir
   state.SetGlobalString(mem, 'PWD', pwd)
 
   dir_stack.Reset()  # for pushd/popd/dirs
@@ -653,7 +654,7 @@ def Pwd(argv, mem):
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
   # the others
   if arg.P:
-    pwd = os.path.realpath(pwd)
+    pwd = libc.realpath(pwd)
   print(pwd)
   return 0
 
