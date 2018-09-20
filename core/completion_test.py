@@ -5,12 +5,13 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+from __future__ import print_function
 """
 completion_test.py: Tests for completion.py
 """
-from __future__ import print_function
 
 import unittest
+import sys
 
 from core import alloc
 from core import cmd_exec_test
@@ -18,6 +19,7 @@ from core import completion  # module under test
 from core import state
 from core import test_lib
 from core import ui
+from core import util
 from osh.meta import Id
 
 from osh.meta import ast
@@ -30,10 +32,10 @@ A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
 
 C1 = completion.ChainedCompleter([A1])
 
-status_lines = [ui.TestStatusLine()] * 10  # A bunch of dummies
 mem = state.Mem('', [], {}, None)
 exec_opts = state.ExecOpts(mem, None)
-STATUS = completion.StatusOutput(status_lines, exec_opts)
+debug_f = util.DebugFile(sys.stdout)
+progress_f = ui.TestStatusLine()
 
 
 V1 = completion.WordsAction(['$var1', '$var2', '$another_var'])
@@ -123,34 +125,35 @@ class CompletionTest(unittest.TestCase):
     arena = pool.NewArena()
     parse_ctx = parse_lib.ParseContext(arena, {})
     var_comp = V1
-    r = completion.RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx)
+    r = completion.RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx,
+                                 progress_f, debug_f)
 
-    m = list(r.Matches('grep f', STATUS))
+    m = list(r.Matches('grep f'))
     self.assertEqual(['foo.py ', 'foo '], m)
 
-    m = list(r.Matches('grep g', STATUS))
+    m = list(r.Matches('grep g'))
     self.assertEqual([], m)
 
-    m = list(r.Matches('ls $v', STATUS))
+    m = list(r.Matches('ls $v'))
     self.assertEqual(['$var1 ', '$var2 '], m)
 
-    m = list(r.Matches('g', STATUS))
+    m = list(r.Matches('g'))
     self.assertEqual(['grep '], m)
 
     # Empty completer
-    m = list(r.Matches('', STATUS))
+    m = list(r.Matches(''))
     self.assertEqual(['grep ', 'sed ', 'test '], m)
 
     # Test compound commands. These PARSE
-    m = list(r.Matches('echo hi || grep f', STATUS))
-    m = list(r.Matches('echo hi; grep f', STATUS))
+    m = list(r.Matches('echo hi || grep f'))
+    m = list(r.Matches('echo hi; grep f'))
 
     # Brace -- does NOT parse
-    m = list(r.Matches('{ echo hi; grep f', STATUS))
+    m = list(r.Matches('{ echo hi; grep f'))
     # TODO: Test if/for/while/case/etc.
 
-    m = list(r.Matches('var=$v', STATUS))
-    m = list(r.Matches('local var=$v', STATUS))
+    m = list(r.Matches('var=$v'))
+    m = list(r.Matches('local var=$v'))
 
 
 def _TestGetCompletionType(buf):
@@ -159,7 +162,7 @@ def _TestGetCompletionType(buf):
   parse_ctx = parse_lib.ParseContext(arena, {})
   w_parser, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
   print('---', buf)
-  return completion._GetCompletionType(w_parser, c_parser, ev, STATUS)
+  return completion._GetCompletionType(w_parser, c_parser, ev, debug_f)
 
 
 f = _TestGetCompletionType

@@ -27,6 +27,7 @@ def Clear():
 
 
 class StatusLine(object):
+  """For optionally displaying the progress of slow completions."""
 
   def __init__(self, row_num=3, width=80):
     # NOTE: '%-80s' % msg doesn't do this, because it doesn't pad at the end
@@ -68,16 +69,6 @@ class StatusLine(object):
     sys.stdout.flush()
 
 
-class NullStatusLine(object):
-
-  def __init__(self):
-    pass
-
-  def Write(self, msg, *args):
-    """NOTE: We could use logging?"""
-    pass
-
-
 class TestStatusLine(object):
 
   def __init__(self):
@@ -88,10 +79,6 @@ class TestStatusLine(object):
     if args:
       msg = msg % args
     print('\t' + msg)
-
-
-def MakeStatusLines():
-  return [StatusLine(row_num=i) for i in range(3, 10)]
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
@@ -182,6 +169,7 @@ def PrintAst(nodes, opts):
 
 
 def usage(msg, *args):
+  """For user-facing usage errors."""
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)

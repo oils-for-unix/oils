@@ -249,18 +249,22 @@ def ShowFdState():
   subprocess.call(['ls', '-l', '/proc/%d/fd' % os.getpid()])
 
 
-# NOTE: Should there be one of these per process?
-DEBUG_FILE = None
+class DebugFile(object):
+  def __init__(self, f):
+    self.f = f
 
-def Debug(msg, *args):
-  if not DEBUG_FILE:
-    return
-  if args:
-    msg = msg % args
-  # TODO: Don't get pid every time
-  msg = '%d %s' % (os.getpid(), msg)
-  print(msg, file=DEBUG_FILE)
-  DEBUG_FILE.flush()  # so we can see it
+  def log(self, msg, *args):
+    if args:
+      msg = msg % args
+    # TODO: Don't get pid every time.  Should there be one of these per
+    # process?
+    self.f.write('%d ' % os.getpid())
+    self.f.write(msg)
+    self.f.write('\n')
+    self.f.flush()  # need to see it interacitvely
 
 
+class NullDebugFile(object):
 
+  def log(self, *args):
+    pass

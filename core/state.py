@@ -335,15 +335,17 @@ class _StackFrame(object):
       if flags:
         cell_json['flags'] = flags
 
+      # For compactness, just put the value right in the cell.
       tag = cell.val.tag
       if tag == value_e.Undef:
-        val_json = {'type': 'Undef'}
+        cell_json['type'] = 'Undef'
       elif tag == value_e.Str:
-        val_json = {'type': 'Str', 'value': cell.val.s}
+        cell_json['type'] = 'Str'
+        cell_json['value'] = cell.val.s
       elif tag == value_e.StrArray:
-        val_json = {'type': 'StrArray', 'value': cell.val.strs}
+        cell_json['type'] = 'StrArray'
+        cell_json['value'] = cell.val.strs
 
-      cell_json['val'] = val_json
       vars_json[name] = cell_json
 
     return {

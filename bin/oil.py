@@ -146,9 +146,6 @@ def OshMain(argv0, argv, login_shell):
   pool = alloc.Pool()
   arena = pool.NewArena()
 
-  # TODO: Maybe wrap this initialization sequence up in an oil_State, like
-  # lua_State.
-  status_lines = ui.MakeStatusLines()
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], os.environ, arena)
   funcs = {}
 
@@ -162,8 +159,10 @@ def OshMain(argv0, argv, login_shell):
   parse_ctx = parse_lib.ParseContext(arena, aliases)
 
   if opts.debug_file:
-    util.DEBUG_FILE = fd_state.Open(opts.debug_file, mode='w')
-    util.Debug('Debug file is %s', util.DEBUG_FILE)
+    debug_f = util.DebugFile(fd_state.Open(opts.debug_file, mode='w'))
+  else:
+    debug_f = util.NullDebugFile()
+  debug_f.log('Debug file is %s', opts.debug_file)
 
   # Controlled by env variable, flag, or hook?
   dumper = dev.CrashDumper(os.getenv('OSH_CRASH_DUMP_DIR', ''))
@@ -223,11 +222,11 @@ def OshMain(argv0, argv, login_shell):
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:
+      progress_f = ui.StatusLine()
       splitter = legacy.SplitContext(mem)
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
-      status_out = completion.StatusOutput(status_lines, exec_opts)
       completion.Init(readline, pool, builtin.BUILTIN_DEF, mem, funcs,
-                      comp_lookup, status_out, ev, parse_ctx)
+                      comp_lookup, progress_f, debug_f, ev, parse_ctx)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

@@ -37,6 +37,22 @@ status=1
 status=0
 ## END
 
+#### crash dump with source
+# TODO: The failure is not propagated through 'source'.  Failure only happens
+# on 'errexit'.
+#rm -f $TMP/*.json
+OSH_CRASH_DUMP_DIR=$TMP $SH -c '
+set -o errexit
+source spec/testdata/crash.sh
+'
+echo status=$?
+python -m json.tool $TMP/*.json > /dev/null
+echo status=$?
+## STDOUT:
+status=1
+status=0
+## END
+
 # NOTE: strict-arith has one case in arith.test.sh), strict-word-eval has a case in var-op-other.
 
 

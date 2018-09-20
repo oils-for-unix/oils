@@ -31,6 +31,8 @@
 --   * In the printer, I want to preserve line breaks!  foo \bar?
 -- TODO:
 -- * remove redundancy of 'string val' in token.  It should use the span.
+-- * Get rid of line_id.  'string line' is more straightforward.  And maybe
+--   span_id?
 -- * rename this file to osh/syntax.asdl, and then we have oil/syntax.asdl.
 --   Nothing is shared?
 

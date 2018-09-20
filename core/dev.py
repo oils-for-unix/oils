@@ -5,7 +5,6 @@ dev.py - Devtools / introspection.
 """
 
 import os
-from core import state
 from core import util
 
 # TODO: Move Tracer here.
@@ -37,13 +36,8 @@ class CrashDumper(object):
 
     # Things to dump:
     # Executor
-    #   functions, aliases, traps, completion hooks
+    #   functions, aliases, traps, completion hooks, fd_state
     #   dir_stack -- minor thing
-    #
-    # state.Mem()
-    #  _ArgFrame
-    #  _StackFrame
-    # func names
     #
     # debug info for the source?  Or does that come elsewhere?
     #
@@ -57,6 +51,8 @@ class CrashDumper(object):
     # One is constant at build time; the other is constant at runtime.
 
   def MaybeCollect(self, ex):
+    # TODO: Add error_with_loc here, and then save it in the JSON.
+
     if not self.do_collect:  # Either we already did it, or there is no file
       return
 
@@ -92,11 +88,14 @@ class CrashDumper(object):
     if not self.collected:
       return
 
+    # Other things we need: the reason for the crash!  _ErrorWithLocation is
+    # required I think.
     d = {
         'var_stack': self.var_stack,
         'argv_stack': self.argv_stack,
         'debug_stack': self.debug_stack,
     }
+
     path = os.path.join(self.crash_dump_dir, 'osh-crash-dump.json')
     with open(path, 'w') as f:
       import json

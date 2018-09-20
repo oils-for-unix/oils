@@ -442,7 +442,7 @@ def _FindLastSimpleCommand(node):
 # VarCompleter.Complete(prefix) -> iter
 # HashKey.Complete(hash_name, prefix) -> iter
 
-def _GetCompletionType(w_parser, c_parser, ev, status_out):
+def _GetCompletionType(w_parser, c_parser, ev, debug_f):
   """
   Parser returns completion state.
   Then we translate that into completion_state_e.
@@ -520,15 +520,14 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
     pass
 
   # TODO: Need to show buf... Need a multiline display for debugging?
-  status_out.Write(1,
-      'prev_token %s  cur_token %s  cur_word %s',
+  debug_f.log('prev_token %s  cur_token %s  cur_word %s',
       prev_token, cur_token, cur_word)
-  status_out.Write(2, 'comp_state %s  error %s', comp_state, c_parser.Error())
+  debug_f.log('comp_state %s  error %s', comp_state, c_parser.Error())
   # This one can be multiple lines
-  status_out.Write(3, 'node: %s %s', repr(node) if node else '<Parse Error>',
-                    node.tag if node else '')
+  debug_f.log('node: %s %s', repr(node) if node else '<Parse Error>',
+                node.tag if node else '')
   # This one can be multiple lines
-  status_out.Write(6, 'com_node: %s', repr(com_node) if com_node else '<None>')
+  debug_f.log('com_node: %s', repr(com_node) if com_node else '<None>')
 
   # IMPORTANT: if the last token is Id.Ignored_Space, then we want to add a
   # dummy word!  empty word
@@ -600,21 +599,24 @@ class RootCompleter(object):
   """
   Provide completion of a buffer according to the configured rules.
   """
-  def __init__(self, pool, ev, comp_lookup, var_comp, parse_ctx):
+  def __init__(self, pool, ev, comp_lookup, var_comp, parse_ctx, progress_f,
+               debug_f):
     self.pool = pool
     self.ev = ev
     self.comp_lookup = comp_lookup
     # This can happen in any position, with any command
     self.var_comp = var_comp
     self.parse_ctx = parse_ctx
+    self.progress_f = progress_f
+    self.debug_f = debug_f
 
     self.parser = DummyParser()  # TODO: remove
 
-  def Matches(self, buf, status_out):
+  def Matches(self, buf):
     arena = alloc.SideArena('<completion>')
     w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
     comp_type, prefix, comp_words = _GetCompletionType(
-        w_parser, c_parser, self.ev, status_out)
+        w_parser, c_parser, self.ev, self.debug_f)
 
     comp_type, prefix, comp_words = _GetCompletionType1(self.parser, buf)
 
@@ -642,7 +644,7 @@ class RootCompleter(object):
     else:
       raise AssertionError(comp_type)
 
-    status_out.Write(0, 'Completing %r ... (Ctrl-C to cancel)', buf)
+    self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', buf)
     start_time = time.time()
 
     index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
@@ -653,13 +655,13 @@ class RootCompleter(object):
       i += 1
       elapsed = time.time() - start_time
       plural = '' if i == 1 else 'es'
-      status_out.Write(0,
+      self.progress_f.Write(
           '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
           plural, buf, elapsed)
 
     elapsed = time.time() - start_time
     plural = '' if i == 1 else 'es'
-    status_out.Write(0,
+    self.progress_f.Write(
         'Found %d match%s for %r in %.2f seconds', i,
         plural, buf, elapsed)
 
@@ -670,10 +672,10 @@ class RootCompleter(object):
 
 
 class ReadlineCompleter(object):
-  def __init__(self, readline_mod, root_comp, status_out, debug=False):
+  def __init__(self, readline_mod, root_comp, debug_f, debug=False):
     self.readline_mod = readline_mod
     self.root_comp = root_comp
-    self.status_out = status_out
+    self.debug_f = debug_f
     self.debug = debug
 
     self.comp_iter = None  # current completion being processed
@@ -694,14 +696,14 @@ class ReadlineCompleter(object):
       end = self.readline_mod.get_endidx()
 
       if self.debug:
-        self.status_out.Write(0,
+        self.debug_f.log(
             'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
             buf[begin:end])
 
-      self.comp_iter = self.root_comp.Matches(buf, self.status_out)
+      self.comp_iter = self.root_comp.Matches(buf)
 
     if self.comp_iter is None:
-      self.status_out.Write(0, "ASSERT comp_iter shouldn't be None")
+      self.debug_f.log("ASSERT comp_iter shouldn't be None")
 
     try:
       next_completion = self.comp_iter.next()
@@ -715,12 +717,12 @@ class ReadlineCompleter(object):
     # NOTE: The readline library tokenizes words.  We bypass that and use
     # get_line_buffer().  So we get 'for x in l' instead of just 'l'.
 
-    #self.status_out.Write(0, 'word %r state %s', unused_word, state)
+    #self.debug_f.log(0, 'word %r state %s', unused_word, state)
     try:
       return self._GetNextCompletion(state)
     except Exception as e:
       traceback.print_exc()
-      self.status_out.Write(0, 'Unhandled exception while completing: %s', e)
+      self.debug_f.log('Unhandled exception while completing: %s', e)
 
 
 def InitReadline(readline_mod, complete_cb):
@@ -758,19 +760,8 @@ def InitReadline(readline_mod, complete_cb):
   readline_mod.set_completer_delims(' ')
 
 
-class StatusOutput(object):
-  def __init__(self, status_lines, exec_opts):
-    self.status_lines = status_lines
-    self.exec_opts = exec_opts
-
-  def Write(self, index, msg, *args):
-    # Only line zero gets shown by default
-    if index == 0 or self.exec_opts.debug_completion:
-      self.status_lines[index].Write(msg, *args)
-
-
-def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, status_out, ev,
-         parse_ctx):
+def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, progress_f,
+         debug_f, ev, parse_ctx):
 
   aliases_action = WordsAction(['TODO:alias'])
   commands_action = ExternalCommandAction(mem)
@@ -797,9 +788,10 @@ def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, status_out, ev,
   comp_lookup.RegisterName('grep', C1)
 
   var_comp = VarAction(os.environ, mem)
-  root_comp = RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx)
+  root_comp = RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx,
+                            progress_f, debug_f)
 
-  complete_cb = ReadlineCompleter(readline_mod, root_comp, status_out)
+  complete_cb = ReadlineCompleter(readline_mod, root_comp, debug_f)
   InitReadline(readline_mod, complete_cb)
 
 

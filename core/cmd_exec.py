@@ -1164,7 +1164,11 @@ class Executor(object):
         status = e.StatusCode()
       else:
         raise  # Invalid
+    except util.ParseError as e:
+      self.dumper.MaybeCollect(self)  # Do this before unwinding stack
+      raise
     except util.FatalRuntimeError as e:
+      self.dumper.MaybeCollect(self)  # Do this before unwinding stack
       ui.PrettyPrintError(e, self.arena)
       is_fatal = True
       status = e.exit_status if e.exit_status is not None else 1
