@@ -801,3 +801,12 @@ def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, status_out, ev,
 
   complete_cb = ReadlineCompleter(readline_mod, root_comp, status_out)
   InitReadline(readline_mod, complete_cb)
+
+
+if __name__ == '__main__':
+  # This does basic filename copmletion
+  import readline
+  readline.parse_and_bind('tab: complete')
+  while True:
+    x = raw_input('$ ')
+    print(x)

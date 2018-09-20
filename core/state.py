@@ -316,23 +316,44 @@ class _ArgFrame(object):
 
 
 class _StackFrame(object):
-  def __init__(self, readonly=False):
+  def __init__(self, mutable=True):
     self.vars = {}  # string -> runtime.cell
-    self.readonly = readonly
+    self.mutable = mutable
 
   def Dump(self):
-    vars_ = {}
+    """Dump the stack frame as reasonably compact and readable JSON."""
+
+    vars_json = {}
     for name, cell in self.vars.iteritems():
-      # NOTE: We're using the ASDL representation.  Need to dump it as JSON too.
-      vars_[name] = str(cell)
+      cell_json = {}
+
+      flags = ''
+      if cell.exported:
+        flags += 'x'
+      if cell.readonly:
+        flags += 'r'
+      if flags:
+        cell_json['flags'] = flags
+
+      tag = cell.val.tag
+      if tag == value_e.Undef:
+        val_json = {'type': 'Undef'}
+      elif tag == value_e.Str:
+        val_json = {'type': 'Str', 'value': cell.val.s}
+      elif tag == value_e.StrArray:
+        val_json = {'type': 'StrArray', 'value': cell.val.strs}
+
+      cell_json['val'] = val_json
+      vars_json[name] = cell_json
+
     return {
-        'vars': vars_,
-        'readonly': self.readonly
+        'vars': vars_json,
+        'mutable': self.mutable,
     }
 
   def __repr__(self):
     f = cStringIO.StringIO()
-    f.write('<_StackFrame readonly:%s' % self.readonly)
+    f.write('<_StackFrame mutable:%s' % self.mutable)
     for name, cell in self.vars.iteritems():
       f.write('  %s = ' % name)
       f.write('  %s' % cell)
@@ -391,13 +412,14 @@ class Mem(object):
   """
 
   def __init__(self, argv0, argv, environ, arena):
-    top = _StackFrame()
-    self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
+    self.var_stack = [_StackFrame()]
 
-    # For 3 parallel arrays: FUNCNAME, BASH_SOURCE, BASH_LINENO
-    self.debug_stack = []
+    # The debug_stack isn't strictly necessary for execution.  We use it for
+    # crash dumps and for 3 parallel arrays: FUNCNAME, BASH_SOURCE,
+    # BASH_LINENO.  The First frame points at the global vars and argv.
+    self.debug_stack = [(None, None, const.NO_INTEGER, 0, 0)]
     self.current_spid = const.NO_INTEGER
 
     # Note: we're reusing these objects because they change on every single
@@ -426,9 +448,25 @@ class Mem(object):
     return '\n'.join(parts) + '\n'
 
   def Dump(self):
+    """Copy state before unwinding the stack."""
     var_stack = [frame.Dump() for frame in self.var_stack]
     argv_stack = [frame.Dump() for frame in self.argv_stack]
-    return var_stack, argv_stack
+    debug_stack = []
+    for func_name, source_name, call_spid, argv_i, var_i in self.debug_stack:
+      d = {}
+      if func_name:
+        d['func_called'] = func_name
+      elif source_name:
+        d['file_sourced'] = source_name
+      else:
+        pass  # It's a frame for FOO=bar?  Or the top one?
+
+      d['call_spid'] = call_spid
+      d['argv_frame'] = argv_i
+      d['var_frame'] = var_i
+      debug_stack.append(d)
+
+    return var_stack, argv_stack, debug_stack
 
   def _InitDefaults(self):
     # Default value; user may unset it.
@@ -496,11 +534,11 @@ class Mem(object):
 
   def PushCall(self, func_name, argv):
     """For function calls."""
+    self.argv_stack.append(_ArgFrame(argv))
+    self.var_stack.append(_StackFrame())
+
     # bash uses this order: top of stack first.
     self._PushDebugStack(func_name, None)
-
-    self.var_stack.append(_StackFrame())
-    self.argv_stack.append(_ArgFrame(argv))
 
   def PopCall(self):
     self._PopDebugStack()
@@ -510,11 +548,11 @@ class Mem(object):
 
   def PushSource(self, source_name, argv):
     """For 'source foo.sh 1 2 3."""
+    if argv:
+      self.argv_stack.append(_ArgFrame(argv))
     # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
     # the name of the script here?
     self._PushDebugStack(None, source_name)
-    if argv:
-      self.argv_stack.append(_ArgFrame(argv))
 
   def PopSource(self, argv):
     self._PopDebugStack()
@@ -523,9 +561,9 @@ class Mem(object):
 
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
-    self._PushDebugStack(None, None)
     # We don't want the 'read' builtin to write to this frame!
-    self.var_stack.append(_StackFrame(readonly=True))
+    self.var_stack.append(_StackFrame(mutable=False))
+    self._PushDebugStack(None, None)
 
   def PopTemp(self):
     self._PopDebugStack()
@@ -536,12 +574,14 @@ class Mem(object):
     # Function calls and 'source' are both SimpleCommand.
 
     # These integers are handles/pointers, for use in CrashDumper.
-    n = len(self.argv_stack)
-    m = len(self.var_stack)
+    argv_i = len(self.argv_stack) - 1
+    var_i = len(self.var_stack) - 1
 
     # The stack is a 5-tuple, where func_name and source_name are optional.  If
     # both are unset, then it's aTemp frame'.
-    self.debug_stack.append((func_name, source_name, self.current_spid, n, m)) 
+    self.debug_stack.append(
+        (func_name, source_name, self.current_spid, argv_i, var_i)
+    )
 
   def _PopDebugStack(self):
     self.debug_stack.pop()
@@ -613,6 +653,7 @@ class Mem(object):
     Args:
       name: the variable name
       lookup_mode: scope_e
+      is_read: Is this lookup for a read or a write?
 
     Returns:
       cell: The cell corresponding to looking up 'name' with the given mode, or
@@ -622,7 +663,7 @@ class Mem(object):
     if lookup_mode == scope_e.Dynamic:
       for i in range(len(self.var_stack) - 1, -1, -1):
         frame = self.var_stack[i]
-        if frame.readonly and not is_read:
+        if not frame.mutable and not is_read:
           continue
         namespace = frame.vars
         if name in namespace:
@@ -632,11 +673,10 @@ class Mem(object):
 
     elif lookup_mode == scope_e.LocalOnly:
       frame = self.var_stack[-1]
-      if frame.readonly and not is_read:
+      if not frame.mutable and not is_read:
         frame = self.var_stack[-2]
-        # The frame below a readonly one shouldn't be readonly.
-        assert not frame.readonly, frame
-        #assert not frame.readonly, self._Format(self.var_stack)
+        # The frame below a readonly one should be mutable.
+        assert frame.mutable, frame
       namespace = frame.vars
       return namespace.get(name), namespace
 

@@ -41,9 +41,9 @@ class MemTest(unittest.TestCase):
 
     self.assertEqual(2, len(mem.var_stack))
 
-    # Temporary frame is readonly
-    self.assertEqual(True, mem.var_stack[-1].readonly)
-    self.assertEqual(False, mem.var_stack[-2].readonly)
+    # Temporary frame is immutable
+    self.assertEqual(False, mem.var_stack[-1].mutable)
+    self.assertEqual(True, mem.var_stack[-2].mutable)
 
     # x=temp E=3 read x <<< 'line'
     mem.SetVar(

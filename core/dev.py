@@ -33,7 +33,7 @@ class CrashDumper(object):
 
     self.var_stack = []
     self.argv_stack = []
-    self.func_name_stack = []
+    self.debug_stack = []
 
     # Things to dump:
     # Executor
@@ -61,7 +61,7 @@ class CrashDumper(object):
       return
 
     # Copy stack
-    self.var_stack, self.argv_stack, self.func_name_stack = ex.mem.Dump()
+    self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
 
     # TODO: Also do functions, aliases, etc.
 
@@ -95,7 +95,7 @@ class CrashDumper(object):
     d = {
         'var_stack': self.var_stack,
         'argv_stack': self.argv_stack,
-        'func_name_stack': self.func_name_stack,
+        'debug_stack': self.debug_stack,
     }
     path = os.path.join(self.crash_dump_dir, 'osh-crash-dump.json')
     with open(path, 'w') as f:
