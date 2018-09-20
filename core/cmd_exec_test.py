@@ -35,7 +35,7 @@ def InitExecutor(arena=None):
   if not arena:
     arena = test_lib.MakeArena('<InitExecutor>')
 
-  mem = state.Mem('', [], {}, None)
+  mem = state.Mem('', [], {}, arena)
   fd_state = process.FdState()
   funcs = {}
   comp_funcs = {}

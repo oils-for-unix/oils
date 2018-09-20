@@ -395,10 +395,10 @@ class Mem(object):
     self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
-    # NOTE: could use deque and appendleft/popleft, but:
-    # 1. ASDL type checking of StrArray doesn't allow it (could be fixed)
-    # 2. We don't otherwise depend on the collections module
-    self.func_name_stack = []
+
+    # For 3 parallel arrays: FUNCNAME, BASH_SOURCE, BASH_LINENO
+    self.debug_stack = []
+    self.current_spid = const.NO_INTEGER
 
     # Note: we're reusing these objects because they change on every single
     # line!  Don't want to allocate more than necsesary.
@@ -428,7 +428,7 @@ class Mem(object):
   def Dump(self):
     var_stack = [frame.Dump() for frame in self.var_stack]
     argv_stack = [frame.Dump() for frame in self.argv_stack]
-    return var_stack, argv_stack, list(self.func_name_stack)
+    return var_stack, argv_stack
 
   def _InitDefaults(self):
     # Default value; user may unset it.
@@ -473,10 +473,22 @@ class Mem(object):
       home_dir = util.GetHomeDir() or '~'  # No expansion if not found?
       SetGlobalString(self, 'HOME', home_dir)
 
-  def SetSourceLocation(self, source_name, line_num):
-    # Mutate Str() objects.
+  def SetCurrentSpanId(self, span_id):
+    """Set the current source location, for BASH_SOURCE< BASH_LINENO, LINENO,
+    etc.
+    """
+    if span_id == const.NO_INTEGER:
+      log('Warning: SimpleCommand or Assignment has no location information')
+      return
+
+    span = self.arena.GetLineSpan(span_id)
+    source_name, line_num = self.arena.GetDebugInfo(span.line_id)
+
+    # Mutate Str() objects for now.
     self.source_name.s = source_name
     self.line_num.s = str(line_num)
+
+    self.current_spid = span_id
 
   #
   # Stack
@@ -485,37 +497,54 @@ class Mem(object):
   def PushCall(self, func_name, argv):
     """For function calls."""
     # bash uses this order: top of stack first.
-    self.func_name_stack.append(func_name)
+    self._PushDebugStack(func_name, None)
 
     self.var_stack.append(_StackFrame())
     self.argv_stack.append(_ArgFrame(argv))
 
   def PopCall(self):
-    self.func_name_stack.pop()
+    self._PopDebugStack()
 
     self.var_stack.pop()
     self.argv_stack.pop()
 
-  def PushSourceArgv(self, argv):
+  def PushSource(self, source_name, argv):
     """For 'source foo.sh 1 2 3."""
     # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
     # the name of the script here?
-    self.func_name_stack.append('source')
+    self._PushDebugStack(None, source_name)
     if argv:
       self.argv_stack.append(_ArgFrame(argv))
 
-  def PopSourceArgv(self, argv):
-    self.func_name_stack.pop()
+  def PopSource(self, argv):
+    self._PopDebugStack()
     if argv:
       self.argv_stack.pop()
 
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
+    self._PushDebugStack(None, None)
     # We don't want the 'read' builtin to write to this frame!
     self.var_stack.append(_StackFrame(readonly=True))
 
   def PopTemp(self):
+    self._PopDebugStack()
     self.var_stack.pop()
+
+  def _PushDebugStack(self, func_name, source_name):
+    # self.current_spid is set before every SimpleCommand and Assignment.
+    # Function calls and 'source' are both SimpleCommand.
+
+    # These integers are handles/pointers, for use in CrashDumper.
+    n = len(self.argv_stack)
+    m = len(self.var_stack)
+
+    # The stack is a 5-tuple, where func_name and source_name are optional.  If
+    # both are unset, then it's aTemp frame'.
+    self.debug_stack.append((func_name, source_name, self.current_spid, n, m)) 
+
+  def _PopDebugStack(self):
+    self.debug_stack.pop()
 
   #
   # Argv
@@ -793,9 +822,14 @@ class Mem(object):
     if name == 'FUNCNAME':
       # bash wants it in reverse order.  This is a little inefficient but we're
       # not depending on deque().
-      strs = list(reversed(self.func_name_stack))
-      # TODO: Reuse this object too?
-      return runtime.StrArray(strs)
+      strs = []
+      for func_name, source_name, _, _, _ in reversed(self.debug_stack):
+        if func_name:
+          strs.append(func_name)
+        if source_name:
+          strs.append('source')  # bash doesn't give name
+        # Temp stacks are ignored
+      return runtime.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
       return self.line_num

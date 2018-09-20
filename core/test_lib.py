@@ -11,9 +11,12 @@ test_lib.py - Functions for testing.
 
 import string
 
-from core import alloc
-from osh.meta import Id
 from asdl import py_meta
+from core import alloc
+from core import legacy
+from core import state
+from core import word_eval
+from osh.meta import Id
 
 
 def PrintableString(s):
@@ -78,3 +81,13 @@ def MakeArena(source_name):
   arena = pool.NewArena()
   arena.PushSource(source_name)
   return arena
+
+
+def MakeTestEvaluator():
+  arena = alloc.SideArena('<MakeTestEvaluator>')
+  mem = state.Mem('', [], {}, arena)
+  exec_opts = state.ExecOpts(mem, None)
+  splitter = legacy.SplitContext(mem)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
+  return ev
+

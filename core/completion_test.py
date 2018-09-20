@@ -15,10 +15,8 @@ import unittest
 from core import alloc
 from core import cmd_exec_test
 from core import completion  # module under test
-from core import legacy
 from core import state
 from core import test_lib
-from core import word_eval
 from core import ui
 from osh.meta import Id
 
@@ -78,6 +76,7 @@ class CompletionTest(unittest.TestCase):
     c1 = ast.CompoundWord()
     t1 = ast.token(Id.Lit_Chars, 'f1')
     c1.parts.append(ast.LiteralPart(t1))
+    c1.spids.append(0)
 
     c2 = ast.CompoundWord()
     t2 = ast.token(Id.Lit_Chars, 'f2')
@@ -93,6 +92,7 @@ class CompletionTest(unittest.TestCase):
     pair.spids.append(0)  # dummy
     pairs = [pair]
     body_node = ast.Assignment(Id.Assign_None, [], pairs)
+    #body_node.spids.append(0)  # dummy
 
     func_node.name = 'myfunc'
     func_node.body = body_node
@@ -117,7 +117,7 @@ class CompletionTest(unittest.TestCase):
     comp_lookup.RegisterEmpty(EMPTY)
     comp_lookup.RegisterFirst(FIRST)
 
-    ev = _MakeTestEvaluator()
+    ev = test_lib.MakeTestEvaluator()
 
     pool = alloc.Pool()
     arena = pool.NewArena()
@@ -153,16 +153,8 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches('local var=$v', STATUS))
 
 
-def _MakeTestEvaluator():
-  mem = state.Mem('', [], {}, None)
-  exec_opts = state.ExecOpts(mem, None)
-  splitter = legacy.SplitContext(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
-  return ev
-
-
 def _TestGetCompletionType(buf):
-  ev = _MakeTestEvaluator()
+  ev = test_lib.MakeTestEvaluator()
   arena = test_lib.MakeArena('<completion_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   w_parser, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)

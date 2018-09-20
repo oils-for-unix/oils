@@ -214,11 +214,11 @@ class Executor(object):
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
       source_argv = argv[1:]
-      self.mem.PushSourceArgv(source_argv)
+      self.mem.PushSource(path, source_argv)
       try:
         status = self._EvalHelper(c_parser, path)
       finally:
-        self.mem.PopSourceArgv(source_argv)
+        self.mem.PopSource(source_argv)
 
       return status
 
@@ -606,17 +606,10 @@ class Executor(object):
       log('Started background job with pid %d', pid)
     return 0
 
-  def _SetSourceLocation(self, span_id):
-    # TODO: This API should be simplified
-    line_span = self.arena.GetLineSpan(span_id)
-    line_id = line_span.line_id
-    source_name, line_num = self.arena.GetDebugInfo(line_id)
-    self.mem.SetSourceLocation(source_name, line_num)
-
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
   def _SpanIdForAssignment(self, node):
-    # TODO: Share with tracing (SetSourceLocation) and _CheckStatus
+    # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return node.spids[0]
 
   def _Dispatch(self, node, fork_external):
@@ -634,22 +627,12 @@ class Executor(object):
       # Find span_id for a basic implementation of $LINENO, e.g.
       # PS4='+$SOURCE_NAME:$LINENO:'
       # NOTE: osh2oil uses node.more_env, but we don't need that.
-      found = False
+      span_id = const.NO_INTEGER
       if node.words:
         first_word = node.words[0]
         span_id = word.LeftMostSpanForWord(first_word)
-        if span_id == const.NO_INTEGER:
-          log('Warning: word has no location information: %s', first_word)
-        else:
-          found = True
 
-      # TODO: Move this before word evaluation!
-      if found:
-        # NOTE: This is what we want to expose as variables for PS4.
-        #ui.PrintFilenameAndLine(span_id, self.arena)
-        self._SetSourceLocation(span_id)
-      else:
-        self.mem.SetSourceLocation('<unknown>', -1)
+      self.mem.SetCurrentSpanId(span_id)
 
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up logging.  For example, 'echo hi
@@ -786,11 +769,10 @@ class Executor(object):
 
         # Assignment always appears to have a spid.
         if node.spids:
-          self._SetSourceLocation(node.spids[0])
+          current_spid = node.spids[0]
         else:
-          # TODO: when does this happen?  Warn.
-          #log('Warning: assignment has no location information: %s', node)
-          self.mem.SetSourceLocation('<unknown>', -1)
+          current_spid = const.NO_INTEGER
+        self.mem.SetCurrentSpanId(current_spid)
         self.tracer.OnAssignment(lval, val, flags, lookup_mode)
 
       # PATCH to be compatible with existing shells: If the assignment had a
