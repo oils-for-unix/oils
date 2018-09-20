@@ -645,7 +645,7 @@ class Mem(object):
   # Named Vars
   #
 
-  def _FindCellAndNamespace(self, name, lookup_mode, is_read=False):
+  def _FindCellAndNamespace(self, name, lookup_mode, writing=True):
     """Helper for getting and setting variable.
 
     Need a mode to skip Temp scopes.  For Setting.
@@ -653,7 +653,7 @@ class Mem(object):
     Args:
       name: the variable name
       lookup_mode: scope_e
-      is_read: Is this lookup for a read or a write?
+      writing: Is this lookup for a read or a write?
 
     Returns:
       cell: The cell corresponding to looking up 'name' with the given mode, or
@@ -663,7 +663,7 @@ class Mem(object):
     if lookup_mode == scope_e.Dynamic:
       for i in range(len(self.var_stack) - 1, -1, -1):
         frame = self.var_stack[i]
-        if not frame.mutable and not is_read:
+        if not frame.mutable and writing:
           continue
         namespace = frame.vars
         if name in namespace:
@@ -673,7 +673,7 @@ class Mem(object):
 
     elif lookup_mode == scope_e.LocalOnly:
       frame = self.var_stack[-1]
-      if not frame.mutable and not is_read:
+      if not frame.mutable and writing:
         frame = self.var_stack[-2]
         # The frame below a readonly one should be mutable.
         assert frame.mutable, frame
@@ -878,7 +878,7 @@ class Mem(object):
     if name == 'SOURCE_NAME':
       return self.source_name
 
-    cell, _ = self._FindCellAndNamespace(name, lookup_mode, is_read=True)
+    cell, _ = self._FindCellAndNamespace(name, lookup_mode, writing=False)
 
     if cell:
       return cell.val
