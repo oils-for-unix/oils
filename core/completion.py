@@ -197,21 +197,31 @@ class LiveDictAction(CompletionAction):
 
 
 class FileSystemAction(CompletionAction):
+  """Complete paths from the file system.
+
+  Directories will have a / suffix.
+  
+  TODO: We need a variant that tests for an executable bit.
+  """
+
   def __init__(self):
-    self.cache = {}  # Do we need this?
+    pass
 
   def Matches(self, words, index, prefix):
     i = prefix.rfind('/')
-    if i == -1:
-      base_dir = '.'
+    if i == -1:  # it looks like 'foo'
+      to_list = '.'
       base = ''
+    elif i == 0:  # it's an absolute path prefix like / or /b
+      to_list ='/'
+      base = '/'
     else:
-      base_dir = prefix[:i]
-      base = base_dir
-      #log('base_dir %r', base_dir)
+      to_list = prefix[:i]
+      base = to_list
+      #log('to_list %r', to_list)
 
     try:
-      names = os.listdir(base_dir)
+      names = os.listdir(to_list)
     except OSError as e:
       return  # nothing
 

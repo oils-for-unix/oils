@@ -10,6 +10,7 @@ from __future__ import print_function
 completion_test.py: Tests for completion.py
 """
 
+import os
 import unittest
 import sys
 
@@ -77,6 +78,9 @@ class CompletionTest(unittest.TestCase):
     # Current dir -- all files and dirs
     print(list(a.Matches([], 0, '')))
 
+    os.system('mkdir -p /tmp/oil_comp_test')
+    os.system('bash -c "touch /tmp/oil_comp_test/{one,two,three}"')
+
     # This test depends on actual file system content.  But we choose things
     # that shouldn't go away.
     CASES = [
@@ -89,6 +93,12 @@ class CompletionTest(unittest.TestCase):
         ('asdl/R', ['asdl/README.md']),
         ('opy/doc', ['opy/doc/']),
         ('opy/doc/', ['opy/doc/opcodes.md']),
+        ('/bi', ['/bin/']),
+        ('/tmp/oil_comp_test/', [
+          '/tmp/oil_comp_test/one',
+          '/tmp/oil_comp_test/three',
+          '/tmp/oil_comp_test/two',
+          ])
     ]
 
     for prefix, expected in CASES:

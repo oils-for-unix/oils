@@ -56,4 +56,9 @@ list-distro() {
   find /usr/share/bash-completion/ -type f | xargs wc -l | sort -n
 }
 
+# After running this, source testdata/completion/git-completion.bash
+git-demo() {
+  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh
+}
+
 "$@"
