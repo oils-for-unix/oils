@@ -464,6 +464,14 @@ class Mem(object):
         pass  # It's a frame for FOO=bar?  Or the top one?
 
       d['call_spid'] = call_spid
+      if call_spid != const.NO_INTEGER:  # first frame has this issue
+        span = self.arena.GetLineSpan(call_spid)
+        path, line_num = self.arena.GetDebugInfo(span.line_id)
+        line = self.arena.GetLine(span.line_id)
+        d['call_path'] = path
+        d['call_line_num'] = line_num
+        d['call_line'] = line
+
       d['argv_frame'] = argv_i
       d['var_frame'] = var_i
       debug_stack.append(d)

@@ -5,9 +5,25 @@ dev.py - Devtools / introspection.
 """
 
 import os
+
+from asdl import const
 from core import util
+from core import word
 
 # TODO: Move Tracer here.
+
+def SpanIdFromError(error):
+  #print(parse_error)
+  if error.span_id != const.NO_INTEGER:
+    return error.span_id
+  if error.token:
+    return error.token.span_id
+  if error.part:
+    return word.LeftMostSpanForPart(error.part)
+  if error.word:
+    return word.LeftMostSpanForWord(error.word)
+
+  return const.NO_INTEGER
 
 
 class CrashDumper(object):
@@ -23,6 +39,21 @@ class CrashDumper(object):
     local path=$1
     curl -X POST https://osh-trace.oilshell.org  < $path
   }
+
+  Things to dump:
+  Executor
+    functions, aliases, traps, completion hooks, fd_state, dir_stack
+  
+  debug info for the source?  Or does that come elsewhere?
+  
+  Yeah I think you sould have two separate files.
+  - debug info for a given piece of code (needs hash)
+    - this could just be the raw source files?  Does it need anything else?
+    - I think it needs a hash so the VM dump can refer to it.
+  - vm dump.
+  - Combine those and you get a UI.
+  
+  One is constant at build time; the other is constant at runtime.
   """
   def __init__(self, crash_dump_dir):
     self.crash_dump_dir = crash_dump_dir
@@ -30,44 +61,32 @@ class CrashDumper(object):
     self.do_collect = bool(crash_dump_dir)
     self.collected = False  # whether we have anything to dump
 
-    self.var_stack = []
-    self.argv_stack = []
-    self.debug_stack = []
+    self.var_stack = None
+    self.argv_stack = None
+    self.debug_stack = None
+    self.error = None
 
-    # Things to dump:
-    # Executor
-    #   functions, aliases, traps, completion hooks, fd_state
-    #   dir_stack -- minor thing
-    #
-    # debug info for the source?  Or does that come elsewhere?
-    #
-    # Yeah I think you sould have two separate files.
-    # - debug info for a given piece of code (needs hash)
-    #   - this could just be the raw source files?  Does it need anything else?
-    #   - I think it needs a hash so the VM dump can refer to it.
-    # - vm dump.
-    # - Combine those and you get a UI.
-    #
-    # One is constant at build time; the other is constant at runtime.
-
-  def MaybeCollect(self, ex):
-    # TODO: Add error_with_loc here, and then save it in the JSON.
-
+  def MaybeCollect(self, ex, error):
+    """
+    Args:
+      ex: Executor instance
+      error: _ErrorWithLocation (ParseError or FatalRuntimeError)
+    """
     if not self.do_collect:  # Either we already did it, or there is no file
       return
 
-    # Copy stack
     self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
+    self.error = {
+        # Could also do msg % args separately, but JavaScript won't be able to
+        # render that.
+        'msg': error.UserErrorString(),
+        'span_id': SpanIdFromError(error),
+    }
 
-    # TODO: Also do functions, aliases, etc.
+    # TODO: Collect functions, aliases, etc.
 
     self.do_collect = False
     self.collected = True
-
-  def AddFrame(self):
-    frame = {}
-    self.stack.append(frame)
-    return frame
 
   def MaybeDump(self, status):
     """Write the dump as JSON.
@@ -94,8 +113,11 @@ class CrashDumper(object):
         'var_stack': self.var_stack,
         'argv_stack': self.argv_stack,
         'debug_stack': self.debug_stack,
+        'error': self.error,
+        'status': status,
     }
 
+    # TODO: Add PID here
     path = os.path.join(self.crash_dump_dir, 'osh-crash-dump.json')
     with open(path, 'w') as f:
       import json

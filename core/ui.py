@@ -15,6 +15,7 @@ import sys
 from asdl import const
 from asdl import encode
 from asdl import format as fmt
+from core import dev
 from core import word
 from osh import ast_lib
 from osh.meta import ast
@@ -103,17 +104,7 @@ def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
 
 
 def PrettyPrintError(parse_error, arena, f=sys.stderr):
-  #print(parse_error)
-  if parse_error.span_id != const.NO_INTEGER:
-    span_id = parse_error.span_id
-  elif parse_error.token:
-    span_id = parse_error.token.span_id
-  elif parse_error.part:
-    span_id = word.LeftMostSpanForPart(parse_error.part)
-  elif parse_error.word:
-    span_id = word.LeftMostSpanForWord(parse_error.word)
-  else:
-    span_id = const.NO_INTEGER
+  span_id = dev.SpanIdFromError(parse_error)
 
   # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
   # means there is no location info, but 0 could mean that the location is EOF.

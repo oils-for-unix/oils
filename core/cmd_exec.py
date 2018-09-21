@@ -160,12 +160,20 @@ class Executor(object):
     finally:
       self.arena.PopSource()
 
-  def _Eval(self, argv):
-    # TODO: set -o sane-eval should change eval to take a single string.
+  def _Eval(self, argv, eval_spid):
+    # TODO:
+    # - (argv, spid) should be a pattern for all builtins?  They all will need
+    # to report usage errors.
+    # - set -o sane-eval should change eval to take a single string.
     code_str = ' '.join(argv)
     line_reader = reader.StringLineReader(code_str, self.arena)
     _, c_parser = self.parse_ctx.MakeParser(line_reader)
-    return self._EvalHelper(c_parser, '<eval string>')
+
+    span = self.arena.GetLineSpan(eval_spid)
+    path, line_num = self.arena.GetDebugInfo(span.line_id)
+
+    source_name = '<eval string from %s:%d>' % (path, line_num)
+    return self._EvalHelper(c_parser, source_name)
 
   def ParseTrapCode(self, code_str):
     """
@@ -239,7 +247,7 @@ class Executor(object):
     else:
       return 0
 
-  def _RunBuiltin(self, builtin_id, argv):
+  def _RunBuiltin(self, builtin_id, argv, span_id):
     # NOTE: Builtins don't need to know their own name.
     argv = argv[1:]
 
@@ -303,7 +311,7 @@ class Executor(object):
       status = builtin.Umask(argv)
 
     elif builtin_id == builtin_e.EVAL:
-      status = self._Eval(argv)
+      status = self._Eval(argv, span_id)
 
     elif builtin_id == builtin_e.COMPLETE:
       status = comp_builtins.Complete(argv, self, self.funcs, self.comp_lookup)
@@ -504,7 +512,7 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, fork_external):
+  def _RunSimpleCommand(self, argv, fork_external, span_id):
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
@@ -514,7 +522,7 @@ class Executor(object):
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
       try:
-        status = self._RunBuiltin(builtin_id, argv)
+        status = self._RunBuiltin(builtin_id, argv, span_id)
       except args.UsageError as e:
         ui.usage('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
@@ -530,7 +538,7 @@ class Executor(object):
     builtin_id = builtin.Resolve(arg0)
     if builtin_id != builtin_e.NONE:
       try:
-        status = self._RunBuiltin(builtin_id, argv)
+        status = self._RunBuiltin(builtin_id, argv, span_id)
       except args.UsageError as e:
         ui.usage('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
@@ -665,7 +673,7 @@ class Executor(object):
                           (var_flags_e.Exported,), scope_e.TempEnv)
 
         # NOTE: This might never return!  In the case of fork_external=False.
-        status = self._RunSimpleCommand(argv, fork_external)
+        status = self._RunSimpleCommand(argv, fork_external, span_id)
       finally:
         if node.more_env:
           self.mem.PopTemp()
@@ -1165,10 +1173,10 @@ class Executor(object):
       else:
         raise  # Invalid
     except util.ParseError as e:
-      self.dumper.MaybeCollect(self)  # Do this before unwinding stack
+      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
     except util.FatalRuntimeError as e:
-      self.dumper.MaybeCollect(self)  # Do this before unwinding stack
+      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       ui.PrettyPrintError(e, self.arena)
       is_fatal = True
       status = e.exit_status if e.exit_status is not None else 1
@@ -1349,7 +1357,7 @@ class Executor(object):
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
     except (util.FatalRuntimeError, util.ParseError) as e:
-      self.dumper.MaybeCollect(self)  # Do this before unwinding stack
+      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
     finally:
       self.mem.PopCall()
