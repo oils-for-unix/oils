@@ -196,6 +196,34 @@ class LiveDictAction(CompletionAction):
         yield name + ' '  # full word
 
 
+class FileSystemAction(CompletionAction):
+  def __init__(self):
+    self.cache = {}  # Do we need this?
+
+  def Matches(self, words, index, prefix):
+    i = prefix.rfind('/')
+    if i == -1:
+      base_dir = '.'
+      base = ''
+    else:
+      base_dir = prefix[:i]
+      base = base_dir
+      #log('base_dir %r', base_dir)
+
+    try:
+      names = os.listdir(base_dir)
+    except OSError as e:
+      return  # nothing
+
+    for name in names:
+      path = os.path.join(base, name)
+      if path.startswith(prefix):
+        if os.path.isdir(path):
+          yield path + '/'
+        else:
+          yield path
+
+
 class ShellFuncAction(CompletionAction):
   def __init__(self, ex, func):
     self.ex = ex
@@ -780,7 +808,7 @@ def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, progress_f,
 
   # NOTE: Need set_completer_delims to be space here?  Otherwise you complete
   # as --a and --n.  Why?
-  comp_lookup.RegisterName('__default__', WordsAction(['-a', '-n']))
+  comp_lookup.RegisterName('__default__', FileSystemAction())
 
   A1 = WordsAction(['foo.py', 'foo', 'bar.py'])
   A2 = WordsAction(['m%d' % i for i in range(5)], delay=0.1)

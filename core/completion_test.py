@@ -26,6 +26,7 @@ from osh.meta import ast
 from osh import parse_lib
 
 assign_op_e = ast.assign_op_e
+log = util.log
 
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
@@ -70,6 +71,36 @@ class CompletionTest(unittest.TestCase):
     mem = state.Mem('dummy', [], {}, None)
     a = completion.ExternalCommandAction(mem)
     print(list(a.Matches([], 0, 'f')))
+
+  def testFileSystemAction(self):
+    a = completion.FileSystemAction()
+    # Current dir -- all files and dirs
+    print(list(a.Matches([], 0, '')))
+
+    # This test depends on actual file system content.  But we choose things
+    # that shouldn't go away.
+    CASES = [
+        # Dirs and files
+        ('c', ['core/', 'configure']),
+        ('nonexistent/', []),
+        ('README', ['README.md']),
+        # Directory should be completed to core/ ?
+        ('core', ['core/']),
+        ('asdl/R', ['asdl/README.md']),
+        ('opy/doc', ['opy/doc/']),
+        ('opy/doc/', ['opy/doc/opcodes.md']),
+    ]
+
+    for prefix, expected in CASES:
+      log('')
+      log('-- PREFIX %s', prefix)
+      log('-- expected %s', expected)
+      self.assertEqual(expected, list(a.Matches([], 0, prefix)))
+
+    print(list(a.Matches([], 0, './o')))
+
+    # A bunch of repos in oilshell
+    print(list(a.Matches([], 0, '../o')))
 
   def testShellFuncExecution(self):
     ex = cmd_exec_test.InitExecutor()
