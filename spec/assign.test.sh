@@ -407,11 +407,14 @@ None
 #### syntax error in array assignment
 a=x b[0+]=y c=z
 echo $a $b $c
-# status: 2
+## status: 2
+## stdout-json: ""
 ## BUG bash stdout: x
 ## BUG bash status: 0
 ## OK mksh stdout-json: ""
 ## OK mksh status: 1
+## N-I dash stdout:
+## N-I dash status: 0
 
 #### dynamic local variables
 f() {
@@ -430,3 +433,48 @@ f 'x=y a=b'
 [y]
 [b]
 ## END
+
+#### 'local x' does not set variable
+set -o nounset
+f() {
+  local x
+  echo $x
+}
+f
+## status: 1
+## OK dash status: 2
+
+#### 'local -a x' does not set variable
+set -o nounset
+f() {
+  local -a x
+  echo $x
+}
+f
+## status: 1
+## OK dash status: 2
+
+#### 'local x' and then array assignment
+f() {
+  local x
+  x[3]=foo
+  echo ${x[3]}
+}
+f
+## status: 0
+## stdout: foo
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### 'declare -A' and then dict assignment
+set -o strict-arith
+declare -A foo
+key=bar
+foo["$key"]=value
+echo ${foo["bar"]}
+## status: 0
+## stdout: value
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""

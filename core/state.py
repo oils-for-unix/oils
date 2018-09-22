@@ -702,7 +702,7 @@ class Mem(object):
     else:
       raise AssertionError(lookup_mode)
 
-  def SetVar(self, lval, value, new_flags, lookup_mode):
+  def SetVar(self, lval, value, new_flags, lookup_mode, strict_array=False):
     """
     Args:
       lval: lvalue
@@ -763,6 +763,7 @@ class Mem(object):
           cell.readonly = True
       else:
         if value is None:
+          # set -o nounset; local foo; echo $foo  # It's still undefined!
           value = runtime.Undef()  # export foo, readonly foo
         cell = runtime.cell(value,
                             var_flags_e.Exported in new_flags ,
@@ -787,66 +788,79 @@ class Mem(object):
         e_die("Can't assign array to array member", span_id=left_spid)
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-      if cell:
-        if cell.val.tag != value_e.StrArray:
-          # s=x
-          # s[1]=y  # invalid
-          e_die("Entries in value of type %s can't be assigned to",
-                cell.val.__class__.__name__, span_id=left_spid)
+      if not cell:
+        self._BindNewArrayWithEntry(namespace, lval, value, new_flags)
+        return
 
-        if cell.readonly:
-          e_die("Can't assign to readonly value", span_id=left_spid)
+      # bash/mksh have annoying behavior of letting you do LHS assignment to
+      # Undef, which then turns into an array.  (Undef means that set -o
+      # nounset fails.)
+      if (cell.val.tag == value_e.Str or
+          (cell.val.tag == value_e.Undef and strict_array)):
+        # s=x
+        # s[1]=y  # invalid
+        e_die("Entries in value of type %s can't be assigned to",
+              cell.val.__class__.__name__, span_id=left_spid)
 
-        strs = cell.val.strs
-        try:
-          strs[lval.index] = value.s
-        except IndexError:
-          # Fill it in with None.  It could look like this:
-          # ['1', 2, 3, None, None, '4', None]
-          # Then ${#a[@]} counts the entries that are not None.
-          #
-          # TODO: strict-array for Oil arrays won't auto-fill.
-          n = lval.index - len(strs) + 1
-          strs.extend([None] * n)
-          strs[lval.index] = value.s
-      else:
-        # When the array doesn't exist yet, it is created filled with None.
-        # Access to the array needs to explicitly filter those sentinel values.
-        # It also wastes memory. But indexed access is fast.
+      if cell.readonly:
+        e_die("Can't assign to readonly value", span_id=left_spid)
 
-        # What should be optimized for? Bash uses a linked list. Random access
-        # takes linear time, but iteration skips unset entries automatically.
+      if cell.val.tag == value_e.Undef:
+        self._BindNewArrayWithEntry(namespace, lval, value, new_flags)
+        return
 
-        # - Maybe represent as hash table?  Then it's not an ASDL type?
-
-        # representations:
-        # - array_item.Str array_item.Undef
-        # - parallel array: val.strs, val.undefs
-        # - or change ASDL type checking
-        #   - ASDL language does not allow: StrArray(string?* strs)
-        # - or add dict to ASDL?  Didn't it support obj?
-        #   - finding the max index is linear time?
-        #     - also you have to sort the indices
+      strs = cell.val.strs
+      try:
+        strs[lval.index] = value.s
+      except IndexError:
+        # Fill it in with None.  It could look like this:
+        # ['1', 2, 3, None, None, '4', None]
+        # Then ${#a[@]} counts the entries that are not None.
         #
-        # array ops:
-        # a=(1 2)
-        # a[1]=x
-        # a+=(1 2)
-        # ${a[@]}  - get all
-        # ${#a[@]} - length
-        # ${!a[@]} - keys
-        # That seems pretty minimal.
-
-        items = [None] * lval.index
-        items.append(value.s)
-        new_value = runtime.StrArray(items)
-        # arrays can't be exported
-        cell = runtime.cell(new_value, False,
-                            var_flags_e.ReadOnly in new_flags)
-        namespace[lval.name] = cell
+        # TODO: strict-array for Oil arrays won't auto-fill.
+        n = lval.index - len(strs) + 1
+        strs.extend([None] * n)
+        strs[lval.index] = value.s
 
     else:
-      raise AssertionError
+      raise AssertionError(lval.__class__.__name__)
+
+  def _BindNewArrayWithEntry(self, namespace, lval, value, new_flags):
+    # When the array doesn't exist yet, it is created filled with None.
+    # Access to the array needs to explicitly filter those sentinel values.
+    # It also wastes memory. But indexed access is fast.
+
+    # What should be optimized for? Bash uses a linked list. Random access
+    # takes linear time, but iteration skips unset entries automatically.
+
+    # - Maybe represent as hash table?  Then it's not an ASDL type?
+
+    # representations:
+    # - array_item.Str array_item.Undef
+    # - parallel array: val.strs, val.undefs
+    # - or change ASDL type checking
+    #   - ASDL language does not allow: StrArray(string?* strs)
+    # - or add dict to ASDL?  Didn't it support obj?
+    #   - finding the max index is linear time?
+    #     - also you have to sort the indices
+    #
+    # array ops:
+    # a=(1 2)
+    # a[1]=x
+    # a+=(1 2)
+    # ${a[@]}  - get all
+    # ${#a[@]} - length
+    # ${!a[@]} - keys
+    # That seems pretty minimal.
+
+    items = [None] * lval.index
+    items.append(value.s)
+    new_value = runtime.StrArray(items)
+    # arrays can't be exported
+    cell = runtime.cell(new_value, False,
+                        var_flags_e.ReadOnly in new_flags)
+    namespace[lval.name] = cell
+
 
   def InternalSetGlobal(self, name, new_val):
     """For setting read-only globals internally.

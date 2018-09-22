@@ -313,6 +313,16 @@ strict_array_3() {
   local foo=${1:- "[$@]" }
 }
 
+strict_array_4() {
+  local -a x
+  x[42]=99
+  echo "x[42] = ${x[42]}"
+
+  set -o strict-array
+  local -a y
+  y[42]=99
+}
+
 array_assign_1() {
   s=1
   s[0]=x  # can't assign value
