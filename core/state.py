@@ -710,6 +710,20 @@ class Mem(object):
     else:
       raise AssertionError(lookup_mode)
 
+  def IsAssocArray(self, name, lookup_mode):
+    """Returns whether a name resolve to a cell with an associative array.
+    
+    We need to know this to evaluate the index expression properly -- should it
+    be coerced to an integer or not?
+    """
+    cell, _ = self._FindCellAndNamespace(name, lookup_mode)
+    if cell:
+      if cell.val.tag == value_e.AssocArray:  # foo=([key]=value)
+        return True
+      if cell.is_assoc_array:  # declare -A
+        return True
+    return False
+
   def SetVar(self, lval, value, new_flags, lookup_mode, strict_array=False):
     """
     Args:
@@ -769,13 +783,16 @@ class Mem(object):
           cell.exported = True
         if var_flags_e.ReadOnly in new_flags:
           cell.readonly = True
+        if var_flags_e.AssocArray in new_flags:
+          cell.is_assoc_array = True
       else:
         if value is None:
           # set -o nounset; local foo; echo $foo  # It's still undefined!
           value = runtime.Undef()  # export foo, readonly foo
         cell = runtime.cell(value,
-                            var_flags_e.Exported in new_flags ,
-                            var_flags_e.ReadOnly in new_flags )
+                            var_flags_e.Exported in new_flags,
+                            var_flags_e.ReadOnly in new_flags,
+                            var_flags_e.AssocArray in new_flags)
         namespace[lval.name] = cell
 
       if (cell.val is not None and cell.val.tag == value_e.StrArray and
@@ -803,8 +820,9 @@ class Mem(object):
       # bash/mksh have annoying behavior of letting you do LHS assignment to
       # Undef, which then turns into an array.  (Undef means that set -o
       # nounset fails.)
-      if (cell.val.tag == value_e.Str or
-          (cell.val.tag == value_e.Undef and strict_array)):
+      cell_tag = cell.val.tag
+      if (cell_tag == value_e.Str or 
+          (cell_tag == value_e.Undef and strict_array)):
         # s=x
         # s[1]=y  # invalid
         e_die("Entries in value of type %s can't be assigned to",
@@ -813,22 +831,31 @@ class Mem(object):
       if cell.readonly:
         e_die("Can't assign to readonly value", span_id=left_spid)
 
-      if cell.val.tag == value_e.Undef:
-        self._BindNewArrayWithEntry(namespace, lval, value, new_flags)
+      if cell_tag == value_e.Undef:
+        if cell.is_assoc_array:
+          self._BindNewAssocArrayWithEntry(namespace, lval, value, new_flags)
+        else:
+          self._BindNewArrayWithEntry(namespace, lval, value, new_flags)
         return
 
-      strs = cell.val.strs
-      try:
-        strs[lval.index] = value.s
-      except IndexError:
-        # Fill it in with None.  It could look like this:
-        # ['1', 2, 3, None, None, '4', None]
-        # Then ${#a[@]} counts the entries that are not None.
-        #
-        # TODO: strict-array for Oil arrays won't auto-fill.
-        n = lval.index - len(strs) + 1
-        strs.extend([None] * n)
-        strs[lval.index] = value.s
+      if cell_tag == value_e.StrArray:
+        strs = cell.val.strs
+        try:
+          strs[lval.index] = value.s
+        except IndexError:
+          # Fill it in with None.  It could look like this:
+          # ['1', 2, 3, None, None, '4', None]
+          # Then ${#a[@]} counts the entries that are not None.
+          #
+          # TODO: strict-array for Oil arrays won't auto-fill.
+          n = lval.index - len(strs) + 1
+          strs.extend([None] * n)
+          strs[lval.index] = value.s
+        return
+
+      if cell_tag == value_e.AssocArray:
+        cell.val.d[lval.index] = value.s
+        return
 
     else:
       raise AssertionError(lval.__class__.__name__)
@@ -838,9 +865,19 @@ class Mem(object):
     items = [None] * lval.index
     items.append(value.s)
     new_value = runtime.StrArray(items)
-    # arrays can't be exported
-    cell = runtime.cell(new_value, False, var_flags_e.ReadOnly in new_flags)
-    namespace[lval.name] = cell
+
+    # arrays can't be exported; can't have AssocArray flag
+    readonly = var_flags_e.ReadOnly in new_flags
+    namespace[lval.name] = runtime.cell(new_value, False, readonly, False)
+
+  def _BindNewAssocArrayWithEntry(self, namespace, lval, value, new_flags):
+    """Fill 'namespace' with a new indexed array entry."""
+    d = {lval.index: value.s}  # TODO: RHS has to be string?
+    new_value = runtime.AssocArray(d)
+
+    # associative arrays can't be exported; don't need AssocArray flag
+    readonly = var_flags_e.ReadOnly in new_flags
+    namespace[lval.name] = runtime.cell(new_value, False, readonly, False)
 
   def InternalSetGlobal(self, name, new_val):
     """For setting read-only globals internally.

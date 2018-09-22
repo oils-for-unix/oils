@@ -397,18 +397,23 @@ class Executor(object):
             '[%d] %r exited with status %d', os.getpid(),
             node.__class__.__name__, status, status=status)
 
-  def _EvalLhs(self, node, spid):
+  def _EvalLhs(self, node, spid, lookup_mode):
     """lhs_expr -> lvalue."""
     assert isinstance(node, ast.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
-      node = runtime.LhsName(node.name)
-      node.spids.append(spid)
-      return node
+      runtime_node = runtime.LhsName(node.name)
+      runtime_node.spids.append(spid)
+      return runtime_node
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
-      i = self.arith_ev.Eval(node.index)
-      runtime_node = runtime.LhsIndexedName(node.name, i)
+      # TODO: Look up node.name and check if the cell is AssocArray, or if the
+      # type is AssocArray.
+      int_coerce = not self.mem.IsAssocArray(node.name, lookup_mode)
+      #log('int_coerce %s', int_coerce)
+      index = self.arith_ev.Eval(node.index, int_coerce=int_coerce)
+
+      runtime_node = runtime.LhsIndexedName(node.name, index)
       runtime_node.spids.append(node.spids[0])  # copy left-most token over
       return runtime_node
 
@@ -731,8 +736,6 @@ class Executor(object):
       elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
         # declare is like local, except it can also be used outside functions?
         lookup_mode = scope_e.LocalOnly
-        # TODO: Respect flags.  -r and -x matter, but -a and -A might be
-        # implicit in the RHS?
       elif node.keyword == Id.Assign_Readonly:
         lookup_mode = scope_e.Dynamic
         flags.append(var_flags_e.ReadOnly)
@@ -763,7 +766,7 @@ class Executor(object):
 
         else:  # plain assignment
           spid = pair.spids[0]  # Source location for tracing
-          lval = self._EvalLhs(pair.lhs, spid)
+          lval = self._EvalLhs(pair.lhs, spid, lookup_mode)
 
           # RHS can be a string or array.
           if pair.rhs:
@@ -776,6 +779,7 @@ class Executor(object):
         # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
         # Undef value, but the 'array' attribute.
 
+        #log('setting %s to %s with flags %s', lval, val, flags)
         self.mem.SetVar(lval, val, flags, lookup_mode,
                         strict_array=self.exec_opts.strict_array)
 

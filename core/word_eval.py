@@ -57,9 +57,13 @@ def _ValueToPartValue(val, quoted):
   elif val.tag == value_e.StrArray:
     return runtime.ArrayPartValue(val.strs)
 
+  elif val.tag == value_e.AssocArray:
+    # TODO: Is this correct?
+    return runtime.ArrayPartValue(val.d.values())
+
   else:
     # Undef should be caught by _EmptyStrOrError().
-    raise AssertionError
+    raise AssertionError(val.__class__.__name__)
 
 
 def _MakeWordFrames(part_vals):

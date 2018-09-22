@@ -247,6 +247,9 @@ def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
   elif isinstance(desc, asdl.BoolType):
     out_val = _ColoredString('T' if field_val else 'F', _OTHER_LITERAL)
 
+  elif isinstance(desc, asdl.DictType):
+    raise AssertionError
+
   elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
     out_val = field_val.name
 

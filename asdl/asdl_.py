@@ -69,6 +69,11 @@ class BoolType(_RuntimeType):
     return '<Bool>'
 
 
+class DictType(_RuntimeType):
+  def __repr__(self):
+    return '<Dict>'
+
+
 class ArrayType(_RuntimeType):
   def __init__(self, desc):
     self.desc = desc
@@ -138,6 +143,7 @@ BUILTIN_TYPES = {
     'string': StrType(),
     'int': IntType(),
     'bool': BoolType(),
+    'dict': DictType(),
 }
 
 

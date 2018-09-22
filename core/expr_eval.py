@@ -154,6 +154,7 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
   """
   #log('lhs_expr NODE %s', node)
   assert isinstance(node, ast.lhs_expr), node
+
   if node.tag == lhs_expr_e.LhsName:  # a = b
     # Problem: It can't be an array?
     # a=(1 2)
@@ -203,25 +204,45 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
   return val, lval
 
 
-def _ValToArith(val, word=None):
+def _ValToArith(val, int_coerce=True, word=None):
   """Convert runtime.value to a Python int or list of strings."""
   assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
 
+  if int_coerce:
+    if val.tag == value_e.Undef:  # 'nounset' already handled before got here
+      warn('converting undefined variable to 0')
+      return 0
+
+    if val.tag == value_e.Str:
+      return _StringToInteger(val.s, word=word)  # may raise FatalRuntimeError
+
+    if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
+      return val.strs
+
+    if val.tag == value_e.AssocArray:
+      return val.d
+
+    raise AssertionError(val)
+
   if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-    return 0
+    return ''  # I think nounset is handled elsewhere
 
   if val.tag == value_e.Str:
-    return _StringToInteger(val.s, word=word)  # may raise FatalRuntimeError
+    return val.s
 
   if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
     return val.strs
 
+  if val.tag == value_e.AssocArray:
+    return val.d
+
 
 class ArithEvaluator(_ExprEvaluator):
 
-  def _ValToArithOrError(self, val, word=None):
+  def _ValToArithOrError(self, val, int_coerce=True, word=None):
     try:
-      i = _ValToArith(val, word=word)
+      i = _ValToArith(val, int_coerce=int_coerce, word=word)
+
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -250,7 +271,7 @@ class ArithEvaluator(_ExprEvaluator):
     val = runtime.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
-  def Eval(self, node):
+  def Eval(self, node, int_coerce=True):
     """
     Args:
       node: osh_ast.arith_expr
@@ -264,12 +285,12 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
       val = self._LookupVar(node.name)
-      return self._ValToArithOrError(val)
+      return self._ValToArithOrError(val, int_coerce=int_coerce)
 
     # $(( $x )) or $(( ${x}${y} )), etc.
     if node.tag == arith_expr_e.ArithWord:
       val = self.word_ev.EvalWordToString(node.w)
-      return self._ValToArithOrError(val, word=node.w)
+      return self._ValToArithOrError(val, int_coerce=int_coerce, word=node.w)
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id

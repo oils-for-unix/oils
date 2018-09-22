@@ -516,12 +516,13 @@ append() {
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
-# associative array -- mksh implements different associative arrays.
+# associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh $BASH "$@"
+  sh-spec spec/assoc.test.sh --osh-failures-allowed 10 \
+    $BASH $OSH_LIST "$@"
 }
 
-# ZSH also has associative arrays, which means we probably need them
+# ZSH also has associative arrays
 assoc-zsh() {
   sh-spec spec/assoc-zsh.test.sh $ZSH "$@"
 }

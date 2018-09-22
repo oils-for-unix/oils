@@ -18,6 +18,12 @@
 declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)
 
+#### create empty assoc array, put, then get
+declare -A d  # still undefined
+d['foo']=bar
+echo ${d['foo']}
+## stdout: bar
+
 #### retrieve indices with !
 declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)

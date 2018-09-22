@@ -97,6 +97,14 @@ class CompletionLookup(object):
     # searched linearly.
     self.patterns = []
 
+  def PrintSpecs(self):
+    for name in sorted(self.lookup):
+      print('%s %s' % (name, self.lookup[name]))
+    print('---')
+    print('%s' % self.empty_comp)
+    print('%s' % self.first_comp)
+    print('%s' % self.patterns)
+
   def RegisterName(self, name, chain):
     """
     Called by 'complete' builtin.

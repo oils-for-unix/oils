@@ -73,7 +73,8 @@ def Complete(argv, ex, funcs, comp_lookup):
 
   commands = arg_r.Rest()
   if not commands:
-    raise args.UsageError('missing required commands')
+    comp_lookup.PrintSpecs()
+    return 0
 
   for command in commands:
     # NOTE: bash doesn't actually check the name until completion time, but

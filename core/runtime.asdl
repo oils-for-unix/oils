@@ -24,13 +24,14 @@ module runtime
     Undef
   | Str(string s)
   | StrArray(string* strs)
+  | AssocArray(dict d)
 
   -- For Oil?
   -- | ArrayInt(int* array_int)
   -- | ArrayBool(bool* a)
 
   -- For storing a variable.
-  cell = (value val, bool exported, bool readonly)
+  cell = (value val, bool exported, bool readonly, bool is_assoc_array)
 
   -- An undefined variable can become an indexed array with s[x]=1.  But if we
   -- 'declare -A' it, it will be undefined and waiting to turn into an
