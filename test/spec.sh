@@ -558,7 +558,7 @@ process-sub() {
 
 extended-glob() {
   # Do NOT use dash here.  Brace sub breaks things.
-  sh-spec spec/extended-glob.test.sh $BASH $MKSH "$@"
+  sh-spec spec/extended-glob.test.sh $BASH $MKSH $OSH_LIST "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.

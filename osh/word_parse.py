@@ -531,8 +531,8 @@ class WordParser(object):
     """
     left_token = self.cur_token
     arms = []
-    part = ast.ExtGlobPart(left_token, arms)  # return value
-    part.spids.append(left_token.span_id)
+    spids = []
+    spids.append(left_token.span_id)
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
     self._Next(lex_mode_e.EXTGLOB)  # advance past LEFT
@@ -545,7 +545,7 @@ class WordParser(object):
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
           arms.append(ast.CompoundWord())
-        part.spids.append(self.cur_token.span_id)
+        spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
@@ -567,6 +567,7 @@ class WordParser(object):
       else:
         raise AssertionError('Unexpected token %r' % self.cur_token)
 
+    part = ast.ExtGlobPart(left_token, arms, spids=spids)
     return part
 
   def _ReadLikeDQ(self, left_dq_token, out_parts):

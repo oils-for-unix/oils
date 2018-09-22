@@ -771,6 +771,12 @@ class _WordEvaluator(object):
       v = runtime.StringPartValue(str(num), False)
       part_vals.append(v)
 
+    elif part.tag == word_part_e.ExtGlobPart:
+      e_die('Unxpected extglob', part=part)
+      #log('part %s', part)
+      #v = runtime.StringPartValue('TODO', False)
+      #part_vals.append(v)
+
     else:
       raise AssertionError(part.__class__.__name__)
 

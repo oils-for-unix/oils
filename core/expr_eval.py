@@ -566,7 +566,7 @@ class BoolEvaluator(_ExprEvaluator):
       op_id = node.op_id
 
       s1 = self._EvalCompoundWord(node.left)
-      # Whehter to glob escape
+      # Whether to glob escape
       do_fnmatch = op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
                              Id.BoolBinary_GlobNEqual)
       s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)
@@ -613,6 +613,7 @@ class BoolEvaluator(_ExprEvaluator):
 
         if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
           #log('Comparing %s and %s', s2, s1)
+          # TODO: Respect extended glob?
           return libc.fnmatch(s2, s1)
 
         if op_id == Id.BoolBinary_GlobNEqual:
