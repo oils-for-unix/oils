@@ -99,11 +99,11 @@ class CompletionLookup(object):
 
   def PrintSpecs(self):
     for name in sorted(self.lookup):
-      print('%s %s' % (name, self.lookup[name]))
+      print('%-15r %s' % (name, self.lookup[name]))
     print('---')
-    print('%s' % self.empty_comp)
-    print('%s' % self.first_comp)
-    print('%s' % self.patterns)
+    print('empty = %s' % self.empty_comp)
+    print('first = %s' % self.first_comp)
+    print('patterns = %s' % self.patterns)
 
   def RegisterName(self, name, chain):
     """
@@ -204,6 +204,20 @@ class LiveDictAction(CompletionAction):
         yield name + ' '  # full word
 
 
+class Directory(CompletionAction):
+  """complete -A directory"""
+
+  def Matches(self, words, index, prefix):
+    raise NotImplementedError('-A directory')
+
+
+class User(CompletionAction):
+  """complete -A user"""
+
+  def Matches(self, words, index, prefix):
+    raise NotImplementedError('-A user')
+
+
 class FileSystemAction(CompletionAction):
   """Complete paths from the file system.
 
@@ -246,6 +260,10 @@ class ShellFuncAction(CompletionAction):
   def __init__(self, ex, func):
     self.ex = ex
     self.func = func
+
+  def __repr__(self):
+    # TODO: Add file and line number here!
+    return '<ShellFuncAction %r>' % (self.func.name,)
 
   def Matches(self, words, index, prefix):
     # TODO:

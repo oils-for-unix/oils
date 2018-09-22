@@ -32,7 +32,6 @@ def _DefineActions(spec):
   # NOTE: git-completion.bash uses -f and -v. 
   # My ~/.bashrc on Ubuntu uses -d, -u, -j, -v, -a, -c, -b
   spec.InitActions()
-  spec.Action(None, 'function')
   spec.Action('a', 'alias')
   spec.Action('b', 'binding')
   spec.Action('c', 'command')
@@ -41,10 +40,12 @@ def _DefineActions(spec):
   spec.Action('j', 'job')
   spec.Action('u', 'user')
   spec.Action('v', 'variable')
+  spec.Action(None, 'function')
   spec.Action(None, 'helptopic')  # help
   spec.Action(None, 'setopt')  # set -o
   spec.Action(None, 'shopt')  # shopt -s
   spec.Action(None, 'signal')  # kill -s
+  spec.Action(None, 'stopped')
 
 
 # git-completion.sh uses complete -o and complete -F
@@ -57,6 +58,12 @@ COMPLETE_SPEC.ShortFlag('-E',
     help='Define the compspec for an empty line')
 COMPLETE_SPEC.ShortFlag('-D',
     help='Define the compspec that applies when nothing else matches')
+COMPLETE_SPEC.ShortFlag('-P', args.Str,
+    help='Prefix is added at the beginning of each possible completion after '
+         'all other options have been applied.')
+COMPLETE_SPEC.ShortFlag('-S', args.Str,
+    help='Suffix is appended to each possible completion after '
+         'all other options have been applied.')
 COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Complete with this function')
 
 
@@ -72,31 +79,72 @@ def Complete(argv, ex, funcs, comp_lookup):
   #log('arg %s', arg)
 
   commands = arg_r.Rest()
+
+  if arg.D:
+    commands.append('__fallback')  # if the command doesn't match anything
+  if arg.E:
+    commands.append('__empty')  # empty line
+
   if not commands:
     comp_lookup.PrintSpecs()
     return 0
 
-  for command in commands:
-    # NOTE: bash doesn't actually check the name until completion time, but
-    # obviously it's better to check here.
-    if arg.F:
-      func_name = arg.F
-      func = funcs.get(func_name)
-      if func is None:
-        print('Function %r not found' % func_name)
-        return 1
+  actions = []
+  # NOTE: bash doesn't actually check the name until completion time, but
+  # obviously it's better to check here.
+  if arg.F:
+    func_name = arg.F
+    func = funcs.get(func_name)
+    if func is None:
+      util.error('Function %r not found', func_name)
+      return 1
+    actions.append(completion.ShellFuncAction(ex, func))
 
-      chain = completion.ShellFuncAction(ex, func)
-      comp_lookup.RegisterName(command, chain)
-
-      # TODO: Some feedback would be nice?
-      # Should we show an error like this?  Or maybe a warning?  Maybe
-      # comp_lookup has readline_mod?
-      # util.error('Oil was not built with readline/completion.')
+  for name in arg.actions:
+    if name == 'alias':
+      actions.append(completion.Directory())
+    elif name == 'binding':
+      actions.append(completion.Directory())
+    elif name == 'command':
+      actions.append(completion.Directory())
+    elif name == 'directory':
+      actions.append(completion.Directory())
+    elif name == 'file':
+      actions.append(completion.Directory())
+    elif name == 'job':
+      actions.append(completion.User())
+    elif name == 'user':
+      actions.append(completion.User())
+    elif name == 'variable':
+      actions.append(completion.User())
+    elif name == 'function':
+      actions.append(completion.User())
+    elif name == 'helptopic':
+      actions.append(completion.User())
+    elif name == 'setopt':
+      actions.append(completion.User())
+    elif name == 'shopt':
+      actions.append(completion.User())
+    elif name == 'signal':
+      actions.append(completion.User())
+    elif name == 'stopped':
+      actions.append(completion.User())
     else:
       pass
 
-    return 0
+  if not actions:
+    util.error('No actions defined in completion: %s' % argv)
+    return 1
+
+  chain = completion.ChainedCompleter(actions)
+  for command in commands:
+    comp_lookup.RegisterName(command, chain)
+
+  patterns = []
+  for pat in patterns:
+    comp_lookup.RegisterGlob(pat, action)
+
+  return 0
 
 
 COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A

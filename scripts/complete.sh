@@ -58,12 +58,22 @@ list-distro() {
 
 # After running this, source testdata/completion/git-completion.bash
 fresh-osh-with-dump() {
-  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh "$@"
+  env -i OSH_CRASH_DUMP_DIR=_tmp  \
+    bin/osh --debug-file _tmp/debug "$@"
+}
+
+osh-trace() {
+  env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+${LINENO} ' \
+    bin/osh -x --debug-file _tmp/debug "$@"
 }
 
 bash-completion() {
   # This is a patched version
   fresh-osh-with-dump /usr/share/bash-completion/bash_completion.osh
+}
+
+bash-completion-trace() {
+  osh-trace /usr/share/bash-completion/bash_completion.osh
 }
 
 # This should do nothing

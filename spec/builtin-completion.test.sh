@@ -96,3 +96,15 @@ PATH
 PA_FILE_1
 PA_FILE_2
 ## END
+
+#### complete with nonexistent function
+complete -F invalidZZ -D
+echo status=$?
+## stdout: status=1
+## BUG bash stdout: status=0
+
+#### complete with no action
+complete foo
+echo status=$?
+## stdout: status=1
+## BUG bash stdout: status=0

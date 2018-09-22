@@ -336,8 +336,8 @@ builtin-bash() {
 }
 
 # This is bash/OSH only
-builtin-compgen() {
-  sh-spec spec/builtin-compgen.test.sh --osh-failures-allowed 1 \
+builtin-completion() {
+  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
