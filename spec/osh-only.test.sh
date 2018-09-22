@@ -13,6 +13,19 @@ set -o debug-completion
 $SH -o debug-completion
 ## status: 0
 
+#### repr
+x=42
+repr x
+echo status=$?
+repr nonexistent
+echo status=$?
+## STDOUT:
+x = (Str s:42)
+status=0
+status=1
+## END
+
+
 #### crash dump
 rm -f $TMP/*.json
 OSH_CRASH_DUMP_DIR=$TMP $SH -c '

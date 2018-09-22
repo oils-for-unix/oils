@@ -116,6 +116,9 @@ _NORMAL_BUILTINS = {
     "unalias": builtin_e.UNALIAS,
 
     "help": builtin_e.HELP,
+
+    # OSH only
+    "repr": builtin_e.REPR,
 }
 
 
@@ -1338,6 +1341,23 @@ def Help(argv, loader):
     sys.stdout.write(line)
   f.close()
   return 0
+
+
+def Repr(argv, mem):
+  """Given a list of variable names, print their values.
+
+  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
+  """
+  status = 0
+  for name in argv:
+    # TODO: Should we print flags too?
+    val = mem.GetVar(name)
+    if val.tag == value_e.Undef:
+      print('%r is not defined' % name, file=sys.stderr)
+      status = 1
+    else:
+      print('%s = %s' % (name, val))
+  return status
 
 
 def main(argv):

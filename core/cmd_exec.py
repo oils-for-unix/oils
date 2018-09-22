@@ -362,6 +362,9 @@ class Executor(object):
       loader = util.GetResourceLoader()
       status = builtin.Help(argv, loader)
 
+    elif builtin_id == builtin_e.REPR:
+      status = builtin.Repr(argv, self.mem)
+
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
 
