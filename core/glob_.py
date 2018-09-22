@@ -46,6 +46,15 @@ def LooksLikeGlob(s):
   return False
 
 
+def _BackslashEscape(s, meta_chars):
+  escaped = []
+  for c in s:
+    if c in meta_chars:
+      escaped.append('\\')
+    escaped.append(c)
+  return ''.join(escaped)
+
+
 # Glob Helpers for WordParts.
 # NOTE: Escaping / doesn't work, because it's not a filename character.
 # ! : - are metachars within character classes
@@ -55,12 +64,23 @@ def GlobEscape(s):
   """
   For SingleQuotedPart, DoubleQuotedPart, and EscapedLiteralPart
   """
-  escaped = ''
-  for c in s:
-    if c in GLOB_META_CHARS:
-      escaped += '\\'
-    escaped += c
-  return escaped
+  return _BackslashEscape(s, GLOB_META_CHARS)
+
+
+# Quoted parts need to be regex-escaped, e.g. [[ $a =~ "{" ]].  I don't think
+# libc has a function to do this.  Escape these characters:
+# https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html Use
+
+# NOTE: Weird bash rule: (|) are literal and don't have to be escaped
+# The {} are the regex meta chars that are NOT bash meta chars?
+# This is very gross.
+ERE_META_CHARS = '{}'
+
+def ExtendedRegexEscape(s):
+  """
+  For [[ foo =~ $\{ ]]
+  """
+  return _BackslashEscape(s, ERE_META_CHARS)
 
 
 def _GlobUnescape(s):  # used by cmd_exec

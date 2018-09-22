@@ -343,6 +343,10 @@ LEXER_DEF[lex_mode_e.BASH_REGEX] = [
   # At a minimum, you do need $ and ~ expansions to happen.  <>;& could have
   # been allowed unescaped too, but that's not what bash does.  The criteria
   # was whether they were "special" in both languages, which seems dubious.
+
+  # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
+  # and [].  We will avoid that and ask the user to extract a variable.
+
   C('(', Id.Lit_Chars),
   C(')', Id.Lit_Chars),
   C('|', Id.Lit_Chars),

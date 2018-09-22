@@ -108,12 +108,12 @@ pat="^(a b)$"
 ## status: 2
 ## OK zsh status: 1
 
-#### Regex with char class
+#### Regex with char class containing space
 # For some reason it doesn't work without parens?
 [[ 'ba ba ' =~ ([a b]+) ]] && echo true
 ## stdout: true
 
-#### Operators lose meaning in () in regex state (BASH_REGEX_CAHRS)
+#### Operators and space lose meaning inside ()
 [[ '< >' =~ (< >) ]] && echo true
 ## stdout: true
 ## N-I zsh stdout-json: ""
@@ -125,8 +125,31 @@ pat="^(a b)$"
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 1
 
-#### Double quoted regex gets regex-escaped
+#### Unquoted { is parse error in bash/zsh
+[[ { =~ { ]] && echo true
+echo status=$?
+## STDOUT:
+status=2
+## END
+## N-I zsh STDOUT:
+status=1
+## END
+
+#### Quoted {
 [[ { =~ "{" ]] && echo true
-## stdout: true
-## N-I zsh status: 1
-## N-I zsh stdout-json: ""
+echo status=$?
+## STDOUT:
+true
+status=0
+## END
+## N-I zsh STDOUT:
+status=1
+## END
+
+#### regex with ?
+[[ 'c' =~ c? ]] && echo true
+[[ '' =~ c? ]] && echo true
+## STDOUT:
+true
+true
+## END

@@ -17,6 +17,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
+from core import glob_
 from core import util
 from core import state
 from osh.meta import BOOL_ARG_TYPES, Id, types
@@ -624,8 +625,10 @@ class BoolEvaluator(_ExprEvaluator):
           return s1 != s2
 
         if op_id == Id.BoolBinary_EqualTilde:
+          regex_str = glob_.ExtendedRegexEscape(s2)
+          #log('%r -> %r', s2, regex_str)
           try:
-            matches = libc.regex_match(s2, s1)
+            matches = libc.regex_match(regex_str, s1)
           except RuntimeError:
             e_die("Invalid regex %r", s2, word=node.right)
 

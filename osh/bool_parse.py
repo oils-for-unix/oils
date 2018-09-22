@@ -30,6 +30,7 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
+from core import glob_
 from core import word
 from core import util
 from osh.meta import ast, Id, Kind, LookupKind, types
@@ -216,16 +217,10 @@ class BoolParser(object):
 
         right = self.cur_word
         if is_regex:
-          # TODO: Quoted parts need to be regex-escaped, e.g. [[ $a =~ "{" ]].
-          # I don't think libc has a function to do this.  Escape these
-          # characters:
-          # https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html0
-
-          ok, regex_str, unused_quoted = word.StaticEval(right)
-
-          # TODO: Should raise exception with error?
-          # doesn't contain $foo, etc.
+          # Check syntax.  TODO: We should have rhs = Dynamic | Static.
+          ok, s, unused_quoted = word.StaticEval(right)
           if ok:
+            regex_str = glob_.ExtendedRegexEscape(s)
             try:
               libc.regex_parse(regex_str)
             except RuntimeError as e:
