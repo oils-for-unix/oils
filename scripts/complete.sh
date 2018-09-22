@@ -61,4 +61,10 @@ git-demo() {
   env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh
 }
 
+bash-completion() {
+  # This is a patched version
+  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh \
+    /usr/share/bash-completion/bash_completion.osh
+}
+
 "$@"

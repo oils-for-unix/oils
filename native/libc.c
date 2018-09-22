@@ -7,6 +7,10 @@
 #include <limits.h>
 #include <stdlib.h>
 
+// Enable GNU extensions in fnmatch.h.
+// TODO: Need a configure option for this.
+#define _GNU_SOURCE 1
+
 #include <fnmatch.h>
 #include <glob.h>
 #ifdef __FreeBSD__
@@ -55,7 +59,12 @@ func_fnmatch(PyObject *self, PyObject *args) {
     return NULL;
   }
 
+#ifdef _GNU_SOURCE
+  int flags = FNM_EXTMATCH;
+#else
   int flags = 0;
+#endif
+
   int ret = fnmatch(pattern, str, flags);
 
   switch (ret) {

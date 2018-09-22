@@ -772,10 +772,12 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.ExtGlobPart:
-      e_die('Unxpected extglob', part=part)
-      #log('part %s', part)
-      #v = runtime.StringPartValue('TODO', False)
-      #part_vals.append(v)
+      part_vals.append(runtime.StringPartValue(part.op.val, False))
+      for i, w in enumerate(part.arms):
+        if i != 0:
+          part_vals.append(runtime.StringPartValue('|', False))  # separator
+        self._EvalWordToParts(w, True, part_vals)  # eval like quoted
+      part_vals.append(runtime.StringPartValue(')', False))  # closing )
 
     else:
       raise AssertionError(part.__class__.__name__)
