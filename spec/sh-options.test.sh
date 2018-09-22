@@ -242,3 +242,45 @@ set -o | grep set
 #### set without args lists variables
 set | grep PWD
 ## status: 0
+
+#### shopt -q
+shopt -q nullglob
+echo nullglob=$?
+
+# set it
+shopt -s nullglob
+
+shopt -q nullglob
+echo nullglob=$?
+
+shopt -q nullglob failglob
+echo nullglob,failglob=$?
+
+# set it
+shopt -s failglob
+shopt -q nullglob failglob
+echo nullglob,failglob=$?
+
+## STDOUT:
+nullglob=1
+nullglob=0
+nullglob,failglob=1
+nullglob,failglob=0
+## END
+## N-I dash/mksh STDOUT:
+nullglob=127
+nullglob=127
+nullglob,failglob=127
+nullglob,failglob=127
+## END
+
+#### shopt -q invalid
+shopt -q invalidZZ
+echo invalidZZ=$?
+## STDOUT:
+invalidZZ=1
+## END
+## N-I dash/mksh STDOUT:
+invalidZZ=127
+## END
+

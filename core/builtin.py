@@ -774,6 +774,7 @@ SHOPT_SPEC.ShortFlag('-s')  # set
 SHOPT_SPEC.ShortFlag('-u')  # unset
 SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' up names
 SHOPT_SPEC.ShortFlag('-p')  # print
+SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 
 def Shopt(argv, exec_opts):
@@ -785,6 +786,17 @@ def Shopt(argv, exec_opts):
     else:
       exec_opts.ShowShoptOptions(argv[i:])
     return 0
+
+  if arg.q:  # query values
+    status = 0
+    for opt_name in argv[i:]:
+      if not hasattr(exec_opts, opt_name):  # Invalid option
+        status = 1  # bash does this, 2 would be better
+        break
+      if not getattr(exec_opts, opt_name):
+        status = 1
+        break
+    return status
 
   b = None
   if arg.s:

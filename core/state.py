@@ -161,6 +161,7 @@ class ExecOpts(object):
     self.expand_aliases = False
     self.extglob = False  # No-op for bash compatibility.
     self.progcomp = False  # ditto
+    self.hostcomplete = False  # ditto, for words with '@'
 
     #
     # OSH-specific options that are not yet implemented.
@@ -260,7 +261,7 @@ class ExecOpts(object):
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
   SHOPT_OPTIONS = ('nullglob', 'failglob', 'expand_aliases', 'extglob',
-                   'progcomp')
+                   'progcomp', 'hostcomplete')
 
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """
