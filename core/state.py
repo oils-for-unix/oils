@@ -176,6 +176,9 @@ class ExecOpts(object):
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
 
+    self.vi = False
+    self.emacs = False
+
   def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail
     lookup = set(shellopts.split(':'))
@@ -826,41 +829,13 @@ class Mem(object):
       raise AssertionError(lval.__class__.__name__)
 
   def _BindNewArrayWithEntry(self, namespace, lval, value, new_flags):
-    # When the array doesn't exist yet, it is created filled with None.
-    # Access to the array needs to explicitly filter those sentinel values.
-    # It also wastes memory. But indexed access is fast.
-
-    # What should be optimized for? Bash uses a linked list. Random access
-    # takes linear time, but iteration skips unset entries automatically.
-
-    # - Maybe represent as hash table?  Then it's not an ASDL type?
-
-    # representations:
-    # - array_item.Str array_item.Undef
-    # - parallel array: val.strs, val.undefs
-    # - or change ASDL type checking
-    #   - ASDL language does not allow: StrArray(string?* strs)
-    # - or add dict to ASDL?  Didn't it support obj?
-    #   - finding the max index is linear time?
-    #     - also you have to sort the indices
-    #
-    # array ops:
-    # a=(1 2)
-    # a[1]=x
-    # a+=(1 2)
-    # ${a[@]}  - get all
-    # ${#a[@]} - length
-    # ${!a[@]} - keys
-    # That seems pretty minimal.
-
+    """Fill 'namespace' with a new indexed array entry."""
     items = [None] * lval.index
     items.append(value.s)
     new_value = runtime.StrArray(items)
     # arrays can't be exported
-    cell = runtime.cell(new_value, False,
-                        var_flags_e.ReadOnly in new_flags)
+    cell = runtime.cell(new_value, False, var_flags_e.ReadOnly in new_flags)
     namespace[lval.name] = cell
-
 
   def InternalSetGlobal(self, name, new_val):
     """For setting read-only globals internally.

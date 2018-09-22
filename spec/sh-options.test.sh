@@ -234,3 +234,11 @@ SHELLOPTS=x
 echo status=$?
 ## stdout: status=1
 ## N-I dash/mksh stdout: status=0
+
+#### set -o lists options
+set -o | grep set
+## status: 0
+
+#### set without args lists variables
+set | grep PWD
+## status: 0

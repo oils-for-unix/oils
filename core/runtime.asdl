@@ -32,7 +32,10 @@ module runtime
   -- For storing a variable.
   cell = (value val, bool exported, bool readonly)
 
-  var_flags = Exported | ReadOnly | Array | AssocArray
+  -- An undefined variable can become an indexed array with s[x]=1.  But if we
+  -- 'declare -A' it, it will be undefined and waiting to turn into an
+  -- associative array.
+  var_flags = Exported | ReadOnly | AssocArray
   scope = TempEnv | LocalOnly | GlobalOnly | Dynamic
 
   -- For assignment, evaluated to osh_ast.lhs_expr
