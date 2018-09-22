@@ -771,7 +771,13 @@ class Executor(object):
             assert isinstance(val, runtime.value), val
           else:
             # e.g. 'readonly x' or 'local x'
-            val = None  # only changing flags
+            if var_flags_e.Array in flags:
+              val = runtime.StrArray([])
+            elif var_flags_e.AssocArray in flags:
+              # TODO: AssocArray
+              val = runtime.StrArray([])
+            else:
+              val = None  # 'export a' -- only changing flags, may exist
 
         # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
         # Undef value, but the 'array' attribute.

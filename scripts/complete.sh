@@ -57,14 +57,18 @@ list-distro() {
 }
 
 # After running this, source testdata/completion/git-completion.bash
-git-demo() {
-  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh
+fresh-osh-with-dump() {
+  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh "$@"
 }
 
 bash-completion() {
   # This is a patched version
-  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh \
-    /usr/share/bash-completion/bash_completion.osh
+  fresh-osh-with-dump /usr/share/bash-completion/bash_completion.osh
+}
+
+# This should do nothing
+git-completion() {
+  fresh-osh-with-dump testdata/completion/git-completion.bash
 }
 
 "$@"

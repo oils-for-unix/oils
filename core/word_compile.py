@@ -110,8 +110,12 @@ def ParseAssignFlags(flag_args):
         flags.append(var_flags_e.Exported)
       elif char == 'r':
         flags.append(var_flags_e.ReadOnly)
+      elif char == 'a':
+        flags.append(var_flags_e.Array)
+      elif char == 'A':
+        flags.append(var_flags_e.AssocArray)
       else:
-        # -a is ignored right now?
+        # TODO: Throw an error?
         pass
   return flags
 
