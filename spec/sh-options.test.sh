@@ -278,6 +278,9 @@ nullglob,failglob=127
 shopt -q invalidZZ
 echo invalidZZ=$?
 ## STDOUT:
+invalidZZ=2
+## END
+## OK bash STDOUT:
 invalidZZ=1
 ## END
 ## N-I dash/mksh STDOUT:

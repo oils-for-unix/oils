@@ -788,15 +788,12 @@ def Shopt(argv, exec_opts):
     return 0
 
   if arg.q:  # query values
-    status = 0
     for opt_name in argv[i:]:
-      if not hasattr(exec_opts, opt_name):  # Invalid option
-        status = 1  # bash does this, 2 would be better
-        break
+      if not hasattr(exec_opts, opt_name):
+        return 2  # bash gives 1 for invalid option; 2 is better
       if not getattr(exec_opts, opt_name):
-        status = 1
-        break
-    return status
+        return 1  # at least one option is not true
+    return 0  # all options are true
 
   b = None
   if arg.s:
