@@ -413,3 +413,20 @@ echo $a $b $c
 ## OK mksh stdout-json: ""
 ## OK mksh status: 1
 
+#### dynamic local variables
+f() {
+  local "$1"  # Only x is assigned here
+  echo [$x]
+  echo [$a]
+
+  local $1  # x and a are assigned here
+  echo [$x]
+  echo [$a]
+}
+f 'x=y a=b'
+## STDOUT:
+[y a=b]
+[]
+[y]
+[b]
+## END

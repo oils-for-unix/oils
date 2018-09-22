@@ -203,8 +203,14 @@ def _AppendMoreEnv(preparsed_list, more_env):
 
 
 def _MakeAssignment(parse_ctx, assign_kw, suffix_words):
-  """Create an ast.Assignment node from a keyword and a list of words."""
+  """Create an ast.Assignment node from a keyword and a list of words.
 
+  NOTE: We don't allow dynamic assignments like:
+
+  local $1
+
+  This can be replaced with eval 'local $1'
+  """
   # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
   flags = []
   n = len(suffix_words)
