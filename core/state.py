@@ -74,6 +74,7 @@ SET_OPTIONS = [
     ('n', 'noexec'),
     ('u', 'nounset'),
     ('x', 'xtrace'),
+    ('v', 'verbose'),
     ('f', 'noglob'),
     ('C', 'noclobber'),
     ('h', 'hashall'),
@@ -119,6 +120,7 @@ class ExecOpts(object):
     self.nounset = False  # -u
     self.pipefail = False
     self.xtrace = False  # NOTE: uses PS4
+    self.verbose = False  # like xtrace, but prints unevaluated commands
     self.noglob = False  # -f
     self.noexec = False  # -n
     self.noclobber = False  # -C
@@ -226,6 +228,8 @@ class ExecOpts(object):
     else:
       # strict-control-flow -> strict_control_flow
       opt_name = opt_name.replace('-', '_')
+      if opt_name == 'verbose' and b:
+        log('Warning: set -o verbose not implemented')
       setattr(self, opt_name, b)
 
   def SetOption(self, opt_name, b):
