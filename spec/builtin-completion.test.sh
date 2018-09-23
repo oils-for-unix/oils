@@ -83,7 +83,7 @@ PATH
 PWD
 ## END
 
-#### Three compgens combined
+#### compgen with actions: function / variable / file 
 mkdir -p $TMP/compgen2
 touch $TMP/compgen2/PA_FILE_{1,2}
 cd $TMP/compgen2  # depends on previous test above!
@@ -95,6 +95,30 @@ PA_FUNC
 PATH
 PA_FILE_1
 PA_FILE_2
+## END
+
+#### compgen with actions: alias, setopt
+alias v_alias='ls'
+alias v_alias2='ls'
+alias a1='ls'
+compgen -A alias -A setopt v
+## STDOUT:
+v_alias
+v_alias2
+verbose
+vi
+## END
+
+#### compgen with actions: shopt
+compgen -A shopt -P [ -S ] nu
+## STDOUT:
+[nullglob]
+## END
+
+#### compgen with action and suffix: helptopic
+compgen -A helptopic -S ___ fa
+## STDOUT:
+false___
 ## END
 
 #### complete with nonexistent function

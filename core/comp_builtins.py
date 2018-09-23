@@ -7,13 +7,22 @@ import os
 
 from core import args
 from core import completion
+from core import state
 from core import util
+
+from _devbuild.gen import osh_help  # generated file
 
 log = util.log
 
 
 def _DefineFlags(spec):
   spec.ShortFlag('-F', args.Str, help='Complete with this function')
+  spec.ShortFlag('-P', args.Str,
+      help='Prefix is added at the beginning of each possible completion after '
+           'all other options have been applied.')
+  spec.ShortFlag('-S', args.Str,
+      help='Suffix is appended to each possible completion after '
+           'all other options have been applied.')
 
 
 def _DefineOptions(spec):
@@ -53,7 +62,7 @@ def _DefineActions(spec):
   spec.Action(None, 'stopped')
 
 
-class _LiveDictAction(object):
+class _SortedWordsAction(object):
   def __init__(self, d):
     self.d = d
 
@@ -99,42 +108,66 @@ def _BuildCompletionChain(argv, arg, ex):
       raise args.UsageError('Function %r not found' % func_name)
     actions.append(completion.ShellFuncAction(ex, func))
 
+  # NOTE: We need completion for -A action itself!!!  bash seems to have it.
   for name in arg.actions:
     if name == 'alias':
-      actions.append(_DirectoriesAction())
+      a = _SortedWordsAction(ex.aliases)
+
     elif name == 'binding':
-      actions.append(_DirectoriesAction())
+      # TODO: Where do we get this from?
+      a = _SortedWordsAction(['vi-delete'])
+
     elif name == 'command':
-      actions.append(_DirectoriesAction())
+      # TODO: This needs builtins too
+      a = completion.ExternalCommandAction(ex.mem)
+
     elif name == 'directory':
-      actions.append(_DirectoriesAction())
+      # TODO: This is FileSystemAction with a filter
+      a = _DirectoriesAction()
+
     elif name == 'file':
-      actions.append(completion.FileSystemAction())
+      a = completion.FileSystemAction()
+
     elif name == 'function':
-      actions.append(_LiveDictAction(ex.funcs))
+      a = _SortedWordsAction(ex.funcs)
+
     elif name == 'job':
-      actions.append(_UsersAction())
+      a = _SortedWordsAction(['jobs-not-implemented'])
+
     elif name == 'user':
-      actions.append(_UsersAction())
+      a = _UsersAction()
+
     elif name == 'variable':
-      actions.append(_VariablesAction(ex.mem))
+      a = _VariablesAction(ex.mem)
+
     elif name == 'helptopic':
-      actions.append(_UsersAction())
+      a = _SortedWordsAction(osh_help.TOPIC_LOOKUP)
+
     elif name == 'setopt':
-      actions.append(_UsersAction())
+      a = _SortedWordsAction(state.SET_OPTION_NAMES)
+
     elif name == 'shopt':
-      actions.append(_UsersAction())
+      a = _SortedWordsAction(state.SHOPT_OPTION_NAMES)
+
     elif name == 'signal':
-      actions.append(_UsersAction())
+      a = _SortedWordsAction(['TODO:signals'])
+
     elif name == 'stopped':
-      actions.append(_UsersAction())
+      a = _SortedWordsAction(['jobs-not-implemented'])
+
     else:
       raise NotImplementedError(name)
+
+    actions.append(a)
 
   if not actions:
     raise args.UsageError('No actions defined in completion: %s' % argv)
 
-  chain = completion.ChainedCompleter(actions)
+  chain = completion.ChainedCompleter(
+      actions,
+      prefix=arg.P or '',
+      suffix=arg.S or '')
+
   return chain
 
 
@@ -149,12 +182,6 @@ COMPLETE_SPEC.ShortFlag('-E',
     help='Define the compspec for an empty line')
 COMPLETE_SPEC.ShortFlag('-D',
     help='Define the compspec that applies when nothing else matches')
-COMPLETE_SPEC.ShortFlag('-P', args.Str,
-    help='Prefix is added at the beginning of each possible completion after '
-         'all other options have been applied.')
-COMPLETE_SPEC.ShortFlag('-S', args.Str,
-    help='Suffix is appended to each possible completion after '
-         'all other options have been applied.')
 
 
 def Complete(argv, ex, comp_lookup):
@@ -205,9 +232,9 @@ def CompGen(argv, funcs, ex):
   status = 0
 
   if arg_r.AtEnd():
-    prefix = ''
+    to_complete = ''
   else:
-    prefix = arg_r.Peek()
+    to_complete = arg_r.Peek()
     arg_r.Next()
     if not arg_r.AtEnd():
       raise args.UsageError('Extra arguments')
@@ -220,10 +247,9 @@ def CompGen(argv, funcs, ex):
   # - need to dedupe these, as in RootCompleter
   # - what to pass for comp_words and index?
   matched = False 
-  for m in chain.Matches(None, None, prefix):
-    if m.startswith(prefix):
-      matched = True
-      print(m)
+  for m in chain.Matches(None, None, to_complete):
+    matched = True
+    print(m)
 
   return 0 if matched else 1
 
@@ -242,4 +268,3 @@ def CompOpt(argv):
 
   log('arg %s', arg)
   return 0
-

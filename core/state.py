@@ -97,7 +97,12 @@ SET_OPTIONS = [
     # checking this.
 ]
 
-_SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
+# Used by core/comp_builtins.py too.
+SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
+
+SHOPT_OPTION_NAMES = (
+    'nullglob', 'failglob', 'expand_aliases', 'extglob', 'progcomp',
+    'hostcomplete')
 
 
 class ExecOpts(object):
@@ -216,7 +221,7 @@ class ExecOpts(object):
   def _SetOption(self, opt_name, b):
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
-    if opt_name not in _SET_OPTION_NAMES:
+    if opt_name not in SET_OPTION_NAMES:
       raise args.UsageError('Invalid option %r' % opt_name)
     if opt_name == 'errexit':
       self.errexit.Set(b)
@@ -260,19 +265,16 @@ class ExecOpts(object):
         new_val = runtime.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-  SHOPT_OPTIONS = ('nullglob', 'failglob', 'expand_aliases', 'extglob',
-                   'progcomp', 'hostcomplete')
-
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """
-    if opt_name not in self.SHOPT_OPTIONS:
+    if opt_name not in SHOPT_OPTION_NAMES:
       raise args.UsageError('Invalid option %r' % opt_name)
     setattr(self, opt_name, b)
 
   def ShowOptions(self, opt_names):
     """ For 'set -o' and 'shopt -p -o' """
     # TODO: Maybe sort them differently?
-    opt_names = opt_names or _SET_OPTION_NAMES
+    opt_names = opt_names or SET_OPTION_NAMES
     for opt_name in opt_names:
       if opt_name == 'errexit':
         b = self.errexit.errexit
@@ -283,7 +285,7 @@ class ExecOpts(object):
 
   def ShowShoptOptions(self, opt_names):
     """ For 'shopt -p' """
-    opt_names = opt_names or self.SHOPT_OPTIONS  # show all
+    opt_names = opt_names or SHOPT_OPTION_NAMES  # show all
     for opt_name in opt_names:
       b = getattr(self, opt_name)
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))

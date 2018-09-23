@@ -392,8 +392,7 @@ class GlobPredicate(object):
 
 
 class ChainedCompleter(object):
-  """
-  Composite completer, composed of individual ones.
+  """A completer that tries a bunch of them in order.
 
   NOTE: plus_dirs happens AFTER filtering with predicates?  We add BACK the
   dirs, e.g. -A file -X '!*.sh' -o plusdirs.
@@ -404,18 +403,17 @@ class ChainedCompleter(object):
   """
   def __init__(self, actions, predicate=None, prefix='', suffix=''):
     self.actions = actions
+    # Predicate is for the prefix
     self.predicate = predicate or (lambda word: True)
     self.prefix = prefix
     self.suffix = suffix
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, words, index, to_complete):
     for a in self.actions:
-      for match in a.Matches(words, index, prefix):
+      for match in a.Matches(words, index, to_complete):
         # There are two kinds of filters: changing the string, and filtering
-        # the set of strings.
-
-        # So maybe have modifiers AND filters?  A triple.
-        if self.predicate(match):
+        # the set of strings.  So maybe have modifiers AND filters?  A triple.
+        if match.startswith(to_complete) and self.predicate(match):
           yield self.prefix + match + self.suffix
 
     # Prefix is the current one?
