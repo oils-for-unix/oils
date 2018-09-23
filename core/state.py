@@ -978,14 +978,12 @@ class Mem(object):
           exported[name] = cell.val.s
     return exported
 
-  def VarsWithPrefix(self, prefix):
+  def VarNames(self):
     """For compgen -A variable."""
-
     # Look up the stack, yielding all variables.  Bash seems to do this.
     for scope in self.var_stack:
       for name, _ in scope.vars.iteritems():
-        if name.startswith(prefix):
-          yield name
+        yield name
 
 
 def SetLocalString(mem, name, s):

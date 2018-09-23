@@ -195,30 +195,6 @@ class WordsAction(CompletionAction):
         yield w + ' '
 
 
-class LiveDictAction(CompletionAction):
-  def __init__(self, d):
-    self.d = d
-
-  def Matches(self, words, index, prefix):
-    for name in sorted(self.d):
-      if name.startswith(prefix):
-        yield name + ' '  # full word
-
-
-class Directory(CompletionAction):
-  """complete -A directory"""
-
-  def Matches(self, words, index, prefix):
-    raise NotImplementedError('-A directory')
-
-
-class User(CompletionAction):
-  """complete -A user"""
-
-  def Matches(self, words, index, prefix):
-    raise NotImplementedError('-A user')
-
-
 class FileSystemAction(CompletionAction):
   """Complete paths from the file system.
 
@@ -831,11 +807,9 @@ def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, progress_f,
   commands_action = ExternalCommandAction(mem)
   builtins_action = WordsAction(builtins.GetNamesToComplete())
   keywords_action = WordsAction(['TODO:keywords'])
-  funcs_action = LiveDictAction(funcs)
 
   first_chain = ChainedCompleter([
       aliases_action, commands_action, builtins_action, keywords_action,
-      funcs_action
   ])
 
   # NOTE: These two are the same by default

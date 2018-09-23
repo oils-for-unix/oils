@@ -12,6 +12,10 @@ from core import util
 log = util.log
 
 
+def _DefineFlags(spec):
+  spec.ShortFlag('-F', args.Str, help='Complete with this function')
+
+
 def _DefineOptions(spec):
   """Common -o options for complete and compgen."""
 
@@ -25,6 +29,7 @@ def _DefineOptions(spec):
            "post-processed")
   spec.Option(None, 'nospace',
       help="Don't append a space to words completed at the end of the line")
+
 
 def _DefineActions(spec):
   """Common -A actions for complete and compgen."""
@@ -48,9 +53,95 @@ def _DefineActions(spec):
   spec.Action(None, 'stopped')
 
 
+class _LiveDictAction(object):
+  def __init__(self, d):
+    self.d = d
+
+  def Matches(self, words, index, prefix):
+    for name in sorted(self.d):
+      if name.startswith(prefix):
+        #yield name + ' '  # full word
+        yield name
+
+
+class _VariablesAction(object):
+  def __init__(self, mem):
+    self.mem = mem
+
+  def Matches(self, words, index, prefix):
+    for var_name in self.mem.VarNames():
+      yield var_name
+
+
+class _DirectoriesAction(object):
+  """complete -A directory"""
+
+  def Matches(self, words, index, prefix):
+    raise NotImplementedError('-A directory')
+
+
+class _UsersAction(object):
+  """complete -A user"""
+
+  def Matches(self, words, index, prefix):
+    raise NotImplementedError('-A user')
+
+
+def _BuildCompletionChain(argv, arg, ex):
+  """Given flags to complete/compgen, built a ChainedCompleter."""
+  actions = []
+  # NOTE: bash doesn't actually check the name until completion time, but
+  # obviously it's better to check here.
+  if arg.F:
+    func_name = arg.F
+    func = ex.funcs.get(func_name)
+    if func is None:
+      raise args.UsageError('Function %r not found' % func_name)
+    actions.append(completion.ShellFuncAction(ex, func))
+
+  for name in arg.actions:
+    if name == 'alias':
+      actions.append(_DirectoriesAction())
+    elif name == 'binding':
+      actions.append(_DirectoriesAction())
+    elif name == 'command':
+      actions.append(_DirectoriesAction())
+    elif name == 'directory':
+      actions.append(_DirectoriesAction())
+    elif name == 'file':
+      actions.append(completion.FileSystemAction())
+    elif name == 'function':
+      actions.append(_LiveDictAction(ex.funcs))
+    elif name == 'job':
+      actions.append(_UsersAction())
+    elif name == 'user':
+      actions.append(_UsersAction())
+    elif name == 'variable':
+      actions.append(_VariablesAction(ex.mem))
+    elif name == 'helptopic':
+      actions.append(_UsersAction())
+    elif name == 'setopt':
+      actions.append(_UsersAction())
+    elif name == 'shopt':
+      actions.append(_UsersAction())
+    elif name == 'signal':
+      actions.append(_UsersAction())
+    elif name == 'stopped':
+      actions.append(_UsersAction())
+    else:
+      raise NotImplementedError(name)
+
+  if not actions:
+    raise args.UsageError('No actions defined in completion: %s' % argv)
+
+  chain = completion.ChainedCompleter(actions)
+  return chain
+
+
 # git-completion.sh uses complete -o and complete -F
 COMPLETE_SPEC = args.FlagsAndOptions()
 
+_DefineFlags(COMPLETE_SPEC)
 _DefineOptions(COMPLETE_SPEC)
 _DefineActions(COMPLETE_SPEC)
 
@@ -64,10 +155,9 @@ COMPLETE_SPEC.ShortFlag('-P', args.Str,
 COMPLETE_SPEC.ShortFlag('-S', args.Str,
     help='Suffix is appended to each possible completion after '
          'all other options have been applied.')
-COMPLETE_SPEC.ShortFlag('-F', args.Str, help='Complete with this function')
 
 
-def Complete(argv, ex, funcs, comp_lookup):
+def Complete(argv, ex, comp_lookup):
   """complete builtin - register a completion function.
 
   NOTE: It's a member of Executor because it creates a ShellFuncAction, which
@@ -89,54 +179,7 @@ def Complete(argv, ex, funcs, comp_lookup):
     comp_lookup.PrintSpecs()
     return 0
 
-  actions = []
-  # NOTE: bash doesn't actually check the name until completion time, but
-  # obviously it's better to check here.
-  if arg.F:
-    func_name = arg.F
-    func = funcs.get(func_name)
-    if func is None:
-      util.error('Function %r not found', func_name)
-      return 1
-    actions.append(completion.ShellFuncAction(ex, func))
-
-  for name in arg.actions:
-    if name == 'alias':
-      actions.append(completion.Directory())
-    elif name == 'binding':
-      actions.append(completion.Directory())
-    elif name == 'command':
-      actions.append(completion.Directory())
-    elif name == 'directory':
-      actions.append(completion.Directory())
-    elif name == 'file':
-      actions.append(completion.Directory())
-    elif name == 'job':
-      actions.append(completion.User())
-    elif name == 'user':
-      actions.append(completion.User())
-    elif name == 'variable':
-      actions.append(completion.User())
-    elif name == 'function':
-      actions.append(completion.User())
-    elif name == 'helptopic':
-      actions.append(completion.User())
-    elif name == 'setopt':
-      actions.append(completion.User())
-    elif name == 'shopt':
-      actions.append(completion.User())
-    elif name == 'signal':
-      actions.append(completion.User())
-    elif name == 'stopped':
-      actions.append(completion.User())
-    else:
-      pass
-
-  if not actions:
-    util.error('No actions defined in completion: %s' % argv)
-    return 1
-
-  chain = completion.ChainedCompleter(actions)
+  chain = _BuildCompletionChain(argv, arg, ex)
   for command in commands:
     comp_lookup.RegisterName(command, chain)
 
@@ -149,11 +192,12 @@ def Complete(argv, ex, funcs, comp_lookup):
 
 COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A
 
+_DefineFlags(COMPGEN_SPEC)
 _DefineOptions(COMPGEN_SPEC)
 _DefineActions(COMPGEN_SPEC)
 
 
-def CompGen(argv, funcs, mem):
+def CompGen(argv, funcs, ex):
   """Print completions on stdout."""
 
   arg_r = args.Reader(argv)
@@ -170,30 +214,16 @@ def CompGen(argv, funcs, mem):
 
   matched = False
 
-  if 'function' in arg.actions:
-    for func_name in sorted(funcs):
-      if func_name.startswith(prefix):
-        print(func_name)
-        matched = True
+  chain = _BuildCompletionChain(argv, arg, ex)
 
-  # Useful command to see what bash has:
-  # env -i -- bash --norc --noprofile -c 'compgen -v'
-  if 'variable' in arg.actions:
-    for var_name in mem.VarsWithPrefix(prefix):
-      print(var_name)
+  # TODO:
+  # - need to dedupe these, as in RootCompleter
+  # - what to pass for comp_words and index?
+  matched = False 
+  for m in chain.Matches(None, None, prefix):
+    if m.startswith(prefix):
       matched = True
-
-  if 'file' in arg.actions:
-    # git uses compgen -f, which is the same as compgen -A file
-    # TODO: listing '.' could be a capability?
-    for filename in os.listdir('.'):
-      if filename.startswith(prefix):
-        print(filename)
-        matched = True
-
-  if not arg.actions:
-    util.warn('*** command without -A not implemented ***')
-    return 1
+      print(m)
 
   return 0 if matched else 1
 

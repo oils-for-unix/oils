@@ -89,7 +89,7 @@ touch $TMP/compgen2/PA_FILE_{1,2}
 cd $TMP/compgen2  # depends on previous test above!
 PA_FUNC() { echo P; }
 Q_FUNC() { echo Q; }
-compgen -A function -A file -A variable PA
+compgen -A function -A variable -A file PA
 ## STDOUT:
 PA_FUNC
 PATH
@@ -100,11 +100,11 @@ PA_FILE_2
 #### complete with nonexistent function
 complete -F invalidZZ -D
 echo status=$?
-## stdout: status=1
+## stdout: status=2
 ## BUG bash stdout: status=0
 
 #### complete with no action
 complete foo
 echo status=$?
-## stdout: status=1
+## stdout: status=2
 ## BUG bash stdout: status=0
