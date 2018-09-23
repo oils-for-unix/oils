@@ -345,7 +345,7 @@ class GlobPredicate(object):
   """Expand into files that match a pattern.  !*.py filters them.
 
   Weird syntax:
-  *.py or !*.py
+  -X *.py or -X !*.py
 
   Also & is a placeholder for the string being completed?.  Yeah I probably
   want to get rid of this feature.
@@ -369,7 +369,7 @@ class ChainedCompleter(object):
   """
   def __init__(self, actions, predicate=None, prefix='', suffix=''):
     self.actions = actions
-    # TODO: predicate is for GlobPredicate?
+    # TODO: predicate is for GlobPredicate, for -X
     self.predicate = predicate or (lambda word: True)
     self.prefix = prefix
     self.suffix = suffix

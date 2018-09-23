@@ -7,8 +7,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly BASH_COMP=/usr/share/bash-completion/bash_completion.osh
+readonly GIT_COMP=testdata/completion/git-completion.bash
+
 audit() {
-  local file=${1:-testdata/completion/git-completion.bash}
+  local file=${1:-$GIT_COMP}
 
   echo
   echo --
@@ -69,16 +72,20 @@ osh-trace() {
 
 bash-completion() {
   # This is a patched version
-  fresh-osh-with-dump /usr/share/bash-completion/bash_completion.osh
+  fresh-osh-with-dump $BASH_COMP
 }
 
 bash-completion-trace() {
-  osh-trace /usr/share/bash-completion/bash_completion.osh
+  osh-trace $BASH_COMP
 }
 
 # This should do nothing
 git-completion() {
-  fresh-osh-with-dump testdata/completion/git-completion.bash
+  fresh-osh-with-dump $GIT_COMP
+}
+
+git-completion-trace() {
+  osh-trace $GIT_COMP
 }
 
 # See what completion is there by default.  It looks like filename completion.
