@@ -121,6 +121,8 @@ _NORMAL_BUILTINS = {
     "repr": builtin_e.REPR,
 }
 
+BUILTIN_NAMES = _SPECIAL_BUILTINS.keys() + _NORMAL_BUILTINS.keys()
+
 
 class BuiltinDef(object):
   """

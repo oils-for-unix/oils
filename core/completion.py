@@ -49,25 +49,13 @@ completion_state_e = runtime.completion_state_e
 log = util.log
 
 
-class CompletionInterface(object):
-  """
-  Things we need to do:
+class NullCompleter(object):
 
-  - Register completion (complete builtin)
-    - including instantiate ShellFuncAction and so forth
-    - instantiate things for completing var names, filenames, etc.
+  def Matches(self, words, index, to_complete):
+    return []
 
-  - Look up completion (for the callback, set by Init())
-  - readline: set -o vi emacs
-  - Display debug info: add DEBUG_FILE instead of status_lines
 
-  - Should we just print a warning that readline isn't installed?  Otherwise
-    every completion hook should work the same way.  No if statements.
-
-  """
-  def __init__(self, readline_mod):
-    self.readline_mod = readline_mod
-    pass
+_NULL_COMPLETER = NullCompleter()
 
 
 class CompletionLookup(object):
@@ -83,16 +71,12 @@ class CompletionLookup(object):
   But I also want to register patterns.
   """
   def __init__(self):
-    # default default actions are what?  Rest completer are filenames!
-    # TODO:
-    default_default = ChainedCompleter([])
-    self.lookup = {'__default__': default_default}
-
-    # NOTE: These two are the same by default, and bash provides a way to
-    # change empty_comp, with -E.  We will provide a way to change first_comp
-    # too.  If set, empty_comp also uses it?  That only makes sense.
-    self.empty_comp = None
-    self.first_comp = None
+    # command name -> ChainedCompleter
+    # There are pseudo commands __first and __fallback for -E and -D.
+    self.lookup = {
+        '__fallback': _NULL_COMPLETER,
+        '__first': _NULL_COMPLETER,
+        }
 
     # So you can register *.sh, unlike bash.  List of (glob, [actions]),
     # searched linearly.
@@ -102,40 +86,20 @@ class CompletionLookup(object):
     for name in sorted(self.lookup):
       print('%-15r %s' % (name, self.lookup[name]))
     print('---')
-    print('empty = %s' % self.empty_comp)
-    print('first = %s' % self.first_comp)
-    print('patterns = %s' % self.patterns)
+    for pat, chain in self.patterns:
+      print('%s = %s' % (pat, chain))
 
   def RegisterName(self, name, chain):
-    """
-    Called by 'complete' builtin.
-
-    Args:
-      name: command name, '' for empty, or __default__ for default?
-      actions: list of CompAction instances
+    """Register a completion action with a name.
+    Used by the 'complete' builtin.
     """
     self.lookup[name] = chain
 
   def RegisterGlob(self, glob_pat, chain):
     self.patterns.append((glob_pat, chain))
 
-  def RegisterEmpty(self, chain):
-    """What to do when completing empty line."""
-    self.empty_comp = chain
-
-  def GetEmptyCompleter(self):
-    return self.empty_comp
-
-  def RegisterFirst(self, chain):
-    """
-    What to do when complete the first word.  By default, there are 5 actions.
-
-    bash doesn't provide a way to change this -- it only provides -E.
-    """
-    self.first_comp = chain
-
   def GetFirstCompleter(self):
-    return self.first_comp
+    return self.lookup['__first']
 
   def GetCompleterForName(self, argv0):
     """
@@ -143,7 +107,7 @@ class CompletionLookup(object):
       argv0: A finished argv0 to lookup
     """
     if not argv0:
-      return self.empty_comp
+      return self.GetFirstCompleter()
 
     chain = self.lookup.get(argv0)  # NOTE: Could be ''
     if chain:
@@ -159,7 +123,8 @@ class CompletionLookup(object):
       if libc.fnmatch(glob_pat, key):
         return chain
 
-    return self.lookup['__default__']
+    # Nothing matched
+    return self.lookup['__fallback']
 
 
 #
@@ -175,9 +140,7 @@ class CompletionAction(object):
   def __init__(self):
     pass
 
-  def Matches(self, words, index, prefix):
-    # Prefix is the current one?
-    # What if the cursor is not at the end of line?  See readline interface.
+  def Matches(self, words, index, to_complete):
     pass
 
 
@@ -187,9 +150,9 @@ class WordsAction(CompletionAction):
     self.words = words
     self.delay = delay
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, words, index, to_complete):
     for w in self.words:
-      if w.startswith(prefix):
+      if w.startswith(to_complete):
         if self.delay:
           time.sleep(self.delay)
         yield w + ' '
@@ -202,20 +165,16 @@ class FileSystemAction(CompletionAction):
   
   TODO: We need a variant that tests for an executable bit.
   """
-
-  def __init__(self):
-    pass
-
-  def Matches(self, words, index, prefix):
-    i = prefix.rfind('/')
+  def Matches(self, words, index, to_complete):
+    i = to_complete.rfind('/')
     if i == -1:  # it looks like 'foo'
       to_list = '.'
       base = ''
-    elif i == 0:  # it's an absolute path prefix like / or /b
+    elif i == 0:  # it's an absolute path to_complete like / or /b
       to_list ='/'
       base = '/'
     else:
-      to_list = prefix[:i]
+      to_list = to_complete[:i]
       base = to_list
       #log('to_list %r', to_list)
 
@@ -226,7 +185,7 @@ class FileSystemAction(CompletionAction):
 
     for name in names:
       path = os.path.join(base, name)
-      if path.startswith(prefix):
+      if path.startswith(to_complete):
         if os.path.isdir(path):
           yield path + '/'
         else:
@@ -242,7 +201,7 @@ class ShellFuncAction(CompletionAction):
     # TODO: Add file and line number here!
     return '<ShellFuncAction %r>' % (self.func.name,)
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, words, index, to_complete):
     # TODO:
     # - Set COMP_CWORD etc. in ex.mem -- in the global namespace I guess
     # - Then parse the reply here
@@ -287,28 +246,33 @@ class ShellFuncAction(CompletionAction):
     print('REPLY', reply)
     #reply = ['g1', 'g2', 'h1', 'i1']
     for name in sorted(reply):
-      if name.startswith(prefix):
+      if name.startswith(to_complete):
         yield name + ' '  # full word
 
 
-class VarAction(object):
-  """Completes variable names."""
-
-  def __init__(self, environ, mem):
-    """
-    Args:
-      mem: state.Mem object
-    """
-    self.environ = environ
-    # How to complete environment?  **environ global var.  That's os.environ.
-    # What about lo
+class VariablesAction(object):
+  """compgen -A variable."""
+  def __init__(self, mem):
     self.mem = mem
 
-  def Matches(self, words, index, prefix):
-    assert prefix.startswith('$')
-    prefix = prefix[1:]
-    for name in sorted(self.environ):
-      if name.startswith(prefix):
+  def Matches(self, words, index, to_complete):
+    for var_name in self.mem.VarNames():
+      yield var_name
+
+
+class VariablesActionInternal(object):
+  """When we parse $VAR ourselves.
+
+  TODO: Also need to complete ${P (BracedVarSub)
+  """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def Matches(self, words, index, to_complete):
+    assert to_complete.startswith('$')
+    to_complete = to_complete[1:]
+    for name in self.mem.VarNames():
+      if name.startswith(to_complete):
         yield '$' + name + ' '  # full word
 
 
@@ -342,7 +306,7 @@ class ExternalCommandAction(object):
     # huge, and will require lots of sys calls.
     self.cache = {}
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, words, index, to_complete):
     """
     TODO: Cache is never cleared.
 
@@ -371,7 +335,7 @@ class ExternalCommandAction(object):
       names.extend(listing)
 
     for word in listing:
-      if word.startswith(prefix):
+      if word.startswith(to_complete):
         yield word + ' '
 
 
@@ -403,7 +367,7 @@ class ChainedCompleter(object):
   """
   def __init__(self, actions, predicate=None, prefix='', suffix=''):
     self.actions = actions
-    # Predicate is for the prefix
+    # TODO: predicate is for GlobPredicate?
     self.predicate = predicate or (lambda word: True)
     self.prefix = prefix
     self.suffix = suffix
@@ -469,17 +433,6 @@ def _FindLastSimpleCommand(node):
   # Go as deep as we need.
   return _FindLastSimpleCommand(node.children[-1])
 
-
-# Or it could just be a Completer / Chain?
-# CommandCompleter
-
-# ShellFuncAction()
-#  CompRequest?
-#
-# ShellFuncAction.Complete(words, i, prefix) -> iter
-#   This is the REST completer
-# VarCompleter.Complete(prefix) -> iter
-# HashKey.Complete(hash_name, prefix) -> iter
 
 def _GetCompletionType(w_parser, c_parser, ev, debug_f):
   """
@@ -657,7 +610,7 @@ class RootCompleter(object):
     comp_type, prefix, comp_words = _GetCompletionType(
         w_parser, c_parser, self.ev, self.debug_f)
 
-    comp_type, prefix, comp_words = _GetCompletionType1(self.parser, buf)
+    comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
 
     # TODO: I don't get bash -D vs -E.  Might need to write a test program.
 
@@ -669,7 +622,7 @@ class RootCompleter(object):
       chain = 'TODO'
     elif comp_type == completion_state_e.REDIR_FILENAME:
       # Non-user chain
-      chain = 'TODO'
+      chain = FileSystemAction()
 
     elif comp_type == completion_state_e.FIRST:
       chain = self.comp_lookup.GetFirstCompleter()
@@ -688,7 +641,7 @@ class RootCompleter(object):
 
     index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
     i = 0
-    for m in chain.Matches(comp_words, index, prefix):
+    for m in chain.Matches(comp_words, index, to_complete):
       # TODO: need to dedupe these
       yield m
       i += 1
@@ -798,32 +751,25 @@ def InitReadline(readline_mod, complete_cb):
   readline_mod.set_completer_delims(' ')
 
 
-def Init(readline_mod, pool, builtins, mem, funcs, comp_lookup, progress_f,
-         debug_f, ev, parse_ctx):
+def Init(readline_mod, pool, ex, comp_lookup, progress_f, debug_f, ev,
+         parse_ctx):
 
-  aliases_action = WordsAction(['TODO:alias'])
-  commands_action = ExternalCommandAction(mem)
-  builtins_action = WordsAction(builtins.GetNamesToComplete())
-  keywords_action = WordsAction(['TODO:keywords'])
+  from core import comp_builtins
 
-  first_chain = ChainedCompleter([
-      aliases_action, commands_action, builtins_action, keywords_action,
-  ])
+  # TODO: Need a space
+  # register builtins and words
+  comp_builtins.Complete(['-E', '-A', 'command'], ex, comp_lookup)
+  # register path completion
+  comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
 
-  # NOTE: These two are the same by default
-  comp_lookup.RegisterEmpty(first_chain)
-  comp_lookup.RegisterFirst(first_chain)
-
-  # NOTE: Need set_completer_delims to be space here?  Otherwise you complete
-  # as --a and --n.  Why?
-  comp_lookup.RegisterName('__default__', FileSystemAction())
-
+  # Something for fun, to show off.  Also: test that you don't repeatedly hit
+  # the file system / network / coprocess.
   A1 = WordsAction(['foo.py', 'foo', 'bar.py'])
   A2 = WordsAction(['m%d' % i for i in range(5)], delay=0.1)
   C1 = ChainedCompleter([A1, A2])
-  comp_lookup.RegisterName('grep', C1)
+  comp_lookup.RegisterName('slowc', C1)
 
-  var_comp = VarAction(os.environ, mem)
+  var_comp = VariablesActionInternal(ex.mem)
   root_comp = RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx,
                             progress_f, debug_f)
 

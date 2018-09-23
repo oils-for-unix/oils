@@ -42,7 +42,6 @@ progress_f = ui.TestStatusLine()
 
 V1 = completion.WordsAction(['$var1', '$var2', '$another_var'])
 
-EMPTY = completion.WordsAction(['grep', 'sed', 'test'])
 FIRST = completion.WordsAction(['grep', 'sed', 'test'])
 
 
@@ -62,8 +61,6 @@ class CompletionTest(unittest.TestCase):
 
     comp_rb = c.GetCompleterForName('foo.rb')
     print('rb', comp_rb)
-    # NOTE: This is an implementation detail
-    self.assertEqual(0, len(comp_rb.actions))
 
   def testWordsAction(self):
     print(list(A1.Matches(['f'], 0, 'f')))
@@ -157,8 +154,7 @@ class CompletionTest(unittest.TestCase):
     comp_lookup = completion.CompletionLookup()
 
     comp_lookup.RegisterName('grep', C1)
-    comp_lookup.RegisterEmpty(EMPTY)
-    comp_lookup.RegisterFirst(FIRST)
+    comp_lookup.RegisterName('__first', FIRST)
 
     ev = test_lib.MakeTestEvaluator()
 

@@ -6,6 +6,7 @@ comp_builtins.py - Completion builtins
 import os
 
 from core import args
+from core import builtin
 from core import completion
 from core import state
 from core import util
@@ -73,15 +74,6 @@ class _SortedWordsAction(object):
         yield name
 
 
-class _VariablesAction(object):
-  def __init__(self, mem):
-    self.mem = mem
-
-  def Matches(self, words, index, prefix):
-    for var_name in self.mem.VarNames():
-      yield var_name
-
-
 class _DirectoriesAction(object):
   """complete -A directory"""
 
@@ -118,7 +110,9 @@ def _BuildCompletionChain(argv, arg, ex):
       a = _SortedWordsAction(['vi-delete'])
 
     elif name == 'command':
-      # TODO: This needs builtins too
+      # TODO: This needs keywords too
+      actions.append(_SortedWordsAction(builtin.BUILTIN_NAMES))
+
       a = completion.ExternalCommandAction(ex.mem)
 
     elif name == 'directory':
@@ -138,7 +132,7 @@ def _BuildCompletionChain(argv, arg, ex):
       a = _UsersAction()
 
     elif name == 'variable':
-      a = _VariablesAction(ex.mem)
+      a = completion.VariablesAction(ex.mem)
 
     elif name == 'helptopic':
       a = _SortedWordsAction(osh_help.TOPIC_LOOKUP)
@@ -200,7 +194,7 @@ def Complete(argv, ex, comp_lookup):
   if arg.D:
     commands.append('__fallback')  # if the command doesn't match anything
   if arg.E:
-    commands.append('__empty')  # empty line
+    commands.append('__first')  # empty line
 
   if not commands:
     comp_lookup.PrintSpecs()
@@ -224,12 +218,11 @@ _DefineOptions(COMPGEN_SPEC)
 _DefineActions(COMPGEN_SPEC)
 
 
-def CompGen(argv, funcs, ex):
+def CompGen(argv, ex):
   """Print completions on stdout."""
 
   arg_r = args.Reader(argv)
   arg = COMPGEN_SPEC.Parse(arg_r)
-  status = 0
 
   if arg_r.AtEnd():
     to_complete = ''
@@ -264,7 +257,6 @@ def CompOpt(argv):
 
   # NOTE: This is supposed to fail if a completion isn't being generated?
   # The executor should have a mode?
-
 
   log('arg %s', arg)
   return 0

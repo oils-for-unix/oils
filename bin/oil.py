@@ -225,8 +225,8 @@ def OshMain(argv0, argv, login_shell):
       progress_f = ui.StatusLine()
       splitter = legacy.SplitContext(mem)
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
-      completion.Init(readline, pool, builtin.BUILTIN_DEF, mem, funcs,
-                      comp_lookup, progress_f, debug_f, ev, parse_ctx)
+      completion.Init(readline, pool, ex, comp_lookup, progress_f, debug_f,
+                      ev, parse_ctx)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

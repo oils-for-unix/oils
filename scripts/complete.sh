@@ -81,4 +81,10 @@ git-completion() {
   fresh-osh-with-dump testdata/completion/git-completion.bash
 }
 
+# See what completion is there by default.  It looks like filename completion.
+# Actually it does complete variables with $ and ${.
+bare-bash() {
+  bash --noprofile --norc "$@"
+}
+
 "$@"
