@@ -56,3 +56,42 @@ echo
 myfunc
 status=1
 ## END
+
+#### command skips function lookup
+seq() {
+  echo "$@"
+}
+command  # no-op
+seq 3
+command seq 3
+# subshell shouldn't fork another process (but we don't have a good way of
+# testing it)
+( command seq 3 )
+## STDOUT:
+3
+1
+2
+3
+1
+2
+3
+## END
+
+#### command command seq 3
+command command seq 3
+## STDOUT:
+1
+2
+3
+## END
+## N-I zsh stdout-json: ""
+## N-I zsh status: 127
+
+#### command command -v seq
+seq() {
+  echo 3
+}
+command command -v seq
+## stdout: seq
+## N-I zsh stdout-json: ""
+## N-I zsh status: 127

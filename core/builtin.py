@@ -884,7 +884,7 @@ def _ResolveNames(names, funcs, path_val):
 
 COMMAND_SPEC = _Register('command')
 COMMAND_SPEC.ShortFlag('-v')
-COMMAND_SPEC.ShortFlag('-V')
+#COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
 
 
 def Command(argv, funcs, path_val):
@@ -897,11 +897,10 @@ def Command(argv, funcs, path_val):
       else:
         # This is for -v, -V is more detailed.
         print(arg)
-  else:
-    util.warn('*** command without -v not implemented ***')
-    status = 1
+    return status
 
-  return status
+  raise AssertionError('command without -v should have been handled earlier')
+
 
 
 TYPE_SPEC = _Register('type')

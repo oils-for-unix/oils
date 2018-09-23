@@ -523,7 +523,11 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, fork_external, span_id):
+  def _RunSimpleCommand(self, argv, fork_external, span_id, funcs=True):
+    """
+    Args:
+      fork_external: for subshell ( ls / ) or ( command ls / )
+    """
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
@@ -540,13 +544,25 @@ class Executor(object):
       return status
 
     # Builtins like 'true' can be redefined as functions.
-    func_node = self.funcs.get(arg0)
-    if func_node is not None:
-      # NOTE: Functions could call 'exit 42' directly, etc.
-      status = self._RunFunc(func_node, argv)
-      return status
+    if funcs:
+      func_node = self.funcs.get(arg0)
+      if func_node is not None:
+        # NOTE: Functions could call 'exit 42' directly, etc.
+        status = self._RunFunc(func_node, argv)
+        return status
 
     builtin_id = builtin.Resolve(arg0)
+
+    if builtin_id == builtin_e.COMMAND:  # 'command ls' suppresses function lookup
+      n = len(argv)
+      if n == 1:
+        return 0  # 'command', like the 'if not argv' case above
+      # The 'command' builtin syntax is simple enough that this is 100%
+      # correct, not a heuristic.
+      elif n >= 2 and argv[1] != '-v':
+        return self._RunSimpleCommand(argv[1:], fork_external, span_id,
+                                      funcs=False)
+
     if builtin_id != builtin_e.NONE:
       try:
         status = self._RunBuiltin(builtin_id, argv, span_id)
