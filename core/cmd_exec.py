@@ -107,19 +107,18 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx,
-               dumper):
+               dumper, debug_f):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
-      funcs: registry of functions (these names are completed)
-      comp_lookup: completion pattern/action
+      funcs: dict of functions
+      comp_lookup: registry of completion hooks
       exec_opts: ExecOpts
       parse_ctx: for instantiating parsers
     """
     self.mem = mem
     self.fd_state = fd_state
-    # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
     # Completion hooks, set by 'complete' builtin.
     self.comp_lookup = comp_lookup
@@ -131,8 +130,8 @@ class Executor(object):
     self.dumper = dumper
 
     self.splitter = legacy.SplitContext(self.mem)
-    self.word_ev = word_eval.NormalWordEvaluator(
-        mem, exec_opts, self.splitter, self)
+    self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
+                                                 self)
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
     self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
 
@@ -150,7 +149,11 @@ class Executor(object):
 
     self.loop_level = 0  # for detecting bad top-level break/continue
 
-    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev)
+    if 1:
+      trace_f = debug_f
+    else:
+      trace_f = util.DebugFile(sys.stderr)
+    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev, trace_f)
     self.check_command_sub_status = False  # a hack
 
   def _EvalHelper(self, c_parser, source_name):
@@ -1398,9 +1401,10 @@ class Tracer(object):
     - set -x doesn't print line numbers!  OH but you can do that with
       PS4=$LINENO
   """
-  def __init__(self, parse_ctx, exec_opts, mem, word_ev):
+  def __init__(self, parse_ctx, exec_opts, mem, word_ev, f):
     """
     Args:
+      parse_ctx: For parsing PS4.
       exec_opts: For xtrace setting
       mem: for retrieving PS4
       word_ev: for evaluating PS4
@@ -1409,6 +1413,7 @@ class Tracer(object):
     self.exec_opts = exec_opts
     self.mem = mem
     self.word_ev = word_ev
+    self.f = f  # can be the --debug-file as well
 
     self.arena = alloc.SideArena('<$PS4>')
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
@@ -1463,7 +1468,7 @@ class Tracer(object):
 
     first_char, prefix = self._EvalPS4()
     cmd = ' '.join(pretty.Str(a) for a in argv)
-    print('%s%s%s' % (first_char, prefix, cmd), file=sys.stderr)
+    self.f.log('%s%s%s', first_char, prefix, cmd)
 
   def OnAssignment(self, lval, val, flags, lookup_mode):
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
@@ -1472,7 +1477,7 @@ class Tracer(object):
 
     # Now we have to get the prefix
     first_char, prefix = self._EvalPS4()
-    print('%s%s%s = %s' % (first_char, prefix, lval, val), file=sys.stderr)
+    self.f.log('%s%s%s = %s', first_char, prefix, lval, val)
 
   def Event(self):
     """

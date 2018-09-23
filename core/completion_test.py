@@ -162,7 +162,7 @@ class CompletionTest(unittest.TestCase):
     arena = pool.NewArena()
     parse_ctx = parse_lib.ParseContext(arena, {})
     var_comp = V1
-    r = completion.RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx,
+    r = completion.RootCompleter(ev, comp_lookup, var_comp, parse_ctx,
                                  progress_f, debug_f)
 
     m = list(r.Matches('grep f'))

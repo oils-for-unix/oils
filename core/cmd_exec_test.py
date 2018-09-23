@@ -10,6 +10,7 @@ cmd_exec_test.py: Tests for cmd_exec.py
 """
 
 import unittest
+import sys
 
 from core import cmd_exec  # module under test
 from core import dev
@@ -18,6 +19,7 @@ from core import word_eval
 from core import process
 from core import state
 from core import test_lib
+from core import util
 
 from osh.meta import ast, Id
 from osh import parse_lib
@@ -43,8 +45,9 @@ def InitExecutor(arena=None):
   exec_opts = state.ExecOpts(mem, None)
   parse_ctx = parse_lib.ParseContext(arena, {})
   dumper = dev.CrashDumper('')
+  debug_f = util.DebugFile(sys.stderr)
   return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
-                           parse_ctx, dumper)
+                           parse_ctx, dumper, debug_f)
 
 
 def InitEvaluator():

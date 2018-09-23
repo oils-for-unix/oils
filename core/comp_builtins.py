@@ -3,8 +3,6 @@
 comp_builtins.py - Completion builtins
 """
 
-import os
-
 from core import args
 from core import builtin
 from core import completion
@@ -206,7 +204,7 @@ def Complete(argv, ex, comp_lookup):
 
   patterns = []
   for pat in patterns:
-    comp_lookup.RegisterGlob(pat, action)
+    comp_lookup.RegisterGlob(pat, chain)
 
   return 0
 

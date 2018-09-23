@@ -16,7 +16,6 @@ from asdl import const
 from asdl import encode
 from asdl import format as fmt
 from core import dev
-from core import word
 from osh import ast_lib
 from osh.meta import ast
 

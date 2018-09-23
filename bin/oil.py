@@ -167,7 +167,7 @@ def OshMain(argv0, argv, login_shell):
   # Controlled by env variable, flag, or hook?
   dumper = dev.CrashDumper(os.getenv('OSH_CRASH_DUMP_DIR', ''))
   ex = cmd_exec.Executor(mem, fd_state, funcs, comp_lookup, exec_opts,
-                         parse_ctx, dumper)
+                         parse_ctx, dumper, debug_f)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
@@ -222,11 +222,27 @@ def OshMain(argv0, argv, login_shell):
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:
-      progress_f = ui.StatusLine()
-      splitter = legacy.SplitContext(mem)
+      splitter = legacy.SplitContext(mem)  # TODO: share with executor.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
-      completion.Init(readline, pool, ex, comp_lookup, progress_f, debug_f,
-                      ev, parse_ctx)
+      progress_f = ui.StatusLine()
+      var_action = completion.VariablesActionInternal(ex.mem)
+      root_comp = completion.RootCompleter(ev, comp_lookup, var_action,
+                                           parse_ctx, progress_f, debug_f)
+      completion.Init(readline, root_comp, debug_f)
+
+      from core import comp_builtins
+      # register builtins and words
+      comp_builtins.Complete(['-E', '-A', 'command'], ex, comp_lookup)
+      # register path completion
+      comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
+
+      if 1:
+        # Something for fun, to show off.  Also: test that you don't repeatedly hit
+        # the file system / network / coprocess.
+        A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
+        A2 = completion.WordsAction(['m%d' % i for i in range(5)], delay=0.1)
+        C1 = completion.ChainedCompleter([A1, A2])
+        comp_lookup.RegisterName('slowc', C1)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

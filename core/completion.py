@@ -334,6 +334,8 @@ class ExternalCommandAction(object):
         self.cache[key] = listing
       names.extend(listing)
 
+    # TODO: Shouldn't do the prefix / space thing ourselves.  readline does
+    # that at the END of the line.
     for word in listing:
       if word.startswith(to_complete):
         yield word + ' '
@@ -512,14 +514,15 @@ def _GetCompletionType(w_parser, c_parser, ev, debug_f):
     pass
 
   # TODO: Need to show buf... Need a multiline display for debugging?
-  debug_f.log('prev_token %s  cur_token %s  cur_word %s',
-      prev_token, cur_token, cur_word)
-  debug_f.log('comp_state %s  error %s', comp_state, c_parser.Error())
-  # This one can be multiple lines
-  debug_f.log('node: %s %s', repr(node) if node else '<Parse Error>',
-                node.tag if node else '')
-  # This one can be multiple lines
-  debug_f.log('com_node: %s', repr(com_node) if com_node else '<None>')
+  if 0:
+    debug_f.log('prev_token %s  cur_token %s  cur_word %s',
+        prev_token, cur_token, cur_word)
+    debug_f.log('comp_state %s  error %s', comp_state, c_parser.Error())
+    # This one can be multiple lines
+    debug_f.log('node: %s %s', repr(node) if node else '<Parse Error>',
+                  node.tag if node else '')
+    # This one can be multiple lines
+    debug_f.log('com_node: %s', repr(com_node) if com_node else '<None>')
 
   # IMPORTANT: if the last token is Id.Ignored_Space, then we want to add a
   # dummy word!  empty word
@@ -591,9 +594,8 @@ class RootCompleter(object):
   """
   Provide completion of a buffer according to the configured rules.
   """
-  def __init__(self, pool, ev, comp_lookup, var_comp, parse_ctx, progress_f,
+  def __init__(self, ev, comp_lookup, var_comp, parse_ctx, progress_f,
                debug_f):
-    self.pool = pool
     self.ev = ev
     self.comp_lookup = comp_lookup
     # This can happen in any position, with any command
@@ -639,6 +641,8 @@ class RootCompleter(object):
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', buf)
     start_time = time.time()
 
+    self.debug_f.log('Using %s', chain)
+
     index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
     i = 0
     for m in chain.Matches(comp_words, index, to_complete):
@@ -664,11 +668,10 @@ class RootCompleter(object):
 
 
 class ReadlineCompleter(object):
-  def __init__(self, readline_mod, root_comp, debug_f, debug=False):
+  def __init__(self, readline_mod, root_comp, debug_f):
     self.readline_mod = readline_mod
     self.root_comp = root_comp
     self.debug_f = debug_f
-    self.debug = debug
 
     self.comp_iter = None  # current completion being processed
 
@@ -687,10 +690,9 @@ class ReadlineCompleter(object):
       # The current position of the cursor.  The thing being completed.
       end = self.readline_mod.get_endidx()
 
-      if self.debug:
-        self.debug_f.log(
-            'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
-            buf[begin:end])
+      self.debug_f.log(
+          'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
+          buf[begin:end])
 
       self.comp_iter = self.root_comp.Matches(buf)
 
@@ -751,28 +753,7 @@ def InitReadline(readline_mod, complete_cb):
   readline_mod.set_completer_delims(' ')
 
 
-def Init(readline_mod, pool, ex, comp_lookup, progress_f, debug_f, ev,
-         parse_ctx):
-
-  from core import comp_builtins
-
-  # TODO: Need a space
-  # register builtins and words
-  comp_builtins.Complete(['-E', '-A', 'command'], ex, comp_lookup)
-  # register path completion
-  comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
-
-  # Something for fun, to show off.  Also: test that you don't repeatedly hit
-  # the file system / network / coprocess.
-  A1 = WordsAction(['foo.py', 'foo', 'bar.py'])
-  A2 = WordsAction(['m%d' % i for i in range(5)], delay=0.1)
-  C1 = ChainedCompleter([A1, A2])
-  comp_lookup.RegisterName('slowc', C1)
-
-  var_comp = VariablesActionInternal(ex.mem)
-  root_comp = RootCompleter(pool, ev, comp_lookup, var_comp, parse_ctx,
-                            progress_f, debug_f)
-
+def Init(readline_mod, root_comp, debug_f):
   complete_cb = ReadlineCompleter(readline_mod, root_comp, debug_f)
   InitReadline(readline_mod, complete_cb)
 
