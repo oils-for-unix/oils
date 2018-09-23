@@ -12,7 +12,7 @@ readonly BASH_COMP=/usr/share/bash-completion/bash_completion.osh
 # This version is too new to run on my Ubuntu machine!  Uses git --list-cmds.
 #readonly GIT_COMP=testdata/completion/git-completion.bash
 
-readonly GIT_COMP=/usr/share/bash-completion/completions/git
+readonly GIT_COMP=testdata/completion/git
 
 audit() {
   local file=${1:-$GIT_COMP}
