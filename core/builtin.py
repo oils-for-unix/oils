@@ -1292,6 +1292,8 @@ def GetOpts(argv, mem):
   Vars used:
     OPTERR: disable printing of error messages
   """
+  # TODO: need to handle explicit args.
+
   try:
     # NOTE: If first char is a colon, error reporting is different.  Alpine
     # might not use that?

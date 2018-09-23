@@ -8,7 +8,11 @@ set -o pipefail
 set -o errexit
 
 readonly BASH_COMP=/usr/share/bash-completion/bash_completion.osh
-readonly GIT_COMP=testdata/completion/git-completion.bash
+
+# This version is too new to run on my Ubuntu machine!  Uses git --list-cmds.
+#readonly GIT_COMP=testdata/completion/git-completion.bash
+
+readonly GIT_COMP=/usr/share/bash-completion/completions/git
 
 audit() {
   local file=${1:-$GIT_COMP}
@@ -66,8 +70,14 @@ fresh-osh-with-dump() {
 }
 
 osh-trace() {
-  env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+${LINENO} ' \
+  # $FUNCNAME displays the whole stack in osh (unlike bash), but ${FUNCNAME[0]}
+  # displays the top.
+  env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME}] ' \
     bin/osh -x --debug-file _tmp/debug "$@"
+}
+
+bash-bash() {
+  PS4='+[${LINENO}:${FUNCNAME}] ' bash -x $BASH_COMP
 }
 
 bash-completion() {
