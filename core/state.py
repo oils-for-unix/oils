@@ -1030,6 +1030,15 @@ def SetLocalString(mem, name, s):
   mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope_e.LocalOnly)
 
 
+def SetStringDynamic(mem, name, s):
+  """Set a string by looking up the stack.
+
+  Used for getopts.
+  """
+  assert isinstance(s, str)
+  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope_e.Dynamic)
+
+
 def SetGlobalString(mem, name, s):
   """Helper for completion, $PWD, etc."""
   assert isinstance(s, str)
