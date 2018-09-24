@@ -335,28 +335,43 @@ LEXER_DEF[lex_mode_e.EXTGLOB] = \
   R(r'[^\0]', Id.Lit_Other),  # everything else is literal
 ]
 
+# Notes on BASH_REGEX states
+#
+# From bash manual:
+#
+# - Any part of the pattern may be quoted to force the quoted portion to be
+# matched as a string.
+# - Bracket expressions in regular expressions must be treated carefully, since
+# normal quoting characters lose their meanings between brackets.
+# - If the pattern is stored in a shell variable, quoting the variable
+# expansion forces the entire pattern to be matched as a string.
+#
+# Is there a re.escape function?  It's just like EscapeGlob and UnescapeGlob.
+#
+# TODO: For testing, write a script to extract and save regexes... and compile
+# them with regcomp.  I've only seen constant regexes.
+#
+# From code: ( | ) are treated special.
 
-LEXER_DEF[lex_mode_e.BASH_REGEX] = [
-  # Match these literals first, and then the rest of the OUTER state I guess.
-  # That's how bash works.
-  #
-  # At a minimum, you do need $ and ~ expansions to happen.  <>;& could have
-  # been allowed unescaped too, but that's not what bash does.  The criteria
-  # was whether they were "special" in both languages, which seems dubious.
-
+LEXER_DEF[lex_mode_e.BASH_REGEX] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
-  # and [].  We will avoid that and ask the user to extract a variable.
+  # and [].  We will avoid that and ask the user to extract a variable?
 
-  C('(', Id.Lit_Chars),
-  C(')', Id.Lit_Chars),
-  C('|', Id.Lit_Chars),
-] + [
-  # Avoid "unreachable rule error"
-  (is_regex, pat, re_list) for
-  (is_regex, pat, re_list) in _UNQUOTED
-  if not (is_regex == False and pat in ('(', ')', '|'))
+  R(r'[a-zA-Z0-9_/-]+', Id.Lit_Chars),  # not including period
+  R(r'[ \t\r]+', Id.WS_Space),
+
+  # From _BACKSLASH
+  R(r'\\[^\n\0]', Id.Lit_EscapedChar),
+  C('\\\n', Id.Ignored_LineCont),
+
+  #C('{', Id.Lit_RegexMeta),    # { -> \{
+  #C('}', Id.Lit_RegexMeta),    # } -> \}
+  # In [[ foo =~ foo$ ]], the $ doesn't get escaped
+  #C('$', Id.Lit_RegexMeta),
+
+  # NOTE: ( | and ) aren't operators!
+  R(r'[^\0]', Id.Lit_Other),  # everything else is literal
 ]
-
 
 LEXER_DEF[lex_mode_e.DQ] = [
   # Only 4 characters are backslash escaped inside "".
@@ -506,25 +521,6 @@ LEXER_DEF[lex_mode_e.ARITH] = \
   C('\\\n', Id.Ignored_LineCont),
   R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
 ]
-
-# Notes on BASH_REGEX states
-#
-# From bash manual:
-#
-# - Any part of the pattern may be quoted to force the quoted portion to be
-# matched as a string.
-# - Bracket expressions in regular expressions must be treated carefully, since
-# normal quoting characters lose their meanings between brackets.
-# - If the pattern is stored in a shell variable, quoting the variable
-# expansion forces the entire pattern to be matched as a string.
-#
-# Is there a re.escape function?  It's just like EscapeGlob and UnescapeGlob.
-#
-# TODO: For testing, write a script to extract and save regexes... and compile
-# them with regcomp.  I've only seen constant regexes.
-#
-# From code: ( | ) are treated special.
-
 
 # A lexer for the parser that converts globs to extended regexes.  Since we're
 # only parsing character classes ([^[:space:][:alpha:]]) as opaque blobs, we

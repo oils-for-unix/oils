@@ -60,18 +60,18 @@ argv.py "${BASH_REMATCH[@]}"
 #### Regex quoted with single quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ '^(a b)$' ]] && echo true
-## stdout: true
-## status: 0
-## OK bash stdout-json: ""
-## OK bash status: 1
+## stdout-json: ""
+## status: 1
+## OK zsh stdout: true
+## OK zsh status: 0
 
 #### Regex quoted with double quotes
 # bash doesn't like the quotes
 [[ 'a b' =~ "^(a b)$" ]] && echo true
-## stdout: true
-## status: 0
-## OK bash stdout-json: ""
-## OK bash status: 1
+## stdout-json: ""
+## status: 1
+## OK zsh stdout: true
+## OK zsh status: 0
 
 #### Fix single quotes by storing in variable
 pat='^(a b)$'
@@ -86,10 +86,10 @@ pat="^(a b)$"
 #### Double quoting pat variable -- again bash doesn't like it.
 pat="^(a b)$"
 [[ 'a b' =~ "$pat" ]] && echo true
-## stdout: true
-## status: 0
-## OK bash stdout-json: ""
-## OK bash status: 1
+## stdout-json: ""
+## status: 1
+## OK zsh stdout: true
+## OK zsh status: 0
 
 #### Regex with == and not =~ is parse error, different lexer mode required
 # They both give a syntax error.  This is lame.
@@ -144,6 +144,26 @@ status=0
 ## END
 ## N-I zsh STDOUT:
 status=1
+## END
+
+#### Escaped {
+# from bash-completion
+[[ '$PA' =~ ^(\$\{?)([A-Za-z0-9_]*)$ ]] && argv.py "${BASH_REMATCH[@]}"
+## STDOUT:
+['$PA', '$', 'PA']
+## END
+## BUG zsh stdout-json: ""
+## BUG zsh status: 1
+
+#### Escaped { stored in variable first
+# from bash-completion
+pat='^(\$\{?)([A-Za-z0-9_]*)$'
+[[ '$PA' =~ $pat ]] && argv.py "${BASH_REMATCH[@]}"
+## STDOUT:
+['$PA', '$', 'PA']
+## END
+## BUG zsh STDOUT:
+['']
 ## END
 
 #### regex with ?

@@ -71,10 +71,9 @@ def GlobEscape(s):
 # libc has a function to do this.  Escape these characters:
 # https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html Use
 
-# NOTE: Weird bash rule: (|) are literal and don't have to be escaped
-# The {} are the regex meta chars that are NOT bash meta chars?
-# This is very gross.
-ERE_META_CHARS = '{}'
+# NOTE: Weird bash rule: (|) are literal and don't have to be escaped.
+# The list of chars {}$ is determined by experience.
+ERE_META_CHARS = '{}$'
 
 def ExtendedRegexEscape(s):
   """

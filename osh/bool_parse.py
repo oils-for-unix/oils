@@ -217,14 +217,10 @@ class BoolParser(object):
 
         right = self.cur_word
         if is_regex:
-          # Check syntax.  TODO: We should have rhs = Dynamic | Static.
-          ok, s, unused_quoted = word.StaticEval(right)
-          if ok:
-            regex_str = glob_.ExtendedRegexEscape(s)
-            try:
-              libc.regex_parse(regex_str)
-            except RuntimeError as e:
-              p_die("Error parsing regex %r: %s", regex_str, e, word=right)
+          # NOTE: StaticEval for checking regex syntax isn't enough.  We could
+          # need to pass do_ere so that the quoted parts get escaped.
+          #ok, s, unused_quoted = word.StaticEval(right)
+          pass
 
         self._Next()
         return ast.BoolBinary(op, left, right)

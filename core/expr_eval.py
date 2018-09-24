@@ -486,12 +486,13 @@ class BoolEvaluator(_ExprEvaluator):
     """For ~= to set the BASH_REMATCH array."""
     state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 
-  def _EvalCompoundWord(self, word, do_fnmatch=False):
+  def _EvalCompoundWord(self, word, do_fnmatch=False, do_ere=False):
     """
     Args:
       node: Id.Word_Compound
     """
-    val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch)
+    val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch,
+                                        do_ere=do_ere)
     return val.s
 
   def Eval(self, node):
@@ -590,7 +591,9 @@ class BoolEvaluator(_ExprEvaluator):
       # Whether to glob escape
       do_fnmatch = op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
                              Id.BoolBinary_GlobNEqual)
-      s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)
+      do_ere = (op_id == Id.BoolBinary_EqualTilde)
+      s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch,
+                                  do_ere=do_ere)
 
       # Now dispatch on arg type
       arg_type = BOOL_ARG_TYPES[op_id]
@@ -647,12 +650,13 @@ class BoolEvaluator(_ExprEvaluator):
           return s1 != s2
 
         if op_id == Id.BoolBinary_EqualTilde:
-          regex_str = glob_.ExtendedRegexEscape(s2)
-          #log('%r -> %r', s2, regex_str)
+          #log('Matching %r against regex %r', s1, s2)
           try:
-            matches = libc.regex_match(regex_str, s1)
+            matches = libc.regex_match(s2, s1)
           except RuntimeError:
-            e_die("Invalid regex %r", s2, word=node.right)
+            # 2 means a parse error.  Note this is a fatal error in OSH but not
+            # in bash.
+            e_die("Invalid regex %r", s2, word=node.right, status=2)
 
           if matches is None:
             return False

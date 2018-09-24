@@ -803,7 +803,7 @@ class _WordEvaluator(object):
     else:
       raise AssertionError(word.__class__.__name__)
 
-  def EvalWordToString(self, word, do_fnmatch=False):
+  def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
     """
     Args:
       word: CompoundWord
@@ -831,6 +831,8 @@ class _WordEvaluator(object):
         # [[ foo == */"*".py ]] or case *.py) ... esac
         if do_fnmatch and not part_val.do_split_glob:
           s = glob_.GlobEscape(part_val.s)
+        elif do_ere and not part_val.do_split_glob:
+          s = glob_.ExtendedRegexEscape(part_val.s)
         else:
           s = part_val.s
       else:
