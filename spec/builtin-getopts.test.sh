@@ -200,3 +200,15 @@ myfunc -c bar
 echo h=$FLAG_h c=$FLAG_c opt=$opt optind=$OPTIND argv=$@
 ## stdout: h=0 c=bar opt=? optind=3 argv=-h -c foo x y z
 
+#### Local OPTIND
+# minimal test case extracted from bash-completion
+min() {
+  local OPTIND=1
+
+  while getopts "n:e:o:i:s" flag "$@"; do
+    echo "loop $OPTIND";
+  done
+}
+min -s
+## stdout: loop 2
+

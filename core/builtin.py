@@ -1318,9 +1318,10 @@ def GetOpts(argv, mem):
   user_argv = argv[2:] or mem.GetArgv()
   status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind)
 
-  state.SetGlobalString(mem, var_name, opt_char)
-  state.SetGlobalString(mem, 'OPTARG', optarg)
-  state.SetGlobalString(mem, 'OPTIND', str(optind))
+  # Bug fix: bash-completion uses a *local* OPTIND !  Not global.
+  state.SetLocalString(mem, var_name, opt_char)
+  state.SetLocalString(mem, 'OPTARG', optarg)
+  state.SetLocalString(mem, 'OPTIND', str(optind))
   return status
 
 
