@@ -238,8 +238,9 @@ def CompGen(argv, ex):
   else:
     to_complete = arg_r.Peek()
     arg_r.Next()
-    if not arg_r.AtEnd():
-      raise args.UsageError('Extra arguments')
+    # bash allows extra arguments here.
+    #if not arg_r.AtEnd():
+    #  raise args.UsageError('Extra arguments')
 
   matched = False
 

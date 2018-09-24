@@ -1361,10 +1361,14 @@ def Repr(argv, mem):
   """
   status = 0
   for name in argv:
+    if not match.IsValidVarName(name):
+      util.error('%r is not a valid variable name', name)
+      return 1
+
     # TODO: Should we print flags too?
     val = mem.GetVar(name)
     if val.tag == value_e.Undef:
-      print('%r is not defined' % name, file=sys.stderr)
+      print('%r is not defined' % name)
       status = 1
     else:
       print('%s = %s' % (name, val))
