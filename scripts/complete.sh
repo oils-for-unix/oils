@@ -104,4 +104,11 @@ bare-bash() {
   bash --noprofile --norc "$@"
 }
 
+# TODO: This is a good use case
+npm-comp() {
+  npm completion | bin/osh -n
+  #npm-completion > _tmp/npm.sh
+  #bin/osh -n _tmp/npm.sh
+}
+
 "$@"
