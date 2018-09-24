@@ -1245,15 +1245,13 @@ def _ParseOptSpec(spec_str):
   return spec
 
 
-def _GetOpts(spec, mem, optind):
+def _GetOpts(spec, argv, optind):
   optarg = ''  # not set by default
 
-  v2 = mem.GetArgNum(optind)
-  if v2.tag == value_e.Undef:  # No more arguments.
+  try:
+    current = argv[optind-1]  # 1-based indexing
+  except IndexError:
     return 1, '?', optarg, optind
-  assert v2.tag == value_e.Str
-
-  current = v2.s
 
   if not current.startswith('-'):  # The next arg doesn't look like a flag.
     return 1, '?', optarg, optind
@@ -1268,14 +1266,13 @@ def _GetOpts(spec, mem, optind):
 
   needs_arg = spec[current]
   if needs_arg:
-    v3 = mem.GetArgNum(optind)
-    if v3.tag == value_e.Undef:
+    try:
+      optarg = argv[optind-1]  # 1-based indexing
+    except IndexError:
       util.error('getopts: option %r requires an argument', current)
       # Hm doesn't cause status 1?
       return 0, '?', optarg, optind
-    assert v3.tag == value_e.Str
 
-    optarg = v3.s
     optind += 1
 
   return 0, opt_char, optarg, optind
@@ -1318,7 +1315,8 @@ def GetOpts(argv, mem):
   except ValueError:
     e_die("OPTIND doesn't look like an integer, got %r", v.s)
 
-  status, opt_char, optarg, optind = _GetOpts(spec, mem, optind)
+  user_argv = argv[2:] or mem.GetArgv()
+  status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind)
 
   state.SetGlobalString(mem, var_name, opt_char)
   state.SetGlobalString(mem, 'OPTARG', optarg)

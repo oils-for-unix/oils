@@ -89,10 +89,11 @@ echo h=$FLAG_h c=$FLAG_c optind=$OPTIND argv=$@
 ## stdout: h=0 c= optind=1 argv=x -h -c y
 
 #### getopts with explicit args
-# NOTE: Alpine doesn't appear to use this
+# NOTE: Alpine doesn't appear to use this, but bash-completion does.
 FLAG_h=0
 FLAG_c=''
 arg=''
+set -- A B C
 while getopts "hc:" opt -h -c foo x y z; do
   case $opt in
     h) FLAG_h=1 ;;
@@ -100,7 +101,9 @@ while getopts "hc:" opt -h -c foo x y z; do
   esac
 done
 echo h=$FLAG_h c=$FLAG_c optind=$OPTIND argv=$@
-## stdout: h=1 c=foo optind=4 argv=
+## STDOUT:
+h=1 c=foo optind=4 argv=A B C
+## END
 
 #### OPTIND
 echo $OPTIND
