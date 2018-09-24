@@ -128,6 +128,7 @@ class Executor(object):
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
     self.dumper = dumper
+    self.debug_f = debug_f  # Used by ShellFuncAction too
 
     self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
@@ -148,8 +149,7 @@ class Executor(object):
     self.job_state = process.JobState()
 
     self.loop_level = 0  # for detecting bad top-level break/continue
-
-    if 1:
+    if 0:
       trace_f = debug_f
     else:
       trace_f = util.DebugFile(sys.stderr)
@@ -808,7 +808,7 @@ class Executor(object):
         else:
           current_spid = const.NO_INTEGER
         self.mem.SetCurrentSpanId(current_spid)
-        self.tracer.OnAssignment(lval, val, flags, lookup_mode)
+        self.tracer.OnAssignment(lval, pair.op, val, flags, lookup_mode)
 
       # PATCH to be compatible with existing shells: If the assignment had a
       # command sub like:
@@ -1395,12 +1395,15 @@ class Executor(object):
 
   def RunFuncForCompletion(self, func_node):
     try:
-      self._RunFunc(func_node, [])
+      status = self._RunFunc(func_node, [])
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena, sys.stderr)
+      status = e.exit_status if e.exit_status is not None else 1
     except _ControlFlow as e:
        # shouldn't be able to exit the shell from a completion hook!
       util.error('Attempted to exit from completion hook.')
+      status = 1
+    return status
 
 
 class Tracer(object):
@@ -1486,14 +1489,15 @@ class Tracer(object):
     cmd = ' '.join(pretty.Str(a) for a in argv)
     self.f.log('%s%s%s', first_char, prefix, cmd)
 
-  def OnAssignment(self, lval, val, flags, lookup_mode):
+  def OnAssignment(self, lval, op, val, flags, lookup_mode):
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
     if not self.exec_opts.xtrace:
       return
 
     # Now we have to get the prefix
     first_char, prefix = self._EvalPS4()
-    self.f.log('%s%s%s = %s', first_char, prefix, lval, val)
+    op_str = {assign_op_e.Equal: '=', assign_op_e.PlusEqual: '+='}[op]
+    self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
 
   def Event(self):
     """

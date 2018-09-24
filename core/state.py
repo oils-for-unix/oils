@@ -532,7 +532,7 @@ class Mem(object):
       SetGlobalString(self, 'HOME', home_dir)
 
   def SetCurrentSpanId(self, span_id):
-    """Set the current source location, for BASH_SOURCE< BASH_LINENO, LINENO,
+    """Set the current source location, for BASH_SOURCE, BASH_LINENO, LINENO,
     etc.
     """
     if span_id == const.NO_INTEGER:
@@ -914,10 +914,40 @@ class Mem(object):
         # Temp stacks are ignored
       return runtime.StrArray(strs)  # TODO: Reuse this object too?
 
+    # This isn't the call source, it's the source of the function DEFINITION
+    # (or the sourced # file itself).
+    if name == 'BASH_SOURCE':
+      strs = []
+      for func_name, source_name, _, _, _ in reversed(self.debug_stack):
+        if source_name:
+          strs.append(source_name)
+      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+
+    # This is how bash source SHOULD be defined, but it's not!
+    if name == 'CALL_SOURCE':
+      strs = []
+      for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
+        if call_spid == const.NO_INTEGER:  # should only happen for the first entry
+          continue
+        span = self.arena.GetLineSpan(call_spid)
+        path, _ = self.arena.GetDebugInfo(span.line_id)
+        strs.append(path)
+      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+
+    if name == 'BASH_LINENO':
+      strs = []
+      for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
+        if call_spid == const.NO_INTEGER:  # should only happen for the first entry
+          continue
+        span = self.arena.GetLineSpan(call_spid)
+        _, line_num = self.arena.GetDebugInfo(span.line_id)
+        strs.append(str(line_num))
+      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+
     if name == 'LINENO':
       return self.line_num
 
-    # Instead of BASH_SOURCE.  Using Oil _ convnetion.
+    # This is OSH-specific.  Get rid of it in favor of ${BASH_SOURCE[0]} ?
     if name == 'SOURCE_NAME':
       return self.source_name
 

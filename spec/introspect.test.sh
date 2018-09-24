@@ -20,6 +20,9 @@
 # ${BASH_SOURCE[0]} does line up with $LINENO!
 #
 # Geez.
+#
+# In other words, BASH_SOURCE is about the DEFINITION.  While FUNCNAME and
+# BASH_LINENO are about the CALL.
 
 
 #### ${FUNCNAME[@]} array
@@ -54,6 +57,15 @@ argv.py "${FUNCNAME[@]}"
 []
 ## END
 
+#### ${BASH_SOURCE[0]} is the current file
+argv.py "${BASH_SOURCE[@]}"
+source spec/testdata/bash-source-simple.sh
+# f  # hm calling this function doesn't quite work?
+## STDOUT: 
+[]
+['spec/testdata/bash-source-simple.sh']
+## END
+
 #### ${BASH_SOURCE[@]} is a stack of source files for function calls
 $SH spec/testdata/bash-source.sh
 ## STDOUT: 
@@ -78,11 +90,13 @@ f() {
   g  # line 6
   argv.py 'end F' "${BASH_LINENO[@]}"
 }
+argv.py ${BASH_LINENO[@]}
 f  # line 9
 ## STDOUT: 
-['begin F', '9']
-['G', '6', '9']
-['end F', '9']
+[]
+['begin F', '10']
+['G', '6', '10']
+['end F', '10']
 ## END
 
 #### $LINENO is the current line, not line of function call

@@ -420,7 +420,7 @@ special-vars() {
 
 # dash/mksh don't implement this.
 introspect() {
-  sh-spec spec/introspect.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 

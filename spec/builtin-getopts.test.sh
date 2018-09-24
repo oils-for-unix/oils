@@ -184,7 +184,6 @@ echo a=$FLAG_a b=$FLAG_b c=$FLAG_c d=$FLAG_d e=$FLAG_e
 
 
 #### Getopts parses the function's arguments
-# NOTE: GLOBALS are set, not locals!  Bad interface.
 FLAG_h=0
 FLAG_c=''
 myfunc() {

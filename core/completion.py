@@ -201,41 +201,33 @@ class ShellFuncAction(CompletionAction):
     # TODO: Add file and line number here!
     return '<ShellFuncAction %r>' % (self.func.name,)
 
+  def log(self, *args):
+    self.ex.debug_f.log(*args)
+
   def Matches(self, words, index, to_complete):
-    # TODO:
-    # - Set COMP_CWORD etc. in ex.mem -- in the global namespace I guess
-    # - Then parse the reply here
-
-    # This is like a stack code:
-    # for word in words:
-    #   self.ex.PushString(word)
-    # self.ex.PushString('COMP_WORDS')
-    # self.ex.MakeArray()
-
-    # self.ex.PushString(str(index))
-    # self.ex.PushString('COMP_CWORD')
-
-    # TODO: Get the name instead!
-    # self.ex.PushString(self.func_name)
-    # self.ex.Call()  # call wit no arguments
-
-    # self.ex.PushString('COMP_REPLY')
-
-    # How does this one work?
-    # reply = []
-    # self.ex.GetArray(reply)
-
     state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', words)
     state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
 
+    self.log('Running completion function %r', self.func.name)
+
+    # TODO: Delete COMPREPLY here?  It doesn't seem to be defined in bash by
+    # default.
+
     # TODO: We could catch FatalRuntimeError here instead of in RootCompleter?
     # But we don't have the arena available.
-    self.ex.RunFuncForCompletion(self.func)
+    status = self.ex.RunFuncForCompletion(self.func)
+    if status == 124:
+      self.log('Got status 124 from %r', self.func.name)
+      # The previous run may have registered another function via 'complete',
+      # i.e. by sourcing a file.  Try it again.
+      status = self.ex.RunFuncForCompletion(self.func)
+      if status == 124:
+        util.warn('Got exit code 124 from function %r twice', self.func.name)
 
     # Should be COMP_REPLY to follow naming convention!  Lame.
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
-      log('COMPREPLY not defined')
+      util.error('Ran function %s but COMPREPLY was not defined', self.func.name)
       return
 
     if val.tag != value_e.StrArray:
@@ -243,7 +235,8 @@ class ShellFuncAction(CompletionAction):
       return
     reply = val.strs
 
-    print('REPLY', reply)
+    self.log('COMPREPLY %s', reply)
+
     #reply = ['g1', 'g2', 'h1', 'i1']
     for name in sorted(reply):
       if name.startswith(to_complete):

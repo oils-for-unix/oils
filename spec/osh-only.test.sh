@@ -22,6 +22,7 @@ echo status=$?
 ## STDOUT:
 x = (Str s:42)
 status=0
+'nonexistent' is not defined
 status=1
 ## END
 
