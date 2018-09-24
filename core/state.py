@@ -432,6 +432,7 @@ class Mem(object):
     # crash dumps and for 3 parallel arrays: FUNCNAME, BASH_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
     self.debug_stack = [(None, None, const.NO_INTEGER, 0, 0)]
+    self.bash_source = []  # for implementing BASH_SOURCE
     self.current_spid = const.NO_INTEGER
 
     # Note: we're reusing these objects because they change on every single
@@ -552,7 +553,7 @@ class Mem(object):
   # Stack
   #
 
-  def PushCall(self, func_name, argv):
+  def PushCall(self, func_name, def_spid, argv):
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
     self.var_stack.append(_StackFrame())
@@ -560,7 +561,12 @@ class Mem(object):
     # bash uses this order: top of stack first.
     self._PushDebugStack(func_name, None)
 
+    span = self.arena.GetLineSpan(def_spid)
+    def_source_name, _ = self.arena.GetDebugInfo(span.line_id)
+    self.bash_source.append(def_source_name)
+
   def PopCall(self):
+    self.bash_source.pop()
     self._PopDebugStack()
 
     self.var_stack.pop()
@@ -573,8 +579,10 @@ class Mem(object):
     # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
     # the name of the script here?
     self._PushDebugStack(None, source_name)
+    self.bash_source.append(source_name)
 
   def PopSource(self, argv):
+    self.bash_source.pop()
     self._PopDebugStack()
     if argv:
       self.argv_stack.pop()
@@ -917,11 +925,7 @@ class Mem(object):
     # This isn't the call source, it's the source of the function DEFINITION
     # (or the sourced # file itself).
     if name == 'BASH_SOURCE':
-      strs = []
-      for func_name, source_name, _, _, _ in reversed(self.debug_stack):
-        if source_name:
-          strs.append(source_name)
-      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+      return runtime.StrArray(list(reversed(self.bash_source)))
 
     # This is how bash source SHOULD be defined, but it's not!
     if name == 'CALL_SOURCE':

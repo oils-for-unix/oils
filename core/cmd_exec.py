@@ -1369,7 +1369,7 @@ class Executor(object):
       if not self.fd_state.Push(def_redirects, self.waiter):
         return 1  # error
 
-    self.mem.PushCall(func_node.name, argv[1:])
+    self.mem.PushCall(func_node.name, func_node.spids[0], argv[1:])
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).

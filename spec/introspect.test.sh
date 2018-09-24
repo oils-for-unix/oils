@@ -57,16 +57,17 @@ argv.py "${FUNCNAME[@]}"
 []
 ## END
 
-#### ${BASH_SOURCE[0]} is the current file
+#### ${BASH_SOURCE[@]} with source and function name
 argv.py "${BASH_SOURCE[@]}"
 source spec/testdata/bash-source-simple.sh
-# f  # hm calling this function doesn't quite work?
+f
 ## STDOUT: 
 []
 ['spec/testdata/bash-source-simple.sh']
+['spec/testdata/bash-source-simple.sh']
 ## END
 
-#### ${BASH_SOURCE[@]} is a stack of source files for function calls
+#### ${BASH_SOURCE[@]} with line numbers
 $SH spec/testdata/bash-source.sh
 ## STDOUT: 
 ['begin F funcs', 'f', 'main']
