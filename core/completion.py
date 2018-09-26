@@ -222,7 +222,7 @@ class ShellFuncAction(CompletionAction):
       self.log('Got status 124 from %r', self.func.name)
       # The previous run may have registered another function via 'complete',
       # i.e. by sourcing a file.  Try it again.
-      status = self.ex.RunFuncForCompletion(self.func)
+      status = self.ex.RunFuncForCompletion(self.func, argv)
       if status == 124:
         util.warn('Got exit code 124 from function %r twice', self.func.name)
 

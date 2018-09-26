@@ -73,7 +73,7 @@ osh-trace() {
   # $FUNCNAME displays the whole stack in osh (unlike bash), but ${FUNCNAME[0]}
   # displays the top.
   env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME}] ' \
-    bin/osh -x --debug-file _tmp/debug "$@"
+    bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
 
 bash-bash() {

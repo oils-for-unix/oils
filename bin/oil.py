@@ -109,6 +109,7 @@ OSH_SPEC.LongFlag('--ast-format',
 OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
 OSH_SPEC.LongFlag('--hijack-shebang')  # TODO: Implement this
 OSH_SPEC.LongFlag('--debug-file', args.Str)
+OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 
 # For benchmarks/*.sh
 OSH_SPEC.LongFlag('--parser-mem-dump', args.Str)
@@ -166,8 +167,14 @@ def OshMain(argv0, argv, login_shell):
 
   # Controlled by env variable, flag, or hook?
   dumper = dev.CrashDumper(os.getenv('OSH_CRASH_DUMP_DIR', ''))
+  if opts.xtrace_to_debug_file:
+    trace_f = debug_f
+  else:
+    trace_f = util.DebugFile(sys.stderr)
+  devtools = dev.DevTools(dumper, debug_f, trace_f)
+
   ex = cmd_exec.Executor(mem, fd_state, funcs, comp_lookup, exec_opts,
-                         parse_ctx, dumper, debug_f)
+                         parse_ctx, devtools)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.

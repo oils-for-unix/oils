@@ -107,7 +107,7 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx,
-               dumper, debug_f):
+               devtools):
     """
     Args:
       mem: Mem instance for storing variables
@@ -127,8 +127,8 @@ class Executor(object):
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
-    self.dumper = dumper
-    self.debug_f = debug_f  # Used by ShellFuncAction too
+    self.dumper = devtools.dumper
+    self.debug_f = devtools.debug_f  # Used by ShellFuncAction too
 
     self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
@@ -147,13 +147,10 @@ class Executor(object):
     self.waiter = process.Waiter()
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = process.JobState()
+    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev,
+                         devtools.trace_f)
 
     self.loop_level = 0  # for detecting bad top-level break/continue
-    if 1:
-      trace_f = debug_f
-    else:
-      trace_f = util.DebugFile(sys.stderr)
-    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev, trace_f)
     self.check_command_sub_status = False  # a hack
 
   def _EvalHelper(self, c_parser, source_name):
