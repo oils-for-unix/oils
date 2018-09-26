@@ -76,4 +76,23 @@ caller
 ## BUG mksh stdout-json: ""
 ## BUG mksh status: 1
 
-
+#### ${!OPTIND} (used by bash completion
+set -- a b c
+echo ${!OPTIND}
+f() {
+  local OPTIND=1
+  echo ${!OPTIND}
+  local OPTIND=2
+  echo ${!OPTIND}
+}
+f x y z
+## STDOUT:
+a
+x
+y
+## END
+## N-I mksh STDOUT:
+OPTIND
+OPTIND
+OPTIND
+## END

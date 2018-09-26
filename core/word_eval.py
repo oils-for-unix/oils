@@ -342,7 +342,12 @@ class _WordEvaluator(object):
 
       # Treat the value of the variable as a variable name.
       if val.tag == value_e.Str:
-        return self.mem.GetVar(val.s)
+        try:
+          # e.g. ${!OPTIND} gives $1 when OPTIND is 1
+          arg_num = int(val.s)
+          return self.mem.GetArgNum(arg_num)
+        except ValueError:
+          return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
         raise NotImplementedError('${!a[@]}')  # bash gets keys this way
       else:
