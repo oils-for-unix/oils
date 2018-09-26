@@ -34,8 +34,7 @@ def InitCommandParser(code_str):
 
 
 def InitExecutor(arena=None):
-  if not arena:
-    arena = test_lib.MakeArena('<InitExecutor>')
+  arena = arena or test_lib.MakeArena('<InitExecutor>')
 
   mem = state.Mem('', [], {}, arena)
   fd_state = process.FdState()

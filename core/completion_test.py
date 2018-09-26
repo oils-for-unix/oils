@@ -21,9 +21,9 @@ from core import state
 from core import test_lib
 from core import ui
 from core import util
-from osh.meta import Id
 
-from osh.meta import ast
+from osh.meta import ast, Id
+from osh import cmd_parse_test
 from osh import parse_lib
 
 assign_op_e = ast.assign_op_e
@@ -110,32 +110,15 @@ class CompletionTest(unittest.TestCase):
     print(list(a.Matches([], 0, '../o')))
 
   def testShellFuncExecution(self):
-    ex = cmd_exec_test.InitExecutor()
-    func_node = ast.FuncDef()
+    arena, c_parser = cmd_parse_test.InitCommandParser("""\
+    f() {
+      COMPREPLY=(f1 f2)
+    }
+    """)
+    func_node = c_parser.ParseLogicalLine()
+    print(func_node)
 
-    c1 = ast.CompoundWord()
-    t1 = ast.token(Id.Lit_Chars, 'f1')
-    c1.parts.append(ast.LiteralPart(t1))
-    c1.spids.append(0)
-
-    c2 = ast.CompoundWord()
-    t2 = ast.token(Id.Lit_Chars, 'f2')
-    c2.parts.append(ast.LiteralPart(t2))
-
-    a = ast.ArrayLiteralPart()
-    a.words = [c1, c2]
-    w = ast.CompoundWord()
-    w.parts.append(a)
-
-    # Set global COMPREPLY=(f1 f2)
-    pair = ast.assign_pair(ast.LhsName('COMPREPLY'), assign_op_e.Equal, w)
-    pair.spids.append(0)  # dummy
-    pairs = [pair]
-    body_node = ast.Assignment(Id.Assign_None, [], pairs)
-    #body_node.spids.append(0)  # dummy
-
-    func_node.name = 'myfunc'
-    func_node.body = body_node
+    ex = cmd_exec_test.InitExecutor(arena=arena)
 
     a = completion.ShellFuncAction(ex, func_node)
     matches = list(a.Matches([], 0, 'f'))

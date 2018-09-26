@@ -213,9 +213,11 @@ class ShellFuncAction(CompletionAction):
     # TODO: Delete COMPREPLY here?  It doesn't seem to be defined in bash by
     # default.
 
-    # TODO: We could catch FatalRuntimeError here instead of in RootCompleter?
-    # But we don't have the arena available.
-    status = self.ex.RunFuncForCompletion(self.func)
+    # TODO: Fill these in
+    command = None
+    prev = ''  # TODO: Fill in
+    argv = [command, to_complete, prev]
+    status = self.ex.RunFuncForCompletion(self.func, argv)
     if status == 124:
       self.log('Got status 124 from %r', self.func.name)
       # The previous run may have registered another function via 'complete',
@@ -597,15 +599,46 @@ class RootCompleter(object):
     self.progress_f = progress_f
     self.debug_f = debug_f
 
+    # This simply splits words!
     self.parser = DummyParser()  # TODO: remove
 
   def Matches(self, buf):
     arena = alloc.SideArena('<completion>')
-    w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
-    comp_type, prefix, comp_words = _GetCompletionType(
-        w_parser, c_parser, self.ev, self.debug_f)
 
-    comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
+    # Two strategies:
+    # 1. COMP_WORDBREAKS like bash.  set_completer_delims()
+    # 2. Use the actual OSH parser.  Parse these cases:
+    #   - echo 
+    #   - $VA
+    #   - ${VA
+    #   - $(echo h)
+    #     - <(echo h)
+    #     - >(echo h)
+    #     - ``
+    #   - $(( VA    # This should be a variable name
+    #   - while false; do <TAB>
+    #   - if <TAB>
+    #   - while <TAB> -- bash gets this wrong!
+    #   - command <TAB> -- bash-completion fills this in
+    #   - alias completion?
+    #     - alias ll='ls -l'
+    #   - also var expansion?  
+    #     foo=ls
+    #     $foo <TAB>    (even ZSH doesn't seem to handle this)
+    #
+    # the empty completer is consistently wrong.  Only works in the first
+    # position.
+    #
+    # I think bash-completion is fighting with bash?
+    #
+    # completing aliases -- someone mentioned about zsh
+
+    if 0:
+      w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
+      comp_type, to_complete, comp_words = _GetCompletionType(
+          w_parser, c_parser, self.ev, self.debug_f)
+    else:
+      comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
 
     # TODO: I don't get bash -D vs -E.  Might need to write a test program.
 

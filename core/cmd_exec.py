@@ -149,7 +149,7 @@ class Executor(object):
     self.job_state = process.JobState()
 
     self.loop_level = 0  # for detecting bad top-level break/continue
-    if 0:
+    if 1:
       trace_f = debug_f
     else:
       trace_f = util.DebugFile(sys.stderr)
@@ -1393,9 +1393,9 @@ class Executor(object):
 
     return status
 
-  def RunFuncForCompletion(self, func_node):
+  def RunFuncForCompletion(self, func_node, argv):
     try:
-      status = self._RunFunc(func_node, [])
+      status = self._RunFunc(func_node, argv)
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena, sys.stderr)
       status = e.exit_status if e.exit_status is not None else 1

@@ -125,13 +125,13 @@ class LexerTest(unittest.TestCase):
     lexer = _InitLexer('(foo|bar)')
 
     t = lexer.Read(lex_mode_e.BASH_REGEX)
-    self.assertTokensEqual(ast.token(Id.Lit_Chars, '('), t)
+    self.assertTokensEqual(ast.token(Id.Lit_Other, '('), t)
 
     t = lexer.Read(lex_mode_e.BASH_REGEX)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'foo'), t)
 
     t = lexer.Read(lex_mode_e.BASH_REGEX)
-    self.assertTokensEqual(ast.token(Id.Lit_Chars, '|'), t)
+    self.assertTokensEqual(ast.token(Id.Lit_Other, '|'), t)
 
   def testDBracketState(self):
     lexer = _InitLexer('-z foo')
