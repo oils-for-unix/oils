@@ -26,6 +26,24 @@ compgen -A foo
 echo status=$?
 ## stdout: status=2
 
+#### how compgen calls completion functions
+foo_complete() {
+  argv.py argv "$@"
+  argv.py COMP_WORDS "${COMP_WORDS[@]}"
+  argv.py COMP_CWORD "${COMP_CWORD}"
+  #return 124
+  COMPREPLY=(one two three)
+}
+compgen -F foo_complete foo a b c
+## STDOUT:
+['argv', 'compgen', 'foo', '']
+['COMP_WORDS']
+['COMP_CWORD', '-1']
+one
+two
+three
+## END
+
 #### complete -o -F (git)
 foo() { echo foo; }
 wrapper=foo

@@ -22,7 +22,7 @@ from core import test_lib
 from core import ui
 from core import util
 
-from osh.meta import ast, Id
+from osh.meta import ast
 from osh import cmd_parse_test
 from osh import parse_lib
 
@@ -121,8 +121,8 @@ class CompletionTest(unittest.TestCase):
     ex = cmd_exec_test.InitExecutor(arena=arena)
 
     a = completion.ShellFuncAction(ex, func_node)
-    matches = list(a.Matches([], 0, 'f'))
-    self.assertEqual(['f1 ', 'f2 '], matches)
+    matches = list(a.Matches(['f'], 0, 'f'))
+    self.assertEqual(['f1', 'f2'], matches)
 
   def testChainedCompleter(self):
     matches = list(C1.Matches(['f'], 0, 'f'))

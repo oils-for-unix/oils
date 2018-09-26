@@ -17,7 +17,6 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from core import glob_
 from core import util
 from core import state
 from osh.meta import BOOL_ARG_TYPES, Id, types

@@ -246,13 +246,17 @@ def CompGen(argv, ex):
 
   chain = _BuildCompletionChain(argv, arg, ex)
 
-  # TODO:
-  # - need to dedupe these, as in RootCompleter
-  # - what to pass for comp_words and index?
+  # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
+  # and also showing ALL COMPREPLY reuslts, not just the ones that start with
+  # the word to complete.
   matched = False 
-  for m in chain.Matches(None, None, to_complete):
+  for m in chain.Matches(['compgen', to_complete], -1, to_complete,
+                         filter_func_matches=False):
     matched = True
     print(m)
+
+  # TODO:
+  # - need to dedupe results.
 
   return 0 if matched else 1
 

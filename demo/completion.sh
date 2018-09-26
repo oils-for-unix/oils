@@ -10,7 +10,10 @@ argv() {
 }
 
 complete_foo() {
-  argv "$@"
+  argv args "$@"
+
+  argv COMP_WORDS "${COMP_WORDS[@]}"
+  argv COMP_CWORD "${COMP_CWORD}"
 
   # This value is used in main bash_completion script.
 

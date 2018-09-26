@@ -545,7 +545,7 @@ class Executor(object):
       func_node = self.funcs.get(arg0)
       if func_node is not None:
         # NOTE: Functions could call 'exit 42' directly, etc.
-        status = self._RunFunc(func_node, argv)
+        status = self._RunFunc(func_node, argv[1:])
         return status
 
     builtin_id = builtin.Resolve(arg0)
@@ -1366,7 +1366,7 @@ class Executor(object):
       if not self.fd_state.Push(def_redirects, self.waiter):
         return 1  # error
 
-    self.mem.PushCall(func_node.name, func_node.spids[0], argv[1:])
+    self.mem.PushCall(func_node.name, func_node.spids[0], argv)
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).

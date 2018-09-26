@@ -204,27 +204,37 @@ class ShellFuncAction(CompletionAction):
   def log(self, *args):
     self.ex.debug_f.log(*args)
 
-  def Matches(self, words, index, to_complete):
-    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', words)
-    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
-
-    self.log('Running completion function %r', self.func.name)
+  def Matches(self, comp_words, index, to_complete):
 
     # TODO: Delete COMPREPLY here?  It doesn't seem to be defined in bash by
     # default.
+    command = comp_words[0]
 
-    # TODO: Fill these in
-    command = None
-    prev = ''  # TODO: Fill in
+    if index == -1:  # called directly by compgen, not by hitting TAB
+      prev = ''
+      comp_words = []  # not completing anything?
+    else:
+      prev = '' if index == 0 else comp_words[index-1]
+
     argv = [command, to_complete, prev]
+
+    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
+    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
+
+    self.log('Running completion function %r with arguments %s',
+        self.func.name, argv)
+
     status = self.ex.RunFuncForCompletion(self.func, argv)
     if status == 124:
+      # TODO: DETECT CHANGES IN COMPSPEC to command!  To avoid infinite loop?
+      # How do you do this?  By the argv?
+
       self.log('Got status 124 from %r', self.func.name)
       # The previous run may have registered another function via 'complete',
       # i.e. by sourcing a file.  Try it again.
       status = self.ex.RunFuncForCompletion(self.func, argv)
       if status == 124:
-        util.warn('Got exit code 124 from function %r twice', self.func.name)
+        util.warn('Got exit code 124 from function %r TWICE', self.func.name)
 
     # Should be COMP_REPLY to follow naming convention!  Lame.
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
@@ -235,14 +245,9 @@ class ShellFuncAction(CompletionAction):
     if val.tag != value_e.StrArray:
       log('ERROR: COMPREPLY should be an array, got %s', val)
       return
-    reply = val.strs
-
-    self.log('COMPREPLY %s', reply)
-
-    #reply = ['g1', 'g2', 'h1', 'i1']
-    for name in sorted(reply):
-      if name.startswith(to_complete):
-        yield name + ' '  # full word
+    self.log('COMPREPLY %s', val)
+    for name in val.strs:
+      yield name
 
 
 class VariablesAction(object):
@@ -369,12 +374,19 @@ class ChainedCompleter(object):
     self.prefix = prefix
     self.suffix = suffix
 
-  def Matches(self, words, index, to_complete):
+  def Matches(self, words, index, to_complete, filter_func_matches=True):
     for a in self.actions:
       for match in a.Matches(words, index, to_complete):
+        # Special case hack to match bash for compgen -F.  It doesn't filter by
+        # to_complete!
+        show = (
+            match.startswith(to_complete) and self.predicate(match) or
+            (isinstance(a, ShellFuncAction) and not filter_func_matches)
+            )
+
         # There are two kinds of filters: changing the string, and filtering
         # the set of strings.  So maybe have modifiers AND filters?  A triple.
-        if match.startswith(to_complete) and self.predicate(match):
+        if show:
           yield self.prefix + match + self.suffix
 
     # Prefix is the current one?

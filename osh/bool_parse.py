@@ -30,15 +30,14 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-from core import glob_
 from core import word
 from core import util
 from osh.meta import ast, Id, Kind, LookupKind, types
 
-try:
-  import libc  # for regex_parse
-except ImportError:
-  from benchmarks import fake_libc as libc
+#try:
+#  import libc  # for regex_parse
+#except ImportError:
+#  from benchmarks import fake_libc as libc
 
 word_e = ast.word_e
 lex_mode_e = types.lex_mode_e
