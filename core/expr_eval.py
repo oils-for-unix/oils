@@ -117,9 +117,9 @@ class _ExprEvaluator(object):
     self.exec_opts = exec_opts
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
 
-  def _StringToIntegerOrError(self, s):
+  def _StringToIntegerOrError(self, s, word=None):
     try:
-      i = _StringToInteger(s)
+      i = _StringToInteger(s, word=word)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -409,7 +409,7 @@ class ArithEvaluator(_ExprEvaluator):
             return 0  # If not fatal, return 0
 
         assert isinstance(item, str), item
-        return self._StringToIntegerOrError(item)
+        return self._StringToIntegerOrError(item, word=lhs)
 
       if op_id == Id.Arith_Comma:
         return rhs
@@ -612,8 +612,8 @@ class BoolEvaluator(_ExprEvaluator):
       if arg_type == bool_arg_type_e.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
         # Bash also allows [[ 1+2 -eq 3 ]].
-        i1 = self._StringToIntegerOrError(s1)
-        i2 = self._StringToIntegerOrError(s2)
+        i1 = self._StringToIntegerOrError(s1, word=node.left)
+        i2 = self._StringToIntegerOrError(s2, word=node.right)
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2
