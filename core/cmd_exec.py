@@ -513,8 +513,8 @@ class Executor(object):
     #
     # - We might want errors to fit on a single line so they don't get
     # interleaved.
-    # - We could return the `exit` builtin into a FatalRuntimeError exception
-    # and get this check for "free".
+    # - We could turn the `exit` builtin into a FatalRuntimeError exception and
+    # get this check for "free".
     thunk = process.SubProgramThunk(self, node,
                                     disable_errexit=disable_errexit)
     p = process.Process(thunk, job_state=job_state)
@@ -579,22 +579,19 @@ class Executor(object):
     # NOTE: Never returns!
     process.ExecExternalProgram(argv, environ)
 
-  def _MakePipeline(self, node, job_state=None):
-    # NOTE: First or last one could use the "main" shell thread.  Doesn't have
-    # to run in subshell.  Although I guess it's simpler if it always does.
-    # I think bash has an option to control this?  echo hi | read x; should
-    # test it.
-    pi = process.Pipeline(job_state=job_state)
-
-    for child in node.children:
-      p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
-      pi.Add(p)
-    return pi
-
   def _RunPipeline(self, node):
-    pi = self._MakePipeline(node)
+    pi = process.Pipeline()
 
-    pipe_status = pi.Run(self.waiter)
+    # First n-1 processes (which is empty when n == 1)
+    n = len(node.children)
+    for i in xrange(n - 1):
+      p = self._MakeProcess(node.children[i])
+      pi.Add(p)
+
+    # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
+    pi.AddLast((self, node.children[n-1]))
+
+    pipe_status = pi.Run(self.waiter, self.fd_state)
     state.SetGlobalArray(self.mem, 'PIPESTATUS', [str(p) for p in pipe_status])
 
     if self.exec_opts.pipefail:
@@ -618,8 +615,12 @@ class Executor(object):
     #  program presented in this chapter uses the first approach because it
     #  makes bookkeeping somewhat simpler."
     if node.tag == command_e.Pipeline:
-      pi = self._MakePipeline(node, job_state=self.job_state)
-      job_id = pi.Start(self.waiter)
+      pi = process.Pipeline()
+      for child in node.children:
+        pi.Add(self._MakeProcess(child, job_state=self.job_state))
+
+      job_id = pi.StartInBackground(self.waiter, self.job_state)
+
       self.mem.last_job_id = job_id  # for $!
       self.job_state.Register(job_id, pi)
       log('Started background pipeline with job ID %d', job_id)

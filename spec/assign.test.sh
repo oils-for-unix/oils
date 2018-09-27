@@ -489,13 +489,19 @@ f() {
 
   declare -A localdict
   localdict["spam"]=Eggs
+
+  # For bash-completion
+  eval 'declare -Ag ev'
+  ev["ev1"]=ev2
 }
 f
 argv.py "$G" "$L"
 argv.py "${dict["foo"]}" "${localdict["spam"]}"
+argv.py "${ev["ev1"]}"
 ## STDOUT:
 ['42', '']
 ['bar', '']
+['ev2']
 ## END
 ## N-I dash STDOUT:
 ['', '']
@@ -507,3 +513,19 @@ argv.py "${dict["foo"]}" "${localdict["spam"]}"
 
 ## END
 ## N-I mksh status: 1
+
+#### declare in an if statement
+# bug caught by my feature detection snippet in bash-completion
+if ! foo=bar; then
+  echo BAD
+fi
+echo $foo
+if ! eval 'spam=eggs'; then
+  echo BAD
+fi
+echo $spam
+## STDOUT:
+bar
+eggs
+## END
+

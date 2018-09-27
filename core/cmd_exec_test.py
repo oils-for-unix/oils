@@ -25,8 +25,8 @@ from osh.meta import ast, Id
 from osh import parse_lib
 
 
-def InitCommandParser(code_str):
-  arena = test_lib.MakeArena('<cmd_exec_test.py>')
+def InitCommandParser(code_str, arena=None):
+  arena = arena or test_lib.MakeArena('<cmd_exec_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
   _, c_parser = parse_ctx.MakeParser(line_reader)

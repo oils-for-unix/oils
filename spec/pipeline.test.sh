@@ -39,12 +39,29 @@ echo a | egrep '[0-9]+'
 ## status: 1
 
 #### PIPESTATUS
-{ sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } | { sleep 0.01; exit 3; }
+return3() {
+  return 3
+}
+{ sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } | { sleep 0.01; return3; }
 echo ${PIPESTATUS[@]}
 ## stdout: 1 2 3
 ## N-I dash status: 2
-## N-I zsh status: 3
-## N-I dash/zsh stdout-json: ""
+## N-I dash stdout-json: ""
+## N-I zsh status: 0
+## N-I zsh stdout-json: "\n"
+
+#### PIPESTATUS with shopt -s lastpipe
+shopt -s lastpipe
+return3() {
+  return 3
+}
+{ sleep 0.03; exit 1; } | { sleep 0.02; exit 2; } | { sleep 0.01; return3; }
+echo ${PIPESTATUS[@]}
+## stdout: 1 2 3
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I zsh status: 0
+## N-I zsh stdout-json: "\n"
 
 #### |&
 stdout_stderr.py |& cat
@@ -95,23 +112,29 @@ $v echo hi
 #### Evaluation of argv[0] in pipeline occurs in child
 ${cmd=echo} hi | wc -l
 echo "cmd=$cmd"
-## stdout-json: "1\ncmd=\n"
-## BUG zsh stdout-json: "1\ncmd=echo\n"
+## STDOUT:
+1
+cmd=
+## END
+## BUG zsh STDOUT:
+1
+cmd=echo
+## END
 
-#### last command is run in its own process
+#### bash/dash/mksh run the last command is run in its own process
 echo hi | read line
 echo "line=$line"
-## stdout: line=
-## OK zsh stdout: line=hi
+## stdout: line=hi
+## OK bash/dash/mksh stdout: line=
 
-#### shopt -s lastpipe
+#### shopt -s lastpipe (always on in OSH)
 shopt -s lastpipe
 echo hi | read line
 echo "line=$line"
 ## stdout: line=hi
 ## N-I dash/mksh stdout: line=
 
-#### shopt -s lastpipe
+#### shopt -s lastpipe (always on in OSH)
 shopt -s lastpipe
 i=0
 seq 3 | while read line; do
