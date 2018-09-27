@@ -751,7 +751,10 @@ class Executor(object):
       # typeset and declare are synonyms?  I see typeset -a a=() the most.
       elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
         # declare is like local, except it can also be used outside functions?
-        lookup_mode = scope_e.LocalOnly
+        if var_flags_e.Global in flags:
+          lookup_mode = scope_e.GlobalOnly
+        else:
+          lookup_mode = scope_e.LocalOnly
       elif node.keyword == Id.Assign_Readonly:
         lookup_mode = scope_e.Dynamic
         flags.append(var_flags_e.ReadOnly)

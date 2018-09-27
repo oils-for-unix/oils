@@ -112,6 +112,8 @@ def ParseAssignFlags(flag_args):
         flags.append(var_flags_e.ReadOnly)
       elif char == 'A':
         flags.append(var_flags_e.AssocArray)
+      elif char == 'g':  # useful for 'declare -Ag'
+        flags.append(var_flags_e.Global)
       else:
         # TODO: Throw an error?
         pass
