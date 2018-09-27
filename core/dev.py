@@ -85,19 +85,22 @@ class CrashDumper(object):
 
     self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
     span_id = SpanIdFromError(error)
-    span = ex.arena.GetLineSpan(span_id)
-    path, line_num = ex.arena.GetDebugInfo(span.line_id)
-    line = ex.arena.GetLine(span.line_id)
 
     self.error = {
-        # Could also do msg % args separately, but JavaScript won't be able to
-        # render that.
-        'msg': error.UserErrorString(),
-        'span_id': span_id,
-        'path': path,
-        'line_num': line_num,
-        'line': line,
+       'msg': error.UserErrorString(),
+       'span_id': span_id,
     }
+
+    if span_id != const.NO_INTEGER:
+      span = ex.arena.GetLineSpan(span_id)
+      path, line_num = ex.arena.GetDebugInfo(span.line_id)
+      line = ex.arena.GetLine(span.line_id)
+
+      # Could also do msg % args separately, but JavaScript won't be able to
+      # render that.
+      self.error['path'] = path
+      self.error['line_num'] = line_num
+      self.error['line'] = line
 
     # TODO: Collect functions, aliases, etc.
 
