@@ -521,14 +521,20 @@ class _WordEvaluator(object):
         elif val.tag == value_e.StrArray:
           index = self.arith_ev.Eval(anode)
           try:
-            val = runtime.Str(val.strs[index])
+            # could be None because representation is sparse
+            s = val.strs[index]
           except IndexError:
+            s = None
+
+          if s is None:
             val = runtime.Undef()
+          else:
+            val = runtime.Str(s)
 
         elif val.tag == value_e.AssocArray:
           key = self.arith_ev.Eval(anode, int_coerce=False)
           try:
-            s = runtime.Str(val.d[key])
+            val = runtime.Str(val.d[key])
           except KeyError:
             val = runtime.Undef()
 
