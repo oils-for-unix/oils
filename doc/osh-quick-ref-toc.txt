@@ -41,7 +41,7 @@ ASSIGNING VARIABLES
   [Operators]     assign        str='xyz'
                   append        str+='abc'
   [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
-                  X assoc       declare -A assoc=([a]=1 [b]=2)
+                  assoc         declare -A assoc=([a]=1 [b]=2)
 
 OIL VARIABLES
 
@@ -83,7 +83,7 @@ OTHER SHELL SUBLANGUAGES
                   bool-str      [[ -z '' ]]
                   bool-other    [[ -o errexit ]]
   [Patterns]      glob          *.py
-                  X extglob     @(*.py|*.sh)
+                  extglob       @(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
   [Brace Expand]  braces        {alice,bob}@example.com
 
@@ -100,7 +100,7 @@ BUILTIN COMMANDS
                   X fg   X bg   X disown 
   [External]      test [   X printf   getopts   X kill
   [Introspection] help   X hash   type   X caller
-X [Word Lookup]   command   builtin
+  [Word Lookup]   command   X builtin
   [Interactive]   alias   unalias   X bind   X history   X fc
 X [Unsupported]   enable
 
@@ -113,6 +113,7 @@ SHELL OPTIONS
   [Errors]        nounset   errexit   pipefail
   [Globbing]      noglob   failglob   nullglob
   [Debugging]     xtrace   X verbose   X extdebug
+  [Interactive]   emacs   vi
   [Other]         X noclobber
   [Parsing]       TODO
   [OSH Strict]    STRICT   strict-array   X strict-arith
@@ -136,6 +137,8 @@ X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO
   [Process State] X BASHPID   X PPID   UID   EUID   
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
+  [Completion]    @COMP_WORDS   COMP_CWORD   COMP_WORDBREAKS
+                  @COMPREPLY
   [cd]            PWD   OLDPWD   X CDPATH
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
