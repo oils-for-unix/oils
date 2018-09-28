@@ -251,7 +251,7 @@ word-eval() {
 }
 
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 

@@ -508,24 +508,32 @@ class _WordEvaluator(object):
 
       elif part.bracket_op.tag == bracket_op_e.ArrayIndex:
         anode = part.bracket_op.expr
-        index = self.arith_ev.Eval(anode)
 
         if val.tag == value_e.Undef:
           pass  # it will be checked later
-        elif val.tag == value_e.Str:
-          # TODO: Implement this as an extension. Requires unicode support.
-          # Bash treats it as an array.
-          e_die("Can't index string %r with integer", part.token.val)
-        elif val.tag == value_e.StrArray:
-          try:
-            s = val.strs[index]
-          except IndexError:
-            s = None
 
-          if s is None:
+        elif val.tag == value_e.Str:
+          # Bash treats any string as an array, so we can't add our own
+          # behavior here without making valid OSH invalid bash.
+          e_die("Can't index string %r with integer", part.token.val,
+                token=part.token)
+
+        elif val.tag == value_e.StrArray:
+          index = self.arith_ev.Eval(anode)
+          try:
+            val = runtime.Str(val.strs[index])
+          except IndexError:
             val = runtime.Undef()
-          else:
-            val = runtime.Str(s)
+
+        elif val.tag == value_e.AssocArray:
+          key = self.arith_ev.Eval(anode, int_coerce=False)
+          try:
+            s = runtime.Str(val.d[key])
+          except KeyError:
+            val = runtime.Undef()
+
+        else:
+          raise AssertionError(val.__class__.__name__)
 
       else:
         raise AssertionError(part.bracket_op.tag)

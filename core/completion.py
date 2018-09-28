@@ -49,6 +49,11 @@ completion_state_e = runtime.completion_state_e
 log = util.log
 
 
+class _RetryCompletion(Exception):
+  """For the 'exit 124' protocol."""
+  pass
+
+
 class NullCompleter(object):
 
   def Matches(self, words, index, to_complete):
@@ -205,7 +210,6 @@ class ShellFuncAction(CompletionAction):
     self.ex.debug_f.log(*args)
 
   def Matches(self, comp_words, index, to_complete):
-
     # TODO: Delete COMPREPLY here?  It doesn't seem to be defined in bash by
     # default.
     command = comp_words[0]
@@ -226,28 +230,23 @@ class ShellFuncAction(CompletionAction):
 
     status = self.ex.RunFuncForCompletion(self.func, argv)
     if status == 124:
-      # TODO: DETECT CHANGES IN COMPSPEC to command!  To avoid infinite loop?
-      # How do you do this?  By the argv?
-
       self.log('Got status 124 from %r', self.func.name)
-      # The previous run may have registered another function via 'complete',
-      # i.e. by sourcing a file.  Try it again.
-      status = self.ex.RunFuncForCompletion(self.func, argv)
-      if status == 124:
-        util.warn('Got exit code 124 from function %r TWICE', self.func.name)
+      raise _RetryCompletion()
 
     # Should be COMP_REPLY to follow naming convention!  Lame.
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
       util.error('Ran function %s but COMPREPLY was not defined', self.func.name)
-      return
+      return []
 
     if val.tag != value_e.StrArray:
       log('ERROR: COMPREPLY should be an array, got %s', val)
-      return
+      return []
     self.log('COMPREPLY %s', val)
-    for name in val.strs:
-      yield name
+
+    # Return this all at once so we don't have a generator.  COMPREPLY happens
+    # all at once anyway.
+    return val.strs
 
 
 class VariablesAction(object):
@@ -375,6 +374,8 @@ class ChainedCompleter(object):
     self.suffix = suffix
 
   def Matches(self, words, index, to_complete, filter_func_matches=True):
+    # NOTE: This has to be evaluated eagerly so we get the _RetryCompletion
+    # exception.
     for a in self.actions:
       for match in a.Matches(words, index, to_complete):
         # Special case hack to match bash for compgen -F.  It doesn't filter by
@@ -652,8 +653,6 @@ class RootCompleter(object):
     else:
       comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
 
-    # TODO: I don't get bash -D vs -E.  Might need to write a test program.
-
     if comp_type == completion_state_e.VAR_NAME:
       # Non-user chain
       chain = self.var_comp
@@ -679,9 +678,9 @@ class RootCompleter(object):
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', buf)
     start_time = time.time()
 
+    index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
     self.debug_f.log('Using %s', chain)
 
-    index = len(comp_words) - 1  # COMP_CWORD -1 when it's empty
     i = 0
     for m in chain.Matches(comp_words, index, to_complete):
       # TODO: need to dedupe these
@@ -698,6 +697,7 @@ class RootCompleter(object):
     self.progress_f.Write(
         'Found %d match%s for %r in %.2f seconds', i,
         plural, buf, elapsed)
+    done = True
 
     # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
     # well as a command, and we don't want to show it twice.  Although then
@@ -734,13 +734,24 @@ class ReadlineCompleter(object):
 
       self.comp_iter = self.root_comp.Matches(buf)
 
-    if self.comp_iter is None:
-      self.debug_f.log("ASSERT comp_iter shouldn't be None")
+    assert self.comp_iter is not None, self.comp_iter
 
-    try:
-      next_completion = self.comp_iter.next()
-    except StopIteration:
-      next_completion = None  # sentinel?
+    done = False
+    while not done:
+      self.debug_f.log('comp_iter.next()')
+      try:
+        next_completion = self.comp_iter.next()
+        done = True
+      except _RetryCompletion:
+        # TODO: Is it OK to retry here?  Shouldn't we retry in
+        # RootCompleter, after we already know the words?  That seems to run
+        # into some problems with Python generators and exceptions.
+        # I kind of want the 'g.send()' pattern to "prime the generator",
+        # revealing the first exception.
+        pass
+      except StopIteration:
+        next_completion = None  # sentinel?
+        done = True
 
     return next_completion
 

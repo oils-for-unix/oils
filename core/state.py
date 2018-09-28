@@ -506,6 +506,10 @@ class Mem(object):
     # For xtrace
     SetGlobalString(self, 'PS4', '+ ')
 
+    # bash-completion uses this.  Value copied from bash.  It doesn't integrate
+    # with 'readline' yet.
+    SetGlobalString(self, 'COMP_WORDBREAKS', '"\'><=;|&(:')
+
   def _InitVarsFromEnv(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
