@@ -88,6 +88,6 @@ def MakeTestEvaluator():
   mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
   splitter = legacy.SplitContext(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
   return ev
 

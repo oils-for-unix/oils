@@ -138,7 +138,9 @@ X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
   [Completion]    @COMP_WORDS   COMP_CWORD   COMP_WORDBREAKS
-                  @COMPREPLY
+                  @COMPREPLY   X COMP_KEY   X COMP_LINE   X COMP_POINT
+                  X COMP_TYPE
+
   [cd]            PWD   OLDPWD   X CDPATH
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS

@@ -261,3 +261,14 @@ not newer
 not older than itself
 not newer than itself
 ## END
+
+#### [ a -eq b ]
+[ a -eq a ]
+echo status=$?
+## STDOUT:
+status=2
+## END
+## BUG mksh STDOUT:
+status=0
+## END
+

@@ -133,13 +133,13 @@ class _WordEvaluator(object):
     EvalRhsWord
     EvalWordSequence
   """
-  def __init__(self, mem, exec_opts, splitter):
+  def __init__(self, mem, exec_opts, splitter, arena):
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
     self.splitter = splitter
     self.globber = glob_.Globber(exec_opts)
     # NOTE: Executor also instantiates one.
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self, arena)
 
   def _EvalCommandSub(self, part, quoted):
     """Abstract since it has a side effect.
@@ -1039,8 +1039,8 @@ class _WordEvaluator(object):
 
 class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, splitter, ex):
-    _WordEvaluator.__init__(self, mem, exec_opts, splitter)
+  def __init__(self, mem, exec_opts, splitter, arena, ex):
+    _WordEvaluator.__init__(self, mem, exec_opts, splitter, arena)
     self.ex = ex
 
   def _EvalCommandSub(self, node, quoted):
@@ -1057,9 +1057,6 @@ class CompletionWordEvaluator(_WordEvaluator):
   Difference from NormalWordEvaluator: No access to executor!  But they both
   have a splitter.
   """
-  def __init__(self, mem, exec_opts, splitter):
-    _WordEvaluator.__init__(self, mem, exec_opts, splitter)
-
   def _EvalCommandSub(self, node, quoted):
     return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
 

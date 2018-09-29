@@ -300,6 +300,10 @@ builtin-io() {
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+builtin-printf() {
+  sh-spec spec/builtin-printf.test.sh $BASH $OSH_LIST "$@"
+}
+
 builtins2() {
   sh-spec spec/builtins2.test.sh ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }

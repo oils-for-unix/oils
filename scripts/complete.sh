@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly BASH_COMP=/usr/share/bash-completion/bash_completion.osh
+readonly BASH_COMP=../bash-completion/bash_completion
 
 # This version is too new to run on my Ubuntu machine!  Uses git --list-cmds.
 #readonly GIT_COMP=testdata/completion/git-completion.bash
@@ -44,11 +44,15 @@ audit-git() {
 #        local -A VERBS=(
 #               [STANDALONE]='status list-locales list-keymaps'
 
-audit-distro() {
-  local path=/usr/share/bash-completion/bash_completion
+audit-bashcomp() {
+  local path=$BASH_COMP
+
   audit $path
 
-  find /usr/share/bash-completion/ -type f | xargs grep -E --color ']\+?='
+  # Some of these are not cash variables.
+  grep -E -o 'COMP_[A-Z]+' $path | hist
+
+  #find /usr/share/bash-completion/ -type f | xargs grep -E --color ']\+?='
 }
 
 # Git completion is very big!
@@ -72,7 +76,7 @@ fresh-osh-with-dump() {
 osh-trace() {
   # $FUNCNAME displays the whole stack in osh (unlike bash), but ${FUNCNAME[0]}
   # displays the top.
-  env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME}] ' \
+  env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
     bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
 

@@ -230,7 +230,7 @@ def OshMain(argv0, argv, login_shell):
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:
       splitter = legacy.SplitContext(mem)  # TODO: share with executor.
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
+      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
       progress_f = ui.StatusLine()
       var_action = completion.VariablesActionInternal(ex.mem)
       root_comp = completion.RootCompleter(ev, comp_lookup, var_action,

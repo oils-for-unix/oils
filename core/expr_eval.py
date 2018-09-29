@@ -17,11 +17,12 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
+from asdl import const
+from core import dev
 from core import util
 from core import state
-from osh.meta import BOOL_ARG_TYPES, Id, types
-from osh.meta import runtime
-from osh.meta import ast
+from core import ui
+from osh.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
 
 log = util.log
 warn = util.warn
@@ -108,16 +109,22 @@ def _StringToInteger(s, word=None):
 
 
 class _ExprEvaluator(object):
-  """
-  For now the arith and bool evaluators share some logic.
+  """Shared between arith and bool evaluators.
+
+  They both:
+
+  1. Convert strings to integers, respecting set -o strict_arith.
+  2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, exec_opts, word_ev):
+  def __init__(self, mem, exec_opts, word_ev, arena):
     self.mem = mem
     self.exec_opts = exec_opts
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
+    self.arena = arena
 
   def _StringToIntegerOrError(self, s, word=None):
+    """Used by both [[ $x -gt 3 ]] and (( $x ))."""
     try:
       i = _StringToInteger(s, word=word)
     except util.FatalRuntimeError as e:
@@ -178,7 +185,7 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
       # It would make more sense for 'nounset' to control this, but bash
       # doesn't work that way.
       #if self.exec_opts.strict_arith:
-      #  e_die('Undefined array %r', node.name)  # TODO: error location
+      #  e_die('Undefined array %r', node.name)
       val = runtime.Str('')
 
     elif val.tag == value_e.StrArray:
@@ -247,6 +254,13 @@ class ArithEvaluator(_ExprEvaluator):
         raise
       else:
         i = 0
+
+        span_id = dev.SpanIdFromError(e)
+        if self.arena:  # BoolEvaluator for test builtin doesn't have it.
+          if span_id != const.NO_INTEGER:
+            ui.PrintFilenameAndLine(span_id, self.arena)
+          else:
+            log('*** Warning has no location info ***')
         warn(e.UserErrorString())
     return i
 
@@ -263,7 +277,9 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.StrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
-    i = self._ValToArithOrError(val)
+    # TODO: attribute a word here.  It really should be a span ID?
+    # We have a few nodes here like UnaryAssign and BinaryAssign.
+    i = self._ValToArithOrError(val, word=None)
     return i, lval
 
   def _Store(self, lval, new_int):

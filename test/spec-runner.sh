@@ -25,6 +25,9 @@ _spec-manifest() {
     # Nothing passing here
     if (name == "extended-glob") next;
 
+    # For testing printf -v, which I do not want to implement.
+    if (name == "builtin-printf") next;
+
     # This was meant for ANTLR.
     if (name == "shell-grammar") next;
 

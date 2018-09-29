@@ -132,9 +132,12 @@ class Executor(object):
 
     self.splitter = legacy.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
-                                                 self)
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev)
-    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev)
+                                                 self.arena, self)
+    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev,
+                                             self.arena)
+
+    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev,
+                                           self.arena)
 
     self.traps = {}  # signal/hook name -> callable
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers

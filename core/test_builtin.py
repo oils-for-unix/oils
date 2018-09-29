@@ -171,11 +171,18 @@ def Test(argv, need_right_bracket):
   # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
   # exec_opts: don't need it, but might need it later
 
-  mem = None
-  exec_opts = None
+  mem = None  # Not necessary
   word_ev = _WordEvaluator()
+  arena = None
 
-  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev)
+  # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is a
+  # weird case of [[ being less strict.
+  class _DummyExecOpts():
+    def __init__(self):
+      self.strict_arith = True
+  exec_opts = _DummyExecOpts()
+
+  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
   try:
     b = bool_ev.Eval(bool_node)
   except util.FatalRuntimeError as e:

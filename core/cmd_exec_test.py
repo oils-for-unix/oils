@@ -52,14 +52,10 @@ def InitExecutor(arena=None):
 
 
 def InitEvaluator():
-  mem = state.Mem('', [], {}, None)
-  state.SetLocalString(mem, 'x', 'xxx')
-  state.SetLocalString(mem, 'y', 'yyy')
-
-  exec_opts = state.ExecOpts(mem, None)
-  # Don't need side effects for most things
-  splitter = legacy.SplitContext(mem)
-  return word_eval.CompletionWordEvaluator(mem, exec_opts, splitter)
+  word_ev = test_lib.MakeTestEvaluator()
+  state.SetLocalString(word_ev.mem, 'x', 'xxx')
+  state.SetLocalString(word_ev.mem, 'y', 'yyy')
+  return word_ev
 
 
 class ExpansionTest(unittest.TestCase):
