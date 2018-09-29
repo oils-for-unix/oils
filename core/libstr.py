@@ -182,6 +182,18 @@ def DoUnarySuffixOp(s, op, arg):
       else:
         return s
 
+    elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
+      return s[0].lower() + s[1:]
+
+    elif op.op_id == Id.VOp1_DComma:
+      return s.lower()
+
+    elif op.op_id == Id.VOp1_Caret:  # Only uppercase the first letter
+      return s[0].upper() + s[1:]
+
+    elif op.op_id == Id.VOp1_DCaret:
+      return s.upper()
+
     else:  # e.g. ^ ^^ , ,,
       raise AssertionError(op.op_id)
 

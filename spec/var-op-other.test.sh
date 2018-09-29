@@ -440,3 +440,29 @@ echo -${s:1:3}-
 ## N-I dash stdout-json: ""
 ## N-I bash status: 0
 ## N-I bash stdout-json: "slice\n-bcd-\n"
+
+#### Lower Case with , and ,,
+x='ABC DEF'
+echo ${x,}
+echo ${x,,}
+## STDOUT:
+aBC DEF
+abc def
+## END
+## N-I dash/mksh/zsh stdout-json: ""
+## N-I dash status: 2
+## N-I mksh/zsh status: 1
+
+
+#### Upper Case with ^ and ^^
+x='abc def'
+echo ${x^}
+echo ${x^^}
+## STDOUT:
+Abc def
+ABC DEF
+## END
+## N-I dash/mksh/zsh stdout-json: ""
+## N-I dash status: 2
+## N-I mksh/zsh status: 1
+
