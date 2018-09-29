@@ -23,5 +23,23 @@ complete_foo() {
   COMPREPLY=(one two three)
 }
 
+complete_filedir() {
+  COMPREPLY=( $( compgen -d ) )
+}
+
+complete_bug()
+{
+    # Regression for issue where readline swallows SystemExit.
+    comsub=$(echo comsub)
+
+    COMPREPLY=(one two three $comsub)
+}
+
+
 complete -F complete_foo foo
 
+# from _filedir
+complete -F complete_filedir filedir
+
+# isolated bug
+complete -F complete_bug bug

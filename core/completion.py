@@ -792,6 +792,9 @@ class ReadlineCompleter(object):
     except Exception as e:
       traceback.print_exc()
       self.debug_f.log('Unhandled exception while completing: %s', e)
+    except SystemExit as e:
+      # Because readline ignores SystemExit!
+      os._exit(e.code)
 
 
 def InitReadline(readline_mod, complete_cb):
