@@ -466,3 +466,26 @@ ABC DEF
 ## N-I dash status: 2
 ## N-I mksh/zsh status: 1
 
+#### Lower Case with constant string (VERY WEIRD)
+x='AAA ABC DEF'
+echo ${x,A}
+echo ${x,,A}  # replaces every A only?
+## STDOUT:
+aAA ABC DEF
+aaa aBC DEF
+## END
+## N-I dash/mksh/zsh stdout-json: ""
+## N-I dash status: 2
+## N-I mksh/zsh status: 1
+
+#### Lower Case glob
+x='ABC DEF'
+echo ${x,[d-f]}
+echo ${x,,[d-f]}  # This seems buggy, it doesn't include F?
+## STDOUT:
+ABC DEF
+ABC deF
+## END
+## N-I dash/mksh/zsh stdout-json: ""
+## N-I dash status: 2
+## N-I mksh/zsh status: 1
