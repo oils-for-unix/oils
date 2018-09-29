@@ -250,8 +250,9 @@ def CompGen(argv, ex):
   # and also showing ALL COMPREPLY reuslts, not just the ones that start with
   # the word to complete.
   matched = False 
-  comp = completion.CompletionApi(words=['compgen', to_complete], index=-1,
-                                  to_complete=to_complete)
+  comp = completion.CompletionApi()
+  comp.Update(words=['compgen', to_complete], index=-1,
+              to_complete=to_complete)
   for m in chain.Matches(comp, filter_func_matches=False):
     matched = True
     print(m)

@@ -125,20 +125,22 @@ class CompletionLookup(object):
 
 class CompletionApi(object):
 
-  def __init__(self, words=None, index=0, line='', point=0, to_complete='', key=0):
+  def __init__(self, line='', begin=0, end=0):
     """
     Args:
       index: if -1, then we're running through compgen
     """
-    self.words = words or []  # COMP_WORDS
-    self.index = index  # COMP_CWORD
-    self.line = line  # COMP_LINE
-    self.point = point  # COMP_POINT
-    # the word to complete, which could be '' when words == []
-    self.to_complete = to_complete
-    self.key = key # COMP_KEY
+    self.line = line
+    self.begin = begin
+    self.end = end
 
     # NOTE: COMP_WORDBREAKS is initliazed in Mem().
+
+  def Update(self, words=None, index=0, to_complete=''):
+    """Added after we've done parsing."""
+    self.words = words or []  # COMP_WORDS
+    self.index = index  # COMP_CWORD
+    self.to_complete = to_complete  #
 
   def GetApiInput(self):
     """Returns argv and comp_words."""
@@ -241,6 +243,8 @@ class ShellFuncAction(CompletionAction):
 
     state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
     state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp.index))
+    state.SetGlobalString(self.ex.mem, 'COMP_LINE', comp.line)
+    state.SetGlobalString(self.ex.mem, 'COMP_POINT', str(comp.end))
 
     self.log('Running completion function %r with arguments %s',
         self.func.name, argv)
@@ -632,7 +636,7 @@ class RootCompleter(object):
     # This simply splits words!
     self.parser = DummyParser()  # TODO: remove
 
-  def Matches(self, buf):
+  def Matches(self, comp):
     arena = alloc.SideArena('<completion>')
 
     # Two strategies:
@@ -664,14 +668,16 @@ class RootCompleter(object):
     # completing aliases -- someone mentioned about zsh
 
     if 0:
-      w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(buf, arena)
+      w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
       comp_type, to_complete, comp_words = _GetCompletionType(
           w_parser, c_parser, self.ev, self.debug_f)
     else:
-      comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, buf)
+      comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, comp.line)
 
     index = len(comp_words) - 1  # COMP_CWORD is -1 when it's empty
-    comp = CompletionApi(words=comp_words, index=index, to_complete=to_complete)
+
+    # After parsing
+    comp.Update(words=comp_words, index=index, to_complete=to_complete)
 
     if comp_type == completion_state_e.VAR_NAME:
       # Non-user chain
@@ -695,7 +701,7 @@ class RootCompleter(object):
     else:
       raise AssertionError(comp_type)
 
-    self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', buf)
+    self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
     self.debug_f.log('Using %s', chain)
@@ -709,13 +715,13 @@ class RootCompleter(object):
       plural = '' if i == 1 else 'es'
       self.progress_f.Write(
           '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
-          plural, buf, elapsed)
+          plural, comp.line, elapsed)
 
     elapsed = time.time() - start_time
     plural = '' if i == 1 else 'es'
     self.progress_f.Write(
         'Found %d match%s for %r in %.2f seconds', i,
-        plural, buf, elapsed)
+        plural, comp.line, elapsed)
     done = True
 
     # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
@@ -747,11 +753,12 @@ class ReadlineCompleter(object):
       # The current position of the cursor.  The thing being completed.
       end = self.readline_mod.get_endidx()
 
+      comp = CompletionApi(line=buf, begin=begin, end=end)
       self.debug_f.log(
           'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
           buf[begin:end])
 
-      self.comp_iter = self.root_comp.Matches(buf)
+      self.comp_iter = self.root_comp.Matches(comp)
 
     assert self.comp_iter is not None, self.comp_iter
 
