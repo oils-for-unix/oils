@@ -22,6 +22,7 @@ from core import dev
 from core import util
 from core import state
 from core import ui
+from core import word
 from osh.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
 
 log = util.log
@@ -148,12 +149,12 @@ def _LookupVar(name, mem, exec_opts):
 
 
 def EvalLhs(node, arith_ev, mem, exec_opts):
-  """Evaluate the operand for a++ a[0]++ as an R-value.
+  """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
-  Used by Executor as well.
+  Also used by the Executor for s+='x' and a[42]+='x'.
 
   Args:
-    node: osh_ast.lhs_expr
+    node: ast.lhs_expr
 
   Returns:
     runtime.value, runtime.lvalue
@@ -189,6 +190,7 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
       val = runtime.Str('')
 
     elif val.tag == value_e.StrArray:
+
       #log('ARRAY %s -> %s, index %d', node.name, array, index)
       array = val.strs
       # NOTE: Similar logic in RHS Arith_LBracket
@@ -202,25 +204,56 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
       else:
         assert isinstance(item, str), item
         val = runtime.Str(item)
+
+    elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
+      # TODO: Also need IsAssocArray() check?
+      index = arith_ev.Eval(node.index, int_coerce=False)
+      lval = runtime.LhsIndexedName(node.name, index)
+      raise NotImplementedError
+
     else:
       raise AssertionError(val.tag)
+
   else:
     raise AssertionError(node.tag)
 
   return val, lval
 
 
-def _ValToArith(val, int_coerce=True, word=None):
-  """Convert runtime.value to a Python int or list of strings."""
-  assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+class ArithEvaluator(_ExprEvaluator):
 
-  if int_coerce:
+  def _ValToArith(self, val, int_coerce=True, blame_word=None):
+    """Convert runtime.value to a Python int or list of strings."""
+    assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+
+    if int_coerce:
+      if val.tag == value_e.Undef:  # 'nounset' already handled before got here
+        # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
+        #log('blame_word %s   arena %s', blame_word, self.arena)
+        if blame_word and self.arena:
+          span_id = word.LeftMostSpanForWord(blame_word)
+          if span_id != const.NO_INTEGER:
+            ui.PrintFilenameAndLine(span_id, self.arena)
+
+        warn('converting undefined variable to 0')
+        return 0
+
+      if val.tag == value_e.Str:
+        return _StringToInteger(val.s, word=blame_word)  # may raise FatalRuntimeError
+
+      if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
+        return val.strs
+
+      if val.tag == value_e.AssocArray:
+        return val.d
+
+      raise AssertionError(val)
+
     if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-      warn('converting undefined variable to 0')
-      return 0
+      return ''  # I think nounset is handled elsewhere
 
     if val.tag == value_e.Str:
-      return _StringToInteger(val.s, word=word)  # may raise FatalRuntimeError
+      return val.s
 
     if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
       return val.strs
@@ -228,27 +261,9 @@ def _ValToArith(val, int_coerce=True, word=None):
     if val.tag == value_e.AssocArray:
       return val.d
 
-    raise AssertionError(val)
-
-  if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-    return ''  # I think nounset is handled elsewhere
-
-  if val.tag == value_e.Str:
-    return val.s
-
-  if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
-    return val.strs
-
-  if val.tag == value_e.AssocArray:
-    return val.d
-
-
-class ArithEvaluator(_ExprEvaluator):
-
   def _ValToArithOrError(self, val, int_coerce=True, word=None):
     try:
-      i = _ValToArith(val, int_coerce=int_coerce, word=word)
-
+      i = self._ValToArith(val, int_coerce=int_coerce, blame_word=word)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -302,8 +317,7 @@ class ArithEvaluator(_ExprEvaluator):
       val = self._LookupVar(node.name)
       return self._ValToArithOrError(val, int_coerce=int_coerce)
 
-    # $(( $x )) or $(( ${x}${y} )), etc.
-    if node.tag == arith_expr_e.ArithWord:
+    if node.tag == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
       return self._ValToArithOrError(val, int_coerce=int_coerce, word=node.w)
 
