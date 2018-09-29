@@ -405,20 +405,22 @@ class Executor(object):
     assert isinstance(node, ast.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
-      runtime_node = runtime.LhsName(node.name)
-      runtime_node.spids.append(spid)
-      return runtime_node
+      lval = runtime.LhsName(node.name)
+      lval.spids.append(spid)
+      return lval
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
       # TODO: Look up node.name and check if the cell is AssocArray, or if the
       # type is AssocArray.
       int_coerce = not self.mem.IsAssocArray(node.name, lookup_mode)
       #log('int_coerce %s', int_coerce)
+      #log('**************** node.index %s', node.index)
       index = self.arith_ev.Eval(node.index, int_coerce=int_coerce)
+      #log('**************** done eval')
 
-      runtime_node = runtime.LhsIndexedName(node.name, index)
-      runtime_node.spids.append(node.spids[0])  # copy left-most token over
-      return runtime_node
+      lval = runtime.LhsIndexedName(node.name, index)
+      lval.spids.append(node.spids[0])  # copy left-most token over
+      return lval
 
     raise AssertionError(node.tag)
 
