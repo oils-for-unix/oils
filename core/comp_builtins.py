@@ -76,9 +76,9 @@ class _SortedWordsAction(object):
   def __init__(self, d):
     self.d = d
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, comp):
     for name in sorted(self.d):
-      if name.startswith(prefix):
+      if name.startswith(comp.to_complete):
         #yield name + ' '  # full word
         yield name
 
@@ -86,14 +86,14 @@ class _SortedWordsAction(object):
 class _DirectoriesAction(object):
   """complete -A directory"""
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, comp):
     raise NotImplementedError('-A directory')
 
 
 class _UsersAction(object):
   """complete -A user"""
 
-  def Matches(self, words, index, prefix):
+  def Matches(self, comp):
     raise NotImplementedError('-A user')
 
 
@@ -250,8 +250,9 @@ def CompGen(argv, ex):
   # and also showing ALL COMPREPLY reuslts, not just the ones that start with
   # the word to complete.
   matched = False 
-  for m in chain.Matches(['compgen', to_complete], -1, to_complete,
-                         filter_func_matches=False):
+  comp = completion.CompletionApi(words=['compgen', to_complete], index=-1,
+                                  to_complete=to_complete)
+  for m in chain.Matches(comp, filter_func_matches=False):
     matched = True
     print(m)
 
