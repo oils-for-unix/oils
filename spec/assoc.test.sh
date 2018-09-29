@@ -106,3 +106,13 @@ echo "${a[@]}"
 #echo "${!a[@]}"
 ## N-I mksh stdout-json: ""
 ## BUG bash stdout-json: "3\n"
+
+#### Append to associative array value
+declare -A a
+a['x']+='foo'
+a['x']+='bar'
+argv.py "${a["x"]}"
+## STDOUT:
+['foobar']
+## END
+
