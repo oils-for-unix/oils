@@ -184,7 +184,7 @@ class WordsAction(CompletionAction):
       if w.startswith(comp.to_complete):
         if self.delay:
           time.sleep(self.delay)
-        yield w + ' '
+        yield w
 
 
 class FileSystemAction(CompletionAction):
@@ -194,6 +194,9 @@ class FileSystemAction(CompletionAction):
   
   TODO: We need a variant that tests for an executable bit.
   """
+  def __init__(self, dirs_only=False):
+    self.dirs_only = dirs_only
+
   def Matches(self, comp):
     to_complete = comp.to_complete
     i = to_complete.rfind('/')
@@ -216,10 +219,14 @@ class FileSystemAction(CompletionAction):
     for name in names:
       path = os.path.join(base, name)
       if path.startswith(to_complete):
-        if os.path.isdir(path):
-          yield path + '/'
+        if self.dirs_only:
+          if os.path.isdir(path):
+            yield path
         else:
-          yield path
+          if os.path.isdir(path):
+            yield path + '/'
+          else:
+            yield path
 
 
 class ShellFuncAction(CompletionAction):

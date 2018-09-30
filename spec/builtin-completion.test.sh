@@ -143,6 +143,34 @@ compgen -A helptopic -S ___ fa
 false___
 ## END
 
+#### compgen -A directory
+compgen -A directory b
+## STDOUT:
+bin
+benchmarks
+build
+## END
+
+#### compgen -W 'one two three'
+compgen -W 'one two three'
+echo --
+compgen -W 'w1 w2 three' -A directory w
+echo --
+compgen -A directory -W 'w1 w2 three' w  # order doesn't matter
+## STDOUT:
+one
+two
+three
+--
+web
+w1
+w2
+--
+web
+w1
+w2
+## END
+
 #### complete with nonexistent function
 complete -F invalidZZ -D
 echo status=$?

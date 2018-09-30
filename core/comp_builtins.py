@@ -16,6 +16,7 @@ log = util.log
 
 def _DefineFlags(spec):
   spec.ShortFlag('-F', args.Str, help='Complete with this function')
+  spec.ShortFlag('-W', args.Str, help='Complete with these words')
   spec.ShortFlag('-P', args.Str,
       help='Prefix is added at the beginning of each possible completion after '
            'all other options have been applied.')
@@ -100,6 +101,7 @@ class _UsersAction(object):
 def _BuildCompletionChain(argv, arg, ex):
   """Given flags to complete/compgen, built a ChainedCompleter."""
   actions = []
+
   # NOTE: bash doesn't actually check the name until completion time, but
   # obviously it's better to check here.
   if arg.F:
@@ -125,8 +127,7 @@ def _BuildCompletionChain(argv, arg, ex):
       a = completion.ExternalCommandAction(ex.mem)
 
     elif name == 'directory':
-      # TODO: This is FileSystemAction with a filter
-      a = _DirectoriesAction()
+      a = completion.FileSystemAction(dirs_only=True)
 
     elif name == 'file':
       a = completion.FileSystemAction()
@@ -162,6 +163,12 @@ def _BuildCompletionChain(argv, arg, ex):
       raise NotImplementedError(name)
 
     actions.append(a)
+
+  # e.g. -W comes after -A directory
+  if arg.W:
+    # TODO: Split with IFS.  Is that done at registration time or completion
+    # time?
+    actions.append(completion.WordsAction(arg.W.split()))
 
   if not actions:
     raise args.UsageError('No actions defined in completion: %s' % argv)

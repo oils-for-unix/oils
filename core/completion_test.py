@@ -141,13 +141,13 @@ class CompletionTest(unittest.TestCase):
   def testChainedCompleter(self):
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(C1.Matches(comp))
-    self.assertEqual(['foo.py ', 'foo '], matches)
+    self.assertEqual(['foo.py', 'foo'], matches)
 
     p = completion.GlobPredicate('*.py')
     c2 = completion.ChainedCompleter([A1], predicate=p)
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
-    self.assertEqual([], matches)
+    self.assertEqual(['foo.py'], matches)
 
   def testRootCompleter(self):
     comp_lookup = completion.CompletionLookup()
@@ -166,21 +166,21 @@ class CompletionTest(unittest.TestCase):
 
     comp = completion.CompletionApi(line='grep f')
     m = list(r.Matches(comp))
-    self.assertEqual(['foo.py ', 'foo '], m)
+    self.assertEqual(['foo.py', 'foo'], m)
 
     comp = completion.CompletionApi(line='grep g')
     m = list(r.Matches(comp))
     self.assertEqual([], m)
 
     m = list(r.Matches(completion.CompletionApi(line='ls $v')))
-    self.assertEqual(['$var1 ', '$var2 '], m)
+    self.assertEqual(['$var1', '$var2'], m)
 
     m = list(r.Matches(completion.CompletionApi(line='g')))
-    self.assertEqual(['grep '], m)
+    self.assertEqual(['grep'], m)
 
     # Empty completer
     m = list(r.Matches(completion.CompletionApi('')))
-    self.assertEqual(['grep ', 'sed ', 'test '], m)
+    self.assertEqual(['grep', 'sed', 'test'], m)
 
     # Test compound commands. These PARSE
     m = list(r.Matches(completion.CompletionApi('echo hi || grep f')))
