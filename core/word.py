@@ -346,23 +346,24 @@ def AsFuncName(w):
   return True, s
 
 
-def AsArithVarName(w):
+def LooksLikeArithVar(w):
   """Returns a string if this word looks like an arith var; otherwise False.
 
   NOTE: This can't be combined with DetectAssignment because VarLike and
   ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
   confused between array assigments foo=(1 2) and function calls foo(1, 2).
   """
-  assert w.tag == word_e.CompoundWord
+  if w.tag != word_e.CompoundWord:
+    return False
 
   if len(w.parts) != 1:
-    return ""
+    return False
 
   part0 = w.parts[0]
   if _LiteralPartId(part0) != Id.Lit_ArithVarLike:
     return False
 
-  return part0.token.val
+  return part0.token
 
 
 def IsVarLike(w):

@@ -116,8 +116,7 @@ module osh
   | LhsIndexedName(string name, arith_expr index)
 
   arith_expr =
-    -- TODO: need token
-    ArithVarRef(string name)  -- variable without $
+    ArithVarRef(token token)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
 
   | UnaryAssign(id op_id, lhs_expr child)

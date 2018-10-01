@@ -14,8 +14,6 @@ import sys
 
 from core import cmd_exec  # module under test
 from core import dev
-from core import legacy
-from core import word_eval
 from core import process
 from core import state
 from core import test_lib

@@ -42,7 +42,7 @@ lvalue_e = runtime.lvalue_e
 scope_e = runtime.scope_e
 
 
-def _StringToInteger(s, word=None):
+def _StringToInteger(s, span_id=const.NO_INTEGER):
   """Use bash-like rules to coerce a string to an integer.
 
   0xAB -- hex constant
@@ -61,14 +61,14 @@ def _StringToInteger(s, word=None):
       integer = int(s, 16)
     except ValueError:
       # TODO: Show line number
-      e_die('Invalid hex constant %r', s, word=word)
+      e_die('Invalid hex constant %r', s, span_id=span_id)
     return integer
 
   if s.startswith('0'):
     try:
       integer = int(s, 8)
     except ValueError:
-      e_die('Invalid octal constant %r', s, word=word)  # TODO: Show line number
+      e_die('Invalid octal constant %r', s, span_id=span_id)  # TODO: Show line number
     return integer
 
   if '#' in s:
@@ -76,7 +76,7 @@ def _StringToInteger(s, word=None):
     try:
       base = int(b)
     except ValueError:
-      e_die('Invalid base for numeric constant %r',  b, word=word)
+      e_die('Invalid base for numeric constant %r',  b, span_id=span_id)
 
     integer = 0
     n = 1
@@ -92,10 +92,10 @@ def _StringToInteger(s, word=None):
       elif char.isdigit():
         digit = int(char)
       else:
-        e_die('Invalid digits for numeric constant %r', digits, word=word)
+        e_die('Invalid digits for numeric constant %r', digits, span_id=span_id)
 
       if digit >= base:
-        e_die('Digits %r out of range for base %d', digits, base, word=word)
+        e_die('Digits %r out of range for base %d', digits, base, span_id=span_id)
 
       integer += digit * n
       n *= base
@@ -105,7 +105,7 @@ def _StringToInteger(s, word=None):
   try:
     integer = int(s)
   except ValueError:
-    e_die("Invalid integer constant %r", s, word=word)
+    e_die("Invalid integer constant %r", s, span_id=span_id)
   return integer
 
 
@@ -124,10 +124,14 @@ class _ExprEvaluator(object):
     self.word_ev = word_ev  # type: word_eval.WordEvaluator
     self.arena = arena
 
-  def _StringToIntegerOrError(self, s, word=None):
+  def _StringToIntegerOrError(self, s, blame_word=None,
+                              span_id=const.NO_INTEGER):
     """Used by both [[ $x -gt 3 ]] and (( $x ))."""
+    if span_id == const.NO_INTEGER and blame_word:
+      span_id = word.LeftMostSpanForWord(blame_word)
+
     try:
-      i = _StringToInteger(s, word=word)
+      i = _StringToInteger(s, span_id=span_id)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -222,7 +226,7 @@ def EvalLhs(node, arith_ev, mem, exec_opts):
 
 class ArithEvaluator(_ExprEvaluator):
 
-  def _ValToArith(self, val, int_coerce=True, blame_word=None):
+  def _ValToArith(self, val, span_id, int_coerce=True):
     """Convert runtime.value to a Python int or list of strings."""
     assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
 
@@ -230,16 +234,11 @@ class ArithEvaluator(_ExprEvaluator):
       if val.tag == value_e.Undef:  # 'nounset' already handled before got here
         # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
         #log('blame_word %s   arena %s', blame_word, self.arena)
-        if blame_word and self.arena:
-          span_id = word.LeftMostSpanForWord(blame_word)
-          if span_id != const.NO_INTEGER:
-            ui.PrintFilenameAndLine(span_id, self.arena)
-
-        warn('converting undefined variable to 0')
+        e_die('Coercing undefined value to 0 in arithmetic context', span_id=span_id)
         return 0
 
       if val.tag == value_e.Str:
-        return _StringToInteger(val.s, word=blame_word)  # may raise FatalRuntimeError
+        return _StringToInteger(val.s, span_id=span_id)  # may raise FatalRuntimeError
 
       if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
         return val.strs
@@ -261,9 +260,13 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.AssocArray:
       return val.d
 
-  def _ValToArithOrError(self, val, int_coerce=True, word=None):
+  def _ValToArithOrError(self, val, int_coerce=True, blame_word=None,
+                         span_id=const.NO_INTEGER):
+    if span_id == const.NO_INTEGER and blame_word:
+      span_id = word.LeftMostSpanForWord(blame_word)
+
     try:
-      i = self._ValToArith(val, int_coerce=int_coerce, blame_word=word)
+      i = self._ValToArith(val, span_id, int_coerce=int_coerce)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -292,9 +295,9 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.StrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
-    # TODO: attribute a word here.  It really should be a span ID?
-    # We have a few nodes here like UnaryAssign and BinaryAssign.
-    i = self._ValToArithOrError(val, word=None)
+    # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
+    # and BinaryAssign.
+    i = self._ValToArithOrError(val, span_id=const.NO_INTEGER)
     return i, lval
 
   def _Store(self, lval, new_int):
@@ -314,12 +317,14 @@ class ArithEvaluator(_ExprEvaluator):
     # to handle that as a special case.
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
-      val = self._LookupVar(node.name)
-      return self._ValToArithOrError(val, int_coerce=int_coerce)
+      tok = node.token
+      val = self._LookupVar(tok.val)
+      return self._ValToArithOrError(val, int_coerce=int_coerce,
+                                     span_id=tok.span_id)
 
     if node.tag == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
-      return self._ValToArithOrError(val, int_coerce=int_coerce, word=node.w)
+      return self._ValToArithOrError(val, int_coerce=int_coerce, blame_word=node.w)
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
@@ -439,7 +444,7 @@ class ArithEvaluator(_ExprEvaluator):
             return 0  # If not fatal, return 0
 
         assert isinstance(item, str), item
-        return self._StringToIntegerOrError(item, word=lhs)
+        return self._StringToIntegerOrError(item)
 
       if op_id == Id.Arith_Comma:
         return rhs
@@ -642,8 +647,8 @@ class BoolEvaluator(_ExprEvaluator):
       if arg_type == bool_arg_type_e.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
         # Bash also allows [[ 1+2 -eq 3 ]].
-        i1 = self._StringToIntegerOrError(s1, word=node.left)
-        i2 = self._StringToIntegerOrError(s2, word=node.right)
+        i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
+        i2 = self._StringToIntegerOrError(s2, blame_word=node.right)
 
         if op_id == Id.BoolBinary_eq:
           return i1 == i2
