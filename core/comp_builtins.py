@@ -282,5 +282,6 @@ def CompOpt(argv):
   # NOTE: This is supposed to fail if a completion isn't being generated?
   # The executor should have a mode?
 
-  log('arg %s', arg)
+  #log('compopt: %s', arg)
+  log('compopt %s', argv)
   return 0
