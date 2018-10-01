@@ -288,7 +288,7 @@ class ArithEvaluator(_ExprEvaluator):
   def _LookupVar(self, name):
     return _LookupVar(name, self.mem, self.exec_opts)
 
-  def _EvalLhsToArith(self, node):
+  def _EvalLhsAndLookupArith(self, node):
     """
     Args:
       node: lhs_expr
@@ -305,6 +305,31 @@ class ArithEvaluator(_ExprEvaluator):
     span_id = word.SpanForLhsExpr(node)
     i = self._ValToArithOrError(val, span_id=span_id)
     return i, lval
+
+  def _EvalLhsArith(self, node):
+    """lhs_expr -> lvalue.
+    
+    Very similar to _EvalLhs in core/cmd_exec."""
+    assert isinstance(node, ast.lhs_expr), node
+
+    if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
+      lval = runtime.LhsName(node.name)
+      # TODO: location info.  Use the = token?
+      #lval.spids.append(spid)
+      return lval
+
+    if node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
+      # The index of StrArray needs to be coerced to int, but not the index of
+      # an AssocArray.
+      int_coerce = not self.mem.IsAssocArray(node.name, scope_e.Dynamic)
+      index = self.Eval(node.index, int_coerce=int_coerce)
+
+      lval = runtime.LhsIndexedName(node.name, index)
+      # TODO: location info.  Use the = token?
+      #lval.spids.append(node.spids[0])
+      return lval
+
+    raise AssertionError(node.tag)
 
   def _Store(self, lval, new_int):
     val = runtime.Str(str(new_int))
@@ -334,7 +359,7 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
-      old_int, lval = self._EvalLhsToArith(node.child)
+      old_int, lval = self._EvalLhsAndLookupArith(node.child)
 
       if op_id == Id.Node_PostDPlus:  # post-increment
         new_int = old_int + 1
@@ -361,16 +386,17 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
       op_id = node.op_id
-      old_int, lval = self._EvalLhsToArith(node.left)
-
-      rhs = self.Eval(node.right)
 
       if op_id == Id.Arith_Equal:
-        # NOTE: We don't need old_int for this case.  Evaluating it has no side
-        # effects, so it's harmless.
-        # TODO: Use a function like core/cmd_exec.EvalLhs
-        new_int = rhs
-      elif op_id == Id.Arith_PlusEqual:
+        rhs = self.Eval(node.right)
+        lval = self._EvalLhsArith(node.left)
+        self._Store(lval, rhs)
+        return rhs
+
+      old_int, lval = self._EvalLhsAndLookupArith(node.left)
+      rhs = self.Eval(node.right)
+
+      if op_id == Id.Arith_PlusEqual:
         new_int = old_int + rhs
       elif op_id == Id.Arith_MinusEqual:
         new_int = old_int - rhs

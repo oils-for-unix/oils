@@ -258,6 +258,19 @@ string_to_intbase() {
   echo 'SHOULD NOT GET HERE'
 }
 
+undef_arith() {
+  (( undef++ ))  # doesn't make sense
+
+  # Can't assign to characters of string?  Is that strong?
+  (( undef[42]++ ))
+}
+
+undef_arith2() {
+  # undefined cell
+  a=()
+  (( a[42]++ ))
+}
+
 array_arith() {
   a=(1 2)
   (( a++ ))  # doesn't make sense
@@ -357,7 +370,7 @@ all() {
     failed_command \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
     nonexistent nounset \
-    nounset_arith divzero divzero_var array_arith \
+    nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
     array_assign_1 array_assign_2 patsub_bad_glob; do
