@@ -152,7 +152,7 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
-def EvalLhs(node, arith_ev, mem, exec_opts):
+def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
   """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
   Also used by the Executor for s+='x' and a[42]+='x'.
@@ -234,11 +234,13 @@ class ArithEvaluator(_ExprEvaluator):
       if val.tag == value_e.Undef:  # 'nounset' already handled before got here
         # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
         #log('blame_word %s   arena %s', blame_word, self.arena)
-        e_die('Coercing undefined value to 0 in arithmetic context', span_id=span_id)
+        e_die('Coercing undefined value to 0 in arithmetic context',
+              span_id=span_id)
         return 0
 
       if val.tag == value_e.Str:
-        return _StringToInteger(val.s, span_id=span_id)  # may raise FatalRuntimeError
+        # may raise FatalRuntimeError
+        return _StringToInteger(val.s, span_id=span_id)
 
       if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
         return val.strs
@@ -264,6 +266,7 @@ class ArithEvaluator(_ExprEvaluator):
                          span_id=const.NO_INTEGER):
     if span_id == const.NO_INTEGER and blame_word:
       span_id = word.LeftMostSpanForWord(blame_word)
+    #log('_ValToArithOrError span=%s blame=%s', span_id, blame_word)
 
     try:
       i = self._ValToArith(val, span_id, int_coerce=int_coerce)
@@ -287,17 +290,20 @@ class ArithEvaluator(_ExprEvaluator):
 
   def _EvalLhsToArith(self, node):
     """
+    Args:
+      node: lhs_expr
     Returns:
       int or list of strings, runtime.lvalue
     """
-    val, lval = EvalLhs(node, self, self.mem, self.exec_opts)
+    val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 
     if val.tag == value_e.StrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
     # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
     # and BinaryAssign.
-    i = self._ValToArithOrError(val, span_id=const.NO_INTEGER)
+    span_id = word.SpanForLhsExpr(node)
+    i = self._ValToArithOrError(val, span_id=span_id)
     return i, lval
 
   def _Store(self, lval, new_int):
@@ -362,6 +368,7 @@ class ArithEvaluator(_ExprEvaluator):
       if op_id == Id.Arith_Equal:
         # NOTE: We don't need old_int for this case.  Evaluating it has no side
         # effects, so it's harmless.
+        # TODO: Use a function like core/cmd_exec.EvalLhs
         new_int = rhs
       elif op_id == Id.Arith_PlusEqual:
         new_int = old_int + rhs

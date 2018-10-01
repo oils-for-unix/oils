@@ -124,6 +124,7 @@ def _MakeAssignPair(parse_ctx, preparsed):
       op = assign_op_e.Equal
 
     lhs_expr = ast.LhsName(var_name)
+    lhs_expr.spids.append(left_token.span_id)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
     var_name = left_token.val[:-1]
@@ -249,7 +250,9 @@ def _MakeAssignment(parse_ctx, assign_kw, suffix_words):
       if not match.IsValidVarName(static_val):
         p_die('Invalid variable name %r', static_val, word=w)
 
-      pair = ast.assign_pair(ast.LhsName(static_val), assign_op_e.Equal, None)
+      lhs_expr = ast.LhsName(static_val)
+      lhs_expr.spids.append(word.LeftMostSpanForWord(w))
+      pair = ast.assign_pair(lhs_expr, assign_op_e.Equal, None)
 
       left_spid = word.LeftMostSpanForWord(w)
       pair.spids.append(left_spid)

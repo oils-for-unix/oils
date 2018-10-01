@@ -229,6 +229,7 @@ def Complete(argv, ex, comp_lookup):
 
 COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A
 
+# TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
 _DefineFlags(COMPGEN_SPEC)
 _DefineOptions(COMPGEN_SPEC)
 _DefineActions(COMPGEN_SPEC)

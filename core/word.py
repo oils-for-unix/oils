@@ -12,6 +12,7 @@ p_die = util.p_die
 word_e = ast.word_e
 word_part_e = ast.word_part_e
 assign_op_e = ast.assign_op_e
+lhs_expr_e = ast.lhs_expr_e
 
 
 def _LiteralPartId(p):
@@ -523,6 +524,17 @@ def CommandKind(w):
 
 
 # Stubs for converting RHS of assignment to expression mode.
+# For osh2oil.py
 def IsVarSub(w):
   # Return whether it's any var sub, or a double quoted one
   return False
+
+
+def SpanForLhsExpr(node):
+  if node.spids:
+    return node.spids[0]
+  else:
+    return const.NO_INTEGER  
+  # TODO: LhsIndexedName needs span_id.
+  #if node.tag == lhs_expr_e.LhsName:
+  #elif node.tag == lhs_expr_e.LhsIndexedName:

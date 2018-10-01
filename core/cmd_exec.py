@@ -410,13 +410,10 @@ class Executor(object):
       return lval
 
     if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
-      # TODO: Look up node.name and check if the cell is AssocArray, or if the
-      # type is AssocArray.
+      # The index of StrArray needs to be coerced to int, but not the index of
+      # an AssocArray.
       int_coerce = not self.mem.IsAssocArray(node.name, lookup_mode)
-      #log('int_coerce %s', int_coerce)
-      #log('**************** node.index %s', node.index)
       index = self.arith_ev.Eval(node.index, int_coerce=int_coerce)
-      #log('**************** done eval')
 
       lval = runtime.LhsIndexedName(node.name, index)
       lval.spids.append(node.spids[0])  # copy left-most token over
@@ -773,8 +770,8 @@ class Executor(object):
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
           val = self.word_ev.EvalRhsWord(pair.rhs)
-          old_val, lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem,
-                                            self.exec_opts)
+          old_val, lval = expr_eval.EvalLhsAndLookup(pair.lhs, self.arith_ev,
+                                                     self.mem, self.exec_opts)
           sig = (old_val.tag, val.tag)
           if sig == (value_e.Undef, value_e.Str):
             pass  # val is RHS
