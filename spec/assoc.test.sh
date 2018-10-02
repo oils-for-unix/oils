@@ -29,7 +29,7 @@ declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)
 argv.py "${!a[@]}"
 # Is this invalid on associative arrays?  Makes no sense.
-## stdout: ['aa', 'foo', 'a+1']
+## stdout: ['foo', 'aa', 'a+1']
 
 #### $a gives nothing
 declare -A a

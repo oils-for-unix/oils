@@ -21,7 +21,6 @@ x=foo
 y=bar
 echo $x
 echo $(echo $y)
-echo $y
 ## END
 
 #### xtrace with whitespace and quotes

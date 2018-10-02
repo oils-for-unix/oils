@@ -9,12 +9,12 @@ from core import braces
 from core import expr_eval
 from core import libstr
 from core import glob_
-from osh.meta import Id, Kind, LookupKind
-from osh.meta import runtime
 from core import state
 from core import word_compile
 from core import util
-from osh.meta import ast
+
+from osh.meta import Id, Kind, LookupKind, ast, runtime
+from osh import match
 
 word_e = ast.word_e
 bracket_op_e = ast.bracket_op_e
@@ -347,6 +347,11 @@ class _WordEvaluator(object):
           arg_num = int(val.s)
           return self.mem.GetArgNum(arg_num)
         except ValueError:
+          if not match.IsValidVarName(val.s):
+            # TODO: location information.
+            # Also note that bash doesn't consider this fatal.  It makes the
+            # command exit with '1', but we don't have that ability yet?
+            e_die('Bad variable name %r in var ref', val.s)
           return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
         raise NotImplementedError('${!a[@]}')  # bash gets keys this way

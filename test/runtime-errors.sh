@@ -190,6 +190,11 @@ nounset() {
   echo 'SHOULD NOT GET HERE'
 }
 
+bad_var_ref() {
+  name='bad var name'
+  echo ${!name}
+}
+
 #
 # ARITHMETIC ERRORS
 #
@@ -369,7 +374,7 @@ all() {
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
-    nonexistent nounset \
+    nonexistent nounset bad_var_ref \
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \

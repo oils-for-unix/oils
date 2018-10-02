@@ -699,12 +699,12 @@ class BoolEvaluator(_ExprEvaluator):
         raise NotImplementedError(op_id)
 
       if arg_type == bool_arg_type_e.Str:
-        # TODO:
-        # - Compare arrays.  (Although bash coerces them to string first)
 
         if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
           #log('Comparing %s and %s', s2, s1)
-          # TODO: Respect extended glob?
+
+          # TODO: Respect extended glob?  * and ! and ? are quoted improperly.
+          # But @ and + are OK.
           return libc.fnmatch(s2, s1)
 
         if op_id == Id.BoolBinary_GlobNEqual:

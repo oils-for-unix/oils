@@ -36,8 +36,14 @@ echo ${!a} ${a}
 a='bad var name'
 echo ref ${!a}
 echo status=$?
-## stdout-json: "ref\nstatus=0\n"
-## BUG mksh stdout-json: "ref a\nstatus=0\n"
+## STDOUT:
+status=1
+## END
+## BUG mksh STDOUT:
+ref a
+status=0
+## END
+
 #### pass array by reference
 show_value() {
   local -n array=$1
