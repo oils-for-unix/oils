@@ -157,7 +157,7 @@ runtime() {
   # NOTE: braces.py contains both parsing and runtime.  It is a  middle stage.
 
   echo 'Runtime'
-  wc -l core/{process,state}.py core/runtime.asdl | sort -n
+  wc -l core/{process,state,dev}.py core/runtime.asdl | sort -n
   echo
 
   # NOTE: These may turn into compilers
@@ -166,7 +166,7 @@ runtime() {
   echo
 
   echo 'Builtins'
-  wc -l core/{builtin,test_builtin}.py
+  wc -l core/{builtin,comp_builtins,test_builtin}.py
   echo
 
   echo 'Libraries'
