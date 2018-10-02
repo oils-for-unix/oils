@@ -207,6 +207,11 @@ smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+ps1-replacements() {
+  sh-spec spec/ps1-replacements.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+
+}
+
 osh-only() {
   sh-spec spec/osh-only.test.sh $OSH_LIST "$@"
 }
