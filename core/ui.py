@@ -89,6 +89,7 @@ class Prompt(object):
     "h" : lambda ex: socket.gethostname(),
     "w" : lambda ex: get_var(ex, "PWD"),
     "e" : lambda ex: "\033",
+    "a" : lambda ex: "\007",
     "$" : lambda ex: "$",
     "[" : lambda ex: "",
     "]" : lambda ex: "",
@@ -113,7 +114,7 @@ class Prompt(object):
 
   def EvalPS1(self, val):
     if val.tag != runtime.value_e.Str:
-      return "", self.ps1
+      return self.ps1
 
     s = val.s
     if s:
