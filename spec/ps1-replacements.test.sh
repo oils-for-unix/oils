@@ -2,8 +2,17 @@
 #
 # For testing the Python sketch
 
+#### sh -i
+echo 'echo foo' | PS1='$ ' $SH --norc -i
+## STDOUT:
+foo
+## END
+## STDERR:
+$ echo foo
+$ exit
+## END
+
 #### constant string
-#'echo 1' | PS1='$ ' $SH --norc -i
 PS1='$ '
 echo "${PS1@P}"
 ## STDOUT:
@@ -11,7 +20,6 @@ $
 ## END
 
 #### hostname
-#'echo 1' | PS1='$ ' $SH --norc -i
 PS1='\h '
 test "${PS1@P}" = "$(hostname) "
 echo status=$?

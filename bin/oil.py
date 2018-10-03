@@ -115,6 +115,9 @@ OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 OSH_SPEC.LongFlag('--parser-mem-dump', args.Str)
 OSH_SPEC.LongFlag('--runtime-mem-dump', args.Str)
 
+# For bash compatibility
+OSH_SPEC.LongFlag('--norc')
+
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
