@@ -163,7 +163,10 @@ class Prompt(object):
     ret = []
     non_printing = 0
     for id_, value in match.PS1_LEXER.Tokens(s):
-      if id_ == Id.Char_OneChar:
+      if id_ == Id.Char_Literals:
+        ret.append(value)
+
+      elif id_ == Id.Char_OneChar:
         if value == "\[":
           non_printing += 1
         elif value == "\]":
@@ -174,7 +177,7 @@ class Prompt(object):
         oct_value = int(value[1:], 8)
         ret.append(chr(oct_value))
       else:
-        ret.append(value)
+        raise AssertionError('Invalid token %r' % id_)
 
     return "".join(ret)
 

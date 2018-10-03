@@ -12,6 +12,27 @@ $ echo foo
 $ exit
 ## END
 
+#### \1004
+PS1='\1004$'
+echo "${PS1@P}"
+## STDOUT:
+@4$
+## END
+
+#### \777 is beyond max octal byte of \377
+PS1='\777$'
+echo "${PS1@P}"
+# TODO(andy): the test framework makes it hard to test stdout here.
+## status: 2
+## OK bash status: 0
+
+#### \x55 hex literals not supported
+PS1='[\x55]'
+echo "${PS1@P}"
+## STDOUT:
+[\x55]
+## END
+
 #### constant string
 PS1='$ '
 echo "${PS1@P}"
