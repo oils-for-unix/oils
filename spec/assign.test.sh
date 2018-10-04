@@ -217,6 +217,24 @@ echo $?
 127
 ## END
 
+#### declare -F
+add () { expr 4 + 4; }
+div () { expr 6 / 2; }
+ek () { echo hello; }
+__ec () { echo hi; }
+_ab () { expr 10 % 3; }
+
+declare -F
+## STDOUT:
+declare -f __ec
+declare -f _ab
+declare -f add
+declare -f div
+declare -f ek
+## END
+## N-I dash/mksh stdout-json: ""
+## N-I dash/mksh status: 127
+
 #### declare -p 
 var1() { echo func; }  # function names are NOT found.
 declare -p var1 var2 >/dev/null
