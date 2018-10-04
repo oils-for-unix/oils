@@ -193,7 +193,7 @@ argv.py "${a[@]}"
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
-#### declare -f 
+#### declare -f exit code indicates function existence
 func2=x  # var names are NOT found
 declare -f myfunc func2
 echo $?
@@ -217,7 +217,7 @@ echo $?
 127
 ## END
 
-#### declare -F
+#### declare -F prints function names
 add () { expr 4 + 4; }
 div () { expr 6 / 2; }
 ek () { echo hello; }
