@@ -141,13 +141,18 @@ def OshMain(argv0, argv, login_shell):
 
   if arg_r.AtEnd():
     dollar0 = argv0
+    has_main = False
   else:
     dollar0 = arg_r.Peek()  # the script name, or the arg after -c
+    has_main = True
 
   pool = alloc.Pool()
   arena = pool.NewArena()
 
-  mem = state.Mem(dollar0, argv[arg_r.i + 1:], os.environ, arena)
+  # NOTE: has_main is only for ${BASH_SOURCE[@} and family.  Could be a
+  # required arg.
+  mem = state.Mem(dollar0, argv[arg_r.i + 1:], os.environ, arena,
+                  has_main=has_main)
   funcs = {}
 
   comp_lookup = completion.CompletionLookup()
