@@ -424,8 +424,8 @@ class Mem(object):
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
 
-  def __init__(self, argv0, argv, environ, arena):
-    self.argv0 = argv0
+  def __init__(self, dollar0, argv, environ, arena, has_main=False):
+    self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
     self.var_stack = [_StackFrame()]
 
@@ -433,7 +433,12 @@ class Mem(object):
     # crash dumps and for 3 parallel arrays: FUNCNAME, BASH_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
     self.debug_stack = [(None, None, const.NO_INTEGER, 0, 0)]
+
     self.bash_source = []  # for implementing BASH_SOURCE
+    self.has_main = has_main
+    if has_main:
+      self.bash_source.append(dollar0)  # e.g. the filename
+
     self.current_spid = const.NO_INTEGER
 
     # Note: we're reusing these objects because they change on every single
@@ -635,7 +640,7 @@ class Mem(object):
 
   def GetArgNum(self, arg_num):
     if arg_num == 0:
-      return runtime.Str(self.argv0)
+      return runtime.Str(self.dollar0)
 
     return self.argv_stack[-1].GetArgNum(arg_num)
 
@@ -925,6 +930,9 @@ class Mem(object):
         if source_name:
           strs.append('source')  # bash doesn't give name
         # Temp stacks are ignored
+
+      if self.has_main:
+        strs.append('main')  # bash does this
       return runtime.StrArray(strs)  # TODO: Reuse this object too?
 
     # This isn't the call source, it's the source of the function DEFINITION
@@ -936,21 +944,27 @@ class Mem(object):
     if name == 'CALL_SOURCE':
       strs = []
       for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
-        if call_spid == const.NO_INTEGER:  # should only happen for the first entry
+        # should only happen for the first entry
+        if call_spid == const.NO_INTEGER:
           continue
         span = self.arena.GetLineSpan(call_spid)
         path, _ = self.arena.GetDebugInfo(span.line_id)
         strs.append(path)
+      if self.has_main:
+        strs.append('-')  # Bash does this to line up with main?
       return runtime.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'BASH_LINENO':
       strs = []
       for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
-        if call_spid == const.NO_INTEGER:  # should only happen for the first entry
+        # should only happen for the first entry
+        if call_spid == const.NO_INTEGER:
           continue
         span = self.arena.GetLineSpan(call_spid)
         _, line_num = self.arena.GetDebugInfo(span.line_id)
         strs.append(str(line_num))
+      if self.has_main:
+        strs.append('0')  # Bash does this to line up with main?
       return runtime.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
