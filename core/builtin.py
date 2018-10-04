@@ -957,6 +957,9 @@ def DeclareTypeset(argv, mem, funcs):
           #print(funcs[name])
         else:
           status = 1
+    elif arg.F:
+      for func_name in sorted(funcs):
+        print('declare -f %s' % (func_name))
     else:
       raise NotImplementedError('declare/typeset -f without args')
 
