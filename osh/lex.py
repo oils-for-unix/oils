@@ -328,7 +328,7 @@ LEXER_DEF[lex_mode_e.DBRACKET] = [
 #
 # Example: echo @(<> <>|&&|'foo'|$bar)
 LEXER_DEF[lex_mode_e.EXTGLOB] = \
-    _BACKSLASH + _LEFT_SUBS + _VARS + _EXTGLOB_BEGIN + [
+    _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + _EXTGLOB_BEGIN + [
   R(r'[^\\$`"\'|)@*+!?\0]+', Id.Lit_Chars),
   C('|', Id.Op_Pipe),
   C(')', Id.Op_RParen),  # maybe be translated to Id.ExtGlob_RParen

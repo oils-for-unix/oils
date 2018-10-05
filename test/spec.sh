@@ -570,8 +570,7 @@ extended-glob() {
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 9 \
-    $BASH $MKSH $OSH_LIST "$@"
+  sh-spec spec/extglob-match.test.sh $BASH $MKSH $OSH_LIST "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.

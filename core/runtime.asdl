@@ -11,6 +11,8 @@ module runtime
   -- A static word_part from osh.asdl is evaluated to a dynamic part_value.
   part_value = 
     -- Substitutions and unquoted literals get split/elided/globbed.
+    -- TODO: invert and rename to 'quoted', because quoted means escaping
+    -- in other contexts!
     StringPartValue(string s, bool do_split_glob)
     -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
   | ArrayPartValue(string* strs)

@@ -14,6 +14,10 @@ readonly BASH_COMP=../bash-completion/bash_completion
 
 readonly GIT_COMP=testdata/completion/git
 
+grep-extglob() {
+  grep -E --color '[@?!+*]\(' "$@"
+}
+
 audit() {
   local file=${1:-$GIT_COMP}
 
@@ -32,6 +36,9 @@ audit() {
   # Search for array usage
   grep -E --color ']=' $file
   grep -E --color ']+=' $file
+
+  # extended glob
+  grep-extglob $file
 }
 
 audit-git() {
@@ -51,6 +58,8 @@ audit-bashcomp() {
 
   # Some of these are not cash variables.
   grep -E -o 'COMP_[A-Z]+' $path | hist
+
+  grep-extglob ../bash-completion/completions/*
 
   #find /usr/share/bash-completion/ -type f | xargs grep -E --color ']\+?='
 }

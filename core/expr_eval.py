@@ -701,7 +701,7 @@ class BoolEvaluator(_ExprEvaluator):
       if arg_type == bool_arg_type_e.Str:
 
         if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
-          #log('Comparing %s and %s', s2, s1)
+          #log('Matching %s against pattern %s', s1, s2)
 
           # TODO: Respect extended glob?  * and ! and ? are quoted improperly.
           # But @ and + are OK.

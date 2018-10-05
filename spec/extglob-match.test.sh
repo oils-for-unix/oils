@@ -249,7 +249,7 @@ FALSE
 TRUE
 TRUE
 ## END
-## OK mksh STDOUT:
+## OK osh/mksh STDOUT:
 TRUE
 TRUE
 TRUE
