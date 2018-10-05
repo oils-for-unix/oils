@@ -416,9 +416,10 @@ def DetectAssignment(w):
     return part0.token, None, 1  # everything after first token is the value
 
   if id0 == Id.Lit_ArrayLhsOpen:
-    if n < 3:  # a[]= can't be valid
+    # NOTE that a[]=x should be an error.  We don't want to silently decay.
+    if n < 2:
       return None, None, 0
-    for i in xrange(2, n):
+    for i in xrange(1, n):
       if _LiteralPartId(w.parts[i]) == Id.Lit_ArrayLhsClose:
         return part0.token, w.parts[i].token, i+1
 
