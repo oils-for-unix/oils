@@ -1,7 +1,18 @@
 #!/bin/bash
 #
+# Metrics for Oil bytecode produced by the OPy compiler.
+#
+# This is more like a metric than a benchmark.  In particular, we do NOT need
+# to run it on multiple machines!  It doesn't need the provenance of binaries
+# and so forth.
+#
+# But it IS like a benchmark in that we use R to analyze data and want HTML
+# reports.
+#
+# NOTE: We will eventually have benchmarks for OPy compile time.
+#
 # Usage:
-#   ./opy.sh <function name>
+#   ./bytecode.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -26,7 +37,7 @@ for n in names:
 # are ~131K rows in ~8.5 MB altogether.  The biggest table is the 'ops' table.
 
 dis-tables() {
-  local out_dir=$BASE_DIR
+  local out_dir=$BASE_DIR/opy
   mkdir -p $out_dir
 
   # Pass the .pyc files in the bytecode-opy.zip file to 'opyc dis'
@@ -76,13 +87,27 @@ report() {
   R_LIBS_USER=$R_PATH benchmarks/bytecode.R "$@"
 }
 
-# Reads the 5 tables and produces some metrics
-metrics() {
-  report metrics $BASE_DIR
+# Reads the 5 tables and produces some metrics.
+metrics-opy() {
+  report metrics $BASE_DIR/opy 
 }
 
-pyc-ratio() {
-  report pyc-ratio _build/oil/all-deps-py.txt
+# Reads a .py / .pyc manifest and calculates the ratio of input/output file
+# sizes.
+src-bin-ratio() {
+  # Pass the manifest and the base directory of .pyc files.
+  report src-bin-ratio _build/oil/all-deps-py.txt _build/oil/bytecode-opy
+}
+
+run-for-release() {
+  dis-tables
+  dis-tables-cpython
+
+  report metrics $BASE_DIR/opy > $BASE_DIR/opy-metrics.txt
+  report metrics $BASE_DIR/cpython > $BASE_DIR/cpython-metrics.txt
+
+  src-bin-ratio > $BASE_DIR/src-bin-ratio.txt
+  log "Wrote $BASE_DIR/src-bin-ratio.txt"
 }
 
 # TODO:

@@ -667,6 +667,9 @@ metrics() {
 
   line-counts $out/line-counts
 
+  # NOTE: Could move these files and scripts/count.sh to a metrics/ dir?
+  benchmarks/bytecode.sh run-for-release
+
   tree $out
 }
 
