@@ -25,6 +25,9 @@ from osh import match
 
 import socket
 
+DEFAULT_PS1 = 'osh$ '
+
+
 
 
 def Clear():
@@ -91,17 +94,15 @@ class Prompt(object):
     "e" : lambda ex: "\033",
     "a" : lambda ex: "\007",
     "$" : lambda ex: "$",
-    "[" : lambda ex: "",
-    "]" : lambda ex: "",
   }
 
-  def __init__(self, ps1, arena, parse_ctx, ex):
-    self.ps1 = ps1
+  def __init__(self, arena, parse_ctx, ex):
+    self.ps1 = DEFAULT_PS1
     self.arena = arena
     self.parse_ctx = parse_ctx
     self.ex = ex
 
-    self.prompt_str = ps1
+    self.prompt_str = self.ps1
     self.parse_cache = {}  # PS1 value -> CompoundWord.
 
   def Reset(self):
@@ -163,19 +164,17 @@ class Prompt(object):
     ret = []
     non_printing = 0
     for id_, value in match.PS1_LEXER.Tokens(s):
-      if id_ == Id.Char_Literals:
+      if id_ == Id.Char_Literals or id_ == Id.Char_Hex:
         ret.append(value)
-
       elif id_ == Id.Char_OneChar:
-        if value == "\[":
-          non_printing += 1
-        elif value == "\]":
-          non_printing -= 1
-
         ret.append(self.GetPS1Replacement(value[1:]))
       elif id_ == Id.Char_Octal4:
         oct_value = int(value[1:], 8)
         ret.append(chr(oct_value))
+      elif id_ == Id.Lit_LBrace:
+        non_printing += 1
+      elif id_ == Id.Lit_RBrace:
+        non_printing -= 1
       else:
         raise AssertionError('Invalid token %r' % id_)
 

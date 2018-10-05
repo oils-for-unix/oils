@@ -87,8 +87,6 @@ _tlog('after imports')
 
 
 # bash --noprofile --norc uses 'bash-4.3$ '
-OSH_PS1 = 'osh$ '
-
 
 def _ShowVersion():
   util.ShowAppVersion('Oil')
@@ -196,7 +194,7 @@ def OshMain(argv0, argv, login_shell):
       raise
 
   # Needed in non-interactive shells for @P
-  prompt = ui.Prompt(OSH_PS1, arena, parse_ctx, ex)
+  prompt = ui.Prompt(arena, parse_ctx, ex)
   ui.PROMPT = prompt
 
   if opts.c is not None:
@@ -214,7 +212,7 @@ def OshMain(argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
-        prompt = ui.Prompt(OSH_PS1, arena, parse_ctx, ex)
+        prompt = ui.Prompt(arena, parse_ctx, ex)
         line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:

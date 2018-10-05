@@ -446,10 +446,12 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html#Controlling-the-Prompt
-PS1_DEF = ECHO_E_DEF + [
+PS1_DEF = _C_STRING_COMMON + [
+    R(r'\\0[0-7]{1,3}', Id.Char_Octal4),
     R(r'\\[adehHjlnrstT@AuvVwW!#\\]', Id.Char_OneChar),
-    C(r'\[', Id.Char_OneChar),
-    C(r'\]', Id.Char_OneChar),
+    C(r'\[', Id.Lit_LBrace),
+    C(r'\]', Id.Lit_RBrace),
+    R(r'[^\\\0]+', Id.Char_Literals),
 ]
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
