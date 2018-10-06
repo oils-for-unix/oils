@@ -263,6 +263,8 @@ FileSizes = function(all_deps_py, pyc_base_dir) {
   py_pyc %>% filter(py_bytes != 0) %>% mutate(ratio = pyc_bytes / py_bytes) %>%
     arrange(ratio) -> py_pyc
 
+  Banner('RATIO')
+
   py_pyc %>% head(10) -> small
   ShowFrame('small .pyc files:', small)
 
@@ -275,6 +277,12 @@ FileSizes = function(all_deps_py, pyc_base_dir) {
 
   ShowValue('Overall: %d bytes of .py -> %d bytes of .pyc', py_total, pyc_total)
   ShowValue('Ratio: %f', pyc_total / py_total)
+
+  Banner('FULL LISTING')
+
+  py_pyc %>% select(c(pyc_bytes, pyc_path)) %>% arrange(desc(pyc_bytes)) -> f1
+  ShowFrame('bytecode', f1)
+  ShowValue('total (again): %d', pyc_total)
 
   py_pyc
 }

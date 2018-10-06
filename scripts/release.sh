@@ -663,8 +663,6 @@ metrics() {
   local out=_tmp/metrics
   mkdir -p $out
 
-  build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
-
   line-counts $out/line-counts
 
   # NOTE: Could move these files and scripts/count.sh to a metrics/ dir?

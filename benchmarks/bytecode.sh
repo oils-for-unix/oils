@@ -36,8 +36,8 @@ for n in names:
 # NOTE: We analyze ~76 bytecode files.  This outputs produces 5 TSV2 files that
 # are ~131K rows in ~8.5 MB altogether.  The biggest table is the 'ops' table.
 
-dis-tables() {
-  local out_dir=$BASE_DIR/opy
+opy-dis-tables() {
+  local out_dir=$BASE_DIR/opy-dis-tables
   mkdir -p $out_dir
 
   # Pass the .pyc files in the bytecode-opy.zip file to 'opyc dis'
@@ -51,8 +51,8 @@ dis-tables() {
 }
 
 # Hm it seems like build/prepare.sh build-python is necessary for this?
-dis-tables-cpython() {
-  local out_dir=$BASE_DIR/cpython
+cpython-dis-tables() {
+  local out_dir=$BASE_DIR/cpython-dis-tables
   mkdir -p $out_dir
   # The .py files look like /home/andy/git/oilshell/oil/Python-2.7.13/Lib/os.py
   time cat _build/oil/opy-app-deps.txt \
@@ -100,14 +100,22 @@ src-bin-ratio() {
 }
 
 run-for-release() {
-  dis-tables
-  dis-tables-cpython
+  opy-dis-tables
+  cpython-dis-tables
 
-  report metrics $BASE_DIR/opy > $BASE_DIR/opy-metrics.txt
-  report metrics $BASE_DIR/cpython > $BASE_DIR/cpython-metrics.txt
+  local out
 
-  src-bin-ratio > $BASE_DIR/src-bin-ratio.txt
-  log "Wrote $BASE_DIR/src-bin-ratio.txt"
+  out=$BASE_DIR/oil-with-opy.txt
+  report metrics $BASE_DIR/opy-dis-tables > $out
+  log "Wrote $out"
+
+  out=$BASE_DIR/oil-with-cpython.txt
+  report metrics $BASE_DIR/cpython-dis-tables > $out
+  log "Wrote $out"
+
+  out=$BASE_DIR/src-bin-ratio-with-opy.txt
+  src-bin-ratio > $out
+  log "Wrote $out"
 }
 
 # TODO:

@@ -24,19 +24,25 @@ Oil Version 0.6.pre5
 
 ### Metrics
 
-- Count lines of source code in different ways:
+- Lines of source, counted in differented ways:
   - [oil-osh-cloc](metrics.wwz/line-counts/oil-osh-cloc.txt).  The core of Oil,
     as measured by the [cloc][] tool.
   - [src](metrics.wwz/line-counts/src.txt).  The whole Oil repo organized by
     type of source file.
   - [parser](metrics.wwz/line-counts/parser.txt).  How big is the parser?
   - [runtime](metrics.wwz/line-counts/runtime.txt).  How big is the runtime?
-- Count lines of dependencies:
+- Lines of dependencies:
   - [pydeps](metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
     standard library.
   - [nativedeps](metrics.wwz/line-counts/nativedeps.txt).  Oil code plus A
     slice of CPython.
-- [Bytecode Size](metrics.wwz/pyc-bytes.txt)
+- Bytecode Metrics
+  - [oil-with-opy](metrics.wwz/bytecode/oil-with-opy.txt) - Oil compiled with
+    OPy.
+  - [oil-with-cpython](metrics.wwz/bytecode/oil-with-cpython.txt) - Oil
+    compiled with CPython (for comparison).
+  - [src-bin-ratio-with-opy](metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
+    How big is the compiled output?
 
 [cloc]: https://github.com/AlDanial/cloc
 
