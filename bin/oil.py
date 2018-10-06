@@ -5,7 +5,6 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 oil.py - A busybox-like binary for oil.
 
@@ -20,6 +19,7 @@ Builtins that can be exposed:
 
 - echo: most likely don't care about this
 """
+from __future__ import print_function
 
 import os
 import sys
