@@ -5,10 +5,10 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 cmd_parse.py - Parse high level shell commands.
 """
+from __future__ import print_function
 
 from asdl import const
 

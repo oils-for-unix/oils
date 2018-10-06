@@ -5,7 +5,6 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 builtins.py - Implementation of builtins, along with their metadata.
 
@@ -25,6 +24,7 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 - syntax errors in special builtins may cause the shell to abort, but NOT for
   regular builtins?
 """
+from __future__ import print_function
 
 import os
 import signal

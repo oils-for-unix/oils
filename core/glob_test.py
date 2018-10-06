@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 glob_test.py: Tests for glob.py
 """
+from __future__ import print_function
 
 import re
 import unittest

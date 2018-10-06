@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 lex_test.py: Tests for lex.py
 """
+from __future__ import print_function
 
 import re
 import unittest

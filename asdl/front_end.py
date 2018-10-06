@@ -1,8 +1,8 @@
 #!/usr/bin/python
-from __future__ import print_function
 """
 front_end.py: Lexer and parser for the ASDL schema language.
 """
+from __future__ import print_function
 
 import re
 

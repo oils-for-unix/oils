@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 braces.py - Implementation of {andy,bob}@example.com
 
@@ -14,6 +13,7 @@ Possible optimization flags for CompoundWord:
 - has Lit_Star, ?, [ ] -- globbing?
   - but after expansion do you still have those flags?
 """
+from __future__ import print_function
 
 import sys
 

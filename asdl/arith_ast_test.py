@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 arith_ast_test.py: Tests for arith_ast.py
 """
+from __future__ import print_function
 
 import cStringIO
 import unittest

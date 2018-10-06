@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from __future__ import print_function
 """
 main_loop.py
 
@@ -15,6 +14,7 @@ Get rid of:
 ex.Execute() -- only used for tests
 ParseWholeFile() -- needs to check the here doc.
 """
+from __future__ import print_function
 
 from core import ui
 from core import util

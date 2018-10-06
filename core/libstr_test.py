@@ -1,8 +1,8 @@
 #!/usr/bin/python -S
-from __future__ import print_function
 """
 libstr_test.py: Tests for libstr.py
 """
+from __future__ import print_function
 
 import unittest
 

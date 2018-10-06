@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 lex_gen.py
 """
+from __future__ import print_function
 
 import cStringIO
 import sys

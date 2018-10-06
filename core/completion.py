@@ -5,7 +5,6 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 completion.py - Tab completion.
 
@@ -28,6 +27,7 @@ the same startup state?
 bash note: most of this stuff is in pcomplete.c and bashline.c (4K lines!).
 Uses ITEMLIST with a bunch of flags.
 """
+from __future__ import print_function
 
 import atexit
 import os

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 asdl_gen.py - Generate Python and C from OSH ASDL schemas.
 """
+from __future__ import print_function
 
 import os
 import pickle

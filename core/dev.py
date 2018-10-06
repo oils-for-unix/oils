@@ -1,8 +1,8 @@
 #!/usr/bin/python
-from __future__ import print_function
 """
 dev.py - Devtools / introspection.
 """
+from __future__ import print_function
 
 import os
 

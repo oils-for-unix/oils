@@ -1,8 +1,8 @@
 #!/usr/bin/python -S
-from __future__ import print_function
 """
 lexer_gen_test.py: Tests for lexer_gen.py
 """
+from __future__ import print_function
 
 import unittest
 
