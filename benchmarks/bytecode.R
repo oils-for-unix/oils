@@ -287,6 +287,28 @@ FileSizes = function(all_deps_py, pyc_base_dir) {
   py_pyc
 }
 
+
+CompareCol = function(ctx) {
+  c(nrow(ctx$frames),
+    nrow(ctx$names),
+    nrow(ctx$consts),
+    nrow(ctx$flags),
+    nrow(ctx$ops)
+  )
+}
+
+Compare = function(cpython_ctx, opy_ctx) {
+  Banner('CPYTHON vs. OPY')
+
+  data_frame(
+    table_name = c('frames', 'names', 'consts', 'flags', 'ops'),
+    cpython = CompareCol(cpython_ctx),
+    opy = CompareCol(opy_ctx)
+  ) -> f1
+
+  ShowFrame('Overview', f1)
+}
+
 main = function(argv) {
   action = argv[[1]]
 
@@ -294,6 +316,11 @@ main = function(argv) {
     in_dir = argv[[2]]
     ctx = Load(in_dir)
     Report(ctx)
+
+  } else if (action == 'compare') {
+    cpython_ctx = Load(argv[[2]])
+    opy_ctx = Load(argv[[3]])
+    Compare(cpython_ctx, opy_ctx)
 
   } else if (action == 'src-bin-ratio') {  # This takes different inputs
     all_deps_py = argv[[2]]

@@ -92,6 +92,10 @@ metrics-opy() {
   report metrics $BASE_DIR/opy 
 }
 
+compare() {
+  report compare $BASE_DIR/cpython-dis-tables $BASE_DIR/opy-dis-tables
+}
+
 # Reads a .py / .pyc manifest and calculates the ratio of input/output file
 # sizes.
 src-bin-ratio() {
@@ -115,6 +119,10 @@ run-for-release() {
 
   out=$BASE_DIR/src-bin-ratio-with-opy.txt
   src-bin-ratio > $out
+  log "Wrote $out"
+
+  out=$BASE_DIR/overview.txt
+  compare > $out
   log "Wrote $out"
 }
 

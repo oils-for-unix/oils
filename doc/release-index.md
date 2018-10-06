@@ -37,6 +37,7 @@ Oil Version 0.6.pre5
   - [nativedeps](metrics.wwz/line-counts/nativedeps.txt).  Oil code plus A
     slice of CPython.
 - Bytecode Metrics
+  - [overview](metrics.wwz/bytecode/overview.txt) - Compare OPy vs. CPython.
   - [oil-with-opy](metrics.wwz/bytecode/oil-with-opy.txt) - Oil compiled with
     OPy.
   - [oil-with-cpython](metrics.wwz/bytecode/oil-with-cpython.txt) - Oil
