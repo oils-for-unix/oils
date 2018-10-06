@@ -79,7 +79,8 @@ compile-manifest() {
     log "     $full_src_path"
 
     # Save space by omitting docstring.
-    $py $THIS_DIR/../bin/opyc compile -emit-docstring=0 $full_src_path $dest
+    # TODO: Turn this back on at the 0.6.pre6 release to show the difference.
+    $py $THIS_DIR/../bin/opyc compile -emit-docstring=1 $full_src_path $dest
 
     local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
 
