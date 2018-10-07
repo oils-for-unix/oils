@@ -18,6 +18,13 @@ from asdl import format as fmt
 from core import dev
 from osh import ast_lib
 from osh.meta import ast
+from osh.meta import Id
+from osh.meta import runtime
+
+from osh import match
+
+import socket
+
 
 
 def Clear():
@@ -67,6 +74,107 @@ class StatusLine(object):
 
     sys.stdout.write('\033[u')  # restore
     sys.stdout.flush()
+
+_PS2 = '> '
+def get_var(ex,name):
+    r = ex.mem.GetVar(name)
+    if r.tag == runtime.value_e.Str:
+        return r.s
+
+    return ""
+
+class Prompt(object):
+  REPLACEMENTS = {
+    "u" : lambda ex: get_var(ex, "USER"),
+    "h" : lambda ex: socket.gethostname(),
+    "w" : lambda ex: get_var(ex, "PWD"),
+    "e" : lambda ex: "\033",
+    "$" : lambda ex: "$",
+    "[" : lambda ex: "",
+    "]" : lambda ex: "",
+  }
+
+  def __init__(self, ps1, arena, parse_ctx, ex):
+    self.ps1 = ps1
+    self.arena = arena
+    self.parse_ctx = parse_ctx
+    self.ex = ex
+
+    self.prompt_str = ps1
+    self.parse_cache = {}  # PS1 value -> CompoundWord.
+
+  def Reset(self):
+    ps1 = "".join(self._EvalPS1())
+    decoded_string = self.ReplacePS1Variables(ps1)
+    self.prompt_str = decoded_string
+
+  # copied from _EvalPS4
+  def _EvalPS1(self):
+    val = self.ex.mem.GetVar('PS1')
+
+    if val.tag != runtime.value_e.Str:
+      return "", self.ps1
+
+    s = val.s
+    if s:
+      ps1 = s
+    else:
+      ps1 = self.ps1
+
+    try:
+      ps1_word = self.parse_cache[ps1]
+    except KeyError:
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1, self.arena)
+
+      try:
+        ps1_word = w_parser.ReadPS()
+      except Exception as e:
+        error_str = '<ERROR: cannot parse PS1>'
+        t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        ps1_word = ast.CompoundWord([ast.LiteralPart(t)])
+
+    self.parse_cache[ps1] = ps1_word
+
+    prefix = self.ex.word_ev.EvalWordToString(ps1_word)
+
+    return prefix.s
+
+  def GetInput(self):
+    try:
+      ret = raw_input(self.prompt_str) + '\n'  # newline required
+    except Exception as e:
+      print(e)
+      ret = None
+
+    self.prompt_str = _PS2
+
+    return ret
+
+  def GetPS1Replacement(self, sc):
+    if sc in self.REPLACEMENTS:
+      r = self.REPLACEMENTS[sc](self.ex)
+      return r
+
+    raise NotImplementedError(sc)
+
+  def ReplacePS1Variables(self, s):
+    ret = []
+    non_printing = 0
+    for id_, value in match.PS1_LEXER.Tokens(s):
+      if id_ == Id.Char_OneChar:
+        if value == "\[":
+          non_printing += 1
+        elif value == "\]":
+          non_printing -= 1
+
+        ret.append(self.GetPS1Replacement(value[1:]))
+      elif id_ == Id.Char_Octal4:
+        oct_value = int(value[1:], 8)
+        ret.append(chr(oct_value))
+      else:
+        ret.append(value)
+
+    return "".join(ret)
 
 
 class TestStatusLine(object):

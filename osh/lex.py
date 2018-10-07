@@ -445,6 +445,13 @@ ECHO_E_DEF = _C_STRING_COMMON + [
   R(r'[^\\\0]+', Id.Char_Literals),
 ]
 
+# https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html#Controlling-the-Prompt
+PS1_DEF = ECHO_E_DEF + [
+    R(r'\\[adehHjlnrstT@AuvVwW!#\\]', Id.Char_OneChar),
+    C(r'\[', Id.Char_OneChar),
+    C(r'\]', Id.Char_OneChar),
+]
+
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
