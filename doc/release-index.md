@@ -95,7 +95,7 @@ Tree-shaking:
   parse compared to other shells?
 - [OSH Runtime](benchmarks.wwz/osh-runtime/).  How fast does OSH
   run compared to other shells?
-- [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory to
+- [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory do
   shells use at startup?
 - [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
   to build Oil?  How big is the resulting binary?

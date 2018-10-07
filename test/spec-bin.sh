@@ -159,4 +159,12 @@ download-shell-source() {
   _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
 }
 
+publish-tmp() {
+  local name=$1  # required
+
+  local dest=oilshell.org/share/2018-10-06-tmp/
+  ssh ${name}@${name}.org mkdir -p $dest
+  scp _deps/re2c-1.0.3/re2c ${name}@${name}.org:$dest
+}
+
 "$@"
