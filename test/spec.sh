@@ -503,7 +503,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 4 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
