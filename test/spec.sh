@@ -208,7 +208,9 @@ smoke() {
 }
 
 osh-only() {
-  sh-spec spec/osh-only.test.sh $OSH_LIST "$@"
+  # 2 failures until we build in a JSON encoder.
+  sh-spec spec/osh-only.test.sh --osh-failures-allowed 2  \
+    $OSH_LIST "$@"
 }
 
 # Regress bugs

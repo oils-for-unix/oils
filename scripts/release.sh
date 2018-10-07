@@ -488,7 +488,7 @@ git-changelog-0.6.pre4() {
 }
 
 git-changelog-0.6.pre5() {
-  _git-changelog origin/release/0.6.pre5 release/0.6.pre5 \
+  _git-changelog origin/release/0.6.pre4 release/0.6.pre5 \
     > _release/VERSION/changelog.html
 }
 
