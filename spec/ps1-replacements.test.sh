@@ -19,12 +19,13 @@ echo "${PS1@P}"
 @4$
 ## END
 
-#### \777 is beyond max octal byte of \377
-PS1='\777$'
-echo "${PS1@P}"
-# TODO(andy): the test framework makes it hard to test stdout here.
-## status: 2
-## OK bash status: 0
+#### \555 is beyond max octal byte of \377 and wrapped to m
+PS1='\555$'
+test "${PS1@P}" = "m$"
+echo status=$?
+## STDOUT:
+status=0
+## END
 
 #### \x55 hex literals not supported
 PS1='[\x55]'

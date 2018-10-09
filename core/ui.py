@@ -179,15 +179,9 @@ class Prompt(object):
         ret.append(value)
       elif id_ == Id.Char_OneChar:
         ret.append(self.GetPS1Replacement(value[1:]))
-      elif Id.Char_Octal4 and int(value[1:], 8) < 255:
-        oct_value = int(value[1:], 8)
-        ret.append(chr(oct_value))
-      elif Id.Char_Octal3:
-          if int(value[1:], 8) < 255:
-            oct_value = int(value[1:], 8)
-            ret.append(chr(oct_value))
-          else:
-            ret.append(value)
+      elif id_ == Id.Char_Octal3:
+          oct_value = int(value[1:], 8)
+          ret.append(chr(oct_value % 256))
       elif id_ == Id.Lit_LBrace:
         non_printing += 1
       elif id_ == Id.Lit_RBrace:
