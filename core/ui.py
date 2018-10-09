@@ -88,7 +88,7 @@ def get_var(ex,name):
 
     return ""
 
-def get_pwd():
+def get_username():
   uid = os.getuid()
   try:
     e = pwd.getpwuid(uid)
@@ -99,7 +99,7 @@ def get_pwd():
 
 class Prompt(object):
   REPLACEMENTS = {
-    "u" : lambda ex: get_pwd(),
+    "u" : lambda ex: get_username(),
     "h" : lambda ex: socket.gethostname(),
     "w" : lambda ex: get_var(ex, "PWD"),
     "e" : lambda ex: "\033",
