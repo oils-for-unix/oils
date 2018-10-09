@@ -51,7 +51,8 @@ status=0
 #### username
 #'echo 1' | PS1='$ ' $SH --norc -i
 PS1='\u '
-test "${PS1@P}" = "$(whoami) "
+USER=$(whoami)
+test "${PS1@P}" = "${USER} "
 echo status=$?
 ## STDOUT:
 status=0

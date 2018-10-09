@@ -10,6 +10,8 @@ from __future__ import print_function
 ui.py - User interface constructs.
 """
 
+import os
+import pwd
 import sys
 
 from asdl import const
@@ -86,9 +88,18 @@ def get_var(ex,name):
 
     return ""
 
+def get_pwd():
+  uid = os.getuid()
+  try:
+    e = pwd.getpwuid(uid)
+  except KeyError:
+    return None
+  else:
+    return e.pw_name
+
 class Prompt(object):
   REPLACEMENTS = {
-    "u" : lambda ex: get_var(ex, "USER"),
+    "u" : lambda ex: get_pwd(),
     "h" : lambda ex: socket.gethostname(),
     "w" : lambda ex: get_var(ex, "PWD"),
     "e" : lambda ex: "\033",
@@ -164,13 +175,19 @@ class Prompt(object):
     ret = []
     non_printing = 0
     for id_, value in match.PS1_LEXER.Tokens(s):
-      if id_ == Id.Char_Literals or id_ == Id.Char_Hex:
+      if id_ == Id.Char_Literals or id_ == Id.Char_Hex or id_ == Id.Char_BadBackslash:
         ret.append(value)
       elif id_ == Id.Char_OneChar:
         ret.append(self.GetPS1Replacement(value[1:]))
-      elif id_ == Id.Char_Octal4:
+      elif Id.Char_Octal4 and int(value[1:], 8) < 255:
         oct_value = int(value[1:], 8)
         ret.append(chr(oct_value))
+      elif Id.Char_Octal3:
+          if int(value[1:], 8) < 255:
+            oct_value = int(value[1:], 8)
+            ret.append(chr(oct_value))
+          else:
+            ret.append(value)
       elif id_ == Id.Lit_LBrace:
         non_printing += 1
       elif id_ == Id.Lit_RBrace:
