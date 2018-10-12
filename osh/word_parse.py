@@ -269,10 +269,6 @@ class WordParser(object):
     if self.token_type == Id.Right_VarSub:
       return part  # no ops
 
-    log('%s', self.token_type)
-
-    # Or maybe this is a VarOpKind
-
     op_kind = self.token_kind
 
     if op_kind == Kind.VTest:
