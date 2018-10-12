@@ -15,6 +15,13 @@ from core import util
 log = util.log
 glob_part_e = ast.glob_part_e
 
+# TODO: Need LooksLikeExtGlob?
+#
+# pat='@(foo|bar)'
+# [[ foo == $pat ]] -- this works.
+#
+# Problem with extended glob -> ERE
+# x!(foo|bar)y
 
 def LooksLikeGlob(s):
   """

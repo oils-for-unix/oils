@@ -1319,7 +1319,7 @@ class ClassCodeGenerator(CodeGenerator):
         self.set_lineno(self.klass)
         self.emit("LOAD_GLOBAL", "__name__")
         self.storeName("__module__")
-        if self.klass.doc:
+        if self.klass.doc and self.ctx.comp_opt.emit_docstring:
             self.emit("LOAD_CONST", self.klass.doc)
             self.storeName('__doc__')
 

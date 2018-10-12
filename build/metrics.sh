@@ -36,11 +36,6 @@ pyc-files() {
   awk '/\.pyc$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt
 }
 
-# Print table of [num_bytes pyc_path]
-pyc-bytes() {
-  pyc-files "$@" | sort | uniq | xargs wc --bytes | sort -n
-}
-
 # Print table of [md5 pyc path]
 pyc-md5() {
   pyc-files "$@" | xargs bin/opyc dis-md5

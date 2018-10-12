@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 test_builtin.py
 """
+from __future__ import print_function
 
 from core import expr_eval
 from core import util

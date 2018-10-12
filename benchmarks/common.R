@@ -7,6 +7,11 @@ Log = function(fmt, ...) {
   cat('\n')
 }
 
+Banner = function(fmt, ...) {
+  cat('===== '); Log(fmt, ...)
+  cat('\n')
+}
+
 # Same precision for all columns.
 SamePrecision = function(precision = 1) {
   return(function(column_name) {

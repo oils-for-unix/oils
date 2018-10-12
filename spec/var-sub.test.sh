@@ -9,15 +9,9 @@ echo ${a|}
 ## OK bash/mksh status: 1
 
 #### Braced block inside ${}
-# NOTE: This doesn't work in bash.  The nested {} aren't parsed.  It works in
-# dash though!
-# bash - line 1: syntax error near unexpected token `)'
-# bash - line 1: `echo ${foo:-$({ which ls; })}'
-# tag: bash-bug
+# NOTE: This bug was in bash 4.3 but fixed in bash 4.4.
 echo ${foo:-$({ which ls; })}
 ## stdout: /bin/ls
-## BUG bash stdout-json: ""
-## BUG bash status: 2
 
 #### Nested ${} 
 bar=ZZ

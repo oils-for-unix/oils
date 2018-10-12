@@ -5,10 +5,10 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 word_eval_test.py: Tests for word_eval.py
 """
+from __future__ import print_function
 
 import unittest
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 arith_parse.py: Parse shell-like and C-like arithmetic.
 """
+from __future__ import print_function
 
 import sys
 

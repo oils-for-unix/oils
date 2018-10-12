@@ -42,6 +42,35 @@ class LibcTest(unittest.TestCase):
       actual = libc.fnmatch(pat, s)
       self.assertEqual(expected, actual)
 
+  def testFnmatchExtglob(self):
+    return
+
+    # With GNU extension.
+    cases = [
+        # One of these
+        ('--@(help|verbose)', '--verbose', 1),
+        ('--@(help|verbose)', '--foo', 0),
+
+        ('--*(help|verbose)', '--verbose', 1),
+        ('--*(help|verbose)', '--', 1),
+        ('--*(help|verbose)', '--helpverbose', 1),  # Not what we want
+
+        ('--+(help|verbose)', '--verbose', 1),
+        ('--+(help|verbose)', '--', 0),
+        ('--+(help|verbose)', '--helpverbose', 1),  # Not what we want
+
+        ('--?(help|verbose)', '--verbose', 1),
+        ('--?(help|verbose)', '--helpverbose', 0),
+
+        # Neither of these
+        ('--!(help|verbose)', '--verbose', 0),
+    ]
+    for pat, s, expected in cases:
+      actual = libc.fnmatch(pat, s)
+      self.assertEqual(expected, actual,
+          "Matching %s against %s: got %s but expected %s" %
+          (pat, s, actual, expected))
+
   def testGlob(self):
     print(libc.glob('*.py'))
 

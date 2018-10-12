@@ -338,7 +338,7 @@ def OpyCommandMain(argv):
     with open(py_path) as f:
       co = compiler.Compile(f, opt, 'exec')
 
-    log("Compiled to %d bytes of bytecode", len(co.co_code))
+    log("Compiled to %d bytes of top-level bytecode", len(co.co_code))
 
     # Write the .pyc file
     with open(out_path, 'wb') as out_f:
@@ -355,7 +355,7 @@ def OpyCommandMain(argv):
     with open(py_path) as f:
       co = compiler.Compile(f, opt, 'ovm')
 
-    log("Compiled to %d bytes of bytecode", len(co.co_code))
+    log("Compiled to %d bytes of top-level bytecode", len(co.co_code))
     # Write the .pyc file
     with open(out_path, 'wb') as out_f:
       if 1:
@@ -412,7 +412,7 @@ def OpyCommandMain(argv):
       with open(path) as f:
         co = compiler.Compile(f, opt, 'exec')
 
-      log("Compiled to %d bytes of bytecode", len(co.co_code))
+      log("Compiled to %d bytes of top-level bytecode", len(co.co_code))
       v.show_code(co)
 
     else:  # assume pyc_path

@@ -31,14 +31,17 @@ argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
 
 #### nounset with empty array (design bug, makes it hard to use arrays)
 # http://lists.gnu.org/archive/html/help-bash/2017-09/msg00005.html
-# TODO: sane-arrays should get rid of this problem.
+# NOTE: This used to be a bug in bash 4.3, but is fixed in bash 4.4.
 set -o nounset
 empty=()
 argv.py "${empty[@]}"
 echo status=$?
-## stdout-json: "[]\nstatus=0\n"
-## BUG bash/mksh stdout-json: ""
-## BUG bash/mksh status: 1
+## STDOUT:
+[]
+status=0
+## END
+## BUG mksh stdout-json: ""
+## BUG mksh status: 1
 
 #### local array
 # mksh support local variables, but not local arrays, oddly.
@@ -311,24 +314,20 @@ argv.py "${files[@]%.c}"
 ## N-I mksh stdout-json: ""
 
 #### Multiple subscripts not allowed
+# NOTE: bash 4.3 had a bug where it ignored the bad subscript, but now it is
+# fixed.
 a=('123' '456')
 argv.py "${a[0]}" "${a[0][0]}"
 ## stdout-json: ""
 ## status: 2
-## OK mksh status: 1
-# bash is bad -- it IGNORES the bad subscript.
-## BUG bash status: 0
-## BUG bash stdout: ['123', '123']
+## OK bash/mksh status: 1
 
 #### Length op, index op, then transform op is not allowed
 a=('123' '456')
 echo "${#a[0]}" "${#a[0]/1/xxx}"
 ## stdout-json: ""
 ## status: 2
-## OK mksh status: 1
-# bash is bad -- it IGNORES the op at the end
-## BUG bash status: 0
-## BUG bash stdout: 3 3
+## OK bash/mksh status: 1
 
 #### Array subscript not allowed on string
 s='abc'
@@ -453,3 +452,14 @@ argv.py "${a[@]:15:2}"
 ## stdout: ['1', '2']
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
+
+#### Using an array itself as the index
+# TODO: Fix OSH crash.
+# NOTE: strict-arith prevents this nonsentical behavior.
+a[a]=42
+a[a]=99
+argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
+## STDOUT:
+['42', '99', '42', '99', '']
+## END
+

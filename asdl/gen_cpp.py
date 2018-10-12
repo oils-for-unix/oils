@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 asdl_cpp.py
 
@@ -24,6 +23,7 @@ address space.  If 1, then we have 16MiB of code.  If 4, then we have 64 MiB.
 Everything is decoded on the fly, or is a char*, which I don't think has to be
 aligned (because the natural alignment woudl be 1 byte anyway.)
 """
+from __future__ import print_function
 
 import sys
 

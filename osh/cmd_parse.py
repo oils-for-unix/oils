@@ -5,10 +5,10 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 cmd_parse.py - Parse high level shell commands.
 """
+from __future__ import print_function
 
 from asdl import const
 
@@ -1526,20 +1526,18 @@ class CommandParser(object):
     node = ast.AndOr(ops, children)
     return node
 
-  """
-  NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
+  # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
 
-  At the top level, We want to execute after every line:
-  - to process alias
-  - to process 'exit', because invalid syntax might appear after it
+  # At the top level, We want to execute after every line:
+  # - to process alias
+  # - to process 'exit', because invalid syntax might appear after it
 
-  But for say a while loop body, we want to parse the whole thing at once, and
-  then execute it.  We don't want to parse it over and over again!
+  # But for say a while loop body, we want to parse the whole thing at once, and
+  # then execute it.  We don't want to parse it over and over again!
 
-  COMPARE
-  command_line     : and_or (sync_op and_or)* trailer? ;   # TOP LEVEL
-  command_term     : and_or (trailer and_or)* ;            # CHILDREN
-  """
+  # COMPARE
+  # command_line     : and_or (sync_op and_or)* trailer? ;   # TOP LEVEL
+  # command_term     : and_or (trailer and_or)* ;            # CHILDREN
 
   def _ParseCommandLine(self):
     """

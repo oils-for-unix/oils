@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 word_test.py: Tests for word.py
 """
+from __future__ import print_function
 
 import unittest
 
@@ -69,8 +69,8 @@ class WordTest(unittest.TestCase):
         ('a[x', (None, None, 0)),
 
         # Empty is not valid, there has to be at least one token.
-        ('a[]=$foo$bar', (None, None, 0)),
-        ('a[]+=$foo$bar', (None, None, 0)),
+        ('a[]=$foo$bar', (Id.Lit_ArrayLhsOpen, Id.Lit_ArrayLhsClose, 2)),
+        ('a[]+=$foo$bar', (Id.Lit_ArrayLhsOpen, Id.Lit_ArrayLhsClose, 2)),
 
         ('s=1', (Id.Lit_VarLike, None, 1)),
         ('s+=1', (Id.Lit_VarLike, None, 1)),

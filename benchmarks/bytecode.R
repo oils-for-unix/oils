@@ -11,15 +11,51 @@ library(stringr)
 
 source('benchmarks/common.R')
 
-options(stringsAsFactors = F)
+options(stringsAsFactors = F,
+        # Make the report wide.  tibble.width doesn't appear to do this?
+        width=200
+)
+
+ShowFrame = function(description, df) {
+  Log(description)
+  print(df)
+  Log('')
+}
+
+ShowValue = function(msg, ...) {
+  cat('-- '); Log(msg, ...)
+  Log('')
+}
+
+Basic = function(ctx) {
+  Banner('BASIC METRICS')
+
+  # Number of files
+  ctx$frames %>% count(path) -> by_path
+  ShowValue('Number of files: %d', nrow(by_path))
+
+  # 216K
+  b = sum(ctx$frames$bytecode_bytes)
+  ShowValue('Total bytecode bytes: %d', b)
+
+  num_insts = nrow(ctx$ops)
+  ShowValue('Total instructions: %d', num_insts)
+
+  # Hm this isn't reliable because the code name isn't unique!  I think we need
+  # firstlineno
+  ctx$frames %>% count(path, code_name) %>% arrange(desc(n)) %>% head() -> f1
+  ShowFrame('Duplicate path/name', f1)
+}
 
 BigStrings = function(consts) {
+  Banner('BIG STRINGS')
+
   strs = consts %>% filter(type == 'str') %>% arrange(desc(len_or_val))
   strs %>% head(20) %>% print()
   total_bytes = sum(strs$len_or_val)
 
   # 184 KB of strings!  That's just the payload; the header is probably more.
-  Log('total string bytes: %d', total_bytes)
+  ShowValue('total string bytes: %d', total_bytes)
 
   # This plot says:
   #
@@ -34,71 +70,70 @@ BigStrings = function(consts) {
 }
 
 Consts = function(consts) {
+  Banner('CONSTS')
+
   # count of types of constants.  Strings dominate of course.
   # But there are only 7 or so immutable types!
 
   # - only 2 float constants.
   # - get rid of the unicode constants in posixpath.
 
-  consts %>% count(type) %>% arrange(n) %>% tail(20)
+  consts %>% count(type) %>% arrange(desc(n)) %>% head(20) -> frequent
+  ShowFrame('Types of constants', frequent)
 }
 
 # Frames by number of consts, number of ops, etc.
 Frames = function(ctx) {
-  Log('Frames with many consts')
-  ctx$consts %>% count(path, code_name, sort=T) %>% print()
+  Banner('FRAMES')
 
-  Log('Frames with many ops')
-  ctx$ops %>% count(path, code_name, sort=T) %>% print()
+  ctx$consts %>% count(path, code_name, sort=T) -> f1
+  ShowFrame('Frames with many consts', f1)
 
-  Log('Frames with large stacksize')
-  ctx$frames %>% arrange(desc(stacksize)) %>% head(10) %>% print()
+  ctx$ops %>% count(path, code_name, sort=T) -> f2
+  ShowFrame('Frames with many ops', f2)
 
-  Log('Frames with many locals')
-  ctx$frames %>% arrange(desc(nlocals)) %>% head(10) %>% print()
+  ctx$frames %>% arrange(desc(stacksize)) %>% head(10) -> f3
+  ShowFrame('Frames with large stacksize', f3)
+
+  ctx$frames %>% arrange(desc(nlocals)) %>% head(10) -> f4
+  ShowFrame('Frames with many locals', f4)
 }
 
 Ops = function(ops) {
-  ops %>% count(op_name) %>% arrange(n) -> op_freq
+  Banner('OPS')
 
-  Log('common:')
-  op_freq %>% tail(n=20) %>% print()
-  Log('rare:')
-  op_freq %>% head(n=20) %>% print()
+  ops %>% count(op_name) %>% arrange(desc(n)) -> op_freq
+
+  op_freq %>% head(n=20) -> common
+  ShowFrame('Common:', common)
+
+  op_freq %>% tail(n=20) -> rare
+  ShowFrame('Rare:', rare)
 
   # These are all the big jump targets!  Max is 3,852, which is a lot less than
   # 65,536.  We don't need EXTENDED_ARG!
-  ops %>% arrange(op_arg) %>% tail(10) %>% print()
+  ops %>% arrange(desc(op_arg)) %>% head(10) -> f1
+  ShowFrame('Large op_arg (jump targets):', f1)
 }
 
 Flags = function(flags) {
-  flags %>% count(flag) %>% arrange(n) %>% print()
+  Banner('FLAGS')
+
+  flags %>% count(flag) %>% arrange(desc(n)) -> f1
+  ShowFrame('Common flags', f1)
 }
 
 Names = function(names) {
+  Banner('NAMES')
+
   # Common types: free, cell, etc.
-  names %>% count(kind) %>% arrange(desc(n)) %>% print()
+  names %>% count(kind) %>% arrange(desc(n)) -> f1
+  ShowFrame('Common types', f1)
 
   # Common names:
   # self, None, True, False, append, len
-  names %>% count(name) %>% arrange(desc(n)) %>% print()
-}
-
-Basic = function(ctx) {
-  # Number of files
-  ctx$frames %>% count(path) -> by_path
-  Log('number of files: %d', nrow(by_path))
-
-  # Hm this isn't reliable because the code name isn't unique!  I think we need
-  # firstlineno
-  ctx$frames %>% count(path, code_name) %>% print()
-
-  # 216K
-  b = sum(ctx$frames$bytecode_bytes)
-  Log('Total bytecode bytes: %d', b)
-
-  num_insts = nrow(ctx$ops)
-  Log('Total instructions: %d', num_insts)
+  names %>% count(name) %>% arrange(desc(n)) -> f2
+  ShowFrame('Common names', f2)
 }
 
 # Hm max unique ops is 58
@@ -110,34 +145,35 @@ Basic = function(ctx) {
 
 # Written by opy/metrics.sh.  Could get rid of that file.
 UniqueOpsByFile = function(ops, ops_defined = '_tmp/opcodes-defined.txt') {
+  Banner('UNIQUE OPS')
+
   # This is a row for every path/op_name
   u = ops %>% group_by(path) %>% distinct(op_name)
   u %>% count(path) %>% arrange(n) -> ops_by_file
 
-  Log('files with few ops:')
-  ops_by_file %>% head(20) %>% print()
+  ops_by_file %>% head(20) -> f1
+  ShowFrame('Files with few ops:', f1)
 
-  Log('files with many ops:')
-  ops_by_file %>% tail(10) %>% print()
+  ops_by_file %>% tail(10) -> f2
+  ShowFrame('Files with many ops:', f2)
 
-  Log('parsing:')  # 17, 23, 34, 34, 46
-  ops_by_file %>% filter(grepl('reader|lex|parse', path)) %>% print()
-  ops %>% filter(grepl('reader|lex|parse', path)) %>% distinct(op_name) -> string_ops
-  Log('Total for parsing: %d', nrow(string_ops))
+  ops_by_file %>% filter(grepl('reader|lex|parse', path)) -> f3
+  ShowFrame('Unique ops for files that just parse:', f3)  # 17, 23, 34, 34, 46
+
+  ops %>% filter(grepl('reader|lex|parse', path)) %>% distinct(op_name) ->
+    string_ops
+  ShowValue('Unique opcodes for parsing: %d', nrow(string_ops))
   
-  Log('')
   u2 = ops %>% distinct(op_name) 
-  Log('Total unique opcodes: %d', nrow(u2))
+  ShowValue('Total unique opcodes: %d', nrow(u2))
 
   if (ops_defined != '') {
     defined = read.table(ops_defined, header=F)
     colnames(defined) = c('op_name')
 
-    Log('Unused opcodes:')
-    setdiff(defined, u2) %>% print()
+    setdiff(defined, u2) -> f4
+    ShowFrame('Unused opcodes:', f4)
   }
-
-  list(string_ops = string_ops)
 }
 
 # OPy emits 88 distinct opcodes out of 119.  Interesting.
@@ -212,35 +248,65 @@ Load = function(in_dir) {
        )
 }
 
-# TODO: Just take a table of (py_path, pyc_path, key) and then produce bytes
-# for py_path and pyc_path.  Does R have getsize?
-#
-# file.info()$size of both.  And then
+# This takes a table of (py_path, pyc_path) and calls file.info()$size on both.
+# Then it computes the ratio.
 
-MeasureFileSizes = function(all_deps_py) {
+FileSizes = function(all_deps_py, pyc_base_dir) {
   py_pyc = read.table(all_deps_py, header=F)
   colnames(py_pyc) = c('py_path', 'pyc_path')
 
   py_pyc$py_bytes = file.info(py_pyc$py_path)$size
 
-  pyc_paths = file.path('_build/oil/bytecode-opy', py_pyc$pyc_path)
+  pyc_paths = file.path(pyc_base_dir, py_pyc$pyc_path)
   py_pyc$pyc_bytes = file.info(pyc_paths)$size
 
-  py_pyc %>% mutate(ratio = pyc_bytes / py_bytes) %>% arrange(ratio) -> py_pyc
+  py_pyc %>% filter(py_bytes != 0) %>% mutate(ratio = pyc_bytes / py_bytes) %>%
+    arrange(ratio) -> py_pyc
 
-  Log('small .pyc files:')
-  py_pyc %>% head(10) %>% print()
+  Banner('RATIO')
 
-  Log('big .pyc files:')
-  py_pyc %>% tail(10) %>% print()
+  py_pyc %>% head(10) -> small
+  ShowFrame('small .pyc files:', small)
+
+  py_pyc %>% tail(10) -> big
+  ShowFrame('big .pyc files:', big)
 
   # This ratio is a ltitle misleading because it counts comments.
   py_total = sum(py_pyc$py_bytes)
   pyc_total =  sum(py_pyc$pyc_bytes)
-  Log('Overall: %d bytes of .py -> %d bytes of .pyc', py_total, pyc_total)
-  Log('Ratio: %f', pyc_total / py_total)
+
+  ShowValue('Overall: %d bytes of .py -> %d bytes of .pyc', py_total, pyc_total)
+  ShowValue('Ratio: %f', pyc_total / py_total)
+
+  Banner('FULL LISTING')
+
+  py_pyc %>% select(c(pyc_bytes, pyc_path)) %>% arrange(desc(pyc_bytes)) -> f1
+  ShowFrame('bytecode', f1)
+  ShowValue('total (again): %d', pyc_total)
 
   py_pyc
+}
+
+
+CompareCol = function(ctx) {
+  c(nrow(ctx$frames),
+    nrow(ctx$names),
+    nrow(ctx$consts),
+    nrow(ctx$flags),
+    nrow(ctx$ops)
+  )
+}
+
+Compare = function(cpython_ctx, opy_ctx) {
+  Banner('CPYTHON vs. OPY')
+
+  data_frame(
+    table_name = c('frames', 'names', 'consts', 'flags', 'ops'),
+    cpython = CompareCol(cpython_ctx),
+    opy = CompareCol(opy_ctx)
+  ) -> f1
+
+  ShowFrame('Overview', f1)
 }
 
 main = function(argv) {
@@ -248,20 +314,23 @@ main = function(argv) {
 
   if (action == 'metrics') {
     in_dir = argv[[2]]
-
     ctx = Load(in_dir)
-    #out_dir = argv[[3]]
     Report(ctx)
 
-  } else if (action == 'pyc-ratio') {  # This takes different inputs
+  } else if (action == 'compare') {
+    cpython_ctx = Load(argv[[2]])
+    opy_ctx = Load(argv[[3]])
+    Compare(cpython_ctx, opy_ctx)
+
+  } else if (action == 'src-bin-ratio') {  # This takes different inputs
     all_deps_py = argv[[2]]
-    ctx = MeasureFileSizes(all_deps_py)
+    pyc_base_dir = argv[[3]]
+    ctx = FileSizes(all_deps_py, pyc_base_dir)
 
   } else {
     Log("Invalid action '%s'", action)
     quit(status = 1)
   }
-  Log('PID %d done', Sys.getpid())
 }
 
 if (length(sys.frames()) == 0) {

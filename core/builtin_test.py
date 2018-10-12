@@ -1,8 +1,8 @@
 #!/usr/bin/python -S
-from __future__ import print_function
 """
 builtin_test.py: Tests for builtin.py
 """
+from __future__ import print_function
 
 import unittest
 

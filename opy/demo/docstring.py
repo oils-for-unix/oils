@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """
-docstring.py
+module DOCSTRING
 """
 class Foo(object):
-  """class."""
+  """class DOCSTRING"""
   def inc(self, x):
-    """inc by one"""
+    """func DOCSTRING"""
     return x + 1

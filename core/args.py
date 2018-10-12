@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 args.py - Flag, option, and arg parsing for the shell.
 
@@ -56,6 +55,7 @@ bashgetopt.c codes:
 
 However I don't see these used anywhere!  I only see ':' used.
 """
+from __future__ import print_function
 
 import libc
 from core import util

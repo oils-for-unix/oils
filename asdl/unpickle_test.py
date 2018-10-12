@@ -1,8 +1,8 @@
 #!/usr/bin/python -S
-from __future__ import print_function
 """
 unpickle_test.py: Tests for unpickle.py
 """
+from __future__ import print_function
 
 import unittest
 

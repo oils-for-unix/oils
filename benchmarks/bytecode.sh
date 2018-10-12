@@ -1,7 +1,18 @@
 #!/bin/bash
 #
+# Metrics for Oil bytecode produced by the OPy compiler.
+#
+# This is more like a metric than a benchmark.  In particular, we do NOT need
+# to run it on multiple machines!  It doesn't need the provenance of binaries
+# and so forth.
+#
+# But it IS like a benchmark in that we use R to analyze data and want HTML
+# reports.
+#
+# NOTE: We will eventually have benchmarks for OPy compile time.
+#
 # Usage:
-#   ./opy.sh <function name>
+#   ./bytecode.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -25,8 +36,8 @@ for n in names:
 # NOTE: We analyze ~76 bytecode files.  This outputs produces 5 TSV2 files that
 # are ~131K rows in ~8.5 MB altogether.  The biggest table is the 'ops' table.
 
-dis-tables() {
-  local out_dir=$BASE_DIR
+opy-dis-tables() {
+  local out_dir=$BASE_DIR/opy-dis-tables
   mkdir -p $out_dir
 
   # Pass the .pyc files in the bytecode-opy.zip file to 'opyc dis'
@@ -40,8 +51,8 @@ dis-tables() {
 }
 
 # Hm it seems like build/prepare.sh build-python is necessary for this?
-dis-tables-cpython() {
-  local out_dir=$BASE_DIR/cpython
+cpython-dis-tables() {
+  local out_dir=$BASE_DIR/cpython-dis-tables
   mkdir -p $out_dir
   # The .py files look like /home/andy/git/oilshell/oil/Python-2.7.13/Lib/os.py
   time cat _build/oil/opy-app-deps.txt \
@@ -76,13 +87,43 @@ report() {
   R_LIBS_USER=$R_PATH benchmarks/bytecode.R "$@"
 }
 
-# Reads the 5 tables and produces some metrics
-metrics() {
-  report metrics $BASE_DIR
+# Reads the 5 tables and produces some metrics.
+metrics-opy() {
+  report metrics $BASE_DIR/opy 
 }
 
-pyc-ratio() {
-  report pyc-ratio _build/oil/all-deps-py.txt
+compare() {
+  report compare $BASE_DIR/cpython-dis-tables $BASE_DIR/opy-dis-tables
+}
+
+# Reads a .py / .pyc manifest and calculates the ratio of input/output file
+# sizes.
+src-bin-ratio() {
+  # Pass the manifest and the base directory of .pyc files.
+  report src-bin-ratio _build/oil/all-deps-py.txt _build/oil/bytecode-opy
+}
+
+run-for-release() {
+  opy-dis-tables
+  cpython-dis-tables
+
+  local out
+
+  out=$BASE_DIR/oil-with-opy.txt
+  report metrics $BASE_DIR/opy-dis-tables > $out
+  log "Wrote $out"
+
+  out=$BASE_DIR/oil-with-cpython.txt
+  report metrics $BASE_DIR/cpython-dis-tables > $out
+  log "Wrote $out"
+
+  out=$BASE_DIR/src-bin-ratio-with-opy.txt
+  src-bin-ratio > $out
+  log "Wrote $out"
+
+  out=$BASE_DIR/overview.txt
+  compare > $out
+  log "Wrote $out"
 }
 
 # TODO:

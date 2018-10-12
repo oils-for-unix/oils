@@ -212,7 +212,9 @@ ps1-replacements() {
 }
 
 osh-only() {
-  sh-spec spec/osh-only.test.sh $OSH_LIST "$@"
+  # 2 failures until we build in a JSON encoder.
+  sh-spec spec/osh-only.test.sh --osh-failures-allowed 2  \
+    $OSH_LIST "$@"
 }
 
 # Regress bugs
@@ -505,7 +507,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 4 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
@@ -565,14 +567,21 @@ process-sub() {
     $BASH $ZSH $OSH_LIST "$@"
 }
 
+# This does file globbing
 extended-glob() {
-  # Do NOT use dash here.  Brace sub breaks things.
+  # Do NOT use dash here.  Lack of brace sub means it leaves bad files on the
+  # file system.
   sh-spec spec/extended-glob.test.sh $BASH $MKSH $OSH_LIST "$@"
+}
+
+# This does string matching.
+extglob-match() {
+  sh-spec spec/extglob-match.test.sh $BASH $MKSH $OSH_LIST "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.
 var-ref() {
-  sh-spec spec/var-ref.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-ref.test.sh --osh-failures-allowed 6 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

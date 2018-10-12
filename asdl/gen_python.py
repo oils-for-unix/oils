@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 gen_python.py
 
@@ -8,6 +7,7 @@ Generate Python code from and ASDL schema.
 TODO:
 - What about Id?  app_types?
 """
+from __future__ import print_function
 
 from asdl import visitor
 

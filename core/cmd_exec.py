@@ -5,7 +5,6 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-from __future__ import print_function
 """
 cmd_exec.py -- Interpreter for the command language.
 
@@ -14,6 +13,7 @@ $ < Makefile cat | < NOTES.txt head
 
 This just does head?  Last one wins.
 """
+from __future__ import print_function
 
 import os
 import resource

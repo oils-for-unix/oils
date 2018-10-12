@@ -116,7 +116,7 @@ SHELL OPTIONS
   [Interactive]   emacs   vi
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    STRICT   strict-array   X strict-arith
+  [OSH Strict]    STRICT   strict-array   strict-arith
                   strict-errexit   strict-control-flow   X strict-scope
                   strict-word-eval   strict-var-eval
   [OSH Sane]      SANE   X sane-no-word-split   X sane-glob
@@ -131,14 +131,14 @@ X [select]        PS3
 
 SPECIAL VARIABLES
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
-X [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
-                  @BASH_ARGV   @BASH_ARGC
+  [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
+                  X @BASH_ARGV   X @BASH_ARGC
   [Tracing]       LINENO   SOURCE_NAME
   [Process State] X BASHPID   X PPID   UID   EUID   
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
   [Completion]    @COMP_WORDS   COMP_CWORD   COMP_WORDBREAKS
-                  @COMPREPLY   X COMP_KEY   X COMP_LINE   X COMP_POINT
+                  @COMPREPLY   X COMP_KEY   COMP_LINE   COMP_POINT
                   X COMP_TYPE
 
   [cd]            PWD   OLDPWD   X CDPATH

@@ -487,6 +487,11 @@ git-changelog-0.6.pre4() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.6.pre5() {
+  _git-changelog origin/release/0.6.pre4 release/0.6.pre5 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -568,6 +573,10 @@ announcement-0.6.pre3() {
 
 announcement-0.6.pre4() {
   write-no-announcement
+}
+
+announcement-0.6.pre5() {
+  html-redirect '/blog/2018/10/08.html' > _release/VERSION/announcement.html
 }
 
 _link() {
@@ -663,9 +672,10 @@ metrics() {
   local out=_tmp/metrics
   mkdir -p $out
 
-  build/metrics.sh pyc-bytes > $out/pyc-bytes.txt
-
   line-counts $out/line-counts
+
+  # NOTE: Could move these files and scripts/count.sh to a metrics/ dir?
+  benchmarks/bytecode.sh run-for-release
 
   tree $out
 }

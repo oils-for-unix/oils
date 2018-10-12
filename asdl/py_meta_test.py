@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 py_meta_test.py: Tests for py_meta.py
 """
+from __future__ import print_function
 
 import unittest
 

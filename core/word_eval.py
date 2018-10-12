@@ -9,11 +9,13 @@ from core import braces
 from core import expr_eval
 from core import glob_
 from core import libstr
-from core import ui
 from core import state
 from core import word_compile
+from core import ui
 from core import util
+
 from osh.meta import ast, runtime, Id, Kind, LookupKind
+from osh import match
 
 word_e = ast.word_e
 bracket_op_e = ast.bracket_op_e
@@ -347,6 +349,11 @@ class _WordEvaluator(object):
           arg_num = int(val.s)
           return self.mem.GetArgNum(arg_num)
         except ValueError:
+          if not match.IsValidVarName(val.s):
+            # TODO: location information.
+            # Also note that bash doesn't consider this fatal.  It makes the
+            # command exit with '1', but we don't have that ability yet?
+            e_die('Bad variable name %r in var ref', val.s)
           return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
         raise NotImplementedError('${!a[@]}')  # bash gets keys this way
@@ -804,12 +811,15 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.ExtGlobPart:
-      part_vals.append(runtime.StringPartValue(part.op.val, False))
+      # do_split_glob should be renamed 'unquoted'?  or inverted and renamed
+      # 'quoted'?
+      part_vals.append(runtime.StringPartValue(part.op.val, True))
       for i, w in enumerate(part.arms):
         if i != 0:
-          part_vals.append(runtime.StringPartValue('|', False))  # separator
-        self._EvalWordToParts(w, True, part_vals)  # eval like quoted
-      part_vals.append(runtime.StringPartValue(')', False))  # closing )
+          part_vals.append(runtime.StringPartValue('|', True))  # separator
+        # This flattens the tree!
+        self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
+      part_vals.append(runtime.StringPartValue(')', True))  # closing )
 
     else:
       raise AssertionError(part.__class__.__name__)
@@ -831,6 +841,16 @@ class _WordEvaluator(object):
     else:
       raise AssertionError(word.__class__.__name__)
 
+  # Do we need this?
+  def EvalWordToPattern(self, word):
+    """
+    Given a word, returns pattern.ERE if has an ExtGlobPart, or pattern.Fnmatch
+    otherwise.
+
+    NOTE: Have ot handle nested extglob like: [[ foo == ${empty:-@(foo|bar) ]]
+    """
+    pass
+
   def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
     """
     Args:
@@ -845,6 +865,8 @@ class _WordEvaluator(object):
       $pat) echo 'matches glob pattern' ;;
       "$pat") echo 'equal to glob string' ;;  # must be glob escaped
     esac
+
+    TODO: Raise AssertionError if it has ExtGlobPart.
     """
     if word.tag == word_e.EmptyWord:
       return runtime.Str('')

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
 asdl_demo.py
 """
+from __future__ import print_function
 
 import sys
 from asdl import asdl_ as asdl
