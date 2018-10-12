@@ -51,7 +51,6 @@ Python/traceback.c
 Python/pystrcmp.c
 Python/pystrtod.c
 Python/dtoa.c
-Python/formatter_string.c
 '
 
 OBJECT_OBJS='

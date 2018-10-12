@@ -4107,6 +4107,7 @@ long_get1(PyLongObject *v, void *context) {
     return PyLong_FromLong(1L);
 }
 
+#ifndef OVM_MAIN
 static PyObject *
 long__format__(PyObject *self, PyObject *args)
 {
@@ -4136,6 +4137,7 @@ long__format__(PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");
     return NULL;
 }
+#endif
 
 static PyObject *
 long_sizeof(PyLongObject *v)
@@ -4230,7 +4232,9 @@ static PyMethodDef long_methods[] = {
     {"__trunc__",       (PyCFunction)long_long, METH_NOARGS,
      "Truncating an Integral returns itself."},
     {"__getnewargs__",          (PyCFunction)long_getnewargs,   METH_NOARGS},
+#ifndef OVM_MAIN
     {"__format__", (PyCFunction)long__format__, METH_VARARGS},
+#endif
     {"__sizeof__",      (PyCFunction)long_sizeof, METH_NOARGS,
      "Returns size in memory, in bytes"},
     {NULL,              NULL}           /* sentinel */
