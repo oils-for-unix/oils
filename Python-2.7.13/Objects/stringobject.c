@@ -3595,6 +3595,7 @@ string_getnewargs(PyStringObject *v)
 }
 
 
+#ifndef OVM_MAIN
 #include "stringlib/string_format.h"
 
 PyDoc_STRVAR(format__doc__,
@@ -3636,6 +3637,7 @@ PyDoc_STRVAR(p_format__doc__,
 "S.__format__(format_spec) -> string\n\
 \n\
 Return a formatted version of S as described by format_spec.");
+#endif
 
 
 static PyMethodDef
@@ -3681,10 +3683,12 @@ string_methods[] = {
     {"rjust", (PyCFunction)string_rjust, METH_VARARGS, rjust__doc__},
     {"center", (PyCFunction)string_center, METH_VARARGS, center__doc__},
     {"zfill", (PyCFunction)string_zfill, METH_VARARGS, zfill__doc__},
+#ifndef OVM_MAIN
     {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"__format__", (PyCFunction) string__format__, METH_VARARGS, p_format__doc__},
     {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
     {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
+#endif
     {"encode", (PyCFunction)string_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"decode", (PyCFunction)string_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
     {"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS,
