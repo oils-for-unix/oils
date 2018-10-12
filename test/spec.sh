@@ -208,7 +208,8 @@ smoke() {
 }
 
 ps1-replacements() {
-  sh-spec spec/ps1-replacements.test.sh $BASH $OSH_LIST "$@"
+  sh-spec spec/ps1-replacements.test.sh --osh-failures-allowed 1 \
+    $BASH $OSH_LIST "$@"
 }
 
 osh-only() {
