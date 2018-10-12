@@ -19,6 +19,13 @@ echo "${PS1@P}"
 @4$
 ## END
 
+#### \001 octal literals are supported
+PS1='[\045]'
+echo "${PS1@P}"
+## STDOUT:
+[%]
+## END
+
 #### \555 is beyond max octal byte of \377 and wrapped to m
 PS1='\555$'
 echo "${PS1@P}"
@@ -32,6 +39,24 @@ echo "${PS1@P}"
 ## STDOUT:
 [\x55]
 ## END
+
+#### \0001 octal literals are not supported
+PS1='[\0455]'
+echo "${PS1@P}"
+## STDOUT:
+[%5]
+## END
+
+#### \u0001 unicode literals not supported
+PS1='[\u0001]'
+USER=$(whoami)
+echo status=$?
+## STDOUT:
+status=0
+## END
+
+
+
 
 #### constant string
 PS1='$ '
