@@ -21,10 +21,9 @@ echo "${PS1@P}"
 
 #### \555 is beyond max octal byte of \377 and wrapped to m
 PS1='\555$'
-test "${PS1@P}" = "m$"
-echo status=$?
+echo "${PS1@P}"
 ## STDOUT:
-status=0
+m$
 ## END
 
 #### \x55 hex literals not supported
@@ -50,7 +49,6 @@ status=0
 ## END
 
 #### username
-#'echo 1' | PS1='$ ' $SH --norc -i
 PS1='\u '
 USER=$(whoami)
 test "${PS1@P}" = "${USER} "
@@ -59,17 +57,7 @@ echo status=$?
 status=0
 ## END
 
-#### uid (not root)
-#'echo 1' | PS1='$ ' $SH --norc -i
-PS1='\$ '
-test "${PS1@P}" = "$ "
-echo status=$?
-## STDOUT:
-status=0
-## END
-
 #### current working dir
-#'echo 1' | PS1='$ ' $SH --norc -i
 PS1='\w '
 test "${PS1@P}" = "${PWD} "
 echo status=$?
