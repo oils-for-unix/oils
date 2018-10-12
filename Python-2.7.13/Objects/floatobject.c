@@ -1069,6 +1069,7 @@ float_long(PyObject *v)
     return PyLong_FromDouble(x);
 }
 
+#ifndef OVM_MAIN
 /* _Py_double_round: rounds a finite nonzero double to the closest multiple of
    10**-ndigits; here ndigits is within reasonable bounds (typically, -308 <=
    ndigits <= 323).  Returns a Python float, or sets a Python error and
@@ -1276,6 +1277,7 @@ _Py_double_round(double x, int ndigits) {
 
     return PyFloat_FromDouble(z);
 }
+#endif  // OVM_MAIN
 
 #endif /* PY_NO_SHORT_FLOAT_REPR */
 

@@ -49,8 +49,7 @@ Python/structmember.c
 Python/sysmodule.c
 Python/traceback.c
 Python/pystrcmp.c
-Python/pystrtod.c
-Python/dtoa.c
+Python/ovm_stub_pystrtod.c
 '
 
 OBJECT_OBJS='

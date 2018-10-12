@@ -2178,6 +2178,7 @@ Return the canonical string representation of the object.\n\
 For most object types, eval(repr(object)) == object.");
 
 
+#ifndef OVM_MAIN
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -2229,6 +2230,7 @@ PyDoc_STRVAR(round_doc,
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
 This always returns a floating point number.  Precision may be negative.");
+#endif
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2664,7 +2666,9 @@ static PyMethodDef builtin_methods[] = {
     {"reduce",          builtin_reduce,     METH_VARARGS, reduce_doc},
     {"reload",          builtin_reload,     METH_O, reload_doc},
     {"repr",            builtin_repr,       METH_O, repr_doc},
+#ifndef OVM_MAIN
     {"round",           (PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
+#endif
     {"setattr",         builtin_setattr,    METH_VARARGS, setattr_doc},
     {"sorted",          (PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
     {"sum",             builtin_sum,        METH_VARARGS, sum_doc},
