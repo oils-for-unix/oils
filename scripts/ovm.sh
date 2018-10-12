@@ -11,8 +11,12 @@ set -o errexit
 
 source build/common.sh  # $PY27
 
-grep-python() {
+grep-cpython() {
   find $PY27 -type f | xargs grep "$@"
+}
+
+grep-cpython-c() {
+  find $PY27 -type f -a -name '*.[ch]' | xargs grep "$@"
 }
 
 # https://stackoverflow.com/questions/2224334/gcc-dump-preprocessor-defines
