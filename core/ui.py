@@ -121,6 +121,7 @@ class Prompt(object):
 
     ps1_str = val.s
 
+    # NOTE: This is copied from the PS4 logic in Tracer.
     try:
       ps1_word = self.parse_cache[ps1_str]
     except KeyError:
@@ -140,13 +141,6 @@ class Prompt(object):
     decoded_string = self.ReplacePS1Variables(val2.s)
     return decoded_string
 
-  def GetPS1Replacement(self, sc):
-    if sc in self.REPLACEMENTS:
-      r = self.REPLACEMENTS[sc](self.ex)
-      return r
-
-    raise NotImplementedError(sc)
-
   def ReplacePS1Variables(self, s):
     ret = []
     non_printing = 0
@@ -154,15 +148,25 @@ class Prompt(object):
       # TODO: BadBackslash could be an error
       if id_ in (Id.Char_Literals, Id.Char_BadBackslash):
         ret.append(value)
+
       elif id_ == Id.Char_OneChar:
-        ret.append(self.GetPS1Replacement(value[1:]))
+        char = value[1:]
+        if char not in self.REPLACEMENTS:
+          raise NotImplementedError(char)
+
+        r = self.REPLACEMENTS[char](self.ex)
+        ret.append(r)
+
       elif id_ == Id.Char_Octal3:
-          oct_value = int(value[1:], 8)
-          ret.append(chr(oct_value % 256))
+        oct_value = int(value[1:], 8)
+        ret.append(chr(oct_value % 256))
+
       elif id_ == Id.Lit_LBrace:
         non_printing += 1
+
       elif id_ == Id.Lit_RBrace:
         non_printing -= 1
+
       else:
         raise AssertionError('Invalid token %r' % id_)
 
