@@ -134,6 +134,9 @@ class LibcTest(unittest.TestCase):
     # Consistent with GNU
     self.assertEqual(None, libc.realpath('_tmp/nonexistent/supernonexistent'))
 
+  def testPrintTime(self):
+    libc.print_time(0.1, 0.2, 0.3)
+
 
 if __name__ == '__main__':
   unittest.main()

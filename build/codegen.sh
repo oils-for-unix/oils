@@ -100,26 +100,6 @@ ast-id-lex() {
   osh-lex-gen-native
 }
 
-# Size profiler for binaries.  TODO: Fold this into benchmarks/
-bloaty() { ~/git/other/bloaty/bloaty "$@"; }
-
-stats() {
-  local obj=_devbuild/py-ext/x86_64/fastlex.so
-  nm $obj
-  echo
-
-  bloaty $obj
-  echo
-
-  # fastlex_MatchToken is 21.2 KiB.  That doesn't seem to large compared ot
-  # the 14K line output?
-  bloaty -d symbols $obj
-  echo
-
-  ls -l $obj
-  echo
-}
-
 # NOTES:
 # - core/id_kind_gen.py generates the mapping from Id to Kind.
 #   - It needs a mapping output by the Python superoptimizatio script.

@@ -49,9 +49,7 @@ Python/structmember.c
 Python/sysmodule.c
 Python/traceback.c
 Python/pystrcmp.c
-Python/pystrtod.c
-Python/dtoa.c
-Python/formatter_string.c
+Python/ovm_stub_pystrtod.c
 '
 
 OBJECT_OBJS='
@@ -151,7 +149,16 @@ readonly CC=${CC:-cc}  # cc should be on POSIX systems
 # isn't necessary.  Python's configure.ac sometimes does it by compiling a test
 # file; at other times it does it by grepping $CC --help.
 
-readonly BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
+BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
+
+# TODO: Enable this once you test that Clang also accepts the flags?  Or should
+# that be detected by a config file?
+# https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
+#BASE_CFLAGS="$BASE_CFLAGS -fdata-sections -ffunction-sections"
+readonly BASE_CFLAGS
+
+#BASE_LDFLAGS='-Wl,--gc-sections'
+BASE_LDFLAGS=''
 
 # The user should be able to customize CFLAGS, but it shouldn't disable what's
 # in BASE_CFLAGS.
@@ -213,6 +220,7 @@ build() {
     $c_module_src_list \
     Modules/ovm.c \
     -l m \
+    ${BASE_LDFLAGS} \
     $readline_flags \
     "$@" \
     || true

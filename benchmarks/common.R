@@ -12,6 +12,17 @@ Banner = function(fmt, ...) {
   cat('\n')
 }
 
+ShowFrame = function(description, df) {
+  Log(description)
+  print(df)
+  Log('')
+}
+
+ShowValue = function(msg, ...) {
+  cat('-- '); Log(msg, ...)
+  Log('')
+}
+
 # Same precision for all columns.
 SamePrecision = function(precision = 1) {
   return(function(column_name) {

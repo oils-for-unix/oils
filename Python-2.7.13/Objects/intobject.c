@@ -1249,6 +1249,7 @@ _PyInt_Format(PyIntObject *v, int base, int newstyle)
     return PyString_FromStringAndSize(p, &buf[sizeof(buf)] - p);
 }
 
+#ifndef OVM_MAIN
 static PyObject *
 int__format__(PyObject *self, PyObject *args)
 {
@@ -1278,6 +1279,7 @@ int__format__(PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "__format__ requires str or unicode");
     return NULL;
 }
+#endif
 
 static PyObject *
 int_bit_length(PyIntObject *v)
@@ -1322,7 +1324,9 @@ static PyMethodDef int_methods[] = {
     {"__trunc__",       (PyCFunction)int_int,   METH_NOARGS,
      "Truncating an Integral returns itself."},
     {"__getnewargs__",          (PyCFunction)int_getnewargs,    METH_NOARGS},
+#ifndef OVM_MAIN
     {"__format__", (PyCFunction)int__format__, METH_VARARGS},
+#endif
     {NULL,              NULL}           /* sentinel */
 };
 

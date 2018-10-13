@@ -1069,6 +1069,7 @@ float_long(PyObject *v)
     return PyLong_FromDouble(x);
 }
 
+#ifndef OVM_MAIN
 /* _Py_double_round: rounds a finite nonzero double to the closest multiple of
    10**-ndigits; here ndigits is within reasonable bounds (typically, -308 <=
    ndigits <= 323).  Returns a Python float, or sets a Python error and
@@ -1276,6 +1277,7 @@ _Py_double_round(double x, int ndigits) {
 
     return PyFloat_FromDouble(z);
 }
+#endif  // OVM_MAIN
 
 #endif /* PY_NO_SHORT_FLOAT_REPR */
 
@@ -1989,6 +1991,7 @@ float_getzero(PyObject *v, void *closure)
     return PyFloat_FromDouble(0.0);
 }
 
+#ifndef OVM_MAIN
 static PyObject *
 float__format__(PyObject *self, PyObject *args)
 {
@@ -2023,6 +2026,7 @@ PyDoc_STRVAR(float__format__doc,
 "float.__format__(format_spec) -> string\n"
 "\n"
 "Formats the float according to format_spec.");
+#endif
 
 
 static PyMethodDef float_methods[] = {
@@ -2051,8 +2055,10 @@ static PyMethodDef float_methods[] = {
      METH_O|METH_CLASS,                 float_getformat_doc},
     {"__setformat__",           (PyCFunction)float_setformat,
      METH_VARARGS|METH_CLASS,           float_setformat_doc},
+#ifndef OVM_MAIN
     {"__format__",          (PyCFunction)float__format__,
      METH_VARARGS,                  float__format__doc},
+#endif
     {NULL,              NULL}           /* sentinel */
 };
 

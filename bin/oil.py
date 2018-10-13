@@ -254,6 +254,7 @@ def OshMain(argv0, argv, login_shell):
       # register path completion
       comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
 
+      # TODO: Move this into demo/slow-completion.sh
       if 1:
         # Something for fun, to show off.  Also: test that you don't repeatedly hit
         # the file system / network / coprocess.
@@ -264,11 +265,8 @@ def OshMain(argv0, argv, login_shell):
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 
-  # Parse the whole thing up front
-  #print('Parsing file')
-
-  # Do this after parsing the entire file.  There could be another option to
-  # do it before exiting runtime?
+  # TODO: Remove this after removing it from benchmarks/osh-runtime.  It's no
+  # longer relevant with main_loop.
   if opts.parser_mem_dump:
     # This might be superstition, but we want to let the value stabilize
     # after parsing.  bash -c 'cat /proc/$$/status' gives different results
@@ -284,7 +282,6 @@ def OshMain(argv0, argv, login_shell):
   nodes_out = [] if exec_opts.noexec else None
 
   _tlog('Execute(node)')
-  #status = ex.ExecuteAndRunExitTrap(node)
   status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
 
   if nodes_out is not None:

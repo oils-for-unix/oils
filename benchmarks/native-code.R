@@ -1,0 +1,77 @@
+#!/usr/bin/Rscript
+#
+# bytecode.R -- Analyze output of opyc dis-tables.
+#
+# Usage:
+#   bytecode.R ACTION IN_DIR OUT_DIR
+
+library(dplyr)
+library(tidyr)  # spread()
+library(stringr)
+
+source('benchmarks/common.R')
+
+options(stringsAsFactors = F,
+        # Make the report wide.  tibble.width doesn't appear to do this?
+        width=200
+)
+
+# Categorieze names:
+# - _doc(__)?
+# - PRETTY
+# - init?
+
+Basic = function(ctx) {
+  Banner('BASIC METRICS')
+
+  ctx$symbols %>% arrange(desc(filesize)) %>% head(20) -> f1
+  ShowValue('Number of Symbols: %d', nrow(ctx$symbols))
+
+  ctx$symbols %>% arrange(desc(filesize)) %>% head(20) -> f1
+  ShowFrame('By Size On Disk:', f1)
+
+  ShowValue('Total filesize: %d', sum(ctx$symbols$filesize))
+
+  # Number of files
+  ctx$symbols %>% arrange(desc(vmsize)) %>% head(20) -> f2
+  ShowFrame('By Size in Virtual Memory:', f2)
+
+  ShowValue('Total vmsize: %d', sum(ctx$symbols$vmsize))
+
+  # This isn't foolproof, but docstrings seem to be named with a _doc or
+  # __doc__ suffix.
+  ctx$symbols %>% filter(str_detect(symbols, '_doc(__)?')) -> f3
+  ShowFrame('Doc', f3 %>% head(20))
+
+  ShowValue('Approx number of docstrings: %d in %d bytes', nrow(f3), sum(f3$filesize))
+}
+
+Report = function(ctx) {
+  Basic(ctx)
+}
+
+Load = function(in_dir) {
+  list(
+    symbols = read.table(file.path(in_dir, 'symbols.tsv'), sep='\t', header=T)
+  )
+}
+
+main = function(argv) {
+  action = argv[[1]]
+
+  if (action == 'metrics') {
+    in_dir = argv[[2]]
+    ctx = Load(in_dir)
+    Report(ctx)
+
+  } else {
+    Log("Invalid action '%s'", action)
+    quit(status = 1)
+  }
+}
+
+if (length(sys.frames()) == 0) {
+  # increase ggplot font size globally
+  #theme_set(theme_grey(base_size = 20))
+  main(commandArgs(TRUE))
+}
