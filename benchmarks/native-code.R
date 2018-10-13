@@ -25,6 +25,9 @@ Basic = function(ctx) {
   Banner('BASIC METRICS')
 
   ctx$symbols %>% arrange(desc(filesize)) %>% head(20) -> f1
+  ShowValue('Number of Symbols: %d', nrow(ctx$symbols))
+
+  ctx$symbols %>% arrange(desc(filesize)) %>% head(20) -> f1
   ShowFrame('By Size On Disk:', f1)
 
   ShowValue('Total filesize: %d', sum(ctx$symbols$filesize))
