@@ -207,6 +207,11 @@ smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+ps1-replacements() {
+  sh-spec spec/ps1-replacements.test.sh --osh-failures-allowed 1 \
+    $BASH $OSH_LIST "$@"
+}
+
 osh-only() {
   # 2 failures until we build in a JSON encoder.
   sh-spec spec/osh-only.test.sh --osh-failures-allowed 2  \

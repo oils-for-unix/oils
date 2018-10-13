@@ -109,16 +109,22 @@ def _MatchGlobToken_Fast(line, start_pos):
   tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
   return IdInstance(tok_type), end_pos
 
+def _MatchPS1Token_Fast(line, start_pos):
+  """Returns (id, end_pos)."""
+  tok_type, end_pos = fastlex.MatchPS1Token(line, start_pos)
+  return IdInstance(tok_type), end_pos
 
 if fastlex:
   MATCHER = _MatchOshToken_Fast
   ECHO_MATCHER = _MatchEchoToken_Fast
   GLOB_MATCHER = _MatchGlobToken_Fast
+  PS1_MATCHER = _MatchPS1Token_Fast
   IsValidVarName = fastlex.IsValidVarName
 else:
   MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
   ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
   GLOB_MATCHER = _MatchTokenSlow(lex.GLOB_DEF)
+  PS1_MATCHER = _MatchTokenSlow(lex.PS1_DEF)
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
@@ -129,3 +135,4 @@ else:
 
 ECHO_LEXER = SimpleLexer(ECHO_MATCHER)
 GLOB_LEXER = SimpleLexer(GLOB_MATCHER)
+PS1_LEXER = SimpleLexer(PS1_MATCHER)

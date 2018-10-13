@@ -10,6 +10,9 @@ ui.py - User interface constructs.
 """
 from __future__ import print_function
 
+import os
+import pwd
+import socket  # socket.gethostname()
 import sys
 
 from asdl import const
@@ -17,7 +20,14 @@ from asdl import encode
 from asdl import format as fmt
 from core import dev
 from osh import ast_lib
-from osh.meta import ast
+from osh import match
+from osh.meta import ast, runtime, Id
+
+value_e = runtime.value_e
+
+
+# bash --noprofile --norc uses 'bash-4.3$ '
+DEFAULT_PS1 = 'osh$ '
 
 
 def Clear():
@@ -70,7 +80,6 @@ class StatusLine(object):
 
 
 class TestStatusLine(object):
-
   def __init__(self):
     pass
 
@@ -79,6 +88,116 @@ class TestStatusLine(object):
     if args:
       msg = msg % args
     print('\t' + msg)
+
+
+#
+# Prompt handling
+#
+
+# Global instance set by main().  TODO: Use dependency injection.
+PROMPT = None
+
+# NOTE: word_compile._ONE_CHAR has some of the same stuff.
+_ONE_CHAR = {
+  'a' : '\a',
+  'e' : '\x1b',
+  '\\' : '\\',
+}
+
+
+def _GetCurrentUserName():
+  uid = os.getuid()  # Does it make sense to cache this somewhere?
+  try:
+    e = pwd.getpwuid(uid)
+  except KeyError:
+    return "<ERROR: Couldn't determine user name for uid %d>" % uid
+  else:
+    return e.pw_name
+
+
+class Prompt(object):
+  def __init__(self, arena, parse_ctx, ex):
+    self.arena = arena
+    self.parse_ctx = parse_ctx
+    self.ex = ex
+
+    self.parse_cache = {}  # PS1 value -> CompoundWord.
+
+  def _ReplaceBackslashCodes(self, s):
+    ret = []
+    non_printing = 0
+    for id_, value in match.PS1_LEXER.Tokens(s):
+      # BadBacklash means they should have escaped with \\, but we can't 
+      # make this an error.
+      if id_ in (Id.PS_Literals, Id.PS_BadBackslash):
+        ret.append(value)
+
+      elif id_ == Id.PS_Octal3:
+        i = int(value[1:], 8)
+        ret.append(chr(i % 256))
+
+      elif id_ == Id.PS_LBrace:
+        non_printing += 1
+
+      elif id_ == Id.PS_RBrace:
+        non_printing -= 1
+
+      elif id_ == Id.PS_Subst:  # \u \h \w etc.
+        char = value[1:]
+        if char == 'u':
+          r = _GetCurrentUserName()
+
+        elif char == 'h':
+          r = socket.gethostname()
+
+        elif char == 'w':
+          val = self.ex.mem.GetVar('PWD')
+          if val.tag == value_e.Str:
+            r = val.s
+          else:
+            r = '<Error: PWD is not a string>'
+
+        elif char in _ONE_CHAR:
+          r = _ONE_CHAR[char]
+
+        else:
+          raise NotImplementedError(char)
+
+        ret.append(r)
+
+      else:
+        raise AssertionError('Invalid token %r' % id_)
+
+    return ''.join(ret)
+
+  def PS1(self):
+    val = self.ex.mem.GetVar('PS1')
+    return self.EvalPS1(val)
+
+  def EvalPS1(self, val):
+    if val.tag != value_e.Str:
+      return DEFAULT_PS1
+
+    ps1_str = val.s
+
+    # NOTE: This is copied from the PS4 logic in Tracer.
+    try:
+      ps1_word = self.parse_cache[ps1_str]
+    except KeyError:
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str, self.arena)
+
+      try:
+        ps1_word = w_parser.ReadPS()
+      except Exception as e:
+        error_str = '<ERROR: cannot parse PS1>'
+        t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        ps1_word = ast.CompoundWord([ast.LiteralPart(t)])
+
+    self.parse_cache[ps1_str] = ps1_word
+
+    # e.g. "${debian_chroot}\u" -> '\u'
+    val2 = self.ex.word_ev.EvalWordToString(ps1_word)
+    return self._ReplaceBackslashCodes(val2.s)
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):

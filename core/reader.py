@@ -10,6 +10,7 @@ reader.py - Read lines of input.
 """
 
 import cStringIO
+import sys
 
 from core import util
 log = util.log
@@ -39,27 +40,27 @@ class _Reader(object):
 
 _PS2 = '> '
 
-
 class InteractiveLineReader(_Reader):
-  def __init__(self, ps1, arena):
+  def __init__(self, arena, prompt):
     _Reader.__init__(self, arena)
-    self.ps1 = ps1
-    self.prompt_str = ps1
+    self.prompt = prompt
+    self.prompt_str = ''
+    self.Reset()  # initialize self.prompt_str
 
   def _GetLine(self):
+    sys.stderr.write(self.prompt_str)
     try:
-      ret = raw_input(self.prompt_str) + '\n'  # newline required
+      ret = raw_input('') + '\n'  # newline required
     except EOFError:
       ret = None
-    self.prompt_str = _PS2
+    self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return ret
 
   def Reset(self):
     """Call this after command execution, to free memory taken up by the lines,
     and reset prompt string back to PS1.
     """
-    self.prompt_str = self.ps1
-    # free vector...
+    self.prompt_str = self.prompt.PS1()
 
 
 class FileLineReader(_Reader):
@@ -97,7 +98,7 @@ def StringLineReader(s, arena):
 
 class VirtualLineReader(_Reader):
   """Read from lines we already read from the OS.
-  
+
   Used for here docs and aliases.
   """
 
