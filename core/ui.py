@@ -79,6 +79,30 @@ class StatusLine(object):
     sys.stdout.flush()
 
 
+class TestStatusLine(object):
+  def __init__(self):
+    pass
+
+  def Write(self, msg, *args):
+    """NOTE: We could use logging?"""
+    if args:
+      msg = msg % args
+    print('\t' + msg)
+
+
+#
+# Prompt handling
+#
+
+# Global instance set by main().  TODO: Use dependency injection.
+PROMPT = None
+
+_REPLACEMENTS = {
+  'e' : '\033',
+  'a' : '\007',
+}
+
+
 def _GetCurrentUserName():
   uid = os.getuid()  # Does it make sense to cache this somewhere?
   try:
@@ -87,12 +111,6 @@ def _GetCurrentUserName():
     return "<ERROR: Couldn't determine user name for uid %d>" % uid
   else:
     return e.pw_name
-
-
-_REPLACEMENTS = {
-  'e' : '\033',
-  'a' : '\007',
-}
 
 
 class Prompt(object):
@@ -178,17 +196,6 @@ class Prompt(object):
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
     return self._ReplaceBackslashCodes(val2.s)
 
-class TestStatusLine(object):
-
-  def __init__(self):
-    pass
-
-  def Write(self, msg, *args):
-    """NOTE: We could use logging?"""
-    if args:
-      msg = msg % args
-    print('\t' + msg)
-
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
   line_span = arena.GetLineSpan(span_id)
@@ -272,7 +279,3 @@ def usage(msg, *args):
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
-
-
-# Set by main()
-PROMPT = None
