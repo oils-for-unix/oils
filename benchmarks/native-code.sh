@@ -51,7 +51,17 @@ symbols() {
 # - marshal_dumps and marshal_dump!  We never use those.
 # - Remove all docstrings!!!  Like sys_doc.
 
-cpython-bloat() {
+cpython-compileunits() {
+  # Hm there doesn't seem to be a way to do this without
+  local file=_build/oil/ovm-dbg
+
+  #local file=_build/oil/ovm-opt
+  #local sym=_build/oil/ovm-opt.symbols
+
+  bloaty --tsv -n 0 -d compileunits $file 
+}
+
+cpython-symbols() {
   # NOTE: This is different than the release binary!
   # ovm-opt.stripped doesn't show a report.
   local file=_build/oil/ovm-opt
@@ -66,15 +76,24 @@ cpython-bloat() {
   bloaty --tsv -n 0 -d symbols $file 
 }
 
-report() {
+_report() {
   R_LIBS_USER=$R_PATH benchmarks/native-code.R "$@"
+}
+
+report() {
+  _report metrics $BASE_DIR
 }
 
 run-for-release() {
   mkdir -p $BASE_DIR
-  cpython-bloat | tee $BASE_DIR/symbols.tsv
-  report metrics $BASE_DIR
+  cpython-symbols | tee $BASE_DIR/symbols.tsv
+  report
 }
 
+py-method-defs() {
+  # 52 different instances.  Sometimes multiple ones per file.
+  find _tmp/oil-tar-test -name '*.[ch]' \
+    | xargs grep -n 'static PyMethodDef'
+}
 
 "$@"
