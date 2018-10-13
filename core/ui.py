@@ -151,7 +151,8 @@ class Prompt(object):
     ret = []
     non_printing = 0
     for id_, value in match.PS1_LEXER.Tokens(s):
-      if id_ == Id.Char_Literals or id_ == Id.Char_Hex or id_ == Id.Char_BadBackslash:
+      # TODO: BadBackslash could be an error
+      if id_ in (Id.Char_Literals, Id.Char_BadBackslash):
         ret.append(value)
       elif id_ == Id.Char_OneChar:
         ret.append(self.GetPS1Replacement(value[1:]))
