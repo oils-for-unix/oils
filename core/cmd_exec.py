@@ -1085,9 +1085,7 @@ class Executor(object):
       real = end_t - start_t
       user = end_u.ru_utime - start_u.ru_utime
       sys_ = end_u.ru_stime - start_u.ru_stime
-      print('real\t%.3f' % real, file=sys.stderr)
-      print('user\t%.3f' % user, file=sys.stderr)
-      print('sys\t%.3f' % sys_, file=sys.stderr)
+      libc.print_time(real, user, sys_)
 
     else:
       raise NotImplementedError(node.__class__.__name__)

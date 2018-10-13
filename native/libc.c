@@ -338,6 +338,21 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   return Py_BuildValue("(i,i)", pos + start, pos + end);
 }
 
+// We do this in C so we can remove '%f' % 0.1 from the CPython build.  That
+// involves dtoa.c and pystrod.c, which are thousands of lines of code.
+static PyObject *
+func_print_time(PyObject *self, PyObject *args) {
+  double real, user, sys;
+  int pos;
+  if (!PyArg_ParseTuple(args, "ddd", &real, &user, &sys)) {
+    return NULL;
+  }
+  fprintf(stderr, "real\t%.3f\n", real);
+  fprintf(stderr, "user\t%.3f\n",  user);
+  fprintf(stderr, "sys\t%.3f\n", sys);
+  Py_RETURN_NONE;
+}
+
 static PyMethodDef methods[] = {
   {"realpath", func_realpath, METH_VARARGS,
    "Return the canonical version of a path with symlinks, or None if there is "
@@ -350,12 +365,14 @@ static PyMethodDef methods[] = {
   {"regex_parse", func_regex_parse, METH_VARARGS,
    "Compile a regex in ERE syntax, returning whether it is valid"},
   {"regex_match", func_regex_match, METH_VARARGS,
-   "Match regex against a string.  Returns a list of matches, None if no match. "
-    "Raises RuntimeError if the regex is invalid."},
+   "Match regex against a string.  Returns a list of matches, None if no "
+   "match.  Raises RuntimeError if the regex is invalid."},
   {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS,
    "If the regex matches the string, return the start and end position of the "
    "first group.  Returns None if there is no match.  Raises RuntimeError if "
    "the regex is invalid."},
+  {"print_time", func_print_time, METH_VARARGS,
+   "Print three floating point values for the 'time' builtin."},
   {NULL, NULL},
 };
 
