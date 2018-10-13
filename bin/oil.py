@@ -215,7 +215,6 @@ def OshMain(argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
-        prompt = ui.Prompt(arena, parse_ctx, ex)
         line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:
