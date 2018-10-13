@@ -52,6 +52,7 @@ symbols() {
 # - Remove all docstrings!!!  Like sys_doc.
 
 cpython-bloat() {
+  # NOTE: This is different than the release binary!
   # ovm-opt.stripped doesn't show a report.
   local file=_build/oil/ovm-opt
 
