@@ -99,7 +99,6 @@ class Prompt(object):
     "w" : lambda ex: get_var(ex, "PWD"),
     "e" : lambda ex: "\033",
     "a" : lambda ex: "\007",
-    "$" : lambda ex: "$",
   }
 
   def __init__(self, arena, parse_ctx, ex):
