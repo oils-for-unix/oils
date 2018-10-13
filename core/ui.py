@@ -20,13 +20,11 @@ from asdl import encode
 from asdl import format as fmt
 from core import dev
 from osh import ast_lib
-from osh.meta import ast, runtime, Id
-
 from osh import match
+from osh.meta import ast, runtime, Id
 
 
 # bash --noprofile --norc uses 'bash-4.3$ '
-
 DEFAULT_PS1 = 'osh$ '
 
 
@@ -78,7 +76,6 @@ class StatusLine(object):
     sys.stdout.write('\033[u')  # restore
     sys.stdout.flush()
 
-_PS2 = '> '
 def get_var(ex,name):
     r = ex.mem.GetVar(name)
     if r.tag == runtime.value_e.Str:
@@ -117,8 +114,7 @@ class Prompt(object):
   def Reset(self):
     self.prompt_str = self._EvalPS1()
 
-  # copied from _EvalPS4
-  def _EvalPS1(self):
+  def PS1(self):
     val = self.ex.mem.GetVar('PS1')
     return self.EvalPS1(val)
 
@@ -150,17 +146,6 @@ class Prompt(object):
     val = self.ex.word_ev.EvalWordToString(ps1_word)
     decoded_string = self.ReplacePS1Variables(val.s)
     return decoded_string
-
-  def GetInput(self):
-    try:
-      ret = raw_input(self.prompt_str) + '\n'  # newline required
-    except Exception as e:
-      print(e)
-      ret = None
-
-    self.prompt_str = _PS2
-
-    return ret
 
   def GetPS1Replacement(self, sc):
     if sc in self.REPLACEMENTS:
