@@ -7,6 +7,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # for $R_PATH
+
+readonly BASE_DIR=_tmp/metrics/native-code
+
 # Size profiler for binaries.
 bloaty() {
   ~/git/other/bloaty/bloaty "$@"
@@ -58,7 +62,17 @@ cpython-bloat() {
 
   # Full output
   # 3,588 lines!
-  bloaty --tsv -n 0 -d symbols $file
+  bloaty --tsv -n 0 -d symbols $file 
+}
+
+report() {
+  R_LIBS_USER=$R_PATH benchmarks/native-code.R "$@"
+}
+
+run-for-release() {
+  mkdir -p $BASE_DIR
+  cpython-bloat | tee $BASE_DIR/symbols.tsv
+  report metrics $BASE_DIR
 }
 
 

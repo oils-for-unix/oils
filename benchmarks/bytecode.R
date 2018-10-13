@@ -16,17 +16,6 @@ options(stringsAsFactors = F,
         width=200
 )
 
-ShowFrame = function(description, df) {
-  Log(description)
-  print(df)
-  Log('')
-}
-
-ShowValue = function(msg, ...) {
-  cat('-- '); Log(msg, ...)
-  Log('')
-}
-
 Basic = function(ctx) {
   Banner('BASIC METRICS')
 
