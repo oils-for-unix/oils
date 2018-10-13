@@ -386,6 +386,11 @@ def AddKinds(spec):
       'Eof',
   ])
 
+  # For parsing prompt strings like PS1.
+  spec.AddKind('PS', [
+      'Subst', 'Octal3', 'LBrace', 'RBrace', 'Literals', 'BadBackslash',
+  ])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n

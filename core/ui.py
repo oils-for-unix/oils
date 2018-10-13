@@ -126,20 +126,20 @@ class Prompt(object):
     non_printing = 0
     for id_, value in match.PS1_LEXER.Tokens(s):
       # TODO: BadBackslash could be an error
-      if id_ in (Id.Char_Literals, Id.Char_BadBackslash):
+      if id_ in (Id.PS_Literals, Id.PS_BadBackslash):
         ret.append(value)
 
-      elif id_ == Id.Char_Octal3:
+      elif id_ == Id.PS_Octal3:
         i = int(value[1:], 8)
         ret.append(chr(i % 256))
 
-      elif id_ == Id.Lit_LBrace:
+      elif id_ == Id.PS_LBrace:
         non_printing += 1
 
-      elif id_ == Id.Lit_RBrace:
+      elif id_ == Id.PS_RBrace:
         non_printing -= 1
 
-      elif id_ == Id.Char_OneChar:  # \u \h \w etc.
+      elif id_ == Id.PS_Subst:  # \u \h \w etc.
         char = value[1:]
         if char == 'u':
           r = _GetCurrentUserName()

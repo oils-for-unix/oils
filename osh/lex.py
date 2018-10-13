@@ -449,12 +449,12 @@ OCTAL3_RE = r'\\[0-7]{1,3}'
 
 # https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html#Controlling-the-Prompt
 PS1_DEF = [
-    R(OCTAL3_RE, Id.Char_Octal3),
-    R(r'\\[adehHjlnrstT@AuvVwW!#\\]', Id.Char_OneChar),
-    C(r'\[', Id.Lit_LBrace),  # non-printing
-    C(r'\]', Id.Lit_RBrace),
-    R(r'[^\\\0]+', Id.Char_Literals),
-    C('\\', Id.Char_BadBackslash),
+    R(OCTAL3_RE, Id.PS_Octal3),
+    R(r'\\[adehHjlnrstT@AuvVwW!#\\]', Id.PS_Subst),
+    C(r'\[', Id.PS_LBrace),  # non-printing
+    C(r'\]', Id.PS_RBrace),
+    R(r'[^\\\0]+', Id.PS_Literals),
+    C('\\', Id.PS_BadBackslash),
 ]
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
