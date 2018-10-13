@@ -76,6 +76,7 @@ class StatusLine(object):
     sys.stdout.write('\033[u')  # restore
     sys.stdout.flush()
 
+
 def get_var(ex,name):
     r = ex.mem.GetVar(name)
     if r.tag == runtime.value_e.Str:
@@ -83,14 +84,16 @@ def get_var(ex,name):
 
     return ""
 
+
 def get_username():
-  uid = os.getuid()
+  uid = os.getuid()  # Does it make sense to cache this somewhere?
   try:
     e = pwd.getpwuid(uid)
   except KeyError:
-    return None
+    return '<OSH could not determine your user name>'
   else:
     return e.pw_name
+
 
 class Prompt(object):
   REPLACEMENTS = {
@@ -102,16 +105,11 @@ class Prompt(object):
   }
 
   def __init__(self, arena, parse_ctx, ex):
-    self.ps1 = DEFAULT_PS1
     self.arena = arena
     self.parse_ctx = parse_ctx
     self.ex = ex
 
-    self.prompt_str = self.ps1
     self.parse_cache = {}  # PS1 value -> CompoundWord.
-
-  def Reset(self):
-    self.prompt_str = self._EvalPS1()
 
   def PS1(self):
     val = self.ex.mem.GetVar('PS1')
@@ -119,18 +117,14 @@ class Prompt(object):
 
   def EvalPS1(self, val):
     if val.tag != runtime.value_e.Str:
-      return self.ps1
+      return DEFAULT_PS1
 
-    s = val.s
-    if s:
-      ps1 = s
-    else:
-      ps1 = self.ps1
+    ps1_str = val.s
 
     try:
-      ps1_word = self.parse_cache[ps1]
+      ps1_word = self.parse_cache[ps1_str]
     except KeyError:
-      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1, self.arena)
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str, self.arena)
 
       try:
         ps1_word = w_parser.ReadPS()
@@ -139,11 +133,11 @@ class Prompt(object):
         t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
         ps1_word = ast.CompoundWord([ast.LiteralPart(t)])
 
-    self.parse_cache[ps1] = ps1_word
+    self.parse_cache[ps1_str] = ps1_word
 
     # e.g. "${debian_chroot}\u" -> '\u'
-    val = self.ex.word_ev.EvalWordToString(ps1_word)
-    decoded_string = self.ReplacePS1Variables(val.s)
+    val2 = self.ex.word_ev.EvalWordToString(ps1_word)
+    decoded_string = self.ReplacePS1Variables(val2.s)
     return decoded_string
 
   def GetPS1Replacement(self, sc):
