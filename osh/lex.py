@@ -445,11 +445,13 @@ ECHO_E_DEF = _C_STRING_COMMON + [
   R(r'[^\\\0]+', Id.Char_Literals),
 ]
 
+OCTAL3_RE = r'\\[0-7]{1,3}'
+
 # https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html#Controlling-the-Prompt
 PS1_DEF = [
-    R(r'\\[0-7]{1,3}', Id.Char_Octal3),
+    R(OCTAL3_RE, Id.Char_Octal3),
     R(r'\\[adehHjlnrstT@AuvVwW!#\\]', Id.Char_OneChar),
-    C(r'\[', Id.Lit_LBrace),
+    C(r'\[', Id.Lit_LBrace),  # non-printing
     C(r'\]', Id.Lit_RBrace),
     R(r'[^\\\0]+', Id.Char_Literals),
     C('\\', Id.Char_BadBackslash),
@@ -461,7 +463,7 @@ PS1_DEF = [
 LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
   # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
   # with no leading 0.
-  R(r'\\[0-7]{1,3}', Id.Char_Octal3),
+  R(OCTAL3_RE, Id.Char_Octal3),
 
   # ' is escaped in $'' mode, but not echo -e.  Ditto fr ", not sure why.
   C(r"\'", Id.Char_OneChar),

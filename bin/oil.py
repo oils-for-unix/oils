@@ -86,8 +86,6 @@ log = util.log
 _tlog('after imports')
 
 
-# bash --noprofile --norc uses 'bash-4.3$ '
-
 def _ShowVersion():
   util.ShowAppVersion('Oil')
 

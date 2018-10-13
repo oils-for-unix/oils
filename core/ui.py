@@ -12,6 +12,7 @@ from __future__ import print_function
 
 import os
 import pwd
+import socket  # socket.gethostname()
 import sys
 
 from asdl import const
@@ -19,17 +20,14 @@ from asdl import encode
 from asdl import format as fmt
 from core import dev
 from osh import ast_lib
-from osh.meta import ast
-from osh.meta import Id
-from osh.meta import runtime
+from osh.meta import ast, runtime, Id
 
 from osh import match
 
-import socket
+
+# bash --noprofile --norc uses 'bash-4.3$ '
 
 DEFAULT_PS1 = 'osh$ '
-
-
 
 
 def Clear():

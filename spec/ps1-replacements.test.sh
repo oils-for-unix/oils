@@ -12,6 +12,13 @@ $ echo foo
 $ exit
 ## END
 
+#### [] are non-printing
+PS1='\[foo\]$'
+echo "${PS1@P}"
+## STDOUT:
+foo$
+## END
+
 #### \1004
 PS1='\1004$'
 echo "${PS1@P}"
