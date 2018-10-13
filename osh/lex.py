@@ -445,13 +445,26 @@ ECHO_E_DEF = _C_STRING_COMMON + [
   R(r'[^\\\0]+', Id.Char_Literals),
 ]
 
+OCTAL3_RE = r'\\[0-7]{1,3}'
+
+# https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html#Controlling-the-Prompt
+PS1_DEF = [
+    R(OCTAL3_RE, Id.PS_Octal3),
+    R(r'\\[adehHjlnrstT@AuvVwW!#\\]', Id.PS_Subst),
+    C(r'\[', Id.PS_LBrace),  # non-printing
+    C(r'\]', Id.PS_RBrace),
+    R(r'[^\\\0]+', Id.PS_Literals),
+    # e.g. \x is not a valid escape.
+    C('\\', Id.PS_BadBackslash),
+]
+
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
 LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
   # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
   # with no leading 0.
-  R(r'\\[0-7]{1,3}', Id.Char_Octal3),
+  R(OCTAL3_RE, Id.Char_Octal3),
 
   # ' is escaped in $'' mode, but not echo -e.  Ditto fr ", not sure why.
   C(r"\'", Id.Char_OneChar),
@@ -490,6 +503,7 @@ LEXER_DEF[lex_mode_e.VS_1] = [
 
 LEXER_DEF[lex_mode_e.VS_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
+    ID_SPEC.LexerPairs(Kind.VOp0) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
     ID_SPEC.LexerPairs(Kind.VOp2) + [
   C('}', Id.Right_VarSub),

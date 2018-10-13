@@ -86,10 +86,6 @@ log = util.log
 _tlog('after imports')
 
 
-# bash --noprofile --norc uses 'bash-4.3$ '
-OSH_PS1 = 'osh$ '
-
-
 def _ShowVersion():
   util.ShowAppVersion('Oil')
 
@@ -114,6 +110,9 @@ OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 # For benchmarks/*.sh
 OSH_SPEC.LongFlag('--parser-mem-dump', args.Str)
 OSH_SPEC.LongFlag('--runtime-mem-dump', args.Str)
+
+# For bash compatibility
+OSH_SPEC.LongFlag('--norc')
 
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
@@ -197,6 +196,10 @@ def OshMain(argv0, argv, login_shell):
     if e.errno != errno.ENOENT:
       raise
 
+  # Needed in non-interactive shells for @P
+  prompt = ui.Prompt(arena, parse_ctx, ex)
+  ui.PROMPT = prompt
+
   if opts.c is not None:
     arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena)
@@ -204,7 +207,7 @@ def OshMain(argv0, argv, login_shell):
       exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
-    line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
+    line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:
     try:
@@ -212,7 +215,7 @@ def OshMain(argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
-        line_reader = reader.InteractiveLineReader(OSH_PS1, arena)
+        line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:
         arena.PushSource('<stdin>')

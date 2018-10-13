@@ -258,6 +258,15 @@ def AddKinds(spec):
       ('Plus',          '+' ),
   ])
 
+  # Statically parse @P, so @x etc. is an error.
+  spec.AddKindPairs('VOp0', [
+      ('Q', '@Q'),  # ${x@Q} for quoting
+      ('E', '@E'),
+      ('P', '@P'),  # ${PS1@P} for prompt eval
+      ('A', '@A'),
+      ('a', '@a'),
+  ])
+
   # String removal ops
   spec.AddKindPairs('VOp1', [
       ('Percent',       '%' ),
@@ -375,6 +384,11 @@ def AddKinds(spec):
       'EscapedChar', 'BadBackslash',
       'CleanLiterals', 'OtherLiteral',
       'Eof',
+  ])
+
+  # For parsing prompt strings like PS1.
+  spec.AddKind('PS', [
+      'Subst', 'Octal3', 'LBrace', 'RBrace', 'Literals', 'BadBackslash',
   ])
 
 

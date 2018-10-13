@@ -52,7 +52,8 @@ module osh
   | ArrayIndex(arith_expr expr)
 
   suffix_op = 
-    StringUnary(id op_id, word arg_word)  -- e.g. ${v:-default}
+    StringNullary(id op_id)  -- ${x@Q}
+  | StringUnary(id op_id, word arg_word)  -- e.g. ${v:-default}
     -- TODO: token for / to attribute errors
   | PatSub(word pat, word? replace, id replace_mode)
   -- begin is optional with ${array::1}
