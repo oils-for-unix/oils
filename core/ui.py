@@ -23,6 +23,8 @@ from osh import ast_lib
 from osh import match
 from osh.meta import ast, runtime, Id
 
+value_e = runtime.value_e
+
 
 # bash --noprofile --norc uses 'bash-4.3$ '
 DEFAULT_PS1 = 'osh$ '
@@ -77,33 +79,23 @@ class StatusLine(object):
     sys.stdout.flush()
 
 
-def get_var(ex,name):
-    r = ex.mem.GetVar(name)
-    if r.tag == runtime.value_e.Str:
-        return r.s
-
-    return ""
-
-
-def get_username():
+def _GetCurrentUserName():
   uid = os.getuid()  # Does it make sense to cache this somewhere?
   try:
     e = pwd.getpwuid(uid)
   except KeyError:
-    return '<OSH could not determine your user name>'
+    return "<ERROR: Couldn't determine user name for uid %d>" % uid
   else:
     return e.pw_name
 
 
-class Prompt(object):
-  REPLACEMENTS = {
-    "u" : lambda ex: get_username(),
-    "h" : lambda ex: socket.gethostname(),
-    "w" : lambda ex: get_var(ex, "PWD"),
-    "e" : lambda ex: "\033",
-    "a" : lambda ex: "\007",
-  }
+_REPLACEMENTS = {
+  'e' : '\033',
+  'a' : '\007',
+}
 
+
+class Prompt(object):
   def __init__(self, arena, parse_ctx, ex):
     self.arena = arena
     self.parse_ctx = parse_ctx
@@ -111,12 +103,58 @@ class Prompt(object):
 
     self.parse_cache = {}  # PS1 value -> CompoundWord.
 
+  def _ReplaceBackslashCodes(self, s):
+    ret = []
+    non_printing = 0
+    for id_, value in match.PS1_LEXER.Tokens(s):
+      # TODO: BadBackslash could be an error
+      if id_ in (Id.Char_Literals, Id.Char_BadBackslash):
+        ret.append(value)
+
+      elif id_ == Id.Char_Octal3:
+        i = int(value[1:], 8)
+        ret.append(chr(i % 256))
+
+      elif id_ == Id.Lit_LBrace:
+        non_printing += 1
+
+      elif id_ == Id.Lit_RBrace:
+        non_printing -= 1
+
+      elif id_ == Id.Char_OneChar:  # \u \h \w etc.
+        char = value[1:]
+        if char == 'u':
+          r = _GetCurrentUserName()
+
+        elif char == 'h':
+          r = socket.gethostname()
+
+        elif char == 'w':
+          val = self.ex.mem.GetVar('PWD')
+          if val.tag == value_e.Str:
+            r = val.s
+          else:
+            r = '<Error: PWD is not a string>'
+
+        elif char in _REPLACEMENTS:
+          r = _REPLACEMENTS[char]
+
+        else:
+          raise NotImplementedError(char)
+
+        ret.append(r)
+
+      else:
+        raise AssertionError('Invalid token %r' % id_)
+
+    return ''.join(ret)
+
   def PS1(self):
     val = self.ex.mem.GetVar('PS1')
     return self.EvalPS1(val)
 
   def EvalPS1(self, val):
-    if val.tag != runtime.value_e.Str:
+    if val.tag != value_e.Str:
       return DEFAULT_PS1
 
     ps1_str = val.s
@@ -138,40 +176,7 @@ class Prompt(object):
 
     # e.g. "${debian_chroot}\u" -> '\u'
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
-    decoded_string = self.ReplacePS1Variables(val2.s)
-    return decoded_string
-
-  def ReplacePS1Variables(self, s):
-    ret = []
-    non_printing = 0
-    for id_, value in match.PS1_LEXER.Tokens(s):
-      # TODO: BadBackslash could be an error
-      if id_ in (Id.Char_Literals, Id.Char_BadBackslash):
-        ret.append(value)
-
-      elif id_ == Id.Char_OneChar:
-        char = value[1:]
-        if char not in self.REPLACEMENTS:
-          raise NotImplementedError(char)
-
-        r = self.REPLACEMENTS[char](self.ex)
-        ret.append(r)
-
-      elif id_ == Id.Char_Octal3:
-        oct_value = int(value[1:], 8)
-        ret.append(chr(oct_value % 256))
-
-      elif id_ == Id.Lit_LBrace:
-        non_printing += 1
-
-      elif id_ == Id.Lit_RBrace:
-        non_printing -= 1
-
-      else:
-        raise AssertionError('Invalid token %r' % id_)
-
-    return "".join(ret)
-
+    return self._ReplaceBackslashCodes(val2.s)
 
 class TestStatusLine(object):
 
