@@ -97,9 +97,11 @@ class TestStatusLine(object):
 # Global instance set by main().  TODO: Use dependency injection.
 PROMPT = None
 
-_REPLACEMENTS = {
-  'e' : '\033',
-  'a' : '\007',
+# NOTE: word_compile._ONE_CHAR has some of the same stuff.
+_ONE_CHAR = {
+  'a' : '\a',
+  'e' : '\x1b',
+  '\\' : '\\',
 }
 
 
@@ -125,7 +127,8 @@ class Prompt(object):
     ret = []
     non_printing = 0
     for id_, value in match.PS1_LEXER.Tokens(s):
-      # TODO: BadBackslash could be an error
+      # BadBacklash means they should have escaped with \\, but we can't 
+      # make this an error.
       if id_ in (Id.PS_Literals, Id.PS_BadBackslash):
         ret.append(value)
 
@@ -154,8 +157,8 @@ class Prompt(object):
           else:
             r = '<Error: PWD is not a string>'
 
-        elif char in _REPLACEMENTS:
-          r = _REPLACEMENTS[char]
+        elif char in _ONE_CHAR:
+          r = _ONE_CHAR[char]
 
         else:
           raise NotImplementedError(char)

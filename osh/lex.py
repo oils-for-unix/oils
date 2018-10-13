@@ -454,6 +454,7 @@ PS1_DEF = [
     C(r'\[', Id.PS_LBrace),  # non-printing
     C(r'\]', Id.PS_RBrace),
     R(r'[^\\\0]+', Id.PS_Literals),
+    # e.g. \x is not a valid escape.
     C('\\', Id.PS_BadBackslash),
 ]
 

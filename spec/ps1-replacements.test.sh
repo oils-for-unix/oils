@@ -47,6 +47,22 @@ echo "${PS1@P}"
 [\x55]
 ## END
 
+#### Single backslash
+PS1='\'
+echo "${PS1@P}"
+## BUG bash stdout-json: "\\\u0002\n"
+## STDOUT:
+\
+## END
+
+#### Escaped backslash
+PS1='\\'
+echo "${PS1@P}"
+## BUG bash stdout-json: "\\\u0002\n"
+## STDOUT:
+\
+## END
+
 #### \0001 octal literals are not supported
 PS1='[\0455]'
 echo "${PS1@P}"
@@ -62,9 +78,6 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
-
-
-
 
 #### constant string
 PS1='$ '
