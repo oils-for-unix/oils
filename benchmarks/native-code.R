@@ -16,43 +16,52 @@ options(stringsAsFactors = F,
         width=200
 )
 
-# Categorieze names:
+# Categorize names:
 # - _doc(__)?
 # - PRETTY
 # - init?
 
-Basic = function(ctx) {
-  Banner('BASIC METRICS')
+# frame: A table with 3 columns.  ctx$symbols or ctx$compileunits.
+Basic = function(frame) {
+  frame %>% arrange(desc(filesize)) %>% head(20) -> f1
+  ShowValue('Number of Symbols: %d', nrow(frame))
 
-  ctx$symbols %>% arrange(desc(filesize)) %>% head(20) -> f1
-  ShowValue('Number of Symbols: %d', nrow(ctx$symbols))
-
-  ctx$symbols %>% arrange(desc(filesize)) %>% head(20) -> f1
+  frame %>% arrange(desc(filesize)) %>% head(20) -> f1
   ShowFrame('By Size On Disk:', f1)
 
-  ShowValue('Total filesize: %d', sum(ctx$symbols$filesize))
+  ShowValue('Total filesize: %d', sum(frame$filesize))
 
   # Number of files
-  ctx$symbols %>% arrange(desc(vmsize)) %>% head(20) -> f2
+  frame %>% arrange(desc(vmsize)) %>% head(20) -> f2
   ShowFrame('By Size in Virtual Memory:', f2)
 
-  ShowValue('Total vmsize: %d', sum(ctx$symbols$vmsize))
+  ShowValue('Total vmsize: %d', sum(frame$vmsize))
+}
+
+Report = function(ctx) {
+  Banner('Summary of symbols.tsv (from _build/oil/ovm-opt):')
+  Basic(ctx$symbols)
+
+  Banner('Summary of compileunits.tsv (from _build/oil/ovm-dbg):')
+  Basic(ctx$compileunits)
+
+  Banner('Other analysis:')
 
   # This isn't foolproof, but docstrings seem to be named with a _doc or
   # __doc__ suffix.
   ctx$symbols %>% filter(str_detect(symbols, '_doc(__)?')) -> f3
   ShowFrame('Doc', f3 %>% head(20))
 
-  ShowValue('Approx number of docstrings: %d in %d bytes', nrow(f3), sum(f3$filesize))
-}
-
-Report = function(ctx) {
-  Basic(ctx)
+  ShowValue('Approx number of docstrings: %d in %d bytes', nrow(f3),
+            sum(f3$filesize))
 }
 
 Load = function(in_dir) {
   list(
-    symbols = read.table(file.path(in_dir, 'symbols.tsv'), sep='\t', header=T)
+    symbols = read.table(
+      file.path(in_dir, 'symbols.tsv'), sep='\t', header=T),
+    compileunits = read.table(
+      file.path(in_dir, 'compileunits.tsv'), sep='\t', header=T)
   )
 }
 

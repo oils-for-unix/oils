@@ -84,9 +84,21 @@ report() {
   _report metrics $BASE_DIR
 }
 
+build-ovm() {
+  make _build/oil/ovm-{dbg,opt}
+}
+
 run-for-release() {
+  build-ovm
+
   mkdir -p $BASE_DIR
-  cpython-symbols | tee $BASE_DIR/symbols.tsv
+  cpython-symbols > $BASE_DIR/symbols.tsv
+
+  # Really 'transation units', but bloaty gives it that name.
+  cpython-compileunits > $BASE_DIR/compileunits.tsv
+
+  head $BASE_DIR/symbols.tsv $BASE_DIR/compileunits.tsv
+
   report
 }
 
