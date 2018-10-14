@@ -140,8 +140,21 @@ class _PromptCache(object):
 
 
 class Prompt(object):
-  """Evaluate the prompt mini-language."""
+  """Evaluate the prompt mini-language.
 
+  bash has a very silly algorithm:
+  1. replace backslash codes, except any $ in those values get quoted into \$.
+  2. Parse the word as if it's in a double quoted context, and then evaluate
+  the word.
+
+  Haven't done this from POSIX: POSIX:
+  http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
+
+  The shell shall replace each instance of the character '!' in PS1 with the
+  history file number of the next command to be typed. Escaping the '!' with
+  another '!' (that is, "!!" ) shall place the literal character '!' in the
+  prompt.
+  """
   def __init__(self, arena, parse_ctx, ex):
     self.arena = arena
     self.parse_ctx = parse_ctx
@@ -175,7 +188,10 @@ class Prompt(object):
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
         char = value[1:]
-        if char == 'u':
+        if char == '$':  # So the user can tell if they're root or not.
+          r = '#' if self.cache.Get('euid') == 0 else '$'
+
+        elif char == 'u':
           r = self.cache.Get('user')
 
         elif char == 'h':
@@ -188,17 +204,14 @@ class Prompt(object):
           else:
             r = '<Error: PWD is not a string>'
 
-        elif char == '$':
-          # So the user can tell if they are root.
-          r = '#' if self.cache.Get('euid') == 0 else '$'
-
         elif char in _ONE_CHAR:
           r = _ONE_CHAR[char]
 
         else:
           raise NotImplementedError(char)
 
-        ret.append(r)
+        # See comment above on bash hack for $.
+        ret.append(r.replace('$', '\\$'))
 
       else:
         raise AssertionError('Invalid token %r' % id_)
@@ -213,8 +226,10 @@ class Prompt(object):
     if val.tag != value_e.Str:
       return DEFAULT_PS1
 
-    ps1_str = val.s
+    # First replacements.  TODO: Should we cache this too?
+    ps1_str = self._ReplaceBackslashCodes(val.s)
 
+    # The prompt is often constant, so we can avoid parsing it.
     # NOTE: This is copied from the PS4 logic in Tracer.
     try:
       ps1_word = self.parse_cache[ps1_str]
@@ -232,7 +247,7 @@ class Prompt(object):
 
     # e.g. "${debian_chroot}\u" -> '\u'
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
-    return self._ReplaceBackslashCodes(val2.s)
+    return val2.s
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):

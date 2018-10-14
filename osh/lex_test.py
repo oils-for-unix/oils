@@ -242,7 +242,7 @@ class RegexTest(unittest.TestCase):
     self.assertEqual(False, bool(last_echo_e_pat.match('\0')))
 
 
-class EchoLexerTest(unittest.TestCase):
+class OtherLexerTest(unittest.TestCase):
 
   def testEchoLexer(self):
     lex = match.ECHO_LEXER
@@ -252,6 +252,11 @@ class EchoLexerTest(unittest.TestCase):
 
     # NOTE: We only test with one of these.
     print(match.ECHO_MATCHER)  # either fast or slow
+
+  def testPS1Lexer(self):
+    lex = match.PS1_LEXER
+    print(list(lex.Tokens(r'foo')))
+    print(list(lex.Tokens(r'\h \w \$')))
 
 
 if __name__ == '__main__':

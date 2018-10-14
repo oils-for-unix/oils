@@ -24,6 +24,48 @@ PS1='\a\e\r\n'
 echo "${PS1@P}"
 ## stdout-json: "\u0007\u001b\r\n\n"
 
+#### special case for $
+# NOTE: This might be broken for # but it's hard to tell since we don't have
+# root.  Could inject __TEST_EUID or something.
+PS1='$'
+echo "${PS1@P}"
+PS1='\$'
+echo "${PS1@P}"
+PS1='\\$'
+echo "${PS1@P}"
+PS1='\\\$'
+echo "${PS1@P}"
+PS1='\\\\$'
+echo "${PS1@P}"
+## STDOUT:
+$
+$
+$
+\$
+\$
+## END
+
+#### PS1 evaluation order
+x='\'
+y='h'
+PS1='$x$y'
+echo "${PS1@P}"
+## STDOUT:
+\h
+## END
+
+#### PS1 evaluation order 2
+foo=foo_value
+dir=$TMP/'$foo'  # Directory name with a dollar!
+mkdir -p $dir
+cd $dir
+PS1='\w $foo'
+test "${PS1@P}" = "$PWD foo_value"
+echo status=$?
+## STDOUT:
+status=0
+## END
+
 #### \1004
 PS1='\1004$'
 echo "${PS1@P}"
