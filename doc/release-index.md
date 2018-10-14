@@ -44,8 +44,15 @@ Oil Version 0.6.pre5
     compiled with CPython (for comparison).
   - [src-bin-ratio-with-opy](metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
+- Native Code Metrics
+  - [overview](metrics.wwz/native-code/overview.txt) - An analysis of GCC's
+    compilation of [OVM][] (a subset of CPython).  [Bloaty][] provides the
+    underlying data.
 
 [cloc]: https://github.com/AlDanial/cloc
+[Bloaty]: https://github.com/google/bloaty
+[OVM]: //www.oilshell.org/cross-ref.html?tag=OVM#OVM
+
 
 ### Oil Tests
 

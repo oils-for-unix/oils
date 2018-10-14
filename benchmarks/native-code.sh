@@ -99,7 +99,7 @@ run-for-release() {
 
   head $BASE_DIR/symbols.tsv $BASE_DIR/compileunits.tsv
 
-  report
+  report | tee $BASE_DIR/overview.txt
 }
 
 # TODO:
