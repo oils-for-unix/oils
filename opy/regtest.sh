@@ -66,11 +66,24 @@ manifest() {
 # TODO: Parallelize with xargs.  compile-manifest in build.sh is serial.  Just
 # needs a mkdir.
 
-compile() {
+# NOTE: This is like './build.sh compile-manifest', except we don't exclude
+# docstrings, etc.
+_compile-manifest() {
+  local dest_dir=$1
+  while read full_src_path rel_dest_path; do
+    local dest=$dest_dir/$rel_dest_path
+    mkdir -p $(dirname $dest)
+
+    $THIS_DIR/../bin/opyc compile $full_src_path $dest
+    log "     $full_src_path"
+  done
+}
+
+compile-all() {
   local pat=${1:-}
-  local dest=_tmp/regtest
-  mkdir -p $dest
-  time manifest | egrep "$pat" | ./build.sh compile-manifest $dest
+  local dest_dir=_tmp/regtest
+  mkdir -p $dest_dir
+  time manifest | egrep "$pat" | _compile-manifest $dest_dir
 }
 
 checksum() {
