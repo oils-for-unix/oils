@@ -24,7 +24,7 @@ options(stringsAsFactors = F,
 # frame: A table with 3 columns.  ctx$symbols or ctx$compileunits.
 Basic = function(frame) {
   frame %>% arrange(desc(filesize)) %>% head(20) -> f1
-  ShowValue('Number of Symbols: %d', nrow(frame))
+  ShowValue('Rows: %d', nrow(frame))
 
   frame %>% arrange(desc(filesize)) %>% head(20) -> f1
   ShowFrame('By Size On Disk:', f1)
@@ -50,10 +50,9 @@ Report = function(ctx) {
   # This isn't foolproof, but docstrings seem to be named with a _doc or
   # __doc__ suffix.
   ctx$symbols %>% filter(str_detect(symbols, '_doc(__)?')) -> f3
-  ShowFrame('Doc', f3 %>% head(20))
+  ShowFrame('Big Docstrings (approximate, based on name)', f3 %>% head(20))
 
-  ShowValue('Approx number of docstrings: %d in %d bytes', nrow(f3),
-            sum(f3$filesize))
+  ShowValue('%d symbols in %d bytes', nrow(f3), sum(f3$filesize))
 }
 
 Load = function(in_dir) {
