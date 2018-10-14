@@ -207,8 +207,8 @@ smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-ps1-replacements() {
-  sh-spec spec/ps1-replacements.test.sh --osh-failures-allowed 1 \
+prompt() {
+  sh-spec spec/prompt.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 

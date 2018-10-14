@@ -129,19 +129,26 @@ one
 
 #### continue in subshell
 for i in $(seq 3); do
-  echo $i
+  echo "> $i"
   ( if true; then continue; fi; echo "Should not print" )
+  echo ". $i"
 done
 ## STDOUT:
-1
-2
-3
+> 1
+. 1
+> 2
+. 2
+> 3
+. 3
 ## END
 ## BUG mksh STDOUT:
-1
+> 1
 Should not print
-2
+. 1
+> 2
 Should not print
-3
+. 2
+> 3
 Should not print
+. 3
 ## END

@@ -563,7 +563,7 @@ class _WordEvaluator(object):
         if op.op_id == Id.VOp0_P:
           # TODO: Use dependency injection
           #val = self.prompt._EvalPS1(val)
-          prompt = ui.PROMPT.EvalPS1(val)
+          prompt = ui.PROMPT.EvalPrompt(val)
           val = runtime.Str(prompt)
         else:
           raise NotImplementedError(op.op_id)

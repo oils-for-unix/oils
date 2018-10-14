@@ -164,13 +164,17 @@ class Prompt(object):
     self.hostname = None
     self.username = None
 
-    self.cache = _PromptCache()
-    self.parse_cache = {}  # PS1 value -> CompoundWord.
+    self.cache = _PromptCache()  # Cache to save syscalls / libc calls.
 
-  def _ReplaceBackslashCodes(self, s):
+    # These caches should reduce memory pressure a bit.  We don't want to
+    # reparse the prompt twice every time you hit enter.
+    self.tokens_cache = {}  # string -> list of tokens
+    self.parse_cache = {}  # string -> CompoundWord.
+
+  def _ReplaceBackslashCodes(self, tokens):
     ret = []
     non_printing = 0
-    for id_, value in match.PS1_LEXER.Tokens(s):
+    for id_, value in tokens:
       # BadBacklash means they should have escaped with \\, but we can't 
       # make this an error.
       if id_ in (Id.PS_Literals, Id.PS_BadBackslash):
@@ -218,16 +222,19 @@ class Prompt(object):
 
     return ''.join(ret)
 
-  def PS1(self):
-    val = self.ex.mem.GetVar('PS1')
-    return self.EvalPS1(val)
-
-  def EvalPS1(self, val):
+  def EvalPrompt(self, val):
+    """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
     if val.tag != value_e.Str:
-      return DEFAULT_PS1
+      return DEFAULT_PS1  # no evaluation necessary
+
+    try:
+      tokens = self.tokens_cache[val.s]
+    except KeyError:
+      tokens = match.PS1_LEXER.Tokens(val.s)
+      self.tokens_cache[val.s] = tokens
 
     # First replacements.  TODO: Should we cache this too?
-    ps1_str = self._ReplaceBackslashCodes(val.s)
+    ps1_str = self._ReplaceBackslashCodes(tokens)
 
     # The prompt is often constant, so we can avoid parsing it.
     # NOTE: This is copied from the PS4 logic in Tracer.
@@ -235,19 +242,21 @@ class Prompt(object):
       ps1_word = self.parse_cache[ps1_str]
     except KeyError:
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str, self.arena)
-
       try:
         ps1_word = w_parser.ReadPS()
       except Exception as e:
         error_str = '<ERROR: cannot parse PS1>'
         t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
         ps1_word = ast.CompoundWord([ast.LiteralPart(t)])
-
-    self.parse_cache[ps1_str] = ps1_word
+      self.parse_cache[ps1_str] = ps1_word
 
     # e.g. "${debian_chroot}\u" -> '\u'
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
     return val2.s
+
+  def PS1(self):
+    val = self.ex.mem.GetVar('PS1')
+    return self.EvalPrompt(val)
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
