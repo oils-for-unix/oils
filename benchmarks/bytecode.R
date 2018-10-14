@@ -296,6 +296,14 @@ Compare = function(cpython_ctx, opy_ctx) {
   ) -> f1
 
   ShowFrame('Overview', f1)
+
+  Banner('Cell Variables')
+
+  cpython_ctx$names %>% filter(kind == 'cell') -> f2
+  opy_ctx$names %>% filter(kind == 'cell') -> f3
+
+  ShowFrame('CPython', f2)
+  ShowFrame('OPy', f3)
 }
 
 main = function(argv) {
