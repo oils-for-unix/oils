@@ -25,6 +25,8 @@ done
 ## stdout-json: ""
 ## status: 2
 ## OK bash/mksh status: 1
+## BUG zsh stdout: hi
+## BUG zsh status: 1
 
 #### Tilde expansion within for loop
 HOME=/home/bob
@@ -82,14 +84,14 @@ done
 ## stdout-json: "cond\nbody\n"
 
 #### while in pipe
-i=0
-find tests/ | while read $path; do
-  i=$((i+1))
-  #echo $i
-done
-# This Because while loop was in a subshell
-echo $i
-## stdout: 0
+x=$(find spec/ | wc -l)
+y=$(find spec/ | while read path; do
+  echo $path
+done | wc -l
+)
+test $x -eq $y
+echo status=$?
+## stdout: status=0
 
 #### while in pipe with subshell
 i=0
@@ -107,3 +109,39 @@ until false; do
   break
 done
 ## stdout: hi
+
+#### continue at top level
+# zsh behaves with strict-control-flow!
+if true; then
+  echo one
+  continue
+  echo two
+fi
+## status: 0
+## STDOUT:
+one
+two
+## END
+## OK zsh status: 1
+## OK zsh STDOUT:
+one
+## END
+
+#### continue in subshell
+for i in $(seq 3); do
+  echo $i
+  ( if true; then continue; fi; echo "Should not print" )
+done
+## STDOUT:
+1
+2
+3
+## END
+## BUG mksh STDOUT:
+1
+Should not print
+2
+Should not print
+3
+Should not print
+## END

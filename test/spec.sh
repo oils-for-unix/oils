@@ -278,8 +278,8 @@ quote() {
 }
 
 loop() {
-  sh-spec spec/loop.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  sh-spec spec/loop.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 case_() {
