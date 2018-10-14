@@ -332,6 +332,20 @@ echo "status=$?"
 echo $(( 1 + 2*3 - 8/2 ))
 ## stdout: 3
 
+#### Exponentiation with **
+echo $(( 3 ** 0 ))
+echo $(( 3 ** 1 ))
+echo $(( 3 ** 2 ))
+## STDOUT:
+1
+3
+9
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
 #### Exponentiation operator has buggy precedence
 # NOTE: All shells agree on this, but R and Python give -9, which is more
 # mathematically correct.
@@ -342,12 +356,12 @@ echo $(( -3 ** 2 ))
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
-#### Negative exponennt
+#### Negative exponent
 # bash explicitly disallows negative exponents!
 echo $(( 2**-1 * 5 ))
-## stdout: 2.5
-## status: 0
-## OK bash/mksh stdout-json: ""
-## OK bash/mksh status: 1
+## stdout-json: ""
+## status: 1
+## OK zsh stdout: 2.5
+## OK zsh status: 0
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
