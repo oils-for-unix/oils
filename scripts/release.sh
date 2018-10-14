@@ -58,7 +58,7 @@ auto-machine1() {
   $0 spec-all
   $0 metrics
   $0 benchmark-run
-  $0 benchmark-run-on-1-machine
+  #$0 benchmark-run-on-1-machine
 }
 
 # TODO:
@@ -492,6 +492,11 @@ git-changelog-0.6.pre5() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.6.pre6() {
+  _git-changelog origin/release/0.6.pre5 release/0.6.pre6 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -577,6 +582,10 @@ announcement-0.6.pre4() {
 
 announcement-0.6.pre5() {
   html-redirect '/blog/2018/10/08.html' > _release/VERSION/announcement.html
+}
+
+announcement-0.6.pre6() {
+  html-redirect '/blog/2018/10/16.html' > _release/VERSION/announcement.html
 }
 
 _link() {
@@ -676,6 +685,7 @@ metrics() {
 
   # NOTE: Could move these files and scripts/count.sh to a metrics/ dir?
   benchmarks/bytecode.sh run-for-release
+  benchmarks/native-code.sh run-for-release
 
   tree $out
 }
