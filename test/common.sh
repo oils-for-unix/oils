@@ -10,10 +10,16 @@ readonly __TEST_COMMON_SH=1
 
 # TODO: Remove/rename this.  The release process might use the release binary
 # instead of this dev binary.  test/spec.sh already has its own scheme.
-# This is analogous to $OSH_OVM in benchmarks/common.sh.  
+# This is analogous to $OSH_OVM in benchmarks/common.sh.
 readonly OSH=${OSH:-bin/osh}
 
 # For xargs -P in spec-runner.sh, wild-runner.sh.
+command -v nproc || {
+  nproc() {
+    sysctl -n hw.ncpu
+  }
+}
+
 readonly JOBS=$(( $(nproc) - 1 ))
 
 readonly R_PATH=~/R  # Like PYTHONPATH, but for running R scripts
