@@ -74,8 +74,10 @@ _compile-manifest() {
     local dest=$dest_dir/$rel_dest_path
     mkdir -p $(dirname $dest)
 
+    # stdout is saved and linked on /release/$VERSION/index.html
+    echo "$full_src_path"
+
     $THIS_DIR/../bin/opyc compile $full_src_path $dest
-    log "     $full_src_path"
   done
 }
 
