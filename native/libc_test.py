@@ -137,6 +137,9 @@ class LibcTest(unittest.TestCase):
   def testPrintTime(self):
     libc.print_time(0.1, 0.2, 0.3)
 
+  def testGethostname(self):
+    print(libc.gethostname())
+
 
 if __name__ == '__main__':
   unittest.main()

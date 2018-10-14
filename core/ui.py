@@ -12,7 +12,6 @@ from __future__ import print_function
 
 import os
 import pwd
-import socket  # socket.gethostname()
 import sys
 
 from asdl import const
@@ -22,6 +21,8 @@ from core import dev
 from osh import ast_lib
 from osh import match
 from osh.meta import ast, runtime, Id
+
+import libc  # gethostname()
 
 value_e = runtime.value_e
 
@@ -129,7 +130,7 @@ class _PromptCache(object):
     if name == 'euid':  # for \$ and \u
       value = os.geteuid()
     elif name == 'hostname':  # for \h and \H
-      value = socket.gethostname()
+      value = libc.gethostname()
     elif name == 'user':  # for \u
       value = _GetUserName(self.Get('euid'))  # recursive call for caching
     else:

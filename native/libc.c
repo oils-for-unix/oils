@@ -353,6 +353,26 @@ func_print_time(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
+// A copy of socket.gethostname() from socketmodule.c.  That module brings in
+// too many dependencies.
+
+static PyObject *socket_error;
+
+static PyObject *
+socket_gethostname(PyObject *self, PyObject *unused)
+{
+    char buf[1024];
+    int res;
+    Py_BEGIN_ALLOW_THREADS
+    res = gethostname(buf, (int) sizeof buf - 1);
+    //res = gethostname(buf, 0);  // For testing errors
+    Py_END_ALLOW_THREADS
+    if (res < 0)
+        return PyErr_SetFromErrno(socket_error);
+    buf[sizeof buf - 1] = '\0';
+    return PyString_FromString(buf);
+}
+
 static PyMethodDef methods[] = {
   {"realpath", func_realpath, METH_VARARGS,
    "Return the canonical version of a path with symlinks, or None if there is "
@@ -373,9 +393,12 @@ static PyMethodDef methods[] = {
    "the regex is invalid."},
   {"print_time", func_print_time, METH_VARARGS,
    "Print three floating point values for the 'time' builtin."},
+  {"gethostname",socket_gethostname, METH_NOARGS, ""},
   {NULL, NULL},
 };
 
 void initlibc(void) {
   Py_InitModule("libc", methods);
+  socket_error = PyErr_NewException("socket.error",
+                                    PyExc_IOError, NULL);
 }
