@@ -101,12 +101,13 @@ PROMPT = None
 _ONE_CHAR = {
   'a' : '\a',
   'e' : '\x1b',
+  'r': '\r',
+  'n': '\n',
   '\\' : '\\',
 }
 
 
-def _GetCurrentUserName():
-  uid = os.getuid()  # Does it make sense to cache this somewhere?
+def _GetUserName(uid):
   try:
     e = pwd.getpwuid(uid)
   except KeyError:
@@ -115,12 +116,42 @@ def _GetCurrentUserName():
     return e.pw_name
 
 
+class _PromptCache(object):
+  """Cache some values we don't expect to change for the life of a process."""
+
+  def __init__(self):
+    self.cache = {}
+
+  def Get(self, name):
+    if name in self.cache:
+      return self.cache[name]
+
+    if name == 'euid':  # for \$ and \u
+      value = os.geteuid()
+    elif name == 'hostname':  # for \h and \H
+      value = socket.gethostname()
+    elif name == 'user':  # for \u
+      value = _GetUserName(self.Get('euid'))  # recursive call for caching
+    else:
+      raise AssertionError(name)
+
+    self.cache[name] = value
+    return value
+
+
 class Prompt(object):
+  """Evaluate the prompt mini-language."""
+
   def __init__(self, arena, parse_ctx, ex):
     self.arena = arena
     self.parse_ctx = parse_ctx
     self.ex = ex
 
+    # We don't expect these to change for the life of the shell
+    self.hostname = None
+    self.username = None
+
+    self.cache = _PromptCache()
     self.parse_cache = {}  # PS1 value -> CompoundWord.
 
   def _ReplaceBackslashCodes(self, s):
@@ -145,10 +176,10 @@ class Prompt(object):
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
         char = value[1:]
         if char == 'u':
-          r = _GetCurrentUserName()
+          r = self.cache.Get('user')
 
         elif char == 'h':
-          r = socket.gethostname()
+          r = self.cache.Get('hostname')
 
         elif char == 'w':
           val = self.ex.mem.GetVar('PWD')
@@ -156,6 +187,10 @@ class Prompt(object):
             r = val.s
           else:
             r = '<Error: PWD is not a string>'
+
+        elif char == '$':
+          # So the user can tell if they are root.
+          r = '#' if self.cache.Get('euid') == 0 else '$'
 
         elif char in _ONE_CHAR:
           r = _ONE_CHAR[char]

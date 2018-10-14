@@ -13,11 +13,16 @@ $ exit
 ## END
 
 #### [] are non-printing
-PS1='\[foo\]$'
+PS1='\[foo\]\$'
 echo "${PS1@P}"
 ## STDOUT:
 foo$
 ## END
+
+#### literal escapes
+PS1='\a\e\r\n'
+echo "${PS1@P}"
+## stdout-json: "\u0007\u001b\r\n\n"
 
 #### \1004
 PS1='\1004$'
