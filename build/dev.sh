@@ -33,6 +33,26 @@ else
   exit 1
 fi
 
+release-macos-deps() {
+  command -v markdown 2> /dev/null || brew install markdown
+  command -v cloc 2> /dev/null || brew install cloc
+  command -v Rscript 2> /dev/null || brew install r
+}
+
+macos-deps() {
+  command -v gawk 2> /dev/null || brew install gawk
+  command -v gcat 2> /dev/null || brew install coreutils
+  command -v python2 2> /dev/null || brew install python@2
+  cat --version 2>/dev/null | grep -q GNU || {
+    echo 'exporting path to point to gnu coreutils for tests'
+    echo 'you may want to add this your bashrc or zshrc:'
+    echo 'export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"'
+    export PATH='/usr/local/opt/coreutils/libexec/gnubin:$PATH'
+  }
+
+  test/spec.sh install-shells
+}
+
 ubuntu-deps() {
   # python-dev: for pylibc
   # gawk: used by spec-runner.sh for the special match() function.
@@ -78,7 +98,7 @@ gen-asdl-py-pickle() {
   local out=_devbuild/gen/${name}_asdl.py
 
   PYTHONPATH=. osh/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
-  
+
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
   mv -v $tmp $out
