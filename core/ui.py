@@ -231,7 +231,7 @@ class Prompt(object):
     try:
       tokens = self.tokens_cache[val.s]
     except KeyError:
-      tokens = match.PS1_LEXER.Tokens(val.s)
+      tokens = list(match.PS1_LEXER.Tokens(val.s))
       self.tokens_cache[val.s] = tokens
 
     # First replacements.  TODO: Should we cache this too?
