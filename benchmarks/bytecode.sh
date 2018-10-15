@@ -89,7 +89,7 @@ report() {
 
 # Reads the 5 tables and produces some metrics.
 metrics-opy() {
-  report metrics $BASE_DIR/opy 
+  report metrics $BASE_DIR/opy-dis-tables
 }
 
 compare() {

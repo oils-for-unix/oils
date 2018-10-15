@@ -123,6 +123,14 @@ Names = function(names) {
   # self, None, True, False, append, len
   names %>% count(name) %>% arrange(desc(n)) -> f2
   ShowFrame('Common names', f2)
+
+  names %>% mutate(len=nchar(name)) -> all
+  names %>% count(name) %>% mutate(len=nchar(name)) -> unique
+
+  ShowValue('Total length of all %d names: %d',
+            nrow(all), sum(all$len))
+  ShowValue('Total length of %d unique names: %d',
+            nrow(unique), sum(unique$len))
 }
 
 # Hm max unique ops is 58
