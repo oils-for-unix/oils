@@ -10,14 +10,9 @@ cmd_exec_test.py: Tests for cmd_exec.py
 """
 
 import unittest
-import sys
 
-from core import cmd_exec  # module under test
-from core import dev
-from core import process
 from core import state
 from core import test_lib
-from core import util
 
 from osh.meta import ast, Id
 from osh import parse_lib
@@ -29,24 +24,6 @@ def InitCommandParser(code_str, arena=None):
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
   _, c_parser = parse_ctx.MakeParser(line_reader)
   return c_parser
-
-
-def InitExecutor(arena=None):
-  arena = arena or test_lib.MakeArena('<InitExecutor>')
-
-  mem = state.Mem('', [], {}, arena)
-  fd_state = process.FdState()
-  funcs = {}
-  comp_funcs = {}
-  # For the tests, we do not use 'readline'.
-  exec_opts = state.ExecOpts(mem, None)
-  parse_ctx = parse_lib.ParseContext(arena, {})
-
-  debug_f = util.DebugFile(sys.stderr)
-  devtools = dev.DevTools(dev.CrashDumper(''), debug_f, debug_f)
-
-  return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
-                           parse_ctx, devtools)
 
 
 def InitEvaluator():
@@ -65,7 +42,7 @@ class ExpansionTest(unittest.TestCase):
     print(node)
 
     arena = test_lib.MakeArena('<cmd_exec_test.py>')
-    ex = InitExecutor(arena)
+    ex = test_lib.InitExecutor(arena)
     #print(ex.Execute(node))
 
     #print(ex._ExpandWords(node.words))

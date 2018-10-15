@@ -161,10 +161,6 @@ class Prompt(object):
     self.parse_ctx = parse_ctx
     self.ex = ex
 
-    # We don't expect these to change for the life of the shell
-    self.hostname = None
-    self.username = None
-
     self.cache = _PromptCache()  # Cache to save syscalls / libc calls.
 
     # These caches should reduce memory pressure a bit.  We don't want to
@@ -203,6 +199,7 @@ class Prompt(object):
           r = self.cache.Get('hostname')
 
         elif char == 'w':
+          # TODO: This should shorten to ~foo when applicable.
           val = self.ex.mem.GetVar('PWD')
           if val.tag == value_e.Str:
             r = val.s
@@ -228,16 +225,17 @@ class Prompt(object):
     if val.tag != value_e.Str:
       return DEFAULT_PS1  # no evaluation necessary
 
+    # Parse backslash escapes (cached)
     try:
       tokens = self.tokens_cache[val.s]
     except KeyError:
       tokens = list(match.PS1_LEXER.Tokens(val.s))
       self.tokens_cache[val.s] = tokens
 
-    # First replacements.  TODO: Should we cache this too?
+    # Replace values.
     ps1_str = self._ReplaceBackslashCodes(tokens)
 
-    # The prompt is often constant, so we can avoid parsing it.
+    # Parse it like a double-quoted word (cached).
     # NOTE: This is copied from the PS4 logic in Tracer.
     try:
       ps1_word = self.parse_cache[ps1_str]
@@ -251,7 +249,7 @@ class Prompt(object):
         ps1_word = ast.CompoundWord([ast.LiteralPart(t)])
       self.parse_cache[ps1_str] = ps1_word
 
-    # e.g. "${debian_chroot}\u" -> '\u'
+    # Evaluate, e.g. "${debian_chroot}\u" -> '\u'
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
     return val2.s
 

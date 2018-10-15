@@ -86,7 +86,7 @@ class ProcessTest(unittest.TestCase):
   def testPipeline(self):
     arena = test_lib.MakeArena('testPipeline')
     node = _CommandNode('uniq -c', arena)
-    ex = cmd_exec_test.InitExecutor(arena=arena)
+    ex = test_lib.InitExecutor(arena=arena)
     print('BEFORE', os.listdir('/dev/fd'))
 
     p = process.Pipeline()
@@ -103,7 +103,7 @@ class ProcessTest(unittest.TestCase):
 
   def testPipeline2(self):
     arena = test_lib.MakeArena('testPipeline')
-    ex = cmd_exec_test.InitExecutor(arena=arena)
+    ex = test_lib.InitExecutor(arena=arena)
 
     Banner('ls | cut -d . -f 1 | head')
     p = process.Pipeline()

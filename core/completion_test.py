@@ -15,7 +15,6 @@ import unittest
 import sys
 
 from core import alloc
-from core import cmd_exec_test
 from core import completion  # module under test
 from core import state
 from core import test_lib
@@ -131,7 +130,7 @@ class CompletionTest(unittest.TestCase):
     func_node = c_parser.ParseLogicalLine()
     print(func_node)
 
-    ex = cmd_exec_test.InitExecutor(arena=arena)
+    ex = test_lib.InitExecutor(arena=arena)
 
     a = completion.ShellFuncAction(ex, func_node)
     comp = self._MakeComp(['f'], 0, 'f')

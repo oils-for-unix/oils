@@ -10,12 +10,20 @@ test_lib.py - Functions for testing.
 """
 
 import string
+import sys
 
 from asdl import py_meta
+
 from core import alloc
+from core import cmd_exec
+from core import dev
 from core import legacy
+from core import process
 from core import state
 from core import word_eval
+from core import util
+
+from osh import parse_lib
 from osh.meta import Id
 
 
@@ -91,3 +99,20 @@ def MakeTestEvaluator():
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
   return ev
 
+
+def InitExecutor(arena=None):
+  arena = arena or MakeArena('<InitExecutor>')
+
+  mem = state.Mem('', [], {}, arena)
+  fd_state = process.FdState()
+  funcs = {}
+  comp_funcs = {}
+  # For the tests, we do not use 'readline'.
+  exec_opts = state.ExecOpts(mem, None)
+  parse_ctx = parse_lib.ParseContext(arena, {})
+
+  debug_f = util.DebugFile(sys.stderr)
+  devtools = dev.DevTools(dev.CrashDumper(''), debug_f, debug_f)
+
+  return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
+                           parse_ctx, devtools)
