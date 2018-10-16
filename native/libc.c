@@ -374,26 +374,33 @@ socket_gethostname(PyObject *self, PyObject *unused)
 }
 
 static PyMethodDef methods[] = {
-  {"realpath", func_realpath, METH_VARARGS,
-   "Return the canonical version of a path with symlinks, or None if there is "
-   "an error."},
-  {"fnmatch", func_fnmatch, METH_VARARGS,
-   "Return whether a string matches a pattern."},
+  // Return the canonical version of a path with symlinks, or None if there is
+  // an error.
+  {"realpath", func_realpath, METH_VARARGS, ""},
+
+  // Return whether a string matches a pattern."
+  {"fnmatch", func_fnmatch, METH_VARARGS, ""},
+
+  // Return a list of files that match a pattern.
   // We need this since Python's glob doesn't have char classes.
-  {"glob", func_glob, METH_VARARGS,
-   "Return a list of files that match a pattern."},
-  {"regex_parse", func_regex_parse, METH_VARARGS,
-   "Compile a regex in ERE syntax, returning whether it is valid"},
-  {"regex_match", func_regex_match, METH_VARARGS,
-   "Match regex against a string.  Returns a list of matches, None if no "
-   "match.  Raises RuntimeError if the regex is invalid."},
-  {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS,
-   "If the regex matches the string, return the start and end position of the "
-   "first group.  Returns None if there is no match.  Raises RuntimeError if "
-   "the regex is invalid."},
-  {"print_time", func_print_time, METH_VARARGS,
-   "Print three floating point values for the 'time' builtin."},
-  {"gethostname",socket_gethostname, METH_NOARGS, ""},
+  {"glob", func_glob, METH_VARARGS, ""},
+
+  // Compile a regex in ERE syntax, returning whether it is valid
+  {"regex_parse", func_regex_parse, METH_VARARGS, ""},
+
+  // Match regex against a string.  Returns a list of matches, None if no
+  // match.  Raises RuntimeError if the regex is invalid.
+  {"regex_match", func_regex_match, METH_VARARGS, ""},
+
+  // If the regex matches the string, return the start and end position of the
+  // first group.  Returns None if there is no match.  Raises RuntimeError if
+  // the regex is invalid.
+  {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS, ""},
+
+  // "Print three floating point values for the 'time' builtin.
+  {"print_time", func_print_time, METH_VARARGS, ""},
+
+  {"gethostname", socket_gethostname, METH_NOARGS, ""},
   {NULL, NULL},
 };
 

@@ -160,9 +160,15 @@ extract-all-defs() {
   find _tmp/oil-tar-test -name '*.[ch]' | xargs -- $0 extract-defs 
 }
 
-py-method-defs() {
-  extract-all-defs #| preprocess
+parse-cpython() {
+  PYTHONPATH=. build/parse_cpython.py "$@"
 }
 
+py-method-defs() {
+  local tmp=_tmp/py-method-defs.txt
+  extract-all-defs | preprocess > $tmp
+  #head -n 30 $tmp
+  cat $tmp | parse-cpython
+}
 
 "$@"
