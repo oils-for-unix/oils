@@ -90,7 +90,7 @@ cd -- /
 echo $PWD
 ## stdout: /
 
-#### cd to non-symlink with -P
+#### cd to non-symlink with -P (TODO: redundant?)
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
@@ -99,47 +99,17 @@ cd -P $targ
 test $PWD = "$TMP/cd-symtarget" && echo OK
 ## stdout: OK
 
-#### cd to symlink default behavior
-targ=$TMP/cd-symtarget
-lnk=$TMP/cd-symlink
-mkdir -p $targ
-ln -s $targ $lnk
-cd $lnk
-test $PWD = "$TMP/cd-symlink" && echo OK
-## stdout: OK
-
-#### cd to symlink with -L
+#### cd to symlink with -L (TODO: redundant?)
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
 ln -s $targ $lnk
 cd -L $lnk
-test $PWD = "$TMP/cd-symlink" && echo OK
+test $PWD = "$TMP/cd-symlink" && echo OK || echo $PWD
+rm -r -f $targ  # somehow we need to clean this up?
 ## stdout: OK
 
-#### cd to relative path with -L and -P
-targ=$TMP/cd-symtarget/subdir
-lnk=$TMP/cd-symlink
-mkdir -p $targ
-ln -s $targ $lnk
-
-cd $lnk/subdir
-test $PWD = "$TMP/cd-symlink/subdir" && echo OK
-cd -L ..
-test $PWD = "$TMP/cd-symlink" && echo OK
-
-cd $lnk/subdir
-test $PWD = "$TMP/cd-symlink/subdir" && echo OK
-cd -P ..
-test $PWD = "$TMP/cd-symtarget" && echo OK || echo $PWD
-## STDOUT:
-OK
-OK
-OK
-OK
-## END
-
-#### cd to symlink with -P
+#### cd to symlink with -P (TODO: redundant?)
 targ=$TMP/cd-symtarget
 lnk=$TMP/cd-symlink
 mkdir -p $targ
@@ -147,6 +117,56 @@ ln -s $targ $lnk
 cd -P $lnk
 test $PWD = "$TMP/cd-symtarget" && echo OK
 ## stdout: OK
+
+#### cd to symlink with -L and -P
+targ=$TMP/cd-symtarget
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+
+# -L behavior is the default
+cd $lnk
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd -L $lnk
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd -P $lnk
+test $PWD = "$TMP/cd-symtarget" && echo OK || echo $PWD
+## STDOUT:
+OK
+OK
+OK
+## END
+
+#### cd to relative path with -L and -P
+die() { echo "$@"; exit 1; }
+
+targ=$TMP/cd-symtarget/subdir
+lnk=$TMP/cd-symlink
+mkdir -p $targ
+ln -s $targ $lnk
+
+# -L behavior is the default
+cd $lnk/subdir
+test $PWD = "$TMP/cd-symlink/subdir" || die "failed"
+cd ..
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd $lnk/subdir
+test $PWD = "$TMP/cd-symlink/subdir" || die "failed"
+cd -L ..
+test $PWD = "$TMP/cd-symlink" && echo OK
+
+cd $lnk/subdir
+test $PWD = "$TMP/cd-symlink/subdir" || die "failed"
+cd -P ..
+test $PWD = "$TMP/cd-symtarget" && echo OK || echo $PWD
+## STDOUT:
+OK
+OK
+OK
+## END
 
 #### pushd/popd
 set -o errexit

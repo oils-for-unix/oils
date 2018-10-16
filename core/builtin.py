@@ -540,22 +540,20 @@ def Cd(argv, mem, dir_stack):
     util.error("cd %r: %s", dest_dir, os.strerror(e.errno))
     return 1
 
-  # Set $PWD.
-  # '-L' is the default behavior; no need to check it
+  # Calculate new $PWD and set it.
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
-  # the others
+  # the others.
 
-  # if we are cd'ing relatively: we do a join and fix any '..'s
-  # else: do a replace
-  if dest_dir[0] != '/':
-    pwd = os.path.normpath(os.path.join(pwd.s, dest_dir))
+  abspath = os.path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
+  if arg.P:
+    # -P means resolve symbolic links, then process '..'
+    pwd = os.path.normpath(libc.realpath(abspath))
   else:
-    pwd = libc.realpath(dest_dir) if arg.P else dest_dir
+    # -L means process '..' first.  (But realpath afterward isn't correct?)
+    pwd = os.path.normpath(abspath)
 
   state.SetGlobalString(mem, 'PWD', pwd)
-
   dir_stack.Reset()  # for pushd/popd/dirs
-
   return 0
 
 
