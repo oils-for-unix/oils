@@ -59,7 +59,7 @@ rmdir $tmp/symtarg
 rm $tmp/symlink
 ## stdout: symtarg
 
-#### pwd after cd .. involving symlinks
+#### Test the current directory after 'cd ..' involving symlinks
 mkdir -p symlinktest
 cd symlinktest
 mkdir -p a/b/c
