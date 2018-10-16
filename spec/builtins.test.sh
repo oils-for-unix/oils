@@ -59,6 +59,22 @@ rmdir $tmp/symtarg
 rm $tmp/symlink
 ## stdout: symtarg
 
+#### pwd after cd .. involving symlinks
+mkdir -p symlinktest
+cd symlinktest
+mkdir -p a/b/c
+mkdir -p a/b/d
+ln -s -f a/b/c c > /dev/null
+cd c
+cd ..
+# Expecting a c/ (since we are in symlinktest) but osh gives c d (thinks we are
+# in b/)
+ls
+## STDOUT:
+a
+c
+## END
+
 #### cd with no arguments
 HOME=$TMP/home
 mkdir -p $HOME

@@ -500,6 +500,8 @@ CD_SPEC.ShortFlag('-P')
 def Cd(argv, mem, dir_stack):
   arg, i = CD_SPEC.Parse(argv)
   # TODO: error checking, etc.
+  # TODO: ensure that if multiple flags are provided, the *last* one overrides
+  # the others.
 
   try:
     dest_dir = argv[i]
@@ -527,33 +529,30 @@ def Cd(argv, mem, dir_stack):
       # can't even set it at all.)
       raise AssertionError('Invalid OLDPWD')
 
-  # NOTE: We can't call os.getcwd() because it can raise OSError if the
-  # directory was removed (ENOENT.)
-
   pwd = mem.GetVar('PWD')
   assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
-  state.SetGlobalString(mem, 'OLDPWD', pwd.s)
-  try:
-    os.chdir(dest_dir)
-  except OSError as e:
-    # TODO: Add line number, etc.
-    util.error("cd %r: %s", dest_dir, os.strerror(e.errno))
-    return 1
 
-  # Calculate new $PWD and set it.
-  # TODO: ensure that if multiple flags are provided, the *last* one overrides
-  # the others.
-
+  # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
+  # call os.getcwd() because it can raise OSError if the directory was removed
+  # (ENOENT.)
   abspath = os.path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
   if arg.P:
     # -P means resolve symbolic links, then process '..'
-    pwd = libc.realpath(abspath)
+    real_dest_dir = libc.realpath(abspath)
   else:
     # -L means process '..' first.  This just does string manipulation.  (But
     # realpath afterward isn't correct?)
-    pwd = os.path.normpath(abspath)
+    real_dest_dir = os.path.normpath(abspath)
 
-  state.SetGlobalString(mem, 'PWD', pwd)
+  try:
+    os.chdir(real_dest_dir)
+  except OSError as e:
+    # TODO: Add line number, etc.
+    util.error("cd %r: %s", real_dest_dir, os.strerror(e.errno))
+    return 1
+
+  state.SetGlobalString(mem, 'OLDPWD', pwd.s)
+  state.SetGlobalString(mem, 'PWD', real_dest_dir)
   dir_stack.Reset()  # for pushd/popd/dirs
   return 0
 
