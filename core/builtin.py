@@ -547,9 +547,10 @@ def Cd(argv, mem, dir_stack):
   abspath = os.path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
   if arg.P:
     # -P means resolve symbolic links, then process '..'
-    pwd = os.path.normpath(libc.realpath(abspath))
+    pwd = libc.realpath(abspath)
   else:
-    # -L means process '..' first.  (But realpath afterward isn't correct?)
+    # -L means process '..' first.  This just does string manipulation.  (But
+    # realpath afterward isn't correct?)
     pwd = os.path.normpath(abspath)
 
   state.SetGlobalString(mem, 'PWD', pwd)
