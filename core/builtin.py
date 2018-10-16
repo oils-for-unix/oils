@@ -544,7 +544,14 @@ def Cd(argv, mem, dir_stack):
   # '-L' is the default behavior; no need to check it
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
   # the others
-  pwd = libc.realpath(dest_dir) if arg.P else dest_dir
+
+  # if we are cd'ing relatively: we do a join and fix any '..'s
+  # else: do a replace
+  if dest_dir[0] != '/':
+    pwd = os.path.normpath(os.path.join(pwd.s, dest_dir))
+  else:
+    pwd = libc.realpath(dest_dir) if arg.P else dest_dir
+
   state.SetGlobalString(mem, 'PWD', pwd)
 
   dir_stack.Reset()  # for pushd/popd/dirs
