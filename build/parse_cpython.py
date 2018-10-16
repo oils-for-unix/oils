@@ -8,6 +8,7 @@ import re
 import sys
 
 from core.lexer import C, R
+from core.util import log
 
 
 C_DEF = [
@@ -21,6 +22,8 @@ C_DEF = [
   C(r',', 'Comma'),
   C(r';', 'Semi'),
   R(r'"([^"]*)"', 'Str'),
+  C(r'PyDoc_STR(', 'LDocStr'),
+  C(r')', 'RDocStr'),
   R(r'[^,}]+', 'Opaque'),
 ]
 
@@ -74,7 +77,7 @@ class Parser(object):
       self.tok_id, self.tok_val = self.tokens.next()
       if self.tok_id not in ('Comment', 'Whitespace'):
         break
-    if 0:
+    if 1:
       print('%s %r' % (self.tok_id, self.tok_val))
 
   def Eat(self, tok_id):
@@ -98,12 +101,28 @@ class Parser(object):
 
   def ParseVal(self):
     """
-    Val = Str | Opaque 
+    Val = Str
+        | Opaque
+        | LDocStr Str+ RDocStr   # string concatenation happens
     """
-    if self.tok_id not in ('Opaque', 'Str'):
+    if self.tok_id == 'LDocStr':
+      self.Next()
+
+      val = self.tok_val
+      self.Eat('Str')
+      while self.tok_id == 'Str':
+        val += self.tok_val
+        self.Next()
+
+      self.Eat('RDocStr')
+
+    elif self.tok_id in ('Opaque', 'Str'):
+      val = self.tok_val
+      self.Next()
+
+    else:
       raise RuntimeError('Unexpected token %r' % self.tok_id)
-    val = self.tok_val
-    self.Next()
+
     return val
 
   def ParseItem(self):
@@ -153,17 +172,41 @@ class Parser(object):
     return defs
 
 
+def PrettyPrint(defs):
+  num_methods = 0
+  for def_name, entries in defs:
+    print()
+    print('static PyMethodDef %s[] = {' % def_name)
+    for entry_name, vals in entries:
+      if entry_name is None:
+        print('  {0},')  # null initializer
+        continue
+      print('  {"%s", ' % entry_name, end='')
+      # Strip off the docstring.
+      print(', '.join(vals[:-1]), end='')
+      print('},')
+      num_methods += 1
+    print('};')
+
+  log('Printed %d methods in %d definitions', num_methods, len(defs))
+
+
 def main(argv):
   tokens = Lexer(C_DEF).Tokens(sys.stdin.read())
   if 1:
     p = Parser(tokens)
     defs = p.ParseFile()
-    for d in defs:
-      name, entries = d
-      print()
-      print('-- %s' % name)
-      for e in entries:
-        print(e)
+
+    # Debug
+    if 0:
+      for def_name, entries in defs:
+        if def_name == 'proxy_methods':
+        #if def_name == 'object_methods':
+          for entry_name, vals in entries:
+            print(entry_name, vals)
+    else:
+      PrettyPrint(defs)
+
   else:
     # Print all tokens.
     while True:

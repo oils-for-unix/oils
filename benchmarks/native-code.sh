@@ -168,7 +168,10 @@ py-method-defs() {
   local tmp=_tmp/py-method-defs.txt
   extract-all-defs | preprocess > $tmp
   #head -n 30 $tmp
-  cat $tmp | parse-cpython
+  cat $tmp | parse-cpython | tee _tmp/methods.c
+
+  # syntax check
+  cc _tmp/methods.c
 }
 
 "$@"
