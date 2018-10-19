@@ -192,27 +192,23 @@ class Parser(object):
     return files
 
 
-def PrettyPrint(defs, f, stats):
+def PrettyPrint(def_name, entries, f, stats):
   def out(msg, *args):
     if args:
       msg = msg % args
     print(msg, file=f, end='')
 
-  num_methods = 0
-  for def_name, entries in defs:
-    out('\n')
-    out('static PyMethodDef %s[] = {\n', def_name)
-    for entry_name, vals in entries:
-      if entry_name is None:
-        out('  {0},\n')  # null initializer
-        continue
-      out('  {"%s", ', entry_name)
-      # Strip off the docstring.
-      out(', '.join(vals[:-1]))
-      out('},\n')
-      stats['num_methods'] += 1
-    out('};\n')
-    stats['num_defs'] += 1
+  out('static PyMethodDef %s[] = {\n', def_name)
+  for entry_name, vals in entries:
+    if entry_name is None:
+      out('  {0},\n')  # null initializer
+      continue
+    out('  {"%s", ', entry_name)
+    # Strip off the docstring.
+    out(', '.join(vals[:-1]))
+    out('},\n')
+    stats['num_methods'] += 1
+  out('};\n')
 
 
 def main(argv):
@@ -246,19 +242,27 @@ def main(argv):
 
     stats = {'num_methods': 0, 'num_defs': 0}
     for rel_path, defs in files:
-      base_path, _ = os.path.splitext(rel_path)
-      out_path = os.path.join(out_dir, base_path + '.defs')
-
+      # Make a directory for each .c file!  Each file is a def.
+      c_dir = os.path.join(out_dir, rel_path)
       try:
-        os.makedirs(os.path.dirname(out_path))
+        os.makedirs(c_dir)
       except OSError as e:
         if e.errno != errno.EEXIST:
           raise
 
-      with open(out_path, 'w') as f:
-        print('// %s' % rel_path, file=f)
-        PrettyPrint(defs, f, stats)
-      log('Wrote %s', out_path)
+      for def_name, entries in defs:
+        out_path = os.path.join(c_dir, '%s.def' % def_name)
+
+        # TODO: Write a separate file here for each one.  We have to include a
+        # different file at each definition.
+
+        with open(out_path, 'w') as f:
+          print('// %s' % rel_path, file=f)
+          print('', file=f)
+          PrettyPrint(def_name, entries, f, stats)
+
+        stats['num_defs'] += 1
+        log('Wrote %s', out_path)
 
     log('cpython_defs.py: Printed %(num_methods)d methods in %(num_defs)d '
         'definitions' % stats)

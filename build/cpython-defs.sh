@@ -28,17 +28,28 @@ set -o errexit
 
 extract-defs() {
   local path_prefix=$1  # to strip
+  shift
+
   local edit_list=_tmp/cpython-defs/edit-list.txt
 
   # NOTE: PyMemberDef is also interesting, but we don't need it for the build.
   gawk -v path_prefix_length=${#path_prefix} -v edit_list=$edit_list '
   /static PyMethodDef/ {
     if (printing != 0) {
-      printf("%s:%d Expected not to be printing\n", FILENAME, FNR);
+      printf("%s:%d Expected not to be printing\n", FILENAME, FNR) > "/dev/stderr";
+      exit 1;
+    }
+    # NOTE: We had to adjust stringobject.c and _weakref.c so that the name is
+    # on one line!  Not a big deal.
+    if (match($0, /static PyMethodDef ([a-zA-Z0-9_]+)\[\]/, m)) {
+      def_name = m[1];
+    } else {
+      printf("%s:%d Could not parse declaration name\n",
+             FILENAME, FNR) > "/dev/stderr";
       exit 1;
     }
     printing = 1;
-    start_line_num = FNR;
+    line_begin = FNR;
 
     rel_path = substr(FILENAME, path_prefix_length + 1);
     if (!found[FILENAME]) {
@@ -61,8 +72,8 @@ extract-defs() {
   /^[:space:]*\}/ {
     if (printing) {
       # Print the edit list for #ifdef #endif.
-      end_line_num = FNR;
-      printf("%s %d %d\n", rel_path, start_line_num, end_line_num) > edit_list;
+      line_end = FNR;
+      printf("%s %s %d %d\n", rel_path, def_name, line_begin, line_end) > edit_list;
       printing = 0;
     }
   }
@@ -103,14 +114,58 @@ py-method-defs() {
   extract-all-defs > $tmp/extracted.txt
   cat $tmp/extracted.txt | preprocess > $tmp/preprocessed.txt
 
+  local out_dir=build/oil-defs
+  mkdir -p $out_dir
+
   #head -n 30 $tmp
-  cat $tmp/preprocessed.txt | cpython-defs filter $tmp
+  cat $tmp/preprocessed.txt | cpython-defs filter $out_dir
 
   wc -l $tmp/*/*.defs
   wc -l $tmp/*.txt
 
   # syntax check
   #cc _tmp/filtered.c
+}
+
+edit-file() {
+  local rel_path=$1
+  local def_name=$2
+  local line_begin=$3
+  local line_end=$4
+
+  local def_path="${rel_path}/${def_name}.def"
+
+  local tmp=_tmp/buf.txt
+
+  # DESTRUCTIVE
+  mv $rel_path $tmp
+
+  gawk -v def_path=$def_path -v line_begin=$line_begin -v line_end=$line_end '
+  NR == line_begin {
+    print("#ifdef OVM_MAIN")
+    printf("#include \"%s\"\n", def_path)
+    print("#else")
+    print  # print the PyMethodDef line {
+    next
+  }
+  NR == line_end {
+    print  # print the }
+    print("#endif"); 
+    next
+  }
+  # All other lines just get printed
+  {
+    print
+  }
+  ' $tmp > $rel_path
+
+  echo "Wrote $rel_path"
+}
+
+edit-all() {
+  # Reversed so that edits to the same file work!  We are always inserting
+  # lines.
+  tac _tmp/cpython-defs/edit-list.txt | xargs -n 4 -- $0 edit-file
 }
 
 "$@"

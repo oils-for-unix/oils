@@ -76,8 +76,7 @@ weakref_proxy(PyObject *self, PyObject *args)
 }
 
 
-static PyMethodDef
-weakref_functions[] =  {
+static PyMethodDef weakref_functions[] =  {
     {"getweakrefcount", weakref_getweakrefcount,        METH_O,
      weakref_getweakrefcount__doc__},
     {"getweakrefs",     weakref_getweakrefs,            METH_O,

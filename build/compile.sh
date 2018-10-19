@@ -132,7 +132,10 @@ readonly PREPROC_FLAGS=(
   -D WITHOUT_COMPLEX
 )
 
-readonly INCLUDE_PATHS=(-I . -I Include -I ../_devbuild/gen)
+# NOTE: build/oil-defs is hard-coded to the oil.ovm app.  We're abandoning
+# hello.ovm and opy.ovm for now, but those can easily be added later.  We
+# haven't mangled the CPython source!
+readonly INCLUDE_PATHS=(-I . -I Include -I ../_devbuild/gen -I ../build/oil-defs)
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 # BASE_CFLAGS is copied by observation from what configure.ac does on my Ubuntu

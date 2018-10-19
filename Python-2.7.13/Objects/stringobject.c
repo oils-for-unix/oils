@@ -3640,8 +3640,7 @@ Return a formatted version of S as described by format_spec.");
 #endif
 
 
-static PyMethodDef
-string_methods[] = {
+static PyMethodDef string_methods[] = {
     /* Counterparts of the obsolete stropmodule functions; except
        string.maketrans(). */
     {"join", (PyCFunction)string_join, METH_O, join__doc__},
