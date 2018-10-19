@@ -192,7 +192,7 @@ class Parser(object):
     return files
 
 
-def PrettyPrint(defs, f):
+def PrettyPrint(defs, f, stats):
   def out(msg, *args):
     if args:
       msg = msg % args
@@ -210,11 +210,9 @@ def PrettyPrint(defs, f):
       # Strip off the docstring.
       out(', '.join(vals[:-1]))
       out('},\n')
-      num_methods += 1
+      stats['num_methods'] += 1
     out('};\n')
-
-  log('cpython_defs.py: Printed %d methods in %d definitions', num_methods,
-      len(defs))
+    stats['num_defs'] += 1
 
 
 def main(argv):
@@ -246,20 +244,24 @@ def main(argv):
 
     # Print to files.
 
-    for source_path, defs in files:
-      rel_path = '/'.join(source_path.split('/')[-2:])
-      out_path = os.path.join(out_dir, rel_path)
+    stats = {'num_methods': 0, 'num_defs': 0}
+    for rel_path, defs in files:
+      base_path, _ = os.path.splitext(rel_path)
+      out_path = os.path.join(out_dir, base_path + '.defs')
 
       try:
-        os.mkdir(os.path.dirname(out_path))
+        os.makedirs(os.path.dirname(out_path))
       except OSError as e:
         if e.errno != errno.EEXIST:
           raise
 
       with open(out_path, 'w') as f:
-        print('// %s' % source_path, file=f)
-        PrettyPrint(defs, f)
+        print('// %s' % rel_path, file=f)
+        PrettyPrint(defs, f, stats)
       log('Wrote %s', out_path)
+
+    log('cpython_defs.py: Printed %(num_methods)d methods in %(num_defs)d '
+        'definitions' % stats)
 
   elif action == 'tsv':
     raise NotImplementedError

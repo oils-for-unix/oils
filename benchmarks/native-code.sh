@@ -122,19 +122,24 @@ run-for-release() {
 # in the string.
 
 extract-defs() {
+  local path_prefix=$1  # to strip
+  local edit_list=_tmp/cpython-defs/edit-list.txt
+
   # NOTE: PyMemberDef is also interesting, but we don't need it for the build.
-  gawk '
+  gawk -v path_prefix_length=${#path_prefix} -v edit_list=$edit_list '
   /static PyMethodDef/ {
     if (printing != 0) {
       printf("%s:%d Expected not to be printing\n", FILENAME, FNR);
       exit 1;
     }
     printing = 1;
+    start_line_num = FNR;
 
+    rel_path = substr(FILENAME, path_prefix_length + 1);
     if (!found[FILENAME]) {
       # This special line seems to survive the preprocessor?
       printf("\n");
-      printf("FILE %s\n", FILENAME)
+      printf("FILE %s\n", rel_path);
       printf("\n");
 
       printf("Filtering %s\n", FILENAME) > "/dev/stderr";
@@ -149,7 +154,12 @@ extract-defs() {
   }
 
   /^[:space:]*\}/ {
-    printing = 0;
+    if (printing) {
+      # Print the edit list for #ifdef #endif.
+      end_line_num = FNR;
+      printf("%s %d %d\n", rel_path, start_line_num, end_line_num) > edit_list;
+      printing = 0;
+    }
   }
 
   END {
@@ -170,10 +180,12 @@ preprocess() {
   gcc -I $PY27 -E -D OVM_MAIN -
 }
 
+readonly TARBALL_ROOT=$(echo _tmp/oil-tar-test/oil-*)
+
 extract-all-defs() {
   echo '#include "pyconfig.h"'
   # 52 different instances.  Sometimes multiple ones per file.
-  find _tmp/oil-tar-test -name '*.c' | xargs -- $0 extract-defs
+  find "$TARBALL_ROOT" -name '*.c' | xargs -- $0 extract-defs "$TARBALL_ROOT/"
 }
 
 cpython-defs() {
@@ -183,12 +195,12 @@ cpython-defs() {
 py-method-defs() {
   local tmp=_tmp/cpython-defs
   mkdir -p $tmp
-  extract-all-defs | preprocess > $tmp/extracted.c
+  extract-all-defs | preprocess > $tmp/extracted.txt
 
   #head -n 30 $tmp
-  cat $tmp/extracted.c | cpython-defs filter $tmp
+  cat $tmp/extracted.txt | cpython-defs filter $tmp
 
-  wc -l $tmp/*/*.c
+  wc -l $tmp/*/*.defs
 
   # syntax check
   #cc _tmp/filtered.c
