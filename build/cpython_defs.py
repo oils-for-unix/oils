@@ -4,6 +4,8 @@ parse_cpython.py
 """
 from __future__ import print_function
 
+import errno
+import os
 import re
 import sys
 
@@ -22,9 +24,10 @@ C_DEF = [
   C(r',', 'Comma'),
   C(r';', 'Semi'),
   R(r'"([^"]*)"', 'Str'),
+  C(r'FILE', 'FILE'),
   C(r'PyDoc_STR(', 'LDocStr'),
   C(r')', 'RDocStr'),
-  R(r'[^,}]+', 'Opaque'),
+  R(r'[^,}\n]+', 'Opaque'),
 ]
 
 
@@ -77,8 +80,8 @@ class Parser(object):
       self.tok_id, self.tok_val = self.tokens.next()
       if self.tok_id not in ('Comment', 'Whitespace'):
         break
-    if 1:
-      print('%s %r' % (self.tok_id, self.tok_val))
+    if 0:
+      log('%s %r', self.tok_id, self.tok_val)
 
   def Eat(self, tok_id):
     if self.tok_id != tok_id:
@@ -161,59 +164,108 @@ class Parser(object):
 
     return (def_name, items)
 
+  def ParseHeader(self):
+    self.Eat('FILE')
+    path = self.tok_val
+    self.Eat('Opaque')
+    return path 
+
   def ParseFile(self):
     """
-    File = Def*
+    File = Header Def*
     """
+    path = self.ParseHeader()
     defs = []
-    while self.tok_id != 'EOF':
+    while self.tok_id not in ('FILE', 'EOF'):
       defs.append(self.ParseDef())
 
-    return defs
+    return path, defs
+
+  def ParseStream(self):
+    """
+    Stream = File*
+    """
+    files = []
+    while self.tok_id != 'EOF':
+      files.append(self.ParseFile())
+
+    return files
 
 
-def PrettyPrint(defs):
+def PrettyPrint(defs, f):
+  def out(msg, *args):
+    if args:
+      msg = msg % args
+    print(msg, file=f, end='')
+
   num_methods = 0
   for def_name, entries in defs:
-    print()
-    print('static PyMethodDef %s[] = {' % def_name)
+    out('\n')
+    out('static PyMethodDef %s[] = {\n', def_name)
     for entry_name, vals in entries:
       if entry_name is None:
-        print('  {0},')  # null initializer
+        out('  {0},\n')  # null initializer
         continue
-      print('  {"%s", ' % entry_name, end='')
+      out('  {"%s", ', entry_name)
       # Strip off the docstring.
-      print(', '.join(vals[:-1]), end='')
-      print('},')
+      out(', '.join(vals[:-1]))
+      out('},\n')
       num_methods += 1
-    print('};')
+    out('};\n')
 
-  log('Printed %d methods in %d definitions', num_methods, len(defs))
+  log('cpython_defs.py: Printed %d methods in %d definitions', num_methods,
+      len(defs))
 
 
 def main(argv):
+  action = argv[1]
+  out_dir = argv[2]
+
   tokens = Lexer(C_DEF).Tokens(sys.stdin.read())
-  if 1:
-    p = Parser(tokens)
-    defs = p.ParseFile()
 
-    # Debug
-    if 0:
-      for def_name, entries in defs:
-        if def_name == 'proxy_methods':
-        #if def_name == 'object_methods':
-          for entry_name, vals in entries:
-            print(entry_name, vals)
-    else:
-      PrettyPrint(defs)
-
-  else:
-    # Print all tokens.
+  if action == 'lex':  # for debugging
     while True:
       id_, value = tokens.next()
       print('%s\t%r' % (id_, value))
       if id_ == 'EOF':
         break
+
+  elif action == 'parse':  # for debugging
+    p = Parser(tokens)
+    files = p.ParseStream()
+    for path, defs in files:
+      for def_name, entries in defs:
+        if def_name == 'proxy_methods':
+        #if def_name == 'object_methods':
+          for entry_name, vals in entries:
+            print(entry_name, vals)
+
+  elif action == 'filter':  # for slimming the build down
+    p = Parser(tokens)
+    files = p.ParseStream()
+
+    # Print to files.
+
+    for source_path, defs in files:
+      rel_path = '/'.join(source_path.split('/')[-2:])
+      out_path = os.path.join(out_dir, rel_path)
+
+      try:
+        os.mkdir(os.path.dirname(out_path))
+      except OSError as e:
+        if e.errno != errno.EEXIST:
+          raise
+
+      with open(out_path, 'w') as f:
+        print('// %s' % source_path, file=f)
+        PrettyPrint(defs, f)
+      log('Wrote %s', out_path)
+
+  elif action == 'tsv':
+    raise NotImplementedError
+
+  else:
+    raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':

@@ -130,8 +130,16 @@ extract-defs() {
       exit 1;
     }
     printing = 1;
-    printf("\n");
-    printf("/* Extracted from %s */\n", FILENAME);
+
+    if (!found[FILENAME]) {
+      # This special line seems to survive the preprocessor?
+      printf("\n");
+      printf("FILE %s\n", FILENAME)
+      printf("\n");
+
+      printf("Filtering %s\n", FILENAME) > "/dev/stderr";
+      found[FILENAME] = 1  # count number of files that have matches
+    }
   }
 
   {
@@ -142,6 +150,14 @@ extract-defs() {
 
   /^[:space:]*\}/ {
     printing = 0;
+  }
+
+  END {
+    for (name in found) {
+      num_found++;
+    }
+    printf("extract-defs.awk: Found definitions in %d out of %d files\n",
+           num_found, ARGC) > "/dev/stderr";
   }
   ' "$@"
 }
@@ -157,21 +173,25 @@ preprocess() {
 extract-all-defs() {
   echo '#include "pyconfig.h"'
   # 52 different instances.  Sometimes multiple ones per file.
-  find _tmp/oil-tar-test -name '*.[ch]' | xargs -- $0 extract-defs 
+  find _tmp/oil-tar-test -name '*.c' | xargs -- $0 extract-defs
 }
 
-parse-cpython() {
-  PYTHONPATH=. build/parse_cpython.py "$@"
+cpython-defs() {
+  PYTHONPATH=. build/cpython_defs.py "$@"
 }
 
 py-method-defs() {
-  local tmp=_tmp/py-method-defs.txt
-  extract-all-defs | preprocess > $tmp
+  local tmp=_tmp/cpython-defs
+  mkdir -p $tmp
+  extract-all-defs | preprocess > $tmp/extracted.c
+
   #head -n 30 $tmp
-  cat $tmp | parse-cpython | tee _tmp/methods.c
+  cat $tmp/extracted.c | cpython-defs filter $tmp
+
+  wc -l $tmp/*/*.c
 
   # syntax check
-  cc _tmp/methods.c
+  #cc _tmp/filtered.c
 }
 
 "$@"
