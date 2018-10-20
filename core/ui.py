@@ -10,7 +10,7 @@ ui.py - User interface constructs.
 """
 from __future__ import print_function
 
-import os
+import posix
 import pwd
 import sys
 
@@ -128,7 +128,7 @@ class _PromptCache(object):
       return self.cache[name]
 
     if name == 'euid':  # for \$ and \u
-      value = os.geteuid()
+      value = posix.geteuid()
     elif name == 'hostname':  # for \h and \H
       value = libc.gethostname()
     elif name == 'user':  # for \u

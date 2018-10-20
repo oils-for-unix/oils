@@ -3,7 +3,7 @@
 match.py - match with generated re2c code or Python regexes.
 """
 
-import os
+import posix
 
 #from core import util
 from osh import lex
@@ -11,7 +11,7 @@ from osh.meta import Id, IdInstance
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
-if os.environ.get('FASTLEX') == '0':  # For manual testing
+if posix.environ.get('FASTLEX') == '0':  # For manual testing
   fastlex = None
 else:
   try:

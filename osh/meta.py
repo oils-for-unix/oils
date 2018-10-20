@@ -11,12 +11,12 @@ Usage:
   from osh.meta import Id, Kind, ast, ID_SPEC
 """
 
-import os
+import posix
 
 from core import id_kind
 
 
-_BOOTSTRAP_LEVEL = int(os.getenv('BOOTSTRAP_LEVEL', '3'))
+_BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '3'))
 
 
 # TODO: Get rid of this hack.

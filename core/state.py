@@ -11,7 +11,7 @@ state.py - Interpreter state
 from __future__ import print_function
 
 import cStringIO
-import os
+import posix
 
 from asdl import const
 from core import args
@@ -383,7 +383,7 @@ class DirStack(object):
     self.Reset()
 
   def Reset(self):
-    self.stack[:] = [os.getcwd()]
+    self.stack[:] = [posix.getcwd()]
 
   def Push(self, entry):
     self.stack.append(entry)
@@ -450,7 +450,7 @@ class Mem(object):
     self.last_job_id = -1  # Uninitialized value mutable public variable
 
     # Done ONCE on initialization
-    self.root_pid = os.getpid()
+    self.root_pid = posix.getpid()
 
     self._InitDefaults()
     self._InitVarsFromEnv(environ)
@@ -500,11 +500,11 @@ class Mem(object):
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
     SetGlobalString(self, 'IFS', legacy.DEFAULT_IFS)
-    SetGlobalString(self, 'PWD', os.getcwd())
+    SetGlobalString(self, 'PWD', posix.getcwd())
 
     # NOTE: Should we put these in a namespace for Oil?
-    SetGlobalString(self, 'UID', str(os.getuid()))
-    SetGlobalString(self, 'EUID', str(os.geteuid()))
+    SetGlobalString(self, 'UID', str(posix.getuid()))
+    SetGlobalString(self, 'EUID', str(posix.geteuid()))
     # For getopts builtin
     SetGlobalString(self, 'OPTIND', '1')
 
