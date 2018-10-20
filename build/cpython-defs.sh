@@ -110,7 +110,7 @@ cpython-defs() {
 
 readonly BASE_DIR=_tmp/cpython-defs
 
-py-method-defs() {
+filter-methods() {
   local tmp=$BASE_DIR
   mkdir -p $tmp
   extract-all-defs > $tmp/extracted.txt

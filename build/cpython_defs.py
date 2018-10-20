@@ -215,8 +215,9 @@ def PrettyPrint(def_name, entries, predicate, f, stats):
 
 
 def OilMethodFilter(def_name, method_name):
-  #if def_name == 'marshal_methods':
-  #  return False
+  # NOTE: asdl/unpickle.py needs marshal.loads
+  if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
+    return False
   #log('= %s %s', def_name, method_name)
 
   return True
