@@ -9,7 +9,7 @@
 expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
-import os
+import posix
 import stat
 
 try:
@@ -606,14 +606,14 @@ class BoolEvaluator(_ExprEvaluator):
         # Only use lstat if we're testing for a symlink.
         if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
           try:
-            mode = os.lstat(s).st_mode
+            mode = posix.lstat(s).st_mode
           except OSError:
             return False
 
           return stat.S_ISLNK(mode)
 
         try:
-          mode = os.stat(s).st_mode
+          mode = posix.stat(s).st_mode
         except OSError:
           # TODO: Signal extra debug information?
           #log("Error from stat(%r): %s" % (s, e))
@@ -629,13 +629,13 @@ class BoolEvaluator(_ExprEvaluator):
           return stat.S_ISDIR(mode)
 
         if op_id == Id.BoolUnary_x:
-          return os.access(s, os.X_OK)
+          return posix.access(s, posix.X_OK)
 
         if op_id == Id.BoolUnary_r:
-          return os.access(s, os.R_OK)
+          return posix.access(s, posix.R_OK)
 
         if op_id == Id.BoolUnary_w:
-          return os.access(s, os.W_OK)
+          return posix.access(s, posix.W_OK)
 
         raise NotImplementedError(op_id)
 
@@ -654,7 +654,7 @@ class BoolEvaluator(_ExprEvaluator):
           except ValueError:
             # TODO: Need location information of [
             e_die('Invalid file descriptor %r', s)
-          return os.isatty(fd)
+          return posix.isatty(fd)
 
         raise NotImplementedError(op_id)
 
@@ -675,8 +675,8 @@ class BoolEvaluator(_ExprEvaluator):
       arg_type = BOOL_ARG_TYPES[op_id]
 
       if arg_type == bool_arg_type_e.Path:
-        st1 = os.stat(s1)
-        st2 = os.stat(s2)
+        st1 = posix.stat(s1)
+        st2 = posix.stat(s2)
 
         # TODO: test newer than (mtime)
         if op_id == Id.BoolBinary_nt:

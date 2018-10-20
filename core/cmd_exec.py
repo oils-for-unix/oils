@@ -15,7 +15,7 @@ This just does head?  Last one wins.
 """
 from __future__ import print_function
 
-import os
+import posix
 import resource
 import sys
 import time
@@ -214,7 +214,7 @@ class Executor(object):
       f = self.fd_state.Open(path)  # Shell can't use descriptors 3-9
     except OSError as e:
       # TODO: Should point to the source statement that failed.
-      util.error('source %r failed: %s', path, os.strerror(e.errno))
+      util.error('source %r failed: %s', path, posix.strerror(e.errno))
       return 1
 
     try:
@@ -387,17 +387,17 @@ class Executor(object):
       if node.tag == command_e.SimpleCommand:
         argv0 = argv0 or '<unknown>'
         raise util.ErrExitFailure(
-            '[%d] %r command exited with status %d', os.getpid(), argv0,
+            '[%d] %r command exited with status %d', posix.getpid(), argv0,
             status, word=node.words[0], status=status)
       elif node.tag == command_e.Assignment:
         span_id = self._SpanIdForAssignment(node)
         raise util.ErrExitFailure(
-            '[%d] assignment exited with status %d', os.getpid(),
+            '[%d] assignment exited with status %d', posix.getpid(),
             status, span_id=span_id, status=status)
 
       else:
         raise util.ErrExitFailure(
-            '[%d] %r exited with status %d', os.getpid(),
+            '[%d] %r exited with status %d', posix.getpid(),
             node.__class__.__name__, status, status=status)
 
   def _EvalLhs(self, node, spid, lookup_mode):
@@ -1246,20 +1246,20 @@ class Executor(object):
     p = self._MakeProcess(node,
                           disable_errexit=not self.exec_opts.strict_errexit)
 
-    r, w = os.pipe()
+    r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
     pid = p.Start()
     #log('Command sub started %d', pid)
     self.waiter.Register(pid, p.WhenDone)
 
     chunks = []
-    os.close(w)  # not going to write
+    posix.close(w)  # not going to write
     while True:
-      byte_str = os.read(r, 4096)
+      byte_str = posix.read(r, 4096)
       if not byte_str:
         break
       chunks.append(byte_str)
-    os.close(r)
+    posix.close(r)
 
     status = p.WaitUntilDone(self.waiter)
 
@@ -1305,7 +1305,7 @@ class Executor(object):
     """
     p = self._MakeProcess(node)
 
-    r, w = os.pipe()
+    r, w = posix.pipe()
 
     if op_id == Id.Left_ProcSubIn:
       # Example: cat < <(head foo.txt)
@@ -1332,13 +1332,13 @@ class Executor(object):
 
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
-      os.close(w)
+      posix.close(w)
     elif op_id == Id.Left_ProcSubOut:
-      os.close(r)
+      posix.close(r)
     else:
       raise AssertionError
 
-    #log('I am %d', os.getpid())
+    #log('I am %d', posix.getpid())
     #log('Process sub started %d', pid)
     self.waiter.Register(pid, p.WhenDone)
 

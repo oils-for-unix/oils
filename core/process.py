@@ -12,12 +12,12 @@ from __future__ import print_function
 
 import errno
 import fcntl
-import os
+import posix
 import sys
 
-from osh.meta import runtime
+from osh.meta import runtime, Id
 from core import util
-from osh.meta import Id
+from core import os_
 
 redirect_e = runtime.redirect_e
 process_state_e = runtime.process_state_e
@@ -80,17 +80,17 @@ class FdState(object):
       OSError if the path can't be found.
     """
     if mode == 'r':
-      fd_mode = os.O_RDONLY
+      fd_mode = posix.O_RDONLY
     elif mode == 'w':
-      fd_mode = os.O_CREAT | os.O_RDWR
+      fd_mode = posix.O_CREAT | posix.O_RDWR
     else:
       raise AssertionError(mode)
 
-    fd = os.open(path, fd_mode, 0666)
+    fd = posix.open(path, fd_mode, 0666)
     new_fd = self._NextFreeFileDescriptor()
-    os.dup2(fd, new_fd)
-    os.close(fd)
-    return os.fdopen(new_fd, mode)
+    posix.dup2(fd, new_fd)
+    posix.close(fd)
+    return posix.fdopen(new_fd, mode)
 
   def _PushDup(self, fd1, fd2):
     """Save fd2, and dup fd1 onto fd2.
@@ -116,18 +116,18 @@ class FdState(object):
       else:
         raise
     else:
-      os.close(fd2)
+      posix.close(fd2)
       fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
     #log('==== dup %s %s\n' % (fd1, fd2))
     try:
-      os.dup2(fd1, fd2)
+      posix.dup2(fd1, fd2)
     except OSError as e:
       # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-      util.error('%d: %s', fd1, os.strerror(e.errno))
+      util.error('%d: %s', fd1, posix.strerror(e.errno))
       # Restore and return error
-      os.dup2(new_fd, fd2)
-      os.close(new_fd)
+      posix.dup2(new_fd, fd2)
+      posix.close(new_fd)
       # Undo it
       return False
 
@@ -148,21 +148,21 @@ class FdState(object):
       if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
         # NOTE: This is different than >| because it respects noclobber, but
         # that option is almost never used.  See test/wild.sh.
-        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+        mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
       elif r.op_id == Id.Redir_Clobber:  # >|
-        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+        mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
       elif r.op_id in (Id.Redir_DGreat, Id.Redir_AndDGreat):  # >>   &>>
-        mode = os.O_CREAT | os.O_WRONLY | os.O_APPEND
+        mode = posix.O_CREAT | posix.O_WRONLY | posix.O_APPEND
       elif r.op_id == Id.Redir_Less:  # <
-        mode = os.O_RDONLY
+        mode = posix.O_RDONLY
       else:
         raise NotImplementedError(r.op_id)
 
       # NOTE: 0666 is affected by umask, all shells use it.
       try:
-        target_fd = os.open(r.filename, mode, 0666)
+        target_fd = posix.open(r.filename, mode, 0666)
       except OSError as e:
-        util.error("Can't open %r: %s", r.filename, os.strerror(e.errno))
+        util.error("Can't open %r: %s", r.filename, posix.strerror(e.errno))
         return False
 
       # Apply redirect
@@ -188,7 +188,7 @@ class FdState(object):
           if not self._PushDup(r.fd, 2):
             ok = False
 
-      os.close(target_fd)  # We already made a copy of it.
+      posix.close(target_fd)  # We already made a copy of it.
       # I don't think we need to close(0) because it will be restored from its
       # saved position (10), which closes it.
       #self._PushClose(r.fd)
@@ -208,7 +208,7 @@ class FdState(object):
 
     elif r.tag == redirect_e.HereRedirect:
       # NOTE: Do these descriptors have to be moved out of the range 0-9?
-      read_fd, write_fd = os.pipe()
+      read_fd, write_fd = posix.pipe()
 
       if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
         ok = False
@@ -237,11 +237,11 @@ class FdState(object):
         self._PushWait(here_proc, waiter)
 
         # Now that we've started the child, close it in the parent.
-        os.close(write_fd)
+        posix.close(write_fd)
 
       else:
-        os.write(write_fd, r.body)
-        os.close(write_fd)
+        posix.write(write_fd, r.body)
+        posix.close(write_fd)
 
     return ok
 
@@ -279,13 +279,13 @@ class FdState(object):
     #log('< Pop %s', frame)
     for saved, orig in reversed(frame.saved):
       try:
-        os.dup2(saved, orig)
+        posix.dup2(saved, orig)
       except OSError as e:
         log('dup2(%d, %d) error: %s', saved, orig, e)
         #log('fd state:')
-        #os.system('ls -l /proc/%s/fd' % os.getpid())
+        #posix.system('ls -l /proc/%s/fd' % posix.getpid())
         raise
-      os.close(saved)
+      posix.close(saved)
       #log('dup2 %s %s', saved, orig)
 
       # NOTE: This balances the increments from _PushDup().  But it doesn't
@@ -296,7 +296,7 @@ class FdState(object):
     for fd in frame.need_close:
       #log('Close %d', fd)
       try:
-        os.close(fd)
+        posix.close(fd)
       except OSError as e:
         log('Error closing descriptor %d: %s', fd, e)
         raise
@@ -321,11 +321,11 @@ class StdinFromPipe(ChildStateChange):
     return '<StdinFromPipe %d %d>' % (self.r, self.w)
 
   def Apply(self):
-    os.dup2(self.r, 0)
-    os.close(self.r)  # close after dup
+    posix.dup2(self.r, 0)
+    posix.close(self.r)  # close after dup
 
-    os.close(self.w)  # we're reading from the pipe, not writing
-    #log('child CLOSE w %d pid=%d', self.w, os.getpid())
+    posix.close(self.w)  # we're reading from the pipe, not writing
+    #log('child CLOSE w %d pid=%d', self.w, posix.getpid())
 
 
 class StdoutToPipe(ChildStateChange):
@@ -337,11 +337,11 @@ class StdoutToPipe(ChildStateChange):
     return '<StdoutToPipe %d %d>' % (self.r, self.w)
 
   def Apply(self):
-    os.dup2(self.w, 1)
-    os.close(self.w)  # close after dup
+    posix.dup2(self.w, 1)
+    posix.close(self.w)  # close after dup
 
-    os.close(self.r)  # we're writing to the pipe, not reading
-    #log('child CLOSE r %d pid=%d', self.r, os.getpid())
+    posix.close(self.r)  # we're writing to the pipe, not reading
+    #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
 
 
 class Thunk(object):
@@ -363,9 +363,9 @@ def ExecExternalProgram(argv, environ):
   # TODO: If there is an error, like the file isn't executable, then we should
   # exit, and the parent will reap it.  Should it capture stderr?
   try:
-    os.execvpe(argv[0], argv, environ)
+    os_.execvpe(argv[0], argv, environ)
   except OSError as e:
-    util.error('%r: %s', argv[0], os.strerror(e.errno))
+    util.error('%r: %s', argv[0], posix.strerror(e.errno))
     # POSIX mentions 126 and 127 for two specific errors.  The rest are
     # unspecified.
     #
@@ -428,9 +428,9 @@ class _HereDocWriterThunk(Thunk):
     do_exit: For small pipelines
     """
     #log('Writing %r', self.body_str)
-    os.write(self.w, self.body_str)
+    posix.write(self.w, self.body_str)
     #log('Wrote %r', self.body_str)
-    os.close(self.w)
+    posix.close(self.w)
     #log('Closed %d', self.w)
 
     sys.exit(0)  # Could this fail?
@@ -491,8 +491,8 @@ class Process(Job):
 
   def ClosePipe(self):
     if self.close_r != -1:
-      os.close(self.close_r)
-      os.close(self.close_w)
+      posix.close(self.close_r)
+      posix.close(self.close_w)
 
   def Start(self):
     """Start this process with fork(), haandling redirects."""
@@ -501,19 +501,19 @@ class Process(Job):
     # originate from a terminal.  All the processes in a pipeline should be in
     # a single process group.
     #
-    # - os.setpgid()
-    # - os.setpgrp() 
-    # - os.tcsetpgrp()
+    # - posix.setpgid()
+    # - posix.setpgrp() 
+    # - posix.tcsetpgrp()
     #
-    # NOTE: os.setsid() isn't called by the shell; it's should be called by the
+    # NOTE: posix.setsid() isn't called by the shell; it's should be called by the
     # login program that starts the shell.
     #
     # The whole job control mechanism is complicated and hacky.
 
-    pid = os.fork()
+    pid = posix.fork()
     if pid < 0:
       # When does this happen?
-      raise RuntimeError('Fatal error in os.fork()')
+      raise RuntimeError('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
       for st in self.state_changes:
@@ -594,7 +594,7 @@ class Pipeline(Job):
       self.procs.append(p)
       return
 
-    r, w = os.pipe()
+    r, w = posix.pipe()
     #log('pipe for %s: %d %d', p, r, w)
     prev = self.procs[-1]
 
@@ -616,7 +616,7 @@ class Pipeline(Job):
     if len(self.procs) == 0:   # No pipe: if ! foo
       return
 
-    r, w = os.pipe()
+    r, w = posix.pipe()
     #log('last pipe %d %d', r, w)
 
     prev = self.procs[-1]
@@ -669,7 +669,7 @@ class Pipeline(Job):
     #log('thunk %s', self.last_thunk)
     if self.last_pipe is not None:
       r, w = self.last_pipe  # set in AddLast()
-      os.close(w)  # we will not write here
+      posix.close(w)  # we will not write here
       fd_state.PushStdinFromPipe(r)
       try:
         ex.ExecuteAndCatch(node)
@@ -762,7 +762,7 @@ class Waiter(object):
   process OR a background process!  So you have to distinguish between them.
 
   NOTE: strace reveals that all shells call wait4(-1), which waits for ANY
-  process.  os.wait() ends up calling that too.  This is the only way to
+  process.  posix.wait() ends up calling that too.  This is the only way to
   support the processes we need.
   """
   def __init__(self):
@@ -776,7 +776,7 @@ class Waiter(object):
     # This is a list of async jobs
     while True:
       try:
-        pid, status = os.wait()
+        pid, status = posix.wait()
       except OSError as e:
         #log('wait() error: %s', e)
         if e.errno == errno.ECHILD:
@@ -797,10 +797,10 @@ class Waiter(object):
     #log('WAIT got %s %s', pid, status)
 
     # TODO: change status in more cases.
-    if os.WIFSIGNALED(status):
+    if posix.WIFSIGNALED(status):
       pass
-    elif os.WIFEXITED(status):
-      status = os.WEXITSTATUS(status)
+    elif posix.WIFEXITED(status):
+      status = posix.WEXITSTATUS(status)
       #log('exit status: %s', status)
 
     # This could happen via coding error.  But this may legitimately happen

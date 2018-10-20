@@ -30,7 +30,8 @@ Uses ITEMLIST with a bunch of flags.
 from __future__ import print_function
 
 import atexit
-import os
+import posix
+import posixpath
 import sys
 import time
 import traceback
@@ -109,7 +110,7 @@ class CompletionLookup(object):
     if chain:
       return chain
 
-    key = os.path.basename(argv0)
+    key = posixpath.basename(argv0)
     actions = self.lookup.get(key)
     if chain:
       return chain
@@ -212,18 +213,18 @@ class FileSystemAction(CompletionAction):
       #log('to_list %r', to_list)
 
     try:
-      names = os.listdir(to_list)
+      names = posix.listdir(to_list)
     except OSError as e:
       return  # nothing
 
     for name in names:
-      path = os.path.join(base, name)
+      path = posixpath.join(base, name)
       if path.startswith(to_complete):
         if self.dirs_only:
-          if os.path.isdir(path):
+          if util.path_isdir(path):
             yield path
         else:
-          if os.path.isdir(path):
+          if util.path_isdir(path):
             yield path + '/'
           else:
             yield path
@@ -351,14 +352,14 @@ class ExternalCommandAction(object):
     names = []
     for d in path_dirs:
       try:
-        st = os.stat(d)
+        st = posix.stat(d)
       except OSError as e:
         # There could be a directory that doesn't exist in the $PATH.
         continue
       key = (d, st.st_mtime)
       listing = self.cache.get(key)
       if listing is None:
-        listing = os.listdir(d)
+        listing = posix.listdir(d)
         self.cache[key] = listing
       names.extend(listing)
 
@@ -801,17 +802,17 @@ class ReadlineCompleter(object):
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # Because readline ignores SystemExit!
-      os._exit(e.code)
+      posix._exit(e.code)
 
 
 def InitReadline(readline_mod, complete_cb):
-  home_dir = os.environ.get('HOME')
+  home_dir = posix.environ.get('HOME')
   if home_dir is None:
     home_dir = util.GetHomeDir()
     if home_dir is None:
       print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
       return
-  history_filename = os.path.join(home_dir, 'oil_history')
+  history_filename = posixpath.join(home_dir, 'oil_history')
 
   try:
     readline_mod.read_history_file(history_filename)

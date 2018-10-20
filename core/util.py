@@ -11,9 +11,10 @@ util.py - Common infrastructure.
 from __future__ import print_function
 
 import cStringIO
-import os
 import posix
+import posixpath
 import pwd  # TODO: Move this dependency to Oil?
+import stat
 import sys
 import zipimport  # NOT the zipfile module.
 
@@ -31,6 +32,15 @@ def path_exists(path):
     except posix.error:
         return False
     return True
+
+
+def path_isdir(s):
+    """Return true if the pathname refers to an existing directory."""
+    try:
+        st = posix.stat(s)
+    except posix.error:
+        return False
+    return stat.S_ISDIR(st.st_mode)
 
 
 class _ErrorWithLocation(Exception):
@@ -143,7 +153,7 @@ def GetHomeDir():
   Used by tilde expansion in word_eval.py and readline initialization in
   completion.py.
   """
-  uid = os.getuid()
+  uid = posix.getuid()
   try:
     e = pwd.getpwuid(uid)
   except KeyError:
@@ -160,7 +170,7 @@ class _FileResourceLoader(object):
 
   # TODO: Make this a context manager?
   def open(self, rel_path):
-    return open(os.path.join(self.root_dir, rel_path))
+    return open(posixpath.join(self.root_dir, rel_path))
 
 
 class _ZipResourceLoader(object):
@@ -182,18 +192,18 @@ def GetResourceLoader():
     return _loader
 
   # Ovm_Main in main.c sets this.
-  if os.getenv('_OVM_IS_BUNDLE') == '1':
-    ovm_path = os.getenv('_OVM_PATH')
+  if posix.environ.get('_OVM_IS_BUNDLE') == '1':
+    ovm_path = posix.environ.get('_OVM_PATH')
     #log('! OVM_PATH = %s', ovm_path)
     _loader = _ZipResourceLoader(ovm_path)
-  elif os.getenv('_OVM_RESOURCE_ROOT'):  # Unit tests set this
-    root_dir = os.getenv('_OVM_RESOURCE_ROOT')
+  elif posix.environ.get('_OVM_RESOURCE_ROOT'):  # Unit tests set this
+    root_dir = posix.environ.get('_OVM_RESOURCE_ROOT')
     _loader = _FileResourceLoader(root_dir)
   else:
     # NOTE: This assumes all unit tests are one directory deep, e.g.
     # core/util_test.py.
-    bin_dir = os.path.dirname(os.path.abspath(sys.argv[0]))  # ~/git/oil/bin
-    root_dir = os.path.join(bin_dir, '..')  # ~/git/oil/osh
+    bin_dir = posixpath.dirname(posixpath.abspath(sys.argv[0]))  # ~/git/oil/bin
+    root_dir = posixpath.join(bin_dir, '..')  # ~/git/oil/osh
     _loader = _FileResourceLoader(root_dir)
 
   return _loader
@@ -226,7 +236,7 @@ def ShowAppVersion(app_name):
 
   # node is like 'hostname'
   # release is the kernel version
-  system, unused_node, unused_release, platform_version, machine = os.uname()
+  system, unused_node, unused_release, platform_version, machine = posix.uname()
 
   # The platform.py module has a big regex that parses sys.version, but we
   # don't want to depend on regular expressions.  So we will do our own parsing
@@ -241,7 +251,7 @@ def ShowAppVersion(app_name):
   py_compiler = py_compiler[1:-1]
 
   # This environment variable set in C code.
-  py_impl = 'OVM' if os.getenv('_OVM_IS_BUNDLE') else 'CPython'
+  py_impl = 'OVM' if posix.environ.get('_OVM_IS_BUNDLE') else 'CPython'
 
   # What C functions do these come from?
   print('%s version %s' % (app_name, version))
@@ -258,7 +268,7 @@ def ShowAppVersion(app_name):
 # This was useful for debugging.
 def ShowFdState():
   import subprocess
-  subprocess.call(['ls', '-l', '/proc/%d/fd' % os.getpid()])
+  subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
 
 
 class DebugFile(object):

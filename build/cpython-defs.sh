@@ -28,7 +28,7 @@ oil-py-names() {
 # initialized in posixmodule.c.
 os-module-deps() {
   #oil-py-deps | xargs egrep --no-filename -o '\bos\.[a-z]+' */*.py | sort | uniq -c |sort -n
-  oil-py-deps | xargs egrep -l os.path
+  oil-py-deps | xargs fgrep -l 'os.'
 }
 
 # TODO:
