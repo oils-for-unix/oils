@@ -1,0 +1,7 @@
+// Python-2.7.13/Objects/exceptions.c
+
+static PyMethodDef BaseException_methods[] = {
+  {"__reduce__", (PyCFunction)BaseException_reduce},
+  {"__setstate__", (PyCFunction)BaseException_setstate},
+  {0},
+};

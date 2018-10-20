@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/structseq.c
+
+static PyMethodDef structseq_methods[] = {
+  {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS},
+  {0},
+};

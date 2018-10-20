@@ -794,6 +794,9 @@ proxy_copy(proxyobject *pp)
     return PyObject_CallMethod(pp->dict, "copy", NULL);
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/descrobject.c/proxy_methods.def"
+#else
 static PyMethodDef proxy_methods[] = {
     {"has_key",   (PyCFunction)proxy_has_key,    METH_O,
      PyDoc_STR("D.has_key(k) -> True if D has a key k, else False")},
@@ -817,6 +820,7 @@ static PyMethodDef proxy_methods[] = {
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {0}
 };
+#endif
 
 static void
 proxy_dealloc(proxyobject *pp)
@@ -1197,12 +1201,16 @@ property_deleter(PyObject *self, PyObject *deleter)
 }
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/descrobject.c/property_methods.def"
+#else
 static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
     {0}
 };
+#endif
 
 
 static void

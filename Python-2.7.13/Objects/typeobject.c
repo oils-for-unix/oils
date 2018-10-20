@@ -2758,6 +2758,9 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
     return list;
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/typeobject.c/type_methods.def"
+#else
 static PyMethodDef type_methods[] = {
     {"mro", (PyCFunction)mro_external, METH_NOARGS,
      PyDoc_STR("mro() -> list\nreturn a type's method resolution order")},
@@ -2769,6 +2772,7 @@ static PyMethodDef type_methods[] = {
      PyDoc_STR("__subclasscheck__() -> bool\ncheck if a class is a subclass")},
     {0}
 };
+#endif
 
 PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
@@ -3606,6 +3610,9 @@ object_sizeof(PyObject *self, PyObject *args)
     return PyInt_FromSsize_t(res);
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/typeobject.c/object_methods.def"
+#else
 static PyMethodDef object_methods[] = {
     {"__reduce_ex__", object_reduce_ex, METH_VARARGS,
      PyDoc_STR("helper for pickle")},
@@ -3619,6 +3626,7 @@ static PyMethodDef object_methods[] = {
      PyDoc_STR("__sizeof__() -> int\nsize of object in memory, in bytes")},
     {0}
 };
+#endif
 
 
 PyTypeObject PyBaseObject_Type = {

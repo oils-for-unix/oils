@@ -1,0 +1,26 @@
+// Python-2.7.13/Objects/dictobject.c
+
+static PyMethodDef mapp_methods[] = {
+  {"__contains__", (PyCFunction)dict_contains, METH_O | METH_COEXIST},
+  {"__getitem__", (PyCFunction)dict_subscript, METH_O | METH_COEXIST},
+  {"__sizeof__", (PyCFunction)dict_sizeof, METH_NOARGS},
+  {"has_key", (PyCFunction)dict_has_key, METH_O},
+  {"get", (PyCFunction)dict_get, METH_VARARGS},
+  {"setdefault", (PyCFunction)dict_setdefault, METH_VARARGS},
+  {"pop", (PyCFunction)dict_pop, METH_VARARGS},
+  {"popitem", (PyCFunction)dict_popitem, METH_NOARGS},
+  {"keys", (PyCFunction)dict_keys, METH_NOARGS},
+  {"items", (PyCFunction)dict_items, METH_NOARGS},
+  {"values", (PyCFunction)dict_values, METH_NOARGS},
+  {"viewkeys", (PyCFunction)dictkeys_new, METH_NOARGS},
+  {"viewitems", (PyCFunction)dictitems_new, METH_NOARGS},
+  {"viewvalues", (PyCFunction)dictvalues_new, METH_NOARGS},
+  {"update", (PyCFunction)dict_update, METH_VARARGS | METH_KEYWORDS},
+  {"fromkeys", (PyCFunction)dict_fromkeys, METH_VARARGS | METH_CLASS},
+  {"clear", (PyCFunction)dict_clear, METH_NOARGS},
+  {"copy", (PyCFunction)dict_copy, METH_NOARGS},
+  {"iterkeys", (PyCFunction)dict_iterkeys, METH_NOARGS},
+  {"itervalues", (PyCFunction)dict_itervalues, METH_NOARGS},
+  {"iteritems", (PyCFunction)dict_iteritems, METH_NOARGS},
+  {0},
+};

@@ -176,11 +176,15 @@ static PyObject * range_reverse(PyObject *seq);
 PyDoc_STRVAR(reverse_doc,
 "Returns a reverse iterator.");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/rangeobject.c/range_methods.def"
+#else
 static PyMethodDef range_methods[] = {
     {"__reversed__",            (PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
     {"__reduce__",              (PyCFunction)range_reduce, METH_VARARGS},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyTypeObject PyRange_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
@@ -250,10 +254,14 @@ rangeiter_len(rangeiterobject *r)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/rangeobject.c/rangeiter_methods.def"
+#else
 static PyMethodDef rangeiter_methods[] = {
     {"__length_hint__", (PyCFunction)rangeiter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 static PyTypeObject Pyrangeiter_Type = {
     PyObject_HEAD_INIT(&PyType_Type)

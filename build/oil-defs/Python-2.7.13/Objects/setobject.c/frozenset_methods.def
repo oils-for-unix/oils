@@ -1,0 +1,16 @@
+// Python-2.7.13/Objects/setobject.c
+
+static PyMethodDef frozenset_methods[] = {
+  {"__contains__", (PyCFunction)set_direct_contains, METH_O | METH_COEXIST},
+  {"copy", (PyCFunction)frozenset_copy, METH_NOARGS},
+  {"difference", (PyCFunction)set_difference_multi, METH_VARARGS},
+  {"intersection", (PyCFunction)set_intersection_multi, METH_VARARGS},
+  {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O},
+  {"issubset", (PyCFunction)set_issubset, METH_O},
+  {"issuperset", (PyCFunction)set_issuperset, METH_O},
+  {"__reduce__", (PyCFunction)set_reduce, METH_NOARGS},
+  {"__sizeof__", (PyCFunction)set_sizeof, METH_NOARGS},
+  {"symmetric_difference", (PyCFunction)set_symmetric_difference, METH_O},
+  {"union", (PyCFunction)set_union, METH_VARARGS},
+  {0},
+};

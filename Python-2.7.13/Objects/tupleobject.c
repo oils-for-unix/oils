@@ -768,12 +768,16 @@ PyDoc_STRVAR(index_doc,
 PyDoc_STRVAR(count_doc,
 "T.count(value) -> integer -- return number of occurrences of value");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/tupleobject.c/tuple_methods.def"
+#else
 static PyMethodDef tuple_methods[] = {
     {"__getnewargs__",          (PyCFunction)tuple_getnewargs,  METH_NOARGS},
     {"index",           (PyCFunction)tupleindex,  METH_VARARGS, index_doc},
     {"count",           (PyCFunction)tuplecount,  METH_O, count_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 static PyMappingMethods tuple_as_mapping = {
     (lenfunc)tuplelength,
@@ -982,10 +986,14 @@ tupleiter_len(tupleiterobject *it)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/tupleobject.c/tupleiter_methods.def"
+#else
 static PyMethodDef tupleiter_methods[] = {
     {"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

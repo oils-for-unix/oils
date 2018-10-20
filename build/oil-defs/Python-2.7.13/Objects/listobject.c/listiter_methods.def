@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/listobject.c
+
+static PyMethodDef listiter_methods[] = {
+  {"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS},
+  {0},
+};

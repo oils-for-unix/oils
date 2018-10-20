@@ -2510,6 +2510,9 @@ cmp(x, y) -> -1, 0, 1");
 
 static PyObject *list_subscript(PyListObject*, PyObject*);
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/listobject.c/list_methods.def"
+#else
 static PyMethodDef list_methods[] = {
     {"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST, getitem_doc},
     {"__reversed__",(PyCFunction)list_reversed, METH_NOARGS, reversed_doc},
@@ -2525,6 +2528,7 @@ static PyMethodDef list_methods[] = {
     {"sort",            (PyCFunction)listsort,    METH_VARARGS | METH_KEYWORDS, sort_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 static PySequenceMethods list_as_sequence = {
     (lenfunc)list_length,                       /* sq_length */
@@ -2826,10 +2830,14 @@ static PyObject *listiter_len(listiterobject *);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/listobject.c/listiter_methods.def"
+#else
 static PyMethodDef listiter_methods[] = {
     {"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyTypeObject PyListIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -2948,10 +2956,14 @@ static int listreviter_traverse(listreviterobject *, visitproc, void *);
 static PyObject *listreviter_next(listreviterobject *);
 static PyObject *listreviter_len(listreviterobject *);
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/listobject.c/listreviter_methods.def"
+#else
 static PyMethodDef listreviter_methods[] = {
     {"__length_hint__", (PyCFunction)listreviter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyTypeObject PyListRevIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

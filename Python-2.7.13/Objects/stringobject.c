@@ -3640,6 +3640,9 @@ Return a formatted version of S as described by format_spec.");
 #endif
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/stringobject.c/string_methods.def"
+#else
 static PyMethodDef string_methods[] = {
     /* Counterparts of the obsolete stropmodule functions; except
        string.maketrans(). */
@@ -3699,6 +3702,7 @@ static PyMethodDef string_methods[] = {
     {"__getnewargs__",          (PyCFunction)string_getnewargs, METH_NOARGS},
     {NULL,     NULL}                         /* sentinel */
 };
+#endif
 
 static PyObject *
 str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);

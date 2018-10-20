@@ -1,0 +1,8 @@
+// Python-2.7.13/Modules/pwdmodule.c
+
+static PyMethodDef pwd_methods[] = {
+  {"getpwuid", pwd_getpwuid, METH_VARARGS},
+  {"getpwnam", pwd_getpwnam, METH_VARARGS},
+  {"getpwall", (PyCFunction)pwd_getpwall, METH_NOARGS},
+  {0},
+};

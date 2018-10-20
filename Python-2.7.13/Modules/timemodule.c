@@ -776,6 +776,9 @@ inittimezone(PyObject *m) {
 }
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/timemodule.c/time_methods.def"
+#else
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
 #ifdef HAVE_CLOCK
@@ -798,6 +801,7 @@ static PyMethodDef time_methods[] = {
 #endif
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 
 PyDoc_STRVAR(module_doc,

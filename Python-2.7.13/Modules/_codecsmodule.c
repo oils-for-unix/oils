@@ -1052,6 +1052,9 @@ static PyObject *lookup_error(PyObject *self, PyObject *args)
 
 /* --- Module API --------------------------------------------------------- */
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/_codecsmodule.c/_codecs_functions.def"
+#else
 static PyMethodDef _codecs_functions[] = {
     {"register",                codec_register,                 METH_O,
         register__doc__},
@@ -1108,6 +1111,7 @@ static PyMethodDef _codecs_functions[] = {
         lookup_error__doc__},
     {NULL, NULL}                /* sentinel */
 };
+#endif
 
 PyMODINIT_FUNC
 init_codecs(void)

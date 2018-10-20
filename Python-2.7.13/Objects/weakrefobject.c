@@ -616,10 +616,14 @@ proxy_iternext(PyWeakReference *proxy)
 WRAP_METHOD(proxy_unicode, "__unicode__");
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/weakrefobject.c/proxy_methods.def"
+#else
 static PyMethodDef proxy_methods[] = {
         {"__unicode__", (PyCFunction)proxy_unicode, METH_NOARGS},
         {NULL, NULL}
 };
+#endif
 
 
 static PyNumberMethods proxy_as_number = {

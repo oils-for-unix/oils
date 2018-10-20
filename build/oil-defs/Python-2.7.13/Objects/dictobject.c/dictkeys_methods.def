@@ -1,0 +1,5 @@
+// Python-2.7.13/Objects/dictobject.c
+
+static PyMethodDef dictkeys_methods[] = {
+  {0},
+};

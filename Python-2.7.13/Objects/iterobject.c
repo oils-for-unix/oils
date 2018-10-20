@@ -93,10 +93,14 @@ iter_len(seqiterobject *it)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/iterobject.c/seqiter_methods.def"
+#else
 static PyMethodDef seqiter_methods[] = {
     {"__length_hint__", (PyCFunction)iter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyTypeObject PySeqIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

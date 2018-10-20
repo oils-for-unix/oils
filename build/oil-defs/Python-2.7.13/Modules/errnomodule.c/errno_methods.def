@@ -1,0 +1,5 @@
+// Python-2.7.13/Modules/errnomodule.c
+
+static PyMethodDef errno_methods[] = {
+  {0},
+};

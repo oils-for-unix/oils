@@ -1,0 +1,13 @@
+// Python-2.7.13/Modules/_codecsmodule.c
+
+static PyMethodDef _codecs_functions[] = {
+  {"register", codec_register, METH_O},
+  {"lookup", codec_lookup, METH_VARARGS},
+  {"encode", codec_encode, METH_VARARGS},
+  {"decode", codec_decode, METH_VARARGS},
+  {"escape_encode", escape_encode},
+  {"escape_decode", escape_decode},
+  {"register_error", register_error, METH_VARARGS},
+  {"lookup_error", lookup_error, METH_VARARGS},
+  {0},
+};

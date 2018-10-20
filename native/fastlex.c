@@ -148,6 +148,9 @@ fastlex_IsPlainWord(PyObject *self, PyObject *args) {
 }
 
 
+#ifdef OVM_MAIN
+#include "native/fastlex.c/methods.def"
+#else
 static PyMethodDef methods[] = {
   {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
@@ -163,6 +166,7 @@ static PyMethodDef methods[] = {
    "Can the string be pretty-printed without quotes?"},
   {NULL, NULL},
 };
+#endif
 
 void initfastlex(void) {
   Py_InitModule("fastlex", methods);

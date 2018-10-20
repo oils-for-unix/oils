@@ -2620,6 +2620,9 @@ from each of the argument sequences.  The returned list is truncated\n\
 in length to the length of the shortest argument sequence.");
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Python/bltinmodule.c/builtin_methods.def"
+#else
 static PyMethodDef builtin_methods[] = {
     {"__import__",      (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
     {"abs",             builtin_abs,        METH_O, abs_doc},
@@ -2679,6 +2682,7 @@ static PyMethodDef builtin_methods[] = {
     {"zip",         builtin_zip,        METH_VARARGS, zip_doc},
     {NULL,              NULL},
 };
+#endif
 
 PyDoc_STRVAR(builtin_doc,
 "Built-in functions, exceptions, and other objects.\n\

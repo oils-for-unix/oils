@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/frameobject.c
+
+static PyMethodDef frame_methods[] = {
+  {"__sizeof__", (PyCFunction)frame_sizeof, METH_NOARGS},
+  {0},
+};

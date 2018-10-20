@@ -833,10 +833,14 @@ setiter_len(setiterobject *si)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/setobject.c/setiter_methods.def"
+#else
 static PyMethodDef setiter_methods[] = {
     {"__length_hint__", (PyCFunction)setiter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 static PyObject *setiter_iternext(setiterobject *si)
 {
@@ -2027,6 +2031,9 @@ PyDoc_STRVAR(test_c_api_doc, "Exercises C API.  Returns True.\n\
 All is well if assertions don't fail.");
 #endif
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/setobject.c/set_methods.def"
+#else
 static PyMethodDef set_methods[] = {
     {"add",             (PyCFunction)set_add,           METH_O,
      add_doc},
@@ -2074,6 +2081,7 @@ static PyMethodDef set_methods[] = {
      update_doc},
     {NULL,              NULL}   /* sentinel */
 };
+#endif
 
 static PyNumberMethods set_as_number = {
     0,                                  /*nb_add*/
@@ -2165,6 +2173,9 @@ PyTypeObject PySet_Type = {
 /* frozenset object ********************************************************/
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/setobject.c/frozenset_methods.def"
+#else
 static PyMethodDef frozenset_methods[] = {
     {"__contains__",(PyCFunction)set_direct_contains,           METH_O | METH_COEXIST,
      contains_doc},
@@ -2190,6 +2201,7 @@ static PyMethodDef frozenset_methods[] = {
      union_doc},
     {NULL,              NULL}   /* sentinel */
 };
+#endif
 
 static PyNumberMethods frozenset_as_number = {
     0,                                  /*nb_add*/

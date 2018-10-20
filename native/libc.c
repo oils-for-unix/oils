@@ -373,6 +373,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
     return PyString_FromString(buf);
 }
 
+#ifdef OVM_MAIN
+#include "native/libc.c/methods.def"
+#else
 static PyMethodDef methods[] = {
   // Return the canonical version of a path with symlinks, or None if there is
   // an error.
@@ -403,6 +406,7 @@ static PyMethodDef methods[] = {
   {"gethostname", socket_gethostname, METH_NOARGS, ""},
   {NULL, NULL},
 };
+#endif
 
 void initlibc(void) {
   Py_InitModule("libc", methods);

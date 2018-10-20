@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/rangeobject.c
+
+static PyMethodDef rangeiter_methods[] = {
+  {"__length_hint__", (PyCFunction)rangeiter_len, METH_NOARGS},
+  {0},
+};

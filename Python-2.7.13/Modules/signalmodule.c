@@ -506,6 +506,9 @@ Returns current value of given itimer.");
 
 
 /* List of functions defined in the module */
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/signalmodule.c/signal_methods.def"
+#else
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
     {"alarm",                   signal_alarm, METH_VARARGS, alarm_doc},
@@ -530,6 +533,7 @@ static PyMethodDef signal_methods[] = {
      METH_VARARGS, default_int_handler_doc},
     {NULL,                      NULL}           /* sentinel */
 };
+#endif
 
 
 PyDoc_STRVAR(module_doc,

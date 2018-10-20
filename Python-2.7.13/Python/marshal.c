@@ -1374,6 +1374,9 @@ Convert the string to a value. If no valid value is found, raise\n\
 EOFError, ValueError or TypeError. Extra characters in the string are\n\
 ignored.");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Python/marshal.c/marshal_methods.def"
+#else
 static PyMethodDef marshal_methods[] = {
     {"dump",            marshal_dump,   METH_VARARGS,   dump_doc},
     {"load",            marshal_load,   METH_O,         load_doc},
@@ -1381,6 +1384,7 @@ static PyMethodDef marshal_methods[] = {
     {"loads",           marshal_loads,  METH_VARARGS,   loads_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyDoc_STRVAR(marshal_doc,
 "This module contains functions that can read and write Python values in\n\

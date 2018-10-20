@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/dictobject.c
+
+static PyMethodDef dictiter_methods[] = {
+  {"__length_hint__", (PyCFunction)dictiter_len, METH_NOARGS},
+  {0},
+};

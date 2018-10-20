@@ -567,11 +567,15 @@ frame_sizeof(PyFrameObject *f)
 PyDoc_STRVAR(sizeof__doc__,
 "F.__sizeof__() -> size of F in memory, in bytes");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/frameobject.c/frame_methods.def"
+#else
 static PyMethodDef frame_methods[] = {
     {"__sizeof__",      (PyCFunction)frame_sizeof,      METH_NOARGS,
      sizeof__doc__},
     {NULL,              NULL}   /* sentinel */
 };
+#endif
 
 PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

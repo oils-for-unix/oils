@@ -178,6 +178,9 @@ pwd_getpwall(PyObject *self)
 }
 #endif
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/pwdmodule.c/pwd_methods.def"
+#else
 static PyMethodDef pwd_methods[] = {
     {"getpwuid",        pwd_getpwuid, METH_VARARGS, pwd_getpwuid__doc__},
     {"getpwnam",        pwd_getpwnam, METH_VARARGS, pwd_getpwnam__doc__},
@@ -187,6 +190,7 @@ static PyMethodDef pwd_methods[] = {
 #endif
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyMODINIT_FUNC
 initpwd(void)

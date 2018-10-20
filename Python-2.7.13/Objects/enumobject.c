@@ -331,10 +331,14 @@ reversed_len(reversedobject *ro)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/enumobject.c/reversediter_methods.def"
+#else
 static PyMethodDef reversediter_methods[] = {
     {"__length_hint__", (PyCFunction)reversed_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 PyTypeObject PyReversed_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

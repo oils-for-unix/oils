@@ -1,0 +1,13 @@
+// native/libc.c
+
+static PyMethodDef methods[] = {
+  {"realpath", func_realpath, METH_VARARGS},
+  {"fnmatch", func_fnmatch, METH_VARARGS},
+  {"glob", func_glob, METH_VARARGS},
+  {"regex_parse", func_regex_parse, METH_VARARGS},
+  {"regex_match", func_regex_match, METH_VARARGS},
+  {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS},
+  {"print_time", func_print_time, METH_VARARGS},
+  {"gethostname", socket_gethostname, METH_NOARGS},
+  {0},
+};

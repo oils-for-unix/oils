@@ -1,0 +1,25 @@
+// Python-2.7.13/Objects/setobject.c
+
+static PyMethodDef set_methods[] = {
+  {"add", (PyCFunction)set_add, METH_O},
+  {"clear", (PyCFunction)set_clear, METH_NOARGS},
+  {"__contains__", (PyCFunction)set_direct_contains, METH_O | METH_COEXIST},
+  {"copy", (PyCFunction)set_copy, METH_NOARGS},
+  {"discard", (PyCFunction)set_discard, METH_O},
+  {"difference", (PyCFunction)set_difference_multi, METH_VARARGS},
+  {"difference_update", (PyCFunction)set_difference_update, METH_VARARGS},
+  {"intersection", (PyCFunction)set_intersection_multi, METH_VARARGS},
+  {"intersection_update", (PyCFunction)set_intersection_update_multi, METH_VARARGS},
+  {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O},
+  {"issubset", (PyCFunction)set_issubset, METH_O},
+  {"issuperset", (PyCFunction)set_issuperset, METH_O},
+  {"pop", (PyCFunction)set_pop, METH_NOARGS},
+  {"__reduce__", (PyCFunction)set_reduce, METH_NOARGS},
+  {"remove", (PyCFunction)set_remove, METH_O},
+  {"__sizeof__", (PyCFunction)set_sizeof, METH_NOARGS},
+  {"symmetric_difference", (PyCFunction)set_symmetric_difference, METH_O},
+  {"symmetric_difference_update", (PyCFunction)set_symmetric_difference_update, METH_O},
+  {"union", (PyCFunction)set_union, METH_VARARGS},
+  {"update", (PyCFunction)set_update, METH_VARARGS},
+  {0},
+};

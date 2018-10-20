@@ -1,0 +1,7 @@
+// Python-2.7.13/Python/_warnings.c
+
+static PyMethodDef warnings_functions[] = {
+  {"warn", (PyCFunction)warnings_warn, METH_VARARGS | METH_KEYWORDS},
+  {"warn_explicit", (PyCFunction)warnings_warn_explicit, METH_VARARGS | METH_KEYWORDS},
+  {0},
+};

@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/setobject.c
+
+static PyMethodDef setiter_methods[] = {
+  {"__length_hint__", (PyCFunction)setiter_len, METH_NOARGS},
+  {0},
+};

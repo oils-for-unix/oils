@@ -426,11 +426,15 @@ static PyMappingMethods structseq_as_mapping = {
     (binaryfunc)structseq_subscript,
 };
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/structseq.c/structseq_methods.def"
+#else
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce,
      METH_NOARGS, NULL},
     {NULL, NULL}
 };
+#endif
 
 static PyTypeObject _struct_sequence_template = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

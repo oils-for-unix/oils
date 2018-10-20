@@ -76,6 +76,9 @@ weakref_proxy(PyObject *self, PyObject *args)
 }
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/_weakref.c/weakref_functions.def"
+#else
 static PyMethodDef weakref_functions[] =  {
     {"getweakrefcount", weakref_getweakrefcount,        METH_O,
      weakref_getweakrefcount__doc__},
@@ -85,6 +88,7 @@ static PyMethodDef weakref_functions[] =  {
      weakref_proxy__doc__},
     {NULL, NULL, 0, NULL}
 };
+#endif
 
 
 PyMODINIT_FUNC

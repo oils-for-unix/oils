@@ -1,0 +1,12 @@
+// Python-2.7.13/Modules/zipimport.c
+
+static PyMethodDef zipimporter_methods[] = {
+  {"find_module", zipimporter_find_module, METH_VARARGS},
+  {"load_module", zipimporter_load_module, METH_VARARGS},
+  {"get_data", zipimporter_get_data, METH_VARARGS},
+  {"get_code", zipimporter_get_code, METH_VARARGS},
+  {"get_source", zipimporter_get_source, METH_VARARGS},
+  {"get_filename", zipimporter_get_filename, METH_VARARGS},
+  {"is_package", zipimporter_is_package, METH_VARARGS},
+  {0},
+};

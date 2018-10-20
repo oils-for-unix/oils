@@ -561,6 +561,9 @@ PyDoc_STRVAR(doc_get_filename,
 \n\
 Return the filename for the specified module.");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/zipimport.c/zipimporter_methods.def"
+#else
 static PyMethodDef zipimporter_methods[] = {
     {"find_module", zipimporter_find_module, METH_VARARGS,
      doc_find_module},
@@ -578,6 +581,7 @@ static PyMethodDef zipimporter_methods[] = {
      doc_is_package},
     {NULL,              NULL}   /* sentinel */
 };
+#endif
 
 static PyMemberDef zipimporter_members[] = {
     {"archive",  T_OBJECT, offsetof(ZipImporter, archive),  READONLY},

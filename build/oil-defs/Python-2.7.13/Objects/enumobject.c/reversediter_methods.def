@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/enumobject.c
+
+static PyMethodDef reversediter_methods[] = {
+  {"__length_hint__", (PyCFunction)reversed_len, METH_NOARGS},
+  {0},
+};

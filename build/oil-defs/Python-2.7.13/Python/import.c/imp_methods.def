@@ -1,0 +1,19 @@
+// Python-2.7.13/Python/import.c
+
+static PyMethodDef imp_methods[] = {
+  {"reload", imp_reload, METH_O},
+  {"find_module", imp_find_module, METH_VARARGS},
+  {"get_magic", imp_get_magic, METH_NOARGS},
+  {"get_suffixes", imp_get_suffixes, METH_NOARGS},
+  {"load_module", imp_load_module, METH_VARARGS},
+  {"new_module", imp_new_module, METH_VARARGS},
+  {"lock_held", imp_lock_held, METH_NOARGS},
+  {"acquire_lock", imp_acquire_lock, METH_NOARGS},
+  {"release_lock", imp_release_lock, METH_NOARGS},
+  {"init_builtin", imp_init_builtin},
+  {"is_builtin", imp_is_builtin},
+  {"load_compiled", imp_load_compiled},
+  {"load_package", imp_load_package},
+  {"load_source", imp_load_source},
+  {0},
+};

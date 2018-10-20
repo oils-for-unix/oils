@@ -1,0 +1,9 @@
+// Python-2.7.13/Objects/intobject.c
+
+static PyMethodDef int_methods[] = {
+  {"conjugate", (PyCFunction)int_int, METH_NOARGS},
+  {"bit_length", (PyCFunction)int_bit_length, METH_NOARGS},
+  {"__trunc__", (PyCFunction)int_int, METH_NOARGS},
+  {"__getnewargs__", (PyCFunction)int_getnewargs},
+  {0},
+};

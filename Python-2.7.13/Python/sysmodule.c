@@ -916,6 +916,9 @@ PyDoc_STRVAR(sys_clear_type_cache__doc__,
 Clear the internal type lookup cache.");
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Python/sysmodule.c/sys_methods.def"
+#else
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     {"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS,
@@ -990,6 +993,7 @@ static PyMethodDef sys_methods[] = {
     {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 static PyObject *
 list_builtin_module_names(void)

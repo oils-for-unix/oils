@@ -12,9 +12,13 @@
  * Pull in the system error definitions
  */
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/errnomodule.c/errno_methods.def"
+#else
 static PyMethodDef errno_methods[] = {
     {NULL,              NULL}
 };
+#endif
 
 /* Helper function doing the dictionary inserting */
 

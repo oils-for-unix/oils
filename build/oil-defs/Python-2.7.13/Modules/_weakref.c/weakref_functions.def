@@ -1,0 +1,8 @@
+// Python-2.7.13/Modules/_weakref.c
+
+static PyMethodDef weakref_functions[] = {
+  {"getweakrefcount", weakref_getweakrefcount, METH_O},
+  {"getweakrefs", weakref_getweakrefs, METH_O},
+  {"proxy", weakref_proxy, METH_VARARGS},
+  {0},
+};

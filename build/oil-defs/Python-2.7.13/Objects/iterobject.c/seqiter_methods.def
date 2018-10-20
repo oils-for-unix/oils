@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/iterobject.c
+
+static PyMethodDef seqiter_methods[] = {
+  {"__length_hint__", (PyCFunction)iter_len, METH_NOARGS},
+  {0},
+};

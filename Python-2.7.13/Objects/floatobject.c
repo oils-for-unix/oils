@@ -2029,6 +2029,9 @@ PyDoc_STRVAR(float__format__doc,
 #endif
 
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/floatobject.c/float_methods.def"
+#else
 static PyMethodDef float_methods[] = {
     {"conjugate",       (PyCFunction)float_float,       METH_NOARGS,
      "Return self, the complex conjugate of any float."},
@@ -2061,6 +2064,7 @@ static PyMethodDef float_methods[] = {
 #endif
     {NULL,              NULL}           /* sentinel */
 };
+#endif
 
 static PyGetSetDef float_getset[] = {
     {"real",

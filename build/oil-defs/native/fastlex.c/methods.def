@@ -1,0 +1,11 @@
+// native/fastlex.c
+
+static PyMethodDef methods[] = {
+  {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS},
+  {"MatchEchoToken", fastlex_MatchEchoToken, METH_VARARGS},
+  {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS},
+  {"MatchPS1Token", fastlex_MatchPS1Token, METH_VARARGS},
+  {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS},
+  {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS},
+  {0},
+};

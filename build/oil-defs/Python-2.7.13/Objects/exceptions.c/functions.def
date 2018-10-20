@@ -1,0 +1,5 @@
+// Python-2.7.13/Objects/exceptions.c
+
+static PyMethodDef functions[] = {
+  {0},
+};

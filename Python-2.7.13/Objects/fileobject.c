@@ -2113,6 +2113,9 @@ PyDoc_STRVAR(enter_doc,
 PyDoc_STRVAR(exit_doc,
              "__exit__(*excinfo) -> None.  Closes the file.");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/fileobject.c/file_methods.def"
+#else
 static PyMethodDef file_methods[] = {
     {"readline",  (PyCFunction)file_readline, METH_VARARGS, readline_doc},
     {"read",      (PyCFunction)file_read,     METH_VARARGS, read_doc},
@@ -2134,6 +2137,7 @@ static PyMethodDef file_methods[] = {
     {"__exit__",  (PyCFunction)file_exit,     METH_VARARGS, exit_doc},
     {NULL,            NULL}             /* sentinel */
 };
+#endif
 
 #define OFF(x) offsetof(PyFileObject, x)
 

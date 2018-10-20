@@ -3326,6 +3326,9 @@ PyDoc_STRVAR(doc_release_lock,
 Release the interpreter's import lock.\n\
 On platforms without threads, this function does nothing.");
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Python/import.c/imp_methods.def"
+#else
 static PyMethodDef imp_methods[] = {
     {"reload",           imp_reload,       METH_O,       doc_reload},
     {"find_module",      imp_find_module,  METH_VARARGS, doc_find_module},
@@ -3356,6 +3359,7 @@ static PyMethodDef imp_methods[] = {
     {"load_source",             imp_load_source,        METH_VARARGS},
     {NULL,                      NULL}           /* sentinel */
 };
+#endif
 
 static int
 setint(PyObject *d, char *name, int value)
@@ -3406,12 +3410,16 @@ NullImporter_find_module(NullImporter *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Python/import.c/NullImporter_methods.def"
+#else
 static PyMethodDef NullImporter_methods[] = {
     {"find_module", (PyCFunction)NullImporter_find_module, METH_VARARGS,
      "Always return None"
     },
     {NULL}  /* Sentinel */
 };
+#endif
 
 
 PyTypeObject PyNullImporter_Type = {

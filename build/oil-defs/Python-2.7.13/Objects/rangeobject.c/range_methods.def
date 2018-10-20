@@ -1,0 +1,7 @@
+// Python-2.7.13/Objects/rangeobject.c
+
+static PyMethodDef range_methods[] = {
+  {"__reversed__", (PyCFunction)range_reverse, METH_NOARGS},
+  {"__reduce__", (PyCFunction)range_reduce},
+  {0},
+};

@@ -1,0 +1,6 @@
+// Python-2.7.13/Objects/tupleobject.c
+
+static PyMethodDef tupleiter_methods[] = {
+  {"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS},
+  {0},
+};
