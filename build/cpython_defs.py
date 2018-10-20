@@ -200,12 +200,13 @@ def PrettyPrint(def_name, entries, predicate, f, stats):
 
   out('static PyMethodDef %s[] = {\n', def_name)
   for entry_name, vals in entries:
-    if not predicate(def_name, entry_name):
-      continue
-
     if entry_name is None:
       out('  {0},\n')  # null initializer
       continue
+
+    if not predicate(def_name, entry_name):
+      continue
+
     out('  {"%s", ', entry_name)
     # Strip off the docstring.
     out(', '.join(vals[:-1]))
@@ -214,13 +215,30 @@ def PrettyPrint(def_name, entries, predicate, f, stats):
   out('};\n')
 
 
-def OilMethodFilter(def_name, method_name):
-  # NOTE: asdl/unpickle.py needs marshal.loads
-  if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
-    return False
-  #log('= %s %s', def_name, method_name)
+class OilMethodFilter(object):
 
-  return True
+  def __init__(self, py_names):
+    self.py_names = py_names
+
+  def __call__(self, def_name, method_name):
+    # __length_hint__ ?
+    #if method_name.startswith('__'):
+    #  return True
+
+    # NOTE: asdl/unpickle.py needs marshal.loads
+    if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
+      return False
+    #log('= %s %s', def_name, method_name)
+
+    # If it doesn't appear in the .py source, it can't be used.  (Execption: it
+    # coudl be used in C source with dynamic lookup?  But I don't think CPython
+    # does that.)
+    #if method_name not in self.py_names:
+    if 0:
+      log('Omitting %r', method_name)
+      return False
+
+    return True
 
 
 def main(argv):
@@ -246,10 +264,17 @@ def main(argv):
             print(method_name, vals)
 
   elif action == 'filter':  # for slimming the build down
-    out_dir = argv[2]
+    py_names_path = argv[2]
+    out_dir = argv[3]
 
     p = Parser(tokens)
     files = p.ParseStream()
+
+    py_names = set()
+    with open(py_names_path) as f:
+      for line in f:
+        py_names.add(line.strip())
+    method_filter = OilMethodFilter(py_names)
 
     # Print to files.
 
@@ -272,7 +297,7 @@ def main(argv):
         with open(out_path, 'w') as f:
           print('// %s' % rel_path, file=f)
           print('', file=f)
-          PrettyPrint(def_name, entries, OilMethodFilter, f, stats)
+          PrettyPrint(def_name, entries, method_filter, f, stats)
 
         stats['num_defs'] += 1
         log('Wrote %s', out_path)

@@ -7,6 +7,16 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# Could be published in metrics?
+readonly PY_NAMES=_tmp/oil-py-names.txt
+
+oil-py-names() {
+  time cat _build/oil/opy-app-deps.txt | awk ' $1 ~ /\.py$/ { print $1 }' \
+    | xargs bin/opyc lex-names | sort | uniq > $PY_NAMES
+
+  wc -l $PY_NAMES
+}
+
 # TODO:
 # Write to a separate file like _build/pydefs/intobject.include
 # #ifdef OVM_MAIN
@@ -120,7 +130,7 @@ filter-methods() {
   mkdir -p $out_dir
 
   #head -n 30 $tmp
-  cat $tmp/preprocessed.txt | cpython-defs filter $out_dir
+  cat $tmp/preprocessed.txt | cpython-defs filter $PY_NAMES $out_dir
 
   wc -l $tmp/*/*.defs
   wc -l $tmp/*.txt
@@ -175,8 +185,16 @@ edit-all() {
   tac _tmp/cpython-defs/edit-list.txt | xargs -n 4 -- $0 edit-file
 }
 
+# Show current Oil definitions.
 show-oil() {
   find build/oil-defs -name '*.def' | xargs cat | less
+}
+
+# NOTE: We can replace os with posix.  Will save 700 lines of code, 25K + 25K.
+# os.getenv() is a trivial wrapper around os.environ.get().  It gets
+# initialized in posixmodule.c.
+grep-os() {
+  egrep --no-filename -o '\bos\.[a-z]+' */*.py | sort | uniq -c |sort -n
 }
 
 "$@"

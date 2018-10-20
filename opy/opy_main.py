@@ -301,6 +301,15 @@ def OpyCommandMain(argv):
       for typ, val, start, end, unused_line in tokens:
         print('%10s %10s %-10s %r' % (start, end, token.tok_name[typ], val))
 
+  elif action == 'lex-names':  # Print all the NAME tokens.
+    for py_path in argv:
+      log('Lexing %s', py_path)
+      with open(py_path) as f:
+        tokens = tokenize.generate_tokens(f.readline)
+        for typ, val, start, end, unused_line in tokens:
+          if typ == token.NAME:
+            print(val)
+
   elif action == 'parse':
     py_path = argv[0]
     with open(py_path) as f:
