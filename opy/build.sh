@@ -117,14 +117,16 @@ make-mains() {
 _fill-oil-tree() {
   local dir=${1:-_tmp/repo-with-opy}
 
-  mkdir -p $dir/_devbuild
+  mkdir -p $dir/_devbuild/osh-quick-ref
   cp -v ../_devbuild/*_asdl.pickle $dir/_devbuild
+  # For help text.
+  cp -v ../_devbuild/osh-quick-ref/* $dir/_devbuild/osh-quick-ref
 
   cp -v ../asdl/arith.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
   ln -v -s -f $PWD/../oil-version.txt $dir
 
-  # Needed for help text.
+  # OPy needs this for the grammar pickle?  Maybe just copy it.
   ln -v -s -f --no-target-directory $PWD/../_build $dir/_build
 
   # Running core/process_test.py depends on this existing!
