@@ -99,6 +99,10 @@ Ops = function(ops) {
   op_freq %>% tail(n=20) -> rare
   ShowFrame('Rare:', rare)
 
+  # Goal: get rid of IMPORT_STAR.
+  ops %>% filter(str_detect(op_name, 'IMPORT')) %>% count(op_name) -> imports
+  ShowFrame('Imports:', imports)
+
   # These are all the big jump targets!  Max is 3,852, which is a lot less than
   # 65,536.  We don't need EXTENDED_ARG!
   ops %>% arrange(desc(op_arg)) %>% head(10) -> f1
