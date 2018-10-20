@@ -10,11 +10,25 @@ set -o errexit
 # Could be published in metrics?
 readonly PY_NAMES=_tmp/oil-py-names.txt
 
+# Print the .py files in the tarball in their original locations.  For slimming
+# down the build.  Similar to build/metrics.sh linecounts-pydeps.
+# Hm that doesn't seem to duplicate posixpath while this does?
+oil-py-deps() {
+  cat _build/oil/opy-app-deps.txt | awk ' $1 ~ /\.py$/ { print $1 }'
+}
+
 oil-py-names() {
-  time cat _build/oil/opy-app-deps.txt | awk ' $1 ~ /\.py$/ { print $1 }' \
-    | xargs bin/opyc lex-names | sort | uniq > $PY_NAMES
+  time oil-py-deps | xargs bin/opyc lex-names | sort | uniq > $PY_NAMES
 
   wc -l $PY_NAMES
+}
+
+# NOTE: We can replace os with posix.  Will save 700 lines of code, 25K + 25K.
+# os.getenv() is a trivial wrapper around os.environ.get().  It gets
+# initialized in posixmodule.c.
+os-module-deps() {
+  #oil-py-deps | xargs egrep --no-filename -o '\bos\.[a-z]+' */*.py | sort | uniq -c |sort -n
+  oil-py-deps | xargs egrep -l os.path
 }
 
 # TODO:
@@ -188,13 +202,6 @@ edit-all() {
 # Show current Oil definitions.
 show-oil() {
   find build/oil-defs -name '*.def' | xargs cat | less
-}
-
-# NOTE: We can replace os with posix.  Will save 700 lines of code, 25K + 25K.
-# os.getenv() is a trivial wrapper around os.environ.get().  It gets
-# initialized in posixmodule.c.
-grep-os() {
-  egrep --no-filename -o '\bos\.[a-z]+' */*.py | sort | uniq -c |sort -n
 }
 
 "$@"

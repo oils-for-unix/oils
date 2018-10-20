@@ -21,15 +21,16 @@ Builtins that can be exposed:
 """
 from __future__ import print_function
 
-import os
+import posix
+import posixpath
 import sys
 import time  # for perf measurement
 
 # TODO: Set PYTHONPATH from outside?
-this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-sys.path.append(os.path.join(this_dir, '..'))
+this_dir = posixpath.dirname(posixpath.abspath(sys.argv[0]))
+sys.path.append(posixpath.join(this_dir, '..'))
 
-_trace_path = os.environ.get('_PY_TRACE')
+_trace_path = posix.environ.get('_PY_TRACE')
 if _trace_path:
   from benchmarks import pytrace
   _tracer = pytrace.Tracer()
@@ -38,10 +39,10 @@ else:
   _tracer = None
 
 # Uncomment this to see startup time problems.
-if os.environ.get('OIL_TIMING'):
+if posix.environ.get('OIL_TIMING'):
   start_time = time.time()
   def _tlog(msg):
-    pid = os.getpid()  # TODO: Maybe remove PID later.
+    pid = posix.getpid()  # TODO: Maybe remove PID later.
     print('[%d] %.3f %s' % (pid, (time.time() - start_time) * 1000, msg))
 else:
   def _tlog(msg):
@@ -53,7 +54,7 @@ import errno
 #import traceback  # for debugging
 
 # Set in Modules/main.c.
-HAVE_READLINE = os.getenv('_HAVE_READLINE') != ''
+HAVE_READLINE = posix.environ.get('_HAVE_READLINE') != ''
 
 from osh import parse_lib
 
@@ -150,7 +151,7 @@ def OshMain(argv0, argv, login_shell):
 
   # NOTE: has_main is only for ${BASH_SOURCE[@} and family.  Could be a
   # required arg.
-  mem = state.Mem(dollar0, argv[arg_r.i + 1:], os.environ, arena,
+  mem = state.Mem(dollar0, argv[arg_r.i + 1:], posix.environ, arena,
                   has_main=has_main)
   funcs = {}
 
@@ -170,7 +171,7 @@ def OshMain(argv0, argv, login_shell):
   debug_f.log('Debug file is %s', opts.debug_file)
 
   # Controlled by env variable, flag, or hook?
-  dumper = dev.CrashDumper(os.getenv('OSH_CRASH_DUMP_DIR', ''))
+  dumper = dev.CrashDumper(posix.environ.get('OSH_CRASH_DUMP_DIR', ''))
   if opts.xtrace_to_debug_file:
     trace_f = debug_f
   else:
@@ -225,7 +226,7 @@ def OshMain(argv0, argv, login_shell):
       try:
         f = fd_state.Open(script_name)
       except OSError as e:
-        util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
+        util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
@@ -269,7 +270,7 @@ def OshMain(argv0, argv, login_shell):
     # after parsing.  bash -c 'cat /proc/$$/status' gives different results
     # with a sleep.
     time.sleep(0.001)
-    input_path = '/proc/%d/status' % os.getpid()
+    input_path = '/proc/%d/status' % posix.getpid()
     with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
       contents = f.read()
       f2.write(contents)
@@ -291,7 +292,7 @@ def OshMain(argv0, argv, login_shell):
     # after parsing.  bash -c 'cat /proc/$$/status' gives different results
     # with a sleep.
     time.sleep(0.001)
-    input_path = '/proc/%d/status' % os.getpid()
+    input_path = '/proc/%d/status' % posix.getpid()
     with open(input_path) as f, open(opts.runtime_mem_dump, 'w') as f2:
       contents = f.read()
       f2.write(contents)
@@ -377,7 +378,7 @@ def OshCommandMain(argv):
     try:
       f = open(script_name)
     except IOError as e:
-      util.error("Couldn't open %r: %s", script_name, os.strerror(e.errno))
+      util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
       return 2
 
   pool = alloc.Pool()
@@ -444,8 +445,8 @@ APPLETS = ['osh', 'oshc']
 def AppBundleMain(argv):
   login_shell = False
 
-  b = os.path.basename(argv[0])
-  main_name, ext = os.path.splitext(b)
+  b = posixpath.basename(argv[0])
+  main_name, ext = posixpath.splitext(b)
   if main_name.startswith('-'):
     login_shell = True
     main_name = main_name[1:]
@@ -519,7 +520,7 @@ def main(argv):
 
 if __name__ == '__main__':
   # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
-  if os.getenv('CALLGRAPH') == '1':
+  if posix.environ.get('CALLGRAPH') == '1':
     from opy import callgraph
     callgraph.Walk(main, sys.modules)
   else:
