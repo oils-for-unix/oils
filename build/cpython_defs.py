@@ -213,7 +213,6 @@ def PrettyPrint(def_name, entries, f, stats):
 
 def main(argv):
   action = argv[1]
-  out_dir = argv[2]
 
   tokens = Lexer(C_DEF).Tokens(sys.stdin.read())
 
@@ -231,10 +230,12 @@ def main(argv):
       for def_name, entries in defs:
         if def_name == 'proxy_methods':
         #if def_name == 'object_methods':
-          for entry_name, vals in entries:
-            print(entry_name, vals)
+          for method_name, vals in entries:
+            print(method_name, vals)
 
   elif action == 'filter':  # for slimming the build down
+    out_dir = argv[2]
+
     p = Parser(tokens)
     files = p.ParseStream()
 
@@ -268,7 +269,19 @@ def main(argv):
         'definitions' % stats)
 
   elif action == 'tsv':
-    raise NotImplementedError
+    p = Parser(tokens)
+    files = p.ParseStream()
+    header = ['file', 'def_name', 'py_method_name', 'c_symbol_name', 'flags']
+    print('\t'.join(header))
+    for rel_path, defs in files:
+      for def_name, entries in defs:
+        for method_name, vals in entries:
+          if method_name is None:
+            continue
+          # TODO: The c_symbol_name could be parsed better.  It sometimes has
+          # "(PyCFunction)" on the front of it.
+          row = [rel_path, def_name, method_name, vals[0], vals[1]]
+          print('\t'.join(row))
 
   else:
     raise RuntimeError('Invalid action %r' % action)

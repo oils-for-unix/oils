@@ -108,8 +108,10 @@ cpython-defs() {
   PYTHONPATH=. build/cpython_defs.py "$@"
 }
 
+readonly BASE_DIR=_tmp/cpython-defs
+
 py-method-defs() {
-  local tmp=_tmp/cpython-defs
+  local tmp=$BASE_DIR
   mkdir -p $tmp
   extract-all-defs > $tmp/extracted.txt
   cat $tmp/extracted.txt | preprocess > $tmp/preprocessed.txt
@@ -125,6 +127,11 @@ py-method-defs() {
 
   # syntax check
   #cc _tmp/filtered.c
+}
+
+methods-tsv() {
+  local out=_tmp/metrics/native-code/cpython-methods.tsv
+  cat $BASE_DIR/preprocessed.txt | cpython-defs tsv | tee $out
 }
 
 edit-file() {
