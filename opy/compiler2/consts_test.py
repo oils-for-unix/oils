@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env -S python -S
 """
 consts_test.py: Tests for consts.py
 """

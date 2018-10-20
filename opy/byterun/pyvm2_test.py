@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 pyvm2_test.py: Tests for pyvm2.py
 """

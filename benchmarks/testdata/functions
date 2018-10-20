@@ -1564,7 +1564,7 @@ fakechroot" >> "$TARGET/var/lib/dpkg/diversions"
 
 	mv "$TARGET/usr/bin/ldd" "$TARGET/usr/bin/ldd.REAL"
 	cat << 'END' > "$TARGET/usr/bin/ldd"
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # fakeldd
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from __future__ import print_function
 """
 readlink.py - Minimal implementation of readlink -f, e.g. for OS X.

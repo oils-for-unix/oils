@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 match.py - match with generated re2c code or Python regexes.
 """

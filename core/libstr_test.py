@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env -S python -S
 """
 libstr_test.py: Tests for libstr.py
 """

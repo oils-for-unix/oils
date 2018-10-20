@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env -S python -S
 """
 reader_test.py: Tests for reader.py
 """

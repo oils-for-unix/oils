@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 #
 # osh-parser.R -- Analyze output from shell scripts.
 #

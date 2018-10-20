@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env -S python -S
 """
 unpickle_test.py: Tests for unpickle.py
 """

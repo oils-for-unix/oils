@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 front_end.py: Lexer and parser for the ASDL schema language.
 """

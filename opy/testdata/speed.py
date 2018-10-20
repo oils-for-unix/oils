@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 def do_sum(n):
   sum = 0
   for i in xrange(n):

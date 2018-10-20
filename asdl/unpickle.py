@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 unpickle.py: A subset of unpickling code from pickle.py.
 

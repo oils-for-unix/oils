@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 skeleton.py: The compiler pipeline.
 """

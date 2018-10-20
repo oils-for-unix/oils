@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 cgi.py - Copied from Python stdlib.
 

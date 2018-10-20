@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env -S python -S
 from __future__ import print_function
 """
 py_deps.py
