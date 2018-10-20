@@ -27,7 +27,7 @@ def _execvpe(file, args, env=None):
     else:
         func = posix.execv
         argrest = (args,)
-        env = environ
+        env = posix.environ
 
     head, tail = posixpath.split(file)
     if head:
