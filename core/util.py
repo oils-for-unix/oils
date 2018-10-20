@@ -12,6 +12,7 @@ from __future__ import print_function
 
 import cStringIO
 import os
+import posix
 import pwd  # TODO: Move this dependency to Oil?
 import sys
 import zipimport  # NOT the zipfile module.
@@ -19,6 +20,17 @@ import zipimport  # NOT the zipfile module.
 from asdl import const
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
+
+
+# Copied from Python-2.7.13/Lib/genericpath.py.  We want to avoid os module
+# dependencies.
+def path_exists(path):
+    """Test whether a path exists.  Returns False for broken symbolic links"""
+    try:
+        posix.stat(path)
+    except posix.error:
+        return False
+    return True
 
 
 class _ErrorWithLocation(Exception):

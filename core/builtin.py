@@ -26,7 +26,8 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 """
 from __future__ import print_function
 
-import os
+import posix
+import posixpath
 import signal
 import sys
 
@@ -410,7 +411,7 @@ READ_SPEC.ShortFlag('-n', args.Int)
 def ReadLineFromStdin():
   chars = []
   while True:
-    c = os.read(0, 1)
+    c = posix.read(0, 1)
     if not c:
       break
     chars.append(c)
@@ -429,7 +430,7 @@ def Read(argv, splitter, mem):
       name = names[0]
     except IndexError:
       name = 'REPLY'  # default variable name
-    s = os.read(sys.stdin.fileno(), arg.n)
+    s = posix.read(sys.stdin.fileno(), arg.n)
     #log('read -n: %s = %s', name, s)
 
     state.SetLocalString(mem, name, s)
@@ -533,22 +534,22 @@ def Cd(argv, mem, dir_stack):
   assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
 
   # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
-  # call os.getcwd() because it can raise OSError if the directory was removed
-  # (ENOENT.)
-  abspath = os.path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
+  # call posix.getcwd() because it can raise OSError if the directory was
+  # removed (ENOENT.)
+  abspath = posixpath.join(pwd.s, dest_dir)  # make it absolute, for cd ..
   if arg.P:
     # -P means resolve symbolic links, then process '..'
     real_dest_dir = libc.realpath(abspath)
   else:
     # -L means process '..' first.  This just does string manipulation.  (But
     # realpath afterward isn't correct?)
-    real_dest_dir = os.path.normpath(abspath)
+    real_dest_dir = posixpath.normpath(abspath)
 
   try:
-    os.chdir(real_dest_dir)
+    posix.chdir(real_dest_dir)
   except OSError as e:
     # TODO: Add line number, etc.
-    util.error("cd %r: %s", real_dest_dir, os.strerror(e.errno))
+    util.error("cd %r: %s", real_dest_dir, posix.strerror(e.errno))
     return 1
 
   state.SetGlobalString(mem, 'OLDPWD', pwd.s)
@@ -596,11 +597,11 @@ def Pushd(argv, home_dir, dir_stack):
     util.error('pushd: too many arguments')
     return 1
 
-  dest_dir = os.path.abspath(argv[0])
+  dest_dir = posixpath.abspath(argv[0])
   try:
-    os.chdir(dest_dir)
+    posix.chdir(dest_dir)
   except OSError as e:
-    util.error("pushd: %r: %s", dest_dir, os.strerror(e.errno))
+    util.error("pushd: %r: %s", dest_dir, posix.strerror(e.errno))
     return 1
 
   dir_stack.Push(dest_dir)
@@ -615,9 +616,9 @@ def Popd(argv, home_dir, dir_stack):
     return 1
 
   try:
-    os.chdir(dest_dir)
+    posix.chdir(dest_dir)
   except OSError as e:
-    util.error("popd: %r: %s", dest_dir, os.strerror(e.errno))
+    util.error("popd: %r: %s", dest_dir, posix.strerror(e.errno))
     return 1
 
   _PrintDirStack(dir_stack, SINGLE_LINE, home_dir)
@@ -875,8 +876,8 @@ def _ResolveNames(names, funcs, path_val):
       # Now look for files.
       found = False
       for path_dir in path_list:
-        full_path = os.path.join(path_dir, name)
-        if os.path.exists(full_path):
+        full_path = posixpath.join(path_dir, name)
+        if util.path_exists(full_path):
           kind = ('file', full_path)
           found = True
           break
@@ -1212,8 +1213,8 @@ def Umask(argv):
     # umask() has a dumb API: you can't get it without modifying it first!
     # NOTE: dash disables interrupts around the two umask() calls, but that
     # shouldn't be a concern for us.  Signal handlers won't call umask().
-    mask = os.umask(0)
-    os.umask(mask)  #
+    mask = posix.umask(0)
+    posix.umask(mask)  #
     print('0%03o' % mask)  # octal format
     return 0
 
@@ -1227,7 +1228,7 @@ def Umask(argv):
       util.warn('*** umask with symbolic input not implemented ***')
       return 1
     else:
-      os.umask(new_mask)
+      posix.umask(new_mask)
       return 0
 
   raise args.UsageError('umask: unexpected arguments')

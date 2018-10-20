@@ -16,8 +16,12 @@ from core import util  # module under test
 
 class UtilTest(unittest.TestCase):
 
-  def testFoo(self):
+  def testLog(self):
     util.log('hello %d', 42)
+
+  def testPathExists(self):
+    self.assertEqual(True, util.path_exists('/'))
+    self.assertEqual(False, util.path_exists('/nonexistent__ZZZZ'))
 
 
 if __name__ == '__main__':
