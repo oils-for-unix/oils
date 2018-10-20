@@ -192,7 +192,7 @@ class Parser(object):
     return files
 
 
-def PrettyPrint(def_name, entries, f, stats):
+def PrettyPrint(def_name, entries, predicate, f, stats):
   def out(msg, *args):
     if args:
       msg = msg % args
@@ -200,6 +200,9 @@ def PrettyPrint(def_name, entries, f, stats):
 
   out('static PyMethodDef %s[] = {\n', def_name)
   for entry_name, vals in entries:
+    if not predicate(def_name, entry_name):
+      continue
+
     if entry_name is None:
       out('  {0},\n')  # null initializer
       continue
@@ -209,6 +212,14 @@ def PrettyPrint(def_name, entries, f, stats):
     out('},\n')
     stats['num_methods'] += 1
   out('};\n')
+
+
+def OilMethodFilter(def_name, method_name):
+  #if def_name == 'marshal_methods':
+  #  return False
+  #log('= %s %s', def_name, method_name)
+
+  return True
 
 
 def main(argv):
@@ -260,7 +271,7 @@ def main(argv):
         with open(out_path, 'w') as f:
           print('// %s' % rel_path, file=f)
           print('', file=f)
-          PrettyPrint(def_name, entries, f, stats)
+          PrettyPrint(def_name, entries, OilMethodFilter, f, stats)
 
         stats['num_defs'] += 1
         log('Wrote %s', out_path)
@@ -280,6 +291,7 @@ def main(argv):
             continue
           # TODO: The c_symbol_name could be parsed better.  It sometimes has
           # "(PyCFunction)" on the front of it.
+
           row = [rel_path, def_name, method_name, vals[0], vals[1]]
           print('\t'.join(row))
 
