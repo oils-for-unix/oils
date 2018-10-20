@@ -154,14 +154,12 @@ readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
 
-# TODO: Enable this once you test that Clang also accepts the flags?  Or should
-# that be detected by a config file?
+# This appears to work for Clang too!
 # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
-#BASE_CFLAGS="$BASE_CFLAGS -fdata-sections -ffunction-sections"
+BASE_CFLAGS="$BASE_CFLAGS -fdata-sections -ffunction-sections"
 readonly BASE_CFLAGS
 
-#BASE_LDFLAGS='-Wl,--gc-sections'
-BASE_LDFLAGS=''
+BASE_LDFLAGS='-Wl,--gc-sections'
 
 # The user should be able to customize CFLAGS, but it shouldn't disable what's
 # in BASE_CFLAGS.
