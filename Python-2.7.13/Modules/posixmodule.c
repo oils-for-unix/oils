@@ -9079,15 +9079,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef WIFSTOPPED
     {"WIFSTOPPED",      posix_WIFSTOPPED, METH_VARARGS, posix_WIFSTOPPED__doc__},
 #endif /* WIFSTOPPED */
-#ifdef WIFSIGNALED
     {"WIFSIGNALED",     posix_WIFSIGNALED, METH_VARARGS, posix_WIFSIGNALED__doc__},
-#endif /* WIFSIGNALED */
-#ifdef WIFEXITED
     {"WIFEXITED",       posix_WIFEXITED, METH_VARARGS, posix_WIFEXITED__doc__},
-#endif /* WIFEXITED */
-#ifdef WEXITSTATUS
     {"WEXITSTATUS",     posix_WEXITSTATUS, METH_VARARGS, posix_WEXITSTATUS__doc__},
-#endif /* WEXITSTATUS */
 #ifdef WTERMSIG
     {"WTERMSIG",        posix_WTERMSIG, METH_VARARGS, posix_WTERMSIG__doc__},
 #endif /* WTERMSIG */
