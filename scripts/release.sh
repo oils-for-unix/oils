@@ -497,6 +497,11 @@ git-changelog-0.6.pre6() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.6.pre7() {
+  _git-changelog origin/release/0.6.pre6 release/0.6.pre7 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -586,6 +591,10 @@ announcement-0.6.pre5() {
 
 announcement-0.6.pre6() {
   html-redirect '/blog/2018/10/16.html' > _release/VERSION/announcement.html
+}
+
+announcement-0.6.pre7() {
+  write-no-announcement
 }
 
 _link() {

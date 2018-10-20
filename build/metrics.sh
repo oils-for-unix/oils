@@ -19,7 +19,7 @@ bundle-size() {
 
 linecount-nativedeps() {
   local app_name=${1:-oil}
-  find _tmp/${app_name}-tar-test -name '*.[ch]' | xargs wc -l | sort -n
+  find _tmp/${app_name}-tar-test -type f -a -name '*.[ch]' | xargs wc -l | sort -n
 }
 
 readonly BYTECODE='bytecode-opy'
