@@ -8929,9 +8929,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETEGID
     {"getegid",         posix_getegid, METH_NOARGS, posix_getegid__doc__},
 #endif /* HAVE_GETEGID */
-#ifdef HAVE_GETEUID
     {"geteuid",         posix_geteuid, METH_NOARGS, posix_geteuid__doc__},
-#endif /* HAVE_GETEUID */
 #ifdef HAVE_GETGID
     {"getgid",          posix_getgid, METH_NOARGS, posix_getgid__doc__},
 #endif /* HAVE_GETGID */
@@ -8945,9 +8943,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETPPID
     {"getppid",         posix_getppid, METH_NOARGS, posix_getppid__doc__},
 #endif /* HAVE_GETPPID */
-#ifdef HAVE_GETUID
     {"getuid",          posix_getuid, METH_NOARGS, posix_getuid__doc__},
-#endif /* HAVE_GETUID */
 #ifdef HAVE_GETLOGIN
     {"getlogin",        posix_getlogin, METH_NOARGS, posix_getlogin__doc__},
 #endif
@@ -9006,9 +9002,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SETPGRP
     {"setpgrp",         posix_setpgrp, METH_NOARGS, posix_setpgrp__doc__},
 #endif /* HAVE_SETPGRP */
-#ifdef HAVE_WAIT
     {"wait",            posix_wait, METH_NOARGS, posix_wait__doc__},
-#endif /* HAVE_WAIT */
 #ifdef HAVE_WAIT3
     {"wait3",           posix_wait3, METH_VARARGS, posix_wait3__doc__},
 #endif /* HAVE_WAIT3 */
@@ -9044,9 +9038,7 @@ static PyMethodDef posix_methods[] = {
     {"fstat",           posix_fstat, METH_VARARGS, posix_fstat__doc__},
     {"fdopen",          posix_fdopen, METH_VARARGS, posix_fdopen__doc__},
     {"isatty",          posix_isatty, METH_VARARGS, posix_isatty__doc__},
-#ifdef HAVE_PIPE
     {"pipe",            posix_pipe, METH_NOARGS, posix_pipe__doc__},
-#endif
 #ifdef HAVE_MKFIFO
     {"mkfifo",          posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},
 #endif

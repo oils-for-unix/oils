@@ -304,8 +304,9 @@ python-headers() {
   # but 'Python/..' causes problems for tar.
   #
 
+  # NOTE: need .def for build/oil-defs.
   _headers $c_module_srcs \
-    | egrep --only-matching '[^ ]+\.h' \
+    | egrep --only-matching '[^ ]+\.(h|def)' \
     | grep -v '_build/detected-config.h' \
     | sed 's|^Python/../||' \
     | sort | uniq | add-py27

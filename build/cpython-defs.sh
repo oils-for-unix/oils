@@ -175,4 +175,8 @@ edit-all() {
   tac _tmp/cpython-defs/edit-list.txt | xargs -n 4 -- $0 edit-file
 }
 
+show-oil() {
+  find build/oil-defs -name '*.def' | xargs cat | less
+}
+
 "$@"
