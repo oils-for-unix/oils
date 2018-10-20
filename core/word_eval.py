@@ -356,7 +356,7 @@ class _WordEvaluator(object):
             e_die('Bad variable name %r in var ref', val.s)
           return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
-        raise NotImplementedError('${!a[@]}')  # bash gets keys this way
+        return runtime.StrArray([str(i) for i, x in enumerate(val.strs) if x != None])
       else:
         raise AssertionError
 
