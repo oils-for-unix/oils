@@ -1,6 +1,5 @@
 // Python-2.7.13/Python/import.c
 
 static PyMethodDef NullImporter_methods[] = {
-  {"find_module", (PyCFunction)NullImporter_find_module, METH_VARARGS},
   {0},
 };

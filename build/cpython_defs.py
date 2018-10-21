@@ -217,6 +217,8 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
 
 
 MODULES_TO_FILTER = [
+    'import.c',
+
     'boolobject.c',
     'descrobject.c',
     'dictobject.c',
