@@ -161,8 +161,6 @@ parser-port() {
 }
 
 runtime() {
-  # NOTE: braces.py contains both parsing and runtime.  It is a  middle stage.
-
   echo 'Runtime'
   wc -l core/{process,state,dev}.py core/runtime.asdl | sort -n
   echo
@@ -178,6 +176,12 @@ runtime() {
 
   echo 'Libraries'
   wc -l core/{args,glob_,legacy,libstr}.py | sort -n
+  echo
+
+  # Not counting asdl/unpickle.py because in theory that's part of OHeap.  We
+  # don't have to port it.
+  echo 'Python Standard Library'
+  wc -l core/{os_,os_path}.py asdl/cgi.py | sort -n
   echo
 }
 
