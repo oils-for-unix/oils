@@ -453,6 +453,14 @@ argv.py "${a[@]:15:2}"
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
+#### Retrieve all sparse indices with !
+a=()
+(( a[99]=1 )) # osh doesn't parse index assignment outside arithmetic yet
+argv.py "${!a[@]}"
+## STDOUT:
+['99']
+## END
+
 #### Using an array itself as the index
 # TODO: Fix OSH crash.
 # NOTE: strict-arith prevents this nonsentical behavior.
