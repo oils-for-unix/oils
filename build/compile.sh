@@ -40,7 +40,6 @@ Python/mysnprintf.c
 Python/pyarena.c
 Python/pyctype.c
 Python/pyfpe.c
-Python/pymath.c
 Python/pystate.c
 Python/pythonrun.c
 Python/random.c
