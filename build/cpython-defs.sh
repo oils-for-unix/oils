@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # R_PATH
+
 # Could be published in metrics?
 readonly PY_NAMES=_tmp/oil-py-names.txt
 
@@ -154,14 +156,6 @@ filter-methods() {
   #cc _tmp/filtered.c
 }
 
-readonly METRICS_DIR=_tmp/metrics/cpython-defs
-
-methods-tsv() {
-  mkdir -p $METRICS_DIR
-  local out=$METRICS_DIR/methods.tsv
-  cat $BASE_DIR/preprocessed.txt | cpython-defs tsv | tee $out
-}
-
 edit-file() {
   local rel_path=$1
   local def_name=$2
@@ -283,5 +277,31 @@ extract-all-types() {
   find "$TARBALL_ROOT" -type f -a -name '*.c' \
     | xargs -- $0 extract-types "$TARBALL_ROOT/"
 }
+
+#
+# Analysis
+#
+
+readonly METRICS_DIR=_tmp/metrics/cpython-defs
+
+methods-tsv() {
+  mkdir -p $METRICS_DIR
+  local out=$METRICS_DIR/methods.tsv
+  cat $BASE_DIR/preprocessed.txt | cpython-defs tsv | tee $out
+}
+
+_report() {
+  R_LIBS_USER=$R_PATH metrics/cpython-defs.R "$@"
+}
+
+report() {
+  _report metrics $METRICS_DIR
+}
+
+run-for-release() {
+  methods-tsv
+  report | tee $METRICS_DIR/overview.txt
+}
+
 
 "$@"

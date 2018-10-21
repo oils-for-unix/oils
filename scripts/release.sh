@@ -694,6 +694,7 @@ metrics() {
 
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
+  build/cpython-defs.sh run-for-release
 
   tree $out
 }
