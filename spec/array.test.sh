@@ -125,10 +125,18 @@ a=(1 '2 3')
 argv.py "${a[$(echo 1)]}"
 ## stdout: ['2 3']
 
-#### Retrieve all indices with !
+#### Retrieve array indices with ${!a}
 a=(1 '2 3')
 argv.py "${!a[@]}"
 ## stdout: ['0', '1']
+
+#### Retrieve sparse array indices with ${!a}
+a=()
+(( a[99]=1 ))
+argv.py "${!a[@]}"
+## STDOUT:
+['99']
+## END
 
 #### ${!a[1]} is named ref in bash
 # mksh ignores it
@@ -452,14 +460,6 @@ argv.py "${a[@]:15:2}"
 ## stdout: ['1', '2']
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
-
-#### Retrieve all sparse indices with !
-a=()
-(( a[99]=1 )) # osh doesn't parse index assignment outside arithmetic yet
-argv.py "${!a[@]}"
-## STDOUT:
-['99']
-## END
 
 #### Using an array itself as the index
 # TODO: Fix OSH crash.

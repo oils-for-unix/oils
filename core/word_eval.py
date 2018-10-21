@@ -356,7 +356,8 @@ class _WordEvaluator(object):
             e_die('Bad variable name %r in var ref', val.s)
           return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
-        return runtime.StrArray([str(i) for i, x in enumerate(val.strs) if x != None])
+        indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
+        return runtime.StrArray(indices)
       else:
         raise AssertionError
 
