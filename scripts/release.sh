@@ -673,8 +673,8 @@ line-counts() {
   mkdir -p $out
 
   # Counting directly from the build.
-  build/metrics.sh linecount-pydeps > $out/pydeps.txt
-  build/metrics.sh linecount-nativedeps > $out/nativedeps.txt
+  metrics/tarball.sh linecount-pydeps > $out/pydeps.txt
+  metrics/tarball.sh linecount-nativedeps > $out/nativedeps.txt
 
   # My arbitrrary categorization.
   scripts/count.sh all > $out/src.txt  # Count repo lines
