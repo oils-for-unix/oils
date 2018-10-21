@@ -217,8 +217,11 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
 
 
 MODULES_TO_FILTER = [
+    'errnomodule.c',  # has no methods, but include it for completeness
+    'fcntlmodule.c',
     'posixmodule.c',
     'pwdmodule.c',
+    #'signalmodule.c',  # This caused problems?  Couldn't find SIGINT?
     'timemodule.c',
 ]
 

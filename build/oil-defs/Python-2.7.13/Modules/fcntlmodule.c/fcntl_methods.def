@@ -2,8 +2,5 @@
 
 static PyMethodDef fcntl_methods[] = {
   {"fcntl", fcntl_fcntl, METH_VARARGS},
-  {"ioctl", fcntl_ioctl, METH_VARARGS},
-  {"flock", fcntl_flock, METH_VARARGS},
-  {"lockf", fcntl_lockf, METH_VARARGS},
   {0},
 };
