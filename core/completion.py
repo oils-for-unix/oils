@@ -221,10 +221,10 @@ class FileSystemAction(CompletionAction):
       path = os_path.join(base, name)
       if path.startswith(to_complete):
         if self.dirs_only:
-          if util.path_isdir(path):
+          if os_path.isdir(path):
             yield path
         else:
-          if util.path_isdir(path):
+          if os_path.isdir(path):
             yield path + '/'
           else:
             yield path

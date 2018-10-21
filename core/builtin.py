@@ -877,7 +877,7 @@ def _ResolveNames(names, funcs, path_val):
       found = False
       for path_dir in path_list:
         full_path = os_path.join(path_dir, name)
-        if util.path_exists(full_path):
+        if os_path.exists(full_path):
           kind = ('file', full_path)
           found = True
           break

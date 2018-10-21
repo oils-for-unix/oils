@@ -100,6 +100,10 @@ all() {
   ls tools/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
+  echo 'BORROWED FROM STDLIB'
+  wc -l asdl/{cgi,unpickle}.py core/{os_,os_path}.py | sort --numeric
+  echo
+
   echo 'WEB'
   ls web/*.js web/*/*.{js,py} | xargs wc -l | sort --numeric
   echo
@@ -113,8 +117,7 @@ all() {
   echo
 
   echo 'OIL AND OSH'
-  oil-osh-files |
-    xargs wc -l | sort --numeric
+  oil-osh-files | xargs wc -l | sort --numeric
   echo
 
   return
