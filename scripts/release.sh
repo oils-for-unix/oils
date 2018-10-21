@@ -693,8 +693,8 @@ metrics() {
   line-counts $out/line-counts
 
   # NOTE: Could move these files and scripts/count.sh to a metrics/ dir?
-  benchmarks/bytecode.sh run-for-release
-  benchmarks/native-code.sh run-for-release
+  metrics/bytecode.sh run-for-release
+  metrics/native-code.sh run-for-release
 
   tree $out
 }

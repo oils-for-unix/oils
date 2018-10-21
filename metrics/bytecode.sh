@@ -84,7 +84,7 @@ cpython-dis-tables() {
 
 
 report() {
-  R_LIBS_USER=$R_PATH benchmarks/bytecode.R "$@"
+  R_LIBS_USER=$R_PATH metrics/bytecode.R "$@"
 }
 
 # Reads the 5 tables and produces some metrics.

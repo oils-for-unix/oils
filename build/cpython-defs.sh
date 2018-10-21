@@ -154,8 +154,11 @@ filter-methods() {
   #cc _tmp/filtered.c
 }
 
+readonly METRICS_DIR=_tmp/metrics/cpython-defs
+
 methods-tsv() {
-  local out=_tmp/metrics/native-code/cpython-methods.tsv
+  mkdir -p $METRICS_DIR
+  local out=$METRICS_DIR/methods.tsv
   cat $BASE_DIR/preprocessed.txt | cpython-defs tsv | tee $out
 }
 

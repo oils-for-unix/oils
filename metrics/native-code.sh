@@ -77,7 +77,7 @@ cpython-symbols() {
 }
 
 _report() {
-  R_LIBS_USER=$R_PATH benchmarks/native-code.R "$@"
+  R_LIBS_USER=$R_PATH metrics/native-code.R "$@"
 }
 
 report() {
