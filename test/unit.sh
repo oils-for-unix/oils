@@ -39,7 +39,7 @@ readonly PY_27=~/src/languages/Python-2.7/python
 banner() {
   echo -----
   echo "$@"
-  echo ----
+  echo -----
 }
 
 tests-to-run() {
