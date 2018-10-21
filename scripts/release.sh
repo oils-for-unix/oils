@@ -198,8 +198,8 @@ test-opy() {
 
   mkdir -p $out
 
-  scripts/count.sh oil-python-symbols $out
-  scripts/count.sh opy-python-symbols $out
+  metrics/source-code.sh oil-python-symbols $out
+  metrics/source-code.sh opy-python-symbols $out
 
   pushd opy
 
@@ -677,13 +677,13 @@ line-counts() {
   metrics/tarball.sh linecount-nativedeps > $out/nativedeps.txt
 
   # My arbitrrary categorization.
-  scripts/count.sh all > $out/src.txt  # Count repo lines
+  metrics/source-code.sh all > $out/src.txt  # Count repo lines
 
   # A couple other categorizations.
-  scripts/count.sh parser > $out/parser.txt
-  scripts/count.sh runtime > $out/runtime.txt
+  metrics/source-code.sh parser > $out/parser.txt
+  metrics/source-code.sh runtime > $out/runtime.txt
 
-  scripts/count.sh oil-osh-cloc > $out/oil-osh-cloc.txt
+  metrics/source-code.sh oil-osh-cloc > $out/oil-osh-cloc.txt
 }
 
 metrics() {
@@ -692,7 +692,6 @@ metrics() {
 
   line-counts $out/line-counts
 
-  # NOTE: Could move these files and scripts/count.sh to a metrics/ dir?
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
 
