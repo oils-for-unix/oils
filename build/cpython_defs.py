@@ -205,6 +205,7 @@ def PrettyPrint(def_name, entries, predicate, f, stats):
       continue
 
     if not predicate(def_name, entry_name):
+      stats['num_filtered'] += 1
       continue
 
     out('  {"%s", ', entry_name)
@@ -278,7 +279,7 @@ def main(argv):
 
     # Print to files.
 
-    stats = {'num_methods': 0, 'num_defs': 0}
+    stats = {'num_methods': 0, 'num_defs': 0, 'num_filtered': 0}
     for rel_path, defs in files:
       # Make a directory for each .c file!  Each file is a def.
       c_dir = os.path.join(out_dir, rel_path)
@@ -302,8 +303,9 @@ def main(argv):
         stats['num_defs'] += 1
         log('Wrote %s', out_path)
 
-    log('cpython_defs.py: Printed %(num_methods)d methods in %(num_defs)d '
-        'definitions' % stats)
+    stats['num_left'] = stats['num_methods'] - stats['num_filtered']
+    log('cpython_defs.py: Filtered %(num_filtered)d of %(num_methods)d methods, '
+        'leaving %(num_left)d (from %(num_defs)d definitions)' % stats)
 
   elif action == 'tsv':
     p = Parser(tokens)
