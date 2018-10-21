@@ -75,6 +75,10 @@ all() {
   wc -l benchmarks/*.{sh,py,R} | sort --numeric
   echo
 
+  echo 'METRICS'
+  wc -l metrics/*.{sh,R} | sort --numeric
+  echo
+
   echo 'SPEC TESTS'
   wc -l spec/*.test.sh | sort --numeric
   echo
