@@ -125,7 +125,8 @@ readonly TARBALL_ROOT=$(echo _tmp/oil-tar-test/oil-*)
 extract-all-defs() {
   echo '#include "pyconfig.h"'
   # 52 different instances.  Sometimes multiple ones per file.
-  find "$TARBALL_ROOT" -name '*.c' | xargs -- $0 extract-defs "$TARBALL_ROOT/"
+  find "$TARBALL_ROOT" -type f -a -name '*.c' \
+    | xargs -- $0 extract-defs "$TARBALL_ROOT/"
 }
 
 cpython-defs() {
@@ -202,6 +203,82 @@ edit-all() {
 # Show current Oil definitions.
 show-oil() {
   find build/oil-defs -name '*.def' | xargs cat | less
+}
+
+extract-types() {
+  local path_prefix=$1  # to strip
+  shift
+
+  local edit_list=_tmp/cpython-defs/type-edit-list.txt
+
+  # NOTE: PyMemberDef is also interesting, but we don't need it for the build.
+  gawk -v path_prefix_length=${#path_prefix} -v edit_list=$edit_list '
+  function maybe_print_file_header() {
+    rel_path = substr(FILENAME, path_prefix_length + 1);
+    if (!found[FILENAME]) {
+      # This special line seems to survive the preprocessor?
+      printf("\n");
+      printf("FILE %s\n", rel_path);
+      printf("\n");
+
+      printf("Filtering %s\n", FILENAME) > "/dev/stderr";
+      found[FILENAME] = 1  # count number of files that have matches
+    }
+  }
+
+  /PyTypeObject.*=.*\{.*\}/ {
+    if (printing != 0) {
+      printf("%s:%d Expected not to be printing\n", FILENAME, FNR) > "/dev/stderr";
+      exit 1;
+    }
+    // Found it all on one line
+    print
+    num_one_line_types++;
+    next
+  }
+
+  /PyTypeObject.*=.*\{/ {
+    if (printing != 0) {
+      printf("%s:%d Expected not to be printing\n", FILENAME, FNR) > "/dev/stderr";
+      exit 1;
+    }
+    printing = 1;
+    line_begin = FNR;
+
+    maybe_print_file_header()
+    num_types++;
+  }
+
+  {
+    if (printing) {
+      print
+    }
+  }
+
+  /^[:space:]*\}/ {
+    if (printing) {
+      # Print the edit list for #ifdef #endif.
+      line_end = FNR;
+      printf("%s %s %d %d\n", rel_path, def_name, line_begin, line_end) > edit_list;
+      printing = 0;
+    }
+  }
+
+  END {
+    for (name in found) {
+      num_found++;
+    }
+    printf("extract-types.awk: Found %d definitions in %d files (of %d files)\n",
+           num_types, num_found, ARGC) > "/dev/stderr";
+    printf("extract-types.awk: Also found %d types on one line\n",
+           num_one_line_types) > "/dev/stderr";
+  }
+  ' "$@"
+}
+
+extract-all-types() {
+  find "$TARBALL_ROOT" -type f -a -name '*.c' \
+    | xargs -- $0 extract-types "$TARBALL_ROOT/"
 }
 
 "$@"
