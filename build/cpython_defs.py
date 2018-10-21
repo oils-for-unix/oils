@@ -261,6 +261,17 @@ class OilMethodFilter(object):
 def main(argv):
   action = argv[1]
 
+  try:
+    py_names_path = argv[2]
+  except IndexError:
+    method_filter = None
+  else:
+    py_names = set()
+    with open(py_names_path) as f:
+      for line in f:
+        py_names.add(line.strip())
+    method_filter = OilMethodFilter(py_names)
+
   tokens = Lexer(C_DEF).Tokens(sys.stdin.read())
 
   if action == 'lex':  # for debugging
@@ -281,17 +292,10 @@ def main(argv):
             print(method_name, vals)
 
   elif action == 'filter':  # for slimming the build down
-    py_names_path = argv[2]
     out_dir = argv[3]
 
     p = Parser(tokens)
     files = p.ParseStream()
-
-    py_names = set()
-    with open(py_names_path) as f:
-      for line in f:
-        py_names.add(line.strip())
-    method_filter = OilMethodFilter(py_names)
 
     # Print to files.
 
@@ -326,17 +330,23 @@ def main(argv):
   elif action == 'tsv':
     p = Parser(tokens)
     files = p.ParseStream()
-    header = ['file', 'def_name', 'py_method_name', 'c_symbol_name', 'flags']
+    header = [
+        'file', 'def_name', 'py_method_name', 'c_symbol_name', 'flags',
+        'used'
+    ]
     print('\t'.join(header))
     for rel_path, defs in files:
       for def_name, entries in defs:
         for method_name, vals in entries:
           if method_name is None:
             continue
+          b = method_filter(rel_path, def_name, method_name)
+          used = 'T' if b else 'F'
+
           # TODO: The c_symbol_name could be parsed better.  It sometimes has
           # "(PyCFunction)" on the front of it.
 
-          row = [rel_path, def_name, method_name, vals[0], vals[1]]
+          row = [rel_path, def_name, method_name, vals[0], vals[1], used]
           print('\t'.join(row))
 
   else:

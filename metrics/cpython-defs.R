@@ -18,12 +18,15 @@ options(stringsAsFactors = F,
 
 Report = function(ctx) {
   Banner('Summary of methods.tsv:')
-  ctx$methods %>% count(file) %>% arrange(desc(n)) -> f1
+  ctx$methods %>% count(used) %>% arrange(desc(n)) -> f0
+  ShowFrame('Methods used:', f0)
 
-  ShowFrame('Files by Method', f1)
-
-  # This is BEFORE filtering!
+  ctx$methods %>% filter(used == T) %>% count(file) %>% arrange(desc(n)) -> f1
+  ShowFrame('Methods by file (after filtering):', f1)
   ShowValue('%d methods in %d files', nrow(ctx$methods), nrow(f1))
+
+  ctx$methods %>% count(flags) %>% arrange(desc(n)) -> f2
+  ShowFrame('Methods by flag', f2)
 }
 
 Load = function(in_dir) {

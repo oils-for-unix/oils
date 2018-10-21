@@ -287,7 +287,7 @@ readonly METRICS_DIR=_tmp/metrics/cpython-defs
 methods-tsv() {
   mkdir -p $METRICS_DIR
   local out=$METRICS_DIR/methods.tsv
-  cat $BASE_DIR/preprocessed.txt | cpython-defs tsv | tee $out
+  cat $BASE_DIR/preprocessed.txt | cpython-defs tsv $PY_NAMES | tee $out
 }
 
 _report() {
