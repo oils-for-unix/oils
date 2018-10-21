@@ -123,9 +123,6 @@ SHELL OPTIONS
                   X sane-echo   X sane-read   X sane-eval   X sane-trap
 
 ENVIRONMENT VARIABLES
-X [Prompts]       PS1   PS2
-X [select]        PS3
-  [xtrace]        PS4
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other]         HOME   PATH   IFS
 
@@ -150,8 +147,8 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 PLUGINS AND HOOKS
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
-X [Words]         PS1   PS2   PS4
-X [Completion]    
+  [Words]         PS1   X PS2   X PS3   PS4
+  [Prompts]       complete
 X [Other]         command_not_found
 
 OIL EXTENSIONS
