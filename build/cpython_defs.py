@@ -217,6 +217,9 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
 
 
 MODULES_TO_FILTER = [
+    'setobject.c',
+    'stringobject.c',
+
     'bltinmodule.c',
     'errnomodule.c',  # has no methods, but include it for completeness
     'fcntlmodule.c',
