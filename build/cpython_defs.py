@@ -192,7 +192,7 @@ class Parser(object):
     return files
 
 
-def PrettyPrint(def_name, entries, predicate, f, stats):
+def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
   def out(msg, *args):
     if args:
       msg = msg % args
@@ -204,7 +204,7 @@ def PrettyPrint(def_name, entries, predicate, f, stats):
       out('  {0},\n')  # null initializer
       continue
 
-    if not predicate(def_name, entry_name):
+    if not predicate(rel_path, def_name, entry_name):
       stats['num_filtered'] += 1
       continue
 
@@ -216,12 +216,19 @@ def PrettyPrint(def_name, entries, predicate, f, stats):
   out('};\n')
 
 
+MODULES_TO_FILTER = [
+    'posixmodule.c',
+    'pwdmodule.c',
+    'timemodule.c',
+]
+
+
 class OilMethodFilter(object):
 
   def __init__(self, py_names):
     self.py_names = py_names
 
-  def __call__(self, def_name, method_name):
+  def __call__(self, rel_path, def_name, method_name):
     # __length_hint__ ?
     #if method_name.startswith('__'):
     #  return True
@@ -229,6 +236,12 @@ class OilMethodFilter(object):
     # NOTE: asdl/unpickle.py needs marshal.loads
     if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
       return False
+
+    # Try just filtering {time,pwd,posix}module.c, etc.
+    if os.path.basename(rel_path) in MODULES_TO_FILTER and \
+        method_name not in self.py_names:
+      return False
+
     #log('= %s %s', def_name, method_name)
 
     # If it doesn't appear in the .py source, it can't be used.  (Execption: it
@@ -298,7 +311,7 @@ def main(argv):
         with open(out_path, 'w') as f:
           print('// %s' % rel_path, file=f)
           print('', file=f)
-          PrettyPrint(def_name, entries, method_filter, f, stats)
+          PrettyPrint(rel_path, def_name, entries, method_filter, f, stats)
 
         stats['num_defs'] += 1
         log('Wrote %s', out_path)
