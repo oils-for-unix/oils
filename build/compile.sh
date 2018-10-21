@@ -47,7 +47,6 @@ Python/random.c
 Python/structmember.c
 Python/sysmodule.c
 Python/traceback.c
-Python/pystrcmp.c
 Python/ovm_stub_pystrtod.c
 '
 
