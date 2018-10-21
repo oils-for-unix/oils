@@ -23,16 +23,15 @@ options(stringsAsFactors = F,
 
 # frame: A table with 3 columns.  ctx$symbols or ctx$compileunits.
 Basic = function(frame) {
-  frame %>% arrange(desc(filesize)) %>% head(20) -> f1
   ShowValue('Rows: %d', nrow(frame))
 
-  frame %>% arrange(desc(filesize)) %>% head(20) -> f1
+  frame %>% arrange(desc(filesize)) %>% head(30) -> f1
   ShowFrame('By Size On Disk:', f1)
 
   ShowValue('Total filesize: %d', sum(frame$filesize))
 
   # Number of files
-  frame %>% arrange(desc(vmsize)) %>% head(20) -> f2
+  frame %>% arrange(desc(vmsize)) %>% head(30) -> f2
   ShowFrame('By Size in Virtual Memory:', f2)
 
   ShowValue('Total vmsize: %d', sum(frame$vmsize))

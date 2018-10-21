@@ -1,10 +1,5 @@
 // Python-2.7.13/Objects/longobject.c
 
 static PyMethodDef long_methods[] = {
-  {"conjugate", (PyCFunction)long_long, METH_NOARGS},
-  {"bit_length", (PyCFunction)long_bit_length, METH_NOARGS},
-  {"__trunc__", (PyCFunction)long_long, METH_NOARGS},
-  {"__getnewargs__", (PyCFunction)long_getnewargs},
-  {"__sizeof__", (PyCFunction)long_sizeof, METH_NOARGS},
   {0},
 };

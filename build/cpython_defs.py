@@ -217,6 +217,14 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
 
 
 MODULES_TO_FILTER = [
+    'boolobject.c',
+    'descrobject.c',
+    'dictobject.c',
+    'fileobject.c',
+    'floatobject.c',
+    'intobject.c',
+    'longobject.c',
+    'moduleobject.c',
     'setobject.c',
     'stringobject.c',
 
@@ -236,13 +244,20 @@ class OilMethodFilter(object):
     self.py_names = py_names
 
   def __call__(self, rel_path, def_name, method_name):
-    # __length_hint__ ?
-    #if method_name.startswith('__'):
-    #  return True
+    # Is this an optimization?  See Objects/abstract.c.
+    if method_name == '__length_hint__':
+      return True
+    # NOTE: We filtered out __enter__ and __exit__ on fileobject.c.  We're not
+    # using "with" but it will be a problem if we do.
 
-    # NOTE: asdl/unpickle.py needs marshal.loads
+    # NOTE: asdl/unpickle.py needs marshal.loads.
     if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
       return False
+
+    # TODO:
+    # - Also filter pop() and update() from setobject.c.  Those are used on
+    # dictionaries but not on sets (I think.)
+    # - Remove ALL of proxy_methods from descrobject.c?
 
     # Try just filtering {time,pwd,posix}module.c, etc.
     if os.path.basename(rel_path) in MODULES_TO_FILTER and \

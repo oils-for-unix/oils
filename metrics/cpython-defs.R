@@ -13,7 +13,8 @@ source('benchmarks/common.R')
 
 options(stringsAsFactors = F,
         # Make the report wide.  tibble.width doesn't appear to do this?
-        width=200
+        width=200,
+        tibble.print_max=40
 )
 
 Report = function(ctx) {
@@ -23,7 +24,8 @@ Report = function(ctx) {
 
   ctx$methods %>% filter(used == T) %>% count(file) %>% arrange(desc(n)) -> f1
   ShowFrame('Methods by file (after filtering):', f1)
-  ShowValue('%d methods in %d files', nrow(ctx$methods), nrow(f1))
+  ShowValue('Kept %d of %d methods in %d files', sum(ctx$methods$used),
+            nrow(ctx$methods), nrow(f1))
 
   ctx$methods %>% count(flags) %>% arrange(desc(n)) -> f2
   ShowFrame('Methods by flag', f2)

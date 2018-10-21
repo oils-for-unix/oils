@@ -1,8 +1,5 @@
 // Python-2.7.13/Objects/descrobject.c
 
 static PyMethodDef property_methods[] = {
-  {"getter", property_getter, METH_O},
-  {"setter", property_setter, METH_O},
-  {"deleter", property_deleter, METH_O},
   {0},
 };
