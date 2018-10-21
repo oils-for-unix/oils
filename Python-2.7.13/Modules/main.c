@@ -206,6 +206,44 @@ static int RunModule(char *module, int set_argv0)
     return 0;
 }
 
+static int RunModuleDirectly(char *module, int set_argv0)
+{
+    PyObject *runpy, *runmodule, *runargs, *result;
+    runpy = PyImport_ImportModule(module);  // e.g. bin.oil
+    if (runpy == NULL) {
+        fprintf(stderr, "Could not import %s\n", module);
+        PyErr_Print();
+        return -1;
+    }
+    runmodule = PyObject_GetAttrString(runpy, "_cpython_main_hook");
+    if (runmodule == NULL) {
+        fprintf(stderr, "Didn't find _cpython_main_hook\n");
+        Py_DECREF(runpy);
+        return -1;
+    }
+    runargs = Py_BuildValue("(si)", module, set_argv0);
+    if (runargs == NULL) {
+        fprintf(stderr,
+            "Could not create arguments for _cpython_main_hook\n");
+        Py_DECREF(runpy);
+        Py_DECREF(runmodule);
+        return -1;
+    }
+    // This should result in sys.exit() rather than returning.
+    result = PyObject_Call(runmodule, runargs, NULL);
+    if (result == NULL) {
+        PyErr_Print();
+    }
+    Py_DECREF(runpy);
+    Py_DECREF(runmodule);
+    Py_DECREF(runargs);
+    if (result == NULL) {
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
 
 #ifdef OVM_MAIN
 extern char* MAIN_NAME;
@@ -231,7 +269,11 @@ static int RunMainFromImporter(char *filename)
             Py_INCREF(argv0);
             Py_DECREF(importer);
             sys_path = NULL;
+#ifdef OVM_MAIN
+            return RunModuleDirectly(MAIN_NAME, 0) != 0;
+#else
             return RunModule(MAIN_NAME, 0) != 0;
+#endif
         }
     }
     Py_XDECREF(argv0);

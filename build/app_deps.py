@@ -1,5 +1,4 @@
 #!/usr/bin/python -S
-from __future__ import print_function
 """
 py_deps.py
 
@@ -12,6 +11,7 @@ Usage:
 
 IMPORTANT: Run this script with -S so that system libraries aren't found.
 """
+from __future__ import print_function
 
 import sys
 OLD_MODULES = dict(sys.modules)  # Make a copy
@@ -56,6 +56,12 @@ def ImportMain(main_module, old_modules):
     if full_path is None:
       continue
     yield name, full_path
+
+  # Special case for __future__.  It's necessary, but doesn't get counted
+  # because we import it first!
+  module = sys.modules['__future__']
+  full_path = getattr(module, '__file__', None)
+  yield '__future__', full_path
 
 
 PY_MODULE = 0

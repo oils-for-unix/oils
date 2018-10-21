@@ -31,13 +31,13 @@ from __future__ import print_function
 
 import atexit
 import posix
-import posixpath
 import sys
 import time
 import traceback
 
 from osh.meta import ast, runtime
 from core import alloc
+from core import os_path
 from core import state
 from core import util
 
@@ -110,7 +110,7 @@ class CompletionLookup(object):
     if chain:
       return chain
 
-    key = posixpath.basename(argv0)
+    key = os_path.basename(argv0)
     actions = self.lookup.get(key)
     if chain:
       return chain
@@ -218,7 +218,7 @@ class FileSystemAction(CompletionAction):
       return  # nothing
 
     for name in names:
-      path = posixpath.join(base, name)
+      path = os_path.join(base, name)
       if path.startswith(to_complete):
         if self.dirs_only:
           if util.path_isdir(path):
@@ -812,7 +812,7 @@ def InitReadline(readline_mod, complete_cb):
     if home_dir is None:
       print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
       return
-  history_filename = posixpath.join(home_dir, 'oil_history')
+  history_filename = os_path.join(home_dir, 'oil_history')
 
   try:
     readline_mod.read_history_file(history_filename)

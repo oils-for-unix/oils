@@ -62,7 +62,7 @@ _build/%/c-module-srcs.txt: \
 _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 	$(ACTIONS_SH) join-modules $^ > $@
 
-_build/%/all-deps-py.txt: _build/py-to-compile.txt _build/%/py-to-compile.txt 
+_build/%/all-deps-py.txt: _build/%/py-to-compile.txt 
 	sort $^ | uniq > $@
 
 # NOTE: This should really depend on all the .py files.

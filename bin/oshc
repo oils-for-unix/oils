@@ -1,1 +1,3 @@
-oil.py
+#!/bin/sh
+REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
+PYTHONPATH=$REPO_ROOT exec $REPO_ROOT/bin/oil.py oshc "$@"

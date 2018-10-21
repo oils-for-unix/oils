@@ -4,9 +4,8 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
-import posixpath
-
 from asdl import const
+from core import os_path
 from core import util
 from core import word
 
@@ -137,7 +136,7 @@ class CrashDumper(object):
     }
 
     # TODO: Add PID here
-    path = posixpath.join(self.crash_dump_dir, 'osh-crash-dump.json')
+    path = os_path.join(self.crash_dump_dir, 'osh-crash-dump.json')
     with open(path, 'w') as f:
       import json
       json.dump(d, f, indent=2)

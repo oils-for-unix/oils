@@ -157,6 +157,8 @@ BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
 # This appears to work for Clang too!
 # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
 BASE_CFLAGS="$BASE_CFLAGS -fdata-sections -ffunction-sections"
+# Needed after cpython-defs filtering.
+BASE_CFLAGS="$BASE_CFLAGS -Wno-unused-variable -Wno-unused-function"
 readonly BASE_CFLAGS
 
 BASE_LDFLAGS='-Wl,--gc-sections'

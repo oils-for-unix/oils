@@ -31,4 +31,19 @@ EOF
   uftrace _tmp/hello
 }
 
+# Creates uftrace.data
+ovm-dbg() {
+  make clean 
+  make CFLAGS='-O0 -pg' _bin/oil.ovm-dbg
+  OVM_VERBOSE=1 uftrace record _bin/oil.ovm-dbg osh "$@"
+}
+
+# Now we can analyze uftrace.data.
+# NOTE: This wasn't that useful because it doesn't give line numbers?
+
+replay() {
+  # Just strace from this module.
+  uftrace replay -F FindModule
+}
+
 "$@"

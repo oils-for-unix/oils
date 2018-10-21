@@ -12,13 +12,13 @@ from __future__ import print_function
 
 import cStringIO
 import posix
-import posixpath
 import pwd  # TODO: Move this dependency to Oil?
 import stat
 import sys
 import zipimport  # NOT the zipfile module.
 
 from asdl import const
+from core import os_path
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 
@@ -170,7 +170,7 @@ class _FileResourceLoader(object):
 
   # TODO: Make this a context manager?
   def open(self, rel_path):
-    return open(posixpath.join(self.root_dir, rel_path))
+    return open(os_path.join(self.root_dir, rel_path))
 
 
 class _ZipResourceLoader(object):
@@ -202,8 +202,8 @@ def GetResourceLoader():
   else:
     # NOTE: This assumes all unit tests are one directory deep, e.g.
     # core/util_test.py.
-    bin_dir = posixpath.dirname(posixpath.abspath(sys.argv[0]))  # ~/git/oil/bin
-    root_dir = posixpath.join(bin_dir, '..')  # ~/git/oil/osh
+    bin_dir = os_path.dirname(os_path.abspath(sys.argv[0]))  # ~/git/oil/bin
+    root_dir = os_path.join(bin_dir, '..')  # ~/git/oil/osh
     _loader = _FileResourceLoader(root_dir)
 
   return _loader

@@ -1,10 +1,10 @@
 #!/usr/bin/python -S
-from __future__ import print_function
 """
 runpy_deps.py
 
 NOTE: -S above is important.
 """
+from __future__ import print_function
 
 import sys  # 15 modules
 import runpy  # 34 modules

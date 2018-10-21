@@ -6,9 +6,13 @@ from __future__ import print_function
 
 import errno
 import posix
-import posixpath
 import sys
 
+from core import os_path
+
+#
+# From os.py
+#
 
 def execvpe(file, args, env):
     """execvpe(file, args, env)
@@ -29,19 +33,19 @@ def _execvpe(file, args, env=None):
         argrest = (args,)
         env = posix.environ
 
-    head, tail = posixpath.split(file)
+    head, tail = os_path.split(file)
     if head:
         func(file, *argrest)
         return
     if 'PATH' in env:
         envpath = env['PATH']
     else:
-        envpath = posixpath.defpath
-    PATH = envpath.split(posixpath.pathsep)
+        envpath = os_path.defpath
+    PATH = envpath.split(os_path.pathsep)
     saved_exc = None
     saved_tb = None
     for dir in PATH:
-        fullname = posixpath.join(dir, file)
+        fullname = os_path.join(dir, file)
         try:
             func(fullname, *argrest)
         except posix.error as e:

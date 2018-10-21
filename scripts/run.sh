@@ -18,13 +18,24 @@ replace-print() {
   #sed -i --regexp-extended -e 's/print (.*)/print(\1)/' {osh,core}/*.py
 }
 
+# A snippet that sets PYTHONPATH for bin/oil.py and runs it with the right
+# action.
+dev-snippet() {
+  local name=$1
+  echo '#!/bin/sh'
+  echo 'REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)'
+  echo 'PYTHONPATH=$REPO_ROOT exec $REPO_ROOT/bin/oil.py '$name' "$@"'
+}
+
 make-bin-links() {
   # bin/ is for running with the Python interpreter.  _bin/ is for running with
   # OVM app bundles.
   mkdir -p bin _bin
 
   for link in "${OIL_SYMLINKS[@]}"; do
-    ln -s -f --verbose oil.py bin/$link
+    dev-snippet $link > bin/$link
+    chmod +x bin/$link
+    echo "Wrote bin/$link"
   done
 
   for link in "${OIL_SYMLINKS[@]}"; do

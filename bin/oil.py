@@ -22,13 +22,8 @@ Builtins that can be exposed:
 from __future__ import print_function
 
 import posix
-import posixpath
 import sys
 import time  # for perf measurement
-
-# TODO: Set PYTHONPATH from outside?
-this_dir = posixpath.dirname(posixpath.abspath(sys.argv[0]))
-sys.path.append(posixpath.join(this_dir, '..'))
 
 _trace_path = posix.environ.get('_PY_TRACE')
 if _trace_path:
@@ -66,6 +61,7 @@ from core import cmd_exec
 from core import dev
 from core import legacy
 from core import main_loop
+from core import os_path
 from core import process
 from core import reader
 from core import state
@@ -445,8 +441,8 @@ APPLETS = ['osh', 'oshc']
 def AppBundleMain(argv):
   login_shell = False
 
-  b = posixpath.basename(argv[0])
-  main_name, ext = posixpath.splitext(b)
+  b = os_path.basename(argv[0])
+  main_name, ext = os_path.splitext(b)
   if main_name.startswith('-'):
     login_shell = True
     main_name = main_name[1:]
@@ -516,6 +512,11 @@ def main(argv):
     _tlog('Exiting main()')
     if _trace_path:
       _tracer.Stop(_trace_path)
+
+
+# Called from Python-2.7.13/Modules/main.c.
+def _cpython_main_hook(dummy1, dummy2):
+  main(sys.argv)
 
 
 if __name__ == '__main__':

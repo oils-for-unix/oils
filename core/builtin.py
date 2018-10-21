@@ -27,11 +27,11 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 from __future__ import print_function
 
 import posix
-import posixpath
 import signal
 import sys
 
 from core import args
+from core import os_path
 from core import util
 from core import state
 from core import word_compile
@@ -536,14 +536,14 @@ def Cd(argv, mem, dir_stack):
   # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
   # call posix.getcwd() because it can raise OSError if the directory was
   # removed (ENOENT.)
-  abspath = posixpath.join(pwd.s, dest_dir)  # make it absolute, for cd ..
+  abspath = os_path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
   if arg.P:
     # -P means resolve symbolic links, then process '..'
     real_dest_dir = libc.realpath(abspath)
   else:
     # -L means process '..' first.  This just does string manipulation.  (But
     # realpath afterward isn't correct?)
-    real_dest_dir = posixpath.normpath(abspath)
+    real_dest_dir = os_path.normpath(abspath)
 
   try:
     posix.chdir(real_dest_dir)
@@ -597,7 +597,7 @@ def Pushd(argv, home_dir, dir_stack):
     util.error('pushd: too many arguments')
     return 1
 
-  dest_dir = posixpath.abspath(argv[0])
+  dest_dir = os_path.abspath(argv[0])
   try:
     posix.chdir(dest_dir)
   except OSError as e:
@@ -876,7 +876,7 @@ def _ResolveNames(names, funcs, path_val):
       # Now look for files.
       found = False
       for path_dir in path_list:
-        full_path = posixpath.join(path_dir, name)
+        full_path = os_path.join(path_dir, name)
         if util.path_exists(full_path):
           kind = ('file', full_path)
           found = True
