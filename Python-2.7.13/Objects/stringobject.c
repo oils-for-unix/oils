@@ -428,6 +428,7 @@ PyObject *PyString_Decode(const char *s,
     return v;
 }
 
+#ifndef OVM_MAIN
 PyObject *PyString_AsDecodedObject(PyObject *str,
                                    const char *encoding,
                                    const char *errors)
@@ -572,6 +573,7 @@ PyObject *PyString_AsEncodedString(PyObject *str,
  onError:
     return NULL;
 }
+#endif
 
 static void
 string_dealloc(PyObject *op)
@@ -2998,6 +3000,7 @@ string_endswith(PyStringObject *self, PyObject *args)
 }
 
 
+#ifndef OVM_MAIN
 PyDoc_STRVAR(encode__doc__,
 "S.encode([encoding[,errors]]) -> object\n\
 \n\
@@ -3074,6 +3077,7 @@ string_decode(PyStringObject *self, PyObject *args, PyObject *kwargs)
  onError:
     return NULL;
 }
+#endif
 
 
 PyDoc_STRVAR(expandtabs__doc__,
@@ -3691,8 +3695,10 @@ static PyMethodDef string_methods[] = {
     {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
     {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
 #endif
+#ifndef OVM_MAIN
     {"encode", (PyCFunction)string_encode, METH_VARARGS | METH_KEYWORDS, encode__doc__},
     {"decode", (PyCFunction)string_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
+#endif
     {"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS,
      expandtabs__doc__},
     {"splitlines", (PyCFunction)string_splitlines, METH_VARARGS,

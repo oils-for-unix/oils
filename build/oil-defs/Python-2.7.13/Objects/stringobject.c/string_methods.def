@@ -34,8 +34,6 @@ static PyMethodDef string_methods[] = {
   {"rjust", (PyCFunction)string_rjust, METH_VARARGS},
   {"center", (PyCFunction)string_center, METH_VARARGS},
   {"zfill", (PyCFunction)string_zfill, METH_VARARGS},
-  {"encode", (PyCFunction)string_encode, METH_VARARGS | METH_KEYWORDS},
-  {"decode", (PyCFunction)string_decode, METH_VARARGS | METH_KEYWORDS},
   {"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS},
   {"splitlines", (PyCFunction)string_splitlines, METH_VARARGS},
   {"__sizeof__", (PyCFunction)string_sizeof, METH_NOARGS},

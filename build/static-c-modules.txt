@@ -9,7 +9,6 @@ posix posixmodule.c		# posix (UNIX) system calls
 errno errnomodule.c		# posix (UNIX) errno values
 pwd pwdmodule.c			# this is needed to find out the user's home dir
 				# if $HOME is not set
-_codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 
 _weakref _weakref.c             # weak references
 

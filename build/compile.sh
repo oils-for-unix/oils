@@ -27,7 +27,6 @@ readonly OVM_PYTHON_OBJS='
 Python/_warnings.c
 Python/bltinmodule.c
 Python/ceval.c
-Python/codecs.c
 Python/errors.c
 Python/getargs.c
 Python/getcompiler.c
@@ -102,7 +101,6 @@ MODOBJS='
 Modules/posixmodule.c
 Modules/errnomodule.c
 Modules/pwdmodule.c
-Modules/_codecsmodule.c
 Modules/_weakref.c
 Modules/zipimport.c
 Modules/signalmodule.c
