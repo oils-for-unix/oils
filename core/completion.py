@@ -33,7 +33,7 @@ import atexit
 import posix
 import sys
 import time
-import traceback
+#import traceback
 
 from osh.meta import ast, runtime
 from core import alloc
@@ -798,7 +798,7 @@ class ReadlineCompleter(object):
     try:
       return self._GetNextCompletion(state)
     except Exception as e:
-      traceback.print_exc()
+      #traceback.print_exc()
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # Because readline ignores SystemExit!

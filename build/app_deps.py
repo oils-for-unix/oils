@@ -16,7 +16,7 @@ from __future__ import print_function
 import sys
 OLD_MODULES = dict(sys.modules)  # Make a copy
 
-import os  # Do it here so we don't mess up analysis
+import posix  # Do it afterward so we don't mess up analysis.
 
 
 def log(msg, *args):
@@ -109,7 +109,7 @@ def main(argv):
   #  raise Error('No modules specified.')
 
   # Set an environment variable so dependencies in debug mode can be excluded.
-  os.environ['_OVM_DEPS'] = '1'
+  posix.environ['_OVM_DEPS'] = '1'
 
   action = argv[1]
   main_module = argv[2]
