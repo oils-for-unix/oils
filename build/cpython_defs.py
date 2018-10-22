@@ -256,6 +256,11 @@ class OilMethodFilter(object):
     if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
       return False
 
+    # Auto-filtering gave false-positives here.
+    if (def_name == 'builtin_methods' and
+        method_name in ('compile', 'format', 'vars')):
+      return False
+
     # TODO:
     # - Also filter pop() and update() from setobject.c.  Those are used on
     # dictionaries but not on sets (I think.)
