@@ -29,6 +29,17 @@ Report = function(ctx) {
 
   ctx$methods %>% count(flags) %>% arrange(desc(n)) -> f2
   ShowFrame('Methods by flag', f2)
+
+  # libc.c and fastlex.c are mostly implemented.  posixmodule are just
+  # bindings?
+  ctx$methods %>%
+    filter(used == T) %>%
+    mutate(basename=basename(file)) %>%
+    filter(basename != 'libc.c' & basename != 'fastlex.c') %>%
+    filter(py_method_name != '__length_hint__') %>%
+    select(c(basename, py_method_name)) -> f3
+  ShowFrame('Methods to reimplement:', f3)
+  ShowValue('Total: %d methods', nrow(f3))
 }
 
 Load = function(in_dir) {

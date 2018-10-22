@@ -197,11 +197,6 @@ edit-all() {
   tac $BASE_DIR/method-edit-list.txt | xargs -n 4 -- $0 edit-file
 }
 
-# Show current Oil definitions.
-show-oil() {
-  find build/oil-defs -name '*.def' | xargs cat | less
-}
-
 extract-types() {
   local path_prefix=$1  # to strip
   shift
@@ -283,6 +278,20 @@ extract-all-types() {
 #
 
 readonly METRICS_DIR=_tmp/metrics/cpython-defs
+
+# Show current Oil definitions literally.
+show-oil() {
+  find build/oil-defs -name '*.def' | xargs cat | less
+}
+
+# Show in a contenses format.
+methods-audit() {
+  mkdir -p $METRICS_DIR
+  cat $BASE_DIR/preprocessed.txt | cpython-defs audit $PY_NAMES \
+    | grep $'\t\t' | tee _tmp/methods.txt
+
+  wc -l _tmp/methods.txt
+}
 
 methods-tsv() {
   mkdir -p $METRICS_DIR

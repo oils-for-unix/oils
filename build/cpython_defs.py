@@ -367,15 +367,26 @@ def main(argv):
       if id_ == 'EOF':
         break
 
-  elif action == 'parse':  # for debugging
+  elif action == 'audit':  # show after filtering, for debugging
     p = Parser(tokens)
     files = p.ParseStream()
-    for path, defs in files:
+    for rel_path, defs in files:
+      basename = os.path.basename(rel_path)
+      # We will implement a shim for set(), using dict.
+      if basename in ('libc.c', 'fastlex.c', 'setobject.c'):
+        continue
+
+      print(rel_path)
       for def_name, entries in defs:
-        if def_name == 'proxy_methods':
-        #if def_name == 'object_methods':
-          for method_name, vals in entries:
-            print(method_name, vals)
+        print('\t' + def_name)
+        for method_name, vals in entries:
+          if method_name is None:
+            continue
+          if method_name in ('__length_hint__',):
+            continue
+          if not method_filter(rel_path, def_name, method_name):
+            continue
+          print('\t\t' + method_name)
 
   elif action == 'filter':  # for slimming the build down
     out_dir = argv[3]
