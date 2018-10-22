@@ -9,6 +9,8 @@ set -o errexit
 
 source test/common.sh  # R_PATH
 
+readonly BASE_DIR=_tmp/cpython-defs
+
 # Could be published in metrics?
 readonly PY_NAMES=_tmp/oil-py-names.txt
 
@@ -52,11 +54,11 @@ os-module-deps() {
 # hard to parse.  You can almost do it with a regex, since commas don't appear
 # in the string.
 
-extract-defs() {
+extract-methods() {
   local path_prefix=$1  # to strip
   shift
 
-  local edit_list=_tmp/cpython-defs/edit-list.txt
+  local edit_list=$BASE_DIR/method-edit-list.txt
 
   # NOTE: PyMemberDef is also interesting, but we don't need it for the build.
   gawk -v path_prefix_length=${#path_prefix} -v edit_list=$edit_list '
@@ -124,23 +126,21 @@ preprocess() {
 
 readonly TARBALL_ROOT=$(echo _tmp/oil-tar-test/oil-*)
 
-extract-all-defs() {
+extract-all-methods() {
   echo '#include "pyconfig.h"'
   # 52 different instances.  Sometimes multiple ones per file.
   find "$TARBALL_ROOT" -type f -a -name '*.c' \
-    | xargs -- $0 extract-defs "$TARBALL_ROOT/"
+    | xargs -- $0 extract-methods "$TARBALL_ROOT/"
 }
 
 cpython-defs() {
   PYTHONPATH=. build/cpython_defs.py "$@"
 }
 
-readonly BASE_DIR=_tmp/cpython-defs
-
 filter-methods() {
   local tmp=$BASE_DIR
   mkdir -p $tmp
-  extract-all-defs > $tmp/extracted.txt
+  extract-all-methods > $tmp/extracted.txt
   cat $tmp/extracted.txt | preprocess > $tmp/preprocessed.txt
 
   local out_dir=build/oil-defs
@@ -194,7 +194,7 @@ edit-file() {
 edit-all() {
   # Reversed so that edits to the same file work!  We are always inserting
   # lines.
-  tac _tmp/cpython-defs/edit-list.txt | xargs -n 4 -- $0 edit-file
+  tac $BASE_DIR/method-edit-list.txt | xargs -n 4 -- $0 edit-file
 }
 
 # Show current Oil definitions.
@@ -206,7 +206,7 @@ extract-types() {
   local path_prefix=$1  # to strip
   shift
 
-  local edit_list=_tmp/cpython-defs/type-edit-list.txt
+  local edit_list=$BASE_DIR/type-edit-list.txt
 
   # NOTE: PyMemberDef is also interesting, but we don't need it for the build.
   gawk -v path_prefix_length=${#path_prefix} -v edit_list=$edit_list '
@@ -301,6 +301,14 @@ report() {
 run-for-release() {
   methods-tsv
   report | tee $METRICS_DIR/overview.txt
+}
+
+unfiltered() {
+  cpython-defs filtered | sort > _tmp/left.txt
+  awk '{print $1}' $BASE_DIR/edit-list.txt \
+    | egrep -o '[^/]+$' \
+    | sort | uniq > _tmp/right.txt
+  diff -u _tmp/{left,right}.txt
 }
 
 

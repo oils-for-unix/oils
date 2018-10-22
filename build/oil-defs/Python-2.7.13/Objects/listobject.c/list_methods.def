@@ -1,16 +1,10 @@
 // Python-2.7.13/Objects/listobject.c
 
 static PyMethodDef list_methods[] = {
-  {"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST},
-  {"__reversed__", (PyCFunction)list_reversed, METH_NOARGS},
-  {"__sizeof__", (PyCFunction)list_sizeof, METH_NOARGS},
   {"append", (PyCFunction)listappend, METH_O},
-  {"insert", (PyCFunction)listinsert, METH_VARARGS},
   {"extend", (PyCFunction)listextend, METH_O},
   {"pop", (PyCFunction)listpop, METH_VARARGS},
-  {"remove", (PyCFunction)listremove, METH_O},
   {"index", (PyCFunction)listindex, METH_VARARGS},
-  {"count", (PyCFunction)listcount, METH_O},
   {"reverse", (PyCFunction)listreverse, METH_NOARGS},
   {"sort", (PyCFunction)listsort, METH_VARARGS | METH_KEYWORDS},
   {0},

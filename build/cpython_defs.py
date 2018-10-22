@@ -218,6 +218,10 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
 
 MODULES_TO_FILTER = [
     'import.c',
+    'marshal.c',  # additional filters below
+
+    'enumobject.c',
+    'rangeobject.c',
 
     'boolobject.c',
     'descrobject.c',
@@ -225,18 +229,22 @@ MODULES_TO_FILTER = [
     'fileobject.c',
     'floatobject.c',
     'intobject.c',
+    'listobject.c',
     'longobject.c',
     'moduleobject.c',
     'setobject.c',
     'stringobject.c',
+    'tupleobject.c',
 
-    'bltinmodule.c',
+    'bltinmodule.c',  # additional filters below
     'errnomodule.c',  # has no methods, but include it for completeness
     'fcntlmodule.c',
     'posixmodule.c',
     'pwdmodule.c',
     #'signalmodule.c',  # This caused problems?  Couldn't find SIGINT?
     'timemodule.c',
+
+    '_warnings.c',
 ]
 
 
@@ -246,6 +254,8 @@ class OilMethodFilter(object):
     self.py_names = py_names
 
   def __call__(self, rel_path, def_name, method_name):
+    basename = os.path.basename(rel_path) 
+
     # Is this an optimization?  See Objects/abstract.c.
     if method_name == '__length_hint__':
       return True
@@ -261,14 +271,16 @@ class OilMethodFilter(object):
         method_name in ('compile', 'format', 'vars')):
       return False
 
+    if basename == '_warnings.c' and method_name == 'warn':
+      return False
+
     # TODO:
     # - Also filter pop() and update() from setobject.c.  Those are used on
     # dictionaries but not on sets (I think.)
     # - Remove ALL of proxy_methods from descrobject.c?
 
     # Try just filtering {time,pwd,posix}module.c, etc.
-    if os.path.basename(rel_path) in MODULES_TO_FILTER and \
-        method_name not in self.py_names:
+    if basename in MODULES_TO_FILTER and method_name not in self.py_names:
       return False
 
     #log('= %s %s', def_name, method_name)
@@ -298,7 +310,10 @@ def main(argv):
         py_names.add(line.strip())
     method_filter = OilMethodFilter(py_names)
 
-  tokens = Lexer(C_DEF).Tokens(sys.stdin.read())
+  if action == 'filtered':
+    tokens = None
+  else:
+    tokens = Lexer(C_DEF).Tokens(sys.stdin.read())
 
   if action == 'lex':  # for debugging
     while True:
@@ -374,6 +389,10 @@ def main(argv):
 
           row = [rel_path, def_name, method_name, vals[0], vals[1], used]
           print('\t'.join(row))
+
+  elif action == 'filtered':
+    for name in MODULES_TO_FILTER:
+      print(name)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
