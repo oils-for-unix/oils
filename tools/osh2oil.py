@@ -40,7 +40,7 @@ class Cursor(object):
     # Sometimes we add +1
     assert until_span_id < const.NO_INTEGER, \
         'Missing span ID, got %d' % until_span_id
-    for span_id in range(self.next_span_id, until_span_id):
+    for span_id in xrange(self.next_span_id, until_span_id):
       span = self.arena.GetLineSpan(span_id)
 
       # A span for Eof may have a line_id of -1 when the file is completely

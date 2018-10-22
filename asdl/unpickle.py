@@ -296,7 +296,7 @@ class Unpickler(object):
         k = self.marker()
         d = {}
         items = self.stack[k+1:]
-        for i in range(0, len(items), 2):
+        for i in xrange(0, len(items), 2):
             key = items[i]
             value = items[i+1]
             d[key] = value
@@ -442,7 +442,7 @@ class Unpickler(object):
         stack = self.stack
         mark = self.marker()
         dict = stack[mark - 1]
-        for i in range(mark + 1, len(stack), 2):
+        for i in xrange(mark + 1, len(stack), 2):
             dict[stack[i]] = stack[i + 1]
 
         del stack[mark:]

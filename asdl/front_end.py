@@ -14,7 +14,7 @@ from asdl.asdl_ import Module, Type, Constructor, Field, Sum, Product
 class TokenKind(object):
     """TokenKind is provides a scope for enumerated token kinds."""
     (ConstructorId, TypeId, Equals, Comma, Question, Pipe, Asterisk,
-     LParen, RParen, LBrace, RBrace) = range(11)
+     LParen, RParen, LBrace, RBrace) = xrange(11)
 
     operator_table = {
         '=': Equals, ',': Comma,    '?': Question, '|': Pipe,    '(': LParen,

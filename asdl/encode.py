@@ -88,7 +88,7 @@ class Params(object):
       raise EncodeError(
           '%d is too big to fit in %d bytes' % (n, self.int_width))
 
-    for i in range(self.int_width):
+    for i in xrange(self.int_width):
       chunk.append(n & 0xFF)
       n >>= 8
 
@@ -127,7 +127,7 @@ class Params(object):
     n = len(buf)
     if n >= self.max_index:
       raise EncodeError("bytes object is too long (%d)" % n)
-    for i in range(self.index_width):
+    for i in xrange(self.index_width):
       chunk.append(n & 0xFF)
       n >>= 8
     chunk.extend(buf)

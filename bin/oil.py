@@ -253,7 +253,7 @@ def OshMain(argv0, argv, login_shell):
         # Something for fun, to show off.  Also: test that you don't repeatedly hit
         # the file system / network / coprocess.
         A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-        A2 = completion.WordsAction(['m%d' % i for i in range(5)], delay=0.1)
+        A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
         C1 = completion.ChainedCompleter([A1, A2])
         comp_lookup.RegisterName('slowc', C1)
 

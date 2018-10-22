@@ -101,7 +101,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def _EmitEnum(self, sum, name, depth):
     enum = []
-    for i in range(len(sum.types)):
+    for i in xrange(len(sum.types)):
       type = sum.types[i]
       enum.append("%s = %d" % (type.name, i + 1))  # zero is reserved
 

@@ -19,7 +19,6 @@ static PyMethodDef builtin_methods[] = {
   {"open", (PyCFunction)builtin_open, METH_VARARGS | METH_KEYWORDS},
   {"ord", builtin_ord, METH_O},
   {"print", (PyCFunction)builtin_print, METH_VARARGS | METH_KEYWORDS},
-  {"range", builtin_range, METH_VARARGS},
   {"raw_input", builtin_raw_input, METH_VARARGS},
   {"repr", builtin_repr, METH_O},
   {"setattr", builtin_setattr, METH_VARARGS},
