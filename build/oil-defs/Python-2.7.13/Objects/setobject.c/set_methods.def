@@ -2,7 +2,6 @@
 
 static PyMethodDef set_methods[] = {
   {"add", (PyCFunction)set_add, METH_O},
-  {"pop", (PyCFunction)set_pop, METH_NOARGS},
   {"update", (PyCFunction)set_update, METH_VARARGS},
   {0},
 };

@@ -1,27 +1,9 @@
 // Python-2.7.13/Python/sysmodule.c
 
 static PyMethodDef sys_methods[] = {
-  {"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS},
-  {"_clear_type_cache", sys_clear_type_cache, METH_NOARGS},
-  {"_current_frames", sys_current_frames, METH_NOARGS},
   {"displayhook", sys_displayhook, METH_O},
   {"exc_info", sys_exc_info, METH_NOARGS},
-  {"exc_clear", sys_exc_clear, METH_NOARGS},
   {"excepthook", sys_excepthook, METH_VARARGS},
   {"exit", sys_exit, METH_VARARGS},
-  {"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS},
-  {"getrefcount", (PyCFunction)sys_getrefcount, METH_O},
-  {"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS},
-  {"getsizeof", (PyCFunction)sys_getsizeof, METH_VARARGS | METH_KEYWORDS},
-  {"_getframe", sys_getframe, METH_VARARGS},
-  {"setcheckinterval", sys_setcheckinterval, METH_VARARGS},
-  {"getcheckinterval", sys_getcheckinterval, METH_NOARGS},
-  {"setdlopenflags", sys_setdlopenflags, METH_VARARGS},
-  {"setprofile", sys_setprofile, METH_O},
-  {"getprofile", sys_getprofile, METH_NOARGS},
-  {"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS},
-  {"settrace", sys_settrace, METH_O},
-  {"gettrace", sys_gettrace, METH_NOARGS},
-  {"call_tracing", sys_call_tracing, METH_VARARGS},
   {0},
 };

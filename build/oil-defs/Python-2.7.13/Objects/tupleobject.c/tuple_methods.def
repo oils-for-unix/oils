@@ -1,6 +1,5 @@
 // Python-2.7.13/Objects/tupleobject.c
 
 static PyMethodDef tuple_methods[] = {
-  {"index", (PyCFunction)tupleindex, METH_VARARGS},
   {0},
 };

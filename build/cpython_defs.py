@@ -262,8 +262,7 @@ MODULES_TO_FILTER = [
 
     # Builtins
     'bltinmodule.c',  # additional filters below
-    # Can't filter this completely!  TODO: Filter individuals.
-    #'sysmodule.c',
+    #'sysmodule.c',  # Filtered below
 
     # Libraries
     'errnomodule.c',  # has no methods, but include it for completeness
@@ -304,6 +303,21 @@ class OilMethodFilter(object):
 
     if basename == '_warnings.c' and method_name == 'warn':
       return False
+
+    if basename == 'tupleobject.c' and method_name == 'index':
+      return False
+
+    if basename == 'setobject.c' and method_name == 'pop':
+      return False
+
+    if basename == 'sliceobject.c' and method_name == 'indices':
+      return False
+
+    # Do custom filtering here.
+    if (basename == 'sysmodule.c' and method_name not in self.py_names):
+      # These can't be removed or they cause assertions!
+      if method_name not in ('displayhook', 'excepthook'):
+        return False
 
     # TODO:
     # - Also filter pop() and update() from setobject.c.  Those are used on

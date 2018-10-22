@@ -1,6 +1,5 @@
 // Python-2.7.13/Objects/sliceobject.c
 
 static PyMethodDef slice_methods[] = {
-  {"indices", (PyCFunction)slice_indices, METH_O},
   {0},
 };
