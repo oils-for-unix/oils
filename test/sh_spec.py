@@ -66,7 +66,8 @@ import time
 # It would be better to rename these osh-cpython and osh-ovm.  Have the concept
 # of a suffix?  Then we can have osh-byterun too.
 
-OTHER_OSH = ('osh_ALT', 'osh-byterun') 
+OSH_CPYTHON = ('osh', 'osh-dbg')
+OTHER_OSH = ('osh_ALT', 'osh-byterun')
 
 
 class ParseError(Exception):
@@ -367,7 +368,7 @@ def CreateAssertions(case, sh_label):
   status = False
 
   # So the assertion are exactly the same for osh and osh_ALT
-  case_sh = 'osh' if sh_label in OTHER_OSH else sh_label
+  case_sh = 'osh' if sh_label.startswith('osh') else sh_label
 
   if case_sh in case:
     q = case[case_sh]['qualifier']
@@ -464,7 +465,7 @@ def RunCases(cases, case_predicate, shells, env, out):
   # shells.
   osh_cpython_index = -1
   for i, (sh_label, _) in enumerate(shells):
-    if sh_label == 'osh':
+    if sh_label in OSH_CPYTHON:
       osh_cpython_index = i
       break
 
@@ -529,7 +530,7 @@ def RunCases(cases, case_predicate, shells, env, out):
         if sh_label not in OTHER_OSH:
           stats['num_failed'] += 1
 
-        if sh_label == 'osh':
+        if sh_label in OSH_CPYTHON:
           stats['osh_num_failed'] += 1
       elif cell_result == Result.BUG:
         stats['num_bug'] += 1
@@ -539,7 +540,7 @@ def RunCases(cases, case_predicate, shells, env, out):
         stats['num_ok'] += 1
       elif cell_result == Result.PASS:
         stats['num_passed'] += 1
-        if sh_label == 'osh':
+        if sh_label in OSH_CPYTHON:
           stats['osh_num_passed'] += 1
       else:
         raise AssertionError

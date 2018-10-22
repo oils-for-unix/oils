@@ -18,6 +18,20 @@ replace-print() {
   #sed -i --regexp-extended -e 's/print (.*)/print(\1)/' {osh,core}/*.py
 }
 
+# For osh-dbg.
+ovm-snippet() {
+  local name=$1
+  echo '#!/bin/sh'
+  echo 'exec _bin/oil.ovm-dbg '$name' "$@"'
+}
+
+# For running spec tests quickly.
+make-osh-dbg() {
+  local out=_bin/osh-dbg
+  ovm-snippet osh > $out
+  chmod +x $out
+}
+
 # A snippet that sets PYTHONPATH for bin/oil.py and runs it with the right
 # action.
 dev-snippet() {
@@ -42,10 +56,13 @@ make-bin-links() {
     ln -s -f --verbose oil.ovm _bin/$link
   done
 
+
   for link in "${OPY_SYMLINKS[@]}"; do
     ln -s -f --verbose opy_.py bin/$link
     ln -s -f --verbose opy.ovm _bin/$link
   done
+
+  make-osh-dbg
 }
 
 # Hm all of the solutions involve grep --perl or perl itself?

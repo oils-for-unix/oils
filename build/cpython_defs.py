@@ -203,6 +203,7 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
     if entry_name is None:
       out('  {0},\n')  # null initializer
       continue
+    stats['num_methods'] += 1
 
     if not predicate(rel_path, def_name, entry_name):
       stats['num_filtered'] += 1
@@ -212,7 +213,6 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
     # Strip off the docstring.
     out(', '.join(vals[:-1]))
     out('},\n')
-    stats['num_methods'] += 1
   out('};\n')
 
 

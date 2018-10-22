@@ -195,6 +195,15 @@ all() {
   test/spec-runner.sh all-parallel "$@"
 }
 
+# Usgae: test/spec.sh dbg smoke, dbg-all
+dbg() {
+  OSH_LIST='_bin/osh-dbg' $0 "$@"
+}
+
+# For completion
+dbg-all() {
+  $0 dbg all
+}
 
 #
 # Invidual tests.
