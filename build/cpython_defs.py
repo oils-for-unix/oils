@@ -217,34 +217,61 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
 
 
 MODULES_TO_FILTER = [
+    # My Own
+    'libc.c',
+    'fastlex.c',
+
     'import.c',
     'marshal.c',  # additional filters below
+    #'zipimport.c',  # Cannot filter this because find_module called from C!
 
+    # Types for Builtins
     'enumobject.c',
     'rangeobject.c',
 
-    'boolobject.c',
+    # Interpreter types
     'descrobject.c',
+    'exceptions.c',
+    'structseq.c',
+    '_warnings.c',
+
+    # Control flow
+    'frameobject.c',
+    'genobject.c',
+    'iterobject.c',
+
+    # GC
+    '_weakref.c',
+    'weakrefobject.c',
+    'gcmodule.c',
+
+    # "Data types"
+    #'boolobject.c',  # No defs
     'dictobject.c',
     'fileobject.c',
     'floatobject.c',
     'intobject.c',
     'listobject.c',
     'longobject.c',
-    'moduleobject.c',
+    #'moduleobject.c',  # No defs
     'setobject.c',
     'stringobject.c',
     'tupleobject.c',
+    'sliceobject.c',
+    'typeobject.c',
 
+    # Builtins
     'bltinmodule.c',  # additional filters below
+    # Can't filter this completely!  TODO: Filter individuals.
+    #'sysmodule.c',
+
+    # Libraries
     'errnomodule.c',  # has no methods, but include it for completeness
     'fcntlmodule.c',
     'posixmodule.c',
     'pwdmodule.c',
     #'signalmodule.c',  # This caused problems?  Couldn't find SIGINT?
     'timemodule.c',
-
-    '_warnings.c',
 ]
 
 
@@ -259,8 +286,12 @@ class OilMethodFilter(object):
     # Is this an optimization?  See Objects/abstract.c.
     if method_name == '__length_hint__':
       return True
-    # NOTE: We filtered out __enter__ and __exit__ on fileobject.c.  We're not
-    # using "with" but it will be a problem if we do.
+    # Notes:
+    # - We filtered out __enter__ and __exit__ on fileobject.c.  We're not
+    #   using "with" but it will be a problem if we do.
+    # - __reduce__ and __setstate__ are for pickle.  And I think
+    #   __getnewargs__.
+    # - Do we need __sizeof__?  Is that for sys.getsizeof()?
 
     # NOTE: asdl/unpickle.py needs marshal.loads.
     if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):

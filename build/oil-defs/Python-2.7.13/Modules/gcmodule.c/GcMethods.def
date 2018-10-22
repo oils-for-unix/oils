@@ -1,18 +1,5 @@
 // Python-2.7.13/Modules/gcmodule.c
 
 static PyMethodDef GcMethods[] = {
-  {"enable", gc_enable, METH_NOARGS},
-  {"disable", gc_disable, METH_NOARGS},
-  {"isenabled", gc_isenabled, METH_NOARGS},
-  {"set_debug", gc_set_debug, METH_VARARGS},
-  {"get_debug", gc_get_debug, METH_NOARGS},
-  {"get_count", gc_get_count, METH_NOARGS},
-  {"set_threshold", gc_set_thresh, METH_VARARGS},
-  {"get_threshold", gc_get_thresh, METH_NOARGS},
-  {"collect", (PyCFunction)gc_collect, METH_VARARGS | METH_KEYWORDS},
-  {"get_objects", gc_get_objects, METH_NOARGS},
-  {"is_tracked", gc_is_tracked, METH_O},
-  {"get_referrers", gc_get_referrers, METH_VARARGS},
-  {"get_referents", gc_get_referents, METH_VARARGS},
   {0},
 };

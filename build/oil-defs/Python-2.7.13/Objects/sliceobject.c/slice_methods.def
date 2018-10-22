@@ -2,6 +2,5 @@
 
 static PyMethodDef slice_methods[] = {
   {"indices", (PyCFunction)slice_indices, METH_O},
-  {"__reduce__", (PyCFunction)slice_reduce, METH_NOARGS},
   {0},
 };

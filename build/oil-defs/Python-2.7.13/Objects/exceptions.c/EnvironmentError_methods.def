@@ -1,6 +1,5 @@
 // Python-2.7.13/Objects/exceptions.c
 
 static PyMethodDef EnvironmentError_methods[] = {
-  {"__reduce__", (PyCFunction)EnvironmentError_reduce},
   {0},
 };

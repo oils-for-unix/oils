@@ -1,10 +1,5 @@
 // Python-2.7.13/Objects/typeobject.c
 
 static PyMethodDef object_methods[] = {
-  {"__reduce_ex__", object_reduce_ex, METH_VARARGS},
-  {"__reduce__", object_reduce, METH_VARARGS},
-  {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS},
-  {"__format__", object_format, METH_VARARGS},
-  {"__sizeof__", object_sizeof, METH_NOARGS},
   {0},
 };

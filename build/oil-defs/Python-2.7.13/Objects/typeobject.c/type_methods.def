@@ -1,9 +1,5 @@
 // Python-2.7.13/Objects/typeobject.c
 
 static PyMethodDef type_methods[] = {
-  {"mro", (PyCFunction)mro_external, METH_NOARGS},
-  {"__subclasses__", (PyCFunction)type_subclasses, METH_NOARGS},
-  {"__instancecheck__", type___instancecheck__, METH_O},
-  {"__subclasscheck__", type___subclasscheck__, METH_O},
   {0},
 };
