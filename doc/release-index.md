@@ -48,6 +48,8 @@ Oil Version 0.6.pre7
   - [overview](metrics.wwz/native-code/overview.txt) - An analysis of GCC's
     compilation of [OVM][] (a subset of CPython).  [Bloaty][] provides the
     underlying data.
+  - [cpython-defs/overview](metrics.wwz/cpython-defs/overview.txt) - We try to
+    ship as little of CPython as possible, and this is what's left.
 
 [cloc]: https://github.com/AlDanial/cloc
 [Bloaty]: https://github.com/google/bloaty
