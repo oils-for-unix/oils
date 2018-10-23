@@ -1,7 +1,6 @@
 // Python-2.7.13/Python/marshal.c
 
 static PyMethodDef marshal_methods[] = {
-  {"load", marshal_load, METH_O},
   {"loads", marshal_loads, METH_VARARGS},
   {0},
 };

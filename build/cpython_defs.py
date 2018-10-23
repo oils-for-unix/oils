@@ -269,7 +269,7 @@ MODULES_TO_FILTER = [
     'fcntlmodule.c',
     'posixmodule.c',
     'pwdmodule.c',
-    #'signalmodule.c',  # This caused problems?  Couldn't find SIGINT?
+    'signalmodule.c',
     'timemodule.c',
 ]
 
@@ -285,6 +285,7 @@ class OilMethodFilter(object):
     # Is this an optimization?  See Objects/abstract.c.
     if method_name == '__length_hint__':
       return True
+
     # Notes:
     # - We filtered out __enter__ and __exit__ on fileobject.c.  We're not
     #   using "with" but it will be a problem if we do.
@@ -293,12 +294,13 @@ class OilMethodFilter(object):
     # - Do we need __sizeof__?  Is that for sys.getsizeof()?
 
     # NOTE: asdl/unpickle.py needs marshal.loads.
-    if def_name == 'marshal_methods' and method_name in ('dump', 'dumps'):
+    if basename == 'marshal.c' and method_name in ('dump', 'dumps', 'load'):
       return False
 
     # Auto-filtering gave false-positives here.
-    if (def_name == 'builtin_methods' and
-        method_name in ('compile', 'format', 'vars')):
+    # We don't need top-level next().  The method should be good enough.
+    if (basename == 'bltinmodule.c' and
+        method_name in ('compile', 'format', 'next', 'vars')):
       return False
 
     if basename == '_warnings.c' and method_name == 'warn':
@@ -313,10 +315,6 @@ class OilMethodFilter(object):
     if basename == 'sliceobject.c' and method_name == 'indices':
       return False
 
-    # We don't need top-level next().  The method should be good enough.
-    if basename == 'bltinmodule.c' and method_name == 'next':  # Shadowed
-      return False
-
     if basename == 'genobject.c' and method_name == 'close':  # Shadowed
       return False
 
@@ -326,13 +324,14 @@ class OilMethodFilter(object):
       if method_name not in ('displayhook', 'excepthook'):
         return False
 
+    # This one is called from C.
+    if basename == 'signalmodule.c' and method_name == 'default_int_handler':
+      return True
+
     # I don't understand when this object is used in CPython, but it's not used
     # in Oil.
     if basename == 'descrobject.c':
       return False
-
-    # TODO:
-    # - Remove ALL of proxy_methods from descrobject.c?
 
     # Try just filtering {time,pwd,posix}module.c, etc.
     if basename in MODULES_TO_FILTER and method_name not in self.py_names:
