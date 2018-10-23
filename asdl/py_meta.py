@@ -163,7 +163,15 @@ class DebugCompoundObj(CompoundObj):
 
   def __init__(self, *args, **kwargs):
     # The user must specify ALL required fields or NONE.
-    self._assigned = {f: False for f in self.ASDL_TYPE.GetFieldNames()}
+
+    # NOTE: This was a dict comprehension, but I wanted to get rid of the only
+    # instance of the MAP_ADD bytecode in the program.  Maybe add it back later
+    # although I hope ASDL and will be "lowered" to the OVM layer, and maybe do
+    # static rather than dynamic type checking.)
+    self._assigned = {}
+    for f in self.ASDL_TYPE.GetFieldNames():
+      self._assigned[f] = False
+
     self._SetDefaults()
     if args or kwargs:
       self._Init(args, kwargs)
