@@ -1,6 +1,5 @@
 // Python-2.7.13/Objects/genobject.c
 
 static PyMethodDef gen_methods[] = {
-  {"close", (PyCFunction)gen_close, METH_NOARGS},
   {0},
 };

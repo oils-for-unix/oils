@@ -313,6 +313,13 @@ class OilMethodFilter(object):
     if basename == 'sliceobject.c' and method_name == 'indices':
       return False
 
+    # We don't need top-level next().  The method should be good enough.
+    if basename == 'bltinmodule.c' and method_name == 'next':  # Shadowed
+      return False
+
+    if basename == 'genobject.c' and method_name == 'close':  # Shadowed
+      return False
+
     # Do custom filtering here.
     if (basename == 'sysmodule.c' and method_name not in self.py_names):
       # These can't be removed or they cause assertions!
