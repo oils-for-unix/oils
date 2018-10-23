@@ -221,16 +221,10 @@ static int RunModuleDirectly(char *module, int set_argv0)
         Py_DECREF(runpy);
         return -1;
     }
-    runargs = Py_BuildValue("(si)", module, set_argv0);
-    if (runargs == NULL) {
-        fprintf(stderr,
-            "Could not create arguments for _cpython_main_hook\n");
-        Py_DECREF(runpy);
-        Py_DECREF(runmodule);
-        return -1;
-    }
+    runargs = PyTuple_New(0);
     // This should result in sys.exit() rather than returning.
     result = PyObject_Call(runmodule, runargs, NULL);
+    Py_DECREF(runargs);
     if (result == NULL) {
         PyErr_Print();
     }

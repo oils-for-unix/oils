@@ -515,7 +515,7 @@ def main(argv):
 
 
 # Called from Python-2.7.13/Modules/main.c.
-def _cpython_main_hook(dummy1, dummy2):
+def _cpython_main_hook():
   main(sys.argv)
 
 
