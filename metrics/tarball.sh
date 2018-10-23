@@ -87,6 +87,4 @@ oil-tar-lines() {
   _tar-lines oil
 }
 
-if test $0 = $(basename $0); then
-  "$@"
-fi
+"$@"

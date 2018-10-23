@@ -86,6 +86,7 @@ OTHER SHELL SUBLANGUAGES
                   extglob       @(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
   [Brace Expand]  braces        {alice,bob}@example.com
+X [History]       histsub       !$  !!  ^foo^bar
 
 BUILTIN COMMANDS
   [I/O]           read   echo 
