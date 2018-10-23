@@ -326,9 +326,12 @@ class OilMethodFilter(object):
       if method_name not in ('displayhook', 'excepthook'):
         return False
 
+    # I don't understand when this object is used in CPython, but it's not used
+    # in Oil.
+    if basename == 'descrobject.c':
+      return False
+
     # TODO:
-    # - Also filter pop() and update() from setobject.c.  Those are used on
-    # dictionaries but not on sets (I think.)
     # - Remove ALL of proxy_methods from descrobject.c?
 
     # Try just filtering {time,pwd,posix}module.c, etc.

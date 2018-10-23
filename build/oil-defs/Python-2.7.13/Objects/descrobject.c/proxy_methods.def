@@ -1,11 +1,5 @@
 // Python-2.7.13/Objects/descrobject.c
 
 static PyMethodDef proxy_methods[] = {
-  {"get", (PyCFunction)proxy_get, METH_VARARGS},
-  {"keys", (PyCFunction)proxy_keys, METH_NOARGS},
-  {"values", (PyCFunction)proxy_values, METH_NOARGS},
-  {"items", (PyCFunction)proxy_items, METH_NOARGS},
-  {"itervalues", (PyCFunction)proxy_itervalues, METH_NOARGS},
-  {"iteritems", (PyCFunction)proxy_iteritems, METH_NOARGS},
   {0},
 };

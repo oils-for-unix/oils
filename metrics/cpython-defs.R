@@ -35,7 +35,8 @@ Report = function(ctx) {
   ctx$methods %>%
     filter(used == T) %>%
     mutate(basename=basename(file)) %>%
-    filter(basename != 'libc.c' & basename != 'fastlex.c') %>%
+    filter(basename != 'libc.c' & basename != 'fastlex.c' &
+           basename != 'setobject.c') %>%
     filter(py_method_name != '__length_hint__') %>%
     select(c(basename, py_method_name)) -> f3
   ShowFrame('Methods to reimplement:', f3)
