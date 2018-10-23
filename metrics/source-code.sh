@@ -224,7 +224,8 @@ _python-symbols() {
   mkdir -p $out_dir
   local out=${out_dir}/${name}-symbols.txt
 
-  CALLGRAPH=1 $main | tee $out
+  # Run this from the repository root.
+  PYTHONPATH=. CALLGRAPH=1 $main | tee $out
 
   wc -l $out
   echo 

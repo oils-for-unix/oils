@@ -282,13 +282,10 @@ class OilMethodFilter(object):
   def __call__(self, rel_path, def_name, method_name):
     basename = os.path.basename(rel_path) 
 
-    # Is this an optimization?  See Objects/abstract.c.
-    if method_name == '__length_hint__':
+    # enter/exit needed for 'with open'.  __length_hint__ is an optimization.
+    if method_name in ('__enter__', '__exit__', '__length_hint__'):
       return True
-
     # Notes:
-    # - We filtered out __enter__ and __exit__ on fileobject.c.  We're not
-    #   using "with" but it will be a problem if we do.
     # - __reduce__ and __setstate__ are for pickle.  And I think
     #   __getnewargs__.
     # - Do we need __sizeof__?  Is that for sys.getsizeof()?

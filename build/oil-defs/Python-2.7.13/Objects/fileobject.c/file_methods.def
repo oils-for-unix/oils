@@ -9,5 +9,7 @@ static PyMethodDef file_methods[] = {
   {"flush", (PyCFunction)file_flush, METH_NOARGS},
   {"close", (PyCFunction)file_close, METH_NOARGS},
   {"isatty", (PyCFunction)file_isatty, METH_NOARGS},
+  {"__enter__", (PyCFunction)file_self, METH_NOARGS},
+  {"__exit__", (PyCFunction)file_exit, METH_VARARGS},
   {0},
 };
