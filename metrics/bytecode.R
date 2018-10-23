@@ -89,18 +89,41 @@ Frames = function(ctx) {
   ShowFrame('Frames with many locals', f4)
 }
 
-Ops = function(ops) {
+# OpKind is FAST for LOAD_FAST, or SLICE for STORE_SLICE+1
+#
+# [,1] is the whole match, and [,2] is the first match.  Like $0 and $1 in
+# normal regexes.
+OpKind = function(op_name) {
+  # optional +1 suffix
+  str_match(op_name, '([A-Z]+)(?:\\+[0-9])?$')[,2]
+}
+
+Ops = function(ops, ops_defined = '_tmp/opcodes-defined.txt') {
   Banner('OPS')
 
   ops %>% count(op_name) %>% arrange(desc(n)) -> op_freq
 
-  op_freq %>% head(n=20) -> common
-  ShowFrame('Common:', common)
+  ShowFrame('Ops Used by Frequency', op_freq)
 
-  op_freq %>% tail(n=20) -> rare
-  ShowFrame('Rare:', rare)
+  u2 = ops %>% distinct(op_name) 
+  ShowValue('Total unique opcodes: %d', nrow(u2))
 
-  # Goal: get rid of IMPORT_STAR.
+  if (ops_defined != '') {
+    defined = read.table(ops_defined, header=F)
+    colnames(defined) = c('op_name')
+
+    setdiff(defined, u2) -> f4
+    ShowFrame('Unused opcodes:', f4)
+  }
+
+  op_freq %>%
+    filter(str_detect(op_name, 'LOAD|STORE|FAST')) %>%
+    mutate(kind = OpKind(op_name)) %>%
+    arrange(kind) %>%
+    select(kind, op_name, n) -> mem_ops
+  ShowFrame('Memory Operations:', mem_ops)
+
+  # NOTE: got rid of IMPORT_STAR!
   ops %>% filter(str_detect(op_name, 'IMPORT')) %>% count(op_name) -> imports
   ShowFrame('Imports:', imports)
 
@@ -146,7 +169,7 @@ Names = function(names) {
 # But there are 119 total opcodes.  A lot of the math ones are uncommon.
 
 # Written by opy/metrics.sh.  Could get rid of that file.
-UniqueOpsByFile = function(ops, ops_defined = '_tmp/opcodes-defined.txt') {
+UniqueOpsByFile = function(ops) {
   Banner('UNIQUE OPS')
 
   # This is a row for every path/op_name
@@ -165,20 +188,6 @@ UniqueOpsByFile = function(ops, ops_defined = '_tmp/opcodes-defined.txt') {
   ops %>% filter(grepl('reader|lex|parse', path)) %>% distinct(op_name) ->
     string_ops
   ShowValue('Unique opcodes for parsing: %d', nrow(string_ops))
-  
-  ops %>% count(op_name) %>% arrange(desc(n)) -> f4
-  ShowFrame('Ops Used by Frequency', f4)
-
-  u2 = ops %>% distinct(op_name) 
-  ShowValue('Total unique opcodes: %d', nrow(u2))
-
-  if (ops_defined != '') {
-    defined = read.table(ops_defined, header=F)
-    colnames(defined) = c('op_name')
-
-    setdiff(defined, u2) -> f4
-    ShowFrame('Unused opcodes:', f4)
-  }
 }
 
 # OPy emits 88 distinct opcodes out of 119.  Interesting.
