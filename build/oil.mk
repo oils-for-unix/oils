@@ -39,17 +39,14 @@ OIL_BYTECODE_DEPS := \
 # - Do we need $(OIL_SRCS) as dependencies?
 
 _build/oil/bytecode-cpython-manifest.txt: $(OIL_BYTECODE_DEPS) \
-                         _build/oil/app-deps-cpython.txt \
-                         _build/runpy-deps-cpython.txt
+                         _build/oil/app-deps-cpython.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
 	  cat build/oil-manifest.txt \
 	      _build/oil/app-deps-cpython.txt \
-	      _build/runpy-deps-cpython.txt; \
 	  $(ACTIONS_SH) quick-ref-manifest _devbuild/osh-quick-ref; \
 	  $(ACTIONS_SH) pyc-version-manifest $@; \
 	} > $@
 
-# NOTE: runpy deps are included in opy-app-deps.txt.
 _build/oil/bytecode-opy-manifest.txt: $(OIL_BYTECODE_DEPS) \
                          _build/oil/opy-app-deps.txt
 	{ echo '_build/release-date.txt release-date.txt'; \

@@ -36,10 +36,6 @@
 #   cpython-full/           # Full CPython build, for dynamically
 #                           # discovering Python/C dependencies
 #   c-module-toc.txt        # What files each module is in
-#   py-to-compile.txt
-#   runpy-deps-c.txt
-#   runpy-deps-cpython.txt
-#   runpy-deps-opy.txt
 #   oil/                    # App-specific dir
 #     py-to-compile.txt
 #     all-deps-py.txt       # input to compiler: _build/py-to-compile +

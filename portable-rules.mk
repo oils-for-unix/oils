@@ -35,15 +35,6 @@ _build/detected-config.sh:
 _build/c-module-toc.txt: build/c_module_toc.py
 	$(ACTIONS_SH) c-module-toc > $@
 
-# Python and C dependencies of runpy.
-# NOTE: This is done with a pattern rule because of the "multiple outputs"
-# problem in Make.
-_build/runpy-deps-%.txt: build/runpy_deps.py
-	$(ACTIONS_SH) runpy-deps _build
-
-_build/py-to-compile.txt: build/runpy_deps.py
-	$(ACTIONS_SH) runpy-py-to-compile > $@
-
 #
 # App-Independent Pattern Rules.
 #

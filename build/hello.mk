@@ -32,13 +32,11 @@ HELLO_BYTECODE_DEPS := \
 	build/testdata/hello-manifest.txt
 
 _build/hello/bytecode-cpython.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
-                           _build/hello/app-deps-cpython.txt \
-                           _build/runpy-deps-cpython.txt
+                           _build/hello/app-deps-cpython.txt
 	{ echo 'build/testdata/hello-version.txt hello-version.txt'; \
 	  echo '_build/release-date.txt release-date.txt'; \
 	  cat build/testdata/hello-manifest.txt \
 	      _build/hello/app-deps-cpython.txt \
-	      _build/runpy-deps-cpython.txt; \
 	} | build/make_zip.py $@
 
 _build/hello/bytecode-opy.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
