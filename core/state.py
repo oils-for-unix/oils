@@ -383,7 +383,8 @@ class DirStack(object):
     self.Reset()
 
   def Reset(self):
-    self.stack[:] = [posix.getcwd()]
+    del self.stack[:] 
+    self.stack.append(posix.getcwd())
 
   def Push(self, entry):
     self.stack.append(entry)
