@@ -329,6 +329,16 @@ Compare = function(cpython_ctx, opy_ctx) {
 
   ShowFrame('CPython', f2)
   ShowFrame('OPy', f3)
+
+  Banner('CLOSURE bytecodes')
+
+  cpython_ctx$ops %>%
+    filter(op_name %in% c('LOAD_CLOSURE', 'MAKE_CLOSURE')) -> f4
+  opy_ctx$ops %>%
+    filter(op_name %in% c('LOAD_CLOSURE', 'MAKE_CLOSURE')) -> f5
+
+  ShowFrame('CPython', f4)
+  ShowFrame('OPy', f5)
 }
 
 main = function(argv) {
