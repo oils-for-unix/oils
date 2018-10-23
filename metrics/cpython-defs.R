@@ -38,7 +38,8 @@ Report = function(ctx) {
     filter(basename != 'libc.c' & basename != 'fastlex.c' &
            basename != 'setobject.c') %>%
     filter(py_method_name != '__length_hint__') %>%
-    select(c(basename, py_method_name)) -> f3
+    select(c(basename, py_method_name)) %>% 
+    arrange(basename, py_method_name) -> f3
   ShowFrame('Methods to reimplement:', f3)
   ShowValue('Total: %d methods', nrow(f3))
 }

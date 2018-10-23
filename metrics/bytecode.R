@@ -13,7 +13,8 @@ source('benchmarks/common.R')
 
 options(stringsAsFactors = F,
         # Make the report wide.  tibble.width doesn't appear to do this?
-        width=200
+        width=200,
+        tibble.print_max=Inf
 )
 
 Basic = function(ctx) {
@@ -75,10 +76,10 @@ Consts = function(consts) {
 Frames = function(ctx) {
   Banner('FRAMES')
 
-  ctx$consts %>% count(path, code_name, sort=T) -> f1
+  ctx$consts %>% count(path, code_name, sort=T) %>% head(20) -> f1
   ShowFrame('Frames with many consts', f1)
 
-  ctx$ops %>% count(path, code_name, sort=T) -> f2
+  ctx$ops %>% count(path, code_name, sort=T) %>% head(20) -> f2
   ShowFrame('Frames with many ops', f2)
 
   ctx$frames %>% arrange(desc(stacksize)) %>% head(10) -> f3
@@ -120,12 +121,12 @@ Names = function(names) {
   Banner('NAMES')
 
   # Common types: free, cell, etc.
-  names %>% count(kind) %>% arrange(desc(n)) -> f1
+  names %>% count(kind) %>% arrange(desc(n)) %>% head(20) -> f1
   ShowFrame('Common types', f1)
 
   # Common names:
   # self, None, True, False, append, len
-  names %>% count(name) %>% arrange(desc(n)) -> f2
+  names %>% count(name) %>% arrange(desc(n)) %>% head(20) -> f2
   ShowFrame('Common names', f2)
 
   names %>% mutate(len=nchar(name)) -> all
@@ -165,6 +166,9 @@ UniqueOpsByFile = function(ops, ops_defined = '_tmp/opcodes-defined.txt') {
     string_ops
   ShowValue('Unique opcodes for parsing: %d', nrow(string_ops))
   
+  ops %>% count(op_name) %>% arrange(desc(n)) -> f4
+  ShowFrame('Ops Used by Frequency', f4)
+
   u2 = ops %>% distinct(op_name) 
   ShowValue('Total unique opcodes: %d', nrow(u2))
 
