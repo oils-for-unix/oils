@@ -110,6 +110,9 @@ osh-interactive() {
 help() {
   set +o errexit
 
+  # TODO: Test the oil.ovm binary as well as bin/oil.py.
+  export PYTHONPATH=.
+
   # Bundle usage.
   bin/oil.py --help
   assert $? -eq 0

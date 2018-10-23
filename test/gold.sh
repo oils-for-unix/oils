@@ -53,10 +53,10 @@ version-text() {
 
 # Uses {core,osh}/*.py
 count() {
-  _compare scripts/count.sh all
-  _compare scripts/count.sh parser
-  _compare scripts/count.sh parser-port
-  _compare scripts/count.sh runtime
+  _compare metrics/source-code.sh all
+  _compare metrics/source-code.sh parser
+  _compare metrics/source-code.sh parser-port
+  _compare metrics/source-code.sh runtime
 }
 
 # Uses $(cd $(dirname $0) && pwd)
@@ -96,7 +96,7 @@ comments() { _compare gold/comments.sh; }
 readonly_() { _compare gold/readonly.sh; }
 export-case() { _compare gold/export.sh; }
 glob() { _compare gold/glob.sh; }
-no-op() { _compare scripts/count.sh; }
+no-op() { _compare metrics/source-code.sh; }
 complex-here-docs() { _compare gold/complex-here-docs.sh; }
 
 strip-op-char-class() { _compare gold/strip-op-char-class.sh; }
