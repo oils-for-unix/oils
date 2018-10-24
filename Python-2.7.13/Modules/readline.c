@@ -666,6 +666,9 @@ contents of the line buffer.");
 
 /* Table of functions exported by the module */
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/readline.c/readline_methods.def"
+#else
 static struct PyMethodDef readline_methods[] = {
     {"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
     {"get_line_buffer", get_line_buffer, METH_NOARGS, doc_get_line_buffer},
@@ -712,6 +715,7 @@ static struct PyMethodDef readline_methods[] = {
 #endif
     {0, 0}
 };
+#endif
 
 
 /* C function to call the Python hooks. */

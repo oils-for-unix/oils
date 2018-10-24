@@ -230,6 +230,9 @@ resource_getpagesize(PyObject *self, PyObject *unused)
 
 /* List of functions */
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/resource.c/resource_methods.def"
+#else
 static struct PyMethodDef resource_methods[] = {
     {"getrusage",    resource_getrusage,   METH_VARARGS},
     {"getrlimit",    resource_getrlimit,   METH_VARARGS},
@@ -237,6 +240,7 @@ static struct PyMethodDef resource_methods[] = {
     {"getpagesize",  resource_getpagesize, METH_NOARGS},
     {NULL, NULL}                             /* sentinel */
 };
+#endif
 
 
 /* Module initialization */

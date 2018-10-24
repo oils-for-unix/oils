@@ -194,7 +194,12 @@ edit-file() {
 edit-all() {
   # Reversed so that edits to the same file work!  We are always inserting
   # lines.
-  tac $BASE_DIR/method-edit-list.txt | xargs -n 4 -- $0 edit-file
+  #tac $BASE_DIR/method-edit-list.txt | xargs -n 4 -- $0 edit-file
+
+  # One-off editing
+	grep typeobject.c $BASE_DIR/method-edit-list.txt \
+    | tac | xargs -n 4 -- $0 edit-file
+
 }
 
 extract-types() {

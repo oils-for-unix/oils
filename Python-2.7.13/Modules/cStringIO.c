@@ -508,6 +508,9 @@ O_writelines(Oobject *self, PyObject *args) {
 
     Py_RETURN_NONE;
 }
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/cStringIO.c/O_methods.def"
+#else
 static struct PyMethodDef O_methods[] = {
   /* Common methods: */
   {"flush",     (PyCFunction)IO_flush,    METH_NOARGS,  IO_flush__doc__},
@@ -527,6 +530,7 @@ static struct PyMethodDef O_methods[] = {
   {"writelines", (PyCFunction)O_writelines, METH_O,       O_writelines__doc__},
   {NULL,         NULL}          /* sentinel */
 };
+#endif
 
 static PyMemberDef O_memberlist[] = {
     {"softspace",       T_INT,  offsetof(Oobject, softspace),   0,
@@ -615,6 +619,9 @@ I_close(Iobject *self, PyObject *unused) {
     return Py_None;
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/cStringIO.c/I_methods.def"
+#else
 static struct PyMethodDef I_methods[] = {
   /* Common methods: */
   {"flush",     (PyCFunction)IO_flush,    METH_NOARGS,  IO_flush__doc__},
@@ -632,6 +639,7 @@ static struct PyMethodDef I_methods[] = {
   {"close",     (PyCFunction)I_close,    METH_NOARGS,  O_close__doc__},
   {NULL,        NULL}
 };
+#endif
 
 static void
 I_dealloc(Iobject *self) {
@@ -724,11 +732,15 @@ IO_StringIO(PyObject *self, PyObject *args) {
 
 /* List of methods defined in the module */
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/cStringIO.c/IO_methods.def"
+#else
 static struct PyMethodDef IO_methods[] = {
   {"StringIO",  (PyCFunction)IO_StringIO,
    METH_VARARGS,        IO_StringIO__doc__},
   {NULL,                NULL}           /* sentinel */
 };
+#endif
 
 
 /* Initialization function for the module (*must* be called initcStringIO) */
