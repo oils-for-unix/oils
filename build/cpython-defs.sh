@@ -293,7 +293,7 @@ show-oil() {
 methods-audit() {
   mkdir -p $METRICS_DIR
   cat $BASE_DIR/preprocessed.txt | cpython-defs audit $PY_NAMES \
-    | grep $'\t\t' | tee _tmp/methods.txt
+    | tee _tmp/methods.txt
 
   wc -l _tmp/methods.txt
 }

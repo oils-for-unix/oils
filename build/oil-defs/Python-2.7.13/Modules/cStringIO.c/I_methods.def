@@ -6,11 +6,7 @@ static PyMethodDef I_methods[] = {
   {"isatty", (PyCFunction)IO_isatty, METH_NOARGS},
   {"read", (PyCFunction)IO_read, METH_VARARGS},
   {"readline", (PyCFunction)IO_readline, METH_VARARGS},
-  {"readlines", (PyCFunction)IO_readlines, METH_VARARGS},
-  {"reset", (PyCFunction)IO_reset, METH_NOARGS},
   {"seek", (PyCFunction)IO_seek, METH_VARARGS},
-  {"tell", (PyCFunction)IO_tell, METH_NOARGS},
-  {"truncate", (PyCFunction)IO_truncate, METH_VARARGS},
   {"close", (PyCFunction)I_close, METH_NOARGS},
   {0},
 };

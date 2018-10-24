@@ -209,9 +209,11 @@ def PrettyPrint(rel_path, def_name, entries, predicate, f, stats):
       stats['num_filtered'] += 1
       continue
 
+    # Reprint the definition, but omit the docstring.
     out('  {"%s", ', entry_name)
-    # Strip off the docstring.
-    out(', '.join(vals[:-1]))
+    out(vals[0])  # The C function
+    out(', ')
+    out(vals[1])  # The flags
     out('},\n')
   out('};\n')
 
@@ -247,6 +249,7 @@ MODULES_TO_FILTER = [
 
     # "Data types"
     #'boolobject.c',  # No defs
+    'cStringIO.c',
     'dictobject.c',
     'fileobject.c',
     'floatobject.c',
@@ -269,6 +272,8 @@ MODULES_TO_FILTER = [
     'fcntlmodule.c',
     'posixmodule.c',
     'pwdmodule.c',
+    'readline.c',
+    'resource.c',
     'signalmodule.c',
     'timemodule.c',
 ]
@@ -378,9 +383,6 @@ def main(argv):
     files = p.ParseStream()
     for rel_path, defs in files:
       basename = os.path.basename(rel_path)
-      # We will implement a shim for set(), using dict.
-      if basename in ('libc.c', 'fastlex.c', 'setobject.c'):
-        continue
 
       print(rel_path)
       for def_name, entries in defs:
@@ -388,11 +390,9 @@ def main(argv):
         for method_name, vals in entries:
           if method_name is None:
             continue
-          if method_name in ('__length_hint__',):
-            continue
           if not method_filter(rel_path, def_name, method_name):
             continue
-          print('\t\t' + method_name)
+          print('\t\t%s %s' % (method_name, vals))
 
   elif action == 'filter':  # for slimming the build down
     out_dir = argv[3]

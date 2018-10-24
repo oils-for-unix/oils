@@ -1,9 +1,6 @@
 // Python-2.7.13/Modules/resource.c
 
 static PyMethodDef resource_methods[] = {
-  {"getrusage", resource_getrusage},
-  {"getrlimit", resource_getrlimit},
-  {"setrlimit", resource_setrlimit},
-  {"getpagesize", resource_getpagesize},
+  {"getrusage", resource_getrusage, METH_VARARGS},
   {0},
 };
