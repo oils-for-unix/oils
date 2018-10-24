@@ -174,19 +174,6 @@ class Pool(object):
     self.arenas.append(a)
     return a
 
-  def DestroyLastArena(self):
-    """
-    Free everything in the last arena (possibly reusing it).  This is done
-    after we executed all of its statements if there were no function
-    definitions that need to be executed later.
-    """
-    a = self.arenas.pop()
-    # This removes lines and spans?
-    del a
-
-  def IsComplete(self):
-    """Return whether we have one arena that was never destroyed?"""
-
 
 # TODO: Also need arena_id
 
