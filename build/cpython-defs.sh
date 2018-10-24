@@ -62,14 +62,14 @@ extract-methods() {
 
   # NOTE: PyMemberDef is also interesting, but we don't need it for the build.
   gawk -v path_prefix_length=${#path_prefix} -v edit_list=$edit_list '
-  /static PyMethodDef/ {
+  /static.*PyMethodDef/ {
     if (printing != 0) {
       printf("%s:%d Expected not to be printing\n", FILENAME, FNR) > "/dev/stderr";
       exit 1;
     }
     # NOTE: We had to adjust stringobject.c and _weakref.c so that the name is
     # on one line!  Not a big deal.
-    if (match($0, /static PyMethodDef ([a-zA-Z0-9_]+)\[\]/, m)) {
+    if (match($0, /static.*PyMethodDef ([a-zA-Z0-9_]+)\[\]/, m)) {
       def_name = m[1];
     } else {
       printf("%s:%d Could not parse declaration name\n",

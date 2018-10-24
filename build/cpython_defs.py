@@ -18,7 +18,7 @@ C_DEF = [
   R(r'[ \t\n]+', 'Whitespace'),
 
   # This could be more space-insensitive.
-  R(r'static PyMethodDef[ \n]+(.*)\[\] = ', 'BeginDef'),
+  R(r'static.*PyMethodDef (.*)\[\] = ', 'BeginDef'),
   C(r'{', 'LBrace'),
   C(r'}', 'RBrace'),
   C(r',', 'Comma'),

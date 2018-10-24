@@ -666,8 +666,7 @@ contents of the line buffer.");
 
 /* Table of functions exported by the module */
 
-static struct PyMethodDef readline_methods[] =
-{
+static struct PyMethodDef readline_methods[] = {
     {"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
     {"get_line_buffer", get_line_buffer, METH_NOARGS, doc_get_line_buffer},
     {"insert_text", insert_text, METH_VARARGS, doc_insert_text},

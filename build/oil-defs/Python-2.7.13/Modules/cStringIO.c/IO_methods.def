@@ -1,0 +1,6 @@
+// Python-2.7.13/Modules/cStringIO.c
+
+static PyMethodDef IO_methods[] = {
+  {"StringIO", (PyCFunction)IO_StringIO, METH_VARARGS},
+  {0},
+};

@@ -230,8 +230,7 @@ resource_getpagesize(PyObject *self, PyObject *unused)
 
 /* List of functions */
 
-static struct PyMethodDef
-resource_methods[] = {
+static struct PyMethodDef resource_methods[] = {
     {"getrusage",    resource_getrusage,   METH_VARARGS},
     {"getrlimit",    resource_getrlimit,   METH_VARARGS},
     {"setrlimit",    resource_setrlimit,   METH_VARARGS},
