@@ -237,6 +237,18 @@ gold() {
   done
 }
 
+compile-with-cpython() {
+  local path=${1:-gold/with_statement.py}
+  local pyc=${path}c
+  rm --verbose -f $pyc
+  pushd $(dirname $path)
+  python -c "import $(basename $path .py)"
+  popd
+  ls -l $pyc
+
+  ../bin/opyc dis $pyc
+}
+
 #
 # Fibonacci test
 #

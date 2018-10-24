@@ -809,6 +809,13 @@ class CodeGenerator(ASTVisitor):
         self.emit('SETUP_FINALLY', final)
         self.nextBlock(body)
         self.setups.push((TRY_FINALLY, body))
+
+        # TODO: This is buggy:
+        # - It generates LOAD_FAST and DELETE_FAST in bin/oil.py.
+        # The self.visit does nothing -- there are never any statements in between.
+        # - I think WITH_CLEANUP pops a block so this is # OK.
+        # - It never emits SETUP_WITH!  Doh!
+
         if node.vars is not None:
             self._implicitNameOp('LOAD', valuevar)
             self._implicitNameOp('DELETE', valuevar)
