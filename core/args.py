@@ -493,13 +493,15 @@ class BuiltinFlags(object):
 
     while not arg_r.AtEnd():
       arg = arg_r.Peek()
-      if arg.startswith('-') and len(arg) > 1:
-        if not all(c in self.arity0 for c in arg[1:]):
+      chars = arg[1:]
+      if arg.startswith('-') and chars:
+        # Check if it looks like -en or not.
+        # NOTE: Changed to list comprehension to avoid
+        # LOAD_CLOSURE/MAKE_CLOSURE.  TODO: Restore later?
+        if not all([c in self.arity0 for c in arg[1:]]):
           break  # looks like args
 
-        n = len(arg)
-        for i in xrange(1, n):
-          char = arg[i]
+        for char in chars:
           action = self.arity0[char]
           action.OnMatch(None, None, arg_r, out)
 

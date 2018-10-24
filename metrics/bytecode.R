@@ -339,6 +339,22 @@ Compare = function(cpython_ctx, opy_ctx) {
 
   ShowFrame('CPython', f4)
   ShowFrame('OPy', f5)
+
+  Banner('Rare bytecodes')
+
+  cpython_ctx$ops %>% filter(op_name == 'DELETE_FAST') -> f6
+  ShowFrame('DELETE_FAST in CPython', f6)
+
+  opy_ctx$ops %>% filter(op_name == 'DELETE_FAST') -> f7
+  ShowFrame('DELETE_FAST in OPy', f7)
+
+  # These are all for the global util.GetResourceLoader().
+  opy_ctx$ops %>% filter(op_name == 'STORE_GLOBAL') -> f8
+  ShowFrame('STORE_GLOBAL in OPy', f8)
+
+  # In asdl/unpickle.py.
+  opy_ctx$ops %>% filter(op_name == 'STORE_SLICE+1') -> f9
+  ShowFrame('STORE_SLICE+1 in OPy', f9)
 }
 
 main = function(argv) {

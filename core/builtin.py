@@ -574,8 +574,10 @@ def _PrintDirStack(dir_stack, style, home_dir):
       print(_FormatDir(entry, home_dir))
 
   elif style == SINGLE_LINE:
-    print(' '.join(_FormatDir(entry, home_dir)
-        for entry in dir_stack.Iter()))
+    # NOTE: Changed to list comprehension to avoid LOAD_CLOSURE/MAKE_CLOSURE.
+    # TODO: Restore later?
+    print(
+        ' '.join([_FormatDir(entry, home_dir) for entry in dir_stack.Iter()]))
 
   sys.stdout.flush()
 
