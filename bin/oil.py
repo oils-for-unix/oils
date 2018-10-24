@@ -46,16 +46,11 @@ else:
 _tlog('before imports')
 
 import errno
-#import traceback  # for debugging
-
-# Set in Modules/main.c.
-HAVE_READLINE = posix.environ.get('_HAVE_READLINE') != ''
-
-from osh import parse_lib
 
 from core import alloc
 from core import args
 from core import builtin
+from core import comp_builtins
 from core import completion
 from core import cmd_exec
 from core import dev
@@ -69,14 +64,18 @@ from core import word_eval
 from core import ui
 from core import util
 
-if HAVE_READLINE:
-  import readline
-else:
-  readline = None
+from osh import parse_lib
 
 from tools import deps
 from tools import osh2oil
 from tools import readlink
+
+# Set in Modules/main.c.
+HAVE_READLINE = posix.environ.get('_HAVE_READLINE') != ''
+if HAVE_READLINE:
+  import readline
+else:
+  readline = None
 
 log = util.log
 
@@ -85,6 +84,22 @@ _tlog('after imports')
 
 def _ShowVersion():
   util.ShowAppVersion('Oil')
+
+
+def _InitDefaultCompletions(ex, comp_lookup):
+  # register builtins and words
+  comp_builtins.Complete(['-E', '-A', 'command'], ex, comp_lookup)
+  # register path completion
+  comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
+
+  # TODO: Move this into demo/slow-completion.sh
+  if 1:
+    # Something for fun, to show off.  Also: test that you don't repeatedly hit
+    # the file system / network / coprocess.
+    A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
+    A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
+    C1 = completion.ChainedCompleter([A1, A2])
+    comp_lookup.RegisterName('slowc', C1)
 
 
 OSH_SPEC = args.FlagsAndOptions()
@@ -241,21 +256,7 @@ def OshMain(argv0, argv, login_shell):
       root_comp = completion.RootCompleter(ev, comp_lookup, var_action,
                                            parse_ctx, progress_f, debug_f)
       completion.Init(readline, root_comp, debug_f)
-
-      from core import comp_builtins
-      # register builtins and words
-      comp_builtins.Complete(['-E', '-A', 'command'], ex, comp_lookup)
-      # register path completion
-      comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
-
-      # TODO: Move this into demo/slow-completion.sh
-      if 1:
-        # Something for fun, to show off.  Also: test that you don't repeatedly hit
-        # the file system / network / coprocess.
-        A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-        A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
-        C1 = completion.ChainedCompleter([A1, A2])
-        comp_lookup.RegisterName('slowc', C1)
+      _InitDefaultCompletions(ex, comp_lookup)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 
