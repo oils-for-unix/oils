@@ -115,6 +115,8 @@ class Scope(object):
         #    return x + inc  # x is a local, inc is a free var?
         #  return Adder
         """
+        # TODO: Fix this calculation!
+
         if not self.nested:
             return []
         free = set()

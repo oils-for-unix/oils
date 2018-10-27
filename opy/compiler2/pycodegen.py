@@ -589,6 +589,8 @@ class CodeGenerator(ASTVisitor):
         ArgEncoder calls MakeCodeObject on it.  There are a few instructions
         afterward, so I guess we can't do that here?
         """
+        # NOTE: This scope analysis must be wrong, because we are outputting
+        # LOAD_CLOSURE.
         frees = gen.scope.get_free_vars()
 
         # Recursive call!

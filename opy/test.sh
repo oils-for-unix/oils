@@ -222,7 +222,10 @@ opy-speed-test() {
   time opyc-run _tmp/speed_main.pyc $n
 }
 
+# Compare execution.
+# Although some of these are mostly there for disassembly.
 gold() {
+  set +o errexit
   for script in gold/*.py; do
 
     $script > _tmp/gold-cpython.txt 2>&1
