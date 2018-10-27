@@ -9,11 +9,5 @@ LOAD_CLOSURE or MAKE_CLOSURE bytecodes.
 #
 # In CPython that list is empty.
 def BraceExpandWords(words):
-  out = []
-  for w in words:
-    if w.tag == word_e.BracedWordTree:
-      parts_list = _BraceExpand(w.parts)
-      out.extend(ast.CompoundWord(p) for p in parts_list)
-    else:
-      out.append(w)
-  return out
+  parts_list = []
+  print(p for p in parts_list)

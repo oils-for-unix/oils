@@ -186,5 +186,9 @@ opy-bin() {
   popd >/dev/null
 }
 
+astgen() {
+  tools/astgen.py tools/ast.txt > compiler2/ast.py
+}
+
 "$@"
 

@@ -237,11 +237,13 @@ class Visitor(object):
         value = "0x(%s)" % to_hexstr(value)
       print("%s%s%s" % (indent, (name+":").ljust(NAME_OFFSET), value))
 
-    print("%sco_consts" % indent)
-    self.show_consts(code.co_consts, level=level+1)
-
+    # Show bytecode FIRST, and then consts.  There is nested bytecode in the
+    # consts, so it's a 'top-down' order.
     print("%sco_code" % indent)
     self.show_bytecode(code, level=level+1)
+
+    print("%sco_consts" % indent)
+    self.show_consts(code.co_consts, level=level+1)
 
   def Visit(self, f):
     """Write a readable listing of a .pyc file to stdout."""

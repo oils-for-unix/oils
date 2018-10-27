@@ -276,6 +276,8 @@ class CodeGenerator(ASTVisitor):
         frame.setArgs(node.argnames)
         graph = pyassem.FlowGraph()
 
+        # NOTE: This is a new CodeGenerator instance because each function has
+        # its own scope.
         gen = FunctionCodeGenerator(self.ctx, frame, graph, node,
                                     self.class_name)
 

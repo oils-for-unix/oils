@@ -82,6 +82,12 @@ UnaryAdd: expr
 UnarySub: expr
 Invert: expr
 
+# NOTE: Added these for OPy.  Upstream Python's ast.txt apparently got out of
+# sync with ast.py.
+DictComp: key, value, quals!
+SetComp: expr, quals!
+Set: nodes!
+
 init(Function):
     self.varargs = self.kwargs = None
     if flags & CO_VARARGS:
