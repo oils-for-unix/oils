@@ -161,9 +161,10 @@ readonly HAVE_ROOT=1
 readonly -a OTHER_TESTS=(
   gold 
   osh2oil 
-  osh-usage oshc-deps
-  arena
   parse-errors runtime-errors
+  arena
+  osh-usage oshc-deps
+  opyc
 )
 
 run-other-tests() {

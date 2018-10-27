@@ -75,10 +75,11 @@ More tests:
 - [parse-errors](test/other.wwz/parse-errors.txt).  A list of all parse errors.
 - [runtime-errors](test/other.wwz/runtime-errors.txt).  A list of all runtime
   errors.
+- [arena](test/other.wwz/arena.txt).  Testing an invariant for the parser.
 - [osh-usage](test/other.wwz/osh-usage.txt).  Misc tests of the `osh` binary.
 - [oshc-deps](test/other.wwz/oshc-deps.txt).  Tests for a subcommand in
   progress.
-- [arena](test/other.wwz/arena.txt).  Testing an invariant for the parser.
+- [opyc](test/other.wwz/opyc.txt).  Tests for the opyc tool.
 
 ### OPy Tests
 
