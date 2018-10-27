@@ -31,6 +31,8 @@ Oil Version 0.6.pre8
     type of source file.
   - [parser](metrics.wwz/line-counts/parser.txt).  How big is the parser?
   - [runtime](metrics.wwz/line-counts/runtime.txt).  How big is the runtime?
+  - [OPy](metrics.wwz/line-counts/opy.txt).  How much code is in the OPy
+    toolchain?
 - Lines of dependencies:
   - [pydeps](metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
     standard library.

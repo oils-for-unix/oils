@@ -678,7 +678,7 @@ compress-benchmarks() {
 }
 
 line-counts() {
-  local out=$1
+  local out=$1  # should be an absolute path
   mkdir -p $out
 
   # Counting directly from the build.
@@ -693,13 +693,18 @@ line-counts() {
   metrics/source-code.sh runtime > $out/runtime.txt
 
   metrics/source-code.sh oil-osh-cloc > $out/oil-osh-cloc.txt
+
+  local opy_out=$out/opy.txt
+  pushd opy
+  ./count.sh all > $opy_out
+  popd
 }
 
 metrics() {
   local out=_tmp/metrics
   mkdir -p $out
 
-  line-counts $out/line-counts
+  line-counts $PWD/$out/line-counts
 
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
