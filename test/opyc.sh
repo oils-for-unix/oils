@@ -22,6 +22,10 @@ ast() {
   bin/opyc ast $FILE
 }
 
+symbols() {
+  bin/opyc symbols $FILE
+}
+
 cfg() {
   bin/opyc cfg $FILE
 }
@@ -43,6 +47,7 @@ help() {
 readonly -a PASSING=(
   lex
   ast
+  symbols
   cfg
   run
   dis

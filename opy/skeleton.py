@@ -2,6 +2,7 @@
 """
 skeleton.py: The compiler pipeline.
 """
+from __future__ import print_function
 
 import cStringIO
 
@@ -16,6 +17,17 @@ from .compiler2 import ovm_codegen
 from .compiler2 import syntax
 from .compiler2 import symbols
 from .compiler2 import transformer
+
+
+
+def _PrintScopes(scopes):
+  # This is already flattened out.
+  for node, scope in scopes.iteritems():
+    print(scope)
+    scope.DebugDump()
+    print()
+    #for c in scope.children:
+    #  print(c)
 
 
 class _ModuleContext(object):
@@ -62,7 +74,6 @@ class StringInput(object):
 
   def close(self):
     return self.f.close()
-    
 
 
 class ParseMode(object):
@@ -122,6 +133,10 @@ def Compile(f, opt, gr, mode, print_action=None):
 
   s = symbols.SymbolVisitor()
   s.Dispatch(as_tree)
+
+  if print_action == 'symbols':
+      _PrintScopes(s.scopes)
+      return
 
   graph = pyassem.FlowGraph()  # Mutated by code generator
 

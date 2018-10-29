@@ -232,8 +232,8 @@ def OpyCommandMain(argv):
                    # That will shift the input.
 
   if action in (
-      'parse', 'compile', 'dis', 'ast', 'cfg', 'compile-ovm', 'eval', 'repl',
-      'run', 'run-ovm'):
+      'parse', 'compile', 'dis', 'ast', 'symbols', 'cfg', 'compile-ovm',
+      'eval', 'repl', 'run', 'run-ovm'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -329,6 +329,12 @@ def OpyCommandMain(argv):
     py_path = argv[i]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='ast')
+
+  elif action == 'symbols':  # output symbols
+    opt, i = compile_spec.Parse(argv)
+    py_path = argv[i]
+    with open(py_path) as f:
+      graph = compiler.Compile(f, opt, 'exec', print_action='symbols')
 
   elif action == 'cfg':  # output Control Flow Graph
     opt, i = compile_spec.Parse(argv)

@@ -48,7 +48,7 @@ class Scope(object):
         return "<%s: %s>" % (self.__class__.__name__, self.name)
 
     def DebugDump(self):
-        print(self.name, self.nested and "nested" or "", file=sys.stderr)
+        print(self.name, 'nested' if self.nested else '', file=sys.stderr)
         print("\tglobals: ", self.globals, file=sys.stderr)
         print("\tcells: ", self.cells, file=sys.stderr)
         print("\tdefs: ", self.defs, file=sys.stderr)
