@@ -10,4 +10,4 @@ LOAD_CLOSURE or MAKE_CLOSURE bytecodes.
 # In CPython that list is empty.
 def BraceExpandWords(words):
   parts_list = []
-  print(p for p in parts_list)
+  print(p for p in parts_list if len(p) > 2)

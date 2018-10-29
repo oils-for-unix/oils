@@ -45,15 +45,18 @@ class Scope(object):
             self.klass = klass.lstrip('_')
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.name)
+        n = '(nested)' if self.nested else ''
+        return "<%s: %s> %s" % (self.__class__.__name__, self.name, n)
 
-    def DebugDump(self):
-        print(self.name, 'nested' if self.nested else '', file=sys.stderr)
-        print("\tglobals: ", self.globals, file=sys.stderr)
-        print("\tcells: ", self.cells, file=sys.stderr)
-        print("\tdefs: ", self.defs, file=sys.stderr)
-        print("\tuses: ", self.uses, file=sys.stderr)
-        print("\tfrees:", self.frees, file=sys.stderr)
+    def PrettyPrint(self):
+        def p(s):
+          return ' '.join(sorted(s))
+        print(repr(self))
+        print("\tglobals: ", p(self.globals))
+        print("\tcells: ", p(self.cells))
+        print("\tdefs: ", p(self.defs))
+        print("\tuses: ", p(self.uses))
+        print("\tfrees:", p(self.frees))
 
     def mangle(self, name):
         return misc.mangle(name, self.klass)
@@ -248,12 +251,20 @@ class SymbolVisitor(ASTVisitor):
 
     def visitGenExpr(self, node, parent):
         obj_name = "generator expression<%d>" % gGenExprCounter.next()
+
+        # BUG FIX: These name references happen OUTSIDE the GenExprScope!
+        # NOTE: I can see the difference with 'opyc symbols', but somehow I
+        # can't construct a difference in the executed code (opyc dis).
+        for genfor in node.code.quals:
+            self.visit(genfor.iter, parent)
+
         scope = GenExprScope(obj_name, self.module, self.klass)
 
         if parent.nested or isinstance(parent, (FunctionScope, GenExprScope)):
             scope.nested = 1
 
         self.scopes[node] = scope
+
         self.visit(node.code, scope)
 
         self.handle_free_vars(scope, parent)
@@ -266,7 +277,19 @@ class SymbolVisitor(ASTVisitor):
 
     def visitGenExprFor(self, node, scope):
         self.visit(node.assign, scope, 1)
-        self.visit(node.iter, scope)
+
+        # BUG FIX: node.iter contains a Name() node for the iterable variable.
+        # But it is not really used -- an ITERABLE to it is passed to the
+        # generator CodeObject instead!
+
+        # That is, in each of these cases, we are using the GET_ITER bytecode, then
+        # CALL_FUNCTION to pass it in to the generator.
+        # print(x for x in nums) 
+        # print(x for x in range(3))
+        # print(x for x in [1,2,3])
+
+        #self.visit(node.iter, scope)
+
         for if_ in node.ifs:
             self.visit(if_, scope)
 

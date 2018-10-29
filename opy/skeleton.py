@@ -23,8 +23,7 @@ from .compiler2 import transformer
 def _PrintScopes(scopes):
   # This is already flattened out.
   for node, scope in scopes.iteritems():
-    print(scope)
-    scope.DebugDump()
+    scope.PrettyPrint()
     print()
     #for c in scope.children:
     #  print(c)
