@@ -235,8 +235,8 @@ def OpyCommandMain(argv):
                    # That will shift the input.
 
   if action in (
-      'parse', 'compile', 'dis', 'cfg', 'compile-ovm', 'eval', 'repl', 'run',
-      'run-ovm'):
+      'parse', 'compile', 'dis', 'ast', 'cfg', 'compile-ovm', 'eval', 'repl',
+      'run', 'run-ovm'):
     loader = util.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -327,13 +327,17 @@ def OpyCommandMain(argv):
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
 
+  elif action == 'ast':  # output AST
+    opt, i = compile_spec.Parse(argv)
+    py_path = argv[i]
+    with open(py_path) as f:
+      graph = compiler.Compile(f, opt, 'exec', print_action='ast')
+
   elif action == 'cfg':  # output Control Flow Graph
     opt, i = compile_spec.Parse(argv)
     py_path = argv[i]
     with open(py_path) as f:
-      graph = compiler.Compile(f, opt, 'exec', return_cfg=True)
-
-    print(graph)
+      graph = compiler.Compile(f, opt, 'exec', print_action='cfg')
 
   elif action == 'compile':  # 'opyc compile' is pgen2 + compiler2
     # spec.Arg('action', ['foo', 'bar'])

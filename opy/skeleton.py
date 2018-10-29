@@ -81,7 +81,7 @@ class Compiler(object):
     return Compile(f, opt, self.gr, *args, **kwargs)
 
 
-def Compile(f, opt, gr, mode, return_cfg=False):
+def Compile(f, opt, gr, mode, print_action=None):
   """Run the full compiler pipeline.
 
   Args:
@@ -90,8 +90,8 @@ def Compile(f, opt, gr, mode, return_cfg=False):
     gr: Grammar
     start_symbol: name of the grammar start symbol
     mode: 'exec', 'eval', or 'single', like Python's builtin compile()
-    return_cfg: A little hack to stop at the CFG stage
-    opt: Command lien flags
+    print_action: 'ast' or 'cfg'.  Print an intermediate representation.
+    opt: Command line flags
   """
   filename = f.name
 
@@ -111,6 +111,10 @@ def Compile(f, opt, gr, mode, return_cfg=False):
 
   tr = transformer.Transformer()
   as_tree = tr.transform(parse_tree)
+
+  if print_action == 'ast':
+      print(as_tree)
+      return
 
   # NOTE: This currently does nothing!
   v = syntax.SyntaxErrorChecker()
@@ -157,8 +161,9 @@ def Compile(f, opt, gr, mode, return_cfg=False):
   gen.Dispatch(as_tree)  # mutates graph
   gen.Finish()
 
-  if return_cfg:
-      return graph
+  if print_action == 'cfg':
+      print(graph)
+      return
 
   co = pyassem.MakeCodeObject(frame, graph, opt)
 

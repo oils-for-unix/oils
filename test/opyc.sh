@@ -18,6 +18,19 @@ lex() {
   bin/opyc lex $FILE
 }
 
+ast() {
+  bin/opyc ast $FILE
+}
+
+cfg() {
+  bin/opyc cfg $FILE
+}
+
+# This should be tested by opy/test.sh gold
+run() {
+  bin/opyc run opy/gold/fib_recursive.py
+} 
+
 dis() {
   bin/opyc dis $FILE
 }
@@ -27,15 +40,12 @@ help() {
   bin/opyc --help
 }
 
-# This should be tested by opy/test.sh gold
-run() {
-  bin/opyc run opy/gold/fib_recursive.py
-} 
-
 readonly -a PASSING=(
   lex
-  dis
+  ast
+  cfg
   run
+  dis
 )
 
 all-passing() {
