@@ -214,9 +214,6 @@ def Options():
   return p
 
 
-# TODO: more actions:
-# - lex, parse, ast, compile/eval/repl
-
 # Made by the Makefile.
 PICKLE_REL_PATH = '_build/opy/py27.grammar.pickle'
 
