@@ -255,6 +255,10 @@ class SymbolVisitor(ASTVisitor):
         # BUG FIX: These name references happen OUTSIDE the GenExprScope!
         # NOTE: I can see the difference with 'opyc symbols', but somehow I
         # can't construct a difference in the executed code (opyc dis).
+
+        # NOTE: This should probably just be quals[0] like visitGenExpr() in
+        # pycodegen.py: "precomputation of outmost iterable".
+        # TODO: Test it out with gold/genexpr_nested.py.
         for genfor in node.code.quals:
             self.visit(genfor.iter, parent)
 
