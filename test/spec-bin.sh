@@ -1,13 +1,21 @@
 #!/bin/bash
 #
-# Build binaries for the spec tests.
-#
-# TODO:
-# - coreutils
-# - re2c for the OSH build
+# Build binaries for the spec tests.  This is necessary because they tickle
+# behavior in minor versions of each shell.
 #
 # Usage:
 #   ./spec-bin.sh <function name>
+#
+# Instructions:
+#   test/spec-bin.sh download     # Get the right version of every tarball
+#   test/spec-bin.sh extract-all  # Extract source
+#   test/spec-bin.sh build-all    # Compile
+#   test/spec-bin.sh copy-all     # Put them in _tmp/spec-bin
+#   test/spec-bin.sh test-all     # Run a small smoke test
+#
+# Could also build these:
+# - coreutils
+# - re2c for the OSH build (now in build/codegen.sh)
 
 set -o nounset
 set -o pipefail
@@ -16,6 +24,7 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly DIR=$THIS_DIR/../_tmp/spec-bin
 
+# The authoritative versions!
 download() {
   mkdir -p $DIR
   wget --no-clobber --directory $DIR \
