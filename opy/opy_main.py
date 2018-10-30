@@ -29,6 +29,9 @@ from .byterun import ovm
 
 from core import args
 from core import util
+
+from ovm import oheap2
+
 log = util.log
 
 
@@ -367,9 +370,15 @@ def OpyCommandMain(argv):
     py_path = argv[i]
     out_path = argv[i+1]
 
-    # Compile to OVM bytecode
+    # Compile to Python bytecode (TODO: remove ovm_codegen.py)
+    mode = 'exec'
     with open(py_path) as f:
-      co = compiler.Compile(f, opt, 'ovm')
+      co = compiler.Compile(f, opt, mode)
+
+    if 1:
+      with open(out_path, 'wb') as out_f:
+        oheap2.Write(co, out_f)
+      return 0
 
     log("Compiled to %d bytes of top-level bytecode", len(co.co_code))
     # Write the .pyc file

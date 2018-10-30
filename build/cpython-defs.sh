@@ -149,7 +149,10 @@ filter-methods() {
   #head -n 30 $tmp
   cat $tmp/preprocessed.txt | cpython-defs filter $PY_NAMES $out_dir
 
-  wc -l $tmp/*/*.defs
+  echo
+  find $out_dir -name '*.def' | xargs wc -l | sort -n
+
+  echo
   wc -l $tmp/*.txt
 
   # syntax check

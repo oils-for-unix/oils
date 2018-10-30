@@ -9,7 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly FIB_I=opy/gold/fib_iterative.py 
+readonly FIB_I='opy/gold/fib_iterative.py'
+readonly FIB_R='opy/gold/fib_recursive.py'
 
 fib-dis() {
   local py=${1:-opy/gold/fib_iterative.py}
@@ -21,14 +22,19 @@ fib-cfg() {
   bin/opyc cfg $FIB_I
 }
 
+gen-opcodes() {
+  local out=_tmp/opcode.h
+  PYTHONPATH=opy opy/lib/opcode_gen.py > $out
+  echo "Wrote $out"
+}
+
 # Helper function.
 run-ovm() {
   local bin=_tmp/ovm_main
 
-  # generate code
-  PYTHONPATH=opy opy/lib/opcode_gen.py > _tmp/opcode.h
-
-  cc -I _tmp -o $bin ovm/ovm_main.cc
+  #local ASAN_FLAGS='-fsanitize=address -g'
+  local ASAN_FLAGS=
+  c++ -Wall -I _tmp $ASAN_FLAGS -o $bin ovm/ovm_main.cc
   #cc -I ../Python-2.7.13/Include -o $bin ../ovm/ovm_main.cc
   set -x
   $bin "$@"
@@ -46,10 +52,25 @@ fib-ovm-prototype() {
   VM_SUMMARY=1 bin/opyc run-ovm $FIB_I
 }
 
+compile-iterative() {
+  local out=_tmp/fib_iterative.ovm2
+  bin/opyc compile-ovm $FIB_I $out
+  ls -l $out
+}
+
+compile-recursive() {
+  local out=_tmp/fib_recursive.ovm2
+  bin/opyc compile $FIB_R _tmp/fib_recursive.pyc
+
+  bin/opyc compile-ovm $FIB_R $out
+  ls -l $out
+}
+
 # Run ovm_main.cc
 fib-ovm-native() {
-  local bytecode=_tmp/fib_iterative.bytecode
-  bin/opyc compile-ovm $FIB_I $bytecode
+  local py=${1:-$FIB_I}
+  local bytecode=_tmp/$(basename $py '.py').ovm2
+  bin/opyc compile-ovm $py $bytecode
   run-ovm $bytecode
 }
 
