@@ -252,69 +252,6 @@ compile-with-cpython() {
   ../bin/opyc dis $pyc
 }
 
-#
-# Fibonacci test
-#
-
-fib-dis() {
-  local py=${1:-gold/fib_iterative.py}
-  local pyc=_tmp/fib_iterative.pyc
-  ../bin/opyc compile $py $pyc
-  ../bin/opyc dis $pyc
-}
-
-# TODO: Show graph output
-fib-cfg() {
-  ../bin/opyc cfg gold/fib_iterative.py
-}
-
-# TODO: Move this to the OVM dir
-run-ovm() {
-  local bin=_tmp/ovm_main
-
-  # generate code
-  PYTHONPATH=. lib/opcode_gen.py > _tmp/opcode.h
-
-  cc -I _tmp -o $bin ../ovm/ovm_main.cc
-  #cc -I ../Python-2.7.13/Include -o $bin ../ovm/ovm_main.cc
-  set -x
-  $bin "$@"
-}
-
-fib-ovm-prototype() {
-  local py=${1:-gold/fib_iterative.py}
-  #local bytecode=_tmp/$(basename $py .py).bytecode
-  VM_SUMMARY=1 ../bin/opyc run-ovm $py
-}
-
-fib-ovm-native() {
-  local bytecode=_tmp/fib_iterative.bytecode
-  ../bin/opyc compile-ovm gold/fib_iterative.py $bytecode
-  run-ovm $bytecode
-}
-
-compare-compiler() {
-  ../bin/opyc compile gold/fib_iterative.py _tmp/c2.pyc
-  ../bin/opyc compile-ovm gold/fib_iterative.py _tmp/ovm.pyc
-  ls -l _tmp/{c2,ovm}.pyc
-  ../bin/opyc dis-md5 _tmp/c2.pyc
-  ../bin/opyc dis-md5 _tmp/ovm.pyc
-
-  ../bin/opyc dis _tmp/c2.pyc > _tmp/c2.txt
-  ../bin/opyc dis _tmp/ovm.pyc > _tmp/ovm.txt
-  diff -u _tmp/{c2,ovm}.txt
-}
-
-fib-byterun() {
-  local bytecode=_tmp/fib_iterative.pyc
-  ../bin/opyc compile gold/fib_iterative.py $bytecode
-  BYTERUN_SUMMARY=1 ../bin/opyc run $bytecode
-}
-
-fib-callgraph() {
-  PYTHONPATH=.. CALLGRAPH=1 gold/fib_recursive.py
-}
-
 if test $(basename $0) = 'test.sh'; then
   "$@"
 fi

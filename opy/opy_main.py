@@ -481,8 +481,8 @@ def OpyCommandMain(argv):
 
   elif action == 'run-ovm':  # Compile and run, without writing pyc file
     opt, i = compile_spec.Parse(argv)
-    py_path = argv[1]
-    opy_argv = argv[1:]
+    py_path = argv[i]
+    opy_argv = argv[i+1:]
 
     if py_path.endswith('.py'):
       #mode = 'exec'
