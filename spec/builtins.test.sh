@@ -36,7 +36,7 @@ pwd
 ## END
 
 #### pwd after cd ..
-dir=dir-one/dir-two
+dir=$TMP/dir-one/dir-two
 mkdir -p $dir
 cd $dir
 echo $(basename $(pwd))
@@ -60,8 +60,9 @@ rm $tmp/symlink
 ## stdout: symtarg
 
 #### Test the current directory after 'cd ..' involving symlinks
-mkdir -p symlinktest
-cd symlinktest
+dir=$TMP/symlinktest
+mkdir -p $dir
+cd $dir
 mkdir -p a/b/c
 mkdir -p a/b/d
 ln -s -f a/b/c c > /dev/null
