@@ -16,7 +16,6 @@ from .consts import SC_LOCAL, SC_GLOBAL_IMPLICIT, SC_GLOBAL_EXPLICIT, \
 from .visitor import ASTVisitor
 
 import itertools
-import sys
 import types
 
 
