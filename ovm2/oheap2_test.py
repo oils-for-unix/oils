@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from ovm import oheap2  # module under test
+from ovm2 import oheap2  # module under test
 
 
 class Oheap2Test(unittest.TestCase):
