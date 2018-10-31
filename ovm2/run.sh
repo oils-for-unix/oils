@@ -34,8 +34,7 @@ run-ovm() {
 
   #local ASAN_FLAGS='-fsanitize=address -g'
   local ASAN_FLAGS=
-  c++ -Wall -I _tmp $ASAN_FLAGS -o $bin ovm/ovm_main.cc
-  #cc -I ../Python-2.7.13/Include -o $bin ../ovm/ovm_main.cc
+  c++ -Wall -I _tmp $ASAN_FLAGS -o $bin ovm2/ovm_main.cc
   set -x
   $bin "$@"
 }

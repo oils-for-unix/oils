@@ -117,11 +117,15 @@ all() {
   echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {osh,core,native,tools}/*_test.py | sort --numeric
+  wc -l {osh,core,ovm2,native,tools}/*_test.py | sort --numeric
   echo
 
   echo 'OIL AND OSH'
   oil-osh-files | xargs wc -l | sort --numeric
+  echo
+
+  echo 'OVM2'
+  wc -l ovm2/*.{py,cc} | filter-py | sort --numeric
   echo
 
   return

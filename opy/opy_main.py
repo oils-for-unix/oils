@@ -30,7 +30,7 @@ from .byterun import ovm
 from core import args
 from core import util
 
-from ovm import oheap2
+from ovm2 import oheap2
 
 log = util.log
 
