@@ -79,7 +79,7 @@ TAG_NONE = -1
 TAG_BOOL = -2
 TAG_INT = -3
 TAG_FLOAT = -4
-TAG_STR =  -5
+TAG_STR = -5
 TAG_TUPLE = -6
 TAG_CODE = -7
 
@@ -284,13 +284,13 @@ class Encoder(object):
         f.write(i32(int(val)))  # 0 or 1
 
       elif tag == TAG_INT:
-        assert is_slab == False, val
+        assert not is_slab, val
         f.write(i16(0))  # Padding
         f.write(i32(0))  # Padding
         f.write(i64(val))
 
       elif tag == TAG_FLOAT:
-        assert is_slab == False, val
+        assert not is_slab, val
         f.write(i16(0))  # Padding
         f.write(i32(0))  # Padding
         f.write(f64(val))
