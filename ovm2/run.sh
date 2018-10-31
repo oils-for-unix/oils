@@ -32,9 +32,9 @@ gen-opcodes() {
 run-ovm() {
   local bin=_tmp/ovm_main
 
-  #local ASAN_FLAGS='-fsanitize=address -g'
-  local ASAN_FLAGS=
-  c++ -Wall -I _tmp $ASAN_FLAGS -o $bin ovm2/ovm_main.cc
+  local ASAN_FLAGS='-fsanitize=address -g'
+  #local ASAN_FLAGS=
+  c++ -std=c++11 -Wall -I _tmp $ASAN_FLAGS -o $bin ovm2/ovm_main.cc
   set -x
   $bin "$@"
 }

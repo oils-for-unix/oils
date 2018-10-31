@@ -44,6 +44,9 @@ Operations on OHeap
    - Import?
    - Patch all cell refs!
 
+5. Make permanent?  Move to another "generation"?  OPy classes and bytecode
+perhaps fit in this category.
+
 TODO
 ----
 
