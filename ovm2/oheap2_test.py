@@ -11,6 +11,13 @@ from ovm2 import oheap2  # module under test
 
 class Oheap2Test(unittest.TestCase):
 
+  def testAlign4(self):
+    self.assertEqual(0, oheap2.Align4(0))
+    self.assertEqual(4, oheap2.Align4(1))
+    self.assertEqual(4, oheap2.Align4(3))
+    self.assertEqual(4, oheap2.Align4(4))
+    self.assertEqual(8, oheap2.Align4(5))
+
   def testAlign16(self):
     self.assertEqual(0, oheap2.Align16(0))
     self.assertEqual(16, oheap2.Align16(1))

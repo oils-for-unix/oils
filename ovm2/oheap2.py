@@ -108,6 +108,11 @@ def f64(i):  # 8 byte double
   return struct.pack('d', i)
 
 
+def Align4(i):
+  """Round up to the nearest multiple of 4.  See unit tests."""
+  return ((i-1) | 3) + 1
+
+
 def Align16(i):
   """Round up to the nearest multiple of 16.  See unit tests."""
   return ((i-1) | 15) + 1
@@ -235,11 +240,13 @@ class Encoder(object):
         slab_offsets.append(pos)
 
         f.write(i32(length))  # length in bytes
-        f.write(payload)
-        f.write('\0')  # NUL terminator
         pos += 4
-        pos += len(payload)
-        pos += 1
+
+        n = len(payload)
+        aligned = Align4(n+1)  # at least NUL byte for terminator
+        f.write(payload)
+        f.write('\0' * (aligned - n))  # padding
+        pos += aligned
 
       elif isinstance(payload, list):  # list of references
         slab_offsets.append(pos)
@@ -309,11 +316,8 @@ class Encoder(object):
           f.write(i32(offset))
         else:
           n = len(val)
-          # TODO: We could pack the length and is_slab together, and get 12
-          # significant bytes instead of 11.  Or we could just calculate
-          # strlen() every time?
           f.write(u8(0))  # is_slab
-          f.write(u8(n))  # length stored in slab
+          f.write(u8(n))  # length stored here
           f.write(val)
           num_pad = 12 - n  # at least one NUL
           f.write('\0' * num_pad)
