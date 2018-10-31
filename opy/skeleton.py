@@ -13,7 +13,6 @@ from .pgen2 import parse
 from .compiler2 import future
 from .compiler2 import pyassem
 from .compiler2 import pycodegen
-from .compiler2 import ovm_codegen
 from .compiler2 import syntax
 from .compiler2 import symbols
 from .compiler2 import transformer
@@ -112,8 +111,6 @@ def Compile(f, opt, gr, mode, print_action=None):
     start_symbol = 'single_input'
   elif mode == 'exec':
     start_symbol = 'file_input'
-  elif mode == 'ovm':
-    start_symbol = 'file_input'
   elif mode == 'eval':
     start_symbol = 'eval_input'
 
@@ -162,11 +159,6 @@ def Compile(f, opt, gr, mode, print_action=None):
       ctx = _ModuleContext(filename, opt, s.scopes)
       frame = pyassem.Frame("<expression>", filename)  # mutated
       gen = pycodegen.TopLevelCodeGenerator(ctx, frame, graph)
-
-  elif mode == "ovm":
-      ctx = _ModuleContext(filename, opt, s.scopes)
-      frame = ovm_codegen.Frame("<module>", filename)  # mutated
-      gen = ovm_codegen.CodeGenerator(ctx, frame, graph)
 
   else:
       raise AssertionError('Invalid mode %r' % mode)
