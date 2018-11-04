@@ -13,6 +13,17 @@ echo ref ${!a} ${a}
 ## BUG mksh stdout: ref a b
 ## N-I dash/zsh stdout-json: ""
 
+#### var ref: positional params
+set -- x y
+ref=1; printf "|%s" "${!ref}" $'\n'
+ref=@; printf "|%s" "${!ref}" $'\n'
+ref=*; printf "|%s" "${!ref}" $'\n'
+## STDOUT:
+|x|
+|x|y|
+|x y|
+## END
+
 #### var ref with special vars
 myfunc() {
   local ref=$1
@@ -29,14 +40,55 @@ f() {
   echo
 }
 f a[0]
-b=(x)
+b=(x y)
 f b[0]
+f b[@]
+f "b[*]"
+# Also associative arrays.
 ## STDOUT:
 .
 .x
+.x.y
+.x y
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### complex indirections bash disallows
+check_indir() {
+    result="${!1}"
+    desugared_result=$(eval 'echo "${'"$1"'}"')
+    [ "$2" = "$desugared_result" ] || { echo "$1 $desugared_result";  }
+}
+x=y
+y=a
+a=(x y)
+declare -A aa
+aa=([k]=r [l]=s)
+# malformed array indexing
+check_indir "a[0"
+check_indir "aa[k"
+# double indirection
+check_indir "!x"      a
+check_indir "!a[0]"   y
+# apparently everything else in the manual under "Shell Parameter Expansion"
+check_indir "x:-foo"  y
+check_indir "x:=foo"  y
+check_indir "x:?oops" y
+check_indir "x:+yy"   yy
+check_indir "x:0"     y
+check_indir "x:0:1"   y
+check_indir "!a@"    "a aa"
+# (!a[@] is elsewhere)
+check_indir "#x"      1
+check_indir "x#y"
+check_indir "x/y/foo" foo
+check_indir "x@Q"    "'y'"
+echo done
+## status: 1
+## stdout-json: ""
+## OK bash status: 0
+## OK bash stdout: done
 
 #### declare -n and ${!a}
 declare -n a
