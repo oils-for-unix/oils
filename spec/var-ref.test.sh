@@ -34,7 +34,56 @@ myfunc '?'  # osh doesn't do this dynamically
 ## stdout-json: "myfunc\n0\n"
 ## N-I mksh stdout-json: "ref\nref\n"
 
-#### var ref indexing into array
+#### indirection, *then* fancy expansion features
+check_eq() {
+    [ "$1" = "$2" ] || { echo "$1 vs $2"; }
+}
+check_expand() {
+    val=$(eval "echo \"$1\"")
+    [ "$val" = "$2" ] || { echo "$1 -> $val vs $2"; }
+}
+check_err() {
+    e="$1"
+    msg=$(eval "$e" 2>&1) && echo "bad success: $e"
+    [ -z "$2" ] || [[ "$msg" == $2 ]] || echo "bad err msg: $e -> $msg"
+}
+# Nearly everything in manual section 3.5.3 "Shell Parameter Expansion"
+# is allowed after a !-indirection.
+#
+# Not allowed: any further prefix syntax.
+x=xx; xx=aaabcc
+xd=x
+check_err '${!!xd}'
+check_err '${!!x*}'
+a=(1 2)
+check_err '${!!a[*]}'
+check_err '${!#x}'
+check_err '${!#a[@]}'
+#
+# Allowed: apparently everything else.
+y=yy; yy=
+check_expand '${!y:-foo}' foo
+check_expand '${!x:-foo}' aaabcc
+z=zz; zz=
+check_eq "${!z:=foo}" foo ; check_expand '$zz' foo
+check_eq "${!z:=bar}" foo ; check_expand '$zz' foo
+w=ww; ww=
+check_err '${!w:?oops}' '*: oops'
+check_expand '${!x:?oops}' aaabcc
+check_expand '${!y:+foo}' ''
+check_expand '${!x:+foo}' foo
+check_expand '${!x:2}' abcc
+check_expand '${!x:2:2}' ab
+check_expand '${!x#*a}' aabcc
+check_expand '${!x%%c*}' aaab
+check_expand '${!x/a*b/d}' dcc
+check_expand '${!x^a}' Aaabcc
+p=pp; pp='\$ '
+check_expand '${!p@P}' '$ '
+echo ok
+## stdout: ok
+
+#### indirection *to* an array reference
 f() {
   printf ".%s" "${!1}"
   echo
@@ -54,7 +103,7 @@ f "b[*]"
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### complex indirections bash disallows
+#### indirection *to* fancy expansion features bash disallows
 check_indir() {
     result="${!1}"
     desugared_result=$(eval 'echo "${'"$1"'}"')
