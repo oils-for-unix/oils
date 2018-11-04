@@ -311,25 +311,32 @@ class _WordEvaluator(object):
     """
     if not match.IsValidVarName(name):
       return None
-
-    if index in ('@', '*'):
-      raise NotImplementedError
-    else:
+    val = self.mem.GetVar(name)
+    if val.tag == value_e.StrArray:
+      if index in ('@', '*'):
+        # TODO: maybe_decay_array
+        return runtime.StrArray(val.strs)
       try:
         index_num = int(index)
       except ValueError:
-        # assoc arrays
-        raise NotImplementedError
-
-    val = self.mem.GetVar(name)
-    if val.tag == value_e.StrArray:
+        return None
       try:
         return runtime.Str(val.strs[index_num])
       except IndexError:
         return runtime.Undef()
+    elif val.tag == value_e.AssocArray:
+      if index in ('@', '*'):
+        raise NotImplementedError
+      try:
+        return runtime.Str(val.d[index])
+      except KeyError:
+        return runtime.Undef()
+    elif val.tag == value_e.Undef:
+      return runtime.Undef()
+    elif val.tag == value_e.Str:
+      return None
     else:
-      # assoc arrays, and error handling
-      raise NotImplementedError
+      raise AssertionError
 
   def _ApplyPrefixOp(self, val, op_id, token):
     """
@@ -384,7 +391,8 @@ class _WordEvaluator(object):
           pass
 
         if val.s in ('@', '*'):
-          raise NotImplementedError
+          # TODO maybe_decay_array
+          return runtime.StrArray(self.mem.GetArgv())
 
         # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
         i = val.s.find('[')
