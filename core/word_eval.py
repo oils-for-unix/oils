@@ -301,7 +301,7 @@ class _WordEvaluator(object):
     else:
       raise NotImplementedError(id)
 
-  def _ApplyPrefixOp(self, val, op_id):
+  def _ApplyPrefixOp(self, val, op_id, token):
     """
     Returns:
       value
@@ -350,10 +350,10 @@ class _WordEvaluator(object):
           return self.mem.GetArgNum(arg_num)
         except ValueError:
           if not match.IsValidVarName(val.s):
-            # TODO: location information.
-            # Also note that bash doesn't consider this fatal.  It makes the
+            # Note that bash doesn't consider this fatal.  It makes the
             # command exit with '1', but we don't have that ability yet?
-            e_die('Bad variable name %r in var ref', val.s)
+            e_die('Got bad variable name %r from value of %r in indirect expansion',
+                  val.s, token.val, token=token)
           return self.mem.GetVar(val.s)
       elif val.tag == value_e.StrArray:
         indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
@@ -554,7 +554,7 @@ class _WordEvaluator(object):
 
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
-      val = self._ApplyPrefixOp(val, part.prefix_op)
+      val = self._ApplyPrefixOp(val, part.prefix_op, token=part.token)
       # NOTE: When applying the length operator, we can't have a test or
       # suffix afterward.  And we don't want to decay the array
 
