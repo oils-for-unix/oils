@@ -23,6 +23,21 @@ myfunc '?'  # osh doesn't do this dynamically
 ## stdout-json: "myfunc\n0\n"
 ## N-I mksh stdout-json: "ref\nref\n"
 
+#### var ref indexing into array
+f() {
+  printf ".%s" "${!1}"
+  echo
+}
+f a[0]
+b=(x)
+f b[0]
+## STDOUT:
+.
+.x
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
 #### declare -n and ${!a}
 declare -n a
 a=b
