@@ -108,6 +108,48 @@ f "b[*]"
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
+#### indirection to nasty complex array references
+i=0
+f() {
+    ((i++))
+    val=$(echo "${!1}")
+    [ "$val" = y ] && echo -n "$i "
+}
+# Warmup: nice plain array reference
+a=(x y)
+f 'a[1]'
+#
+# Not allowed:
+# no brace expansion
+f 'a[{1,0}]'  # operand expected
+# no process substitution (but see command substitution below!)
+f 'a[<(echo x)]'  # operand expected
+# TODO word splitting seems interesting
+aa="1 0"
+f 'a[$aa]'  # 1 0: syntax error in expression (error token is "0")
+# no filename globbing
+f 'a[b*]'  # operand expected
+f 'a[1"]'  # bad substitution
+#
+# Allowed: most everything else in section 3.5 "Shell Expansions".
+# tilde expansion
+( PWD=1; f 'a[~+]' ); ((i++))
+# shell parameter expansion
+b=1
+f 'a[$b]'
+f 'a[${c:-1}]'
+# (... and presumably most of the other features there)
+# command substitution, yikes!
+f 'a[$(echo 1)]'
+# arithmetic expansion
+f 'a[$(( 3 - 2 ))]'
+echo end
+# All of these are undocumented and probably shouldn't exist,
+# though it's always possible some will turn up in the wild and
+# we'll end up implementing them.
+## stdout: 1 end
+## OK bash stdout: 1 7 8 9 10 11 end
+
 #### indirection *to* fancy expansion features bash disallows
 check_indir() {
     result="${!1}"
