@@ -301,7 +301,44 @@ class _WordEvaluator(object):
     else:
       raise NotImplementedError(id)
 
-  def _ApplyPrefixOp(self, val, op_id):
+  def _EvalIndirectArrayExpansion(self, name, index):
+    """Expands ${!ref} when $ref has the form `name[index]`.
+
+    Args:
+      name, index: arbitrary strings
+    Returns:
+      value, or None if invalid
+    """
+    if not match.IsValidVarName(name):
+      return None
+    val = self.mem.GetVar(name)
+    if val.tag == value_e.StrArray:
+      if index in ('@', '*'):
+        # TODO: maybe_decay_array
+        return runtime.StrArray(val.strs)
+      try:
+        index_num = int(index)
+      except ValueError:
+        return None
+      try:
+        return runtime.Str(val.strs[index_num])
+      except IndexError:
+        return runtime.Undef()
+    elif val.tag == value_e.AssocArray:
+      if index in ('@', '*'):
+        raise NotImplementedError
+      try:
+        return runtime.Str(val.d[index])
+      except KeyError:
+        return runtime.Undef()
+    elif val.tag == value_e.Undef:
+      return runtime.Undef()
+    elif val.tag == value_e.Str:
+      return None
+    else:
+      raise AssertionError
+
+  def _ApplyPrefixOp(self, val, op_id, token):
     """
     Returns:
       value
@@ -334,7 +371,7 @@ class _WordEvaluator(object):
 
       return runtime.Str(str(length))
 
-    elif op_id == Id.VSub_Bang:
+    elif op_id == Id.VSub_Bang:  # ${!foo}, "indirect expansion"
       # NOTES:
       # - Could translate to eval('$' + name) or eval("\$$name")
       # - ${!array[@]} means something completely different.  TODO: implement
@@ -342,19 +379,33 @@ class _WordEvaluator(object):
       # - It might make sense to suggest implementing this with associative
       #   arrays?
 
-      # Treat the value of the variable as a variable name.
       if val.tag == value_e.Str:
-        try:
-          # e.g. ${!OPTIND} gives $1 when OPTIND is 1
-          arg_num = int(val.s)
-          return self.mem.GetArgNum(arg_num)
-        except ValueError:
-          if not match.IsValidVarName(val.s):
-            # TODO: location information.
-            # Also note that bash doesn't consider this fatal.  It makes the
-            # command exit with '1', but we don't have that ability yet?
-            e_die('Bad variable name %r in var ref', val.s)
+        # plain variable name, like 'foo'
+        if match.IsValidVarName(val.s):
           return self.mem.GetVar(val.s)
+
+        # positional argument, like '1'
+        try:
+          return self.mem.GetArgNum(int(val.s))
+        except ValueError:
+          pass
+
+        if val.s in ('@', '*'):
+          # TODO maybe_decay_array
+          return runtime.StrArray(self.mem.GetArgv())
+
+        # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
+        i = val.s.find('[')
+        if i >= 0 and val.s[-1] == ']':
+          name, index = val.s[:i], val.s[i+1:-1]
+          result = self._EvalIndirectArrayExpansion(name, index)
+          if result is not None:
+            return result
+
+        # Note that bash doesn't consider this fatal.  It makes the
+        # command exit with '1', but we don't have that ability yet?
+        e_die('Bad indirect expansion: %r', val.s, token=token)
+
       elif val.tag == value_e.StrArray:
         indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
         return runtime.StrArray(indices)
@@ -554,7 +605,7 @@ class _WordEvaluator(object):
 
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
-      val = self._ApplyPrefixOp(val, part.prefix_op)
+      val = self._ApplyPrefixOp(val, part.prefix_op, token=part.token)
       # NOTE: When applying the length operator, we can't have a test or
       # suffix afterward.  And we don't want to decay the array
 
