@@ -55,10 +55,15 @@ x=xx; xx=aaabcc
 xd=x
 check_err '${!!xd}'
 check_err '${!!x*}'
-a=(1 2)
+a=(asdf x)
 check_err '${!!a[*]}'
 check_err '${!#x}'
 check_err '${!#a[@]}'
+# And an array reference binds tighter in the syntax, so goes first;
+# there's no way to spell "indirection, then array reference".
+check_expand '${!a[1]}' xx
+b=(aoeu a)
+check_expand '${!b[1]}' asdf  # i.e. like !(b[1]), not (!b)[1]
 #
 # Allowed: apparently everything else.
 y=yy; yy=
