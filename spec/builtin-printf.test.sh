@@ -17,7 +17,7 @@
 #### printf -v %s
 var=foo
 printf -v $var %s 'hello there'
-argv "$foo" 
+argv.py "$foo"
 ## STDOUT:
 ['hello there']
 ## END
@@ -25,7 +25,7 @@ argv "$foo"
 #### printf -v %q
 var=foo
 printf -v $var %q '"quoted" with spaces and \'
-argv "$foo" 
+argv.py "$foo"
 ## STDOUT:
 ['\\"quoted\\"\\ with\\ spaces\\ and\\ \\\\']
 ## END
@@ -33,7 +33,7 @@ argv "$foo"
 #### declare instead of %s
 var=foo
 declare $var='hello there'
-argv "$foo" 
+argv.py "$foo"
 ## STDOUT:
 ['hello there']
 ## END
@@ -43,9 +43,9 @@ var=foo
 val='"quoted" with spaces and \'
 # I think this is bash 4.4 only.
 declare $var="${val@Q}"
-argv "$foo" 
+echo "$foo"
 ## STDOUT:
-['hello there']
+'"quoted" with spaces and \'
 ## END
 
 #### printf -v dynamic scope
