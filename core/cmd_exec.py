@@ -268,6 +268,9 @@ class Executor(object):
     elif builtin_id == builtin_e.ECHO:
       status = builtin.Echo(argv)
 
+    elif builtin_id == builtin_e.PRINTF:
+      status = builtin.Printf(argv, self.mem)
+
     elif builtin_id == builtin_e.SHIFT:
       status = builtin.Shift(argv, self.mem)
 

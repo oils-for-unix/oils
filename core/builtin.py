@@ -82,6 +82,7 @@ _SPECIAL_BUILTINS = {
 _NORMAL_BUILTINS = {
     "read": builtin_e.READ,
     "echo": builtin_e.ECHO,
+    "printf": builtin_e.PRINTF,
     "cd": builtin_e.CD,
     "pushd": builtin_e.PUSHD,
     "popd": builtin_e.POPD,
@@ -233,6 +234,85 @@ def Echo(argv):
 
   sys.stdout.flush()
   return 0
+
+
+PRINTF_SPEC = _Register('printf')
+PRINTF_SPEC.ShortFlag('-v', args.Str)
+
+
+def Printf(argv, mem):
+  """
+  printf: printf [-v var] format [argument ...]
+  """
+  arg, args_consumed = PRINTF_SPEC.Parse(argv)
+  if args_consumed >= len(argv):
+    util.error('printf: need format string')
+    return 1
+  fmt = argv[args_consumed]
+  vals = argv[args_consumed + 1:]
+
+  parts = []
+  f = 0
+  v = 0
+  # Loop invariant: vals[v:] and fmt[f:] remain, to accumulate onto `parts`.
+  while True:
+    f_next = fmt.find('%', f)
+    if f_next < 0:
+      f_next = len(fmt)
+
+    parts.append(fmt[f:f_next])  # TODO backslash-escapes, at least \n
+    f = f_next
+
+    if f >= len(fmt):
+      if v >= len(vals):
+        break
+      else:
+        # (handy!) bash printf quirk: re-use fmt to consume remaining vals.
+        f = 0
+        continue
+
+    c = fmt[f+1]
+    if c == '%':
+      f += 2
+      parts.append('%')
+      continue
+    elif c == 's':
+      f += 2
+      parts.append(vals[v] if v < len(vals) else '')
+      v += 1
+      continue
+    elif c == 'q':
+      f += 2
+      parts.append(_PrintfQuote(vals[v] if v < len(vals) else ''))
+      v += 1
+      continue
+    elif c == 'd':
+      f += 2
+      val = vals[v] if v < len(vals) else '0'
+      v += 1
+      try:
+        num = int(val)
+      except ValueError:
+        # TODO should print message but carry on as if 0
+        util.error('printf: %s: invalid number', val)
+        return 1
+      parts.append(str(num))
+    else:
+      # TODO %b, %(fmt)T, plus "the standard ones in printf(1)"
+      raise NotImplementedError
+
+  result = ''.join(parts)
+  if arg.v:
+    state.SetLocalString(mem, arg.v, result)
+  else:
+    sys.stdout.write(result)
+    sys.stdout.flush()
+  return 0
+
+
+def _PrintfQuote(val):
+  # TODO match specifics
+  return "'" + val.replace("'", r"'\''") + "'"
 
 
 WAIT_SPEC = _Register('wait')

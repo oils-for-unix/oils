@@ -317,7 +317,7 @@ builtin-io() {
 }
 
 builtin-printf() {
-  sh-spec spec/builtin-printf.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/builtin-printf.test.sh --osh-failures-allowed 4 \
     $BASH $OSH_LIST "$@"
 }
 
