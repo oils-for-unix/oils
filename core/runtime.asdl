@@ -69,7 +69,7 @@ module runtime
   char_kind = DE_White | DE_Gray | Black | Backslash
 
   builtin = 
-    NONE | READ | ECHO | SHIFT
+    NONE | READ | ECHO | PRINTF | SHIFT
   | CD | PUSHD | POPD | DIRS
   | EXPORT | UNSET | SET | SHOPT
   | TRAP | UMASK
