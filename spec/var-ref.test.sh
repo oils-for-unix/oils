@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
-# Var refs are done with ${!a} and local/declare -n.
+# Var refs are done with ${!a}
+#
+# local/declare -n is tested in spec/named-ref.test.sh.
 #
 # http://stackoverflow.com/questions/16461656/bash-how-to-pass-array-as-an-argument-to-a-function
 
@@ -8,10 +10,7 @@
 a=b
 b=c
 echo ref ${!a} ${a}
-# Woah mksh has a completely different behavior -- var name, not var ref.
 ## stdout: ref c b
-## BUG mksh stdout: ref a b
-## N-I dash/zsh stdout-json: ""
 
 #### var ref: positional params
 set -- x y
@@ -31,8 +30,10 @@ myfunc() {
 }
 myfunc FUNCNAME
 myfunc '?'  # osh doesn't do this dynamically
-## stdout-json: "myfunc\n0\n"
-## N-I mksh stdout-json: "ref\nref\n"
+## STDOUT: 
+myfunc
+0
+## END
 
 #### indirection, *then* fancy expansion features
 check_eq() {
@@ -40,7 +41,7 @@ check_eq() {
 }
 check_expand() {
     val=$(eval "echo \"$1\"")
-    [ "$val" = "$2" ] || { echo "$1 -> $val vs $2"; }
+    [ "$val" = "$2" ] || { echo "$1 -> expected $2, got $val"; }
 }
 check_err() {
     e="$1"
@@ -105,8 +106,6 @@ f "b[*]"
 .x.y
 .x y
 ## END
-## N-I dash status: 2
-## N-I dash stdout-json: ""
 
 #### indirection to nasty complex array references
 i=0
@@ -192,7 +191,6 @@ a=b
 b=c
 echo ${!a} ${a}
 ## stdout: b c
-## N-I mksh stdout: a b
 
 #### Bad var ref with ${!a}
 #set -o nounset
@@ -202,48 +200,6 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
-## BUG mksh STDOUT:
-ref a
-status=0
-## END
-
-#### pass array by reference
-show_value() {
-  local -n array=$1
-  local idx=$2
-  echo "${array[$idx]}"
-}
-shadock=(ga bu zo meu)
-show_value shadock 2
-## stdout: zo
-
-#### pass assoc array by reference
-show_value() {
-  local -n array=$1
-  local idx=$2
-  echo "${array[$idx]}"
-}
-days=([monday]=eggs [tuesday]=bread [sunday]=jam)
-show_value days sunday
-## stdout: jam
-## BUG mksh stdout: [monday]=eggs
-#  mksh note: it coerces "days" to 0?  Horrible.
-
-#### pass local array by reference, relying on DYNAMIC SCOPING
-show_value() {
-  local -n array=$1
-  local idx=$2
-  echo "${array[$idx]}"
-}
-caller() {
-  local shadock=(ga bu zo meu)
-  show_value shadock 2
-}
-caller
-## stdout: zo
-# mksh appears not to hav elocal arrays!
-## BUG mksh stdout-json: ""
-## BUG mksh status: 1
 
 #### ${!OPTIND} (used by bash completion
 set -- a b c
@@ -259,9 +215,4 @@ f x y z
 a
 x
 y
-## END
-## N-I mksh STDOUT:
-OPTIND
-OPTIND
-OPTIND
 ## END
