@@ -311,7 +311,16 @@ def Printf(argv, mem):
 
 
 def _PrintfQuote(val):
-  # TODO match specifics
+  """
+  Quote the argument in a way that can be reused as shell input.
+  """
+  # Could be made slightly nicer by e.g. returning unmodified when
+  # there's nothing that needs to be quoted.  Bash's `printf %q`
+  # does that while producing uglier output in other ways, with
+  # lots of backslashes.  Hopefully we don't end up having to
+  # match its behavior byte-for-byte.
+  #
+  # Example: FOO'BAR -> 'FOO'\''BAR'
   return "'" + val.replace("'", r"'\''") + "'"
 
 
