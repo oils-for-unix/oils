@@ -28,6 +28,17 @@ enum class Why {
   Yield,
 };
 
+enum CompareOp {
+	LT,
+	LE,
+	EQ,
+	NE,
+	GT,
+	GE,
+	IS,
+	IS_NOT,
+};
+
 //
 // Forward declarations
 //
@@ -85,7 +96,8 @@ struct Cell {
   uint8_t small_len;  // end first 4 bytes
 
   union {
-    uint8_t small_val[1];  // following TWELVE bytes, for small string, tuple, etc.
+    // following TWELVE bytes, for small string, tuple, etc.
+    uint8_t small_val[1];
     int32_t big_len;  // length of slab.  TODO: Use this.
   };
 
@@ -108,7 +120,7 @@ struct Cell {
 struct Str {
   int32_t len;
   const char* data;  // NUL-terminated, but can also contain NUL.
-                        // should not be mutated.
+                     // should not be mutated.
 };
 
 struct Tuple {
@@ -118,102 +130,82 @@ struct Tuple {
 
 class Code {
  public:
-  Code(Cell* cells, Handle self) 
-      : cells_(cells),
-        self_(cells + self) {
+  Code(OHeap* heap, Cell* self) 
+      : heap_(heap),
+        self_(self) {
   }
-  inline int64_t AsInt(int field_index) const {
-    int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-    Handle h = slab[field_index];
-    assert(cells_[h].tag == TAG_INT);
-    // TODO: small or big
-    return cells_[h].i;
-  }
-
-  inline Str AsStr(int field_index) const {
-    int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-    Handle h = slab[field_index];
-    assert(cells_[h].tag == TAG_STR);
-    const Cell& cell = cells_[h];
-    Str s;
-    if (cells_[h].is_slab) {
-      int32_t* str_slab = reinterpret_cast<int32_t*>(cell.ptr);
-      s.len = *str_slab;
-      s.data = reinterpret_cast<const char*>(str_slab + 1);  // everything after len
-    } else {
-      s.len = cell.small_len;  // in bytes
-      s.data = reinterpret_cast<const char*>(&cell.small_val);
-    }
-    return s;
-  }
-
-  inline Tuple AsTuple(int field_index) const {
-    int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-    Handle h = slab[field_index];
-    assert(cells_[h].tag == TAG_TUPLE);
-    const Cell& cell = cells_[h];
-    Tuple t;
-    if (cells_[h].is_slab) {
-      int32_t* tuple_slab = reinterpret_cast<int32_t*>(cell.ptr);
-      t.len = *tuple_slab;
-      // everything after len
-      t.handles = reinterpret_cast<const Handle*>(tuple_slab + 1);
-    } else {
-      t.len = cell.small_len;  // in entries
-      t.handles = reinterpret_cast<const Handle*>(&cell.small_val);
-    }
-    return t;
-  };
+  inline int64_t FieldAsInt(int field_index) const;
+  inline Str FieldAsStr(int field_index) const;
+  inline Tuple FieldAsTuple(int field_index) const;
 
   // Assume the pointers are patched below
   int64_t argcount() const {
-    return AsInt(1);
+    return FieldAsInt(1);
   }
   int64_t nlocals() const {
-    return AsInt(2);
+    return FieldAsInt(2);
   }
   int64_t stacksize() const {
-    return AsInt(3);
+    return FieldAsInt(3);
   }
   int64_t flags() const {
-    return AsInt(4);
+    return FieldAsInt(4);
   }
   int64_t firstlineno() const {
-    return AsInt(5);
+    return FieldAsInt(5);
   }
   Str name() const {
-    return AsStr(6);
+    return FieldAsStr(6);
   }
   Str filename() const {
-    return AsStr(7);
+    return FieldAsStr(7);
   }
   Str code() const {
-    return AsStr(8);
+    return FieldAsStr(8);
   }
   Tuple names() const {
-    return AsTuple(9);
+    return FieldAsTuple(9);
   }
   Tuple varnames() const {
-    return AsTuple(10);
+    return FieldAsTuple(10);
   }
   Tuple consts() const {
-    return AsTuple(11);
+    return FieldAsTuple(11);
   }
+
  private:
-  Cell* cells_;
+  OHeap* heap_;
   Cell* self_;
 };
 
 class OHeap {
  public:
-  OHeap() : slabs_(nullptr), cells_(nullptr) {
+  OHeap() : slabs_(nullptr), num_cells_(0), cells_(nullptr) {
   }
-  bool Init(uint8_t* slabs, int num_cells, Cell* cells) {
-    slabs_ = slabs;
+
+  ~OHeap() {
+    if (slabs_) {
+      free(slabs_);
+    }
+    if (cells_) {
+      free(cells_);
+    }
+  }
+
+  uint8_t* AllocPermanentSlabs(int total_slab_size) {
+    slabs_ = static_cast<uint8_t*>(malloc(total_slab_size));
+    return slabs_;
+  }
+
+  Cell* AllocInitialCells(int num_cells) {
     num_cells_ = num_cells;
-    cells_ = cells;
-    return true;
+    // Allocate double the amount to account for growth.
+    // TODO: Store this and realloc.
+    int max_cells = num_cells * 2;
+    cells_ = static_cast<Cell*>(malloc(sizeof(Cell) * max_cells));
+    return cells_;
   }
+
   // C string.  NULL if the cell isn't a string.
   // NOTE: Shouldn't modify this?
   const char* AsStr0(Handle h) const {
@@ -246,9 +238,27 @@ class OHeap {
     return true;
   }
 
+  bool AsTuple(Handle h, Tuple* out) {
+    const Cell& cell = cells_[h];
+    if (cell.tag != TAG_TUPLE) {
+      return false;
+    }
+    if (cell.is_slab) {
+      int32_t* tuple_slab = reinterpret_cast<int32_t*>(cell.ptr);
+      out->len = *tuple_slab;
+      // everything after len
+      out->handles = reinterpret_cast<const Handle*>(tuple_slab + 1);
+    } else {
+      out->len = cell.small_len;  // in entries
+      out->handles = reinterpret_cast<const Handle*>(&cell.small_val);
+    }
+    return true;
+  };
+
+
   bool AsInt(Handle h, int64_t* out) {
     const Cell& cell = cells_[h];
-    if (cell.tag != TAG_STR) {
+    if (cell.tag != TAG_INT) {
       return false;
     }
     *out = cell.i;
@@ -259,21 +269,53 @@ class OHeap {
   Code AsCode(Handle h) {
     log("tag = %d", cells_[h].tag);
     assert(cells_[h].tag == TAG_CODE);
-    return Code(cells_, h);
+    return Code(this, cells_ + h);
   }
-  int Last() {
-    return num_cells_ - 1;
-  }
-  // TODO: Should these be allocated in the class for symmetry?
-  ~OHeap() {
-    if (slabs_) {
-      free(slabs_);
+
+  // Returns whether the value is truthy, according to Python's rules.
+  bool Truthy(Handle h) {
+    const Cell& cell = cells_[h];
+    switch (cell.tag) {
+    case TAG_NONE:
+      return false;
+    case TAG_BOOL:
+      return cell.i != 0;  // True or False
+    case TAG_INT:
+      return cell.i != 0;  // nonzero
+    case TAG_FLOAT:
+      return cell.d != 0.0;  // Is this correct?
+    case TAG_STR: {
+      Str s;
+      AsStr(h, &s);
+      return s.len != 0;
     }
-    if (cells_) {
-      free(cells_);
+    case TAG_TUPLE:
+      assert(0);  // TODO
+      break;
+    case TAG_CODE:
+      return true;  // always truthy
+
+    // NOTE: Instances don't get to override nonzero?  They are always true.
+
+    default:
+      assert(0);  // TODO
     }
   }
 
+  // TODO: append to cells_.
+  // Zero out the 16 bytes first, and then set cell.i?
+  Handle NewInt(int64_t i) {
+    //Cell* cell = new
+    return 0;
+  }
+  // TODO: Determine if its big or small.
+  Handle NewStr0(const char* s) {
+    return 0;
+  }
+
+  int Last() {
+    return num_cells_ - 1;
+  }
   void DebugString(Handle h) {
     const Cell& cell = cells_[h];
 
@@ -313,6 +355,38 @@ class OHeap {
   Cell* cells_;
 };
 
+//
+// Code implementation.  Must come after OHeap declaration.
+//
+
+inline int64_t Code::FieldAsInt(int field_index) const {
+  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
+  Handle h = slab[field_index];
+
+  int64_t i;
+  assert(heap_->AsInt(h, &i));  // invalid bytecode not handled
+  return i;
+}
+
+inline Str Code::FieldAsStr(int field_index) const {
+  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
+  Handle h = slab[field_index];
+
+  Str s;
+  assert(heap_->AsStr(h, &s));  // invalid bytecode not handled
+  return s;
+}
+
+inline Tuple Code::FieldAsTuple(int field_index) const {
+  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
+  Handle h = slab[field_index];
+
+  Tuple t;
+  assert(heap_->AsTuple(h, &t));  // invalid bytecode not handled
+  return t;
+}
+
+
 const char* kHeader = "OHP2";
 const int kHeaderLen = 4;
 
@@ -351,7 +425,7 @@ bool Load(FILE* f, OHeap* heap) {
   int32_t num_read;
 
   // TODO: Limit total size of slabs?
-  uint8_t* slabs = static_cast<uint8_t*>(malloc(total_slab_size));
+  uint8_t* slabs = heap->AllocPermanentSlabs(total_slab_size);
   num_read = fread(slabs, 1, total_slab_size, f);
   if (num_read != total_slab_size) {
     log("Error reading slabs");
@@ -361,7 +435,7 @@ bool Load(FILE* f, OHeap* heap) {
   size_t pos = ftell(f);
   log("pos after reading slabs = %d", pos);
 
-  Cell* cells = static_cast<Cell*>(malloc(sizeof(Cell) * num_cells));
+  Cell* cells = heap->AllocInitialCells(num_cells);
   num_read = fread(cells, sizeof(Cell), num_cells, f);
   if (num_read != num_cells) {
     log("Error: expected %d cells, got %d", num_cells, num_read);
@@ -395,7 +469,6 @@ bool Load(FILE* f, OHeap* heap) {
     }
   }
 
-  heap->Init(slabs, num_cells, cells);
   return true;
 }
 
@@ -444,13 +517,12 @@ class Frame {
       : co_(co),
         heap_(heap),
         value_stack_(),
-        block_stack_() {
+        block_stack_(),
+        locals_(),
+        last_i_(0) {
   }
   // Take the handle of a string, and return a handle of a value.
-  Handle LoadName(Handle h) {
-    const char* name = heap_.AsStr0(h);
-    assert(name != nullptr);
-
+  Handle LoadName(const char* name) {
     log("-- Looking up %s", name);
 
     auto it = locals_.find(name);
@@ -464,16 +536,33 @@ class Frame {
 
     return 0;  // should this be a specal value?
   }
+  void StoreName(const char* name, Handle value_h) {
+    locals_[name] = value_h;
+  }
+  void JumpTo(int dest) {
+    last_i_ = dest;
+  }
+  void JumpForward(int offset) {
+    last_i_ += offset;  // Is this correct?
+  }
+  void PushBlock(BlockType type) {
+  };
+  void PopBlock() {
+  };
+
   const Code& co_;  // public for now
   vector<Handle> value_stack_;
   vector<Block> block_stack_;
  private:
+  // TODO: We might not need this?
   const OHeap& heap_;
+
   // How do we use the default hash?
   // TODO: if we de-dupe all the names in OHeap, and there's no runtime code
   // generaetion, each variable name string will have exactly one address.  So
   // then can we use pointer comparison for equality / hashing?  Would be nice.
   NameLookup locals_;
+  int last_i_;
 };
 
 class VM {
@@ -584,9 +673,22 @@ Why VM::RunFrame(Frame* frame) {
       value_stack.push_back(consts.handles[oparg]);
       break;
     case LOAD_NAME: {
+      Handle name_h = names.handles[oparg];
+      const char* name = heap_->AsStr0(name_h);
+      assert(name != nullptr);  // Invalid bytecode not handled
+
       //log("load_name handle = %d", names.handles[oparg]);
-      Handle h = frame->LoadName(names.handles[oparg]);
+      Handle h = frame->LoadName(name);
       value_stack.push_back(h);
+      break;
+    }
+    case STORE_NAME: {
+      Handle name_h = names.handles[oparg];
+      const char* name = heap_->AsStr0(name_h);
+      assert(name != nullptr);  // Invalid bytecode not handled
+
+      frame->StoreName(name, value_stack.back());
+      value_stack.pop_back();
       break;
     }
     case POP_TOP:
@@ -637,19 +739,96 @@ Why VM::RunFrame(Frame* frame) {
         //CallFunction(func, args, &rets);
         rets.push_back(0);
       }
-      // Now push
 
-      // TODO: Interpret thing as a string.  Then look it up in the builtins, e.g.
-      // "print".  Should get -1.  Then since it's negative, look up that value
-      // in a special table of builtins.
-      // Then call that function with args.
-      // Should it get direct access to the value stack?  And then we can check
-      // that it popped the right number and pushed the right number?
-
+      // Now push return values.
       assert(rets.size() == 1);
       value_stack.push_back(rets[0]);
       break;
     }
+
+    // Computation
+    case COMPARE_OP: {
+      Handle w = value_stack.back();
+      value_stack.pop_back();
+      Handle v = value_stack.back();
+      value_stack.pop_back();
+
+      // CPython inlines cmp(int, int) too.
+      int64_t a, b, result;
+      if (heap_->AsInt(w, &a) && heap_->AsInt(v, &b))  {
+        switch (oparg) {
+        case CompareOp::LT: result = a <  b; break;
+        case CompareOp::LE: result = a <= b; break;
+        case CompareOp::EQ: result = a == b; break;
+        case CompareOp::NE: result = a != b; break;
+        case CompareOp::GT: result = a >  b; break;
+        case CompareOp::GE: result = a >= b; break;
+        //case CompareOp::IS: result = v == w; break;
+        //case CompareOp::IS_NOT: result = v != w; break;
+        }
+        // TODO: Avoid stack movement by SET_TOP().
+
+        // TODO: Turn result into Py_True or Py_False.
+        // Do those have canonical handles?  Maybe -1 and -2?
+        value_stack.push_back(0);
+      } else {
+        assert(0);
+      }
+      break;
+    }
+
+    case BINARY_ADD: {
+      Handle w = value_stack.back();
+      value_stack.pop_back();
+      Handle v = value_stack.back();
+      value_stack.pop_back();
+
+      int64_t a, b, result;
+      if (heap_->AsInt(w, &a) && heap_->AsInt(v, &b))  {
+        result = a + b;
+      } else {
+        assert(0);
+      }
+
+      Handle result_h = heap_->NewInt(result);
+      value_stack.push_back(result_h);
+      break;
+    }
+
+    // 
+    // Jumps
+    //
+    case JUMP_ABSOLUTE:
+      frame->JumpTo(oparg);
+      break;
+
+    case JUMP_FORWARD:
+      frame->JumpForward(oparg);
+      break;
+
+    case POP_JUMP_IF_FALSE: {
+      Handle w = value_stack.back();
+      value_stack.pop_back();
+
+      // TODO: Special case for Py_True / Py_False like CPython
+      if (!heap_->Truthy(w)) {
+        frame->JumpTo(oparg);
+      }
+      break;
+    }
+
+    //
+    // Control Flow
+    //
+
+    case SETUP_LOOP:
+      frame->PushBlock(BlockType::Loop);
+      break;
+
+    case POP_BLOCK:
+      frame->PopBlock();
+      break;
+
     case RETURN_VALUE:
       // TODO: Set return value here.  It's just a Handle I guess.
       why = Why::Return;
