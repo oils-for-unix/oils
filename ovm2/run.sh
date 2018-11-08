@@ -78,6 +78,11 @@ ovm-native() {
   run-ovm $bytecode
 }
 
+# This works
+hello-py3() {
+  ovm-native opy/gold/hello_py3.py
+}
+
 compare-compiler() {
   local py=$FIB_I
   bin/opyc compile $py _tmp/c2.pyc

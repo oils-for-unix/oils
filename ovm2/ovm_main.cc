@@ -9,6 +9,11 @@
 
 #include "opcode.h"
 
+#define VERBOSE_LOOP 0
+#define VERBOSE_NAMES 0
+#define VERBOSE_VALUE_STACK 0
+#define VERBOSE_ALLOC 0  // for New*() functions
+
 using std::vector;
 using std::unordered_map;
 
@@ -73,6 +78,15 @@ const int TAG_STR =  -5;
 const int TAG_TUPLE = -6;
 const int TAG_CODE = -7;
 
+// Should this be zero?  Positive are user defined, negative are native, 0 is
+// invalid?  Useful for NewCell() to return on allocation failure.  And
+// uninitialized handles should be in an invalid state.
+const int kInvalidHandle = -10;
+
+// TODO: These should be generated
+const int kTrueHandle = -11;
+const int kFalseHandle = -12;
+
 const char* kTagDebugString[] = {
   "",
   "None",
@@ -134,10 +148,6 @@ class Code {
       : heap_(heap),
         self_(self) {
   }
-  inline int64_t FieldAsInt(int field_index) const;
-  inline Str FieldAsStr(int field_index) const;
-  inline Tuple FieldAsTuple(int field_index) const;
-
   // Assume the pointers are patched below
   int64_t argcount() const {
     return FieldAsInt(1);
@@ -174,13 +184,17 @@ class Code {
   }
 
  private:
+  inline int64_t FieldAsInt(int field_index) const;
+  inline Str FieldAsStr(int field_index) const;
+  inline Tuple FieldAsTuple(int field_index) const;
+
   OHeap* heap_;
   Cell* self_;
 };
 
 class OHeap {
  public:
-  OHeap() : slabs_(nullptr), num_cells_(0), cells_(nullptr) {
+  OHeap() : slabs_(nullptr), num_cells_(0), max_cells_(0), cells_(nullptr) {
   }
 
   ~OHeap() {
@@ -199,16 +213,27 @@ class OHeap {
 
   Cell* AllocInitialCells(int num_cells) {
     num_cells_ = num_cells;
-    // Allocate double the amount to account for growth.
-    // TODO: Store this and realloc.
-    int max_cells = num_cells * 2;
-    cells_ = static_cast<Cell*>(malloc(sizeof(Cell) * max_cells));
+    // Allocate 2x the number of cells to account for growth.
+    //max_cells_ = num_cells * 2;
+    max_cells_ = num_cells * 10;
+    cells_ = static_cast<Cell*>(malloc(sizeof(Cell) * max_cells_));
     return cells_;
+  }
+
+  bool AsInt(Handle h, int64_t* out) const {
+    assert(h >= 0);
+    const Cell& cell = cells_[h];
+    if (cell.tag != TAG_INT) {
+      return false;
+    }
+    *out = cell.i;
+    return true;
   }
 
   // C string.  NULL if the cell isn't a string.
   // NOTE: Shouldn't modify this?
   const char* AsStr0(Handle h) const {
+    assert(h >= 0);
     const Cell& cell = cells_[h];
     if (cell.tag != TAG_STR) {
       log("AsStr0 expected string but got tag %d", cell.tag);
@@ -216,13 +241,15 @@ class OHeap {
     }
     if (cell.is_slab) {
       int32_t* str_slab = reinterpret_cast<int32_t*>(cell.ptr);
-      return reinterpret_cast<const char*>(str_slab + 1);  // everything after len
+      // everything after len
+      return reinterpret_cast<const char*>(str_slab + 1);
     } else {
       return reinterpret_cast<const char*>(&cell.small_val);
     }
   }
   // Sets str and len.  Returns false if the Cell isn't a string.
   bool AsStr(Handle h, Str* out) const {
+    assert(h >= 0);
     const Cell& cell = cells_[h];
     if (cell.tag != TAG_STR) {
       return false;
@@ -230,7 +257,8 @@ class OHeap {
     if (cell.is_slab) {
       int32_t* str_slab = reinterpret_cast<int32_t*>(cell.ptr);
       out->len = *str_slab;
-      out->data = reinterpret_cast<const char*>(str_slab + 1);  // everything after len
+      // everything after len
+      out->data = reinterpret_cast<const char*>(str_slab + 1);
     } else {
       out->len = cell.small_len;  // in bytes
       out->data = reinterpret_cast<const char*>(&cell.small_val);
@@ -239,6 +267,7 @@ class OHeap {
   }
 
   bool AsTuple(Handle h, Tuple* out) {
+    assert(h >= 0);
     const Cell& cell = cells_[h];
     if (cell.tag != TAG_TUPLE) {
       return false;
@@ -255,25 +284,18 @@ class OHeap {
     return true;
   };
 
-
-  bool AsInt(Handle h, int64_t* out) {
-    const Cell& cell = cells_[h];
-    if (cell.tag != TAG_INT) {
-      return false;
-    }
-    *out = cell.i;
-    return true;
-  }
-
   // TODO: How do we bounds check?
   Code AsCode(Handle h) {
+    assert(h >= 0);
     log("tag = %d", cells_[h].tag);
     assert(cells_[h].tag == TAG_CODE);
     return Code(this, cells_ + h);
   }
 
   // Returns whether the value is truthy, according to Python's rules.
+  // Should we unify this with the bool() constructor?
   bool Truthy(Handle h) {
+    assert(h >= 0);
     const Cell& cell = cells_[h];
     switch (cell.tag) {
     case TAG_NONE:
@@ -302,20 +324,43 @@ class OHeap {
     }
   }
 
+  // For now just append to end.  Later we have to look at the free list.
+  Handle NewCell() {
+    // TODO: Should we reserve handle 0 for NULL, an allocation failure?  The
+    // file format will bloat by 16 bytes?
+    if (num_cells_ == max_cells_) {
+      log("Allocation failure: num_cells_ = %d", num_cells_);
+      assert(0);
+    }
+    return num_cells_++;
+  }
+
   // TODO: append to cells_.
   // Zero out the 16 bytes first, and then set cell.i?
   Handle NewInt(int64_t i) {
-    //Cell* cell = new
-    return 0;
+    Handle h = NewCell();
+    memset(cells_ + h, 0, sizeof(Cell));
+    cells_[h].tag = TAG_INT;
+    cells_[h].i = i;
+#if VERBOSE_ALLOC
+    log("new int <id = %d> %d", h, i);
+#endif
+    return h;
   }
-  // TODO: Determine if its big or small.
   Handle NewStr0(const char* s) {
-    return 0;
+    Handle h = NewCell();
+    memset(cells_ + h, 0, sizeof(Cell));
+    cells_[h].tag = TAG_STR;
+
+    // TODO: Determine if its big or small.
+    assert(0);
+    return h;
   }
 
   int Last() {
     return num_cells_ - 1;
   }
+
   void DebugString(Handle h) {
     const Cell& cell = cells_[h];
 
@@ -352,6 +397,7 @@ class OHeap {
  private:
   uint8_t* slabs_;  // so we can free it, not used directly
   int num_cells_;
+  int max_cells_;
   Cell* cells_;
 };
 
@@ -386,6 +432,9 @@ inline Tuple Code::FieldAsTuple(int field_index) const {
   return t;
 }
 
+//
+// File I/O
+//
 
 const char* kHeader = "OHP2";
 const int kHeaderLen = 4;
@@ -505,17 +554,19 @@ struct NameEq {
   }
 };
 
-
-// Is there a simple implementation for char* ?
+// Dictionary of names (char*) to value (Handle).
+//
+// TODO: if we de-dupe all the names in OHeap, and there's no runtime code
+// generation, each variable name string will have exactly one address.  So
+// then can we use pointer comparison for equality / hashing?  Would be nice.
 typedef unordered_map<const char*, Handle, NameHash, NameEq> NameLookup;
 
 class Frame {
  public:
   // TODO: Reserve the right size for these stacks?
   // from co.stacksize
-  Frame(const Code& co, const OHeap& heap) 
+  Frame(const Code& co) 
       : co_(co),
-        heap_(heap),
         value_stack_(),
         block_stack_(),
         locals_(),
@@ -523,7 +574,9 @@ class Frame {
   }
   // Take the handle of a string, and return a handle of a value.
   Handle LoadName(const char* name) {
+#if VERBOSE_NAMES
     log("-- Looking up %s", name);
+#endif
 
     auto it = locals_.find(name);
     if (it != locals_.end()) {
@@ -539,10 +592,10 @@ class Frame {
   void StoreName(const char* name, Handle value_h) {
     locals_[name] = value_h;
   }
-  void JumpTo(int dest) {
+  inline void JumpTo(int dest) {
     last_i_ = dest;
   }
-  void JumpForward(int offset) {
+  inline void JumpRelative(int offset) {
     last_i_ += offset;  // Is this correct?
   }
   void PushBlock(BlockType type) {
@@ -553,16 +606,9 @@ class Frame {
   const Code& co_;  // public for now
   vector<Handle> value_stack_;
   vector<Block> block_stack_;
+  int last_i_;  // index into bytecode (which is variable length)
  private:
-  // TODO: We might not need this?
-  const OHeap& heap_;
-
-  // How do we use the default hash?
-  // TODO: if we de-dupe all the names in OHeap, and there's no runtime code
-  // generaetion, each variable name string will have exactly one address.  So
-  // then can we use pointer comparison for equality / hashing?  Would be nice.
   NameLookup locals_;
-  int last_i_;
 };
 
 class VM {
@@ -615,12 +661,7 @@ void VM::DebugHandleArray(const vector<Handle>& handles) {
 
 }
 
-Why VM::RunFrame(Frame* frame) {
-  const Code& co = frame->co_;
-
-  vector<Handle>& value_stack = frame->value_stack_;
-  // TODO: Cache other locals here too
-
+void CodeDebugString(const Code& co, OHeap* heap) {
   log("argcount = %d", co.argcount());
   log("nlocals = %d", co.nlocals());
   log("stacksize = %d", co.stacksize());
@@ -633,38 +674,62 @@ Why VM::RunFrame(Frame* frame) {
 
   log("len(names) = %d", co.names().len);
   log("len(varnames) = %d", co.varnames().len);
-  Tuple names = co.names();
-  Tuple varnames = co.varnames();
   Tuple consts = co.consts();
 
   log("len(consts) = %d", consts.len);
 
   log("consts {");
   for (int i = 0; i < consts.len; ++i) {
-    heap_->DebugString(consts.handles[i]);
+    heap->DebugString(consts.handles[i]);
   }
   log("}");
+}
+
+Why VM::RunFrame(Frame* frame) {
+  const Code& co = frame->co_;
+
+  Tuple names = co.names();
+  Tuple varnames = co.varnames();
+  Tuple consts = co.consts();
+
+  vector<Handle>& value_stack = frame->value_stack_;
+
+  CodeDebugString(co, heap_);  // Show what code we're running.
 
   Why why = Why::Not;
+  Handle retval = kInvalidHandle;
 
-  int num_bytes = co.code().len;
-  const char* bytecode = co.code().data;
+  Str b = co.code();
+  int code_len = b.len;
+  const uint8_t* bytecode = reinterpret_cast<const uint8_t*>(b.data);
 
-  int i = 0;
-  int n = 0;
+  int inst_count = 0;
 
-  while (i < num_bytes) {
-    uint8_t op = bytecode[i];
+  while (true) {
+    assert(0 <= frame->last_i_);
+    assert(frame->last_i_ < code_len);
+
+    uint8_t op = bytecode[frame->last_i_];
     int oparg;
-    i++;
+    frame->last_i_++;
+#if VERBOSE_LOOP
     printf("%20s", kOpcodeNames[op]);
+#endif
 
     if (op >= HAVE_ARGUMENT) {
-      oparg = bytecode[i] + bytecode[i+1]*256;
-      printf(" %5d", oparg);
-      i += 2;
+      int i = frame->last_i_;
+      oparg = bytecode[i] + (bytecode[i+1] << 8);
+#if VERBOSE_LOOP
+      printf(" %5d (last_i_ = %d)", oparg, i);
+      if (oparg < 0) {
+        log(" oparg bytes: %d %d", bytecode[i], bytecode[i+1]);
+      }
+#endif
+      frame->last_i_ += 2;
     }
+#if VERBOSE_LOOP
     printf("\n");
+#endif
 
     switch(op) {
     case LOAD_CONST:
@@ -697,10 +762,12 @@ Why VM::RunFrame(Frame* frame) {
     case CALL_FUNCTION: {
       int num_args = oparg & 0xff;
       int num_kwargs = (oparg >> 8) & 0xff;  // copied from CPython
-      log("num_args %d", num_args);
+      //log("num_args %d", num_args);
 
+#if VERBOSE_VALUE_STACK
       log("value stack on CALL_FUNCTION");
       DebugHandleArray(value_stack);
+#endif
 
       vector<Handle> args;
       args.reserve(num_args);  // reserve the right size
@@ -711,11 +778,13 @@ Why VM::RunFrame(Frame* frame) {
         args.push_back(value_stack.back());
         value_stack.pop_back();
       }
+#if VERBOSE_VALUE_STACK
       log("Popped args:");
       DebugHandleArray(args);
 
       log("Value stack after popping args:");
       DebugHandleArray(value_stack);
+#endif
 
       // Pop the function itself off
       Handle func_handle = value_stack.back();
@@ -754,7 +823,8 @@ Why VM::RunFrame(Frame* frame) {
       value_stack.pop_back();
 
       // CPython inlines cmp(int, int) too.
-      int64_t a, b, result;
+      int64_t a, b;
+      bool result;
       if (heap_->AsInt(w, &a) && heap_->AsInt(v, &b))  {
         switch (oparg) {
         case CompareOp::LT: result = a <  b; break;
@@ -765,12 +835,14 @@ Why VM::RunFrame(Frame* frame) {
         case CompareOp::GE: result = a >= b; break;
         //case CompareOp::IS: result = v == w; break;
         //case CompareOp::IS_NOT: result = v != w; break;
+        default:
+          log("Unhandled compare %d", oparg);
+          assert(0);
         }
         // TODO: Avoid stack movement by SET_TOP().
 
-        // TODO: Turn result into Py_True or Py_False.
-        // Do those have canonical handles?  Maybe -1 and -2?
-        value_stack.push_back(0);
+        // Use canonical handles rather than allocating bools.
+        value_stack.push_back(result ? kTrueHandle : kFalseHandle);
       } else {
         assert(0);
       }
@@ -787,6 +859,7 @@ Why VM::RunFrame(Frame* frame) {
       if (heap_->AsInt(w, &a) && heap_->AsInt(v, &b))  {
         result = a + b;
       } else {
+        // TODO: Concatenate strings, tuples, lists
         assert(0);
       }
 
@@ -803,15 +876,18 @@ Why VM::RunFrame(Frame* frame) {
       break;
 
     case JUMP_FORWARD:
-      frame->JumpForward(oparg);
+      frame->JumpRelative(oparg);
       break;
 
     case POP_JUMP_IF_FALSE: {
       Handle w = value_stack.back();
       value_stack.pop_back();
 
-      // TODO: Special case for Py_True / Py_False like CPython
-      if (!heap_->Truthy(w)) {
+      // Special case for Py_True / Py_False like CPython.
+      if (w == kTrueHandle) {
+        break;
+      }
+      if (w == kFalseHandle || !heap_->Truthy(w)) {
         frame->JumpTo(oparg);
       }
       break;
@@ -829,23 +905,35 @@ Why VM::RunFrame(Frame* frame) {
       frame->PopBlock();
       break;
 
+    case BREAK_LOOP:
+      why = Why::Break;
+      break;
+
     case RETURN_VALUE:
       // TODO: Set return value here.  It's just a Handle I guess.
+      retval = value_stack.back();
+      value_stack.pop_back();
       why = Why::Return;
       break;
 
     }
-    n++;
+
+    // TODO: Handle the block stack.  Break should JUMP to the location in the
+    // block handler!
+    if (why != Why::Not) {  // return, yield, continue, etc.
+      break;
+    }
+    inst_count++;
   }
 
-  printf("Read %d instructions\n", n);
+  printf("Processed %d instructions\n", inst_count);
   return why;
 }
 
 Why VM::RunMain() {
   Code co = heap_->AsCode(heap_->Last());
 
-  Frame* frame = new Frame(co, *heap_);
+  Frame* frame = new Frame(co);
   call_stack_.push_back(frame);
 
   log("co = %p", co);
@@ -856,19 +944,29 @@ Why VM::RunMain() {
 // Need a VM to be able to convert args to Cell?
 Why func_print(const OHeap& heap, const Args& args, Rets* rets) {
   Str s;
-  if (!heap.AsStr(args[0], &s)) {
-    // TODO: Set TypeError
-    // I guess you need the VM argument here.
-    return Why::Exception;
+  if (heap.AsStr(args[0], &s)) {
+    //printf("PRINTING\n");
+    fwrite(s.data, sizeof(char), s.len, stdout);  // make sure to write NUL bytes!
+    puts("\n");
+
+    // This is like Py_RETURN_NONE?
+    rets->push_back(0);
+    return Why::Not;
   }
 
-  //printf("PRINTING\n");
-  fwrite(s.data, sizeof(char), s.len, stdout);  // make sure to write NUL bytes!
-  puts("\n");
+  // TODO: We should really call the str() constructor here, which will call
+  // __str__ on user-defined instances.
+  int64_t i;
+  if (heap.AsInt(args[0], &i)) {
+    printf("%d\n", i);
 
-  // This is like Py_RETURN_NONE?
-  rets->push_back(0);
-  return Why::Not;
+    rets->push_back(0);
+    return Why::Not;
+  }
+
+  // TODO: Set TypeError
+  // I guess you need the VM argument here.
+  return Why::Exception;
 }
 
 int main(int argc, char **argv) {
