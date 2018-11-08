@@ -5,10 +5,44 @@
 #include <stdlib.h>
 #include <string.h>  // memcmp
 #include <vector>
+#include <unordered_map>
 
 #include "opcode.h"
 
 using std::vector;
+using std::unordered_map;
+
+typedef int32_t Handle;
+
+typedef vector<Handle> Args;
+typedef vector<Handle> Rets;
+
+// Like enum why_code in ceval.c.
+enum class Why {
+  Not,
+  Exception,
+  Reraise,
+  Return,
+  Break,
+  Continue,
+  Yield,
+};
+
+//
+// Forward declarations
+//
+
+class OHeap;
+
+//
+// Prototypes
+//
+
+Why func_print(const OHeap& heap, const Args& args, Rets* rets);
+
+//
+// Utilities
+//
 
 // Log messages to stdout.
 void log(const char* fmt, ...) {
@@ -28,7 +62,21 @@ const int TAG_STR =  -5;
 const int TAG_TUPLE = -6;
 const int TAG_CODE = -7;
 
-typedef int32_t Handle;
+const char* kTagDebugString[] = {
+  "",
+  "None",
+  "bool",
+  "int",
+  "float",
+  "str",
+  "tuple",
+  "code",
+};
+
+const char* TagDebugString(int tag) {
+  return kTagDebugString[-tag];
+}
+
 
 // 16 bytes
 struct Cell {
@@ -59,7 +107,7 @@ struct Cell {
 // What about hash code?  That could be stored with big strings.
 struct Str {
   int32_t len;
-  const uint8_t* data;  // NUL-terminated, but can also contain NUL.
+  const char* data;  // NUL-terminated, but can also contain NUL.
                         // should not be mutated.
 };
 
@@ -91,10 +139,10 @@ class Code {
     if (cells_[h].is_slab) {
       int32_t* str_slab = reinterpret_cast<int32_t*>(cell.ptr);
       s.len = *str_slab;
-      s.data = reinterpret_cast<uint8_t*>(str_slab + 1);  // everything after len
+      s.data = reinterpret_cast<const char*>(str_slab + 1);  // everything after len
     } else {
       s.len = cell.small_len;  // in bytes
-      s.data = reinterpret_cast<const uint8_t*>(&cell.small_val);
+      s.data = reinterpret_cast<const char*>(&cell.small_val);
     }
     return s;
   }
@@ -166,6 +214,47 @@ class OHeap {
     cells_ = cells;
     return true;
   }
+  // C string.  NULL if the cell isn't a string.
+  // NOTE: Shouldn't modify this?
+  const char* AsStr0(Handle h) const {
+    const Cell& cell = cells_[h];
+    if (cell.tag != TAG_STR) {
+      log("AsStr0 expected string but got tag %d", cell.tag);
+      return nullptr;
+    }
+    if (cell.is_slab) {
+      int32_t* str_slab = reinterpret_cast<int32_t*>(cell.ptr);
+      return reinterpret_cast<const char*>(str_slab + 1);  // everything after len
+    } else {
+      return reinterpret_cast<const char*>(&cell.small_val);
+    }
+  }
+  // Sets str and len.  Returns false if the Cell isn't a string.
+  bool AsStr(Handle h, Str* out) const {
+    const Cell& cell = cells_[h];
+    if (cell.tag != TAG_STR) {
+      return false;
+    }
+    if (cell.is_slab) {
+      int32_t* str_slab = reinterpret_cast<int32_t*>(cell.ptr);
+      out->len = *str_slab;
+      out->data = reinterpret_cast<const char*>(str_slab + 1);  // everything after len
+    } else {
+      out->len = cell.small_len;  // in bytes
+      out->data = reinterpret_cast<const char*>(&cell.small_val);
+    }
+    return true;
+  }
+
+  bool AsInt(Handle h, int64_t* out) {
+    const Cell& cell = cells_[h];
+    if (cell.tag != TAG_STR) {
+      return false;
+    }
+    *out = cell.i;
+    return true;
+  }
+
   // TODO: How do we bounds check?
   Code AsCode(Handle h) {
     log("tag = %d", cells_[h].tag);
@@ -183,6 +272,40 @@ class OHeap {
     if (cells_) {
       free(cells_);
     }
+  }
+
+  void DebugString(Handle h) {
+    const Cell& cell = cells_[h];
+
+    fprintf(stderr, "  <id %d> ", h);
+
+    switch (cell.tag) {
+    case TAG_NONE:
+      log("None");
+      break;
+    case TAG_BOOL:
+      log("Bool");
+      break;
+    case TAG_INT: {
+      int64_t i;
+      AsInt(h, &i);
+      log("Int %d", i);
+      break;
+    }
+    case TAG_FLOAT:
+      log("Float");
+      break;
+    case TAG_STR:
+      log("Str %s", AsStr0(h));
+      break;
+    default:
+      log("%s", TagDebugString(cell.tag));
+    }
+  }
+
+  // Getter
+  inline Cell* cells() {
+    return cells_;
   }
  private:
   uint8_t* slabs_;  // so we can free it, not used directly
@@ -276,17 +399,6 @@ bool Load(FILE* f, OHeap* heap) {
   return true;
 }
 
-// Like enum why_code in ceval.c.
-enum class Why {
-  Not,
-  Exception,
-  Reraise,
-  Return,
-  Break,
-  Continue,
-  Yield,
-};
-
 enum class BlockType {
   Loop,
   Except,
@@ -301,25 +413,68 @@ struct Block {
   int handler;  // jump address.  TODO: Rename?
 };
 
+// Implement hash and equality functors for unordered_set.
+struct NameHash {
+  int operator() (const char* s) const {
+    // DJB hash: http://www.cse.yorku.ca/~oz/hash.html
+    int h = 5381;
+
+    while (char c = *s++) {
+      h = (h << 5) + h + c;
+    }
+    return h;
+  }
+};
+
+struct NameEq {
+  bool operator() (const char* x, const char* y) const {
+    return strcmp(x, y) == 0;
+  }
+};
+
+
+// Is there a simple implementation for char* ?
+typedef unordered_map<const char*, Handle, NameHash, NameEq> NameLookup;
+
 class Frame {
  public:
   // TODO: Reserve the right size for these stacks?
   // from co.stacksize
-  Frame(const Code& co) 
+  Frame(const Code& co, const OHeap& heap) 
       : co_(co),
+        heap_(heap),
         value_stack_(),
         block_stack_() {
   }
   // Take the handle of a string, and return a handle of a value.
-  Handle LoadName(Handle n) {
-    return 0;
+  Handle LoadName(Handle h) {
+    const char* name = heap_.AsStr0(h);
+    assert(name != nullptr);
+
+    log("-- Looking up %s", name);
+
+    auto it = locals_.find(name);
+    if (it != locals_.end()) {
+      return it->second;
+    }
+
+    if (strcmp(name, "print") == 0) {
+      return -1;  // special value for a C function?
+    }
+
+    return 0;  // should this be a specal value?
   }
   const Code& co_;  // public for now
   vector<Handle> value_stack_;
   vector<Block> block_stack_;
  private:
+  const OHeap& heap_;
+  // How do we use the default hash?
+  // TODO: if we de-dupe all the names in OHeap, and there's no runtime code
+  // generaetion, each variable name string will have exactly one address.  So
+  // then can we use pointer comparison for equality / hashing?  Would be nice.
+  NameLookup locals_;
 };
-
 
 class VM {
  public:
@@ -327,8 +482,8 @@ class VM {
       : heap_(heap) {
   }
   ~VM() {
-    for (auto* f : call_stack_) {
-      delete f;
+    for (auto* frame : call_stack_) {
+      delete frame;
     }
   }
 
@@ -339,6 +494,8 @@ class VM {
   Why RunMain();
 
  private:
+  void DebugHandleArray(const vector<Handle>& handles);
+
   OHeap* heap_;
   vector<Frame*> call_stack_;  // call stack
 
@@ -348,6 +505,26 @@ class VM {
   // PyInterpreterState: modules, sysdict, builtins, module reloading
   // OVM won't have overridable builtins.
 };
+
+void VM::DebugHandleArray(const vector<Handle>& handles) {
+  printf("(%d) [ ", handles.size());
+  for (Handle h : handles) {
+    printf("%d ", h);
+  }
+  printf("]\n");
+
+  printf("    [ ");
+  for (Handle h : handles) {
+    if (h < 0) {
+      printf("(native) ");
+    } else {
+      int tag = heap_->cells()[h].tag;
+      printf("%s ", TagDebugString(tag));
+    }
+  }
+  printf("]\n");
+
+}
 
 Why VM::RunFrame(Frame* frame) {
   const Code& co = frame->co_;
@@ -367,16 +544,22 @@ Why VM::RunFrame(Frame* frame) {
 
   log("len(names) = %d", co.names().len);
   log("len(varnames) = %d", co.varnames().len);
-  log("len(consts) = %d", co.consts().len);
-
   Tuple names = co.names();
   Tuple varnames = co.varnames();
   Tuple consts = co.consts();
 
+  log("len(consts) = %d", consts.len);
+
+  log("consts {");
+  for (int i = 0; i < consts.len; ++i) {
+    heap_->DebugString(consts.handles[i]);
+  }
+  log("}");
+
   Why why = Why::Not;
 
   int num_bytes = co.code().len;
-  const uint8_t* bytecode = co.code().data;
+  const char* bytecode = co.code().data;
 
   int i = 0;
   int n = 0;
@@ -409,10 +592,66 @@ Why VM::RunFrame(Frame* frame) {
     case POP_TOP:
       value_stack.pop_back();
       break;
-    case CALL_FUNCTION:
-      // TODO: pop number of args.  Create a new frame, etc.
+    case CALL_FUNCTION: {
+      int num_args = oparg & 0xff;
+      int num_kwargs = (oparg >> 8) & 0xff;  // copied from CPython
+      log("num_args %d", num_args);
+
+      log("value stack on CALL_FUNCTION");
+      DebugHandleArray(value_stack);
+
+      vector<Handle> args;
+      args.reserve(num_args);  // reserve the right size
+
+      // Pop num_args off.  TODO: Could print() builtin do this itself to avoid
+      // copying?
+      for (int i = 0; i < num_args; ++i ) {
+        args.push_back(value_stack.back());
+        value_stack.pop_back();
+      }
+      log("Popped args:");
+      DebugHandleArray(args);
+
+      log("Value stack after popping args:");
+      DebugHandleArray(value_stack);
+
+      // Pop the function itself off
+      Handle func_handle = value_stack.back();
+      value_stack.pop_back();
+
+      //log("func handle %d", func_handle);
+
+      vector<Handle> rets;
+      if (func_handle < 0) {
+        // TODO: dispatch table for native functions.
+        // Call func_print for now.
+
+        why = func_print(*heap_, args, &rets);
+        if (why != Why::Not) {
+          log("EXCEPTION after calling native function");
+          break;
+        }
+      } else {
+        //Func func;  // has CodeObject and more?
+        //heap_->AsFunc(func_handle, &func);
+        //CallFunction(func, args, &rets);
+        rets.push_back(0);
+      }
+      // Now push
+
+      // TODO: Interpret thing as a string.  Then look it up in the builtins, e.g.
+      // "print".  Should get -1.  Then since it's negative, look up that value
+      // in a special table of builtins.
+      // Then call that function with args.
+      // Should it get direct access to the value stack?  And then we can check
+      // that it popped the right number and pushed the right number?
+
+      assert(rets.size() == 1);
+      value_stack.push_back(rets[0]);
       break;
+    }
     case RETURN_VALUE:
+      // TODO: Set return value here.  It's just a Handle I guess.
       why = Why::Return;
       break;
 
@@ -427,12 +666,30 @@ Why VM::RunFrame(Frame* frame) {
 Why VM::RunMain() {
   Code co = heap_->AsCode(heap_->Last());
 
-  Frame* frame = new Frame(co);
+  Frame* frame = new Frame(co, *heap_);
   call_stack_.push_back(frame);
 
   log("co = %p", co);
 
   return RunFrame(frame);
+}
+
+// Need a VM to be able to convert args to Cell?
+Why func_print(const OHeap& heap, const Args& args, Rets* rets) {
+  Str s;
+  if (!heap.AsStr(args[0], &s)) {
+    // TODO: Set TypeError
+    // I guess you need the VM argument here.
+    return Why::Exception;
+  }
+
+  //printf("PRINTING\n");
+  fwrite(s.data, sizeof(char), s.len, stdout);  // make sure to write NUL bytes!
+  puts("\n");
+
+  // This is like Py_RETURN_NONE?
+  rets->push_back(0);
+  return Why::Not;
 }
 
 int main(int argc, char **argv) {
