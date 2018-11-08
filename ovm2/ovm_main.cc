@@ -158,6 +158,8 @@ class Code {
 
 class OHeap {
  public:
+  OHeap() : slabs_(nullptr), cells_(nullptr) {
+  }
   bool Init(uint8_t* slabs, int num_cells, Cell* cells) {
     slabs_ = slabs;
     num_cells_ = num_cells;
@@ -175,8 +177,12 @@ class OHeap {
   }
   // TODO: Should these be allocated in the class for symmetry?
   ~OHeap() {
-    free(slabs_);
-    free(cells_);
+    if (slabs_) {
+      free(slabs_);
+    }
+    if (cells_) {
+      free(cells_);
+    }
   }
  private:
   uint8_t* slabs_;  // so we can free it, not used directly
@@ -190,11 +196,11 @@ const int kHeaderLen = 4;
 bool ReadHeader(FILE* f) {
   char buf[kHeaderLen];
   if (fread(buf, kHeaderLen, 1, f) != 1) {
-    log("Error reading magic number");
+    log("Couldn't read OHeap header");
     return false;
   }
   if (memcmp(buf, kHeader, kHeaderLen) != 0) {
-    log("Error: expected '%s'", kHeader);
+    log("Error: expected '%s' in OHeap header", kHeader);
     return false;
   }
   return true;
@@ -445,8 +451,8 @@ int main(int argc, char **argv) {
 
   OHeap heap;
   if (!Load(f, &heap)) {
-    log("Error loading OHeap", argv[1]);
-    return false;
+    log("Error loading '%s'", argv[1]);
+    return 1;
   }
 
   VM vm(&heap);

@@ -39,6 +39,11 @@ run-ovm() {
   $bin "$@"
 }
 
+# TODO: Make this a test.  This tickled a memory error.
+bad-oheap() {
+  run-ovm opy/gold/hello_py3.py
+}
+
 # Python VM.
 fib-byterun() {
   local bytecode=_tmp/fib_iterative.pyc
@@ -66,7 +71,7 @@ compile-recursive() {
 }
 
 # Run ovm_main.cc
-fib-ovm-native() {
+ovm-native() {
   local py=${1:-$FIB_I}
   local bytecode=_tmp/$(basename $py '.py').ovm2
   bin/opyc compile-ovm $py $bytecode
