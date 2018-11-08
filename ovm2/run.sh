@@ -30,11 +30,11 @@ gen-opcodes() {
 
 # Helper function.
 run-ovm() {
-  local bin=_tmp/ovm_main
+  local bin=_tmp/ovm2
 
   local ASAN_FLAGS='-fsanitize=address -g'
   #local ASAN_FLAGS=
-  c++ -std=c++11 -Wall -I _tmp $ASAN_FLAGS -o $bin ovm2/ovm_main.cc
+  c++ -std=c++11 -Wall -I _tmp $ASAN_FLAGS -o $bin ovm2/main.cc
   set -x
   $bin "$@"
 }
@@ -70,7 +70,7 @@ compile-recursive() {
   ls -l $out
 }
 
-# Run ovm_main.cc
+# Run ovm2/main.cc
 ovm-native() {
   local py=${1:-$FIB_I}
   local bytecode=_tmp/$(basename $py '.py').ovm2
