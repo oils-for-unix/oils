@@ -569,8 +569,8 @@ class Frame {
       : co_(co),
         value_stack_(),
         block_stack_(),
-        locals_(),
-        last_i_(0) {
+        last_i_(0),
+        locals_() {
   }
   // Take the handle of a string, and return a handle of a value.
   Handle LoadName(const char* name) {
@@ -642,7 +642,7 @@ class VM {
 };
 
 void VM::DebugHandleArray(const vector<Handle>& handles) {
-  printf("(%d) [ ", handles.size());
+  printf("(%zu) [ ", handles.size());
   for (Handle h : handles) {
     printf("%d ", h);
   }
@@ -683,13 +683,14 @@ void CodeDebugString(const Code& co, OHeap* heap) {
     heap->DebugString(consts.handles[i]);
   }
   log("}");
+  log("-----");
 }
 
 Why VM::RunFrame(Frame* frame) {
   const Code& co = frame->co_;
 
   Tuple names = co.names();
-  Tuple varnames = co.varnames();
+  //Tuple varnames = co.varnames();
   Tuple consts = co.consts();
 
   vector<Handle>& value_stack = frame->value_stack_;
@@ -761,7 +762,7 @@ Why VM::RunFrame(Frame* frame) {
       break;
     case CALL_FUNCTION: {
       int num_args = oparg & 0xff;
-      int num_kwargs = (oparg >> 8) & 0xff;  // copied from CPython
+      //int num_kwargs = (oparg >> 8) & 0xff;  // copied from CPython
       //log("num_args %d", num_args);
 
 #if VERBOSE_VALUE_STACK
@@ -926,7 +927,7 @@ Why VM::RunFrame(Frame* frame) {
     inst_count++;
   }
 
-  printf("Processed %d instructions\n", inst_count);
+  log("Processed %d instructions", inst_count);
   return why;
 }
 
@@ -958,7 +959,7 @@ Why func_print(const OHeap& heap, const Args& args, Rets* rets) {
   // __str__ on user-defined instances.
   int64_t i;
   if (heap.AsInt(args[0], &i)) {
-    printf("%d\n", i);
+    printf("%ld\n", i);
 
     rets->push_back(0);
     return Why::Not;

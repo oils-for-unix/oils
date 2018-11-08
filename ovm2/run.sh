@@ -71,7 +71,7 @@ compile-recursive() {
 }
 
 # Run ovm2/main.cc
-ovm-native() {
+ovm2-main() {
   local py=${1:-$FIB_I}
   local bytecode=_tmp/$(basename $py '.py').ovm2
   bin/opyc compile-ovm $py $bytecode
@@ -80,7 +80,12 @@ ovm-native() {
 
 # This works
 hello-py3() {
-  ovm-native opy/gold/hello_py3.py
+  ovm2-main opy/gold/hello_py3.py
+}
+
+# This works
+fib-iterative() {
+  ovm2-main $FIB_I
 }
 
 compare-compiler() {
