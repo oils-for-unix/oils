@@ -521,7 +521,7 @@ bool Load(FILE* f, OHeap* heap) {
   return true;
 }
 
-enum class BlockType {
+enum class BlockType : uint8_t {
   Loop,
   Except,
   Finally,
@@ -531,8 +531,8 @@ enum class BlockType {
 // Like PyTryBlock in frameobject.h
 struct Block {
   BlockType type;
-  int level;  // stack level
-  int handler;  // jump address.  TODO: Rename?
+  uint8_t level;  // VALUE stack level to pop to.
+  uint16_t jump_target;  // Called 'handler' in CPython.
 };
 
 // Implement hash and equality functors for unordered_set.
@@ -598,11 +598,6 @@ class Frame {
   inline void JumpRelative(int offset) {
     last_i_ += offset;  // Is this correct?
   }
-  void PushBlock(BlockType type) {
-  };
-  void PopBlock() {
-  };
-
   const Code& co_;  // public for now
   vector<Handle> value_stack_;
   vector<Block> block_stack_;
@@ -694,6 +689,7 @@ Why VM::RunFrame(Frame* frame) {
   Tuple consts = co.consts();
 
   vector<Handle>& value_stack = frame->value_stack_;
+  vector<Block>& block_stack = frame->block_stack_;
 
   CodeDebugString(co, heap_);  // Show what code we're running.
 
@@ -826,7 +822,7 @@ Why VM::RunFrame(Frame* frame) {
       // CPython inlines cmp(int, int) too.
       int64_t a, b;
       bool result;
-      if (heap_->AsInt(w, &a) && heap_->AsInt(v, &b))  {
+      if (heap_->AsInt(v, &a) && heap_->AsInt(w, &b))  {
         switch (oparg) {
         case CompareOp::LT: result = a <  b; break;
         case CompareOp::LE: result = a <= b; break;
@@ -869,6 +865,32 @@ Why VM::RunFrame(Frame* frame) {
       break;
     }
 
+    case BINARY_MODULO: {
+      Handle w = value_stack.back();
+      value_stack.pop_back();
+      Handle v = value_stack.back();
+      value_stack.pop_back();
+
+      Str s;
+      if (heap_->AsStr(v, &s)) {
+        // TODO: Do string formatting
+        assert(0);
+      }
+
+      int64_t a, b, result;
+      if (heap_->AsInt(v, &a) && heap_->AsInt(w, &b)) {
+        result = a % b;
+        Handle result_h = heap_->NewInt(result);
+        value_stack.push_back(result_h);
+        break;
+      }
+
+      // TODO: TypeError
+      assert(0);
+
+      break;
+    }
+
     // 
     // Jumps
     //
@@ -898,12 +920,17 @@ Why VM::RunFrame(Frame* frame) {
     // Control Flow
     //
 
-    case SETUP_LOOP:
-      frame->PushBlock(BlockType::Loop);
+    case SETUP_LOOP: {
+      Block b;
+      b.type = BlockType::Loop;
+      b.level = value_stack.size();
+      b.jump_target = frame->last_i_ + oparg;  // oparg is relative jump target
+      block_stack.push_back(b);
       break;
+    }
 
     case POP_BLOCK:
-      frame->PopBlock();
+      block_stack.pop_back();
       break;
 
     case BREAK_LOOP:
@@ -917,6 +944,40 @@ Why VM::RunFrame(Frame* frame) {
       why = Why::Return;
       break;
 
+    default:
+      log("Unhandled instruction");
+      break;
+
+    }
+
+    while (why != Why::Not && block_stack.size()) {
+      assert(why != Why::Yield);
+      Block b = block_stack.back();
+
+      // TODO: This code appears to be unused!  continue compiles as
+      // POP_JUMP_IF_FALSE!
+      if (b.type == BlockType::Loop && why == Why::Continue) {
+        assert(0);
+        // TODO: retval?  I guess it's popped off the stack.
+        frame->JumpTo(retval);
+      }
+      block_stack.pop_back();
+
+      // Unwind value stack to the saved level.
+      while (value_stack.size() > b.level) {
+        value_stack.pop_back();
+      }
+
+      if (b.type == BlockType::Loop && why == Why::Break) {
+        why = Why::Not;
+        frame->JumpTo(b.jump_target);
+      }
+
+      if (b.type == BlockType::Finally ||
+          b.type == BlockType::Except && why == Why::Exception ||
+          b.type == BlockType::With) {
+        assert(0);
+      }
     }
 
     // TODO: Handle the block stack.  Break should JUMP to the location in the
@@ -981,7 +1042,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  log("cell = %d", sizeof(Cell));
   assert(sizeof(Cell) == 16);
 
   OHeap heap;

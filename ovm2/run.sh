@@ -83,6 +83,11 @@ hello-py3() {
   ovm2-main opy/gold/hello_py3.py
 }
 
+# This tickled a couple bugs
+continue_() {
+  ovm2-main opy/gold/continue_.py
+}
+
 # This works
 fib-iterative() {
   ovm2-main $FIB_I
