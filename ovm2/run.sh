@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/common.sh  # for $CLANGXX, etc
+
 readonly FIB_I='opy/gold/fib_iterative.py'
 readonly FIB_R='opy/gold/fib_recursive.py'
 
@@ -32,9 +34,10 @@ gen-opcodes() {
 run-ovm() {
   local bin=_tmp/ovm2
 
-  local ASAN_FLAGS='-fsanitize=address -g'
-  #local ASAN_FLAGS=
-  c++ -std=c++11 -Wall -I _tmp $ASAN_FLAGS -o $bin ovm2/main.cc
+  #local SANITIZER_FLAGS='-fsanitize=address -g'
+  local SANITIZER_FLAGS='-fsanitize=undefined -g'
+
+  $CLANGXX -std=c++11 -Wall -I _tmp $SANITIZER_FLAGS -o $bin ovm2/main.cc
   set -x
   $bin "$@"
 }
