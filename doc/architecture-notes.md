@@ -3,21 +3,18 @@ Notes on OSH Architecture
 
 ## Parser Issues
 
-### Where we (unfortunately) must re-parse previously parsed text
+This section is about extra passes ("irregularities") at **parse time**.  In
+the "Runtime Issues" section below, we discuss cases that involve parsing after
+variable expansion, etc.
 
-These cases make it harder to produce good error messages with source location
-info.  They also have implications for translation, because we break the "arena
-invariant".
+### Where We Re-parse Previously Parsed Text (unfortunately)
 
-(1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
-"lexical macros".
+This makes it harder to produce good error messages with source location info.
+It also implications for translation, because we break the "arena invariant".
 
-(2) **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
+(1) **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
 expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this used,
 and it would significantly complicate the OSH parser.
-
-NOTE: These two cases involve extra passes at **parse time**.  Cases that
-involve runtime code evaluation are demonstrated below.
 
 ### Where VirtualLineReader is used
 
@@ -40,6 +37,17 @@ These are handled up front, but not in a single pass.
 - `func() { echo hi; }` vs.  `func=()  # an array`
 - precedence parsing?  I think this is also a single token.
 
+### Lexer Unread
+
+`osh/word_parse.py` calls `lexer.MaybeUnreadOne() to handle right parens in
+this case:
+
+```
+(case x in x) ;; esac )
+```
+
+This is sort of like the `ungetc()` I've seen in other shell lexers.
+
 ### Where the arena invariant is broken
 
 - Here docs with <<-.  The leading tab is lost, because we don't need it for
@@ -51,18 +59,28 @@ These are handled up front, but not in a single pass.
 
 ## Runtime Issues
 
-### Where Strings are Evaluated As Code (intentionally)
+### Where OSH Parses Code in Strings Formed At Runtime
 
-- `source` builtin (`CommandParser`)
-` `eval` builtin
+(1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
+"lexical macros".
+
+(2) **Prompt strings**.  `$PS1` and family first undergo `\` substitution, and
+then the resulting strings are parsed as words, with `$` escaped to `\$`.
+
+(3) **Builtins**.
+
+- `eval` 
 - `trap` builtin
   - exit
   - debug
   - err
   - signals
-- `$PS1` and `$PS4` (WordParser)
+- `source` -- the filename is formed dynamically, but the code is generally
+  static.
 
-### Where Strings are Evaluated As Code (perhaps unintentionally)
+### Where Bash Parses Code in Strings Formed at Runtime (perhaps unintentionally)
+
+All of the cases above, plus:
 
 (1) Recursive **Arithmetic Evaluation**:
 
