@@ -1266,7 +1266,8 @@ class _FunctionCodeGenerator(CodeGenerator):
         self.scope = self.ctx.scopes[func]
 
     def _optimized(self):
-        return True
+        # -fast-ops=1 is the default
+        return self.ctx.comp_opt.fast_ops
 
     def FindLocals(self):
         func = self.func
