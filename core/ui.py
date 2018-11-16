@@ -27,9 +27,6 @@ import libc  # gethostname()
 value_e = runtime.value_e
 
 
-# bash --noprofile --norc uses 'bash-4.3$ '
-DEFAULT_PS1 = 'osh$ '
-
 
 def Clear():
   sys.stdout.write('\033[2J')  # clear screen
@@ -156,11 +153,17 @@ class Prompt(object):
   another '!' (that is, "!!" ) shall place the literal character '!' in the
   prompt.
   """
-  def __init__(self, arena, parse_ctx, ex):
+  def __init__(self, lang, arena, parse_ctx, ex, mem):
+    assert lang in ('osh', 'oil'), lang
+    self.lang = lang
     self.arena = arena
     self.parse_ctx = parse_ctx
     self.ex = ex
+    self.mem = mem
 
+    # The default prompt is osh$ or oil$ for now.  bash --noprofile --norc ->
+    # 'bash-4.3$ '
+    self.default_prompt = lang + '$ '
     self.cache = _PromptCache()  # Cache to save syscalls / libc calls.
 
     # These caches should reduce memory pressure a bit.  We don't want to
@@ -200,7 +203,7 @@ class Prompt(object):
 
         elif char == 'w':
           # TODO: This should shorten to ~foo when applicable.
-          val = self.ex.mem.GetVar('PWD')
+          val = self.mem.GetVar('PWD')
           if val.tag == value_e.Str:
             r = val.s
           else:
@@ -223,7 +226,7 @@ class Prompt(object):
   def EvalPrompt(self, val):
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
     if val.tag != value_e.Str:
-      return DEFAULT_PS1  # no evaluation necessary
+      return self.default_prompt  # no evaluation necessary
 
     # Parse backslash escapes (cached)
     try:
@@ -253,9 +256,14 @@ class Prompt(object):
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
     return val2.s
 
-  def PS1(self):
-    val = self.ex.mem.GetVar('PS1')
-    return self.EvalPrompt(val)
+  def FirstPrompt(self):
+    if self.lang == 'osh':
+      val = self.mem.GetVar('PS1')
+      return self.EvalPrompt(val)
+    else:
+      # TODO: If the lang is Oil, we should use a better prompt language than
+      # $PS1!!!
+      return self.default_prompt
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):

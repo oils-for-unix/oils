@@ -56,6 +56,7 @@ from core import cmd_exec
 from core import dev
 from core import legacy
 from core import main_loop
+from core import oil_exec
 from core import os_path
 from core import process
 from core import reader
@@ -136,7 +137,21 @@ OSH_SPEC.LongFlag('--norc')
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
-def OshMain(argv0, argv, login_shell):
+def ShellMain(lang, argv0, argv, login_shell):
+  """Used by bin/osh and bin/oil.
+
+  Args:
+    lang: 'osh' or 'oil'
+    argv0, argv: So we can also invoke bin/osh as 'oil.ovm osh'.  Like busybox.
+    login_shell: Was - on the front?
+  """
+  # Differences between osh and oil:
+  # - --help?  I guess Oil has a SUPERSET of OSH options.
+  # - oshrc vs oilrc
+  # - the parser and executor
+  # - Change the prompt in the interactive shell?
+
+  assert lang in ('osh', 'oil'), lang
 
   arg_r = args.Reader(argv)
   try:
@@ -147,7 +162,7 @@ def OshMain(argv0, argv, login_shell):
 
   if opts.help:
     loader = util.GetResourceLoader()
-    builtin.Help(['osh-usage'], loader)
+    builtin.Help(['%s-usage' % lang], loader)
     return 0
   if opts.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
@@ -198,15 +213,22 @@ def OshMain(argv0, argv, login_shell):
 
   ex = cmd_exec.Executor(mem, fd_state, funcs, comp_lookup, exec_opts,
                          parse_ctx, devtools)
+  if lang == 'oil':
+    # The Oil executor wraps an OSH executor?  It needs to be able to source
+    # it.
+    ex = oil_exec.OilExecutor(ex)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
   try:
-    rc_path = 'oilrc'
+    rc_path = lang + 'rc'  # oshrc or oilrc
     arena.PushSource(rc_path)
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
-      _, rc_c_parser = parse_ctx.MakeParser(rc_line_reader)
+      if lang == 'osh':
+        _, rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
+      else:
+        rc_c_parser = parse_ctx.MakeOilParser(rc_line_reader)
       try:
         status = main_loop.Batch(ex, rc_c_parser, arena)
       finally:
@@ -215,8 +237,8 @@ def OshMain(argv0, argv, login_shell):
     if e.errno != errno.ENOENT:
       raise
 
-  # Needed in non-interactive shells for @P
-  prompt = ui.Prompt(arena, parse_ctx, ex)
+  # Prompt rendering is needed in non-interactive shells for @P.
+  prompt = ui.Prompt(lang, arena, parse_ctx, ex, mem)
   ui.PROMPT = prompt
 
   if opts.c is not None:
@@ -250,7 +272,10 @@ def OshMain(argv0, argv, login_shell):
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
-  w_parser, c_parser = parse_ctx.MakeParser(line_reader)
+  if lang == 'osh':
+    _, c_parser = parse_ctx.MakeOshParser(line_reader)
+  else:
+    c_parser = parse_ctx.MakeOilParser(line_reader)
 
   if exec_opts.interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
@@ -305,50 +330,6 @@ def OshMain(argv0, argv, login_shell):
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status
-
-
-# TODO: Does oil have the same -o syntax?  I probably want something else.
-
-OIL_SPEC = args.FlagsAndOptions()
-
-DefineCommonFlags(OIL_SPEC)
-OIL_SPEC.ShortFlag('-n')
-
-
-def OilMain(argv):
-  arg_r = args.Reader(argv)
-  try:
-    opts = OIL_SPEC.Parse(arg_r)
-  except args.UsageError as e:
-    ui.usage('oil usage error: %s', e)
-    return 2
-
-  if opts.help:
-    loader = util.GetResourceLoader()
-    builtin.Help(['oil-usage'], loader)
-    return 0
-  if opts.version:
-    # OSH version is the only binary in Oil right now, so it's all one version.
-    _ShowVersion()
-    return 0
-
-  pool = alloc.Pool()
-  arena = pool.NewArena()
-
-  # -n is exec_opts.noexec for OSH.  Just make it a flag here.
-  # TODO: Have a long flag too?
-  nodes_out = [] if opts.n else None
-
-  # I guess OSH is parsed line-by-line?
-  if 0:
-    _tlog('Execute(node)')
-    status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
-
-    if nodes_out is not None:
-      ui.PrintAst(nodes_out, opts)
-
-  raise NotImplementedError('oil')
-  return 0
 
 
 def WokMain(main_argv):
@@ -406,7 +387,7 @@ def OshCommandMain(argv):
   line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!
   parse_ctx = parse_lib.ParseContext(arena, aliases)
-  _, c_parser = parse_ctx.MakeParser(line_reader)
+  _, c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:
     node = main_loop.ParseWholeFile(c_parser)
@@ -494,14 +475,14 @@ def AppBundleMain(argv):
     main_argv = argv[1:]
 
   if main_name in ('osh', 'sh'):
-    status = OshMain(argv0, main_argv, login_shell)
+    status = ShellMain('osh', argv0, main_argv, login_shell)
     _tlog('done osh main')
     return status
   elif main_name == 'oshc':
     return OshCommandMain(main_argv)
 
   elif main_name == 'oil':
-    return OilMain(main_argv)
+    return ShellMain('oil', argv0, main_argv, login_shell)
   elif main_name == 'wok':
     return WokMain(main_argv)
   elif main_name == 'boil':

@@ -12,6 +12,8 @@ from osh import match
 from osh import word_parse
 from osh.meta import types
 
+from frontend import oil_parse
+
 lex_mode_e = types.lex_mode_e
 
 
@@ -34,12 +36,19 @@ class ParseContext(object):
     self.arena = arena
     self.aliases = aliases
 
-  def MakeParser(self, line_reader):
+  def MakeOshParser(self, line_reader):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
     lx = lexer.Lexer(line_lexer, line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
     return w_parser, c_parser
+
+  def MakeOilParser(self, line_reader):
+    # Same lexer as Oil?  It just doesn't start in the OUTER state?
+    line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
+    lx = lexer.Lexer(line_lexer, line_reader)
+    c_parser = oil_parse.OilParser(self, lx, line_reader)
+    return c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)

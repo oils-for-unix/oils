@@ -640,7 +640,7 @@ class CommandParser(object):
 
     # TODO: Change name back to VirtualLineReader?
     line_reader = reader.VirtualLineReader(line_info, self.arena)
-    _, cp = self.parse_ctx.MakeParser(line_reader)
+    _, cp = self.parse_ctx.MakeOshParser(line_reader)
 
     try:
       node = cp.ParseCommand(cur_aliases=cur_aliases)

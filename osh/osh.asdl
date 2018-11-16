@@ -213,4 +213,45 @@ module osh
   -- Char classes are opaque for now.  If we ever need them:
   -- * Collating symbols are [. .]
   -- * Equivalence classes are [=
+
+
+  --
+  -- OIL LANGUAGE
+  --
+
+  -- NOTE: These are defined in the same ASDL module since the OSH LST will
+  -- contain oil_command in the form of 'proc and 'func'.  The Oil LST will NOT
+  -- contain any OSH nodes.  It will have 'sh-eval', shEval(), etc. which work
+  -- with strings.
+
+  oil_expr =
+    Name
+  | UnaryOp(token op, oil_expr child)
+  | BinaryOp(token op, oil_expr left, oil_expr right)
+  | FuncCall_(oil_expr func, oil_expr* args)
+
+  oil_word_part = 
+    Literal(token token)
+  | EscapedLiteral(token token)
+    -- for 'foo=' and "${a:-}"
+  | SingleQuoted(token left, token* tokens)
+  | DoubleQuoted(token left, oil_word_part* parts)
+  | TildeSub(token token)
+  | VarSub(token token)
+  | ExprSub(token token,
+            id? prefix_op,  -- prefix # or ! operators
+            bracket_op? bracket_op
+            suffix_op? suffix_op)
+  | CommandSub(oil_command command_list, token left_token)
+
+  -- NOTE differences from OSH: no TokenWord, but add GlobWord, etc.
+  oil_word = 
+    Compound(oil_word_part* parts)
+  | Glob()
+  | Braced(oil_word_part* parts) -- TODO: Does it need its own parts?
+
+  oil_command = 
+    -- TODO: respect order of words and redirects
+    Simple(oil_word* words, redir* redirects, env_pair* more_env)
+  | Sentence_(command child, token terminator)
 }

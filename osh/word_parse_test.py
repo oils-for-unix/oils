@@ -30,7 +30,7 @@ def _InitWordParserWithArena(s):
   arena = alloc.SideArena('word_parse_test.py')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(s, arena)
-  w_parser, _ = parse_ctx.MakeParser(line_reader)
+  w_parser, _ = parse_ctx.MakeOshParser(line_reader)
   return arena, w_parser
 
 

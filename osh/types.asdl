@@ -18,4 +18,16 @@ module types {
   | EXTGLOB
   | VS_1 | VS_2 | VS_ARG_UNQ | VS_ARG_DQ
   | BASH_REGEX | BASH_REGEX_CHARS
+
+  | OIL_OUTER   -- echo foo (should this be OIL_COMMAND?)
+  | OIL_WORDS   -- Like OUTER, but {a,b} and [a-z].? are recognized.
+  | OIL_EXPR    -- echo ${a * b} $(a * b)
+  | OIL_SQ      -- echo '_\t_'
+  | OIL_DQ      -- echo "hello $name\n"
+  | OIL_RAW_SQ  -- echo r'foo'
+  | OIL_RAW_DQ  -- echo r"hello there"
+
+  -- More:
+  -- * Multiline strings
+  -- * Bitwise expressions for set x = bits ~a | b ?
 }

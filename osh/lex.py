@@ -186,21 +186,18 @@ LEXER_DEF[lex_mode_e.COMMENT] = [
   R(r'[^\n\0]*', Id.Ignored_Comment)
 ]
 
+_LIT_CHAR_WHITELIST = R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars)
+
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: We could add anything 128 and above to this character class?  So
   # utf-8 characters don't get split?
-  R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars),
+  _LIT_CHAR_WHITELIST,
 
   # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
   # want the next token after the tilde TildeLike token start with a /.
   R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike),
 
   C('#', Id.Lit_Pound),  # For comments
-
-  # Needs to be LONGER than any other
-  #(VAR_NAME_RE + r'\[', Id.Lit_Maybe_LHS_ARRAY),
-  # Id.Lit_Maybe_LHS_ARRAY2
-  #(r'\]\+?=', Id.Lit_Maybe_ARRAY_ASSIGN_RIGHT),
 
   # For brace expansion {a,b}
   C('{', Id.Lit_LBrace),
@@ -283,6 +280,7 @@ _MORE_KEYWORDS = [
 ]
 
 
+# The 'type' builtin introspects on keywords and builtins.
 _TYPE_KEYWORDS = set(name for _, name, _ in _KEYWORDS)
 _TYPE_KEYWORDS.add('{')  # not in our lexer list
 _TYPE_BUILTINS = set(name for _, name, _ in _MORE_KEYWORDS)
@@ -304,8 +302,8 @@ LEXER_DEF[lex_mode_e.OUTER] = [
   # These four are not allowed within [[, so they are in OUTER but not
   # _UNQUOTED.
 
-  # e.g. beginning of NAME=val, which will always be longer than the above
-  # Id.Lit_Chars.
+  # e.g. beginning of NAME=val, which will always be longer than
+  # _LIT_CHAR_WHITELIST.
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\[', Id.Lit_ArrayLhsOpen),
   R(r'\]\+?=', Id.Lit_ArrayLhsClose),
@@ -561,3 +559,107 @@ GLOB_DEF = [
   R(r'[a-zA-Z0-9_]+', Id.Glob_CleanLiterals),  # no regex escaping
   R(r'[^\0]', Id.Glob_OtherLiteral),  # anything else -- examine the char
 ]
+
+
+#
+# Oil lexing.  TODO: Move to a different file?
+#
+
+
+_OIL_KEYWORDS = [
+  # Blocks
+  C('const',     Id.KW_Const),
+  C('set',       Id.KW_Set),
+  C('setglobal', Id.KW_SetGlobal),
+  C('var',       Id.KW_Var),
+
+  # Blocks
+  C('proc',      Id.KW_Proc),
+  C('func',      Id.KW_Func),
+
+  C('do',        Id.KW_Do),
+  C('fork',      Id.KW_Fork),
+  C('shell',     Id.KW_Shell),
+  C('time',      Id.KW_Time),  # Or should this be time do ?
+
+  # Loops
+  C('for',       Id.KW_For),
+  C('in',        Id.KW_In),
+  C('while',     Id.KW_While),
+
+  # Connditionals
+  C('if',        Id.KW_If),
+  C('else',      Id.KW_Else),
+  C('elif',      Id.KW_Elif),  # Python and shell both use elif
+
+  C('match',     Id.KW_If),
+  C('case',      Id.KW_Case),
+  C('with',      Id.KW_With),
+]
+
+# Valid in double-quoted modes.
+_OIL_LEFT_SUBS = [
+  C('$(', Id.Left_ParenSub),
+  C('${', Id.Left_BraceSub),
+  C('$[', Id.Left_BracketSub),
+]
+
+# Valid in unquoted modes.
+# TODO:
+# - raw strings with r' r"
+# - multiline strings ''' """ r''' r"""
+_OIL_LEFT_UNQUOTED = [
+  C('"', Id.Left_DoubleQuote),
+  C("'", Id.Left_SingleQuote),
+]
+
+_OIL_VARS = [
+  # Unbraced variables
+  R(r'\$' + VAR_NAME_RE, Id.VSub_Name),
+  R(r'\$[0-9]', Id.VSub_Number),
+]
+
+LEXER_DEF[lex_mode_e.OIL_OUTER] = (
+    _OIL_KEYWORDS + _BACKSLASH + _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + 
+    _OIL_VARS + [
+
+  _LIT_CHAR_WHITELIST,
+
+  C('#', Id.Lit_Pound),  # For comments
+  R(r'[ \t\r]+', Id.WS_Space),
+  C('\n', Id.Op_Newline),
+
+  # TODO:
+  # - Recognize glob chars like *.py here?  What about '?' ?
+  # - Need % to start "words" mode?
+
+  # File descriptor?  Or is that parsed like $foo?  &1 and &stderr?
+  R('&[0-9]', Id.Fd_Number),
+  R('&' + VAR_NAME_RE, Id.Fd_Name),
+
+  # Unused now?  But we don't want them to be literals.
+  C('(', Id.Op_LParen),
+  C(')', Id.Op_RParen),
+  # for proc args?  Otherwise unused?
+  C('[', Id.Op_LBracket),
+  C(']', Id.Op_RBracket),
+  # For blocks
+  C('{', Id.Op_LBrace),
+  C('}', Id.Op_RBrace),
+
+  C('!', Id.Op_Bang),
+  C('|', Id.Op_Pipe),
+  C('&&', Id.Op_DAmp),
+  C('||', Id.Op_DPipe),
+  C(';', Id.Op_Semi),
+
+  C('<', Id.Redir_Less),
+  C('>', Id.Redir_Great),
+  C('>+', Id.Redir_GreatPlus),  # Append
+
+  C('<<', Id.Redir_DLess),
+  C('>>', Id.Redir_DGreat),
+  C('>>+', Id.Redir_DGreatPlus),
+
+  R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
+])

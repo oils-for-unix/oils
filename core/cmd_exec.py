@@ -170,7 +170,7 @@ class Executor(object):
     # - set -o sane-eval should change eval to take a single string.
     code_str = ' '.join(argv)
     line_reader = reader.StringLineReader(code_str, self.arena)
-    _, c_parser = self.parse_ctx.MakeParser(line_reader)
+    _, c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     span = self.arena.GetLineSpan(eval_spid)
     path, line_num = self.arena.GetDebugInfo(span.line_id)
@@ -184,7 +184,7 @@ class Executor(object):
       A node, or None if the code is invalid.
     """
     line_reader = reader.StringLineReader(code_str, self.arena)
-    _, c_parser = self.parse_ctx.MakeParser(line_reader)
+    _, c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     source_name = '<trap string>'
     self.arena.PushSource(source_name)
@@ -219,7 +219,7 @@ class Executor(object):
 
     try:
       line_reader = reader.FileLineReader(f, self.arena)
-      _, c_parser = self.parse_ctx.MakeParser(line_reader)
+      _, c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a

@@ -68,6 +68,17 @@ def IdName(id_):
   return _ID_NAMES[id_.enum_value]
 
 
+# HACK.  Kind needs to be part of ASDL.
+def KindName(kind_int):
+  for name in dir(Kind):
+    if name.startswith('__'):
+      continue
+    val = getattr(Kind, name)
+    if val == kind_int:
+      return name
+  return '<Invalid Kind>'
+
+
 # Keep one instance of each Id, to save memory and enable comparison by
 # OBJECT IDENTITY.
 # Do NOT create any any more instances of them!  Always used IdInstance().

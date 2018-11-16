@@ -21,7 +21,7 @@ def InitCommandParser(code_str):
   arena = test_lib.MakeArena('<cmd_parse_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  _, c_parser = parse_ctx.MakeParser(line_reader)
+  _, c_parser = parse_ctx.MakeOshParser(line_reader)
   return arena, c_parser  # arena is returned for printing errors
 
 

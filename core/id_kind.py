@@ -175,6 +175,13 @@ def AddKinds(spec):
       'RParen',   # Default, will be translated to Id.Right_*
       'DLeftParen',
       'DRightParen',
+
+      # Oil [] {}
+      'LBracket',
+      'RBracket',
+      'LBrace',
+      'RBrace',
+      'Bang',  # In Oil, this is an operator, not a keyword.  if !ls.
   ])
 
   spec.AddKind('Redir', [
@@ -190,7 +197,13 @@ def AddKinds(spec):
       'Clobber',    # >|  POSIX?
       'AndGreat',   # bash &> stdout/stderr to file
       'AndDGreat',  # bash &>> stdout/stderr append to file
+
+      'GreatPlus',  # >+ is append in Oil
+      'DGreatPlus', # >>+ is append to string in Oil
   ])
+
+  # For Oil
+  spec.AddKind('Fd', ['Number', 'Name'])
 
   # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
   # get that.
@@ -206,6 +219,10 @@ def AddKinds(spec):
       'DollarSingleQuote',  # $' for \n escapes
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
+
+      'ParenSub',           # Oil $(
+      'BraceSub',           # Oil ${
+      'BracketSub',         # Oil $[
   ])
 
   spec.AddKind('Right', [
@@ -354,6 +371,12 @@ def AddKinds(spec):
       'For', 'While', 'Until', 'Do', 'Done', 'In', 'Case',
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
       'Time',
+
+      # Oil keywords
+      'Const', 'Set', 'SetGlobal', 'Var',  # assignment
+      'Fork', 'Shell',  # blocks
+      'Proc', 'Func',
+      'Match', 'With',  # matching
   ])
 
   # Assignment builtins -- treated as statically parsed keywords.  They are

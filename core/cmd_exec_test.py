@@ -22,7 +22,7 @@ def InitCommandParser(code_str, arena=None):
   arena = arena or test_lib.MakeArena('<cmd_exec_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  _, c_parser = parse_ctx.MakeParser(line_reader)
+  _, c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser
 
 
