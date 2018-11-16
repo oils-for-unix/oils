@@ -102,13 +102,20 @@ def _InitDefaultCompletions(ex, comp_lookup):
     comp_lookup.RegisterName('slowc', C1)
 
 
+def DefineCommonFlags(spec):
+  """Common flags between OSH and Oil."""
+  spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
+  spec.LongFlag('--help')
+  spec.LongFlag('--version')
+
+
 OSH_SPEC = args.FlagsAndOptions()
-OSH_SPEC.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
+
+DefineCommonFlags(OSH_SPEC)
+
 OSH_SPEC.ShortFlag('-i')  # interactive
 
 # TODO: -h too
-OSH_SPEC.LongFlag('--help')
-OSH_SPEC.LongFlag('--version')
 # the output format when passing -n
 OSH_SPEC.LongFlag('--ast-format',
               ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
@@ -303,10 +310,9 @@ def OshMain(argv0, argv, login_shell):
 # TODO: Does oil have the same -o syntax?  I probably want something else.
 
 OIL_SPEC = args.FlagsAndOptions()
-# TODO: -h too
-OIL_SPEC.LongFlag('--help')
-OIL_SPEC.LongFlag('--version')
-#builtin.AddOptionsToArgSpec(OIL_SPEC)
+
+DefineCommonFlags(OIL_SPEC)
+OIL_SPEC.ShortFlag('-n')
 
 
 def OilMain(argv):
@@ -325,6 +331,21 @@ def OilMain(argv):
     # OSH version is the only binary in Oil right now, so it's all one version.
     _ShowVersion()
     return 0
+
+  pool = alloc.Pool()
+  arena = pool.NewArena()
+
+  # -n is exec_opts.noexec for OSH.  Just make it a flag here.
+  # TODO: Have a long flag too?
+  nodes_out = [] if opts.n else None
+
+  # I guess OSH is parsed line-by-line?
+  if 0:
+    _tlog('Execute(node)')
+    status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
+
+    if nodes_out is not None:
+      ui.PrintAst(nodes_out, opts)
 
   raise NotImplementedError('oil')
   return 0

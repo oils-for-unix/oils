@@ -17,23 +17,18 @@ from core import util
 
 
 class Arena(object):
-  """A collection of lines and line spans.
+  """A collection line spans and associated debug info.
 
-  In C++ and maybe Oil: A block of memory that can be freed at once.
-
-  Two use cases:
-  1. Reformatting: ClearLastLine() is never called
-  2. Execution: ClearLastLine() for lines that are all comments.  The purpose
-     of this is not to penalize big comment blocks in .rc files and completion
-     files!
+  Use Cases:
+  1. Error reporting
+  2. osh-to-oil Translation
   """
   def __init__(self, arena_id):
     self.arena_id = arena_id  # an integer stored in tokens
 
-    # Could be std::vector<char *> pointing into a std::string.
-    # NOTE: lines are required for bootstrapping code within the binary, and
-    # also required for interactive or stdin, but optional when code is on
-    # disk.  We can go look it up later to save memory.
+    # TODO: lines should be part of the token, so they get garbage collected
+    # when the token goes away.  (For example, a line that's all whitespace
+    # will have no tokens put in the LST.)
     self.lines = []
     self.next_line_id = 0
 
@@ -46,21 +41,12 @@ class Arena(object):
     # it's probably more important to compact the ASDL representation.)
     self.debug_info = []
     self.src_paths = []  # list of source paths
-    self.src_id_stack = []  # stack of src_id integers
-
-  def IsComplete(self):
-    """Return whether we have a full set of lines -- none of which was cleared.
-
-    Maybe just an assertion error.
-    """
 
   def PushSource(self, src_path):
-    src_id = len(self.src_paths)
     self.src_paths.append(src_path)
-    self.src_id_stack.append(src_id)
 
   def PopSource(self):
-    self.src_id_stack.pop()
+    self.src_paths.pop()
 
   def AddLine(self, line, line_num):
     """
@@ -74,12 +60,8 @@ class Arena(object):
     line_id = self.next_line_id
     self.lines.append(line)
     self.next_line_id += 1
-    self.debug_info.append((self.src_id_stack[-1], line_num))
+    self.debug_info.append((self.src_paths[-1], line_num))
     return line_id
-
-  def ClearLastLine(self):
-    """Call if it was a comment."""
-    pass
 
   def GetLine(self, line_id):
     """
@@ -115,15 +97,12 @@ class Arena(object):
   def GetDebugInfo(self, line_id):
     """Get the path and physical line number, for parse errors."""
     assert line_id != const.NO_INTEGER, line_id
-    src_id , line_num = self.debug_info[line_id]
-    try:
-      path = self.src_paths[src_id]
-    except IndexError:
-      print('INDEX', src_id)
-      raise
+    path, line_num = self.debug_info[line_id]
     return path, line_num
 
 
+# TODO: Remove this.  There are many sources of code, and they are hard to
+# divide strictly into arenas.
 def SideArena(source_name):
   """A new arena outside the main one.
   
