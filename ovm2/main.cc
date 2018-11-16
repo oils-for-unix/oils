@@ -9,7 +9,7 @@
 
 #include "opcode.h"
 
-#define VERBOSE_LOOP 0
+#define VERBOSE_OPS 0
 #define VERBOSE_NAMES 0
 #define VERBOSE_VALUE_STACK 0
 #define VERBOSE_ALLOC 0  // for New*() functions
@@ -57,17 +57,8 @@ class OHeap;
 Why func_print(const OHeap& heap, const Args& args, Rets* rets);
 
 //
-// Utilities
+// Constants
 //
-
-// Log messages to stdout.
-void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-  printf("\n");
-}
 
 // TODO: Generate this?
 const int TAG_NONE = -1;
@@ -77,6 +68,7 @@ const int TAG_FLOAT = -4;
 const int TAG_STR =  -5;
 const int TAG_TUPLE = -6;
 const int TAG_CODE = -7;
+const int TAG_FUNC = -8;
 
 // Should this be zero?  Positive are user defined, negative are native, 0 is
 // invalid?  Useful for NewCell() to return on allocation failure.  And
@@ -101,6 +93,45 @@ const char* kTagDebugString[] = {
 const char* TagDebugString(int tag) {
   return kTagDebugString[-tag];
 }
+
+//
+// Utilities
+//
+
+// Log messages to stdout.
+void log(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+  printf("\n");
+}
+
+// Implement hash and equality functors for unordered_map.
+struct NameHash {
+  int operator() (const char* s) const {
+    // DJB hash: http://www.cse.yorku.ca/~oz/hash.html
+    int h = 5381;
+
+    while (char c = *s++) {
+      h = (h << 5) + h + c;
+    }
+    return h;
+  }
+};
+
+struct NameEq {
+  bool operator() (const char* x, const char* y) const {
+    return strcmp(x, y) == 0;
+  }
+};
+
+// Dictionary of names (char*) to value (Handle).
+//
+// TODO: if we de-dupe all the names in OHeap, and there's no runtime code
+// generation, each variable name string will have exactly one address.  So
+// then can we use pointer comparison for equality / hashing?  Would be nice.
+typedef unordered_map<const char*, Handle, NameHash, NameEq> NameLookup;
 
 
 // 16 bytes
@@ -140,6 +171,81 @@ struct Str {
 struct Tuple {
   int32_t len;
   const Handle* handles;
+};
+
+
+// Dicts require special consideration in these cases:
+// - When deserializing, we have to create a new DictIndex from the DictItems
+//   array.  We compute the size of the index from the number of items.
+// - When garbage collecting, we iterate over DictItems and mark 'key' and
+// 'value' Handles, skipping over the hash value.
+//
+// Another possibility: Why isn't the hash stored with the key itself rather
+// than in the items array?  I guess it could be both.
+
+struct DictIndex {
+    int size;  // power of 2
+    int num_used;  // is this the same as the number of items?
+                   // For the load factor.
+
+// The slab first has sparse indices, and then dense items, like CPython.
+
+    // Using the same approach as CPython.  
+    //
+    // NOTE PyDict_MINSIZE == 8
+    // "8 allows dicts with no more than 5 active entries; experiments suggested
+    // this suffices for the majority of dicts (consisting mostly of
+    // usually-small dicts created to pass keyword arguments)."
+    // This is always a power of 2 (see dictresize() in dictobject.c).
+    // So it goes 8, 16, 32 ...
+    //
+    // Optimization: DictIndex could be shared among different hash tables!
+    // As long as they have the exact same set of keys.  But how would you
+    // determine that?
+
+    // Doesn't this produce a lot of unpredictable branches?  Maybe as a
+    // compromise we could just use options for 2 bytes and 4 bytes?  Dicts up
+    // to 2**32 should be fine.
+/*
+       The size in bytes of an indice depends on dk_size:
+
+       - 1 byte if dk_size <= 0xff (char*)
+       - 2 bytes if dk_size <= 0xffff (int16_t*)
+       - 4 bytes if dk_size <= 0xffffffff (int32_t*)
+       - 8 bytes otherwise (int64_t*)
+*/
+    union {
+        int8_t as_1[8];
+        int16_t as_2[4];
+        int32_t as_4[2];
+#if SIZEOF_VOID_P > 4
+        int64_t as_8[1];
+#endif
+    } dk_indices;
+};
+
+struct DictSlab {
+  // number of items is in Cell big_len
+  int items_offset;  // offset to later in the slab?
+
+  int indices_size;  // how many we can have without reallocating
+  int indices_used;  //
+
+};
+
+struct DictItem {
+  uint64_t hash;
+  Handle key;
+  Handle value;
+};
+
+// Wire format for dicts: a hole for the index, and then an array of DictItem.
+struct DictSlabWire {
+  union {
+    uint8_t pad[8];
+    DictIndex* index;
+  };
+  // DictItems here.  Length is stored in the cell?
 };
 
 class Code {
@@ -184,10 +290,46 @@ class Code {
   }
 
  private:
+  inline Handle GetField(int field_index) const {
+    int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
+    return slab[field_index];
+  }
+
   inline int64_t FieldAsInt(int field_index) const;
   inline Str FieldAsStr(int field_index) const;
   inline Tuple FieldAsTuple(int field_index) const;
 
+  OHeap* heap_;
+  Cell* self_;
+};
+
+// A convenient "view" on a function object.  To create a function, you create
+// the cell and the slab directly!
+//
+// LATER: This may have a closure pointer too.
+class Func {
+ public:
+  Func(OHeap* heap, Cell* self) 
+      : heap_(heap),
+        self_(self) {
+  }
+  // Code is copyable?
+#if 0
+  Code code() const {
+    Handle h = 0;  // TODO: Field access for handle
+    Code c(heap_, heap_->cells_ + h);
+    return c;
+  }
+#endif
+  Tuple defaults() const {
+    Tuple t;
+    return t;
+    //return FieldAsTuple(1);
+  }
+  // Fields: code, globals, defaults, __doc__,
+  // And note that we have to SET them too.
+
+ private:
   OHeap* heap_;
   Cell* self_;
 };
@@ -357,6 +499,34 @@ class OHeap {
     return h;
   }
 
+  Handle NewTuple(int initial_size) {
+    assert(0);
+    return kInvalidHandle;
+  }
+
+  Handle NewFunc(Handle code, NameLookup* globals) {
+    Handle h = NewCell();
+    memset(cells_ + h, 0, sizeof(Cell));
+    cells_[h].tag = TAG_FUNC;
+
+    // NOTE: This should be a Cell because we want to freeze it!
+
+    // This sould be a pointer to a slab.  TODO: So we need a function to
+    // allocate a slab with 3 fields?  code, globals, defaults are essential.
+    // THen it could be small.
+    //
+    // BUT we also want a docstring?  That will be useful for running some code.
+    // So it needs to be a slab.
+    //
+    // Should there be indirection with "globals"?  It should be its own handle?
+    // Yes I think it's a handle to an entry of sys.modules?
+
+    cells_[h].ptr = nullptr;
+
+    assert(0);
+    return kInvalidHandle;
+  }
+
   int Last() {
     return num_cells_ - 1;
   }
@@ -401,22 +571,20 @@ class OHeap {
   Cell* cells_;
 };
 
+
 //
 // Code implementation.  Must come after OHeap declaration.
 //
 
 inline int64_t Code::FieldAsInt(int field_index) const {
-  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-  Handle h = slab[field_index];
-
+  Handle h = GetField(field_index);
   int64_t i;
   assert(heap_->AsInt(h, &i));  // invalid bytecode not handled
   return i;
 }
 
 inline Str Code::FieldAsStr(int field_index) const {
-  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-  Handle h = slab[field_index];
+  Handle h = GetField(field_index);
 
   Str s;
   assert(heap_->AsStr(h, &s));  // invalid bytecode not handled
@@ -424,8 +592,7 @@ inline Str Code::FieldAsStr(int field_index) const {
 }
 
 inline Tuple Code::FieldAsTuple(int field_index) const {
-  int32_t* slab = reinterpret_cast<int32_t*>(self_->ptr);
-  Handle h = slab[field_index];
+  Handle h = GetField(field_index);
 
   Tuple t;
   assert(heap_->AsTuple(h, &t));  // invalid bytecode not handled
@@ -535,32 +702,6 @@ struct Block {
   uint16_t jump_target;  // Called 'handler' in CPython.
 };
 
-// Implement hash and equality functors for unordered_set.
-struct NameHash {
-  int operator() (const char* s) const {
-    // DJB hash: http://www.cse.yorku.ca/~oz/hash.html
-    int h = 5381;
-
-    while (char c = *s++) {
-      h = (h << 5) + h + c;
-    }
-    return h;
-  }
-};
-
-struct NameEq {
-  bool operator() (const char* x, const char* y) const {
-    return strcmp(x, y) == 0;
-  }
-};
-
-// Dictionary of names (char*) to value (Handle).
-//
-// TODO: if we de-dupe all the names in OHeap, and there's no runtime code
-// generation, each variable name string will have exactly one address.  So
-// then can we use pointer comparison for equality / hashing?  Would be nice.
-typedef unordered_map<const char*, Handle, NameHash, NameEq> NameLookup;
-
 class Frame {
  public:
   // TODO: Reserve the right size for these stacks?
@@ -570,6 +711,7 @@ class Frame {
         value_stack_(),
         block_stack_(),
         last_i_(0),
+        globals_(),
         locals_() {
   }
   // Take the handle of a string, and return a handle of a value.
@@ -602,6 +744,7 @@ class Frame {
   vector<Handle> value_stack_;
   vector<Block> block_stack_;
   int last_i_;  // index into bytecode (which is variable length)
+  NameLookup globals_;
  private:
   NameLookup locals_;
 };
@@ -628,6 +771,7 @@ class VM {
 
   OHeap* heap_;
   vector<Frame*> call_stack_;  // call stack
+  Handle modules;  // like sys.modules.  A dictionary of globals.
 
   // See PyThreadState for other stuff that goes here.
   // Exception info, profiling, tracing, counters, etc.
@@ -709,14 +853,14 @@ Why VM::RunFrame(Frame* frame) {
     uint8_t op = bytecode[frame->last_i_];
     int oparg;
     frame->last_i_++;
-#if VERBOSE_LOOP
+#if VERBOSE_OPS
     printf("%20s", kOpcodeNames[op]);
 #endif
 
     if (op >= HAVE_ARGUMENT) {
       int i = frame->last_i_;
       oparg = bytecode[i] + (bytecode[i+1] << 8);
-#if VERBOSE_LOOP
+#if VERBOSE_OPS
       printf(" %5d (last_i_ = %d)", oparg, i);
       if (oparg < 0) {
         log(" oparg bytes: %d %d", bytecode[i], bytecode[i+1]);
@@ -724,7 +868,7 @@ Why VM::RunFrame(Frame* frame) {
 #endif
       frame->last_i_ += 2;
     }
-#if VERBOSE_LOOP
+#if VERBOSE_OPS
     printf("\n");
 #endif
 
@@ -943,6 +1087,22 @@ Why VM::RunFrame(Frame* frame) {
       value_stack.pop_back();
       why = Why::Return;
       break;
+
+    case MAKE_FUNCTION: {
+      Handle code = value_stack.back();
+      value_stack.pop_back();
+      // TODO: default arguments are on the stack.
+      if (oparg) {
+        //Handle defaults = heap_->NewTuple(oparg);  // initial size
+        for (int i = 0; i < oparg; ++i) {
+          value_stack.pop_back();
+        }
+      }
+      // the function is run with the same globals as the frame it was defined in
+      NameLookup* globals = &frame->globals_;
+      Handle func = heap_->NewFunc(code, globals);
+      value_stack.push_back(func);
+    }
 
     default:
       log("Unhandled instruction");

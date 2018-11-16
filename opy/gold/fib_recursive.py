@@ -16,18 +16,22 @@ def fib(n):
   else:
     return fib(n-1) + fib(n-2)
 
-
-def main():
-  for i in xrange(9):
-    print(fib(i))
-  print('Done fib_recursive.py')
+print(fib(9))
 
 
-if __name__ == '__main__':
-  import os
-  if os.getenv('CALLGRAPH') == '1':
-    import sys
-    from opy import callgraph
-    callgraph.Walk(main, sys.modules)
-  else:
-    main()
+# TODO: Do this later.
+if 0:
+  def main():
+    for i in xrange(9):
+      print(fib(i))
+    print('Done fib_recursive.py')
+
+
+  if __name__ == '__main__':
+    import os
+    if os.getenv('CALLGRAPH') == '1':
+      import sys
+      from opy import callgraph
+      callgraph.Walk(main, sys.modules)
+    else:
+      main()

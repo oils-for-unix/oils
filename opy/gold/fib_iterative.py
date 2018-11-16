@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
-"""Iterative version if Fibonacci."""
+"""Iterative version of Fibonacci."""
 
 i = 0
 n = 10
