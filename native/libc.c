@@ -343,7 +343,6 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
 static PyObject *
 func_print_time(PyObject *self, PyObject *args) {
   double real, user, sys;
-  int pos;
   if (!PyArg_ParseTuple(args, "ddd", &real, &user, &sys)) {
     return NULL;
   }
