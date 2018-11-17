@@ -36,7 +36,7 @@
 -- * rename this file to osh/syntax.asdl, and then we have oil/syntax.asdl.
 --   Nothing is shared?
 
-module osh
+module syntax
 {
   -- A portion of a line, used for error messages.  For translation to work,
   -- the spans should "sum up" to the original file. 
