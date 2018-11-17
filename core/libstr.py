@@ -11,7 +11,7 @@ Instead of:
 
 import libc
 
-from osh.meta import Id
+from core.meta import Id
 from core import glob_
 from core import util
 

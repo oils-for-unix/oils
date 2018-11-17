@@ -9,7 +9,7 @@ import sys
 from core import util
 
 # TODO: These should be moved to core/meta?  Or syntax/meta?
-from osh.meta import ast, types, Id, Kind, LookupKind, KindName
+from core.meta import ast, types, Id, Kind, LookupKind, KindName
 lex_mode_e = types.lex_mode_e
 
 p_die = util.p_die

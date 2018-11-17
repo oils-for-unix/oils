@@ -21,7 +21,7 @@ from core import test_lib
 from core import ui
 from core import util
 
-from osh.meta import ast
+from core.meta import ast
 from osh import cmd_parse_test
 from osh import parse_lib
 

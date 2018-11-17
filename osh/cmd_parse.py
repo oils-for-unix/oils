@@ -18,8 +18,8 @@ from core import reader
 from core import word
 from core import util
 
-from osh import match
-from osh.meta import ast, Id, Kind, types
+from frontend import match
+from core.meta import ast, Id, Kind, types
 from osh.bool_parse import BoolParser
 
 log = util.log

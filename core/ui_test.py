@@ -8,7 +8,7 @@ import unittest
 
 from core import state
 from core import test_lib
-from osh.meta import runtime
+from core.meta import runtime
 
 from core import ui  # module under test
 

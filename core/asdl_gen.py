@@ -28,7 +28,7 @@ def main(argv):
   if os.path.basename(schema_path) == 'types.asdl':
     app_types = {}
   else:
-    from osh.meta import Id
+    from core.meta import Id
     app_types = {'id': asdl.UserType(Id)}
 
   if action == 'c':  # Generate C code for the lexer

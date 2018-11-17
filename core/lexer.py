@@ -11,8 +11,8 @@ lexer.py - Library for lexing.
 
 from asdl import const
 from core import util
-from osh.meta import Id
-from osh.meta import ast
+from core.meta import Id
+from core.meta import ast
 
 log = util.log
 

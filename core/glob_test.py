@@ -8,7 +8,7 @@ import re
 import unittest
 
 from core import glob_
-from osh import match
+from frontend import match
 
 
 class GlobEscapeTest(unittest.TestCase):

@@ -312,7 +312,7 @@ def main(argv):
     # this gen_cpp.py module.  We should move all the main() functions out of
     # asdl/ and into command line tools.
 
-    from osh.meta import Id
+    from core.meta import Id
     app_types = {'id': asdl.UserType(Id)}
     with open(schema_path) as input_f:
       module, type_lookup = front_end.LoadSchema(input_f, app_types)

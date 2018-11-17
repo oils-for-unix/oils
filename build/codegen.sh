@@ -62,7 +62,7 @@ extract-clang() {
 }
 
 types-gen() {
-  PYTHONPATH=. osh/asdl_gen.py c osh/types.asdl "$@" > _devbuild/gen/osh-types.h
+  PYTHONPATH=. core/asdl_gen.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
 }
 
 id-gen() {

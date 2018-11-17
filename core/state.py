@@ -17,7 +17,7 @@ from asdl import const
 from core import args
 from core import legacy
 from core import util
-from osh.meta import ast, runtime, Id
+from core.meta import ast, runtime, Id
 
 part_value_e = runtime.part_value_e
 value_e = runtime.value_e

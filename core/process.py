@@ -15,7 +15,7 @@ import fcntl
 import posix
 import sys
 
-from osh.meta import runtime, Id
+from core.meta import runtime, Id
 from core import util
 from core import os_
 

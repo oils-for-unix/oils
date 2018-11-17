@@ -19,7 +19,7 @@ from core import test_lib
 from core import util
 
 from osh import parse_lib
-from osh.meta import types
+from core.meta import types
 #from osh import arith_parse
 
 lex_mode_e = types.lex_mode_e

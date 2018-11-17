@@ -8,8 +8,8 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from osh.meta import ast, Id
-from osh import match
+from core.meta import ast, Id
+from frontend import match
 from core import util
 
 log = util.log

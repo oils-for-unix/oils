@@ -35,7 +35,7 @@ import sys
 import time
 #import traceback
 
-from osh.meta import ast, runtime
+from core.meta import ast, runtime
 from core import alloc
 from core import os_path
 from core import state

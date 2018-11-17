@@ -13,12 +13,12 @@ from __future__ import print_function
 import unittest
 
 from core import id_kind
-from osh.meta import (
+from core.meta import (
     Id, IdName, IdInstance,
     Kind, LookupKind,
     ID_SPEC, BOOL_ARG_TYPES, _ID_NAMES, _kind_sizes)
 
-from osh.meta import ast
+from core.meta import ast
 
 
 class TokensTest(unittest.TestCase):

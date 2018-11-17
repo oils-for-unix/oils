@@ -18,7 +18,7 @@ from __future__ import print_function
 
 from core import ui
 from core import util
-from osh.meta import ast
+from core.meta import ast
 
 log = util.log
 

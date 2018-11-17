@@ -32,7 +32,7 @@ BINARY_OP: -gt, -ot, ==, etc.
 
 from core import word
 from core import util
-from osh.meta import ast, Id, Kind, LookupKind, types
+from core.meta import ast, Id, Kind, LookupKind, types
 
 #try:
 #  import libc  # for regex_parse

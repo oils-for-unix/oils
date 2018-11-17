@@ -9,8 +9,8 @@ doesn't depend on any values at runtime.
 from core import util
 from core import libstr
 
-from osh.meta import Id
-from osh.meta import runtime
+from core.meta import Id
+from core.meta import runtime
 
 var_flags_e = runtime.var_flags_e
 

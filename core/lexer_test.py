@@ -5,10 +5,8 @@ lexer_test.py: Tests for lexer.py
 
 import unittest
 
-from osh.meta import Id
-from osh.lex import LEXER_DEF
-
-from osh.meta import ast
+from core.meta import ast, Id
+from frontend.lex import LEXER_DEF
 
 
 class TokenTest(unittest.TestCase):

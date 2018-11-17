@@ -10,7 +10,7 @@ from core import test_lib
 from core import word
 from core import ui
 from core import util
-from osh.meta import ast, Id
+from core.meta import ast, Id
 from osh import ast_lib
 from osh import parse_lib
 

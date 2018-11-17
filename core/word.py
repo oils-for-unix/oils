@@ -2,9 +2,9 @@
 word.py - Utility functions for words, e.g. treating them as "tokens".
 """
 
-from osh.meta import Id, Kind, LookupKind
+from core.meta import Id, Kind, LookupKind
 from core import util
-from osh.meta import ast
+from core.meta import ast
 from asdl import const
 
 p_die = util.p_die

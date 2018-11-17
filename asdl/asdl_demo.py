@@ -12,7 +12,7 @@ from asdl import py_meta
 from asdl import encode
 from asdl import format as fmt
 
-from osh.meta import Id
+from core.meta import Id
 from core import util
 
 log = util.log

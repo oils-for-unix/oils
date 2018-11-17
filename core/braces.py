@@ -17,8 +17,8 @@ from __future__ import print_function
 
 import sys
 
-from osh.meta import Id
-from osh.meta import ast
+from core.meta import Id
+from core.meta import ast
 
 word_part_e = ast.word_part_e
 word_e = ast.word_e

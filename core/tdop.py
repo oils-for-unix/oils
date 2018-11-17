@@ -3,11 +3,11 @@
 tdop.py - Library for expression parsing.
 """
 
-from osh.meta import Id
+from core.meta import Id
 from core import word
 from core import util
 
-from osh.meta import ast, types
+from core.meta import ast, types
 
 p_die = util.p_die
 

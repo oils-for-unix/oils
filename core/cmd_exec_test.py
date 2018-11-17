@@ -14,7 +14,7 @@ import unittest
 from core import state
 from core import test_lib
 
-from osh.meta import ast, Id
+from core.meta import ast, Id
 from osh import parse_lib
 
 

@@ -409,7 +409,7 @@ class Symbols(object):
     # command_e is there, but command and SimpleCommmand aren't.
     # it's because we do
     # ast.command_e vs. ast.SimpleCommand
-    # in both cases ast is a osh/meta _AsdlModule?
+    # in both cases ast is a core.meta _AsdlModule?
 
     print('PYTHON CODE')
     print()

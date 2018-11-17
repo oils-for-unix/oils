@@ -18,7 +18,7 @@ from core import test_lib
 from core import word
 from core import util
 
-from osh.meta import ast, Id, types
+from core.meta import ast, Id, types
 from osh import ast_lib
 from osh import parse_lib
 

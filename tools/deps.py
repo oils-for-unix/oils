@@ -11,7 +11,7 @@ from asdl import py_meta
 from core import builtin
 from core import util
 from core import word
-from osh.meta import ast, runtime
+from core.meta import ast, runtime
 from osh import ast_lib
 
 command_e = ast.command_e

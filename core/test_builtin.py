@@ -6,10 +6,10 @@ from __future__ import print_function
 
 from core import expr_eval
 from core import util
+from core import meta
+from core.meta import ast, Id, runtime
 
 from osh import bool_parse
-from osh.meta import ast, Id, runtime
-from osh import meta
 
 log = util.log
 

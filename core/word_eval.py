@@ -14,8 +14,8 @@ from core import word_compile
 from core import ui
 from core import util
 
-from osh.meta import ast, runtime, Id, Kind, LookupKind
-from osh import match
+from core.meta import ast, runtime, Id, Kind, LookupKind
+from frontend import match
 
 word_e = ast.word_e
 bracket_op_e = ast.bracket_op_e

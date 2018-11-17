@@ -10,8 +10,8 @@ import sre_parse
 import sre_constants
 
 from asdl import pretty  # For PLAIN_WORD_RE
-from osh import lex
-from osh import meta
+from core import meta
+from frontend import lex
 
 
 def PrintTree(re_tree, depth=2):

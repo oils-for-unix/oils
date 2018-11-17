@@ -12,7 +12,7 @@ from core import util
 from core import cmd_exec_test
 from core import test_lib
 
-from osh.meta import runtime, Id
+from core.meta import runtime, Id
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk

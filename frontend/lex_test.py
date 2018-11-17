@@ -10,10 +10,10 @@ import unittest
 from core.lexer import LineLexer
 from core import test_lib
 
-from osh import lex
-from osh import match
+from frontend import lex
+from frontend import match
 from osh import parse_lib
-from osh.meta import ast, Id, Kind, LookupKind, types
+from core.meta import ast, Id, Kind, LookupKind, types
 
 lex_mode_e = types.lex_mode_e
 

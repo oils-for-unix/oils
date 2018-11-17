@@ -54,7 +54,7 @@ from core import tdop
 from core import util
 
 from osh import arith_parse
-from osh.meta import ast, types, Id, Kind, LookupKind
+from core.meta import ast, types, Id, Kind, LookupKind
 
 word_part_e = ast.word_part_e
 word_e = ast.word_e

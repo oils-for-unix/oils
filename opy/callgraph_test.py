@@ -8,7 +8,7 @@ import unittest
 import sys
 
 from opy import callgraph  # module under test
-from osh.meta import types
+from core.meta import types
 
 lex_mode_e = types.lex_mode_e
 

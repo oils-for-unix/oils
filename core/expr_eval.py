@@ -23,7 +23,7 @@ from core import util
 from core import state
 from core import ui
 from core import word
-from osh.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
+from core.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
 
 log = util.log
 warn = util.warn

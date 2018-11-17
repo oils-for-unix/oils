@@ -6,7 +6,7 @@ ast_lib.py - Helpers for osh/osh.asdl
 import sys
 
 from asdl import format as fmt
-from osh.meta import Id
+from core.meta import Id
 
 
 _ColoredString = fmt._ColoredString

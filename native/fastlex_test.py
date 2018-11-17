@@ -12,7 +12,7 @@ libc_test.py: Tests for libc.py
 
 import unittest
 
-from osh.meta import Id, IdInstance, types
+from core.meta import Id, IdInstance, types
 
 import fastlex  # module under test
 

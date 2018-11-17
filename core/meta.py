@@ -8,7 +8,7 @@ We are following the code <-> data pattern, and this is the "data" module.
 id_kind and asdl are the "code" modules.
 
 Usage:
-  from osh.meta import Id, Kind, ast, ID_SPEC
+  from core.meta import Id, Kind, ast, ID_SPEC
 """
 
 import posix
@@ -135,9 +135,10 @@ _kind_sizes = ID_SPEC.kind_sizes
 #
 
 if _BOOTSTRAP_LEVEL > 1:
+  # TODO: Rename ast -> syntax
   ast = _AsdlModule()
-  from _devbuild.gen import osh_asdl
-  _AssignTypes(osh_asdl, ast)
+  from _devbuild.gen import syntax_asdl
+  _AssignTypes(syntax_asdl, ast)
 
 #
 # Instantiate core/runtime.asdl

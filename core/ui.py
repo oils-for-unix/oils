@@ -19,8 +19,8 @@ from asdl import encode
 from asdl import format as fmt
 from core import dev
 from osh import ast_lib
-from osh import match
-from osh.meta import ast, runtime, Id
+from frontend import match
+from core.meta import ast, runtime, Id
 
 import libc  # gethostname()
 

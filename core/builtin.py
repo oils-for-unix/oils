@@ -36,9 +36,9 @@ from core import util
 from core import state
 from core import word_compile
 
-from osh.meta import runtime
-from osh import lex
-from osh import match
+from core.meta import runtime
+from frontend import lex
+from frontend import match
 
 import libc
 from _devbuild.gen import osh_help  # generated file

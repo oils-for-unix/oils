@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 
 from asdl.visitor import FormatLines
-from osh.meta import Id, Kind, LookupKind, ID_SPEC
+from core.meta import Id, Kind, LookupKind, ID_SPEC
 
 
 def Emit(s, f, depth=0):

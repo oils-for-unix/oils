@@ -5,7 +5,7 @@ state_test.py: Tests for state.py
 
 import unittest
 
-from osh.meta import ast, runtime
+from core.meta import ast, runtime
 from core import state  # module under test
 from core import util
 from core import test_lib

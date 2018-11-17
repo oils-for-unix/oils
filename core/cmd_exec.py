@@ -41,7 +41,7 @@ from core import ui
 from core import util
 from core import word_compile
 
-from osh.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
+from core.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
 
 try:
   import libc  # for fnmatch

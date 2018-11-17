@@ -15,7 +15,7 @@ filter-py() {
 
 # Oil-only would exclude core/legacy.py, etc.
 oil-osh-files() {
-  { ls {bin,osh,core}/*.py native/*.c osh/{osh,types}.asdl core/runtime.asdl; } |
+  { ls {bin,osh,core}/*.py native/*.c frontend/{syntax,types}.asdl core/runtime.asdl; } |
     filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 
@@ -52,7 +52,7 @@ oil-osh-cloc() {
 
   echo
   echo 'ASDL SCHEMAS (non-blank non-comment lines)'
-  asdl-cloc osh/osh.asdl core/runtime.asdl
+  asdl-cloc frontend/syntax.asdl core/runtime.asdl
 }
 
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
@@ -139,11 +139,11 @@ all() {
 # Just the parser
 parser() {
   echo 'AST and IDs'
-  wc -l osh/osh.asdl core/id_kind.py | sort -n
+  wc -l frontend/syntax.asdl core/id_kind.py | sort -n
   echo
 
   echo 'Lexer / Parser'
-  wc -l osh/{*_parse.py,lex.py,match.py,parse_lib.py} core/word.py | sort -n
+  wc -l frontend/{lex,match}.py osh/{*_parse,parse_lib}.py core/word.py | sort -n
   echo
 
   echo 'Compiler / Middle End'

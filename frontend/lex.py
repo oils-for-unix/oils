@@ -100,7 +100,7 @@ Indexed array and Associative array literals:
   Op_LBracket Op_RBracketEqual
 """
 
-from osh.meta import types, Id, Kind, ID_SPEC
+from core.meta import types, Id, Kind, ID_SPEC
 from core.lexer import C, R
 
 lex_mode_e = types.lex_mode_e

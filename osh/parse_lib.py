@@ -8,9 +8,9 @@ from core import tdop
 
 from osh import arith_parse
 from osh import cmd_parse
-from osh import match
+from frontend import match
 from osh import word_parse
-from osh.meta import types
+from core.meta import types
 
 from frontend import oil_parse
 

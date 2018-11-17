@@ -6,8 +6,8 @@ match.py - match with generated re2c code or Python regexes.
 import posix
 
 #from core import util
-from osh import lex
-from osh.meta import Id, IdInstance
+from frontend import lex
+from core.meta import Id, IdInstance
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.

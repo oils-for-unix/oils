@@ -77,7 +77,7 @@ gen-asdl-py-pickle() {
   local tmp=_tmp/${name}_asdl.py
   local out=_devbuild/gen/${name}_asdl.py
 
-  PYTHONPATH=. osh/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
+  PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
   
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
@@ -87,11 +87,11 @@ gen-asdl-py-pickle() {
 }
 
 gen-types-asdl() {
-  gen-asdl-py-pickle osh/types.asdl
+  gen-asdl-py-pickle frontend/types.asdl
 }
 
-gen-osh-asdl() {
-  gen-asdl-py-pickle osh/osh.asdl
+gen-syntax-asdl() {
+  gen-asdl-py-pickle frontend/syntax.asdl
 }
 
 gen-runtime-asdl() {
@@ -153,7 +153,7 @@ minimal() {
 
   # BOOTSTRAP_LEVEL is a hack for avoiding circular dependencies.
   BOOTSTRAP_LEVEL=0 gen-types-asdl    # doesn't need Id
-  BOOTSTRAP_LEVEL=1 gen-osh-asdl      # needs Id, which needs types.asdl
+  BOOTSTRAP_LEVEL=1 gen-syntax-asdl   # needs Id, which needs types.asdl
   BOOTSTRAP_LEVEL=2 gen-runtime-asdl  # ditto
 
   pylibc

@@ -13,7 +13,7 @@ import unittest
 
 from core import test_lib
 
-from osh.meta import ast, Id, types
+from core.meta import ast, Id, types
 from osh import parse_lib
 from osh import bool_parse  # module under test
 

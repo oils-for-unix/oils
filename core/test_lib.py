@@ -24,7 +24,7 @@ from core import word_eval
 from core import util
 
 from osh import parse_lib
-from osh.meta import Id
+from core.meta import Id
 
 
 def PrintableString(s):
