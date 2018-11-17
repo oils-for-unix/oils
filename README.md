@@ -68,32 +68,43 @@ Directory Structure
 
     # Development Scripts
 
-    benchmarks/       # Test for speed
+    benchmarks/       # Benchmarks should be run on multiple machines.
+    metrics/          # Metrics don't change between machines (e.g. code size)
     build/            # Build automation
       dev.sh          # For development builds, running CPython
+    devtools/         # For Oil developers (not end users)
+    scripts/          # Other development scripts
+    demo/             # Miscellaneous stuff that should probably be moved to tests
+    web/              # HTML/JS/CSS for tests and tools
+
+    # Tests
+
     test/             # Test automation
       unit.sh         ## Types of test runner: unit, spec, wild, smoke
       spec.sh
       wild.sh
       smoke.sh
       sh_spec.py      # shell spec test framework
+    testdata/
+    gold/             # Gold Test cases.
     spec/             # spec test cases
       bin/            # tools used in many spec tests
       testdata/       # scripts for specific test cases
       errors/         # TODO: migrate these bad shell scripts
-    scripts/          # Other development scripts
-    web/              # HTML/JS/CSS for tests and tools
 
     # Oil Code
 
     Python-2.7.13/    # CPython is the initial basis for the Oil VM
     asdl/             # ASDL implementation
-    bin/              # programs to run (bin/osh)
-    core/             # the implementation (AST, runtime, etc.)
+    bin/              # Programs to run (bin/osh)
+    core/             # Most of the Oil and OSH implementation.
     native/           # Native code for Oil, e.g. libc.c
-    osh/              # osh front end
-    oil/              # oil front end (empty now)
+    frontend/         # Lexing/Parsing code common to Oil and OSH.
+    osh/              # Parsing code specific to OSH.
     opy/              # Python compiler in Python
+    ovm2/             # A nascent VM to run Oil.  Perhaps a target for
+                      # metaprogramming.
+    pylib/            # Borrowed from the Python standard library.
     tools/            # osh2oil translator
 
     # Temporary Directories
@@ -126,14 +137,11 @@ Directory Structure
         web/          # Static files, copy of $REPO_ROOT/web
           table/
 
+    # Docs
+    doc/              # A mix of docs
+    README.md         # For Oil developers
 
-    # Dev Docs
-
-    README.md
-
-    # End user docs
-
-    LICENSE.txt
+    LICENSE.txt       # For end users
     INSTALL.txt
 
     # End user build system
