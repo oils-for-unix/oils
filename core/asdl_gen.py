@@ -50,7 +50,7 @@ def main(argv):
 from asdl import asdl_ as asdl
 from asdl import const  # For const.NO_INTEGER
 from asdl import py_meta
-from asdl import unpickle
+from pylib import unpickle
 
 from core import util
 

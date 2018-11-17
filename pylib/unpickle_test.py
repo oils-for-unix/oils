@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from asdl import unpickle  # module under test
+from pylib import unpickle  # module under test
 
 
 class UnpickleTest(unittest.TestCase):

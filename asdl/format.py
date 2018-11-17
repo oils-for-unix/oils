@@ -16,7 +16,7 @@ Places where we try a single line:
 """
 
 from asdl import asdl_ as asdl
-from asdl import cgi
+from pylib import cgi
 from asdl import pretty
 from core import util
 

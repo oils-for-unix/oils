@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from core import os_path  # module under test
+from pylib import os_path  # module under test
 
 
 class OsPathTest(unittest.TestCase):

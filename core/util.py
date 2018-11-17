@@ -17,7 +17,7 @@ import sys
 import zipimport  # NOT the zipfile module.
 
 from asdl import const
-from core import os_path
+from pylib import os_path
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 

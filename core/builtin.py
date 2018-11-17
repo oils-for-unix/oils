@@ -31,7 +31,7 @@ import signal
 import sys
 
 from core import args
-from core import os_path
+from pylib import os_path
 from core import util
 from core import state
 from core import word_compile

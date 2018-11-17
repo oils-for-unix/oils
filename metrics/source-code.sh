@@ -15,7 +15,7 @@ filter-py() {
 
 # Oil-only would exclude core/legacy.py, etc.
 oil-osh-files() {
-  { ls {bin,osh,core}/*.py native/*.c frontend/{syntax,types}.asdl core/runtime.asdl; } |
+  { ls {bin,osh,core,frontend}/*.py native/*.c frontend/{syntax,types}.asdl core/runtime.asdl; } |
     filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 
@@ -105,7 +105,7 @@ all() {
   echo
 
   echo 'BORROWED FROM STDLIB'
-  wc -l asdl/{cgi,unpickle}.py core/{os_,os_path}.py | sort --numeric
+  wc -l pylib/*.py | filter-py | sort --numeric
   echo
 
   echo 'WEB'
@@ -113,11 +113,11 @@ all() {
   echo
 
   echo 'OTHER UNIT TESTS'
-  wc -l {build,test,asdl,tools}/*_test.py | sort --numeric
+  wc -l {build,test,asdl,pylib,tools}/*_test.py | sort --numeric
   echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {osh,core,ovm2,native,tools}/*_test.py | sort --numeric
+  wc -l {osh,frontend,core,ovm2,native,tools}/*_test.py | sort --numeric
   echo
 
   echo 'OIL AND OSH'

@@ -5,7 +5,7 @@ dev.py - Devtools / introspection.
 from __future__ import print_function
 
 from asdl import const
-from core import os_path
+from pylib import os_path
 from core import util
 from core import word
 

@@ -17,7 +17,7 @@ import sys
 
 from core.meta import runtime, Id
 from core import util
-from core import os_
+from pylib import os_
 
 redirect_e = runtime.redirect_e
 process_state_e = runtime.process_state_e

@@ -57,7 +57,7 @@ from core import dev
 from core import legacy
 from core import main_loop
 from core import oil_exec
-from core import os_path
+from pylib import os_path
 from core import process
 from core import reader
 from core import state

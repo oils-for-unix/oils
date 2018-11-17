@@ -8,7 +8,7 @@ import errno
 import posix
 import sys
 
-from core import os_path
+from pylib import os_path
 
 #
 # From os.py
