@@ -13,7 +13,6 @@ from core import util
 from core.meta import ast, Id
 
 from osh import ast_lib
-from frontend import parse_lib
 
 command_e = ast.command_e
 
