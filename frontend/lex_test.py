@@ -45,108 +45,108 @@ class LexerTest(unittest.TestCase):
   def testRead(self):
     lexer = _InitLexer(CMD)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'ls'), t)
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
 
     self.assertTokensEqual(ast.token(Id.WS_Space, ' '), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, '/'), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Op_Newline, '\n'), t)
 
     # Line two
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'ls'), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.WS_Space, ' '), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, '/home/'), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Op_Newline, '\n'), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Eof_Real, ''), t)
 
     # Another EOF gives EOF
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Eof_Real, ''), t)
 
   def testRead_VS_ARG_UNQ(self):
     # Another EOF gives EOF
     lexer = _InitLexer("'hi'")
-    t = lexer.Read(lex_mode_e.VS_ARG_UNQ)
+    t = lexer.Read(lex_mode_e.VS_ArgUnquoted)
     #self.assertTokensEqual(ast.token(Id.Eof_Real, ''), t)
-    #t = l.Read(lex_mode_e.VS_ARG_UNQ)
+    #t = l.Read(lex_mode_e.VS_ArgUnquoted)
     print(t)
 
   def testExtGlob(self):
     lexer = _InitLexer('@(foo|bar)')
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.ExtGlob_At, '@('), t)
 
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'foo'), t)
 
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.Op_Pipe, '|'), t)
 
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'bar'), t)
 
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.Op_RParen, ')'), t)
 
     # Individual cases
 
     lexer = _InitLexer('@(')
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.ExtGlob_At, '@('), t)
 
     lexer = _InitLexer('*(')
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.ExtGlob_Star, '*('), t)
 
     lexer = _InitLexer('?(')
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.ExtGlob_QMark, '?('), t)
 
     lexer = _InitLexer('$')
-    t = lexer.Read(lex_mode_e.EXTGLOB)
+    t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(ast.token(Id.Lit_Other, '$'), t)
 
   def testBashRegexState(self):
     lexer = _InitLexer('(foo|bar)')
 
-    t = lexer.Read(lex_mode_e.BASH_REGEX)
+    t = lexer.Read(lex_mode_e.BashRegex)
     self.assertTokensEqual(ast.token(Id.Lit_Other, '('), t)
 
-    t = lexer.Read(lex_mode_e.BASH_REGEX)
+    t = lexer.Read(lex_mode_e.BashRegex)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'foo'), t)
 
-    t = lexer.Read(lex_mode_e.BASH_REGEX)
+    t = lexer.Read(lex_mode_e.BashRegex)
     self.assertTokensEqual(ast.token(Id.Lit_Other, '|'), t)
 
   def testDBracketState(self):
     lexer = _InitLexer('-z foo')
-    t = lexer.Read(lex_mode_e.DBRACKET)
+    t = lexer.Read(lex_mode_e.DBracket)
     self.assertTokensEqual(ast.token(Id.BoolUnary_z, '-z'), t)
     self.assertEqual(Kind.BoolUnary, LookupKind(t.id))
 
   def testDollarSqState(self):
     lexer = _InitLexer(r'foo bar\n \x00 \000 \u0065')
 
-    t = lexer.Read(lex_mode_e.DOLLAR_SQ)
+    t = lexer.Read(lex_mode_e.DollarSQ)
     print(t)
     self.assertTokensEqual(ast.token(Id.Char_Literals, 'foo bar'), t)
 
-    t = lexer.Read(lex_mode_e.DOLLAR_SQ)
+    t = lexer.Read(lex_mode_e.DollarSQ)
     print(t)
     self.assertTokensEqual(ast.token(Id.Char_OneChar, r'\n'), t)
 
@@ -155,27 +155,27 @@ class LexerTest(unittest.TestCase):
     # the function; then Peek() the next token.  Then Lookahead in that state.
     lexer = _InitLexer('func()')
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'func'), t)
 
     #self.assertEqual(Id.Op_LParen, lexer.LookAhead())
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Op_LParen, '('), t)
 
     self.assertTokensEqual(
-        ast.token(Id.Op_RParen, ')'), lexer.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Op_RParen, ')'), lexer.LookAhead(lex_mode_e.Outer))
 
     lexer = _InitLexer('func ()')
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.Lit_Chars, 'func'), t)
 
-    t = lexer.Read(lex_mode_e.OUTER)
+    t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(ast.token(Id.WS_Space, ' '), t)
 
     self.assertTokensEqual(
-        ast.token(Id.Op_LParen, '('), lexer.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Op_LParen, '('), lexer.LookAhead(lex_mode_e.Outer))
 
 
 class LineLexerTest(unittest.TestCase):
@@ -189,43 +189,43 @@ class LineLexerTest(unittest.TestCase):
   def testReadOuter(self):
     l = LineLexer(match.MATCHER, '\n', self.arena)
     self.assertTokensEqual(
-        ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.OUTER))
+        ast.token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.Outer))
 
   def testRead_VS_ARG_UNQ(self):
     l = LineLexer(match.MATCHER, "'hi'", self.arena)
-    t = l.Read(lex_mode_e.VS_ARG_UNQ)
+    t = l.Read(lex_mode_e.VS_ArgUnquoted)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
     l = LineLexer(match.MATCHER, '', self.arena)
     self.assertTokensEqual(
-        ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.Outer))
 
     l = LineLexer(match.MATCHER, 'foo', self.arena)
     self.assertTokensEqual(
-        ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
+        ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.Outer))
     self.assertTokensEqual(
-        ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.Outer))
 
     l = LineLexer(match.MATCHER, 'foo  bar', self.arena)
     self.assertTokensEqual(
-        ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.OUTER))
+        ast.token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.Outer))
     self.assertTokensEqual(
-        ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.Outer))
 
     # No lookahead; using the cursor!
     l = LineLexer(match.MATCHER, 'func(', self.arena)
     self.assertTokensEqual(
-        ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
+        ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.Outer))
     self.assertTokensEqual(
-        ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.Outer))
 
     l = LineLexer(match.MATCHER, 'func  (', self.arena)
     self.assertTokensEqual(
-        ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.OUTER))
+        ast.token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.Outer))
     self.assertTokensEqual(
-        ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.OUTER))
+        ast.token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.Outer))
 
 
 class RegexTest(unittest.TestCase):

@@ -64,7 +64,7 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
     lx = lexer.Lexer(line_lexer, line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader,
-                                     lex_mode=lex_mode_e.ARITH)
+                                     lex_mode=lex_mode_e.Arith)
     a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
     return a_parser
 

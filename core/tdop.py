@@ -242,7 +242,7 @@ class TdopParser(object):
 
   def Next(self):
     """Preferred over Eat()? """
-    self.cur_word = self.w_parser.ReadWord(lex_mode_e.ARITH)
+    self.cur_word = self.w_parser.ReadWord(lex_mode_e.Arith)
     assert self.cur_word is not None
     self.op_id = word.ArithId(self.cur_word)
     return True

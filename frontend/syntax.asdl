@@ -242,7 +242,7 @@ module syntax
             id? prefix_op,  -- prefix # or ! operators
             bracket_op? bracket_op
             suffix_op? suffix_op)
-  | CommandSub(oil_command command_list, token left_token)
+  | CommandSub(oil_cmd command_list, token left_token)
 
   -- NOTE differences from OSH: no TokenWord, but add GlobWord, etc.
   oil_word = 
@@ -250,7 +250,7 @@ module syntax
   | Glob()
   | Braced(oil_word_part* parts) -- TODO: Does it need its own parts?
 
-  oil_command = 
+  oil_cmd = 
     -- TODO: respect order of words and redirects
     Simple(oil_word* words, redir* redirects, env_pair* more_env)
   | Sentence_(command child, token terminator)

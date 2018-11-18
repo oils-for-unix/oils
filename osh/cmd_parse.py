@@ -348,7 +348,7 @@ class CommandParser(object):
     self.completion_stack = []
 
     # Cursor state set by _Peek()
-    self.next_lex_mode = lex_mode_e.OUTER
+    self.next_lex_mode = lex_mode_e.Outer
     self.cur_word = None  # current word
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
@@ -379,7 +379,7 @@ class CommandParser(object):
   # You might also need a flag to indicate whether the previous expansion ends
   # with ' '.  I didn't see that in dash or bash code.
 
-  def _Next(self, lex_mode=lex_mode_e.OUTER):
+  def _Next(self, lex_mode=lex_mode_e.Outer):
     """Helper method."""
     self.next_lex_mode = lex_mode
 
@@ -394,7 +394,7 @@ class CommandParser(object):
     Returns True for success and False on error.  Error examples: bad command
     sub word, or unterminated quoted string, etc.
     """
-    if self.next_lex_mode != lex_mode_e.NONE:
+    if self.next_lex_mode != lex_mode_e.Undefined:
       w = self.w_parser.ReadWord(self.next_lex_mode)
       assert w is not None
 
@@ -409,7 +409,7 @@ class CommandParser(object):
 
       self.c_kind = word.CommandKind(self.cur_word)
       self.c_id = word.CommandId(self.cur_word)
-      self.next_lex_mode = lex_mode_e.NONE
+      self.next_lex_mode = lex_mode_e.Undefined
 
   def _Eat(self, c_id):
     """Consume a word of a type.  If it doesn't match, return False.

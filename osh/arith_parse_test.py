@@ -29,7 +29,7 @@ def ParseAndEval(code_str):
   arena = test_lib.MakeArena('<arith_parse_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   w_parser, _ = parse_ctx.MakeParserForCompletion(code_str, arena)
-  w_parser._Next(lex_mode_e.ARITH)  # Calling private method
+  w_parser._Next(lex_mode_e.Arith)  # Calling private method
   anode = w_parser._ReadArithExpr()  # need the right lex state?
   print('node:', anode)
 

@@ -28,7 +28,7 @@ def MatchOshToken(lex_mode, line, start_pos):
 def TokenizeLineOuter(line):
   start_pos = 0
   while True:
-    tok_type, end_pos = MatchOshToken(lex_mode_e.OUTER, line, start_pos)
+    tok_type, end_pos = MatchOshToken(lex_mode_e.Outer, line, start_pos)
     tok_val = line[start_pos:end_pos]
     print('TOK: %s %r\n' % (tok_type, tok_val))
     start_pos = end_pos
@@ -41,7 +41,7 @@ class LexTest(unittest.TestCase):
 
   def testMatchOshToken(self):
     print(dir(fastlex))
-    print(MatchOshToken(lex_mode_e.COMMENT, 'line', 3))
+    print(MatchOshToken(lex_mode_e.Comment, 'line', 3))
     print()
 
     # Need to be able to pass NUL bytes for EOF.
@@ -51,18 +51,18 @@ class LexTest(unittest.TestCase):
     TokenizeLineOuter(line)
 
   def testOutOfBounds(self):
-    print(MatchOshToken(lex_mode_e.OUTER, 'line', 3))
+    print(MatchOshToken(lex_mode_e.Outer, 'line', 3))
     # It's an error to point to the end of the buffer!  Have to be one behind
     # it.
     return
-    print(MatchOshToken(lex_mode_e.OUTER, 'line', 4))
-    print(MatchOshToken(lex_mode_e.OUTER, 'line', 5))
+    print(MatchOshToken(lex_mode_e.Outer, 'line', 4))
+    print(MatchOshToken(lex_mode_e.Outer, 'line', 5))
 
   def testBug(self):
     code_str = '-n'
     expected = Id.BoolUnary_n
 
-    tok_type, end_pos = MatchOshToken(lex_mode_e.DBRACKET, code_str, 0)
+    tok_type, end_pos = MatchOshToken(lex_mode_e.DBracket, code_str, 0)
     print('---', 'expected', expected.enum_value, 'got', tok_type.enum_value)
 
     self.assertEqual(expected, tok_type)

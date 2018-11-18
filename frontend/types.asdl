@@ -9,23 +9,23 @@ module types {
   -- Possible additional modes:
   --   nested backticks: echo `echo \`echo foo\` bar`
   lex_mode =
-    NONE
-  | COMMENT
-  | OUTER
-  | DBRACKET
-  | SQ | DQ | DOLLAR_SQ
-  | ARITH
-  | EXTGLOB
-  | VS_1 | VS_2 | VS_ARG_UNQ | VS_ARG_DQ
-  | BASH_REGEX | BASH_REGEX_CHARS
+    Undefined
+  | Comment
+  | Outer
+  | DBracket
+  | SQ | DQ | DollarSQ
+  | Arith
+  | ExtGlob
+  | VS_1 | VS_2 | VS_ArgUnquoted | VS_ArgDQ
+  | BashRegex | BashRegexChars
 
-  | OIL_OUTER   -- echo foo (should this be OIL_COMMAND?)
-  | OIL_WORDS   -- Like OUTER, but {a,b} and [a-z].? are recognized.
-  | OIL_EXPR    -- echo ${a * b} $(a * b)
-  | OIL_SQ      -- echo '_\t_'
-  | OIL_DQ      -- echo "hello $name\n"
-  | OIL_RAW_SQ  -- echo r'foo'
-  | OIL_RAW_DQ  -- echo r"hello there"
+  | OilOuter    -- echo foo (should this be OIL_COMMAND?)
+  | OilWords -- Like OUTER, but {a,b} and [a-z].? are recognized.
+  | OilExpr -- echo ${a * b} $(a * b)
+  | OilSQ -- echo '_\t_'
+  | OilDQ -- echo "hello $name\n"
+  | OilRawSQ  -- echo r'foo'
+  | OilRawDQ  -- echo r"hello there"
 
   -- More:
   -- * Multiline strings

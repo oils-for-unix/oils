@@ -15,7 +15,7 @@ hi$((1 + 2))"$(echo hi)"${var:-__"$(echo default)"__}
 Substitutions can be nested, but which inner subs are allowed depends on the
 outer sub.
 
-lex_mode_e.OUTER (_ReadLeftParts)
+lex_mode_e.Outer (_ReadLeftParts)
   All subs and quotes are allowed:
   $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
 
@@ -24,12 +24,12 @@ lex_mode_e.DQ  (_ReadDoubleQuotedLeftParts)
   $v ${v}   $() ``   $(())
   No process substitution.
 
-lex_mode_e.ARITH
+lex_mode_e.Arith
   Similar to DQ: Var, Command, and Arith sub, but no process sub.  bash doesn't
   allow quotes, but OSH does.  We allow ALL FOUR kinds of quotes, because we
   need those for associative array indexing.
 
-lex_mode_e.VS_ARG_UNQ
+lex_mode_e.VS_ArgUnquoted
   Like UNQUOTED, everything is allowed (even process substitutions), but we
   stop at }, and space is SIGNIFICANT.
   
@@ -38,7 +38,7 @@ lex_mode_e.VS_ARG_UNQ
   ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
   ${X:-'single'}  ${X:-"double"}  ${X:-$'\n'}  ${X:-<(echo hi)}
 
-lex_mode_e.VS_ARG_DQ
+lex_mode_e.VS_ArgDQ
   In contrast to DQ, VS_ARG_DQ accepts nested "" and $'' and $"", e.g.
   "${x:-"default"}".
 
@@ -66,13 +66,13 @@ log = util.log
 
 class WordParser(object):
 
-  def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.OUTER):
+  def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.Outer):
     self.parse_ctx = parse_ctx
     self.lexer = lexer
     self.line_reader = line_reader
     self.Reset(lex_mode=lex_mode)
 
-  def Reset(self, lex_mode=lex_mode_e.OUTER):
+  def Reset(self, lex_mode=lex_mode_e.Outer):
     """Called by interactive loop."""
     # For _Peek()
     self.prev_token = None  # for completion
@@ -130,14 +130,14 @@ class WordParser(object):
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
     # return a CompoundWord with no parts, which is explicitly checked with a
     # custom error message.
-    if not w.parts and arg_lex_mode == lex_mode_e.VS_ARG_DQ and empty_ok:
+    if not w.parts and arg_lex_mode == lex_mode_e.VS_ArgDQ and empty_ok:
       return ast.EmptyWord()
 
     return w
 
   def _ReadSliceVarOp(self):
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
-    self._Next(lex_mode_e.ARITH)
+    self._Next(lex_mode_e.Arith)
     self._Peek()
     if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
       begin = None  # no beginning specified
@@ -149,7 +149,7 @@ class WordParser(object):
 
     # Id.Arith_Colon is a pun for Id.VOp2_Colon
     if self.token_type == Id.Arith_Colon:
-      self._Next(lex_mode_e.ARITH)
+      self._Next(lex_mode_e.Arith)
       length = self._ReadArithExpr()
       return ast.Slice(begin, length)
 
@@ -214,16 +214,16 @@ class WordParser(object):
     """
     # Lookahead to see if we get @ or *.  Otherwise read a full arithmetic
     # expression.
-    t2 = self.lexer.LookAhead(lex_mode_e.ARITH)
+    t2 = self.lexer.LookAhead(lex_mode_e.Arith)
     if t2.id in (Id.Lit_At, Id.Arith_Star):
       op = ast.WholeArray(t2.id)
 
-      self._Next(lex_mode_e.ARITH)  # skip past [
+      self._Next(lex_mode_e.Arith)  # skip past [
       self._Peek()
-      self._Next(lex_mode_e.ARITH)  # skip past @
+      self._Next(lex_mode_e.Arith)  # skip past @
       self._Peek()
     else:
-      self._Next(lex_mode_e.ARITH)  # skip past [
+      self._Next(lex_mode_e.Arith)  # skip past [
       anode = self._ReadArithExpr()
       op = ast.ArrayIndex(anode)
 
@@ -385,9 +385,9 @@ class WordParser(object):
     left_spid = self.cur_token.span_id
 
     if d_quoted:
-      arg_lex_mode = lex_mode_e.VS_ARG_DQ
+      arg_lex_mode = lex_mode_e.VS_ArgDQ
     else:
-      arg_lex_mode = lex_mode_e.VS_ARG_UNQ
+      arg_lex_mode = lex_mode_e.VS_ArgUnquoted
 
     self._Next(lex_mode_e.VS_1)
     self._Peek()
@@ -506,7 +506,7 @@ class WordParser(object):
       return self._ReadSingleQuotedPart(lex_mode_e.SQ)
 
     if self.token_type == Id.Left_DollarSingleQuote:
-      return self._ReadSingleQuotedPart(lex_mode_e.DOLLAR_SQ)
+      return self._ReadSingleQuotedPart(lex_mode_e.DollarSQ)
 
     if self.token_type in (
         Id.Left_CommandSub, Id.Left_Backtick, Id.Left_ProcSubIn,
@@ -539,7 +539,7 @@ class WordParser(object):
     spids.append(left_token.span_id)
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
-    self._Next(lex_mode_e.EXTGLOB)  # advance past LEFT
+    self._Next(lex_mode_e.ExtGlob)  # advance past LEFT
 
     read_word = False  # did we just a read a word?  To handle @(||).
 
@@ -556,11 +556,11 @@ class WordParser(object):
         if not read_word:
           arms.append(ast.CompoundWord())
         read_word = False
-        self._Next(lex_mode_e.EXTGLOB)
+        self._Next(lex_mode_e.ExtGlob)
 
       # lex mode EXTGLOB should only produce these 4 kinds of tokens
       elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub, Kind.ExtGlob):
-        w = self._ReadCompoundWord(lex_mode=lex_mode_e.EXTGLOB)
+        w = self._ReadCompoundWord(lex_mode=lex_mode_e.ExtGlob)
         arms.append(w)
         read_word = True
 
@@ -649,7 +649,7 @@ class WordParser(object):
     left_token = self.cur_token
     left_spid = left_token.span_id
 
-    self._Next(lex_mode_e.OUTER)  # advance past $( or `
+    self._Next(lex_mode_e.Outer)  # advance past $( or `
 
     # Set the lexer in a state so ) becomes the EOF token.
     if left_id in (Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
@@ -699,7 +699,7 @@ class WordParser(object):
 
     See the assertion in ArithParser.Parse() -- unexpected extra input.
     """
-    # calls self.ReadWord(lex_mode_e.ARITH)
+    # calls self.ReadWord(lex_mode_e.Arith)
     a_parser = tdop.TdopParser(arith_parse.SPEC, self)
     anode = a_parser.Parse()
     assert anode is not None
@@ -723,13 +723,13 @@ class WordParser(object):
     # $((echo * foo))  # looks like multiplication
     # $((echo / foo))  # looks like division
 
-    self._Next(lex_mode_e.ARITH)
+    self._Next(lex_mode_e.Arith)
     anode = self._ReadArithExpr()
     if self.token_type != Id.Arith_RParen:
       p_die('Expected first ) to end arith sub, got %r', self.cur_token.val,
             token=self.cur_token)
 
-    self._Next(lex_mode_e.OUTER)  # TODO: This could be DQ or ARITH too
+    self._Next(lex_mode_e.Outer)  # TODO: This could be DQ or ARITH too
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     # Two right parens break the Id.Eof_RParen scheme
@@ -749,7 +749,7 @@ class WordParser(object):
     """Non-standard arith sub $[a + 1]."""
     left_span_id = self.cur_token.span_id
 
-    self._Next(lex_mode_e.ARITH)
+    self._Next(lex_mode_e.Arith)
     anode = self._ReadArithExpr()
     if self.token_type != Id.Arith_RBracket:
       p_die('Expected ], got %r', self.cur_token.val, token=self.cur_token)
@@ -768,31 +768,31 @@ class WordParser(object):
     above.
     """
     # The second one needs to be disambiguated in stuff like stuff like:
-    # TODO: Be consistent with ReadForExpression below and use lex_mode_e.ARITH?
+    # TODO: Be consistent with ReadForExpression below and use lex_mode_e.Arith?
     # Then you can get rid of this.
     self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
-    self._Next(lex_mode_e.ARITH)
+    self._Next(lex_mode_e.Arith)
     anode = self._ReadArithExpr()
 
     if self.token_type != Id.Arith_RParen:
       p_die('Expected first ) to end arith statement, got %r',
             self.cur_token.val, token=self.cur_token)
-    self._Next(lex_mode_e.OUTER)
+    self._Next(lex_mode_e.Outer)
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     self._Peek()
     if self.token_type != Id.Op_DRightParen:
       p_die('Expected second ) to end arith statement, got %r',
             self.cur_token.val, token=self.cur_token)
-    self._Next(lex_mode_e.OUTER)
+    self._Next(lex_mode_e.Outer)
 
     return anode, self.cur_token.span_id
 
   def _NextNonSpace(self):
     """Same logic as _ReadWord, but for ReadForExpresion."""
     while True:
-      self._Next(lex_mode_e.ARITH)
+      self._Next(lex_mode_e.Arith)
       self._Peek()
       if self.token_kind not in (Kind.Ignored, Kind.WS):
         break
@@ -826,12 +826,12 @@ class WordParser(object):
     if self.token_type != Id.Arith_RParen:
       p_die('Expected ) to end for loop expression, got %r',
             self.cur_token.val, token=self.cur_token)
-    self._Next(lex_mode_e.OUTER)
+    self._Next(lex_mode_e.Outer)
 
     return ast.ForExpr(init_node, cond_node, update_node)
 
   def _ReadArrayLiteralPart(self):
-    self._Next(lex_mode_e.OUTER)  # advance past (
+    self._Next(lex_mode_e.Outer)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:
       p_die('Expected ( after =, got %r', self.cur_token.val,
@@ -841,7 +841,7 @@ class WordParser(object):
     w_parser = WordParser(self.parse_ctx, self.lexer, self.line_reader)
     words = []
     while True:
-      w = w_parser.ReadWord(lex_mode_e.OUTER)
+      w = w_parser.ReadWord(lex_mode_e.Outer)
       assert w is not None
 
       if w.tag == word_e.TokenWord:
@@ -863,7 +863,7 @@ class WordParser(object):
     return ast.ArrayLiteralPart(words3)
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
-                        lex_mode=lex_mode_e.OUTER, empty_ok=True):
+                        lex_mode=lex_mode_e.Outer, empty_ok=True):
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -895,7 +895,7 @@ class WordParser(object):
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:  # foo=
-          t = self.lexer.LookAhead(lex_mode_e.OUTER)
+          t = self.lexer.LookAhead(lex_mode_e.Outer)
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
@@ -974,22 +974,22 @@ class WordParser(object):
     elif self.token_kind == Kind.Ignored:
       # Space should be ignored.  TODO: change this to SPACE_SPACE and
       # SPACE_NEWLINE?  or SPACE_TOK.
-      self._Next(lex_mode_e.ARITH)
+      self._Next(lex_mode_e.Arith)
       return None, True  # Tell wrapper to try again
 
     elif self.token_kind in (Kind.Arith, Kind.Right):
       # Id.Right_ArithSub IS just a normal token, handled by ArithParser
-      self._Next(lex_mode_e.ARITH)
+      self._Next(lex_mode_e.Arith)
       w = ast.TokenWord(self.cur_token)
       return w, False
 
     elif self.token_kind in (Kind.Lit, Kind.Left):
-      w = self._ReadCompoundWord(lex_mode=lex_mode_e.ARITH)
+      w = self._ReadCompoundWord(lex_mode=lex_mode_e.Arith)
       return w, False
 
     elif self.token_kind == Kind.VSub:
       part = ast.SimpleVarSub(self.cur_token)
-      self._Next(lex_mode_e.ARITH)
+      self._Next(lex_mode_e.Arith)
       w = ast.CompoundWord([part])
       return w, False
 
@@ -1038,9 +1038,9 @@ class WordParser(object):
         Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.ControlFlow,
         Kind.BoolUnary, Kind.BoolBinary, Kind.ExtGlob):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
-      # lex_mode_e.COMMENT and read until end of line.
+      # lex_mode_e.Comment and read until end of line.
       if self.token_type == Id.Lit_Pound:
-        self._Next(lex_mode_e.COMMENT)
+        self._Next(lex_mode_e.Comment)
         self._Peek()
 
         # NOTE: The # could be the last character in the file.  It can't be
@@ -1049,7 +1049,7 @@ class WordParser(object):
             self.cur_token
 
         # The next iteration will go into Kind.Ignored and set lex state to
-        # lex_mode_e.OUTER/etc.
+        # lex_mode_e.Outer/etc.
         return None, True  # tell Read() to try again after comment
 
       else:
@@ -1071,7 +1071,7 @@ class WordParser(object):
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:
-      t = self.lexer.LookAhead(lex_mode_e.OUTER)
+      t = self.lexer.LookAhead(lex_mode_e.Outer)
     else:
       t = self.cur_token
     return t.id
@@ -1085,11 +1085,11 @@ class WordParser(object):
     # Implementation note: This is an stateful/iterative function that calls
     # the stateless "_ReadWord" function.
     while True:
-      if lex_mode == lex_mode_e.ARITH:
+      if lex_mode == lex_mode_e.Arith:
         # TODO: Can this be unified?
         w, need_more = self._ReadArithWord()
       elif lex_mode in (
-          lex_mode_e.OUTER, lex_mode_e.DBRACKET, lex_mode_e.BASH_REGEX):
+          lex_mode_e.Outer, lex_mode_e.DBracket, lex_mode_e.BashRegex):
         w, need_more = self._ReadWord(lex_mode)
       else:
         raise AssertionError('Invalid lex state %s' % lex_mode)

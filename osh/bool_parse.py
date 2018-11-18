@@ -63,10 +63,10 @@ class BoolParser(object):
     self.op_id = Id.Undefined_Tok
     self.b_kind = Kind.Undefined
 
-  def _NextOne(self, lex_mode=lex_mode_e.DBRACKET):
+  def _NextOne(self, lex_mode=lex_mode_e.DBracket):
     n = len(self.words)
     if n == 2:
-      assert lex_mode == lex_mode_e.DBRACKET
+      assert lex_mode == lex_mode_e.DBracket
       self.words[0] = self.words[1]
       self.cur_word = self.words[0]
       del self.words[1]
@@ -84,7 +84,7 @@ class BoolParser(object):
     #log('--- word %s', self.cur_word)
     #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
 
-  def _Next(self, lex_mode=lex_mode_e.DBRACKET):
+  def _Next(self, lex_mode=lex_mode_e.DBracket):
     """Advance to the next token, skipping newlines.
 
     We don't handle newlines in the lexer because we want the newline after ]]
@@ -101,7 +101,7 @@ class BoolParser(object):
     if n != 1:
       raise AssertionError(self.words)
 
-    w = self.w_parser.ReadWord(lex_mode_e.DBRACKET)  # may raise
+    w = self.w_parser.ReadWord(lex_mode_e.DBracket)  # may raise
     self.words.append(w)  # Save it for _Next()
     return w
 
@@ -208,11 +208,11 @@ class BoolParser(object):
         self._Next()
         op = self.op_id
 
-        # TODO: Need to change to lex_mode_e.BASH_REGEX.
+        # TODO: Need to change to lex_mode_e.BashRegex.
         # _Next(lex_mode) then?
         is_regex = t2_op_id == Id.BoolBinary_EqualTilde
         if is_regex:
-          self._Next(lex_mode=lex_mode_e.BASH_REGEX)
+          self._Next(lex_mode=lex_mode_e.BashRegex)
         else:
           self._Next()
 

@@ -93,6 +93,10 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('', depth)
 
+    # PROBLEM: Constructor names may conflict, even though they're namespaced!
+    # Should I generate a unique name?
+    # Or just indent them underneath?
+
     for i, t in enumerate(sum.types):
       tag_num = i + 1
       # name of sum e.g. 'oil_cmd' is the superclass

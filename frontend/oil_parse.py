@@ -9,8 +9,13 @@ import sys
 from core import util
 
 # TODO: These should be moved to core/meta?  Or syntax/meta?
-from core.meta import ast, types, Id, Kind, LookupKind, KindName
-lex_mode_e = types.lex_mode_e
+from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind, KindName
+
+lex_mode_e = types_asdl.lex_mode_e
+oil_cmd = syntax_asdl.oil_cmd
+oil_word = syntax_asdl.oil_word
+oil_word_part = syntax_asdl.oil_word_part
+
 
 p_die = util.p_die
 log = util.log
@@ -37,7 +42,7 @@ class OilParser(object):
     self.token_kind = Kind.Undefined
     self.token_type = Id.Undefined_Tok
 
-    self.next_lex_mode = lex_mode_e.OIL_OUTER
+    self.next_lex_mode = lex_mode_e.OilOuter
 
   def _Peek(self):
     """Helper method."""
@@ -64,7 +69,7 @@ class OilParser(object):
   def _NextNonSpace(self):
     """Same logic as _ReadWord, but for ReadForExpresion."""
     while True:
-      self._Next(lex_mode_e.OIL_OUTER)
+      self._Next(lex_mode_e.OilOuter)
       self._Peek()
       if self.token_kind not in (Kind.Ignored, Kind.WS):
         break
@@ -111,12 +116,12 @@ class OilParser(object):
          | multiline_string
     """
     words = []
-    w = ast.Compound()
+    w = oil_word.Compound()
     done = False
     while not done:
       if self.token_kind == Kind.Lit:
-        w.parts.append(ast.Literal(self.cur_token))
-        self._Next(lex_mode_e.OUTER)
+        w.parts.append(oil_word_part.Literal(self.cur_token))
+        self._Next(lex_mode_e.Outer)
       elif self.token_kind in (Kind.WS, Kind.Eof):
         done = True
       else:
@@ -167,8 +172,8 @@ class OilParser(object):
       else:
         break
 
-      self._Next(lex_mode_e.OIL_OUTER)
-    return ast.Simple(words)
+      self._Next(lex_mode_e.OilOuter)
+    return oil_cmd.Simple(words)
 
   def ParseCommand(self, cur_aliases=None):
     """

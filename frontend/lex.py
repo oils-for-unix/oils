@@ -182,7 +182,7 @@ LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 # Anything until the end of the line is a comment.  Does not match the newline
 # itself.  We want to switch modes and possibly process Op_Newline for here
 # docs, etc.
-LEXER_DEF[lex_mode_e.COMMENT] = [
+LEXER_DEF[lex_mode_e.Comment] = [
   R(r'[^\n\0]*', Id.Ignored_Comment)
 ]
 
@@ -298,7 +298,7 @@ def IsKeyword(name):
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
-LEXER_DEF[lex_mode_e.OUTER] = [
+LEXER_DEF[lex_mode_e.Outer] = [
   # These four are not allowed within [[, so they are in OUTER but not
   # _UNQUOTED.
 
@@ -313,7 +313,7 @@ LEXER_DEF[lex_mode_e.OUTER] = [
 # DBRACKET: can be like OUTER, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
 # - Id.Op_DLeftParen can't be nested inside.
-LEXER_DEF[lex_mode_e.DBRACKET] = [
+LEXER_DEF[lex_mode_e.DBracket] = [
   C(']]', Id.Lit_DRightBracket),
   C('!', Id.KW_Bang),
 ] + ID_SPEC.LexerPairs(Kind.BoolUnary) + \
@@ -325,7 +325,7 @@ LEXER_DEF[lex_mode_e.DBRACKET] = [
 # nested, so _EXTGLOB_BEGIN appears here.
 #
 # Example: echo @(<> <>|&&|'foo'|$bar)
-LEXER_DEF[lex_mode_e.EXTGLOB] = \
+LEXER_DEF[lex_mode_e.ExtGlob] = \
     _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + _EXTGLOB_BEGIN + [
   R(r'[^\\$`"\'|)@*+!?\0]+', Id.Lit_Chars),
   C('|', Id.Op_Pipe),
@@ -351,7 +351,7 @@ LEXER_DEF[lex_mode_e.EXTGLOB] = \
 #
 # From code: ( | ) are treated special.
 
-LEXER_DEF[lex_mode_e.BASH_REGEX] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
   # and [].  We will avoid that and ask the user to extract a variable?
 
@@ -391,7 +391,7 @@ _VS_ARG_COMMON = _BACKSLASH + [
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[lex_mode_e.VS_ARG_UNQ] = \
+LEXER_DEF[lex_mode_e.VS_ArgUnquoted] = \
   _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
@@ -399,7 +399,7 @@ LEXER_DEF[lex_mode_e.VS_ARG_UNQ] = \
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[lex_mode_e.VS_ARG_DQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
+LEXER_DEF[lex_mode_e.VS_ArgDQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
   # Weird wart: even in double quoted state, double quotes are allowed
   C('"', Id.Left_DoubleQuote),
@@ -459,7 +459,7 @@ PS1_DEF = [
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
-LEXER_DEF[lex_mode_e.DOLLAR_SQ] = _C_STRING_COMMON + [
+LEXER_DEF[lex_mode_e.DollarSQ] = _C_STRING_COMMON + [
   # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
   # with no leading 0.
   R(OCTAL3_RE, Id.Char_Octal3),
@@ -512,7 +512,7 @@ LEXER_DEF[lex_mode_e.VS_2] = \
 ]
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
-LEXER_DEF[lex_mode_e.ARITH] = \
+LEXER_DEF[lex_mode_e.Arith] = \
     _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
   # newline is ignored space, unlike in OUTER
   R(r'[ \t\r\n]+', Id.Ignored_Space),
@@ -619,7 +619,7 @@ _OIL_VARS = [
   R(r'\$[0-9]', Id.VSub_Number),
 ]
 
-LEXER_DEF[lex_mode_e.OIL_OUTER] = (
+LEXER_DEF[lex_mode_e.OilOuter] = (
     _OIL_KEYWORDS + _BACKSLASH + _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + 
     _OIL_VARS + [
 

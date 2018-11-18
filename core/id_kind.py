@@ -143,8 +143,8 @@ def AddKinds(spec):
 
   spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
 
-  # Id.WS_Space is for lex_mode_e.OUTER; Id.Ignored_Space is for
-  # lex_mode_e.ARITH
+  # Id.WS_Space is for lex_mode_e.Outer; Id.Ignored_Space is for
+  # lex_mode_e.Arith
   spec.AddKind('WS', ['Space'])
 
   spec.AddKind('Lit', [
@@ -156,8 +156,8 @@ def AddKinds(spec):
       'TildeLike',         # tilde expansion
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
-      'Digits',            # for lex_mode_e.ARITH
-      'At',                # for ${a[@]}, in lex_mode_e.ARITH
+      'Digits',            # for lex_mode_e.Arith
+      'At',                # for ${a[@]}, in lex_mode_e.Arith
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
   ])
 

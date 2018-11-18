@@ -24,7 +24,7 @@ lex_mode_e = types.lex_mode_e
 def _ReadWords(w_parser):
   words = []
   while True:
-    w = w_parser.ReadWord(lex_mode_e.DBRACKET)
+    w = w_parser.ReadWord(lex_mode_e.DBracket)
     if w.Type() == Id.Eof_Real:
       break
     words.append(w)
@@ -39,7 +39,7 @@ def _MakeParser(code_str):
   arena = test_lib.MakeArena('<bool_parse_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   w_parser, _ = parse_ctx.MakeParserForCompletion(code_str + ' ]]', arena)
-  w_parser._Next(lex_mode_e.DBRACKET)  # for tests only
+  w_parser._Next(lex_mode_e.DBracket)  # for tests only
   p = bool_parse.BoolParser(w_parser)
   p._Next()
   return p
