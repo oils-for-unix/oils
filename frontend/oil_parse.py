@@ -22,9 +22,15 @@ class OilParser(object):
   """
   This parser does everything in an 'ideal' fashion, all-in-one.
 
-  TODO:
+  Issues:
   - Whitespace handling.
-  - Ignored handling.
+    - in WORDS, whitespace is significant, because it delimits words
+    - commands, e.g. for loop or while loop, it's not significant.
+    - maybe retain word parser?
+  - Ignored tokens should be ignored
+  - Here strings
+    - What about here strings in expression mode?  Maybe don't even go to
+      expression mode.
   """
   def __init__(self, parse_ctx, lexer, line_reader, arena=None):
     self.parse_ctx = parse_ctx

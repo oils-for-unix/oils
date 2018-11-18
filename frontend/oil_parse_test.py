@@ -11,12 +11,11 @@ from frontend import oil_parse  # module under test
 
 
 class OilParseTest(unittest.TestCase):
-  def setUp(self):
-    pass
 
-  def tearDown(self):
-    pass
-
+  # TODO: Maybe use the osh2oil tool on configure?  And then feed that as a
+  # case?
+  #
+  # That could be part of 'wild'?  Or oil-wild?
   def testSimple(self):
     _, c_parser = test_lib.InitOilParser('echo hi')
     node = c_parser.ParseLogicalLine()

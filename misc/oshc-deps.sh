@@ -14,7 +14,7 @@ _this-repo() {
   # NOTE: copied from test/wild.sh oil-manifest.
   for name in \
     configure install *.sh {benchmarks,build,test,scripts,opy}/*.sh; do
-    bin/oilc deps $name
+    bin/oshc deps $name
   done
 }
 

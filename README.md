@@ -73,8 +73,10 @@ Directory Structure
     build/            # Build automation
       dev.sh          # For development builds, running CPython
     devtools/         # For Oil developers (not end users)
-    scripts/          # Other development scripts
-    demo/             # Miscellaneous stuff that should probably be moved to tests
+      release.sh      # Documents the release process.
+    misc/             # Other development scripts
+    demo/             # Demonstrations of bash/shell features.  Could be
+                      # moved to tests/ if automated.
     web/              # HTML/JS/CSS for tests and tools
 
     # Tests
