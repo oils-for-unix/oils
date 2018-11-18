@@ -102,6 +102,11 @@ Directory Structure
     frontend/         # Lexing/Parsing code common to Oil and OSH.
     osh/              # Parsing code specific to OSH.
     opy/              # Python compiler in Python
+      lib/            # Common code
+      pgen2/          # Parsing library
+      compiler2/      # Bytecode compiler
+      byterun/        # Metacircular bytecode VM in Python
+      gold/           # tests
     ovm2/             # A nascent VM to run Oil.  Perhaps a target for
                       # metaprogramming.
     pylib/            # Borrowed from the Python standard library.

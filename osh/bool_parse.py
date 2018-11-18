@@ -32,15 +32,17 @@ BINARY_OP: -gt, -ot, ==, etc.
 
 from core import word
 from core import util
-from core.meta import ast, Id, Kind, LookupKind, types
+from core.meta import Id, Kind, LookupKind, syntax_asdl, types_asdl
 
 #try:
 #  import libc  # for regex_parse
 #except ImportError:
 #  from benchmarks import fake_libc as libc
 
-word_e = ast.word_e
-lex_mode_e = types.lex_mode_e
+bool_expr = syntax_asdl.bool_expr
+word_e = syntax_asdl.word_e
+lex_mode_e = types_asdl.lex_mode_e
+
 log = util.log
 p_die = util.p_die
 
@@ -142,7 +144,7 @@ class BoolParser(object):
     if self.op_id in (Id.Op_DPipe, Id.BoolUnary_o):
       self._Next()
       right = self.ParseExpr()
-      return ast.LogicalOr(left, right)
+      return bool_expr.LogicalOr(left, right)
     else:
       return left
 
@@ -158,7 +160,7 @@ class BoolParser(object):
     if self.op_id in (Id.Op_DAmp, Id.BoolUnary_a):
       self._Next()
       right = self.ParseTerm()
-      return ast.LogicalAnd(left, right)
+      return bool_expr.LogicalAnd(left, right)
     else:
       return left
 
@@ -169,7 +171,7 @@ class BoolParser(object):
     if self.op_id == Id.KW_Bang:
       self._Next()
       child = self.ParseFactor()
-      return ast.LogicalNot(child)
+      return bool_expr.LogicalNot(child)
     else:
       return self.ParseFactor()
 
@@ -189,7 +191,7 @@ class BoolParser(object):
       if w.tag not in (word_e.CompoundWord, word_e.StringWord):
         p_die('Invalid argument to unary operator', word=w)
       self._Next()
-      node = ast.BoolUnary(op, w)
+      node = bool_expr.BoolUnary(op, w)
       return node
 
     if self.b_kind == Kind.Word:
@@ -222,12 +224,12 @@ class BoolParser(object):
           pass
 
         self._Next()
-        return ast.BoolBinary(op, left, right)
+        return bool_expr.BoolBinary(op, left, right)
       else:
         # [[ foo ]]
         w = self.cur_word
         self._Next()
-        return ast.WordTest(w)
+        return bool_expr.WordTest(w)
 
     if self.op_id == Id.Op_LParen:
       self._Next()

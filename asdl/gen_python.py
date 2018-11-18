@@ -72,11 +72,11 @@ class GenClassesVisitor(visitor.AsdlVisitor):
 
     self.Emit('', depth)
 
-  def VisitConstructor(self, cons, def_name, tag_num, depth):
+  def VisitConstructor(self, cons, super_name, tag_num, depth):
     if cons.fields:
-      self._GenClass(cons, cons.name, def_name, depth, tag_num=tag_num)
+      self._GenClass(cons, cons.name, super_name, depth, tag_num=tag_num)
     else:
-      self.Emit("class %s(%s):" % (cons.name, def_name), depth)
+      self.Emit("class %s(%s):" % (cons.name, super_name), depth)
       self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % cons.name, depth)
       self.Emit('  tag = %d'  % tag_num, depth)
       self.Emit('', depth)
@@ -88,15 +88,21 @@ class GenClassesVisitor(visitor.AsdlVisitor):
       self.Emit('  %s = %d' % (variant.name, i + 1), depth)
     self.Emit('', depth)
 
+    # the base class, e.g. 'oil_cmd'
     self.Emit('class %s(py_meta.CompoundObj):' % name, depth)
     self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('', depth)
 
-    # define command_t, and then make subclasses
-    super_name = '%s' % name
     for i, t in enumerate(sum.types):
       tag_num = i + 1
-      self.VisitConstructor(t, super_name, tag_num, depth)
+      # name of sum e.g. 'oil_cmd' is the superclass
+      self.VisitConstructor(t, name, tag_num, depth)
+
+    # Put everything in a namespace of the base class, so we can instantiate
+    # with oil_cmd.Simple()
+    for i, t in enumerate(sum.types):
+      self.Emit('%s.%s = %s' % (name, t.name, t.name), depth)
+    self.Emit('', depth)
 
   def VisitProduct(self, product, name, depth):
     self._GenClass(product, name, 'py_meta.CompoundObj', depth)
