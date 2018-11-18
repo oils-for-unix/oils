@@ -686,12 +686,8 @@ line-counts() {
   metrics/tarball.sh linecount-pydeps > $out/pydeps.txt
   metrics/tarball.sh linecount-nativedeps > $out/nativedeps.txt
 
-  # My arbitrrary categorization.
+  # My arbitrary categorization.
   metrics/source-code.sh all > $out/src.txt  # Count repo lines
-
-  # A couple other categorizations.
-  metrics/source-code.sh parser > $out/parser.txt
-  metrics/source-code.sh runtime > $out/runtime.txt
 
   metrics/source-code.sh oil-osh-cloc > $out/oil-osh-cloc.txt
 

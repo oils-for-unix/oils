@@ -15,7 +15,7 @@ filter-py() {
 
 # Oil-only would exclude core/legacy.py, etc.
 oil-osh-files() {
-  { ls {bin,osh,core,frontend}/*.py native/*.c frontend/{syntax,types}.asdl core/runtime.asdl; } |
+  { ls {bin,oil_lang,osh,core,frontend}/*.py native/*.c */*.asdl; } |
     filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 
@@ -52,7 +52,7 @@ oil-osh-cloc() {
 
   echo
   echo 'ASDL SCHEMAS (non-blank non-comment lines)'
-  asdl-cloc frontend/syntax.asdl core/runtime.asdl
+  asdl-cloc */*.asdl
 }
 
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
@@ -68,7 +68,7 @@ all() {
   echo
 
   echo 'RELEASE AUTOMATION'
-  wc -l scripts/release.sh | sort --numeric
+  wc -l devtools/release.sh | sort --numeric
   echo
 
   echo 'BENCHMARKS'
@@ -104,12 +104,12 @@ all() {
   ls tools/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
-  echo 'BORROWED FROM STDLIB'
-  wc -l pylib/*.py | filter-py | sort --numeric
-  echo
-
   echo 'WEB'
   ls web/*.js web/*/*.{js,py} | xargs wc -l | sort --numeric
+  echo
+
+  echo 'BORROWED FROM STDLIB'
+  wc -l pylib/*.py | filter-py | sort --numeric
   echo
 
   echo 'OTHER UNIT TESTS'
@@ -117,7 +117,7 @@ all() {
   echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {osh,frontend,core,ovm2,native,tools}/*_test.py | sort --numeric
+  wc -l {oil_lang,osh,frontend,core,ovm2,native,tools}/*_test.py | sort --numeric
   echo
 
   echo 'OIL AND OSH'
@@ -133,59 +133,6 @@ all() {
 
   echo 'DOCS'
   wc -l README.md doc/* | sort --numeric
-  echo
-}
-
-# Just the parser
-parser() {
-  echo 'AST and IDs'
-  wc -l frontend/syntax.asdl core/id_kind.py | sort -n
-  echo
-
-  echo 'Lexer / Parser'
-  wc -l frontend/{lex,match}.py osh/{*_parse,parse_lib}.py core/word.py | sort -n
-  echo
-
-  echo 'Compiler / Middle End'
-  wc -l core/{braces,word_compile}.py | sort -n
-  echo
-
-  echo 'Common Algorithms'
-  wc -l core/{tdop,lexer}.py | sort -n
-  echo
-
-  echo 'Utilities'
-  wc -l core/{alloc,ui,reader}.py | sort -n
-  echo
-}
-
-# Stuff we might need to hand-port
-parser-port() {
-  wc -l core/tdop.py osh/*_parse.py | sort -n
-}
-
-runtime() {
-  echo 'Runtime'
-  wc -l core/{process,state,dev}.py core/runtime.asdl | sort -n
-  echo
-
-  # NOTE: These may turn into compilers
-  echo 'Evaluators'
-  wc -l core/*_{exec,eval}.py | sort -n
-  echo
-
-  echo 'Builtins'
-  wc -l core/{builtin,comp_builtins,test_builtin}.py
-  echo
-
-  echo 'Libraries'
-  wc -l core/{args,glob_,legacy,libstr}.py | sort -n
-  echo
-
-  # Not counting asdl/unpickle.py because in theory that's part of OHeap.  We
-  # don't have to port it.
-  echo 'Python Standard Library'
-  wc -l core/{os_,os_path}.py asdl/cgi.py | sort -n
   echo
 }
 
