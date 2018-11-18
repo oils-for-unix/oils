@@ -22,7 +22,9 @@ bracket_op_e = ast.bracket_op_e
 suffix_op_e = ast.suffix_op_e
 word_part_e = ast.word_part_e
 
+part_value = runtime.part_value
 part_value_e = runtime.part_value_e
+value = runtime.value
 value_e = runtime.value_e
 effect_e = runtime.effect_e
 
@@ -53,14 +55,14 @@ def _ValueToPartValue(val, quoted):
   assert isinstance(val, runtime.value), val
 
   if val.tag == value_e.Str:
-    return runtime.StringPartValue(val.s, not quoted)
+    return part_value.String(val.s, not quoted)
 
   elif val.tag == value_e.StrArray:
-    return runtime.ArrayPartValue(val.strs)
+    return part_value.Array(val.strs)
 
   elif val.tag == value_e.AssocArray:
     # TODO: Is this correct?
-    return runtime.ArrayPartValue(val.d.values())
+    return part_value.Array(val.d.values())
 
   else:
     # Undef should be caught by _EmptyStrOrError().
@@ -96,10 +98,10 @@ def _MakeWordFrames(part_vals):
   frames = [current]
 
   for p in part_vals:
-    if p.tag == part_value_e.StringPartValue:
+    if p.tag == part_value_e.String:
       current.append((p.s, p.do_split_glob))
 
-    elif p.tag == part_value_e.ArrayPartValue:
+    elif p.tag == part_value_e.Array:
       for i, s in enumerate(s for s in p.strs if s is not None):
         if i == 0:
           current.append((s, False))  # don't split or glob
@@ -119,7 +121,7 @@ def _DecayPartValuesToString(part_vals, join_char):
   # Decay ${a=x"$@"x} to string.
   out = []
   for p in part_vals:
-    if p.tag == part_value_e.StringPartValue:
+    if p.tag == part_value_e.String:
        out.append(p.s)
     else:
       out.append(join_char.join(s for s in p.strs if s is not None))
@@ -461,7 +463,7 @@ class _WordEvaluator(object):
     # of (DoubleQuotedPart [LiteralPart '']).  This is better but it means we
     # have to check for it.
     if not part.parts:
-      v = runtime.StringPartValue('', False)
+      v = part_value.String('', False)
       part_vals.append(v)
       return
 
@@ -788,7 +790,7 @@ class _WordEvaluator(object):
           'Array literal should have been handled at word level')
 
     elif part.tag == word_part_e.LiteralPart:
-      v = runtime.StringPartValue(part.token.val, not quoted)
+      v = part_value.String(part.token.val, not quoted)
       part_vals.append(v)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
@@ -796,7 +798,7 @@ class _WordEvaluator(object):
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      v = runtime.StringPartValue(s, False)
+      v = part_value.String(s, False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.SingleQuotedPart:
@@ -809,7 +811,7 @@ class _WordEvaluator(object):
       else:
         raise AssertionError(part.left.id)
 
-      v = runtime.StringPartValue(s, False)
+      v = part_value.String(s, False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
@@ -854,24 +856,24 @@ class _WordEvaluator(object):
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
       s = self._EvalTildeSub(part.token)
-      v = runtime.StringPartValue(s, False)
+      v = part_value.String(s, False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.ArithSubPart:
       num = self.arith_ev.Eval(part.anode)
-      v = runtime.StringPartValue(str(num), False)
+      v = part_value.String(str(num), False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.ExtGlobPart:
       # do_split_glob should be renamed 'unquoted'?  or inverted and renamed
       # 'quoted'?
-      part_vals.append(runtime.StringPartValue(part.op.val, True))
+      part_vals.append(part_value.String(part.op.val, True))
       for i, w in enumerate(part.arms):
         if i != 0:
-          part_vals.append(runtime.StringPartValue('|', True))  # separator
+          part_vals.append(part_value.String('|', True))  # separator
         # This flattens the tree!
         self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
-      part_vals.append(runtime.StringPartValue(')', True))  # closing )
+      part_vals.append(part_value.String(')', True))  # closing )
 
     else:
       raise AssertionError(part.__class__.__name__)
@@ -888,7 +890,7 @@ class _WordEvaluator(object):
         self._EvalWordPart(p, part_vals, quoted=quoted)
 
     elif word.tag == word_e.EmptyWord:
-      part_vals.append(runtime.StringPartValue('', False))
+      part_vals.append(part_value.String('', False))
 
     else:
       raise AssertionError(word.__class__.__name__)
@@ -929,7 +931,7 @@ class _WordEvaluator(object):
 
     strs = []
     for part_val in part_vals:
-      if part_val.tag == part_value_e.StringPartValue:
+      if part_val.tag == part_value_e.String:
         # [[ foo == */"*".py ]] or case *.py) ... esac
         if do_fnmatch and not part_val.do_split_glob:
           s = glob_.GlobEscape(part_val.s)
@@ -1128,11 +1130,11 @@ class NormalWordEvaluator(_WordEvaluator):
 
   def _EvalCommandSub(self, node, quoted):
     stdout = self.ex.RunCommandSub(node)
-    return runtime.StringPartValue(stdout, not quoted)
+    return part_value.String(stdout, not quoted)
 
   def _EvalProcessSub(self, node, id_):
     dev_path = self.ex.RunProcessSub(node, id_)
-    return runtime.StringPartValue(dev_path, False)  # no split or glob
+    return part_value.String(dev_path, False)  # no split or glob
 
 
 class CompletionWordEvaluator(_WordEvaluator):
@@ -1141,7 +1143,7 @@ class CompletionWordEvaluator(_WordEvaluator):
   have a splitter.
   """
   def _EvalCommandSub(self, node, quoted):
-    return runtime.StringPartValue('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
+    return part_value.String('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
 
   def _EvalProcessSub(self, node, id_):
-    return runtime.StringPartValue('__PROCESS_SUB_NOT_EXECUTED__', False)
+    return part_value.String('__PROCESS_SUB_NOT_EXECUTED__', False)
