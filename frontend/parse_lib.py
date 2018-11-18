@@ -2,17 +2,18 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
+from core.meta import types_asdl
+
 from frontend import lexer
 from frontend import reader
 from frontend import tdop
-from core.meta import types_asdl
-
 from frontend import match
-from frontend import oil_parse
 
 from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
+
+from oil_lang import cmd_parse as oil_cmd_parse
 
 lex_mode_e = types_asdl.lex_mode_e
 
@@ -38,7 +39,7 @@ class ParseContext(object):
     # Same lexer as Oil?  It just doesn't start in the OUTER state?
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
     lx = lexer.Lexer(line_lexer, line_reader)
-    c_parser = oil_parse.OilParser(self, lx, line_reader)
+    c_parser = oil_cmd_parse.OilParser(self, lx, line_reader)
     return c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):

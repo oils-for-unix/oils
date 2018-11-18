@@ -102,7 +102,8 @@ Directory Structure
     core/             # Most of the Oil and OSH implementation.
     native/           # Native code for Oil, e.g. libc.c
     frontend/         # Lexing/Parsing code common to Oil and OSH.
-    osh/              # Parsing code specific to OSH.
+    oil_lang/         # Oil language definition.
+    osh/              # OSH language definition.
     opy/              # Python compiler in Python
       lib/            # Common code
       pgen2/          # Parsing library

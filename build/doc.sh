@@ -199,7 +199,7 @@ update-src-versions() {
 }
 
 oil-grammar() {
-  PYTHONPATH=. frontend/oil_parse.py "$@"
+  PYTHONPATH=. oil_lang/cmd_parse.py "$@"
 }
 
 "$@"

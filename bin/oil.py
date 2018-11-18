@@ -48,7 +48,6 @@ _tlog('before imports')
 import errno
 
 from core import alloc
-from frontend import args
 from core import builtin
 from core import comp_builtins
 from core import completion
@@ -56,16 +55,19 @@ from core import cmd_exec
 from core import dev
 from core import legacy
 from core import main_loop
-from core import oil_exec
-from pylib import os_path
 from core import process
-from frontend import reader
 from core import state
 from core import word_eval
 from core import ui
 from core import util
 
+from frontend import args
+from frontend import reader
 from frontend import parse_lib
+
+from pylib import os_path
+
+from oil_lang import cmd_exec as oil_cmd_exec
 
 from tools import deps
 from tools import osh2oil
@@ -216,7 +218,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source
     # it.
-    ex = oil_exec.OilExecutor(ex)
+    ex = oil_cmd_exec.OilExecutor(ex)
 
   # NOTE: The rc file can contain both commands and functions... ideally we
   # would only want to save nodes/lines for the functions.
