@@ -12,6 +12,8 @@ from core.meta import runtime
 
 from core import ui  # module under test
 
+value = runtime.value
+
 
 class UiTest(unittest.TestCase):
 
@@ -24,8 +26,8 @@ class UiTest(unittest.TestCase):
     p = ui.Prompt('osh', arena, ex.parse_ctx, ex, mem)
 
     # Rgression for caching bug!
-    self.assertEqual('foo', p.EvalPrompt(runtime.Str('foo')))
-    self.assertEqual('foo', p.EvalPrompt(runtime.Str('foo')))
+    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
+    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
 
 
 if __name__ == '__main__':

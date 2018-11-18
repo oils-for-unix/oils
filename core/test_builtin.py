@@ -7,9 +7,11 @@ from __future__ import print_function
 from core import expr_eval
 from core import util
 from core import meta
-from core.meta import ast, Id, runtime
+from core.meta import ast, Id, runtime_asdl
 
 from osh import bool_parse
+
+value = runtime_asdl.value
 
 log = util.log
 
@@ -54,7 +56,7 @@ class _WordEvaluator(object):
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a
     # different tree.
-    return runtime.Str(w.s)
+    return value.Str(w.s)
 
 
 def _StringWordTest(s):

@@ -11,6 +11,7 @@ from core import util
 from core import test_lib
 
 scope_e = runtime.scope_e
+value = runtime.value
 value_e = runtime.value_e
 var_flags_e = runtime.var_flags_e
 
@@ -38,7 +39,7 @@ class MemTest(unittest.TestCase):
 
     # x=1
     mem.SetVar(
-        runtime.LhsName('x'), runtime.Str('1'), (), scope_e.Dynamic)
+        runtime.LhsName('x'), value.Str('1'), (), scope_e.Dynamic)
     self.assertEqual('1', mem.var_stack[-1].vars['x'].val.s)
 
     mem.PushTemp()
@@ -51,11 +52,11 @@ class MemTest(unittest.TestCase):
 
     # x=temp E=3 read x <<< 'line'
     mem.SetVar(
-        runtime.LhsName('x'), runtime.Str('temp'), (), scope_e.TempEnv)
+        runtime.LhsName('x'), value.Str('temp'), (), scope_e.TempEnv)
     mem.SetVar(
-        runtime.LhsName('E'), runtime.Str('3'), (), scope_e.TempEnv)
+        runtime.LhsName('E'), value.Str('3'), (), scope_e.TempEnv)
     mem.SetVar(
-        runtime.LhsName('x'), runtime.Str('line'), (), scope_e.LocalOnly)
+        runtime.LhsName('x'), value.Str('line'), (), scope_e.LocalOnly)
 
     self.assertEqual('3', mem.var_stack[-1].vars['E'].val.s)
     self.assertEqual('temp', mem.var_stack[-1].vars['x'].val.s)
@@ -74,7 +75,7 @@ class MemTest(unittest.TestCase):
 
     # local x=y
     mem.SetVar(
-        runtime.LhsName('x'), runtime.Str('y'), (), scope_e.LocalOnly)
+        runtime.LhsName('x'), value.Str('y'), (), scope_e.LocalOnly)
     self.assertEqual('y', mem.var_stack[-1].vars['x'].val.s)
 
     # New frame
@@ -83,19 +84,19 @@ class MemTest(unittest.TestCase):
 
     # x=y -- test out dynamic scope
     mem.SetVar(
-        runtime.LhsName('x'), runtime.Str('YYY'), (), scope_e.Dynamic)
+        runtime.LhsName('x'), value.Str('YYY'), (), scope_e.Dynamic)
     self.assertEqual('YYY', mem.var_stack[-2].vars['x'].val.s)
     self.assertEqual(None, mem.var_stack[-1].vars.get('x'))
 
     # myglobal=g
     mem.SetVar(
-        runtime.LhsName('myglobal'), runtime.Str('g'), (), scope_e.Dynamic)
+        runtime.LhsName('myglobal'), value.Str('g'), (), scope_e.Dynamic)
     self.assertEqual('g', mem.var_stack[0].vars['myglobal'].val.s)
     self.assertEqual(False, mem.var_stack[0].vars['myglobal'].exported)
 
     # 'export PYTHONPATH=/'
     mem.SetVar(
-        runtime.LhsName('PYTHONPATH'), runtime.Str('/'),
+        runtime.LhsName('PYTHONPATH'), value.Str('/'),
         (var_flags_e.Exported,), scope_e.Dynamic)
     self.assertEqual('/', mem.var_stack[0].vars['PYTHONPATH'].val.s)
     self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
@@ -129,7 +130,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual(True, mem.var_stack[0].vars['myglobal'].readonly)
 
     mem.SetVar(
-        runtime.LhsName('PYTHONPATH'), runtime.Str('/lib'), (),
+        runtime.LhsName('PYTHONPATH'), value.Str('/lib'), (),
         scope_e.Dynamic)
     self.assertEqual('/lib', mem.var_stack[0].vars['PYTHONPATH'].val.s)
     self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
@@ -137,7 +138,7 @@ class MemTest(unittest.TestCase):
     # COMPREPLY=(1 2 3)
     # invariant to enforce: arrays can't be exported
     mem.SetVar(
-        runtime.LhsName('COMPREPLY'), runtime.StrArray(['1', '2', '3']),
+        runtime.LhsName('COMPREPLY'), value.StrArray(['1', '2', '3']),
         (), scope_e.GlobalOnly)
     self.assertEqual(
         ['1', '2', '3'], mem.var_stack[0].vars['COMPREPLY'].val.strs)
@@ -154,7 +155,7 @@ class MemTest(unittest.TestCase):
 
     # readonly r=1
     mem.SetVar(
-        runtime.LhsName('r'), runtime.Str('1'), (var_flags_e.ReadOnly,),
+        runtime.LhsName('r'), value.Str('1'), (var_flags_e.ReadOnly,),
         scope_e.Dynamic)
     self.assertEqual('1', mem.var_stack[0].vars['r'].val.s)
     self.assertEqual(False, mem.var_stack[0].vars['r'].exported)
@@ -164,7 +165,7 @@ class MemTest(unittest.TestCase):
     # r=newvalue
     try:
       mem.SetVar(
-          runtime.LhsName('r'), runtime.Str('newvalue'), (), scope_e.Dynamic)
+          runtime.LhsName('r'), value.Str('newvalue'), (), scope_e.Dynamic)
     except util.FatalRuntimeError as e:
       pass
     else:
@@ -186,16 +187,16 @@ class MemTest(unittest.TestCase):
     lhs = runtime.LhsIndexedName('a', 1)
     lhs.spids.append(0)
     # a[1]=2
-    mem.SetVar(lhs, runtime.Str('2'), (), scope_e.Dynamic)
+    mem.SetVar(lhs, value.Str('2'), (), scope_e.Dynamic)
     self.assertEqual([None, '2'], mem.var_stack[0].vars['a'].val.strs)
 
     # a[1]=3
-    mem.SetVar(lhs, runtime.Str('3'), (), scope_e.Dynamic)
+    mem.SetVar(lhs, value.Str('3'), (), scope_e.Dynamic)
     self.assertEqual([None, '3'], mem.var_stack[0].vars['a'].val.strs)
 
     # a[1]=(x y z)  # illegal
     try:
-      mem.SetVar(lhs, runtime.StrArray(['x', 'y', 'z']), (), scope_e.Dynamic)
+      mem.SetVar(lhs, value.StrArray(['x', 'y', 'z']), (), scope_e.Dynamic)
     except util.FatalRuntimeError as e:
       pass
     else:
@@ -209,7 +210,7 @@ class MemTest(unittest.TestCase):
 
     try:
       # a[1]=3
-      mem.SetVar(lhs, runtime.Str('3'), (), scope_e.Dynamic)
+      mem.SetVar(lhs, value.Str('3'), (), scope_e.Dynamic)
     except util.FatalRuntimeError as e:
       pass
     else:
@@ -220,14 +221,14 @@ class MemTest(unittest.TestCase):
 
     # readonly a=x
     mem.SetVar(
-        runtime.LhsName('a'), runtime.Str('x'), (var_flags_e.ReadOnly,),
+        runtime.LhsName('a'), value.Str('x'), (var_flags_e.ReadOnly,),
         scope_e.Dynamic)
 
     val = mem.GetVar('a', scope_e.Dynamic)
-    test_lib.AssertAsdlEqual(self, runtime.Str('x'), val)
+    test_lib.AssertAsdlEqual(self, value.Str('x'), val)
 
     val = mem.GetVar('undef', scope_e.Dynamic)
-    test_lib.AssertAsdlEqual(self, runtime.Undef(), val)
+    test_lib.AssertAsdlEqual(self, value.Undef(), val)
 
   def testExportThenAssign(self):
     """Regression Test"""
@@ -240,7 +241,7 @@ class MemTest(unittest.TestCase):
 
     # U=u
     mem.SetVar(
-        runtime.LhsName('U'), runtime.Str('u'), (), scope_e.Dynamic)
+        runtime.LhsName('U'), value.Str('u'), (), scope_e.Dynamic)
     print(mem)
     e = mem.GetExported()
     self.assertEqual({'U': 'u'}, e)

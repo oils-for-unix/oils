@@ -20,6 +20,7 @@ from core import util
 from core.meta import ast, runtime, Id
 
 part_value_e = runtime.part_value_e
+value = runtime.value
 value_e = runtime.value_e
 lvalue_e = runtime.lvalue_e
 scope_e = runtime.scope_e
@@ -258,12 +259,12 @@ class ExecOpts(object):
     # - shopt -s foo bar
     if b:
       if opt_name not in shellopts:
-        new_val = runtime.Str('%s:%s' % (shellopts, opt_name))
+        new_val = value.Str('%s:%s' % (shellopts, opt_name))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
     else:
       if opt_name in shellopts:
         names = [n for n in shellopts.split(':') if n != opt_name]
-        new_val = runtime.Str(':'.join(names))
+        new_val = value.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
   def SetShoptOption(self, opt_name, b):
@@ -311,9 +312,9 @@ class _ArgFrame(object):
   def GetArgNum(self, arg_num):
     index = self.num_shifted + arg_num - 1
     if index >= len(self.argv):
-      return runtime.Undef()
+      return value.Undef()
 
-    return runtime.Str(str(self.argv[index]))
+    return value.Str(str(self.argv[index]))
 
   def GetArgv(self):
     return self.argv[self.num_shifted : ]
@@ -444,8 +445,8 @@ class Mem(object):
 
     # Note: we're reusing these objects because they change on every single
     # line!  Don't want to allocate more than necsesary.
-    self.source_name = runtime.Str('')
-    self.line_num = runtime.Str('')
+    self.source_name = value.Str('')
+    self.line_num = value.Str('')
 
     self.last_status = 0  # Mutable public variable
     self.last_job_id = -1  # Uninitialized value mutable public variable
@@ -521,7 +522,7 @@ class Mem(object):
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
-      self.SetVar(ast.LhsName(n), runtime.Str(v),
+      self.SetVar(ast.LhsName(n), value.Str(v),
                  (var_flags_e.Exported,), scope_e.GlobalOnly)
 
     # If it's not in the environment, initialize it.  This makes it easier to
@@ -641,7 +642,7 @@ class Mem(object):
 
   def GetArgNum(self, arg_num):
     if arg_num == 0:
-      return runtime.Str(self.dollar0)
+      return value.Str(self.dollar0)
 
     return self.argv_stack[-1].GetArgNum(arg_num)
 
@@ -662,7 +663,7 @@ class Mem(object):
     if op_id == Id.VSub_Bang:  # $!
       n = self.last_job_id
       if n == -1:
-        return runtime.Undef()  # could be an error
+        return value.Undef()  # could be an error
 
     elif op_id == Id.VSub_QMark:  # $?
       # TODO: Have to parse status somewhere.
@@ -678,7 +679,7 @@ class Mem(object):
     else:
       raise NotImplementedError(op_id)
 
-    return runtime.Str(str(n))
+    return value.Str(str(n))
 
   #
   # Named Vars
@@ -745,7 +746,7 @@ class Mem(object):
         return True
     return False
 
-  def SetVar(self, lval, value, new_flags, lookup_mode, strict_array=False):
+  def SetVar(self, lval, val, new_flags, lookup_mode, strict_array=False):
     """
     Args:
       lval: lvalue
@@ -775,7 +776,7 @@ class Mem(object):
       # TODO: Turn this into a tracing feature.  Like osh --tracevar ldflags
       # --tracevar foo.  Has to respect environment variables too.
       if 0:
-        util.log('--- SETTING ldflags to %s', value)
+        util.log('--- SETTING ldflags to %s', val)
         if lval.spids:
           span_id = lval.spids[0]
           line_span = self.arena.GetLineSpan(span_id)
@@ -795,11 +796,11 @@ class Mem(object):
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
-        if value is not None:
+        if val is not None:
           if cell.readonly:
             # TODO: error context
             e_die("Can't assign to readonly value %r", lval.name)
-          cell.val = value
+          cell.val = val
         if var_flags_e.Exported in new_flags:
           cell.exported = True
         if var_flags_e.ReadOnly in new_flags:
@@ -807,10 +808,10 @@ class Mem(object):
         if var_flags_e.AssocArray in new_flags:
           cell.is_assoc_array = True
       else:
-        if value is None:
+        if val is None:
           # set -o nounset; local foo; echo $foo  # It's still undefined!
-          value = runtime.Undef()  # export foo, readonly foo
-        cell = runtime.cell(value,
+          val = value.Undef()  # export foo, readonly foo
+        cell = runtime.cell(val,
                             var_flags_e.Exported in new_flags,
                             var_flags_e.ReadOnly in new_flags,
                             var_flags_e.AssocArray in new_flags)
@@ -830,12 +831,12 @@ class Mem(object):
 
       # TODO: This is a parse error!
       # a[1]=(1 2 3)
-      if value.tag == value_e.StrArray:
+      if val.tag == value_e.StrArray:
         e_die("Can't assign array to array member", span_id=left_spid)
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if not cell:
-        self._BindNewArrayWithEntry(namespace, lval, value, new_flags)
+        self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
         return
 
       # bash/mksh have annoying behavior of letting you do LHS assignment to
@@ -854,15 +855,15 @@ class Mem(object):
 
       if cell_tag == value_e.Undef:
         if cell.is_assoc_array:
-          self._BindNewAssocArrayWithEntry(namespace, lval, value, new_flags)
+          self._BindNewAssocArrayWithEntry(namespace, lval, val, new_flags)
         else:
-          self._BindNewArrayWithEntry(namespace, lval, value, new_flags)
+          self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
         return
 
       if cell_tag == value_e.StrArray:
         strs = cell.val.strs
         try:
-          strs[lval.index] = value.s
+          strs[lval.index] = val.s
         except IndexError:
           # Fill it in with None.  It could look like this:
           # ['1', 2, 3, None, None, '4', None]
@@ -871,11 +872,11 @@ class Mem(object):
           # TODO: strict-array for Oil arrays won't auto-fill.
           n = lval.index - len(strs) + 1
           strs.extend([None] * n)
-          strs[lval.index] = value.s
+          strs[lval.index] = val.s
         return
 
       if cell_tag == value_e.AssocArray:
-        cell.val.d[lval.index] = value.s
+        cell.val.d[lval.index] = val.s
         return
 
     else:
@@ -885,7 +886,7 @@ class Mem(object):
     """Fill 'namespace' with a new indexed array entry."""
     items = [None] * lval.index
     items.append(value.s)
-    new_value = runtime.StrArray(items)
+    new_value = value.StrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = var_flags_e.ReadOnly in new_flags
@@ -894,7 +895,7 @@ class Mem(object):
   def _BindNewAssocArrayWithEntry(self, namespace, lval, value, new_flags):
     """Fill 'namespace' with a new indexed array entry."""
     d = {lval.index: value.s}  # TODO: RHS has to be string?
-    new_value = runtime.AssocArray(d)
+    new_value = value.AssocArray(d)
 
     # associative arrays can't be exported; don't need AssocArray flag
     readonly = var_flags_e.ReadOnly in new_flags
@@ -934,12 +935,12 @@ class Mem(object):
 
       if self.has_main:
         strs.append('main')  # bash does this
-      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+      return value.StrArray(strs)  # TODO: Reuse this object too?
 
     # This isn't the call source, it's the source of the function DEFINITION
     # (or the sourced # file itself).
     if name == 'BASH_SOURCE':
-      return runtime.StrArray(list(reversed(self.bash_source)))
+      return value.StrArray(list(reversed(self.bash_source)))
 
     # This is how bash source SHOULD be defined, but it's not!
     if name == 'CALL_SOURCE':
@@ -953,7 +954,7 @@ class Mem(object):
         strs.append(path)
       if self.has_main:
         strs.append('-')  # Bash does this to line up with main?
-      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+      return value.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'BASH_LINENO':
       strs = []
@@ -966,7 +967,7 @@ class Mem(object):
         strs.append(str(line_num))
       if self.has_main:
         strs.append('0')  # Bash does this to line up with main?
-      return runtime.StrArray(strs)  # TODO: Reuse this object too?
+      return value.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
       return self.line_num
@@ -980,7 +981,7 @@ class Mem(object):
     if cell:
       return cell.val
 
-    return runtime.Undef()
+    return value.Undef()
 
   def Unset(self, lval, lookup_mode):
     """
@@ -1051,7 +1052,7 @@ def SetLocalString(mem, name, s):
   3) read builtin
   """
   assert isinstance(s, str)
-  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope_e.LocalOnly)
+  mem.SetVar(ast.LhsName(name), value.Str(s), (), scope_e.LocalOnly)
 
 
 def SetStringDynamic(mem, name, s):
@@ -1060,20 +1061,20 @@ def SetStringDynamic(mem, name, s):
   Used for getopts.
   """
   assert isinstance(s, str)
-  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope_e.Dynamic)
+  mem.SetVar(ast.LhsName(name), value.Str(s), (), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
   """Helper for completion, $PWD, etc."""
   assert isinstance(s, str)
-  val = runtime.Str(s)
+  val = value.Str(s)
   mem.SetVar(ast.LhsName(name), val, (), scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(ast.LhsName(name), runtime.StrArray(a), (), scope_e.GlobalOnly)
+  mem.SetVar(ast.LhsName(name), value.StrArray(a), (), scope_e.GlobalOnly)
 
 
 def GetGlobal(mem, name):

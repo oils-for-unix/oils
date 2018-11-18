@@ -58,6 +58,7 @@ redir_e = ast.redir_e
 lhs_expr_e = ast.lhs_expr_e
 assign_op_e = ast.assign_op_e
 
+value = runtime.value
 value_e = runtime.value_e
 scope_e = runtime.scope_e
 var_flags_e = runtime.var_flags_e
@@ -781,13 +782,13 @@ class Executor(object):
           elif sig == (value_e.Undef, value_e.StrArray):
             pass  # val is RHS
           elif sig == (value_e.Str, value_e.Str):
-            val = runtime.Str(old_val.s + val.s)
+            val = value.Str(old_val.s + val.s)
           elif sig == (value_e.Str, value_e.StrArray):
             e_die("Can't append array to string")
           elif sig == (value_e.StrArray, value_e.Str):
             e_die("Can't append string to array")
           elif sig == (value_e.StrArray, value_e.StrArray):
-            val = runtime.StrArray(old_val.strs + val.strs)
+            val = value.StrArray(old_val.strs + val.strs)
 
         else:  # plain assignment
           spid = pair.spids[0]  # Source location for tracing

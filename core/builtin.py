@@ -43,6 +43,7 @@ from frontend import match
 import libc
 from _devbuild.gen import osh_help  # generated file
 
+value = runtime.value
 value_e = runtime.value_e
 scope_e = runtime.scope_e
 span_e = runtime.span_e
@@ -783,7 +784,7 @@ def Export(argv, mem):
         val = None  # Creates an empty variable
       else:
         name, s = parts
-        val = runtime.Str(s)
+        val = value.Str(s)
 
       m = match.IsValidVarName(name)
       if not m:

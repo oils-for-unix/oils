@@ -37,6 +37,7 @@ bool_expr_e = ast.bool_expr_e  # used for dispatch
 word_e = ast.word_e
 
 part_value_e = runtime.part_value_e
+value = runtime.value
 value_e = runtime.value_e
 lvalue_e = runtime.lvalue_e
 scope_e = runtime.scope_e
@@ -191,7 +192,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
       # doesn't work that way.
       #if self.exec_opts.strict_arith:
       #  e_die('Undefined array %r', node.name)
-      val = runtime.Str('')
+      val = value.Str('')
 
     elif val.tag == value_e.StrArray:
 
@@ -204,10 +205,10 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
         item = None
 
       if item is None:
-        val = runtime.Str('')
+        val = value.Str('')
       else:
         assert isinstance(item, str), item
-        val = runtime.Str(item)
+        val = value.Str(item)
 
     elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
       # TODO: Also need IsAssocArray() check?
@@ -332,7 +333,7 @@ class ArithEvaluator(_ExprEvaluator):
     raise AssertionError(node.tag)
 
   def _Store(self, lval, new_int):
-    val = runtime.Str(str(new_int))
+    val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
   def Eval(self, node, int_coerce=True):

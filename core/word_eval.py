@@ -212,7 +212,7 @@ class _WordEvaluator(object):
 
     if op_id in (Id.VSub_At, Id.VSub_Star):
       argv = self.mem.GetArgv()
-      val = runtime.StrArray(argv)
+      val = value.StrArray(argv)
       if op_id == Id.VSub_At:
         # "$@" evaluates to an array, $@ should be decayed
         return val, not quoted
@@ -221,7 +221,7 @@ class _WordEvaluator(object):
 
     elif op_id == Id.VSub_Hyphen:
       s = self.exec_opts.GetDollarHyphen()
-      return runtime.Str(s), False
+      return value.Str(s), False
     else:
       val = self.mem.GetSpecialVar(op_id)
       return val, False  # don't decay
@@ -317,24 +317,24 @@ class _WordEvaluator(object):
     if val.tag == value_e.StrArray:
       if index in ('@', '*'):
         # TODO: maybe_decay_array
-        return runtime.StrArray(val.strs)
+        return value.StrArray(val.strs)
       try:
         index_num = int(index)
       except ValueError:
         return None
       try:
-        return runtime.Str(val.strs[index_num])
+        return value.Str(val.strs[index_num])
       except IndexError:
-        return runtime.Undef()
+        return value.Undef()
     elif val.tag == value_e.AssocArray:
       if index in ('@', '*'):
         raise NotImplementedError
       try:
-        return runtime.Str(val.d[index])
+        return value.Str(val.d[index])
       except KeyError:
-        return runtime.Undef()
+        return value.Undef()
     elif val.tag == value_e.Undef:
-      return runtime.Undef()
+      return value.Undef()
     elif val.tag == value_e.Str:
       return None
     else:
@@ -365,13 +365,13 @@ class _WordEvaluator(object):
             # NOTE: Doesn't make the command exit with 1; it just returns a
             # length of -1.
             util.warn(e.UserErrorString())
-            return runtime.Str('-1')
+            return value.Str('-1')
 
       elif val.tag == value_e.StrArray:
         # There can be empty placeholder values in the array.
         length = sum(1 for s in val.strs if s is not None)
 
-      return runtime.Str(str(length))
+      return value.Str(str(length))
 
     elif op_id == Id.VSub_Bang:  # ${!foo}, "indirect expansion"
       # NOTES:
@@ -394,7 +394,7 @@ class _WordEvaluator(object):
 
         if val.s in ('@', '*'):
           # TODO maybe_decay_array
-          return runtime.StrArray(self.mem.GetArgv())
+          return value.StrArray(self.mem.GetArgv())
 
         # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
         i = val.s.find('[')
@@ -410,7 +410,7 @@ class _WordEvaluator(object):
 
       elif val.tag == value_e.StrArray:
         indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-        return runtime.StrArray(indices)
+        return value.StrArray(indices)
       else:
         raise AssertionError
 
@@ -429,14 +429,14 @@ class _WordEvaluator(object):
 
       if val.tag == value_e.Str:
         s = libstr.DoUnarySuffixOp(val.s, op, arg_val.s)
-        new_val = runtime.Str(s)
+        new_val = value.Str(s)
       else:  # val.tag == value_e.StrArray:
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
         strs = []
         for s in val.strs:
           if s is not None:
             strs.append(libstr.DoUnarySuffixOp(s, op, arg_val.s))
-        new_val = runtime.StrArray(strs)
+        new_val = value.StrArray(strs)
 
     else:
       raise AssertionError(op_kind)
@@ -473,7 +473,7 @@ class _WordEvaluator(object):
   def _DecayArray(self, val):
     assert val.tag == value_e.StrArray, val
     sep = self.splitter.GetJoinChar()
-    return runtime.Str(sep.join(s for s in val.strs if s is not None))
+    return value.Str(sep.join(s for s in val.strs if s is not None))
 
   def _EmptyStrOrError(self, val, token=None):
     assert isinstance(val, runtime.value), val
@@ -486,7 +486,7 @@ class _WordEvaluator(object):
           name = token.val[1:] if token.val.startswith('$') else token.val
           e_die('Undefined variable %r', name, token=token)
       else:
-        return runtime.Str('')
+        return value.Str('')
     else:
       return val
 
@@ -495,7 +495,7 @@ class _WordEvaluator(object):
     if self.exec_opts.nounset:
       e_die('Undefined array %r', token.val, token=token)
     else:
-      return runtime.StrArray([])
+      return value.StrArray([])
 
   def _EvalBracedVarSub(self, part, part_vals, quoted):
     """
@@ -551,7 +551,7 @@ class _WordEvaluator(object):
             e_die("Can't index string with @: %r", val, part=part)
           elif val.tag == value_e.StrArray:
             # TODO: Is this a no-op?  Just leave 'val' alone.
-            val = runtime.StrArray(val.strs)
+            val = value.StrArray(val.strs)
 
         elif op_id == Id.Arith_Star:
           maybe_decay_array = True  # both ${a[*]} and "${a[*]}" decay
@@ -562,7 +562,7 @@ class _WordEvaluator(object):
           elif val.tag == value_e.StrArray:
             # TODO: Is this a no-op?  Just leave 'val' alone.
             # ${a[*]} or "${a[*]}" :  maybe_decay_array is always true
-            val = runtime.StrArray(val.strs)
+            val = value.StrArray(val.strs)
 
         else:
           raise AssertionError(op_id)  # unknown
@@ -588,16 +588,16 @@ class _WordEvaluator(object):
             s = None
 
           if s is None:
-            val = runtime.Undef()
+            val = value.Undef()
           else:
-            val = runtime.Str(s)
+            val = value.Str(s)
 
         elif val.tag == value_e.AssocArray:
           key = self.arith_ev.Eval(anode, int_coerce=False)
           try:
-            val = runtime.Str(val.d[key])
+            val = value.Str(val.d[key])
           except KeyError:
-            val = runtime.Undef()
+            val = value.Undef()
 
         else:
           raise AssertionError(val.__class__.__name__)
@@ -618,7 +618,7 @@ class _WordEvaluator(object):
           # TODO: Use dependency injection
           #val = self.prompt._EvalPS1(val)
           prompt = ui.PROMPT.EvalPrompt(val)
-          val = runtime.Str(prompt)
+          val = value.Str(prompt)
         else:
           raise NotImplementedError(op.op_id)
 
@@ -682,14 +682,14 @@ class _WordEvaluator(object):
 
         if val.tag == value_e.Str:
           s = replacer.Replace(val.s, op)
-          val = runtime.Str(s)
+          val = value.Str(s)
 
         elif val.tag == value_e.StrArray:
           strs = []
           for s in val.strs:
             if s is not None:
               strs.append(replacer.Replace(s, op))
-          val = runtime.StrArray(strs)
+          val = value.StrArray(strs)
 
         else:
           raise AssertionError(val.__class__.__name__)
@@ -749,7 +749,7 @@ class _WordEvaluator(object):
           else:
             substr = s[byte_begin : byte_end]
 
-          val = runtime.Str(substr)
+          val = value.Str(substr)
 
         elif val.tag == value_e.StrArray:  # Slice array entries.
           # NOTE: unset elements don't count towards the length.
@@ -759,7 +759,7 @@ class _WordEvaluator(object):
               strs.append(s)
               if len(strs) == length:  # never true for unspecified length
                 break
-          val = runtime.StrArray(strs)
+          val = value.StrArray(strs)
 
         else:
           raise AssertionError(val.__class__.__name__)  # Not possible
@@ -923,7 +923,7 @@ class _WordEvaluator(object):
     TODO: Raise AssertionError if it has ExtGlobPart.
     """
     if word.tag == word_e.EmptyWord:
-      return runtime.Str('')
+      return value.Str('')
 
     part_vals = []
     for p in word.parts:
@@ -959,7 +959,7 @@ class _WordEvaluator(object):
 
       strs.append(s)
 
-    return runtime.Str(''.join(strs))
+    return value.Str(''.join(strs))
 
   def EvalRhsWord(self, word):
     """word_t -> value_t.
@@ -973,7 +973,7 @@ class _WordEvaluator(object):
       runtime.value_t
     """
     if word.tag == word_e.EmptyWord:
-      return runtime.Str('')
+      return value.Str('')
 
     # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
     # don't look like assignments.
@@ -984,7 +984,7 @@ class _WordEvaluator(object):
       words = braces.BraceExpandWords(array_words)
       strs = self._EvalWordSequence(words)
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-      return runtime.StrArray(strs)
+      return value.StrArray(strs)
 
     # If RHS doens't look like a=( ... ), then it must be a string.
     return self.EvalWordToString(word)
