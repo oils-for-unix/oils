@@ -65,7 +65,7 @@ from core import word_eval
 from core import ui
 from core import util
 
-from osh import parse_lib
+from frontend import parse_lib
 
 from tools import deps
 from tools import osh2oil

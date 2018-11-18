@@ -27,7 +27,7 @@ from core import util
 from core.meta import Id
 
 from frontend import match
-from osh import parse_lib
+from frontend import parse_lib
 
 
 def PrintableString(s):

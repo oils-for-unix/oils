@@ -18,7 +18,7 @@ from core import state
 from core import test_lib
 from core import util
 
-from osh import parse_lib
+from frontend import parse_lib
 from core.meta import types
 #from osh import arith_parse
 

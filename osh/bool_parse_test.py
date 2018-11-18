@@ -14,7 +14,7 @@ import unittest
 from core import test_lib
 
 from core.meta import ast, Id, types
-from osh import parse_lib
+from frontend import parse_lib
 from osh import bool_parse  # module under test
 
 bool_expr_e = ast.bool_expr_e

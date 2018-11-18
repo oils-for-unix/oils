@@ -22,7 +22,7 @@ from core import ui
 from core import util
 
 from core.meta import ast
-from osh import parse_lib
+from frontend import parse_lib
 
 assign_op_e = ast.assign_op_e
 log = util.log

@@ -7,7 +7,7 @@ from __future__ import print_function
 import unittest
 
 from osh import cmd_parse  # reparse input
-from osh import parse_lib
+from frontend import parse_lib
 from osh import word_parse_test  # parse words
 from core.meta import Id
 from core.util import log
