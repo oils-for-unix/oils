@@ -11,22 +11,15 @@ from core import word
 from core import ui
 from core import util
 from core.meta import ast, Id
+
 from osh import ast_lib
 from osh import parse_lib
 
 command_e = ast.command_e
 
 
-def InitCommandParser(code_str):
-  arena = test_lib.MakeArena('<cmd_parse_test.py>')
-  parse_ctx = parse_lib.ParseContext(arena, {})
-  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  _, c_parser = parse_ctx.MakeOshParser(line_reader)
-  return arena, c_parser  # arena is returned for printing errors
-
-
 def _assertParseMethod(test, code_str, method, expect_success=True):
-  arena, c_parser = InitCommandParser(code_str)
+  arena, c_parser = test_lib.InitCommandParser(code_str)
   m = getattr(c_parser, method)
   try:
     if method == 'ParseSimpleCommand':
@@ -48,7 +41,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
 
 
 def _assert_ParseCommandListError(test, code_str):
-  arena, c_parser = InitCommandParser(code_str)
+  arena, c_parser = test_lib.InitCommandParser(code_str)
 
   try:
     node = c_parser._ParseCommandLine()
@@ -494,12 +487,12 @@ class CommandParserTest(unittest.TestCase):
     self.assertEqual(command_e.AndOr, node.tag)
 
   def testParseCommand(self):
-    _, c_parser = InitCommandParser('ls foo')
+    _, c_parser = test_lib.InitCommandParser('ls foo')
     node = c_parser.ParseCommand()
     self.assertEqual(2, len(node.words))
     print(node)
 
-    _, c_parser = InitCommandParser('func() { echo hi; }')
+    _, c_parser = test_lib.InitCommandParser('func() { echo hi; }')
     node = c_parser.ParseCommand()
     print(node)
     self.assertEqual(command_e.FuncDef, node.tag)

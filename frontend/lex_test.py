@@ -7,12 +7,11 @@ from __future__ import print_function
 import re
 import unittest
 
-from core.lexer import LineLexer
-from core import test_lib
-
 from frontend import lex
 from frontend import match
-from osh import parse_lib
+
+from core import test_lib
+from core.lexer import LineLexer
 from core.meta import ast, Id, Kind, LookupKind, types
 
 lex_mode_e = types.lex_mode_e
@@ -20,7 +19,7 @@ lex_mode_e = types.lex_mode_e
 
 def _InitLexer(s):
   arena = test_lib.MakeArena('<lex_test.py>')
-  _, lexer = parse_lib.InitLexer(s, arena)
+  _, lexer = test_lib.InitLexer(s, arena)
   return lexer
 
 

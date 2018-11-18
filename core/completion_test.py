@@ -22,7 +22,6 @@ from core import ui
 from core import util
 
 from core.meta import ast
-from osh import cmd_parse_test
 from osh import parse_lib
 
 assign_op_e = ast.assign_op_e
@@ -122,7 +121,7 @@ class CompletionTest(unittest.TestCase):
     print(list(a.Matches(comp)))
 
   def testShellFuncExecution(self):
-    arena, c_parser = cmd_parse_test.InitCommandParser("""\
+    arena, c_parser = test_lib.InitCommandParser("""\
     f() {
       COMPREPLY=(f1 f2)
     }

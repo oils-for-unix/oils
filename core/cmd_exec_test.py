@@ -13,17 +13,7 @@ import unittest
 
 from core import state
 from core import test_lib
-
 from core.meta import ast, Id
-from osh import parse_lib
-
-
-def InitCommandParser(code_str, arena=None):
-  arena = arena or test_lib.MakeArena('<cmd_exec_test.py>')
-  parse_ctx = parse_lib.ParseContext(arena, {})
-  line_reader, lexer = parse_lib.InitLexer(code_str, arena)
-  _, c_parser = parse_ctx.MakeOshParser(line_reader)
-  return c_parser
 
 
 def InitEvaluator():
@@ -37,7 +27,7 @@ class ExpansionTest(unittest.TestCase):
 
   def testBraceExpand(self):
     # TODO: Move this to test_lib?
-    c_parser = InitCommandParser('echo _{a,b}_')
+    _, c_parser = test_lib.InitCommandParser('echo _{a,b}_')
     node = c_parser._ParseCommandLine()
     print(node)
 

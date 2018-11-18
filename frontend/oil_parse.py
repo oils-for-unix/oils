@@ -7,15 +7,12 @@ from __future__ import print_function
 import sys
 
 from core import util
-
-# TODO: These should be moved to core/meta?  Or syntax/meta?
 from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind, KindName
 
 lex_mode_e = types_asdl.lex_mode_e
 oil_cmd = syntax_asdl.oil_cmd
 oil_word = syntax_asdl.oil_word
 oil_word_part = syntax_asdl.oil_word_part
-
 
 p_die = util.p_die
 log = util.log
@@ -369,7 +366,6 @@ def main(argv):
     print('[%s]' % name)
     print(docstring)
     print()
-
 
 
 if __name__ == '__main__':

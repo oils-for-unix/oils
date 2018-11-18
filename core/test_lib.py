@@ -18,13 +18,16 @@ from core import alloc
 from core import cmd_exec
 from core import dev
 from core import legacy
+from core import lexer
 from core import process
+from core import reader
 from core import state
 from core import word_eval
 from core import util
-
-from osh import parse_lib
 from core.meta import Id
+
+from frontend import match
+from osh import parse_lib
 
 
 def PrintableString(s):
@@ -91,6 +94,15 @@ def MakeArena(source_name):
   return arena
 
 
+def InitLexer(s, arena):
+  """For tests only."""
+  match_func = match.MATCHER
+  line_lexer = lexer.LineLexer(match_func, '', arena)
+  line_reader = reader.StringLineReader(s, arena)
+  lx = lexer.Lexer(line_lexer, line_reader)
+  return line_reader, lx
+
+
 def MakeTestEvaluator():
   arena = alloc.SideArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
@@ -116,3 +128,20 @@ def InitExecutor(arena=None):
 
   return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
                            parse_ctx, devtools)
+
+
+def InitCommandParser(code_str, arena=None):
+  arena = arena or MakeArena('<cmd_exec_test.py>')
+  parse_ctx = parse_lib.ParseContext(arena, {})
+  line_reader, _ = InitLexer(code_str, arena)
+  w_parser, c_parser = parse_ctx.MakeOshParser(line_reader)
+  return arena, c_parser
+
+
+def InitOilParser(code_str, arena=None):
+  # NOTE: aliases don't exist in the Oil parser?
+  arena = arena or MakeArena('<cmd_exec_test.py>')
+  parse_ctx = parse_lib.ParseContext(arena, {})
+  line_reader, _ = InitLexer(code_str, arena)
+  c_parser = parse_ctx.MakeOilParser(line_reader)
+  return arena, c_parser

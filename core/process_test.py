@@ -9,7 +9,6 @@ import unittest
 from core import builtin
 from core import process  # module under test
 from core import util
-from core import cmd_exec_test
 from core import test_lib
 
 from core.meta import runtime, Id
@@ -30,7 +29,7 @@ _FD_STATE = process.FdState()
 
 
 def _CommandNode(code_str, arena):
-  c_parser = cmd_exec_test.InitCommandParser(code_str, arena=arena)
+  _, c_parser = test_lib.InitCommandParser(code_str, arena=arena)
   return c_parser.ParseLogicalLine()
 
 

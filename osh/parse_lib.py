@@ -5,25 +5,16 @@ parse_lib.py - Consolidate various parser instantiations here.
 from core import lexer
 from core import reader
 from core import tdop
+from core.meta import types_asdl
+
+from frontend import match
+from frontend import oil_parse
 
 from osh import arith_parse
 from osh import cmd_parse
-from frontend import match
 from osh import word_parse
-from core.meta import types
 
-from frontend import oil_parse
-
-lex_mode_e = types.lex_mode_e
-
-
-def InitLexer(s, arena):
-  """For tests only."""
-  match_func = match.MATCHER
-  line_lexer = lexer.LineLexer(match_func, '', arena)
-  line_reader = reader.StringLineReader(s, arena)
-  lx = lexer.Lexer(line_lexer, line_reader)
-  return line_reader, lx
+lex_mode_e = types_asdl.lex_mode_e
 
 
 class ParseContext(object):
