@@ -12,7 +12,7 @@ arith_parse_test.py: Tests for arith_parse.py
 import unittest
 
 from osh import expr_eval
-from core import legacy
+from osh import split
 from osh import word_eval
 from osh import state
 from core import test_lib
@@ -35,7 +35,7 @@ def ParseAndEval(code_str):
 
   mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
-  splitter = legacy.SplitContext(mem)
+  splitter = split.SplitContext(mem)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
 
   arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)

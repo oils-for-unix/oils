@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-legacy.py - Word Splitting
+split.py - Word Splitting
 
 Nice blog post on the complexity/corner cases/differing intuition of splitting
 strings:

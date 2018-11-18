@@ -29,7 +29,7 @@ from core import braces
 from osh import builtin
 from osh import comp_builtins
 from osh import expr_eval
-from core import legacy
+from osh import split
 from core import main_loop
 from core import process
 from frontend import reader
@@ -131,7 +131,7 @@ class Executor(object):
     self.dumper = devtools.dumper
     self.debug_f = devtools.debug_f  # Used by ShellFuncAction too
 
-    self.splitter = legacy.SplitContext(self.mem)
+    self.splitter = split.SplitContext(self.mem)
     self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
                                                  self.arena, self)
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev,

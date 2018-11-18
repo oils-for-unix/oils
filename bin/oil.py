@@ -53,7 +53,7 @@ from osh import comp_builtins
 from core import completion
 from osh import cmd_exec
 from core import dev
-from core import legacy
+from osh import split
 from core import main_loop
 from core import process
 from osh import state
@@ -283,7 +283,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
     if HAVE_READLINE:
-      splitter = legacy.SplitContext(mem)  # TODO: share with executor.
+      splitter = split.SplitContext(mem)  # TODO: share with executor.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
       progress_f = ui.StatusLine()
       var_action = completion.VariablesActionInternal(ex.mem)

@@ -1,11 +1,11 @@
 #!/usr/bin/python -S
 """
-legacy_test.py: Tests for legacy.py
+split.test.py: Tests for split.py
 """
 
 import unittest
 
-from core import legacy  # module under test
+from osh import split  # module under test
 
 
 def _RunSplitCases(test, sp, cases):
@@ -20,7 +20,7 @@ def _RunSplitCases(test, sp, cases):
       for span in spans:
         print('  %s %s' % span)
 
-    parts = legacy._SpansToParts(s, spans)
+    parts = split._SpansToParts(s, spans)
     print('PARTS %s' % parts)
 
     test.assertEqual(expected_parts, parts,
@@ -30,28 +30,28 @@ def _RunSplitCases(test, sp, cases):
 class SplitTest(unittest.TestCase):
 
   def testSpansToParts(self):
-    sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
+    sp = split.IfsSplitter(split.DEFAULT_IFS, '')
 
     s = 'one\\ two'
     spans = sp.Split(s, False)
     print(spans)
 
-    parts = legacy._SpansToParts(s, spans)
+    parts = split._SpansToParts(s, spans)
     self.assertEqual(['one\\', 'two'], parts)
 
     spans = sp.Split(s, True)  # allow_escape
-    parts = legacy._SpansToParts(s, spans)
+    parts = split._SpansToParts(s, spans)
     self.assertEqual(['one two'], parts)
 
     # NOTE: Only read builtin supports max_results
     return
 
-    parts = legacy._SpansToParts(s, spans, max_results=1)
+    parts = split._SpansToParts(s, spans, max_results=1)
     self.assertEqual(['one\\ two'], parts)
 
     print(spans)
 
-    parts = legacy._SpansToParts(s, spans, max_results=1)
+    parts = split._SpansToParts(s, spans, max_results=1)
     self.assertEqual(['one two'], parts)
 
   def testTrailingWhitespaceBug(self):
@@ -61,7 +61,7 @@ class SplitTest(unittest.TestCase):
         (['ab '], ' ab\ ', True),
         (['ab '], ' ab\  ', True),
     ]
-    sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
+    sp = split.IfsSplitter(split.DEFAULT_IFS, '')
     _RunSplitCases(self, sp, CASES)
 
   def testDefaultIfs(self):
@@ -80,7 +80,7 @@ class SplitTest(unittest.TestCase):
         (['Aa', 'b', ' a b'], 'Aa b \\ a\\ b', True),
     ]
 
-    sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
+    sp = split.IfsSplitter(split.DEFAULT_IFS, '')
     _RunSplitCases(self, sp, CASES)
 
     self.assertEqual('a\ _b', sp.Escape('a _b'))
@@ -111,7 +111,7 @@ class SplitTest(unittest.TestCase):
     ]
 
     # IFS='_ '
-    sp = legacy.IfsSplitter(' ', '_')
+    sp = split.IfsSplitter(' ', '_')
     _RunSplitCases(self, sp, CASES)
 
     self.assertEqual('a\ \_b', sp.Escape('a _b'))
@@ -129,7 +129,7 @@ class SplitTest(unittest.TestCase):
     ]
 
     # IFS='_ '
-    sp = legacy.IfsSplitter('\t', '')
+    sp = split.IfsSplitter('\t', '')
     _RunSplitCases(self, sp, CASES)
 
     self.assertEqual('a b', sp.Escape('a b'))
@@ -148,7 +148,7 @@ class SplitTest(unittest.TestCase):
     ]
 
     # IFS='_ '
-    sp = legacy.IfsSplitter('', '_')
+    sp = split.IfsSplitter('', '_')
     _RunSplitCases(self, sp, CASES)
 
   def testTwoOther(self):
@@ -161,7 +161,7 @@ class SplitTest(unittest.TestCase):
     ]
 
     # IFS='_ '
-    sp = legacy.IfsSplitter('', '_-')
+    sp = split.IfsSplitter('', '_-')
     _RunSplitCases(self, sp, CASES)
 
 

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from core import legacy
+from osh import split
 from osh import builtin  # module under test
 
 
@@ -20,7 +20,7 @@ class BuiltinTest(unittest.TestCase):
     ]
 
     for expected_parts, max_results, line in CASES:
-      sp = legacy.IfsSplitter(legacy.DEFAULT_IFS, '')
+      sp = split.IfsSplitter(split.DEFAULT_IFS, '')
       spans = sp.Split(line, True)
       print('--- %r' % line)
       for span in spans:

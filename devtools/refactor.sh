@@ -58,14 +58,7 @@ replace() {
 
 replace2() {
   #sed -r -i "s/^from osh import parse_lib/from frontend import parse_lib/g" */*.py
-  #sed -r -i "s/^from core import args/from frontend import args/g" */*.py
-  #sed -r -i "s/^from core import expr_eval/from osh import expr_eval/g" */*.py
-  #sed -r -i "s/^from core import word_eval/from osh import word_eval/g" */*.py
-  #sed -r -i "s/^from core import cmd_exec/from osh import cmd_exec/g" */*.py
-
-  sed -r -i "s/^from core import builtin/from osh import builtin/g" */*.py
-  sed -r -i "s/^from core import comp_builtins/from osh import comp_builtins/g" */*.py
-  sed -r -i "s/^from core import test_builtin/from osh import test_builtin/g" */*.py
+  sed -r -i "s/^from core import legacy/from osh import split/g" */*.py
 }
 
 trailing-ws() {

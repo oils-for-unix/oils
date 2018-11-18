@@ -17,7 +17,7 @@ from asdl import py_meta
 from core import alloc
 from osh import cmd_exec
 from core import dev
-from core import legacy
+from osh import split
 from frontend import lexer
 from core import process
 from frontend import reader
@@ -107,7 +107,7 @@ def MakeTestEvaluator():
   arena = alloc.SideArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
-  splitter = legacy.SplitContext(mem)
+  splitter = split.SplitContext(mem)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
   return ev
 

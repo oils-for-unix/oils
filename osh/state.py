@@ -15,7 +15,7 @@ import posix
 
 from asdl import const
 from frontend import args
-from core import legacy
+from osh import split
 from core import util
 from core.meta import ast, runtime, Id
 
@@ -501,7 +501,7 @@ class Mem(object):
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
-    SetGlobalString(self, 'IFS', legacy.DEFAULT_IFS)
+    SetGlobalString(self, 'IFS', split.DEFAULT_IFS)
     SetGlobalString(self, 'PWD', posix.getcwd())
 
     # NOTE: Should we put these in a namespace for Oil?
