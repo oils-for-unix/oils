@@ -8,7 +8,7 @@ import unittest
 
 from core import alloc
 from core import test_lib
-from core import reader  # module under test
+from frontend import reader  # module under test
 
 
 class ReaderTest(unittest.TestCase):

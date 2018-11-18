@@ -2,9 +2,9 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-from core import lexer
-from core import reader
-from core import tdop
+from frontend import lexer
+from frontend import reader
+from frontend import tdop
 from core.meta import types_asdl
 
 from frontend import match

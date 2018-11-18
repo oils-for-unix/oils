@@ -50,7 +50,7 @@ lex_mode_e.VS_ArgDQ
 
 from core import braces
 from core import word
-from core import tdop
+from frontend import tdop
 from core import util
 
 from osh import arith_parse

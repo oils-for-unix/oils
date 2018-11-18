@@ -14,7 +14,7 @@ from asdl import const
 
 from core import alloc
 from core import braces
-from core import reader
+from frontend import reader
 from core import word
 from core import util
 

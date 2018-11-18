@@ -3,7 +3,7 @@
 comp_builtins.py - Completion builtins
 """
 
-from core import args
+from frontend import args
 from core import builtin
 from core import completion
 from core import state

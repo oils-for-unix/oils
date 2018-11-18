@@ -9,9 +9,9 @@ import unittest
 
 from frontend import lex
 from frontend import match
+from frontend.lexer import LineLexer
 
 from core import test_lib
-from core.lexer import LineLexer
 from core.meta import ast, Id, Kind, LookupKind, types
 
 lex_mode_e = types.lex_mode_e

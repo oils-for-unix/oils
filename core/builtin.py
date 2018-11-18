@@ -30,7 +30,7 @@ import posix
 import signal
 import sys
 
-from core import args
+from frontend import args
 from pylib import os_path
 from core import util
 from core import state

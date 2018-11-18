@@ -18,9 +18,9 @@ from core import alloc
 from core import cmd_exec
 from core import dev
 from core import legacy
-from core import lexer
+from frontend import lexer
 from core import process
-from core import reader
+from frontend import reader
 from core import state
 from core import word_eval
 from core import util

@@ -5,7 +5,7 @@ args_test.py: Tests for args.py
 
 import unittest
 
-from core import args  # module under test
+from frontend import args  # module under test
 
 
 class ArgsTest(unittest.TestCase):

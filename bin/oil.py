@@ -48,7 +48,7 @@ _tlog('before imports')
 import errno
 
 from core import alloc
-from core import args
+from frontend import args
 from core import builtin
 from core import comp_builtins
 from core import completion
@@ -59,7 +59,7 @@ from core import main_loop
 from core import oil_exec
 from pylib import os_path
 from core import process
-from core import reader
+from frontend import reader
 from core import state
 from core import word_eval
 from core import ui

@@ -27,7 +27,7 @@ from .compiler2 import transformer
 from .byterun import execfile
 from .byterun import ovm
 
-from core import args
+from frontend import args
 from core import util
 
 from ovm2 import oheap2

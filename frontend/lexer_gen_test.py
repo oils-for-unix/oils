@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from core import lexer_gen  # module under test
+from frontend import lexer_gen  # module under test
 from core import test_lib
 
 

@@ -101,7 +101,7 @@ Indexed array and Associative array literals:
 """
 
 from core.meta import types, Id, Kind, ID_SPEC
-from core.lexer import C, R
+from frontend.lexer import C, R
 
 lex_mode_e = types.lex_mode_e
 

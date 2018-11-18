@@ -57,13 +57,8 @@ replace() {
 }
 
 replace2() {
-  #sed -r -i "s/^from core.id_kind import/from osh.meta import/g" */*.py
-  #sed -r -i "s/^from osh import ast_ as ast/from osh.meta import ast/g" */*.py
-  #sed -r -i "s/^from core import runtime/from osh.meta import runtime/g" */*.py
-  #sed -r -i "s/^from osh import lex/from frontend import lex/g" */*.py
-  #sed -r -i "s/^from osh import match/from frontend import match/g" */*.py
-  #sed -r -i "s/^from asdl import cgi/from pylib import cgi/g" */*.py
-  sed -r -i "s/^from osh import parse_lib/from frontend import parse_lib/g" */*.py
+  #sed -r -i "s/^from osh import parse_lib/from frontend import parse_lib/g" */*.py
+  sed -r -i "s/^from core import args/from frontend import args/g" */*.py
 }
 
 trailing-ws() {

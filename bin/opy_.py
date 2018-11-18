@@ -10,7 +10,7 @@ import sys
 this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(this_dir, '..'))
 
-from core import args
+from frontend import args
 from core import util
 
 from opy import opy_main

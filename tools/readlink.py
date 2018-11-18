@@ -5,7 +5,8 @@ readlink.py - Minimal implementation of readlink -f, e.g. for OS X.
 """
 
 import libc
-from core import args, util
+from frontend import args
+from core import util
 
 SPEC = args.BuiltinFlags()
 SPEC.ShortFlag('-f')

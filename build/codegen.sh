@@ -69,7 +69,7 @@ id-gen() {
   PYTHONPATH=. core/id_kind_gen.py c > _devbuild/gen/id.h
 }
 
-lexer-gen() { PYTHONPATH=. core/lexer_gen.py "$@"; }
+lexer-gen() { PYTHONPATH=. frontend/lexer_gen.py "$@"; }
 
 # _gen/osh_lex.re2c.c
 # This includes osh_ast.h

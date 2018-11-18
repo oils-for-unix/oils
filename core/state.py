@@ -14,7 +14,7 @@ import cStringIO
 import posix
 
 from asdl import const
-from core import args
+from frontend import args
 from core import legacy
 from core import util
 from core.meta import ast, runtime, Id

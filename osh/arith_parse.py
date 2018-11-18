@@ -3,7 +3,7 @@
 arith_parse.py - Parse shell arithmetic, which is based on C.
 """
 
-from core import tdop
+from frontend import tdop
 from core import util
 from core.meta import Id
 from core import word
