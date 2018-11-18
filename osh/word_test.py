@@ -13,7 +13,7 @@ from core.meta import Id
 from core.util import log
 
 
-from core import word  # module under test
+from osh import word  # module under test
 
 
 def _Detect(test, word_str, expected):

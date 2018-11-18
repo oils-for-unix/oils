@@ -4,9 +4,9 @@ comp_builtins.py - Completion builtins
 """
 
 from frontend import args
-from core import builtin
+from osh import builtin
 from core import completion
-from core import state
+from osh import state
 from core import util
 
 from _devbuild.gen import osh_help  # generated file

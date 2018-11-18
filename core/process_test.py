@@ -6,7 +6,7 @@ process_test.py: Tests for process.py
 import os
 import unittest
 
-from core import builtin
+from osh import builtin
 from core import process  # module under test
 from core import util
 from core import test_lib

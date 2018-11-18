@@ -7,7 +7,7 @@ import sys
 
 from asdl import const
 from core import util
-from core import word
+from osh import word
 from core.meta import ast, Id
 
 from _devbuild.gen import runtime_asdl

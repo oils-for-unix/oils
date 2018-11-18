@@ -16,7 +16,7 @@ import sys
 
 from core import alloc
 from core import completion  # module under test
-from core import state
+from osh import state
 from core import test_lib
 from core import ui
 from core import util

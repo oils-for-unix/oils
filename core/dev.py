@@ -7,7 +7,7 @@ from __future__ import print_function
 from asdl import const
 from pylib import os_path
 from core import util
-from core import word
+from osh import word
 
 # TODO: Move Tracer here.
 

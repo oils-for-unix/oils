@@ -48,16 +48,16 @@ _tlog('before imports')
 import errno
 
 from core import alloc
-from core import builtin
-from core import comp_builtins
+from osh import builtin
+from osh import comp_builtins
 from core import completion
-from core import cmd_exec
+from osh import cmd_exec
 from core import dev
 from core import legacy
 from core import main_loop
 from core import process
-from core import state
-from core import word_eval
+from osh import state
+from osh import word_eval
 from core import ui
 from core import util
 

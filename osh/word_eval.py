@@ -6,11 +6,11 @@ import pwd
 import sys
 
 from core import braces
-from core import expr_eval
+from osh import expr_eval
 from core import glob_
 from core import libstr
-from core import state
-from core import word_compile
+from osh import state
+from osh import word_compile
 from core import ui
 from core import util
 

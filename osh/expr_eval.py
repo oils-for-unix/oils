@@ -20,9 +20,9 @@ except ImportError:
 from asdl import const
 from core import dev
 from core import util
-from core import state
+from osh import state
 from core import ui
-from core import word
+from osh import word
 from core.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
 
 log = util.log

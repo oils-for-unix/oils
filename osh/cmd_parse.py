@@ -15,7 +15,7 @@ from asdl import const
 from core import alloc
 from core import braces
 from frontend import reader
-from core import word
+from osh import word
 from core import util
 
 from frontend import match

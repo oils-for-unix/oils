@@ -5,7 +5,7 @@ osh2oil_test.py: Tests for osh2oil.py
 
 import unittest
 
-from core import word
+from osh import word
 from tools import osh2oil  # module under test
 
 from _devbuild.gen import runtime_asdl

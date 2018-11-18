@@ -4,7 +4,7 @@ tdop.py - Library for expression parsing.
 """
 
 from core.meta import Id
-from core import word
+from osh import word
 from core import util
 
 from core.meta import ast, types

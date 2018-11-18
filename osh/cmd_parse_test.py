@@ -7,7 +7,7 @@ import sys
 import unittest
 
 from core import test_lib
-from core import word
+from osh import word
 from core import ui
 from core import util
 from core.meta import ast, Id

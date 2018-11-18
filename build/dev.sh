@@ -95,7 +95,7 @@ gen-syntax-asdl() {
 }
 
 gen-runtime-asdl() {
-  gen-asdl-py-pickle core/runtime.asdl
+  gen-asdl-py-pickle osh/runtime.asdl
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c

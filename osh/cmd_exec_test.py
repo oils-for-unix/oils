@@ -11,7 +11,7 @@ cmd_exec_test.py: Tests for cmd_exec.py
 
 import unittest
 
-from core import state
+from osh import state
 from core import test_lib
 from core.meta import ast, Id
 

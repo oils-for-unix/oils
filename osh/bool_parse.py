@@ -30,7 +30,7 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-from core import word
+from osh import word
 from core import util
 from core.meta import Id, Kind, LookupKind, syntax_asdl, types_asdl
 

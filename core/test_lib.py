@@ -15,14 +15,14 @@ import sys
 from asdl import py_meta
 
 from core import alloc
-from core import cmd_exec
+from osh import cmd_exec
 from core import dev
 from core import legacy
 from frontend import lexer
 from core import process
 from frontend import reader
-from core import state
-from core import word_eval
+from osh import state
+from osh import word_eval
 from core import util
 from core.meta import Id
 

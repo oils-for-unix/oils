@@ -11,10 +11,10 @@ arith_parse_test.py: Tests for arith_parse.py
 
 import unittest
 
-from core import expr_eval
+from osh import expr_eval
 from core import legacy
-from core import word_eval
-from core import state
+from osh import word_eval
+from osh import state
 from core import test_lib
 from core import util
 

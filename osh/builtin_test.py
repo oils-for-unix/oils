@@ -7,7 +7,7 @@ from __future__ import print_function
 import unittest
 
 from core import legacy
-from core import builtin  # module under test
+from osh import builtin  # module under test
 
 
 class BuiltinTest(unittest.TestCase):

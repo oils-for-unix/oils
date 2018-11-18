@@ -4,7 +4,7 @@ test_builtin.py
 """
 from __future__ import print_function
 
-from core import expr_eval
+from osh import expr_eval
 from core import util
 from core import meta
 from core.meta import ast, Id, runtime_asdl

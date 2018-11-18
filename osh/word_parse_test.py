@@ -15,7 +15,7 @@ from asdl import const
 
 from core import alloc
 from core import test_lib
-from core import word
+from osh import word
 from core import util
 
 from core.meta import ast, Id, types

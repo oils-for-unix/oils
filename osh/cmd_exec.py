@@ -26,20 +26,20 @@ from asdl import pretty
 from core import alloc
 from frontend import args
 from core import braces
-from core import builtin
-from core import comp_builtins
-from core import expr_eval
+from osh import builtin
+from osh import comp_builtins
+from osh import expr_eval
 from core import legacy
 from core import main_loop
 from core import process
 from frontend import reader
-from core import state
-from core import test_builtin
-from core import word
-from core import word_eval
+from osh import state
+from osh import test_builtin
+from osh import word
+from osh import word_eval
 from core import ui
 from core import util
-from core import word_compile
+from osh import word_compile
 
 from core.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
 

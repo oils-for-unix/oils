@@ -33,8 +33,8 @@ import sys
 from frontend import args
 from pylib import os_path
 from core import util
-from core import state
-from core import word_compile
+from osh import state
+from osh import word_compile
 
 from core.meta import runtime
 from frontend import lex

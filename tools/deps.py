@@ -8,9 +8,9 @@ import sys
 
 from asdl import asdl_ as asdl
 from asdl import py_meta
-from core import builtin
+from osh import builtin
 from core import util
-from core import word
+from osh import word
 from core.meta import ast, runtime
 from osh import ast_lib
 

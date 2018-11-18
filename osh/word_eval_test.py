@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import unittest
 
-from core import word_eval  # module under test
+from osh import word_eval  # module under test
 
 
 class WordEvalTest(unittest.TestCase):

@@ -38,7 +38,7 @@ import time
 from core.meta import ast, runtime
 from core import alloc
 from pylib import os_path
-from core import state
+from osh import state
 from core import util
 
 import libc

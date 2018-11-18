@@ -6,7 +6,7 @@ ui_test.py: Tests for ui.py
 
 import unittest
 
-from core import state
+from osh import state
 from core import test_lib
 from core.meta import runtime
 
