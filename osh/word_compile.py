@@ -7,7 +7,7 @@ doesn't depend on any values at runtime.
 """
 
 from core import util
-from core import libstr
+from osh import string_ops
 
 from core.meta import Id
 from core.meta import runtime
@@ -82,7 +82,7 @@ def EvalCStringToken(id_, value):
     s = value[2:]
     i = int(s, 16)
     #util.log('i = %d', i)
-    return libstr.Utf8Encode(i)
+    return string_ops.Utf8Encode(i)
 
   else:
     raise AssertionError

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-libstr.py - String library functions that can be exposed with a saner syntax.
+string_ops.py - String library functions that can be exposed with a saner syntax.
 
 Instead of:
 
@@ -12,7 +12,7 @@ Instead of:
 import libc
 
 from core.meta import Id
-from core import glob_
+from osh import glob_
 from core import util
 
 log = util.log

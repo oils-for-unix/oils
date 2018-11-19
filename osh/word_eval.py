@@ -5,10 +5,10 @@ word_eval.py - Evaluator for the word language.
 import pwd
 import sys
 
-from core import braces
+from osh import braces
 from osh import expr_eval
-from core import glob_
-from core import libstr
+from osh import glob_
+from osh import string_ops
 from osh import state
 from osh import word_compile
 from core import ui
@@ -356,7 +356,7 @@ class _WordEvaluator(object):
 
         # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
         try:
-          length = libstr.CountUtf8Chars(val.s)
+          length = string_ops.CountUtf8Chars(val.s)
         except util.InvalidUtf8 as e:
           # TODO: Add location info from 'part'?  Only the caller has it.
           if self.exec_opts.strict_word_eval:
@@ -428,14 +428,14 @@ class _WordEvaluator(object):
       assert arg_val.tag == value_e.Str
 
       if val.tag == value_e.Str:
-        s = libstr.DoUnarySuffixOp(val.s, op, arg_val.s)
+        s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
         new_val = value.Str(s)
       else:  # val.tag == value_e.StrArray:
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
         strs = []
         for s in val.strs:
           if s is not None:
-            strs.append(libstr.DoUnarySuffixOp(s, op, arg_val.s))
+            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
         new_val = value.StrArray(strs)
 
     else:
@@ -678,7 +678,7 @@ class _WordEvaluator(object):
           replace_str = ''
 
         # Either GlobReplacer or ConstStringReplacer
-        replacer = libstr.MakeReplacer(pat_val.s, replace_str, op.spids[0])
+        replacer = string_ops.MakeReplacer(pat_val.s, replace_str, op.spids[0])
 
         if val.tag == value_e.Str:
           s = replacer.Replace(val.s, op)
@@ -721,7 +721,7 @@ class _WordEvaluator(object):
                   "The start index of a string slice can't be negative: %d",
                   begin, part=part)
 
-            byte_begin = libstr.AdvanceUtf8Chars(s, begin, 0)
+            byte_begin = string_ops.AdvanceUtf8Chars(s, begin, 0)
 
             if length is None:
               byte_end = len(s)
@@ -733,7 +733,7 @@ class _WordEvaluator(object):
                     "The length of a string slice can't be negative: %d",
                     length, part=part)
 
-              byte_end = libstr.AdvanceUtf8Chars(s, length, byte_begin)
+              byte_end = string_ops.AdvanceUtf8Chars(s, length, byte_begin)
 
           except (util.InvalidSlice, util.InvalidUtf8) as e:
             if self.exec_opts.strict_word_eval:

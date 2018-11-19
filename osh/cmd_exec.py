@@ -25,7 +25,7 @@ from asdl import pretty
 
 from core import alloc
 from frontend import args
-from core import braces
+from osh import braces
 from osh import builtin
 from osh import comp_builtins
 from osh import expr_eval

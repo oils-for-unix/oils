@@ -7,7 +7,7 @@ from __future__ import print_function
 import re
 import unittest
 
-from core import glob_
+from osh import glob_
 from frontend import match
 
 

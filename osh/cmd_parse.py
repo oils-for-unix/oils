@@ -13,7 +13,7 @@ from __future__ import print_function
 from asdl import const
 
 from core import alloc
-from core import braces
+from osh import braces
 from frontend import reader
 from osh import word
 from core import util

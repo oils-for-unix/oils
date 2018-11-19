@@ -7,7 +7,7 @@ from pprint import pprint
 import sys
 import unittest
 
-from core import braces  # module under test
+from osh import braces  # module under test
 from osh import word_parse_test
 from core.meta import ast
 

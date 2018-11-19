@@ -48,7 +48,7 @@ lex_mode_e.VS_ArgDQ
   e.g. "${x:-a  "b"}".
 """
 
-from core import braces
+from osh import braces
 from osh import word
 from frontend import tdop
 from core import util

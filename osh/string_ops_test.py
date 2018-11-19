@@ -1,12 +1,12 @@
 #!/usr/bin/python -S
 """
-libstr_test.py: Tests for libstr.py
+string_ops_test.py: Tests for string_ops.py
 """
 from __future__ import print_function
 
 import unittest
 
-from core import libstr  # module under test
+from osh import string_ops  # module under test
 
 
 class LibStrTest(unittest.TestCase):
@@ -24,10 +24,10 @@ class LibStrTest(unittest.TestCase):
     for expected, code_point in CASES:
       print('')
       print('Utf8Encode case %r %r' % (expected, code_point))
-      self.assertEqual(expected, libstr.Utf8Encode(code_point))
+      self.assertEqual(expected, string_ops.Utf8Encode(code_point))
 
   def testUnarySuffixOpDemo(self):
-    print(libstr)
+    print(string_ops)
 
     s = 'abcd'
     n = len(s)
@@ -61,22 +61,22 @@ class LibStrTest(unittest.TestCase):
     # Match positions
     self.assertEqual(
         [(1, 3), (4, 6)],
-        libstr._AllMatchPositions(s, '(X.)'))
+        string_ops._AllMatchPositions(s, '(X.)'))
 
     # No match
     self.assertEqual(
         [],
-        libstr._AllMatchPositions(s, '(z)'))
+        string_ops._AllMatchPositions(s, '(z)'))
 
     # Replacement
     self.assertEqual(
         'o_o_ooX',
-        libstr._PatSubAll(s, '(X.)', '_'))
+        string_ops._PatSubAll(s, '(X.)', '_'))
 
     # Replacement with no match
     self.assertEqual(
         s,
-        libstr._PatSubAll(s, '(z)', '_'))
+        string_ops._PatSubAll(s, '(z)', '_'))
 
 
 if __name__ == '__main__':

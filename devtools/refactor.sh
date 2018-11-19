@@ -58,7 +58,8 @@ replace() {
 
 replace2() {
   #sed -r -i "s/^from osh import parse_lib/from frontend import parse_lib/g" */*.py
-  sed -r -i "s/^from core import legacy/from osh import split/g" */*.py
+  sed -r -i "s/^from core import libstr/from osh import string_ops/g" */*.py
+  sed -r -i "s/libstr/string_ops/g" */*.py
 }
 
 trailing-ws() {
