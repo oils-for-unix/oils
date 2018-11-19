@@ -38,9 +38,7 @@ import time
 from core import alloc
 from core import util
 from core.meta import syntax_asdl, runtime_asdl
-
 from pylib import os_path
-
 from osh import state
 
 import libc

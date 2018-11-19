@@ -19,6 +19,7 @@ from core import id_kind
 _BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '3'))
 
 
+# TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj)
 class Id(object):
   """Token and op type.
 
@@ -34,11 +35,10 @@ class Id(object):
     return IdName(self)
 
 
+# TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj).  Right now it
+# can't print itself, which is inconsistent with Id.
 class Kind(object):
   """A coarser version of Id, used to make parsing decisions."""
-
-  # TODO: The Kind type should be folded into ASDL.  It can't print itself,
-  # which is inconsistent with Id.
   pass
 
 

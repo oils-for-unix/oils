@@ -27,16 +27,16 @@ with SPLIT_REGEX = / digit+ / {
 }
 """
 
-from core.meta import runtime
+from core.meta import runtime_asdl
 from core import util
 
-value_e = runtime.value_e
+value_e = runtime_asdl.value_e
+span_e = runtime_asdl.span_e
 
-span_e = runtime.span_e
 # Enums for the state machine
-CH = runtime.char_kind_e
-EMIT = runtime.emit_e
-ST = runtime.state_e
+CH = runtime_asdl.char_kind_e
+EMIT = runtime_asdl.emit_e
+ST = runtime_asdl.state_e
 
 log = util.log
 

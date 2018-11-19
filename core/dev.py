@@ -5,9 +5,9 @@ dev.py - Devtools / introspection.
 from __future__ import print_function
 
 from asdl import const
-from pylib import os_path
 from core import util
 from osh import word
+from pylib import os_path
 
 # TODO: Move Tracer here.
 

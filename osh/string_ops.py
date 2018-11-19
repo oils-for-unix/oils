@@ -11,9 +11,9 @@ Instead of:
 
 import libc
 
+from core import util
 from core.meta import Id
 from osh import glob_
-from core import util
 
 log = util.log
 e_die = util.e_die

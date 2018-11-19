@@ -3,11 +3,11 @@
 builtin_comp.py - Completion builtins
 """
 
+from core import completion
+from core import util
 from frontend import args
 from osh import builtin
-from core import completion
 from osh import state
-from core import util
 
 from _devbuild.gen import osh_help  # generated file
 

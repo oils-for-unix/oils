@@ -48,13 +48,12 @@ lex_mode_e.VS_ArgDQ
   e.g. "${x:-a  "b"}".
 """
 
+from core import util
+from core.meta import ast, types_asdl, Id, Kind, LookupKind
+from frontend import tdop
+from osh import arith_parse
 from osh import braces
 from osh import word
-from frontend import tdop
-from core import util
-
-from osh import arith_parse
-from core.meta import ast, types_asdl, Id, Kind, LookupKind
 
 word_part_e = ast.word_part_e
 word_e = ast.word_e

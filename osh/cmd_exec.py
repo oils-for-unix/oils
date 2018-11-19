@@ -24,45 +24,50 @@ from asdl import const
 from asdl import pretty
 
 from core import alloc
+from core import main_loop
+from core import process
+from core import ui
+from core import util
+from core.meta import (
+    Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, syntax_asdl, types_asdl)
+
 from frontend import args
+from frontend import reader
+
 from osh import braces
 from osh import builtin
 from osh import builtin_comp
 from osh import expr_eval
 from osh import split
-from core import main_loop
-from core import process
-from frontend import reader
 from osh import state
 from osh import builtin_bracket
-from osh import word
+from osh import word as word_lib
 from osh import word_eval
-from core import ui
-from core import util
 from osh import word_compile
-
-from core.meta import (
-    ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types_asdl)
 
 try:
   import libc  # for fnmatch
 except ImportError:
   from benchmarks import fake_libc as libc
 
-builtin_e = builtin.builtin_e
-
 lex_mode_e = types_asdl.lex_mode_e
 redir_arg_type_e = types_asdl.redir_arg_type_e
 
-command_e = ast.command_e
-redir_e = ast.redir_e
-lhs_expr_e = ast.lhs_expr_e
-assign_op_e = ast.assign_op_e
+command_e = syntax_asdl.command_e
+redir_e = syntax_asdl.redir_e
+lhs_expr_e = syntax_asdl.lhs_expr_e
+assign_op_e = syntax_asdl.assign_op_e
 
+word = syntax_asdl.word
+word_part = syntax_asdl.word_part
+
+lvalue = runtime.lvalue
+redirect = runtime.redirect
 value = runtime.value
 value_e = runtime.value_e
 scope_e = runtime.scope_e
 var_flags_e = runtime.var_flags_e
+builtin_e = runtime.builtin_e
 
 log = util.log
 e_die = util.e_die
@@ -407,10 +412,10 @@ class Executor(object):
 
   def _EvalLhs(self, node, spid, lookup_mode):
     """lhs_expr -> lvalue."""
-    assert isinstance(node, ast.lhs_expr), node
+    assert isinstance(node, syntax_asdl.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
-      lval = runtime.LhsName(node.name)
+      lval = lvalue.LhsName(node.name)
       lval.spids.append(spid)
       return lval
 
@@ -420,7 +425,7 @@ class Executor(object):
       int_coerce = not self.mem.IsAssocArray(node.name, lookup_mode)
       index = self.arith_ev.Eval(node.index, int_coerce=int_coerce)
 
-      lval = runtime.LhsIndexedName(node.name, index)
+      lval = lvalue.LhsIndexedName(node.name, index)
       lval.spids.append(node.spids[0])  # copy left-most token over
       return lval
 
@@ -443,7 +448,7 @@ class Executor(object):
           util.error("Redirect filename can't be empty")
           return None
 
-        return runtime.PathRedirect(n.op.id, fd, filename)
+        return redirect.PathRedirect(n.op.id, fd, filename)
 
       elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
@@ -461,22 +466,22 @@ class Executor(object):
               "Redirect descriptor should look like an integer, got %s", val)
           return None
 
-        return runtime.DescRedirect(n.op.id, fd, target_fd)
+        return redirect.DescRedirect(n.op.id, fd, target_fd)
 
       elif redir_type == redir_arg_type_e.Here:  # here word
         val = self.word_ev.EvalWordToString(n.arg_word)
         assert val.tag == value_e.Str, val
         # NOTE: bash and mksh both add \n
-        return runtime.HereRedirect(fd, val.s + '\n')
+        return redirect.HereRedirect(fd, val.s + '\n')
       else:
         raise AssertionError('Unknown redirect op')
 
     elif n.tag == redir_e.HereDoc:
       # HACK: Wrap it in a word to evaluate.
-      w = ast.CompoundWord(n.stdin_parts)
+      w = word.CompoundWord(n.stdin_parts)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
-      return runtime.HereRedirect(fd, val.s)
+      return redirect.HereRedirect(fd, val.s)
 
     else:
       raise AssertionError('Unknown redirect type')
@@ -670,7 +675,7 @@ class Executor(object):
       span_id = const.NO_INTEGER
       if node.words:
         first_word = node.words[0]
-        span_id = word.LeftMostSpanForWord(first_word)
+        span_id = word_lib.LeftMostSpanForWord(first_word)
 
       self.mem.SetCurrentSpanId(span_id)
 
@@ -701,7 +706,7 @@ class Executor(object):
           val = self.word_ev.EvalWordToString(env_pair.val)
           # Set each var so the next one can reference it.  Example:
           # FOO=1 BAR=$FOO ls /
-          self.mem.SetVar(ast.LhsName(env_pair.name), val,
+          self.mem.SetVar(lvalue.LhsName(env_pair.name), val,
                           (var_flags_e.Exported,), scope_e.TempEnv)
 
         # NOTE: This might never return!  In the case of fork_external=False.
@@ -1101,7 +1106,7 @@ class Executor(object):
     """Apply redirects, call _Dispatch(), and performs the errexit check.
 
     Args:
-      node: ast.command
+      node: syntax_asdl.command
       fork_external: if we get a SimpleCommand that is an external command,
         should we fork first?  This is disabled in the context of a pipeline
         process and a subshell.
@@ -1467,8 +1472,8 @@ class Tracer(object):
         ps4_word = w_parser.ReadPS()
       except util.ParseError as e:
         error_str = '<ERROR: cannot parse PS4>'
-        t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
-        ps4_word = ast.CompoundWord([ast.LiteralPart(t)])
+        t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        ps4_word = word.CompoundWord([word_part.LiteralPart(t)])
       self.parse_cache[ps4] = ps4_word
 
     #print(ps4_word)

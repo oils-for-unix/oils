@@ -7,21 +7,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO:
-# Rparen -> RParen, Dgreat -> DGreat, Colon_Hyphen -> ColonHyphen, etc.
-# IGNORED_LINECONT -> IGNORED_LineCont
-
-# LIT -> Lit
-# LEFT -> Left
-# LEFT -> Left
-
-# VS -> VSub
-# VS_TEST VTest
-# VS_UNARY VUnary 
-# VS_OP VOp
-# 
-
-
 change-kind() {
   local kind=$1
   local kind2=${2:-$kind}
@@ -44,6 +29,7 @@ k2() {
   sed -r -i "s/TokenKind.${kind}/TokenKind.${replace}/g" */*.py
 }
 
+# Execute a bunch of find/replace pairs in a text file.
 replace() {
   local file=$1
 
@@ -77,6 +63,14 @@ trailing-ws() {
 # Found a latin-1 character in Python-2.7.13/Lib/heapq.py.  Had to add LC_ALL=C.
 grep-unicode() {
   LC_ALL=C grep --color='auto' --perl -n '[^\x00-\x7F]'  "$@"
+}
+
+find-old-asdl() {
+  egrep 'import.*\bruntime\b' */*.py
+  echo ---
+
+  # TODO: Remove from tests too
+  egrep 'import.*\bast\b' */*.py | grep -v _test
 }
 
 "$@"

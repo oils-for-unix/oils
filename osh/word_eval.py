@@ -5,17 +5,18 @@ word_eval.py - Evaluator for the word language.
 import pwd
 import sys
 
+from core import ui
+from core import util
+from core.meta import syntax_asdl, runtime, Id, Kind, LookupKind
+
+from frontend import match
+
 from osh import braces
 from osh import expr_eval
 from osh import glob_
 from osh import string_ops
 from osh import state
 from osh import word_compile
-from core import ui
-from core import util
-
-from core.meta import syntax_asdl, runtime, Id, Kind, LookupKind
-from frontend import match
 
 word_e = syntax_asdl.word_e
 bracket_op_e = syntax_asdl.bracket_op_e

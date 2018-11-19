@@ -30,25 +30,27 @@ import posix
 import signal
 import sys
 
-from frontend import args
-from pylib import os_path
 from core import util
+from core.meta import runtime_asdl
+from frontend import args
+from frontend import lex
+from frontend import match
+from pylib import os_path
 from osh import state
 from osh import word_compile
 
-from core.meta import runtime
-from frontend import lex
-from frontend import match
 
 import libc
 from _devbuild.gen import osh_help  # generated file
 
-value = runtime.value
-value_e = runtime.value_e
-scope_e = runtime.scope_e
-span_e = runtime.span_e
-var_flags_e = runtime.var_flags_e
-builtin_e = runtime.builtin_e
+lvalue = runtime_asdl.lvalue
+
+value = runtime_asdl.value
+value_e = runtime_asdl.value_e
+scope_e = runtime_asdl.scope_e
+span_e = runtime_asdl.span_e
+var_flags_e = runtime_asdl.var_flags_e
+builtin_e = runtime_asdl.builtin_e
 log = util.log
 e_die = util.e_die
 
@@ -792,7 +794,7 @@ def Export(argv, mem):
 
       #log('%s %s', name, val)
       mem.SetVar(
-          runtime.LhsName(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
+          lvalue.LhsName(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
 
   return 0
 
@@ -928,13 +930,13 @@ def Unset(argv, mem, funcs):
       if name in funcs:
         del funcs[name]
     elif arg.v:
-      ok, _  = mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
+      ok, _  = mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
       if not ok:
         util.error("Can't unset readonly variable %r", name)
         return 1
     else:
       # Try to delete var first, then func.
-      ok, found = mem.Unset(runtime.LhsName(name), scope_e.Dynamic)
+      ok, found = mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
       if not ok:
         util.error("Can't unset readonly variable %r", name)
         return 1

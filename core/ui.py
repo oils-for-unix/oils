@@ -17,19 +17,17 @@ import sys
 from asdl import const
 from asdl import encode
 from asdl import format as fmt
-
 from core import dev
 from core.meta import runtime_asdl, syntax_asdl, Id
-
 from frontend import match
 from osh import ast_lib
 
 import libc  # gethostname()
 
 value_e = runtime_asdl.value_e
+command = syntax_asdl.word
 word = syntax_asdl.word
 word_part = syntax_asdl.word_part
-
 
 
 def Clear():

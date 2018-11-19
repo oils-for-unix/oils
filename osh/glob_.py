@@ -8,12 +8,13 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc
 
-from core.meta import ast, Id
-from frontend import match
+from core.meta import syntax_asdl, Id
 from core import util
+from frontend import match
 
 log = util.log
-glob_part_e = ast.glob_part_e
+glob_part_e = syntax_asdl.glob_part_e
+glob_part = syntax_asdl.glob_part
 
 # TODO: Need LooksLikeExtGlob?
 #
@@ -162,7 +163,7 @@ class _GlobParser(object):
       if self.token_type == Id.Glob_Eof:
         # TODO: location info
         self.warnings.append('Malformed character class; treating as literal')
-        return [ast.GlobLit(id_, s) for (id_, s) in tokens]
+        return [glob_part.GlobLit(id_, s) for (id_, s) in tokens]
 
       if self.token_type == Id.Glob_LBracket:
         balance += 1
@@ -182,7 +183,7 @@ class _GlobParser(object):
       if id1 in (Id.Glob_Bang, Id.Glob_Caret):
         negated = True
         tokens = tokens[1:]
-    return [ast.CharClass(negated, [s for _, s in tokens])]
+    return [glob_part.CharClass(negated, [s for _, s in tokens])]
 
   def Parse(self):
     """
@@ -202,7 +203,7 @@ class _GlobParser(object):
         break
 
       if id_ in (Id.Glob_Star, Id.Glob_QMark):
-        parts.append(ast.GlobOp(id_))
+        parts.append(glob_part.GlobOp(id_))
 
       elif id_ == Id.Glob_LBracket:
         # Could return a GlobLit or a CharClass
@@ -210,7 +211,7 @@ class _GlobParser(object):
 
       else: # Glob_{Bang,Caret,CleanLiterals,OtherLiteral,RBracket,EscapedChar,
             #       BadBackslash}
-        parts.append(ast.GlobLit(id_, s))
+        parts.append(glob_part.GlobLit(id_, s))
 
       # Also check for warnings.  TODO: location info.
       if id_ == Id.Glob_RBracket:

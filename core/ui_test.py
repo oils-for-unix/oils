@@ -6,13 +6,13 @@ ui_test.py: Tests for ui.py
 
 import unittest
 
-from osh import state
 from core import test_lib
-from core.meta import runtime
-
 from core import ui  # module under test
+from core.meta import runtime_asdl
 
-value = runtime.value
+from osh import state
+
+value = runtime_asdl.value
 
 
 class UiTest(unittest.TestCase):

@@ -10,9 +10,9 @@ from core import util
 from osh import string_ops
 
 from core.meta import Id
-from core.meta import runtime
+from core.meta import runtime_asdl
 
-var_flags_e = runtime.var_flags_e
+var_flags_e = runtime_asdl.var_flags_e
 
 
 _ONE_CHAR = {

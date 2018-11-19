@@ -13,21 +13,19 @@ import string
 import sys
 
 from asdl import py_meta
-
 from core import alloc
-from osh import cmd_exec
 from core import dev
-from osh import split
-from frontend import lexer
 from core import process
-from frontend import reader
-from osh import state
-from osh import word_eval
 from core import util
 from core.meta import Id
-
+from frontend import lexer
 from frontend import match
 from frontend import parse_lib
+from frontend import reader
+from osh import cmd_exec
+from osh import split
+from osh import state
+from osh import word_eval
 
 
 def PrintableString(s):

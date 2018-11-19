@@ -15,8 +15,8 @@ import fcntl
 import posix
 import sys
 
-from core.meta import runtime, Id
 from core import util
+from core.meta import runtime, Id
 from pylib import os_
 
 redirect_e = runtime.redirect_e
@@ -749,7 +749,7 @@ class Waiter(object):
   - Every child process is registered once
   - Every child process is waited for
 
-  Canonical example of why we need a GLBOAL waiter:
+  Canonical example of why we need a GLOBAL waiter:
 
   { sleep 3; echo 'done 3'; } &
   { sleep 4; echo 'done 4'; } &

@@ -7,12 +7,12 @@ import sys
 import unittest
 
 from core import test_lib
-from osh import word
 from core import ui
 from core import util
 from core.meta import ast, Id
 
 from osh import ast_lib
+from osh import word
 
 command_e = ast.command_e
 

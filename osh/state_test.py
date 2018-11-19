@@ -6,9 +6,10 @@ state_test.py: Tests for state.py
 import unittest
 
 from core.meta import ast, runtime
-from osh import state  # module under test
 from core import util
 from core import test_lib
+
+from osh import state  # module under test
 
 scope_e = runtime.scope_e
 value = runtime.value
