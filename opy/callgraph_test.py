@@ -8,9 +8,9 @@ import unittest
 import sys
 
 from opy import callgraph  # module under test
-from core.meta import types
+from core.meta import types_asdl
 
-lex_mode_e = types.lex_mode_e
+lex_mode_e = types_asdl.lex_mode_e
 
 class CallgraphTest(unittest.TestCase):
 

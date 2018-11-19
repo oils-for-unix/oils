@@ -7,13 +7,13 @@ from core.meta import Id
 from osh import word
 from core import util
 
-from core.meta import ast, types
+from core.meta import ast, types_asdl
 
 p_die = util.p_die
 
 arith_expr_e = ast.arith_expr_e
 word_e = ast.word_e
-lex_mode_e = types.lex_mode_e
+lex_mode_e = types_asdl.lex_mode_e
 
 
 def Assert(s, expected, tree):

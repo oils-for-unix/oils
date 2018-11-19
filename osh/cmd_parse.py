@@ -19,7 +19,7 @@ from osh import word
 from core import util
 
 from frontend import match
-from core.meta import ast, Id, Kind, types
+from core.meta import ast, Id, Kind, types_asdl
 from osh.bool_parse import BoolParser
 
 log = util.log
@@ -27,7 +27,7 @@ p_die = util.p_die
 command_e = ast.command_e
 word_e = ast.word_e
 assign_op_e = ast.assign_op_e
-lex_mode_e = types.lex_mode_e
+lex_mode_e = types_asdl.lex_mode_e
 
 
 def _ReadHereLines(line_reader, h, delimiter):

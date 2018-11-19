@@ -12,9 +12,9 @@ from frontend import match
 from frontend.lexer import LineLexer
 
 from core import test_lib
-from core.meta import ast, Id, Kind, LookupKind, types
+from core.meta import ast, Id, Kind, LookupKind, types_asdl
 
-lex_mode_e = types.lex_mode_e
+lex_mode_e = types_asdl.lex_mode_e
 
 
 def _InitLexer(s):

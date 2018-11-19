@@ -41,7 +41,8 @@ from core import ui
 from core import util
 from osh import word_compile
 
-from core.meta import ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types
+from core.meta import (
+    ast, Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, types_asdl)
 
 try:
   import libc  # for fnmatch
@@ -50,8 +51,8 @@ except ImportError:
 
 builtin_e = builtin.builtin_e
 
-lex_mode_e = types.lex_mode_e
-redir_arg_type_e = types.redir_arg_type_e
+lex_mode_e = types_asdl.lex_mode_e
+redir_arg_type_e = types_asdl.redir_arg_type_e
 
 command_e = ast.command_e
 redir_e = ast.redir_e

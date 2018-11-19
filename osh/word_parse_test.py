@@ -15,15 +15,16 @@ from asdl import const
 
 from core import alloc
 from core import test_lib
-from osh import word
 from core import util
+from core.meta import ast, Id, types_asdl
 
-from core.meta import ast, Id, types
 from osh import ast_lib
+from osh import word
+
 from frontend import parse_lib
 
 arith_expr_e = ast.arith_expr_e
-lex_mode_e = types.lex_mode_e
+lex_mode_e = types_asdl.lex_mode_e
 
 
 def _InitWordParserWithArena(s):

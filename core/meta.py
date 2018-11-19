@@ -95,9 +95,7 @@ def IdInstance(i):
 # Instantiate osh/types.asdl
 #
 
-types = _AsdlModule()
 from _devbuild.gen import types_asdl
-_AssignTypes(types_asdl, types)
 
 
 # Id -> bool_arg_type_e
@@ -118,13 +116,13 @@ ID_SPEC = id_kind.IdSpec(Id, Kind,
                          BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
-id_kind.AddBoolKinds(ID_SPEC, Id, types.bool_arg_type_e)  # must come second
+id_kind.AddBoolKinds(ID_SPEC, Id, types_asdl.bool_arg_type_e)  # must come second
 # NOTE: Dependency on the types module here.  This is the root cause of the
 # _BOOTSTRAP_LEVEL hack.
 id_kind.SetupTestBuiltin(Id, Kind, ID_SPEC,
                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
                          TEST_OTHER_LOOKUP,
-                         types.bool_arg_type_e)
+                         types_asdl.bool_arg_type_e)
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes
@@ -177,7 +175,7 @@ REDIR_DEFAULT_FD = {
     Id.Redir_DLessDash: 0,
 }
 
-redir_arg_type_e = types.redir_arg_type_e
+redir_arg_type_e = types_asdl.redir_arg_type_e
 
 REDIR_ARG_TYPES = {
     # filename

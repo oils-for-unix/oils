@@ -23,13 +23,13 @@ from core import util
 from osh import state
 from core import ui
 from osh import word
-from core.meta import ast, runtime, types, BOOL_ARG_TYPES, Id
+from core.meta import ast, runtime, types_asdl, BOOL_ARG_TYPES, Id
 
 log = util.log
 warn = util.warn
 e_die = util.e_die
 
-bool_arg_type_e = types.bool_arg_type_e
+bool_arg_type_e = types_asdl.bool_arg_type_e
 
 arith_expr_e = ast.arith_expr_e
 lhs_expr_e = ast.lhs_expr_e

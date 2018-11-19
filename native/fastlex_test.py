@@ -12,11 +12,11 @@ libc_test.py: Tests for libc.py
 
 import unittest
 
-from core.meta import Id, IdInstance, types
+from core.meta import Id, IdInstance, types_asdl
 
 import fastlex  # module under test
 
-lex_mode_e = types.lex_mode_e
+lex_mode_e = types_asdl.lex_mode_e
 
 
 # NOTE: This is just like _MatchOshToken_Fast in osh/match.py
