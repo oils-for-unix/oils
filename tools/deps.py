@@ -8,14 +8,18 @@ import sys
 
 from asdl import asdl_ as asdl
 from asdl import py_meta
-from osh import builtin
-from core import util
-from osh import word
-from core.meta import ast, runtime
-from osh import ast_lib
 
-command_e = ast.command_e
-builtin_e = runtime.builtin_e
+from core import util
+from core.meta import syntax_asdl, runtime_asdl
+
+from osh import ast_lib
+from osh import builtin
+from osh import word
+
+command = syntax_asdl.command
+command_e = syntax_asdl.command_e
+
+builtin_e = runtime_asdl.builtin_e
 log = util.log
 
 # TODO: Move to asdl/visitor.py?
@@ -89,7 +93,7 @@ class DepsVisitor(Visitor):
     # But it's easier to check the __class__ attribute.
 
     cls = node.__class__
-    if cls is ast.SimpleCommand:
+    if cls is command.SimpleCommand:
       #log('SimpleCommand %s', node.words)
       #log('--')
       #ast_lib.PrettyPrint(node)
@@ -128,7 +132,7 @@ class DepsVisitor(Visitor):
         # Should we mark them behind 'sudo'?  e.g. "sudo apt install"?
         self.progs_used[argv1] = True
 
-    elif cls is ast.FuncDef:
+    elif cls is command.FuncDef:
       self.funcs_defined[node.name] = True
 
   def Visit(self, node):

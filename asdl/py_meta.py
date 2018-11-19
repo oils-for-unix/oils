@@ -6,11 +6,8 @@ Parse an ASDL file, and generate Python classes using metaprogramming.
 All objects descends from Obj, which allows them to be dynamically type-checked
 and serialized.  Objects hold type descriptors, which are defined in asdl.py.
 
-Usage:
-  from osh import ast_ as ast
-
-  n1 = ast.ArithVar()
-  n2 = ast.ArrayLiteralPart()
+NOTE: We're not using this "in production" anymore.  We generate textual
+Python code instead.  See asdl/gen_python.py.
 
 API Notes:
 

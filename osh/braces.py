@@ -17,17 +17,19 @@ from __future__ import print_function
 
 import sys
 
-from core.meta import Id
-from core.meta import ast
+from core.meta import Id, syntax_asdl
 
-word_part_e = ast.word_part_e
-word_e = ast.word_e
+word_part = syntax_asdl.word_part
+word_part_e = syntax_asdl.word_part_e
+
+word = syntax_asdl.word
+word_e = syntax_asdl.word_e
 
 
 class _StackFrame(object):
   def __init__(self, cur_parts):
     self.cur_parts = cur_parts
-    self.alt_part = ast.BracedAltPart()
+    self.alt_part = word_part.BracedAltPart()
     self.saw_comma = False
 
 
@@ -105,7 +107,7 @@ def _BraceDetect(w):
         if stack:
           stack[-1].saw_comma = True
 
-          stack[-1].alt_part.words.append(ast.CompoundWord(cur_parts))
+          stack[-1].alt_part.words.append(word.CompoundWord(cur_parts))
           cur_parts = []  # clear
           append = False
 
@@ -118,14 +120,14 @@ def _BraceDetect(w):
         #     - digit+ '..' digit+  ( '..' digit+ )?
         # - Char ranges are bash only!
         #
-        # ast.BracedIntRangePart()
-        # ast.CharRangePart()
+        # word_part.BracedIntRangePart()
+        # word_part.CharRangePart()
 
         if not stack:  # e.g. echo }  -- unbalancd {
           return None
         if not stack[-1].saw_comma:  # {foo} is not a real alternative
           return None
-        stack[-1].alt_part.words.append(ast.CompoundWord(cur_parts))
+        stack[-1].alt_part.words.append(word.CompoundWord(cur_parts))
 
         frame = stack.pop()
         cur_parts = frame.cur_parts
@@ -139,7 +141,7 @@ def _BraceDetect(w):
     return None
 
   if found:
-    return ast.BracedWordTree(cur_parts)
+    return word.BracedWordTree(cur_parts)
   else:
     return None
 
@@ -236,7 +238,7 @@ def BraceExpandWords(words):
   for w in words:
     if w.tag == word_e.BracedWordTree:
       parts_list = _BraceExpand(w.parts)
-      out.extend(ast.CompoundWord(p) for p in parts_list)
+      out.extend(word.CompoundWord(p) for p in parts_list)
     else:
       out.append(w)
   return out

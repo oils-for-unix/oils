@@ -13,7 +13,7 @@ set -o errexit
 _this-repo() {
   # NOTE: copied from test/wild.sh oil-manifest.
   for name in \
-    configure install *.sh {benchmarks,build,test,scripts,opy}/*.sh; do
+    configure install *.sh {benchmarks,build,devtools,metrics,misc,test,opy}/*.sh; do
     bin/oshc deps $name
   done
 }

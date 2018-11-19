@@ -14,13 +14,13 @@ from osh import word_compile
 from core import ui
 from core import util
 
-from core.meta import ast, runtime, Id, Kind, LookupKind
+from core.meta import syntax_asdl, runtime, Id, Kind, LookupKind
 from frontend import match
 
-word_e = ast.word_e
-bracket_op_e = ast.bracket_op_e
-suffix_op_e = ast.suffix_op_e
-word_part_e = ast.word_part_e
+word_e = syntax_asdl.word_e
+bracket_op_e = syntax_asdl.bracket_op_e
+suffix_op_e = syntax_asdl.suffix_op_e
+word_part_e = syntax_asdl.word_part_e
 
 part_value = runtime.part_value
 part_value_e = runtime.part_value_e
@@ -962,15 +962,9 @@ class _WordEvaluator(object):
     return value.Str(''.join(strs))
 
   def EvalRhsWord(self, word):
-    """word_t -> value_t.
+    """syntax.word -> runtime.value
 
     Used for RHS of assignment.  There is no splitting.
-
-    Args:
-      ast.word_t
-
-    Returns:
-      runtime.value_t
     """
     if word.tag == word_e.EmptyWord:
       return value.Str('')

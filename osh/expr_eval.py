@@ -18,12 +18,14 @@ except ImportError:
   from benchmarks import fake_libc as libc
 
 from asdl import const
+
 from core import dev
 from core import util
-from osh import state
 from core import ui
+from core.meta import syntax_asdl, runtime, types_asdl, BOOL_ARG_TYPES, Id
+
+from osh import state
 from osh import word
-from core.meta import ast, runtime, types_asdl, BOOL_ARG_TYPES, Id
 
 log = util.log
 warn = util.warn
@@ -31,11 +33,12 @@ e_die = util.e_die
 
 bool_arg_type_e = types_asdl.bool_arg_type_e
 
-arith_expr_e = ast.arith_expr_e
-lhs_expr_e = ast.lhs_expr_e
-bool_expr_e = ast.bool_expr_e  # used for dispatch
-word_e = ast.word_e
+arith_expr_e = syntax_asdl.arith_expr_e
+lhs_expr_e = syntax_asdl.lhs_expr_e
+bool_expr_e = syntax_asdl.bool_expr_e  # used for dispatch
+word_e = syntax_asdl.word_e
 
+lvalue = runtime.lvalue
 part_value_e = runtime.part_value_e
 value = runtime.value
 value_e = runtime.value_e
@@ -159,19 +162,19 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
   Also used by the Executor for s+='x' and a[42]+='x'.
 
   Args:
-    node: ast.lhs_expr
+    node: syntax_asdl.lhs_expr
 
   Returns:
     runtime.value, runtime.lvalue
   """
   #log('lhs_expr NODE %s', node)
-  assert isinstance(node, ast.lhs_expr), node
+  assert isinstance(node, syntax_asdl.lhs_expr), node
 
   if node.tag == lhs_expr_e.LhsName:  # a = b
     # Problem: It can't be an array?
     # a=(1 2)
     # (( a++ ))
-    lval = runtime.LhsName(node.name)
+    lval = lvalue.LhsName(node.name)
     val = _LookupVar(node.name, mem, exec_opts)
 
   elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
@@ -181,7 +184,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     # - ArithBinary LBracket: f[1][1] -- no semantics for this?
 
     index = arith_ev.Eval(node.index)
-    lval = runtime.LhsIndexedName(node.name, index)
+    lval = lvalue.LhsIndexedName(node.name, index)
 
     val = mem.GetVar(node.name)
     if val.tag == value_e.Str:
@@ -213,7 +216,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
       # TODO: Also need IsAssocArray() check?
       index = arith_ev.Eval(node.index, int_coerce=False)
-      lval = runtime.LhsIndexedName(node.name, index)
+      lval = lvalue.LhsIndexedName(node.name, index)
       raise NotImplementedError
 
     else:
@@ -311,10 +314,10 @@ class ArithEvaluator(_ExprEvaluator):
     """lhs_expr -> lvalue.
     
     Very similar to _EvalLhs in core/cmd_exec."""
-    assert isinstance(node, ast.lhs_expr), node
+    assert isinstance(node, syntax_asdl.lhs_expr), node
 
     if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
-      lval = runtime.LhsName(node.name)
+      lval = lvalue.LhsName(node.name)
       # TODO: location info.  Use the = token?
       #lval.spids.append(spid)
       return lval
@@ -325,7 +328,7 @@ class ArithEvaluator(_ExprEvaluator):
       int_coerce = not self.mem.IsAssocArray(node.name, scope_e.Dynamic)
       index = self.Eval(node.index, int_coerce=int_coerce)
 
-      lval = runtime.LhsIndexedName(node.name, index)
+      lval = lvalue.LhsIndexedName(node.name, index)
       # TODO: location info.  Use the = token?
       #lval.spids.append(node.spids[0])
       return lval
