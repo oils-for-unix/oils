@@ -18,7 +18,9 @@ from __future__ import print_function
 
 from core import ui
 from core import util
-from core.meta import ast
+from core.meta import syntax_asdl
+
+command = syntax_asdl.command
 
 log = util.log
 
@@ -131,4 +133,4 @@ def ParseWholeFile(c_parser):
   if len(children) == 1:
     return children[0]
   else:
-    return ast.CommandList(children)
+    return command.CommandList(children)

@@ -17,14 +17,18 @@ import sys
 from asdl import const
 from asdl import encode
 from asdl import format as fmt
+
 from core import dev
-from osh import ast_lib
+from core.meta import runtime_asdl, syntax_asdl, Id
+
 from frontend import match
-from core.meta import ast, runtime, Id
+from osh import ast_lib
 
 import libc  # gethostname()
 
-value_e = runtime.value_e
+value_e = runtime_asdl.value_e
+word = syntax_asdl.word
+word_part = syntax_asdl.word_part
 
 
 
@@ -248,8 +252,8 @@ class Prompt(object):
         ps1_word = w_parser.ReadPS()
       except Exception as e:
         error_str = '<ERROR: cannot parse PS1>'
-        t = ast.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
-        ps1_word = ast.CompoundWord([ast.LiteralPart(t)])
+        t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        ps1_word = word.CompoundWord([word_part.LiteralPart(t)])
       self.parse_cache[ps1_str] = ps1_word
 
     # Evaluate, e.g. "${debian_chroot}\u" -> '\u'
@@ -311,7 +315,7 @@ def PrintAst(nodes, opts):
   if len(nodes) == 1:
     node = nodes[0]
   else:
-    node = ast.CommandList(nodes)
+    node = command.CommandList(nodes)
 
   if opts.ast_format == 'none':
     print('AST not printed.', file=sys.stderr)

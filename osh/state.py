@@ -14,10 +14,12 @@ import cStringIO
 import posix
 
 from asdl import const
+from core import util
+from core.meta import syntax_asdl, runtime, Id
 from frontend import args
 from osh import split
-from core import util
-from core.meta import ast, runtime, Id
+
+lhs_expr = syntax_asdl.lhs_expr
 
 part_value_e = runtime.part_value_e
 value = runtime.value
@@ -522,7 +524,7 @@ class Mem(object):
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
-      self.SetVar(ast.LhsName(n), value.Str(v),
+      self.SetVar(lhs_expr.LhsName(n), value.Str(v),
                  (var_flags_e.Exported,), scope_e.GlobalOnly)
 
     # If it's not in the environment, initialize it.  This makes it easier to
@@ -536,7 +538,7 @@ class Mem(object):
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
-        ast.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
+        lhs_expr.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
         scope_e.GlobalOnly)
 
     v = self.GetVar('HOME')
@@ -1052,7 +1054,7 @@ def SetLocalString(mem, name, s):
   3) read builtin
   """
   assert isinstance(s, str)
-  mem.SetVar(ast.LhsName(name), value.Str(s), (), scope_e.LocalOnly)
+  mem.SetVar(lhs_expr.LhsName(name), value.Str(s), (), scope_e.LocalOnly)
 
 
 def SetStringDynamic(mem, name, s):
@@ -1061,20 +1063,20 @@ def SetStringDynamic(mem, name, s):
   Used for getopts.
   """
   assert isinstance(s, str)
-  mem.SetVar(ast.LhsName(name), value.Str(s), (), scope_e.Dynamic)
+  mem.SetVar(lhs_expr.LhsName(name), value.Str(s), (), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
   """Helper for completion, $PWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(ast.LhsName(name), val, (), scope_e.GlobalOnly)
+  mem.SetVar(lhs_expr.LhsName(name), val, (), scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(ast.LhsName(name), value.StrArray(a), (), scope_e.GlobalOnly)
+  mem.SetVar(lhs_expr.LhsName(name), value.StrArray(a), (), scope_e.GlobalOnly)
 
 
 def GetGlobal(mem, name):

@@ -3,16 +3,18 @@
 tdop.py - Library for expression parsing.
 """
 
-from core.meta import Id
-from osh import word
 from core import util
-
-from core.meta import ast, types_asdl
+from core.meta import syntax_asdl, types_asdl, Id
+from osh import word
 
 p_die = util.p_die
 
-arith_expr_e = ast.arith_expr_e
-word_e = ast.word_e
+arith_expr = syntax_asdl.arith_expr
+arith_expr_e = syntax_asdl.arith_expr_e
+
+lhs_expr = syntax_asdl.lhs_expr
+
+word_e = syntax_asdl.word_e
 lex_mode_e = types_asdl.lex_mode_e
 
 
@@ -67,14 +69,14 @@ def ToLValue(node):
   if node.tag == arith_expr_e.ArithVarRef:
     # For consistency with osh/cmd_parse.py, append a span_id.
     # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
-    lhs_expr = ast.LhsName(node.token.val)
-    lhs_expr.spids.append(node.token.span_id)
-    return lhs_expr
+    n = lhs_expr.LhsName(node.token.val)
+    n.spids.append(node.token.span_id)
+    return n
   if node.tag == arith_expr_e.ArithBinary:
     # For example, a[0][0] = 1 is NOT valid.
     if (node.op_id == Id.Arith_LBracket and
         node.left.tag == arith_expr_e.ArithVarRef):
-      return ast.LhsIndexedName(node.left.token.val, node.right)
+      return lhs_expr.LhsIndexedName(node.left.token.val, node.right)
 
   return None
 
@@ -92,9 +94,9 @@ def NullError(p, t, bp):
 def NullConstant(p, w, bp):
   var_name_token = word.LooksLikeArithVar(w)
   if var_name_token:
-    return ast.ArithVarRef(var_name_token)
+    return arith_expr.ArithVarRef(var_name_token)
 
-  return ast.ArithWord(w)
+  return arith_expr.ArithWord(w)
 
 
 def NullParen(p, t, bp):
@@ -114,7 +116,7 @@ def NullPrefixOp(p, w, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   right = p.ParseUntil(bp)
-  return ast.ArithUnary(word.ArithId(w), right)
+  return arith_expr.ArithUnary(word.ArithId(w), right)
 
 
 #
@@ -129,7 +131,7 @@ def LeftError(p, t, left, rbp):
 def LeftBinaryOp(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # TODO: w shoudl be a TokenWord, and we should extract the token from it.
-  return ast.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
+  return arith_expr.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, w, left, rbp):
@@ -138,7 +140,7 @@ def LeftAssign(p, w, left, rbp):
   lhs = ToLValue(left)
   if lhs is None:
     p_die("Can't assign to %r", lhs, word=w)
-  return ast.BinaryAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
+  return arith_expr.BinaryAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
 
 
 #

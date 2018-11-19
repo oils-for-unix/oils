@@ -3,13 +3,15 @@
 arith_parse.py - Parse shell arithmetic, which is based on C.
 """
 
-from frontend import tdop
 from core import util
-from core.meta import Id
+from core.meta import syntax_asdl, Id
+
+from frontend import tdop
+
 from osh import word
-from core.meta import ast
 
 p_die = util.p_die
+arith_expr = syntax_asdl.arith_expr
 
 
 def NullIncDec(p, w, bp):
@@ -18,19 +20,19 @@ def NullIncDec(p, w, bp):
   child = tdop.ToLValue(right)
   if child is None:
     p_die("This value can't be assigned to", word=w)
-  return ast.UnaryAssign(word.ArithId(w), child)
+  return arith_expr.UnaryAssign(word.ArithId(w), child)
 
 
 def NullUnaryPlus(p, t, bp):
   """ +x, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return ast.ArithUnary(Id.Node_UnaryPlus, right)
+  return arith_expr.ArithUnary(Id.Node_UnaryPlus, right)
 
 
 def NullUnaryMinus(p, t, bp):
   """ -1, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return ast.ArithUnary(Id.Node_UnaryMinus, right)
+  return arith_expr.ArithUnary(Id.Node_UnaryMinus, right)
 
 
 def LeftIncDec(p, w, left, rbp):
@@ -44,7 +46,7 @@ def LeftIncDec(p, w, left, rbp):
     raise AssertionError
 
   child = tdop.ToLValue(left)
-  return ast.UnaryAssign(op_id, child)
+  return arith_expr.UnaryAssign(op_id, child)
 
 
 def LeftIndex(p, w, left, unused_bp):
@@ -71,7 +73,7 @@ def LeftIndex(p, w, left, unused_bp):
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
-  return ast.ArithBinary(word.ArithId(w), left, index)
+  return arith_expr.ArithBinary(word.ArithId(w), left, index)
 
 
 def LeftTernary(p, t, left, bp):
@@ -79,7 +81,7 @@ def LeftTernary(p, t, left, bp):
   true_expr = p.ParseUntil(bp)
   p.Eat(Id.Arith_Colon)
   false_expr = p.ParseUntil(bp)
-  return ast.TernaryOp(left, true_expr, false_expr)
+  return arith_expr.TernaryOp(left, true_expr, false_expr)
 
 
 # For overloading of , inside function calls
@@ -98,7 +100,7 @@ def LeftFuncCall(p, t, left, unused_bp):
     if p.AtToken(Id.Arith_Comma):
       p.Next()
   p.Eat(Id.Arith_RParen)
-  return ast.FuncCall(left, children)
+  return arith_expr.FuncCall(left, children)
 
 
 def MakeShellSpec():

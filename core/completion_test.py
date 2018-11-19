@@ -16,15 +16,16 @@ import sys
 
 from core import alloc
 from core import completion  # module under test
-from osh import state
 from core import test_lib
 from core import ui
 from core import util
+from core.meta import syntax_asdl
 
-from core.meta import ast
 from frontend import parse_lib
 
-assign_op_e = ast.assign_op_e
+from osh import state
+
+assign_op_e = syntax_asdl.assign_op_e
 log = util.log
 
 

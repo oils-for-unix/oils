@@ -12,7 +12,7 @@ lexer.py - Library for lexing.
 from asdl import const
 from core import util
 from core.meta import Id
-from core.meta import ast
+from core.meta import syntax_asdl as syntax
 
 log = util.log
 
@@ -63,7 +63,7 @@ class LineLexer(object):
   def GetSpanIdForEof(self):
     assert self.arena, self.arena  # This is mandatory now?
     # zero length is special!
-    line_span = ast.line_span(self.line_id, self.line_pos, 0)
+    line_span = syntax.line_span(self.line_id, self.line_pos, 0)
     return self.arena.AddLineSpan(line_span)
 
   def LookAhead(self, lex_mode):
@@ -84,7 +84,7 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        t = ast.token(Id.Unknown_Tok, '', const.NO_INTEGER)
+        t = syntax.token(Id.Unknown_Tok, '', const.NO_INTEGER)
         return t
 
       tok_type, end_pos = self.match_func(lex_mode, self.line, pos)
@@ -95,14 +95,14 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return ast.token(tok_type, tok_val, const.NO_INTEGER)
+    return syntax.token(tok_type, tok_val, const.NO_INTEGER)
 
   def Read(self, lex_mode):
     #assert self.line_pos <= len(self.line), (self.line, self.line_pos)
     tok_type, end_pos = self.match_func(lex_mode, self.line, self.line_pos)
     #assert end_pos <= len(self.line)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-      return ast.token(tok_type, '', const.NO_INTEGER)
+      return syntax.token(tok_type, '', const.NO_INTEGER)
 
     tok_val = self.line[self.line_pos:end_pos]
 
@@ -112,7 +112,7 @@ class LineLexer(object):
 
     # TODO: Add this back once arena is threaded everywhere
     #assert self.line_id != -1
-    line_span = ast.line_span(self.line_id, self.line_pos, len(tok_val))
+    line_span = syntax.line_span(self.line_id, self.line_pos, len(tok_val))
 
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
     # want it to be "low level".  The only thing fabricated here is a newline
@@ -127,7 +127,7 @@ class LineLexer(object):
       self.last_span_id = span_id
 
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
-    t = ast.token(tok_type, tok_val, span_id)
+    t = syntax.token(tok_type, tok_val, span_id)
 
     self.line_pos = end_pos
     return t
@@ -201,7 +201,7 @@ class Lexer(object):
         # to retrieve the path and line number in ui.PrettyPrintError().
         # The line_id might be -1.
         span_id = self.line_lexer.GetSpanIdForEof()
-        t = ast.token(Id.Eof_Real, '', span_id)
+        t = syntax.token(Id.Eof_Real, '', span_id)
         return t
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line

@@ -2,17 +2,21 @@
 word.py - Utility functions for words, e.g. treating them as "tokens".
 """
 
-from core.meta import Id, Kind, LookupKind
-from core import util
-from core.meta import ast
 from asdl import const
+
+from core import util
+from core.meta import syntax_asdl, Id, Kind, LookupKind
 
 p_die = util.p_die
 
-word_e = ast.word_e
-word_part_e = ast.word_part_e
-assign_op_e = ast.assign_op_e
-lhs_expr_e = ast.lhs_expr_e
+word = syntax_asdl.word
+word_e = syntax_asdl.word_e
+
+word_part = syntax_asdl.word_part
+word_part_e = syntax_asdl.word_part_e
+
+assign_op_e = syntax_asdl.assign_op_e
+lhs_expr_e = syntax_asdl.lhs_expr_e
 
 
 def _LiteralPartId(p):
@@ -300,14 +304,14 @@ def TildeDetect(word):
     return None
 
   if len(word.parts) == 1:  # can't be zero
-    tilde_part = ast.TildeSubPart(part0.token)
-    return ast.CompoundWord([tilde_part])
+    tilde_part = word_part.TildeSubPart(part0.token)
+    return word.CompoundWord([tilde_part])
 
   part1 = word.parts[1]
   # NOTE: We could inspect the raw tokens.
   if _LiteralPartId(part1) == Id.Lit_Chars and part1.token.val.startswith('/'):
-    tilde_part = ast.TildeSubPart(part0.token)
-    return ast.CompoundWord([tilde_part] + word.parts[1:])
+    tilde_part = word_part.TildeSubPart(part0.token)
+    return word.CompoundWord([tilde_part] + word.parts[1:])
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None

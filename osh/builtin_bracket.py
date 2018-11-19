@@ -4,13 +4,15 @@ builtin_bracket.py
 """
 from __future__ import print_function
 
-from osh import expr_eval
 from core import util
 from core import meta
-from core.meta import ast, Id, runtime_asdl
+from core.meta import Id, runtime_asdl, syntax_asdl
 
+from osh import expr_eval
 from osh import bool_parse
 
+word = syntax_asdl.word
+bool_expr = syntax_asdl.bool_expr
 value = runtime_asdl.value
 
 log = util.log
@@ -35,7 +37,7 @@ class _StringWordEmitter(object):
   def ReadWord(self, unused_lex_mode):
     if self.i == self.n:
       # NOTE: Could define something special
-      return ast.StringWord(Id.Eof_Real, '')
+      return word.StringWord(Id.Eof_Real, '')
 
     #log('ARGV %s i %d', self.argv, self.i)
     s = self.argv[self.i]
@@ -46,7 +48,7 @@ class _StringWordEmitter(object):
         _UNARY_LOOKUP.get(s) or _BINARY_LOOKUP.get(s) or _OTHER_LOOKUP.get(s)
         or Id.Word_Compound)
 
-    return ast.StringWord(id_, s)
+    return word.StringWord(id_, s)
 
 
 class _WordEvaluator(object):
@@ -61,22 +63,22 @@ class _WordEvaluator(object):
 
 def _StringWordTest(s):
   # TODO: Could be Word_String
-  return ast.WordTest(ast.StringWord(Id.Word_Compound, s))
+  return bool_expr.WordTest(word.StringWord(Id.Word_Compound, s))
 
 
 def _TwoArgs(argv):
   """Returns an expression tree to be evaluated."""
   a0, a1 = argv
   if a0 == '!':
-    return ast.LogicalNot(_StringWordTest(a1))
+    return bool_expr.LogicalNot(_StringWordTest(a1))
   unary_id = _UNARY_LOOKUP.get(a0)
   if unary_id is None:
     # TODO:
     # - syntax error
     # - separate lookup by unary
     util.p_die('Expected unary operator, got %r (2 args)', a0)
-  child = ast.StringWord(Id.Word_Compound, a1)
-  return ast.BoolUnary(unary_id, child)
+  child = word.StringWord(Id.Word_Compound, a1)
+  return bool_expr.BoolUnary(unary_id, child)
 
 
 def _ThreeArgs(argv):
@@ -87,23 +89,23 @@ def _ThreeArgs(argv):
 
   binary_id = _BINARY_LOOKUP.get(a1)
   if binary_id is not None:
-    left = ast.StringWord(Id.Word_Compound, a0)
-    right = ast.StringWord(Id.Word_Compound, a2)
-    return ast.BoolBinary(binary_id, left, right)
+    left = word.StringWord(Id.Word_Compound, a0)
+    right = word.StringWord(Id.Word_Compound, a2)
+    return bool_expr.BoolBinary(binary_id, left, right)
 
   if a1 == '-a':
     left = _StringWordTest(a0)
     right = _StringWordTest(a2)
-    return ast.LogicalAnd(left, right)
+    return bool_expr.LogicalAnd(left, right)
 
   if a1 == '-o':
     left = _StringWordTest(a0)
     right = _StringWordTest(a2)
-    return ast.LogicalOr(left, right)
+    return bool_expr.LogicalOr(left, right)
 
   if a0 == '!':
     child = _TwoArgs(argv[1:])
-    return ast.LogicalNot(child)
+    return bool_expr.LogicalNot(child)
 
   if a0 == '(' and a2 == ')':
     return _StringWordTest(a1)
@@ -154,7 +156,7 @@ def Test(argv, need_right_bracket):
       a0 = argv[0]
       if a0 == '!':
         child = _ThreeArgs(argv[1:])
-        bool_node = ast.LogicalNot(child)
+        bool_node = bool_expr.LogicalNot(child)
       elif a0 == '(' and argv[3] == ')':
         bool_node = _TwoArgs(argv[1:3])
       else:

@@ -35,17 +35,19 @@ import sys
 import time
 #import traceback
 
-from core.meta import ast, runtime
 from core import alloc
-from pylib import os_path
-from osh import state
 from core import util
+from core.meta import syntax_asdl, runtime_asdl
+
+from pylib import os_path
+
+from osh import state
 
 import libc
 
-command_e = ast.command_e
-value_e = runtime.value_e
-completion_state_e = runtime.completion_state_e
+command_e = syntax_asdl.command_e
+value_e = runtime_asdl.value_e
+completion_state_e = runtime_asdl.completion_state_e
 
 log = util.log
 

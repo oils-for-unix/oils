@@ -8,7 +8,7 @@ We are following the code <-> data pattern, and this is the "data" module.
 id_kind and asdl are the "code" modules.
 
 Usage:
-  from core.meta import Id, Kind, ast, ID_SPEC
+  from core.meta import syntax_asdl, Id, Kind, ID_SPEC
 """
 
 import posix
@@ -17,15 +17,6 @@ from core import id_kind
 
 
 _BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '3'))
-
-
-# TODO: Get rid of this hack.
-def _AssignTypes(src_module, dest_module):
-  """For generated code."""
-  for name in dir(src_module):
-    if not name.startswith('__'):
-      v = getattr(src_module, name)
-      setattr(dest_module, name, v)
 
 
 class Id(object):
@@ -48,11 +39,6 @@ class Kind(object):
 
   # TODO: The Kind type should be folded into ASDL.  It can't print itself,
   # which is inconsistent with Id.
-  pass
-
-
-class _AsdlModule(object):
-  """Dummy object to copy attributes onto."""
   pass
 
 
@@ -133,19 +119,16 @@ _kind_sizes = ID_SPEC.kind_sizes
 #
 
 if _BOOTSTRAP_LEVEL > 1:
-  # TODO: Rename ast -> syntax
-  ast = _AsdlModule()
   from _devbuild.gen import syntax_asdl
-  _AssignTypes(syntax_asdl, ast)
+  ast = syntax_asdl  # TODO: Remove this old alias
 
 #
 # Instantiate core/runtime.asdl
 #
 
 if _BOOTSTRAP_LEVEL > 2:
-  runtime = _AsdlModule()
   from _devbuild.gen import runtime_asdl
-  _AssignTypes(runtime_asdl, runtime)
+  runtime = runtime_asdl
 
 #
 # Redirect Tables associated with IDs
