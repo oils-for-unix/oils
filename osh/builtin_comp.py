@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-comp_builtins.py - Completion builtins
+builtin_comp.py - Completion builtins
 """
 
 from frontend import args

@@ -103,7 +103,7 @@ _AssignTypes(types_asdl, types)
 # Id -> bool_arg_type_e
 BOOL_ARG_TYPES = {}  # type: dict
 
-# Used by test_builtin.py
+# Used by builtin_bracket.py
 TEST_UNARY_LOOKUP = {}
 TEST_BINARY_LOOKUP = {}
 TEST_OTHER_LOOKUP = {}

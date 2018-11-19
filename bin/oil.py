@@ -49,7 +49,7 @@ import errno
 
 from core import alloc
 from osh import builtin
-from osh import comp_builtins
+from osh import builtin_comp
 from core import completion
 from osh import cmd_exec
 from core import dev
@@ -91,9 +91,9 @@ def _ShowVersion():
 
 def _InitDefaultCompletions(ex, comp_lookup):
   # register builtins and words
-  comp_builtins.Complete(['-E', '-A', 'command'], ex, comp_lookup)
+  builtin_comp.Complete(['-E', '-A', 'command'], ex, comp_lookup)
   # register path completion
-  comp_builtins.Complete(['-D', '-A', 'file'], ex, comp_lookup)
+  builtin_comp.Complete(['-D', '-A', 'file'], ex, comp_lookup)
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:

@@ -98,7 +98,7 @@ SET_OPTIONS = [
     # checking this.
 ]
 
-# Used by core/comp_builtins.py too.
+# Used by core/builtin_comp.py too.
 SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 SHOPT_OPTION_NAMES = (

@@ -27,14 +27,14 @@ from core import alloc
 from frontend import args
 from osh import braces
 from osh import builtin
-from osh import comp_builtins
+from osh import builtin_comp
 from osh import expr_eval
 from osh import split
 from core import main_loop
 from core import process
 from frontend import reader
 from osh import state
-from osh import test_builtin
+from osh import builtin_bracket
 from osh import word
 from osh import word_eval
 from core import ui
@@ -321,13 +321,13 @@ class Executor(object):
       status = self._Eval(argv, span_id)
 
     elif builtin_id == builtin_e.COMPLETE:
-      status = comp_builtins.Complete(argv, self, self.comp_lookup)
+      status = builtin_comp.Complete(argv, self, self.comp_lookup)
 
     elif builtin_id == builtin_e.COMPGEN:
-      status = comp_builtins.CompGen(argv, self)
+      status = builtin_comp.CompGen(argv, self)
 
     elif builtin_id == builtin_e.COMPOPT:
-      status = comp_builtins.CompOpt(argv)
+      status = builtin_comp.CompOpt(argv)
 
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
@@ -339,10 +339,10 @@ class Executor(object):
       status = 1
 
     elif builtin_id == builtin_e.TEST:
-      status = test_builtin.Test(argv, False)
+      status = builtin_bracket.Test(argv, False)
 
     elif builtin_id == builtin_e.BRACKET:
-      status = test_builtin.Test(argv, True)  # need_right_bracket
+      status = builtin_bracket.Test(argv, True)  # need_right_bracket
 
     elif builtin_id == builtin_e.GETOPTS:
       status = builtin.GetOpts(argv, self.mem)
