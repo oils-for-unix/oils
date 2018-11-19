@@ -340,8 +340,8 @@ builtin-getopts() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
-builtin-test() {
-  sh-spec spec/builtin-test.test.sh --osh-failures-allowed 1 \
+builtin-bracket() {
+  sh-spec spec/builtin-bracket.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
