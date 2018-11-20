@@ -81,7 +81,8 @@ def IdInstance(i):
 # Instantiate osh/types.asdl
 #
 
-from _devbuild.gen import types_asdl
+from _devbuild.gen import types_asdl  # other modules import this
+              
 
 
 # Id -> bool_arg_type_e
@@ -119,14 +120,16 @@ _kind_sizes = ID_SPEC.kind_sizes
 #
 
 if _BOOTSTRAP_LEVEL > 1:
-  from _devbuild.gen import syntax_asdl
+  from _devbuild.gen import syntax_asdl  # other modules import this
+  _ = syntax_asdl  # shut up lint
 
 #
 # Instantiate core/runtime.asdl
 #
 
 if _BOOTSTRAP_LEVEL > 2:
-  from _devbuild.gen import runtime_asdl
+  from _devbuild.gen import runtime_asdl  # other modules import this
+  _ = runtime_asdl  # shut up lint
 
 #
 # Redirect Tables associated with IDs
