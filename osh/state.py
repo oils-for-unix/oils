@@ -15,18 +15,18 @@ import posix
 
 from asdl import const
 from core import util
-from core.meta import syntax_asdl, runtime, Id
+from core.meta import syntax_asdl, runtime_asdl, Id
 from frontend import args
 from osh import split
 
 lhs_expr = syntax_asdl.lhs_expr
 
-part_value_e = runtime.part_value_e
-value = runtime.value
-value_e = runtime.value_e
-lvalue_e = runtime.lvalue_e
-scope_e = runtime.scope_e
-var_flags_e = runtime.var_flags_e
+part_value_e = runtime_asdl.part_value_e
+value = runtime_asdl.value
+value_e = runtime_asdl.value_e
+lvalue_e = runtime_asdl.lvalue_e
+scope_e = runtime_asdl.scope_e
+var_flags_e = runtime_asdl.var_flags_e
 
 log = util.log
 e_die = util.e_die
@@ -331,7 +331,7 @@ class _ArgFrame(object):
 
 class _StackFrame(object):
   def __init__(self, mutable=True):
-    self.vars = {}  # string -> runtime.cell
+    self.vars = {}  # string -> runtime_asdl.cell
     self.mutable = mutable
 
   def Dump(self):
@@ -813,10 +813,10 @@ class Mem(object):
         if val is None:
           # set -o nounset; local foo; echo $foo  # It's still undefined!
           val = value.Undef()  # export foo, readonly foo
-        cell = runtime.cell(val,
-                            var_flags_e.Exported in new_flags,
-                            var_flags_e.ReadOnly in new_flags,
-                            var_flags_e.AssocArray in new_flags)
+        cell = runtime_asdl.cell(val,
+                                 var_flags_e.Exported in new_flags,
+                                 var_flags_e.ReadOnly in new_flags,
+                                 var_flags_e.AssocArray in new_flags)
         namespace[lval.name] = cell
 
       if (cell.val is not None and cell.val.tag == value_e.StrArray and
@@ -892,7 +892,7 @@ class Mem(object):
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = var_flags_e.ReadOnly in new_flags
-    namespace[lval.name] = runtime.cell(new_value, False, readonly, False)
+    namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly, False)
 
   def _BindNewAssocArrayWithEntry(self, namespace, lval, value, new_flags):
     """Fill 'namespace' with a new indexed array entry."""
@@ -901,7 +901,7 @@ class Mem(object):
 
     # associative arrays can't be exported; don't need AssocArray flag
     readonly = var_flags_e.ReadOnly in new_flags
-    namespace[lval.name] = runtime.cell(new_value, False, readonly, False)
+    namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly, False)
 
   def InternalSetGlobal(self, name, new_val):
     """For setting read-only globals internally.

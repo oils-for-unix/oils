@@ -11,9 +11,13 @@ cmd_exec_test.py: Tests for cmd_exec.py
 
 import unittest
 
-from osh import state
 from core import test_lib
-from core.meta import ast, Id
+from core.meta import syntax_asdl, Id
+from osh import state
+
+suffix_op = syntax_asdl.suffix_op
+osh_word = syntax_asdl.word
+word_part = syntax_asdl.word_part
 
 
 def InitEvaluator():
@@ -42,20 +46,20 @@ class VarOpTest(unittest.TestCase):
 
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
-    unset_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'unset'))
+    unset_sub = word_part.BracedVarSub(syntax_asdl.token(Id.VSub_Name, 'unset'))
     part_vals = []
     ev._EvalWordPart(unset_sub, part_vals)
     print(part_vals)
 
-    set_sub = ast.BracedVarSub(ast.token(Id.VSub_Name, 'x'))
+    set_sub = word_part.BracedVarSub(syntax_asdl.token(Id.VSub_Name, 'x'))
     part_vals = []
     ev._EvalWordPart(set_sub, part_vals)
     print(part_vals)
 
     # Now add some ops
-    part = ast.LiteralPart(ast.token(Id.Lit_Chars, 'default'))
-    arg_word = ast.CompoundWord([part])
-    test_op = ast.StringUnary(Id.VTest_ColonHyphen, arg_word)
+    part = word_part.LiteralPart(syntax_asdl.token(Id.Lit_Chars, 'default'))
+    arg_word = osh_word.CompoundWord([part])
+    test_op = suffix_op.StringUnary(Id.VTest_ColonHyphen, arg_word)
     unset_sub.suffix_op = test_op
     set_sub.suffix_op = test_op
 

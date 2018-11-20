@@ -120,7 +120,6 @@ _kind_sizes = ID_SPEC.kind_sizes
 
 if _BOOTSTRAP_LEVEL > 1:
   from _devbuild.gen import syntax_asdl
-  ast = syntax_asdl  # TODO: Remove this old alias
 
 #
 # Instantiate core/runtime.asdl
@@ -128,7 +127,6 @@ if _BOOTSTRAP_LEVEL > 1:
 
 if _BOOTSTRAP_LEVEL > 2:
   from _devbuild.gen import runtime_asdl
-  runtime = runtime_asdl
 
 #
 # Redirect Tables associated with IDs

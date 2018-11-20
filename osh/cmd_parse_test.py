@@ -9,12 +9,12 @@ import unittest
 from core import test_lib
 from core import ui
 from core import util
-from core.meta import ast, Id
+from core.meta import syntax_asdl, Id
 
 from osh import ast_lib
 from osh import word
 
-command_e = ast.command_e
+command_e = syntax_asdl.command_e
 
 
 def _assertParseMethod(test, code_str, method, expect_success=True):

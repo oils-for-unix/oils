@@ -16,14 +16,16 @@ from asdl import const
 from core import alloc
 from core import test_lib
 from core import util
-from core.meta import ast, Id, types_asdl
+from core.meta import syntax_asdl, Id, types_asdl
 
 from frontend import parse_lib
 
 from osh import ast_lib
 from osh import word
 
-arith_expr_e = ast.arith_expr_e
+arith_expr_e = syntax_asdl.arith_expr_e
+osh_word = syntax_asdl.word
+word_part = syntax_asdl.word_part
 lex_mode_e = types_asdl.lex_mode_e
 
 
@@ -50,7 +52,8 @@ def _assertReadWordWithArena(test, word_str):
   # Next word must be Eof_Real
   w2 = w_parser.ReadWord(lex_mode_e.Outer)
   test.assertTrue(
-      test_lib.TokenWordsEqual(ast.TokenWord(ast.token(Id.Eof_Real, '')), w2),
+      test_lib.TokenWordsEqual(
+          osh_word.TokenWord(syntax_asdl.token(Id.Eof_Real, '')), w2),
       w2)
 
   return arena, w
@@ -460,32 +463,32 @@ ls bar
 """)
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]
-    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
+    parts = [word_part.LiteralPart(syntax_asdl.token(Id.Lit_Chars, 'ls'))]
+    test_lib.AssertAsdlEqual(self, osh_word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'foo'))]
-    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
+    parts = [word_part.LiteralPart(syntax_asdl.token(Id.Lit_Chars, 'foo'))]
+    test_lib.AssertAsdlEqual(self, osh_word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    t = ast.token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
+    t = syntax_asdl.token(Id.Op_Newline, '\n')
+    test_lib.AssertAsdlEqual(self, osh_word.TokenWord(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'ls'))]
-    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
+    parts = [word_part.LiteralPart(syntax_asdl.token(Id.Lit_Chars, 'ls'))]
+    test_lib.AssertAsdlEqual(self, osh_word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    parts = [ast.LiteralPart(ast.token(Id.Lit_Chars, 'bar'))]
-    test_lib.AssertAsdlEqual(self, ast.CompoundWord(parts), w)
+    parts = [word_part.LiteralPart(syntax_asdl.token(Id.Lit_Chars, 'bar'))]
+    test_lib.AssertAsdlEqual(self, osh_word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    t = ast.token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
+    t = syntax_asdl.token(Id.Op_Newline, '\n')
+    test_lib.AssertAsdlEqual(self, osh_word.TokenWord(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.Outer)
-    t = ast.token(Id.Eof_Real, '')
-    test_lib.AssertAsdlEqual(self, ast.TokenWord(t), w)
+    t = syntax_asdl.token(Id.Eof_Real, '')
+    test_lib.AssertAsdlEqual(self, osh_word.TokenWord(t), w)
 
   def testParseErrorLocation(self):
     w = _assertSpanForWord(self, 'a=(1 2 3)')

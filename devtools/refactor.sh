@@ -66,11 +66,11 @@ grep-unicode() {
 }
 
 find-old-asdl() {
-  egrep 'import.*\bruntime\b' */*.py
+  egrep 'import.*\bruntime\b' */*.py || true
   echo ---
 
   # Only tests left
-  egrep 'import.*\bast\b' */*.py
+  egrep 'import.*\bast\b' */*.py || true
 }
 
 "$@"

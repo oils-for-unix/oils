@@ -11,7 +11,9 @@ from core import process  # module under test
 from core import util
 from core import test_lib
 
-from core.meta import runtime, Id
+from core.meta import runtime_asdl, Id
+
+redirect = runtime_asdl.redirect
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
@@ -50,7 +52,7 @@ class ProcessTest(unittest.TestCase):
 
     # Should get the first line twice, because Pop() closes it!
 
-    r = runtime.PathRedirect(Id.Redir_Less, 0, PATH)
+    r = redirect.PathRedirect(Id.Redir_Less, 0, PATH)
     fd_state.Push([r], waiter)
     line1 = builtin.ReadLineFromStdin()
     fd_state.Pop()

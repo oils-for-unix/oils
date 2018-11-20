@@ -22,7 +22,7 @@ from asdl import const
 from core import dev
 from core import util
 from core import ui
-from core.meta import syntax_asdl, runtime, types_asdl, BOOL_ARG_TYPES, Id
+from core.meta import syntax_asdl, runtime_asdl, types_asdl, BOOL_ARG_TYPES, Id
 
 from osh import state
 from osh import word
@@ -38,12 +38,12 @@ lhs_expr_e = syntax_asdl.lhs_expr_e
 bool_expr_e = syntax_asdl.bool_expr_e  # used for dispatch
 word_e = syntax_asdl.word_e
 
-lvalue = runtime.lvalue
-part_value_e = runtime.part_value_e
-value = runtime.value
-value_e = runtime.value_e
-lvalue_e = runtime.lvalue_e
-scope_e = runtime.scope_e
+lvalue = runtime_asdl.lvalue
+part_value_e = runtime_asdl.part_value_e
+value = runtime_asdl.value
+value_e = runtime_asdl.value_e
+lvalue_e = runtime_asdl.lvalue_e
+scope_e = runtime_asdl.scope_e
 
 
 def _StringToInteger(s, span_id=const.NO_INTEGER):
@@ -165,7 +165,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     node: syntax_asdl.lhs_expr
 
   Returns:
-    runtime.value, runtime.lvalue
+    runtime_asdl.value, runtime_asdl.lvalue
   """
   #log('lhs_expr NODE %s', node)
   assert isinstance(node, syntax_asdl.lhs_expr), node
@@ -231,8 +231,8 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
 class ArithEvaluator(_ExprEvaluator):
 
   def _ValToArith(self, val, span_id, int_coerce=True):
-    """Convert runtime.value to a Python int or list of strings."""
-    assert isinstance(val, runtime.value), '%r %r' % (val, type(val))
+    """Convert runtime_asdl.value to a Python int or list of strings."""
+    assert isinstance(val, runtime_asdl.value), '%r %r' % (val, type(val))
 
     if int_coerce:
       if val.tag == value_e.Undef:  # 'nounset' already handled before got here
@@ -297,7 +297,7 @@ class ArithEvaluator(_ExprEvaluator):
     Args:
       node: lhs_expr
     Returns:
-      int or list of strings, runtime.lvalue
+      int or list of strings, runtime_asdl.lvalue
     """
     val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 

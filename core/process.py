@@ -16,11 +16,11 @@ import posix
 import sys
 
 from core import util
-from core.meta import runtime, Id
+from core.meta import runtime_asdl, Id
 from pylib import os_
 
-redirect_e = runtime.redirect_e
-process_state_e = runtime.process_state_e
+redirect_e = runtime_asdl.redirect_e
+process_state_e = runtime_asdl.process_state_e
 e_die = util.e_die
 log = util.log
 

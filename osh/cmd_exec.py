@@ -29,7 +29,7 @@ from core import process
 from core import ui
 from core import util
 from core.meta import (
-    Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime, syntax_asdl, types_asdl)
+    Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime_asdl, syntax_asdl, types_asdl)
 
 from frontend import args
 from frontend import reader
@@ -61,13 +61,13 @@ assign_op_e = syntax_asdl.assign_op_e
 osh_word = syntax_asdl.word  # TODO: Rename the definition
 word_part = syntax_asdl.word_part
 
-lvalue = runtime.lvalue
-redirect = runtime.redirect
-value = runtime.value
-value_e = runtime.value_e
-scope_e = runtime.scope_e
-var_flags_e = runtime.var_flags_e
-builtin_e = runtime.builtin_e
+lvalue = runtime_asdl.lvalue
+redirect = runtime_asdl.redirect
+value = runtime_asdl.value
+value_e = runtime_asdl.value_e
+scope_e = runtime_asdl.scope_e
+var_flags_e = runtime_asdl.var_flags_e
+builtin_e = runtime_asdl.builtin_e
 
 log = util.log
 e_die = util.e_die
@@ -803,7 +803,7 @@ class Executor(object):
           # RHS can be a string or array.
           if pair.rhs:
             val = self.word_ev.EvalRhsWord(pair.rhs)
-            assert isinstance(val, runtime.value), val
+            assert isinstance(val, runtime_asdl.value), val
 
           else:  # e.g. 'readonly x' or 'local x'
             val = None
