@@ -41,7 +41,7 @@ from osh import expr_eval
 from osh import split
 from osh import state
 from osh import builtin_bracket
-from osh import word as word_lib
+from osh import word
 from osh import word_eval
 from osh import word_compile
 
@@ -58,7 +58,7 @@ redir_e = syntax_asdl.redir_e
 lhs_expr_e = syntax_asdl.lhs_expr_e
 assign_op_e = syntax_asdl.assign_op_e
 
-word = syntax_asdl.word
+osh_word = syntax_asdl.word  # TODO: Rename the definition
 word_part = syntax_asdl.word_part
 
 lvalue = runtime.lvalue
@@ -478,7 +478,7 @@ class Executor(object):
 
     elif n.tag == redir_e.HereDoc:
       # HACK: Wrap it in a word to evaluate.
-      w = word.CompoundWord(n.stdin_parts)
+      w = osh_word.CompoundWord(n.stdin_parts)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
       return redirect.HereRedirect(fd, val.s)
@@ -675,7 +675,7 @@ class Executor(object):
       span_id = const.NO_INTEGER
       if node.words:
         first_word = node.words[0]
-        span_id = word_lib.LeftMostSpanForWord(first_word)
+        span_id = word.LeftMostSpanForWord(first_word)
 
       self.mem.SetCurrentSpanId(span_id)
 
@@ -1473,7 +1473,7 @@ class Tracer(object):
       except util.ParseError as e:
         error_str = '<ERROR: cannot parse PS4>'
         t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
-        ps4_word = word.CompoundWord([word_part.LiteralPart(t)])
+        ps4_word = osh_word.CompoundWord([word_part.LiteralPart(t)])
       self.parse_cache[ps4] = ps4_word
 
     #print(ps4_word)

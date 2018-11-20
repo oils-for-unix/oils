@@ -13,20 +13,28 @@ from __future__ import print_function
 from asdl import const
 
 from core import alloc
-from osh import braces
-from frontend import reader
-from osh import word
 from core import util
+from core.meta import syntax_asdl, types_asdl, Id, Kind
 
 from frontend import match
-from core.meta import ast, Id, Kind, types_asdl
-from osh.bool_parse import BoolParser
+from frontend import reader
+
+from osh import braces
+from osh import bool_parse
+from osh import word
 
 log = util.log
 p_die = util.p_die
-command_e = ast.command_e
-word_e = ast.word_e
-assign_op_e = ast.assign_op_e
+
+assign_op_e = syntax_asdl.assign_op_e
+command = syntax_asdl.command
+command_e = syntax_asdl.command_e
+lhs_expr = syntax_asdl.lhs_expr
+redir = syntax_asdl.redir
+word_part = syntax_asdl.word_part
+word_e = syntax_asdl.word_e
+osh_word = syntax_asdl.word  # TODO: rename
+
 lex_mode_e = types_asdl.lex_mode_e
 
 
@@ -75,11 +83,11 @@ def _MakeLiteralHereLines(here_lines, arena):
   """Create a line_span and a token for each line."""
   tokens = []
   for line_id, line, start_offset in here_lines:
-    line_span = ast.line_span(line_id, start_offset, len(line))
+    line_span = syntax_asdl.line_span(line_id, start_offset, len(line))
     span_id = arena.AddLineSpan(line_span)
-    t = ast.token(Id.Lit_Chars, line[start_offset:], span_id)
+    t = syntax_asdl.token(Id.Lit_Chars, line[start_offset:], span_id)
     tokens.append(t)
-  return [ast.LiteralPart(t) for t in tokens]
+  return [word_part.LiteralPart(t) for t in tokens]
 
 
 def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
@@ -106,7 +114,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
 
   # Create a span with the end terminator.  Maintains the invariant that
   # the spans "add up".
-  line_span = ast.line_span(end_line_id, end_pos, len(end_line))
+  line_span = syntax_asdl.line_span(end_line_id, end_pos, len(end_line))
   h.here_end_span_id = arena.AddLineSpan(line_span)
 
 
@@ -123,8 +131,8 @@ def _MakeAssignPair(parse_ctx, preparsed):
       var_name = left_token.val[:-1]
       op = assign_op_e.Equal
 
-    lhs_expr = ast.LhsName(var_name)
-    lhs_expr.spids.append(left_token.span_id)
+    lhs = lhs_expr.LhsName(var_name)
+    lhs.spids.append(left_token.span_id)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
     var_name = left_token.val[:-1]
@@ -155,8 +163,8 @@ def _MakeAssignPair(parse_ctx, preparsed):
     a_parser = parse_ctx.MakeArithParser(code_str, arena)
     expr = a_parser.Parse()  # raises util.ParseError
                              # TODO: It reports from the wrong arena!
-    lhs_expr = ast.LhsIndexedName(var_name, expr)
-    lhs_expr.spids.append(left_token.span_id)
+    lhs = lhs_expr.LhsIndexedName(var_name, expr)
+    lhs.spids.append(left_token.span_id)
 
   else:
     raise AssertionError
@@ -164,12 +172,12 @@ def _MakeAssignPair(parse_ctx, preparsed):
   # TODO: Should we also create a rhs_exp.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
-    val = ast.EmptyWord()
+    val = osh_word.EmptyWord()
   else:
-    val = ast.CompoundWord(w.parts[part_offset:])
+    val = osh_word.CompoundWord(w.parts[part_offset:])
     val = word.TildeDetect(val) or val
 
-  pair = ast.assign_pair(lhs_expr, op, val)
+  pair = syntax_asdl.assign_pair(lhs, op, val)
   pair.spids.append(left_token.span_id)  # Do we need this?
   return pair
 
@@ -193,18 +201,18 @@ def _AppendMoreEnv(preparsed_list, more_env):
     var_name = left_token.val[:-1]
     n = len(w.parts)
     if part_offset == n:
-      val = ast.EmptyWord()
+      val = osh_word.EmptyWord()
     else:
-      val = ast.CompoundWord(w.parts[part_offset:])
+      val = osh_word.CompoundWord(w.parts[part_offset:])
 
-    pair = ast.env_pair(var_name, val)
+    pair = syntax_asdl.env_pair(var_name, val)
     pair.spids.append(left_token.span_id)  # Do we need this?
 
     more_env.append(pair)
 
 
 def _MakeAssignment(parse_ctx, assign_kw, suffix_words):
-  """Create an ast.Assignment node from a keyword and a list of words.
+  """Create an command.Assignment node from a keyword and a list of words.
 
   NOTE: We don't allow dynamic assignments like:
 
@@ -250,9 +258,9 @@ def _MakeAssignment(parse_ctx, assign_kw, suffix_words):
       if not match.IsValidVarName(static_val):
         p_die('Invalid variable name %r', static_val, word=w)
 
-      lhs_expr = ast.LhsName(static_val)
-      lhs_expr.spids.append(word.LeftMostSpanForWord(w))
-      pair = ast.assign_pair(lhs_expr, assign_op_e.Equal, None)
+      lhs = lhs_expr.LhsName(static_val)
+      lhs.spids.append(word.LeftMostSpanForWord(w))
+      pair = syntax_asdl.assign_pair(lhs, assign_op_e.Equal, None)
 
       left_spid = word.LeftMostSpanForWord(w)
       pair.spids.append(left_spid)
@@ -260,7 +268,7 @@ def _MakeAssignment(parse_ctx, assign_kw, suffix_words):
 
     i += 1
 
-  node = ast.Assignment(assign_kw, flags, pairs)
+  node = command.Assignment(assign_kw, flags, pairs)
   return node
 
 
@@ -286,7 +294,7 @@ def _SplitSimpleCommandPrefix(words):
 
 
 def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
-  """Create an ast.SimpleCommand node."""
+  """Create an command.SimpleCommand node."""
 
   # FOO=(1 2 3) ls is not allowed.
   for _, _, _, w in preparsed_list:
@@ -307,7 +315,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
   words2 = braces.BraceDetectAll(suffix_words)
   words3 = word.TildeDetectAll(words2)
 
-  node = ast.SimpleCommand()
+  node = command.SimpleCommand()
   node.words = words3
   node.redirects = redirects
   _AppendMoreEnv(preparsed_list, node.more_env)
@@ -455,7 +463,7 @@ class CommandParser(object):
       fd = const.NO_INTEGER
 
     if op.id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
-      node = ast.HereDoc()
+      node = redir.HereDoc()
       node.op = op
       node.fd = fd
       self._Next()
@@ -467,7 +475,7 @@ class CommandParser(object):
       self.pending_here_docs.append(node)  # will be filled on next newline.
 
     else:
-      node = ast.Redir()
+      node = redir.Redir()
       node.op = op
       node.fd = fd
       self._Next()
@@ -747,7 +755,7 @@ class CommandParser(object):
     redirects, words = result
 
     if not words:  # e.g.  >out.txt  # redirect without words
-      node = ast.SimpleCommand()
+      node = command.SimpleCommand()
       node.redirects = redirects
       return node
 
@@ -762,7 +770,7 @@ class CommandParser(object):
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed))
 
-      node = ast.Assignment(Id.Assign_None, [], pairs)
+      node = command.Assignment(Id.Assign_None, [], pairs)
       left_spid = word.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node
@@ -821,7 +829,7 @@ class CommandParser(object):
       else:
         p_die('Unexpected argument to %r', kw_token.val, word=suffix_words[2])
 
-      return ast.ControlFlow(kw_token, arg_word)
+      return command.ControlFlow(kw_token, arg_word)
 
     # If any expansions were detected, then parse again.
     node = self._MaybeExpandAliases(suffix_words, cur_aliases)
@@ -852,7 +860,7 @@ class CommandParser(object):
     #right_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
-    node = ast.BraceGroup(c_list.children)
+    node = command.BraceGroup(c_list.children)
     node.spids.append(left_spid)
     return node
 
@@ -871,7 +879,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Done)
     done_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
-    node = ast.DoGroup(c_list.children)
+    node = command.DoGroup(c_list.children)
     node.spids.extend((do_spid, done_spid))
     return node
 
@@ -931,7 +939,7 @@ class CommandParser(object):
     return node
 
   def _ParseForEachLoop(self):
-    node = ast.ForEach()
+    node = command.ForEach()
     node.do_arg_iter = False
 
     ok, iter_name, quoted = word.StaticEval(self.cur_word)
@@ -1009,7 +1017,7 @@ class CommandParser(object):
     body_node = self.ParseDoGroup()
     assert body_node is not None
 
-    return ast.WhileUntil(keyword, cond_node.children, body_node)
+    return command.WhileUntil(keyword, cond_node.children, body_node)
 
   def ParseCaseItem(self):
     """
@@ -1059,7 +1067,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    arm = ast.case_arm(pat_words, action_children)
+    arm = syntax_asdl.case_arm(pat_words, action_children)
     arm.spids.extend((left_spid, rparen_spid, dsemi_spid, last_spid))
     return arm
 
@@ -1086,7 +1094,7 @@ class CommandParser(object):
     """
     case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
     """
-    case_node = ast.Case()
+    case_node = command.Case()
 
     case_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip case
@@ -1132,7 +1140,7 @@ class CommandParser(object):
       body = self._ParseCommandList()
       assert body is not None
 
-      arm = ast.if_arm(cond.children, body.children)
+      arm = syntax_asdl.if_arm(cond.children, body.children)
       arm.spids.extend((elif_spid, then_spid))
       arms.append(arm)
 
@@ -1151,7 +1159,7 @@ class CommandParser(object):
     """
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
-    if_node = ast.If()
+    if_node = command.If()
     self._Next()  # skip if
 
     cond = self._ParseCommandList()
@@ -1163,7 +1171,7 @@ class CommandParser(object):
     body = self._ParseCommandList()
     assert body is not None
 
-    arm = ast.if_arm(cond.children, body.children)
+    arm = syntax_asdl.if_arm(cond.children, body.children)
     arm.spids.extend((const.NO_INTEGER, then_spid))  # no if spid at first?
     if_node.arms.append(arm)
 
@@ -1188,7 +1196,7 @@ class CommandParser(object):
 
     pipeline = self.ParsePipeline()
     assert pipeline is not None
-    return ast.TimeBlock(pipeline)
+    return command.TimeBlock(pipeline)
 
   def ParseCompoundCommand(self):
     """
@@ -1280,7 +1288,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    func = ast.FuncDef()
+    func = command.FuncDef()
     func.name = name
 
     self.ParseFunctionBody(func)
@@ -1315,7 +1323,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    func = ast.FuncDef()
+    func = command.FuncDef()
     func.name = name
 
     self.ParseFunctionBody(func)
@@ -1347,7 +1355,7 @@ class CommandParser(object):
       child = c_list.children[0]
     else:
       child = c_list
-    node = ast.Subshell(child)
+    node = command.Subshell(child)
 
     right_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_Subshell)
@@ -1364,9 +1372,9 @@ class CommandParser(object):
     # (PS2)
 
     self._Next()  # skip [[
-    b_parser = BoolParser(self.w_parser)
+    b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
-    return ast.DBracket(bnode)
+    return command.DBracket(bnode)
 
   def ParseDParen(self):
     maybe_error_word = self.cur_word
@@ -1376,7 +1384,7 @@ class CommandParser(object):
     anode, right_spid = self.w_parser.ReadDParen()
     assert anode is not None
 
-    node = ast.DParen(anode)
+    node = command.DParen(anode)
 
     node.spids.append(left_spid)
     node.spids.append(right_spid)
@@ -1457,7 +1465,7 @@ class CommandParser(object):
     self._Peek()
     if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
       if negated:
-        node = ast.Pipeline(children, negated)
+        node = command.Pipeline(children, negated)
         return node
       else:
         return child
@@ -1486,7 +1494,7 @@ class CommandParser(object):
         stderr_indices.append(pipe_index)
       pipe_index += 1
 
-    node = ast.Pipeline(children, negated)
+    node = command.Pipeline(children, negated)
     node.stderr_indices = stderr_indices
     return node
 
@@ -1523,7 +1531,7 @@ class CommandParser(object):
       if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
         break
 
-    node = ast.AndOr(ops, children)
+    node = command.AndOr(ops, children)
     return node
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
@@ -1569,7 +1577,7 @@ class CommandParser(object):
 
       self._Peek()
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
-        child = ast.Sentence(child, self.cur_word.token)
+        child = command.Sentence(child, self.cur_word.token)
         self._Next()
 
         self._Peek()
@@ -1588,7 +1596,7 @@ class CommandParser(object):
 
     # Simplify the AST.
     if len(children) > 1:
-      return ast.CommandList(children)
+      return command.CommandList(children)
     else:
       return children[0]
 
@@ -1604,7 +1612,7 @@ class CommandParser(object):
     which is slightly different.  (HOW?  Is it the DSEMI?)
 
     Returns:
-      ast.command
+      syntax_asdl.command
     """
     # Token types that will end the command term.
     END_LIST = (self.eof_id, Id.Right_Subshell, Id.Lit_RBrace, Id.Op_DSemi)
@@ -1638,7 +1646,7 @@ class CommandParser(object):
           done = True
 
       elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
-        child = ast.Sentence(child, self.cur_word.token)
+        child = command.Sentence(child, self.cur_word.token)
         self._Next()
 
         self._Peek()
@@ -1664,7 +1672,7 @@ class CommandParser(object):
 
     self._Peek()
 
-    return ast.CommandList(children)
+    return command.CommandList(children)
 
   # TODO: Make this private.
   def _ParseCommandList(self):
@@ -1716,7 +1724,7 @@ class CommandParser(object):
     self._NewlineOk()
 
     if self.c_kind == Kind.Eof:  # e.g. $()
-      return ast.NoOp()
+      return command.NoOp()
 
     # This calls ParseAndOr(), but I think it should be a loop that calls
     # _ParseCommandLine(), like oil.InteractiveLoop.

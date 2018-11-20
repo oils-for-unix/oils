@@ -69,8 +69,8 @@ find-old-asdl() {
   egrep 'import.*\bruntime\b' */*.py
   echo ---
 
-  # TODO: Remove from tests too
-  egrep 'import.*\bast\b' */*.py | grep -v _test
+  # Only tests left
+  egrep 'import.*\bast\b' */*.py
 }
 
 "$@"
