@@ -57,6 +57,7 @@ from core import util
 f = util.GetResourceLoader().open('%s')
 TYPE_LOOKUP = unpickle.load_v2_subset(f)
 f.close()
+
 """ % pickle_out_path)
 
     v = gen_python.GenClassesVisitor(f)

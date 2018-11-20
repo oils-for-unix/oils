@@ -63,7 +63,7 @@ py-cpp() {
 
 gen-python() {
   local schema=${1:-asdl/arith.asdl}
-  asdl/gen_python.py $schema
+  core/asdl_gen.py py $schema _tmp/$(basename $schema).pickle
 }
 
 # For testing only, build/dev.sh has it
@@ -75,12 +75,18 @@ gen-osh-python() {
 }
 
 gen-arith-python() {
-  local out=_tmp/arith_ast_asdl.py
+  local out=_tmp/arith_asdl.py
   touch _tmp/__init__.py
   gen-python asdl/arith.asdl > $out
   wc -l $out
+}
 
-  test/unit.sh unit asdl/arith_ast_test.py
+unit() {
+  # This test is for the code dynamically generated with py_meta.py.
+  #test/unit.sh unit asdl/arith_ast_test.py
+
+  # This test is for the metadata
+  ASDL_TYPE_CHECK=1 PYTHONPATH=. asdl/arith_generated_test.py "$@"
 }
 
 #

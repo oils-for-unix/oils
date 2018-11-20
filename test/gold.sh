@@ -14,6 +14,8 @@ set -o errexit
 
 source test/common.sh  # for $OSH
 
+export ASDL_TYPE_CHECK=1
+
 # Runs an command (argv) the normal way (with its shebang) and then with
 # OSH, and compares the stdout and exit code.
 #
@@ -54,9 +56,6 @@ version-text() {
 # Uses {core,osh}/*.py
 count() {
   _compare metrics/source-code.sh all
-  _compare metrics/source-code.sh parser
-  _compare metrics/source-code.sh parser-port
-  _compare metrics/source-code.sh runtime
 }
 
 # Uses $(cd $(dirname $0) && pwd)

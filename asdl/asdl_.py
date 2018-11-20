@@ -104,11 +104,14 @@ class SumType(_RuntimeType):
 
   obj.ASDL_TYPE points directly to the constructor, which you reflect on.
   """
-  def __init__(self):
-    pass
+  def __init__(self, is_simple):
+    self.is_simple = is_simple  # for type checking
+    self.cases = []  # list of _RuntimeType for type checking
 
   def __repr__(self):
-    return '<SumType>'  # We need an entry for this but we don't use it?
+    # We need an entry for this but we don't use it?
+    return '<SumType with %d cases at %d>' % (
+        len(self.cases), id(self))
 
 
 class CompoundType(_RuntimeType):
@@ -136,7 +139,7 @@ class CompoundType(_RuntimeType):
     for n, descriptor in self.fields:
       if n == field_name:
         return descriptor
-    raise AssertionError(field_name)
+    raise TypeError('Invalid field %r' % field_name)
 
 
 BUILTIN_TYPES = {

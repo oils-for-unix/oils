@@ -288,7 +288,7 @@ def _MakeReflection(module, app_types):
   type_lookup  = dict(asdl.BUILTIN_TYPES)
   type_lookup.update(app_types)
 
-  # NOTE: We need two passes.  Types can be mutually recurisve.  See
+  # NOTE: We need two passes because types can be mutually recursive, e.g.
   # asdl/arith.asdl.
 
   # First pass: collect declared types and make entries for them.
@@ -298,7 +298,8 @@ def _MakeReflection(module, app_types):
       type_lookup[d.name] = asdl.CompoundType([])
 
     elif isinstance(ast_node, asdl.Sum):
-      type_lookup[d.name] = asdl.SumType()
+      is_simple = asdl.is_simple(ast_node)
+      type_lookup[d.name] = asdl.SumType(is_simple)
 
     else:
       raise AssertionError(ast_node)
@@ -311,13 +312,18 @@ def _MakeReflection(module, app_types):
       _AppendFields(ast_node.fields, type_lookup, runtime_type.fields)
 
     elif isinstance(ast_node, asdl.Sum):
+      sum_type = type_lookup[d.name]  # the one we just created
+
       for cons in ast_node.types:
         fields_out = []
         # fully-qualified name.  Use a _ so we can share strings with class
         # name.
         key = '%s__%s' % (d.name, cons.name)
-        type_lookup[key] = asdl.CompoundType(fields_out)
+        cons_type = asdl.CompoundType(fields_out)
+        type_lookup[key] = cons_type
         _AppendFields(cons.fields, type_lookup, fields_out)
+
+        sum_type.cases.append(cons_type)
 
     else:
       raise AssertionError(ast_node)

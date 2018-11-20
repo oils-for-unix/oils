@@ -47,19 +47,22 @@ _tlog('before imports')
 
 import errno
 
+from asdl import py_meta
+
 from core import alloc
-from osh import builtin
-from osh import builtin_comp
-from core import completion
-from osh import cmd_exec
 from core import dev
-from osh import split
+from core import completion
 from core import main_loop
 from core import process
-from osh import state
-from osh import word_eval
 from core import ui
 from core import util
+
+from osh import builtin
+from osh import builtin_comp
+from osh import cmd_exec
+from osh import split
+from osh import state
+from osh import word_eval
 
 from frontend import args
 from frontend import reader
@@ -329,6 +332,10 @@ def ShellMain(lang, argv0, argv, login_shell):
       f2.write(contents)
       log('Wrote %s to %s (--runtime-mem-dump)', input_path,
           opts.runtime_mem_dump)
+
+  # NOTE: This doesn't cause any spec tests to fail, but it could.
+  if posix.environ.get('ASDL_TYPE_CHECK'):
+    log('NOTE: Performed %d ASDL_TYPE_CHECKs.', py_meta.NUM_TYPE_CHECKS)
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status
