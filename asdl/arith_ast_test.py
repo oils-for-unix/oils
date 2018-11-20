@@ -7,10 +7,10 @@ from __future__ import print_function
 import cStringIO
 import unittest
 
-from asdl import py_meta
 from asdl import asdl_
 from asdl import const
 from asdl import encode
+from asdl import py_meta
 
 from asdl import arith_ast  # module under test
 

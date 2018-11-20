@@ -10,6 +10,7 @@ TODO:
 from __future__ import print_function
 
 from asdl import visitor
+from core.util import log
 
 
 class GenClassesVisitor(visitor.AsdlVisitor):
@@ -27,6 +28,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
   def _GenClass(self, desc, name, super_name, depth, tag_num=None):
+    """Used for Constructor and Product."""
     self.Emit('class %s(%s):' % (name, super_name), depth)
 
     if tag_num is not None:
@@ -72,40 +74,42 @@ class GenClassesVisitor(visitor.AsdlVisitor):
 
     self.Emit('', depth)
 
-  def VisitConstructor(self, cons, super_name, tag_num, depth):
+  def VisitConstructor(self, cons, sum_name, tag_num, depth):
+    # Use fully-qualified name, so we can have osh_cmd.Simple and
+    # oil_cmd.Simple.
+    fq_name = '%s__%s' % (sum_name, cons.name)
     if cons.fields:
-      self._GenClass(cons, cons.name, super_name, depth, tag_num=tag_num)
+      self._GenClass(cons, fq_name, sum_name, depth, tag_num=tag_num)
     else:
-      self.Emit("class %s(%s):" % (cons.name, super_name), depth)
-      self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % cons.name, depth)
+      # No fields
+      self.Emit('class %s(%s):' % (fq_name, sum_name), depth)
+      self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % fq_name, depth)
       self.Emit('  tag = %d'  % tag_num, depth)
       self.Emit('', depth)
 
-  def VisitCompoundSum(self, sum, name, depth):
+  def VisitCompoundSum(self, sum, sum_name, depth):
     # define command_e
-    self.Emit('class %s_e(object):' % name, depth)
+    self.Emit('class %s_e(object):' % sum_name, depth)
     for i, variant in enumerate(sum.types):
       self.Emit('  %s = %d' % (variant.name, i + 1), depth)
     self.Emit('', depth)
 
     # the base class, e.g. 'oil_cmd'
-    self.Emit('class %s(py_meta.CompoundObj):' % name, depth)
-    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
+    self.Emit('class %s(py_meta.CompoundObj):' % sum_name, depth)
+    self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % sum_name, depth)
     self.Emit('', depth)
-
-    # PROBLEM: Constructor names may conflict, even though they're namespaced!
-    # Should I generate a unique name?
-    # Or just indent them underneath?
 
     for i, t in enumerate(sum.types):
       tag_num = i + 1
-      # name of sum e.g. 'oil_cmd' is the superclass
-      self.VisitConstructor(t, name, tag_num, depth)
+      # e.g. 'oil_cmd' is the superclass
+      self.VisitConstructor(t, sum_name, tag_num, depth)
 
     # Put everything in a namespace of the base class, so we can instantiate
     # with oil_cmd.Simple()
     for i, t in enumerate(sum.types):
-      self.Emit('%s.%s = %s' % (name, t.name, t.name), depth)
+      # e.g. op_id.Plus = op_id__Plus.
+      fq_name = '%s__%s' % (sum_name, t.name)
+      self.Emit('%s.%s = %s' % (sum_name, t.name, fq_name), depth)
     self.Emit('', depth)
 
   def VisitProduct(self, product, name, depth):

@@ -313,7 +313,10 @@ def _MakeReflection(module, app_types):
     elif isinstance(ast_node, asdl.Sum):
       for cons in ast_node.types:
         fields_out = []
-        type_lookup[cons.name] = asdl.CompoundType(fields_out)
+        # fully-qualified name.  Use a _ so we can share strings with class
+        # name.
+        key = '%s__%s' % (d.name, cons.name)
+        type_lookup[key] = asdl.CompoundType(fields_out)
         _AppendFields(cons.fields, type_lookup, fields_out)
 
     else:

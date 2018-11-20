@@ -295,7 +295,10 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
   elif isinstance(obj, py_meta.CompoundObj):
     # These lines can be possibly COMBINED all into one.  () can replace
     # indentation?
-    out_node = _Obj(obj.__class__.__name__)
+    class_name = obj.__class__.__name__
+    # Hack for constructor names.  We don't know if it is a Product or
+    # Constructor here, but product names won't contain '__'.
+    out_node = _Obj(class_name.replace('__', '.'))
 
     for field_name, desc in obj.ASDL_TYPE.GetFields():
       out_val = MakeFieldSubtree(obj, field_name, desc, abbrev_hook,

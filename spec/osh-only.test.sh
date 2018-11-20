@@ -20,7 +20,7 @@ echo status=$?
 repr nonexistent
 echo status=$?
 ## STDOUT:
-x = (Str s:42)
+x = (value.Str s:42)
 status=0
 'nonexistent' is not defined
 status=1
@@ -68,5 +68,4 @@ status=0
 ## END
 
 # NOTE: strict-arith has one case in arith.test.sh), strict-word-eval has a case in var-op-other.
-
 

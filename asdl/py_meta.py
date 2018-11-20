@@ -292,8 +292,9 @@ def MakeTypes(module, root, type_lookup):
           tag = i + 1  # zero reserved?
           tag_num[cons.name] = tag  # for enum
 
+          fq_name = '%s__%s' % (defn.name, cons.name)
           class_attr = {
-              'ASDL_TYPE': type_lookup[cons.name],
+              'ASDL_TYPE': type_lookup[fq_name],
               'tag': tag,  # Does this API change?
           }
 

@@ -42,19 +42,19 @@ def AbbreviateNodes(obj, node):
     node.right = '>'
     _AbbreviateToken(obj, node.unnamed_fields)
 
-  elif node.node_type == 'LiteralPart':
+  elif node.node_type == 'word_part.LiteralPart':
     node.abbrev = True
     node.node_type = 'L'
     node.show_node_type = False
 
     _AbbreviateToken(obj.token, node.unnamed_fields)
 
-  elif node.node_type == 'SimpleVarSub':
+  elif node.node_type == 'word_part.SimpleVarSub':
     node.abbrev = True
     node.node_type = '$'
     _AbbreviateToken(obj.token, node.unnamed_fields)
 
-  elif node.node_type == 'BracedVarSub':
+  elif node.node_type == 'word_part.BracedVarSub':
     if _GetFieldNames(node) != ['token']:
       return  # we have other fields to display; don't abbreviate
 
@@ -62,7 +62,7 @@ def AbbreviateNodes(obj, node):
     node.node_type = '${'
     _AbbreviateToken(obj.token, node.unnamed_fields)
 
-  elif node.node_type == 'DoubleQuotedPart':
+  elif node.node_type == 'word_part.DoubleQuotedPart':
     node.abbrev = True
     node.node_type = 'DQ'
 
@@ -70,7 +70,7 @@ def AbbreviateNodes(obj, node):
       node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
 
   # Only abbreviate 'foo', not $'foo\n'
-  elif (node.node_type == 'SingleQuotedPart' and
+  elif (node.node_type == 'word_part.SingleQuotedPart' and
         obj.left.id == Id.Left_SingleQuote):
     node.abbrev = True
     node.node_type = 'SQ'
@@ -78,7 +78,7 @@ def AbbreviateNodes(obj, node):
     for token in obj.tokens:
       node.unnamed_fields.append(MakeTree(token, AbbreviateNodes))
 
-  elif node.node_type == 'CompoundWord':
+  elif node.node_type == 'word.CompoundWord':
     node.abbrev = True
     node.node_type = 'W'
     node.show_node_type = False
@@ -88,7 +88,7 @@ def AbbreviateNodes(obj, node):
     for part in obj.parts:
       node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
 
-  elif node.node_type == 'SimpleCommand':
+  elif node.node_type == 'command.SimpleCommand':
     if _GetFieldNames(node) != ['words']:
       return  # we have other fields to display; don't abbreviate
 

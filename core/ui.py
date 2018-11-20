@@ -25,7 +25,7 @@ from osh import ast_lib
 import libc  # gethostname()
 
 value_e = runtime_asdl.value_e
-command = syntax_asdl.word
+command = syntax_asdl.command
 word = syntax_asdl.word
 word_part = syntax_asdl.word_part
 
