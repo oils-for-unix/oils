@@ -6,7 +6,6 @@ deps.py
 
 import sys
 
-from asdl import asdl_ as asdl
 from asdl import runtime
 
 from core import util
