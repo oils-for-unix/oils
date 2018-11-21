@@ -63,10 +63,9 @@ run-task-with-status-test() {
   test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
 }
 
-# Each test file should define PASSING
 run-all() {
   for t in "$@"; do
-    # fail calls 'exit 1'
+    # NOTE: bash has a problem doing "if $t" with 'errexit', see issue #179.
     $t
     echo "OK  $t"
   done
@@ -75,7 +74,7 @@ run-all() {
   echo "All $0 tests passed."
 }
 
-# A quick and dirty function to show logs
+# Save test suite output to a log.
 run-other-suite-for-release() {
   local suite_name=$1
   local func_name=$2
@@ -87,13 +86,10 @@ run-other-suite-for-release() {
   echo "*** Running test suite '$suite_name' ***"
   echo
 
-  if $func_name 2>&1 | tee $out; then
-    echo
-    log "Test suite '$suite_name' ran without errors.  Wrote $out"
-  else
-    echo
-    die "Test suite '$suite_name' failed (running $func_name)"
-  fi
+  $func_name 2>&1 | tee $out
+  status=$?
+
+  log "Test suite '$suite_name' ran without errors.  Wrote $out"
 }
 
 date-and-git-info() {
