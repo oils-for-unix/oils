@@ -28,8 +28,8 @@ from __future__ import print_function
 import sys
 
 from asdl import asdl_ as asdl
-from asdl import encode
 from asdl import front_end
+from asdl import runtime
 from asdl import visitor
 
 class ChainOfVisitors:
@@ -138,7 +138,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # rudimentary attribute handling
     for field in sum.attributes:
       type_name = str(field.type)
-      assert type_name in asdl.BUILTIN_TYPES, type_name
+      assert type_name in runtime.BUILTIN_TYPES, type_name
       Emit("%s %s;" % (type_name, field.name), depth + 1)
 
   def VisitConstructor(self, cons, def_name, depth):
@@ -165,7 +165,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for field in product.attributes:
       # rudimentary attribute handling
       type_name = str(field.type)
-      assert type_name in asdl.BUILTIN_TYPES, type_name
+      assert type_name in runtime.BUILTIN_TYPES, type_name
       self.Emit("%s %s;" % (type_name, field.name), depth + 1)
     self.Emit("};", depth)
     self.Emit("", depth)

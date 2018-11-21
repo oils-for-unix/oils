@@ -16,7 +16,7 @@ from core.util import log
 class GenClassesVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
-    self.Emit('class %s_e(py_meta.SimpleObj):' % name, depth)
+    self.Emit('class %s_e(runtime.SimpleObj):' % name, depth)
     self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('', depth)
 
@@ -95,7 +95,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
     # the base class, e.g. 'oil_cmd'
-    self.Emit('class %s(py_meta.CompoundObj):' % sum_name, depth)
+    self.Emit('class %s(runtime.CompoundObj):' % sum_name, depth)
     self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % sum_name, depth)
     self.Emit('', depth)
 
@@ -113,7 +113,7 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
   def VisitProduct(self, product, name, depth):
-    self._GenClass(product, name, 'py_meta.CompoundObj', depth)
+    self._GenClass(product, name, 'runtime.CompoundObj', depth)
 
   def EmitFooter(self):
     pass

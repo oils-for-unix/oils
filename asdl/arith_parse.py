@@ -8,9 +8,11 @@ import sys
 
 from asdl import tdop
 from asdl.tdop import CompositeNode
-from asdl import arith_ast
 
-op_id = arith_ast.op_id_e  # TODO: Rename this back.
+from _tmp import arith_asdl
+
+arith_expr = arith_asdl.arith_expr
+op_id_e = arith_asdl.op_id_e
 
 
 #
@@ -19,10 +21,10 @@ op_id = arith_ast.op_id_e  # TODO: Rename this back.
 
 def NullConstant(p, token, bp):
   if token.type == 'number':
-    return arith_ast.Const(token.val)
+    return arith_expr.Const(token.val)
   # We have to wrap a string in some kind of variant.
   if token.type == 'name':
-    return arith_ast.ArithVar(token.val)
+    return arith_expr.ArithVar(token.val)
 
   raise AssertionError(token.type)
 
@@ -71,7 +73,7 @@ def LeftIncDec(p, token, left, rbp):
 def LeftIndex(p, token, left, unused_bp):
   """ index f[x+1] """
   # f[x] or f[x][y]
-  if not isinstance(left, arith_ast.ArithVar):
+  if not isinstance(left, arith_asdl.ArithVar):
     raise tdop.ParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
   if p.AtToken(':'):
@@ -88,9 +90,9 @@ def LeftIndex(p, token, left, unused_bp):
   # Both end and step are optional
 
   if end:
-    return arith_ast.Slice(left, index, end, None)
+    return arith_asdl.Slice(left, index, end, None)
   else:
-    return arith_ast.Index(left, index)
+    return arith_asdl.Index(left, index)
 
 
 def LeftTernary(p, token, left, bp):
@@ -105,14 +107,14 @@ def LeftTernary(p, token, left, bp):
 def LeftBinaryOp(p, token, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   if token.val == '+':
-    op_id_ = op_id.Plus
+    op_id_ = op_id_e.Plus
   elif token.val == '-':
-    op_id_ = op_id.Minus
+    op_id_ = op_id_e.Minus
   elif token.val == '*':
-    op_id_ = op_id.Star
+    op_id_ = op_id_e.Star
   else:
     raise AssertionError(token.val)
-  return arith_ast.ArithBinary(op_id_, left, p.ParseUntil(rbp))
+  return arith_expr.ArithBinary(op_id_, left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, token, left, rbp):
@@ -143,7 +145,7 @@ def LeftFuncCall(p, token, left, unused_bp):
   """ Function call f(a, b). """
   args = []
   # f(x) or f[i](x)
-  if not isinstance(left, arith_ast.ArithVar):
+  if not isinstance(left, arith_asdl.ArithVar):
     raise tdop.ParseError("%s can't be called" % left)
   func_name = left.name  # get a string
 
@@ -154,7 +156,7 @@ def LeftFuncCall(p, token, left, unused_bp):
     if p.AtToken(','):
       p.Next()
   p.Eat(")")
-  return arith_ast.FuncCall(func_name, args)
+  return arith_asdl.FuncCall(func_name, args)
 
 
 def MakeShellParserSpec():

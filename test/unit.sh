@@ -51,6 +51,7 @@ tests-to-run() {
     if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
       continue
     fi
+
     echo $t
   done
 }

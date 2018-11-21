@@ -15,10 +15,10 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
-from asdl import asdl_ as asdl
-from pylib import cgi
 from asdl import pretty
+from asdl import runtime
 from core import util
+from pylib import cgi
 
 
 def DetectConsoleOutput(f):
@@ -241,22 +241,22 @@ def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
     raise AssertionError(
         '%s is missing field %r' % (obj.__class__, field_name))
 
-  if isinstance(desc, asdl.IntType):
+  if isinstance(desc, runtime.IntType):
     out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
 
-  elif isinstance(desc, asdl.BoolType):
+  elif isinstance(desc, runtime.BoolType):
     out_val = _ColoredString('T' if field_val else 'F', _OTHER_LITERAL)
 
-  elif isinstance(desc, asdl.DictType):
+  elif isinstance(desc, runtime.DictType):
     raise AssertionError
 
-  elif isinstance(desc, asdl.Sum) and asdl.is_simple(desc):
+  elif isinstance(desc, runtime.SumType) and desc.is_simple:
     out_val = field_val.name
 
-  elif isinstance(desc, asdl.StrType):
+  elif isinstance(desc, runtime.StrType):
     out_val = _ColoredString(field_val, _STRING_LITERAL)
 
-  elif isinstance(desc, asdl.ArrayType):
+  elif isinstance(desc, runtime.ArrayType):
     out_val = []
     obj_list = field_val
     for child_obj in obj_list:
@@ -266,7 +266,7 @@ def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
     if omit_empty and not obj_list:
       out_val = None
 
-  elif isinstance(desc, asdl.MaybeType):
+  elif isinstance(desc, runtime.MaybeType):
     if field_val is None:
       out_val = None
     else:
@@ -282,17 +282,15 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
   """The first step of printing: create a homogeneous tree.
 
   Args:
-    obj: py_meta.Obj
+    obj: runtime.Obj
     omit_empty: Whether to omit empty lists
   Returns:
     _Obj node
   """
-  from asdl import py_meta
-
-  if isinstance(obj, py_meta.SimpleObj):  # Primitive
+  if isinstance(obj, runtime.SimpleObj):  # Primitive
     return obj.name
 
-  elif isinstance(obj, py_meta.CompoundObj):
+  elif isinstance(obj, runtime.CompoundObj):
     # These lines can be possibly COMBINED all into one.  () can replace
     # indentation?
     class_name = obj.__class__.__name__

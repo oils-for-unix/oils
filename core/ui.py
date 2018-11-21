@@ -15,7 +15,6 @@ import pwd
 import sys
 
 from asdl import const
-from asdl import encode
 from asdl import format as fmt
 from core import dev
 from core.meta import runtime_asdl, syntax_asdl, Id
@@ -317,15 +316,6 @@ def PrintAst(nodes, opts):
 
   if opts.ast_format == 'none':
     print('AST not printed.', file=sys.stderr)
-  elif opts.ast_format == 'oheap':
-    # TODO: Make this a separate flag?
-    if sys.stdout.isatty():
-      raise RuntimeError('ERROR: Not dumping binary data to a TTY.')
-    f = sys.stdout
-
-    enc = encode.Params()
-    out = encode.BinOutput(f)
-    encode.EncodeRoot(node, enc, out)
 
   else:  # text output
     f = sys.stdout

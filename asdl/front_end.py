@@ -7,6 +7,7 @@ from __future__ import print_function
 import re
 
 from asdl import asdl_ as asdl
+from asdl import runtime
 from asdl.asdl_ import Module, Type, Constructor, Field, Sum, Product
 
 
@@ -274,10 +275,10 @@ def _AppendFields(field_ast_nodes, type_lookup, out):
 
     # TODO: cache these under 'type*' and 'type?'.  Don't want duplicates!
     if field.seq:
-      runtime_type = asdl.ArrayType(runtime_type)
+      runtime_type = runtime.ArrayType(runtime_type)
 
     if field.opt:
-      runtime_type = asdl.MaybeType(runtime_type)
+      runtime_type = runtime.MaybeType(runtime_type)
 
     out.append((field.name, runtime_type))
 
@@ -285,7 +286,7 @@ def _AppendFields(field_ast_nodes, type_lookup, out):
 def _MakeReflection(module, app_types):
   # Types that fields are declared with: int, id, word_part, etc.
   # Fields are NOT declared with Constructor names.
-  type_lookup  = dict(asdl.BUILTIN_TYPES)
+  type_lookup  = dict(runtime.BUILTIN_TYPES)
   type_lookup.update(app_types)
 
   # NOTE: We need two passes because types can be mutually recursive, e.g.
@@ -295,11 +296,11 @@ def _MakeReflection(module, app_types):
   for d in module.dfns:
     ast_node = d.value
     if isinstance(ast_node, asdl.Product):
-      type_lookup[d.name] = asdl.CompoundType([])
+      type_lookup[d.name] = runtime.CompoundType([])
 
     elif isinstance(ast_node, asdl.Sum):
       is_simple = asdl.is_simple(ast_node)
-      type_lookup[d.name] = asdl.SumType(is_simple)
+      type_lookup[d.name] = runtime.SumType(is_simple)
 
     else:
       raise AssertionError(ast_node)
@@ -319,7 +320,7 @@ def _MakeReflection(module, app_types):
         # fully-qualified name.  Use a _ so we can share strings with class
         # name.
         key = '%s__%s' % (d.name, cons.name)
-        cons_type = asdl.CompoundType(fields_out)
+        cons_type = runtime.CompoundType(fields_out)
         type_lookup[key] = cons_type
         _AppendFields(cons.fields, type_lookup, fields_out)
 

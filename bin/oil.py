@@ -47,7 +47,7 @@ _tlog('before imports')
 
 import errno
 
-from asdl import py_meta
+from asdl import runtime
 
 from core import alloc
 from core import dev
@@ -335,7 +335,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # NOTE: This doesn't cause any spec tests to fail, but it could.
   if posix.environ.get('ASDL_TYPE_CHECK'):
-    log('NOTE: Performed %d ASDL_TYPE_CHECKs.', py_meta.NUM_TYPE_CHECKS)
+    log('NOTE: Performed %d ASDL_TYPE_CHECKs.', runtime.NUM_TYPE_CHECKS)
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status

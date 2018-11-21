@@ -7,7 +7,7 @@ deps.py
 import sys
 
 from asdl import asdl_ as asdl
-from asdl import py_meta
+from asdl import runtime
 
 from core import util
 from core.meta import syntax_asdl, runtime_asdl
@@ -50,11 +50,11 @@ class Visitor(object):
           # type basis, because sums can look liek this:
           # iterable = IterArgv | IterArray(word* words)
           # We visit the latter but not the former.
-          if isinstance(item, py_meta.CompoundObj):
+          if isinstance(item, runtime.CompoundObj):
             self.Visit(item)
         continue
 
-      if isinstance(child, py_meta.CompoundObj):
+      if isinstance(child, runtime.CompoundObj):
         #log('Visiting child %s', name)
         self.Visit(child)
         continue

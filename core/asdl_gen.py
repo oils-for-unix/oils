@@ -8,10 +8,10 @@ import os
 import pickle
 import sys
 
-from asdl import asdl_ as asdl
 from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
+from asdl import runtime
 
 def main(argv):
   try:
@@ -29,7 +29,7 @@ def main(argv):
     app_types = {}
   else:
     from core.meta import Id
-    app_types = {'id': asdl.UserType(Id)}
+    app_types = {'id': runtime.UserType(Id)}
 
   if action == 'c':  # Generate C code for the lexer
     with open(schema_path) as f:
@@ -49,7 +49,7 @@ def main(argv):
     f.write("""\
 from asdl import asdl_ as asdl
 from asdl import const  # For const.NO_INTEGER
-from asdl import py_meta
+from asdl import runtime
 from pylib import unpickle
 
 from core import util

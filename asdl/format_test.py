@@ -8,13 +8,13 @@ import unittest
 
 from asdl import format as fmt
 
-from asdl import arith_ast  # module under test
+from _tmp import arith_asdl # module under test
 
 
 class FormatTest(unittest.TestCase):
 
   def testSimpleSum(self):
-    node = arith_ast.op_id_e.Plus
+    node = arith_asdl.op_id_e.Plus
     print(node)
 
     f = cStringIO.StringIO()
@@ -30,7 +30,7 @@ class FormatTest(unittest.TestCase):
     print(pretty_str)
 
   def testRepeatedString(self):
-    node = arith_ast.assign('declare', ['-r', '-x'])
+    node = arith_asdl.assign('declare', ['-r', '-x'])
 
     f = cStringIO.StringIO()
     ast_f = fmt.TextOutput(f)

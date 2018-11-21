@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from asdl import tdop
-from asdl import arith_ast
 from asdl import arith_parse   # module under test
+
+from _tmp import arith_asdl
 
 
 def _assertParseError(make_parser, s, error_substring=''):
@@ -158,9 +159,9 @@ def TestErrors(p):
   _assertParseError(p, '1 [ 2 ]', "can't be indexed")
 
 
-arith_expr_e = arith_ast.arith_expr_e
-#source_location = arith_ast.source_location
-#op_id_e = arith_ast.op_id_e
+arith_expr_e = arith_asdl.arith_expr_e
+#source_location = arith_asdl.source_location
+#op_id_e = arith_asdl.op_id_e
 
 class Visitor(object):
   def __init__(self):

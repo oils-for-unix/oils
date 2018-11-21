@@ -9,7 +9,6 @@ from asdl import asdl_ as asdl
 from asdl import front_end
 from asdl import arith_parse
 from asdl import py_meta
-from asdl import encode
 from asdl import format as fmt
 
 from core.meta import Id
@@ -62,19 +61,6 @@ def main(argv):
         print(desc)
       print()
       print('Wrote %s' % out_path)
-
-  elif action == 'arith-encode':  # oheap encoding
-    expr = argv[2]
-    out_path = argv[3]
-
-    obj = arith_parse.ParseShell(expr)
-    print('Encoding %r into binary:' % expr)
-    print(obj)
-
-    enc = encode.Params()
-    with open(out_path, 'wb') as f:
-      out = encode.BinOutput(f)
-      encode.EncodeRoot(obj, enc, out)
 
   elif action == 'arith-format':  # pretty printing
     expr = argv[2]

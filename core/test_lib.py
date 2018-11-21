@@ -12,7 +12,7 @@ test_lib.py - Functions for testing.
 import string
 import sys
 
-from asdl import py_meta
+from asdl import runtime
 from core import alloc
 from core import dev
 from core import process
@@ -63,7 +63,7 @@ def AsdlEqual(left, right):
         return False
     return True
 
-  if isinstance(left, py_meta.CompoundObj):
+  if isinstance(left, runtime.CompoundObj):
     if left.tag != right.tag:
       return False
 
