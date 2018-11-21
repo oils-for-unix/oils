@@ -104,6 +104,8 @@ src-bin-ratio() {
 }
 
 run-for-release() {
+  write-opcodes  # _tmp/opcodes-defined.txt, for analysis
+
   opy-dis-tables
   cpython-dis-tables
 
