@@ -333,7 +333,8 @@ def main(argv):
     # nodes?  Rewrite pointers.
 
     alignment = 4
-    enc = encode.Params(alignment)
+    #enc = encode.Params(alignment)
+    enc = None
     d = {'pointer_type': enc.pointer_type}
 
     f.write("""\

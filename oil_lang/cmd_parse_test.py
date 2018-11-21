@@ -7,7 +7,6 @@ from __future__ import print_function
 import unittest
 
 from core import test_lib
-from frontend import oil_parse  # module under test
 
 
 class OilParseTest(unittest.TestCase):

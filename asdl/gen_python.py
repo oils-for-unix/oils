@@ -10,7 +10,7 @@ TODO:
 from __future__ import print_function
 
 from asdl import visitor
-from core.util import log
+#from core.util import log
 
 
 class GenClassesVisitor(visitor.AsdlVisitor):

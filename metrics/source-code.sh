@@ -15,8 +15,9 @@ filter-py() {
 
 # Oil-only would exclude core/legacy.py, etc.
 oil-osh-files() {
-  { ls {bin,oil_lang,osh,core,frontend}/*.py native/*.c */*.asdl; } |
-    filter-py | grep -E -v '_gen.py$|test_lib.py'
+  { ls {bin,oil_lang,osh,core,frontend}/*.py \
+       native/*.c {frontend,osh}/*.asdl;
+  } | filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
 
 # cloc doesn't understand ASDL files.

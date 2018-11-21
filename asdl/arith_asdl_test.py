@@ -4,10 +4,8 @@ arith_asdl_test.py: Tests for arith_asdl.py
 """
 from __future__ import print_function
 
-import cStringIO
 import unittest
 
-from asdl import asdl_
 from asdl import const
 from asdl import runtime
 
