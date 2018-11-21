@@ -9,8 +9,8 @@ import os
 import re
 import sys
 
-from core.lexer import C, R
 from core.util import log
+from frontend.lexer import C, R
 
 
 C_DEF = [

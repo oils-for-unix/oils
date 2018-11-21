@@ -2,6 +2,10 @@
 #
 # Usage:
 #   ./cpython-defs.sh <function name>
+#
+# Example:
+#   ./cpython-defs.sh oil-py-names  # extract names
+#   ./cpython-defs.sh filter-methods
 
 set -o nounset
 set -o pipefail

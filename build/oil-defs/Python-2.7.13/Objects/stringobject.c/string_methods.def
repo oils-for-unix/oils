@@ -7,6 +7,7 @@ static PyMethodDef string_methods[] = {
   {"upper", (PyCFunction)string_upper, METH_NOARGS},
   {"isdigit", (PyCFunction)string_isdigit, METH_NOARGS},
   {"endswith", (PyCFunction)string_endswith, METH_VARARGS},
+  {"find", (PyCFunction)string_find, METH_VARARGS},
   {"index", (PyCFunction)string_index, METH_VARARGS},
   {"replace", (PyCFunction)string_replace, METH_VARARGS},
   {"rfind", (PyCFunction)string_rfind, METH_VARARGS},
