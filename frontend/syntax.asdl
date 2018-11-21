@@ -228,7 +228,7 @@ module syntax
     Name
   | UnaryOp(token op, oil_expr child)
   | BinaryOp(token op, oil_expr left, oil_expr right)
-  | FuncCall_(oil_expr func, oil_expr* args)
+  | FuncCall(oil_expr func, oil_expr* args)
 
   oil_word_part = 
     Literal(token token)
@@ -253,5 +253,8 @@ module syntax
   oil_cmd = 
     -- TODO: respect order of words and redirects
     Simple(oil_word* words, redir* redirects, env_pair* more_env)
-  | Sentence_(command child, token terminator)
+  | Sentence(oil_cmd child, token terminator)
+  | Pipeline(oil_cmd* children, bool negated)
+  | AndOr(id* ops, oil_cmd* children)
+  | CommandList(oil_cmd* children)
 }

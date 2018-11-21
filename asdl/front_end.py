@@ -226,7 +226,7 @@ class Check(_VisitorBase):
     def __init__(self):
         super(Check, self).__init__()
         self.cons = {}
-        self.errors = 0
+        self.errors = 0  # No longer used, but maybe in the future?
         self.types = {}  # list of declared field types
 
     def visitModule(self, mod):
@@ -244,19 +244,8 @@ class Check(_VisitorBase):
             self.visit(t, name)
 
     def visitConstructor(self, cons, name):
-        key = str(cons.name)
-        conflict = self.cons.get(key)
-        if conflict is None:
-            self.cons[key] = name
-        else:
-            # Problem: This assumes a flat namespace, which we don't want!
-            # This check is more evidence that a flat namespace isn't
-            # desirable.
-            print('Redefinition of constructor {}'.format(key))
-            print('Defined in {} and {}'.format(conflict, name))
-            self.errors += 1
         for f in cons.fields:
-            self.visit(f, key)
+            self.visit(f, cons.name)
 
     def visitField(self, field, name):
         key = str(field.type)

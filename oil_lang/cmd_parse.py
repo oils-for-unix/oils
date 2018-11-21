@@ -207,7 +207,7 @@ class OilParser(object):
     self._Peek()
     if self.token_type not in (Id.Op_Pipe,):
       if negated:
-        node = ast.Pipeline(children, negated)
+        node = oil_cmd.Pipeline(children, negated)
         return node
       else:
         return child
@@ -225,7 +225,7 @@ class OilParser(object):
       if self.token_type  not in (Id.Op_Pipe,):
         break
 
-    node = ast.Pipeline(children, negated)
+    node = oil_cmd.Pipeline(children, negated)
     return node
 
   def ParseAndOr(self):
@@ -258,7 +258,7 @@ class OilParser(object):
       if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
         break
 
-    node = ast.AndOr(ops, children)
+    node = oil_cmd.AndOr(ops, children)
     return node
 
   def ParseCommandSeq(self):
@@ -322,7 +322,7 @@ class OilParser(object):
       if self.token_type == Id.Op_Semi:
         # Should be oil_command_t.Simple?  No sentence?  It has its own
         # terminator for LST purposes?
-        child = ast.Sentence_(child) 
+        child = oil_cmd.Sentence(child) 
         self._Next()
 
         self._Peek()
@@ -341,7 +341,7 @@ class OilParser(object):
 
     # Simplify the AST.
     if len(children) > 1:
-      return ast.CommandList(children)
+      return oil_cmd.CommandList(children)
     else:
       return children[0]
 
