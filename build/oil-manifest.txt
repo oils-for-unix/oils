@@ -1,5 +1,5 @@
 oil-version.txt oil-version.txt 
 doc/osh-quick-ref-toc.txt doc/osh-quick-ref-toc.txt
 _devbuild/types_asdl.pickle _devbuild/types_asdl.pickle
-_devbuild/osh_asdl.pickle _devbuild/osh_asdl.pickle
+_devbuild/syntax_asdl.pickle _devbuild/syntax_asdl.pickle
 _devbuild/runtime_asdl.pickle _devbuild/runtime_asdl.pickle
