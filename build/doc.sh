@@ -131,7 +131,9 @@ osh-quick-ref() {
 markdown2html() {
   local src=$1
   local out=$2
-  local monospace=${3:-}
+  local more_css_link=${3:-}
+  local monospace=${4:-}
+
   mkdir -p _build/doc
 
   { cat <<EOF
@@ -152,9 +154,11 @@ markdown2html() {
         text-align: right;
       }
     </style>
+    $more_css_link
   </head>
   <body>
     <p id="home-link">
+      <a href="/releases.html">all releases</a> |
       <a href="/">oilshell.org</a>
     </p>
 EOF
@@ -172,13 +176,14 @@ EOF
 readonly MONOSPACE='font-family: monospace;'
 
 install() {
-  markdown2html INSTALL.txt _release/VERSION/doc/INSTALL.html "$MONOSPACE"
+  markdown2html INSTALL.txt _release/VERSION/doc/INSTALL.html '' "$MONOSPACE"
 }
 
 release-index() {
   local out=${1:-_build/doc/release-index.html}
   # Not monospace
-  markdown2html doc/release-index.md $out ''
+  local css_link='<link rel="stylesheet" type="text/css" href="../../web/release-index.css" />'
+  markdown2html doc/release-index.md $out "$css_link" ''
 }
 
 # I want to ship the INSTALL file literally, so just mutate things

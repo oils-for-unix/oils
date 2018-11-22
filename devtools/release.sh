@@ -423,6 +423,27 @@ copy-web() {
   xargs -n 2 -- $0 _copy-path
 }
 
+this-release-links() {
+  echo '<div style="margin-left: 2em;">'
+  echo '<table class="file-table">'
+  _tarball-links-row-html "$OIL_VERSION"
+  echo '</table>'
+  echo '</div>'
+}
+
+# Turn HTML comment into a download link
+add-download-links() {
+  awk -v snippet="$(this-release-links)" '
+    /<!-- REPLACE_WITH_DOWNLOAD_LINKS -->/ {
+      print(snippet)
+      next
+    }
+
+    # Everything else
+    { print }
+  '
+}
+
 # TODO:
 # Test out web/ *.css,js,html
 # metrics/line-counts.wwz/
@@ -444,7 +465,8 @@ build-tree() {
   build/doc.sh osh-quick-ref _release/VERSION
 
   build/doc.sh install
-  build/doc.sh release-index $root/index.html
+  build/doc.sh release-index _tmp/release-index.html
+  add-download-links < _tmp/release-index.html > $root/index.html
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 
@@ -527,20 +549,21 @@ _tarball-links-row-html() {
   cat <<EOF
 <tr class="file-table-heading">
   <td></td>
-  <td>File</td>
-  <td>Size and SHA256 Checksum</td>
+  <td>File / SHA256 checksum</td>
+  <td>Size</td>
   <td></td>
 </tr>
 EOF
 
   for name in oil-$version.tar.{xz,gz}; do
-    local url="download/$name"  # The server URL
-    local path=../oilshell.org__deploy/download/$name
+    local url="/download/$name"  # The server URL
+    local path="../oilshell.org__deploy/download/$name"
     local checksum=$(sha256sum $path | awk '{print $1}')
     local size=$(pretty-size $path)
 
     # TODO: Port this to oil with "commas" extension.
 
+    # Three columns: date, version, and links
     cat <<EOF
     <tr> 
       <td></td>
@@ -549,8 +572,7 @@ EOF
     </tr>
     <tr>
       <td></td>
-      <td></td>
-      <td class="checksum">$checksum</td>
+      <td colspan=2 class="checksum">$checksum</td>
     </tr>
 EOF
   done
@@ -653,32 +675,11 @@ _releases-html-header() {
       h1 {
         text-align: center;
       }
-      /* Style for checksum, file size, etc. */
+EOF
 
-      .file-table {
-        width: 100%;
-      }
-      .file-table-heading {
-        color: darkgreen;
-      }
+  cat web/release-index.css
 
-      .filename {
-        font-family: monospace;
-      }
-
-      .size {
-      }
-      .checksum {
-        font-family: monospace;
-        font-size: small;
-        color: #555;
-      }
-
-      .version-number {
-        font-size: large;
-        font-weight: bold;
-      }
-
+cat <<EOF
       /* Copied from oilshell.org bundle.css */
       .date {
         font-size: medium;

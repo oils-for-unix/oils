@@ -94,7 +94,6 @@ _git-changelog-header() {
   <body>
     <h3>Commits Between Branches <code>$prev_branch</code> and
        <code>$cur_branch</code></h3>
-    <table>
 EOF
 # Doesn't seem necessary now.
 #     <thead>
@@ -107,11 +106,10 @@ EOF
 }
 
 _git-changelog() {
+  echo '<table>'
   _git-changelog-header "$@"
   _git-changelog-body "$@"
-  cat <<EOF
-  </table>
-EOF
+  echo '</table>'
   html-footer
 }
 

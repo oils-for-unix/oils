@@ -1,0 +1,29 @@
+/* Style for checksum, file size, etc.
+ * Included dynamically from release/$VERSION/index.html, and statically
+ * built into /releases.html.
+ */
+
+.file-table {
+  width: 100%;
+}
+.file-table-heading {
+  color: darkgreen;
+}
+
+.filename {
+  font-family: monospace;
+}
+
+.size {
+}
+.checksum {
+  font-family: monospace;
+  font-size: small;
+  color: #555;
+}
+
+.version-number {
+  font-size: large;
+  font-weight: bold;
+}
+

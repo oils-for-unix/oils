@@ -22,6 +22,10 @@ Oil Version 0.6.pre9
 
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
+### Download
+
+<!-- REPLACE_WITH_DOWNLOAD_LINKS -->
+
 ### Metrics
 
 - Lines of source, counted in differented ways:
