@@ -71,9 +71,6 @@ run-test-and-maybe-abort() {
 }
 
 all() {
-  # makes _tmp/arith_asdl.py
-  asdl/run.sh gen-arith-python
-
   # For testing
   #export FASTLEX=0
   time tests-to-run | xargs -n 1 -- $0 run-test-and-maybe-abort

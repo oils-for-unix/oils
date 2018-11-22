@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-arith_asdl_test.py: Tests for arith_asdl.py
+demo_asdl_test.py: Tests for demo_asdl.py
 """
 from __future__ import print_function
 
@@ -9,14 +9,14 @@ import unittest
 from asdl import const
 from asdl import runtime
 
-from _tmp import arith_asdl  # module under test
+from _devbuild.gen import demo_asdl  # module under test
 
-arith_expr = arith_asdl.arith_expr
-source_location = arith_asdl.source_location
-op_id_e = arith_asdl.op_id_e
+arith_expr = demo_asdl.arith_expr
+source_location = demo_asdl.source_location
+op_id_e = demo_asdl.op_id_e
 
-cflow = arith_asdl.cflow
-cflow_e = arith_asdl.cflow_e
+cflow = demo_asdl.cflow
+cflow_e = demo_asdl.cflow_e
 
 
 class ArithAstTest(unittest.TestCase):
@@ -42,7 +42,7 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual([], func.args)
     print(func)
 
-    t = arith_asdl.token(5, 'x')
+    t = demo_asdl.token(5, 'x')
     self.assertEqual(5, t.id)
     self.assertEqual('x', t.value)
     self.assertEqual(const.NO_INTEGER, t.span_id)
@@ -129,7 +129,7 @@ class ArithAstTest(unittest.TestCase):
     # TODO: Should be cflow_t.Break() and cflow_i.Break
     c = cflow.Break()
     assert isinstance(c, cflow.Break)
-    assert isinstance(c, arith_asdl.cflow)
+    assert isinstance(c, demo_asdl.cflow)
     assert isinstance(c, runtime.CompoundObj)
 
     # Implementation detail for dynamic type checking
@@ -157,7 +157,7 @@ class ArithAstTest(unittest.TestCase):
     n.right = arith_expr.Const(6)
     #n.CheckUnassigned()
 
-    arith_expr_e = arith_asdl.arith_expr_e
+    arith_expr_e = demo_asdl.arith_expr_e
     self.assertEqual(arith_expr_e.Const, c.tag)
     self.assertEqual(arith_expr_e.ArithBinary, n.tag)
 

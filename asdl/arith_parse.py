@@ -9,10 +9,10 @@ import sys
 from asdl import tdop
 from asdl.tdop import CompositeNode
 
-from _tmp import arith_asdl
+from _devbuild.gen import demo_asdl
 
-arith_expr = arith_asdl.arith_expr
-op_id_e = arith_asdl.op_id_e
+arith_expr = demo_asdl.arith_expr
+op_id_e = demo_asdl.op_id_e
 
 
 #
@@ -73,7 +73,7 @@ def LeftIncDec(p, token, left, rbp):
 def LeftIndex(p, token, left, unused_bp):
   """ index f[x+1] """
   # f[x] or f[x][y]
-  if not isinstance(left, arith_asdl.ArithVar):
+  if not isinstance(left, demo_asdl.ArithVar):
     raise tdop.ParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
   if p.AtToken(':'):
@@ -90,9 +90,9 @@ def LeftIndex(p, token, left, unused_bp):
   # Both end and step are optional
 
   if end:
-    return arith_asdl.Slice(left, index, end, None)
+    return demo_asdl.Slice(left, index, end, None)
   else:
-    return arith_asdl.Index(left, index)
+    return demo_asdl.Index(left, index)
 
 
 def LeftTernary(p, token, left, bp):
@@ -145,7 +145,7 @@ def LeftFuncCall(p, token, left, unused_bp):
   """ Function call f(a, b). """
   args = []
   # f(x) or f[i](x)
-  if not isinstance(left, arith_asdl.ArithVar):
+  if not isinstance(left, demo_asdl.ArithVar):
     raise tdop.ParseError("%s can't be called" % left)
   func_name = left.name  # get a string
 
@@ -156,7 +156,7 @@ def LeftFuncCall(p, token, left, unused_bp):
     if p.AtToken(','):
       p.Next()
   p.Eat(")")
-  return arith_asdl.FuncCall(func_name, args)
+  return demo_asdl.FuncCall(func_name, args)
 
 
 def MakeShellParserSpec():

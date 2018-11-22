@@ -62,22 +62,15 @@ py-cpp() {
 }
 
 gen-python() {
-  local schema=${1:-asdl/arith.asdl}
-  core/asdl_gen.py py $schema _tmp/$(basename $schema).pickle
+  local schema=$1
+  local name=$(basename $schema .asdl)
+  core/asdl_gen.py py $schema _tmp/$name.pickle
 }
 
-# For testing only, build/dev.sh has it
-gen-osh-python() {
-  local out=_devbuild/gen/osh_asdl.py
-  mkdir -p _devbuild/gen
-  gen-python osh/osh.asdl > $out
-  wc -l $out
-}
-
-gen-arith-python() {
-  local out=_tmp/arith_asdl.py
+gen-demo-asdl() {
+  local out=_devbuild/gen/demo_asdl.py
   touch _tmp/__init__.py
-  gen-python asdl/arith.asdl > $out
+  gen-python asdl/demo.asdl > $out
   wc -l $out
 }
 

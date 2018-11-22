@@ -156,6 +156,9 @@ minimal() {
   BOOTSTRAP_LEVEL=1 gen-syntax-asdl   # needs Id, which needs types.asdl
   BOOTSTRAP_LEVEL=2 gen-runtime-asdl  # ditto
 
+  # Only for testing.
+  asdl/run.sh gen-demo-asdl
+
   pylibc
 }
 
