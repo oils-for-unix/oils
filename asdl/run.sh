@@ -64,7 +64,7 @@ py-cpp() {
 gen-python() {
   local schema=$1
   local name=$(basename $schema .asdl)
-  core/asdl_gen.py py $schema _tmp/$name.pickle
+  core/asdl_gen.py py $schema _devbuild/${name}_asdl.pickle
 }
 
 gen-demo-asdl() {

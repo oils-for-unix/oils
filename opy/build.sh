@@ -14,7 +14,7 @@ set -o errexit
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 
-source $THIS_DIR/common.sh
+source $THIS_DIR/common.sh  # oil-python-sources
 source $THIS_DIR/../build/common.sh  # for OIL_SYMLINKS
 
 md5-manifest() {
@@ -122,7 +122,7 @@ _fill-oil-tree() {
   # For help text.
   cp -v ../_devbuild/osh-quick-ref/* $dir/_devbuild/osh-quick-ref
 
-  cp -v ../asdl/arith.asdl $dir/asdl
+  cp -v ../asdl/demo.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
   ln -v -s -f $PWD/../oil-version.txt $dir
 

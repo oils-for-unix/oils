@@ -42,8 +42,9 @@ oil-unit() {
   local n=0
   local -a failures=()
 
+  # TODO: Share with test/unit.sh.
   #for t in {build,test,native,asdl,core,osh,test,tools}/*_test.py; do
-  for t in {asdl,core,osh}/*_test.pyc; do
+  for t in {asdl,core,frontend,osh,oil_lang}/*_test.pyc; do
 
     echo $t
     if test $vm = byterun; then
@@ -82,16 +83,7 @@ oil-unit-byterun() {
 }
 
 readonly -a FAILED=(
-  asdl/arith_parse_test.pyc  # IndexError
-  # I believe this is due to:
-  # 'TODO: handle generator exception state' in pyvm2.py.  Open bug in
-  # byterun.  asdl/tdop.py uses a generator Tokenize() with StopIteration
-
-  # Any bytecode can raise an exception internally.
-
-  core/glob_test.pyc  # unbound method append()
-  core/lexer_gen_test.pyc  # ditto
-  osh/lex_test.pyc  # ditto
+  asdl/demo_asdl_test.pyc
 )
 
 oil-byterun-failed() {
@@ -104,7 +96,7 @@ oil-byterun-failed() {
     echo --- $t
     echo ---
 
-    pushd _tmp/oil-opy
+    pushd _tmp/repo-with-opy
     opyc run $t
     popd
   done
