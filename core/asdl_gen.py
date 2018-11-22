@@ -47,7 +47,6 @@ def main(argv):
     f = sys.stdout
 
     f.write("""\
-from asdl import asdl_ as asdl
 from asdl import const  # For const.NO_INTEGER
 from asdl import runtime
 from pylib import unpickle

@@ -712,4 +712,12 @@ html-index() {
   ls -l $out
 }
 
+# For quickly iterating on tarball size reductions.
+tarball-size() {
+  make clean-repo
+  make _bin/oil.ovm-dbg  # faster way to build bytecode
+  oil  # make tarball
+  build/test.sh oil-tar  # Ctrl-C this, then run metrics/tarball.sh
+}
+
 "$@"
