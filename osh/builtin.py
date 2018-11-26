@@ -85,8 +85,7 @@ _SPECIAL_BUILTINS = {
 _NORMAL_BUILTINS = {
     "read": builtin_e.READ,
     "echo": builtin_e.ECHO,
-    # TODO: re-enable after release
-    #"printf": builtin_e.PRINTF,
+    "printf": builtin_e.PRINTF,
     "cd": builtin_e.CD,
     "pushd": builtin_e.PUSHD,
     "popd": builtin_e.POPD,
