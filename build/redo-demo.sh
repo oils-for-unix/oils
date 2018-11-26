@@ -35,7 +35,7 @@ make-zip() {
 	build/make_zip.py _build/oil-redo/bytecode-opy.zip  < $pairs
 	ls -l _build/oil-redo
 
-	awk '{print $1}' $pairs | xargs redo-ifchange
+	#awk '{print $1}' $pairs | xargs redo-ifchange
 }
 
 "$@"
