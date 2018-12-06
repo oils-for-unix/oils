@@ -55,6 +55,8 @@ class InteractiveLineReader(_Reader):
     try:
       ret = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
+      # bash prints 'exit'.  I'm printing [exit] to avoid confusion.
+      print('[exit]')
       ret = None
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return ret
