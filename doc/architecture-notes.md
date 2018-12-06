@@ -142,6 +142,8 @@ Where bash respects it:
 
 - echo -e '\x00\n' and echo $'\x00\n' (shared in OSH)
 - test / [ and [[ (shared in OSH)
+- static vs. dynamic assignment.  `local x=$y` vs. `s='x=$y'; local $s`.
+  - shells are very consistent here, but they have both notions!
 
 ### Other Pairs
 
