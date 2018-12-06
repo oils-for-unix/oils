@@ -734,8 +734,14 @@ class RootCompleter(object):
 
     i = 0
     for m in chain.Matches(comp):
-      # TODO: need to dedupe these
-      yield m
+      # TODO: dedupe these?  You can get two 'echo' in bash, which is dumb.
+
+      if m.endswith('/'):
+        yield m
+      else:
+        # TODO: don't append space if 'nospace' is set?
+        yield m + ' '
+
       i += 1
       elapsed = time.time() - start_time
       plural = '' if i == 1 else 'es'
