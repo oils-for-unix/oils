@@ -50,6 +50,9 @@ def _DefineOptions(spec):
            "matches")
   spec.Option(None, 'nospace',
       help="Don't append a space to words completed at the end of the line")
+  spec.Option(None, 'plusdirs',
+      help="After processing the compspec, attempt directory name completion "
+      "and return those matches.")
 
 
 def _DefineActions(spec):
