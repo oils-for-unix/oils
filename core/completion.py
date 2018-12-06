@@ -308,8 +308,7 @@ class VariablesActionInternal(object):
 class ExternalCommandAction(object):
   """Complete commands in $PATH.
 
-  NOTE: -A command in bash is FIVE things: aliases, builtins, functions,
-  keywords, etc.
+  This is PART of compge -A command.
   """
   def __init__(self, mem):
     """

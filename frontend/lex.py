@@ -280,18 +280,19 @@ _MORE_KEYWORDS = [
 ]
 
 
-# The 'type' builtin introspects on keywords and builtins.
-_TYPE_KEYWORDS = set(name for _, name, _ in _KEYWORDS)
-_TYPE_KEYWORDS.add('{')  # not in our lexer list
-_TYPE_BUILTINS = set(name for _, name, _ in _MORE_KEYWORDS)
+# The 'compen' and 'type' builtins introspect on keywords and builtins.
+OSH_KEYWORD_NAMES = [name for _, name, _ in _KEYWORDS]
+OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
+OTHER_OSH_BUILTINS = [name for _, name, _ in _MORE_KEYWORDS]
 
 
 def IsOtherBuiltin(name):
-  return name in _TYPE_BUILTINS
+  return name in OTHER_OSH_BUILTINS
 
 
 def IsKeyword(name):
-  return name in _TYPE_KEYWORDS
+  return name in OSH_KEYWORD_NAMES
+
 
 
 # These two can must be recognized in the OUTER state, but can't nested within

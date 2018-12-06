@@ -6,6 +6,7 @@ builtin_comp.py - Completion builtins
 from core import completion
 from core import util
 from frontend import args
+from frontend import lex
 from osh import builtin
 from osh import state
 
@@ -121,9 +122,14 @@ def _BuildCompletionChain(argv, arg, ex):
       a = _SortedWordsAction(['vi-delete'])
 
     elif name == 'command':
-      # TODO: This needs keywords too
+      # compgen -A command in bash is FIVE things: aliases, builtins,
+      # functions, keywords, and external commands.
       actions.append(_SortedWordsAction(builtin.BUILTIN_NAMES))
+      actions.append(_SortedWordsAction(ex.aliases))
+      actions.append(_SortedWordsAction(ex.funcs))
+      actions.append(_SortedWordsAction(lex.OSH_KEYWORD_NAMES))
 
+      # Look on the file system.
       a = completion.ExternalCommandAction(ex.mem)
 
     elif name == 'directory':

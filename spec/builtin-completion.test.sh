@@ -171,11 +171,37 @@ w1
 w2
 ## END
 
-#### compgen -A command
+#### compgen -A command completes external commands
+# NOTE: this test isn't hermetic
 compgen -A command xarg
 echo status=$?
 ## STDOUT:
 xargs
+status=0
+## END
+
+#### compgen -A command completes functions and aliases
+myfunc() { echo ; }
+myfunc2() { echo ; }
+alias myalias=foo
+compgen -A command my
+echo status=$?
+## STDOUT:
+myalias
+myfunc
+myfunc2
+status=0
+## END
+
+#### compgen -A command completes builtins and keywords
+compgen -A command eva
+echo status=$?
+compgen -A command whil
+echo status=$?
+## STDOUT:
+eval
+status=0
+while
 status=0
 ## END
 
