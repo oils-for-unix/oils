@@ -39,9 +39,10 @@ _debug() {
   log "$COMP_CWORD - ${COMP_WORDS[@]}"
 }
 
+readonly THIS_DIR=$(dirname ${BASH_SOURCE[0]})
+
 _completion_py() {
-  #set -o nounset
-  "$DOTFILES_ROOT/completion/completion.py" "$@"
+  "$THIS_DIR/completion.py" "$@"
 }
 
 # default completion
