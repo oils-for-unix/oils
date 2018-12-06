@@ -122,12 +122,15 @@ def _BuildCompletionChain(argv, arg, ex):
       a = _SortedWordsAction(['vi-delete'])
 
     elif name == 'command':
-      # compgen -A command in bash is FIVE things: aliases, builtins,
-      # functions, keywords, and external commands.
+      # compgen -A command in bash is SIX things: aliases, builtins,
+      # functions, keywords, external commands relative to the current
+      # directory, and external commands in $PATH.
+
       actions.append(_SortedWordsAction(builtin.BUILTIN_NAMES))
       actions.append(_SortedWordsAction(ex.aliases))
       actions.append(_SortedWordsAction(ex.funcs))
       actions.append(_SortedWordsAction(lex.OSH_KEYWORD_NAMES))
+      actions.append(completion.FileSystemAction(exec_only=True))
 
       # Look on the file system.
       a = completion.ExternalCommandAction(ex.mem)

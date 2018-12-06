@@ -75,6 +75,9 @@ class CompletionTest(unittest.TestCase):
     comp = self._MakeComp([], 0, 'f')
     print(list(a.Matches(comp)))
 
+    # TODO: This should set up the file system and $PATH and assert that only
+    # executable files are accessed!
+
   def testFileSystemAction(self):
     a = completion.FileSystemAction()
     # Current dir -- all files and dirs
@@ -84,7 +87,10 @@ class CompletionTest(unittest.TestCase):
     os.system('mkdir -p /tmp/oil_comp_test')
     os.system('bash -c "touch /tmp/oil_comp_test/{one,two,three}"')
 
-    # TODO: This no longer filters by prefix!
+    # TODO:
+    # - This no longer filters by prefix!
+    # - Should test that the executable bit works!
+
     return
 
     # This test depends on actual file system content.  But we choose things

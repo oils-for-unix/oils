@@ -195,8 +195,9 @@ class FileSystemAction(CompletionAction):
   
   TODO: We need a variant that tests for an executable bit.
   """
-  def __init__(self, dirs_only=False):
+  def __init__(self, dirs_only=False, exec_only=False):
     self.dirs_only = dirs_only
+    self.exec_only = exec_only
 
   def Matches(self, comp):
     to_complete = comp.to_complete
@@ -223,11 +224,18 @@ class FileSystemAction(CompletionAction):
         if self.dirs_only:
           if os_path.isdir(path):
             yield path
+          continue
+
+        if self.exec_only:
+          # TODO: Handle exception if file gets deleted in between listing and
+          # check?
+          if not posix.access(path, posix.X_OK):
+            continue
+
+        if os_path.isdir(path):
+          yield path + '/'
         else:
-          if os_path.isdir(path):
-            yield path + '/'
-          else:
-            yield path
+          yield path
 
 
 class ShellFuncAction(CompletionAction):
@@ -348,7 +356,7 @@ class ExternalCommandAction(object):
     path_dirs = val.s.split(':')
     #log('path: %s', path_dirs)
 
-    names = []
+    executables = []
     for d in path_dirs:
       try:
         st = posix.stat(d)
@@ -356,15 +364,26 @@ class ExternalCommandAction(object):
         # There could be a directory that doesn't exist in the $PATH.
         continue
       key = (d, st.st_mtime)
-      listing = self.cache.get(key)
-      if listing is None:
-        listing = posix.listdir(d)
-        self.cache[key] = listing
-      names.extend(listing)
+
+      dir_exes = self.cache.get(key)
+      if dir_exes is None:
+        entries = posix.listdir(d)
+        dir_exes = []
+        for name in entries:
+          path = os_path.join(d, name)
+          # TODO: Handle exception if file gets deleted in between listing and
+          # check?
+          if not posix.access(path, posix.X_OK):
+            continue
+          dir_exes.append(name)  # append the name, not the path
+
+        self.cache[key] = dir_exes
+
+      executables.extend(dir_exes)
 
     # TODO: Shouldn't do the prefix / space thing ourselves.  readline does
     # that at the END of the line.
-    for word in names:
+    for word in executables:
       if word.startswith(comp.to_complete):
         yield word
 
