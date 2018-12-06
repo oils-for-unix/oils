@@ -310,7 +310,7 @@ class VariablesActionInternal(object):
     to_complete = to_complete[1:]
     for name in self.mem.VarNames():
       if name.startswith(to_complete):
-        yield '$' + name + ' '  # full word
+        yield '$' + name
 
 
 class ExternalCommandAction(object):

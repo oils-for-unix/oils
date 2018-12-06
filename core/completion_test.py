@@ -171,21 +171,21 @@ class CompletionTest(unittest.TestCase):
 
     comp = completion.CompletionApi(line='grep f')
     m = list(r.Matches(comp))
-    self.assertEqual(['foo.py', 'foo'], m)
+    self.assertEqual(['foo.py ', 'foo '], m)
 
     comp = completion.CompletionApi(line='grep g')
     m = list(r.Matches(comp))
     self.assertEqual([], m)
 
     m = list(r.Matches(completion.CompletionApi(line='ls $v')))
-    self.assertEqual(['$var1', '$var2'], m)
+    self.assertEqual(['$var1 ', '$var2 '], m)
 
     m = list(r.Matches(completion.CompletionApi(line='g')))
-    self.assertEqual(['grep'], m)
+    self.assertEqual(['grep '], m)
 
     # Empty completer
     m = list(r.Matches(completion.CompletionApi('')))
-    self.assertEqual(['grep', 'sed', 'test'], m)
+    self.assertEqual(['grep ', 'sed ', 'test '], m)
 
     # Test compound commands. These PARSE
     m = list(r.Matches(completion.CompletionApi('echo hi || grep f')))
