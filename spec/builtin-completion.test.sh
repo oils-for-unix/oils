@@ -171,6 +171,14 @@ w1
 w2
 ## END
 
+#### compgen -A command
+compgen -A command xarg
+echo status=$?
+## STDOUT:
+xargs
+status=0
+## END
+
 #### complete with nonexistent function
 complete -F invalidZZ -D
 echo status=$?

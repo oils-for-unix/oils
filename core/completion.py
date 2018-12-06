@@ -347,7 +347,7 @@ class ExternalCommandAction(object):
       # No matches if not a string
       return
     path_dirs = val.s.split(':')
-    #print(path_dirs)
+    #log('path: %s', path_dirs)
 
     names = []
     for d in path_dirs:
@@ -365,9 +365,9 @@ class ExternalCommandAction(object):
 
     # TODO: Shouldn't do the prefix / space thing ourselves.  readline does
     # that at the END of the line.
-    for word in listing:
+    for word in names:
       if word.startswith(comp.to_complete):
-        yield word + ' '
+        yield word
 
 
 class GlobPredicate(object):
