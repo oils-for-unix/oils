@@ -96,7 +96,11 @@ fresh-osh-with-dump() {
 osh-trace() {
   # $FUNCNAME displays the whole stack in osh (unlike bash), but ${FUNCNAME[0]}
   # displays the top.
-  env -i OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
+
+	# NOTE: env -i disables $TERM, which breaks some things.
+  #env -i 
+
+	OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
     bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
 

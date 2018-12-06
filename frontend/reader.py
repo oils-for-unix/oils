@@ -48,9 +48,12 @@ class InteractiveLineReader(_Reader):
     self.Reset()  # initialize self.prompt_str
 
   def _GetLine(self):
-    sys.stderr.write(self.prompt_str)
+    # NOTE: In bash, the prompt goes to stderr, but this seems to cause drawing
+    # problems with readline?  It needs to know about the prompt.
+
+    #sys.stderr.write(self.prompt_str)
     try:
-      ret = raw_input('') + '\n'  # newline required
+      ret = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
       ret = None
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
