@@ -279,7 +279,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
     # interactive shell only
-    SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
+    if not opts.norc:
+      SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
     line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:
@@ -289,7 +290,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
         # interactive shell only
-        SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
+        if not opts.norc:
+          SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
         line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:
