@@ -142,6 +142,39 @@ OSH_SPEC.LongFlag('--norc')
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
+def SourceStartupFile(lang, ex, parse_ctx):
+  # Right now this is called when the shell is interactive.  (Maybe it should
+  # be called on login_shel too.)
+  #
+  # Terms:
+  # - interactive shell: Roughly speaking, no args or -c, and isatty() is true
+  #   for stdin and stdout.
+  # - login shell: Started from the top level, e.g. from init or ssh.
+  #
+  # We're not going to copy everything bash does because it's too complex, but
+  # for reference:
+  # https://www.gnu.org/software/bash/manual/bash.html#Bash-Startup-Files
+  # Bash also has --login.
+
+  arena = parse_ctx.arena
+  try:
+    rc_path = lang + 'rc'  # oshrc or oilrc
+    arena.PushSource(rc_path)
+    with open(rc_path) as f:
+      rc_line_reader = reader.FileLineReader(f, arena)
+      if lang == 'osh':
+        _, rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
+      else:
+        rc_c_parser = parse_ctx.MakeOilParser(rc_line_reader)
+      try:
+        status = main_loop.Batch(ex, rc_c_parser, arena)
+      finally:
+        arena.PopSource()
+  except IOError as e:
+    if e.errno != errno.ENOENT:
+      raise
+
+
 def ShellMain(lang, argv0, argv, login_shell):
   """Used by bin/osh and bin/oil.
 
@@ -223,25 +256,6 @@ def ShellMain(lang, argv0, argv, login_shell):
     # it.
     ex = oil_cmd_exec.OilExecutor(ex)
 
-  # NOTE: The rc file can contain both commands and functions... ideally we
-  # would only want to save nodes/lines for the functions.
-  try:
-    rc_path = lang + 'rc'  # oshrc or oilrc
-    arena.PushSource(rc_path)
-    with open(rc_path) as f:
-      rc_line_reader = reader.FileLineReader(f, arena)
-      if lang == 'osh':
-        _, rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
-      else:
-        rc_c_parser = parse_ctx.MakeOilParser(rc_line_reader)
-      try:
-        status = main_loop.Batch(ex, rc_c_parser, arena)
-      finally:
-        arena.PopSource()
-  except IOError as e:
-    if e.errno != errno.ENOENT:
-      raise
-
   # Prompt rendering is needed in non-interactive shells for @P.
   prompt = ui.Prompt(lang, arena, parse_ctx, ex, mem)
   ui.PROMPT = prompt
@@ -253,6 +267,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
+    SourceStartupFile(lang, ex, parse_ctx)  # interactive shell only
     line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:
@@ -261,6 +276,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
+        SourceStartupFile(lang, ex, parse_ctx)  # interactive shell only
         line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:
@@ -274,6 +290,8 @@ def ShellMain(lang, argv0, argv, login_shell):
         util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
+
+  # TODO: Call SourceStartupFile() if login_shell?  When does that matter?
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
