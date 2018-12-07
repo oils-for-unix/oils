@@ -181,8 +181,11 @@ install() {
 
 release-index() {
   local out=${1:-_build/doc/release-index.html}
+  # NOTE: We're at /release/0.6.pre10/index.html, and then there is a
+  # web/release-index.css file in each release tree.
+
   # Not monospace
-  local css_link='<link rel="stylesheet" type="text/css" href="../../web/release-index.css" />'
+  local css_link='<link rel="stylesheet" type="text/css" href="web/release-index.css" />'
   markdown2html doc/release-index.md $out "$css_link" ''
 }
 

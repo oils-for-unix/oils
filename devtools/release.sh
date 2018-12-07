@@ -25,17 +25,17 @@
 #     lisa: $0 benchmark-run, then $0 benchmark-run-on-1-machine (oheap)
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
+#   $0 deploy-tar  # needed to checksum
 #   $0 build-tree
 #   $0 compress
 #   devtools/release-version.sh git-changelog-$VERSION
 #   devtools/release-version.sh announcement-$VERSION
 #   MAYBE: ./local.sh test-release-tree if you want to preview it
 #   $0 sync-old-tar (for releases.html)
-#   $0 deploy-tar
 #   $0 deploy-doc
 # 
 # - Go to oilshell.org__deploy and "git add release/$VERSION".
-# - Go to oilshell.org repo and do ./deploy.sh all.
+# - Go to oilshell.org repo and do ./deploy.sh site.
 
 set -o nounset
 set -o pipefail
