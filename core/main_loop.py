@@ -18,7 +18,8 @@ from __future__ import print_function
 
 from core import ui
 from core import util
-from core.meta import syntax_asdl
+from core.meta import syntax_asdl, Id
+from osh import word
 
 command = syntax_asdl.command
 
@@ -32,6 +33,14 @@ def Interactive(opts, ex, c_parser, arena):
     # reinitialize all objects (except Env) on every iteration.
     c_parser.Reset()
     c_parser.ResetInputObjects()
+
+    w = c_parser.Peek()
+
+    c_id = word.CommandId(w)
+    if c_id == Id.Op_Newline:  # print PS1 again, not PS2
+      continue  # next command
+    elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
+      break  # end
 
     try:
       node = c_parser.ParseLogicalLine()

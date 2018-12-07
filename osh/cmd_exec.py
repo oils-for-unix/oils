@@ -757,6 +757,8 @@ class Executor(object):
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
+      # TODO: Also do dynamic assignment here
+
       flags = word_compile.ParseAssignFlags(node.flags)
 
       if node.keyword == Id.Assign_Local:
