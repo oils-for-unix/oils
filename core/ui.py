@@ -260,7 +260,13 @@ class Prompt(object):
   def FirstPrompt(self):
     if self.lang == 'osh':
       val = self.mem.GetVar('PS1')
-      return self.EvalPrompt(val)
+      try:
+        return self.EvalPrompt(val)
+      except NotImplementedError as e:
+        print("Cannot use prompt='%s'; backslash code not implemented: \\%s"
+              % (val.s, e.args[0]))
+        return self.default_prompt
+      # TODO: handle other errors?
     else:
       # TODO: If the lang is Oil, we should use a better prompt language than
       # $PS1!!!
