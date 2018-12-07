@@ -214,7 +214,7 @@ class Prompt(object):
           r = _ONE_CHAR[char]
 
         else:
-          raise NotImplementedError(char)
+          r = '<\%s not implemented in $PS1> $' % char
 
         # See comment above on bash hack for $.
         ret.append(r.replace('$', '\\$'))
