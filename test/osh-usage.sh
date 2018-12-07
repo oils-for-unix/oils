@@ -138,12 +138,20 @@ exit-builtin-interactive() {
   assert $? -eq 42
 }
 
+rc-file() {
+  local rc=_tmp/testrc
+  echo 'PS1="TESTRC$ "' > $rc
+  bin/osh -i --rcfile $rc < /dev/null
+  bin/osh -i --rcfile /dev/null < /dev/null
+}
+
 readonly -a PASSING=(
   ast-formats
   osh-file
   osh-stdin
   osh-interactive
   exit-builtin-interactive
+  rc-file
   help
 )
 
