@@ -3,6 +3,9 @@
 # Usage:
 #   scripts/release.sh <function name>
 #
+# Pre-release:
+#   opy/regtest.sh verify-golden, because that one tends to be flaky
+#
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (builds tarball, runs unit,gold, initial spec tests, etc.)
