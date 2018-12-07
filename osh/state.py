@@ -543,7 +543,8 @@ class Mem(object):
 
     v = self.GetVar('HOME')
     if v.tag == value_e.Undef:
-      home_dir = util.GetHomeDir() or '~'  # No expansion if not found?
+      # TODO: Should lack of a home dir be an error?  What does bash do?
+      home_dir = util.GetHomeDir() or '~'
       SetGlobalString(self, 'HOME', home_dir)
 
   def SetCurrentSpanId(self, span_id):

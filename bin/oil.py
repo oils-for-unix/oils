@@ -56,6 +56,7 @@ from core import main_loop
 from core import process
 from core import ui
 from core import util
+from core.meta import runtime_asdl
 
 from osh import builtin
 from osh import builtin_comp
@@ -75,6 +76,8 @@ from oil_lang import cmd_exec as oil_cmd_exec
 from tools import deps
 from tools import osh2oil
 from tools import readlink
+
+value_e = runtime_asdl.value_e
 
 # Set in Modules/main.c.
 HAVE_READLINE = posix.environ.get('_HAVE_READLINE') != ''
@@ -142,7 +145,7 @@ OSH_SPEC.LongFlag('--norc')
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
-def SourceStartupFile(lang, ex, parse_ctx):
+def SourceStartupFile(home_dir, lang, parse_ctx, ex):
   # Right now this is called when the shell is interactive.  (Maybe it should
   # be called on login_shel too.)
   #
@@ -156,9 +159,17 @@ def SourceStartupFile(lang, ex, parse_ctx):
   # https://www.gnu.org/software/bash/manual/bash.html#Bash-Startup-Files
   # Bash also has --login.
 
+  # Use ~/.config/oil to avoid cluttering the user's home directory.
+  # Some users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
+
+  # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
+
+  assert home_dir.tag == value_e.Str, home_dir
+
   arena = parse_ctx.arena
   try:
-    rc_path = lang + 'rc'  # oshrc or oilrc
+    # oshrc or oilrc
+    rc_path = os_path.join(home_dir.s, '.config/oil', lang + 'rc')
     arena.PushSource(rc_path)
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
@@ -267,7 +278,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
-    SourceStartupFile(lang, ex, parse_ctx)  # interactive shell only
+    # interactive shell only
+    SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
     line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:
@@ -276,7 +288,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
-        SourceStartupFile(lang, ex, parse_ctx)  # interactive shell only
+        # interactive shell only
+        SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
         line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:
