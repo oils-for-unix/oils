@@ -68,6 +68,8 @@ gen-help() {
   build/doc.sh osh-quick-ref
 }
 
+mkdir -p _tmp
+
 # Helper
 gen-asdl-py-pickle() {
   local asdl_path=$1  # e.g. osh/osh.asdl
