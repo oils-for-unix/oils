@@ -139,13 +139,14 @@ OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 OSH_SPEC.LongFlag('--parser-mem-dump', args.Str)
 OSH_SPEC.LongFlag('--runtime-mem-dump', args.Str)
 
-# For bash compatibility
-OSH_SPEC.LongFlag('--norc')
+# This flag has is named like bash's equivalent.  We got rid of --norc because
+# it can simply by --rcfile /dev/null.
+OSH_SPEC.LongFlag('--rcfile', args.Str)
 
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
-def SourceStartupFile(home_dir, lang, parse_ctx, ex):
+def SourceStartupFile(rc_path, lang, parse_ctx, ex):
   # Right now this is called when the shell is interactive.  (Maybe it should
   # be called on login_shel too.)
   #
@@ -159,17 +160,8 @@ def SourceStartupFile(home_dir, lang, parse_ctx, ex):
   # https://www.gnu.org/software/bash/manual/bash.html#Bash-Startup-Files
   # Bash also has --login.
 
-  # Use ~/.config/oil to avoid cluttering the user's home directory.
-  # Some users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
-
-  # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
-
-  assert home_dir.tag == value_e.Str, home_dir
-
   arena = parse_ctx.arena
   try:
-    # oshrc or oilrc
-    rc_path = os_path.join(home_dir.s, '.config/oil', lang + 'rc')
     arena.PushSource(rc_path)
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
@@ -271,6 +263,15 @@ def ShellMain(lang, argv0, argv, login_shell):
   prompt = ui.Prompt(lang, arena, parse_ctx, ex, mem)
   ui.PROMPT = prompt
 
+  # Calculate ~/.config/oil/oshrc or oilrc
+  # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
+  # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
+
+  # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
+  home_dir = mem.GetVar('HOME')
+  assert home_dir.tag == value_e.Str, home_dir
+  rc_path = opts.rcfile or os_path.join(home_dir.s, '.config/oil', lang + 'rc')
+
   if opts.c is not None:
     arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena)
@@ -279,7 +280,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
     # interactive shell only
-    SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
+    SourceStartupFile(rc_path, lang, parse_ctx, ex)
     line_reader = reader.InteractiveLineReader(arena, prompt)
     exec_opts.interactive = True
   else:
@@ -289,7 +290,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
         # interactive shell only
-        SourceStartupFile(mem.GetVar('HOME'), lang, parse_ctx, ex)
+        SourceStartupFile(rc_path, lang, parse_ctx, ex)
         line_reader = reader.InteractiveLineReader(arena, prompt)
         exec_opts.interactive = True
       else:

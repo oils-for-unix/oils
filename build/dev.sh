@@ -142,7 +142,7 @@ clean() {
 
 # No fastlex, because we don't want to require re2c installation.
 minimal() {
-  mkdir -p _devbuild/gen
+  mkdir -p _tmp _devbuild/gen
 
   rm -v -f _devbuild/gen/*
 

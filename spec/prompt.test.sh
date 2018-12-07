@@ -3,7 +3,7 @@
 # For testing the Python sketch
 
 #### sh -i
-echo 'echo foo' | PS1='$ ' $SH --norc -i
+echo 'echo foo' | PS1='$ ' $SH -i
 ## STDOUT:
 foo
 ## END
