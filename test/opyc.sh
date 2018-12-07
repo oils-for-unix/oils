@@ -11,7 +11,7 @@ set -o errexit
 
 source test/common.sh
 
-readonly FILE=core/word_compile_test.py  # choose a small one
+readonly FILE=osh/word_compile_test.py  # choose a small one
 
 # NOTE: We don't really use the 'lex' action.
 lex() {

@@ -9,7 +9,7 @@ set -o errexit
 
 source test/common.sh
 
-readonly SMALL_FILE='core/word_compile_test.py'
+readonly SMALL_FILE='osh/word_compile_test.py'
 
 # Can't be readonly because we override it below?  Gah.
 #readonly OPYC=${OPYC:-bin/opyc}
