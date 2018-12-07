@@ -68,8 +68,6 @@ gen-help() {
   build/doc.sh osh-quick-ref
 }
 
-mkdir -p _tmp
-
 # Helper
 gen-asdl-py-pickle() {
   local asdl_path=$1  # e.g. osh/osh.asdl
@@ -144,7 +142,7 @@ clean() {
 
 # No fastlex, because we don't want to require re2c installation.
 minimal() {
-  mkdir -p _devbuild/gen
+  mkdir -p _tmp _devbuild/gen
 
   rm -v -f _devbuild/gen/*
 
