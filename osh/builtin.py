@@ -228,15 +228,20 @@ def Echo(argv):
   if not arg.n:
     sys.stdout.write('\n')
 
-  # Do I need the flush?  Had a problem here under load, but it might not have
-  # been because of that.
+  # I think the flush fixes a problem with command sub.  But it causes
+  # IOError non-deterministically, when spec/background.test.sh is run in
+  # parallel with other tests.  So just silence it.
+
   # File "/home/andy/git/oil/bin/../core/cmd_exec.py", line 251, in _RunBuiltin
   #   status = builtin.Echo(argv)
   # File "/home/andy/git/oil/bin/../core/builtin.py", line 431, in Echo
   #   sys.stdout.flush()
   # IOError: [Errno 32] Broken pipe
+  try:
+    sys.stdout.flush()
+  except IOError as e:
+    pass
 
-  sys.stdout.flush()
   return 0
 
 
