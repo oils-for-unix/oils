@@ -116,7 +116,7 @@
   5062 b805c171f95636e88a4f4a664c995b82 _tmp/regtest/core/args_test.pyc
   5136 b6a09aadcf181b5096d68ca034e473ed _tmp/regtest/encodings/__init__.pyc
   5180 b9a6011c335c092e46f31606c148120d _tmp/regtest/core/cmd_exec_test.pyc
-  5261 70a7e1040d60f8b027b1587e8b221f05 _tmp/regtest/core/ui.pyc
+  5266 b9b6fa8dc51fe32b2e30083b3ab87eab _tmp/regtest/core/ui.pyc
   5412 453edb810fc4eb971ed8d5757c8f8e6d _tmp/regtest/osh/parse_lib.pyc
   5515 b37b3f06e263b2fa0cf4256a93017d98 _tmp/regtest/core/glob_.pyc
   5582 d4f2faaa63f6882c9575b8b3c25f3de9 _tmp/regtest/asdl/arith_ast_test.pyc
@@ -145,7 +145,7 @@
   8772 dd457acd09a56788020dc6220938b37d _tmp/regtest/encodings/aliases.pyc
   8979 8cd272936e049ff6cd1cdeb926b1d04d _tmp/regtest/opy/misc/inspect_pyc.pyc
   9047 2c9296eb4e11b168e3b7e1157630e7ec _tmp/regtest/core/lexer.pyc
-  9048 713097d305e3307700f5ae53cc861571 _tmp/regtest/asdl/encode.pyc
+  9053 05bb6dcc96ed566ce2b12e4e0762874d _tmp/regtest/asdl/encode.pyc
   9161 c5cd11e827b8701de0f0570bb3c7eb98 _tmp/regtest/core/completion_test.pyc
   9249 ff523d9b89278d6ed3f57247ea1f8fe7 _tmp/regtest/asdl/py_meta.pyc
   9316 64bd9b485abd8deafd992c1558b89ca9 _tmp/regtest/asdl/tdop.pyc
