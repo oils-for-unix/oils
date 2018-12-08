@@ -15,6 +15,7 @@
 }
 
 .size {
+  text-align: right;
 }
 .checksum {
   font-family: monospace;

@@ -553,7 +553,7 @@ _tarball-links-row-html() {
 <tr class="file-table-heading">
   <td></td>
   <td>File / SHA256 checksum</td>
-  <td>Size</td>
+  <td class="size">Size</td>
   <td></td>
 </tr>
 EOF
@@ -640,7 +640,7 @@ _html-index() {
     <span class="version-number">$version</span>
   </td>
   <td>
-    <p>                <a href="release/$version/announcement.html">Release Announcement</a>
+    <p>                <a href="release/$version/announcement.html">Announcement</a>
        &nbsp; | &nbsp; <a href="release/$version/doc/INSTALL.html">INSTALL</a>
        &nbsp; | &nbsp; <a href="release/$version/">Docs and Details</a>
     </p>
@@ -673,7 +673,7 @@ _releases-html-header() {
       /* Make it centered and skinny for readability */
       body {
         margin: 0 auto;
-        width: 60em;
+        width: 50em;
       }
       h1 {
         text-align: center;
