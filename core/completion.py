@@ -450,7 +450,11 @@ class ChainedCompleter(object):
         self.actions, self.predicate, self.prefix, self.suffix)
 
 
+# TODO: This breaks completion of ~/.config, because $HOME isn't expanded.  We
+# need to use real parser.
+
 class DummyParser(object):
+
   def GetWords(self, buf):
     words = buf.split()
     # 'grep ' -> ['grep', ''], so we're completing the second word
@@ -742,18 +746,19 @@ class RootCompleter(object):
         # TODO: don't append space if 'nospace' is set?
         yield m + ' '
 
+      # NOTE: Can't use %.2f in production build!
       i += 1
-      elapsed = time.time() - start_time
+      elapsed_ms = (time.time() - start_time) * 1000.0
       plural = '' if i == 1 else 'es'
       self.progress_f.Write(
-          '... %d match%s for %r in %.2f seconds (Ctrl-C to cancel)', i,
-          plural, comp.line, elapsed)
+          '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
+          plural, comp.line, elapsed_ms)
 
-    elapsed = time.time() - start_time
+    elapsed_ms = (time.time() - start_time) * 1000.0
     plural = '' if i == 1 else 'es'
     self.progress_f.Write(
-        'Found %d match%s for %r in %.2f seconds', i,
-        plural, comp.line, elapsed)
+        'Found %d match%s for %r in %d ms', i,
+        plural, comp.line, elapsed_ms)
     done = True
 
     # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
