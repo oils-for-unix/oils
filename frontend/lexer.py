@@ -152,6 +152,10 @@ class Lexer(object):
   def ResetInputObjects(self):
     self.line_lexer.Reset('', -1, 0)
 
+  def GetCurrentLine(self):
+    """Used for completion."""
+    return self.line_lexer.line
+
   def MaybeUnreadOne(self):
     return self.line_lexer.MaybeUnreadOne()
 

@@ -91,19 +91,21 @@ module runtime
   process_state = Init | Done
 
   -- core/completion.py
-  -- NONE: nothing detected, should we default to filenames/directories?
-  -- REDIR_FILENAME: stdin only
-  -- HASH_KEY: do this later
+  -- Nothing: no completions.
+  -- RedirPath: stdin only!
+  -- HashKey: do this later
 
   -- Note: this could also be a CompRequest
-  -- CompRequest(FIRST, prefix)
-  -- CompRequest(REST, prefix, comp_words)  # use the full contact
-  -- CompRequest(VAR_NAME, prefix)
-  -- CompRequest(HASH_KEY, prefix, hash_name)  # use var name
-  -- CompRequest(REDIR_FILENAME, prefix)
+  -- CompRequest(First, prefix)
+  -- CompRequest(Rest, prefix, comp_words)  # use the full context
+  -- CompRequest(VarName, prefix)
+  -- CompRequest(HashKey, prefix, hash_name)  # use var name
+  -- CompRequest(RedirPath, prefix)
 
-  completion_state = 
-    NONE | FIRST | REST | VAR_NAME | HASH_KEY | REDIR_FILENAME
+  -- NOTE: should there be different states for variables in SimpleVarSub,
+  -- BracedVarSub, arith -- context, etc.?
+
+  comp_kind = Nothing | First | Rest | VarName | HashKey | RedirPath
 
   -- tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ

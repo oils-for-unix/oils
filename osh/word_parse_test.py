@@ -82,7 +82,7 @@ def _assertReadWordFailure(test, word_str):
   try:
     w = w_parser.ReadWord(lex_mode_e.Outer)
   except util.ParseError as e:
-    print(e)
+    print('Got expected ParseError: %s' % e)
   else:
     ast_lib.PrettyPrint(w)
     test.fail('Expected a parser error, got %r' % w)
@@ -167,6 +167,22 @@ class WordParserTest(unittest.TestCase):
     # Allowed by bash, but we don't parse it.  Use len=$#; echo ${len#2}
     # instead.
     _assertReadWordFailure(self, '${##2}')
+
+  def testIncompleteWords(self):
+    # Bugs found in completion
+    w = _assertReadWordFailure(self, '${undef:-')
+    w = _assertReadWordFailure(self, '${undef:-$')
+    w = _assertReadWordFailure(self, '${undef:-$F')
+
+    w = _assertReadWordFailure(self, '${x@')
+    w = _assertReadWordFailure(self, '${x@Q')
+
+    w = _assertReadWordFailure(self, '${x%')
+
+    w = _assertReadWordFailure(self, '${x/')
+    w = _assertReadWordFailure(self, '${x/a/')
+    w = _assertReadWordFailure(self, '${x/a/b')
+    w = _assertReadWordFailure(self, '${x:')
 
   def testVarOf(self):
     w = _assertReadWord(self, '${name}')

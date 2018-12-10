@@ -83,6 +83,23 @@ word-parse() {
   _error-case 'for (( i = 0; i < 10; i++ /'
 
   _error-case 'echo @(extglob|foo'
+
+  # Copied from osh/word_parse_test.py.  Bugs were found while writing
+  # core/completion_test.py.
+
+  _error-case '${undef:-'
+  _error-case '${undef:-$'
+  _error-case '${undef:-$F'
+
+  _error-case '${x@'
+  _error-case '${x@Q'
+
+  _error-case '${x%'
+
+  _error-case '${x/'
+  _error-case '${x/a/'
+  _error-case '${x/a/b'
+  _error-case '${x:'
 }
 
 array-literal() {

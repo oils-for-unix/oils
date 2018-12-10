@@ -279,7 +279,9 @@ class WordParser(object):
     if op_kind == Kind.VTest:
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
-      assert self.token_type == Id.Right_VarSub, self.cur_token
+      if self.token_type != Id.Right_VarSub:
+        p_die('Unexpected token (after VTest): %r', self.cur_token.val,
+              token=self.cur_token)
 
       part.suffix_op = suffix_op.StringUnary(op_id, arg_word)
 
@@ -292,7 +294,9 @@ class WordParser(object):
     elif op_kind == Kind.VOp1:
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
-      assert self.token_type == Id.Right_VarSub, self.cur_token
+      if self.token_type != Id.Right_VarSub:
+        p_die('Unexpected token (after VOp1): %r', self.cur_token.val,
+              token=self.cur_token)
 
       part.suffix_op = suffix_op.StringUnary(op_id, arg_word)
 
@@ -300,8 +304,8 @@ class WordParser(object):
       if self.token_type == Id.VOp2_Slash:
         op_spid = self.cur_token.span_id  # for attributing error to /
         op = self._ReadPatSubVarOp(arg_lex_mode)
-        op.spids.append(op_spid)
         assert op is not None
+        op.spids.append(op_spid)
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
 

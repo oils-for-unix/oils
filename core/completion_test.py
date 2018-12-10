@@ -199,86 +199,122 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches(completion.CompletionApi('local var=$v')))
 
 
-def _TestGetCompletionType(buf):
+def _TestCompKind(test, buf, check=True):
+  """
+  Args:
+    check: Should we check it against the heuristic?
+  """
   ev = test_lib.MakeTestEvaluator()
   arena = test_lib.MakeArena('<completion_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   w_parser, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
-  print('---', buf)
-  return completion._GetCompletionType(w_parser, c_parser, ev, debug_f)
+  print('--- %r' % buf)
 
+  # Comparison
+  p = completion.DummyParser()
+  old_kind, old_prefix, old_argv = completion._GetCompKindHeuristic(p, buf)
 
-f = _TestGetCompletionType
+  new_kind, new_prefix, new_argv = completion._GetCompKind(w_parser, c_parser,
+                                                           ev, debug_f)
+
+  if check:
+    test.assertEqual(new_kind, old_kind)
+    test.assertEqual(new_prefix, old_prefix)
+    test.assertEqual(new_argv, old_argv)
+
+  print()
 
 
 class PartialParseTest(unittest.TestCase):
 
+  # Look at what kind of tree we get back
+  def testLST(self):
+    _TestCompKind(self, 'ls |', check=False)
+    _TestCompKind(self, 'ls | ', check=False)
+
+    _TestCompKind(self, 'ls ; ', check=False)
+    _TestCompKind(self, 'ls && ', check=False)
+
+    _TestCompKind(self, 'echo $(echo hi', check=False)
+
+    _TestCompKind(self, 'echo $', check=False)
+    _TestCompKind(self, 'echo $F', check=False)
+    _TestCompKind(self, 'echo ${F', check=False)
+
+    _TestCompKind(self, 'echo ${undef:-$', check=False)
+    _TestCompKind(self, 'echo ${undef:-$F', check=False)
+
   def testEmpty(self):
-    print(f(''))
-    print(f(' '))
+    _TestCompKind(self, '')
+    _TestCompKind(self, ' ')
 
   def testCommands(self):
     # External
-    print(f('ls'))
-    print(f('ls '))
+    _TestCompKind(self, 'ls')
+    _TestCompKind(self, 'ls ')
 
+    return
     # Redirect
-    print(f('cat <'))
-    print(f('cat <input'))
+    _TestCompKind(self, 'cat <')
+    _TestCompKind(self, 'cat <input')
 
-    # Builtin
-    print(f('time'))
-    print(f('time '))
-    print(f('time echo'))
-
+  def testCompound(self):
+    return
     # Pipeline
-    print(f('ls |'))
-    print(f('ls | wc -l'))
+    _TestCompKind(self, 'ls |', check=False)  # heuristic is WRONG
+    _TestCompKind(self, 'ls | wc -l')
 
     # AndOr
-    print(f('ls && '))
-    print(f('ls && echo'))
+    _TestCompKind(self, 'ls && ')
+    _TestCompKind(self, 'ls && echo')
 
     # List
-    print(f('echo a;'))
-    print(f('echo a; echo'))
+    _TestCompKind(self, 'echo a;')
+    _TestCompKind(self, 'echo a; echo')
 
     # BraceGroup
-    print(f('{ echo hi;'))
-    print(f('{ echo hi; echo'))  # second word
-    print(f('{ echo hi; echo bye;'))  # new command
+    _TestCompKind(self, '{ echo hi;')
+    _TestCompKind(self, '{ echo hi; echo')  # second word
+    _TestCompKind(self, '{ echo hi; echo bye;')  # new command
 
     # Subshell
-    print(f('( echo hi'))
-    print(f('( echo hi; echo'))
+    _TestCompKind(self, '( echo hi')
+    _TestCompKind(self, '( echo hi; echo')
 
     # FunctionDef
-    print(f('f() {'))
-    print(f('f() { echo'))
-    print(f('f() { echo hi;'))
+    _TestCompKind(self, 'f() {')
+    _TestCompKind(self, 'f() { echo')
+    _TestCompKind(self, 'f() { echo hi;')
 
-    print(f('if'))
-    print(f('if '))
-    print(f('if test '))
+    _TestCompKind(self, 'if')
+    _TestCompKind(self, 'if ')
+    _TestCompKind(self, 'if test ')
 
-    print(f('while'))
-    print(f('while '))
-    print(f('while test '))
+    _TestCompKind(self, 'while')
+    _TestCompKind(self, 'while ')
+    _TestCompKind(self, 'while test ')
 
-    print(f('case $foo '))  # in
-    print(f('case $foo in a)'))
-    print(f('case $foo in a) echo'))
+    _TestCompKind(self, 'case $foo ')  # in
+    _TestCompKind(self, 'case $foo in a)')
+    _TestCompKind(self, 'case $foo in a) echo')
+
+    # time construct
+    _TestCompKind(self, 'time')
+    _TestCompKind(self, 'time ')
+    _TestCompKind(self, 'time echo')
 
   def testVarSub(self):
+    return
+
     # TODO: Mem needs variable "f"
 
     # BracedVarSub
-    print(f('echo $'))
-    print(f('echo $f'))
+    _TestCompKind(self, 'echo $')
+    _TestCompKind(self, 'echo $f')
 
     # Double Quoted BracedVarSub
-    print(f('echo "$'))
-    print(f('echo "$f'))
+    _TestCompKind(self, 'echo "$')
+    _TestCompKind(self, 'echo "$f')
 
     # Braced var sub
     #print(f('echo ${'))  # TODO: FIx bug
@@ -289,27 +325,28 @@ class PartialParseTest(unittest.TestCase):
     #print(f('echo "${f'))
 
     # Single quoted var sub should give nothing
-    print(f("echo '${"))
-    print(f("echo '${f"))
+    _TestCompKind(self, "echo '${")
+    _TestCompKind(self, "echo '${f")
 
     # Array index
     #print(f('echo ${a['))
     #print(f('echo ${a[k'))
 
     # Var sub in command sub
-    print(f('echo $(ls $'))
-    print(f('echo $(ls $f'))
+    _TestCompKind(self, 'echo $(ls $')
+    _TestCompKind(self, 'echo $(ls $f')
 
     # Var sub in var sub (bash doesn't do this)
     #print(f('echo ${a:-$'))
     #print(f('echo ${a:-$f'))
 
   def testCommandSub(self):
+    return
 
     # CommandSubPart
-    print(f('echo $('))
-    print(f('echo $(ls '))
-    print(f('echo $(ls foo'))
+    _TestCompKind(self, 'echo $(')
+    _TestCompKind(self, 'echo $(ls ')
+    _TestCompKind(self, 'echo $(ls foo')
 
     #print(f('echo `'))
     #print(f('echo `ls '))

@@ -45,7 +45,7 @@ import libc
 
 command_e = syntax_asdl.command_e
 value_e = runtime_asdl.value_e
-completion_state_e = runtime_asdl.completion_state_e
+comp_kind_e = runtime_asdl.comp_kind_e
 
 log = util.log
 
@@ -496,27 +496,37 @@ def _FindLastSimpleCommand(node):
   return _FindLastSimpleCommand(node.children[-1])
 
 
-def _GetCompletionType(w_parser, c_parser, ev, debug_f):
-  """
-  Parser returns completion state.
-  Then we translate that into completion_state_e.
+def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
+  """What kind of values should we complete?
+
+  Args:
+    w_parser, c_parser, word_ev: For inspecting parser state
+    debug_f: Debug file
 
   Returns:
     comp_type
     prefix: the prefix to complete
     comp_words: list of words.  First word is used for dispatching.
 
-    TODO: what about hash table name?
+  We try to parse the command line, then inspect the state of various parsers.
+  That turns into comp_kind_e and a partial_argv.
+
+  NOTE: partial_argv isn't necessary for comp_kind_e.{VarName,HashKey} etc.?
+
+  We also look at the state of the LineLexer in order to determine if we're
+  completing a new word.
+
   """
-  # TODO: Fill these in
-  comp_type = completion_state_e.FIRST
-  prefix = ''
-  words = []
+  # Return values
+  kind = comp_kind_e.First
+  to_complete = ''
+  partial_argv = []
 
   try:
     node = c_parser.ParseLogicalLine()
   except util.ParseError as e:
-    return comp_type, prefix, words  # EARLY RETURN
+    # e.g. 'ls | ' will not parse.  Now inspect the parser state!
+    node = None
 
   # Inspect state after parsing.  Hm I'm getting the newline.  Can I view the
   # one before that?
@@ -525,40 +535,11 @@ def _GetCompletionType(w_parser, c_parser, ev, debug_f):
   cur_word = w_parser.cursor
   comp_state = c_parser.GetCompletionState()
 
+  # Find the last SimpleCommandNode.
   com_node = None
   if node:
     # These 4 should all parse
     if node.tag == command_e.SimpleCommand:
-      # NOTE: prev_token can be ;, then complete a new one
-      #print('WORDS', node.words)
-      # TODO:
-      # - EvalVarSub depends on memory
-      # - EvalTildeSub needs to be somewhere else
-      # - EvalCommandSub needs to be
-      #
-      # maybe write a version of Executor._EvalWordSequence that doesn't do
-      # CommandSub.  Or honestly you can just reuse it for now.  Can you pass
-      # the same cmd_exec in?  What about side effects?  I guess it can't
-      # really have any.  It can only have them on the file system.  Hm.
-      # Defining funcitons?  Yeah if you complete partial functions that could
-      # be bad.  That is, you could change the name of the function.
-
-      argv = []
-      for w in node.words:
-        try:
-          # TODO: Should we call EvalWordSequence?  But turn globbing off?  It
-          # can do splitting and such.
-          val = ev.EvalWordToString(w)
-        except util.FatalRuntimeError:
-          # Why would it fail?
-          continue
-        if val.tag == value_e.Str:
-          argv.append(val.s)
-        else:
-          pass
-          # Oh I have to handle $@ on the command line?
-
-      #print(argv)
       com_node = node
 
     elif node.tag == command_e.CommandList:  # echo a; echo b
@@ -568,10 +549,65 @@ def _GetCompletionType(w_parser, c_parser, ev, debug_f):
     elif node.tag == command_e.Pipeline:  # echo a | wc -l
       com_node = _FindLastSimpleCommand(node)
     else:
-      # Return NONE?  Not handling it for now
+      # Return comp_kind_e.Nothing?  Not handling it for now
       pass
   else:  # No node.
     pass
+
+  if 1:
+    log('command node = %s', com_node)
+    log('prev_token = %s', prev_token)
+    log('cur_token = %s', cur_token)
+    log('cur_word = %s', cur_word)
+    log('comp_state = %s', comp_state)
+
+  if com_node:
+    for w in com_node.words:
+      try:
+        # TODO: Should we call EvalWordSequence?  But turn globbing off?  It
+        # can do splitting and such.
+        val = word_ev.EvalWordToString(w)
+      except util.FatalRuntimeError:
+        # Why would it fail?
+        continue
+      if val.tag == value_e.Str:
+        partial_argv.append(val.s)
+      else:
+        pass
+        # Oh I have to handle $@ on the command line?
+
+  # TODO: Detect SimpleVarSub and BracedVarSub?
+  #
+  # FindLastVarSub on the word nodes?
+  # Does it make sense to write a function that flattens the LST?
+  # And then we look for the last thing?
+  #
+  # Do we care about this?
+  #
+  # copy --verb'o'<TAB>
+  #
+  # o=$o
+  # copy --verb'o'<TAB>
+  # We should check language completions FIRST.
+
+  # To distinguish 'echo<TAB>' vs. 'echo <TAB>'.  Could instead we look for
+  # Id.Ignored_Space somewhere?  Not sure if it's worth it.
+  cur_line = c_parser.lexer.GetCurrentLine()
+  #log('current line = %r', cur_line)
+  if cur_line.endswith(' '):
+    partial_argv.append('')
+
+  n = len(partial_argv)
+
+  if n == 0:
+    kind = comp_kind_e.First
+    to_complete = ''
+  elif n == 1:
+    kind = comp_kind_e.First
+    to_complete = partial_argv[-1]
+  else:
+    kind = comp_kind_e.Rest
+    to_complete = partial_argv[-1]
 
   # TODO: Need to show buf... Need a multiline display for debugging?
   if 0:
@@ -584,45 +620,11 @@ def _GetCompletionType(w_parser, c_parser, ev, debug_f):
     # This one can be multiple lines
     debug_f.log('com_node: %s', repr(com_node) if com_node else '<None>')
 
-  # IMPORTANT: if the last token is Id.Ignored_Space, then we want to add a
-  # dummy word!  empty word
-
-  # initial simple algorithm
-  # If we got a node:
-  #   1. Look at c_parser.LastCompletionState()
-  #   1. don't complete unless it's SIMPLE_COMMAND?
-  #   2. look at node.words -- first word or not?
-  #   3. EvalStatic() of the first word
-
-  # If we got None:
-  #   1. Look at c_parser.LastCompletionState()
-  #   2. If it is $ or ${, complete var names
-  #
-  #   Is there any case where we shoudl fall back on buf.split()?
-
-  # Now parse it.  And then look at the AST, but don't eval?  Or actually we
-  # CAN eval, but we probably don't want to.
-  #
-  # completion state also has to know about ${pre<TAB>  and ${foo[pre<TAB>
-  # Those are invalid parses.  But the LAST TOKEN is the one we want to
-  # complete?  Will it be a proper group of LIT tokens?  I don't think you
-  # complete anything else besides that?
-  #
-  # $<TAB> will be Id.Lit_Other -- but you might want to special case
-  # $na<TAB> will be VS_NAME
-
-  # NOTE: The LineLexer adds \n to the buf?  Should we disable it and add \0?
-
-  # I guess the shortest way to do it is to just Eval(), and even run command
-  # sub.  Or maybe SafeEval() for command sub returns __DUMMY__ or None or some
-  # other crap.
-  # I guess in oil you could have some arbitrarily long function in $split(bar,
-  # baz).  That is what you would want to run the completion in a subprocess
-  # with a timeout.
-  return comp_type, prefix, words
+  return kind, to_complete, partial_argv
 
 
-def _GetCompletionType1(parser, buf):
+def _GetCompKindHeuristic(parser, buf):
+  """Hacky implementation using heuristics."""
   words = parser.GetWords(buf)  # just does a dummy split for now
 
   n = len(words)
@@ -631,18 +633,18 @@ def _GetCompletionType1(parser, buf):
   # state.  And also we didn't see $${, which would be a special var.  Oil
   # rules are almost the same.
   if n > 0 and words[-1].startswith('$'):
-    comp_type = completion_state_e.VAR_NAME
+    comp_type = comp_kind_e.VarName
     to_complete = words[-1]
 
   # Otherwise complete words
   elif n == 0:
-    comp_type = completion_state_e.FIRST
+    comp_type = comp_kind_e.First
     to_complete = ''
   elif n == 1:
-    comp_type = completion_state_e.FIRST
+    comp_type = comp_kind_e.First
     to_complete = words[-1]
   else:
-    comp_type = completion_state_e.REST
+    comp_type = comp_kind_e.Rest
     to_complete = words[-1]
 
   comp_index = len(words) - 1
@@ -653,9 +655,9 @@ class RootCompleter(object):
   """
   Provide completion of a buffer according to the configured rules.
   """
-  def __init__(self, ev, comp_lookup, var_comp, parse_ctx, progress_f,
+  def __init__(self, word_ev, comp_lookup, var_comp, parse_ctx, progress_f,
                debug_f):
-    self.ev = ev
+    self.word_ev = word_ev
     self.comp_lookup = comp_lookup
     # This can happen in any position, with any command
     self.var_comp = var_comp
@@ -697,34 +699,50 @@ class RootCompleter(object):
     #
     # completing aliases -- someone mentioned about zsh
 
-    if 0:
+    if 0:  # TODO: enable
+      comp_type, to_complete, comp_words = _GetCompKindHeuristic(self.parser,
+                                                                 comp.line)
+      self.debug_f.log(
+          'OLD comp_type: %s, to_complete: %s, comp_words %s', comp_type,
+          to_complete, comp_words)
+
       w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
-      comp_type, to_complete, comp_words = _GetCompletionType(
-          w_parser, c_parser, self.ev, self.debug_f)
+      # NOTE: comp_words could be argv or partial_argv?  They are stripped of
+      # shell syntax.
+      comp_type, to_complete, comp_words = _GetCompKind(w_parser, c_parser,
+                                                        self.word_ev,
+                                                        self.debug_f)
     else:
-      comp_type, to_complete, comp_words = _GetCompletionType1(self.parser, comp.line)
+      comp_type, to_complete, comp_words = _GetCompKindHeuristic(self.parser,
+                                                                 comp.line)
+    self.debug_f.log(
+        'NEW comp_type: %s, to_complete: %s, comp_words %s', comp_type,
+        to_complete, comp_words)
 
     index = len(comp_words) - 1  # COMP_CWORD is -1 when it's empty
 
     # After parsing
     comp.Update(words=comp_words, index=index, to_complete=to_complete)
 
-    if comp_type == completion_state_e.VAR_NAME:
-      # Non-user chain
+    # Non-user chains
+    if comp_type == comp_kind_e.VarName:
+      # TODO: 
+      # - echo $F
+      # - echo ${F
+      # - echo $(( 2 * F ))  # var name here
+      # - echo $(echo ${undef:-${F    # required completing ${F
       chain = self.var_comp
-    elif comp_type == completion_state_e.HASH_KEY:
-      # Non-user chain
-      chain = 'TODO'
-    elif comp_type == completion_state_e.REDIR_FILENAME:
-      # Non-user chain
+    elif comp_type == comp_kind_e.HashKey:
+      chain = 'TODO: look in hash table keys'
+    elif comp_type == comp_kind_e.RedirPath:
       chain = FileSystemAction()
 
-    elif comp_type == completion_state_e.FIRST:
+    elif comp_type == comp_kind_e.First:
       chain = self.comp_lookup.GetFirstCompleter()
-    elif comp_type == completion_state_e.REST:
+    elif comp_type == comp_kind_e.Rest:
       chain = self.comp_lookup.GetCompleterForName(comp_words[0])
 
-    elif comp_type == completion_state_e.NONE:
+    elif comp_type == comp_kind_e.Nothing:
       # Null chain?  No completion?  For example,
       # ${a:- <TAB>  -- we have no idea what to put here
       chain = 'TODO'
@@ -801,7 +819,7 @@ class ReadlineCompleter(object):
 
     done = False
     while not done:
-      self.debug_f.log('comp_iter.next()')
+      #self.debug_f.log('comp_iter.next()')
       try:
         next_completion = self.comp_iter.next()
         done = True
