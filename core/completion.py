@@ -533,8 +533,6 @@ def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
   cur_token = w_parser.cur_token
   prev_token = w_parser.PrevToken()
   cur_word = w_parser.cursor
-  # TODO: This is UNUSED
-  comp_state = c_parser.GetCompletionState()
 
   # Find the last SimpleCommandNode.
   com_node = None
@@ -560,7 +558,30 @@ def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
     log('prev_token = %s', prev_token)
     log('cur_token = %s', cur_token)
     log('cur_word = %s', cur_word)
-    log('comp_state = %s', comp_state)
+    log('comp_state = %s', c_parser.parse_ctx.comp_state)
+  if 1:
+    from osh import ast_lib
+    print('  words:')
+    for w in c_parser.parse_ctx.comp_state.words:
+      ast_lib.PrettyPrint(w)
+    print()
+    print('  parts:')
+    for p in c_parser.parse_ctx.comp_state.word_parts:
+      ast_lib.PrettyPrint(p)
+    print()
+    print('  tokens:')
+    for p in c_parser.parse_ctx.comp_state.tokens:
+      ast_lib.PrettyPrint(p)
+    print()
+
+  if 0:
+    # Hm we need token IDs, not just line spans.
+    print('--')
+    arena = c_parser.parse_ctx.arena
+    last_span_id = arena.LastSpanId()
+    for spid in xrange(0, last_span_id):
+      span = arena.GetLineSpan(spid)
+      ast_lib.PrettyPrint(span)
 
   if com_node:
     for w in com_node.words:
@@ -595,8 +616,9 @@ def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
   # Id.Ignored_Space somewhere?  Not sure if it's worth it.
   cur_line = c_parser.lexer.GetCurrentLine()
   #log('current line = %r', cur_line)
-  if cur_line.endswith(' '):
-    partial_argv.append('')
+  # Done with CompDummy
+  #if cur_line.endswith(' '):
+  #  partial_argv.append('')
 
   n = len(partial_argv)
 

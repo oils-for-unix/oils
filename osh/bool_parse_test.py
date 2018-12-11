@@ -38,8 +38,7 @@ def _ReadWords(w_parser):
 def _MakeParser(code_str):
   # NOTE: We need the extra ]] token
   arena = test_lib.MakeArena('<bool_parse_test.py>')
-  parse_ctx = parse_lib.ParseContext(arena, {})
-  w_parser, _ = parse_ctx.MakeParserForCompletion(code_str + ' ]]', arena)
+  w_parser = test_lib.InitWordParser(code_str + ' ]]', arena=arena)
   w_parser._Next(lex_mode_e.DBracket)  # for tests only
   p = bool_parse.BoolParser(w_parser)
   p._Next()

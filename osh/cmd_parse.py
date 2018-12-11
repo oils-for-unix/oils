@@ -353,8 +353,6 @@ class CommandParser(object):
 
     Called by the interactive loop.
     """
-    self.completion_stack = []
-
     # Cursor state set by _Peek()
     self.next_lex_mode = lex_mode_e.Outer
     self.cur_word = None  # current word
@@ -374,9 +372,6 @@ class CommandParser(object):
     self.w_parser.Reset()
     self.lexer.ResetInputObjects()
     self.line_reader.Reset()
-
-  def GetCompletionState(self):
-    return self.completion_stack
 
   # NOTE: If our approach to _MaybeExpandAliases isn't sufficient, we could
   # have an expand_alias=True flag here?  We would litter the parser with calls
@@ -515,6 +510,7 @@ class CommandParser(object):
     """First pass: Split into redirects and words."""
     redirects = []
     words = []
+    self.parse_ctx.comp_state.words = words  # HACK
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:

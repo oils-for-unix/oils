@@ -2,7 +2,7 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-from core.meta import types_asdl
+from core.meta import types_asdl, Id
 
 from frontend import lexer
 from frontend import reader
@@ -18,6 +18,32 @@ from oil_lang import cmd_parse as oil_cmd_parse
 lex_mode_e = types_asdl.lex_mode_e
 
 
+class _CompletionState(object):
+  """
+  Output from the parser that helps us complete commands.
+  """
+
+  def __init__(self):
+    # word from a partially completed command.
+    # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
+    self.words = []
+    # word_part from a partially completed word.
+    # Filled in by _ReadCompoundWord in osh/word_parse.py 
+    self.word_parts = []
+    # ALL tokens.  Filled in by _Peek() in osh/word_parse.py.  TODO: doesn't
+    # this lose ignored tokens?  Should we put it in LineLexer?
+    # Where it adds line spans?  It should add the whole token?
+
+    # NOTE:
+    # - These tokens do not respsect PushHint?  Is that good?
+    # - What about MaybeUnreadOne?  It has arena_skip
+    # - technically we could ignore \?  Because $\<TAB> could complete vars!
+    self.tokens = []
+
+  def __repr__(self):
+    return '<_CompletionState %s %s>' % (self.words, self.word_parts)
+
+
 class ParseContext(object):
   """Context shared between the mutually recursive Command and Word parsers.
 
@@ -27,6 +53,9 @@ class ParseContext(object):
   def __init__(self, arena, aliases):
     self.arena = arena
     self.aliases = aliases
+    # Completion state lives here since it may span multiple parsers.
+    # TODO: Should we clear this at ParseLogicalLine ?
+    self.comp_state = _CompletionState()
 
   def MakeOshParser(self, line_reader):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
@@ -95,6 +124,7 @@ class ParseContext(object):
     line_reader = reader.StringLineReader(code_str, arena)
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)  # AtEnd() is true
     lx = lexer.Lexer(line_lexer, line_reader)
+    lx.PushHint(Id.Eof_Real, Id.Lit_CompDummy)
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
                                        arena=arena)

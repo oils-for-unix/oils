@@ -128,8 +128,16 @@ def InitExecutor(arena=None):
                            parse_ctx, devtools)
 
 
+def InitWordParser(code_str, arena=None):
+  arena = arena or MakeArena('<test_lib>')
+  parse_ctx = parse_lib.ParseContext(arena, {})
+  line_reader, _ = InitLexer(code_str, arena)
+  w_parser, c_parser = parse_ctx.MakeOshParser(line_reader)
+  return w_parser
+
+
 def InitCommandParser(code_str, arena=None):
-  arena = arena or MakeArena('<cmd_exec_test.py>')
+  arena = arena or MakeArena('<test_lib>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, _ = InitLexer(code_str, arena)
   w_parser, c_parser = parse_ctx.MakeOshParser(line_reader)

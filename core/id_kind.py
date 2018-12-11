@@ -159,6 +159,8 @@ def AddKinds(spec):
       'Digits',            # for lex_mode_e.Arith
       'At',                # for ${a[@]}, in lex_mode_e.Arith
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
+      'CompDummy',        # A fake Lit_* token to get partial words during
+                           # completion
   ])
 
   spec.AddKind('Op', [

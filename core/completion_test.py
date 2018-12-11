@@ -236,6 +236,9 @@ class PartialParseTest(unittest.TestCase):
     _TestCompKind(self, 'ls && ', check=False)
 
     _TestCompKind(self, 'echo $(echo hi', check=False)
+    # One word part
+    _TestCompKind(self, 'echo a$(echo hi', check=False)
+    _TestCompKind(self, 'echo a$x', check=False)
 
     # should we use a Lit_Dollar token here, for completion?
     _TestCompKind(self, 'echo $', check=False)
@@ -245,8 +248,15 @@ class PartialParseTest(unittest.TestCase):
     _TestCompKind(self, 'echo ${undef:-$', check=False)
     _TestCompKind(self, 'echo ${undef:-$F', check=False)
 
+    # Complete var names in arith context??  Or funcs?
+    _TestCompKind(self, 'echo $((', check=False)
+    _TestCompKind(self, 'echo $(( ', check=False)
+    # Lit_ArithVarLike could be completed.  The above 2 might not.
+    # This could be a function too though, like f().
+    _TestCompKind(self, 'echo $(( f', check=False)
+
   def testEmpty(self):
-    _TestCompKind(self, '')
+    _TestCompKind(self, '', check=False)
     _TestCompKind(self, ' ')
 
   def testCommands(self):

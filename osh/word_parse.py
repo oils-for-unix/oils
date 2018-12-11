@@ -100,6 +100,9 @@ class WordParser(object):
       self.token_kind = LookupKind(self.cur_token.id)
       self.token_type = self.cur_token.id
 
+      # Save every token!
+      self.parse_ctx.comp_state.tokens.append(self.cur_token)
+
       self.next_lex_mode = None
     return self.cur_token
 
@@ -882,6 +885,8 @@ class WordParser(object):
     and remove this special case?
     """
     word = osh_word.CompoundWord()
+    # Save state for completion!
+    self.parse_ctx.comp_state.word_parts = word.parts
 
     num_parts = 0
     done = False
