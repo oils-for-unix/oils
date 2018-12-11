@@ -22,6 +22,13 @@ from pylib import os_path
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 
 
+# This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
+# Python overwrites this to something Python-specific in Modules/readline.c, so
+# we have to set it back!
+# Used in both core/competion.py and osh/state.py
+READLINE_DELIMS = ' \t\n"\'><=;|&(:'
+
+
 class _ErrorWithLocation(Exception):
   """A parse error that can be formatted.
 

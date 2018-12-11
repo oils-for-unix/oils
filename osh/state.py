@@ -517,7 +517,7 @@ class Mem(object):
 
     # bash-completion uses this.  Value copied from bash.  It doesn't integrate
     # with 'readline' yet.
-    SetGlobalString(self, 'COMP_WORDBREAKS', '"\'><=;|&(:')
+    SetGlobalString(self, 'COMP_WORDBREAKS', util.READLINE_DELIMS)
 
   def _InitVarsFromEnv(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in

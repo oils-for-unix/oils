@@ -15,6 +15,7 @@ from core import test_lib
 from core.meta import syntax_asdl, Id, Kind, LookupKind, types_asdl
 
 lex_mode_e = types_asdl.lex_mode_e
+token = syntax_asdl.token
 
 
 def _InitLexer(s):
@@ -175,6 +176,43 @@ class LexerTest(unittest.TestCase):
 
     self.assertTokensEqual(
         syntax_asdl.token(Id.Op_LParen, '('), lexer.LookAhead(lex_mode_e.Outer))
+
+  def testPushHint(self):
+    # Extglob use case
+    lexer = _InitLexer('@()')
+    lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
+
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.ExtGlob_At, '@('), t)
+
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.Right_ExtGlob, ')'), t)
+
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.Eof_Real, ''), t)
+
+    # EOF use case
+    lexer = _InitLexer('@()')
+    lexer.PushHint(Id.Eof_Real, Id.Lit_Other)
+    lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
+
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.ExtGlob_At, '@('), t)
+
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.Right_ExtGlob, ')'), t)
+
+    # First we get the translated one
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.Lit_Other, ''), t)
+
+    # Then we get a real EOF
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.Eof_Real, ''), t)
+
+    # Another EOF
+    t = lexer.Read(lex_mode_e.Outer)
+    self.assertTokensEqual(token(Id.Eof_Real, ''), t)
 
 
 class LineLexerTest(unittest.TestCase):

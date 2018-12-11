@@ -237,6 +237,7 @@ class PartialParseTest(unittest.TestCase):
 
     _TestCompKind(self, 'echo $(echo hi', check=False)
 
+    # should we use a Lit_Dollar token here, for completion?
     _TestCompKind(self, 'echo $', check=False)
     _TestCompKind(self, 'echo $F', check=False)
     _TestCompKind(self, 'echo ${F', check=False)

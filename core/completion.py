@@ -533,6 +533,7 @@ def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
   cur_token = w_parser.cur_token
   prev_token = w_parser.PrevToken()
   cur_word = w_parser.cursor
+  # TODO: This is UNUSED
   comp_state = c_parser.GetCompletionState()
 
   # Find the last SimpleCommandNode.
@@ -554,7 +555,7 @@ def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
   else:  # No node.
     pass
 
-  if 1:
+  if 0:
     log('command node = %s', com_node)
     log('prev_token = %s', prev_token)
     log('cur_token = %s', cur_token)
@@ -875,15 +876,20 @@ def InitReadline(readline_mod, complete_cb):
 
   readline_mod.set_completer(complete_cb)
 
-  # NOTE: This apparently matters for -a -n completion -- why?  Is space the
-  # right value?
   # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
   # "The basic list of characters that signal a break between words for the
   # completer routine. The default value of this variable is the characters
   # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
+
+  # This determines the boundaries you get back from get_begidx() and
+  # get_endidx() at completion time!
+  # We could be more conservative and set it to ' ', but then cases like
+  # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
   #
-  # Hm I don't get this.
-  readline_mod.set_completer_delims(' ')
+  # Note that this should not affect the OSH completion algorithm.  It only
+  # affects what we pass back to readline and what readline displays to the
+  # user!
+  readline_mod.set_completer_delims(util.READLINE_DELIMS)
 
 
 def Init(readline_mod, root_comp, debug_f):

@@ -206,10 +206,9 @@ class Lexer(object):
         # The line_id might be -1.
         span_id = self.line_lexer.GetSpanIdForEof()
         t = syntax.token(Id.Eof_Real, '', span_id)
-        return t
-
-      self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
-      t = self.line_lexer.Read(lex_mode)
+      else:
+        self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
+        t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF
     if self.translation_stack:
