@@ -44,6 +44,18 @@ V1 = completion.WordsAction(['$var1', '$var2', '$another_var'])
 FIRST = completion.WordsAction(['grep', 'sed', 'test'])
 
 
+def MockApi(line):
+  """Match readline's get_begidx() / get_endidx()."""
+  end = len(line)
+  i = end - 1
+  while i > 0:
+    if line[i] in util.READLINE_DELIMS:
+      break
+    i -= 1
+
+  return completion.CompletionApi(line=line, begin=i+1, end=end)
+
+
 class CompletionTest(unittest.TestCase):
   def _MakeComp(self, words, index, to_complete):
     comp = completion.CompletionApi()
@@ -154,7 +166,72 @@ class CompletionTest(unittest.TestCase):
     matches = list(c2.Matches(comp))
     self.assertEqual(['foo.py'], matches)
 
-  def testRootCompleter(self):
+  def testRootCompleterCompletesVarNames(self):
+    # Several cases here
+    comp_lookup = completion.CompletionLookup()
+    ev = test_lib.MakeTestEvaluator()
+
+    pool = alloc.Pool()
+    arena = pool.NewArena()
+    parse_ctx = parse_lib.ParseContext(arena, {})
+    r = completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
+                                 progress_f, debug_f)
+
+    # Complete ALL variables
+    comp = MockApi('echo $')
+    self.assertEqual(5, comp.begin)  # what readline does
+    self.assertEqual(6, comp.end)
+    print(comp)
+    m = list(r.Matches(comp))
+    # Just test for a subset
+    self.assert_('$HOME' in m, m)
+    self.assert_('$IFS' in m, m)
+
+    # Now it has a prefix
+    comp = MockApi(line='echo $P')
+    self.assertEqual(5, comp.begin)  # what readline does
+    self.assertEqual(7, comp.end)
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('$PWD' in m, 'Got %s' % m)
+    self.assert_('$PS4' in m, 'Got %s' % m)
+
+    # BracedVarSub
+
+    # Complete ALL variables
+    comp = MockApi(line='echo ${')
+    print(comp)
+    m = list(r.Matches(comp))
+    # Just test for a subset
+    self.assert_('${HOME' in m, 'Got %s' % m)
+    self.assert_('${IFS' in m, 'Got %s' % m)
+
+    # Now it has a prefix
+    # NOTE: We use VSub_Name both for $FOO and ${FOO.  Might be bad?
+    # Yeah I think this makes sense to change.
+    if 0:
+      comp = MockApi(line='echo ${P')
+      print(comp)
+      m = list(r.Matches(comp))
+      self.assert_('${PWD' in m, 'Got %s' % m)
+      self.assert_('${PS4' in m, 'Got %s' % m)
+
+    # Odd word break
+    # NOTE: We use VSub_Name both for $FOO and ${FOO.  Might be bad?
+    comp = MockApi(line='echo ${undef:-$P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('-$PWD' in m, 'Got %s' % m)
+    self.assert_('-$PS4' in m, 'Got %s' % m)
+
+    # Odd word break
+    comp = MockApi(line='echo ${undef:-$')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('-$HOME' in m, 'Got %s' % m)
+    self.assert_('-$IFS' in m, 'Got %s' % m)
+
+  def testRootCompleterCompletesOther(self):
     comp_lookup = completion.CompletionLookup()
 
     comp_lookup.RegisterName('grep', C1)
@@ -165,8 +242,7 @@ class CompletionTest(unittest.TestCase):
     pool = alloc.Pool()
     arena = pool.NewArena()
     parse_ctx = parse_lib.ParseContext(arena, {})
-    var_comp = V1
-    r = completion.RootCompleter(ev, comp_lookup, var_comp, parse_ctx,
+    r = completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
                                  progress_f, debug_f)
 
     comp = completion.CompletionApi(line='grep f')
@@ -177,14 +253,11 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches(comp))
     self.assertEqual([], m)
 
-    m = list(r.Matches(completion.CompletionApi(line='ls $v')))
-    self.assertEqual(['$var1 ', '$var2 '], m)
-
     m = list(r.Matches(completion.CompletionApi(line='g')))
     self.assertEqual(['grep '], m)
 
     # Empty completer
-    m = list(r.Matches(completion.CompletionApi('')))
+    m = list(r.Matches(MockApi('')))
     self.assertEqual(['grep ', 'sed ', 'test '], m)
 
     # Test compound commands. These PARSE
@@ -207,22 +280,11 @@ def _TestCompKind(test, buf, check=True):
   ev = test_lib.MakeTestEvaluator()
   arena = test_lib.MakeArena('<completion_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
-  w_parser, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
+  _, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
   print('--- %r' % buf)
 
-  # Comparison
-  p = completion.DummyParser()
-  old_kind, old_prefix, old_argv = completion._GetCompKindHeuristic(p, buf)
-
-  new_kind, new_prefix, new_argv = completion._GetCompKind(w_parser, c_parser,
-                                                           ev, debug_f)
-
-  if check:
-    test.assertEqual(new_kind, old_kind)
-    test.assertEqual(new_prefix, old_prefix)
-    test.assertEqual(new_argv, old_argv)
-
-  print()
+  # TODO:
+  # Create MockApi(buf) and pass it to RootCompleter
 
 
 class PartialParseTest(unittest.TestCase):

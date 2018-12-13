@@ -80,7 +80,6 @@ class WordParser(object):
   def Reset(self, lex_mode=lex_mode_e.Outer):
     """Called by interactive loop."""
     # For _Peek()
-    self.prev_token = None  # for completion
     self.cur_token = None
     self.token_kind = Kind.Undefined
     self.token_type = Id.Undefined_Tok
@@ -95,7 +94,6 @@ class WordParser(object):
   def _Peek(self):
     """Helper method."""
     if self.next_lex_mode is not None:
-      self.prev_token = self.cur_token  # for completion
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_kind = LookupKind(self.cur_token.id)
       self.token_type = self.cur_token.id
@@ -112,13 +110,6 @@ class WordParser(object):
     We need this for proper interactive parsing.
     """
     self.next_lex_mode = lex_mode
-
-  def PrevToken(self):
-    """Inspect state.  Used by completion.
-
-    cur_token is usually Id.Op_Newline \n, so we need the previous one.
-    """
-    return self.prev_token
 
   def _ReadVarOpArg(self, arg_lex_mode, eof_type=Id.Undefined_Tok,
                     empty_ok=True):

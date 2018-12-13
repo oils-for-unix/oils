@@ -14,8 +14,6 @@ import unittest
 from core import test_lib
 from core.meta import syntax_asdl, Id, types_asdl
 
-from frontend import parse_lib
-
 from osh import bool_parse  # module under test
 
 bool_expr_e = syntax_asdl.bool_expr_e

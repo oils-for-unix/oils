@@ -191,26 +191,20 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(token(Id.Eof_Real, ''), t)
 
-    # EOF use case
-    lexer = _InitLexer('@()')
-    lexer.PushHint(Id.Eof_Real, Id.Lit_Other)
-    lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
+  def testEmitCompDummy(self):
+    lexer = _InitLexer('echo ')
+    lexer.EmitCompDummy()
 
     t = lexer.Read(lex_mode_e.Outer)
-    self.assertTokensEqual(token(Id.ExtGlob_At, '@('), t)
+    self.assertTokensEqual(token(Id.Lit_Chars, 'echo'), t)
 
     t = lexer.Read(lex_mode_e.Outer)
-    self.assertTokensEqual(token(Id.Right_ExtGlob, ')'), t)
+    self.assertTokensEqual(token(Id.WS_Space, ' '), t)
 
-    # First we get the translated one
+    # Right before EOF
     t = lexer.Read(lex_mode_e.Outer)
-    self.assertTokensEqual(token(Id.Lit_Other, ''), t)
+    self.assertTokensEqual(token(Id.Lit_CompDummy, ''), t)
 
-    # Then we get a real EOF
-    t = lexer.Read(lex_mode_e.Outer)
-    self.assertTokensEqual(token(Id.Eof_Real, ''), t)
-
-    # Another EOF
     t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(token(Id.Eof_Real, ''), t)
 

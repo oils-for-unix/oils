@@ -20,7 +20,6 @@ from osh import split
 from osh import word_eval
 from osh import state
 
-from frontend import parse_lib
 #from osh import arith_parse
 
 lex_mode_e = types_asdl.lex_mode_e

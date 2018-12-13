@@ -37,7 +37,7 @@ import time
 
 from core import alloc
 from core import util
-from core.meta import syntax_asdl, runtime_asdl
+from core.meta import syntax_asdl, runtime_asdl, Id
 from pylib import os_path
 from osh import state
 
@@ -155,6 +155,10 @@ class CompletionApi(object):
       comp_words = self.words
 
     return [command, self.to_complete, prev], comp_words
+
+  def __repr__(self):
+    """For testing"""
+    return '<CompletionApi %r %d-%d>' % (self.line, self.begin, self.end)
 
 
 #
@@ -450,145 +454,148 @@ class ChainedCompleter(object):
         self.actions, self.predicate, self.prefix, self.suffix)
 
 
-# TODO: This breaks completion of ~/.config, because $HOME isn't expanded.  We
-# need to use real parser.
+class RootCompleter(object):
+  """Dispatch to various completers.
 
-class DummyParser(object):
-
-  def GetWords(self, buf):
-    words = buf.split()
-    # 'grep ' -> ['grep', ''], so we're completing the second word
-    if buf.endswith(' '):
-      words.append('')
-    return words
-
-
-def _FindLastSimpleCommand(node):
+  - Complete the OSH language (variables, etc.), or
+  - Statically evaluate argv and dispatch to a command completer.
   """
-  The last thing has to be a simple command.  Cases:
+  def __init__(self, word_ev, comp_lookup, mem, parse_ctx, progress_f,
+               debug_f):
+    self.word_ev = word_ev  # for static evaluation of words
+    self.comp_lookup = comp_lookup  # to look up plugins
+    self.mem = mem  # to complete variable names
 
-  echo a; echo b
-  ls | wc -l
-  test -f foo && hello
-  """
-  if node.tag == command_e.SimpleCommand:
-    return node
-  if node.tag == command_e.Sentence:
-    return node.child
-  if node.tag == command_e.TimeBlock:
-    child = node.pipeline
-    if child.tag == command_e.SimpleCommand:
-      return child
-    if child.tag == command_e.Pipeline:
-      return child.children[0]
-  if node.tag == command_e.Assignment:
-    return None
-  if node.tag == command_e.ControlFlow:
-    return None
+    self.parse_ctx = parse_ctx
+    self.progress_f = progress_f
+    self.debug_f = debug_f
 
-  assert hasattr(node, 'children'), node
-
-  n = len(node.children)
-  if n == 0:
-    return None
-
-  # Go as deep as we need.
-  return _FindLastSimpleCommand(node.children[-1])
+  def Matches(self, comp):
+    """
+    Args:
+      comp: Callback args from readline.  Readline uses set_completer_delims to
+        tokenize the string.
 
 
-def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
-  """What kind of values should we complete?
+    Returns a list of matches relative to readline's completion_delims.
 
-  Args:
-    w_parser, c_parser, word_ev: For inspecting parser state
-    debug_f: Debug file
+    We have to post-process the output of various completers.
+    """
+    # TODO: What is the point of this?  Can we manually reduce the amount of GC
+    # time?
+    arena = alloc.SideArena('<completion>')
+    self.parse_ctx.ClearCompletionState()
+    _, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
 
-  Returns:
-    comp_type
-    prefix: the prefix to complete
-    comp_words: list of words.  First word is used for dispatching.
+    # NOTE Do we even use node?  We just want the output from parse_ctx.
+    try:
+      node = c_parser.ParseLogicalLine()
+    except util.ParseError as e:
+      # e.g. 'ls | ' will not parse.  Now inspect the parser state!
+      node = None
 
-  We try to parse the command line, then inspect the state of various parsers.
-  That turns into comp_kind_e and a partial_argv.
+    debug_f = self.debug_f
+    comp_state = c_parser.parse_ctx.comp_state
+    if 0:
+      #log('command node = %s', com_node)
+      #log('cur_token = %s', cur_token)
+      #log('cur_word = %s', cur_word)
+      log('comp_state = %s', comp_state)
+    if 1:
+      from osh import ast_lib
+      debug_f.log('  words:')
+      for w in comp_state.words:
+        ast_lib.PrettyPrint(w, f=debug_f)
+      debug_f.log('')
+      debug_f.log('  parts:')
+      for p in comp_state.word_parts:
+        ast_lib.PrettyPrint(p, f=debug_f)
+      debug_f.log('')
+      debug_f.log('  tokens:')
+      for p in comp_state.tokens:
+        ast_lib.PrettyPrint(p, f=debug_f)
+      debug_f.log('')
 
-  NOTE: partial_argv isn't necessary for comp_kind_e.{VarName,HashKey} etc.?
+    toks = comp_state.tokens
+    # NOTE: We get the EOF in the command state, but not in the middle of a
+    # BracedVarSub.  Due to the way the WordParser works.
 
-  We also look at the state of the LineLexer in order to determine if we're
-  completing a new word.
+    last = -1
+    if toks[-1].id == Id.Eof_Real:
+      last -= 1  # ignore it
 
-  """
-  # Return values
-  kind = comp_kind_e.First
-  to_complete = ''
-  partial_argv = []
+    try:
+      t2 = toks[last]
+    except IndexError:
+      t2 = None
+    try:
+      t3 = toks[last-1]
+    except IndexError:
+      t3 = None
 
-  try:
-    node = c_parser.ParseLogicalLine()
-  except util.ParseError as e:
-    # e.g. 'ls | ' will not parse.  Now inspect the parser state!
-    node = None
+    # TODO: Add Lit_Dollar?
+    def IsDollar(t):
+      return t.id == Id.Lit_Other and t.val == '$'
 
-  # Inspect state after parsing.  Hm I'm getting the newline.  Can I view the
-  # one before that?
-  cur_token = w_parser.cur_token
-  prev_token = w_parser.PrevToken()
-  cur_word = w_parser.cursor
+    def IsDummy(t):
+      return t.id == Id.Lit_CompDummy
 
-  # Find the last SimpleCommandNode.
-  com_node = None
-  if node:
-    # These 4 should all parse
-    if node.tag == command_e.SimpleCommand:
-      com_node = node
+    debug_f.log('line: %r', comp.line)
+    debug_f.log('rl_slice from byte %d to %d: %r', comp.begin, comp.end,
+        comp.line[comp.begin:comp.end])
 
-    elif node.tag == command_e.CommandList:  # echo a; echo b
-      com_node = _FindLastSimpleCommand(node)
-    elif node.tag == command_e.AndOr:  # echo a && echo b
-      com_node = _FindLastSimpleCommand(node)
-    elif node.tag == command_e.Pipeline:  # echo a | wc -l
-      com_node = _FindLastSimpleCommand(node)
-    else:
-      # Return comp_kind_e.Nothing?  Not handling it for now
-      pass
-  else:  # No node.
-    pass
+    debug_f.log('t2 %s', t2)
+    debug_f.log('t3 %s', t3)
 
-  if 0:
-    log('command node = %s', com_node)
-    log('prev_token = %s', prev_token)
-    log('cur_token = %s', cur_token)
-    log('cur_word = %s', cur_word)
-    log('comp_state = %s', c_parser.parse_ctx.comp_state)
-  if 1:
-    from osh import ast_lib
-    print('  words:')
-    for w in c_parser.parse_ctx.comp_state.words:
-      ast_lib.PrettyPrint(w)
-    print()
-    print('  parts:')
-    for p in c_parser.parse_ctx.comp_state.word_parts:
-      ast_lib.PrettyPrint(p)
-    print()
-    print('  tokens:')
-    for p in c_parser.parse_ctx.comp_state.tokens:
-      ast_lib.PrettyPrint(p)
-    print()
+    if t3:  # We always have t2?
+      if IsDollar(t3) and IsDummy(t2):
+        # TODO: share this with logic below.  Or use t2.
+        span = arena.GetLineSpan(t3.span_id)
+        t3_begin = span.col
+        prefix = comp.line[comp.begin : t3_begin+1]  # +1 for the $
 
-  if 0:
-    # Hm we need token IDs, not just line spans.
-    print('--')
-    arena = c_parser.parse_ctx.arena
-    last_span_id = arena.LastSpanId()
-    for spid in xrange(0, last_span_id):
-      span = arena.GetLineSpan(spid)
-      ast_lib.PrettyPrint(span)
+        for name in self.mem.VarNames():
+          yield prefix + name
+        return
 
-  if com_node:
-    for w in com_node.words:
+      # echo ${
+      if t3.id == Id.Left_VarSub and IsDummy(t2):
+        for name in self.mem.VarNames():
+          yield '${' + name
+        return
+
+      # echo $P
+      # AND echo ${P ?  Do we have to separate these?
+      if t3.id == Id.VSub_Name and IsDummy(t2):
+        # Example: ${undef:-$P
+        # readline splits at ':' so we have to prepend '-$' to every completed
+        # variable name.
+        span = arena.GetLineSpan(t3.span_id)
+        t3_begin = span.col
+        prefix = comp.line[comp.begin : t3_begin+1]  # +1 for the $
+        to_complete = t3.val[1:]
+        for name in self.mem.VarNames():
+          if name.startswith(to_complete):
+            yield prefix + name
+        return
+
+    #
+    # It didn't look like we need to complete variable names.  Now try
+    # partial_argv.
+    #
+    # TODO: Detect when the words aren't the last thing?  When does that
+    # happen?
+    # Like if<TAB> ?
+
+    partial_argv = []
+    for w in comp_state.words:
       try:
         # TODO: Should we call EvalWordSequence?  But turn globbing off?  It
         # can do splitting and such.
-        val = word_ev.EvalWordToString(w)
+
+        # TODO: Do we have to TildeDetect here?
+
+        val = self.word_ev.EvalWordToString(w)
       except util.FatalRuntimeError:
         # Why would it fail?
         continue
@@ -596,195 +603,38 @@ def _GetCompKind(w_parser, c_parser, word_ev, debug_f):
         partial_argv.append(val.s)
       else:
         pass
-        # Oh I have to handle $@ on the command line?
 
-  # TODO: Detect SimpleVarSub and BracedVarSub?
-  #
-  # FindLastVarSub on the word nodes?
-  # Does it make sense to write a function that flattens the LST?
-  # And then we look for the last thing?
-  #
-  # Do we care about this?
-  #
-  # copy --verb'o'<TAB>
-  #
-  # o=$o
-  # copy --verb'o'<TAB>
-  # We should check language completions FIRST.
+    n = len(partial_argv)
 
-  # To distinguish 'echo<TAB>' vs. 'echo <TAB>'.  Could instead we look for
-  # Id.Ignored_Space somewhere?  Not sure if it's worth it.
-  cur_line = c_parser.lexer.GetCurrentLine()
-  #log('current line = %r', cur_line)
-  # Done with CompDummy
-  #if cur_line.endswith(' '):
-  #  partial_argv.append('')
-
-  n = len(partial_argv)
-
-  if n == 0:
-    kind = comp_kind_e.First
-    to_complete = ''
-  elif n == 1:
-    kind = comp_kind_e.First
-    to_complete = partial_argv[-1]
-  else:
-    kind = comp_kind_e.Rest
-    to_complete = partial_argv[-1]
-
-  # TODO: Need to show buf... Need a multiline display for debugging?
-  if 0:
-    debug_f.log('prev_token %s  cur_token %s  cur_word %s',
-        prev_token, cur_token, cur_word)
-    debug_f.log('comp_state %s  error %s', comp_state, c_parser.Error())
-    # This one can be multiple lines
-    debug_f.log('node: %s %s', repr(node) if node else '<Parse Error>',
-                  node.tag if node else '')
-    # This one can be multiple lines
-    debug_f.log('com_node: %s', repr(com_node) if com_node else '<None>')
-
-  return kind, to_complete, partial_argv
-
-
-def _GetCompKindHeuristic(parser, buf):
-  """Hacky implementation using heuristics."""
-  words = parser.GetWords(buf)  # just does a dummy split for now
-
-  n = len(words)
-  # Complete variables
-  # TODO: Parser should tell if we saw $, ${, but are NOT in a single quoted
-  # state.  And also we didn't see $${, which would be a special var.  Oil
-  # rules are almost the same.
-  if n > 0 and words[-1].startswith('$'):
-    comp_type = comp_kind_e.VarName
-    to_complete = words[-1]
-
-  # Otherwise complete words
-  elif n == 0:
-    comp_type = comp_kind_e.First
-    to_complete = ''
-  elif n == 1:
-    comp_type = comp_kind_e.First
-    to_complete = words[-1]
-  else:
-    comp_type = comp_kind_e.Rest
-    to_complete = words[-1]
-
-  comp_index = len(words) - 1
-  return comp_type, to_complete, words
-
-
-class RootCompleter(object):
-  """
-  Provide completion of a buffer according to the configured rules.
-  """
-  def __init__(self, word_ev, comp_lookup, var_comp, parse_ctx, progress_f,
-               debug_f):
-    self.word_ev = word_ev
-    self.comp_lookup = comp_lookup
-    # This can happen in any position, with any command
-    self.var_comp = var_comp
-    self.parse_ctx = parse_ctx
-    self.progress_f = progress_f
-    self.debug_f = debug_f
-
-    # This simply splits words!
-    self.parser = DummyParser()  # TODO: remove
-
-  def Matches(self, comp):
-    arena = alloc.SideArena('<completion>')
-
-    # Two strategies:
-    # 1. COMP_WORDBREAKS like bash.  set_completer_delims()
-    # 2. Use the actual OSH parser.  Parse these cases:
-    #   - echo 
-    #   - $VA
-    #   - ${VA
-    #   - $(echo h)
-    #     - <(echo h)
-    #     - >(echo h)
-    #     - ``
-    #   - $(( VA    # This should be a variable name
-    #   - while false; do <TAB>
-    #   - if <TAB>
-    #   - while <TAB> -- bash gets this wrong!
-    #   - command <TAB> -- bash-completion fills this in
-    #   - alias completion?
-    #     - alias ll='ls -l'
-    #   - also var expansion?  
-    #     foo=ls
-    #     $foo <TAB>    (even ZSH doesn't seem to handle this)
-    #
-    # the empty completer is consistently wrong.  Only works in the first
-    # position.
-    #
-    # I think bash-completion is fighting with bash?
-    #
-    # completing aliases -- someone mentioned about zsh
-
-    if 0:  # TODO: enable
-      comp_type, to_complete, comp_words = _GetCompKindHeuristic(self.parser,
-                                                                 comp.line)
-      self.debug_f.log(
-          'OLD comp_type: %s, to_complete: %s, comp_words %s', comp_type,
-          to_complete, comp_words)
-
-      w_parser, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
-      # NOTE: comp_words could be argv or partial_argv?  They are stripped of
-      # shell syntax.
-      comp_type, to_complete, comp_words = _GetCompKind(w_parser, c_parser,
-                                                        self.word_ev,
-                                                        self.debug_f)
+    if n == 0:
+      # should never get this because of Lit_CompDummy?
+      raise AssertionError
+    elif n == 1:
+      # First
+      completer = self.comp_lookup.GetFirstCompleter()
     else:
-      comp_type, to_complete, comp_words = _GetCompKindHeuristic(self.parser,
-                                                                 comp.line)
-    self.debug_f.log(
-        'NEW comp_type: %s, to_complete: %s, comp_words %s', comp_type,
-        to_complete, comp_words)
+      completer = self.comp_lookup.GetCompleterForName(partial_argv[0])
 
-    index = len(comp_words) - 1  # COMP_CWORD is -1 when it's empty
-
+    index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
     # After parsing
-    comp.Update(words=comp_words, index=index, to_complete=to_complete)
-
-    # Non-user chains
-    if comp_type == comp_kind_e.VarName:
-      # TODO: 
-      # - echo $F
-      # - echo ${F
-      # - echo $(( 2 * F ))  # var name here
-      # - echo $(echo ${undef:-${F    # required completing ${F
-      chain = self.var_comp
-    elif comp_type == comp_kind_e.HashKey:
-      chain = 'TODO: look in hash table keys'
-    elif comp_type == comp_kind_e.RedirPath:
-      chain = FileSystemAction()
-
-    elif comp_type == comp_kind_e.First:
-      chain = self.comp_lookup.GetFirstCompleter()
-    elif comp_type == comp_kind_e.Rest:
-      chain = self.comp_lookup.GetCompleterForName(comp_words[0])
-
-    elif comp_type == comp_kind_e.Nothing:
-      # Null chain?  No completion?  For example,
-      # ${a:- <TAB>  -- we have no idea what to put here
-      chain = 'TODO'
-    else:
-      raise AssertionError(comp_type)
+    comp.Update(words=partial_argv, index=index, to_complete=partial_argv[-1])
 
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
-    self.debug_f.log('Using %s', chain)
+    self.debug_f.log('Using %s', completer)
 
     i = 0
-    for m in chain.Matches(comp):
-      # TODO: dedupe these?  You can get two 'echo' in bash, which is dumb.
+    for m in completer.Matches(comp):
+      # TODO:
+      # - dedupe these?  You can get two 'echo' in bash, which is dumb.
+      # - Do shell QUOTING here for filenames?
+      # - Add trailing slashes to directories?
+      # - don't append space if 'nospace' is set?
 
       if m.endswith('/'):
         yield m
       else:
-        # TODO: don't append space if 'nospace' is set?
         yield m + ' '
 
       # NOTE: Can't use %.2f in production build!
@@ -800,15 +650,11 @@ class RootCompleter(object):
     self.progress_f.Write(
         'Found %d match%s for %r in %d ms', i,
         plural, comp.line, elapsed_ms)
-    done = True
-
-    # TODO: Have to de-dupe and sort these?  Because 'echo' is a builtin as
-    # well as a command, and we don't want to show it twice.  Although then
-    # it's not incremental.  We can still show progress though.  Need
-    # status_line.
 
 
 class ReadlineCompleter(object):
+  """A callable we pass to the readline module."""
+
   def __init__(self, readline_mod, root_comp, debug_f):
     self.readline_mod = readline_mod
     self.root_comp = root_comp
@@ -823,18 +669,13 @@ class ReadlineCompleter(object):
       # StringLineReader?
       buf = self.readline_mod.get_line_buffer()
 
-      # Begin: the index of the first char of the 'word' in the line.  Words
-      # are parsed according to readline delims (which we won't use).
-
+      # Readline parses "words" using characters provided by
+      # set_completer_delims().
+      # We have our own notion of words.  So let's call this a 'rl_slice'.
       begin = self.readline_mod.get_begidx()
-
-      # The current position of the cursor.  The thing being completed.
       end = self.readline_mod.get_endidx()
 
       comp = CompletionApi(line=buf, begin=begin, end=end)
-      self.debug_f.log(
-          'line: %r / begin - end: %d - %d, part: %r', buf, begin, end,
-          buf[begin:end])
 
       self.comp_iter = self.root_comp.Matches(comp)
 
@@ -861,14 +702,12 @@ class ReadlineCompleter(object):
 
   def __call__(self, unused_word, state):
     """Return a single match."""
-    # NOTE: The readline library tokenizes words.  We bypass that and use
-    # get_line_buffer().  So we get 'for x in l' instead of just 'l'.
-
-    #self.debug_f.log(0, 'word %r state %s', unused_word, state)
     try:
       return self._GetNextCompletion(state)
-    except Exception as e:
+    except Exception as e:  # ESSENTIAL because readline swallows exceptions.
+      #import traceback
       #traceback.print_exc()
+      #log('Unhandled exception while completing: %s', e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # Because readline ignores SystemExit!

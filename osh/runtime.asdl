@@ -91,21 +91,19 @@ module runtime
   process_state = Init | Done
 
   -- core/completion.py
-  -- Nothing: no completions.
-  -- RedirPath: stdin only!
-  -- HashKey: do this later
-
-  -- Note: this could also be a CompRequest
-  -- CompRequest(First, prefix)
-  -- CompRequest(Rest, prefix, comp_words)  # use the full context
-  -- CompRequest(VarName, prefix)
-  -- CompRequest(HashKey, prefix, hash_name)  # use var name
-  -- CompRequest(RedirPath, prefix)
-
-  -- NOTE: should there be different states for variables in SimpleVarSub,
-  -- BracedVarSub, arith -- context, etc.?
-
   comp_kind = Nothing | First | Rest | VarName | HashKey | RedirPath
+
+  -- TODO: Fill this in
+  comp_kind2 = 
+    First(string prefix)  -- what about location info?
+  | Rest(string first, string* words)  -- what else?
+                                       -- this one dispatches to a handler
+  | VarName(string prefix) 
+  | FileSystem(string prefix)  -- requires no context?
+
+  -- begidx and endidx from readline?
+  loc_info = (int begin, int end, string line)
+  comp_req = (comp_kind2 kind, loc_info loc)
 
   -- tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ

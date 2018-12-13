@@ -268,8 +268,24 @@ class DebugFile(object):
     self.f.write('\n')
     self.f.flush()  # need to see it interacitvely
 
+  # These two methods are for ast_lib.PrettyPrint
+  def write(self, s):
+    self.f.write(s)
 
-class NullDebugFile(object):
+  def isatty(self):
+    return self.f.isatty()
+
+
+class NullDebugFile(DebugFile):
+
+  def __init__(self):
+    pass
 
   def log(self, *args):
     pass
+
+  def write(self, s):
+    pass
+
+  def isatty(self):
+    return False

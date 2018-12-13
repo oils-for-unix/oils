@@ -296,7 +296,16 @@ cat >${out} <${in}
 OSH
 cat >$(out) <$(in)
 OIL
+}
 
+# TODO: Make this pass after fixing left-to-right LST invariant.  That is,
+# SimpleCommand(..., cmd_part*)
+redirect-position-matters() {
+  osh0-oil3 << 'OSH' 3<< 'OIL'
+< input.txt cat >output.txt
+OSH
+< input.txt cat >output.txt
+OIL
 }
 
 here-doc() {

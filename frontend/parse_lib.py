@@ -2,7 +2,7 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-from core.meta import types_asdl, Id
+from core.meta import types_asdl
 
 from frontend import lexer
 from frontend import reader
@@ -27,17 +27,20 @@ class _CompletionState(object):
     # word from a partially completed command.
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
     self.words = []
+
     # word_part from a partially completed word.
     # Filled in by _ReadCompoundWord in osh/word_parse.py 
     self.word_parts = []
-    # ALL tokens.  Filled in by _Peek() in osh/word_parse.py.  TODO: doesn't
-    # this lose ignored tokens?  Should we put it in LineLexer?
-    # Where it adds line spans?  It should add the whole token?
 
-    # NOTE:
-    # - These tokens do not respsect PushHint?  Is that good?
-    # - What about MaybeUnreadOne?  It has arena_skip
-    # - technically we could ignore \?  Because $\<TAB> could complete vars!
+    # ALL tokens.  Filled in by _Peek() in osh/word_parse.py.  This loses
+    # ignored tokens, but that's OK?
+    #
+    # Example:
+    # $ echo $\
+    # f<TAB>   
+    # This could complete $foo.
+    # Problem: readline doesn't even allow that, because it spans more than one
+    # line!
     self.tokens = []
 
   def __repr__(self):
@@ -56,6 +59,10 @@ class ParseContext(object):
     # Completion state lives here since it may span multiple parsers.
     # TODO: Should we clear this at ParseLogicalLine ?
     self.comp_state = _CompletionState()
+
+  def ClearCompletionState(self):
+    # The other ones don't need to be reset?
+    del self.comp_state.tokens[:]
 
   def MakeOshParser(self, line_reader):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
@@ -124,7 +131,7 @@ class ParseContext(object):
     line_reader = reader.StringLineReader(code_str, arena)
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)  # AtEnd() is true
     lx = lexer.Lexer(line_lexer, line_reader)
-    lx.PushHint(Id.Eof_Real, Id.Lit_CompDummy)
+    lx.EmitCompDummy()  # A special token before EOF!
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
                                        arena=arena)

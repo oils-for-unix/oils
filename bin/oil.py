@@ -321,8 +321,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       splitter = split.SplitContext(mem)  # TODO: share with executor.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
       progress_f = ui.StatusLine()
-      var_action = completion.VariablesActionInternal(ex.mem)
-      root_comp = completion.RootCompleter(ev, comp_lookup, var_action,
+      # TODO: Should parse_ctx have a different arena?
+      root_comp = completion.RootCompleter(ev, comp_lookup, mem,
                                            parse_ctx, progress_f, debug_f)
       completion.Init(readline, root_comp, debug_f)
       _InitDefaultCompletions(ex, comp_lookup)

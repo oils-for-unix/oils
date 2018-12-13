@@ -148,6 +148,7 @@ class Lexer(object):
     self.line_reader = line_reader
     self.line_id = -1  # Invalid one
     self.translation_stack = []
+    self.emit_comp_dummy = False
 
   def ResetInputObjects(self):
     self.line_lexer.Reset('', -1, 0)
@@ -175,6 +176,10 @@ class Lexer(object):
     {}
     """
     return self.line_lexer.LookAhead(lex_mode)
+
+  def EmitCompDummy(self):
+    """Emit Id.Lit_CompDummy right before EOF, for completion."""
+    self.emit_comp_dummy = True
 
   def PushHint(self, old_id, new_id):
     """
@@ -205,10 +210,16 @@ class Lexer(object):
         # to retrieve the path and line number in ui.PrettyPrintError().
         # The line_id might be -1.
         span_id = self.line_lexer.GetSpanIdForEof()
-        t = syntax.token(Id.Eof_Real, '', span_id)
-      else:
-        self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
-        t = self.line_lexer.Read(lex_mode)
+        if self.emit_comp_dummy:
+          id_ = Id.Lit_CompDummy
+          self.emit_comp_dummy = False  # emit EOF the next time
+        else:
+          id_ = Id.Eof_Real
+        t = syntax.token(id_, '', span_id)
+        return t
+
+      self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
+      t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF
     if self.translation_stack:
