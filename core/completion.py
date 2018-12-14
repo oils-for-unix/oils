@@ -467,7 +467,7 @@ class RootCompleter(object):
     # TODO: What is the point of this?  Can we manually reduce the amount of GC
     # time?
     arena = alloc.SideArena('<completion>')
-    self.parse_ctx.ClearCompletionState()
+    self.parse_ctx.PrepareForCompletion()
     _, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
 
     # NOTE Do we even use node?  We just want the output from parse_ctx.
@@ -490,10 +490,12 @@ class RootCompleter(object):
       for w in comp_state.words:
         ast_lib.PrettyPrint(w, f=debug_f)
       debug_f.log('')
-      debug_f.log('  parts:')
-      for p in comp_state.word_parts:
-        print(p, file=debug_f)  # full
+
+      debug_f.log('  redirects:')
+      for r in comp_state.redirects:
+        ast_lib.PrettyPrint(r, f=debug_f)
       debug_f.log('')
+
       debug_f.log('  tokens:')
       for p in comp_state.tokens:
         ast_lib.PrettyPrint(p, f=debug_f)
@@ -587,20 +589,26 @@ class RootCompleter(object):
             yield prefix + name
         return
 
+    # This happens in the case of [[ and ((.  We're not parsing a command.
+    if not comp_state.words:
+      debug_f.log('Not a variable, and no words to complete')
+      return
 
-    # Complete tilde like 'echo ~' and 'echo ~a'.  TildeDetectAll() does NOT
-    # help here, because they don't have trailing slashes yet!
-    # We can't do it on tokens, because otherwise f~a will complete.  Looking
-    # at word_part is EXACTLY what we want.
-    word_parts = comp_state.word_parts
-    if (len(word_parts) == 2 and
-        word_parts[0].tag == word_part_e.LiteralPart and
-        word_parts[1].tag == word_part_e.LiteralPart and
-        word_parts[0].token.id == Id.Lit_TildeLike and
-        word_parts[1].token.id == Id.Lit_CompDummy):
-      t3 = word_parts[0].token
+    last_word = comp_state.words[-1]
 
-        # NOTE: Not bothering to compute prefix
+    # Complete tilde like 'echo ~' and 'echo ~a'.  This must be done at a word
+    # level, and TildeDetectAll() does NOT help here, because they don't have
+    # trailing slashes yet!  We can't do it on tokens, because otherwise f~a
+    # will complete.  Looking at word_part is EXACTLY what we want.
+    parts = last_word.parts
+    if (len(parts) == 2 and
+        parts[0].tag == word_part_e.LiteralPart and
+        parts[1].tag == word_part_e.LiteralPart and
+        parts[0].token.id == Id.Lit_TildeLike and
+        parts[1].token.id == Id.Lit_CompDummy):
+      t3 = parts[0].token
+
+      # NOTE: Not bothering to compute prefix
       prefix = '~'
       to_complete = t3.val[1:]
       for u in pwd.getpwall():
@@ -609,14 +617,7 @@ class RootCompleter(object):
           yield prefix + name + '/'
       return
 
-    # This happens in the case of [[ and ((.  We're not parsing a command.
-    if not comp_state.words:
-      debug_f.log('Not a variable, and no words to complete')
-      return
-
     # Check if we're actually completing a word!
-    last_word = comp_state.words[-1]
-
     span_id = word.RightMostSpanForWord(last_word)
     debug_f.log('last_word: %s', last_word)
     debug_f.log('span_id: %d', span_id)

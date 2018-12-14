@@ -510,7 +510,8 @@ class CommandParser(object):
     """First pass: Split into redirects and words."""
     redirects = []
     words = []
-    self.parse_ctx.comp_state.words = words  # HACK
+    # Set a reference so we can inspect state after a failed parse!
+    self.parse_ctx.SetLatestWords(words, redirects)
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:

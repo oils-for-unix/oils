@@ -27,10 +27,9 @@ class _CompletionState(object):
     # word from a partially completed command.
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
     self.words = []
-
-    # word_part from a partially completed word.  Used to expand ~.
-    # Filled in by _ReadCompoundWord in osh/word_parse.py 
-    self.word_parts = []
+    self.redirects = []
+    # TODO: We should maintain the LST invariant and have a single list, but
+    # that I ran into the "cases classes are better than variants" problem.
 
     # Non-ignored tokens, after PushHint translation.  Used for variable name
     # completion.  Filled in by _Peek() in osh/word_parse.py.
@@ -44,7 +43,7 @@ class _CompletionState(object):
     self.tokens = []
 
   def __repr__(self):
-    return '<_CompletionState %s %s>' % (self.words, self.word_parts)
+    return '<_CompletionState %s %s>' % (self.words, self.tokens)
 
 
 class ParseContext(object):
@@ -57,15 +56,29 @@ class ParseContext(object):
     self.arena = arena
     self.aliases = aliases
     # Completion state lives here since it may span multiple parsers.
-    # TODO: Should we clear this at ParseLogicalLine ?
     self.comp_state = _CompletionState()
+    self.completing = False
 
-  def ClearCompletionState(self):
-    # The other ones don't need to be reset?
-    del self.comp_state.tokens[:]
-    del self.comp_state.word_parts[:]
+  def PrepareForCompletion(self):
+    """Called every time we parse for completion."""
+    self.completing = True
     # must be deleted or we will have words from the oshrc arena!
     del self.comp_state.words[:]
+    # The other ones don't need to be reset?
+    del self.comp_state.tokens[:]
+
+  def SetLatestWords(self, words, redirects):
+    """Called by the CommandParser every time we can a command."""
+    if not self.completing:
+      return False
+    self.comp_state.words = words
+    self.comp_state.redirects = redirects
+
+  def AppendToken(self, token):
+    """Called by the CommandParser every time we can a command."""
+    if not self.completing:
+      return False
+    self.comp_state.tokens.append(token)
 
   def MakeOshParser(self, line_reader):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
