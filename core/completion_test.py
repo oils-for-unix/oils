@@ -56,6 +56,17 @@ def MockApi(line):
   return completion.CompletionApi(line=line, begin=i+1, end=end)
 
 
+def _MakeRootCompleter():
+  comp_lookup = completion.CompletionLookup()
+  ev = test_lib.MakeTestEvaluator()
+
+  pool = alloc.Pool()
+  arena = pool.NewArena()
+  parse_ctx = parse_lib.ParseContext(arena, {})
+  return completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
+                                  progress_f, debug_f)
+
+
 class CompletionTest(unittest.TestCase):
   def _MakeComp(self, words, index, to_complete):
     comp = completion.CompletionApi()
@@ -166,16 +177,28 @@ class CompletionTest(unittest.TestCase):
     matches = list(c2.Matches(comp))
     self.assertEqual(['foo.py'], matches)
 
-  def testRootCompleterCompletesVarNames(self):
-    # Several cases here
-    comp_lookup = completion.CompletionLookup()
-    ev = test_lib.MakeTestEvaluator()
+  def testRootCompleterCompletesHomeDIrs(self):
+    r = _MakeRootCompleter()
 
-    pool = alloc.Pool()
-    arena = pool.NewArena()
-    parse_ctx = parse_lib.ParseContext(arena, {})
-    r = completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
-                                 progress_f, debug_f)
+    comp = MockApi(line='echo ~r')
+    print(comp)
+    m = list(r.Matches(comp))
+     #This test isn't hermetic, but I think root should be on all systems.
+    self.assert_('~root/' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo ~')
+    print(comp)
+    m = list(r.Matches(comp))
+     #This test isn't hermetic, but I think root should be on all systems.
+    self.assert_('~root/' in m, 'Got %s' % m)
+
+    # Don't be overly aggressive!
+    comp = MockApi(line='echo a~')
+    m = list(r.Matches(comp))
+    self.assertEqual(0, len(m))
+
+  def testRootCompleterCompletesVarNames(self):
+    r = _MakeRootCompleter()
 
     # Complete ALL variables
     comp = MockApi('echo $')

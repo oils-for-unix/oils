@@ -1039,7 +1039,10 @@ class Mem(object):
     return exported
 
   def VarNames(self):
-    """For compgen -A variable."""
+    """For internal OSH completion and compgen -A variable.
+
+    NOTE: We could also add $? $$ etc.?
+    """
     # Look up the stack, yielding all variables.  Bash seems to do this.
     for scope in self.var_stack:
       for name, _ in scope.vars.iteritems():

@@ -151,6 +151,11 @@ benchmarks
 build
 ## END
 
+#### compgen -A user
+# no assertion because this isn't hermetic
+compgen -A user
+## status: 0
+
 #### compgen -W 'one two three'
 compgen -W 'one two three'
 echo --

@@ -28,12 +28,12 @@ class _CompletionState(object):
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
     self.words = []
 
-    # word_part from a partially completed word.
+    # word_part from a partially completed word.  Used to expand ~.
     # Filled in by _ReadCompoundWord in osh/word_parse.py 
     self.word_parts = []
 
-    # ALL tokens.  Filled in by _Peek() in osh/word_parse.py.  This loses
-    # ignored tokens, but that's OK?
+    # Non-ignored tokens, after PushHint translation.  Used for variable name
+    # completion.  Filled in by _Peek() in osh/word_parse.py.
     #
     # Example:
     # $ echo $\
@@ -63,6 +63,9 @@ class ParseContext(object):
   def ClearCompletionState(self):
     # The other ones don't need to be reset?
     del self.comp_state.tokens[:]
+    del self.comp_state.word_parts[:]
+    # must be deleted or we will have words from the oshrc arena!
+    del self.comp_state.words[:]
 
   def MakeOshParser(self, line_reader):
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)

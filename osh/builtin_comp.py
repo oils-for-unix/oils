@@ -3,6 +3,8 @@
 builtin_comp.py - Completion builtins
 """
 
+import pwd
+
 from core import completion
 from core import util
 from frontend import args
@@ -99,7 +101,10 @@ class _UsersAction(object):
   """complete -A user"""
 
   def Matches(self, comp):
-    raise NotImplementedError('-A user')
+    for u in pwd.getpwall():
+      name = u.pw_name
+      if name.startswith(comp.to_complete):
+        yield name
 
 
 def _BuildCompletionChain(argv, arg, ex):

@@ -31,9 +31,9 @@ from __future__ import print_function
 
 import atexit
 import posix
+import pwd
 import sys
 import time
-#import traceback
 
 from core import alloc
 from core import util
@@ -45,6 +45,7 @@ from osh import state
 import libc
 
 command_e = syntax_asdl.command_e
+word_part_e = syntax_asdl.word_part_e
 value_e = runtime_asdl.value_e
 comp_kind_e = runtime_asdl.comp_kind_e
 
@@ -460,9 +461,7 @@ class RootCompleter(object):
       comp: Callback args from readline.  Readline uses set_completer_delims to
         tokenize the string.
 
-
     Returns a list of matches relative to readline's completion_delims.
-
     We have to post-process the output of various completers.
     """
     # TODO: What is the point of this?  Can we manually reduce the amount of GC
@@ -493,7 +492,7 @@ class RootCompleter(object):
       debug_f.log('')
       debug_f.log('  parts:')
       for p in comp_state.word_parts:
-        ast_lib.PrettyPrint(p, f=debug_f)
+        print(p, file=debug_f)  # full
       debug_f.log('')
       debug_f.log('  tokens:')
       for p in comp_state.tokens:
@@ -588,13 +587,39 @@ class RootCompleter(object):
             yield prefix + name
         return
 
-    # This should never happen because of Id.Lit_CompDummy?
+
+    # Complete tilde like 'echo ~' and 'echo ~a'.  TildeDetectAll() does NOT
+    # help here, because they don't have trailing slashes yet!
+    # We can't do it on tokens, because otherwise f~a will complete.  Looking
+    # at word_part is EXACTLY what we want.
+    word_parts = comp_state.word_parts
+    if (len(word_parts) == 2 and
+        word_parts[0].tag == word_part_e.LiteralPart and
+        word_parts[1].tag == word_part_e.LiteralPart and
+        word_parts[0].token.id == Id.Lit_TildeLike and
+        word_parts[1].token.id == Id.Lit_CompDummy):
+      t3 = word_parts[0].token
+
+        # NOTE: Not bothering to compute prefix
+      prefix = '~'
+      to_complete = t3.val[1:]
+      for u in pwd.getpwall():
+        name = u.pw_name
+        if name.startswith(to_complete):
+          yield prefix + name + '/'
+      return
+
+    # This happens in the case of [[ and ((.  We're not parsing a command.
     if not comp_state.words:
+      debug_f.log('Not a variable, and no words to complete')
       return
 
     # Check if we're actually completing a word!
     last_word = comp_state.words[-1]
+
     span_id = word.RightMostSpanForWord(last_word)
+    debug_f.log('last_word: %s', last_word)
+    debug_f.log('span_id: %d', span_id)
     span = arena.GetLineSpan(span_id)
     last_col = span.col + span.length
     if last_col != comp.end:  # We're not completing the last word!
@@ -611,8 +636,16 @@ class RootCompleter(object):
     # happen?
     # Like if<TAB> ?
 
+    # needed to complete paths with ~
+    words2 = word.TildeDetectAll(comp_state.words)
+
+    if 1:
+      debug_f.log('After tilde detection')
+      for w in words2:
+        print(w, file=debug_f)
+
     partial_argv = []
-    for w in comp_state.words:
+    for w in words2:
       try:
         # TODO: Should we call EvalWordSequence?  But turn globbing off?  It
         # can do splitting and such.
@@ -730,9 +763,9 @@ class ReadlineCompleter(object):
     try:
       return self._GetNextCompletion(state)
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
-      #import traceback
-      #traceback.print_exc()
-      #log('Unhandled exception while completing: %s', e)
+      import traceback
+      traceback.print_exc()
+      log('Unhandled exception while completing: %s', e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # Because readline ignores SystemExit!
