@@ -565,7 +565,6 @@ class RootCompleter(object):
         return
 
       # echo $P
-      # AND echo ${P ?  Do we have to separate these?
       if t3.id == Id.VSub_DollarName and IsDummy(t2):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
@@ -574,6 +573,22 @@ class RootCompleter(object):
         t3_begin = span.col
         prefix = comp.line[comp.begin : t3_begin+1]  # +1 for the $
         to_complete = t3.val[1:]
+        for name in self.mem.VarNames():
+          if name.startswith(to_complete):
+            yield prefix + name
+        return
+
+      # TODO: Remove duplication here!
+
+      # echo ${P
+      if t3.id == Id.VSub_Name and IsDummy(t2):
+        # Example: ${undef:-$P
+        # readline splits at ':' so we have to prepend '-$' to every completed
+        # variable name.
+        span = arena.GetLineSpan(t3.span_id)
+        t3_begin = span.col
+        prefix = comp.line[comp.begin : t3_begin]
+        to_complete = t3.val
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
             yield prefix + name

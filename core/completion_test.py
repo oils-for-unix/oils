@@ -196,7 +196,9 @@ class CompletionTest(unittest.TestCase):
     self.assert_('$PWD' in m, 'Got %s' % m)
     self.assert_('$PS4' in m, 'Got %s' % m)
 
+    #
     # BracedVarSub
+    #
 
     # Complete ALL variables
     comp = MockApi(line='echo ${')
@@ -207,14 +209,11 @@ class CompletionTest(unittest.TestCase):
     self.assert_('${IFS' in m, 'Got %s' % m)
 
     # Now it has a prefix
-    # NOTE: We use VSub_Name both for $FOO and ${FOO.  Might be bad?
-    # Yeah I think this makes sense to change.
-    if 0:
-      comp = MockApi(line='echo ${P')
-      print(comp)
-      m = list(r.Matches(comp))
-      self.assert_('${PWD' in m, 'Got %s' % m)
-      self.assert_('${PS4' in m, 'Got %s' % m)
+    comp = MockApi(line='echo ${P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('${PWD' in m, 'Got %s' % m)
+    self.assert_('${PS4' in m, 'Got %s' % m)
 
     # Odd word break
     # NOTE: We use VSub_Name both for $FOO and ${FOO.  Might be bad?
@@ -230,6 +229,40 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches(comp))
     self.assert_('-$HOME' in m, 'Got %s' % m)
     self.assert_('-$IFS' in m, 'Got %s' % m)
+
+    #
+    # Double Quoted
+    #
+    # NOTE: GNU readline seems to complete closing quotes?  We don't want that.
+
+    comp = MockApi(line='echo "$')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('$HOME' in m, 'Got %s' % m)  # don't need leading "
+    self.assert_('$IFS' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo "$P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('$PWD' in m, 'Got %s' % m)  # don't need leading "
+    self.assert_('$PS4' in m, 'Got %s' % m)
+
+    #
+    # Prefix operator
+    #
+
+    if 0:  # Here you need to handle VSub_Pound
+      comp = MockApi(line='echo ${#')
+      print(comp)
+      m = list(r.Matches(comp))
+      self.assert_('${#HOME' in m, 'Got %s' % m)
+      self.assert_('${#IFS' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo "${#P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('${#PWD' in m, 'Got %s' % m)  # don't need leading "
+    self.assert_('${#PS4' in m, 'Got %s' % m)
 
   def testRootCompleterCompletesOther(self):
     comp_lookup = completion.CompletionLookup()
