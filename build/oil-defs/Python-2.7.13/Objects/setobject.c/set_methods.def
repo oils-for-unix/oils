@@ -1,7 +1,6 @@
 // Python-2.7.13/Objects/setobject.c
 
 static PyMethodDef set_methods[] = {
-  {"add", (PyCFunction)set_add, METH_O},
   {"update", (PyCFunction)set_update, METH_VARARGS},
   {0},
 };

@@ -617,6 +617,10 @@ class RootCompleter(object):
           yield prefix + name + '/'
       return
 
+    # TODO:
+    # - Check if we're completing a word or redirect
+    # - Only certain redirects ops take words!
+
     # Check if we're actually completing a word!
     span_id = word.RightMostSpanForWord(last_word)
     debug_f.log('last_word: %s', last_word)
