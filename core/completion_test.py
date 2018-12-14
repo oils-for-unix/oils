@@ -264,6 +264,22 @@ class CompletionTest(unittest.TestCase):
     self.assert_('${#PWD' in m, 'Got %s' % m)  # don't need leading "
     self.assert_('${#PS4' in m, 'Got %s' % m)
 
+    #
+    # Arithmetic Context
+    #
+
+    comp = MockApi(line='echo "$((PWD +P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('+PWD' in m, 'Got %s' % m)  # don't need leading "
+    self.assert_('+PS4' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo "$(( $P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('$PWD' in m, 'Got %s' % m)  # don't need leading "
+    self.assert_('$PS4' in m, 'Got %s' % m)
+
   def testRootCompleterCompletesOther(self):
     comp_lookup = completion.CompletionLookup()
 
@@ -278,15 +294,15 @@ class CompletionTest(unittest.TestCase):
     r = completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
                                  progress_f, debug_f)
 
-    comp = completion.CompletionApi(line='grep f')
+    comp = MockApi('grep f')
     m = list(r.Matches(comp))
     self.assertEqual(['foo.py ', 'foo '], m)
 
-    comp = completion.CompletionApi(line='grep g')
+    comp = MockApi('grep g')
     m = list(r.Matches(comp))
     self.assertEqual([], m)
 
-    m = list(r.Matches(completion.CompletionApi(line='g')))
+    m = list(r.Matches(MockApi('g')))
     self.assertEqual(['grep '], m)
 
     # Empty completer
@@ -294,15 +310,15 @@ class CompletionTest(unittest.TestCase):
     self.assertEqual(['grep ', 'sed ', 'test '], m)
 
     # Test compound commands. These PARSE
-    m = list(r.Matches(completion.CompletionApi('echo hi || grep f')))
-    m = list(r.Matches(completion.CompletionApi('echo hi; grep f')))
+    m = list(r.Matches(MockApi('echo hi || grep f')))
+    m = list(r.Matches(MockApi('echo hi; grep f')))
 
     # Brace -- does NOT parse
-    m = list(r.Matches(completion.CompletionApi('{ echo hi; grep f')))
+    m = list(r.Matches(MockApi('{ echo hi; grep f')))
     # TODO: Test if/for/while/case/etc.
 
-    m = list(r.Matches(completion.CompletionApi('var=$v')))
-    m = list(r.Matches(completion.CompletionApi('local var=$v')))
+    m = list(r.Matches(MockApi('var=$v')))
+    m = list(r.Matches(MockApi('local var=$v')))
 
 
 def _TestCompKind(test, buf, check=True):

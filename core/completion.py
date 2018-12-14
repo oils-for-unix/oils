@@ -39,6 +39,7 @@ from core import alloc
 from core import util
 from core.meta import syntax_asdl, runtime_asdl, Id
 from pylib import os_path
+from osh import word
 from osh import state
 
 import libc
@@ -298,23 +299,6 @@ class VariablesAction(object):
   def Matches(self, comp):
     for var_name in self.mem.VarNames():
       yield var_name
-
-
-class VariablesActionInternal(object):
-  """When we parse $VAR ourselves.
-
-  TODO: Also need to complete ${P (BracedVarSub)
-  """
-  def __init__(self, mem):
-    self.mem = mem
-
-  def Matches(self, comp):
-    to_complete = comp.to_complete
-    assert to_complete.startswith('$')
-    to_complete = to_complete[1:]
-    for name in self.mem.VarNames():
-      if name.startswith(to_complete):
-        yield '$' + name
 
 
 class ExternalCommandAction(object):
@@ -594,6 +578,31 @@ class RootCompleter(object):
             yield prefix + name
         return
 
+      if t3.id == Id.Lit_ArithVarLike and IsDummy(t2):
+        span = arena.GetLineSpan(t3.span_id)
+        t3_begin = span.col
+        prefix = comp.line[comp.begin : t3_begin]
+        to_complete = t3.val
+        for name in self.mem.VarNames():
+          if name.startswith(to_complete):
+            yield prefix + name
+        return
+
+    # This should never happen because of Id.Lit_CompDummy?
+    if not comp_state.words:
+      return
+
+    # Check if we're actually completing a word!
+    last_word = comp_state.words[-1]
+    span_id = word.RightMostSpanForWord(last_word)
+    span = arena.GetLineSpan(span_id)
+    last_col = span.col + span.length
+    if last_col != comp.end:  # We're not completing the last word!
+      debug_f.log('last col: %d', last_col)
+      debug_f.log('comp.end: %d', comp.end)
+      debug_f.log('Not completing a word!')
+      return
+
     #
     # It didn't look like we need to complete variable names.  Now try
     # partial_argv.
@@ -619,6 +628,7 @@ class RootCompleter(object):
       else:
         pass
 
+    debug_f.log('partial_argv: %s', partial_argv)
     n = len(partial_argv)
 
     if n == 0:
