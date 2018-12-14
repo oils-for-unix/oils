@@ -255,15 +255,16 @@ def AddKinds(spec):
   # But then you have AS_STAR, or Id.Arith_Star maybe
 
   spec.AddKind('VSub', [
-      'Name',    # $foo or ${foo}
-      'Number',  # $0 .. $9
-      'Bang',    # $!
-      'At',      # $@  or  [@] for array subscripting
-      'Pound',   # $#  or  ${#var} for length
-      'Dollar',  # $$
-      'Star',    # $*
-      'Hyphen',  # $-
-      'QMark',   # $?
+      'DollarName',  # $foo
+      'Name',        # 'foo' in ${foo}
+      'Number',      # $0 .. $9
+      'Bang',        # $!
+      'At',          # $@  or  [@] for array subscripting
+      'Pound',       # $#  or  ${#var} for length
+      'Dollar',      # $$
+      'Star',        # $*
+      'Hyphen',      # $-
+      'QMark',       # $?
   ])
 
   spec.AddKindPairs('VTest', [

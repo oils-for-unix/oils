@@ -566,7 +566,7 @@ class RootCompleter(object):
 
       # echo $P
       # AND echo ${P ?  Do we have to separate these?
-      if t3.id == Id.VSub_Name and IsDummy(t2):
+      if t3.id == Id.VSub_DollarName and IsDummy(t2):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.

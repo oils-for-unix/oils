@@ -1043,7 +1043,7 @@ class OilPrinter(object):
               return  # Done replacing
 
             # "$1" -> $1, "$foo" -> $foo
-            if vsub_part.token.id in (Id.VSub_Number, Id.VSub_Name):
+            if vsub_part.token.id in (Id.VSub_Number, Id.VSub_DollarName):
               self.cursor.PrintUntil(left_spid)
               self.cursor.SkipUntil(right_spid + 1)
               self.f.write(vsub_part.token.val)
@@ -1166,7 +1166,7 @@ class OilPrinter(object):
       spid = node.token.span_id
       op_id = node.token.id
 
-      if op_id == Id.VSub_Name:
+      if op_id == Id.VSub_DollarName:
         self.cursor.PrintUntil(spid + 1)
 
       elif op_id == Id.VSub_Number:

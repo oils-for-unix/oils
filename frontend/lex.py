@@ -133,7 +133,7 @@ VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 # All Kind.VSub
 _VARS = [
   # Unbraced variables
-  R(r'\$' + VAR_NAME_RE, Id.VSub_Name),
+  R(r'\$' + VAR_NAME_RE, Id.VSub_DollarName),
   R(r'\$[0-9]', Id.VSub_Number),
   C(r'$!', Id.VSub_Bang),
   C(r'$@', Id.VSub_At),
@@ -616,7 +616,7 @@ _OIL_LEFT_UNQUOTED = [
 
 _OIL_VARS = [
   # Unbraced variables
-  R(r'\$' + VAR_NAME_RE, Id.VSub_Name),
+  R(r'\$' + VAR_NAME_RE, Id.VSub_DollarName),
   R(r'\$[0-9]', Id.VSub_Number),
 ]
 

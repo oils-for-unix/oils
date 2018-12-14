@@ -834,7 +834,7 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.SimpleVarSub:
       maybe_decay_array = False
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
-      if part.token.id == Id.VSub_Name:
+      if part.token.id == Id.VSub_DollarName:
         var_name = part.token.val[1:]
         val = self.mem.GetVar(var_name)
       elif part.token.id == Id.VSub_Number:
