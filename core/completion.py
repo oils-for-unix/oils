@@ -37,7 +37,8 @@ import time
 
 from core import alloc
 from core import util
-from core.meta import syntax_asdl, runtime_asdl, Id
+from core.meta import (
+    Id, REDIR_ARG_TYPES, syntax_asdl, runtime_asdl, types_asdl)
 from pylib import os_path
 from osh import word
 from osh import state
@@ -46,8 +47,9 @@ import libc
 
 command_e = syntax_asdl.command_e
 word_part_e = syntax_asdl.word_part_e
+redir_e = syntax_asdl.redir_e
 value_e = runtime_asdl.value_e
-comp_kind_e = runtime_asdl.comp_kind_e
+redir_arg_type_e = types_asdl.redir_arg_type_e
 
 log = util.log
 
@@ -420,7 +422,7 @@ class ChainedCompleter(object):
         show = (
             match.startswith(comp.to_complete) and self.predicate(match) or
             (isinstance(a, ShellFuncAction) and not filter_func_matches)
-            )
+        )
 
         # There are two kinds of filters: changing the string, and filtering
         # the set of strings.  So maybe have modifiers AND filters?  A triple.
@@ -589,103 +591,127 @@ class RootCompleter(object):
             yield prefix + name
         return
 
-    # This happens in the case of [[ and ((.  We're not parsing a command.
-    if not comp_state.words:
-      debug_f.log('Not a variable, and no words to complete')
+    # NOTE: Instead of looking at the column positions on line spans, we could
+    # look for IsDummy() on the rightmost LiteralPart(token) of words.
+    def LastColForWord(w):
+      span_id = word.RightMostSpanForWord(w)
+      span = arena.GetLineSpan(span_id)
+      debug_f.log('span %s', span)
+      debug_f.log('span col %d length %d', span.col, span.length)
+      return span.col + span.length
+
+    if comp_state.words:
+      # First check if we're completing a path that begins with ~.
+      #
+      # Complete tilde like 'echo ~' and 'echo ~a'.  This must be done at a word
+      # level, and TildeDetectAll() does NOT help here, because they don't have
+      # trailing slashes yet!  We can't do it on tokens, because otherwise f~a
+      # will complete.  Looking at word_part is EXACTLY what we want.
+      parts = comp_state.words[-1].parts
+      if (len(parts) == 2 and
+          parts[0].tag == word_part_e.LiteralPart and
+          parts[1].tag == word_part_e.LiteralPart and
+          parts[0].token.id == Id.Lit_TildeLike and
+          parts[1].token.id == Id.Lit_CompDummy):
+        t3 = parts[0].token
+
+        # NOTE: Not bothering to compute prefix
+        prefix = '~'
+        to_complete = t3.val[1:]
+        for u in pwd.getpwall():
+          name = u.pw_name
+          if name.startswith(to_complete):
+            yield prefix + name + '/'
+        return
+
+    completer = None 
+
+    # Check if we should complete a redirect
+    if comp_state.redirects:
+      r = comp_state.redirects[-1]
+      debug_f.log('R: %s', r)
+      # Only complete 'echo >', but not 'echo >&' or 'cat <<'
+      if (r.tag == redir_e.Redir and
+          REDIR_ARG_TYPES[r.op.id] == redir_arg_type_e.Path):
+        last_col = LastColForWord(r.arg_word)
+        if last_col == comp.end:
+          debug_f.log('Completing redirect arg')
+
+          try:
+            val = self.word_ev.EvalWordToString(r.arg_word)
+          except util.FatalRuntimeError as e:
+            debug_f.log('Error evaluating redirect word: %s', e)
+            return
+          if val.tag != value_e.Str:
+            debug_log.f("Didn't get a string from redir arg")
+            return
+
+          # TODO: Redirect path completion isn't user-definable, so we
+          # shouldn't need Update() ?  That should be for API details.
+          comp.Update(to_complete=val.s)
+          completer = FileSystemAction()
+
+    if comp_state.words:
+      # Now check if we're completing a word!
+      last_col = LastColForWord(comp_state.words[-1])
+      debug_f.log('last_col for word: %d', last_col)
+      if last_col == comp.end:  # We're not completing the last word!
+        debug_f.log('Completing words')
+        #
+        # It didn't look like we need to complete var names, tilde, redirects, etc.
+        # Now try partial_argv, which may involve invoking PLUGINS.
+
+        # needed to complete paths with ~
+        words2 = word.TildeDetectAll(comp_state.words)
+        if 1:
+          debug_f.log('After tilde detection')
+          for w in words2:
+            print(w, file=debug_f)
+
+        partial_argv = []
+        for w in words2:
+          try:
+            # TODO:
+            # - Should we call EvalWordSequence?  But turn globbing off?  It can do
+            # splitting and such.
+            # - We could have a variant to eval TildeSubPart to ~ ?
+            val = self.word_ev.EvalWordToString(w)
+          except util.FatalRuntimeError:
+            # Why would it fail?
+            continue
+          if val.tag == value_e.Str:
+            partial_argv.append(val.s)
+          else:
+            pass
+
+        debug_f.log('partial_argv: %s', partial_argv)
+        n = len(partial_argv)
+
+        if n == 0:
+          # should never get this because of Lit_CompDummy?
+          raise AssertionError
+        elif n == 1:
+          # First
+          completer = self.comp_lookup.GetFirstCompleter()
+        else:
+          completer = self.comp_lookup.GetCompleterForName(partial_argv[0])
+
+        # NOTE: GetFirstCompleter and GetCompleterForName can be user-defined
+        # plugins.  So they both need this API options.
+
+        index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
+        # After parsing
+        comp.Update(words=partial_argv, index=index, to_complete=partial_argv[-1])
+
+    # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
+    if not completer:
+      debug_f.log("Didn't find anything to complete")
       return
 
-    last_word = comp_state.words[-1]
-
-    # Complete tilde like 'echo ~' and 'echo ~a'.  This must be done at a word
-    # level, and TildeDetectAll() does NOT help here, because they don't have
-    # trailing slashes yet!  We can't do it on tokens, because otherwise f~a
-    # will complete.  Looking at word_part is EXACTLY what we want.
-    parts = last_word.parts
-    if (len(parts) == 2 and
-        parts[0].tag == word_part_e.LiteralPart and
-        parts[1].tag == word_part_e.LiteralPart and
-        parts[0].token.id == Id.Lit_TildeLike and
-        parts[1].token.id == Id.Lit_CompDummy):
-      t3 = parts[0].token
-
-      # NOTE: Not bothering to compute prefix
-      prefix = '~'
-      to_complete = t3.val[1:]
-      for u in pwd.getpwall():
-        name = u.pw_name
-        if name.startswith(to_complete):
-          yield prefix + name + '/'
-      return
-
-    # TODO:
-    # - Check if we're completing a word or redirect
-    # - Only certain redirects ops take words!
-
-    # Check if we're actually completing a word!
-    span_id = word.RightMostSpanForWord(last_word)
-    debug_f.log('last_word: %s', last_word)
-    debug_f.log('span_id: %d', span_id)
-    span = arena.GetLineSpan(span_id)
-    last_col = span.col + span.length
-    if last_col != comp.end:  # We're not completing the last word!
-      debug_f.log('last col: %d', last_col)
-      debug_f.log('comp.end: %d', comp.end)
-      debug_f.log('Not completing a word!')
-      return
-
-    #
-    # It didn't look like we need to complete variable names.  Now try
-    # partial_argv.
-    #
-    # TODO: Detect when the words aren't the last thing?  When does that
-    # happen?
-    # Like if<TAB> ?
-
-    # needed to complete paths with ~
-    words2 = word.TildeDetectAll(comp_state.words)
-
-    if 1:
-      debug_f.log('After tilde detection')
-      for w in words2:
-        print(w, file=debug_f)
-
-    partial_argv = []
-    for w in words2:
-      try:
-        # TODO: Should we call EvalWordSequence?  But turn globbing off?  It
-        # can do splitting and such.
-
-        # TODO: Do we have to TildeDetect here?
-
-        val = self.word_ev.EvalWordToString(w)
-      except util.FatalRuntimeError:
-        # Why would it fail?
-        continue
-      if val.tag == value_e.Str:
-        partial_argv.append(val.s)
-      else:
-        pass
-
-    debug_f.log('partial_argv: %s', partial_argv)
-    n = len(partial_argv)
-
-    if n == 0:
-      # should never get this because of Lit_CompDummy?
-      raise AssertionError
-    elif n == 1:
-      # First
-      completer = self.comp_lookup.GetFirstCompleter()
-    else:
-      completer = self.comp_lookup.GetCompleterForName(partial_argv[0])
-
-    index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
-    # After parsing
-    comp.Update(words=partial_argv, index=index, to_complete=partial_argv[-1])
+    self.debug_f.log('Using %s', completer)
 
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
-
-    self.debug_f.log('Using %s', completer)
 
     i = 0
     for m in completer.Matches(comp):

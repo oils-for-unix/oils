@@ -56,8 +56,8 @@ def MockApi(line):
   return completion.CompletionApi(line=line, begin=i+1, end=end)
 
 
-def _MakeRootCompleter():
-  comp_lookup = completion.CompletionLookup()
+def _MakeRootCompleter(comp_lookup=None):
+  comp_lookup = comp_lookup or completion.CompletionLookup()
   ev = test_lib.MakeTestEvaluator()
 
   pool = alloc.Pool()
@@ -68,6 +68,7 @@ def _MakeRootCompleter():
 
 
 class CompletionTest(unittest.TestCase):
+
   def _MakeComp(self, words, index, to_complete):
     comp = completion.CompletionApi()
     comp.Update(words=['f'], index=0, to_complete='f')
@@ -177,7 +178,10 @@ class CompletionTest(unittest.TestCase):
     matches = list(c2.Matches(comp))
     self.assertEqual(['foo.py'], matches)
 
-  def testRootCompleterCompletesHomeDIrs(self):
+
+class RootCompeterTest(unittest.TestCase):
+
+  def testCompletesHomeDirs(self):
     r = _MakeRootCompleter()
 
     comp = MockApi(line='echo ~r')
@@ -197,7 +201,7 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches(comp))
     self.assertEqual(0, len(m))
 
-  def testRootCompleterCompletesVarNames(self):
+  def testCompletesVarNames(self):
     r = _MakeRootCompleter()
 
     # Complete ALL variables
@@ -303,19 +307,27 @@ class CompletionTest(unittest.TestCase):
     self.assert_('$PWD' in m, 'Got %s' % m)  # don't need leading "
     self.assert_('$PS4' in m, 'Got %s' % m)
 
-  def testRootCompleterCompletesOther(self):
+  def testCompletesRedirectArguments(self):
+    r = _MakeRootCompleter()
+
+    comp = MockApi('cat < b')
+    m = list(r.Matches(comp))
+    # Some B subdirs of the repo!
+    self.assert_('bin/' in m, 'Got %s' % m)
+    self.assert_('build/' in m, 'Got %s' % m)
+    self.assert_('benchmarks/' in m, 'Got %s' % m)
+
+    # This redirect does NOT take a path argument!
+    comp = MockApi('echo >&')
+    m = list(r.Matches(comp))
+    self.assertEqual(0, len(m))
+
+  def testCompletesWords(self):
     comp_lookup = completion.CompletionLookup()
 
     comp_lookup.RegisterName('grep', C1)
     comp_lookup.RegisterName('__first', FIRST)
-
-    ev = test_lib.MakeTestEvaluator()
-
-    pool = alloc.Pool()
-    arena = pool.NewArena()
-    parse_ctx = parse_lib.ParseContext(arena, {})
-    r = completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
-                                 progress_f, debug_f)
+    r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
     comp = MockApi('grep f')
     m = list(r.Matches(comp))
@@ -325,6 +337,7 @@ class CompletionTest(unittest.TestCase):
     m = list(r.Matches(comp))
     self.assertEqual([], m)
 
+    # Complete first word
     m = list(r.Matches(MockApi('g')))
     self.assertEqual(['grep '], m)
 
