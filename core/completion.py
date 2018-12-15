@@ -443,7 +443,7 @@ class ChainedCompleter(object):
 
 def _ShowCompState(comp_state, debug_f):
   from osh import ast_lib
-  log('comp_state = %s', comp_state)
+  #debug_f.log('comp_state = %s', comp_state)
   debug_f.log('  words:')
   for w in comp_state.words:
     ast_lib.PrettyPrint(w, f=debug_f)
@@ -513,71 +513,72 @@ class RootCompleter(object):
     if 1:
       _ShowCompState(comp_state, debug_f)
 
-    toks = comp_state.tokens
+    # NOTE: We get Eof_Real in the command state, but not in the middle of a
+    # BracedVarSub.  This is due to the difference between the CommandParser
+    # and WordParser.
+    tokens = comp_state.tokens
     last = -1
-    if toks[-1].id == Id.Eof_Real:
+    if tokens[-1].id == Id.Eof_Real:
       last -= 1  # ignore it
 
     try:
-      t2 = toks[last]
+      t1 = tokens[last]
+    except IndexError:
+      t1 = None
+    try:
+      t2 = tokens[last-1]
     except IndexError:
       t2 = None
-    try:
-      t3 = toks[last-1]
-    except IndexError:
-      t3 = None
 
     debug_f.log('line: %r', comp.line)
     debug_f.log('rl_slice from byte %d to %d: %r', comp.begin, comp.end,
         comp.line[comp.begin:comp.end])
 
+    debug_f.log('t1 %s', t1)
     debug_f.log('t2 %s', t2)
-    debug_f.log('t3 %s', t3)
 
     def _MakePrefix(tok, offset=0):
       span = arena.GetLineSpan(tok.span_id)
       return comp.line[comp.begin : span.col+offset]
 
-    # NOTE: We get the EOF in the command state, but not in the middle of a
-    # BracedVarSub.  Due to the way the WordParser works.
-    if t3:  # We always have t2?
-      if IsDollar(t3) and IsDummy(t2):
-        prefix = _MakePrefix(t3, offset=1)
+    if t2:  # We always have t1?
+      if IsDollar(t2) and IsDummy(t1):
+        prefix = _MakePrefix(t2, offset=1)
         for name in self.mem.VarNames():
           yield prefix + name
         return
 
       # echo ${
-      if t3.id == Id.Left_VarSub and IsDummy(t2):
-        prefix = _MakePrefix(t3, offset=2)  # 2 for ${
+      if t2.id == Id.Left_VarSub and IsDummy(t1):
+        prefix = _MakePrefix(t2, offset=2)  # 2 for ${
         for name in self.mem.VarNames():
           yield prefix + name
         return
 
       # echo $P
-      if t3.id == Id.VSub_DollarName and IsDummy(t2):
+      if t2.id == Id.VSub_DollarName and IsDummy(t1):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.
-        prefix = _MakePrefix(t3, offset=1)  # 1 for $
-        to_complete = t3.val[1:]
+        prefix = _MakePrefix(t2, offset=1)  # 1 for $
+        to_complete = t2.val[1:]
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
             yield prefix + name
         return
 
       # echo ${P
-      if t3.id == Id.VSub_Name and IsDummy(t2):
-        prefix = _MakePrefix(t3)  # no offset
-        to_complete = t3.val
+      if t2.id == Id.VSub_Name and IsDummy(t1):
+        prefix = _MakePrefix(t2)  # no offset
+        to_complete = t2.val
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
             yield prefix + name
         return
 
-      if t3.id == Id.Lit_ArithVarLike and IsDummy(t2):
-        prefix = _MakePrefix(t3)  # no offset
-        to_complete = t3.val
+      if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
+        prefix = _MakePrefix(t2)  # no offset
+        to_complete = t2.val
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
             yield prefix + name
@@ -605,12 +606,12 @@ class RootCompleter(object):
           parts[1].tag == word_part_e.LiteralPart and
           parts[0].token.id == Id.Lit_TildeLike and
           parts[1].token.id == Id.Lit_CompDummy):
-        t3 = parts[0].token
+        t2 = parts[0].token
 
         # NOTE: We're assuming readline does its job, and not bothering to
         # compute the prefix.  What are the incorrect corner cases?
         prefix = '~'
-        to_complete = t3.val[1:]
+        to_complete = t2.val[1:]
         for u in pwd.getpwall():
           name = u.pw_name
           if name.startswith(to_complete):
@@ -622,7 +623,6 @@ class RootCompleter(object):
     # Check if we should complete a redirect
     if comp_state.redirects:
       r = comp_state.redirects[-1]
-      debug_f.log('R: %s', r)
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       if (r.tag == redir_e.Redir and
           REDIR_ARG_TYPES[r.op.id] == redir_arg_type_e.Path):
