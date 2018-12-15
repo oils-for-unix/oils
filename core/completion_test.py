@@ -228,12 +228,12 @@ class RootCompeterTest(unittest.TestCase):
     #
 
     # Complete ALL variables
-    comp = MockApi(line='echo ${')
+    comp = MockApi(line='echo _${')
     print(comp)
     m = list(r.Matches(comp))
     # Just test for a subset
-    self.assert_('${HOME' in m, 'Got %s' % m)
-    self.assert_('${IFS' in m, 'Got %s' % m)
+    self.assert_('_${HOME' in m, 'Got %s' % m)
+    self.assert_('_${IFS' in m, 'Got %s' % m)
 
     # Now it has a prefix
     comp = MockApi(line='echo ${P')
@@ -365,7 +365,7 @@ def _TestCompKind(test, buf, check=True):
   ev = test_lib.MakeTestEvaluator()
   arena = test_lib.MakeArena('<completion_test.py>')
   parse_ctx = parse_lib.ParseContext(arena, {})
-  _, c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
+  c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
   print('--- %r' % buf)
 
   # TODO:

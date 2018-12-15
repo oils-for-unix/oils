@@ -441,6 +441,35 @@ class ChainedCompleter(object):
         self.actions, self.predicate, self.prefix, self.suffix)
 
 
+def _ShowCompState(comp_state, debug_f):
+  from osh import ast_lib
+  log('comp_state = %s', comp_state)
+  debug_f.log('  words:')
+  for w in comp_state.words:
+    ast_lib.PrettyPrint(w, f=debug_f)
+  debug_f.log('')
+
+  debug_f.log('  redirects:')
+  for r in comp_state.redirects:
+    ast_lib.PrettyPrint(r, f=debug_f)
+  debug_f.log('')
+
+  debug_f.log('  tokens:')
+  for p in comp_state.tokens:
+    ast_lib.PrettyPrint(p, f=debug_f)
+  debug_f.log('')
+
+
+# Helpers for Matches()
+
+# NOTE: We could add Lit_Dollar, but it would affect many lexer modes.
+def IsDollar(t):
+  return t.id == Id.Lit_Other and t.val == '$'
+
+def IsDummy(t):
+  return t.id == Id.Lit_CompDummy
+
+
 class RootCompleter(object):
   """Dispatch to various completers.
 
@@ -470,43 +499,21 @@ class RootCompleter(object):
     # time?
     arena = alloc.SideArena('<completion>')
     self.parse_ctx.PrepareForCompletion()
-    _, c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
+    c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
 
-    # NOTE Do we even use node?  We just want the output from parse_ctx.
+    # We want the output from parse_ctx, so we don't use the return value.
     try:
-      node = c_parser.ParseLogicalLine()
+      c_parser.ParseLogicalLine()
     except util.ParseError as e:
       # e.g. 'ls | ' will not parse.  Now inspect the parser state!
-      node = None
+      pass
 
     debug_f = self.debug_f
     comp_state = c_parser.parse_ctx.comp_state
-    if 0:
-      #log('command node = %s', com_node)
-      #log('cur_token = %s', cur_token)
-      #log('cur_word = %s', cur_word)
-      log('comp_state = %s', comp_state)
     if 1:
-      from osh import ast_lib
-      debug_f.log('  words:')
-      for w in comp_state.words:
-        ast_lib.PrettyPrint(w, f=debug_f)
-      debug_f.log('')
-
-      debug_f.log('  redirects:')
-      for r in comp_state.redirects:
-        ast_lib.PrettyPrint(r, f=debug_f)
-      debug_f.log('')
-
-      debug_f.log('  tokens:')
-      for p in comp_state.tokens:
-        ast_lib.PrettyPrint(p, f=debug_f)
-      debug_f.log('')
+      _ShowCompState(comp_state, debug_f)
 
     toks = comp_state.tokens
-    # NOTE: We get the EOF in the command state, but not in the middle of a
-    # BracedVarSub.  Due to the way the WordParser works.
-
     last = -1
     if toks[-1].id == Id.Eof_Real:
       last -= 1  # ignore it
@@ -520,13 +527,6 @@ class RootCompleter(object):
     except IndexError:
       t3 = None
 
-    # TODO: Add Lit_Dollar?
-    def IsDollar(t):
-      return t.id == Id.Lit_Other and t.val == '$'
-
-    def IsDummy(t):
-      return t.id == Id.Lit_CompDummy
-
     debug_f.log('line: %r', comp.line)
     debug_f.log('rl_slice from byte %d to %d: %r', comp.begin, comp.end,
         comp.line[comp.begin:comp.end])
@@ -534,21 +534,24 @@ class RootCompleter(object):
     debug_f.log('t2 %s', t2)
     debug_f.log('t3 %s', t3)
 
+    def _MakePrefix(tok, offset=0):
+      span = arena.GetLineSpan(tok.span_id)
+      return comp.line[comp.begin : span.col+offset]
+
+    # NOTE: We get the EOF in the command state, but not in the middle of a
+    # BracedVarSub.  Due to the way the WordParser works.
     if t3:  # We always have t2?
       if IsDollar(t3) and IsDummy(t2):
-        # TODO: share this with logic below.  Or use t2.
-        span = arena.GetLineSpan(t3.span_id)
-        t3_begin = span.col
-        prefix = comp.line[comp.begin : t3_begin+1]  # +1 for the $
-
+        prefix = _MakePrefix(t3, offset=1)
         for name in self.mem.VarNames():
           yield prefix + name
         return
 
       # echo ${
       if t3.id == Id.Left_VarSub and IsDummy(t2):
+        prefix = _MakePrefix(t3, offset=2)  # 2 for ${
         for name in self.mem.VarNames():
-          yield '${' + name
+          yield prefix + name
         return
 
       # echo $P
@@ -556,25 +559,16 @@ class RootCompleter(object):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.
-        span = arena.GetLineSpan(t3.span_id)
-        t3_begin = span.col
-        prefix = comp.line[comp.begin : t3_begin+1]  # +1 for the $
+        prefix = _MakePrefix(t3, offset=1)  # 1 for $
         to_complete = t3.val[1:]
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
             yield prefix + name
         return
 
-      # TODO: Remove duplication here!
-
       # echo ${P
       if t3.id == Id.VSub_Name and IsDummy(t2):
-        # Example: ${undef:-$P
-        # readline splits at ':' so we have to prepend '-$' to every completed
-        # variable name.
-        span = arena.GetLineSpan(t3.span_id)
-        t3_begin = span.col
-        prefix = comp.line[comp.begin : t3_begin]
+        prefix = _MakePrefix(t3)  # no offset
         to_complete = t3.val
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
@@ -582,9 +576,7 @@ class RootCompleter(object):
         return
 
       if t3.id == Id.Lit_ArithVarLike and IsDummy(t2):
-        span = arena.GetLineSpan(t3.span_id)
-        t3_begin = span.col
-        prefix = comp.line[comp.begin : t3_begin]
+        prefix = _MakePrefix(t3)  # no offset
         to_complete = t3.val
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
@@ -615,7 +607,8 @@ class RootCompleter(object):
           parts[1].token.id == Id.Lit_CompDummy):
         t3 = parts[0].token
 
-        # NOTE: Not bothering to compute prefix
+        # NOTE: We're assuming readline does its job, and not bothering to
+        # compute the prefix.  What are the incorrect corner cases?
         prefix = '~'
         to_complete = t3.val[1:]
         for u in pwd.getpwall():
@@ -624,7 +617,7 @@ class RootCompleter(object):
             yield prefix + name + '/'
         return
 
-    completer = None 
+    completer = None   # Set below
 
     # Check if we should complete a redirect
     if comp_state.redirects:
@@ -663,7 +656,7 @@ class RootCompleter(object):
 
         # needed to complete paths with ~
         words2 = word.TildeDetectAll(comp_state.words)
-        if 1:
+        if 0:
           debug_f.log('After tilde detection')
           for w in words2:
             print(w, file=debug_f)
@@ -698,17 +691,16 @@ class RootCompleter(object):
 
         # NOTE: GetFirstCompleter and GetCompleterForName can be user-defined
         # plugins.  So they both need this API options.
-
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
-        # After parsing
-        comp.Update(words=partial_argv, index=index, to_complete=partial_argv[-1])
+        comp.Update(words=partial_argv, index=index,
+                    to_complete=partial_argv[-1])
 
     # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
     if not completer:
       debug_f.log("Didn't find anything to complete")
       return
 
-    self.debug_f.log('Using %s', completer)
+    #self.debug_f.log('Using %s', completer)
 
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()

@@ -132,11 +132,8 @@ class ParseContext(object):
     lx = lexer.Lexer(line_lexer, line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  # TODO: We could reuse w_parser with ResetInputObjects() each time.  That's
+  # NOTE: We could reuse w_parser with ResetInputObjects() each time.  That's
   # what the REPL does.
-  #
-  # NOTE: It probably needs to take a VirtualLineReader for $PS1, $PS2, ...
-  # values.
   def MakeParserForCompletion(self, code_str, arena):
     """Parser for partial lines.
 
@@ -151,7 +148,7 @@ class ParseContext(object):
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
                                        arena=arena)
-    return w_parser, c_parser
+    return c_parser
 
   # Another parser instantiation:
   # - For Array Literal in word_parse.py WordParser:
