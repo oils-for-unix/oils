@@ -10,10 +10,10 @@
 #   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (builds tarball, runs unit,gold, initial spec tests, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
+#   $0 metrics  # this can catch bugs
 #   test/wild.sh all (3-4 minutes on fast machine)
 #   $0 test-opy (2 minutes on fast machine)
 #   $0 spec-all  # tests 3 OSH binaries
-#   $0 metrics
 #   benchmarks:
 #     Sync up oilshell/benchmark-data repo.
 #     flanders: $0 benchmark-build, then $0 benchmark-run
@@ -57,10 +57,10 @@ log() {
 # benchmark-data repo to make reports.
 auto-machine1() {
   $0 build-and-test
+  $0 metrics  # this can catch bugs
   test/wild.sh all
   $0 test-opy
   $0 spec-all
-  $0 metrics
   $0 benchmark-run
   #$0 benchmark-run-on-1-machine
 }
@@ -242,6 +242,9 @@ spec-all() {
 # TODO: Log this whole thing?  Include logs with the /release/ page?
 build-and-test() {
   # 5 steps: clean, dev build, unit tests, release build, end-to-end tests.
+
+  # Before doing anything
+  test/lint.sh travis
 
   _clean
   _dev-build

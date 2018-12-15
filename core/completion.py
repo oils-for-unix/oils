@@ -636,7 +636,7 @@ class RootCompleter(object):
             debug_f.log('Error evaluating redirect word: %s', e)
             return
           if val.tag != value_e.Str:
-            debug_log.f("Didn't get a string from redir arg")
+            debug_f.log("Didn't get a string from redir arg")
             return
 
           # TODO: Redirect path completion isn't user-definable, so we
