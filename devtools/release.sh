@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   scripts/release.sh <function name>
+#   devtools/release.sh <function name>
 #
 # Pre-release:
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
