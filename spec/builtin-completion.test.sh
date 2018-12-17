@@ -54,7 +54,12 @@ wrapper=foo
 complete -o default -o nospace -F $wrapper git
 ## status: 0
 
-#### compopt -o (git)
+#### compopt with invalid syntax
+compopt -o invalid
+echo status=$?
+## stdout: status=2
+
+#### compopt fails when not in completion function
 # NOTE: Have to be executing a completion function
 compopt -o filenames +o nospace
 ## status: 1
@@ -221,3 +226,34 @@ complete foo
 echo status=$?
 ## stdout: status=2
 ## BUG bash stdout: status=0
+
+#### -o filenames and -o nospace have no effect with compgen 
+# they are POSTPROCESSING.
+compgen -o filenames -o nospace -W 'bin build'
+## STDOUT:
+bin
+build
+## END
+
+#### -o plusdirs and -o dirnames with compgen
+compgen -o plusdirs -W 'a b1 b2' b | sort
+echo ---
+compgen -o dirnames b | sort
+## STDOUT:
+b1
+b2
+benchmarks
+bin
+build
+---
+benchmarks
+bin
+build
+## END
+
+#### compgen -o default completes files and dirs
+compgen -o default p
+## STDOUT:
+portable-rules.mk
+pylib
+## END

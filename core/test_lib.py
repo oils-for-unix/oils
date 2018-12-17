@@ -14,7 +14,9 @@ import sys
 
 from asdl import runtime
 from core import alloc
+from core import completion
 from core import dev
+from core import main_loop
 from core import process
 from core import util
 from core.meta import Id
@@ -116,7 +118,7 @@ def InitExecutor(arena=None):
   mem = state.Mem('', [], {}, arena)
   fd_state = process.FdState()
   funcs = {}
-  comp_funcs = {}
+  comp_state = completion.State()
   # For the tests, we do not use 'readline'.
   exec_opts = state.ExecOpts(mem, None)
   parse_ctx = parse_lib.ParseContext(arena, {})
@@ -124,8 +126,20 @@ def InitExecutor(arena=None):
   debug_f = util.DebugFile(sys.stderr)
   devtools = dev.DevTools(dev.CrashDumper(''), debug_f, debug_f)
 
-  return cmd_exec.Executor(mem, fd_state, funcs, comp_funcs, exec_opts,
+  return cmd_exec.Executor(mem, fd_state, funcs, comp_state, exec_opts,
                            parse_ctx, devtools)
+
+
+def EvalCode(code_str):
+  """
+  This allows unit tests to write code strings and have functions appear in the
+  executor.
+  """
+  arena, c_parser = InitCommandParser(code_str)
+  ex = InitExecutor(arena)
+  # Parse and execute!
+  main_loop.Batch(ex, c_parser, arena)
+  return ex
 
 
 def InitWordParser(code_str, arena=None):

@@ -113,14 +113,14 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, fd_state, funcs, comp_lookup, exec_opts, parse_ctx,
+  def __init__(self, mem, fd_state, funcs, comp_state, exec_opts, parse_ctx,
                devtools):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
       funcs: dict of functions
-      comp_lookup: registry of completion hooks
+      comp_state: registry of completion hooks
       exec_opts: ExecOpts
       parse_ctx: for instantiating parsers
     """
@@ -128,7 +128,7 @@ class Executor(object):
     self.fd_state = fd_state
     self.funcs = funcs
     # Completion hooks, set by 'complete' builtin.
-    self.comp_lookup = comp_lookup
+    self.comp_state = comp_state
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
@@ -327,13 +327,13 @@ class Executor(object):
       status = self._Eval(argv, span_id)
 
     elif builtin_id == builtin_e.COMPLETE:
-      status = builtin_comp.Complete(argv, self, self.comp_lookup)
+      status = builtin_comp.Complete(argv, self, self.comp_state)
 
     elif builtin_id == builtin_e.COMPGEN:
       status = builtin_comp.CompGen(argv, self)
 
     elif builtin_id == builtin_e.COMPOPT:
-      status = builtin_comp.CompOpt(argv)
+      status = builtin_comp.CompOpt(argv, self.comp_state)
 
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0

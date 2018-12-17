@@ -48,8 +48,7 @@ def _DefineOptions(spec):
       help="The completion function generates filenames and should be "
            "post-processed")
   spec.Option(None, 'dirnames',
-      help="Perform directory name completion if the compspec generates no "
-           "matches")
+      help="If nothing matches, perform directory name completion")
   spec.Option(None, 'nospace',
       help="Don't append a space to words completed at the end of the line")
   spec.Option(None, 'plusdirs',
@@ -105,6 +104,15 @@ class _UsersAction(object):
       name = u.pw_name
       if name.startswith(comp.to_complete):
         yield name
+
+
+def _MakeOptions(opt_changes):
+  opts = completion.Options()
+  for name, b in opt_changes:
+    # Should have already been checked by the option parser
+    assert hasattr(opts, name), name
+    setattr(opts, name, b)
+  return opts
 
 
 def _BuildCompletionChain(argv, arg, ex):
@@ -211,7 +219,7 @@ COMPLETE_SPEC.ShortFlag('-D',
     help='Define the compspec that applies when nothing else matches')
 
 
-def Complete(argv, ex, comp_lookup):
+def Complete(argv, ex, comp_state):
   """complete builtin - register a completion function.
 
   NOTE: It's a member of Executor because it creates a ShellFuncAction, which
@@ -230,16 +238,17 @@ def Complete(argv, ex, comp_lookup):
     commands.append('__first')  # empty line
 
   if not commands:
-    comp_lookup.PrintSpecs()
+    comp_state.PrintSpecs()
     return 0
 
+  comp_opts = _MakeOptions(arg.opt_changes)
   chain = _BuildCompletionChain(argv, arg, ex)
   for command in commands:
-    comp_lookup.RegisterName(command, chain)
+    comp_state.RegisterName(command, comp_opts, chain)
 
   patterns = []
   for pat in patterns:
-    comp_lookup.RegisterGlob(pat, chain)
+    comp_state.RegisterGlob(pat, comp_opts, chain)
 
   return 0
 
@@ -269,13 +278,14 @@ def CompGen(argv, ex):
 
   matched = False
 
+  comp_opts = _MakeOptions(arg.opt_changes)
   chain = _BuildCompletionChain(argv, arg, ex)
 
   # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
   # and also showing ALL COMPREPLY reuslts, not just the ones that start with
   # the word to complete.
   matched = False 
-  comp = completion.CompletionApi()
+  comp = completion.Api()
   comp.Update(words=['compgen', to_complete], index=-1,
               to_complete=to_complete)
   for m in chain.Matches(comp, filter_func_matches=False):
@@ -292,13 +302,20 @@ COMPOPT_SPEC = args.FlagsAndOptions()  # for -o
 _DefineOptions(COMPOPT_SPEC)
 
 
-def CompOpt(argv):
+def CompOpt(argv, comp_state):
   arg_r = args.Reader(argv)
   arg = COMPOPT_SPEC.Parse(arg_r)
+
+  if not comp_state.currently_completing:
+    # bash checks this.
+    util.error('compopt: not currently executing a completion function')
+    return 1
+
+  comp_opts = _MakeOptions(arg.opt_changes)
 
   # NOTE: This is supposed to fail if a completion isn't being generated?
   # The executor should have a mode?
 
   #log('compopt: %s', arg)
-  log('compopt %s', argv)
+  log('compopt %s', comp_opts)
   return 0

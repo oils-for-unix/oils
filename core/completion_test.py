@@ -28,18 +28,12 @@ from osh import state
 assign_op_e = syntax_asdl.assign_op_e
 log = util.log
 
-
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-
 C1 = completion.ChainedCompleter([A1])
 
+COMP_OPTS = completion.Options()
+
 mem = state.Mem('', [], {}, None)
-exec_opts = state.ExecOpts(mem, None)
-debug_f = util.DebugFile(sys.stdout)
-progress_f = ui.TestStatusLine()
-
-
-V1 = completion.WordsAction(['$var1', '$var2', '$another_var'])
 
 FIRST = completion.WordsAction(['grep', 'sed', 'test'])
 
@@ -53,34 +47,36 @@ def MockApi(line):
       break
     i -= 1
 
-  return completion.CompletionApi(line=line, begin=i+1, end=end)
+  return completion.Api(line=line, begin=i+1, end=end)
 
 
-def _MakeRootCompleter(comp_lookup=None):
-  comp_lookup = comp_lookup or completion.CompletionLookup()
+def _MakeRootCompleter(comp_state=None):
+  comp_state = comp_state or completion.State()
   ev = test_lib.MakeTestEvaluator()
 
   pool = alloc.Pool()
   arena = pool.NewArena()
   parse_ctx = parse_lib.ParseContext(arena, {})
-  return completion.RootCompleter(ev, comp_lookup, mem, parse_ctx,
+  debug_f = util.DebugFile(sys.stdout)
+  progress_f = ui.TestStatusLine()
+  return completion.RootCompleter(ev, comp_state, mem, parse_ctx,
                                   progress_f, debug_f)
 
 
 class CompletionTest(unittest.TestCase):
 
   def _MakeComp(self, words, index, to_complete):
-    comp = completion.CompletionApi()
+    comp = completion.Api()
     comp.Update(words=['f'], index=0, to_complete='f')
     return comp
 
   def testLookup(self):
-    c = completion.CompletionLookup()
-    c.RegisterName('grep', C1)
+    c = completion.State()
+    c.RegisterName('grep', COMP_OPTS, C1)
     print(c.GetCompleterForName('grep'))
     print(c.GetCompleterForName('/usr/bin/grep'))
 
-    c.RegisterGlob('*.py', C1)
+    c.RegisterGlob('*.py', COMP_OPTS, C1)
     comp = c.GetCompleterForName('/usr/bin/foo.py')
     print('py', comp)
     # NOTE: This is an implementation detail
@@ -323,11 +319,11 @@ class RootCompeterTest(unittest.TestCase):
     self.assertEqual(0, len(m))
 
   def testCompletesWords(self):
-    comp_lookup = completion.CompletionLookup()
+    comp_state = completion.State()
 
-    comp_lookup.RegisterName('grep', C1)
-    comp_lookup.RegisterName('__first', FIRST)
-    r = _MakeRootCompleter(comp_lookup=comp_lookup)
+    comp_state.RegisterName('grep', COMP_OPTS, C1)
+    comp_state.RegisterName('__first', COMP_OPTS, FIRST)
+    r = _MakeRootCompleter(comp_state=comp_state)
 
     comp = MockApi('grep f')
     m = list(r.Matches(comp))
@@ -355,6 +351,50 @@ class RootCompeterTest(unittest.TestCase):
 
     m = list(r.Matches(MockApi('var=$v')))
     m = list(r.Matches(MockApi('local var=$v')))
+
+  def testCompletesUserDefinedFunctions(self):
+    # This is here because it's hard to test readline with the spec tests.
+
+    USER_COMPLETION = """
+argv() {
+  python -c 'import sys; print(sys.argv[1:])'
+}
+
+complete_foo() {
+  local first=$1
+  local cur=$2
+  local prev=$3
+
+  argv COMP_WORDS "${COMP_WORDS[@]}"
+  argv COMP_CWORD "${COMP_CWORD}"
+
+  # This value is used in main bash_completion script.
+
+  argv source "${BASH_SOURCE[@]}"
+  argv 'source[0]' "${BASH_SOURCE[0]}"
+
+  # Test for prefix
+  # bin is a dir
+  for candidate in one two three bin; do
+    if test "${candidate#$cur}" != "$candidate"; then
+      COMPREPLY+=("$candidate")
+    fi
+  done
+}
+
+complete -F complete_foo foo
+"""
+
+    ex = test_lib.EvalCode(USER_COMPLETION)
+    print(ex.comp_state)
+
+    r = _MakeRootCompleter(comp_state=ex.comp_state)
+
+    m = list(r.Matches(MockApi('foo t')))
+    print(m)
+    # By default, we get a space on the end.
+    self.assert_('two ' in m, 'Got %s' % m)
+    self.assert_('three ' in m, 'Got %s' % m)
 
 
 def _TestCompKind(test, buf, check=True):

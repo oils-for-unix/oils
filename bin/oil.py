@@ -95,11 +95,11 @@ def _ShowVersion():
   util.ShowAppVersion('Oil')
 
 
-def _InitDefaultCompletions(ex, comp_lookup):
+def _InitDefaultCompletions(ex, comp_state):
   # register builtins and words
-  builtin_comp.Complete(['-E', '-A', 'command'], ex, comp_lookup)
+  builtin_comp.Complete(['-E', '-A', 'command'], ex, comp_state)
   # register path completion
-  builtin_comp.Complete(['-D', '-A', 'file'], ex, comp_lookup)
+  builtin_comp.Complete(['-D', '-A', 'file'], ex, comp_state)
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:
@@ -108,7 +108,7 @@ def _InitDefaultCompletions(ex, comp_lookup):
     A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
     A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
     C1 = completion.ChainedCompleter([A1, A2])
-    comp_lookup.RegisterName('slowc', C1)
+    comp_state.RegisterName('slowc', completion.Options(), C1)
 
 
 def DefineCommonFlags(spec):
@@ -229,7 +229,7 @@ def ShellMain(lang, argv0, argv, login_shell):
                   has_main=has_main)
   funcs = {}
 
-  comp_lookup = completion.CompletionLookup()
+  comp_state = completion.State()
 
   fd_state = process.FdState()
   exec_opts = state.ExecOpts(mem, readline)
@@ -252,7 +252,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     trace_f = util.DebugFile(sys.stderr)
   devtools = dev.DevTools(dumper, debug_f, trace_f)
 
-  ex = cmd_exec.Executor(mem, fd_state, funcs, comp_lookup, exec_opts,
+  ex = cmd_exec.Executor(mem, fd_state, funcs, comp_state, exec_opts,
                          parse_ctx, devtools)
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source
@@ -322,10 +322,10 @@ def ShellMain(lang, argv0, argv, login_shell):
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
       progress_f = ui.StatusLine()
       # TODO: Should parse_ctx have a different arena?
-      root_comp = completion.RootCompleter(ev, comp_lookup, mem,
+      root_comp = completion.RootCompleter(ev, comp_state, mem,
                                            parse_ctx, progress_f, debug_f)
       completion.Init(readline, root_comp, debug_f)
-      _InitDefaultCompletions(ex, comp_lookup)
+      _InitDefaultCompletions(ex, comp_state)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

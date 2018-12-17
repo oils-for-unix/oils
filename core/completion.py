@@ -65,23 +65,54 @@ class NullCompleter(object):
     return []
 
 
-_NULL_COMPLETER = NullCompleter()
+class Options(object):
+  def __init__(self):
+    # everything false by default
+    self.nospace = False
+    self.dirnames = False  # only if empty
+    self.default = False  # only if empty
+    self.plusdirs = False
+    self.filenames = False  # post-process
+
+# NOTE: How to create temporary options?  With copy.deepcopy()?
+# We might want that as a test for OVM.  Copying is similar to garbage
+# collection in that you walk a graph.
 
 
-class CompletionLookup(object):
-  """Stores completion hooks registered by the user."""
+# These values should never be mutated.
+_DO_NOTHING = (Options(), NullCompleter())
 
+
+class State(object):
+  """Global completion state.
+  
+  It has two separate parts:
+    
+  1. Stores completion hooks registered by the user.
+  2. Stores the state of the CURRENT completion.
+
+  Both of them are needed in the RootCompleter and various builtins, so let's
+  store them in the same object for convenience.
+  """
   def __init__(self):
     # command name -> ChainedCompleter
-    # There are pseudo commands __first and __fallback for -E and -D.
+    # Pseudo-commands __first and __fallback are for -E and -D.
     self.lookup = {
-        '__fallback': _NULL_COMPLETER,
-        '__first': _NULL_COMPLETER,
-        }
+        '__fallback': _DO_NOTHING,
+        '__first': _DO_NOTHING,
+    }
 
     # So you can register *.sh, unlike bash.  List of (glob, [actions]),
     # searched linearly.
     self.patterns = []
+
+    # For the IN-PROGRESS completion.
+    self.currently_completing = False
+    # should be SET to a COPY of the registration options by the completer.
+    self.current_options = None
+
+  def __str__(self):
+    return '<completion.State %s>' % self.lookup
 
   def PrintSpecs(self):
     for name in sorted(self.lookup):
@@ -90,14 +121,14 @@ class CompletionLookup(object):
     for pat, chain in self.patterns:
       print('%s = %s' % (pat, chain))
 
-  def RegisterName(self, name, chain):
+  def RegisterName(self, name, comp_opts, chain):
     """Register a completion action with a name.
     Used by the 'complete' builtin.
     """
-    self.lookup[name] = chain
+    self.lookup[name] = (comp_opts, chain)
 
-  def RegisterGlob(self, glob_pat, chain):
-    self.patterns.append((glob_pat, chain))
+  def RegisterGlob(self, glob_pat, comp_opts, chain):
+    self.patterns.append((glob_pat, comp_opts, chain))
 
   def GetFirstCompleter(self):
     return self.lookup['__first']
@@ -119,7 +150,7 @@ class CompletionLookup(object):
     if chain:
       return chain
 
-    for glob_pat, chain in self.patterns:
+    for glob_pat, comp_opts, chain in self.patterns:
       #log('Matching %r %r', key, glob_pat)
       if libc.fnmatch(glob_pat, key):
         return chain
@@ -128,7 +159,7 @@ class CompletionLookup(object):
     return self.lookup['__fallback']
 
 
-class CompletionApi(object):
+class Api(object):
 
   def __init__(self, line='', begin=0, end=0):
     """
@@ -162,7 +193,7 @@ class CompletionApi(object):
 
   def __repr__(self):
     """For testing"""
-    return '<CompletionApi %r %d-%d>' % (self.line, self.begin, self.end)
+    return '<Api %r %d-%d>' % (self.line, self.begin, self.end)
 
 
 #
@@ -281,7 +312,8 @@ class ShellFuncAction(CompletionAction):
     # Lame: COMP_REPLY would follow the naming convention!
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
-      util.error('Ran function %s but COMPREPLY was not defined', self.func.name)
+      util.error('Ran function %s but COMPREPLY was not defined',
+                 self.func.name)
       return []
 
     if val.tag != value_e.StrArray:
@@ -476,10 +508,10 @@ class RootCompleter(object):
   - Complete the OSH language (variables, etc.), or
   - Statically evaluate argv and dispatch to a command completer.
   """
-  def __init__(self, word_ev, comp_lookup, mem, parse_ctx, progress_f,
+  def __init__(self, word_ev, comp_state, mem, parse_ctx, progress_f,
                debug_f):
     self.word_ev = word_ev  # for static evaluation of words
-    self.comp_lookup = comp_lookup  # to look up plugins
+    self.comp_state = comp_state  # to look up plugins
     self.mem = mem  # to complete variable names
 
     self.parse_ctx = parse_ctx
@@ -651,8 +683,8 @@ class RootCompleter(object):
       if last_col == comp.end:  # We're not completing the last word!
         debug_f.log('Completing words')
         #
-        # It didn't look like we need to complete var names, tilde, redirects, etc.
-        # Now try partial_argv, which may involve invoking PLUGINS.
+        # It didn't look like we need to complete var names, tilde, redirects,
+        # etc.  Now try partial_argv, which may involve invoking PLUGINS.
 
         # needed to complete paths with ~
         words2 = word.TildeDetectAll(comp_state.words)
@@ -665,8 +697,8 @@ class RootCompleter(object):
         for w in words2:
           try:
             # TODO:
-            # - Should we call EvalWordSequence?  But turn globbing off?  It can do
-            # splitting and such.
+            # - Should we call EvalWordSequence?  But turn globbing off?  It
+            # can do splitting and such.
             # - We could have a variant to eval TildeSubPart to ~ ?
             val = self.word_ev.EvalWordToString(w)
           except util.FatalRuntimeError:
@@ -685,9 +717,10 @@ class RootCompleter(object):
           raise AssertionError
         elif n == 1:
           # First
-          completer = self.comp_lookup.GetFirstCompleter()
+          comp_opts, completer = self.comp_state.GetFirstCompleter()
         else:
-          completer = self.comp_lookup.GetCompleterForName(partial_argv[0])
+          comp_opts, completer = self.comp_state.GetCompleterForName(
+              partial_argv[0])
 
         # NOTE: GetFirstCompleter and GetCompleterForName can be user-defined
         # plugins.  So they both need this API options.
@@ -756,7 +789,7 @@ class ReadlineCompleter(object):
       begin = self.readline_mod.get_begidx()
       end = self.readline_mod.get_endidx()
 
-      comp = CompletionApi(line=buf, begin=begin, end=end)
+      comp = Api(line=buf, begin=begin, end=end)
 
       self.comp_iter = self.root_comp.Matches(comp)
 
@@ -802,6 +835,7 @@ def InitReadline(readline_mod, complete_cb):
     if home_dir is None:
       print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
       return
+  # TODO: Put this in .config/oil/.
   history_filename = os_path.join(home_dir, 'oil_history')
 
   try:
