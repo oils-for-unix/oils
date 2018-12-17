@@ -617,11 +617,12 @@ class BoolEvaluator(_ExprEvaluator):
           return stat.S_ISLNK(mode)
 
         try:
-          mode = posix.stat(s).st_mode
+          st = posix.stat(s)
         except OSError:
           # TODO: Signal extra debug information?
           #log("Error from stat(%r): %s" % (s, e))
           return False
+        mode = st.st_mode
 
         if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e
           return True
@@ -640,6 +641,9 @@ class BoolEvaluator(_ExprEvaluator):
 
         if op_id == Id.BoolUnary_w:
           return posix.access(s, posix.W_OK)
+
+        if op_id == Id.BoolUnary_s:
+          return st.st_size != 0
 
         raise NotImplementedError(op_id)
 

@@ -237,7 +237,7 @@ dangling is not file
 ## END
 
 #### -t 1 for stdout
-# There isn't way to get a terminal in the test environment?
+# There is no way to get a terminal in the test environment?
 [ -t 1 ]
 echo status=$?
 ## stdout: status=1
@@ -269,6 +269,21 @@ echo status=$?
 status=2
 ## END
 ## BUG mksh STDOUT:
+status=0
+## END
+
+#### test -s
+test -s __nonexistent
+echo status=$?
+touch $TMP/empty
+test -s $TMP/empty
+echo status=$?
+echo nonempty > $TMP/nonempty
+test -s $TMP/nonempty
+echo status=$?
+## STDOUT:
+status=1
+status=1
 status=0
 ## END
 
