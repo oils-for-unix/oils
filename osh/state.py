@@ -105,7 +105,7 @@ SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 SHOPT_OPTION_NAMES = (
     'nullglob', 'failglob', 'expand_aliases', 'extglob', 'progcomp',
-    'hostcomplete', 'lastpipe')
+    'histappend', 'hostcomplete', 'lastpipe')
 
 
 class ExecOpts(object):
@@ -165,12 +165,13 @@ class ExecOpts(object):
     self.nullglob = False
     self.failglob = False
 
-    # No-op for bash compatibility.  We always expand aliases.
-    self.expand_aliases = False
-    self.extglob = False  # No-op for bash compatibility.
+    # No-ops for bash compatibility.
+    self.expand_aliases = False  # We always expand aliases.
+    self.extglob = False  # extended globs are always on (where implemented)
     self.progcomp = False  # ditto
-    self.hostcomplete = False  # ditto, for words with '@'
-    self.lastpipe = False  # No-op because it's always on.
+    self.histappend = False  # stubbed out for issue #218
+    self.hostcomplete = False  # complete words with '@' ?
+    self.lastpipe = False  # Always on in our pipeline implementation.
 
     #
     # OSH-specific options that are not yet implemented.
