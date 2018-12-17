@@ -145,6 +145,16 @@ rc-file() {
   bin/osh -i --rcfile /dev/null < /dev/null
 }
 
+noexec-fails-properly() {
+  set +o errexit
+  local tmp=_tmp/osh-usage-noexec.txt
+  bin/osh -n -c 'echo; echo; |' > $tmp
+  assert $? -eq 2
+  read < $tmp
+  assert $? -eq 1  # shouldn't have read any lines!
+  echo "$tmp appears empty, as expected"
+}
+
 readonly -a PASSING=(
   ast-formats
   osh-file
@@ -153,6 +163,7 @@ readonly -a PASSING=(
   exit-builtin-interactive
   rc-file
   help
+  noexec-fails-properly
 )
 
 all-passing() {

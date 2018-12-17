@@ -348,7 +348,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   _tlog('Execute(node)')
   status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
 
-  if nodes_out is not None:
+  # Only print nodes if the whole parse succeeded.
+  if nodes_out is not None and status == 0:
     ui.PrintAst(nodes_out, opts)
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
