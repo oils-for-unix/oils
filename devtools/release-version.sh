@@ -260,6 +260,8 @@ write-no-announcement() {
   no-announcement > _release/VERSION/announcement.html
 }
 
+readonly SITE_DEPLOY_DIR='../oilshell.org__deploy'
+
 announcement-0.0() {
   html-redirect '/blog/2017/07/23.html' \
     > ../oilshell.org__deploy/release/0.0.0/announcement.html
@@ -309,11 +311,11 @@ announcement-0.6.pre4() {
 }
 
 announcement-0.6.pre5() {
-  html-redirect '/blog/2018/10/08.html' > _release/VERSION/announcement.html
+  html-redirect '/blog/2018/10/11.html' > $SITE_DEPLOY_DIR/release/0.6.pre5/announcement.html
 }
 
 announcement-0.6.pre6() {
-  html-redirect '/blog/2018/10/16.html' > _release/VERSION/announcement.html
+  no-announcement > $SITE_DEPLOY_DIR/release/0.6.pre6/announcement.html
 }
 
 announcement-0.6.pre7() {
@@ -321,7 +323,7 @@ announcement-0.6.pre7() {
 }
 
 announcement-0.6.pre8() {
-  write-no-announcement
+  html-redirect '/blog/2018/11/15.html' > $SITE_DEPLOY_DIR/release/0.6.pre8/announcement.html
 }
 
 announcement-0.6.pre9() {
@@ -333,7 +335,7 @@ announcement-0.6.pre10() {
 }
 
 announcement-0.6.pre11() {
-  write-no-announcement
+  html-redirect '/blog/2018/12/16.html' > $SITE_DEPLOY_DIR/release/0.6.pre11/announcement.html
 }
 
 "$@"
