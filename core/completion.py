@@ -66,13 +66,21 @@ class NullCompleter(object):
 
 
 class Options(object):
-  def __init__(self):
-    # everything false by default
-    self.nospace = False
-    self.dirnames = False  # only if empty
-    self.default = False  # only if empty
-    self.plusdirs = False
-    self.filenames = False  # post-process
+  def __init__(self, opt_changes):
+    self.initial = dict(opt_changes)  # option name -> bool
+    self.ephemeral = {}  # during one completion
+
+  def Reset(self):
+    self.ephemeral.clear()
+
+  def Get(self, opt_name):
+    try:
+      return self.ephemeral[opt_name]
+    except KeyError:
+      return self.initial.get(opt_name, False)  # all default to False
+
+  def Set(self, opt_name, b):
+    self.ephemeral[opt_name] = b
 
 # NOTE: How to create temporary options?  With copy.deepcopy()?
 # We might want that as a test for OVM.  Copying is similar to garbage
@@ -80,7 +88,7 @@ class Options(object):
 
 
 # These values should never be mutated.
-_DO_NOTHING = (Options(), NullCompleter())
+_DO_NOTHING = (Options([]), NullCompleter())
 
 
 class State(object):
@@ -296,6 +304,9 @@ class ShellFuncAction(CompletionAction):
     # default.
     argv, comp_words = comp.GetApiInput()
 
+    # Have to clear the response every time.  TODO: Reuse the object?
+    state.SetGlobalArray(self.ex.mem, 'COMPREPLY', [])
+
     state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
     state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp.index))
     state.SetGlobalString(self.ex.mem, 'COMP_LINE', comp.line)
@@ -309,7 +320,9 @@ class ShellFuncAction(CompletionAction):
       self.log('Got status 124 from %r', self.func.name)
       raise _RetryCompletion()
 
-    # Lame: COMP_REPLY would follow the naming convention!
+    # Read the response.  We set it above, so this error would only happen if
+    # the user unset it.
+    # NOTE: 'COMP_REPLY' would follow the naming convention!
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
       util.error('Ran function %s but COMPREPLY was not defined',
@@ -650,6 +663,7 @@ class RootCompleter(object):
             yield prefix + name + '/'
         return
 
+    comp_opts = None
     completer = None   # Set below
 
     # Check if we should complete a redirect
@@ -746,10 +760,13 @@ class RootCompleter(object):
       # - Add trailing slashes to directories?
       # - don't append space if 'nospace' is set?
 
-      if m.endswith('/'):
+      if m.endswith('/'):  # TODO: FileSystemAction shouldn't add this
         yield m
       else:
-        yield m + ' '
+        if comp_opts.Get('nospace'):
+          yield m
+        else:
+          yield m + ' '
 
       # NOTE: Can't use %.2f in production build!
       i += 1

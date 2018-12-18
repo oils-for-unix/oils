@@ -75,6 +75,7 @@ complete_optdemo() {
 # plusdirs: always add dirs
 # filenames: adds trailing slash if it is a directory
 complete -F complete_foo -o dirnames -o filenames foo
+complete -F complete_foo -o nospace foo2
 
 # from _filedir
 complete -F complete_filedir filedir

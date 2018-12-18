@@ -106,15 +106,6 @@ class _UsersAction(object):
         yield name
 
 
-def _MakeOptions(opt_changes):
-  opts = completion.Options()
-  for name, b in opt_changes:
-    # Should have already been checked by the option parser
-    assert hasattr(opts, name), name
-    setattr(opts, name, b)
-  return opts
-
-
 def _BuildCompletionChain(argv, arg, ex):
   """Given flags to complete/compgen, built a ChainedCompleter."""
   actions = []
@@ -241,7 +232,7 @@ def Complete(argv, ex, comp_state):
     comp_state.PrintSpecs()
     return 0
 
-  comp_opts = _MakeOptions(arg.opt_changes)
+  comp_opts = completion.Options(arg.opt_changes)
   chain = _BuildCompletionChain(argv, arg, ex)
   for command in commands:
     comp_state.RegisterName(command, comp_opts, chain)
@@ -278,7 +269,7 @@ def CompGen(argv, ex):
 
   matched = False
 
-  comp_opts = _MakeOptions(arg.opt_changes)
+  comp_opts = completion.Options(arg.opt_changes)
   chain = _BuildCompletionChain(argv, arg, ex)
 
   # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
@@ -311,7 +302,7 @@ def CompOpt(argv, comp_state):
     util.error('compopt: not currently executing a completion function')
     return 1
 
-  comp_opts = _MakeOptions(arg.opt_changes)
+  comp_opts = completion.Options(arg.opt_changes)
 
   # NOTE: This is supposed to fail if a completion isn't being generated?
   # The executor should have a mode?

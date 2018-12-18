@@ -31,7 +31,7 @@ log = util.log
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
 C1 = completion.ChainedCompleter([A1])
 
-COMP_OPTS = completion.Options()
+COMP_OPTS = completion.Options([])
 
 mem = state.Mem('', [], {}, None)
 
@@ -360,7 +360,7 @@ argv() {
   python -c 'import sys; print(sys.argv[1:])'
 }
 
-complete_foo() {
+my_completion_hook() {
   local first=$1
   local cur=$2
   local prev=$3
@@ -382,7 +382,8 @@ complete_foo() {
   done
 }
 
-complete -F complete_foo foo
+complete -F my_completion_hook foo
+complete -F my_completion_hook -o nospace bar
 """
 
     ex = test_lib.EvalCode(USER_COMPLETION)
@@ -393,8 +394,16 @@ complete -F complete_foo foo
     m = list(r.Matches(MockApi('foo t')))
     print(m)
     # By default, we get a space on the end.
+    self.assertEqual(2, len(m))
     self.assert_('two ' in m, 'Got %s' % m)
     self.assert_('three ' in m, 'Got %s' % m)
+
+    # No space for 'bar'
+    m = list(r.Matches(MockApi('bar t')))
+    print(m)
+    self.assertEqual(2, len(m))
+    self.assert_('two' in m, 'Got %s' % m)
+    self.assert_('three' in m, 'Got %s' % m)
 
 
 def _TestCompKind(test, buf, check=True):

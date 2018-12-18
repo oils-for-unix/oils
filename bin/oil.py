@@ -108,7 +108,7 @@ def _InitDefaultCompletions(ex, comp_state):
     A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
     A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
     C1 = completion.ChainedCompleter([A1, A2])
-    comp_state.RegisterName('slowc', completion.Options(), C1)
+    comp_state.RegisterName('slowc', completion.Options([]), C1)
 
 
 def DefineCommonFlags(spec):
