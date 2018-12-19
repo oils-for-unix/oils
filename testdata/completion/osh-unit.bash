@@ -2,8 +2,13 @@
 #
 # Demo of the bash completion API.
 #
+# It's used by core/completion_test.py, and you can run it manually.
+#
+# The reason we use unit tests is that some of the postprocessing in GNU
+# readline is untestable from the "outside".
+#
 # Usage:
-#   source demo/completion.sh
+#   source testdata/completion/osh-unit.bash
 
 argv() {
   spec/bin/argv.py "$@"
@@ -133,13 +138,31 @@ complete -A file -A user fileuser
 #complete -D -A file
 complete -F complete_files -D
 
+#
+# Unit tests use this
+#
+
+# For testing interactively
 flagX() { argv "$@"; }
 flagX_bang() { argv "$@"; }
+flagX_prefix() { argv "$@"; }
+prefix_plusdirs() { argv "$@"; }
+flagX_plusdirs() { argv "$@"; }
+
+complete -F complete_mywords mywords
+complete -F complete_mywords -o nospace mywords_nospace
 
 # This REMOVES two of them.  'three' should not be removed
 # since it's not an exact match.
 # Hm filtering comes BEFORE the prefix.
-complete -P __ -X '@(two|bin|thre)' -F complete_mywords flagX
+complete -X '@(two|bin|thre)' -F complete_mywords flagX
 
 # Silly negation syntax
 complete -X '!@(two|bin)' -F complete_mywords flagX_bang
+
+complete -P __ -X '@(two|bin|thre)' -F complete_mywords flagX_prefix
+
+complete -P __ -o plusdirs -F complete_mywords prefix_plusdirs
+
+# Filter out bin, is it added back?  Yes, it appears to work.
+complete -X '@(two|bin)' -o plusdirs -F complete_mywords flagX_plusdirs

@@ -14,8 +14,6 @@ from osh import state
 
 from _devbuild.gen import osh_help  # generated file
 
-import libc
-
 log = util.log
 
 

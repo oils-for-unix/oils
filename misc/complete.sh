@@ -75,6 +75,13 @@ audit-plugins() {
   grep --no-filename _init_completion \
     $BASH_COMP ../bash-completion/completions/* |
     sort | uniq -c | sort -n
+
+  echo
+  echo '-X usage'
+  echo
+
+  grep --no-filename -- -X \
+    $BASH_COMP ../bash-completion/completions/* 
 }
 
 

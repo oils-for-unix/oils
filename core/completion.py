@@ -459,7 +459,7 @@ class UserSpec(object):
   """User-defined completions.
   
   - The compgen builtin exposes this DIRECTLY.
-  - On the other hand, Readline uses RootCompleter>
+  - On the other hand, Readline uses RootCompleter.
 
   NOTE: plusdirs happens AFTER filtering with predicates?  We add BACK the
   dirs, e.g. -A file -X '!*.sh' -o plusdirs.
@@ -476,6 +476,9 @@ class UserSpec(object):
   def Matches(self, comp):
     """Yield completion candidates."""
     num_matches = 0
+
+    # TODO: plusdirs could be in here, and doesn't respect predicate.
+    # Fix that?
     for a in self.actions:
       is_fs_action = isinstance(a, FileSystemAction)
       for match in a.Matches(comp):

@@ -355,73 +355,42 @@ class RootCompeterTest(unittest.TestCase):
 
   def testCompletesUserDefinedFunctions(self):
     # This is here because it's hard to test readline with the spec tests.
-
-    USER_COMPLETION = """
-argv() {
-  python -c 'import sys; print(sys.argv[1:])'
-}
-
-my_completion_hook() {
-  local first=$1
-  local cur=$2
-  local prev=$3
-
-  argv COMP_WORDS "${COMP_WORDS[@]}"
-  argv COMP_CWORD "${COMP_CWORD}"
-
-  # This value is used in main bash_completion script.
-
-  argv source "${BASH_SOURCE[@]}"
-  argv 'source[0]' "${BASH_SOURCE[0]}"
-
-  # Test for prefix
-  # bin is a dir
-  for candidate in one two three bin; do
-    if [[ $candidate == $cur* ]]; then
-      COMPREPLY+=("$candidate")
-    fi
-  done
-}
-
-complete -F my_completion_hook foo
-complete -F my_completion_hook -o nospace bar
-
-complete -X "@(one|three)" -F my_completion_hook flagX
-complete -X "!@(one|three)" -F my_completion_hook flagX_bang
-"""
-
-    ex = test_lib.EvalCode(USER_COMPLETION)
+    with open('testdata/completion/osh-unit.bash') as f:
+      code_str = f.read()
+    ex = test_lib.EvalCode(code_str)
     print(ex.comp_state)
 
     r = _MakeRootCompleter(comp_state=ex.comp_state)
 
-    m = list(r.Matches(MockApi('foo t')))
-    print(m)
     # By default, we get a space on the end.
-    self.assertEqual(2, len(m))
-    self.assert_('two ' in m, 'Got %s' % m)
-    self.assert_('three ' in m, 'Got %s' % m)
+    m = list(r.Matches(MockApi('mywords t')))
+    self.assertEqual(['three ', 'two '], sorted(m))
 
-    # No space for 'bar'
-    m = list(r.Matches(MockApi('bar t')))
-    print(m)
-    self.assertEqual(2, len(m))
-    self.assert_('two' in m, 'Got %s' % m)
-    self.assert_('three' in m, 'Got %s' % m)
+    # No space
+    m = list(r.Matches(MockApi('mywords_nospace t')))
+    self.assertEqual(['three', 'two'], sorted(m))
 
-    # Filtered out one and three
+    # Filtered out two and bin
     m = list(r.Matches(MockApi('flagX ')))
-    print(m)
-    self.assertEqual(2, len(m))
-    self.assert_('two ' in m, 'Got %s' % m)
-    self.assert_('bin ' in m, 'Got %s' % m)
+    self.assertEqual(['one ', 'three '], sorted(m))
 
-    # Filter out everything EXCEPT one and three
+    # Filter out everything EXCEPT two and bin
     m = list(r.Matches(MockApi('flagX_bang ')))
-    print(m)
-    self.assertEqual(2, len(m))
-    self.assert_('one ' in m, 'Got %s' % m)
-    self.assert_('three ' in m, 'Got %s' % m)
+    self.assertEqual(['bin ', 'two '], sorted(m))
+
+    # -X with -P
+    m = list(r.Matches(MockApi('flagX_prefix ')))
+    self.assertEqual(['__one ', '__three '], sorted(m))
+
+    if 0:
+      # -P with plusdirs
+      m = list(r.Matches(MockApi('prefix_plusdirs b')))
+      self.assertEqual(['__bin', 'benchmarks/', 'bin/', 'build/'], sorted(m))
+
+      # -X with plusdirs.  We're filtering out bin/, and then it's added back by
+      # plusdirs.  The filter doesn't kill it.
+      m = list(r.Matches(MockApi('flagX_plusdirs b')))
+      self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
 
 
 def _TestCompKind(test, buf, check=True):
