@@ -452,14 +452,13 @@ class GlobPredicate(object):
 
 
 class UserSpec(object):
-  """A completer that tries a bunch of them in order.
+  """User-defined completions.
+  
+  - The compgen builtin exposes this DIRECTLY.
+  - On the other hand, Readline uses RootCompleter>
 
-  NOTE: plus_dirs happens AFTER filtering with predicates?  We add BACK the
+  NOTE: plusdirs happens AFTER filtering with predicates?  We add BACK the
   dirs, e.g. -A file -X '!*.sh' -o plusdirs.
-
-  NOTE: plusdirs can just create another chained completer.  I think you should
-  probably get rid of the predicate.  That should just be a Filter().  prefix
-  and suffix can be adhoc for now I guess, since they are trivial.
   """
   def __init__(self, actions, else_actions, predicate=None,
                prefix='', suffix=''):
@@ -470,30 +469,11 @@ class UserSpec(object):
     self.prefix = prefix
     self.suffix = suffix
 
-  # TODO: There should be a function here to do -o nospace and -o filenames
-  # post-processing.
-  #
-  # And it is NOT handling redirects.
-  #
-  # Actually it can do prefix and suffix.
-  #
-  # Maybe tag candidates from ShellFuncAction and FileSystemAction
-  # ShellFuncAction is not filtered
-
-  def Matches(self, comp, filter_func_matches=True):
-    """
-    ShellFuncAction should probably have a special flag.  It could be a tuple.
-
-    -o filenames
-      -W 'a b' respects it
-      -F functions respects it
-      But we don't want to respect it for redirect completions
-      And we don't need it for plusdirs, dirnames, default
-    """
-    # NOTE: This has to be evaluated eagerly so we get the _RetryCompletion
-    # exception.
+  def Matches(self, comp):
+    """Yield completion candidates."""
     num_matches = 0
     for a in self.actions:
+      is_fs_action = isinstance(a, FileSystemAction)
       for match in a.Matches(comp):
         # Special case hack to match bash for compgen -F.  It doesn't filter by
         # to_complete!
@@ -506,15 +486,16 @@ class UserSpec(object):
         # There are two kinds of filters: changing the string, and filtering
         # the set of strings.  So maybe have modifiers AND filters?  A triple.
         if show:
-          yield self.prefix + match + self.suffix
+          yield self.prefix + match + self.suffix, is_fs_action
           num_matches += 1
 
     if num_matches == 0:
       for a in self.else_actions:
+        is_fs_action = isinstance(a, FileSystemAction)
         for match in a.Matches(comp):
           # Not filtering by startswith(comp.to_complete) because these are all
           # FileSystemActions, which do it already.
-          yield self.prefix + match + self.suffix
+          yield self.prefix + match + self.suffix, is_fs_action
 
     # What if the cursor is not at the end of line?  See readline interface.
     # That's OK -- we just truncate the line at the cursor?
@@ -777,8 +758,7 @@ class RootCompleter(object):
           comp_opts, user_spec = self.comp_state.GetCompleterForName(
               partial_argv[0])
 
-        # NOTE: GetFirstCompleter and GetCompleterForName can be user-defined
-        # plugins.  So they both need this API options.
+        # Update the API for user-defined functions.
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
         comp.Update(words=partial_argv, index=index,
                     to_complete=partial_argv[-1])
@@ -799,18 +779,25 @@ class RootCompleter(object):
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
+    comp_opts.Reset()  # User specs mutate this
+
     i = 0
-    for m in user_spec.Matches(comp):
+    for m, is_fs_action in user_spec.Matches(comp):
       # TODO:
       # - dedupe these?  You can get two 'echo' in bash, which is dumb.
       # - Do shell QUOTING here for filenames?
 
-      if comp_opts.Get('filenames'):
+      # NOTE: This post-processing MUST go here, and not in UserSpec, because
+      # it's in READLINE in bash.  compgen doesn't see it.
+
+      # compopt -o filenames is for user-defined actions.  Or any
+      # FileSystemAction needs it.
+      if is_fs_action or comp_opts.Get('filenames'):
         if os_path.isdir(m):  # TODO: test coverage
           yield m + '/'
-        else:
-          yield m
-      elif comp_opts.Get('nospace'):
+          continue
+
+      if comp_opts.Get('nospace'):
         yield m
       else:
         yield m + ' '

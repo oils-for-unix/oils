@@ -29,13 +29,14 @@ assign_op_e = syntax_asdl.assign_op_e
 log = util.log
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-C1 = completion.UserSpec([A1], [])
+U1 = completion.UserSpec([A1], [])
 
 COMP_OPTS = completion.Options([])
 
 mem = state.Mem('', [], {}, None)
 
 FIRST = completion.WordsAction(['grep', 'sed', 'test'])
+U2 = completion.UserSpec([FIRST], [])
 
 
 def MockApi(line):
@@ -72,11 +73,11 @@ class CompletionTest(unittest.TestCase):
 
   def testLookup(self):
     c = completion.State()
-    c.RegisterName('grep', COMP_OPTS, C1)
+    c.RegisterName('grep', COMP_OPTS, U1)
     print(c.GetCompleterForName('grep'))
     print(c.GetCompleterForName('/usr/bin/grep'))
 
-    c.RegisterGlob('*.py', COMP_OPTS, C1)
+    c.RegisterGlob('*.py', COMP_OPTS, U1)
     comp = c.GetCompleterForName('/usr/bin/foo.py')
     print('py', comp)
     # NOTE: This is an implementation detail
@@ -165,14 +166,14 @@ class CompletionTest(unittest.TestCase):
 
   def testUserSpec(self):
     comp = self._MakeComp(['f'], 0, 'f')
-    matches = list(C1.Matches(comp))
-    self.assertEqual(['foo.py', 'foo'], matches)
+    matches = list(U1.Matches(comp))
+    self.assertEqual([('foo.py', False), ('foo', False)], matches)
 
     p = completion.GlobPredicate('*.py')
     c2 = completion.UserSpec([A1], [], predicate=p)
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
-    self.assertEqual(['foo.py'], matches)
+    self.assertEqual([('foo.py', False)], matches)
 
 
 class RootCompeterTest(unittest.TestCase):
@@ -321,8 +322,8 @@ class RootCompeterTest(unittest.TestCase):
   def testCompletesWords(self):
     comp_state = completion.State()
 
-    comp_state.RegisterName('grep', COMP_OPTS, C1)
-    comp_state.RegisterName('__first', COMP_OPTS, FIRST)
+    comp_state.RegisterName('grep', COMP_OPTS, U1)
+    comp_state.RegisterName('__first', COMP_OPTS, U2)
     r = _MakeRootCompleter(comp_state=comp_state)
 
     comp = MockApi('grep f')

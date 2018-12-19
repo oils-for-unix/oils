@@ -200,13 +200,8 @@ def _BuildUserSpec(argv, arg, comp_opts, ex):
     raise args.UsageError('No actions defined in completion: %s' % argv)
 
   # TODO: What about predicate?
-  user_spec = completion.UserSpec(
-      actions,
-      else_actions,
-      prefix=arg.P or '',
-      suffix=arg.S or '')
-
-  return user_spec
+  return completion.UserSpec(actions, else_actions,
+                             prefix=arg.P or '', suffix=arg.S or '')
 
 
 # git-completion.sh uses complete -o and complete -F
@@ -291,7 +286,7 @@ def CompGen(argv, ex):
   comp = completion.Api()
   comp.Update(words=['compgen', to_complete], index=-1,
               to_complete=to_complete)
-  for m in user_spec.Matches(comp):
+  for m, _ in user_spec.Matches(comp):
     matched = True
     print(m)
 
