@@ -74,16 +74,16 @@ class CompletionTest(unittest.TestCase):
   def testLookup(self):
     c = completion.State()
     c.RegisterName('grep', COMP_OPTS, U1)
-    print(c.GetCompleterForName('grep'))
-    print(c.GetCompleterForName('/usr/bin/grep'))
+    print(c.GetSpecForName('grep'))
+    print(c.GetSpecForName('/usr/bin/grep'))
 
     c.RegisterGlob('*.py', COMP_OPTS, U1)
-    comp = c.GetCompleterForName('/usr/bin/foo.py')
+    comp = c.GetSpecForName('/usr/bin/foo.py')
     print('py', comp)
     # NOTE: This is an implementation detail
     self.assertEqual(1, len(comp.actions))
 
-    comp_rb = c.GetCompleterForName('foo.rb')
+    comp_rb = c.GetSpecForName('foo.rb')
     print('rb', comp_rb)
 
   def testWordsAction(self):

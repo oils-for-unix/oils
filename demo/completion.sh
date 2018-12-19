@@ -71,6 +71,22 @@ complete_optdemo() {
   COMPREPLY=( $( compgen -o nospace -d "$cur" ) )
 }
 
+complete_optdynamic() {
+  local first=$1
+  local cur=$2
+  local prev=$3
+
+  # Suppress space on anything that starts with b
+  if [[ "$cur" == b* ]]; then
+    compopt -o nospace
+  fi
+  COMPREPLY=( $( compgen -A file "$cur" ) )
+}
+
+optdynamic() {
+  argv optdynamic "$@"
+}
+
 complete_files() {
   local first=$1
   local cur=$2
@@ -94,6 +110,8 @@ complete -F complete_bug bug
 
 # Test how the options work.  git uses nospace.
 complete -F complete_optdemo -o nospace optdemo
+
+complete -F complete_optdynamic optdynamic
 
 # Check trailing backslashes for the 'fileuser' command
 # Hm somehow it knows to distinguish.  Gah.

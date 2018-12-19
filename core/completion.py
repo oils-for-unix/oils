@@ -118,7 +118,7 @@ class State(object):
     # For the IN-PROGRESS completion.
     self.currently_completing = False
     # should be SET to a COPY of the registration options by the completer.
-    self.current_options = None
+    self.current_opts = None
 
   def __str__(self):
     return '<completion.State %s>' % self.lookup
@@ -139,17 +139,14 @@ class State(object):
   def RegisterGlob(self, glob_pat, comp_opts, user_spec):
     self.patterns.append((glob_pat, comp_opts, user_spec))
 
-  def GetFirstCompleter(self):
+  def GetFirstSpec(self):
     return self.lookup['__first']
 
-  def GetCompleterForName(self, argv0):
+  def GetSpecForName(self, argv0):
     """
     Args:
       argv0: A finished argv0 to lookup
     """
-    if not argv0:
-      return self.GetFirstCompleter()
-
     user_spec = self.lookup.get(argv0)  # NOTE: Could be ''
     if user_spec:
       return user_spec
@@ -753,9 +750,9 @@ class RootCompleter(object):
           raise AssertionError
         elif n == 1:
           # First
-          comp_opts, user_spec = self.comp_state.GetFirstCompleter()
+          comp_opts, user_spec = self.comp_state.GetFirstSpec()
         else:
-          comp_opts, user_spec = self.comp_state.GetCompleterForName(
+          comp_opts, user_spec = self.comp_state.GetSpecForName(
               partial_argv[0])
 
         # Update the API for user-defined functions.
@@ -768,9 +765,16 @@ class RootCompleter(object):
       debug_f.log("Didn't find anything to complete")
       return
 
-    #self.debug_f.log('Using %s', user_spec)
-    for entry in self._PostProcess(comp_opts, user_spec, comp):
-      yield entry
+    # Reset it back to what was registered.  User-defined functions can mutate
+    # it.
+    comp_opts.Reset()
+    self.comp_state.current_opts = comp_opts
+    self.comp_state.currently_completing = True
+    try:
+      for entry in self._PostProcess(comp_opts, user_spec, comp):
+        yield entry
+    finally:
+      self.comp_state.currently_completing = False
 
   def _PostProcess(self, comp_opts, user_spec, comp):
     """
@@ -778,8 +782,6 @@ class RootCompleter(object):
     """
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
-
-    comp_opts.Reset()  # User specs mutate this
 
     i = 0
     for m, is_fs_action in user_spec.Matches(comp):

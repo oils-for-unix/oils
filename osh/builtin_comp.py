@@ -309,11 +309,9 @@ def CompOpt(argv, comp_state):
     util.error('compopt: not currently executing a completion function')
     return 1
 
-  comp_opts = completion.Options(arg.opt_changes)
-
-  # NOTE: This is supposed to fail if a completion isn't being generated?
-  # The executor should have a mode?
-
+  for name, b in arg.opt_changes:
+    #log('setting %s = %s', name, b)
+    comp_state.current_opts.Set(name, b)
   #log('compopt: %s', arg)
-  log('compopt %s', comp_opts)
+  #log('compopt %s', comp_opts)
   return 0
