@@ -71,6 +71,15 @@ complete_optdemo() {
   COMPREPLY=( $( compgen -o nospace -d "$cur" ) )
 }
 
+complete_files() {
+  local first=$1
+  local cur=$2
+  local prev=$3
+
+  # This MESSES up the trailing slashes.  Need -o filenames.
+  COMPREPLY=( $( compgen -A file "$cur" ) )
+}
+
 # dirnames: add dirs if nothing matches
 # plusdirs: always add dirs
 # filenames: adds trailing slash if it is a directory
@@ -85,3 +94,12 @@ complete -F complete_bug bug
 
 # Test how the options work.  git uses nospace.
 complete -F complete_optdemo -o nospace optdemo
+
+# Check trailing backslashes for the 'fileuser' command
+# Hm somehow it knows to distinguish.  Gah.
+complete -A file -A user fileuser
+
+# everything else completes files
+#complete -D -A file
+complete -F complete_files -D
+

@@ -88,7 +88,8 @@ class Options(object):
 
 
 # These values should never be mutated.
-_DO_NOTHING = (Options([]), NullCompleter())
+_DEFAULT_OPTS = Options([])
+_DO_NOTHING = (_DEFAULT_OPTS, NullCompleter())
 
 
 class State(object):
@@ -103,7 +104,7 @@ class State(object):
   store them in the same object for convenience.
   """
   def __init__(self):
-    # command name -> ChainedCompleter
+    # command name -> UserSpec
     # Pseudo-commands __first and __fallback are for -E and -D.
     self.lookup = {
         '__fallback': _DO_NOTHING,
@@ -126,17 +127,17 @@ class State(object):
     for name in sorted(self.lookup):
       print('%-15r %s' % (name, self.lookup[name]))
     print('---')
-    for pat, chain in self.patterns:
-      print('%s = %s' % (pat, chain))
+    for pat, spec in self.patterns:
+      print('%s = %s' % (pat, spec))
 
-  def RegisterName(self, name, comp_opts, chain):
+  def RegisterName(self, name, comp_opts, user_spec):
     """Register a completion action with a name.
     Used by the 'complete' builtin.
     """
-    self.lookup[name] = (comp_opts, chain)
+    self.lookup[name] = (comp_opts, user_spec)
 
-  def RegisterGlob(self, glob_pat, comp_opts, chain):
-    self.patterns.append((glob_pat, comp_opts, chain))
+  def RegisterGlob(self, glob_pat, comp_opts, user_spec):
+    self.patterns.append((glob_pat, comp_opts, user_spec))
 
   def GetFirstCompleter(self):
     return self.lookup['__first']
@@ -149,19 +150,19 @@ class State(object):
     if not argv0:
       return self.GetFirstCompleter()
 
-    chain = self.lookup.get(argv0)  # NOTE: Could be ''
-    if chain:
-      return chain
+    user_spec = self.lookup.get(argv0)  # NOTE: Could be ''
+    if user_spec:
+      return user_spec
 
     key = os_path.basename(argv0)
     actions = self.lookup.get(key)
-    if chain:
-      return chain
+    if user_spec:
+      return user_spec
 
-    for glob_pat, comp_opts, chain in self.patterns:
+    for glob_pat, comp_opts, user_spec in self.patterns:
       #log('Matching %r %r', key, glob_pat)
       if libc.fnmatch(glob_pat, key):
-        return chain
+        return user_spec
 
     # Nothing matched
     return self.lookup['__fallback']
@@ -242,9 +243,14 @@ class FileSystemAction(CompletionAction):
   
   TODO: We need a variant that tests for an executable bit.
   """
-  def __init__(self, dirs_only=False, exec_only=False):
+
+  def __init__(self, dirs_only=False, exec_only=False, add_slash=False):
     self.dirs_only = dirs_only
     self.exec_only = exec_only
+
+    # This is for redirects, not for UserSpec, which should respect compopt -o
+    # filenames.
+    self.add_slash = add_slash  # for directories
 
   def Matches(self, comp):
     to_complete = comp.to_complete
@@ -268,7 +274,12 @@ class FileSystemAction(CompletionAction):
     for name in names:
       path = os_path.join(base, name)
       if path.startswith(to_complete):
-        if self.dirs_only:
+        if self.dirs_only:  # add_slash not used here
+          # NOTE: There is a duplicate isdir() check later to add a trailing
+          # slash.  Consolidate the checks for fewer stat() ops.  This is hard
+          # because all the completion actions must obey the same interface.
+          # We could have another type like candidate = File | Dir |
+          # OtherString ?
           if os_path.isdir(path):
             yield path
           continue
@@ -279,7 +290,7 @@ class FileSystemAction(CompletionAction):
           if not posix.access(path, posix.X_OK):
             continue
 
-        if os_path.isdir(path):
+        if self.add_slash and os_path.isdir(path):
           yield path + '/'
         else:
           yield path
@@ -440,7 +451,7 @@ class GlobPredicate(object):
     return libc.fnmatch(self.glob_pat, match)
 
 
-class ChainedCompleter(object):
+class UserSpec(object):
   """A completer that tries a bunch of them in order.
 
   NOTE: plus_dirs happens AFTER filtering with predicates?  We add BACK the
@@ -450,31 +461,60 @@ class ChainedCompleter(object):
   probably get rid of the predicate.  That should just be a Filter().  prefix
   and suffix can be adhoc for now I guess, since they are trivial.
   """
-  def __init__(self, actions, predicate=None, prefix='', suffix=''):
+  def __init__(self, actions, else_actions, predicate=None,
+               prefix='', suffix=''):
     self.actions = actions
+    self.else_actions = else_actions
     # TODO: predicate is for GlobPredicate, for -X
     self.predicate = predicate or (lambda word: True)
     self.prefix = prefix
     self.suffix = suffix
 
+  # TODO: There should be a function here to do -o nospace and -o filenames
+  # post-processing.
+  #
+  # And it is NOT handling redirects.
+  #
+  # Actually it can do prefix and suffix.
+  #
+  # Maybe tag candidates from ShellFuncAction and FileSystemAction
+  # ShellFuncAction is not filtered
+
   def Matches(self, comp, filter_func_matches=True):
+    """
+    ShellFuncAction should probably have a special flag.  It could be a tuple.
+
+    -o filenames
+      -W 'a b' respects it
+      -F functions respects it
+      But we don't want to respect it for redirect completions
+      And we don't need it for plusdirs, dirnames, default
+    """
     # NOTE: This has to be evaluated eagerly so we get the _RetryCompletion
     # exception.
+    num_matches = 0
     for a in self.actions:
       for match in a.Matches(comp):
         # Special case hack to match bash for compgen -F.  It doesn't filter by
         # to_complete!
         show = (
             match.startswith(comp.to_complete) and self.predicate(match) or
-            (isinstance(a, ShellFuncAction) and not filter_func_matches)
+            # NOT filtered by prefix!
+            isinstance(a, ShellFuncAction)
         )
 
         # There are two kinds of filters: changing the string, and filtering
         # the set of strings.  So maybe have modifiers AND filters?  A triple.
         if show:
           yield self.prefix + match + self.suffix
+          num_matches += 1
 
-    # Prefix is the current one?
+    if num_matches == 0:
+      for a in self.else_actions:
+        for match in a.Matches(comp):
+          # Not filtering by startswith(comp.to_complete) because these are all
+          # FileSystemActions, which do it already.
+          yield self.prefix + match + self.suffix
 
     # What if the cursor is not at the end of line?  See readline interface.
     # That's OK -- we just truncate the line at the cursor?
@@ -482,7 +522,7 @@ class ChainedCompleter(object):
     # It completes the word that
 
   def __str__(self):
-    return '<ChainedCompleter %s %s %r %r>' % (
+    return '<UserSpec %s %s %r %r>' % (
         self.actions, self.predicate, self.prefix, self.suffix)
 
 
@@ -663,9 +703,6 @@ class RootCompleter(object):
             yield prefix + name + '/'
         return
 
-    comp_opts = None
-    completer = None   # Set below
-
     # Check if we should complete a redirect
     if comp_state.redirects:
       r = comp_state.redirects[-1]
@@ -685,10 +722,14 @@ class RootCompleter(object):
             debug_f.log("Didn't get a string from redir arg")
             return
 
-          # TODO: Redirect path completion isn't user-definable, so we
-          # shouldn't need Update() ?  That should be for API details.
           comp.Update(to_complete=val.s)
-          completer = FileSystemAction()
+          action = FileSystemAction(add_slash=True)
+          for name in action.Matches(comp):
+            yield name
+          return
+
+    comp_opts = None
+    user_spec = None   # Set below
 
     if comp_state.words:
       # Now check if we're completing a word!
@@ -731,9 +772,9 @@ class RootCompleter(object):
           raise AssertionError
         elif n == 1:
           # First
-          comp_opts, completer = self.comp_state.GetFirstCompleter()
+          comp_opts, user_spec = self.comp_state.GetFirstCompleter()
         else:
-          comp_opts, completer = self.comp_state.GetCompleterForName(
+          comp_opts, user_spec = self.comp_state.GetCompleterForName(
               partial_argv[0])
 
         # NOTE: GetFirstCompleter and GetCompleterForName can be user-defined
@@ -743,30 +784,36 @@ class RootCompleter(object):
                     to_complete=partial_argv[-1])
 
     # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
-    if not completer:
+    if not user_spec:
       debug_f.log("Didn't find anything to complete")
       return
 
-    #self.debug_f.log('Using %s', completer)
+    #self.debug_f.log('Using %s', user_spec)
+    for entry in self._PostProcess(comp_opts, user_spec, comp):
+      yield entry
 
+  def _PostProcess(self, comp_opts, user_spec, comp):
+    """
+    Add trailing spaces / slashes to completion candidates, and time them.
+    """
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
     i = 0
-    for m in completer.Matches(comp):
+    for m in user_spec.Matches(comp):
       # TODO:
       # - dedupe these?  You can get two 'echo' in bash, which is dumb.
       # - Do shell QUOTING here for filenames?
-      # - Add trailing slashes to directories?
-      # - don't append space if 'nospace' is set?
 
-      if m.endswith('/'):  # TODO: FileSystemAction shouldn't add this
+      if comp_opts.Get('filenames'):
+        if os_path.isdir(m):  # TODO: test coverage
+          yield m + '/'
+        else:
+          yield m
+      elif comp_opts.Get('nospace'):
         yield m
       else:
-        if comp_opts.Get('nospace'):
-          yield m
-        else:
-          yield m + ' '
+        yield m + ' '
 
       # NOTE: Can't use %.2f in production build!
       i += 1
@@ -782,7 +829,7 @@ class RootCompleter(object):
         'Found %d match%s for %r in %d ms', i,
         plural, comp.line, elapsed_ms)
 
-
+   
 class ReadlineCompleter(object):
   """A callable we pass to the readline module."""
 

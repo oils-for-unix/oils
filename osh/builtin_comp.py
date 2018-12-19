@@ -106,8 +106,8 @@ class _UsersAction(object):
         yield name
 
 
-def _BuildCompletionChain(argv, arg, ex):
-  """Given flags to complete/compgen, built a ChainedCompleter."""
+def _BuildUserSpec(argv, arg, comp_opts, ex):
+  """Given flags to complete/compgen, built a UserSpec."""
   actions = []
 
   # NOTE: bash doesn't actually check the name until completion time, but
@@ -186,15 +186,27 @@ def _BuildCompletionChain(argv, arg, ex):
     # time?
     actions.append(completion.WordsAction(arg.W.split()))
 
-  if not actions:
+  if comp_opts.Get('plusdirs'):
+    actions.append(completion.FileSystemAction(dirs_only=True))
+
+  # These only happen if there were zero shown.
+  else_actions = []
+  if comp_opts.Get('default'):
+    else_actions.append(completion.FileSystemAction())
+  if comp_opts.Get('dirnames'):
+    else_actions.append(completion.FileSystemAction(dirs_only=True))
+
+  if not actions and not else_actions:
     raise args.UsageError('No actions defined in completion: %s' % argv)
 
-  chain = completion.ChainedCompleter(
+  # TODO: What about predicate?
+  user_spec = completion.UserSpec(
       actions,
+      else_actions,
       prefix=arg.P or '',
       suffix=arg.S or '')
 
-  return chain
+  return user_spec
 
 
 # git-completion.sh uses complete -o and complete -F
@@ -233,13 +245,13 @@ def Complete(argv, ex, comp_state):
     return 0
 
   comp_opts = completion.Options(arg.opt_changes)
-  chain = _BuildCompletionChain(argv, arg, ex)
+  user_spec = _BuildUserSpec(argv, arg, comp_opts, ex)
   for command in commands:
-    comp_state.RegisterName(command, comp_opts, chain)
+    comp_state.RegisterName(command, comp_opts, user_spec)
 
   patterns = []
   for pat in patterns:
-    comp_state.RegisterGlob(pat, comp_opts, chain)
+    comp_state.RegisterGlob(pat, comp_opts, user_spec)
 
   return 0
 
@@ -270,7 +282,7 @@ def CompGen(argv, ex):
   matched = False
 
   comp_opts = completion.Options(arg.opt_changes)
-  chain = _BuildCompletionChain(argv, arg, ex)
+  user_spec = _BuildUserSpec(argv, arg, comp_opts, ex)
 
   # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
   # and also showing ALL COMPREPLY reuslts, not just the ones that start with
@@ -279,7 +291,7 @@ def CompGen(argv, ex):
   comp = completion.Api()
   comp.Update(words=['compgen', to_complete], index=-1,
               to_complete=to_complete)
-  for m in chain.Matches(comp, filter_func_matches=False):
+  for m in user_spec.Matches(comp):
     matched = True
     print(m)
 

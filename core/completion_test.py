@@ -29,7 +29,7 @@ assign_op_e = syntax_asdl.assign_op_e
 log = util.log
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-C1 = completion.ChainedCompleter([A1])
+C1 = completion.UserSpec([A1], [])
 
 COMP_OPTS = completion.Options([])
 
@@ -163,13 +163,13 @@ class CompletionTest(unittest.TestCase):
     matches = list(a.Matches(comp))
     self.assertEqual(['f1', 'f2'], matches)
 
-  def testChainedCompleter(self):
+  def testUserSpec(self):
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(C1.Matches(comp))
     self.assertEqual(['foo.py', 'foo'], matches)
 
     p = completion.GlobPredicate('*.py')
-    c2 = completion.ChainedCompleter([A1], predicate=p)
+    c2 = completion.UserSpec([A1], [], predicate=p)
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
     self.assertEqual(['foo.py'], matches)

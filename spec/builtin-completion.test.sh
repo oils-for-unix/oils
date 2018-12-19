@@ -149,7 +149,14 @@ false___
 ## END
 
 #### compgen -A directory
-compgen -A directory b
+# omit portable-files.mk
+compgen -A directory p
+## STDOUT:
+pylib
+## END
+
+#### compgen -A file
+compgen -A file b
 ## STDOUT:
 bin
 benchmarks
