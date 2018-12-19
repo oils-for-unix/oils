@@ -264,3 +264,15 @@ compgen -o default p
 portable-rules.mk
 pylib
 ## END
+
+#### compgen accept -X but doesn't respect it
+func() {
+  COMPREPLY=(one two three bin)
+}
+compgen -X '@(two|bin)' -F func
+## STDOUT:
+one
+two
+three
+bin
+## END

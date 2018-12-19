@@ -169,7 +169,7 @@ class CompletionTest(unittest.TestCase):
     matches = list(U1.Matches(comp))
     self.assertEqual([('foo.py', False), ('foo', False)], matches)
 
-    p = completion.GlobPredicate('*.py')
+    p = completion.GlobPredicate(False, '*.py')
     c2 = completion.UserSpec([A1], [], predicate=p)
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
@@ -377,7 +377,7 @@ my_completion_hook() {
   # Test for prefix
   # bin is a dir
   for candidate in one two three bin; do
-    if test "${candidate#$cur}" != "$candidate"; then
+    if [[ $candidate == $cur* ]]; then
       COMPREPLY+=("$candidate")
     fi
   done
@@ -385,6 +385,9 @@ my_completion_hook() {
 
 complete -F my_completion_hook foo
 complete -F my_completion_hook -o nospace bar
+
+complete -X "@(one|three)" -F my_completion_hook flagX
+complete -X "!@(one|three)" -F my_completion_hook flagX_bang
 """
 
     ex = test_lib.EvalCode(USER_COMPLETION)
@@ -405,6 +408,20 @@ complete -F my_completion_hook -o nospace bar
     self.assertEqual(2, len(m))
     self.assert_('two' in m, 'Got %s' % m)
     self.assert_('three' in m, 'Got %s' % m)
+
+    # Filtered out one and three
+    m = list(r.Matches(MockApi('flagX ')))
+    print(m)
+    self.assertEqual(2, len(m))
+    self.assert_('two ' in m, 'Got %s' % m)
+    self.assert_('bin ' in m, 'Got %s' % m)
+
+    # Filter out everything EXCEPT one and three
+    m = list(r.Matches(MockApi('flagX_bang ')))
+    print(m)
+    self.assertEqual(2, len(m))
+    self.assert_('one ' in m, 'Got %s' % m)
+    self.assert_('three ' in m, 'Got %s' % m)
 
 
 def _TestCompKind(test, buf, check=True):

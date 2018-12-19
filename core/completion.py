@@ -441,11 +441,18 @@ class GlobPredicate(object):
   Also & is a placeholder for the string being completed?.  Yeah I probably
   want to get rid of this feature.
   """
-  def __init__(self, glob_pat):
-    self.glob_pat = glob_pat
+  def __init__(self, include, glob_pat):
+    self.include = include  # True for inclusion, False for exclusion
+    self.glob_pat = glob_pat  # extended glob syntax supported
 
-  def __call__(self, match):
-    return libc.fnmatch(self.glob_pat, match)
+  def __call__(self, candidate):
+    """Should we INCLUDE the candidate or not?"""
+    matched = libc.fnmatch(self.glob_pat, candidate)
+    # This is confusing because of bash's double-negative syntax
+    if self.include:
+      return not matched
+    else:
+      return matched
 
 
 class UserSpec(object):
@@ -461,8 +468,8 @@ class UserSpec(object):
                prefix='', suffix=''):
     self.actions = actions
     self.else_actions = else_actions
-    # TODO: predicate is for GlobPredicate, for -X
-    self.predicate = predicate or (lambda word: True)
+    # for -X
+    self.predicate = predicate or (lambda candidate: True)
     self.prefix = prefix
     self.suffix = suffix
 
@@ -475,9 +482,10 @@ class UserSpec(object):
         # Special case hack to match bash for compgen -F.  It doesn't filter by
         # to_complete!
         show = (
-            match.startswith(comp.to_complete) and self.predicate(match) or
-            # NOT filtered by prefix!
-            isinstance(a, ShellFuncAction)
+            self.predicate(match) and
+            # ShellFuncAction results are NOT filtered by prefix!
+            (match.startswith(comp.to_complete) or
+             isinstance(a, ShellFuncAction))
         )
 
         # There are two kinds of filters: changing the string, and filtering

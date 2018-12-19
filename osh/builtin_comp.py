@@ -14,6 +14,8 @@ from osh import state
 
 from _devbuild.gen import osh_help  # generated file
 
+import libc
+
 log = util.log
 
 
@@ -106,8 +108,12 @@ class _UsersAction(object):
         yield name
 
 
-def _BuildUserSpec(argv, arg, comp_opts, ex):
-  """Given flags to complete/compgen, built a UserSpec."""
+def _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=True):
+  """Given flags to complete/compgen, built a UserSpec.
+
+  Args:
+    respect_x: Stupid special case because bash doesn't respect -X in compgen.
+  """
   actions = []
 
   # NOTE: bash doesn't actually check the name until completion time, but
@@ -199,8 +205,14 @@ def _BuildUserSpec(argv, arg, comp_opts, ex):
   if not actions and not else_actions:
     raise args.UsageError('No actions defined in completion: %s' % argv)
 
-  # TODO: What about predicate?
-  return completion.UserSpec(actions, else_actions,
+  p = lambda candidate: True  # include all
+  if respect_x and arg.X:
+    filter_pat = arg.X
+    if filter_pat.startswith('!'):
+      p = completion.GlobPredicate(False, filter_pat[1:])
+    else:
+      p = completion.GlobPredicate(True, filter_pat)
+  return completion.UserSpec(actions, else_actions, predicate=p,
                              prefix=arg.P or '', suffix=arg.S or '')
 
 
@@ -277,7 +289,7 @@ def CompGen(argv, ex):
   matched = False
 
   comp_opts = completion.Options(arg.opt_changes)
-  user_spec = _BuildUserSpec(argv, arg, comp_opts, ex)
+  user_spec = _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=False)
 
   # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
   # and also showing ALL COMPREPLY reuslts, not just the ones that start with

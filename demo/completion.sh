@@ -9,6 +9,18 @@ argv() {
   spec/bin/argv.py "$@"
 }
 
+# Complete a fixed set of words
+complete_mywords() {
+  local first=$1
+  local cur=$2
+  local prev=$3
+  for candidate in one two three bin; do
+    if [[ $candidate == $cur* ]]; then
+      COMPREPLY+=("$candidate")
+    fi
+  done
+}
+
 complete_foo() {
   local first=$1
   local cur=$2
@@ -35,7 +47,7 @@ complete_foo() {
   # Test for prefix
   # bin is a dir
   for candidate in one two three bin; do
-    if test "${candidate#$cur}" != "$candidate"; then
+    if [[ $candidate == $cur* ]]; then
       COMPREPLY+=("$candidate")
     fi
   done
@@ -121,3 +133,13 @@ complete -A file -A user fileuser
 #complete -D -A file
 complete -F complete_files -D
 
+flagX() { argv "$@"; }
+flagX_bang() { argv "$@"; }
+
+# This REMOVES two of them.  'three' should not be removed
+# since it's not an exact match.
+# Hm filtering comes BEFORE the prefix.
+complete -P __ -X '@(two|bin|thre)' -F complete_mywords flagX
+
+# Silly negation syntax
+complete -X '!@(two|bin)' -F complete_mywords flagX_bang

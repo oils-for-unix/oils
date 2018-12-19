@@ -56,6 +56,27 @@ audit-git() {
   audit
 }
 
+# EVERY plugin seems ot use the _init_completion function.  We can do this
+# ourselves!
+audit-plugins() {
+  ls ../bash-completion/completions/* | wc -l
+  #grep -c _init_completion ../bash-completion/completions/* 
+
+  # almost all calls are the same!
+  # the -n changes delimiters.  Why would you need that?  Those need to be
+  # rewritten?
+  #
+  # There is one instance of -o '@(diff|patch)
+  # -s is for splitting longopt with --foo=
+  # Oh OK maybe I should just implement that in Python in OSH?
+  #
+  # So everything is about the delimiters.
+
+  grep --no-filename _init_completion \
+    $BASH_COMP ../bash-completion/completions/* |
+    sort | uniq -c | sort -n
+}
+
 
 # NOTE: there are a number of associative arrays in completion scripts.
 # e.g. localectl
