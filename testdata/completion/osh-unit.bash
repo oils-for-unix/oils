@@ -43,6 +43,10 @@ complete_foo() {
 
   argv COMP_WORDS "${COMP_WORDS[@]}"
   argv COMP_CWORD "${COMP_CWORD}"
+  argv COMP_LINE "${COMP_LINE}"
+  # Somehow completion doesn't trigger in the middle of a word, so this is
+  # always equal to ${#COMP_LINE} ?
+  argv COMP_POINT "${COMP_POINT}"
 
   # This value is used in main bash_completion script.
 

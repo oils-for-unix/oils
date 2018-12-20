@@ -58,7 +58,7 @@ audit-git() {
 
 # EVERY plugin seems ot use the _init_completion function.  We can do this
 # ourselves!
-audit-plugins() {
+audit-plugin-init() {
   ls ../bash-completion/completions/* | wc -l
   #grep -c _init_completion ../bash-completion/completions/* 
 
@@ -75,7 +75,9 @@ audit-plugins() {
   grep --no-filename _init_completion \
     $BASH_COMP ../bash-completion/completions/* |
     sort | uniq -c | sort -n
+}  
 
+audit-plugin-x() {
   echo
   echo '-X usage'
   echo
