@@ -108,7 +108,7 @@ def _InitDefaultCompletions(ex, comp_state):
     # the file system / network / coprocess.
     A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
     A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
-    C1 = completion.UserSpec([A1, A2], [])
+    C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
     comp_state.RegisterName('slowc', completion.Options([]), C1)
 
 

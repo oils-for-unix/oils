@@ -190,8 +190,9 @@ def _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=True):
     # time?
     actions.append(completion.WordsAction(arg.W.split()))
 
+  extra_actions = []
   if comp_opts.Get('plusdirs'):
-    actions.append(completion.FileSystemAction(dirs_only=True))
+    extra_actions.append(completion.FileSystemAction(dirs_only=True))
 
   # These only happen if there were zero shown.
   else_actions = []
@@ -210,7 +211,7 @@ def _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=True):
       p = completion.GlobPredicate(False, filter_pat[1:])
     else:
       p = completion.GlobPredicate(True, filter_pat)
-  return completion.UserSpec(actions, else_actions, predicate=p,
+  return completion.UserSpec(actions, extra_actions, else_actions, p,
                              prefix=arg.P or '', suffix=arg.S or '')
 
 

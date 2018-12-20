@@ -148,6 +148,7 @@ flagX_bang() { argv "$@"; }
 flagX_prefix() { argv "$@"; }
 prefix_plusdirs() { argv "$@"; }
 flagX_plusdirs() { argv "$@"; }
+prefix_dirnames() { argv "$@"; }
 
 complete -F complete_mywords mywords
 complete -F complete_mywords -o nospace mywords_nospace
@@ -166,3 +167,6 @@ complete -P __ -o plusdirs -F complete_mywords prefix_plusdirs
 
 # Filter out bin, is it added back?  Yes, it appears to work.
 complete -X '@(two|bin)' -o plusdirs -F complete_mywords flagX_plusdirs
+
+complete -P __ -o dirnames prefix_dirnames
+

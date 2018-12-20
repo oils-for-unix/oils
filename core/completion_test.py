@@ -29,14 +29,14 @@ assign_op_e = syntax_asdl.assign_op_e
 log = util.log
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-U1 = completion.UserSpec([A1], [])
+U1 = completion.UserSpec([A1], [], [], lambda candidate: True)
 
 COMP_OPTS = completion.Options([])
 
 mem = state.Mem('', [], {}, None)
 
 FIRST = completion.WordsAction(['grep', 'sed', 'test'])
-U2 = completion.UserSpec([FIRST], [])
+U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
 
 
 def MockApi(line):
@@ -169,8 +169,8 @@ class CompletionTest(unittest.TestCase):
     matches = list(U1.Matches(comp))
     self.assertEqual([('foo.py', False), ('foo', False)], matches)
 
-    p = completion.GlobPredicate(False, '*.py')
-    c2 = completion.UserSpec([A1], [], predicate=p)
+    predicate = completion.GlobPredicate(False, '*.py')
+    c2 = completion.UserSpec([A1], [], [], predicate)
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
     self.assertEqual([('foo.py', False)], matches)
@@ -382,15 +382,20 @@ class RootCompeterTest(unittest.TestCase):
     m = list(r.Matches(MockApi('flagX_prefix ')))
     self.assertEqual(['__one ', '__three '], sorted(m))
 
-    if 0:
-      # -P with plusdirs
-      m = list(r.Matches(MockApi('prefix_plusdirs b')))
-      self.assertEqual(['__bin', 'benchmarks/', 'bin/', 'build/'], sorted(m))
+    # TODO: Fix these!
 
-      # -X with plusdirs.  We're filtering out bin/, and then it's added back by
-      # plusdirs.  The filter doesn't kill it.
-      m = list(r.Matches(MockApi('flagX_plusdirs b')))
-      self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
+    # -P with plusdirs
+    m = list(r.Matches(MockApi('prefix_plusdirs b')))
+    self.assertEqual(['__bin ', 'benchmarks/', 'bin/', 'build/'], sorted(m))
+
+    # -X with plusdirs.  We're filtering out bin/, and then it's added back by
+    # plusdirs.  The filter doesn't kill it.
+    m = list(r.Matches(MockApi('flagX_plusdirs b')))
+    self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
+
+    # -P with dirnames.  -P is NOT respected.
+    m = list(r.Matches(MockApi('prefix_dirnames b')))
+    self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
 
 
 def _TestCompKind(test, buf, check=True):

@@ -456,20 +456,17 @@ class GlobPredicate(object):
 
 
 class UserSpec(object):
-  """User-defined completions.
+  """The user configuration for completion.
   
   - The compgen builtin exposes this DIRECTLY.
-  - On the other hand, Readline uses RootCompleter.
-
-  NOTE: plusdirs happens AFTER filtering with predicates?  We add BACK the
-  dirs, e.g. -A file -X '!*.sh' -o plusdirs.
+  - Readline must call ReadlineCallback, which uses RootCompleter.
   """
-  def __init__(self, actions, else_actions, predicate=None,
+  def __init__(self, actions, extra_actions, else_actions, predicate,
                prefix='', suffix=''):
     self.actions = actions
+    self.extra_actions = extra_actions
     self.else_actions = else_actions
-    # for -X
-    self.predicate = predicate or (lambda candidate: True)
+    self.predicate = predicate  # for -X
     self.prefix = prefix
     self.suffix = suffix
 
@@ -497,13 +494,20 @@ class UserSpec(object):
           yield self.prefix + match + self.suffix, is_fs_action
           num_matches += 1
 
+    # NOTE: extra_actions and else_actions don't respect -X, -P or -S, and we
+    # don't have to filter by startswith(comp.to_complete).  They are all all
+    # FileSystemActions, which do it already.
+
+    # for -o plusdirs
+    for a in self.extra_actions:
+      for match in a.Matches(comp):
+        yield match, True  # We know plusdirs is a file system action
+
+    # for -o default and -o dirnames
     if num_matches == 0:
       for a in self.else_actions:
-        is_fs_action = isinstance(a, FileSystemAction)
         for match in a.Matches(comp):
-          # Not filtering by startswith(comp.to_complete) because these are all
-          # FileSystemActions, which do it already.
-          yield self.prefix + match + self.suffix, is_fs_action
+          yield match, True  # both are FileSystemAction
 
     # What if the cursor is not at the end of line?  See readline interface.
     # That's OK -- we just truncate the line at the cursor?
@@ -511,8 +515,9 @@ class UserSpec(object):
     # It completes the word that
 
   def __str__(self):
-    return '<UserSpec %s %s %r %r>' % (
-        self.actions, self.predicate, self.prefix, self.suffix)
+    return '<UserSpec %s %s %s %s %r %r>' % (
+        self.actions, self.extra_actions, self.else_actions, self.predicate,
+        self.prefix, self.suffix)
 
 
 def _ShowCompState(comp_state, debug_f):
@@ -830,7 +835,7 @@ class RootCompleter(object):
         plural, comp.line, elapsed_ms)
 
    
-class ReadlineCompleter(object):
+class ReadlineCallback(object):
   """A callable we pass to the readline module."""
 
   def __init__(self, readline_mod, root_comp, debug_f):
@@ -933,7 +938,7 @@ def InitReadline(readline_mod, complete_cb):
 
 
 def Init(readline_mod, root_comp, debug_f):
-  complete_cb = ReadlineCompleter(readline_mod, root_comp, debug_f)
+  complete_cb = ReadlineCallback(readline_mod, root_comp, debug_f)
   InitReadline(readline_mod, complete_cb)
 
 
