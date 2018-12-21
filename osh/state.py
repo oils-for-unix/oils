@@ -1071,6 +1071,15 @@ def SetStringDynamic(mem, name, s):
   mem.SetVar(lhs_expr.LhsName(name), value.Str(s), (), scope_e.Dynamic)
 
 
+def SetArrayDynamic(mem, name, a):
+  """Set an array by looking up the stack.
+
+  Used for _init_completion.
+  """
+  assert isinstance(a, list)
+  mem.SetVar(lhs_expr.LhsName(name), value.StrArray(a), (), scope_e.Dynamic)
+
+
 def SetGlobalString(mem, name, s):
   """Helper for completion, $PWD, etc."""
   assert isinstance(s, str)

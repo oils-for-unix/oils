@@ -378,6 +378,9 @@ class Executor(object):
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)
 
+    elif builtin_id == builtin_e.INIT_COMPLETION:
+      status = builtin_comp.InitCompletion(argv, self.mem)
+
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
 

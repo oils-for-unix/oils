@@ -125,6 +125,7 @@ _NORMAL_BUILTINS = {
 
     # OSH only
     "repr": builtin_e.REPR,
+    "_init_completion": builtin_e.INIT_COMPLETION,
 }
 
 BUILTIN_NAMES = _SPECIAL_BUILTINS.keys() + _NORMAL_BUILTINS.keys()

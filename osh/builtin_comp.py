@@ -326,3 +326,31 @@ def CompOpt(argv, comp_state):
   #log('compopt: %s', arg)
   #log('compopt %s', comp_opts)
   return 0
+
+
+INIT_COMPLETION_SPEC = args.FlagsAndOptions()
+
+INIT_COMPLETION_SPEC.ShortFlag('-n', args.Str,
+    help='Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')
+INIT_COMPLETION_SPEC.ShortFlag('-s',
+    help='Treat --foo=bar and --foo bar the same way.')
+
+
+def InitCompletion(argv, mem):
+  arg_r = args.Reader(argv)
+  arg = INIT_COMPLETION_SPEC.Parse(arg_r)
+  print(arg)
+  state.SetArrayDynamic(mem, 'words', ['a', 'b'])
+
+  cur = 'CUR'
+  prev = 'PREV'
+  cword = 'CWORD'
+  state.SetStringDynamic(mem, 'cur', cur)
+  state.SetStringDynamic(mem, 'prev', prev)
+  state.SetStringDynamic(mem, 'cword', cword)
+
+  if arg.s:
+    # or false
+    state.SetStringDynamic(mem, 'split', 'true')
+
+  return 0

@@ -8,18 +8,23 @@ fi
 argv() {
   python -c 'import sys; print(sys.argv[1:])' "$@"
 }
+
+argv1() {
+  python -c 'import sys; print(repr(sys.argv[1]))' "$@"
+}
+
 comp_echo() {
   echo
-  echo -n 'COMP_WORDS '; argv "${COMP_WORDS[@]}"
+  echo -n 'case["COMP_WORDS"] = '; argv "${COMP_WORDS[@]}"
 }
 complete -F comp_echo echo
 
 showvars() {
-  echo -n 'WORDS '; argv "${words[@]}"
-  echo -n 'VAR '; argv cur "$cur"
-  echo -n 'VAR '; argv prev "$prev"
-  echo -n 'VAR '; argv cword "$cword"
-  echo -n 'VAR '; argv split "$split"
+  echo -n 'case["words"] = '; argv "${words[@]}"
+  echo -n 'case["cur"] = '; argv1 "$cur"
+  echo -n 'case["prev"] = '; argv1 "$prev"
+  echo -n 'case["cword"] = '; argv1 "$cword"
+  echo -n 'case["split"] = '; argv1 "$split"
 }
 
 _comp_init_completion() {
