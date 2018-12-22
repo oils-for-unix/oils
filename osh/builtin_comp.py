@@ -7,12 +7,14 @@ import pwd
 
 from core import completion
 from core import util
+from core.meta import runtime_asdl
 from frontend import args
 from frontend import lex
 from osh import builtin
 from osh import state
 
 from _devbuild.gen import osh_help  # generated file
+value_e = runtime_asdl.value_e
 
 log = util.log
 
@@ -295,8 +297,7 @@ def CompGen(argv, ex):
   # the word to complete.
   matched = False 
   comp = completion.Api()
-  comp.Update(words=['compgen', to_complete], index=-1,
-              to_complete=to_complete)
+  comp.Update(first='compgen', to_complete=to_complete, prev='', index=-1)
   for m, _ in user_spec.Matches(comp):
     matched = True
     print(m)
@@ -336,21 +337,50 @@ INIT_COMPLETION_SPEC.ShortFlag('-s',
     help='Treat --foo=bar and --foo bar the same way.')
 
 
+# TODO:
+# - Use COMP_ARGV by default to produce output values.
+#   - it should involve splitting up by : and =, and adjusting cur, prev, cword
+#   index.
+
 def InitCompletion(argv, mem):
   arg_r = args.Reader(argv)
   arg = INIT_COMPLETION_SPEC.Parse(arg_r)
   print(arg)
-  state.SetArrayDynamic(mem, 'words', ['a', 'b'])
+  print(arg_r.Rest())
 
-  cur = 'CUR'
-  prev = 'PREV'
-  cword = 'CWORD'
+  # TODO: How does the user test a completion function programmatically?  Set COMP_ARGV?
+  # Or we can use argv.Rest.
+  val = mem.GetVar('COMP_ARGV')
+  if val.tag != value_e.StrArray:
+    raise args.UsageError("COMP_ARGV should be an array")
+  comp_argv = val.strs
+
+  # Words adjusted according to -n.
+  # Make sure to make a copy.
+  adjusted_words = list(val.strs)
+  state.SetArrayDynamic(mem, 'words', adjusted_words)
+
+  n = len(comp_argv)
+  cur = comp_argv[-1]
+  prev = '' if n < 2 else comp_argv[-2]
+  cword = str(n-1)  # This invariant is dumb?
+
+  split = ''  # a STRING returned bash_completion
+  if arg.s:
+    if cur.startswith('--') and '=' in cur:
+      # Split in to flag name and flag value
+      prev, cur = cur.split('=', 1)
+      split = 'true'
+    else:
+      split = 'false'
+
+  # TODO: arg -n should prevent splitting?  Or we can always split?
+  # I guess the case we want to test is completing parts of $PATH.
+  # PYTHONPATH=/home/:/   # This DOES complete.
+
   state.SetStringDynamic(mem, 'cur', cur)
   state.SetStringDynamic(mem, 'prev', prev)
   state.SetStringDynamic(mem, 'cword', cword)
-
-  if arg.s:
-    # or false
-    state.SetStringDynamic(mem, 'split', 'true')
+  state.SetStringDynamic(mem, 'split', split)
 
   return 0

@@ -31,7 +31,7 @@ _FD_STATE = process.FdState()
 
 
 def _CommandNode(code_str, arena):
-  _, c_parser = test_lib.InitCommandParser(code_str, arena=arena)
+  c_parser = test_lib.InitCommandParser(code_str, arena=arena)
   return c_parser.ParseLogicalLine()
 
 

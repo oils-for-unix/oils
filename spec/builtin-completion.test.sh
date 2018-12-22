@@ -28,6 +28,7 @@ echo status=$?
 
 #### how compgen calls completion functions
 foo_complete() {
+  # first, cur, prev
   argv.py argv "$@"
   argv.py COMP_WORDS "${COMP_WORDS[@]}"
   argv.py COMP_CWORD "${COMP_CWORD}"

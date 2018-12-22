@@ -175,27 +175,18 @@ class Api(object):
     self.line = line
     self.begin = begin
     self.end = end
+    # NOTE: COMP_WORDBREAKS is initialized in Mem().
 
-    # NOTE: COMP_WORDBREAKS is initliazed in Mem().
-
-  def Update(self, words=None, index=0, to_complete=''):
+  # NOTE: to_complete could be 'cur'
+  def Update(self, first='', to_complete='', prev='', index=0,
+             partial_argv=None):
     """Added after we've done parsing."""
-    self.words = words or []  # COMP_WORDS
+    self.first = first
+    self.to_complete = to_complete
+    self.prev = prev
     self.index = index  # COMP_CWORD
-    self.to_complete = to_complete  #
-
-  def GetApiInput(self):
-    """Returns argv and comp_words."""
-
-    command = self.words[0]
-    if self.index == -1:  # called directly by compgen, not by hitting TAB
-      prev = ''
-      comp_words = []  # not completing anything
-    else:
-      prev = '' if self.index == 0 else self.words[self.index - 1]
-      comp_words = self.words
-
-    return [command, self.to_complete, prev], comp_words
+    # COMP_ARGV, and COMP_WORDS can be derived from this
+    self.partial_argv = partial_argv or []
 
   def __repr__(self):
     """For testing"""
@@ -308,20 +299,21 @@ class ShellFuncAction(CompletionAction):
     self.ex.debug_f.log(*args)
 
   def Matches(self, comp):
-    # TODO: Delete COMPREPLY here?  It doesn't seem to be defined in bash by
-    # default.
-    argv, comp_words = comp.GetApiInput()
-
     # Have to clear the response every time.  TODO: Reuse the object?
     state.SetGlobalArray(self.ex.mem, 'COMPREPLY', [])
 
-    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
+    # This is the invention of OSH.
+    state.SetGlobalArray(self.ex.mem, 'COMP_ARGV', comp.partial_argv)
+
+    # TODO: We can split this by : and = to emulate bash's behavior?
+    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp.partial_argv)
     state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp.index))
     state.SetGlobalString(self.ex.mem, 'COMP_LINE', comp.line)
     state.SetGlobalString(self.ex.mem, 'COMP_POINT', str(comp.end))
 
+    argv = [comp.first, comp.to_complete, comp.prev]
     self.log('Running completion function %r with arguments %s',
-        self.func.name, argv)
+             self.func.name, argv)
 
     status = self.ex.RunFuncForCompletion(self.func, argv)
     if status == 124:
@@ -716,7 +708,7 @@ class RootCompleter(object):
             debug_f.log("Didn't get a string from redir arg")
             return
 
-          comp.Update(to_complete=val.s)
+          comp.Update(to_complete=val.s)  # The FileSystemAction only uses one value
           action = FileSystemAction(add_slash=True)
           for name in action.Matches(comp):
             yield name
@@ -773,8 +765,9 @@ class RootCompleter(object):
 
         # Update the API for user-defined functions.
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
-        comp.Update(words=partial_argv, index=index,
-                    to_complete=partial_argv[-1])
+        prev = '' if index == 0 else partial_argv[index-1]
+        comp.Update(first=partial_argv[0], to_complete=partial_argv[-1],
+                    prev=prev, index=index, partial_argv=partial_argv) 
 
     # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
     if not user_spec:

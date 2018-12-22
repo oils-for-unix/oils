@@ -30,15 +30,13 @@ def InitEvaluator():
 class ExpansionTest(unittest.TestCase):
 
   def testBraceExpand(self):
-    # TODO: Move this to test_lib?
-    _, c_parser = test_lib.InitCommandParser('echo _{a,b}_')
+    arena = test_lib.MakeArena('<cmd_exec_test.py>')
+    c_parser = test_lib.InitCommandParser('echo _{a,b}_', arena=arena)
     node = c_parser._ParseCommandLine()
     print(node)
 
-    arena = test_lib.MakeArena('<cmd_exec_test.py>')
-    ex = test_lib.InitExecutor(arena)
+    ex = test_lib.InitExecutor(arena=arena)
     #print(ex.Execute(node))
-
     #print(ex._ExpandWords(node.words))
 
 

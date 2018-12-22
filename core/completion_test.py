@@ -19,13 +19,14 @@ from core import completion  # module under test
 from core import test_lib
 from core import ui
 from core import util
-from core.meta import syntax_asdl
+from core.meta import runtime_asdl, syntax_asdl
 
 from frontend import parse_lib
-
 from osh import state
+from testdata import init_completion_testdata
 
 assign_op_e = syntax_asdl.assign_op_e
+value_e = runtime_asdl.value_e
 log = util.log
 
 A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
@@ -58,7 +59,10 @@ def _MakeRootCompleter(comp_state=None):
   pool = alloc.Pool()
   arena = pool.NewArena()
   parse_ctx = parse_lib.ParseContext(arena, {})
-  debug_f = util.DebugFile(sys.stdout)
+  if 0:  # enable for details
+    debug_f = util.DebugFile(sys.stdout)
+  else:
+    debug_f = util.NullDebugFile()
   progress_f = ui.TestStatusLine()
   return completion.RootCompleter(ev, comp_state, mem, parse_ctx,
                                   progress_f, debug_f)
@@ -68,7 +72,7 @@ class CompletionTest(unittest.TestCase):
 
   def _MakeComp(self, words, index, to_complete):
     comp = completion.Api()
-    comp.Update(words=['f'], index=0, to_complete='f')
+    comp.Update(partial_argv=['f'], index=0, to_complete='f')
     return comp
 
   def testLookup(self):
@@ -149,11 +153,12 @@ class CompletionTest(unittest.TestCase):
     print(list(a.Matches(comp)))
 
   def testShellFuncExecution(self):
-    arena, c_parser = test_lib.InitCommandParser("""\
+    arena = test_lib.MakeArena('testShellFuncExecution')
+    c_parser = test_lib.InitCommandParser("""\
     f() {
       COMPREPLY=(f1 f2)
     }
-    """)
+    """, arena=arena)
     func_node = c_parser.ParseLogicalLine()
     print(func_node)
 
@@ -398,168 +403,162 @@ class RootCompeterTest(unittest.TestCase):
     self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
 
 
-def _TestCompKind(test, buf, check=True):
-  """
-  Args:
-    check: Should we check it against the heuristic?
-  """
-  ev = test_lib.MakeTestEvaluator()
-  arena = test_lib.MakeArena('<completion_test.py>')
-  parse_ctx = parse_lib.ParseContext(arena, {})
-  c_parser = parse_ctx.MakeParserForCompletion(buf, arena)
-  print('--- %r' % buf)
+_INIT_TEMPLATE = """
+fail() {
+  echo "Non-fatal assertion failed: $@" >&2
+}
 
-  # TODO:
-  # Create MockApi(buf) and pass it to RootCompleter
+my_complete() {
+  local cur prev words cword split
 
+  PASSED=()
 
-class PartialParseTest(unittest.TestCase):
+  # no quotes with [[
+  if [[ $COMP_LINE == $ORACLE_COMP_LINE ]]; then
+    PASSED+=(COMP_LINE)
+  fi
+  if [[ $COMP_POINT == $ORACLE_COMP_POINT ]]; then
+    PASSED+=(COMP_POINT)
+  fi
 
-  # Look at what kind of tree we get back
-  def testLST(self):
-    _TestCompKind(self, 'ls |', check=False)
-    _TestCompKind(self, 'ls | ', check=False)
+  # This doesn't pass because COMP_WORDS and COMP_CWORD are different.
+  if [[ $COMP_CWORD == $ORACLE_COMP_CWORD ]]; then
+    PASSED+=(COMP_CWORD)
+  else
+    fail "COMP_CWORD: Expected $ORACLE_COMP_CWORD, got $COMP_CWORD"
+  fi
 
-    _TestCompKind(self, 'ls ; ', check=False)
-    _TestCompKind(self, 'ls && ', check=False)
+  #
+  # Now run _init_completion
+  #
+  _init_completion %(flags)s
 
-    _TestCompKind(self, 'echo $(echo hi', check=False)
-    # One word part
-    _TestCompKind(self, 'echo a$(echo hi', check=False)
-    _TestCompKind(self, 'echo a$x', check=False)
+  # TODO: Compare "words" array by length first, and then with an explicit
+  # loop.
 
-    # should we use a Lit_Dollar token here, for completion?
-    _TestCompKind(self, 'echo $', check=False)
-    _TestCompKind(self, 'echo $F', check=False)
-    _TestCompKind(self, 'echo ${F', check=False)
+  if [[ $cur == $ORACLE_cur ]]; then
+    PASSED+=(cur)
+  else
+    fail "cur: Expected $ORACLE_cur, got $cur"
+  fi
+  if [[ $prev == $ORACLE_prev ]]; then
+    PASSED+=(prev)
+  else
+    fail "prev: Expected $ORACLE_prev, got $prev"
+  fi
+  if [[ $cword == $ORACLE_cword ]]; then
+    PASSED+=(cword)
+  else
+    fail "cword: Expected $ORACLE_cword, got $cword"
+  fi
+  if [[ $split == $ORACLE_split ]]; then
+    PASSED+=(split)
+  else
+    fail "split: Expected $ORACLE_split, got $split"
+  fi
 
-    _TestCompKind(self, 'echo ${undef:-$', check=False)
-    _TestCompKind(self, 'echo ${undef:-$F', check=False)
+  COMPREPLY=(dummy)
+}
+complete -F my_complete %(command)s
+"""
 
-    # Complete var names in arith context??  Or funcs?
-    _TestCompKind(self, 'echo $((', check=False)
-    _TestCompKind(self, 'echo $(( ', check=False)
-    # Lit_ArithVarLike could be completed.  The above 2 might not.
-    # This could be a function too though, like f().
-    _TestCompKind(self, 'echo $(( f', check=False)
+class InitCompletionTest(unittest.TestCase):
 
-  def testEmpty(self):
-    _TestCompKind(self, '', check=False)
-    _TestCompKind(self, ' ')
+  def testMatchesOracle(self):
+    for i, case in enumerate(init_completion_testdata.CASES):  # generated data
+      flags = case.get('_init_completion_flags')
+      if flags is None:
+        continue
 
-  def testCommands(self):
-    # External
-    _TestCompKind(self, 'ls')
-    _TestCompKind(self, 'ls ')
+      # This was input
+      code_str = case['code']
+      assert code_str.endswith('\t')
 
-    return
-    # Redirect
-    _TestCompKind(self, 'cat <')
-    _TestCompKind(self, 'cat <input')
+      log('')
+      log('--- Case %d: %r with flags %s', i, code_str, flags)
+      log('')
+      #print(case)
 
-  def testCompound(self):
-    return
-    # Pipeline
-    _TestCompKind(self, 'ls |', check=False)  # heuristic is WRONG
-    _TestCompKind(self, 'ls | wc -l')
+      oracle_comp_words = case['COMP_WORDS']
+      oracle_comp_cword = case['COMP_CWORD']
+      oracle_comp_line = case['COMP_LINE']
+      oracle_comp_point = case['COMP_POINT']
 
-    # AndOr
-    _TestCompKind(self, 'ls && ')
-    _TestCompKind(self, 'ls && echo')
+      # Init completion data
+      oracle_words = case['words']
+      oracle_cur = case['cur']
+      oracle_prev = case['prev']
+      oracle_cword = case['cword']
+      oracle_split = case['split']
 
-    # List
-    _TestCompKind(self, 'echo a;')
-    _TestCompKind(self, 'echo a; echo')
+      #
+      # First test some invariants on the oracle's data.
+      #
 
-    # BraceGroup
-    _TestCompKind(self, '{ echo hi;')
-    _TestCompKind(self, '{ echo hi; echo')  # second word
-    _TestCompKind(self, '{ echo hi; echo bye;')  # new command
+      self.assertEqual(code_str[:-1], oracle_comp_line)
+      # weird invariant that always holds.  So isn't COMP_CWORD useless?
+      self.assertEqual(int(oracle_comp_cword), len(oracle_comp_words)-1)
+      # Another weird invariant.  Note this is from the bash ORACLE, not from
+      # our mocks.
+      self.assertEqual(int(oracle_comp_point), len(code_str) - 1)
 
-    # Subshell
-    _TestCompKind(self, '( echo hi')
-    _TestCompKind(self, '( echo hi; echo')
+      #
+      # Now run a piece of code that compares OSH's actual data against hte oracle.
+      #
 
-    # FunctionDef
-    _TestCompKind(self, 'f() {')
-    _TestCompKind(self, 'f() { echo')
-    _TestCompKind(self, 'f() { echo hi;')
+      init_code = _INIT_TEMPLATE % {
+        'flags': ' '.join(flags),
+        'command': oracle_comp_words[0]
+      }
+      #print(init_code)
 
-    _TestCompKind(self, 'if')
-    _TestCompKind(self, 'if ')
-    _TestCompKind(self, 'if test ')
+      arena = test_lib.MakeArena('<InitCompletionTest>')
+      mem = state.Mem('', [], {}, arena)
 
-    _TestCompKind(self, 'while')
-    _TestCompKind(self, 'while ')
-    _TestCompKind(self, 'while test ')
+      #
+      # Allow our code to access oracle data
+      #
+      state.SetGlobalArray(mem, 'ORACLE_COMP_WORDS', oracle_comp_words)
+      state.SetGlobalString(mem, 'ORACLE_COMP_CWORD', oracle_comp_cword)
+      state.SetGlobalString(mem, 'ORACLE_COMP_LINE', oracle_comp_line)
+      state.SetGlobalString(mem, 'ORACLE_COMP_POINT', oracle_comp_point)
 
-    _TestCompKind(self, 'case $foo ')  # in
-    _TestCompKind(self, 'case $foo in a)')
-    _TestCompKind(self, 'case $foo in a) echo')
+      state.SetGlobalArray(mem, 'ORACLE_words', oracle_words)
+      state.SetGlobalString(mem, 'ORACLE_cur', oracle_cur)
+      state.SetGlobalString(mem, 'ORACLE_prev', oracle_prev)
+      state.SetGlobalString(mem, 'ORACLE_cword', oracle_cword)
+      state.SetGlobalString(mem, 'ORACLE_split', oracle_split)
 
-    # time construct
-    _TestCompKind(self, 'time')
-    _TestCompKind(self, 'time ')
-    _TestCompKind(self, 'time echo')
+      ex = test_lib.EvalCode(init_code, arena=arena, mem=mem)
+      #print(ex.comp_state)
 
-  def testVarSub(self):
-    return
+      r = _MakeRootCompleter(comp_state=ex.comp_state)
+      #print(r)
+      comp = MockApi(code_str[:-1])
+      m = list(r.Matches(comp))
+      log('matches = %s', m)
 
-    # TODO: Mem needs variable "f"
+      # Unterminated quote in case 5.  Nothing to complete.
+      # TODO: use a label
+      if i == 5:
+        continue
 
-    # BracedVarSub
-    _TestCompKind(self, 'echo $')
-    _TestCompKind(self, 'echo $f')
+      # Our test shell script records what passed in an array.
+      val = ex.mem.GetVar('PASSED')
+      self.assertEqual(value_e.StrArray, val.tag, "Expected array, got %s" % val)
+      actually_passed = val.strs
 
-    # Double Quoted BracedVarSub
-    _TestCompKind(self, 'echo "$')
-    _TestCompKind(self, 'echo "$f')
+      should_pass = ['COMP_LINE', 'COMP_POINT']
+      # This only works in the -s case now because we're not simulating COMP_WORDS
+      if '-s' in flags:
+        should_pass.extend(['cur', 'prev'])
+      should_pass.append('split')  # always passes
 
-    # Braced var sub
-    #print(f('echo ${'))  # TODO: FIx bug
-    #print(f('echo ${f'))
+      for t in should_pass:
+        self.assert_(t in actually_passed)
 
-    # Quoted Braced var sub
-    #print(f('echo "${'))
-    #print(f('echo "${f'))
+    log('Ran %d cases', len(init_completion_testdata.CASES))
 
-    # Single quoted var sub should give nothing
-    _TestCompKind(self, "echo '${")
-    _TestCompKind(self, "echo '${f")
-
-    # Array index
-    #print(f('echo ${a['))
-    #print(f('echo ${a[k'))
-
-    # Var sub in command sub
-    _TestCompKind(self, 'echo $(ls $')
-    _TestCompKind(self, 'echo $(ls $f')
-
-    # Var sub in var sub (bash doesn't do this)
-    #print(f('echo ${a:-$'))
-    #print(f('echo ${a:-$f'))
-
-  def testCommandSub(self):
-    return
-
-    # CommandSubPart
-    _TestCompKind(self, 'echo $(')
-    _TestCompKind(self, 'echo $(ls ')
-    _TestCompKind(self, 'echo $(ls foo')
-
-    #print(f('echo `'))
-    #print(f('echo `ls '))
-
-    # Command sub in var sub
-    #print(f('echo ${a:-$('))
-    #print(f('echo ${a:-$(l'))
-
-  def testArithSub(self):
-    pass
-
-    # BONUS points: ArithSubPart
-    #print(f('echo $((a'))
-    #print(f('echo $(($a'))
 
 if __name__ == '__main__':
   unittest.main()

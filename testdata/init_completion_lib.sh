@@ -19,7 +19,15 @@ comp_echo() {
 }
 complete -F comp_echo echo
 
-showvars() {
+show_bash_api_vars() {
+  echo -n 'case["func_argv"] = '; argv "$@"
+  echo -n 'case["COMP_LINE"] = '; argv1 "${COMP_LINE}"
+  echo -n 'case["COMP_POINT"] = '; argv1 "${COMP_POINT}"
+  echo -n 'case["COMP_WORDS"] = '; argv "${COMP_WORDS[@]}"
+  echo -n 'case["COMP_CWORD"] = '; argv1 "${COMP_CWORD}"
+}
+
+show_init_completion_vars() {
   echo -n 'case["words"] = '; argv "${words[@]}"
   echo -n 'case["cur"] = '; argv1 "$cur"
   echo -n 'case["prev"] = '; argv1 "$prev"
@@ -28,14 +36,15 @@ showvars() {
 }
 
 _comp_init_completion() {
+  show_bash_api_vars "$@"
   local cur prev words cword split
 
   echo
-  echo FLAGS "$@"
+  echo -n 'case["_init_completion_flags"] = '; argv "$@"
   _init_completion "$@"
 
   echo
-  showvars
+  show_init_completion_vars
 }
 
 noflags() { echo; }

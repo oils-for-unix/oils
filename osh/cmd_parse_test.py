@@ -18,7 +18,8 @@ command_e = syntax_asdl.command_e
 
 
 def _assertParseMethod(test, code_str, method, expect_success=True):
-  arena, c_parser = test_lib.InitCommandParser(code_str)
+  arena = test_lib.MakeArena('<cmd_parse_test>')
+  c_parser = test_lib.InitCommandParser(code_str, arena=arena)
   m = getattr(c_parser, method)
   try:
     if method == 'ParseSimpleCommand':
@@ -40,7 +41,8 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
 
 
 def _assert_ParseCommandListError(test, code_str):
-  arena, c_parser = test_lib.InitCommandParser(code_str)
+  arena = test_lib.MakeArena('<cmd_parse_test>')
+  c_parser = test_lib.InitCommandParser(code_str, arena=arena)
 
   try:
     node = c_parser._ParseCommandLine()
@@ -486,12 +488,12 @@ class CommandParserTest(unittest.TestCase):
     self.assertEqual(command_e.AndOr, node.tag)
 
   def testParseCommand(self):
-    _, c_parser = test_lib.InitCommandParser('ls foo')
+    c_parser = test_lib.InitCommandParser('ls foo')
     node = c_parser.ParseCommand()
     self.assertEqual(2, len(node.words))
     print(node)
 
-    _, c_parser = test_lib.InitCommandParser('func() { echo hi; }')
+    c_parser = test_lib.InitCommandParser('func() { echo hi; }')
     node = c_parser.ParseCommand()
     print(node)
     self.assertEqual(command_e.FuncDef, node.tag)

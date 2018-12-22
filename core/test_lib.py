@@ -112,10 +112,10 @@ def MakeTestEvaluator():
   return ev
 
 
-def InitExecutor(arena=None):
+def InitExecutor(arena=None, mem=None):
   arena = arena or MakeArena('<InitExecutor>')
 
-  mem = state.Mem('', [], {}, arena)
+  mem = mem or state.Mem('', [], {}, arena)
   fd_state = process.FdState()
   funcs = {}
   comp_state = completion.State()
@@ -130,13 +130,15 @@ def InitExecutor(arena=None):
                            parse_ctx, devtools)
 
 
-def EvalCode(code_str):
+def EvalCode(code_str, arena=None, mem=None):
   """
   This allows unit tests to write code strings and have functions appear in the
   executor.
   """
-  arena, c_parser = InitCommandParser(code_str)
-  ex = InitExecutor(arena)
+  arena = arena or MakeArena('<test_lib>')
+  c_parser = InitCommandParser(code_str, arena=arena)
+  mem = mem or state.Mem('', [], {}, arena)
+  ex = InitExecutor(arena, mem=mem)
   # Parse and execute!
   main_loop.Batch(ex, c_parser, arena)
   return ex
@@ -155,7 +157,7 @@ def InitCommandParser(code_str, arena=None):
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, _ = InitLexer(code_str, arena)
   w_parser, c_parser = parse_ctx.MakeOshParser(line_reader)
-  return arena, c_parser
+  return c_parser
 
 
 def InitOilParser(code_str, arena=None):
