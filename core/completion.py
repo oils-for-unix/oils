@@ -59,6 +59,41 @@ class _RetryCompletion(Exception):
   pass
 
 
+CH_Break, CH_Other = range(2)  # Character types
+ST_Begin, ST_Break, ST_Other = range(3)  # States
+
+# State machine definition.
+_TRANSITIONS = {
+    # (state, char) -> (new state, emit span)
+    (ST_Begin, CH_Break): (ST_Break, False),
+    (ST_Begin, CH_Other): (ST_Other, False),
+
+    (ST_Break, CH_Break): (ST_Break, False),
+    (ST_Break, CH_Other): (ST_Other, True),
+
+    (ST_Other, CH_Break): (ST_Break, True),
+    (ST_Other, CH_Other): (ST_Other, False),
+}
+
+def AdjustArg(arg, break_chars, argv_out):
+  spans = []
+  state = ST_Begin
+  last_i = 0
+  for i, c in enumerate(arg):
+    ch = CH_Break if c in break_chars else CH_Other
+    state, emit_span = _TRANSITIONS[state, ch]
+    if emit_span:
+      spans.append((last_i, i))
+      last_i = i
+
+  # Always emit a span at the end (even for empty string)
+  n = len(arg)
+  spans.append((last_i, n))
+
+  for begin, end in spans:
+    argv_out.append(arg[begin:end])
+
+
 class NullCompleter(object):
 
   def Matches(self, comp):
@@ -185,7 +220,7 @@ class Api(object):
     self.to_complete = to_complete
     self.prev = prev
     self.index = index  # COMP_CWORD
-    # COMP_ARGV, and COMP_WORDS can be derived from this
+    # COMP_ARGV and COMP_WORDS can be derived from this
     self.partial_argv = partial_argv or []
 
   def __repr__(self):
@@ -302,12 +337,23 @@ class ShellFuncAction(CompletionAction):
     # Have to clear the response every time.  TODO: Reuse the object?
     state.SetGlobalArray(self.ex.mem, 'COMPREPLY', [])
 
-    # This is the invention of OSH.
+    # New completions should use COMP_ARGV, a construct specific to OSH>
     state.SetGlobalArray(self.ex.mem, 'COMP_ARGV', comp.partial_argv)
 
-    # TODO: We can split this by : and = to emulate bash's behavior?
-    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp.partial_argv)
-    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp.index))
+    # Old completions may use COMP_WORDS.  It is split by : and = to emulate
+    # bash's behavior. 
+    # More commonly, they will call _init_completion and use the 'words' output
+    # of that, ignoring COMP_WORDS.
+    comp_words = []
+    for a in comp.partial_argv:
+      AdjustArg(a, [':', '='], comp_words)
+    if comp.index == -1:  # cmopgen
+      comp_cword = comp.index
+    else:
+      comp_cword = len(comp_words) - 1  # weird invariant
+
+    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
+    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp_cword))
     state.SetGlobalString(self.ex.mem, 'COMP_LINE', comp.line)
     state.SetGlobalString(self.ex.mem, 'COMP_POINT', str(comp.end))
 

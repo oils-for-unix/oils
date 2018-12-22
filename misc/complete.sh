@@ -169,4 +169,27 @@ npm-comp() {
   #bin/osh -n _tmp/npm.sh
 }
 
+# NOTE: This package doesn't have git completion.  That comes with the git package!
+download-bash-completion-xenial() {
+  # binary package
+  if false; then
+    wget --directory _tmp \
+      http://mirrors.kernel.org/ubuntu/pool/main/b/bash-completion/bash-completion_2.1-4.2ubuntu1_all.deb
+  fi
+
+  # source package
+  wget --directory _tmp \
+    http://archive.ubuntu.com/ubuntu/pool/main/b/bash-completion/bash-completion_2.1.orig.tar.bz2
+}
+
+# Conclusion: git-completion.bash is is unmodified.  It's just renamed to
+# /usr/share/bash-completion/git.  It seems to use the _git() and _gitk() entry
+# points.
+download-git-package() {
+  true || wget --directory _tmp \
+    http://archive.ubuntu.com/ubuntu/pool/main/g/git/git_2.7.4.orig.tar.xz
+  wget --directory _tmp \
+    http://security.ubuntu.com/ubuntu/pool/main/g/git/git_2.7.4-0ubuntu1.6_amd64.deb
+}
+
 "$@"

@@ -68,6 +68,28 @@ def _MakeRootCompleter(comp_state=None):
                                   progress_f, debug_f)
 
 
+class FunctionsTest(unittest.TestCase):
+
+  def testAdjustArg(self):
+    AdjustArg = completion.AdjustArg
+    out = []
+    AdjustArg(':foo:=bar:', [':', '='], out)
+    self.assertEqual(out, [':', 'foo', ':=', 'bar', ':'])
+
+    out = []
+    AdjustArg('==::==', [':', '='], out)
+    self.assertEqual(out, ['==::=='])
+
+    out = []
+    AdjustArg('==::==', [':'], out)
+    self.assertEqual(out, ['==', '::', '=='])
+
+    # This is like if you get [""] somehow, it should be [""].
+    out = []
+    AdjustArg('', [':', '='], out)
+    self.assertEqual(out, [''])
+
+
 class CompletionTest(unittest.TestCase):
 
   def _MakeComp(self, words, index, to_complete):
@@ -358,7 +380,7 @@ class RootCompeterTest(unittest.TestCase):
     m = list(r.Matches(MockApi('var=$v')))
     m = list(r.Matches(MockApi('local var=$v')))
 
-  def testCompletesUserDefinedFunctions(self):
+  def testRunsUserDefinedFunctions(self):
     # This is here because it's hard to test readline with the spec tests.
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
@@ -402,14 +424,65 @@ class RootCompeterTest(unittest.TestCase):
     m = list(r.Matches(MockApi('prefix_dirnames b')))
     self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
 
+  def testCompletesAssignment(self):
+    # OSH doesn't do this.  Here is noticed about bash --norc (which is
+    # undoubtedly different from bash_completion):
+    #
+    # foo=/ho<TAB> completes directory
+    # foo=/home/:/ho<TAB> completes directory
+    #
+    # foo='/ho<TAB> completes directory
+    # foo='/home/:/ho<TAB> does NOT complete
+    #
+    # Ditto for ".  The first path is completed, but nothing after :.
+    #
+    # Ditto for echo foo=/ho
+    #           echo foo='/ho
+    #           echo foo="/ho
+    #
+    # It doesn't distinguish by position.
+    #
+    # TODO:
+    # - test with an image created with debootstrap
+    # - test with an Alpine image
+    return
+
 
 _INIT_TEMPLATE = """
+argv() {
+  python -c 'import sys; print(sys.argv[1:])' "$@"
+}
+
 fail() {
   echo "Non-fatal assertion failed: $@" >&2
 }
 
+arrays_equal() {
+  local n=$1
+  shift
+  local left=(${@: 0 : n})
+  local right=(${@: n : 2*n - 1})
+  for (( i = 0; i < n; i++ )); do
+    if [[ ${left[i]} != ${right[i]} ]]; then
+      echo -n 'left : '; argv "${left[@]}"
+      echo -n 'right: '; argv "${right[@]}"
+      fail "Word $i differed: ${left[i]} != ${right[i]}"
+      return 1
+    fi
+  done
+  return 0
+}
+
 my_complete() {
   local cur prev words cword split
+
+  # Test this function
+  if arrays_equal 2 a b a b; then
+    echo ok
+  else
+    echo failed
+    return
+  fi
 
   PASSED=()
 
@@ -421,8 +494,18 @@ my_complete() {
     PASSED+=(COMP_POINT)
   fi
 
+  if [[ ${#COMP_WORDS[@]} == ${#ORACLE_COMP_WORDS[@]} ]]; then
+    local n=${#COMP_WORDS[@]}
+    if arrays_equal "$n" "${COMP_WORDS[@]}" "${ORACLE_COMP_WORDS[@]}"; then
+      PASSED+=(COMP_WORDS)
+    fi
+  else
+    fail "COMP_WORDS: Expected ${ORACLE_COMP_WORDS[@]}, got ${COMP_WORDS[@]}"
+  fi
+
   # This doesn't pass because COMP_WORDS and COMP_CWORD are different.
   if [[ $COMP_CWORD == $ORACLE_COMP_CWORD ]]; then
+    #echo "passed: COMP_CWORD = $COMP_CWORD"
     PASSED+=(COMP_CWORD)
   else
     fail "COMP_CWORD: Expected $ORACLE_COMP_CWORD, got $COMP_CWORD"
@@ -433,8 +516,14 @@ my_complete() {
   #
   _init_completion %(flags)s
 
-  # TODO: Compare "words" array by length first, and then with an explicit
-  # loop.
+  if [[ ${#words[@]} == ${#ORACLE_words[@]} ]]; then
+    local n=${#words[@]}
+    if arrays_equal "$n" "${words[@]}" "${ORACLE_words[@]}"; then
+      PASSED+=(words)
+    fi
+  else
+    fail "COMP_WORDS: Expected ${ORACLE_words[@]}, got ${words[@]}"
+  fi
 
   if [[ $cur == $ORACLE_cur ]]; then
     PASSED+=(cur)
@@ -548,14 +637,21 @@ class InitCompletionTest(unittest.TestCase):
       self.assertEqual(value_e.StrArray, val.tag, "Expected array, got %s" % val)
       actually_passed = val.strs
 
-      should_pass = ['COMP_LINE', 'COMP_POINT']
-      # This only works in the -s case now because we're not simulating COMP_WORDS
-      if '-s' in flags:
-        should_pass.extend(['cur', 'prev'])
-      should_pass.append('split')  # always passes
+      should_pass = [
+          'COMP_WORDS', 'COMP_CWORD', 'COMP_LINE', 'COMP_POINT',  # old API
+          'words', 'cur', 'prev', 'cword', 'split'  # new API
+      ]
+
+      #should_pass = ['COMP_LINE', 'COMP_POINT', 'words', 'cur', 'prev', 'split']
+      if i == 4:
+        should_pass.remove('COMP_WORDS')
+        should_pass.remove('COMP_CWORD')
+        should_pass.remove('cword')
+        should_pass.remove('words')  # double quotes aren't the same
 
       for t in should_pass:
-        self.assert_(t in actually_passed)
+        self.assert_(
+            t in actually_passed, "%r was expected to pass (case %d)" % (t, i))
 
     log('Ran %d cases', len(init_completion_testdata.CASES))
 

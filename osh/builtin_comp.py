@@ -337,16 +337,19 @@ INIT_COMPLETION_SPEC.ShortFlag('-s',
     help='Treat --foo=bar and --foo bar the same way.')
 
 
-# TODO:
-# - Use COMP_ARGV by default to produce output values.
-#   - it should involve splitting up by : and =, and adjusting cur, prev, cword
-#   index.
-
 def InitCompletion(argv, mem):
+  """
+  Uses COMP_ARGV and flags produce the 'words' array.  Also sets $cur, $prev,
+  $cword, and $split.
+
+  Note that we do not use COMP_WORDS, which already has splitting applied.
+  bash-completion does a hack to undo or "reassemble" words after erroneous
+  splitting.
+  """
   arg_r = args.Reader(argv)
   arg = INIT_COMPLETION_SPEC.Parse(arg_r)
-  print(arg)
-  print(arg_r.Rest())
+  #print(arg)
+  #print(arg_r.Rest())
 
   # TODO: How does the user test a completion function programmatically?  Set COMP_ARGV?
   # Or we can use argv.Rest.
@@ -355,32 +358,42 @@ def InitCompletion(argv, mem):
     raise args.UsageError("COMP_ARGV should be an array")
   comp_argv = val.strs
 
-  # Words adjusted according to -n.
-  # Make sure to make a copy.
-  adjusted_words = list(val.strs)
-  state.SetArrayDynamic(mem, 'words', adjusted_words)
+  # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
+  # "outside" of words.
+  break_chars = [':', '=']
+  if arg.s:  # implied
+    break_chars.remove('=')
+  # NOTE: The syntax is -n := and not -n : -n =.
+  omit_chars = arg.n or ''
+  for c in omit_chars:
+    if c in break_chars:
+      break_chars.remove(c)
+  #log('break_chars: %s', break_chars)
 
-  n = len(comp_argv)
-  cur = comp_argv[-1]
-  prev = '' if n < 2 else comp_argv[-2]
-  cword = str(n-1)  # This invariant is dumb?
+  # argv adjusted according to 'break_chars'.
+  adjusted_argv = []
+  for a in comp_argv:
+    completion.AdjustArg(a, break_chars, adjusted_argv)
+
+  state.SetArrayDynamic(mem, 'words', adjusted_argv)
+
+  n = len(adjusted_argv)
+  cur = adjusted_argv[-1]
+  prev = '' if n < 2 else adjusted_argv[-2]
 
   split = ''  # a STRING returned bash_completion
   if arg.s:
-    if cur.startswith('--') and '=' in cur:
-      # Split in to flag name and flag value
+    if cur.startswith('--') and '=' in cur:  # Split into flag name and value
       prev, cur = cur.split('=', 1)
       split = 'true'
     else:
       split = 'false'
-
-  # TODO: arg -n should prevent splitting?  Or we can always split?
-  # I guess the case we want to test is completing parts of $PATH.
-  # PYTHONPATH=/home/:/   # This DOES complete.
+    # Do NOT set 'split' without -s.  Caller might not have declared it.
+    state.SetStringDynamic(mem, 'split', split)
 
   state.SetStringDynamic(mem, 'cur', cur)
   state.SetStringDynamic(mem, 'prev', prev)
-  state.SetStringDynamic(mem, 'cword', cword)
-  state.SetStringDynamic(mem, 'split', split)
+  # Same weird invariant after adjustment
+  state.SetStringDynamic(mem, 'cword', str(n-1))
 
   return 0
