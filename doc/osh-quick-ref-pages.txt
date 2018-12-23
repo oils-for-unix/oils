@@ -268,7 +268,26 @@ set   X shopt
 cd   pwd   pushd   popd   dirs
 
 #### <Completion> Completion
-complete   X compgen   X compopt
+
+##### <complete>
+
+Register completion policies for different commands.
+
+##### <compgen>
+
+Generate completion candidates inside a user-defined completion function.
+
+##### <compopt>
+
+Change completion options inside a user-defined completion function.
+
+##### <compadjust>
+
+Adjust COMP_ARGV according to specified delimiters, and optionally set
+variables cur, prev, words (an array), and cword.  May also set 'split'.
+
+This is an OSH extension that makes it easier to run the bash-completion
+project.
 
 #### <Shell-Process> Shell Process Control
 exec   exit   X logout 

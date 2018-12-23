@@ -94,7 +94,7 @@ BUILTIN COMMANDS
   [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs
-  [Completion]    complete   compgen   X compopt
+  [Completion]    complete   compgen   compopt   compadjust
   [Shell Process] exec   X logout 
                   umask   X ulimit   X times
   [Child Process] jobs   wait   ampersand &
