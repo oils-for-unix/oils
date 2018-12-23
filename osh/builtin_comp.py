@@ -348,11 +348,15 @@ def CompAdjust(argv, mem):
   """
   arg_r = args.Reader(argv)
   arg = INIT_COMPLETION_SPEC.Parse(arg_r)
-  var_names = arg_r.Rest()  # What to set
+  var_names = arg_r.Rest()  # Output variables to set
+  for name in var_names:
+    # Ironically we could complete these
+    if name not in ['cur', 'prev', 'words', 'cword']:
+      raise args.UsageError('Invalid output variable name %r' % name)
   #print(arg)
 
-  # TODO: How does the user test a completion function programmatically?  Set COMP_ARGV?
-  # Or we can use argv.Rest.
+  # TODO: How does the user test a completion function programmatically?  Set
+  # COMP_ARGV?
   val = mem.GetVar('COMP_ARGV')
   if val.tag != value_e.StrArray:
     raise args.UsageError("COMP_ARGV should be an array")
@@ -368,7 +372,6 @@ def CompAdjust(argv, mem):
   for c in omit_chars:
     if c in break_chars:
       break_chars.remove(c)
-  #log('break_chars: %s', break_chars)
 
   # argv adjusted according to 'break_chars'.
   adjusted_argv = []
@@ -382,7 +385,6 @@ def CompAdjust(argv, mem):
   cur = adjusted_argv[-1]
   prev = '' if n < 2 else adjusted_argv[-2]
 
-  split = ''  # a STRING returned bash_completion
   if arg.s:
     if cur.startswith('--') and '=' in cur:  # Split into flag name and value
       prev, cur = cur.split('=', 1)
