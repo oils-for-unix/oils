@@ -23,7 +23,7 @@ from core.meta import runtime_asdl, syntax_asdl
 
 from frontend import parse_lib
 from osh import state
-from testdata import init_completion_testdata
+from testdata.completion import bash_oracle
 
 assign_op_e = syntax_asdl.assign_op_e
 value_e = runtime_asdl.value_e
@@ -554,7 +554,7 @@ complete -F my_complete %(command)s
 class InitCompletionTest(unittest.TestCase):
 
   def testMatchesOracle(self):
-    for i, case in enumerate(init_completion_testdata.CASES):  # generated data
+    for i, case in enumerate(bash_oracle.CASES):  # generated data
       flags = case.get('_init_completion_flags')
       if flags is None:
         continue
@@ -653,7 +653,7 @@ class InitCompletionTest(unittest.TestCase):
         self.assert_(
             t in actually_passed, "%r was expected to pass (case %d)" % (t, i))
 
-    log('Ran %d cases', len(init_completion_testdata.CASES))
+    log('Ran %d cases', len(bash_oracle.CASES))
 
 
 if __name__ == '__main__':
