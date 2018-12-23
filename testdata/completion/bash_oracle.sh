@@ -39,7 +39,7 @@ tab-complete() {
 # Also I see '-n =+!' once, but that may be a mistake.  The most common cases
 # are : and =.
 
-gen-cases() {
+codegen-header() {
   # Make everything here into a Python comment.
   awk '{ print "# " $0 }' << EOF
 
@@ -54,7 +54,10 @@ $(md5sum testdata/completion/bash_completion)
 $(ls -l testdata/completion/bash_completion)
 
 EOF
+}
 
+init-cases() {
+  codegen-header
   echo 'CASES = []'
 
   tab-complete $'echo foo:bar --color=auto\t'
@@ -86,10 +89,29 @@ EOF
   tab-complete $'n2 foo:bar --color=auto\t'
 }
 
-# Write a checked in file
-write-cases() {
+# Write a file that's committed
+write-init-cases() {
   local out=testdata/completion/bash_oracle.py
-  gen-cases > $out
+  init-cases > $out
+  wc -l $out
+  echo "Wrote $out"
+}
+
+other-cases() {
+  codegen-header
+  echo 'CASES = []'
+
+  tab-complete $'reassemble foo:bar --color=auto\t'
+  tab-complete $'words foo:bar --color=auto\t'
+}
+
+# NOTE: This was for __reassemble_comp_words_by_ref and _get_comp_words_by_ref,
+# but they turned out to trivial to implement with 'compadjust'.  I'm keeping
+# this for now in case we need another example of a bash oracle.
+
+write-other-cases() {
+  local out=testdata/completion/bash_oracle_other.py
+  other-cases > $out
   wc -l $out
   echo "Wrote $out"
 }

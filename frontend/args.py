@@ -110,12 +110,13 @@ class Reader(object):
     return self.argv[self.i]
 
   def ReadRequired(self, error_msg):
-    self.Next()
     try:
-      return self.Peek()
+      arg = self.Peek()
     except IndexError:
       # TODO: Format it
       raise UsageError(error_msg)
+    self.Next()
+    return arg
 
   def Rest(self):
     """Return the rest of the arguments."""
@@ -588,7 +589,7 @@ class OilFlags(object):
   Another idea:
 
     input = ArgInput(argv)
-    action = input.ReadRequiredArg(error='An action is required')
+    action = input.ReadRequired(error='An action is required')
 
   The rest should be similar to Go flags.
   https://golang.org/pkg/flag/

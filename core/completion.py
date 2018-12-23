@@ -59,8 +59,8 @@ class _RetryCompletion(Exception):
   pass
 
 
-CH_Break, CH_Other = range(2)  # Character types
-ST_Begin, ST_Break, ST_Other = range(3)  # States
+CH_Break, CH_Other = xrange(2)  # Character types
+ST_Begin, ST_Break, ST_Other = xrange(3)  # States
 
 # State machine definition.
 _TRANSITIONS = {

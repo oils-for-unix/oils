@@ -103,6 +103,7 @@ _NORMAL_BUILTINS = {
     "complete": builtin_e.COMPLETE,
     "compgen": builtin_e.COMPGEN,
     "compopt": builtin_e.COMPOPT,
+    "compadjust": builtin_e.COMPADJUST,
 
     "true": builtin_e.TRUE,
     "false": builtin_e.FALSE,
@@ -125,7 +126,6 @@ _NORMAL_BUILTINS = {
 
     # OSH only
     "repr": builtin_e.REPR,
-    "_init_completion": builtin_e.INIT_COMPLETION,
 }
 
 BUILTIN_NAMES = _SPECIAL_BUILTINS.keys() + _NORMAL_BUILTINS.keys()

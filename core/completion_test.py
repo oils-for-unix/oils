@@ -473,6 +473,10 @@ arrays_equal() {
   return 0
 }
 
+_init_completion() {
+  compadjust "$@" cur prev words cword
+}
+
 my_complete() {
   local cur prev words cword split
 

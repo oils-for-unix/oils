@@ -337,7 +337,7 @@ INIT_COMPLETION_SPEC.ShortFlag('-s',
     help='Treat --foo=bar and --foo bar the same way.')
 
 
-def InitCompletion(argv, mem):
+def CompAdjust(argv, mem):
   """
   Uses COMP_ARGV and flags produce the 'words' array.  Also sets $cur, $prev,
   $cword, and $split.
@@ -348,8 +348,8 @@ def InitCompletion(argv, mem):
   """
   arg_r = args.Reader(argv)
   arg = INIT_COMPLETION_SPEC.Parse(arg_r)
+  var_names = arg_r.Rest()  # What to set
   #print(arg)
-  #print(arg_r.Rest())
 
   # TODO: How does the user test a completion function programmatically?  Set COMP_ARGV?
   # Or we can use argv.Rest.
@@ -375,7 +375,8 @@ def InitCompletion(argv, mem):
   for a in comp_argv:
     completion.AdjustArg(a, break_chars, adjusted_argv)
 
-  state.SetArrayDynamic(mem, 'words', adjusted_argv)
+  if 'words' in var_names:
+    state.SetArrayDynamic(mem, 'words', adjusted_argv)
 
   n = len(adjusted_argv)
   cur = adjusted_argv[-1]
@@ -389,11 +390,15 @@ def InitCompletion(argv, mem):
     else:
       split = 'false'
     # Do NOT set 'split' without -s.  Caller might not have declared it.
+    # Also does not respect var_names, because we don't need it.
     state.SetStringDynamic(mem, 'split', split)
 
-  state.SetStringDynamic(mem, 'cur', cur)
-  state.SetStringDynamic(mem, 'prev', prev)
-  # Same weird invariant after adjustment
-  state.SetStringDynamic(mem, 'cword', str(n-1))
+  if 'cur' in var_names:
+    state.SetStringDynamic(mem, 'cur', cur)
+  if 'prev' in var_names:
+    state.SetStringDynamic(mem, 'prev', prev)
+  if 'cword' in var_names:
+    # Same weird invariant after adjustment
+    state.SetStringDynamic(mem, 'cword', str(n-1))
 
   return 0

@@ -335,6 +335,9 @@ class Executor(object):
     elif builtin_id == builtin_e.COMPOPT:
       status = builtin_comp.CompOpt(argv, self.comp_state)
 
+    elif builtin_id == builtin_e.COMPADJUST:
+      status = builtin_comp.CompAdjust(argv, self.mem)
+
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
 
@@ -377,9 +380,6 @@ class Executor(object):
 
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)
-
-    elif builtin_id == builtin_e.INIT_COMPLETION:
-      status = builtin_comp.InitCompletion(argv, self.mem)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)

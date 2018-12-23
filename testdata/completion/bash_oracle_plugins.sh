@@ -62,3 +62,39 @@ complete -F comp_n n
 n2() { echo; }
 comp_n2() { _comp_init_completion -n := ; }
 complete -F comp_n2 n2
+
+_reassemble_helper() {
+  show_bash_api_vars "$@"
+  local words cword  # assigned
+
+  echo
+  echo -n 'case["_completion_reassemble_flags"] = '; argv "$@"
+  #_completion_reassemble "$@"
+  __reassemble_comp_words_by_ref "$@"
+
+  echo
+  echo -n 'case["words"] = '; argv "${words[@]}"
+  echo -n 'case["cword"] = '; argv1 "$cword"
+}
+_reassemble() {
+  _reassemble_helper : words cword
+}
+complete -F _reassemble reassemble
+
+
+_words_helper() {
+  show_bash_api_vars "$@"
+  local cur  # assigned
+
+  echo
+  echo -n 'case["_completion_words_flags"] = '; argv "$@"
+  #_completion_words "$@"
+  _get_comp_words_by_ref "$@"
+
+  echo
+  echo -n 'case["cur"] = '; argv1 "$cur"
+}
+_words() {
+  _words_helper cur
+}
+complete -F _words words

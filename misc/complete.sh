@@ -56,6 +56,8 @@ audit-git() {
   audit
 }
 
+readonly COMPLETION_FILES=($BASH_COMP ../bash-completion/completions/*)
+
 # EVERY plugin seems ot use the _init_completion function.  We can do this
 # ourselves!
 audit-plugin-init() {
@@ -72,8 +74,7 @@ audit-plugin-init() {
   #
   # So everything is about the delimiters.
 
-  grep --no-filename _init_completion \
-    $BASH_COMP ../bash-completion/completions/* |
+  grep --no-filename _init_completion "${COMPLETION_FILES[@]}" |
     sort | uniq -c | sort -n
 }  
 
@@ -82,10 +83,76 @@ audit-plugin-x() {
   echo '-X usage'
   echo
 
-  grep --no-filename -- -X \
-    $BASH_COMP ../bash-completion/completions/* 
+  grep --no-filename -- -X "${COMPLETION_FILES[@]}"
 }
 
+# Hm I guess you could implement these two?  _get_cword and _get_pword can look
+# at COMP_ARGV or 'words'?
+
+# Yes they both take delimiters like -n.  So just take COMP_ARGV and split, and
+# then get the last one or second to last.
+
+audit-plugin-funcs() {
+  echo
+  echo 'annoying functions'
+  echo
+
+  # _get_cword and _get_pword should be easy to implement.  COMP_ARGV is split
+  # with delimiters again.  Should you try an oracle?
+  grep --color -- '_get_.word' "${COMPLETION_FILES[@]}"
+
+  # This calls __reassemble_comp_words_by_ref
+  grep --color -w -- '_count_args' "${COMPLETION_FILES[@]}"
+
+  # These call _get_comp_words_by_ref, which calls _get_cword_at_cursor_by_ref,
+  # which calls __reassemble_comp_words_by_ref
+  grep --color -w -- '_command' "${COMPLETION_FILES[@]}"
+  grep --color -w -- '_command_offset' "${COMPLETION_FILES[@]}"
+
+  # Uses _quote_readline_by_ref, which uses printf -v.  Although printf -v
+  # isn't really a big problem.
+  # Hm this is used a lot.
+  #grep --color -w -- '_filedir' "${COMPLETION_FILES[@]}"
+
+  # Example of where _command is used:
+  #   find -exec, find -execdir
+  #   sftp -S takes a program
+  
+  # Example of where _command_offset is used:
+  #   sudo
+  #   strace
+  #   They try to skip the flags first?
+  #
+  # NOTES:
+  # - sudo s<TAB> works in bash/osh
+  # - find -exec e<TAB> does NOT work in bash or osh.  It DOES work in zsh!
+  # - nslookup -<TAB> works in bash and osh, except it seems to require 2 tabs?  Is
+  #   that because of _RetryCompletion?
+  #   - yes xz -<TAB> has the same issue
+  #
+  # BUGS
+  # - ssh fails with OSH error -- needs a patch
+  # - echo fr  # _filedir completion fails
+
+  # other functions you could replace:
+  # _get_comp_words_by_ref -- this has local "${upvars[@]}"
+  #   this is trivial, there is only one usage in _command_offset
+  #   just return 'cur', which is COMP_WORDS[-1]?
+  # _get_cword_at_cursor_by_ref -- this has local "$2"
+  #   this can be DELETED once we implement _get_comp_words_by_ref
+  # __reassemble_comp_words_by_ref -- count_words uses it
+  #   _get_cword and _count_args call this
+  #   returns 'words' and 'cword'
+  #
+  # rename to
+  # _completion_get_words cur
+  # _completion_reassemble
+  #
+  # So basically these are all wrappers around the same logic in _init_completion
+  #
+  # So we only need to implement 2 things.  Make oracles for them?  I think
+  # they should be easy to implement.
+}
 
 # NOTE: there are a number of associative arrays in completion scripts.
 # e.g. localectl

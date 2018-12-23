@@ -70,18 +70,17 @@ module runtime
 
   builtin = 
     NONE | READ | ECHO | PRINTF | SHIFT
-  | CD | PUSHD | POPD | DIRS
+  | CD | PWD | PUSHD | POPD | DIRS
   | EXPORT | UNSET | SET | SHOPT
   | TRAP | UMASK
   | SOURCE | DOT | EVAL | EXEC | WAIT | JOBS
-  | COMPLETE | COMPGEN | COMPOPT
+  | COMPLETE | COMPGEN | COMPOPT | COMPADJUST
   | TRUE | FALSE
   | COLON
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HELP
   | DECLARE | TYPESET | ALIAS | UNALIAS
-  | PWD
-  | REPR | INIT_COMPLETION
+  | REPR
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.
