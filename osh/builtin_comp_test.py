@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from osh import builtin_comp  # module under test
+#from osh import builtin_comp  # module under test
 
 
 class BuiltinCompTest(unittest.TestCase):
