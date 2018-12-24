@@ -566,8 +566,12 @@ def _cpython_main_hook():
 
 
 if __name__ == '__main__':
-  # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
-  if posix.environ.get('CALLGRAPH') == '1':
+  if posix.environ.get('RESOLVE') == '1':
+    from opy import resolve
+    resolve.Walk(dict(sys.modules))
+
+  elif posix.environ.get('CALLGRAPH') == '1':
+    # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
     from opy import callgraph
     callgraph.Walk(main, sys.modules)
   else:

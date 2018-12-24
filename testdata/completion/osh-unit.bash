@@ -26,6 +26,7 @@ complete_mywords() {
   done
 }
 
+foo() { argv foo "$@"; }
 complete_foo() {
   local first=$1
   local cur=$2
@@ -61,10 +62,11 @@ complete_foo() {
     fi
   done
 }
-
-foo() {
-  argv completed "$@"
-}
+# dirnames: add dirs if nothing matches
+# plusdirs: always add dirs
+# filenames: adds trailing slash if it is a directory
+complete -F complete_foo -o dirnames -o filenames foo
+complete -F complete_foo -o nospace foo2
 
 complete_filedir() {
   local first=$1
@@ -72,6 +74,8 @@ complete_filedir() {
   local prev=$3
   COMPREPLY=( $( compgen -d "$cur" ) )
 }
+# from _filedir
+complete -F complete_filedir filedir
 
 complete_bug() {
   # Regression for issue where readline swallows SystemExit.
@@ -79,6 +83,8 @@ complete_bug() {
 
   COMPREPLY=(one two three $comsub)
 }
+# isolated bug
+complete -F complete_bug bug
 
 complete_optdemo() {
   local first=$1
@@ -91,7 +97,10 @@ complete_optdemo() {
   # -o nospace doesn't work here, but it's accepted!
   COMPREPLY=( $( compgen -o nospace -d "$cur" ) )
 }
+# Test how the options work.  git uses nospace.
+complete -F complete_optdemo -o nospace optdemo
 
+optdynamic() { argv optdynamic "$@"; }
 complete_optdynamic() {
   local first=$1
   local cur=$2
@@ -103,10 +112,7 @@ complete_optdynamic() {
   fi
   COMPREPLY=( $( compgen -A file "$cur" ) )
 }
-
-optdynamic() {
-  argv optdynamic "$@"
-}
+complete -F complete_optdynamic optdynamic
 
 complete_files() {
   local first=$1
@@ -116,31 +122,26 @@ complete_files() {
   # This MESSES up the trailing slashes.  Need -o filenames.
   COMPREPLY=( $( compgen -A file "$cur" ) )
 }
-
-# dirnames: add dirs if nothing matches
-# plusdirs: always add dirs
-# filenames: adds trailing slash if it is a directory
-complete -F complete_foo -o dirnames -o filenames foo
-complete -F complete_foo -o nospace foo2
-
-# from _filedir
-complete -F complete_filedir filedir
-
-# isolated bug
-complete -F complete_bug bug
-
-# Test how the options work.  git uses nospace.
-complete -F complete_optdemo -o nospace optdemo
-
-complete -F complete_optdynamic optdynamic
+# everything else completes files
+#complete -D -A file
+complete -F complete_files -D  # messes up trailing slashes
 
 # Check trailing backslashes for the 'fileuser' command
 # Hm somehow it knows to distinguish.  Gah.
-complete -A file -A user fileuser
+fu_builtin() { argv "$@"; }
+complete -A user -A file fu_builtin
 
-# everything else completes files
-#complete -D -A file
-complete -F complete_files -D
+# This behaves the same way as above because of -o filenames.
+# If you have both a dir and a user named root, it gets a trailing slash, which
+# makes sense.
+fu_func() { argv "$@"; }
+complete_users_files() {
+  local first=$1
+  local cur=$2
+
+  COMPREPLY=( $( compgen -A user -A file "$cur" ) )
+}
+complete -F complete_users_files -o filenames fu_func
 
 #
 # Unit tests use this

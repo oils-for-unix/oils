@@ -100,9 +100,10 @@ class ParseContext(object):
     return word_parse.WordParser(self, lx, line_reader)
 
   def MakeArithParser(self, code_str, arena):
-    """
-    NOTE: We want to add tokens to a different arena, so we don't mess up the
-    translation.
+    """Used for a[x+1]=foo in the CommandParser.
+
+    NOTE: We add tokens to a different arena, so we don't mess up the
+    invariants for translation.
     """
     line_reader = reader.StringLineReader(code_str, arena)
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena)

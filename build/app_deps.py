@@ -134,7 +134,7 @@ def main(argv):
         else:
           raise AssertionError(mod_type)
 
-  elif action == 'py':  # Just .py files
+  elif action == 'py':  # .py path -> .pyc relative path
     modules = ImportMain(main_module, OLD_MODULES)
     for mod_type, full_path, rel_path in FilterModules(modules):
       if mod_type == PY_MODULE:
@@ -142,6 +142,14 @@ def main(argv):
         opy_output = rel_path + 'c'  # output is .pyc
         print(opy_input, opy_output)
 
+  elif action == 'py-manifest':  # .py path -> .py relative path
+    modules = ImportMain(main_module, OLD_MODULES)
+    for mod_type, full_path, rel_path in FilterModules(modules):
+      if mod_type == PY_MODULE:
+        opy_input = full_path
+        assert rel_path.endswith('.py')
+        #mod_name = rel_path[:-3].replace('/', '.')
+        print(opy_input, rel_path)
   else:
     raise RuntimeError('Invalid action %r' % action)
 

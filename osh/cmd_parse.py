@@ -643,7 +643,6 @@ class CommandParser(object):
     finally:
       self.arena.PopSource()
 
-    # TODO: Change name back to VirtualLineReader?
     line_reader = reader.VirtualLineReader(line_info, self.arena)
     _, cp = self.parse_ctx.MakeOshParser(line_reader)
 

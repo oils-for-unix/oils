@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./opy.sh <function name>
+#   opy/demo.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -32,6 +32,10 @@ osh-byterun-parse() {
   time bin/osh -n -c "$prog"
   time osh-byterun -n -c "$prog"
   popd
+}
+
+resolve() {
+  PYTHONPATH=. RESOLVE=1 bin/oil.py
 }
 
 "$@"

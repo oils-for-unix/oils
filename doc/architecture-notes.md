@@ -169,3 +169,18 @@ Where bash respects it:
 
 - See `build/dev.sh`
 
+## The OSH Parser
+
+The OSH parser is better than other shell parsers:
+
+- It statically parses interleaved sublanguages/dialects (e.g. the word
+  language, arithmetic, etc.)
+- `$PS2` just works (due to `_Peek()` and `_Next()`).  Other shells use special
+  annotations in the parser to handle newlines.  (TODO: link them)
+- It's used for interactive completion!  The `ParseContext()` collects
+  "trails".
+- It produces an LST, so it can be used for translation.  This structure could
+  also be used for linting/reformatting.
+
+Bad: it's a slower!  This needs to be fixed.
+

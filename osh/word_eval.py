@@ -1133,9 +1133,12 @@ class NormalWordEvaluator(_WordEvaluator):
 
 
 class CompletionWordEvaluator(_WordEvaluator):
-  """
-  Difference from NormalWordEvaluator: No access to executor!  But they both
-  have a splitter.
+  """An evaluator that has no access to an executor.
+
+  NOTE: core/completion.py doesn't actually try to use these strings to
+  complete.  If you have something like 'echo $(echo hi)/f<TAB>', it sees the
+  inner command as the last one, and knows that it is not at the end of the
+  line.
   """
   def _EvalCommandSub(self, node, quoted):
     return part_value.String('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
