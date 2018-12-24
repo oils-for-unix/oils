@@ -76,22 +76,22 @@ _TRANSITIONS = {
 }
 
 def AdjustArg(arg, break_chars, argv_out):
-  spans = []
+  end_indices = []  # stores the end of each span
   state = ST_Begin
   last_i = 0
   for i, c in enumerate(arg):
     ch = CH_Break if c in break_chars else CH_Other
     state, emit_span = _TRANSITIONS[state, ch]
     if emit_span:
-      spans.append((last_i, i))
-      last_i = i
+      end_indices.append(i)
 
   # Always emit a span at the end (even for empty string)
-  n = len(arg)
-  spans.append((last_i, n))
+  end_indices.append(len(arg))
 
-  for begin, end in spans:
+  begin = 0
+  for end in end_indices:
     argv_out.append(arg[begin:end])
+    begin = end
 
 
 class NullCompleter(object):
