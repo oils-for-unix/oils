@@ -135,9 +135,9 @@ X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
   [Process State] X BASHPID   X PPID   UID   EUID   
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
-  [Completion]    @COMP_WORDS   COMP_CWORD   COMP_WORDBREAKS
-                  @COMPREPLY   X COMP_KEY   COMP_LINE   COMP_POINT
-                  X COMP_TYPE
+  [Completion]    @COMP_WORDS   COMP_CWORD   COMP_LINE   COMP_POINT
+                  COMP_WORDBREAKS   @COMPREPLY   X COMP_KEY   
+                  X COMP_TYPE   COMP_ARGV
 
   [cd]            PWD   OLDPWD   X CDPATH
   [getopts]       OPTIND   OPTARG   X OPTERR

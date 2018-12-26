@@ -269,19 +269,19 @@ cd   pwd   pushd   popd   dirs
 
 #### <Completion> Completion
 
-##### <complete>
+### <complete>
 
 Register completion policies for different commands.
 
-##### <compgen>
+### <compgen>
 
 Generate completion candidates inside a user-defined completion function.
 
-##### <compopt>
+### <compopt>
 
 Change completion options inside a user-defined completion function.
 
-##### <compadjust>
+### <compadjust>
 
 Adjust COMP_ARGV according to specified delimiters, and optionally set
 variables cur, prev, words (an array), and cword.  May also set 'split'.
@@ -343,6 +343,47 @@ Bash has this, but OSH won't implement it.
 ##### <ENVIRONMENT-VARIABLES> Environment Variables
 
 ##### <SPECIAL-VARIABLES> Special Variables
+
+#### <Platform>
+
+#### <Call Stack>
+
+#### <Tracing>
+
+#### <Process State>
+
+#### <Process Stack>
+
+#### <Shell State>
+
+#### <Completion>
+
+### <COMP_WORDS>
+
+An array of words, split by : and = for compatibility with bash.  New
+completion scripts should use COMP_ARGV instead.
+
+### <COMP_CWORD>
+
+Discouraged; for compatibility with bash.
+
+### <COMP_LINE>
+
+Discouraged; for compatibility with bash.
+
+### <COMP_POINT>
+
+Discouraged; for compatibility with bash.
+
+### <COMPREPLY>
+
+User-defined completion functions should Fill this array with candidates.  It
+is cleared on every completion request.
+
+### <COMP_ARGV>
+
+An array of partial command arguments to complete.  Preferred over COMP_WORDS.
+The compadjust builtin uses this variable.
 
 ##### <PLUGINS-AND-HOOKS> Plugins and Hooks
 
