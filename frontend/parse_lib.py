@@ -18,10 +18,7 @@ from oil_lang import cmd_parse as oil_cmd_parse
 lex_mode_e = types_asdl.lex_mode_e
 
 
-class _CompletionState(object):
-  """
-  Output from the parser that helps us complete commands.
-  """
+class _BaseCompletionTrail(object):
 
   def __init__(self):
     # word from a partially completed command.
@@ -42,8 +39,57 @@ class _CompletionState(object):
     # line!
     self.tokens = []
 
+  def PrintDebugString(self, debug_f):
+    from osh import ast_lib
+    #debug_f.log('trail = %s', trail)
+    debug_f.log('  words:')
+    for w in self.words:
+      ast_lib.PrettyPrint(w, f=debug_f)
+    debug_f.log('')
+
+    debug_f.log('  redirects:')
+    for r in self.redirects:
+      ast_lib.PrettyPrint(r, f=debug_f)
+    debug_f.log('')
+
+    debug_f.log('  tokens:')
+    for p in self.tokens:
+      ast_lib.PrettyPrint(p, f=debug_f)
+    debug_f.log('')
+
   def __repr__(self):
-    return '<_CompletionState %s %s>' % (self.words, self.tokens)
+    return '<CompletionTrail %s %s %s>' % (
+        self.words, self.redirects, self.tokens)
+
+
+class _NullCompletionTrail(_BaseCompletionTrail):
+  """Used when we're not completing."""
+
+  def Clear(self):
+    pass
+
+  def SetLatestWords(self, words, redirects):
+    pass
+
+  def AppendToken(self, token):
+    pass
+
+
+class CompletionTrail(_BaseCompletionTrail):
+  """Info left by the parser to help us complete shell syntax and commands."""
+
+  def Clear(self):
+    del self.words[:]
+    del self.redirects[:]
+    # The other ones don't need to be reset?
+    del self.tokens[:]
+
+  def SetLatestWords(self, words, redirects):
+    self.words = words
+    self.redirects = redirects
+
+  def AppendToken(self, token):
+    self.tokens.append(token)
 
 
 class ParseContext(object):
@@ -52,12 +98,11 @@ class ParseContext(object):
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, aliases):
+  def __init__(self, arena, aliases, trail=None):
     self.arena = arena
     self.aliases = aliases
     # Completion state lives here since it may span multiple parsers.
-    self.comp_state = _CompletionState()
-    self.completing = False
+    self.trail = trail or _NullCompletionTrail()
 
   def _MakeLexer(self, line_reader, arena=None):
     """Helper function.
@@ -66,27 +111,6 @@ class ParseContext(object):
     """
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena=arena or self.arena)
     return lexer.Lexer(line_lexer, line_reader)
-
-  def PrepareForCompletion(self):
-    """Called every time we parse for completion."""
-    self.completing = True
-    # must be deleted or we will have words from the oshrc arena!
-    del self.comp_state.words[:]
-    # The other ones don't need to be reset?
-    del self.comp_state.tokens[:]
-
-  def SetLatestWords(self, words, redirects):
-    """Called by the CommandParser every time we can a command."""
-    if not self.completing:
-      return False
-    self.comp_state.words = words
-    self.comp_state.redirects = redirects
-
-  def AppendToken(self, token):
-    """Called by the CommandParser every time we can a command."""
-    if not self.completing:
-      return False
-    self.comp_state.tokens.append(token)
 
   def MakeOshParser(self, line_reader):
     lx = self._MakeLexer(line_reader)
@@ -138,19 +162,13 @@ class ParseContext(object):
 
   # NOTE: We could reuse w_parser with ResetInputObjects() each time.  That's
   # what the REPL does.
-  def MakeParserForCompletion(self, code_str, arena):
-    """Parser for partial lines.
-
-    NOTE: Uses its own arena!
-    """
-    # NOTE: We don't need to use a arena here?  Or we need a "scratch arena"
-    # that doesn't interfere with the rest of the program.
-    line_reader = reader.StringLineReader(code_str, arena)
-    lx = self._MakeLexer(line_reader, arena=arena)
+  def MakeParserForCompletion(self, code_str):
+    """Parser for partial lines."""
+    line_reader = reader.StringLineReader(code_str, self.arena)
+    lx = self._MakeLexer(line_reader)
     lx.EmitCompDummy()  # A special token before EOF!
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
-                                       arena=arena)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
     return c_parser
 
   # Another parser instantiation:

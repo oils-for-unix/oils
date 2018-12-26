@@ -97,8 +97,7 @@ class WordParser(object):
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_kind = LookupKind(self.cur_token.id)
       self.token_type = self.cur_token.id
-      # For completion
-      self.parse_ctx.AppendToken(self.cur_token)
+      self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
       self.next_lex_mode = None
     return self.cur_token
 

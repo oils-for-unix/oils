@@ -58,7 +58,9 @@ def _MakeRootCompleter(comp_state=None):
 
   pool = alloc.Pool()
   arena = pool.NewArena()
-  parse_ctx = parse_lib.ParseContext(arena, {})
+  arena.PushSource('<_MakeRootCompleter>')
+  trail = parse_lib.CompletionTrail()
+  parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
   if 0:  # enable for details
     debug_f = util.DebugFile(sys.stdout)
   else:

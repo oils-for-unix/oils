@@ -237,7 +237,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
-  parse_ctx = parse_lib.ParseContext(arena, aliases)
+  parse_ctx = parse_lib.ParseContext(arena, aliases)  # For main_loop
+
+  # Two ParseContext instances SHARE aliases.  TODO: Complete aliases.
+  comp_arena = pool.NewArena()
+  comp_arena.PushSource('<completion>')
+  trail = parse_lib.CompletionTrail()
+  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail)
 
   if opts.debug_file:
     debug_f = util.DebugFile(fd_state.Open(opts.debug_file, mode='w'))
@@ -322,9 +328,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       splitter = split.SplitContext(mem)  # TODO: share with executor.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
       progress_f = ui.StatusLine()
-      # TODO: Should parse_ctx have a different arena?
       root_comp = completion.RootCompleter(ev, comp_state, mem,
-                                           parse_ctx, progress_f, debug_f)
+                                           comp_ctx, progress_f, debug_f)
       completion.Init(readline, root_comp, debug_f)
       _InitDefaultCompletions(ex, comp_state)
 

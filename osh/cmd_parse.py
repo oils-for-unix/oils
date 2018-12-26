@@ -511,7 +511,7 @@ class CommandParser(object):
     redirects = []
     words = []
     # Set a reference so we can inspect state after a failed parse!
-    self.parse_ctx.SetLatestWords(words, redirects)
+    self.parse_ctx.trail.SetLatestWords(words, redirects)
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:

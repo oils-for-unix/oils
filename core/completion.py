@@ -35,7 +35,6 @@ import pwd
 import sys
 import time
 
-from core import alloc
 from core import util
 from core.meta import (
     Id, REDIR_ARG_TYPES, syntax_asdl, runtime_asdl, types_asdl)
@@ -558,25 +557,6 @@ class UserSpec(object):
         self.prefix, self.suffix)
 
 
-def _ShowCompState(comp_state, debug_f):
-  from osh import ast_lib
-  #debug_f.log('comp_state = %s', comp_state)
-  debug_f.log('  words:')
-  for w in comp_state.words:
-    ast_lib.PrettyPrint(w, f=debug_f)
-  debug_f.log('')
-
-  debug_f.log('  redirects:')
-  for r in comp_state.redirects:
-    ast_lib.PrettyPrint(r, f=debug_f)
-  debug_f.log('')
-
-  debug_f.log('  tokens:')
-  for p in comp_state.tokens:
-    ast_lib.PrettyPrint(p, f=debug_f)
-  debug_f.log('')
-
-
 # Helpers for Matches()
 
 # NOTE: We could add Lit_Dollar, but it would affect many lexer modes.
@@ -612,11 +592,10 @@ class RootCompleter(object):
     Returns a list of matches relative to readline's completion_delims.
     We have to post-process the output of various completers.
     """
-    # TODO: What is the point of this?  Can we manually reduce the amount of GC
-    # time?
-    arena = alloc.SideArena('<completion>')
-    self.parse_ctx.PrepareForCompletion()
-    c_parser = self.parse_ctx.MakeParserForCompletion(comp.line, arena)
+    arena = self.parse_ctx.arena  # Used by inner functions
+
+    self.parse_ctx.trail.Clear()
+    c_parser = self.parse_ctx.MakeParserForCompletion(comp.line)
 
     # We want the output from parse_ctx, so we don't use the return value.
     try:
@@ -626,14 +605,14 @@ class RootCompleter(object):
       pass
 
     debug_f = self.debug_f
-    comp_state = c_parser.parse_ctx.comp_state
+    trail = self.parse_ctx.trail
     if 1:
-      _ShowCompState(comp_state, debug_f)
+      trail.PrintDebugString(debug_f)
 
     # NOTE: We get Eof_Real in the command state, but not in the middle of a
     # BracedVarSub.  This is due to the difference between the CommandParser
     # and WordParser.
-    tokens = comp_state.tokens
+    tokens = trail.tokens
     last = -1
     if tokens[-1].id == Id.Eof_Real:
       last -= 1  # ignore it
@@ -710,14 +689,14 @@ class RootCompleter(object):
       debug_f.log('span col %d length %d', span.col, span.length)
       return span.col + span.length
 
-    if comp_state.words:
+    if trail.words:
       # First check if we're completing a path that begins with ~.
       #
       # Complete tilde like 'echo ~' and 'echo ~a'.  This must be done at a word
       # level, and TildeDetectAll() does NOT help here, because they don't have
       # trailing slashes yet!  We can't do it on tokens, because otherwise f~a
       # will complete.  Looking at word_part is EXACTLY what we want.
-      parts = comp_state.words[-1].parts
+      parts = trail.words[-1].parts
       if (len(parts) == 2 and
           parts[0].tag == word_part_e.LiteralPart and
           parts[1].tag == word_part_e.LiteralPart and
@@ -736,8 +715,8 @@ class RootCompleter(object):
         return
 
     # Check if we should complete a redirect
-    if comp_state.redirects:
-      r = comp_state.redirects[-1]
+    if trail.redirects:
+      r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       if (r.tag == redir_e.Redir and
           REDIR_ARG_TYPES[r.op.id] == redir_arg_type_e.Path):
@@ -763,9 +742,9 @@ class RootCompleter(object):
     comp_opts = None
     user_spec = None   # Set below
 
-    if comp_state.words:
+    if trail.words:
       # Now check if we're completing a word!
-      last_col = LastColForWord(comp_state.words[-1])
+      last_col = LastColForWord(trail.words[-1])
       debug_f.log('last_col for word: %d', last_col)
       if last_col == comp.end:  # We're not completing the last word!
         debug_f.log('Completing words')
@@ -774,7 +753,7 @@ class RootCompleter(object):
         # etc.  Now try partial_argv, which may involve invoking PLUGINS.
 
         # needed to complete paths with ~
-        words2 = word.TildeDetectAll(comp_state.words)
+        words2 = word.TildeDetectAll(trail.words)
         if 0:
           debug_f.log('After tilde detection')
           for w in words2:
