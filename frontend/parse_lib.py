@@ -59,6 +59,14 @@ class ParseContext(object):
     self.comp_state = _CompletionState()
     self.completing = False
 
+  def _MakeLexer(self, line_reader, arena=None):
+    """Helper function.
+
+    TODO: should we combine the LineLexer and Lexer?  And the matcher?
+    """
+    line_lexer = lexer.LineLexer(match.MATCHER, '', arena=arena or self.arena)
+    return lexer.Lexer(line_lexer, line_reader)
+
   def PrepareForCompletion(self):
     """Called every time we parse for completion."""
     self.completing = True
@@ -81,22 +89,19 @@ class ParseContext(object):
     self.comp_state.tokens.append(token)
 
   def MakeOshParser(self, line_reader):
-    line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
-    lx = lexer.Lexer(line_lexer, line_reader)
+    lx = self._MakeLexer(line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
     return w_parser, c_parser
 
   def MakeOilParser(self, line_reader):
     # Same lexer as Oil?  It just doesn't start in the OUTER state?
-    line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
-    lx = lexer.Lexer(line_lexer, line_reader)
+    lx = self._MakeLexer(line_reader)
     c_parser = oil_cmd_parse.OilParser(self, lx, line_reader)
     return c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):
-    line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
-    lx = lexer.Lexer(line_lexer, line_reader)
+    lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
   def MakeArithParser(self, code_str, arena):
@@ -106,8 +111,7 @@ class ParseContext(object):
     invariants for translation.
     """
     line_reader = reader.StringLineReader(code_str, arena)
-    line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
-    lx = lexer.Lexer(line_lexer, line_reader)
+    lx = self._MakeLexer(line_reader, arena=arena)
     w_parser = word_parse.WordParser(self, lx, line_reader,
                                      lex_mode=lex_mode_e.Arith)
     a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
@@ -129,8 +133,7 @@ class ParseContext(object):
     NOTE: Uses its own arena!  I think that does nothing though?
     """
     line_reader = reader.StringLineReader(code_str, arena)
-    line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
-    lx = lexer.Lexer(line_lexer, line_reader)
+    lx = self._MakeLexer(line_reader, arena=arena)
     return word_parse.WordParser(self, lx, line_reader)
 
   # NOTE: We could reuse w_parser with ResetInputObjects() each time.  That's
@@ -143,8 +146,7 @@ class ParseContext(object):
     # NOTE: We don't need to use a arena here?  Or we need a "scratch arena"
     # that doesn't interfere with the rest of the program.
     line_reader = reader.StringLineReader(code_str, arena)
-    line_lexer = lexer.LineLexer(match.MATCHER, '', arena)  # AtEnd() is true
-    lx = lexer.Lexer(line_lexer, line_reader)
+    lx = self._MakeLexer(line_reader, arena=arena)
     lx.EmitCompDummy()  # A special token before EOF!
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
