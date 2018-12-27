@@ -8,8 +8,6 @@
 """
 completion.py - Tab completion.
 
-TODO: Is this specific to osh/oil, or common?
-
 Architecture:
 
 Completion should run in threads?  For two reasons:
@@ -24,15 +22,19 @@ Does that mean the user code gets run in an entirely separate interpreter?  The
 whole lexer/parser/cmd_exec combo has to be thread-safe.  Does it get a copy of
 the same startup state?
 
+Features TODO:
+  - complete flags after alias expansion
+  - complete history expansions like zsh
+  - complete flags for all builtins, using frontend/args.py?
+    - might need a special error token
+
 bash note: most of this stuff is in pcomplete.c and bashline.c (4K lines!).
 Uses ITEMLIST with a bunch of flags.
 """
 from __future__ import print_function
 
-import atexit
 import posix
 import pwd
-import sys
 import time
 
 from core import util
@@ -913,51 +915,6 @@ class ReadlineCallback(object):
     except SystemExit as e:
       # Because readline ignores SystemExit!
       posix._exit(e.code)
-
-
-def InitReadline(readline_mod, complete_cb):
-  home_dir = posix.environ.get('HOME')
-  if home_dir is None:
-    home_dir = util.GetHomeDir()
-    if home_dir is None:
-      print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
-      return
-  # TODO: Put this in .config/oil/.
-  history_filename = os_path.join(home_dir, 'oil_history')
-
-  try:
-    readline_mod.read_history_file(history_filename)
-  except IOError:
-    pass
-
-  # The 'atexit' module is a small wrapper around sys.exitfunc.
-  atexit.register(readline_mod.write_history_file, history_filename)
-  readline_mod.parse_and_bind("tab: complete")
-
-  # How does this map to C?
-  # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
-
-  readline_mod.set_completer(complete_cb)
-
-  # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
-  # "The basic list of characters that signal a break between words for the
-  # completer routine. The default value of this variable is the characters
-  # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
-
-  # This determines the boundaries you get back from get_begidx() and
-  # get_endidx() at completion time!
-  # We could be more conservative and set it to ' ', but then cases like
-  # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
-  #
-  # Note that this should not affect the OSH completion algorithm.  It only
-  # affects what we pass back to readline and what readline displays to the
-  # user!
-  readline_mod.set_completer_delims(util.READLINE_DELIMS)
-
-
-def Init(readline_mod, root_comp, debug_f):
-  complete_cb = ReadlineCallback(readline_mod, root_comp, debug_f)
-  InitReadline(readline_mod, complete_cb)
 
 
 if __name__ == '__main__':

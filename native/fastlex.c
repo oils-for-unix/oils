@@ -124,6 +124,30 @@ fastlex_MatchPS1Token(PyObject *self, PyObject *args) {
   return Py_BuildValue("(ii)", id, end_pos);
 }
 
+static PyObject *
+fastlex_MatchHistoryToken(PyObject *self, PyObject *args) {
+  unsigned char* line;
+  int line_len;
+
+  int start_pos;
+  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
+    return NULL;
+  }
+
+  // Bounds checking.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchPS1Token call (start_pos = %d, line_len = %d)",
+                 start_pos, line_len);
+    return NULL;
+  }
+
+  int id;
+  int end_pos;
+  MatchHistoryToken(line, line_len, start_pos, &id, &end_pos);
+  return Py_BuildValue("(ii)", id, end_pos);
+}
+
 
 static PyObject *
 fastlex_IsValidVarName(PyObject *self, PyObject *args) {
@@ -159,6 +183,8 @@ static PyMethodDef methods[] = {
   {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchPS1Token", fastlex_MatchPS1Token, METH_VARARGS,
+   "(line, start_pos) -> (id, end_pos)."},
+  {"MatchHistoryToken", fastlex_MatchHistoryToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
    "Is it a valid var name?"},

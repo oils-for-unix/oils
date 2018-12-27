@@ -267,6 +267,35 @@ class Prompt(object):
       return self.default_prompt
 
 
+class HistoryEvaluator(object):
+  """
+  TODO: We could move this to core/history or osh/history, and move InitReadline
+  out of completion.py
+  """
+
+  def __init__(self, readline_mod, parse_ctx):
+    self.readline_mod = readline_mod
+    self.parse_ctx = parse_ctx
+
+  def Eval(self, line):
+    """
+    TODO:
+
+    - lex with HISTORY_MATCHER
+    - if any Op / Num / Search tokens, use readline_mod to get that command
+    - maybe parse it
+      - !^ -- use trail.words[1]
+      - !$ -- use trail.words[-1]
+      - !* -- use the left most span of trail.words[1] until end of line
+    - !! is whole line
+
+    - expand it
+
+    Use this in InteractiveLineReader, and also RootCompleter so you can
+    complete like zsh.
+    """
+
+
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
   line_span = arena.GetLineSpan(span_id)
   line_id = line_span.line_id

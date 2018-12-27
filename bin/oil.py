@@ -45,6 +45,7 @@ else:
 
 _tlog('before imports')
 
+import atexit
 import errno
 
 from asdl import runtime
@@ -92,27 +93,6 @@ log = util.log
 _tlog('after imports')
 
 
-def _ShowVersion():
-  util.ShowAppVersion('Oil')
-
-
-def _InitDefaultCompletions(ex, complete_builtin, comp_state):
-  # register builtins and words
-  complete_builtin(['-E', '-A', 'command'])
-  # register path completion
-  # Add -o filenames?  Or should that be automatic?
-  complete_builtin(['-D', '-A', 'file'])
-
-  # TODO: Move this into demo/slow-completion.sh
-  if 1:
-    # Something for fun, to show off.  Also: test that you don't repeatedly hit
-    # the file system / network / coprocess.
-    A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-    A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
-    C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
-    comp_state.RegisterName('slowc', completion.Options([]), C1)
-
-
 def DefineCommonFlags(spec):
   """Common flags between OSH and Oil."""
   spec.ShortFlag('-c', args.Str, quit_parsing_flags=True)  # command string
@@ -146,6 +126,70 @@ OSH_SPEC.LongFlag('--runtime-mem-dump', args.Str)
 OSH_SPEC.LongFlag('--rcfile', args.Str)
 
 builtin.AddOptionsToArgSpec(OSH_SPEC)
+
+
+def _InitDefaultCompletions(ex, complete_builtin, comp_state):
+  # register builtins and words
+  complete_builtin(['-E', '-A', 'command'])
+  # register path completion
+  # Add -o filenames?  Or should that be automatic?
+  complete_builtin(['-D', '-A', 'file'])
+
+  # TODO: Move this into demo/slow-completion.sh
+  if 1:
+    # Something for fun, to show off.  Also: test that you don't repeatedly hit
+    # the file system / network / coprocess.
+    A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
+    A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
+    C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
+    comp_state.RegisterName('slowc', completion.Options([]), C1)
+
+
+def _InitReadline(readline_mod, root_comp, debug_f):
+  assert readline_mod
+
+  home_dir = posix.environ.get('HOME')
+  if home_dir is None:
+    home_dir = util.GetHomeDir()
+    if home_dir is None:
+      print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
+      return
+  # TODO: Put this in .config/oil/.
+  history_filename = os_path.join(home_dir, 'oil_history')
+
+  try:
+    readline_mod.read_history_file(history_filename)
+  except IOError:
+    pass
+
+  # The 'atexit' module is a small wrapper around sys.exitfunc.
+  atexit.register(readline_mod.write_history_file, history_filename)
+  readline_mod.parse_and_bind("tab: complete")
+
+  # How does this map to C?
+  # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
+
+  complete_cb = completion.ReadlineCallback(readline_mod, root_comp, debug_f)
+  readline_mod.set_completer(complete_cb)
+
+  # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
+  # "The basic list of characters that signal a break between words for the
+  # completer routine. The default value of this variable is the characters
+  # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
+
+  # This determines the boundaries you get back from get_begidx() and
+  # get_endidx() at completion time!
+  # We could be more conservative and set it to ' ', but then cases like
+  # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
+  #
+  # Note that this should not affect the OSH completion algorithm.  It only
+  # affects what we pass back to readline and what readline displays to the
+  # user!
+  readline_mod.set_completer_delims(util.READLINE_DELIMS)
+
+
+def _ShowVersion():
+  util.ShowAppVersion('Oil')
 
 
 def SourceStartupFile(rc_path, lang, parse_ctx, ex):
@@ -344,7 +388,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       progress_f = ui.StatusLine()
       root_comp = completion.RootCompleter(ev, comp_state, mem,
                                            comp_ctx, progress_f, debug_f)
-      completion.Init(readline, root_comp, debug_f)
+      _InitReadline(readline, root_comp, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_state)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)

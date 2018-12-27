@@ -357,6 +357,7 @@ def main(argv):
     TranslateSimpleLexer('MatchEchoToken', lex.ECHO_E_DEF)
     TranslateSimpleLexer('MatchGlobToken', lex.GLOB_DEF)
     TranslateSimpleLexer('MatchPS1Token', lex.PS1_DEF)
+    TranslateSimpleLexer('MatchHistoryToken', lex.HISTORY_DEF)
     TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
 

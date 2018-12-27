@@ -289,6 +289,15 @@ class OtherLexerTest(unittest.TestCase):
     print(list(lex.Tokens(r'foo')))
     print(list(lex.Tokens(r'\h \w \$')))
 
+  def testHistoryLexer(self):
+    lex = match.HISTORY_LEXER
+    print(list(lex.Tokens(r'echo hi')))
+    print(list(lex.Tokens(r'echo !! !* !^ !$')))
+    print(list(lex.Tokens(r'echo \!!')))
+    print(list(lex.Tokens(r'echo !3...')))
+    print(list(lex.Tokens(r'echo !-5...')))
+    print(list(lex.Tokens(r'echo !x/foo.py')))
+
 
 if __name__ == '__main__':
   unittest.main()

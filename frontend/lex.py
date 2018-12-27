@@ -186,21 +186,17 @@ LEXER_DEF[lex_mode_e.Comment] = [
   R(r'[^\n\0]*', Id.Ignored_Comment)
 ]
 
-_LIT_CHARS_RULE = R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars)
+# A whitelist for efficiency.  The shell language says that "anything else" is
+# a literal character.  In other words, a single $ \ or ! is a literal, not a
+# syntax error.  It's defined negatively, but let's define positive runs here.
+# TODO: Add + and @ here they are never special?  It's different for Oil
+# though.
+_LITERAL_WHITELIST_REGEX = r'[a-zA-Z0-9_/.-]+'
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: We could add anything 128 and above to this character class?  So
   # utf-8 characters don't get split?
-  _LIT_CHARS_RULE,
-
-  # NOTES:
-  # - These patterns are longer than KW_Bang, so matching them will take priority.
-  # - bash and zsh both allow history expansion within double quotes.  That is
-  # an extra step of "macro expansion" which we're avoiding in OSH.  We're
-  # doing it within the lexer, not applying yet another stage of "pre-lexing".
-  R('![!*^$]', Id.History_Op),
-  R('!-?[0-9]+', Id.History_Num),  # optional negates it
-  R('!\??[a-zA-Z0-9]+', Id.History_Search),  # optional ? means substring
+  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
   # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
   # want the next token after the tilde TildeLike token start with a /.
@@ -313,7 +309,7 @@ LEXER_DEF[lex_mode_e.Outer] = [
   # _UNQUOTED.
 
   # e.g. beginning of NAME=val, which will always be longer than
-  # _LIT_CHARS_RULE.
+  # _LITERAL_WHITELIST_REGEX.
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\[', Id.Lit_ArrayLhsOpen),
   R(r'\]\+?=', Id.Lit_ArrayLhsClose),
@@ -570,6 +566,26 @@ GLOB_DEF = [
   R(r'[^\0]', Id.Glob_OtherLiteral),  # anything else -- examine the char
 ]
 
+# History expansion.  We're doing this as "pre-lexing" since that's what bash
+# and zsh seem to do.  Example:
+#
+# $ foo=x
+# $ echo $
+# $ !!foo   # expands to echo $foo and prints x
+#
+# We can also reuse this in the RootCompleter to expand history interactively.
+
+HISTORY_DEF = [
+  # NOTE: We could have a different regex, with ' ' and such.
+  R(_LITERAL_WHITELIST_REGEX, Id.History_Other),
+  R('![!*^$]', Id.History_Op),
+  R('!-?[0-9]+', Id.History_Num),  # optional - negates it
+  # optional ? means substring
+  R('!\??' + _LITERAL_WHITELIST_REGEX, Id.History_Search),
+  R(r'\\[^\0]', Id.History_EscapedChar),  # \! disables history
+  R(r'[^\0]', Id.History_Other),  # anything else, including trailing backslash
+]
+
 
 #
 # Oil lexing.  TODO: Move to a different file?
@@ -633,7 +649,7 @@ LEXER_DEF[lex_mode_e.OilOuter] = (
     _OIL_KEYWORDS + _BACKSLASH + _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + 
     _OIL_VARS + [
 
-  _LIT_CHARS_RULE,
+  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
   C('#', Id.Lit_Pound),  # For comments
   R(r'[ \t\r]+', Id.WS_Space),

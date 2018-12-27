@@ -36,7 +36,6 @@ from frontend import reader
 
 from osh import braces
 from osh import builtin
-from osh import builtin_comp
 from osh import expr_eval
 from osh import split
 from osh import state
