@@ -113,22 +113,21 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   CompoundWord/WordPart.
   """
-  def __init__(self, mem, fd_state, funcs, comp_state, exec_opts, parse_ctx,
+  def __init__(self, mem, fd_state, funcs, builtins, exec_opts, parse_ctx,
                devtools):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
       funcs: dict of functions
-      comp_state: registry of completion hooks
+      builtins: dict of builtin callables (TODO: migrate everything this way)
       exec_opts: ExecOpts
       parse_ctx: for instantiating parsers
     """
     self.mem = mem
     self.fd_state = fd_state
     self.funcs = funcs
-    # Completion hooks, set by 'complete' builtin.
-    self.comp_state = comp_state
+    self.builtins = builtins
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
@@ -258,12 +257,17 @@ class Executor(object):
       return 0
 
   def _RunBuiltin(self, builtin_id, argv, span_id):
-    # NOTE: Builtins don't need to know their own name.
-    argv = argv[1:]
+    argv = argv[1:]  # Builtins don't need to know their own name.
 
-    # TODO: figure out a quicker dispatch mechanism.  Just make a table of
-    # builtins I guess.
-    if builtin_id == builtin_e.EXEC:
+    #
+    # TODO: Convert everything to this new style
+    #
+
+    builtin_func = self.builtins.get(builtin_id)
+    if builtin_func is not None:
+      status = builtin_func(argv)
+
+    elif builtin_id == builtin_e.EXEC:
       status = self._Exec(argv)  # may never return
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
@@ -326,18 +330,6 @@ class Executor(object):
     elif builtin_id == builtin_e.EVAL:
       status = self._Eval(argv, span_id)
 
-    elif builtin_id == builtin_e.COMPLETE:
-      status = builtin_comp.Complete(argv, self, self.comp_state)
-
-    elif builtin_id == builtin_e.COMPGEN:
-      status = builtin_comp.CompGen(argv, self)
-
-    elif builtin_id == builtin_e.COMPOPT:
-      status = builtin_comp.CompOpt(argv, self.comp_state)
-
-    elif builtin_id == builtin_e.COMPADJUST:
-      status = builtin_comp.CompAdjust(argv, self.mem)
-
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
 
@@ -364,6 +356,10 @@ class Executor(object):
       path = self.mem.GetVar('PATH')
       status = builtin.Type(argv, self.funcs, path)
 
+    elif builtin_id == builtin_e.HELP:
+      loader = util.GetResourceLoader()
+      status = builtin.Help(argv, loader)
+
     elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):
       # These are synonyms
       status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
@@ -373,10 +369,6 @@ class Executor(object):
 
     elif builtin_id == builtin_e.UNALIAS:
       status = builtin.UnAlias(argv, self.aliases)
-
-    elif builtin_id == builtin_e.HELP:
-      loader = util.GetResourceLoader()
-      status = builtin.Help(argv, loader)
 
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)

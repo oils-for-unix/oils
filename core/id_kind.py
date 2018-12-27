@@ -163,6 +163,8 @@ def AddKinds(spec):
                            # completion
   ])
 
+  spec.AddKind('History', ['Op', 'Num', 'Search'])
+
   spec.AddKind('Op', [
       'Newline',  # mostly equivalent to SEMI
       'Amp',      # &

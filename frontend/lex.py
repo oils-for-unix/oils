@@ -50,7 +50,7 @@ UPDATE: Two More Options
 ------------------------
 
 3. Change the \n at the end of every line to \0.  \0 becomes Id.Op_Newline, at
-least in lex_mode.OUTER.
+least in lex_mode.Outer.
 
 Advantage: This makes the regular expressions easier to generate, but allows
 you to read in the whole file at once instead of allocating lines.
@@ -186,12 +186,21 @@ LEXER_DEF[lex_mode_e.Comment] = [
   R(r'[^\n\0]*', Id.Ignored_Comment)
 ]
 
-_LIT_CHAR_WHITELIST = R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars)
+_LIT_CHARS_RULE = R(r'[a-zA-Z0-9_/.-]+', Id.Lit_Chars)
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: We could add anything 128 and above to this character class?  So
   # utf-8 characters don't get split?
-  _LIT_CHAR_WHITELIST,
+  _LIT_CHARS_RULE,
+
+  # NOTES:
+  # - These patterns are longer than KW_Bang, so matching them will take priority.
+  # - bash and zsh both allow history expansion within double quotes.  That is
+  # an extra step of "macro expansion" which we're avoiding in OSH.  We're
+  # doing it within the lexer, not applying yet another stage of "pre-lexing".
+  R('![!*^$]', Id.History_Op),
+  R('!-?[0-9]+', Id.History_Num),  # optional negates it
+  R('!\??[a-zA-Z0-9]+', Id.History_Search),  # optional ? means substring
 
   # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
   # want the next token after the tilde TildeLike token start with a /.
@@ -235,7 +244,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]
 
-# In OUTER and DBRACKET states.
+# In Outer and DBracket states.
 _EXTGLOB_BEGIN = [
   C('@(', Id.ExtGlob_At),
   C('*(', Id.ExtGlob_Star),
@@ -295,23 +304,23 @@ def IsKeyword(name):
 
 
 
-# These two can must be recognized in the OUTER state, but can't nested within
+# These two can must be recognized in the Outer state, but can't nested within
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
 LEXER_DEF[lex_mode_e.Outer] = [
-  # These four are not allowed within [[, so they are in OUTER but not
+  # These four are not allowed within [[, so they are in Outer but not
   # _UNQUOTED.
 
   # e.g. beginning of NAME=val, which will always be longer than
-  # _LIT_CHAR_WHITELIST.
+  # _LIT_CHARS_RULE.
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\[', Id.Lit_ArrayLhsOpen),
   R(r'\]\+?=', Id.Lit_ArrayLhsClose),
   C('((', Id.Op_DLeftParen),
 ] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
-# DBRACKET: can be like OUTER, except:
+# DBRACKET: can be like Outer, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
 # - Id.Op_DLeftParen can't be nested inside.
 LEXER_DEF[lex_mode_e.DBracket] = [
@@ -515,7 +524,7 @@ LEXER_DEF[lex_mode_e.VS_2] = \
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
 LEXER_DEF[lex_mode_e.Arith] = \
     _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
-  # newline is ignored space, unlike in OUTER
+  # newline is ignored space, unlike in Outer
   R(r'[ \t\r\n]+', Id.Ignored_Space),
 
   # Examples of arith constants:
@@ -624,7 +633,7 @@ LEXER_DEF[lex_mode_e.OilOuter] = (
     _OIL_KEYWORDS + _BACKSLASH + _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + 
     _OIL_VARS + [
 
-  _LIT_CHAR_WHITELIST,
+  _LIT_CHARS_RULE,
 
   C('#', Id.Lit_Pound),  # For comments
   R(r'[ \t\r]+', Id.WS_Space),

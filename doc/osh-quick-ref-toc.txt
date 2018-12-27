@@ -86,7 +86,7 @@ OTHER SHELL SUBLANGUAGES
                   extglob       @(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
   [Brace Expand]  braces        {alice,bob}@example.com
-X [History]       histsub       !$  !!  ^foo^bar
+  [History]       histsub       !$  !!  !n
 
 BUILTIN COMMANDS
   [I/O]           read   echo 
@@ -102,7 +102,7 @@ BUILTIN COMMANDS
   [External]      test [   X printf   getopts   X kill
   [Introspection] help   X hash   type   X caller
   [Word Lookup]   command   X builtin
-  [Interactive]   alias   unalias   X bind   X history   X fc
+  [Interactive]   alias   unalias   history   X fc   X bind
 X [Unsupported]   enable
 
 OIL BUILTINS

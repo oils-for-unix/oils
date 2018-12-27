@@ -78,6 +78,7 @@ from tools import osh2oil
 from tools import readlink
 
 value_e = runtime_asdl.value_e
+builtin_e = runtime_asdl.builtin_e
 
 # Set in Modules/main.c.
 HAVE_READLINE = posix.environ.get('_HAVE_READLINE') != ''
@@ -95,12 +96,12 @@ def _ShowVersion():
   util.ShowAppVersion('Oil')
 
 
-def _InitDefaultCompletions(ex, comp_state):
+def _InitDefaultCompletions(ex, complete_builtin, comp_state):
   # register builtins and words
-  builtin_comp.Complete(['-E', '-A', 'command'], ex, comp_state)
+  complete_builtin(['-E', '-A', 'command'])
   # register path completion
   # Add -o filenames?  Or should that be automatic?
-  builtin_comp.Complete(['-D', '-A', 'file'], ex, comp_state)
+  complete_builtin(['-D', '-A', 'file'])
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:
@@ -230,8 +231,6 @@ def ShellMain(lang, argv0, argv, login_shell):
                   has_main=has_main)
   funcs = {}
 
-  comp_state = completion.State()
-
   fd_state = process.FdState()
   exec_opts = state.ExecOpts(mem, readline)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
@@ -259,8 +258,23 @@ def ShellMain(lang, argv0, argv, login_shell):
     trace_f = util.DebugFile(sys.stderr)
   devtools = dev.DevTools(dumper, debug_f, trace_f)
 
-  ex = cmd_exec.Executor(mem, fd_state, funcs, comp_state, exec_opts,
+  # TODO: Separate comp_state and comp_lookup.
+  comp_state = completion.State()
+
+  builtins = {  # Lookup
+      builtin_e.HISTORY: builtin.History(readline),
+
+      builtin_e.COMPOPT: builtin_comp.CompOpt(comp_state),
+      builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
+  }
+  ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, devtools)
+
+  # Add some builtins that depend on the executor!
+  complete_builtin = builtin_comp.Complete(ex, comp_state)  # used later
+  builtins[builtin_e.COMPLETE] = complete_builtin
+  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex)
+
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source
     # it.
@@ -324,14 +338,14 @@ def ShellMain(lang, argv0, argv, login_shell):
   if exec_opts.interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
-    if HAVE_READLINE:
+    if readline:
       splitter = split.SplitContext(mem)  # TODO: share with executor.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
       progress_f = ui.StatusLine()
       root_comp = completion.RootCompleter(ev, comp_state, mem,
                                            comp_ctx, progress_f, debug_f)
       completion.Init(readline, root_comp, debug_f)
-      _InitDefaultCompletions(ex, comp_state)
+      _InitDefaultCompletions(ex, complete_builtin, comp_state)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

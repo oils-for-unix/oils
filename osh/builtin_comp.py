@@ -230,38 +230,43 @@ COMPLETE_SPEC.ShortFlag('-D',
     help='Define the compspec that applies when nothing else matches')
 
 
-def Complete(argv, ex, comp_state):
+class Complete(object):
   """complete builtin - register a completion function.
 
-  NOTE: It's a member of Executor because it creates a ShellFuncAction, which
+  NOTE: It's has an Executor because it creates a ShellFuncAction, which
   needs an Executor.
   """
-  arg_r = args.Reader(argv)
-  arg = COMPLETE_SPEC.Parse(arg_r)
-  # TODO: process arg.opt_changes
-  #log('arg %s', arg)
+  def __init__(self, ex, comp_state):
+    self.ex = ex
+    self.comp_state = comp_state
 
-  commands = arg_r.Rest()
+  def __call__(self, argv):
+    arg_r = args.Reader(argv)
+    arg = COMPLETE_SPEC.Parse(arg_r)
+    # TODO: process arg.opt_changes
+    #log('arg %s', arg)
 
-  if arg.D:
-    commands.append('__fallback')  # if the command doesn't match anything
-  if arg.E:
-    commands.append('__first')  # empty line
+    commands = arg_r.Rest()
 
-  if not commands:
-    comp_state.PrintSpecs()
+    if arg.D:
+      commands.append('__fallback')  # if the command doesn't match anything
+    if arg.E:
+      commands.append('__first')  # empty line
+
+    if not commands:
+      self.comp_state.PrintSpecs()
+      return 0
+
+    comp_opts = completion.Options(arg.opt_changes)
+    user_spec = _BuildUserSpec(argv, arg, comp_opts, self.ex)
+    for command in commands:
+      self.comp_state.RegisterName(command, comp_opts, user_spec)
+
+    patterns = []
+    for pat in patterns:
+      self.comp_state.RegisterGlob(pat, comp_opts, user_spec)
+
     return 0
-
-  comp_opts = completion.Options(arg.opt_changes)
-  user_spec = _BuildUserSpec(argv, arg, comp_opts, ex)
-  for command in commands:
-    comp_state.RegisterName(command, comp_opts, user_spec)
-
-  patterns = []
-  for pat in patterns:
-    comp_state.RegisterGlob(pat, comp_opts, user_spec)
-
-  return 0
 
 
 COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A
@@ -272,61 +277,72 @@ _DefineOptions(COMPGEN_SPEC)
 _DefineActions(COMPGEN_SPEC)
 
 
-def CompGen(argv, ex):
+
+class CompGen(object):
   """Print completions on stdout."""
 
-  arg_r = args.Reader(argv)
-  arg = COMPGEN_SPEC.Parse(arg_r)
+  def __init__(self, ex):
+    self.ex = ex
 
-  if arg_r.AtEnd():
-    to_complete = ''
-  else:
-    to_complete = arg_r.Peek()
-    arg_r.Next()
-    # bash allows extra arguments here.
-    #if not arg_r.AtEnd():
-    #  raise args.UsageError('Extra arguments')
+  def __call__(self, argv):
+    arg_r = args.Reader(argv)
+    arg = COMPGEN_SPEC.Parse(arg_r)
 
-  matched = False
+    if arg_r.AtEnd():
+      to_complete = ''
+    else:
+      to_complete = arg_r.Peek()
+      arg_r.Next()
+      # bash allows extra arguments here.
+      #if not arg_r.AtEnd():
+      #  raise args.UsageError('Extra arguments')
 
-  comp_opts = completion.Options(arg.opt_changes)
-  user_spec = _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=False)
+    matched = False
 
-  # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
-  # and also showing ALL COMPREPLY reuslts, not just the ones that start with
-  # the word to complete.
-  matched = False 
-  comp = completion.Api()
-  comp.Update(first='compgen', to_complete=to_complete, prev='', index=-1)
-  for m, _ in user_spec.Matches(comp):
-    matched = True
-    print(m)
+    comp_opts = completion.Options(arg.opt_changes)
+    user_spec = _BuildUserSpec(argv, arg, comp_opts, self.ex, respect_x=False)
 
-  # TODO:
-  # - need to dedupe results.
+    # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
+    # and also showing ALL COMPREPLY reuslts, not just the ones that start with
+    # the word to complete.
+    matched = False 
+    comp = completion.Api()
+    comp.Update(first='compgen', to_complete=to_complete, prev='', index=-1)
+    for m, _ in user_spec.Matches(comp):
+      matched = True
+      print(m)
 
-  return 0 if matched else 1
+    # TODO:
+    # - need to dedupe results.
+
+    return 0 if matched else 1
 
 
 COMPOPT_SPEC = args.FlagsAndOptions()  # for -o
 _DefineOptions(COMPOPT_SPEC)
 
 
-def CompOpt(argv, comp_state):
-  arg_r = args.Reader(argv)
-  arg = COMPOPT_SPEC.Parse(arg_r)
+class CompOpt(object):
+  """Adjust options inside user-defined completion functions."""
 
-  if not comp_state.currently_completing:
-    # bash checks this.
-    util.error('compopt: not currently executing a completion function')
-    return 1
+  def __init__(self, comp_state):
+    self.comp_state = comp_state
 
-  for name, b in arg.opt_changes:
-    #log('setting %s = %s', name, b)
-    comp_state.current_opts.Set(name, b)
-  #log('compopt: %s', arg)
-  #log('compopt %s', comp_opts)
-  return 0
+  def __call__(self, argv):
+    arg_r = args.Reader(argv)
+    arg = COMPOPT_SPEC.Parse(arg_r)
+
+    if not self.comp_state.currently_completing:
+      # bash checks this.
+      util.error('compopt: not currently executing a completion function')
+      return 1
+
+    for name, b in arg.opt_changes:
+      #log('setting %s = %s', name, b)
+      self.comp_state.current_opts.Set(name, b)
+    #log('compopt: %s', arg)
+    #log('compopt %s', comp_opts)
+    return 0
 
 
 INIT_COMPLETION_SPEC = args.FlagsAndOptions()
@@ -337,7 +353,7 @@ INIT_COMPLETION_SPEC.ShortFlag('-s',
     help='Treat --foo=bar and --foo bar the same way.')
 
 
-def CompAdjust(argv, mem):
+class CompAdjust(object):
   """
   Uses COMP_ARGV and flags produce the 'words' array.  Also sets $cur, $prev,
   $cword, and $split.
@@ -346,61 +362,65 @@ def CompAdjust(argv, mem):
   bash-completion does a hack to undo or "reassemble" words after erroneous
   splitting.
   """
-  arg_r = args.Reader(argv)
-  arg = INIT_COMPLETION_SPEC.Parse(arg_r)
-  var_names = arg_r.Rest()  # Output variables to set
-  for name in var_names:
-    # Ironically we could complete these
-    if name not in ['cur', 'prev', 'words', 'cword']:
-      raise args.UsageError('Invalid output variable name %r' % name)
-  #print(arg)
+  def __init__(self, mem):
+    self.mem = mem
 
-  # TODO: How does the user test a completion function programmatically?  Set
-  # COMP_ARGV?
-  val = mem.GetVar('COMP_ARGV')
-  if val.tag != value_e.StrArray:
-    raise args.UsageError("COMP_ARGV should be an array")
-  comp_argv = val.strs
+  def __call__(self, argv):
+    arg_r = args.Reader(argv)
+    arg = INIT_COMPLETION_SPEC.Parse(arg_r)
+    var_names = arg_r.Rest()  # Output variables to set
+    for name in var_names:
+      # Ironically we could complete these
+      if name not in ['cur', 'prev', 'words', 'cword']:
+        raise args.UsageError('Invalid output variable name %r' % name)
+    #print(arg)
 
-  # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
-  # "outside" of words.
-  break_chars = [':', '=']
-  if arg.s:  # implied
-    break_chars.remove('=')
-  # NOTE: The syntax is -n := and not -n : -n =.
-  omit_chars = arg.n or ''
-  for c in omit_chars:
-    if c in break_chars:
-      break_chars.remove(c)
+    # TODO: How does the user test a completion function programmatically?  Set
+    # COMP_ARGV?
+    val = self.mem.GetVar('COMP_ARGV')
+    if val.tag != value_e.StrArray:
+      raise args.UsageError("COMP_ARGV should be an array")
+    comp_argv = val.strs
 
-  # argv adjusted according to 'break_chars'.
-  adjusted_argv = []
-  for a in comp_argv:
-    completion.AdjustArg(a, break_chars, adjusted_argv)
+    # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
+    # "outside" of words.
+    break_chars = [':', '=']
+    if arg.s:  # implied
+      break_chars.remove('=')
+    # NOTE: The syntax is -n := and not -n : -n =.
+    omit_chars = arg.n or ''
+    for c in omit_chars:
+      if c in break_chars:
+        break_chars.remove(c)
 
-  if 'words' in var_names:
-    state.SetArrayDynamic(mem, 'words', adjusted_argv)
+    # argv adjusted according to 'break_chars'.
+    adjusted_argv = []
+    for a in comp_argv:
+      completion.AdjustArg(a, break_chars, adjusted_argv)
 
-  n = len(adjusted_argv)
-  cur = adjusted_argv[-1]
-  prev = '' if n < 2 else adjusted_argv[-2]
+    if 'words' in var_names:
+      state.SetArrayDynamic(self.mem, 'words', adjusted_argv)
 
-  if arg.s:
-    if cur.startswith('--') and '=' in cur:  # Split into flag name and value
-      prev, cur = cur.split('=', 1)
-      split = 'true'
-    else:
-      split = 'false'
-    # Do NOT set 'split' without -s.  Caller might not have declared it.
-    # Also does not respect var_names, because we don't need it.
-    state.SetStringDynamic(mem, 'split', split)
+    n = len(adjusted_argv)
+    cur = adjusted_argv[-1]
+    prev = '' if n < 2 else adjusted_argv[-2]
 
-  if 'cur' in var_names:
-    state.SetStringDynamic(mem, 'cur', cur)
-  if 'prev' in var_names:
-    state.SetStringDynamic(mem, 'prev', prev)
-  if 'cword' in var_names:
-    # Same weird invariant after adjustment
-    state.SetStringDynamic(mem, 'cword', str(n-1))
+    if arg.s:
+      if cur.startswith('--') and '=' in cur:  # Split into flag name and value
+        prev, cur = cur.split('=', 1)
+        split = 'true'
+      else:
+        split = 'false'
+      # Do NOT set 'split' without -s.  Caller might not have declared it.
+      # Also does not respect var_names, because we don't need it.
+      state.SetStringDynamic(self.mem, 'split', split)
 
-  return 0
+    if 'cur' in var_names:
+      state.SetStringDynamic(self.mem, 'cur', cur)
+    if 'prev' in var_names:
+      state.SetStringDynamic(self.mem, 'prev', prev)
+    if 'cword' in var_names:
+      # Same weird invariant after adjustment
+      state.SetStringDynamic(self.mem, 'cword', str(n-1))
+
+    return 0

@@ -384,12 +384,12 @@ class RootCompeterTest(unittest.TestCase):
 
   def testRunsUserDefinedFunctions(self):
     # This is here because it's hard to test readline with the spec tests.
+    comp_state = completion.State()
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    ex = test_lib.EvalCode(code_str)
-    print(ex.comp_state)
+    ex = test_lib.EvalCode(code_str, comp_state=comp_state)
 
-    r = _MakeRootCompleter(comp_state=ex.comp_state)
+    r = _MakeRootCompleter(comp_state=comp_state)
 
     # By default, we get a space on the end.
     m = list(r.Matches(MockApi('mywords t')))
@@ -624,10 +624,13 @@ class InitCompletionTest(unittest.TestCase):
       state.SetGlobalString(mem, 'ORACLE_cword', oracle_cword)
       state.SetGlobalString(mem, 'ORACLE_split', oracle_split)
 
-      ex = test_lib.EvalCode(init_code, arena=arena, mem=mem)
+      comp_state = completion.State()
+      ex = test_lib.EvalCode(init_code, comp_state=comp_state, arena=arena,
+                             mem=mem)
+
       #print(ex.comp_state)
 
-      r = _MakeRootCompleter(comp_state=ex.comp_state)
+      r = _MakeRootCompleter(comp_state=comp_state)
       #print(r)
       comp = MockApi(code_str[:-1])
       m = list(r.Matches(comp))

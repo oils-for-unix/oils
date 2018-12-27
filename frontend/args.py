@@ -457,12 +457,15 @@ class BuiltinFlags(object):
     self.attr_names = {}
 
   def PrintHelp(self, f):
-    print('[0]')
+    if self.arity0:
+      print('  arity 0:')
     for ch in self.arity0:
-      print(ch)
-    print('[1]')
+      print('    -%s' % ch)
+
+    if self.arity1:
+      print('  arity 1:')
     for ch in self.arity1:
-      print(ch)
+      print('    -%s' % ch)
 
   def ShortFlag(self, short_name, arg_type=None, help=None):
     """

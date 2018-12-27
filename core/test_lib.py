@@ -19,15 +19,19 @@ from core import dev
 from core import main_loop
 from core import process
 from core import util
-from core.meta import Id
+from core.meta import Id, runtime_asdl
 from frontend import lexer
 from frontend import match
 from frontend import parse_lib
 from frontend import reader
+from osh import builtin
+from osh import builtin_comp
 from osh import cmd_exec
 from osh import split
 from osh import state
 from osh import word_eval
+
+builtin_e = runtime_asdl.builtin_e
 
 
 def PrintableString(s):
@@ -112,13 +116,22 @@ def MakeTestEvaluator():
   return ev
 
 
-def InitExecutor(arena=None, mem=None):
+def InitExecutor(comp_state=None, arena=None, mem=None):
   arena = arena or MakeArena('<InitExecutor>')
 
   mem = mem or state.Mem('', [], {}, arena)
   fd_state = process.FdState()
   funcs = {}
-  comp_state = completion.State()
+
+  comp_state = comp_state or completion.State()
+  readline = None  # simulate not having it
+  builtins = {  # Lookup
+      builtin_e.HISTORY: builtin.History(readline),
+
+      builtin_e.COMPOPT: builtin_comp.CompOpt(comp_state),
+      builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
+  }
+
   # For the tests, we do not use 'readline'.
   exec_opts = state.ExecOpts(mem, None)
   parse_ctx = parse_lib.ParseContext(arena, {})
@@ -126,19 +139,28 @@ def InitExecutor(arena=None, mem=None):
   debug_f = util.DebugFile(sys.stderr)
   devtools = dev.DevTools(dev.CrashDumper(''), debug_f, debug_f)
 
-  return cmd_exec.Executor(mem, fd_state, funcs, comp_state, exec_opts,
-                           parse_ctx, devtools)
+  ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
+                         parse_ctx, devtools)
+
+  # Add some builtins that depend on the executor!
+  complete_builtin = builtin_comp.Complete(ex, comp_state)  # used later
+  builtins[builtin_e.COMPLETE] = complete_builtin
+  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex)
+
+  return ex
 
 
-def EvalCode(code_str, arena=None, mem=None):
+def EvalCode(code_str, comp_state=None, arena=None, mem=None):
   """
   This allows unit tests to write code strings and have functions appear in the
   executor.
   """
+  comp_state = comp_state or completion.State()
   arena = arena or MakeArena('<test_lib>')
-  c_parser = InitCommandParser(code_str, arena=arena)
   mem = mem or state.Mem('', [], {}, arena)
-  ex = InitExecutor(arena, mem=mem)
+
+  c_parser = InitCommandParser(code_str, arena=arena)
+  ex = InitExecutor(comp_state=comp_state, arena=arena, mem=mem)
   # Parse and execute!
   main_loop.Batch(ex, c_parser, arena)
   return ex

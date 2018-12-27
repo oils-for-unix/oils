@@ -62,8 +62,8 @@ def PrintRegex(pat):
   print('\t\t]')
 
 
-# ^ means negation, - means range
-CHAR_CLASS_META = ['\\', '^', '-', ']']
+# - means range.  Note that re2c gives an error we uselessly escape \^.
+CHAR_CLASS_META = ['\\', '-', ']']
 CHAR_CLASS_META_CODES = [ord(c) for c in CHAR_CLASS_META]
 
 # re2c literals are inside double quotes, so we don't need to do anything with

@@ -115,6 +115,8 @@ _NORMAL_BUILTINS = {
 
     "command": builtin_e.COMMAND,
     "type": builtin_e.TYPE,
+    "help": builtin_e.HELP,
+    "history": builtin_e.HISTORY,
 
     "declare": builtin_e.DECLARE,
     "typeset": builtin_e.TYPESET,
@@ -122,18 +124,20 @@ _NORMAL_BUILTINS = {
     "alias": builtin_e.ALIAS,
     "unalias": builtin_e.UNALIAS,
 
-    "help": builtin_e.HELP,
-
     # OSH only
     "repr": builtin_e.REPR,
 }
 
+# This is used by completion.
 BUILTIN_NAMES = _SPECIAL_BUILTINS.keys() + _NORMAL_BUILTINS.keys()
 
 
 class BuiltinDef(object):
   """
-  NOTE: Used by completion.py.
+  NOTE: This isn't used anywhere!  We're registering nothing.
+
+  We want to complete the flags to builtins.  So this is a mapping from name
+  to arg spec.  There might not be any flags.
   """
   def __init__(self):
     # Is this what we want?
@@ -146,12 +150,9 @@ class BuiltinDef(object):
     self.arg_specs = {}
     self.to_complete = sorted(names)
 
-  def GetNamesToComplete(self):
-    """For completion of builtin names."""
-    return self.to_complete
-
   def Register(self, name, help_topic=None):
-    help_topic = help_topic or name
+    # The help topics are in the quick ref.  TODO: We should match them up?
+    #help_topic = help_topic or name
     arg_spec = args.BuiltinFlags()
     self.arg_specs[name] = arg_spec
     return arg_spec
@@ -1462,6 +1463,38 @@ def Help(argv, loader):
     sys.stdout.write(line)
   f.close()
   return 0
+
+
+class History(object):
+  """Show history."""
+
+  def __init__(self, readline_mod):
+    self.readline_mod = readline_mod
+
+  def __call__(self, readline_mod):
+    # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
+    # It silently exits zero.
+    # zsh -c 'history' produces an error.
+
+    readline_mod = self.readline_mod
+    if not readline_mod:
+      raise args.UsageError("OSH wasn't compiled with the readline module.")
+
+    log('config len = %d', readline_mod.get_history_length())
+
+    # Returns 0 items in non-interactive mode?
+    num_items = readline_mod.get_current_history_length()
+    log('len = %d', num_items)
+
+    # TODO:
+    # - Exclude lines that don't parse from the history!  bash and zsh don't do
+    # that.
+    # - Consolidate multiline commands.
+
+    for i in xrange(1, num_items+1):  # 1-based index
+      item = readline_mod.get_history_item(i)
+      print('%5d  %s' % (i, item))
+    return 0
 
 
 def Repr(argv, mem):

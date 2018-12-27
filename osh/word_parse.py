@@ -883,8 +883,8 @@ class WordParser(object):
 
       # Keywords like "for" are treated like literals
       elif self.token_kind in (
-          Kind.Lit, Kind.KW, Kind.Assign, Kind.ControlFlow, Kind.BoolUnary,
-          Kind.BoolBinary):
+          Kind.Lit, Kind.History, Kind.KW, Kind.Assign, Kind.ControlFlow,
+          Kind.BoolUnary, Kind.BoolBinary):
         if self.token_type == Id.Lit_EscapedChar:
           part = word_part.EscapedLiteralPart(self.cur_token)
         else:
@@ -1034,8 +1034,8 @@ class WordParser(object):
       return None, True  # tell Read() to try again
 
     elif self.token_kind in (
-        Kind.VSub, Kind.Lit, Kind.Left, Kind.KW, Kind.Assign, Kind.ControlFlow,
-        Kind.BoolUnary, Kind.BoolBinary, Kind.ExtGlob):
+        Kind.VSub, Kind.Lit, Kind.History, Kind.Left, Kind.KW, Kind.Assign,
+        Kind.ControlFlow, Kind.BoolUnary, Kind.BoolBinary, Kind.ExtGlob):
       # We're beginning a word.  If we see Id.Lit_Pound, change to
       # lex_mode_e.Comment and read until end of line.
       if self.token_type == Id.Lit_Pound:

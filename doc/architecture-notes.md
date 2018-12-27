@@ -184,3 +184,13 @@ The OSH parser is better than other shell parsers:
 
 Bad: it's a slower!  This needs to be fixed.
 
+Where the parser is reused:
+
+- The `eval` builtin.  (I'm sure bash does this too.)
+- Expanding aliases.
+- Parsing the prompt string `$PS1`, which may contain substitutions, and hence
+  arbitrary code.  Also `$PS{2,4}`.
+- For interactive completion.  (bash does NOT do this).
+- Upcoming: for history expansion, e.g. `!$` to pick off the last word.  (bash
+  does NOT do this.)
+
