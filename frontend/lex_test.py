@@ -296,7 +296,7 @@ class OtherLexerTest(unittest.TestCase):
     print(list(lex.Tokens(r'echo \!!')))
     print(list(lex.Tokens(r'echo !3...')))
     print(list(lex.Tokens(r'echo !-5...')))
-    print(list(lex.Tokens(r'echo !x/foo.py')))
+    print(list(lex.Tokens(r'echo !x/foo.py bar')))
 
 
 if __name__ == '__main__':

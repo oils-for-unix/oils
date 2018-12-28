@@ -163,7 +163,7 @@ def AddKinds(spec):
                            # completion
   ])
 
-  spec.AddKind('History', ['Other', 'Op', 'Num', 'Search', 'EscapedChar'])
+  spec.AddKind('History', ['Op', 'Num', 'Search', 'Other'])
 
   spec.AddKind('Op', [
       'Newline',  # mostly equivalent to SEMI

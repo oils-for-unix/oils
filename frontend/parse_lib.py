@@ -18,7 +18,7 @@ from oil_lang import cmd_parse as oil_cmd_parse
 lex_mode_e = types_asdl.lex_mode_e
 
 
-class _BaseCompletionTrail(object):
+class _BaseTrail(object):
 
   def __init__(self):
     # word from a partially completed command.
@@ -58,11 +58,11 @@ class _BaseCompletionTrail(object):
     debug_f.log('')
 
   def __repr__(self):
-    return '<CompletionTrail %s %s %s>' % (
+    return '<Trail %s %s %s>' % (
         self.words, self.redirects, self.tokens)
 
 
-class _NullCompletionTrail(_BaseCompletionTrail):
+class _NullTrail(_BaseTrail):
   """Used when we're not completing."""
 
   def Clear(self):
@@ -75,7 +75,7 @@ class _NullCompletionTrail(_BaseCompletionTrail):
     pass
 
 
-class CompletionTrail(_BaseCompletionTrail):
+class Trail(_BaseTrail):
   """Info left by the parser to help us complete shell syntax and commands."""
 
   def Clear(self):
@@ -102,7 +102,7 @@ class ParseContext(object):
     self.arena = arena
     self.aliases = aliases
     # Completion state lives here since it may span multiple parsers.
-    self.trail = trail or _NullCompletionTrail()
+    self.trail = trail or _NullTrail()
 
   def _MakeLexer(self, line_reader, arena=None):
     """Helper function.
@@ -112,11 +112,13 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena=arena or self.arena)
     return lexer.Lexer(line_lexer, line_reader)
 
-  def MakeOshParser(self, line_reader):
+  def MakeOshParser(self, line_reader, emit_comp_dummy=False):
     lx = self._MakeLexer(line_reader)
+    if emit_comp_dummy:
+      lx.EmitCompDummy()  # A special token before EOF!
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
-    return w_parser, c_parser
+    return c_parser
 
   def MakeOilParser(self, line_reader):
     # Same lexer as Oil?  It just doesn't start in the OUTER state?
@@ -159,17 +161,6 @@ class ParseContext(object):
     line_reader = reader.StringLineReader(code_str, arena)
     lx = self._MakeLexer(line_reader, arena=arena)
     return word_parse.WordParser(self, lx, line_reader)
-
-  # NOTE: We could reuse w_parser with ResetInputObjects() each time.  That's
-  # what the REPL does.
-  def MakeParserForCompletion(self, code_str):
-    """Parser for partial lines."""
-    line_reader = reader.StringLineReader(code_str, self.arena)
-    lx = self._MakeLexer(line_reader)
-    lx.EmitCompDummy()  # A special token before EOF!
-    w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
-    return c_parser
 
   # Another parser instantiation:
   # - For Array Literal in word_parse.py WordParser:

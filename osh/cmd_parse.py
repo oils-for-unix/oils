@@ -644,7 +644,7 @@ class CommandParser(object):
       self.arena.PopSource()
 
     line_reader = reader.VirtualLineReader(line_info, self.arena)
-    _, cp = self.parse_ctx.MakeOshParser(line_reader)
+    cp = self.parse_ctx.MakeOshParser(line_reader)
 
     try:
       node = cp.ParseCommand(cur_aliases=cur_aliases)

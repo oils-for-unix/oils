@@ -34,7 +34,11 @@ def Interactive(opts, ex, c_parser, arena):
     c_parser.Reset()
     c_parser.ResetInputObjects()
 
-    w = c_parser.Peek()
+    try:
+      w = c_parser.Peek()
+    except util.HistoryError as e:  # e.g. expansion failed
+      print(e.UserErrorString())
+      continue
 
     c_id = word.CommandId(w)
     if c_id == Id.Op_Newline:  # print PS1 again, not PS2
@@ -44,6 +48,13 @@ def Interactive(opts, ex, c_parser, arena):
 
     try:
       node = c_parser.ParseLogicalLine()
+    except util.HistoryError as e:  # e.g. expansion failed
+      # Where this happens:
+      # for i in 1 2 3; do
+      #   !invalid
+      # done
+      print(e.UserErrorString())
+      continue
     except util.ParseError as e:
       ui.PrettyPrintError(e, arena)
       # NOTE: This should set the status interactively!  Bash does this.

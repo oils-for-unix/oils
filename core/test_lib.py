@@ -100,8 +100,7 @@ def MakeArena(source_name):
 
 def InitLexer(s, arena):
   """For tests only."""
-  match_func = match.MATCHER
-  line_lexer = lexer.LineLexer(match_func, '', arena)
+  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   line_reader = reader.StringLineReader(s, arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx
@@ -170,15 +169,16 @@ def InitWordParser(code_str, arena=None):
   arena = arena or MakeArena('<test_lib>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, _ = InitLexer(code_str, arena)
-  w_parser, c_parser = parse_ctx.MakeOshParser(line_reader)
-  return w_parser
+  c_parser = parse_ctx.MakeOshParser(line_reader)
+  # Hack
+  return c_parser.w_parser
 
 
 def InitCommandParser(code_str, arena=None):
   arena = arena or MakeArena('<test_lib>')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, _ = InitLexer(code_str, arena)
-  w_parser, c_parser = parse_ctx.MakeOshParser(line_reader)
+  c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser
 
 

@@ -212,7 +212,7 @@ def SourceStartupFile(rc_path, lang, parse_ctx, ex):
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
       if lang == 'osh':
-        _, rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
+        rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
       else:
         rc_c_parser = parse_ctx.MakeOilParser(rc_line_reader)
       try:
@@ -282,11 +282,16 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   parse_ctx = parse_lib.ParseContext(arena, aliases)  # For main_loop
 
-  # Two ParseContext instances SHARE aliases.  TODO: Complete aliases.
+  # Three ParseContext instances SHARE aliases.  TODO: Complete aliases.
   comp_arena = pool.NewArena()
   comp_arena.PushSource('<completion>')
-  trail = parse_lib.CompletionTrail()
-  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail)
+  trail1 = parse_lib.Trail()
+  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail1)
+
+  hist_arena = pool.NewArena()
+  hist_arena.PushSource('<history>')
+  trail2 = parse_lib.Trail()  # TODO: Rename
+  hist_ctx = parse_lib.ParseContext(hist_arena, aliases, trail=trail2)
 
   if opts.debug_file:
     debug_f = util.DebugFile(fd_state.Open(opts.debug_file, mode='w'))
@@ -325,8 +330,12 @@ def ShellMain(lang, argv0, argv, login_shell):
     ex = oil_cmd_exec.OilExecutor(ex)
 
   # Prompt rendering is needed in non-interactive shells for @P.
-  prompt = ui.Prompt(lang, arena, parse_ctx, ex, mem)
-  ui.PROMPT = prompt
+  prompt_ev = ui.Prompt(lang, arena, parse_ctx, ex, mem)
+  # TODO: create eval_ctx?  Maybe instead of devtools.
+  ui.PROMPT = prompt_ev
+
+  # History evaluation is a no-op if readline is None.
+  hist_ev = reader.HistoryEvaluator(readline, hist_ctx, debug_f)
 
   # Calculate ~/.config/oil/oshrc or oilrc
   # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
@@ -346,7 +355,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     arena.PushSource('<stdin -i>')
     # interactive shell only
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
-    line_reader = reader.InteractiveLineReader(arena, prompt)
+    line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev)
     exec_opts.interactive = True
   else:
     try:
@@ -356,7 +365,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         arena.PushSource('<interactive>')
         # interactive shell only
         SourceStartupFile(rc_path, lang, parse_ctx, ex)
-        line_reader = reader.InteractiveLineReader(arena, prompt)
+        line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev)
         exec_opts.interactive = True
       else:
         arena.PushSource('<stdin>')
@@ -375,7 +384,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
   if lang == 'osh':
-    _, c_parser = parse_ctx.MakeOshParser(line_reader)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
   else:
     c_parser = parse_ctx.MakeOilParser(line_reader)
 

@@ -40,6 +40,7 @@ import time
 from core import util
 from core.meta import (
     Id, REDIR_ARG_TYPES, syntax_asdl, runtime_asdl, types_asdl)
+from frontend import reader
 from pylib import os_path
 from osh import word
 from osh import state
@@ -597,7 +598,8 @@ class RootCompleter(object):
     arena = self.parse_ctx.arena  # Used by inner functions
 
     self.parse_ctx.trail.Clear()
-    c_parser = self.parse_ctx.MakeParserForCompletion(comp.line)
+    line_reader = reader.StringLineReader(comp.line, self.parse_ctx.arena)
+    c_parser = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True)
 
     # We want the output from parse_ctx, so we don't use the return value.
     try:

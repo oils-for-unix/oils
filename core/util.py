@@ -29,6 +29,22 @@ Buffer = cStringIO.StringIO  # used by asdl/format.py
 READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
 
+class HistoryError(Exception):
+
+  def __init__(self, msg, *args):
+    Exception.__init__(self)
+    self.msg = msg
+    self.args = args
+
+  def UserErrorString(self):
+    out = 'history: '
+    if self.args:
+      out += self.msg % self.args
+    else:
+      out += self.msg
+    return out
+
+
 class _ErrorWithLocation(Exception):
   """A parse error that can be formatted.
 

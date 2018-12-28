@@ -29,22 +29,18 @@ word_part = syntax_asdl.word_part
 lex_mode_e = types_asdl.lex_mode_e
 
 
-def _InitWordParserWithArena(s):
-  arena = alloc.SideArena('word_parse_test.py')
+def _InitWordParser(s, arena=None):
+  arena = arena or alloc.SideArena('word_parse_test.py')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = test_lib.InitLexer(s, arena)
-  w_parser, _ = parse_ctx.MakeOshParser(line_reader)
-  return arena, w_parser
-
-
-def InitWordParser(s):
-  _, w_parser = _InitWordParserWithArena(s)
-  return w_parser
+  c_parser = parse_ctx.MakeOshParser(line_reader)
+  return c_parser.w_parser  # hack
 
 
 def _assertReadWordWithArena(test, word_str):
   print('\n---', word_str)
-  arena, w_parser = _InitWordParserWithArena(word_str)
+  arena = test_lib.MakeArena('word_parse_test.py')
+  w_parser = _InitWordParser(word_str, arena=arena)
   w = w_parser.ReadWord(lex_mode_e.Outer)
   assert w is not None
   ast_lib.PrettyPrint(w)
@@ -78,7 +74,7 @@ def _assertSpanForWord(test, code_str):
 
 def _assertReadWordFailure(test, word_str):
   print('\n---', word_str)
-  w_parser = InitWordParser(word_str)
+  w_parser = _InitWordParser(word_str)
   try:
     w = w_parser.ReadWord(lex_mode_e.Outer)
   except util.ParseError as e:
@@ -110,7 +106,7 @@ class WordParserTest(unittest.TestCase):
 
   def testStaticEvalWord(self):
     expr = r'\EOF'  # Quoted here doc delimiter
-    w_parser = InitWordParser(expr)
+    w_parser = _InitWordParser(expr)
     w = w_parser.ReadWord(lex_mode_e.Outer)
     ok, s, quoted = word.StaticEval(w)
     self.assertEqual(True, ok)
@@ -361,7 +357,7 @@ class WordParserTest(unittest.TestCase):
       print(expr)
       print()
 
-      w_parser = InitWordParser(expr)
+      w_parser = _InitWordParser(expr)
 
       while True:
         w = w_parser.ReadWord(lex_mode_e.Outer)
@@ -375,7 +371,7 @@ class WordParserTest(unittest.TestCase):
   def testReadComment(self):
     # Test that we get Id.Op_Newline
     code = 'foo # comment\nbar #comment\n'
-    w_parser = InitWordParser(code)
+    w_parser = _InitWordParser(code)
     w = w_parser.ReadWord(lex_mode_e.Outer)
     assert w
     self.assertEqual('foo', w.parts[0].token.val)
@@ -399,7 +395,7 @@ class WordParserTest(unittest.TestCase):
   def testReadRegex(self):
     # Test that we get Id.Op_Newline
     code = '(foo|bar)'
-    w_parser = InitWordParser(code)
+    w_parser = _InitWordParser(code)
     w_parser.next_lex_mode = lex_mode_e.BashRegex  # needed at beginning
 
     w = w_parser.ReadWord(lex_mode_e.BashRegex)
@@ -459,7 +455,7 @@ class WordParserTest(unittest.TestCase):
       print(expr)
       print()
 
-      w_parser = InitWordParser(expr)
+      w_parser = _InitWordParser(expr)
       w_parser._Next(lex_mode_e.Arith)  # Can we remove this requirement?
 
       while True:
@@ -470,7 +466,7 @@ class WordParserTest(unittest.TestCase):
           break
 
   def testMultiLine(self):
-    w_parser = InitWordParser("""\
+    w_parser = _InitWordParser("""\
 ls foo
 
 # Multiple newlines and comments should be ignored

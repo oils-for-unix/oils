@@ -13,6 +13,10 @@ import cStringIO
 import sys
 
 from core import util
+from core.meta import Id
+from frontend.match import HISTORY_LEXER
+from osh import word
+
 log = util.log
 
 
@@ -41,9 +45,10 @@ class _Reader(object):
 _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
-  def __init__(self, arena, prompt):
+  def __init__(self, arena, prompt_ev, hist_ev):
     _Reader.__init__(self, arena)
-    self.prompt = prompt
+    self.prompt_ev = prompt_ev
+    self.hist_ev = hist_ev
     self.prompt_str = ''
     self.Reset()  # initialize self.prompt_str
 
@@ -53,18 +58,21 @@ class InteractiveLineReader(_Reader):
 
     #sys.stderr.write(self.prompt_str)
     try:
-      ret = raw_input(self.prompt_str) + '\n'  # newline required
+      line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
       print('^D')  # bash prints 'exit'; mksh prints ^D.
-      ret = None
+      line = None
+    else:
+      line = self.hist_ev.Eval(line)
+
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
-    return ret
+    return line
 
   def Reset(self):
     """Call this after command execution, to free memory taken up by the lines,
     and reset prompt string back to PS1.
     """
-    self.prompt_str = self.prompt.FirstPrompt()
+    self.prompt_str = self.prompt_ev.FirstPrompt()
 
 
 class FileLineReader(_Reader):
@@ -127,3 +135,151 @@ class VirtualLineReader(_Reader):
     # tokens with the correct line_spans.  So we have to tell it 'start_offset'
     # as well.
     return line_id, line, start_offset
+
+
+class HistoryEvaluator(object):
+  """Expand ! commands within the command line.
+
+  This necessarily happens BEFORE lexing.
+  """
+
+  def __init__(self, readline_mod, parse_ctx, debug_f):
+    self.readline_mod = readline_mod
+    self.parse_ctx = parse_ctx
+    self.debug_f = debug_f
+
+  def Eval(self, line):
+    """Returns an expanded line."""
+
+    if not self.readline_mod:
+      return line
+
+    tokens = list(HISTORY_LEXER.Tokens(line))
+    # Common case: no history expansion.
+    if all(id_ == Id.History_Other for (id_, _) in tokens):
+      return line
+
+    history_len = self.readline_mod.get_current_history_length()
+    if history_len <= 0:  # no commands to expand
+      return line
+
+    self.debug_f.log('history length = %d', history_len)
+
+    parts = []
+    for id_, val in tokens:
+      if id_ == Id.History_Other:
+        out = val
+
+      elif id_ == Id.History_Op:
+        # TODO: the current line was ALREADY entered in the history, so we have
+        # to subtact 1.  We should add it AFTER expanion, but Python's binding
+        # might not allow that.  We probably need to fork it.
+        prev = self.readline_mod.get_history_item(history_len-1)
+
+        ch = val[1]
+        if ch == '!':
+          out = prev
+        else:
+          self.parse_ctx.trail.Clear()  # not strictyl necessary?
+          line_reader = StringLineReader(prev, self.parse_ctx.arena)
+          c_parser = self.parse_ctx.MakeOshParser(line_reader)
+          try:
+            c_parser.ParseLogicalLine()
+          except util.ParseError as e:
+            #from core import ui
+            #ui.PrettyPrintError(e, self.parse_ctx.arena)
+
+            # Invalid command in history.  TODO: We should never enter these.
+            self.debug_f.log(
+                "Couldn't parse historical command %r: %s", prev, e)
+
+          # NOTE: We're using the trail rather than the return value of
+          # ParseLogicalLine because it handles cases like 
+          # $ for i in 1 2 3; do sleep ${i}; done
+          # $ echo !$
+          # which should expand to 'echo ${i}'
+
+          words = self.parse_ctx.trail.words
+          #self.debug_f.log('TRAIL WORDS: %s', words)
+
+          if ch == '^':
+            try:
+              w = words[1]
+            except IndexError:
+              raise util.HistoryError("No first word in %r", prev)
+            spid1 = word.LeftMostSpanForWord(w)
+            spid2 = word.RightMostSpanForWord(w)
+
+          elif ch == '$':
+            try:
+              w = words[-1]
+            except IndexError:
+              raise util.HistoryError("No last word in %r", prev)
+
+            spid1 = word.LeftMostSpanForWord(w)
+            spid2 = word.RightMostSpanForWord(w)
+
+          elif ch == '*':
+            try:
+              w1 = words[1]
+              w2 = words[-1]
+            except IndexError:
+              raise util.HistoryError("Couldn't find words in %r", prev)
+
+            spid1 = word.LeftMostSpanForWord(w1)
+            spid2 = word.RightMostSpanForWord(w2)
+
+          else:
+            raise AssertionError(ch)
+
+          arena = self.parse_ctx.arena
+          span1 = arena.GetLineSpan(spid1)
+          span2 = arena.GetLineSpan(spid2)
+
+          begin = span1.col
+          end = span2.col + span2.length
+
+          out = prev[begin:end]
+
+      elif id_ == Id.History_Num:
+        index = int(val[1:])  # regex ensures this.  Maybe have - on the front.
+        if index < 0:
+          num = history_len + index
+        else:
+          num = index
+
+        out = self.readline_mod.get_history_item(num)
+        if out is None:  # out of range
+          raise util.HistoryError('%s: not found', val)
+
+      elif id_ == Id.History_Search:
+        # Search backward
+        prefix = None
+        substring = None
+        if val[1] == '?':
+          substring = val[2:]
+        else:
+          prefix = val[1:]
+
+        out = None
+        for i in xrange(history_len, 1, -1):
+          cmd = self.readline_mod.get_history_item(i)
+          if prefix and cmd.startswith(prefix):
+            out = cmd
+          if substring and substring in cmd:
+            out = cmd
+          if out is not None:
+            break
+
+        if out is None:
+          raise util.HistoryError('%r found no results', val)
+
+      else:
+        raise AssertionError(id_)
+
+      parts.append(out)
+
+    line = ''.join(parts)
+    # show what we expanded to
+    sys.stdout.write('! %s' % line)
+    return line

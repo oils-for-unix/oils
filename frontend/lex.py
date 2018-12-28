@@ -574,16 +574,31 @@ GLOB_DEF = [
 # $ !!foo   # expands to echo $foo and prints x
 #
 # We can also reuse this in the RootCompleter to expand history interactively.
+#
+# bash note: handled in lib/readline/histexpand.c.  Quite messy and handles
+# quotes AGAIN.
+#
+# Note: \! gets expanded to literal \! for the real lexer, but no history
+# expansion occurs.
 
 HISTORY_DEF = [
-  # NOTE: We could have a different regex, with ' ' and such.
-  R(_LITERAL_WHITELIST_REGEX, Id.History_Other),
-  R('![!*^$]', Id.History_Op),
-  R('!-?[0-9]+', Id.History_Num),  # optional - negates it
-  # optional ? means substring
-  R('!\??' + _LITERAL_WHITELIST_REGEX, Id.History_Search),
-  R(r'\\[^\0]', Id.History_EscapedChar),  # \! disables history
-  R(r'[^\0]', Id.History_Other),  # anything else, including trailing backslash
+  # Common operators.
+  R(r'![!*^$]', Id.History_Op),
+
+  # By command number.
+  R(r'!-?[0-9]+', Id.History_Num),
+
+  # Search by prefix of substring (optional '?').
+  # NOTE: there are no numbers allowed here!  Bash doesn't seem to support it.
+  # No hyphen since it conflits with $-1 too.
+  R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+', Id.History_Search),
+
+  # Runs of chars that are definitely not special
+  R(r'[^!\\\0]+', Id.History_Other),
+  # Escaped characters.  \! disables history
+  R(r'\\[^\0]', Id.History_Other),
+  # Other single chars, like a trailing \ or !
+  R(r'[^\0]', Id.History_Other),
 ]
 
 
