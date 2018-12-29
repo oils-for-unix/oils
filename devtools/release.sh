@@ -395,7 +395,7 @@ line-counts() {
   # My arbitrary categorization.
   metrics/source-code.sh all > $out/src.txt  # Count repo lines
 
-  metrics/source-code.sh oil-osh-cloc > $out/oil-osh-cloc.txt
+  metrics/source-code.sh osh-cloc > $out/osh-cloc.txt
 
   local opy_out=$out/opy.txt
   pushd opy

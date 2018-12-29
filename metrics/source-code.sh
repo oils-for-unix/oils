@@ -13,9 +13,9 @@ filter-py() {
   grep -E -v '__init__.py$|_test.py$'
 }
 
-# Oil-only would exclude core/legacy.py, etc.
-oil-osh-files() {
-  { ls {bin,oil_lang,osh,core,frontend}/*.py \
+# OSH and common
+osh-files() {
+  { ls {bin,osh,core,frontend}/*.py \
        native/*.c {frontend,osh}/*.asdl;
   } | filter-py | grep -E -v '_gen.py$|test_lib.py'
 }
@@ -43,10 +43,10 @@ print "%5d %s" % (total, "total")
 ' "$@"
 }
 
-oil-osh-cloc() {
-  echo 'OIL AND OSH (non-blank non-comment lines)'
+osh-cloc() {
+  echo 'OSH (non-blank non-comment lines)'
   echo
-  oil-osh-files | xargs cloc --quiet "$@"
+  osh-files | xargs cloc --quiet "$@"
 
   # NOTE: --csv option could be parsed into HTML.
   # Or just sum with asdl-cloc!
@@ -118,11 +118,15 @@ all() {
   echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {oil_lang,osh,frontend,core,ovm2,native,tools}/*_test.py | sort --numeric
+  wc -l {osh,frontend,core,ovm2,native,tools}/*_test.py | sort --numeric
   echo
 
-  echo 'OIL AND OSH'
-  oil-osh-files | xargs wc -l | sort --numeric
+  echo 'OSH (and common libraries)'
+  osh-files | xargs wc -l | sort --numeric
+  echo
+
+  echo 'Oil Language'
+  ls oil_lang/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
   echo 'OVM2'

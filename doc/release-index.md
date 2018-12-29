@@ -29,8 +29,8 @@ Oil Version 0.6.pre11
 ### Metrics
 
 - Lines of source, counted in differented ways:
-  - [oil-osh-cloc](metrics.wwz/line-counts/oil-osh-cloc.txt).  The core of Oil,
-    as measured by the [cloc][] tool.
+  - [osh-cloc](metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
+    libraries, as measured by the [cloc][] tool.
   - [src](metrics.wwz/line-counts/src.txt).  The whole Oil repo organized by
     type of source file.
   - [OPy](metrics.wwz/line-counts/opy.txt).  How much code is in the OPy
