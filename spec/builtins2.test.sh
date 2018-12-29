@@ -95,3 +95,44 @@ command command -v seq
 ## stdout: seq
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 127
+
+#### history usage
+history
+echo status=$?
+history +5  # hm bash considers this valid
+echo status=$?
+history -5  # invalid flag
+echo status=$?
+history f 
+echo status=$?
+history too many args
+echo status=$?
+## status: 0
+## STDOUT:
+status=0
+status=0
+status=2
+status=2
+status=2
+## END
+## OK bash STDOUT:
+status=0
+status=0
+status=2
+status=1
+status=1
+## END
+## BUG zsh/mksh STDOUT:
+status=1
+status=1
+status=1
+status=1
+status=1
+## END
+## N-I dash STDOUT:
+status=127
+status=127
+status=127
+status=127
+status=127
+## END

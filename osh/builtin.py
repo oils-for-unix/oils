@@ -1465,33 +1465,49 @@ def Help(argv, loader):
   return 0
 
 
+HISTORY_SPEC = _Register('history')
+
+
 class History(object):
   """Show history."""
 
   def __init__(self, readline_mod):
     self.readline_mod = readline_mod
 
-  def __call__(self, readline_mod):
+  def __call__(self, argv):
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.
-
     readline_mod = self.readline_mod
     if not readline_mod:
       raise args.UsageError("OSH wasn't compiled with the readline module.")
 
-    log('config len = %d', readline_mod.get_history_length())
+    #arg_r = args.Reader(argv)
+    arg, i = HISTORY_SPEC.Parse(argv)
 
     # Returns 0 items in non-interactive mode?
     num_items = readline_mod.get_current_history_length()
-    log('len = %d', num_items)
+    #log('len = %d', num_items)
+
+    rest = argv[i:]
+    if len(rest) == 0:
+      start_index = 1
+    elif len(rest) == 1:
+      arg0 = rest[0]
+      try:
+        num_to_show = int(arg0)
+      except ValueError:
+        raise args.UsageError('Invalid argument %r' % arg0)
+      start_index = max(1, num_items + 1 - num_to_show)
+    else:
+      raise args.UsageError('Too many arguments')
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do
     # that.
     # - Consolidate multiline commands.
 
-    for i in xrange(1, num_items+1):  # 1-based index
+    for i in xrange(start_index, num_items+1):  # 1-based index
       item = readline_mod.get_history_item(i)
       print('%5d  %s' % (i, item))
     return 0
