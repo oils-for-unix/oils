@@ -145,17 +145,17 @@ def _InitDefaultCompletions(ex, complete_builtin, comp_state):
     comp_state.RegisterName('slowc', completion.Options([]), C1)
 
 
-def _InitReadline(readline_mod, root_comp, debug_f):
-  assert readline_mod
+def _MaybeWriteHistoryFile(history_filename):
+  if not readline:
+    return
+  try:
+    readline.write_history_file(history_filename)
+  except IOError:
+    pass
 
-  home_dir = posix.environ.get('HOME')
-  if home_dir is None:
-    home_dir = util.GetHomeDir()
-    if home_dir is None:
-      print("Couldn't find home dir in $HOME or /etc/passwd", file=sys.stderr)
-      return
-  # TODO: Put this in .config/oil/.
-  history_filename = os_path.join(home_dir, 'oil_history')
+
+def _InitReadline(readline_mod, history_filename, root_comp, debug_f):
+  assert readline_mod
 
   try:
     readline_mod.read_history_file(history_filename)
@@ -163,7 +163,7 @@ def _InitReadline(readline_mod, root_comp, debug_f):
     pass
 
   # The 'atexit' module is a small wrapper around sys.exitfunc.
-  atexit.register(readline_mod.write_history_file, history_filename)
+  atexit.register(_MaybeWriteHistoryFile, history_filename)
   readline_mod.parse_and_bind("tab: complete")
 
   # How does this map to C?
@@ -346,6 +346,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   assert home_dir.tag == value_e.Str, home_dir
   rc_path = opts.rcfile or os_path.join(home_dir.s, '.config/oil', lang + 'rc')
 
+  history_filename = os_path.join(home_dir.s, '.config/oil', 'history_' + lang)
+
   if opts.c is not None:
     arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena)
@@ -397,7 +399,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       progress_f = ui.StatusLine()
       root_comp = completion.RootCompleter(ev, comp_state, mem,
                                            comp_ctx, progress_f, debug_f)
-      _InitReadline(readline, root_comp, debug_f)
+      _InitReadline(readline, history_filename, root_comp, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_state)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
