@@ -489,3 +489,15 @@ ABC deF
 ## N-I dash/mksh/zsh stdout-json: ""
 ## N-I dash status: 2
 ## N-I mksh/zsh status: 1
+
+#### ${x@Q}
+x="FOO'BAR spam\"eggs"
+eval "new=${x@Q}"
+test "$x" = "$new" && echo OK
+## STDOUT:
+OK
+## END
+## N-I dash/zsh stdout-json: ""
+## N-I dash status: 2
+## N-I zsh status: 1
+

@@ -294,7 +294,7 @@ def Printf(argv, mem):
       continue
     elif c == 'q':
       f += 2
-      parts.append(_PrintfQuote(vals[v] if v < len(vals) else ''))
+      parts.append(string_ops.ShellQuote(vals[v] if v < len(vals) else ''))
       v += 1
       continue
     elif c == 'd':
@@ -319,20 +319,6 @@ def Printf(argv, mem):
     sys.stdout.write(result)
     sys.stdout.flush()
   return 0
-
-
-def _PrintfQuote(val):
-  """
-  Quote the argument in a way that can be reused as shell input.
-  """
-  # Could be made slightly nicer by e.g. returning unmodified when
-  # there's nothing that needs to be quoted.  Bash's `printf %q`
-  # does that while producing uglier output in other ways, with
-  # lots of backslashes.  Hopefully we don't end up having to
-  # match its behavior byte-for-byte.
-  #
-  # Example: FOO'BAR -> 'FOO'\''BAR'
-  return "'" + val.replace("'", r"'\''") + "'"
 
 
 WAIT_SPEC = _Register('wait')
