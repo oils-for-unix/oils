@@ -266,11 +266,22 @@ portable-rules.mk
 pylib
 ## END
 
-#### compgen accept -X but doesn't respect it
+#### compgen doesn't respect -X for user-defined functions
 func() {
   COMPREPLY=(one two three bin)
 }
 compgen -X '@(two|bin)' -F func
+## STDOUT:
+one
+two
+three
+bin
+## END
+
+#### compgen doesn't respect -X with -W either
+# this CHANGED between bash 4.3 and 4.4 apparently?  That is odd.  bash 4.4
+# removed the filter.
+compgen -X '@(two|bin)' -W 'one two three bin'
 ## STDOUT:
 one
 two

@@ -149,11 +149,24 @@ def error(msg, *args):
   print('osh error: ' + msg, file=sys.stderr)
 
 
+def BackslashEscape(s, meta_chars):
+  """Escaped certain characters with backslashes.
+
+  Used for shell syntax (i.e. quoting completed filenames), globs, and EREs.
+  """
+  escaped = []
+  for c in s:
+    if c in meta_chars:
+      escaped.append('\\')
+    escaped.append(c)
+  return ''.join(escaped)
+
+
 def GetHomeDir():
   """Get the user's home directory from the /etc/passwd.
 
-  Used by tilde expansion in word_eval.py and readline initialization in
-  completion.py.
+  Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
+  initialization use mem.GetVar('HOME').
   """
   uid = posix.getuid()
   try:

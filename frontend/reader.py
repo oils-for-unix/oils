@@ -141,6 +141,9 @@ class HistoryEvaluator(object):
   """Expand ! commands within the command line.
 
   This necessarily happens BEFORE lexing.
+
+  NOTE: This should also be used in completion, and it COULD be used in history
+  -p, if we want to support that.
   """
 
   def __init__(self, readline_mod, parse_ctx, debug_f):

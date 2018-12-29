@@ -186,6 +186,8 @@ def _InitReadline(readline_mod, history_filename, root_comp, debug_f):
   # affects what we pass back to readline and what readline displays to the
   # user!
   readline_mod.set_completer_delims(util.READLINE_DELIMS)
+  # TODO: Disable READLINE_DELIMS because it causes problems with quoting.
+  #readline_mod.set_completer_delims('')
 
 
 def _ShowVersion():

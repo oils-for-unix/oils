@@ -109,6 +109,13 @@ audit-plugin-funcs() {
   grep --color -w -- '_command' "${COMPLETION_FILES[@]}"
   grep --color -w -- '_command_offset' "${COMPLETION_FILES[@]}"
 
+  # Should be replaced by compgen -A file?
+  grep --color -w -- '_filedir' "${COMPLETION_FILES[@]}"
+
+  # What's the difference between these two?
+  grep --color -w -- '_expand' "${COMPLETION_FILES[@]}"
+  grep --color -w -- '_tilde' "${COMPLETION_FILES[@]}"
+
   # Uses _quote_readline_by_ref, which uses printf -v.  Although printf -v
   # isn't really a big problem.
   # Hm this is used a lot.

@@ -385,4 +385,3 @@ def ShellQuote(s):
   # Example: FOO'BAR -> 'FOO'\''BAR'
   return "'" + s.replace("'", r"'\''") + "'"
 
-

@@ -54,15 +54,6 @@ def LooksLikeGlob(s):
   return False
 
 
-def _BackslashEscape(s, meta_chars):
-  escaped = []
-  for c in s:
-    if c in meta_chars:
-      escaped.append('\\')
-    escaped.append(c)
-  return ''.join(escaped)
-
-
 # Glob Helpers for WordParts.
 # NOTE: Escaping / doesn't work, because it's not a filename character.
 # ! : - are metachars within character classes
@@ -72,7 +63,7 @@ def GlobEscape(s):
   """
   For SingleQuotedPart, DoubleQuotedPart, and EscapedLiteralPart
   """
-  return _BackslashEscape(s, GLOB_META_CHARS)
+  return util.BackslashEscape(s, GLOB_META_CHARS)
 
 
 # Quoted parts need to be regex-escaped, e.g. [[ $a =~ "{" ]].  I don't think
@@ -87,7 +78,7 @@ def ExtendedRegexEscape(s):
   """
   For [[ foo =~ $\{ ]]
   """
-  return _BackslashEscape(s, ERE_META_CHARS)
+  return util.BackslashEscape(s, ERE_META_CHARS)
 
 
 def _GlobUnescape(s):  # used by cmd_exec

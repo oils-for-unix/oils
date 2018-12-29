@@ -143,6 +143,27 @@ complete_users_files() {
 }
 complete -F complete_users_files -o filenames fu_func
 
+complete_op_chars() {
+  local first=$1
+  local cur=$2
+
+  for candidate in '$$$' '(((' '```' ';;;'; do
+    if [[ $candidate == $cur* ]]; then
+      COMPREPLY+=("$candidate")
+    fi
+  done
+}
+
+# Bash does NOT quote these!  So they do not get sent into commands.  It is
+# conflating shell syntax and tool syntax.
+op_chars() { argv "$@"; }
+complete -F complete_op_chars op_chars
+
+# Aha but this does the right thing!  I think OSH should do this all the time!
+# User-defined functions shouldn't be repsonsible for quoting.
+op_chars_filenames() { argv "$@"; }
+complete -F complete_op_chars -o filenames op_chars_filenames
+
 #
 # Unit tests use this
 #

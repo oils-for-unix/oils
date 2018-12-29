@@ -56,6 +56,18 @@ redir_arg_type_e = types_asdl.redir_arg_type_e
 log = util.log
 
 
+# To quote completion candidates.
+#   !    is for history expansion, which only happens interactively, but
+#        completion only does too.
+#   *?[] are for globs
+#   {}   are for brace expansion
+#   ~    in filenames should be quoted
+#
+# TODO: Also escape tabs as \t and newlines at \n?
+SHELL_META_CHARS = r' ~`!$&|;()\"*?[]{}<>' + "'"
+
+
+
 class _RetryCompletion(Exception):
   """For the 'exit 124' protocol."""
   pass
@@ -640,6 +652,7 @@ class RootCompleter(object):
     def _MakePrefix(tok, offset=0):
       span = arena.GetLineSpan(tok.span_id)
       return comp.line[comp.begin : span.col+offset]
+      #return comp.line[0 : span.col+offset]
 
     if t2:  # We always have t1?
       if IsDollar(t2) and IsDummy(t1):
@@ -737,9 +750,10 @@ class RootCompleter(object):
             debug_f.log("Didn't get a string from redir arg")
             return
 
-          comp.Update(to_complete=val.s)  # The FileSystemAction only uses one value
+          comp.Update(to_complete=val.s)  # FileSystemAction uses only this
           action = FileSystemAction(add_slash=True)
           for name in action.Matches(comp):
+            # TODO: form prefix from r.arg_word
             yield name
           return
 
@@ -782,6 +796,8 @@ class RootCompleter(object):
         debug_f.log('partial_argv: %s', partial_argv)
         n = len(partial_argv)
 
+        # TODO: Form prefix for RootCompleter to add to user_spec candidates
+
         if n == 0:
           # should never get this because of Lit_CompDummy?
           raise AssertionError
@@ -817,18 +833,31 @@ class RootCompleter(object):
   def _PostProcess(self, comp_opts, user_spec, comp):
     """
     Add trailing spaces / slashes to completion candidates, and time them.
+
+    NOTE: This post-processing MUST go here, and not in UserSpec, because it's
+    in READLINE in bash.  compgen doesn't see it.
     """
     self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
+    # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
+
     i = 0
     for m, is_fs_action in user_spec.Matches(comp):
-      # TODO:
-      # - dedupe these?  You can get two 'echo' in bash, which is dumb.
-      # - Do shell QUOTING here for filenames?
 
-      # NOTE: This post-processing MUST go here, and not in UserSpec, because
-      # it's in READLINE in bash.  compgen doesn't see it.
+      # - Do shell QUOTING here. Not just for filenames, but for everything!
+      #   User-defined functions can't emit $var, only \$var
+      # Problem: COMP_WORDBREAKS messes things up!  How can I account for that?
+      # '_tmp/spam\ '
+      # it stops at the first ' ' char.
+      #
+      # I guess you can add a COMP_WORDBREAKS suffix?
+      # Or should you get rid of completion_delims altogether?
+      # Then you would be constantly completing the beginning of the line?
+      # TODO: write a terminal program to show that
+
+      m = util.BackslashEscape(m, SHELL_META_CHARS)
+      self.debug_f.log('after shell escaping: %s', m)
 
       # compopt -o filenames is for user-defined actions.  Or any
       # FileSystemAction needs it.

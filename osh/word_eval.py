@@ -621,7 +621,6 @@ class _WordEvaluator(object):
           prompt = ui.PROMPT.EvalPrompt(val)
           val = value.Str(prompt)
         elif op.op_id == Id.VOp0_Q:
-          # NOTE: ShellQuote doesn't behave exactly the same as bash
           val = value.Str(string_ops.ShellQuote(val.s))
         else:
           raise NotImplementedError(op.op_id)
