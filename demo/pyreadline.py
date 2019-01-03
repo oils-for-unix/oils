@@ -5,45 +5,48 @@ pyreadline.py
 Let's think of the interactive shell prompt roughly as a state machine.
 
 Inputs:
-  - entering a line that's incomplete
-  - entering a line that finishes a command
-  - hitting TAB for complete
-  - Ctrl-C to cancel a command in progress!  (make sure to delete stuff here)
-  - Ctrl-C to cancel a completion in progress, for slow completions.
+  - Enter a line that finishes a command
+  - Enter a line that's incomplete.
+  - Hitting TAB to complete
+    - which display multiple candidates or fill in a single candidate
+  - Ctrl-C to cancel a COMMAND in progress.
+  - Ctrl-C to cancel a COMPLETION in progress, for slow completions.
     - NOTE: if there are blocking NFS calls, completion should go in a
       thread/process?
   - EOF: Ctrl-D on an EMPTY line.
     (Ctrl-D on a non-empty line behaves just like hitting enter)
-  - Terminal width change?  Or do we poll here?
+  - SIGWINCH: Terminal width change.
 
 Actions:
-  - Display completions
-    - Depends on terminal width.  When do we query that?
+  - Display completions, which depends on the terminal width.
   - Display a 1-line message showing lack of completions ('no variables that
     begin with $')
   - Execute a command
-  - Clear N lines below the prompt (has to happen a lot)
-  - Exit shell
+  - Clear N lines below the prompt (must happen frequently)
+  - Exit the shell
 
 State:
-  1. The prompt: PS1 or PS2  
-  2. The number of lines to clear next
-  3. The completion that is in progress.  The 'compopt' builtin affects this.
+  1. The terminal width.  Changes dynamically.
+  2. The prompt: PS1 or PS2  
+  3. The number of lines to clear next
+  4. The completion that is in progress.  The 'compopt' builtin affects this.
+  5. The number of times you have requested the same completion (to show more)
 
   NOTE: EraseLines() uses #2.
 
-NOTES:
-  - We don't care about terminal resizes, but we care about terminal width.
-
 TODO for this demo:
-  - reset terminal width on window change.  Or just query it before displaying
-    anything?
-  - simulate FileSystemAction on 'ls'
-  - use PrintMessage() for progress (as well as for 'no completions')
-  - If there are too many completions, display 5 or 10 rows, and then hit a key to see more?
-    - this is better than zsh prompt
-  - show descriptions of flags.  comp_state needs a separate dictionary then?
+  - It does seem nice to be able page down 10 at a time? 
+    - I think you hit tab for 10 more.
+    - detect this with a counter in root_completer?
+
   - experiment with ordering?  You would have to disable readline sorting
+  - simulate FileSystemAction on 'ls'
+
+LATER:
+  - Make the max of 10 lines configurable?
+  - We could also make it so you can hit TAB again
+  - Could have a caching decorator, because we recompute candidates every time.
+    For $PATH entries?
 
 Readline settings to experiment with:
 
@@ -63,8 +66,23 @@ import readline
 import signal
 import sys
 import time
+import traceback
 
-#from core import ui
+# Only for GetTerminalSize().  They should be implemented in C to avoid
+# dependencies.
+import fcntl
+import struct
+import termios
+
+
+_RESET = '\033[0;0m'
+_BOLD = '\033[1m'
+
+_YELLOW = '\033[33m'
+_BLUE = '\033[34m'
+#_MAGENTA = '\033[35m'
+_CYAN = '\033[36m'
+
 
 
 if 0:
@@ -76,15 +94,9 @@ else:
 def log(msg, *args, **kwargs):
   if args:
     msg = msg % args
-  f = kwargs.get('f', sys.stderr)
+  f = kwargs.get('file', sys.stderr)
   print(msg, file=f)
   f.flush()
-
-
-# TODO: This should be implemented in C to avoid dependencies.
-import fcntl
-import struct
-import termios
 
 
 def GetTerminalSize():
@@ -104,6 +116,7 @@ _NULL_ACTION = NullAction()
 
 
 class WordsAction(object):
+  """Yield a fixed list of completion candidates."""
   def __init__(self, words, delay=None):
     self.words = words
     self.delay = delay
@@ -117,7 +130,24 @@ class WordsAction(object):
         yield w
 
 
+class FlagsHelpAction(object):
+  """Yield flags and their help.
+  
+  Return a list of TODO: This API can't be expressed in shell itself.  How do
+  zsh and fish do it?
+  """
+
+  def __init__(self, flags):
+    self.flags = flags  # a list of tuples
+
+  def Matches(self, prefix):
+    for flag, desc in self.flags:
+      if flag.startswith(prefix):
+        yield flag, desc
+
+
 class RootCompleter(object):
+  """Dispatch to multiple completers."""
 
   def __init__(self, display, comp_lookup, comp_state):
     """
@@ -132,7 +162,7 @@ class RootCompleter(object):
     line = comp['line']
     self.comp_state['ORIG'] = line
 
-    # Calculate the portion to complete
+    # Calculate the portion of the line to complete.
 
     i = line.rfind(' ')  # the last space
     if i == -1:  # FIRST WORD state, no prefix
@@ -151,46 +181,60 @@ class RootCompleter(object):
       assert j != -1
       first = line[:j]
 
-      # TODO: fallback
       completer = self.comp_lookup.get(first, _NULL_ACTION)
 
     # For the Display callback to look at
     self.comp_state['prefix_pos'] = pos
 
+    # Reset this at the beginning of each completion.
+    # Is there any way to avoid creating a duplicate dictionary each time?
+    # I think every completer could have an optional PAYLOAD.
+    # Yes that is better.
+    # And maybe you can yield the original 'c' too, without prefix and ' '.
+    self.comp_state['DESC'] = {}
+
     i = 0
     start_time = time.time()
-    for c in completer.Matches(to_complete):
-      yield prefix + c + ' '
+    for match in completer.Matches(to_complete):
+      if isinstance(match, tuple):
+        flag, desc = match  # hack
+        if flag.endswith('='):  # Hack for --color=auto
+          rl_match = flag
+        else:
+          rl_match = flag + ' '
+        self.comp_state['DESC'][rl_match] = desc  # save it for later
+      else:
+        rl_match = match + ' '
+
+      yield prefix + rl_match
       # TODO: avoid calling time() so much?
       elapsed_ms = (time.time() - start_time) * 1000
 
-      # NOTE: Ctrl-C works here!  You only get the first 5 candidates.
-      # only print after 200ms
+      # NOTES:
+      # - Ctrl-C works here!  You only get the first 5 candidates.
+      # - These progress messages will not help if the file system hangs!  We
+      #   might want to run "adversarial completions" in a separate process?
       i += 1
       if elapsed_ms > 200:
         plural = '' if i == 1 else 'es'
-        #self.status_line.Write(
-        #    '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
-        #    plural, line, elapsed_ms)
+        self.display.PrintMessage(
+            '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
+            plural, line, elapsed_ms)
 
     if i == 0:
       self.display.PrintMessage('(no matches for %r)', line)
-      pass
 
 
 class CompletionCallback(object):
+  """Registered with the readline library and called for completions."""
 
-  def __init__(self, status_line, root_comp):
-    #self.status_line = status_line
+  def __init__(self, root_comp):
     self.root_comp = root_comp
     self.iter = None
 
   def Call(self, word_prefix, state):
     """Generate completions."""
-
-    #log('Called with %r %r', word_prefix, state)
     if state == 0:  # initial completion
-      # Save for later
       orig_line = readline.get_line_buffer()
       comp = {'line': orig_line}
       self.iter = self.root_comp.Matches(comp)
@@ -210,51 +254,118 @@ class CompletionCallback(object):
       raise
 
 
-def PrintPacked(matches, longest_match_len, term_width):
-  w = longest_match_len + 2  # 2 spaces between each
-  num_per_line = max(1, (term_width-2) // w)  # don't print in first or last column
+def PrintPacked(matches, max_match_len, term_width, max_lines):
+  # With of each candidate.  2 spaces between each.
+  w = max_match_len + 2
+
+  # Number of candidates per line.  Don't print in first or last column.
+  num_per_line = max(1, (term_width-2) // w)
+
   fmt = '%-' + str(w) + 's'
   num_lines = 0
 
-  sys.stdout.write(' ')  # 1 space gutter
+  too_many = False
   remainder = num_per_line - 1
-  for i, m in enumerate(matches):
+  i = 0  # num matches
+  for m in matches:
+    if i % num_per_line == 0:
+      sys.stdout.write(' ')  # 1 space left gutter
+
     sys.stdout.write(fmt % m)
+
     if i % num_per_line == remainder:
-      sys.stdout.write('\n ')  # 1 space gutter
+      sys.stdout.write('\n')  # newline (leaving 1 space right gutter)
       num_lines += 1
+
+      # Check if we've printed enough lines
+      if num_lines == max_lines:
+        too_many = True
+        i += 1  # count this one
+        break
+    i += 1
 
   # Write last line break, unless it came out exactly.
   if i % num_per_line != 0:
+    #log('i = %d, num_per_line = %d, i %% num_per_line = %d',
+    #    i, num_per_line, i % num_per_line)
+
     sys.stdout.write('\n')
+    num_lines += 1
+
+  if too_many:
+    # TODO: Save this in the Display class
+    fmt2 = _BOLD + _BLUE + '%' + str(term_width-2) + 's' + _RESET
+    n = len(matches)
+    sys.stdout.write(fmt2 % '... and %d more\n' % (n-i))
     num_lines += 1
 
   return num_lines
 
 
-class Display(object):
-  """Hook to display completion candidates.
+def PrintLong(matches, max_match_len, term_width, max_lines, descriptions):
+  """Print flags with descriptions, one per line.
 
-  This is useful for:
-  - stripping off the common prefix according to OUR rules
-  - display builtin and flag help
+  Args:
+    descriptions: dict of { prefix-stripped match -> description }
 
-  Problem: how do I detect where the bottom of the screen is?
-
-  Features here:
-  - limit the number of matches to 10 or so?
-    - so then do you need an option to set this limit?  COMPLIMIT?
-    - what does readline do?
-
-  BUG: EraseLines() sometimes doesn't get called.  In particular when readline
-  completes  something.
+  Returns:
+    The number of lines printed.
   """
-  def __init__(self, status_line, comp_state, reader, term_width, max_lines=5):
-    #self.status_line = status_line
+  #log('desc = %s', descriptions)
+
+  # Why subtract 3?  1 char for left and right margin, and then 1 for the space
+  # in between.
+  max_desc = max(0, term_width - max_match_len - 3)
+  fmt = ' %-' + str(max_match_len) + 's ' + _YELLOW + '%s' + _RESET
+
+  num_lines = 0
+
+  # rl_match is a raw string, which may or may not have a trailing space
+  for rl_match in matches:
+    desc = descriptions.get(rl_match) or ''
+    if max_desc == 0:  # the window is not wide enough for some flag
+      print(' %s' % rl_match)
+    else:
+      if len(desc) > max_desc:
+        desc = desc[:max_desc-5] + ' ... '
+      print(fmt % (rl_match, desc))
+
+    num_lines += 1
+
+    if num_lines == max_lines:
+      # right justify
+      fmt2 = _BOLD + _BLUE + '%' + str(term_width-1) + 's' + _RESET
+      n = len(matches)
+      sys.stdout.write(fmt2 % '... and %d more\n' % (n-num_lines))
+      num_lines += 1
+      break
+
+  return num_lines
+
+
+class Display(object):
+  """Methods to display completion candidates and other messages.
+
+  This object has to remember how many lines we last drew, in order to erase
+  them before drawing something new.
+
+  It's also useful for:
+  - Stripping off the common prefix according to OUR rules, not readline's.
+  - displaying descriptions of flags and builtins
+  """
+  def __init__(self, comp_state, reader, max_lines=10):
+    """
+    Args:
+      max_lines: Maximum lines to take up.  TODO: What is the variable to
+        complete this?
+    """
     self.comp_state = comp_state
     self.reader = reader
-    self.term_width = term_width
-    self.max_lines = max_lines  # TODO: Respect this!
+    self.max_lines = max_lines
+
+    self.width_is_dirty = True
+    self.term_width = -1  # invalid
+
     self.num_lines_last_displayed = 0
 
     self.c_count = 0
@@ -264,25 +375,28 @@ class Display(object):
     """Call this in between commands."""
     self.num_lines_last_displayed = 0
 
-  def _PrintCandidates(self, subst, matches, unused_longest_match_len):
-
-    # These are set by the completion generator.  They should always exist,
-    # because we can't get "matches" without calling that function.
+  def _ReturnToPrompt(self, num_lines):
+    # TODO: Save and restore position instead of doing this?
 
     orig_len = len(self.comp_state['ORIG'])
+    prompt_len = len(self.reader.prompt_str)  # may change between PS1 and PS2
+
+    sys.stdout.write('\x1b[%dA' % num_lines)  # UP
+    n = orig_len + prompt_len
+    sys.stdout.write('\x1b[%dC' % n)  # RIGHT
+    sys.stdout.flush()
+
+  def _PrintCandidates(self, subst, matches, unused_max_match_len):
+    term_width = self._GetTerminalWidth()
+
+    # Variables set by the completion generator.  They should always exist,
+    # because we can't get "matches" without calling that function.
     prefix_pos = self.comp_state['prefix_pos']
 
-    if 0:
-      log('')
-      log('subst = %r', subst)
-      log('matches = %s', matches)
-      log('longest = %s', longest_match_len)
-    print('')
+    sys.stdout.write('\r\n')
 
-    # Have to delete previous completions!
-    #self.status_line.Write('display: erasing %d lines', self.num_lines_last_displayed)
-    self.EraseLines()
-    log('_PrintCandidates %r', subst, f=DEBUG_F)
+    self.EraseLines()  # Delete previous completions!
+    log('_PrintCandidates %r', subst, file=DEBUG_F)
 
     # TODO: should we quote these or not?
     if prefix_pos:
@@ -290,26 +404,24 @@ class Display(object):
     else:
       to_display = matches
 
-    # Calculate our own
-    longest_match_len = max(len(m) for m in to_display)
+    # Calculate max length after stripping prefix.
+    max_match_len = max(len(m) for m in to_display)
 
     #sys.stdout.write('\x1b[s')  # SAVE
 
     # Print and go back up.  But we have to ERASE these before hitting enter!
-    num_lines = PrintPacked(to_display, longest_match_len, self.term_width)
+    if self.comp_state.get('DESC'):  # exists and is NON EMPTY
+      num_lines = PrintLong(to_display, max_match_len, term_width,
+                            self.max_lines, self.comp_state['DESC'])
+    else:
+      num_lines = PrintPacked(to_display, max_match_len, term_width,
+                              self.max_lines)
 
     self.num_lines_last_displayed = num_lines
 
     #sys.stdout.write('\x1b[u')  # RESTORE
 
-    if 1:
-      # Move up.  Hm this works.  But I need to erase the candidates after
-      # hitting enter!
-      sys.stdout.write('\x1b[%dA' % (num_lines+1))  # UP
-
-      # Also need to move back to the end of line, before readline?
-      n = orig_len + len(self.reader.prompt_str)  # maybe change between PS1 and PS2
-      sys.stdout.write('\x1b[%dC' % n)  # RIGHT
+    self._ReturnToPrompt(num_lines+1)
 
     self.c_count += 1
 
@@ -317,7 +429,6 @@ class Display(object):
     try:
       self._PrintCandidates(*args)
     except Exception as e:
-      import traceback
       traceback.print_exc()
 
   def PrintMessage(self, msg, *args):
@@ -325,37 +436,27 @@ class Display(object):
     Print a message below the prompt, and then return to the location on the
     prompt line.
     """
-    orig_len = len(self.comp_state['ORIG'])
-
     if args:
       msg = msg % args
 
     # This will mess up formatting
     assert not msg.endswith('\n'), msg
 
-    # hack to account for what readline does NOT do?
-    # demo$ echo <TAB>
-    # You get \r\n if there are completions, but none if there aren't?
-    # I found this using 'script'.
     sys.stdout.write('\r\n')
 
     self.EraseLines()
-    log('_PrintMessage %r', msg, f=DEBUG_F)
+    log('_PrintMessage %r', msg, file=DEBUG_F)
 
     # Truncate to terminal width
-    max_len = self.term_width - 2
+    max_len = self._GetTerminalWidth() - 2
     if len(msg) > max_len:
       msg = msg[:max_len-5] + ' ... '
 
-    fmt = '%' + str(max_len) + 's'
+    fmt = _BOLD + _BLUE + '%' + str(max_len) + 's' + _RESET
     sys.stdout.write(fmt % msg)
     sys.stdout.write('\r')  # go back to beginning of line
 
-    # TODO: Save and restore position instead of doing this junk
-    sys.stdout.write('\x1b[1A')  # 1 line up
-    n = orig_len + len(self.reader.prompt_str)  # maybe change between PS1 and PS2
-    sys.stdout.write('\x1b[%dC' % n)  # RIGHT
-    sys.stdout.flush()
+    self._ReturnToPrompt(1)
 
     self.num_lines_last_displayed = 1
 
@@ -375,7 +476,7 @@ class Display(object):
     n = self.num_lines_last_displayed
 
     log('EraseLines %d (c = %d, m = %d)', n, self.c_count, self.m_count,
-        f=DEBUG_F)
+        file=DEBUG_F)
 
     if n == 0:
       return
@@ -395,12 +496,24 @@ class Display(object):
       sys.stdout.write('\x1b[%dA' % n)
       sys.stdout.flush()  # Without this, output will look messed up
 
+  def _GetTerminalWidth(self):
+    if self.width_is_dirty:
+      _, self.term_width = GetTerminalSize()
+      self.width_is_dirty = False
+    return self.term_width
+
+  def OnWindowChange(self):
+    # Only do it for the NEXT completion.  The signal handler can be run in
+    # between arbitrary bytecodes, and we don't want a single completion
+    # display to be shown with different widths.
+    self.width_is_dirty = True
+
 
 _PS1 = 'demo$ '
 _PS2 = '> '  # A different length to test Display
 
 
-def DoNothing(unused_frame, unused):
+def DoNothing(unused1, unused2):
   pass
 
 
@@ -434,7 +547,6 @@ class InteractiveLineReader(object):
       # Ignore it usually, so we don't get KeyboardInterrupt in weird places.
       # NOTE: This can't be SIG_IGN, because that affects the child process.
       signal.signal(signal.SIGINT, DoNothing)
-      #pass
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return line
@@ -444,12 +556,11 @@ class InteractiveLineReader(object):
     del self.pending_lines[:]
 
 
-def MainLoop(status_line, reader, display):
+def MainLoop(reader, display):
   while True:
     line = reader.GetLine()
 
     # Erase lines before execution, displaying PS2, or exit!
-    #status_line.Write('loop: erasing %d lines', display.num_lines_last_displayed)
     display.EraseLines()
 
     #log('got %r', line)
@@ -476,60 +587,83 @@ def MainLoop(status_line, reader, display):
     display.Reset()
     reader.Reset()
 
-_COMMANDS = ['echo', 'sleep', 'ls', 'clear', 'slowc', 'many']
+
+_COMMANDS = [
+    'echo', 'sleep', 'ls', 'grep', 'clear', 'slowc', 'many', 'toomany'
+]
 
 ECHO_WORDS = [
     'zz', 'foo', 'bar', 'baz', 'spam', 'eggs', 'python', 'perl', 'pearl',
     # To simulate filenames with spaces
-    'two words', 'three words here'
+    'two words', 'three words here',
 ]
 
 
+def LoadFlags(path):
+  flags = []
+  with open(path) as f:
+    for line in f:
+      try:
+        flag, desc = line.split(None, 1)
+        desc = desc.strip()
+      except ValueError:
+        #log('Error: %r', line)
+        #raise
+        flag = line.strip()
+        desc = None
+
+      # TODO: do something with the description
+      flags.append((flag, desc))
+  return flags
+
+
 def main(argv):
-  height, width = GetTerminalSize()
-  #log('width = %d, height = %d', width, height)
+  _, term_width = GetTerminalSize()
+  fmt = '%' + str(term_width) + 's'
 
-  # Hm this can conflict with completion.  Display has to be aware of
-  # it.
-  # It also conflicts with the text of 'ls' and such!   Would have to delete it
-  # before every command.
-  #status_line = ui.StatusLine(row_num=height-1, width=width-1)
-  status_line = None
-  #status_line.Write('height = %d', height)
-
-  fmt = '%' + str(width) + 's'
   #msg = "[Oil 0.6.pre11] Type 'help' or visit https://oilshell.org/help/ "
   msg = "For help, type 'help' or visit https://oilshell.org/help/0.6.pre11 "
   print(fmt % msg)
 
-  # Right now this is used to set the original command.
+  # Used to store the original line, flag descriptions, etc.
   comp_state = {}
 
   reader = InteractiveLineReader()
-  display = Display(status_line, comp_state, reader, width)
+  display = Display(comp_state, reader)
+
+  # Register a callback to receive terminal width changes.
+  signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+
+  ls_flags = LoadFlags('_tmp/ls_flags.txt')
+  grep_flags = LoadFlags('_tmp/grep_flags.txt')
 
   comp_lookup = {
       'echo': WordsAction(ECHO_WORDS),
+      'ls': FlagsHelpAction(ls_flags),
+      'grep': FlagsHelpAction(grep_flags),
       'slowc': WordsAction([str(i) for i in xrange(20)], delay=0.1),
-      'many': WordsAction(['--flag%d' % i for i in xrange(100)]),
+      'many': WordsAction(['--flag%d' % i for i in xrange(50)]),
+      'toomany': WordsAction(['--too%d' % i for i in xrange(1000)]),
   }
-   
-  root_comp = RootCompleter(display, comp_lookup, comp_state)
-  readline.set_completer(CompletionCallback(status_line, root_comp))
 
-  # If we do this, we get the whole line.  Then we need to use Display
-  # to get it.
+  # Register a callback to generate completion candidates.
+  root_comp = RootCompleter(display, comp_lookup, comp_state)
+  readline.set_completer(CompletionCallback(root_comp))
+
+  # We want to parse the line ourselves, rather than use readline's naive
+  # delimiter-based tokenization.
   readline.set_completer_delims('')
 
-
-  # NOTE: Is this style hard to compile?  Maybe have to expand the args literally.
+  # Register a callback to display completions.
+  # NOTE: Is this style hard to compile?  Maybe have to expand the args
+  # literally.
   readline.set_completion_display_matches_hook(
       lambda *args: display.PrintCandidates(*args)
   )
 
   readline.parse_and_bind('tab: complete')
 
-  MainLoop(status_line, reader, display)
+  MainLoop(reader, display)
 
 
 if __name__ == '__main__':
