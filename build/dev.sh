@@ -41,7 +41,17 @@ ubuntu-deps() {
   sudo apt install python-dev gawk time libreadline-dev
 
   test/spec.sh install-shells
+}
 
+# This is what Python uses on OS X.
+#
+# https://www.thrysoee.dk/editline/
+install-libedit() {
+  sudo apt install libedit-dev
+}
+
+libedit-flags() {
+  pkg-config --libs --cflags libedit
 }
 
 # Needed for the release process, but not the dev process.

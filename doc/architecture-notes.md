@@ -1,6 +1,28 @@
 Notes on OSH Architecture
 =========================
 
+## List of Regex-Based Lexers
+
+Oil uses regex-based lexers, which are turned into efficient C code with
+[re2c][].  We intentionally avoid hand-written code that manipulates strings
+char-by-char, since that strategy is error prone.  It's inevitable that rare
+cases will be mishandled.
+
+The list of lexers can bge found by looking at `native/fastlex.c`:
+
+- The huge combined OSH/Oil lexer.
+- OSH lexers:
+  - For `echo -e`
+  - For `PS1` backslash escapes.
+  - For history expansion, e.g. `!$`.
+  - For globs, to implement `${x/foo*/replace}` via conversion to ERE.  We need
+    position information, and the `fnmatch()` API doesn't provide it, but
+    `regexec()` does.
+    - NOTE: We'll also need one for converting extended globs to EREs, for
+      portability.
+
+[re2c]: http://re2c.org/
+
 ## Parser Issues
 
 This section is about extra passes ("irregularities") at **parse time**.  In
@@ -193,4 +215,15 @@ Where the parser is reused:
 - For interactive completion.  (bash does NOT do this).
 - Upcoming: for history expansion, e.g. `!$` to pick off the last word.  (bash
   does NOT do this.)
+
+## State Machines
+
+- `$IFS` splitting in `osh/split.py`
+- compadjust needs to split partial `argv` by user-defined delimiters, e.g.
+  `:=`
+- TODO: Model the prompt and completion as a state machine
+- outside example: vtparse.
+
+The point of a state machine is to make sure all cases are handled!
+
 

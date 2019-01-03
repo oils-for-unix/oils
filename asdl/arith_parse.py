@@ -242,6 +242,7 @@ def main(argv):
       tree = ParseShell(s)
     except tdop.ParseError as e:
       print('Error parsing %r: %s' % (s, e), file=sys.stderr)
+    print(tree)
 
 
 if __name__ == '__main__':
