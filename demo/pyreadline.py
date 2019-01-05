@@ -33,10 +33,15 @@ State:
   5. The number of times you have requested the same completion (to show more
      lines)
 
-
 TODO for this demo:
   - experiment with ordering?  You would have to disable readline sorting
   - simulate FileSystemAction on 'ls'
+  - Don't print past the bottom of the terminal?  Things get messed up.
+  - RootCompleter could get pending lines from the reader
+    - so it will only complete the current line, but it will use the full
+      context of the command
+      echo \
+          <TAB>
 
 LATER:
   - Could have a caching decorator, because we recompute candidates every time.
@@ -349,15 +354,8 @@ class Display(object):
   - Stripping off the common prefix according to OUR rules, not readline's.
   - displaying descriptions of flags and builtins
   """
-  def __init__(self, comp_state, reader, max_lines=10):
-    """
-    Args:
-      max_lines: Maximum lines to take up.  TODO: What is the variable to
-        complete this?
-    """
+  def __init__(self, comp_state):
     self.comp_state = comp_state
-    self.reader = reader
-    self.max_lines = max_lines
 
     self.width_is_dirty = True
     self.term_width = -1  # invalid
@@ -374,17 +372,6 @@ class Display(object):
     """Call this in between commands."""
     self.num_lines_last_displayed = 0
 
-  def _ReturnToPrompt(self, num_lines):
-    # TODO: Save and restore position instead of doing this?
-
-    orig_len = len(self.comp_state['ORIG'])
-    prompt_len = len(self.reader.prompt_str)  # may change between PS1 and PS2
-
-    sys.stdout.write('\x1b[%dA' % num_lines)  # UP
-    n = orig_len + prompt_len
-    sys.stdout.write('\x1b[%dC' % n)  # RIGHT
-    sys.stdout.flush()
-
   def _PrintCandidates(self, subst, matches, unused_max_match_len):
     term_width = self._GetTerminalWidth()
 
@@ -392,7 +379,8 @@ class Display(object):
     # because we can't get "matches" without calling that function.
     prefix_pos = self.comp_state['prefix_pos']
 
-    sys.stdout.write('\r\n')
+    sys.stdout.write('\x1b[s')  # SAVE
+    sys.stdout.write('\n')
 
     self.EraseLines()  # Delete previous completions!
     log('_PrintCandidates %r', subst, file=DEBUG_F)
@@ -426,8 +414,6 @@ class Display(object):
     # Calculate max length after stripping prefix.
     max_match_len = max(len(m) for m in to_display)
 
-    #sys.stdout.write('\x1b[s')  # SAVE
-
     # Print and go back up.  But we have to ERASE these before hitting enter!
     if self.comp_state.get('DESC'):  # exists and is NON EMPTY
       num_lines = PrintLong(to_display, max_match_len, term_width,
@@ -438,9 +424,7 @@ class Display(object):
 
     self.num_lines_last_displayed = num_lines
 
-    #sys.stdout.write('\x1b[u')  # RESTORE
-
-    self._ReturnToPrompt(num_lines+1)
+    sys.stdout.write('\x1b[u')  # RESTORE
 
     self.c_count += 1
 
@@ -461,7 +445,8 @@ class Display(object):
     # This will mess up formatting
     assert not msg.endswith('\n'), msg
 
-    sys.stdout.write('\r\n')
+    sys.stdout.write('\x1b[s')  # SAVE
+    sys.stdout.write('\n')
 
     self.EraseLines()
     log('_PrintMessage %r', msg, file=DEBUG_F)
@@ -473,9 +458,10 @@ class Display(object):
 
     fmt = _BOLD + _BLUE + '%' + str(max_len) + 's' + _RESET
     sys.stdout.write(fmt % msg)
-    sys.stdout.write('\r')  # go back to beginning of line
+    #sys.stdout.write('\r')  # go back to beginning of line
 
-    self._ReturnToPrompt(1)
+    sys.stdout.write('\x1b[u')  # RESTORE
+    sys.stdout.flush()  # required
 
     self.num_lines_last_displayed = 1
 
@@ -500,20 +486,14 @@ class Display(object):
     if n == 0:
       return
 
-    sys.stdout.write('\x1b[s')  # SAVE
-
     for i in xrange(n):
       # 2K would clear the ENTIRE line, but isn't strictly necessary.
       sys.stdout.write('\x1b[0K')
       sys.stdout.write('\x1b[%dB' % 1)  # go down one line
 
-    sys.stdout.write('\x1b[u')  # RESTORE
+    # Now go back up
+    sys.stdout.write('\x1b[%dA' % n)
     sys.stdout.flush()  # Without this, output will look messed up
-
-    if 0:
-      # Now go back up
-      sys.stdout.write('\x1b[%dA' % n)
-      sys.stdout.flush()  # Without this, output will look messed up
 
   def _GetTerminalWidth(self):
     if self.width_is_dirty:
@@ -648,7 +628,7 @@ def main(argv):
   comp_state = {}
 
   reader = InteractiveLineReader()
-  display = Display(comp_state, reader)
+  display = Display(comp_state)
 
   # Register a callback to receive terminal width changes.
   signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
