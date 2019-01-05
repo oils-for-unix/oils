@@ -27,24 +27,18 @@ Actions:
 
 State:
   1. The terminal width.  Changes dynamically.
-  2. The prompt: PS1 or PS2  
-  3. The number of lines to clear next
+  2. The prompt: PS1 or PS2.  (Or could save/restore here?)
+  3. The number of lines to clear next.  EraseLines() uses this.
   4. The completion that is in progress.  The 'compopt' builtin affects this.
-  5. The number of times you have requested the same completion (to show more)
+  5. The number of times you have requested the same completion (to show more
+     lines)
 
-  NOTE: EraseLines() uses #2.
 
 TODO for this demo:
-  - It does seem nice to be able page down 10 at a time? 
-    - I think you hit tab for 10 more.
-    - detect this with a counter in root_completer?
-
   - experiment with ordering?  You would have to disable readline sorting
   - simulate FileSystemAction on 'ls'
 
 LATER:
-  - Make the max of 10 lines configurable?
-  - We could also make it so you can hit TAB again
   - Could have a caching decorator, because we recompute candidates every time.
     For $PATH entries?
 
@@ -170,7 +164,7 @@ class RootCompleter(object):
       to_complete = line
       prefix = ''
       # List of commands we know about
-      completer = WordsAction(_COMMANDS)
+      completer = self.comp_lookup['__first']
     else:
       pos = i+1  # beginning of word to complete
       to_complete = line[pos:]
@@ -295,9 +289,10 @@ def PrintPacked(matches, max_match_len, term_width, max_lines):
   if too_many:
     # TODO: Save this in the Display class
     fmt2 = _BOLD + _BLUE + '%' + str(term_width-2) + 's' + _RESET
-    n = len(matches)
-    sys.stdout.write(fmt2 % '... and %d more\n' % (n-i))
-    num_lines += 1
+    num_left = len(matches) - i
+    if num_left:
+      sys.stdout.write(fmt2 % '... and %d more\n' % num_left)
+      num_lines += 1
 
   return num_lines
 
@@ -335,9 +330,10 @@ def PrintLong(matches, max_match_len, term_width, max_lines, descriptions):
     if num_lines == max_lines:
       # right justify
       fmt2 = _BOLD + _BLUE + '%' + str(term_width-1) + 's' + _RESET
-      n = len(matches)
-      sys.stdout.write(fmt2 % '... and %d more\n' % (n-num_lines))
-      num_lines += 1
+      num_left = len(matches) - num_lines
+      if num_left:
+        sys.stdout.write(fmt2 % '... and %d more\n' % num_left)
+        num_lines += 1
       break
 
   return num_lines
@@ -371,6 +367,9 @@ class Display(object):
     self.c_count = 0
     self.m_count = 0
 
+    # hash of matches -> count.  Has exactly ONE entry at a time.
+    self.dupes = {}
+
   def Reset(self):
     """Call this in between commands."""
     self.num_lines_last_displayed = 0
@@ -398,6 +397,26 @@ class Display(object):
     self.EraseLines()  # Delete previous completions!
     log('_PrintCandidates %r', subst, file=DEBUG_F)
 
+    # Figure out if the user hit TAB multiple times to show more matches.
+    # It's not correct to hash the line itself, because two different lines can
+    # have the same completions:
+    #
+    # ls <TAB>
+    # ls --<TAB>
+    #
+    # This is because there is a common prefix. 
+    # So instead use the hash of all matches as the identity.
+
+    # This could be more accurate but I think it's good enough.
+    comp_id = hash(''.join(matches))
+    if comp_id in self.dupes:
+      self.dupes[comp_id] += 1
+    else:
+      self.dupes.clear()  # delete the old ones
+      self.dupes[comp_id] = 1
+
+    max_lines = 10 * self.dupes[comp_id]
+
     # TODO: should we quote these or not?
     if prefix_pos:
       to_display = [m[prefix_pos:] for m in matches]
@@ -412,10 +431,10 @@ class Display(object):
     # Print and go back up.  But we have to ERASE these before hitting enter!
     if self.comp_state.get('DESC'):  # exists and is NON EMPTY
       num_lines = PrintLong(to_display, max_match_len, term_width,
-                            self.max_lines, self.comp_state['DESC'])
+                            max_lines, self.comp_state['DESC'])
     else:
       num_lines = PrintPacked(to_display, max_match_len, term_width,
-                              self.max_lines)
+                              max_lines)
 
     self.num_lines_last_displayed = num_lines
 
@@ -589,7 +608,7 @@ def MainLoop(reader, display):
 
 
 _COMMANDS = [
-    'echo', 'sleep', 'ls', 'grep', 'clear', 'slowc', 'many', 'toomany'
+    'echo', 'sleep', 'clear', 'slowc', 'many', 'toomany'
 ]
 
 ECHO_WORDS = [
@@ -634,17 +653,22 @@ def main(argv):
   # Register a callback to receive terminal width changes.
   signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
 
-  ls_flags = LoadFlags('_tmp/ls_flags.txt')
-  grep_flags = LoadFlags('_tmp/grep_flags.txt')
-
   comp_lookup = {
       'echo': WordsAction(ECHO_WORDS),
-      'ls': FlagsHelpAction(ls_flags),
-      'grep': FlagsHelpAction(grep_flags),
       'slowc': WordsAction([str(i) for i in xrange(20)], delay=0.1),
       'many': WordsAction(['--flag%d' % i for i in xrange(50)]),
       'toomany': WordsAction(['--too%d' % i for i in xrange(1000)]),
   }
+
+  flag_dir = argv[1]
+  commands = []
+  for cmd in os.listdir(flag_dir):
+    path = os.path.join(flag_dir, cmd)
+    flags = LoadFlags(path)
+    comp_lookup[cmd] = FlagsHelpAction(flags)
+    commands.append(cmd)
+
+  comp_lookup['__first'] = WordsAction(commands + _COMMANDS)
 
   # Register a callback to generate completion candidates.
   root_comp = RootCompleter(display, comp_lookup, comp_state)
