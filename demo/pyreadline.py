@@ -145,45 +145,120 @@ class FlagsHelpAction(object):
         yield flag, desc
 
 
+def MultiLineCommand(pending_lines):
+  last_line_pos = 0
+  parts = []
+  for line in pending_lines:
+    if line.endswith('\\\n'):
+      line = line[:-2]
+      last_line_pos += len(line)
+    parts.append(line)
+  cmd = ''.join(parts)
+  return cmd, last_line_pos
+
+
+def MakeCompletionRequest(lines):
+  """Returns a 4-tuple or an error code.
+
+  Cases we CAN complete:
+
+    echo foo \
+    f<TAB>
+
+    echo foo \
+    bar f<TAB>
+
+  Cases we CAN'T complete:
+    ec\
+    h<TAB>    # complete 'o' ?
+    
+    echo f\
+    o<TAB>    # complete 'o' ?
+  """
+  #log('pending_lines %s', pending_lines)
+
+  # first word can't be split over multiple lines
+  if len(lines) > 1 and ' ' not in lines[0]:
+    return -1
+
+  partial_cmd, last_line_pos = MultiLineCommand(lines)
+
+  first = None  # the first word, or None if we're completing the first word
+                # itself (and the candidate is in
+
+  cmd_last_space_pos = partial_cmd.rfind(' ')
+  if cmd_last_space_pos == -1:  # FIRST WORD state, no prefix
+    prefix_pos = 0
+    to_complete = partial_cmd
+    prefix = ''
+
+  else:  # Completing an argument, may be on any line
+    # Find the first word with the left-most space.  (Not the right-most space
+    # above).
+
+    j = partial_cmd.find(' ')
+    assert j != -1
+    first = partial_cmd[:j]
+
+    # The space has to be on the current line, or be the last char on the
+    # previous line before the line continuation.  Otherwise we can't complete
+    # anything.
+    if cmd_last_space_pos < last_line_pos-1:
+      return -2
+
+    last_line = lines[-1]
+    line_space_pos = last_line.rfind(' ')
+    if line_space_pos == -1:  # space is on previous line
+      prefix_pos = 0  # complete all of this line
+    else:
+      prefix_pos = line_space_pos + 1
+
+    #log('space_pos = %d, last_line_pos = %d', line_space_pos, last_line_pos)
+
+    to_complete = last_line[prefix_pos:]
+    prefix = last_line[:prefix_pos]
+
+  #log('X partial_cmd %r', partial_cmd, file=DEBUG_F)
+  #log('X to_complete %r', to_complete, file=DEBUG_F)
+
+  return first, to_complete, prefix, prefix_pos
+
+
 class RootCompleter(object):
   """Dispatch to multiple completers."""
 
-  def __init__(self, display, comp_lookup, comp_state):
+  def __init__(self, reader, display, comp_lookup, comp_state):
     """
     Args:
-      comp_state: Mutated
+      reader: for completing the entire command, not just one line
+      comp_lookup: Dispatch to completion logic for different commands
+      comp_state: fields are added here for Display
     """
+    self.reader = reader
     self.display = display
     self.comp_lookup = comp_lookup
     self.comp_state = comp_state
 
   def Matches(self, comp):
     line = comp['line']
-    self.comp_state['ORIG'] = line
 
-    # Calculate the portion of the line to complete.
+    #log('lines %s', self.reader.pending_lines, file=DEBUG_F)
+    lines = list(self.reader.pending_lines)
+    lines.append(line)
 
-    i = line.rfind(' ')  # the last space
-    if i == -1:  # FIRST WORD state, no prefix
-      pos = 0
-      to_complete = line
-      prefix = ''
-      # List of commands we know about
-      completer = self.comp_lookup['__first']
-    else:
-      pos = i+1  # beginning of word to complete
-      to_complete = line[pos:]
-      prefix = line[:pos]
+    result = MakeCompletionRequest(lines)
+    if result == -1:
+      self.display.PrintMessage("(can't complete first word spanning lines)")
+      return
+    if result == -2:
+      self.display.PrintMessage("(can't complete last word spanning lines)")
+      return
 
-      # left-most space might be different than right-most
-      j = line.find(' ')
-      assert j != -1
-      first = line[:j]
-
-      completer = self.comp_lookup.get(first, _NULL_ACTION)
+    # We have to add on prefix before sending it completer.  And then
+    first, to_complete, prefix, prefix_pos = result
 
     # For the Display callback to look at
-    self.comp_state['prefix_pos'] = pos
+    self.comp_state['prefix_pos'] = prefix_pos
 
     # Reset this at the beginning of each completion.
     # Is there any way to avoid creating a duplicate dictionary each time?
@@ -191,6 +266,13 @@ class RootCompleter(object):
     # Yes that is better.
     # And maybe you can yield the original 'c' too, without prefix and ' '.
     self.comp_state['DESC'] = {}
+
+    if first:
+      completer = self.comp_lookup.get(first, _NULL_ACTION)
+    else:
+      completer = self.comp_lookup['__first']
+
+    #log('to_complete: %r', to_complete, file=DEBUG_F)
 
     i = 0
     start_time = time.time()
@@ -425,6 +507,9 @@ class Display(object):
     self.num_lines_last_displayed = num_lines
 
     sys.stdout.write('\x1b[u')  # RESTORE
+                                # TODO: This is wrong if the screen scrolled!
+                                # We should go back to going up and right?
+                                # Use num_lines.
 
     self.c_count += 1
 
@@ -574,12 +659,8 @@ def MainLoop(reader, display):
     if line.endswith('\\\n'):
       continue
 
-    parts = []
-    for line in reader.pending_lines:
-      if line.endswith('\\\n'):
-        line = line[:-2]
-      parts.append(line)
-    cmd = ''.join(parts)
+    # Take multiple lines from the reader, simulating the OSH parser.
+    cmd, _ = MultiLineCommand(reader.pending_lines)
 
     os.system(cmd)
 
@@ -651,7 +732,7 @@ def main(argv):
   comp_lookup['__first'] = WordsAction(commands + _COMMANDS)
 
   # Register a callback to generate completion candidates.
-  root_comp = RootCompleter(display, comp_lookup, comp_state)
+  root_comp = RootCompleter(reader, display, comp_lookup, comp_state)
   readline.set_completer(CompletionCallback(root_comp))
 
   # We want to parse the line ourselves, rather than use readline's naive

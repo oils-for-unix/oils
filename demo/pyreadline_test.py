@@ -30,6 +30,49 @@ class PyReadlineTest(unittest.TestCase):
       print('Wrote %d lines' % n)
       print('')
 
+  def testRootCompleter(self):
+    comp_state = {}
+    comp_lookup = {
+        'echo': pyreadline.WordsAction(['foo', 'bar']),
+    }
+    display = pyreadline.Display(comp_state)
+    reader = pyreadline.InteractiveLineReader()
+    reader.pending_lines.extend([
+      'echo \\\n',  # first line
+    ])
+
+    r = pyreadline.RootCompleter(reader, display, comp_lookup, comp_state)
+    # second line
+    matches = list(r.Matches({'line': 'x f'}))
+    print(matches)
+
+    # this is what readline wants
+    self.assertEqual(['x foo '], matches)
+
+  def testMakeCompletionRequest(self):
+    f = pyreadline.MakeCompletionRequest
+    # complete the first word
+    self.assertEqual((None, 'ech', '', 0), f(['ech']))
+
+    # complete argument to echo
+    self.assertEqual(('echo', '', 'echo ', 5), f(['echo ']))
+    self.assertEqual(('echo', 'f', 'echo ', 5), f(['echo f']))
+
+    # CAN complete this
+    self.assertEqual(('echo', '', '', 0), f(['echo \\\n', '']))
+
+    # can't complete a first word split over multiple lines without space
+    self.assertEqual(-1, f(['ec\\\n', 'ho']))
+
+    # can't complete a first word split over multiple lines with space
+    self.assertEqual(-1, f(['ec\\\n', 'ho f']))
+
+    # can't complete last word split over multiple lines
+    self.assertEqual(-2, f(['echo f\\\n', 'o']))
+
+    # CAN complete with line break in the middle
+    self.assertEqual(('echo', 'b', 'oo ', 3), f(['echo f\\\n', 'oo b']))
+
 
 if __name__ == '__main__':
   unittest.main()
