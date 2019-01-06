@@ -33,16 +33,18 @@ State:
   - The number of times you have requested the same completion (to show more
     lines)
 
-TODO for this demo:
-  - copy in FileSystemAction?  That might make it somewhat usable.
-    - how does 'ls' get both flag and path completion?  See bash-completion.
-  - experiment with ordering?  You would have to disable readline sorting
+UI:
+  - Explanatory message when there's no completion
+  - Progress when there's a slow completion (over 200 ms)
+  - Empty input "moves" the prompt down a line
+  - Flag help displayed in yellow
+  - Line can be bold.  Although we might want syntax highlighting for $foo
+    and so forth.  "$foo" vs. '$foo' is useful.
 
 LATER:
   - Could have a caching decorator, because we recompute candidates every time.
     For $PATH entries?
-
-Readline settings to experiment with:
+  - experiment with ordering?  You would have to disable readline sorting:
 
 Variable: int rl_sort_completion_matches
   If an application sets this variable to 0, Readline will not sort the list of
@@ -50,8 +52,6 @@ Variable: int rl_sort_completion_matches
   The default value is 1, which means that Readline will sort the completions
   and, depending on the value of rl_ignore_completion_duplicates, will attempt
   to remove duplicate matches. 
-
-We should handle all of this in OSH.
 """
 from __future__ import print_function
 
@@ -62,21 +62,27 @@ import sys
 import time
 import traceback
 
-# Only for GetTerminalSize().  They should be implemented in C to avoid
+# Only for GetTerminalSize().  OSH should implement that function in C to avoid
 # dependencies.
 import fcntl
 import struct
 import termios
 
+# Only for prompt rendering.
+import getpass
+import pwd
+import socket
+
 
 _RESET = '\033[0;0m'
 _BOLD = '\033[1m'
+_UNDERLINE = '\033[4m'
+_REVERSE = '\033[7m'  # reverse video
 
 _YELLOW = '\033[33m'
 _BLUE = '\033[34m'
 #_MAGENTA = '\033[35m'
 _CYAN = '\033[36m'
-
 
 
 if 0:
@@ -102,11 +108,22 @@ def GetTerminalSize():
   return cr
 
 
-class NullAction(object):
-  def Matches(self, prefix):
-    return []
+def GetHomeDir():
+  """Get the user's home directory from the /etc/passwd.
 
-_NULL_ACTION = NullAction()
+  Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
+  initialization use mem.GetVar('HOME').
+  """
+  uid = os.getuid()
+  try:
+    e = pwd.getpwuid(uid)
+  except KeyError:
+    return None
+  else:
+    return e.pw_dir
+
+
+_HOME_DIR = GetHomeDir()
 
 
 class WordsAction(object):
@@ -122,6 +139,69 @@ class WordsAction(object):
           time.sleep(self.delay)
 
         yield w
+
+
+class FileSystemAction(object):
+  """Complete paths from the file system.
+
+  Directories will have a / suffix.
+  
+  Copied from core/completion.py in Oil.
+  """
+
+  def __init__(self, dirs_only=False, exec_only=False, add_slash=False):
+    self.dirs_only = dirs_only
+    self.exec_only = exec_only
+
+    # This is for redirects, not for UserSpec, which should respect compopt -o
+    # filenames.
+    self.add_slash = add_slash  # for directories
+
+  def Matches(self, to_complete):
+    #log('fs %r', to_complete)
+    i = to_complete.rfind('/')
+    if i == -1:  # it looks like 'foo'
+      to_list = '.'
+      base = ''
+    elif i == 0:  # it's an absolute path to_complete like / or /b
+      to_list ='/'
+      base = '/'
+    else:
+      to_list = to_complete[:i]
+      base = to_list
+      #log('to_list %r', to_list)
+
+    try:
+      names = os.listdir(to_list)
+    except OSError as e:
+      return  # nothing
+
+    for name in names:
+      path = os.path.join(base, name)
+      if path.startswith(to_complete):
+        if self.dirs_only:  # add_slash not used here
+          # NOTE: There is a duplicate isdir() check later to add a trailing
+          # slash.  Consolidate the checks for fewer stat() ops.  This is hard
+          # because all the completion actions must obey the same interface.
+          # We could have another type like candidate = File | Dir |
+          # OtherString ?
+          if os_path.isdir(path):
+            yield path
+          continue
+
+        if self.exec_only:
+          # TODO: Handle exception if file gets deleted in between listing and
+          # check?
+          if not os.access(path, os.X_OK):
+            continue
+
+        if self.add_slash and os.path.isdir(path):
+          yield path + '/'
+        else:
+          yield path
+
+
+_FS_ACTION = FileSystemAction(add_slash=True)
 
 
 class FlagsHelpAction(object):
@@ -140,7 +220,25 @@ class FlagsHelpAction(object):
         yield flag, desc
 
 
-def MultiLineCommand(pending_lines):
+class FlagsAndFileSystemAction(object):
+  """Complete flags if the word starts with '-', otherwise files.
+
+  This is basically what _longopt in bash-completion does.
+  """
+  def __init__(self, flags_action, fs_action):
+    self.flags_action = flags_action
+    self.fs_action = fs_action
+
+  def Matches(self, prefix):
+    if prefix.startswith('-'):
+      for m in self.flags_action.Matches(prefix):
+        yield m
+    else:
+      for m in self.fs_action.Matches(prefix):
+        yield m
+
+
+def JoinLinesOfCommand(pending_lines):
   last_line_pos = 0
   parts = []
   for line in pending_lines:
@@ -176,7 +274,7 @@ def MakeCompletionRequest(lines):
   if len(lines) > 1 and ' ' not in lines[0]:
     return -1
 
-  partial_cmd, last_line_pos = MultiLineCommand(lines)
+  partial_cmd, last_line_pos = JoinLinesOfCommand(lines)
 
   first = None  # the first word, or None if we're completing the first word
                 # itself (and the candidate is in
@@ -264,7 +362,7 @@ class RootCompleter(object):
     self.comp_state['DESC'] = {}
 
     if first:
-      completer = self.comp_lookup.get(first, _NULL_ACTION)
+      completer = self.comp_lookup.get(first, _FS_ACTION)
     else:
       completer = self.comp_lookup['__first']
 
@@ -281,7 +379,10 @@ class RootCompleter(object):
           rl_match = flag + ' '
         self.comp_state['DESC'][rl_match] = desc  # save it for later
       else:
-        rl_match = match + ' '
+        if match.endswith('/'):  # Hack for directories
+          rl_match = match
+        else:
+          rl_match = match + ' '
 
       yield prefix + rl_match
       # TODO: avoid calling time() so much?
@@ -432,9 +533,14 @@ class Display(object):
   - Stripping off the common prefix according to OUR rules, not readline's.
   - displaying descriptions of flags and builtins
   """
-  def __init__(self, comp_state, reader):
+  def __init__(self, comp_state, reader, bold_line=False):
+    """
+    Args:
+      bold_line: Should the command line be made bold?
+    """
     self.comp_state = comp_state
     self.reader = reader
+    self.bold_line = bold_line
 
     self.width_is_dirty = True
     self.term_width = -1  # invalid
@@ -457,11 +563,17 @@ class Display(object):
     # how many lines we printed and the original column of the cursor.
 
     orig_len = len(self.comp_state['ORIG'])
-    prompt_len = len(self.reader.prompt_str)  # may change between PS1 and PS2
+
+    # PROBLEM: We need to count PRINTABLE characters here, leaving out escapes.
+    prompt_len = self.reader.PromptLength()
 
     sys.stdout.write('\x1b[%dA' % num_lines)  # UP
     n = orig_len + prompt_len
     sys.stdout.write('\x1b[%dC' % n)  # RIGHT
+
+    if self.bold_line:
+      sys.stdout.write(_BOLD)  # Experiment
+
     sys.stdout.flush()
 
   def _PrintCandidates(self, subst, matches, unused_max_match_len):
@@ -547,13 +659,11 @@ class Display(object):
 
     fmt = _BOLD + _BLUE + '%' + str(max_len) + 's' + _RESET
     sys.stdout.write(fmt % msg)
-    #sys.stdout.write('\r')  # go back to beginning of line
 
-    sys.stdout.flush()  # required
+    sys.stdout.write('\r')  # go back to beginning of line
+    self._ReturnToPrompt(1)
 
-    self._ReturnToPrompt(num_lines)
     self.num_lines_last_displayed = 1
-
     self.m_count += 1
 
   def EraseLines(self):
@@ -561,12 +671,16 @@ class Display(object):
 
     Assume the cursor is right below thep rompt:
 
-    demo$ echo hi
-    _     <-- HERE
+    ish$ echo hi
+    _ <-- HERE
 
     That's the first line to erase out of N.  After erasing them, return it
     there.
     """
+    if self.bold_line:
+      sys.stdout.write(_RESET)  # if command is bold
+      sys.stdout.flush()
+
     n = self.num_lines_last_displayed
 
     log('EraseLines %d (c = %d, m = %d)', n, self.c_count, self.m_count,
@@ -596,8 +710,12 @@ class Display(object):
     # display to be shown with different widths.
     self.width_is_dirty = True
 
+ 
+# What does the Oil prompt look like, vs OSH?
 
-_PS1 = 'demo$ '
+#_PS1 = ' \u@\h \w '
+_PS1 = '\u@\h \w! '
+#_PS1 = '[\u@\h \w] '
 _PS2 = '> '  # A different length to test Display
 
 
@@ -610,25 +728,43 @@ class InteractiveLineReader(object):
 
   Holds PS1 / PS2 state.
   """
-  def __init__(self):
+  def __init__(self, bold_line=False):
+    self.bold_line = bold_line
     self.prompt_str = ''
     self.pending_lines = []  # for completion to use
     self.Reset()  # initialize self.prompt_str
 
     # https://stackoverflow.com/questions/22916783/reset-python-sigint-to-default-signal-handler
     self.orig_handler = signal.getsignal(signal.SIGINT) 
+    self.last_prompt_len = 0
     #log('%s', self.orig_handler)
 
   def GetLine(self):
     signal.signal(signal.SIGINT, self.orig_handler)  # raise KeyboardInterrupt
+    p = self.prompt_str
+    p = p.replace('\u', getpass.getuser())
+    p = p.replace('\h', socket.gethostname())
+    cwd = os.getcwd().replace(_HOME_DIR, '~')  # Hack
+    p = p.replace('\w', cwd)
+    self.last_prompt_len = len(p)
+    #p2 = _BOLD + p + _RESET
+    if self.bold_line:
+      p2 = p + _BOLD
+    else:
+      p2 = p
+
+    #p2 = _UNDERLINE + p + _RESET + ' '
+    # Maybe Oil prompt should use reverse video, so you can tell them apart?
+    #p2 = _REVERSE + ' ' + p + _RESET + ' '
+
     try:
-      line = raw_input(self.prompt_str) + '\n'  # newline required
+      line = raw_input(p2) + '\n'  # newline required
     except KeyboardInterrupt:
       print('^C')
-      line = ''
+      line = -1
     except EOFError:
       print('^D')  # bash prints 'exit'; mksh prints ^D.
-      line = None
+      line = -2
     else:
       self.pending_lines.append(line)
     finally:
@@ -636,8 +772,23 @@ class InteractiveLineReader(object):
       # NOTE: This can't be SIG_IGN, because that affects the child process.
       signal.signal(signal.SIGINT, DoNothing)
 
+    # Nice trick to remove repeated prompts.
+    if line == '\n':  # empty
+      # Go up one line and erase the whole line
+      sys.stdout.write('\x1b[1A\x1b[2K\n')
+      sys.stdout.flush()
+
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return line
+
+  def PromptLength(self):
+    """Return the length of the current prompt.
+
+    TODO: This should be the length in PRINTABLE characters.
+    Does bash make you use \[ and \] to calculate that?
+    """
+    # The length can change every time!
+    return self.last_prompt_len
 
   def Reset(self):
     self.prompt_str = _PS1
@@ -651,20 +802,34 @@ def MainLoop(reader, display):
     # Erase lines before execution, displaying PS2, or exit!
     display.EraseLines()
 
-    #log('got %r', line)
-    if line is None:
-      break
-
-    if line == '':  # Ctrl-C
+    if line == -1:  # Ctrl-C
       display.Reset()
       reader.Reset()
       continue
 
+    #log('got %r', line)
+    if line == -2:  # EOF
+      break
+
     if line.endswith('\\\n'):
       continue
 
+    if line.startswith('cd '):
+      try:
+        dest = line.strip().split(None, 1)[1]
+      except IndexError:
+        log('cd: dir required')
+      else:
+        try:
+          os.chdir(dest)
+        except OSError as e:
+          log('cd: %s', e)
+      display.Reset()
+      reader.Reset()
+      continue
+
     # Take multiple lines from the reader, simulating the OSH parser.
-    cmd, _ = MultiLineCommand(reader.pending_lines)
+    cmd, _ = JoinLinesOfCommand(reader.pending_lines)
 
     os.system(cmd)
 
@@ -673,7 +838,7 @@ def MainLoop(reader, display):
 
 
 _COMMANDS = [
-    'echo', 'sleep', 'clear', 'slowc', 'many', 'toomany'
+    'cd', 'echo', 'sleep', 'clear', 'slowc', 'many', 'toomany'
 ]
 
 ECHO_WORDS = [
@@ -706,14 +871,15 @@ def main(argv):
   fmt = '%' + str(term_width) + 's'
 
   #msg = "[Oil 0.6.pre11] Type 'help' or visit https://oilshell.org/help/ "
-  msg = "For help, type 'help' or visit https://oilshell.org/help/0.6.pre11 "
+  msg = "For help, type 'help' or visit https://oilshell.org "
   print(fmt % msg)
+  print('')
 
   # Used to store the original line, flag descriptions, etc.
   comp_state = {}
 
-  reader = InteractiveLineReader()
-  display = Display(comp_state, reader)
+  reader = InteractiveLineReader(bold_line=True)
+  display = Display(comp_state, reader, bold_line=True)
 
   # Register a callback to receive terminal width changes.
   signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
@@ -730,7 +896,8 @@ def main(argv):
   for cmd in os.listdir(flag_dir):
     path = os.path.join(flag_dir, cmd)
     flags = LoadFlags(path)
-    comp_lookup[cmd] = FlagsHelpAction(flags)
+    fl = FlagsHelpAction(flags)
+    comp_lookup[cmd] = FlagsAndFileSystemAction(fl, _FS_ACTION)
     commands.append(cmd)
 
   comp_lookup['__first'] = WordsAction(commands + _COMMANDS)

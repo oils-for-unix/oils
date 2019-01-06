@@ -35,11 +35,11 @@ class PyReadlineTest(unittest.TestCase):
     comp_lookup = {
         'echo': pyreadline.WordsAction(['foo', 'bar']),
     }
-    display = pyreadline.Display(comp_state)
     reader = pyreadline.InteractiveLineReader()
     reader.pending_lines.extend([
       'echo \\\n',  # first line
     ])
+    display = pyreadline.Display(comp_state, reader)
 
     r = pyreadline.RootCompleter(reader, display, comp_lookup, comp_state)
     # second line

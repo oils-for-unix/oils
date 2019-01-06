@@ -277,10 +277,7 @@ class FileSystemAction(CompletionAction):
   """Complete paths from the file system.
 
   Directories will have a / suffix.
-  
-  TODO: We need a variant that tests for an executable bit.
   """
-
   def __init__(self, dirs_only=False, exec_only=False, add_slash=False):
     self.dirs_only = dirs_only
     self.exec_only = exec_only
