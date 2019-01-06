@@ -26,22 +26,17 @@ Actions:
   - Exit the shell
 
 State:
-  1. The terminal width.  Changes dynamically.
-  2. The prompt: PS1 or PS2.  (Or could save/restore here?)
-  3. The number of lines to clear next.  EraseLines() uses this.
-  4. The completion that is in progress.  The 'compopt' builtin affects this.
-  5. The number of times you have requested the same completion (to show more
-     lines)
+  - The terminal width.  Changes dynamically.
+  - The prompt: PS1 or PS2.  (Or could save/restore here?)
+  - The number of lines to clear next.  EraseLines() uses this.
+  - The completion that is in progress.  The 'compopt' builtin affects this.
+  - The number of times you have requested the same completion (to show more
+    lines)
 
 TODO for this demo:
   - experiment with ordering?  You would have to disable readline sorting
   - simulate FileSystemAction on 'ls'
   - Don't print past the bottom of the terminal?  Things get messed up.
-  - RootCompleter could get pending lines from the reader
-    - so it will only complete the current line, but it will use the full
-      context of the command
-      echo \
-          <TAB>
 
 LATER:
   - Could have a caching decorator, because we recompute candidates every time.

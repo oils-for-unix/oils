@@ -37,8 +37,8 @@ from frontend import lex
 from frontend import match
 from pylib import os_path
 from osh import state
+from osh import string_ops
 from osh import word_compile
-
 
 import libc
 from _devbuild.gen import osh_help  # generated file
