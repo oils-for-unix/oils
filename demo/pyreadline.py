@@ -34,9 +34,9 @@ State:
     lines)
 
 TODO for this demo:
+  - copy in FileSystemAction?  That might make it somewhat usable.
+    - how does 'ls' get both flag and path completion?  See bash-completion.
   - experiment with ordering?  You would have to disable readline sorting
-  - simulate FileSystemAction on 'ls'
-  - Don't print past the bottom of the terminal?  Things get messed up.
 
 LATER:
   - Could have a caching decorator, because we recompute candidates every time.
@@ -236,6 +236,7 @@ class RootCompleter(object):
 
   def Matches(self, comp):
     line = comp['line']
+    self.comp_state['ORIG'] = line
 
     #log('lines %s', self.reader.pending_lines, file=DEBUG_F)
     lines = list(self.reader.pending_lines)
@@ -431,8 +432,9 @@ class Display(object):
   - Stripping off the common prefix according to OUR rules, not readline's.
   - displaying descriptions of flags and builtins
   """
-  def __init__(self, comp_state):
+  def __init__(self, comp_state, reader):
     self.comp_state = comp_state
+    self.reader = reader
 
     self.width_is_dirty = True
     self.term_width = -1  # invalid
@@ -449,6 +451,19 @@ class Display(object):
     """Call this in between commands."""
     self.num_lines_last_displayed = 0
 
+  def _ReturnToPrompt(self, num_lines):
+    # NOTE: We can't use ANSI terminal codes to save and restore the prompt,
+    # because the screen may have scrolled.  Instead we have to keep track of
+    # how many lines we printed and the original column of the cursor.
+
+    orig_len = len(self.comp_state['ORIG'])
+    prompt_len = len(self.reader.prompt_str)  # may change between PS1 and PS2
+
+    sys.stdout.write('\x1b[%dA' % num_lines)  # UP
+    n = orig_len + prompt_len
+    sys.stdout.write('\x1b[%dC' % n)  # RIGHT
+    sys.stdout.flush()
+
   def _PrintCandidates(self, subst, matches, unused_max_match_len):
     term_width = self._GetTerminalWidth()
 
@@ -456,7 +471,6 @@ class Display(object):
     # because we can't get "matches" without calling that function.
     prefix_pos = self.comp_state['prefix_pos']
 
-    sys.stdout.write('\x1b[s')  # SAVE
     sys.stdout.write('\n')
 
     self.EraseLines()  # Delete previous completions!
@@ -499,12 +513,8 @@ class Display(object):
       num_lines = PrintPacked(to_display, max_match_len, term_width,
                               max_lines)
 
+    self._ReturnToPrompt(num_lines+1)
     self.num_lines_last_displayed = num_lines
-
-    sys.stdout.write('\x1b[u')  # RESTORE
-                                # TODO: This is wrong if the screen scrolled!
-                                # We should go back to going up and right?
-                                # Use num_lines.
 
     self.c_count += 1
 
@@ -525,7 +535,6 @@ class Display(object):
     # This will mess up formatting
     assert not msg.endswith('\n'), msg
 
-    sys.stdout.write('\x1b[s')  # SAVE
     sys.stdout.write('\n')
 
     self.EraseLines()
@@ -540,9 +549,9 @@ class Display(object):
     sys.stdout.write(fmt % msg)
     #sys.stdout.write('\r')  # go back to beginning of line
 
-    sys.stdout.write('\x1b[u')  # RESTORE
     sys.stdout.flush()  # required
 
+    self._ReturnToPrompt(num_lines)
     self.num_lines_last_displayed = 1
 
     self.m_count += 1
@@ -704,7 +713,7 @@ def main(argv):
   comp_state = {}
 
   reader = InteractiveLineReader()
-  display = Display(comp_state)
+  display = Display(comp_state, reader)
 
   # Register a callback to receive terminal width changes.
   signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
