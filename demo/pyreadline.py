@@ -84,6 +84,20 @@ _BLUE = '\033[34m'
 #_MAGENTA = '\033[35m'
 _CYAN = '\033[36m'
 
+# Prompt style
+_RIGHT = '_RIGHT'
+
+
+# ANSI escape codes affect the prompt!
+# https://superuser.com/questions/301353/escape-non-printing-characters-in-a-function-for-a-bash-prompt
+#
+# Readline understands \x01 and \x02, while bash understands \[ and \].
+
+_PROMPT_BOLD = '\x01%s\x02' % _BOLD
+_PROMPT_RESET = '\x01%s\x02' % _RESET
+_PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
+_PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
+
 
 if 0:
   DEBUG_F = open('_tmp/demo-debug', 'w')
@@ -533,14 +547,15 @@ class Display(object):
   - Stripping off the common prefix according to OUR rules, not readline's.
   - displaying descriptions of flags and builtins
   """
-  def __init__(self, comp_state, reader, bold_line=False):
+  def __init__(self, comp_state, bold_line=False):
     """
     Args:
       bold_line: Should the command line be made bold?
     """
     self.comp_state = comp_state
-    self.reader = reader
     self.bold_line = bold_line
+
+    self.last_prompt_len = -1  # invalid
 
     self.width_is_dirty = True
     self.term_width = -1  # invalid
@@ -557,6 +572,9 @@ class Display(object):
     """Call this in between commands."""
     self.num_lines_last_displayed = 0
 
+  def SetPromptLength(self, i):
+    self.last_prompt_len = i
+
   def _ReturnToPrompt(self, num_lines):
     # NOTE: We can't use ANSI terminal codes to save and restore the prompt,
     # because the screen may have scrolled.  Instead we have to keep track of
@@ -564,11 +582,9 @@ class Display(object):
 
     orig_len = len(self.comp_state['ORIG'])
 
-    # PROBLEM: We need to count PRINTABLE characters here, leaving out escapes.
-    prompt_len = self.reader.PromptLength()
-
     sys.stdout.write('\x1b[%dA' % num_lines)  # UP
-    n = orig_len + prompt_len
+    assert self.last_prompt_len != -1
+    n = orig_len + self.last_prompt_len
     sys.stdout.write('\x1b[%dC' % n)  # RIGHT
 
     if self.bold_line:
@@ -657,14 +673,24 @@ class Display(object):
     if len(msg) > max_len:
       msg = msg[:max_len-5] + ' ... '
 
-    fmt = _BOLD + _BLUE + '%' + str(max_len) + 's' + _RESET
+    # NOTE: \n at end is REQUIRED.  Otherwise we get drawing problems when on
+    # the last line.
+    fmt = _BOLD + _BLUE + '%' + str(max_len) + 's' + _RESET + '\n'
     sys.stdout.write(fmt % msg)
 
-    sys.stdout.write('\r')  # go back to beginning of line
-    self._ReturnToPrompt(1)
+    self._ReturnToPrompt(2)
 
     self.num_lines_last_displayed = 1
     self.m_count += 1
+
+  def ShowPromptOnRight(self, rendered):
+    n = self._GetTerminalWidth() - 2 - len(rendered)
+    spaces = ' ' * n
+
+    # We avoid drawing problems if we print it on its own line:
+    # - inserting text doesn't push it to the right
+    # - you can't overwrite it
+    sys.stdout.write(spaces + _REVERSE + ' ' + rendered + ' ' + _RESET + '\r\n')
 
   def EraseLines(self):
     """Clear N lines one-by-one.
@@ -712,10 +738,11 @@ class Display(object):
 
  
 # What does the Oil prompt look like, vs OSH?
+# We have reverse and underline styles.  But we need a default.
+# We also have bold.  We might not want the command line to be bold, because
+# later it could be syntax-highlighted.
 
-#_PS1 = ' \u@\h \w '
-_PS1 = '\u@\h \w! '
-#_PS1 = '[\u@\h \w] '
+_PS1 = '\u@\h \w'
 _PS2 = '> '  # A different length to test Display
 
 
@@ -723,13 +750,57 @@ def DoNothing(unused1, unused2):
   pass
 
 
+class PromptEvaluator(object):
+  """Evaluate the prompt and give it a certain style."""
+
+  def __init__(self, style, display):
+    self.style = style
+    self.display = display
+
+  def Eval(self, template):
+    p = template
+    p = p.replace('\u', getpass.getuser())
+    p = p.replace('\h', socket.gethostname())
+    cwd = os.getcwd().replace(_HOME_DIR, '~')  # Hack
+    p = p.replace('\w', cwd)
+    prompt_len = len(p)
+
+    if self.style == _RIGHT:
+      self.display.ShowPromptOnRight(p)
+
+      p2 = _PROMPT_BOLD + ': ' + _PROMPT_RESET
+      prompt_len = 2
+
+    elif self.style == _BOLD:  # Make it bold and add '$ '
+      p2 = _PROMPT_BOLD + p + '$ ' + _PROMPT_RESET
+      prompt_len += 2
+
+    elif self.style == _UNDERLINE:
+      # Don't underline the space
+      p2 = _PROMPT_UNDERLINE + p + _PROMPT_RESET + ' '
+      prompt_len += 1
+
+    elif self.style == _REVERSE:
+      p2 = _PROMPT_REVERSE + ' ' + p + ' ' + _PROMPT_RESET + ' '
+      prompt_len += 3
+
+    else:
+      p2 = p + '$ '  # emulate bash style
+      prompt_len += 2
+
+    return p2, prompt_len
+
+
 class InteractiveLineReader(object):
   """Simplified version of OSH prompt.
 
   Holds PS1 / PS2 state.
   """
-  def __init__(self, bold_line=False):
+  def __init__(self, prompt_eval, display, bold_line=False):
+    self.prompt_eval = prompt_eval
+    self.display = display
     self.bold_line = bold_line
+
     self.prompt_str = ''
     self.pending_lines = []  # for completion to use
     self.Reset()  # initialize self.prompt_str
@@ -741,19 +812,20 @@ class InteractiveLineReader(object):
 
   def GetLine(self):
     signal.signal(signal.SIGINT, self.orig_handler)  # raise KeyboardInterrupt
-    p = self.prompt_str
-    p = p.replace('\u', getpass.getuser())
-    p = p.replace('\h', socket.gethostname())
-    cwd = os.getcwd().replace(_HOME_DIR, '~')  # Hack
-    p = p.replace('\w', cwd)
-    self.last_prompt_len = len(p)
-    #p2 = _BOLD + p + _RESET
-    if self.bold_line:
-      p2 = p + _BOLD
-    else:
-      p2 = p
+    if self.prompt_str != _PS2:
+      p2, prompt_len = self.prompt_eval.Eval(self.prompt_str)
 
-    #p2 = _UNDERLINE + p + _RESET + ' '
+    else:
+      p2 = self.prompt_str
+      prompt_len = len(self.prompt_str)
+
+    # Tell the display how wide the prompt now is, so it can _ReturnToPrompt()!
+    self.display.SetPromptLength(prompt_len)
+
+    #p2 = _BOLD + p + _RESET
+    if self.display.bold_line:
+      p2 += _PROMPT_BOLD
+
     # Maybe Oil prompt should use reverse video, so you can tell them apart?
     #p2 = _REVERSE + ' ' + p + _RESET + ' '
 
@@ -780,15 +852,6 @@ class InteractiveLineReader(object):
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return line
-
-  def PromptLength(self):
-    """Return the length of the current prompt.
-
-    TODO: This should be the length in PRINTABLE characters.
-    Does bash make you use \[ and \] to calculate that?
-    """
-    # The length can change every time!
-    return self.last_prompt_len
 
   def Reset(self):
     self.prompt_str = _PS1
@@ -878,8 +941,21 @@ def main(argv):
   # Used to store the original line, flag descriptions, etc.
   comp_state = {}
 
-  reader = InteractiveLineReader(bold_line=True)
-  display = Display(comp_state, reader, bold_line=True)
+  # TODO:
+  # - in the case of the right-hand prompt, the display should render it?
+  # - i.e. you should have a PromptEvaluator, and it should be passed
+  #   potentially to both of these based on the style?
+  # - reader renders it if it's a normal prompt, and display renders it if it's
+  # a RHS prompt.
+
+  # OSH looks normal?
+  #prompt = PromptEvaluator(None)
+
+  # Oil has reverse video on the right.  It's also bold, and may be syntax
+  # highlighted later.
+  display = Display(comp_state, bold_line=True)
+  prompt = PromptEvaluator(_RIGHT, display)
+  reader = InteractiveLineReader(prompt, display)  # updates the display
 
   # Register a callback to receive terminal width changes.
   signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
@@ -891,14 +967,18 @@ def main(argv):
       'toomany': WordsAction(['--too%d' % i for i in xrange(1000)]),
   }
 
-  flag_dir = argv[1]
   commands = []
-  for cmd in os.listdir(flag_dir):
-    path = os.path.join(flag_dir, cmd)
-    flags = LoadFlags(path)
-    fl = FlagsHelpAction(flags)
-    comp_lookup[cmd] = FlagsAndFileSystemAction(fl, _FS_ACTION)
-    commands.append(cmd)
+  try:
+    flag_dir = argv[1]
+  except IndexError:
+    pass
+  else:
+    for cmd in os.listdir(flag_dir):
+      path = os.path.join(flag_dir, cmd)
+      flags = LoadFlags(path)
+      fl = FlagsHelpAction(flags)
+      comp_lookup[cmd] = FlagsAndFileSystemAction(fl, _FS_ACTION)
+      commands.append(cmd)
 
   comp_lookup['__first'] = WordsAction(commands + _COMMANDS)
 
