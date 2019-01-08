@@ -100,6 +100,11 @@ bin-flake8() {
   fi
 }
 
+# Just do a single file
+flake8-one() {
+  bin-flake8 --ignore 'E111,E114,E226,E265' "$@"
+}
+
 flake8-all() {
   local -a dirs=(asdl bin core oil_lang osh opy ovm2)
 

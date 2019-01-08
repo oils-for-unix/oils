@@ -293,7 +293,7 @@ class FileSystemAction(CompletionAction):
       to_list = '.'
       base = ''
     elif i == 0:  # it's an absolute path to_complete like / or /b
-      to_list ='/'
+      to_list = '/'
       base = '/'
     else:
       to_list = to_complete[:i]

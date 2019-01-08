@@ -51,7 +51,7 @@ Variable: int rl_sort_completion_matches
   completions (which implies that it cannot remove any duplicate completions).
   The default value is 1, which means that Readline will sort the completions
   and, depending on the value of rl_ignore_completion_duplicates, will attempt
-  to remove duplicate matches. 
+  to remove duplicate matches.
 """
 from __future__ import print_function
 
@@ -86,6 +86,7 @@ _CYAN = '\033[36m'
 
 # Prompt style
 _RIGHT = '_RIGHT'
+_OSH = '_OSH'
 
 
 # ANSI escape codes affect the prompt!
@@ -159,7 +160,7 @@ class FileSystemAction(object):
   """Complete paths from the file system.
 
   Directories will have a / suffix.
-  
+
   Copied from core/completion.py in Oil.
   """
 
@@ -178,7 +179,7 @@ class FileSystemAction(object):
       to_list = '.'
       base = ''
     elif i == 0:  # it's an absolute path to_complete like / or /b
-      to_list ='/'
+      to_list = '/'
       base = '/'
     else:
       to_list = to_complete[:i]
@@ -193,16 +194,6 @@ class FileSystemAction(object):
     for name in names:
       path = os.path.join(base, name)
       if path.startswith(to_complete):
-        if self.dirs_only:  # add_slash not used here
-          # NOTE: There is a duplicate isdir() check later to add a trailing
-          # slash.  Consolidate the checks for fewer stat() ops.  This is hard
-          # because all the completion actions must obey the same interface.
-          # We could have another type like candidate = File | Dir |
-          # OtherString ?
-          if os_path.isdir(path):
-            yield path
-          continue
-
         if self.exec_only:
           # TODO: Handle exception if file gets deleted in between listing and
           # check?
@@ -220,7 +211,7 @@ _FS_ACTION = FileSystemAction(add_slash=True)
 
 class FlagsHelpAction(object):
   """Yield flags and their help.
-  
+
   Return a list of TODO: This API can't be expressed in shell itself.  How do
   zsh and fish do it?
   """
@@ -278,7 +269,7 @@ def MakeCompletionRequest(lines):
   Cases we CAN'T complete:
     ec\
     h<TAB>    # complete 'o' ?
-    
+
     echo f\
     o<TAB>    # complete 'o' ?
   """
@@ -290,8 +281,9 @@ def MakeCompletionRequest(lines):
 
   partial_cmd, last_line_pos = JoinLinesOfCommand(lines)
 
-  first = None  # the first word, or None if we're completing the first word
-                # itself (and the candidate is in
+  # the first word if we're completing an arg, or None if we're completing the
+  # first word itself
+  first = None
 
   cmd_last_space_pos = partial_cmd.rfind(' ')
   if cmd_last_space_pos == -1:  # FIRST WORD state, no prefix
@@ -611,7 +603,7 @@ class Display(object):
     # ls <TAB>
     # ls --<TAB>
     #
-    # This is because there is a common prefix. 
+    # This is because there is a common prefix.
     # So instead use the hash of all matches as the identity.
 
     # This could be more accurate but I think it's good enough.
@@ -736,15 +728,6 @@ class Display(object):
     # display to be shown with different widths.
     self.width_is_dirty = True
 
- 
-# What does the Oil prompt look like, vs OSH?
-# We have reverse and underline styles.  But we need a default.
-# We also have bold.  We might not want the command line to be bold, because
-# later it could be syntax-highlighted.
-
-_PS1 = '\u@\h \w'
-_PS2 = '> '  # A different length to test Display
-
 
 def DoNothing(unused1, unused2):
   pass
@@ -754,6 +737,10 @@ class PromptEvaluator(object):
   """Evaluate the prompt and give it a certain style."""
 
   def __init__(self, style, display):
+    """
+    Args:
+      style: _RIGHT, _BOLD, _UNDERLINE, _REVERSE or _OSH
+    """
     self.style = style
     self.display = display
 
@@ -784,9 +771,12 @@ class PromptEvaluator(object):
       p2 = _PROMPT_REVERSE + ' ' + p + ' ' + _PROMPT_RESET + ' '
       prompt_len += 3
 
-    else:
+    elif self.style == _OSH:
       p2 = p + '$ '  # emulate bash style
       prompt_len += 2
+
+    else:
+      raise AssertionError
 
     return p2, prompt_len
 
@@ -796,7 +786,9 @@ class InteractiveLineReader(object):
 
   Holds PS1 / PS2 state.
   """
-  def __init__(self, prompt_eval, display, bold_line=False):
+  def __init__(self, ps1, ps2, prompt_eval, display, bold_line=False):
+    self.ps1 = ps1
+    self.ps2 = ps2
     self.prompt_eval = prompt_eval
     self.display = display
     self.bold_line = bold_line
@@ -806,31 +798,19 @@ class InteractiveLineReader(object):
     self.Reset()  # initialize self.prompt_str
 
     # https://stackoverflow.com/questions/22916783/reset-python-sigint-to-default-signal-handler
-    self.orig_handler = signal.getsignal(signal.SIGINT) 
+    self.orig_handler = signal.getsignal(signal.SIGINT)
     self.last_prompt_len = 0
     #log('%s', self.orig_handler)
 
   def GetLine(self):
     signal.signal(signal.SIGINT, self.orig_handler)  # raise KeyboardInterrupt
-    if self.prompt_str != _PS2:
-      p2, prompt_len = self.prompt_eval.Eval(self.prompt_str)
 
-    else:
-      p2 = self.prompt_str
-      prompt_len = len(self.prompt_str)
-
-    # Tell the display how wide the prompt now is, so it can _ReturnToPrompt()!
-    self.display.SetPromptLength(prompt_len)
-
-    #p2 = _BOLD + p + _RESET
+    p = self.prompt_str
     if self.display.bold_line:
-      p2 += _PROMPT_BOLD
-
-    # Maybe Oil prompt should use reverse video, so you can tell them apart?
-    #p2 = _REVERSE + ' ' + p + _RESET + ' '
+      p += _PROMPT_BOLD
 
     try:
-      line = raw_input(p2) + '\n'  # newline required
+      line = raw_input(p) + '\n'  # newline required
     except KeyboardInterrupt:
       print('^C')
       line = -1
@@ -850,11 +830,12 @@ class InteractiveLineReader(object):
       sys.stdout.write('\x1b[1A\x1b[2K\n')
       sys.stdout.flush()
 
-    self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
+    self.prompt_str = self.ps2
     return line
 
   def Reset(self):
-    self.prompt_str = _PS1
+    self.prompt_str, prompt_len = self.prompt_eval.Eval(self.ps1)
+    self.display.SetPromptLength(prompt_len)
     del self.pending_lines[:]
 
 
@@ -900,7 +881,7 @@ def MainLoop(reader, display):
     reader.Reset()
 
 
-_COMMANDS = [
+_MORE_COMMANDS = [
     'cd', 'echo', 'sleep', 'clear', 'slowc', 'many', 'toomany'
 ]
 
@@ -929,6 +910,9 @@ def LoadFlags(path):
   return flags
 
 
+_PS1 = '\u@\h \w'
+
+
 def main(argv):
   _, term_width = GetTerminalSize()
   fmt = '%' + str(term_width) + 's'
@@ -941,21 +925,17 @@ def main(argv):
   # Used to store the original line, flag descriptions, etc.
   comp_state = {}
 
-  # TODO:
-  # - in the case of the right-hand prompt, the display should render it?
-  # - i.e. you should have a PromptEvaluator, and it should be passed
-  #   potentially to both of these based on the style?
-  # - reader renders it if it's a normal prompt, and display renders it if it's
-  # a RHS prompt.
-
-  # OSH looks normal?
-  #prompt = PromptEvaluator(None)
-
-  # Oil has reverse video on the right.  It's also bold, and may be syntax
-  # highlighted later.
   display = Display(comp_state, bold_line=True)
-  prompt = PromptEvaluator(_RIGHT, display)
-  reader = InteractiveLineReader(prompt, display)  # updates the display
+
+  osh = False
+  if osh:
+    prompt = PromptEvaluator(_OSH, display)
+    reader = InteractiveLineReader(_PS1, '> ', prompt, display)
+  else:
+    # Oil has reverse video on the right.  It's also bold, and may be syntax
+    # highlighted later.
+    prompt = PromptEvaluator(_RIGHT, display)
+    reader = InteractiveLineReader(_PS1, '| ', prompt, display)
 
   # Register a callback to receive terminal width changes.
   signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
@@ -980,7 +960,7 @@ def main(argv):
       comp_lookup[cmd] = FlagsAndFileSystemAction(fl, _FS_ACTION)
       commands.append(cmd)
 
-  comp_lookup['__first'] = WordsAction(commands + _COMMANDS)
+  comp_lookup['__first'] = WordsAction(commands + _MORE_COMMANDS)
 
   # Register a callback to generate completion candidates.
   root_comp = RootCompleter(reader, display, comp_lookup, comp_state)
@@ -996,7 +976,6 @@ def main(argv):
   readline.set_completion_display_matches_hook(
       lambda *args: display.PrintCandidates(*args)
   )
-
   readline.parse_and_bind('tab: complete')
 
   MainLoop(reader, display)
