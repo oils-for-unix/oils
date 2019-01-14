@@ -516,6 +516,15 @@ grep-features3() {
     xargs grep -F ';&'
 }
 
+grep-features4() {
+  # Wow this is ONLY used in a handful of files in bash-completions!  And tests.
+  # That might be enough to justify it.
+  time abspaths | #| grep -v ltmain.sh |
+    xargs grep -E '\[\[ .*-(eq|ne|le|ge|lt|gt)'
+    #xargs grep -E '\${[a-zA-Z0-9_]+\[[^@*]'  # looks like ${a[i]}
+    #xargs grep -F '$(('
+}
+
 # Takes ~15 seconds for 8,000+ files.
 #
 # NOTE: APKBUILD don't have shebang lines!  So there are a bunch of false
@@ -681,6 +690,16 @@ copy-golden-ast() {
   local dest=${1:-_tmp/wild-gold}
   find _tmp/wild/www/esoteric/ -name '*__ast.html' -a -printf '%p %P\n' \
     | ~/git/tree-tools/bin/multi cp $dest
+}
+
+# Find shell scripts on the root file system.
+# 1302 files on my system.
+rootfs-manifest() {
+  find /bin /lib /sbin /etc/ /opt /root /run /usr /var \
+    -type f -a \
+    -executable -a \
+    -exec test/shebang.sh is-shell {} ';' \
+    -a -print | tee _tmp/rootfs.txt
 }
 
 if test "$(basename $0)" = 'wild.sh'; then

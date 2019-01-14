@@ -7,7 +7,7 @@
 is-shell() {
   local path=$1
   local shebang
-  read shebang < $path  # read a line from the file
+  read shebang < "$path"  # read a line from the file
   shebang=${shebang// /}  # strip all whitespace on the line
   [[ $shebang == *sh ]]
 }
