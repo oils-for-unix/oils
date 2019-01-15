@@ -1183,7 +1183,12 @@ def _MakeSignals():
   return names
 
 
-def _GetSignalValue(sig_spec):
+def _GetSignalNumber(sig_spec):
+  # POSIX lists the unmbers that are required.
+  # http://pubs.opengroup.org/onlinepubs/9699919799/
+  if sig_spec.strip() in ('1', '2', '3', '6', '9', '14', '15'):
+    return int(sig_spec)
+
   # INT is an alias for SIGINT
   if sig_spec.startswith('SIG'):
     sig_spec = sig_spec[3:]
@@ -1214,9 +1219,9 @@ def Trap(argv, traps, nodes_to_run, ex):
 
   if arg.p:  # Print registered handlers
     for name, value in traps.iteritems():
-      print(name)
-      print(value)
-      print()
+      # The unit tests rely on this being one line.
+      # bash prints a line that can be re-parsed.
+      print('%s %s' % (name, value.__class__.__name__))
 
     sys.stdout.flush()
     return 0
@@ -1239,6 +1244,10 @@ def Trap(argv, traps, nodes_to_run, ex):
   except IndexError:
     raise args.UsageError('trap CODE SIGNAL_SPEC')
 
+  # Special case
+  if sig_spec == '0':
+    sig_spec = 'EXIT'
+
   # NOTE: sig_spec isn't validated when removing handlers.
   if code_str == '-':
     if sig_spec in _HOOK_NAMES:
@@ -1248,18 +1257,18 @@ def Trap(argv, traps, nodes_to_run, ex):
         pass
       return 0
 
-    sig_val = _GetSignalValue(sig_spec)
-    if sig_val is not None:
+    sig_num = _GetSignalNumber(sig_spec)
+    if sig_num is not None:
       try:
         del traps[sig_spec]
       except KeyError:
         pass
 
       # Restore default
-      if sig_val == signal.SIGINT:
+      if sig_num == signal.SIGINT:
         RegisterSigIntHandler()
       else:
-        signal.signal(sig_val, signal.SIG_DFL)
+        signal.signal(sig_num, signal.SIG_DFL)
       return 0
 
     util.error("Can't remove invalid trap %r" % sig_spec)
@@ -1278,13 +1287,13 @@ def Trap(argv, traps, nodes_to_run, ex):
     return 0
 
   # Register a signal.
-  sig_val = _GetSignalValue(sig_spec)
-  if sig_val is not None:
+  sig_num = _GetSignalNumber(sig_spec)
+  if sig_num is not None:
     handler = _TrapHandler(node, nodes_to_run)
     # For signal handlers, the traps dictionary is used only for debugging.
     traps[sig_spec] = handler
 
-    signal.signal(sig_val, handler)
+    signal.signal(sig_num, handler)
     return 0
 
   util.error('Invalid trap %r' % sig_spec)
