@@ -853,7 +853,7 @@ class RootCompleter(object):
       # Then you would be constantly completing the beginning of the line?
       # TODO: write a terminal program to show that
 
-      m = util.BackslashEscape(m, SHELL_META_CHARS)
+      #m = util.BackslashEscape(m, SHELL_META_CHARS)
       self.debug_f.log('after shell escaping: %s', m)
 
       # compopt -o filenames is for user-defined actions.  Or any
