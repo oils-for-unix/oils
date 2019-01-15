@@ -1244,23 +1244,35 @@ def Trap(argv, traps, nodes_to_run, ex):
   except IndexError:
     raise args.UsageError('trap CODE SIGNAL_SPEC')
 
-  # Special case
-  if sig_spec == '0':
-    sig_spec = 'EXIT'
+  # sig_key is NORMALIZED sig_spec: and integer signal number or string hook
+  # name.
+  sig_key = None
+  sig_num = None
+  if sig_spec in _HOOK_NAMES:
+    sig_key = sig_spec
+  elif sig_spec == '0':  # Special case
+    sig_key = 'EXIT'
+  else:
+    sig_num = _GetSignalNumber(sig_spec)
+    if sig_num is not None:
+      sig_key = sig_num
+
+  if sig_key is None:
+    util.error("Invalid signal or hook %r" % sig_spec)
+    return 1
 
   # NOTE: sig_spec isn't validated when removing handlers.
   if code_str == '-':
-    if sig_spec in _HOOK_NAMES:
+    if sig_key in _HOOK_NAMES:
       try:
-        del traps[sig_spec]
+        del traps[sig_key]
       except KeyError:
         pass
       return 0
 
-    sig_num = _GetSignalNumber(sig_spec)
     if sig_num is not None:
       try:
-        del traps[sig_spec]
+        del traps[sig_key]
       except KeyError:
         pass
 
@@ -1271,8 +1283,7 @@ def Trap(argv, traps, nodes_to_run, ex):
         signal.signal(sig_num, signal.SIG_DFL)
       return 0
 
-    util.error("Can't remove invalid trap %r" % sig_spec)
-    return 1
+    raise AssertionError('Signal or trap')
 
   # Try parsing the code first.
   node = ex.ParseTrapCode(code_str)
@@ -1280,10 +1291,10 @@ def Trap(argv, traps, nodes_to_run, ex):
     return 1  # ParseTrapCode() prints an error for us.
 
   # Register a hook.
-  if sig_spec in _HOOK_NAMES:
-    if sig_spec in ('ERR', 'RETURN', 'DEBUG'):
+  if sig_key in _HOOK_NAMES:
+    if sig_key in ('ERR', 'RETURN', 'DEBUG'):
       util.warn("*** The %r isn't yet implemented in OSH ***", sig_spec)
-    traps[sig_spec] = _TrapHandler(node, nodes_to_run)
+    traps[sig_key] = _TrapHandler(node, nodes_to_run)
     return 0
 
   # Register a signal.
@@ -1291,13 +1302,12 @@ def Trap(argv, traps, nodes_to_run, ex):
   if sig_num is not None:
     handler = _TrapHandler(node, nodes_to_run)
     # For signal handlers, the traps dictionary is used only for debugging.
-    traps[sig_spec] = handler
+    traps[sig_key] = handler
 
     signal.signal(sig_num, handler)
     return 0
 
-  util.error('Invalid trap %r' % sig_spec)
-  return 1
+  raise AssertionError('Signal or trap')
 
   # Example:
   # trap -- 'echo "hi  there" | wc ' SIGINT
