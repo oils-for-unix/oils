@@ -54,6 +54,9 @@ class StatusLine(object):
     return to_print
 
   def Write(self, msg, *args):
+    # TODO: Get rid of StatusLine in favor of the new ui.Display() class.
+    return
+
     if args:
       msg = msg % args
 
