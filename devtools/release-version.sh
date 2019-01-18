@@ -344,7 +344,7 @@ announcement-0.6.pre11() {
 }
 
 announcement-0.6.pre12() {
-  write-no-announcement
+  html-redirect '/blog/2019/01/18.html' > $SITE_DEPLOY_DIR/release/0.6.pre12/announcement.html
 }
 
 "$@"
