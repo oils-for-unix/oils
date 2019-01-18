@@ -506,7 +506,7 @@ def OshCommandMain(argv):
   line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!
   parse_ctx = parse_lib.ParseContext(arena, aliases)
-  _, c_parser = parse_ctx.MakeOshParser(line_reader)
+  c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:
     node = main_loop.ParseWholeFile(c_parser)
