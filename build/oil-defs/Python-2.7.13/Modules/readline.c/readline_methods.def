@@ -5,6 +5,8 @@ static PyMethodDef readline_methods[] = {
   {"get_line_buffer", get_line_buffer, METH_NOARGS},
   {"read_history_file", read_history_file, METH_VARARGS},
   {"write_history_file", write_history_file, METH_VARARGS},
+  {"get_history_item", get_history_item, METH_VARARGS},
+  {"get_current_history_length", (PyCFunction)get_current_history_length, METH_NOARGS},
   {"set_completer", set_completer, METH_VARARGS},
   {"get_begidx", get_begidx, METH_NOARGS},
   {"get_endidx", get_endidx, METH_NOARGS},

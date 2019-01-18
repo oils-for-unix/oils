@@ -5,6 +5,7 @@
 #
 # Pre-release:
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
+#   build/cpython-defs.sh {oil-py-names,filter-methods}  # to regenerate C source
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)

@@ -4,6 +4,7 @@ static PyMethodDef list_methods[] = {
   {"append", (PyCFunction)listappend, METH_O},
   {"extend", (PyCFunction)listextend, METH_O},
   {"pop", (PyCFunction)listpop, METH_VARARGS},
+  {"remove", (PyCFunction)listremove, METH_O},
   {"index", (PyCFunction)listindex, METH_VARARGS},
   {"reverse", (PyCFunction)listreverse, METH_NOARGS},
   {"sort", (PyCFunction)listsort, METH_VARARGS | METH_KEYWORDS},

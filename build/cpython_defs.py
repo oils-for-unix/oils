@@ -320,6 +320,14 @@ class OilMethodFilter(object):
     if basename == 'genobject.c' and method_name == 'close':  # Shadowed
       return False
 
+    # We're using list.remove()
+    if basename == 'posixmodule.c' and method_name == 'remove':  # Shadowed
+      return False
+
+    # We're using dict.clear() and list.remove()
+    if basename == 'setobject.c' and method_name in ('clear', 'remove'):
+      return False
+
     # Do custom filtering here.
     if (basename == 'sysmodule.c' and method_name not in self.py_names):
       # These can't be removed or they cause assertions!
