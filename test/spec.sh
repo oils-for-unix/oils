@@ -393,7 +393,7 @@ arith() {
 }
 
 command-sub() {
-  sh-spec spec/command-sub.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/command-sub.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

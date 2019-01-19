@@ -50,6 +50,7 @@ lex_mode_e.VS_ArgDQ
 
 from core import util
 from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind
+from frontend import reader
 from frontend import tdop
 from osh import arith_parse
 from osh import braces
@@ -649,32 +650,58 @@ class WordParser(object):
     left_token = self.cur_token
     left_spid = left_token.span_id
 
-    self._Next(lex_mode_e.Outer)  # advance past $( or `
-
     # Set the lexer in a state so ) becomes the EOF token.
     if left_id in (Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+      self._Next(lex_mode_e.Outer)  # advance past $( etc.
+
       right_id = Id.Eof_RParen
       self.lexer.PushHint(Id.Op_RParen, right_id)
+      c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
+                                                        self.lexer, right_id)
+      # NOTE: This doesn't use something like main_loop because we don't want to
+      # interleave parsing and execution!  Unlike 'source' and 'eval'.
+      node = c_parser.ParseCommandSub()
 
     elif left_id == Id.Left_Backtick:
+      self._Next(lex_mode_e.Backtick)  # advance past `
 
-      # TODO: Backticks are parsed VERY differently than $().  They need their
-      # own lexer to get rid of backslashes!  virtualenv depends on this.  See
-      # the 7 failing cases in spec/command-sub.test.sh.
+      parts = []
+      while True:
+        self._Peek()
+        #print(self.cur_token)
+        if self.token_type == Id.Backtick_Quoted:
+          parts.append(self.cur_token.val[1:])  # remove leading \
+        elif self.token_type == Id.Backtick_Other:
+          parts.append(self.cur_token.val)
+        elif self.token_type == Id.Backtick_Right:
+          break
+        elif self.token_type == Id.Eof_Real:
+          # Note: this parse error is in the ORIGINAL context.  No code_str yet.
+          p_die('Unexpected EOF while looking for closing backtick',
+                token=left_token)
+        else:
+          raise AssertionError
+        self._Next(lex_mode_e.Backtick)
 
-      right_id = Id.Eof_Backtick
-      self.lexer.PushHint(Id.Left_Backtick, right_id)
+      code_str = ''.join(parts)
+      #log('code %r', code_str)
+
+      # NOTE: This is similar to how we parse aliases in osh/cmd_parse.py.
+      # It won't have the same location info as MakeParserForCommandSub(),
+      # because the lexer is different.
+      arena = self.parse_ctx.arena
+      # TODO: Link back to source location.
+      arena.PushSource('Backticks at line %d of %r' % (-1, 'TODO'))
+
+      line_reader = reader.StringLineReader(code_str, self.parse_ctx.arena)
+      c_parser = self.parse_ctx.MakeOshParser(line_reader)
+      try:
+        node = c_parser.ParseCommandSub()
+      finally:
+        arena.PopSource()
 
     else:
       raise AssertionError(self.left_id)
-
-    c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
-                                                      self.lexer, right_id)
-
-    # NOTE: This doesn't use something like main_loop because we don't want to
-    # interleave parsing and execution!  Unlike 'source' and 'eval'.
-    node = c_parser.ParseCommandSub()
-    assert node is not None
 
     # Hm this creates its own word parser, which is thrown away?
     right_spid = c_parser.w_parser.cur_token.span_id

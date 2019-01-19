@@ -166,6 +166,25 @@ arith-expr() {
   _error-case '$(( ${var} = fd ))'
 }
 
+command-sub() {
+  set +o errexit
+  _error-case ' 
+    echo line 2
+    echo $( echo '
+  _error-case ' 
+    echo line 2
+    echo ` echo '
+  # Both unclosed
+  _error-case '
+    echo line 2
+    echo ` echo \` '
+
+  # Only the inner one is unclosed
+  _error-case '
+    echo line 2
+    echo ` echo \`unclosed ` '
+}
+
 bool-expr() {
   set +o errexit
 
@@ -337,6 +356,7 @@ cases-in-strings() {
 
   cmd-parse
   simple-command
+  command-sub
   redirect
   here-doc
   here-doc-delimiter

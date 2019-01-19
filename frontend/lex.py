@@ -317,6 +317,14 @@ LEXER_DEF[lex_mode_e.Outer] = [
   C('((', Id.Op_DLeftParen),
 ] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
+# Preprocessing before Outer
+LEXER_DEF[lex_mode_e.Backtick] = [
+  C(r'`', Id.Backtick_Right),
+  R(r'\\[^\0]', Id.Backtick_Quoted),  # a backslash and then any character
+  R(r'[^`\\\0]+', Id.Backtick_Other),  # contiguous run of literals
+  R(r'[^\0]', Id.Backtick_Other),  # anything else
+]
+
 # DBRACKET: can be like Outer, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
 # - Id.Op_DLeftParen can't be nested inside.

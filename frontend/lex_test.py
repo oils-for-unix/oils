@@ -77,7 +77,7 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.Outer)
     self.assertTokensEqual(syntax_asdl.token(Id.Eof_Real, ''), t)
 
-  def testRead_VS_ARG_UNQ(self):
+  def testMode_VS_ArgUnquoted(self):
     # Another EOF gives EOF
     lexer = _InitLexer("'hi'")
     t = lexer.Read(lex_mode_e.VS_ArgUnquoted)
@@ -85,7 +85,7 @@ class LexerTest(unittest.TestCase):
     #t = l.Read(lex_mode_e.VS_ArgUnquoted)
     print(t)
 
-  def testExtGlob(self):
+  def testMode_ExtGlob(self):
     lexer = _InitLexer('@(foo|bar)')
 
     t = lexer.Read(lex_mode_e.Outer)
@@ -121,7 +121,7 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.ExtGlob)
     self.assertTokensEqual(syntax_asdl.token(Id.Lit_Other, '$'), t)
 
-  def testBashRegexState(self):
+  def testMode_BashRegex(self):
     lexer = _InitLexer('(foo|bar)')
 
     t = lexer.Read(lex_mode_e.BashRegex)
@@ -133,13 +133,13 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.BashRegex)
     self.assertTokensEqual(syntax_asdl.token(Id.Lit_Other, '|'), t)
 
-  def testDBracketState(self):
+  def testMode_DBracket(self):
     lexer = _InitLexer('-z foo')
     t = lexer.Read(lex_mode_e.DBracket)
     self.assertTokensEqual(syntax_asdl.token(Id.BoolUnary_z, '-z'), t)
     self.assertEqual(Kind.BoolUnary, LookupKind(t.id))
 
-  def testDollarSqState(self):
+  def testMode_DollarSq(self):
     lexer = _InitLexer(r'foo bar\n \x00 \000 \u0065')
 
     t = lexer.Read(lex_mode_e.DollarSQ)
@@ -149,6 +149,15 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.DollarSQ)
     print(t)
     self.assertTokensEqual(syntax_asdl.token(Id.Char_OneChar, r'\n'), t)
+
+  def testMode_Backtick(self):
+    lexer = _InitLexer(r'echo \" \\ hi`')
+
+    while True:
+      t = lexer.Read(lex_mode_e.Backtick)
+      print(t)
+      if t.id == Id.Eof_Real:
+        break
 
   def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past

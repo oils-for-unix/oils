@@ -196,22 +196,22 @@ echo "3 `echo \\ \\(`"
 ## END
 
 #### \ with non-operator characters within ``
-echo [1 `echo \%]`
-echo [2 `echo \\%]`
-echo [3 `echo \\\%]`
-echo [4 `echo \\\\%]`
+echo [1 `echo \z]`
+echo [2 `echo \\z]`
+echo [3 `echo \\\z]`
+echo [4 `echo \\\\z]`
 
-echo "[1 `echo \%`]"
-echo "[2 `echo \\%`]"
-echo "[3 `echo \\\%`]"
-echo "[4 `echo \\\\%`]"
+echo "[1 `echo \z`]"
+echo "[2 `echo \\z`]"
+echo "[3 `echo \\\z`]"
+echo "[4 `echo \\\\z`]"
 ## STDOUT:
-[1 %]
-[2 %]
-[3 \%]
-[4 \%]
-[1 %]
-[2 %]
-[3 \%]
-[4 \%]
+[1 z]
+[2 z]
+[3 \z]
+[4 \z]
+[1 z]
+[2 z]
+[3 \z]
+[4 \z]
 ## END

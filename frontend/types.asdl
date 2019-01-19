@@ -12,6 +12,7 @@ module types {
     Undefined
   | Comment
   | Outer
+  | Backtick  -- preprocessing before Outer
   | DBracket
   | SQ | DQ | DollarSQ
   | Arith

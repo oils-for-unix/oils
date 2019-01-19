@@ -163,6 +163,10 @@ def AddKinds(spec):
                            # completion
   ])
 
+  # For recognizing \` and \" and \\ within backticks.  There's an extra layer
+  # of backslash quoting.
+  spec.AddKind('Backtick', ['Right', 'Quoted', 'Other'])
+
   spec.AddKind('History', ['Op', 'Num', 'Search', 'Other'])
 
   spec.AddKind('Op', [
