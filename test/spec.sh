@@ -343,7 +343,7 @@ builtin-getopts() {
 }
 
 builtin-bracket() {
-  sh-spec spec/builtin-bracket.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-bracket.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -393,7 +393,7 @@ arith() {
 }
 
 command-sub() {
-  sh-spec spec/command-sub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/command-sub.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -443,7 +443,7 @@ special-vars() {
 
 # dash/mksh don't implement this.
 introspect() {
-  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/introspect.test.sh \
     $BASH $OSH_LIST "$@"
 }
 

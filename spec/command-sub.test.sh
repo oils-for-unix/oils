@@ -26,7 +26,7 @@ echo `echo -n l; echo -n s`
 ## stdout: ls
 
 #### Nested backticks
-# Inner `` are escaped!  # Not sure how to do triple..  Seems like an unlikely
+# Inner `` are escaped!  Not sure how to do triple..  Seems like an unlikely
 # use case.  Not sure if I even want to support this!
 echo X > $TMP/000000-first
 echo `\`echo -n l; echo -n s\` $TMP | grep 000000-first`
@@ -103,4 +103,115 @@ f
 x
 0
 0
+## END
+
+#### Double Quotes in Command Sub in Double Quotes
+# virtualenv's bin/activate uses this.
+# This is weird!  Double quotes within `` is different than double quotes
+# within $()!  All shells agree.
+# I think this is related to the nested backticks case!
+echo "x $(echo hi)"
+echo "x $(echo "hi")"
+echo "x $(echo \"hi\")"
+echo "x `echo hi`"
+echo "x `echo "hi"`"
+echo "x `echo \"hi\"`"
+## STDOUT:
+x hi
+x hi
+x "hi"
+x hi
+x hi
+x hi
+## END
+
+#### Escaped quote in [[ ]]
+file=$TMP/command-sub-dbracket
+#rm -f $file
+echo "123 `[[ $(echo \\" > $file) ]]` 456";
+cat $file
+## STDOUT:
+123  456
+"
+## END
+
+#### Quoting $ within ``
+echo 1 `echo $`
+echo 2 `echo \$`
+echo 3 `echo \\$`
+echo 4 `echo \\\$`
+echo 5 `echo \\\\$`
+
+echo "1 `echo $`"
+echo "2 `echo \$`"
+echo "3 `echo \\$`"
+echo "4 `echo \\\$`"
+echo "5 `echo \\\\$`"
+## STDOUT:
+1 $
+2 $
+3 $
+4 $
+5 \$
+1 $
+2 $
+3 $
+4 $
+5 \$
+## END
+
+#### Quoting \ within ``
+# You need FOUR backslashes to make a literal \.
+echo [1 `echo \ `]
+echo [2 `echo \\ `]
+echo [3 `echo \\\\ `]
+echo "[1 `echo \ `]"
+echo "[2 `echo \\ `]"
+echo "[3 `echo \\\\ `]"
+
+## STDOUT:
+[1 ]
+[2 ]
+[3 \]
+[1  ]
+[2  ]
+[3 \]
+## END
+
+#### Quoting ( within ``
+echo 1 `echo \(`
+echo 2 `echo \\(`
+echo 3 `echo \\ \\(`
+
+echo "1 `echo \(`"
+echo "2 `echo \\(`"
+echo "3 `echo \\ \\(`"
+## STDOUT:
+1 (
+2 (
+3 (
+1 (
+2 (
+3  (
+## END
+
+#### \ with non-operator characters within ``
+echo [1 `echo \%]`
+echo [2 `echo \\%]`
+echo [3 `echo \\\%]`
+echo [4 `echo \\\\%]`
+
+echo "[1 `echo \%`]"
+echo "[2 `echo \\%`]"
+echo "[3 `echo \\\%`]"
+echo "[4 `echo \\\\%`]"
+## STDOUT:
+[1 %]
+[2 %]
+[3 \%]
+[4 \%]
+[1 %]
+[2 %]
+[3 \%]
+[4 \%]
 ## END

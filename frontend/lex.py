@@ -145,6 +145,7 @@ _VARS = [
 ]
 
 # Kind.Left that are valid in double-quoted modes.
+
 _LEFT_SUBS = [
   C('`', Id.Left_Backtick),
   C('$(', Id.Left_CommandSub),

@@ -657,6 +657,11 @@ class WordParser(object):
       self.lexer.PushHint(Id.Op_RParen, right_id)
 
     elif left_id == Id.Left_Backtick:
+
+      # TODO: Backticks are parsed VERY differently than $().  They need their
+      # own lexer to get rid of backslashes!  virtualenv depends on this.  See
+      # the 7 failing cases in spec/command-sub.test.sh.
+
       right_id = Id.Eof_Backtick
       self.lexer.PushHint(Id.Left_Backtick, right_id)
 
