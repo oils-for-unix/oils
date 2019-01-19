@@ -108,7 +108,7 @@ lex_mode_e = types_asdl.lex_mode_e
 
 # In oil, I hope to have these lexer modes:
 # COMMAND
-# EXPRESSION (takes place of ARITH, VS_ARG_UNQ, VS_ARG_DQ)
+# EXPRESSION (takes place of ARITH, VS_ArgUnquoted, VS_ArgDQ)
 # SQ  RAW_SQ  DQ  RAW_DQ
 # VS    -- a single state here?  Or switches into expression state, because }
 #          is an operator
@@ -407,8 +407,13 @@ LEXER_DEF[lex_mode_e.VS_ArgUnquoted] = \
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[lex_mode_e.VS_ArgDQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
+
   # Weird wart: even in double quoted state, double quotes are allowed
   C('"', Id.Left_DoubleQuote),
+
+  # Another weird wart of bash/mksh: $'' is recognized but NOT ''!
+  C("$'", Id.Left_DollarSingleQuote),
+
   R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 

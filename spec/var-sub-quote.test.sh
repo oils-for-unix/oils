@@ -190,3 +190,17 @@ foo='a b c d'
 argv.py "${foo%'c d'}" "${foo%'c  d'}"
 ## stdout: ['a b c d', 'a b c d']
 ## BUG bash/mksh stdout: ['a b ', 'a b c d']
+
+#### $'' allowed within VarSub arguments
+# Odd behavior of bash/mksh: $'' is recognized but NOT ''!
+x=abc
+echo ${x%$'b'*}
+echo "${x%$'b'*}"  # git-prompt.sh relies on this
+## STDOUT:
+a
+a
+## END
+## N-I dash STDOUT:
+abc
+abc
+## END

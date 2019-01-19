@@ -147,6 +147,13 @@ class ParseContext(object):
     """To parse command sub, we want a fresh word parser state.
 
     It's a new instance based on same lexer and arena.
+
+    TODO: We also need to know if we're in a double quoted context, in order to
+    parse " vs \"
+    Is that a lexer mode or can we save some code size?
+    The CommandParser starts in Outer mode.  We could pass DQCommand or
+    DQOuter.
+    lex_mode_e.Command vs. lex_mode_e.DQCommand
     """
     w_parser = word_parse.WordParser(self, lexer, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader,
