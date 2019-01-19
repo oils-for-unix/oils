@@ -352,9 +352,8 @@ def AddKinds(spec):
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
                                  # Actually we don't need this because we they
                                  # will be under Expr1/Plus vs Expr2/Plus.
-     'ArithVar',                 # a bare variable like (( foo = bar ))
 
-     # Command nodes
+     # Oil Command nodes?  Not used yet.
      'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
      'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
 
