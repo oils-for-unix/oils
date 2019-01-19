@@ -561,7 +561,7 @@ def Read(argv, splitter, mem):
     except IndexError:
       s = ''  # if there are too many variables
     #log('read: %s = %s', names[i], s)
-    state.SetLocalString(mem, names[i], s)
+    state.SetStringDynamic(mem, names[i], s)
 
   return status
 

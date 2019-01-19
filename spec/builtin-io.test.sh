@@ -355,3 +355,15 @@ echo $line
 ## BUG dash/zsh stdout-json: "\u0007 \u0008\n"
 ## BUG mksh stdout-json: "\u0007 \u0008 d \u001b \u000c g h e 145 i\n"
 
+#### Read builtin uses dynamic scope
+f() {
+  read head << EOF
+ref: refs/heads/dev/andy
+EOF
+}
+f
+echo $head
+## STDOUT:
+ref: refs/heads/dev/andy
+## END
+
