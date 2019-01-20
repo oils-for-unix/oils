@@ -141,18 +141,21 @@ echo 2 `echo \$`
 echo 3 `echo \\$`
 echo 4 `echo \\\$`
 echo 5 `echo \\\\$`
-
-echo "1 `echo $`"
-echo "2 `echo \$`"
-echo "3 `echo \\$`"
-echo "4 `echo \\\$`"
-echo "5 `echo \\\\$`"
 ## STDOUT:
 1 $
 2 $
 3 $
 4 $
 5 \$
+## END
+
+#### Quoting $ within `` within double quotes
+echo "1 `echo $`"
+echo "2 `echo \$`"
+echo "3 `echo \\$`"
+echo "4 `echo \\\$`"
+echo "5 `echo \\\\$`"
+## STDOUT:
 1 $
 2 $
 3 $
@@ -165,14 +168,17 @@ echo "5 `echo \\\\$`"
 echo [1 `echo \ `]
 echo [2 `echo \\ `]
 echo [3 `echo \\\\ `]
-echo "[1 `echo \ `]"
-echo "[2 `echo \\ `]"
-echo "[3 `echo \\\\ `]"
-
 ## STDOUT:
 [1 ]
 [2 ]
 [3 \]
+## END
+
+#### Quoting \ within `` within double quotes
+echo "[1 `echo \ `]"
+echo "[2 `echo \\ `]"
+echo "[3 `echo \\\\ `]"
+## STDOUT:
 [1  ]
 [2  ]
 [3 \]
@@ -182,34 +188,40 @@ echo "[3 `echo \\\\ `]"
 echo 1 `echo \(`
 echo 2 `echo \\(`
 echo 3 `echo \\ \\(`
+## STDOUT:
+1 (
+2 (
+3 (
+## END
 
+#### Quoting ( within `` within double quotes
 echo "1 `echo \(`"
 echo "2 `echo \\(`"
 echo "3 `echo \\ \\(`"
 ## STDOUT:
 1 (
 2 (
-3 (
-1 (
-2 (
 3  (
 ## END
 
-#### \ with non-operator characters within ``
+#### Quoting non-special characters within ``
 echo [1 `echo \z]`
 echo [2 `echo \\z]`
 echo [3 `echo \\\z]`
 echo [4 `echo \\\\z]`
-
-echo "[1 `echo \z`]"
-echo "[2 `echo \\z`]"
-echo "[3 `echo \\\z`]"
-echo "[4 `echo \\\\z`]"
 ## STDOUT:
 [1 z]
 [2 z]
 [3 \z]
 [4 \z]
+## END
+
+#### Quoting non-special characters within `` within double quotes
+echo "[1 `echo \z`]"
+echo "[2 `echo \\z`]"
+echo "[3 `echo \\\z`]"
+echo "[4 `echo \\\\z`]"
+## STDOUT:
 [1 z]
 [2 z]
 [3 \z]

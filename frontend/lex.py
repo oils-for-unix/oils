@@ -320,7 +320,8 @@ LEXER_DEF[lex_mode_e.Outer] = [
 # Preprocessing before Outer
 LEXER_DEF[lex_mode_e.Backtick] = [
   C(r'`', Id.Backtick_Right),
-  R(r'\\[^\0]', Id.Backtick_Quoted),  # a backslash and then any character
+  # A backslash, and then one of the SAME FOUR escaped chars in the DQ mode.
+  R(r'\\[$`"\\]', Id.Backtick_Quoted),
   R(r'[^`\\\0]+', Id.Backtick_Other),  # contiguous run of literals
   R(r'[^\0]', Id.Backtick_Other),  # anything else
 ]
