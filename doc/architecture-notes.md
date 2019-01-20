@@ -38,19 +38,27 @@ It also implications for translation, because we break the "arena invariant".
 expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this used,
 and it would significantly complicate the OSH parser.
 
+(in `_MakeAssignPair` in `osh/cmd_parse.py`)
+
+(2) **Backticks**.  There is an extra level of backslash quoting that may
+happen compared with `$()`.
+
+(in `_ReadCommandSubPart` in `osh/word_parse.py`)
+
 ### Where VirtualLineReader is used
 
 This isn't necessarily re-parsing, but it's re-reading.
 
-- alias expansion:
-- HereDoc:  We first read lines, and then
+- alias expansion
+- here documents:  We first read lines, and then parse them.
 
 ### Extra Passes Over the LST
 
 These are handled up front, but not in a single pass.
 
-- Assignment / Env detection: `FOO=bar declare a[x]=1`
-  - s=1 doesn't cause reparsing, but a[x+1]=y does.
+- Assignment vs. Env binding detection: `FOO=bar declare a[x]=1`.
+  We make another pass with `_SplitSimpleCommandPrefix()`.
+  - Related: `s=1` doesn't cause reparsing, but `a[x+1]=y` does.
 - Brace Detection in a few places: `echo {a,b}`
 - Tilde Detection: `echo ~bob`, `home=~bob`
 
@@ -116,7 +124,7 @@ This also happens for the operands to `[[ x -eq x ]]`.
 NOTE that `a='$(echo 3)` results in a **syntax error**.  I believe this was due
 to the ShellShock mitigation.
 
-(2) The **`unset` builtin** (not yet implemented in OSH):
+(2) The **`unset` builtin** takes an LValue.  (not yet implemented in OSH)
 
     $ a=(1 2 3 4)
     $ expr='a[1+1]'
@@ -124,8 +132,10 @@ to the ShellShock mitigation.
     $ argv "${a[@]}"
     ['1', '2', '4']
 
-(3) **Var refs** with `${!x}` (not yet implemented OSH.  Relied on by
-`bash-completion`, as discovered by Greg Price)
+(3) **printf -v** takes an "LValue".
+
+(4) **Var refs** with `${!x}` takes a "cell".  (not yet implemented OSH.
+Relied on by `bash-completion`, as discovered by Greg Price)
 
     $ a=(1 2 3 4)
     $ expr='a[$(echo 2 | tee BAD)]'
@@ -134,13 +144,16 @@ to the ShellShock mitigation.
     $ cat BAD
     2
 
-(4) ShellShock (removed from bash): `export -f`, all variables were checked for
+(5) **test -v** takes a "cell".
+
+(6) ShellShock (removed from bash): `export -f`, all variables were checked for
 a certain pattern.
 
 ### Parse errors at runtime (need line numbers)
 
 - [ -a -a -a ]
 - command line flag usage errors
+- alias parse errors
 
 ## Other Cross-Cutting Observations
 
@@ -151,9 +164,9 @@ a certain pattern.
 
 ### Where Unicode is Respected
 
-- ${#s} -- length in code points
-- ${s:1:2} -- offsets in code points
-- ${x#?} and family (not yet implemented)
+- `${#s}` -- length in code points
+- `${s:1:2}` -- offsets in code points
+- `${x#?}` and family (not yet implemented)
 
 Where bash respects it:
 
@@ -225,5 +238,4 @@ Where the parser is reused:
 - outside example: vtparse.
 
 The point of a state machine is to make sure all cases are handled!
-
 
