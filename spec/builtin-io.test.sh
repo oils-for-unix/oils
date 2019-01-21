@@ -367,3 +367,34 @@ echo $head
 ref: refs/heads/dev/andy
 ## END
 
+#### read -a reads into array
+
+# read -a is used in bash-completion
+# none of these shells implement it
+case $SH in
+  *mksh|*dash|*zsh|*/ash)
+    exit 2;
+    ;;
+esac
+
+read -a myarray <<'EOF'
+a b c\ d
+EOF
+argv.py "${myarray[@]}"
+
+# arguments are ignored here
+read -r -a array2 extra arguments <<'EOF'
+a b c\ d
+EOF
+argv.py "${array2[@]}"
+argv.py "${extra[@]}"
+argv.py "${arguments[@]}"
+## status: 0
+## STDOUT:
+['a', 'b', 'c d']
+['a', 'b', 'c\\', 'd']
+[]
+[]
+## END
+## N-I dash/mksh/zsh/ash status: 2
+## N-I dash/mksh/zsh/ash stdout-json: ""

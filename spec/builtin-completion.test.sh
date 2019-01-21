@@ -331,13 +331,13 @@ eggs
 ham cheese
 ## END
 
-#### compgen -W uses IFS
+#### compgen -W uses IFS, and delimiters are escaped with \
 IFS=':%'
-compgen -W 'spam:eggs%ham cheese'
+compgen -W 'spam:eggs%ham cheese\:colon'
 ## STDOUT:
 spam
 eggs
-ham cheese
+ham cheese:colon
 ## END
 
 #### Parse errors for compgen -W and complete -W

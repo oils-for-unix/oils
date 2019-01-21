@@ -468,7 +468,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
         join_next = True
       last_span_was_black = False
 
-    if len(parts) >= max_results:
+    if max_results and len(parts) >= max_results:
       join_next = True
 
     start_index = end_index
@@ -488,6 +488,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 READ_SPEC = _Register('read')
 READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
+READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
 
 
 # sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
@@ -527,7 +528,10 @@ def Read(argv, splitter, mem):
     names.append('REPLY')
 
   # leftover words assigned to the last name
-  max_results = len(names)
+  if arg.a:
+    max_results = 0  # no max
+  else:
+    max_results = len(names)
 
   # We have to read more than one line if there is a line continuation (and
   # it's not -r).
@@ -555,13 +559,16 @@ def Read(argv, splitter, mem):
     if done:
       break
 
-  for i in xrange(max_results):
-    try:
-      s = parts[i]
-    except IndexError:
-      s = ''  # if there are too many variables
-    #log('read: %s = %s', names[i], s)
-    state.SetStringDynamic(mem, names[i], s)
+  if arg.a:
+    state.SetArrayDynamic(mem, arg.a, parts)
+  else:
+    for i in xrange(max_results):
+      try:
+        s = parts[i]
+      except IndexError:
+        s = ''  # if there are too many variables
+      #log('read: %s = %s', names[i], s)
+      state.SetStringDynamic(mem, names[i], s)
 
   return status
 
