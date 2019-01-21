@@ -6,6 +6,7 @@ builtin_comp.py - Completion builtins
 import pwd
 
 from core import completion
+from core import ui
 from core import util
 from core.meta import runtime_asdl
 from frontend import args
@@ -198,9 +199,26 @@ class SpecBuilder(object):
 
     # e.g. -W comes after -A directory
     if arg.W:
-      # TODO: Split with IFS.  Is that done at registration time or completion
-      # time?
-      actions.append(completion.DynamicWordsAction(arg.W.split()))
+      # NOTES:
+      # - Parsing is done at REGISTRATION time, but execution and splitting is
+      #   done at COMPLETION time (when the user hits tab).  So parse errors
+      #   happen early.
+      # - It's OK to reuse the same arena because this doesn't happen during
+      #   translation.  TODO: But we need PushSource().  We should
+      #   create SideArena instances that track back to the current location of
+      #   the 'complete' builtin.
+      arena = self.parse_ctx.arena
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(arg.W, arena)
+
+      try:
+        arg_word = w_parser.ReadForPlugin()
+      except util.ParseError as e:
+        ui.PrettyPrintError(e, self.parse_ctx.arena)
+        raise  # Let 'complete' or 'compgen' return 2
+
+      a = completion.DynamicWordsAction(
+          self.word_ev, self.splitter, arg_word, arena)
+      actions.append(a)
 
     extra_actions = []
     if comp_opts.Get('plusdirs'):
@@ -268,7 +286,11 @@ class Complete(object):
       return 0
 
     comp_opts = completion.Options(arg.opt_changes)
-    user_spec = self.spec_builder.Build(argv, arg, comp_opts)
+    try:
+      user_spec = self.spec_builder.Build(argv, arg, comp_opts)
+    except util.ParseError as e:
+      # error printed above
+      return 2
     for command in commands:
       self.comp_lookup.RegisterName(command, comp_opts, user_spec)
 
@@ -309,7 +331,11 @@ class CompGen(object):
     matched = False
 
     comp_opts = completion.Options(arg.opt_changes)
-    user_spec = self.spec_builder.Build(argv, arg, comp_opts)
+    try:
+      user_spec = self.spec_builder.Build(argv, arg, comp_opts)
+    except util.ParseError as e:
+      # error printed above
+      return 2
 
     # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
     # and also showing ALL COMPREPLY reuslts, not just the ones that start with
@@ -317,9 +343,17 @@ class CompGen(object):
     matched = False 
     comp = completion.Api()
     comp.Update(first='compgen', to_complete=to_complete, prev='', index=-1)
-    for m, _ in user_spec.Matches(comp):
-      matched = True
-      print(m)
+    try:
+      for m, _ in user_spec.Matches(comp):
+        matched = True
+        print(m)
+    except util.FatalRuntimeError:
+      # - DynamicWordsAction: We already printed an error, so return failure.
+      return 1
+
+    # - ShellFuncAction: We do NOT get FatalRuntimeError.  We printed an error
+    # in the executor, but RunFuncForCompletion swallows failures.  See test
+    # case in builtin-completion.test.sh.
 
     # TODO:
     # - need to dedupe results.

@@ -339,3 +339,36 @@ spam
 eggs
 ham cheese
 ## END
+
+#### Parse errors for compgen -W and complete -W
+# bash doesn't detect as many errors because it lacks static parsing.
+compgen -W '${'
+echo status=$?
+complete -W '${' foo
+echo status=$?
+## STDOUT:
+status=2
+status=2
+## END
+## BUG bash STDOUT:
+status=1
+status=0
+## END
+
+#### Runtime errors for compgen -W 
+compgen -W 'foo $(( 1 / 0 )) bar'
+echo status=$?
+## STDOUT:
+status=1
+## END
+
+#### Runtime errors for compgen -F func
+_foo() {
+  COMPREPLY=( foo bar )
+  COMPREPLY+=( $(( 1 / 0 )) )  # FATAL, but we still have candidates
+}
+compgen -F _foo foo
+echo status=$?
+## STDOUT:
+status=1
+## END

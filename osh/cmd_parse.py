@@ -155,6 +155,7 @@ def _MakeAssignPair(parse_ctx, preparsed):
     code_str = ''.join(pieces)
 
     # NOTE: It's possible that an alias expansion underlies this, not a real file!
+    # We have to use a SideArena since this will happen during translation.
     line_num = 99
     source_name = 'TODO'
     arena = alloc.SideArena('<LHS array index at line %d of %s>' %

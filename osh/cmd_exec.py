@@ -1451,6 +1451,8 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be the --debug-file as well
 
+    # NOTE: We could use the same arena, since this doesn't happen during
+    # translation.
     self.arena = alloc.SideArena('<$PS4>')
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
 

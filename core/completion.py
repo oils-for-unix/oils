@@ -37,6 +37,7 @@ import posix
 import pwd
 import time
 
+from core import ui
 from core import util
 from core.meta import (
     Id, REDIR_ARG_TYPES, syntax_asdl, runtime_asdl, types_asdl)
@@ -270,17 +271,26 @@ class TestAction(CompletionAction):
 
 
 class DynamicWordsAction(CompletionAction):
-  # NOTE: Have to split the words passed to -W.  Using IFS or something else?
-  def __init__(self, words, delay=None):
-    self.words = words
-    self.delay = delay
+  """ compgen -W '$(echo one two three)' """
+
+  def __init__(self, word_ev, splitter, arg_word, arena):
+    self.word_ev = word_ev
+    self.splitter = splitter
+    self.arg_word = arg_word
+    self.arena = arena
 
   def Matches(self, comp):
-    for w in self.words:
-      if w.startswith(comp.to_complete):
-        if self.delay:
-          time.sleep(self.delay)
-        yield w
+    try:
+      val = self.word_ev.EvalWordToString(self.arg_word)
+    except util.FatalRuntimeError as e:
+      ui.PrettyPrintError(e, self.arena)
+      raise
+
+    # SplitForWordEval() Allows \ escapes
+    candidates = self.splitter.SplitForWordEval(val.s)
+    for c in candidates:
+      if c.startswith(comp.to_complete):
+        yield c
 
 
 class FileSystemAction(CompletionAction):
@@ -946,6 +956,13 @@ class ReadlineCallback(object):
     """Return a single match."""
     try:
       return self._GetNextCompletion(state)
+    except util.FatalRuntimeError as e:
+      # From -W.  TODO: -F is swallowed now.
+      # We should have a nicer UI for displaying errors.  Maybe they shouldn't
+      # print it to stderr.  That messes up the completion display.  We could
+      # print what WOULD have been COMPREPLY here.
+      log('Runtime error while completing: %s', e)
+      self.debug_f.log('Runtime error while completing: %s', e)
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
       import traceback
       traceback.print_exc()

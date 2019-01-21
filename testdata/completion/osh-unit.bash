@@ -168,6 +168,16 @@ complete -F complete_op_chars -o filenames op_chars_filenames
 W_runtime() { argv "$@"; }
 complete -W 'foo $x $(echo --$x)' W_runtime
 
+W_runtime_error() { argv "$@"; }
+complete -W 'foo $(( 1 / 0 )) bar' W_runtime_error
+
+F_runtime_error() { argv "$@"; }
+complete_F_runtime_error() {
+  COMPREPLY=( foo bar )
+  COMPREPLY+=( $(( 1 / 0 )) )  # FATAL, but we still have candidates
+}
+complete -F complete_F_runtime_error F_runtime_error
+
 #
 # Unit tests use this
 #
