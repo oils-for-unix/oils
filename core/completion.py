@@ -142,16 +142,18 @@ _DO_NOTHING = (_DEFAULT_OPTS, NullCompleter())
 
 
 class State(object):
-  """Global completion state.
-  
-  It has two separate parts:
-    
-  1. Stores completion hooks registered by the user.
-  2. Stores the state of the CURRENT completion.
+  """Stores the state of the CURRENT completion."""
 
-  Both of them are needed in the RootCompleter and various builtins, so let's
-  store them in the same object for convenience.
-  """
+  def __init__(self):
+    # For the IN-PROGRESS completion.
+    self.currently_completing = False
+    # should be SET to a COPY of the registration options by the completer.
+    self.current_opts = None
+
+
+class Lookup(object):
+  """Stores completion hooks registered by the user."""
+
   def __init__(self):
     # command name -> UserSpec
     # Pseudo-commands __first and __fallback are for -E and -D.
@@ -163,11 +165,6 @@ class State(object):
     # So you can register *.sh, unlike bash.  List of (glob, [actions]),
     # searched linearly.
     self.patterns = []
-
-    # For the IN-PROGRESS completion.
-    self.currently_completing = False
-    # should be SET to a COPY of the registration options by the completer.
-    self.current_opts = None
 
   def __str__(self):
     return '<completion.State %s>' % self.lookup
@@ -259,7 +256,20 @@ class CompletionAction(object):
     pass
 
 
-class WordsAction(CompletionAction):
+class TestAction(CompletionAction):
+  def __init__(self, words, delay=None):
+    self.words = words
+    self.delay = delay
+
+  def Matches(self, comp):
+    for w in self.words:
+      if w.startswith(comp.to_complete):
+        if self.delay:
+          time.sleep(self.delay)
+        yield w
+
+
+class DynamicWordsAction(CompletionAction):
   # NOTE: Have to split the words passed to -W.  Using IFS or something else?
   def __init__(self, words, delay=None):
     self.words = words
@@ -585,11 +595,12 @@ class RootCompleter(object):
   - Complete the OSH language (variables, etc.), or
   - Statically evaluate argv and dispatch to a command completer.
   """
-  def __init__(self, word_ev, comp_state, mem, parse_ctx, progress_f,
-               debug_f):
+  def __init__(self, word_ev, mem, comp_lookup, comp_state, parse_ctx,
+               progress_f, debug_f):
     self.word_ev = word_ev  # for static evaluation of words
-    self.comp_state = comp_state  # to look up plugins
     self.mem = mem  # to complete variable names
+    self.comp_lookup = comp_lookup
+    self.comp_state = comp_state  # to look up plugins
 
     self.parse_ctx = parse_ctx
     self.progress_f = progress_f
@@ -800,9 +811,9 @@ class RootCompleter(object):
           raise AssertionError
         elif n == 1:
           # First
-          comp_opts, user_spec = self.comp_state.GetFirstSpec()
+          comp_opts, user_spec = self.comp_lookup.GetFirstSpec()
         else:
-          comp_opts, user_spec = self.comp_state.GetSpecForName(
+          comp_opts, user_spec = self.comp_lookup.GetSpecForName(
               partial_argv[0])
 
         # Update the API for user-defined functions.

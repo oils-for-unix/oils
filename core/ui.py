@@ -227,7 +227,7 @@ class PromptEvaluator(object):
 
     return ''.join(ret)
 
-  def EvalPromptEvaluator(self, val):
+  def EvalPrompt(self, val):
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
     if val.tag != value_e.Str:
       return self.default_prompt  # no evaluation necessary
@@ -257,13 +257,14 @@ class PromptEvaluator(object):
       self.parse_cache[ps1_str] = ps1_word
 
     # Evaluate, e.g. "${debian_chroot}\u" -> '\u'
+    # TODO: Handle runtime errors like unset variables, etc.
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
     return val2.s
 
   def FirstPromptEvaluator(self):
     if self.lang == 'osh':
       val = self.mem.GetVar('PS1')
-      return self.EvalPromptEvaluator(val)
+      return self.EvalPrompt(val)
     else:
       # TODO: If the lang is Oil, we should use a better prompt language than
       # $PS1!!!

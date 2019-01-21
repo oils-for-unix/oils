@@ -615,7 +615,7 @@ class _WordEvaluator(object):
       op = part.suffix_op
       if op.tag == suffix_op_e.StringNullary:
         if op.op_id == Id.VOp0_P:
-          prompt = self.prompt_ev.EvalPromptEvaluator(val)
+          prompt = self.prompt_ev.EvalPrompt(val)
           val = value.Str(prompt)
         elif op.op_id == Id.VOp0_Q:
           val = value.Str(string_ops.ShellQuote(val.s))

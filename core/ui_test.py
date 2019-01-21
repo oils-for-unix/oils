@@ -26,8 +26,8 @@ class UiTest(unittest.TestCase):
     p = ui.PromptEvaluator('osh', arena, ex.parse_ctx, ex, mem)
 
     # Rgression for caching bug!
-    self.assertEqual('foo', p.EvalPromptEvaluator(value.Str('foo')))
-    self.assertEqual('foo', p.EvalPromptEvaluator(value.Str('foo')))
+    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
+    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
 
 
 if __name__ == '__main__':

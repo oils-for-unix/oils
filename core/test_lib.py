@@ -119,14 +119,16 @@ def MakeTestEvaluator():
   return ev
 
 
-def InitExecutor(comp_state=None, arena=None, mem=None):
+def InitExecutor(comp_lookup=None, arena=None, mem=None):
   arena = arena or MakeArena('<InitExecutor>')
 
   mem = mem or state.Mem('', [], {}, arena)
   fd_state = process.FdState()
   funcs = {}
 
-  comp_state = comp_state or completion.State()
+  comp_state = completion.State()
+  comp_lookup = comp_lookup or completion.Lookup()
+
   readline = None  # simulate not having it
   builtins = {  # Lookup
       builtin_e.HISTORY: builtin.History(readline),
@@ -167,24 +169,24 @@ def InitExecutor(comp_state=None, arena=None, mem=None):
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
   # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_state)  # used later
+  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 
   return ex
 
 
-def EvalCode(code_str, comp_state=None, arena=None, mem=None):
+def EvalCode(code_str, comp_lookup=None, arena=None, mem=None):
   """
   This allows unit tests to write code strings and have functions appear in the
   executor.
   """
-  comp_state = comp_state or completion.State()
+  comp_lookup = comp_lookup or completion.Lookup()
   arena = arena or MakeArena('<test_lib>')
   mem = mem or state.Mem('', [], {}, arena)
 
   c_parser = InitCommandParser(code_str, arena=arena)
-  ex = InitExecutor(comp_state=comp_state, arena=arena, mem=mem)
+  ex = InitExecutor(comp_lookup=comp_lookup, arena=arena, mem=mem)
   # Parse and execute!
   main_loop.Batch(ex, c_parser, arena)
   return ex

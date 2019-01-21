@@ -29,14 +29,14 @@ assign_op_e = syntax_asdl.assign_op_e
 value_e = runtime_asdl.value_e
 log = util.log
 
-A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
+A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
 U1 = completion.UserSpec([A1], [], [], lambda candidate: True)
 
 COMP_OPTS = completion.Options([])
 
 mem = state.Mem('', [], {}, None)
 
-FIRST = completion.WordsAction(['grep', 'sed', 'test'])
+FIRST = completion.TestAction(['grep', 'sed', 'test'])
 U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
 
 
@@ -52,8 +52,10 @@ def MockApi(line):
   return completion.Api(line=line, begin=i+1, end=end)
 
 
-def _MakeRootCompleter(comp_state=None):
-  comp_state = comp_state or completion.State()
+def _MakeRootCompleter(comp_lookup=None):
+  #comp_state = comp_state or completion.State()
+  comp_state = completion.State()
+  comp_lookup = comp_lookup or completion.Lookup()
   ev = test_lib.MakeTestEvaluator()
 
   pool = alloc.Pool()
@@ -66,7 +68,7 @@ def _MakeRootCompleter(comp_state=None):
   else:
     debug_f = util.NullDebugFile()
   progress_f = ui.TestStatusLine()
-  return completion.RootCompleter(ev, comp_state, mem, parse_ctx,
+  return completion.RootCompleter(ev, mem, comp_lookup, comp_state, parse_ctx,
                                   progress_f, debug_f)
 
 
@@ -100,7 +102,7 @@ class CompletionTest(unittest.TestCase):
     return comp
 
   def testLookup(self):
-    c = completion.State()
+    c = completion.Lookup()
     c.RegisterName('grep', COMP_OPTS, U1)
     print(c.GetSpecForName('grep'))
     print(c.GetSpecForName('/usr/bin/grep'))
@@ -113,10 +115,6 @@ class CompletionTest(unittest.TestCase):
 
     comp_rb = c.GetSpecForName('foo.rb')
     print('rb', comp_rb)
-
-  def testWordsAction(self):
-    comp = self._MakeComp(['f'], 0, 'f')
-    print(list(A1.Matches(comp)))
 
   def testExternalCommandAction(self):
     mem = state.Mem('dummy', [], {}, None)
@@ -349,11 +347,11 @@ class RootCompeterTest(unittest.TestCase):
     self.assertEqual(0, len(m))
 
   def testCompletesWords(self):
-    comp_state = completion.State()
+    comp_lookup = completion.Lookup()
 
-    comp_state.RegisterName('grep', COMP_OPTS, U1)
-    comp_state.RegisterName('__first', COMP_OPTS, U2)
-    r = _MakeRootCompleter(comp_state=comp_state)
+    comp_lookup.RegisterName('grep', COMP_OPTS, U1)
+    comp_lookup.RegisterName('__first', COMP_OPTS, U2)
+    r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
     comp = MockApi('grep f')
     m = list(r.Matches(comp))
@@ -384,12 +382,12 @@ class RootCompeterTest(unittest.TestCase):
 
   def testRunsUserDefinedFunctions(self):
     # This is here because it's hard to test readline with the spec tests.
-    comp_state = completion.State()
+    comp_lookup = completion.Lookup()
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    ex = test_lib.EvalCode(code_str, comp_state=comp_state)
+    ex = test_lib.EvalCode(code_str, comp_lookup=comp_lookup)
 
-    r = _MakeRootCompleter(comp_state=comp_state)
+    r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
     # By default, we get a space on the end.
     m = list(r.Matches(MockApi('mywords t')))
@@ -624,13 +622,13 @@ class InitCompletionTest(unittest.TestCase):
       state.SetGlobalString(mem, 'ORACLE_cword', oracle_cword)
       state.SetGlobalString(mem, 'ORACLE_split', oracle_split)
 
-      comp_state = completion.State()
-      ex = test_lib.EvalCode(init_code, comp_state=comp_state, arena=arena,
+      comp_lookup = completion.Lookup()
+      ex = test_lib.EvalCode(init_code, comp_lookup=comp_lookup, arena=arena,
                              mem=mem)
 
       #print(ex.comp_state)
 
-      r = _MakeRootCompleter(comp_state=comp_state)
+      r = _MakeRootCompleter(comp_lookup=comp_lookup)
       #print(r)
       comp = MockApi(code_str[:-1])
       m = list(r.Matches(comp))

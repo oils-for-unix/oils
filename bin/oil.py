@@ -129,7 +129,7 @@ OSH_SPEC.LongFlag('--rcfile', args.Str)
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
-def _InitDefaultCompletions(ex, complete_builtin, comp_state):
+def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
   # register builtins and words
   complete_builtin(['-E', '-A', 'command'])
   # register path completion
@@ -140,10 +140,10 @@ def _InitDefaultCompletions(ex, complete_builtin, comp_state):
   if 1:
     # Something for fun, to show off.  Also: test that you don't repeatedly hit
     # the file system / network / coprocess.
-    A1 = completion.WordsAction(['foo.py', 'foo', 'bar.py'])
-    A2 = completion.WordsAction(['m%d' % i for i in xrange(5)], delay=0.1)
+    A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
+    A2 = completion.TestAction(['m%d' % i for i in xrange(5)], delay=0.1)
     C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
-    comp_state.RegisterName('slowc', completion.Options([]), C1)
+    comp_lookup.RegisterName('slowc', completion.Options([]), C1)
 
 
 def _MaybeWriteHistoryFile(history_filename):
@@ -325,6 +325,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # TODO: Separate comp_state and comp_lookup.
   comp_state = completion.State()
+  comp_lookup = completion.Lookup()
 
   builtins = {  # Lookup
       builtin_e.HISTORY: builtin.History(readline),
@@ -357,7 +358,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
   # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_state)  # used later
+  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 
@@ -433,10 +434,10 @@ def ShellMain(lang, argv0, argv, login_shell):
     if readline:
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
       progress_f = ui.StatusLine()
-      root_comp = completion.RootCompleter(ev, comp_state, mem,
+      root_comp = completion.RootCompleter(ev, mem, comp_lookup, comp_state,
                                            comp_ctx, progress_f, debug_f)
       _InitReadline(readline, history_filename, root_comp, debug_f)
-      _InitDefaultCompletions(ex, complete_builtin, comp_state)
+      _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 

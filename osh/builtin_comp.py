@@ -80,14 +80,13 @@ def _DefineActions(spec):
   spec.Action(None, 'stopped')
 
 
-class _SortedWordsAction(object):
+class _FixedWordsAction(object):
   def __init__(self, d):
     self.d = d
 
   def Matches(self, comp):
     for name in sorted(self.d):
       if name.startswith(comp.to_complete):
-        #yield name + ' '  # full word
         yield name
 
 
@@ -139,21 +138,21 @@ class SpecBuilder(object):
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in arg.actions:
       if name == 'alias':
-        a = _SortedWordsAction(ex.aliases)
+        a = _FixedWordsAction(ex.aliases)
 
       elif name == 'binding':
         # TODO: Where do we get this from?
-        a = _SortedWordsAction(['vi-delete'])
+        a = _FixedWordsAction(['vi-delete'])
 
       elif name == 'command':
         # compgen -A command in bash is SIX things: aliases, builtins,
         # functions, keywords, external commands relative to the current
         # directory, and external commands in $PATH.
 
-        actions.append(_SortedWordsAction(builtin.BUILTIN_NAMES))
-        actions.append(_SortedWordsAction(ex.aliases))
-        actions.append(_SortedWordsAction(ex.funcs))
-        actions.append(_SortedWordsAction(lex.OSH_KEYWORD_NAMES))
+        actions.append(_FixedWordsAction(builtin.BUILTIN_NAMES))
+        actions.append(_FixedWordsAction(ex.aliases))
+        actions.append(_FixedWordsAction(ex.funcs))
+        actions.append(_FixedWordsAction(lex.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
         # Look on the file system.
@@ -166,10 +165,10 @@ class SpecBuilder(object):
         a = completion.FileSystemAction()
 
       elif name == 'function':
-        a = _SortedWordsAction(ex.funcs)
+        a = _FixedWordsAction(ex.funcs)
 
       elif name == 'job':
-        a = _SortedWordsAction(['jobs-not-implemented'])
+        a = _FixedWordsAction(['jobs-not-implemented'])
 
       elif name == 'user':
         a = _UsersAction()
@@ -178,19 +177,19 @@ class SpecBuilder(object):
         a = completion.VariablesAction(ex.mem)
 
       elif name == 'helptopic':
-        a = _SortedWordsAction(osh_help.TOPIC_LOOKUP)
+        a = _FixedWordsAction(osh_help.TOPIC_LOOKUP)
 
       elif name == 'setopt':
-        a = _SortedWordsAction(state.SET_OPTION_NAMES)
+        a = _FixedWordsAction(state.SET_OPTION_NAMES)
 
       elif name == 'shopt':
-        a = _SortedWordsAction(state.SHOPT_OPTION_NAMES)
+        a = _FixedWordsAction(state.SHOPT_OPTION_NAMES)
 
       elif name == 'signal':
-        a = _SortedWordsAction(['TODO:signals'])
+        a = _FixedWordsAction(['TODO:signals'])
 
       elif name == 'stopped':
-        a = _SortedWordsAction(['jobs-not-implemented'])
+        a = _FixedWordsAction(['jobs-not-implemented'])
 
       else:
         raise NotImplementedError(name)
@@ -201,7 +200,7 @@ class SpecBuilder(object):
     if arg.W:
       # TODO: Split with IFS.  Is that done at registration time or completion
       # time?
-      actions.append(completion.WordsAction(arg.W.split()))
+      actions.append(completion.DynamicWordsAction(arg.W.split()))
 
     extra_actions = []
     if comp_opts.Get('plusdirs'):
@@ -247,9 +246,9 @@ class Complete(object):
   NOTE: It's has an Executor because it creates a ShellFuncAction, which
   needs an Executor.
   """
-  def __init__(self, spec_builder, comp_state):
+  def __init__(self, spec_builder, comp_lookup):
     self.spec_builder = spec_builder
-    self.comp_state = comp_state
+    self.comp_lookup = comp_lookup
 
   def __call__(self, argv):
     arg_r = args.Reader(argv)
@@ -265,17 +264,17 @@ class Complete(object):
       commands.append('__first')  # empty line
 
     if not commands:
-      self.comp_state.PrintSpecs()
+      self.comp_lookup.PrintSpecs()
       return 0
 
     comp_opts = completion.Options(arg.opt_changes)
     user_spec = self.spec_builder.Build(argv, arg, comp_opts)
     for command in commands:
-      self.comp_state.RegisterName(command, comp_opts, user_spec)
+      self.comp_lookup.RegisterName(command, comp_opts, user_spec)
 
     patterns = []
     for pat in patterns:
-      self.comp_state.RegisterGlob(pat, comp_opts, user_spec)
+      self.comp_lookup.RegisterGlob(pat, comp_opts, user_spec)
 
     return 0
 
