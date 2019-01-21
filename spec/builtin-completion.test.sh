@@ -267,24 +267,66 @@ pylib
 ## END
 
 #### compgen doesn't respect -X for user-defined functions
+# WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
+# differently!
+$SH -i -c '
 func() {
   COMPREPLY=(one two three bin)
 }
-compgen -X '@(two|bin)' -F func
+compgen -X "@(two|bin)" -F func
+echo --
+compgen -X "!@(two|bin)" -F func
+'
 ## STDOUT:
 one
-two
 three
+--
+two
 bin
 ## END
 
-#### compgen doesn't respect -X with -W either
-# this CHANGED between bash 4.3 and 4.4 apparently?  That is odd.  bash 4.4
-# removed the filter.
-compgen -X '@(two|bin)' -W 'one two three bin'
+#### compgen -W words -X filter
+# WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
+# differently!
+$SH -i -c 'compgen -X "@(two|bin)" -W "one two three bin"'
 ## STDOUT:
 one
-two
 three
-bin
+## END
+
+#### compgen -f -X filter -- $cur
+abs_sh=$PWD/$SH
+cd $TMP
+touch spam.py spam.sh
+compgen -f -- sp
+echo --
+# WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
+# differently!
+$abs_sh  -i -c 'compgen -f -X "!*.@(py)" -- sp'
+## STDOUT:
+spam.py
+spam.sh
+--
+spam.py
+## END
+
+#### compgen doesn't need shell quoting
+# There is an obsolete comment in bash_completion that claims the opposite.
+cd $TMP
+touch 'foo bar'
+touch "foo'bar"
+compgen -f "foo b"
+compgen -f "foo'"
+## STDOUT:
+foo bar
+foo'bar
+## END
+
+#### compgen -W uses IFS
+IFS=':%'
+compgen -W 'spam:eggs%ham cheese'
+## STDOUT:
+spam
+eggs
+ham cheese
 ## END

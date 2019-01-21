@@ -108,12 +108,8 @@ class _UsersAction(object):
         yield name
 
 
-def _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=True):
-  """Given flags to complete/compgen, built a UserSpec.
-
-  Args:
-    respect_x: Stupid special case because bash doesn't respect -X in compgen.
-  """
+def _BuildUserSpec(argv, arg, comp_opts, ex):
+  """Given flags to complete/compgen, built a UserSpec."""
   actions = []
 
   # NOTE: bash doesn't actually check the name until completion time, but
@@ -207,7 +203,7 @@ def _BuildUserSpec(argv, arg, comp_opts, ex, respect_x=True):
     raise args.UsageError('No actions defined in completion: %s' % argv)
 
   p = lambda candidate: True  # include all
-  if respect_x and arg.X:
+  if arg.X:
     filter_pat = arg.X
     if filter_pat.startswith('!'):
       p = completion.GlobPredicate(False, filter_pat[1:])
@@ -300,7 +296,7 @@ class CompGen(object):
     matched = False
 
     comp_opts = completion.Options(arg.opt_changes)
-    user_spec = _BuildUserSpec(argv, arg, comp_opts, self.ex, respect_x=False)
+    user_spec = _BuildUserSpec(argv, arg, comp_opts, self.ex)
 
     # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
     # and also showing ALL COMPREPLY reuslts, not just the ones that start with

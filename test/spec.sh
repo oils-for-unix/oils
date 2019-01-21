@@ -360,7 +360,7 @@ builtin-bash() {
 
 # This is bash/OSH only
 builtin-completion() {
-  sh-spec spec/builtin-completion.test.sh \
+  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
