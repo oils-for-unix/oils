@@ -183,7 +183,7 @@ def _RightMostSpanForPart(part):
     return part.token.span_id
 
   elif part.tag == word_part_e.BracedVarSub:
-    spid = part.spids[0]
+    spid = part.spids[1]  # right }
     assert spid != const.NO_INTEGER
     return spid
 

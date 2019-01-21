@@ -239,3 +239,8 @@ Where the parser is reused:
 
 The point of a state machine is to make sure all cases are handled!
 
+## Where $IFS is Used
+
+- Splitting of unquoted substitutions
+- read
+- To split words in `compgen -W` (bash only)

@@ -110,6 +110,12 @@ class HistoryEvaluatorTest(unittest.TestCase):
 
     self.assertEqual('echo /echo/', hist_ev.Eval('echo !$'))
 
+  def testBug(self):
+    hist_ev = _MakeHistoryEvaluator([
+      'echo ${two:-}',
+    ])
+    self.assertEqual('echo ${two:-}', hist_ev.Eval('echo !$'))
+
   def testParsing(self):
     hist_ev = _MakeHistoryEvaluator([
       'echo 1',
