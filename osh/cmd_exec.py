@@ -37,11 +37,9 @@ from frontend import reader
 from osh import braces
 from osh import builtin
 from osh import expr_eval
-from osh import split
 from osh import state
 from osh import builtin_bracket
 from osh import word
-from osh import word_eval
 from osh import word_compile
 
 try:
@@ -106,6 +104,20 @@ class _ControlFlow(RuntimeError):
     return '<_ControlFlow %s>' % self.token
 
 
+class Deps(object):
+  def __init__(self):
+    self.splitter = None
+    self.word_ev = None
+    self.arith_ev = None
+    self.bool_ev = None
+    self.ex = None
+    self.prompt_ev = None
+    self.dumper = None
+    self.tracer = None
+    self.debug_f = None
+    self.trace_f = None
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -113,15 +125,16 @@ class Executor(object):
   CompoundWord/WordPart.
   """
   def __init__(self, mem, fd_state, funcs, builtins, exec_opts, parse_ctx,
-               devtools):
+               exec_deps):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
       funcs: dict of functions
-      builtins: dict of builtin callables (TODO: migrate everything this way)
+      builtins: dict of builtin callables (TODO: migrate all builtins here)
       exec_opts: ExecOpts
       parse_ctx: for instantiating parsers
+      exec_deps: A bundle of stateless code
     """
     self.mem = mem
     self.fd_state = fd_state
@@ -129,20 +142,18 @@ class Executor(object):
     self.builtins = builtins
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
+
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
-    self.dumper = devtools.dumper
-    self.debug_f = devtools.debug_f  # Used by ShellFuncAction too
 
-    self.splitter = split.SplitContext(self.mem)
-    self.word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, self.splitter,
-                                                 self.arena, self)
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self.word_ev,
-                                             self.arena)
+    self.dumper = exec_deps.dumper
+    self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
 
-    self.bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, self.word_ev,
-                                           self.arena)
+    self.splitter = exec_deps.splitter
+    self.word_ev = exec_deps.word_ev
+    self.arith_ev = exec_deps.arith_ev
+    self.bool_ev = exec_deps.bool_ev
 
     self.traps = {}  # signal/hook name -> callable
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers
@@ -155,8 +166,7 @@ class Executor(object):
     self.waiter = process.Waiter()
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = process.JobState()
-    self.tracer = Tracer(parse_ctx, exec_opts, mem, self.word_ev,
-                         devtools.trace_f)
+    self.tracer = exec_deps.tracer
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack

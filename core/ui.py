@@ -93,7 +93,7 @@ class TestStatusLine(object):
 
 
 #
-# Prompt handling
+# Prompt Evaluation
 #
 
 # Global instance set by main().  TODO: Use dependency injection.
@@ -118,7 +118,7 @@ def _GetUserName(uid):
     return e.pw_name
 
 
-class _PromptCache(object):
+class _PromptEvaluatorCache(object):
   """Cache some values we don't expect to change for the life of a process."""
 
   def __init__(self):
@@ -141,7 +141,7 @@ class _PromptCache(object):
     return value
 
 
-class Prompt(object):
+class PromptEvaluator(object):
   """Evaluate the prompt mini-language.
 
   bash has a very silly algorithm:
@@ -168,7 +168,7 @@ class Prompt(object):
     # The default prompt is osh$ or oil$ for now.  bash --noprofile --norc ->
     # 'bash-4.3$ '
     self.default_prompt = lang + '$ '
-    self.cache = _PromptCache()  # Cache to save syscalls / libc calls.
+    self.cache = _PromptEvaluatorCache()  # Cache to save syscalls / libc calls.
 
     # These caches should reduce memory pressure a bit.  We don't want to
     # reparse the prompt twice every time you hit enter.
@@ -227,7 +227,7 @@ class Prompt(object):
 
     return ''.join(ret)
 
-  def EvalPrompt(self, val):
+  def EvalPromptEvaluator(self, val):
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
     if val.tag != value_e.Str:
       return self.default_prompt  # no evaluation necessary
@@ -260,10 +260,10 @@ class Prompt(object):
     val2 = self.ex.word_ev.EvalWordToString(ps1_word)
     return val2.s
 
-  def FirstPrompt(self):
+  def FirstPromptEvaluator(self):
     if self.lang == 'osh':
       val = self.mem.GetVar('PS1')
-      return self.EvalPrompt(val)
+      return self.EvalPromptEvaluator(val)
     else:
       # TODO: If the lang is Oil, we should use a better prompt language than
       # $PS1!!!

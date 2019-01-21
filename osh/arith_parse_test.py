@@ -15,6 +15,7 @@ from core import test_lib
 from core import util
 from core.meta import types_asdl
 
+from osh import cmd_exec
 from osh import expr_eval
 from osh import split
 from osh import word_eval
@@ -34,8 +35,12 @@ def ParseAndEval(code_str):
 
   mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
+
+  exec_deps = cmd_exec.Deps()
   splitter = split.SplitContext(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
+  exec_deps.splitter = splitter
+
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
 
   arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)
   value = arith_ev.Eval(anode)

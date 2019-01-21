@@ -62,6 +62,7 @@ from core.meta import runtime_asdl
 from osh import builtin
 from osh import builtin_comp
 from osh import cmd_exec
+from osh import expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
@@ -292,22 +293,34 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   hist_arena = pool.NewArena()
   hist_arena.PushSource('<history>')
-  trail2 = parse_lib.Trail()  # TODO: Rename
+  trail2 = parse_lib.Trail()
   hist_ctx = parse_lib.ParseContext(hist_arena, aliases, trail=trail2)
+
+  # Deps helps manages dependencies.  These dependencies are circular:
+  # - ex and word_ev (for command sub)
+  # - ex and builtins (which execute code, like eval)
+  # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
+  exec_deps = cmd_exec.Deps()
 
   if opts.debug_file:
     debug_f = util.DebugFile(fd_state.Open(opts.debug_file, mode='w'))
   else:
     debug_f = util.NullDebugFile()
+  exec_deps.debug_f = debug_f
+
   debug_f.log('Debug file is %s', opts.debug_file)
 
+  splitter = split.SplitContext(mem)
+  exec_deps.splitter = splitter
+
   # Controlled by env variable, flag, or hook?
-  dumper = dev.CrashDumper(posix.environ.get('OSH_CRASH_DUMP_DIR', ''))
+  exec_deps.dumper = dev.CrashDumper(posix.environ.get('OSH_CRASH_DUMP_DIR', ''))
+
   if opts.xtrace_to_debug_file:
     trace_f = debug_f
   else:
     trace_f = util.DebugFile(sys.stderr)
-  devtools = dev.DevTools(dumper, debug_f, trace_f)
+  exec_deps.trace_f = trace_f
 
   # TODO: Separate comp_state and comp_lookup.
   comp_state = completion.State()
@@ -319,22 +332,41 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
-                         parse_ctx, devtools)
+                         parse_ctx, exec_deps)
+  exec_deps.ex = ex
+
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
+  exec_deps.word_ev = word_ev
+
+  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
+  exec_deps.arith_ev = arith_ev
+
+  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+  exec_deps.bool_ev = bool_ev
+
+  tracer = cmd_exec.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
+  exec_deps.tracer = tracer
+
+  # HACK for circular deps
+  ex.word_ev = word_ev
+  ex.arith_ev = arith_ev
+  ex.bool_ev = bool_ev
+  ex.tracer = tracer
 
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(ex, comp_state)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin
-  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex)
+  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex, splitter, word_ev)
 
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source
     # it.
     ex = oil_cmd_exec.OilExecutor(ex)
 
-  # Prompt rendering is needed in non-interactive shells for @P.
-  prompt_ev = ui.Prompt(lang, arena, parse_ctx, ex, mem)
-  # TODO: create eval_ctx?  Maybe instead of devtools.
-  ui.PROMPT = prompt_ev
+  # PromptEvaluator rendering is needed in non-interactive shells for @P.
+  prompt_ev = ui.PromptEvaluator(lang, arena, parse_ctx, ex, mem)
+  exec_deps.prompt_ev = prompt_ev
+  word_ev.prompt_ev = prompt_ev  # HACK for circular deps
 
   # History evaluation is a no-op if readline is None.
   hist_ev = reader.HistoryEvaluator(readline, hist_ctx, debug_f)
@@ -396,8 +428,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
     if readline:
-      splitter = split.SplitContext(mem)  # TODO: share with executor.
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
+      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
       progress_f = ui.StatusLine()
       root_comp = completion.RootCompleter(ev, comp_state, mem,
                                            comp_ctx, progress_f, debug_f)

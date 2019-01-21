@@ -277,8 +277,15 @@ _DefineActions(COMPGEN_SPEC)
 class CompGen(object):
   """Print completions on stdout."""
 
-  def __init__(self, ex):
+  def __init__(self, ex, splitter, word_ev):
+    """
+      Args:
+        ex: Executor for compgen -F
+        splitter, word_ev: for compgen -W
+    """
     self.ex = ex
+    self.splitter = splitter
+    self.word_ev = word_ev
 
   def __call__(self, argv):
     arg_r = args.Reader(argv)

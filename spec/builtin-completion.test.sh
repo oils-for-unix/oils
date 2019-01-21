@@ -169,26 +169,6 @@ build
 compgen -A user
 ## status: 0
 
-#### compgen -W 'one two three'
-compgen -W 'one two three'
-echo --
-compgen -W 'w1 w2 three' -A directory w
-echo --
-compgen -A directory -W 'w1 w2 three' w  # order doesn't matter
-## STDOUT:
-one
-two
-three
---
-web
-w1
-w2
---
-web
-w1
-w2
-## END
-
 #### compgen -A command completes external commands
 # NOTE: this test isn't hermetic
 compgen -A command xarg
@@ -320,6 +300,35 @@ compgen -f "foo'"
 ## STDOUT:
 foo bar
 foo'bar
+## END
+
+#### compgen -W 'one two three'
+compgen -W 'one two three'
+echo --
+compgen -W 'w1 w2 three' -A directory w
+echo --
+compgen -A directory -W 'w1 w2 three' w  # order doesn't matter
+## STDOUT:
+one
+two
+three
+--
+web
+w1
+w2
+--
+web
+w1
+w2
+## END
+
+#### compgen -W evaluates code in $()
+IFS=':%'
+compgen -W '$(echo "spam:eggs%ham cheese")'
+## STDOUT:
+spam
+eggs
+ham cheese
 ## END
 
 #### compgen -W uses IFS

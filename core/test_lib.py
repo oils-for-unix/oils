@@ -27,6 +27,7 @@ from frontend import reader
 from osh import builtin
 from osh import builtin_comp
 from osh import cmd_exec
+from osh import expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
@@ -110,8 +111,11 @@ def MakeTestEvaluator():
   arena = alloc.SideArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
-  splitter = split.SplitContext(mem)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, arena)
+
+  exec_deps = cmd_exec.Deps()
+  exec_deps.splitter = split.SplitContext(mem)
+
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
   return ev
 
 
@@ -136,15 +140,33 @@ def InitExecutor(comp_state=None, arena=None, mem=None):
   parse_ctx = parse_lib.ParseContext(arena, {})
 
   debug_f = util.DebugFile(sys.stderr)
-  devtools = dev.DevTools(dev.CrashDumper(''), debug_f, debug_f)
+  exec_deps = cmd_exec.Deps()
+  exec_deps.dumper = dev.CrashDumper('')
+  exec_deps.debug_f = debug_f
+  exec_deps.trace_f = debug_f
+
+  splitter = split.SplitContext(mem)
+  exec_deps.splitter = splitter
+
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
+  exec_deps.word_ev = word_ev
+
+  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
+  exec_deps.arith_ev = arith_ev
+
+  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+  exec_deps.bool_ev = bool_ev
+
+  tracer = cmd_exec.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
+  exec_deps.tracer = tracer
 
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
-                         parse_ctx, devtools)
+                         parse_ctx, exec_deps)
 
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(ex, comp_state)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin
-  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex)
+  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex, splitter, word_ev)
 
   return ex
 

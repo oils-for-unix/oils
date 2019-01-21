@@ -72,7 +72,7 @@ class InteractiveLineReader(_Reader):
     """Call this after command execution, to free memory taken up by the lines,
     and reset prompt string back to PS1.
     """
-    self.prompt_str = self.prompt_ev.FirstPrompt()
+    self.prompt_str = self.prompt_ev.FirstPromptEvaluator()
 
 
 class FileLineReader(_Reader):

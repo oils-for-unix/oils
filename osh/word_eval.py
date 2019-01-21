@@ -5,7 +5,6 @@ word_eval.py - Evaluator for the word language.
 import pwd
 import sys
 
-from core import ui
 from core import util
 from core.meta import syntax_asdl, runtime_asdl, Id, Kind, LookupKind
 
@@ -137,13 +136,14 @@ class _WordEvaluator(object):
     EvalRhsWord
     EvalWordSequence
   """
-  def __init__(self, mem, exec_opts, splitter, arena):
+  def __init__(self, mem, exec_opts, exec_deps, arena):
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
-    self.splitter = splitter
+    self.splitter = exec_deps.splitter
+    self.prompt_ev = exec_deps.prompt_ev
 
     self.globber = glob_.Globber(exec_opts)
-    # NOTE: Executor also instantiates one.
+    # TODO: Consolidate into exec_deps.  Executor also instantiates one.
     self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self, arena)
 
   def _EvalCommandSub(self, part, quoted):
@@ -616,9 +616,7 @@ class _WordEvaluator(object):
       op = part.suffix_op
       if op.tag == suffix_op_e.StringNullary:
         if op.op_id == Id.VOp0_P:
-          # TODO: Use dependency injection, maybe eval_ctx.
-          #val = self.prompt._EvalPS1(val)
-          prompt = ui.PROMPT.EvalPrompt(val)
+          prompt = self.prompt_ev.EvalPromptEvaluator(val)
           val = value.Str(prompt)
         elif op.op_id == Id.VOp0_Q:
           val = value.Str(string_ops.ShellQuote(val.s))
@@ -1121,9 +1119,9 @@ class _WordEvaluator(object):
 
 class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, splitter, arena, ex):
-    _WordEvaluator.__init__(self, mem, exec_opts, splitter, arena)
-    self.ex = ex
+  def __init__(self, mem, exec_opts, exec_deps, arena):
+    _WordEvaluator.__init__(self, mem, exec_opts, exec_deps, arena)
+    self.ex = exec_deps.ex
 
   def _EvalCommandSub(self, node, quoted):
     stdout = self.ex.RunCommandSub(node)

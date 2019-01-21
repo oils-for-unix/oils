@@ -17,17 +17,17 @@ value = runtime_asdl.value
 
 class UiTest(unittest.TestCase):
 
-  def testPrompt(self):
+  def testPromptEvaluator(self):
     arena = test_lib.MakeArena('<ui_test.py>')
     mem = state.Mem('', [], {}, arena)
 
     ex = test_lib.InitExecutor(arena=arena)
 
-    p = ui.Prompt('osh', arena, ex.parse_ctx, ex, mem)
+    p = ui.PromptEvaluator('osh', arena, ex.parse_ctx, ex, mem)
 
     # Rgression for caching bug!
-    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
-    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
+    self.assertEqual('foo', p.EvalPromptEvaluator(value.Str('foo')))
+    self.assertEqual('foo', p.EvalPromptEvaluator(value.Str('foo')))
 
 
 if __name__ == '__main__':

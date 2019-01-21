@@ -466,7 +466,7 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
 
-# https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html#Controlling-the-Prompt
+# https://www.gnu.org/software/bash/manual/html_node/Controlling-the-PromptEvaluator.html#Controlling-the-PromptEvaluator
 PS1_DEF = [
     R(OCTAL3_RE, Id.PS_Octal3),
     R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
