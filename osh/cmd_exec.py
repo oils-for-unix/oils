@@ -1475,7 +1475,7 @@ class Tracer(object):
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4, self.arena)
 
       try:
-        ps4_word = w_parser.ReadPS()
+        ps4_word = w_parser.ReadForPlugin()
       except util.ParseError as e:
         error_str = '<ERROR: cannot parse PS4>'
         t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)

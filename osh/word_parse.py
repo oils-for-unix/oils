@@ -1142,7 +1142,7 @@ class WordParser(object):
     self._ReadLikeDQ(None, parts)
     # Returns nothing
 
-  def ReadPS(self):
+  def ReadForPlugin(self):
     """For $PS1, $PS4, etc.
 
     This is just like reading a here doc line.  "\n" is allowed, as well as the

@@ -11,7 +11,6 @@ from core.meta import syntax_asdl, runtime_asdl, Id, Kind, LookupKind
 from frontend import match
 
 from osh import braces
-from osh import expr_eval
 from osh import glob_
 from osh import string_ops
 from osh import state
@@ -141,10 +140,10 @@ class _WordEvaluator(object):
     self.exec_opts = exec_opts  # for nounset
     self.splitter = exec_deps.splitter
     self.prompt_ev = exec_deps.prompt_ev
+    self.arith_ev = exec_deps.arith_ev
 
     self.globber = glob_.Globber(exec_opts)
     # TODO: Consolidate into exec_deps.  Executor also instantiates one.
-    self.arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, self, arena)
 
   def _EvalCommandSub(self, part, quoted):
     """Abstract since it has a side effect.

@@ -297,7 +297,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   hist_ctx = parse_lib.ParseContext(hist_arena, aliases, trail=trail2)
 
   # Deps helps manages dependencies.  These dependencies are circular:
-  # - ex and word_ev (for command sub)
+  # - ex and word_ev, arith_ev -- for command sub, arith sub
+  # - arith_ev and word_ev -- for $(( ${a} )) and $x$(( 1 )) 
   # - ex and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
@@ -340,6 +341,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.arith_ev = arith_ev
+  word_ev.arith_ev = arith_ev  # Another circular dependency
 
   bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.bool_ev = bool_ev
@@ -353,10 +355,11 @@ def ShellMain(lang, argv0, argv, login_shell):
   ex.bool_ev = bool_ev
   ex.tracer = tracer
 
+  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
   # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(ex, comp_state)  # used later
+  complete_builtin = builtin_comp.Complete(spec_builder, comp_state)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin
-  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex, splitter, word_ev)
+  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source

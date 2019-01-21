@@ -249,7 +249,7 @@ class PromptEvaluator(object):
     except KeyError:
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str, self.arena)
       try:
-        ps1_word = w_parser.ReadPS()
+        ps1_word = w_parser.ReadForPlugin()
       except Exception as e:
         error_str = '<ERROR: cannot parse PS1>'
         t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)

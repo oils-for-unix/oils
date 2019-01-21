@@ -154,6 +154,8 @@ def InitExecutor(comp_state=None, arena=None, mem=None):
   arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.arith_ev = arith_ev
 
+  word_ev.arith_ev = arith_ev  # Circular
+
   bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.bool_ev = bool_ev
 
@@ -163,10 +165,11 @@ def InitExecutor(comp_state=None, arena=None, mem=None):
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
 
+  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
   # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(ex, comp_state)  # used later
+  complete_builtin = builtin_comp.Complete(spec_builder, comp_state)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin
-  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(ex, splitter, word_ev)
+  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 
   return ex
 

@@ -108,109 +108,124 @@ class _UsersAction(object):
         yield name
 
 
-def _BuildUserSpec(argv, arg, comp_opts, ex):
-  """Given flags to complete/compgen, built a UserSpec."""
-  actions = []
+class SpecBuilder(object):
 
-  # NOTE: bash doesn't actually check the name until completion time, but
-  # obviously it's better to check here.
-  if arg.F:
-    func_name = arg.F
-    func = ex.funcs.get(func_name)
-    if func is None:
-      raise args.UsageError('Function %r not found' % func_name)
-    actions.append(completion.ShellFuncAction(ex, func))
+  def __init__(self, ex, parse_ctx, word_ev, splitter):
+    """
+    Args:
+      ex: Executor for compgen -F
+      parse_ctx, word_ev, splitter: for compgen -W
+    """
+    self.ex = ex
+    self.parse_ctx = parse_ctx
+    self.word_ev = word_ev
+    self.splitter = splitter
 
-  # NOTE: We need completion for -A action itself!!!  bash seems to have it.
-  for name in arg.actions:
-    if name == 'alias':
-      a = _SortedWordsAction(ex.aliases)
+  def Build(self, argv, arg, comp_opts):
+    """Given flags to complete/compgen, built a UserSpec."""
+    ex = self.ex
 
-    elif name == 'binding':
-      # TODO: Where do we get this from?
-      a = _SortedWordsAction(['vi-delete'])
+    actions = []
 
-    elif name == 'command':
-      # compgen -A command in bash is SIX things: aliases, builtins,
-      # functions, keywords, external commands relative to the current
-      # directory, and external commands in $PATH.
+    # NOTE: bash doesn't actually check the name until completion time, but
+    # obviously it's better to check here.
+    if arg.F:
+      func_name = arg.F
+      func = ex.funcs.get(func_name)
+      if func is None:
+        raise args.UsageError('Function %r not found' % func_name)
+      actions.append(completion.ShellFuncAction(ex, func))
 
-      actions.append(_SortedWordsAction(builtin.BUILTIN_NAMES))
-      actions.append(_SortedWordsAction(ex.aliases))
-      actions.append(_SortedWordsAction(ex.funcs))
-      actions.append(_SortedWordsAction(lex.OSH_KEYWORD_NAMES))
-      actions.append(completion.FileSystemAction(exec_only=True))
+    # NOTE: We need completion for -A action itself!!!  bash seems to have it.
+    for name in arg.actions:
+      if name == 'alias':
+        a = _SortedWordsAction(ex.aliases)
 
-      # Look on the file system.
-      a = completion.ExternalCommandAction(ex.mem)
+      elif name == 'binding':
+        # TODO: Where do we get this from?
+        a = _SortedWordsAction(['vi-delete'])
 
-    elif name == 'directory':
-      a = completion.FileSystemAction(dirs_only=True)
+      elif name == 'command':
+        # compgen -A command in bash is SIX things: aliases, builtins,
+        # functions, keywords, external commands relative to the current
+        # directory, and external commands in $PATH.
 
-    elif name == 'file':
-      a = completion.FileSystemAction()
+        actions.append(_SortedWordsAction(builtin.BUILTIN_NAMES))
+        actions.append(_SortedWordsAction(ex.aliases))
+        actions.append(_SortedWordsAction(ex.funcs))
+        actions.append(_SortedWordsAction(lex.OSH_KEYWORD_NAMES))
+        actions.append(completion.FileSystemAction(exec_only=True))
 
-    elif name == 'function':
-      a = _SortedWordsAction(ex.funcs)
+        # Look on the file system.
+        a = completion.ExternalCommandAction(ex.mem)
 
-    elif name == 'job':
-      a = _SortedWordsAction(['jobs-not-implemented'])
+      elif name == 'directory':
+        a = completion.FileSystemAction(dirs_only=True)
 
-    elif name == 'user':
-      a = _UsersAction()
+      elif name == 'file':
+        a = completion.FileSystemAction()
 
-    elif name == 'variable':
-      a = completion.VariablesAction(ex.mem)
+      elif name == 'function':
+        a = _SortedWordsAction(ex.funcs)
 
-    elif name == 'helptopic':
-      a = _SortedWordsAction(osh_help.TOPIC_LOOKUP)
+      elif name == 'job':
+        a = _SortedWordsAction(['jobs-not-implemented'])
 
-    elif name == 'setopt':
-      a = _SortedWordsAction(state.SET_OPTION_NAMES)
+      elif name == 'user':
+        a = _UsersAction()
 
-    elif name == 'shopt':
-      a = _SortedWordsAction(state.SHOPT_OPTION_NAMES)
+      elif name == 'variable':
+        a = completion.VariablesAction(ex.mem)
 
-    elif name == 'signal':
-      a = _SortedWordsAction(['TODO:signals'])
+      elif name == 'helptopic':
+        a = _SortedWordsAction(osh_help.TOPIC_LOOKUP)
 
-    elif name == 'stopped':
-      a = _SortedWordsAction(['jobs-not-implemented'])
+      elif name == 'setopt':
+        a = _SortedWordsAction(state.SET_OPTION_NAMES)
 
-    else:
-      raise NotImplementedError(name)
+      elif name == 'shopt':
+        a = _SortedWordsAction(state.SHOPT_OPTION_NAMES)
 
-    actions.append(a)
+      elif name == 'signal':
+        a = _SortedWordsAction(['TODO:signals'])
 
-  # e.g. -W comes after -A directory
-  if arg.W:
-    # TODO: Split with IFS.  Is that done at registration time or completion
-    # time?
-    actions.append(completion.WordsAction(arg.W.split()))
+      elif name == 'stopped':
+        a = _SortedWordsAction(['jobs-not-implemented'])
 
-  extra_actions = []
-  if comp_opts.Get('plusdirs'):
-    extra_actions.append(completion.FileSystemAction(dirs_only=True))
+      else:
+        raise NotImplementedError(name)
 
-  # These only happen if there were zero shown.
-  else_actions = []
-  if comp_opts.Get('default'):
-    else_actions.append(completion.FileSystemAction())
-  if comp_opts.Get('dirnames'):
-    else_actions.append(completion.FileSystemAction(dirs_only=True))
+      actions.append(a)
 
-  if not actions and not else_actions:
-    raise args.UsageError('No actions defined in completion: %s' % argv)
+    # e.g. -W comes after -A directory
+    if arg.W:
+      # TODO: Split with IFS.  Is that done at registration time or completion
+      # time?
+      actions.append(completion.WordsAction(arg.W.split()))
 
-  p = lambda candidate: True  # include all
-  if arg.X:
-    filter_pat = arg.X
-    if filter_pat.startswith('!'):
-      p = completion.GlobPredicate(False, filter_pat[1:])
-    else:
-      p = completion.GlobPredicate(True, filter_pat)
-  return completion.UserSpec(actions, extra_actions, else_actions, p,
-                             prefix=arg.P or '', suffix=arg.S or '')
+    extra_actions = []
+    if comp_opts.Get('plusdirs'):
+      extra_actions.append(completion.FileSystemAction(dirs_only=True))
+
+    # These only happen if there were zero shown.
+    else_actions = []
+    if comp_opts.Get('default'):
+      else_actions.append(completion.FileSystemAction())
+    if comp_opts.Get('dirnames'):
+      else_actions.append(completion.FileSystemAction(dirs_only=True))
+
+    if not actions and not else_actions:
+      raise args.UsageError('No actions defined in completion: %s' % argv)
+
+    p = lambda candidate: True  # include all
+    if arg.X:
+      filter_pat = arg.X
+      if filter_pat.startswith('!'):
+        p = completion.GlobPredicate(False, filter_pat[1:])
+      else:
+        p = completion.GlobPredicate(True, filter_pat)
+    return completion.UserSpec(actions, extra_actions, else_actions, p,
+                               prefix=arg.P or '', suffix=arg.S or '')
 
 
 # git-completion.sh uses complete -o and complete -F
@@ -232,8 +247,8 @@ class Complete(object):
   NOTE: It's has an Executor because it creates a ShellFuncAction, which
   needs an Executor.
   """
-  def __init__(self, ex, comp_state):
-    self.ex = ex
+  def __init__(self, spec_builder, comp_state):
+    self.spec_builder = spec_builder
     self.comp_state = comp_state
 
   def __call__(self, argv):
@@ -254,7 +269,7 @@ class Complete(object):
       return 0
 
     comp_opts = completion.Options(arg.opt_changes)
-    user_spec = _BuildUserSpec(argv, arg, comp_opts, self.ex)
+    user_spec = self.spec_builder.Build(argv, arg, comp_opts)
     for command in commands:
       self.comp_state.RegisterName(command, comp_opts, user_spec)
 
@@ -273,19 +288,11 @@ _DefineOptions(COMPGEN_SPEC)
 _DefineActions(COMPGEN_SPEC)
 
 
-
 class CompGen(object):
   """Print completions on stdout."""
 
-  def __init__(self, ex, splitter, word_ev):
-    """
-      Args:
-        ex: Executor for compgen -F
-        splitter, word_ev: for compgen -W
-    """
-    self.ex = ex
-    self.splitter = splitter
-    self.word_ev = word_ev
+  def __init__(self, spec_builder):
+    self.spec_builder = spec_builder
 
   def __call__(self, argv):
     arg_r = args.Reader(argv)
@@ -303,7 +310,7 @@ class CompGen(object):
     matched = False
 
     comp_opts = completion.Options(arg.opt_changes)
-    user_spec = _BuildUserSpec(argv, arg, comp_opts, self.ex)
+    user_spec = self.spec_builder.Build(argv, arg, comp_opts)
 
     # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
     # and also showing ALL COMPREPLY reuslts, not just the ones that start with

@@ -164,6 +164,10 @@ complete -F complete_op_chars op_chars
 op_chars_filenames() { argv "$@"; }
 complete -F complete_op_chars -o filenames op_chars_filenames
 
+# This shows that x is evaluated at RUNTIME, not at registration time!
+W_runtime() { argv "$@"; }
+complete -W 'foo $x $(echo --$x)' W_runtime
+
 #
 # Unit tests use this
 #
