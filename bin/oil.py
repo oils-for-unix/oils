@@ -392,12 +392,14 @@ def ShellMain(lang, argv0, argv, login_shell):
     if opts.i:  # -c and -i can be combined
       SourceStartupFile(rc_path, lang, parse_ctx, ex)
       exec_opts.interactive = True
+
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
     # interactive shell only
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
     line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev)
     exec_opts.interactive = True
+
   else:
     try:
       script_name = arg_r.Peek()

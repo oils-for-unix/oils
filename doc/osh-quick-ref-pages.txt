@@ -95,11 +95,22 @@ TODO: any changes?
 
 ### <config> Configuration Files
 
-### <startup> Shell Startup
+If the --rcfile flag is specified, osh and oil will source that on startup.
+
+Otherwise they source ~/.config/oil/oshrc and ~/.config/oil/oilrc,
+respectively.
+
+To disable startup files, pass --rcfile /dev/null.
+
+### startup
 
 ### <line-editing> Line Editing
 
+Oil currently has support for building against GNU readline.
+
 ### <prompt> Customizing the Prompt String
+
+OSH supports bash-compatible $PS1 syntax.
 
 #### <Lexing> Lexing
 

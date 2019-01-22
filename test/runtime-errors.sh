@@ -351,6 +351,12 @@ array_assign_2() {
   array[0]=x
 }
 
+# Need location info
+readonly_assign() {
+  readonly x=1
+  readonly x=2
+}
+
 #
 # TEST DRIVER
 #
@@ -378,7 +384,7 @@ all() {
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
-    array_assign_1 array_assign_2 patsub_bad_glob; do
+    array_assign_1 array_assign_2 readonly_assign patsub_bad_glob; do
 
     _run_test $t
   done
