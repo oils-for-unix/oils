@@ -390,6 +390,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     arena.PushSource('<command string>')
     line_reader = reader.StringLineReader(opts.c, arena)
     if opts.i:  # -c and -i can be combined
+      SourceStartupFile(rc_path, lang, parse_ctx, ex)
       exec_opts.interactive = True
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')

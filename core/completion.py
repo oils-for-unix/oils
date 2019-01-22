@@ -171,6 +171,7 @@ class Lookup(object):
     return '<completion.State %s>' % self.lookup
 
   def PrintSpecs(self):
+    """For 'complete' without args."""
     for name in sorted(self.lookup):
       print('%-15r %s' % (name, self.lookup[name]))
     print('---')
