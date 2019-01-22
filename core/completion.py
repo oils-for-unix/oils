@@ -815,9 +815,8 @@ class RootCompleter(object):
         n = len(partial_argv)
 
         # TODO: Form prefix for RootCompleter to add to user_spec candidates
-
         if n == 0:
-          # should never get this because of Lit_CompDummy?
+          # We should never get this because of Lit_CompDummy.
           raise AssertionError
         elif n == 1:
           # First
@@ -843,8 +842,28 @@ class RootCompleter(object):
     self.comp_state.current_opts = comp_opts
     self.comp_state.currently_completing = True
     try:
-      for entry in self._PostProcess(comp_opts, user_spec, comp):
-        yield entry
+      done = False
+      while not done:
+        try:
+          for entry in self._PostProcess(comp_opts, user_spec, comp):
+            yield entry
+        except _RetryCompletion as e:
+          debug_f.log('Got 124, trying again ...')
+
+          n = len(partial_argv)
+          # Get another user_spec.  The ShellFuncAction may have 'sourced' code
+          # and run 'complete' to mutate comp_lookup, and we want to get that
+          # new entry.
+          if n == 0:
+            raise AssertionError
+          elif n == 1:
+            # First
+            comp_opts, user_spec = self.comp_lookup.GetFirstSpec()
+          else:
+            comp_opts, user_spec = self.comp_lookup.GetSpecForName(
+                partial_argv[0])
+        else:
+          done = True  # exhausted candidates without getting a retry
     finally:
       self.comp_state.currently_completing = False
 
@@ -933,22 +952,10 @@ class ReadlineCallback(object):
 
     assert self.comp_iter is not None, self.comp_iter
 
-    done = False
-    while not done:
-      #self.debug_f.log('comp_iter.next()')
-      try:
-        next_completion = self.comp_iter.next()
-        done = True
-      except _RetryCompletion:
-        # TODO: Is it OK to retry here?  Shouldn't we retry in
-        # RootCompleter, after we already know the words?  That seems to run
-        # into some problems with Python generators and exceptions.
-        # I kind of want the 'g.send()' pattern to "prime the generator",
-        # revealing the first exception.
-        pass
-      except StopIteration:
-        next_completion = None  # sentinel?
-        done = True
+    try:
+      next_completion = self.comp_iter.next()
+    except StopIteration:
+      next_completion = None  # signals the end
 
     return next_completion
 

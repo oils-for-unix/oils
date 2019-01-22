@@ -114,7 +114,8 @@ complete_optdynamic() {
 }
 complete -F complete_optdynamic optdynamic
 
-complete_files() {
+files_func() { argv "$@"; }
+complete_files_func() {
   local first=$1
   local cur=$2
   local prev=$3
@@ -124,7 +125,7 @@ complete_files() {
 }
 # everything else completes files
 #complete -D -A file
-complete -F complete_files -D  # messes up trailing slashes
+complete -F complete_files_func files_func  # messes up trailing slashes
 
 # Check trailing backslashes for the 'fileuser' command
 # Hm somehow it knows to distinguish.  Gah.
@@ -177,6 +178,19 @@ complete_F_runtime_error() {
   COMPREPLY+=( $(( 1 / 0 )) )  # FATAL, but we still have candidates
 }
 complete -F complete_F_runtime_error F_runtime_error
+
+#
+# Test out the "124" protocol for lazy loading of completions.
+#
+
+# https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
+_completion_loader()
+{
+  # If the file exists, we will return 124 and reload it.
+  # TODO: It would be nice to have a debug_f builtin to trace this!
+  . "testdata/completion/${1}_completion.bash" >/dev/null 2>&1 && return 124
+}
+complete -D -F _completion_loader
 
 #
 # Unit tests use this
