@@ -173,7 +173,12 @@ _comp_fallback=''
 # _comp_fallback is invoked by my _my_default_completion, with the same 3 args
 # as a completion function, i.e. -- "$@".
 _maybe_set_comp_fallback() {
-  local _distro_script=/etc/bash_completion
+  local _distro_script
+  if test -n "$BASH_VERSION"; then 
+    _distro_script='/etc/bash_completion'
+  else
+    _distro_script=~/git/oilshell/bash-completion/osh_completion
+  fi
   local _distro_function=_completion_loader
 
   # NOTE: _compbacllback
