@@ -32,7 +32,7 @@ log = util.log
 A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
 U1 = completion.UserSpec([A1], [], [], lambda candidate: True)
 
-COMP_OPTS = completion.Options([])
+BASE_OPTS = {}
 
 mem = state.Mem('', [], {}, None)
 
@@ -103,12 +103,12 @@ class CompletionTest(unittest.TestCase):
 
   def testLookup(self):
     c = completion.Lookup()
-    c.RegisterName('grep', COMP_OPTS, U1)
+    c.RegisterName('grep', BASE_OPTS, U1)
     print(c.GetSpecForName('grep'))
     print(c.GetSpecForName('/usr/bin/grep'))
 
-    c.RegisterGlob('*.py', COMP_OPTS, U1)
-    comp = c.GetSpecForName('/usr/bin/foo.py')
+    c.RegisterGlob('*.py', BASE_OPTS, U1)
+    base_opts, comp = c.GetSpecForName('/usr/bin/foo.py')
     print('py', comp)
     # NOTE: This is an implementation detail
     self.assertEqual(1, len(comp.actions))
@@ -349,8 +349,8 @@ class RootCompeterTest(unittest.TestCase):
   def testCompletesWords(self):
     comp_lookup = completion.Lookup()
 
-    comp_lookup.RegisterName('grep', COMP_OPTS, U1)
-    comp_lookup.RegisterName('__first', COMP_OPTS, U2)
+    comp_lookup.RegisterName('grep', BASE_OPTS, U1)
+    comp_lookup.RegisterName('__first', BASE_OPTS, U2)
     r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
     comp = MockApi('grep f')

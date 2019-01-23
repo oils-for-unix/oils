@@ -115,33 +115,13 @@ class NullCompleter(object):
     return []
 
 
-class Options(object):
-  def __init__(self, opt_changes):
-    self.initial = dict(opt_changes)  # option name -> bool
-    self.ephemeral = {}  # during one completion
-
-  def Reset(self):
-    self.ephemeral.clear()
-
-  def Get(self, opt_name):
-    try:
-      return self.ephemeral[opt_name]
-    except KeyError:
-      return self.initial.get(opt_name, False)  # all default to False
-
-  def Set(self, opt_name, b):
-    self.ephemeral[opt_name] = b
-
-  def __repr__(self):
-    return '(Options %s)' % (self.initial or '')
-
 # NOTE: How to create temporary options?  With copy.deepcopy()?
 # We might want that as a test for OVM.  Copying is similar to garbage
 # collection in that you walk a graph.
 
 
 # These values should never be mutated.
-_DEFAULT_OPTS = Options([])
+_DEFAULT_OPTS = {}
 _DO_NOTHING = (_DEFAULT_OPTS, NullCompleter())
 
 
@@ -152,7 +132,7 @@ class State(object):
     # For the IN-PROGRESS completion.
     self.currently_completing = False
     # should be SET to a COPY of the registration options by the completer.
-    self.current_opts = None
+    self.dynamic_opts = None
 
 
 class Lookup(object):
@@ -176,20 +156,20 @@ class Lookup(object):
   def PrintSpecs(self):
     """For 'complete' without args."""
     for name in sorted(self.lookup):
-      comp_opts, user_spec = self.lookup[name]
-      print('%-15s %s  %s' % (name, comp_opts, user_spec))
+      base_opts, user_spec = self.lookup[name]
+      print('%-15s %s  %s' % (name, base_opts, user_spec))
     print('---')
     for pat, spec in self.patterns:
       print('%s = %s' % (pat, spec))
 
-  def RegisterName(self, name, comp_opts, user_spec):
+  def RegisterName(self, name, base_opts, user_spec):
     """Register a completion action with a name.
     Used by the 'complete' builtin.
     """
-    self.lookup[name] = (comp_opts, user_spec)
+    self.lookup[name] = (base_opts, user_spec)
 
-  def RegisterGlob(self, glob_pat, comp_opts, user_spec):
-    self.patterns.append((glob_pat, comp_opts, user_spec))
+  def RegisterGlob(self, glob_pat, base_opts, user_spec):
+    self.patterns.append((glob_pat, base_opts, user_spec))
 
   def GetFirstSpec(self):
     return self.lookup['__first']
@@ -208,10 +188,10 @@ class Lookup(object):
     if user_spec:
       return user_spec
 
-    for glob_pat, comp_opts, user_spec in self.patterns:
+    for glob_pat, base_opts, user_spec in self.patterns:
       #log('Matching %r %r', key, glob_pat)
       if libc.fnmatch(glob_pat, key):
-        return user_spec
+        return base_opts, user_spec
 
     # Nothing matched
     return self.lookup['__fallback']
@@ -816,7 +796,7 @@ class RootCompleter(object):
             yield name
           return
 
-    comp_opts = None
+    base_opts = None
     user_spec = None   # Set below
 
     if trail.words:
@@ -861,9 +841,9 @@ class RootCompleter(object):
           raise AssertionError
         elif n == 1:
           # First
-          comp_opts, user_spec = self.comp_lookup.GetFirstSpec()
+          base_opts, user_spec = self.comp_lookup.GetFirstSpec()
         else:
-          comp_opts, user_spec = self.comp_lookup.GetSpecForName(
+          base_opts, user_spec = self.comp_lookup.GetSpecForName(
               partial_argv[0])
 
         # Update the API for user-defined functions.
@@ -879,14 +859,14 @@ class RootCompleter(object):
 
     # Reset it back to what was registered.  User-defined functions can mutate
     # it.
-    comp_opts.Reset()
-    self.comp_state.current_opts = comp_opts
+    dynamic_opts = {}
+    self.comp_state.dynamic_opts = dynamic_opts
     self.comp_state.currently_completing = True
     try:
       done = False
       while not done:
         try:
-          for entry in self._PostProcess(comp_opts, user_spec, comp):
+          for entry in self._PostProcess(base_opts, dynamic_opts, user_spec, comp):
             yield entry
         except _RetryCompletion as e:
           debug_f.log('Got 124, trying again ...')
@@ -899,16 +879,16 @@ class RootCompleter(object):
             raise AssertionError
           elif n == 1:
             # First
-            comp_opts, user_spec = self.comp_lookup.GetFirstSpec()
+            base_opts, user_spec = self.comp_lookup.GetFirstSpec()
           else:
-            comp_opts, user_spec = self.comp_lookup.GetSpecForName(
+            base_opts, user_spec = self.comp_lookup.GetSpecForName(
                 partial_argv[0])
         else:
           done = True  # exhausted candidates without getting a retry
     finally:
       self.comp_state.currently_completing = False
 
-  def _PostProcess(self, comp_opts, user_spec, comp):
+  def _PostProcess(self, base_opts, dynamic_opts, user_spec, comp):
     """
     Add trailing spaces / slashes to completion candidates, and time them.
 
@@ -937,14 +917,28 @@ class RootCompleter(object):
       #m = util.BackslashEscape(m, SHELL_META_CHARS)
       self.debug_f.log('after shell escaping: %s', m)
 
+      # SUBTLE: dynamic_opts is part of comp_state, which ShellFuncAction can
+      # mutate!  So we don't want to pull this out of the loop.
+      opt_filenames = False
+      if 'filenames' in dynamic_opts:
+        opt_filenames = dynamic_opts['filenames']
+      if 'filenames' in base_opts:
+        opt_filenames = base_opts['filenames']
+
       # compopt -o filenames is for user-defined actions.  Or any
       # FileSystemAction needs it.
-      if is_fs_action or comp_opts.Get('filenames'):
+      if is_fs_action or opt_filenames:
         if os_path.isdir(m):  # TODO: test coverage
           yield m + '/'
           continue
 
-      if comp_opts.Get('nospace'):
+      opt_nospace = False
+      if 'nospace' in dynamic_opts:
+        opt_nospace = dynamic_opts['nospace']
+      if 'nospace' in base_opts:
+        opt_nospace = base_opts['nospace']
+
+      if opt_nospace:
         yield m
       else:
         yield m + ' '

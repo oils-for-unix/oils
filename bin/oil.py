@@ -143,7 +143,7 @@ def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
     A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
     A2 = completion.TestAction(['m%d' % i for i in xrange(5)], delay=0.1)
     C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
-    comp_lookup.RegisterName('slowc', completion.Options([]), C1)
+    comp_lookup.RegisterName('slowc', {}, C1)
 
 
 def _MaybeWriteHistoryFile(history_filename):

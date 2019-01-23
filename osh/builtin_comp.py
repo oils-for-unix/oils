@@ -102,7 +102,7 @@ class SpecBuilder(object):
     self.word_ev = word_ev
     self.splitter = splitter
 
-  def Build(self, argv, arg, comp_opts):
+  def Build(self, argv, arg, base_opts):
     """Given flags to complete/compgen, built a UserSpec."""
     ex = self.ex
 
@@ -202,14 +202,14 @@ class SpecBuilder(object):
       actions.append(a)
 
     extra_actions = []
-    if comp_opts.Get('plusdirs'):
+    if base_opts.get('plusdirs'):
       extra_actions.append(completion.FileSystemAction(dirs_only=True))
 
     # These only happen if there were zero shown.
     else_actions = []
-    if comp_opts.Get('default'):
+    if base_opts.get('default'):
       else_actions.append(completion.FileSystemAction())
-    if comp_opts.Get('dirnames'):
+    if base_opts.get('dirnames'):
       else_actions.append(completion.FileSystemAction(dirs_only=True))
 
     if not actions and not else_actions:
@@ -266,18 +266,18 @@ class Complete(object):
       self.comp_lookup.PrintSpecs()
       return 0
 
-    comp_opts = completion.Options(arg.opt_changes)
+    base_opts = dict(arg.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, arg, comp_opts)
+      user_spec = self.spec_builder.Build(argv, arg, base_opts)
     except util.ParseError as e:
       # error printed above
       return 2
     for command in commands:
-      self.comp_lookup.RegisterName(command, comp_opts, user_spec)
+      self.comp_lookup.RegisterName(command, base_opts, user_spec)
 
     patterns = []
     for pat in patterns:
-      self.comp_lookup.RegisterGlob(pat, comp_opts, user_spec)
+      self.comp_lookup.RegisterGlob(pat, base_opts, user_spec)
 
     return 0
 
@@ -311,9 +311,9 @@ class CompGen(object):
 
     matched = False
 
-    comp_opts = completion.Options(arg.opt_changes)
+    base_opts = dict(arg.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, arg, comp_opts)
+      user_spec = self.spec_builder.Build(argv, arg, base_opts)
     except util.ParseError as e:
       # error printed above
       return 2
@@ -361,11 +361,9 @@ class CompOpt(object):
       util.error('compopt: not currently executing a completion function')
       return 1
 
-    for name, b in arg.opt_changes:
-      #log('setting %s = %s', name, b)
-      self.comp_state.current_opts.Set(name, b)
+    self.comp_state.dynamic_opts.update(arg.opt_changes)
     #log('compopt: %s', arg)
-    #log('compopt %s', comp_opts)
+    #log('compopt %s', base_opts)
     return 0
 
 
