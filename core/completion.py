@@ -132,6 +132,9 @@ class Options(object):
   def Set(self, opt_name, b):
     self.ephemeral[opt_name] = b
 
+  def __repr__(self):
+    return '(Options %s)' % (self.initial or '')
+
 # NOTE: How to create temporary options?  With copy.deepcopy()?
 # We might want that as a test for OVM.  Copying is similar to garbage
 # collection in that you walk a graph.
@@ -173,7 +176,8 @@ class Lookup(object):
   def PrintSpecs(self):
     """For 'complete' without args."""
     for name in sorted(self.lookup):
-      print('%-15r %s' % (name, self.lookup[name]))
+      comp_opts, user_spec = self.lookup[name]
+      print('%-15s %s  %s' % (name, comp_opts, user_spec))
     print('---')
     for pat, spec in self.patterns:
       print('%s = %s' % (pat, spec))
@@ -256,6 +260,19 @@ class CompletionAction(object):
 
   def Matches(self, comp):
     pass
+
+  def __repr__(self):
+    return self.__class__.__name__
+
+
+class UsersAction(CompletionAction):
+  """complete -A user"""
+
+  def Matches(self, comp):
+    for u in pwd.getpwall():
+      name = u.pw_name
+      if name.startswith(comp.to_complete):
+        yield name
 
 
 class TestAction(CompletionAction):
@@ -360,7 +377,7 @@ class ShellFuncAction(CompletionAction):
 
   def __repr__(self):
     # TODO: Add file and line number here!
-    return '<ShellFuncAction %r>' % (self.func.name,)
+    return '<ShellFuncAction %s>' % (self.func.name,)
 
   def log(self, *args):
     self.ex.debug_f.log(*args)
@@ -417,7 +434,7 @@ class ShellFuncAction(CompletionAction):
     return val.strs
 
 
-class VariablesAction(object):
+class VariablesAction(CompletionAction):
   """compgen -A variable."""
   def __init__(self, mem):
     self.mem = mem
@@ -427,7 +444,7 @@ class VariablesAction(object):
       yield var_name
 
 
-class ExternalCommandAction(object):
+class ExternalCommandAction(CompletionAction):
   """Complete commands in $PATH.
 
   This is PART of compge -A command.
@@ -525,6 +542,18 @@ class GlobPredicate(object):
       return matched
 
 
+class _DefaultPredicate(object):
+  """This is like lambda x: True, but it has a __repr__."""
+  def __call__(self, candidate):
+    return True
+
+  def __repr__(self):
+    return '<True>'
+
+
+DEFAULT_PREDICATE = _DefaultPredicate()
+
+
 class UserSpec(object):
   """The user configuration for completion.
   
@@ -585,9 +614,20 @@ class UserSpec(object):
     # It completes the word that
 
   def __str__(self):
-    return '<UserSpec %s %s %s %s %r %r>' % (
-        self.actions, self.extra_actions, self.else_actions, self.predicate,
-        self.prefix, self.suffix)
+    parts = ['(UserSpec']
+    if self.actions:
+      parts.append(str(self.actions))
+    if self.extra_actions:
+      parts.append('extra=%s' % self.extra_actions)
+    if self.else_actions:
+      parts.append('else=%s' % self.else_actions)
+    if self.predicate is not DEFAULT_PREDICATE:
+      parts.append('pred = %s' % self.predicate)
+    if self.prefix:
+      parts.append('prefix=%r' % self.prefix)
+    if self.suffix:
+      parts.append('suffix=%r' % self.suffix)
+    return ' '.join(parts) + ')'
 
 
 # Helpers for Matches()

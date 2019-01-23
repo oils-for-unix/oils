@@ -3,8 +3,6 @@
 builtin_comp.py - Completion builtins
 """
 
-import pwd
-
 from core import completion
 from core import ui
 from core import util
@@ -81,29 +79,12 @@ def _DefineActions(spec):
   spec.Action(None, 'stopped')
 
 
-class _FixedWordsAction(object):
+class _FixedWordsAction(completion.CompletionAction):
   def __init__(self, d):
     self.d = d
 
   def Matches(self, comp):
     for name in sorted(self.d):
-      if name.startswith(comp.to_complete):
-        yield name
-
-
-class _DirectoriesAction(object):
-  """complete -A directory"""
-
-  def Matches(self, comp):
-    raise NotImplementedError('-A directory')
-
-
-class _UsersAction(object):
-  """complete -A user"""
-
-  def Matches(self, comp):
-    for u in pwd.getpwall():
-      name = u.pw_name
       if name.startswith(comp.to_complete):
         yield name
 
@@ -172,7 +153,7 @@ class SpecBuilder(object):
         a = _FixedWordsAction(['jobs-not-implemented'])
 
       elif name == 'user':
-        a = _UsersAction()
+        a = completion.UsersAction()
 
       elif name == 'variable':
         a = completion.VariablesAction(ex.mem)
@@ -234,7 +215,7 @@ class SpecBuilder(object):
     if not actions and not else_actions:
       raise args.UsageError('No actions defined in completion: %s' % argv)
 
-    p = lambda candidate: True  # include all
+    p = completion.DEFAULT_PREDICATE
     if arg.X:
       filter_pat = arg.X
       if filter_pat.startswith('!'):
