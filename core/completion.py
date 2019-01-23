@@ -915,7 +915,7 @@ class RootCompleter(object):
       # TODO: write a terminal program to show that
 
       #m = util.BackslashEscape(m, SHELL_META_CHARS)
-      self.debug_f.log('after shell escaping: %s', m)
+      #self.debug_f.log('after shell escaping: %s', m)
 
       # SUBTLE: dynamic_opts is part of comp_state, which ShellFuncAction can
       # mutate!  So we don't want to pull this out of the loop.
