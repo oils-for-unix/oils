@@ -419,11 +419,6 @@ def ShellMain(lang, argv0, argv, login_shell):
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
-  # Do we also need to call this for a login_shell?  Or are those always
-  # interactive?
-  if exec_opts.interactive:
-    SourceStartupFile(rc_path, lang, parse_ctx, ex)
-
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
   if lang == 'osh':
@@ -441,6 +436,9 @@ def ShellMain(lang, argv0, argv, login_shell):
                                            comp_ctx, progress_f, debug_f)
       _InitReadline(readline, history_filename, root_comp, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
+
+    # NOTE: Call this AFTER _InitDefaultCompletions.
+    SourceStartupFile(rc_path, lang, parse_ctx, ex)
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 
