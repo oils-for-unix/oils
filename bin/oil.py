@@ -285,7 +285,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   parse_ctx = parse_lib.ParseContext(arena, aliases)  # For main_loop
 
-  # Three ParseContext instances SHARE aliases.  TODO: Complete aliases.
+  # Three ParseContext instances SHARE aliases.
   comp_arena = pool.NewArena()
   comp_arena.PushSource('<completion>')
   trail1 = parse_lib.Trail()

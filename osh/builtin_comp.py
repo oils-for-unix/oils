@@ -179,7 +179,7 @@ class SpecBuilder(object):
       actions.append(a)
 
     # e.g. -W comes after -A directory
-    if arg.W:
+    if arg.W is not None:  # could be ''
       # NOTES:
       # - Parsing is done at REGISTRATION time, but execution and splitting is
       #   done at COMPLETION time (when the user hits tab).  So parse errors

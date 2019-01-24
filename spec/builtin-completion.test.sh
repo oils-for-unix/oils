@@ -372,3 +372,9 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
+
+#### compgen -W '' cmd is not a usage error
+# Bug fix due to '' being falsey in Python
+compgen -W '' -- foo
+echo status=$?
+## stdout: status=1

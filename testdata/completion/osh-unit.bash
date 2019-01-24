@@ -10,6 +10,18 @@
 # Usage:
 #   source testdata/completion/osh-unit.bash
 
+# For testing if ls completion works AUTOMATICALLY
+
+complete -W 'one two' ls
+
+alias ll='ls -l'
+alias ll_classify='ll --classify'  # a second level of alias expansion
+alias ll_trailing='ls -l '  # trailing space shouldn't make a difference
+
+alias ll_own_completion='ls -l'
+complete -W 'own words' ll_own_completion
+
+
 argv() {
   spec/bin/argv.py "$@"
 }

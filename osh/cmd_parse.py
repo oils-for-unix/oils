@@ -511,8 +511,6 @@ class CommandParser(object):
     """First pass: Split into redirects and words."""
     redirects = []
     words = []
-    # Set a reference so we can inspect state after a failed parse!
-    self.parse_ctx.trail.SetLatestWords(words, redirects)
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:
@@ -530,6 +528,13 @@ class CommandParser(object):
 
   def _MaybeExpandAliases(self, words, cur_aliases):
     """Try to expand aliases.
+
+    Args:
+      words: A list of CompoundWord
+      cur_aliases: A list of already expanded aliases?
+
+    Returns:
+      A new LST node.
 
     Our implementation of alias has two design choices:
     - Where to insert it in parsing.  We do it at the end of ParseSimpleCommand.
@@ -645,14 +650,28 @@ class CommandParser(object):
       self.arena.PopSource()
 
     line_reader = reader.VirtualLineReader(line_info, self.arena)
-    cp = self.parse_ctx.MakeOshParser(line_reader)
 
+    cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True)
+
+    # The interaction between COMPLETION and ALIASES requires special care.
+    # - Don't do SetLatestWords for this CommandParser.
+    # - Instead collect aliases -- SetAliasedFirstWord rather than anything
+    # else in this function _MaybeExpandAliases
+    # - Instead of trail, should you have something else?
+    #
+    # And then when completing, look first at the first alias word, and THEN
+    # look at the GetAliasExpansion?
+
+    trail = self.parse_ctx.trail
+    trail.BeginAliasExpansion()
     try:
       node = cp.ParseCommand(cur_aliases=cur_aliases)
     except util.ParseError as e:
       # Failure to parse alias expansion is a fatal error
       # We don't need more handling here/
       raise
+    finally:
+      trail.EndAliasExpansion()
 
     if 0:
       log('AFTER expansion:')
@@ -757,6 +776,10 @@ class CommandParser(object):
       return node
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
+
+    # Set a reference to words and redirects for completion.  We want to
+    # inspect this state after a failed parse.
+    self.parse_ctx.trail.SetLatestWords(suffix_words, redirects)
 
     if not suffix_words:  # ONE=1 a[x]=1 TWO=2  (with no other words)
       if redirects:

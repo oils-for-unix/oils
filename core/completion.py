@@ -179,21 +179,23 @@ class Lookup(object):
     Args:
       argv0: A finished argv0 to lookup
     """
-    user_spec = self.lookup.get(argv0)  # NOTE: Could be ''
-    if user_spec:
-      return user_spec
+    pair = self.lookup.get(argv0)  # NOTE: Could be ''
+    if pair:
+      return pair
 
     key = os_path.basename(argv0)
     actions = self.lookup.get(key)
-    if user_spec:
-      return user_spec
+    if pair:
+      return pair
 
     for glob_pat, base_opts, user_spec in self.patterns:
       #log('Matching %r %r', key, glob_pat)
       if libc.fnmatch(glob_pat, key):
         return base_opts, user_spec
 
-    # Nothing matched
+    return None, None
+
+  def GetFallback(self):
     return self.lookup['__fallback']
 
 
@@ -616,8 +618,17 @@ class UserSpec(object):
 def IsDollar(t):
   return t.id == Id.Lit_Other and t.val == '$'
 
+
 def IsDummy(t):
   return t.id == Id.Lit_CompDummy
+
+
+def WordEndsWithCompDummy(w):
+  last_part = w.parts[-1]
+  return (
+      last_part.tag == word_part_e.LiteralPart and
+      last_part.token.id == Id.Lit_CompDummy
+  )
 
 
 class RootCompleter(object):
@@ -736,15 +747,6 @@ class RootCompleter(object):
             yield prefix + name
         return
 
-    # NOTE: Instead of looking at the column positions on line spans, we could
-    # look for IsDummy() on the rightmost LiteralPart(token) of words.
-    def LastColForWord(w):
-      span_id = word.RightMostSpanForWord(w)
-      span = arena.GetLineSpan(span_id)
-      debug_f.log('span %s', span)
-      debug_f.log('span col %d length %d', span.col, span.length)
-      return span.col + span.length
-
     if trail.words:
       # First check if we're completing a path that begins with ~.
       #
@@ -776,8 +778,7 @@ class RootCompleter(object):
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       if (r.tag == redir_e.Redir and
           REDIR_ARG_TYPES[r.op.id] == redir_arg_type_e.Path):
-        last_col = LastColForWord(r.arg_word)
-        if last_col == comp.end:
+        if WordEndsWithCompDummy(r.arg_word):
           debug_f.log('Completing redirect arg')
 
           try:
@@ -796,14 +797,18 @@ class RootCompleter(object):
             yield name
           return
 
+    # Set below, and set on retries.
     base_opts = None
-    user_spec = None   # Set below
+    user_spec = None
+
+    # Used on retries.
+    partial_argv = []
+    num_partial = -1
+    first = None
 
     if trail.words:
       # Now check if we're completing a word!
-      last_col = LastColForWord(trail.words[-1])
-      debug_f.log('last_col for word: %d', last_col)
-      if last_col == comp.end:  # We're not completing the last word!
+      if WordEndsWithCompDummy(trail.words[-1]):
         debug_f.log('Completing words')
         #
         # It didn't look like we need to complete var names, tilde, redirects,
@@ -816,7 +821,11 @@ class RootCompleter(object):
           for w in words2:
             print(w, file=debug_f)
 
-        partial_argv = []
+        if 0:
+          debug_f.log('words2:')
+          for w2 in words2:
+            debug_f.log(' %s', w2)
+
         for w in words2:
           try:
             # TODO:
@@ -833,23 +842,40 @@ class RootCompleter(object):
             pass
 
         debug_f.log('partial_argv: %s', partial_argv)
-        n = len(partial_argv)
+        num_partial = len(partial_argv)
 
-        # TODO: Form prefix for RootCompleter to add to user_spec candidates
-        if n == 0:
-          # We should never get this because of Lit_CompDummy.
+        first = partial_argv[0]
+        alias_first = None
+        debug_f.log('alias_words: %s', trail.alias_words)
+
+        if trail.alias_words:
+          w = trail.alias_words[0]
+          try:
+            val = self.word_ev.EvalWordToString(w)
+          except util.FatalRuntimeError:
+            pass
+          alias_first = val.s
+          debug_f.log('alias_first: %s', alias_first)
+
+        if num_partial == 0:  # should never happen because of Lit_CompDummy
           raise AssertionError
-        elif n == 1:
-          # First
+        elif num_partial == 1:
           base_opts, user_spec = self.comp_lookup.GetFirstSpec()
         else:
-          base_opts, user_spec = self.comp_lookup.GetSpecForName(
-              partial_argv[0])
+          base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
+          if not user_spec and alias_first:
+            base_opts, user_spec = self.comp_lookup.GetSpecForName(alias_first)
+            if user_spec:
+              # Pass the aliased command to the user-defined function, and use
+              # it for retries.
+              first = alias_first
+          if not user_spec:
+            base_opts, user_spec = self.comp_lookup.GetFallback()
 
         # Update the API for user-defined functions.
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
         prev = '' if index == 0 else partial_argv[index-1]
-        comp.Update(first=partial_argv[0], to_complete=partial_argv[-1],
+        comp.Update(first=first, to_complete=partial_argv[-1],
                     prev=prev, index=index, partial_argv=partial_argv) 
 
     # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
@@ -866,23 +892,24 @@ class RootCompleter(object):
       done = False
       while not done:
         try:
-          for entry in self._PostProcess(base_opts, dynamic_opts, user_spec, comp):
+          for entry in self._PostProcess(
+              base_opts, dynamic_opts, user_spec, comp):
             yield entry
         except _RetryCompletion as e:
           debug_f.log('Got 124, trying again ...')
 
-          n = len(partial_argv)
           # Get another user_spec.  The ShellFuncAction may have 'sourced' code
           # and run 'complete' to mutate comp_lookup, and we want to get that
           # new entry.
-          if n == 0:
+          if num_partial == 0:
             raise AssertionError
-          elif n == 1:
-            # First
+          elif num_partial == 1:
             base_opts, user_spec = self.comp_lookup.GetFirstSpec()
           else:
-            base_opts, user_spec = self.comp_lookup.GetSpecForName(
-                partial_argv[0])
+            # (already processed alias_first)
+            base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
+            if not user_spec:
+              base_opts, user_spec = self.comp_lookup.GetFallback()
         else:
           done = True  # exhausted candidates without getting a retry
     finally:

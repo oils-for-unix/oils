@@ -39,6 +39,9 @@ class _BaseTrail(object):
     # line!
     self.tokens = []
 
+    self.alias_words = []  # words INSIDE an alias expansion
+    self.expanding_alias = False
+
   def PrintDebugString(self, debug_f):
     from osh import ast_lib
     #debug_f.log('trail = %s', trail)
@@ -57,9 +60,14 @@ class _BaseTrail(object):
       ast_lib.PrettyPrint(p, f=debug_f)
     debug_f.log('')
 
+    debug_f.log('  alias_words:')
+    for w in self.alias_words:
+      ast_lib.PrettyPrint(w, f=debug_f)
+    debug_f.log('')
+
   def __repr__(self):
-    return '<Trail %s %s %s>' % (
-        self.words, self.redirects, self.tokens)
+    return '<Trail %s %s %s %s>' % (
+        self.words, self.redirects, self.tokens, self.alias_words)
 
 
 class _NullTrail(_BaseTrail):
@@ -74,22 +82,57 @@ class _NullTrail(_BaseTrail):
   def AppendToken(self, token):
     pass
 
+  def BeginAliasExpansion(self):
+    pass
+
+  def EndAliasExpansion(self):
+    pass
+
 
 class Trail(_BaseTrail):
-  """Info left by the parser to help us complete shell syntax and commands."""
+  """Info left by the parser to help us complete shell syntax and commands.
 
+  It's also used for history expansion.
+  """
   def Clear(self):
     del self.words[:]
     del self.redirects[:]
     # The other ones don't need to be reset?
     del self.tokens[:]
+    del self.alias_words[:]
 
   def SetLatestWords(self, words, redirects):
+    if self.expanding_alias:
+      self.alias_words = words  # Save these separately
+      return
     self.words = words
     self.redirects = redirects
 
   def AppendToken(self, token):
+    if self.expanding_alias:  # We don't want tokens inside aliases
+      return
     self.tokens.append(token)
+
+  def BeginAliasExpansion(self):
+    """Called by CommandParser so we know to be ready for FIRST alias word.
+
+    For example, for
+
+    alias ll='ls -l'
+
+    Then we want to capture 'ls' as the first word.
+
+    We do NOT want SetLatestWords or AppendToken to be active, because we don't
+    need other tokens from 'ls -l'.
+    
+    It would also probably cause bugs in history expansion, e.g. echo !1 should
+    be the first word the user typed, not the first word after alias expansion.
+    """
+    self.expanding_alias = True
+
+  def EndAliasExpansion(self):
+    """Go back to the normal trail collection mode."""
+    self.expanding_alias = False
 
 
 class ParseContext(object):

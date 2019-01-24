@@ -52,18 +52,20 @@ def MockApi(line):
   return completion.Api(line=line, begin=i+1, end=end)
 
 
-def _MakeRootCompleter(comp_lookup=None):
+def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   #comp_state = comp_state or completion.State()
   comp_state = completion.State()
   comp_lookup = comp_lookup or completion.Lookup()
   ev = test_lib.MakeTestEvaluator()
 
-  pool = alloc.Pool()
-  arena = pool.NewArena()
-  arena.PushSource('<_MakeRootCompleter>')
-  trail = parse_lib.Trail()
-  parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
-  if 0:  # enable for details
+  if not parse_ctx:
+    pool = alloc.Pool()
+    arena = pool.NewArena()
+    arena.PushSource('<_MakeRootCompleter>')
+    trail = parse_lib.Trail()
+    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+
+  if 1:  # enable for details
     debug_f = util.DebugFile(sys.stdout)
   else:
     debug_f = util.NullDebugFile()
@@ -382,10 +384,13 @@ class RootCompeterTest(unittest.TestCase):
 
   def testRunsUserDefinedFunctions(self):
     # This is here because it's hard to test readline with the spec tests.
-    comp_lookup = completion.Lookup()
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    ex = test_lib.EvalCode(code_str, comp_lookup=comp_lookup)
+    trail = parse_lib.Trail()
+    arena = alloc.SideArena('<completion_test.py>')
+    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    comp_lookup = completion.Lookup()
+    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
     r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
@@ -423,6 +428,39 @@ class RootCompeterTest(unittest.TestCase):
     # -P with dirnames.  -P is NOT respected.
     m = list(r.Matches(MockApi('prefix_dirnames b')))
     self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
+
+  def testCompletesAliases(self):
+    # I put some aliases in this file.
+    with open('testdata/completion/osh-unit.bash') as f:
+      code_str = f.read()
+    trail = parse_lib.Trail()
+    arena = alloc.SideArena('<completion_test.py>')
+    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    comp_lookup = completion.Lookup()
+
+    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+
+    r = _MakeRootCompleter(parse_ctx=parse_ctx, comp_lookup=comp_lookup)
+
+    # The original command
+    m = list(r.Matches(MockApi('ls ')))
+    self.assertEqual(['one ', 'two '], sorted(m))
+
+    # Alias for the command
+    m = list(r.Matches(MockApi('ll ')))
+    self.assertEqual(['one ', 'two '], sorted(m))
+
+    # DOUBLE alias expansion goes back to original
+    m = list(r.Matches(MockApi('ll_classify ')))
+    self.assertEqual(['one ', 'two '], sorted(m))
+
+    # Trailing space
+    m = list(r.Matches(MockApi('ll_trailing ')))
+    self.assertEqual(['one ', 'two '], sorted(m))
+
+    # It should NOT clobber completio registered for aliases
+    m = list(r.Matches(MockApi('ll_own_completion ')))
+    self.assertEqual(['own ', 'words '], sorted(m))
 
   def testCompletesAssignment(self):
     # OSH doesn't do this.  Here is noticed about bash --norc (which is
@@ -603,9 +641,9 @@ class InitCompletionTest(unittest.TestCase):
         'flags': ' '.join(flags),
         'command': oracle_comp_words[0]
       }
-      #print(init_code)
 
       arena = test_lib.MakeArena('<InitCompletionTest>')
+      parse_ctx = parse_lib.ParseContext(arena, {})
       mem = state.Mem('', [], {}, arena)
 
       #
@@ -623,13 +661,10 @@ class InitCompletionTest(unittest.TestCase):
       state.SetGlobalString(mem, 'ORACLE_split', oracle_split)
 
       comp_lookup = completion.Lookup()
-      ex = test_lib.EvalCode(init_code, comp_lookup=comp_lookup, arena=arena,
+      ex = test_lib.EvalCode(init_code, parse_ctx, comp_lookup=comp_lookup,
                              mem=mem)
 
-      #print(ex.comp_state)
-
       r = _MakeRootCompleter(comp_lookup=comp_lookup)
-      #print(r)
       comp = MockApi(code_str[:-1])
       m = list(r.Matches(comp))
       log('matches = %s', m)

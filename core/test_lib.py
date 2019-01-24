@@ -119,8 +119,12 @@ def MakeTestEvaluator():
   return ev
 
 
-def InitExecutor(comp_lookup=None, arena=None, mem=None):
-  arena = arena or MakeArena('<InitExecutor>')
+def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
+  if parse_ctx:
+    arena = parse_ctx.arena
+  else:
+    arena or MakeArena('<InitExecutor>')
+    parse_ctx = parse_lib.ParseContext(arena, {})
 
   mem = mem or state.Mem('', [], {}, arena)
   fd_state = process.FdState()
@@ -139,7 +143,6 @@ def InitExecutor(comp_lookup=None, arena=None, mem=None):
 
   # For the tests, we do not use 'readline'.
   exec_opts = state.ExecOpts(mem, None)
-  parse_ctx = parse_lib.ParseContext(arena, {})
 
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
@@ -176,19 +179,21 @@ def InitExecutor(comp_lookup=None, arena=None, mem=None):
   return ex
 
 
-def EvalCode(code_str, comp_lookup=None, arena=None, mem=None):
+def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None):
   """
-  This allows unit tests to write code strings and have functions appear in the
-  executor.
+  Unit tests can evaluate code strings and then use the resulting Executor.
   """
+  arena = parse_ctx.arena
+
   comp_lookup = comp_lookup or completion.Lookup()
-  arena = arena or MakeArena('<test_lib>')
   mem = mem or state.Mem('', [], {}, arena)
 
-  c_parser = InitCommandParser(code_str, arena=arena)
-  ex = InitExecutor(comp_lookup=comp_lookup, arena=arena, mem=mem)
-  # Parse and execute!
-  main_loop.Batch(ex, c_parser, arena)
+  line_reader, _ = InitLexer(code_str, arena)
+  c_parser = parse_ctx.MakeOshParser(line_reader)
+
+  ex = InitExecutor(parse_ctx=parse_ctx, comp_lookup=comp_lookup, arena=arena, mem=mem)
+
+  main_loop.Batch(ex, c_parser, arena)  # Parse and execute!
   return ex
 
 
