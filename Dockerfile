@@ -26,3 +26,4 @@ ENTRYPOINT [ "/tmp/bin/osh" ]
 
 #USAGE EXAMPLEs: docker run -ti --rm osh -c 'echo hi'
 #interactive     docker run -ti --rm osh
+#script file     docker run -ti -v /Users/Shared/x.sh:/x.sh --rm osh /x.sh
