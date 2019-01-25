@@ -107,13 +107,18 @@ class _ControlFlow(RuntimeError):
 class Deps(object):
   def __init__(self):
     self.splitter = None
+
     self.word_ev = None
     self.arith_ev = None
     self.bool_ev = None
     self.ex = None
     self.prompt_ev = None
+
+    self.ext_prog = None
+
     self.dumper = None
     self.tracer = None
+
     self.debug_f = None
     self.trace_f = None
 
@@ -154,6 +159,8 @@ class Executor(object):
     self.word_ev = exec_deps.word_ev
     self.arith_ev = exec_deps.arith_ev
     self.bool_ev = exec_deps.bool_ev
+
+    self.ext_prog = exec_deps.ext_prog
 
     self.traps = {}  # signal/hook name -> callable
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers
@@ -261,7 +268,7 @@ class Executor(object):
     # NOTE: Redirects were processed earlier.
     if argv:
       environ = self.mem.GetExported()
-      process.ExecExternalProgram(argv, environ)  # never returns
+      self.ext_prog.Exec(argv, environ)  # NEVER RETURNS
     else:
       return 0
 
@@ -587,13 +594,12 @@ class Executor(object):
     environ = self.mem.GetExported()  # Include temporary variables
 
     if fork_external:
-      thunk = process.ExternalThunk(argv, environ)
+      thunk = process.ExternalThunk(self.ext_prog, argv, environ)
       p = process.Process(thunk)
       status = p.Run(self.waiter)
       return status
 
-    # NOTE: Never returns!
-    process.ExecExternalProgram(argv, environ)
+    self.ext_prog.Exec(argv, environ)  # NEVER RETURNS
 
   def _RunPipeline(self, node):
     pi = process.Pipeline()

@@ -352,42 +352,66 @@ class Thunk(object):
     raise NotImplementedError
 
 
-def ExecExternalProgram(argv, environ):
-  """Execute a program and exit this process.
+class ExternalProgram(object):
+  def __init__(self, hijack_shebang, fd_state):
+    self.hijack_shebang = hijack_shebang
+    self.fd_state = fd_state
 
-  Called by:
-  ls /
-  exec ls /
-  ( ls / )
-  """
-  # TODO: If there is an error, like the file isn't executable, then we should
-  # exit, and the parent will reap it.  Should it capture stderr?
-  try:
-    os_.execvpe(argv[0], argv, environ)
-  except OSError as e:
-    util.error('%r: %s', argv[0], posix.strerror(e.errno))
-    # POSIX mentions 126 and 127 for two specific errors.  The rest are
-    # unspecified.
-    #
-    # http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/utilities/V3_chap02.html#tag_18_08_02
+  def Exec(self, argv, environ):
+    """Execute a program and exit this process.
 
-    if e.errno == errno.EACCES:
-      status = 126
-    elif e.errno == errno.ENOENT:
-      status = 127  # e.g. command not found should be 127.
-    else:
-      # dash uses 2, but we use that for parse errors.  This seems to be
-      # consistent with mksh and zsh.
-      status = 127
+    Called by:
+    ls /
+    exec ls /
+    ( ls / )
+    """
+    if self.hijack_shebang:
+      try:
+        f = self.fd_state.Open(argv[0])
+      except OSError as e:
+        pass
+      else:
+        try:
+          line = f.readline()
+          if (line.startswith('#!/bin/sh') or
+              line.startswith('#!/bin/bash') or
+              line.startswith('#!/usr/bin/env bash')):
+            log('Running %s with OSH', argv)
+            argv = ['/usr/local/bin/osh'] + argv
+          else:
+            log('%s has line %r', argv, line)
+        finally:
+          f.close()
 
-    sys.exit(status)
-  # no return
+    # TODO: If there is an error, like the file isn't executable, then we should
+    # exit, and the parent will reap it.  Should it capture stderr?
+    try:
+      os_.execvpe(argv[0], argv, environ)
+    except OSError as e:
+      util.error('%r: %s', argv[0], posix.strerror(e.errno))
+      # POSIX mentions 126 and 127 for two specific errors.  The rest are
+      # unspecified.
+      #
+      # http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/utilities/V3_chap02.html#tag_18_08_02
+
+      if e.errno == errno.EACCES:
+        status = 126
+      elif e.errno == errno.ENOENT:
+        status = 127  # e.g. command not found should be 127.
+      else:
+        # dash uses 2, but we use that for parse errors.  This seems to be
+        # consistent with mksh and zsh.
+        status = 127
+
+      sys.exit(status)
+    # NO RETURN
 
 
 class ExternalThunk(object):
   """An external executable."""
 
-  def __init__(self, argv, environ):
+  def __init__(self, ext_prog, argv, environ):
+    self.ext_prog = ext_prog
     self.argv = argv
     self.environ = environ
 
@@ -395,7 +419,7 @@ class ExternalThunk(object):
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
-    ExecExternalProgram(self.argv, self.environ)
+    self.ext_prog.Exec(self.argv, self.environ)
 
 
 class SubProgramThunk(object):

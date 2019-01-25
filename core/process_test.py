@@ -28,6 +28,7 @@ def Banner(msg):
 
 _WAITER = process.Waiter()
 _FD_STATE = process.FdState()
+_EXT_PROG = process.ExternalProgram(False, _FD_STATE)
 
 
 def _CommandNode(code_str, arena):
@@ -36,7 +37,7 @@ def _CommandNode(code_str, arena):
 
 
 def _ExtProc(argv):
-  return Process(ExternalThunk(argv, {}))
+  return Process(ExternalThunk(_EXT_PROG, argv, {}))
 
 
 class ProcessTest(unittest.TestCase):
