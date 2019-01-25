@@ -378,6 +378,7 @@ class ExternalProgram(object):
               line.startswith('#!/usr/bin/env bash')):
             log('Running %s with OSH', argv)
             argv = ['/usr/local/bin/osh'] + argv
+            #argv = ['python', '/home/andy/git/oilshell/oil/bin/oil.py', 'osh'] + argv
           else:
             log('%s has line %r', argv, line)
         finally:

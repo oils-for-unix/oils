@@ -20,3 +20,10 @@ $TMP/not-a-dir/text-file
 ## status: 127
 ## OK dash status: 2
 ## OK bash status: 126
+
+#### External programs don't have _OVM in environment
+# bug fix for leakage
+env | grep _OVM
+echo status=$?
+## stdout: status=1
+

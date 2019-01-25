@@ -209,11 +209,17 @@ def GetResourceLoader():
   # Ovm_Main in main.c sets this.
   if posix.environ.get('_OVM_IS_BUNDLE') == '1':
     ovm_path = posix.environ.get('_OVM_PATH')
-    #log('! OVM_PATH = %s', ovm_path)
     _loader = _ZipResourceLoader(ovm_path)
+
+    # Now clear them so we don't pollute the environment.  In Python, this
+    # calls unsetenv().
+    del posix.environ['_OVM_IS_BUNDLE']
+    del posix.environ['_OVM_PATH']
+
   elif posix.environ.get('_OVM_RESOURCE_ROOT'):  # Unit tests set this
     root_dir = posix.environ.get('_OVM_RESOURCE_ROOT')
     _loader = _FileResourceLoader(root_dir)
+
   else:
     # NOTE: This assumes all unit tests are one directory deep, e.g.
     # core/util_test.py.
