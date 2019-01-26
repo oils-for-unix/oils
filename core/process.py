@@ -46,29 +46,26 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self, next_fd=10):
-    self.next_fd = next_fd  # where to start saving descriptors
+  def __init__(self):
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
 
-  def _NextFreeFileDescriptor(self):
-    """Return a free file descriptor above 10 that isn't used.
+  # TODO: Use fcntl(F_DUPFD) and look at the return value!  I didn't understand
+  # the difference.
 
-    NOTE: This doesn't seem to solve all file descriptor problems, and I
-    don't understand why!  This fixed 'test/gold.sh configure-bug', I still
-    had ANOTHER bug with 'test/gold.sh nix' that wasn't fixed.  That required
-    removing the 'import cgi'.
-    """
+  def _GetFreeDescriptor(self):
+    """Return a free file descriptor above 10 that isn't used."""
     done = False
-    while not done:
+    fd = 10
+    while True:
       try:
-        fcntl.fcntl(self.next_fd, fcntl.F_GETFD)
+        fcntl.fcntl(fd, fcntl.F_GETFD)
       except IOError as e:
         if e.errno == errno.EBADF:
-          done = True
-      self.next_fd += 1
+          break
+      fd += 1
 
-    return self.next_fd
+    return fd
 
   def Open(self, path, mode='r'):
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
@@ -87,7 +84,7 @@ class FdState(object):
       raise AssertionError(mode)
 
     fd = posix.open(path, fd_mode, 0666)
-    new_fd = self._NextFreeFileDescriptor()
+    new_fd = self._GetFreeDescriptor()
     posix.dup2(fd, new_fd)
     posix.close(fd)
     return posix.fdopen(new_fd, mode)
@@ -100,11 +97,10 @@ class FdState(object):
     Returns:
       success Bool
     """
-    new_fd = self._NextFreeFileDescriptor()
+    new_fd = self._GetFreeDescriptor()
     #log('---- _PushDup %s %s', fd1, fd2)
     need_restore = True
     try:
-      #log('DUPFD %s %s', fd2, self.next_fd)
       fcntl.fcntl(fd2, fcntl.F_DUPFD, new_fd)
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
@@ -287,11 +283,6 @@ class FdState(object):
         raise
       posix.close(saved)
       #log('dup2 %s %s', saved, orig)
-
-      # NOTE: This balances the increments from _PushDup().  But it doesn't
-      # balance the ones from Open().
-      self.next_fd -= 1  # Count down
-      assert self.next_fd >= 10, self.next_fd
 
     for fd in frame.need_close:
       #log('Close %d', fd)

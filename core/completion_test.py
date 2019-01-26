@@ -205,7 +205,7 @@ class CompletionTest(unittest.TestCase):
     self.assertEqual([('foo.py', False)], matches)
 
 
-class RootCompeterTest(unittest.TestCase):
+class RootCompleterTest(unittest.TestCase):
 
   def testCompletesHomeDirs(self):
     r = _MakeRootCompleter()
@@ -634,7 +634,8 @@ class InitCompletionTest(unittest.TestCase):
       self.assertEqual(int(oracle_comp_point), len(code_str) - 1)
 
       #
-      # Now run a piece of code that compares OSH's actual data against hte oracle.
+      # Now run a piece of code that compares OSH's actual data against the
+      # oracle.
       #
 
       init_code = _INIT_TEMPLATE % {
@@ -675,8 +676,9 @@ class InitCompletionTest(unittest.TestCase):
         continue
 
       # Our test shell script records what passed in an array.
-      val = ex.mem.GetVar('PASSED')
-      self.assertEqual(value_e.StrArray, val.tag, "Expected array, got %s" % val)
+      val = mem.GetVar('PASSED')
+      self.assertEqual(
+          value_e.StrArray, val.tag, "Expected array, got %s" % val)
       actually_passed = val.strs
 
       should_pass = [
@@ -684,7 +686,6 @@ class InitCompletionTest(unittest.TestCase):
           'words', 'cur', 'prev', 'cword', 'split'  # new API
       ]
 
-      #should_pass = ['COMP_LINE', 'COMP_POINT', 'words', 'cur', 'prev', 'split']
       if i == 4:
         should_pass.remove('COMP_WORDS')
         should_pass.remove('COMP_CWORD')
