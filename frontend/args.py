@@ -341,7 +341,7 @@ class FlagsAndOptions(object):
 
     self.attr_names[char] = default
 
-  def LongFlag(self, long_name, arg_type=None, default=None):
+  def LongFlag(self, long_name, arg_type=None, default=None, help=None):
     """ --rcfile """
     assert long_name.startswith('--'), long_name
 

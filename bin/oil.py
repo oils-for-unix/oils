@@ -114,7 +114,9 @@ OSH_SPEC.LongFlag('--ast-format',
               default='abbrev-text')
 
 OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
-OSH_SPEC.LongFlag('--hijack-shebang')
+OSH_SPEC.LongFlag('--hijack-shebang', args.Str,
+                  help='Replace sh or bash shebangs with this interpreter, '
+                       ' e.g. $(which osh)')
 OSH_SPEC.LongFlag('--debug-file', args.Str)
 OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 

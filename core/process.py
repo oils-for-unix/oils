@@ -363,15 +363,16 @@ class ExternalProgram(object):
         pass
       else:
         try:
-          line = f.readline()
+          line = f.read(40)
           if (line.startswith('#!/bin/sh') or
               line.startswith('#!/bin/bash') or
               line.startswith('#!/usr/bin/env bash')):
-            log('Running %s with OSH', argv)
-            argv = ['/usr/local/bin/osh'] + argv
+            log('Running %s with %s', argv, self.hijack_shebang)
+            argv = [self.hijack_shebang] + argv
             #argv = ['python', '/home/andy/git/oilshell/oil/bin/oil.py', 'osh'] + argv
           else:
-            log('%s has line %r', argv, line)
+            #log('%s has line %r', argv, line)
+            pass
         finally:
           f.close()
 
