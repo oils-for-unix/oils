@@ -308,12 +308,15 @@ def ShellMain(lang, argv0, argv, login_shell):
   debug_dir = posix.environ.get('OSH_DEBUG_DIR')
   if opts.debug_file:  # --debug-file takes precedence over OSH_DEBUG_DIR
     debug_path = opts.debug_file
-    debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
   elif debug_dir:
     debug_path = os_path.join(debug_dir, '%d-osh.log' % my_pid)
+
+  if debug_path:
+    # TODO: Catch OSError if the path doesn't exist.
     debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
   else:
     debug_f = util.NullDebugFile()
+
   exec_deps.debug_f = debug_f
 
   # Not using datetime for dependency reasons.  TODO: maybe show the date at

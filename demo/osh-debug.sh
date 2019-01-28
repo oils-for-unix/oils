@@ -37,7 +37,8 @@ hijack-recursive() {
 # For the release
 #
 
-readonly RELEASE_LOGS_DIR=_tmp/osh-debug-release
+# Must be an absolute path!  Otherwise it will fail.
+readonly RELEASE_LOGS_DIR=$PWD/_tmp/osh-debug-release
 
 osh-for-release() {
   mkdir -p $RELEASE_LOGS_DIR
