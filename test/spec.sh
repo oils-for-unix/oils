@@ -398,7 +398,7 @@ command-sub() {
 }
 
 command_() {
-  sh-spec spec/command_.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/command_.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
