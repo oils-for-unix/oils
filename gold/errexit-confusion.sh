@@ -115,5 +115,25 @@ run-for-release-FIXED() {
 # 1. Use the argv dispatch pattern
 # 2. Use $0 $func_name || status=$?
 
+# -----------------------------------------------------------------------------
+
+# Another different that went away with the FIXED: A case where the stricter
+# behavior of OSH's errexit was triggered.
+
+# Can't set 'errexit' in a context where it's disabled (if, !, && ||,
+# while/until conditions)
+#
+# Arguably this is exposing a bug?  errexit is already disabled?  May have to
+# revisit this.
+
+test-case-that-sets-errexit() {
+  set +o errexit
+  echo hi
+}
+
+osh-stricter() {
+  run-other-suite-for-release-OLD osh-stricter test-case-that-sets-errexit
+}
+
 "$@"
 
