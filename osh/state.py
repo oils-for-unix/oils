@@ -49,6 +49,7 @@ class _ErrExit(object):
     self.stack = []
 
   def Push(self):
+    """Temporarily disable errexit."""
     if self.errexit:
       self.errexit = False
       self.stack.append(True)  # value to restore
@@ -56,6 +57,7 @@ class _ErrExit(object):
       self.stack.append(False)
 
   def Pop(self):
+    """Restore the previous value."""
     self.errexit = self.stack.pop()
 
   def Set(self, b):
