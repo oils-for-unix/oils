@@ -24,6 +24,8 @@ export ASDL_TYPE_CHECK=1
 _compare() {
   set +o errexit
 
+  # NOTE: This will be wrong with OSH_HIJACK_SHEBANG!
+
   "$@" >_tmp/shebang.txt
   local expected_status=$?
 
@@ -121,7 +123,8 @@ readlink-case() {
 
 # Hm this isn't tickling the bug?
 errexit-confusion() {
-  _compare gold/errexit-confusion.sh run-for-release
+  _compare gold/errexit-confusion.sh run-for-release-OLD
+  _compare gold/errexit-confusion.sh run-for-release-FIXED
 }
 
 readonly -a PASSING=(
@@ -152,6 +155,8 @@ readonly -a PASSING=(
   html-summary
   gen-module-init
   readlink-case
+
+  errexit-confusion
 
   # This one takes a little long, but it's realistic.
   #wild

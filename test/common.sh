@@ -63,7 +63,7 @@ run-task-with-status-test() {
   test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
 }
 
-# Each test file should define PASSING
+# TODO: We should run them like $0?  To get more fine-grained reporting.
 run-all() {
   for t in "$@"; do
     # fail calls 'exit 1'
@@ -87,12 +87,19 @@ run-other-suite-for-release() {
   echo "*** Running test suite '$suite_name' ***"
   echo
 
-  if $func_name 2>&1 | tee $out; then
+  # I want to handle errors in $func_name while NOT changing its semantics.
+  # This requires a separate shell interpreter starts with $0, not just a
+  # separate process.  I came up with this fix in gold/errexit-confusion.sh.
+
+  local status=0
+  $0 $func_name 2>&1 | tee $out || status=$?
+
+  if test $status -eq 0; then
     echo
-    log "Test suite '$suite_name' ran without errors.  Wrote $out"
+    log "Test suite '$suite_name' ran without errors.  Wrote '$out'"
   else
     echo
-    die "Test suite '$suite_name' failed (running $func_name)"
+    die "Test suite '$suite_name' failed (running $func_name, wrote '$out')"
   fi
 }
 
