@@ -114,9 +114,6 @@ OSH_SPEC.LongFlag('--ast-format',
               default='abbrev-text')
 
 OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
-OSH_SPEC.LongFlag('--hijack-shebang', args.Str,
-                  help='Replace sh or bash shebangs with this interpreter, '
-                       ' e.g. $(which osh)')
 OSH_SPEC.LongFlag('--debug-file', args.Str)
 OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 
@@ -305,8 +302,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
 
-  exec_deps.ext_prog = process.ExternalProgram(opts.hijack_shebang, fd_state)
-
   if opts.debug_file:
     debug_f = util.DebugFile(fd_state.Open(opts.debug_file, mode='w'))
   else:
@@ -314,6 +309,9 @@ def ShellMain(lang, argv0, argv, login_shell):
   exec_deps.debug_f = debug_f
 
   debug_f.log('Debug file is %s', opts.debug_file)
+
+  interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
+  exec_deps.ext_prog = process.ExternalProgram(interp, fd_state, debug_f)
 
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter

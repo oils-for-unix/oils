@@ -28,7 +28,7 @@ def Banner(msg):
 
 _WAITER = process.Waiter()
 _FD_STATE = process.FdState()
-_EXT_PROG = process.ExternalProgram(False, _FD_STATE)
+_EXT_PROG = process.ExternalProgram(False, _FD_STATE, util.NullDebugFile())
 
 
 def _CommandNode(code_str, arena):

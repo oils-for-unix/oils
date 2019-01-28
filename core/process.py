@@ -344,9 +344,15 @@ class Thunk(object):
 
 
 class ExternalProgram(object):
-  def __init__(self, hijack_shebang, fd_state):
+  def __init__(self, hijack_shebang, fd_state, debug_f):
+    """
+    Args:
+      hijack_shebang: The path of an interpreter to run instead of the one
+        specified in the shebang line.  May be empty.
+    """
     self.hijack_shebang = hijack_shebang
     self.fd_state = fd_state
+    self.debug_f = debug_f
 
   def Exec(self, argv, environ):
     """Execute a program and exit this process.
@@ -367,11 +373,10 @@ class ExternalProgram(object):
           if (line.startswith('#!/bin/sh') or
               line.startswith('#!/bin/bash') or
               line.startswith('#!/usr/bin/env bash')):
-            log('Running %s with %s', argv, self.hijack_shebang)
+            self.debug_f.log('Hijacked: %s with %s', argv, self.hijack_shebang)
             argv = [self.hijack_shebang] + argv
-            #argv = ['python', '/home/andy/git/oilshell/oil/bin/oil.py', 'osh'] + argv
           else:
-            #log('%s has line %r', argv, line)
+            #self.debug_f.log('Not hijacking %s (%r)', argv, line)
             pass
         finally:
           f.close()
@@ -381,6 +386,9 @@ class ExternalProgram(object):
     try:
       os_.execvpe(argv[0], argv, environ)
     except OSError as e:
+      # TODO: Run with /bin/sh when ENOEXEC error (noshebang).  Because all
+      # shells do it.
+
       util.error('%r: %s', argv[0], posix.strerror(e.errno))
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.

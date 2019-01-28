@@ -204,7 +204,9 @@ osh-trace() {
 	# NOTE: env -i disables $TERM, which breaks some things.
   #env -i 
 
-	OSH_CRASH_DUMP_DIR=_tmp PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
+	OSH_CRASH_DUMP_DIR=_tmp \
+	OSH_HIJACK_SHEBANG=bin/osh \
+    PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
     bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
 

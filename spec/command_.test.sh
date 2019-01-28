@@ -51,3 +51,11 @@ if test "$count" -ne 4; then
 fi
 ## stdout: count=4
 ## OK mksh/zsh stdout: count=5
+
+#### File with no shebang is executed
+# most shells execute /bin/sh; bash may execute itself
+echo 'echo hi' > $TMP/no-shebang
+chmod +x $TMP/no-shebang
+$SH -c '$TMP/no-shebang'
+## stdout: hi
+## status: 0
