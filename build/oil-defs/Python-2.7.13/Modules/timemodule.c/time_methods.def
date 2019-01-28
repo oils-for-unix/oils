@@ -3,5 +3,6 @@
 static PyMethodDef time_methods[] = {
   {"time", time_time, METH_NOARGS},
   {"sleep", time_sleep, METH_VARARGS},
+  {"strftime", time_strftime, METH_VARARGS},
   {0},
 };

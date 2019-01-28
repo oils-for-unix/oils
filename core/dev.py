@@ -4,6 +4,8 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
+import posix
+
 from asdl import const
 from core import util
 from osh import word
@@ -115,6 +117,8 @@ class CrashDumper(object):
     if not self.collected:
       return
 
+    my_pid = posix.getpid()  # Get fresh PID here
+
     # Other things we need: the reason for the crash!  _ErrorWithLocation is
     # required I think.
     d = {
@@ -123,12 +127,13 @@ class CrashDumper(object):
         'debug_stack': self.debug_stack,
         'error': self.error,
         'status': status,
+        'pid': my_pid,
     }
 
     # TODO: Add PID here
-    path = os_path.join(self.crash_dump_dir, 'osh-crash-dump.json')
+    path = os_path.join(self.crash_dump_dir, '%d-osh-crash-dump.json' % my_pid)
     with open(path, 'w') as f:
       import json
       json.dump(d, f, indent=2)
       #print(repr(d), file=f)
-    util.log('Wrote crash dump to %s', path)
+    util.log('[%d] Wrote crash dump to %s', my_pid, path)

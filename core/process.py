@@ -404,7 +404,7 @@ class ExternalProgram(object):
         # consistent with mksh and zsh.
         status = 127
 
-      sys.exit(status)
+      sys.exit(status)  # raises SystemExit
     # NO RETURN
 
 
@@ -436,7 +436,9 @@ class SubProgramThunk(object):
     if self.disable_errexit:
       self.ex.exec_opts.errexit.Disable()
     self.ex.ExecuteAndCatch(self.node, fork_external=False)
-    sys.exit(self.ex.LastStatus())  # Must exit!
+
+    # Raises SystemExit, so we still have time to write a crash dump.
+    sys.exit(self.ex.LastStatus())
 
 
 class _HereDocWriterThunk(Thunk):

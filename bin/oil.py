@@ -302,13 +302,28 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
 
-  if opts.debug_file:
-    debug_f = util.DebugFile(fd_state.Open(opts.debug_file, mode='w'))
+  my_pid = posix.getpid()
+
+  debug_path = ''
+  debug_dir = posix.environ.get('OSH_DEBUG_DIR')
+  if opts.debug_file:  # --debug-file takes precedence over OSH_DEBUG_DIR
+    debug_path = opts.debug_file
+    debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
+  elif debug_dir:
+    debug_path = os_path.join(debug_dir, '%d-osh.log' % my_pid)
+    debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
   else:
     debug_f = util.NullDebugFile()
   exec_deps.debug_f = debug_f
 
-  debug_f.log('Debug file is %s', opts.debug_file)
+  # Not using datetime for dependency reasons.  TODO: maybe show the date at
+  # the beginning of the log, and then only show time afterward?  To save
+  # space, and make space for microseconds.  (datetime supports microseconds
+  # but time.strftime doesn't).
+  iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+  debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid, argv)
+  if debug_path:
+    debug_f.log('Writing logs to %r', debug_path)
 
   interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
   exec_deps.ext_prog = process.ExternalProgram(interp, fd_state, debug_f)
@@ -316,8 +331,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter
 
-  # Controlled by env variable, flag, or hook?
-  exec_deps.dumper = dev.CrashDumper(posix.environ.get('OSH_CRASH_DUMP_DIR', ''))
+  # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
+  # stuffing too much into one, since a .json crash dump isn't a stream.
+  crash_dump_dir = posix.environ.get('OSH_CRASH_DUMP_DIR', '')
+  exec_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
   if opts.xtrace_to_debug_file:
     trace_f = debug_f
@@ -360,7 +377,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
   # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)  # used later
+  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 

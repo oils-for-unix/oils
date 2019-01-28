@@ -2,7 +2,7 @@
 
 #### --debug-file
 $SH --debug-file $TMP/debug.txt -c 'true'
-grep 'Debug file' $TMP/debug.txt >/dev/null && echo yes
+grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
 ## stdout: yes
 
 #### debug-completion option
