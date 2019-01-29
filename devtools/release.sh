@@ -174,6 +174,25 @@ readonly -a OTHER_TESTS=(
 
 run-other-tests() {
   for name in "${OTHER_TESTS[@]}"; do
+    case $name in
+      gold)
+        if test -n "${OSH_HIJACK_SHEBANG:-}"; then
+          cat >&2 <<'EOF'
+---
+WARNING: Skipping gold tests because $OSH_HIJACK_SHEBANG is set.'
+Run them manually with:
+
+  test/gold.sh run-for-release
+---
+EOF
+        fi
+        continue
+        ;;
+      *)
+        banner "Test suite: $name"
+        ;;
+    esac
+
     test/$name.sh run-for-release
   done
 }

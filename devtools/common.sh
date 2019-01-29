@@ -13,3 +13,10 @@ html-footer() {
 EOF
 }
 
+# Copied from test/unit.sh
+banner() {
+  echo -----
+  echo "$@"
+  echo -----
+}
+
