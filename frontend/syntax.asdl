@@ -115,6 +115,7 @@ module syntax
   lhs_expr =
     LhsName(string name)
   | LhsIndexedName(string name, arith_expr index)
+  | CompatIndexedName(string name, string index)  -- for translation
 
   arith_expr =
     ArithVarRef(token token)  -- variable without $

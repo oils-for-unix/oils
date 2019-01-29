@@ -1039,7 +1039,7 @@ foo=bar
 a[x+1]=bar
 OSH
 setglobal foo = 'bar'
-setglobal a[x+1] = 'bar'
+compat array-assign a 'x+1' 'bar'
 OIL
 }
 
@@ -1316,7 +1316,7 @@ readonly -a PASSING=(
 
   # Require --one-pass-parse
   backticks
-  #lhs-assignment
+  lhs-assignment
 
   # Compound commands
   brace-group

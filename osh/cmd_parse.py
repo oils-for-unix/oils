@@ -134,6 +134,25 @@ def _MakeAssignPair(parse_ctx, preparsed):
     lhs = lhs_expr.LhsName(var_name)
     lhs.spids.append(left_token.span_id)
 
+  elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
+    var_name = left_token.val[:-1]
+    if close_token.val[-2] == '+':
+      op = assign_op_e.PlusEqual
+    else:
+      op = assign_op_e.Equal
+
+    left_spid = left_token.span_id + 1
+    right_spid = close_token.span_id
+
+    left_span = parse_ctx.arena.GetLineSpan(left_spid)
+    right_span = parse_ctx.arena.GetLineSpan(right_spid)
+    assert left_span.line_id == right_span.line_id, \
+        '%s and %s not on same line' % (left_span, right_span)
+
+    line = parse_ctx.arena.GetLine(left_span.line_id)
+    index_str = line[left_span.col : right_span.col]
+    lhs = lhs_expr.CompatIndexedName(var_name, index_str)
+
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
     var_name = left_token.val[:-1]
     if close_token.val[-2] == '+':
@@ -154,8 +173,9 @@ def _MakeAssignPair(parse_ctx, preparsed):
     # Now reparse everything between here
     code_str = ''.join(pieces)
 
-    # NOTE: It's possible that an alias expansion underlies this, not a real file!
-    # We have to use a SideArena since this will happen during translation.
+    # NOTE: It's possible that an alias expansion underlies this, not a real
+    # file!  We have to use a SideArena since this will happen during
+    # translation.
     line_num = 99
     source_name = 'TODO'
     arena = alloc.SideArena('<LHS array index at line %d of %s>' %
@@ -170,7 +190,7 @@ def _MakeAssignPair(parse_ctx, preparsed):
   else:
     raise AssertionError
 
-  # TODO: Should we also create a rhs_exp.ArrayLiteral here?
+  # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
     val = osh_word.EmptyWord()
@@ -179,7 +199,7 @@ def _MakeAssignPair(parse_ctx, preparsed):
     val = word.TildeDetect(val) or val
 
   pair = syntax_asdl.assign_pair(lhs, op, val)
-  pair.spids.append(left_token.span_id)  # Do we need this?
+  pair.spids.append(left_token.span_id)  # To skip to beginning of pair
   return pair
 
 

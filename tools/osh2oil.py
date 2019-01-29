@@ -464,9 +464,14 @@ class OilPrinter(object):
           defined_locally = True
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
+      has_array = any(
+          pair.lhs.tag == lhs_expr_e.CompatIndexedName for pair in node.pairs)
+
       # need semantic analysis.
       # Would be nice to assume that it's a local though.
-      if at_top_level:
+      if has_array:
+        self.f.write('compat ')  # 'compat array-assign' syntax
+      elif at_top_level:
         self.f.write('setglobal ')
       elif defined_locally:
         self.f.write('set ')
@@ -531,22 +536,35 @@ class OilPrinter(object):
         else:
           self.DoWordAsExpr(pair.rhs, local_symbols)
 
-        if i != n - 1:
-          self.f.write(',')
-
-      elif pair.lhs.tag == lhs_expr_e.LhsIndexedName:
-        # TODO:
+      elif pair.lhs.tag == lhs_expr_e.CompatIndexedName:
+        # NOTES:
         # - parse_ctx.one_pass_parse should be on, so the span invariant
         #   is accurate
         # - Then do the following translation:
         #   a[x+1]="foo $bar" ->
         #   compat array-assign a 'x+1' "$foo $bar"
+        # This avoids dealing with nested arenas.
         #
-        # This way we don't have to deal with nested arenas.
-        pass
+        # TODO: This isn't great when there are multiple assignments.
+        #   a[x++]=1 b[y++]=2
+        #
+        # 'compat' could apply to the WHOLE statement, with multiple
+        # assignments.
+        self.f.write("array-assign %s '%s' " % (pair.lhs.name, pair.lhs.index))
+
+        # TODO: This should be translated from EmptyWord.
+        if pair.rhs is None:
+          self.f.write("''")  # local i -> var i = ''
+        else:
+          rhs_spid = word.LeftMostSpanForWord(pair.rhs)
+          self.cursor.SkipUntil(rhs_spid)
+          self.DoWordAsExpr(pair.rhs, local_symbols)
 
       else: 
         raise AssertionError(pair.lhs.__class__.__name__)
+
+      if i != n - 1:
+        self.f.write(',')
 
   def DoCommand(self, node, local_symbols, at_top_level=False):
     if node.tag == command_e.CommandList:
