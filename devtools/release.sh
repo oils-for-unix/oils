@@ -179,18 +179,14 @@ run-other-tests() {
       gold)
         if test -n "${OSH_HIJACK_SHEBANG:-}"; then
           cat >&2 <<'EOF'
----
+=====
 WARNING: Skipping gold tests because $OSH_HIJACK_SHEBANG is set.'
 Run them manually with:
 
   test/gold.sh run-for-release
----
+=====
 EOF
         fi
-        continue
-        ;;
-      osh2oil)
-        # TODO: Fix this suite
         continue
         ;;
       *)
