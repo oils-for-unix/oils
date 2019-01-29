@@ -5,12 +5,13 @@
 #
 # Pre-release:
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
-#   build/cpython-defs.sh {oil-py-names,filter-methods}  # to regenerate C source
+#   build/cpython-defs.sh {oil-py-names,filter-methods}   # regenerate C source
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
-#   $0 build-and-test  (builds tarball, runs unit,gold, initial spec tests, etc.)
+#   $0 build-and-test  (builds tarball, runs unit/gold/osh2oil suites, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
+#     With OSH_HIJACK_SHEBANG: test/gold.sh run-for-release
 #   $0 metrics  # this can catch bugs
 #   test/wild.sh all (3-4 minutes on fast machine)
 #   $0 test-opy (2 minutes on fast machine)
@@ -186,6 +187,10 @@ Run them manually with:
 ---
 EOF
         fi
+        continue
+        ;;
+      osh2oil)
+        # TODO: Fix this suite
         continue
         ;;
       *)

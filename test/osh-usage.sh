@@ -26,6 +26,8 @@ ast-formats() {
   bin/osh -n --ast-format abbrev-html -c 'echo hi'
   bin/osh -n --ast-format html -c 'echo hi'
 
+  # Removed with oheap
+  return
   local ast_bin=_tmp/smoke-ast.bin 
   bin/osh -n --ast-format oheap -c 'echo hi' > $ast_bin
   ls -l $ast_bin
