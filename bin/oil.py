@@ -317,8 +317,13 @@ def ShellMain(lang, argv0, argv, login_shell):
     debug_path = os_path.join(debug_dir, '%d-osh.log' % my_pid)
 
   if debug_path:
-    # TODO: Catch OSError if the path doesn't exist.
-    debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
+    # This will be created as an empty file if it doesn't exist, or it could be
+    # a pipe.
+    try:
+      debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
+    except IOError as e:
+      util.error("Couldn't open %r: %s", debug_path, posix.strerror(e.errno))
+      return 2
   else:
     debug_f = util.NullDebugFile()
 
@@ -441,7 +446,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       arena.PushSource(script_name)
       try:
         f = fd_state.Open(script_name)
-      except OSError as e:
+      except IOError as e:
         util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
