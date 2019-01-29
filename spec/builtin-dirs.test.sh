@@ -1,5 +1,26 @@
 #!/bin/bash
 
+#### pushd/popd
+set -o errexit
+cd /
+pushd /tmp
+echo -n pwd=; pwd
+popd
+echo -n pwd=; pwd
+## status: 0
+## STDOUT:
+/tmp /
+pwd=/tmp
+/
+pwd=/
+## END
+## OK zsh STDOUT:
+pwd=/tmp
+pwd=/
+## END
+## N-I dash/mksh status: 127
+## N-I dash/mksh stdout-json: ""
+
 #### dirs builtin
 cd /
 dirs

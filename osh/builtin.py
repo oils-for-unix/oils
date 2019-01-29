@@ -683,7 +683,7 @@ def _FormatDir(dir_name, home_dir):
   return dir_name
 
 
-def Pushd(argv, home_dir, dir_stack):
+def Pushd(argv, mem, dir_stack):
   num_args = len(argv)
   if num_args <= 0:
     util.error('pushd: no other directory')
@@ -700,11 +700,12 @@ def Pushd(argv, home_dir, dir_stack):
     return 1
 
   dir_stack.Push(dest_dir)
-  _PrintDirStack(dir_stack, SINGLE_LINE, home_dir)
+  _PrintDirStack(dir_stack, SINGLE_LINE, mem.GetVar('HOME'))
+  state.SetGlobalString(mem, 'PWD', dest_dir)
   return 0
 
 
-def Popd(argv, home_dir, dir_stack):
+def Popd(argv, mem, dir_stack):
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
     util.error('popd: directory stack is empty')
@@ -716,7 +717,8 @@ def Popd(argv, home_dir, dir_stack):
     util.error("popd: %r: %s", dest_dir, posix.strerror(e.errno))
     return 1
 
-  _PrintDirStack(dir_stack, SINGLE_LINE, home_dir)
+  _PrintDirStack(dir_stack, SINGLE_LINE, mem.GetVar('HOME'))
+  state.SetGlobalString(mem, 'PWD', dest_dir)
   return 0
 
 

@@ -323,10 +323,10 @@ class Executor(object):
       status = builtin.Jobs(argv, self.job_state)
 
     elif builtin_id == builtin_e.PUSHD:
-      status = builtin.Pushd(argv, self.mem.GetVar('HOME'), self.dir_stack)
+      status = builtin.Pushd(argv, self.mem, self.dir_stack)
 
     elif builtin_id == builtin_e.POPD:
-      status = builtin.Popd(argv, self.mem.GetVar('HOME'), self.dir_stack)
+      status = builtin.Popd(argv, self.mem, self.dir_stack)
 
     elif builtin_id == builtin_e.DIRS:
       status = builtin.Dirs(argv, self.mem.GetVar('HOME'), self.dir_stack)

@@ -157,15 +157,6 @@ OK
 OK
 ## END
 
-#### pushd/popd
-set -o errexit
-cd /
-pushd $TMP
-popd
-pwd
-## status: 0
-## N-I dash/mksh status: 127
-
 #### Exit out of function
 f() { exit 3; }
 f

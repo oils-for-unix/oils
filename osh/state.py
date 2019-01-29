@@ -383,10 +383,9 @@ class _StackFrame(object):
 
 class DirStack(object):
   """For pushd/popd/dirs."""
-
   def __init__(self):
     self.stack = []
-    self.Reset()
+    self.Reset()  # Invariant: it always has at least ONE entry.
 
   def Reset(self):
     del self.stack[:] 
@@ -398,7 +397,8 @@ class DirStack(object):
   def Pop(self):
     if len(self.stack) <= 1:
       return None
-    return self.stack.pop()
+    self.stack.pop()  # remove last
+    return self.stack[-1]  # return second to last
 
   def Iter(self):
     """Iterate in reverse order."""
