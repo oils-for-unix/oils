@@ -83,11 +83,15 @@ class FdState(object):
     else:
       raise AssertionError(mode)
 
-    fd = posix.open(path, fd_mode, 0666)
+    try:
+      fd = posix.open(path, fd_mode, 0666)
+    except OSError as e:
+      raise IOError(*e.args)  # Consistently raise IOError
     new_fd = self._GetFreeDescriptor()
     posix.dup2(fd, new_fd)
     posix.close(fd)
-    return posix.fdopen(new_fd, mode)
+    f = posix.fdopen(new_fd, mode)  # Might raise IOError
+    return f
 
   def _PushDup(self, fd1, fd2):
     """Save fd2, and dup fd1 onto fd2.
@@ -365,7 +369,7 @@ class ExternalProgram(object):
     if self.hijack_shebang:
       try:
         f = self.fd_state.Open(argv[0])
-      except OSError as e:
+      except IOError as e:
         pass
       else:
         try:

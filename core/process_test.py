@@ -148,6 +148,17 @@ class ProcessTest(unittest.TestCase):
     # Or technically we could fork the whole interpreter for foo|bar|baz and
     # capture stdout of that interpreter.
 
+  def testOpen(self):
+    fd_state = process.FdState()
+
+    # These used to raise OSError and IOError because Python is a bit
+    # inconsistent.  We made them the same.
+    #
+    # Hm this wart was fixed in Python 3.  Didn't know that.
+    # https://stackoverflow.com/questions/29347790/difference-between-ioerror-and-oserror
+    self.assertRaises(IOError, fd_state.Open, '_nonexistent_')
+    self.assertRaises(IOError, fd_state.Open, 'metrics/')
+
 
 if __name__ == '__main__':
   unittest.main()

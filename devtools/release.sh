@@ -13,7 +13,7 @@
 #     prereq: build/codegen.sh {download,install}-re2c
 #     With OSH_HIJACK_SHEBANG: test/gold.sh run-for-release
 #   $0 metrics  # this can catch bugs
-#   test/wild.sh all (3-4 minutes on fast machine)
+#   test/wild.sh all (3-4 minutes on fast machine.  Do it outside OSH.)
 #   $0 test-opy (2 minutes on fast machine)
 #   $0 spec-all  # tests 3 OSH binaries
 #   benchmarks:
