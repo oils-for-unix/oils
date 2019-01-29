@@ -112,6 +112,8 @@ OSH_SPEC.ShortFlag('-i')  # interactive
 OSH_SPEC.LongFlag('--ast-format',
               ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
               default='abbrev-text')
+# Don't reparse a[x+1] and ``.  Only valid in -n mode.
+OSH_SPEC.LongFlag('--one-pass-parse')
 
 OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
 OSH_SPEC.LongFlag('--debug-file', args.Str)
@@ -282,7 +284,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
-  parse_ctx = parse_lib.ParseContext(arena, aliases)  # For main_loop
+  if opts.one_pass_parse and not exec_opts.noexec:
+    raise args.UsageError('--one-pass-parse requires noexec (-n)')
+  parse_ctx = parse_lib.ParseContext(arena, aliases,
+                                     one_pass_parse=opts.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
   comp_arena = pool.NewArena()
@@ -563,7 +568,8 @@ def OshCommandMain(argv):
 
   line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!
-  parse_ctx = parse_lib.ParseContext(arena, aliases)
+  # parse `` and a[x+1]=bar differently
+  parse_ctx = parse_lib.ParseContext(arena, aliases, one_pass_parse=True)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:

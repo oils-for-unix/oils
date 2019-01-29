@@ -141,11 +141,12 @@ class ParseContext(object):
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, aliases, trail=None):
+  def __init__(self, arena, aliases, trail=None, one_pass_parse=False):
     self.arena = arena
     self.aliases = aliases
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
+    self.one_pass_parse = one_pass_parse
 
   def _MakeLexer(self, line_reader, arena=None):
     """Helper function.

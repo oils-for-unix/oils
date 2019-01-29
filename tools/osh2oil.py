@@ -535,9 +535,14 @@ class OilPrinter(object):
           self.f.write(',')
 
       elif pair.lhs.tag == lhs_expr_e.LhsIndexedName:
-        # TODO: Just wrap whatever is inside [] with with shExpr(' ') ?
-        # - But also setglobal is not appropriate?  It should always be set?
-        #self.cursor.PrintUntil()
+        # TODO:
+        # - parse_ctx.one_pass_parse should be on, so the span invariant
+        #   is accurate
+        # - Then do the following translation:
+        #   a[x+1]="foo $bar" ->
+        #   compat array-assign a 'x+1' "$foo $bar"
+        #
+        # This way we don't have to deal with nested arenas.
         pass
 
       else: 

@@ -662,6 +662,16 @@ class WordParser(object):
       # interleave parsing and execution!  Unlike 'source' and 'eval'.
       node = c_parser.ParseCommandSub()
 
+    elif left_id == Id.Left_Backtick and self.parse_ctx.one_pass_parse:
+      # NOTE: This is an APPROXIMATE solution for translation ONLY.  See
+      # test/osh2oil.
+
+      right_id = Id.Eof_Backtick
+      self.lexer.PushHint(Id.Left_Backtick, right_id)
+      c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
+                                                        self.lexer, right_id)
+      node = c_parser.ParseCommandSub()
+
     elif left_id == Id.Left_Backtick:
       self._Next(lex_mode_e.Backtick)  # advance past `
 
