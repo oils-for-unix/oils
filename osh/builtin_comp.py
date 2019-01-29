@@ -215,7 +215,7 @@ class SpecBuilder(object):
     if not actions and not else_actions:
       raise args.UsageError('No actions defined in completion: %s' % argv)
 
-    p = completion.DEFAULT_PREDICATE
+    p = completion.DefaultPredicate
     if arg.X:
       filter_pat = arg.X
       if filter_pat.startswith('!'):

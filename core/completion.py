@@ -523,17 +523,12 @@ class GlobPredicate(object):
     else:
       return matched
 
-
-class _DefaultPredicate(object):
-  """This is like lambda x: True, but it has a __repr__."""
-  def __call__(self, candidate):
-    return True
-
   def __repr__(self):
-    return '<True>'
+    return '<GlobPredicate %s %r>' % (self.include, self.glob_pat)
 
 
-DEFAULT_PREDICATE = _DefaultPredicate()
+def DefaultPredicate(candidate):
+  return True
 
 
 class UserSpec(object):
@@ -603,7 +598,7 @@ class UserSpec(object):
       parts.append('extra=%s' % self.extra_actions)
     if self.else_actions:
       parts.append('else=%s' % self.else_actions)
-    if self.predicate is not DEFAULT_PREDICATE:
+    if self.predicate is not DefaultPredicate:
       parts.append('pred = %s' % self.predicate)
     if self.prefix:
       parts.append('prefix=%r' % self.prefix)
