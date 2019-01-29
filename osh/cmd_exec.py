@@ -234,7 +234,7 @@ class Executor(object):
 
     try:
       f = self.fd_state.Open(path)  # Shell can't use descriptors 3-9
-    except OSError as e:
+    except IOError as e:
       # TODO: Should point to the source statement that failed.
       util.error('source %r failed: %s', path, posix.strerror(e.errno))
       return 1
