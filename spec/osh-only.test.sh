@@ -60,11 +60,26 @@ set -o errexit
 source spec/testdata/crash.sh
 '
 echo status=$?
-python -m json.tool $TMP/*.json > /dev/null
-echo status=$?
+
+# Now try to parse crash dumps
+set -o xtrace
+set -o errexit
+ok=0
+for dump in $TMP/*.json; do
+  # Workaround for test issue: release binaries leave empty files because they
+  # don't have the json module.
+  if test -s $dump; then  # non-empty
+    python -m json.tool $dump > /dev/null
+    echo "OK $dump" >&2
+    (( ++ok ))
+  fi
+done
+if test $ok -ge 1; then  # make sure we parsed at least once crash dump
+  echo OK
+fi
 ## STDOUT:
 status=1
-status=0
+OK
 ## END
 
 # NOTE: strict-arith has one case in arith.test.sh), strict-word-eval has a case in var-op-other.

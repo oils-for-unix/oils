@@ -259,6 +259,11 @@ spec-all() {
   OSH_LIST="bin/osh $OSH_RELEASE_BINARY $OSH_BYTERUN" test/spec.sh all
 }
 
+# For quickly debugging failures that don't happen in dev mode.
+spec-one() {
+  OSH_LIST="bin/osh $OSH_RELEASE_BINARY $OSH_BYTERUN" test/spec.sh "$@"
+}
+
 
 # TODO: Log this whole thing?  Include logs with the /release/ page?
 build-and-test() {
