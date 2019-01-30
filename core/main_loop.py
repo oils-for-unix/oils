@@ -35,19 +35,15 @@ def Interactive(opts, ex, c_parser, arena):
     c_parser.ResetInputObjects()
 
     try:
-      w = c_parser.Peek()
-    except util.HistoryError as e:  # e.g. expansion failed
-      print(e.UserErrorString())
-      continue
+      w = c_parser.Peek()  # may raise HistoryError or ParseError
 
-    c_id = word.CommandId(w)
-    if c_id == Id.Op_Newline:  # print PS1 again, not PS2
-      continue  # next command
-    elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
-      break  # end
+      c_id = word.CommandId(w)
+      if c_id == Id.Op_Newline:  # print PS1 again, not PS2
+        continue  # next command
+      elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
+        break  # end
 
-    try:
-      node = c_parser.ParseLogicalLine()
+      node = c_parser.ParseLogicalLine()  # ditto, HistoryError or ParseError
     except util.HistoryError as e:  # e.g. expansion failed
       # Where this happens:
       # for i in 1 2 3; do

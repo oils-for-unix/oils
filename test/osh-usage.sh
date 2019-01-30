@@ -98,15 +98,23 @@ EOF
 osh-interactive() {
   set +o errexit
   echo 'echo hi' | $OSH -i
+  assert $? -eq 0
 
   echo 'exit' | $OSH -i
+  assert $? -eq 0
 
   # Parse failure
   echo ';' | $OSH -i
+  assert $? -eq 2
 
   # Bug fix: this shouldn't try execute 'echo OIL OIL'
   # The line lexer wasn't getting reset on parse failures.
   echo ';echo OIL OIL' | $OSH -i
+  assert $? -eq 2
+
+  # Bug fix: c_parser.Peek() in main_loop.InteractiveLoop can raise execptions
+  echo 'v=`echo \"`' | $OSH -i
+  assert $? -eq 2
 }
 
 help() {
