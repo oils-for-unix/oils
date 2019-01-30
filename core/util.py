@@ -271,8 +271,8 @@ def ShowAppVersion(app_name):
   assert py_compiler.endswith(']'), py_compiler
   py_compiler = py_compiler[1:-1]
 
-  # This environment variable set in C code.
-  py_impl = 'OVM' if posix.environ.get('_OVM_IS_BUNDLE') else 'CPython'
+  # We removed sys.executable from sysmodule.c.
+  py_impl = 'CPython' if hasattr(sys, 'executable') else 'OVM'
 
   # What C functions do these come from?
   print('%s version %s' % (app_name, version))
