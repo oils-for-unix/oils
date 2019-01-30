@@ -321,7 +321,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     # a pipe.
     try:
       debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
-    except IOError as e:
+    except OSError as e:
       util.error("Couldn't open %r: %s", debug_path, posix.strerror(e.errno))
       return 2
   else:
@@ -446,7 +446,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       arena.PushSource(script_name)
       try:
         f = fd_state.Open(script_name)
-      except IOError as e:
+      except OSError as e:
         util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)

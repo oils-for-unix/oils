@@ -151,13 +151,12 @@ class ProcessTest(unittest.TestCase):
   def testOpen(self):
     fd_state = process.FdState()
 
-    # These used to raise OSError and IOError because Python is a bit
-    # inconsistent.  We made them the same.
-    #
-    # Hm this wart was fixed in Python 3.  Didn't know that.
+    # This function used to raise BOTH OSError and IOError because Python 2 is
+    # inconsistent.
+    # We follow Python 3 in preferring OSError.
     # https://stackoverflow.com/questions/29347790/difference-between-ioerror-and-oserror
-    self.assertRaises(IOError, fd_state.Open, '_nonexistent_')
-    self.assertRaises(IOError, fd_state.Open, 'metrics/')
+    self.assertRaises(OSError, fd_state.Open, '_nonexistent_')
+    self.assertRaises(OSError, fd_state.Open, 'metrics/')
 
 
 if __name__ == '__main__':
