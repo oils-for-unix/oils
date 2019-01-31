@@ -227,3 +227,44 @@ echo "[4 `echo \\\\z`]"
 [3 \z]
 [4 \z]
 ## END
+
+#### Quoting double quotes within backticks
+echo \"foo\"   # for comparison
+echo `echo \"foo\"`
+echo `echo \\"foo\\"`
+## STDOUT:
+"foo"
+"foo"
+"foo"
+## END
+
+#### More levels of double quotes in backticks
+# Shells don't agree here, some of them give you form feeds!
+# There are two levels of processing I don't understand.
+echo BUG
+exit
+echo `echo \\\"foo\\\"`
+echo `echo \\\\"foo\\\\"`
+echo `echo \\\\\"foo\\\\\"`
+## BUG bash/dash/mksh/osh STDOUT:
+BUG
+## END
+
+#### Syntax errors with double quotes within backticks
+
+# bash does print syntax errors but somehow it exits 0
+
+$SH -c 'echo `echo "`'
+echo status=$?
+$SH -c 'echo `echo \\\\"`'
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+## END
+## OK mksh STDOUT:
+status=1
+status=1
+## END
+## OK bash stdout-json: "\nstatus=0\n\nstatus=0\n"
