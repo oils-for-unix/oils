@@ -151,13 +151,24 @@ class LexerTest(unittest.TestCase):
     self.assertTokensEqual(syntax_asdl.token(Id.Char_OneChar, r'\n'), t)
 
   def testMode_Backtick(self):
-    lexer = _InitLexer(r'echo \" \\ hi`')
+    CASES = [
+        r'echo \" \\ hi`',
+        r'`',
+        r'',
+    ]
 
-    while True:
-      t = lexer.Read(lex_mode_e.Backtick)
-      print(t)
-      if t.id == Id.Eof_Real:
-        break
+    for case in CASES:
+      print()
+      print('--- %s ---' % case)
+      print()
+
+      lexer = _InitLexer(case)
+
+      while True:
+        t = lexer.Read(lex_mode_e.Backtick)
+        print(t)
+        if t.id == Id.Eof_Real:
+          break
 
   def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
@@ -300,12 +311,37 @@ class OtherLexerTest(unittest.TestCase):
 
   def testHistoryLexer(self):
     lex = match.HISTORY_LEXER
+
     print(list(lex.Tokens(r'echo hi')))
+
     print(list(lex.Tokens(r'echo !! !* !^ !$')))
-    print(list(lex.Tokens(r'echo \!!')))
+
+    # No history operator with \ escape
+    tokens = list(lex.Tokens(r'echo \!!'))
+    print(tokens)
+    self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
+
     print(list(lex.Tokens(r'echo !3...')))
     print(list(lex.Tokens(r'echo !-5...')))
     print(list(lex.Tokens(r'echo !x/foo.py bar')))
+
+    print('---')
+
+    # No history operator in single quotes
+    tokens = list(lex.Tokens(r"echo '!!' $'!!' "))
+    print(tokens)
+    self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
+
+    # No history operator in incomplete single quotes
+    tokens = list(lex.Tokens(r"echo '!! "))
+    print(tokens)
+    self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
+
+    # Quoted single quote, and then a History operator
+    tokens = list(lex.Tokens(r"echo \' !! "))
+    print(tokens)
+    # YES operator
+    self.assert_(Id.History_Op in [tok_type for tok_type, _ in tokens])
 
 
 if __name__ == '__main__':

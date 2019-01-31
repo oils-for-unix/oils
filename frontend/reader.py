@@ -63,6 +63,8 @@ class InteractiveLineReader(_Reader):
       print('^D')  # bash prints 'exit'; mksh prints ^D.
       line = None
     else:
+      # NOTE: Like bash, OSH does this on EVERY line in a multi-line command,
+      # which is confusing.
       line = self.hist_ev.Eval(line)
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.

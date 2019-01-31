@@ -608,8 +608,12 @@ HISTORY_DEF = [
   # No hyphen since it conflits with $-1 too.
   R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+', Id.History_Search),
 
+  # Single quoted, e.g. 'a' or $'\n'.  Terminated by another single quote or
+  # end of string.
+  R(r"'[^'\0]*'?", Id.History_Other),
+
   # Runs of chars that are definitely not special
-  R(r'[^!\\\0]+', Id.History_Other),
+  R(r"[^!\\'\0]+", Id.History_Other),
   # Escaped characters.  \! disables history
   R(r'\\[^\0]', Id.History_Other),
   # Other single chars, like a trailing \ or !
