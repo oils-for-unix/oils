@@ -170,7 +170,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
 
-  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
+  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
+                                          comp_lookup)
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)  # used later
   builtins[builtin_e.COMPLETE] = complete_builtin

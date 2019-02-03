@@ -146,6 +146,8 @@ class Lookup(object):
         '__first': _DO_NOTHING,
     }
 
+    self.commands_with_spec_changes = []  # for the 124 protocol
+
     # So you can register *.sh, unlike bash.  List of (glob, [actions]),
     # searched linearly.
     self.patterns = []
@@ -162,11 +164,20 @@ class Lookup(object):
     for pat, spec in self.patterns:
       print('%s = %s' % (pat, spec))
 
+  def ClearCommandsChanged(self):
+    del self.commands_with_spec_changes[:]
+
+  def GetCommandsChanged(self):
+    return self.commands_with_spec_changes
+
   def RegisterName(self, name, base_opts, user_spec):
     """Register a completion action with a name.
     Used by the 'complete' builtin.
     """
     self.lookup[name] = (base_opts, user_spec)
+
+    if name not in ('__fallback', '__first'):
+      self.commands_with_spec_changes.append(name)
 
   def RegisterGlob(self, glob_pat, base_opts, user_spec):
     self.patterns.append((glob_pat, base_opts, user_spec))
@@ -181,7 +192,7 @@ class Lookup(object):
       return pair
 
     key = os_path.basename(argv0)
-    actions = self.lookup.get(key)
+    pair = self.lookup.get(key)
     if pair:
       return pair
 
@@ -353,9 +364,15 @@ class FileSystemAction(CompletionAction):
 class ShellFuncAction(CompletionAction):
   """Call a user-defined function using bash's completion protocol."""
 
-  def __init__(self, ex, func):
+  def __init__(self, ex, func, comp_lookup):
+    """
+    Args:
+      comp_lookup: For the 124 protocol: test if the user-defined function
+      registered a new UserSpec.
+    """
     self.ex = ex
     self.func = func
+    self.comp_lookup = comp_lookup
 
   def __repr__(self):
     # TODO: Add file and line number here!
@@ -392,10 +409,24 @@ class ShellFuncAction(CompletionAction):
     self.log('Running completion function %r with arguments %s',
              self.func.name, argv)
 
+    self.comp_lookup.ClearCommandsChanged()
     status = self.ex.RunFuncForCompletion(self.func, argv)
+    commands_changed = self.comp_lookup.GetCommandsChanged()
+
+    self.log('comp.first %s, commands_changed: %s', comp.first,
+             commands_changed)
+
     if status == 124:
-      self.log('Got status 124 from %r', self.func.name)
-      raise _RetryCompletion()
+      cmd = os_path.basename(comp.first) 
+      if cmd in commands_changed:
+        self.log('Got status 124 from %r and %s commands changed',
+                 self.func.name, commands_changed)
+        raise _RetryCompletion()
+      else:
+        util.error(
+            "Function %r returned 124, but the completion spec for %r wasn't "
+            "changed", self.func.name, cmd)
+        return []
 
     # Read the response.  We set it above, so this error would only happen if
     # the user unset it.

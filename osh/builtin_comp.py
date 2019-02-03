@@ -91,7 +91,7 @@ class _FixedWordsAction(completion.CompletionAction):
 
 class SpecBuilder(object):
 
-  def __init__(self, ex, parse_ctx, word_ev, splitter):
+  def __init__(self, ex, parse_ctx, word_ev, splitter, comp_lookup):
     """
     Args:
       ex: Executor for compgen -F
@@ -101,6 +101,7 @@ class SpecBuilder(object):
     self.parse_ctx = parse_ctx
     self.word_ev = word_ev
     self.splitter = splitter
+    self.comp_lookup = comp_lookup
 
   def Build(self, argv, arg, base_opts):
     """Given flags to complete/compgen, return a UserSpec."""
@@ -115,7 +116,7 @@ class SpecBuilder(object):
       func = ex.funcs.get(func_name)
       if func is None:
         raise args.UsageError('Function %r not found' % func_name)
-      actions.append(completion.ShellFuncAction(ex, func))
+      actions.append(completion.ShellFuncAction(ex, func, self.comp_lookup))
 
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in arg.actions:

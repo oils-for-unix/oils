@@ -392,7 +392,9 @@ def ShellMain(lang, argv0, argv, login_shell):
   ex.bool_ev = bool_ev
   ex.tracer = tracer
 
-  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter)
+  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
+                                          comp_lookup)
+
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_e.COMPLETE] = complete_builtin

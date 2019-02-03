@@ -107,8 +107,12 @@ class CompletionTest(unittest.TestCase):
   def testLookup(self):
     c = completion.Lookup()
     c.RegisterName('grep', BASE_OPTS, U1)
-    print(c.GetSpecForName('grep'))
-    print(c.GetSpecForName('/usr/bin/grep'))
+
+    _, user_spec = c.GetSpecForName('grep')
+    self.assertEqual(1, len(user_spec.actions))
+
+    _, user_spec = c.GetSpecForName('/usr/bin/grep')
+    self.assertEqual(1, len(user_spec.actions))
 
     c.RegisterGlob('*.py', BASE_OPTS, U1)
     base_opts, comp = c.GetSpecForName('/usr/bin/foo.py')
@@ -189,7 +193,8 @@ class CompletionTest(unittest.TestCase):
 
     ex = test_lib.InitExecutor(arena=arena)
 
-    a = completion.ShellFuncAction(ex, func_node)
+    comp_lookup = completion.Lookup()
+    a = completion.ShellFuncAction(ex, func_node, comp_lookup)
     comp = self._MakeComp(['f'], 0, 'f')
     matches = list(a.Matches(comp))
     self.assertEqual(['f1', 'f2'], matches)
@@ -488,6 +493,30 @@ class RootCompleterTest(unittest.TestCase):
     # It should NOT clobber completio registered for aliases
     m = list(r.Matches(MockApi('ll_own_completion ')))
     self.assertEqual(['own ', 'words '], sorted(m))
+
+  def testNoInfiniteLoop(self):
+    # This was ONE place where we got an infinite loop.
+
+    with open('testdata/completion/return-124.bash') as f:
+      code_str = f.read()
+    trail = parse_lib.Trail()
+    arena = alloc.SideArena('<completion_test.py>')
+    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    comp_lookup = completion.Lookup()
+    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+
+    r = _MakeRootCompleter(parse_ctx=parse_ctx, comp_lookup=comp_lookup)
+
+    m = list(r.Matches(MockApi('bad ')))
+    self.assertEqual([], sorted(m))
+
+    # Error: spec not changed
+    m = list(r.Matches(MockApi('both ')))
+    self.assertEqual([], sorted(m))
+
+    # Redefines completions
+    m = list(r.Matches(MockApi('both2 ')))
+    self.assertEqual(['b1 ', 'b2 '], sorted(m))
 
   def testCompletesAssignment(self):
     # OSH doesn't do this.  Here is noticed about bash --norc (which is
