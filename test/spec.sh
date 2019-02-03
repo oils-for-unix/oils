@@ -458,9 +458,15 @@ var-op-test() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-var-op-other() {
-  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 2 \
+var-op-len() {
+  sh-spec spec/var-op-len.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+}
+
+var-op-other() {
+  # dash doesn't support any of these operations
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 2 \
+    $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
 var-op-strip() {
