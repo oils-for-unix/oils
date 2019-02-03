@@ -305,9 +305,19 @@ echo status=$?
 v='aabb'
 echo ${v/a}
 echo status=$?
-## stdout-json: "abb\nstatus=0\n"
+## STDOUT:
+abb
+status=0
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+
+#### Replacement with special chars (bug fix)
+v=xx
+echo ${v/x/"?"}
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## stdout: ?x
 
 #### String slice
 foo=abcdefg

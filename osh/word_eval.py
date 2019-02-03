@@ -667,11 +667,12 @@ class _WordEvaluator(object):
       elif op.tag == suffix_op_e.PatSub:  # PatSub, vectorized
         val = self._EmptyStrOrError(val)  # ${undef//x/y}
 
+        # globs are supported in the pattern
         pat_val = self.EvalWordToString(op.pat, do_fnmatch=True)
         assert pat_val.tag == value_e.Str, pat_val
 
         if op.replace:
-          replace_val = self.EvalWordToString(op.replace, do_fnmatch=True)
+          replace_val = self.EvalWordToString(op.replace)
           assert replace_val.tag == value_e.Str, replace_val
           replace_str = replace_val.s
         else:
@@ -679,6 +680,7 @@ class _WordEvaluator(object):
 
         # Either GlobReplacer or ConstStringReplacer
         replacer = string_ops.MakeReplacer(pat_val.s, replace_str, op.spids[0])
+        #log('s %r / replace_str %r', pat_val.s, replace_str)
 
         if val.tag == value_e.Str:
           s = replacer.Replace(val.s, op)
