@@ -103,7 +103,7 @@ class SpecBuilder(object):
     self.splitter = splitter
 
   def Build(self, argv, arg, base_opts):
-    """Given flags to complete/compgen, built a UserSpec."""
+    """Given flags to complete/compgen, return a UserSpec."""
     ex = self.ex
 
     actions = []

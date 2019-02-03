@@ -63,7 +63,8 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     arena = pool.NewArena()
     arena.PushSource('<_MakeRootCompleter>')
     trail = parse_lib.Trail()
-    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail,
+                                       one_pass_parse=True)
 
   if 1:  # enable for details
     debug_f = util.DebugFile(sys.stdout)
@@ -332,6 +333,32 @@ class RootCompleterTest(unittest.TestCase):
     m = list(r.Matches(comp))
     self.assert_('$PWD' in m, 'Got %s' % m)  # don't need leading "
     self.assert_('$PS4' in m, 'Got %s' % m)
+
+  def testCompletesCommandSubs(self):
+    comp_lookup = completion.Lookup()
+    comp_lookup.RegisterName('grep', BASE_OPTS, U1)
+    comp_lookup.RegisterName('__first', BASE_OPTS, U2)
+    r = _MakeRootCompleter(comp_lookup=comp_lookup)
+
+    # Normal completion
+    comp = MockApi('gre')
+    m = list(r.Matches(comp))
+    self.assertEqual(['grep '], m)
+
+    # $(command sub)
+    comp = MockApi('echo $(gre')
+    m = list(r.Matches(comp))
+    self.assertEqual(['grep '], m)
+
+    # `backticks`
+    comp = MockApi('echo `gre')
+    m = list(r.Matches(comp))
+    self.assertEqual(['grep '], m)
+
+    # Args inside `backticks
+    comp = MockApi('echo `grep f')
+    m = list(r.Matches(comp))
+    self.assertEqual(['foo.py ', 'foo '], m)
 
   def testCompletesRedirectArguments(self):
     r = _MakeRootCompleter()

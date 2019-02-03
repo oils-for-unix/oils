@@ -293,7 +293,11 @@ def ShellMain(lang, argv0, argv, login_shell):
   comp_arena = pool.NewArena()
   comp_arena.PushSource('<completion>')
   trail1 = parse_lib.Trail()
-  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail1)
+  # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
+  # fix the issue where ` gets erased because it's not part of
+  # set_completer_delims().
+  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail1,
+                                    one_pass_parse=True)
 
   hist_arena = pool.NewArena()
   hist_arena.PushSource('<history>')

@@ -171,9 +171,6 @@ class Lookup(object):
   def RegisterGlob(self, glob_pat, base_opts, user_spec):
     self.patterns.append((glob_pat, base_opts, user_spec))
 
-  def GetFirstSpec(self):
-    return self.lookup['__first']
-
   def GetSpecForName(self, argv0):
     """
     Args:
@@ -194,6 +191,9 @@ class Lookup(object):
         return base_opts, user_spec
 
     return None, None
+
+  def GetFirstSpec(self):
+    return self.lookup['__first']
 
   def GetFallback(self):
     return self.lookup['__fallback']
