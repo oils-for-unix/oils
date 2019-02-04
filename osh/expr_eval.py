@@ -739,8 +739,8 @@ class BoolEvaluator(_ExprEvaluator):
           try:
             matches = libc.regex_match(s2, s1)
           except RuntimeError:
-            # 2 means a parse error.  Note this is a fatal error in OSH but not
-            # in bash.
+            # Status 2 indicates a regex parse error.  This is fatal in OSH but
+            # not in bash, which treats [[ like a command with an exit code.
             e_die("Invalid regex %r", s2, word=node.right, status=2)
 
           if matches is None:

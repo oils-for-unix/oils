@@ -180,15 +180,26 @@ false
 ## END
 ## BUG zsh status: 1
 
-#### Unquoted { is parse error in bash/zsh
+#### Unquoted { is a regex parse error
 [[ { =~ { ]] && echo true
 echo status=$?
-## STDOUT:
-status=2
-## END
-## N-I zsh STDOUT:
-status=1
-## END
+## stdout-json: ""
+## status: 2
+## BUG bash stdout-json: "status=2\n"
+## BUG bash status: 0
+## BUG zsh stdout-json: "status=1\n"
+## BUG zsh status: 0
+
+#### Fatal error inside [[ =~ ]]
+
+# zsh and osh are stricter than bash.  bash treats [[ like a command.
+
+[[ a =~ $(( 1 / 0 )) ]]
+echo status=$?
+## stdout-json: ""
+## status: 1
+## BUG bash stdout: status=1
+## BUG bash status: 0
 
 #### Quoted {
 [[ { =~ "{" ]] && echo true

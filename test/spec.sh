@@ -582,7 +582,7 @@ brace-expansion() {
 }
 
 regex() {
-  sh-spec spec/regex.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/regex.test.sh --osh-failures-allowed 2 \
     $BASH $ZSH $OSH_LIST "$@"
 }
 
