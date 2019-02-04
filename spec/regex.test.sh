@@ -91,6 +91,14 @@ pat="^(a b)$"
 ## OK zsh stdout: true
 ## OK zsh status: 0
 
+#### Mixing quoted and unquoted parts
+[[ 'a b' =~ 'a 'b ]] && echo true
+[[ "a b" =~ "a "'b' ]] && echo true
+## STDOUT:
+true
+true
+## END
+
 #### Regex with == and not =~ is parse error, different lexer mode required
 # They both give a syntax error.  This is lame.
 [[ '^(a b)$' == ^(a\ b)$ ]] && echo true
@@ -124,6 +132,53 @@ pat="^(a b)$"
 ## stdout: true
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 1
+
+#### Regex to match literal brackets []
+
+# bash-completion relies on this, so we're making it match bash.
+# zsh understandably differs.
+[[ '[]' =~ \[\] ]] && echo true
+
+# Another way to write this.
+pat='\[\]'
+[[ '[]' =~ $pat ]] && echo true
+## STDOUT:
+true
+true
+## END
+## OK zsh STDOUT:
+true
+## END
+
+#### Regex to match literals . ^ $ etc.
+[[ 'x' =~ \. ]] || echo false
+[[ '.' =~ \. ]] && echo true
+
+[[ 'xx' =~ \^\$ ]] || echo false
+[[ '^$' =~ \^\$ ]] && echo true
+
+[[ 'xxx' =~ \+\*\? ]] || echo false
+[[ '*+?' =~ \*\+\? ]] && echo true
+
+[[ 'xx' =~ \{\} ]] || echo false
+[[ '{}' =~ \{\} ]] && echo true
+## STDOUT:
+false
+true
+false
+true
+false
+true
+false
+true
+## END
+## BUG zsh STDOUT:
+true
+false
+false
+false
+## END
+## BUG zsh status: 1
 
 #### Unquoted { is parse error in bash/zsh
 [[ { =~ { ]] && echo true

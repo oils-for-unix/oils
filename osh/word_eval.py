@@ -680,7 +680,10 @@ class _WordEvaluator(object):
 
         regex, warnings = glob_.GlobToERE(pat_val.s)
         if warnings:
-          # TODO: Add strict mode and expose warnings.
+          # TODO:
+          # - Add 'set -o strict-glob' mode and expose warnings.
+          #   "Glob is not in CANONICAL FORM".
+          # - Propagate location info back to the 'op.pat' word.
           pass
         replacer = string_ops.GlobReplacer(regex, replace_str, op.spids[0])
 

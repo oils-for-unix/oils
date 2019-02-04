@@ -734,6 +734,7 @@ class BoolEvaluator(_ExprEvaluator):
           return s1 != s2
 
         if op_id == Id.BoolBinary_EqualTilde:
+          # TODO: This should go to --debug-file
           #log('Matching %r against regex %r', s1, s2)
           try:
             matches = libc.regex_match(s2, s1)

@@ -374,14 +374,13 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[a-zA-Z0-9_/-]+', Id.Lit_Chars),  # not including period
   R(r'[ \t\r]+', Id.WS_Space),
 
-  # From _BACKSLASH
+  # Normally, \x evalutes to x.  But quoted regex metacharacters like \* should
+  # evaluate to \*.  Compare with ( | ).
+  R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
+
+  # Everything else is an escape.
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
-
-  #C('{', Id.Lit_RegexMeta),    # { -> \{
-  #C('}', Id.Lit_RegexMeta),    # } -> \}
-  # In [[ foo =~ foo$ ]], the $ doesn't get escaped
-  #C('$', Id.Lit_RegexMeta),
 
   # NOTE: ( | and ) aren't operators!
   R(r'[^\0]', Id.Lit_Other),  # everything else is literal

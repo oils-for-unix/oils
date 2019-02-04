@@ -127,6 +127,13 @@ errexit-confusion() {
   _compare gold/errexit-confusion.sh run-for-release-FIXED
 }
 
+parse-help() {
+  local dir=testdata/parse-help
+
+  # This is not hermetic since it calls 'ls'
+  _compare $dir/excerpt.sh _parse_help ls
+}
+
 readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
   #version-text
@@ -157,6 +164,8 @@ readonly -a PASSING=(
   readlink-case
 
   errexit-confusion
+
+  parse-help
 
   # This one takes a little long, but it's realistic.
   #wild

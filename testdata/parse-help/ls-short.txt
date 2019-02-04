@@ -1,0 +1,2 @@
+  -a, --all                  do not ignore entries starting with .
+  -A, --almost-all           do not list implied . and ..
