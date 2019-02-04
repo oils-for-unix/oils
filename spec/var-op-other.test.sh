@@ -4,6 +4,13 @@
 #
 # NOTE: There are also slice tests in {array,arith-context}.test.sh.
 
+#### String slice
+foo=abcdefg
+echo ${foo:1:3}
+## STDOUT:
+bcd
+## END
+
 #### Cannot take length of substring slice
 # These are runtime errors, but we could make them parse time errors.
 v=abcde
@@ -13,103 +20,6 @@ echo ${#v:1:3}
 # zsh actually implements this!
 ## OK zsh stdout: 3
 ## OK zsh status: 0
-
-#### Pattern replacement
-v=abcde
-echo ${v/c*/XX}
-## stdout: abXX
-
-#### Pattern replacement on unset variable
-echo -${v/x/y}-
-echo status=$?
-set -o nounset  # make sure this fails
-echo -${v/x/y}-
-## STDOUT:
---
-status=0
-## BUG mksh STDOUT:
-# patsub disrespects nounset!
---
-status=0
---
-## status: 1
-## BUG mksh status: 0
-
-#### Global Pattern replacement with /
-s=xx_xx_xx
-echo ${s/xx?/yy_} ${s//xx?/yy_}
-## stdout: yy_xx_xx yy_yy_xx
-
-#### Left Anchored Pattern replacement with #
-s=xx_xx_xx
-echo ${s/?xx/_yy} ${s/#?xx/_yy}
-## stdout: xx_yy_xx xx_xx_xx
-
-#### Right Anchored Pattern replacement with %
-s=xx_xx_xx
-echo ${s/?xx/_yy} ${s/%?xx/_yy}
-## stdout: xx_yy_xx xx_xx_yy
-
-#### Replace fixed strings
-s=xx_xx
-echo ${s/xx/yy} ${s//xx/yy} ${s/#xx/yy} ${s/%xx/yy}
-## stdout: yy_xx yy_yy yy_xx xx_yy
-
-#### Replace is longest match
-# If it were shortest, then you would just replace the first <html>
-s='begin <html></html> end'
-echo ${s/<*>/[]}
-## stdout: begin [] end
-
-#### Replace char class
-s=xx_xx_xx
-echo ${s//[[:alpha:]]/y} ${s//[^[:alpha:]]/-}
-## stdout: yy_yy_yy xx-xx-xx
-## N-I mksh stdout: xx_xx_xx xx_xx_xx
-
-#### Replace hard glob
-s='aa*bb+cc'
-echo ${s//\**+/__}  # Literal *, then any sequence of characters, then literal +
-## stdout: aa__cc
-
-#### Pattern replacement ${v/} is not valid
-v=abcde
-echo -${v/}-
-echo status=$?
-## status: 2
-## stdout-json: ""
-## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh stdout-json: "-abcde-\nstatus=0\n"
-
-#### Pattern replacement ${v//} is not valid
-v='a/b/c'
-echo -${v//}-
-echo status=$?
-## status: 2
-## stdout-json: ""
-## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh stdout-json: "-a/b/c-\nstatus=0\n"
-
-#### ${v/a} is the same as ${v/a/}  -- no replacement string
-v='aabb'
-echo ${v/a}
-echo status=$?
-## STDOUT:
-abb
-status=0
-## END
-
-#### Replacement with special chars (bug fix)
-v=xx
-echo ${v/x/"?"}
-## stdout: ?x
-
-#### String slice
-foo=abcdefg
-echo ${foo:1:3}
-## STDOUT:
-bcd
-## END
 
 #### Out of range string slice: begin
 # out of range begin doesn't raise error in bash, but in mksh it skips the

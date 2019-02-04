@@ -463,6 +463,11 @@ var-op-len() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
+var-op-patsub() {
+  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 1 \
+    $BASH $MKSH $ZSH $OSH_LIST "$@"
+}
+
 var-op-other() {
   # dash doesn't support any of these operations
   sh-spec spec/var-op-other.test.sh --osh-failures-allowed 2 \

@@ -269,13 +269,13 @@ def _AllMatchPositions(s, regex):
   """
   matches = []
   pos = 0
-  while True:
+  n = len(s)
+  while pos < n:  # needed to prevent infinite loop in (.*) case
     m = libc.regex_first_group_match(regex, s, pos)
     if m is None:
       break
     matches.append(m)
     start, end = m
-    #log('m = %r, %r' % (start, end))
     pos = end  # advance position
   return matches
 
