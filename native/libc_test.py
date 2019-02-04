@@ -16,16 +16,43 @@ import libc  # module under test
 class LibcTest(unittest.TestCase):
 
   def testFnmatch(self):
-    #print(dir(libc))
-    # pattern, string, result
 
     cases = [
+    #   (pattern, string, result)
+
         ('', '', 1),  # no pattern is valid
         ('a', 'a', 1),
         ('?', 'a', 1),
-        ('\?', 'a', 0),
-        ('\?', '?', 1),
+
+        # Test escaping of glob operator chars
+        ('\\?', '-', 0),
+        ('\\?', '?', 1),
+
+        ('\\*', '-', 0),
+        ('\\*', '*', 1),
+
+        ('\\[', '-', 0),
+        ('\\[', '[', 1),
+
+        ('\\!', '-', 0),
+        ('\\!', '!', 1),
+
         ('\\\\', '\\', 1),
+        ('\\\\', 'x', 0),
+        ('\\\\', '\\extra', 0),
+
+        ('\\f', '\\', 0),  # no match
+
+        # Hm this is weird, c is not a special character
+        ('\\c', 'c', 1),
+        ('\\c', '\\c', 0),
+        ('\\\\c', '\\c', 1),  # the proper way to match
+
+        ('c:\\foo', 'c:\\foo', 0),
+        ('c:\\foo', 'c:foo', 1),
+
+        ('strange]one', 'strange]one', 1),
+
         # What is another error?  Invalid escape is OK?
         ('\\', '\\', 0),  # no pattern is valid
 
@@ -40,7 +67,8 @@ class LibcTest(unittest.TestCase):
 
     for pat, s, expected in cases:
       actual = libc.fnmatch(pat, s)
-      self.assertEqual(expected, actual)
+      self.assertEqual(
+          expected, actual, '%r %r -> got %d' % (pat, s, actual))
 
   def testFnmatchExtglob(self):
     return

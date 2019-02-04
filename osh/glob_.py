@@ -139,6 +139,7 @@ class _GlobParser(object):
       a CharClass if the parse suceeds, or a GlobLit if fails.  In the latter
       case, we also append a warning.
     """
+    first_token = glob_part.GlobLit(self.token_type, self.token_val)
     balance = 1  # We already saw a [
     tokens = []
 
@@ -154,7 +155,7 @@ class _GlobParser(object):
       if self.token_type == Id.Glob_Eof:
         # TODO: location info
         self.warnings.append('Malformed character class; treating as literal')
-        return [glob_part.GlobLit(id_, s) for (id_, s) in tokens]
+        return [first_token] + [glob_part.GlobLit(id_, s) for (id_, s) in tokens]
 
       if self.token_type == Id.Glob_LBracket:
         balance += 1
@@ -239,6 +240,19 @@ def _GenerateERE(parts):
           out.append('\\')
         out.append(c)
 
+      # These are UNMATCHED ones not parsed in a glob class
+      elif part.id == Id.Glob_LBracket:
+        out.append('\\[')
+
+      elif part.id == Id.Glob_RBracket:
+        out.append('\\]')
+
+      elif part.id == Id.Glob_BadBackslash:
+        out.append('\\\\')
+
+      else:
+        raise AssertionError(part.id)
+
     elif part.tag == glob_part_e.GlobOp:
       if part.op_id == Id.Glob_QMark:
         out.append('.')
@@ -267,16 +281,14 @@ def GlobToERE(pat):
   p = _GlobParser(lexer)
   parts, warnings = p.Parse()
 
-  # If there is nothing like * ? or [abc], then the whole string is a literal,
-  # and we can use a more efficient mechanism.
-  is_glob = False
-  for p in parts:
-    if p.tag in (glob_part_e.GlobOp, glob_part_e.CharClass):
-      is_glob = True
-
-  if not is_glob:
-    return None, warnings
-
+  # Vestigial: if there is nothing like * ? or [abc], then the whole string is
+  # a literal, and we could use a more efficient mechanism.
+  # But we would have to DEQUOTE before doing that.
+  if 0:
+    is_glob = False
+    for p in parts:
+      if p.tag in (glob_part_e.GlobOp, glob_part_e.CharClass):
+        is_glob = True
   if 0:
     print('---')
     for p in parts:

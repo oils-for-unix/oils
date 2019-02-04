@@ -678,9 +678,11 @@ class _WordEvaluator(object):
         else:
           replace_str = ''
 
-        # Either GlobReplacer or ConstStringReplacer
-        replacer = string_ops.MakeReplacer(pat_val.s, replace_str, op.spids[0])
-        #log('s %r / replace_str %r', pat_val.s, replace_str)
+        regex, warnings = glob_.GlobToERE(pat_val.s)
+        if warnings:
+          # TODO: Add strict mode and expose warnings.
+          pass
+        replacer = string_ops.GlobReplacer(regex, replace_str, op.spids[0])
 
         if val.tag == value_e.Str:
           s = replacer.Replace(val.s, op)

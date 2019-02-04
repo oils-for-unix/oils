@@ -122,10 +122,10 @@ class GlobParserTest(unittest.TestCase):
         ('*.[ch]pp', '.*\.[ch]pp', False),
 
         # not globs
-        ('abc', None, False),
-        ('\\*', None, False),
-        ('c:\\foo', None, False),
-        ('strange]one', None, False),
+        ('abc', 'abc', False),
+        ('\\*', '\\*', False),
+        ('c:\\foo', 'c:foo', False),
+        ('strange]one', 'strange\\]one', False),
 
         # character class globs
         ('[[:space:]abc]', '[[:space:]abc]', False),
@@ -138,13 +138,13 @@ class GlobParserTest(unittest.TestCase):
         ('[!\]foo]', '[^\]foo]', False),
 
         # invalid globs
-        ('not_closed[a-z', None, True),
-        ('[[:spa[ce:]]', None, True),
+        ('not_closed[a-z', 'not_closed\\[a-z', True),
+        ('[[:spa[ce:]]', '\\[\\[:spa\\[ce:\\]\\]', True),
 
         # Regression test for IndexError.
-        ('[', None, True),
-        ('\\', None, True),
-        (']', None, False),
+        ('[', '\\[', True),
+        ('\\', '\\\\', True),
+        (']', '\\]', False),
     ]
     for glob, expected_ere, expected_err in CASES:
       print('===')

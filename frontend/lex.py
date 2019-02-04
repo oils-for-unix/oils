@@ -572,6 +572,9 @@ GLOB_DEF = [
   C('[', Id.Glob_LBracket),
   C(']', Id.Glob_RBracket),
 
+  # There is no whitelist of characters; backslashes are unconditionally
+  # removed.  With libc.fnmatch(), the pattern r'\f' matches 'f' but not '\\f'.
+  # See libc_test.py.
   R(r'\\[^\0]', Id.Glob_EscapedChar),
   C('\\', Id.Glob_BadBackslash),  # Trailing single backslash
 

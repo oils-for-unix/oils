@@ -291,37 +291,8 @@ def _PatSubAll(s, regex, replace_str):
   return ''.join(parts)
 
 
-class _Replacer(object):
-  def Replace(self, s, op):
-    raise NotImplementedError
+class GlobReplacer(object):
 
-
-class _ConstStringReplacer(_Replacer):
-  def __init__(self, pat, replace_str):
-    self.pat = pat
-    self.pat_len = len(pat)
-    self.replace_str = replace_str
-
-  def Replace(self, s, op):
-    if op.replace_mode == Id.Lit_Slash:  # replace all
-      return s.replace(self.pat, self.replace_str)
-    elif op.replace_mode == Id.Lit_Pound:  # replace prefix
-      if s.startswith(self.pat):
-        return self.replace_str + s[self.pat_len:]
-      else:
-        return s
-    elif op.replace_mode == Id.Lit_Percent:  # replace suffix
-      if s.endswith(self.pat):
-        # NOTE: This handles ${s/#/foo}.  See spec test in var-op-strip.
-        i = len(s) - self.pat_len
-        return s[:i] + self.replace_str
-      else:
-        return s
-    else:
-      return s.replace(self.pat, self.replace_str, 1)  # just the first one
-
-
-class _GlobReplacer(_Replacer):
   def __init__(self, regex, replace_str, slash_spid):
     # TODO: It would be nice to cache the compilation of the regex here,
     # instead of just the string.  That would require more sophisticated use of
@@ -329,6 +300,9 @@ class _GlobReplacer(_Replacer):
     self.regex = regex
     self.replace_str = replace_str
     self.slash_spid = slash_spid
+
+  def __repr__(self):
+    return '<_GlobReplacer regex %r r %r>' % (self.regex, self.replace_str)
 
   def Replace(self, s, op):
     regex = '(%s)' % self.regex  # make it a group
@@ -350,24 +324,6 @@ class _GlobReplacer(_Replacer):
       return s
     start, end = m
     return s[:start] + self.replace_str + s[end:]
-
-
-def MakeReplacer(pat, replace_str, slash_spid):
-  """Helper for ${x/pat/replace}
-
-  Parses 'pat' and returns either a _GlobReplacer or a _ConstStringReplacer.
-
-  Using these objects is more efficient when performing the same operation on
-  multiple strings.
-  """
-  regex, warnings = glob_.GlobToERE(pat)
-  if warnings:
-    # TODO: Add strict mode and expose warnings.
-    pass
-  if regex is None:
-    return _ConstStringReplacer(pat, replace_str)
-  else:
-    return _GlobReplacer(regex, replace_str, slash_spid)
 
 
 def ShellQuote(s):

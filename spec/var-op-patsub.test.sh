@@ -98,6 +98,41 @@ v=xx
 echo ${v/x/"?"}
 ## stdout: ?x
 
+#### Replace backslash
+v='[\f]'
+x='\f'
+echo ${v/"$x"/_}
+
+# mksh and zsh differ on this case, but this is consistent with the fact that
+# \f as a glob means 'f', not '\f'.  TODO: Warn that it's a bad glob?
+# The canonical form is 'f'.
+echo ${v/$x/_}
+
+echo ${v/\f/_}
+echo ${v/\\f/_}
+## STDOUT:
+[_]
+[\_]
+[\_]
+[_]
+## END
+## BUG mksh/zsh STDOUT:
+[_]
+[_]
+[\_]
+[_]
+## END
+
+#### Replace right ]
+v='--]--'
+x=']'
+echo ${v/"$x"/_}
+echo ${v/$x/_}
+## STDOUT:
+--_--
+--_--
+## END
+
 #### Substitute glob characters in pattern, quoted and unquoted
 g='*'
 v='a*b'

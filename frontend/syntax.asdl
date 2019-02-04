@@ -204,7 +204,7 @@ module syntax
   -- Example: *.[ch] is:
   --   GlobOp(<Glob_Star '*'>),
   --   GlobLit(Glob_OtherLiteral, '.'),
-  --   CharClassExpr(False, 'ch')  # from Glob_CleanLiterals token
+  --   CharClass(False, ['ch'])  # from Glob_CleanLiterals token
 
   glob_part =
     GlobLit(id id, string s)
