@@ -512,6 +512,12 @@ class Mem(object):
     # NOTE: Should we put these in a namespace for Oil?
     SetGlobalString(self, 'UID', str(posix.getuid()))
     SetGlobalString(self, 'EUID', str(posix.geteuid()))
+
+    # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
+    # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
+    # 'musl'.  We don't have that info, so just make it 'linux'.
+    SetGlobalString(self, 'OSTYPE', str(posix.uname()[0].lower()))
+
     # For getopts builtin
     SetGlobalString(self, 'OPTIND', '1')
 

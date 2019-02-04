@@ -136,3 +136,13 @@ echo status=$?
 ## stdout: status=0
 ## N-I dash/mksh stdout-json: ""
 ## N-I dash/mksh status: 1
+
+#### $OSTYPE is non-empty
+test -n "$OSTYPE"
+echo status=$?
+## STDOUT:
+status=0
+## END
+## N-I dash/mksh STDOUT:
+status=1
+## END

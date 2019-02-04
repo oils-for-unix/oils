@@ -134,6 +134,17 @@ parse-help() {
   _compare $dir/excerpt.sh _parse_help ls
 }
 
+# Gah, bash gets this from compile-time configuration generated with autoconf,
+# not uname().  It looks like 'linux-gnu' on Ubuntu.  In Alpine, it's
+# 'linux-musl'.
+_ostype() {
+  echo $OSTYPE
+}
+
+ostype() {
+  _compare $0 _ostype
+}
+
 readonly -a PASSING=(
   # FLAKY: This one differs by timestamp
   #version-text
