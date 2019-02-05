@@ -480,8 +480,12 @@ def ShellMain(lang, argv0, argv, login_shell):
 
     return main_loop.Interactive(opts, ex, c_parser, arena)
 
-  # TODO: Remove this after removing it from benchmarks/osh-runtime.  It's no
-  # longer relevant with main_loop.
+  # TODO: This doesn't do anything interesting.
+  # - Remove the column from osh-runtime, since it doesn't work with main_loop.
+  # - http://www.oilshell.org/release/0.6.pre6/benchmarks.wwz/osh-runtime/
+  # - Move it to right before ui.PrintAst(), so we can use it in -n mode.
+  # This benchmark has been broken since 0.6.pre4.
+  # http://www.oilshell.org/release/0.6.pre3/benchmarks.wwz/osh-parser/
   if opts.parser_mem_dump:
     # This might be superstition, but we want to let the value stabilize
     # after parsing.  bash -c 'cat /proc/$$/status' gives different results
