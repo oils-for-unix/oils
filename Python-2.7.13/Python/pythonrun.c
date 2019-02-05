@@ -92,9 +92,11 @@ int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
 
 
+#ifndef OVM_MAIN
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
     PyOS_mystrnicmp; /* Python/pystrcmp.o */
+#endif
 
 /* PyModule_GetWarningsModule is no longer necessary as of 2.6
 since _warnings is builtin.  This API should not be used. */

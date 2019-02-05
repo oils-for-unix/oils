@@ -413,6 +413,7 @@ PyString_FromFormat(const char *format, ...)
 }
 
 
+#ifndef OVM_MAIN
 PyObject *PyString_Decode(const char *s,
                           Py_ssize_t size,
                           const char *encoding,
@@ -428,7 +429,6 @@ PyObject *PyString_Decode(const char *s,
     return v;
 }
 
-#ifndef OVM_MAIN
 PyObject *PyString_AsDecodedObject(PyObject *str,
                                    const char *encoding,
                                    const char *errors)

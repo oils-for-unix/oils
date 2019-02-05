@@ -150,14 +150,18 @@ readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
 
-# This appears to work for Clang too!
+# These flags are disabled for OS X.  I would have thought it would work in
+# Clang?  It works with both GCC and Clang on Linux.
 # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
-BASE_CFLAGS="$BASE_CFLAGS -fdata-sections -ffunction-sections"
+#BASE_CFLAGS="$BASE_CFLAGS -fdata-sections -ffunction-sections"
+
 # Needed after cpython-defs filtering.
 BASE_CFLAGS="$BASE_CFLAGS -Wno-unused-variable -Wno-unused-function"
 readonly BASE_CFLAGS
 
-BASE_LDFLAGS='-Wl,--gc-sections'
+BASE_LDFLAGS=''
+# Disabled for OS X
+# BASE_LDFLAGS='-Wl,--gc-sections'
 
 # The user should be able to customize CFLAGS, but it shouldn't disable what's
 # in BASE_CFLAGS.
