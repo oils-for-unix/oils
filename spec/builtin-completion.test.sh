@@ -179,15 +179,15 @@ status=0
 ## END
 
 #### compgen -A command completes functions and aliases
-myfunc() { echo ; }
-myfunc2() { echo ; }
-alias myalias=foo
-compgen -A command my
+my_func() { echo ; }
+my_func2() { echo ; }
+alias my_alias=foo
+compgen -A command my_
 echo status=$?
 ## STDOUT:
-myalias
-myfunc
-myfunc2
+my_alias
+my_func
+my_func2
 status=0
 ## END
 
