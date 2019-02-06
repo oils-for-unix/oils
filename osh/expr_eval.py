@@ -125,7 +125,7 @@ class _ExprEvaluator(object):
   def __init__(self, mem, exec_opts, word_ev, arena):
     self.mem = mem
     self.exec_opts = exec_opts
-    self.word_ev = word_ev  # type: word_eval.WordEvaluator
+    self.word_ev = word_ev  # type = word_eval.WordEvaluator
     self.arena = arena
 
   def _StringToIntegerOrError(self, s, blame_word=None,
