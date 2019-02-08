@@ -921,23 +921,12 @@ on_completion(const char *text, int state)
 static char **
 flex_complete(const char *text, int start, int end)
 {
-// Removed two #ifdefs because our frozen pyconfig.h doesn't have them.  That
-// is because I froze it inside Alpine Linux, which doesn't have readline.
-//
-// This fixes a bug where we would get extra spaces after completions (only
-// detectable interactively).
-//
-// I'm not sure why the bug didn't show up until 0.6.pre11.  It may have been
-// because I added flags to remove unused code.
-//
-// It didn't happen in OSH 0.6.pre5, and the releases in between crashed so I
-// can't tell.
-// TODO: We should rewrite this binding for OVM2!
-//
-// OVM: removed ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
+#ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     rl_completion_append_character ='\0';
-// OVM: removed ifdef HAVE_RL_COMPLETION_SUPPRESS_APPEND
+#endif
+#ifdef HAVE_RL_COMPLETION_SUPPRESS_APPEND
     rl_completion_suppress_append = 0;
+#endif
     Py_XDECREF(begidx);
     Py_XDECREF(endidx);
     begidx = PyInt_FromLong((long) start);
