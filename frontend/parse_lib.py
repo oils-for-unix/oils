@@ -156,12 +156,14 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer(match.MATCHER, '', arena=arena or self.arena)
     return lexer.Lexer(line_lexer, line_reader)
 
-  def MakeOshParser(self, line_reader, emit_comp_dummy=False):
+  def MakeOshParser(self, line_reader, emit_comp_dummy=False,
+                    aliases_in_flight=None):
     lx = self._MakeLexer(line_reader)
     if emit_comp_dummy:
       lx.EmitCompDummy()  # A special token before EOF!
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
+                                       aliases_in_flight=aliases_in_flight)
     return c_parser
 
   def MakeOilParser(self, line_reader):

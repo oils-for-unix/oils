@@ -22,10 +22,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   c_parser = test_lib.InitCommandParser(code_str, arena=arena)
   m = getattr(c_parser, method)
   try:
-    if method == 'ParseSimpleCommand':
-      node = m([])  # required cur_aliases arg
-    else:
-      node = m()
+    node = m()
 
   except util.ParseError as e:
     ui.PrettyPrintError(e, arena, sys.stdout)

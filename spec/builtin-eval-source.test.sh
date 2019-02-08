@@ -81,3 +81,57 @@ echo status=$?
 ## OK dash status: 2
 ## OK mksh stdout-json: ""
 ## OK mksh status: 1
+
+#### Eval in does tilde expansion
+
+x="~"
+eval y="$x"  # scalar
+test "$x" = "$y" || echo FALSE
+[[ $x == /* ]] || echo FALSE  # doesn't start with /
+[[ $y == /* ]] && echo TRUE
+
+#argv "$x" "$y"
+
+## STDOUT:
+FALSE
+FALSE
+TRUE
+## END
+## BUG dash status: 127
+## BUG dash stdout-json: "FALSE\n"
+## BUG mksh status: 1
+## BUG mksh stdout-json: "FALSE\n"
+
+#### Eval in bash does tilde expansion in array
+
+# the "make" plugin in bash-completion relies on this?  wtf?
+x="~"
+
+# UPSTREAM CODE
+
+#eval array=( "$x" )
+
+# FIXED CODE -- proper quoting.
+
+eval 'array=(' "$x" ')'  # array
+
+test "$x" = "${array[0]}" || echo FALSE
+[[ $x == /* ]] || echo FALSE  # doesn't start with /
+[[ "${array[0]}" == /* ]] && echo TRUE
+## STDOUT:
+FALSE
+FALSE
+TRUE
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+FALSE
+## END
+## BUG zsh status: 1
+## BUG zsh STDOUT:
+FALSE
+FALSE
+## END
+

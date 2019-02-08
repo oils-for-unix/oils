@@ -437,3 +437,23 @@ argv.py "${a[@]}"
 ## N-I dash status: 2
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 1
+
+#### Alias that is pipeline
+shopt -s expand_aliases
+alias t1='echo hi|wc -c'
+t1
+## STDOUT:
+3
+## END
+
+#### Alias that is && || ;
+shopt -s expand_aliases
+alias t1='echo one && echo two && echo 3 | wc -l;
+echo four'
+t1
+## STDOUT:
+one
+two
+1
+four
+## END

@@ -355,17 +355,21 @@ class CommandParser(object):
     word_parse: to get a stream of words
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
+    eof_id: for command subs
+    arena: where to add nodes, spans, lines, etc.
+    aliases_in_flight: for preventing infinite alias expansion
   """
-  def __init__(self, parse_ctx, w_parser, lexer_, line_reader, arena=None,
-               eof_id=Id.Eof_Real):
+  def __init__(self, parse_ctx, w_parser, lexer_, line_reader,
+               eof_id=Id.Eof_Real, aliases_in_flight=None):
     self.parse_ctx = parse_ctx
     self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
     self.w_parser = w_parser  # for normal parsing
     self.lexer = lexer_  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
-    self.arena = arena or parse_ctx.arena  # for adding here doc and alias spans
+    self.arena = parse_ctx.arena  # for adding here doc and alias spans
     self.eof_id = eof_id
+    self.aliases_in_flight = aliases_in_flight
 
     self.Reset()
 
@@ -546,12 +550,11 @@ class CommandParser(object):
       self._Next()
     return redirects, words
 
-  def _MaybeExpandAliases(self, words, cur_aliases):
+  def _MaybeExpandAliases(self, words):
     """Try to expand aliases.
 
     Args:
       words: A list of CompoundWord
-      cur_aliases: A list of already expanded aliases?
 
     Returns:
       A new LST node.
@@ -589,6 +592,10 @@ class CommandParser(object):
     Returns:
       A command node if any aliases were expanded, or None otherwise.
     """
+    # Start a new list if there aren't any.  This will be passed recursively
+    # through CommandParser instances.
+    aliases_in_flight = self.aliases_in_flight or []
+
     # The last char that we might parse.
     right_spid = word.RightMostSpanForWord(words[-1])
     first_word_str = None  # for error message
@@ -611,15 +618,15 @@ class CommandParser(object):
       # Prevent infinite loops.  This is subtle: we want to prevent infinite
       # expansion of alias echo='echo x'.  But we don't want to prevent
       # expansion of the second word in 'echo echo', so we add 'i' to
-      # "cur_aliases".
-      if (word_str, i) in cur_aliases:
+      # "aliases_in_flight".
+      if (word_str, i) in aliases_in_flight:
         break
 
       if i == 0:
         first_word_str = word_str  # for error message
 
       #log('%r -> %r', word_str, alias_exp)
-      cur_aliases.append((word_str, i))
+      aliases_in_flight.append((word_str, i))
       expanded.append(alias_exp)
       i += 1
 
@@ -671,7 +678,7 @@ class CommandParser(object):
 
     line_reader = reader.VirtualLineReader(line_info, self.arena)
 
-    cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True)
+    cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True, aliases_in_flight=aliases_in_flight)
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # - Don't do SetLatestWords for this CommandParser.
@@ -685,7 +692,7 @@ class CommandParser(object):
     trail = self.parse_ctx.trail
     trail.BeginAliasExpansion()
     try:
-      node = cp.ParseCommand(cur_aliases=cur_aliases)
+      node = cp.ParseCommand()
     except util.ParseError as e:
       # Failure to parse alias expansion is a fatal error
       # We don't need more handling here/
@@ -718,7 +725,7 @@ class CommandParser(object):
   ])
   # Flags to parse like assignments: -a -r -x (and maybe -i)
 
-  def ParseSimpleCommand(self, cur_aliases):
+  def ParseSimpleCommand(self):
     """
     Fixed transcription of the POSIX grammar (TODO: port to grammar/Shell.g)
 
@@ -872,7 +879,7 @@ class CommandParser(object):
       return command.ControlFlow(kw_token, arg_word)
 
     # If any expansions were detected, then parse again.
-    node = self._MaybeExpandAliases(suffix_words, cur_aliases)
+    node = self._MaybeExpandAliases(suffix_words)
     if node:
       # NOTE: There are other types of nodes with redirects.  Do they matter?
       if node.tag == command_e.SimpleCommand:
@@ -1431,7 +1438,7 @@ class CommandParser(object):
 
     return node
 
-  def ParseCommand(self, cur_aliases=None):
+  def ParseCommand(self):
     """
     command          : simple_command
                      | compound_command io_redirect*
@@ -1439,8 +1446,6 @@ class CommandParser(object):
                      | ksh_function_def
                      ;
     """
-    cur_aliases = cur_aliases or []
-
     self._Peek()
 
     if self.c_id in NOT_FIRST_WORDS:
@@ -1469,7 +1474,7 @@ class CommandParser(object):
       p_die('Unexpected right brace', word=self.cur_word)
 
     if self.c_kind == Kind.Redir:  # Leading redirect
-      return self.ParseSimpleCommand(cur_aliases)
+      return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Word:
       if (self.w_parser.LookAhead() == Id.Op_LParen and
@@ -1478,7 +1483,7 @@ class CommandParser(object):
       # echo foo
       # f=(a b c)  # array
       # array[1+2]+=1
-      return self.ParseSimpleCommand(cur_aliases)
+      return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Eof:
       p_die("Unexpected EOF while parsing command", word=self.cur_word)
