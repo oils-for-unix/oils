@@ -694,7 +694,7 @@ class OilPrinter(object):
       self.cursor.SkipUntil(left_spid + 1)
       self.f.write('shell {')
 
-      self.DoCommand(node.child, local_symbols)
+      self.DoCommand(node.command_list, local_symbols)
 
       #self._DebugSpid(right_spid)
       #self._DebugSpid(right_spid + 1)

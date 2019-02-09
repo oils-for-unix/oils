@@ -817,7 +817,7 @@ class NestedParensTest(unittest.TestCase):
     node = assert_ParseCommandList(self,
         '(echo $((1+2)))')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(command_e.SimpleCommand, node.child.tag)
+    self.assertEqual(command_e.CommandList, node.command_list.tag)
 
   def testArithGroupingWithin(self):
     # Within com sub
@@ -830,7 +830,7 @@ class NestedParensTest(unittest.TestCase):
     node = assert_ParseCommandList(self,
         '(echo $((1*(2+3))) )')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(command_e.SimpleCommand, node.child.tag)
+    self.assertEqual(command_e.CommandList, node.command_list.tag)
 
   def testLhsArithGroupingWithin(self):
     # Within Arith sub
@@ -851,7 +851,7 @@ class NestedParensTest(unittest.TestCase):
     node = assert_ParseCommandList(self,
         '(func() { echo hi; }; func)')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(command_e.CommandList, node.child.tag)
+    self.assertEqual(command_e.CommandList, node.command_list.tag)
 
   def testArrayLiteralWithin(self):
     node = assert_ParseCommandList(self,
@@ -862,7 +862,7 @@ class NestedParensTest(unittest.TestCase):
     node = assert_ParseCommandList(self,
         '(array=(a b c))')
     self.assertEqual(command_e.Subshell, node.tag)
-    self.assertEqual(command_e.Assignment, node.child.tag)
+    self.assertEqual(command_e.CommandList, node.command_list.tag)
 
   def testSubshellWithinComSub(self):
     node = assert_ParseCommandList(self,

@@ -774,7 +774,7 @@ class Executor(object):
     elif node.tag == command_e.Subshell:
       check_errexit = True
       # This makes sure we don't waste a process if we'd launch one anyway.
-      p = self._MakeProcess(node.child)
+      p = self._MakeProcess(node.command_list)
       status = p.Run(self.waiter)
 
     elif node.tag == command_e.DBracket:

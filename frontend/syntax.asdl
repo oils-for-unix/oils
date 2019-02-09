@@ -163,19 +163,20 @@ module syntax
     NoOp
     -- TODO: respect order of words and redirects
   | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
+    -- This doesn't technically belong in the LST, but it's convenient for
+    -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
   | Assignment(id keyword, string* flags, assign_pair* pairs)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)
-    -- Part of for/while/until.  Can have one or more children.
+    -- Part of for/while/until.
   | DoGroup(command* children, redir* redirects)
-    -- A brace group is a compound command, with redirects.  Can have one or
-    -- more children.
+    -- A brace group is a compound command, with redirects.
   | BraceGroup(command* children, redir* redirects)
-    -- Can have one or more children.
-  | Subshell(command child, redir* redirects)
+    -- Contains a single child, like CommandSubPart
+  | Subshell(command command_list, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
     -- do_arg_iter: whether to implicitly loop over "$@"

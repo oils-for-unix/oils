@@ -1389,14 +1389,7 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
     c_list = self._ParseCommandList()
-    assert c_list is not None
-
-    # Remove singleton CommandList as an optimization.
-    if len(c_list.children) == 1:
-      child = c_list.children[0]
-    else:
-      child = c_list
-    node = command.Subshell(child)
+    node = command.Subshell(c_list)
 
     right_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_Subshell)
