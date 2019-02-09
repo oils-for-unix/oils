@@ -398,15 +398,6 @@ class CommandParser(object):
     self.lexer.ResetInputObjects()
     self.line_reader.Reset()
 
-  # NOTE: If our approach to _MaybeExpandAliases isn't sufficient, we could
-  # have an expand_alias=True flag here?  We would litter the parser with calls
-  # to this like dash and bash.
-  #
-  # Although it might be possible that you really need to mutate the parser
-  # state, and not just provide a parameter to _Next().
-  # You might also need a flag to indicate whether the previous expansion ends
-  # with ' '.  I didn't see that in dash or bash code.
-
   def _Next(self, lex_mode=lex_mode_e.Outer):
     """Helper method."""
     self.next_lex_mode = lex_mode
@@ -678,7 +669,8 @@ class CommandParser(object):
 
     line_reader = reader.VirtualLineReader(line_info, self.arena)
 
-    cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True, aliases_in_flight=aliases_in_flight)
+    cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True,
+                                      aliases_in_flight=aliases_in_flight)
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # - Don't do SetLatestWords for this CommandParser.
@@ -692,7 +684,9 @@ class CommandParser(object):
     trail = self.parse_ctx.trail
     trail.BeginAliasExpansion()
     try:
-      node = cp.ParseCommand()
+      # _ParseCommandTerm() handles multiline commands, compound commands, etc.
+      # as opposed to ParseLogicalLine()
+      node = cp._ParseCommandTerm()
     except util.ParseError as e:
       # Failure to parse alias expansion is a fatal error
       # We don't need more handling here/
@@ -879,12 +873,12 @@ class CommandParser(object):
       return command.ControlFlow(kw_token, arg_word)
 
     # If any expansions were detected, then parse again.
-    node = self._MaybeExpandAliases(suffix_words)
-    if node:
-      # NOTE: There are other types of nodes with redirects.  Do they matter?
-      if node.tag == command_e.SimpleCommand:
-        node.redirects = redirects
-        _AppendMoreEnv(preparsed_list, node.more_env)
+    expanded_node = self._MaybeExpandAliases(suffix_words)
+    if expanded_node:
+      # Attach env bindings and redirects to the expanded node.
+      more_env = []
+      _AppendMoreEnv(preparsed_list, more_env)
+      node = command.ExpandedAlias(expanded_node, redirects, more_env)
       return node
 
     # TODO check that we don't have env1=x x[1]=y env2=z here.

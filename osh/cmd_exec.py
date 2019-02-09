@@ -667,6 +667,15 @@ class Executor(object):
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return node.spids[0]
 
+  def _EvalTempEnv(self, more_env):
+    """For FOO=1 cmd."""
+    for env_pair in more_env:
+      val = self.word_ev.EvalWordToString(env_pair.val)
+      # Set each var so the next one can reference it.  Example:
+      # FOO=1 BAR=$FOO ls /
+      self.mem.SetVar(lvalue.LhsName(env_pair.name), val,
+                      (var_flags_e.Exported,), scope_e.TempEnv)
+
   def _Dispatch(self, node, fork_external):
     # If we call RunCommandSub in a recursive call to the executor, this will
     # be set true (if strict-errexit is false).  But it only lasts for one
@@ -709,21 +718,33 @@ class Executor(object):
       # with set-o verbose?
       self.tracer.OnSimpleCommand(argv)
 
+      # NOTE: _RunSimpleCommand never returns when fork_external=False!
+      if node.more_env:  # I think this guard is necessary?
+        self.mem.PushTemp()
+        try:
+          self._EvalTempEnv(node.more_env)
+          status = self._RunSimpleCommand(argv, fork_external, span_id)
+        finally:
+          self.mem.PopTemp()
+      else:
+        status = self._RunSimpleCommand(argv, fork_external, span_id)
+
+    elif node.tag == command_e.ExpandedAlias:
+      # Expanded aliases need redirects and env bindings from the calling
+      # context, as well as redirects in the expansion!
+
+      # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
+      # expansion, since aliase are discouarged.
+
       if node.more_env:
         self.mem.PushTemp()
-      try:
-        for env_pair in node.more_env:
-          val = self.word_ev.EvalWordToString(env_pair.val)
-          # Set each var so the next one can reference it.  Example:
-          # FOO=1 BAR=$FOO ls /
-          self.mem.SetVar(lvalue.LhsName(env_pair.name), val,
-                          (var_flags_e.Exported,), scope_e.TempEnv)
-
-        # NOTE: This might never return!  In the case of fork_external=False.
-        status = self._RunSimpleCommand(argv, fork_external, span_id)
-      finally:
-        if node.more_env:
+        try:
+          self._EvalTempEnv(node.more_env)
+          status = self._Execute(node.child)
+        finally:
           self.mem.PopTemp()
+      else:
+        status = self._Execute(node.child)
 
     elif node.tag == command_e.Sentence:
       # Don't check_errexit since this isn't a real node!
