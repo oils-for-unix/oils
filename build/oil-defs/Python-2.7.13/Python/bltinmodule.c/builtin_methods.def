@@ -3,6 +3,7 @@
 static PyMethodDef builtin_methods[] = {
   {"__import__", (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS},
   {"all", builtin_all, METH_O},
+  {"any", builtin_any, METH_O},
   {"chr", builtin_chr, METH_VARARGS},
   {"dir", builtin_dir, METH_VARARGS},
   {"getattr", builtin_getattr, METH_VARARGS},
