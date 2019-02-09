@@ -235,6 +235,11 @@ git-changelog-0.6.pre13() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.6.pre14() {
+  _git-changelog origin/release/0.6.pre13 release/0.6.pre14 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -353,6 +358,10 @@ announcement-0.6.pre12() {
 }
 
 announcement-0.6.pre13() {
+  html-redirect '/blog/2019/02/05.html' > $SITE_DEPLOY_DIR/release/0.6.pre13/announcement.html
+}
+
+announcement-0.6.pre14() {
   write-no-announcement
 }
 
