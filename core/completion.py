@@ -423,7 +423,9 @@ class ShellFuncAction(CompletionAction):
                  self.func.name, commands_changed)
         raise _RetryCompletion()
       else:
-        util.error(
+        # This happens with my own completion scripts.  bash doesn't show an
+        # error.
+        self.log(
             "Function %r returned 124, but the completion spec for %r wasn't "
             "changed", self.func.name, cmd)
         return []
