@@ -315,8 +315,7 @@ _compressed-tarball() {
   local in=_release/$name.tar
   local out=_release/$name-$version.tar.gz
 
-  # Overwrite it to cause rebuild of oil.tar (_build/oil/bytecode.zip will be
-  # out of date.)
+  # Overwrite it to cause rebuild of oil.tar
   build/actions.sh write-release-date
 
   #make -d -r $in  # To debug
@@ -750,6 +749,32 @@ tarball-size() {
   make _bin/oil.ovm-dbg  # faster way to build bytecode
   oil  # make tarball
   build/test.sh oil-tar  # Ctrl-C this, then run metrics/tarball.sh
+}
+
+# This is a hack because the Makefile dependencies aren't correct.
+quick-oil-tarball() {
+  make clean-repo
+  make _bin/oil.ovm-dbg
+
+  local in=_release/oil.tar
+  local out=_release/oil-$OIL_VERSION.tar.gz
+
+  make $in
+  time gzip -c $in > $out
+}
+
+upload-tmp() {
+  local tarball=$1
+  local user=$2
+
+  scp $tarball $user@oilshell.org:tmp/
+}
+
+sync-tmp() {
+  local user=$1
+  local dest=${2:-_tmp/candidates}
+  mkdir -p $dest
+  rsync --archive --verbose $user@oilshell.org:tmp/ $dest
 }
 
 "$@"
