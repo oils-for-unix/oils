@@ -58,7 +58,7 @@ audit-git() {
 
 readonly COMPLETION_FILES=($BASH_COMP ../bash-completion/completions/*)
 
-# EVERY plugin seems ot use the _init_completion function.  We can do this
+# EVERY plugin seems to use the _init_completion function.  We can do this
 # ourselves!
 audit-plugin-init() {
   ls ../bash-completion/completions/* | wc -l
@@ -115,56 +115,7 @@ audit-plugin-funcs() {
   # What's the difference between these two?
   grep --color -w -- '_expand' "${COMPLETION_FILES[@]}"
   grep --color -w -- '_tilde' "${COMPLETION_FILES[@]}"
-
-  # Uses _quote_readline_by_ref, which uses printf -v.  Although printf -v
-  # isn't really a big problem.
-  # Hm this is used a lot.
-  #grep --color -w -- '_filedir' "${COMPLETION_FILES[@]}"
-
-  # Example of where _command is used:
-  #   find -exec, find -execdir
-  #   sftp -S takes a program
-  
-  # Example of where _command_offset is used:
-  #   sudo
-  #   strace
-  #   They try to skip the flags first?
-  #
-  # NOTES:
-  # - sudo s<TAB> works in bash/osh
-  # - find -exec e<TAB> does NOT work in bash or osh.  It DOES work in zsh!
-  # - nslookup -<TAB> works in bash and osh, except it seems to require 2 tabs?  Is
-  #   that because of _RetryCompletion?
-  #   - yes xz -<TAB> has the same issue
-  #
-  # BUGS
-  # - ssh fails with OSH error -- needs a patch
-  # - echo fr  # _filedir completion fails
-
-  # other functions you could replace:
-  # _get_comp_words_by_ref -- this has local "${upvars[@]}"
-  #   this is trivial, there is only one usage in _command_offset
-  #   just return 'cur', which is COMP_WORDS[-1]?
-  # _get_cword_at_cursor_by_ref -- this has local "$2"
-  #   this can be DELETED once we implement _get_comp_words_by_ref
-  # __reassemble_comp_words_by_ref -- count_words uses it
-  #   _get_cword and _count_args call this
-  #   returns 'words' and 'cword'
-  #
-  # rename to
-  # _completion_get_words cur
-  # _completion_reassemble
-  #
-  # So basically these are all wrappers around the same logic in _init_completion
-  #
-  # So we only need to implement 2 things.  Make oracles for them?  I think
-  # they should be easy to implement.
 }
-
-# NOTE: there are a number of associative arrays in completion scripts.
-# e.g. localectl
-#        local -A VERBS=(
-#               [STANDALONE]='status list-locales list-keymaps'
 
 audit-bashcomp() {
   local path=$BASH_COMP
@@ -201,11 +152,11 @@ osh-trace() {
   # $FUNCNAME displays the whole stack in osh (unlike bash), but ${FUNCNAME[0]}
   # displays the top.
 
-	# NOTE: env -i disables $TERM, which breaks some things.
+  # NOTE: env -i disables $TERM, which breaks some things.
   #env -i 
 
-	OSH_CRASH_DUMP_DIR=_tmp \
-	OSH_HIJACK_SHEBANG=bin/osh \
+  OSH_CRASH_DUMP_DIR=_tmp \
+  OSH_HIJACK_SHEBANG=bin/osh \
     PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
     bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
