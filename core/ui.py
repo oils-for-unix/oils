@@ -13,6 +13,7 @@ from __future__ import print_function
 import posix
 import pwd
 import sys
+from pylib import os_path
 
 from asdl import const
 from asdl import format as fmt
@@ -210,6 +211,13 @@ class PromptEvaluator(object):
           val = self.mem.GetVar('PWD')
           if val.tag == value_e.Str:
             r = val.s
+          else:
+            r = '<Error: PWD is not a string>'
+
+        elif char == 'W':
+          val = self.mem.GetVar('PWD')
+          if val.tag == value_e.Str:
+            r = os_path.basename(val.s)
           else:
             r = '<Error: PWD is not a string>'
 
