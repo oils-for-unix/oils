@@ -1,0 +1,22 @@
+-- To test how all ASDL construct generate typed code.
+
+module arith {
+  -- Simple Sum Type
+  op_id = Plus | Minus | Star
+
+  -- Compound Sum Type
+  cflow =
+    Break
+  | Continue
+  | Return(int status)
+
+  source_location = (string path, int line, int col, int length)
+
+  word = (string value)
+
+  bool_expr =
+    BoolBinary(word left, word right)
+  | BoolUnary(word child)
+  | LogicalNot(bool_expr b)
+  | LogicalBinary(op_id op, bool_expr left, bool_expr right)
+}

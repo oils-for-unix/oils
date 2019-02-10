@@ -168,6 +168,7 @@ minimal() {
 
   # Only for testing.
   asdl/run.sh gen-demo-asdl
+  asdl/run.sh gen-typed-arith-asdl
 
   pylibc
 }
@@ -175,7 +176,6 @@ minimal() {
 # Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
   minimal
-  build/codegen.sh
   fastlex
 }
 
