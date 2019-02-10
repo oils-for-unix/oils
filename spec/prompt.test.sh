@@ -157,3 +157,11 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
+
+#### \W is basename of working dir
+PS1='\W '
+test "${PS1@P}" = "$(basename $PWD) "
+echo status=$?
+## STDOUT:
+status=0
+## END
