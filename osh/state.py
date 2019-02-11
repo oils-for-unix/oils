@@ -19,6 +19,8 @@ from core.meta import syntax_asdl, runtime_asdl, Id
 from frontend import args
 from osh import split
 
+import libc
+
 lhs_expr = syntax_asdl.lhs_expr
 
 part_value_e = runtime_asdl.part_value_e
@@ -512,6 +514,8 @@ class Mem(object):
     # NOTE: Should we put these in a namespace for Oil?
     SetGlobalString(self, 'UID', str(posix.getuid()))
     SetGlobalString(self, 'EUID', str(posix.geteuid()))
+
+    SetGlobalString(self, 'HOSTNAME', str(libc.gethostname()))
 
     # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
     # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
