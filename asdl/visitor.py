@@ -19,7 +19,7 @@ class AsdlVisitor:
     self.f = f
 
   def Emit(self, s, depth, reflow=True):
-    for line in FormatLines(s, depth):
+    for line in FormatLines(s, depth, reflow=reflow):
       self.f.write(line)
 
   def VisitModule(self, mod):

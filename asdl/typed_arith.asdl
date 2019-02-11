@@ -1,0 +1,13 @@
+module arith {
+
+  arith_expr =
+    Const(int i)  -- 
+  | ArithVar(string name)  -- eval variable 
+  | ArithUnary(string op, arith_expr a)
+  | ArithBinary(string op, arith_expr left, arith_expr right)
+  | FuncCall(string name, arith_expr* args)
+  | Index(arith_expr a, arith_expr index)
+    -- Using Python's style for now.  Bash uses length instead of end.
+  | Slice(arith_expr a, arith_expr? begin, arith_expr? end, arith_expr? stride)
+}
+

@@ -88,7 +88,7 @@ class CompoundType(_RuntimeType):
   """A product or Constructor instance.  Both have fields."""
   def __init__(self, fields):
     # List of (name, _RuntimeType) tuples.
-    # NOTE: This list may be mutated after its set.
+    # NOTE: This list may be mutated after initialization.
     self.fields = fields
 
   def __repr__(self):
@@ -103,9 +103,7 @@ class CompoundType(_RuntimeType):
       yield field_name, descriptor
 
   def LookupFieldType(self, field_name):
-    """
-    NOTE: Only used by py_meta.py.
-    """
+    """Get the type descriptor for a field."""
     for n, descriptor in self.fields:
       if n == field_name:
         return descriptor
