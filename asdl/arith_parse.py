@@ -7,7 +7,6 @@ from __future__ import print_function
 import sys
 
 from asdl import tdop
-from asdl.tdop import CompositeNode
 
 from _devbuild.gen import demo_asdl
 
@@ -16,12 +15,43 @@ op_id_e = demo_asdl.op_id_e
 
 
 #
+# Simple and Composite AST nodes
+#
+
+class Node(object):
+  def __init__(self, token):
+    """
+    Args:
+      type: token type (operator, etc.)
+      val: token val, only important for number and string
+    """
+    self.token = token
+
+  def __repr__(self):
+    return str(self.token.val)
+
+
+class CompositeNode(Node):
+  def __init__(self, token, children):
+    """
+    Args:
+      type: token type (operator, etc.)
+    """
+    Node.__init__(self, token)
+    self.children = children
+
+  def __repr__(self):
+    args = ''.join([" " + repr(c) for c in self.children])
+    return "(" + self.token.type + args + ")"
+
+
+#
 # Null Denotation -- token that takes nothing on the left
 #
 
 def NullConstant(p, token, bp):
   if token.type == 'number':
-    return arith_expr.Const(token.val)
+    return arith_expr.Const(int(token.val))
   # We have to wrap a string in some kind of variant.
   if token.type == 'name':
     return arith_expr.ArithVar(token.val)
