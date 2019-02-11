@@ -193,8 +193,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       else:
         type_str = f.type
-      #arg_types.append(type_str)
-      arg_types.append('Union[%s, None]' % type_str)
+
+      if f.seq:
+        arg_types.append('List[%s]' % type_str)
+      else:
+        # We allow initializing, so we need None.
+        # TODO: Change this?  I think it would make sense.  We can always use
+        # locals to initialize.
+        arg_types.append('Union[%s, None]' % type_str)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types),
               depth, reflow=False)

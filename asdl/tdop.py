@@ -4,9 +4,10 @@ tdop.py
 """
 
 import re
-from typing import Any
+from _devbuild.gen.typed_arith_asdl import arith_expr_t
 from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
 from _devbuild.gen.typed_arith_asdl import arith_expr__Const
+from typing import Dict
 from typing import List
 from typing import Union
 from typing import Callable
@@ -26,7 +27,7 @@ class ParseError(Exception):
 #
 
 def NullError(p, token, bp):
-  # type: (Parser, Any, int) -> NoReturn
+  # type: (Parser, Token, int) -> NoReturn
   raise ParseError("%s can't be used in prefix position" % token)
 
 
@@ -58,7 +59,7 @@ TOKEN_RE = re.compile("""
 """, re.VERBOSE)
 
 def Tokenize(s):
-  # type: (str) -> Iterator[Union[Iterator, Iterator[Any]]]
+  # type: (str) -> Iterator[Token]
   for item in TOKEN_RE.findall(s):
     if item[0]:
       typ = 'number'
@@ -81,7 +82,7 @@ def Tokenize(s):
 
 class Node(object):
   def __init__(self, token):
-    # type: (Any) -> None
+    # type: (Token) -> None
     """
     Args:
       type: token type (operator, etc.)
@@ -95,7 +96,7 @@ class Node(object):
 
 class CompositeNode(Node):
   def __init__(self,
-               token,  # type: Any
+               token,  # type: Token
                children,  # type: Union[List[arith_expr__ArithVar], List[arith_expr__Const]]
                ):
     # type: (...) -> None
@@ -144,8 +145,8 @@ class ParserSpec(object):
 
   def __init__(self):
     # type: () -> None
-    self.null_lookup = {}
-    self.left_lookup = {}
+    self.null_lookup = {}  # type: Dict[str, NullInfo]
+    self.left_lookup = {}  # type: Dict[str, LeftInfo]
 
   def Null(self, bp, nud, tokens):
     # type: (int, Callable, List[str]) -> None
@@ -204,7 +205,7 @@ class Parser(object):
     # type: (ParserSpec, Iterator) -> None
     self.spec = spec
     self.lexer = lexer  # iterable
-    self.token = None  # current token
+    self.token = Token('undefined', '')  # current token
 
   def AtToken(self, token_type):
     # type: (str) -> bool
@@ -228,7 +229,7 @@ class Parser(object):
     self.Next()
 
   def ParseUntil(self, rbp):
-    # type: (int) -> Union[arith_expr__ArithVar, arith_expr__Const]
+    # type: (int) -> arith_expr_t
     """
     Parse to the right, eating tokens until we encounter a token with binding
     power LESS THAN OR EQUAL TO rbp.
@@ -259,6 +260,6 @@ class Parser(object):
     return node
 
   def Parse(self):
-    # type: () -> Union[arith_expr__ArithBinary, arith_expr__FuncCall]
+    # type: () -> arith_expr_t
     self.Next()
     return self.ParseUntil(0)
