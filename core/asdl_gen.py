@@ -81,7 +81,7 @@ f.close()
 from asdl import const  # For const.NO_INTEGER
 from asdl import typed_runtime as runtime
 
-from typing import Union, List
+from typing import Optional, List
 
 """)
 

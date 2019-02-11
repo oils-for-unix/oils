@@ -6,18 +6,18 @@ from __future__ import print_function
 
 import sys
 
-from asdl import tdop
-from asdl.tdop import CompositeNode
-
 from _devbuild.gen import typed_arith_asdl
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
 from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
 from _devbuild.gen.typed_arith_asdl import arith_expr__Const
-from asdl.tdop import Parser
-from typing import Union
 from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
 from _devbuild.gen.typed_arith_asdl import arith_expr__Index
 from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
+
+from typing import List, Optional, Union
+
+from asdl import tdop
+from asdl.tdop import Parser
 from asdl.tdop import ParserSpec
 
 arith_expr = typed_arith_asdl.arith_expr
@@ -34,7 +34,7 @@ def NullConstant(p,  # type: Parser
                  ):
   # type: (...) -> arith_expr_t
   if token.type == 'number':
-    return arith_expr.Const(token.val)
+    return arith_expr.Const(int(token.val))
   # We have to wrap a string in some kind of variant.
   if token.type == 'name':
     return arith_expr.ArithVar(token.val)
@@ -122,7 +122,7 @@ def LeftIndex(p, token, left, unused_bp):
 
 def LeftTernary(p,  # type: Parser
                 token,  # type: Token
-                left,  # type: Union[arith_expr__ArithBinary, arith_expr__Const]
+                left,  # type: arith_expr_t
                 bp,  # type: int
                 ):
   # type: (...) -> arith_expr_t
@@ -135,7 +135,7 @@ def LeftTernary(p,  # type: Parser
 
 def LeftBinaryOp(p,  # type: Parser
                  token,  # type: Token
-                 left,  # type: Union[arith_expr__ArithBinary, arith_expr__Const, arith_expr__FuncCall]
+                 left,  # type: arith_expr_t
                  rbp,  # type: int
                  ):
   # type: (...) -> arith_expr__ArithBinary
@@ -145,7 +145,7 @@ def LeftBinaryOp(p,  # type: Parser
 
 def LeftAssign(p,  # type: Parser
                token,  # type: Token
-               left,  # type: arith_expr__ArithVar
+               left,  # type: arith_expr_t
                rbp,  # type: int
                ):
   # type: (...) -> arith_expr__ArithBinary
@@ -241,6 +241,7 @@ def MakeParser(s):
 
 
 def ParseShell(s, expected=None):
+  # type: (str, Optional[str]) -> arith_expr_t
   """Used by tests."""
   p = MakeParser(s)
   tree = p.Parse()
@@ -254,6 +255,7 @@ def ParseShell(s, expected=None):
 
 
 def main(argv):
+  # type: (List[str]) -> None
   try:
     s = argv[1]
   except IndexError:

@@ -4,14 +4,16 @@ from asdl import tdop
 from asdl import typed_arith_parse as arith_parse  # module under test
 
 from _devbuild.gen import typed_arith_asdl
-from typing import Callable
 from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
 from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
-from typing import Union
+from typing import Callable, Optional, Union
+
+Parser = arith_parse.Parser
+arith_expr_t = arith_parse.arith_expr_t
 
 
 def _assertParseError(make_parser, s, error_substring=''):
-  # type: (Callable, str, str) -> None
+  # type: (Callable[[str], Parser], str, str) -> None
   p = make_parser(s)
   try:
     node = p.Parse()
@@ -26,7 +28,7 @@ def _assertParseError(make_parser, s, error_substring=''):
 
 
 def TestArith(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   t_parse('1+2+3', '(+ (+ 1 2) 3)')
   t_parse('1+2*3', '(+ 1 (* 2 3))')
   t_parse('4*(2+3)', '(* 4 (+ 2 3))')
@@ -65,7 +67,7 @@ def TestArith(t_parse):
 
 
 def TestBitwise(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   t_parse("~1 | ~2", "(| (~ 1) (~ 2))")
   t_parse("x & y | a & b", "(| (& x y) (& a b))")
   t_parse("~x ^ y", "(^ (~ x) y)")
@@ -75,7 +77,7 @@ def TestBitwise(t_parse):
 
 
 def TestLogical(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   t_parse("a && b || c && d", "(|| (&& a b) (&& c d))")
   t_parse("!a && !b", "(&& (! a) (! b))")
   t_parse("a != b && c == d", "(&& (!= a b) (== c d))")
@@ -94,7 +96,7 @@ def TestLogical(t_parse):
 
 
 def TestUnary(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   t_parse("!x", "(! x)")
   t_parse("x--", "(post-- x)")
   t_parse("x[1]--", "(post-- (get x 1))")
@@ -118,19 +120,19 @@ def TestUnary(t_parse):
 
 
 def TestArrays(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   """Shared between shell, oil, and Python."""
   t_parse('x[1]', '(get x 1)')
   t_parse('x[a+b]', '(get x (+ a b))')
 
 
 def TestComma(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   t_parse('x=1,y=2,z=3', '(, (= x 1) (= y 2) (= z 3))')
 
 
 def TestFuncCalls(t_parse):
-  # type: (Callable) -> None
+  # type: (ParseFunc) -> None
   t_parse('x = y(2)*3 + y(4)*5', '(= x (+ (* (call y 2) 3) (* (call y 4) 5)))')
 
   t_parse('x(1,2)+y(3,4)', '(+ (call x 1 2) (call y 3 4))')
@@ -144,7 +146,7 @@ def TestFuncCalls(t_parse):
 
 
 def TestErrors(p):
-  # type: (Callable) -> None
+  # type: (Callable[[str], Parser]) -> None
   _assertParseError(p, '}')
   _assertParseError(p, ']')
 
@@ -171,44 +173,10 @@ def TestErrors(p):
   _assertParseError(p, '1 [ 2 ]', "can't be indexed")
 
 
-arith_expr_e = typed_arith_asdl.arith_expr_e
-#source_location = demo_asdl.source_location
-#op_id_e = demo_asdl.op_id_e
-
-class Visitor(object):
-  def __init__(self):
-    pass
-
-  # In Python, they do introspection on method names.
-  # method = 'visit_' + node.__class__.__name__
-  # I'm not going to bother, because I have ASDL!  I want the generic visitor.
-
-  def Visit(self, node):
-    raise NotImplementedError
-
-  # Like ast.NodeVisitor().generic_visit!
-  def VisitChildren(self, node):
-      #print dir(node)
-
-    # TODO: Use node.ASDL_TYPE.GetFields()
-    # Only compound children get visited?
-    print([name for name in dir(node) if not name.startswith('_')])
-    # Call self.Visit()!
-
-
-class PrettyPrinter(Visitor):
-
-  def Visit(self, node):
-    if node.tag == arith_expr_e.ArithUnary:
-      print('ArithUnary %s' % node.child)
-    else:
-      self.VisitChildren(node)
-
-
 def t_parse(s,  # type: str
-            expected=None,  # type: str
+            expected=None,  # type: Optional[str]
             ):
-  # type: (...) -> Union[arith_expr__ArithBinary, arith_expr__FuncCall]
+  # type: (...) -> arith_expr_t
   p = arith_parse.MakeParser(s)
   tree = p.Parse()
 
@@ -233,6 +201,10 @@ def main():
   TestFuncCalls(t_parse)
   TestComma(t_parse)
   TestErrors(p)
+
+
+# Type alias
+ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
 
 
 if __name__ == '__main__':

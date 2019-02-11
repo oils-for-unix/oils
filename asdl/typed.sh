@@ -33,8 +33,9 @@ typecheck() {
 
 check-arith() {
   local strict='--strict'
-  strict=''
-  PYTHONPATH=. typecheck $strict asdl/typed_arith_parse.py #asdl/tdop.py
+  #strict=''
+  PYTHONPATH=. typecheck $strict \
+    asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
 iter-arith() {
