@@ -10,6 +10,15 @@ from asdl import tdop
 from asdl.tdop import CompositeNode
 
 from _devbuild.gen import typed_arith_asdl
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
+from _devbuild.gen.typed_arith_asdl import arith_expr__Const
+from asdl.tdop import Parser
+from typing import Any
+from typing import Union
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
+from _devbuild.gen.typed_arith_asdl import arith_expr__Index
+from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
+from asdl.tdop import ParserSpec
 
 arith_expr = typed_arith_asdl.arith_expr
 
@@ -18,7 +27,11 @@ arith_expr = typed_arith_asdl.arith_expr
 # Null Denotation -- token that takes nothing on the left
 #
 
-def NullConstant(p, token, bp):
+def NullConstant(p,  # type: Parser
+                 token,  # type: Any
+                 bp,  # type: int
+                 ):
+  # type: (...) -> Union[arith_expr__ArithVar, arith_expr__Const]
   if token.type == 'number':
     return arith_expr.Const(token.val)
   # We have to wrap a string in some kind of variant.
@@ -28,7 +41,11 @@ def NullConstant(p, token, bp):
   raise AssertionError(token.type)
 
 
-def NullParen(p, token, bp):
+def NullParen(p,  # type: Parser
+              token,  # type: Any
+              bp,  # type: int
+              ):
+  # type: (...) -> Union[arith_expr__ArithBinary, CompositeNode]
   """ Arithmetic grouping """
   r = p.ParseUntil(bp)
   p.Eat(')')
@@ -36,6 +53,7 @@ def NullParen(p, token, bp):
 
 
 def NullPrefixOp(p, token, bp):
+  # type: (Parser, Any, int) -> CompositeNode
   """Prefix operator.
 
   Low precedence:  return, raise, etc.
@@ -49,6 +67,7 @@ def NullPrefixOp(p, token, bp):
 
 
 def NullIncDec(p, token, bp):
+  # type: (Parser, Any, int) -> CompositeNode
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
   if not isinstance(right, (arith_expr.ArithVar, arith_expr.Index)):
@@ -60,7 +79,12 @@ def NullIncDec(p, token, bp):
 # Left Denotation -- token that takes an expression on the left
 #
 
-def LeftIncDec(p, token, left, rbp):
+def LeftIncDec(p,  # type: Parser
+               token,  # type: Any
+               left,  # type: Union[arith_expr__ArithVar, arith_expr__Index]
+               rbp,  # type: int
+               ):
+  # type: (...) -> CompositeNode
   """ For i++ and i--
   """
   if not isinstance(left, (arith_expr.ArithVar, arith_expr.Index)):
@@ -70,6 +94,7 @@ def LeftIncDec(p, token, left, rbp):
 
 
 def LeftIndex(p, token, left, unused_bp):
+  # type: (Parser, Any, arith_expr__ArithVar, int) -> arith_expr__Index
   """ index f[x+1] """
   # f[x] or f[x][y]
   if not isinstance(left, arith_expr.ArithVar):
@@ -94,7 +119,12 @@ def LeftIndex(p, token, left, unused_bp):
     return arith_expr.Index(left, index)
 
 
-def LeftTernary(p, token, left, bp):
+def LeftTernary(p,  # type: Parser
+                token,  # type: Any
+                left,  # type: Union[arith_expr__ArithBinary, arith_expr__Const]
+                bp,  # type: int
+                ):
+  # type: (...) -> CompositeNode
   """ e.g. a > 1 ? x : y """
   true_expr = p.ParseUntil(bp)
   p.Eat(':')
@@ -103,12 +133,22 @@ def LeftTernary(p, token, left, bp):
   return CompositeNode(token, children)
 
 
-def LeftBinaryOp(p, token, left, rbp):
+def LeftBinaryOp(p,  # type: Parser
+                 token,  # type: Any
+                 left,  # type: Union[arith_expr__ArithBinary, arith_expr__Const, arith_expr__FuncCall]
+                 rbp,  # type: int
+                 ):
+  # type: (...) -> arith_expr__ArithBinary
   """ Normal binary operator like 1+2 or 2*3, etc. """
   return arith_expr.ArithBinary(token.val, left, p.ParseUntil(rbp))
 
 
-def LeftAssign(p, token, left, rbp):
+def LeftAssign(p,  # type: Parser
+               token,  # type: Any
+               left,  # type: arith_expr__ArithVar
+               rbp,  # type: int
+               ):
+  # type: (...) -> arith_expr__ArithBinary
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
   if not isinstance(left, (arith_expr.ArithVar, arith_expr.Index)):
@@ -120,6 +160,7 @@ def LeftAssign(p, token, left, rbp):
 COMMA_PREC = 1
 
 def LeftFuncCall(p, token, left, unused_bp):
+  # type: (Parser, Any, arith_expr__ArithVar, int) -> arith_expr__FuncCall
   """ Function call f(a, b). """
   args = []
   # f(x) or f[i](x)
@@ -138,6 +179,7 @@ def LeftFuncCall(p, token, left, unused_bp):
 
 
 def MakeShellParserSpec():
+  # type: () -> ParserSpec
   """
   Create a parser.
 
@@ -190,6 +232,7 @@ def MakeShellParserSpec():
 
 
 def MakeParser(s):
+  # type: (str) -> Parser
   """Used by tests."""
   spec = MakeShellParserSpec()
   lexer = tdop.Tokenize(s)

@@ -4,9 +4,14 @@ from asdl import tdop
 from asdl import typed_arith_parse as arith_parse  # module under test
 
 from _devbuild.gen import typed_arith_asdl
+from typing import Callable
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
+from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
+from typing import Union
 
 
 def _assertParseError(make_parser, s, error_substring=''):
+  # type: (Callable, str, str) -> None
   p = make_parser(s)
   try:
     node = p.Parse()
@@ -21,6 +26,7 @@ def _assertParseError(make_parser, s, error_substring=''):
 
 
 def TestArith(t_parse):
+  # type: (Callable) -> None
   t_parse('1+2+3', '(+ (+ 1 2) 3)')
   t_parse('1+2*3', '(+ 1 (* 2 3))')
   t_parse('4*(2+3)', '(* 4 (+ 2 3))')
@@ -59,6 +65,7 @@ def TestArith(t_parse):
 
 
 def TestBitwise(t_parse):
+  # type: (Callable) -> None
   t_parse("~1 | ~2", "(| (~ 1) (~ 2))")
   t_parse("x & y | a & b", "(| (& x y) (& a b))")
   t_parse("~x ^ y", "(^ (~ x) y)")
@@ -68,6 +75,7 @@ def TestBitwise(t_parse):
 
 
 def TestLogical(t_parse):
+  # type: (Callable) -> None
   t_parse("a && b || c && d", "(|| (&& a b) (&& c d))")
   t_parse("!a && !b", "(&& (! a) (! b))")
   t_parse("a != b && c == d", "(&& (!= a b) (== c d))")
@@ -86,6 +94,7 @@ def TestLogical(t_parse):
 
 
 def TestUnary(t_parse):
+  # type: (Callable) -> None
   t_parse("!x", "(! x)")
   t_parse("x--", "(post-- x)")
   t_parse("x[1]--", "(post-- (get x 1))")
@@ -109,16 +118,19 @@ def TestUnary(t_parse):
 
 
 def TestArrays(t_parse):
+  # type: (Callable) -> None
   """Shared between shell, oil, and Python."""
   t_parse('x[1]', '(get x 1)')
   t_parse('x[a+b]', '(get x (+ a b))')
 
 
 def TestComma(t_parse):
+  # type: (Callable) -> None
   t_parse('x=1,y=2,z=3', '(, (= x 1) (= y 2) (= z 3))')
 
 
 def TestFuncCalls(t_parse):
+  # type: (Callable) -> None
   t_parse('x = y(2)*3 + y(4)*5', '(= x (+ (* (call y 2) 3) (* (call y 4) 5)))')
 
   t_parse('x(1,2)+y(3,4)', '(+ (call x 1 2) (call y 3 4))')
@@ -132,6 +144,7 @@ def TestFuncCalls(t_parse):
 
 
 def TestErrors(p):
+  # type: (Callable) -> None
   _assertParseError(p, '}')
   _assertParseError(p, ']')
 
@@ -192,7 +205,10 @@ class PrettyPrinter(Visitor):
       self.VisitChildren(node)
 
 
-def t_parse(s, expected=None):
+def t_parse(s,  # type: str
+            expected=None,  # type: str
+            ):
+  # type: (...) -> Union[arith_expr__ArithBinary, arith_expr__FuncCall]
   p = arith_parse.MakeParser(s)
   tree = p.Parse()
 
@@ -206,6 +222,7 @@ def t_parse(s, expected=None):
 
 
 def main():
+  # type: () -> None
   p = arith_parse.MakeParser
 
   TestArith(t_parse)
