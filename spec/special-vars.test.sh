@@ -146,3 +146,14 @@ status=0
 ## N-I dash/mksh STDOUT:
 status=1
 ## END
+
+#### $HOSTNAME
+test "$HOSTNAME" = "$(hostname)"
+echo status=$?
+## STDOUT:
+status=0
+## END
+## N-I dash/mksh STDOUT:
+status=1
+## END
+

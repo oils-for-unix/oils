@@ -193,8 +193,17 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       else:
         type_str = f.type
-      #arg_types.append(type_str)
-      arg_types.append('Union[%s, None]' % type_str)
+
+      if f.seq:
+        # We set the default value to None because we don't want a mutable
+        # default.  TODO: get rid of this?
+        t = 'Optional[List[%s]]' % type_str
+        arg_types.append(t)
+      else:
+        # We allow initializing, so we need None.
+        # TODO: Change this?  I think it would make sense.  We can always use
+        # locals to initialize.
+        arg_types.append('Optional[%s]' % type_str)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types),
               depth, reflow=False)

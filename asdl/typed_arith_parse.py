@@ -6,21 +6,35 @@ from __future__ import print_function
 
 import sys
 
-from asdl import tdop
-from asdl.tdop import CompositeNode
-
 from _devbuild.gen import typed_arith_asdl
+from _devbuild.gen.typed_arith_asdl import arith_expr_t
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
+from _devbuild.gen.typed_arith_asdl import arith_expr__Const
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
+from _devbuild.gen.typed_arith_asdl import arith_expr__Index
+from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
+
+from typing import List, Optional, Union
+
+from asdl import tdop
+from asdl.tdop import Parser
+from asdl.tdop import ParserSpec
 
 arith_expr = typed_arith_asdl.arith_expr
+Token = tdop.Token
 
 
 #
 # Null Denotation -- token that takes nothing on the left
 #
 
-def NullConstant(p, token, bp):
+def NullConstant(p,  # type: Parser
+                 token,  # type: Token
+                 bp,  # type: int
+                 ):
+  # type: (...) -> arith_expr_t
   if token.type == 'number':
-    return arith_expr.Const(token.val)
+    return arith_expr.Const(int(token.val))
   # We have to wrap a string in some kind of variant.
   if token.type == 'name':
     return arith_expr.ArithVar(token.val)
@@ -28,7 +42,11 @@ def NullConstant(p, token, bp):
   raise AssertionError(token.type)
 
 
-def NullParen(p, token, bp):
+def NullParen(p,  # type: Parser
+              token,  # type: Token
+              bp,  # type: int
+              ):
+  # type: (...) -> arith_expr_t
   """ Arithmetic grouping """
   r = p.ParseUntil(bp)
   p.Eat(')')
@@ -36,6 +54,7 @@ def NullParen(p, token, bp):
 
 
 def NullPrefixOp(p, token, bp):
+  # type: (Parser, Token, int) -> arith_expr_t
   """Prefix operator.
 
   Low precedence:  return, raise, etc.
@@ -45,31 +64,38 @@ def NullPrefixOp(p, token, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   r = p.ParseUntil(bp)
-  return CompositeNode(token, [r])
+  return arith_expr.ArithUnary(token.val, r)
 
 
 def NullIncDec(p, token, bp):
+  # type: (Parser, Token, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
   if not isinstance(right, (arith_expr.ArithVar, arith_expr.Index)):
-    raise tdop.ParseError("Can't assign to %r (%s)" % (right, right.token))
-  return CompositeNode(token, [right])
+    raise tdop.ParseError("Can't assign to %r" % right)
+  return arith_expr.ArithUnary(token.val, right)
 
 
 #
 # Left Denotation -- token that takes an expression on the left
 #
 
-def LeftIncDec(p, token, left, rbp):
+def LeftIncDec(p,  # type: Parser
+               token,  # type: Token
+               left,  # type: arith_expr_t
+               rbp,  # type: int
+               ):
+  # type: (...) -> arith_expr_t
   """ For i++ and i--
   """
   if not isinstance(left, (arith_expr.ArithVar, arith_expr.Index)):
     raise tdop.ParseError("Can't assign to %r" % left)
   token.type = 'post' + token.type
-  return CompositeNode(token, [left])
+  return arith_expr.ArithUnary(token.val, left)
 
 
 def LeftIndex(p, token, left, unused_bp):
+  # type: (Parser, Token, arith_expr_t, int) -> arith_expr_t
   """ index f[x+1] """
   # f[x] or f[x][y]
   if not isinstance(left, arith_expr.ArithVar):
@@ -77,7 +103,7 @@ def LeftIndex(p, token, left, unused_bp):
   index = p.ParseUntil(0)
   if p.AtToken(':'):
     p.Next()
-    end = p.ParseUntil(0)
+    end = p.ParseUntil(0)  # type: Union[arith_expr_t, None]
   else:
     end = None
 
@@ -94,21 +120,35 @@ def LeftIndex(p, token, left, unused_bp):
     return arith_expr.Index(left, index)
 
 
-def LeftTernary(p, token, left, bp):
+def LeftTernary(p,  # type: Parser
+                token,  # type: Token
+                left,  # type: arith_expr_t
+                bp,  # type: int
+                ):
+  # type: (...) -> arith_expr_t
   """ e.g. a > 1 ? x : y """
   true_expr = p.ParseUntil(bp)
   p.Eat(':')
   false_expr = p.ParseUntil(bp)
-  children = [left, true_expr, false_expr]
-  return CompositeNode(token, children)
+  return arith_expr.Ternary(left, true_expr, false_expr)
 
 
-def LeftBinaryOp(p, token, left, rbp):
+def LeftBinaryOp(p,  # type: Parser
+                 token,  # type: Token
+                 left,  # type: arith_expr_t
+                 rbp,  # type: int
+                 ):
+  # type: (...) -> arith_expr__ArithBinary
   """ Normal binary operator like 1+2 or 2*3, etc. """
   return arith_expr.ArithBinary(token.val, left, p.ParseUntil(rbp))
 
 
-def LeftAssign(p, token, left, rbp):
+def LeftAssign(p,  # type: Parser
+               token,  # type: Token
+               left,  # type: arith_expr_t
+               rbp,  # type: int
+               ):
+  # type: (...) -> arith_expr__ArithBinary
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
   if not isinstance(left, (arith_expr.ArithVar, arith_expr.Index)):
@@ -120,6 +160,7 @@ def LeftAssign(p, token, left, rbp):
 COMMA_PREC = 1
 
 def LeftFuncCall(p, token, left, unused_bp):
+  # type: (Parser, Token, arith_expr_t, int) -> arith_expr__FuncCall
   """ Function call f(a, b). """
   args = []
   # f(x) or f[i](x)
@@ -138,6 +179,7 @@ def LeftFuncCall(p, token, left, unused_bp):
 
 
 def MakeShellParserSpec():
+  # type: () -> ParserSpec
   """
   Create a parser.
 
@@ -190,6 +232,7 @@ def MakeShellParserSpec():
 
 
 def MakeParser(s):
+  # type: (str) -> Parser
   """Used by tests."""
   spec = MakeShellParserSpec()
   lexer = tdop.Tokenize(s)
@@ -198,6 +241,7 @@ def MakeParser(s):
 
 
 def ParseShell(s, expected=None):
+  # type: (str, Optional[str]) -> arith_expr_t
   """Used by tests."""
   p = MakeParser(s)
   tree = p.Parse()
@@ -211,6 +255,7 @@ def ParseShell(s, expected=None):
 
 
 def main(argv):
+  # type: (List[str]) -> None
   try:
     s = argv[1]
   except IndexError:

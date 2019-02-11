@@ -4,6 +4,18 @@ tdop.py
 """
 
 import re
+from _devbuild.gen.typed_arith_asdl import arith_expr_t
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
+from _devbuild.gen.typed_arith_asdl import arith_expr__Const
+from typing import Dict
+from typing import List
+from typing import Callable
+from typing import Optional
+from typing import Iterator
+from typing import Tuple
+from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
+from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
+from mypy_extensions import NoReturn
 
 
 class ParseError(Exception):
@@ -15,10 +27,12 @@ class ParseError(Exception):
 #
 
 def NullError(p, token, bp):
+  # type: (Parser, Token, int) -> NoReturn
   raise ParseError("%s can't be used in prefix position" % token)
 
 
 def LeftError(p, token, left, rbp):
+  # type: (Parser, Token, arith_expr_t, int) -> NoReturn
   # Hm is this not called because of binding power?
   raise ParseError("%s can't be used in infix position" % token)
 
@@ -27,12 +41,14 @@ def LeftError(p, token, left, rbp):
 # Input
 #
 
-class Token:
+class Token(object):
   def __init__(self, type, val, loc=None):
+    # type: (str, str, Optional[Tuple[int, int]]) -> None
     self.type = type
     self.val = val
 
   def __repr__(self):
+    # type: () -> str
     return '<Token %s %s>' % (self.type, self.val)
 
 
@@ -46,10 +62,11 @@ TOKEN_RE = re.compile("""
 """, re.VERBOSE)
 
 def Tokenize(s):
+  # type: (str) -> Iterator[Token]
   for item in TOKEN_RE.findall(s):
     if item[0]:
       typ = 'number'
-      val = int(item[0])
+      val = item[0]
     elif item[1]:
       typ = 'name'
       val = item[1]
@@ -63,37 +80,6 @@ def Tokenize(s):
 
 
 #
-# Simple and Composite AST nodes
-#
-
-class Node(object):
-  def __init__(self, token):
-    """
-    Args:
-      type: token type (operator, etc.)
-      val: token val, only important for number and string
-    """
-    self.token = token
-
-  def __repr__(self):
-    return str(self.token.val)
-
-
-class CompositeNode(Node):
-  def __init__(self, token, children):
-    """
-    Args:
-      type: token type (operator, etc.)
-    """
-    Node.__init__(self, token)
-    self.children = children
-
-  def __repr__(self):
-    args = ''.join([" " + repr(c) for c in self.children])
-    return "(" + self.token.type + args + ")"
-
-
-#
 # Parser definition
 #
 
@@ -103,6 +89,7 @@ class LeftInfo(object):
   In C++ this should be a big array.
   """
   def __init__(self, led=None, lbp=0, rbp=0):
+    # type: (Optional[LeftFunc], int, int) -> None
     self.led = led or LeftError
     self.lbp = lbp
     self.rbp = rbp
@@ -114,6 +101,7 @@ class NullInfo(object):
   In C++ this should be a big array.
   """
   def __init__(self, nud=None, bp=0):
+    # type: (Optional[NullFunc], int) -> None
     self.nud = nud or NullError
     self.bp = bp
 
@@ -122,10 +110,12 @@ class ParserSpec(object):
   """Specification for a TDOP parser."""
 
   def __init__(self):
-    self.null_lookup = {}
-    self.left_lookup = {}
+    # type: () -> None
+    self.null_lookup = {}  # type: Dict[str, NullInfo]
+    self.left_lookup = {}  # type: Dict[str, LeftInfo]
 
   def Null(self, bp, nud, tokens):
+    # type: (int, NullFunc, List[str]) -> None
     """Register a token that doesn't take anything on the left.
 
     Examples: constant, prefix operator, error.
@@ -136,20 +126,24 @@ class ParserSpec(object):
         self.left_lookup[token] = LeftInfo()  # error
 
   def _RegisterLed(self, lbp, rbp, led, tokens):
+    # type: (int, int, LeftFunc, List[str]) -> None
     for token in tokens:
       if token not in self.null_lookup:
         self.null_lookup[token] = NullInfo(NullError)
       self.left_lookup[token] = LeftInfo(lbp=lbp, rbp=rbp, led=led)
 
   def Left(self, bp, led, tokens):
+    # type: (int, LeftFunc, List[str]) -> None
     """Register a token that takes an expression on the left."""
     self._RegisterLed(bp, bp, led, tokens)
 
   def LeftRightAssoc(self, bp, led, tokens):
+    # type: (int, LeftFunc, List[str]) -> None
     """Register a right associative operator."""
     self._RegisterLed(bp, bp-1, led, tokens)
 
   def LookupNull(self, token):
+    # type: (str) -> NullInfo
     """Get the parsing function and precedence for a null position token."""
     try:
       nud = self.null_lookup[token]
@@ -158,6 +152,7 @@ class ParserSpec(object):
     return nud
 
   def LookupLeft(self, token):
+    # type: (str) -> LeftInfo
     """Get the parsing function and precedence for a left position token."""
     try:
       led = self.left_lookup[token]
@@ -173,15 +168,18 @@ class Parser(object):
   """Recursive TDOP parser."""
 
   def __init__(self, spec, lexer):
+    # type: (ParserSpec, Iterator[Token]) -> None
     self.spec = spec
     self.lexer = lexer  # iterable
-    self.token = None  # current token
+    self.token = Token('undefined', '')  # current token
 
   def AtToken(self, token_type):
+    # type: (str) -> bool
     """Test if we are looking at a token."""
     return self.token.type == token_type
 
   def Next(self):
+    # type: () -> None
     """Move to the next token."""
     try:
       t = self.lexer.next()
@@ -190,12 +188,14 @@ class Parser(object):
     self.token = t
 
   def Eat(self, val):
+    # type: (str) -> None
     """Assert the value of the current token, then move to the next token."""
     if val and not self.AtToken(val):
       raise ParseError('expected %s, got %s' % (val, self.token))
     self.Next()
 
   def ParseUntil(self, rbp):
+    # type: (int) -> arith_expr_t
     """
     Parse to the right, eating tokens until we encounter a token with binding
     power LESS THAN OR EQUAL TO rbp.
@@ -226,5 +226,10 @@ class Parser(object):
     return node
 
   def Parse(self):
+    # type: () -> arith_expr_t
     self.Next()
     return self.ParseUntil(0)
+
+
+NullFunc = Callable[[Parser, Token, int], arith_expr_t]
+LeftFunc = Callable[[Parser, Token, arith_expr_t, int], arith_expr_t]
