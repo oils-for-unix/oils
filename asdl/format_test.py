@@ -27,7 +27,7 @@ class FormatTest(unittest.TestCase):
     f = cStringIO.StringIO()
     ast_f = fmt.TextOutput(f)
 
-    tree = fmt.MakeTree(node)
+    tree = fmt.MakePrettyTree(node)
     #print(tree)
 
     fmt.PrintTree(tree, ast_f)

@@ -253,4 +253,20 @@ compare-opts() {
   opt-stats
 }
 
+regress() {
+  bin/osh -n configure > _tmp/configure-tree-abbrev.txt
+  bin/osh --ast-format text -n configure > _tmp/configure-tree-full.txt
+  { wc -l _tmp/configure*.txt
+    md5sum _tmp/configure*.txt
+  } #| tee _tmp/gold.txt
+}
+
+# To check if the lines go over 100 characters.
+line-length-hist() {
+  for f in _tmp/configure*.txt; do
+    echo $f
+    awk '{ print length($0) } ' $f | sort -n | uniq -c | tail 
+  done
+}
+
 "$@"

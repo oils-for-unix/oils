@@ -340,7 +340,7 @@ def PrintAst(nodes, opts):
       raise AssertionError
     abbrev_hook = (
         ast_lib.AbbreviateNodes if 'abbrev-' in opts.ast_format else None)
-    tree = fmt.MakeTree(node, abbrev_hook=abbrev_hook)
+    tree = fmt.MakePrettyTree(node, abbrev_hook=abbrev_hook)
     ast_f.FileHeader()
     fmt.PrintTree(tree, ast_f)
     ast_f.FileFooter()

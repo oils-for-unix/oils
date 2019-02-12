@@ -38,10 +38,6 @@ class GenClassesVisitor(visitor.AsdlVisitor):
     field_names = [f.name for f in desc.fields]
 
     quoted_fields = repr(tuple(field_names))
-    # NOTE: FIELDS is a duplicate of __slots__, used for pretty printing and
-    # oheap serialization.  TODO: measure the effect of __slots__, and then get
-    # rid of FIELDS?  Or you can just make it an alias.
-    # FIELDS = self.__slots__.
     self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
 
@@ -153,11 +149,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     field_names = [f.name for f in desc.fields]
 
     quoted_fields = repr(tuple(field_names))
-    # NOTE: FIELDS is a duplicate of __slots__, used for pretty printing and
-    # oheap serialization.  TODO: measure the effect of __slots__, and then get
-    # rid of FIELDS?  Or you can just make it an alias.
-    # FIELDS = self.__slots__.
-    #self.Emit('  ASDL_TYPE = TYPE_LOOKUP[%r]' % name, depth)
     self.Emit('  __slots__ = %s' % quoted_fields, depth)
 
     self.Emit('', depth)
@@ -177,32 +168,28 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     arg_types = []
     for f in desc.fields:
-      # TODO: handle more types
-
-      #log('field %s :: %s', f.name, f.type)
-
-      # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
       field_desc = self.type_lookup.get(f.type)
 
-      if f.type == 'string':
-        type_str = 'str'
-
-      # note: product type doesn't have _t suffix
-      elif isinstance(field_desc, runtime.SumType):
+      # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
+      # NOTE: product type doesn't have _t suffix
+      if isinstance(field_desc, runtime.SumType):
         type_str = '%s_t' % f.type
+
+      elif f.type == 'string':
+        type_str = 'str'
 
       else:
         type_str = f.type
 
+      # We allow partially initializing, so both of these are Optional.
+      # TODO: Change this?  I think it would make sense.  We can always use
+      # locals to initialize.
+      # NOTE: It's complicated in the List[] case, because we don't want a
+      # mutable default arg?  That is a Python pitfall
       if f.seq:
-        # We set the default value to None because we don't want a mutable
-        # default.  TODO: get rid of this?
         t = 'Optional[List[%s]]' % type_str
         arg_types.append(t)
       else:
-        # We allow initializing, so we need None.
-        # TODO: Change this?  I think it would make sense.  We can always use
-        # locals to initialize.
         arg_types.append('Optional[%s]' % type_str)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types),
@@ -245,7 +232,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('', depth)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
-    # Three types:
+    # We emit THREE Python types for each runtime.CompoundType:
     #
     # 1. enum for tag (cflow_e)
     # 2. base class for inheritance (cflow_t)

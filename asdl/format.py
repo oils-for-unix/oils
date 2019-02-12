@@ -241,7 +241,7 @@ class _PrettyLeaf(_PrettyBase):
     return '<_PrettyLeaf %s %s>' % (self.s, self.str_type)
 
 
-def _MakePrettySubtree(field_val, desc, abbrev_hook, omit_empty=True):
+def _MakePrettySubtree(field_val, desc, abbrev_hook):
   """Given a field value and type descriptor, return a _PrettyBase."""
 
   if isinstance(desc, runtime.BoolType):
@@ -260,28 +260,26 @@ def _MakePrettySubtree(field_val, desc, abbrev_hook, omit_empty=True):
     if desc.is_simple:
       out_val = _PrettyLeaf(field_val.name, _SIMPLE_SUM)
     else:
-      out_val = MakeTree(field_val, abbrev_hook, omit_empty=omit_empty)
+      out_val = MakePrettyTree(field_val, abbrev_hook)
 
   elif isinstance(desc, runtime.CompoundType):
-    out_val = MakeTree(field_val, abbrev_hook, omit_empty=omit_empty)
+    out_val = MakePrettyTree(field_val, abbrev_hook)
 
   elif isinstance(desc, runtime.ArrayType):
     out_val = []
     obj_list = field_val
     for item in obj_list:
-      t = _MakePrettySubtree(item, desc.desc, abbrev_hook,
-                             omit_empty=omit_empty)
+      t = _MakePrettySubtree(item, desc.desc, abbrev_hook)
       out_val.append(t)
 
-    if omit_empty and not obj_list:
+    if not obj_list:  # don't display empty lists
       out_val = None
 
   elif isinstance(desc, runtime.MaybeType):
     if field_val is None:
       out_val = None
     else:
-      out_val = _MakePrettySubtree(field_val, desc.desc, abbrev_hook,
-                                   omit_empty=omit_empty)
+      out_val = _MakePrettySubtree(field_val, desc.desc, abbrev_hook)
 
   elif isinstance(desc, runtime.UserType):  # e.g. Id
     out_val = _PrettyLeaf(repr(field_val), _OTHER_TYPE)
@@ -292,26 +290,27 @@ def _MakePrettySubtree(field_val, desc, abbrev_hook, omit_empty=True):
   return out_val
 
 
-def MakeTree(obj, abbrev_hook=None, omit_empty=True):
+def MakePrettyTree(obj, abbrev_hook=None):
   """The first step of printing: create a homogeneous tree.
 
   Args:
     obj: runtime.CompoundObj
     abbrev_hook: function to mutate output _PrettyNode
-    omit_empty: Whether to omit empty lists
   Returns:
     _PrettyBase
   """
   assert isinstance(obj, runtime.CompoundObj), obj
 
-  # These lines can be possibly COMBINED all into one.  () can replace
-  # indentation?
   class_name = obj.__class__.__name__
   # Hack for constructor names.  We don't know if it is a Product or
   # Constructor here, but product names won't contain '__'.
   out_node = _PrettyNode(class_name.replace('__', '.'))
 
   for field_name, desc in obj.ASDL_TYPE.GetFields():
+    # Always omit spids when abbreviating
+    if field_name == 'spids' and abbrev_hook:
+      continue
+
     try:
       field_val = getattr(obj, field_name)
     except AttributeError:
@@ -320,8 +319,7 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
       raise AssertionError(
           '%s is missing field %r' % (obj.__class__, field_name))
 
-    out_val = _MakePrettySubtree(field_val, desc, abbrev_hook,
-                                 omit_empty=omit_empty)
+    out_val = _MakePrettySubtree(field_val, desc, abbrev_hook)
 
     if out_val is not None:
       out_node.fields.append((field_name, out_val))
@@ -468,6 +466,9 @@ def PrintTree(node, f, indent=0, max_col=100):
     node: homogeneous tree node
     f: ColorOutput instance.
     max_col: don't print past this column number on ANY line
+      NOTE: See asdl/run.sh line-length-hist for a test of this.  It's
+      approximate.
+      TODO: Use the terminal width.
   """
   ind = ' ' * indent
 
@@ -478,10 +479,7 @@ def PrintTree(node, f, indent=0, max_col=100):
     f.WriteRaw(single_f.GetRaw())
     return
 
-  if isinstance(node, str):
-    f.write(ind + pretty.Str(node))
-
-  elif isinstance(node, _PrettyLeaf):
+  if isinstance(node, _PrettyLeaf):
     f.PushColor(node.str_type)
     f.write(pretty.Str(node.s))
     f.PopColor()
@@ -535,10 +533,7 @@ def _TrySingleLine(node, f, max_chars):
     ok: whether it fit on the line of the given size.
       If False, you can't use the value of f.
   """
-  if isinstance(node, str):
-    f.write(pretty.Str(node))
-
-  elif isinstance(node, _PrettyLeaf):
+  if isinstance(node, _PrettyLeaf):
     f.PushColor(node.str_type)
     f.write(pretty.Str(node.s))
     f.PopColor()

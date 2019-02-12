@@ -187,10 +187,7 @@ class Obj(object):
 
 
 class SimpleObj(Obj):
-  """An enum value.
-
-  Other simple objects: int, str, maybe later a float.
-  """
+  """Base type of simple sum types."""
   def __init__(self, enum_id, name):
     self.enum_id = enum_id
     self.name = name
@@ -215,17 +212,29 @@ class SimpleObj(Obj):
 NUM_TYPE_CHECKS = 0
 
 class CompoundObj(Obj):
-  # TODO: Remove tag?
+  """Base type of product types and compound sum types.
+
+  Its ASDL_TYPE attribute should be runtime.CompoundType().
+  """
+  # TODO: Remove tag?  Or make it 0 by default for type checking.
   # The tag is always set for constructor types, which are subclasses of sum
   # types.  Never set for product types.
   tag = None
 
-  # NOTE: SimpleObj could share this.
+  def PrettyTree(self):
+    """Return a homogeneous tree for pretty printing.
+
+    By default, we use ASDL reflection, using ASDL_TYPE.GetFields().  But
+    generated code can override to avoid this.
+    """
+    return fmt.MakePrettyTree(self)  # No abbreviation
+
   def __repr__(self):
     # TODO: Break this circular dependency.
     from asdl import format as fmt
+
     ast_f = fmt.TextOutput(util.Buffer())  # No color by default.
-    tree = fmt.MakeTree(self)
+    tree = self.PrettyTree()
     fmt.PrintTree(tree, ast_f)
     s, _ = ast_f.GetRaw()
     return s

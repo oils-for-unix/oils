@@ -10,17 +10,17 @@ from core.meta import Id
 
 
 _PrettyLeaf = fmt._PrettyLeaf
-MakeTree = fmt.MakeTree
 _STRING_LITERAL = fmt._STRING_LITERAL
 _OTHER_TYPE = fmt._OTHER_TYPE
 
 
 def _AbbreviateToken(token, out):
   if token.id != Id.Lit_Chars:
-    c = _PrettyLeaf(str(token.id), _OTHER_TYPE)
-    out.append(c)
+    n1 = _PrettyLeaf(str(token.id), _OTHER_TYPE)
+    out.append(n1)
 
-  out.append(_PrettyLeaf(token.val, _STRING_LITERAL))
+  n2 = _PrettyLeaf(token.val, _STRING_LITERAL)
+  out.append(n2)
 
 
 def _GetFieldNames(node):
@@ -32,7 +32,7 @@ def AbbreviateNodes(obj, node):
   """
   Args:
     obj: py_meta.Obj to print
-    node: homogeneous node after MakeTree prints it; can be mutated
+    node: homogeneous node after MakePrettyTree prints it; can be mutated
   """
   if node.node_type == 'token':
     node.abbrev = True
@@ -67,7 +67,7 @@ def AbbreviateNodes(obj, node):
     node.node_type = 'DQ'
 
     for part in obj.parts:
-      node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
+      node.unnamed_fields.append(fmt.MakePrettyTree(part, AbbreviateNodes))
 
   # Only abbreviate 'foo', not $'foo\n'
   elif (node.node_type == 'word_part.SingleQuotedPart' and
@@ -76,7 +76,7 @@ def AbbreviateNodes(obj, node):
     node.node_type = 'SQ'
 
     for token in obj.tokens:
-      node.unnamed_fields.append(MakeTree(token, AbbreviateNodes))
+      node.unnamed_fields.append(fmt.MakePrettyTree(token, AbbreviateNodes))
 
   elif node.node_type == 'word.CompoundWord':
     node.abbrev = True
@@ -86,7 +86,7 @@ def AbbreviateNodes(obj, node):
     node.right = '}'
 
     for part in obj.parts:
-      node.unnamed_fields.append(MakeTree(part, AbbreviateNodes))
+      node.unnamed_fields.append(fmt.MakePrettyTree(part, AbbreviateNodes))
 
   elif node.node_type == 'command.SimpleCommand':
     if _GetFieldNames(node) != ['words']:
@@ -96,11 +96,11 @@ def AbbreviateNodes(obj, node):
     node.node_type = 'C'
 
     for w in obj.words:
-      node.unnamed_fields.append(MakeTree(w, AbbreviateNodes))
+      node.unnamed_fields.append(fmt.MakePrettyTree(w, AbbreviateNodes))
 
 
 def PrettyPrint(node, f=sys.stdout):
   ast_f = fmt.DetectConsoleOutput(f)
-  tree = fmt.MakeTree(node, AbbreviateNodes)
+  tree = fmt.MakePrettyTree(node, AbbreviateNodes)
   fmt.PrintTree(tree, ast_f)
   f.write('\n')
