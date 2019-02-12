@@ -51,6 +51,10 @@ class CompoundObj(Obj):
     # type: () -> _PrettyBase
     raise NotImplementedError
 
+  def AbbreviatedTree(self):
+    # type: () -> _PrettyBase
+    raise NotImplementedError
+
   def __repr__(self):
     # TODO: Break this circular dependency.
     from asdl import format as fmt

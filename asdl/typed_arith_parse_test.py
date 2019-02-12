@@ -184,7 +184,14 @@ def t_parse(s,  # type: str
 
   print(s)
   print()
-  print(tree)
+  #print(tree)
+
+  import sys
+  from asdl import format as fmt
+
+  ast_f = fmt.DetectConsoleOutput(sys.stdout)
+  p_node = tree.AbbreviatedTree()
+  fmt.PrintTree(p_node, ast_f)
 
   #v = PrettyPrinter()
   #v.Visit(tree)
@@ -195,7 +202,8 @@ def t_parse(s,  # type: str
 
 def main():
   # TODO: Enable once we switch to MyPy
-  return
+  if 1:
+    return
 
   # type: () -> None
   p = typed_arith_parse.MakeParser

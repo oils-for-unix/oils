@@ -81,7 +81,7 @@ gen-typed-demo-asdl() {
 
 gen-typed-arith-asdl() {
   local out=_devbuild/gen/typed_arith_asdl.py
-  core/asdl_gen.py mypy asdl/typed_arith.asdl > $out
+  core/asdl_gen.py mypy asdl/typed_arith.asdl 'asdl.typed_arith_abbrev' > $out
   wc -l $out
 }
 

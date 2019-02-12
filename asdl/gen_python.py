@@ -121,9 +121,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   TODO: Remove the code above.  This should substitute for it.
   """
-  def __init__(self, f):
+  def __init__(self, f, type_lookup, abbrev_mod):
     visitor.AsdlVisitor.__init__(self, f)
-    self.type_lookup = None
+    self.type_lookup = type_lookup
+    self.abbrev_mod = abbrev_mod
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -139,7 +140,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit(attr, depth)
     self.Emit('', depth)
 
-  def _CodeSnippet(self, var_name, desc):
+  def _CodeSnippet(self, method_name, var_name, desc):
     none_guard = False
     if isinstance(desc, runtime.BoolType):
       code_str = "PrettyLeaf('T' if %s else 'F', Color_OtherConst)" % var_name
@@ -160,11 +161,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       if desc.is_simple:
         code_str = 'PrettyLeaf(%s.name, Color_TypeName)' % var_name
       else:
-        code_str = '%s.PrettyTree()' % var_name
+        code_str = '%s.%s()' % (var_name, method_name)
         none_guard = True
 
     elif isinstance(desc, runtime.CompoundType):
-      code_str = '%s.PrettyTree()' % var_name
+      code_str = '%s.%s()' % (var_name, method_name)
       none_guard = True
 
     else:
@@ -172,7 +173,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     return code_str, none_guard
 
-  def _EmitCodeForPrettySubtree(self, field_name, desc, out_val_name, depth):
+  def _EmitCodeForPrettySubtree(self, method_name, field_name, desc, out_val_name, depth):
     """Given a field value and type descriptor, return a PrettyNode."""
 
     code_str = None
@@ -182,7 +183,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('  if self.%s:  # ArrayType' % field_name, depth)
       self.Emit('    %s = PrettyArray()' % out_val_name, depth)
       self.Emit('    for item in self.%s:' % field_name, depth)
-      child_code_str, _ = self._CodeSnippet('item', desc.desc)
+      child_code_str, _ = self._CodeSnippet(method_name, 'item', desc.desc)
       self.Emit('      t = %s' % child_code_str, depth)
       self.Emit('      %s.children.append(t)  # type: ignore' % out_val_name, depth)
       self.Emit('    out_node.fields.append((%r, %s))' %
@@ -190,14 +191,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     elif isinstance(desc, runtime.MaybeType):
       self.Emit('  if self.%s is not None:  # MaybeType' % field_name, depth)
-      child_code_str, _ = self._CodeSnippet('self.%s' % field_name, desc.desc)
+      child_code_str, _ = self._CodeSnippet(method_name, 'self.%s' % field_name, desc.desc)
       self.Emit('    %s = %s' % (out_val_name, child_code_str), depth)
       self.Emit('    out_node.fields.append((%r, %s))' %
                 (field_name, out_val_name), depth)
 
     else:
       var_name = 'self.%s' % field_name
-      code_str, obj_none_guard = self._CodeSnippet(var_name, desc)
+      code_str, obj_none_guard = self._CodeSnippet(method_name, var_name, desc)
 
       if obj_none_guard:
         self.Emit('  if self.%s is not None:' % field_name, depth)
@@ -293,20 +294,39 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('    out_node = PrettyNode(%r)' % class_name.replace('__', '.'), depth)
     self.Emit('', depth)
 
+    # Use the runtime type to be more like asdl/format.py
     desc = self.type_lookup[name]
     log('desc %s', desc)
     for i, (field_name, field_desc) in enumerate(desc.GetFields()):
       if field_name == 'spids':
         continue  # don't emit for now
 
-      # Use the runtime type to be more like asdl/format.py
       log('%s :: %s', field_name, field_desc)
       out_val_name = 'x%d' % i
-      self._EmitCodeForPrettySubtree(field_name, field_desc, out_val_name, depth+1)
+      self._EmitCodeForPrettySubtree('PrettyTree', field_name, field_desc, out_val_name, depth+1)
       self.Emit('', depth)
 
     self.Emit('    return out_node', depth)
     self.Emit('', depth)
+
+    abbrev_module_name = self.abbrev_mod.__name__.split('.')[-1]
+    self.Emit('  def AbbreviatedTree(self):', depth)
+    self.Emit('    # type: () -> PrettyNode', depth)
+    if class_name in dir(self.abbrev_mod):
+      self.Emit('    return %s.%s(self)' % (abbrev_module_name, class_name), depth)
+      self.Emit('', depth)
+    else:
+      self.Emit('    out_node = PrettyNode(%r)' % class_name.replace('__', '.'), depth)
+      for i, (field_name, field_desc) in enumerate(desc.GetFields()):
+        if field_name == 'spids':
+          continue  # don't emit for now
+
+        out_val_name = 'x%d' % i
+        self._EmitCodeForPrettySubtree('AbbreviatedTree', field_name, field_desc, out_val_name, depth+1)
+        self.Emit('', depth)
+
+      self.Emit('    return out_node', depth)
+      self.Emit('', depth)
 
     log('')
 
@@ -364,10 +384,3 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def EmitFooter(self):
     pass
-
-  def VisitModule(self, mod, type_lookup):
-    """Overrides method on base class."""
-    self.type_lookup = type_lookup
-    for dfn in mod.dfns:
-      self.VisitType(dfn)
-    self.EmitFooter()
