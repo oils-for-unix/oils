@@ -9,7 +9,7 @@ from asdl import format as fmt
 from core.meta import Id
 
 
-_ColoredString = fmt._ColoredString
+_PrettyLeaf = fmt._PrettyLeaf
 MakeTree = fmt.MakeTree
 _STRING_LITERAL = fmt._STRING_LITERAL
 _OTHER_TYPE = fmt._OTHER_TYPE
@@ -17,10 +17,10 @@ _OTHER_TYPE = fmt._OTHER_TYPE
 
 def _AbbreviateToken(token, out):
   if token.id != Id.Lit_Chars:
-    c = _ColoredString(str(token.id), _OTHER_TYPE)
+    c = _PrettyLeaf(str(token.id), _OTHER_TYPE)
     out.append(c)
 
-  out.append(_ColoredString(token.val, _STRING_LITERAL))
+  out.append(_PrettyLeaf(token.val, _STRING_LITERAL))
 
 
 def _GetFieldNames(node):
@@ -96,8 +96,6 @@ def AbbreviateNodes(obj, node):
     node.node_type = 'C'
 
     for w in obj.words:
-      # Recursively call MakeTree here?
-      # Well actually then the printer needs to recursively handle it
       node.unnamed_fields.append(MakeTree(w, AbbreviateNodes))
 
 

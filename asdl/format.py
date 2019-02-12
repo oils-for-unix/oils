@@ -139,6 +139,8 @@ class HtmlOutput(ColorOutput):
       css_class = 'o'
     elif str_type == _OTHER_TYPE:
       css_class = 'o'
+    elif str_type == _SIMPLE_SUM:
+      css_class = 'n'
     else:
       raise AssertionError(str_type)
     self.f.write('<span class="%s">' % css_class)
@@ -157,6 +159,7 @@ _NODE_TYPE = 1
 _STRING_LITERAL = 2
 _OTHER_LITERAL = 3  # Int and bool.  Green?
 _OTHER_TYPE = 4  # Or
+_SIMPLE_SUM = 5  # e.g. assign_op = Equal | PlusEqual
 
 
 # ANSI color constants (also in sh_spec.py)
@@ -190,6 +193,8 @@ class AnsiOutput(ColorOutput):
       self.f.write(_GREEN)
     elif str_type == _OTHER_TYPE:
       self.f.write(_GREEN)  # Same color as other literals for now
+    elif str_type == _SIMPLE_SUM:
+      self.f.write(_YELLOW)
     else:
       raise AssertionError(str_type)
 
@@ -202,65 +207,70 @@ class AnsiOutput(ColorOutput):
 #
 
 
-class _Obj(object):
-  """Node for pretty-printing."""
+class _PrettyBase(object):
+  pass
+
+
+class _PrettyNode(_PrettyBase):
+  """Homogeneous node for pretty-printing."""
+
   def __init__(self, node_type):
     self.node_type = node_type
-    self.fields = []  # list of 2-tuples of (name, Obj or ColoredString)
+    self.fields = []  # list of 2-tuples of (name, _PrettyBase)
 
-    # Custom hooks can change these:
+    # Custom hooks set abbrev = True and use the nodes below.
     self.abbrev = False
     self.show_node_type = True  # only respected when abbrev is false
     self.left = '('
     self.right = ')'
-    self.unnamed_fields = []  # if this is set, it's printed instead?
-                              # problem: CompoundWord just has word_part though
-                              # List of Obj or ColoredString
+    self.unnamed_fields = []  # Used by abbreviations
 
   def __repr__(self):
-    return '<_Obj %s %s>' % (self.node_type, self.fields)
+    return '<_PrettyNode %s %s>' % (self.node_type, self.fields)
 
 
-class _ColoredString(object):
-  """Node for pretty-printing."""
+class _PrettyLeaf(_PrettyBase):
+  """Colored string for pretty-printing."""
+
   def __init__(self, s, str_type):
     assert isinstance(s, str), s
     self.s = s
     self.str_type = str_type
 
   def __repr__(self):
-    return '<_ColoredString %s %s>' % (self.s, self.str_type)
+    return '<_PrettyLeaf %s %s>' % (self.s, self.str_type)
 
 
-def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
-  try:
-    field_val = getattr(obj, field_name)
-  except AttributeError:
-    # This happens when required fields are not initialized, e.g. FuncCall()
-    # without setting name.
-    raise AssertionError(
-        '%s is missing field %r' % (obj.__class__, field_name))
+def _MakePrettySubtree(field_val, desc, abbrev_hook, omit_empty=True):
+  """Given a field value and type descriptor, return a _PrettyBase."""
 
-  if isinstance(desc, runtime.IntType):
-    out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
+  if isinstance(desc, runtime.BoolType):
+    out_val = _PrettyLeaf('T' if field_val else 'F', _OTHER_LITERAL)
 
-  elif isinstance(desc, runtime.BoolType):
-    out_val = _ColoredString('T' if field_val else 'F', _OTHER_LITERAL)
+  elif isinstance(desc, runtime.IntType):
+    out_val = _PrettyLeaf(str(field_val), _OTHER_LITERAL)
+
+  elif isinstance(desc, runtime.StrType):
+    out_val = _PrettyLeaf(field_val, _STRING_LITERAL)
 
   elif isinstance(desc, runtime.DictType):
     raise AssertionError
 
-  elif isinstance(desc, runtime.SumType) and desc.is_simple:
-    out_val = field_val.name
+  elif isinstance(desc, runtime.SumType):
+    if desc.is_simple:
+      out_val = _PrettyLeaf(field_val.name, _SIMPLE_SUM)
+    else:
+      out_val = MakeTree(field_val, abbrev_hook, omit_empty=omit_empty)
 
-  elif isinstance(desc, runtime.StrType):
-    out_val = _ColoredString(field_val, _STRING_LITERAL)
+  elif isinstance(desc, runtime.CompoundType):
+    out_val = MakeTree(field_val, abbrev_hook, omit_empty=omit_empty)
 
   elif isinstance(desc, runtime.ArrayType):
     out_val = []
     obj_list = field_val
-    for child_obj in obj_list:
-      t = MakeTree(child_obj, abbrev_hook)
+    for item in obj_list:
+      t = _MakePrettySubtree(item, desc.desc, abbrev_hook,
+                             omit_empty=omit_empty)
       out_val.append(t)
 
     if omit_empty and not obj_list:
@@ -270,10 +280,14 @@ def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
     if field_val is None:
       out_val = None
     else:
-      out_val = MakeTree(field_val, abbrev_hook)
+      out_val = _MakePrettySubtree(field_val, desc.desc, abbrev_hook,
+                                   omit_empty=omit_empty)
+
+  elif isinstance(desc, runtime.UserType):  # e.g. Id
+    out_val = _PrettyLeaf(repr(field_val), _OTHER_TYPE)
 
   else:
-    out_val = MakeTree(field_val, abbrev_hook)
+    raise AssertionError('%s %r' % (field_val, desc))
 
   return out_val
 
@@ -282,40 +296,39 @@ def MakeTree(obj, abbrev_hook=None, omit_empty=True):
   """The first step of printing: create a homogeneous tree.
 
   Args:
-    obj: runtime.Obj
+    obj: runtime.CompoundObj
+    abbrev_hook: function to mutate output _PrettyNode
     omit_empty: Whether to omit empty lists
   Returns:
-    _Obj node
+    _PrettyBase
   """
-  if isinstance(obj, runtime.SimpleObj):  # Primitive
-    return obj.name
+  assert isinstance(obj, runtime.CompoundObj), obj
 
-  elif isinstance(obj, runtime.CompoundObj):
-    # These lines can be possibly COMBINED all into one.  () can replace
-    # indentation?
-    class_name = obj.__class__.__name__
-    # Hack for constructor names.  We don't know if it is a Product or
-    # Constructor here, but product names won't contain '__'.
-    out_node = _Obj(class_name.replace('__', '.'))
+  # These lines can be possibly COMBINED all into one.  () can replace
+  # indentation?
+  class_name = obj.__class__.__name__
+  # Hack for constructor names.  We don't know if it is a Product or
+  # Constructor here, but product names won't contain '__'.
+  out_node = _PrettyNode(class_name.replace('__', '.'))
 
-    for field_name, desc in obj.ASDL_TYPE.GetFields():
-      out_val = MakeFieldSubtree(obj, field_name, desc, abbrev_hook,
+  for field_name, desc in obj.ASDL_TYPE.GetFields():
+    try:
+      field_val = getattr(obj, field_name)
+    except AttributeError:
+      # This happens when required fields are not initialized, e.g. FuncCall()
+      # without setting name.
+      raise AssertionError(
+          '%s is missing field %r' % (obj.__class__, field_name))
+
+    out_val = _MakePrettySubtree(field_val, desc, abbrev_hook,
                                  omit_empty=omit_empty)
 
-      if out_val is not None:
-        out_node.fields.append((field_name, out_val))
+    if out_val is not None:
+      out_node.fields.append((field_name, out_val))
 
-    # Call user-defined hook to abbreviate compound objects.
-    if abbrev_hook:
-      abbrev_hook(obj, out_node)
-
-  elif isinstance(obj, str):  # Could be an array of strings
-    return _ColoredString(obj, _STRING_LITERAL)
-
-  else:
-    # Id uses this now.  TODO: Should we have plugins?  Might need it for
-    # color.
-    return _ColoredString(repr(obj), _OTHER_TYPE)
+  # Call user-defined hook to abbreviate compound objects.
+  if abbrev_hook:
+    abbrev_hook(obj, out_node)
 
   return out_node
 
@@ -468,12 +481,12 @@ def PrintTree(node, f, indent=0, max_col=100):
   if isinstance(node, str):
     f.write(ind + pretty.Str(node))
 
-  elif isinstance(node, _ColoredString):
+  elif isinstance(node, _PrettyLeaf):
     f.PushColor(node.str_type)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, _Obj):
+  elif isinstance(node, _PrettyNode):
     _PrintTreeObj(node, f, indent, max_col)
 
   else:
@@ -525,7 +538,7 @@ def _TrySingleLine(node, f, max_chars):
   if isinstance(node, str):
     f.write(pretty.Str(node))
 
-  elif isinstance(node, _ColoredString):
+  elif isinstance(node, _PrettyLeaf):
     f.PushColor(node.str_type)
     f.write(pretty.Str(node.s))
     f.PopColor()
@@ -539,7 +552,7 @@ def _TrySingleLine(node, f, max_chars):
         return False
     f.write(']')
 
-  elif isinstance(node, _Obj):
+  elif isinstance(node, _PrettyNode):
     return _TrySingleLineObj(node, f, max_chars)
 
   else:

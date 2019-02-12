@@ -15,19 +15,11 @@ class FormatTest(unittest.TestCase):
 
   def testSimpleSum(self):
     node = demo_asdl.op_id_e.Plus
+    # This calls __repr__, but does NOT call asdl/format.py
     print(node)
 
-    f = cStringIO.StringIO()
-    ast_f = fmt.TextOutput(f)
-
-    tree = fmt.MakeTree(node)
-    fmt.PrintTree(tree, ast_f)
-
-    # Hm this prints 'Plus'.  Doesn't print the class or the number.
-    # But those aren't intrinsic.  These are mostly used for ther IDENTITY.
-    # I think the ASDL_TYPE field contains the relevant info.  Yes!
-    pretty_str = f.getvalue()
-    print(pretty_str)
+    array = demo_asdl.op_array([node, node])
+    print(array)
 
   def testRepeatedString(self):
     node = demo_asdl.assign('declare', ['-r', '-x'])
