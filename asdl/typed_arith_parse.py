@@ -8,10 +8,7 @@ import sys
 
 from _devbuild.gen import typed_arith_asdl
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
-from _devbuild.gen.typed_arith_asdl import arith_expr__Const
 from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
-from _devbuild.gen.typed_arith_asdl import arith_expr__Index
 from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
 
 from typing import List, Optional, Union

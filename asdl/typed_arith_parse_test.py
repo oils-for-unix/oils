@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from asdl import tdop
-from asdl import typed_arith_parse as arith_parse  # module under test
+from asdl import typed_arith_parse  # module under test
 
-from _devbuild.gen import typed_arith_asdl
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
-from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
-Parser = arith_parse.Parser
-arith_expr_t = arith_parse.arith_expr_t
+Parser = typed_arith_parse.Parser
+arith_expr_t = typed_arith_parse.arith_expr_t
 
 
 def _assertParseError(make_parser, s, error_substring=''):
@@ -177,7 +174,7 @@ def t_parse(s,  # type: str
             expected=None,  # type: Optional[str]
             ):
   # type: (...) -> arith_expr_t
-  p = arith_parse.MakeParser(s)
+  p = typed_arith_parse.MakeParser(s)
   tree = p.Parse()
 
   print(tree)
@@ -191,7 +188,7 @@ def t_parse(s,  # type: str
 
 def main():
   # type: () -> None
-  p = arith_parse.MakeParser
+  p = typed_arith_parse.MakeParser
 
   TestArith(t_parse)
   TestBitwise(t_parse)

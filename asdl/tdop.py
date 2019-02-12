@@ -5,16 +5,12 @@ tdop.py
 
 import re
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
-from _devbuild.gen.typed_arith_asdl import arith_expr__Const
 from typing import Dict
 from typing import List
 from typing import Callable
 from typing import Optional
 from typing import Iterator
 from typing import Tuple
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
-from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
 from mypy_extensions import NoReturn
 
 

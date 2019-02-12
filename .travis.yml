@@ -18,11 +18,12 @@ addons:
 
 before_install:
     - test/spec.sh link-busybox-ash
-    - mkdir -p _tmp
 
 install:
     # - pip install -r requirements.txt
-    - pip install flake8  # pytest  # add another testing frameworks later
+    - pip install flake8 typing mypy_extensions
+    # TODO: we will want this later
+    # - pip3 install mypy
     - build/dev.sh minimal
 
 script:

@@ -59,11 +59,6 @@ format-demo() {
 
 # yapf: was useful, but might cause big diffs
 
-# After 'pip install pep8' on Ubunu, it's in ~/.local.
-bin-pep8() {
-  ~/.local/bin/pep8 "$@"
-}
-
 # Language independent
 find-src() {
   # benchmarks/testdata should be excluded
