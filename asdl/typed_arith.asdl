@@ -1,5 +1,7 @@
 module arith {
 
+  pipeline = (bool negated)
+
   arith_expr =
     Const(int i)  -- 
   | ArithVar(string name)  -- eval variable 

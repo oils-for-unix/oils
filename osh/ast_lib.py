@@ -6,20 +6,16 @@ ast_lib.py - Helpers for osh/osh.asdl
 import sys
 
 from asdl import format as fmt
+from asdl import runtime
 from core.meta import Id
-
-
-_PrettyLeaf = fmt._PrettyLeaf
-_STRING_LITERAL = fmt._STRING_LITERAL
-_OTHER_TYPE = fmt._OTHER_TYPE
 
 
 def _AbbreviateToken(token, out):
   if token.id != Id.Lit_Chars:
-    n1 = _PrettyLeaf(str(token.id), _OTHER_TYPE)
+    n1 = runtime.PrettyLeaf(str(token.id), runtime.Color_OtherConst)
     out.append(n1)
 
-  n2 = _PrettyLeaf(token.val, _STRING_LITERAL)
+  n2 = runtime.PrettyLeaf(token.val, runtime.Color_StringConst)
   out.append(n2)
 
 

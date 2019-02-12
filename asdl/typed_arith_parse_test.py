@@ -121,6 +121,7 @@ def TestArrays(t_parse):
   """Shared between shell, oil, and Python."""
   t_parse('x[1]', '(get x 1)')
   t_parse('x[a+b]', '(get x (+ a b))')
+  t_parse('x[1:2]', 'SLICE')
 
 
 def TestComma(t_parse):
@@ -177,6 +178,12 @@ def t_parse(s,  # type: str
   p = typed_arith_parse.MakeParser(s)
   tree = p.Parse()
 
+  print()
+  print('---')
+  print()
+
+  print(s)
+  print()
   print(tree)
 
   #v = PrettyPrinter()
@@ -187,6 +194,9 @@ def t_parse(s,  # type: str
 
 
 def main():
+  # TODO: Enable once we switch to MyPy
+  return
+
   # type: () -> None
   p = typed_arith_parse.MakeParser
 

@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from asdl import visitor
 from asdl import runtime
-#from core.util import log
+from core.util import log
 
 
 class GenClassesVisitor(visitor.AsdlVisitor):
@@ -139,8 +139,77 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit(attr, depth)
     self.Emit('', depth)
 
+  def _CodeSnippet(self, var_name, desc):
+    none_guard = False
+    if isinstance(desc, runtime.BoolType):
+      code_str = "PrettyLeaf('T' if %s else 'F', Color_OtherConst)" % var_name
+
+    elif isinstance(desc, runtime.IntType):
+      code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
+
+    elif isinstance(desc, runtime.StrType):
+      code_str = 'PrettyLeaf(%s, Color_StringConst)' % var_name
+
+    elif isinstance(desc, runtime.DictType):
+      raise AssertionError
+
+    elif isinstance(desc, runtime.UserType):  # e.g. Id
+      code_str = 'PrettyLeaf(repr(%s), Color_UserType)' % var_name
+
+    elif isinstance(desc, runtime.SumType):
+      if desc.is_simple:
+        code_str = 'PrettyLeaf(%s.name, Color_TypeName)' % var_name
+      else:
+        code_str = '%s.PrettyTree()' % var_name
+        none_guard = True
+
+    elif isinstance(desc, runtime.CompoundType):
+      code_str = '%s.PrettyTree()' % var_name
+      none_guard = True
+
+    else:
+      raise AssertionError(desc)
+
+    return code_str, none_guard
+
+  def _EmitCodeForPrettySubtree(self, field_name, desc, out_val_name, depth):
+    """Given a field value and type descriptor, return a PrettyNode."""
+
+    code_str = None
+    none_guard = False
+
+    if isinstance(desc, runtime.ArrayType):
+      self.Emit('  if self.%s:  # ArrayType' % field_name, depth)
+      self.Emit('    %s = PrettyArray()' % out_val_name, depth)
+      self.Emit('    for item in self.%s:' % field_name, depth)
+      child_code_str, _ = self._CodeSnippet('item', desc.desc)
+      self.Emit('      t = %s' % child_code_str, depth)
+      self.Emit('      %s.children.append(t)  # type: ignore' % out_val_name, depth)
+      self.Emit('    out_node.fields.append((%r, %s))' %
+                (field_name, out_val_name), depth)
+
+    elif isinstance(desc, runtime.MaybeType):
+      self.Emit('  if self.%s is not None:  # MaybeType' % field_name, depth)
+      child_code_str, _ = self._CodeSnippet('self.%s' % field_name, desc.desc)
+      self.Emit('    %s = %s' % (out_val_name, child_code_str), depth)
+      self.Emit('    out_node.fields.append((%r, %s))' %
+                (field_name, out_val_name), depth)
+
+    else:
+      var_name = 'self.%s' % field_name
+      code_str, obj_none_guard = self._CodeSnippet(var_name, desc)
+
+      if obj_none_guard:
+        self.Emit('  if self.%s is not None:' % field_name, depth)
+        depth += 1  # MUTATION
+      self.Emit('  %s = %s' % (out_val_name, code_str), depth)
+
+      self.Emit('  out_node.fields.append((%r, %s))' %
+                (field_name, out_val_name), depth)
+
   def _GenClass(self, desc, name, super_name, depth, tag_num=None):
     """Used for Constructor and Product."""
+    class_name = name  # used below
     self.Emit('class %s(%s):' % (name, super_name), depth)
 
     if tag_num is not None:
@@ -218,6 +287,28 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str), depth)
 
     self.Emit('', depth)
+
+    self.Emit('  def PrettyTree(self):', depth)
+    self.Emit('    # type: () -> PrettyNode', depth)
+    self.Emit('    out_node = PrettyNode(%r)' % class_name.replace('__', '.'), depth)
+    self.Emit('', depth)
+
+    desc = self.type_lookup[name]
+    log('desc %s', desc)
+    for i, (field_name, field_desc) in enumerate(desc.GetFields()):
+      if field_name == 'spids':
+        continue  # don't emit for now
+
+      # Use the runtime type to be more like asdl/format.py
+      log('%s :: %s', field_name, field_desc)
+      out_val_name = 'x%d' % i
+      self._EmitCodeForPrettySubtree(field_name, field_desc, out_val_name, depth+1)
+      self.Emit('', depth)
+
+    self.Emit('    return out_node', depth)
+    self.Emit('', depth)
+
+    log('')
 
   def VisitConstructor(self, cons, sum_name, tag_num, depth):
     # Use fully-qualified name, so we can have osh_cmd.Simple and

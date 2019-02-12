@@ -81,9 +81,23 @@ f.close()
 from asdl import const  # For const.NO_INTEGER
 from asdl import typed_runtime as runtime
 
-from typing import Optional, List
+PrettyLeaf = runtime.PrettyLeaf
+PrettyArray = runtime.PrettyArray
+PrettyNode = runtime.PrettyNode
+
+Color_TypeName = runtime.Color_TypeName
+Color_StringConst = runtime.Color_StringConst
+Color_OtherConst = runtime.Color_OtherConst
+Color_UserType = runtime.Color_UserType
+
+from typing import Optional, List, Tuple
 
 """)
+
+    # TODO:
+    # Third argument should be frontend/abbrev_syntax.py
+    # 'from frontend import abbrev_syntax'
+    # return abbrev_syntax.arith_expr__ArithBinary() or something
 
     v = gen_python.GenMyPyVisitor(f)
     v.VisitModule(schema_ast, type_lookup)

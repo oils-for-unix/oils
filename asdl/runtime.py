@@ -227,6 +227,8 @@ class CompoundObj(Obj):
     By default, we use ASDL reflection, using ASDL_TYPE.GetFields().  But
     generated code can override to avoid this.
     """
+    from asdl import format as fmt
+
     return fmt.MakePrettyTree(self)  # No abbreviation
 
   def __repr__(self):
@@ -267,3 +269,58 @@ class CompoundObj(Obj):
 # none.
 # - Maybe spids should never be mutated?  It can only be appended to?
 # - SimpleObj could deny all __setattr__?
+
+
+#
+# A Homogeneous Tree for Pretty Printing.
+#
+
+
+class _PrettyBase(object):
+  pass
+
+
+class PrettyNode(_PrettyBase):
+  """Homogeneous node for pretty-printing."""
+
+  def __init__(self, node_type):
+    self.node_type = node_type
+    self.fields = []  # list of 2-tuples of (name, _PrettyBase)
+
+    # Custom hooks set abbrev = True and use the nodes below.
+    self.abbrev = False
+    self.show_node_type = True  # only respected when abbrev is false
+    self.left = '('
+    self.right = ')'
+    self.unnamed_fields = []  # Used by abbreviations
+
+  def __repr__(self):
+    return '<PrettyNode %s %s>' % (self.node_type, self.fields)
+
+
+class PrettyArray(_PrettyBase):
+  def __init__(self):
+    self.children = []
+
+  def __repr__(self):
+    # type: () -> str
+    return '<PrettyArray %s>' % (self.children)
+
+
+# Color token types
+Color_TypeName = 1
+Color_StringConst = 2
+Color_OtherConst = 3  # Int and bool.  Green?
+Color_UserType = 4  # UserType Id
+
+
+class PrettyLeaf(_PrettyBase):
+  """Colored string for pretty-printing."""
+
+  def __init__(self, s, e_color):
+    assert isinstance(s, str), s
+    self.s = s
+    self.e_color = e_color
+
+  def __repr__(self):
+    return '<PrettyLeaf %s %s>' % (self.s, self.e_color)

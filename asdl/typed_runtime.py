@@ -4,6 +4,8 @@ typed_runtime.py
 """
 from __future__ import print_function
 
+from typing import List, Tuple, Optional
+
 
 class Obj(object):
   # NOTE: We're using CAPS for these static fields, since they are constant at
@@ -12,10 +14,7 @@ class Obj(object):
 
 
 class SimpleObj(Obj):
-  """An enum value.
-
-  Other simple objects: int, str, maybe later a float.
-  """
+  """Base type of simple sum types."""
   def __init__(self, enum_id, name):
     # type: (int, str) -> None
     self.enum_id = enum_id
@@ -47,3 +46,80 @@ class CompoundObj(Obj):
   # The tag is always set for constructor types, which are subclasses of sum
   # types.  Never set for product types.
   tag = 0  # TYPED: Changed from None.  0 is invalid!
+
+  def PrettyTree(self):
+    # type: () -> _PrettyBase
+    raise NotImplementedError
+
+  def __repr__(self):
+    # TODO: Break this circular dependency.
+    from asdl import format as fmt
+    from core import util
+
+    ast_f = fmt.TextOutput(util.Buffer())  # No color by default.
+    tree = self.PrettyTree()
+    fmt.PrintTree(tree, ast_f)
+    s, _ = ast_f.GetRaw()
+    return s
+
+
+#
+# A Homogeneous Tree for Pretty Printing.  (COPIED from runtime.py)
+#
+
+
+class _PrettyBase(object):
+  pass
+
+
+class PrettyNode(_PrettyBase):
+  """Homogeneous node for pretty-printing."""
+
+  def __init__(self, node_type):
+    # type: (str) -> None
+    self.node_type = node_type
+    # Gah this signature is complicated.
+    # Probably should have _PrettyRepeated?
+    self.fields = []  # type: List[Tuple[str, _PrettyBase]]
+
+    # Custom hooks set abbrev = True and use the nodes below.
+    self.abbrev = False
+    self.show_node_type = True  # only respected when abbrev is false
+    self.left = '('
+    self.right = ')'
+    # Used by abbreviations
+    self.unnamed_fields = []  # type: List[_PrettyBase]
+
+  def __repr__(self):
+    # type: () -> str
+    return '<PrettyNode %s %s>' % (self.node_type, self.fields)
+
+
+class PrettyArray(_PrettyBase):
+  def __init__(self):
+    self.children = []  # type: List[_PrettyBase]
+
+  def __repr__(self):
+    # type: () -> str
+    return '<PrettyArray %s>' % (self.children)
+
+
+# Color token types
+Color_TypeName = 1
+Color_StringConst = 2
+Color_OtherConst = 3  # Int and bool.  Green?
+Color_UserType = 4  # UserType Id
+
+
+class PrettyLeaf(_PrettyBase):
+  """Colored string for pretty-printing."""
+
+  def __init__(self, s, e_color):
+    # type: (Optional[str], int) -> None
+    assert isinstance(s, str), s
+    self.s = s
+    self.e_color = e_color
+
+  def __repr__(self):
+    # type: () -> str
+    return '<PrettyLeaf %s %s>' % (self.s, self.e_color)

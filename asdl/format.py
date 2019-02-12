@@ -15,8 +15,14 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
+# TODO: Reconcile this
+MYPY = 0
+
 from asdl import pretty
-from asdl import runtime
+if MYPY:
+  from asdl import typed_runtime as runtime
+else:
+  from asdl import runtime
 from core import util
 from pylib import cgi
 
@@ -48,7 +54,7 @@ class ColorOutput(object):
     """Hook for printing a full file."""
     pass
 
-  def PushColor(self, str_type):
+  def PushColor(self, e_color):
     raise NotImplementedError
 
   def PopColor(self):
@@ -84,7 +90,7 @@ class TextOutput(ColorOutput):
   def NewTempBuffer(self):
     return TextOutput(util.Buffer())
 
-  def PushColor(self, str_type):
+  def PushColor(self, e_color):
     pass  # ignore color
 
   def PopColor(self):
@@ -129,20 +135,18 @@ class HtmlOutput(ColorOutput):
 </html>
     """)
 
-  def PushColor(self, str_type):
+  def PushColor(self, e_color):
     # To save bandwidth, use single character CSS names.
-    if str_type == _NODE_TYPE:
+    if e_color == runtime.Color_TypeName:
       css_class = 'n'
-    elif str_type == _STRING_LITERAL:
+    elif e_color == runtime.Color_StringConst:
       css_class = 's'
-    elif str_type == _OTHER_LITERAL:
+    elif e_color == runtime.Color_OtherConst:
       css_class = 'o'
-    elif str_type == _OTHER_TYPE:
+    elif e_color == runtime.Color_UserType:
       css_class = 'o'
-    elif str_type == _SIMPLE_SUM:
-      css_class = 'n'
     else:
-      raise AssertionError(str_type)
+      raise AssertionError(e_color)
     self.f.write('<span class="%s">' % css_class)
 
   def PopColor(self):
@@ -152,14 +156,6 @@ class HtmlOutput(ColorOutput):
     # PROBLEM: Double escaping!
     self.f.write(cgi.escape(s))
     self.num_chars += len(s)  # Only count visible characters!
-
-
-# Color token types
-_NODE_TYPE = 1
-_STRING_LITERAL = 2
-_OTHER_LITERAL = 3  # Int and bool.  Green?
-_OTHER_TYPE = 4  # Or
-_SIMPLE_SUM = 5  # e.g. assign_op = Equal | PlusEqual
 
 
 # ANSI color constants (also in sh_spec.py)
@@ -183,82 +179,44 @@ class AnsiOutput(ColorOutput):
   def NewTempBuffer(self):
     return AnsiOutput(util.Buffer())
 
-  def PushColor(self, str_type):
-    if str_type == _NODE_TYPE:
-      #self.f.write(_GREEN)
+  def PushColor(self, e_color):
+    if e_color == runtime.Color_TypeName:
       self.f.write(_YELLOW)
-    elif str_type == _STRING_LITERAL:
+    elif e_color == runtime.Color_StringConst:
       self.f.write(_BOLD)
-    elif str_type == _OTHER_LITERAL:
+    elif e_color == runtime.Color_OtherConst:
       self.f.write(_GREEN)
-    elif str_type == _OTHER_TYPE:
+    elif e_color == runtime.Color_UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
-    elif str_type == _SIMPLE_SUM:
-      self.f.write(_YELLOW)
     else:
-      raise AssertionError(str_type)
+      raise AssertionError(e_color)
 
   def PopColor(self):
     self.f.write(_RESET)
 
 
-#
-# Nodes
-#
-
-
-class _PrettyBase(object):
-  pass
-
-
-class _PrettyNode(_PrettyBase):
-  """Homogeneous node for pretty-printing."""
-
-  def __init__(self, node_type):
-    self.node_type = node_type
-    self.fields = []  # list of 2-tuples of (name, _PrettyBase)
-
-    # Custom hooks set abbrev = True and use the nodes below.
-    self.abbrev = False
-    self.show_node_type = True  # only respected when abbrev is false
-    self.left = '('
-    self.right = ')'
-    self.unnamed_fields = []  # Used by abbreviations
-
-  def __repr__(self):
-    return '<_PrettyNode %s %s>' % (self.node_type, self.fields)
-
-
-class _PrettyLeaf(_PrettyBase):
-  """Colored string for pretty-printing."""
-
-  def __init__(self, s, str_type):
-    assert isinstance(s, str), s
-    self.s = s
-    self.str_type = str_type
-
-  def __repr__(self):
-    return '<_PrettyLeaf %s %s>' % (self.s, self.str_type)
-
-
 def _MakePrettySubtree(field_val, desc, abbrev_hook):
-  """Given a field value and type descriptor, return a _PrettyBase."""
+  """
+  Given a field value and type descriptor, return a _PrettyBase or
+  List[PrettyNode].
+  """
 
   if isinstance(desc, runtime.BoolType):
-    out_val = _PrettyLeaf('T' if field_val else 'F', _OTHER_LITERAL)
+    out_val = runtime.PrettyLeaf('T' if field_val else 'F',
+                                 runtime.Color_OtherConst)
 
   elif isinstance(desc, runtime.IntType):
-    out_val = _PrettyLeaf(str(field_val), _OTHER_LITERAL)
+    out_val = runtime.PrettyLeaf(str(field_val), runtime.Color_OtherConst)
 
   elif isinstance(desc, runtime.StrType):
-    out_val = _PrettyLeaf(field_val, _STRING_LITERAL)
+    out_val = runtime.PrettyLeaf(field_val, runtime.Color_StringConst)
 
   elif isinstance(desc, runtime.DictType):
     raise AssertionError
 
   elif isinstance(desc, runtime.SumType):
     if desc.is_simple:
-      out_val = _PrettyLeaf(field_val.name, _SIMPLE_SUM)
+      out_val = runtime.PrettyLeaf(field_val.name, runtime.Color_TypeName)
     else:
       out_val = MakePrettyTree(field_val, abbrev_hook)
 
@@ -266,11 +224,11 @@ def _MakePrettySubtree(field_val, desc, abbrev_hook):
     out_val = MakePrettyTree(field_val, abbrev_hook)
 
   elif isinstance(desc, runtime.ArrayType):
-    out_val = []
+    out_val = runtime.PrettyArray()
     obj_list = field_val
     for item in obj_list:
       t = _MakePrettySubtree(item, desc.desc, abbrev_hook)
-      out_val.append(t)
+      out_val.children.append(t)
 
     if not obj_list:  # don't display empty lists
       out_val = None
@@ -282,7 +240,7 @@ def _MakePrettySubtree(field_val, desc, abbrev_hook):
       out_val = _MakePrettySubtree(field_val, desc.desc, abbrev_hook)
 
   elif isinstance(desc, runtime.UserType):  # e.g. Id
-    out_val = _PrettyLeaf(repr(field_val), _OTHER_TYPE)
+    out_val = runtime.PrettyLeaf(repr(field_val), runtime.Color_UserType)
 
   else:
     raise AssertionError('%s %r' % (field_val, desc))
@@ -295,7 +253,7 @@ def MakePrettyTree(obj, abbrev_hook=None):
 
   Args:
     obj: runtime.CompoundObj
-    abbrev_hook: function to mutate output _PrettyNode
+    abbrev_hook: function to mutate output runtime.PrettyNode
   Returns:
     _PrettyBase
   """
@@ -304,7 +262,7 @@ def MakePrettyTree(obj, abbrev_hook=None):
   class_name = obj.__class__.__name__
   # Hack for constructor names.  We don't know if it is a Product or
   # Constructor here, but product names won't contain '__'.
-  out_node = _PrettyNode(class_name.replace('__', '.'))
+  out_node = runtime.PrettyNode(class_name.replace('__', '.'))
 
   for field_name, desc in obj.ASDL_TYPE.GetFields():
     # Always omit spids when abbreviating
@@ -400,7 +358,7 @@ def _PrintTreeObj(node, f, indent, max_col):
     prefix = ind + node.left
     f.write(prefix)
     if node.show_node_type:
-      f.PushColor(_NODE_TYPE)
+      f.PushColor(runtime.Color_TypeName)
       f.write(node.node_type)
       f.PopColor()
       f.write(' ')
@@ -417,7 +375,7 @@ def _PrintTreeObj(node, f, indent, max_col):
   else:  # full form like (SimpleCommand ...)
     f.write(ind + node.left)
 
-    f.PushColor(_NODE_TYPE)
+    f.PushColor(runtime.Color_TypeName)
     f.write(node.node_type)
     f.PopColor()
 
@@ -425,14 +383,14 @@ def _PrintTreeObj(node, f, indent, max_col):
     i = 0
     for name, val in node.fields:
       ind1 = ' ' * (indent+INDENT)
-      if isinstance(val, list):  # list field
+      if isinstance(val, runtime.PrettyArray):  # list field
         name_str = '%s%s: [' % (ind1, name)
         f.write(name_str)
         prefix_len = len(name_str)
 
-        if not _PrintWholeArray(val, prefix_len, f, indent, max_col):
+        if not _PrintWholeArray(val.children, prefix_len, f, indent, max_col):
           f.write('\n')
-          for child in val:
+          for child in val.children:
             # TODO: Add max_col here
             PrintTree(child, f, indent=indent+INDENT+INDENT)
             f.write('\n')
@@ -479,12 +437,12 @@ def PrintTree(node, f, indent=0, max_col=100):
     f.WriteRaw(single_f.GetRaw())
     return
 
-  if isinstance(node, _PrettyLeaf):
-    f.PushColor(node.str_type)
+  if isinstance(node, runtime.PrettyLeaf):
+    f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, _PrettyNode):
+  elif isinstance(node, runtime.PrettyNode):
     _PrintTreeObj(node, f, indent, max_col)
 
   else:
@@ -496,7 +454,7 @@ def _TrySingleLineObj(node, f, max_chars):
   f.write(node.left)
   if node.abbrev:
     if node.show_node_type:
-      f.PushColor(_NODE_TYPE)
+      f.PushColor(runtime.Color_TypeName)
       f.write(node.node_type)
       f.PopColor()
       f.write(' ')
@@ -507,7 +465,7 @@ def _TrySingleLineObj(node, f, max_chars):
       if not _TrySingleLine(val, f, max_chars):
         return False
   else:
-    f.PushColor(_NODE_TYPE)
+    f.PushColor(runtime.Color_TypeName)
     f.write(node.node_type)
     f.PopColor()
 
@@ -533,21 +491,21 @@ def _TrySingleLine(node, f, max_chars):
     ok: whether it fit on the line of the given size.
       If False, you can't use the value of f.
   """
-  if isinstance(node, _PrettyLeaf):
-    f.PushColor(node.str_type)
+  if isinstance(node, runtime.PrettyLeaf):
+    f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, list):  # Can we fit the WHOLE list on the line?
+  elif isinstance(node, runtime.PrettyArray):  # Can we fit the WHOLE list on the line?
     f.write('[')
-    for i, item in enumerate(node):
+    for i, item in enumerate(node.children):
       if i != 0:
         f.write(' ')
       if not _TrySingleLine(item, f, max_chars):
         return False
     f.write(']')
 
-  elif isinstance(node, _PrettyNode):
+  elif isinstance(node, runtime.PrettyNode):
     return _TrySingleLineObj(node, f, max_chars)
 
   else:
