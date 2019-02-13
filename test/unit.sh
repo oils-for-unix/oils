@@ -52,6 +52,13 @@ tests-to-run() {
       continue
     fi
 
+    # Temporary for ASDL migration
+    case $t in 
+      asdl/arith_parse_test.py|asdl/demo_asdl_test.py|asdl/format_test.py)
+        #continue
+        ;;
+    esac
+
     echo $t
   done
 }

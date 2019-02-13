@@ -51,6 +51,10 @@ class CompoundObj(Obj):
     # type: () -> _PrettyBase
     raise NotImplementedError
 
+  def _AbbreviatedTree(self):
+    # type: () -> _PrettyBase
+    raise NotImplementedError
+
   def AbbreviatedTree(self):
     # type: () -> _PrettyBase
     raise NotImplementedError

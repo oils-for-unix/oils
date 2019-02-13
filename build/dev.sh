@@ -87,7 +87,13 @@ gen-asdl-py-pickle() {
   local tmp=_tmp/${name}_asdl.py
   local out=_devbuild/gen/${name}_asdl.py
 
-  PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
+  #if false; then
+  if true; then
+    PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
+  else
+    # optional abbrev module
+    PYTHONPATH=. core/asdl_gen.py mypy "$@" > $tmp
+  fi
   
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
@@ -101,7 +107,7 @@ gen-types-asdl() {
 }
 
 gen-syntax-asdl() {
-  gen-asdl-py-pickle frontend/syntax.asdl
+  gen-asdl-py-pickle frontend/syntax.asdl 'frontend.syntax_abbrev'
 }
 
 gen-runtime-asdl() {

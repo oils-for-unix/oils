@@ -5,8 +5,7 @@ ast_lib.py - Helpers for osh/osh.asdl
 
 import sys
 
-from asdl import format as fmt
-from asdl import runtime
+from asdl import typed_runtime as runtime
 from core.meta import Id
 
 
@@ -19,16 +18,11 @@ def _AbbreviateToken(token, out):
   out.append(n2)
 
 
-def _GetFieldNames(p_node):
-  # Don't let the 'spids' field disable abbreviation
-  return [n for n, _ in p_node.fields if n != 'spids']
-
-
 def token(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
-  p_node.node_type = 'T'
-  p_node.show_node_type = False
+  p_node.node_type = ''  # don't show
+
   p_node.left = '<'
   p_node.right = '>'
   _AbbreviateToken(obj, p_node.unnamed_fields)
@@ -38,8 +32,7 @@ def token(obj):
 def word_part__LiteralPart(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
-  p_node.node_type = 'L'
-  p_node.show_node_type = False
+  p_node.node_type = ''  # don't show
 
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
   return p_node
@@ -55,8 +48,8 @@ def word_part__SimpleVarSub(obj):
 
 def word_part__BracedVarSub(obj):
   p_node = runtime.PrettyNode()
-  if _GetFieldNames(node) != ['token']:
-    return  # we have other fields to display; don't abbreviate
+  if obj.prefix_op or obj.bracket_op or obj.suffix_op:
+    return None  # we have other fields to display; don't abbreviate
 
   p_node.abbrev = True
   p_node.node_type = '${'
@@ -70,46 +63,44 @@ def word_part__DoubleQuotedPart(obj):
   p_node.node_type = 'DQ'
 
   for part in obj.parts:
-    p_node.unnamed_fields.append(fmt.MakePrettyTree(part, AbbreviateNodes))
+    p_node.unnamed_fields.append(part.AbbreviatedTree())
   return p_node
 
 
-# Only abbreviate 'foo', not $'foo\n'
-def word_part__SingleQuotedPart(Obj):
-  if obj.left.id == Id.Left_SingleQuote:
-    p_node = runtime.PrettyNode()
-    p_node.abbrev = True
-    p_node.node_type = 'SQ'
+def word_part__SingleQuotedPart(obj):
+  # Only abbreviate 'foo', not $'foo\n'
+  if obj.left.id != Id.Left_SingleQuote:
+    return None  # Fall back on obj._AbbreviatedTree()
 
-    for token in obj.tokens:
-      p_node.unnamed_fields.append(fmt.MakePrettyTree(token, AbbreviateNodes))
-    return p_node
+  p_node = runtime.PrettyNode()
+  p_node.abbrev = True
+  p_node.node_type = 'SQ'
 
-  # TODO: This means don't modify it?
-  return None
+  for token in obj.tokens:
+    p_node.unnamed_fields.append(token.AbbreviatedTree())
+  return p_node
 
 
 def word__CompoundWord(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
-  p_node.node_type = 'W'
-  p_node.show_node_type = False
+  p_node.node_type = ''  # don't show
   p_node.left = '{'
   p_node.right = '}'
 
   for part in obj.parts:
-    p_node.unnamed_fields.append(fmt.MakePrettyTree(part, AbbreviateNodes))
+    p_node.unnamed_fields.append(part.AbbreviatedTree())
   return p_node
 
 
 def command__SimpleCommand(obj):
   p_node = runtime.PrettyNode()
-  if _GetFieldNames(node) != ['words']:
-    return  # we have other fields to display; don't abbreviate
+  if obj.redirects or obj.more_env:
+    return None  # we have other fields to display; don't abbreviate
 
   p_node.abbrev = True
   p_node.node_type = 'C'
 
   for w in obj.words:
-    p_node.unnamed_fields.append(fmt.MakePrettyTree(w, AbbreviateNodes))
+    p_node.unnamed_fields.append(w.AbbreviatedTree())
   return p_node

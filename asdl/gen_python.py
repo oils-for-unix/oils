@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from asdl import visitor
 from asdl import runtime
-from core.util import log
+#from core.util import log
 
 
 class GenClassesVisitor(visitor.AsdlVisitor):
@@ -121,11 +121,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   TODO: Remove the code above.  This should substitute for it.
   """
-  def __init__(self, f, type_lookup, abbrev_mod):
+  def __init__(self, f, type_lookup, abbrev_mod=None):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
-    self.abbrev_mod_name = abbrev_mod.__name__.split('.')[-1]
-    self.abbrev_mod_entries = dir(abbrev_mod)
+    if abbrev_mod:
+      self.abbrev_mod_name = abbrev_mod.__name__.split('.')[-1]
+      self.abbrev_mod_entries = dir(abbrev_mod)
+    else:
+      self.abbrev_mod_name = ''
+      self.abbrev_mod_entries = []
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -153,7 +157,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       code_str = 'PrettyLeaf(%s, Color_StringConst)' % var_name
 
     elif isinstance(desc, runtime.DictType):
-      raise AssertionError
+      # Dicts are used for AssocArray in osh/runtime.asdl
+      # I think it makes sense to treat it as a leaf.
+      code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
 
     elif isinstance(desc, runtime.UserType):  # e.g. Id
       code_str = 'PrettyLeaf(repr(%s), Color_UserType)' % var_name
@@ -309,25 +315,30 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # AbbreviatedTree
     #
 
-    self.Emit('  def AbbreviatedTree(self):')
+    self.Emit('  def _AbbreviatedTree(self):')
     self.Emit('    # type: () -> PrettyNode')
+    self.Emit('    out_node = PrettyNode(%r)' % pretty_cls_name)
+    self.Emit('    L = out_node.fields')
+    for i, (field_name, field_desc) in enumerate(desc.GetFields()):
+      if field_name == 'spids':
+        continue  # don't emit for now
+
+      self.Indent()
+      self._EmitCodeForField('AbbreviatedTree', field_name, field_desc, i)
+      self.Dedent()
+      self.Emit('')
+    self.Emit('    return out_node')
+
+    self.Emit('')
+
+    self.Emit('  def AbbreviatedTree(self):')
     if class_name in self.abbrev_mod_entries:
-      self.Emit('    return %s.%s(self)' % (self.abbrev_mod_name, class_name))
-      self.Emit('')
+      self.Emit('    p = %s.%s(self)' % (self.abbrev_mod_name, class_name))
+      # If the user function didn't return anything, fall back.
+      self.Emit('    return p if p else self._AbbreviatedTree()')
     else:
-      self.Emit('    out_node = PrettyNode(%r)' % pretty_cls_name)
-      self.Emit('    L = out_node.fields')
-      for i, (field_name, field_desc) in enumerate(desc.GetFields()):
-        if field_name == 'spids':
-          continue  # don't emit for now
-
-        self.Indent()
-        self._EmitCodeForField('AbbreviatedTree', field_name, field_desc, i)
-        self.Dedent()
-        self.Emit('')
-
-      self.Emit('    return out_node')
-      self.Emit('')
+      self.Emit('    return self._AbbreviatedTree()')
+    self.Emit('')
 
   def VisitConstructor(self, cons, sum_name, tag_num, depth):
     # Use fully-qualified name, so we can have osh_cmd.Simple and
