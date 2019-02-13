@@ -1069,8 +1069,6 @@ echo hi
     self.assertEqual(command_e.CommandList, node.tag)
 
   def testBackticks(self):
-    #return
-
     # Another empty command sub
     node = assert_ParseCommandList(self, """\
 echo $()

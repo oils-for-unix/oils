@@ -51,7 +51,7 @@ def _ValueToPartValue(val, quoted):
 
   Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
   """
-  assert isinstance(val, runtime_asdl.value), val
+  assert isinstance(val, runtime_asdl.value_t), val
 
   if val.tag == value_e.Str:
     return part_value.String(val.s, not quoted)
@@ -476,7 +476,7 @@ class _WordEvaluator(object):
     return value.Str(sep.join(s for s in val.strs if s is not None))
 
   def _EmptyStrOrError(self, val, token=None):
-    assert isinstance(val, runtime_asdl.value), val
+    assert isinstance(val, runtime_asdl.value_t), val
 
     if val.tag == value_e.Undef:
       if self.exec_opts.nounset:

@@ -8,7 +8,7 @@ from __future__ import print_function
 #from _devbuild.gen import typed_arith_asdl as A
 #from typing import Optional
 
-from asdl import typed_runtime as runtime
+from asdl import runtime
 _PrettyBase = runtime._PrettyBase
 
 

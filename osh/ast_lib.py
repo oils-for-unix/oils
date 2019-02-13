@@ -94,6 +94,10 @@ def AbbreviateNodes(obj, node):
 
 def PrettyPrint(node, f=sys.stdout):
   ast_f = fmt.DetectConsoleOutput(f)
-  tree = fmt.MakePrettyTree(node, AbbreviateNodes)
+  if 0:
+    tree = fmt.MakePrettyTree(node, AbbreviateNodes)
+  else:
+    tree = node.AbbreviatedTree()
+    #tree = node.PrettyTree()
   fmt.PrintTree(tree, ast_f)
   f.write('\n')

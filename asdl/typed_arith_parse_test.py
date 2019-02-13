@@ -204,7 +204,7 @@ def main():
   # type: () -> None
 
   # TODO: Enable once we switch to MyPy
-  if 1:
+  if 0:
     return
 
   p = typed_arith_parse.MakeParser

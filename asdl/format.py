@@ -15,14 +15,8 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
-# TODO: Reconcile this
-MYPY = 0
-
 from asdl import pretty
-if MYPY:
-  from asdl import typed_runtime as runtime
-else:
-  from asdl import runtime
+from asdl import runtime
 from core import util
 from pylib import cgi
 

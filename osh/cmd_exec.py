@@ -423,7 +423,7 @@ class Executor(object):
 
   def _EvalLhs(self, node, spid, lookup_mode):
     """lhs_expr -> lvalue."""
-    assert isinstance(node, syntax_asdl.lhs_expr), node
+    assert isinstance(node, syntax_asdl.lhs_expr_t), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
       lval = lvalue.LhsName(node.name)
@@ -836,7 +836,7 @@ class Executor(object):
           # RHS can be a string or array.
           if pair.rhs:
             val = self.word_ev.EvalRhsWord(pair.rhs)
-            assert isinstance(val, runtime_asdl.value), val
+            assert isinstance(val, runtime_asdl.value_t), val
 
           else:  # e.g. 'readonly x' or 'local x'
             val = None

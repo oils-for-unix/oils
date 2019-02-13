@@ -11,7 +11,7 @@ import sys
 from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
-from asdl import runtime
+from asdl import meta
 
 from core.util import log
 
@@ -31,7 +31,7 @@ def main(argv):
     app_types = {}
   else:
     from core.meta import Id
-    app_types = {'id': runtime.UserType(Id)}
+    app_types = {'id': meta.UserType(Id)}
 
   if action == 'c':  # Generate C code for the lexer
     with open(schema_path) as f:
@@ -88,7 +88,7 @@ f.close()
 
     f.write("""\
 from asdl import const  # For const.NO_INTEGER
-from asdl import typed_runtime as runtime
+from asdl import runtime
 
 PrettyLeaf = runtime.PrettyLeaf
 PrettyArray = runtime.PrettyArray

@@ -5,7 +5,7 @@ ast_lib.py - Helpers for osh/osh.asdl
 
 import sys
 
-from asdl import typed_runtime as runtime
+from asdl import runtime
 from core.meta import Id
 
 

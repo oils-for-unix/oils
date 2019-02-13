@@ -31,7 +31,7 @@ dev-snippet() {
   local name=$1
   echo '#!/bin/sh'
   echo 'REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)'
-  echo 'PYTHONPATH=$REPO_ROOT exec $REPO_ROOT/bin/oil.py '$name' "$@"'
+  echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oil.py '$name' "$@"'
 }
 
 make-bin-links() {

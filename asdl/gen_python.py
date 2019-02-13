@@ -9,8 +9,8 @@ TODO:
 """
 from __future__ import print_function
 
+from asdl import meta
 from asdl import visitor
-from asdl import runtime
 #from core.util import log
 
 
@@ -147,31 +147,31 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def _CodeSnippet(self, method_name, var_name, desc):
     none_guard = False
-    if isinstance(desc, runtime.BoolType):
+    if isinstance(desc, meta.BoolType):
       code_str = "PrettyLeaf('T' if %s else 'F', Color_OtherConst)" % var_name
 
-    elif isinstance(desc, runtime.IntType):
+    elif isinstance(desc, meta.IntType):
       code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
 
-    elif isinstance(desc, runtime.StrType):
+    elif isinstance(desc, meta.StrType):
       code_str = 'PrettyLeaf(%s, Color_StringConst)' % var_name
 
-    elif isinstance(desc, runtime.DictType):
+    elif isinstance(desc, meta.DictType):
       # Dicts are used for AssocArray in osh/runtime.asdl
       # I think it makes sense to treat it as a leaf.
       code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
 
-    elif isinstance(desc, runtime.UserType):  # e.g. Id
+    elif isinstance(desc, meta.UserType):  # e.g. Id
       code_str = 'PrettyLeaf(repr(%s), Color_UserType)' % var_name
 
-    elif isinstance(desc, runtime.SumType):
+    elif isinstance(desc, meta.SumType):
       if desc.is_simple:
         code_str = 'PrettyLeaf(%s.name, Color_TypeName)' % var_name
       else:
         code_str = '%s.%s()' % (var_name, method_name)
         none_guard = True
 
-    elif isinstance(desc, runtime.CompoundType):
+    elif isinstance(desc, meta.CompoundType):
       code_str = '%s.%s()' % (var_name, method_name)
       none_guard = True
 
@@ -184,7 +184,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     """Given a field value and type descriptor, return a PrettyNode."""
     out_val_name = 'x%d' % counter
 
-    if isinstance(desc, runtime.ArrayType):
+    if isinstance(desc, meta.ArrayType):
       iter_name = 'i%d' % counter
 
       self.Emit('  if self.%s:  # ArrayType' % field_name)
@@ -195,7 +195,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('      %s.children.append(t)  # type: ignore' % out_val_name)
       self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
 
-    elif isinstance(desc, runtime.MaybeType):
+    elif isinstance(desc, meta.MaybeType):
       self.Emit('  if self.%s is not None:  # MaybeType' % field_name)
       child_code_str, _ = self._CodeSnippet(method_name,
                                             'self.%s' % field_name, desc.desc)
@@ -243,7 +243,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
       # NOTE: product type doesn't have _t suffix
-      if isinstance(field_desc, runtime.SumType):
+      if isinstance(field_desc, meta.SumType):
         type_str = '%s_t' % f.type
 
       elif f.type == 'string':
@@ -264,6 +264,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         arg_types.append('Optional[%s]' % type_str)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
+
+    if not desc.fields:
+      self.Emit('    pass')  # for types like NoOp
 
     for f in desc.fields:
       # This logic is like _MakeFieldDescriptors
@@ -340,20 +343,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    return self._AbbreviatedTree()')
     self.Emit('')
 
-  def VisitConstructor(self, cons, sum_name, tag_num, depth):
-    # Use fully-qualified name, so we can have osh_cmd.Simple and
-    # oil_cmd.Simple.
-    fq_name = '%s__%s' % (sum_name, cons.name)
-    if cons.fields:
-      self._GenClass(cons, fq_name, sum_name + '_t', depth, tag_num=tag_num)
-    else:
-      # No fields
-      self.Emit('class %s(%s_t):' % (fq_name, sum_name), depth)
-      self.Emit('  tag = %d'  % tag_num, depth)
-      self.Emit('', depth)
-
   def VisitCompoundSum(self, sum, sum_name, depth):
-    # We emit THREE Python types for each runtime.CompoundType:
+    # We emit THREE Python types for each meta.CompoundType:
     #
     # 1. enum for tag (cflow_e)
     # 2. base class for inheritance (cflow_t)
@@ -374,10 +365,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('  pass', depth)
     self.Emit('', depth)
 
-    for i, t in enumerate(sum.types):
-      tag_num = i + 1
-      # e.g. 'oil_cmd' is the superclass
-      self.VisitConstructor(t, sum_name, tag_num, depth)
+    for i, variant in enumerate(sum.types):
+      # Use fully-qualified name, so we can have osh_cmd.Simple and
+      # oil_cmd.Simple.
+      fq_name = '%s__%s' % (sum_name, variant.name)
+      self._GenClass(variant, fq_name, sum_name + '_t', depth, tag_num=i+1)
 
     # Emit a namespace
     self.Emit('class %s(object):' % sum_name, depth)

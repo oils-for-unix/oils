@@ -16,7 +16,7 @@ set -o errexit
 
 source test/common.sh
 
-export PYTHONPATH=.  # current dir
+export PYTHONPATH='.:vendor'  # repo root and vendor subdir
 export ASDL_TYPE_CHECK=1
 
 # For auto-complete
@@ -54,8 +54,8 @@ tests-to-run() {
 
     # Temporary for ASDL migration
     case $t in 
-      asdl/arith_parse_test.py|asdl/demo_asdl_test.py|asdl/format_test.py)
-        #continue
+      asdl/arith_parse_test.py)
+        continue
         ;;
     esac
 

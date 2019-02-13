@@ -69,7 +69,7 @@ gen-python() {
 
 gen-demo-asdl() {
   local out=_devbuild/gen/demo_asdl.py
-  gen-python asdl/demo.asdl > $out
+  core/asdl_gen.py mypy asdl/demo.asdl > $out
   wc -l $out
 }
 

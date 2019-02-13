@@ -168,7 +168,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     runtime_asdl.value, runtime_asdl.lvalue
   """
   #log('lhs_expr NODE %s', node)
-  assert isinstance(node, syntax_asdl.lhs_expr), node
+  assert isinstance(node, syntax_asdl.lhs_expr_t), node
 
   if node.tag == lhs_expr_e.LhsName:  # a = b
     # Problem: It can't be an array?
@@ -232,7 +232,7 @@ class ArithEvaluator(_ExprEvaluator):
 
   def _ValToArith(self, val, span_id, int_coerce=True):
     """Convert runtime_asdl.value to a Python int or list of strings."""
-    assert isinstance(val, runtime_asdl.value), '%r %r' % (val, type(val))
+    assert isinstance(val, runtime_asdl.value_t), '%r %r' % (val, type(val))
 
     if int_coerce:
       if val.tag == value_e.Undef:  # 'nounset' already handled before got here
@@ -313,8 +313,9 @@ class ArithEvaluator(_ExprEvaluator):
   def _EvalLhsArith(self, node):
     """lhs_expr -> lvalue.
     
-    Very similar to _EvalLhs in core/cmd_exec."""
-    assert isinstance(node, syntax_asdl.lhs_expr), node
+    Very similar to _EvalLhs in core/cmd_exec.
+    """
+    assert isinstance(node, syntax_asdl.lhs_expr_t), node
 
     if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
       lval = lvalue.LhsName(node.name)

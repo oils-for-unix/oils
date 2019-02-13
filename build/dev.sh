@@ -87,8 +87,8 @@ gen-asdl-py-pickle() {
   local tmp=_tmp/${name}_asdl.py
   local out=_devbuild/gen/${name}_asdl.py
 
-  #if false; then
-  if true; then
+  if false; then
+  #if true; then
     PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
   else
     # optional abbrev module

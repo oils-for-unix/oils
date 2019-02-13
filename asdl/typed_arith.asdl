@@ -3,7 +3,8 @@ module arith {
   pipeline = (bool negated)
 
   arith_expr =
-    Const(int i)  -- 
+    NoOp
+  | Const(int i)  -- 
   | Var(string name)  -- eval variable 
   | Unary(string op, arith_expr a)
   | Binary(string op, arith_expr left, arith_expr right)
