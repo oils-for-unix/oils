@@ -124,7 +124,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def __init__(self, f, type_lookup, abbrev_mod):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
-    self.abbrev_mod = abbrev_mod
+    self.abbrev_mod_name = abbrev_mod.__name__.split('.')[-1]
+    self.abbrev_mod_entries = dir(abbrev_mod)
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -173,68 +174,62 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     return code_str, none_guard
 
-  def _EmitCodeForPrettySubtree(self, method_name, field_name, desc, out_val_name, depth):
+  def _EmitCodeForField(self, method_name, field_name, desc, counter):
     """Given a field value and type descriptor, return a PrettyNode."""
-
-    code_str = None
-    none_guard = False
+    out_val_name = 'x%d' % counter
 
     if isinstance(desc, runtime.ArrayType):
-      self.Emit('  if self.%s:  # ArrayType' % field_name, depth)
-      self.Emit('    %s = PrettyArray()' % out_val_name, depth)
-      self.Emit('    for item in self.%s:' % field_name, depth)
-      child_code_str, _ = self._CodeSnippet(method_name, 'item', desc.desc)
-      self.Emit('      t = %s' % child_code_str, depth)
-      self.Emit('      %s.children.append(t)  # type: ignore' % out_val_name, depth)
-      self.Emit('    out_node.fields.append((%r, %s))' %
-                (field_name, out_val_name), depth)
+      iter_name = 'i%d' % counter
+
+      self.Emit('  if self.%s:  # ArrayType' % field_name)
+      self.Emit('    %s = PrettyArray()' % out_val_name)
+      self.Emit('    for %s in self.%s:' % (iter_name, field_name))
+      child_code_str, _ = self._CodeSnippet(method_name, iter_name, desc.desc)
+      self.Emit('      t = %s' % child_code_str)
+      self.Emit('      %s.children.append(t)  # type: ignore' % out_val_name)
+      self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
 
     elif isinstance(desc, runtime.MaybeType):
-      self.Emit('  if self.%s is not None:  # MaybeType' % field_name, depth)
-      child_code_str, _ = self._CodeSnippet(method_name, 'self.%s' % field_name, desc.desc)
-      self.Emit('    %s = %s' % (out_val_name, child_code_str), depth)
-      self.Emit('    out_node.fields.append((%r, %s))' %
-                (field_name, out_val_name), depth)
+      self.Emit('  if self.%s is not None:  # MaybeType' % field_name)
+      child_code_str, _ = self._CodeSnippet(method_name,
+                                            'self.%s' % field_name, desc.desc)
+      self.Emit('    %s = %s' % (out_val_name, child_code_str))
+      self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
 
     else:
       var_name = 'self.%s' % field_name
       code_str, obj_none_guard = self._CodeSnippet(method_name, var_name, desc)
 
+      depth = self.current_depth
       if obj_none_guard:
-        self.Emit('  if self.%s is not None:' % field_name, depth)
+        self.Emit('  if self.%s is not None:' % field_name)
         depth += 1  # MUTATION
       self.Emit('  %s = %s' % (out_val_name, code_str), depth)
 
-      self.Emit('  out_node.fields.append((%r, %s))' %
-                (field_name, out_val_name), depth)
+      self.Emit('  L.append((%r, %s))' % (field_name, out_val_name), depth)
 
-  def _GenClass(self, desc, name, super_name, depth, tag_num=None):
+  def _GenClass(self, desc, class_name, super_name, depth, tag_num=None):
     """Used for Constructor and Product."""
-    class_name = name  # used below
-    self.Emit('class %s(%s):' % (name, super_name), depth)
+    pretty_cls_name = class_name.replace('__', '.')  # used below
+    self.Emit('class %s(%s):' % (class_name, super_name))
 
     if tag_num is not None:
-      self.Emit('  tag = %d' % tag_num, depth)
+      self.Emit('  tag = %d' % tag_num)
 
     field_names = [f.name for f in desc.fields]
 
     quoted_fields = repr(tuple(field_names))
-    self.Emit('  __slots__ = %s' % quoted_fields, depth)
+    self.Emit('  __slots__ = %s' % quoted_fields)
 
-    self.Emit('', depth)
+    self.Emit('')
+
+    #
+    # __init__
+    #
 
     # TODO: leave out spids?  Mark it as an attribute?
     args = ', '.join('%s=None' % f.name for f in desc.fields)
-    self.Emit('  def __init__(self, %s):' % args, depth)
-
-    # defaults:
-    # int is 0 like C++?
-    # str is ''?
-    # There is no such thing as unset?
-    # No I guess you can have nullptr for unset.  But not for ints.
-
-    #for name, val in self.type_lookup.iteritems():
-    #  log('%s %s', name, val)
+    self.Emit('  def __init__(self, %s):' % args)
 
     arg_types = []
     for f in desc.fields:
@@ -262,8 +257,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       else:
         arg_types.append('Optional[%s]' % type_str)
 
-    self.Emit('    # type: (%s) -> None' % ', '.join(arg_types),
-              depth, reflow=False)
+    self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
 
     for f in desc.fields:
       # This logic is like _MakeFieldDescriptors
@@ -285,50 +279,55 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # For now don't use optional ints.  We don't need it.
 
       default_str = (' or %s' % default) if default else ''
-      self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str), depth)
+      self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str))
 
-    self.Emit('', depth)
+    self.Emit('')
 
-    self.Emit('  def PrettyTree(self):', depth)
-    self.Emit('    # type: () -> PrettyNode', depth)
-    self.Emit('    out_node = PrettyNode(%r)' % class_name.replace('__', '.'), depth)
-    self.Emit('', depth)
+    #
+    # PrettyTree
+    #
+
+    self.Emit('  def PrettyTree(self):')
+    self.Emit('    # type: () -> PrettyNode')
+    self.Emit('    out_node = PrettyNode(%r)' % pretty_cls_name)
+    self.Emit('    L = out_node.fields')
+    self.Emit('')
 
     # Use the runtime type to be more like asdl/format.py
-    desc = self.type_lookup[name]
-    log('desc %s', desc)
+    desc = self.type_lookup[class_name]
     for i, (field_name, field_desc) in enumerate(desc.GetFields()):
-      if field_name == 'spids':
-        continue  # don't emit for now
+      #log('%s :: %s', field_name, field_desc)
+      self.Indent()
+      self._EmitCodeForField('PrettyTree', field_name, field_desc, i)
+      self.Dedent()
+      self.Emit('')
 
-      log('%s :: %s', field_name, field_desc)
-      out_val_name = 'x%d' % i
-      self._EmitCodeForPrettySubtree('PrettyTree', field_name, field_desc, out_val_name, depth+1)
-      self.Emit('', depth)
+    self.Emit('    return out_node')
+    self.Emit('')
 
-    self.Emit('    return out_node', depth)
-    self.Emit('', depth)
+    #
+    # AbbreviatedTree
+    #
 
-    abbrev_module_name = self.abbrev_mod.__name__.split('.')[-1]
-    self.Emit('  def AbbreviatedTree(self):', depth)
-    self.Emit('    # type: () -> PrettyNode', depth)
-    if class_name in dir(self.abbrev_mod):
-      self.Emit('    return %s.%s(self)' % (abbrev_module_name, class_name), depth)
-      self.Emit('', depth)
+    self.Emit('  def AbbreviatedTree(self):')
+    self.Emit('    # type: () -> PrettyNode')
+    if class_name in self.abbrev_mod_entries:
+      self.Emit('    return %s.%s(self)' % (self.abbrev_mod_name, class_name))
+      self.Emit('')
     else:
-      self.Emit('    out_node = PrettyNode(%r)' % class_name.replace('__', '.'), depth)
+      self.Emit('    out_node = PrettyNode(%r)' % pretty_cls_name)
+      self.Emit('    L = out_node.fields')
       for i, (field_name, field_desc) in enumerate(desc.GetFields()):
         if field_name == 'spids':
           continue  # don't emit for now
 
-        out_val_name = 'x%d' % i
-        self._EmitCodeForPrettySubtree('AbbreviatedTree', field_name, field_desc, out_val_name, depth+1)
-        self.Emit('', depth)
+        self.Indent()
+        self._EmitCodeForField('AbbreviatedTree', field_name, field_desc, i)
+        self.Dedent()
+        self.Emit('')
 
-      self.Emit('    return out_node', depth)
-      self.Emit('', depth)
-
-    log('')
+      self.Emit('    return out_node')
+      self.Emit('')
 
   def VisitConstructor(self, cons, sum_name, tag_num, depth):
     # Use fully-qualified name, so we can have osh_cmd.Simple and

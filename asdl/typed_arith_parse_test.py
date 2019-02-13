@@ -184,7 +184,7 @@ def t_parse(s,  # type: str
 
   print(s)
   print()
-  #print(tree)
+  print(tree)
 
   import sys
   from asdl import format as fmt
@@ -201,11 +201,12 @@ def t_parse(s,  # type: str
 
 
 def main():
+  # type: () -> None
+
   # TODO: Enable once we switch to MyPy
   if 1:
     return
 
-  # type: () -> None
   p = typed_arith_parse.MakeParser
 
   TestArith(t_parse)

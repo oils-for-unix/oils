@@ -4,9 +4,9 @@ module arith {
 
   arith_expr =
     Const(int i)  -- 
-  | ArithVar(string name)  -- eval variable 
-  | ArithUnary(string op, arith_expr a)
-  | ArithBinary(string op, arith_expr left, arith_expr right)
+  | Var(string name)  -- eval variable 
+  | Unary(string op, arith_expr a)
+  | Binary(string op, arith_expr left, arith_expr right)
   | Ternary(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
   | FuncCall(string name, arith_expr* args)
   | Index(arith_expr a, arith_expr index)

@@ -79,8 +79,8 @@ class _PrettyBase(object):
 class PrettyNode(_PrettyBase):
   """Homogeneous node for pretty-printing."""
 
-  def __init__(self, node_type):
-    # type: (str) -> None
+  def __init__(self, node_type=None):
+    # type: (Optional[str]) -> None
     self.node_type = node_type
     # Gah this signature is complicated.
     # Probably should have _PrettyRepeated?
@@ -88,7 +88,6 @@ class PrettyNode(_PrettyBase):
 
     # Custom hooks set abbrev = True and use the nodes below.
     self.abbrev = False
-    self.show_node_type = True  # only respected when abbrev is false
     self.left = '('
     self.right = ')'
     # Used by abbreviations

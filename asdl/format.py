@@ -357,7 +357,7 @@ def _PrintTreeObj(node, f, indent, max_col):
   if node.abbrev:  # abbreviated
     prefix = ind + node.left
     f.write(prefix)
-    if node.show_node_type:
+    if node.node_type:
       f.PushColor(runtime.Color_TypeName)
       f.write(node.node_type)
       f.PopColor()
@@ -453,7 +453,7 @@ def _TrySingleLineObj(node, f, max_chars):
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
-    if node.show_node_type:
+    if node.node_type:
       f.PushColor(runtime.Color_TypeName)
       f.write(node.node_type)
       f.PopColor()

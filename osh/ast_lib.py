@@ -32,16 +32,14 @@ def AbbreviateNodes(obj, node):
   """
   if node.node_type == 'token':
     node.abbrev = True
-    node.node_type = 'T'
-    node.show_node_type = False
+    node.node_type = ''  # don't show
     node.left = '<'
     node.right = '>'
     _AbbreviateToken(obj, node.unnamed_fields)
 
   elif node.node_type == 'word_part.LiteralPart':
     node.abbrev = True
-    node.node_type = 'L'
-    node.show_node_type = False
+    node.node_type = ''  # don't show
 
     _AbbreviateToken(obj.token, node.unnamed_fields)
 
@@ -76,8 +74,7 @@ def AbbreviateNodes(obj, node):
 
   elif node.node_type == 'word.CompoundWord':
     node.abbrev = True
-    node.node_type = 'W'
-    node.show_node_type = False
+    node.node_type = ''  # don't show
     node.left = '{'
     node.right = '}'
 
