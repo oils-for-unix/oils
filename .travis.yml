@@ -26,7 +26,7 @@ before_install:
     - test/spec.sh link-busybox-ash
 
 install:
-    - pip install --user flake8 typing mypy_extensions
+    - pip install --user flake8 typing
     # mypy requires Python 3
     - pip3 install --user mypy
     - build/dev.sh minimal

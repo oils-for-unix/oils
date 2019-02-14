@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen import typed_arith_asdl
 from _devbuild.gen.typed_arith_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
     arith_expr__Binary, arith_expr__FuncCall, arith_expr__Const)
