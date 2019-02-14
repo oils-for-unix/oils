@@ -2,6 +2,7 @@ language: python
 cache: pip
 python:
     - 2.7
+    - 3.6
 
 addons:
     apt:
@@ -20,13 +21,15 @@ before_install:
     - test/spec.sh link-busybox-ash
 
 install:
-    # - pip install -r requirements.txt
     - pip install flake8 typing mypy_extensions
-    # TODO: we will want this later
-    # - pip3 install mypy
+    # mypy requires Python 3
+    - pip3 install mypy
     - build/dev.sh minimal
 
 script:
+    # Type checking with MyPy
+    - asdl/typed.sh iter-demo
+    - asdl/typed.sh iter-arith
     - test/lint.sh travis
     # Unit tests
     - test/unit.sh all
