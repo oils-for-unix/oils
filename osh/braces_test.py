@@ -23,10 +23,7 @@ def _assertReadWord(*args):
 def _PrettyPrint(n):
   """Prints in color."""
   ast_f = fmt.DetectConsoleOutput(sys.stdout)
-  if 0:
-    tree = fmt.MakePrettyTree(n)
-  else:
-    tree = n.PrettyTree()
+  tree = n.PrettyTree()
   fmt.PrintTree(tree, ast_f)
 
 
