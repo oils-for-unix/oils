@@ -696,8 +696,7 @@ class CommandParser(object):
 
     if 0:
       log('AFTER expansion:')
-      from osh import ast_lib
-      ast_lib.PrettyPrint(node)
+      #node.PrettyPrint()
     return node
 
   # Flags that indicate an assignment should be parsed like a command.

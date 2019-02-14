@@ -7,6 +7,8 @@ runtime.py
 """
 from __future__ import print_function
 
+import sys
+
 from typing import List, Tuple, Optional
 
 
@@ -59,6 +61,15 @@ class CompoundObj(Obj):
   def AbbreviatedTree(self):
     # type: () -> _PrettyBase
     raise NotImplementedError(self.__class__.__name__)
+
+  def PrettyPrint(self, f=sys.stdout):
+    # type: () -> None
+    """Print abbreviated tree in color, for debugging."""
+    from asdl import format as fmt
+
+    ast_f = fmt.DetectConsoleOutput(f)
+    tree = self.AbbreviatedTree()
+    fmt.PrintTree(tree, ast_f)
 
   def __repr__(self):
     # TODO: Break this circular dependency.

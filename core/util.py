@@ -303,7 +303,7 @@ class DebugFile(object):
     self.f.write('\n')
     self.f.flush()  # need to see it interacitvely
 
-  # These two methods are for ast_lib.PrettyPrint
+  # These two methods are for node.PrettyPrint()
   def write(self, s):
     self.f.write(s)
 

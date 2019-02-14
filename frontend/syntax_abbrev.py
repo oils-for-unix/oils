@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-ast_lib.py - Helpers for osh/osh.asdl
+syntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
 """
 
 import sys

@@ -43,26 +43,24 @@ class _BaseTrail(object):
     self.expanding_alias = False
 
   def PrintDebugString(self, debug_f):
-    from osh import ast_lib
-    #debug_f.log('trail = %s', trail)
     debug_f.log('  words:')
     for w in self.words:
-      ast_lib.PrettyPrint(w, f=debug_f)
+      w.PrettyPrint(f=debug_f)
     debug_f.log('')
 
     debug_f.log('  redirects:')
     for r in self.redirects:
-      ast_lib.PrettyPrint(r, f=debug_f)
+      r.PrettyPrint(f=debug_f)
     debug_f.log('')
 
     debug_f.log('  tokens:')
     for p in self.tokens:
-      ast_lib.PrettyPrint(p, f=debug_f)
+      p.PrettyPrint(f=debug_f)
     debug_f.log('')
 
     debug_f.log('  alias_words:')
     for w in self.alias_words:
-      ast_lib.PrettyPrint(w, f=debug_f)
+      w.PrettyPrint(f=debug_f)
     debug_f.log('')
 
   def __repr__(self):
