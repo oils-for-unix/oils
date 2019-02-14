@@ -7,17 +7,16 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen import typed_arith_asdl
-from _devbuild.gen.typed_arith_asdl import arith_expr_t
-from _devbuild.gen.typed_arith_asdl import arith_expr__Binary
-from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
+from _devbuild.gen.typed_arith_asdl import (
+    arith_expr, arith_expr_e, arith_expr_t,
+    arith_expr__Binary, arith_expr__FuncCall, arith_expr__Const)
 
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union, cast
 
 from asdl import tdop
 from asdl.tdop import Parser
 from asdl.tdop import ParserSpec
 
-arith_expr = typed_arith_asdl.arith_expr
 Token = tdop.Token
 
 
@@ -255,19 +254,65 @@ def ParseShell(s, expected=None):
   return tree
 
 
+class Evaluator(object):
+  def __init__(self):
+    # type: () -> None
+    self.mem = {}  # type: Dict[str, int]
+
+  def Eval(self, node):
+    # type: (arith_expr_t) -> int
+
+    tag = node.tag
+    if tag == arith_expr_e.Const:
+      n = cast(arith_expr__Const, node)
+
+      assert n.i is not None
+      return n.i
+
+    if tag == arith_expr_e.Binary:
+      n2 = cast(arith_expr__Binary, node)
+
+      assert n2.left is not None
+      assert n2.right is not None
+
+      left = self.Eval(n2.left)
+      right = self.Eval(n2.right)
+      op = n2.op
+
+      if op == '+':
+        return left + right
+
+    return 3
+
+
 def main(argv):
-  # type: (List[str]) -> None
+  # type: (List[str]) -> int
   try:
-    s = argv[1]
+    action = argv[1]
+    s = argv[2]
   except IndexError:
-    print('Usage: ./arith_parse.py EXPRESSION')
+    print('Usage: ./arith_parse.py ACTION EXPRESSION')
+    return 2
+
+  try:
+    node = ParseShell(s)
+  except tdop.ParseError as e:
+    print('Error parsing %r: %s' % (s, e), file=sys.stderr)
+
+  if action == 'parse':
+    print(node)
+  elif action == 'eval':
+    ev = Evaluator()
+    result = ev.Eval(node)
+    print(node)
+    print('  =>  ')
+    print(result)
   else:
-    try:
-      tree = ParseShell(s)
-    except tdop.ParseError as e:
-      print('Error parsing %r: %s' % (s, e), file=sys.stderr)
-    print(tree)
+    print('Invalid action %r' % action)
+    return 2
+
+  return 0
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+  sys.exit(main(sys.argv))

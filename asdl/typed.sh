@@ -41,7 +41,16 @@ iter-arith() {
   asdl/run.sh gen-typed-arith-asdl
   check-arith
 
-  PYTHONPATH=. asdl/typed_arith_parse_test.py
+  export PYTHONPATH=. 
+  asdl/typed_arith_parse_test.py
+
+  echo '---'
+  asdl/typed_arith_parse.py parse '40+2'
+  echo
+
+  echo '---'
+  asdl/typed_arith_parse.py eval '40+2+5'
+  echo
 }
 
 # --no-strict-optional issues
