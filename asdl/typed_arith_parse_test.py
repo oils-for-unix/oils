@@ -3,7 +3,7 @@ from __future__ import print_function
 from asdl import tdop
 from asdl import typed_arith_parse  # module under test
 
-from typing import Callable, Optional
+from typing import Callable, Optional, TYPE_CHECKING
 
 Parser = typed_arith_parse.Parser
 arith_expr_t = typed_arith_parse.arith_expr_t
@@ -220,7 +220,8 @@ def main():
 
 
 # Type alias
-ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
+if TYPE_CHECKING:
+  ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
 
 
 if __name__ == '__main__':

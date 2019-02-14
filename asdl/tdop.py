@@ -221,5 +221,8 @@ class Parser(object):
     return self.ParseUntil(0)
 
 
-NullFunc = Callable[[Parser, Token, int], arith_expr_t]
-LeftFunc = Callable[[Parser, Token, arith_expr_t, int], arith_expr_t]
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  NullFunc = Callable[[Parser, Token, int], arith_expr_t]
+  LeftFunc = Callable[[Parser, Token, arith_expr_t, int], arith_expr_t]
