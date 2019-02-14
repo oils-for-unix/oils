@@ -43,6 +43,7 @@ from core.meta import (
     Id, REDIR_ARG_TYPES, syntax_asdl, runtime_asdl, types_asdl)
 from frontend import reader
 from pylib import os_path
+from pylib import path_stat
 from osh import word
 from osh import state
 
@@ -345,7 +346,7 @@ class FileSystemAction(CompletionAction):
           # because all the completion actions must obey the same interface.
           # We could have another type like candidate = File | Dir |
           # OtherString ?
-          if os_path.isdir(path):
+          if path_stat.isdir(path):
             yield path
           continue
 
@@ -355,7 +356,7 @@ class FileSystemAction(CompletionAction):
           if not posix.access(path, posix.X_OK):
             continue
 
-        if self.add_slash and os_path.isdir(path):
+        if self.add_slash and path_stat.isdir(path):
           yield path + '/'
         else:
           yield path

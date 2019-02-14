@@ -36,6 +36,7 @@ from frontend import args
 from frontend import lex
 from frontend import match
 from pylib import os_path
+from pylib import path_stat
 from osh import state
 from osh import string_ops
 from osh import word_compile
@@ -974,7 +975,7 @@ def _ResolveNames(names, funcs, path_val):
       found = False
       for path_dir in path_list:
         full_path = os_path.join(path_dir, name)
-        if os_path.exists(full_path):
+        if path_stat.exists(full_path):
           kind = ('file', full_path)
           found = True
           break
