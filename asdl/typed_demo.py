@@ -27,6 +27,8 @@ def main(argv):
   # type: (List[str]) -> None
 
   op = op_id_e.Plus
+  print(op)
+  print(repr(op))
 
   n1 = cflow.Break()
   n2 = cflow.Return()  # hm I would like a type error here

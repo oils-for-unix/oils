@@ -103,6 +103,7 @@ from typing import Optional, List, Tuple
 
 """)
 
+    # TODO: inline the module at the END
     if abbrev_mod:
       package, module = abbrev_module_name.split('.')
       f.write('from %s import %s\n' % (package, module))

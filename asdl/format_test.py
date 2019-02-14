@@ -24,16 +24,24 @@ class FormatTest(unittest.TestCase):
   def testRepeatedString(self):
     node = demo_asdl.assign('declare', ['-r', '-x'])
 
-    f = cStringIO.StringIO()
-    ast_f = fmt.TextOutput(f)
+    for i in xrange(100):
+      f = cStringIO.StringIO()
+      f1 = fmt.TextOutput(f)
+      f2 = fmt.HtmlOutput(f)
 
-    tree = node.PrettyTree()
+      for ast_f in [f1, f2]:
+        tree = node.PrettyTree()
 
-    fmt.PrintTree(tree, ast_f)
-    pretty_str = f.getvalue()
-    print(pretty_str)
+        fmt.PrintTree(tree, ast_f)
+        pretty_str = f.getvalue()
+        print(pretty_str)
 
-    self.assertEqual('(assign name:declare flags:[-r -x])', pretty_str)
+        if ast_f is f1:
+          self.assertEqual('(assign name:declare flags:[-r -x])', pretty_str)
+
+        t2 = node.AbbreviatedTree()
+
+        fmt.PrintTree(t2, ast_f)
 
 
 if __name__ == '__main__':

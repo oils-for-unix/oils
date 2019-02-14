@@ -7,9 +7,10 @@ runtime.py
 """
 from __future__ import print_function
 
+from cStringIO import StringIO
 import sys
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, IO
 
 
 class Obj(object):
@@ -63,7 +64,7 @@ class CompoundObj(Obj):
     raise NotImplementedError(self.__class__.__name__)
 
   def PrettyPrint(self, f=sys.stdout):
-    # type: () -> None
+    # type: (IO[str]) -> None
     """Print abbreviated tree in color, for debugging."""
     from asdl import format as fmt
 
@@ -72,11 +73,11 @@ class CompoundObj(Obj):
     fmt.PrintTree(tree, ast_f)
 
   def __repr__(self):
+    # type: () -> str
     # TODO: Break this circular dependency.
     from asdl import format as fmt
-    from core import util
 
-    ast_f = fmt.TextOutput(util.Buffer())  # No color by default.
+    ast_f = fmt.TextOutput(StringIO())  # No color by default.
     tree = self.PrettyTree()
     fmt.PrintTree(tree, ast_f)
     s, _ = ast_f.GetRaw()
@@ -97,7 +98,7 @@ class PrettyNode(_PrettyBase):
 
   def __init__(self, node_type=None):
     # type: (Optional[str]) -> None
-    self.node_type = node_type
+    self.node_type = node_type or ''  # type: str
     # Gah this signature is complicated.
     # Probably should have _PrettyRepeated?
     self.fields = []  # type: List[Tuple[str, _PrettyBase]]
@@ -116,6 +117,7 @@ class PrettyNode(_PrettyBase):
 
 class PrettyArray(_PrettyBase):
   def __init__(self):
+    # type: () -> None
     self.children = []  # type: List[_PrettyBase]
 
   def __repr__(self):

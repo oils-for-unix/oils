@@ -15,13 +15,18 @@ Places where we try a single line:
  - abbreviated, unnamed fields
 """
 
+from typing import Tuple, List, IO
+from asdl.runtime import PrettyLeaf, PrettyNode, PrettyArray, _PrettyBase
+
+from cStringIO import StringIO
+
 from asdl import pretty
 from asdl import runtime
-from core import util
 from pylib import cgi
 
 
 def DetectConsoleOutput(f):
+  # type: (IO[str]) -> ColorOutput
   """Wrapped to auto-detect."""
   if f.isatty():
     return AnsiOutput(f)
@@ -33,32 +38,40 @@ class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
 
   def __init__(self, f):
+    # type: (IO[str]) -> None
     self.f = f
     self.num_chars = 0
 
   def NewTempBuffer(self):
+    # type: () -> ColorOutput
     """Return a temporary buffer for the line wrapping calculation."""
     raise NotImplementedError
 
   def FileHeader(self):
+    # type: () -> None
     """Hook for printing a full file."""
     pass
 
   def FileFooter(self):
+    # type: () -> None
     """Hook for printing a full file."""
     pass
 
   def PushColor(self, e_color):
+    # type: (int) -> None
     raise NotImplementedError
 
   def PopColor(self):
+    # type: () -> None
     raise NotImplementedError
 
   def write(self, s):
+    # type: (str) -> None
     self.f.write(s)
     self.num_chars += len(s)  # Only count visible characters!
 
   def WriteRaw(self, raw):
+    # type: (Tuple[str, int]) -> None
     """
     Write raw data without escaping, and without counting control codes in the
     length.
@@ -68,26 +81,32 @@ class ColorOutput(object):
     self.num_chars += num_chars
 
   def NumChars(self):
+    # type: () -> int
     return self.num_chars
 
   def GetRaw(self):
-    # For when we have an io.StringIO()
-    return self.f.getvalue(), self.num_chars
+    # type: () -> Tuple[str, int]
+    # NOTE: When wrapping, self.f will be a StringIO with this method.
+    return self.f.getvalue(), self.num_chars  # type: ignore
 
 
 class TextOutput(ColorOutput):
   """TextOutput put obeys the color interface, but outputs nothing."""
 
   def __init__(self, f):
+    # type: (IO[str]) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return TextOutput(util.Buffer())
+    # type: () -> TextOutput
+    return TextOutput(StringIO())
 
   def PushColor(self, e_color):
+    # type: (int) -> None
     pass  # ignore color
 
   def PopColor(self):
+    # type: () -> None
     pass  # ignore color
 
 
@@ -99,12 +118,15 @@ class HtmlOutput(ColorOutput):
   Color: HTML spans
   """
   def __init__(self, f):
+    # type: (IO[str]) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return HtmlOutput(util.Buffer())
+    # type: () -> HtmlOutput
+    return HtmlOutput(StringIO())
 
   def FileHeader(self):
+    # type: () -> None
     # TODO: Use a different CSS file to make the colors match.  I like string
     # literals as yellow, etc.
      #<link rel="stylesheet" type="text/css" href="/css/code.css" />
@@ -123,6 +145,7 @@ class HtmlOutput(ColorOutput):
 """)
 
   def FileFooter(self):
+    # type: () -> None
     self.f.write("""
     </pre>
   </body>
@@ -130,6 +153,7 @@ class HtmlOutput(ColorOutput):
     """)
 
   def PushColor(self, e_color):
+    # type: (int) -> None
     # To save bandwidth, use single character CSS names.
     if e_color == runtime.Color_TypeName:
       css_class = 'n'
@@ -144,9 +168,12 @@ class HtmlOutput(ColorOutput):
     self.f.write('<span class="%s">' % css_class)
 
   def PopColor(self):
+    # type: () -> None
     self.f.write('</span>')
 
   def write(self, s):
+    # type: (str) -> None
+
     # PROBLEM: Double escaping!
     self.f.write(cgi.escape(s))
     self.num_chars += len(s)  # Only count visible characters!
@@ -168,12 +195,15 @@ class AnsiOutput(ColorOutput):
   """For the console."""
 
   def __init__(self, f):
+    # type: (IO[str]) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return AnsiOutput(util.Buffer())
+    # type: () -> AnsiOutput
+    return AnsiOutput(StringIO())
 
   def PushColor(self, e_color):
+    # type: (int) -> None
     if e_color == runtime.Color_TypeName:
       self.f.write(_YELLOW)
     elif e_color == runtime.Color_StringConst:
@@ -186,12 +216,19 @@ class AnsiOutput(ColorOutput):
       raise AssertionError(e_color)
 
   def PopColor(self):
+    # type: () -> None
     self.f.write(_RESET)
 
 
 INDENT = 2
 
-def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
+def _PrintWrappedArray(array,  # type: List[_PrettyBase]
+                       prefix_len,  # type: int
+                       f,  # type: ColorOutput
+                       indent,  # type: int
+                       max_col,  # type: int
+                       ):
+  # type: (...) -> bool
   """Print an array of objects with line wrapping.
 
   Returns whether they all fit on a single line, so you can print the closing
@@ -220,6 +257,8 @@ def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
 
 
 def _PrintWholeArray(array, prefix_len, f, indent, max_col):
+  # type: (List[_PrettyBase], int, ColorOutput, int, int) -> bool
+
   # This is UNLIKE the abbreviated case above, where we do WRAPPING.
   # Here, ALL children must fit on a single line, or else we separate
   # each one oonto a separate line.  This is to avoid the following:
@@ -251,6 +290,7 @@ def _PrintWholeArray(array, prefix_len, f, indent, max_col):
 
 
 def _PrintTreeObj(node, f, indent, max_col):
+  # type: (PrettyNode, ColorOutput, int, int) -> None
   """Print a CompoundObj in abbreviated or normal form."""
   ind = ' ' * indent
 
@@ -318,6 +358,7 @@ def _PrintTreeObj(node, f, indent, max_col):
 
 
 def PrintTree(node, f, indent=0, max_col=100):
+  # type: (_PrettyBase, ColorOutput, int, int) -> None
   """Second step of printing: turn homogeneous tree into a colored string.
 
   Args:
@@ -350,6 +391,7 @@ def PrintTree(node, f, indent=0, max_col=100):
 
 
 def _TrySingleLineObj(node, f, max_chars):
+  # type: (PrettyNode, ColorOutput, int) -> bool
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
@@ -378,7 +420,11 @@ def _TrySingleLineObj(node, f, max_chars):
   return True
 
 
-def _TrySingleLine(node, f, max_chars):
+def _TrySingleLine(node,  # type: _PrettyBase
+                   f,  # type: ColorOutput
+                   max_chars,  # type: int
+                   ):
+  # type: (...) -> bool
   """Try printing on a single line.
 
   Args:

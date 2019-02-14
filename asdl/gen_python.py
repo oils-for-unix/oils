@@ -192,7 +192,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    for %s in self.%s:' % (iter_name, field_name))
       child_code_str, _ = self._CodeSnippet(method_name, iter_name, desc.desc)
       self.Emit('      t = %s' % child_code_str)
-      self.Emit('      %s.children.append(t)  # type: ignore' % out_val_name)
+      self.Emit('      %s.children.append(t)' % out_val_name)
       self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
 
     elif isinstance(desc, meta.MaybeType):
@@ -335,6 +335,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('')
 
     self.Emit('  def AbbreviatedTree(self):')
+    self.Emit('    # type: () -> PrettyNode')
     if class_name in self.abbrev_mod_entries:
       self.Emit('    p = %s.%s(self)' % (self.abbrev_mod_name, class_name))
       # If the user function didn't return anything, fall back.
