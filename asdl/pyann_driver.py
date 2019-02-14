@@ -6,7 +6,7 @@ import unittest
 
 from pyannotate_runtime import collect_types
 
-from asdl import typed_arith_parse_test
+#from asdl import typed_arith_parse_test
 from asdl import format_test
 
 

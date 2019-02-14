@@ -14,9 +14,7 @@ Places where we try a single line:
  - objects with name fields
  - abbreviated, unnamed fields
 """
-
 from typing import Tuple, List, IO
-from asdl.runtime import PrettyLeaf, PrettyNode, PrettyArray, _PrettyBase
 
 from cStringIO import StringIO
 
@@ -222,7 +220,7 @@ class AnsiOutput(ColorOutput):
 
 INDENT = 2
 
-def _PrintWrappedArray(array,  # type: List[_PrettyBase]
+def _PrintWrappedArray(array,  # type: List[runtime._PrettyBase]
                        prefix_len,  # type: int
                        f,  # type: ColorOutput
                        indent,  # type: int
@@ -257,7 +255,7 @@ def _PrintWrappedArray(array,  # type: List[_PrettyBase]
 
 
 def _PrintWholeArray(array, prefix_len, f, indent, max_col):
-  # type: (List[_PrettyBase], int, ColorOutput, int, int) -> bool
+  # type: (List[runtime._PrettyBase], int, ColorOutput, int, int) -> bool
 
   # This is UNLIKE the abbreviated case above, where we do WRAPPING.
   # Here, ALL children must fit on a single line, or else we separate
@@ -290,7 +288,7 @@ def _PrintWholeArray(array, prefix_len, f, indent, max_col):
 
 
 def _PrintTreeObj(node, f, indent, max_col):
-  # type: (PrettyNode, ColorOutput, int, int) -> None
+  # type: (runtime.PrettyNode, ColorOutput, int, int) -> None
   """Print a CompoundObj in abbreviated or normal form."""
   ind = ' ' * indent
 
@@ -358,7 +356,7 @@ def _PrintTreeObj(node, f, indent, max_col):
 
 
 def PrintTree(node, f, indent=0, max_col=100):
-  # type: (_PrettyBase, ColorOutput, int, int) -> None
+  # type: (runtime._PrettyBase, ColorOutput, int, int) -> None
   """Second step of printing: turn homogeneous tree into a colored string.
 
   Args:
@@ -391,7 +389,7 @@ def PrintTree(node, f, indent=0, max_col=100):
 
 
 def _TrySingleLineObj(node, f, max_chars):
-  # type: (PrettyNode, ColorOutput, int) -> bool
+  # type: (runtime.PrettyNode, ColorOutput, int) -> bool
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
@@ -420,7 +418,7 @@ def _TrySingleLineObj(node, f, max_chars):
   return True
 
 
-def _TrySingleLine(node,  # type: _PrettyBase
+def _TrySingleLine(node,  # type: runtime._PrettyBase
                    f,  # type: ColorOutput
                    max_chars,  # type: int
                    ):

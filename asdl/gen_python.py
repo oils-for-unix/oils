@@ -167,6 +167,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
         code_str = 'PrettyLeaf(%s.name, Color_TypeName)' % var_name
+        none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s.%s()' % (var_name, method_name)
         none_guard = True
@@ -207,9 +208,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       code_str, obj_none_guard = self._CodeSnippet(method_name, var_name, desc)
 
       depth = self.current_depth
-      if obj_none_guard:
-        self.Emit('  if self.%s is not None:' % field_name)
-        depth += 1  # MUTATION
+      if obj_none_guard:  # to satisfy MyPy type system
+        self.Emit('  assert self.%s is not None' % field_name)
       self.Emit('  %s = %s' % (out_val_name, code_str), depth)
 
       self.Emit('  L.append((%r, %s))' % (field_name, out_val_name), depth)

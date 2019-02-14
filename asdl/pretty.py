@@ -6,7 +6,7 @@ pretty.py
 try:
   import fastlex
 except ImportError:
-  fastlex = None
+  fastlex = None  # type: ignore
 
 # Word characters, - and _, as well as path name characters . and /.
 PLAIN_WORD_RE = r'[a-zA-Z0-9\-_./]+'

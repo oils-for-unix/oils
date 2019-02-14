@@ -34,7 +34,7 @@ typecheck() {
 check-arith() {
   local strict='--strict'
   #strict=''
-  MYPYPATH=. PYTHONPATH=. typecheck $strict --no-strict-optional \
+  MYPYPATH=. PYTHONPATH=. typecheck $strict \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
@@ -51,7 +51,7 @@ iter-arith() {
 
 iter-demo() {
   asdl/run.sh gen-typed-demo-asdl
-  typecheck --strict --no-strict-optional \
+  typecheck --strict \
     _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
 
   PYTHONPATH=. asdl/typed_demo.py "$@"
