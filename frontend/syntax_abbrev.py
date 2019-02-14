@@ -1,9 +1,6 @@
-#!/usr/bin/python
 """
 syntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
 """
-
-import sys
 
 from asdl import runtime
 from core.meta import Id
@@ -18,7 +15,7 @@ def _AbbreviateToken(token, out):
   out.append(n2)
 
 
-def token(obj):
+def _token(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -29,7 +26,7 @@ def token(obj):
   return p_node
 
 
-def word_part__LiteralPart(obj):
+def _word_part__LiteralPart(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -38,7 +35,7 @@ def word_part__LiteralPart(obj):
   return p_node
 
 
-def word_part__SimpleVarSub(obj):
+def _word_part__SimpleVarSub(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = '$'
@@ -46,7 +43,7 @@ def word_part__SimpleVarSub(obj):
   return p_node
 
 
-def word_part__BracedVarSub(obj):
+def _word_part__BracedVarSub(obj):
   p_node = runtime.PrettyNode()
   if obj.prefix_op or obj.bracket_op or obj.suffix_op:
     return None  # we have other fields to display; don't abbreviate
@@ -57,7 +54,7 @@ def word_part__BracedVarSub(obj):
   return p_node
 
 
-def word_part__DoubleQuotedPart(obj):
+def _word_part__DoubleQuotedPart(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = 'DQ'
@@ -67,7 +64,7 @@ def word_part__DoubleQuotedPart(obj):
   return p_node
 
 
-def word_part__SingleQuotedPart(obj):
+def _word_part__SingleQuotedPart(obj):
   # Only abbreviate 'foo', not $'foo\n'
   if obj.left.id != Id.Left_SingleQuote:
     return None  # Fall back on obj._AbbreviatedTree()
@@ -81,7 +78,7 @@ def word_part__SingleQuotedPart(obj):
   return p_node
 
 
-def word__CompoundWord(obj):
+def _word__CompoundWord(obj):
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -93,7 +90,7 @@ def word__CompoundWord(obj):
   return p_node
 
 
-def command__SimpleCommand(obj):
+def _command__SimpleCommand(obj):
   p_node = runtime.PrettyNode()
   if obj.redirects or obj.more_env:
     return None  # we have other fields to display; don't abbreviate

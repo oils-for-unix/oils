@@ -1,19 +1,11 @@
-#!/usr/bin/python
 """
-typed_arith_abbrev.py
+typed_arith_abbrev.py - Abbreviations for pretty-printing typed_arith.asdl.
 """
-from __future__ import print_function
-
-# Causes a circular import!  Gah.
-#from _devbuild.gen import typed_arith_asdl as A
-#from typing import Optional
 
 from asdl import runtime
-_PrettyBase = runtime._PrettyBase
 
-
-def arith_expr__Unary(obj):
-  # X type: (A.arith_expr__Unary) -> Optional[_PrettyBase]
+def _arith_expr__Unary(obj):
+  # type: (arith_expr__Unary) -> Optional[runtime.PrettyNode]
 
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
@@ -24,8 +16,8 @@ def arith_expr__Unary(obj):
   return p_node
 
 
-def arith_expr__Binary(obj):
-  # X type: (A.arith_expr__Binary) -> Optional[_PrettyBase]
+def _arith_expr__Binary(obj):
+  # type: (arith_expr__Binary) -> Optional[runtime.PrettyNode]
 
   if obj.op == '=':  # test for fallback
     return None
@@ -40,16 +32,18 @@ def arith_expr__Binary(obj):
   return p_node
 
 
-def arith_expr__Const(obj):
+def _arith_expr__Const(obj):
+  # type: (arith_expr__Const) -> Optional[runtime.PrettyNode]
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
-  p_node.node_type = None  # omit it
+  p_node.node_type = ''  # omit it
   n = runtime.PrettyLeaf(str(obj.i), runtime.Color_OtherConst)
   p_node.unnamed_fields.append(n)
   return p_node
 
 
-def arith_expr__Var(obj):
+def _arith_expr__Var(obj):
+  # type: (arith_expr__Var) -> Optional[runtime.PrettyNode]
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = '$'

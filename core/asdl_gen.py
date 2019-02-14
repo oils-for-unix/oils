@@ -103,14 +103,21 @@ from typing import Optional, List, Tuple
 
 """)
 
-    # TODO: inline the module at the END
-    if abbrev_mod:
-      package, module = abbrev_module_name.split('.')
-      f.write('from %s import %s\n' % (package, module))
-      f.write('\n')
-
-    v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod)
+    abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
+    v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod_entries)
     v.VisitModule(schema_ast)
+
+    if abbrev_mod:
+      f.write("""\
+#
+# CONCATENATED FILE
+#
+
+""")
+      package, module = abbrev_module_name.split('.')
+      path = os.path.join(package, module + '.py')
+      with open(path) as in_f:
+        f.write(in_f.read())
 
   else:
     raise RuntimeError('Invalid action %r' % action)

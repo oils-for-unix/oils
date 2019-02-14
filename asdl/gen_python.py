@@ -121,15 +121,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   TODO: Remove the code above.  This should substitute for it.
   """
-  def __init__(self, f, type_lookup, abbrev_mod=None):
+  def __init__(self, f, type_lookup, abbrev_mod_entries=None):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
-    if abbrev_mod:
-      self.abbrev_mod_name = abbrev_mod.__name__.split('.')[-1]
-      self.abbrev_mod_entries = dir(abbrev_mod)
-    else:
-      self.abbrev_mod_name = ''
-      self.abbrev_mod_entries = []
+    self.abbrev_mod_entries = abbrev_mod_entries or []
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -336,8 +331,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     self.Emit('  def AbbreviatedTree(self):')
     self.Emit('    # type: () -> PrettyNode')
-    if class_name in self.abbrev_mod_entries:
-      self.Emit('    p = %s.%s(self)' % (self.abbrev_mod_name, class_name))
+    abbrev_name = '_%s' % class_name
+    if abbrev_name in self.abbrev_mod_entries:
+      self.Emit('    p = %s(self)' % abbrev_name)
       # If the user function didn't return anything, fall back.
       self.Emit('    return p if p else self._AbbreviatedTree()')
     else:
