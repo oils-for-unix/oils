@@ -26,7 +26,7 @@ deps() {
 
   echo ---
 
-  # Around 24K lines, after removing 're' and 'copy' from the typing module.
+  # Around 16K lines, after stripping down the 'typing' module.
 
   awk '
   $1 ~ /^.*\.py$/ { print $1 }
@@ -34,14 +34,5 @@ deps() {
     | sort | tee _tmp/osh-parse-src.txt | xargs wc -l | sort -n
 
 }
-
-# PROBLEM:
-#
-# re module is in typing!  Gah.
-# get rid of collections, functools, copy, etc. ?
-
-# Make your own slimmed down one?  Dict[KT, VT]?
-# or does MyPy just use its own?  Maybe you can make a stub?
-
 
 "$@"
