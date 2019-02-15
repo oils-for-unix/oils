@@ -203,7 +203,7 @@ class PromptEvaluator(object):
           r = self.cache.Get('user')
 
         elif char == 'h':
-          r = self.cache.Get('hostname')
+          r = self.cache.Get('hostname').split('.')[0]
 
         elif char == 'w':
           # TODO: This should shorten to ~foo when applicable.
