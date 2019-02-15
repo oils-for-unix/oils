@@ -50,7 +50,7 @@ check-some() {
   egrep -v 'vendor|__future__' _tmp/osh-parse-src.txt | tee _tmp/to-check.txt
 
   set -x
-  cat _tmp/to-check.txt | xargs -- $0 typecheck >_tmp/err.txt || true
+  cat _tmp/to-check.txt | xargs -- $0 typecheck $strict >_tmp/err.txt || true
 
   cat _tmp/err.txt
   wc -l _tmp/err.txt

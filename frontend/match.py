@@ -136,9 +136,9 @@ else:
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
-  _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')
+  _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')  # type: ignore
 
-  def IsValidVarName(s):
+  def IsValidVarName(s):  # type: ignore # duplicates a MyPy name?
     return _VAR_NAME_RE.match(s)
 
 ECHO_LEXER = SimpleLexer(ECHO_MATCHER)
