@@ -14,14 +14,17 @@ Places where we try a single line:
  - objects with name fields
  - abbreviated, unnamed fields
 """
+from typing import Tuple, List, IO
+
+from cStringIO import StringIO
 
 from asdl import pretty
 from asdl import runtime
-from core import util
 from pylib import cgi
 
 
 def DetectConsoleOutput(f):
+  # type: (IO[str]) -> ColorOutput
   """Wrapped to auto-detect."""
   if f.isatty():
     return AnsiOutput(f)
@@ -33,32 +36,40 @@ class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
 
   def __init__(self, f):
+    # type: (IO[str]) -> None
     self.f = f
     self.num_chars = 0
 
   def NewTempBuffer(self):
+    # type: () -> ColorOutput
     """Return a temporary buffer for the line wrapping calculation."""
     raise NotImplementedError
 
   def FileHeader(self):
+    # type: () -> None
     """Hook for printing a full file."""
     pass
 
   def FileFooter(self):
+    # type: () -> None
     """Hook for printing a full file."""
     pass
 
-  def PushColor(self, str_type):
+  def PushColor(self, e_color):
+    # type: (int) -> None
     raise NotImplementedError
 
   def PopColor(self):
+    # type: () -> None
     raise NotImplementedError
 
   def write(self, s):
+    # type: (str) -> None
     self.f.write(s)
     self.num_chars += len(s)  # Only count visible characters!
 
   def WriteRaw(self, raw):
+    # type: (Tuple[str, int]) -> None
     """
     Write raw data without escaping, and without counting control codes in the
     length.
@@ -68,26 +79,32 @@ class ColorOutput(object):
     self.num_chars += num_chars
 
   def NumChars(self):
+    # type: () -> int
     return self.num_chars
 
   def GetRaw(self):
-    # For when we have an io.StringIO()
-    return self.f.getvalue(), self.num_chars
+    # type: () -> Tuple[str, int]
+    # NOTE: When wrapping, self.f will be a StringIO with this method.
+    return self.f.getvalue(), self.num_chars  # type: ignore
 
 
 class TextOutput(ColorOutput):
   """TextOutput put obeys the color interface, but outputs nothing."""
 
   def __init__(self, f):
+    # type: (IO[str]) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return TextOutput(util.Buffer())
+    # type: () -> TextOutput
+    return TextOutput(StringIO())
 
-  def PushColor(self, str_type):
+  def PushColor(self, e_color):
+    # type: (int) -> None
     pass  # ignore color
 
   def PopColor(self):
+    # type: () -> None
     pass  # ignore color
 
 
@@ -99,12 +116,15 @@ class HtmlOutput(ColorOutput):
   Color: HTML spans
   """
   def __init__(self, f):
+    # type: (IO[str]) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return HtmlOutput(util.Buffer())
+    # type: () -> HtmlOutput
+    return HtmlOutput(StringIO())
 
   def FileHeader(self):
+    # type: () -> None
     # TODO: Use a different CSS file to make the colors match.  I like string
     # literals as yellow, etc.
      #<link rel="stylesheet" type="text/css" href="/css/code.css" />
@@ -123,40 +143,38 @@ class HtmlOutput(ColorOutput):
 """)
 
   def FileFooter(self):
+    # type: () -> None
     self.f.write("""
     </pre>
   </body>
 </html>
     """)
 
-  def PushColor(self, str_type):
+  def PushColor(self, e_color):
+    # type: (int) -> None
     # To save bandwidth, use single character CSS names.
-    if str_type == _NODE_TYPE:
+    if e_color == runtime.Color_TypeName:
       css_class = 'n'
-    elif str_type == _STRING_LITERAL:
+    elif e_color == runtime.Color_StringConst:
       css_class = 's'
-    elif str_type == _OTHER_LITERAL:
+    elif e_color == runtime.Color_OtherConst:
       css_class = 'o'
-    elif str_type == _OTHER_TYPE:
+    elif e_color == runtime.Color_UserType:
       css_class = 'o'
     else:
-      raise AssertionError(str_type)
+      raise AssertionError(e_color)
     self.f.write('<span class="%s">' % css_class)
 
   def PopColor(self):
+    # type: () -> None
     self.f.write('</span>')
 
   def write(self, s):
+    # type: (str) -> None
+
     # PROBLEM: Double escaping!
     self.f.write(cgi.escape(s))
     self.num_chars += len(s)  # Only count visible characters!
-
-
-# Color token types
-_NODE_TYPE = 1
-_STRING_LITERAL = 2
-_OTHER_LITERAL = 3  # Int and bool.  Green?
-_OTHER_TYPE = 4  # Or
 
 
 # ANSI color constants (also in sh_spec.py)
@@ -175,154 +193,40 @@ class AnsiOutput(ColorOutput):
   """For the console."""
 
   def __init__(self, f):
+    # type: (IO[str]) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
-    return AnsiOutput(util.Buffer())
+    # type: () -> AnsiOutput
+    return AnsiOutput(StringIO())
 
-  def PushColor(self, str_type):
-    if str_type == _NODE_TYPE:
-      #self.f.write(_GREEN)
+  def PushColor(self, e_color):
+    # type: (int) -> None
+    if e_color == runtime.Color_TypeName:
       self.f.write(_YELLOW)
-    elif str_type == _STRING_LITERAL:
+    elif e_color == runtime.Color_StringConst:
       self.f.write(_BOLD)
-    elif str_type == _OTHER_LITERAL:
+    elif e_color == runtime.Color_OtherConst:
       self.f.write(_GREEN)
-    elif str_type == _OTHER_TYPE:
+    elif e_color == runtime.Color_UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
     else:
-      raise AssertionError(str_type)
+      raise AssertionError(e_color)
 
   def PopColor(self):
+    # type: () -> None
     self.f.write(_RESET)
-
-
-#
-# Nodes
-#
-
-
-class _Obj(object):
-  """Node for pretty-printing."""
-  def __init__(self, node_type):
-    self.node_type = node_type
-    self.fields = []  # list of 2-tuples of (name, Obj or ColoredString)
-
-    # Custom hooks can change these:
-    self.abbrev = False
-    self.show_node_type = True  # only respected when abbrev is false
-    self.left = '('
-    self.right = ')'
-    self.unnamed_fields = []  # if this is set, it's printed instead?
-                              # problem: CompoundWord just has word_part though
-                              # List of Obj or ColoredString
-
-  def __repr__(self):
-    return '<_Obj %s %s>' % (self.node_type, self.fields)
-
-
-class _ColoredString(object):
-  """Node for pretty-printing."""
-  def __init__(self, s, str_type):
-    assert isinstance(s, str), s
-    self.s = s
-    self.str_type = str_type
-
-  def __repr__(self):
-    return '<_ColoredString %s %s>' % (self.s, self.str_type)
-
-
-def MakeFieldSubtree(obj, field_name, desc, abbrev_hook, omit_empty=True):
-  try:
-    field_val = getattr(obj, field_name)
-  except AttributeError:
-    # This happens when required fields are not initialized, e.g. FuncCall()
-    # without setting name.
-    raise AssertionError(
-        '%s is missing field %r' % (obj.__class__, field_name))
-
-  if isinstance(desc, runtime.IntType):
-    out_val = _ColoredString(str(field_val), _OTHER_LITERAL)
-
-  elif isinstance(desc, runtime.BoolType):
-    out_val = _ColoredString('T' if field_val else 'F', _OTHER_LITERAL)
-
-  elif isinstance(desc, runtime.DictType):
-    raise AssertionError
-
-  elif isinstance(desc, runtime.SumType) and desc.is_simple:
-    out_val = field_val.name
-
-  elif isinstance(desc, runtime.StrType):
-    out_val = _ColoredString(field_val, _STRING_LITERAL)
-
-  elif isinstance(desc, runtime.ArrayType):
-    out_val = []
-    obj_list = field_val
-    for child_obj in obj_list:
-      t = MakeTree(child_obj, abbrev_hook)
-      out_val.append(t)
-
-    if omit_empty and not obj_list:
-      out_val = None
-
-  elif isinstance(desc, runtime.MaybeType):
-    if field_val is None:
-      out_val = None
-    else:
-      out_val = MakeTree(field_val, abbrev_hook)
-
-  else:
-    out_val = MakeTree(field_val, abbrev_hook)
-
-  return out_val
-
-
-def MakeTree(obj, abbrev_hook=None, omit_empty=True):
-  """The first step of printing: create a homogeneous tree.
-
-  Args:
-    obj: runtime.Obj
-    omit_empty: Whether to omit empty lists
-  Returns:
-    _Obj node
-  """
-  if isinstance(obj, runtime.SimpleObj):  # Primitive
-    return obj.name
-
-  elif isinstance(obj, runtime.CompoundObj):
-    # These lines can be possibly COMBINED all into one.  () can replace
-    # indentation?
-    class_name = obj.__class__.__name__
-    # Hack for constructor names.  We don't know if it is a Product or
-    # Constructor here, but product names won't contain '__'.
-    out_node = _Obj(class_name.replace('__', '.'))
-
-    for field_name, desc in obj.ASDL_TYPE.GetFields():
-      out_val = MakeFieldSubtree(obj, field_name, desc, abbrev_hook,
-                                 omit_empty=omit_empty)
-
-      if out_val is not None:
-        out_node.fields.append((field_name, out_val))
-
-    # Call user-defined hook to abbreviate compound objects.
-    if abbrev_hook:
-      abbrev_hook(obj, out_node)
-
-  elif isinstance(obj, str):  # Could be an array of strings
-    return _ColoredString(obj, _STRING_LITERAL)
-
-  else:
-    # Id uses this now.  TODO: Should we have plugins?  Might need it for
-    # color.
-    return _ColoredString(repr(obj), _OTHER_TYPE)
-
-  return out_node
 
 
 INDENT = 2
 
-def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
+def _PrintWrappedArray(array,  # type: List[runtime._PrettyBase]
+                       prefix_len,  # type: int
+                       f,  # type: ColorOutput
+                       indent,  # type: int
+                       max_col,  # type: int
+                       ):
+  # type: (...) -> bool
   """Print an array of objects with line wrapping.
 
   Returns whether they all fit on a single line, so you can print the closing
@@ -351,6 +255,8 @@ def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
 
 
 def _PrintWholeArray(array, prefix_len, f, indent, max_col):
+  # type: (List[runtime._PrettyBase], int, ColorOutput, int, int) -> bool
+
   # This is UNLIKE the abbreviated case above, where we do WRAPPING.
   # Here, ALL children must fit on a single line, or else we separate
   # each one oonto a separate line.  This is to avoid the following:
@@ -382,14 +288,15 @@ def _PrintWholeArray(array, prefix_len, f, indent, max_col):
 
 
 def _PrintTreeObj(node, f, indent, max_col):
+  # type: (runtime.PrettyNode, ColorOutput, int, int) -> None
   """Print a CompoundObj in abbreviated or normal form."""
   ind = ' ' * indent
 
   if node.abbrev:  # abbreviated
     prefix = ind + node.left
     f.write(prefix)
-    if node.show_node_type:
-      f.PushColor(_NODE_TYPE)
+    if node.node_type:
+      f.PushColor(runtime.Color_TypeName)
       f.write(node.node_type)
       f.PopColor()
       f.write(' ')
@@ -406,7 +313,7 @@ def _PrintTreeObj(node, f, indent, max_col):
   else:  # full form like (SimpleCommand ...)
     f.write(ind + node.left)
 
-    f.PushColor(_NODE_TYPE)
+    f.PushColor(runtime.Color_TypeName)
     f.write(node.node_type)
     f.PopColor()
 
@@ -414,14 +321,14 @@ def _PrintTreeObj(node, f, indent, max_col):
     i = 0
     for name, val in node.fields:
       ind1 = ' ' * (indent+INDENT)
-      if isinstance(val, list):  # list field
+      if isinstance(val, runtime.PrettyArray):  # list field
         name_str = '%s%s: [' % (ind1, name)
         f.write(name_str)
         prefix_len = len(name_str)
 
-        if not _PrintWholeArray(val, prefix_len, f, indent, max_col):
+        if not _PrintWholeArray(val.children, prefix_len, f, indent, max_col):
           f.write('\n')
-          for child in val:
+          for child in val.children:
             # TODO: Add max_col here
             PrintTree(child, f, indent=indent+INDENT+INDENT)
             f.write('\n')
@@ -449,12 +356,16 @@ def _PrintTreeObj(node, f, indent, max_col):
 
 
 def PrintTree(node, f, indent=0, max_col=100):
+  # type: (runtime._PrettyBase, ColorOutput, int, int) -> None
   """Second step of printing: turn homogeneous tree into a colored string.
 
   Args:
     node: homogeneous tree node
     f: ColorOutput instance.
     max_col: don't print past this column number on ANY line
+      NOTE: See asdl/run.sh line-length-hist for a test of this.  It's
+      approximate.
+      TODO: Use the terminal width.
   """
   ind = ' ' * indent
 
@@ -465,15 +376,12 @@ def PrintTree(node, f, indent=0, max_col=100):
     f.WriteRaw(single_f.GetRaw())
     return
 
-  if isinstance(node, str):
-    f.write(ind + pretty.Str(node))
-
-  elif isinstance(node, _ColoredString):
-    f.PushColor(node.str_type)
+  if isinstance(node, runtime.PrettyLeaf):
+    f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, _Obj):
+  elif isinstance(node, runtime.PrettyNode):
     _PrintTreeObj(node, f, indent, max_col)
 
   else:
@@ -481,11 +389,12 @@ def PrintTree(node, f, indent=0, max_col=100):
 
 
 def _TrySingleLineObj(node, f, max_chars):
+  # type: (runtime.PrettyNode, ColorOutput, int) -> bool
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
-    if node.show_node_type:
-      f.PushColor(_NODE_TYPE)
+    if node.node_type:
+      f.PushColor(runtime.Color_TypeName)
       f.write(node.node_type)
       f.PopColor()
       f.write(' ')
@@ -496,7 +405,7 @@ def _TrySingleLineObj(node, f, max_chars):
       if not _TrySingleLine(val, f, max_chars):
         return False
   else:
-    f.PushColor(_NODE_TYPE)
+    f.PushColor(runtime.Color_TypeName)
     f.write(node.node_type)
     f.PopColor()
 
@@ -509,7 +418,11 @@ def _TrySingleLineObj(node, f, max_chars):
   return True
 
 
-def _TrySingleLine(node, f, max_chars):
+def _TrySingleLine(node,  # type: runtime._PrettyBase
+                   f,  # type: ColorOutput
+                   max_chars,  # type: int
+                   ):
+  # type: (...) -> bool
   """Try printing on a single line.
 
   Args:
@@ -522,24 +435,21 @@ def _TrySingleLine(node, f, max_chars):
     ok: whether it fit on the line of the given size.
       If False, you can't use the value of f.
   """
-  if isinstance(node, str):
-    f.write(pretty.Str(node))
-
-  elif isinstance(node, _ColoredString):
-    f.PushColor(node.str_type)
+  if isinstance(node, runtime.PrettyLeaf):
+    f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, list):  # Can we fit the WHOLE list on the line?
+  elif isinstance(node, runtime.PrettyArray):  # Can we fit the WHOLE list on the line?
     f.write('[')
-    for i, item in enumerate(node):
+    for i, item in enumerate(node.children):
       if i != 0:
         f.write(' ')
       if not _TrySingleLine(item, f, max_chars):
         return False
     f.write(']')
 
-  elif isinstance(node, _Obj):
+  elif isinstance(node, runtime.PrettyNode):
     return _TrySingleLineObj(node, f, max_chars)
 
   else:

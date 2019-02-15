@@ -11,7 +11,6 @@ from asdl import runtime
 from core import util
 from core.meta import syntax_asdl, runtime_asdl
 
-from osh import ast_lib
 from osh import builtin
 from osh import word
 
@@ -95,7 +94,7 @@ class DepsVisitor(Visitor):
     if cls is command.SimpleCommand:
       #log('SimpleCommand %s', node.words)
       #log('--')
-      #ast_lib.PrettyPrint(node)
+      #node.PrettyPrint()
 
       # Things to consider:
       # - source and .

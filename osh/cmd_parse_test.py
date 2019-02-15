@@ -11,7 +11,6 @@ from core import ui
 from core import util
 from core.meta import syntax_asdl, Id
 
-from osh import ast_lib
 from osh import word
 
 command_e = syntax_asdl.command_e
@@ -30,7 +29,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
       test.fail('%r failed' % code_str)
     node = None
   else:
-    ast_lib.PrettyPrint(node)
+    node.PrettyPrint()
     if not expect_success:
       test.fail('Expected %r to fail ' % code_str)
 
@@ -47,7 +46,7 @@ def _assert_ParseCommandListError(test, code_str):
     ui.PrettyPrintError(e, arena, sys.stdout)
   else:
     print('UNEXPECTED:')
-    ast_lib.PrettyPrint(node)
+    node.PrettyPrint()
     test.fail("Expected %r to fail" % code_str)
 
 
@@ -1069,8 +1068,6 @@ echo hi
     self.assertEqual(command_e.CommandList, node.tag)
 
   def testBackticks(self):
-    #return
-
     # Another empty command sub
     node = assert_ParseCommandList(self, """\
 echo $()

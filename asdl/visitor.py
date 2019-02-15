@@ -17,8 +17,17 @@ class AsdlVisitor:
   """
   def __init__(self, f):
     self.f = f
+    self.current_depth = 0  # the current number of indent levels
 
-  def Emit(self, s, depth, reflow=True):
+  def Indent(self):
+    self.current_depth += 1
+
+  def Dedent(self):
+    self.current_depth -= 1
+
+  def Emit(self, s, depth=-1, reflow=True):
+    if depth == -1:
+      depth = self.current_depth
     for line in FormatLines(s, depth, reflow=reflow):
       self.f.write(line)
 

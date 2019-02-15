@@ -3,10 +3,10 @@
 braces_test.py: Tests for braces.py
 """
 
-from pprint import pprint
 import sys
 import unittest
 
+from asdl import format as fmt
 from osh import braces  # module under test
 from osh import word_parse_test
 from core.meta import syntax_asdl
@@ -21,9 +21,9 @@ def _assertReadWord(*args):
 
 
 def _PrettyPrint(n):
-  from asdl import format as fmt
+  """Prints in color."""
   ast_f = fmt.DetectConsoleOutput(sys.stdout)
-  tree = fmt.MakeTree(n)
+  tree = n.PrettyTree()
   fmt.PrintTree(tree, ast_f)
 
 
@@ -41,27 +41,27 @@ class BracesTest(unittest.TestCase):
     w = _assertReadWord(self, 'B-{a,b}-E')
     tree = braces._BraceDetect(w)
     self.assertEqual(3, len(tree.parts))
-    pprint(tree)
+    _PrettyPrint(tree)
     print('--')
 
     # Multiple parts for each alternative
     w = _assertReadWord(self, 'B-{a"a",b"b",c"c"}-E')
     tree  = braces._BraceDetect(w)
     self.assertEqual(3, len(tree.parts))
-    pprint(tree)
+    _PrettyPrint(tree)
     print('--')
 
     # Multiple expansion
     w = _assertReadWord(self, 'B-{a,b}--{c,d}-E')
     tree = braces._BraceDetect(w)
     self.assertEqual(5, len(tree.parts))
-    pprint(tree)
+    _PrettyPrint(tree)
     print('--')
 
     # Nested expansion
     w = _assertReadWord(self, 'B-{a,b,c,={d,e}}-E')
     tree = braces._BraceDetect(w)
-    pprint(tree)
+    _PrettyPrint(tree)
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
@@ -78,7 +78,7 @@ class BracesTest(unittest.TestCase):
     # Another nested expansion
     w = _assertReadWord(self, 'B-{a,={b,c}=,d}-E')
     tree = braces._BraceDetect(w)
-    pprint(tree)
+    _PrettyPrint(tree)
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
@@ -100,7 +100,7 @@ class BracesTest(unittest.TestCase):
     # Third alternative is a CompoundWord with zero parts
     w = _assertReadWord(self, '{a,b,}')
     tree = braces._BraceDetect(w)
-    pprint(tree)
+    _PrettyPrint(tree)
     self.assertEqual(1, len(tree.parts))
     self.assertEqual(3, len(tree.parts[0].words))
 
@@ -115,7 +115,7 @@ class BracesTest(unittest.TestCase):
     w = _assertReadWord(self, 'B-{a,b}-E')
     tree = braces._BraceDetect(w)
     self.assertEqual(3, len(tree.parts))
-    pprint(tree)
+    _PrettyPrint(tree)
 
     results = braces._BraceExpand(tree.parts)
     self.assertEqual(2, len(results))
@@ -126,7 +126,7 @@ class BracesTest(unittest.TestCase):
     w = _assertReadWord(self, 'B-{a,={b,c,d}=,e}-E')
     tree = braces._BraceDetect(w)
     self.assertEqual(3, len(tree.parts))
-    pprint(tree)
+    _PrettyPrint(tree)
 
     results = braces._BraceExpand(tree.parts)
     self.assertEqual(5, len(results))
@@ -137,7 +137,7 @@ class BracesTest(unittest.TestCase):
     w = _assertReadWord(self, 'B-{a,b}-{c,d}-E')
     tree = braces._BraceDetect(w)
     self.assertEqual(5, len(tree.parts))
-    pprint(tree)
+    _PrettyPrint(tree)
 
     results = braces._BraceExpand(tree.parts)
     self.assertEqual(4, len(results))

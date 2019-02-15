@@ -1,6 +1,6 @@
 #!/usr/bin/python -S
 """
-py_deps.py
+app_deps.py
 
 Dynamically discover Python and C modules.  We import the main module and
 inspect sys.modules before and after.  That is, we use the exact logic that the
@@ -95,18 +95,8 @@ def FilterModules(modules):
       yield C_MODULE, module, full_path
 
 
-# TODO: Get rid of this?
-def CreateOptionsParser():
-  parser = optparse.OptionParser()
-  return parser
-
-
 def main(argv):
   """Returns an exit code."""
-
-  #(opts, argv) = CreateOptionsParser().parse_args(argv)
-  #if not argv:
-  #  raise Error('No modules specified.')
 
   # Set an environment variable so dependencies in debug mode can be excluded.
   posix.environ['_OVM_DEPS'] = '1'

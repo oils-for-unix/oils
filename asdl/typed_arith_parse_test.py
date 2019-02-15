@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from asdl import tdop
-from asdl import typed_arith_parse as arith_parse  # module under test
+from asdl import typed_arith_parse  # module under test
 
-from _devbuild.gen import typed_arith_asdl
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
-from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, TYPE_CHECKING
 
-Parser = arith_parse.Parser
-arith_expr_t = arith_parse.arith_expr_t
+Parser = typed_arith_parse.Parser
+arith_expr_t = typed_arith_parse.arith_expr_t
 
 
 def _assertParseError(make_parser, s, error_substring=''):
@@ -124,6 +121,7 @@ def TestArrays(t_parse):
   """Shared between shell, oil, and Python."""
   t_parse('x[1]', '(get x 1)')
   t_parse('x[a+b]', '(get x (+ a b))')
+  t_parse('x[1:2]', 'SLICE')
 
 
 def TestComma(t_parse):
@@ -177,10 +175,23 @@ def t_parse(s,  # type: str
             expected=None,  # type: Optional[str]
             ):
   # type: (...) -> arith_expr_t
-  p = arith_parse.MakeParser(s)
+  p = typed_arith_parse.MakeParser(s)
   tree = p.Parse()
 
+  print()
+  print('---')
+  print()
+
+  print(s)
+  print()
   print(tree)
+
+  import sys
+  from asdl import format as fmt
+
+  ast_f = fmt.DetectConsoleOutput(sys.stdout)
+  p_node = tree.AbbreviatedTree()
+  fmt.PrintTree(p_node, ast_f)
 
   #v = PrettyPrinter()
   #v.Visit(tree)
@@ -191,7 +202,12 @@ def t_parse(s,  # type: str
 
 def main():
   # type: () -> None
-  p = arith_parse.MakeParser
+
+  # TODO: Enable once we switch to MyPy
+  if 0:
+    return
+
+  p = typed_arith_parse.MakeParser
 
   TestArith(t_parse)
   TestBitwise(t_parse)
@@ -204,7 +220,8 @@ def main():
 
 
 # Type alias
-ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
+if TYPE_CHECKING:
+  ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
 
 
 if __name__ == '__main__':

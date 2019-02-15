@@ -8,7 +8,7 @@ import sys
 
 from asdl import tdop
 
-from _devbuild.gen import demo_asdl
+from _devbuild.gen import typed_demo_asdl as demo_asdl
 
 arith_expr = demo_asdl.arith_expr
 op_id_e = demo_asdl.op_id_e

@@ -20,6 +20,8 @@ module arith {
   -- Repeated string
   assign = (string name, string* flags)
 
+  op_array = (op_id* ops)
+
   -- TODO:
   -- - Add optional.  For slicing maybe -- optional end.
   -- - Add repeated.  For function call maybe.

@@ -5,17 +5,7 @@ tdop.py
 
 import re
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithVar
-from _devbuild.gen.typed_arith_asdl import arith_expr__Const
-from typing import Dict
-from typing import List
-from typing import Callable
-from typing import Optional
-from typing import Iterator
-from typing import Tuple
-from _devbuild.gen.typed_arith_asdl import arith_expr__ArithBinary
-from _devbuild.gen.typed_arith_asdl import arith_expr__FuncCall
-from mypy_extensions import NoReturn
+from typing import (Dict, List, Callable, Optional, Iterator, Tuple, NoReturn)
 
 
 class ParseError(Exception):
@@ -231,5 +221,8 @@ class Parser(object):
     return self.ParseUntil(0)
 
 
-NullFunc = Callable[[Parser, Token, int], arith_expr_t]
-LeftFunc = Callable[[Parser, Token, arith_expr_t, int], arith_expr_t]
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  NullFunc = Callable[[Parser, Token, int], arith_expr_t]
+  LeftFunc = Callable[[Parser, Token, arith_expr_t, int], arith_expr_t]

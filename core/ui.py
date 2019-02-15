@@ -20,7 +20,6 @@ from asdl import format as fmt
 from core import dev
 from core.meta import runtime_asdl, syntax_asdl, Id
 from frontend import match
-from osh import ast_lib
 
 import libc  # gethostname()
 
@@ -338,9 +337,12 @@ def PrintAst(nodes, opts):
       ast_f = fmt.HtmlOutput(f)
     else:
       raise AssertionError
-    abbrev_hook = (
-        ast_lib.AbbreviateNodes if 'abbrev-' in opts.ast_format else None)
-    tree = fmt.MakeTree(node, abbrev_hook=abbrev_hook)
+
+    if 'abbrev-' in opts.ast_format:
+      tree = node.AbbreviatedTree()
+    else:
+      tree = node.PrettyTree()
+
     ast_f.FileHeader()
     fmt.PrintTree(tree, ast_f)
     ast_f.FileFooter()

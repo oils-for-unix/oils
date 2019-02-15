@@ -87,7 +87,13 @@ gen-asdl-py-pickle() {
   local tmp=_tmp/${name}_asdl.py
   local out=_devbuild/gen/${name}_asdl.py
 
-  PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
+  if false; then
+  #if true; then
+    PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
+  else
+    # optional abbrev module
+    PYTHONPATH=. core/asdl_gen.py mypy "$@" > $tmp
+  fi
   
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
@@ -101,7 +107,7 @@ gen-types-asdl() {
 }
 
 gen-syntax-asdl() {
-  gen-asdl-py-pickle frontend/syntax.asdl
+  gen-asdl-py-pickle frontend/syntax.asdl 'frontend.syntax_abbrev'
 }
 
 gen-runtime-asdl() {
@@ -138,7 +144,7 @@ pylibc() {
 fastlex() {
   build/codegen.sh ast-id-lex
 
-  # Why do we need this?  It gets stail otherwise.
+  # Why do we need this?  It gets stale otherwise.
   rm -f _devbuild/py-ext/x86_64/fastlex.so
 
   py-ext fastlex build/setup_fastlex.py
@@ -163,8 +169,10 @@ minimal() {
 
   # BOOTSTRAP_LEVEL is a hack for avoiding circular dependencies.
   BOOTSTRAP_LEVEL=0 gen-types-asdl    # doesn't need Id
-  BOOTSTRAP_LEVEL=1 gen-syntax-asdl   # needs Id, which needs types.asdl
-  BOOTSTRAP_LEVEL=2 gen-runtime-asdl  # ditto
+  BOOTSTRAP_LEVEL=0 gen-syntax-asdl   # needs Id, which needs types.asdl
+  BOOTSTRAP_LEVEL=0 gen-runtime-asdl  # ditto
+
+  build/codegen.sh id-mypy-gen
 
   # Only for testing.
   asdl/run.sh gen-demo-asdl

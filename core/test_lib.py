@@ -74,7 +74,8 @@ def AsdlEqual(left, right):
     if left.tag != right.tag:
       return False
 
-    for name in left.ASDL_TYPE.GetFieldNames():
+    field_names = left.__slots__  # hack for now
+    for name in field_names:
       # Special case: we are not testing locations right now.
       if name == 'span_id':
         continue

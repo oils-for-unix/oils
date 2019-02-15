@@ -66,8 +66,7 @@ def main(argv):
     expr = argv[2]
 
     obj = arith_parse.ParseShell(expr)
-    #out = fmt.TextOutput(sys.stdout)
-    tree = fmt.MakeTree(obj)
+    tree = obj.PrettyTree()
     #treee= ['hi', 'there', ['a', 'b'], 'c']
     f = fmt.DetectConsoleOutput(sys.stdout)
     fmt.PrintTree(tree, f)

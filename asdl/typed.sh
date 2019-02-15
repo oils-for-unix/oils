@@ -33,8 +33,7 @@ typecheck() {
 
 check-arith() {
   local strict='--strict'
-  #strict=''
-  PYTHONPATH=. typecheck $strict \
+  MYPYPATH=. PYTHONPATH=. typecheck $strict \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
@@ -42,28 +41,45 @@ iter-arith() {
   asdl/run.sh gen-typed-arith-asdl
   check-arith
 
-  PYTHONPATH=. asdl/typed_arith_parse_test.py
+  export PYTHONPATH=. 
+  asdl/typed_arith_parse_test.py
+
+  echo '---'
+  asdl/typed_arith_parse.py parse '40+2'
+  echo
+
+  echo '---'
+  asdl/typed_arith_parse.py eval '40+2+5'
+  echo
 }
+
+# --no-strict-optional issues
+# - simple sum type might be None, but generated PrettyTree() method uses
+#   obj.name
 
 iter-demo() {
   asdl/run.sh gen-typed-demo-asdl
-  typecheck --strict _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
+  typecheck --strict \
+    _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
 
   PYTHONPATH=. asdl/typed_demo.py "$@"
 }
 
 collect-types() {
   export PYTHONPATH=".:$PYANN_REPO"
-  asdl/unit_test_types.py "$@"
+  asdl/pyann_driver.py "$@"
 
   ls -l type_info.json
   wc -l type_info.json
 }
 
 apply-types() {
-  local -a files=( asdl/tdop.py asdl/typed_arith_parse*.py )
+  #local -a files=( asdl/tdop.py asdl/typed_arith_parse*.py )
   #local -a files=( asdl/unit_test_types.py )
   #local -a files=( unit_test_types.py )
+
+  #local -a files=( core/util.py asdl/runtime.py )
+  local -a files=(asdl/format.py )
   pyann-patched --type-info type_info.json "${files[@]}" "$@"
 }
 

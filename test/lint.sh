@@ -59,11 +59,6 @@ format-demo() {
 
 # yapf: was useful, but might cause big diffs
 
-# After 'pip install pep8' on Ubunu, it's in ~/.local.
-bin-pep8() {
-  ~/.local/bin/pep8 "$@"
-}
-
 # Language independent
 find-src() {
   # benchmarks/testdata should be excluded
@@ -111,8 +106,9 @@ flake8-all() {
   # astgen.py has a PROLOGUE which must have unused imports!
   # opcode.py triggers a flake8 bug?  Complains about def_op() when it is
   # defined.
+  # _abbrev.py modules are concatenated, and don't need to check on their own.
   local -a exclude=(
-    --exclude 'opy/_regtest,opy/byterun,opy/tools/astgen.py,opy/lib/opcode.py')
+    --exclude 'opy/_regtest,opy/byterun,opy/tools/astgen.py,opy/lib/opcode.py,*/*_abbrev.py')
 
   # Step 1: Stop the build if there are Python syntax errors, undefined names,
   # unused imports

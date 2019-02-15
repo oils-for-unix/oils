@@ -279,7 +279,7 @@ def RightMostSpanForWord(w):
 #
 # We only detect ~Lit_Chars and split.  So we might as well just write a regex.
 
-def TildeDetect(word):
+def TildeDetect(w):
   """Detect tilde expansion in a word.
 
   It might begin with  LiteralPart that needs to be turned into a TildeSubPart.
@@ -294,24 +294,24 @@ def TildeDetect(word):
     is changed.  But note that we CANNOT know this during lexing.
   """
   # NOTE: BracedWordTree, EmptyWord, etc. can't be tilde expanded
-  if word.tag != word_e.CompoundWord:
+  if w.tag != word_e.CompoundWord:
     return None
 
-  assert word.parts, word
+  assert w.parts, w
 
-  part0 = word.parts[0]
+  part0 = w.parts[0]
   if _LiteralPartId(part0) != Id.Lit_TildeLike:
     return None
 
-  if len(word.parts) == 1:  # can't be zero
+  if len(w.parts) == 1:  # can't be zero
     tilde_part = word_part.TildeSubPart(part0.token)
     return word.CompoundWord([tilde_part])
 
-  part1 = word.parts[1]
+  part1 = w.parts[1]
   # NOTE: We could inspect the raw tokens.
   if _LiteralPartId(part1) == Id.Lit_Chars and part1.token.val.startswith('/'):
     tilde_part = word_part.TildeSubPart(part0.token)
-    return word.CompoundWord([tilde_part] + word.parts[1:])
+    return word.CompoundWord([tilde_part] + w.parts[1:])
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None

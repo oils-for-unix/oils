@@ -20,7 +20,6 @@ from core.meta import syntax_asdl, Id, types_asdl
 
 from frontend import parse_lib
 
-from osh import ast_lib
 from osh import word
 
 arith_expr_e = syntax_asdl.arith_expr_e
@@ -43,7 +42,7 @@ def _assertReadWordWithArena(test, word_str):
   w_parser = _InitWordParser(word_str, arena=arena)
   w = w_parser.ReadWord(lex_mode_e.Outer)
   assert w is not None
-  ast_lib.PrettyPrint(w)
+  w.PrettyPrint()
 
   # Next word must be Eof_Real
   w2 = w_parser.ReadWord(lex_mode_e.Outer)
@@ -80,7 +79,7 @@ def _assertReadWordFailure(test, word_str):
   except util.ParseError as e:
     print('Got expected ParseError: %s' % e)
   else:
-    ast_lib.PrettyPrint(w)
+    w.PrettyPrint()
     test.fail('Expected a parser error, got %r' % w)
 
 
@@ -363,7 +362,7 @@ class WordParserTest(unittest.TestCase):
         w = w_parser.ReadWord(lex_mode_e.Outer)
         assert w is not None
 
-        ast_lib.PrettyPrint(w)
+        w.PrettyPrint()
 
         if word.CommandId(w) == Id.Eof_Real:
           break
@@ -461,7 +460,7 @@ class WordParserTest(unittest.TestCase):
       while True:
         w = w_parser.ReadWord(lex_mode_e.Arith)
         assert w is not None
-        ast_lib.PrettyPrint(w)
+        w.PrettyPrint()
         if word.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break
 

@@ -898,19 +898,19 @@ class Mem(object):
     else:
       raise AssertionError(lval.__class__.__name__)
 
-  def _BindNewArrayWithEntry(self, namespace, lval, value, new_flags):
+  def _BindNewArrayWithEntry(self, namespace, lval, val, new_flags):
     """Fill 'namespace' with a new indexed array entry."""
     items = [None] * lval.index
-    items.append(value.s)
+    items.append(val.s)
     new_value = value.StrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = var_flags_e.ReadOnly in new_flags
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly, False)
 
-  def _BindNewAssocArrayWithEntry(self, namespace, lval, value, new_flags):
+  def _BindNewAssocArrayWithEntry(self, namespace, lval, val, new_flags):
     """Fill 'namespace' with a new indexed array entry."""
-    d = {lval.index: value.s}  # TODO: RHS has to be string?
+    d = {lval.index: val.s}  # TODO: RHS has to be string?
     new_value = value.AssocArray(d)
 
     # associative arrays can't be exported; don't need AssocArray flag

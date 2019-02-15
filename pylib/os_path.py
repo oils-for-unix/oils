@@ -4,31 +4,12 @@ os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 """
 
 import posix
-import stat
 
 extsep = '.'
 sep = '/'
 pathsep = ':'
 defpath = ':/bin:/usr/bin'
 altsep = None
-
-
-def exists(path):
-    """Test whether a path exists.  Returns False for broken symbolic links"""
-    try:
-        posix.stat(path)
-    except posix.error:
-        return False
-    return True
-
-
-def isdir(s):
-    """Return true if the pathname refers to an existing directory."""
-    try:
-        st = posix.stat(s)
-    except posix.error:
-        return False
-    return stat.S_ISDIR(st.st_mode)
 
 
 # Join pathnames.
