@@ -11,8 +11,6 @@ Usage:
   from core.meta import syntax_asdl, Id, Kind, ID_SPEC
 """
 
-import posix
-
 from core import id_kind
 from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
 

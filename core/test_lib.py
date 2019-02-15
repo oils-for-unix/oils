@@ -19,7 +19,7 @@ from core import dev
 from core import main_loop
 from core import process
 from core import util
-from core.meta import Id, runtime_asdl
+from core.meta import runtime_asdl
 from frontend import lexer
 from frontend import match
 from frontend import parse_lib
