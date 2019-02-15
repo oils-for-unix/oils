@@ -3,7 +3,7 @@ syntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
 """
 
 from asdl import runtime
-from core.meta import Id
+from _devbuild.gen.id_kind_asdl import Id
 
 
 def _AbbreviateToken(token, out):

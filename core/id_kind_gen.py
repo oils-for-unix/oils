@@ -85,15 +85,6 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
   """)
 
 
-# Dummy objects
-class _Id(object):
-  def __init__(self, enum_value):
-    #self.enum_value = enum_value
-    pass
-
-class _Kind(object):
-  pass
-
 # duplicate of frontend/types.asdl to break dependency
 class bool_arg_type_e(object):
   Undefined = 1
@@ -112,20 +103,19 @@ def main(argv):
   # NOTE: This initialization must be identical to the one in core/meta.py.  We
   # do it here to avoid circular dependencies.
 
-  id_names = {}  # int -> string.  Mutated
-  ID_SPEC = id_kind.IdSpec(_Id, _Kind, id_names, {}, {})
+  ID_SPEC = id_kind.IdSpec({}, {})
 
   id_kind.AddKinds(ID_SPEC)
-  id_kind.AddBoolKinds(ID_SPEC, _Id, bool_arg_type_e)  # must come second
+  id_kind.AddBoolKinds(ID_SPEC, bool_arg_type_e)  # must come second
 
-  id_kind.SetupTestBuiltin(_Id, _Kind, ID_SPEC, {}, {}, {}, bool_arg_type_e)
+  id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {}, bool_arg_type_e)
 
-  ids = list(id_names.iteritems())
-  ids.sort(key=lambda pair: pair[0])  # Sort by ID
+  ids = ID_SPEC.id_str2int.items()
+  ids.sort(key=lambda pair: pair[1])  # Sort by ID
 
   if action == 'c':
-    for i, name in ids:
-      print('#define id__%s %s' % (name, i))
+    for name, id_int in ids:
+      print('#define id__%s %s' % (name, id_int))
 
   elif action == 'mypy':
     from asdl import asdl_
@@ -134,7 +124,7 @@ def main(argv):
     #
     # Create a SYNTHETIC ASDL module, and generate code from it.
     #
-    id_sum = asdl_.Sum([asdl_.Constructor(name) for _, name in ids])
+    id_sum = asdl_.Sum([asdl_.Constructor(name) for name, _ in ids])
 
     variants2 = [asdl_.Constructor(name) for name in ID_SPEC.kind_name_list]
     kind_sum = asdl_.Sum(variants2)

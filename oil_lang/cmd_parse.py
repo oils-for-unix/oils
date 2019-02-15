@@ -7,7 +7,7 @@ from __future__ import print_function
 import sys
 
 from core import util
-from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind, KindName
+from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind
 
 lex_mode_e = types_asdl.lex_mode_e
 oil_cmd = syntax_asdl.oil_cmd
@@ -128,7 +128,7 @@ class OilParser(object):
       elif self.token_kind in (Kind.WS, Kind.Eof):
         done = True
       else:
-        raise AssertionError(KindName(self.token_kind))
+        raise AssertionError(self.token_kind)
 
       self._Peek()
     return w

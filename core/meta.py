@@ -17,32 +17,6 @@ from core import id_kind
 from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
 
 
-_BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '1'))
-
-
-# TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj)
-class _Id(object):
-  """Token and op type.
-
-  The evaluator must consider all Ids.
-
-  NOTE: We add a bunch of class attributes that are INSTANCES of this class,
-  e.g. Id.Lit_Chars.
-  """
-  def __init__(self, enum_value):
-    self.enum_value = enum_value
-
-  def __repr__(self):
-    return IdName(self)
-
-
-# TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj).  Right now it
-# can't print itself, which is inconsistent with Id.
-class _Kind(object):
-  """A coarser version of Id, used to make parsing decisions."""
-  pass
-
-
 def _CreateInstanceLookup(id_enum, id_type, instances):
   """
   Args:
@@ -56,12 +30,6 @@ def _CreateInstanceLookup(id_enum, id_type, instances):
       instances[val.enum_id] = val
 
 
-_ID_TO_KIND_INTEGERS = {}  # int Id -> int Kind
-
-# Keep one instance of each Id, to save memory and enable comparison by
-# OBJECT IDENTITY.
-# Do NOT create any any more instances of them!  Always used IdInstance().
-
 _ID_INSTANCES = {}  # int -> Id_t
 _KIND_INSTANCES = {}  # int -> Kind_t
 
@@ -69,21 +37,17 @@ _CreateInstanceLookup(Id, Id_t, _ID_INSTANCES)
 _CreateInstanceLookup(Kind, Kind_t, _KIND_INSTANCES)
 
 
+_ID_TO_KIND_INTEGERS = {}  # int Id -> int Kind
+
+
 def LookupKind(id_):
   """Id_t -> Kind_t"""
   return _KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
 
 
+# Do NOT create any any more instances of Id.  Always used IdInstance().
 def IdInstance(i):
   return _ID_INSTANCES[i]
-
-
-def IdName(id_):
-  return id_.name
-
-
-def KindName(k):
-  return k.name
 
 
 #
@@ -93,8 +57,7 @@ def KindName(k):
 from _devbuild.gen import types_asdl  # other modules import this
               
 
-
-# Id -> bool_arg_type_e
+# int -> bool_arg_type_e
 BOOL_ARG_TYPES = {}  # type: dict
 
 # Used by builtin_bracket.py
@@ -107,14 +70,11 @@ TEST_OTHER_LOOKUP = {}
 # Add attributes to Id and Kind
 #
 
-ID_SPEC = id_kind.IdSpec(_Id, _Kind, {}, _ID_TO_KIND_INTEGERS,
-                         BOOL_ARG_TYPES)
+ID_SPEC = id_kind.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
-id_kind.AddBoolKinds(ID_SPEC, _Id, types_asdl.bool_arg_type_e)  # must come second
-# NOTE: Dependency on the types module here.  This is the root cause of the
-# _BOOTSTRAP_LEVEL hack.
-id_kind.SetupTestBuiltin(_Id, _Kind, ID_SPEC,
+id_kind.AddBoolKinds(ID_SPEC, types_asdl.bool_arg_type_e)  # must come second
+id_kind.SetupTestBuiltin(ID_SPEC,
                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
                          TEST_OTHER_LOOKUP,
                          types_asdl.bool_arg_type_e)
@@ -127,17 +87,15 @@ _kind_sizes = ID_SPEC.kind_sizes
 # Instantiate osh/osh.asdl
 #
 
-if _BOOTSTRAP_LEVEL > 0:
-  from _devbuild.gen import syntax_asdl  # other modules import this
-  _ = syntax_asdl  # shut up lint
+from _devbuild.gen import syntax_asdl  # other modules import this
+_ = syntax_asdl  # shut up lint
 
 #
 # Instantiate core/runtime.asdl
 #
 
-if _BOOTSTRAP_LEVEL > 0:
-  from _devbuild.gen import runtime_asdl  # other modules import this
-  _ = runtime_asdl  # shut up lint
+from _devbuild.gen import runtime_asdl  # other modules import this
+_ = runtime_asdl  # shut up lint
 
 #
 # Redirect Tables associated with IDs

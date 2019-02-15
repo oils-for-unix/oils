@@ -20,18 +20,16 @@ log = util.log
 class IdSpec(object):
   """Identifiers that form the "spine" of the shell program representation."""
 
-  def __init__(self, id_enum, kind_enum, id_names, kind_lookup, bool_ops):
-    self.id_enum = id_enum
-    self.kind_enum = kind_enum
-
-    self.id_names = id_names  # integer -> string Id name
+  def __init__(self, kind_lookup, bool_ops):
+    self.id_str2int = {}
+    self.kind_str2int = {}
 
     self.kind_lookup = kind_lookup  # Id int -> Kind int
     self.kind_name_list = []
     self.kind_sizes = []  # stats
 
     self.lexer_pairs = {}  # Kind -> [(regex, Id), ...]
-    self.bool_ops = bool_ops  # table of runtime values
+    self.bool_ops = bool_ops  # int -> bool_arg_type_e
 
     # Incremented on each method call
     # IMPORTANT: 1-based indices match what asdl/gen_python.py does!!!
@@ -53,9 +51,8 @@ class IdSpec(object):
     """
     t = self.id_index
 
-    setattr(self.id_enum, id_name, t)  # Used later
+    self.id_str2int[id_name] = t
 
-    self.id_names[t] = id_name
     if kind is None:
       kind = self.kind_index
     self.kind_lookup[t] = kind
@@ -64,8 +61,7 @@ class IdSpec(object):
     return t  # the index we used
 
   def _AddKind(self, kind_name):
-    # TODO: Should be instantiated or folded into ASDL.
-    setattr(self.kind_enum, kind_name, self.kind_index)
+    self.kind_str2int[kind_name] = self.kind_index
     #log('%s = %d', kind_name, self.kind_index)
     self.kind_index += 1
     self.kind_name_list.append(kind_name)
@@ -442,7 +438,7 @@ def _Dash(strs):
   return [(s, '-' + s) for s in strs]
 
 
-def AddBoolKinds(spec, Id, bool_arg_type_e):
+def AddBoolKinds(spec, bool_arg_type_e):
   spec.AddBoolKind('BoolUnary', [
       (bool_arg_type_e.Str, _Dash(list(_UNARY_STR_CHARS))),
       (bool_arg_type_e.Other, _Dash(list(_UNARY_OTHER_CHARS))),
@@ -458,17 +454,17 @@ def AddBoolKinds(spec, Id, bool_arg_type_e):
       (bool_arg_type_e.Int, _Dash(_BINARY_INT)),
   ])
 
+  Id = spec.id_str2int
   # logical, arity, arg_type
-  spec.AddBoolOp(Id.Op_DAmp, bool_arg_type_e.Undefined)
-  spec.AddBoolOp(Id.Op_DPipe, bool_arg_type_e.Undefined)
-  spec.AddBoolOp(Id.KW_Bang, bool_arg_type_e.Undefined)
+  spec.AddBoolOp(Id['Op_DAmp'], bool_arg_type_e.Undefined)
+  spec.AddBoolOp(Id['Op_DPipe'], bool_arg_type_e.Undefined)
+  spec.AddBoolOp(Id['KW_Bang'], bool_arg_type_e.Undefined)
 
-  spec.AddBoolOp(Id.Redir_Less, bool_arg_type_e.Str)
-  spec.AddBoolOp(Id.Redir_Great, bool_arg_type_e.Str)
+  spec.AddBoolOp(Id['Redir_Less'], bool_arg_type_e.Str)
+  spec.AddBoolOp(Id['Redir_Great'], bool_arg_type_e.Str)
 
 
-def SetupTestBuiltin(Id, Kind, id_spec,
-                     unary_lookup, binary_lookup, other_lookup,
+def SetupTestBuiltin(id_spec, unary_lookup, binary_lookup, other_lookup,
                      bool_arg_type_e):
   """Setup tokens for test/[.
 
@@ -477,31 +473,34 @@ def SetupTestBuiltin(Id, Kind, id_spec,
   - && -> -a, || -> -o
   - ( ) -> Op_LParen (they don't appear above)
   """
+  Id = id_spec.id_str2int
+  Kind = id_spec.kind_str2int
+
   for letter in _UNARY_STR_CHARS + _UNARY_OTHER_CHARS + _UNARY_PATH_CHARS:
     id_name = 'BoolUnary_%s' % letter
-    unary_lookup['-' + letter] = getattr(Id, id_name)
+    unary_lookup['-' + letter] = Id[id_name]
 
   for s in _BINARY_PATH + _BINARY_INT:
     id_name = 'BoolBinary_%s' % s
-    binary_lookup['-' + s] = getattr(Id, id_name)
+    binary_lookup['-' + s] = Id[id_name]
 
   # Like the [[ definition above, but without globbing and without =~ .
 
   for id_name, token_str in [
       ('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
-    id_int = id_spec.AddBoolBinaryForBuiltin(id_name, Kind.BoolBinary,
+    id_int = id_spec.AddBoolBinaryForBuiltin(id_name, Kind['BoolBinary'],
                                              bool_arg_type_e)
 
     binary_lookup[token_str] = id_int
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.
-  binary_lookup['<'] = Id.Redir_Less
-  binary_lookup['>'] = Id.Redir_Great
+  binary_lookup['<'] = Id['Redir_Less']
+  binary_lookup['>'] = Id['Redir_Great']
 
   # NOTE: -a and -o overloaded as unary prefix operators BoolUnary_a and
   # BoolUnary_o.  The parser rather than the tokenizer handles this.
-  other_lookup['!'] = Id.KW_Bang  # like [[ !
-  other_lookup['('] = Id.Op_LParen
-  other_lookup[')'] = Id.Op_RParen
+  other_lookup['!'] = Id['KW_Bang']  # like [[ !
+  other_lookup['('] = Id['Op_LParen']
+  other_lookup[')'] = Id['Op_RParen']
 
-  other_lookup[']'] = Id.Arith_RBracket  # For closing ]
+  other_lookup[']'] = Id['Arith_RBracket']  # For closing ]

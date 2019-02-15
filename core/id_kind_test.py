@@ -14,8 +14,7 @@ import unittest
 
 from core import id_kind
 from core.meta import (
-    Id, IdName, IdInstance, Kind, LookupKind,
-    ID_SPEC, BOOL_ARG_TYPES, _kind_sizes)
+    Id, IdInstance, Kind, LookupKind, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes)
 
 from core.meta import syntax_asdl
 
@@ -31,7 +30,7 @@ class TokensTest(unittest.TestCase):
     print(Id.Op_Newline)
     print(syntax_asdl.token(Id.Op_Newline, '\n'))
 
-    print(IdName(Id.Op_Newline))
+    print(Id.Op_Newline)
 
     print(Kind.Eof)
     print(Kind.Left)
@@ -44,7 +43,7 @@ class TokensTest(unittest.TestCase):
 
     print('Number of Kinds:', num_kinds)
     # 233 out of 256 tokens now
-    print('Number of IDs:', len(ID_SPEC.id_names))
+    print('Number of IDs:', len(ID_SPEC.id_str2int))
 
     # Make sure we're not exporting too much
     print(dir(id_kind))

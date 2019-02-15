@@ -30,7 +30,7 @@ def main(argv):
   if os.path.basename(schema_path) == 'types.asdl':
     app_types = {}
   else:
-    from core.meta import Id
+    from _devbuild.gen.id_kind_asdl import Id
     app_types = {'id': meta.UserType(Id)}
 
   if action == 'c':  # Generate C code for the lexer
