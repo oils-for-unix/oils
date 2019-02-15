@@ -15,14 +15,15 @@ if posix.environ.get('FASTLEX') == '0':  # For manual testing
   fastlex = None
 else:
   try:
-    import fastlex
+    import fastlex  # type: ignore
   except ImportError:
     fastlex = None
 
 if fastlex:
-  re = None  # Shouldn't use re module in this case
+  # Shouldn't use re module in this case
+  re = None
 else:
-  import re
+  import re  # type: ignore
 
 
 def _LongestMatch(re_list, line, start_pos):

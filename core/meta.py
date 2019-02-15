@@ -14,6 +14,8 @@ Usage:
 from core import id_kind
 from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
 
+from typing import Dict
+
 
 def _CreateInstanceLookup(id_enum, id_type, instances):
   """
@@ -28,14 +30,14 @@ def _CreateInstanceLookup(id_enum, id_type, instances):
       instances[val.enum_id] = val
 
 
-_ID_INSTANCES = {}  # int -> Id_t
-_KIND_INSTANCES = {}  # int -> Kind_t
+_ID_INSTANCES = {}  # type: Dict[int, Id_t]
+_KIND_INSTANCES = {}  # type: Dict[int, Kind_t]
 
 _CreateInstanceLookup(Id, Id_t, _ID_INSTANCES)
 _CreateInstanceLookup(Kind, Kind_t, _KIND_INSTANCES)
 
 
-_ID_TO_KIND_INTEGERS = {}  # int Id -> int Kind
+_ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
 
 
 def LookupKind(id_):
@@ -53,15 +55,14 @@ def IdInstance(i):
 #
 
 from _devbuild.gen import types_asdl  # other modules import this
-              
+bool_arg_type_e = types_asdl.bool_arg_type_e
 
-# int -> bool_arg_type_e
-BOOL_ARG_TYPES = {}  # type: dict
+BOOL_ARG_TYPES = {}  # type: Dict[int, bool_arg_type_e]
 
 # Used by builtin_bracket.py
-TEST_UNARY_LOOKUP = {}
-TEST_BINARY_LOOKUP = {}
-TEST_OTHER_LOOKUP = {}
+TEST_UNARY_LOOKUP = {}  # type: Dict[str, int]
+TEST_BINARY_LOOKUP = {}  # type: Dict[str, int]
+TEST_OTHER_LOOKUP = {}  # type: Dict[str, int]
 
 
 #
@@ -86,14 +87,14 @@ _kind_sizes = ID_SPEC.kind_sizes
 #
 
 from _devbuild.gen import syntax_asdl  # other modules import this
-_ = syntax_asdl  # shut up lint
+unused1 = syntax_asdl  # shut up lint
 
 #
 # Instantiate core/runtime.asdl
 #
 
 from _devbuild.gen import runtime_asdl  # other modules import this
-_ = runtime_asdl  # shut up lint
+unused2 = runtime_asdl  # shut up lint
 
 #
 # Redirect Tables associated with IDs
