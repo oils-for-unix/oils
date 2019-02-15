@@ -10,7 +10,6 @@ import sre_parse
 import sre_constants
 
 from asdl import pretty  # For PLAIN_WORD_RE
-from core import meta
 from frontend import lex
 
 
@@ -210,13 +209,12 @@ static inline void %s(unsigned char* line, int line_len,
     /*!re2c
 """ % func_name)
 
-  for is_regex, pat, token_id in lexer_def:
+  for is_regex, pat, id_ in lexer_def:
     if is_regex:
       re2c_pat = TranslateRegex(pat)
     else:
       re2c_pat = TranslateConstant(pat)
-    id_name = meta.IdName(token_id)
-    print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
+    print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_.name))
 
   # EARLY RETURN: Do NOT advance past the NUL terminator.
   print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
@@ -267,13 +265,12 @@ static inline void MatchOshToken(int lex_mode, unsigned char* line, int line_len
     print('    for (;;) {')
     print('      /*!re2c')
 
-    for is_regex, pat, token_id in pat_list:
+    for is_regex, pat, id_ in pat_list:
       if is_regex:
         re2c_pat = TranslateRegex(pat)
       else:
         re2c_pat = TranslateConstant(pat)
-      id_name = meta.IdName(token_id)
-      print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
+      print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_.name))
 
     # EARLY RETURN: Do NOT advance past the NUL terminator.
     print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \

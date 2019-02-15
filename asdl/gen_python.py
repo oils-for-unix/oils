@@ -159,7 +159,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
 
     elif isinstance(desc, meta.UserType):  # e.g. Id
-      code_str = 'PrettyLeaf(repr(%s), Color_UserType)' % var_name
+      # Hm can I get rid of this now that Id is a SimpleObj?
+      code_str = 'PrettyLeaf(%s.name, Color_UserType)' % var_name
 
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:

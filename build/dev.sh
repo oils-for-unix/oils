@@ -167,12 +167,12 @@ minimal() {
 
   gen-help
 
+  build/codegen.sh id-mypy-gen
+
   # BOOTSTRAP_LEVEL is a hack for avoiding circular dependencies.
   BOOTSTRAP_LEVEL=0 gen-types-asdl    # doesn't need Id
   BOOTSTRAP_LEVEL=0 gen-syntax-asdl   # needs Id, which needs types.asdl
   BOOTSTRAP_LEVEL=0 gen-runtime-asdl  # ditto
-
-  build/codegen.sh id-mypy-gen
 
   # Only for testing.
   asdl/run.sh gen-demo-asdl

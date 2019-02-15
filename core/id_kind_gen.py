@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 
 from asdl.visitor import FormatLines
-from core.meta import ID_SPEC
+from core import id_kind
 
 
 def Emit(s, f, depth=0):
@@ -84,13 +84,43 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
   }
   """)
 
+
+# Dummy objects
+class _Id(object):
+  def __init__(self, enum_value):
+    #self.enum_value = enum_value
+    pass
+
+class _Kind(object):
+  pass
+
+# duplicate of frontend/types.asdl to break dependency
+class bool_arg_type_e(object):
+  Undefined = 1
+  Path = 2
+  Int = 3
+  Str = 4
+  Other = 5
+
+
 def main(argv):
   try:
     action = argv[1]
   except IndexError:
     raise RuntimeError('Action required')
 
-  ids = list(ID_SPEC.id_names.iteritems())
+  # NOTE: This initialization must be identical to the one in core/meta.py.  We
+  # do it here to avoid circular dependencies.
+
+  id_names = {}  # int -> string.  Mutated
+  ID_SPEC = id_kind.IdSpec(_Id, _Kind, id_names, {}, {})
+
+  id_kind.AddKinds(ID_SPEC)
+  id_kind.AddBoolKinds(ID_SPEC, _Id, bool_arg_type_e)  # must come second
+
+  id_kind.SetupTestBuiltin(_Id, _Kind, ID_SPEC, {}, {}, {}, bool_arg_type_e)
+
+  ids = list(id_names.iteritems())
   ids.sort(key=lambda pair: pair[0])  # Sort by ID
 
   if action == 'c':
@@ -119,6 +149,7 @@ def main(argv):
 
     f.write("""\
 from asdl import runtime
+
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
     v = gen_python.GenMyPyVisitor(f, None, e_suffix=False)

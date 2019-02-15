@@ -14,13 +14,14 @@ Usage:
 import posix
 
 from core import id_kind
+from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
 
 
 _BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '1'))
 
 
 # TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj)
-class Id(object):
+class _Id(object):
   """Token and op type.
 
   The evaluator must consider all Ids.
@@ -37,7 +38,7 @@ class Id(object):
 
 # TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj).  Right now it
 # can't print itself, which is inconsistent with Id.
-class Kind(object):
+class _Kind(object):
   """A coarser version of Id, used to make parsing decisions."""
   pass
 
@@ -55,60 +56,34 @@ def _CreateInstanceLookup(id_enum, id_type, instances):
       instances[val.enum_id] = val
 
 
-
-_ASDL = False
-#_ASDL = True
-
-
 _ID_TO_KIND_INTEGERS = {}  # int Id -> int Kind
-
-def LookupKind(id_):
-  return _ID_TO_KIND_INTEGERS[id_.enum_value]
-
-_ID_NAMES = {}  # int -> string
-
-def IdName(id_):
-  return _ID_NAMES[id_.enum_value]
-
-
-# HACK.  Kind needs to be part of ASDL.
-def KindName(kind_int):
-  for name in dir(Kind):
-    if name.startswith('__'):
-      continue
-    val = getattr(Kind, name)
-    if val == kind_int:
-      return name
-  return '<Invalid Kind>'
-
 
 # Keep one instance of each Id, to save memory and enable comparison by
 # OBJECT IDENTITY.
 # Do NOT create any any more instances of them!  Always used IdInstance().
 
-# TODO: Fold Id into ASDL, which will enforce uniqueness?
-
-
 _ID_INSTANCES = {}  # int -> Id_t
 _KIND_INSTANCES = {}  # int -> Kind_t
 
-if _ASDL:
-  _CreateInstanceLookup(Id, Id_t, _ID_INSTANCES)
-  _CreateInstanceLookup(Kind, Kind_t, _KIND_INSTANCES)
+_CreateInstanceLookup(Id, Id_t, _ID_INSTANCES)
+_CreateInstanceLookup(Kind, Kind_t, _KIND_INSTANCES)
 
-  def IdName(id_):
-    return id_.name
 
-  def KindName(k):
-    return k.name
-
-  def LookupKind(id_):
-    """Id_t -> Kind_t"""
-    return _KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
+def LookupKind(id_):
+  """Id_t -> Kind_t"""
+  return _KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
 
 
 def IdInstance(i):
   return _ID_INSTANCES[i]
+
+
+def IdName(id_):
+  return id_.name
+
+
+def KindName(k):
+  return k.name
 
 
 #
@@ -132,15 +107,14 @@ TEST_OTHER_LOOKUP = {}
 # Add attributes to Id and Kind
 #
 
-ID_SPEC = id_kind.IdSpec(Id, Kind,
-                         _ID_NAMES, _ID_INSTANCES, _ID_TO_KIND_INTEGERS,
+ID_SPEC = id_kind.IdSpec(_Id, _Kind, {}, _ID_TO_KIND_INTEGERS,
                          BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
-id_kind.AddBoolKinds(ID_SPEC, Id, types_asdl.bool_arg_type_e)  # must come second
+id_kind.AddBoolKinds(ID_SPEC, _Id, types_asdl.bool_arg_type_e)  # must come second
 # NOTE: Dependency on the types module here.  This is the root cause of the
 # _BOOTSTRAP_LEVEL hack.
-id_kind.SetupTestBuiltin(Id, Kind, ID_SPEC,
+id_kind.SetupTestBuiltin(_Id, _Kind, ID_SPEC,
                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
                          TEST_OTHER_LOOKUP,
                          types_asdl.bool_arg_type_e)

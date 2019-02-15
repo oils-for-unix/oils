@@ -12,6 +12,7 @@ libc_test.py: Tests for libc.py
 
 import unittest
 
+#from core.util import log
 from core.meta import Id, IdInstance, types_asdl
 
 import fastlex  # module under test
@@ -22,6 +23,7 @@ lex_mode_e = types_asdl.lex_mode_e
 # NOTE: This is just like _MatchOshToken_Fast in osh/match.py
 def MatchOshToken(lex_mode, line, start_pos):
   tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
+  #log('tok_type = %d, id = %s', tok_type, IdInstance(tok_type))
   return IdInstance(tok_type), end_pos
 
 
@@ -63,7 +65,7 @@ class LexTest(unittest.TestCase):
     expected = Id.BoolUnary_n
 
     tok_type, end_pos = MatchOshToken(lex_mode_e.DBracket, code_str, 0)
-    print('---', 'expected', expected.enum_value, 'got', tok_type.enum_value)
+    print('--- %s expected, got %s' % (expected, tok_type))
 
     self.assertEqual(expected, tok_type)
 

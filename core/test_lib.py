@@ -59,7 +59,7 @@ def AsdlEqual(left, right):
 
   We don't use equality in the actual code, so this is relegated to test_lib.
   """
-  if isinstance(left, (int, str, bool, Id)):  # little hack for Id
+  if isinstance(left, (int, str, bool, runtime.SimpleObj)):
     return left == right
 
   if isinstance(left, list):

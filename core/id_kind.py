@@ -11,6 +11,7 @@ id_kind.py - Id and Kind definitions, used for Token, Word, Nodes, etc.
 NOTE: If this changes, the lexer may need to be recompiled with
 build/codegen.sh lexer.
 """
+from __future__ import print_function
 
 from core import util
 log = util.log
@@ -19,13 +20,11 @@ log = util.log
 class IdSpec(object):
   """Identifiers that form the "spine" of the shell program representation."""
 
-  def __init__(self, id_enum, kind_enum,
-               id_names, id_instance_lookup, kind_lookup, bool_ops):
+  def __init__(self, id_enum, kind_enum, id_names, kind_lookup, bool_ops):
     self.id_enum = id_enum
     self.kind_enum = kind_enum
 
     self.id_names = id_names  # integer -> string Id name
-    self.id_instance_lookup = id_instance_lookup  # integer -> Id instance
 
     self.kind_lookup = kind_lookup  # Id int -> Kind int
     self.kind_name_list = []
@@ -40,7 +39,11 @@ class IdSpec(object):
     self.kind_index = 1
 
   def LexerPairs(self, kind):
-    return self.lexer_pairs[kind]
+    from core import meta  # break circular dep
+    result = []
+    for is_regex, pat, id_int in self.lexer_pairs[kind.enum_id]:
+      result.append((is_regex, pat, meta.IdInstance(id_int)))
+    return result
 
   def _AddId(self, id_name, kind=None):
     """
@@ -48,19 +51,17 @@ class IdSpec(object):
       id_name: e.g. BoolBinary_Equal
       kind: override autoassignment.  For AddBoolBinaryForBuiltin
     """
-    # The ONLY place that Id() is instantiated.
-    id_val = self.id_enum(self.id_index)
-    setattr(self.id_enum, id_name, id_val)
-
     t = self.id_index
+
+    setattr(self.id_enum, id_name, t)  # Used later
+
     self.id_names[t] = id_name
-    self.id_instance_lookup[t] = id_val
     if kind is None:
       kind = self.kind_index
     self.kind_lookup[t] = kind
 
     self.id_index += 1  # mutate last
-    return id_val
+    return t  # the index we used
 
   def _AddKind(self, kind_name):
     # TODO: Should be instantiated or folded into ASDL.
@@ -86,9 +87,9 @@ class IdSpec(object):
     lexer_pairs = []
     for name, char_pat in pairs:
       id_name = '%s_%s' % (kind_name, name)
-      id_val = self._AddId(id_name)
+      id_int = self._AddId(id_name)
       # After _AddId
-      lexer_pairs.append((False, char_pat, id_val))  # Constant
+      lexer_pairs.append((False, char_pat, id_int))  # Constant
 
     self.lexer_pairs[self.kind_index] = lexer_pairs
 
@@ -104,17 +105,15 @@ class IdSpec(object):
     """
     lexer_pairs = []
     num_tokens = 0
-    for arg_type, pairs in arg_type_pairs.items():
+    for arg_type, pairs in arg_type_pairs:
       #print(arg_type, pairs)
 
       for name, char_pat in pairs:
         # BoolUnary_f, BoolBinary_eq, BoolBinary_NEqual
         id_name = '%s_%s' % (kind_name, name)
-        id_val = self._AddId(id_name)
-        # not logical
-        self.AddBoolOp(id_val, arg_type)
-        # After _AddId.
-        lexer_pairs.append((False, char_pat, id_val))  # constant
+        id_int = self._AddId(id_name)
+        self.AddBoolOp(id_int, arg_type)  # register type
+        lexer_pairs.append((False, char_pat, id_int))  # constant
 
       num_tokens += len(pairs)
 
@@ -130,12 +129,13 @@ class IdSpec(object):
     These operators are NOT added to the lexer.  The are "lexed" as StringWord.
     """
     id_name = 'BoolBinary_%s' % id_name
-    id_val = self._AddId(id_name, kind=kind)
-    self.AddBoolOp(id_val, bool_arg_type_e.Str)
-    return id_val
+    id_int = self._AddId(id_name, kind=kind)
+    self.AddBoolOp(id_int, bool_arg_type_e.Str)
+    return id_int
 
-  def AddBoolOp(self, id_, arg_type):
-    self.bool_ops[id_] = arg_type
+  def AddBoolOp(self, id_int, arg_type):
+    """Associate an ID integer with an bool_arg_type_e."""
+    self.bool_ops[id_int] = arg_type
 
 
 def AddKinds(spec):
@@ -443,20 +443,20 @@ def _Dash(strs):
 
 
 def AddBoolKinds(spec, Id, bool_arg_type_e):
-  spec.AddBoolKind('BoolUnary', {
-      bool_arg_type_e.Str: _Dash(list(_UNARY_STR_CHARS)),
-      bool_arg_type_e.Other: _Dash(list(_UNARY_OTHER_CHARS)),
-      bool_arg_type_e.Path: _Dash(list(_UNARY_PATH_CHARS)),
-  })
+  spec.AddBoolKind('BoolUnary', [
+      (bool_arg_type_e.Str, _Dash(list(_UNARY_STR_CHARS))),
+      (bool_arg_type_e.Other, _Dash(list(_UNARY_OTHER_CHARS))),
+      (bool_arg_type_e.Path, _Dash(list(_UNARY_PATH_CHARS))),
+  ])
 
-  spec.AddBoolKind('BoolBinary', {
-      bool_arg_type_e.Str: [
+  spec.AddBoolKind('BoolBinary', [
+      (bool_arg_type_e.Str, [
           ('GlobEqual', '='), ('GlobDEqual', '=='), ('GlobNEqual', '!='),
           ('EqualTilde', '=~'),
-      ],
-      bool_arg_type_e.Path: _Dash(_BINARY_PATH),
-      bool_arg_type_e.Int: _Dash(_BINARY_INT),
-  })
+      ]),
+      (bool_arg_type_e.Path, _Dash(_BINARY_PATH)),
+      (bool_arg_type_e.Int, _Dash(_BINARY_INT)),
+  ])
 
   # logical, arity, arg_type
   spec.AddBoolOp(Id.Op_DAmp, bool_arg_type_e.Undefined)
@@ -489,10 +489,10 @@ def SetupTestBuiltin(Id, Kind, id_spec,
 
   for id_name, token_str in [
       ('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
-    id_val = id_spec.AddBoolBinaryForBuiltin(id_name, Kind.BoolBinary,
+    id_int = id_spec.AddBoolBinaryForBuiltin(id_name, Kind.BoolBinary,
                                              bool_arg_type_e)
 
-    binary_lookup[token_str] = id_val
+    binary_lookup[token_str] = id_int
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.
   binary_lookup['<'] = Id.Redir_Less

@@ -8,7 +8,7 @@ from core.meta import Id
 
 def _AbbreviateToken(token, out):
   if token.id != Id.Lit_Chars:
-    n1 = runtime.PrettyLeaf(str(token.id), runtime.Color_OtherConst)
+    n1 = runtime.PrettyLeaf(token.id.name, runtime.Color_OtherConst)
     out.append(n1)
 
   n2 = runtime.PrettyLeaf(token.val, runtime.Color_StringConst)

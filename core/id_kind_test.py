@@ -14,9 +14,8 @@ import unittest
 
 from core import id_kind
 from core.meta import (
-    Id, IdName, IdInstance,
-    Kind, LookupKind,
-    ID_SPEC, BOOL_ARG_TYPES, _ID_NAMES, _kind_sizes)
+    Id, IdName, IdInstance, Kind, LookupKind,
+    ID_SPEC, BOOL_ARG_TYPES, _kind_sizes)
 
 from core.meta import syntax_asdl
 
@@ -45,7 +44,7 @@ class TokensTest(unittest.TestCase):
 
     print('Number of Kinds:', num_kinds)
     # 233 out of 256 tokens now
-    print('Number of IDs:', len(_ID_NAMES))
+    print('Number of IDs:', len(ID_SPEC.id_names))
 
     # Make sure we're not exporting too much
     print(dir(id_kind))
@@ -95,7 +94,7 @@ class TokensTest(unittest.TestCase):
 
 def PrintBoolTable():
   for i, arg_type in BOOL_ARG_TYPES.items():
-    row = (IdName(i), arg_type)
+    row = (IdInstance(i), arg_type)
     print('\t'.join(str(c) for c in row))
 
 

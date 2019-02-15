@@ -1,13 +1,11 @@
 -- Types that don't depend on Id.  (To break dependency)
 
 module types {
-  -- Also invalid because of duplicate 'Path' -- to fix
   bool_arg_type = Undefined | Path | Int | Str | Other
   redir_arg_type = Path | Desc | Here
 
-  -- Fifteen lexer modes for osh.
-  -- Possible additional modes:
-  --   nested backticks: echo `echo \`echo foo\` bar`
+  -- Fifteen lexer modes for OSH
+
   lex_mode =
     Undefined
   | Comment

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from core import util
 from core import meta
-from core.meta import Id, runtime_asdl, syntax_asdl
+from core.meta import Id, IdInstance, runtime_asdl, syntax_asdl
 
 from osh import expr_eval
 from osh import bool_parse
@@ -44,10 +44,10 @@ class _StringWordEmitter(object):
     self.i += 1
 
     # default is an operand word
-    id_ = (
-        _UNARY_LOOKUP.get(s) or _BINARY_LOOKUP.get(s) or _OTHER_LOOKUP.get(s)
-        or Id.Word_Compound)
+    id_int = (
+        _UNARY_LOOKUP.get(s) or _BINARY_LOOKUP.get(s) or _OTHER_LOOKUP.get(s))
 
+    id_ = Id.Word_Compound if id_int is None else IdInstance(id_int)
     return word.StringWord(id_, s)
 
 
@@ -78,7 +78,7 @@ def _TwoArgs(argv):
     # - separate lookup by unary
     util.p_die('Expected unary operator, got %r (2 args)', a0)
   child = word.StringWord(Id.Word_Compound, a1)
-  return bool_expr.BoolUnary(unary_id, child)
+  return bool_expr.BoolUnary(IdInstance(unary_id), child)
 
 
 def _ThreeArgs(argv):
@@ -91,7 +91,7 @@ def _ThreeArgs(argv):
   if binary_id is not None:
     left = word.StringWord(Id.Word_Compound, a0)
     right = word.StringWord(Id.Word_Compound, a2)
-    return bool_expr.BoolBinary(binary_id, left, right)
+    return bool_expr.BoolBinary(IdInstance(binary_id), left, right)
 
   if a1 == '-a':
     left = _StringWordTest(a0)
