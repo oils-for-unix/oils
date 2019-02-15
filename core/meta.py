@@ -16,7 +16,7 @@ import posix
 from core import id_kind
 
 
-_BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '3'))
+_BOOTSTRAP_LEVEL = int(posix.environ.get('BOOTSTRAP_LEVEL', '1'))
 
 
 # TODO: Should be py_meta.SimpleObj (or asdl_runtime.SimpleObj)
@@ -42,11 +42,28 @@ class Kind(object):
   pass
 
 
-_ID_TO_KIND = {}  # int -> Kind
+def _CreateInstanceLookup(id_enum, id_type, instances):
+  """
+  Args:
+    id_enum: Id or Kind
+    id_type: Id_t or Kind_t
+    instances: dictionary to mutate
+  """
+  for name in dir(id_enum):
+    val = getattr(id_enum, name)
+    if isinstance(val, id_type):
+      instances[val.enum_id] = val
+
+
+
+_ASDL = False
+#_ASDL = True
+
+
+_ID_TO_KIND_INTEGERS = {}  # int Id -> int Kind
 
 def LookupKind(id_):
-  return _ID_TO_KIND[id_.enum_value]
-
+  return _ID_TO_KIND_INTEGERS[id_.enum_value]
 
 _ID_NAMES = {}  # int -> string
 
@@ -71,7 +88,24 @@ def KindName(kind_int):
 
 # TODO: Fold Id into ASDL, which will enforce uniqueness?
 
-_ID_INSTANCES = {}  # int -> Id
+
+_ID_INSTANCES = {}  # int -> Id_t
+_KIND_INSTANCES = {}  # int -> Kind_t
+
+if _ASDL:
+  _CreateInstanceLookup(Id, Id_t, _ID_INSTANCES)
+  _CreateInstanceLookup(Kind, Kind_t, _KIND_INSTANCES)
+
+  def IdName(id_):
+    return id_.name
+
+  def KindName(k):
+    return k.name
+
+  def LookupKind(id_):
+    """Id_t -> Kind_t"""
+    return _KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
+
 
 def IdInstance(i):
   return _ID_INSTANCES[i]
@@ -99,7 +133,7 @@ TEST_OTHER_LOOKUP = {}
 #
 
 ID_SPEC = id_kind.IdSpec(Id, Kind,
-                         _ID_NAMES, _ID_INSTANCES, _ID_TO_KIND,
+                         _ID_NAMES, _ID_INSTANCES, _ID_TO_KIND_INTEGERS,
                          BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
@@ -119,7 +153,7 @@ _kind_sizes = ID_SPEC.kind_sizes
 # Instantiate osh/osh.asdl
 #
 
-if _BOOTSTRAP_LEVEL > 1:
+if _BOOTSTRAP_LEVEL > 0:
   from _devbuild.gen import syntax_asdl  # other modules import this
   _ = syntax_asdl  # shut up lint
 
@@ -127,7 +161,7 @@ if _BOOTSTRAP_LEVEL > 1:
 # Instantiate core/runtime.asdl
 #
 
-if _BOOTSTRAP_LEVEL > 2:
+if _BOOTSTRAP_LEVEL > 0:
   from _devbuild.gen import runtime_asdl  # other modules import this
   _ = runtime_asdl  # shut up lint
 

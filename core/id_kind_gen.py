@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 
 from asdl.visitor import FormatLines
-from core.meta import Id, Kind, LookupKind, ID_SPEC
+from core.meta import ID_SPEC
 
 
 def Emit(s, f, depth=0):
@@ -90,30 +90,20 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
+  ids = list(ID_SPEC.id_names.iteritems())
+  ids.sort(key=lambda pair: pair[0])  # Sort by ID
+
   if action == 'c':
-    ids = list(ID_SPEC.id_names.iteritems())
-    ids.sort(key=lambda pair: pair[0])  # Sort by ID
-    for i, name in enumerate(ID_SPEC.id_name_list):
+    for i, name in ids:
       print('#define id__%s %s' % (name, i))
 
   elif action == 'mypy':
     from asdl import asdl_
     from asdl import gen_python
 
-    from core.meta import ID_SPEC
-
     #
     # Create a SYNTHETIC ASDL module, and generate code from it.
     #
-    # TODO: Get rid of UserType.  We don't need it!
-    # Or do we need it for Dict?
-    # The problem is that the other schemas rely on it!  syntax.asdl,
-    # runtime.asdl, etc.
-    # How do ASDL modules refer to each other?
-
-    ids = list(ID_SPEC.id_names.iteritems())
-    ids.sort(key=lambda pair: pair[0])  # Sort by ID
-
     id_sum = asdl_.Sum([asdl_.Constructor(name) for _, name in ids])
 
     variants2 = [asdl_.Constructor(name) for name in ID_SPEC.kind_name_list]
@@ -133,74 +123,6 @@ from asdl import runtime
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
     v = gen_python.GenMyPyVisitor(f, None, e_suffix=False)
     v.VisitModule(schema_ast)
-
-  elif action == 'cpp':
-    # For blog post
-    try:
-      labels = argv[2]
-    except IndexError:
-      label_lines = []
-    else:
-      with open(labels) as f:
-        label_lines = f.readlines()
-
-    from collections import defaultdict
-
-    id_by_kind_index = defaultdict(list)  # Kind name -> [list of Id names]
-    for name in dir(Id):
-      if name[0].isupper():
-        id_ = getattr(Id, name)
-        kind_index = LookupKind(id_)
-        id_by_kind_index[kind_index].append(name)
-
-    kinds = []
-    for name in dir(Kind):
-      if name[0].isupper():
-        kind_index = getattr(Kind, name)
-        #print(kind, name)
-        kinds.append((name, kind_index, len(id_by_kind_index[kind_index])))
-
-    # Sort descending by length of ID list
-    kinds = sorted(kinds, key=lambda p: p[2], reverse=True)
-
-    id_labels = {}  # Id name -> integer
-    kind_labels = {}  # Kind name -> integer
-
-    for k, line in enumerate(label_lines):  # descending order by kind size
-
-      parts = line.split()
-      id_list_len, _, actual_len, _, kind_label, _ = parts[:6]
-      id_list_len = int(id_list_len)
-      kind_label = int(kind_label)
-      id_list = [int(id_) for id_ in parts[6:]]
-
-      try:
-        kind_name, kind_index, len_id_list = kinds[k]
-      except IndexError:
-        break
-      kind_labels[kind_name] = kind_label
-
-      id_names = id_by_kind_index[kind_index]
-      #print(id_names)
-      for i, name in enumerate(id_names):
-        try:
-          id_labels[name] = id_list[i]
-        except IndexError:
-          raise RuntimeError('%s %s' % (name, i))
-
-    if 0:  # disable labeling
-      id_labels = None
-      kind_labels = None
-
-    kind_names = [k[0] for k in kinds]
-
-    id_names = []
-    for _, kind_index, _ in kinds:
-      n = id_by_kind_index[kind_index]
-      id_names.append(n)
-
-    GenCppCode(kind_names, id_names, sys.stdout,
-               id_labels=id_labels, kind_labels=kind_labels)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

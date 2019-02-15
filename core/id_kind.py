@@ -27,7 +27,7 @@ class IdSpec(object):
     self.id_names = id_names  # integer -> string Id name
     self.id_instance_lookup = id_instance_lookup  # integer -> Id instance
 
-    self.kind_lookup = kind_lookup  # Id -> Kind
+    self.kind_lookup = kind_lookup  # Id int -> Kind int
     self.kind_name_list = []
     self.kind_sizes = []  # stats
 
@@ -35,8 +35,9 @@ class IdSpec(object):
     self.bool_ops = bool_ops  # table of runtime values
 
     # Incremented on each method call
-    self.id_index = 0
-    self.kind_index = 0
+    # IMPORTANT: 1-based indices match what asdl/gen_python.py does!!!
+    self.id_index = 1
+    self.kind_index = 1
 
   def LexerPairs(self, kind):
     return self.lexer_pairs[kind]
@@ -47,7 +48,6 @@ class IdSpec(object):
       id_name: e.g. BoolBinary_Equal
       kind: override autoassignment.  For AddBoolBinaryForBuiltin
     """
-    self.id_index += 1  # leave out 0 I guess?
     # The ONLY place that Id() is instantiated.
     id_val = self.id_enum(self.id_index)
     setattr(self.id_enum, id_name, id_val)
@@ -58,6 +58,8 @@ class IdSpec(object):
     if kind is None:
       kind = self.kind_index
     self.kind_lookup[t] = kind
+
+    self.id_index += 1  # mutate last
     return id_val
 
   def _AddKind(self, kind_name):
