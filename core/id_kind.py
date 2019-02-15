@@ -20,39 +20,41 @@ class IdSpec(object):
   """Identifiers that form the "spine" of the shell program representation."""
 
   def __init__(self, id_enum, kind_enum,
-               token_names, instance_lookup, kind_lookup, bool_ops):
+               id_names, id_instance_lookup, kind_lookup, bool_ops):
     self.id_enum = id_enum
     self.kind_enum = kind_enum
-    self.token_names = token_names  # integer -> string Id
-    self.instance_lookup = instance_lookup
-    self.kind_lookup = kind_lookup  # Id -> Kind
 
+    self.id_names = id_names  # integer -> string Id name
+    self.id_instance_lookup = id_instance_lookup  # integer -> Id instance
+
+    self.kind_lookup = kind_lookup  # Id -> Kind
+    self.kind_name_list = []
     self.kind_sizes = []  # stats
 
     self.lexer_pairs = {}  # Kind -> [(regex, Id), ...]
     self.bool_ops = bool_ops  # table of runtime values
 
     # Incremented on each method call
-    self.token_index = 0
+    self.id_index = 0
     self.kind_index = 0
 
   def LexerPairs(self, kind):
     return self.lexer_pairs[kind]
 
-  def _AddId(self, token_name, kind=None):
+  def _AddId(self, id_name, kind=None):
     """
     Args:
-      token_name: e.g. BoolBinary_Equal
+      id_name: e.g. BoolBinary_Equal
       kind: override autoassignment.  For AddBoolBinaryForBuiltin
     """
-    self.token_index += 1  # leave out 0 I guess?
+    self.id_index += 1  # leave out 0 I guess?
     # The ONLY place that Id() is instantiated.
-    id_val = self.id_enum(self.token_index)
-    setattr(self.id_enum, token_name, id_val)
+    id_val = self.id_enum(self.id_index)
+    setattr(self.id_enum, id_name, id_val)
 
-    t = self.token_index
-    self.token_names[t] = token_name
-    self.instance_lookup[t] = id_val
+    t = self.id_index
+    self.id_names[t] = id_name
+    self.id_instance_lookup[t] = id_val
     if kind is None:
       kind = self.kind_index
     self.kind_lookup[t] = kind
@@ -63,13 +65,14 @@ class IdSpec(object):
     setattr(self.kind_enum, kind_name, self.kind_index)
     #log('%s = %d', kind_name, self.kind_index)
     self.kind_index += 1
+    self.kind_name_list.append(kind_name)
 
   def AddKind(self, kind_name, tokens):
     assert isinstance(tokens, list), tokens
 
     for name in tokens:
-      token_name = '%s_%s' % (kind_name, name)
-      self._AddId(token_name)
+      id_name = '%s_%s' % (kind_name, name)
+      self._AddId(id_name)
 
     # Must be after adding Id
     self._AddKind(kind_name)
@@ -80,8 +83,8 @@ class IdSpec(object):
 
     lexer_pairs = []
     for name, char_pat in pairs:
-      token_name = '%s_%s' % (kind_name, name)
-      id_val = self._AddId(token_name)
+      id_name = '%s_%s' % (kind_name, name)
+      id_val = self._AddId(id_name)
       # After _AddId
       lexer_pairs.append((False, char_pat, id_val))  # Constant
 
@@ -104,8 +107,8 @@ class IdSpec(object):
 
       for name, char_pat in pairs:
         # BoolUnary_f, BoolBinary_eq, BoolBinary_NEqual
-        token_name = '%s_%s' % (kind_name, name)
-        id_val = self._AddId(token_name)
+        id_name = '%s_%s' % (kind_name, name)
+        id_val = self._AddId(id_name)
         # not logical
         self.AddBoolOp(id_val, arg_type)
         # After _AddId.
@@ -119,13 +122,13 @@ class IdSpec(object):
     self._AddKind(kind_name)
     self.kind_sizes.append(num_tokens)  # debug info
 
-  def AddBoolBinaryForBuiltin(self, token_name, kind, bool_arg_type_e):
+  def AddBoolBinaryForBuiltin(self, id_name, kind, bool_arg_type_e):
     """For [ = ] [ == ] and [ != ].
 
     These operators are NOT added to the lexer.  The are "lexed" as StringWord.
     """
-    token_name = 'BoolBinary_%s' % token_name
-    id_val = self._AddId(token_name, kind=kind)
+    id_name = 'BoolBinary_%s' % id_name
+    id_val = self._AddId(id_name, kind=kind)
     self.AddBoolOp(id_val, bool_arg_type_e.Str)
     return id_val
 
@@ -473,18 +476,18 @@ def SetupTestBuiltin(Id, Kind, id_spec,
   - ( ) -> Op_LParen (they don't appear above)
   """
   for letter in _UNARY_STR_CHARS + _UNARY_OTHER_CHARS + _UNARY_PATH_CHARS:
-    token_name = 'BoolUnary_%s' % letter
-    unary_lookup['-' + letter] = getattr(Id, token_name)
+    id_name = 'BoolUnary_%s' % letter
+    unary_lookup['-' + letter] = getattr(Id, id_name)
 
   for s in _BINARY_PATH + _BINARY_INT:
-    token_name = 'BoolBinary_%s' % s
-    binary_lookup['-' + s] = getattr(Id, token_name)
+    id_name = 'BoolBinary_%s' % s
+    binary_lookup['-' + s] = getattr(Id, id_name)
 
   # Like the [[ definition above, but without globbing and without =~ .
 
-  for token_name, token_str in [
+  for id_name, token_str in [
       ('Equal', '='), ('DEqual', '=='), ('NEqual', '!=')]:
-    id_val = id_spec.AddBoolBinaryForBuiltin(token_name, Kind.BoolBinary,
+    id_val = id_spec.AddBoolBinaryForBuiltin(id_name, Kind.BoolBinary,
                                              bool_arg_type_e)
 
     binary_lookup[token_str] = id_val

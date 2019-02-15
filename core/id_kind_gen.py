@@ -91,10 +91,48 @@ def main(argv):
     raise RuntimeError('Action required')
 
   if action == 'c':
-    ids = list(ID_SPEC.token_names.iteritems())
+    ids = list(ID_SPEC.id_names.iteritems())
     ids.sort(key=lambda pair: pair[0])  # Sort by ID
-    for i, name in ids:
+    for i, name in enumerate(ID_SPEC.id_name_list):
       print('#define id__%s %s' % (name, i))
+
+  elif action == 'mypy':
+    from asdl import asdl_
+    from asdl import gen_python
+
+    from core.meta import ID_SPEC
+
+    #
+    # Create a SYNTHETIC ASDL module, and generate code from it.
+    #
+    # TODO: Get rid of UserType.  We don't need it!
+    # Or do we need it for Dict?
+    # The problem is that the other schemas rely on it!  syntax.asdl,
+    # runtime.asdl, etc.
+    # How do ASDL modules refer to each other?
+
+    ids = list(ID_SPEC.id_names.iteritems())
+    ids.sort(key=lambda pair: pair[0])  # Sort by ID
+
+    id_sum = asdl_.Sum([asdl_.Constructor(name) for _, name in ids])
+
+    variants2 = [asdl_.Constructor(name) for name in ID_SPEC.kind_name_list]
+    kind_sum = asdl_.Sum(variants2)
+
+    id_ = asdl_.Type('Id', id_sum)
+    kind_ = asdl_.Type('Kind', kind_sum)
+
+    schema_ast = asdl_.Module('id_kind', [id_, kind_])
+    #print(schema_ast)
+
+    f = sys.stdout
+
+    f.write("""\
+from asdl import runtime
+""")
+    # Minor style issue: we want Id and Kind, not Id_e and Kind_e
+    v = gen_python.GenMyPyVisitor(f, None, e_suffix=False)
+    v.VisitModule(schema_ast)
 
   elif action == 'cpp':
     # For blog post

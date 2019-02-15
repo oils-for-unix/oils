@@ -121,10 +121,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   TODO: Remove the code above.  This should substitute for it.
   """
-  def __init__(self, f, type_lookup, abbrev_mod_entries=None):
+  def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
+    self.e_suffix = e_suffix
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -133,7 +134,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
     # Now emit a namespace
-    self.Emit('class %s_e(object):' % name, depth)
+    e_name = ('%s_e' % name) if self.e_suffix else name
+    self.Emit('class %s(object):' % e_name, depth)
     for i, variant in enumerate(sum.types):
       attr = '  %s = %s_t(%d, %r)' % (
           variant.name, name, i + 1, variant.name)
@@ -263,6 +265,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     if not desc.fields:
       self.Emit('    pass')  # for types like NoOp
 
+    # TODO: Use the field_desc rather than the parse tree, for consistency.
     for f in desc.fields:
       # This logic is like _MakeFieldDescriptors
       default = None

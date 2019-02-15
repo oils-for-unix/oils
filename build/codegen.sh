@@ -65,8 +65,12 @@ types-gen() {
   PYTHONPATH=. core/asdl_gen.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
 }
 
-id-gen() {
+id-c-gen() {
   PYTHONPATH=. core/id_kind_gen.py c > _devbuild/gen/id.h
+}
+
+id-mypy-gen() {
+  PYTHONPATH=. core/id_kind_gen.py mypy > _devbuild/gen/id_kind_asdl.py
 }
 
 lexer-gen() { PYTHONPATH=. frontend/lexer_gen.py "$@"; }
@@ -95,7 +99,7 @@ ast-id-lex() {
 
   log "-- Generating AST, IDs, and lexer in _devbuild/gen"
   types-gen
-  id-gen
+  id-c-gen
   osh-lex-gen
   osh-lex-gen-native
 }
