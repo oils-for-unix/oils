@@ -11,7 +11,6 @@ from asdl import arith_parse
 from asdl import py_meta
 from asdl import format as fmt
 
-from core.meta import Id
 from core import util
 
 log = util.log
@@ -27,7 +26,7 @@ def main(argv):
     # Called by asdl/run.sh py-cpp
 
     schema_path = argv[2]
-    app_types = {'id': asdl.UserType(Id)}
+    app_types = {'id': asdl.UserType('id_kind_asdl', 'Id_t')}
     with open(schema_path) as f:
       schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 

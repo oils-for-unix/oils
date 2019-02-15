@@ -30,8 +30,7 @@ def main(argv):
   if os.path.basename(schema_path) == 'types.asdl':
     app_types = {}
   else:
-    from _devbuild.gen.id_kind_asdl import Id
-    app_types = {'id': meta.UserType(Id)}
+    app_types = {'id': meta.UserType('id_kind_asdl', 'Id_t')}
 
   if action == 'c':  # Generate C code for the lexer
     with open(schema_path) as f:
@@ -85,6 +84,12 @@ f.close()
       abbrev_mod = __import__(abbrev_module_name, fromlist=['.'])
 
     f = sys.stdout
+
+    for typ in app_types.itervalues():
+      if isinstance(typ, meta.UserType):
+        f.write('from _devbuild.gen.%s import %s\n' % (
+          typ.mod_name, typ.type_name))
+        f.write('\n')
 
     f.write("""\
 from asdl import const  # For const.NO_INTEGER

@@ -159,8 +159,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
 
     elif isinstance(desc, meta.UserType):  # e.g. Id
-      # Hm can I get rid of this now that Id is a SimpleObj?
+      # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
       code_str = 'PrettyLeaf(%s.name, Color_UserType)' % var_name
+      none_guard = True  # otherwise MyPy complains about foo.name
 
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
@@ -190,8 +191,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    %s = PrettyArray()' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field_name))
       child_code_str, _ = self._CodeSnippet(method_name, iter_name, desc.desc)
-      self.Emit('      t = %s' % child_code_str)
-      self.Emit('      %s.children.append(t)' % out_val_name)
+      self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
 
     elif isinstance(desc, meta.MaybeType):
@@ -244,8 +244,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       if isinstance(field_desc, meta.SumType):
         type_str = '%s_t' % f.type
 
-      elif f.type == 'string':
+      elif isinstance(field_desc, meta.StrType):
         type_str = 'str'
+
+      elif isinstance(field_desc, meta.UserType):
+        type_str = field_desc.type_name
 
       else:
         type_str = f.type
