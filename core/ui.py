@@ -205,6 +205,9 @@ class PromptEvaluator(object):
         elif char == 'h':
           r = self.cache.Get('hostname').split('.')[0]
 
+        elif char == 'H':
+          r = self.cache.Get('hostname')
+
         elif char == 'w':
           # TODO: This should shorten to ~foo when applicable.
           val = self.mem.GetVar('PWD')
