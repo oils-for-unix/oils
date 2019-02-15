@@ -203,6 +203,9 @@ class PromptEvaluator(object):
           r = self.cache.Get('user')
 
         elif char == 'h':
+          r = self.cache.Get('hostname').split('.')[0]
+
+        elif char == 'H':
           r = self.cache.Get('hostname')
 
         elif char == 'w':
