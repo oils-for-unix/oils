@@ -485,7 +485,6 @@ f
 ## N-I dash stdout-json: ""
 
 #### 'declare -A' and then dict assignment
-set -o strict-arith
 declare -A foo
 key=bar
 foo["$key"]=value

@@ -463,7 +463,6 @@ argv.py "${a[@]:15:2}"
 
 #### Using an array itself as the index
 # TODO: Fix OSH crash.
-# NOTE: strict-arith prevents this nonsentical behavior.
 a[a]=42
 a[a]=99
 argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"

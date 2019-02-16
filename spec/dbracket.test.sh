@@ -188,7 +188,7 @@ false
 ## END
 
 #### Array coerces to string
-# NOTE: set -o strict-array should make this invalid
+# TODO: set -o strict-array should make this invalid
 a=(1 3 5)
 [[ '1 3 5' = "${a[@]}" ]] && echo true
 [[ '1 3 4' = "${a[@]}" ]] || echo false

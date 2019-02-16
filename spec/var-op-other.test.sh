@@ -62,10 +62,15 @@ set -o strict-word-eval || true
 echo slice
 s='abc'
 echo -${s: -2}-
-## stdout-json: "slice\n"
+## STDOUT:
+slice
+## END
 ## status: 1
 ## N-I bash status: 0
-## N-I bash stdout-json: "slice\n-bc-\n"
+## N-I bash STDOUT:
+slice
+-bc-
+# END
 ## N-I mksh/zsh status: 1
 ## N-I mksh/zsh stdout-json: ""
 

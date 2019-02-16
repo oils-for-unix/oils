@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
+#
+# Other tests:
+# - spec/var-op-other tests strict-word-eval (negative indices and invalid
+#   utf-8)
+#   - hm I think these should be the default?
+#   - compat-word-eval?
+# - spec/array tests strict-array
+#   - undef[2]=x
+# - spec/arith tests strict-arith - invalid strings become 0
+#   - I think OSH warns now
+# - spec/errexit-strict tests strict-errexit
+
+# - spec/dbracket has array comparison relevant to the case below
 
 #### Sourcing a script that returns at the top level
 echo one
@@ -63,3 +76,106 @@ echo status=$?
 break
 echo status=$?
 ## stdout: status=0
+
+#### empty argv WITHOUT strict-argv
+x=''
+$x
+echo status=$?
+
+if $x; then
+  echo VarSub
+fi
+
+if $(echo foo >/dev/null); then
+  echo CommandSub
+fi
+
+if "$x"; then
+  echo VarSub
+else
+  echo VarSub FAILED
+fi
+
+if "$(echo foo >/dev/null)"; then
+  echo CommandSub
+else
+  echo CommandSub FAILED
+fi
+
+## STDOUT:
+status=0
+VarSub
+CommandSub
+VarSub FAILED
+CommandSub FAILED
+## END
+
+#### empty argv WITH strict-argv
+set -o strict-argv || true
+echo empty
+x=''
+$x
+echo status=$?
+## status: 1
+## STDOUT:
+empty
+## END
+## N-I bash status: 0
+## N-I bash STDOUT:
+empty
+status=0
+## END
+## N-I dash status: 2
+## N-I mksh status: 1
+## N-I dash/mksh stdout-json: ""
+
+#### Arrays should not be incorrectly compared like bash/mksh
+
+# NOTE: from spec/dbracket has a test case like this
+# sane-array should turn this ON.
+# bash and mksh allow this because of decay
+
+a=('a b' 'c d')
+b=('a' 'b' 'c' 'd')
+echo ${#a[@]}
+echo ${#b[@]}
+[[ "${a[@]}" == "${b[@]}" ]] && echo EQUAL
+## status: 1
+## STDOUT:
+2
+4
+## END
+## BUG bash/mksh status: 0
+## BUG bash/mksh STDOUT:
+2
+4
+EQUAL
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### automatically creating arrays WITHOUT strict-array
+undef[2]=x
+undef[3]=y
+argv "${undef[@]}"
+## STDOUT:
+['x', 'y']
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### automatically creating arrays are INDEXED, not associative
+
+undef[2]=x
+undef[3]=y
+x='bad'
+# bad gets coerced to zero, but this is part of the RECURSIVE arithmetic
+# behavior, which we want to disallow.  Consider disallowing in OSH.
+
+undef[$x]=zzz
+argv "${undef[@]}"
+## STDOUT:
+['zzz', 'x', 'y']
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""

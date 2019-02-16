@@ -89,12 +89,13 @@ SET_OPTIONS = [
 
     (None, 'debug-completion'),
 
-    (None, 'strict-control-flow'),
-    (None, 'strict-errexit'),
+    (None, 'strict-control-flow'),  # misuse of break/continue is fatal
+    (None, 'strict-errexit'),  # inherited to command subs, etc.
     (None, 'strict-array'),
     (None, 'strict-arith'),
-    (None, 'strict-word-eval'),
+    (None, 'strict-word-eval'),  # negative slices, unicode
     (None, 'strict-var-eval'),
+    (None, 'strict-argv'),  # empty argv not allowed
 
     (None, 'vi'),
     (None, 'emacs'),
@@ -159,6 +160,9 @@ class ExecOpts(object):
     # - do not allow [[ "$@" == "${a[@]}" ]]
     self.strict_array = False
 
+    self.strict_word_eval = False
+    self.strict_argv = False
+
     # This comes after all the 'set' options.
     shellopts = self.mem.GetVar('SHELLOPTS')
     assert shellopts.tag == value_e.Str, shellopts
@@ -182,7 +186,6 @@ class ExecOpts(object):
     #
 
     self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
-    self.strict_word_eval = False
     # Whether we statically know variables, e.g. $PYTHONPATH vs.
     # $ENV['PYTHONPATH'], and behavior of 'or' and 'if' expressions.
     # This is off by default because we want the interactive shell to match.
@@ -762,7 +765,7 @@ class Mem(object):
         return True
     return False
 
-  def SetVar(self, lval, val, new_flags, lookup_mode, strict_array=False):
+  def SetVar(self, lval, val, new_flags, lookup_mode):
     """
     Args:
       lval: lvalue
@@ -850,17 +853,16 @@ class Mem(object):
       if val.tag == value_e.StrArray:
         e_die("Can't assign array to array member", span_id=left_spid)
 
+      # bash/mksh have annoying behavior of letting you do LHS assignment to
+      # Undef, which then turns into an INDEXED array.  (Undef means that set
+      # -o nounset fails.)
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if not cell:
         self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
         return
 
-      # bash/mksh have annoying behavior of letting you do LHS assignment to
-      # Undef, which then turns into an array.  (Undef means that set -o
-      # nounset fails.)
       cell_tag = cell.val.tag
-      if (cell_tag == value_e.Str or 
-          (cell_tag == value_e.Undef and strict_array)):
+      if cell_tag == value_e.Str:
         # s=x
         # s[1]=y  # invalid
         e_die("Entries in value of type %s can't be assigned to",
@@ -869,6 +871,8 @@ class Mem(object):
       if cell.readonly:
         e_die("Can't assign to readonly value", span_id=left_spid)
 
+      # This is for the case where we did declare -a foo or declare -A foo.
+      # There IS a cell, but it's still undefined.
       if cell_tag == value_e.Undef:
         if cell.is_assoc_array:
           self._BindNewAssocArrayWithEntry(namespace, lval, val, new_flags)

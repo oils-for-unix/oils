@@ -845,8 +845,7 @@ class Executor(object):
         # Undef value, but the 'array' attribute.
 
         #log('setting %s to %s with flags %s', lval, val, flags)
-        self.mem.SetVar(lval, val, flags, lookup_mode,
-                        strict_array=self.exec_opts.strict_array)
+        self.mem.SetVar(lval, val, flags, lookup_mode)
 
         # Assignment always appears to have a spid.
         if node.spids:
