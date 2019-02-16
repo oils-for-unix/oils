@@ -67,12 +67,6 @@ gen-python() {
   core/asdl_gen.py py $schema _devbuild/${name}_asdl.pickle
 }
 
-gen-demo-asdl() {
-  local out=_devbuild/gen/demo_asdl.py
-  core/asdl_gen.py mypy asdl/demo.asdl > $out
-  wc -l $out
-}
-
 gen-typed-demo-asdl() {
   local out=_devbuild/gen/typed_demo_asdl.py
   core/asdl_gen.py mypy asdl/typed_demo.asdl > $out

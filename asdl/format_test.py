@@ -8,7 +8,7 @@ import unittest
 
 from asdl import format as fmt
 
-from _devbuild.gen import demo_asdl  # module under test
+from _devbuild.gen import typed_demo_asdl as demo_asdl  # module under test
 
 
 class FormatTest(unittest.TestCase):
@@ -24,24 +24,23 @@ class FormatTest(unittest.TestCase):
   def testRepeatedString(self):
     node = demo_asdl.assign('declare', ['-r', '-x'])
 
-    for i in xrange(100):
-      f = cStringIO.StringIO()
-      f1 = fmt.TextOutput(f)
-      f2 = fmt.HtmlOutput(f)
+    f = cStringIO.StringIO()
+    f1 = fmt.TextOutput(f)
+    f2 = fmt.HtmlOutput(f)
 
-      for ast_f in [f1, f2]:
-        tree = node.PrettyTree()
+    for ast_f in [f1, f2]:
+      tree = node.PrettyTree()
 
-        fmt.PrintTree(tree, ast_f)
-        pretty_str = f.getvalue()
-        print(pretty_str)
+      fmt.PrintTree(tree, ast_f)
+      pretty_str = f.getvalue()
+      print(pretty_str)
 
-        if ast_f is f1:
-          self.assertEqual('(assign name:declare flags:[-r -x])', pretty_str)
+      if ast_f is f1:
+        self.assertEqual('(assign name:declare flags:[-r -x])', pretty_str)
 
-        t2 = node.AbbreviatedTree()
+      t2 = node.AbbreviatedTree()
 
-        fmt.PrintTree(t2, ast_f)
+      fmt.PrintTree(t2, ast_f)
 
 
 if __name__ == '__main__':

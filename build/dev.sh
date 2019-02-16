@@ -171,7 +171,7 @@ minimal() {
   gen-runtime-asdl  # ditto
 
   # Only for testing.
-  asdl/run.sh gen-demo-asdl
+  asdl/run.sh gen-typed-demo-asdl
   asdl/run.sh gen-typed-arith-asdl
 
   pylibc

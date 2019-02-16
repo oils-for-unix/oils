@@ -12,7 +12,7 @@ from asdl import front_end  # module under test
 class FrontEndTest(unittest.TestCase):
 
   def testLoadSchema(self):
-    with open('asdl/demo.asdl') as f:
+    with open('asdl/typed_demo.asdl') as f:
       schema_ast, type_lookup = front_end.LoadSchema(f, {})
     #print(type_lookup)
 

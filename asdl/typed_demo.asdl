@@ -4,6 +4,9 @@ module arith {
   -- Simple Sum Type
   op_id = Plus | Minus | Star
 
+  op_array = (op_id* ops)
+  assign = (string name, string* flags)
+
   -- Compound Sum Type
   cflow =
     Break
