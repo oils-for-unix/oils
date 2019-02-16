@@ -18,6 +18,8 @@ set -o errexit
 
 source build/common.sh
 
+export PYTHONPATH='.:vendor/'
+
 # Files
 #
 # native/lex.c -- calls generated function?
@@ -62,18 +64,18 @@ extract-clang() {
 }
 
 types-gen() {
-  PYTHONPATH=. core/asdl_gen.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
+  core/asdl_gen.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
 }
 
 id-c-gen() {
-  PYTHONPATH=. core/id_kind_gen.py c > _devbuild/gen/id.h
+  core/id_kind_gen.py c > _devbuild/gen/id.h
 }
 
 id-mypy-gen() {
-  PYTHONPATH=. core/id_kind_gen.py mypy > _devbuild/gen/id_kind_asdl.py
+  core/id_kind_gen.py mypy > _devbuild/gen/id_kind_asdl.py
 }
 
-lexer-gen() { PYTHONPATH=. frontend/lexer_gen.py "$@"; }
+lexer-gen() { frontend/lexer_gen.py "$@"; }
 
 # _gen/osh_lex.re2c.c
 # This includes osh_ast.h
@@ -112,7 +114,7 @@ ast-id-lex() {
 #   - Also see asdl/run.sh.
 
 gen-cpp() {
-  PYTHONPATH=. asdl/gen_cpp.py cpp osh/osh.asdl
+  asdl/gen_cpp.py cpp osh/osh.asdl
 }
 
 "$@"

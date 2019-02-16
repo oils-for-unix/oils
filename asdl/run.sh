@@ -11,7 +11,7 @@ set -o errexit
 
 source build/common.sh  # for clang
 
-export PYTHONPATH=.
+export PYTHONPATH='.:vendor/'
 
 asdl-arith-encode() {
   local expr="$1"

@@ -16,6 +16,8 @@ set -o errexit
 
 source test/common.sh  # R_PATH
 
+export PYTHONPATH='.:vendor/'
+
 # In some distros, 'python' is python3, which confuses first-time developers.
 # https://github.com/oilshell/oil/issues/97
 readonly PYTHON_VERSION="$(python --version 2>&1)"
@@ -79,7 +81,7 @@ gen-help() {
 }
 
 # Helper
-gen-asdl-py-pickle() {
+gen-asdl-py() {
   local asdl_path=$1  # e.g. osh/osh.asdl
 
   local name=$(basename $asdl_path .asdl)
@@ -87,13 +89,8 @@ gen-asdl-py-pickle() {
   local tmp=_tmp/${name}_asdl.py
   local out=_devbuild/gen/${name}_asdl.py
 
-  if false; then
-  #if true; then
-    PYTHONPATH=. core/asdl_gen.py py $asdl_path _devbuild/${name}_asdl.pickle > $tmp
-  else
-    # optional abbrev module
-    PYTHONPATH=. core/asdl_gen.py mypy "$@" > $tmp
-  fi
+  # abbrev module is optional
+  core/asdl_gen.py mypy "$@" > $tmp
   
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
@@ -103,15 +100,15 @@ gen-asdl-py-pickle() {
 }
 
 gen-types-asdl() {
-  gen-asdl-py-pickle frontend/types.asdl
+  gen-asdl-py frontend/types.asdl
 }
 
 gen-syntax-asdl() {
-  gen-asdl-py-pickle frontend/syntax.asdl 'frontend.syntax_abbrev'
+  gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
 }
 
 gen-runtime-asdl() {
-  gen-asdl-py-pickle osh/runtime.asdl
+  gen-asdl-py osh/runtime.asdl
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
@@ -138,7 +135,7 @@ py-ext() {
 
 pylibc() {
   py-ext libc build/setup.py
-  PYTHONPATH=. native/libc_test.py "$@"
+  native/libc_test.py "$@"
 }
 
 fastlex() {
@@ -148,7 +145,7 @@ fastlex() {
   rm -f _devbuild/py-ext/x86_64/fastlex.so
 
   py-ext fastlex build/setup_fastlex.py
-  PYTHONPATH=. native/fastlex_test.py
+  native/fastlex_test.py
 }
 
 clean() {
