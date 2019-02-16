@@ -118,7 +118,6 @@ _fill-oil-tree() {
   local dir=${1:-_tmp/repo-with-opy}
 
   mkdir -p $dir/_devbuild/osh-quick-ref
-  cp -v ../_devbuild/*_asdl.pickle $dir/_devbuild
   # For help text.
   cp -v ../_devbuild/osh-quick-ref/* $dir/_devbuild/osh-quick-ref
 
