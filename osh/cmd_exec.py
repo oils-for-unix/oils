@@ -29,7 +29,8 @@ from core import process
 from core import ui
 from core import util
 from core.meta import (
-    Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime_asdl, syntax_asdl, types_asdl)
+    Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime_asdl, syntax_asdl,
+    types_asdl)
 
 from frontend import args
 from frontend import reader
@@ -216,7 +217,7 @@ class Executor(object):
         node = main_loop.ParseWholeFile(c_parser)
       except util.ParseError as e:
         util.error('Parse error in %r:', source_name)
-        ui.PrettyPrintError(e, self.arena, sys.stderr)
+        ui.PrettyPrintError(e, self.arena)
         return None
 
     finally:
@@ -550,7 +551,11 @@ class Executor(object):
     """
     # This happens when you write "$@" but have no arguments.
     if not argv:
-      return 0  # status 0, or skip it?
+      if self.exec_opts.strict_argv:
+        e_die("Command evaluated to an empty argv array",
+              span_id=span_id)
+      else:
+        return 0  # status 0, or skip it?
 
     arg0 = argv[0]
 
@@ -1247,7 +1252,7 @@ class Executor(object):
       raise
     except util.FatalRuntimeError as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
-      ui.PrettyPrintError(e, self.arena)
+      ui.PrettyPrintError(e, self.arena, prefix='fatal: ')
       is_fatal = True
       status = e.exit_status if e.exit_status is not None else 1
 
@@ -1440,7 +1445,7 @@ class Executor(object):
     try:
       status = self._RunFunc(func_node, argv)
     except util.FatalRuntimeError as e:
-      ui.PrettyPrintError(e, self.arena, sys.stderr)
+      ui.PrettyPrintError(e, self.arena)
       status = e.exit_status if e.exit_status is not None else 1
     except _ControlFlow as e:
        # shouldn't be able to exit the shell from a completion hook!

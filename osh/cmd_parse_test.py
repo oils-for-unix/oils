@@ -24,7 +24,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
     node = m()
 
   except util.ParseError as e:
-    ui.PrettyPrintError(e, arena, sys.stdout)
+    ui.PrettyPrintError(e, arena)
     if expect_success:
       test.fail('%r failed' % code_str)
     node = None
@@ -43,7 +43,7 @@ def _assert_ParseCommandListError(test, code_str):
   try:
     node = c_parser._ParseCommandLine()
   except util.ParseError as e:
-    ui.PrettyPrintError(e, arena, sys.stdout)
+    ui.PrettyPrintError(e, arena)
   else:
     print('UNEXPECTED:')
     node.PrettyPrint()

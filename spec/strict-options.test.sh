@@ -18,7 +18,9 @@
 
 # - strict-array: unimplemented.
 #   - WAS undef[2]=x, but bash-completion relied on the associative array
-#   version of that.
+#     version of that.
+#   - TODO: It should disable decay_array EVERYWHERE except a specific case like:
+#     - s="${a[*]}"  # quoted, the unquoted ones glob in a command context
 # - spec/dbracket has array comparison relevant to the case below
 #
 # Most of those options could be compat-*.

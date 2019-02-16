@@ -302,8 +302,8 @@ def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
   f.write('\n')
 
 
-def PrettyPrintError(parse_error, arena, f=sys.stderr):
-  span_id = dev.SpanIdFromError(parse_error)
+def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
+  span_id = dev.SpanIdFromError(err)
 
   # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
   # means there is no location info, but 0 could mean that the location is EOF.
@@ -319,7 +319,8 @@ def PrettyPrintError(parse_error, arena, f=sys.stderr):
   else:
     PrintFilenameAndLine(span_id, arena, f=f)
 
-  print(parse_error.UserErrorString(), file=f)
+  f.write(prefix)
+  print(err.UserErrorString(), file=f)
 
 
 def PrintAst(nodes, opts):
