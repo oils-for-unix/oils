@@ -48,8 +48,6 @@ _tlog('before imports')
 import atexit
 import errno
 
-from asdl import runtime
-
 from core import alloc
 from core import dev
 from core import completion
