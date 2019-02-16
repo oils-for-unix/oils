@@ -181,7 +181,7 @@ _python-symbols() {
   local out=${out_dir}/${name}-symbols.txt
 
   # Run this from the repository root.
-  PYTHONPATH=. CALLGRAPH=1 $main | tee $out
+  PYTHONPATH='.:vendor/' CALLGRAPH=1 $main | tee $out
 
   wc -l $out
   echo 
