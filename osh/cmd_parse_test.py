@@ -3,7 +3,6 @@
 cmd_parse_test.py: Tests for cmd_parse.py
 """
 
-import sys
 import unittest
 
 from core import test_lib

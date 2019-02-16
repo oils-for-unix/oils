@@ -17,7 +17,6 @@ from __future__ import print_function
 
 import posix
 import resource
-import sys
 import time
 
 from asdl import const
