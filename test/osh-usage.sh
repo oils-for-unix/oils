@@ -121,7 +121,7 @@ help() {
   set +o errexit
 
   # TODO: Test the oil.ovm binary as well as bin/oil.py.
-  export PYTHONPATH=.
+  export PYTHONPATH='.:vendor/'  # TODO: Put this in one place.
 
   # Bundle usage.
   bin/oil.py --help
