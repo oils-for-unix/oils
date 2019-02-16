@@ -526,10 +526,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       log('Wrote %s to %s (--runtime-mem-dump)', input_path,
           opts.runtime_mem_dump)
 
-  # NOTE: This doesn't cause any spec tests to fail, but it could.
-  if posix.environ.get('ASDL_TYPE_CHECK'):
-    log('NOTE: Performed %d ASDL_TYPE_CHECKs.', runtime.NUM_TYPE_CHECKS)
-
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status
 

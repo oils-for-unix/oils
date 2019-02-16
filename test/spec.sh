@@ -9,8 +9,6 @@ set -o errexit
 
 source test/common.sh
 
-export ASDL_TYPE_CHECK=1
-
 # For now, fall back to the shell in $PATH.
 shell-path() {
   local name=$1

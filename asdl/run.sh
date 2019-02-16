@@ -90,7 +90,7 @@ unit() {
   #test/unit.sh unit asdl/arith_ast_test.py
 
   # This test is for the metadata
-  ASDL_TYPE_CHECK=1 PYTHONPATH=. asdl/arith_generated_test.py "$@"
+  PYTHONPATH=. asdl/arith_generated_test.py "$@"
 }
 
 #

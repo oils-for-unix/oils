@@ -14,8 +14,6 @@ set -o errexit
 
 source test/common.sh  # for $OSH
 
-export ASDL_TYPE_CHECK=1
-
 # Runs an command (argv) the normal way (with its shebang) and then with
 # OSH, and compares the stdout and exit code.
 #

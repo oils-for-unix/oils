@@ -17,7 +17,6 @@ set -o errexit
 source test/common.sh
 
 export PYTHONPATH='.:vendor'  # repo root and vendor subdir
-export ASDL_TYPE_CHECK=1
 
 # For auto-complete
 unit() {

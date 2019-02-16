@@ -111,6 +111,7 @@ _copy-tar() {
   local version=${3:-$OIL_VERSION}
 
   local dest=$chroot_dir/src
+  rm -r -f $dest  # make sure it's empty
   mkdir -p $dest
   cp -v _release/$name-$version.tar.gz $dest
 }

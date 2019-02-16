@@ -16,7 +16,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-export ASDL_TYPE_CHECK=1
 readonly RESULT_DIR=_tmp/wild
 
 #
