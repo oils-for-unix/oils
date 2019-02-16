@@ -5,12 +5,12 @@ $SH --debug-file $TMP/debug.txt -c 'true'
 grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
 ## stdout: yes
 
-#### debug-completion option
-set -o debug-completion
+#### strict-arith option
+set -o strict-arith
 ## status: 0
 
-#### debug-completion from command line
-$SH -o debug-completion
+#### strict-arith from command line
+$SH -o strict-arith
 ## status: 0
 
 #### repr

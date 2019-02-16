@@ -1,17 +1,29 @@
 #!/usr/bin/env bash
 #
+# In this file:
+#
+# - strict-control-flow: break/continue at the top level should be fatal!
+#
 # Other tests:
+# - spec/errexit-strict: command subs inherit errexit
+#   - TODO: does bash 4.4. use inherit_errexit?
+#
 # - spec/var-op-other tests strict-word-eval (negative indices and invalid
 #   utf-8)
-#   - hm I think these should be the default?
-#   - compat-word-eval?
-# - spec/array tests strict-array
-#   - undef[2]=x
+#   - hm I think these should be the default?  compat-word-eval?
+#
 # - spec/arith tests strict-arith - invalid strings become 0
-#   - I think OSH warns now
-# - spec/errexit-strict tests strict-errexit
+#   - OSH has a warning that can turn into an error.  I think the error could
+#     be the default (since this was a side effect of "ShellMathShock")
 
+# - strict-array: unimplemented.
+#   - WAS undef[2]=x, but bash-completion relied on the associative array
+#   version of that.
 # - spec/dbracket has array comparison relevant to the case below
+#
+# Most of those options could be compat-*.
+#
+# One that can't: strict-scope disables dynamic scope.
 
 #### Sourcing a script that returns at the top level
 echo one

@@ -87,8 +87,6 @@ SET_OPTIONS = [
     ('h', 'hashall'),
     (None, 'pipefail'),
 
-    (None, 'debug-completion'),
-
     (None, 'strict-control-flow'),  # misuse of break/continue is fatal
     (None, 'strict-errexit'),  # inherited to command subs, etc.
     (None, 'strict-array'),
@@ -141,8 +139,8 @@ class ExecOpts(object):
     self.hashall = True  # -h is true by default.
 
     # OSH-specific options.
-    self.debug_completion = False
-    self.strict_control_flow = False
+
+    self.strict_control_flow = False  # break at top level is fatal, etc.
 
     # strict_errexit makes 'local foo=$(false)' and echo $(false) fail.
     # By default, we have mimic bash's undesirable behavior of ignoring
@@ -153,15 +151,11 @@ class ExecOpts(object):
     # local still needs to fail.
     self.strict_errexit = False
 
-    # Several problems:
-    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
-    # - ${a} not ${a[0]}
-    # - possibly disallow $* "$*" altogether.
-    # - do not allow [[ "$@" == "${a[@]}" ]]
-    self.strict_array = False
+    # e.g. $(( x )) where x doesn't look like integer is fatal
+    self.strict_arith = False
 
+    # Bad slices and bad unicode
     self.strict_word_eval = False
-    self.strict_argv = False
 
     # This comes after all the 'set' options.
     shellopts = self.mem.GetVar('SHELLOPTS')
@@ -181,11 +175,21 @@ class ExecOpts(object):
     self.hostcomplete = False  # complete words with '@' ?
     self.lastpipe = False  # Always on in our pipeline implementation.
 
+    self.vi = False
+    self.emacs = False
+
     #
-    # OSH-specific options that are not yet implemented.
+    # OSH-specific options that are NOT YET IMPLEMENTED.
     #
 
-    self.strict_arith = False  # e.g. $(( x )) where x doesn't look like integer
+    self.strict_argv = False
+    # Several problems (NOT implemented):
+    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
+    # - ${a} not ${a[0]}
+    # - possibly disallow $* "$*" altogether.
+    # - do not allow [[ "$@" == "${a[@]}" ]]
+    self.strict_array = False
+
     # Whether we statically know variables, e.g. $PYTHONPATH vs.
     # $ENV['PYTHONPATH'], and behavior of 'or' and 'if' expressions.
     # This is off by default because we want the interactive shell to match.
@@ -195,9 +199,6 @@ class ExecOpts(object):
 
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
-
-    self.vi = False
-    self.emacs = False
 
   def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail
