@@ -251,8 +251,13 @@ def ShellMain(lang, argv0, argv, login_shell):
     ui.usage('osh usage error: %s', e)
     return 2
 
+  # NOTE: This has a side effect of deleting _OVM_* from the environment!
+  # TODO: Thread this throughout the program, and get rid of the global
+  # variable in core/util.py.  Rename to InitResourceLaoder().  It's now only
+  # used for the 'help' builtin and --version.
+  loader = util.GetResourceLoader()
+
   if opts.help:
-    loader = util.GetResourceLoader()
     builtin.Help(['%s-usage' % lang], loader)
     return 0
   if opts.version:
