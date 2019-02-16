@@ -304,6 +304,10 @@ class OilMethodFilter(object):
     if (basename == 'bltinmodule.c' and
         method_name in ('compile', 'format', 'next', 'vars')):
       return False
+    if basename == 'bltinmodule.c':
+      # Get "bootstrapping error" without this.
+      if method_name == '__import__':
+        return True
 
     if basename == '_warnings.c' and method_name == 'warn':
       return False
@@ -338,9 +342,14 @@ class OilMethodFilter(object):
     if basename == 'signalmodule.c' and method_name == 'default_int_handler':
       return True
 
-    # I don't understand when this object is used in CPython, but it's not used
-    # in Oil.
+    # segfault without this
+    if basename == 'typeobject.c' and method_name == '__new__':
+      return True
+
     if basename == 'descrobject.c':
+      # Apparently used for dir() on class namespace, as in dir(Id).
+      if method_name == 'keys':
+        return True
       return False
 
     # Try just filtering {time,pwd,posix}module.c, etc.
