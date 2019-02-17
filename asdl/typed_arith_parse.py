@@ -260,6 +260,27 @@ class Evaluator(object):
 
   def Eval(self, node):
     # type: (arith_expr_t) -> int
+    """Use the isinstance() style for comparison."""
+
+    if isinstance(node, arith_expr__Const):
+      assert node.i is not None
+      return node.i
+
+    if isinstance(node, arith_expr__Binary):
+      assert node.left is not None
+      assert node.right is not None
+
+      left = self.Eval(node.left)
+      right = self.Eval(node.right)
+      op = node.op
+
+      if op == '+':
+        return left + right
+
+    return 3
+
+  def Eval2(self, node):
+    # type: (arith_expr_t) -> int
 
     tag = node.tag
     if tag == arith_expr_e.Const:
