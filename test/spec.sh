@@ -505,7 +505,7 @@ xtrace() {
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/strict-options.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

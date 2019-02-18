@@ -124,6 +124,23 @@ VarSub FAILED
 CommandSub FAILED
 ## END
 
+#### strict-argv: no first word but exit code
+
+# POSIX has a special rule for this.  In OSH strict-argv is preferred so it
+# becomes a moot point.  I think this is an artifact of the
+# "stateful"/imperative nature of $? -- it can be "left over" from a prior
+# command, and sometimes the prior argv is [].  OSH has a more "functional"
+# implementation so it doesn't have this weirdness.
+
+if $(false); then
+  echo TRUE
+else
+  echo FALSE
+fi
+## STDOUT:
+FALSE
+## END
+
 #### empty argv WITH strict-argv
 set -o strict-argv || true
 echo empty
