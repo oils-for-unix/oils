@@ -1074,7 +1074,10 @@ class ReadlineCallback(object):
 if __name__ == '__main__':
   # This does basic filename copmletion
   import readline
-  readline.parse_and_bind('tab: complete')
+  if 'libedit' in readline.__doc__:
+    readline.parse_and_bind("bind ^I rl_complete")
+  else:
+    readline.parse_and_bind("tab: complete")
   while True:
     x = raw_input('$ ')
     print(x)
