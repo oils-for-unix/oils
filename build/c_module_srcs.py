@@ -26,7 +26,7 @@ def main(argv):
 
       # Hard-coded special cases for now.
 
-      if mod_name in ('libc', 'fastlex'):  # Our own modules
+      if mod_name in ('libc', 'fastlex', 'line_input'):  # Our own modules
         # Relative to Python-2.7.13 dir
         print('../native/%s.c' % mod_name)
 

@@ -5,10 +5,10 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+"""
+fastlex_test.py: Tests for fastlex
+"""
 from __future__ import print_function
-"""
-libc_test.py: Tests for libc.py
-"""
 
 import unittest
 

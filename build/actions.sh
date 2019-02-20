@@ -128,18 +128,18 @@ make-dotd() {
 
 extdecls() {
   for mod in "$@"; do
-    test "$mod" = readline && echo "#ifdef HAVE_READLINE"
+    test "$mod" = line_input && echo "#ifdef HAVE_READLINE"
     echo "extern void init$mod(void);"
-    test "$mod" = readline && echo "#endif"
+    test "$mod" = line_input && echo "#endif"
   done
   return 0  # because test can fail
 }
 
 initbits() {
   for mod in "$@"; do
-    test "$mod" = readline && echo "#ifdef HAVE_READLINE"
+    test "$mod" = line_input && echo "#ifdef HAVE_READLINE"
     echo "    {\"$mod\", init$mod},"
-    test "$mod" = readline && echo "#endif"
+    test "$mod" = line_input && echo "#endif"
   done
   return 0  # because test can fail
 }

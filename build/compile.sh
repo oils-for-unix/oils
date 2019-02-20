@@ -202,7 +202,7 @@ build() {
     readline_flags+="-l readline -D HAVE_READLINE"
   else
     # don't fail
-    c_module_src_list=$(grep -v '/readline.c' $abs_c_module_srcs || true)
+    c_module_src_list=$(grep -E -v '/readline.c|/line_input.c' $abs_c_module_srcs || true)
   fi
 
   # $PREFIX comes from ./configure and defaults to /usr/local.

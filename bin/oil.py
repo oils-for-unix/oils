@@ -80,12 +80,10 @@ from tools import readlink
 value_e = runtime_asdl.value_e
 builtin_e = runtime_asdl.builtin_e
 
-# Set in Modules/main.c.
-HAVE_READLINE = posix.environ.get('_HAVE_READLINE') != ''
-if HAVE_READLINE:
-  import readline
-else:
-  readline = None
+try:
+  import line_input
+except ImportError:
+  line_input = None
 
 log = util.log
 
@@ -146,10 +144,10 @@ def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
 
 
 def _MaybeWriteHistoryFile(history_filename):
-  if not readline:
+  if not line_input:
     return
   try:
-    readline.write_history_file(history_filename)
+    line_input.write_history_file(history_filename)
   except IOError:
     pass
 
@@ -283,7 +281,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   funcs = {}
 
   fd_state = process.FdState()
-  exec_opts = state.ExecOpts(mem, readline)
+  exec_opts = state.ExecOpts(mem, line_input)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
@@ -367,7 +365,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   comp_lookup = completion.Lookup()
 
   builtins = {  # Lookup
-      builtin_e.HISTORY: builtin.History(readline),
+      builtin_e.HISTORY: builtin.History(line_input),
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(comp_state),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
@@ -413,8 +411,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   exec_deps.prompt_ev = prompt_ev
   word_ev.prompt_ev = prompt_ev  # HACK for circular deps
 
-  # History evaluation is a no-op if readline is None.
-  hist_ev = reader.HistoryEvaluator(readline, hist_ctx, debug_f)
+  # History evaluation is a no-op if line_input is None.
+  hist_ev = reader.HistoryEvaluator(line_input, hist_ctx, debug_f)
 
   # Calculate ~/.config/oil/oshrc or oilrc
   # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
@@ -470,12 +468,12 @@ def ShellMain(lang, argv0, argv, login_shell):
   if exec_opts.interactive:
     # NOTE: We're using a different evaluator here.  The completion system can
     # also run functions... it gets the Executor through Executor._Complete.
-    if readline:
+    if line_input:
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
       progress_f = ui.StatusLine()
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, comp_state,
                                            comp_ctx, progress_f, debug_f)
-      _InitReadline(readline, history_filename, root_comp, debug_f)
+      _InitReadline(line_input, history_filename, root_comp, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
 
     # NOTE: Call this AFTER _InitDefaultCompletions.

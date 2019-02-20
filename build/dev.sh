@@ -148,6 +148,11 @@ fastlex() {
   native/fastlex_test.py
 }
 
+line-input() {
+  py-ext line_input build/setup_line_input.py
+  native/line_input_test.py "$@"
+}
+
 clean() {
   rm -f --verbose libc.so fastlex.so
   rm -r -f --verbose _devbuild/py-ext
@@ -175,6 +180,7 @@ minimal() {
   asdl/run.sh gen-typed-arith-asdl
 
   pylibc
+  line-input
 }
 
 # Prerequisites: build/codegen.sh {download,install}-re2c

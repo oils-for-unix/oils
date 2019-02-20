@@ -222,6 +222,7 @@ MODULES_TO_FILTER = [
     # My Own
     'libc.c',
     'fastlex.c',
+    'line_input.c',
 
     'import.c',
     'marshal.c',  # additional filters below
