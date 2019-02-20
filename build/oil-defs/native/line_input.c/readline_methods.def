@@ -1,4 +1,4 @@
-// Python-2.7.13/Modules/readline.c
+// native/line_input.c
 
 static PyMethodDef readline_methods[] = {
   {"parse_and_bind", parse_and_bind, METH_VARARGS},

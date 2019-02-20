@@ -705,7 +705,7 @@ contents of the line buffer.");
 /* Table of functions exported by the module */
 
 #ifdef OVM_MAIN
-#include "Python-2.7.13/Modules/readline.c/readline_methods.def"
+#include "native/line_input.c/readline_methods.def"
 #else
 static struct PyMethodDef readline_methods[] = {
     {"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
