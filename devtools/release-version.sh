@@ -368,11 +368,11 @@ announcement-0.6.pre13() {
 }
 
 announcement-0.6.pre14() {
-  write-no-announcement
+  html-redirect '/blog/2019/02/18.html' > $SITE_DEPLOY_DIR/release/0.6.pre14/announcement.html
 }
 
 announcement-0.6.pre15() {
-  write-no-announcement
+  html-redirect '/blog/2019/02/18.html' > $SITE_DEPLOY_DIR/release/0.6.pre15/announcement.html
 }
 
 "$@"
