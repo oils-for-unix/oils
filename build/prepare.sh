@@ -22,7 +22,7 @@ configure() {
   local conf=$PWD/$PY27/configure 
 
   pushd $dir 
-  time $conf --without-threads
+  time $conf
   popd
 }
 

@@ -42,11 +42,6 @@
 /* Define if you have readline 4.0 */
 #define HAVE_RL_RESIZE_TERMINAL 1
 
-/* HACK.  Otherwise we get undefined symbol PyGILState_Release in app_deps.py?
- * We're not using threads anyway.
- */
-#undef WITH_THREAD
-
 /* ------------------------------------------------------------------------- */
 
 #if defined(HAVE_SETLOCALE)
