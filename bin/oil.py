@@ -434,7 +434,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   elif opts.i:  # force interactive
     arena.PushSource('<stdin -i>')
     # interactive shell only
-    line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev)
+    line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
+                                               line_input)
     exec_opts.interactive = True
 
   else:
@@ -444,7 +445,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       if sys.stdin.isatty():
         arena.PushSource('<interactive>')
         # interactive shell only
-        line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev)
+        line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
+                                                   line_input)
         exec_opts.interactive = True
       else:
         arena.PushSource('<stdin>')

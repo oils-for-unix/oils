@@ -1194,22 +1194,6 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 
     /* we have a valid line */
     n = strlen(p);
-    if (n > 0) {
-        const char *line;
-        int length = _py_get_history_length();
-        if (length > 0)
-#ifdef __APPLE__
-            if (using_libedit_emulation) {
-                /* handle older 0-based or newer 1-based indexing */
-                line = history_get(length + libedit_history_start - 1)->line;
-            } else
-#endif /* __APPLE__ */
-            line = history_get(length)->line;
-        else
-            line = "";
-        if (strcmp(p, line))
-            add_history(p);
-    }
     /* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
        release the original. */
     q = p;

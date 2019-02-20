@@ -45,10 +45,13 @@ class _Reader(object):
 _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
-  def __init__(self, arena, prompt_ev, hist_ev):
+  def __init__(self, arena, prompt_ev, hist_ev, line_input):
     _Reader.__init__(self, arena)
     self.prompt_ev = prompt_ev
     self.hist_ev = hist_ev
+    self.line_input = line_input  # may be None!
+
+    self.prev_line = None
     self.prompt_str = ''
     self.Reset()  # initialize self.prompt_str
 
@@ -65,7 +68,19 @@ class InteractiveLineReader(_Reader):
     else:
       # NOTE: Like bash, OSH does this on EVERY line in a multi-line command,
       # which is confusing.
+
+      # Also, in bash this is affected by HISTCONTROL=erasedups.  But I
+      # realized I don't like that behavior because it changes the numbers!  I
+      # can't just remember a number -- I have to type 'hi' again.
       line = self.hist_ev.Eval(line)
+
+    # Add the line if it's not EOL, the same as the previous line, and we have
+    # line_input.
+    if (line is not None and
+        line != self.prev_line and
+        self.line_input is not None):
+      self.line_input.add_history(line.rstrip())  # no trailing newlines
+      self.prev_line = line
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     return line
@@ -176,10 +191,7 @@ class HistoryEvaluator(object):
         out = val
 
       elif id_ == Id.History_Op:
-        # TODO: the current line was ALREADY entered in the history, so we have
-        # to subtact 1.  We should add it AFTER expanion, but Python's binding
-        # might not allow that.  We probably need to fork it.
-        prev = self.readline_mod.get_history_item(history_len-1)
+        prev = self.readline_mod.get_history_item(history_len)
 
         ch = val[1]
         if ch == '!':
