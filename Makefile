@@ -81,7 +81,12 @@ COMPILE_SH := build/compile.sh
 #BYTECODE_ZIP := bytecode-cpython.zip
 BYTECODE_ZIP := bytecode-opy.zip
 
-HAVE_DSYMUTIL := $(shell command -v dsymutil 2>/dev/null)
+# We want to generated the unstripped binary first, then strip it, so we can
+# retain symbols.  There doesn't seem to be a portable way to do this?
+#
+# The GNU toolchain has objcopy, and Clang has dsymutil.
+
+HAVE_OBJCOPY := $(shell command -v objcopy 2>/dev/null)
 
 # For faster tesing of builds
 #default: _bin/oil.ovm-dbg
@@ -133,28 +138,35 @@ _build/%/ovm-opt: _build/%/module_init.c _build/%/main_name.c \
                   _build/%/c-module-srcs.txt $(COMPILE_SH)
 	$(COMPILE_SH) build-opt $@ $(filter-out $(COMPILE_SH),$^)
 
-ifdef HAVE_DSYMUTIL
 
-# NOTE: Debug symbols work a bit different on Mac OS
-# NOTE: https://stackoverflow.com/a/33307778
-_build/%/ovm-opt.stripped: _build/%/ovm-opt
-	strip -o $@ -S _build/$*/ovm-opt
-	dsymutil $@ -o _build/$*/$@.dSYM
+ifdef HAVE_OBJCOPY
 
-else
+# If possible, we want symbols for OPTIMIZED builds, for various profiling
+# tools.
 
-# NOTE: This gets run on the end user's machine!  It requires binutils for now?
-# NOTE: objcopy fails if the linked files does not exist!
+# First copy the symbols out of the binary we built.
+# (Distro packagers might use this to create symbols packages?)
+_build/%/ovm-opt.symbols: _build/%/ovm-opt
+	objcopy --only-keep-debug $^ $@
+
+# Then create a stripped binary that LINKS to the symbols.
+
 _build/%/ovm-opt.stripped: _build/%/ovm-opt _build/%/ovm-opt.symbols
-	#strip -o $@ --strip-debug $^
 	strip -o $@ _build/$*/ovm-opt  # What's the difference with debug symbols?
 	# We need a relative path since it will be _bin/oil.ovm
 	objcopy --add-gnu-debuglink=_build/$*/ovm-opt.symbols $@
 
-# Distro packagers might use this to create symbols packages?  On the dev
-# machine, we just use _bin/oil.ovm-opt.
-_build/%/ovm-opt.symbols: _build/%/ovm-opt
-	objcopy --only-keep-debug $^ $@
+else
+
+# We don't have objcopy, which means we might be using the Clang toolchain
+# (e.g. on OS X).  We're not doing any profiling on OS X, and there's no way to
+# link the symbols, so just strip it.
+#
+# We used to have 'dsymutil' but it was never tested.
+# https://stackoverflow.com/a/33307778
+
+_build/%/ovm-opt.stripped: _build/%/ovm-opt
+	strip -o $@ _build/$*/ovm-opt 
 
 endif
 
