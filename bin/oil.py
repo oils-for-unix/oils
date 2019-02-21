@@ -61,6 +61,7 @@ from osh import builtin
 from osh import builtin_comp
 from osh import cmd_exec
 from osh import expr_eval
+from osh import history
 from osh import prompt
 from osh import split
 from osh import state
@@ -413,7 +414,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   word_ev.prompt_ev = prompt_ev  # HACK for circular deps
 
   # History evaluation is a no-op if line_input is None.
-  hist_ev = reader.HistoryEvaluator(line_input, hist_ctx, debug_f)
+  hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
 
   # Calculate ~/.config/oil/oshrc or oilrc
   # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
