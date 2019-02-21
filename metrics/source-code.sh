@@ -13,11 +13,17 @@ filter-py() {
   grep -E -v '__init__.py$|_test.py$'
 }
 
+readonly -a ASDL_FILES=( {frontend,osh}/*.asdl )
+
 # OSH and common
 osh-files() {
-  { ls {bin,osh,core,frontend}/*.py \
-       native/*.c {frontend,osh}/*.asdl;
-  } | filter-py | grep -E -v '_gen.py$|test_lib.py'
+  # Exclude:
+  # - line_input.c because I didn't write it.  It still should be minimized.
+  # - code generators
+  # - test library
+
+  ls {bin,osh,core,frontend}/*.py native/*.c "${ASDL_FILES[@]}" \
+    | filter-py | grep -E -v 'line_input.c$|_gen.py$|test_lib.py$'
 }
 
 # cloc doesn't understand ASDL files.
@@ -53,7 +59,7 @@ osh-cloc() {
 
   echo
   echo 'ASDL SCHEMAS (non-blank non-comment lines)'
-  asdl-cloc */*.asdl
+  asdl-cloc "${ASDL_FILES[@]}"
 }
 
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn

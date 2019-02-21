@@ -6,11 +6,10 @@ User interface details should go in core/ui.py.
 """
 from __future__ import print_function
 
-import sys
-
 import posix
 import pwd
 
+from asdl import const
 from core.meta import runtime_asdl, syntax_asdl, Id
 from frontend import match
 from pylib import os_path

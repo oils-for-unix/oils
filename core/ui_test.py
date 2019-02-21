@@ -12,7 +12,7 @@ from core import ui  # module under test
 class UiTest(unittest.TestCase):
 
   def testFoo(self):
-    pass
+    ui.usage('oops')
 
 
 if __name__ == '__main__':
