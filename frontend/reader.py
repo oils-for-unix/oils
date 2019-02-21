@@ -76,8 +76,7 @@ class InteractiveLineReader(_Reader):
 
     # Add the line if it's not EOL, the same as the previous line, and we have
     # line_input.
-    if (line is not None and
-        line != self.prev_line and
+    if (line is not None and line != self.prev_line and
         self.line_input is not None):
       self.line_input.add_history(line.rstrip())  # no trailing newlines
       self.prev_line = line
@@ -261,7 +260,7 @@ class HistoryEvaluator(object):
       elif id_ == Id.History_Num:
         index = int(val[1:])  # regex ensures this.  Maybe have - on the front.
         if index < 0:
-          num = history_len + index
+          num = history_len + 1 + index
         else:
           num = index
 

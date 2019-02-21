@@ -6,28 +6,13 @@ ui_test.py: Tests for ui.py
 
 import unittest
 
-from core import test_lib
 from core import ui  # module under test
-from core.meta import runtime_asdl
-
-from osh import state
-
-value = runtime_asdl.value
 
 
 class UiTest(unittest.TestCase):
 
-  def testPromptEvaluator(self):
-    arena = test_lib.MakeArena('<ui_test.py>')
-    mem = state.Mem('', [], {}, arena)
-
-    ex = test_lib.InitExecutor(arena=arena)
-
-    p = ui.PromptEvaluator('osh', arena, ex.parse_ctx, ex, mem)
-
-    # Rgression for caching bug!
-    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
-    self.assertEqual('foo', p.EvalPrompt(value.Str('foo')))
+  def testFoo(self):
+    pass
 
 
 if __name__ == '__main__':

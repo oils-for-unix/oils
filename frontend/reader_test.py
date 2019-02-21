@@ -78,9 +78,8 @@ class HistoryEvaluatorTest(unittest.TestCase):
   def testInvalidHistoryItems(self):
     hist_ev = _MakeHistoryEvaluator([
       'echo ( a )',
-      'CURRENT',
     ])
-    # If you can't parse a command, then it is
+    # If you can't parse a command, then it's an error
     self.assertRaises(util.HistoryError, hist_ev.Eval, 'echo !$')
 
   def testReplacements(self):
@@ -88,7 +87,6 @@ class HistoryEvaluatorTest(unittest.TestCase):
       'echo 1',
       'echo ${two:-}',
       'ls /echo/',
-      'CURRENT',
     ])
 
     self.assertEqual('echo hi', hist_ev.Eval('echo hi'))
@@ -120,7 +118,6 @@ class HistoryEvaluatorTest(unittest.TestCase):
     hist_ev = _MakeHistoryEvaluator([
       'echo 1',
       'echo $three ${4:-} "${five@P}"',
-      'CURRENT',
     ])
     self.assertEqual('echo "${five@P}"', hist_ev.Eval('echo !$'))
     self.assertEqual('echo $three', hist_ev.Eval('echo !^'))
@@ -130,19 +127,16 @@ class HistoryEvaluatorTest(unittest.TestCase):
   def testNonCommands(self):
     hist_ev = _MakeHistoryEvaluator([
       'echo hi | wc -l',
-      'CURRENT',
     ])
     self.assertEqual('echo -l', hist_ev.Eval('echo !$'))
 
     hist_ev = _MakeHistoryEvaluator([
       'for i in 1 2 3; do echo xx; done',
-      'CURRENT',
     ])
     self.assertEqual('echo xx', hist_ev.Eval('echo !$'))
 
     hist_ev = _MakeHistoryEvaluator([
       '{ echo yy; }',
-      'CURRENT',
     ])
     self.assertEqual('echo yy', hist_ev.Eval('echo !$'))
 
