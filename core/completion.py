@@ -135,6 +135,14 @@ class State(object):
     # should be SET to a COPY of the registration options by the completer.
     self.dynamic_opts = None
 
+    self.orig_line = None  # original line
+
+    # Start offset in EVERY candidate to display.  We send fully-completed
+    # LINES to readline because we don't want it to do its own word splitting.
+    self.common_prefix_pos = -1
+
+    self.descriptions = {}  # completion candidate descriptions
+
 
 class Lookup(object):
   """Stores completion hooks registered by the user."""
@@ -685,6 +693,9 @@ class RootCompleter(object):
     """
     arena = self.parse_ctx.arena  # Used by inner functions
 
+    # Pass the original line "out of band" to the completion callback.
+    self.comp_state.orig_line = comp.line
+
     self.parse_ctx.trail.Clear()
     line_reader = reader.StringLineReader(comp.line, self.parse_ctx.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True)
@@ -725,12 +736,25 @@ class RootCompleter(object):
     debug_f.log('t1 %s', t1)
     debug_f.log('t2 %s', t2)
 
+    # TODO: Everything below here should yield (common_prefix_pos, candidate)
+    #
+    # Then send (orig_line[:common_prefix_pos] + escaped(candidate)) to
+    # readline.
+    #
+    # Then the display callback strips off the common prefix and shows the rest
+    # to the user.
+    #
+    # The root cause of this dance: If there's one candidate, readline is
+    # responsible for redrawing the input line.  OSH only displays candidates;
+    # it never modifies the input line.
+
     def _MakePrefix(tok, offset=0):
       span = arena.GetLineSpan(tok.span_id)
       return comp.line[comp.begin : span.col+offset]
       #return comp.line[0 : span.col+offset]
 
     if t2:  # We always have t1?
+      # echo $
       if IsDollar(t2) and IsDummy(t1):
         prefix = _MakePrefix(t2, offset=1)
         for name in self.mem.VarNames():
@@ -774,12 +798,12 @@ class RootCompleter(object):
         return
 
     if trail.words:
-      # First check if we're completing a path that begins with ~.
-      #
-      # Complete tilde like 'echo ~' and 'echo ~a'.  This must be done at a word
-      # level, and TildeDetectAll() does NOT help here, because they don't have
-      # trailing slashes yet!  We can't do it on tokens, because otherwise f~a
-      # will complete.  Looking at word_part is EXACTLY what we want.
+      # echo ~<TAB>
+      # echo ~a<TAB> $(home dirs)
+      # This must be done at a word level, and TildeDetectAll() does NOT help
+      # here, because they don't have trailing slashes yet!  We can't do it on
+      # tokens, because otherwise f~a will complete.  Looking at word_part is
+      # EXACTLY what we want.
       parts = trail.words[-1].parts
       if (len(parts) == 2 and
           parts[0].tag == word_part_e.LiteralPart and
@@ -798,7 +822,7 @@ class RootCompleter(object):
             yield prefix + name + '/'
         return
 
-    # Check if we should complete a redirect
+    # echo hi > f<TAB>   (complete redirect arg)
     if trail.redirects:
       r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
@@ -970,6 +994,9 @@ class RootCompleter(object):
       #m = util.BackslashEscape(m, SHELL_META_CHARS)
       #self.debug_f.log('after shell escaping: %s', m)
 
+      # TODO: Shouldn't this be reversed?  Check base_opts, and then check
+      # dynamic_opts?
+
       # SUBTLE: dynamic_opts is part of comp_state, which ShellFuncAction can
       # mutate!  So we don't want to pull this out of the loop.
       opt_filenames = False
@@ -992,9 +1019,14 @@ class RootCompleter(object):
         opt_nospace = base_opts['nospace']
 
       if opt_nospace:
-        yield m
+        candidate = m
       else:
-        yield m + ' '
+        candidate = m + ' '
+
+      if 0:
+        yield common_prefix + candidate
+      else:
+        yield candidate
 
       # NOTE: Can't use %.2f in production build!
       i += 1

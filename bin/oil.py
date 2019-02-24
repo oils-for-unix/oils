@@ -49,6 +49,7 @@ import atexit
 import errno
 
 from core import alloc
+from core import comp_ui
 from core import dev
 from core import completion
 from core import main_loop
@@ -110,6 +111,11 @@ OSH_SPEC.ShortFlag('-i')  # interactive
 OSH_SPEC.LongFlag('--ast-format',
               ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
               default='abbrev-text')
+
+# Defines completion style.
+OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='osh')
+# TODO: Add option for Oil prompt style?  RHS prompt?
+
 # Don't reparse a[x+1] and ``.  Only valid in -n mode.
 OSH_SPEC.LongFlag('--one-pass-parse')
 
@@ -154,7 +160,7 @@ def _MaybeWriteHistoryFile(history_filename):
     pass
 
 
-def _InitReadline(readline_mod, history_filename, root_comp, debug_f):
+def _InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
   assert readline_mod
 
   try:
@@ -185,9 +191,16 @@ def _InitReadline(readline_mod, history_filename, root_comp, debug_f):
   # Note that this should not affect the OSH completion algorithm.  It only
   # affects what we pass back to readline and what readline displays to the
   # user!
-  readline_mod.set_completer_delims(util.READLINE_DELIMS)
-  # TODO: Disable READLINE_DELIMS because it causes problems with quoting.
-  #readline_mod.set_completer_delims('')
+
+  if 1:
+    readline_mod.set_completer_delims(util.READLINE_DELIMS)
+  else:
+    # Disable READLINE_DELIMS because it causes problems with quoting.
+    readline_mod.set_completer_delims('')
+
+    readline_mod.set_completion_display_matches_hook(
+        lambda *args: display.PrintCandidates(*args)
+    )
 
 
 def _ShowVersion():
@@ -476,7 +489,14 @@ def ShellMain(lang, argv0, argv, login_shell):
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, comp_state,
                                            comp_ctx, debug_f)
-      _InitReadline(line_input, history_filename, root_comp, debug_f)
+      if opts.completion_display == 'minimal':
+        display = comp_ui.MinimalDisplay(comp_state)
+      elif opts.completion_display == 'nice':
+        display = comp_ui.NiceDisplay(comp_state)
+      else:
+        raise AssertionError(opts.ui)
+
+      _InitReadline(line_input, history_filename, root_comp, display, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
