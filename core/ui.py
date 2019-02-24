@@ -20,69 +20,6 @@ from core.meta import syntax_asdl
 command = syntax_asdl.command
 
 
-def Clear():
-  sys.stdout.write('\033[2J')  # clear screen
-  sys.stdout.write('\033[2;0H')  # Move to 2,0  (below status bar)
-  sys.stdout.flush()
-
-
-class StatusLine(object):
-  """For optionally displaying the progress of slow completions."""
-
-  def __init__(self, row_num=3, width=80):
-    # NOTE: '%-80s' % msg doesn't do this, because it doesn't pad at the end
-    self.width = width
-    self.row_num = row_num
-
-  def _FormatMessage(self, msg):
-    max_width = self.width - 4  # two spaces on each side
-    # Truncate if necessary.  TODO: could display truncation char?
-    msg = msg[:max_width]
-
-    num_end_spaces = max_width - len(msg) + 2  # at least 2 spaces at the end
-
-    to_print = '  %s%s' % (msg, ' ' * num_end_spaces)
-    return to_print
-
-  def Write(self, msg, *args):
-    # TODO: Get rid of StatusLine in favor of the new ui.Display() class.
-    return
-
-    if args:
-      msg = msg % args
-
-    sys.stdout.write('\033[s')  # save
-    # TODO: When there is more than one option for completion, we scroll past
-    # this.
-    # TODO: Should status line be BELOW, and disappear after readline?
-    # Or really it should be at the right margin?  At hit Ctrl-C to cancel?
-
-    sys.stdout.write('\033[%d;0H' % self.row_num)  # Move the cursor
-
-    sys.stdout.write('\033[7m')  # reverse video
-
-    # Make sure you draw the same number of spaces
-    # TODO: detect terminal width
-
-    sys.stdout.write(self._FormatMessage(msg))
-
-    sys.stdout.write('\033[0m')  # remove attributes
-
-    sys.stdout.write('\033[u')  # restore
-    sys.stdout.flush()
-
-
-class TestStatusLine(object):
-  def __init__(self):
-    pass
-
-  def Write(self, msg, *args):
-    """NOTE: We could use logging?"""
-    if args:
-      msg = msg % args
-    print('\t' + msg)
-
-
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
   line_span = arena.GetLineSpan(span_id)
   line_id = line_span.line_id

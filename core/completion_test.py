@@ -70,9 +70,8 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     debug_f = util.DebugFile(sys.stdout)
   else:
     debug_f = util.NullDebugFile()
-  progress_f = ui.TestStatusLine()
   return completion.RootCompleter(ev, mem, comp_lookup, comp_state, parse_ctx,
-                                  progress_f, debug_f)
+                                  debug_f)
 
 
 class FunctionsTest(unittest.TestCase):

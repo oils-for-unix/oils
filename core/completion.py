@@ -584,8 +584,6 @@ class UserSpec(object):
     """Yield completion candidates."""
     num_matches = 0
 
-    # TODO: plusdirs could be in here, and doesn't respect predicate.
-    # Fix that?
     for a in self.actions:
       is_fs_action = isinstance(a, FileSystemAction)
       for match in a.Matches(comp):
@@ -667,14 +665,13 @@ class RootCompleter(object):
   - Statically evaluate argv and dispatch to a command completer.
   """
   def __init__(self, word_ev, mem, comp_lookup, comp_state, parse_ctx,
-               progress_f, debug_f):
+               debug_f):
     self.word_ev = word_ev  # for static evaluation of words
     self.mem = mem  # to complete variable names
     self.comp_lookup = comp_lookup
     self.comp_state = comp_state  # to look up plugins
 
     self.parse_ctx = parse_ctx
-    self.progress_f = progress_f
     self.debug_f = debug_f
 
   def Matches(self, comp):
@@ -951,7 +948,7 @@ class RootCompleter(object):
     NOTE: This post-processing MUST go here, and not in UserSpec, because it's
     in READLINE in bash.  compgen doesn't see it.
     """
-    self.progress_f.Write('Completing %r ... (Ctrl-C to cancel)', comp.line)
+    self.debug_f.log('Completing %r ... (Ctrl-C to cancel)', comp.line)
     start_time = time.time()
 
     # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
@@ -1003,13 +1000,13 @@ class RootCompleter(object):
       i += 1
       elapsed_ms = (time.time() - start_time) * 1000.0
       plural = '' if i == 1 else 'es'
-      self.progress_f.Write(
+      self.debug_f.log(
           '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
           plural, comp.line, elapsed_ms)
 
     elapsed_ms = (time.time() - start_time) * 1000.0
     plural = '' if i == 1 else 'es'
-    self.progress_f.Write(
+    self.debug_f.log(
         'Found %d match%s for %r in %d ms', i,
         plural, comp.line, elapsed_ms)
 

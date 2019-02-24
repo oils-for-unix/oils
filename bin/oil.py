@@ -474,9 +474,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     # also run functions... it gets the Executor through Executor._Complete.
     if line_input:
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
-      progress_f = ui.StatusLine()
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, comp_state,
-                                           comp_ctx, progress_f, debug_f)
+                                           comp_ctx, debug_f)
       _InitReadline(line_input, history_filename, root_comp, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
 
