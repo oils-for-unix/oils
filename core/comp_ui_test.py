@@ -5,7 +5,6 @@ display_test.py: Tests for display.py
 from __future__ import print_function
 
 import cStringIO
-import sys
 import unittest
 
 from core import completion

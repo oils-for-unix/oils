@@ -1009,6 +1009,9 @@ class RootCompleter(object):
       # FileSystemAction needs it.
       if is_fs_action or opt_filenames:
         if path_stat.isdir(m):  # TODO: test coverage
+
+          # TODO: Need to add prefix and escape here too
+
           yield m + '/'
           continue
 
@@ -1024,6 +1027,7 @@ class RootCompleter(object):
         candidate = m + ' '
 
       if 0:
+        common_prefix = ''
         yield common_prefix + candidate
       else:
         yield candidate

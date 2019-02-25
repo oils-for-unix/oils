@@ -17,7 +17,6 @@ import sys
 from core import alloc
 from core import completion  # module under test
 from core import test_lib
-from core import ui
 from core import util
 from core.meta import runtime_asdl, syntax_asdl
 
