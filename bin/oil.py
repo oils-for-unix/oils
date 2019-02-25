@@ -113,7 +113,7 @@ OSH_SPEC.LongFlag('--ast-format',
               default='abbrev-text')
 
 # Defines completion style.
-OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='osh')
+OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
 # TODO: Add option for Oil prompt style?  RHS prompt?
 
 # Don't reparse a[x+1] and ``.  Only valid in -n mode.
@@ -494,7 +494,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       elif opts.completion_display == 'nice':
         display = comp_ui.NiceDisplay(comp_state)
       else:
-        raise AssertionError(opts.ui)
+        raise AssertionError(opts.completion_display)
 
       _InitReadline(line_input, history_filename, root_comp, display, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
