@@ -11,9 +11,6 @@ from core import completion
 from core import comp_ui  # module under test
 
 
-# TODO: Unit tests should test some properties of the output!
-# How many lines are there, and did it overflow?
-
 class VisualTest(unittest.TestCase):
 
   def testPrintPacked(self):

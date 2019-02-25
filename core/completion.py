@@ -994,16 +994,11 @@ class RootCompleter(object):
       #m = util.BackslashEscape(m, SHELL_META_CHARS)
       #self.debug_f.log('after shell escaping: %s', m)
 
-      # TODO: Shouldn't this be reversed?  Check base_opts, and then check
-      # dynamic_opts?
-
       # SUBTLE: dynamic_opts is part of comp_state, which ShellFuncAction can
       # mutate!  So we don't want to pull this out of the loop.
-      opt_filenames = False
+      opt_filenames = base_opts.get('filenames', False)
       if 'filenames' in dynamic_opts:
         opt_filenames = dynamic_opts['filenames']
-      if 'filenames' in base_opts:
-        opt_filenames = base_opts['filenames']
 
       # compopt -o filenames is for user-defined actions.  Or any
       # FileSystemAction needs it.
@@ -1015,11 +1010,9 @@ class RootCompleter(object):
           yield m + '/'
           continue
 
-      opt_nospace = False
+      opt_nospace = base_opts.get('nospace', False)
       if 'nospace' in dynamic_opts:
         opt_nospace = dynamic_opts['nospace']
-      if 'nospace' in base_opts:
-        opt_nospace = base_opts['nospace']
 
       if opt_nospace:
         candidate = m

@@ -98,13 +98,15 @@ complete_bug() {
 # isolated bug
 complete -F complete_bug bug
 
+optdemo() { argv "$@"; }
 complete_optdemo() {
   local first=$1
   local cur=$2
   local prev=$3
 
-  # Dynamically set
-  #compopt -o nospace
+  # Turn this off DYNAMICALLY, so we WILL get a space.
+  # TODO: Add unit tests for this case.  I only tested it manually.
+  compopt +o nospace
 
   # -o nospace doesn't work here, but it's accepted!
   COMPREPLY=( $( compgen -o nospace -d "$cur" ) )
