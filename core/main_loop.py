@@ -26,13 +26,18 @@ command = syntax_asdl.command
 log = util.log
 
 
-def Interactive(opts, ex, c_parser, arena):
+def Interactive(opts, ex, c_parser, display, arena):
   status = 0
   while True:
-    # Reset internal newline state.  NOTE: It would actually be correct to
-    # reinitialize all objects (except Env) on every iteration.
+    # NOTE: It's easier to make these calls at the beginning rather than the
+    # end, so we can use of break/continue.
+
+    # Reset internal newline state.
     c_parser.Reset()
     c_parser.ResetInputObjects()
+
+    display.EraseLines()  # clear any completion candidates we displayed
+    display.Reset()  # clears dupes and number of lines last displayed
 
     try:
       w = c_parser.Peek()  # may raise HistoryError or ParseError
@@ -60,6 +65,8 @@ def Interactive(opts, ex, c_parser, arena):
     if node is None:  # EOF
       # NOTE: We don't care if there are pending here docs in the interative case.
       break
+
+    display.EraseLines()  # Do this right before executing
 
     is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
     status = ex.LastStatus()

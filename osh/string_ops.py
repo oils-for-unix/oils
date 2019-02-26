@@ -341,3 +341,25 @@ def ShellQuote(s):
   # Example: FOO'BAR -> 'FOO'\''BAR'
   return "'" + s.replace("'", r"'\''") + "'"
 
+
+def ShellQuoteB(s):
+  """Quote by adding backslashes.
+
+  This is friendlier for display on the command line.
+  TODO: We could also use this strategy for printf %q?
+  """
+  # There's no way to escape a newline!  Bash prints ^J for some reason, but
+  # we're more explicit.  This will happen if there's a newline on a file
+  # system or a completion plugin returns a newline.
+
+  # NOTE: tabs CAN be escaped with \.
+  s = s.replace('\r', '<INVALID CR>').replace('\n', '<INVALID NEWLINE>')
+
+  # ~ for home dir
+  # ! for history
+  # * [] ? for glob
+  # {} for brace expansion
+  # space because it separates words
+  return util.BackslashEscape(s, ' `~!$&*()[]{}\\|;\'"<>?')
+
+

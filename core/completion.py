@@ -46,6 +46,7 @@ from pylib import os_path
 from pylib import path_stat
 from osh import word
 from osh import state
+from osh import string_ops
 
 import libc
 
@@ -56,6 +57,7 @@ value_e = runtime_asdl.value_e
 redir_arg_type_e = types_asdl.redir_arg_type_e
 
 log = util.log
+ShellQuoteB = string_ops.ShellQuoteB
 
 
 # To quote completion candidates.
@@ -126,22 +128,14 @@ _DEFAULT_OPTS = {}
 _DO_NOTHING = (_DEFAULT_OPTS, NullCompleter())
 
 
-class State(object):
-  """Stores the state of the CURRENT completion."""
+class OptionState(object):
+  """Stores the compopt state of the CURRENT completion."""
 
   def __init__(self):
     # For the IN-PROGRESS completion.
     self.currently_completing = False
     # should be SET to a COPY of the registration options by the completer.
     self.dynamic_opts = None
-
-    self.orig_line = None  # original line
-
-    # Start offset in EVERY candidate to display.  We send fully-completed
-    # LINES to readline because we don't want it to do its own word splitting.
-    self.common_prefix_pos = -1
-
-    self.descriptions = {}  # completion candidate descriptions
 
 
 class Lookup(object):
@@ -162,7 +156,7 @@ class Lookup(object):
     self.patterns = []
 
   def __str__(self):
-    return '<completion.State %s>' % self.lookup
+    return '<completion.Lookup %s>' % self.lookup
 
   def PrintSpecs(self):
     """For 'complete' without args."""
@@ -672,12 +666,13 @@ class RootCompleter(object):
   - Complete the OSH language (variables, etc.), or
   - Statically evaluate argv and dispatch to a command completer.
   """
-  def __init__(self, word_ev, mem, comp_lookup, comp_state, parse_ctx,
-               debug_f):
+  def __init__(self, word_ev, mem, comp_lookup, compopt_state, comp_ui_state,
+               parse_ctx, debug_f):
     self.word_ev = word_ev  # for static evaluation of words
     self.mem = mem  # to complete variable names
     self.comp_lookup = comp_lookup
-    self.comp_state = comp_state  # to look up plugins
+    self.compopt_state = compopt_state  # for compopt builtin
+    self.comp_ui_state = comp_ui_state
 
     self.parse_ctx = parse_ctx
     self.debug_f = debug_f
@@ -694,10 +689,11 @@ class RootCompleter(object):
     arena = self.parse_ctx.arena  # Used by inner functions
 
     # Pass the original line "out of band" to the completion callback.
-    self.comp_state.orig_line = comp.line
+    line_until_tab = comp.line[:comp.end]
+    self.comp_ui_state.line_until_tab = line_until_tab
 
     self.parse_ctx.trail.Clear()
-    line_reader = reader.StringLineReader(comp.line, self.parse_ctx.arena)
+    line_reader = reader.StringLineReader(line_until_tab, self.parse_ctx.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True)
 
     # We want the output from parse_ctx, so we don't use the return value.
@@ -711,6 +707,10 @@ class RootCompleter(object):
     trail = self.parse_ctx.trail
     if 1:
       trail.PrintDebugString(debug_f)
+
+    #
+    # First try completing the shell language itself.
+    #
 
     # NOTE: We get Eof_Real in the command state, but not in the middle of a
     # BracedVarSub.  This is due to the difference between the CommandParser
@@ -736,36 +736,28 @@ class RootCompleter(object):
     debug_f.log('t1 %s', t1)
     debug_f.log('t2 %s', t2)
 
-    # TODO: Everything below here should yield (common_prefix_pos, candidate)
-    #
-    # Then send (orig_line[:common_prefix_pos] + escaped(candidate)) to
-    # readline.
-    #
-    # Then the display callback strips off the common prefix and shows the rest
-    # to the user.
-    #
-    # The root cause of this dance: If there's one candidate, readline is
-    # responsible for redrawing the input line.  OSH only displays candidates;
-    # it never modifies the input line.
+    # Each of the 'yield' statements below returns a fully-completed line, to
+    # appease the readline library.  The root cause of this dance: If there's
+    # one candidate, readline is responsible for redrawing the input line.  OSH
+    # only displays candidates and never redraws the input line.
 
-    def _MakePrefix(tok, offset=0):
+    def _TokenStart(tok):
       span = arena.GetLineSpan(tok.span_id)
-      return comp.line[comp.begin : span.col+offset]
-      #return comp.line[0 : span.col+offset]
+      return span.col
 
     if t2:  # We always have t1?
       # echo $
       if IsDollar(t2) and IsDummy(t1):
-        prefix = _MakePrefix(t2, offset=1)
+        self.comp_ui_state.display_pos = _TokenStart(t2) + 1  # 1 for $
         for name in self.mem.VarNames():
-          yield prefix + name
+          yield line_until_tab + name  # no need to quote var names
         return
 
       # echo ${
       if t2.id == Id.Left_VarSub and IsDummy(t1):
-        prefix = _MakePrefix(t2, offset=2)  # 2 for ${
+        self.comp_ui_state.display_pos = _TokenStart(t2) + 2  # 2 for ${
         for name in self.mem.VarNames():
-          yield prefix + name
+          yield line_until_tab + name  # no need to quote var names
         return
 
       # echo $P
@@ -773,28 +765,32 @@ class RootCompleter(object):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.
-        prefix = _MakePrefix(t2, offset=1)  # 1 for $
+        self.comp_ui_state.display_pos = _TokenStart(t2) + 1  # 1 for $
         to_complete = t2.val[1:]
+        n = len(to_complete)
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
-            yield prefix + name
+            yield line_until_tab + name[n:]  # no need to quote var names
         return
 
       # echo ${P
       if t2.id == Id.VSub_Name and IsDummy(t1):
-        prefix = _MakePrefix(t2)  # no offset
+        self.comp_ui_state.display_pos = _TokenStart(t2)  # no offset
         to_complete = t2.val
+        n = len(to_complete)
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
-            yield prefix + name
+            yield line_until_tab + name[n:]  # no need to quote var names
         return
 
+      # echo $(( VAR
       if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
-        prefix = _MakePrefix(t2)  # no offset
+        self.comp_ui_state.display_pos = _TokenStart(t2)  # no offset
         to_complete = t2.val
+        n = len(to_complete)
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
-            yield prefix + name
+            yield line_until_tab + name[n:]  # no need to quote var names
         return
 
     if trail.words:
@@ -812,14 +808,15 @@ class RootCompleter(object):
           parts[1].token.id == Id.Lit_CompDummy):
         t2 = parts[0].token
 
-        # NOTE: We're assuming readline does its job, and not bothering to
-        # compute the prefix.  What are the incorrect corner cases?
-        prefix = '~'
+        # +1 for ~
+        self.comp_ui_state.display_pos = _TokenStart(parts[0].token) + 1
+
         to_complete = t2.val[1:]
-        for u in pwd.getpwall():
+        n = len(to_complete)
+        for u in pwd.getpwall():  # catch errors?
           name = u.pw_name
           if name.startswith(to_complete):
-            yield prefix + name + '/'
+            yield line_until_tab + ShellQuoteB(name[n:]) + '/'
         return
 
     # echo hi > f<TAB>   (complete redirect arg)
@@ -840,12 +837,22 @@ class RootCompleter(object):
             debug_f.log("Didn't get a string from redir arg")
             return
 
+          span_id = word.LeftMostSpanForWord(r.arg_word)
+          span = arena.GetLineSpan(span_id)
+
+          self.comp_ui_state.display_pos = span.col
+
           comp.Update(to_complete=val.s)  # FileSystemAction uses only this
+          n = len(val.s)
           action = FileSystemAction(add_slash=True)
           for name in action.Matches(comp):
-            # TODO: form prefix from r.arg_word
-            yield name
+            yield line_until_tab + ShellQuoteB(name[n:])
           return
+
+    #
+    # We're not completing the shell language.  Delegate to user-defined
+    # completion for external tools.
+    #
 
     # Set below, and set on retries.
     base_opts = None
@@ -911,6 +918,17 @@ class RootCompleter(object):
           raise AssertionError
         elif num_partial == 1:
           base_opts, user_spec = self.comp_lookup.GetFirstSpec()
+
+          # Display/replace since the beginning of the first word.  Note: this
+          # is non-zero in the case of
+          # echo $(gr   and
+          # echo `gr
+
+          span_id = word.LeftMostSpanForWord(trail.words[0])
+          span = arena.GetLineSpan(span_id)
+          self.comp_ui_state.display_pos = span.col
+          self.debug_f.log('** DISPLAY_POS = %d', self.comp_ui_state.display_pos)
+
         else:
           base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
           if not user_spec and alias_first:
@@ -921,6 +939,13 @@ class RootCompleter(object):
               first = alias_first
           if not user_spec:
             base_opts, user_spec = self.comp_lookup.GetFallback()
+
+          # Display since the beginning
+          span_id = word.LeftMostSpanForWord(trail.words[-1])
+          span = arena.GetLineSpan(span_id)
+          self.comp_ui_state.display_pos = span.col
+          self.debug_f.log('words[-1]: %r', trail.words[-1])
+          self.debug_f.log('display_pos %d', self.comp_ui_state.display_pos)
 
         # Update the API for user-defined functions.
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
@@ -936,15 +961,15 @@ class RootCompleter(object):
     # Reset it back to what was registered.  User-defined functions can mutate
     # it.
     dynamic_opts = {}
-    self.comp_state.dynamic_opts = dynamic_opts
-    self.comp_state.currently_completing = True
+    self.compopt_state.dynamic_opts = dynamic_opts
+    self.compopt_state.currently_completing = True
     try:
       done = False
       while not done:
         try:
-          for entry in self._PostProcess(
+          for candidate in self._PostProcess(
               base_opts, dynamic_opts, user_spec, comp):
-            yield entry
+            yield candidate
         except _RetryCompletion as e:
           debug_f.log('Got 124, trying again ...')
 
@@ -963,7 +988,7 @@ class RootCompleter(object):
         else:
           done = True  # exhausted candidates without getting a retry
     finally:
-      self.comp_state.currently_completing = False
+      self.compopt_state.currently_completing = False
 
   def _PostProcess(self, base_opts, dynamic_opts, user_spec, comp):
     """
@@ -978,24 +1003,36 @@ class RootCompleter(object):
     # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
 
     i = 0
-    for m, is_fs_action in user_spec.Matches(comp):
-
-      # - Do shell QUOTING here. Not just for filenames, but for everything!
-      #   User-defined functions can't emit $var, only \$var
-      # Problem: COMP_WORDBREAKS messes things up!  How can I account for that?
-      # '_tmp/spam\ '
-      # it stops at the first ' ' char.
+    for candidate, is_fs_action in user_spec.Matches(comp):
+      # SUBTLE: dynamic_opts is part of compopt_state, which ShellFuncAction
+      # can mutate!  So we don't want to pull this out of the loop.
       #
-      # I guess you can add a COMP_WORDBREAKS suffix?
-      # Or should you get rid of completion_delims altogether?
-      # Then you would be constantly completing the beginning of the line?
-      # TODO: write a terminal program to show that
+      # TODO: The candidates from each actions shouldn't be flattened.
+      # for action in user_spec.Actions():
+      #   if action.IsFileSystem():  # this returns is_dir too
+      #     
+      #   action.Run()  # might set dynamic opts
+      #   opt_nospace = base_opts...
+      #   if 'nospace' in dynamic_opts:
+      #     opt_nosspace = dynamic_opts['nospace']
+      #   for candidate in action.Matches():
+      #     add space or /
+      #     and do escaping too
+      #
+      # Or maybe you can request them on demand?  Most actions are EAGER.
+      # While the ShellacAction is LAZY?  And you should be able to cancel it!
 
-      #m = util.BackslashEscape(m, SHELL_META_CHARS)
-      #self.debug_f.log('after shell escaping: %s', m)
+      # NOTE: User-defined plugins (and the -P flag) can REWRITE what the user
+      # already typed.  So
+      #
+      # $ echo 'dir with spaces'/f<TAB>
+      #
+      # can be rewritten to:
+      #
+      # $ echo dir\ with\ spaces/foo
+      line_until_tab = self.comp_ui_state.line_until_tab
+      line_until_word = line_until_tab[:self.comp_ui_state.display_pos]
 
-      # SUBTLE: dynamic_opts is part of comp_state, which ShellFuncAction can
-      # mutate!  So we don't want to pull this out of the loop.
       opt_filenames = base_opts.get('filenames', False)
       if 'filenames' in dynamic_opts:
         opt_filenames = dynamic_opts['filenames']
@@ -1003,35 +1040,27 @@ class RootCompleter(object):
       # compopt -o filenames is for user-defined actions.  Or any
       # FileSystemAction needs it.
       if is_fs_action or opt_filenames:
-        if path_stat.isdir(m):  # TODO: test coverage
-
-          # TODO: Need to add prefix and escape here too
-
-          yield m + '/'
+        if path_stat.isdir(candidate):  # TODO: test coverage
+          yield line_until_word + ShellQuoteB(candidate) + '/'
           continue
 
       opt_nospace = base_opts.get('nospace', False)
       if 'nospace' in dynamic_opts:
         opt_nospace = dynamic_opts['nospace']
 
-      if opt_nospace:
-        candidate = m
-      else:
-        candidate = m + ' '
-
-      if 0:
-        common_prefix = ''
-        yield common_prefix + candidate
-      else:
-        yield candidate
+      sp = '' if opt_nospace else ' '
+      yield line_until_word + ShellQuoteB(candidate) + sp
 
       # NOTE: Can't use %.2f in production build!
       i += 1
       elapsed_ms = (time.time() - start_time) * 1000.0
       plural = '' if i == 1 else 'es'
-      self.debug_f.log(
-          '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
-          plural, comp.line, elapsed_ms)
+
+      # TODO: Show this in the UI if it takes too long!
+      if 0:
+        self.debug_f.log(
+            '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
+            plural, comp.line, elapsed_ms)
 
     elapsed_ms = (time.time() - start_time) * 1000.0
     plural = '' if i == 1 else 'es'

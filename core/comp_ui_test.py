@@ -5,10 +5,11 @@ display_test.py: Tests for display.py
 from __future__ import print_function
 
 import cStringIO
+import sys
 import unittest
 
-from core import completion
 from core import comp_ui  # module under test
+from core import util
 
 
 class VisualTest(unittest.TestCase):
@@ -110,32 +111,38 @@ class VisualTest(unittest.TestCase):
 
 class UiTest(unittest.TestCase):
 
-  def testNiceDisplay(self):
-    comp_state = completion.State()
+  def testDisplays(self):
+    comp_ui_state = comp_ui.State()
+    prompt_state = comp_ui.PromptState()
+    debug_f = util.DebugFile(sys.stdout)
 
-    disp = comp_ui.NiceDisplay(comp_state, bold_line=False)
-    # This one is important
-    disp.EraseLines()
-    disp.Reset()
-    disp.SetPromptLength(10)
+    d1 = comp_ui.NiceDisplay(comp_ui_state, prompt_state, debug_f, bold_line=False)
+    d2 = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    # These are related but we can just set them separately.
-    comp_state.orig_line = 'echo '  # for returning to the prompt
-    comp_state.suffix_pos = 5  # Strip this off every candidate
+    prompt_state.SetLastPrompt('$ ')
 
-    disp.PrintRequired('hello')
-    disp.PrintOptional('hello')
+    for disp in [d1, d2]:
+      # This one is important
+      disp.EraseLines()
+      disp.Reset()
 
-    matches = ['echo one', 'echo two']
-    disp.PrintCandidates(None, matches, None)
+      # These are related but we can just set them separately.
+      comp_ui_state.line_until_tab = 'echo '  # for returning to the prompt
+      comp_ui_state.display_pos = 5  # Strip this off every candidate
 
-    disp.OnWindowChange()
+      disp.PrintRequired('hello')
+      disp.PrintOptional('hello')
 
-    # This needs to be aware of the terminal width.
-    # It's a bit odd since it's called as a side effect of the PromptEvaluator.
-    # That class knows about styles and so forth.
+      matches = ['echo one', 'echo two']
+      disp.PrintCandidates(None, matches, None)
 
-    disp.ShowPromptOnRight('RIGHT')
+      disp.OnWindowChange()
+
+      # This needs to be aware of the terminal width.
+      # It's a bit odd since it's called as a side effect of the PromptEvaluator.
+      # That class knows about styles and so forth.
+
+      disp.ShowPromptOnRight('RIGHT')
 
 
 if __name__ == '__main__':

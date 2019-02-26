@@ -131,14 +131,14 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
   fd_state = process.FdState()
   funcs = {}
 
-  comp_state = completion.State()
+  compopt_state = completion.OptionState()
   comp_lookup = comp_lookup or completion.Lookup()
 
   readline = None  # simulate not having it
   builtins = {  # Lookup
       builtin_e.HISTORY: builtin.History(readline),
 
-      builtin_e.COMPOPT: builtin_comp.CompOpt(comp_state),
+      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
   }
 

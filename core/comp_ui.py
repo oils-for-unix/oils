@@ -51,6 +51,32 @@ def log(msg, *args, **kwargs):
   f.flush()
 
 
+class PromptState(object):
+  """For the InteractiveLineReader to communicate with the Display callback."""
+
+  def __init__(self):
+    self.last_prompt_str = None
+    self.last_prompt_len = -1
+
+  def SetLastPrompt(self, prompt_str):
+    self.last_prompt_str = prompt_str
+    # TODO: We should figure out the length WITHOUT ANSI codes!
+    self.last_prompt_len = len(prompt_str)
+
+
+class State(object):
+  """For the RootCompleter to communicate with the Display callback."""
+
+  def __init__(self):
+    self.line_until_tab = None  # original line, truncated
+
+    # Start offset in EVERY candidate to display.  We send fully-completed
+    # LINES to readline because we don't want it to do its own word splitting.
+    self.display_pos = -1
+
+    self.descriptions = {}  # completion candidate descriptions
+
+
 def GetTerminalSize():
   # fd 0 = stdin.  The arg has to be 4 bytes for some reason.
   try:
@@ -68,10 +94,12 @@ def GetTerminalSize():
 class _IDisplay(object):
   """Interface for completion displays."""
 
-  def __init__(self, comp_state, num_lines_cap, f):
+  def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f):
     self.comp_state = comp_state
+    self.prompt_state = prompt_state
     self.num_lines_cap = num_lines_cap
     self.f = f
+    self.debug_f = debug_f
 
   def PrintCandidates(self, *args):
     try:
@@ -79,15 +107,11 @@ class _IDisplay(object):
     except Exception as e:
       traceback.print_exc()
 
-  def SetPromptLength(self, i):
-    # NiceDisplay needs this to return to original location.
-    pass
-
   def Reset(self):
     """Call this in between commands."""
     pass
 
-  def ShowPromptOnRight(self):
+  def ShowPromptOnRight(self, rendered):
     # Doesn't apply to MinimalDisplay
     pass
 
@@ -114,31 +138,29 @@ class MinimalDisplay(_IDisplay):
   It could be useful if we ever have a browser build!  We can see completion
   without testing it.
   """
-  def __init__(self, comp_state, num_lines_cap=10, f=sys.stdout):
-    _IDisplay.__init__(self, comp_state, num_lines_cap, f)
+  def __init__(self, comp_state, prompt_state, debug_f, num_lines_cap=10,
+               f=sys.stdout):
+    _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
+                       debug_f)
 
     self.reader = None
-
-  def SetReader(self, r):
-    """Dependency injection."""
-    self.reader = r
 
   def _RedrawPrompt(self):
     # NOTE: This has to reprint the prompt and the command line!
     # Like bash, we SAVE the prompt and print it, rather than re-evaluating it.
-    self.f.write(self.reader.CurrentRenderedPrompt())
-    self.f.write(self.comp_state.orig_line)
+    self.f.write(self.prompt_state.last_prompt_str)
+    self.f.write(self.comp_state.line_until_tab)
 
   def _PrintCandidates(self, unused_subst, matches, unused_match_len):
     #log('_PrintCandidates %s', matches)
     self.f.write('\n')  # need this
-    common_prefix_pos = self.comp_state.common_prefix_pos
-    assert common_prefix_pos != -1
+    display_pos = self.comp_state.display_pos
+    assert display_pos != -1
 
     too_many = False
     i = 0
     for m in matches:
-      self.f.write(' %s\n' % m[common_prefix_pos:])
+      self.f.write(' %s\n' % m[display_pos:])
 
       if i == self.num_lines_cap:
         too_many = True
@@ -263,17 +285,16 @@ class NiceDisplay(_IDisplay):
   - Stripping off the common prefix according to OUR rules, not readline's.
   - displaying descriptions of flags and builtins
   """
-  def __init__(self, comp_state, f=sys.stdout, num_lines_cap=10,
-               bold_line=False):
+  def __init__(self, comp_state, prompt_state, debug_f, f=sys.stdout,
+               num_lines_cap=10, bold_line=False):
     """
     Args:
       bold_line: Should user's entry be bold?
     """
-    _IDisplay.__init__(self, comp_state, num_lines_cap, f)
+    _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
+                       debug_f)
 
     self.bold_line = bold_line
-
-    self.last_prompt_len = -1  # invalid
 
     self.width_is_dirty = True
     self.term_width = -1  # invalid
@@ -291,19 +312,17 @@ class NiceDisplay(_IDisplay):
     self.num_lines_last_displayed = 0
     self.dupes.clear()
 
-  def SetPromptLength(self, i):
-    self.last_prompt_len = i
-
   def _ReturnToPrompt(self, num_lines):
     # NOTE: We can't use ANSI terminal codes to save and restore the prompt,
     # because the screen may have scrolled.  Instead we have to keep track of
     # how many lines we printed and the original column of the cursor.
 
-    orig_len = len(self.comp_state.orig_line)
+    orig_len = len(self.comp_state.line_until_tab)
 
     self.f.write('\x1b[%dA' % num_lines)  # UP
-    assert self.last_prompt_len != -1
-    n = orig_len + self.last_prompt_len
+    last_prompt_len = self.prompt_state.last_prompt_len
+    assert last_prompt_len != -1
+    n = orig_len + last_prompt_len
     self.f.write('\x1b[%dC' % n)  # RIGHT
 
     if self.bold_line:
@@ -316,7 +335,8 @@ class NiceDisplay(_IDisplay):
 
     # Variables set by the completion generator.  They should always exist,
     # because we can't get "matches" without calling that function.
-    common_prefix_pos = self.comp_state.common_prefix_pos
+    display_pos = self.comp_state.display_pos
+    self.debug_f.log('DISPLAY POS in _PrintCandidates = %d', display_pos)
 
     self.f.write('\n')
 
@@ -343,11 +363,11 @@ class NiceDisplay(_IDisplay):
 
     max_lines = self.num_lines_cap * self.dupes[comp_id]
 
-    assert common_prefix_pos != -1
-    if common_prefix_pos == 0:  # slight optimization for first word
+    assert display_pos != -1
+    if display_pos == 0:  # slight optimization for first word
       to_display = matches
     else:
-      to_display = [m[common_prefix_pos:] for m in matches]
+      to_display = [m[display_pos:] for m in matches]
 
     # Calculate max length after stripping prefix.
     max_match_len = max(len(m) for m in to_display)
@@ -356,9 +376,9 @@ class NiceDisplay(_IDisplay):
     # Also truncate when a single candidate is super long?
 
     # Print and go back up.  But we have to ERASE these before hitting enter!
-    if self.comp_state.get('DESC'):  # exists and is NON EMPTY
+    if self.comp_state.descriptions:  # exists and is NON EMPTY
       num_lines = _PrintLong(to_display, max_match_len, term_width,
-                             max_lines, self.comp_state['DESC'], self.f)
+                             max_lines, self.comp_state.descriptions, self.f)
     else:
       num_lines = _PrintPacked(to_display, max_match_len, term_width,
                                max_lines, self.f)

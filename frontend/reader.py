@@ -37,11 +37,16 @@ class _Reader(object):
 _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
-  def __init__(self, arena, prompt_ev, hist_ev, line_input):
+  def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
+    """
+    Args:
+      prompt_state: Current prompt is PUBLISHED here.
+    """
     _Reader.__init__(self, arena)
     self.prompt_ev = prompt_ev
     self.hist_ev = hist_ev
     self.line_input = line_input  # may be None!
+    self.prompt_state = prompt_state
 
     self.prev_line = None
     self.prompt_str = ''
@@ -74,6 +79,7 @@ class InteractiveLineReader(_Reader):
       self.prev_line = line
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
+    self.prompt_state.SetLastPrompt(self.prompt_str)
     return line
 
   def Reset(self):
@@ -81,6 +87,7 @@ class InteractiveLineReader(_Reader):
     and reset prompt string back to PS1.
     """
     self.prompt_str = self.prompt_ev.FirstPromptEvaluator()
+    self.prompt_state.SetLastPrompt(self.prompt_str)
 
 
 class FileLineReader(_Reader):

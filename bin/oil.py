@@ -192,7 +192,7 @@ def _InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
   # affects what we pass back to readline and what readline displays to the
   # user!
 
-  if 1:
+  if 0:
     readline_mod.set_completer_delims(util.READLINE_DELIMS)
   else:
     # Disable READLINE_DELIMS because it causes problems with quoting.
@@ -375,14 +375,20 @@ def ShellMain(lang, argv0, argv, login_shell):
     trace_f = util.DebugFile(sys.stderr)
   exec_deps.trace_f = trace_f
 
-  # TODO: Separate comp_state and comp_lookup.
-  comp_state = completion.State()
   comp_lookup = completion.Lookup()
+
+  #
+  # Various Global State objects to work around readline interfaces
+  #
+
+  compopt_state = completion.OptionState()
+  comp_ui_state = comp_ui.State()
+  prompt_state = comp_ui.PromptState()
 
   builtins = {  # Lookup
       builtin_e.HISTORY: builtin.History(line_input),
 
-      builtin_e.COMPOPT: builtin_comp.CompOpt(comp_state),
+      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
@@ -450,7 +456,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     arena.PushSource('<stdin -i>')
     # interactive shell only
     line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                               line_input)
+                                               line_input, prompt_state)
     exec_opts.interactive = True
 
   else:
@@ -461,7 +467,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         arena.PushSource('<interactive>')
         # interactive shell only
         line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                                   line_input)
+                                                   line_input, prompt_state)
         exec_opts.interactive = True
       else:
         arena.PushSource('<stdin>')
@@ -483,26 +489,29 @@ def ShellMain(lang, argv0, argv, login_shell):
     c_parser = parse_ctx.MakeOilParser(line_reader)
 
   if exec_opts.interactive:
-    # NOTE: We're using a different evaluator here.  The completion system can
-    # also run functions... it gets the Executor through Executor._Complete.
+    # NOTE: We're using a different WordEvaluator here.
     if line_input:
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
-      root_comp = completion.RootCompleter(ev, mem, comp_lookup, comp_state,
-                                           comp_ctx, debug_f)
+      root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
+                                           comp_ui_state, comp_ctx, debug_f)
       if opts.completion_display == 'minimal':
-        display = comp_ui.MinimalDisplay(comp_state)
+        display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
       elif opts.completion_display == 'nice':
-        display = comp_ui.NiceDisplay(comp_state)
+        display = comp_ui.NiceDisplay(comp_ui_state, prompt_state, debug_f)
       else:
         raise AssertionError(opts.completion_display)
 
       _InitReadline(line_input, history_filename, root_comp, display, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
+    else:
+      # Without readline, we have to use the minimal one.
+      # NOTE: The display callback won't be used.
+      display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
 
-    return main_loop.Interactive(opts, ex, c_parser, arena)
+    return main_loop.Interactive(opts, ex, c_parser, display, arena)
 
   # TODO: This doesn't do anything interesting.
   # - Remove the column from osh-runtime, since it doesn't work with main_loop.

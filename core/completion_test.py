@@ -16,6 +16,7 @@ import sys
 
 from core import alloc
 from core import completion  # module under test
+from core import comp_ui
 from core import test_lib
 from core import util
 from core.meta import runtime_asdl, syntax_asdl
@@ -41,19 +42,13 @@ U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
 
 def MockApi(line):
   """Match readline's get_begidx() / get_endidx()."""
-  end = len(line)
-  i = end - 1
-  while i > 0:
-    if line[i] in util.READLINE_DELIMS:
-      break
-    i -= 1
-
-  return completion.Api(line=line, begin=i+1, end=end)
+  return completion.Api(line=line, begin=0, end=len(line))
 
 
 def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   #comp_state = comp_state or completion.State()
-  comp_state = completion.State()
+  compopt_state = completion.OptionState()
+  comp_ui_state = comp_ui.State()
   comp_lookup = comp_lookup or completion.Lookup()
   ev = test_lib.MakeTestEvaluator()
 
@@ -69,8 +64,8 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     debug_f = util.DebugFile(sys.stdout)
   else:
     debug_f = util.NullDebugFile()
-  return completion.RootCompleter(ev, mem, comp_lookup, comp_state, parse_ctx,
-                                  debug_f)
+  return completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
+                                  comp_ui_state, parse_ctx, debug_f)
 
 
 class FunctionsTest(unittest.TestCase):
@@ -211,173 +206,6 @@ class CompletionTest(unittest.TestCase):
 
 class RootCompleterTest(unittest.TestCase):
 
-  def testCompletesHomeDirs(self):
-    r = _MakeRootCompleter()
-
-    comp = MockApi(line='echo ~r')
-    print(comp)
-    m = list(r.Matches(comp))
-     #This test isn't hermetic, but I think root should be on all systems.
-    self.assert_('~root/' in m, 'Got %s' % m)
-
-    comp = MockApi(line='echo ~')
-    print(comp)
-    m = list(r.Matches(comp))
-     #This test isn't hermetic, but I think root should be on all systems.
-    self.assert_('~root/' in m, 'Got %s' % m)
-
-    # Don't be overly aggressive!
-    comp = MockApi(line='echo a~')
-    m = list(r.Matches(comp))
-    self.assertEqual(0, len(m))
-
-  def testCompletesVarNames(self):
-    r = _MakeRootCompleter()
-
-    # Complete ALL variables
-    comp = MockApi('echo $')
-    self.assertEqual(5, comp.begin)  # what readline does
-    self.assertEqual(6, comp.end)
-    print(comp)
-    m = list(r.Matches(comp))
-    # Just test for a subset
-    self.assert_('$HOME' in m, m)
-    self.assert_('$IFS' in m, m)
-
-    # Now it has a prefix
-    comp = MockApi(line='echo $P')
-    self.assertEqual(5, comp.begin)  # what readline does
-    self.assertEqual(7, comp.end)
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('$PWD' in m, 'Got %s' % m)
-    self.assert_('$PS4' in m, 'Got %s' % m)
-
-    #
-    # BracedVarSub
-    #
-
-    # Complete ALL variables
-    comp = MockApi(line='echo _${')
-    print(comp)
-    m = list(r.Matches(comp))
-    # Just test for a subset
-    self.assert_('_${HOME' in m, 'Got %s' % m)
-    self.assert_('_${IFS' in m, 'Got %s' % m)
-
-    # Now it has a prefix
-    comp = MockApi(line='echo ${P')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('${PWD' in m, 'Got %s' % m)
-    self.assert_('${PS4' in m, 'Got %s' % m)
-
-    # Odd word break
-    # NOTE: We use VSub_Name both for $FOO and ${FOO.  Might be bad?
-    comp = MockApi(line='echo ${undef:-$P')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('-$PWD' in m, 'Got %s' % m)
-    self.assert_('-$PS4' in m, 'Got %s' % m)
-
-    # Odd word break
-    comp = MockApi(line='echo ${undef:-$')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('-$HOME' in m, 'Got %s' % m)
-    self.assert_('-$IFS' in m, 'Got %s' % m)
-
-    #
-    # Double Quoted
-    #
-    # NOTE: GNU readline seems to complete closing quotes?  We don't want that.
-
-    comp = MockApi(line='echo "$')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('$HOME' in m, 'Got %s' % m)  # don't need leading "
-    self.assert_('$IFS' in m, 'Got %s' % m)
-
-    comp = MockApi(line='echo "$P')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('$PWD' in m, 'Got %s' % m)  # don't need leading "
-    self.assert_('$PS4' in m, 'Got %s' % m)
-
-    #
-    # Prefix operator
-    #
-
-    if 0:  # Here you need to handle VSub_Pound
-      comp = MockApi(line='echo ${#')
-      print(comp)
-      m = list(r.Matches(comp))
-      self.assert_('${#HOME' in m, 'Got %s' % m)
-      self.assert_('${#IFS' in m, 'Got %s' % m)
-
-    comp = MockApi(line='echo "${#P')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('${#PWD' in m, 'Got %s' % m)  # don't need leading "
-    self.assert_('${#PS4' in m, 'Got %s' % m)
-
-    #
-    # Arithmetic Context
-    #
-
-    comp = MockApi(line='echo "$((PWD +P')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('+PWD' in m, 'Got %s' % m)  # don't need leading "
-    self.assert_('+PS4' in m, 'Got %s' % m)
-
-    comp = MockApi(line='echo "$(( $P')
-    print(comp)
-    m = list(r.Matches(comp))
-    self.assert_('$PWD' in m, 'Got %s' % m)  # don't need leading "
-    self.assert_('$PS4' in m, 'Got %s' % m)
-
-  def testCompletesCommandSubs(self):
-    comp_lookup = completion.Lookup()
-    comp_lookup.RegisterName('grep', BASE_OPTS, U1)
-    comp_lookup.RegisterName('__first', BASE_OPTS, U2)
-    r = _MakeRootCompleter(comp_lookup=comp_lookup)
-
-    # Normal completion
-    comp = MockApi('gre')
-    m = list(r.Matches(comp))
-    self.assertEqual(['grep '], m)
-
-    # $(command sub)
-    comp = MockApi('echo $(gre')
-    m = list(r.Matches(comp))
-    self.assertEqual(['grep '], m)
-
-    # `backticks`
-    comp = MockApi('echo `gre')
-    m = list(r.Matches(comp))
-    self.assertEqual(['grep '], m)
-
-    # Args inside `backticks
-    comp = MockApi('echo `grep f')
-    m = list(r.Matches(comp))
-    self.assertEqual(['foo.py ', 'foo '], m)
-
-  def testCompletesRedirectArguments(self):
-    r = _MakeRootCompleter()
-
-    comp = MockApi('cat < b')
-    m = list(r.Matches(comp))
-    # Some B subdirs of the repo!
-    self.assert_('bin/' in m, 'Got %s' % m)
-    self.assert_('build/' in m, 'Got %s' % m)
-    self.assert_('benchmarks/' in m, 'Got %s' % m)
-
-    # This redirect does NOT take a path argument!
-    comp = MockApi('echo >&')
-    m = list(r.Matches(comp))
-    self.assertEqual(0, len(m))
-
   def testCompletesWords(self):
     comp_lookup = completion.Lookup()
 
@@ -387,7 +215,7 @@ class RootCompleterTest(unittest.TestCase):
 
     comp = MockApi('grep f')
     m = list(r.Matches(comp))
-    self.assertEqual(['foo.py ', 'foo '], m)
+    self.assertEqual(['grep foo.py ', 'grep foo '], m)
 
     comp = MockApi('grep g')
     m = list(r.Matches(comp))
@@ -412,6 +240,171 @@ class RootCompleterTest(unittest.TestCase):
     m = list(r.Matches(MockApi('var=$v')))
     m = list(r.Matches(MockApi('local var=$v')))
 
+  def testCompletesHomeDirs(self):
+    r = _MakeRootCompleter()
+
+    comp = MockApi(line='echo ~r')
+    print(comp)
+    m = list(r.Matches(comp))
+    # This test isn't hermetic, but I think root should be on all systems.
+    self.assert_('echo ~root/' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo ~')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo ~root/' in m, 'Got %s' % m)
+
+    # Don't be overly aggressive!
+    comp = MockApi(line='echo a~')
+    m = list(r.Matches(comp))
+    self.assertEqual(0, len(m))
+
+  def testCompletesVarNames(self):
+    r = _MakeRootCompleter()
+
+    # Complete ALL variables
+    comp = MockApi('echo $')
+    self.assertEqual(0, comp.begin)  # what readline does
+    self.assertEqual(6, comp.end)
+    print(comp)
+    m = list(r.Matches(comp))
+    # Just test for a subset
+    self.assert_('echo $HOME' in m, m)
+    self.assert_('echo $IFS' in m, m)
+
+    # Now it has a prefix
+    comp = MockApi(line='echo $P')
+    self.assertEqual(0, comp.begin)  # what readline does
+    self.assertEqual(7, comp.end)
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo $PWD' in m, 'Got %s' % m)
+    self.assert_('echo $PS4' in m, 'Got %s' % m)
+
+    #
+    # BracedVarSub
+    #
+
+    # Complete ALL variables
+    comp = MockApi(line='echo _${')
+    print(comp)
+    m = list(r.Matches(comp))
+    # Just test for a subset
+    self.assert_('echo _${HOME' in m, 'Got %s' % m)
+    self.assert_('echo _${IFS' in m, 'Got %s' % m)
+
+    # Now it has a prefix
+    comp = MockApi(line='echo ${P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo ${PWD' in m, 'Got %s' % m)
+    self.assert_('echo ${PS4' in m, 'Got %s' % m)
+
+    # Odd word break
+    # NOTE: We use VSub_Name both for $FOO and ${FOO.  Might be bad?
+    comp = MockApi(line='echo ${undef:-$P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo ${undef:-$PWD' in m, 'Got %s' % m)
+    self.assert_('echo ${undef:-$PS4' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo ${undef:-$')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo ${undef:-$HOME' in m, 'Got %s' % m)
+    self.assert_('echo ${undef:-$IFS' in m, 'Got %s' % m)
+
+    #
+    # Double Quoted
+    #
+    # NOTE: GNU readline seems to complete closing quotes?  We don't want that.
+
+    comp = MockApi(line='echo "$')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo "$HOME' in m, 'Got %s' % m)
+    self.assert_('echo "$IFS' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo "$P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo "$PWD' in m, 'Got %s' % m)
+    self.assert_('echo "$PS4' in m, 'Got %s' % m)
+
+    #
+    # Prefix operator
+    #
+
+    if 0:  # Here you need to handle VSub_Pound
+      comp = MockApi(line='echo ${#')
+      print(comp)
+      m = list(r.Matches(comp))
+      self.assert_('${#HOME' in m, 'Got %s' % m)
+      self.assert_('${#IFS' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo "${#P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo "${#PWD' in m, 'Got %s' % m)
+    self.assert_('echo "${#PS4' in m, 'Got %s' % m)
+
+    #
+    # Arithmetic Context
+    #
+
+    comp = MockApi(line='echo "$((PWD +P')  # bare word
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo "$((PWD +PWD' in m, 'Got %s' % m)
+    self.assert_('echo "$((PWD +PS4' in m, 'Got %s' % m)
+
+    comp = MockApi(line='echo "$(( $P')
+    print(comp)
+    m = list(r.Matches(comp))
+    self.assert_('echo "$(( $PWD' in m, 'Got %s' % m)  # word with $
+    self.assert_('echo "$(( $PS4' in m, 'Got %s' % m)
+
+  def testCompletesCommandSubs(self):
+    comp_lookup = completion.Lookup()
+    comp_lookup.RegisterName('grep', BASE_OPTS, U1)
+    comp_lookup.RegisterName('__first', BASE_OPTS, U2)
+    r = _MakeRootCompleter(comp_lookup=comp_lookup)
+
+    # Normal completion
+    comp = MockApi('gre')
+    m = list(r.Matches(comp))
+    self.assertEqual(['grep '], m)
+
+    # $(command sub)
+    comp = MockApi('echo $(gre')
+    m = list(r.Matches(comp))
+    self.assertEqual(['echo $(grep '], m)
+
+    # `backticks`
+    comp = MockApi('echo `gre')
+    m = list(r.Matches(comp))
+    self.assertEqual(['echo `grep '], m)
+
+    # Args inside `backticks
+    comp = MockApi('echo `grep f')
+    m = list(r.Matches(comp))
+    self.assertEqual(['echo `grep foo.py ', 'echo `grep foo '], m)
+
+  def testCompletesRedirectArguments(self):
+    r = _MakeRootCompleter()
+
+    comp = MockApi('cat < b')
+    m = list(r.Matches(comp))
+    # Some B subdirs of the repo!
+    self.assert_('cat < bin/' in m, 'Got %s' % m)
+    self.assert_('cat < build/' in m, 'Got %s' % m)
+    self.assert_('cat < benchmarks/' in m, 'Got %s' % m)
+
+    # This redirect does NOT take a path argument!
+    comp = MockApi('echo >&')
+    m = list(r.Matches(comp))
+    self.assertEqual(0, len(m))
+
   def testRunsUserDefinedFunctions(self):
     # This is here because it's hard to test readline with the spec tests.
     with open('testdata/completion/osh-unit.bash') as f:
@@ -426,38 +419,48 @@ class RootCompleterTest(unittest.TestCase):
 
     # By default, we get a space on the end.
     m = list(r.Matches(MockApi('mywords t')))
-    self.assertEqual(['three ', 'two '], sorted(m))
+    self.assertEqual(['mywords three ', 'mywords two '], sorted(m))
 
     # No space
     m = list(r.Matches(MockApi('mywords_nospace t')))
-    self.assertEqual(['three', 'two'], sorted(m))
+    self.assertEqual(
+        ['mywords_nospace three', 'mywords_nospace two'], sorted(m))
 
     # Filtered out two and bin
     m = list(r.Matches(MockApi('flagX ')))
-    self.assertEqual(['one ', 'three '], sorted(m))
+    self.assertEqual(['flagX one ', 'flagX three '], sorted(m))
 
     # Filter out everything EXCEPT two and bin
     m = list(r.Matches(MockApi('flagX_bang ')))
-    self.assertEqual(['bin ', 'two '], sorted(m))
+    self.assertEqual(['flagX_bang bin ', 'flagX_bang two '], sorted(m))
 
     # -X with -P
     m = list(r.Matches(MockApi('flagX_prefix ')))
-    self.assertEqual(['__one ', '__three '], sorted(m))
-
-    # TODO: Fix these!
+    self.assertEqual(['flagX_prefix __one ', 'flagX_prefix __three '], sorted(m))
 
     # -P with plusdirs
     m = list(r.Matches(MockApi('prefix_plusdirs b')))
-    self.assertEqual(['__bin ', 'benchmarks/', 'bin/', 'build/'], sorted(m))
+    self.assertEqual(
+        [ 'prefix_plusdirs __bin ',
+          'prefix_plusdirs benchmarks/',
+          'prefix_plusdirs bin/',
+          'prefix_plusdirs build/' ],
+        sorted(m))
 
     # -X with plusdirs.  We're filtering out bin/, and then it's added back by
     # plusdirs.  The filter doesn't kill it.
     m = list(r.Matches(MockApi('flagX_plusdirs b')))
-    self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
+    self.assertEqual(
+        [ 'flagX_plusdirs benchmarks/', 'flagX_plusdirs bin/',
+          'flagX_plusdirs build/' ],
+        sorted(m))
 
     # -P with dirnames.  -P is NOT respected.
     m = list(r.Matches(MockApi('prefix_dirnames b')))
-    self.assertEqual(['benchmarks/', 'bin/', 'build/'], sorted(m))
+    self.assertEqual(
+        [ 'prefix_dirnames benchmarks/', 'prefix_dirnames bin/',
+          'prefix_dirnames build/' ],
+        sorted(m))
 
   def testCompletesAliases(self):
     # I put some aliases in this file.
@@ -474,23 +477,24 @@ class RootCompleterTest(unittest.TestCase):
 
     # The original command
     m = list(r.Matches(MockApi('ls ')))
-    self.assertEqual(['one ', 'two '], sorted(m))
+    self.assertEqual(['ls one ', 'ls two '], sorted(m))
 
     # Alias for the command
     m = list(r.Matches(MockApi('ll ')))
-    self.assertEqual(['one ', 'two '], sorted(m))
+    self.assertEqual(['ll one ', 'll two '], sorted(m))
 
     # DOUBLE alias expansion goes back to original
     m = list(r.Matches(MockApi('ll_classify ')))
-    self.assertEqual(['one ', 'two '], sorted(m))
+    self.assertEqual(['ll_classify one ', 'll_classify two '], sorted(m))
 
     # Trailing space
     m = list(r.Matches(MockApi('ll_trailing ')))
-    self.assertEqual(['one ', 'two '], sorted(m))
+    self.assertEqual(['ll_trailing one ', 'll_trailing two '], sorted(m))
 
     # It should NOT clobber completio registered for aliases
     m = list(r.Matches(MockApi('ll_own_completion ')))
-    self.assertEqual(['own ', 'words '], sorted(m))
+    self.assertEqual(
+        ['ll_own_completion own ', 'll_own_completion words '], sorted(m))
 
   def testNoInfiniteLoop(self):
     # This was ONE place where we got an infinite loop.
@@ -514,7 +518,7 @@ class RootCompleterTest(unittest.TestCase):
 
     # Redefines completions
     m = list(r.Matches(MockApi('both2 ')))
-    self.assertEqual(['b1 ', 'b2 '], sorted(m))
+    self.assertEqual(['both2 b1 ', 'both2 b2 '], sorted(m))
 
   def testCompletesAssignment(self):
     # OSH doesn't do this.  Here is noticed about bash --norc (which is

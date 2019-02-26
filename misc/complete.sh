@@ -161,6 +161,12 @@ osh-trace() {
     bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
 
+osh-debug() {
+  OSH_CRASH_DUMP_DIR=_tmp \
+  OSH_HIJACK_SHEBANG=bin/osh \
+    bin/osh --debug-file _tmp/debug "$@"
+}
+
 bash-bash() {
   PS4='+[${LINENO}:${FUNCNAME}] ' bash -x $BASH_COMP
 }
