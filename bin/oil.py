@@ -510,6 +510,9 @@ def ShellMain(lang, argv0, argv, login_shell):
     # not getting notification via wait() that the child stopped?
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
 
+    # Register a callback to receive terminal width changes.
+    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+
     # NOTE: Call this AFTER _InitDefaultCompletions.
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
 
