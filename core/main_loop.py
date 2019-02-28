@@ -28,9 +28,59 @@ log = util.log
 
 def Interactive(opts, ex, c_parser, display, arena):
   status = 0
-  while True:
-    # NOTE: It's easier to make these calls at the beginning rather than the
-    # end, so we can use of break/continue.
+  done = False
+  while not done:
+    # This loop has a an odd structure because we want to do cleanup after
+    # every 'break'.  (The ones without 'done = True' were 'continue')
+    while True:  # ONLY EXECUTES ONCE
+      try:
+        w = c_parser.Peek()  # may raise HistoryError or ParseError
+
+        c_id = word.CommandId(w)
+        if c_id == Id.Op_Newline:  # print PS1 again, not PS2
+          break  # next command
+        elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
+          done = True
+          break  # quit shell
+
+        node = c_parser.ParseLogicalLine()  # ditto, HistoryError or ParseError
+      except util.HistoryError as e:  # e.g. expansion failed
+        # Where this happens:
+        # for i in 1 2 3; do
+        #   !invalid
+        # done
+        print(e.UserErrorString())
+        break
+      except util.ParseError as e:
+        ui.PrettyPrintError(e, arena)
+        # NOTE: This should set the status interactively!  Bash does this.
+        status = 2
+        break
+      except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+        print('^C')
+        # http://www.tldp.org/LDP/abs/html/exitcodes.html
+        # bash gives 130, dash gives 0, zsh gives 1.
+        # Unless we SET ex.last_status, scripts see it, so don't bother now.
+        break
+
+      if node is None:  # EOF
+        # NOTE: We don't care if there are pending here docs in the interative case.
+        done = True
+        break
+
+      display.EraseLines()  # Do this right before executing
+
+      is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
+      status = ex.LastStatus()
+      if is_control_flow:  # e.g. 'exit' in the middle of a script
+        done = True
+        break
+      if is_fatal:  # e.g. divide by zero 
+        break
+
+      break  # QUIT LOOP after one iteration.
+
+    # Cleanup after every command (or failed command).
 
     # Reset internal newline state.
     c_parser.Reset()
@@ -38,42 +88,6 @@ def Interactive(opts, ex, c_parser, display, arena):
 
     display.EraseLines()  # clear any completion candidates we displayed
     display.Reset()  # clears dupes and number of lines last displayed
-
-    try:
-      w = c_parser.Peek()  # may raise HistoryError or ParseError
-
-      c_id = word.CommandId(w)
-      if c_id == Id.Op_Newline:  # print PS1 again, not PS2
-        continue  # next command
-      elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
-        break  # end
-
-      node = c_parser.ParseLogicalLine()  # ditto, HistoryError or ParseError
-    except util.HistoryError as e:  # e.g. expansion failed
-      # Where this happens:
-      # for i in 1 2 3; do
-      #   !invalid
-      # done
-      print(e.UserErrorString())
-      continue
-    except util.ParseError as e:
-      ui.PrettyPrintError(e, arena)
-      # NOTE: This should set the status interactively!  Bash does this.
-      status = 2
-      continue
-
-    if node is None:  # EOF
-      # NOTE: We don't care if there are pending here docs in the interative case.
-      break
-
-    display.EraseLines()  # Do this right before executing
-
-    is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
-    status = ex.LastStatus()
-    if is_control_flow:  # e.g. 'exit' in the middle of a script
-      break
-    if is_fatal:  # e.g. divide by zero 
-      continue
 
     # TODO: Replace this with a shell hook?  with 'trap', or it could be just
     # like command_not_found.  The hook can be 'echo $?' or something more

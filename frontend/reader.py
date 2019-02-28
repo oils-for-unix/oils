@@ -10,6 +10,7 @@ reader.py - Read lines of input.
 """
 
 import cStringIO
+import signal
 
 
 class _Reader(object):
@@ -34,6 +35,11 @@ class _Reader(object):
     pass
 
 
+def _DoNothing(unused1, unused2):
+  """SIGINT handler."""
+  pass
+
+
 _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
@@ -48,15 +54,18 @@ class InteractiveLineReader(_Reader):
     self.line_input = line_input  # may be None!
     self.prompt_state = prompt_state
 
+    self.orig_handler = signal.getsignal(signal.SIGINT)
+
     self.prev_line = None
     self.prompt_str = ''
-    self.Reset()  # initialize self.prompt_str
 
   def _GetLine(self):
     # NOTE: In bash, the prompt goes to stderr, but this seems to cause drawing
     # problems with readline?  It needs to know about the prompt.
-
     #sys.stderr.write(self.prompt_str)
+
+    signal.signal(signal.SIGINT, self.orig_handler)  # raise KeyboardInterrupt
+
     try:
       line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
@@ -70,6 +79,12 @@ class InteractiveLineReader(_Reader):
       # realized I don't like that behavior because it changes the numbers!  I
       # can't just remember a number -- I have to type 'hi' again.
       line = self.hist_ev.Eval(line)
+    finally:
+      # When we're not waiting for input, ignore Ctrl-C so we don't get
+      # KeyboardInterrupt in weird places.  NOTE: This can't be SIG_IGN,
+      # because that affects the child process.
+      signal.signal(signal.SIGINT, _DoNothing)
+      # TODO: Should we restore the user-registered handler?
 
     # Add the line if it's not EOL, the same as the previous line, and we have
     # line_input.

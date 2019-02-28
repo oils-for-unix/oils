@@ -276,9 +276,6 @@ def ShellMain(lang, argv0, argv, login_shell):
     _ShowVersion()
     return 0
 
-  # TODO: This should be in interactive mode only?
-  builtin.RegisterSigIntHandler()
-
   if arg_r.AtEnd():
     dollar0 = argv0
     has_main = False
@@ -511,6 +508,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     # NOTE: Call this AFTER _InitDefaultCompletions.
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
 
+    line_reader.Reset()  # After sourcing startup file, render $PS1
     return main_loop.Interactive(opts, ex, c_parser, display, arena)
 
   # TODO: This doesn't do anything interesting.
