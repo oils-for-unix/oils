@@ -127,14 +127,25 @@ class CompletionTest(unittest.TestCase):
     # executable files are accessed!
 
   def testFileSystemAction(self):
-    a = completion.FileSystemAction(add_slash=True)
+    CASES = [
+        # Dirs and files
+        ('c', ['core', 'configure']),
+        ('opy/doc', ['opy/doc']),
+    ]
+
+    a = completion.FileSystemAction()
+    for prefix, expected in CASES:
+      log('')
+      log('-- PREFIX %r', prefix)
+      comp = self._CompApi([], 0, prefix)
+      self.assertEqual(expected, list(a.Matches(comp)))
 
     os.system('mkdir -p /tmp/oil_comp_test')
     os.system('bash -c "touch /tmp/oil_comp_test/{one,two,three}"')
 
     # This test depends on actual file system content.  But we choose things
     # that shouldn't go away.
-    CASES = [
+    ADD_SLASH_CASES = [
         # Dirs and files
         ('c', ['core/', 'configure']),
         ('nonexistent/', []),
@@ -153,7 +164,8 @@ class CompletionTest(unittest.TestCase):
         ('./b', ['./bin/', './benchmarks/', './build/']),
     ]
 
-    for prefix, expected in CASES:
+    a = completion.FileSystemAction(add_slash=True)
+    for prefix, expected in ADD_SLASH_CASES:
       log('')
       log('-- PREFIX %s', prefix)
       comp = self._CompApi([], 0, prefix)

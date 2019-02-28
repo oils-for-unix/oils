@@ -322,17 +322,23 @@ class FileSystemAction(CompletionAction):
 
   def Matches(self, comp):
     to_complete = comp.to_complete
-    i = to_complete.rfind('/')
-    if i == -1:  # it looks like 'foo'
+
+    # Problem: .. and ../.. don't complete /.
+    # TODO: Set display_pos before fixing this.
+
+    #import os
+    #to_complete = os.path.normpath(to_complete)
+
+    dirname, basename = os_path.split(to_complete)
+    if dirname == '':  # We're completing in this directory
       to_list = '.'
-      base = ''
-    elif i == 0:  # it's an absolute path to_complete like / or /b
-      to_list = '/'
-      base = '/'
-    else:
-      to_list = to_complete[:i]
-      base = to_list
-      #log('to_list %r', to_list)
+    else:  # We're completing in some other directory
+      to_list = dirname
+
+    if 0:
+      log('basename %r', basename)
+      log('to_list %r', to_list)
+      log('dirname %r', dirname)
 
     try:
       names = posix.listdir(to_list)
@@ -340,7 +346,8 @@ class FileSystemAction(CompletionAction):
       return  # nothing
 
     for name in names:
-      path = os_path.join(base, name)
+      path = os_path.join(dirname, name)
+
       if path.startswith(to_complete):
         if self.dirs_only:  # add_slash not used here
           # NOTE: There is a duplicate isdir() check later to add a trailing
