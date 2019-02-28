@@ -92,9 +92,10 @@ class FunctionsTest(unittest.TestCase):
 
 class CompletionTest(unittest.TestCase):
 
-  def _MakeComp(self, words, index, to_complete):
+  def _CompApi(self, partial_argv, index, to_complete):
     comp = completion.Api()
-    comp.Update(partial_argv=['f'], index=0, to_complete='f')
+    comp.Update(partial_argv=partial_argv, index=index,
+                to_complete=to_complete)
     return comp
 
   def testLookup(self):
@@ -119,26 +120,17 @@ class CompletionTest(unittest.TestCase):
   def testExternalCommandAction(self):
     mem = state.Mem('dummy', [], {}, None)
     a = completion.ExternalCommandAction(mem)
-    comp = self._MakeComp([], 0, 'f')
+    comp = self._CompApi([], 0, 'f')
     print(list(a.Matches(comp)))
 
     # TODO: This should set up the file system and $PATH and assert that only
     # executable files are accessed!
 
   def testFileSystemAction(self):
-    a = completion.FileSystemAction()
-    # Current dir -- all files and dirs
-    comp = self._MakeComp([], 0, '')
-    print(list(a.Matches(comp)))
+    a = completion.FileSystemAction(add_slash=True)
 
     os.system('mkdir -p /tmp/oil_comp_test')
     os.system('bash -c "touch /tmp/oil_comp_test/{one,two,three}"')
-
-    # TODO:
-    # - This no longer filters by prefix!
-    # - Should test that the executable bit works!
-
-    return
 
     # This test depends on actual file system content.  But we choose things
     # that shouldn't go away.
@@ -157,22 +149,31 @@ class CompletionTest(unittest.TestCase):
           '/tmp/oil_comp_test/one',
           '/tmp/oil_comp_test/three',
           '/tmp/oil_comp_test/two',
-          ])
+          ]),
+        ('./b', ['./bin/', './benchmarks/', './build/']),
     ]
 
     for prefix, expected in CASES:
       log('')
       log('-- PREFIX %s', prefix)
-      log('-- expected %s', expected)
-      comp = self._MakeComp([], 0, prefix)
+      comp = self._CompApi([], 0, prefix)
       self.assertEqual(expected, list(a.Matches(comp)))
 
-    comp = self._MakeComp([], 0, './o')
+    # A bunch of repos in oilshell
+    comp = completion.Api()
+    comp.Update(partial_argv=[], index=0, to_complete='../o')
     print(list(a.Matches(comp)))
 
-    # A bunch of repos in oilshell
-    comp = self._MakeComp([], 0, '../o')
-    print(list(a.Matches(comp)))
+    EXEC_ONLY_CASES = [
+        ('i', ['install'])
+    ]
+
+    a = completion.FileSystemAction(exec_only=True)
+    for prefix, expected in EXEC_ONLY_CASES:
+      log('')
+      log('-- PREFIX %s', prefix)
+      comp = self._CompApi([], 0, prefix)
+      self.assertEqual(expected, list(a.Matches(comp)))
 
   def testShellFuncExecution(self):
     arena = test_lib.MakeArena('testShellFuncExecution')
@@ -188,18 +189,18 @@ class CompletionTest(unittest.TestCase):
 
     comp_lookup = completion.Lookup()
     a = completion.ShellFuncAction(ex, func_node, comp_lookup)
-    comp = self._MakeComp(['f'], 0, 'f')
+    comp = self._CompApi(['f'], 0, 'f')
     matches = list(a.Matches(comp))
     self.assertEqual(['f1', 'f2'], matches)
 
   def testUserSpec(self):
-    comp = self._MakeComp(['f'], 0, 'f')
+    comp = self._CompApi(['f'], 0, 'f')
     matches = list(U1.Matches(comp))
     self.assertEqual([('foo.py', False), ('foo', False)], matches)
 
     predicate = completion.GlobPredicate(False, '*.py')
     c2 = completion.UserSpec([A1], [], [], predicate)
-    comp = self._MakeComp(['f'], 0, 'f')
+    comp = self._CompApi(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
     self.assertEqual([('foo.py', False)], matches)
 
