@@ -6,8 +6,8 @@ from __future__ import print_function
 
 import sys
 
-# Only for GetTerminalSize().  OSH should implement that function in C to avoid
-# dependencies.
+# Only for GetTerminalWidth().  OSH should implement that function in C to
+# avoid dependencies.
 import fcntl
 import struct
 import termios
@@ -77,18 +77,18 @@ class State(object):
     self.descriptions = {}  # completion candidate descriptions
 
 
-def GetTerminalSize():
+def GetTerminalWidth():
+  """
+  Raises:
+    IOError if stdin isn't a terminal!
+  """
   # fd 0 = stdin.  The arg has to be 4 bytes for some reason.
-  try:
-    b = fcntl.ioctl(0, termios.TIOCGWINSZ, '1234')
-  except IOError:
-    # TODO: Should dynamically fall back on MinimalDisplay?
-    return 25, 80
+  b = fcntl.ioctl(0, termios.TIOCGWINSZ, '1234')
 
   #log('%r', b)
-  cr = struct.unpack('hh', b)  # 2 short integers
+  _, width = struct.unpack('hh', b)  # 2 short integers
   #log('%s', cr)
-  return cr
+  return width
 
 
 class _IDisplay(object):
@@ -285,22 +285,22 @@ class NiceDisplay(_IDisplay):
   - Stripping off the common prefix according to OUR rules, not readline's.
   - displaying descriptions of flags and builtins
   """
-  def __init__(self, comp_state, prompt_state, debug_f, f=sys.stdout,
-               num_lines_cap=10, bold_line=False):
+  def __init__(self, term_width, comp_state, prompt_state, debug_f,
+               f=sys.stdout, num_lines_cap=10, bold_line=False):
     """
     Args:
       bold_line: Should user's entry be bold?
     """
     _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
                        debug_f)
+    self.term_width = term_width
+    self.width_is_dirty = False
 
     self.bold_line = bold_line
 
-    self.width_is_dirty = True
-    self.term_width = -1  # invalid
-
     self.num_lines_last_displayed = 0
 
+    # For debugging only, could get rid of
     self.c_count = 0
     self.m_count = 0
 
@@ -465,7 +465,13 @@ class NiceDisplay(_IDisplay):
 
   def _GetTerminalWidth(self):
     if self.width_is_dirty:
-      _, self.term_width = GetTerminalSize()
+      try:
+        self.term_width = GetTerminalWidth()
+      except IOError:
+        # This shouldn't raise IOError because we did it at startup!  Under
+        # rare circumstances stdin can change, e.g. if you do exec <&
+        # input.txt.  So we have a fallback.
+        self.term_width = 80
       self.width_is_dirty = False
     return self.term_width
 

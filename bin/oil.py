@@ -487,23 +487,29 @@ def ShellMain(lang, argv0, argv, login_shell):
     c_parser = parse_ctx.MakeOilParser(line_reader)
 
   if exec_opts.interactive:
-    # NOTE: We're using a different WordEvaluator here.
     if line_input:
+      # NOTE: We're using a different WordEvaluator here.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                            comp_ui_state, comp_ctx, debug_f)
-      if opts.completion_display == 'minimal':
-        display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
-      elif opts.completion_display == 'nice':
-        display = comp_ui.NiceDisplay(comp_ui_state, prompt_state, debug_f)
+
+      term_width = 0
+      if opts.completion_display == 'nice':
+        try:
+          term_width = comp_ui.GetTerminalWidth()
+        except IOError:  # stdin not a terminal
+          pass
+
+      if term_width != 0:
+        display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
+                                      debug_f)
       else:
-        raise AssertionError(opts.completion_display)
+        display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
       _InitReadline(line_input, history_filename, root_comp, display, debug_f)
       _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
-    else:
-      # Without readline, we have to use the minimal one.
-      # NOTE: The display callback won't be used.
+
+    else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     # This prevents Ctrl-Z from suspending OSH in interactive mode.  But we're

@@ -116,7 +116,8 @@ class UiTest(unittest.TestCase):
     prompt_state = comp_ui.PromptState()
     debug_f = util.DebugFile(sys.stdout)
 
-    d1 = comp_ui.NiceDisplay(comp_ui_state, prompt_state, debug_f, bold_line=False)
+    # terminal width
+    d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f, bold_line=False)
     d2 = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     prompt_state.SetLastPrompt('$ ')
