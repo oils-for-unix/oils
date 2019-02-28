@@ -22,6 +22,7 @@ Builtins that can be exposed:
 from __future__ import print_function
 
 import posix
+import signal
 import sys
 import time  # for perf measurement
 
@@ -504,6 +505,10 @@ def ShellMain(lang, argv0, argv, login_shell):
       # Without readline, we have to use the minimal one.
       # NOTE: The display callback won't be used.
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
+
+    # This prevents Ctrl-Z from suspending OSH in interactive mode.  But we're
+    # not getting notification via wait() that the child stopped?
+    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
