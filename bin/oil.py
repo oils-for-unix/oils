@@ -512,6 +512,12 @@ def ShellMain(lang, argv0, argv, login_shell):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
+    # NOTE: SIGINT is handled in frontend/reader.py.  It interacts with
+    # readline.
+
+    # The shell itself should ignore Ctrl-\.
+    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+
     # This prevents Ctrl-Z from suspending OSH in interactive mode.  But we're
     # not getting notification via wait() that the child stopped?
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)

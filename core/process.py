@@ -13,6 +13,7 @@ from __future__ import print_function
 import errno
 import fcntl
 import posix
+import signal
 import sys
 
 from core import util
@@ -547,6 +548,15 @@ class Process(Job):
       raise RuntimeError('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
+      # Respond to Ctrl-\ (core dump)
+      signal.signal(signal.SIGQUIT, signal.SIG_DFL)
+
+      # This doesn't make the child respond to Ctrl-Z?  Why not?  Is there
+      # something at the Python level?  signalmodule.c has PyOS_AfterFork but
+      # it seems OK.
+      # If we add it then somehow the process stop responding to Ctrl-C too.
+      #signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+
       for st in self.state_changes:
         st.Apply()
 
@@ -656,6 +666,11 @@ class Pipeline(Job):
     self.last_pipe = (r, w)  # So we can connect it to last_thunk
 
   def Start(self, waiter):
+    # TODO: pipelines should be put in their own process group with setpgid().
+    # I tried 'cat | cat' and Ctrl-C, and it works without this, probably
+    # because of SIGPIPE?  I think you will need that for Ctrl-Z, to suspend a
+    # whole pipeline.
+
     for i, proc in enumerate(self.procs):
       pid = proc.Start()
       self.pids.append(pid)
