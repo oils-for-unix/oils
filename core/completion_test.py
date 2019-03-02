@@ -129,7 +129,7 @@ class CompletionTest(unittest.TestCase):
   def testFileSystemAction(self):
     CASES = [
         # Dirs and files
-        ('c', ['core', 'configure']),
+        ('c', ['configure', 'core']),
         ('opy/doc', ['opy/doc']),
     ]
 
@@ -138,7 +138,7 @@ class CompletionTest(unittest.TestCase):
       log('')
       log('-- PREFIX %r', prefix)
       comp = self._CompApi([], 0, prefix)
-      self.assertEqual(expected, list(a.Matches(comp)))
+      self.assertEqual(expected, sorted(a.Matches(comp)))
 
     os.system('mkdir -p /tmp/oil_comp_test')
     os.system('bash -c "touch /tmp/oil_comp_test/{one,two,three}"')
@@ -147,7 +147,7 @@ class CompletionTest(unittest.TestCase):
     # that shouldn't go away.
     ADD_SLASH_CASES = [
         # Dirs and files
-        ('c', ['core/', 'configure']),
+        ('c', ['configure', 'core/']),
         ('nonexistent/', []),
         ('README', ['README.md']),
         # Directory should be completed to core/ ?
@@ -161,7 +161,7 @@ class CompletionTest(unittest.TestCase):
           '/tmp/oil_comp_test/three',
           '/tmp/oil_comp_test/two',
           ]),
-        ('./b', ['./bin/', './benchmarks/', './build/']),
+        ('./b', ['./benchmarks/', './bin/', './build/']),
     ]
 
     a = completion.FileSystemAction(add_slash=True)
@@ -169,7 +169,7 @@ class CompletionTest(unittest.TestCase):
       log('')
       log('-- PREFIX %s', prefix)
       comp = self._CompApi([], 0, prefix)
-      self.assertEqual(expected, list(a.Matches(comp)))
+      self.assertEqual(expected, sorted(a.Matches(comp)))
 
     # A bunch of repos in oilshell
     comp = completion.Api()
@@ -185,7 +185,7 @@ class CompletionTest(unittest.TestCase):
       log('')
       log('-- PREFIX %s', prefix)
       comp = self._CompApi([], 0, prefix)
-      self.assertEqual(expected, list(a.Matches(comp)))
+      self.assertEqual(expected, sorted(a.Matches(comp)))
 
   def testShellFuncExecution(self):
     arena = test_lib.MakeArena('testShellFuncExecution')
