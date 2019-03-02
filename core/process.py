@@ -550,6 +550,8 @@ class Process(Job):
     elif pid == 0:  # child
       # Respond to Ctrl-\ (core dump)
       signal.signal(signal.SIGQUIT, signal.SIG_DFL)
+      # Respond to Ctrl-C
+      signal.signal(signal.SIGINT, signal.SIG_DFL)
 
       # This doesn't make the child respond to Ctrl-Z?  Why not?  Is there
       # something at the Python level?  signalmodule.c has PyOS_AfterFork but

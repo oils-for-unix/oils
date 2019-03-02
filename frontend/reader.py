@@ -65,7 +65,6 @@ class InteractiveLineReader(_Reader):
     #sys.stderr.write(self.prompt_str)
 
     signal.signal(signal.SIGINT, self.orig_handler)  # raise KeyboardInterrupt
-
     try:
       line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
@@ -83,7 +82,7 @@ class InteractiveLineReader(_Reader):
       # When we're not waiting for input, ignore Ctrl-C so we don't get
       # KeyboardInterrupt in weird places.  NOTE: This can't be SIG_IGN,
       # because that affects the child process.
-      signal.signal(signal.SIGINT, _DoNothing)
+      signal.signal(signal.SIGINT, signal.SIG_IGN)
       # TODO: Should we restore the user-registered handler?
 
     # Add the line if it's not EOL, the same as the previous line, and we have
