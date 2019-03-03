@@ -488,6 +488,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   else:
     c_parser = parse_ctx.MakeOilParser(line_reader)
 
+  # NOTE: SIGINT is temporarily enabled during readline() by
+  # frontend/reader.py.
+  # It's treated differently than SIGQUIT and SIGTSTP because Python handles it
+  # with KeyboardInterrupt.  We don't want KeyboardInterrupt at arbitrary
+  # points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then Ctrl-C)
+  signal.signal(signal.SIGINT, signal.SIG_IGN)
+
   if exec_opts.interactive:
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
@@ -513,10 +520,6 @@ def ShellMain(lang, argv0, argv, login_shell):
 
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
-
-    # NOTE: SIGINT is temporarily enabled during readline() by
-    # frontend/reader.py.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     # The shell itself should ignore Ctrl-\.
     signal.signal(signal.SIGQUIT, signal.SIG_IGN)
