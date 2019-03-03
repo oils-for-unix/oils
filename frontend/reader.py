@@ -85,10 +85,10 @@ class InteractiveLineReader(_Reader):
       signal.signal(signal.SIGINT, signal.SIG_IGN)
       # TODO: Should we restore the user-registered handler?
 
-    # Add the line if it's not EOL, the same as the previous line, and we have
-    # line_input.
-    if (line is not None and line != self.prev_line and
-        self.line_input is not None):
+    # Add the line if it's not EOL, not whitespace-only, not the same as the
+    # previous line, and we have line_input.
+    if (line is not None and line.strip() and 
+        line != self.prev_line and self.line_input is not None):
       self.line_input.add_history(line.rstrip())  # no trailing newlines
       self.prev_line = line
 
