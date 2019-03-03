@@ -6,6 +6,7 @@
 #include <stdio.h>  // printf
 #include <limits.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 
 // Enable GNU extensions in fnmatch.h.
 // TODO: Need a configure option for this.
@@ -355,7 +356,7 @@ func_print_time(PyObject *self, PyObject *args) {
 // A copy of socket.gethostname() from socketmodule.c.  That module brings in
 // too many dependencies.
 
-static PyObject *socket_error;
+static PyObject *errno_error;
 
 static PyObject *
 socket_gethostname(PyObject *self, PyObject *unused)
@@ -367,10 +368,21 @@ socket_gethostname(PyObject *self, PyObject *unused)
     //res = gethostname(buf, 0);  // For testing errors
     Py_END_ALLOW_THREADS
     if (res < 0)
-        return PyErr_SetFromErrno(socket_error);
+        return PyErr_SetFromErrno(errno_error);
     buf[sizeof buf - 1] = '\0';
     return PyString_FromString(buf);
 }
+
+static PyObject *
+func_get_terminal_width(PyObject *self, PyObject *unused) {
+  struct winsize w;
+  int res;
+  res = ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  if (res < 0)
+    return PyErr_SetFromErrno(errno_error);
+  return PyLong_FromLong(w.ws_col);
+}
+
 
 #ifdef OVM_MAIN
 #include "native/libc.c/methods.def"
@@ -403,12 +415,15 @@ static PyMethodDef methods[] = {
   {"print_time", func_print_time, METH_VARARGS, ""},
 
   {"gethostname", socket_gethostname, METH_NOARGS, ""},
+
+  // ioctl() to get the terminal width.
+  {"get_terminal_width", func_get_terminal_width, METH_NOARGS, ""},
   {NULL, NULL},
 };
 #endif
 
 void initlibc(void) {
   Py_InitModule("libc", methods);
-  socket_error = PyErr_NewException("socket.error",
+  errno_error = PyErr_NewException("libc.error",
                                     PyExc_IOError, NULL);
 }

@@ -114,7 +114,7 @@ extract-methods() {
     for (name in found) {
       num_found++;
     }
-    printf("extract-defs.awk: Found definitions in %d out of %d files\n",
+    printf("extract-methods.awk: Found definitions in %d out of %d files\n",
            num_found, ARGC) > "/dev/stderr";
   }
   ' "$@"

@@ -6,13 +6,7 @@ from __future__ import print_function
 
 import sys
 
-# Only for GetTerminalWidth().  OSH should implement that function in C to
-# avoid dependencies.
-import fcntl
-import struct
-import termios
-
-import traceback
+import libc
 
 
 _RESET = '\033[0;0m'
@@ -35,20 +29,6 @@ PROMPT_BOLD = '\x01%s\x02' % _BOLD
 PROMPT_RESET = '\x01%s\x02' % _RESET
 PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
 PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
-
-
-if 0:
-  DEBUG_F = open('_tmp/demo-debug', 'w')
-else:
-  DEBUG_F = open('/dev/null', 'w')
-
-
-def log(msg, *args, **kwargs):
-  if args:
-    msg = msg % args
-  f = kwargs.get('file', sys.stderr)
-  print(msg, file=f)
-  f.flush()
 
 
 class PromptState(object):
@@ -77,20 +57,6 @@ class State(object):
     self.descriptions = {}  # completion candidate descriptions
 
 
-def GetTerminalWidth():
-  """
-  Raises:
-    IOError if stdin isn't a terminal!
-  """
-  # fd 0 = stdin.  The arg has to be 4 bytes for some reason.
-  b = fcntl.ioctl(0, termios.TIOCGWINSZ, '1234')
-
-  #log('%r', b)
-  _, width = struct.unpack('hh', b)  # 2 short integers
-  #log('%s', cr)
-  return width
-
-
 class _IDisplay(object):
   """Interface for completion displays."""
 
@@ -105,6 +71,7 @@ class _IDisplay(object):
     try:
       self._PrintCandidates(*args)
     except Exception as e:
+      import traceback
       traceback.print_exc()
 
   def Reset(self):
@@ -341,7 +308,7 @@ class NiceDisplay(_IDisplay):
     self.f.write('\n')
 
     self.EraseLines()  # Delete previous completions!
-    log('_PrintCandidates %r', unused_subst, file=DEBUG_F)
+    #log('_PrintCandidates %r', unused_subst, file=DEBUG_F)
 
     # Figure out if the user hit TAB multiple times to show more matches.
     # It's not correct to hash the line itself, because two different lines can
@@ -402,7 +369,7 @@ class NiceDisplay(_IDisplay):
     self.f.write('\n')
 
     self.EraseLines()
-    log('PrintOptional %r', msg, file=DEBUG_F)
+    #log('PrintOptional %r', msg, file=DEBUG_F)
 
     # Truncate to terminal width
     max_len = self._GetTerminalWidth() - 2
@@ -448,8 +415,8 @@ class NiceDisplay(_IDisplay):
 
     n = self.num_lines_last_displayed
 
-    log('EraseLines %d (c = %d, m = %d)', n, self.c_count, self.m_count,
-        file=DEBUG_F)
+    #log('EraseLines %d (c = %d, m = %d)', n, self.c_count, self.m_count,
+    #    file=DEBUG_F)
 
     if n == 0:
       return
@@ -466,7 +433,7 @@ class NiceDisplay(_IDisplay):
   def _GetTerminalWidth(self):
     if self.width_is_dirty:
       try:
-        self.term_width = GetTerminalWidth()
+        self.term_width = libc.get_terminal_width()
       except IOError:
         # This shouldn't raise IOError because we did it at startup!  Under
         # rare circumstances stdin can change, e.g. if you do exec <&

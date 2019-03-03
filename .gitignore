@@ -2,6 +2,7 @@
 *.pyc
 tags
 .vagrant
+.mypy_cache/
 _chroot/
 _tmp/
 _bin/
@@ -12,5 +13,6 @@ _deps/
 _release/
 libc.so
 fastlex.so
+line_input.so
 # Python build support
 build/temp.*

@@ -11,5 +11,7 @@ static PyMethodDef readline_methods[] = {
   {"get_begidx", get_begidx, METH_NOARGS},
   {"get_endidx", get_endidx, METH_NOARGS},
   {"set_completer_delims", set_completer_delims, METH_VARARGS},
+  {"add_history", py_add_history, METH_VARARGS},
+  {"set_completion_display_matches_hook", set_completion_display_matches_hook, METH_VARARGS},
   {0},
 };

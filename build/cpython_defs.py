@@ -18,7 +18,7 @@ C_DEF = [
   R(r'[ \t\n]+', 'Whitespace'),
 
   # This could be more space-insensitive.
-  R(r'static.*PyMethodDef (.*)\[\] = ', 'BeginDef'),
+  R(r'static.*PyMethodDef (.*)\[\]\s*=\s*', 'BeginDef'),
   C(r'{', 'LBrace'),
   C(r'}', 'RBrace'),
   C(r',', 'Comma'),
@@ -64,8 +64,8 @@ class Lexer(object):
             'no token matched at position %r: %r' % ( pos, s[pos]))
 
       if id_ != 'Whitespace':
-        yield id_, s[start:end]
-    yield 'EOF', ''
+        yield id_, s[start:end], pos
+    yield 'EOF', '', -1
 
 
 class Parser(object):
@@ -77,7 +77,7 @@ class Parser(object):
 
   def Next(self):
     while True:
-      self.tok_id, self.tok_val = self.tokens.next()
+      self.tok_id, self.tok_val, self.pos = self.tokens.next()
       if self.tok_id not in ('Comment', 'Whitespace'):
         break
     if 0:
@@ -85,7 +85,10 @@ class Parser(object):
 
   def Eat(self, tok_id):
     if self.tok_id != tok_id:
-      raise RuntimeError('Expected %r, got %r' % (tok_id, self.tok_id))
+      raise RuntimeError(
+          'Expected %r, got %r %r (byte offset %d)' %
+          (tok_id, self.tok_id, self.tok_val, self.pos))
+
     self.Next()
 
   def ParseName(self):
@@ -391,7 +394,7 @@ def main(argv):
 
   if action == 'lex':  # for debugging
     while True:
-      id_, value = tokens.next()
+      id_, value, pos = tokens.next()
       print('%s\t%r' % (id_, value))
       if id_ == 'EOF':
         break

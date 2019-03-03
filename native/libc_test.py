@@ -168,6 +168,14 @@ class LibcTest(unittest.TestCase):
   def testGethostname(self):
     print(libc.gethostname())
 
+  def testGetTerminalWidth(self):
+    try:
+      width = libc.get_terminal_width()
+    except IOError as e:
+      print('error getting terminal width: %s' % e)
+    else:
+      print('width % d' % width)
+
 
 if __name__ == '__main__':
   unittest.main()

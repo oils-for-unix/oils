@@ -59,6 +59,8 @@ from core import ui
 from core import util
 from core.meta import runtime_asdl
 
+from oil_lang import cmd_exec as oil_cmd_exec
+
 from osh import builtin
 from osh import builtin_comp
 from osh import cmd_exec
@@ -75,11 +77,11 @@ from frontend import parse_lib
 
 from pylib import os_path
 
-from oil_lang import cmd_exec as oil_cmd_exec
-
 from tools import deps
 from tools import osh2oil
 from tools import readlink
+
+import libc
 
 value_e = runtime_asdl.value_e
 builtin_e = runtime_asdl.builtin_e
@@ -496,7 +498,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       term_width = 0
       if opts.completion_display == 'nice':
         try:
-          term_width = comp_ui.GetTerminalWidth()
+          term_width = libc.get_terminal_width()
         except IOError:  # stdin not a terminal
           pass
 

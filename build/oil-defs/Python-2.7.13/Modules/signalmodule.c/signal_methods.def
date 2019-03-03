@@ -2,6 +2,7 @@
 
 static PyMethodDef signal_methods[] = {
   {"signal", signal_signal, METH_VARARGS},
+  {"getsignal", signal_getsignal, METH_VARARGS},
   {"default_int_handler", signal_default_int_handler, METH_VARARGS},
   {0},
 };
