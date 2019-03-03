@@ -7,6 +7,7 @@ static PyMethodDef mapp_methods[] = {
   {"items", (PyCFunction)dict_items, METH_NOARGS},
   {"values", (PyCFunction)dict_values, METH_NOARGS},
   {"update", (PyCFunction)dict_update, METH_VARARGS | METH_KEYWORDS},
+  {"clear", (PyCFunction)dict_clear, METH_NOARGS},
   {"itervalues", (PyCFunction)dict_itervalues, METH_NOARGS},
   {"iteritems", (PyCFunction)dict_iteritems, METH_NOARGS},
   {0},

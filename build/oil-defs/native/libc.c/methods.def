@@ -8,5 +8,6 @@ static PyMethodDef methods[] = {
   {"regex_first_group_match", func_regex_first_group_match, METH_VARARGS},
   {"print_time", func_print_time, METH_VARARGS},
   {"gethostname", socket_gethostname, METH_NOARGS},
+  {"get_terminal_width", func_get_terminal_width, METH_NOARGS},
   {0},
 };
