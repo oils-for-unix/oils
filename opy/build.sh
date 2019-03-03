@@ -121,7 +121,7 @@ _fill-oil-tree() {
   # For help text.
   cp -v ../_devbuild/osh-quick-ref/* $dir/_devbuild/osh-quick-ref
 
-  cp -v ../asdl/demo.asdl $dir/asdl
+  cp -v ../asdl/*.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
   ln -v -s -f $PWD/../oil-version.txt $dir
 
