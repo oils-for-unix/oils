@@ -97,18 +97,22 @@ class LineLexer(object):
     return syntax.token(tok_type, tok_val, const.NO_INTEGER)
 
   def Read(self, lex_mode):
-    tok_type, end_pos = self.match_func(lex_mode, self.line, self.line_pos)
+    # Inner loop optimization
+    line = self.line
+    line_pos = self.line_pos
+
+    tok_type, end_pos = self.match_func(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
       return syntax.token(tok_type, '', const.NO_INTEGER)
 
-    tok_val = self.line[self.line_pos:end_pos]
+    tok_val = line[line_pos:end_pos]
 
     # NOTE: tok_val is redundant, but even in osh.asdl we have some separation
     # between data needed for formatting and data needed for execution.  Could
     # revisit this later.
 
     # TODO: Add this back once arena is threaded everywhere
-    line_span = syntax.line_span(self.line_id, self.line_pos, len(tok_val))
+    line_span = syntax.line_span(self.line_id, line_pos, len(tok_val))
 
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
     # want it to be "low level".  The only thing fabricated here is a newline

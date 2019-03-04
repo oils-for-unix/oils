@@ -116,16 +116,16 @@ class _CompoundAST(AST):
     def __init__(self, fields):
         self.fields = fields or []
 
-        # Add fake spids field.
-        # TODO: Only do this if 'attributes' are set.
-        if self.fields:
-          self.fields.append(Field('int', 'spids', seq=True))
-
 
 class Constructor(_CompoundAST):
     def __init__(self, name, fields=None):
         _CompoundAST.__init__(self, fields)
         self.name = name
+
+        # Add fake spids field.
+        # TODO: Only do this if 'attributes' are set.
+        if self.fields:
+          self.fields.append(Field('int', 'spids', seq=True))
 
     def Print(self, f, indent):
         ind = indent * '  '

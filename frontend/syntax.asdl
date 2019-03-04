@@ -146,12 +146,12 @@ module syntax
            )
 
   assign_op = Equal | PlusEqual
-  assign_pair = (lhs_expr lhs, assign_op op, word? rhs)
-  env_pair = (string name, word val)
+  assign_pair = (lhs_expr lhs, assign_op op, word? rhs, int* spids)
+  env_pair = (string name, word val, int* spids)
 
   -- Each arm tests one word against multiple words
-  case_arm = (word* pat_list, command* action)
-  if_arm = (command* cond, command* action)
+  case_arm = (word* pat_list, command* action, int* spids)
+  if_arm = (command* cond, command* action, int* spids)
 
   iterable = 
     IterArgv
