@@ -142,7 +142,7 @@ PS1='\h '
 test "${PS1@P}" = "$(hostname -s) "  # short name
 echo status=$?
 PS1='\H '
-test "${PS1@P}" = "$(hostname -f) "  # fully qualified
+test "${PS1@P}" = "$(hostname) "
 echo status=$?
 ## STDOUT:
 status=0
