@@ -11,8 +11,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+export PYTHONPATH='.:vendor'
+
 readonly BIGGEST=benchmarks/testdata/configure-coreutils
+readonly GIT_COMPLETION=testdata/completion/git
+readonly OSH_COMPLETION=../bash-completion/osh_completion
 readonly ABUILD=benchmarks/testdata/abuild
+
 readonly -a RUN_ABUILD=(bin/oil.py osh $ABUILD -h)
 # Slightly faster but not significantly.
 #readonly -a RUN_ABUILD=(_bin/osh $ABUILD -h)
@@ -27,8 +32,16 @@ time-bash-run-abuild() { time bash $ABUILD -h; }
 # Old: ~2.7 seconds (no tracing)
 # 2017/11/27, After ASDL optimization: 0.72 seconds.
 time-run-abuild() { time "${RUN_ABUILD[@]}"; }
+
+# ~250 ms
 time-parse-abuild() { time "${OSH_PARSE[@]}" $ABUILD; }
 
+# ~160 ms
+time-parse-git-completion() { time "${OSH_PARSE[@]}" $GIT_COMPLETION; }
+# ~150 ms
+time-parse-osh-completion() { time "${OSH_PARSE[@]}" $OSH_COMPLETION; }
+
+# 4.3 seconds on lisa
 time-parse-biggest() { time "${OSH_PARSE[@]}" $BIGGEST; }
 
 _cprofile() {
@@ -37,7 +50,7 @@ _cprofile() {
   time python -m cProfile -o $out "$@"
 }
 
-# 3.8 seconds.  So less than 2x overhead.
+# Takes about 380 ms.
 cprofile-osh-parse() {
   local in=${1:-$ABUILD}
   local out=${2:-abuild.cprofile}

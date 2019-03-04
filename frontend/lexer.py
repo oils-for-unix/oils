@@ -29,7 +29,6 @@ def R(pat, tok_type):
 
 class LineLexer(object):
   def __init__(self, match_func, line, arena):
-    # Compile all regexes
     self.match_func = match_func
     self.arena = arena
 
@@ -61,7 +60,6 @@ class LineLexer(object):
       return True
 
   def GetSpanIdForEof(self):
-    assert self.arena, self.arena  # This is mandatory now?
     # zero length is special!
     line_span = syntax.line_span(self.line_id, self.line_pos, 0)
     return self.arena.AddLineSpan(line_span)
@@ -77,9 +75,10 @@ class LineLexer(object):
       lex_mode_e.Outer
     """
     pos = self.line_pos
+    n = len(self.line)
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
     while True:
-      if pos == len(self.line):
+      if pos == n:
         # We don't allow lookahead while already at end of line, because it
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
@@ -98,9 +97,7 @@ class LineLexer(object):
     return syntax.token(tok_type, tok_val, const.NO_INTEGER)
 
   def Read(self, lex_mode):
-    #assert self.line_pos <= len(self.line), (self.line, self.line_pos)
     tok_type, end_pos = self.match_func(lex_mode, self.line, self.line_pos)
-    #assert end_pos <= len(self.line)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
       return syntax.token(tok_type, '', const.NO_INTEGER)
 
@@ -111,7 +108,6 @@ class LineLexer(object):
     # revisit this later.
 
     # TODO: Add this back once arena is threaded everywhere
-    #assert self.line_id != -1
     line_span = syntax.line_span(self.line_id, self.line_pos, len(tok_val))
 
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we

@@ -118,7 +118,6 @@ class WordParser(object):
 
     w = self._ReadCompoundWord(lex_mode=arg_lex_mode, eof_type=eof_type,
                                empty_ok=empty_ok)
-    assert w is not None
 
     # This is for "${s:-}", ${s/a//}, etc.  It is analogous to
     # LooksLikeAssignment where we turn x= into x=''.  It has the same
@@ -247,7 +246,6 @@ class WordParser(object):
     self._Peek()  # Check for []
     if self.token_type == Id.VOp2_LBracket:
       bracket_op = self._ReadSubscript()
-      assert bracket_op is not None
     else:
       bracket_op = None
 
@@ -260,7 +258,6 @@ class WordParser(object):
     Start parsing at the op -- we already skipped past the name.
     """
     part = self._ParseVarOf()
-    assert part is not None
 
     self._Peek()
     if self.token_type == Id.Right_VarSub:
@@ -296,14 +293,12 @@ class WordParser(object):
       if self.token_type == Id.VOp2_Slash:
         op_spid = self.cur_token.span_id  # for attributing error to /
         op = self._ReadPatSubVarOp(arg_lex_mode)
-        assert op is not None
         op.spids.append(op_spid)
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
 
       elif self.token_type == Id.VOp2_Colon:
         op = self._ReadSliceVarOp()
-        assert op is not None
         # NOTE: } in arithmetic mode.
         if self.token_type != Id.Arith_RBrace:
           # Token seems off; doesn't point to X in # ${a:1:2 X
@@ -744,7 +739,6 @@ class WordParser(object):
     # calls self.ReadWord(lex_mode_e.Arith)
     a_parser = tdop.TdopParser(arith_parse.SPEC, self)
     anode = a_parser.Parse()
-    assert anode is not None
     return anode  # could be None
 
   def _ReadArithSubPart(self):
@@ -884,7 +878,6 @@ class WordParser(object):
     words = []
     while True:
       w = w_parser.ReadWord(lex_mode_e.Outer)
-      assert w is not None
 
       if w.tag == word_e.TokenWord:
         word_id = word.CommandId(w)
@@ -918,8 +911,9 @@ class WordParser(object):
     num_parts = 0
     done = False
     while not done:
-      allow_done = empty_ok or num_parts != 0
       self._Peek()
+
+      allow_done = empty_ok or num_parts != 0
       if allow_done and self.token_type == eof_type:
         done = True  # e.g. for ${foo//pat/replace}
 
@@ -931,7 +925,6 @@ class WordParser(object):
           part = word_part.EscapedLiteralPart(self.cur_token)
         else:
           part = word_part.LiteralPart(self.cur_token)
-          #part.xspans.append(self.cur_token.span_id)
 
         word.parts.append(part)
 
@@ -940,7 +933,6 @@ class WordParser(object):
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
-            assert part2 is not None
             word.parts.append(part2)
 
       elif self.token_kind == Kind.VSub:
@@ -949,12 +941,10 @@ class WordParser(object):
 
       elif self.token_kind == Kind.ExtGlob:
         part = self._ReadExtGlobPart()
-        assert part is not None
         word.parts.append(part)
 
       elif self.token_kind == Kind.Left:
         part = self._ReadLeftParts()
-        assert part is not None
         word.parts.append(part)
 
       # NOT done yet, will advance below
@@ -1095,7 +1085,6 @@ class WordParser(object):
 
       else:
         w = self._ReadCompoundWord(lex_mode=lex_mode)
-        assert w is not None
         return w, False
 
     else:
@@ -1137,7 +1126,6 @@ class WordParser(object):
       if not need_more:
         break
 
-    assert w is not None, w
     self.cursor = w
 
     # TODO: Do consolidation of newlines in the lexer?
