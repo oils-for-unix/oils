@@ -15,7 +15,7 @@ from core.meta import Id
 from core.meta import syntax_asdl as syntax
 from core.alloc import Arena
 
-from frontend.reader import FileLineReader
+from frontend.reader import _Reader
 
 from typing import Callable, List, Tuple
 
@@ -153,7 +153,7 @@ class Lexer(object):
   returning them in a stream.
   """
   def __init__(self, line_lexer, line_reader):
-    # type: (LineLexer, FileLineReader) -> None
+    # type: (LineLexer, _Reader) -> None
     """
     Args:
       line_lexer: Underlying object to get tokens from

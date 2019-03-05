@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     loader = unittest.TestLoader()
     #modules = [lex_test, lexer_test]
-    modules = [word_parse_test]
+    modules = [cmd_parse_test, word_parse_test]
     suites = [loader.loadTestsFromModule(m) for m in modules]
 
     suite = unittest.TestSuite()

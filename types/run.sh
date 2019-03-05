@@ -88,8 +88,9 @@ apply-types() {
   local -a files=(
     frontend/lexer.py frontend/match.py frontend/reader.py core/alloc.py
     core/meta.py )
-
   local -a files=(osh/word.py) # osh/word_parse.py)
+
+  local -a files=(frontend/parse_lib.py)
 
   pyann-patched --type-info type_info.json "${files[@]}" "$@"
 }

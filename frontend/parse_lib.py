@@ -15,16 +15,28 @@ from osh import word_parse
 
 from oil_lang import cmd_parse as oil_cmd_parse
 
+from core.alloc import Arena
+from frontend.lexer import Lexer
+from frontend.reader import _Reader
+from osh.word_parse import WordParser
+from osh.cmd_parse import CommandParser
+from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.syntax_asdl import (
+    token, word_t, redir_t, word__CompoundWord
+)
+from typing import List, Tuple, Dict, Optional
+
 lex_mode_e = types_asdl.lex_mode_e
 
 
 class _BaseTrail(object):
 
   def __init__(self):
+    # type: () -> None
     # word from a partially completed command.
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
-    self.words = []
-    self.redirects = []
+    self.words = []  # type: List[word_t]
+    self.redirects = []  # type: List[redir_t]
     # TODO: We should maintain the LST invariant and have a single list, but
     # that I ran into the "cases classes are better than variants" problem.
 
@@ -37,9 +49,9 @@ class _BaseTrail(object):
     # This could complete $foo.
     # Problem: readline doesn't even allow that, because it spans more than one
     # line!
-    self.tokens = []
+    self.tokens = []  # type: List[token]
 
-    self.alias_words = []  # words INSIDE an alias expansion
+    self.alias_words = []  # type: List[word_t]  # words INSIDE an alias expansion
     self.expanding_alias = False
 
   def PrintDebugString(self, debug_f):
@@ -75,9 +87,11 @@ class _NullTrail(_BaseTrail):
     pass
 
   def SetLatestWords(self, words, redirects):
+    # type: (List[word__CompoundWord], List) -> None
     pass
 
   def AppendToken(self, token):
+    # type: (token) -> None
     pass
 
   def BeginAliasExpansion(self):
@@ -140,6 +154,7 @@ class ParseContext(object):
   """
 
   def __init__(self, arena, aliases, trail=None, one_pass_parse=False):
+    # type: (Arena, Dict, Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.aliases = aliases
     # Completion state lives here since it may span multiple parsers.
@@ -147,6 +162,7 @@ class ParseContext(object):
     self.one_pass_parse = one_pass_parse
 
   def _MakeLexer(self, line_reader, arena=None):
+    # type: (_Reader, Optional[Arena]) -> Lexer
     """Helper function.
 
     TODO: should we combine the LineLexer and Lexer?  And the matcher?
@@ -156,6 +172,7 @@ class ParseContext(object):
 
   def MakeOshParser(self, line_reader, emit_comp_dummy=False,
                     aliases_in_flight=None):
+    # type: (_Reader, bool, Optional[List[Tuple[str, int]]]) -> CommandParser
     lx = self._MakeLexer(line_reader)
     if emit_comp_dummy:
       lx.EmitCompDummy()  # A special token before EOF!
@@ -171,6 +188,7 @@ class ParseContext(object):
     return c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):
+    # type: (_Reader) -> WordParser
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
@@ -188,6 +206,7 @@ class ParseContext(object):
     return a_parser
 
   def MakeParserForCommandSub(self, line_reader, lexer, eof_id):
+    # type: (_Reader, Lexer, Id_t) -> CommandParser
     """To parse command sub, we want a fresh word parser state.
 
     It's a new instance based on same lexer and arena.

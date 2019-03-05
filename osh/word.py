@@ -7,12 +7,7 @@ from asdl import const
 from core import util
 from core.meta import syntax_asdl, Id, Kind, LookupKind
 
-from typing import Any
-from typing import Tuple
-from typing import Union
-from typing import Optional
-from typing import List
-
+from typing import Tuple, Optional, List
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import word_t, word_part_t, token
 from _devbuild.gen.syntax_asdl import (
