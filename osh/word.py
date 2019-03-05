@@ -573,10 +573,11 @@ def CommandId(node):
 
 def CommandKind(w):
   # type: (word_t) -> Kind_t
+  """The CommandKind is for coarse-grained decisions in the CommandParser."""
   if isinstance(w, word__TokenWord):
     return LookupKind(w.token.id)
 
-  # NOTE: This is a bit inconsistent with CommandId, because we never retur
+  # NOTE: This is a bit inconsistent with CommandId, because we never return
   # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.
   return Kind.Word
 

@@ -27,11 +27,13 @@ log = util.log
 
 
 def C(pat, tok_type):
+  # type: (str, Id_t) -> Tuple[bool, str, Id_t]
   """ Create a constant mapping like C('$*', VSub_Star) """
   return (False, pat, tok_type)
 
 
 def R(pat, tok_type):
+  # type: (str, Id_t) -> Tuple[bool, str, Id_t]
   """ Create a constant mapping like C('$*', VSub_Star) """
   return (True, pat, tok_type)
 

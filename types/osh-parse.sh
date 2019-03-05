@@ -43,7 +43,7 @@ typecheck() {
 check-some() {
   local flags='--no-implicit-optional --no-strict-optional'
   #local flags='--strict'
-  #flags='--strict --no-implicit-optional --no-strict-optional'
+  #local flags='--strict --no-implicit-optional --no-strict-optional'
 
   # Somehow MyPy crashes on all files?
   # It doesn't like __future__.py, but that's ok!

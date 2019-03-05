@@ -25,7 +25,7 @@ from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
     token, word_t, redir_t, word__CompoundWord
 )
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
 
 lex_mode_e = types_asdl.lex_mode_e
 
@@ -154,6 +154,9 @@ class Trail(_BaseTrail):
     self.expanding_alias = False
 
 
+if TYPE_CHECKING:
+  AliasesInFlight = List[Tuple[str, int]]
+
 class ParseContext(object):
   """Context shared between the mutually recursive Command and Word parsers.
 
@@ -179,7 +182,7 @@ class ParseContext(object):
 
   def MakeOshParser(self, line_reader, emit_comp_dummy=False,
                     aliases_in_flight=None):
-    # type: (_Reader, bool, Optional[List[Tuple[str, int]]]) -> CommandParser
+    # type: (_Reader, bool, Optional[AliasesInFlight]) -> CommandParser
     lx = self._MakeLexer(line_reader)
     if emit_comp_dummy:
       lx.EmitCompDummy()  # A special token before EOF!
