@@ -110,6 +110,7 @@ def _MatchEchoToken_Fast(line, start_pos):
   return IdInstance(tok_type), end_pos
 
 def _MatchGlobToken_Fast(line, start_pos):
+  # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
   return IdInstance(tok_type), end_pos

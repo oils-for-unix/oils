@@ -48,6 +48,7 @@ class Arena(object):
     self.src_paths.append(src_path)
 
   def PopSource(self):
+    # type: () -> None
     self.src_paths.pop()
 
   def AddLine(self, line, line_num):
@@ -67,6 +68,7 @@ class Arena(object):
     return line_id
 
   def GetLine(self, line_id):
+    # type: (int) -> str
     """
     Given an line ID, return the actual filename, physical line number, and
     line contents.
@@ -86,6 +88,7 @@ class Arena(object):
     return span_id
 
   def GetLineSpan(self, span_id):
+    # type: (int) -> line_span
     assert span_id != const.NO_INTEGER, span_id
     try:
       return self.spans[span_id]
@@ -99,6 +102,7 @@ class Arena(object):
     return len(self.spans)
 
   def GetDebugInfo(self, line_id):
+    # type: (int) -> Tuple[str, int]
     """Get the path and physical line number, for parse errors."""
     assert line_id != const.NO_INTEGER, line_id
     path, line_num = self.debug_info[line_id]
@@ -108,6 +112,7 @@ class Arena(object):
 # TODO: Remove this.  There are many sources of code, and they are hard to
 # divide strictly into arenas.
 def SideArena(source_name):
+  # type: (str) -> Arena
   """A new arena outside the main one.
   
   For completion, $PS1 and $PS4, a[x++]=1, etc.

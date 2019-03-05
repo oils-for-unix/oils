@@ -56,11 +56,9 @@ from osh import arith_parse
 from osh import braces
 from osh import word
 
+from typing import List, Optional, Tuple, cast
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-  from typing import List, Optional, Tuple, cast
-
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
   from frontend.reader import _Reader

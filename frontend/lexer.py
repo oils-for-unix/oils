@@ -59,6 +59,7 @@ class LineLexer(object):
     self.line_pos = line_pos
 
   def MaybeUnreadOne(self):
+    # type: () -> bool
     """Return True if we can unread one character, or False otherwise.
 
     NOTE: Only call this when you know the last token was exactly on character!
@@ -173,6 +174,7 @@ class Lexer(object):
     return self.line_lexer.line
 
   def MaybeUnreadOne(self):
+    # type: () -> bool
     return self.line_lexer.MaybeUnreadOne()
 
   def LookAhead(self, lex_mode):

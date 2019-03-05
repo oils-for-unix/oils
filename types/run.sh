@@ -66,6 +66,11 @@ iter-arith-asdl() {
   echo
 }
 
+# Alias for convenience
+check-osh-parse() {
+  types/osh-parse.sh check-some
+}
+
 collect-types() {
   export PYTHONPATH=".:$PYANN_REPO"
   types/pyann_driver.py "$@"
@@ -80,20 +85,19 @@ peek-type-info() {
 
 apply-types() {
   #local -a files=( asdl/tdop.py asdl/typed_arith_parse*.py )
-  #local -a files=( asdl/unit_test_types.py )
-  #local -a files=( unit_test_types.py )
 
   #local -a files=( core/util.py asdl/runtime.py )
   #local -a files=(asdl/format.py )
-  local -a files=(
-    frontend/lexer.py frontend/match.py frontend/reader.py core/alloc.py
-    core/meta.py )
-  local -a files=(osh/word.py) # osh/word_parse.py)
+  #local -a files=(
+  #  frontend/lexer.py frontend/match.py frontend/reader.py core/alloc.py
+  #  core/meta.py )
+  #local -a files=(osh/word.py)
 
-  local -a files=(frontend/parse_lib.py)
-  local -a files=(frontend/tdop.py osh/arith_parse.py)
-  local -a files=(osh/bool_parse.py)
-  local -a files=(osh/word_parse.py)
+  #local -a files=(frontend/parse_lib.py)
+  #local -a files=(frontend/tdop.py osh/arith_parse.py)
+  #local -a files=(osh/bool_parse.py)
+  #local -a files=(osh/word_parse.py)
+  local -a files=(osh/cmd_parse.py)
 
   pyann-patched --type-info type_info.json "${files[@]}" "$@"
 }

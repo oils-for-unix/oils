@@ -13,6 +13,7 @@ import cStringIO
 import signal
 from core.alloc import Arena
 from typing import Optional, Tuple, IO
+from typing import List
 
 
 class _Reader(object):
@@ -155,6 +156,7 @@ class VirtualLineReader(_Reader):
   """
 
   def __init__(self, lines, arena):
+    # type: (List[Tuple[int, str, int]], Arena) -> None
     """
     Args:
       lines: List of (line_id, line) pairs
@@ -165,6 +167,7 @@ class VirtualLineReader(_Reader):
     self.pos = 0
 
   def GetLine(self):
+    # type: () -> Tuple[int, Optional[str], int]
     if self.pos == self.num_lines:
       return -1, None, 0
     line_id, line, start_offset = self.lines[self.pos]

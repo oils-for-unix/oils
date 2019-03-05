@@ -21,7 +21,7 @@ from pylib import os_path
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 
-from typing import NoReturn
+from typing import IO, NoReturn, Any
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -34,6 +34,7 @@ READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 class HistoryError(Exception):
 
   def __init__(self, msg, *args):
+    # type: (str, *str) -> None
     Exception.__init__(self)
     self.msg = msg
     self.args = args
@@ -53,6 +54,7 @@ class _ErrorWithLocation(Exception):
   Formatting is in ui.PrintError.
   """
   def __init__(self, msg, *args, **kwargs):
+    # type: (str, *str, **Any) -> None
     Exception.__init__(self)
     self.msg = msg
     self.args = args
@@ -67,14 +69,17 @@ class _ErrorWithLocation(Exception):
       raise AssertionError('Invalid keyword args %s' % kwargs)
 
   def __repr__(self):
+    # type: () -> str
     return '<%s %s %r %r %s>' % (
         self.msg, self.args, self.token, self.word, self.exit_status)
 
   def __str__(self):
+    # type: () -> str
     # The default doesn't work very well?
     return repr(self)
 
   def UserErrorString(self):
+    # type: () -> str
     return self.msg % self.args
 
 
@@ -128,11 +133,13 @@ def p_die(msg, *args, **kwargs):
 
 
 def e_die(msg, *args, **kwargs):
+  # type: (str, *str, **Any) -> NoReturn
   """Convenience wrapper for runtime errors."""
   raise FatalRuntimeError(msg, *args, **kwargs)
 
 
 def log(msg, *args):
+  # type: (str, *Any) -> None
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
@@ -153,6 +160,7 @@ def error(msg, *args):
 
 
 def BackslashEscape(s, meta_chars):
+  # type: (str, str) -> str
   """Escaped certain characters with backslashes.
 
   Used for shell syntax (i.e. quoting completed filenames), globs, and EREs.
@@ -166,6 +174,7 @@ def BackslashEscape(s, meta_chars):
 
 
 def GetHomeDir():
+  # type: () -> str
   """Get the user's home directory from the /etc/passwd.
 
   Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
@@ -297,9 +306,11 @@ def ShowFdState():
 
 class DebugFile(object):
   def __init__(self, f):
+    # type: (IO[str]) -> None
     self.f = f
 
   def log(self, msg, *args):
+    # type: (str, *Any) -> None
     if args:
       msg = msg % args
     self.f.write(msg)
@@ -308,9 +319,11 @@ class DebugFile(object):
 
   # These two methods are for node.PrettyPrint()
   def write(self, s):
+    # type: (str) -> None
     self.f.write(s)
 
   def isatty(self):
+    # type: () -> bool
     return self.f.isatty()
 
 

@@ -8,27 +8,23 @@ from core import util
 from core.meta import syntax_asdl, Id, Kind, LookupKind
 
 from typing import Tuple, Optional, List
-from _devbuild.gen.id_kind_asdl import Id_t
-from _devbuild.gen.syntax_asdl import word_t, word_part_t, token
+from _devbuild.gen.id_kind_asdl import (Id_t, Kind_t)
 from _devbuild.gen.syntax_asdl import (
-    word_part__ArrayLiteralPart,
-    word_part__LiteralPart,
-    word_part__EscapedLiteralPart,
-    word_part__SingleQuotedPart,
-    word_part__DoubleQuotedPart,
-    word_part__SimpleVarSub,
-    word_part__BracedVarSub,
-    word_part__TildeSubPart,
-    word_part__CommandSubPart,
-    word_part__ArithSubPart,
-    word_part__BracedAltPart,
-    word_part__ExtGlobPart,
-)
-from _devbuild.gen.syntax_asdl import (
+    token,
+    word_part_t,
+    word_part__ArrayLiteralPart, word_part__LiteralPart,
+    word_part__EscapedLiteralPart, word_part__SingleQuotedPart,
+    word_part__DoubleQuotedPart, word_part__SimpleVarSub,
+    word_part__BracedVarSub, word_part__TildeSubPart,
+    word_part__CommandSubPart, word_part__ArithSubPart,
+    word_part__BracedAltPart, word_part__ExtGlobPart,
+
+    word_t, 
     word__CompoundWord, word__TokenWord, word__EmptyWord, word__BracedWordTree,
     word__StringWord,
+
+    lhs_expr__LhsName,
 )
-from _devbuild.gen.id_kind_asdl import Kind_t
 
 p_die = util.p_die
 
@@ -378,6 +374,7 @@ def HasArrayPart(w):
 
 
 def AsFuncName(w):
+  # type: (word__CompoundWord) -> Tuple[bool, str]
   assert isinstance(w, word__CompoundWord)
 
   ok, s, quoted = StaticEval(w)
@@ -413,6 +410,7 @@ def LooksLikeArithVar(w):
 
 
 def IsVarLike(w):
+  # type: (word__CompoundWord) -> bool
   """Tests whether a word looks like FOO=bar.
 
   This is a quick test for the command parser to distinguish:
@@ -519,14 +517,15 @@ def ArithId(node):
 
 
 def BoolId(node):
+  # type: (word_t) -> Id_t
   if isinstance(node, word__StringWord):  # for test/[
     return node.id
 
   if isinstance(node, word__TokenWord):
     return node.token.id
 
-  # Assume it's a CompoundWord
-  #assert isinstance(node, word__CompoundWord)
+  # NOTE: I think EmptyWord never happens in this context?
+  assert isinstance(node, word__CompoundWord)
 
   if len(node.parts) != 1:
     return Id.Word_Compound
@@ -590,6 +589,7 @@ def IsVarSub(w):
 
 
 def SpanForLhsExpr(node):
+  # type: (lhs_expr__LhsName) -> int
   if node.spids:
     return node.spids[0]
   else:

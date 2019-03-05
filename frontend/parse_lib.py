@@ -18,6 +18,7 @@ from oil_lang import cmd_parse as oil_cmd_parse
 from core.alloc import Arena
 from frontend.lexer import Lexer
 from frontend.reader import _Reader
+from frontend.tdop import TdopParser
 from osh.word_parse import WordParser
 from osh.cmd_parse import CommandParser
 from _devbuild.gen.id_kind_asdl import Id_t
@@ -35,7 +36,7 @@ class _BaseTrail(object):
     # type: () -> None
     # word from a partially completed command.
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
-    self.words = []  # type: List[word_t]
+    self.words = []  # type: List[word__CompoundWord]
     self.redirects = []  # type: List[redir_t]
     # TODO: We should maintain the LST invariant and have a single list, but
     # that I ran into the "cases classes are better than variants" problem.
@@ -51,7 +52,7 @@ class _BaseTrail(object):
     # line!
     self.tokens = []  # type: List[token]
 
-    self.alias_words = []  # type: List[word_t]  # words INSIDE an alias expansion
+    self.alias_words = []  # type: List[word__CompoundWord]  # words INSIDE an alias expansion
     self.expanding_alias = False
 
   def Clear(self):
@@ -108,6 +109,7 @@ class Trail(_BaseTrail):
   It's also used for history expansion.
   """
   def Clear(self):
+    # type: () -> None
     del self.words[:]
     del self.redirects[:]
     # The other ones don't need to be reset?
@@ -115,6 +117,7 @@ class Trail(_BaseTrail):
     del self.alias_words[:]
 
   def SetLatestWords(self, words, redirects):
+    # type: (List[word__CompoundWord], List) -> None
     if self.expanding_alias:
       self.alias_words = words  # Save these separately
       return
@@ -122,11 +125,13 @@ class Trail(_BaseTrail):
     self.redirects = redirects
 
   def AppendToken(self, token):
+    # type: (token) -> None
     if self.expanding_alias:  # We don't want tokens inside aliases
       return
     self.tokens.append(token)
 
   def BeginAliasExpansion(self):
+    # type: () -> None
     """Called by CommandParser so we know to be ready for FIRST alias word.
 
     For example, for
@@ -144,6 +149,7 @@ class Trail(_BaseTrail):
     self.expanding_alias = True
 
   def EndAliasExpansion(self):
+    # type: () -> None
     """Go back to the normal trail collection mode."""
     self.expanding_alias = False
 
@@ -194,6 +200,7 @@ class ParseContext(object):
     return word_parse.WordParser(self, lx, line_reader)
 
   def MakeArithParser(self, code_str, arena):
+    # type: (str, Arena) -> TdopParser
     """Used for a[x+1]=foo in the CommandParser.
 
     NOTE: We add tokens to a different arena, so we don't mess up the
@@ -218,6 +225,7 @@ class ParseContext(object):
     return c_parser
 
   def MakeWordParserForPlugin(self, code_str, arena):
+    # type: (str, Arena) -> WordParser
     """FOr $PS1, etc.
 
     NOTE: Uses its own arena!  I think that does nothing though?
