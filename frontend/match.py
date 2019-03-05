@@ -9,15 +9,17 @@ import posix
 from frontend import lex
 from core.meta import Id, IdInstance
 
+from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.types_asdl import lex_mode_t
+
+from typing import Iterator, Tuple
+
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
-if posix.environ.get('FASTLEX') == '0':  # For manual testing
-  fastlex = None
-else:
-  try:
-    import fastlex  # type: ignore
-  except ImportError:
-    fastlex = None
+try:
+  import fastlex
+except ImportError:
+  fastlex = None  # type: ignore
 
 if fastlex:
   # Shouldn't use re module in this case
@@ -67,6 +69,7 @@ class _MatchOshToken_Slow(object):
 
 
 def _MatchOshToken_Fast(lex_mode, line, start_pos):
+  # type: (lex_mode_t, str, int) -> Tuple[Id_t, int]
   """Returns (Id, end_pos)."""
   tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
   # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
@@ -80,6 +83,7 @@ class SimpleLexer(object):
     self.match_func = match_func
 
   def Tokens(self, line):
+    # type: (str) -> Iterator[Tuple[Id_t, str]]
     """Yields tokens."""
     pos = 0
     while True:
@@ -100,6 +104,7 @@ class _MatchTokenSlow(object):
 
 
 def _MatchEchoToken_Fast(line, start_pos):
+  # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchEchoToken(line, start_pos)
   return IdInstance(tok_type), end_pos
@@ -110,11 +115,13 @@ def _MatchGlobToken_Fast(line, start_pos):
   return IdInstance(tok_type), end_pos
 
 def _MatchPS1Token_Fast(line, start_pos):
+  # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchPS1Token(line, start_pos)
   return IdInstance(tok_type), end_pos
 
 def _MatchHistoryToken_Fast(line, start_pos):
+  # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchHistoryToken(line, start_pos)
   return IdInstance(tok_type), end_pos

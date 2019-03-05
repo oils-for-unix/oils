@@ -13,6 +13,15 @@ from asdl import const
 from core import util
 from core.meta import Id
 from core.meta import syntax_asdl as syntax
+from core.alloc import Arena
+
+from frontend.reader import FileLineReader
+
+from typing import Callable, List, Tuple
+
+from _devbuild.gen.syntax_asdl import token
+from _devbuild.gen.types_asdl import lex_mode_t
+from _devbuild.gen.id_kind_asdl import Id_t
 
 log = util.log
 
@@ -29,6 +38,7 @@ def R(pat, tok_type):
 
 class LineLexer(object):
   def __init__(self, match_func, line, arena):
+    # type: (Callable, str, Arena) -> None
     self.match_func = match_func
     self.arena = arena
 
@@ -42,6 +52,7 @@ class LineLexer(object):
         self.line_pos, self.line, self.line_id)
 
   def Reset(self, line, line_id, line_pos):
+    # type: (str, int, int) -> None
     #assert line, repr(line)  # can't be empty or None
     self.line = line
     self.line_id = line_id
@@ -60,11 +71,13 @@ class LineLexer(object):
       return True
 
   def GetSpanIdForEof(self):
+    # type: () -> int
     # zero length is special!
     line_span = syntax.line_span(self.line_id, self.line_pos, 0)
     return self.arena.AddLineSpan(line_span)
 
   def LookAhead(self, lex_mode):
+    # type: (lex_mode_t) -> token
     """Look ahead for a non-space token, using the given lexer mode.
 
     Does NOT advance self.line_pos.
@@ -97,6 +110,7 @@ class LineLexer(object):
     return syntax.token(tok_type, tok_val, const.NO_INTEGER)
 
   def Read(self, lex_mode):
+    # type: (lex_mode_t) -> token
     # Inner loop optimization
     line = self.line
     line_pos = self.line_pos
@@ -139,6 +153,7 @@ class Lexer(object):
   returning them in a stream.
   """
   def __init__(self, line_lexer, line_reader):
+    # type: (LineLexer, FileLineReader) -> None
     """
     Args:
       line_lexer: Underlying object to get tokens from
@@ -147,7 +162,7 @@ class Lexer(object):
     self.line_lexer = line_lexer
     self.line_reader = line_reader
     self.line_id = -1  # Invalid one
-    self.translation_stack = []
+    self.translation_stack = []  # type: List[Tuple[Id_t, Id_t]]
     self.emit_comp_dummy = False
 
   def ResetInputObjects(self):
@@ -161,6 +176,7 @@ class Lexer(object):
     return self.line_lexer.MaybeUnreadOne()
 
   def LookAhead(self, lex_mode):
+    # type: (lex_mode_t) -> token
     """Look ahead in the current line for the next non-space token.
 
     NOTE: Limiting lookahead to the current line makes the code a lot simpler
@@ -178,10 +194,12 @@ class Lexer(object):
     return self.line_lexer.LookAhead(lex_mode)
 
   def EmitCompDummy(self):
+    # type: () -> None
     """Emit Id.Lit_CompDummy right before EOF, for completion."""
     self.emit_comp_dummy = True
 
   def PushHint(self, old_id, new_id):
+    # type: (Id_t, Id_t) -> None
     """
     Use cases:
     Id.Op_RParen -> Id.Right_Subshell -- disambiguate
@@ -200,6 +218,7 @@ class Lexer(object):
     self.translation_stack.append((old_id, new_id))
 
   def _Read(self, lex_mode):
+    # type: (lex_mode_t) -> token
     """Read from the normal line buffer, not an alias."""
     t = self.line_lexer.Read(lex_mode)
     if t.id == Id.Eol_Tok:  # hit \0, read a new line
@@ -232,6 +251,7 @@ class Lexer(object):
     return t
 
   def Read(self, lex_mode):
+    # type: (lex_mode_t) -> token
     while True:
       t = self._Read(lex_mode)
       # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means

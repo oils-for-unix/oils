@@ -67,10 +67,14 @@ iter-demo() {
 
 collect-types() {
   export PYTHONPATH=".:$PYANN_REPO"
-  asdl/pyann_driver.py "$@"
+  types/pyann_driver.py "$@"
 
   ls -l type_info.json
   wc -l type_info.json
+}
+
+peek-type-info() {
+  grep path type_info.json | sort | uniq -c | sort -n
 }
 
 apply-types() {
@@ -79,7 +83,12 @@ apply-types() {
   #local -a files=( unit_test_types.py )
 
   #local -a files=( core/util.py asdl/runtime.py )
-  local -a files=(asdl/format.py )
+  #local -a files=(asdl/format.py )
+  #local -a files=(osh/cmd_parse.py osh/word_parse.py)
+  local -a files=(
+    frontend/lexer.py frontend/match.py frontend/reader.py core/alloc.py
+    core/meta.py )
+
   pyann-patched --type-info type_info.json "${files[@]}" "$@"
 }
 

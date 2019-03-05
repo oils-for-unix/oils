@@ -11,14 +11,22 @@ reader.py - Read lines of input.
 
 import cStringIO
 import signal
+from core.alloc import Arena
+from typing import Optional, Tuple, IO
 
 
 class _Reader(object):
   def __init__(self, arena):
+    # type: (Arena) -> None
     self.arena = arena
     self.line_num = 1  # physical line numbers start from 1
 
+  def _GetLine(self):
+    # type: () -> Optional[str]
+    raise NotImplementedError
+
   def GetLine(self):
+    # type: () -> Tuple[int, Optional[str], int]
     line = self._GetLine()
     if line is None:
       return -1, None, 0
@@ -108,6 +116,7 @@ class FileLineReader(_Reader):
   """For -c and stdin?"""
 
   def __init__(self, f, arena):
+    # type: (IO[str], Arena) -> None
     """
     Args:
       lines: List of (line_id, line) pairs
@@ -116,6 +125,7 @@ class FileLineReader(_Reader):
     self.f = f
 
   def _GetLine(self):
+    # type: () -> Optional[str]
     line = self.f.readline()
     if not line:
       return None
@@ -124,6 +134,7 @@ class FileLineReader(_Reader):
 
 
 def StringLineReader(s, arena):
+  # type: (str, Arena) -> FileLineReader
   return FileLineReader(cStringIO.StringIO(s), arena)
 
 

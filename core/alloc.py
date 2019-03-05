@@ -12,8 +12,10 @@ Also, we don't want to save comment lines.
 """
 
 from asdl import const
-
 from core import util
+from _devbuild.gen.syntax_asdl import line_span
+
+from typing import List, Tuple
 
 
 class Arena(object):
@@ -24,31 +26,32 @@ class Arena(object):
   2. osh-to-oil Translation
   """
   def __init__(self, arena_id):
+    # type: (int) -> None
     self.arena_id = arena_id  # an integer stored in tokens
 
     # TODO: lines should be part of the token, so they get garbage collected
     # when the token goes away.  (For example, a line that's all whitespace
     # will have no tokens put in the LST.)
-    self.lines = []
+    self.lines = []  # type: List[str]
     self.next_line_id = 0
 
     # first real span is 1.  0 means undefined.
-    self.spans = []
+    self.spans = []  # type: List[line_span]
     self.next_span_id = 0
 
-    # List of (src_path index, physical line number).  This is two integers for
-    # every line read.  We could use a clever encoding of this.  (Although the
-    # it's probably more important to compact the ASDL representation.)
-    self.debug_info = []
-    self.src_paths = []  # list of source paths
+    # (src_path, physical line number)
+    self.debug_info = []  # type: List[Tuple[str, int]] 
+    self.src_paths = []  # type: List[str]  # list of source paths
 
   def PushSource(self, src_path):
+    # type: (str) -> None
     self.src_paths.append(src_path)
 
   def PopSource(self):
     self.src_paths.pop()
 
   def AddLine(self, line, line_num):
+    # type: (str, int) -> int
     """
     Args:
       line: string
@@ -72,6 +75,7 @@ class Arena(object):
     return self.lines[line_id]
 
   def AddLineSpan(self, line_span):
+    # type: (line_span) -> int
     """
     TODO: Add an option of whether to save the line?  You can retrieve it on
     disk in many cases.
@@ -138,7 +142,8 @@ class Pool(object):
   of the API should do this.
   """
   def __init__(self):
-    self.arenas = []
+    # type: () -> None
+    self.arenas = []  # type: List[Arena]
     self.next_arena_id = 0
 
   # NOTE: dash uses a similar scheme.  stalloc() / setstackmark() /
@@ -147,6 +152,7 @@ class Pool(object):
   # We're not using Push/POp terminology because you never pop twice.  You can
   # only destroy the top/last arena.
   def NewArena(self):
+    # type: () -> Arena
     """Call this after parsing anything that you might want to destroy."""
     a = Arena(self.next_arena_id)
     self.next_arena_id += 1

@@ -15,6 +15,8 @@ from core import id_kind
 from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
 
 from typing import Dict
+from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.id_kind_asdl import Kind_t
 
 
 def _CreateInstanceLookup(id_enum, id_type, instances):
@@ -41,12 +43,14 @@ _ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
 
 
 def LookupKind(id_):
+  # type: (Id_t) -> Kind_t
   """Id_t -> Kind_t"""
   return _KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
 
 
 # Do NOT create any any more instances of Id.  Always used IdInstance().
 def IdInstance(i):
+  # type: (int) -> Id_t
   return _ID_INSTANCES[i]
 
 
