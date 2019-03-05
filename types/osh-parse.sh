@@ -14,6 +14,8 @@ demo() {
   echo 'echo hi' | bin/osh_parse.py "$@"
 }
 
+readonly PY_MANIFEST='_tmp/osh-parse-src.txt'
+
 deps() {
   local pythonpath='.:vendor'
   local out=_build/osh_parse
@@ -31,7 +33,7 @@ deps() {
   awk '
   $1 ~ /^.*\.py$/ { print $1 }
   ' $out/app-deps-cpython.txt \
-    | sort | tee _tmp/osh-parse-src.txt | xargs wc -l | sort -n
+    | sort | tee $PY_MANIFEST | xargs wc -l | sort -n
 }
 
 typecheck() {

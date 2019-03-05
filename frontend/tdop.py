@@ -14,10 +14,12 @@ if TYPE_CHECKING:  # break circular dep
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_t, lhs_expr_t,
+    arith_expr_t,
     arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__ArithVarRef,
     arith_expr__ArithBinary, arith_expr__BinaryAssign, arith_expr__FuncCall,
+    lhs_expr_t,
     lhs_expr__LhsName,
+    word_t,
 )
 from _devbuild.gen.syntax_asdl import (word__TokenWord, word__CompoundWord)
 
@@ -261,7 +263,7 @@ class TdopParser(object):
     # type: (ParserSpec, WordParser) -> None
     self.spec = spec
     self.w_parser = w_parser  # iterable
-    self.cur_word = None  # current token
+    self.cur_word = None  # type: word_t  # current token
     self.op_id = Id.Undefined_Tok
 
   def _Led(self, token):

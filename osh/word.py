@@ -114,14 +114,14 @@ def _EvalWordPart(part):
 
 
 def StaticEval(w):
-  # type: (word__CompoundWord) -> Tuple[bool, str, bool]
+  # type: (word_t) -> Tuple[bool, str, bool]
   """Evaluate a CompoundWord at PARSE TIME.
   """
   ret = ''
   quoted = False
 
   # e.g. for ( instead of for (( is a token word
-  if w.tag != word_e.CompoundWord:
+  if not isinstance(w, word__CompoundWord):
     return False, ret, quoted
 
   for part in w.parts:

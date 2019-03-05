@@ -34,6 +34,15 @@ from osh import word
 from core import util
 from core.meta import Id, Kind, LookupKind, syntax_asdl, types_asdl
 
+from _devbuild.gen.types_asdl import lex_mode_t
+from _devbuild.gen.syntax_asdl import (
+    word_t, word__CompoundWord, word__StringWord,
+    bool_expr_t,
+)
+from typing import List, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+  from osh.word_parse import WordParser
+
 #try:
 #  import libc  # for regex_parse
 #except ImportError:
@@ -51,19 +60,21 @@ class BoolParser(object):
   """Parses [[ at compile time and [ at runtime."""
 
   def __init__(self, w_parser):
+    # type: (WordParser) -> None
     """
     Args:
       w_parser: WordParser
     """
     self.w_parser = w_parser
     # Either one word or two words for lookahead
-    self.words = []
+    self.words = []  # type: List[word_t]
 
-    self.cur_word = None
+    self.cur_word = None  # type: Optional[word_t]
     self.op_id = Id.Undefined_Tok
     self.b_kind = Kind.Undefined
 
   def _NextOne(self, lex_mode=lex_mode_e.DBracket):
+    # type: (lex_mode_t) -> None
     n = len(self.words)
     if n == 2:
       assert lex_mode == lex_mode_e.DBracket
@@ -85,6 +96,7 @@ class BoolParser(object):
     #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
 
   def _Next(self, lex_mode=lex_mode_e.DBracket):
+    # type: (lex_mode_t) -> None
     """Advance to the next token, skipping newlines.
 
     We don't handle newlines in the lexer because we want the newline after ]]
@@ -97,6 +109,7 @@ class BoolParser(object):
         break
 
   def _LookAhead(self):
+    # type: () -> word_t
     n = len(self.words)
     if n != 1:
       raise AssertionError(self.words)
@@ -106,6 +119,7 @@ class BoolParser(object):
     return w
 
   def Parse(self):
+    # type: () -> bool_expr_t
     self._Next()
 
     node = self.ParseExpr()
@@ -117,6 +131,7 @@ class BoolParser(object):
     return node
 
   def _TestAtEnd(self):
+    # type: () -> bool
     """For unit tests only."""
     return self.op_id == Id.Lit_DRightBracket
 
@@ -132,6 +147,7 @@ class BoolParser(object):
     return node
 
   def ParseExpr(self):
+    # type: () -> bool_expr_t
     """
     Iterative:
     Expr    : Term (OR Term)*
@@ -149,6 +165,7 @@ class BoolParser(object):
       return left
 
   def ParseTerm(self):
+    # type: () -> bool_expr_t
     """
     Term    : Negated (AND Negated)*
 
@@ -165,6 +182,7 @@ class BoolParser(object):
       return left
 
   def ParseNegatedFactor(self):
+    # type: () -> bool_expr_t
     """
     Negated : '!'? Factor
     """
@@ -176,6 +194,7 @@ class BoolParser(object):
       return self.ParseFactor()
 
   def ParseFactor(self):
+    # type: () -> bool_expr_t
     """
     Factor  : WORD
             | UNARY_OP WORD
@@ -188,10 +207,10 @@ class BoolParser(object):
       self._Next()
       w = self.cur_word
       # e.g. [[ -f < ]].  But [[ -f '<' ]] is OK
-      if w.tag not in (word_e.CompoundWord, word_e.StringWord):
+      if not isinstance(w, (word__CompoundWord, word__StringWord)):
         p_die('Invalid argument to unary operator', word=w)
       self._Next()
-      node = bool_expr.BoolUnary(op, w)
+      node = bool_expr.BoolUnary(op, w)  # type: bool_expr_t
       return node
 
     if self.b_kind == Kind.Word:

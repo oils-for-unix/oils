@@ -54,6 +54,23 @@ class _BaseTrail(object):
     self.alias_words = []  # type: List[word_t]  # words INSIDE an alias expansion
     self.expanding_alias = False
 
+  def Clear(self):
+    pass
+
+  def SetLatestWords(self, words, redirects):
+    # type: (List[word__CompoundWord], List) -> None
+    pass
+
+  def AppendToken(self, token):
+    # type: (token) -> None
+    pass
+
+  def BeginAliasExpansion(self):
+    pass
+
+  def EndAliasExpansion(self):
+    pass
+
   def PrintDebugString(self, debug_f):
     debug_f.log('  words:')
     for w in self.words:
@@ -82,23 +99,7 @@ class _BaseTrail(object):
 
 class _NullTrail(_BaseTrail):
   """Used when we're not completing."""
-
-  def Clear(self):
-    pass
-
-  def SetLatestWords(self, words, redirects):
-    # type: (List[word__CompoundWord], List) -> None
-    pass
-
-  def AppendToken(self, token):
-    # type: (token) -> None
-    pass
-
-  def BeginAliasExpansion(self):
-    pass
-
-  def EndAliasExpansion(self):
-    pass
+  pass
 
 
 class Trail(_BaseTrail):

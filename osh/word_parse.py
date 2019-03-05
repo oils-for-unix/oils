@@ -56,6 +56,30 @@ from osh import arith_parse
 from osh import braces
 from osh import word
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from typing import List, Optional, Tuple, cast
+
+  from frontend.lexer import Lexer
+  from frontend.parse_lib import ParseContext
+  from frontend.reader import _Reader
+
+from _devbuild.gen.types_asdl import lex_mode_t
+from _devbuild.gen.id_kind_asdl import Id_t
+
+from _devbuild.gen.syntax_asdl import (
+    token, arith_expr_t, bracket_op_t,
+    suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
+    word_t, word__CompoundWord, word__TokenWord,
+    word_part_t,
+    word_part__ArrayLiteralPart, word_part__LiteralPart,
+    word_part__BracedVarSub, word_part__SingleQuotedPart,
+    word_part__ArithSubPart, word_part__DoubleQuotedPart,
+    word_part__CommandSubPart,
+    command__ForExpr,
+)
+
 word_part_e = syntax_asdl.word_part_e
 word_e = syntax_asdl.word_e
 osh_word = syntax_asdl.word  # TODO: rename word -> osh_word in syntax.asdl
@@ -73,15 +97,17 @@ log = util.log
 class WordParser(object):
 
   def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.Outer):
+    # type: (ParseContext, Lexer, _Reader, lex_mode_t) -> None
     self.parse_ctx = parse_ctx
     self.lexer = lexer
     self.line_reader = line_reader
     self.Reset(lex_mode=lex_mode)
 
   def Reset(self, lex_mode=lex_mode_e.Outer):
+    # type: (lex_mode_t) -> None
     """Called by interactive loop."""
     # For _Peek()
-    self.cur_token = None
+    self.cur_token = None  # type: token
     self.token_kind = Kind.Undefined
     self.token_type = Id.Undefined_Tok
 
@@ -89,10 +115,11 @@ class WordParser(object):
 
     # For newline.  TODO: I think we can do this iteratively, without member
     # state.
-    self.cursor = None
+    self.cursor = None  # type: word_t
     self.cursor_was_newline = False
 
   def _Peek(self):
+    # type: () -> token
     """Helper method."""
     if self.next_lex_mode is not None:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
@@ -103,6 +130,7 @@ class WordParser(object):
     return self.cur_token
 
   def _Next(self, lex_mode):
+    # type: (lex_mode_t) -> None
     """Set the next lex state, but don't actually read a token.
 
     We need this for proper interactive parsing.
@@ -111,6 +139,12 @@ class WordParser(object):
 
   def _ReadVarOpArg(self, arg_lex_mode, eof_type=Id.Undefined_Tok,
                     empty_ok=True):
+    # type: (lex_mode_t, Id_t, bool) -> word_t
+    """
+    Args:
+      empty_ok: Whether EmptyWord can be returned
+    """
+
     # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
     # valid, even when unquoted.
     self._Next(arg_lex_mode)
@@ -119,9 +153,14 @@ class WordParser(object):
     w = self._ReadCompoundWord(lex_mode=arg_lex_mode, eof_type=eof_type,
                                empty_ok=empty_ok)
 
-    # This is for "${s:-}", ${s/a//}, etc.  It is analogous to
-    # LooksLikeAssignment where we turn x= into x=''.  It has the same
-    # potential problem of not having spids.
+    # If the CompoundWord has no parts, and we're in a double-quoted VarSub
+    # arg, and empty_ok, then return EmptyWord.  This is so it can evaluate to
+    # the empty string and not get elided.
+    #
+    # Examples:
+    # - "${s:-}", "${s/%pat/}"
+    # It's similar to LooksLikeAssignment where we turn x= into x=''.  And it
+    # has the same potential problem of not having spids.
     #
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
     # return a CompoundWord with no parts, which is explicitly checked with a
@@ -132,6 +171,7 @@ class WordParser(object):
     return w
 
   def _ReadSliceVarOp(self):
+    # type: () -> suffix_op__Slice
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
     self._Next(lex_mode_e.Arith)
     self._Peek()
@@ -153,12 +193,14 @@ class WordParser(object):
           token=self.cur_token)
 
   def _ReadPatSubVarOp(self, lex_mode):
+    # type: (lex_mode_t) -> suffix_op__PatSub
     """
     Match     = ('/' | '#' | '%') WORD
     VarSub    = ...
               | VarOf '/' Match '/' WORD
     """
     pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
+    assert isinstance(pat, word__CompoundWord)  # Because empty_ok=False
 
     if len(pat.parts) == 1:
       ok, s, quoted = word.StaticEval(pat)
@@ -175,7 +217,7 @@ class WordParser(object):
     replace_mode = Id.Undefined_Tok
     # Check for / # % modifier on pattern.
     first_part = pat.parts[0]
-    if first_part.tag == word_part_e.LiteralPart:
+    if isinstance(first_part, word_part__LiteralPart):
       lit_id = first_part.token.id
       if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)
@@ -206,13 +248,14 @@ class WordParser(object):
           token=self.cur_token)
 
   def _ReadSubscript(self):
+    # type: () -> bracket_op_t
     """ Subscript = '[' ('@' | '*' | ArithExpr) ']'
     """
     # Lookahead to see if we get @ or *.  Otherwise read a full arithmetic
     # expression.
     t2 = self.lexer.LookAhead(lex_mode_e.Arith)
     if t2.id in (Id.Lit_At, Id.Arith_Star):
-      op = bracket_op.WholeArray(t2.id)
+      op = bracket_op.WholeArray(t2.id)  # type: bracket_op_t
 
       self._Next(lex_mode_e.Arith)  # skip past [
       self._Peek()
@@ -233,6 +276,7 @@ class WordParser(object):
     return op
 
   def _ParseVarOf(self):
+    # type: () -> word_part__BracedVarSub
     """
     VarOf     = NAME Subscript?
               | NUMBER      # no subscript allowed, none of these are arrays
@@ -254,6 +298,7 @@ class WordParser(object):
     return part
 
   def _ParseVarExpr(self, arg_lex_mode):
+    # type: (lex_mode_t) -> word_part__BracedVarSub
     """
     Start parsing at the op -- we already skipped past the name.
     """
@@ -292,8 +337,14 @@ class WordParser(object):
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:
         op_spid = self.cur_token.span_id  # for attributing error to /
-        op = self._ReadPatSubVarOp(arg_lex_mode)
-        op.spids.append(op_spid)
+
+        # TODO: op_temp is only necessary for MyPy.  It can be removed when
+        # 'spids' are put on the base class suffix_op_t.
+        op_temp = self._ReadPatSubVarOp(arg_lex_mode)
+        op_temp.spids.append(op_spid)
+
+        op = cast(suffix_op_t, op_temp)  # for MyPy
+
         # Checked by the method above
         assert self.token_type == Id.Right_VarSub, self.cur_token
 
@@ -321,6 +372,7 @@ class WordParser(object):
     return part
 
   def _ReadBracedBracedVarSub(self, d_quoted=False):
+    # type: (bool) -> word_part__BracedVarSub
     """For the ${} expression language.
 
     NAME        = [a-zA-Z_][a-zA-Z0-9_]*
@@ -442,6 +494,7 @@ class WordParser(object):
     return part
 
   def _ReadSingleQuotedPart(self, lex_mode):
+    # type: (lex_mode_t) -> word_part__SingleQuotedPart
     left = self.cur_token
     tokens = []
 
@@ -463,7 +516,7 @@ class WordParser(object):
 
       else:
         raise AssertionError(
-            'Unhandled token in single-quoted part %s (%d)' %
+            'Unhandled token in single-quoted part %s (%s)' %
             (self.cur_token, self.token_kind))
 
     node = word_part.SingleQuotedPart(left, tokens)
@@ -472,6 +525,7 @@ class WordParser(object):
     return node
 
   def _ReadDoubleQuotedLeftParts(self):
+    # type: () -> word_part_t
     """Read substitution parts in a double quoted context."""
     if self.token_type in (Id.Left_CommandSub, Id.Left_Backtick):
       return self._ReadCommandSubPart(self.token_type)
@@ -488,6 +542,7 @@ class WordParser(object):
     raise AssertionError(self.cur_token)
 
   def _ReadLeftParts(self):
+    # type: () -> word_part_t
     """Read substitutions and quoted strings (for the OUTER context)."""
 
     if self.token_type == Id.Left_DoubleQuote:
@@ -567,10 +622,12 @@ class WordParser(object):
       else:
         raise AssertionError('Unexpected token %r' % self.cur_token)
 
-    part = word_part.ExtGlobPart(left_token, arms, spids=spids)
+    part = word_part.ExtGlobPart(left_token, arms)
+    part.spids.extend(spids)
     return part
 
   def _ReadLikeDQ(self, left_dq_token, out_parts):
+    # type: (Optional[token], List) -> None
     """
     Args:
       left_dq_token: A token if we are reading a double quoted part, or None if
@@ -584,7 +641,7 @@ class WordParser(object):
 
       if self.token_kind == Kind.Lit:
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteralPart(self.cur_token)
+          part = word_part.EscapedLiteralPart(self.cur_token)  # type: word_part_t
         else:
           part = word_part.LiteralPart(self.cur_token)
         out_parts.append(part)
@@ -617,6 +674,7 @@ class WordParser(object):
     # Return nothing, since we appended to 'out_parts'
 
   def _ReadDoubleQuotedPart(self):
+    # type: () -> word_part__DoubleQuotedPart
     """
     Args:
       eof_type: for stopping at }, Id.Lit_RBrace
@@ -634,6 +692,7 @@ class WordParser(object):
     return dq_part
 
   def _ReadCommandSubPart(self, left_id):
+    # type: (Id_t) -> word_part__CommandSubPart
     """
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
@@ -706,7 +765,7 @@ class WordParser(object):
         arena.PopSource()
 
     else:
-      raise AssertionError(self.left_id)
+      raise AssertionError(left_id)
 
     # Hm this creates its own word parser, which is thrown away?
     right_spid = c_parser.w_parser.cur_token.span_id
@@ -717,6 +776,7 @@ class WordParser(object):
     return cs_part
 
   def _ReadArithExpr(self):
+    # type: () -> arith_expr_t
     """Read and parse an arithmetic expression in various contexts.
 
     $(( 1+2 ))
@@ -742,6 +802,7 @@ class WordParser(object):
     return anode  # could be None
 
   def _ReadArithSubPart(self):
+    # type: () -> word_part__ArithSubPart
     """
     Read an arith substitution, which contains an arith expression, e.g.
     $((a + 1)).
@@ -798,6 +859,7 @@ class WordParser(object):
     return node
 
   def ReadDParen(self):
+    # type: () -> Tuple[arith_expr_t, int]
     """Read ((1+ 2))  -- command context.
 
     We're using the word parser because it's very similar to _ReadArithExpr
@@ -826,6 +888,7 @@ class WordParser(object):
     return anode, self.cur_token.span_id
 
   def _NextNonSpace(self):
+    # type: () -> None
     """Same logic as _ReadWord, but for ReadForExpresion."""
     while True:
       self._Next(lex_mode_e.Arith)
@@ -834,6 +897,7 @@ class WordParser(object):
         break
 
   def ReadForExpression(self):
+    # type: () -> command__ForExpr
     """Read ((i=0; i<5; ++i)) -- part of command context."""
     self._NextNonSpace()  # skip over ((
 
@@ -867,6 +931,7 @@ class WordParser(object):
     return command.ForExpr(init_node, cond_node, update_node)
 
   def _ReadArrayLiteralPart(self):
+    # type: () -> word_part__ArrayLiteralPart
     self._Next(lex_mode_e.Outer)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:
@@ -879,7 +944,7 @@ class WordParser(object):
     while True:
       w = w_parser.ReadWord(lex_mode_e.Outer)
 
-      if w.tag == word_e.TokenWord:
+      if isinstance(w, word__TokenWord):
         word_id = word.CommandId(w)
         if word_id == Id.Right_ArrayLiteral:
           break
@@ -899,6 +964,7 @@ class WordParser(object):
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
                         lex_mode=lex_mode_e.Outer, empty_ok=True):
+    # type: (Id_t, lex_mode_t, bool) -> word__CompoundWord
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -922,7 +988,7 @@ class WordParser(object):
           Kind.Lit, Kind.History, Kind.KW, Kind.Assign, Kind.ControlFlow,
           Kind.BoolUnary, Kind.BoolBinary):
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteralPart(self.cur_token)
+          part = word_part.EscapedLiteralPart(self.cur_token)  # type: word_part_t
         else:
           part = word_part.LiteralPart(self.cur_token)
 
@@ -991,6 +1057,7 @@ class WordParser(object):
     return word
 
   def _ReadArithWord(self):
+    # type: () -> Tuple[word_t, bool]
     """Helper function for ReadArithWord."""
     self._Peek()
 
@@ -999,7 +1066,7 @@ class WordParser(object):
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
-      w = osh_word.TokenWord(self.cur_token)
+      w = osh_word.TokenWord(self.cur_token)  # type: word_t
       return w, False
 
     elif self.token_kind == Kind.Ignored:
@@ -1030,6 +1097,7 @@ class WordParser(object):
     raise AssertionError("Shouldn't get here")
 
   def _ReadWord(self, lex_mode):
+    # type: (lex_mode_t) -> Tuple[word_t, bool]
     """Helper function for Read().
 
     Returns:
@@ -1094,6 +1162,7 @@ class WordParser(object):
     raise AssertionError("Shouldn't get here")
 
   def LookAhead(self):
+    # type: () -> Id_t
     """Look ahead to the next token.
 
     For the command parser to recognize func () { } and array= (1 2 3).  And
@@ -1107,6 +1176,7 @@ class WordParser(object):
     return t.id
 
   def ReadWord(self, lex_mode):
+    # type: (lex_mode_t) -> word_t
     """Read the next Word.
 
     Returns:
@@ -1136,11 +1206,13 @@ class WordParser(object):
     return self.cursor
 
   def ReadHereDocBody(self, parts):
+    # type: (List) -> None
     """A here doc is like a double quoted context, except " isn't special."""
     self._ReadLikeDQ(None, parts)
     # Returns nothing
 
   def ReadForPlugin(self):
+    # type: () -> word__CompoundWord
     """For $PS1, $PS4, etc.
 
     This is just like reading a here doc line.  "\n" is allowed, as well as the
