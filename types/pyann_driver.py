@@ -9,6 +9,7 @@ from pyannotate_runtime import collect_types
 #from asdl import typed_arith_parse_test
 from asdl import format_test
 from osh import cmd_parse_test
+from osh import word_parse_test
 from frontend import lex_test
 from frontend import lexer_test
 
@@ -19,9 +20,9 @@ if __name__ == '__main__':
     #typed_arith_parse_test.main()
 
     loader = unittest.TestLoader()
-    suites = [
-        loader.loadTestsFromModule(m) for m in [lex_test, lexer_test]
-    ]
+    #modules = [lex_test, lexer_test]
+    modules = [word_parse_test]
+    suites = [loader.loadTestsFromModule(m) for m in modules]
 
     suite = unittest.TestSuite()
     for s in suites:

@@ -34,8 +34,8 @@ install:
 script:
     # Type checking with MyPy.  Problem: mypy requires Python 3, but Oil
     # requires Python 2.  The Travis environment doesn't like that.
-    - asdl/typed.sh iter-demo
-    - asdl/typed.sh iter-arith
+    - types/run.sh iter-demo-asdl
+    - types/run.sh iter-arith-asdl
     - test/lint.sh travis
     # Unit tests
     - test/unit.sh all

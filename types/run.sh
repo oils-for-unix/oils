@@ -16,6 +16,7 @@ deps() {
 }
 
 mypy() { ~/.local/bin/mypy "$@"; }
+# This has a bug
 #pyannotate() { ~/.local/bin/pyannotate "$@"; }
 
 readonly PYANN_REPO=~/git/oilshell/pyannotate/
@@ -31,13 +32,25 @@ typecheck() {
   mypy --py2 "$@"
 }
 
+# --no-strict-optional issues
+# - simple sum type might be None, but generated PrettyTree() method uses
+#   obj.name
+
+iter-demo-asdl() {
+  asdl/run.sh gen-typed-demo-asdl
+  typecheck --strict \
+    _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
+
+  PYTHONPATH=. asdl/typed_demo.py "$@"
+}
+
 check-arith() {
   local strict='--strict'
   MYPYPATH=. PYTHONPATH=. typecheck $strict \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
-iter-arith() {
+iter-arith-asdl() {
   asdl/run.sh gen-typed-arith-asdl
   check-arith
 
@@ -51,18 +64,6 @@ iter-arith() {
   echo '---'
   asdl/typed_arith_parse.py eval '40+2+5'
   echo
-}
-
-# --no-strict-optional issues
-# - simple sum type might be None, but generated PrettyTree() method uses
-#   obj.name
-
-iter-demo() {
-  asdl/run.sh gen-typed-demo-asdl
-  typecheck --strict \
-    _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
-
-  PYTHONPATH=. asdl/typed_demo.py "$@"
 }
 
 collect-types() {
@@ -84,17 +85,19 @@ apply-types() {
 
   #local -a files=( core/util.py asdl/runtime.py )
   #local -a files=(asdl/format.py )
-  #local -a files=(osh/cmd_parse.py osh/word_parse.py)
   local -a files=(
     frontend/lexer.py frontend/match.py frontend/reader.py core/alloc.py
     core/meta.py )
 
+  local -a files=(osh/word.py) # osh/word_parse.py)
+
   pyann-patched --type-info type_info.json "${files[@]}" "$@"
 }
 
-apply2() {
-  pyann-patched --verbose --type-info type_info.json asdl/unit_test_types.py "$@"
+sub() {
+  local f=$1
+  types/refactor.py sub < $f > _tmp/sub.txt
+  diff -u _tmp/sub.txt $f
 }
-
 
 "$@"
