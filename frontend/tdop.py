@@ -7,6 +7,20 @@ from core import util
 from core.meta import syntax_asdl, types_asdl, Id
 from osh import word
 
+from typing import NoReturn, TYPE_CHECKING
+
+if TYPE_CHECKING:  # break circular dep
+  from osh.word_parse import WordParser
+
+from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.syntax_asdl import (
+    arith_expr_t, lhs_expr_t,
+    arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__ArithVarRef,
+    arith_expr__ArithBinary, arith_expr__BinaryAssign, arith_expr__FuncCall,
+    lhs_expr__LhsName,
+)
+from _devbuild.gen.syntax_asdl import (word__TokenWord, word__CompoundWord)
+
 p_die = util.p_die
 
 arith_expr = syntax_asdl.arith_expr
@@ -27,6 +41,7 @@ def Assert(s, expected, tree):
 
 
 def IsCallable(node):
+  # type: (arith_expr_t) -> bool
   """Is the word callable or indexable?
 
   Args:
@@ -35,47 +50,51 @@ def IsCallable(node):
   # f(x), or f[1](x)
   # I guess function calls can be callable?  Return a function later.  Not
   # sure.  Python allows f(3)(4).
-  if node.tag == arith_expr_e.ArithVarRef:
+  if isinstance(node, arith_expr__ArithVarRef):
     return True
-  if node.tag == arith_expr_e.ArithBinary:
+  if isinstance(node, arith_expr__ArithBinary):
     return node.op_id == Id.Arith_LBracket
+  return False
 
 
 def IsIndexable(node):
+  # type: (arith_expr_t) -> bool
   """Is the word callable or indexable?
 
   Args:
     node: ExprNode
   """
   # f[1], or f(x)[1], or f[1][1]
-  if node.tag == arith_expr_e.ArithVarRef:
+  if isinstance(node, arith_expr__ArithVarRef):
     return True
-  if node.tag == arith_expr_e.FuncCall:
+  if isinstance(node, arith_expr__FuncCall):
     return True
 
   # Hm f[1][1] is not allowed in shell, but might be in Oil.  There are no
   # nested arrays, or mutable strings.
-  if node.tag == arith_expr_e.ArithBinary:
+  if isinstance(node, arith_expr__ArithBinary):
     return node.op_id == Id.Arith_LBracket
+  return False
 
 
 def ToLValue(node):
+  # type: (arith_expr_t) -> lhs_expr_t
   """Determine if a node is a valid L-value by whitelisting tags.
 
   Args:
     node: ExprNode (could be VarExprNode or BinaryExprNode)
   """
   # foo = bar, foo[1] = bar
-  if node.tag == arith_expr_e.ArithVarRef:
+  if isinstance(node, arith_expr__ArithVarRef):
     # For consistency with osh/cmd_parse.py, append a span_id.
     # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
     n = lhs_expr.LhsName(node.token.val)
     n.spids.append(node.token.span_id)
     return n
-  if node.tag == arith_expr_e.ArithBinary:
+  if isinstance(node, arith_expr__ArithBinary):
     # For example, a[0][0] = 1 is NOT valid.
     if (node.op_id == Id.Arith_LBracket and
-        node.left.tag == arith_expr_e.ArithVarRef):
+        isinstance(node.left, arith_expr__ArithVarRef)):
       return lhs_expr.LhsIndexedName(node.left.token.val, node.right)
 
   return None
@@ -87,11 +106,16 @@ def ToLValue(node):
 
 
 def NullError(p, t, bp):
+  # type: (TdopParser, word__TokenWord, int) -> NoReturn
   # TODO: I need position information
   p_die("Token can't be used in prefix position", word=t)
 
 
-def NullConstant(p, w, bp):
+def NullConstant(p,  # type: TdopParser
+                 w,  # type: word__CompoundWord
+                 bp,  # type: int
+                 ):
+  # type: (...) -> arith_expr_t
   var_name_token = word.LooksLikeArithVar(w)
   if var_name_token:
     return arith_expr.ArithVarRef(var_name_token)
@@ -100,6 +124,7 @@ def NullConstant(p, w, bp):
 
 
 def NullParen(p, t, bp):
+  # type: (TdopParser, word__TokenWord, int) -> arith_expr_t
   """ Arithmetic grouping """
   r = p.ParseUntil(bp)
   p.Eat(Id.Arith_RParen)
@@ -128,13 +153,23 @@ def LeftError(p, t, left, rbp):
   p_die("Token can't be used in infix position", word=t)
 
 
-def LeftBinaryOp(p, w, left, rbp):
+def LeftBinaryOp(p,  # type: TdopParser
+                 w,  # type: word__TokenWord
+                 left,  # type: arith_expr_t
+                 rbp,  # type: int
+                 ):
+  # type: (...) -> arith_expr__ArithBinary
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # TODO: w shoudl be a TokenWord, and we should extract the token from it.
   return arith_expr.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
 
 
-def LeftAssign(p, w, left, rbp):
+def LeftAssign(p,  # type: TdopParser
+               w,  # type: word__TokenWord
+               left,  # type: arith_expr_t
+               rbp,  # type: int
+               ):
+  # type: (...) -> arith_expr__BinaryAssign
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
   lhs = ToLValue(left)
@@ -202,6 +237,7 @@ class ParserSpec(object):
     self._RegisterLed(bp, bp - 1, led, tokens)
 
   def LookupNud(self, token):
+    # type: (Id_t) -> NullInfo
     try:
       nud = self.nud_lookup[token]
     except KeyError:
@@ -209,6 +245,7 @@ class ParserSpec(object):
     return nud
 
   def LookupLed(self, token):
+    # type: (Id_t) -> LeftInfo
     """Get a left_info for the token."""
     return self.led_lookup[token]
 
@@ -221,21 +258,25 @@ class TdopParser(object):
   Parser state.  Current token and lookup stack.
   """
   def __init__(self, spec, w_parser):
+    # type: (ParserSpec, WordParser) -> None
     self.spec = spec
     self.w_parser = w_parser  # iterable
     self.cur_word = None  # current token
     self.op_id = Id.Undefined_Tok
 
   def _Led(self, token):
+    # type: (Id_t) -> LeftInfo
     return self.spec.LookupLed(token)
 
   def AtAnyOf(self, *args):
     return self.op_id in args
 
   def AtToken(self, token_type):
+    # type: (Id_t) -> bool
     return self.op_id == token_type
 
   def Eat(self, token_type):
+    # type: (Id_t) -> None
     """ Eat()? """
     if not self.AtToken(token_type):
       p_die('Parser expected %s, got %s', token_type, self.cur_word,
@@ -243,6 +284,7 @@ class TdopParser(object):
     self.Next()
 
   def Next(self):
+    # type: () -> bool
     """Preferred over Eat()? """
     self.cur_word = self.w_parser.ReadWord(lex_mode_e.Arith)
     assert self.cur_word is not None
@@ -250,6 +292,7 @@ class TdopParser(object):
     return True
 
   def ParseUntil(self, rbp):
+    # type: (int) -> arith_expr_t
     """
     Parse to the right, eating tokens until we encounter a token with binding
     power LESS THAN OR EQUAL TO rbp.
@@ -284,6 +327,7 @@ class TdopParser(object):
     return node
 
   def Parse(self):
+    # type: () -> arith_expr_t
     self.Next()  # may raise ParseError
     return self.ParseUntil(0)
 

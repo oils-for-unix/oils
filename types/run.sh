@@ -91,6 +91,7 @@ apply-types() {
   local -a files=(osh/word.py) # osh/word_parse.py)
 
   local -a files=(frontend/parse_lib.py)
+  local -a files=(frontend/tdop.py osh/arith_parse.py)
 
   pyann-patched --type-info type_info.json "${files[@]}" "$@"
 }

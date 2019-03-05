@@ -21,6 +21,8 @@ from pylib import os_path
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 
+from typing import NoReturn
+
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
 # Python overwrites this to something Python-specific in Modules/readline.c, so
@@ -120,6 +122,7 @@ class ErrExitFailure(FatalRuntimeError):
 
 
 def p_die(msg, *args, **kwargs):
+  # type: (...) -> NoReturn
   """Convenience wrapper for parse errors."""
   raise ParseError(msg, *args, **kwargs)
 
