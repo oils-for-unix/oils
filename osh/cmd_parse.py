@@ -412,7 +412,7 @@ class CommandParser(object):
   def __init__(self,
                parse_ctx,  # type: ParseContext
                w_parser,  # type: WordParser
-               lexer_,  # type: Lexer
+               lexer,  # type: Lexer
                line_reader,  # type: _Reader
                eof_id=Id.Eof_Real,  # type: Id_t
                aliases_in_flight=None,  # type: Optional[AliasesInFlight]
@@ -422,7 +422,7 @@ class CommandParser(object):
     self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
     self.w_parser = w_parser  # type: WordParser  # for normal parsing
-    self.lexer = lexer_  # for pushing hints, lookahead to (
+    self.lexer = lexer  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
     self.arena = parse_ctx.arena  # for adding here doc and alias spans
     self.eof_id = eof_id
@@ -526,8 +526,8 @@ class CommandParser(object):
     self._Peek()
     assert self.c_kind == Kind.Redir, self.cur_word
     w = cast(word__TokenWord, self.cur_word)  # for MyPy
-    op = w.token
 
+    op = w.token
     # For now only supporting single digit descriptor
     first_char = w.token.val[0]
     if first_char.isdigit():
@@ -535,33 +535,27 @@ class CommandParser(object):
     else:
       fd = const.NO_INTEGER
 
-    if op.id in (Id.Redir_DLess, Id.Redir_DLessDash):  # here doc
-      node = redir.HereDoc()
-      node.op = op
-      node.fd = fd
-      self._Next()
-
-      self._Peek()
-      node.here_begin = self.cur_word
-      self._Next()
-
-      self.pending_here_docs.append(node)  # will be filled on next newline.
-      return node
-
-    # Need to use a different name because of MyPy
-    node_ = redir.Redir()
-    node_.op = op
-    node_.fd = fd
     self._Next()
-
     self._Peek()
+
+    # Here doc
+    if op.id in (Id.Redir_DLess, Id.Redir_DLessDash):
+      here_begin = self.cur_word
+      self._Next()
+
+      h = redir.HereDoc(op, fd, here_begin)
+      self.pending_here_docs.append(h)  # will be filled on next newline.
+      return h
+
+    # Other redirect
     if self.c_kind != Kind.Word:
       p_die('Invalid token after redirect operator', word=self.cur_word)
 
-    new_word = word.TildeDetect(self.cur_word)
-    node_.arg_word = new_word or self.cur_word
+    w2 = word.TildeDetect(self.cur_word)
+    arg_word = w2 or self.cur_word
     self._Next()
-    return node_
+
+    return redir.Redir(op, fd, arg_word)
 
   def _ParseRedirectList(self):
     # type: () -> List
@@ -858,14 +852,8 @@ class CommandParser(object):
     redirects, words = result
 
     if not words:  # e.g.  >out.txt  # redirect without words
-      node = command.SimpleCommand()  # type: command_t
-
-      # Silly renaming because of MyPy.  Would be solved by variable
-      # declarations to command_t without initialization.  Or should be upgrade
-      # MyPy?
-      n_ = cast(command__SimpleCommand, node)
-      n_.redirects = redirects
-      return n_
+      node = command.SimpleCommand(None, redirects, None)  # type: command_t
+      return node
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
 

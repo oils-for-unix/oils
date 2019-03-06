@@ -108,4 +108,10 @@ sub() {
   diff -u _tmp/sub.txt $f
 }
 
+audit-hacks() {
+  # I used a trailing _ in a couple places to indicates hacks
+  # A MyPy upgrade might fix this?
+  egrep -n --context 1 '[a-z]+_ ' osh/*_parse.py
+}
+
 "$@"
