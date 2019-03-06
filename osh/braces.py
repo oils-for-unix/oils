@@ -19,6 +19,17 @@ import sys
 
 from core.meta import Id, syntax_asdl
 
+from typing import List, Optional, cast, TYPE_CHECKING
+from _devbuild.gen.syntax_asdl import (
+    word_t,
+    word__CompoundWord,
+    word__BracedWordTree,
+
+    word_part_t,
+    word_part__BracedAltPart,
+    word_part__LiteralPart,
+)
+
 word_part = syntax_asdl.word_part
 word_part_e = syntax_asdl.word_part_e
 
@@ -28,12 +39,14 @@ word_e = syntax_asdl.word_e
 
 class _StackFrame(object):
   def __init__(self, cur_parts):
+    # type: (List[word_part_t]) -> None
     self.cur_parts = cur_parts
     self.alt_part = word_part.BracedAltPart()
     self.saw_comma = False
 
 
 def _BraceDetect(w):
+  # type: (word__CompoundWord) -> Optional[word__BracedWordTree]
   """
   Args:
     CompoundWord
@@ -78,14 +91,14 @@ def _BraceDetect(w):
   # {a,b}{ - Stack depth doesn't end at 0
   # {a}    - no comma, and also not an numeric range
 
-  cur_parts = []
-  stack = []
+  cur_parts = []  # type: List[word_part_t]
+  stack = []  # type: List[_StackFrame]
 
   found = False
 
   for i, part in enumerate(w.parts):
     append = True
-    if part.tag == word_part_e.LiteralPart:
+    if isinstance(part, word_part__LiteralPart):
       id_ = part.token.id
       if id_ == Id.Lit_LBrace:
         # Save prefix parts.  Start new parts list.
@@ -147,7 +160,9 @@ def _BraceDetect(w):
 
 
 def BraceDetectAll(words):
-  out = []
+  # type: (List[word__CompoundWord]) -> List[word_t]
+  """Return a new list of words, possibly with BracedWordTree instances."""
+  out = []  # type: List[word_t]
   for w in words:
     #print(w)
     brace_tree = _BraceDetect(w)
@@ -170,7 +185,7 @@ def _TreeCount(tree_word):
   """
   # TODO: Copy the structure of _BraceExpand and _BraceExpandOne.
   for part in tree_word.parts:
-    if part.tag == word_part_e.BracedAltPart:
+    if isinstance(part, word_part__BracedAltPart):
       for word in part.words:
         pass
   num_results = 2
@@ -178,8 +193,12 @@ def _TreeCount(tree_word):
   return num_results, max_parts
 
 
-def _BraceExpandOne(parts, first_alt_index, suffixes):
-  """Helper for _BraceExpand.
+def _BraceExpandOne(parts,  # type: List[word_part__BracedAltPart]
+                    first_alt_index,  # type: int
+                    suffixes,  # type: List[List[word_part_t]]
+                    ):
+  # type: (...) -> List[List[word_part_t]]
+  """Mutually recursive with _BraceExpand.
 
   Args:
     parts: input parts
@@ -190,14 +209,15 @@ def _BraceExpandOne(parts, first_alt_index, suffixes):
 
   # Need to call _BraceExpand on each of the inner words too!
   first_alt = parts[first_alt_index]
-  expanded_alts = []
+  expanded_alts = []  # type: List[List[word_part_t]]
   for w in first_alt.words:
+    assert isinstance(w, word__CompoundWord)  # for MyPy
     expanded_alts.extend(_BraceExpand(w.parts))
 
   prefix = parts[ : first_alt_index]
   for alt_parts in expanded_alts:
     for suffix in suffixes:
-      out_parts = []
+      out_parts = []  # type: List[word_part_t]
       out_parts.extend(prefix)
       out_parts.extend(alt_parts)
       out_parts.extend(suffix)
@@ -206,11 +226,19 @@ def _BraceExpandOne(parts, first_alt_index, suffixes):
   return out
 
 
+if TYPE_CHECKING:
+  ListOfLists = List[List[word_part_t]]
+else:
+  ListOfLists = None
+
+
 def _BraceExpand(parts):
+  # type: (List[word_part_t]) -> List[List[word_part_t]]
+  """Mutually recursive with _BraceExpandOne."""
   num_alts = 0
   first_alt_index = -1
   for i, part in enumerate(parts):
-    if part.tag == word_part_e.BracedAltPart:
+    if isinstance(part, word_part__BracedAltPart):
       num_alts += 1
       if num_alts == 1:
         first_alt_index = i
@@ -218,13 +246,17 @@ def _BraceExpand(parts):
         break  # don't need to count anymore
 
   # NOTE: There are TWO recursive calls here, not just one -- one for
-  # nested {}, and one for adjacent {}.  Thus it's hard to do iteratively.
+  # nested {}, and one for adjacent {}.  This is hard to do iteratively.
   if num_alts == 0:
-    return [parts]
+    # Need this cast because List in MyPy is invariant?
+    result = cast(ListOfLists, [parts])
+    return result
 
   elif num_alts == 1:
     suffix = parts[first_alt_index+1 : ]
-    return _BraceExpandOne(parts, first_alt_index, [suffix])
+    # Need this cast because List in MyPy is invariant?
+    suffixes = cast(ListOfLists, [suffix])
+    return _BraceExpandOne(parts, first_alt_index, suffixes)
 
   else:
     # Now call it on the tail
@@ -234,9 +266,10 @@ def _BraceExpand(parts):
 
 
 def BraceExpandWords(words):
-  out = []
+  # type: (List[word__CompoundWord]) -> List[word__CompoundWord]
+  out = []  # type: List[word__CompoundWord]
   for w in words:
-    if w.tag == word_e.BracedWordTree:
+    if isinstance(w, word__BracedWordTree):
       parts_list = _BraceExpand(w.parts)
       out.extend(word.CompoundWord(p) for p in parts_list)
     else:

@@ -841,6 +841,7 @@ class WordParser(object):
     return node
 
   def _ReadArithSub2Part(self):
+    # type: () -> word_part__ArithSubPart
     """Non-standard arith sub $[a + 1]."""
     left_span_id = self.cur_token.span_id
 
@@ -953,6 +954,7 @@ class WordParser(object):
           # TokenWord
           p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
+      assert isinstance(w, word__CompoundWord)  # for MyPy
       words.append(w)
 
     words2 = braces.BraceDetectAll(words)

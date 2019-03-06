@@ -4,6 +4,7 @@ os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 """
 
 import posix
+from typing import Tuple
 
 extsep = '.'
 sep = '/'
@@ -17,6 +18,7 @@ altsep = None
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
 def join(a, *p):
+    # type: (str, *str) -> str
     """Join two or more pathname components, inserting '/' as needed.
     If any component is an absolute path, all previous path components
     will be discarded.  An empty last part will result in a path that
@@ -38,6 +40,7 @@ def join(a, *p):
 # Trailing '/'es are stripped from head unless it is the root.
 
 def split(p):
+    # type: (str) -> Tuple[str, str]
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
     i = p.rfind('/') + 1
@@ -89,6 +92,7 @@ def splitext(p):
 # Return the tail (basename) part of a path, same as split(path)[1].
 
 def basename(p):
+    # type: (str) -> str
     """Returns the final component of a pathname"""
     i = p.rfind('/') + 1
     return p[i:]

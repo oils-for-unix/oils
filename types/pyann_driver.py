@@ -17,6 +17,28 @@ from frontend import lexer_test
 
 import glob
 
+def TopLevel():
+  """Copy some metaprogramming that only happens at the top level."""
+  # from core/meta.py
+  from core.meta import (
+      _ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES, TEST_UNARY_LOOKUP,
+      TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP,
+      types_asdl
+  )
+  from core import id_kind
+
+  ID_SPEC = id_kind.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
+
+  id_kind.AddKinds(ID_SPEC)
+  id_kind.AddBoolKinds(ID_SPEC, types_asdl.bool_arg_type_e)  # must come second
+  id_kind.SetupTestBuiltin(ID_SPEC,
+                           TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
+                           TEST_OTHER_LOOKUP,
+                           types_asdl.bool_arg_type_e)
+
+  from osh import arith_parse
+  spec = arith_parse.MakeShellSpec()
+
 
 def main():
   #typed_arith_parse_test.main()
@@ -51,6 +73,7 @@ def main():
   collect_types.init_types_collection()
   with collect_types.collect():
     runner.run(suite)
+    TopLevel()
 
   collect_types.dump_stats('type_info.json')
 

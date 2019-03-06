@@ -44,6 +44,8 @@ from osh import word_compile
 import libc
 from _devbuild.gen import osh_help  # generated file
 
+from typing import Dict
+
 lvalue = runtime_asdl.lvalue
 
 value = runtime_asdl.value
@@ -1352,6 +1354,7 @@ def Umask(argv):
 
 
 def _ParseOptSpec(spec_str):
+  # type: (str) -> Dict[str, bool]
   spec = {}
   i = 0
   n = len(spec_str)
@@ -1405,7 +1408,7 @@ def _GetOpts(spec, argv, optind):
 
 
 # spec string -> {flag, arity}
-_GETOPTS_CACHE = {}
+_GETOPTS_CACHE = {}  # type: Dict[str, Dict[str, bool]]
 
 def GetOpts(argv, mem):
   """

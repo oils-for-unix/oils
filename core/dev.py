@@ -10,8 +10,10 @@ from asdl import const
 from core import util
 from osh import word
 from pylib import os_path
+from core.util import ParseError
 
 def SpanIdFromError(error):
+  # type: (ParseError) -> int
   #print(parse_error)
   if error.span_id != const.NO_INTEGER:
     return error.span_id
@@ -55,6 +57,7 @@ class CrashDumper(object):
   One is constant at build time; the other is constant at runtime.
   """
   def __init__(self, crash_dump_dir):
+    # type: (str) -> None
     self.crash_dump_dir = crash_dump_dir
     # whether we should collect a dump, at the highest level of the stack
     self.do_collect = bool(crash_dump_dir)
@@ -99,6 +102,7 @@ class CrashDumper(object):
     self.collected = True
 
   def MaybeDump(self, status):
+    # type: (int) -> None
     """Write the dump as JSON.
 
     User can configure it two ways:

@@ -1306,15 +1306,14 @@ class CommandParser(object):
     return if_node
 
   def ParseTime(self):
+    # type: () -> command_t
     """
     time [-p] pipeline
 
     According to bash help.
     """
     self._Next()  # skip time
-
     pipeline = self.ParsePipeline()
-    assert pipeline is not None
     return command.TimeBlock(pipeline)
 
   def ParseCompoundCommand(self):

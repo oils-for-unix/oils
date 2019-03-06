@@ -6,7 +6,7 @@ glob_.py
 try:
   import libc
 except ImportError:
-  from benchmarks import fake_libc as libc
+  from benchmarks import fake_libc as libc  # type: ignore
 
 from core.meta import syntax_asdl, Id
 from core import util

@@ -15,7 +15,7 @@ import stat
 try:
   import libc  # for fnmatch
 except ImportError:
-  from benchmarks import fake_libc as libc
+  from benchmarks import fake_libc as libc  # type: ignore
 
 from asdl import const
 

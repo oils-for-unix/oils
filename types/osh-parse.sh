@@ -42,7 +42,6 @@ typecheck() {
 
 check-some() {
   local flags='--no-implicit-optional --no-strict-optional'
-  #local flags='--strict'
   #local flags='--strict --no-implicit-optional --no-strict-optional'
 
   # Somehow MyPy crashes on all files?

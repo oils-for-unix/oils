@@ -169,10 +169,11 @@ minimal() {
 
   gen-help
 
-  build/codegen.sh id-mypy-gen
+  gen-types-asdl    # no dependency on Id
 
-  gen-types-asdl    # doesn't need Id
-  gen-syntax-asdl   # needs Id, which needs types.asdl
+  build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
+
+  gen-syntax-asdl   # depends on Id
   gen-runtime-asdl  # ditto
 
   # Only for testing.

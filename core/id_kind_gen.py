@@ -85,15 +85,6 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
   """)
 
 
-# duplicate of frontend/types.asdl to break dependency
-class bool_arg_type_e(object):
-  Undefined = 1
-  Path = 2
-  Int = 3
-  Str = 4
-  Other = 5
-
-
 def main(argv):
   try:
     action = argv[1]
@@ -106,9 +97,9 @@ def main(argv):
   ID_SPEC = id_kind.IdSpec({}, {})
 
   id_kind.AddKinds(ID_SPEC)
-  id_kind.AddBoolKinds(ID_SPEC, bool_arg_type_e)  # must come second
+  id_kind.AddBoolKinds(ID_SPEC)  # must come second
 
-  id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {}, bool_arg_type_e)
+  id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {})
 
   ids = ID_SPEC.id_str2int.items()
   ids.sort(key=lambda pair: pair[1])  # Sort by ID

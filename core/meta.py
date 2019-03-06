@@ -14,9 +14,10 @@ Usage:
 from core import id_kind
 from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
 
-from typing import Dict
-from _devbuild.gen.id_kind_asdl import Id_t
-from _devbuild.gen.id_kind_asdl import Kind_t
+from typing import Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.id_kind_asdl import Id_t, Kind_t
+  from _devbuild.gen.types_asdl import bool_arg_type_t
 
 
 def _CreateInstanceLookup(id_enum, id_type, instances):
@@ -59,9 +60,8 @@ def IdInstance(i):
 #
 
 from _devbuild.gen import types_asdl  # other modules import this
-bool_arg_type_e = types_asdl.bool_arg_type_e
 
-BOOL_ARG_TYPES = {}  # type: Dict[int, bool_arg_type_e]
+BOOL_ARG_TYPES = {}  # type: Dict[int, bool_arg_type_t]
 
 # Used by builtin_bracket.py
 TEST_UNARY_LOOKUP = {}  # type: Dict[str, int]
@@ -76,11 +76,10 @@ TEST_OTHER_LOOKUP = {}  # type: Dict[str, int]
 ID_SPEC = id_kind.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
-id_kind.AddBoolKinds(ID_SPEC, types_asdl.bool_arg_type_e)  # must come second
+id_kind.AddBoolKinds(ID_SPEC)  # must come second
 id_kind.SetupTestBuiltin(ID_SPEC,
                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                         TEST_OTHER_LOOKUP,
-                         types_asdl.bool_arg_type_e)
+                         TEST_OTHER_LOOKUP)
 
 # Debug
 _kind_sizes = ID_SPEC.kind_sizes

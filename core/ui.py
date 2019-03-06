@@ -17,10 +17,16 @@ from asdl import format as fmt
 from core import dev
 from core.meta import syntax_asdl
 
+from typing import Any, IO, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.alloc import Arena
+  from core.util import ParseError
+
 command = syntax_asdl.command
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
+  # type: (int, Arena, IO[str]) -> None
   line_span = arena.GetLineSpan(span_id)
   line_id = line_span.line_id
   line = arena.GetLine(line_id)
@@ -42,6 +48,7 @@ def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
 
 
 def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
+  # type: (ParseError, Arena, str, IO[str]) -> None
   span_id = dev.SpanIdFromError(err)
 
   # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
@@ -93,6 +100,7 @@ def PrintAst(nodes, opts):
 
 
 def usage(msg, *args):
+  # type: (str, *Any) -> None
   """For user-facing usage errors."""
   if args:
     msg = msg % args

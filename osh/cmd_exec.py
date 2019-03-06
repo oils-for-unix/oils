@@ -45,7 +45,7 @@ from osh import word_compile
 try:
   import libc  # for fnmatch
 except ImportError:
-  from benchmarks import fake_libc as libc
+  from benchmarks import fake_libc as libc  # type: ignore
 
 lex_mode_e = types_asdl.lex_mode_e
 redir_arg_type_e = types_asdl.redir_arg_type_e
