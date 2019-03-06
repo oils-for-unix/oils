@@ -17,10 +17,11 @@ from asdl import format as fmt
 from core import dev
 from core.meta import syntax_asdl
 
-from typing import Any, IO, TYPE_CHECKING
+from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.util import ParseError
+  from _devbuild.gen.syntax_asdl import command_t
 
 command = syntax_asdl.command
 
@@ -70,6 +71,7 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
 
 
 def PrintAst(nodes, opts):
+  # type: (List[command_t], Any) -> None
   if len(nodes) == 1:
     node = nodes[0]
   else:

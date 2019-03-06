@@ -5,28 +5,20 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 
 from core import util
 from core.meta import syntax_asdl, Id
-
 from frontend import tdop
-from frontend.tdop import TdopParser
-
 from osh import word
-from _devbuild.gen.syntax_asdl import (
-    word__TokenWord,
-    arith_expr__ArithUnary,
-    arith_expr__ArithVarRef,
-    arith_expr__ArithBinary,
-    arith_expr__ArithWord,
-    arith_expr__TernaryOp,
-    arith_expr__FuncCall,
-    arith_expr__UnaryAssign,
-)
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from frontend.tdop import TdopParser
+  from _devbuild.gen.syntax_asdl import (arith_expr_t, word_t)
 
 p_die = util.p_die
 arith_expr = syntax_asdl.arith_expr
 
 
 def NullIncDec(p, w, bp):
-  # type: (TdopParser, word__TokenWord, int) -> arith_expr__UnaryAssign
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
   child = tdop.ToLValue(right)
@@ -36,25 +28,21 @@ def NullIncDec(p, w, bp):
 
 
 def NullUnaryPlus(p, t, bp):
-  # type: (TdopParser, word__TokenWord, int) -> arith_expr__ArithUnary
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   """ +x, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
   return arith_expr.ArithUnary(Id.Node_UnaryPlus, right)
 
 
 def NullUnaryMinus(p, t, bp):
-  # type: (TdopParser, word__TokenWord, int) -> arith_expr__ArithUnary
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   """ -1, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
   return arith_expr.ArithUnary(Id.Node_UnaryMinus, right)
 
 
-def LeftIncDec(p,  # type: TdopParser
-               w,  # type: word__TokenWord
-               left,  # type: arith_expr__ArithVarRef
-               rbp,  # type: int
-               ):
-  # type: (...) -> arith_expr__UnaryAssign
+def LeftIncDec(p, w, left, rbp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ For i++ and i--
   """
   if word.ArithId(w) == Id.Arith_DPlus:
@@ -68,12 +56,8 @@ def LeftIncDec(p,  # type: TdopParser
   return arith_expr.UnaryAssign(op_id, child)
 
 
-def LeftIndex(p,  # type: TdopParser
-              w,  # type: word__TokenWord
-              left,  # type: arith_expr__ArithVarRef
-              unused_bp,  # type: int
-              ):
-  # type: (...) -> arith_expr__ArithBinary
+def LeftIndex(p, w, left, unused_bp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """Array indexing, in both LValue and RValue context.
 
   LValue: f[0] = 1  f[x+1] = 2
@@ -100,12 +84,8 @@ def LeftIndex(p,  # type: TdopParser
   return arith_expr.ArithBinary(word.ArithId(w), left, index)
 
 
-def LeftTernary(p,  # type: TdopParser
-                t,  # type: word__TokenWord
-                left,  # type: arith_expr__ArithWord
-                bp,  # type: int
-                ):
-  # type: (...) -> arith_expr__TernaryOp
+def LeftTernary(p, t, left, bp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Function call f(a, b). """
   true_expr = p.ParseUntil(bp)
   p.Eat(Id.Arith_Colon)
@@ -116,12 +96,8 @@ def LeftTernary(p,  # type: TdopParser
 # For overloading of , inside function calls
 COMMA_PREC = 1
 
-def LeftFuncCall(p,  # type: TdopParser
-                 t,  # type: word__TokenWord
-                 left,  # type: arith_expr__ArithVarRef
-                 unused_bp,  # type: int
-                 ):
-  # type: (...) -> arith_expr__FuncCall
+def LeftFuncCall(p, t, left, unused_bp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Function call f(a, b). """
   children = []
   # f(x) or f[i](x)
@@ -138,6 +114,7 @@ def LeftFuncCall(p,  # type: TdopParser
 
 
 def MakeShellSpec():
+  # type: () -> tdop.ParserSpec
   """
   Following this table:
   http://en.cppreference.com/w/c/language/operator_precedence

@@ -40,13 +40,9 @@ class _Reader(object):
     return line_id, line, 0
 
   def Reset(self):
+    # type: () -> None
     # Should never be called?
     pass
-
-
-def _DoNothing(unused1, unused2):
-  """SIGINT handler."""
-  pass
 
 
 _PS2 = '> '
@@ -69,6 +65,8 @@ class InteractiveLineReader(_Reader):
     self.prompt_str = ''
 
   def _GetLine(self):
+    # type: () -> Optional[str]
+
     # NOTE: In bash, the prompt goes to stderr, but this seems to cause drawing
     # problems with readline?  It needs to know about the prompt.
     #sys.stderr.write(self.prompt_str)
@@ -106,6 +104,7 @@ class InteractiveLineReader(_Reader):
     return line
 
   def Reset(self):
+    # type: () -> None
     """Call this after command execution, to free memory taken up by the lines,
     and reset prompt string back to PS1.
     """

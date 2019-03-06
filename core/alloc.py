@@ -163,14 +163,3 @@ class Pool(object):
     self.next_arena_id += 1
     self.arenas.append(a)
     return a
-
-
-# TODO: Also need arena_id
-
-# NOTE: Not used right now.
-def SpanValue(span, arena):
-  """Given an line_span and a arena of lines, return the string value.
-  """
-  line = arena.GetLine(span.line_id)
-  c = span.col
-  return line[c : c + span.length]

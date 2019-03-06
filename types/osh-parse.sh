@@ -41,14 +41,12 @@ typecheck() {
 }
 
 check-some() {
+  local strict=${1:-}
   local flags='--no-implicit-optional --no-strict-optional'
-  #local flags='--strict --no-implicit-optional --no-strict-optional'
+  if test -n "$strict"; then
+    flags="$flags --strict"
+  fi
 
-  # Somehow MyPy crashes on all files?
-  # It doesn't like __future__.py, but that's ok!
-  # AssertionError: ImportedName(_collections.defaultdict)
-
-  #egrep '_devbuild|bin|asdl|pylib|frontend|core|osh|oil_lang' _tmp/osh-parse-src.txt | tee _tmp/to-check.txt
   egrep -v 'vendor|__future__' _tmp/osh-parse-src.txt | tee _tmp/to-check.txt
 
   set -x

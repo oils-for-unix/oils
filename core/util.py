@@ -34,12 +34,13 @@ READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 class HistoryError(Exception):
 
   def __init__(self, msg, *args):
-    # type: (str, *str) -> None
+    # type: (str, *Any) -> None
     Exception.__init__(self)
     self.msg = msg
     self.args = args
 
   def UserErrorString(self):
+    # type: () -> str
     out = 'history: '
     if self.args:
       out += self.msg % self.args
@@ -54,7 +55,7 @@ class _ErrorWithLocation(Exception):
   Formatting is in ui.PrintError.
   """
   def __init__(self, msg, *args, **kwargs):
-    # type: (str, *str, **Any) -> None
+    # type: (str, *Any, **Any) -> None
     Exception.__init__(self)
     self.msg = msg
     self.args = args
@@ -127,13 +128,13 @@ class ErrExitFailure(FatalRuntimeError):
 
 
 def p_die(msg, *args, **kwargs):
-  # type: (...) -> NoReturn
+  # type: (str, *Any, **Any) -> NoReturn
   """Convenience wrapper for parse errors."""
   raise ParseError(msg, *args, **kwargs)
 
 
 def e_die(msg, *args, **kwargs):
-  # type: (str, *str, **Any) -> NoReturn
+  # type: (str, *Any, **Any) -> NoReturn
   """Convenience wrapper for runtime errors."""
   raise FatalRuntimeError(msg, *args, **kwargs)
 
@@ -146,6 +147,7 @@ def log(msg, *args):
 
 
 def warn(msg, *args):
+  # type: (str, *Any) -> None
   if args:
     msg = msg % args
   print('osh warning: ' + msg, file=sys.stderr)
@@ -154,6 +156,7 @@ def warn(msg, *args):
 # NOTE: This should say 'oilc error' or 'oil error', instead of 'osh error' in
 # some cases.
 def error(msg, *args):
+  # type: (str, *Any) -> None
   if args:
     msg = msg % args
   print('osh error: ' + msg, file=sys.stderr)
@@ -189,31 +192,42 @@ def GetHomeDir():
     return e.pw_dir
 
 
-class _FileResourceLoader(object):
+class _ResourceLoader(object):
+
+  def open(self, rel_path):
+    # type: (str) -> IO[str]
+    raise NotImplementedError
+
+
+class _FileResourceLoader(_ResourceLoader):
   """Open resources relative to argv[0]."""
 
   def __init__(self, root_dir):
+    # type: (str) -> None
     self.root_dir = root_dir
 
-  # TODO: Make this a context manager?
   def open(self, rel_path):
+    # type: (str) -> IO[str]
     return open(os_path.join(self.root_dir, rel_path))
 
 
-class _ZipResourceLoader(object):
+class _ZipResourceLoader(_ResourceLoader):
   """Open resources INSIDE argv[0] as a zip file."""
 
   def __init__(self, argv0):
+    # type: (str) -> None
     self.z = zipimport.zipimporter(argv0)
 
   def open(self, rel_path):
+    # type: (str) -> IO[str]
     contents = self.z.get_data(rel_path)
     return cStringIO.StringIO(contents)
 
 
-_loader = None
+_loader = None  # type: _ResourceLoader
 
 def GetResourceLoader():
+  # type: () -> _ResourceLoader
   global _loader
   if _loader:
     return _loader
@@ -243,6 +257,7 @@ def GetResourceLoader():
 
 
 def ShowAppVersion(app_name):
+  # type: (str) -> None
   """For Oil and OPy."""
   loader = GetResourceLoader()
   f = loader.open('oil-version.txt')
@@ -300,6 +315,7 @@ def ShowAppVersion(app_name):
 
 # This was useful for debugging.
 def ShowFdState():
+  # type: () -> None
   import subprocess
   subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
 
@@ -330,13 +346,17 @@ class DebugFile(object):
 class NullDebugFile(DebugFile):
 
   def __init__(self):
+    # type: () -> None
     pass
 
-  def log(self, *args):
+  def log(self, msg, *args):
+    # type: (str, *Any) -> None
     pass
 
   def write(self, s):
+    # type: (str) -> None
     pass
 
   def isatty(self):
+    # type: () -> bool
     return False

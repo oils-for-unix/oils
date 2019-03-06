@@ -136,6 +136,7 @@ class BoolParser(object):
     return self.op_id == Id.Lit_DRightBracket
 
   def ParseForBuiltin(self):
+    # type: () -> bool_expr_t
     """For test builtin."""
     self._Next()
 

@@ -94,8 +94,9 @@ apply-types() {
   #local -a files=(osh/word.py)
 
   #local -a files=(frontend/parse_lib.py)
-  #local -a files=(core/meta.py core/id_kind.py frontend/tdop.py osh/arith_parse.py)
-  local -a files=(core/id_kind.py)
+  local -a files=(core/meta.py core/id_kind.py frontend/tdop.py osh/arith_parse.py)
+  #local -a files=(core/id_kind.py)
+  #local -a files=(frontend/match.py)
   #local -a files=(osh/bool_parse.py)
   #local -a files=(osh/word_parse.py)
   #local -a files=(osh/cmd_parse.py)

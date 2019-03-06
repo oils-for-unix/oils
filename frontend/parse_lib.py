@@ -15,17 +15,19 @@ from osh import word_parse
 
 from oil_lang import cmd_parse as oil_cmd_parse
 
-from core.alloc import Arena
-from frontend.lexer import Lexer
-from frontend.reader import _Reader
-from frontend.tdop import TdopParser
-from osh.word_parse import WordParser
-from osh.cmd_parse import CommandParser
-from _devbuild.gen.id_kind_asdl import Id_t
-from _devbuild.gen.syntax_asdl import (
-    token, word_t, redir_t, word__CompoundWord
-)
-from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.alloc import Arena
+  from core.util import DebugFile
+  from frontend.lexer import Lexer
+  from frontend.reader import _Reader
+  from frontend.tdop import TdopParser
+  from osh.word_parse import WordParser
+  from osh.cmd_parse import CommandParser
+  from _devbuild.gen.id_kind_asdl import Id_t
+  from _devbuild.gen.syntax_asdl import (
+      token, word_t, redir_t, word__CompoundWord
+  )
 
 lex_mode_e = types_asdl.lex_mode_e
 
@@ -56,10 +58,11 @@ class _BaseTrail(object):
     self.expanding_alias = False
 
   def Clear(self):
+    # type: () -> None
     pass
 
   def SetLatestWords(self, words, redirects):
-    # type: (List[word__CompoundWord], List) -> None
+    # type: (List[word__CompoundWord], List[redir_t]) -> None
     pass
 
   def AppendToken(self, token):
@@ -67,33 +70,39 @@ class _BaseTrail(object):
     pass
 
   def BeginAliasExpansion(self):
+    # type: () -> None
     pass
 
   def EndAliasExpansion(self):
+    # type: () -> None
     pass
 
   def PrintDebugString(self, debug_f):
+    # type: (DebugFile) -> None
+
+    # note: could cast DebugFile to IO[str] instead of ignoring?
     debug_f.log('  words:')
     for w in self.words:
-      w.PrettyPrint(f=debug_f)
+      w.PrettyPrint(f=debug_f)  # type: ignore
     debug_f.log('')
 
     debug_f.log('  redirects:')
     for r in self.redirects:
-      r.PrettyPrint(f=debug_f)
+      r.PrettyPrint(f=debug_f)  # type: ignore
     debug_f.log('')
 
     debug_f.log('  tokens:')
     for p in self.tokens:
-      p.PrettyPrint(f=debug_f)
+      p.PrettyPrint(f=debug_f)  # type: ignore
     debug_f.log('')
 
     debug_f.log('  alias_words:')
     for w in self.alias_words:
-      w.PrettyPrint(f=debug_f)
+      w.PrettyPrint(f=debug_f)  # type: ignore
     debug_f.log('')
 
   def __repr__(self):
+    # type: () -> str
     return '<Trail %s %s %s %s>' % (
         self.words, self.redirects, self.tokens, self.alias_words)
 
@@ -117,7 +126,7 @@ class Trail(_BaseTrail):
     del self.alias_words[:]
 
   def SetLatestWords(self, words, redirects):
-    # type: (List[word__CompoundWord], List) -> None
+    # type: (List[word__CompoundWord], List[redir_t]) -> None
     if self.expanding_alias:
       self.alias_words = words  # Save these separately
       return
@@ -164,7 +173,7 @@ class ParseContext(object):
   """
 
   def __init__(self, arena, aliases, trail=None, one_pass_parse=False):
-    # type: (Arena, Dict, Optional[_BaseTrail], bool) -> None
+    # type: (Arena, Dict[str, Any], Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.aliases = aliases
     # Completion state lives here since it may span multiple parsers.

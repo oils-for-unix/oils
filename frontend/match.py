@@ -12,7 +12,8 @@ from core.meta import Id, IdInstance
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
 
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, Callable, Dict, List, TYPE_CHECKING
+#from _sre import SRE_Pattern
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
@@ -29,6 +30,7 @@ else:
 
 
 def _LongestMatch(re_list, line, start_pos):
+
   # Simulate the EOL handling in re2c.
   if start_pos >= len(line):
     return Id.Eol_Tok, start_pos
@@ -45,7 +47,11 @@ def _LongestMatch(re_list, line, start_pos):
   return tok_type, end_pos
 
 
+if TYPE_CHECKING:
+  LexerPairs = List[Tuple[SRE_Pattern, Id_t]]
+
 def _CompileAll(pat_list):
+  # type: (List[Tuple[bool, str, Id_t]]) -> LexerPairs
   result = []
   for is_regex, pat, token_id in pat_list:
     if not is_regex:
@@ -57,11 +63,13 @@ def _CompileAll(pat_list):
 class _MatchOshToken_Slow(object):
   """An abstract matcher that doesn't depend on OSH."""
   def __init__(self, lexer_def):
-    self.lexer_def = {}
+    # type: (Dict[lex_mode_t, List[Tuple[bool, str, Id_t]]]) -> None
+    self.lexer_def = {}  # type: Dict[lex_mode_t, LexerPairs]
     for lex_mode, pat_list in lexer_def.items():
       self.lexer_def[lex_mode] = _CompileAll(pat_list)
 
   def __call__(self, lex_mode, line, start_pos):
+    # type: (lex_mode_t, str, int) -> Tuple[Id_t, int]
     """Returns (id, end_pos)."""
     re_list = self.lexer_def[lex_mode]
 
@@ -80,6 +88,7 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
 class SimpleLexer(object):
   """Lexer for echo -e, which interprets C-escaped strings."""
   def __init__(self, match_func):
+    # type: (Callable) -> None
     self.match_func = match_func
 
   def Tokens(self, line):
@@ -97,9 +106,11 @@ class SimpleLexer(object):
 
 class _MatchTokenSlow(object):
   def __init__(self, pat_list):
+    # type: (List[Tuple[bool, str, Id_t]]) -> None
     self.pat_list = _CompileAll(pat_list)
 
   def __call__(self, line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
     return _LongestMatch(self.pat_list, line, start_pos)
 
 

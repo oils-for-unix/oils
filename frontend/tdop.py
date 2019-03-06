@@ -7,7 +7,7 @@ from core import util
 from core.meta import syntax_asdl, types_asdl, Id
 from osh import word
 
-from typing import NoReturn, TYPE_CHECKING
+from typing import Callable, List, Dict, NoReturn, TYPE_CHECKING
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
@@ -33,13 +33,9 @@ lhs_expr = syntax_asdl.lhs_expr
 word_e = syntax_asdl.word_e
 lex_mode_e = types_asdl.lex_mode_e
 
-
-def Assert(s, expected, tree):
-  """Used for tests."""
-  print(s)
-  if expected is not None:
-    sexpr = repr(tree)
-    assert sexpr == expected, '%r != %r' % (sexpr, expected)
+if TYPE_CHECKING:
+  NullFunc = Callable[[TdopParser, word_t, int], arith_expr_t]
+  LeftFunc = Callable[[TdopParser, word_t, arith_expr_t, int], arith_expr_t]
 
 
 def IsCallable(node):
@@ -108,16 +104,13 @@ def ToLValue(node):
 
 
 def NullError(p, t, bp):
-  # type: (TdopParser, word__TokenWord, int) -> NoReturn
+  # type: (TdopParser, word_t, int) -> NoReturn
   # TODO: I need position information
   p_die("Token can't be used in prefix position", word=t)
 
 
-def NullConstant(p,  # type: TdopParser
-                 w,  # type: word__CompoundWord
-                 bp,  # type: int
-                 ):
-  # type: (...) -> arith_expr_t
+def NullConstant(p, w, bp):
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   var_name_token = word.LooksLikeArithVar(w)
   if var_name_token:
     return arith_expr.ArithVarRef(var_name_token)
@@ -126,7 +119,7 @@ def NullConstant(p,  # type: TdopParser
 
 
 def NullParen(p, t, bp):
-  # type: (TdopParser, word__TokenWord, int) -> arith_expr_t
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   """ Arithmetic grouping """
   r = p.ParseUntil(bp)
   p.Eat(Id.Arith_RParen)
@@ -134,6 +127,7 @@ def NullParen(p, t, bp):
 
 
 def NullPrefixOp(p, w, bp):
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   """Prefix operator.
 
   Low precedence:  return, raise, etc.
@@ -151,27 +145,20 @@ def NullPrefixOp(p, w, bp):
 #
 
 def LeftError(p, t, left, rbp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> NoReturn
   # Hm is this not called because of binding power?
   p_die("Token can't be used in infix position", word=t)
 
 
-def LeftBinaryOp(p,  # type: TdopParser
-                 w,  # type: word__TokenWord
-                 left,  # type: arith_expr_t
-                 rbp,  # type: int
-                 ):
-  # type: (...) -> arith_expr__ArithBinary
+def LeftBinaryOp(p, w, left, rbp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # TODO: w shoudl be a TokenWord, and we should extract the token from it.
   return arith_expr.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
 
 
-def LeftAssign(p,  # type: TdopParser
-               w,  # type: word__TokenWord
-               left,  # type: arith_expr_t
-               rbp,  # type: int
-               ):
-  # type: (...) -> arith_expr__BinaryAssign
+def LeftAssign(p, w, left, rbp):
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
   lhs = ToLValue(left)
@@ -190,6 +177,7 @@ class LeftInfo(object):
   In C++ this should be a big array.
   """
   def __init__(self, led=None, lbp=0, rbp=0):
+    # type: (LeftFunc, int, int) -> None
     self.led = led or LeftError
     self.lbp = lbp
     self.rbp = rbp
@@ -201,6 +189,7 @@ class NullInfo(object):
   In C++ this should be a big array.
   """
   def __init__(self, nud=None, bp=0):
+    # type: (NullFunc, int) -> None
     self.nud = nud or LeftError
     self.bp = bp
 
@@ -211,10 +200,12 @@ class ParserSpec(object):
   This can be compiled to a table in C++.
   """
   def __init__(self):
-    self.nud_lookup = {}
-    self.led_lookup = {}
+    # type: () -> None
+    self.nud_lookup = {}  # type: Dict[Id_t, NullInfo]
+    self.led_lookup = {}  # type: Dict[Id_t, LeftInfo]
 
   def Null(self, bp, nud, tokens):
+    # type: (int, NullFunc, List[Id_t]) -> None
     """Register a token that doesn't take anything on the left.
 
     Examples: constant, prefix operator, error.
@@ -225,16 +216,19 @@ class ParserSpec(object):
         self.led_lookup[token] = LeftInfo()  # error
 
   def _RegisterLed(self, lbp, rbp, led, tokens):
+    # type: (int, int, LeftFunc, List[Id_t]) -> None
     for token in tokens:
       if token not in self.nud_lookup:
         self.nud_lookup[token] = NullInfo(NullError)
       self.led_lookup[token] = LeftInfo(lbp=lbp, rbp=rbp, led=led)
 
   def Left(self, bp, led, tokens):
+    # type: (int, LeftFunc, List[Id_t]) -> None
     """Register a token that takes an expression on the left."""
     self._RegisterLed(bp, bp, led, tokens)
 
   def LeftRightAssoc(self, bp, led, tokens):
+    # type: (int, LeftFunc, List[Id_t]) -> None
     """Register a right associative operator."""
     self._RegisterLed(bp, bp - 1, led, tokens)
 
@@ -269,9 +263,6 @@ class TdopParser(object):
   def _Led(self, token):
     # type: (Id_t) -> LeftInfo
     return self.spec.LookupLed(token)
-
-  def AtAnyOf(self, *args):
-    return self.op_id in args
 
   def AtToken(self, token_type):
     # type: (Id_t) -> bool

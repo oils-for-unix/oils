@@ -20,6 +20,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.types_asdl import bool_arg_type_t
 
 
+# Hm, there's no way to add static types to this metaprogramming?
 def _CreateInstanceLookup(id_enum, id_type, instances):
   """
   Args:

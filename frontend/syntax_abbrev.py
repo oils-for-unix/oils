@@ -7,6 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id
 
 
 def _AbbreviateToken(token, out):
+  # type: (token, List[runtime._PrettyBase]) -> None
   if token.id != Id.Lit_Chars:
     n1 = runtime.PrettyLeaf(token.id.name, runtime.Color_OtherConst)
     out.append(n1)
@@ -16,6 +17,7 @@ def _AbbreviateToken(token, out):
 
 
 def _token(obj):
+  # type: (token) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -27,6 +29,7 @@ def _token(obj):
 
 
 def _word_part__LiteralPart(obj):
+  # type: (word_part__LiteralPart) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -36,6 +39,7 @@ def _word_part__LiteralPart(obj):
 
 
 def _word_part__SimpleVarSub(obj):
+  # type: (word_part__SimpleVarSub) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = '$'
@@ -44,6 +48,7 @@ def _word_part__SimpleVarSub(obj):
 
 
 def _word_part__BracedVarSub(obj):
+  # type: (word_part__BracedVarSub) -> PrettyNode
   p_node = runtime.PrettyNode()
   if obj.prefix_op or obj.bracket_op or obj.suffix_op:
     return None  # we have other fields to display; don't abbreviate
@@ -55,6 +60,7 @@ def _word_part__BracedVarSub(obj):
 
 
 def _word_part__DoubleQuotedPart(obj):
+  # type: (word_part__DoubleQuotedPart) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = 'DQ'
@@ -65,6 +71,8 @@ def _word_part__DoubleQuotedPart(obj):
 
 
 def _word_part__SingleQuotedPart(obj):
+  # type: (word_part__SingleQuotedPart) -> PrettyNode
+
   # Only abbreviate 'foo', not $'foo\n'
   if obj.left.id != Id.Left_SingleQuote:
     return None  # Fall back on obj._AbbreviatedTree()
@@ -79,6 +87,7 @@ def _word_part__SingleQuotedPart(obj):
 
 
 def _word__CompoundWord(obj):
+  # type: (word__CompoundWord) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -91,6 +100,7 @@ def _word__CompoundWord(obj):
 
 
 def _command__SimpleCommand(obj):
+  # type: (command__SimpleCommand) -> PrettyNode
   p_node = runtime.PrettyNode()
   if obj.redirects or obj.more_env:
     return None  # we have other fields to display; don't abbreviate

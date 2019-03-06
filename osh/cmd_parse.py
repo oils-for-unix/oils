@@ -246,7 +246,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
 
 
 def _AppendMoreEnv(preparsed_list, more_env):
-  # type: (List, List) -> None
+  # type: (PreParsedList, List[env_pair]) -> None
   """Helper to modify a SimpleCommand node.
 
   Args:
@@ -340,9 +340,12 @@ def _MakeAssignment(parse_ctx,  # type: ParseContext
   return node
 
 
+if TYPE_CHECKING:
+  PreParsedList = List[Tuple[token, Optional[token], int, word__CompoundWord]]
+
 def _SplitSimpleCommandPrefix(words  # type: List[word__CompoundWord]
                               ):
-  # type: (...) -> Tuple[List[Tuple[token, Optional[token], int, word__CompoundWord]], List[word__CompoundWord]]
+  # type: (...) -> Tuple[PreParsedList, List[word__CompoundWord]]
   """Second pass of SimpleCommand parsing: look for assignment words."""
   preparsed_list = []
   suffix_words = []
@@ -364,7 +367,7 @@ def _SplitSimpleCommandPrefix(words  # type: List[word__CompoundWord]
 
 
 def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
-  # type: (List, List[word__CompoundWord], List) -> command__SimpleCommand
+  # type: (PreParsedList, List[word__CompoundWord], List[redir_t]) -> command__SimpleCommand
   """Create an command.SimpleCommand node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -444,10 +447,8 @@ class CommandParser(object):
 
     self.pending_here_docs = []  # type: List[redir__HereDoc]
 
-  def Error(self):
-    return 'TODO: for completion'
-
   def ResetInputObjects(self):
+    # type: () -> None
     """Reset the internal state of our inputs.
 
     Called by the interactive loop.
@@ -462,6 +463,7 @@ class CommandParser(object):
     self.next_lex_mode = lex_mode
 
   def Peek(self):
+    # type: () -> word_t
     """Public method for REPL."""
     self._Peek()
     return self.cur_word
@@ -1459,8 +1461,9 @@ class CommandParser(object):
     return func
 
   def ParseCoproc(self):
+    # type: () -> command_t
     """
-    TODO:
+    TODO: command__Coproc?
     """
     raise NotImplementedError
 

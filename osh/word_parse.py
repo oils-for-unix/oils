@@ -74,7 +74,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArrayLiteralPart, word_part__LiteralPart,
     word_part__BracedVarSub, word_part__SingleQuotedPart,
     word_part__ArithSubPart, word_part__DoubleQuotedPart,
-    word_part__CommandSubPart,
+    word_part__CommandSubPart, word_part__ExtGlobPart,
     command__ForExpr,
 )
 
@@ -574,6 +574,7 @@ class WordParser(object):
     raise AssertionError('%s not handled' % self.cur_token)
 
   def _ReadExtGlobPart(self):
+    # type: () -> word_part__ExtGlobPart
     """
     Grammar:
       Item         = CompoundWord | EPSILON  # important: @(foo|) is allowed
@@ -583,7 +584,7 @@ class WordParser(object):
       CompoundWord includes ExtGlobPart
     """
     left_token = self.cur_token
-    arms = []
+    arms = []  # type: List[word_t]
     spids = []
     spids.append(left_token.span_id)
 
@@ -625,7 +626,7 @@ class WordParser(object):
     return part
 
   def _ReadLikeDQ(self, left_dq_token, out_parts):
-    # type: (Optional[token], List) -> None
+    # type: (Optional[token], List[word_part_t]) -> None
     """
     Args:
       left_dq_token: A token if we are reading a double quoted part, or None if
@@ -1206,7 +1207,7 @@ class WordParser(object):
     return self.cursor
 
   def ReadHereDocBody(self, parts):
-    # type: (List) -> None
+    # type: (List[word_part_t]) -> None
     """A here doc is like a double quoted context, except " isn't special."""
     self._ReadLikeDQ(None, parts)
     # Returns nothing

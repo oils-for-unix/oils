@@ -40,6 +40,21 @@ def TopLevel():
   spec = arith_parse.MakeShellSpec()
 
 
+def Match():
+  from frontend.match import _MatchOshToken_Slow, _MatchTokenSlow
+  from frontend import lex
+  MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
+  ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
+  GLOB_MATCHER = _MatchTokenSlow(lex.GLOB_DEF)
+  PS1_MATCHER = _MatchTokenSlow(lex.PS1_DEF)
+  HISTORY_MATCHER = _MatchTokenSlow(lex.HISTORY_DEF)
+
+
+def Arith():
+  from osh.arith_parse import MakeShellSpec
+  SPEC = MakeShellSpec()
+
+
 def main():
   #typed_arith_parse_test.main()
 
@@ -72,8 +87,10 @@ def main():
 
   collect_types.init_types_collection()
   with collect_types.collect():
-    runner.run(suite)
-    TopLevel()
+    #runner.run(suite)
+    #TopLevel()
+    #Match()
+    Arith()
 
   collect_types.dump_stats('type_info.json')
 

@@ -27,8 +27,8 @@ if TYPE_CHECKING:
   #from core.alloc import Arena
   # commented out so --strict doesn't follow all
   #from osh.cmd_exec import Executor
-  #from osh.cmd_parse import CommandParser
-  pass
+  from osh.cmd_parse import CommandParser
+  from _devbuild.gen.syntax_asdl import command_t
 
 command = syntax_asdl.command
 
@@ -165,6 +165,7 @@ def Batch(ex, c_parser, arena, nodes_out=None):
 
 
 def ParseWholeFile(c_parser):
+  # type: (CommandParser) -> command_t
   """Parse an entire shell script.
 
   This uses the same logic as Batch().
