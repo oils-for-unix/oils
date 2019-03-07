@@ -16,14 +16,13 @@ import pwd  # TODO: Move this dependency to Oil?
 import sys
 import zipimport  # NOT the zipfile module.
 
+from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
 from asdl import const
 from pylib import os_path
 
-Buffer = cStringIO.StringIO  # used by asdl/format.py
+from typing import IO, NoReturn, Any
 
-from typing import IO, NoReturn, Any, TYPE_CHECKING
-if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
+Buffer = cStringIO.StringIO  # used by asdl/format.py
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".

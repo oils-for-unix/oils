@@ -5,18 +5,13 @@ match.py - match with generated re2c code or Python regexes.
 
 import posix
 
-#from core import util
-from frontend import lex
-from core.meta import Id, IdInstance
-
-from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
+#from core import util
+from core.meta import IdInstance
+from frontend import lex
 
 from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
-
-# Do we need a .pyi file for re or _sre?
-if TYPE_CHECKING:
-  SRE_Pattern = Any
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
@@ -31,7 +26,9 @@ if fastlex:
 else:
   import re  # type: ignore
 
+
 if TYPE_CHECKING:
+  SRE_Pattern = Any  # Do we need a .pyi file for re or _sre?
   MatchFunc = Callable[[lex_mode_t, str, int], Tuple[Id_t, int]]
   SimpleMatchFunc = Callable[[str, int], Tuple[Id_t, int]]
   LexerPairs = List[Tuple[SRE_Pattern, Id_t]]

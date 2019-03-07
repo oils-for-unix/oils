@@ -48,9 +48,29 @@ lex_mode_e.VS_ArgDQ
   e.g. "${x:-a  "b"}".
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
+from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
+from _devbuild.gen.syntax_asdl import (
+    token, arith_expr_t, bracket_op_t,
+
+    suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
+
+    word_t, word__CompoundWord, word__TokenWord,
+
+    word_part, word_part_t,
+    word_part__ArrayLiteralPart, word_part__LiteralPart,
+    word_part__BracedVarSub, word_part__SingleQuotedPart,
+    word_part__ArithSubPart, word_part__DoubleQuotedPart,
+    word_part__CommandSubPart, word_part__ExtGlobPart,
+
+    command, command__ForExpr,
+    suffix_op, bracket_op,
+)
+# TODO: rename word -> osh_word in syntax.asdl
+from _devbuild.gen.syntax_asdl import word as osh_word
+
 from core import util
-from core.meta import syntax_asdl, types_asdl, LookupKind
+from core.meta import LookupKind
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse
@@ -63,31 +83,6 @@ if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
   from frontend.reader import _Reader
-
-from _devbuild.gen.types_asdl import lex_mode_t
-from _devbuild.gen.id_kind_asdl import Id_t
-
-from _devbuild.gen.syntax_asdl import (
-    token, arith_expr_t, bracket_op_t,
-    suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
-    word_t, word__CompoundWord, word__TokenWord,
-    word_part_t,
-    word_part__ArrayLiteralPart, word_part__LiteralPart,
-    word_part__BracedVarSub, word_part__SingleQuotedPart,
-    word_part__ArithSubPart, word_part__DoubleQuotedPart,
-    word_part__CommandSubPart, word_part__ExtGlobPart,
-    command__ForExpr,
-)
-
-word_part_e = syntax_asdl.word_part_e
-word_e = syntax_asdl.word_e
-osh_word = syntax_asdl.word  # TODO: rename word -> osh_word in syntax.asdl
-word_part = syntax_asdl.word_part
-suffix_op = syntax_asdl.suffix_op
-bracket_op = syntax_asdl.bracket_op
-command = syntax_asdl.command
-
-lex_mode_e = types_asdl.lex_mode_e
 
 p_die = util.p_die
 log = util.log

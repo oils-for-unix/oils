@@ -30,16 +30,16 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-from osh import word
-from core import util
-from core.meta import LookupKind, syntax_asdl, types_asdl
-
 from _devbuild.gen.id_kind_asdl import Id, Kind
-from _devbuild.gen.types_asdl import lex_mode_t
+from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     word_t, word__CompoundWord, word__StringWord,
-    bool_expr_t,
+    bool_expr, bool_expr_t,
 )
+from osh import word
+from core import util
+from core.meta import LookupKind
+
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.word_parse import WordParser
@@ -48,10 +48,6 @@ if TYPE_CHECKING:
 #  import libc  # for regex_parse
 #except ImportError:
 #  from benchmarks import fake_libc as libc
-
-bool_expr = syntax_asdl.bool_expr
-word_e = syntax_asdl.word_e
-lex_mode_e = types_asdl.lex_mode_e
 
 log = util.log
 p_die = util.p_die

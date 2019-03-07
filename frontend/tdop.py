@@ -3,39 +3,26 @@
 tdop.py - Library for expression parsing.
 """
 
+from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.syntax_asdl import (
+    arith_expr, arith_expr_t,
+    arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__ArithVarRef,
+    arith_expr__ArithBinary, arith_expr__BinaryAssign, arith_expr__FuncCall,
+    lhs_expr, lhs_expr_t, lhs_expr__LhsName,
+    word_t,
+)
+from _devbuild.gen.types_asdl import lex_mode_e
 from core import util
-from core.meta import syntax_asdl, types_asdl, Id
 from osh import word
 
 from typing import Callable, List, Dict, NoReturn, TYPE_CHECKING
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
-
-from _devbuild.gen.id_kind_asdl import Id_t
-from _devbuild.gen.syntax_asdl import (
-    arith_expr_t,
-    arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__ArithVarRef,
-    arith_expr__ArithBinary, arith_expr__BinaryAssign, arith_expr__FuncCall,
-    lhs_expr_t,
-    lhs_expr__LhsName,
-    word_t,
-)
-from _devbuild.gen.syntax_asdl import (word__TokenWord, word__CompoundWord)
-
-p_die = util.p_die
-
-arith_expr = syntax_asdl.arith_expr
-arith_expr_e = syntax_asdl.arith_expr_e
-
-lhs_expr = syntax_asdl.lhs_expr
-
-word_e = syntax_asdl.word_e
-lex_mode_e = types_asdl.lex_mode_e
-
-if TYPE_CHECKING:
   NullFunc = Callable[[TdopParser, word_t, int], arith_expr_t]
   LeftFunc = Callable[[TdopParser, word_t, arith_expr_t, int], arith_expr_t]
+
+p_die = util.p_die
 
 
 def IsCallable(node):

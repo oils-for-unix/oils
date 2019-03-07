@@ -12,18 +12,15 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.syntax_asdl import command_t, command
 from asdl import const
 from asdl import format as fmt
 from core import dev
-from core.meta import syntax_asdl
 
 from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.util import ParseError
-  from _devbuild.gen.syntax_asdl import command_t
-
-command = syntax_asdl.command
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):

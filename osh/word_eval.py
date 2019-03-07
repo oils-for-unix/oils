@@ -6,27 +6,20 @@ import pwd
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.syntax_asdl import (
+    word_e, bracket_op_e, suffix_op_e, word_part_e,
+)
+from _devbuild.gen.runtime_asdl import (
+    part_value, part_value_e, value, value_e, value_t, effect_e
+)
 from core import util
-from core.meta import syntax_asdl, runtime_asdl, LookupKind
-
+from core.meta import LookupKind
 from frontend import match
-
 from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import state
 from osh import word_compile
-
-word_e = syntax_asdl.word_e
-bracket_op_e = syntax_asdl.bracket_op_e
-suffix_op_e = syntax_asdl.suffix_op_e
-word_part_e = syntax_asdl.word_part_e
-
-part_value = runtime_asdl.part_value
-part_value_e = runtime_asdl.part_value_e
-value = runtime_asdl.value
-value_e = runtime_asdl.value_e
-effect_e = runtime_asdl.effect_e
 
 log = util.log
 e_die = util.e_die
@@ -52,7 +45,7 @@ def _ValueToPartValue(val, quoted):
 
   Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
   """
-  assert isinstance(val, runtime_asdl.value_t), val
+  assert isinstance(val, value_t), val
 
   if val.tag == value_e.Str:
     return part_value.String(val.s, not quoted)
@@ -477,7 +470,7 @@ class _WordEvaluator(object):
     return value.Str(sep.join(s for s in val.strs if s is not None))
 
   def _EmptyStrOrError(self, val, token=None):
-    assert isinstance(val, runtime_asdl.value_t), val
+    assert isinstance(val, value_t), val
 
     if val.tag == value_e.Undef:
       if self.exec_opts.nounset:
@@ -970,7 +963,7 @@ class _WordEvaluator(object):
     return value.Str(''.join(strs))
 
   def EvalRhsWord(self, word):
-    """syntax.word -> runtime_asdl.value
+    """syntax.word -> value
 
     Used for RHS of assignment.  There is no splitting.
     """

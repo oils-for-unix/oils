@@ -30,8 +30,10 @@ import posix
 import signal
 import sys
 
+from _devbuild.gen import osh_help  # generated file
+from _devbuild.gen.runtime_asdl import (
+  lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e)
 from core import util
-from core.meta import runtime_asdl
 from frontend import args
 from frontend import lex
 from frontend import match
@@ -42,18 +44,9 @@ from osh import string_ops
 from osh import word_compile
 
 import libc
-from _devbuild.gen import osh_help  # generated file
 
 from typing import Dict
 
-lvalue = runtime_asdl.lvalue
-
-value = runtime_asdl.value
-value_e = runtime_asdl.value_e
-scope_e = runtime_asdl.scope_e
-span_e = runtime_asdl.span_e
-var_flags_e = runtime_asdl.var_flags_e
-builtin_e = runtime_asdl.builtin_e
 log = util.log
 e_die = util.e_die
 

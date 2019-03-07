@@ -3,18 +3,17 @@
 arith_parse.py - Parse shell arithmetic, which is based on C.
 """
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import (arith_expr, arith_expr_t, word_t)
 from core import util
-from core.meta import syntax_asdl, Id
 from frontend import tdop
 from osh import word
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.tdop import TdopParser
-  from _devbuild.gen.syntax_asdl import (arith_expr_t, word_t)
 
 p_die = util.p_die
-arith_expr = syntax_asdl.arith_expr
 
 
 def NullIncDec(p, w, bp):

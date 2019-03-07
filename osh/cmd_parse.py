@@ -10,24 +10,37 @@ cmd_parse.py - Parse high level shell commands.
 """
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
+from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
+from _devbuild.gen.syntax_asdl import (
+    command, command_e, command_t,
+    command__Assignment, command__SimpleCommand, command__BraceGroup,
+    command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
+    command__Case, command__If, command__FuncDef, command__Subshell,
+    command__DBracket, command__DParen, command__CommandList,
+    case_arm,
+
+    lhs_expr, lhs_expr_t,
+    redir, redir_t, redir__HereDoc,
+    word_t, word__CompoundWord, word__TokenWord,
+    word_part, word_part_t, word_part__LiteralPart,
+
+    token, assign_pair, env_pair,
+    assign_op_e,
+)
+from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: rename
 
 from asdl import const
-
 from core import alloc
 from core import util
-from core.meta import syntax_asdl, types_asdl
-
+from core.meta import syntax_asdl
 from frontend import match
 from frontend import reader
-
 from osh import braces
 from osh import bool_parse
 from osh import word
 
-from typing import Optional, List, Tuple, cast
-from typing import TYPE_CHECKING
-
+from typing import Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.lexer import Lexer
@@ -35,38 +48,8 @@ if TYPE_CHECKING:
   from frontend.reader import _Reader
   from osh.word_parse import WordParser
 
-from _devbuild.gen.id_kind_asdl import Id_t
-from _devbuild.gen.types_asdl import lex_mode_t
-
-from _devbuild.gen.syntax_asdl import (
-    command_t,
-    command__Assignment, command__SimpleCommand, command__BraceGroup,
-    command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
-    command__Case, command__If, command__FuncDef, command__Subshell,
-    command__DBracket, command__DParen, command__CommandList,
-    case_arm,
-
-    lhs_expr_t,
-    redir_t, redir__HereDoc,
-    word_t, word__CompoundWord, word__TokenWord,
-    word_part_t, word_part__LiteralPart,
-
-    token, assign_pair, env_pair,
-)
-
 log = util.log
 p_die = util.p_die
-
-assign_op_e = syntax_asdl.assign_op_e
-command = syntax_asdl.command
-command_e = syntax_asdl.command_e
-lhs_expr = syntax_asdl.lhs_expr
-redir = syntax_asdl.redir
-word_part = syntax_asdl.word_part
-word_e = syntax_asdl.word_e
-osh_word = syntax_asdl.word  # TODO: rename
-
-lex_mode_e = types_asdl.lex_mode_e
 
 
 def _ReadHereLines(line_reader,  # type: _Reader

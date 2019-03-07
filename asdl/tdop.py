@@ -4,6 +4,7 @@ tdop.py
 """
 
 import re
+
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
 from typing import (Dict, List, Callable, Optional, Iterator, Tuple, NoReturn)
 

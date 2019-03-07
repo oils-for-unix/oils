@@ -11,15 +11,13 @@ Usage:
   from core.meta import syntax_asdl, Id, Kind, ID_SPEC
 """
 
-from core import id_kind
+from _devbuild.gen.types_asdl import bool_arg_type_t
 from _devbuild.gen.id_kind_asdl import (
     Id, Id_t, Kind_t, ID_INSTANCES, KIND_INSTANCES
 )
+from core import id_kind
 
-from typing import Dict, TYPE_CHECKING
-if TYPE_CHECKING:
-  from _devbuild.gen.id_kind_asdl import Id_t, Kind_t
-  from _devbuild.gen.types_asdl import bool_arg_type_t
+from typing import Dict
 
 
 _ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]

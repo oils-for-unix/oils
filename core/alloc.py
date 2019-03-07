@@ -11,9 +11,9 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
+from _devbuild.gen.syntax_asdl import line_span
 from asdl import const
 from core import util
-from _devbuild.gen.syntax_asdl import line_span
 
 from typing import List, Tuple
 

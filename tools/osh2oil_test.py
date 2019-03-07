@@ -5,14 +5,11 @@ osh2oil_test.py: Tests for osh2oil.py
 
 import unittest
 
+from _devbuild.gen.runtime_asdl import word_style_e
 from osh import word
 from tools import osh2oil  # module under test
 
-from _devbuild.gen import runtime_asdl
-
 from osh.word_parse_test import _assertReadWord
-
-word_style_e = runtime_asdl.word_style_e
 
 
 def assertStyle(test, expected_style, word_str):

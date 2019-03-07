@@ -15,19 +15,13 @@ Possible optimization flags for CompoundWord:
 """
 from __future__ import print_function
 
-from core.meta import Id, syntax_asdl
-
-from typing import List, Optional, cast, TYPE_CHECKING
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    word_t, word__CompoundWord, word__BracedWordTree,
-    word_part_t, word_part__BracedAltPart, word_part__LiteralPart,
+    word, word_t, word__CompoundWord, word__BracedWordTree,
+    word_part, word_part_t, word_part__BracedAltPart, word_part__LiteralPart,
 )
 
-word_part = syntax_asdl.word_part
-word_part_e = syntax_asdl.word_part_e
-
-word = syntax_asdl.word
-word_e = syntax_asdl.word_e
+from typing import List, Optional, cast, TYPE_CHECKING
 
 
 class _StackFrame(object):

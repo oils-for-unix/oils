@@ -11,7 +11,7 @@ from asdl import meta
 from asdl import runtime
 
 from _devbuild.gen import typed_demo_asdl as demo_asdl  # module under test
-from _devbuild.gen import typed_arith_asdl  # module under test
+from _devbuild.gen import typed_arith_asdl
 
 arith_expr = typed_arith_asdl.arith_expr
 source_location = demo_asdl.source_location

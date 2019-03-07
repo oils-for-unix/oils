@@ -100,11 +100,10 @@ Indexed array and Associative array literals:
   Op_LBracket Op_RBracketEqual
 """
 
-from core.meta import types_asdl, ID_SPEC
 from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.types_asdl import lex_mode_e
+from core.meta import ID_SPEC
 from frontend.lexer import C, R
-
-lex_mode_e = types_asdl.lex_mode_e
 
 
 # In oil, I hope to have these lexer modes:

@@ -2,16 +2,10 @@
 word.py - Utility functions for words, e.g. treating them as "tokens".
 """
 
-from asdl import const
-
-from core import util
-from core.meta import syntax_asdl, LookupKind
-
-from typing import Tuple, Optional, List
 from _devbuild.gen.id_kind_asdl import (Id, Kind, Id_t, Kind_t)
 from _devbuild.gen.syntax_asdl import (
     token,
-    word_part_t,
+    word_part, word_part_t, word_part_e,
     word_part__ArrayLiteralPart, word_part__LiteralPart,
     word_part__EscapedLiteralPart, word_part__SingleQuotedPart,
     word_part__DoubleQuotedPart, word_part__SimpleVarSub,
@@ -19,23 +13,19 @@ from _devbuild.gen.syntax_asdl import (
     word_part__CommandSubPart, word_part__ArithSubPart,
     word_part__BracedAltPart, word_part__ExtGlobPart,
 
-    word_t, 
+    word, word_t, 
     word__CompoundWord, word__TokenWord, word__EmptyWord, word__BracedWordTree,
     word__StringWord,
 
     lhs_expr__LhsName,
 )
+from asdl import const
+from core import util
+from core.meta import LookupKind
+
+from typing import Tuple, Optional, List
 
 p_die = util.p_die
-
-word = syntax_asdl.word
-word_e = syntax_asdl.word_e
-
-word_part = syntax_asdl.word_part
-word_part_e = syntax_asdl.word_part_e
-
-assign_op_e = syntax_asdl.assign_op_e
-lhs_expr_e = syntax_asdl.lhs_expr_e
 
 
 def _LiteralPartId(p):

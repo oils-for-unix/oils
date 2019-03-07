@@ -3,17 +3,16 @@
 builtin_comp.py - Completion builtins
 """
 
+from _devbuild.gen import osh_help  # generated file
+from _devbuild.gen.runtime_asdl import value_e
 from core import completion
 from core import ui
 from core import util
-from core.meta import runtime_asdl
 from frontend import args
 from frontend import lex
 from osh import builtin
 from osh import state
 
-from _devbuild.gen import osh_help  # generated file
-value_e = runtime_asdl.value_e
 
 log = util.log
 

@@ -8,15 +8,15 @@ import re
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.types_asdl import lex_mode_e
+from _devbuild.gen.syntax_asdl import token
+
 from frontend import lex
 from frontend import match
 from frontend.lexer import LineLexer
 
 from core import test_lib
-from core.meta import syntax_asdl, LookupKind, types_asdl
-
-lex_mode_e = types_asdl.lex_mode_e
-token = syntax_asdl.token
+from core.meta import syntax_asdl, LookupKind
 
 
 def _InitLexer(s):

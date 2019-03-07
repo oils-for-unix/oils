@@ -2,7 +2,10 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-from core.meta import types_asdl
+from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.syntax_asdl import (
+    token, word_t, redir_t, word__CompoundWord)
+from _devbuild.gen.types_asdl import lex_mode_e
 
 from frontend import lexer
 from frontend import reader
@@ -24,12 +27,6 @@ if TYPE_CHECKING:
   from frontend.tdop import TdopParser
   from osh.word_parse import WordParser
   from osh.cmd_parse import CommandParser
-  from _devbuild.gen.id_kind_asdl import Id_t
-  from _devbuild.gen.syntax_asdl import (
-      token, word_t, redir_t, word__CompoundWord
-  )
-
-lex_mode_e = types_asdl.lex_mode_e
 
 
 class _BaseTrail(object):

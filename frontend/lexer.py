@@ -9,24 +9,21 @@
 lexer.py - Library for lexing.
 """
 
+from _devbuild.gen.syntax_asdl import token
+from _devbuild.gen.types_asdl import lex_mode_t
+from _devbuild.gen.id_kind_asdl import Id_t
 from asdl import const
 from core import util
 from core.meta import Id
 from core.meta import syntax_asdl as syntax
 from core.alloc import Arena
 
-from frontend.reader import _Reader
-
 from typing import Callable, List, Tuple, TYPE_CHECKING
-
-from _devbuild.gen.syntax_asdl import token
-from _devbuild.gen.types_asdl import lex_mode_t
-from _devbuild.gen.id_kind_asdl import Id_t
+if TYPE_CHECKING:
+  from frontend.reader import _Reader
+  from frontend.match import MatchFunc
 
 log = util.log
-
-if TYPE_CHECKING:
-  from frontend.match import MatchFunc
 
 
 def C(pat, tok_type):

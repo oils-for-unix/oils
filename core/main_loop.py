@@ -16,20 +16,19 @@ ParseWholeFile() -- needs to check the here doc.
 """
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import command_t, command
+
+from _devbuild.gen.id_kind_asdl import Id
 from core import ui
 from core import util
-from core.meta import syntax_asdl, Id
 from osh import word
 
 from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from osh.cmd_parse import CommandParser
-  from _devbuild.gen.syntax_asdl import command_t
   # commented out so --strict doesn't follow all
   #from osh.cmd_exec import Executor
-
-command = syntax_asdl.command
 
 log = util.log
 
