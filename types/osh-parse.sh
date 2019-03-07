@@ -14,7 +14,8 @@ demo() {
   echo 'echo hi' | bin/osh_parse.py "$@"
 }
 
-readonly PY_MANIFEST='_tmp/osh-parse-src.txt'
+readonly PY_DEPS='_tmp/osh-parse-deps.txt'
+readonly OSH_PARSE_MANIFEST='types/osh-parse-manifest.txt'
 
 deps() {
   local pythonpath='.:vendor'
@@ -24,7 +25,7 @@ deps() {
 
   ls -l $out
 
-  head -n 30 $out/*
+  #head -n 30 $out/*
 
   echo ---
 
@@ -33,7 +34,7 @@ deps() {
   awk '
   $1 ~ /^.*\.py$/ { print $1 }
   ' $out/app-deps-cpython.txt \
-    | sort | tee $PY_MANIFEST | xargs wc -l | sort -n
+    | sort | tee $PY_DEPS | xargs wc -l | sort -n
 }
 
 typecheck() {
@@ -41,7 +42,8 @@ typecheck() {
 }
 
 typecheck-all() {
-  local strict_none=${1:-}
+  local manifest=$1
+  local strict_none=${2:-}
 
   # 150 errors left without those flags.  But it doesn't impede translating to
   # C++ since you have nullptr.  Although List[Optional[int]] may be an issue.
@@ -53,11 +55,8 @@ typecheck-all() {
     flags="--strict --no-implicit-optional --no-strict-optional"
   fi
 
-  echo 'Checking:'
-  egrep -v 'vendor|__future__' _tmp/osh-parse-src.txt | tee _tmp/to-check.txt
-
   set +o errexit
-  cat _tmp/to-check.txt | xargs -- $0 typecheck $flags >_tmp/err.txt
+  cat $manifest | xargs -- $0 typecheck $flags >_tmp/err.txt
   #echo "status: $?"
 
   echo
@@ -77,6 +76,17 @@ typecheck-all() {
 
   #echo ---
   #diff -u _tmp/osh-parse-src.txt _tmp/to-check.txt
+}
+
+# The manifest needs to be checked in because we don't have
+# _devbuild/cpython-full on Travis to crawl dependencies.
+travis-setup() {
+  deps
+  egrep -v 'vendor|__future__' $PY_DEPS | tee $OSH_PARSE_MANIFEST
+}
+
+travis() {
+  typecheck-all $OSH_PARSE_MANIFEST
 }
 
 "$@"

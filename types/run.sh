@@ -66,8 +66,11 @@ iter-arith-asdl() {
   echo
 }
 
-# Avoid spew on travis.
-iter-arith-asdl-travis() { iter-arith-asdl > /dev/null; }
+travis() {
+  iter-demo-asdl
+  # Avoid spew on Travis.
+  iter-arith-asdl > /dev/null
+}
 
 # Alias for convenience
 check-osh-parse() {
