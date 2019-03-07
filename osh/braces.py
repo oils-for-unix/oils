@@ -160,7 +160,7 @@ def BraceDetectAll(words):
   return out
 
 
-def _BraceExpandOne(parts,  # type: List[word_part__BracedAltPart]
+def _BraceExpandOne(parts,  # type: List[word_part_t]
                     first_alt_index,  # type: int
                     suffixes,  # type: List[List[word_part_t]]
                     ):
@@ -175,7 +175,10 @@ def _BraceExpandOne(parts,  # type: List[word_part__BracedAltPart]
   out = []
 
   # Need to call _BraceExpand on each of the inner words too!
-  first_alt = parts[first_alt_index]
+
+  # Caller ensured that the case is safe.
+  first_alt = cast(word_part__BracedAltPart, parts[first_alt_index])
+
   expanded_alts = []  # type: List[List[word_part_t]]
   for w in first_alt.words:
     assert isinstance(w, word__CompoundWord)  # for MyPy
@@ -215,15 +218,11 @@ def _BraceExpand(parts):
   # NOTE: There are TWO recursive calls here, not just one -- one for
   # nested {}, and one for adjacent {}.  This is hard to do iteratively.
   if num_alts == 0:
-    # Need this cast because List in MyPy is invariant?
-    result = cast(ListOfLists, [parts])
-    return result
+    return [parts]
 
   elif num_alts == 1:
     suffix = parts[first_alt_index+1 : ]
-    # Need this cast because List in MyPy is invariant?
-    suffixes = cast(ListOfLists, [suffix])
-    return _BraceExpandOne(parts, first_alt_index, suffixes)
+    return _BraceExpandOne(parts, first_alt_index, [suffix])
 
   else:
     # Now call it on the tail
