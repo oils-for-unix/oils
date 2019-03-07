@@ -16,11 +16,12 @@ import pwd  # TODO: Move this dependency to Oil?
 import sys
 import zipimport  # NOT the zipfile module.
 
-from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
 from asdl import const
 from pylib import os_path
 
-from typing import IO, NoReturn, Any
+from typing import IO, NoReturn, Any, TYPE_CHECKING
+if TYPE_CHECKING:  # avoid circular build deps
+  from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 
