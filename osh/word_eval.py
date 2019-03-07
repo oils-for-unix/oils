@@ -5,8 +5,9 @@ word_eval.py - Evaluator for the word language.
 import pwd
 import sys
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from core import util
-from core.meta import syntax_asdl, runtime_asdl, Id, Kind, LookupKind
+from core.meta import syntax_asdl, runtime_asdl, LookupKind
 
 from frontend import match
 

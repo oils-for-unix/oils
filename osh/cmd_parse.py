@@ -10,11 +10,13 @@ cmd_parse.py - Parse high level shell commands.
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
+
 from asdl import const
 
 from core import alloc
 from core import util
-from core.meta import syntax_asdl, types_asdl, Id, Kind
+from core.meta import syntax_asdl, types_asdl
 
 from frontend import match
 from frontend import reader
@@ -560,7 +562,7 @@ class CommandParser(object):
     return redir.Redir(op, fd, arg_word)
 
   def _ParseRedirectList(self):
-    # type: () -> List
+    # type: () -> List[redir_t]
     """Try parsing any redirects at the cursor.
 
     This is used for blocks only, not commands.
@@ -1165,7 +1167,6 @@ class CommandParser(object):
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
       c_list = self._ParseCommandTerm()
-      assert c_list is not None
       action_children = c_list.children
     else:
       action_children = []
@@ -1189,7 +1190,7 @@ class CommandParser(object):
     return arm
 
   def ParseCaseList(self, arms):
-    # type: (List) -> None
+    # type: (List[case_arm]) -> None
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
@@ -1202,7 +1203,6 @@ class CommandParser(object):
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
       arm = self.ParseCaseItem()
-      assert arm is not None
 
       arms.append(arm)
       self._Peek()
@@ -1653,7 +1653,6 @@ class CommandParser(object):
       self._NewlineOk()
 
       child = self.ParsePipeline()
-      assert child is not None
 
       children.append(child)
 
@@ -1704,7 +1703,6 @@ class CommandParser(object):
     done = False
     while not done:
       child = self.ParseAndOr()
-      assert child is not None
 
       self._Peek()
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
@@ -1768,7 +1766,6 @@ class CommandParser(object):
         break
 
       child = self.ParseAndOr()
-      assert child is not None
 
       self._Peek()
       if self.c_id == Id.Op_Newline:
@@ -1866,7 +1863,6 @@ class CommandParser(object):
     # This calls ParseAndOr(), but I think it should be a loop that calls
     # _ParseCommandLine(), like oil.InteractiveLoop.
     node = self._ParseCommandTerm()
-    assert node is not None
     return node
 
   def CheckForPendingHereDocs(self):

@@ -4,7 +4,7 @@ os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 """
 
 import posix
-from typing import Tuple
+from typing import Tuple, List
 
 extsep = '.'
 sep = '/'
@@ -58,6 +58,7 @@ def split(p):
 # Generic implementation of splitext, to be parametrized with
 # the separators
 def _splitext(p, sep, altsep, extsep):
+    # type: (str, str, str, str) -> Tuple[str, str]
     """Split the extension from a pathname.
 
     Extension is everything from the last dot to the end, ignoring
@@ -86,6 +87,7 @@ def _splitext(p, sep, altsep, extsep):
 # It is always true that root + ext == p.
 
 def splitext(p):
+    # type: (str) -> Tuple[str, str]
     return _splitext(p, sep, altsep, extsep)
 
 
@@ -101,6 +103,7 @@ def basename(p):
 # Return the head (dirname) part of a path, same as split(path)[0].
 
 def dirname(p):
+    # type: (str) -> str
     """Returns the directory component of a pathname"""
     i = p.rfind('/') + 1
     head = p[:i]
@@ -114,20 +117,21 @@ def dirname(p):
 # if it contains symbolic links!
 
 def normpath(path):
+    # type: (str) -> str
     """Normalize path, eliminating double slashes, etc."""
     # Preserve unicode (if path is unicode)
     #slash, dot = (u'/', u'.') if isinstance(path, _unicode) else ('/', '.')
     slash, dot = ('/', '.')
     if path == '':
         return dot
-    initial_slashes = path.startswith('/')
+    initial_slashes = path.startswith('/')  # type: int
     # POSIX allows one or two initial slashes, but treats three or more
     # as single slash.
     if (initial_slashes and
         path.startswith('//') and not path.startswith('///')):
         initial_slashes = 2
     comps = path.split('/')
-    new_comps = []
+    new_comps = []  # type: List[str]
     for comp in comps:
         if comp in ('', '.'):
             continue
@@ -147,11 +151,13 @@ def normpath(path):
 # Trivial in Posix, harder on the Mac or MS-DOS.
 
 def isabs(s):
+    # type: (str) -> bool
     """Test whether a path is absolute"""
     return s.startswith('/')
 
 
 def abspath(path):
+    # type: (str) -> str
     """Return an absolute path."""
     if not isabs(path):
         cwd = posix.getcwd()

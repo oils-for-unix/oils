@@ -61,7 +61,7 @@ class InteractiveLineReader(_Reader):
 
     self.orig_handler = signal.getsignal(signal.SIGINT)
 
-    self.prev_line = None
+    self.prev_line = None  # type: str
     self.prompt_str = ''
 
   def _GetLine(self):

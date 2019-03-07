@@ -32,8 +32,9 @@ BINARY_OP: -gt, -ot, ==, etc.
 
 from osh import word
 from core import util
-from core.meta import Id, Kind, LookupKind, syntax_asdl, types_asdl
+from core.meta import LookupKind, syntax_asdl, types_asdl
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.syntax_asdl import (
     word_t, word__CompoundWord, word__StringWord,

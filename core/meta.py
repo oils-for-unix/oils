@@ -12,33 +12,14 @@ Usage:
 """
 
 from core import id_kind
-from _devbuild.gen.id_kind_asdl import (Id, Id_t, Kind, Kind_t)
+from _devbuild.gen.id_kind_asdl import (
+    Id, Id_t, Kind_t, ID_INSTANCES, KIND_INSTANCES
+)
 
 from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t, Kind_t
   from _devbuild.gen.types_asdl import bool_arg_type_t
-
-
-# Hm, there's no way to add static types to this metaprogramming?
-def _CreateInstanceLookup(id_enum, id_type, instances):
-  """
-  Args:
-    id_enum: Id or Kind
-    id_type: Id_t or Kind_t
-    instances: dictionary to mutate
-  """
-  for name in dir(id_enum):
-    val = getattr(id_enum, name)
-    if isinstance(val, id_type):
-      instances[val.enum_id] = val
-
-
-_ID_INSTANCES = {}  # type: Dict[int, Id_t]
-_KIND_INSTANCES = {}  # type: Dict[int, Kind_t]
-
-_CreateInstanceLookup(Id, Id_t, _ID_INSTANCES)
-_CreateInstanceLookup(Kind, Kind_t, _KIND_INSTANCES)
 
 
 _ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
@@ -47,13 +28,13 @@ _ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
 def LookupKind(id_):
   # type: (Id_t) -> Kind_t
   """Id_t -> Kind_t"""
-  return _KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
+  return KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
 
 
 # Do NOT create any any more instances of Id.  Always used IdInstance().
 def IdInstance(i):
   # type: (int) -> Id_t
-  return _ID_INSTANCES[i]
+  return ID_INSTANCES[i]
 
 
 #

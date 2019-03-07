@@ -130,11 +130,29 @@ def main(argv):
 
     f.write("""\
 from asdl import runtime
+from typing import List
 
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
     v = gen_python.GenMyPyVisitor(f, None, e_suffix=False)
     v.VisitModule(schema_ast)
+
+    f.write("""
+ID_INSTANCES = [
+  None,  # unused index 0
+""")
+    for name, _ in ids:
+      f.write('  Id.%s,\n' % name)
+    f.write(']  # type: List[Id_t]\n')
+
+    f.write("""
+
+KIND_INSTANCES = [
+  None,  # unused index 0
+""")
+    for name in ID_SPEC.kind_name_list:
+      f.write('  Kind.%s,\n' % name)
+    f.write(']  # type: List[Kind_t]\n')
 
   else:
     raise RuntimeError('Invalid action %r' % action)

@@ -5,10 +5,10 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 from asdl import const
 
 from core import util
-from core.meta import syntax_asdl, Id, Kind, LookupKind
+from core.meta import syntax_asdl, LookupKind
 
 from typing import Tuple, Optional, List
-from _devbuild.gen.id_kind_asdl import (Id_t, Kind_t)
+from _devbuild.gen.id_kind_asdl import (Id, Kind, Id_t, Kind_t)
 from _devbuild.gen.syntax_asdl import (
     token,
     word_part_t,
@@ -585,6 +585,7 @@ def CommandKind(w):
 # Stubs for converting RHS of assignment to expression mode.
 # For osh2oil.py
 def IsVarSub(w):
+  # type: (word_t) -> bool
   # Return whether it's any var sub, or a double quoted one
   return False
 

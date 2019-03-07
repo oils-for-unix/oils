@@ -28,8 +28,13 @@ if fastlex:
 else:
   import re  # type: ignore
 
+if TYPE_CHECKING:
+  MatchFunc = Callable[[lex_mode_t, str, int], Tuple[Id_t, int]]
+  LexerPairs = List[Tuple[SRE_Pattern, Id_t]]
+
 
 def _LongestMatch(re_list, line, start_pos):
+  # type: (LexerPairs, str, int) -> Tuple[Id_t, int]
 
   # Simulate the EOL handling in re2c.
   if start_pos >= len(line):
@@ -47,8 +52,6 @@ def _LongestMatch(re_list, line, start_pos):
   return tok_type, end_pos
 
 
-if TYPE_CHECKING:
-  LexerPairs = List[Tuple[SRE_Pattern, Id_t]]
 
 def _CompileAll(pat_list):
   # type: (List[Tuple[bool, str, Id_t]]) -> LexerPairs

@@ -7,12 +7,13 @@ from __future__ import print_function
 import re
 import unittest
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from frontend import lex
 from frontend import match
 from frontend.lexer import LineLexer
 
 from core import test_lib
-from core.meta import syntax_asdl, Id, Kind, LookupKind, types_asdl
+from core.meta import syntax_asdl, LookupKind, types_asdl
 
 lex_mode_e = types_asdl.lex_mode_e
 token = syntax_asdl.token

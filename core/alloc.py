@@ -98,6 +98,7 @@ class Arena(object):
       raise
 
   def LastSpanId(self):
+    # type: () -> int
     """Return one past the last span ID."""
     return len(self.spans)
 

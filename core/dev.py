@@ -12,6 +12,13 @@ from osh import word
 from pylib import os_path
 from core.util import ParseError
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  #from core.util import _ErrorWithLocation
+  #from osh.cmd_exec import Executor
+  pass
+
+
 def SpanIdFromError(error):
   # type: (ParseError) -> int
   #print(parse_error)
@@ -69,6 +76,7 @@ class CrashDumper(object):
     self.error = None
 
   def MaybeCollect(self, ex, error):
+    # typeZZ: (Executor, _ErrorWithLocation) -> None
     """
     Args:
       ex: Executor instance

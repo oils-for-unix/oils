@@ -48,8 +48,9 @@ lex_mode_e.VS_ArgDQ
   e.g. "${x:-a  "b"}".
 """
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from core import util
-from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind
+from core.meta import syntax_asdl, types_asdl, LookupKind
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse

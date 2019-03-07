@@ -15,19 +15,12 @@ Possible optimization flags for CompoundWord:
 """
 from __future__ import print_function
 
-import sys
-
 from core.meta import Id, syntax_asdl
 
 from typing import List, Optional, cast, TYPE_CHECKING
 from _devbuild.gen.syntax_asdl import (
-    word_t,
-    word__CompoundWord,
-    word__BracedWordTree,
-
-    word_part_t,
-    word_part__BracedAltPart,
-    word_part__LiteralPart,
+    word_t, word__CompoundWord, word__BracedWordTree,
+    word_part_t, word_part__BracedAltPart, word_part__LiteralPart,
 )
 
 word_part = syntax_asdl.word_part
@@ -275,29 +268,3 @@ def BraceExpandWords(words):
     else:
       out.append(w)
   return out
-
-
-def _Cartesian(tuples):
-  if len(tuples) == 1:
-    for x in tuples[0]:
-      yield (x,)
-  else:
-    for x in tuples[0]:
-      for y in _Cartesian(tuples[1:]):
-        yield (x,) + y  # join tuples
-
-
-def main(argv):
-  for t in _Cartesian([('a', 'b')]):
-    print(t)
-  print('--')
-  for t in _Cartesian([('a', 'b'), ('c', 'd', 'e'), ('f', 'g')]):
-    print(t)
-
-
-if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)

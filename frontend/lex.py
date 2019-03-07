@@ -100,7 +100,8 @@ Indexed array and Associative array literals:
   Op_LBracket Op_RBracketEqual
 """
 
-from core.meta import types_asdl, Id, Kind, ID_SPEC
+from core.meta import types_asdl, ID_SPEC
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from frontend.lexer import C, R
 
 lex_mode_e = types_asdl.lex_mode_e
@@ -293,10 +294,12 @@ OTHER_OSH_BUILTINS = [name for _, name, _ in _MORE_KEYWORDS]
 
 
 def IsOtherBuiltin(name):
+  # type: (str) -> bool
   return name in OTHER_OSH_BUILTINS
 
 
 def IsKeyword(name):
+  # type: (str) -> bool
   return name in OSH_KEYWORD_NAMES
 
 

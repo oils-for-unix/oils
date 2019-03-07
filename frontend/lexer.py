@@ -17,13 +17,16 @@ from core.alloc import Arena
 
 from frontend.reader import _Reader
 
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, TYPE_CHECKING
 
 from _devbuild.gen.syntax_asdl import token
 from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.id_kind_asdl import Id_t
 
 log = util.log
+
+if TYPE_CHECKING:
+  from frontend.match import MatchFunc
 
 
 def C(pat, tok_type):
@@ -40,7 +43,7 @@ def R(pat, tok_type):
 
 class LineLexer(object):
   def __init__(self, match_func, line, arena):
-    # type: (Callable, str, Arena) -> None
+    # type: (MatchFunc, str, Arena) -> None
     self.match_func = match_func
     self.arena = arena
 
@@ -50,6 +53,7 @@ class LineLexer(object):
     self.Reset(line, -1, 0)  # Invalid line_id to start
 
   def __repr__(self):
+    # type: () -> str
     return '<LineLexer at pos %d of line %r (id = %d)>' % (
         self.line_pos, self.line, self.line_id)
 
@@ -169,11 +173,8 @@ class Lexer(object):
     self.emit_comp_dummy = False
 
   def ResetInputObjects(self):
+    # type: () -> None
     self.line_lexer.Reset('', -1, 0)
-
-  def GetCurrentLine(self):
-    """Used for completion."""
-    return self.line_lexer.line
 
   def MaybeUnreadOne(self):
     # type: () -> bool

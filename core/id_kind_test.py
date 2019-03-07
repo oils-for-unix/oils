@@ -12,9 +12,11 @@ from __future__ import print_function
 
 import unittest
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from core import id_kind
 from core.meta import (
-    Id, IdInstance, Kind, LookupKind, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes)
+    IdInstance, LookupKind, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes
+)
 
 from core.meta import syntax_asdl
 
