@@ -66,6 +66,9 @@ iter-arith-asdl() {
   echo
 }
 
+# Avoid spew on travis.
+iter-arith-asdl-travis() { iter-arith-asdl > /dev/null; }
+
 # Alias for convenience
 check-osh-parse() {
   types/osh-parse.sh check-some
@@ -116,7 +119,19 @@ sub() {
 audit-hacks() {
   # I used a trailing _ in a couple places to indicates hacks
   # A MyPy upgrade might fix this?
-  egrep -n --context 1 '[a-z]+_ ' osh/*_parse.py
+  #egrep -n --context 1 '[a-z]+_ ' osh/*_parse.py
+
+  # spids on base class issue
+  egrep --color -n --context 1 '_temp' osh/*_parse.py
+
+  echo ---
+
+  # a few casts because Id ; is TokenWord.
+  egrep --color -w 'cast' {osh,core,frontend}/*.py
+
+  echo ---
+
+  egrep --color -w 'type: ignore' {osh,core,frontend}/*.py
 }
 
 "$@"

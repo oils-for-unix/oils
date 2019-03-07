@@ -58,8 +58,8 @@ def _CompileAll(pat_list):
   result = []
   for is_regex, pat, token_id in pat_list:
     if not is_regex:
-      pat = re.escape(pat)  # turn $ into \$
-    result.append((re.compile(pat), token_id))
+      pat = re.escape(pat)  # type: ignore  # turn $ into \$
+    result.append((re.compile(pat), token_id))  # type: ignore
   return result
 
 

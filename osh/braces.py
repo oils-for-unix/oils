@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part_t, word_part__BracedAltPart, word_part__LiteralPart,
 )
 
-from typing import List, Optional, cast, TYPE_CHECKING
+from typing import List, Optional, cast
 
 
 class _StackFrame(object):
@@ -194,12 +194,6 @@ def _BraceExpandOne(parts,  # type: List[word_part_t]
       # TODO: Do we need to preserve flags?
       out.append(out_parts)
   return out
-
-
-if TYPE_CHECKING:
-  ListOfLists = List[List[word_part_t]]
-else:
-  ListOfLists = None
 
 
 def _BraceExpand(parts):

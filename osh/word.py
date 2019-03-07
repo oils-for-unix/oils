@@ -333,8 +333,8 @@ def TildeDetect(w):
   if _LiteralPartId(part1) == Id.Lit_Chars:
     assert isinstance(part1, word_part__LiteralPart)  # for MyPy
     if part1.token.val.startswith('/'):
-      tilde_part = word_part.TildeSubPart(part0.token)
-      return word.CompoundWord([tilde_part] + w.parts[1:])  # type: ignore
+      tilde_part_ = word_part.TildeSubPart(part0.token)  # type: word_part_t
+      return word.CompoundWord([tilde_part_] + w.parts[1:])
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None

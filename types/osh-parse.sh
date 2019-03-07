@@ -40,20 +40,40 @@ typecheck() {
   MYPYPATH=. PYTHONPATH=.  mypy --py2 "$@"
 }
 
-check-some() {
-  local strict=${1:-}
-  local flags='--no-implicit-optional --no-strict-optional'
-  if test -n "$strict"; then
-    flags="$flags --strict"
+typecheck-all() {
+  local strict_none=${1:-}
+
+  # 150 errors left without those flags.  But it doesn't impede translating to
+  # C++ since you have nullptr.  Although List[Optional[int]] may be an issue.
+  #local flags=''
+  local flags
+  if test -n "$strict_none"; then
+    flags='--strict'
+  else
+    flags="--strict --no-implicit-optional --no-strict-optional"
   fi
 
+  echo 'Checking:'
   egrep -v 'vendor|__future__' _tmp/osh-parse-src.txt | tee _tmp/to-check.txt
 
-  set -x
-  cat _tmp/to-check.txt | xargs -- $0 typecheck $flags >_tmp/err.txt || true
+  set +o errexit
+  cat _tmp/to-check.txt | xargs -- $0 typecheck $flags >_tmp/err.txt
+  #echo "status: $?"
 
+  echo
   cat _tmp/err.txt
-  wc -l _tmp/err.txt
+  echo
+
+  local num_errors=$(wc -l < _tmp/err.txt)
+
+  # 1 type error allowed for asdl/pretty.py, because our --no-strict-optional
+  # conflicts with demo/typed and so forth.
+  if [[ $num_errors -eq 1 ]]; then
+    return 0
+  else
+    echo "Expected 1 error, but got $num_errors"
+    return 1
+  fi
 
   #echo ---
   #diff -u _tmp/osh-parse-src.txt _tmp/to-check.txt
