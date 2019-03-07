@@ -20,7 +20,7 @@ from typing import Iterator, Tuple, Callable, Dict, List, TYPE_CHECKING
 try:
   import fastlex
 except ImportError:
-  fastlex = None  # type: ignore
+  fastlex = None
 
 if fastlex:
   # Shouldn't use re module in this case
@@ -30,6 +30,7 @@ else:
 
 if TYPE_CHECKING:
   MatchFunc = Callable[[lex_mode_t, str, int], Tuple[Id_t, int]]
+  SimpleMatchFunc = Callable[[str, int], Tuple[Id_t, int]]
   LexerPairs = List[Tuple[SRE_Pattern, Id_t]]
 
 
@@ -91,7 +92,7 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
 class SimpleLexer(object):
   """Lexer for echo -e, which interprets C-escaped strings."""
   def __init__(self, match_func):
-    # type: (Callable) -> None
+    # type: (SimpleMatchFunc) -> None
     self.match_func = match_func
 
   def Tokens(self, line):

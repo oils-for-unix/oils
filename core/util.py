@@ -21,7 +21,9 @@ from pylib import os_path
 
 Buffer = cStringIO.StringIO  # used by asdl/format.py
 
-from typing import IO, NoReturn, Any
+from typing import IO, NoReturn, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -61,11 +63,11 @@ class _ErrorWithLocation(Exception):
     self.args = args
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
     # args.
-    self.span_id = kwargs.pop('span_id', const.NO_INTEGER)
-    self.token = kwargs.pop('token', None)
-    self.part = kwargs.pop('part', None)
-    self.word = kwargs.pop('word', None)
-    self.exit_status = kwargs.pop('status', None)
+    self.span_id = kwargs.pop('span_id', const.NO_INTEGER)  # type: int
+    self.token = kwargs.pop('token', None)  # type: token
+    self.part = kwargs.pop('part', None)  # type: word_part_t
+    self.word = kwargs.pop('word', None)  # type: word_t
+    self.exit_status = kwargs.pop('status', None)  # type: int
     if kwargs:
       raise AssertionError('Invalid keyword args %s' % kwargs)
 

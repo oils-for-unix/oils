@@ -25,10 +25,10 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Schema path required')
 
-  if os.path.basename(schema_path) == 'types.asdl':
-    app_types = {}
-  else:
+  if os.path.basename(schema_path) in ('syntax.asdl', 'runtime.asdl'):
     app_types = {'id': meta.UserType('id_kind_asdl', 'Id_t')}
+  else:
+    app_types = {}
 
   if action == 'c':  # Generate C code for the lexer
     with open(schema_path) as f:

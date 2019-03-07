@@ -64,6 +64,30 @@ class DynamicTdopParser(TdopParser):
     return self.dynamic_led[token]
 
 
+#
+# From osh/braces.py
+#
+
+
+# Possible optmization for later:
+def _TreeCount(tree_word):
+  """Count output size for allocation purposes.
+
+  We can count the number of words expanded into, and the max number of parts
+  in a word.
+
+  Every word can have a differnt number of parts, e.g. -{'a'b,c}- expands into
+  words of 4 parts, then 3 parts.
+  """
+  # TODO: Copy the structure of _BraceExpand and _BraceExpandOne.
+  for part in tree_word.parts:
+    if isinstance(part, word_part__BracedAltPart):
+      for word in part.words:
+        pass
+  num_results = 2
+  max_parts = 5
+  return num_results, max_parts
+
 
 def _Cartesian(tuples):
   if len(tuples) == 1:
