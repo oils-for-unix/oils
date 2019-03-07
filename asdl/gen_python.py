@@ -148,6 +148,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       elif isinstance(field_desc, meta.UserType):
         type_str = field_desc.type_name
 
+      # Hard-coded for AssocArray in runtime.asdl
+      elif isinstance(field_desc, meta.DictType):
+        type_str = 'Dict[str, Any]'
+
       else:
         type_str = f.type
 

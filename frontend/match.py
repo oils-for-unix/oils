@@ -12,8 +12,11 @@ from core.meta import Id, IdInstance
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
 
-from typing import Iterator, Tuple, Callable, Dict, List, TYPE_CHECKING
-#from _sre import SRE_Pattern
+from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
+
+# Do we need a .pyi file for re or _sre?
+if TYPE_CHECKING:
+  SRE_Pattern = Any
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
@@ -51,7 +54,6 @@ def _LongestMatch(re_list, line, start_pos):
   end_pos, tok_type, tok_val = max(matches, key=lambda m: m[0])
   #util.log('%s %s', tok_type, end_pos)
   return tok_type, end_pos
-
 
 
 def _CompileAll(pat_list):

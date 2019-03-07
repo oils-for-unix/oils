@@ -21,14 +21,13 @@ from core import util
 from core.meta import syntax_asdl, Id
 from osh import word
 
-from typing import TYPE_CHECKING
-#from typing import Optional
+from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  #from core.alloc import Arena
-  # commented out so --strict doesn't follow all
-  #from osh.cmd_exec import Executor
+  from core.alloc import Arena
   from osh.cmd_parse import CommandParser
   from _devbuild.gen.syntax_asdl import command_t
+  # commented out so --strict doesn't follow all
+  #from osh.cmd_exec import Executor
 
 command = syntax_asdl.command
 
@@ -36,6 +35,7 @@ log = util.log
 
 
 def Interactive(opts, ex, c_parser, display, arena):
+  # type: (Any, Any, CommandParser, Any, Arena) -> Any
   status = 0
   done = False
   while not done:
@@ -111,7 +111,7 @@ def Interactive(opts, ex, c_parser, display, arena):
 
 
 def Batch(ex, c_parser, arena, nodes_out=None):
-  # typeZ (Executor, CommandParser, Arena, Optional[List[]]) -> int
+  # type: (Any, CommandParser, Arena, Optional[List[command_t]]) -> Any
   """Loop for batch execution.
 
   Args:

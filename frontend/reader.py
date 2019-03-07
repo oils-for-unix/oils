@@ -11,9 +11,10 @@ reader.py - Read lines of input.
 
 import cStringIO
 import signal
-from core.alloc import Arena
-from typing import Optional, Tuple, IO
-from typing import List
+
+from typing import Optional, Tuple, List, IO, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.alloc import Arena
 
 
 class _Reader(object):
@@ -49,6 +50,7 @@ _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
   def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
+    # type: (Arena, Any, Any, Any, Any) -> None
     """
     Args:
       prompt_state: Current prompt is PUBLISHED here.

@@ -57,6 +57,7 @@ def main(argv):
           typ.mod_name, typ.type_name))
         f.write('\n')
 
+    # NOTE: Dict, Any are for AssocArray with 'dict' type.
     f.write("""\
 from asdl import const  # For const.NO_INTEGER
 from asdl import runtime
@@ -70,7 +71,7 @@ Color_StringConst = runtime.Color_StringConst
 Color_OtherConst = runtime.Color_OtherConst
 Color_UserType = runtime.Color_UserType
 
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 
 """)
 

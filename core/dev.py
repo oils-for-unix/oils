@@ -10,17 +10,15 @@ from asdl import const
 from core import util
 from osh import word
 from pylib import os_path
-from core.util import ParseError
 
-from typing import TYPE_CHECKING
+from typing import Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  #from core.util import _ErrorWithLocation
+  from core.util import _ErrorWithLocation
   #from osh.cmd_exec import Executor
-  pass
 
 
 def SpanIdFromError(error):
-  # type: (ParseError) -> int
+  # type: (_ErrorWithLocation) -> int
   #print(parse_error)
   if error.span_id != const.NO_INTEGER:
     return error.span_id
@@ -73,10 +71,11 @@ class CrashDumper(object):
     self.var_stack = None
     self.argv_stack = None
     self.debug_stack = None
-    self.error = None
+    self.error = None  # type: Dict[str, Any]
 
-  def MaybeCollect(self, ex, error):
-    # typeZZ: (Executor, _ErrorWithLocation) -> None
+  def MaybeCollect(self, ex, err):
+    # type: (Any, _ErrorWithLocation) -> None
+    # TODO: Any -> Executor
     """
     Args:
       ex: Executor instance
@@ -86,10 +85,10 @@ class CrashDumper(object):
       return
 
     self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
-    span_id = SpanIdFromError(error)
+    span_id = SpanIdFromError(err)
 
     self.error = {
-       'msg': error.UserErrorString(),
+       'msg': err.UserErrorString(),
        'span_id': span_id,
     }
 
