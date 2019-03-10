@@ -84,7 +84,7 @@ class FdState(object):
     else:
       raise AssertionError(mode)
 
-    fd = posix.open(path, fd_mode, 0666)  # may raise OSError
+    fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
     new_fd = self._GetFreeDescriptor()
     posix.dup2(fd, new_fd)
     posix.close(fd)
@@ -161,7 +161,7 @@ class FdState(object):
 
       # NOTE: 0666 is affected by umask, all shells use it.
       try:
-        target_fd = posix.open(r.filename, mode, 0666)
+        target_fd = posix.open(r.filename, mode, 0o666)
       except OSError as e:
         util.error("Can't open %r: %s", r.filename, posix.strerror(e.errno))
         return False
