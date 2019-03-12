@@ -9,17 +9,15 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import token
+from _devbuild.gen.syntax_asdl import token, line_span
 from _devbuild.gen.types_asdl import lex_mode_t
-from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.id_kind_asdl import Id_t, Id
 from asdl import const
 from core import util
-from core.meta import Id
-from core.meta import syntax_asdl as syntax
-from core.alloc import Arena
 
 from typing import Callable, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
+  from core.alloc import Arena
   from frontend.reader import _Reader
   from frontend.match import MatchFunc
 
@@ -28,13 +26,13 @@ log = util.log
 
 def C(pat, tok_type):
   # type: (str, Id_t) -> Tuple[bool, str, Id_t]
-  """ Create a constant mapping like C('$*', VSub_Star) """
+  """ Lexer rule with a constant string, e.g. C('$*', VSub_Star) """
   return (False, pat, tok_type)
 
 
 def R(pat, tok_type):
   # type: (str, Id_t) -> Tuple[bool, str, Id_t]
-  """ Create a constant mapping like C('$*', VSub_Star) """
+  """ Lexer rule with a regex string, e.g. R('\$[0-9]', VSub_Number) """
   return (True, pat, tok_type)
 
 
@@ -77,8 +75,8 @@ class LineLexer(object):
   def GetSpanIdForEof(self):
     # type: () -> int
     # zero length is special!
-    line_span = syntax.line_span(self.line_id, self.line_pos, 0)
-    return self.arena.AddLineSpan(line_span)
+    span = line_span(self.line_id, self.line_pos, 0)
+    return self.arena.AddLineSpan(span)
 
   def LookAhead(self, lex_mode):
     # type: (lex_mode_t) -> token
@@ -100,7 +98,7 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        t = syntax.token(Id.Unknown_Tok, '', const.NO_INTEGER)
+        t = token(Id.Unknown_Tok, '', const.NO_INTEGER)
         return t
 
       tok_type, end_pos = self.match_func(lex_mode, self.line, pos)
@@ -111,7 +109,7 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return syntax.token(tok_type, tok_val, const.NO_INTEGER)
+    return token(tok_type, tok_val, const.NO_INTEGER)
 
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> token
@@ -121,7 +119,7 @@ class LineLexer(object):
 
     tok_type, end_pos = self.match_func(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-      return syntax.token(tok_type, '', const.NO_INTEGER)
+      return token(tok_type, '', const.NO_INTEGER)
 
     tok_val = line[line_pos:end_pos]
 
@@ -130,7 +128,7 @@ class LineLexer(object):
     # revisit this later.
 
     # TODO: Add this back once arena is threaded everywhere
-    line_span = syntax.line_span(self.line_id, line_pos, len(tok_val))
+    span = line_span(self.line_id, line_pos, len(tok_val))
 
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
     # want it to be "low level".  The only thing fabricated here is a newline
@@ -141,11 +139,11 @@ class LineLexer(object):
       span_id = self.last_span_id
       self.arena_skip = False
     else:
-      span_id = self.arena.AddLineSpan(line_span)
+      span_id = self.arena.AddLineSpan(span)
       self.last_span_id = span_id
 
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
-    t = syntax.token(tok_type, tok_val, span_id)
+    t = token(tok_type, tok_val, span_id)
 
     self.line_pos = end_pos
     return t
@@ -236,7 +234,7 @@ class Lexer(object):
           self.emit_comp_dummy = False  # emit EOF the next time
         else:
           id_ = Id.Eof_Real
-        t = syntax.token(id_, '', span_id)
+        t = token(id_, '', span_id)
         return t
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
