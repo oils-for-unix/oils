@@ -13,11 +13,11 @@ from __future__ import print_function
 import unittest
 
 #from core.util import log
-from core.meta import Id, IdInstance, types_asdl
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.types_asdl import lex_mode_e
+from core.meta import IdInstance
 
 import fastlex  # module under test
-
-lex_mode_e = types_asdl.lex_mode_e
 
 
 # NOTE: This is just like _MatchOshToken_Fast in osh/match.py

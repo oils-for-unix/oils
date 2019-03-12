@@ -12,6 +12,7 @@ test_lib.py - Functions for testing.
 import string
 import sys
 
+from _devbuild.gen.runtime_asdl import builtin_e
 from asdl import runtime
 from core import alloc
 from core import completion
@@ -19,7 +20,6 @@ from core import dev
 from core import main_loop
 from core import process
 from core import util
-from core.meta import runtime_asdl
 from frontend import lexer
 from frontend import match
 from frontend import parse_lib
@@ -31,8 +31,6 @@ from osh import expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
-
-builtin_e = runtime_asdl.builtin_e
 
 
 def PrintableString(s):

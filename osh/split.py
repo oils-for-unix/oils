@@ -27,11 +27,9 @@ with SPLIT_REGEX = / digit+ / {
 }
 """
 
-from core.meta import runtime_asdl
+from _devbuild.gen import runtime_asdl
+from _devbuild.gen.runtime_asdl import value_e, span_e
 from core import util
-
-value_e = runtime_asdl.value_e
-span_e = runtime_asdl.span_e
 
 # Enums for the state machine
 CH = runtime_asdl.char_kind_e

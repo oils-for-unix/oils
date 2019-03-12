@@ -6,13 +6,11 @@ braces_test.py: Tests for braces.py
 import sys
 import unittest
 
+from _devbuild.gen.syntax_asdl import word_part_e
+from _devbuild.gen.syntax_asdl import word as osh_word
 from asdl import format as fmt
 from osh import braces  # module under test
 from osh import word_parse_test
-from core.meta import syntax_asdl
-
-word_part_e = syntax_asdl.word_part_e
-osh_word = syntax_asdl.word
 
 
 # Silly wrapper

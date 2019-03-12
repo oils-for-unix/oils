@@ -8,13 +8,12 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from core.meta import syntax_asdl, Id
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import glob_part_e, glob_part
 from core import util
 from frontend import match
 
 log = util.log
-glob_part_e = syntax_asdl.glob_part_e
-glob_part = syntax_asdl.glob_part
 
 # TODO: Need LooksLikeExtGlob?
 #

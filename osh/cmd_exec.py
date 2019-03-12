@@ -19,6 +19,16 @@ import posix
 import resource
 import time
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import (
+    command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, word_part, token
+)
+from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: Rename
+from _devbuild.gen.runtime_asdl import (
+    lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e
+)
+from _devbuild.gen.types_asdl import redir_arg_type_e
+
 from asdl import const
 from asdl import pretty
 
@@ -27,9 +37,7 @@ from core import main_loop
 from core import process
 from core import ui
 from core import util
-from core.meta import (
-    Id, REDIR_ARG_TYPES, REDIR_DEFAULT_FD, runtime_asdl, syntax_asdl,
-    types_asdl)
+from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
 from frontend import args
 from frontend import reader
@@ -46,25 +54,6 @@ try:
   import libc  # for fnmatch
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
-
-lex_mode_e = types_asdl.lex_mode_e
-redir_arg_type_e = types_asdl.redir_arg_type_e
-
-command_e = syntax_asdl.command_e
-redir_e = syntax_asdl.redir_e
-lhs_expr_e = syntax_asdl.lhs_expr_e
-assign_op_e = syntax_asdl.assign_op_e
-
-osh_word = syntax_asdl.word  # TODO: Rename the definition
-word_part = syntax_asdl.word_part
-
-lvalue = runtime_asdl.lvalue
-redirect = runtime_asdl.redirect
-value = runtime_asdl.value
-value_e = runtime_asdl.value_e
-scope_e = runtime_asdl.scope_e
-var_flags_e = runtime_asdl.var_flags_e
-builtin_e = runtime_asdl.builtin_e
 
 log = util.log
 e_die = util.e_die
@@ -423,7 +412,7 @@ class Executor(object):
 
   def _EvalLhs(self, node, spid, lookup_mode):
     """lhs_expr -> lvalue."""
-    assert isinstance(node, syntax_asdl.lhs_expr_t), node
+    assert isinstance(node, lhs_expr_t), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x
       lval = lvalue.LhsName(node.name)
@@ -840,7 +829,7 @@ class Executor(object):
           # RHS can be a string or array.
           if pair.rhs:
             val = self.word_ev.EvalRhsWord(pair.rhs)
-            assert isinstance(val, runtime_asdl.value_t), val
+            assert isinstance(val, value_t), val
 
           else:  # e.g. 'readonly x' or 'local x'
             val = None
@@ -1142,7 +1131,7 @@ class Executor(object):
     """Apply redirects, call _Dispatch(), and performs the errexit check.
 
     Args:
-      node: syntax_asdl.command
+      node: syntax_asdl.command_t
       fork_external: if we get a SimpleCommand that is an external command,
         should we fork first?  This is disabled in the context of a pipeline
         process and a subshell.
@@ -1510,7 +1499,7 @@ class Tracer(object):
         ps4_word = w_parser.ReadForPlugin()
       except util.ParseError as e:
         error_str = '<ERROR: cannot parse PS4>'
-        t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
         ps4_word = osh_word.CompoundWord([word_part.LiteralPart(t)])
       self.parse_cache[ps4] = ps4_word
 

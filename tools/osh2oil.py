@@ -5,25 +5,19 @@ osh2oil.py: Translate OSH to Oil.
 
 import sys
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.runtime_asdl import word_style_e
+from _devbuild.gen.syntax_asdl import (
+    command_e, redir_e, word_e, word_part_e, arith_expr_e, bool_expr_e,
+    lhs_expr_e
+)
 from asdl import const
-
 from core import util
-from core.meta import runtime_asdl, syntax_asdl, Id
 
 from osh import word
 
 log = util.log
 p_die = util.p_die
-
-word_style_e = runtime_asdl.word_style_e
-
-command_e = syntax_asdl.command_e
-redir_e = syntax_asdl.redir_e
-word_e = syntax_asdl.word_e
-word_part_e = syntax_asdl.word_part_e
-arith_expr_e = syntax_asdl.arith_expr_e
-bool_expr_e = syntax_asdl.bool_expr_e
-lhs_expr_e = syntax_asdl.lhs_expr_e
 
 
 class Cursor(object):

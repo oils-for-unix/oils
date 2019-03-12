@@ -6,12 +6,10 @@ from __future__ import print_function
 
 import unittest
 
+from _devbuild.gen.runtime_asdl import value
 from core import test_lib
-from core.meta import runtime_asdl
 from osh import state
 from osh import prompt  # module under test
-
-value = runtime_asdl.value
 
 
 class PromptTest(unittest.TestCase):

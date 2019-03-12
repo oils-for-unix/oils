@@ -6,13 +6,10 @@ This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.runtime_asdl import var_flags_e
 from core import util
 from osh import string_ops
-
-from core.meta import Id
-from core.meta import runtime_asdl
-
-var_flags_e = runtime_asdl.var_flags_e
 
 
 _ONE_CHAR = {

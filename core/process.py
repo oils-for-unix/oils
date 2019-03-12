@@ -16,12 +16,11 @@ import posix
 import signal
 import sys
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
 from core import util
-from core.meta import runtime_asdl, Id
 from pylib import os_
 
-redirect_e = runtime_asdl.redirect_e
-process_state_e = runtime_asdl.process_state_e
 e_die = util.e_die
 log = util.log
 

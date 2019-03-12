@@ -37,10 +37,13 @@ import posix
 import pwd
 import time
 
+from _devbuild.gen.syntax_asdl import word_part_e, redir_e
+from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.types_asdl import redir_arg_type_e
+
 from core import ui
 from core import util
-from core.meta import (
-    Id, REDIR_ARG_TYPES, syntax_asdl, runtime_asdl, types_asdl)
+from core.meta import Id, REDIR_ARG_TYPES
 from frontend import reader
 from pylib import os_path
 from pylib import path_stat
@@ -49,12 +52,6 @@ from osh import state
 from osh import string_ops
 
 import libc
-
-command_e = syntax_asdl.command_e
-word_part_e = syntax_asdl.word_part_e
-redir_e = syntax_asdl.redir_e
-value_e = runtime_asdl.value_e
-redir_arg_type_e = types_asdl.redir_arg_type_e
 
 log = util.log
 ShellQuoteB = string_ops.ShellQuoteB

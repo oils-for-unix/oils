@@ -9,14 +9,12 @@ from __future__ import print_function
 import posix
 import pwd
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import word, word_part, token
+from _devbuild.gen.runtime_asdl import value_e
 from asdl import const
-from core.meta import runtime_asdl, syntax_asdl, Id
 from frontend import match
 from pylib import os_path
-
-value_e = runtime_asdl.value_e
-word = syntax_asdl.word
-word_part = syntax_asdl.word_part
 
 import libc  # gethostname()
 
@@ -190,7 +188,7 @@ class Evaluator(object):
         ps1_word = w_parser.ReadForPlugin()
       except Exception as e:
         error_str = '<ERROR: cannot parse PS1>'
-        t = syntax_asdl.token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+        t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
         ps1_word = word.CompoundWord([word_part.LiteralPart(t)])
       self.parse_cache[ps1_str] = ps1_word
 

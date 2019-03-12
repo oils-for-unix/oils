@@ -17,33 +17,25 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.runtime_asdl import (
+    lvalue, value, value_e, value_t, scope_e,
+)
+from _devbuild.gen.syntax_asdl import (
+    arith_expr_e, lhs_expr_e, lhs_expr_t, bool_expr_e,
+)
+from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import const
-
 from core import dev
+from core.meta import BOOL_ARG_TYPES
 from core import util
 from core import ui
-from core.meta import syntax_asdl, runtime_asdl, types_asdl, BOOL_ARG_TYPES, Id
-
 from osh import state
 from osh import word
 
 log = util.log
 warn = util.warn
 e_die = util.e_die
-
-bool_arg_type_e = types_asdl.bool_arg_type_e
-
-arith_expr_e = syntax_asdl.arith_expr_e
-lhs_expr_e = syntax_asdl.lhs_expr_e
-bool_expr_e = syntax_asdl.bool_expr_e  # used for dispatch
-word_e = syntax_asdl.word_e
-
-lvalue = runtime_asdl.lvalue
-part_value_e = runtime_asdl.part_value_e
-value = runtime_asdl.value
-value_e = runtime_asdl.value_e
-lvalue_e = runtime_asdl.lvalue_e
-scope_e = runtime_asdl.scope_e
 
 
 def _StringToInteger(s, span_id=const.NO_INTEGER):
@@ -165,10 +157,10 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     node: syntax_asdl.lhs_expr
 
   Returns:
-    runtime_asdl.value, runtime_asdl.lvalue
+    value_t, lvalue_t
   """
   #log('lhs_expr NODE %s', node)
-  assert isinstance(node, syntax_asdl.lhs_expr_t), node
+  assert isinstance(node, lhs_expr_t), node
 
   if node.tag == lhs_expr_e.LhsName:  # a = b
     # Problem: It can't be an array?
@@ -231,8 +223,8 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
 class ArithEvaluator(_ExprEvaluator):
 
   def _ValToArith(self, val, span_id, int_coerce=True):
-    """Convert runtime_asdl.value to a Python int or list of strings."""
-    assert isinstance(val, runtime_asdl.value_t), '%r %r' % (val, type(val))
+    """Convert value_t to a Python int or list of strings."""
+    assert isinstance(val, value_t), '%r %r' % (val, type(val))
 
     if int_coerce:
       if val.tag == value_e.Undef:  # 'nounset' already handled before got here
@@ -297,7 +289,7 @@ class ArithEvaluator(_ExprEvaluator):
     Args:
       node: lhs_expr
     Returns:
-      int or list of strings, runtime_asdl.lvalue
+      int or list of strings, lvalue_t
     """
     val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 
@@ -315,7 +307,7 @@ class ArithEvaluator(_ExprEvaluator):
     
     Very similar to _EvalLhs in core/cmd_exec.
     """
-    assert isinstance(node, syntax_asdl.lhs_expr_t), node
+    assert isinstance(node, lhs_expr_t), node
 
     if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
       lval = lvalue.LhsName(node.name)

@@ -5,14 +5,13 @@ cmd_parse_test.py: Tests for cmd_parse.py
 
 import unittest
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import command_e
 from core import test_lib
 from core import ui
 from core import util
-from core.meta import syntax_asdl, Id
 
 from osh import word
-
-command_e = syntax_asdl.command_e
 
 
 def _assertParseMethod(test, code_str, method, expect_success=True):

@@ -11,7 +11,7 @@ Usage:
   from core.meta import syntax_asdl, Id, Kind, ID_SPEC
 """
 
-from _devbuild.gen.types_asdl import bool_arg_type_t
+from _devbuild.gen.types_asdl import bool_arg_type_t, redir_arg_type_e
 from _devbuild.gen.id_kind_asdl import (
     Id, Id_t, Kind_t, ID_INSTANCES, KIND_INSTANCES
 )
@@ -29,17 +29,11 @@ def LookupKind(id_):
   return KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
 
 
-# Do NOT create any any more instances of Id.  Always used IdInstance().
+# Do NOT create any any more instances of Id.  Always use IdInstance().
 def IdInstance(i):
   # type: (int) -> Id_t
   return ID_INSTANCES[i]
 
-
-#
-# Instantiate osh/types.asdl
-#
-
-from _devbuild.gen import types_asdl  # other modules import this
 
 BOOL_ARG_TYPES = {}  # type: Dict[int, bool_arg_type_t]
 
@@ -50,7 +44,7 @@ TEST_OTHER_LOOKUP = {}  # type: Dict[str, int]
 
 
 #
-# Add attributes to Id and Kind
+# Initialize Id and Kind
 #
 
 ID_SPEC = id_kind.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
@@ -61,23 +55,9 @@ id_kind.SetupTestBuiltin(ID_SPEC,
                          TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
                          TEST_OTHER_LOOKUP)
 
-# Debug
+# Debug Stats
 _kind_sizes = ID_SPEC.kind_sizes
 
-
-#
-# Instantiate osh/osh.asdl
-#
-
-from _devbuild.gen import syntax_asdl  # other modules import this
-unused1 = syntax_asdl  # shut up lint
-
-#
-# Instantiate core/runtime.asdl
-#
-
-from _devbuild.gen import runtime_asdl  # other modules import this
-unused2 = runtime_asdl  # shut up lint
 
 #
 # Redirect Tables associated with IDs
@@ -106,8 +86,6 @@ REDIR_DEFAULT_FD = {
     Id.Redir_DLess: 0,
     Id.Redir_DLessDash: 0,
 }
-
-redir_arg_type_e = types_asdl.redir_arg_type_e
 
 REDIR_ARG_TYPES = {
     # filename

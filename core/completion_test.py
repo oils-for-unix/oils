@@ -14,19 +14,17 @@ import os
 import unittest
 import sys
 
+from _devbuild.gen.runtime_asdl import value_e
 from core import alloc
 from core import completion  # module under test
 from core import comp_ui
 from core import test_lib
 from core import util
-from core.meta import runtime_asdl, syntax_asdl
 
 from frontend import parse_lib
 from osh import state
 from testdata.completion import bash_oracle
 
-assign_op_e = syntax_asdl.assign_op_e
-value_e = runtime_asdl.value_e
 log = util.log
 
 A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])

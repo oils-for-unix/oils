@@ -29,11 +29,11 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e,
 )
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: rename
+from _devbuild.gen import syntax_asdl  # line_span
 
 from asdl import const
 from core import alloc
 from core import util
-from core.meta import syntax_asdl
 from frontend import match
 from frontend import reader
 from osh import braces

@@ -13,22 +13,19 @@ from __future__ import print_function
 import cStringIO
 import posix
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import lhs_expr
+from _devbuild.gen.runtime_asdl import (
+    value, value_e, lvalue_e, scope_e, var_flags_e
+)
+from _devbuild.gen import runtime_asdl  # for cell
 from asdl import const
 from core import util
-from core.meta import syntax_asdl, runtime_asdl, Id
 from frontend import args
 from osh import split
 
 import libc
 
-lhs_expr = syntax_asdl.lhs_expr
-
-part_value_e = runtime_asdl.part_value_e
-value = runtime_asdl.value
-value_e = runtime_asdl.value_e
-lvalue_e = runtime_asdl.lvalue_e
-scope_e = runtime_asdl.scope_e
-var_flags_e = runtime_asdl.var_flags_e
 
 log = util.log
 e_die = util.e_die

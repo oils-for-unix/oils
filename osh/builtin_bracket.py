@@ -4,16 +4,16 @@ builtin_bracket.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.runtime_asdl import value
+from _devbuild.gen.syntax_asdl import word, bool_expr
+
 from core import util
 from core import meta
-from core.meta import Id, IdInstance, runtime_asdl, syntax_asdl
+from core.meta import IdInstance
 
 from osh import expr_eval
 from osh import bool_parse
-
-word = syntax_asdl.word
-bool_expr = syntax_asdl.bool_expr
-value = runtime_asdl.value
 
 log = util.log
 

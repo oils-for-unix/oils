@@ -11,9 +11,9 @@ arith_parse_test.py: Tests for arith_parse.py
 
 import unittest
 
+from _devbuild.gen.types_asdl import lex_mode_e
 from core import test_lib
 from core import util
-from core.meta import types_asdl
 
 from osh import cmd_exec
 from osh import expr_eval
@@ -22,8 +22,6 @@ from osh import word_eval
 from osh import state
 
 #from osh import arith_parse
-
-lex_mode_e = types_asdl.lex_mode_e
 
 
 def ParseAndEval(code_str):
