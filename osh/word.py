@@ -23,7 +23,9 @@ from asdl import const
 from core import util
 from core.meta import LookupKind
 
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.util import _ErrorWithLocation
 
 p_die = util.p_die
 
@@ -589,3 +591,18 @@ def SpanForLhsExpr(node):
   # TODO: LhsIndexedName needs span_id.
   #if isinstance(node, lhs_expr__LhsName):
   #elif isinstance(node, lhs_expr__LhsIndexedName):
+
+
+def SpanIdFromError(error):
+  # type: (_ErrorWithLocation) -> int
+  #print(parse_error)
+  if error.span_id != const.NO_INTEGER:
+    return error.span_id
+  if error.token:
+    return error.token.span_id
+  if error.part:
+    return LeftMostSpanForPart(error.part)
+  if error.word:
+    return LeftMostSpanForWord(error.word)
+
+  return const.NO_INTEGER

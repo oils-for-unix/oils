@@ -15,7 +15,7 @@ import sys
 from _devbuild.gen.syntax_asdl import command_t, command
 from asdl import const
 from asdl import format as fmt
-from core import dev
+from osh import word
 
 from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -47,7 +47,7 @@ def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
 
 def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   # type: (ParseError, Arena, str, IO[str]) -> None
-  span_id = dev.SpanIdFromError(err)
+  span_id = word.SpanIdFromError(err)
 
   # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
   # means there is no location info, but 0 could mean that the location is EOF.

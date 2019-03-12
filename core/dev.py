@@ -17,21 +17,6 @@ if TYPE_CHECKING:
   #from osh.cmd_exec import Executor
 
 
-def SpanIdFromError(error):
-  # type: (_ErrorWithLocation) -> int
-  #print(parse_error)
-  if error.span_id != const.NO_INTEGER:
-    return error.span_id
-  if error.token:
-    return error.token.span_id
-  if error.part:
-    return word.LeftMostSpanForPart(error.part)
-  if error.word:
-    return word.LeftMostSpanForWord(error.word)
-
-  return const.NO_INTEGER
-
-
 class CrashDumper(object):
   """
   Controls if we collect a crash dump, and where we write it to.
@@ -85,7 +70,7 @@ class CrashDumper(object):
       return
 
     self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
-    span_id = SpanIdFromError(err)
+    span_id = word.SpanIdFromError(err)
 
     self.error = {
        'msg': err.UserErrorString(),
