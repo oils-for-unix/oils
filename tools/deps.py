@@ -6,19 +6,15 @@ deps.py
 
 import sys
 
+from _devbuild.gen.runtime_asdl import builtin_e
+from _devbuild.gen.syntax_asdl import command, command_e
 from asdl import runtime
-
 from core import util
-from core.meta import syntax_asdl, runtime_asdl
-
 from osh import builtin
 from osh import word
 
-command = syntax_asdl.command
-command_e = syntax_asdl.command_e
-
-builtin_e = runtime_asdl.builtin_e
 log = util.log
+
 
 # TODO: Move to asdl/visitor.py?
 class Visitor(object):

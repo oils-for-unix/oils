@@ -49,15 +49,17 @@ _tlog('before imports')
 import atexit
 import errno
 
+from _devbuild.gen.runtime_asdl import value_e, builtin_e
+
 from core import alloc
 from core import comp_ui
 from core import dev
 from core import completion
 from core import main_loop
 from core import process
+from core import pyutil
 from core import ui
 from core import util
-from core.meta import runtime_asdl
 
 from oil_lang import cmd_exec as oil_cmd_exec
 
@@ -83,8 +85,6 @@ from tools import readlink
 
 import libc
 
-value_e = runtime_asdl.value_e
-builtin_e = runtime_asdl.builtin_e
 
 try:
   import line_input
@@ -195,19 +195,16 @@ def _InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
   # affects what we pass back to readline and what readline displays to the
   # user!
 
-  if 0:
-    readline_mod.set_completer_delims(util.READLINE_DELIMS)
-  else:
-    # Disable READLINE_DELIMS because it causes problems with quoting.
-    readline_mod.set_completer_delims('')
+  # No delimiters because readline isn't smart enough to tokenize shell!
+  readline_mod.set_completer_delims('')
 
-    readline_mod.set_completion_display_matches_hook(
-        lambda *args: display.PrintCandidates(*args)
-    )
+  readline_mod.set_completion_display_matches_hook(
+      lambda *args: display.PrintCandidates(*args)
+  )
 
 
 def _ShowVersion():
-  util.ShowAppVersion('Oil')
+  pyutil.ShowAppVersion('Oil')
 
 
 def SourceStartupFile(rc_path, lang, parse_ctx, ex):
@@ -269,7 +266,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # TODO: Thread this throughout the program, and get rid of the global
   # variable in core/util.py.  Rename to InitResourceLaoder().  It's now only
   # used for the 'help' builtin and --version.
-  loader = util.GetResourceLoader()
+  loader = pyutil.GetResourceLoader()
 
   if opts.help:
     builtin.Help(['%s-usage' % lang], loader)
@@ -708,7 +705,7 @@ def AppBundleMain(argv):
       raise args.UsageError('Missing required applet name.')
 
     if first_arg in ('-h', '--help'):
-      builtin.Help(['bundle-usage'], util.GetResourceLoader())
+      builtin.Help(['bundle-usage'], pyutil.GetResourceLoader())
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):

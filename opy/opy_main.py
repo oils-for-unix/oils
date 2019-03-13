@@ -29,6 +29,7 @@ from .byterun import ovm
 
 from frontend import args
 from core import util
+from core import pyutil
 
 from ovm2 import oheap2
 
@@ -237,7 +238,7 @@ def OpyCommandMain(argv):
   if action in (
       'parse', 'compile', 'dis', 'ast', 'symbols', 'cfg', 'compile-ovm',
       'eval', 'repl', 'run', 'run-ovm'):
-    loader = util.GetResourceLoader()
+    loader = pyutil.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
     gr.load(f)

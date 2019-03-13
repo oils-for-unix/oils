@@ -37,6 +37,7 @@ from core import main_loop
 from core import process
 from core import ui
 from core import util
+from core import pyutil
 from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
 from frontend import args
@@ -362,7 +363,7 @@ class Executor(object):
       status = builtin.Type(argv, self.funcs, path)
 
     elif builtin_id == builtin_e.HELP:
-      loader = util.GetResourceLoader()
+      loader = pyutil.GetResourceLoader()
       status = builtin.Help(argv, loader)
 
     elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):

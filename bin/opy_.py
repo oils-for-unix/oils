@@ -11,6 +11,7 @@ this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(this_dir, '..'))
 
 from frontend import args
+from core import pyutil
 from core import util
 
 from opy import opy_main
@@ -22,7 +23,7 @@ _OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'
 
 
 def _ShowVersion():
-  util.ShowAppVersion('OPy')
+  pyutil.ShowAppVersion('OPy')
 
 
 # Run the bytecode too.  Should this have an option to use byterun?

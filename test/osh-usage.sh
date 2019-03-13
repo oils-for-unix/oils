@@ -165,6 +165,12 @@ noexec-fails-properly() {
   echo "$tmp appears empty, as expected"
 }
 
+version() {
+  set +o errexit
+  bin/osh --version
+  assert $? -eq 0
+}
+
 readonly -a PASSING=(
   ast-formats
   osh-file
@@ -174,6 +180,7 @@ readonly -a PASSING=(
   rc-file
   help
   noexec-fails-properly
+  version
 )
 
 all-passing() {

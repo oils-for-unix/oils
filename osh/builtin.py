@@ -34,6 +34,7 @@ from _devbuild.gen import osh_help  # generated file
 from _devbuild.gen.runtime_asdl import (
   lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e)
 from core import util
+from core import pyutil
 from frontend import args
 from frontend import lex
 from frontend import match
@@ -1550,7 +1551,7 @@ def main(argv):
   # useful in parser error messages too.  Good thing both kinds of code are
   # generated?  Because I don't want to deal with a C toolchain for it.
 
-  loader = util.GetResourceLoader()
+  loader = pyutil.GetResourceLoader()
   Help([], loader)
 
   for name, spec in BUILTIN_DEF.arg_specs.iteritems():
