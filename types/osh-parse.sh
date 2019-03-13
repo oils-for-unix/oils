@@ -34,7 +34,7 @@ deps() {
   awk '
   $1 ~ /^.*\.py$/ { print $1 }
   ' $out/app-deps-cpython.txt \
-    | sort | tee $PY_DEPS | xargs wc -l | sort -n
+    | grep -v __init__ | sort | tee $PY_DEPS | xargs wc -l | sort -n
 }
 
 typecheck() {

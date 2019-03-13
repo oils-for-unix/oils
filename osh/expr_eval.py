@@ -26,7 +26,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import const
-from core import dev
 from core.meta import BOOL_ARG_TYPES
 from core import util
 from core import ui
@@ -272,7 +271,7 @@ class ArithEvaluator(_ExprEvaluator):
       else:
         i = 0
 
-        span_id = dev.SpanIdFromError(e)
+        span_id = word.SpanIdFromError(e)
         if self.arena:  # BoolEvaluator for test builtin doesn't have it.
           if span_id != const.NO_INTEGER:
             ui.PrintFilenameAndLine(span_id, self.arena)
