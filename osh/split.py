@@ -179,17 +179,12 @@ class SplitContext(object):
 
 class _BaseSplitter(object):
   def __init__(self, escape_chars):
-    # Backslash is always escaped
-    self.escape_chars = escape_chars + '\\'
+    self.escape_chars = escape_chars + '\\'   # Backslash is always escaped
 
-  # NOTE: This is pretty much the same as GlobEscape.
   def Escape(self, s):
-    escaped = ''
-    for c in s:
-      if c in self.escape_chars:
-        escaped += '\\'
-      escaped += c
-    return escaped
+    # Note the characters here are DYNAMIC, unlike other usages of
+    # BackslashEscape().
+    return util.BackslashEscape(s, self.escape_chars)
 
 
 # TODO: Used this when IFS='' or IFS isn't set?  This is the fast path for Oil!

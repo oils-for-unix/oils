@@ -25,19 +25,13 @@ log = util.log
 e_die = util.e_die
 
 
+# NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
 def _BackslashEscape(s):
   """Double up backslashes.
 
   Useful for strings about to be globbed and strings about to be IFS escaped.
   """
   return s.replace('\\', '\\\\')
-  # Similar to GlobEscape and splitter.Escape().
-  escaped = ''
-  for c in s:
-    if c == '\\':
-      escaped += '\\'
-    escaped += c
-  return escaped
 
 
 def _ValueToPartValue(val, quoted):
