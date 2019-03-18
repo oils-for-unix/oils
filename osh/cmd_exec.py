@@ -19,6 +19,8 @@ import posix
 import resource
 import time
 
+from sys import stderr
+
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, word_part, token
@@ -378,6 +380,24 @@ class Executor(object):
 
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)
+
+    elif builtin_id == builtin_e.BUILTIN:
+      if not argv:
+          status = 0
+      else:
+          to_run = builtin.Resolve(argv[0])
+          # check special builtins now, this is a strange thing to ask
+          # since they can't be overwritten but it is valid
+          if to_run == builtin_e.NONE:
+              to_run = builtin.ResolveSpecial(argv[0])
+          if to_run == builtin_e.NONE:
+              print("{}: {}builtin: {}: not a shell builtin".format(
+                  self.mem.GetArgNum(0).s,
+                  self.mem.line_num.s + ': ' if not self.exec_opts.interactive else '' ,
+                  argv[0]), file=stderr)
+              status = 1
+          else:
+              status = self._RunBuiltin(to_run, argv, span_id)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
