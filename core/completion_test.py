@@ -280,7 +280,7 @@ class RootCompleterTest(unittest.TestCase):
     print(comp)
     m = list(r.Matches(comp))
     # Just test for a subset
-    self.assert_('echo $HOME' in m, m)
+    self.assert_('echo $HOSTNAME' in m, m)
     self.assert_('echo $IFS' in m, m)
 
     # Now it has a prefix
@@ -301,7 +301,7 @@ class RootCompleterTest(unittest.TestCase):
     print(comp)
     m = list(r.Matches(comp))
     # Just test for a subset
-    self.assert_('echo _${HOME' in m, 'Got %s' % m)
+    self.assert_('echo _${HOSTNAME' in m, 'Got %s' % m)
     self.assert_('echo _${IFS' in m, 'Got %s' % m)
 
     # Now it has a prefix
@@ -322,7 +322,7 @@ class RootCompleterTest(unittest.TestCase):
     comp = MockApi(line='echo ${undef:-$')
     print(comp)
     m = list(r.Matches(comp))
-    self.assert_('echo ${undef:-$HOME' in m, 'Got %s' % m)
+    self.assert_('echo ${undef:-$HOSTNAME' in m, 'Got %s' % m)
     self.assert_('echo ${undef:-$IFS' in m, 'Got %s' % m)
 
     #
@@ -333,7 +333,7 @@ class RootCompleterTest(unittest.TestCase):
     comp = MockApi(line='echo "$')
     print(comp)
     m = list(r.Matches(comp))
-    self.assert_('echo "$HOME' in m, 'Got %s' % m)
+    self.assert_('echo "$HOSTNAME' in m, 'Got %s' % m)
     self.assert_('echo "$IFS' in m, 'Got %s' % m)
 
     comp = MockApi(line='echo "$P')
@@ -350,7 +350,7 @@ class RootCompleterTest(unittest.TestCase):
       comp = MockApi(line='echo ${#')
       print(comp)
       m = list(r.Matches(comp))
-      self.assert_('${#HOME' in m, 'Got %s' % m)
+      self.assert_('${#HOSTNAME' in m, 'Got %s' % m)
       self.assert_('${#IFS' in m, 'Got %s' % m)
 
     comp = MockApi(line='echo "${#P')

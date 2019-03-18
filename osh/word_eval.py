@@ -12,8 +12,9 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     part_value, part_value_e, value, value_e, value_t, effect_e
 )
-from core import util
+from core import process
 from core.meta import LookupKind
+from core import util
 from frontend import match
 from osh import braces
 from osh import glob_
@@ -162,10 +163,11 @@ class _WordEvaluator(object):
       prefix: The tilde prefix (possibly empty)
     """
     if token.val == '~':
-      # First look up the HOME var, and then env var
+      # First look up the HOME var, then ask the OS.  This is what bash does.
       val = self.mem.GetVar('HOME')
-      assert val.tag == value_e.Str, val
-      return val.s
+      if val.tag == value_e.Str:
+        return val.s
+      return process.GetHomeDir()
 
     # For ~otheruser/src.  TODO: Should this be cached?
     # http://linux.die.net/man/3/getpwnam

@@ -12,10 +12,34 @@
 #
 # And see whether the variable changed.
 
-#### $PWD
+#### $PWD is set
 # Just test that it has a slash for now.
-echo $PWD | grep -o /
+echo $PWD | grep /
 ## status: 0
+
+#### $PWD is not only set, but exported
+env | grep PWD
+## status: 0
+## BUG mksh status: 1
+
+#### $HOME is NOT set
+home=$(echo $HOME)
+test "$home" = ""
+echo status=$?
+
+env | grep HOME
+echo status=$?
+
+# not in interactive shell either
+$SH -i -c 'echo $HOME' | grep /
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+status=1
+## END
+
 
 #### $1 .. $9 are scoped, while $0 is not
 func() { echo $0 $1 $2 | sed -e 's/.*sh/sh/'; }

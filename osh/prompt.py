@@ -13,6 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word, word_part, token
 from _devbuild.gen.runtime_asdl import value_e
 from asdl import const
+from core import ui
 from frontend import match
 from pylib import os_path
 
@@ -135,10 +136,10 @@ class Evaluator(object):
           r = self.cache.Get('hostname')
 
         elif char == 'w':
-          # TODO: This should shorten to ~foo when applicable.
           val = self.mem.GetVar('PWD')
           if val.tag == value_e.Str:
-            r = val.s
+            # Shorten to ~/mydir
+            r = ui.PrettyDir(val.s, self.mem.GetVar('HOME'))
           else:
             r = '<Error: PWD is not a string>'
 

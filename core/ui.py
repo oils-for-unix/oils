@@ -13,6 +13,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import command_t, command
+from _devbuild.gen.runtime_asdl import value_t, value
 from asdl import const
 from asdl import format as fmt
 from osh import word
@@ -21,6 +22,20 @@ from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.util import ParseError
+
+
+def PrettyDir(dir_name, home_dir):
+  # type: (str, value_t) -> str
+  """Maybe replace the home dir with ~.
+
+  Used by the 'dirs' builtin and the prompt evaluator.
+  """
+  if (home_dir and
+      isinstance(home_dir, value.Str) and
+      (dir_name == home_dir.s or dir_name.startswith(home_dir.s + '/'))):
+    return '~' + dir_name[len(home_dir.s):]
+
+  return dir_name
 
 
 def PrintFilenameAndLine(span_id, arena, f=sys.stderr):

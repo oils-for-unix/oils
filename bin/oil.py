@@ -49,7 +49,7 @@ _tlog('before imports')
 import atexit
 import errno
 
-from _devbuild.gen.runtime_asdl import value_e, builtin_e
+from _devbuild.gen.runtime_asdl import builtin_e
 
 from core import alloc
 from core import comp_ui
@@ -437,11 +437,11 @@ def ShellMain(lang, argv0, argv, login_shell):
   # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
 
   # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
-  home_dir = mem.GetVar('HOME')
-  assert home_dir.tag == value_e.Str, home_dir
-  rc_path = opts.rcfile or os_path.join(home_dir.s, '.config/oil', lang + 'rc')
+  home_dir = process.GetHomeDir()
+  assert home_dir is not None
+  rc_path = opts.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
 
-  history_filename = os_path.join(home_dir.s, '.config/oil', 'history_' + lang)
+  history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
 
   if opts.c is not None:
     arena.PushSource('<command string>')

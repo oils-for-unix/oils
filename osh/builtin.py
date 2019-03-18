@@ -33,6 +33,7 @@ import sys
 from _devbuild.gen import osh_help  # generated file
 from _devbuild.gen.runtime_asdl import (
   lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e)
+from core import ui
 from core import util
 from core import pyutil
 from frontend import args
@@ -657,27 +658,19 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
   if style == WITH_LINE_NUMBERS:
     for i, entry in enumerate(dir_stack.Iter()):
-      print('%2d  %s' % (i, _FormatDir(entry, home_dir)))
+      print('%2d  %s' % (i, ui.PrettyDir(entry, home_dir)))
 
   elif style == WITHOUT_LINE_NUMBERS:
     for entry in dir_stack.Iter():
-      print(_FormatDir(entry, home_dir))
+      print(ui.PrettyDir(entry, home_dir))
 
   elif style == SINGLE_LINE:
     # NOTE: Changed to list comprehension to avoid LOAD_CLOSURE/MAKE_CLOSURE.
     # TODO: Restore later?
-    print(
-        ' '.join([_FormatDir(entry, home_dir) for entry in dir_stack.Iter()]))
+    s = ' '.join(ui.PrettyDir(entry, home_dir) for entry in dir_stack.Iter())
+    print(s)
 
   sys.stdout.flush()
-
-
-def _FormatDir(dir_name, home_dir):
-  if home_dir and home_dir.tag == value_e.Str and (
-      dir_name == home_dir.s or dir_name.startswith(home_dir.s + '/')):
-    return dir_name.replace(home_dir.s, '~', 1)
-
-  return dir_name
 
 
 def Pushd(argv, mem, dir_stack):

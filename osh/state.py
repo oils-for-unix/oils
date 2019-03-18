@@ -12,7 +12,6 @@ from __future__ import print_function
 
 import cStringIO
 import posix
-import pwd
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import lhs_expr
@@ -36,22 +35,6 @@ e_die = util.e_die
 # we have to set it back!
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
-
-
-def _GetHomeDir():
-  # type: () -> str
-  """Get the user's home directory from the /etc/passwd.
-
-  Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
-  initialization use mem.GetVar('HOME').
-  """
-  uid = posix.getuid()
-  try:
-    e = pwd.getpwuid(uid)
-  except KeyError:
-    return None
-  else:
-    return e.pw_dir
 
 
 class _ErrExit(object):
@@ -556,6 +539,10 @@ class Mem(object):
     # with 'readline' yet.
     SetGlobalString(self, 'COMP_WORDBREAKS', _READLINE_DELIMS)
 
+    # TODO on $HOME: bash sets it if it's a login shell and not in POSIX mode!
+    # if (login_shell == 1 && posixly_correct == 0)
+    #   set_home_var ();
+
   def _InitVarsFromEnv(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
@@ -577,12 +564,6 @@ class Mem(object):
     self.SetVar(
         lhs_expr.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
         scope_e.GlobalOnly)
-
-    v = self.GetVar('HOME')
-    if v.tag == value_e.Undef:
-      # TODO: Should lack of a home dir be an error?  What does bash do?
-      home_dir = _GetHomeDir() or '~'
-      SetGlobalString(self, 'HOME', home_dir)
 
   def SetCurrentSpanId(self, span_id):
     """Set the current source location, for BASH_SOURCE, BASH_LINENO, LINENO,

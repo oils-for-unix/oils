@@ -13,6 +13,7 @@ from __future__ import print_function
 import errno
 import fcntl
 import posix
+import pwd
 import signal
 import sys
 
@@ -21,8 +22,26 @@ from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
 from core import util
 from pylib import os_
 
+from typing import Optional
+
 e_die = util.e_die
 log = util.log
+
+
+def GetHomeDir():
+  # type: () -> Optional[str]
+  """Get the user's home directory from the /etc/passwd.
+
+  Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
+  initialization use mem.GetVar('HOME').
+  """
+  uid = posix.getuid()
+  try:
+    e = pwd.getpwuid(uid)
+  except KeyError:
+    return None
+  else:
+    return e.pw_dir
 
 
 class _FdFrame(object):
