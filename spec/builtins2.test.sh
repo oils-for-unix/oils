@@ -137,6 +137,24 @@ status=127
 status=127
 ## END
 
+#### $(command type ls)
+type() { echo FUNCTION; }
+type
+s=$(command type echo)
+echo $s | grep builtin > /dev/null
+echo status=$?
+## STDOUT:
+FUNCTION
+status=0
+## END
+## N-I zsh STDOUT:
+FUNCTION
+status=1
+## END
+## N-I mksh STDOUT:
+status=1
+## END
+
 #### builtin
 cd () { echo "hi"; }
 cd
@@ -173,6 +191,15 @@ osh error: builtin: ls: not a shell builtin
 #### builtin no args
 builtin
 ## status: 0
+## N-I dash status: 127
+## N-I dash STDERR:
+/bin/dash: 1: builtin: not found
+## END
+
+#### builtin command echo hi
+builtin command echo hi
+## status: 0
+## stdout: hi
 ## N-I dash status: 127
 ## N-I dash STDERR:
 /bin/dash: 1: builtin: not found

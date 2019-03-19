@@ -262,7 +262,7 @@ class Executor(object):
     else:
       return 0
 
-  def _RunBuiltin(self, builtin_id, argv, span_id):
+  def _RunBuiltin(self, builtin_id, argv, fork_external, span_id):
     argv = argv[1:]  # Builtins don't need to know their own name.
 
     #
@@ -355,8 +355,9 @@ class Executor(object):
       status = builtin.GetOpts(argv, self.mem)
 
     elif builtin_id == builtin_e.COMMAND:
-      path = self.mem.GetVar('PATH')
-      status = builtin.Command(argv, self.funcs, path)
+      # TODO: Pull Command up to the top level?
+      b = builtin.Command(self, self.funcs, self.mem)
+      status = b(argv, fork_external, span_id)
 
     elif builtin_id == builtin_e.TYPE:
       path = self.mem.GetVar('PATH')
@@ -379,20 +380,19 @@ class Executor(object):
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)
 
-    elif builtin_id == builtin_e.BUILTIN:
+    elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
       if not argv:
-          status = 0
-      else:
-          to_run = builtin.Resolve(argv[0])
-          # check special builtins now, this is a strange thing to ask
-          # since they can't be overwritten but it is valid
-          if to_run == builtin_e.NONE:
-              to_run = builtin.ResolveSpecial(argv[0])
-          if to_run == builtin_e.NONE:
-              util.error("builtin: {}: not a shell builtin".format(argv[0]))
-              status = 1
-          else:
-              status = self._RunBuiltin(to_run, argv, span_id)
+        return 0  # this could be an error in strict mode?
+
+      # Run regular builtin or special builtin
+      to_run = builtin.Resolve(argv[0])
+      if to_run == builtin_e.NONE:
+        to_run = builtin.ResolveSpecial(argv[0])
+      if to_run == builtin_e.NONE:
+        util.error("builtin: %s: not a shell builtin", argv[0])
+        return 1
+
+      return self._RunBuiltin(to_run, argv, fork_external, span_id)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
@@ -548,7 +548,7 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, fork_external, span_id, funcs=True):
+  def RunSimpleCommand(self, argv, fork_external, span_id, funcs=True):
     """
     Args:
       fork_external: for subshell ( ls / ) or ( command ls / )
@@ -566,7 +566,7 @@ class Executor(object):
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
       try:
-        status = self._RunBuiltin(builtin_id, argv, span_id)
+        status = self._RunBuiltin(builtin_id, argv, fork_external, span_id)
       except args.UsageError as e:
         ui.usage('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
@@ -582,19 +582,9 @@ class Executor(object):
 
     builtin_id = builtin.Resolve(arg0)
 
-    if builtin_id == builtin_e.COMMAND:  # 'command ls' suppresses function lookup
-      n = len(argv)
-      if n == 1:
-        return 0  # 'command', like the 'if not argv' case above
-      # The 'command' builtin syntax is simple enough that this is 100%
-      # correct, not a heuristic.
-      elif n >= 2 and argv[1] != '-v':
-        return self._RunSimpleCommand(argv[1:], fork_external, span_id,
-                                      funcs=False)
-
     if builtin_id != builtin_e.NONE:
       try:
-        status = self._RunBuiltin(builtin_id, argv, span_id)
+        status = self._RunBuiltin(builtin_id, argv, fork_external, span_id)
       except args.UsageError as e:
         ui.usage('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
@@ -727,16 +717,16 @@ class Executor(object):
       # with set-o verbose?
       self.tracer.OnSimpleCommand(argv)
 
-      # NOTE: _RunSimpleCommand never returns when fork_external=False!
+      # NOTE: RunSimpleCommand never returns when fork_external=False!
       if node.more_env:  # I think this guard is necessary?
         self.mem.PushTemp()
         try:
           self._EvalTempEnv(node.more_env)
-          status = self._RunSimpleCommand(argv, fork_external, span_id)
+          status = self.RunSimpleCommand(argv, fork_external, span_id)
         finally:
           self.mem.PopTemp()
       else:
-        status = self._RunSimpleCommand(argv, fork_external, span_id)
+        status = self.RunSimpleCommand(argv, fork_external, span_id)
 
     elif node.tag == command_e.ExpandedAlias:
       # Expanded aliases need redirects and env bindings from the calling

@@ -981,20 +981,27 @@ COMMAND_SPEC.ShortFlag('-v')
 #COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
 
 
-def Command(argv, funcs, path_val):
-  arg, i = COMMAND_SPEC.Parse(argv)
-  status = 0
-  if arg.v:
-    for kind, arg in _ResolveNames(argv[i:], funcs, path_val):
-      if kind is None:
-        status = 1  # nothing printed, but we fail
-      else:
-        # This is for -v, -V is more detailed.
-        print(arg)
-    return status
+class Command(object):
+  def __init__(self, ex, funcs, mem):
+    self.ex = ex
+    self.funcs = funcs
+    self.mem = mem
 
-  raise AssertionError('command without -v should have been handled earlier')
+  def __call__(self, argv, fork_external, span_id):
+    arg, i = COMMAND_SPEC.Parse(argv)
+    if arg.v:
+      path_val = self.mem.GetVar('PATH')
+      status = 0
+      for kind, arg in _ResolveNames(argv[i:], self.funcs, path_val):
+        if kind is None:
+          status = 1  # nothing printed, but we fail
+        else:
+          # This is for -v, -V is more detailed.
+          print(arg)
+      return status
 
+    # 'command ls' suppresses function lookup.
+    return self.ex.RunSimpleCommand(argv, fork_external, span_id, funcs=False)
 
 
 TYPE_SPEC = _Register('type')
