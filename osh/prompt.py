@@ -117,9 +117,11 @@ class Evaluator(object):
 
       elif id_ == Id.PS_LBrace:
         non_printing += 1
+        ret.append('\x01')
 
       elif id_ == Id.PS_RBrace:
         non_printing -= 1
+        ret.append('\x02')
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
         char = value[1:]
