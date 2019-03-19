@@ -75,6 +75,7 @@ _SPECIAL_BUILTINS = {
     #"local": builtin_e.LOCAL,
     "declare": builtin_e.DECLARE,
     "typeset": builtin_e.TYPESET,
+    "builtin": builtin_e.BUILTIN,
 
     # Not treated as builtins by OSH.  TODO: Need to auto-complete these
     # break continue return
