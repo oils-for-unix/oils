@@ -828,7 +828,13 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.SimpleVarSub:
       maybe_decay_array = False
       # 1. Evaluate from (var_name, var_num, token) -> defined, value
-      if part.token.id == Id.VSub_DollarName:
+      if part.token.id == Id.VSub_DollarSpecialName:
+          SPECIAL_TOKENS = ['RANDOM', 'SECONDS']
+          if not part.token.val[1:] in SPECIAL_TOKENS:
+              raise AssertionError("DollarSpecialName lookup failed")
+          var_name = part.token.val[1:]
+          val = value.Str(str(42))
+      elif part.token.id == Id.VSub_DollarName:
         var_name = part.token.val[1:]
         val = self.mem.GetVar(var_name)
       elif part.token.id == Id.VSub_Number:

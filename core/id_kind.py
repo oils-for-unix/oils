@@ -281,6 +281,7 @@ def AddKinds(spec):
   # But then you have AS_STAR, or Id.Arith_Star maybe
 
   spec.AddKind('VSub', [
+      'DollarSpecialName', # $RANDOM or ${RANDOM}
       'DollarName',  # $foo
       'Name',        # 'foo' in ${foo}
       'Number',      # $0 .. $9
