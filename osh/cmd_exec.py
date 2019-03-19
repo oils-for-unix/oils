@@ -19,8 +19,6 @@ import posix
 import resource
 import time
 
-from sys import stderr
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, word_part, token
