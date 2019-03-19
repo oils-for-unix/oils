@@ -163,44 +163,24 @@ unset -f cd
 ## STDOUT:
 hi
 /
+## END
 ## N-I dash STDOUT:
 hi
-## N-I dash STDERR:
-/bin/dash: 3: builtin: not found
+## END
 
 #### builtin ls not found
 builtin ls
 ## status: 1
-## OK bash STDERR:
-/bin/bash: line 1: builtin: ls: not a shell builtin
-## END
-## OK zsh STDERR:
-zsh: no such builtin: ls
-## END
-## OK mksh STDERR:
-/bin/mksh: <stdin>[1]: builtin: ls: not found
-## END
 ## N-I dash status: 127
-## N-I dash STDERR:
-/bin/dash: 1: builtin: not found
-## END
-## OK osh STDERR:
-osh error: builtin: ls: not a shell builtin
-## END
 
 #### builtin no args
 builtin
 ## status: 0
 ## N-I dash status: 127
-## N-I dash STDERR:
-/bin/dash: 1: builtin: not found
-## END
 
 #### builtin command echo hi
 builtin command echo hi
 ## status: 0
 ## stdout: hi
 ## N-I dash status: 127
-## N-I dash STDERR:
-/bin/dash: 1: builtin: not found
-## END
+## N-I dash stdout-json: ""

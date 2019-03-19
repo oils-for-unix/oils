@@ -358,6 +358,15 @@ readonly_assign() {
 }
 
 #
+# BUILTINS
+#
+
+builtin_builtin() {
+  set +o errexit
+  builtin ls
+}
+
+#
 # TEST DRIVER
 #
 
@@ -384,7 +393,8 @@ all() {
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
-    array_assign_1 array_assign_2 readonly_assign patsub_bad_glob; do
+    array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
+    builtin_builtin; do
 
     _run_test $t
   done
