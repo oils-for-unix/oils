@@ -391,10 +391,7 @@ class Executor(object):
           if to_run == builtin_e.NONE:
               to_run = builtin.ResolveSpecial(argv[0])
           if to_run == builtin_e.NONE:
-              print("{}: {}builtin: {}: not a shell builtin".format(
-                  self.mem.GetArgNum(0).s,
-                  self.mem.line_num.s + ': ' if not self.exec_opts.interactive else '' ,
-                  argv[0]), file=stderr)
+              util.error("builtin: {}: not a shell builtin".format(argv[0]))
               status = 1
           else:
               status = self._RunBuiltin(to_run, argv, span_id)
