@@ -5,6 +5,7 @@ ui.py
 from __future__ import print_function
 
 import sys
+import re
 
 import libc
 
@@ -29,6 +30,9 @@ PROMPT_BOLD = '\x01%s\x02' % _BOLD
 PROMPT_RESET = '\x01%s\x02' % _RESET
 PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
 PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
+# https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python#14693789
+# note this also removes \x01 and \x02, which are used by readline
+ANSI_ESCAPES = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]|\x01|\x02')
 
 
 class PromptState(object):
@@ -40,8 +44,7 @@ class PromptState(object):
 
   def SetLastPrompt(self, prompt_str):
     self.last_prompt_str = prompt_str
-    # TODO: We should figure out the length WITHOUT ANSI codes!
-    self.last_prompt_len = len(prompt_str)
+    self.last_prompt_len = len(ANSI_ESCAPES.sub('', prompt_str))
 
 
 class State(object):
