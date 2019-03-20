@@ -30,6 +30,19 @@ PROMPT_RESET = '\x01%s\x02' % _RESET
 PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
 PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
 
+def _PromptLen(prompt_str):
+  """Ignore all characters between \x01 and \x02."""
+  escaped = False
+  length = 0
+  for c in prompt_str:
+    if c == '\x01':
+      escaped = True
+    elif c == '\x02':
+      escaped = False
+    elif not escaped:
+      length += 1
+  return length
+
 
 class PromptState(object):
   """For the InteractiveLineReader to communicate with the Display callback."""
@@ -40,8 +53,7 @@ class PromptState(object):
 
   def SetLastPrompt(self, prompt_str):
     self.last_prompt_str = prompt_str
-    # TODO: We should figure out the length WITHOUT ANSI codes!
-    self.last_prompt_len = len(prompt_str)
+    self.last_prompt_len = _PromptLen(prompt_str)
 
 
 class State(object):

@@ -25,6 +25,7 @@ import libc  # gethostname()
 
 # Global instance set by main().  TODO: Use dependency injection.
 PROMPT = None
+PROMPT_ERROR = "<error parsing prompt>"
 
 # NOTE: word_compile._ONE_CHAR has some of the same stuff.
 _ONE_CHAR = {
@@ -117,9 +118,11 @@ class Evaluator(object):
 
       elif id_ == Id.PS_LBrace:
         non_printing += 1
+        ret.append('\x01')
 
       elif id_ == Id.PS_RBrace:
         non_printing -= 1
+        ret.append('\x02')
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
         char = value[1:]
@@ -161,6 +164,10 @@ class Evaluator(object):
 
       else:
         raise AssertionError('Invalid token %r' % id_)
+
+    # mismatched braces, see https://github.com/oilshell/oil/pull/256
+    if non_printing != 0:
+        return PROMPT_ERROR
 
     return ''.join(ret)
 
