@@ -290,7 +290,10 @@ class NiceDisplay(_IDisplay):
     self.f.write('\x1b[%dA' % num_lines)  # UP
     last_prompt_len = self.prompt_state.last_prompt_len
     assert last_prompt_len != -1
+
+    # Go right, but not more than the terminal width.
     n = orig_len + last_prompt_len
+    n = n % self._GetTerminalWidth()
     self.f.write('\x1b[%dC' % n)  # RIGHT
 
     if self.bold_line:
