@@ -101,7 +101,7 @@ BUILTIN COMMANDS
                   X fg   X bg   X disown 
   [External]      test [   X printf   getopts   X kill
   [Introspection] help   X hash   type   X caller
-  [Word Lookup]   command   X builtin
+  [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
 X [Unsupported]   enable
 
