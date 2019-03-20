@@ -9,6 +9,9 @@
 
 -include _build/opy/ovm.d
 
+# for typing module
+PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
+
 _build/opy/py27.grammar.pickle:
 	bin/opyc pgen2 opy/py27.grammar $@
 
@@ -17,7 +20,7 @@ _build/opy/main_name.c:
 
 _build/opy/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/opy && \
-	  $(ACTIONS_SH) app-deps opy $(REPO_ROOT) bin.opy_
+	  $(ACTIONS_SH) app-deps opy $(PYPATH) bin.opy_
 
 _build/opy/py-to-compile.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/opy && \
