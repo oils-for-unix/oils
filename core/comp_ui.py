@@ -253,13 +253,14 @@ class NiceDisplay(_IDisplay):
   - displaying descriptions of flags and builtins
   """
   def __init__(self, term_width, comp_state, prompt_state, debug_f,
-               f=sys.stdout, num_lines_cap=10, bold_line=False):
+               readline_mod, f=sys.stdout, num_lines_cap=10, bold_line=False):
     """
     Args:
       bold_line: Should user's entry be bold?
     """
     _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
                        debug_f)
+    self.readline_mod = readline_mod
     self.term_width = term_width
     self.width_is_dirty = False
 
@@ -446,4 +447,7 @@ class NiceDisplay(_IDisplay):
     # between arbitrary bytecodes, and we don't want a single completion
     # display to be shown with different widths.
     self.width_is_dirty = True
+
+    # Update readline's internal state.
+    self.readline_mod.resize_terminal()
 

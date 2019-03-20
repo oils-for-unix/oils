@@ -664,6 +664,14 @@ PyDoc_STRVAR(doc_clear_history,
 Clear the current readline history.");
 #endif
 
+/* Added for OSH.  We need to call this in our SIGWINCH handler so global
+ * variables in readline get updated. */
+static PyObject *
+py_resize_terminal(PyObject *self, PyObject *noarg)
+{
+    rl_resize_terminal();
+    Py_RETURN_NONE;
+}
 
 /* Exported function to insert text into the line buffer */
 
@@ -746,6 +754,7 @@ static struct PyMethodDef readline_methods[] = {
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
 #endif
+    {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
     {0, 0}
 };
 #endif

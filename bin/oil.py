@@ -508,7 +508,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       if term_width != 0:
         display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f)
+                                      debug_f, line_input)
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 

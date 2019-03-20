@@ -11,6 +11,8 @@ import unittest
 from core import comp_ui  # module under test
 from core import util
 
+import line_input
+
 
 class VisualTest(unittest.TestCase):
 
@@ -117,7 +119,8 @@ class UiTest(unittest.TestCase):
     debug_f = util.DebugFile(sys.stdout)
 
     # terminal width
-    d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f, bold_line=False)
+    d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f,
+                             line_input, bold_line=False)
     d2 = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     prompt_state.SetLastPrompt('$ ')
