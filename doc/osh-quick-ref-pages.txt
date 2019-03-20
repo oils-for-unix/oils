@@ -353,6 +353,36 @@ Bash has this, but OSH won't implement it.
 
 ##### <ENVIRONMENT-VARIABLES> Environment Variables
 
+#### <Shell-Options> Variables That Set Shell Options
+
+### <SHELLOPTS>
+
+For the 'set' builtin.
+
+### <BASHOPTS>
+
+For the 'shopt' builtin.
+
+#### <Other-Vars> Other Variables
+
+### <HOME>
+
+$HOME is used for:
+
+1. ~ expansion 
+2. ~ abbreviation in the UI (the dirs builtin, \W in $PS1).
+
+Note: The shell doesn't set $HOME.  According to POSIX, the program that
+invokes the login shell sets it based on /etc/passwd.
+
+### <PATH>
+
+Used for finding executables to run.
+
+### <IFS>
+
+Used for word splitting.
+
 ##### <SPECIAL-VARIABLES> Special Variables
 
 #### <Platform>
