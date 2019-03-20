@@ -37,3 +37,16 @@ echo "help=$?"
 cat $TMP/err.txt | grep -i 'no help topics' >/dev/null
 echo "grep=$?"
 ## stdout-json: "help=1\ngrep=0\n"
+
+#### type -p builtin -> file
+type -p mv tar grep
+## stdout-json: "/bin/mv\n/bin/tar\n/bin/grep\n"
+
+#### type -p builtin -> not found
+type -p FOO BAR NOT_FOUND
+## status: 1
+## stdout-json: ""
+
+#### type -p builtin -> not a file
+type -p cd type builtin command
+## stdout-json: ""
