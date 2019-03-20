@@ -5,7 +5,6 @@ ui.py
 from __future__ import print_function
 
 import sys
-import re
 
 import libc
 
@@ -30,10 +29,6 @@ PROMPT_BOLD = '\x01%s\x02' % _BOLD
 PROMPT_RESET = '\x01%s\x02' % _RESET
 PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
 PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
-# https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python#14693789
-# note this also removes \x01 and \x02, which are used by readline
-ANSI_ESCAPES = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]|\x01|\x02')
-
 
 class PromptState(object):
   """For the InteractiveLineReader to communicate with the Display callback."""
@@ -42,9 +37,22 @@ class PromptState(object):
     self.last_prompt_str = None
     self.last_prompt_len = -1
 
+  def _PromptLen(self, prompt_str):
+    """Ignore all characters between \x01 and \x02."""
+    escaped = False
+    length = 0
+    for c in prompt_str:
+      if c == '\x01':
+        escaped = True
+      elif c == '\x02':
+        escaped = False
+      elif not escaped:
+        length += 1
+    return length
+
   def SetLastPrompt(self, prompt_str):
     self.last_prompt_str = prompt_str
-    self.last_prompt_len = len(ANSI_ESCAPES.sub('', prompt_str))
+    self.last_prompt_len = self._PromptLen(prompt_str)
 
 
 class State(object):
