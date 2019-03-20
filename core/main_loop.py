@@ -17,7 +17,6 @@ ParseWholeFile() -- needs to check the here doc.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import command_t, command
-
 from _devbuild.gen.id_kind_asdl import Id
 from core import ui
 from core import util
@@ -38,16 +37,21 @@ def Interactive(opts, ex, c_parser, display, arena):
   status = 0
   done = False
   while not done:
-    # This loop has a an odd structure because we want to do cleanup after
+    # - This loop has a an odd structure because we want to do cleanup after
     # every 'break'.  (The ones without 'done = True' were 'continue')
+    # - display.EraseLines() needs to be called BEFORE displaying anything, so
+    # it appears in all branches.
+
     while True:  # ONLY EXECUTES ONCE
       try:
         w = c_parser.Peek()  # may raise HistoryError or ParseError
 
         c_id = word.CommandId(w)
         if c_id == Id.Op_Newline:  # print PS1 again, not PS2
+          display.EraseLines()
           break  # next command
         elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
+          display.EraseLines()
           done = True
           break  # quit shell
 
@@ -57,26 +61,31 @@ def Interactive(opts, ex, c_parser, display, arena):
         # for i in 1 2 3; do
         #   !invalid
         # done
+        display.EraseLines()
         print(e.UserErrorString())
         break
       except util.ParseError as e:
+        display.EraseLines()
         ui.PrettyPrintError(e, arena)
         # NOTE: This should set the status interactively!  Bash does this.
         status = 2
         break
       except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+        # Here we must print a newline BEFORE EraseLines()
         print('^C')
+        display.EraseLines()
         # http://www.tldp.org/LDP/abs/html/exitcodes.html
         # bash gives 130, dash gives 0, zsh gives 1.
         # Unless we SET ex.last_status, scripts see it, so don't bother now.
         break
 
       if node is None:  # EOF
-        # NOTE: We don't care if there are pending here docs in the interative case.
+        display.EraseLines()
+        # NOTE: We don't care about pending here docs in the interative case.
         done = True
         break
 
-      display.EraseLines()  # Do this right before executing
+      display.EraseLines()  # Clear candidates right before executing
 
       is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
       status = ex.LastStatus()
@@ -94,7 +103,6 @@ def Interactive(opts, ex, c_parser, display, arena):
     c_parser.Reset()
     c_parser.ResetInputObjects()
 
-    display.EraseLines()  # clear any completion candidates we displayed
     display.Reset()  # clears dupes and number of lines last displayed
 
     # TODO: Replace this with a shell hook?  with 'trap', or it could be just

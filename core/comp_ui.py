@@ -422,9 +422,8 @@ class NiceDisplay(_IDisplay):
       return
 
     for i in xrange(n):
-      # 2K would clear the ENTIRE line, but isn't strictly necessary.
-      self.f.write('\x1b[0K')
-      self.f.write('\x1b[%dB' % 1)  # go down one line
+      self.f.write('\x1b[2K')  # 2K clears entire line (not 0K or 1K)
+      self.f.write('\x1b[1B')  # go down one line
 
     # Now go back up
     self.f.write('\x1b[%dA' % n)
