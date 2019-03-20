@@ -12,7 +12,7 @@ $ echo foo
 $ exit
 ## END
 
-#### [] are non-printing
+#### \[\] are non-printing
 PS1='\[foo\]\$'
 echo "${PS1@P}"
 ## STDOUT:

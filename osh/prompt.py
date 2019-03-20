@@ -23,9 +23,7 @@ import libc  # gethostname()
 # Prompt Evaluation
 #
 
-# Global instance set by main().  TODO: Use dependency injection.
-PROMPT = None
-PROMPT_ERROR = "<error parsing prompt>"
+PROMPT_ERROR = '<Error: unbalanced \[ and \]> '
 
 # NOTE: word_compile._ONE_CHAR has some of the same stuff.
 _ONE_CHAR = {
@@ -122,6 +120,9 @@ class Evaluator(object):
 
       elif id_ == Id.PS_RBrace:
         non_printing -= 1
+        if non_printing < 0:  # e.g. \]\[
+          return PROMPT_ERROR
+
         ret.append('\x02')
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
@@ -144,20 +145,20 @@ class Evaluator(object):
             # Shorten to ~/mydir
             r = ui.PrettyDir(val.s, self.mem.GetVar('HOME'))
           else:
-            r = '<Error: PWD is not a string>'
+            r = '<Error: PWD is not a string> '
 
         elif char == 'W':
           val = self.mem.GetVar('PWD')
           if val.tag == value_e.Str:
             r = os_path.basename(val.s)
           else:
-            r = '<Error: PWD is not a string>'
+            r = '<Error: PWD is not a string> '
 
         elif char in _ONE_CHAR:
           r = _ONE_CHAR[char]
 
         else:
-          r = '<\%s not implemented in $PS1> $' % char
+          r = '<Error: \%s not implemented in $PS1> ' % char
 
         # See comment above on bash hack for $.
         ret.append(r.replace('$', '\\$'))
@@ -165,9 +166,9 @@ class Evaluator(object):
       else:
         raise AssertionError('Invalid token %r' % id_)
 
-    # mismatched braces, see https://github.com/oilshell/oil/pull/256
+    # mismatched brackets, see https://github.com/oilshell/oil/pull/256
     if non_printing != 0:
-        return PROMPT_ERROR
+      return PROMPT_ERROR
 
     return ''.join(ret)
 

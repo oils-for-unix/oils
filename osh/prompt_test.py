@@ -14,6 +14,7 @@ from osh import prompt  # module under test
 
 
 class PromptTest(unittest.TestCase):
+
   @classmethod
   def setUpClass(cls):
     arena = test_lib.MakeArena('<ui_test.py>')
@@ -31,14 +32,22 @@ class PromptTest(unittest.TestCase):
       self.assertEqual(self.p.EvalPrompt(value.Str(prompt_str)), prompt_str)
 
   def testValidEscapes(self):
-    for prompt_str in ["\[\033[01;34m\]user\[\033[00m\] >", "\[\]\[\]\[\]", "\[\] hi \[hi\] \[\] hello"]:
-      self.assertEqual(self.p.EvalPrompt(value.Str(prompt_str)),
+    for prompt_str in [
+        "\[\033[01;34m\]user\[\033[00m\] >", "\[\]\[\]\[\]",
+        "\[\] hi \[hi\] \[\] hello"]:
+      self.assertEqual(
+          self.p.EvalPrompt(value.Str(prompt_str)),
           prompt_str.replace("\[", "\x01").replace("\]", "\x02"))
 
   def testInvalidEscapes(self):
-    for invalid_prompt in ["\[\[", "\[\]\[\]\]", "\]\]", "almost valid \]", "\[almost valid"]:
+    for invalid_prompt in [
+        "\[\[", "\[\]\[\]\]", "\]\]", "almost valid \]", "\[almost valid",
+        "\]\[",  # goes negative!
+        ]:
       tokens = list(match.PS1_LEXER.Tokens(invalid_prompt))
-      self.assertEqual(prompt.PROMPT_ERROR, self.p._ReplaceBackslashCodes(tokens))
+      self.assertEqual(
+          prompt.PROMPT_ERROR, self.p._ReplaceBackslashCodes(tokens))
+
 
 if __name__ == '__main__':
   unittest.main()

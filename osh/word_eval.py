@@ -606,7 +606,9 @@ class _WordEvaluator(object):
       if op.tag == suffix_op_e.StringNullary:
         if op.op_id == Id.VOp0_P:
           prompt = self.prompt_ev.EvalPrompt(val)
-          val = value.Str(prompt)
+          # readline gets rid of these, so we should too.
+          p = prompt.replace('\x01', '').replace('\x02', '')
+          val = value.Str(p)
         elif op.op_id == Id.VOp0_Q:
           val = value.Str(string_ops.ShellQuote(val.s))
         else:

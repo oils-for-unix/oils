@@ -30,6 +30,7 @@ PROMPT_RESET = '\x01%s\x02' % _RESET
 PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
 PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
 
+
 def _PromptLen(prompt_str):
   """Ignore all characters between \x01 and \x02."""
   escaped = False
