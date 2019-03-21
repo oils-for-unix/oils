@@ -13,5 +13,6 @@ static PyMethodDef readline_methods[] = {
   {"set_completer_delims", set_completer_delims, METH_VARARGS},
   {"add_history", py_add_history, METH_VARARGS},
   {"set_completion_display_matches_hook", set_completion_display_matches_hook, METH_VARARGS},
+  {"resize_terminal", py_resize_terminal, METH_NOARGS},
   {0},
 };
