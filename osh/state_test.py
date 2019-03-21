@@ -99,7 +99,8 @@ class MemTest(unittest.TestCase):
     self.assertEqual('/', mem.var_stack[0].vars['PYTHONPATH'].val.s)
     self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
 
-    self.assertEqual({'PYTHONPATH': '/'}, mem.GetExported())
+    ex = mem.GetExported()
+    self.assertEqual('/', ex['PYTHONPATH'])
 
     mem.SetVar(
         lvalue.LhsName('PYTHONPATH'), None, (var_flags_e.Exported,),
@@ -242,7 +243,7 @@ class MemTest(unittest.TestCase):
         lvalue.LhsName('U'), value.Str('u'), (), scope_e.Dynamic)
     print(mem)
     e = mem.GetExported()
-    self.assertEqual({'U': 'u'}, e)
+    self.assertEqual('u', e['U'])
 
   def testUnset(self):
     mem = _InitMem()

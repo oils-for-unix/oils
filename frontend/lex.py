@@ -610,7 +610,11 @@ HISTORY_DEF = [
   # Search by prefix of substring (optional '?').
   # NOTE: there are no numbers allowed here!  Bash doesn't seem to support it.
   # No hyphen since it conflits with $-1 too.
-  R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+', Id.History_Search),
+  # 
+  # Required trailing whitespace is there to avoid conflict with [!charclass]
+  # and ${!indirect}.  This is a simpler hack than the one bash has.  See
+  # frontend/lex_test.py.
+  R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+[ \t\r\n]', Id.History_Search),
 
   # Single quoted, e.g. 'a' or $'\n'.  Terminated by another single quote or
   # end of string.

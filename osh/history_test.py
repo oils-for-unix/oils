@@ -56,9 +56,9 @@ class HistoryEvaluatorTest(unittest.TestCase):
     self.assertEqual('echo hi', hist_ev.Eval('echo hi'))
 
     # Search for prefix
-    self.assertEqual('echo ${two:-}', hist_ev.Eval('!echo'))
+    self.assertEqual('echo ${two:-}\n', hist_ev.Eval('!echo\n'))
     # Search for substring
-    self.assertEqual('echo ${two:-}', hist_ev.Eval('!?two'))
+    self.assertEqual('echo ${two:-} ', hist_ev.Eval('!?two '))
 
     # Indexes and negative indexes
     self.assertEqual('echo 1', hist_ev.Eval('!1'))

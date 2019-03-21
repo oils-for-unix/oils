@@ -666,8 +666,6 @@ def _PrintDirStack(dir_stack, style, home_dir):
       print(ui.PrettyDir(entry, home_dir))
 
   elif style == SINGLE_LINE:
-    # NOTE: Changed to list comprehension to avoid LOAD_CLOSURE/MAKE_CLOSURE.
-    # TODO: Restore later?
     s = ' '.join(ui.PrettyDir(entry, home_dir) for entry in dir_stack.Iter())
     print(s)
 

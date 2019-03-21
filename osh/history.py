@@ -133,6 +133,11 @@ class Evaluator(object):
           raise util.HistoryError('%s: not found', val)
 
       elif id_ == Id.History_Search:
+        # Remove the required space at the end and save it.  A simple hack than
+        # the one bash has.
+        last_char = val[-1]
+        val = val[:-1]
+
         # Search backward
         prefix = None
         substring = None
@@ -149,6 +154,7 @@ class Evaluator(object):
           if substring and substring in cmd:
             out = cmd
           if out is not None:
+            out += last_char  # restore required space
             break
 
         if out is None:

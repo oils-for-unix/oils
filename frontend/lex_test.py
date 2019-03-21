@@ -342,6 +342,39 @@ class OtherLexerTest(unittest.TestCase):
     # YES operator
     self.assert_(Id.History_Op in [tok_type for tok_type, _ in tokens])
 
+  def testHistoryDoesNotConflict(self):
+    lex = match.HISTORY_LEXER
+
+    # https://github.com/oilshell/oil/issues/264
+    #
+    # Bash has a bunch of hacks to suppress the conflict between ! for history
+    # and:
+    #
+    # 1. [!abc] globbing
+    # 2. ${!foo} indirect expansion
+    # 3. $!x -- the PID
+    # 4. !(foo|bar) -- extended glob
+    #
+    # I guess [[ a != b ]] doesn't match the pattern in bash.
+
+    three_other = [Id.History_Other, Id.History_Other, Id.History_Other]
+    two_other = [Id.History_Other, Id.History_Other]
+    CASES = [
+        (r'[!abc]',       three_other),
+        (r'${!indirect}', three_other),
+        (r'$!x',          three_other),  # didn't need a special case
+        (r'!(foo|bar)',   two_other),  # didn't need a special case
+    ]
+
+    for s, expected_types in CASES:
+      tokens = list(lex.Tokens(s))
+      print(tokens)
+      actual_types = [id_ for id_, val in tokens]
+
+      self.assert_(Id.History_Search not in actual_types, tokens)
+
+      self.assertEqual(expected_types, actual_types)
+
 
 if __name__ == '__main__':
   unittest.main()
