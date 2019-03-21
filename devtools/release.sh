@@ -15,7 +15,7 @@
 #   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (builds tarball, runs unit/gold/osh2oil suites, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
-#     With OSH_HIJACK_SHEBANG: test/gold.sh run-for-release
+#     Without OSH_HIJACK_SHEBANG: test/gold.sh run-for-release
 #   $0 metrics  # this can catch bugs
 #   test/wild.sh all (3-4 minutes on fast machine.  Do it outside OSH.)
 #   $0 test-opy (2 minutes on fast machine)

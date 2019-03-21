@@ -6,7 +6,7 @@
 _build/oil/main_name.c:
 	$(ACTIONS_SH) main-name bin.oil oil.ovm > $@
 
-PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
+OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 
 # Dependencies calculated by importing main.
 # NOTE: The list of files is used both to compile and to make a tarball.
@@ -17,11 +17,11 @@ PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 # package.  build/doc.sh currently makes _build/__init__.py.
 _build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
-	  $(ACTIONS_SH) app-deps oil $(PYPATH) bin.oil
+	  $(ACTIONS_SH) app-deps oil $(OIL_PYPATH) bin.oil
 
 _build/oil/py-to-compile.txt: _build/detected-config.sh build/app_deps.py
 	test -d _build/oil && \
-		$(ACTIONS_SH) py-to-compile $(PYPATH) bin.oil > $@
+		$(ACTIONS_SH) py-to-compile $(OIL_PYPATH) bin.oil > $@
 
 _devbuild/gen/osh_help.py: doc/osh-quick-ref-pages.txt
 	build/doc.sh osh-quick-ref
