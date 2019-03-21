@@ -512,11 +512,14 @@ class Mem(object):
     return var_stack, argv_stack, debug_stack
 
   def _InitDefaults(self):
+    # For some reason this is one of few variables EXPORTED.  bash and dash
+    # both do it.  (e.g. env -i -- dash -c env)
+    ExportGlobalString(self, 'PWD', posix.getcwd())
+
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
     SetGlobalString(self, 'IFS', split.DEFAULT_IFS)
-    SetGlobalString(self, 'PWD', posix.getcwd())
 
     # NOTE: Should we put these in a namespace for Oil?
     SetGlobalString(self, 'UID', str(posix.getuid()))
@@ -1099,7 +1102,7 @@ def SetArrayDynamic(mem, name, a):
 
 
 def SetGlobalString(mem, name, s):
-  """Helper for completion, $PWD, etc."""
+  """Helper for completion, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
   mem.SetVar(lhs_expr.LhsName(name), val, (), scope_e.GlobalOnly)
@@ -1109,6 +1112,14 @@ def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
   mem.SetVar(lhs_expr.LhsName(name), value.StrArray(a), (), scope_e.GlobalOnly)
+
+
+def ExportGlobalString(mem, name, s):
+  """Helper for completion, $PWD, $OLDPWD, etc."""
+  assert isinstance(s, str)
+  val = value.Str(s)
+  mem.SetVar(lhs_expr.LhsName(name), val, (var_flags_e.Exported,),
+             scope_e.GlobalOnly)
 
 
 def GetGlobal(mem, name):

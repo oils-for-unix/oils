@@ -644,8 +644,8 @@ def Cd(argv, mem, dir_stack):
     util.error("cd %r: %s", real_dest_dir, posix.strerror(e.errno))
     return 1
 
-  state.SetGlobalString(mem, 'OLDPWD', pwd.s)
-  state.SetGlobalString(mem, 'PWD', real_dest_dir)
+  state.ExportGlobalString(mem, 'OLDPWD', pwd.s)
+  state.ExportGlobalString(mem, 'PWD', real_dest_dir)
   dir_stack.Reset()  # for pushd/popd/dirs
   return 0
 

@@ -1,9 +1,12 @@
 #!/bin/bash
 #
+# The big Oil release process.
+#
 # Usage:
 #   devtools/release.sh <function name>
 #
 # Pre-release:
+#   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
 #   build/cpython-defs.sh {oil-py-names,filter-methods}   # regenerate C source
 #     (BUG: this depends on build/test.sh oil-tar and building the tarball)
@@ -36,6 +39,8 @@
 #   MAYBE: ./local.sh test-release-tree if you want to preview it
 #   $0 sync-old-tar (for releases.html)
 #   $0 deploy-doc
+#
+#   demo/osh-debug.sh analyze  # see what you ran
 # 
 # - Go to oilshell.org__deploy and "git add release/$VERSION".
 # - Go to oilshell.org repo and do ./deploy.sh site.

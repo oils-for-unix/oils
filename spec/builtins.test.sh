@@ -25,8 +25,17 @@ echo $PWD
 cd /
 cd $TMP
 echo "old: $OLDPWD"
+env | grep OLDPWD  # It's EXPORTED too!
 cd -
-## stdout-json: "old: /\n/\n"
+## STDOUT:
+old: /
+OLDPWD=/
+/
+## END
+## BUG mksh STDOUT:
+old: /
+/
+## END
 
 #### pwd
 cd /
