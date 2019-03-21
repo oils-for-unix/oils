@@ -173,4 +173,25 @@ List of operations that are Unicode-aware:
   'sort' command.
 - prompt string has time, which is locale-specific.
 
+## Intentional Differences With Bash
+
+### Startup Files
+
+On startup, the interactive shell sources **only** `~/.config/oil/oshrc`.  This
+is to avoid [this kind of mess][mess] ([original][]), with `/etc/profile`,
+`~/.bashrc`, `~/.bash_profile`, and more.
+
+If you want those files, simply add `source ~/.bashrc` to your `oshrc`.
+
+Similarly, if the `.config` path is too long, create an `~/.oshrc` symlink.
+
+[mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+
+[original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
+
+### History Substitution Language
+
+The rules for history substitution like `!echo` are simpler.  There are no
+special cases to avoid clashes with `${!indirect}` and so forth.  TODO: See the
+history lexer.
 
