@@ -11,21 +11,19 @@ Oil is a new Unix shell.  [Why Create a New Unix Shell?][why]
 This repo contains a bash-compatible shell called OSH, written in Python.
 
 The dialect of bash that is recognized is called the [OSH
-language][osh-language].  The main goal now is to design the [Oil
-language][oil-language], which shell scripts can be automatically converted
-to.
+language][osh-language].  The [Oil language][oil-language] has been designed
+but not implemented.
 
 [osh-language]: http://www.oilshell.org/cross-ref.html#osh-language
 [oil-language]: http://www.oilshell.org/cross-ref.html#oil-language
 
-Oil is written in Python, but we deploy a native executable.  A subset of the
-Python-2.7.13/ directory is packaged with the application.
+OSH is written in Python, but we deploy a native executable.  A subset of the
+`Python-2.7.13/` directory is packaged with the application.
 
-Try it
-------
+Quick Start for Developers on Linux
+-----------------------------------
 
-Clone the repo, build the Python extension, and run `bin/osh`.  Basic things
-like pipelines, variables, functions, etc. should work.
+Clone the repo, build the Python extension, and run `bin/osh`.
 
     bash$ build/dev.sh minimal
     ...
@@ -36,8 +34,11 @@ like pipelines, variables, functions, etc. should work.
     osh$ echo "hello $name"
     hello world
 
+Most shell scripts should run, e.g. with `osh myscript.sh`.
+
 You can also download the latest release and build it, which is linked from the
-[home page](https://www.oilshell.org/).
+[home page](https://www.oilshell.org/).  (This is the only way to try OSH on OS
+X.  Developer builds don't work on OS X.)
 
 Contributing
 ------------
