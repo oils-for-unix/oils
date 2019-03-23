@@ -940,12 +940,14 @@ def Unset(argv, mem, funcs):
   return 0
 
 
-def _ResolveFile(name, path_val):
+def _ParsePath(path_val):
   if path_val.tag == value_e.Str:
-    path_list = path_val.s.split(':')
+    return path_val.s.split(':')
   else:
-    path_list = []  # treat as empty path
+    return []  # treat as empty path
 
+
+def _ResolveFile(name, path_list):
   # Now look for files.
   for path_dir in path_list:
     full_path = os_path.join(path_dir, name)
@@ -957,6 +959,7 @@ def _ResolveFile(name, path_val):
 
 def _ResolveNames(names, funcs, path_val):
   results = []
+  path_list = _ParsePath(path_val)
   for name in names:
     if name in funcs:
       kind = ('function', name)
@@ -969,7 +972,7 @@ def _ResolveNames(names, funcs, path_val):
     elif lex.IsKeyword(name):
       kind = ('keyword', name)
     else:
-      kind = _ResolveFile(name, path_val)
+      kind = _ResolveFile(name, path_list)
     results.append(kind)
 
   return results
@@ -1026,7 +1029,7 @@ def Type(argv, funcs, path_val):
         if kind == 'file':
           print(name)
         else:
-          kind, path = _ResolveFile(name, path_val)
+          kind, path = _ResolveFile(name, _ParsePath(path_val))
           if kind is None:
             status = 1
           else:
