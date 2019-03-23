@@ -54,3 +54,33 @@ type -p FOO BAR NOT_FOUND
 #### type -p builtin -> not a file
 type -p cd type builtin command
 ## stdout-json: ""
+
+#### type -P builtin -> file
+type -P mv tar grep
+## STDOUT:
+/bin/mv
+/bin/tar
+/bin/grep
+## END
+
+#### type -P builtin -> not found
+type -P FOO BAR NOT_FOUND
+## status: 1
+## stdout-json: ""
+
+#### type -P builtin -> not a file
+type -P cd type builtin command
+## stdout-json: ""
+## status: 1
+
+#### type -P builtin -> not a file but file found
+mv () { ls; }
+tar () { ls; }
+grep () { ls; }
+type -P mv tar grep cd builtin command type
+## status: 1
+## STDOUT:
+/bin/mv
+/bin/tar
+/bin/grep
+## END
