@@ -1006,6 +1006,7 @@ class Command(object):
 TYPE_SPEC = _Register('type')
 TYPE_SPEC.ShortFlag('-t')
 TYPE_SPEC.ShortFlag('-p')
+TYPE_SPEC.ShortFlag('-P')
 
 
 def Type(argv, funcs, path_val):
@@ -1021,6 +1022,16 @@ def Type(argv, funcs, path_val):
       elif arg.p:
         if kind == 'file':
           print(name)
+      elif arg.P:
+        if kind == 'file':
+          print(name)
+        else:
+          kind, path = _ResolveFile(name, path_val)
+          if kind is None:
+            status = 1
+          else:
+            print(path)
+
       else:
         # Alpine's abuild relies on this text because busybox ash doesn't have
         # -t!
