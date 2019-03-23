@@ -40,7 +40,11 @@ echo "grep=$?"
 
 #### type -p builtin -> file
 type -p mv tar grep
-## stdout-json: "/bin/mv\n/bin/tar\n/bin/grep\n"
+## STDOUT:
+/bin/mv
+/bin/tar
+/bin/grep
+## END
 
 #### type -p builtin -> not found
 type -p FOO BAR NOT_FOUND
