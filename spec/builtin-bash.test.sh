@@ -84,3 +84,21 @@ type -P mv tar grep cd builtin command type
 /bin/tar
 /bin/grep
 ## END
+
+#### type -f builtin -> not found
+type -f FOO BAR NOT FOUND
+## status: 1
+
+#### type -f builtin -> function and file exists
+mv () { ls; }
+tar () { ls; }
+grep () { ls; }
+type -f mv tar grep
+## STDOUT:
+/bin/mv is a file
+/bin/tar is a file
+/bin/grep is a file
+## OK bash STDOUT:
+mv is /bin/mv
+tar is /bin/tar
+grep is /bin/grep

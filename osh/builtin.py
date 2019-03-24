@@ -1007,6 +1007,7 @@ class Command(object):
 
 
 TYPE_SPEC = _Register('type')
+TYPE_SPEC.ShortFlag('-f')
 TYPE_SPEC.ShortFlag('-t')
 TYPE_SPEC.ShortFlag('-p')
 TYPE_SPEC.ShortFlag('-P')
@@ -1016,6 +1017,8 @@ def Type(argv, funcs, path_val):
   arg, i = TYPE_SPEC.Parse(argv)
 
   status = 0
+  if arg.f:
+    funcs = []
   for kind, name in _ResolveNames(argv[i:], funcs, path_val):
     if kind is None:
       status = 1  # nothing printed, but we fail
