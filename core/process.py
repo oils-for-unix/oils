@@ -864,7 +864,8 @@ class Waiter(object):
 
     # TODO: change status in more cases.
     if posix.WIFSIGNALED(status):
-      pass
+      if posix.WTERMSIG(status) == signal.SIGINT:
+        print()
     elif posix.WIFEXITED(status):
       status = posix.WEXITSTATUS(status)
       #log('exit status: %s', status)
