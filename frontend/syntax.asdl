@@ -31,10 +31,9 @@
 --   * In the printer, I want to preserve line breaks!  foo \bar?
 -- TODO:
 -- * remove redundancy of 'string val' in token.  It should use the span.
--- * Get rid of line_id.  'string line' is more straightforward.  And maybe
---   span_id?
--- * rename this file to osh/syntax.asdl, and then we have oil/syntax.asdl.
---   Nothing is shared?
+-- * In addition to span_id and line_id, should we have file_id and token_id?
+--   These are "side tables" with 4-byte IDs instead of 8 byte pointers (on
+--   64-bit arches).
 
 module syntax
 {

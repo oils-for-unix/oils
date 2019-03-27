@@ -37,6 +37,10 @@ deps() {
     | grep -v __init__ | sort | tee $PY_DEPS | xargs wc -l | sort -n
 }
 
+egrep-deps() {
+  cat $PY_DEPS | xargs -- egrep "$@"
+}
+
 typecheck() {
   MYPYPATH=. PYTHONPATH=.  mypy --py2 "$@"
 }

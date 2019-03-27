@@ -42,8 +42,7 @@ class _Reader(object):
 
   def Reset(self):
     # type: () -> None
-    # Should never be called?
-    pass
+    raise NotImplementedError
 
 
 _PS2 = '> '

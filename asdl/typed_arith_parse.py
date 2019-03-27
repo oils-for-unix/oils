@@ -10,13 +10,10 @@ from _devbuild.gen.typed_arith_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
     arith_expr__Binary, arith_expr__FuncCall, arith_expr__Const)
 
-from typing import Dict, List, Optional, Union, cast
+from typing import Dict, List, Optional, cast
 
 from asdl import tdop
-from asdl.tdop import Parser
-from asdl.tdop import ParserSpec
-
-Token = tdop.Token
+from asdl.tdop import Token, Parser, ParserSpec
 
 
 #
@@ -98,7 +95,7 @@ def LeftIndex(p, token, left, unused_bp):
   index = p.ParseUntil(0)
   if p.AtToken(':'):
     p.Next()
-    end = p.ParseUntil(0)  # type: Union[arith_expr_t, None]
+    end = p.ParseUntil(0)  # type: Optional[arith_expr_t]
   else:
     end = None
 

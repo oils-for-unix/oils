@@ -161,7 +161,8 @@ else:
   _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')  # type: ignore
 
   def IsValidVarName(s):  # type: ignore # duplicates a MyPy name?
-    return _VAR_NAME_RE.match(s)
+    # type: (str) -> bool
+    return bool(_VAR_NAME_RE.match(s))
 
 ECHO_LEXER = SimpleLexer(ECHO_MATCHER)
 GLOB_LEXER = SimpleLexer(GLOB_MATCHER)

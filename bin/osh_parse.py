@@ -37,10 +37,8 @@ def main(argv):
     return 2
   assert node is not None
 
-  if True:
-    tree = node.AbbreviatedTree()
-  else:
-    tree = node.PrettyTree()
+  tree = node.AbbreviatedTree()
+  #tree = node.PrettyTree()
 
   ast_f = fmt.DetectConsoleOutput(sys.stdout)
   fmt.PrintTree(tree, ast_f)

@@ -73,4 +73,9 @@ find-old-asdl() {
   egrep 'import.*\bast\b' */*.py || true
 }
 
+# This should be cleaned up
+grep-span-funcs() {
+  grep MostSpan {osh,core,frontend}/*.py
+}
+
 "$@"
