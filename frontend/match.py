@@ -160,7 +160,7 @@ else:
   # anchored on the right.
   _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')  # type: ignore
 
-  def IsValidVarName(s):  # type: ignore # duplicates a MyPy name?
+  def IsValidVarName(s):
     # type: (str) -> bool
     return bool(_VAR_NAME_RE.match(s))
 
