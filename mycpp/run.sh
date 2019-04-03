@@ -67,7 +67,7 @@ translate-osh-parse() {
 
 # 1.5 seconds.  Still more than I would have liked!
 translate-typed-arith() {
-  local main=~/git/oilshell/oil/asdl/typed_arith_parse.py
+  local main=$PWD/../asdl/typed_arith_parse.py
   time ./mycpp.py $main
 }
 
@@ -257,6 +257,10 @@ heap() {
 
 runtime-test() {
   cpp-compile-run runtime_test
+}
+
+gen-ctags() {
+  ctags -R $MYPY_REPO
 }
 
 "$@"

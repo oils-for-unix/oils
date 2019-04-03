@@ -7,7 +7,8 @@ import sys
 from typing import overload, Union, Optional, Any, Dict
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.types import Type, AnyType, NoneTyp, TupleType, Instance
+from mypy.types import (
+    Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType)
 from mypy.nodes import (
     Expression, Statement, NameExpr, MemberExpr, TupleExpr, ExpressionStmt,
     AssignmentStmt, StrExpr, SliceExpr, FuncDef)
@@ -242,13 +243,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.callee.name == 'log':
           printf_style = True
 
-        # If the function name is the same as the return type, then add 'new'.
-        # f = Foo() => f = new Foo().
         callee_type = self.types[o.callee]
-        ret_type = callee_type.ret_type
-        if isinstance(ret_type, Instance) and \
-            o.callee.name == ret_type.type.name():
-          self.write('new ')
+
+        # e.g. int() takes str, float, etc.  It doesn't matter for translation.
+        if isinstance(callee_type, Overloaded):
+          if 0:
+            for item in callee_type.items():
+              self.log('item: %s', item)
+
+        if isinstance(callee_type, CallableType):
+          # If the function name is the same as the return type, then add 'new'.
+          # f = Foo() => f = new Foo().
+          ret_type = callee_type.ret_type
+          if isinstance(ret_type, Instance) and \
+              o.callee.name == ret_type.type.name():
+            self.write('new ')
 
         self.accept(o.callee)  # could be f() or obj.method()
         self.write('(')
