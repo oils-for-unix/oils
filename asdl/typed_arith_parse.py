@@ -276,6 +276,8 @@ class Evaluator(object):
 
     return 3
 
+# NOTE: This doesn't translate yet because of cast().
+"""
   def Eval2(self, node):
     # type: (arith_expr_t) -> int
 
@@ -300,6 +302,7 @@ class Evaluator(object):
         return left + right
 
     return 3
+"""
 
 
 def main(argv):

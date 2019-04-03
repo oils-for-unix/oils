@@ -310,15 +310,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.log('t0 %r', t0.type.fullname())
           self.log('t1 %r', t0.type.fullname())
 
-        if (t0.type.fullname() == 'builtins.str' and
-            t1.type.fullname() == 'builtins.str' and
-            c_op == '+'):
-          self.write('str_concat(')
-          self.accept(o.left)
-          self.write(', ')
-          self.accept(o.right)
-          self.write(')')
-          return
+        if isinstance(t0, Instance) and isinstance(t1, Instance):
+          if (t0.type.fullname() == 'builtins.str' and
+              t1.type.fullname() == 'builtins.str' and
+              c_op == '+'):
+            self.write('str_concat(')
+            self.accept(o.left)
+            self.write(', ')
+            self.accept(o.right)
+            self.write(')')
+            return
 
         self.accept(o.left)
         self.write(' %s ', c_op)
@@ -862,7 +863,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write_ind('try ')
         self.accept(o.body)
         for t, v, handler in zip(o.types, o.vars, o.handlers):
-          self.write_ind('catch (%s* %s) ', t.name, v.name)
+          if v:
+            self.write_ind('catch (%s* %s) ', t.name, v.name)
+          else:
+            self.write_ind('catch (%s*) ', t.name)
           self.accept(handler)
 
         if o.else_body:

@@ -61,15 +61,10 @@ def main(argv):
     f.write("""\
 from asdl import const  # For const.NO_INTEGER
 from asdl import runtime
-
-PrettyLeaf = runtime.PrettyLeaf
-PrettyArray = runtime.PrettyArray
-PrettyNode = runtime.PrettyNode
-
-Color_TypeName = runtime.Color_TypeName
-Color_StringConst = runtime.Color_StringConst
-Color_OtherConst = runtime.Color_OtherConst
-Color_UserType = runtime.Color_UserType
+from asdl.runtime import (
+  PrettyLeaf, PrettyArray, PrettyNode,
+  Color_TypeName, Color_StringConst, Color_OtherConst, Color_UserType,
+)
 
 from typing import Optional, List, Tuple, Dict, Any
 
