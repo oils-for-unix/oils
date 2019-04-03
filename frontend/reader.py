@@ -42,7 +42,8 @@ class _Reader(object):
 
   def Reset(self):
     # type: () -> None
-    raise NotImplementedError
+    """Called after command execution in main_loop.py."""
+    pass
 
 
 _PS2 = '> '
