@@ -201,7 +201,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
-        pass
+        # e.g. a[-1] or 'not x'
+        self.accept(o.expr)
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
         # lists are MUTABLE, so we can't generate constants at the top level
@@ -418,7 +419,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('WhileStmt')
         self.accept(o.expr)
         self.accept(o.body)
-
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
         self.log('ReturnStmt')

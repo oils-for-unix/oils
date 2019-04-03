@@ -158,7 +158,7 @@ COMMA_PREC = 1
 def LeftFuncCall(p, token, left, unused_bp):
   # type: (Parser, Token, arith_expr_t, int) -> arith_expr__FuncCall
   """ Function call f(a, b). """
-  args = []
+  args = []  # type: List[arith_expr_t]
   # f(x) or f[i](x)
   if not isinstance(left, arith_expr.Var):
     raise tdop.ParseError("%s can't be called" % left)

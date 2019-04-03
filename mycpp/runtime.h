@@ -30,14 +30,6 @@ class Str {
   Str(const char* data, int len) : data_(data), len_(len) {
   }
 
-  bool equals(Str* other) {
-    if (len_ == other->len_) {
-      return memcmp(data_, other->data_, len_) == 0;
-    } else {
-      return false;
-    }
-  }
-
   // Get a string with one character
   Str* index(int i) {
     char* buf = static_cast<char*>(malloc(2));
@@ -241,6 +233,26 @@ template <class T> int len(List<T>* L) {
 //
 
 Str* str_concat(Str* a, Str* b);  // a + b when a and b are strings
+
+inline bool str_equals(Str* left, Str* right) {
+  if (left->len_ == right->len_) {
+    return memcmp(left->data_, right->data_, left->len_) == 0;
+  } else {
+    return false;
+  }
+}
+
+inline bool maybe_str_equals(Str* left, Str* right) {
+  if (left && right) {
+    return str_equals(left, right);
+  }
+
+  if (!left && !right) {
+    return true;  // None == None
+  }
+
+  return false;  // one is None and one is a Str*
+}
 
 // Will need it for dict, but not tuple.
 //inline int len(Dict* D) {

@@ -7,6 +7,24 @@ from __future__ import print_function
 import os
 from runtime import log
 
+from typing import Optional
+
+
+def TestMaybeStrEquals():
+  # type: () -> None
+
+  a = 'foo'
+  b = 'bar'
+
+  x = ''  # type: Optional[str]
+  # TODO: Conditionally assigning x = None doesn't work.
+
+  log('a == b  ->  %d', a == b)
+  log('a != b  ->  %d', a != b)
+
+  log('a == x  ->  %d', a == x)
+  log('a != x  ->  %d', a != x)
+
 
 def run_tests():
   # type: () -> None
@@ -47,6 +65,10 @@ def run_tests():
   for c in mystr:
     if c != 'a':  # test != operator
       log('%s != a', c)
+
+  log('')
+
+  TestMaybeStrEquals()
 
 
 def run_benchmarks():

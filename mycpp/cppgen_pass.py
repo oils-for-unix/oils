@@ -8,7 +8,8 @@ from typing import overload, Union, Optional, Any, Dict
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (
-    Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType)
+    Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
+    UnionType)
 from mypy.nodes import (
     Expression, Statement, NameExpr, MemberExpr, TupleExpr, ExpressionStmt,
     AssignmentStmt, StrExpr, SliceExpr, FuncDef)
@@ -73,8 +74,18 @@ def get_c_type(t):
 
     c_type = 'Tuple%d<%s>*' % (len(t.items), ', '.join(inner_c_types))
 
+  elif isinstance(t, UnionType):
+    # Special case for Optional[T] == Union[T, None]
+    if len(t.items) != 2:
+      raise NotImplementedError('Expected Optional, got %s' % t)
+
+    if not isinstance(t.items[1], NoneTyp):
+      raise NotImplementedError('Expected Optional, got %s' % t)
+
+    c_type = get_c_type(t.items[0])
+
   else:
-    raise NotImplementedError(t)
+    raise NotImplementedError('MyPy type: %s' % t)
 
   return c_type
 
@@ -238,6 +249,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
+        # TODO:
+        # if not isinstance(right, (arith_expr.Var, arith_expr.Index)):
+        # We need to look at the tag?
+
+        if o.callee.name == 'isinstance':
+          self.write('isinstance(TODO)')
+          return
+
         # HACK for log("%s", s)
         printf_style = False
         if o.callee.name == 'log':
@@ -314,9 +333,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         left = o.operands[0]
         right = o.operands[1]
 
-        t0 = self.types[left]
-        t1 = self.types[right]
-
         # Assume is and is not are for None / nullptr comparison.
         if operator == 'is':  # foo is None => foo == nullptr
           self.accept(o.operands[0])
@@ -330,16 +346,39 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.operands[1])
           return
 
-        if (t0.type.fullname() == 'builtins.str' and
-            t1.type.fullname() == 'builtins.str' and
-            operator in ('==', '!=')):
+        # TODO: Change Optional[T] to T for our purposes?
+        t0 = self.types[left]
+        t1 = self.types[right]
+
+        # 0: not a special case
+        # 1: str
+        # 2: Optional[str] which is Union[str, None]
+        left_type = 0  # not a special case
+        right_type = 0  # not a special case
+        if isinstance(t0, Instance) and t0.type.fullname() == 'builtins.str':
+          left_type = 1
+        if isinstance(t1, Instance) and t1.type.fullname() == 'builtins.str':
+          right_type = 1
+
+        if (isinstance(t0, UnionType) and len(t0.items) == 2 and
+            isinstance(t0.items[1], NoneTyp)):
+            left_type = 2
+        if (isinstance(t1, UnionType) and len(t1.items) == 2 and
+            isinstance(t1.items[1], NoneTyp)):
+            right_type = 2
+
+        if left_type > 0 and right_type > 0 and operator in ('==', '!='):
           if operator == '!=':
             self.write('!(')
 
           # NOTE: This could also be str_equals(left, right)?  Does it make a
           # difference?
+          if left_type > 1 or right_type > 1:
+            self.write('maybe_str_equals(')
+          else:
+            self.write('str_equals(')
           self.accept(left)
-          self.write('->equals(')
+          self.write(', ')
           self.accept(right)
           self.write(')')
 
@@ -379,8 +418,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
-        # e.g. a[-1]
-        self.write(o.op)
+        # e.g. a[-1] or 'not x'
+        if o.op == 'not':
+          op_str = '!'
+        else:
+          op_str = o.op
+        self.write(op_str)
         self.accept(o.expr)
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
@@ -408,7 +451,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
         tuple_type = self.types[o]
-        #self.log('**** list_type = %s', list_type)
         c_type = get_c_type(tuple_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
