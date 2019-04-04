@@ -47,14 +47,6 @@ smoke-test() {
   asdl-arith-oheap "$arith_expr"
 }
 
-asdl-cpp() {
-  local schema=${1:-asdl/arith.asdl}
-  local src=${2:-_tmp/arith.asdl.h}
-  asdl/gen_cpp.py cpp $schema > $src
-  ls -l $src
-  wc -l $src
-}
-
 py-cpp() {
   local schema=${1:-asdl/arith.asdl}
   asdl-py $schema

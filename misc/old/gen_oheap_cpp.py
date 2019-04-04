@@ -2,7 +2,7 @@
 """
 asdl_cpp.py
 
-Turn an ASDL schema into C++ code.
+Turn an ASDL schema into C++ code that reads the OHeap V1 format.
 
 TODO:
 - Optional fields
@@ -29,8 +29,10 @@ import sys
 
 from asdl import asdl_ as asdl
 from asdl import front_end
+from asdl import meta
 from asdl import runtime
 from asdl import visitor
+from misc.old import encode
 
 class ChainOfVisitors:
   def __init__(self, *visitors):
@@ -82,7 +84,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     if cpp_type is not None:
       return cpp_type
 
-    typ = self.type_lookup.ByTypeName(type_name)
+    typ = self.type_lookup[type_name]
     if isinstance(typ, asdl.Sum) and asdl.is_simple(typ):
       # Use the enum instead of the class.
       return "%s_e" % type_name
@@ -313,7 +315,7 @@ def main(argv):
     # asdl/ and into command line tools.
 
     from core.meta import Id
-    app_types = {'id': asdl.UserType(Id)}
+    app_types = {'id': meta.UserType('id_kind_asdl', 'Id_t')}
     with open(schema_path) as input_f:
       module, type_lookup = front_end.LoadSchema(input_f, app_types)
 
@@ -333,8 +335,7 @@ def main(argv):
     # nodes?  Rewrite pointers.
 
     alignment = 4
-    #enc = encode.Params(alignment)
-    enc = None
+    enc = encode.Params(alignment)
     d = {'pointer_type': enc.pointer_type}
 
     f.write("""\
