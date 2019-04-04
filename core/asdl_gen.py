@@ -37,12 +37,23 @@ def main(argv):
     v = gen_cpp.CEnumVisitor(sys.stdout)
     v.VisitModule(schema_ast)
 
-  elif action == 'cpp':  # Generate C++ code for ASL schemas
+  elif action == 'cpp':  # Generate C++ code for ASDL schemas
     with open(schema_path) as f:
-      schema_ast, _ = front_end.LoadSchema(f, app_types)
+      schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 
-    v = gen_cpp.ForwardDeclareVisitor(sys.stdout)
+    f = sys.stdout
+    f.write("""\
+#include <cstdint>
+
+#include "runtime.h"  // for Str, List, etc.
+
+""")
+
+    v = gen_cpp.ForwardDeclareVisitor(f)
     v.VisitModule(schema_ast)
+
+    v2 = gen_cpp.ClassDefVisitor(f, type_lookup)
+    v2.VisitModule(schema_ast)
 
   elif action == 'mypy':  # Generated typed MyPy code
     with open(schema_path) as f:

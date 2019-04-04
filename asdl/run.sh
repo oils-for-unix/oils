@@ -82,7 +82,7 @@ cxx() {
   #local CXX=c++ 
   local CXX=$CLANGXX
   local opt_flag='-O2'
-  local opt_flag='-O0'
+  #local opt_flag='-O0'
 
   # -Winline
   # http://stackoverflow.com/questions/10631283/how-will-i-know-whether-inline-function-is-actually-replaced-at-the-place-where
@@ -205,7 +205,18 @@ line-length-hist() {
 }
 
 gen-cpp-demo() {
-  core/asdl_gen.py cpp asdl/typed_arith.asdl
+  local out=_tmp/typed_arith.asdl.h
+  core/asdl_gen.py cpp asdl/typed_arith.asdl > $out
+
+  local out2=_tmp/typed_demo.asdl.h
+  core/asdl_gen.py cpp asdl/typed_demo.asdl > $out2
+
+  wc -l $out $out2
+
+  local bin=_tmp/typed_arith_demo 
+  # uses typed_arith_asdl.h and runtime.h
+  cxx -I _tmp -I mycpp -o $bin asdl/typed_arith_demo.cc
+  $bin
 }
 
 "$@"
