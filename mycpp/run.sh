@@ -66,9 +66,39 @@ translate-osh-parse() {
 }
 
 # 1.5 seconds.  Still more than I would have liked!
+translate-path() {
+  local path=$1
+  local name=$(basename $path .py)
+
+  local raw=_gen/${name}_raw.cc
+  local out=_gen/${name}.cc
+
+  time ./mycpp.py $path > $raw
+
+  filter-cpp $raw > $out
+
+  wc -l _gen/*
+}
+
 translate-typed-arith() {
-  local main=$PWD/../asdl/typed_arith_parse.py
-  time ./mycpp.py $main
+  translate-path $PWD/../asdl/typed_arith_parse.py
+}
+
+translate-tdop() {
+  translate-path $PWD/../asdl/tdop.py
+}
+
+filter-cpp() {
+  awk '
+    BEGIN      { print "#include \"runtime.h\"\n" }
+
+    /int fib/        { printing = 1 }  /* for fib.py */
+    /^Str/           { printing = 1 }  /* for cgi.py */
+    /^List/          { printing = 1 }  /* for escape.py */
+    /__name__/       { printing = 0 }
+
+               { if (printing) print }
+  ' "$@"
 }
 
 # 1.1 seconds
@@ -84,16 +114,7 @@ translate() {
   time ./mycpp.py $main > $raw
   wc -l $raw
 
-  awk '
-    BEGIN      { print "#include \"runtime.h\"\n" }
-
-    /int fib/        { printing = 1 }  /* for fib.py */
-    /^Str/           { printing = 1 }  /* for cgi.py */
-    /^List/          { printing = 1 }  /* for escape.py */
-    /__name__/       { printing = 0 }
-
-               { if (printing) print }
-  ' $raw > $out
+  filter-cpp $raw > $out
 
   wc -l _gen/*
 

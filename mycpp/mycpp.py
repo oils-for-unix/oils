@@ -4,6 +4,7 @@ mycpp.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
 from __future__ import print_function
 
+import os
 import sys
 
 from typing import List, Optional, Tuple
@@ -59,7 +60,11 @@ def main(argv):
       '--py2', '--strict', '--no-implicit-optional', '--no-strict-optional'
   ]
      
-  paths = argv[1:]
+  paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
+
+  # convert to 'typed_arith_parse'
+  mod_names = [os.path.basename(p) for p in paths]
+  mod_names = [os.path.splitext(name)[0] for name in mod_names]
 
   sources, options = get_mypy_config(paths, mypy_options)
   log('sources %s', sources)
@@ -108,6 +113,11 @@ def main(argv):
   # Collect constants and then emit code.
   f = sys.stdout
   for name, module in result.files.items():
+    # Only translate files that were mentioned on the command line
+    suffix = name.split('.')[-1]
+    if suffix not in mod_names:
+      continue
+
     const_lookup = {}
     const_code = []
     p1 = const_pass.Collect(result.types, const_lookup, const_code)

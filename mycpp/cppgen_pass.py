@@ -9,7 +9,7 @@ from typing import overload, Union, Optional, Any, Dict
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (
     Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
-    UnionType)
+    UnionType, UninhabitedType)
 from mypy.nodes import (
     Expression, Statement, NameExpr, MemberExpr, TupleExpr, ExpressionStmt,
     AssignmentStmt, StrExpr, SliceExpr, FuncDef)
@@ -41,10 +41,6 @@ def get_c_type(t):
       c_type = 'Str*'  # TODO: write this!
 
     elif type_name == 'builtins.list':
-      #log("************ TYPE %s", t)
-      #log("************ TYPE %r", type(t))  # Instance
-      #log("args %s", t.args)
-
       assert len(t.args) == 1, t.args
       type_param = t.args[0]
 
@@ -66,6 +62,10 @@ def get_c_type(t):
     else:
       # fullname() => 'parse.Lexer'; name() => 'Lexer'
       c_type = '%s*' % t.type.name()
+
+  elif isinstance(t, UninhabitedType):
+    # UninhabitedType has a NoReturn flag
+    c_type = 'void'
 
   elif isinstance(t, TupleType):
     inner_c_types = []
@@ -181,16 +181,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(node, ExpressionStmt) and isinstance(node.expr, StrExpr):
                 continue
             self.accept(node)
-        #log('YO I got this node %s', o)
-
-        # TODO: How do I get the type of an arbitrary assignment?
-        # So I can declare every variable like x?
-  # x = int(fib_iter(int(n)-1)) 
-  #
-  # Funciton arguments seem to have types, but I also want variables.
 
     # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
-
 
     # LITERALS
 
@@ -827,7 +819,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
         pass
-
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
         # TODO: omit if __name__ == '__main__'?
