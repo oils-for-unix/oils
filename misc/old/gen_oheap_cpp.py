@@ -289,16 +289,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("}", depth)
 
 
-# Used by osh/ast_gen.py
-class CEnumVisitor(visitor.AsdlVisitor):
-
-  def VisitSimpleSum(self, sum, name, depth):
-    # Just use #define, since enums aren't namespaced.
-    for i, variant in enumerate(sum.types):
-      self.Emit('#define %s__%s %d' % (name, variant.name, i + 1), depth)
-    self.Emit("", depth)
-
-
 def main(argv):
   try:
     action = argv[1]
