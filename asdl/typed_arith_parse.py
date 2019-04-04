@@ -7,10 +7,11 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.typed_arith_asdl import (
-    arith_expr, arith_expr_e, arith_expr_t,
+    arith_expr, arith_expr_t,
     arith_expr__Binary, arith_expr__FuncCall, arith_expr__Const)
 
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
+#from typing import cast
 
 from asdl import tdop
 from asdl.tdop import Token, Parser, ParserSpec
