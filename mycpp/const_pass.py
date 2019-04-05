@@ -8,7 +8,9 @@ the generated C++ program for efficiency.
 from typing import overload, Union, Optional, Any, Dict, List
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.nodes import Expression, Statement, ExpressionStmt, StrExpr
+from mypy.nodes import (
+    Expression, Statement, ExpressionStmt, StrExpr, ComparisonExpr, NameExpr)
+
 from mypy.types import Type
 
 from crash import catch_errors
@@ -429,6 +431,17 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
+        # Copied from cppgen_pass.py
+        # Not sure why this wouldn't be true
+        assert len(o.expr) == 1, o.expr
+
+        # Omit anything that looks like if __name__ == ...
+        cond = o.expr[0]
+        if (isinstance(cond, ComparisonExpr) and
+            isinstance(cond.operands[0], NameExpr) and 
+            cond.operands[0].name == '__name__'):
+          return
+
         self.log('IfStmt')
         self.indent += 1
         for e in o.expr:

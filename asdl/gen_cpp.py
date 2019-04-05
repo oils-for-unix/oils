@@ -4,10 +4,11 @@ gen_cpp.py
 
 TODO:
 - pretty printing methods
-  - does asdl/pretty.py get translated?
+  - so asdl/format.py get translated?
 
 - ASDL optional args to C++ default arguments?
 - what about spids?  optional?
+  - TODO: test this out in target_lang.cc
 
 - NoOp needs to be instantiated without args?
 - dict becomes Dict[str, str] ?
@@ -164,8 +165,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit("  }")
 
     for f in cons.fields:
-      if f.name == 'spids':
-        continue
       self.Emit("  %s %s;" % (self._GetCppType(f), f.name))
     self.Emit("};", depth)
     self.Emit("", depth)

@@ -5,6 +5,8 @@
 // - Done:
 //   - initializer lists
 //   - exceptions
+//   - default arguments
+//   - namespaces
 //
 // - advanced:
 //   - What do Python closures get translated to?  Oil uses them in a few
@@ -128,8 +130,66 @@ void template_demo() {
   a2.append(new List {1, 2, 3});
   a2.append(new List {4, 5, 6});
   log("a2.size() = %d", a2.size());
-
 }
+
+void f(int a, int b = -1, const char* s = nullptr) {
+  log("");
+  log("a = %d", a);
+  log("b = %d", b);
+  log("s = %p", s);
+}
+
+void default_args_demo() {
+  f(42, 43, "foo");
+  f(42, 43);
+  f(42);
+}
+
+namespace core {
+  namespace util {
+    void p_die(const char* s) {
+      log("p_die %s", s);
+    }
+  }
+}
+
+namespace tdop {
+  using core::util::p_die;
+
+  class Parser {
+   public:
+    Parser(int token) : token_(token) {
+      log("Parser %d", token);
+      p_die("Parser");
+    }
+    int token_;
+  };
+}
+
+namespace typed_arith_parse {
+  //using namespace core;  This makes EVERYTHING available.
+
+  namespace util = core::util;
+
+  // This lets us use "Parser""
+  using tdop::Parser;
+
+  void namespace_demo() {
+    log("");
+    log("namespace_demo()");
+    f(42);
+    auto p = new tdop::Parser(42);
+    auto p2 = new Parser(43);
+
+    util::p_die("ns");
+  }
+}
+
+// Conclusion: every Python module should have is own namespace
+//
+// from core.util import log => using core::util::log
+// from core import util => namespace util = core::util;
+
 
 int main(int argc, char **argv) {
   List l {1, 2, 3};
@@ -145,4 +205,8 @@ int main(int argc, char **argv) {
 
   log("");
   template_demo();
+
+  log("");
+  default_args_demo();
+  typed_arith_parse::namespace_demo();
 }

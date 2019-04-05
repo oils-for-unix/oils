@@ -75,13 +75,30 @@ translate-path() {
 
   time ./mycpp.py $path > $raw
 
-  filter-cpp $raw > $out
+  # TODO: include tdop.h too?
+  {
+    echo '#include "typed_arith.asdl.h"'
+    filter-cpp $raw 
+  } > $out
 
   wc -l _gen/*
 }
 
 translate-typed-arith() {
-  translate-path $PWD/../asdl/typed_arith_parse.py
+  # tdop.py is a dependency.  How do we determine order?
+  #
+  # I guess we should put them in arbitrary order.  All .h first, and then all
+  # .cc first.
+
+  local tdop=$PWD/../asdl/tdop.py 
+  local path=$PWD/../asdl/typed_arith_parse.py
+  translate-path $path
+
+  local name=typed_arith_parse
+  cc -o _bin/$name $CPPFLAGS \
+    -I . -I ../_tmp \
+    _gen/$name.cc runtime.cc \
+    -lstdc++
 }
 
 translate-tdop() {
@@ -89,16 +106,26 @@ translate-tdop() {
 }
 
 filter-cpp() {
-  awk '
-    BEGIN      { print "#include \"runtime.h\"\n" }
+  local main_module=${1:-fib_iter}
+  shift
 
-    /int fib/        { printing = 1 }  /* for fib.py */
-    /^Str/           { printing = 1 }  /* for cgi.py */
-    /^List/          { printing = 1 }  /* for escape.py */
-    /__name__/       { printing = 0 }
+  cat <<EOF
+#include "runtime.h"
 
-               { if (printing) print }
-  ' "$@"
+EOF
+
+  cat "$@"
+
+  cat <<EOF
+
+int main(int argc, char **argv) {
+  if (getenv("BENCHMARK")) {
+    $main_module::run_benchmarks();
+  } else {
+    $main_module::run_tests();
+  }
+}
+EOF
 }
 
 # 1.1 seconds
@@ -114,7 +141,8 @@ translate() {
   time ./mycpp.py $main > $raw
   wc -l $raw
 
-  filter-cpp $raw > $out
+  local main_module=$(basename $main .py)
+  filter-cpp $main_module $raw > $out
 
   wc -l _gen/*
 
@@ -135,6 +163,60 @@ translate-parse() { translate parse; }  # classes!
 translate-containers() { translate containers; }
 translate-control_flow() { translate control_flow; }
 
+
+readonly PREPARE_DIR=$PWD/../_devbuild/cpython-full
+
+# TODO:
+# - do we need headers?
+# - call the right entry point.  At the top level, it should be 
+#   using modules::run_tests()
+#   using modules::run_benchmarks()
+#   using modules::main()
+# - print statement should be translated?
+# - how do I know if I'm importing a Python module or a function/class/enum
+#   like log, p_die, arith_expr_e, arith_expr_t, etc. ?
+
+translate-modules() {
+  local main_module=modules
+  local prefix=_tmp/modules
+
+  # This is very hacky but works.  We want the full list of files.
+  local pythonpath="$PWD:$PWD/examples:$(cd $PWD/../vendor && pwd)"
+
+  pushd examples
+  mkdir -p _tmp
+  ln -s -f -v ../../../build/app_deps.py _tmp
+
+  PYTHONPATH=$pythonpath \
+    $PREPARE_DIR/python -S _tmp/app_deps.py both $main_module $prefix
+
+  popd
+
+  egrep '/mycpp/.*\.py$' examples/_tmp/modules-cpython.txt \
+    | egrep -v '__init__.py|runtime.py' \
+    | awk '{print $1}' > _tmp/manifest.txt
+
+  local raw=_gen/modules_raw.cc
+  local out=_gen/modules.cc
+
+  cat _tmp/manifest.txt | xargs ./mycpp.py > $raw
+
+  filter-cpp modules $raw > $out
+  wc -l $raw $out
+}
+
+translate-modules-simple() {
+  local raw=_gen/modules_raw.cc
+  local out=_gen/modules.cc
+  ./mycpp.py testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
+  filter-cpp modules $raw > $out
+  wc -l $raw $out
+}
+
+compile-modules() {
+  compile modules
+}
+
 # fib_recursive(35) takes 72 ms without optimization, 20 ms with optimization.
 # optimization doesn't do as much for cgi.  1M iterations goes from ~450ms to ~420ms.
 
@@ -143,13 +225,15 @@ translate-control_flow() { translate control_flow; }
 CPPFLAGS='-O2 -std=c++11 '
 
 compile() { 
-  local name=${1:-fib}
-  # need -lstd++ for operator new
+  local name=${1:-fib} #  name of output, and maybe input
+  local src=${2:-_gen/$name.cc}
+
+  # need -lstdc++ for operator new
 
   #local flags='-O0 -g'  # to debug crashes
   mkdir -p _bin
   cc -o _bin/$name $CPPFLAGS -I . \
-    runtime.cc _gen/$name.cc main.cc -lstdc++
+    runtime.cc $src -lstdc++
 }
 
 compile-fib_iter() { compile fib_recursive; }
@@ -181,8 +265,10 @@ benchmark() {
   run-example "$@"
 }
 
+benchmark-fib_iter() { benchmark fib_iter; }
+
 # fib_recursive(33) - 1083 ms -> 12 ms.  Biggest speedup!
-benchmark-fib() { benchmark fib; }
+benchmark-fib_recursive() { benchmark fib_recursive; }
 
 # 1M iterations: 580 ms -> 173 ms
 # optimizations:

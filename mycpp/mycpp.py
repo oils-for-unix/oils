@@ -77,12 +77,12 @@ def main(argv):
   log('elapsed 1: %f', time.time() - start_time)
 
   if result.errors:
-    print()
-    print('-'* 80)
+    log('')
+    log('-'* 80)
     for e in result.errors:
-      print(e)
-    print('-'* 80)
-    print()
+      log(e)
+    log('-'* 80)
+    log('')
 
   # Important functions in mypyc/build.py:
   #
@@ -110,24 +110,33 @@ def main(argv):
       builder = debug_pass.Print(result.types)
       builder.visit_mypy_file(module)
 
-  # Collect constants and then emit code.
-  f = sys.stdout
+  # GLOBAL Constant pass over all modules.  We want to collect duplicate
+  # strings together.  And have globally unique IDs str0, str1, ... strN.
+  const_lookup = {}
+  const_code = []
+  p1 = const_pass.Collect(result.types, const_lookup, const_code)
+
   for name, module in result.files.items():
     # Only translate files that were mentioned on the command line
     suffix = name.split('.')[-1]
     if suffix not in mod_names:
       continue
-
-    const_lookup = {}
-    const_code = []
-    p1 = const_pass.Collect(result.types, const_lookup, const_code)
     p1.visit_mypy_file(module)
 
-    # Instead of top-level code, should we generate a function and call it
-    # from main?
-    for line in const_code:
-      f.write('%s\n' % line)
-    f.write('\n')
+  # Collect constants and then emit code.
+  f = sys.stdout
+
+  # Instead of top-level code, should we generate a function and call it
+  # from main?
+  for line in const_code:
+    f.write('%s\n' % line)
+  f.write('\n')
+
+  for name, module in result.files.items():
+    # Only translate files that were mentioned on the command line
+    suffix = name.split('.')[-1]
+    if suffix not in mod_names:
+      continue
 
     #print(name)
     p2 = cppgen_pass.Generate(result.types, const_lookup, f)

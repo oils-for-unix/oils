@@ -12,7 +12,7 @@ from mypy.types import (
     UnionType, UninhabitedType)
 from mypy.nodes import (
     Expression, Statement, NameExpr, MemberExpr, TupleExpr, ExpressionStmt,
-    AssignmentStmt, StrExpr, SliceExpr, FuncDef)
+    AssignmentStmt, StrExpr, SliceExpr, FuncDef, ComparisonExpr)
 
 from crash import catch_errors
 from util import log
@@ -110,6 +110,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # self.foo = 1.  Then we write C++ class member declarations at the end
       # of the class.
       self.member_vars = {}  # type: Dict[str, Type]
+      self.imported_names = set()
 
     def log(self, msg, *args):
       ind_str = self.indent * '  '
@@ -174,6 +175,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('')
         self.log('mypyfile %s', o.fullname())
 
+        mod_parts = o.fullname().split('.')
+        self.write_ind('namespace %s {\n', mod_parts[-1])
+        self.write('\n')
+
         self.module_path = o.path
 
         for node in o.defs:
@@ -181,6 +186,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(node, ExpressionStmt) and isinstance(node.expr, StrExpr):
                 continue
             self.accept(node)
+
+        #for part in reversed(mod_parts):
+        self.write_ind('}  // namespace %s \n', mod_parts[-1])
+        self.write('\n')
 
     # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
 
@@ -229,9 +238,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write(o.name)
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
-        if o.expr:
+        t = self.types[o]
+        if o.expr:  
+          # This is an approximate hack that assumes that locals don't shadow
+          # imported names.  Might be a problem with names like 'word'?
+          if isinstance(o.expr, NameExpr) and o.expr.name in self.imported_names:
+            op = '::'
+          else:
+            op = '->'  # Everything is a pointer
+
           self.accept(o.expr)
-          self.write('->')  # Everything is a pointer
+          self.write(op)
         self.write('%s', o.name)
 
     def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
@@ -770,7 +787,32 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
-        pass
+
+        if o.id in ('__future__', 'typing'):
+          return  # do nothing
+        if o.id == 'runtime' and o.names == [('log', None)]:
+          return  # do nothing
+
+        # Later we need to turn module.func() into module::func(), without
+        # disturbing self.foo.
+        for name, alias in o.names:
+          assert alias is None, (name, alias)
+          self.imported_names.add(name)
+
+        # A heuristic that works for the OSH import style.
+        #
+        # from core.util import log => using core::util::log
+        # from core import util => NOT translated
+        if '.' in o.id:
+          mod_name = o.id.split('.')[-1]
+          for name, alias in o.names:
+            self.write_ind('using %s::%s;\n', mod_name, name)
+
+        # Old scheme
+        # from testpkg import module1 =>
+        # namespace module1 = testpkg.module1;
+        # Unfortunately the MyPy AST doesn't have enough info to distinguish
+        # imported packages and functions/classes?
 
     def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> T:
         pass
@@ -821,7 +863,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
-        # TODO: omit if __name__ == '__main__'?
+        # Not sure why this wouldn't be true
+        assert len(o.expr) == 1, o.expr
+
+        # Omit anything that looks like if __name__ == ...
+        cond = o.expr[0]
+        if (isinstance(cond, ComparisonExpr) and
+            isinstance(cond.operands[0], NameExpr) and 
+            cond.operands[0].name == '__name__'):
+          return
 
         self.write_ind('if (')
         for e in o.expr:

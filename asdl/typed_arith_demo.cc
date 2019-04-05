@@ -30,11 +30,13 @@ void PrintTag(arith_expr_t* a) {
 
 int main(int argc, char **argv) {
   auto c = new arith_expr::Const(42);
+  log("sizeof *c = %d", sizeof *c);  // hm only 8
   log("c->i = %d", c->i);
   log("c->tag = %d", c->tag);
   PrintTag(c);
 
   auto v = new arith_expr::Var(new Str("foo"));
+  log("sizeof *v = %d", sizeof *v);  // 16
   log("v->name = %s", v->name->data_);
   log("v->tag = %d", v->tag);
   PrintTag(v);
