@@ -11,10 +11,26 @@ from testpkg import module1
 from testpkg.module2 import func2
 
 
+class Dog(object):
+  def __init__(self, color):
+    # type: (str) -> None
+    self.color = color
+
+  def Speak(self):
+    # type: () -> None
+    log('%s dog: meow', self.color)
+
+
 def run_tests():
   # type: () -> None
   module1.func1()
   func2()
+
+  dog = Dog('white')
+  dog.Speak()
+
+  cat = module1.Cat('black')
+  cat.Speak()
 
 
 def run_benchmarks():

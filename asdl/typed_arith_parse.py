@@ -16,18 +16,15 @@ from typing import Dict, List, Optional
 #from typing import cast
 
 from asdl import tdop
-from asdl.tdop import Token, Parser, ParserSpec
+from asdl import tdop_lexer
 
 
 #
 # Null Denotation -- token that takes nothing on the left
 #
 
-def NullConstant(p,  # type: Parser
-                 token,  # type: Token
-                 bp,  # type: int
-                 ):
-  # type: (...) -> arith_expr_t
+def NullConstant(p, token, bp):
+  # type: (tdop.Parser, tdop.Token, int) -> arith_expr_t
   if token.type == 'number':
     return arith_expr__Const(int(token.val))
   # We have to wrap a string in some kind of variant.
@@ -37,11 +34,8 @@ def NullConstant(p,  # type: Parser
   raise AssertionError(token.type)
 
 
-def NullParen(p,  # type: Parser
-              token,  # type: Token
-              bp,  # type: int
-              ):
-  # type: (...) -> arith_expr_t
+def NullParen(p, token, bp):
+  # type: (tdop.Parser, tdop.Token, int) -> arith_expr_t
   """ Arithmetic grouping """
   r = p.ParseUntil(bp)
   p.Eat(')')
@@ -49,7 +43,7 @@ def NullParen(p,  # type: Parser
 
 
 def NullPrefixOp(p, token, bp):
-  # type: (Parser, Token, int) -> arith_expr_t
+  # type: (tdop.Parser, tdop.Token, int) -> arith_expr_t
   """Prefix operator.
 
   Low precedence:  return, raise, etc.
@@ -63,7 +57,7 @@ def NullPrefixOp(p, token, bp):
 
 
 def NullIncDec(p, token, bp):
-  # type: (Parser, Token, int) -> arith_expr_t
+  # type: (tdop.Parser, tdop.Token, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
   if not isinstance(right, (arith_expr__Var, arith_expr__Index)):
@@ -75,14 +69,9 @@ def NullIncDec(p, token, bp):
 # Left Denotation -- token that takes an expression on the left
 #
 
-def LeftIncDec(p,  # type: Parser
-               token,  # type: Token
-               left,  # type: arith_expr_t
-               rbp,  # type: int
-               ):
-  # type: (...) -> arith_expr_t
-  """ For i++ and i--
-  """
+def LeftIncDec(p, token, left, rbp):
+  # type: (tdop.Parser, tdop.Token, arith_expr_t, int) -> arith_expr_t
+  """ For i++ and i-- """
   if not isinstance(left, (arith_expr__Var, arith_expr__Index)):
     raise tdop.ParseError("Can't assign to %r" % left)
   token.type = 'post' + token.type
@@ -90,7 +79,7 @@ def LeftIncDec(p,  # type: Parser
 
 
 def LeftIndex(p, token, left, unused_bp):
-  # type: (Parser, Token, arith_expr_t, int) -> arith_expr_t
+  # type: (tdop.Parser, tdop.Token, arith_expr_t, int) -> arith_expr_t
   """ index f[x+1] """
   # f[x] or f[x][y]
   if not isinstance(left, arith_expr__Var):
@@ -115,12 +104,8 @@ def LeftIndex(p, token, left, unused_bp):
     return arith_expr__Index(left, index)
 
 
-def LeftTernary(p,  # type: Parser
-                token,  # type: Token
-                left,  # type: arith_expr_t
-                bp,  # type: int
-                ):
-  # type: (...) -> arith_expr_t
+def LeftTernary(p, token, left, bp):
+  # type: (tdop.Parser, tdop.Token, arith_expr_t, int) -> arith_expr_t
   """ e.g. a > 1 ? x : y """
   true_expr = p.ParseUntil(bp)
   p.Eat(':')
@@ -128,22 +113,14 @@ def LeftTernary(p,  # type: Parser
   return arith_expr__Ternary(left, true_expr, false_expr)
 
 
-def LeftBinaryOp(p,  # type: Parser
-                 token,  # type: Token
-                 left,  # type: arith_expr_t
-                 rbp,  # type: int
-                 ):
-  # type: (...) -> arith_expr__Binary
+def LeftBinaryOp(p, token, left, rbp):
+  # type: (tdop.Parser, tdop.Token, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   return arith_expr__Binary(token.val, left, p.ParseUntil(rbp))
 
 
-def LeftAssign(p,  # type: Parser
-               token,  # type: Token
-               left,  # type: arith_expr_t
-               rbp,  # type: int
-               ):
-  # type: (...) -> arith_expr__Binary
+def LeftAssign(p, token, left, rbp):
+  # type: (tdop.Parser, tdop.Token, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
   if not isinstance(left, (arith_expr__Var, arith_expr__Index)):
@@ -159,7 +136,7 @@ def LeftAssign(p,  # type: Parser
 COMMA_PREC = 1
 
 def LeftFuncCall(p, token, left, unused_bp):
-  # type: (Parser, Token, arith_expr_t, int) -> arith_expr__FuncCall
+  # type: (tdop.Parser, tdop.Token, arith_expr_t, int) -> arith_expr__FuncCall
   """ Function call f(a, b). """
   args = []  # type: List[arith_expr_t]
   # f(x) or f[i](x)
@@ -178,7 +155,7 @@ def LeftFuncCall(p, token, left, unused_bp):
 
 
 def MakeShellParserSpec():
-  # type: () -> ParserSpec
+  # type: () -> tdop.ParserSpec
   """
   Create a parser.
 
@@ -231,10 +208,10 @@ def MakeShellParserSpec():
 
 
 def MakeParser(s):
-  # type: (str) -> Parser
+  # type: (str) -> tdop.Parser
   """Used by tests."""
   spec = MakeShellParserSpec()
-  lexer = tdop.Tokenize(s)
+  lexer = tdop_lexer.Tokenize(s)
   p = tdop.Parser(spec, lexer)
   return p
 

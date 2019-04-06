@@ -442,6 +442,12 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             cond.operands[0].name == '__name__'):
           return
 
+        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
+        # don't type check!
+        expr = o.expr[0]
+        if isinstance(expr, NameExpr) and expr.name == 'TYPE_CHECKING':
+          return
+
         self.log('IfStmt')
         self.indent += 1
         for e in o.expr:

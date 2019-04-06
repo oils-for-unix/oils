@@ -45,6 +45,9 @@ iter-demo-asdl() {
 }
 
 check-arith() {
+  # NOTE: There are still some Any types here!  We don't want them for
+  # translation.
+
   local strict='--strict'
   MYPYPATH=. PYTHONPATH=. typecheck $strict \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py

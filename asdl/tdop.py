@@ -3,11 +3,9 @@
 tdop.py
 """
 
-import re
-
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
 from typing import (Dict, List, Callable, Optional, Iterator, Tuple, NoReturn)
-
+from typing import TYPE_CHECKING
 
 class ParseError(Exception):
   pass
@@ -41,33 +39,6 @@ class Token(object):
   def __repr__(self):
     # type: () -> str
     return '<Token %s %s>' % (self.type, self.val)
-
-
-#
-# Using the pattern here: http://effbot.org/zone/xml-scanner.htm
-#
-
-# NOTE: () and [] need to be on their own so (-1+2) works
-TOKEN_RE = re.compile("""
-\s* (?: (\d+) | (\w+) | ( [\-\+\*/%!~<>=&^|?:,]+ ) | ([\(\)\[\]]) )
-""", re.VERBOSE)
-
-def Tokenize(s):
-  # type: (str) -> Iterator[Token]
-  for item in TOKEN_RE.findall(s):
-    if item[0]:
-      typ = 'number'
-      val = item[0]
-    elif item[1]:
-      typ = 'name'
-      val = item[1]
-    elif item[2]:
-      typ = item[2]
-      val = item[2]
-    elif item[3]:
-      typ = item[3]
-      val = item[3]
-    yield Token(typ, val, loc=(0, 0))
 
 
 #
@@ -222,8 +193,9 @@ class Parser(object):
     return self.ParseUntil(0)
 
 
-from typing import TYPE_CHECKING
-
+# Must define these aliases AFTER Parser and Token are defined.
 if TYPE_CHECKING:
   NullFunc = Callable[[Parser, Token, int], arith_expr_t]
   LeftFunc = Callable[[Parser, Token, arith_expr_t, int], arith_expr_t]
+
+

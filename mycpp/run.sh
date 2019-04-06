@@ -93,6 +93,7 @@ translate-typed-arith() {
   # NOTE: tdop.py doesn't translate because of the RE module!
 
   local srcs=( $PWD/../asdl/tdop.py $PWD/../asdl/typed_arith_parse.py )
+  #local srcs=( $PWD/../asdl/typed_arith_parse.py )
 
   local name=typed_arith_parse
   translate-many $name "${srcs[@]}"

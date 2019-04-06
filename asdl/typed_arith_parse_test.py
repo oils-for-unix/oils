@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 from __future__ import print_function
+
+from _devbuild.gen.typed_arith_asdl import arith_expr_t
 from asdl import tdop
 from asdl import typed_arith_parse  # module under test
 
 from typing import Callable, Optional, TYPE_CHECKING
 
-Parser = typed_arith_parse.Parser
-arith_expr_t = typed_arith_parse.arith_expr_t
+
+# Type alias
+if TYPE_CHECKING:
+  ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
 
 
 def _assertParseError(make_parser, s, error_substring=''):
-  # type: (Callable[[str], Parser], str, str) -> None
+  # type: (Callable[[str], tdop.Parser], str, str) -> None
   p = make_parser(s)
   try:
     node = p.Parse()
@@ -144,7 +148,7 @@ def TestFuncCalls(t_parse):
 
 
 def TestErrors(p):
-  # type: (Callable[[str], Parser]) -> None
+  # type: (Callable[[str], tdop.Parser]) -> None
   _assertParseError(p, '}')
   _assertParseError(p, ']')
 
@@ -217,11 +221,6 @@ def main():
   TestFuncCalls(t_parse)
   TestComma(t_parse)
   TestErrors(p)
-
-
-# Type alias
-if TYPE_CHECKING:
-  ParseFunc = Callable[[str, Optional[str]], arith_expr_t]
 
 
 if __name__ == '__main__':

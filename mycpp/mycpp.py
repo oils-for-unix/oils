@@ -138,7 +138,13 @@ def main(argv):
     if suffix not in mod_names:
       continue
 
-    #print(name)
+    log('*** name = %s', name)
+
+    # Why do I get oil.asdl.tdop in addition to asdl.tdop?
+    # I also get oil.asdl.typed_arith_parse?  Doesn't make sense?
+
+    if name == 'asdl.tdop':
+      continue
     p2 = cppgen_pass.Generate(result.types, const_lookup, f)
     p2.visit_mypy_file(module)
 

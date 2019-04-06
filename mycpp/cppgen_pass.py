@@ -11,8 +11,9 @@ from mypy.types import (
     Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
     UnionType, UninhabitedType)
 from mypy.nodes import (
-    Expression, Statement, NameExpr, MemberExpr, TupleExpr, ExpressionStmt,
-    AssignmentStmt, StrExpr, SliceExpr, FuncDef, ComparisonExpr)
+    Expression, Statement, NameExpr, IndexExpr, MemberExpr, TupleExpr,
+    ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
+    ComparisonExpr)
 
 from crash import catch_errors
 from util import log
@@ -61,7 +62,12 @@ def get_c_type(t):
 
     else:
       # fullname() => 'parse.Lexer'; name() => 'Lexer'
-      c_type = '%s*' % t.type.name()
+
+      # NOTE: It would be nice to leave off the namespace if we're IN that
+      # namespace.  But that is cosmetic.
+
+      parts = t.type.fullname().split('.')
+      c_type = '%s::%s*' % (parts[-2], parts[-1])
 
   elif isinstance(t, UninhabitedType):
     # UninhabitedType has a NoReturn flag
@@ -84,8 +90,17 @@ def get_c_type(t):
 
     c_type = get_c_type(t.items[0])
 
+  elif isinstance(t, CallableType):
+    # Function types are expanded
+    # Callable[[Parser, Token, int], arith_expr_t] =>
+    # arith_expr_t* (*f)(Parser*, Token*, int) nud;
+
+    ret_type = get_c_type(t.ret_type)
+    arg_types = [get_c_type(typ) for typ in t.arg_types]
+    c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
+
   else:
-    raise NotImplementedError('MyPy type: %s' % t)
+    raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
 
   return c_type
 
@@ -596,6 +611,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             lval_type = self.types[lval]
             self.member_vars[lval.name] = lval_type
 
+        elif isinstance(lval, IndexExpr):  # a[x] = 1
+          self.write_ind('')
+          self.accept(lval.base)
+          self.write('[')
+          self.accept(lval.index)
+          self.write('] = ')
+          self.accept(o.rvalue)
+          self.write(';\n')
+
         elif isinstance(lval, TupleExpr):
           # An assignment to an n-tuple turns into n+1 statements.  Example:
           #
@@ -871,6 +895,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if (isinstance(cond, ComparisonExpr) and
             isinstance(cond.operands[0], NameExpr) and 
             cond.operands[0].name == '__name__'):
+          return
+
+        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
+        # don't type check!
+        expr = o.expr[0]
+        if isinstance(expr, NameExpr) and expr.name == 'TYPE_CHECKING':
           return
 
         self.write_ind('if (')
