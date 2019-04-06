@@ -5,6 +5,20 @@
 #include "typed_demo.asdl.h"  // has simple Sum, etc
 #include "runtime.h"
 
+using typed_arith_asdl::pipeline;
+
+using typed_arith_asdl::arith_expr_e;
+using typed_arith_asdl::arith_expr_t;
+
+using typed_arith_asdl::arith_expr__Const;
+using typed_arith_asdl::arith_expr__Var;
+using typed_arith_asdl::arith_expr__Unary;
+using typed_arith_asdl::arith_expr__FuncCall;
+
+using typed_demo_asdl::bool_expr__LogicalBinary;
+using typed_demo_asdl::op_id_e;
+
+
 // Log messages to stdout.
 void log(const char* fmt, ...) {
   va_list args;
@@ -29,26 +43,26 @@ void PrintTag(arith_expr_t* a) {
 }
 
 int main(int argc, char **argv) {
-  auto c = new arith_expr::Const(42);
+  auto c = new arith_expr__Const(42);
   log("sizeof *c = %d", sizeof *c);  // hm only 8
   log("c->i = %d", c->i);
   log("c->tag = %d", c->tag);
   PrintTag(c);
 
-  auto v = new arith_expr::Var(new Str("foo"));
+  auto v = new arith_expr__Var(new Str("foo"));
   log("sizeof *v = %d", sizeof *v);  // 16
   log("v->name = %s", v->name->data_);
   log("v->tag = %d", v->tag);
   PrintTag(v);
 
-  auto u = new arith_expr::Unary(new Str("-"), v);
+  auto u = new arith_expr__Unary(new Str("-"), v);
   log("u->op = %s", u->op->data_);
 
-  auto v1 = new arith_expr::Var(new Str("v1"));
-  auto v2 = new arith_expr::Var(new Str("v2"));
+  auto v1 = new arith_expr__Var(new Str("v1"));
+  auto v2 = new arith_expr__Var(new Str("v2"));
   auto args = new List<arith_expr_t*> {v1, v2};
 
-  auto f = new arith_expr::FuncCall(new Str("f"), args);
+  auto f = new arith_expr__FuncCall(new Str("f"), args);
   log("f->name = %s", f->name->data_);
 
   auto p = new pipeline(true);
@@ -57,7 +71,7 @@ int main(int argc, char **argv) {
   // from typed_demo.asdl
 
   auto o = op_id_e::Plus;
-  auto b = new bool_expr::LogicalBinary(o, nullptr, nullptr);
+  auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
   log("sizeof b = %d", sizeof b);
 
   //log("u->a->name = %s", u->a->name->data_);

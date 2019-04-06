@@ -7,8 +7,10 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.typed_arith_asdl import (
-    arith_expr, arith_expr_t,
-    arith_expr__Binary, arith_expr__FuncCall, arith_expr__Const)
+    arith_expr_t, arith_expr__Binary, arith_expr__FuncCall, arith_expr__Const,
+    arith_expr__Var, arith_expr__Unary, arith_expr__Binary, arith_expr__Ternary,
+    arith_expr__Index, arith_expr__Slice
+)
 
 from typing import Dict, List, Optional
 #from typing import cast
@@ -27,10 +29,10 @@ def NullConstant(p,  # type: Parser
                  ):
   # type: (...) -> arith_expr_t
   if token.type == 'number':
-    return arith_expr.Const(int(token.val))
+    return arith_expr__Const(int(token.val))
   # We have to wrap a string in some kind of variant.
   if token.type == 'name':
-    return arith_expr.Var(token.val)
+    return arith_expr__Var(token.val)
 
   raise AssertionError(token.type)
 
@@ -57,16 +59,16 @@ def NullPrefixOp(p, token, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   r = p.ParseUntil(bp)
-  return arith_expr.Unary(token.val, r)
+  return arith_expr__Unary(token.val, r)
 
 
 def NullIncDec(p, token, bp):
   # type: (Parser, Token, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
-  if not isinstance(right, (arith_expr.Var, arith_expr.Index)):
+  if not isinstance(right, (arith_expr__Var, arith_expr__Index)):
     raise tdop.ParseError("Can't assign to %r" % right)
-  return arith_expr.Unary(token.val, right)
+  return arith_expr__Unary(token.val, right)
 
 
 #
@@ -81,17 +83,17 @@ def LeftIncDec(p,  # type: Parser
   # type: (...) -> arith_expr_t
   """ For i++ and i--
   """
-  if not isinstance(left, (arith_expr.Var, arith_expr.Index)):
+  if not isinstance(left, (arith_expr__Var, arith_expr__Index)):
     raise tdop.ParseError("Can't assign to %r" % left)
   token.type = 'post' + token.type
-  return arith_expr.Unary(token.val, left)
+  return arith_expr__Unary(token.val, left)
 
 
 def LeftIndex(p, token, left, unused_bp):
   # type: (Parser, Token, arith_expr_t, int) -> arith_expr_t
   """ index f[x+1] """
   # f[x] or f[x][y]
-  if not isinstance(left, arith_expr.Var):
+  if not isinstance(left, arith_expr__Var):
     raise tdop.ParseError("%s can't be indexed" % left)
   index = p.ParseUntil(0)
   if p.AtToken(':'):
@@ -108,9 +110,9 @@ def LeftIndex(p, token, left, unused_bp):
   # Both end and step are optional
 
   if end:
-    return arith_expr.Slice(left, index, end, None)
+    return arith_expr__Slice(left, index, end, None)
   else:
-    return arith_expr.Index(left, index)
+    return arith_expr__Index(left, index)
 
 
 def LeftTernary(p,  # type: Parser
@@ -123,7 +125,7 @@ def LeftTernary(p,  # type: Parser
   true_expr = p.ParseUntil(bp)
   p.Eat(':')
   false_expr = p.ParseUntil(bp)
-  return arith_expr.Ternary(left, true_expr, false_expr)
+  return arith_expr__Ternary(left, true_expr, false_expr)
 
 
 def LeftBinaryOp(p,  # type: Parser
@@ -133,7 +135,7 @@ def LeftBinaryOp(p,  # type: Parser
                  ):
   # type: (...) -> arith_expr__Binary
   """ Normal binary operator like 1+2 or 2*3, etc. """
-  return arith_expr.Binary(token.val, left, p.ParseUntil(rbp))
+  return arith_expr__Binary(token.val, left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p,  # type: Parser
@@ -144,9 +146,9 @@ def LeftAssign(p,  # type: Parser
   # type: (...) -> arith_expr__Binary
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
-  if not isinstance(left, (arith_expr.Var, arith_expr.Index)):
+  if not isinstance(left, (arith_expr__Var, arith_expr__Index)):
     raise tdop.ParseError("Can't assign to %r" % left)
-  node = arith_expr.Binary(token.val, left, p.ParseUntil(rbp))
+  node = arith_expr__Binary(token.val, left, p.ParseUntil(rbp))
   # For TESTING
   node.spids.append(42)
   node.spids.append(43)
@@ -161,7 +163,7 @@ def LeftFuncCall(p, token, left, unused_bp):
   """ Function call f(a, b). """
   args = []  # type: List[arith_expr_t]
   # f(x) or f[i](x)
-  if not isinstance(left, arith_expr.Var):
+  if not isinstance(left, arith_expr__Var):
     raise tdop.ParseError("%s can't be called" % left)
   func_name = left.name  # get a string
 
@@ -172,7 +174,7 @@ def LeftFuncCall(p, token, left, unused_bp):
     if p.AtToken(','):
       p.Next()
   p.Eat(")")
-  return arith_expr.FuncCall(func_name, args)
+  return arith_expr__FuncCall(func_name, args)
 
 
 def MakeShellParserSpec():

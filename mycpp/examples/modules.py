@@ -20,10 +20,12 @@ def run_tests():
 def run_benchmarks():
   # type: () -> None
   i = 0
-  n = 100000
+  n = 2000000
+  result = 0
   while i < n:
-    run_tests()
+    result += module1.fortytwo()
     i = i + 1
+  log('result = %d', result)
 
 
 if __name__ == '__main__':

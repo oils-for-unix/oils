@@ -23,6 +23,7 @@ from __future__ import print_function
 import sys
 
 from asdl import meta
+from asdl import runtime
 from asdl import visitor
 
 
@@ -126,9 +127,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit("};")
     Emit("")
 
-    Emit("namespace %(name)s {")
-    Emit("")
-
     for t in sum.types:
       self.VisitConstructor(t, name, depth)
 
@@ -137,8 +135,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       type_name = str(field.type)
       assert type_name in runtime.BUILTIN_TYPES, type_name
       Emit("%s %s;" % (type_name, field.name), depth + 1)
-
-    Emit("}  // namespace %(name)s")
 
   def _GenClass(self, cons, class_name, super_name, depth, tag=None):
     """For Product and Constructor."""
@@ -174,7 +170,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     super_name = '%s_t' % sum_name
     if cons.fields:
       tag = '%s_e::%s' % (sum_name, cons.name)
-      self._GenClass(cons, cons.name, super_name, depth, tag=tag)
+      class_name = '%s__%s' % (sum_name, cons.name)
+      self._GenClass(cons, class_name, super_name, depth, tag=tag)
 
   def VisitProduct(self, product, name, depth):
     self._GenClass(product, name, None, depth)

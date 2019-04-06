@@ -41,19 +41,26 @@ def main(argv):
     with open(schema_path) as f:
       schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 
+    # asdl/typed_arith.asdl -> typed_arith_asdl
+    ns = os.path.basename(schema_path).replace('.', '_')
+
     f = sys.stdout
     f.write("""\
 #include <cstdint>
 
 #include "runtime.h"  // for Str, List, etc.
 
-""")
+namespace %s {
+
+""" % ns)
 
     v = gen_cpp.ForwardDeclareVisitor(f)
     v.VisitModule(schema_ast)
 
     v2 = gen_cpp.ClassDefVisitor(f, type_lookup)
     v2.VisitModule(schema_ast)
+
+    f.write('}  // namespace %s\n' % ns)
 
   elif action == 'mypy':  # Generated typed MyPy code
     with open(schema_path) as f:

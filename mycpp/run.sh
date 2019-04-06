@@ -66,19 +66,19 @@ translate-osh-parse() {
 }
 
 # 1.5 seconds.  Still more than I would have liked!
-translate-path() {
-  local path=$1
-  local name=$(basename $path .py)
+translate-many() {
+  local name=$1
+  shift
 
   local raw=_gen/${name}_raw.cc
   local out=_gen/${name}.cc
 
-  time ./mycpp.py $path > $raw
+  time ./mycpp.py "$@" > $raw
 
   # TODO: include tdop.h too?
   {
     echo '#include "typed_arith.asdl.h"'
-    filter-cpp $raw 
+    filter-cpp $name $raw 
   } > $out
 
   wc -l _gen/*
@@ -90,19 +90,17 @@ translate-typed-arith() {
   # I guess we should put them in arbitrary order.  All .h first, and then all
   # .cc first.
 
-  local tdop=$PWD/../asdl/tdop.py 
-  local path=$PWD/../asdl/typed_arith_parse.py
-  translate-path $path
+  # NOTE: tdop.py doesn't translate because of the RE module!
+
+  local srcs=( $PWD/../asdl/tdop.py $PWD/../asdl/typed_arith_parse.py )
 
   local name=typed_arith_parse
+  translate-many $name "${srcs[@]}"
+
   cc -o _bin/$name $CPPFLAGS \
     -I . -I ../_tmp \
     _gen/$name.cc runtime.cc \
     -lstdc++
-}
-
-translate-tdop() {
-  translate-path $PWD/../asdl/tdop.py
 }
 
 filter-cpp() {
@@ -166,17 +164,8 @@ translate-control_flow() { translate control_flow; }
 
 readonly PREPARE_DIR=$PWD/../_devbuild/cpython-full
 
-# TODO:
-# - do we need headers?
-# - call the right entry point.  At the top level, it should be 
-#   using modules::run_tests()
-#   using modules::run_benchmarks()
-#   using modules::main()
-# - print statement should be translated?
-# - how do I know if I'm importing a Python module or a function/class/enum
-#   like log, p_die, arith_expr_e, arith_expr_t, etc. ?
-
-translate-modules() {
+# NOT USED
+modules-deps() {
   local main_module=modules
   local prefix=_tmp/modules
 
@@ -205,7 +194,7 @@ translate-modules() {
   wc -l $raw $out
 }
 
-translate-modules-simple() {
+translate-modules() {
   local raw=_gen/modules_raw.cc
   local out=_gen/modules.cc
   ./mycpp.py testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
@@ -294,8 +283,16 @@ benchmark-control_flow() { benchmark control_flow; }
 
 build-all() {
   for name in "${EXAMPLES[@]}"; do
-    translate $name
-    compile $name
+    case $name in
+      modules)
+        translate-modules
+        compile-modules
+        ;;
+      *)
+        translate $name
+        compile $name
+        ;;
+    esac
   done
 }
 
