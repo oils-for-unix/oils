@@ -162,7 +162,8 @@ clean() {
 minimal() {
   mkdir -p _tmp _devbuild/gen
 
-  rm -v -f _devbuild/gen/*
+  # need -r because Python 3 puts a __pycache__ here
+  rm -v -r -f _devbuild/gen/*
 
   # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
