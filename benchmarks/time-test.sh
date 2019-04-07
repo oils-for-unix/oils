@@ -29,11 +29,11 @@ test-cannot-serialize() {
 
   set +o errexit
 
-  # Tab should fail
+  # Newline should fail
   time-tool --tsv -o $out --field $'\n' -- sleep 0.001; status=$?
   test $status = 1 || fail "Unexpected status $status"
 
-  # Newline should fail
+  # Tab should fail
   time-tool --tsv -o $out --field $'\t' -- sleep 0.001; status=$?
   test $status = 1 || fail "Unexpected status $status"
 

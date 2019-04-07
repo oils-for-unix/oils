@@ -19,6 +19,12 @@ from crash import catch_errors
 from util import log
 
 
+T = None
+
+class UnsupportedException(Exception):
+    pass
+
+
 def get_c_type(t):
   if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
     return 'void'
@@ -105,18 +111,15 @@ def get_c_type(t):
   return c_type
 
 
-T = None
-
-class UnsupportedException(Exception):
-    pass
-
-
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
-    def __init__(self, types: Dict[Expression, Type], const_lookup, f):
+    def __init__(self, types: Dict[Expression, Type], const_lookup, f,
+                 decl=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
+      self.decl = decl
+
       self.indent = 0
       self.local_vars = {}  # type: Dict[str, bool]
 
@@ -125,23 +128,42 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # self.foo = 1.  Then we write C++ class member declarations at the end
       # of the class.
       self.member_vars = {}  # type: Dict[str, Type]
-      self.imported_names = set()
+      self.current_class_name = None  # for prototypes
+
+      self.imported_names = set()  # For module::Foo() vs. self.foo
 
     def log(self, msg, *args):
       ind_str = self.indent * '  '
       log(ind_str + msg, *args)
 
     def write(self, msg, *args):
+      if self.decl:
+        return
       if args:
         msg = msg % args
       self.f.write(msg)
 
     # Write respecting indent
     def write_ind(self, msg, *args):
+      if self.decl:
+        return
       ind_str = self.indent * '  '
       if args:
         msg = msg % args
       self.f.write(ind_str + msg)
+
+    # A little hack to reuse this pass for declarations too
+    def decl_write(self, msg, *args):
+      if args:
+        msg = msg % args
+      self.f.write(msg)
+
+    def decl_write_ind(self, msg, *args):
+      ind_str = self.indent * '  '
+      if args:
+        msg = msg % args
+      self.f.write(ind_str + msg)
+
 
     #
     # COPIED from IRBuilder
@@ -191,20 +213,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('mypyfile %s', o.fullname())
 
         mod_parts = o.fullname().split('.')
-        self.write_ind('namespace %s {\n', mod_parts[-1])
-        self.write('\n')
+        comment = 'declare' if self.decl else 'define'
+
+        self.decl_write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
+        self.decl_write('\n')
 
         self.module_path = o.path
 
         for node in o.defs:
             # skip module docstring
-            if isinstance(node, ExpressionStmt) and isinstance(node.expr, StrExpr):
+            if (isinstance(node, ExpressionStmt) and
+                isinstance(node.expr, StrExpr)):
                 continue
             self.accept(node)
 
         #for part in reversed(mod_parts):
-        self.write_ind('}  // namespace %s \n', mod_parts[-1])
-        self.write('\n')
+        self.decl_write_ind(
+            '}  // %s namespace %s\n', comment, mod_parts[-1])
+        self.decl_write('\n')
 
     # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
 
@@ -709,7 +735,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         first = True
         for i, (arg_type, arg) in enumerate(zip(o.type.arg_types, o.arguments)):
           if not first:
-            self.write(', ')
+            self.decl_write(', ')
 
           c_type = get_c_type(arg_type)
           arg_name = arg.variable.name()
@@ -718,7 +744,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if arg_name == 'self':
             continue
 
-          self.write('%s %s', c_type, arg_name)
+          self.decl_write('%s %s', c_type, arg_name)
           first = False
 
           # arguments shouldn't be redeclared as locals
@@ -736,11 +762,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  kind %s', arg.kind)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
-        # woohoo!!
+        if self.current_class_name:
+          # definition looks like
+          # void Type::foo(...);
+          func_name = '%s::%s' % (self.current_class_name, o.name())
+        else:
+          # declaration inside class { }
+          func_name = o.name()
+
         c_type = get_c_type(o.type.ret_type)
-        self.write_ind('%s %s(', c_type, o.name())
+        self.decl_write_ind('%s %s(', c_type, func_name)
 
         self._write_func_args(o)
+
+        if self.decl:
+          self.decl_write(');\n')
+          return
 
         self.write(') ')
         self.accept(o.body)
@@ -752,46 +789,72 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
-        self.member_vars.clear()  # make a new list
+        if self.decl:
 
-        self.write_ind('class %s {\n', o.name)  # block after this
-        self.write_ind(' public:\n')
+          self.member_vars.clear()  # make a new list
 
-        # TODO: base types
-        for b in o.base_type_exprs:
-          self.log('  base_type_expr %s', b)
+          self.decl_write_ind('class %s {\n', o.name)  # block after this
+          self.decl_write_ind(' public:\n')
 
-        # TODO: __init__ has to be renamed!
+          # TODO: base types
+          for b in o.base_type_exprs:
+            self.log('  base_type_expr %s', b)
+
+          # NOTE: declaration still has to traverse the whole body to fill out
+          # self.member_vars!!!
+          block = o.defs
+
+          self.indent += 1
+          for stmt in block.body:
+
+            # Ignore things that look like docstrings
+            if (isinstance(stmt, ExpressionStmt) and
+                isinstance(stmt.expr, StrExpr)):
+              continue
+
+            # Constructor is named after class
+            if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
+              self.decl_write_ind('%s(', o.name)
+              self._write_func_args(stmt)
+              self.decl_write(');\n')
+
+              # Must visit these for member vars!
+              self.accept(stmt.body)
+              continue
+
+            self.accept(stmt)
+
+          # Now write member defs
+          if self.member_vars:
+            self.decl_write('\n')  # separate from functions
+          for name in sorted(self.member_vars):
+            c_type = get_c_type(self.member_vars[name])
+            self.decl_write_ind('%s %s;\n', c_type, name)
+
+          self.indent -= 1
+          self.decl_write_ind('};\n\n')
+
+          return
+
+        self.current_class_name = o.name
 
         block = o.defs
-
-        self.indent += 1
         for stmt in block.body:
-
-          # Ignore things that look like docstrings
-          if isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, StrExpr):
-            continue
 
           # Constructor!
           if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
-            self.write_ind('%s(', o.name)  # constructor is named after class
+            self.write_ind('%s::%s(', o.name, o.name)
             self._write_func_args(stmt)
             self.write(') ')
             self.accept(stmt.body)
             self.write('\n')
-
             continue
 
-          #log('-- %d', self.indent)
-          self.accept(stmt)
+          # Write body
+          if isinstance(stmt, FuncDef):
+            self.accept(stmt)
 
-        # Now write member defs
-        for name in sorted(self.member_vars):
-          c_type = get_c_type(self.member_vars[name])
-          self.write_ind('%s %s;\n', c_type, name)
-
-        self.indent -= 1
-        self.write_ind('};\n\n')
+        self.current_class_name = None   # Stop prefixing functions with class
 
     def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
         pass
@@ -811,6 +874,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
+        if self.decl:  # No duplicate 'using'
+          return
 
         if o.id in ('__future__', 'typing'):
           return  # do nothing

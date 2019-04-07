@@ -54,6 +54,21 @@ def get_mypy_config(paths: List[str],
     return sources, options
 
 
+def ModulesToCompile(result, mod_names):
+  for name, module in result.files.items():
+    # Only translate files that were mentioned on the command line
+    suffix = name.split('.')[-1]
+    if suffix not in mod_names:
+      continue
+
+    # Why do I get oil.asdl.tdop in addition to asdl.tdop?
+    # I also get oil.asdl.typed_arith_parse?  Doesn't make sense?
+    if name == 'asdl.tdop':
+      continue
+
+    yield name, module
+
+
 def main(argv):
   # TODO: Put these in the shell script
   mypy_options = [
@@ -67,8 +82,9 @@ def main(argv):
   mod_names = [os.path.splitext(name)[0] for name in mod_names]
 
   sources, options = get_mypy_config(paths, mypy_options)
-  log('sources %s', sources)
-  log('options %s', sources)
+  for source in sources:
+    log('sources %s', source)
+  log('options %s', options)
 
   #result = emitmodule.parse_and_typecheck(sources, options)
   import time
@@ -103,10 +119,8 @@ def main(argv):
     state = result.graph[name]
 
   # Print the tree for debugging
-  if 1:
-    for name, module in result.files.items():
-      #print(name)
-
+  if 0:
+    for name, module in ModulesToCompile(result, mod_names):
       builder = debug_pass.Print(result.types)
       builder.visit_mypy_file(module)
 
@@ -114,39 +128,29 @@ def main(argv):
   # strings together.  And have globally unique IDs str0, str1, ... strN.
   const_lookup = {}
   const_code = []
-  p1 = const_pass.Collect(result.types, const_lookup, const_code)
+  pass1 = const_pass.Collect(result.types, const_lookup, const_code)
 
-  for name, module in result.files.items():
-    # Only translate files that were mentioned on the command line
-    suffix = name.split('.')[-1]
-    if suffix not in mod_names:
-      continue
-    p1.visit_mypy_file(module)
+  for name, module in ModulesToCompile(result, mod_names):
+    pass1.visit_mypy_file(module)
 
   # Collect constants and then emit code.
   f = sys.stdout
 
-  # Instead of top-level code, should we generate a function and call it
-  # from main?
+  # Instead of top-level code, should we generate a function and call it from
+  # main?
   for line in const_code:
     f.write('%s\n' % line)
   f.write('\n')
 
-  for name, module in result.files.items():
-    # Only translate files that were mentioned on the command line
-    suffix = name.split('.')[-1]
-    if suffix not in mod_names:
-      continue
-
-    log('*** name = %s', name)
-
-    # Why do I get oil.asdl.tdop in addition to asdl.tdop?
-    # I also get oil.asdl.typed_arith_parse?  Doesn't make sense?
-
-    if name == 'asdl.tdop':
-      continue
-    p2 = cppgen_pass.Generate(result.types, const_lookup, f)
+  # First generate ALL C++ declarations / "headers".
+  for name, module in ModulesToCompile(result, mod_names):
+    p2 = cppgen_pass.Generate(result.types, const_lookup, f, decl=True)
     p2.visit_mypy_file(module)
+
+  # Now the definitions / implementations.
+  for name, module in ModulesToCompile(result, mod_names):
+    p3 = cppgen_pass.Generate(result.types, const_lookup, f)
+    p3.visit_mypy_file(module)
 
 
 if __name__ == '__main__':

@@ -238,8 +238,10 @@ compile-control_flow() { compile control_flow; }
 
 run-example() {
   local name=$1
-  translate $name
-  compile $name
+
+  # translate-modules and compile-modules are DIFFERENT.
+  translate-$name
+  compile-$name
 
   echo
   echo $'\t[ C++ ]'

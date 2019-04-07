@@ -11,16 +11,6 @@ from testpkg import module1
 from testpkg.module2 import func2
 
 
-class Dog(object):
-  def __init__(self, color):
-    # type: (str) -> None
-    self.color = color
-
-  def Speak(self):
-    # type: () -> None
-    log('%s dog: meow', self.color)
-
-
 def run_tests():
   # type: () -> None
   module1.func1()
@@ -42,6 +32,17 @@ def run_benchmarks():
     result += module1.fortytwo()
     i = i + 1
   log('result = %d', result)
+
+
+# This is at the bottom to detect order.
+class Dog(object):
+  def __init__(self, color):
+    # type: (str) -> None
+    self.color = color
+
+  def Speak(self):
+    # type: () -> None
+    log('%s dog: meow', self.color)
 
 
 if __name__ == '__main__':
