@@ -1,0 +1,15 @@
+module expr {
+
+id = 
+    Const
+  | Var
+  | Op1
+  | Op2
+  | Paren
+  | Eof
+
+expr = 
+    Const(int i)
+  | Var(string name) 
+  | Binary(string op, expr left, expr right)
+}

@@ -1,1 +1,3 @@
+from typing import Optional
+
 def getenv(name: str) -> Optional[str]: ...

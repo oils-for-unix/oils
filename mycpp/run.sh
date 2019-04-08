@@ -172,6 +172,37 @@ translate-containers() { translate containers; }
 translate-control_flow() { translate control_flow; }
 translate-asdl() { translate asdl; }
 
+asdl-gen() { PYTHONPATH=$REPO_ROOT $REPO_ROOT/core/asdl_gen.py "$@"; }
+mypy() { ~/.local/bin/mypy "$@"; }
+
+# build ASDL schema and run it
+run-python-parse() {
+  mkdir -p _gen
+  local out=_gen/expr_asdl.py
+  touch _gen/__init__.py
+  asdl-gen mypy examples/expr.asdl > $out
+
+  mypy --py2 --strict examples/parse.py
+
+  # NOTE: There is an example called asdl.py!
+  PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT" examples/parse.py
+}
+
+run-cc-parse() {
+  mkdir -p _gen
+  local out=_gen/expr.asdl.h
+  touch _gen/__init__.py
+  asdl-gen cpp examples/expr.asdl > $out
+
+  # _gen/parse.cc
+
+  # Like mypy, mycpp runs using Python 3!  We need its virtualenv.
+  . _tmp/mycpp-venv/bin/activate
+  translate-parse
+
+  # Now compile it
+}
+
 
 readonly PREPARE_DIR=$PWD/../_devbuild/cpython-full
 

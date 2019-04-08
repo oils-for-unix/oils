@@ -84,7 +84,7 @@ def main(argv):
   sources, options = get_mypy_config(paths, mypy_options)
   for source in sources:
     log('sources %s', source)
-  log('options %s', options)
+  #log('options %s', options)
 
   #result = emitmodule.parse_and_typecheck(sources, options)
   import time
