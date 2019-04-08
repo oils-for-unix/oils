@@ -28,12 +28,21 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
+
 readonly MYPY_REPO=~/git/languages/mypy
+
+source $REPO_ROOT/test/common.sh  # for R_PATH
 
 banner() {
   echo -----
   echo "$@"
   echo -----
+}
+
+time-tsv() {
+  $REPO_ROOT/benchmarks/time.py --tsv "$@"
 }
 
 create-venv() {
@@ -161,6 +170,7 @@ translate-cartesian() { translate cartesian; }
 translate-parse() { translate parse; }  # classes!
 translate-containers() { translate containers; }
 translate-control_flow() { translate control_flow; }
+translate-asdl() { translate asdl; }
 
 
 readonly PREPARE_DIR=$PWD/../_devbuild/cpython-full
@@ -235,6 +245,7 @@ compile-cartesian() { compile cartesian; }
 compile-parse() { compile parse; }
 compile-containers() { compile containers; }
 compile-control_flow() { compile control_flow; }
+compile-asdl() { compile asdl; }
 
 run-example() {
   local name=$1
@@ -315,22 +326,39 @@ test-all() {
 }
 
 benchmark-all() {
-  #build-all
+  # TODO: change this to iterations
+  # BENCHMARK_ITERATIONS=1
 
-  # Compare the two
   export BENCHMARK=1
+
+  local out=_tmp/mycpp-examples.tsv
+
+  # Create a new TSV file every time, and then append rows to it.
+
+  # TODO:
+  # - time.py should have a --header flag to make this more readable?
+  # - More columns: -O1 -O2 -O3, machine, iterations of benchmark.
+  echo $'status\tseconds\texample_name\tlanguage' > $out
+
   for name in "${EXAMPLES[@]}"; do
     banner $name
 
     echo
     echo $'\t[ C++ ]'
-    time _bin/$name
+    time-tsv -o $out --field $name --field 'C++' -- _bin/$name
 
     echo
     echo $'\t[ Python ]'
-    time examples/${name}.py
+    time-tsv -o $out --field $name --field 'Python' -- examples/${name}.py
   done
+
+  cat $out
 }
+
+report() {
+  R_LIBS_USER=$R_PATH ./examples.R report _tmp "$@"
+}
+
 
 #
 # Utilities
