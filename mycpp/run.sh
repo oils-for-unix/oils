@@ -14,6 +14,10 @@
 #
 #   $ git submodule init
 #   $ git submodule update
+#
+# If you don't have Python 3.6, then build one from a source tarball and then
+# install it.  (NOTE: mypyc tests require the libsqlite3-dev dependency.  
+# It's probably not necessary for running mycpp.)
 # 
 # Afterwards, these commands should work:
 #
@@ -62,7 +66,8 @@ mypy-deps() {
 # MyPy doesn't have a configuration option for this!  It's always an env
 # variable.
 export MYPYPATH=~/git/oilshell/oil
-export PYTHONPATH=".:$MYPY_REPO"
+# for running most examples
+export PYTHONPATH=".:$REPO_ROOT/vendor"
 
 # Damn it takes 4.5 seconds to analyze.
 translate-osh-parse() {
@@ -74,26 +79,29 @@ translate-osh-parse() {
   time ./mycpp.py $main
 }
 
-# 1.5 seconds.  Still more than I would have liked!
-translate-many() {
+# Has some hard-coded stuff
+translate-ordered() {
   local name=$1
-  shift
+  local snippet=$2
+  shift 2
 
   local raw=_gen/${name}_raw.cc
   local out=_gen/${name}.cc
 
-  time ./mycpp.py "$@" > $raw
+  ( source _tmp/mycpp-venv/bin/activate
+    time PYTHONPATH=$MYPY_REPO ./mycpp.py "$@" > $raw
+  )
 
-  # TODO: include tdop.h too?
   {
-    echo '#include "typed_arith.asdl.h"'
+    echo "$snippet"
     filter-cpp $name $raw 
   } > $out
 
   wc -l _gen/*
 }
 
-translate-typed-arith() {
+# NOTE: Needs 'asdl/run.sh gen-cpp-demo' first
+translate-compile-typed-arith() {
   # tdop.py is a dependency.  How do we determine order?
   #
   # I guess we should put them in arbitrary order.  All .h first, and then all
@@ -102,10 +110,9 @@ translate-typed-arith() {
   # NOTE: tdop.py doesn't translate because of the RE module!
 
   local srcs=( $PWD/../asdl/tdop.py $PWD/../asdl/typed_arith_parse.py )
-  #local srcs=( $PWD/../asdl/typed_arith_parse.py )
 
   local name=typed_arith_parse
-  translate-many $name "${srcs[@]}"
+  translate-ordered $name '#include "typed_arith.asdl.h"' "${srcs[@]}"
 
   cc -o _bin/$name $CPPFLAGS \
     -I . -I ../_tmp \
@@ -136,11 +143,8 @@ int main(int argc, char **argv) {
 EOF
 }
 
-# 1.1 seconds
-translate() {
+_translate-example() {
   local name=${1:-fib}
-  local include_snippet=${2:-}
-
   local main="examples/$name.py"
 
   mkdir -p _gen
@@ -148,13 +152,13 @@ translate() {
   local raw=_gen/${name}_raw.cc
   local out=_gen/${name}.cc
 
-  time ./mycpp.py $main > $raw
+  # NOTE: mycpp has to be run in the virtualenv, as well as with a different
+  # PYTHONPATH.
+  time PYTHONPATH=$MYPY_REPO ./mycpp.py $main > $raw
   wc -l $raw
 
   local main_module=$(basename $main .py)
-  { echo "$include_snippet"
-    filter-cpp $main_module $raw 
-  } > $out
+  filter-cpp $main_module $raw > $out
 
   wc -l _gen/*
 
@@ -162,26 +166,38 @@ translate() {
   cat $out
 }
 
+translate-example() {
+  # Allow overriding the default.
+  # translate-modules and compile-modules are DIFFERENT.
+  if test "$(type -t translate-$name)" = "function"; then
+    translate-$name
+  else
+    _translate-example $name
+  fi
+}
+
 EXAMPLES=( $(cd examples && echo *.py) )
 EXAMPLES=( "${EXAMPLES[@]//.py/}" )
 
-translate-fib_iter() { translate fib_iter; }
-translate-fib_recursive() { translate fib_recursive; }
-translate-cgi() { translate cgi; }
-translate-escape() { translate escape; }
-translate-length() { translate length; }
-translate-cartesian() { translate cartesian; }
-translate-containers() { translate containers; }
-translate-control_flow() { translate control_flow; }
-translate-asdl() { translate asdl; }
+asdl-gen() {
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/core/asdl_gen.py "$@"
+}
+
+# This is the one installed from PIP
+#mypy() { ~/.local/bin/mypy "$@"; }
+
+# Use repo in the virtualenv
+mypy() {
+  ( source _tmp/mycpp-venv/bin/activate
+    PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
+  )
+}
 
 # classes and ASDL
 translate-parse() {
-  translate parse '#include "expr.asdl.h"'
+  translate-ordered parse '#include "expr.asdl.h"' \
+    $REPO_ROOT/asdl/format.py examples/parse.py 
 } 
-
-asdl-gen() { PYTHONPATH=$REPO_ROOT $REPO_ROOT/core/asdl_gen.py "$@"; }
-mypy() { ~/.local/bin/mypy "$@"; }
 
 # build ASDL schema and run it
 run-python-parse() {
@@ -192,22 +208,15 @@ run-python-parse() {
 
   mypy --py2 --strict examples/parse.py
 
-  # NOTE: There is an example called asdl.py!
-  PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT" examples/parse.py
+  PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/parse.py
 }
 
 run-cc-parse() {
   mkdir -p _gen
   local out=_gen/expr.asdl.h
-  touch _gen/__init__.py
   asdl-gen cpp examples/expr.asdl > $out
 
-  # _gen/parse.cc
-
-  # Like mypy, mycpp runs using Python 3!  We need its virtualenv.
-  . _tmp/mycpp-venv/bin/activate
   translate-parse
-
   # Now compile it
 }
 
@@ -247,13 +256,13 @@ modules-deps() {
 translate-modules() {
   local raw=_gen/modules_raw.cc
   local out=_gen/modules.cc
-  ./mycpp.py testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
+
+  ( source _tmp/mycpp-venv/bin/activate
+    PYTHONPATH=$MYPY_REPO ./mycpp.py \
+      testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
+  )
   filter-cpp modules $raw > $out
   wc -l $raw $out
-}
-
-compile-modules() {
-  compile modules
 }
 
 # fib_recursive(35) takes 72 ms without optimization, 20 ms with optimization.
@@ -263,7 +272,7 @@ compile-modules() {
 
 CPPFLAGS='-O2 -std=c++11 '
 
-compile() { 
+_compile-example() { 
   local name=${1:-fib} #  name of output, and maybe input
   local src=${2:-_gen/$name.cc}
 
@@ -275,16 +284,15 @@ compile() {
     runtime.cc $src -lstdc++
 }
 
-compile-fib_iter() { compile fib_recursive; }
-compile-fib_recursive() { compile fib_recursive; }
-compile-cgi() { compile cgi; }
-compile-escape() { compile escape; }
-compile-length() { compile length; }
-compile-cartesian() { compile cartesian; }
-compile-containers() { compile containers; }
-compile-control_flow() { compile control_flow; }
-compile-asdl() { compile asdl; }
+compile-example() {
+  if test "$(type -t compile-$name)" = "function"; then
+    compile-$name
+  else
+    _compile-example $name
+  fi
+}
 
+# Because it depends on ASDL
 compile-parse() {
   compile parse '' -I _gen
 }
@@ -292,9 +300,8 @@ compile-parse() {
 run-example() {
   local name=$1
 
-  # translate-modules and compile-modules are DIFFERENT.
-  translate-$name
-  compile-$name
+  translate-example $name
+  compile-example $name
 
   echo
   echo $'\t[ C++ ]'
@@ -309,8 +316,6 @@ benchmark() {
   export BENCHMARK=1
   run-example "$@"
 }
-
-benchmark-fib_iter() { benchmark fib_iter; }
 
 # fib_recursive(33) - 1083 ms -> 12 ms.  Biggest speedup!
 benchmark-fib_recursive() { benchmark fib_recursive; }
@@ -348,40 +353,54 @@ benchmark-parse() {
   # TODO: Consolidate this with the above.
   # We need 'asdl'
   export PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT"
+
   echo
   echo $'\t[ Python ]'
   time examples/${name}.py
 }
 
+should-skip() {
+  case $1 in
+    # not passing yet!
+    # parse needs asdl/format.py, and the other 3 are testing features it
+    # uses.
+    parse|loops|files|classes)
+      return 0
+      ;;
+    *)
+      return 1
+  esac
+}
+
 
 build-all() {
+  rm -v -f _bin/* _gen/*
   for name in "${EXAMPLES[@]}"; do
-    case $name in
-      # These two have special instructions
-      modules|parse)
-        translate-$name
-        compile-$name
-        ;;
-      *)
-        translate $name
-        compile $name
-        ;;
-    esac
+    if should-skip $name; then
+      continue
+    fi
+
+    translate-example $name
+    compile-example $name
   done
 }
 
 test-all() {
-  #build-all
-
   mkdir -p _tmp
 
-  # TODO: Compare output for golden!
   time for name in "${EXAMPLES[@]}"; do
-    banner $name
+    if should-skip $name; then
+      echo "  (skipping $name)"
+      continue
+    fi
+
+    echo -n $name
 
     examples/${name}.py > _tmp/$name.python.txt 2>&1
     _bin/$name > _tmp/$name.cpp.txt 2>&1
     diff -u _tmp/$name.{python,cpp}.txt
+
+    echo $'\t\t\tOK'
   done
 }
 

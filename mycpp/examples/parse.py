@@ -5,11 +5,19 @@ parse.py
 from __future__ import print_function
 
 import os
+import sys
+
+# PYTHONPATH=$REPO_ROOT/vendor
 from typing import Tuple, Optional
+
+# PYTHONPATH=$REPO_ROOT/mycpp
 from runtime import log
 from _gen.expr_asdl import (
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )
+
+# PYTHONPATH=$REPO_ROOT
+from asdl import format as fmt
 
 
 class Lexer(object):
@@ -175,6 +183,12 @@ def run_tests():
       continue
 
     log('%s', tree)
+
+    pretty_tree = tree.AbbreviatedTree()
+    #ast_f = fmt.TextOutput(sys.stdout)
+    ast_f = fmt.AnsiOutput(sys.stdout)
+    fmt.PrintTree(pretty_tree, ast_f)
+    ast_f.write('\n')
 
 
 def run_benchmarks():

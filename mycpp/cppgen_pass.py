@@ -50,20 +50,7 @@ def get_c_type(t):
     elif type_name == 'builtins.list':
       assert len(t.args) == 1, t.args
       type_param = t.args[0]
-
-      # TODO: Make recursive call
-
-      type_param_name = type_param.type.fullname()
-      if type_param_name == 'builtins.int':
-        inner_c_type = 'int'
-      elif type_param_name == 'builtins.bool':
-        inner_c_type = 'bool'
-      elif type_param_name == 'builtins.str':
-        inner_c_type = 'Str*'  # TODO: write this!
-      else:
-        # e.g. List<token*>
-        inner_c_type = '%s*' % type_param.type.name()
-
+      inner_c_type = get_c_type(type_param)
       c_type = 'List<%s>*' % inner_c_type
 
     else:
@@ -725,11 +712,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.expr)  # the thing being iterated over
         self.write('); !it.Done(); it.Next()) {\n')
 
-        c_item_type = get_c_type(o.inferred_item_type)
+        if isinstance(o.inferred_item_type, Instance):
+          c_item_type = get_c_type(o.inferred_item_type)
 
-        self.write_ind('  %s ', c_item_type)
-        self.accept(o.index)  # index var expression
-        self.write(' = it.Value();\n')
+          self.write_ind('  %s ', c_item_type)
+          self.accept(o.index)  # index var expression
+          self.write(' = it.Value();\n')
+        elif isinstance(o.inferred_item_type, TupleType):
+          raise NotImplementedError
 
         # Copy of visit_block, without opening {
         self.indent += 1
@@ -907,17 +897,29 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Later we need to turn module.func() into module::func(), without
         # disturbing self.foo.
         for name, alias in o.names:
-          assert alias is None, (name, alias)
-          self.imported_names.add(name)
+          if alias:
+            self.imported_names.add(alias)
+          else:
+            self.imported_names.add(name)
 
         # A heuristic that works for the OSH import style.
         #
         # from core.util import log => using core::util::log
         # from core import util => NOT translated
-        if '.' in o.id:
-          mod_name = o.id.split('.')[-1]
-          for name, alias in o.names:
+
+        for name, alias in o.names:
+          if '.' in o.id:
+            #   from _devbuild.gen.id_kind_asdl import Id
+            # -> using id_kind_asdl::Id.
+            mod_name = o.id.split('.')[-1]
             self.write_ind('using %s::%s;\n', mod_name, name)
+          else:
+            #    from asdl import format as fmt
+            # -> namespace fmt = format;
+            if alias:
+              self.write_ind('namespace %s = %s;\n', alias, name)
+            # If we're importing a module without an alias, we don't need to do
+            # anything.  'namespace cmd_exec' is already defined.
 
         # Old scheme
         # from testpkg import module1 =>
