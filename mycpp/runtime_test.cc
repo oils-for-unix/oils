@@ -8,9 +8,31 @@ void test_str_to_int() {
   int i;
   bool ok;
  
-  ok = str_to_int(new Str("3"), &i);
+  ok = str_to_int(new Str("345"), &i);
   assert(ok);
-  assert(i == 3);
+  assert(i == 345);
+
+  // TODO: Is there a way to check for overflow?
+  // strtol returns 'long int'.
+  ok = str_to_int(new Str("1234567890"), &i);
+  assert(ok);
+  log("i = %d", i);
+  assert(i == 1234567890);
+
+  // negative
+  ok = str_to_int(new Str("-123"), &i);
+  assert(ok);
+  assert(i == -123);
+
+  // Leading space is OK!
+  ok = str_to_int(new Str(" -123"), &i);
+  assert(ok);
+  assert(i == -123);
+
+  // Trailing space is OK!  NOTE: This fails!
+  ok = str_to_int(new Str(" -123  "), &i);
+  assert(ok);
+  assert(i == -123);
 
   // Empty string isn't an integer
   ok = str_to_int(new Str(""), &i);

@@ -281,6 +281,6 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 //inline int len(Dict* D) {
 //}
 
-bool str_to_int(Str* s, int* result);
+int str_to_int(Str* s);
 
 #endif  // RUNTIME_H

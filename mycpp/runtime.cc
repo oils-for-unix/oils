@@ -1,6 +1,7 @@
 // runtime.cc
 
 #include <assert.h>
+#include <exception>  // std::exception
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
@@ -152,15 +153,38 @@ Str* str_concat(Str* a, Str* b) {
   return new Str(buf, new_len);
 }
 
-// Like atoi, but with basic (not exhaustive) error checking.
-bool str_to_int(Str* s, int* result) {
+// Helper for str_to_int() that doesn't use exceptions.
+// Like atoi(), but with better error checking.
+bool _str_to_int(Str* s, int* result) {
   if (s->len_ == 0) {
     return false;  // special case for empty string
   }
 
-  char* end;  // mutated by strtol
-  *result = strtol(s->data_, &end, 10);  // base 10
+  char* p;  // mutated by strtol
+  *result = strtol(s->data_, &p, 10);  // base 10
 
-  // Return true iff it consumed ALL characters.
-  return end == (s->data_ + s->len_);
+  // Return true if it consumed ALL characters.
+  const char* end = s->data_ + s->len_;
+  if (p == end) {
+    return true;
+  }
+
+  // Trailing space is OK!
+  while (p < end) {
+    if (!isspace(*p)) {
+      return false;
+    }
+    p++;
+  }
+  return true;
+}
+
+// Python-like wrapper
+int str_to_int(Str* s) {
+  int i;
+  if (_str_to_int(s, &i)) {
+    return i;
+  } else {
+    throw std::exception();  // TODO: should be ValueError
+  }
 }

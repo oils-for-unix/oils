@@ -162,6 +162,7 @@ def run_tests():
     log('--')
     log('%s =>', expr)
 
+    tree = None  # type: expr_t
     try:
       tree = p.Parse()
     except ParseError as e:

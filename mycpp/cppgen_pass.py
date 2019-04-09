@@ -313,11 +313,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
-        # TODO:
-        # if not isinstance(right, (arith_expr.Var, arith_expr.Index)):
-        # We need to look at the tag?
-
         if o.callee.name == 'isinstance':
+          # TODO:
+          # if not isinstance(right, (arith_expr.Var, arith_expr.Index)):
+          # We need to look at the tag?
           self.write('isinstance(TODO)')
           return
 
@@ -342,7 +341,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               o.callee.name == ret_type.type.name():
             self.write('new ')
 
-        self.accept(o.callee)  # could be f() or obj.method()
+        if o.callee.name == 'int':  # int('foo') in Python conflicts with keyword
+          self.write('str_to_int')
+        else:
+          self.accept(o.callee)  # could be f() or obj.method()
+
         self.write('(')
         for i, arg in enumerate(o.args):
           if i != 0:
