@@ -69,8 +69,8 @@ from _devbuild.gen.syntax_asdl import (
 # TODO: rename word -> osh_word in syntax.asdl
 from _devbuild.gen.syntax_asdl import word as osh_word
 
-from core import util
 from core.meta import LookupKind
+from core.util import p_die, log
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse
@@ -83,9 +83,6 @@ if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
   from frontend.reader import _Reader
-
-p_die = util.p_die
-log = util.log
 
 
 class WordParser(object):

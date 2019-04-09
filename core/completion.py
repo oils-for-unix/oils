@@ -43,18 +43,16 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from core import ui
 from core import util
+from core.util import log
 from core.meta import Id, REDIR_ARG_TYPES
 from frontend import reader
 from pylib import os_path
 from pylib import path_stat
 from osh import word
 from osh import state
-from osh import string_ops
+from osh.string_ops import ShellQuoteB
 
 import libc
-
-log = util.log
-ShellQuoteB = string_ops.ShellQuoteB
 
 
 # To quote completion candidates.

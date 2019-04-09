@@ -34,6 +34,7 @@ from _devbuild.gen import syntax_asdl  # line_span
 from asdl import const
 from core import alloc
 from core import util
+from core.util import log, p_die
 from frontend import match
 from frontend import reader
 from osh import braces
@@ -47,9 +48,6 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext, AliasesInFlight
   from frontend.reader import _Reader
   from osh.word_parse import WordParser
-
-log = util.log
-p_die = util.p_die
 
 
 def _ReadHereLines(line_reader,  # type: _Reader

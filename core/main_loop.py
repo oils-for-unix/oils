@@ -20,6 +20,7 @@ from _devbuild.gen.syntax_asdl import command_t, command
 from _devbuild.gen.id_kind_asdl import Id
 from core import ui
 from core import util
+from core.util import log
 from osh import word
 
 from typing import Any, Optional, List, TYPE_CHECKING
@@ -28,8 +29,6 @@ if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   # commented out so --strict doesn't follow all
   #from osh.cmd_exec import Executor
-
-log = util.log
 
 
 def Interactive(opts, ex, c_parser, display, arena):

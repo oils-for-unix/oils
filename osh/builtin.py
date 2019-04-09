@@ -35,6 +35,7 @@ from _devbuild.gen.runtime_asdl import (
   lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e)
 from core import ui
 from core import util
+from core.util import log, e_die
 from core import pyutil
 from frontend import args
 from frontend import lex
@@ -48,9 +49,6 @@ from osh import word_compile
 import libc
 
 from typing import Dict
-
-log = util.log
-e_die = util.e_die
 
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.

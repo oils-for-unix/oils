@@ -11,12 +11,11 @@ from _devbuild.gen.runtime_asdl import redirect
 from osh import builtin
 from core import process  # module under test
 from core import util
+from core.util import log
 from core import test_lib
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
-
-log = util.log
 
 
 def Banner(msg):

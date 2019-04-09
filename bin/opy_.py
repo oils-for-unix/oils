@@ -9,11 +9,9 @@ import sys
 
 from frontend import args
 from core import pyutil
-from core import util
+from core.util import log
 
 from opy import opy_main
-
-log = util.log
 
 # TODO: move to quick ref?
 _OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'

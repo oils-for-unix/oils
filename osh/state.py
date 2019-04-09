@@ -21,13 +21,11 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import const
 from core import util
+from core.util import log, e_die
 from frontend import args
 from osh import split
 
 import libc
-
-log = util.log
-e_die = util.e_die
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".

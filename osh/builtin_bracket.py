@@ -9,13 +9,13 @@ from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import word, bool_expr
 
 from core import util
+from core.util import log, p_die
 from core import meta
 from core.meta import IdInstance
 
 from osh import expr_eval
 from osh import bool_parse
 
-log = util.log
 
 _UNARY_LOOKUP = meta.TEST_UNARY_LOOKUP
 _BINARY_LOOKUP = meta.TEST_BINARY_LOOKUP
@@ -76,7 +76,7 @@ def _TwoArgs(argv):
     # TODO:
     # - syntax error
     # - separate lookup by unary
-    util.p_die('Expected unary operator, got %r (2 args)', a0)
+    p_die('Expected unary operator, got %r (2 args)', a0)
   child = word.StringWord(Id.Word_Compound, a1)
   return bool_expr.BoolUnary(IdInstance(unary_id), child)
 
@@ -110,7 +110,7 @@ def _ThreeArgs(argv):
   if a0 == '(' and a2 == ')':
     return _StringWordTest(a1)
 
-  util.p_die('Syntax error: binary operator expected, got %r (3 args)', a1)
+  p_die('Syntax error: binary operator expected, got %r (3 args)', a1)
 
 
 def Test(argv, need_right_bracket):

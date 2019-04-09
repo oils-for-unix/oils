@@ -9,14 +9,12 @@ Instead of:
     var y = x -> sub( Glob/a*/, 'b', :ALL)  # maybe a glob literal
 """
 
-import libc
-
+from _devbuild.gen.id_kind_asdl import Id
 from core import util
-from core.meta import Id
+from core.util import log, e_die
 from osh import glob_
 
-log = util.log
-e_die = util.e_die
+import libc
 
 
 def Utf8Encode(code):

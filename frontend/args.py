@@ -58,9 +58,7 @@ However I don't see these used anywhere!  I only see ':' used.
 from __future__ import print_function
 
 import libc
-from core import util
-
-log = util.log
+from core.util import log
 
 
 class UsageError(Exception):

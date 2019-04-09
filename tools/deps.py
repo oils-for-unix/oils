@@ -9,11 +9,9 @@ import sys
 from _devbuild.gen.runtime_asdl import builtin_e
 from _devbuild.gen.syntax_asdl import command, command_e
 from asdl import runtime
-from core import util
+from core.util import log
 from osh import builtin
 from osh import word
-
-log = util.log
 
 
 # TODO: Move to asdl/visitor.py?

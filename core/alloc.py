@@ -13,7 +13,7 @@ Also, we don't want to save comment lines.
 
 from _devbuild.gen.syntax_asdl import line_span
 from asdl import const
-from core import util
+from core.util import log
 
 from typing import List, Tuple
 
@@ -93,7 +93,7 @@ class Arena(object):
     try:
       return self.spans[span_id]
     except IndexError:
-      util.log('Span ID out of range: %d is greater than %d', span_id,
+      log('Span ID out of range: %d is greater than %d', span_id,
           len(self.spans))
       raise
 

@@ -8,13 +8,11 @@ from _devbuild.gen.runtime_asdl import value_e
 from core import completion
 from core import ui
 from core import util
+from core.util import log
 from frontend import args
 from frontend import lex
 from osh import builtin
 from osh import state
-
-
-log = util.log
 
 
 def _DefineFlags(spec):

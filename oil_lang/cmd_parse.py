@@ -6,16 +6,14 @@ from __future__ import print_function
 
 import sys
 
-from core import util
 from core.meta import syntax_asdl, types_asdl, Id, Kind, LookupKind
+from core.util import p_die, log
 
 lex_mode_e = types_asdl.lex_mode_e
 oil_cmd = syntax_asdl.oil_cmd
 oil_word = syntax_asdl.oil_word
 oil_word_part = syntax_asdl.oil_word_part
 
-p_die = util.p_die
-log = util.log
 
 
 class OilParser(object):

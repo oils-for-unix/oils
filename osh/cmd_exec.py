@@ -37,6 +37,7 @@ from core import main_loop
 from core import process
 from core import ui
 from core import util
+from core.util import log, e_die
 from core import pyutil
 from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
@@ -55,9 +56,6 @@ try:
   import libc  # for fnmatch
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
-
-log = util.log
-e_die = util.e_die
 
 
 class _ControlFlow(RuntimeError):

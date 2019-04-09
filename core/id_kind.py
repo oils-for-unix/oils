@@ -14,13 +14,11 @@ build/codegen.sh lexer.
 from __future__ import print_function
 
 from _devbuild.gen.types_asdl import (bool_arg_type_e, bool_arg_type_t)
-from core import util
+from core.util import log
 
 from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
   from _devbuild.gen.id_kind_asdl import Id_t, Kind_t
-
-log = util.log
 
 
 class IdSpec(object):

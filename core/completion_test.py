@@ -20,12 +20,11 @@ from core import completion  # module under test
 from core import comp_ui
 from core import test_lib
 from core import util
+from core.util import log
 
 from frontend import parse_lib
 from osh import state
 from testdata.completion import bash_oracle
-
-log = util.log
 
 A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
 U1 = completion.UserSpec([A1], [], [], lambda candidate: True)

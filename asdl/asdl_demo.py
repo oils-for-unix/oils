@@ -11,9 +11,7 @@ from asdl import arith_parse
 from asdl import py_meta
 from asdl import format as fmt
 
-from core import util
-
-log = util.log
+from core.util import log
 
 
 def main(argv):

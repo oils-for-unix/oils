@@ -60,6 +60,7 @@ from core import process
 from core import pyutil
 from core import ui
 from core import util
+from core.util import log
 
 from oil_lang import cmd_exec as oil_cmd_exec
 
@@ -85,13 +86,11 @@ from tools import readlink
 
 import libc
 
-
 try:
   import line_input
 except ImportError:
   line_input = None
 
-log = util.log
 
 _tlog('after imports')
 

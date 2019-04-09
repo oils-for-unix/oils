@@ -15,15 +15,13 @@ from _devbuild.gen.runtime_asdl import (
 from core import process
 from core.meta import LookupKind
 from core import util
+from core.util import log, e_die
 from frontend import match
 from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import state
 from osh import word_compile
-
-log = util.log
-e_die = util.e_die
 
 
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().

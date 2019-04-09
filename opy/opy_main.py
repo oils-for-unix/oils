@@ -28,12 +28,10 @@ from .byterun import execfile
 from .byterun import ovm
 
 from frontend import args
-from core import util
+from core.util import log
 from core import pyutil
 
 from ovm2 import oheap2
-
-log = util.log
 
 
 # From lib2to3/pygram.py.  This takes the place of the 'symbol' module.

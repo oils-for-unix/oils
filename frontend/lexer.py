@@ -13,15 +13,13 @@ from _devbuild.gen.syntax_asdl import token, line_span
 from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.id_kind_asdl import Id_t, Id
 from asdl import const
-from core import util
+from core.util import log
 
 from typing import Callable, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.reader import _Reader
   from frontend.match import MatchFunc
-
-log = util.log
 
 
 def C(pat, tok_type):

@@ -8,13 +8,12 @@ from __future__ import print_function
 
 import sys
 
-from core.meta import Id
+from _devbuild.gen.id_kind_asdl import Id
 from core import util
+from core.util import log
 from frontend.match import HISTORY_LEXER
 from frontend import reader
 from osh import word
-
-log = util.log
 
 
 class Evaluator(object):

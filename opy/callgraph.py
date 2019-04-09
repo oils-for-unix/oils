@@ -14,8 +14,7 @@ import types
 from .lib import dis
 from .lib import inspect
 
-from core import util
-log = util.log
+from core.util import log
 
 
 def Disassemble(co):

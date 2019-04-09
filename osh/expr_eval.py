@@ -28,13 +28,10 @@ from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import const
 from core.meta import BOOL_ARG_TYPES
 from core import util
+from core.util import log, warn, e_die
 from core import ui
 from osh import state
 from osh import word
-
-log = util.log
-warn = util.warn
-e_die = util.e_die
 
 
 def _StringToInteger(s, span_id=const.NO_INTEGER):

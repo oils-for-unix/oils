@@ -7,7 +7,7 @@ from __future__ import print_function
 import posix
 
 from asdl import const
-from core import util
+from core.util import log
 from osh import word
 from pylib import os_path
 
@@ -132,4 +132,4 @@ class CrashDumper(object):
       import json
       json.dump(d, f, indent=2)
       #print(repr(d), file=f)
-    util.log('[%d] Wrote crash dump to %s', my_pid, path)
+    log('[%d] Wrote crash dump to %s', my_pid, path)
