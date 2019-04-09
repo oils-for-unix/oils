@@ -1,12 +1,13 @@
 module expr {
 
-id = 
+tok = 
     Const
   | Var
   | Op1
   | Op2
   | Paren
   | Eof
+  | Invalid
 
 expr = 
     Const(int i)

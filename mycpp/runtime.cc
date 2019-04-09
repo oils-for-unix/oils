@@ -152,3 +152,15 @@ Str* str_concat(Str* a, Str* b) {
   return new Str(buf, new_len);
 }
 
+// Like atoi, but with basic (not exhaustive) error checking.
+bool str_to_int(Str* s, int* result) {
+  if (s->len_ == 0) {
+    return false;  // special case for empty string
+  }
+
+  char* end;  // mutated by strtol
+  *result = strtol(s->data_, &end, 10);  // base 10
+
+  // Return true iff it consumed ALL characters.
+  return end == (s->data_ + s->len_);
+}

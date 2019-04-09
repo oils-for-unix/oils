@@ -4,6 +4,7 @@
 #define RUNTIME_H
 
 #include <assert.h>
+#include <ctype.h>  // isalpha(), isdigit()
 #include <stddef.h>  // size_t
 #include <stdlib.h>  // malloc
 #include <string.h>  // strlen
@@ -71,6 +72,28 @@ class Str {
   }
   bool endswith(Str* s) {
     assert(false);
+    return true;
+  }
+  bool isdigit() {
+    if (len_ == 0) {
+      return false;  // special case
+    }
+    for (int i = 0; i < len_; ++i) {
+      if (! ::isdigit(data_[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  bool isalpha() {
+    if (len_ == 0) {
+      return false;  // special case
+    }
+    for (int i = 0; i < len_; ++i) {
+      if (! ::isalpha(!data_[i])) {
+        return false;
+      }
+    }
     return true;
   }
 
@@ -258,5 +281,6 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 //inline int len(Dict* D) {
 //}
 
+bool str_to_int(Str* s, int* result);
 
 #endif  // RUNTIME_H

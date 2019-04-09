@@ -30,7 +30,7 @@ def get_c_type(t):
     return 'void'
 
   if isinstance(t, AnyType):
-    return 'Obj'  # TODO: define Obj?
+    return 'Any'  # TODO: This is a problem!
 
   # TODO: It seems better not to check for string equality, but that's what
   # mypyc/genops.py does?
@@ -72,8 +72,22 @@ def get_c_type(t):
       # NOTE: It would be nice to leave off the namespace if we're IN that
       # namespace.  But that is cosmetic.
 
+      # Check base class for runtime.SimpleObj so we can output
+      # expr_asdl::tok_t instead of expr_asdl::tok_t*.  That is a enum, while
+      # expr_t is a "regular base class".
+      # NOTE: Could we avoid the typedef?  If it's SimpleObj, just generate
+      # tok_e instead?
+
+      base_class_names = [b.type.fullname() for b in t.type.bases]
+      #log('** base_class_names %s', base_class_names)
+      # not sure why this isn't runtime.SimpleObj
+      if 'asdl.runtime.SimpleObj' in base_class_names:
+        is_pointer = ''
+      else:
+        is_pointer = '*'
+
       parts = t.type.fullname().split('.')
-      c_type = '%s::%s*' % (parts[-2], parts[-1])
+      c_type = '%s::%s%s' % (parts[-2], parts[-1], is_pointer)
 
   elif isinstance(t, UninhabitedType):
     # UninhabitedType has a NoReturn flag
@@ -667,14 +681,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Now unpack
           i = 0
           for lval_item, item_type in zip(lval.items, rvalue_type.items):
-            self.log('*** %s :: %s', lval_item, item_type)
-            assert isinstance(lval_item, NameExpr), lval_item
+            #self.log('*** %s :: %s', lval_item, item_type)
+            if isinstance(lval_item, NameExpr):
+              # TODO:
+              # - check if it's self.local_vars, then we don't need the
+              # declaration.
+              item_c_type = get_c_type(item_type)
+              self.write_ind('%s %s', item_c_type, lval_item.name)
+            else:
+              # Could be MemberExpr like self.foo, self.bar = baz
+              self.write_ind('')
+              self.accept(lval_item)
 
-            item_c_type = get_c_type(item_type)
-            self.write_ind(
-                '%s %s = %s->at%d();\n', item_c_type, lval_item.name, temp_name,
-                i)
-
+            self.write(' = %s->at%d();\n', temp_name, i)  # RHS
             i += 1
 
         else:

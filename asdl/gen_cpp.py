@@ -108,6 +108,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
     self._EmitEnum(sum, name, depth)
+    # type alias to match Python code
+    self.Emit('typedef %s_e %s_t;' % (name, name), depth)
 
   def VisitCompoundSum(self, sum, name, depth):
     # This is a sign that Python needs string interpolation!!!

@@ -139,6 +139,8 @@ EOF
 # 1.1 seconds
 translate() {
   local name=${1:-fib}
+  local include_snippet=${2:-}
+
   local main="examples/$name.py"
 
   mkdir -p _gen
@@ -150,7 +152,9 @@ translate() {
   wc -l $raw
 
   local main_module=$(basename $main .py)
-  filter-cpp $main_module $raw > $out
+  { echo "$include_snippet"
+    filter-cpp $main_module $raw 
+  } > $out
 
   wc -l _gen/*
 
@@ -167,10 +171,14 @@ translate-cgi() { translate cgi; }
 translate-escape() { translate escape; }
 translate-length() { translate length; }
 translate-cartesian() { translate cartesian; }
-translate-parse() { translate parse; }  # classes!
 translate-containers() { translate containers; }
 translate-control_flow() { translate control_flow; }
 translate-asdl() { translate asdl; }
+
+# classes and ASDL
+translate-parse() {
+  translate parse '#include "expr.asdl.h"'
+} 
 
 asdl-gen() { PYTHONPATH=$REPO_ROOT $REPO_ROOT/core/asdl_gen.py "$@"; }
 mypy() { ~/.local/bin/mypy "$@"; }
@@ -273,10 +281,13 @@ compile-cgi() { compile cgi; }
 compile-escape() { compile escape; }
 compile-length() { compile length; }
 compile-cartesian() { compile cartesian; }
-compile-parse() { compile parse; }
 compile-containers() { compile containers; }
 compile-control_flow() { compile control_flow; }
 compile-asdl() { compile asdl; }
+
+compile-parse() {
+  compile parse '' -I _gen
+}
 
 run-example() {
   local name=$1
@@ -329,9 +340,10 @@ benchmark-control_flow() { benchmark control_flow; }
 build-all() {
   for name in "${EXAMPLES[@]}"; do
     case $name in
-      modules)
-        translate-modules
-        compile-modules
+      # These two have special instructions
+      modules|parse)
+        translate-$name
+        compile-$name
         ;;
       *)
         translate $name
@@ -407,9 +419,10 @@ count() {
 
 cpp-compile-run() {
   local name=$1
+  shift
 
   mkdir -p _bin
-  cc -o _bin/$name $CPPFLAGS -I . $name.cc -lstdc++
+  cc -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++
   _bin/$name
 }
 
@@ -422,7 +435,7 @@ heap() {
 }
 
 runtime-test() {
-  cpp-compile-run runtime_test
+  cpp-compile-run runtime_test runtime.cc
 }
 
 gen-ctags() {

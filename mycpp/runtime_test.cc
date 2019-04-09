@@ -1,14 +1,27 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // vprintf
+#include <assert.h>
 
 #include "runtime.h"
 
-void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-  printf("\n");
+void test_str_to_int() {
+  int i;
+  bool ok;
+ 
+  ok = str_to_int(new Str("3"), &i);
+  assert(ok);
+  assert(i == 3);
+
+  // Empty string isn't an integer
+  ok = str_to_int(new Str(""), &i);
+  assert(!ok);
+
+  ok = str_to_int(new Str("xx"), &i);
+  assert(!ok);
+
+  // Trailing garbage
+  ok = str_to_int(new Str("42a"), &i);
+  assert(!ok);
 }
 
 int main(int argc, char **argv) {
@@ -45,4 +58,6 @@ int main(int argc, char **argv) {
   log("t4[1] = %s", t4->at1()->data_);
   log("t4[2] = %s", t4->at2()->data_);
   log("t4[3] = %d", t4->at3());
+
+  test_str_to_int();
 }

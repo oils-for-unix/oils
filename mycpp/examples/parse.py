@@ -8,7 +8,7 @@ import os
 from typing import Tuple
 from runtime import log
 from _gen.expr_asdl import (
-    expr_t, expr__Var, expr__Const, expr__Binary, id_e, id_t
+    expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )
 
 
@@ -22,31 +22,37 @@ class Lexer(object):
     self.n = len(s)
 
   def Read(self):
-    # type: () -> Tuple[id_t, str]
+    # type: () -> Tuple[tok_t, str]
     if self.i >= self.n:
-      return id_e.Eof, ''  # sentinel
+      return tok_e.Eof, ''  # sentinel
 
     tok = self.s[self.i]
     self.i += 1
 
     if tok.isdigit():
-      return id_e.Const, tok
+      return tok_e.Const, tok
     if tok.isalpha():
-      return id_e.Var, tok
+      return tok_e.Var, tok
     if tok in '+-':
-      return id_e.Op1, tok  # lower precedence
+      return tok_e.Op1, tok  # lower precedence
     if tok in '*/':
-      return id_e.Op2, tok  # higher precedence
+      return tok_e.Op2, tok  # higher precedence
     if tok in '()':
-      return id_e.Paren, tok
+      return tok_e.Paren, tok
 
-    raise AssertionError()
+    return tok_e.Invalid, tok
 
   def _MethodCallingOtherMethod(self):
     # type: () -> None
     # Make sure we don't get a member var called Read!
     # This is easy because we're only checking assignment statements.
     self.Read()
+
+
+class ParseError(Exception):
+  def __init__(self, msg):
+    # type: (str) -> None
+    self.msg = msg
 
 
 class Parser(object):
@@ -63,7 +69,7 @@ class Parser(object):
   def __init__(self, lexer):
     # type: (Lexer) -> None
     self.lexer = lexer  
-    self.tok_type = id_e.Eof  # type: id_t
+    self.tok_type = tok_e.Eof  # type: tok_t
     self.tok_val = ''
 
   def Next(self):
@@ -74,30 +80,30 @@ class Parser(object):
   def Eat(self, tok_val):
     # type: (str) -> None
     if self.tok_val != tok_val:
-      raise RuntimeError('Expected %r, got %r' % (tok_val, self.tok_val))
+      raise ParseError('Expected %r, got %r' % (tok_val, self.tok_val))
     self.Next()
 
   def ParseFactor(self):
     # type: () -> expr_t
 
     #log('ParseFactor')
-    if self.tok_type == id_e.Var:
+    if self.tok_type == tok_e.Var:
       n1 = expr__Var(self.tok_val)
       self.Next()
       return n1
 
-    if self.tok_type == id_e.Const:
+    if self.tok_type == tok_e.Const:
       n2 = expr__Const(int(self.tok_val))
       self.Next()
       return n2
 
-    if self.tok_type == id_e.Paren:
+    if self.tok_type == tok_e.Paren:
       self.Eat('(')
       n3 = self.ParseExpr()
       self.Eat(')')
       return n3
 
-    raise AssertionError('%s %s' % (self.tok_type, self.tok_val))
+    raise ParseError('Unexpected token %s %s' % (self.tok_type, self.tok_val))
 
   def ParseTerm(self):
     # type: () -> expr_t
@@ -106,7 +112,7 @@ class Parser(object):
     node = self.ParseFactor()
 
     # TODO: Iterate and create nodes
-    while self.tok_type == id_e.Op2:
+    while self.tok_type == tok_e.Op2:
       op = self.tok_val
       self.Next()
       n2 = self.ParseFactor()
@@ -119,7 +125,7 @@ class Parser(object):
     #log('ParseExpr')
     node = self.ParseTerm()
 
-    while self.tok_type == id_e.Op1:
+    while self.tok_type == tok_e.Op1:
       op = self.tok_val
       self.Next()
       n2 = self.ParseTerm()
@@ -137,17 +143,32 @@ def run_tests():
   lex = Lexer('abc')
   while True:
     tok_type, tok_val = lex.Read()
-    if tok_type == id_e.Eof:
+    if tok_type == tok_e.Eof:
       break
     print('%s %s' % (tok_type, tok_val))
 
-  for expr in ['1+2', '1+2*3', '1*2+3', '(1+2)*3', 'a+b+c+d', 'a*b*3*4']:
+  CASES = [
+      '1+2', '1+2*3', '1*2+3', '(1+2)*3', 'a+b+c+d', 'a*b*3*4',
+
+      # expect errors here:
+      '(',
+      ')',
+      '(a+b',
+  ]
+  for expr in CASES:
     lex = Lexer(expr)
     p = Parser(lex)
     log('')
     log('--')
     log('%s =>', expr)
-    log('%s', p.Parse())
+
+    try:
+      tree = p.Parse()
+    except ParseError as e:
+      log('Parse error: %s', e.msg)
+      continue
+
+    log('%s', tree)
 
 
 def run_benchmarks():
@@ -159,10 +180,10 @@ def run_benchmarks():
   while i < n:
     lex = Lexer('abc')
     while True:
-      tok = lex.Read()
-      if tok is None:
+      tok_type, tok_val = lex.Read()
+      if tok_type == tok_e.Eof:
         break
-      result += len(tok)
+      result += len(tok_val)
 
     i += 1
 

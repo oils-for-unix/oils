@@ -16,4 +16,7 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-
+# TODO: Do we need this?
+def p_die(msg, *args):
+  # type: (str, *Any) -> None
+  raise RuntimeError(msg % args)
