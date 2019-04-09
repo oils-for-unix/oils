@@ -5,7 +5,7 @@ parse.py
 from __future__ import print_function
 
 import os
-from typing import Tuple
+from typing import Tuple, Optional
 from runtime import log
 from _gen.expr_asdl import (
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
@@ -80,7 +80,8 @@ class Parser(object):
   def Eat(self, tok_val):
     # type: (str) -> None
     if self.tok_val != tok_val:
-      raise ParseError('Expected %r, got %r' % (tok_val, self.tok_val))
+      #raise ParseError('Expected %r, got %r' % (tok_val, self.tok_val))
+      raise ParseError('Expected ' + tok_val)
     self.Next()
 
   def ParseFactor(self):
@@ -103,7 +104,8 @@ class Parser(object):
       self.Eat(')')
       return n3
 
-    raise ParseError('Unexpected token %s %s' % (self.tok_type, self.tok_val))
+    #raise ParseError('Unexpected token %s %s' % (self.tok_type, self.tok_val))
+    raise ParseError('Unexpected token ' + self.tok_val)
 
   def ParseTerm(self):
     # type: () -> expr_t
@@ -145,7 +147,8 @@ def run_tests():
     tok_type, tok_val = lex.Read()
     if tok_type == tok_e.Eof:
       break
-    print('%s %s' % (tok_type, tok_val))
+    #print('%s %s' % (tok_type, tok_val))
+    log('tok_val %s', tok_val)
 
   CASES = [
       '1+2', '1+2*3', '1*2+3', '(1+2)*3', 'a+b+c+d', 'a*b*3*4',
@@ -154,6 +157,8 @@ def run_tests():
       '(',
       ')',
       '(a+b',
+      ' ',
+      ' $$ ',
   ]
   for expr in CASES:
     lex = Lexer(expr)
@@ -162,7 +167,7 @@ def run_tests():
     log('--')
     log('%s =>', expr)
 
-    tree = None  # type: expr_t
+    tree = None  # type: Optional[expr_t]
     try:
       tree = p.Parse()
     except ParseError as e:
@@ -179,12 +184,9 @@ def run_benchmarks():
   result = 0
   i = 0
   while i < n:
-    lex = Lexer('abc')
-    while True:
-      tok_type, tok_val = lex.Read()
-      if tok_type == tok_e.Eof:
-        break
-      result += len(tok_val)
+    lex = Lexer('a*b*3*4')
+    p = Parser(lex)
+    tree = p.Parse()
 
     i += 1
 

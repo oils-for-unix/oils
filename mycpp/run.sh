@@ -330,11 +330,28 @@ benchmark-cartesian() { benchmark cartesian; }
 # no timings
 benchmark-length() { benchmark length; }
 
-benchmark-parse() { benchmark parse; }
-
 benchmark-containers() { benchmark containers; }
 
 benchmark-control_flow() { benchmark control_flow; }
+
+# Good news!  Parsing is 10x faster.
+# 198 ms in C++ vs 1,974 in Python!  Is that because of the method calls?
+benchmark-parse() {
+  export BENCHMARK=1
+
+  local name=parse
+
+  echo
+  echo $'\t[ C++ ]'
+  time _bin/$name
+
+  # TODO: Consolidate this with the above.
+  # We need 'asdl'
+  export PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT"
+  echo
+  echo $'\t[ Python ]'
+  time examples/${name}.py
+}
 
 
 build-all() {

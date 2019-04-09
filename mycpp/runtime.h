@@ -90,7 +90,7 @@ class Str {
       return false;  // special case
     }
     for (int i = 0; i < len_; ++i) {
-      if (! ::isalpha(!data_[i])) {
+      if (! ::isalpha(data_[i])) {
         return false;
       }
     }
@@ -281,6 +281,7 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 //inline int len(Dict* D) {
 //}
 
+bool _str_to_int(Str* s, int* result);  // for testing only
 int str_to_int(Str* s);
 
 #endif  // RUNTIME_H
