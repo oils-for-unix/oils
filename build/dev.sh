@@ -149,6 +149,9 @@ fastlex() {
 }
 
 line-input() {
+  # Why do we need this?  It gets stale otherwise.
+  rm -f _devbuild/py-ext/x86_64/line_input.so
+
   py-ext line_input build/setup_line_input.py
   native/line_input_test.py "$@"
 }
