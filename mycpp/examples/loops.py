@@ -31,16 +31,14 @@ def run_tests():
 
   log('--- two arg xrange()')
 
-  # TODO: reuse index variable i
-  for j in xrange(m+2, n+5):
-    log("%d", j)
+  # TODO: reuse index variable j
+  for k in xrange(m+2, n+5):
+    log("%d", k)
 
-  """
   log('--- enumerate()')
 
   for i, c in enumerate(CATS):
     log('%d %s', i, c)
-  """
 
 
 def run_benchmarks():

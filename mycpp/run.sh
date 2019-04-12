@@ -376,7 +376,7 @@ should-skip() {
     # not passing yet!
     # parse needs asdl/format.py, and the other 3 are testing features it
     # uses.
-    parse|loops|files|classes)
+    parse|files|classes)
       return 0
       ;;
     *)

@@ -697,53 +697,59 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('  inferred_item_type %s', o.inferred_item_type)
         self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
 
+        func_name = None  # does the loop look like 'for x in func():' ?
         if isinstance(o.expr, CallExpr) and isinstance(o.expr.callee, NameExpr):
-          # special case: 'for i in xrange(3)'
+          func_name = o.expr.callee.name
 
-          if o.expr.callee.name == 'xrange':
-            index_name = o.index.name
-            args = o.expr.args
-            num_args = len(args)
+        # special case: 'for i in xrange(3)'
+        if func_name == 'xrange':
+          index_name = o.index.name
+          args = o.expr.args
+          num_args = len(args)
 
-            if num_args == 1:  # xrange(end)
-              self.write_ind('for (int %s = 0; %s < ', index_name, index_name)
-              self.accept(args[0])
-              self.write('; ++%s) {\n', index_name)
+          if num_args == 1:  # xrange(end)
+            self.write_ind('for (int %s = 0; %s < ', index_name, index_name)
+            self.accept(args[0])
+            self.write('; ++%s) ', index_name)
 
-              self.indent +=1
-              self.accept(o.body)
-              self.indent -=1
-
-              self.write('}\n');
-              return
-
-            elif num_args == 2:  # xrange(being, end)
-              self.write_ind('for (int %s = ', index_name)
-              self.accept(args[0])
-              self.write('; %s < ', index_name)
-              self.accept(args[1])
-              self.write('; ++%s) {\n', index_name)
-
-              self.indent +=1
-              self.accept(o.body)
-              self.indent -=1
-
-              self.write('}\n');
-              return
-
-            else:
-              raise AssertionError
-
-          if o.expr.callee.name == 'enumerate':
-            self.log('enumerate args: %s', o.expr.args)
-            raise NotImplementedError
+            self.accept(o.body)
             return
 
-        over_type = self.types[o.expr]
-        self.log('  iterating over type %s', over_type)
+          elif num_args == 2:  # xrange(being, end)
+            self.write_ind('for (int %s = ', index_name)
+            self.accept(args[0])
+            self.write('; %s < ', index_name)
+            self.accept(args[1])
+            self.write('; ++%s) ', index_name)
 
-        # TODO: find a better way to check the type, and also need T in List[T].
-        # Don't assume it's a list!
+            self.accept(o.body)
+            return
+
+          else:
+            raise AssertionError
+
+        # for i, x in enumerate(...):
+        index0_name = None
+        if func_name == 'enumerate':
+          assert isinstance(o.index, TupleExpr), o.index
+          index0 = o.index.items[0]
+          assert isinstance(index0, NameExpr), index0
+          index0_name = index0.name  # generate int i = 0; ; ++i
+
+          # type of 'x' in 'for i, x in enumerate(...)'
+          item_type = o.inferred_item_type.items[1] 
+          index_expr = o.index.items[1]
+
+          # enumerate(mylist) turns into iteration over mylist with variable i
+          assert len(o.expr.args) == 1, o.expr.args
+          iterated_over = o.expr.args[0]
+        else:
+          item_type = o.inferred_item_type
+          index_expr = o.index
+          iterated_over = o.expr
+
+        over_type = self.types[iterated_over]
+        self.log('  iterating over type %s', over_type)
 
         if over_type.type.fullname() == 'builtins.list':
           c_type = get_c_type(over_type)
@@ -752,18 +758,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
           c_iter_type = 'StrIter'
 
+        if index0_name:
+          # can't initialize two things in a for loop, so do it on a separate line
+          self.write_ind('int %s = 0;\n', index0_name)
+          index_update = ', ++%s' % index0_name
+        else:
+          index_update = ''
+
         self.write_ind('for (%s it(', c_iter_type)
-        self.accept(o.expr)  # the thing being iterated over
-        self.write('); !it.Done(); it.Next()) {\n')
+        self.accept(iterated_over)  # the thing being iterated over
+        self.write('); !it.Done(); it.Next()%s) {\n', index_update)
 
-        if isinstance(o.inferred_item_type, Instance):
-          c_item_type = get_c_type(o.inferred_item_type)
-
+        if isinstance(item_type, Instance):
+          c_item_type = get_c_type(item_type)
           self.write_ind('  %s ', c_item_type)
-          self.accept(o.index)  # index var expression
+          self.accept(index_expr)
           self.write(' = it.Value();\n')
 
-        elif isinstance(o.inferred_item_type, TupleType):
+        elif isinstance(item_type, TupleType):
           # Example:
           # for (ListIter it(mylist); !it.Done(); it.Next()) {
           #   Tuple2<int, Str*> tup1 = it.Value();
@@ -773,17 +785,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # }
 
           temp_name = 'tup1'  # TODO: generate
-          c_item_type = get_c_type(o.inferred_item_type)
-
+          c_item_type = get_c_type(item_type)
           self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
+
           assert isinstance(o.index, TupleExpr)
           self.indent += 1
+
           self._write_tuple_unpacking(
-              temp_name, o.index.items, o.inferred_item_type.items)
+              temp_name, o.index.items, item_type.items)
+
           self.indent -= 1
 
         else:
-          raise AssertionError('Unexpected type %s' % o.inferred_item_type)
+          raise AssertionError('Unexpected type %s' % item_type)
 
         # Copy of visit_block, without opening {
         self.indent += 1
