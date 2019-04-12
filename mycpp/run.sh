@@ -1,5 +1,9 @@
 #!/bin/bash
 #
+# Translate, compile, and run mycpp examples.
+#
+# TODO: Extract setup.sh, test.sh, and run.sh from this file.
+#
 # Usage:
 #   ./run.sh <function name>
 #
@@ -154,7 +158,9 @@ _translate-example() {
 
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
-  time PYTHONPATH=$MYPY_REPO ./mycpp.py $main > $raw
+  ( source _tmp/mycpp-venv/bin/activate
+    time PYTHONPATH=$MYPY_REPO ./mycpp.py $main > $raw
+  )
   wc -l $raw
 
   local main_module=$(basename $main .py)
@@ -299,6 +305,11 @@ compile-parse() {
   compile parse '' -I _gen
 }
 
+run-python-example() {
+  local name=$1
+  examples/${name}.py
+}
+
 run-example() {
   local name=$1
 
@@ -319,28 +330,27 @@ benchmark() {
   run-example "$@"
 }
 
-# fib_recursive(33) - 1083 ms -> 12 ms.  Biggest speedup!
-benchmark-fib_recursive() { benchmark fib_recursive; }
+# NOTES on timings:
 
+### fib_recursive
+# fib_recursive(33) - 1083 ms -> 12 ms.  Biggest speedup!
+
+### cgi
 # 1M iterations: 580 ms -> 173 ms
 # optimizations:
 # - const_pass pulls immutable strings to top level
 # - got rid of # function docstring!
-benchmark-cgi() { benchmark cgi; }
 
+### escape
 # 200K iterations: 471 ms -> 333 ms
-benchmark-escape() { benchmark escape; }
 
+### cartesian
 # 200K iterations: 800 ms -> 641 ms
-benchmark-cartesian() { benchmark cartesian; }
 
+### length
 # no timings
-benchmark-length() { benchmark length; }
 
-benchmark-containers() { benchmark containers; }
-
-benchmark-control_flow() { benchmark control_flow; }
-
+### parse
 # Good news!  Parsing is 10x faster.
 # 198 ms in C++ vs 1,974 in Python!  Is that because of the method calls?
 benchmark-parse() {

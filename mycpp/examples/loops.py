@@ -15,15 +15,28 @@ CATS = ['big', 'small', 'hairless']
 def run_tests():
   # type: () -> None
 
-  # Tuple unpacking
+  log('--- tuple unpacking')
 
   mylist = [(1, 'one'), (2, 'two')]
   for i, item in mylist:
     log("- [%d] %s", i, item)
 
+  log('--- one arg xrange()')
+
+  m = 2
+  n = 3
+
+  for j in xrange(m*2):
+    log("%d", j)
+
+  log('--- two arg xrange()')
+
+  # TODO: reuse index variable i
+  for j in xrange(m+2, n+5):
+    log("%d", j)
+
   """
-  for i in xrange(3, 10):
-    print(i)
+  log('--- enumerate()')
 
   for i, c in enumerate(CATS):
     log('%d %s', i, c)

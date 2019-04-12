@@ -13,7 +13,7 @@ from mypy.types import (
 from mypy.nodes import (
     Expression, Statement, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
-    ComparisonExpr)
+    ComparisonExpr, CallExpr)
 
 from crash import catch_errors
 from util import log
@@ -696,6 +696,48 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('  index_type %s', o.index_type)
         self.log('  inferred_item_type %s', o.inferred_item_type)
         self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
+
+        if isinstance(o.expr, CallExpr) and isinstance(o.expr.callee, NameExpr):
+          # special case: 'for i in xrange(3)'
+
+          if o.expr.callee.name == 'xrange':
+            index_name = o.index.name
+            args = o.expr.args
+            num_args = len(args)
+
+            if num_args == 1:  # xrange(end)
+              self.write_ind('for (int %s = 0; %s < ', index_name, index_name)
+              self.accept(args[0])
+              self.write('; ++%s) {\n', index_name)
+
+              self.indent +=1
+              self.accept(o.body)
+              self.indent -=1
+
+              self.write('}\n');
+              return
+
+            elif num_args == 2:  # xrange(being, end)
+              self.write_ind('for (int %s = ', index_name)
+              self.accept(args[0])
+              self.write('; %s < ', index_name)
+              self.accept(args[1])
+              self.write('; ++%s) {\n', index_name)
+
+              self.indent +=1
+              self.accept(o.body)
+              self.indent -=1
+
+              self.write('}\n');
+              return
+
+            else:
+              raise AssertionError
+
+          if o.expr.callee.name == 'enumerate':
+            self.log('enumerate args: %s', o.expr.args)
+            raise NotImplementedError
+            return
 
         over_type = self.types[o.expr]
         self.log('  iterating over type %s', over_type)
