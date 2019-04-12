@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import command_t, command
 from _devbuild.gen.id_kind_asdl import Id
 from core import ui
 from core import util
-from core.util import log
+#from core.util import log
 from osh import word
 
 from typing import Any, Optional, List, TYPE_CHECKING

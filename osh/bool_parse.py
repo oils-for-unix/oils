@@ -37,7 +37,7 @@ from _devbuild.gen.syntax_asdl import (
     bool_expr, bool_expr_t,
 )
 from osh import word
-from core.util import log, p_die
+from core.util import p_die
 from core.meta import LookupKind
 
 from typing import List, Optional, TYPE_CHECKING

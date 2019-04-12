@@ -70,7 +70,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.syntax_asdl import word as osh_word
 
 from core.meta import LookupKind
-from core.util import p_die, log
+from core.util import p_die
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse

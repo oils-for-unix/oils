@@ -20,11 +20,10 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
 from core import util
-from core.util import e_die, log
+from core.util import log
 from pylib import os_
 
 from typing import Optional
-
 
 
 def GetHomeDir():

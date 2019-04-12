@@ -10,7 +10,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from core import util
-from core.util import log
+#from core.util import log
 from frontend.match import HISTORY_LEXER
 from frontend import reader
 from osh import word

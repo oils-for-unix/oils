@@ -11,7 +11,7 @@ except ImportError:
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import glob_part_e, glob_part
 from core import util
-from core.util import log
+#from core.util import log
 from frontend import match
 
 

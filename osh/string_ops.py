@@ -11,7 +11,7 @@ Instead of:
 
 from _devbuild.gen.id_kind_asdl import Id
 from core import util
-from core.util import log, e_die
+from core.util import e_die
 from osh import glob_
 
 import libc
