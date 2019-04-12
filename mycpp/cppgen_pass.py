@@ -606,6 +606,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> T:
         pass
 
+    def _write_tuple_unpacking(self, temp_name, lval_items, item_types):
+      """Used by assignment and for loops."""
+      i = 0
+      for lval_item, item_type in zip(lval_items, item_types):
+        #self.log('*** %s :: %s', lval_item, item_type)
+        if isinstance(lval_item, NameExpr):
+          # TODO:
+          # - check if it's self.local_vars, then we don't need the
+          # declaration.
+          item_c_type = get_c_type(item_type)
+          self.write_ind('%s %s', item_c_type, lval_item.name)
+        else:
+          # Could be MemberExpr like self.foo, self.bar = baz
+          self.write_ind('')
+          self.accept(lval_item)
+
+        self.write(' = %s->at%d();\n', temp_name, i)  # RHS
+        i += 1
+
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         # I think there are more than one when you do a = b = 1, which I never
         # use.
@@ -656,8 +675,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # x, y = mytuple
           #
           # Tuple2<int, Str*> tup1 = mytuple
-          # int x = tup1.at0()
-          # Str* y = tup1.at1()
+          # int x = tup1->at0()
+          # Str* y = tup1->at1()
 
           rvalue_type = self.types[o.rvalue]
           c_type = get_c_type(rvalue_type)
@@ -668,24 +687,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.rvalue)
           self.write(';\n')
 
-          # Now unpack
-          i = 0
-          for lval_item, item_type in zip(lval.items, rvalue_type.items):
-            #self.log('*** %s :: %s', lval_item, item_type)
-            if isinstance(lval_item, NameExpr):
-              # TODO:
-              # - check if it's self.local_vars, then we don't need the
-              # declaration.
-              item_c_type = get_c_type(item_type)
-              self.write_ind('%s %s', item_c_type, lval_item.name)
-            else:
-              # Could be MemberExpr like self.foo, self.bar = baz
-              self.write_ind('')
-              self.accept(lval_item)
-
-            self.write(' = %s->at%d();\n', temp_name, i)  # RHS
-            i += 1
-
+          self._write_tuple_unpacking(temp_name, lval.items, rvalue_type.items)
         else:
           raise AssertionError(lval)
 
@@ -718,8 +720,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write_ind('  %s ', c_item_type)
           self.accept(o.index)  # index var expression
           self.write(' = it.Value();\n')
+
         elif isinstance(o.inferred_item_type, TupleType):
-          raise NotImplementedError
+          # Example:
+          # for (ListIter it(mylist); !it.Done(); it.Next()) {
+          #   Tuple2<int, Str*> tup1 = it.Value();
+          #   int i = tup1->at0();
+          #   Str* s = tup1->at1();
+          #   log("%d %s", i, s);
+          # }
+
+          temp_name = 'tup1'  # TODO: generate
+          c_item_type = get_c_type(o.inferred_item_type)
+
+          self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
+          assert isinstance(o.index, TupleExpr)
+          self.indent += 1
+          self._write_tuple_unpacking(
+              temp_name, o.index.items, o.inferred_item_type.items)
+          self.indent -= 1
+
+        else:
+          raise AssertionError('Unexpected type %s' % o.inferred_item_type)
 
         # Copy of visit_block, without opening {
         self.indent += 1

@@ -167,6 +167,7 @@ _translate-example() {
 }
 
 translate-example() {
+  local name=$1
   # Allow overriding the default.
   # translate-modules and compile-modules are DIFFERENT.
   if test "$(type -t translate-$name)" = "function"; then
@@ -285,6 +286,7 @@ _compile-example() {
 }
 
 compile-example() {
+  local name=$1
   if test "$(type -t compile-$name)" = "function"; then
     compile-$name
   else
