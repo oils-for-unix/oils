@@ -182,7 +182,7 @@ def run_tests():
       log('Parse error: %s', e.msg)
       continue
 
-    log('%s', tree)
+    #log('%s', tree)
 
     pretty_tree = tree.AbbreviatedTree()
     #ast_f = fmt.TextOutput(sys.stdout)

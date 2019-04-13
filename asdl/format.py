@@ -267,7 +267,7 @@ def _PrintWholeArray(array, prefix_len, f, indent, max_col):
   # The first child is out of line.  The abbreviated objects have a
   # small header like C or DQ so it doesn't matter as much.
   all_fit = True
-  pieces = []
+  pieces = []  # type: List[Tuple[str, int]]
   chars_so_far = prefix_len
   for item in array:
     single_f = f.NewTempBuffer()
@@ -453,7 +453,9 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
     return _TrySingleLineObj(node, f, max_chars)
 
   else:
-    raise AssertionError("Unexpected node: %r (%r)" % (node, node.__class__))
+    raise AssertionError("Unexpected node: %r" % node)
+    # mycpp doesn't like __class__
+    #raise AssertionError("Unexpected node: %r (%r)" % (node, node.__class__))
 
   # Take into account the last char.
   num_chars_so_far = f.NumChars()

@@ -302,7 +302,7 @@ compile-example() {
 
 # Because it depends on ASDL
 compile-parse() {
-  compile parse '' -I _gen
+  _compile-example parse '' -I _gen
 }
 
 run-python-example() {
@@ -374,7 +374,7 @@ benchmark-parse() {
 should-skip() {
   case $1 in
     # not passing yet!
-    # parse needs asdl/format.py, and the other 3 are testing features it
+    # parse needs asdl/format.py, and the other 2 are testing features it
     # uses.
     parse|files|classes)
       return 0
@@ -460,9 +460,9 @@ grepall() {
 }
 
 count() {
-  wc -l {mycpp,debug,cppgen,fib}.py
+  wc -l *.py | sort -n
   echo
-  wc -l *.cc *.h
+  wc -l *.cc *.h | sort -n
 }
 
 cpp-compile-run() {
