@@ -398,3 +398,10 @@ argv.py "${arguments[@]}"
 ## END
 ## N-I dash/mksh/zsh/ash status: 2
 ## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### read -n with invalid arg
+read -n not_a_number
+echo status=$?
+## stdout: status=2
+## OK bash stdout: status=1
+## N-I zsh stdout-json: ""

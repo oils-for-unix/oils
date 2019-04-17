@@ -169,6 +169,8 @@ class SetToArg(_Action):
 
     #log('SetToArg arg %r', arg)
 
+    # TODO: better location information for all these errors.
+
     typ = self.arg_type
     if isinstance(typ, list):
       if arg not in typ:
@@ -179,9 +181,17 @@ class SetToArg(_Action):
       if typ == Str:
         value = arg
       elif typ == Int:
-        value = int(arg)  # TODO: check errors
+        try:
+          value = int(arg)
+        except ValueError:
+          raise UsageError(
+              'Expected integer after %r, got %r' % ('-' + self.name, arg))
       elif typ == Float:
-        value = float(arg)  # TODO: check errors
+        try:
+          value = float(arg)
+        except ValueError:
+          raise UsageError(
+              'Expected numeric after %r, got %r' % ('-' + self.name, arg))
       else:
         raise AssertionError
 
