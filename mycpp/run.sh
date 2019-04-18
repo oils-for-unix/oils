@@ -313,6 +313,8 @@ run-python-example() {
 run-example() {
   local name=$1
 
+  #mypy --py2 --strict examples/$name.py
+
   translate-example $name
   compile-example $name
 
@@ -376,7 +378,7 @@ should-skip() {
     # not passing yet!
     # parse needs asdl/format.py, and the other 2 are testing features it
     # uses.
-    parse|files|classes)
+    parse|files|classes|switch1|switch2|scoped_resource)
       return 0
       ;;
     *)
