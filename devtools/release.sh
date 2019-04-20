@@ -55,7 +55,6 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 readonly OSH_RELEASE_BINARY=_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
 
 source devtools/common.sh  # html-footer
-source opy/common.sh  # For OSH_BYTERUN
 
 log() {
   echo "$@" 1>&2
@@ -218,7 +217,7 @@ _test-release-build() {
 
   run-other-tests
 
-  # Just test the release build (not under CPython or byterun.  That comes later.)
+  # Just test the release build (not under CPython.  That comes later.)
   OSH_LIST="$OSH_RELEASE_BINARY" test/spec.sh all
 }
 
@@ -247,11 +246,6 @@ test-opy() {
   time ./test.sh gold > $out/$step.txt 2>&1
   echo $?
 
-  step='test-oil-unit-byterun'
-  echo "--- $step ---"
-  time ./test.sh oil-unit-byterun > $out/$step.txt 2>&1
-  echo $?
-
   # NOTE: This is sensitive to Python 2.7.12 vs .13 vs .14.  Ideally we would
   # remove that.
   # NOTE: There is no indication if this fails!
@@ -262,12 +256,12 @@ test-opy() {
 }
 
 spec-all() {
-  OSH_LIST="bin/osh $OSH_RELEASE_BINARY $OSH_BYTERUN" test/spec.sh all
+  OSH_LIST="bin/osh $OSH_RELEASE_BINARY" test/spec.sh all
 }
 
 # For quickly debugging failures that don't happen in dev mode.
 spec-one() {
-  OSH_LIST="bin/osh $OSH_RELEASE_BINARY $OSH_BYTERUN" test/spec.sh "$@"
+  OSH_LIST="bin/osh $OSH_RELEASE_BINARY" test/spec.sh "$@"
 }
 
 

@@ -90,7 +90,6 @@ the release.
 
 - [build-oil-repo](test/opy.wwz/build-oil-repo.txt)
 - [test-gold](test/opy.wwz/test-gold.txt)
-- [test-oil-unit-byterun](test/opy.wwz/test-oil-unit-byterun.txt)
 - [regtest-compile](test/opy.wwz/regtest-compile.txt)
 - [regtest-verify-golden](test/opy.wwz/regtest-verify-golden.txt)
 
