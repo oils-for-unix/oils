@@ -271,9 +271,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(mem_name = paste(event, metric_name, 'MB', sep = '_')) %>%
     select(-c(event, metric_name)) %>%
     spread(key = c(mem_name), value = megabytes) %>%
-    select(c(host, task_arg,
-             parser_VmRSS_MB, parser_VmPeak_MB,
-             runtime_VmRSS_MB, runtime_VmPeak_MB)) ->
+    select(c(host, task_arg, runtime_VmRSS_MB, runtime_VmPeak_MB)) ->
     vm
 
   Log('VM:')

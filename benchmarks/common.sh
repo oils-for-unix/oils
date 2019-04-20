@@ -3,8 +3,10 @@
 # Common functions for benchmarks.
 #
 
-# What binary the benchmarks will run.
-readonly OSH_OVM=${OSH_OVM:-$PWD/_bin/osh}
+# What binary the benchmarks will run.  NOTE: should be RELATIVE, because
+# there's a hack to make it absolute in benchmarks/osh-runtime.sh.  TODO:
+# consolidate with OSH_OVM in test/common.sh.
+readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
 readonly MACHINE1=flanders
 readonly MACHINE2=lisa

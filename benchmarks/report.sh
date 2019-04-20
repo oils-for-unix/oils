@@ -74,15 +74,6 @@ ovm-build() {
   stage3 $base_dir
 }
 
-# This is one is specific to a particular machine.
-oheap() {
-  local base_dir=_tmp/oheap
-
-  benchmarks/oheap.sh stage1 
-  stage2 $base_dir
-  stage3 $base_dir
-}
-
 all() {
   osh-parser
   osh-runtime
@@ -95,7 +86,7 @@ all() {
 # For view
 dev-index() {
   local out=_tmp/benchmarks.html
-  for name in osh-parser osh-runtime vm-baseline ovm-build oheap; do
+  for name in osh-parser osh-runtime vm-baseline ovm-build; do
     echo "<a href=\"$name/index.html\">$name</a> <br/>"
   done > $out
   log "Wrote $out"

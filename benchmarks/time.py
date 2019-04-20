@@ -16,12 +16,19 @@ Problems with bash time builtin
 
 This program also writes CSV directly, so you can have commas in fields, etc.
 """
+from __future__ import print_function
 
 import csv
 import optparse
 import sys
 import subprocess
 import time
+
+
+def log(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
 
 
 def Options():
@@ -43,7 +50,12 @@ def main(argv):
   (opts, child_argv) = Options().parse_args(argv[1:])
 
   start_time = time.time()
-  exit_code = subprocess.call(child_argv)
+  try:
+    exit_code = subprocess.call(child_argv)
+  except OSError as e:
+    log('Error executing %s: %s', child_argv, e)
+    return 1
+
   elapsed = time.time() - start_time
 
   fields = tuple(opts.fields)

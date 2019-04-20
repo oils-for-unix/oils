@@ -78,6 +78,8 @@ def main(argv):
       host, job_id, _ = d.split('.')
       for name in os.listdir(input_dir):
         n, _ = os.path.splitext(name)
+        # NOTE: event used to be parser or runtime, but it's no longer used.
+        # Code can probably be simplified.
         shell_id, task_arg, event = n.split('__')
         shell_name, shell_hash = shell_id.split('-')
 

@@ -304,10 +304,6 @@ benchmark-run() {
   OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all
 }
 
-benchmark-run-on-1-machine() {
-  OSH_OVM=$OSH_RELEASE_BINARY benchmarks/oheap.sh measure
-}
-
 _compressed-tarball() {
   local name=${1:-hello}
   local version=${2:-0.0.0}
