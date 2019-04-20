@@ -191,7 +191,7 @@ class SetToArg(_Action):
           value = float(arg)
         except ValueError:
           raise UsageError(
-              'Expected numeric after %r, got %r' % ('-' + self.name, arg))
+              'Expected number after %r, got %r' % ('-' + self.name, arg))
       else:
         raise AssertionError
 

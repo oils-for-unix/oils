@@ -351,6 +351,25 @@ here-doc-delimiter() {
   _error-case 'cat << $var/$(invalid)'
 }
 
+args-parse-builtin() {
+  set +o errexit
+  _error-case 'read -x'  # invalid
+
+  _error-case 'read -n'  # expected argument for -n
+  _error-case 'read -n x'  # expected integer
+
+  # not implemented yet
+  #_error-case 'read -t x'  # expected floating point number
+}
+
+args-parse-main() {
+  set +o errexit
+  bin/osh --ast-format x
+
+  # TODO: opy/opy_main.py uses OilFlags, which has Go-like boolean syntax
+}
+
+
 cases-in-strings() {
   set +o errexit
 
@@ -373,6 +392,10 @@ cases-in-strings() {
 
   bool-expr
   test-builtin
+
+  # frontend/args.py
+  args-parse-builtin
+  args-parse-main
 }
 
 # Cases in their own file
