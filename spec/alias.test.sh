@@ -424,6 +424,19 @@ EOF
 [ ]
 ## END
 
+#### here doc inside alias
+shopt -s expand_aliases
+alias c='cat <<EOF
+$(echo hi)
+EOF
+'
+c
+## STDOUT:
+hi
+## END
+## BUG bash stdout-json: ""
+## BUG bash status: 127
+
 #### Corner case: alias inside LHS array arithmetic expression
 shopt -s expand_aliases
 alias zero='echo 0'
@@ -457,3 +470,26 @@ two
 1
 four
 ## END
+
+#### Alias and command sub (bug regression)
+shopt -s expand_aliases
+echo foo bar > tmp.txt
+alias a=argv.py
+a `cat tmp.txt`
+## stdout: ['foo', 'bar']
+
+#### Alias and arithmetic
+shopt -s expand_aliases
+alias a=argv.py
+a $((1 + 2))
+## stdout: ['3']
+
+#### Alias and PS4
+# TO FIX: causes infinite loop!!!
+[[ $SH == */osh ]] && echo 'ENABLE PS4 and FIX'
+set -x
+#PS4='+$(echo trace) '
+shopt -s expand_aliases
+alias a=argv.py
+a foo bar
+## stdout: ['foo', 'bar']

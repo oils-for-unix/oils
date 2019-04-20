@@ -192,6 +192,10 @@ namespace typed_arith_parse {
 
 
 int main(int argc, char **argv) {
+  log("sizeof(int): %d", sizeof(int));
+  log("sizeof(int*): %d", sizeof(int*));
+  log("");
+
   List l {1, 2, 3};
 
   // TODO: How to do this?
