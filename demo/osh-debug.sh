@@ -1,11 +1,45 @@
 #!/bin/bash
 #
+# Demonstrate some OSH debug/development features.
+#
 # Usage:
 #   ./osh-debug.sh <function name>
 
 set -o nounset
 set -o pipefail
+
 set -o errexit
+
+parser-mem-dump() {
+  local big=benchmarks/testdata/configure-coreutils
+  #local big=_tmp/e.sh
+
+  local dump=_tmp/parser-mem-dump.txt 
+
+  set +o errexit
+  rm -f $dump
+  bin/osh --parser-mem-dump $dump $big
+  grep '^Vm' $dump
+
+  echo '==='
+
+  # It ONLY works with -n, because we don't load the whole thing into memory
+  # otherwise?
+  rm -f $dump
+  bin/osh --parser-mem-dump $dump -n --ast-format none $big
+  grep '^Vm' $dump
+}
+
+runtime-mem-dump() {
+  #local big=_tmp/e.sh
+  local big=devtools/release.sh  # just run through all the functions
+  local dump=_tmp/runtime-mem-dump.txt 
+
+  set +o errexit
+  rm -f $dump
+  bin/osh --runtime-mem-dump $dump $big
+  grep '^Vm' $dump
+}
 
 func() {
   metrics/source-code.sh osh-cloc

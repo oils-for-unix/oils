@@ -533,31 +533,28 @@ def ShellMain(lang, argv0, argv, login_shell):
     line_reader.Reset()  # After sourcing startup file, render $PS1
     return main_loop.Interactive(opts, ex, c_parser, display, arena)
 
-  # TODO: This doesn't do anything interesting.
-  # - Remove the column from osh-runtime, since it doesn't work with main_loop.
-  # - http://www.oilshell.org/release/0.6.pre6/benchmarks.wwz/osh-runtime/
-  # - Move it to right before ui.PrintAst(), so we can use it in -n mode.
-  # This benchmark has been broken since 0.6.pre4.
-  # http://www.oilshell.org/release/0.6.pre3/benchmarks.wwz/osh-parser/
-  if opts.parser_mem_dump:
-    # This might be superstition, but we want to let the value stabilize
-    # after parsing.  bash -c 'cat /proc/$$/status' gives different results
-    # with a sleep.
-    time.sleep(0.001)
-    input_path = '/proc/%d/status' % posix.getpid()
-    with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
-      contents = f.read()
-      f2.write(contents)
-      log('Wrote %s to %s (--parser-mem-dump)', input_path,
-          opts.parser_mem_dump)
-
   nodes_out = [] if exec_opts.noexec else None
+
+  if nodes_out is None and opts.parser_mem_dump:
+    raise args.UsageError('--parser-mem-dump can only be used with -n')
 
   _tlog('Execute(node)')
   status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
 
   # Only print nodes if the whole parse succeeded.
   if nodes_out is not None and status == 0:
+    if opts.parser_mem_dump:  # only valid in -n mode
+      # This might be superstition, but we want to let the value stabilize
+      # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+      # with a sleep.
+      time.sleep(0.001)
+      input_path = '/proc/%d/status' % posix.getpid()
+      with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
+        contents = f.read()
+        f2.write(contents)
+        log('Wrote %s to %s (--parser-mem-dump)', input_path,
+            opts.parser_mem_dump)
+
     ui.PrintAst(nodes_out, opts)
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
