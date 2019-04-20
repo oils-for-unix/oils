@@ -60,8 +60,8 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 #
 
 link-busybox-ash() {
-  mkdir -p $(dirname $BUSYBOX_ASH)
-  ln -s -f --verbose "$(which busybox)" $BUSYBOX_ASH
+  mkdir -p _tmp/shells
+  ln -s -f --verbose "$(which busybox)" _tmp/shells/ash
 }
 
 # dash and bash should be there by default on Ubuntu.
