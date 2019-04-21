@@ -11,7 +11,7 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import line_span
+from _devbuild.gen.syntax_asdl import line_span, source, source_t
 from asdl import const
 from core.util import log
 
@@ -41,15 +41,19 @@ class Arena(object):
 
     # (src_path, physical line number)
     self.debug_info = []  # type: List[Tuple[str, int]] 
-    self.src_paths = []  # type: List[str]  # list of source paths
+    self.src_paths = []  # type: List[str]
+    # reuse these instances in many line_span instances
+    self.source_instances = []  # type: List[source_t]
 
   def PushSource(self, src_path):
     # type: (str) -> None
     self.src_paths.append(src_path)
+    self.source_instances.append(source.File(src_path))
 
   def PopSource(self):
     # type: () -> None
     self.src_paths.pop()
+    self.source_instances.pop()
 
   def AddLine(self, line, line_num):
     # type: (str, int) -> int
@@ -76,14 +80,12 @@ class Arena(object):
     assert line_id >= 0, line_id
     return self.lines[line_id]
 
-  def AddLineSpan(self, line_span):
-    # type: (line_span) -> int
-    """
-    TODO: Add an option of whether to save the line?  You can retrieve it on
-    disk in many cases.
-    """
+  def AddLineSpan(self, line_id, col, length):
+    # type: (int, int, int) -> int
+    """Save a line_span and return a new span ID for later retrieval."""
+    span = line_span(line_id, col, length, self.source_instances[-1])
+    self.spans.append(span)
     span_id = self.next_span_id
-    self.spans.append(line_span)
     self.next_span_id += 1
     return span_id
 

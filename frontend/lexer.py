@@ -73,8 +73,7 @@ class LineLexer(object):
   def GetSpanIdForEof(self):
     # type: () -> int
     # zero length is special!
-    span = line_span(self.line_id, self.line_pos, 0)
-    return self.arena.AddLineSpan(span)
+    return self.arena.AddLineSpan(self.line_id, self.line_pos, 0)
 
   def LookAhead(self, lex_mode):
     # type: (lex_mode_t) -> token
@@ -121,28 +120,20 @@ class LineLexer(object):
 
     tok_val = line[line_pos:end_pos]
 
-    # NOTE: tok_val is redundant, but even in osh.asdl we have some separation
-    # between data needed for formatting and data needed for execution.  Could
-    # revisit this later.
-
-    # TODO: Add this back once arena is threaded everywhere
-    span = line_span(self.line_id, line_pos, len(tok_val))
-
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
     # want it to be "low level".  The only thing fabricated here is a newline
     # added at the last line, so we don't end with \0.
 
-    if self.arena_skip:
+    if self.arena_skip:  # make another token from the last span
       assert self.last_span_id != const.NO_INTEGER
       span_id = self.last_span_id
       self.arena_skip = False
     else:
-      span_id = self.arena.AddLineSpan(span)
+      span_id = self.arena.AddLineSpan(self.line_id, line_pos, len(tok_val))
       self.last_span_id = span_id
-
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
-    t = token(tok_type, tok_val, span_id)
 
+    t = token(tok_type, tok_val, span_id)
     self.line_pos = end_pos
     return t
 

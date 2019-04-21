@@ -33,10 +33,7 @@ class _Reader(object):
     if line is None:
       return -1, None, 0
 
-    if self.arena:
-      line_id = self.arena.AddLine(line, self.line_num)
-    else:
-      line_id = -1
+    line_id = self.arena.AddLine(line, self.line_num)
     self.line_num += 1
     return line_id, line, 0
 

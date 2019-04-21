@@ -320,14 +320,13 @@ echo $(alias sayhi='echo hello')
 sayhi
 ## status: 127
 
-#### Alias doesn't work on a single line!
+#### Alias can be defined and used on a single line
+shopt -s expand_aliases
 alias sayhi='echo hello'; sayhi same line
 sayhi other line
 ## STDOUT:
 hello other line
 ## END
-## BUG bash stdout-json: ""
-## BUG bash status: 127
 
 #### Alias is respected inside eval
 shopt -s expand_aliases

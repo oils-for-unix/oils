@@ -5,7 +5,6 @@ state_test.py: Tests for state.py
 
 import unittest
 
-from _devbuild.gen.syntax_asdl import line_span
 from _devbuild.gen.runtime_asdl import (
     scope_e, lvalue, value, value_e, var_flags_e,
 )
@@ -18,8 +17,7 @@ def _InitMem():
   # empty environment, no arena.
   arena = test_lib.MakeArena('<state_test.py>')
   line_id = arena.AddLine(1, 'foo')
-  span = line_span(line_id, 0, 1)  # dummy
-  arena.AddLineSpan(span)
+  unused = arena.AddLineSpan(line_id, 0, 1)  # dummy
   return state.Mem('', [], {}, arena)
 
 

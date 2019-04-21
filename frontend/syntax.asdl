@@ -29,18 +29,36 @@
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
 --   * In the printer, I want to preserve line breaks!  foo \bar?
--- TODO:
--- * remove redundancy of 'string val' in token.  It should use the span.
--- * In addition to span_id and line_id, should we have file_id and token_id?
---   These are "side tables" with 4-byte IDs instead of 8 byte pointers (on
---   64-bit arches).
 
 module syntax
 {
-  -- A portion of a line, used for error messages.  For translation to work,
-  -- the spans should "sum up" to the original file. 
-  line_span = (int line_id, int col, int length)
-  -- Redundant val, as noted above
+  source = 
+    CFlag
+  | Stdin
+  | File(string path)
+  | EvalArg(extent first) -- extent corresponding to the 'eval' word.
+                          -- The rest of the args are JOINED, so it's not clear
+                          -- where they come from.
+  | ArgvWord(extent loc) -- extent for argv
+
+  -- A temporary value that's NOT stored in the LST.  It's the beginning or end
+  -- of a line_span / extent.
+  position = (int line_id, int col, source src)
+
+  -- A line_span represents the source location of a token, which never crosses
+  -- lines.  Encoded into LST with 'int spid'.
+  -- TODO: add source
+  line_span = (int line_id, int col, int length, source src)
+
+  -- An extent represents the source locations of a word or word_part, which
+  -- may span multiple lines.  Encoded into LST with 'int exid'.
+  extent = (int s_line_id, int s_col,
+            int e_line_id, int e_col,
+            source src)
+
+  -- NOTE: We use 'val' for execution, and the line_span from span_id for
+  -- errors and translation.  (LATER: Add 'speck' and 'strand' to optimize for
+  -- space.)
   token = (id id, string val, int span_id)
 
   -- Optional step for {100..50..-15}

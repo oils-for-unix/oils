@@ -63,6 +63,8 @@ def _ReadHereLines(line_reader,  # type: _Reader
   # EOF
   here_lines = []
   last_line = None
+  strip_leading_tabs = (h.op.id == Id.Redir_DLessDash)
+
   while True:
     line_id, line, unused_offset = line_reader.GetLine()
 
@@ -77,9 +79,9 @@ def _ReadHereLines(line_reader,  # type: _Reader
     # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
     # the first tab.
     start_offset = 0
-    if h.op.id == Id.Redir_DLessDash:
+    if strip_leading_tabs:
       n = len(line)
-      i = 0
+      i = 0  # used after loop exit
       while i < n:
         if line[i] != '\t':
           break
@@ -102,8 +104,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
   """Create a line_span and a token for each line."""
   tokens = []
   for line_id, line, start_offset in here_lines:
-    line_span = syntax_asdl.line_span(line_id, start_offset, len(line))
-    span_id = arena.AddLineSpan(line_span)
+    span_id = arena.AddLineSpan(line_id, start_offset, len(line))
     t = syntax_asdl.token(Id.Lit_Chars, line[start_offset:], span_id)
     tokens.append(t)
   return [word_part.LiteralPart(t) for t in tokens]
@@ -134,8 +135,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
 
   # Create a span with the end terminator.  Maintains the invariant that
   # the spans "add up".
-  line_span = syntax_asdl.line_span(end_line_id, end_pos, len(end_line))
-  h.here_end_span_id = arena.AddLineSpan(line_span)
+  h.here_end_span_id = arena.AddLineSpan(end_line_id, end_pos, len(end_line))
 
 
 def _MakeAssignPair(parse_ctx,  # type: ParseContext
@@ -679,6 +679,17 @@ class CommandParser(object):
 
     # We got some expansion.  Now copy the rest of the words.
 
+    # BUGGY: span invariant doesn't hold when you have bacticks in words!!!!
+
+    # So we need words to have an EXTENT
+    # maybe only CompoundWord needs it for now.
+    #  -
+    # Problem: line_span has no concept of "source"!  that needs to be changed.
+
+    # extent implies source!
+    # source has a range of line IDs?
+
+
     # We need each NON-REDIRECT word separately!  For example:
     # $ echo one >out two
     # dash/mksh/zsh go beyond the first redirect!
@@ -687,9 +698,15 @@ class CommandParser(object):
       left_spid = word.LeftMostSpanForWord(w)
       right_spid = word.RightMostSpanForWord(w)
 
+      prev_src = None
       # Adapted from tools/osh2oil.py Cursor.PrintUntil
       for span_id in xrange(left_spid, right_spid + 1):
         span = self.arena.GetLineSpan(span_id)
+
+        if prev_src and span.src != prev_src:
+          raise AssertionError('%s != %s', prev_src, span.src)
+        prev_src = span.src
+
         line = self.arena.GetLine(span.line_id)
         piece = line[span.col : span.col + span.length]
         expanded.append(piece)
@@ -700,32 +717,16 @@ class CommandParser(object):
     code_str = ''.join(expanded)
     lines = code_str.splitlines(True)  # Keep newlines
 
-    line_info = []
-    # TODO: Add location information
-    self.arena.PushSource(
-        '<expansion of alias %r at line %d of %s>' %
-        (first_word_str, -1, 'TODO'))
-    try:
-      for i, line in enumerate(lines):
-        line_id = self.arena.AddLine(line, i+1)
-        line_info.append((line_id, line, 0))
-    finally:
-      self.arena.PopSource()
-
-    line_reader = reader.VirtualLineReader(line_info, self.arena)
-
+    # NOTE: self.arena isn't correct here.  Breaks line invariant.
+    line_reader = reader.StringLineReader(code_str, self.arena)
     cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True,
                                       aliases_in_flight=aliases_in_flight)
 
     # The interaction between COMPLETION and ALIASES requires special care.
-    # - Don't do SetLatestWords for this CommandParser.
-    # - Instead collect aliases -- SetAliasedFirstWord rather than anything
-    # else in this function _MaybeExpandAliases
-    # - Instead of trail, should you have something else?
-    #
-    # And then when completing, look first at the first alias word, and THEN
-    # look at the GetAliasExpansion?
-
+    # See docstring of BeginAliasExpansion() in parse_lib.py.
+    self.arena.PushSource(
+        '<expansion of alias %r at line %d of %s>' %
+        (first_word_str, -1, 'TODO'))
     trail = self.parse_ctx.trail
     trail.BeginAliasExpansion()
     try:
@@ -738,10 +739,12 @@ class CommandParser(object):
       raise
     finally:
       trail.EndAliasExpansion()
+      self.arena.PopSource()
 
     if 0:
       log('AFTER expansion:')
-      #node.PrettyPrint()
+      node.PrettyPrint()
+
     return node
 
   # Flags that indicate an assignment should be parsed like a command.

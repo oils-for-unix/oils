@@ -191,10 +191,26 @@ namespace typed_arith_parse {
 // from core import util => namespace util = core::util;
 
 
+// test out the size of 5 uint16_t.  OK it's actually padded, which is nice!
+// Because there is no big element.
+struct Extent {
+  uint16_t s_line_id;
+  uint16_t s_col;
+  uint16_t e_line_id;
+  uint16_t e_col;
+  uint16_t src_id;
+};
+
+
 int main(int argc, char **argv) {
   log("sizeof(int): %d", sizeof(int));
   log("sizeof(int*): %d", sizeof(int*));
+  log("sizeof(Extent): %d", sizeof(Extent));
   log("");
+
+  // Good, this is 50.
+  Extent ext_array[5];
+  log("sizeof(ext_array): %d", sizeof(ext_array));
 
   List l {1, 2, 3};
 
