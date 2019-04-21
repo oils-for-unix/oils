@@ -16,6 +16,7 @@ import posix
 import pwd
 import signal
 import sys
+from time import sleep
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
@@ -25,6 +26,7 @@ from pylib import os_
 
 from typing import Optional
 
+MAX_TRIES = 10
 
 def GetHomeDir():
   # type: () -> Optional[str]
@@ -550,7 +552,7 @@ class Process(Job):
     # a single process group.
     #
     # - posix.setpgid()
-    # - posix.setpgrp() 
+    # - posix.setpgrp()
     # - posix.tcsetpgrp()
     #
     # NOTE: posix.setsid() isn't called by the shell; it's should be called by the
@@ -558,10 +560,19 @@ class Process(Job):
     #
     # The whole job control mechanism is complicated and hacky.
 
-    pid = posix.fork()
-    if pid < 0:
-      # When does this happen?
-      raise RuntimeError('Fatal error in posix.fork()')
+    pid = None
+    for attempt in range(MAX_TRIES):
+        try:
+            pid = posix.fork()
+            break
+        except OSError:
+            print("osh: fork: retry: Resource temporarily unavailable",
+                  file=sys.stderr)
+            sleep(1)
+
+    if pid is None:
+        print("osh: fork: could not fork child process", file=sys.stderr)
+        return 0
 
     elif pid == 0:  # child
       # Respond to Ctrl-\ (core dump)
