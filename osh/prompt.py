@@ -10,11 +10,12 @@ import posix
 import pwd
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import word, word_part, token
 from _devbuild.gen.runtime_asdl import value_e
 from asdl import const
 from core import ui
+from core import util
 from frontend import match
+from osh import word
 from pylib import os_path
 
 import libc  # gethostname()
@@ -187,7 +188,8 @@ class Evaluator(object):
     # Replace values.
     ps1_str = self._ReplaceBackslashCodes(tokens)
 
-    # Parse it like a double-quoted word (cached).
+    # Parse it like a double-quoted word (cached).  TODO: This could be done on
+    # mem.SetVar(), so we get the error earlier.
     # NOTE: This is copied from the PS4 logic in Tracer.
     try:
       ps1_word = self.parse_cache[ps1_str]
@@ -195,15 +197,12 @@ class Evaluator(object):
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str, self.arena)
       try:
         ps1_word = w_parser.ReadForPlugin()
-      except Exception as e:
-        error_str = '<ERROR: cannot parse PS1>'
-        t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
-        ps1_word = word.CompoundWord([word_part.LiteralPart(t)])
+      except util.ParseError as e:
+        ps1_word = word.ErrorWord("<ERROR: Can't parse PS1: %s>", e)
       self.parse_cache[ps1_str] = ps1_word
 
     # Evaluate, e.g. "${debian_chroot}\u" -> '\u'
-    # TODO: Handle runtime errors like unset variables, etc.
-    val2 = self.ex.word_ev.EvalWordToString(ps1_word)
+    val2 = self.ex.word_ev.EvalForPlugin(ps1_word)
     return val2.s
 
   def FirstPromptEvaluator(self):

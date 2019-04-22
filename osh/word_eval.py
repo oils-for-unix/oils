@@ -21,6 +21,7 @@ from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import state
+from osh import word
 from osh import word_compile
 
 
@@ -119,6 +120,7 @@ class _WordEvaluator(object):
 
   Public entry points:
     EvalWordToString
+    EvalForPlugin
     EvalRhsWord
     EvalWordSequence
   """
@@ -957,6 +959,21 @@ class _WordEvaluator(object):
       strs.append(s)
 
     return value.Str(''.join(strs))
+
+  def EvalForPlugin(self, w):
+    """Wrapper around EvalWordToString that prevents errors.
+    
+    Runtime errors like $(( 1 / 0 )) and mutating $? like $(exit 42) are
+    handled here.
+    """
+    self.mem.PushStatusFrame()  # to "sandbox" $? and $PIPESTATUS
+    try:
+      val = self.EvalWordToString(w)
+    except util.FatalRuntimeError as e:
+      val = value.Str("<Runtime error: %s>" % e.UserErrorString())
+    finally:
+      self.mem.PopStatusFrame()
+    return val
 
   def EvalRhsWord(self, word):
     """syntax.word -> value

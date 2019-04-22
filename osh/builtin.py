@@ -393,7 +393,7 @@ def Wait(argv, waiter, job_state, mem):
     st = job.WaitUntilDone(waiter)
     if isinstance(st, list):
       status = st[-1]
-      state.SetGlobalArray(mem, 'PIPESTATUS', [str(p) for p in st])
+      self.mem.SetPipeStatus(st)
     else:
       status = st
 

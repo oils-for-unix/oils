@@ -44,7 +44,7 @@ def PrettyDir(dir_name, home_dir):
 
 
 def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
-  # type: (int, Arena, IO[str]) -> None
+  # type: (str, str, int, Arena, IO[str]) -> None
   line_span = arena.GetLineSpan(span_id)
   col = line_span.col
   line_id = line_span.line_id
@@ -114,6 +114,7 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
 
 
 def PrintWarning(msg, span_id, arena, f=sys.stderr):
+  # type: (str, int, Arena, IO[str]) -> None
   prefix = 'warning: '
   if span_id == const.NO_INTEGER:  # When does this happen?
     print('*** Warning has no source location info ***', file=f)

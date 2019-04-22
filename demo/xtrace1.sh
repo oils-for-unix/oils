@@ -55,6 +55,9 @@ main() {
   # https://unix.stackexchange.com/questions/355965/how-to-check-which-line-of-a-bash-script-is-being-executed
   PS4='+${LINENO}: '
 
+  # Test runtime errors like this
+  #PS4='+${LINENO}: $(( 1 / 0 ))'
+
   func ps4
   foo=$(func ps4-commandsub)
   echo foo

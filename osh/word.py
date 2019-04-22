@@ -606,3 +606,10 @@ def SpanIdFromError(error):
     return LeftMostSpanForWord(error.word)
 
   return const.NO_INTEGER
+
+
+def ErrorWord(fmt, err):
+  # type: (str, _ErrorWithLocation) -> word__CompoundWord
+  error_str = fmt % err.UserErrorString()
+  t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+  return word.CompoundWord([word_part.LiteralPart(t)])

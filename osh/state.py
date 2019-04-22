@@ -444,7 +444,7 @@ class Mem(object):
     self.var_stack = [_StackFrame()]
 
     # The debug_stack isn't strictly necessary for execution.  We use it for
-    # crash dumps and for 3 parallel arrays: FUNCNAME, BASH_SOURCE,
+    # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
     self.debug_stack = [(None, None, const.NO_INTEGER, 0, 0)]
 
@@ -460,7 +460,8 @@ class Mem(object):
     self.source_name = value.Str('')
     self.line_num = value.Str('')
 
-    self.last_status = 0  # Mutable public variable
+    self.last_status = [0]  # type: List[int]  # a stack
+    self.pipe_status = [[]]  # type: List[List[int]]  # stack
     self.last_job_id = -1  # Uninitialized value mutable public variable
 
     # Done ONCE on initialization
@@ -584,7 +585,37 @@ class Mem(object):
     self.current_spid = span_id
 
   #
-  # Stack
+  # Status Variable Stack (for isolating $PS1 and $PS4)
+  #
+
+  def PushStatusFrame(self):
+    # type: () -> None
+    self.last_status.append(0)
+    self.pipe_status.append([])
+
+  def PopStatusFrame(self):
+    # type: () -> None
+    self.last_status.pop()
+    self.pipe_status.pop()
+
+  def LastStatus(self):
+    # type: () -> int
+    return self.last_status[-1]
+
+  def PipeStatus(self):
+    # type: () -> List[int]
+    return self.pipe_status[-1]
+
+  def SetLastStatus(self, x):
+    # type: (int) -> None
+    self.last_status[-1] = x
+
+  def SetPipeStatus(self, x):
+    # type: (List[int]) -> None
+    self.pipe_status[-1] = x
+
+  #
+  # Call Stack
   #
 
   def PushCall(self, func_name, def_spid, argv):
@@ -692,9 +723,8 @@ class Mem(object):
         return value.Undef()  # could be an error
 
     elif op_id == Id.VSub_QMark:  # $?
-      # TODO: Have to parse status somewhere.
       # External commands need WIFEXITED test.  What about subshells?
-      n = self.last_status
+      n = self.last_status[-1]
 
     elif op_id == Id.VSub_Pound:  # $#
       n = self.argv_stack[-1].GetNumArgs()
@@ -794,6 +824,13 @@ class Mem(object):
     # This helps with stuff like IFS.  It starts off as a string, and assigning
     # it to a list is en error.  I guess you will have to turn this no for
     # bash?
+    #
+    # TODO:
+    # - COMPUTED_VARS can't be set
+    # - What about PWD / OLDPWD / UID / EUID ?  You can simply make them
+    # readonly.
+    # - $PS1 and $PS4 should be PARSED when they are set, to avoid the error on use
+    # - Other validity: $HOME could be checked for existence
 
     assert new_flags is not None
 
@@ -942,9 +979,16 @@ class Mem(object):
     cell = self.var_stack[0].vars[name]
     cell.val = new_val
 
-  # NOTE: Have a default for convenience
   def GetVar(self, name, lookup_mode=scope_e.Dynamic):
     assert isinstance(name, str), name
+
+    # TODO: Short-circuit down to _FindCellAndNamespace by doing a single hash
+    # lookup:
+    # COMPUTED_VARS = {'PIPESTATUS': 1, 'FUNCNAME': 1, ...}
+    # if name not in COMPUTED_VARS: ...
+
+    if name == 'PIPESTATUS':
+      return value.StrArray([str(i) for i in self.pipe_status[-1]])
 
     # Do lookup of system globals before looking at user variables.  Note: we
     # could optimize this at compile-time like $?.  That would break

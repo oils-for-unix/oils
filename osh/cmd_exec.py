@@ -613,7 +613,7 @@ class Executor(object):
     pi.AddLast((self, node.children[n-1]))
 
     pipe_status = pi.Run(self.waiter, self.fd_state)
-    state.SetGlobalArray(self.mem, 'PIPESTATUS', [str(p) for p in pipe_status])
+    self.mem.SetPipeStatus(pipe_status)
 
     if self.exec_opts.pipefail:
       # The status is that of the last command that is non-zero.
@@ -866,9 +866,9 @@ class Executor(object):
         # Only do this if there was a command sub?  How?  Look at node?
         # Set a flag in mem?   self.mem.last_status or
         if self.check_command_sub_status:
-          self._CheckStatus(self.mem.last_status, node)
-          # A global assignment shouldn't clear $?.
-          status = self.mem.last_status
+          last_status = self.mem.LastStatus()
+          self._CheckStatus(last_status, node)
+          status = last_status  # A global assignment shouldn't clear $?.
         else:
           status = 0
       else:
@@ -1182,7 +1182,7 @@ class Executor(object):
     else:  # No redirects
       status, check_errexit = self._Dispatch(node, fork_external)
 
-    self.mem.last_status = status
+    self.mem.SetLastStatus(status)
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier
@@ -1206,7 +1206,7 @@ class Executor(object):
 
   def LastStatus(self):
     """For main_loop.py to determine the exit code of the shell itself."""
-    return self.mem.last_status
+    return self.mem.LastStatus()
 
   def ExecuteAndCatch(self, node, fork_external=True):
     """Execute a subprogram, handling _ControlFlow and fatal exceptions.
@@ -1251,7 +1251,7 @@ class Executor(object):
 
     self.dumper.MaybeDump(status)
 
-    self.mem.last_status = status
+    self.mem.SetLastStatus(status)
     return is_control_flow, is_fatal
 
   # NOTE: Is this only used by tests?
@@ -1318,7 +1318,7 @@ class Executor(object):
       #
       # Set ONLY until this command node has finished executing.
       self.check_command_sub_status = True
-      self.mem.last_status = status
+      self.mem.SetLastStatus(status)
 
     # Runtime errors test case: # $("echo foo > $@")
     # Why rstrip()?
@@ -1493,7 +1493,7 @@ class Tracer(object):
       first_char, ps4 = '+', ' '  # default
 
     # NOTE: This cache is slightly broken because aliases are mutable!  I think
-    # thati s more or less harmless though.
+    # that is more or less harmless though.
     try:
       ps4_word = self.parse_cache[ps4]
     except KeyError:
@@ -1503,9 +1503,7 @@ class Tracer(object):
       try:
         ps4_word = w_parser.ReadForPlugin()
       except util.ParseError as e:
-        error_str = '<ERROR: cannot parse PS4>'
-        t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
-        ps4_word = osh_word.CompoundWord([word_part.LiteralPart(t)])
+        ps4_word = word.ErrorWord("<ERROR: Can't parse PS4: %s>", e)
       self.parse_cache[ps4] = ps4_word
 
     #print(ps4_word)
@@ -1517,10 +1515,7 @@ class Tracer(object):
     # We should come up with a better mechanism.  Something like $PROC_INDENT
     # and $OIL_XTRACE_PREFIX.
 
-    # TODO: Handle runtime errors!  For example, you could PS4='$(( 1 / 0 ))'
-    # <ERROR: cannot evaluate PS4>
-    prefix = self.word_ev.EvalWordToString(ps4_word)
-
+    prefix = self.word_ev.EvalForPlugin(ps4_word)
     return first_char, prefix.s
 
   def OnSimpleCommand(self, argv):
