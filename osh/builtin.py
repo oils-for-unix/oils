@@ -938,13 +938,26 @@ def Unset(argv, mem, funcs):
   return 0
 
 
-def _ResolveNames(names, funcs, path_val):
+def _ParsePath(path_val):
   if path_val.tag == value_e.Str:
-    path_list = path_val.s.split(':')
+    return path_val.s.split(':')
   else:
-    path_list = []  # treat as empty path
+    return []  # treat as empty path
 
+
+def _ResolveFile(name, path_list):
+  # Now look for files.
+  for path_dir in path_list:
+    full_path = os_path.join(path_dir, name)
+    if path_stat.exists(full_path):
+      return ('file', full_path)
+  # Nothing printed, but status is 1.
+  return (None, None)
+
+
+def _ResolveNames(names, funcs, path_val):
   results = []
+  path_list = _ParsePath(path_val)
   for name in names:
     if name in funcs:
       kind = ('function', name)
@@ -957,16 +970,7 @@ def _ResolveNames(names, funcs, path_val):
     elif lex.IsKeyword(name):
       kind = ('keyword', name)
     else:
-      # Now look for files.
-      found = False
-      for path_dir in path_list:
-        full_path = os_path.join(path_dir, name)
-        if path_stat.exists(full_path):
-          kind = ('file', full_path)
-          found = True
-          break
-      if not found:  # Nothing printed, but status is 1.
-        kind = (None, None)
+      kind = _ResolveFile(name, path_list)
     results.append(kind)
 
   return results
@@ -1001,19 +1005,37 @@ class Command(object):
 
 
 TYPE_SPEC = _Register('type')
+TYPE_SPEC.ShortFlag('-f')
 TYPE_SPEC.ShortFlag('-t')
+TYPE_SPEC.ShortFlag('-p')
+TYPE_SPEC.ShortFlag('-P')
 
 
 def Type(argv, funcs, path_val):
   arg, i = TYPE_SPEC.Parse(argv)
 
   status = 0
+  if arg.f:
+    funcs = []
   for kind, name in _ResolveNames(argv[i:], funcs, path_val):
     if kind is None:
       status = 1  # nothing printed, but we fail
     else:
       if arg.t:
         print(kind)
+      elif arg.p:
+        if kind == 'file':
+          print(name)
+      elif arg.P:
+        if kind == 'file':
+          print(name)
+        else:
+          kind, path = _ResolveFile(name, _ParsePath(path_val))
+          if kind is None:
+            status = 1
+          else:
+            print(path)
+
       else:
         # Alpine's abuild relies on this text because busybox ash doesn't have
         # -t!
