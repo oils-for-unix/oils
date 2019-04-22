@@ -11,7 +11,9 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import line_span, source, source_t
+from _devbuild.gen.syntax_asdl import (
+    line_span, source, source_t
+)
 from asdl import const
 from core.util import log
 
@@ -25,39 +27,32 @@ class Arena(object):
   1. Error reporting
   2. osh-to-oil Translation
   """
-  def __init__(self, arena_id):
-    # type: (int) -> None
-    self.arena_id = arena_id  # an integer stored in tokens
+  def __init__(self):
+    # type: () -> None
 
-    # TODO: lines should be part of the token, so they get garbage collected
-    # when the token goes away.  (For example, a line that's all whitespace
-    # will have no tokens put in the LST.)
-    self.lines = []  # type: List[str]
-    self.next_line_id = 0
+    # Three parallel arrays for line information.  indexed by line_id
+    self.line_vals = []  # type: List[str]
+    self.line_nums = []  # type: List[int]
+    self.line_srcs = []  # type: List[source_t]
 
-    # first real span is 1.  0 means undefined.
+    # indexed by span_id
     self.spans = []  # type: List[line_span]
-    self.next_span_id = 0
 
-    # (src_path, physical line number)
-    self.debug_info = []  # type: List[Tuple[str, int]] 
-    self.src_paths = []  # type: List[str]
     # reuse these instances in many line_span instances
     self.source_instances = []  # type: List[source_t]
 
-  def PushSource(self, src_path):
-    # type: (str) -> None
-    self.src_paths.append(src_path)
-    self.source_instances.append(source.File(src_path))
+  def PushSource(self, src):
+    # type: (source_t) -> None
+    self.source_instances.append(src)
 
   def PopSource(self):
     # type: () -> None
-    self.src_paths.pop()
     self.source_instances.pop()
 
   def AddLine(self, line, line_num):
     # type: (str, int) -> int
-    """
+    """Save a physical line and return a line_id for later retrieval.
+
     Args:
       line: string
       line_num: physical line number, for printing
@@ -65,28 +60,31 @@ class Arena(object):
     TODO: Add an option of whether to save the line?  You can retrieve it on
     disk in many cases.  (But not in the stdin, '-c', 'eval' case)
     """
-    line_id = self.next_line_id
-    self.lines.append(line)
-    self.next_line_id += 1
-    self.debug_info.append((self.src_paths[-1], line_num))
+    line_id = len(self.line_vals)
+    self.line_vals.append(line)
+    self.line_nums.append(line_num)
+    self.line_srcs.append(self.source_instances[-1])
     return line_id
 
   def GetLine(self, line_id):
     # type: (int) -> str
-    """
-    Given an line ID, return the actual filename, physical line number, and
-    line contents.
-    """
     assert line_id >= 0, line_id
-    return self.lines[line_id]
+    return self.line_vals[line_id]
+
+  def GetLineNumber(self, line_id):
+    # type: (int) -> int
+    return self.line_nums[line_id]
+
+  def GetLineSource(self, line_id):
+    # type: (int) -> source_t
+    return self.line_srcs[line_id]
 
   def AddLineSpan(self, line_id, col, length):
     # type: (int, int, int) -> int
     """Save a line_span and return a new span ID for later retrieval."""
-    span = line_span(line_id, col, length, self.source_instances[-1])
+    span_id = len(self.spans)  # spids are just array indices
+    span = line_span(line_id, col, length)
     self.spans.append(span)
-    span_id = self.next_span_id
-    self.next_span_id += 1
     return span_id
 
   def GetLineSpan(self, span_id):
@@ -108,8 +106,10 @@ class Arena(object):
     # type: (int) -> Tuple[str, int]
     """Get the path and physical line number, for parse errors."""
     assert line_id != const.NO_INTEGER, line_id
-    path, line_num = self.debug_info[line_id]
-    return path, line_num
+    src = self.line_srcs[line_id]
+    #path = cast(source__File, src).path
+    line_num = self.line_nums[line_id]
+    return None, line_num
 
 
 # TODO: Remove this.  There are many sources of code, and they are hard to
@@ -126,7 +126,7 @@ def SideArena(source_name):
   # get rid of the pool concept?
   pool = Pool()
   arena = pool.NewArena()
-  arena.PushSource(source_name)
+  arena.PushSource(source.File(source_name))
   return arena
 
 
@@ -152,7 +152,6 @@ class Pool(object):
   def __init__(self):
     # type: () -> None
     self.arenas = []  # type: List[Arena]
-    self.next_arena_id = 0
 
   # NOTE: dash uses a similar scheme.  stalloc() / setstackmark() /
   # popstackmark() in memalloc.c.
@@ -162,7 +161,6 @@ class Pool(object):
   def NewArena(self):
     # type: () -> Arena
     """Call this after parsing anything that you might want to destroy."""
-    a = Arena(self.next_arena_id)
-    self.next_arena_id += 1
+    a = Arena()
     self.arenas.append(a)
     return a

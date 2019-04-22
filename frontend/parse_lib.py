@@ -217,6 +217,8 @@ class ParseContext(object):
     NOTE: We add tokens to a different arena, so we don't mess up the
     invariants for translation.
     """
+    # TODO: arena.PushSource()!  Make sure we know it's the LValue.
+
     line_reader = reader.StringLineReader(code_str, arena)
     lx = self._MakeLexer(line_reader, arena=arena)
     w_parser = word_parse.WordParser(self, lx, line_reader,

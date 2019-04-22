@@ -14,7 +14,7 @@ import cStringIO
 import posix
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import lhs_expr
+from _devbuild.gen.syntax_asdl import (lhs_expr, source__File)
 from _devbuild.gen.runtime_asdl import (
     value, value_e, lvalue_e, scope_e, var_flags_e
 )
@@ -596,8 +596,12 @@ class Mem(object):
     self._PushDebugStack(func_name, None)
 
     span = self.arena.GetLineSpan(def_spid)
-    def_source_name, _ = self.arena.GetDebugInfo(span.line_id)
-    self.bash_source.append(def_source_name)
+    src = self.arena.GetLineSource(span.line_id)
+    if isinstance(src, source__File):
+      source_str = src.path
+    else:
+      source_str = repr(src)
+    self.bash_source.append(source_str)
 
   def PopCall(self):
     self.bash_source.pop()

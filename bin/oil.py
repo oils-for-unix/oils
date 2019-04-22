@@ -50,6 +50,7 @@ import atexit
 import errno
 
 from _devbuild.gen.runtime_asdl import builtin_e
+from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
 from core import comp_ui
@@ -443,13 +444,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
 
   if opts.c is not None:
-    arena.PushSource('<command string>')
+    arena.PushSource(source.CFlag())
     line_reader = reader.StringLineReader(opts.c, arena)
     if opts.i:  # -c and -i can be combined
       exec_opts.interactive = True
 
   elif opts.i:  # force interactive
-    arena.PushSource('<stdin -i>')
+    arena.PushSource(source.Stdin(' -i'))
     # interactive shell only
     line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
                                                line_input, prompt_state)
@@ -460,16 +461,16 @@ def ShellMain(lang, argv0, argv, login_shell):
       script_name = arg_r.Peek()
     except IndexError:
       if sys.stdin.isatty():
-        arena.PushSource('<interactive>')
+        arena.PushSource(source.Interactive())
         # interactive shell only
         line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
                                                    line_input, prompt_state)
         exec_opts.interactive = True
       else:
-        arena.PushSource('<stdin>')
+        arena.PushSource(source.Stdin(''))
         line_reader = reader.FileLineReader(sys.stdin, arena)
     else:
-      arena.PushSource(script_name)
+      arena.PushSource(source.File(script_name))
       try:
         f = fd_state.Open(script_name)
       except OSError as e:

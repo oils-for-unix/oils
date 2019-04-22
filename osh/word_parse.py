@@ -65,6 +65,8 @@ from _devbuild.gen.syntax_asdl import (
 
     command, command__ForExpr,
     suffix_op, bracket_op,
+
+    source,
 )
 # TODO: rename word -> osh_word in syntax.asdl
 from _devbuild.gen.syntax_asdl import word as osh_word
@@ -708,6 +710,8 @@ class WordParser(object):
       # interleave parsing and execution!  Unlike 'source' and 'eval'.
       node = c_parser.ParseCommandSub()
 
+      right_spid = c_parser.w_parser.cur_token.span_id
+
     elif left_id == Id.Left_Backtick and self.parse_ctx.one_pass_parse:
       # NOTE: This is an APPROXIMATE solution for translation ONLY.  See
       # test/osh2oil.
@@ -717,6 +721,7 @@ class WordParser(object):
       c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
                                                         self.lexer, right_id)
       node = c_parser.ParseCommandSub()
+      right_spid = c_parser.w_parser.cur_token.span_id
 
     elif left_id == Id.Left_Backtick:
       self._Next(lex_mode_e.Backtick)  # advance past `
@@ -739,6 +744,9 @@ class WordParser(object):
           raise AssertionError
         self._Next(lex_mode_e.Backtick)
 
+      # Calculate right SPID on CommandSubPart BEFORE re-parsing.
+      right_spid = self.cur_token.span_id
+
       code_str = ''.join(parts)
       #log('code %r', code_str)
 
@@ -746,8 +754,8 @@ class WordParser(object):
       # It won't have the same location info as MakeParserForCommandSub(),
       # because the lexer is different.
       arena = self.parse_ctx.arena
-      # TODO: Link back to source location.
-      arena.PushSource('Backticks at line %d of %r' % (-1, 'TODO'))
+      extent = None  # TODO: GetLineNumber
+      arena.PushSource(source.Backticks(extent))
 
       line_reader = reader.StringLineReader(code_str, self.parse_ctx.arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
@@ -758,9 +766,6 @@ class WordParser(object):
 
     else:
       raise AssertionError(left_id)
-
-    # Hm this creates its own word parser, which is thrown away?
-    right_spid = c_parser.w_parser.cur_token.span_id
 
     cs_part = word_part.CommandSubPart(node, left_token)
     cs_part.spids.append(left_spid)

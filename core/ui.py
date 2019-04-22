@@ -12,7 +12,12 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.syntax_asdl import command_t, command
+from _devbuild.gen.syntax_asdl import (
+    command_t, command,
+    source__Interactive, source__CFlag, source__Stdin, source__File,
+    source__Alias, source__Backticks, source__LValue
+
+)
 from _devbuild.gen.runtime_asdl import value_t, value
 from asdl import const
 from asdl import format as fmt
@@ -38,30 +43,58 @@ def PrettyDir(dir_name, home_dir):
   return dir_name
 
 
-def PrintFilenameAndLine(span_id, arena, f=sys.stderr):
+def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
   # type: (int, Arena, IO[str]) -> None
   line_span = arena.GetLineSpan(span_id)
+  col = line_span.col
   line_id = line_span.line_id
   line = arena.GetLine(line_id)
-  path, line_num = arena.GetDebugInfo(line_id)
-  col = line_span.col
-  length = line_span.length
 
-  # TODO: If the line is blank, it would be nice to print the last non-blank
-  # line too?
-  print('Line %d of %r' % (line_num, path), file=f)
   print('  ' + line.rstrip(), file=f)
   f.write('  ')
   # preserve tabs
   for c in line[:col]:
     f.write('\t' if c == '\t' else ' ')
   f.write('^')
-  f.write('~' * (length-1))
+  f.write('~' * (line_span.length-1))
   f.write('\n')
+
+  # TODO: Use color instead of [ ]
+  src = arena.GetLineSource(line_id)
+  if isinstance(src, source__Interactive):
+    source_str = '[ interactive ]'  # This might need some changes
+  elif isinstance(src, source__CFlag):
+    source_str = '[ -c flag ]'
+
+  elif isinstance(src, source__Stdin):
+    source_str = '[ stdin%s ]' % src.comment
+  elif isinstance(src, source__File):
+    source_str = src.path
+
+  # TODO: These three cases have to recurse into the source of the extent!
+  elif isinstance(src, source__Alias):
+    source_str = '[ expansion of alias %r ]' % src.argv0
+  elif isinstance(src, source__Backticks):
+    source_str = '[ backticks at ... ]'
+  elif isinstance(src, source__LValue):
+    source_str = '[ array index LValue at ... ]'
+
+  else:
+    source_str = repr(src)
+
+  # TODO: If the line is blank, it would be nice to print the last non-blank
+  # line too?
+  line_num = arena.GetLineNumber(line_id)
+  print('%s:%d: %s%s' % (source_str, line_num, prefix, msg), file=f)
 
 
 def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   # type: (ParseError, Arena, str, IO[str]) -> None
+  """
+  Args:
+    prefix: in osh/cmd_exec.py we want to print 'fatal'
+  """
+  msg = err.UserErrorString()
   span_id = word.SpanIdFromError(err)
 
   # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
@@ -75,11 +108,18 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   if span_id == const.NO_INTEGER:  # Any clause above might return this.
     # This is usually a bug.
     print('*** Error has no source location info ***', file=f)
+    print('%s%s' % (prefix, msg), file=f)
   else:
-    PrintFilenameAndLine(span_id, arena, f=f)
+    _PrintWithLocation(prefix, msg, span_id, arena, f=f)
 
-  f.write(prefix)
-  print(err.UserErrorString(), file=f)
+
+def PrintWarning(msg, span_id, arena, f=sys.stderr):
+  prefix = 'warning: '
+  if span_id == const.NO_INTEGER:  # When does this happen?
+    print('*** Warning has no source location info ***', file=f)
+    print('%s%s' % (prefix, msg), file=f)
+  else:
+    _PrintWithLocation(prefix, msg, span_id, arena)
 
 
 def PrintAst(nodes, opts):

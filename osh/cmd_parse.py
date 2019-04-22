@@ -27,6 +27,8 @@ from _devbuild.gen.syntax_asdl import (
 
     token, assign_pair, env_pair,
     assign_op_e,
+
+    source,
 )
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: rename
 from _devbuild.gen import syntax_asdl  # line_span
@@ -197,6 +199,8 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
 
     # Now reparse everything between here
     code_str = ''.join(pieces)
+
+    # TODO: do not use this
 
     # NOTE: It's possible that an alias expansion underlies this, not a real
     # file!  We have to use a SideArena since this will happen during
@@ -679,37 +683,38 @@ class CommandParser(object):
 
     # We got some expansion.  Now copy the rest of the words.
 
-    # BUGGY: span invariant doesn't hold when you have bacticks in words!!!!
-
-    # So we need words to have an EXTENT
-    # maybe only CompoundWord needs it for now.
-    #  -
-    # Problem: line_span has no concept of "source"!  that needs to be changed.
-
-    # extent implies source!
-    # source has a range of line IDs?
-
-
     # We need each NON-REDIRECT word separately!  For example:
     # $ echo one >out two
     # dash/mksh/zsh go beyond the first redirect!
     while i < n:
       w = words[i]
-      left_spid = word.LeftMostSpanForWord(w)
-      right_spid = word.RightMostSpanForWord(w)
+      spid1 = word.LeftMostSpanForWord(w)
+      spid2 = word.RightMostSpanForWord(w)
 
-      prev_src = None
-      # Adapted from tools/osh2oil.py Cursor.PrintUntil
-      for span_id in xrange(left_spid, right_spid + 1):
-        span = self.arena.GetLineSpan(span_id)
+      span1 = self.arena.GetLineSpan(spid1)
+      span2 = self.arena.GetLineSpan(spid2)
 
-        if prev_src and span.src != prev_src:
-          raise AssertionError('%s != %s', prev_src, span.src)
-        prev_src = span.src
+      if 0:
+        log('spid1 = %d, spid2 = %d', spid1, spid2)
+        n1 = self.arena.GetLineNumber(span1.line_id)
+        n2 = self.arena.GetLineNumber(span2.line_id)
+        log('span1 %s line %d %r', span1, n1, self.arena.GetLine(span1.line_id))
+        log('span2 %s line %d %r', span2, n2, self.arena.GetLine(span2.line_id))
 
-        line = self.arena.GetLine(span.line_id)
-        piece = line[span.col : span.col + span.length]
+      if span1.line_id == span2.line_id:
+        line = self.arena.GetLine(span1.line_id)
+        piece = line[span1.col : span2.col + span2.length]
         expanded.append(piece)
+      else:
+        # NOTE: The xrange(left_spid, right_spid) algorithm won't work for
+        # commands like this:
+        #
+        # myalias foo`echo hi`bar
+        #
+        # That is why we only support words over 1 or 2 lines.
+
+        raise NotImplementedError(
+            'line IDs %d != %d' % (span1.line_id, span2.line_id))
 
       expanded.append(' ')  # Put space back between words.
       i += 1
@@ -724,9 +729,9 @@ class CommandParser(object):
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.
-    self.arena.PushSource(
-        '<expansion of alias %r at line %d of %s>' %
-        (first_word_str, -1, 'TODO'))
+
+    extent = None  # TODO: GetLineNumber / GetLineSource for current span_id?
+    self.arena.PushSource(source.Alias(first_word_str, extent))
     trail = self.parse_ctx.trail
     trail.BeginAliasExpansion()
     try:

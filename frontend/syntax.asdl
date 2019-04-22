@@ -33,28 +33,47 @@
 module syntax
 {
   source = 
-    CFlag
-  | Stdin
+    Interactive
+  | CFlag
+  | Stdin(string comment)
+    -- TODO: if it's not the main script, it's sourced, and you could provide
+    -- a chain of locations back to the sourced script!
   | File(string path)
-  | EvalArg(extent first) -- extent corresponding to the 'eval' word.
-                          -- The rest of the args are JOINED, so it's not clear
-                          -- where they come from.
-  | ArgvWord(extent loc) -- extent for argv
+  | ArgvWord(extent loc)       -- code parsed from a single word.
+                               -- e.g. trap and complete -W
+  | ArgvCommand(extent first)  -- word splitting changes the arity, so we don't
+                               -- don't know which arg came from which word.
+                               -- Just point to the first word.
+  | EvalArg(extent first)      -- special case for 'eval'
+                               -- The rest of the args are JOINED, so it's not
+                               -- clear where they come from.
+  | Variable(extent assigned)  -- $PS1, $PS4, etc.
+                               --   where the variable was last assigned
+
+                               -- 3 instances of reparsing:
+  | Alias(string argv0, extent argv0_loc)
+                               -- alias expansion (location of first word)
+  | Backticks(extent loc)      -- reparsing in  echo `echo \"hi\"`
+                               --   (area between ` and ` )
+  | LValue(extent loc)         -- reparsing of x+1 in a[x+1]=y
+                               --   (area between [ and ] )
 
   -- A temporary value that's NOT stored in the LST.  It's the beginning or end
   -- of a line_span / extent.
-  position = (int line_id, int col, source src)
+  position = (int line_id, int col)
 
   -- A line_span represents the source location of a token, which never crosses
   -- lines.  Encoded into LST with 'int spid'.
-  -- TODO: add source
-  line_span = (int line_id, int col, int length, source src)
+  line_span = (int line_id, int col, int length)
 
   -- An extent represents the source locations of a word or word_part, which
   -- may span multiple lines.  Encoded into LST with 'int exid'.
   extent = (int s_line_id, int s_col,
-            int e_line_id, int e_col,
-            source src)
+            int e_line_id, int e_col)
+
+  -- Logically, here's our record for a physical line.  For compactness, we
+  -- TRANSPOSE it into 3 parallel arrays, so this record is unused.
+  -- line_record = (int line_num, string val, source src)
 
   -- NOTE: We use 'val' for execution, and the line_span from span_id for
   -- errors and translation.  (LATER: Add 'speck' and 'strand' to optimize for

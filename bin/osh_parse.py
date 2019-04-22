@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.syntax_asdl import source
 from asdl import format as fmt
 from core import alloc
 from core import main_loop
@@ -21,7 +22,7 @@ def main(argv):
   # type: (List[str]) -> int
   pool = alloc.Pool()
   arena = pool.NewArena()
-  arena.PushSource('<stdin>')
+  arena.PushSource(source.Stdin(''))
 
   line_reader = reader.FileLineReader(sys.stdin, arena)
   # Dummy value; not respecting aliases!

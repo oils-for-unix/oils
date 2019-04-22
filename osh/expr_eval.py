@@ -28,7 +28,7 @@ from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import const
 from core.meta import BOOL_ARG_TYPES
 from core import util
-from core.util import log, warn, e_die
+from core.util import warn, e_die
 from core import ui
 from osh import state
 from osh import word
@@ -267,14 +267,8 @@ class ArithEvaluator(_ExprEvaluator):
         raise
       else:
         i = 0
-
         span_id = word.SpanIdFromError(e)
-        if self.arena:  # BoolEvaluator for test builtin doesn't have it.
-          if span_id != const.NO_INTEGER:
-            ui.PrintFilenameAndLine(span_id, self.arena)
-          else:
-            log('*** Warning has no location info ***')
-        warn(e.UserErrorString())
+        ui.PrintWarning(e.UserErrorString(), span_id, self.arena)
     return i
 
   def _LookupVar(self, name):

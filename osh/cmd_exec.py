@@ -21,7 +21,8 @@ import time
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, word_part, token
+    command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, word_part, token,
+    source
 )
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
@@ -166,8 +167,8 @@ class Executor(object):
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack
 
-  def _EvalHelper(self, c_parser, source_name):
-    self.arena.PushSource(source_name)
+  def _EvalHelper(self, c_parser, src):
+    self.arena.PushSource(src)
     try:
       return main_loop.Batch(self, c_parser, self.arena)
     finally:
@@ -185,8 +186,9 @@ class Executor(object):
     span = self.arena.GetLineSpan(eval_spid)
     path, line_num = self.arena.GetDebugInfo(span.line_id)
 
-    source_name = '<eval string from %s:%d>' % (path, line_num)
-    return self._EvalHelper(c_parser, source_name)
+    # TODO: use source.EvalArg
+    src = source.File('<eval string from %s:%d>' % (path, line_num))
+    return self._EvalHelper(c_parser, src)
 
   def ParseTrapCode(self, code_str):
     """
@@ -237,7 +239,7 @@ class Executor(object):
       source_argv = argv[1:]
       self.mem.PushSource(path, source_argv)
       try:
-        status = self._EvalHelper(c_parser, path)
+        status = self._EvalHelper(c_parser, source.File(path))
       finally:
         self.mem.PopSource(source_argv)
 
@@ -904,8 +906,7 @@ class Executor(object):
       else:
         # Only print warnings, never fatal.
         # Bash oddly only exits 1 for 'return', but no other shell does.
-        ui.PrintFilenameAndLine(tok.span_id, self.arena)
-        util.warn(msg)
+        ui.PrintWarning(msg, tok.span_id, self.arena)
         status = 0
 
     # The only difference between these two is that CommandList has no

@@ -182,10 +182,6 @@ class SpecBuilder(object):
       # - Parsing is done at REGISTRATION time, but execution and splitting is
       #   done at COMPLETION time (when the user hits tab).  So parse errors
       #   happen early.
-      # - It's OK to reuse the same arena because this doesn't happen during
-      #   translation.  TODO: But we need PushSource().  We should
-      #   create SideArena instances that track back to the current location of
-      #   the 'complete' builtin.
       arena = self.parse_ctx.arena
       w_parser = self.parse_ctx.MakeWordParserForPlugin(arg.W, arena)
 

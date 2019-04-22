@@ -210,7 +210,7 @@ def _RightMostSpanForPart(part):
     return const.NO_INTEGER
 
   elif isinstance(part, word_part__ArithSubPart):
-    return const.NO_INTEGER
+    return part.spids[1]
 
   elif isinstance(part, word_part__ExtGlobPart):
     return part.spids[1]
