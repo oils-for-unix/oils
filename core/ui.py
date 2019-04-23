@@ -15,7 +15,7 @@ import sys
 from _devbuild.gen.syntax_asdl import (
     command_t, command,
     source__Interactive, source__CFlag, source__Stdin, source__MainFile,
-    source__SourcedFile, source__EvalArg,
+    source__SourcedFile, source__EvalArg, source__Trap,
     source__Alias, source__Backticks, source__LValue
 
 )
@@ -94,6 +94,10 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
     line_num = arena.GetLineNumber(span.line_id)
     outer_source = arena.GetLineSourceString(span.line_id)
     source_str = '[ eval at line %d of %s ]' % (line_num, outer_source)
+
+  elif isinstance(src, source__Trap):
+    # TODO: Look at word_spid
+    source_str = '[ trap ]'
 
   else:
     source_str = repr(src)

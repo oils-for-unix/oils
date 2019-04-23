@@ -303,7 +303,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # Three ParseContext instances SHARE aliases.
   comp_arena = alloc.Arena()
-  comp_arena.PushSource('<completion>')
+  comp_arena.PushSource(source.Unused('completion'))
   trail1 = parse_lib.Trail()
   # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
   # fix the issue where ` gets erased because it's not part of
@@ -312,7 +312,7 @@ def ShellMain(lang, argv0, argv, login_shell):
                                     one_pass_parse=True)
 
   hist_arena = alloc.Arena()
-  hist_arena.PushSource('<history>')
+  hist_arena.PushSource(source.Unused('history'))
   trail2 = parse_lib.Trail()
   hist_ctx = parse_lib.ParseContext(hist_arena, aliases, trail=trail2)
 
@@ -611,10 +611,12 @@ def OshCommandMain(argv):
   if action not in SUBCOMMANDS:
     raise args.UsageError('oshc: Invalid subcommand %r.' % action)
 
+  arena = alloc.Arena()
   try:
     script_name = argv[1]
+    arena.PushSource(source.MainFile(script_name))
   except IndexError:
-    script_name = '<stdin>'
+    arena.PushSource(source.Stdin())
     f = sys.stdin
   else:
     try:
@@ -623,8 +625,6 @@ def OshCommandMain(argv):
       util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
       return 2
 
-  arena = alloc.Arena()
-  arena.PushSource(script_name)
 
   line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!

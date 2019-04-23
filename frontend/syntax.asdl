@@ -34,6 +34,7 @@ module syntax
 {
   source = 
     Interactive
+  | Unused(string comment)     -- completion and history never show parse errors?
   | CFlag
   | Stdin(string comment)
     -- TODO: if it's not the main script, it's sourced, and you could provide
@@ -49,6 +50,7 @@ module syntax
   | EvalArg(int eval_spid)     -- special case for 'eval'
                                -- The rest of the args are JOINED, so it's not
                                -- clear where they come from.
+  | Trap(int word_spid)        -- code for the trap builtin
   | Variable(extent assigned)  -- $PS1, $PS4, etc.
                                --   where the variable was last assigned
     -- 3 instances of reparsing:

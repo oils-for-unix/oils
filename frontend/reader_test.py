@@ -6,6 +6,7 @@ reader_test.py: Tests for reader.py
 import cStringIO
 import unittest
 
+from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import test_lib
 from frontend import reader  # module under test
@@ -34,7 +35,7 @@ class ReaderTest(unittest.TestCase):
     r3 = reader.VirtualLineReader(lines, a3)
 
     for a in [a1, a2, a3]:
-      a.PushSource('reader_test.py')
+      a.PushSource(source.MainFile('reader_test.py'))
 
     for r in [r1, r2, r3]:
       print(r)

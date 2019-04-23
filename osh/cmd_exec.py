@@ -191,14 +191,12 @@ class Executor(object):
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    source_name = '<trap string>'
-    self.arena.PushSource(source_name)
-
+    # TODO: the SPID should be passed through argv
+    self.arena.PushSource(source.Trap(const.NO_INTEGER))
     try:
       try:
         node = main_loop.ParseWholeFile(c_parser)
       except util.ParseError as e:
-        util.error('Parse error in %r:', source_name)
         ui.PrettyPrintError(e, self.arena)
         return None
 
