@@ -750,15 +750,13 @@ class WordParser(object):
       code_str = ''.join(parts)
       #log('code %r', code_str)
 
-      # NOTE: This is similar to how we parse aliases in osh/cmd_parse.py.
-      # It won't have the same location info as MakeParserForCommandSub(),
-      # because the lexer is different.
+      # NOTE: This is similar to how we parse aliases in osh/cmd_parse.py.  It
+      # won't have the same location info as MakeParserForCommandSub(), because
+      # the lexer is different.
       arena = self.parse_ctx.arena
-      extent = None  # TODO: GetLineNumber
-      arena.PushSource(source.Backticks(extent))
-
-      line_reader = reader.StringLineReader(code_str, self.parse_ctx.arena)
+      line_reader = reader.StringLineReader(code_str, arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
+      arena.PushSource(source.Backticks(left_spid, right_spid))
       try:
         node = c_parser.ParseCommandSub()
       finally:

@@ -636,9 +636,8 @@ class CommandParser(object):
     # through CommandParser instances.
     aliases_in_flight = self.aliases_in_flight or []
 
-    # The last char that we might parse.
-    right_spid = word.RightMostSpanForWord(words[-1])
     first_word_str = None  # for error message
+    argv0_spid = word.LeftMostSpanForWord(words[0])
 
     expanded = []
     i = 0
@@ -731,7 +730,7 @@ class CommandParser(object):
     # See docstring of BeginAliasExpansion() in parse_lib.py.
 
     extent = None  # TODO: GetLineNumber / GetLineSource for current span_id?
-    self.arena.PushSource(source.Alias(first_word_str, extent))
+    self.arena.PushSource(source.Alias(first_word_str, argv0_spid))
     trail = self.parse_ctx.trail
     trail.BeginAliasExpansion()
     try:

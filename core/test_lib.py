@@ -163,7 +163,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
   bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.bool_ev = bool_ev
 
-  tracer = cmd_exec.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
+  tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
   exec_deps.tracer = tracer
 
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,

@@ -402,7 +402,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.bool_ev = bool_ev
 
-  tracer = cmd_exec.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
+  tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
   exec_deps.tracer = tracer
 
   # HACK for circular deps

@@ -11,7 +11,6 @@ from _devbuild.gen.syntax_asdl import assign_op_e
 
 from asdl import const
 from asdl import pretty
-from core import alloc
 from core import util
 from core.util import log
 from osh import word
@@ -168,9 +167,7 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be the --debug-file as well
 
-    # NOTE: We could use the same arena, since this doesn't happen during
-    # translation.
-    self.arena = alloc.SideArena('<$PS4>')
+    self.arena = parse_ctx.arena
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
 
   def _EvalPS4(self):

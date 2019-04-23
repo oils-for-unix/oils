@@ -49,14 +49,16 @@ module syntax
                                -- clear where they come from.
   | Variable(extent assigned)  -- $PS1, $PS4, etc.
                                --   where the variable was last assigned
+    -- 3 instances of reparsing:
 
-                               -- 3 instances of reparsing:
-  | Alias(string argv0, extent argv0_loc)
-                               -- alias expansion (location of first word)
-  | Backticks(extent loc)      -- reparsing in  echo `echo \"hi\"`
-                               --   (area between ` and ` )
-  | LValue(extent loc)         -- reparsing of x+1 in a[x+1]=y
-                               --   (area between [ and ] )
+    -- alias expansion (location of first word)
+  | Alias(string argv0, int argv0_spid)
+
+    -- reparsing in  echo `echo \"hi\"`
+  | Backticks(int left_spid, int right_spid)
+
+    -- reparsing of x+1 in a[x+1]=y
+  | LValue(int left_spid, int right_spid)
 
   -- A temporary value that's NOT stored in the LST.  It's the beginning or end
   -- of a line_span / extent.
