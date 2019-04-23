@@ -187,20 +187,22 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
     else:
       op = assign_op_e.Equal
 
-    # Adapted from tools/osh2oil.py Cursor.PrintUntil
-    # TODO: Make a method like arena.AppendPieces(start, end, []), and share
-    # with alias.
-    pieces = []
-    for span_id in xrange(left_token.span_id + 1, close_token.span_id):
-      span = parse_ctx.arena.GetLineSpan(span_id)
-      line = parse_ctx.arena.GetLine(span.line_id)
-      piece = line[span.col : span.col + span.length]
-      pieces.append(piece)
-
-    # Now reparse everything between here
-    code_str = ''.join(pieces)
+    spid1 = left_token.span_id
+    spid2 = close_token.span_id
+    span1 = arena.GetLineSpan(spid1)
+    span2 = arena.GetLineSpan(spid2)
+    if span1.line_id == span2.line_id:
+      line = arena.GetLine(span1.line_id)
+      # extract what's between brackets
+      code_str = line[span1.col + span1.length : span2.col]
+    else:
+      raise NotImplementedError('%d != %d' % (spid1.line_id, spid2.line_id))
     a_parser = parse_ctx.MakeArithParser(code_str, arena)
-    expr = a_parser.Parse()  # may raise util.ParseError
+    arena.PushSource(source.LValue(left_token.span_id, close_token.span_id))
+    try:
+      expr = a_parser.Parse()  # may raise util.ParseError
+    finally:
+      arena.PopSource()
     lhs = lhs_expr.LhsIndexedName(var_name, expr)
     lhs.spids.append(left_token.span_id)
 

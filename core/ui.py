@@ -78,7 +78,13 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
   elif isinstance(src, source__Backticks):
     source_str = '[ backticks at ... ]'
   elif isinstance(src, source__LValue):
-    source_str = '[ array index LValue at ... ]'
+    # TODO: This is always one line, so it always looks like
+    # [ array LValue ... ]:1:
+    # Maybe we should special case it?
+    span = arena.GetLineSpan(src.left_spid)
+    line_num = arena.GetLineNumber(span.line_id)
+    outer_source = arena.GetLineSourceString(span.line_id)
+    source_str = '[ array LValue at line %d of %s ]' % (line_num, outer_source)
 
   elif isinstance(src, source__EvalArg):
     span = arena.GetLineSpan(src.eval_spid)

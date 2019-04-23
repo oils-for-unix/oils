@@ -38,6 +38,7 @@ module syntax
   | Stdin(string comment)
     -- TODO: if it's not the main script, it's sourced, and you could provide
     -- a chain of locations back to the sourced script!
+    -- MainFile(string path) or SourcedFile(string path, int spid)
   | File(string path)
   | ArgvWord(extent loc)       -- code parsed from a single word.
                                -- e.g. trap and complete -W
