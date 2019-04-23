@@ -18,7 +18,6 @@ from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import const
 
-from core import alloc
 from core import test_lib
 from core import util
 
@@ -28,7 +27,7 @@ from osh import word
 
 
 def _InitWordParser(s, arena=None):
-  arena = arena or alloc.SideArena('word_parse_test.py')
+  arena = arena or test_lib.MakeArena('word_parse_test.py')
   parse_ctx = parse_lib.ParseContext(arena, {})
   line_reader, lexer = test_lib.InitLexer(s, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)

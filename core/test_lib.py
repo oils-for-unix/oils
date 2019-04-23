@@ -107,7 +107,7 @@ def InitLexer(s, arena):
 
 
 def MakeTestEvaluator():
-  arena = alloc.SideArena('<MakeTestEvaluator>')
+  arena = MakeArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
   exec_opts = state.ExecOpts(mem, None)
 

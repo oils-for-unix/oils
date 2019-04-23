@@ -12,7 +12,7 @@ Also, we don't want to save comment lines.
 """
 
 from _devbuild.gen.syntax_asdl import (
-    line_span, source, source_t, source__CFlag, source__File
+    line_span, source_t, source__CFlag, source__File
 )
 from asdl import const
 from core.util import log
@@ -113,24 +113,6 @@ class Arena(object):
     # type: () -> int
     """Return one past the last span ID."""
     return len(self.spans)
-
-
-# TODO: Remove this.  There are many sources of code, and they are hard to
-# divide strictly into arenas.
-def SideArena(source_name):
-  # type: (str) -> Arena
-  """A new arena outside the main one.
-  
-  For completion, $PS1 and $PS4, a[x++]=1, etc.
-
-  Translation takes advantage of the fact that arenas have contiguous span_ids.
-  """
-  # TODO: Should there only be one pool?  This isn't worked out yet.  Or just
-  # get rid of the pool concept?
-  pool = Pool()
-  arena = pool.NewArena()
-  arena.PushSource(source.File(source_name))
-  return arena
 
 
 # In C++, InteractiveLineReader and StringLineReader should use the same

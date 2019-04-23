@@ -420,7 +420,7 @@ class RootCompleterTest(unittest.TestCase):
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
     trail = parse_lib.Trail()
-    arena = alloc.SideArena('<completion_test.py>')
+    arena = test_lib.MakeArena('<completion_test.py>')
     parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
@@ -477,7 +477,7 @@ class RootCompleterTest(unittest.TestCase):
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
     trail = parse_lib.Trail()
-    arena = alloc.SideArena('<completion_test.py>')
+    arena = test_lib.MakeArena('<completion_test.py>')
     parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
     comp_lookup = completion.Lookup()
 
@@ -512,7 +512,7 @@ class RootCompleterTest(unittest.TestCase):
     with open('testdata/completion/return-124.bash') as f:
       code_str = f.read()
     trail = parse_lib.Trail()
-    arena = alloc.SideArena('<completion_test.py>')
+    arena = test_lib.MakeArena('<completion_test.py>')
     parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
