@@ -559,7 +559,7 @@ class Executor(object):
       try:
         status = self._RunBuiltin(builtin_id, argv, fork_external, span_id)
       except args.UsageError as e:
-        ui.usage('osh %r usage error: %s', arg0, e)
+        ui.Stderr('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
       return status
 
@@ -577,7 +577,7 @@ class Executor(object):
       try:
         status = self._RunBuiltin(builtin_id, argv, fork_external, span_id)
       except args.UsageError as e:
-        ui.usage('osh %r usage error: %s', arg0, e)
+        ui.Stderr('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
       return status
 

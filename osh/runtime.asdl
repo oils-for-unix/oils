@@ -2,6 +2,11 @@
 
 module runtime
 {
+  -- The spids array is parallel to strs, the argv values.  Note that each
+  -- entry in argv came from a single word, but a word can produce multiple
+  -- argv entries.
+  arg_vector = (string* strs, int* spids)
+
   -- A static word_part from osh.asdl is evaluated to a dynamic part_value.
   part_value = 
     -- Substitutions and unquoted literals get split/elided/globbed.

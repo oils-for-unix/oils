@@ -989,7 +989,7 @@ class _WordEvaluator(object):
 
       array_words = word.parts[0].words
       words = braces.BraceExpandWords(array_words)
-      strs = self._EvalWordSequence(words)
+      strs = self.EvalWordSequence(words)
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
       return value.StrArray(strs)
 
@@ -1072,7 +1072,7 @@ class _WordEvaluator(object):
       results = self.globber.Expand(a)
       argv.extend(results)
 
-  def _EvalWordSequence(self, words):
+  def EvalWordSequence(self, words):
     """Turns a list of Words into a list of strings.
 
     Unlike the EvalWord*() methods, it does globbing.
@@ -1120,13 +1120,6 @@ class _WordEvaluator(object):
 
     #log('ARGV %s', argv)
     return argv
-
-  def EvalWordSequence(self, words):
-    """
-    Used in: SimpleCommand, ForEach.
-    """
-    # TODO: Remove this stub
-    return self._EvalWordSequence(words)
 
 
 class NormalWordEvaluator(_WordEvaluator):

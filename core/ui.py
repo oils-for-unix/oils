@@ -185,11 +185,3 @@ def PrintAst(nodes, opts):
     fmt.PrintTree(tree, ast_f)
     ast_f.FileFooter()
     ast_f.write('\n')
-
-
-def usage(msg, *args):
-  # type: (str, *Any) -> None
-  """For user-facing usage errors."""
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
