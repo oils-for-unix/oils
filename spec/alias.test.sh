@@ -484,11 +484,18 @@ a $((1 + 2))
 ## stdout: ['3']
 
 #### Alias and PS4
-# TO FIX: causes infinite loop!!!
-[[ $SH == */osh ]] && echo 'ENABLE PS4 and FIX'
+# dash enters an infinite loop!
+case $SH in
+  */dash)
+    exit 1
+    ;;
+esac
+
 set -x
-#PS4='+$(echo trace) '
+PS4='+$(echo trace) '
 shopt -s expand_aliases
 alias a=argv.py
 a foo bar
 ## stdout: ['foo', 'bar']
+## BUG dash status: 1
+## BUG dash stdout-json: ""

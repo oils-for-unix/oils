@@ -139,6 +139,7 @@ two
 ## END
 
 #### PS4 with unterminated ${
+# osh shows inline error; maybe fail like dash/mksh?
 x=1
 PS4='+${x'
 set -o xtrace
@@ -155,9 +156,26 @@ status=0
 ## OK mksh status: 1
 
 #### PS4 with unterminated $(
-# osh is not making this a proper syntax error
+# osh shows inline error; maybe fail like dash/mksh?
 x=1
 PS4='+$(x'
+set -o xtrace
+echo one
+echo status=$?
+## STDOUT:
+one
+status=0
+## END
+# mksh and dash both fail.  bash prints errors to stderr.
+## OK dash stdout-json: ""
+## OK dash status: 2
+## OK mksh stdout-json: ""
+## OK mksh status: 1
+
+#### PS4 with runtime error
+# osh shows inline error; maybe fail like dash/mksh?
+x=1
+PS4='+oops $(( 1 / 0 )) \$'
 set -o xtrace
 echo one
 echo status=$?

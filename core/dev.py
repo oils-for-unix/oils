@@ -204,7 +204,13 @@ class Tracer(object):
     # We should come up with a better mechanism.  Something like $PROC_INDENT
     # and $OIL_XTRACE_PREFIX.
 
-    prefix = self.word_ev.EvalForPlugin(ps4_word)
+    # Prevent infinite loop when PS4 has command sub!
+    assert self.exec_opts.xtrace  # We shouldn't call this unless it's on!
+    self.exec_opts.xtrace = False
+    try:
+      prefix = self.word_ev.EvalForPlugin(ps4_word)
+    finally:
+      self.exec_opts.xtrace = True
     return first_char, prefix.s
 
   def OnSimpleCommand(self, argv):
@@ -221,7 +227,6 @@ class Tracer(object):
     if not self.exec_opts.xtrace:
       return
 
-    # Now we have to get the prefix
     first_char, prefix = self._EvalPS4()
     op_str = {assign_op_e.Equal: '=', assign_op_e.PlusEqual: '+='}[op]
     self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
