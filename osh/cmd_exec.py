@@ -1245,18 +1245,6 @@ class Executor(object):
     self.mem.SetLastStatus(status)
     return is_control_flow, is_fatal
 
-  # NOTE: Is this only used by tests?
-  def Execute(self, node, fork_external=True):
-    """Execute a subprogram, handling _ControlFlow and fatal exceptions.
-
-    This is just like ExecuteAndCatch(), but we return a status.
-
-    Returns:
-      status: numeric exit code
-    """
-    self.ExecuteAndCatch(node, fork_external=fork_external)
-    return self.LastStatus()
-
   def MaybeRunExitTrap(self):
     """If an EXIT trap exists, run it.
     

@@ -11,7 +11,6 @@ They call CommandParser.ParseLogicalLine() and Executor.ExecuteAndCatch().
 
 Get rid of:
 
-ex.Execute() -- only used for tests
 ParseWholeFile() -- needs to check the here doc.
 """
 from __future__ import print_function
