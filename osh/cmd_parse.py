@@ -196,7 +196,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       # extract what's between brackets
       code_str = line[span1.col + span1.length : span2.col]
     else:
-      raise NotImplementedError('%d != %d' % (spid1.line_id, spid2.line_id))
+      raise NotImplementedError('%d != %d' % (span1.line_id, span2.line_id))
     a_parser = parse_ctx.MakeArithParser(code_str, arena)
     arena.PushSource(source.LValue(left_token.span_id, close_token.span_id))
     try:
