@@ -207,7 +207,7 @@ class Executor(object):
 
     return node
 
-  def _Source(self, argv):
+  def _Source(self, argv, call_spid):
     try:
       path = argv[0]
     except IndexError:
@@ -232,7 +232,7 @@ class Executor(object):
       source_argv = argv[1:]
       self.mem.PushSource(path, source_argv)
       try:
-        status = self._EvalHelper(c_parser, source.File(path))
+        status = self._EvalHelper(c_parser, source.SourcedFile(path, call_spid))
       finally:
         self.mem.PopSource(source_argv)
 
@@ -318,7 +318,7 @@ class Executor(object):
       status = builtin.Pwd(argv, self.mem)
 
     elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
-      status = self._Source(argv)
+      status = self._Source(argv, span_id)
 
     elif builtin_id == builtin_e.TRAP:
       status = builtin.Trap(argv, self.traps, self.nodes_to_run, self)

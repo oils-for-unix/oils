@@ -14,8 +14,8 @@ import sys
 
 from _devbuild.gen.syntax_asdl import (
     command_t, command,
-    source__Interactive, source__CFlag, source__Stdin, source__File,
-    source__EvalArg,
+    source__Interactive, source__CFlag, source__Stdin, source__MainFile,
+    source__SourcedFile, source__EvalArg,
     source__Alias, source__Backticks, source__LValue
 
 )
@@ -69,10 +69,13 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
 
   elif isinstance(src, source__Stdin):
     source_str = '[ stdin%s ]' % src.comment
-  elif isinstance(src, source__File):
+  elif isinstance(src, source__MainFile):
     source_str = src.path
 
-  # TODO: These three cases have to recurse into the source of the extent!
+  elif isinstance(src, source__SourcedFile):
+    # TODO: could chain of 'source' with the spid
+    source_str = src.path
+
   elif isinstance(src, source__Alias):
     source_str = '[ expansion of alias %r ]' % src.argv0
   elif isinstance(src, source__Backticks):

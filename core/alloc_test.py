@@ -16,7 +16,7 @@ class AllocTest(unittest.TestCase):
 
   def testArena(self):
     arena = self.arena
-    arena.PushSource(source.File('one.oil'))
+    arena.PushSource(source.MainFile('one.oil'))
 
     line_id = arena.AddLine('line 1', 1)
     self.assertEqual(0, line_id)
@@ -37,11 +37,11 @@ class AllocTest(unittest.TestCase):
   def testPushSource(self):
     arena = self.arena
 
-    arena.PushSource(source.File('one.oil'))
+    arena.PushSource(source.MainFile('one.oil'))
     arena.AddLine('echo 1a', 1)
     arena.AddLine('source two.oil', 2)
 
-    arena.PushSource(source.File('two.oil'))
+    arena.PushSource(source.MainFile('two.oil'))
     arena.AddLine('echo 2a', 1)
     id2 = arena.AddLine('echo 2b', 2)  # line 2 of two.oil
     arena.PopSource()

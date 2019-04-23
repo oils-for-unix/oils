@@ -1,11 +1,5 @@
 -- Data types for evaluating an AST (or LST at the moment.)
 
--- TODO: add ASDL option to put constructors under the variant namespace:
---   part_value.String, part_value.Array
---   fragment
---   arg.Const, arg.Glob
---   value.Str, value StrArray,
-
 module runtime
 {
   -- A static word_part from osh.asdl is evaluated to a dynamic part_value.
@@ -33,6 +27,9 @@ module runtime
   -- | ArrayBool(bool* a)
 
   -- For storing a variable.
+  -- TODO:
+  -- * add spid for last-assigned location
+  -- * use a bitfield for flags.
   cell = (value val, bool exported, bool readonly, bool is_assoc_array)
 
   -- An undefined variable can become an indexed array with s[x]=1.  But if we
@@ -46,7 +43,7 @@ module runtime
     LhsName(string name)
   | LhsIndexedName(string name, int index)
 
-  -- evaluated version of osh_ast.redir
+  -- evaluated version of syntax.redir
   redirect = 
     PathRedirect(id op_id, int fd, string filename)
   | DescRedirect(id op_id, int fd, int target_fd)

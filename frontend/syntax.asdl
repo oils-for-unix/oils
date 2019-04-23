@@ -39,7 +39,8 @@ module syntax
     -- TODO: if it's not the main script, it's sourced, and you could provide
     -- a chain of locations back to the sourced script!
     -- MainFile(string path) or SourcedFile(string path, int spid)
-  | File(string path)
+  | MainFile(string path)
+  | SourcedFile(string path, int spid)
   | ArgvWord(extent loc)       -- code parsed from a single word.
                                -- e.g. trap and complete -W
   | ArgvCommand(extent first)  -- word splitting changes the arity, so we don't

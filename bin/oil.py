@@ -469,7 +469,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         arena.PushSource(source.Stdin(''))
         line_reader = reader.FileLineReader(sys.stdin, arena)
     else:
-      arena.PushSource(source.File(script_name))
+      arena.PushSource(source.MainFile(script_name))
       try:
         f = fd_state.Open(script_name)
       except OSError as e:

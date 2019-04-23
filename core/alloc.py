@@ -12,7 +12,7 @@ Also, we don't want to save comment lines.
 """
 
 from _devbuild.gen.syntax_asdl import (
-    line_span, source_t, source__CFlag, source__File
+    line_span, source_t, source__CFlag, source__MainFile, source__SourcedFile
 )
 from asdl import const
 from core.util import log
@@ -82,7 +82,9 @@ class Arena(object):
     # TODO: Make it look nicer, like core/ui.py.
     if isinstance(src, source__CFlag):
       return '-c flag'
-    if isinstance(src, source__File):
+    if isinstance(src, source__MainFile):
+      return src.path
+    if isinstance(src, source__SourcedFile):
       return src.path
     return repr(src)
 
