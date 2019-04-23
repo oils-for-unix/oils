@@ -83,10 +83,9 @@ class Evaluator(object):
   another '!' (that is, "!!" ) shall place the literal character '!' in the
   prompt.
   """
-  def __init__(self, lang, arena, parse_ctx, ex, mem):
+  def __init__(self, lang, parse_ctx, ex, mem):
     assert lang in ('osh', 'oil'), lang
     self.lang = lang
-    self.arena = arena
     self.parse_ctx = parse_ctx
     self.ex = ex
     self.mem = mem
@@ -193,7 +192,7 @@ class Evaluator(object):
     try:
       ps1_word = self.parse_cache[ps1_str]
     except KeyError:
-      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str, self.arena)
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str)
       try:
         ps1_word = w_parser.ReadForPlugin()
       except util.ParseError as e:

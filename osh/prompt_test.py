@@ -20,7 +20,7 @@ class PromptTest(unittest.TestCase):
     arena = test_lib.MakeArena('<ui_test.py>')
     mem = state.Mem('', [], {}, arena)
     ex = test_lib.InitExecutor(arena=arena)
-    cls.p = prompt.Evaluator('osh', arena, ex.parse_ctx, ex, mem)
+    cls.p = prompt.Evaluator('osh', ex.parse_ctx, ex, mem)
 
   def testEvaluator(self):
     # Regression for caching bug!

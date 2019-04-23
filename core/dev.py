@@ -167,7 +167,6 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be the --debug-file as well
 
-    self.arena = parse_ctx.arena
     self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
 
   def _EvalPS4(self):
@@ -188,7 +187,7 @@ class Tracer(object):
       ps4_word = self.parse_cache[ps4]
     except KeyError:
       # We have to parse this at runtime.  PS4 should usually remain constant.
-      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4, self.arena)
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4)
 
       try:
         ps4_word = w_parser.ReadForPlugin()

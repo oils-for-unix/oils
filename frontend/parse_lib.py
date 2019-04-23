@@ -177,13 +177,13 @@ class ParseContext(object):
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
 
-  def _MakeLexer(self, line_reader, arena=None):
-    # type: (_Reader, Optional[Arena]) -> Lexer
+  def _MakeLexer(self, line_reader):
+    # type: (_Reader) -> Lexer
     """Helper function.
 
     TODO: should we combine the LineLexer and Lexer?  And the matcher?
     """
-    line_lexer = lexer.LineLexer(match.MATCHER, '', arena=arena or self.arena)
+    line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
     return lexer.Lexer(line_lexer, line_reader)
 
   def MakeOshParser(self, line_reader, emit_comp_dummy=False,
@@ -210,17 +210,15 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def MakeArithParser(self, code_str, arena):
-    # type: (str, Arena) -> TdopParser
+  def MakeArithParser(self, code_str):
+    # type: (str) -> TdopParser
     """Used for a[x+1]=foo in the CommandParser.
 
     NOTE: We add tokens to a different arena, so we don't mess up the
     invariants for translation.
     """
-    # TODO: arena.PushSource()!  Make sure we know it's the LValue.
-
-    line_reader = reader.StringLineReader(code_str, arena)
-    lx = self._MakeLexer(line_reader, arena=arena)
+    line_reader = reader.StringLineReader(code_str, self.arena)
+    lx = self._MakeLexer(line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader,
                                      lex_mode=lex_mode_e.Arith)
     a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
@@ -237,14 +235,14 @@ class ParseContext(object):
                                        eof_id=eof_id)
     return c_parser
 
-  def MakeWordParserForPlugin(self, code_str, arena):
-    # type: (str, Arena) -> WordParser
+  def MakeWordParserForPlugin(self, code_str):
+    # type: (str) -> WordParser
     """FOr $PS1, etc.
 
     NOTE: Uses its own arena!  I think that does nothing though?
     """
-    line_reader = reader.StringLineReader(code_str, arena)
-    lx = self._MakeLexer(line_reader, arena=arena)
+    line_reader = reader.StringLineReader(code_str, self.arena)
+    lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
   # Another parser instantiation:

@@ -424,7 +424,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     ex = oil_cmd_exec.OilExecutor(ex)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
-  prompt_ev = prompt.Evaluator(lang, arena, parse_ctx, ex, mem)
+  prompt_ev = prompt.Evaluator(lang, parse_ctx, ex, mem)
   exec_deps.prompt_ev = prompt_ev
   word_ev.prompt_ev = prompt_ev  # HACK for circular deps
 

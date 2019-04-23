@@ -197,7 +197,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       code_str = line[span1.col + span1.length : span2.col]
     else:
       raise NotImplementedError('%d != %d' % (span1.line_id, span2.line_id))
-    a_parser = parse_ctx.MakeArithParser(code_str, arena)
+    a_parser = parse_ctx.MakeArithParser(code_str)
     arena.PushSource(source.LValue(left_token.span_id, close_token.span_id))
     try:
       expr = a_parser.Parse()  # may raise util.ParseError

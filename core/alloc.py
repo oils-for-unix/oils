@@ -53,12 +53,7 @@ class Arena(object):
     # type: (str, int) -> int
     """Save a physical line and return a line_id for later retrieval.
 
-    Args:
-      line: string
-      line_num: physical line number, for printing
-
-    TODO: Add an option of whether to save the line?  You can retrieve it on
-    disk in many cases.  (But not in the stdin, '-c', 'eval' case)
+    The line number is 1-based.
     """
     line_id = len(self.line_vals)
     self.line_vals.append(line)

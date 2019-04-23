@@ -182,13 +182,13 @@ class SpecBuilder(object):
       # - Parsing is done at REGISTRATION time, but execution and splitting is
       #   done at COMPLETION time (when the user hits tab).  So parse errors
       #   happen early.
-      arena = self.parse_ctx.arena
-      w_parser = self.parse_ctx.MakeWordParserForPlugin(arg.W, arena)
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(arg.W)
 
+      arena = self.parse_ctx.arena
       try:
         arg_word = w_parser.ReadForPlugin()
       except util.ParseError as e:
-        ui.PrettyPrintError(e, self.parse_ctx.arena)
+        ui.PrettyPrintError(e, arena)
         raise  # Let 'complete' or 'compgen' return 2
 
       a = completion.DynamicWordsAction(
