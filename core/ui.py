@@ -143,6 +143,18 @@ def PrintWarning(msg, span_id, arena, f=sys.stderr):
     _PrintWithLocation(prefix, msg, span_id, arena)
 
 
+def Stderr(msg, *args):
+  """Print a message to stderr for the user.
+
+  This should be used sparingly, since it doesn't have any location info.
+  Right now we use it to print fatal I/O errors that were only caught at the
+  top level.
+  """
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 def PrintAst(nodes, opts):
   # type: (List[command_t], Any) -> None
   if len(nodes) == 1:
