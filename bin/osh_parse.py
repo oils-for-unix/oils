@@ -20,8 +20,7 @@ from typing import List, Dict, Any
 
 def main(argv):
   # type: (List[str]) -> int
-  pool = alloc.Pool()
-  arena = pool.NewArena()
+  arena = alloc.Arena()
   arena.PushSource(source.Stdin(''))
 
   line_reader = reader.FileLineReader(sys.stdin, arena)

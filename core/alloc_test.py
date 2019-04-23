@@ -12,10 +12,9 @@ from core import alloc  # module under test
 class AllocTest(unittest.TestCase):
 
   def setUp(self):
-    p = alloc.Pool()
-    self.arena = p.NewArena()
+    self.arena = alloc.Arena()
 
-  def testPool(self):
+  def testArena(self):
     arena = self.arena
     arena.PushSource(source.File('one.oil'))
 

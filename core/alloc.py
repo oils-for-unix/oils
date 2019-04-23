@@ -113,39 +113,3 @@ class Arena(object):
     # type: () -> int
     """Return one past the last span ID."""
     return len(self.spans)
-
-
-# In C++, InteractiveLineReader and StringLineReader should use the same
-# representation: std::string with internal NULs to terminate lines, and then
-# std::vector<char*> that points into to it.
-# InteractiveLineReader only needs to save a line if it contains a function.
-# The parser needs to set a flag if it contains a function!
-
-class Pool(object):
-  """Owns source lines plus debug info.
-
-  Two use cases:
-  1. Reformatting: PopArena() is never called
-  2. Execution: PopArena() is called if an arena doesn't have any functions.
-  If the whole thing was executed.
-
-  At the end of the program, all remaining arenas can be freed, or we just let
-  the OS clean up.  Probably in debug/ASAN mode, we will clean it up.  We also
-  want to clean up in embedded mode.  the oil_Init() and oil_Destroy() methods
-  of the API should do this.
-  """
-  def __init__(self):
-    # type: () -> None
-    self.arenas = []  # type: List[Arena]
-
-  # NOTE: dash uses a similar scheme.  stalloc() / setstackmark() /
-  # popstackmark() in memalloc.c.
-
-  # We're not using Push/POp terminology because you never pop twice.  You can
-  # only destroy the top/last arena.
-  def NewArena(self):
-    # type: () -> Arena
-    """Call this after parsing anything that you might want to destroy."""
-    a = Arena()
-    self.arenas.append(a)
-    return a

@@ -22,15 +22,14 @@ class ReaderTest(unittest.TestCase):
     self.assertEqual((-1, None, 0), r.GetLine())
 
   def testLineReadersAreEquivalent(self):
-    pool = alloc.Pool()
-    a1 = pool.NewArena()
+    a1 = alloc.Arena()
     r1 = reader.StringLineReader('one\ntwo', a1)
 
-    a2 = pool.NewArena()
+    a2 = alloc.Arena()
     f = cStringIO.StringIO('one\ntwo')
     r2 = reader.FileLineReader(f, a2)
 
-    a3 = pool.NewArena()
+    a3 = alloc.Arena()
     lines = [(0, 'one\n', 0), (1, 'two', 0)]
     r3 = reader.VirtualLineReader(lines, a3)
 

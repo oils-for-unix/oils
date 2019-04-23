@@ -283,8 +283,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     dollar0 = arg_r.Peek()  # the script name, or the arg after -c
     has_main = True
 
-  pool = alloc.Pool()
-  arena = pool.NewArena()
+  arena = alloc.Arena()
 
   # NOTE: has_main is only for ${BASH_SOURCE[@} and family.  Could be a
   # required arg.
@@ -303,7 +302,7 @@ def ShellMain(lang, argv0, argv, login_shell):
                                      one_pass_parse=opts.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
-  comp_arena = pool.NewArena()
+  comp_arena = alloc.Arena()
   comp_arena.PushSource('<completion>')
   trail1 = parse_lib.Trail()
   # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
@@ -312,7 +311,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail1,
                                     one_pass_parse=True)
 
-  hist_arena = pool.NewArena()
+  hist_arena = alloc.Arena()
   hist_arena.PushSource('<history>')
   trail2 = parse_lib.Trail()
   hist_ctx = parse_lib.ParseContext(hist_arena, aliases, trail=trail2)
@@ -624,8 +623,7 @@ def OshCommandMain(argv):
       util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
       return 2
 
-  pool = alloc.Pool()
-  arena = pool.NewArena()
+  arena = alloc.Arena()
   arena.PushSource(script_name)
 
   line_reader = reader.FileLineReader(f, arena)

@@ -92,8 +92,7 @@ def AssertAsdlEqual(test, left, right):
 
 
 def MakeArena(source_name):
-  pool = alloc.Pool()
-  arena = pool.NewArena()
+  arena = alloc.Arena()
   arena.PushSource(source_name)
   return arena
 

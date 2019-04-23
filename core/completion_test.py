@@ -50,8 +50,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   ev = test_lib.MakeTestEvaluator()
 
   if not parse_ctx:
-    pool = alloc.Pool()
-    arena = pool.NewArena()
+    arena = alloc.Arena()
     arena.PushSource('<_MakeRootCompleter>')
     trail = parse_lib.Trail()
     parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail,
