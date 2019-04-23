@@ -1029,10 +1029,7 @@ echo $[do { echo hi }]
 OIL
 }
 
-# FAILING
-# Degrade to single pass?
-# Not parsed as an assignment.
-# Here the CommandParser makes another pass with ArithParser.
+# Uses one_pass_parse
 lhs-assignment() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 foo=bar

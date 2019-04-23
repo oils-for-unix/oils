@@ -34,7 +34,6 @@ from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: rename
 from _devbuild.gen import syntax_asdl  # line_span
 
 from asdl import const
-from core import alloc
 from core import util
 from core.util import log, p_die
 from frontend import match
@@ -142,6 +141,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
 
 def _MakeAssignPair(parse_ctx,  # type: ParseContext
                     preparsed,  # type: Tuple[token, Optional[token], int, word__CompoundWord]
+                    arena,  # type: Arena
                     ):
   # type: (...) -> assign_pair
   """Create an assign_pair from a 4-tuples from DetectAssignment."""
@@ -199,20 +199,8 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
 
     # Now reparse everything between here
     code_str = ''.join(pieces)
-
-    # TODO: do not use this
-
-    # NOTE: It's possible that an alias expansion underlies this, not a real
-    # file!  We have to use a SideArena since this will happen during
-    # translation.
-    line_num = 99
-    source_name = 'TODO'
-    arena = alloc.SideArena('<LHS array index at line %d of %s>' %
-                            (line_num, source_name))
-
     a_parser = parse_ctx.MakeArithParser(code_str, arena)
-    expr = a_parser.Parse()  # raises util.ParseError
-                             # TODO: It reports from the wrong arena!
+    expr = a_parser.Parse()  # may raise util.ParseError
     lhs = lhs_expr.LhsIndexedName(var_name, expr)
     lhs.spids.append(left_token.span_id)
 
@@ -264,7 +252,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
 
 def _MakeAssignment(parse_ctx,  # type: ParseContext
                     assign_kw,  # type: Id_t
-                    suffix_words,  # type: List[word__CompoundWord]
+                    suffix_words  # type: List[word__CompoundWord]
                     ):
   # type: (...) -> command__Assignment
   """Create an command.Assignment node from a keyword and a list of words.
@@ -298,7 +286,8 @@ def _MakeAssignment(parse_ctx,  # type: ParseContext
     # declare x[y]=1 is valid
     left_token, close_token, part_offset = word.DetectAssignment(w)
     if left_token:
-      pair = _MakeAssignPair(parse_ctx, (left_token, close_token, part_offset, w))
+      preparsed = (left_token, close_token, part_offset, w)
+      pair = _MakeAssignPair(parse_ctx, preparsed, parse_ctx.arena)
     else:
       # In aboriginal in variables/sources: export_if_blank does export "$1".
       # We should allow that.
@@ -860,7 +849,7 @@ class CommandParser(object):
 
       pairs = []
       for preparsed in preparsed_list:
-        pairs.append(_MakeAssignPair(self.parse_ctx, preparsed))
+        pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
       node = command.Assignment(Id.Assign_None, [], pairs)
       left_spid = word.LeftMostSpanForWord(words[0])

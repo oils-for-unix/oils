@@ -31,7 +31,6 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from asdl import const
 
-from core import alloc
 from core import main_loop
 from core import process
 from core import ui
