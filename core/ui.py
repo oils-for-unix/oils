@@ -144,6 +144,7 @@ def PrintWarning(msg, span_id, arena, f=sys.stderr):
 
 
 def Stderr(msg, *args):
+  # type: (str, *Any) -> None
   """Print a message to stderr for the user.
 
   This should be used sparingly, since it doesn't have any location info.
