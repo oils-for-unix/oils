@@ -44,7 +44,7 @@ module syntax
   | ArgvCommand(extent first)  -- word splitting changes the arity, so we don't
                                -- don't know which arg came from which word.
                                -- Just point to the first word.
-  | EvalArg(extent first)      -- special case for 'eval'
+  | EvalArg(int eval_spid)     -- special case for 'eval'
                                -- The rest of the args are JOINED, so it's not
                                -- clear where they come from.
   | Variable(extent assigned)  -- $PS1, $PS4, etc.

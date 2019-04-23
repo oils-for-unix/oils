@@ -393,7 +393,7 @@ def Wait(argv, waiter, job_state, mem):
     st = job.WaitUntilDone(waiter)
     if isinstance(st, list):
       status = st[-1]
-      self.mem.SetPipeStatus(st)
+      mem.SetPipeStatus(st)
     else:
       status = st
 

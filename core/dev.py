@@ -79,14 +79,13 @@ class CrashDumper(object):
 
     if span_id != const.NO_INTEGER:
       span = ex.arena.GetLineSpan(span_id)
-      path, line_num = ex.arena.GetDebugInfo(span.line_id)
-      line = ex.arena.GetLine(span.line_id)
+      line_id = span.line_id
 
       # Could also do msg % args separately, but JavaScript won't be able to
       # render that.
-      self.error['path'] = path
-      self.error['line_num'] = line_num
-      self.error['line'] = line
+      self.error['source'] = ex.arena.GetLineSourceString(line_id)
+      self.error['line_num'] = ex.arena.GetLineNumber(line_id)
+      self.error['line'] = ex.arena.GetLine(line_id)
 
     # TODO: Collect functions, aliases, etc.
 

@@ -21,7 +21,6 @@ from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import state
-from osh import word
 from osh import word_compile
 
 

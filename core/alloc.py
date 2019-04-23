@@ -12,12 +12,12 @@ Also, we don't want to save comment lines.
 """
 
 from _devbuild.gen.syntax_asdl import (
-    line_span, source, source_t
+    line_span, source, source_t, source__CFlag, source__File
 )
 from asdl import const
 from core.util import log
 
-from typing import List, Tuple
+from typing import List
 
 
 class Arena(object):
@@ -79,6 +79,18 @@ class Arena(object):
     # type: (int) -> source_t
     return self.line_srcs[line_id]
 
+  def GetLineSourceString(self, line_id):
+    # type: (int) -> str
+    """Returns a human-readable string for dev tools."""
+    src = self.line_srcs[line_id]
+
+    # TODO: Make it look nicer, like core/ui.py.
+    if isinstance(src, source__CFlag):
+      return '-c flag'
+    if isinstance(src, source__File):
+      return src.path
+    return repr(src)
+
   def AddLineSpan(self, line_id, col, length):
     # type: (int, int, int) -> int
     """Save a line_span and return a new span ID for later retrieval."""
@@ -101,15 +113,6 @@ class Arena(object):
     # type: () -> int
     """Return one past the last span ID."""
     return len(self.spans)
-
-  def GetDebugInfo(self, line_id):
-    # type: (int) -> Tuple[str, int]
-    """Get the path and physical line number, for parse errors."""
-    assert line_id != const.NO_INTEGER, line_id
-    src = self.line_srcs[line_id]
-    #path = cast(source__File, src).path
-    line_num = self.line_nums[line_id]
-    return None, line_num
 
 
 # TODO: Remove this.  There are many sources of code, and they are hard to

@@ -13,8 +13,10 @@ from __future__ import print_function
 import cStringIO
 import posix
 
+from typing import List
+
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (lhs_expr, source__File)
+from _devbuild.gen.syntax_asdl import lhs_expr
 from _devbuild.gen.runtime_asdl import (
     value, value_e, lvalue_e, scope_e, var_flags_e
 )
@@ -498,11 +500,10 @@ class Mem(object):
       d['call_spid'] = call_spid
       if call_spid != const.NO_INTEGER:  # first frame has this issue
         span = self.arena.GetLineSpan(call_spid)
-        path, line_num = self.arena.GetDebugInfo(span.line_id)
-        line = self.arena.GetLine(span.line_id)
-        d['call_path'] = path
-        d['call_line_num'] = line_num
-        d['call_line'] = line
+        line_id = span.line_id
+        d['call_source'] = self.arena.GetLineSourceString(line_id)
+        d['call_line_num'] = self.arena.GetLineNumber(line_id)
+        d['call_line'] = self.arena.GetLine(line_id)
 
       d['argv_frame'] = argv_i
       d['var_frame'] = var_i
@@ -576,11 +577,10 @@ class Mem(object):
       return
 
     span = self.arena.GetLineSpan(span_id)
-    source_name, line_num = self.arena.GetDebugInfo(span.line_id)
 
-    # Mutate Str() objects for now.
-    self.source_name.s = source_name
-    self.line_num.s = str(line_num)
+    # Mutate value.Str() objects.
+    self.source_name.s = self.arena.GetLineSourceString(span.line_id)
+    self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
 
     self.current_spid = span_id
 
@@ -627,11 +627,7 @@ class Mem(object):
     self._PushDebugStack(func_name, None)
 
     span = self.arena.GetLineSpan(def_spid)
-    src = self.arena.GetLineSource(span.line_id)
-    if isinstance(src, source__File):
-      source_str = src.path
-    else:
-      source_str = repr(src)
+    source_str = self.arena.GetLineSourceString(span.line_id)
     self.bash_source.append(source_str)
 
   def PopCall(self):
@@ -844,18 +840,13 @@ class Mem(object):
           span_id = lval.spids[0]
           line_span = self.arena.GetLineSpan(span_id)
           line_id = line_span.line_id
-          #line = arena.GetLine(line_id)
-          path, line_num = self.arena.GetDebugInfo(line_id)
-          col = line_span.col
+          source_str = self.arena.GetLineSourceString(line_id)
+          line_num = self.arena.GetLineNumber(line_id)
           #length = line_span.length
-          util.log('--- spid %s: %s, line %d, col %d', span_id, path,
-                   line_num+1, col)
+          util.log('--- spid %s: %s, line %d, col %d', span_id, source_str,
+                   line_num+1, line_span.col)
 
           # TODO: Need the arena to look it up the line spid and line number.
-
-      # Maybe this should return one of (cell, scope).  existing cell, or the
-      # scope to put it in?
-      # _FindCellOrScope
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
@@ -1021,20 +1012,20 @@ class Mem(object):
         if call_spid == const.NO_INTEGER:
           continue
         span = self.arena.GetLineSpan(call_spid)
-        path, _ = self.arena.GetDebugInfo(span.line_id)
-        strs.append(path)
+        source_str = self.arena.GetLineSourceString(span.line_id)
+        strs.append(source_str)
       if self.has_main:
         strs.append('-')  # Bash does this to line up with main?
       return value.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'BASH_LINENO':
       strs = []
-      for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
+      for _, _, call_spid, _, _ in reversed(self.debug_stack):
         # should only happen for the first entry
         if call_spid == const.NO_INTEGER:
           continue
         span = self.arena.GetLineSpan(call_spid)
-        _, line_num = self.arena.GetDebugInfo(span.line_id)
+        line_num = self.arena.GetLineNumber(span.line_id)
         strs.append(str(line_num))
       if self.has_main:
         strs.append('0')  # Bash does this to line up with main?

@@ -11,7 +11,6 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e
-from asdl import const
 from core import ui
 from core import util
 from frontend import match

@@ -21,8 +21,7 @@ import time
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, word_part, token,
-    source
+    command_e, redir_e, lhs_expr_e, lhs_expr_t, assign_op_e, source
 )
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
@@ -183,11 +182,7 @@ class Executor(object):
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    span = self.arena.GetLineSpan(eval_spid)
-    path, line_num = self.arena.GetDebugInfo(span.line_id)
-
-    # TODO: use source.EvalArg
-    src = source.File('<eval string from %s:%d>' % (path, line_num))
+    src = source.EvalArg(eval_spid)
     return self._EvalHelper(c_parser, src)
 
   def ParseTrapCode(self, code_str):

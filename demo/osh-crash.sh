@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Usage:
-#   ./crash.sh <function name>
+#   ./osh-crash.sh <function name>
 
 set -o nounset
 set -o pipefail
