@@ -6,7 +6,13 @@ from __future__ import print_function
 
 import posix
 
+from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.syntax_asdl import assign_op_e
+
 from asdl import const
+from asdl import pretty
+from core import alloc
+from core import util
 from core.util import log
 from osh import word
 from pylib import os_path
@@ -132,3 +138,106 @@ class CrashDumper(object):
       json.dump(d, f, indent=2)
       #print(repr(d), file=f)
     log('[%d] Wrote crash dump to %s', my_pid, path)
+
+
+class Tracer(object):
+  """A tracer for this process.
+
+  TODO: Connect it somehow to tracers for other processes.  So you can make an
+  HTML report offline.
+
+  https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
+
+  Bare minimum to debug problems:
+    - argv and span ID of the SimpleCommand that corresponds to that
+    - then print line number using arena
+    - set -x doesn't print line numbers!  OH but you can do that with
+      PS4=$LINENO
+  """
+  def __init__(self, parse_ctx, exec_opts, mem, word_ev, f):
+    """
+    Args:
+      parse_ctx: For parsing PS4.
+      exec_opts: For xtrace setting
+      mem: for retrieving PS4
+      word_ev: for evaluating PS4
+    """
+    self.parse_ctx = parse_ctx
+    self.exec_opts = exec_opts
+    self.mem = mem
+    self.word_ev = word_ev
+    self.f = f  # can be the --debug-file as well
+
+    # NOTE: We could use the same arena, since this doesn't happen during
+    # translation.
+    self.arena = alloc.SideArena('<$PS4>')
+    self.parse_cache = {}  # PS4 value -> CompoundWord.  PS4 is scoped.
+
+  def _EvalPS4(self):
+    """For set -x."""
+
+    val = self.mem.GetVar('PS4')
+    assert val.tag == value_e.Str
+
+    s = val.s
+    if s:
+      first_char, ps4 = s[0], s[1:]
+    else:
+      first_char, ps4 = '+', ' '  # default
+
+    # NOTE: This cache is slightly broken because aliases are mutable!  I think
+    # that is more or less harmless though.
+    try:
+      ps4_word = self.parse_cache[ps4]
+    except KeyError:
+      # We have to parse this at runtime.  PS4 should usually remain constant.
+      w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4, self.arena)
+
+      try:
+        ps4_word = w_parser.ReadForPlugin()
+      except util.ParseError as e:
+        ps4_word = word.ErrorWord("<ERROR: Can't parse PS4: %s>", e)
+      self.parse_cache[ps4] = ps4_word
+
+    #print(ps4_word)
+
+    # TODO: Repeat first character according process stack depth.  Where is
+    # that stored?  In the executor itself?  It should be stored along with
+    # the PID.  Need some kind of ShellProcessState or something.
+    #
+    # We should come up with a better mechanism.  Something like $PROC_INDENT
+    # and $OIL_XTRACE_PREFIX.
+
+    prefix = self.word_ev.EvalForPlugin(ps4_word)
+    return first_char, prefix.s
+
+  def OnSimpleCommand(self, argv):
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    first_char, prefix = self._EvalPS4()
+    cmd = ' '.join(pretty.Str(a) for a in argv)
+    self.f.log('%s%s%s', first_char, prefix, cmd)
+
+  def OnAssignment(self, lval, op, val, flags, lookup_mode):
+    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+    if not self.exec_opts.xtrace:
+      return
+
+    # Now we have to get the prefix
+    first_char, prefix = self._EvalPS4()
+    op_str = {assign_op_e.Equal: '=', assign_op_e.PlusEqual: '+='}[op]
+    self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
+
+  def Event(self):
+    """
+    Other events:
+
+    - Function call events.  As opposed to external commands.
+    - Process Forks.  Subshell, command sub, pipeline,
+    - Command Completion -- you get the status code.
+    - Assignments
+      - We should desugar to SetVar like mksh
+    """
+    pass
