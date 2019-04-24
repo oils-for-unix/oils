@@ -2,6 +2,7 @@
 word_eval.py - Evaluator for the word language.
 """
 
+import posix
 import pwd
 import sys
 
@@ -970,6 +971,9 @@ class _WordEvaluator(object):
       val = self.EvalWordToString(w)
     except util.FatalRuntimeError as e:
       val = value.Str("<Runtime error: %s>" % e.UserErrorString())
+    except (OSError, IOError) as e:
+      # This is like the catch-all in Executor.ExecuteAndCatch().
+      val = value.Str("<I/O error: %s>" % posix.strerror(e.errno))
     finally:
       self.mem.PopStatusFrame()
     return val
