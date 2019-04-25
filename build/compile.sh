@@ -195,7 +195,7 @@ build() {
     c_module_src_list=$(cat $abs_c_module_srcs)
 
     if [[ -n "$READLINE_DIR" ]]; then
-      readline_flags+="-L $READLINE_DIR/lib -I $READLINE_DIR/include"
+      readline_flags+="-L $READLINE_DIR/lib -I $READLINE_DIR/include "
     fi
 
     # NOTE: pyconfig.h has HAVE_LIBREADLINE but doesn't appear to use it?
