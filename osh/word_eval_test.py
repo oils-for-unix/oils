@@ -15,7 +15,6 @@ import unittest
 from core import test_lib
 from osh.cmd_parse_test import assertParseSimpleCommand
 from osh import state
-from osh import word_eval  # module under test
 
 
 def InitEvaluator():
