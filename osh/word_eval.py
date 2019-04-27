@@ -413,12 +413,13 @@ class _WordEvaluator(object):
     op_kind = LookupKind(op.op_id)
 
     if op_kind == Kind.VOp1:
-      #log('%s', op)
+      # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
       arg_val = self.EvalWordToString(op.arg_word, do_fnmatch=True)
       assert arg_val.tag == value_e.Str
 
       if val.tag == value_e.Str:
         s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
+        #log('%s %s -> %s', val.s, arg_val.s, s)
         new_val = value.Str(s)
       else:  # val.tag == value_e.StrArray:
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.

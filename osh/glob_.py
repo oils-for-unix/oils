@@ -80,7 +80,7 @@ def ExtendedRegexEscape(s):
   return util.BackslashEscape(s, ERE_META_CHARS)
 
 
-def _GlobUnescape(s):  # used by cmd_exec
+def GlobUnescape(s):  # used by cmd_exec
   """Remove glob escaping from a string.
 
   Used when there is no glob match.
@@ -319,7 +319,7 @@ class Globber(object):
     """Given a string that could be a glob, return a list of strings."""
     # e.g. don't glob 'echo' because it doesn't look like a glob
     if not LooksLikeGlob(arg):
-      u = _GlobUnescape(arg)
+      u = GlobUnescape(arg)
       return [u]
     if self.exec_opts.noglob:
       return [arg]
@@ -346,5 +346,5 @@ class Globber(object):
         return []
       else:
         # Return the original string
-        u = _GlobUnescape(arg)
+        u = GlobUnescape(arg)
         return [u]

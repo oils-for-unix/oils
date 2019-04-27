@@ -63,6 +63,13 @@ class LibcTest(unittest.TestCase):
         # Combining char class and a literal character
         ('[[:alpha:]7]', '7', 1),
         ('[[:alpha:]][[:alpha:]]', 'az', 1),
+
+        ('[a]', 'a', 1),
+        # Hm [] is treated as a constant string, not an empty char class.
+        # Should we change LooksLikeGlob?
+        ('[]', '', 0),
+        ('[]', 'a', 0),
+        ('[]', '[]', 1),
     ]
 
     for pat, s, expected in cases:

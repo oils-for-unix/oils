@@ -34,6 +34,7 @@ class GlobEscapeTest(unittest.TestCase):
     #   $ shopt -s nullglob; argv [][  # is a glob
     CASES = [
         (r'[]', True),
+        (r'[a]', True),
         (r'[][', True),
         (r'][', False),  # no balanced pair
         (r'\[]', False),  # no balanced pair

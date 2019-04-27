@@ -167,6 +167,12 @@ def DoUnarySuffixOp(s, op, arg):
 
   # Fast path for constant strings.
   if not glob_.LooksLikeGlob(arg):
+    # It doesn't look like a glob, but we glob-escaped it (e.g. [ -> \[).  So
+    # reverse it.  NOTE: We also do this check in Globber.Expand().  It would
+    # be nice to somehow store the original string rather tahn
+    # escaping/unescaping.
+    arg = glob_.GlobUnescape(arg)
+
     if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
       if s.startswith(arg):
         return s[len(arg):]
@@ -179,6 +185,7 @@ def DoUnarySuffixOp(s, op, arg):
       else:
         return s
 
+    # These operators take glob arguments, we don't implement that obscure case.
     elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
         raise NotImplementedError("%s can't have an argument" % op.op_id)
