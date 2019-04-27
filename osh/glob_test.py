@@ -15,7 +15,7 @@ class GlobEscapeTest(unittest.TestCase):
 
   def testEscapeUnescape(self):
     esc = glob_.GlobEscape
-    unesc = glob_._GlobUnescape
+    unesc = glob_.GlobUnescape
 
     pairs = [
         (r'\*.py', '*.py'),
