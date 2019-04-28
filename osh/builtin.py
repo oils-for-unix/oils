@@ -32,7 +32,8 @@ import sys
 
 from _devbuild.gen import osh_help  # generated file
 from _devbuild.gen.runtime_asdl import (
-  lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e)
+  lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e, arg_vector
+)
 from core import ui
 from core import util
 from core.util import log, e_die
@@ -987,7 +988,8 @@ class Command(object):
     self.funcs = funcs
     self.mem = mem
 
-  def __call__(self, argv, fork_external, span_id):
+  def __call__(self, arg_vec, fork_external):
+    argv = arg_vec.strs[1:]
     arg, i = COMMAND_SPEC.Parse(argv)
     if arg.v:
       path_val = self.mem.GetVar('PATH')
@@ -1000,8 +1002,9 @@ class Command(object):
           print(arg)
       return status
 
+    arg_vec2 = arg_vector(argv, arg_vec.spids[1:])  # shift by one
     # 'command ls' suppresses function lookup.
-    return self.ex.RunSimpleCommand(argv, fork_external, span_id, funcs=False)
+    return self.ex.RunSimpleCommand(arg_vec2, fork_external, funcs=False)
 
 
 TYPE_SPEC = _Register('type')

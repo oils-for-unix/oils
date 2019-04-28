@@ -20,7 +20,7 @@ from osh import state
 def InitEvaluator():
   word_ev = test_lib.MakeTestEvaluator()
   state.SetLocalString(word_ev.mem, 'x', '- -- ---')
-  state.SetLocalString(word_ev.mem, 'y', 'y yy yyy')
+  state.SetLocalString(word_ev.mem, 'y', 'y yy')
   state.SetLocalString(word_ev.mem, 'empty', '')
   return word_ev
 
@@ -32,14 +32,14 @@ class WordEvalTest(unittest.TestCase):
     self.assertEqual(2, len(node.words), node.words)
 
     ev = InitEvaluator()
-    argv = ev.EvalWordSequence(node.words)
+    argv = ev.EvalWordSequence2(node.words)
     print()
     print(argv)
 
     node = assertParseSimpleCommand(self, 'ls [$x] $y core/a*.py')
     print(node)
     ev = InitEvaluator()
-    argv = ev.EvalWordSequence(node.words)
+    argv = ev.EvalWordSequence2(node.words)
     print()
     print(argv)
 

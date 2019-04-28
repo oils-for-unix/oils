@@ -25,7 +25,8 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
-    lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e
+    lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
+    arg_vector
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -171,12 +172,12 @@ class Executor(object):
     finally:
       self.arena.PopSource()
 
-  def _Eval(self, argv, eval_spid):
+  def _Eval(self, arg_vec):
     # TODO:
-    # - (argv, spid) should be a pattern for all builtins?  They all will need
-    # to report usage errors.
     # - set -o sane-eval should change eval to take a single string.
-    code_str = ' '.join(argv)
+    code_str = ' '.join(arg_vec.strs[1:])
+    eval_spid = arg_vec.spids[0]
+
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
@@ -205,9 +206,12 @@ class Executor(object):
 
     return node
 
-  def _Source(self, argv, call_spid):
+  def _Source(self, arg_vec):
+    argv = arg_vec.strs
+    call_spid = arg_vec.spids[0]
+
     try:
-      path = argv[0]
+      path = argv[1]
     except IndexError:
       # TODO: Should point to the source statement that failed.
       util.error('source: missing required argument')
@@ -227,7 +231,7 @@ class Executor(object):
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
-      source_argv = argv[1:]
+      source_argv = argv[2:]
       self.mem.PushSource(path, source_argv)
       try:
         status = self._EvalHelper(c_parser, source.SourcedFile(path, call_spid))
@@ -253,8 +257,9 @@ class Executor(object):
     else:
       return 0
 
-  def _RunBuiltin(self, builtin_id, argv, fork_external, span_id):
-    argv = argv[1:]  # Builtins don't need to know their own name.
+  def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
+    # Shift one arg.  Builtins don't need to know their own name.
+    argv = arg_vec.strs[1:]
 
     #
     # TODO: Convert everything to this new style
@@ -316,7 +321,7 @@ class Executor(object):
       status = builtin.Pwd(argv, self.mem)
 
     elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
-      status = self._Source(argv, span_id)
+      status = self._Source(arg_vec)
 
     elif builtin_id == builtin_e.TRAP:
       status = builtin.Trap(argv, self.traps, self.nodes_to_run, self)
@@ -325,7 +330,7 @@ class Executor(object):
       status = builtin.Umask(argv)
 
     elif builtin_id == builtin_e.EVAL:
-      status = self._Eval(argv, span_id)
+      status = self._Eval(arg_vec)
 
     elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
       status = 0
@@ -348,7 +353,7 @@ class Executor(object):
     elif builtin_id == builtin_e.COMMAND:
       # TODO: Pull Command up to the top level?
       b = builtin.Command(self, self.funcs, self.mem)
-      status = b(argv, fork_external, span_id)
+      status = b(arg_vec, fork_external)
 
     elif builtin_id == builtin_e.TYPE:
       path = self.mem.GetVar('PATH')
@@ -383,7 +388,8 @@ class Executor(object):
         util.error("builtin: %s: not a shell builtin", argv[0])
         return 1
 
-      return self._RunBuiltin(to_run, argv, fork_external, span_id)
+      arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
+      return self._RunBuiltin(to_run, arg_vec2, fork_external)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
@@ -539,11 +545,17 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def RunSimpleCommand(self, argv, fork_external, span_id, funcs=True):
+  def RunSimpleCommand(self, arg_vec, fork_external, funcs=True):
     """
     Args:
       fork_external: for subshell ( ls / ) or ( command ls / )
     """
+    argv = arg_vec.strs
+    if arg_vec.spids:
+      span_id = arg_vec.spids[0]
+    else:
+      span_id = const.NO_INTEGER
+
     # This happens when you write "$@" but have no arguments.
     if not argv:
       if self.exec_opts.strict_argv:
@@ -557,7 +569,7 @@ class Executor(object):
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
       try:
-        status = self._RunBuiltin(builtin_id, argv, fork_external, span_id)
+        status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
       except args.UsageError as e:
         ui.Stderr('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
@@ -575,7 +587,7 @@ class Executor(object):
 
     if builtin_id != builtin_e.NONE:
       try:
-        status = self._RunBuiltin(builtin_id, argv, fork_external, span_id)
+        status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
       except args.UsageError as e:
         ui.Stderr('osh %r usage error: %s', arg0, e)
         status = 2  # consistent error code for usage error
@@ -701,7 +713,8 @@ class Executor(object):
       # to print the filename too.
 
       words = braces.BraceExpandWords(node.words)
-      argv = self.word_ev.EvalWordSequence(words)
+      arg_vec = self.word_ev.EvalWordSequence2(words)
+      argv = arg_vec.strs
 
       # This comes before evaluating env, in case there are problems evaluating
       # it.  We could trace the env separately?  Also trace unevaluated code
@@ -713,11 +726,11 @@ class Executor(object):
         self.mem.PushTemp()
         try:
           self._EvalTempEnv(node.more_env)
-          status = self.RunSimpleCommand(argv, fork_external, span_id)
+          status = self.RunSimpleCommand(arg_vec, fork_external)
         finally:
           self.mem.PopTemp()
       else:
-        status = self.RunSimpleCommand(argv, fork_external, span_id)
+        status = self.RunSimpleCommand(arg_vec, fork_external)
 
     elif node.tag == command_e.ExpandedAlias:
       # Expanded aliases need redirects and env bindings from the calling

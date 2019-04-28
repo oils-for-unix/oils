@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     word_e, bracket_op_e, suffix_op_e, word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
-    part_value, part_value_e, value, value_e, value_t, effect_e
+    part_value, part_value_e, value, value_e, value_t, effect_e, arg_vector
 )
 from core import process
 from core.meta import LookupKind
@@ -22,6 +22,7 @@ from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import state
+from osh import word
 from osh import word_compile
 
 
@@ -1077,7 +1078,7 @@ class _WordEvaluator(object):
       results = self.globber.Expand(a)
       argv.extend(results)
 
-  def EvalWordSequence(self, words):
+  def EvalWordSequence2(self, words):
     """Turns a list of Words into a list of strings.
 
     Unlike the EvalWord*() methods, it does globbing.
@@ -1101,7 +1102,9 @@ class _WordEvaluator(object):
     # 5. globbing -- several exec_opts affect this: nullglob, safeglob, etc.
 
     #log('W %s', words)
-    argv = []
+    arg_vec = arg_vector()
+    strs = arg_vec.strs
+    n = 0
     for w in words:
       part_vals = []
       self._EvalWordToParts(w, False, part_vals)  # not double quoted
@@ -1121,10 +1124,21 @@ class _WordEvaluator(object):
 
       # Now each frame will append zero or more args.
       for frame in frames:
-        self._EvalWordFrame(frame, argv)
+        self._EvalWordFrame(frame, strs)
+
+      # Fill in spids parallel to strs.
+      n_next = len(strs)
+      spid = word.LeftMostSpanForWord(w)
+      for _ in xrange(n_next - n):
+        arg_vec.spids.append(spid)
+      n = n_next
 
     #log('ARGV %s', argv)
-    return argv
+    return arg_vec
+
+  def EvalWordSequence(self, words):
+    arg_vec = self.EvalWordSequence2(words)
+    return arg_vec.strs
 
 
 class NormalWordEvaluator(_WordEvaluator):
