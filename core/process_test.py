@@ -7,7 +7,7 @@ import os
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect
+from _devbuild.gen.runtime_asdl import redirect, arg_vector
 from osh import builtin
 from core import process  # module under test
 from core import util
@@ -34,7 +34,8 @@ def _CommandNode(code_str, arena):
 
 
 def _ExtProc(argv):
-  return Process(ExternalThunk(_EXT_PROG, argv, {}))
+  arg_vec = arg_vector(argv, [0] * len(argv))
+  return Process(ExternalThunk(_EXT_PROG, arg_vec, {}))
 
 
 class ProcessTest(unittest.TestCase):

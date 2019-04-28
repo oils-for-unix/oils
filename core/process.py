@@ -375,7 +375,7 @@ class ExternalProgram(object):
     self.fd_state = fd_state
     self.debug_f = debug_f
 
-  def Exec(self, argv, environ):
+  def Exec(self, arg_vec, environ):
     """Execute a program and exit this process.
 
     Called by:
@@ -383,6 +383,7 @@ class ExternalProgram(object):
     exec ls /
     ( ls / )
     """
+    argv = arg_vec.strs
     if self.hijack_shebang:
       try:
         f = self.fd_state.Open(argv[0])
@@ -432,16 +433,16 @@ class ExternalProgram(object):
 class ExternalThunk(object):
   """An external executable."""
 
-  def __init__(self, ext_prog, argv, environ):
+  def __init__(self, ext_prog, arg_vec, environ):
     self.ext_prog = ext_prog
-    self.argv = argv
+    self.arg_vec = arg_vec
     self.environ = environ
 
   def Run(self):
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
-    self.ext_prog.Exec(self.argv, self.environ)
+    self.ext_prog.Exec(self.arg_vec, self.environ)
 
 
 class SubProgramThunk(object):

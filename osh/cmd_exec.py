@@ -248,14 +248,15 @@ class Executor(object):
     finally:
       f.close()
 
-  def _Exec(self, argv):
-    # Either execute command with redirects, or apply redirects in this shell.
-    # NOTE: Redirects were processed earlier.
-    if argv:
-      environ = self.mem.GetExported()
-      self.ext_prog.Exec(argv, environ)  # NEVER RETURNS
-    else:
+  def _Exec(self, arg_vec):
+    # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
+    if len(arg_vec.strs) == 1:
       return 0
+
+    environ = self.mem.GetExported()
+    # shift off 'exec'
+    arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
+    self.ext_prog.Exec(arg_vec2, environ)  # NEVER RETURNS
 
   def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
     # Shift one arg.  Builtins don't need to know their own name.
@@ -270,7 +271,7 @@ class Executor(object):
       status = builtin_func(argv)
 
     elif builtin_id == builtin_e.EXEC:
-      status = self._Exec(argv)  # may never return
+      status = self._Exec(arg_vec)  # may never return
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
@@ -596,12 +597,12 @@ class Executor(object):
     environ = self.mem.GetExported()  # Include temporary variables
 
     if fork_external:
-      thunk = process.ExternalThunk(self.ext_prog, argv, environ)
+      thunk = process.ExternalThunk(self.ext_prog, arg_vec, environ)
       p = process.Process(thunk)
       status = p.Run(self.waiter)
       return status
 
-    self.ext_prog.Exec(argv, environ)  # NEVER RETURNS
+    self.ext_prog.Exec(arg_vec, environ)  # NEVER RETURNS
 
   def _RunPipeline(self, node):
     pi = process.Pipeline()
