@@ -1437,6 +1437,11 @@ class Executor(object):
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena)
       status = e.exit_status if e.exit_status is not None else 1
+
+    # TODO: Catch IOError here too.  See demo/cannot-fork.sh.
+    # We also need to catch ParseError, in case we 'source' a file with a
+    # syntax error?
+
     except _ControlFlow as e:
        # shouldn't be able to exit the shell from a completion hook!
       util.error('Attempted to exit from completion hook.')

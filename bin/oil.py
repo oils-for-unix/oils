@@ -259,7 +259,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   try:
     opts = OSH_SPEC.Parse(arg_r)
   except args.UsageError as e:
-    ui.usage('osh usage error: %s', e)
+    ui.Stderr('osh usage error: %s', e)
     return 2
 
   # NOTE: This has a side effect of deleting _OVM_* from the environment!

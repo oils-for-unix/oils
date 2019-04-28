@@ -72,8 +72,14 @@ class LineLexer(object):
 
   def GetSpanIdForEof(self):
     # type: () -> int
-    # zero length is special!
-    return self.arena.AddLineSpan(self.line_id, self.line_pos, 0)
+    """Create a new span ID for syntax errors involving the EOF token."""
+    if self.line_id == -1:
+      # When line_id == -1, this means there are ZERO lines.  Add a dummy line
+      # 0 so the span_id has a source to display errors.
+      line_id = self.arena.AddLine('', 0)
+    else:
+      line_id = self.line_id
+    return self.arena.AddLineSpan(line_id, self.line_pos, 0)
 
   def LookAhead(self, lex_mode):
     # type: (lex_mode_t) -> token
@@ -214,9 +220,6 @@ class Lexer(object):
       line_id, line, line_pos = self.line_reader.GetLine()
 
       if line is None:  # no more lines
-        # NOTE: Eof_Real has no contents, but it has a span_id because we want
-        # to retrieve the path and line number in ui.PrettyPrintError().
-        # The line_id might be -1.
         span_id = self.line_lexer.GetSpanIdForEof()
         if self.emit_comp_dummy:
           id_ = Id.Lit_CompDummy

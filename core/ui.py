@@ -44,24 +44,31 @@ def PrettyDir(dir_name, home_dir):
   return dir_name
 
 
-def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
-  # type: (str, str, int, Arena, IO[str]) -> None
-  line_span = arena.GetLineSpan(span_id)
-  col = line_span.col
-  line_id = line_span.line_id
-  line = arena.GetLine(line_id)
-
+def _PrintCodeExcerpt(line, col, length, f):
   print('  ' + line.rstrip(), file=f)
   f.write('  ')
   # preserve tabs
   for c in line[:col]:
     f.write('\t' if c == '\t' else ' ')
   f.write('^')
-  f.write('~' * (line_span.length-1))
+  f.write('~' * (length-1))
   f.write('\n')
 
-  # TODO: Use color instead of [ ]
+
+def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
+  # type: (str, str, int, Arena, IO[str]) -> None
+  line_span = arena.GetLineSpan(span_id)
+  orig_col = line_span.col
+  line_id = line_span.line_id
+
   src = arena.GetLineSource(line_id)
+  line = arena.GetLine(line_id)
+  line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
+
+  if not isinstance(src, source__LValue):  # This is printed specially
+    _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
+
+  # TODO: Use color instead of [ ]
   if isinstance(src, source__Interactive):
     source_str = '[ interactive ]'  # This might need some changes
   elif isinstance(src, source__CFlag):
@@ -81,13 +88,22 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
   elif isinstance(src, source__Backticks):
     source_str = '[ backticks at ... ]'
   elif isinstance(src, source__LValue):
-    # TODO: This is always one line, so it always looks like
-    # [ array LValue ... ]:1:
-    # Maybe we should special case it?
-    span = arena.GetLineSpan(src.left_spid)
-    line_num = arena.GetLineNumber(span.line_id)
-    outer_source = arena.GetLineSourceString(span.line_id)
-    source_str = '[ array LValue at line %d of %s ]' % (line_num, outer_source)
+    span2 = arena.GetLineSpan(src.left_spid)
+    line2 = arena.GetLine(span2.line_id)
+    outer_source = arena.GetLineSourceString(span2.line_id)
+    source_str = '[ array LValue in %s ]' % outer_source
+    # NOTE: The inner line number is always 1 because of reparsing.  We
+    # overwrite it with the original span.
+    line_num = arena.GetLineNumber(span2.line_id)
+
+    # We want the excerpt to look like this:
+    #   a[x+]=1
+    #       ^
+    # Rather than quoting the internal buffer:
+    #   x+
+    #     ^
+    lbracket_col = span2.col + span2.length
+    _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
   elif isinstance(src, source__EvalArg):
     span = arena.GetLineSpan(src.eval_spid)
@@ -104,7 +120,6 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
-  line_num = arena.GetLineNumber(line_id)
   print('%s:%d: %s%s' % (source_str, line_num, prefix, msg), file=f)
 
 
