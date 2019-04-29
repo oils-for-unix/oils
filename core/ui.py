@@ -28,6 +28,7 @@ from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.util import ParseError
+  #from frontend.args import UsageError
 
 
 def PrettyDir(dir_name, home_dir):
@@ -45,6 +46,7 @@ def PrettyDir(dir_name, home_dir):
 
 
 def _PrintCodeExcerpt(line, col, length, f):
+  # type: (str, int, int, IO[str]) -> None
   print('  ' + line.rstrip(), file=f)
   f.write('  ')
   # preserve tabs
@@ -159,7 +161,7 @@ def PrintWarning(msg, span_id, arena, f=sys.stderr):
 
 
 def PrintUsageError(e, arg0, arena):
-  # type: (UsageError, str, Arena) -> None
+  # type: (Any, str, Arena) -> None  # Any -> UsageError after args.py passes
   if e.span_id == const.NO_INTEGER:
     # TODO: Remove this once all builtins have location info.
     print('usage error: %r %s' % (arg0, e.msg), file=sys.stderr)
