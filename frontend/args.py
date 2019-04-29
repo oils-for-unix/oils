@@ -119,8 +119,7 @@ class Reader(object):
     try:
       arg = self.Peek()
     except IndexError:
-      # TODO: Format it
-      raise UsageError(error_msg)
+      raise UsageError(error_msg, span_id=self.SpanId())
     self.Next()
     return arg
 
@@ -184,18 +183,14 @@ class SetToArg(_Action):
         arg = arg_r.Peek()
       except IndexError:
         raise UsageError(
-            'expected argument to %r' % ('-' + self.name),
-            span_id=arg_r.SpanId())
-
-    #log('SetToArg arg %r', arg)
-
-    # TODO: better location information for all these errors.
+            'expected argument to %r' % ('-' + self.name), span_id=arg_r.SpanId())
 
     typ = self.arg_type
     if isinstance(typ, list):
       if arg not in typ:
-        raise UsageError('Invalid argument %r, expected one of: %s' %
-            (arg, ', '.join(typ)))
+        raise UsageError(
+            'got invalid argument %r to %r, expected one of: %s' %
+            (arg, ('-' + self.name), ', '.join(typ)), span_id=arg_r.SpanId())
       value = arg
     else:
       if typ == Str:
@@ -212,7 +207,7 @@ class SetToArg(_Action):
           value = float(arg)
         except ValueError:
           raise UsageError(
-              'Expected number after %r, got %r' % ('-' + self.name, arg),
+              'expected number after %r, got %r' % ('-' + self.name, arg),
               span_id=arg_r.SpanId())
       else:
         raise AssertionError
@@ -236,7 +231,8 @@ class SetBoolToArg(_Action):
       elif suffix in ('1', 'T', 'true', 'Talse'):
         value = True
       else:
-        raise UsageError('Invalid argument to boolean flag: %r' % suffix)
+        raise UsageError(
+            'got invalid argument to boolean flag: %r' % suffix)
     else:
       value = True
 
@@ -444,7 +440,9 @@ class FlagsAndOptions(object):
         try:
           action = self.actions_long[arg]
         except KeyError:
-          raise UsageError('Invalid flag %r' % arg)
+          raise UsageError(
+              'got invalid flag %r' % arg, span_id=arg_r.SpanId())
+
         # TODO: Suffix could be 'bar' for --foo=bar
         action.OnMatch(None, None, arg_r, out)
         arg_r.Next()
@@ -457,8 +455,8 @@ class FlagsAndOptions(object):
           try:
             action = self.actions_short[char]
           except KeyError:
-            #print(self.actions_short)
-            raise UsageError('Invalid flag %r' % char)
+            raise UsageError(
+                'got invalid flag %r' % ('-' + char), span_id=arg_r.SpanId())
           quit = action.OnMatch(char0, None, arg_r, out)
         arg_r.Next() # process the next flag
         if quit:

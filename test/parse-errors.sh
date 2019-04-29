@@ -360,6 +360,10 @@ args-parse-builtin() {
 
   # not implemented yet
   #_error-case 'read -t x'  # expected floating point number
+
+  # TODO:
+  # - invalid choice
+  # - Oil flags: invalid long flag, boolean argument, etc.
 }
 
 args-parse-main() {
