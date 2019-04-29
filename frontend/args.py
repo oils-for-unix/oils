@@ -133,7 +133,11 @@ class Reader(object):
 
   def SpanId(self):
     if self.spids:
-      return self.spids[self.i]
+      if self.i == self.n:
+        i = self.n - 1  # if the last arg is missing, point at the one before
+      else:
+        i = self.i
+      return self.spids[i]
     else:
       return const.NO_INTEGER  # TODO: remove this when all have spids
 
@@ -179,7 +183,9 @@ class SetToArg(_Action):
       try:
         arg = arg_r.Peek()
       except IndexError:
-        raise UsageError('Expected argument for %r' % ('-' + self.name))
+        raise UsageError(
+            'expected argument to %r' % ('-' + self.name),
+            span_id=arg_r.SpanId())
 
     #log('SetToArg arg %r', arg)
 
@@ -199,13 +205,15 @@ class SetToArg(_Action):
           value = int(arg)
         except ValueError:
           raise UsageError(
-              'Expected integer after %r, got %r' % ('-' + self.name, arg))
+              'expected integer after %r, got %r' % ('-' + self.name, arg),
+              span_id=arg_r.SpanId())
       elif typ == Float:
         try:
           value = float(arg)
         except ValueError:
           raise UsageError(
-              'Expected number after %r, got %r' % ('-' + self.name, arg))
+              'Expected number after %r, got %r' % ('-' + self.name, arg),
+              span_id=arg_r.SpanId())
       else:
         raise AssertionError
 
@@ -568,8 +576,8 @@ class BuiltinFlags(object):
             action.OnMatch(None, suffix, arg_r, out)
             break
 
-          raise UsageError("doesn't accept flag -%s" % char, span_id=arg_r.SpanId())
-          #raise UsageError("doesn't accept flag -%s" % char)
+          raise UsageError(
+              "doesn't accept flag %r" % ('-' + char), span_id=arg_r.SpanId())
 
         arg_r.Next()  # next arg
 

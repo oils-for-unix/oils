@@ -506,10 +506,10 @@ def ReadLineFromStdin():
   return ''.join(chars)
 
 
-def Read(argv, splitter, mem):
-  arg, i = READ_SPEC.Parse(argv)
+def Read(arg_vec, splitter, mem):
+  arg, i = READ_SPEC.ParseVec(arg_vec)
 
-  names = argv[i:]
+  names = arg_vec.strs[i:]
   if arg.n is not None:  # read a certain number of bytes
     try:
       name = names[0]

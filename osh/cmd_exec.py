@@ -277,7 +277,7 @@ class Executor(object):
       self.fd_state.MakePermanent()
 
     elif builtin_id == builtin_e.READ:
-      status = builtin.Read(argv, self.splitter, self.mem)
+      status = builtin.Read(arg_vec, self.splitter, self.mem)
 
     elif builtin_id == builtin_e.ECHO:
       status = builtin.Echo(argv)
