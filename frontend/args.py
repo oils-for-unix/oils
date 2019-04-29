@@ -283,7 +283,7 @@ class SetNamedOption(_Action):
     attr_name = arg
     # Validate the option name against a list of valid names.
     if attr_name not in self.names:
-      raise UsageError('Invalid option name %r' % arg)
+      raise UsageError('got invalid option %r' % arg, span_id=arg_r.SpanId())
     out.opt_changes.append((attr_name, b))
 
 

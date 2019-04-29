@@ -292,7 +292,7 @@ class Executor(object):
       status = builtin.Cd(argv, self.mem, self.dir_stack)
 
     elif builtin_id == builtin_e.SET:
-      status = builtin.Set(argv, self.exec_opts, self.mem)
+      status = builtin.Set(arg_vec, self.exec_opts, self.mem)
 
     elif builtin_id == builtin_e.SHOPT:
       status = builtin.Shopt(argv, self.exec_opts)

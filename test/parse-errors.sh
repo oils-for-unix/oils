@@ -358,6 +358,8 @@ args-parse-builtin() {
   _error-case 'read -n'  # expected argument for -n
   _error-case 'read -n x'  # expected integer
 
+  _error-case 'set -o errexit +o oops'
+
   # not implemented yet
   #_error-case 'read -t x'  # expected floating point number
 
@@ -369,6 +371,8 @@ args-parse-builtin() {
 args-parse-main() {
   set +o errexit
   bin/osh --ast-format x
+
+  bin/osh -o errexit +o oops
 
   # TODO: opy/opy_main.py uses OilFlags, which has Go-like boolean syntax
 }

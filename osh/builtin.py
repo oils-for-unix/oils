@@ -806,11 +806,11 @@ def SetExecOpts(exec_opts, opt_changes):
     exec_opts.SetOption(opt_name, b)
 
 
-def Set(argv, exec_opts, mem):
+def Set(arg_vec, exec_opts, mem):
   # TODO:
   # - How to integrate this with auto-completion?  Have to handle '+'.
 
-  if not argv:  # empty
+  if len(arg_vec.strs) == 1:  # no args
     # TODO:
     # - This should be set -o, not plain 'set'.
     # - When no arguments are given, it shows functions/vars?  Why not show
@@ -818,7 +818,8 @@ def Set(argv, exec_opts, mem):
     exec_opts.ShowOptions([])
     return 0
 
-  arg_r = args.Reader(argv)
+  arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+  arg_r.Next()  # skip 'set'
   arg = SET_SPEC.Parse(arg_r)
 
   SetExecOpts(exec_opts, arg.opt_changes)
