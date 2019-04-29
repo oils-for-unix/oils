@@ -57,13 +57,20 @@ However I don't see these used anywhere!  I only see ':' used.
 """
 from __future__ import print_function
 
-import libc
+from asdl import const
 from core.util import log
+
+import libc  # for regex support
 
 
 class UsageError(Exception):
   """Raised by builtins upon flag parsing error."""
-  pass
+
+  # TODO: Should this be _ErrorWithLocation?  Probably, even though we only use
+  # 'span_id'.
+  def __init__(self, msg, span_id=const.NO_INTEGER):
+    self.msg = msg
+    self.span_id = span_id
 
 
 class _Attributes(object):
@@ -92,8 +99,9 @@ class Reader(object):
   The caller of the flags parser can continue to use it after flag parsing is
   done to get args.
   """
-  def __init__(self, argv):
+  def __init__(self, argv, spids=None):
     self.argv = argv
+    self.spids = spids
     self.n = len(argv)
     self.i = 0
 
@@ -122,6 +130,12 @@ class Reader(object):
 
   def AtEnd(self):
     return self.i == self.n
+
+  def SpanId(self):
+    if self.spids:
+      return self.spids[self.i]
+    else:
+      return const.NO_INTEGER  # TODO: remove this when all have spids
 
 
 class _Action(object):
@@ -524,17 +538,11 @@ class BuiltinFlags(object):
 
     return out, arg_r.i
 
-  def Parse(self, argv):
-    # TODO: Parse -en into separate actions
-    # Also read -t1.0 is supposed to be an arg!
-    # So you have to know which one it is.  Is it an arg with flag?
-    # So look up the first one
-
+  def _Parse(self, arg_r):
     # NOTE about -:
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
 
-    arg_r = Reader(argv)
     out = _Attributes(self.attr_names)
 
     while not arg_r.AtEnd():
@@ -560,7 +568,8 @@ class BuiltinFlags(object):
             action.OnMatch(None, suffix, arg_r, out)
             break
 
-          raise UsageError('Invalid flag %r' % char)
+          raise UsageError("doesn't accept flag -%s" % char, span_id=arg_r.SpanId())
+          #raise UsageError("doesn't accept flag -%s" % char)
 
         arg_r.Next()  # next arg
 
@@ -568,6 +577,17 @@ class BuiltinFlags(object):
         break
 
     return out, arg_r.i
+
+  def Parse(self, argv):
+    """TODO: Remove this old API."""
+    arg_r = Reader(argv)
+    return self._Parse(arg_r)
+
+  def ParseVec(self, arg_vec):
+    arg_r = Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # move past the builtin name
+    arg, i = self._Parse(arg_r)
+    return arg, i  # adjust
 
 
 # - A flag can start with one or two dashes, but not three

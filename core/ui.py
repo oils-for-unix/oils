@@ -158,6 +158,15 @@ def PrintWarning(msg, span_id, arena, f=sys.stderr):
     _PrintWithLocation(prefix, msg, span_id, arena)
 
 
+def PrintUsageError(e, arg0, arena):
+  # type: (UsageError, str, Arena) -> None
+  if e.span_id == const.NO_INTEGER:
+    # TODO: Remove this once all builtins have location info.
+    print('usage error: %r %s' % (arg0, e.msg), file=sys.stderr)
+  else:
+    _PrintWithLocation('%r ' % arg0, e.msg, e.span_id, arena)
+
+
 def Stderr(msg, *args):
   # type: (str, *Any) -> None
   """Print a message to stderr for the user.

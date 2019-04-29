@@ -358,7 +358,7 @@ class Executor(object):
 
     elif builtin_id == builtin_e.TYPE:
       path = self.mem.GetVar('PATH')
-      status = builtin.Type(argv, self.funcs, path)
+      status = builtin.Type(arg_vec, self.funcs, path)
 
     elif builtin_id == builtin_e.HELP:
       loader = pyutil.GetResourceLoader()
@@ -572,7 +572,7 @@ class Executor(object):
       try:
         status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
       except args.UsageError as e:
-        ui.Stderr('osh %r usage error: %s', arg0, e)
+        ui.PrintUsageError(e, arg0, self.arena)
         status = 2  # consistent error code for usage error
       return status
 
@@ -590,7 +590,7 @@ class Executor(object):
       try:
         status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
       except args.UsageError as e:
-        ui.Stderr('osh %r usage error: %s', arg0, e)
+        ui.PrintUsageError(e, arg0, self.arena)
         status = 2  # consistent error code for usage error
       return status
 

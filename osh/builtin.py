@@ -1014,13 +1014,13 @@ TYPE_SPEC.ShortFlag('-p')
 TYPE_SPEC.ShortFlag('-P')
 
 
-def Type(argv, funcs, path_val):
-  arg, i = TYPE_SPEC.Parse(argv)
+def Type(arg_vec, funcs, path_val):
+  arg, i = TYPE_SPEC.ParseVec(arg_vec)
 
   status = 0
   if arg.f:
     funcs = []
-  for kind, name in _ResolveNames(argv[i:], funcs, path_val):
+  for kind, name in _ResolveNames(arg_vec.strs[i:], funcs, path_val):
     if kind is None:
       status = 1  # nothing printed, but we fail
     else:
