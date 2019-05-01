@@ -40,9 +40,10 @@ spec() {
   local user=$1
   local host=$2
 
-  # Add hostname because spec tests aren't hermetic yet.
   local dest
-  dest="$(versioned-dest)/$(hostname)/spec"
+  # Add hostname because spec tests aren't hermetic yet.
+  #dest="$(versioned-dest)/$(hostname)/spec"
+  dest="$(versioned-dest)/spec"
 
   ssh $user@$host mkdir -p $dest
 

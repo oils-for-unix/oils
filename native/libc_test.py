@@ -163,7 +163,7 @@ class LibcTest(unittest.TestCase):
   def testRegexFirstGroupMatchError(self):
     # Helping to debug issue #291
     s = ''
-    if 1:
+    if 0:
       libc.regex_first_group_match("(['+-'])", s, 6)
 
   def testRealpathFailOnNonexistentDirectory(self):
