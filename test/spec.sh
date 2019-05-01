@@ -229,8 +229,7 @@ osh-only() {
 
 # Regress bugs
 bugs() {
-  sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@" \
-    --osh-failures-allowed 3
+  sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 blog1() {
@@ -491,7 +490,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec spec/var-sub-quote.test.sh \
+  sh-spec spec/var-sub-quote.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

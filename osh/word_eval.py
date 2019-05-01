@@ -420,7 +420,7 @@ class _WordEvaluator(object):
 
       if val.tag == value_e.Str:
         s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
-        #log('%s %s -> %s', val.s, arg_val.s, s)
+        #log('%r %r -> %r', val.s, arg_val.s, s)
         new_val = value.Str(s)
       else:  # val.tag == value_e.StrArray:
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.

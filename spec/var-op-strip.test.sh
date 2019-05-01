@@ -175,3 +175,29 @@ foo[]
 [a]foo[]
 foo[]
 ## END
+
+#### Nested % and # operators (bug reported by Crestwave)
+var=$'\n'
+argv.py "${var#?}"
+argv.py "${var%''}"
+argv.py "${var%"${var#?}"}"
+var='a'
+argv.py "${var#?}"
+argv.py "${var%''}"
+argv.py "${var%"${var#?}"}"
+## STDOUT:
+['']
+['\n']
+['\n']
+['']
+['a']
+['a']
+## END
+## N-I dash STDOUT:
+['\\n']
+['$\\n']
+['$']
+['']
+['a']
+['a']
+## END
