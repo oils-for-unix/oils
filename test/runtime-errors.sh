@@ -67,6 +67,13 @@ failed_command() {
   echo 'SHOULD NOT GET HERE'
 }
 
+# This quotes the same line of code twice, but maybe that's OK.  At least there
+# is different column information.
+errexit_usage_error() {
+  set -o errexit
+  type -z
+}
+
 errexit_subshell() {
   set -o errexit
 
@@ -75,7 +82,9 @@ errexit_subshell() {
 }
 
 shopt -s expand_aliases
+# Why can't this be in the function?
 alias foo='echo hi; ls '
+
 errexit_alias() {
   set -o errexit
 
@@ -411,7 +420,7 @@ all() {
 
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
-    failed_command errexit_subshell errexit_alias \
+    failed_command errexit_usage_error errexit_subshell errexit_alias \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
     pipefail_multiple core_process \
     nonexistent nounset bad_var_ref \
