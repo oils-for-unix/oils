@@ -25,7 +25,9 @@ def Banner(msg):
 
 _WAITER = process.Waiter()
 _FD_STATE = process.FdState()
-_EXT_PROG = process.ExternalProgram(False, _FD_STATE, util.NullDebugFile())
+_ARENA = test_lib.MakeArena('process_test.py')
+_EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ARENA,
+                                    util.NullDebugFile())
 
 
 def _CommandNode(code_str, arena):

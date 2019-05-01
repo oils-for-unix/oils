@@ -150,14 +150,23 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
     _PrintWithLocation(prefix, msg, span_id, arena, f=f)
 
 
-def PrintWarning(msg, span_id, arena, f=sys.stderr):
-  # type: (str, int, Arena, IO[str]) -> None
-  prefix = 'warning: '
+def _PrintHelper(prefix, msg, span_id, arena, f):
+  # type: (str, str, int, Arena, IO[str]) -> None
   if span_id == const.NO_INTEGER:  # When does this happen?
     print('*** Warning has no source location info ***', file=f)
     print('%s%s' % (prefix, msg), file=f)
   else:
     _PrintWithLocation(prefix, msg, span_id, arena)
+
+
+def PrintWarning(msg, span_id, arena, f=sys.stderr):
+  # type: (str, int, Arena, IO[str]) -> None
+  _PrintHelper('warning: ', msg, span_id, arena, f)
+
+
+def PrintWithLocation(msg, span_id, arena, f=sys.stderr):
+  # type: (str, int, Arena, IO[str]) -> None
+  _PrintHelper('', msg, span_id, arena, f)
 
 
 def PrintUsageError(e, arg0, arena):

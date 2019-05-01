@@ -355,7 +355,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     debug_f.log('Writing logs to %r', debug_path)
 
   interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
-  exec_deps.ext_prog = process.ExternalProgram(interp, fd_state, debug_f)
+  exec_deps.ext_prog = process.ExternalProgram(interp, fd_state, arena, debug_f)
 
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter

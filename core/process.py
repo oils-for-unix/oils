@@ -19,6 +19,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
+from core import ui
 from core import util
 from core.util import log
 from pylib import os_
@@ -365,7 +366,7 @@ class Thunk(object):
 
 
 class ExternalProgram(object):
-  def __init__(self, hijack_shebang, fd_state, debug_f):
+  def __init__(self, hijack_shebang, fd_state, arena, debug_f):
     """
     Args:
       hijack_shebang: The path of an interpreter to run instead of the one
@@ -373,6 +374,7 @@ class ExternalProgram(object):
     """
     self.hijack_shebang = hijack_shebang
     self.fd_state = fd_state
+    self.arena = arena
     self.debug_f = debug_f
 
   def Exec(self, arg_vec, environ):
@@ -410,8 +412,9 @@ class ExternalProgram(object):
     except OSError as e:
       # TODO: Run with /bin/sh when ENOEXEC error (noshebang).  Because all
       # shells do it.
-
-      util.error('%r: %s', argv[0], posix.strerror(e.errno))
+      ui.PrintWithLocation(
+          "can't execute %r: %s" % (argv[0], posix.strerror(e.errno)),
+          arg_vec.spids[0], self.arena)
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
       #
