@@ -889,7 +889,11 @@ class Executor(object):
       if node.arg_word:  # Evaluate the argument
         val = self.word_ev.EvalWordToString(node.arg_word)
         assert val.tag == value_e.Str
-        arg = int(val.s)  # They all take integers
+        try:
+          arg = int(val.s)  # They all take integers
+        except ValueError:
+          e_die('%r expected a number, got %r',
+              node.token.val, val.s, word=node.arg_word)
       else:
         arg = 0  # return 0, exit 0, break 0 levels, etc.
 

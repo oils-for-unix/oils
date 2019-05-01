@@ -152,3 +152,38 @@ Should not print
 Should not print
 . 3
 ## END
+
+#### bad arg to break
+x=oops
+while true; do 
+  echo hi
+  break $x
+  sleep 0.1
+done
+## stdout: hi
+## status: 1
+## OK dash status: 2
+## OK bash status: 128
+
+#### too many args to continue
+# OSH treats this as a parse error
+for x in a b c; do
+  echo $x
+  # bash breaks rather than continue or fatal error!!!
+  continue 1 2 3
+done
+echo --
+## stdout-json: ""
+## status: 2
+## BUG bash STDOUT:
+a
+--
+## END
+## OK bash status: 0
+## BUG dash/mksh/zsh STDOUT:
+a
+b
+c
+--
+## END
+## BUG dash/mksh/zsh status: 0

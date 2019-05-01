@@ -86,3 +86,23 @@ no plus or minus ++--++--
 ## BUG ash status: 0
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+
+#### single quotes work inside character classes
+x='a[[[---]]]b'
+echo "${x//['[]']}"
+## STDOUT:
+a---b
+## END
+## BUG ash STDOUT:
+a[[[---]]]b
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+
+#### comparison: :- operator with single quoted arg
+echo ${unset:-'a'}
+echo "${unset:-'a'}"
+## STDOUT:
+a
+'a'
+## END
