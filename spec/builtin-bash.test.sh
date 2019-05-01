@@ -1,15 +1,19 @@
 #!/bin/bash
 #
-# Bash implements type -t.
-# 
-# NOTE: Aliases don't work in batch mode!  Interactive only.
+# Bash implements type -t
 
-#### type -t builtin -> function
+#### type -t -> function
 f() { echo hi; }
 type -t f
-## stdout-json: "function\n"
+## stdout: function
 
-#### type -t builtin -> builtin
+#### type -t -> alias
+shopt -s expand_aliases
+alias foo=bar
+type -t foo
+## stdout: alias
+
+#### type -t -> builtin
 type -t echo read : [ declare local break continue
 ## stdout-json: "builtin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\n"
 

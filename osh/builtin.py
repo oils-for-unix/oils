@@ -957,12 +957,14 @@ def _ResolveFile(name, path_list):
   return (None, None)
 
 
-def _ResolveNames(names, funcs, path_val):
+def _ResolveNames(names, funcs, aliases, path_val):
   results = []
   path_list = _ParsePath(path_val)
   for name in names:
     if name in funcs:
       kind = ('function', name)
+    elif name in aliases:
+      kind = ('alias', name)
     elif Resolve(name) != builtin_e.NONE:
       kind = ('builtin', name)
     elif ResolveSpecial(name) != builtin_e.NONE:
@@ -984,9 +986,10 @@ COMMAND_SPEC.ShortFlag('-v')
 
 
 class Command(object):
-  def __init__(self, ex, funcs, mem):
+  def __init__(self, ex, funcs, aliases, mem):
     self.ex = ex
     self.funcs = funcs
+    self.aliases = aliases
     self.mem = mem
 
   def __call__(self, arg_vec, fork_external):
@@ -995,7 +998,8 @@ class Command(object):
     if arg.v:
       path_val = self.mem.GetVar('PATH')
       status = 0
-      for kind, arg in _ResolveNames(argv[i:], self.funcs, path_val):
+      for kind, arg in _ResolveNames(argv[i:], self.funcs, self.aliases,
+                                     path_val):
         if kind is None:
           status = 1  # nothing printed, but we fail
         else:
@@ -1015,13 +1019,13 @@ TYPE_SPEC.ShortFlag('-p')
 TYPE_SPEC.ShortFlag('-P')
 
 
-def Type(arg_vec, funcs, path_val):
+def Type(arg_vec, funcs, aliases, path_val):
   arg, i = TYPE_SPEC.ParseVec(arg_vec)
 
   status = 0
   if arg.f:
     funcs = []
-  for kind, name in _ResolveNames(arg_vec.strs[i:], funcs, path_val):
+  for kind, name in _ResolveNames(arg_vec.strs[i:], funcs, aliases, path_val):
     if kind is None:
       status = 1  # nothing printed, but we fail
     else:

@@ -67,11 +67,21 @@ failed_command() {
   echo 'SHOULD NOT GET HERE'
 }
 
-errexit() {
+errexit_subshell() {
   set -o errexit
-  rm nonexistent/file
 
-  echo 'SHOULD NOT GET HERE'
+  # Note: for loops, while loops don't trigger errexit; their components do
+  ( echo subshell; exit 42; )
+}
+
+shopt -s expand_aliases
+alias foo='echo hi; ls '
+errexit_alias() {
+  set -o errexit
+
+  type foo
+
+  foo /nonexistent
 }
 
 pipefail() {
@@ -401,7 +411,7 @@ all() {
 
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
-    failed_command errexit \
+    failed_command errexit_subshell errexit_alias \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
     pipefail_multiple core_process \
     nonexistent nounset bad_var_ref \
