@@ -174,13 +174,15 @@ def DoUnarySuffixOp(s, op, arg):
     arg = glob_.GlobUnescape(arg)
 
     if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
-      if arg and s.startswith(arg):  # explicit check for non-empty arg
+      # explicit check for non-empty arg (len for mycpp)
+      if len(arg) and s.startswith(arg):
         return s[len(arg):]
       else:
         return s
 
     elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
-      if arg and s.endswith(arg):  # need explicit check for non-empty arg
+      # need explicit check for non-empty arg (len for mycpp)
+      if len(arg) and s.endswith(arg):
         return s[:-len(arg)]
       else:
         return s
