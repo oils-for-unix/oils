@@ -137,6 +137,13 @@ control_flow() {
   echo 'SHOULD NOT GET HERE'
 }
 
+# Errors from core/process.py
+core_process() {
+  echo foo > not/a/file
+  echo foo > /etc/no-perms-for-this
+  echo hi 1>&3
+}
+
 ambiguous_redirect() {
   echo foo > "$@"
   echo 'ambiguous redirect not fatal unless errexit'
@@ -389,6 +396,7 @@ all() {
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
+    pipefail_multiple core_process \
     nonexistent nounset bad_var_ref \
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \

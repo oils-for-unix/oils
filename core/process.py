@@ -141,8 +141,10 @@ class FdState(object):
     try:
       posix.dup2(fd1, fd2)
     except OSError as e:
+      # TODO: Use r.op.span_id to print error with location
       # bash/dash give this error too, e.g. for 'echo hi 1>&3'
       util.error('%d: %s', fd1, posix.strerror(e.errno))
+
       # Restore and return error
       posix.dup2(new_fd, fd2)
       posix.close(new_fd)
@@ -180,6 +182,7 @@ class FdState(object):
       try:
         target_fd = posix.open(r.filename, mode, 0o666)
       except OSError as e:
+        # TODO: Use r.op.span_id to print error with location
         util.error("Can't open %r: %s", r.filename, posix.strerror(e.errno))
         return False
 
