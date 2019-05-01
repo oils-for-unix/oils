@@ -368,6 +368,14 @@ args-parse-builtin() {
   # - Oil flags: invalid long flag, boolean argument, etc.
 }
 
+# aiding the transition
+args-parse-more() {
+  set +o errexit
+  _error-case 'set -z'
+  _error-case 'shopt -s foo'
+  _error-case 'shopt -z'
+}
+
 args-parse-main() {
   set +o errexit
   bin/osh --ast-format x

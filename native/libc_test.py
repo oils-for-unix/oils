@@ -160,6 +160,12 @@ class LibcTest(unittest.TestCase):
     self.assertRaises(
         RuntimeError, libc.regex_first_group_match, r'*', 'abcd', 0)
 
+  def testRegexFirstGroupMatchError(self):
+    # Helping to debug issue #291
+    s = ''
+    if 1:
+      libc.regex_first_group_match("(['+-'])", s, 6)
+
   def testRealpathFailOnNonexistentDirectory(self):
     # This behaviour is actually inconsistent with GNU readlink,
     # but matches behaviour of busybox readlink

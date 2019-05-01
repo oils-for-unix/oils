@@ -117,6 +117,15 @@ TODO: Add these
   # This relates to comments being EOL or not
 -->
 
+(7) **Ambiguous Character Classes in Globs**
+
+In short, don't use the ambiguous syntax `[[]` or `[]]` for a character class
+consisting of a single left bracket or right bracket character.
+
+Instead, use `[\[]` and `[\]]`.
+
+TODO: Explanation.
+
 ## set builtin
 
 ### errexit
