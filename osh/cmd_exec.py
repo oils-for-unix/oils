@@ -295,7 +295,7 @@ class Executor(object):
       status = builtin.Set(arg_vec, self.exec_opts, self.mem)
 
     elif builtin_id == builtin_e.SHOPT:
-      status = builtin.Shopt(argv, self.exec_opts)
+      status = builtin.Shopt(arg_vec, self.exec_opts)
 
     elif builtin_id == builtin_e.UNSET:
       status = builtin.Unset(argv, self.mem, self.funcs)

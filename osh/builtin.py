@@ -871,21 +871,22 @@ SHOPT_SPEC.ShortFlag('-p')  # print
 SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 
-def Shopt(argv, exec_opts):
-  arg, i = SHOPT_SPEC.Parse(argv)
+def Shopt(arg_vec, exec_opts):
+  arg, i = SHOPT_SPEC.ParseVec(arg_vec)
+  opt_names = arg_vec.strs[i:]
 
   if arg.p:  # print values
     if arg.o:  # use set -o names
-      exec_opts.ShowOptions(argv[i:])
+      exec_opts.ShowOptions(opt_names)
     else:
-      exec_opts.ShowShoptOptions(argv[i:])
+      exec_opts.ShowShoptOptions(opt_names)
     return 0
 
   if arg.q:  # query values
-    for opt_name in argv[i:]:
-      if not hasattr(exec_opts, opt_name):
+    for name in opt_names:
+      if not hasattr(exec_opts, name):
         return 2  # bash gives 1 for invalid option; 2 is better
-      if not getattr(exec_opts, opt_name):
+      if not getattr(exec_opts, name):
         return 1  # at least one option is not true
     return 0  # all options are true
 
@@ -898,11 +899,11 @@ def Shopt(argv, exec_opts):
   if b is None:
     raise NotImplementedError  # Display options
 
-  for opt_name in argv[i:]:
+  for name in opt_names:
     if arg.o:
-      exec_opts.SetOption(opt_name, b)
+      exec_opts.SetOption(name, b)
     else:
-      exec_opts.SetShoptOption(opt_name, b)
+      exec_opts.SetShoptOption(name, b)
 
   return 0
 
