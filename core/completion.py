@@ -1118,6 +1118,9 @@ class ReadlineCallback(object):
       # print what WOULD have been COMPREPLY here.
       log('Runtime error while completing: %s', e)
       self.debug_f.log('Runtime error while completing: %s', e)
+    except (IOError, OSError) as e:
+      # test this with prlimit --nproc=1 --pid=$$
+      ui.Stderr('I/O error in osh completion: %s', posix.strerror(e.errno))
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
       import traceback
       traceback.print_exc()
