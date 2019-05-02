@@ -369,7 +369,7 @@ class Thunk(object):
 
 
 class ExternalProgram(object):
-  def __init__(self, hijack_shebang, fd_state, arena, debug_f):
+  def __init__(self, hijack_shebang, fd_state, errfmt, debug_f):
     """
     Args:
       hijack_shebang: The path of an interpreter to run instead of the one
@@ -377,7 +377,7 @@ class ExternalProgram(object):
     """
     self.hijack_shebang = hijack_shebang
     self.fd_state = fd_state
-    self.arena = arena
+    self.errfmt = errfmt
     self.debug_f = debug_f
 
   def Exec(self, arg_vec, environ):
@@ -415,9 +415,12 @@ class ExternalProgram(object):
     except OSError as e:
       # TODO: Run with /bin/sh when ENOEXEC error (noshebang).  Because all
       # shells do it.
-      ui.PrintWithLocation(
-          "can't execute %r: %s" % (argv[0], posix.strerror(e.errno)),
-          arg_vec.spids[0], self.arena)
+
+      # Would be nice: when the path is relative and ENOENT: print PWD and do
+      # spelling correction?
+
+      self.errfmt.PrintWithSpid(arg_vec.spids[0],
+          "Can't execute %r: %s", argv[0], posix.strerror(e.errno))
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
       #

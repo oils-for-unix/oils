@@ -164,9 +164,15 @@ def PrintWarning(msg, span_id, arena, f=sys.stderr):
   _PrintHelper('warning: ', msg, span_id, arena, f)
 
 
-def PrintWithLocation(msg, span_id, arena, f=sys.stderr):
-  # type: (str, int, Arena, IO[str]) -> None
-  _PrintHelper('', msg, span_id, arena, f)
+class ErrorFormatter(object):
+  def __init__(self, arena):
+    # type: (Arena) -> None
+    self.arena = arena
+
+  def PrintWithSpid(self, span_id, msg, *args):
+    # type: (int, str, *Any) -> None
+    msg = msg % args
+    _PrintHelper('', msg, span_id, self.arena, sys.stderr)
 
 
 def PrintUsageError(e, arg0, arena):
