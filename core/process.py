@@ -64,7 +64,8 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self):
+  def __init__(self, errfmt):
+    self.errfmt = errfmt
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
 
@@ -182,8 +183,8 @@ class FdState(object):
       try:
         target_fd = posix.open(r.filename, mode, 0o666)
       except OSError as e:
-        # TODO: Use r.op.span_id to print error with location
-        util.error("Can't open %r: %s", r.filename, posix.strerror(e.errno))
+        self.errfmt.PrintWithSpid(r.op_spid,
+            "Can't open %r: %s", r.filename, posix.strerror(e.errno))
         return False
 
       # Apply redirect

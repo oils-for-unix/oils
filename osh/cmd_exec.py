@@ -474,7 +474,7 @@ class Executor(object):
           util.error("Redirect filename can't be empty")
           return None
 
-        return redirect.PathRedirect(n.op.id, fd, filename)
+        return redirect.PathRedirect(n.op.id, fd, filename, n.op.span_id)
 
       elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
@@ -492,13 +492,13 @@ class Executor(object):
               "Redirect descriptor should look like an integer, got %s", val)
           return None
 
-        return redirect.DescRedirect(n.op.id, fd, target_fd)
+        return redirect.DescRedirect(n.op.id, fd, target_fd, n.op.span_id)
 
       elif redir_type == redir_arg_type_e.Here:  # here word
         val = self.word_ev.EvalWordToString(n.arg_word)
         assert val.tag == value_e.Str, val
         # NOTE: bash and mksh both add \n
-        return redirect.HereRedirect(fd, val.s + '\n')
+        return redirect.HereRedirect(fd, val.s + '\n', n.op.span_id)
       else:
         raise AssertionError('Unknown redirect op')
 
@@ -507,7 +507,7 @@ class Executor(object):
       w = osh_word.CompoundWord(n.stdin_parts)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
-      return redirect.HereRedirect(fd, val.s)
+      return redirect.HereRedirect(fd, val.s, n.op.span_id)
 
     else:
       raise AssertionError('Unknown redirect type')

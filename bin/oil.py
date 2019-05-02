@@ -284,6 +284,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     has_main = True
 
   arena = alloc.Arena()
+  errfmt = ui.ErrorFormatter(arena)
 
   # NOTE: has_main is only for ${BASH_SOURCE[@} and family.  Could be a
   # required arg.
@@ -291,7 +292,7 @@ def ShellMain(lang, argv0, argv, login_shell):
                   has_main=has_main)
   funcs = {}
 
-  fd_state = process.FdState()
+  fd_state = process.FdState(errfmt)
   exec_opts = state.ExecOpts(mem, line_input)
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
@@ -355,7 +356,6 @@ def ShellMain(lang, argv0, argv, login_shell):
     debug_f.log('Writing logs to %r', debug_path)
 
   interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
-  errfmt = ui.ErrorFormatter(arena)
   exec_deps.ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
