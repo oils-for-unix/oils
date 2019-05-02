@@ -540,6 +540,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   _tlog('Execute(node)')
   status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
+  if ex.MaybeRunExitTrap():
+    status = ex.LastStatus()
 
   # Only print nodes if the whole parse succeeded.
   if nodes_out is not None and status == 0:
@@ -752,6 +754,7 @@ def main(argv):
     log('oil: %s', e)
     sys.exit(2)
   except RuntimeError as e:
+    # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
     log('FATAL: %s', e)
     sys.exit(1)
   finally:

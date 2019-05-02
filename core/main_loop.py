@@ -163,10 +163,7 @@ def Batch(ex, c_parser, arena, nodes_out=None):
     if is_control_flow or is_fatal:
       break
 
-  if ex.MaybeRunExitTrap():
-    return ex.LastStatus()
-  else:
-    return status  # could be a parse error
+  return status
 
 
 def ParseWholeFile(c_parser):

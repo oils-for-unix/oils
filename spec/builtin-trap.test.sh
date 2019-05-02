@@ -189,3 +189,9 @@ status=0
 status=0
 status=0
 ## END
+
+#### eval in the exit trap (regression for issue #293)
+trap 'eval "echo hi"' 0
+## STDOUT:
+hi
+## END
