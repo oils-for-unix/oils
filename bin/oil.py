@@ -141,6 +141,7 @@ builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
 def _MakeArgVector(argv):
+  argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
   return arg_vector(argv, [const.NO_INTEGER] * len(argv))
 
