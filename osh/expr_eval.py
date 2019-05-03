@@ -644,7 +644,7 @@ class BoolEvaluator(_ExprEvaluator):
             fd = int(s)
           except ValueError:
             # TODO: Need location information of [
-            e_die('Invalid file descriptor %r', s)
+            e_die('Invalid file descriptor %r', s, word=node.child)
           return posix.isatty(fd)
 
         raise NotImplementedError(op_id)

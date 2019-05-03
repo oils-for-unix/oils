@@ -229,6 +229,8 @@ test-builtin() {
 
   _error-case '[ x x "a b" ]'
 
+  # This is a runtime error but is handled similarly
+  _error-case '[ -t xxx ]'
 
   _error-case '[ \( x -a -y -a z ]'
 

@@ -42,7 +42,8 @@ class _StringWordEmitter(object):
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
       w = word.StringWord(Id.Eof_Real, '')
-      # TODO: Add a way to show this.
+      # TODO: Add a way to show this.  Show 1 char past the right-most spid of
+      # the last word?  But we only have the left-most spid.
       w.spids.append(const.NO_INTEGER)
       return w
 
@@ -213,9 +214,7 @@ class Test(object):
     try:
       b = bool_ev.Eval(bool_node)
     except util.FatalRuntimeError as e:
-      # TODO: Print line number.  Pass a span_id into this function?
-      # e.g. [ -t xxx ]
-      ui.Stderr('osh: test: %s', e.UserErrorString())
+      self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2  # 1 means 'false', and this usage error is like a parse error.
 
     status = 0 if b else 1
