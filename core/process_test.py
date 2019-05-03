@@ -10,6 +10,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect, arg_vector
 from osh import builtin
 from core import process  # module under test
+from core import ui
 from core import util
 from core.util import log
 from core import test_lib
@@ -24,8 +25,9 @@ def Banner(msg):
 
 
 _WAITER = process.Waiter()
-_FD_STATE = process.FdState()
 _ARENA = test_lib.MakeArena('process_test.py')
+_ERRFMT = ui.ErrorFormatter(_ARENA)
+_FD_STATE = process.FdState(_ERRFMT)
 _EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ARENA,
                                     util.NullDebugFile())
 
@@ -44,7 +46,7 @@ class ProcessTest(unittest.TestCase):
 
   def testStdinRedirect(self):
     waiter = process.Waiter()
-    fd_state = process.FdState()
+    fd_state = process.FdState(_ERRFMT)
 
     PATH = '_tmp/one-two.txt'
     # Write two lines
@@ -115,7 +117,7 @@ class ProcessTest(unittest.TestCase):
     node = _CommandNode('head', arena)
     p.AddLast((ex, node))
 
-    fd_state = process.FdState()
+    fd_state = process.FdState(_ERRFMT)
     print(p.Run(_WAITER, _FD_STATE))
 
     # Simulating subshell for each command
@@ -149,7 +151,7 @@ class ProcessTest(unittest.TestCase):
     # capture stdout of that interpreter.
 
   def testOpen(self):
-    fd_state = process.FdState()
+    fd_state = process.FdState(_ERRFMT)
 
     # This function used to raise BOTH OSError and IOError because Python 2 is
     # inconsistent.

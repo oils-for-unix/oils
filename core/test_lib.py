@@ -19,6 +19,7 @@ from core import completion
 from core import dev
 from core import main_loop
 from core import process
+from core import ui
 from core import util
 from frontend import lexer
 from frontend import match
@@ -125,7 +126,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
     parse_ctx = parse_lib.ParseContext(arena, {})
 
   mem = mem or state.Mem('', [], {}, arena)
-  fd_state = process.FdState()
+  errfmt = ui.ErrorFormatter(arena)
+  fd_state = process.FdState(errfmt)
   funcs = {}
 
   compopt_state = completion.OptionState()
