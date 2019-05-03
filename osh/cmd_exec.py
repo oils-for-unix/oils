@@ -47,7 +47,6 @@ from osh import braces
 from osh import builtin
 from osh import expr_eval
 from osh import state
-from osh import builtin_bracket
 from osh import word
 from osh import word_compile
 
@@ -268,7 +267,7 @@ class Executor(object):
 
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
-      status = builtin_func(argv)
+      status = builtin_func(arg_vec)
 
     elif builtin_id == builtin_e.EXEC:
       status = self._Exec(arg_vec)  # may never return
@@ -341,12 +340,6 @@ class Executor(object):
 
     elif builtin_id == builtin_e.FALSE:
       status = 1
-
-    elif builtin_id == builtin_e.TEST:
-      status = builtin_bracket.Test(argv, False)
-
-    elif builtin_id == builtin_e.BRACKET:
-      status = builtin_bracket.Test(argv, True)  # need_right_bracket
 
     elif builtin_id == builtin_e.GETOPTS:
       status = builtin.GetOpts(argv, self.mem)

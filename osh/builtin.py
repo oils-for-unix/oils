@@ -1514,7 +1514,8 @@ class History(object):
   def __init__(self, readline_mod):
     self.readline_mod = readline_mod
 
-  def __call__(self, argv):
+  def __call__(self, arg_vec):
+    argv = arg_vec.strs[1:]
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.

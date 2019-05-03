@@ -261,8 +261,7 @@ def LeftMostSpanForWord(w):
       return LeftMostSpanForPart(begin)
 
   elif isinstance(w, word__StringWord):
-    # There is no place to store this now?
-    return const.NO_INTEGER
+    return w.spids[0]  # See _StringWordEmitter in osh/builtin_bracket.py
 
   else:
     raise AssertionError(w)
@@ -621,4 +620,4 @@ def Pretty(w):
   if isinstance(w, word__StringWord):
     return repr(w.s)
   else:
-    return str(s)
+    return str(w)

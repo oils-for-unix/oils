@@ -243,7 +243,8 @@ class Complete(object):
     self.spec_builder = spec_builder
     self.comp_lookup = comp_lookup
 
-  def __call__(self, argv):
+  def __call__(self, arg_vec):
+    argv = arg_vec.strs[1:]
     arg_r = args.Reader(argv)
     arg = COMPLETE_SPEC.Parse(arg_r)
     # TODO: process arg.opt_changes
@@ -290,7 +291,8 @@ class CompGen(object):
   def __init__(self, spec_builder):
     self.spec_builder = spec_builder
 
-  def __call__(self, argv):
+  def __call__(self, arg_vec):
+    argv = arg_vec.strs[1:]
     arg_r = args.Reader(argv)
     arg = COMPGEN_SPEC.Parse(arg_r)
 
@@ -346,7 +348,8 @@ class CompOpt(object):
   def __init__(self, comp_state):
     self.comp_state = comp_state
 
-  def __call__(self, argv):
+  def __call__(self, arg_vec):
+    argv = arg_vec.strs[1:]
     arg_r = args.Reader(argv)
     arg = COMPOPT_SPEC.Parse(arg_r)
 
@@ -381,7 +384,8 @@ class CompAdjust(object):
   def __init__(self, mem):
     self.mem = mem
 
-  def __call__(self, argv):
+  def __call__(self, arg_vec):
+    argv = arg_vec.strs[1:]
     arg_r = args.Reader(argv)
     arg = INIT_COMPLETION_SPEC.Parse(arg_r)
     var_names = arg_r.Rest()  # Output variables to set

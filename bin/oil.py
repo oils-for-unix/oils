@@ -49,8 +49,10 @@ _tlog('before imports')
 import atexit
 import errno
 
-from _devbuild.gen.runtime_asdl import builtin_e
+from _devbuild.gen.runtime_asdl import builtin_e, arg_vector
 from _devbuild.gen.syntax_asdl import source
+
+from asdl import const
 
 from core import alloc
 from core import comp_ui
@@ -66,6 +68,7 @@ from core.util import log
 from oil_lang import cmd_exec as oil_cmd_exec
 
 from osh import builtin
+from osh import builtin_bracket
 from osh import builtin_comp
 from osh import cmd_exec
 from osh import expr_eval
@@ -137,12 +140,17 @@ OSH_SPEC.LongFlag('--rcfile', args.Str)
 builtin.AddOptionsToArgSpec(OSH_SPEC)
 
 
+def _MakeArgVector(argv):
+  # no location info
+  return arg_vector(argv, [const.NO_INTEGER] * len(argv))
+
+
 def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
   # register builtins and words
-  complete_builtin(['-E', '-A', 'command'])
+  complete_builtin(_MakeArgVector(['-E', '-A', 'command']))
   # register path completion
   # Add -o filenames?  Or should that be automatic?
-  complete_builtin(['-D', '-A', 'file'])
+  complete_builtin(_MakeArgVector(['-D', '-A', 'file']))
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:
@@ -387,6 +395,9 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
+      builtin_e.TEST: builtin_bracket.Test(False, errfmt),
+      # need_right_bracket
+      builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
