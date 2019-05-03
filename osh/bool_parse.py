@@ -136,7 +136,7 @@ class BoolParser(object):
 
     node = self.ParseExpr()
     if self.op_id != Id.Eof_Real:
-      p_die('Unexpected trailing word: %s', word.Pretty(self.cur_word),
+      p_die('Unexpected trailing word %s', word.Pretty(self.cur_word),
           word=self.cur_word)
 
     return node

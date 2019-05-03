@@ -144,8 +144,8 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
 
   if span_id == const.NO_INTEGER:  # Any clause above might return this.
     # This is usually a bug.
-    print('*** Error has no source location info ***', file=f)
-    print('%s%s' % (prefix, msg), file=f)
+    # It would be nice to somehow fall back on a line number
+    print('[??? no location ???] %s%s' % (prefix, msg), file=f)
   else:
     _PrintWithLocation(prefix, msg, span_id, arena, f=f)
 

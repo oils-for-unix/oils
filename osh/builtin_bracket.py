@@ -142,7 +142,7 @@ class Test(object):
     if self.need_right_bracket:  # Preprocess right bracket
       strs = arg_vec.strs
       if not strs or strs[-1] != ']':
-        util.error('[: missing closing ]')
+        self.errfmt.PrintWithSpid(arg_vec.spids[0], 'missing closing ]')
         return 2
       # Remove the right bracket
       arg_vec.strs.pop()
@@ -194,7 +194,7 @@ class Test(object):
         bool_node = b_parser.ParseForBuiltin()
 
     except util.ParseError as e:
-      self.errfmt.PrettyPrintError(e, prefix='test: ')
+      self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2
 
     # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
