@@ -618,6 +618,9 @@ def Pretty(w):
   # type: (word_t) -> str
   """Return a string to display to the user."""
   if isinstance(w, word__StringWord):
-    return repr(w.s)
+    if w.id == Id.Eof_Real:
+      return 'EOF'
+    else:
+      return repr(w.s)
   else:
     return str(w)

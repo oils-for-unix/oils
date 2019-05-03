@@ -174,6 +174,10 @@ class ErrorFormatter(object):
     msg = msg % args
     _PrintHelper('', msg, span_id, self.arena, sys.stderr)
 
+  def PrettyPrintError(self, err, prefix=''):
+    # type: (_ErrorWithLocation, str) -> None
+    PrettyPrintError(err, self.arena, prefix=prefix)
+
 
 def PrintUsageError(e, arg0, arena):
   # type: (Any, str, Arena) -> None  # Any -> UsageError after args.py passes

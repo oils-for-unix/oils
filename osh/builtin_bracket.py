@@ -41,9 +41,8 @@ class _StringWordEmitter(object):
     """Interface for bool_parse.py."""
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
-      # Also not: the lack of span is inconsistent with GetSpanIdForEof() in
-      # lexer.py.
       w = word.StringWord(Id.Eof_Real, '')
+      # TODO: Add a way to show this.
       w.spids.append(const.NO_INTEGER)
       return w
 
@@ -97,7 +96,7 @@ def _TwoArgs(w_parser):
   if unary_id is None:
     # TODO:
     # - separate lookup by unary
-    p_die('Expected unary operator, got %r (2 args)', w0.s)
+    p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
   return bool_expr.BoolUnary(IdInstance(unary_id), w1)
 
 
@@ -127,7 +126,7 @@ def _ThreeArgs(w_parser):
   if w0.s == '(' and w2.s == ')':
     return bool_expr.WordTest(w1)
 
-  p_die('Expected binary operator, got %r (3 args)', w1.s)
+  p_die('Expected binary operator, got %r (3 args)', w1.s, word=w1)
 
 
 class Test(object):
@@ -195,8 +194,7 @@ class Test(object):
         bool_node = b_parser.ParseForBuiltin()
 
     except util.ParseError as e:
-      # TODO: Print line number.  Pass a span_id into this function?
-      ui.Stderr("osh: test parse error: %s", e.UserErrorString())
+      self.errfmt.PrettyPrintError(e, prefix='test: ')
       return 2
 
     # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
