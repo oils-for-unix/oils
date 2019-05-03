@@ -613,3 +613,12 @@ def ErrorWord(fmt, err):
   error_str = fmt % err.UserErrorString()
   t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
   return word.CompoundWord([word_part.LiteralPart(t)])
+
+
+def Pretty(w):
+  # type: (word_t) -> str
+  """Return a string to display to the user."""
+  if isinstance(w, word__StringWord):
+    return repr(w.s)
+  else:
+    return str(s)

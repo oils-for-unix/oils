@@ -8,6 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import word, bool_expr
 
+from asdl import pretty
 from core import util
 from core.util import log, p_die
 from core import meta
@@ -110,7 +111,7 @@ def _ThreeArgs(argv):
   if a0 == '(' and a2 == ')':
     return _StringWordTest(a1)
 
-  p_die('Syntax error: binary operator expected, got %r (3 args)', a1)
+  p_die('Expected binary operator, got %r (3 args)', a1)
 
 
 def Test(argv, need_right_bracket):
@@ -166,11 +167,10 @@ def Test(argv, need_right_bracket):
       bool_node = b_parser.ParseForBuiltin()
 
   except util.ParseError as e:
-    # TODO: There should be a nice method to print argv.  And some way to point
-    # to the error.
-    log("Error parsing %s", argv)
-    util.error("test: %s", e.UserErrorString())
-    return 2  # parse error is 2
+    # TODO: Print line number.  Pass a span_id into this function?
+    log("test parse error: %s", e.UserErrorString())
+    log("            argv: %s", ' '.join(pretty.Str(a) for a in argv))
+    return 2
 
   # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
   # exec_opts: don't need it, but might need it later
@@ -190,10 +190,10 @@ def Test(argv, need_right_bracket):
   try:
     b = bool_ev.Eval(bool_node)
   except util.FatalRuntimeError as e:
+    # TODO: Print line number.  Pass a span_id into this function?
     # e.g. [ -t xxx ]
-    # TODO: Printing the location would be nice.
     util.error('test: %s', e.UserErrorString())
-    return 2  # because this is more like a parser error.
+    return 2  # 1 means 'false', and this usage error is like a parse error.
 
   status = 0 if b else 1
   return status

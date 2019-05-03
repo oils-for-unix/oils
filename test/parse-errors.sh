@@ -214,6 +214,9 @@ bool-expr() {
 test-builtin() {
   set +o errexit
 
+  # Some of these come from osh/bool_parse.py, and some from
+  # osh/builtin_bracket.py.
+
   # Extra token
   _error-case '[ x -a y f ]'
   _error-case 'test x -a y f'
@@ -224,11 +227,15 @@ test-builtin() {
   # Hm some of these errors are wonky.  Need positions.
   _error-case '[ x x ]'
 
-  _error-case '[ x x x ]'
+  _error-case '[ x x "a b" ]'
+
+
+  _error-case '[ \( x -a -y -a z ]'
 
   # -o tests if an option is enabled.
   #_error-case '[ -o x ]'
 }
+
 
 quoted-strings() {
   set +o errexit
@@ -276,6 +283,10 @@ cmd-parse() {
   _error-case 'ls foo&&'
 
   _error-case 'foo()'
+
+  # Unquoted (.  What happened here?
+  _error-case '[ ( x ]'
+
 }
 
 redirect() {
