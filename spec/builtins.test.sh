@@ -233,8 +233,8 @@ shift 2
 
 #### Invalid shift argument
 shift ZZZ
-## status: 1
-## OK dash status: 2
+## status: 2
+## OK bash status: 1
 ## BUG mksh status: 0
 
 #### get umask

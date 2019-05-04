@@ -383,8 +383,9 @@ def Wait(argv, waiter, job_state, mem):
     try:
       jid = int(pid)
     except ValueError:
-      # TODO: UsageError, exit code 2 is OK
-      util.error('Invalid argument %r', pid)
+      # TODO: point at the invalid one
+      #raise args.UsageError("expected job, got %r" % pid)
+      util.error('Invalid job: %s', pid)
       return 127
 
     job = job_state.jobs.get(jid)
@@ -578,16 +579,17 @@ class Read(object):
 
 
 def Shift(argv, mem):
-  if len(argv) > 1:
-    util.error('shift: too many arguments')
-    return 1
-  try:
-    n = int(argv[0])
-  except IndexError:
+  num_args = len(argv)
+  if num_args == 0:
     n = 1
-  except ValueError:
-    print("Invalid shift argument %r" % argv[1], file=sys.stderr)
-    return 1  # runtime error
+  elif num_args == 1:
+    try:
+      n = int(argv[0])
+    except ValueError:
+      # TODO: arg_vec
+      raise args.UsageError("Invalid shift argument %r" % argv[0])
+  else:
+    raise args.UsageError('got too many arguments')
 
   return mem.Shift(n)
 
@@ -679,12 +681,12 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
 def Pushd(argv, mem, dir_stack):
   num_args = len(argv)
-  if num_args <= 0:
+  if num_args == 0:
+    # TODO: It's suppose to try anotehr dir before doing this?
     util.error('pushd: no other directory')
     return 1
   elif num_args > 1:
-    util.error('pushd: too many arguments')
-    return 1
+    raise args.UsageError('got too many arguments')
 
   dest_dir = os_path.abspath(argv[0])
   try:

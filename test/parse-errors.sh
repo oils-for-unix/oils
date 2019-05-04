@@ -238,6 +238,18 @@ test-builtin() {
   #_error-case '[ -o x ]'
 }
 
+other-builtins() {
+  set +o errexit
+
+  # TODO:
+  #_error-case 'wait zzz'
+  #_error-case 'wait 1'
+
+  _error-case 'shift 1 2'
+  _error-case 'shift zzz'
+
+  _error-case 'pushd x y'
+}
 
 quoted-strings() {
   set +o errexit
@@ -421,6 +433,7 @@ cases-in-strings() {
 
   bool-expr
   test-builtin
+  other-builtins
 
   # frontend/args.py
   args-parse-builtin
