@@ -399,6 +399,13 @@ builtin_builtin() {
   builtin ls
 }
 
+builtin_source() {
+  source
+
+  bad=/nonexistent/path
+  source $bad
+}
+
 #
 # TEST DRIVER
 #
@@ -428,7 +435,7 @@ all() {
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
     array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
-    builtin_builtin; do
+    builtin_builtin builtin_source; do
 
     _run_test $t
   done

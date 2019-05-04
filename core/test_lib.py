@@ -137,7 +137,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
   builtins = {  # Lookup
       builtin_e.HISTORY: builtin.History(readline),
 
-      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state),
+      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
   }
 
@@ -146,6 +146,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
 
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
+  exec_deps.errfmt = errfmt
   exec_deps.dumper = dev.CrashDumper('')
   exec_deps.debug_f = debug_f
   exec_deps.trace_f = debug_f

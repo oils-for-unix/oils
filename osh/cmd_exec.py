@@ -214,15 +214,13 @@ class Executor(object):
     try:
       path = argv[1]
     except IndexError:
-      # TODO: Should point to the source statement that failed.
-      util.error('source: missing required argument')
-      return 1
+      raise args.UsageError('missing required argument')
 
     try:
       f = self.fd_state.Open(path)  # Shell can't use descriptors 3-9
     except OSError as e:
-      # TODO: Should point to the source statement that failed.
-      util.error('source %r failed: %s', path, posix.strerror(e.errno))
+      self.errfmt.Print('source %r failed: %s', path, posix.strerror(e.errno),
+                        span_id=arg_vec.spids[1])
       return 1
 
     try:

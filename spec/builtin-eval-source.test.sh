@@ -21,9 +21,9 @@ echo status=$?
 #### Source with no arguments
 source
 echo status=$?
-## stdout: status=1
-## OK bash stdout: status=2
-## OK dash stdout: status=127
+## stdout: status=2
+## OK mksh/zsh stdout: status=1
+## N-I dash stdout: status=127
 
 #### Source with arguments
 . spec/testdata/show-argv.sh foo bar  # dash doesn't have source
