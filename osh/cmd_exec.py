@@ -308,12 +308,14 @@ class Executor(object):
       if not argv:
         return 0  # this could be an error in strict mode?
 
+      name = arg_vec.strs[1]
       # Run regular builtin or special builtin
-      to_run = builtin.Resolve(argv[0])
+      to_run = builtin.Resolve(name)
       if to_run == builtin_e.NONE:
-        to_run = builtin.ResolveSpecial(argv[0])
+        to_run = builtin.ResolveSpecial(name)
       if to_run == builtin_e.NONE:
-        util.error("builtin: %s: not a shell builtin", argv[0])
+        self.errfmt.Print("%r isn't a shell builtin", name,
+                          span_id=arg_vec.spids[1])
         return 1
 
       arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
@@ -1458,7 +1460,10 @@ class Executor(object):
     # syntax error?
 
     except _ControlFlow as e:
-       # shouldn't be able to exit the shell from a completion hook!
-      util.error('Attempted to exit from completion hook.')
+      # shouldn't be able to exit the shell from a completion hook!
+      # TODO: Avoid overwriting the prompt!
+      self.errfmt.Print('Attempted to exit from completion hook.',
+                        span_id=e.token.span_id)
+
       status = 1
     return status

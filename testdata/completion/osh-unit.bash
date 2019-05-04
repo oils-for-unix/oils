@@ -199,6 +199,13 @@ complete_unset_compreply() {
 }
 complete -F complete_unset_compreply unset_compreply
 
+badexit() { argv "$@"; }
+complete_badexit() {
+  COMPREPLY=(one two three)
+  exit 42
+}
+complete -F complete_badexit badexit
+
 #
 # Test out the "124" protocol for lazy loading of completions.
 #
