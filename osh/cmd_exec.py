@@ -257,7 +257,11 @@ class Executor(object):
     arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
     self.ext_prog.Exec(arg_vec2, environ)  # NEVER RETURNS
 
-  def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
+  def _RunBuiltinAndRaise(self, builtin_id, arg_vec, fork_external):
+    """
+    Raises:
+      args.UsageError
+    """
     # Shift one arg.  Builtins don't need to know their own name.
     argv = arg_vec.strs[1:]
 
@@ -269,14 +273,55 @@ class Executor(object):
     if builtin_func is not None:
       status = builtin_func(arg_vec)
 
+    #
+    # Handled in this function:
+    #
+
     elif builtin_id == builtin_e.EXEC:
       status = self._Exec(arg_vec)  # may never return
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
 
-    elif builtin_id == builtin_e.READ:
-      status = builtin.Read(arg_vec, self.splitter, self.mem)
+    elif builtin_id == builtin_e.EVAL:
+      status = self._Eval(arg_vec)
+
+    elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
+      status = self._Source(arg_vec)
+
+    elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
+      status = 0
+
+    elif builtin_id == builtin_e.TRUE:
+      status = 0
+
+    elif builtin_id == builtin_e.FALSE:
+      status = 1
+
+    elif builtin_id == builtin_e.COMMAND:
+      # TODO: How do we hadnle fork_external?  It doesn't fit the common
+      # signature.
+      b = builtin.Command(self, self.funcs, self.aliases, self.mem)
+      status = b(arg_vec, fork_external)
+
+    elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
+      if not argv:
+        return 0  # this could be an error in strict mode?
+
+      # Run regular builtin or special builtin
+      to_run = builtin.Resolve(argv[0])
+      if to_run == builtin_e.NONE:
+        to_run = builtin.ResolveSpecial(argv[0])
+      if to_run == builtin_e.NONE:
+        util.error("builtin: %s: not a shell builtin", argv[0])
+        return 1
+
+      arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
+      status = self._RunBuiltinAndRaise(to_run, arg_vec2, fork_external)
+
+    #
+    # Handled elsewhere
+    #
 
     elif builtin_id == builtin_e.ECHO:
       status = builtin.Echo(argv)
@@ -320,34 +365,14 @@ class Executor(object):
     elif builtin_id == builtin_e.PWD:
       status = builtin.Pwd(argv, self.mem)
 
-    elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
-      status = self._Source(arg_vec)
-
     elif builtin_id == builtin_e.TRAP:
       status = builtin.Trap(argv, self.traps, self.nodes_to_run, self)
 
     elif builtin_id == builtin_e.UMASK:
       status = builtin.Umask(argv)
 
-    elif builtin_id == builtin_e.EVAL:
-      status = self._Eval(arg_vec)
-
-    elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
-      status = 0
-
-    elif builtin_id == builtin_e.TRUE:
-      status = 0
-
-    elif builtin_id == builtin_e.FALSE:
-      status = 1
-
     elif builtin_id == builtin_e.GETOPTS:
       status = builtin.GetOpts(argv, self.mem)
-
-    elif builtin_id == builtin_e.COMMAND:
-      # TODO: Pull Command up to the top level?
-      b = builtin.Command(self, self.funcs, self.aliases, self.mem)
-      status = b(arg_vec, fork_external)
 
     elif builtin_id == builtin_e.TYPE:
       path = self.mem.GetVar('PATH')
@@ -370,25 +395,19 @@ class Executor(object):
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)
 
-    elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
-      if not argv:
-        return 0  # this could be an error in strict mode?
-
-      # Run regular builtin or special builtin
-      to_run = builtin.Resolve(argv[0])
-      if to_run == builtin_e.NONE:
-        to_run = builtin.ResolveSpecial(argv[0])
-      if to_run == builtin_e.NONE:
-        util.error("builtin: %s: not a shell builtin", argv[0])
-        return 1
-
-      arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
-      return self._RunBuiltin(to_run, arg_vec2, fork_external)
-
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
 
     assert isinstance(status, int)
+    return status
+
+  def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
+    try:
+      status = self._RunBuiltinAndRaise(builtin_id, arg_vec, fork_external)
+    except args.UsageError as e:
+      arg0 = arg_vec.strs[0]
+      ui.PrintUsageError(e, arg0, self.arena)
+      status = 2  # consistent error code for usage error
     return status
 
   def _PushErrExit(self):
@@ -464,7 +483,7 @@ class Executor(object):
         if not filename:
           # Whether this is fatal depends on errexit.
           raise util.RedirectEvalError(
-              "Redirect filename can't be empty", span_id=n.op.span_id)
+              "Redirect filename can't be empty", word=n.arg_word)
 
         return redirect.PathRedirect(n.op.id, fd, filename, n.op.span_id)
 
@@ -473,14 +492,14 @@ class Executor(object):
         t = val.s
         if not t:
           raise util.RedirectEvalError(
-              "Redirect descriptor can't be empty", span_id=n.op.span_id)
+              "Redirect descriptor can't be empty", word=n.arg_word)
           return None
         try:
           target_fd = int(t)
         except ValueError:
           raise util.RedirectEvalError(
               "Redirect descriptor should look like an integer, got %s", val,
-              span_id=n.op.span_id)
+              word=n.arg_word)
           return None
 
         return redirect.DescRedirect(n.op.id, fd, target_fd, n.op.span_id)
@@ -569,12 +588,7 @@ class Executor(object):
 
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
-      try:
-        status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
-      except args.UsageError as e:
-        ui.PrintUsageError(e, arg0, self.arena)
-        status = 2  # consistent error code for usage error
-      return status
+      return self._RunBuiltin(builtin_id, arg_vec, fork_external)
 
     # Builtins like 'true' can be redefined as functions.
     if funcs:
@@ -587,12 +601,7 @@ class Executor(object):
     builtin_id = builtin.Resolve(arg0)
 
     if builtin_id != builtin_e.NONE:
-      try:
-        status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
-      except args.UsageError as e:
-        ui.PrintUsageError(e, arg0, self.arena)
-        status = 2  # consistent error code for usage error
-      return status
+      return self._RunBuiltin(builtin_id, arg_vec, fork_external)
 
     environ = self.mem.GetExported()  # Include temporary variables
 

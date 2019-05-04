@@ -506,69 +506,74 @@ def ReadLineFromStdin():
   return ''.join(chars)
 
 
-def Read(arg_vec, splitter, mem):
-  arg, i = READ_SPEC.ParseVec(arg_vec)
+class Read(object):
+  def __init__(self, splitter, mem):
+    self.splitter = splitter
+    self.mem = mem
 
-  names = arg_vec.strs[i:]
-  if arg.n is not None:  # read a certain number of bytes
-    try:
-      name = names[0]
-    except IndexError:
-      name = 'REPLY'  # default variable name
-    s = posix.read(sys.stdin.fileno(), arg.n)
-    #log('read -n: %s = %s', name, s)
+  def Read(self, arg_vec):
+    arg, i = READ_SPEC.ParseVec(arg_vec)
 
-    state.SetLocalString(mem, name, s)
-    # NOTE: Even if we don't get n bytes back, there is no error?
-    return 0
-
-  if not names:
-    names.append('REPLY')
-
-  # leftover words assigned to the last name
-  if arg.a:
-    max_results = 0  # no max
-  else:
-    max_results = len(names)
-
-  # We have to read more than one line if there is a line continuation (and
-  # it's not -r).
-
-  parts = []
-  join_next = False
-  while True:
-    line = ReadLineFromStdin()
-    #log('LINE %r', line)
-    if not line:  # EOF
-      status = 1
-      break
-
-    if line.endswith('\n'):  # strip trailing newline
-      line = line[:-1]
-      status = 0
-    else:
-      # odd bash behavior: fail even if we can set variables.
-      status = 1
-
-    spans = splitter.SplitForRead(line, not arg.r)
-    done, join_next = _AppendParts(line, spans, max_results, join_next, parts)
-
-    #log('PARTS %s continued %s', parts, continued)
-    if done:
-      break
-
-  if arg.a:
-    state.SetArrayDynamic(mem, arg.a, parts)
-  else:
-    for i in xrange(max_results):
+    names = arg_vec.strs[i:]
+    if arg.n is not None:  # read a certain number of bytes
       try:
-        s = parts[i]
+        name = names[0]
       except IndexError:
-        s = ''  # if there are too many variables
-      #log('read: %s = %s', names[i], s)
-      state.SetStringDynamic(mem, names[i], s)
+        name = 'REPLY'  # default variable name
+      s = posix.read(sys.stdin.fileno(), arg.n)
+      #log('read -n: %s = %s', name, s)
 
-  return status
+      state.SetLocalString(self.mem, name, s)
+      # NOTE: Even if we don't get n bytes back, there is no error?
+      return 0
+
+    if not names:
+      names.append('REPLY')
+
+    # leftover words assigned to the last name
+    if arg.a:
+      max_results = 0  # no max
+    else:
+      max_results = len(names)
+
+    # We have to read more than one line if there is a line continuation (and
+    # it's not -r).
+
+    parts = []
+    join_next = False
+    while True:
+      line = ReadLineFromStdin()
+      #log('LINE %r', line)
+      if not line:  # EOF
+        status = 1
+        break
+
+      if line.endswith('\n'):  # strip trailing newline
+        line = line[:-1]
+        status = 0
+      else:
+        # odd bash behavior: fail even if we can set variables.
+        status = 1
+
+      spans = self.splitter.SplitForRead(line, not arg.r)
+      done, join_next = _AppendParts(line, spans, max_results, join_next, parts)
+
+      #log('PARTS %s continued %s', parts, continued)
+      if done:
+        break
+
+    if arg.a:
+      state.SetArrayDynamic(self.mem, arg.a, parts)
+    else:
+      for i in xrange(max_results):
+        try:
+          s = parts[i]
+        except IndexError:
+          s = ''  # if there are too many variables
+        #log('read: %s = %s', names[i], s)
+        state.SetStringDynamic(self.mem, names[i], s)
+
+    return status
 
 
 def Shift(argv, mem):

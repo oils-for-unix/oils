@@ -399,6 +399,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.TEST: builtin_bracket.Test(False, errfmt),
       # need_right_bracket
       builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
+
+      builtin_e.READ: builtin.Read(splitter, mem),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
