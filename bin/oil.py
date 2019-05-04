@@ -349,7 +349,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     try:
       debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
     except OSError as e:
-      util.error("Couldn't open %r: %s", debug_path, posix.strerror(e.errno))
+      ui.Stderr("osh: Couldn't open %r: %s", debug_path,
+                posix.strerror(e.errno))
       return 2
   else:
     debug_f = util.NullDebugFile()
@@ -492,7 +493,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       try:
         f = fd_state.Open(script_name)
       except OSError as e:
-        util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
+        ui.Stderr("osh: Couldn't open %r: %s", script_name,
+                  posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
@@ -627,10 +629,10 @@ def OshCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise args.UsageError('oshc: Missing required subcommand.')
+    raise args.UsageError('Missing required subcommand.')
 
   if action not in SUBCOMMANDS:
-    raise args.UsageError('oshc: Invalid subcommand %r.' % action)
+    raise args.UsageError('Invalid subcommand %r.' % action)
 
   arena = alloc.Arena()
   try:
@@ -643,9 +645,9 @@ def OshCommandMain(argv):
     try:
       f = open(script_name)
     except IOError as e:
-      util.error("Couldn't open %r: %s", script_name, posix.strerror(e.errno))
+      ui.Stderr("oshc: Couldn't open %r: %s", script_name,
+                posix.strerror(e.errno))
       return 2
-
 
   line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!
@@ -743,7 +745,11 @@ def AppBundleMain(argv):
     _tlog('done osh main')
     return status
   elif main_name == 'oshc':
-    return OshCommandMain(main_argv)
+    try:
+      return OshCommandMain(main_argv)
+    except args.UsageError as e:
+      ui.Stderr('oshc usage error: %s', e.msg)
+      return 2
 
   elif main_name == 'oil':
     return ShellMain('oil', argv0, main_argv, login_shell)
@@ -770,7 +776,7 @@ def main(argv):
     raise
   except args.UsageError as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
-    log('oil: %s', e)
+    log('oil: %s', e.msg)
     sys.exit(2)
   except RuntimeError as e:
     # NOTE: The Python interpreter can cause this, e.g. on stack overflow.

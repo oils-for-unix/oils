@@ -141,9 +141,8 @@ class FdState(object):
     try:
       posix.dup2(fd1, fd2)
     except OSError as e:
-      # TODO: Use r.op.span_id to print error with location
       # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-      util.error('%d: %s', fd1, posix.strerror(e.errno))
+      self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
 
       # Restore and return error
       posix.dup2(new_fd, fd2)
@@ -275,8 +274,12 @@ class FdState(object):
 
     for r in redirects:
       #log('apply %s', r)
-      if not self._ApplyRedirect(r, waiter):
-        return False  # for bad descriptor
+      self.errfmt.PushLocation(r.op_spid)
+      try:
+        if not self._ApplyRedirect(r, waiter):
+          return False  # for bad descriptor
+      finally:
+        self.errfmt.PopLocation()
     #log('done applying %d redirects', len(redirects))
     return True
 
