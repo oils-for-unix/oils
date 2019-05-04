@@ -57,7 +57,7 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write('\n')
 
 
-def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
+def _PrintWithSpanId(prefix, msg, span_id, arena, f=sys.stderr):
   # type: (str, str, int, Arena, IO[str]) -> None
   line_span = arena.GetLineSpan(span_id)
   orig_col = line_span.col
@@ -125,6 +125,14 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
   print('%s:%d: %s%s' % (source_str, line_num, prefix, msg), file=f)
 
 
+def _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f):
+  # type: (str, str, int, Arena, IO[str]) -> None
+  if span_id == const.NO_INTEGER:  # When does this happen?
+    print('[??? no location ???] %s%s' % (prefix, msg), file=f)
+  else:
+    _PrintWithSpanId(prefix, msg, span_id, arena)
+
+
 def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   # type: (_ErrorWithLocation, Arena, str, IO[str]) -> None
   """
@@ -142,50 +150,69 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   # that is OK.
   # Problem: the column for Eof could be useful.
 
-  if span_id == const.NO_INTEGER:  # Any clause above might return this.
-    # This is usually a bug.
-    # It would be nice to somehow fall back on a line number
-    print('[??? no location ???] %s%s' % (prefix, msg), file=f)
-  else:
-    _PrintWithLocation(prefix, msg, span_id, arena, f=f)
-
-
-def _PrintHelper(prefix, msg, span_id, arena, f):
-  # type: (str, str, int, Arena, IO[str]) -> None
-  if span_id == const.NO_INTEGER:  # When does this happen?
-    print('*** Warning has no source location info ***', file=f)
-    print('%s%s' % (prefix, msg), file=f)
-  else:
-    _PrintWithLocation(prefix, msg, span_id, arena)
+  _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f)
 
 
 def PrintWarning(msg, span_id, arena, f=sys.stderr):
   # type: (str, int, Arena, IO[str]) -> None
-  _PrintHelper('warning: ', msg, span_id, arena, f)
+  _PrintWithOptionalSpanId('warning: ', msg, span_id, arena, f)
 
+
+def PrintUsageError(e, arg0, arena, f=sys.stderr):
+  # type: (Any, str, Arena, IO[str]) -> None
+  # Any -> UsageError after args.py passes
+  """
+  Args:
+    arg0: e.g. 'type', because the error messages are formatted like
+      'type' does not accept flag '-z'
+  """
+  _PrintWithOptionalSpanId('%r ' % arg0, e.msg, e.span_id, arena, f)
+
+
+# TODO:
+# - ColorErrorFormatter
+# - BareErrorFormatter?  Could just display the foo.sh:37:8: and not quotation.
+#
+# Are these controlled by a flag?  It's sort of like --comp-ui.  Maybe
+# --error-ui.
 
 class ErrorFormatter(object):
+
   def __init__(self, arena):
     # type: (Arena) -> None
     self.arena = arena
+    self.spid_stack = []  # type: List[int]
 
-  def PrintWithSpid(self, span_id, msg, *args):
-    # type: (int, str, *Any) -> None
+  # A location is typically a "context" like the line of the current builtin.
+
+  def PushLocation(self, spid):
+    # type: (int) -> None
+    self.spid_stack.append(spid)
+
+  def PopLocation(self):
+    # type: () -> None
+    self.spid_stack.pop()
+
+  # TODO: Should we have PushBuiltinName?
+  # Then we can have a consistent style like foo.sh:1: (compopt) Not currently
+  # executing.
+
+  def Print(self, msg, *args, **kwargs):
+    # type: (str, *Any, **Any) -> None
+    """Print a message with a code quotation based on the given span_id."""
+    span_id = kwargs.pop('span_id', None)
+    if span_id is None:
+      if self.spid_stack:
+        span_id = self.spid_stack[-1]
+      else:
+        span_id = const.NO_INTEGER
     msg = msg % args
-    _PrintHelper('', msg, span_id, self.arena, sys.stderr)
+    _PrintWithOptionalSpanId('', msg, span_id, self.arena, sys.stderr)
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
+    """Print an exception that was caught."""
     PrettyPrintError(err, self.arena, prefix=prefix)
-
-
-def PrintUsageError(e, arg0, arena):
-  # type: (Any, str, Arena) -> None  # Any -> UsageError after args.py passes
-  if e.span_id == const.NO_INTEGER:
-    # TODO: Remove this once all builtins have location info.
-    print('usage error: %r %s' % (arg0, e.msg), file=sys.stderr)
-  else:
-    _PrintWithLocation('%r ' % arg0, e.msg, e.span_id, arena)
 
 
 def Stderr(msg, *args):

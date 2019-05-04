@@ -345,17 +345,17 @@ _DefineOptions(COMPOPT_SPEC)
 class CompOpt(object):
   """Adjust options inside user-defined completion functions."""
 
-  def __init__(self, comp_state):
+  def __init__(self, comp_state, errfmt):
     self.comp_state = comp_state
+    self.errfmt = errfmt
 
   def __call__(self, arg_vec):
     argv = arg_vec.strs[1:]
     arg_r = args.Reader(argv)
     arg = COMPOPT_SPEC.Parse(arg_r)
 
-    if not self.comp_state.currently_completing:
-      # bash checks this.
-      util.error('compopt: not currently executing a completion function')
+    if not self.comp_state.currently_completing:  # bash also checks this.
+      self.errfmt.Print('compopt: not currently executing a completion function')
       return 1
 
     self.comp_state.dynamic_opts.update(arg.opt_changes)

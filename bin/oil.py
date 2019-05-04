@@ -332,6 +332,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - ex and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
+  exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()
 
@@ -394,13 +395,16 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins = {  # Lookup
       builtin_e.HISTORY: builtin.History(line_input),
 
-      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state),
+      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
       builtin_e.TEST: builtin_bracket.Test(False, errfmt),
       # need_right_bracket
       builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
 
       builtin_e.READ: builtin.Read(splitter, mem),
+
+      builtin_e.SET: builtin.Set(exec_opts, mem),
+      builtin_e.SHOPT: builtin.Shopt(exec_opts),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)

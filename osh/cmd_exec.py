@@ -105,6 +105,7 @@ class Deps(object):
     self.dumper = None
     self.tracer = None
 
+    self.errfmt = None
     self.debug_f = None
     self.trace_f = None
 
@@ -139,6 +140,7 @@ class Executor(object):
     self.aliases = parse_ctx.aliases  # alias name -> string
 
     self.dumper = exec_deps.dumper
+    self.errfmt = exec_deps.errfmt
     self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
 
     self.splitter = exec_deps.splitter
@@ -335,12 +337,6 @@ class Executor(object):
     elif builtin_id == builtin_e.CD:
       status = builtin.Cd(argv, self.mem, self.dir_stack)
 
-    elif builtin_id == builtin_e.SET:
-      status = builtin.Set(arg_vec, self.exec_opts, self.mem)
-
-    elif builtin_id == builtin_e.SHOPT:
-      status = builtin.Shopt(arg_vec, self.exec_opts)
-
     elif builtin_id == builtin_e.UNSET:
       status = builtin.Unset(argv, self.mem, self.funcs)
 
@@ -402,12 +398,15 @@ class Executor(object):
     return status
 
   def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
+    self.errfmt.PushLocation(arg_vec.spids[0])
     try:
       status = self._RunBuiltinAndRaise(builtin_id, arg_vec, fork_external)
     except args.UsageError as e:
       arg0 = arg_vec.strs[0]
       ui.PrintUsageError(e, arg0, self.arena)
       status = 2  # consistent error code for usage error
+    finally:
+      self.errfmt.PopLocation()
     return status
 
   def _PushErrExit(self):

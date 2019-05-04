@@ -383,6 +383,7 @@ def Wait(argv, waiter, job_state, mem):
     try:
       jid = int(pid)
     except ValueError:
+      # TODO: UsageError, exit code 2 is OK
       util.error('Invalid argument %r', pid)
       return 127
 
@@ -511,7 +512,7 @@ class Read(object):
     self.splitter = splitter
     self.mem = mem
 
-  def Read(self, arg_vec):
+  def __call__(self, arg_vec):
     arg, i = READ_SPEC.ParseVec(arg_vec)
 
     names = arg_vec.strs[i:]
@@ -811,27 +812,32 @@ def SetExecOpts(exec_opts, opt_changes):
     exec_opts.SetOption(opt_name, b)
 
 
-def Set(arg_vec, exec_opts, mem):
-  # TODO:
-  # - How to integrate this with auto-completion?  Have to handle '+'.
+class Set(object):
+  def __init__(self, exec_opts, mem):
+    self.exec_opts = exec_opts
+    self.mem = mem
 
-  if len(arg_vec.strs) == 1:  # no args
+  def __call__(self, arg_vec):
     # TODO:
-    # - This should be set -o, not plain 'set'.
-    # - When no arguments are given, it shows functions/vars?  Why not show
-    # other state?
-    exec_opts.ShowOptions([])
+    # - How to integrate this with auto-completion?  Have to handle '+'.
+
+    if len(arg_vec.strs) == 1:  # no args
+      # TODO:
+      # - This should be set -o, not plain 'set'.
+      # - When no arguments are given, it shows functions/vars?  Why not show
+      # other state?
+      self.exec_opts.ShowOptions([])
+      return 0
+
+    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # skip 'set'
+    arg = SET_SPEC.Parse(arg_r)
+
+    SetExecOpts(self.exec_opts, arg.opt_changes)
+    # Hm do we need saw_double_dash?
+    if arg.saw_double_dash or not arg_r.AtEnd():
+      self.mem.SetArgv(arg_r.Rest())
     return 0
-
-  arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
-  arg_r.Next()  # skip 'set'
-  arg = SET_SPEC.Parse(arg_r)
-
-  SetExecOpts(exec_opts, arg.opt_changes)
-  # Hm do we need saw_double_dash?
-  if arg.saw_double_dash or not arg_r.AtEnd():
-    mem.SetArgv(arg_r.Rest())
-  return 0
 
   # TODO:
   # - STRICT: should be a combination of errexit,nounset,pipefail, plus
@@ -876,41 +882,45 @@ SHOPT_SPEC.ShortFlag('-p')  # print
 SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 
-def Shopt(arg_vec, exec_opts):
-  arg, i = SHOPT_SPEC.ParseVec(arg_vec)
-  opt_names = arg_vec.strs[i:]
+class Shopt(object):
+  def __init__(self, exec_opts):
+    self.exec_opts = exec_opts
 
-  if arg.p:  # print values
-    if arg.o:  # use set -o names
-      exec_opts.ShowOptions(opt_names)
-    else:
-      exec_opts.ShowShoptOptions(opt_names)
-    return 0
+  def __call__(self, arg_vec):
+    arg, i = SHOPT_SPEC.ParseVec(arg_vec)
+    opt_names = arg_vec.strs[i:]
 
-  if arg.q:  # query values
+    if arg.p:  # print values
+      if arg.o:  # use set -o names
+        self.exec_opts.ShowOptions(opt_names)
+      else:
+        self.exec_opts.ShowShoptOptions(opt_names)
+      return 0
+
+    if arg.q:  # query values
+      for name in opt_names:
+        if not hasattr(self.exec_opts, name):
+          return 2  # bash gives 1 for invalid option; 2 is better
+        if not getattr(self.exec_opts, name):
+          return 1  # at least one option is not true
+      return 0  # all options are true
+
+    b = None
+    if arg.s:
+      b = True
+    elif arg.u:
+      b = False
+
+    if b is None:
+      raise NotImplementedError  # Display options
+
     for name in opt_names:
-      if not hasattr(exec_opts, name):
-        return 2  # bash gives 1 for invalid option; 2 is better
-      if not getattr(exec_opts, name):
-        return 1  # at least one option is not true
-    return 0  # all options are true
+      if arg.o:
+        self.exec_opts.SetOption(name, b)
+      else:
+        self.exec_opts.SetShoptOption(name, b)
 
-  b = None
-  if arg.s:
-    b = True
-  elif arg.u:
-    b = False
-
-  if b is None:
-    raise NotImplementedError  # Display options
-
-  for name in opt_names:
-    if arg.o:
-      exec_opts.SetOption(name, b)
-    else:
-      exec_opts.SetShoptOption(name, b)
-
-  return 0
+    return 0
 
 
 UNSET_SPEC = _Register('unset')
@@ -1136,6 +1146,7 @@ def Alias(argv, aliases):
       name = parts[0]
       alias_exp = aliases.get(name)
       if alias_exp is None:
+        # NOTE: bash prints location info here.
         util.error('alias %r is not defined', name)  # TODO: error?
         status = 1
       else:

@@ -182,8 +182,9 @@ class FdState(object):
       try:
         target_fd = posix.open(r.filename, mode, 0o666)
       except OSError as e:
-        self.errfmt.PrintWithSpid(r.op_spid,
-            "Can't open %r: %s", r.filename, posix.strerror(e.errno))
+        self.errfmt.Print(
+            "Can't open %r: %s", r.filename, posix.strerror(e.errno),
+            span_id=r.op_spid)
         return False
 
       # Apply redirect
@@ -419,8 +420,9 @@ class ExternalProgram(object):
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
 
-      self.errfmt.PrintWithSpid(arg_vec.spids[0],
-          "Can't execute %r: %s", argv[0], posix.strerror(e.errno))
+      self.errfmt.Print(
+          "Can't execute %r: %s", argv[0], posix.strerror(e.errno),
+          span_id=arg_vec.spids[0])
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
       #

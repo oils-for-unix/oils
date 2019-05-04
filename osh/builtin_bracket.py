@@ -142,7 +142,7 @@ class Test(object):
     if self.need_right_bracket:  # Preprocess right bracket
       strs = arg_vec.strs
       if not strs or strs[-1] != ']':
-        self.errfmt.PrintWithSpid(arg_vec.spids[0], 'missing closing ]')
+        self.errfmt.Print('missing closing ]', span_id=arg_vec.spids[0])
         return 2
       # Remove the right bracket
       arg_vec.strs.pop()
