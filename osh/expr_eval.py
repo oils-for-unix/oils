@@ -28,7 +28,7 @@ from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import const
 from core.meta import BOOL_ARG_TYPES
 from core import util
-from core.util import warn, e_die
+from core.util import e_die
 from core import ui
 from osh import state
 from osh import word
@@ -131,7 +131,7 @@ class _ExprEvaluator(object):
         i = 0
         # TODO: Need the arena for printing this error?
         #ui.PrettyPrintError(e)
-        warn(e.UserErrorString())
+        util.warn(e.UserErrorString())
     return i
 
 

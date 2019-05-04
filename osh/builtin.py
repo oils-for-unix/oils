@@ -1327,7 +1327,7 @@ def Trap(argv, traps, nodes_to_run, ex):
   # Register a hook.
   if sig_key in _HOOK_NAMES:
     if sig_key in ('ERR', 'RETURN', 'DEBUG'):
-      util.warn("*** The %r isn't yet implemented in OSH ***", sig_spec)
+      util.warn("*** The %r hook isn't yet implemented in OSH ***", sig_spec)
     traps[sig_key] = _TrapHandler(node, nodes_to_run)
     return 0
 
