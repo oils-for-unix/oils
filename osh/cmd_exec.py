@@ -456,33 +456,31 @@ class Executor(object):
       redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
 
       if redir_type == redir_arg_type_e.Path:
-        # NOTE: no globbing.  You can write to a file called '*.py'.
+        # NOTES
+        # - no globbing.  You can write to a file called '*.py'.
+        # - set -o strict-array prevents joining by spaces
         val = self.word_ev.EvalWordToString(n.arg_word)
-        if val.tag != value_e.Str:  # TODO: This error never fires
-          util.error("Redirect filename must be a string, got %s", val)
-          return None
         filename = val.s
         if not filename:
           # Whether this is fatal depends on errexit.
-          util.error("Redirect filename can't be empty")
-          return None
+          raise util.RedirectEvalError(
+              "Redirect filename can't be empty", span_id=n.op.span_id)
 
         return redirect.PathRedirect(n.op.id, fd, filename, n.op.span_id)
 
       elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
         val = self.word_ev.EvalWordToString(n.arg_word)
-        if val.tag != value_e.Str:  # TODO: This error never fires
-          util.error("Redirect descriptor should be a string, got %s", val)
-          return None
         t = val.s
         if not t:
-          util.error("Redirect descriptor can't be empty")
+          raise util.RedirectEvalError(
+              "Redirect descriptor can't be empty", span_id=n.op.span_id)
           return None
         try:
           target_fd = int(t)
         except ValueError:
-          util.error(
-              "Redirect descriptor should look like an integer, got %s", val)
+          raise util.RedirectEvalError(
+              "Redirect descriptor should look like an integer, got %s", val,
+              span_id=n.op.span_id)
           return None
 
         return redirect.DescRedirect(n.op.id, fd, target_fd, n.op.span_id)
@@ -516,14 +514,11 @@ class Executor(object):
 
     Does it makes sense to just have RedirectNode.Eval?  Nah I think the
     Redirect() abstraction in process.py is useful.  It has a lot of methods.
+
+    Raises:
+      RedirectEvalError
     """
-    redirects = []
-    for redir in node.redirects:
-      r = self._EvalRedirect(redir)
-      if r is None:
-        return None  # bad redirect
-      redirects.append(r)
-    return redirects
+    return [self._EvalRedirect(redir) for redir in node.redirects]
 
   def _MakeProcess(self, node, job_state=None, disable_errexit=False):
     """
@@ -1170,7 +1165,11 @@ class Executor(object):
         ):
       redirects = []
     else:
-      redirects = self._EvalRedirects(node)
+      try:
+        redirects = self._EvalRedirects(node)
+      except util.RedirectEvalError as e:
+        ui.PrettyPrintError(e, self.arena)
+        redirects = None
 
     check_errexit = True
 
@@ -1403,9 +1402,12 @@ class Executor(object):
     # f() { echo hi; } 1>&2
     # f 2>&1
 
-    def_redirects = self._EvalRedirects(func_node)
-    if def_redirects is None:  # error
-      return None
+    try:
+      def_redirects = self._EvalRedirects(func_node)
+    except util.RedirectEvalError as e:
+      ui.PrettyPrintError(e, self.arena)
+      return 1
+
     if def_redirects:
       if not self.fd_state.Push(def_redirects, self.waiter):
         return 1  # error

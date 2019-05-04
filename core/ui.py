@@ -27,7 +27,7 @@ from osh import word
 from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
-  from core.util import ParseError
+  from core.util import _ErrorWithLocation
   #from frontend.args import UsageError
 
 
@@ -126,7 +126,7 @@ def _PrintWithLocation(prefix, msg, span_id, arena, f=sys.stderr):
 
 
 def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
-  # type: (ParseError, Arena, str, IO[str]) -> None
+  # type: (_ErrorWithLocation, Arena, str, IO[str]) -> None
   """
   Args:
     prefix: in osh/cmd_exec.py we want to print 'fatal'

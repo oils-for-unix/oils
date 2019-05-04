@@ -10,9 +10,8 @@ from _devbuild.gen.syntax_asdl import word, bool_expr
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import const
-from core import ui
 from core import util
-from core.util import log, p_die
+from core.util import p_die
 from core import meta
 from core.meta import IdInstance
 

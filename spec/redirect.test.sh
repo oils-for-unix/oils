@@ -58,6 +58,14 @@ func
 ## stdout-json: ""
 ## stderr-json: "hi\n"
 
+#### Bad redirects in function body
+empty=''
+func() { echo hi; } > $empty
+func
+echo status=$?
+## stdout: status=1
+## OK dash stdout: status=2
+
 #### Redirect in function body is evaluated multiple times
 i=0
 func() { echo "file $i"; } 1> "$TMP/file$((i++))"

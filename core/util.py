@@ -88,10 +88,20 @@ class ParseError(_ErrorWithLocation):
   pass
 
 
-class FatalRuntimeError(_ErrorWithLocation):
-  """Used in the evaluators.
+class RedirectEvalError(_ErrorWithLocation):
+  """Used in the Executor.
 
-  Also used in test builtin for invalid argument.
+  A bad redirect causes the SimpleCommand to return with status 1.  To make it
+  fatal, use set -o errexit.
+  """
+  pass
+
+
+class FatalRuntimeError(_ErrorWithLocation):
+  """An exception that propagates to the top level.
+
+  Used in the evaluators, and also also used in test builtin for invalid
+  argument.
   """
   pass
 

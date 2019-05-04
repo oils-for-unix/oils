@@ -124,6 +124,7 @@ class _WordEvaluator(object):
     EvalForPlugin
     EvalRhsWord
     EvalWordSequence
+    EvalWordSequence2
   """
   def __init__(self, mem, exec_opts, exec_deps, arena):
     self.mem = mem  # for $HOME, $1, etc.
