@@ -403,6 +403,10 @@ class Executor(object):
       status = self._RunBuiltinAndRaise(builtin_id, arg_vec, fork_external)
     except args.UsageError as e:
       arg0 = arg_vec.strs[0]
+      # fill in default location.  e.g. osh/state.py raises UsageError without
+      # span_id.
+      if e.span_id == const.NO_INTEGER:
+        e.span_id = self.errfmt.CurrentLocation()
       ui.PrintUsageError(e, arg0, self.arena)
       status = 2  # consistent error code for usage error
     finally:

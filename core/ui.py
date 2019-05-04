@@ -193,6 +193,13 @@ class ErrorFormatter(object):
     # type: () -> None
     self.spid_stack.pop()
 
+  def CurrentLocation(self):
+    # type: () -> int
+    if self.spid_stack:
+      return self.spid_stack[-1]
+    else:
+      return const.NO_INTEGER
+
   # TODO: Should we have PushBuiltinName?
   # Then we can have a consistent style like foo.sh:1: (compopt) Not currently
   # executing.
@@ -202,10 +209,7 @@ class ErrorFormatter(object):
     """Print a message with a code quotation based on the given span_id."""
     span_id = kwargs.pop('span_id', None)
     if span_id is None:
-      if self.spid_stack:
-        span_id = self.spid_stack[-1]
-      else:
-        span_id = const.NO_INTEGER
+      span_id = self.TopSpanId()
     msg = msg % args
     _PrintWithOptionalSpanId('', msg, span_id, self.arena, sys.stderr)
 

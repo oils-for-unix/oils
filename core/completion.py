@@ -435,13 +435,16 @@ class ShellFuncAction(CompletionAction):
             "changed", self.func.name, cmd)
         return []
 
-    # Read the response.  We set it above, so this error would only happen if
-    # the user unset it.
+    # Read the response.
     # NOTE: 'COMP_REPLY' would follow the naming convention!
     val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
-      util.error('Ran function %s but COMPREPLY was not defined',
-                 self.func.name)
+      # We set it above, so this error would only happen if the user unset it.
+      # Not changing it means there were no completions.
+      # TODO: This writes over the command line; it would be better to use an
+      # error object.
+      ui.Stderr('osh: Ran function %r but COMPREPLY was unset',
+                self.func.name)
       return []
 
     if val.tag != value_e.StrArray:

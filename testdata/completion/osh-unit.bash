@@ -193,6 +193,12 @@ complete_F_runtime_error() {
 }
 complete -F complete_F_runtime_error F_runtime_error
 
+unset_compreply() { argv "$@"; }
+complete_unset_compreply() {
+  unset COMPREPLY
+}
+complete -F complete_unset_compreply unset_compreply
+
 #
 # Test out the "124" protocol for lazy loading of completions.
 #
