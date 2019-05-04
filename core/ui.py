@@ -207,9 +207,7 @@ class ErrorFormatter(object):
   def Print(self, msg, *args, **kwargs):
     # type: (str, *Any, **Any) -> None
     """Print a message with a code quotation based on the given span_id."""
-    span_id = kwargs.pop('span_id', None)
-    if span_id is None:
-      span_id = self.TopSpanId()
+    span_id = kwargs.pop('span_id', self.CurrentLocation())
     msg = msg % args
     _PrintWithOptionalSpanId('', msg, span_id, self.arena, sys.stderr)
 
