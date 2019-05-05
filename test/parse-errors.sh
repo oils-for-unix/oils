@@ -249,6 +249,7 @@ other-builtins() {
   _error-case 'shift zzz'
 
   _error-case 'pushd x y'
+  _error-case 'pwd -x'
 
   _error-case 'repr foo a-x'
 }

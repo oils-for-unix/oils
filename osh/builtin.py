@@ -779,18 +779,29 @@ PWD_SPEC.ShortFlag('-L')
 PWD_SPEC.ShortFlag('-P')
 
 
-def Pwd(argv, mem):
-  arg, i = PWD_SPEC.Parse(argv)
+class Pwd(object):
+  def __init__(self, errfmt):
+    self.errfmt = errfmt
 
-  pwd = mem.GetVar('PWD').s
+  def __call__(self, arg_vec):
+    arg, _ = PWD_SPEC.ParseVec(arg_vec)
 
-  # '-L' is the default behavior; no need to check it
-  # TODO: ensure that if multiple flags are provided, the *last* one overrides
-  # the others
-  if arg.P:
-    pwd = libc.realpath(pwd)
-  print(pwd)
-  return 0
+    try:
+      # This comes FIRST, even if you change $PWD.
+      pwd = posix.getcwd()
+    except OSError as e:
+      # Happens when the directory is unlinked.
+      self.errfmt.Print("Can't determine working directory: %s",
+                        posix.strerror(e.errno))
+      return 1
+
+    # '-L' is the default behavior; no need to check it
+    # TODO: ensure that if multiple flags are provided, the *last* one overrides
+    # the others
+    if arg.P:
+      pwd = libc.realpath(pwd)
+    print(pwd)
+    return 0
 
 
 EXPORT_SPEC = _Register('export')
@@ -801,8 +812,8 @@ def Export(argv, mem):
   arg, i = EXPORT_SPEC.Parse(argv)
   if arg.n:
     for name in argv[i:]:
-      m = match.IsValidVarName(name)
-      if not m:
+      if not match.IsValidVarName(name):
+        # TODO: span_id=
         raise args.UsageError('export: Invalid variable name %r' % name)
 
       # NOTE: bash doesn't care if it wasn't found.
@@ -817,8 +828,8 @@ def Export(argv, mem):
         name, s = parts
         val = value.Str(s)
 
-      m = match.IsValidVarName(name)
-      if not m:
+      if not match.IsValidVarName(name):
+        # TODO: span_id=
         raise args.UsageError('export: Invalid variable name %r' % name)
 
       #log('%s %s', name, val)

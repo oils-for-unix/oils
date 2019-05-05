@@ -343,9 +343,6 @@ class Executor(object):
     elif builtin_id == builtin_e.JOBS:
       status = builtin.Jobs(argv, self.job_state)
 
-    elif builtin_id == builtin_e.PWD:
-      status = builtin.Pwd(argv, self.mem)
-
     elif builtin_id == builtin_e.UMASK:
       status = builtin.Umask(argv)
 

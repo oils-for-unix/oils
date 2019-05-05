@@ -68,6 +68,59 @@ rmdir $tmp/symtarg
 rm $tmp/symlink
 ## stdout: symtarg
 
+#### set PWD to something different, invoke pwd
+dir=/tmp/oil-spec-test/pwd
+mkdir -p $dir
+cd $dir
+
+PWD=foo
+echo before $PWD
+pwd
+echo after $PWD
+## STDOUT:
+before foo
+/tmp/oil-spec-test/pwd
+after foo
+## END
+
+#### unset PWD; then pwd
+dir=/tmp/oil-spec-test/pwd
+mkdir -p $dir
+cd $dir
+
+unset PWD
+echo [$PWD]
+pwd
+echo [$PWD]
+## STDOUT:
+[]
+/tmp/oil-spec-test/pwd
+[]
+## END
+
+
+#### remove pwd dir
+dir=/tmp/oil-spec-test/pwd
+mkdir -p $dir
+cd $dir
+pwd
+rmdir $dir
+echo status=$?
+pwd
+echo status=$?
+## STDOUT:
+/tmp/oil-spec-test/pwd
+status=0
+/tmp/oil-spec-test/pwd
+status=0
+## END
+## OK mksh/osh STDOUT:
+/tmp/oil-spec-test/pwd
+status=0
+status=1
+## END
+
+
 #### Test the current directory after 'cd ..' involving symlinks
 dir=$TMP/symlinktest
 mkdir -p $dir

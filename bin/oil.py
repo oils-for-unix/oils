@@ -402,6 +402,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
       builtin_e.POPD: builtin.Popd(mem, dir_stack, errfmt),
       builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
+      builtin_e.PWD: builtin.Pwd(errfmt),
 
       builtin_e.HISTORY: builtin.History(line_input),
 
