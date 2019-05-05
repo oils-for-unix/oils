@@ -335,10 +335,19 @@ class Executor(object):
       status = builtin.Shift(argv, self.mem)
 
     elif builtin_id == builtin_e.CD:
-      status = builtin.Cd(argv, self.mem, self.dir_stack)
+      status = builtin.Cd(arg_vec, self.mem, self.dir_stack)
+
+    elif builtin_id == builtin_e.PUSHD:
+      status = builtin.Pushd(arg_vec, self.mem, self.dir_stack)
+
+    elif builtin_id == builtin_e.POPD:
+      status = builtin.Popd(arg_vec, self.mem, self.dir_stack)
+
+    elif builtin_id == builtin_e.DIRS:
+      status = builtin.Dirs(arg_vec, self.mem.GetVar('HOME'), self.dir_stack)
 
     elif builtin_id == builtin_e.UNSET:
-      status = builtin.Unset(argv, self.mem, self.funcs)
+      status = builtin.Unset(arg_vec, self.mem, self.funcs)
 
     elif builtin_id == builtin_e.EXPORT:
       status = builtin.Export(argv, self.mem)
@@ -348,15 +357,6 @@ class Executor(object):
 
     elif builtin_id == builtin_e.JOBS:
       status = builtin.Jobs(argv, self.job_state)
-
-    elif builtin_id == builtin_e.PUSHD:
-      status = builtin.Pushd(argv, self.mem, self.dir_stack)
-
-    elif builtin_id == builtin_e.POPD:
-      status = builtin.Popd(argv, self.mem, self.dir_stack)
-
-    elif builtin_id == builtin_e.DIRS:
-      status = builtin.Dirs(argv, self.mem.GetVar('HOME'), self.dir_stack)
 
     elif builtin_id == builtin_e.PWD:
       status = builtin.Pwd(argv, self.mem)
@@ -383,10 +383,10 @@ class Executor(object):
       status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
 
     elif builtin_id == builtin_e.ALIAS:
-      status = builtin.Alias(argv, self.aliases)
+      status = builtin.Alias(arg_vec, self.aliases)
 
     elif builtin_id == builtin_e.UNALIAS:
-      status = builtin.UnAlias(argv, self.aliases)
+      status = builtin.UnAlias(arg_vec, self.aliases)
 
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)

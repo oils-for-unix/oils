@@ -597,7 +597,8 @@ CD_SPEC = _Register('cd')
 CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')
 
-def Cd(argv, mem, dir_stack):
+def Cd(arg_vec, mem, dir_stack):
+  argv = arg_vec.strs[1:]
   arg, i = CD_SPEC.Parse(argv)
   # TODO: error checking, etc.
   # TODO: ensure that if multiple flags are provided, the *last* one overrides
@@ -679,7 +680,8 @@ def _PrintDirStack(dir_stack, style, home_dir):
   sys.stdout.flush()
 
 
-def Pushd(argv, mem, dir_stack):
+def Pushd(arg_vec, mem, dir_stack):
+  argv = arg_vec.strs[1:]
   num_args = len(argv)
   if num_args == 0:
     # TODO: It's suppose to try anotehr dir before doing this?
@@ -701,7 +703,9 @@ def Pushd(argv, mem, dir_stack):
   return 0
 
 
-def Popd(argv, mem, dir_stack):
+def Popd(arg_vec, mem, dir_stack):
+  argv = arg_vec.strs[1:]
+
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
     util.error('popd: directory stack is empty')
@@ -725,8 +729,8 @@ DIRS_SPEC.ShortFlag('-p')
 DIRS_SPEC.ShortFlag('-v')
 
 
-def Dirs(argv, home_dir, dir_stack):
-  arg, i = DIRS_SPEC.Parse(argv)
+def Dirs(arg_vec, home_dir, dir_stack):
+  arg, i = DIRS_SPEC.ParseVec(arg_vec)
   style = SINGLE_LINE
 
   # Following bash order of flag priority
@@ -932,7 +936,8 @@ UNSET_SPEC.ShortFlag('-f')
 
 # TODO:
 # - Parse lvalue expression: unset 'a[ i - 1 ]'.  Static or dynamic parsing?
-def Unset(argv, mem, funcs):
+def Unset(arg_vec, mem, funcs):
+  argv = arg_vec.strs[1:]
   arg, i = UNSET_SPEC.Parse(argv)
 
   for name in argv[i:]:
@@ -1133,7 +1138,8 @@ def DeclareTypeset(argv, mem, funcs):
 ALIAS_SPEC = _Register('alias')
 
 
-def Alias(argv, aliases):
+def Alias(arg_vec, aliases):
+  argv = arg_vec.strs[1:]
   if not argv:
     for name in sorted(aliases):
       alias_exp = aliases[name]
@@ -1165,7 +1171,8 @@ def Alias(argv, aliases):
 UNALIAS_SPEC = _Register('unalias')
 
 
-def UnAlias(argv, aliases):
+def UnAlias(arg_vec, aliases):
+  argv = arg_vec.strs[1:]
   if not argv:
     raise args.UsageError('unalias NAME...')
 
