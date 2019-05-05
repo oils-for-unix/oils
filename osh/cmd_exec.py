@@ -37,7 +37,6 @@ from core import process
 from core import ui
 from core import util
 from core.util import log, e_die
-from core import pyutil
 from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
 from frontend import args
@@ -109,6 +108,9 @@ class Deps(object):
     self.debug_f = None
     self.trace_f = None
 
+    self.traps = {} # signal/hook name -> callable
+    self.trap_nodes = []  # list of nodes, appended to by signal handlers
+
 
 class Executor(object):
   """Executes the program by tree-walking.
@@ -149,9 +151,8 @@ class Executor(object):
     self.bool_ev = exec_deps.bool_ev
 
     self.ext_prog = exec_deps.ext_prog
-
-    self.traps = {}  # signal/hook name -> callable
-    self.nodes_to_run = []  # list of nodes, appended to by signal handlers
+    self.traps = exec_deps.traps
+    self.trap_nodes = exec_deps.trap_nodes
 
     self.targets = []  # make syntax enters stuff here -- Target()
                        # metaprogramming or regular target syntax
@@ -345,29 +346,16 @@ class Executor(object):
     elif builtin_id == builtin_e.PWD:
       status = builtin.Pwd(argv, self.mem)
 
-    elif builtin_id == builtin_e.TRAP:
-      status = builtin.Trap(argv, self.traps, self.nodes_to_run, self)
-
     elif builtin_id == builtin_e.UMASK:
       status = builtin.Umask(argv)
-
-    elif builtin_id == builtin_e.GETOPTS:
-      status = builtin.GetOpts(argv, self.mem)
 
     elif builtin_id == builtin_e.TYPE:
       path = self.mem.GetVar('PATH')
       status = builtin.Type(arg_vec, self.funcs, self.aliases, path)
 
-    elif builtin_id == builtin_e.HELP:
-      loader = pyutil.GetResourceLoader()
-      status = builtin.Help(argv, loader)
-
     elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):
       # These are synonyms
       status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
-
-    elif builtin_id == builtin_e.REPR:
-      status = builtin.Repr(argv, self.mem)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
@@ -1137,10 +1125,10 @@ class Executor(object):
     # See core/builtin.py for the Python signal handler that appends to this
     # list.
 
-    if self.nodes_to_run:
+    if self.trap_nodes:
       # Make a copy and clear it so we don't cause an infinite loop.
-      to_run = list(self.nodes_to_run)
-      del self.nodes_to_run[:]
+      to_run = list(self.trap_nodes)
+      del self.trap_nodes[:]
       for node in to_run:
         self._Execute(node)
 

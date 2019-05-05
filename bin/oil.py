@@ -332,6 +332,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - ex and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
+  exec_deps.traps = {}
+  exec_deps.trap_nodes = []
   exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()
@@ -417,6 +419,12 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
+
+      builtin_e.HELP: builtin.Help(loader, errfmt),
+
+      builtin_e.REPR: builtin.Repr(mem, errfmt),
+
+      builtin_e.GETOPTS: builtin.GetOpts(mem, errfmt),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
@@ -448,6 +456,9 @@ def ShellMain(lang, argv0, argv, login_shell):
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
+
+  builtins[builtin_e.TRAP] = builtin.Trap(exec_deps.traps,
+                                          exec_deps.trap_nodes, ex, errfmt)
 
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source

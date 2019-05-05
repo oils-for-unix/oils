@@ -5,7 +5,9 @@ builtin_test.py: Tests for builtin.py
 from __future__ import print_function
 
 import unittest
+import sys
 
+from core import pyutil
 from osh import split
 from osh import builtin  # module under test
 
@@ -31,6 +33,19 @@ class BuiltinTest(unittest.TestCase):
       self.assertEqual(expected_parts, parts)
 
       print('---')
+
+  def testPrintHelp(self):
+    # Localization: Optionally  use GNU gettext()?  For help only.  Might be
+    # useful in parser error messages too.  Good thing both kinds of code are
+    # generated?  Because I don't want to deal with a C toolchain for it.
+
+    loader = pyutil.GetResourceLoader()
+    builtin.Help([], loader)
+
+    for name, spec in builtin.BUILTIN_DEF.arg_specs.iteritems():
+      print(name)
+      spec.PrintHelp(sys.stdout)
+      print()
 
 
 if __name__ == '__main__':

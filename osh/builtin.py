@@ -34,10 +34,10 @@ from _devbuild.gen import osh_help  # generated file
 from _devbuild.gen.runtime_asdl import (
   lvalue, value, value_e, scope_e, span_e, var_flags_e, builtin_e, arg_vector
 )
+from asdl import pretty
 from core import ui
 from core import util
 from core.util import log, e_die
-from core import pyutil
 from frontend import args
 from frontend import lex
 from frontend import match
@@ -1320,100 +1320,107 @@ TRAP_SPEC.ShortFlag('-l')
 # CPython registers different default handlers.  The C++ rewrite should make
 # OVM match sh/bash more closely.
 
-def Trap(argv, traps, nodes_to_run, ex):
-  arg, i = TRAP_SPEC.Parse(argv)
+class Trap(object):
+  def __init__(self, traps, nodes_to_run, ex, errfmt):
+    self.traps = traps
+    self.nodes_to_run = nodes_to_run
+    self.ex = ex  # TODO: ParseTrapCode could be inlined below
+    self.errfmt = errfmt
 
-  if arg.p:  # Print registered handlers
-    for name, value in traps.iteritems():
-      # The unit tests rely on this being one line.
-      # bash prints a line that can be re-parsed.
-      print('%s %s' % (name, value.__class__.__name__))
+  def __call__(self, arg_vec):
+    arg, _ = TRAP_SPEC.ParseVec(arg_vec)
 
-    sys.stdout.flush()
-    return 0
+    if arg.p:  # Print registered handlers
+      for name, value in self.traps.iteritems():
+        # The unit tests rely on this being one line.
+        # bash prints a line that can be re-parsed.
+        print('%s %s' % (name, value.__class__.__name__))
 
-  if arg.l:  # List valid signals and hooks
-    ordered = _SIGNAL_NAMES.items()
-    ordered.sort(key=lambda x: x[1])
-
-    for name in _HOOK_NAMES:
-      print('   %s' % name)
-    for name, int_val in ordered:
-      print('%2d %s' % (int_val, name))
-
-    sys.stdout.flush()
-    return 0
-
-  try:
-    code_str = argv[0]
-    sig_spec = argv[1]
-  except IndexError:
-    raise args.UsageError('trap CODE SIGNAL_SPEC')
-
-  # sig_key is NORMALIZED sig_spec: and integer signal number or string hook
-  # name.
-  sig_key = None
-  sig_num = None
-  if sig_spec in _HOOK_NAMES:
-    sig_key = sig_spec
-  elif sig_spec == '0':  # Special case
-    sig_key = 'EXIT'
-  else:
-    sig_num = _GetSignalNumber(sig_spec)
-    if sig_num is not None:
-      sig_key = sig_num
-
-  if sig_key is None:
-    util.error("Invalid signal or hook %r" % sig_spec)
-    return 1
-
-  # NOTE: sig_spec isn't validated when removing handlers.
-  if code_str == '-':
-    if sig_key in _HOOK_NAMES:
-      try:
-        del traps[sig_key]
-      except KeyError:
-        pass
+      sys.stdout.flush()
       return 0
 
-    if sig_num is not None:
-      try:
-        del traps[sig_key]
-      except KeyError:
-        pass
+    if arg.l:  # List valid signals and hooks
+      ordered = _SIGNAL_NAMES.items()
+      ordered.sort(key=lambda x: x[1])
 
-      # Restore default
-      if sig_num == signal.SIGINT:
-        RegisterSigIntHandler()
-      else:
-        signal.signal(sig_num, signal.SIG_DFL)
+      for name in _HOOK_NAMES:
+        print('   %s' % name)
+      for name, int_val in ordered:
+        print('%2d %s' % (int_val, name))
+
+      sys.stdout.flush()
+      return 0
+
+    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # skip argv[0]
+    code_str = arg_r.ReadRequired('requires a code string')
+    sig_spec = arg_r.ReadRequired('requires a signal or hook name')
+
+    # sig_key is NORMALIZED sig_spec: and integer signal number or string hook
+    # name.
+    sig_key = None
+    sig_num = None
+    if sig_spec in _HOOK_NAMES:
+      sig_key = sig_spec
+    elif sig_spec == '0':  # Special case
+      sig_key = 'EXIT'
+    else:
+      sig_num = _GetSignalNumber(sig_spec)
+      if sig_num is not None:
+        sig_key = sig_num
+
+    if sig_key is None:
+      self.errfmt.Print("Invalid signal or hook %r", sig_spec,
+                        span_id=arg_vec.spids[2])
+      return 1
+
+    # NOTE: sig_spec isn't validated when removing handlers.
+    if code_str == '-':
+      if sig_key in _HOOK_NAMES:
+        try:
+          del self.traps[sig_key]
+        except KeyError:
+          pass
+        return 0
+
+      if sig_num is not None:
+        try:
+          del self.traps[sig_key]
+        except KeyError:
+          pass
+
+        # Restore default
+        if sig_num == signal.SIGINT:
+          RegisterSigIntHandler()
+        else:
+          signal.signal(sig_num, signal.SIG_DFL)
+        return 0
+
+      raise AssertionError('Signal or trap')
+
+    # Try parsing the code first.
+    node = self.ex.ParseTrapCode(code_str)
+    if node is None:
+      return 1  # ParseTrapCode() prints an error for us.
+
+    # Register a hook.
+    if sig_key in _HOOK_NAMES:
+      if sig_key in ('ERR', 'RETURN', 'DEBUG'):
+        util.warn("*** The %r hook isn't yet implemented in OSH ***", sig_spec)
+      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run)
+      return 0
+
+    # Register a signal.
+    sig_num = _GetSignalNumber(sig_spec)
+    if sig_num is not None:
+      handler = _TrapHandler(node, self.nodes_to_run)
+      # For signal handlers, the traps dictionary is used only for debugging.
+      self.traps[sig_key] = handler
+
+      signal.signal(sig_num, handler)
       return 0
 
     raise AssertionError('Signal or trap')
-
-  # Try parsing the code first.
-  node = ex.ParseTrapCode(code_str)
-  if node is None:
-    return 1  # ParseTrapCode() prints an error for us.
-
-  # Register a hook.
-  if sig_key in _HOOK_NAMES:
-    if sig_key in ('ERR', 'RETURN', 'DEBUG'):
-      util.warn("*** The %r hook isn't yet implemented in OSH ***", sig_spec)
-    traps[sig_key] = _TrapHandler(node, nodes_to_run)
-    return 0
-
-  # Register a signal.
-  sig_num = _GetSignalNumber(sig_spec)
-  if sig_num is not None:
-    handler = _TrapHandler(node, nodes_to_run)
-    # For signal handlers, the traps dictionary is used only for debugging.
-    traps[sig_key] = handler
-
-    signal.signal(sig_num, handler)
-    return 0
-
-  raise AssertionError('Signal or trap')
 
   # Example:
   # trap -- 'echo "hi  there" | wc ' SIGINT
@@ -1468,7 +1475,7 @@ def _ParseOptSpec(spec_str):
   return spec
 
 
-def _GetOpts(spec, argv, optind):
+def _GetOpts(spec, argv, optind, errfmt):
   optarg = ''  # not set by default
 
   try:
@@ -1492,7 +1499,8 @@ def _GetOpts(spec, argv, optind):
     try:
       optarg = argv[optind-1]  # 1-based indexing
     except IndexError:
-      util.error('getopts: option %r requires an argument', current)
+      errfmt.Print('getopts: option %r requires an argument.', current)
+      ui.Stderr('(getopts argv: %s)', ' '.join(pretty.Str(a) for a in argv))
       # Hm doesn't cause status 1?
       return 0, '?', optarg, optind
 
@@ -1504,84 +1512,105 @@ def _GetOpts(spec, argv, optind):
 # spec string -> {flag, arity}
 _GETOPTS_CACHE = {}  # type: Dict[str, Dict[str, bool]]
 
-def GetOpts(argv, mem):
+class GetOpts(object):
   """
-  Vars to set:
-    OPTIND - initialized to 1 at startup
-    OPTARG - argument
   Vars used:
     OPTERR: disable printing of error messages
+  Vars set:
+    The variable named by the second arg
+    OPTIND - initialized to 1 at startup
+    OPTARG - argument
   """
-  # TODO: need to handle explicit args.
 
-  try:
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
+
+  def __call__(self, arg_vec):
+    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()
+
     # NOTE: If first char is a colon, error reporting is different.  Alpine
     # might not use that?
-    spec_str = argv[0]
-    var_name = argv[1]
-  except IndexError:
-    raise args.UsageError('getopts optstring name [arg]')
+    spec_str = arg_r.ReadRequired('requires an argspec')
+    var_name = arg_r.ReadRequired('requires the name of a variable to set')
 
-  try:
-    spec = _GETOPTS_CACHE[spec_str]
-  except KeyError:
-    spec = _ParseOptSpec(spec_str)
-    _GETOPTS_CACHE[spec_str] = spec
-
-  # These errors are fatal errors, not like the builtin exiting with code 1.
-  # Because the invariants of the shell have been violated!
-  v = mem.GetVar('OPTIND')
-  if v.tag != value_e.Str:
-    e_die('OPTIND should be a string, got %r', v)
-  try:
-    optind = int(v.s)
-  except ValueError:
-    e_die("OPTIND doesn't look like an integer, got %r", v.s)
-
-  user_argv = argv[2:] or mem.GetArgv()
-  status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind)
-
-  # Bug fix: bash-completion uses a *local* OPTIND !  Not global.
-  state.SetStringDynamic(mem, var_name, opt_char)
-  state.SetStringDynamic(mem, 'OPTARG', optarg)
-  state.SetStringDynamic(mem, 'OPTIND', str(optind))
-  return status
-
-
-def Help(argv, loader):
-  # TODO: Need $VERSION inside all pages?
-  try:
-    topic = argv[0]
-  except IndexError:
-    topic = 'help'
-
-  if topic == 'toc':
-    # Just show the raw source.
-    f = loader.open('doc/osh-quick-ref-toc.txt')
-  else:
     try:
-      section_id = osh_help.TOPIC_LOOKUP[topic]
+      spec = _GETOPTS_CACHE[spec_str]
     except KeyError:
-      util.error('No help topics match %r', topic)
-      return 1
+      spec = _ParseOptSpec(spec_str)
+      _GETOPTS_CACHE[spec_str] = spec
+
+    # These errors are fatal errors, not like the builtin exiting with code 1.
+    # Because the invariants of the shell have been violated!
+    v = self.mem.GetVar('OPTIND')
+    if v.tag != value_e.Str:
+      e_die('OPTIND should be a string, got %r', v)
+    try:
+      optind = int(v.s)
+    except ValueError:
+      e_die("OPTIND doesn't look like an integer, got %r", v.s)
+
+    user_argv = arg_vec.strs[3:] or self.mem.GetArgv()
+    status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind,
+                                                self.errfmt)
+
+    # Bug fix: bash-completion uses a *local* OPTIND !  Not global.
+    state.SetStringDynamic(self.mem, var_name, opt_char)
+    state.SetStringDynamic(self.mem, 'OPTARG', optarg)
+    state.SetStringDynamic(self.mem, 'OPTIND', str(optind))
+    return status
+
+
+class Help(object):
+
+  def __init__(self, loader, errfmt):
+    self.loader = loader
+    self.errfmt = errfmt
+
+  def __call__(self, arg_vec):
+    # TODO: Need $VERSION inside all pages?
+    try:
+      topic = arg_vec.strs[1]
+    except IndexError:
+      topic = 'help'
+
+    if topic == 'toc':
+      # Just show the raw source.
+      f = self.loader.open('doc/osh-quick-ref-toc.txt')
     else:
       try:
-        f = loader.open('_devbuild/osh-quick-ref/%s' % section_id)
-      except IOError as e:
-        util.error(str(e))
-        raise AssertionError('Should have found %r' % section_id)
+        section_id = osh_help.TOPIC_LOOKUP[topic]
+      except KeyError:
+        # NOTE: bash suggests:
+        # man -k zzz
+        # info zzz
+        # help help
+        # We should do something smarter.
 
-  for line in f:
-    sys.stdout.write(line)
-  f.close()
-  return 0
+        # NOTE: This is mostly an interactive command.  Is it obnoxious to
+        # quote the line of code?
+        self.errfmt.Print('No help topics match %r', topic,
+                          span_id=arg_vec.spids[1])
+        return 1
+      else:
+        try:
+          f = self.loader.open('_devbuild/osh-quick-ref/%s' % section_id)
+        except IOError as e:
+          util.log(str(e))
+          raise AssertionError('Should have found %r' % section_id)
+
+    for line in f:
+      sys.stdout.write(line)
+    f.close()
+    return 0
 
 
 HISTORY_SPEC = _Register('history')
 
 
 class History(object):
-  """Show history."""
+  """Show interactive command history."""
 
   def __init__(self, readline_mod):
     self.readline_mod = readline_mod
@@ -1626,44 +1655,29 @@ class History(object):
     return 0
 
 
-def Repr(argv, mem):
+class Repr(object):
   """Given a list of variable names, print their values.
 
   'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
-  status = 0
-  for name in argv:
-    if not match.IsValidVarName(name):
-      util.error('%r is not a valid variable name', name)
-      return 1
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
 
-    # TODO: Should we print flags too?
-    val = mem.GetVar(name)
-    if val.tag == value_e.Undef:
-      print('%r is not defined' % name)
-      status = 1
-    else:
-      print('%s = %s' % (name, val))
-  return status
+  def __call__(self, arg_vec):
+    status = 0
+    for i in xrange(1, len(arg_vec.strs)):
+      name = arg_vec.strs[i]
+      if not match.IsValidVarName(name):
+        self.errfmt.Print('%r is not a valid variable name', name,
+                          span_id=arg_vec.spids[i])
+        return 1
 
-
-def main(argv):
-  # Localization: Optionally  use GNU gettext()?  For help only.  Might be
-  # useful in parser error messages too.  Good thing both kinds of code are
-  # generated?  Because I don't want to deal with a C toolchain for it.
-
-  loader = pyutil.GetResourceLoader()
-  Help([], loader)
-
-  for name, spec in BUILTIN_DEF.arg_specs.iteritems():
-    print(name)
-    spec.PrintHelp(sys.stdout)
-    print()
-
-
-if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+      # TODO: Should we print the variable's flags too?
+      val = self.mem.GetVar(name)
+      if val.tag == value_e.Undef:
+        print('%r is not defined' % name)
+        status = 1
+      else:
+        print('%s = %s' % (name, val))
+    return status

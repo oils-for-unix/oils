@@ -170,6 +170,12 @@ core_process() {
   echo hi 1>&3
 }
 
+# Errors from osh/state.py
+osh_state() {
+  # $HOME is exported so it can't be an array
+  HOME=(a b)
+}
+
 ambiguous_redirect() {
   echo foo > "$@"
   echo 'ambiguous redirect not fatal unless errexit'
@@ -452,6 +458,26 @@ builtin_alias_unalias() {
   unalias zzz
 }
 
+builtin_help() {
+  help zzz
+}
+
+builtin_trap() {
+  trap 
+  trap EXIT
+
+  trap zzz yyy
+}
+
+builtin_getopts() {
+  getopts
+  getopts 'a:' 
+
+  # TODO: It would be nice to put this in a loop and use it properly
+  set -- -a
+  getopts 'a:' varname
+}
+
 #
 # TEST DRIVER
 #
@@ -475,15 +501,15 @@ all() {
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command errexit_usage_error errexit_subshell errexit_alias \
     pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
-    pipefail_multiple core_process \
+    pipefail_multiple core_process osh_state \
     nonexistent nounset bad_var_ref \
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
     array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
     builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
-    builtin_popd builtin_unset builtin_alias_unalias; do
-
+    builtin_popd builtin_unset builtin_alias_unalias builtin_help \
+    builtin_trap builtin_getopts; do
     _run_test $t
   done
 }

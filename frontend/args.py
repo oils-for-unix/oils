@@ -119,7 +119,8 @@ class Reader(object):
     try:
       arg = self.Peek()
     except IndexError:
-      raise UsageError(error_msg, span_id=self.SpanId())
+      # point at argv[0]
+      raise UsageError(error_msg, span_id=self._FirstSpanId())
     self.Next()
     return arg
 
@@ -129,6 +130,12 @@ class Reader(object):
 
   def AtEnd(self):
     return self.i == self.n
+
+  def _FirstSpanId(self):
+    if self.spids:
+      return self.spids[0]
+    else:
+      return const.NO_INTEGER  # TODO: remove this when all have spids
 
   def SpanId(self):
     if self.spids:
