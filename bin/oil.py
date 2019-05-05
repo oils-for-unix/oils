@@ -396,10 +396,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   dir_stack = state.DirStack()
 
   builtins = {  # Lookup
-      builtin_e.CD: builtin.Cd(mem, dir_stack),
-      builtin_e.PUSHD: builtin.Pushd(mem, dir_stack),
-      builtin_e.POPD: builtin.Popd(mem, dir_stack),
-      builtin_e.DIRS: builtin.Dirs(mem, dir_stack),
+      builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),
+      builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
+      builtin_e.POPD: builtin.Popd(mem, dir_stack, errfmt),
+      builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
 
       builtin_e.HISTORY: builtin.History(line_input),
 
@@ -413,6 +413,10 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.SET: builtin.Set(exec_opts, mem),
       builtin_e.SHOPT: builtin.Shopt(exec_opts),
+      builtin_e.UNSET: builtin.Unset(mem, funcs, errfmt),
+
+      builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
+      builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
   }
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)

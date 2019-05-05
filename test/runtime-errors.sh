@@ -323,15 +323,6 @@ patsub_bad_glob() {
 
 
 #
-# Builtins
-#
-
-test_builtin() {
-  # xxx is not a valid file descriptor
-  [ -t xxx ]
-}
-
-#
 # BOOLEAN ERRORS
 #
 
@@ -394,6 +385,11 @@ readonly_assign() {
 # BUILTINS
 #
 
+builtin_bracket() {
+  # xxx is not a valid file descriptor
+  [ -t xxx ]
+}
+
 builtin_builtin() {
   set +o errexit
   builtin ls
@@ -404,6 +400,56 @@ builtin_source() {
 
   bad=/nonexistent/path
   source $bad
+}
+
+builtin_cd() {
+  ( unset HOME
+    cd
+  )
+
+  # TODO: Hm this gives a different useful error without location info
+  ( unset HOME
+    HOME=(a b)
+    cd
+  )
+
+  # TODO: Hm this gives a different useful error without location info
+  ( unset OLDPWD
+    cd -
+  )
+
+  ( cd /nonexistent
+  )
+}
+
+builtin_pushd() {
+  pushd /nonexistent
+}
+
+builtin_popd() {
+  popd  # empty dir stack
+
+  (
+    local dir=$PWD/_tmp/runtime-error-popd
+    mkdir -p $dir
+    pushd $dir
+    pushd /
+    rmdir $dir
+    popd
+  )
+}
+
+builtin_unset() {
+  local x=x
+  readonly a
+
+  unset x a
+  unset -v x a
+}
+
+builtin_alias_unalias() {
+  alias zzz
+  unalias zzz
 }
 
 #
@@ -435,7 +481,8 @@ all() {
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
     array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
-    builtin_builtin builtin_source; do
+    builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
+    builtin_popd builtin_unset builtin_alias_unalias; do
 
     _run_test $t
   done

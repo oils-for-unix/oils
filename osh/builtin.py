@@ -599,9 +599,10 @@ CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')
 
 class Cd(object):
-  def __init__(self, mem, dir_stack):
+  def __init__(self, mem, dir_stack, errfmt):
     self.mem = mem
     self.dir_stack = dir_stack
+    self.errfmt = errfmt
 
   def __call__(self, arg_vec):
     arg, i = CD_SPEC.ParseVec(arg_vec)
@@ -614,18 +615,19 @@ class Cd(object):
     except IndexError:
       val = self.mem.GetVar('HOME')
       if val.tag == value_e.Undef:
-        util.error("$HOME isn't defined")
+        self.errfmt.Print("$HOME isn't defined")
         return 1
       elif val.tag == value_e.Str:
         dest_dir = val.s
       elif val.tag == value_e.StrArray:
-        util.error("$HOME shouldn't be an array.")
+        # User would have to unset $HOME to get rid of exported flag
+        self.errfmt.Print("$HOME shouldn't be an array")
         return 1
 
     if dest_dir == '-':
       old = self.mem.GetVar('OLDPWD', scope_e.GlobalOnly)
       if old.tag == value_e.Undef:
-        log('OLDPWD not set')
+        self.errfmt.Print('OLDPWD not set')
         return 1
       elif old.tag == value_e.Str:
         dest_dir = old.s
@@ -653,8 +655,8 @@ class Cd(object):
     try:
       posix.chdir(real_dest_dir)
     except OSError as e:
-      # TODO: Add line number, etc.
-      util.error("cd %r: %s", real_dest_dir, posix.strerror(e.errno))
+      self.errfmt.Print("cd %r: %s", real_dest_dir, posix.strerror(e.errno),
+                        span_id=arg_vec.spids[i])
       return 1
 
     state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
@@ -686,27 +688,26 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
 
 class Pushd(object):
-  def __init__(self, mem, dir_stack):
+  def __init__(self, mem, dir_stack, errfmt):
     self.mem = mem
     self.dir_stack = dir_stack
+    self.errfmt = errfmt
 
   def __call__(self, arg_vec):
-    # TODO: Use arg_r.NumArgs() and arg_r.Read()?
-
-    argv = arg_vec.strs[1:]
-    num_args = len(argv)
+    num_args = len(arg_vec.strs) - 1
     if num_args == 0:
       # TODO: It's suppose to try another dir before doing this?
-      util.error('pushd: no other directory')
+      self.errfmt.Print('pushd: no other directory')
       return 1
     elif num_args > 1:
       raise args.UsageError('got too many arguments')
 
-    dest_dir = os_path.abspath(argv[0])
+    dest_dir = os_path.abspath(arg_vec.strs[1])
     try:
       posix.chdir(dest_dir)
     except OSError as e:
-      util.error("pushd: %r: %s", dest_dir, posix.strerror(e.errno))
+      self.errfmt.Print("pushd: %r: %s", dest_dir, posix.strerror(e.errno),
+                        span_id=arg_vec.spids[1])
       return 1
 
     self.dir_stack.Push(dest_dir)
@@ -716,20 +717,22 @@ class Pushd(object):
 
 
 class Popd(object):
-  def __init__(self, mem, dir_stack):
+  def __init__(self, mem, dir_stack, errfmt):
     self.mem = mem
     self.dir_stack = dir_stack
+    self.errfmt = errfmt
 
   def __call__(self, arg_vec):
     dest_dir = self.dir_stack.Pop()
     if dest_dir is None:
-      util.error('popd: directory stack is empty')
+      self.errfmt.Print('popd: directory stack is empty')
       return 1
 
     try:
       posix.chdir(dest_dir)
     except OSError as e:
-      util.error("popd: %r: %s", dest_dir, posix.strerror(e.errno))
+      # Happens if a directory is deleted in pushing and popping
+      self.errfmt.Print("popd: %r: %s", dest_dir, posix.strerror(e.errno))
       return 1
 
     _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
@@ -745,9 +748,10 @@ DIRS_SPEC.ShortFlag('-v')
 
 
 class Dirs(object):
-  def __init__(self, mem, dir_stack):
+  def __init__(self, mem, dir_stack, errfmt):
     self.mem = mem
     self.dir_stack = dir_stack
+    self.errfmt = errfmt
 
   def __call__(self, arg_vec):
     home_dir = self.mem.GetVar('HOME')
@@ -958,31 +962,43 @@ UNSET_SPEC.ShortFlag('-f')
 
 # TODO:
 # - Parse lvalue expression: unset 'a[ i - 1 ]'.  Static or dynamic parsing?
-def Unset(arg_vec, mem, funcs):
-  argv = arg_vec.strs[1:]
-  arg, i = UNSET_SPEC.Parse(argv)
+# - It would make more sense to treat no args as an error (bash doesn't.)
+#   - Should we have strict builtins?  Or just make it stricter?
 
-  for name in argv[i:]:
-    if arg.f:
-      if name in funcs:
-        del funcs[name]
-    elif arg.v:
-      ok, _  = mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
-      if not ok:
-        util.error("Can't unset readonly variable %r", name)
-        return 1
-    else:
-      # Try to delete var first, then func.
-      ok, found = mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
-      if not ok:
-        util.error("Can't unset readonly variable %r", name)
-        return 1
-      #log('%s: %s', name, found)
-      if not found:
-        if name in funcs:
-          del funcs[name]
+class Unset(object):
+  def __init__(self, mem, funcs, errfmt):
+    self.mem = mem
+    self.funcs = funcs
+    self.errfmt = errfmt
 
-  return 0
+  def __call__(self, arg_vec):
+    arg, offset = UNSET_SPEC.ParseVec(arg_vec)
+    n = len(arg_vec.strs)
+
+    for i in xrange(offset, n):
+      name = arg_vec.strs[i]
+      if arg.f:
+        if name in self.funcs:
+          del self.funcs[name]
+      elif arg.v:
+        ok, _  = self.mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
+        if not ok:
+          self.errfmt.Print("Can't unset readonly variable %r", name,
+                            span_id=arg_vec.spids[i])
+          return 1
+      else:
+        # Try to delete var first, then func.
+        ok, found = self.mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
+        if not ok:
+          self.errfmt.Print("Can't unset readonly variable %r", name,
+                            span_id=arg_vec.spids[i])
+          return 1
+        #log('%s: %s', name, found)
+        if not found:
+          if name in self.funcs:
+            del self.funcs[name]
+
+    return 0
 
 
 def _ParsePath(path_val):
@@ -1160,52 +1176,61 @@ def DeclareTypeset(argv, mem, funcs):
 ALIAS_SPEC = _Register('alias')
 
 
-def Alias(arg_vec, aliases):
-  argv = arg_vec.strs[1:]
-  if not argv:
-    for name in sorted(aliases):
-      alias_exp = aliases[name]
-      # This is somewhat like bash, except we use %r for ''.
-      print('alias %s=%r' % (name, alias_exp))
-    return 0
+class Alias(object):
+  def __init__(self, aliases, errfmt):
+    self.aliases = aliases
+    self.errfmt = errfmt
 
-  status = 0
-  for arg in argv:
-    parts = arg.split('=', 1)
-    if len(parts) == 1:  # if we get a plain word without, print alias
-      name = parts[0]
-      alias_exp = aliases.get(name)
-      if alias_exp is None:
-        # NOTE: bash prints location info here.
-        util.error('alias %r is not defined', name)  # TODO: error?
-        status = 1
-      else:
+  def __call__(self, arg_vec):
+    if len(arg_vec.strs) == 1:
+      for name in sorted(self.aliases):
+        alias_exp = self.aliases[name]
+        # This is somewhat like bash, except we use %r for ''.
         print('alias %s=%r' % (name, alias_exp))
-    else:
-      name, alias_exp = parts
-      aliases[name] = alias_exp
+      return 0
 
-  #print(argv)
-  #log('AFTER ALIAS %s', aliases)
-  return status
+    status = 0
+    for i in xrange(1, len(arg_vec.strs)):
+      arg = arg_vec.strs[i]
+      parts = arg.split('=', 1)
+      if len(parts) == 1:  # if we get a plain word without, print alias
+        name = parts[0]
+        alias_exp = self.aliases.get(name)
+        if alias_exp is None:
+          self.errfmt.Print('No alias named %r', name, span_id=arg_vec.spids[i])
+          status = 1
+        else:
+          print('alias %s=%r' % (name, alias_exp))
+      else:
+        name, alias_exp = parts
+        self.aliases[name] = alias_exp
+
+    #print(argv)
+    #log('AFTER ALIAS %s', aliases)
+    return status
 
 
 UNALIAS_SPEC = _Register('unalias')
 
 
-def UnAlias(arg_vec, aliases):
-  argv = arg_vec.strs[1:]
-  if not argv:
-    raise args.UsageError('unalias NAME...')
+class UnAlias(object):
+  def __init__(self, aliases, errfmt):
+    self.aliases = aliases
+    self.errfmt = errfmt
 
-  status = 0
-  for name in argv:
-    try:
-      del aliases[name]
-    except KeyError:
-      util.error('alias %r is not defined', name)
-      status = 1
-  return status
+  def __call__(self, arg_vec):
+    if len(arg_vec.strs) == 1:
+      raise args.UsageError('unalias NAME...')
+
+    status = 0
+    for i in xrange(1, len(arg_vec.strs)):
+      name = arg_vec.strs[i]
+      try:
+        del self.aliases[name]
+      except KeyError:
+        self.errfmt.Print('No alias named %r', name, span_id=arg_vec.spids[i])
+        status = 1
+    return status
 
 
 def _SigIntHandler(unused, unused_frame):

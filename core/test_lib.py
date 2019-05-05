@@ -118,7 +118,8 @@ def MakeTestEvaluator():
   return ev
 
 
-def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
+def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
+                 aliases=None):
   if parse_ctx:
     arena = parse_ctx.arena
   else:
@@ -129,6 +130,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
   errfmt = ui.ErrorFormatter(arena)
   fd_state = process.FdState(errfmt)
   funcs = {}
+  aliases = {} if aliases is None else aliases
 
   compopt_state = completion.OptionState()
   comp_lookup = comp_lookup or completion.Lookup()
@@ -139,6 +141,9 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
+
+      builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
+      builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
   }
 
   # For the tests, we do not use 'readline'.
@@ -181,7 +186,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None):
   return ex
 
 
-def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None):
+def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   """
   Unit tests can evaluate code strings and then use the resulting Executor.
   """
@@ -193,7 +198,8 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None):
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  ex = InitExecutor(parse_ctx=parse_ctx, comp_lookup=comp_lookup, arena=arena, mem=mem)
+  ex = InitExecutor(parse_ctx=parse_ctx, comp_lookup=comp_lookup, arena=arena,
+                    mem=mem, aliases=aliases)
 
   main_loop.Batch(ex, c_parser, arena)  # Parse and execute!
   return ex

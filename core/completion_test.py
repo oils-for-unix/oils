@@ -477,10 +477,12 @@ class RootCompleterTest(unittest.TestCase):
       code_str = f.read()
     trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
-    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    aliases = {}
+    parse_ctx = parse_lib.ParseContext(arena, aliases, trail=trail)
     comp_lookup = completion.Lookup()
 
-    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup,
+                           aliases=aliases)
 
     r = _MakeRootCompleter(parse_ctx=parse_ctx, comp_lookup=comp_lookup)
 

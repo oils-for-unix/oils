@@ -333,9 +333,6 @@ class Executor(object):
     elif builtin_id == builtin_e.SHIFT:
       status = builtin.Shift(argv, self.mem)
 
-    elif builtin_id == builtin_e.UNSET:
-      status = builtin.Unset(arg_vec, self.mem, self.funcs)
-
     elif builtin_id == builtin_e.EXPORT:
       status = builtin.Export(argv, self.mem)
 
@@ -368,12 +365,6 @@ class Executor(object):
     elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):
       # These are synonyms
       status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
-
-    elif builtin_id == builtin_e.ALIAS:
-      status = builtin.Alias(arg_vec, self.aliases)
-
-    elif builtin_id == builtin_e.UNALIAS:
-      status = builtin.UnAlias(arg_vec, self.aliases)
 
     elif builtin_id == builtin_e.REPR:
       status = builtin.Repr(argv, self.mem)
