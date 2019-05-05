@@ -108,8 +108,11 @@ class Deps(object):
     self.debug_f = None
     self.trace_f = None
 
-    self.traps = {} # signal/hook name -> callable
-    self.trap_nodes = []  # list of nodes, appended to by signal handlers
+    self.traps = None # signal/hook name -> callable
+    self.trap_nodes = None  # list of nodes, appended to by signal handlers
+
+    self.job_state = None
+    self.waiter = None
 
 
 class Executor(object):
@@ -158,9 +161,10 @@ class Executor(object):
                        # metaprogramming or regular target syntax
                        # Whether argv[0] is make determines if it is executed
 
-    self.waiter = process.Waiter()
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
-    self.job_state = process.JobState()
+    self.job_state = exec_deps.job_state
+    self.waiter = exec_deps.waiter
+
     self.tracer = exec_deps.tracer
 
     self.loop_level = 0  # for detecting bad top-level break/continue
@@ -336,12 +340,6 @@ class Executor(object):
 
     elif builtin_id == builtin_e.EXPORT:
       status = builtin.Export(argv, self.mem)
-
-    elif builtin_id == builtin_e.WAIT:
-      status = builtin.Wait(argv, self.waiter, self.job_state, self.mem)
-
-    elif builtin_id == builtin_e.JOBS:
-      status = builtin.Jobs(argv, self.job_state)
 
     elif builtin_id == builtin_e.UMASK:
       status = builtin.Umask(argv)

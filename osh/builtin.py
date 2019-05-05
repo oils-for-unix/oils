@@ -323,7 +323,7 @@ WAIT_SPEC = _Register('wait')
 WAIT_SPEC.ShortFlag('-n')
 
 
-def Wait(argv, waiter, job_state, mem):
+class Wait(object):
   """
   wait: wait [-n] [id ...]
       Wait for job completion and return exit status.
@@ -340,73 +340,85 @@ def Wait(argv, waiter, job_state, mem):
       Exit Status:
       Returns the status of the last ID; fails if ID is invalid or an invalid
       option is given.
-
-  # Job spec, %1 %2, %%, %?a etc.
-
-  http://mywiki.wooledge.org/BashGuide/JobControl#jobspec
-
-  This is different than a PID?  But it does have a PID.
   """
-  arg, i = WAIT_SPEC.Parse(argv)
-  pids = argv[i:]
+  def __init__(self, waiter, job_state, mem, errfmt):
+    self.waiter = waiter
+    self.job_state = job_state
+    self.mem = mem
+    self.errfmt = errfmt
 
-  if arg.n:
-    # wait -n returns the exit status of the process.  But how do you know
-    # WHICH process?  That doesn't seem useful.
-    log('wait next')
-    if waiter.Wait():
-      return waiter.last_status
-    else:
-      return 127  # nothing to wait for
+  def __call__(self, arg_vec):
+    arg, arg_index = WAIT_SPEC.ParseVec(arg_vec)
+    job_ids = arg_vec.strs[arg_index:]
+    spids = arg_vec.spids[arg_index:]
 
-  if not pids:
-    log('wait all')
-    # TODO: get all background jobs from JobState?
-    i = 0
-    while True:
-      if not waiter.Wait():
-        break  # nothing to wait for
-      i += 1
-      if job_state.AllDone():
-        break
+    if arg.n:
+      # wait -n returns the exit status of the process.  But how do you know
+      # WHICH process?  That doesn't seem useful.
+      log('wait next')
+      if self.waiter.Wait():
+        return self.waiter.last_status
+      else:
+        return 127  # nothing to wait for
 
-    log('waited for %d processes', i)
-    return 0
+    if not job_ids:
+      #log('wait all')
 
-  # Get list of jobs.  Then we need to check if they are ALL stopped.
-  # Returns the exit code of the last one on the COMMAND LINE, not the exit
-  # code of last one to FINSIH.
+      # TODO: get all background jobs from JobState?
+      i = 0
+      while True:
+        if not self.waiter.Wait():
+          break  # nothing to wait for
+        i += 1
+        if self.job_state.AllDone():
+          break
 
-  status = 1  # error
-  for pid in pids:
-    # NOTE: osh doesn't accept 'wait %1' yet
-    try:
-      jid = int(pid)
-    except ValueError:
-      # TODO: point at the invalid one
-      #raise args.UsageError("expected job, got %r" % pid)
-      util.error('Invalid job: %s', pid)
-      return 127
+      log('waited for %d processes', i)
+      return 0
 
-    job = job_state.jobs.get(jid)
-    if job is None:
-      util.error('No such job: %s', jid)
-      return 127
+    # Get list of jobs.  Then we need to check if they are ALL stopped.
+    # Returns the exit code of the last one on the COMMAND LINE, not the exit
+    # code of last one to FINISH.
+    status = 1  # error
+    for job_id, span_id in zip(job_ids, spids):
+      # The % syntax is sort of like ! history sub syntax, with various queries.
+      # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
+      if job_id.startswith('%'):
+        raise args.UsageError(
+            "doesn't support bash-style jobspecs (got %r)" % job_id,
+            span_id=span_id)
 
-    st = job.WaitUntilDone(waiter)
-    if isinstance(st, list):
-      status = st[-1]
-      mem.SetPipeStatus(st)
-    else:
-      status = st
+      # Does it look like a PID?
+      try:
+        pid = int(job_id)
+      except ValueError:
+        raise args.UsageError('expected PID or jobspec, got %r' % job_id,
+                              span_id=span_id)
 
-  return status
+      job = self.job_state.jobs.get(pid)
+      if job is None:
+        self.errfmt.Print("%s isn't a child of this shell", pid,
+                          span_id=span_id)
+        return 127
+
+      st = job.WaitUntilDone(self.waiter)
+      if isinstance(st, list):
+        status = st[-1]
+        self.mem.SetPipeStatus(st)
+      else:
+        status = st
+
+    return status
 
 
-def Jobs(argv, job_state):
+class Jobs(object):
   """List jobs."""
-  job_state.List()
-  return 0
+  def __init__(self, job_state):
+    self.job_state = job_state
+
+  def __call__(self, arg_vec):
+    self.job_state.List()
+    return 0
 
 
 # Summary:
@@ -1680,9 +1692,8 @@ class Repr(object):
     for i in xrange(1, len(arg_vec.strs)):
       name = arg_vec.strs[i]
       if not match.IsValidVarName(name):
-        self.errfmt.Print('%r is not a valid variable name', name,
-                          span_id=arg_vec.spids[i])
-        return 1
+        raise args.UsageError('got invalid variable name %r' % name,
+                              span_id=arg_vec.spids[i])
 
       # TODO: Should we print the variable's flags too?
       val = self.mem.GetVar(name)

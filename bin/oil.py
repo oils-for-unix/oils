@@ -332,8 +332,14 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - ex and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
+
+  # TODO: In general, exec_deps are shared between the mutually recursive
+  # evaluators.  Some of the four below are only shared between a builtin and
+  # the Executor, so we could put them somewhere else.
   exec_deps.traps = {}
   exec_deps.trap_nodes = []
+  exec_deps.job_state = process.JobState()
+  exec_deps.waiter = process.Waiter()
   exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()
@@ -408,8 +414,9 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
-      builtin_e.TEST: builtin_bracket.Test(False, errfmt),
+
       # need_right_bracket
+      builtin_e.TEST: builtin_bracket.Test(False, errfmt),
       builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
 
       builtin_e.READ: builtin.Read(splitter, mem),
@@ -426,7 +433,12 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.REPR: builtin.Repr(mem, errfmt),
 
       builtin_e.GETOPTS: builtin.GetOpts(mem, errfmt),
+
+      builtin_e.WAIT: builtin.Wait(exec_deps.waiter, exec_deps.job_state, mem,
+                                   errfmt),
+      builtin_e.JOBS: builtin.Jobs(exec_deps.job_state),
   }
+
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
   exec_deps.ex = ex

@@ -272,7 +272,7 @@ assign() {
 }
 
 background() {
-  sh-spec spec/background.test.sh \
+  sh-spec spec/background.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 

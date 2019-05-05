@@ -119,7 +119,7 @@ def MakeTestEvaluator():
 
 
 def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
-                 aliases=None):
+                 aliases=None, ext_prog=None):
   if parse_ctx:
     arena = parse_ctx.arena
   else:
@@ -152,6 +152,12 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
   exec_deps.errfmt = errfmt
+  exec_deps.job_state = process.JobState()
+  exec_deps.waiter = process.Waiter()
+
+  exec_deps.ext_prog = \
+      ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
+
   exec_deps.dumper = dev.CrashDumper('')
   exec_deps.debug_f = debug_f
   exec_deps.trace_f = debug_f

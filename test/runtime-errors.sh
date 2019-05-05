@@ -478,6 +478,10 @@ builtin_getopts() {
   getopts 'a:' varname
 }
 
+builtin_wait() {
+  wait 1234578
+}
+
 #
 # TEST DRIVER
 #
@@ -509,7 +513,7 @@ all() {
     array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
     builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
     builtin_popd builtin_unset builtin_alias_unalias builtin_help \
-    builtin_trap builtin_getopts; do
+    builtin_trap builtin_getopts builtin_wait; do
     _run_test $t
   done
 }

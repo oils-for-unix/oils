@@ -241,10 +241,6 @@ test-builtin() {
 other-builtins() {
   set +o errexit
 
-  # TODO:
-  #_error-case 'wait zzz'
-  #_error-case 'wait 1'
-
   _error-case 'shift 1 2'
   _error-case 'shift zzz'
 
@@ -252,6 +248,9 @@ other-builtins() {
   _error-case 'pwd -x'
 
   _error-case 'repr foo a-x'
+
+  _error-case 'wait zzz'
+  _error-case 'wait %jobspec-not-supported'
 }
 
 quoted-strings() {

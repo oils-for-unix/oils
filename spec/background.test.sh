@@ -21,15 +21,21 @@ wait -n
 ## OK dash status: 2
 ## OK mksh status: 1
 
-#### wait with invalid job ID
+#### wait with jobspec syntax %nonexistent
 wait %nonexistent
 ## status: 127
 ## OK dash status: 2
 
 #### wait with invalid PID
-wait %nonexistent
+wait 12345678
 ## status: 127
-## OK dash status: 2
+
+#### wait with invalid arg
+wait zzz
+## status: 2
+## OK bash status: 1
+# mksh confuses a syntax error with 'command not found'!
+## BUG mksh status: 127
 
 #### Builtin in background
 echo async &

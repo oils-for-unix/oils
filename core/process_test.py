@@ -28,7 +28,7 @@ _WAITER = process.Waiter()
 _ARENA = test_lib.MakeArena('process_test.py')
 _ERRFMT = ui.ErrorFormatter(_ARENA)
 _FD_STATE = process.FdState(_ERRFMT)
-_EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ARENA,
+_EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ERRFMT,
                                     util.NullDebugFile())
 
 
@@ -88,9 +88,8 @@ class ProcessTest(unittest.TestCase):
     print('FDS AFTER', os.listdir('/dev/fd'))
 
   def testPipeline(self):
-    arena = test_lib.MakeArena('testPipeline')
-    node = _CommandNode('uniq -c', arena)
-    ex = test_lib.InitExecutor(arena=arena)
+    node = _CommandNode('uniq -c', _ARENA)
+    ex = test_lib.InitExecutor(arena=_ARENA, ext_prog=_EXT_PROG)
     print('BEFORE', os.listdir('/dev/fd'))
 
     p = process.Pipeline()
@@ -106,31 +105,30 @@ class ProcessTest(unittest.TestCase):
     print('AFTER', os.listdir('/dev/fd'))
 
   def testPipeline2(self):
-    arena = test_lib.MakeArena('testPipeline')
-    ex = test_lib.InitExecutor(arena=arena)
+    ex = test_lib.InitExecutor(arena=_ARENA, ext_prog=_EXT_PROG)
 
     Banner('ls | cut -d . -f 1 | head')
     p = process.Pipeline()
     p.Add(_ExtProc(['ls']))
     p.Add(_ExtProc(['cut', '-d', '.', '-f', '1']))
 
-    node = _CommandNode('head', arena)
+    node = _CommandNode('head', _ARENA)
     p.AddLast((ex, node))
 
     fd_state = process.FdState(_ERRFMT)
     print(p.Run(_WAITER, _FD_STATE))
 
     # Simulating subshell for each command
-    node1 = _CommandNode('ls', arena)
-    node2 = _CommandNode('head', arena)
-    node3 = _CommandNode('sort --reverse', arena)
+    node1 = _CommandNode('ls', _ARENA)
+    node2 = _CommandNode('head', _ARENA)
+    node3 = _CommandNode('sort --reverse', _ARENA)
 
     p = process.Pipeline()
     p.Add(Process(process.SubProgramThunk(ex, node1)))
     p.Add(Process(process.SubProgramThunk(ex, node2)))
     p.Add(Process(process.SubProgramThunk(ex, node3)))
 
-    last_thunk = (ex, _CommandNode('cat', arena))
+    last_thunk = (ex, _CommandNode('cat', _ARENA))
     p.AddLast(last_thunk)
 
     print(p.Run(_WAITER, _FD_STATE))
