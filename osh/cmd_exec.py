@@ -152,7 +152,6 @@ class Executor(object):
 
     self.traps = {}  # signal/hook name -> callable
     self.nodes_to_run = []  # list of nodes, appended to by signal handlers
-    self.dir_stack = state.DirStack()
 
     self.targets = []  # make syntax enters stuff here -- Target()
                        # metaprogramming or regular target syntax
@@ -333,18 +332,6 @@ class Executor(object):
 
     elif builtin_id == builtin_e.SHIFT:
       status = builtin.Shift(argv, self.mem)
-
-    elif builtin_id == builtin_e.CD:
-      status = builtin.Cd(arg_vec, self.mem, self.dir_stack)
-
-    elif builtin_id == builtin_e.PUSHD:
-      status = builtin.Pushd(arg_vec, self.mem, self.dir_stack)
-
-    elif builtin_id == builtin_e.POPD:
-      status = builtin.Popd(arg_vec, self.mem, self.dir_stack)
-
-    elif builtin_id == builtin_e.DIRS:
-      status = builtin.Dirs(arg_vec, self.mem.GetVar('HOME'), self.dir_stack)
 
     elif builtin_id == builtin_e.UNSET:
       status = builtin.Unset(arg_vec, self.mem, self.funcs)

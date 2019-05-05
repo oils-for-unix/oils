@@ -593,69 +593,74 @@ def Shift(argv, mem):
 
   return mem.Shift(n)
 
+
 CD_SPEC = _Register('cd')
 CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')
 
-def Cd(arg_vec, mem, dir_stack):
-  argv = arg_vec.strs[1:]
-  arg, i = CD_SPEC.Parse(argv)
-  # TODO: error checking, etc.
-  # TODO: ensure that if multiple flags are provided, the *last* one overrides
-  # the others.
+class Cd(object):
+  def __init__(self, mem, dir_stack):
+    self.mem = mem
+    self.dir_stack = dir_stack
 
-  try:
-    dest_dir = argv[i]
-  except IndexError:
-    val = mem.GetVar('HOME')
-    if val.tag == value_e.Undef:
-      util.error("$HOME isn't defined")
+  def __call__(self, arg_vec):
+    arg, i = CD_SPEC.ParseVec(arg_vec)
+    # TODO: error checking, etc.
+    # TODO: ensure that if multiple flags are provided, the *last* one overrides
+    # the others.
+
+    try:
+      dest_dir = arg_vec.strs[i]
+    except IndexError:
+      val = self.mem.GetVar('HOME')
+      if val.tag == value_e.Undef:
+        util.error("$HOME isn't defined")
+        return 1
+      elif val.tag == value_e.Str:
+        dest_dir = val.s
+      elif val.tag == value_e.StrArray:
+        util.error("$HOME shouldn't be an array.")
+        return 1
+
+    if dest_dir == '-':
+      old = self.mem.GetVar('OLDPWD', scope_e.GlobalOnly)
+      if old.tag == value_e.Undef:
+        log('OLDPWD not set')
+        return 1
+      elif old.tag == value_e.Str:
+        dest_dir = old.s
+        print(dest_dir)  # Shells print the directory
+      elif old.tag == value_e.StrArray:
+        # TODO: Prevent the user from setting OLDPWD to array (or maybe they
+        # can't even set it at all.)
+        raise AssertionError('Invalid OLDPWD')
+
+    pwd = self.mem.GetVar('PWD')
+    assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
+
+    # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
+    # call posix.getcwd() because it can raise OSError if the directory was
+    # removed (ENOENT.)
+    abspath = os_path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
+    if arg.P:
+      # -P means resolve symbolic links, then process '..'
+      real_dest_dir = libc.realpath(abspath)
+    else:
+      # -L means process '..' first.  This just does string manipulation.  (But
+      # realpath afterward isn't correct?)
+      real_dest_dir = os_path.normpath(abspath)
+
+    try:
+      posix.chdir(real_dest_dir)
+    except OSError as e:
+      # TODO: Add line number, etc.
+      util.error("cd %r: %s", real_dest_dir, posix.strerror(e.errno))
       return 1
-    elif val.tag == value_e.Str:
-      dest_dir = val.s
-    elif val.tag == value_e.StrArray:
-      util.error("$HOME shouldn't be an array.")
-      return 1
 
-  if dest_dir == '-':
-    old = mem.GetVar('OLDPWD', scope_e.GlobalOnly)
-    if old.tag == value_e.Undef:
-      log('OLDPWD not set')
-      return 1
-    elif old.tag == value_e.Str:
-      dest_dir = old.s
-      print(dest_dir)  # Shells print the directory
-    elif old.tag == value_e.StrArray:
-      # TODO: Prevent the user from setting OLDPWD to array (or maybe they
-      # can't even set it at all.)
-      raise AssertionError('Invalid OLDPWD')
-
-  pwd = mem.GetVar('PWD')
-  assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
-
-  # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
-  # call posix.getcwd() because it can raise OSError if the directory was
-  # removed (ENOENT.)
-  abspath = os_path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
-  if arg.P:
-    # -P means resolve symbolic links, then process '..'
-    real_dest_dir = libc.realpath(abspath)
-  else:
-    # -L means process '..' first.  This just does string manipulation.  (But
-    # realpath afterward isn't correct?)
-    real_dest_dir = os_path.normpath(abspath)
-
-  try:
-    posix.chdir(real_dest_dir)
-  except OSError as e:
-    # TODO: Add line number, etc.
-    util.error("cd %r: %s", real_dest_dir, posix.strerror(e.errno))
-    return 1
-
-  state.ExportGlobalString(mem, 'OLDPWD', pwd.s)
-  state.ExportGlobalString(mem, 'PWD', real_dest_dir)
-  dir_stack.Reset()  # for pushd/popd/dirs
-  return 0
+    state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
+    state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
+    self.dir_stack.Reset()  # for pushd/popd/dirs
+    return 0
 
 
 WITH_LINE_NUMBERS = 1
@@ -680,46 +685,56 @@ def _PrintDirStack(dir_stack, style, home_dir):
   sys.stdout.flush()
 
 
-def Pushd(arg_vec, mem, dir_stack):
-  argv = arg_vec.strs[1:]
-  num_args = len(argv)
-  if num_args == 0:
-    # TODO: It's suppose to try anotehr dir before doing this?
-    util.error('pushd: no other directory')
-    return 1
-  elif num_args > 1:
-    raise args.UsageError('got too many arguments')
+class Pushd(object):
+  def __init__(self, mem, dir_stack):
+    self.mem = mem
+    self.dir_stack = dir_stack
 
-  dest_dir = os_path.abspath(argv[0])
-  try:
-    posix.chdir(dest_dir)
-  except OSError as e:
-    util.error("pushd: %r: %s", dest_dir, posix.strerror(e.errno))
-    return 1
+  def __call__(self, arg_vec):
+    # TODO: Use arg_r.NumArgs() and arg_r.Read()?
 
-  dir_stack.Push(dest_dir)
-  _PrintDirStack(dir_stack, SINGLE_LINE, mem.GetVar('HOME'))
-  state.SetGlobalString(mem, 'PWD', dest_dir)
-  return 0
+    argv = arg_vec.strs[1:]
+    num_args = len(argv)
+    if num_args == 0:
+      # TODO: It's suppose to try another dir before doing this?
+      util.error('pushd: no other directory')
+      return 1
+    elif num_args > 1:
+      raise args.UsageError('got too many arguments')
+
+    dest_dir = os_path.abspath(argv[0])
+    try:
+      posix.chdir(dest_dir)
+    except OSError as e:
+      util.error("pushd: %r: %s", dest_dir, posix.strerror(e.errno))
+      return 1
+
+    self.dir_stack.Push(dest_dir)
+    _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
+    state.SetGlobalString(self.mem, 'PWD', dest_dir)
+    return 0
 
 
-def Popd(arg_vec, mem, dir_stack):
-  argv = arg_vec.strs[1:]
+class Popd(object):
+  def __init__(self, mem, dir_stack):
+    self.mem = mem
+    self.dir_stack = dir_stack
 
-  dest_dir = dir_stack.Pop()
-  if dest_dir is None:
-    util.error('popd: directory stack is empty')
-    return 1
+  def __call__(self, arg_vec):
+    dest_dir = self.dir_stack.Pop()
+    if dest_dir is None:
+      util.error('popd: directory stack is empty')
+      return 1
 
-  try:
-    posix.chdir(dest_dir)
-  except OSError as e:
-    util.error("popd: %r: %s", dest_dir, posix.strerror(e.errno))
-    return 1
+    try:
+      posix.chdir(dest_dir)
+    except OSError as e:
+      util.error("popd: %r: %s", dest_dir, posix.strerror(e.errno))
+      return 1
 
-  _PrintDirStack(dir_stack, SINGLE_LINE, mem.GetVar('HOME'))
-  state.SetGlobalString(mem, 'PWD', dest_dir)
-  return 0
+    _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
+    state.SetGlobalString(self.mem, 'PWD', dest_dir)
+    return 0
 
 
 DIRS_SPEC = _Register('dirs')
@@ -729,23 +744,30 @@ DIRS_SPEC.ShortFlag('-p')
 DIRS_SPEC.ShortFlag('-v')
 
 
-def Dirs(arg_vec, home_dir, dir_stack):
-  arg, i = DIRS_SPEC.ParseVec(arg_vec)
-  style = SINGLE_LINE
+class Dirs(object):
+  def __init__(self, mem, dir_stack):
+    self.mem = mem
+    self.dir_stack = dir_stack
 
-  # Following bash order of flag priority
-  if arg.l:
-    home_dir = None
-  if arg.c:
-    dir_stack.Reset()
+  def __call__(self, arg_vec):
+    home_dir = self.mem.GetVar('HOME')
+
+    arg, i = DIRS_SPEC.ParseVec(arg_vec)
+    style = SINGLE_LINE
+
+    # Following bash order of flag priority
+    if arg.l:
+      home_dir = None  # disable pretty ~ 
+    if arg.c:
+      self.dir_stack.Reset()
+      return 0
+    elif arg.v:
+      style = WITH_LINE_NUMBERS
+    elif arg.p:
+      style = WITHOUT_LINE_NUMBERS
+
+    _PrintDirStack(self.dir_stack, style, home_dir)
     return 0
-  elif arg.v:
-    style = WITH_LINE_NUMBERS
-  elif arg.p:
-    style = WITHOUT_LINE_NUMBERS
-
-  _PrintDirStack(dir_stack, style, home_dir)
-  return 0
 
 
 PWD_SPEC = _Register('pwd')

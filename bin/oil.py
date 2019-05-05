@@ -393,7 +393,14 @@ def ShellMain(lang, argv0, argv, login_shell):
   comp_ui_state = comp_ui.State()
   prompt_state = comp_ui.PromptState()
 
+  dir_stack = state.DirStack()
+
   builtins = {  # Lookup
+      builtin_e.CD: builtin.Cd(mem, dir_stack),
+      builtin_e.PUSHD: builtin.Pushd(mem, dir_stack),
+      builtin_e.POPD: builtin.Popd(mem, dir_stack),
+      builtin_e.DIRS: builtin.Dirs(mem, dir_stack),
+
       builtin_e.HISTORY: builtin.History(line_input),
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
