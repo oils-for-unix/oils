@@ -205,16 +205,6 @@ class ErrorFormatter(object):
     else:
       return const.NO_INTEGER
 
-  # A simple variable used for SimpleCommand, Assignment, ((, [[, etc.  This is
-  # a fallback for e_die().
-  def SetLastLocation(self, spid):
-    # type: (int) -> None
-    self.last_spid = spid
-
-  def LastLocation(self):
-    # type: () -> int
-    return self.last_spid
-
   def Print(self, msg, *args, **kwargs):
     # type: (str, *Any, **Any) -> None
     """Print a message with a code quotation based on the given span_id."""

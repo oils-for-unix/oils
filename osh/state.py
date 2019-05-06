@@ -571,9 +571,12 @@ class Mem(object):
   def SetCurrentSpanId(self, span_id):
     """Set the current source location, for BASH_SOURCE, BASH_LINENO, LINENO,
     etc.
+
+    It's also set on SimpleCommand, Assignment, ((, [[, etc. and used as
+    a fallback when e_die() didn't set any location information.
     """
     if span_id == const.NO_INTEGER:
-      log('Warning: SimpleCommand or Assignment has no location information')
+      log('Warning: span_id undefined in SetCurrentSpanId')
       return
 
     span = self.arena.GetLineSpan(span_id)
@@ -583,6 +586,10 @@ class Mem(object):
     self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
 
     self.current_spid = span_id
+
+  def CurrentSpanId(self):
+    # type: () -> int
+    return self.current_spid
 
   #
   # Status Variable Stack (for isolating $PS1 and $PS4)

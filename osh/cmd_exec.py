@@ -671,7 +671,6 @@ class Executor(object):
         span_id = word.LeftMostSpanForWord(first_word)
 
       self.mem.SetCurrentSpanId(span_id)
-      self.errfmt.SetLastLocation(span_id)  # hack
 
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up logging.  For example, 'echo hi
@@ -756,7 +755,6 @@ class Executor(object):
     elif node.tag == command_e.DBracket:
       span_id = node.spids[0]
       self.mem.SetCurrentSpanId(span_id)
-      self.errfmt.SetLastLocation(span_id)
 
       check_errexit = True
       result = self.bool_ev.Eval(node.expr)
@@ -765,7 +763,6 @@ class Executor(object):
     elif node.tag == command_e.DParen:
       span_id = node.spids[0]
       self.mem.SetCurrentSpanId(span_id)
-      self.errfmt.SetLastLocation(span_id)
 
       check_errexit = True
       i = self.arith_ev.Eval(node.child)
@@ -774,10 +771,8 @@ class Executor(object):
     elif node.tag == command_e.Assignment:
       span_id = self._SpanIdForAssignment(node)
       self.mem.SetCurrentSpanId(span_id)
-      self.errfmt.SetLastLocation(span_id)
 
       # TODO: Also do dynamic assignment here
-
       flags = word_compile.ParseAssignFlags(node.flags)
 
       if node.keyword == Id.Assign_Local:
@@ -1244,7 +1239,7 @@ class Executor(object):
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
 
       if not e.HasLocation():  # Last resort!
-        e.span_id = self.errfmt.LastLocation()
+        e.span_id = self.mem.CurrentSpanId()
 
       ui.PrettyPrintError(e, self.arena, prefix='fatal: ')
       is_fatal = True
