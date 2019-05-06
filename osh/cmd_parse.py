@@ -1560,8 +1560,12 @@ class CommandParser(object):
     """
     negated = False
 
+    # For blaming failures
+    pipeline_spid = const.NO_INTEGER
+
     self._Peek()
     if self.c_id == Id.KW_Bang:
+      pipeline_spid = word.LeftMostSpanForWord(self.cur_word)
       negated = True
       self._Next()
 
@@ -1574,6 +1578,7 @@ class CommandParser(object):
     if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
       if negated:
         node = command.Pipeline(children, negated)
+        node.spids.append(pipeline_spid)
         return node
       else:
         return child
@@ -1586,12 +1591,14 @@ class CommandParser(object):
     pipe_index += 1
 
     while True:
-      self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
+      # Set it to the first | if it isn't already set.
+      if pipeline_spid == const.NO_INTEGER:
+        pipeline_spid = word.LeftMostSpanForWord(self.cur_word)
 
+      self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
       self._NewlineOk()
 
       child = self.ParseCommand()
-      assert child is not None
       children.append(child)
 
       self._Peek()
@@ -1602,8 +1609,8 @@ class CommandParser(object):
         stderr_indices.append(pipe_index)
       pipe_index += 1
 
-    node = command.Pipeline(children, negated)
-    node.stderr_indices = stderr_indices
+    node = command.Pipeline(children, negated, stderr_indices)
+    node.spids.append(pipeline_spid)
     return node
 
   def ParseAndOr(self):

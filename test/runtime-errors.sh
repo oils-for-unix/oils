@@ -148,6 +148,9 @@ pipefail_while() {
 }
 
 # Multiple errors from multiple processes
+# TODO: These errors get interleaved and messed up.  Maybe we should always
+# print a single line from pipeline processes?  We should set their
+# ErrorFormatter?
 pipefail_multiple() {
   set -o errexit -o pipefail
   { echo 'four'; sh -c 'exit 4'; } |
@@ -504,8 +507,9 @@ all() {
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command errexit_usage_error errexit_subshell errexit_alias \
-    pipefail pipefail_group pipefail_subshell pipefail_func pipefail_while \
-    pipefail_multiple core_process osh_state \
+    pipefail pipefail_group pipefail_subshell pipefail_func \
+    pipefail_while pipefail_multiple \
+    core_process osh_state \
     nonexistent nounset bad_var_ref \
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \

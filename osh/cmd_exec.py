@@ -390,7 +390,7 @@ class Executor(object):
     """Raises ErrExitFailure, maybe with location info attached."""
     if self.exec_opts.ErrExit() and status != 0:
       # NOTE: Sometimes location info is duplicated, like on UsageError, or a
-      # bad redirect.
+      # bad redirect.  Also, pipelines can fail twice.
 
       if node.tag == command_e.SimpleCommand:
         reason = 'command in '
@@ -401,6 +401,10 @@ class Executor(object):
       elif node.tag == command_e.Subshell:
         reason = 'subshell invoked from '
         span_id = node.spids[0]
+      elif node.tag == command_e.Pipeline:
+        # The whole pipeline can fail separately
+        reason = 'pipeline invoked from '
+        span_id = node.spids[0]  # only one spid
       else:
         # Does this ever happen?  command, assignment, subshell are all the
         # non-compound ones?
