@@ -255,7 +255,7 @@ def Printf(argv, mem):
   """
   arg, args_consumed = PRINTF_SPEC.Parse(argv)
   if args_consumed >= len(argv):
-    util.error('printf: need format string')
+    ui.Stderr('osh error: printf: need format string')
     return 1
   fmt = argv[args_consumed]
   vals = argv[args_consumed + 1:]
@@ -303,7 +303,7 @@ def Printf(argv, mem):
         num = int(val)
       except ValueError:
         # TODO should print message but carry on as if 0
-        util.error('printf: %s: invalid number', val)
+        ui.Stderr('osh error: printf: %s: invalid number', val)
         return 1
       parts.append(str(num))
     else:

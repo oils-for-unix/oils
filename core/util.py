@@ -157,15 +157,6 @@ def warn(msg, *args):
   print('osh warning: ' + msg, file=sys.stderr)
 
 
-# NOTE: This should say 'oilc error' or 'oil error', instead of 'osh error' in
-# some cases.
-def error(msg, *args):
-  # type: (str, *Any) -> None
-  if args:
-    msg = msg % args
-  print('osh error: ' + msg, file=sys.stderr)
-
-
 def BackslashEscape(s, meta_chars):
   # type: (str, str) -> str
   """Escaped certain characters with backslashes.

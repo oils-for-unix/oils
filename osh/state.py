@@ -245,8 +245,8 @@ class ExecOpts(object):
       if self.readline:
         self.readline.parse_and_bind("set editing-mode " + opt_name);
       else:
-        # TODO error message copied from 'cmd_exec.py'; refactor?
-        util.error('Oil was not built with readline/completion.')
+        e_die("Can't set option %r because Oil wasn't built with the readline "
+              "library.", opt_name)
     else:
       # strict-control-flow -> strict_control_flow
       opt_name = opt_name.replace('-', '_')
