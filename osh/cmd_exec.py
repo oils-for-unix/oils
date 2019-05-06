@@ -406,12 +406,10 @@ class Executor(object):
         reason = 'pipeline invoked from '
         span_id = node.spids[0]  # only one spid
       else:
-        # Does this ever happen?  command, assignment, subshell are all the
-        # non-compound ones?
+        # NOTE: The fallback of CurrentSpanId() fills this in.
         reason = ''
         span_id = const.NO_INTEGER
 
-      # No location info
       raise util.ErrExitFailure(
           'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
           span_id=span_id, status=status)

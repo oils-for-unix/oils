@@ -350,7 +350,7 @@ class Wait(object):
   def __call__(self, arg_vec):
     arg, arg_index = WAIT_SPEC.ParseVec(arg_vec)
     job_ids = arg_vec.strs[arg_index:]
-    spids = arg_vec.spids[arg_index:]
+    arg_count = len(arg_vec.strs)
 
     if arg.n:
       # wait -n returns the exit status of the process.  But how do you know
@@ -361,7 +361,7 @@ class Wait(object):
       else:
         return 127  # nothing to wait for
 
-    if not job_ids:
+    if arg_index == arg_count:  # no arguments
       #log('wait all')
 
       # TODO: get all background jobs from JobState?
@@ -380,7 +380,10 @@ class Wait(object):
     # Returns the exit code of the last one on the COMMAND LINE, not the exit
     # code of last one to FINISH.
     status = 1  # error
-    for job_id, span_id in zip(job_ids, spids):
+    for i in xrange(arg_index, arg_count):
+      job_id = arg_vec.strs[i]
+      span_id = arg_vec.spids[i]
+
       # The % syntax is sort of like ! history sub syntax, with various queries.
       # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
       if job_id.startswith('%'):
