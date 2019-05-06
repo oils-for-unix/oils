@@ -81,6 +81,12 @@ errexit_subshell() {
   ( echo subshell; exit 42; )
 }
 
+errexit_dbracket() {
+  set -o errexit
+  [[ -n '' ]]
+  echo 'SHOULD NOT GET HERE'
+}
+
 shopt -s expand_aliases
 # Why can't this be in the function?
 alias foo='echo hi; ls '
@@ -91,6 +97,14 @@ errexit_alias() {
   type foo
 
   foo /nonexistent
+}
+
+_func() { set +o errexit; echo _func; }
+
+cannot_disable_errexit() {
+  set -o errexit
+
+  ! _func
 }
 
 pipefail() {
@@ -506,11 +520,12 @@ all() {
 
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
-    failed_command errexit_usage_error errexit_subshell errexit_alias \
+    failed_command errexit_usage_error errexit_subshell errexit_dbracket \
+    errexit_alias cannot_disable_errexit \
     pipefail pipefail_group pipefail_subshell pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \
-    nonexistent nounset bad_var_ref \
+    nounset bad_var_ref \
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \

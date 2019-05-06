@@ -58,6 +58,11 @@ class _ErrorWithLocation(Exception):
     if kwargs:
       raise AssertionError('Invalid keyword args %s' % kwargs)
 
+  def HasLocation(self):
+    # type: () -> bool
+    return bool(self.span_id != const.NO_INTEGER or
+                self.token or self.part or self.word)
+
   def __repr__(self):
     # type: () -> str
     return '<%s %s %r %r %s>' % (

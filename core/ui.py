@@ -181,17 +181,22 @@ class ErrorFormatter(object):
   def __init__(self, arena):
     # type: (Arena) -> None
     self.arena = arena
+    self.last_spid = const.NO_INTEGER  # last resort for location info
     self.spid_stack = []  # type: List[int]
 
-  # A location is typically a "context" like the line of the current builtin.
+  # A stack used for the current builtin.  A fallback for UsageError.
+  # TODO: Should we have PushBuiltinName?  Then we can have a consistent style
+  # like foo.sh:1: (compopt) Not currently executing.
 
   def PushLocation(self, spid):
     # type: (int) -> None
+    #log('%sPushLocation(%d)', '  ' * len(self.spid_stack), spid)
     self.spid_stack.append(spid)
 
   def PopLocation(self):
     # type: () -> None
     self.spid_stack.pop()
+    #log('%sPopLocation -> %d', '  ' * len(self.spid_stack), self.last_spid)
 
   def CurrentLocation(self):
     # type: () -> int
@@ -200,9 +205,15 @@ class ErrorFormatter(object):
     else:
       return const.NO_INTEGER
 
-  # TODO: Should we have PushBuiltinName?
-  # Then we can have a consistent style like foo.sh:1: (compopt) Not currently
-  # executing.
+  # A simple variable used for SimpleCommand, Assignment, ((, [[, etc.  This is
+  # a fallback for e_die().
+  def SetLastLocation(self, spid):
+    # type: (int) -> None
+    self.last_spid = spid
+
+  def LastLocation(self):
+    # type: () -> int
+    return self.last_spid
 
   def Print(self, msg, *args, **kwargs):
     # type: (str, *Any, **Any) -> None

@@ -1471,13 +1471,19 @@ class CommandParser(object):
     Pass the underlying word parser off to the boolean expression parser.
     """
     maybe_error_word = self.cur_word
+    left_spid = word.LeftMostSpanForWord(self.cur_word)
     # TODO: Test interactive.  Without closing ]], you should get > prompt
     # (PS2)
 
     self._Next()  # skip [[
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
-    return command.DBracket(bnode)
+    right_spid = word.LeftMostSpanForWord(self.cur_word)
+
+    node = command.DBracket(bnode)
+    node.spids.append(left_spid)
+    node.spids.append(right_spid)
+    return node
 
   def ParseDParen(self):
     # type: () -> command__DParen
@@ -1489,10 +1495,8 @@ class CommandParser(object):
     assert anode is not None
 
     node = command.DParen(anode)
-
     node.spids.append(left_spid)
     node.spids.append(right_spid)
-
     return node
 
   def ParseCommand(self):
