@@ -132,6 +132,7 @@ class _WordEvaluator(object):
     self.splitter = exec_deps.splitter
     self.prompt_ev = exec_deps.prompt_ev
     self.arith_ev = exec_deps.arith_ev
+    self.errfmt = exec_deps.errfmt
 
     self.globber = glob_.Globber(exec_opts)
     # TODO: Consolidate into exec_deps.  Executor also instantiates one.
@@ -356,7 +357,7 @@ class _WordEvaluator(object):
           else:
             # NOTE: Doesn't make the command exit with 1; it just returns a
             # length of -1.
-            util.warn(e.UserErrorString())
+            self.errfmt.PrettyPrintError(e, prefix='warning: ')
             return value.Str('-1')
 
       elif val.tag == value_e.StrArray:
@@ -741,13 +742,8 @@ class _WordEvaluator(object):
             if self.exec_opts.strict_word_eval:
               raise
             else:
-              # TODO:
-              # - We don't see the error location here, but we see it when set
-              #   -o strict-word-eval.
-              # - Doesn't make the command exit with 1.  It just sets the word
-              #   to empty string.
-              util.warn(e.UserErrorString())
-              substr = ''  # error condition
+              self.errfmt.PrettyPrintError(e, prefix='warning: ')
+              substr = ''  # non-fatal
           else:
             substr = s[byte_begin : byte_end]
 

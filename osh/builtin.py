@@ -1432,7 +1432,8 @@ class Trap(object):
     # Register a hook.
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
-        util.warn("*** The %r hook isn't yet implemented in OSH ***", sig_spec)
+        ui.Stderr("osh warning: The %r hook isn't yet implemented ",
+                  sig_spec)
       self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run)
       return 0
 
@@ -1470,8 +1471,7 @@ def Umask(argv):
       new_mask = int(a, 8)
     except ValueError:
       # NOTE: This happens if we have '8' or '9' in the input too.
-
-      util.warn('*** umask with symbolic input not implemented ***')
+      ui.Stderr("osh warning: umask with symbolic input isn't implemented")
       return 1
     else:
       posix.umask(new_mask)

@@ -19,7 +19,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
-from core import util
+from core import ui
 from core.util import log
 from pylib import os_
 
@@ -889,7 +889,7 @@ class Waiter(object):
     # though we didn't start it.  We can't have any knowledge of such
     # processes, so print a warning.
     if pid not in self.callbacks:
-      util.warn("PID %d stopped, but osh didn't start it", pid)
+      ui.Stderr("osh: PID %d stopped, but osh didn't start it", pid)
       return True  # caller should keep waiting
 
     callback = self.callbacks.pop(pid)

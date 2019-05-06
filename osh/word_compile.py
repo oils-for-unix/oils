@@ -45,9 +45,12 @@ def EvalCStringToken(id_, value):
     return value
 
   elif id_ == Id.Char_BadBackslash:
-    if 1:  # TODO: error in strict mode
+    if 1:
+      # TODO:
+      # - make this an error in strict mode
+      # - improve the error message
       # Either \A or trailing \ (A is not a valid backslash escape)
-      util.warn('Invalid backslash escape')
+      util.warn('Invalid backslash escape %r in C-style string')
     return value
 
   elif id_ == Id.Char_OneChar:

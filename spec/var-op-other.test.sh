@@ -109,10 +109,16 @@ echo ${foo:1:3}
 s=$(echo -e "\xFF")bcdef
 echo -${s:1:3}-
 ## status: 0
-## stdout-json: "--\n"
-## stderr-json: "osh warning: Invalid start of UTF-8 character\n"
+## STDOUT:
+--
+## END
+## STDERR:
+[??? no location ???] warning: Invalid start of UTF-8 character
+## END
 ## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh stdout-json: "-bcd-\n"
+## BUG bash/mksh/zsh STDOUT:
+-bcd-
+## END
 ## BUG bash/mksh/zsh stderr-json: ""
 
 

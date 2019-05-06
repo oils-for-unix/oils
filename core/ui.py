@@ -153,11 +153,6 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f)
 
 
-def PrintWarning(msg, span_id, arena, f=sys.stderr):
-  # type: (str, int, Arena, IO[str]) -> None
-  _PrintWithOptionalSpanId('warning: ', msg, span_id, arena, f)
-
-
 def PrintUsageError(e, arg0, arena, f=sys.stderr):
   # type: (Any, str, Arena, IO[str]) -> None
   # Any -> UsageError after args.py passes
@@ -209,8 +204,9 @@ class ErrorFormatter(object):
     # type: (str, *Any, **Any) -> None
     """Print a message with a code quotation based on the given span_id."""
     span_id = kwargs.pop('span_id', self.CurrentLocation())
+    prefix = kwargs.pop('prefix', '')
     msg = msg % args
-    _PrintWithOptionalSpanId('', msg, span_id, self.arena, sys.stderr)
+    _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena, sys.stderr)
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None

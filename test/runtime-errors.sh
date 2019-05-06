@@ -500,6 +500,47 @@ builtin_wait() {
 }
 
 #
+# Strict options (see spec/strict-options.sh)
+#
+
+strict_word_eval_warnings() {
+  # Warnings when 'set +o strict-word-eval' is OFF
+
+  echo slice start negative
+  s='abc'
+  echo -${s: -2}-
+
+  echo slice length negative
+  s='abc'
+  echo -${s: 1: -2}-
+
+  # TODO: These need span IDs.
+  # - invalid utf-8 and also invalid backslash escape
+
+  echo slice bad utf-8
+  s=$(echo -e "\xFF")bcdef
+  echo -${s:1:3}-
+
+  echo length bad utf-8
+  echo ${#s}
+}
+
+strict_arith_warnings() {
+  local x='xx'
+  echo $(( x + 1 ))
+
+  # TODO: OSH is more lenient here actually
+  local y='-yy-'
+  echo $(( y + 1 ))
+
+  echo 'done'
+}
+
+strict_control_flow_warnings() {
+  break
+}
+
+#
 # TEST DRIVER
 #
 
@@ -532,7 +573,9 @@ all() {
     array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
     builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
     builtin_popd builtin_unset builtin_alias_unalias builtin_help \
-    builtin_trap builtin_getopts builtin_wait; do
+    builtin_trap builtin_getopts builtin_wait \
+    strict_word_eval_warnings strict_arith_warnings \
+    strict_control_flow_warnings; do
     _run_test $t
   done
 }

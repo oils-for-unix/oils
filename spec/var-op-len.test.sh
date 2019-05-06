@@ -44,12 +44,12 @@ done
 7
 ## END
 ## STDERR:
-osh warning: Incomplete UTF-8 character
-osh warning: Incomplete UTF-8 character
-osh warning: Incomplete UTF-8 character
-osh warning: Incomplete UTF-8 character
-osh warning: Incomplete UTF-8 character
-osh warning: Incomplete UTF-8 character
+[??? no location ???] warning: Incomplete UTF-8 character
+[??? no location ???] warning: Incomplete UTF-8 character
+[??? no location ???] warning: Incomplete UTF-8 character
+[??? no location ???] warning: Incomplete UTF-8 character
+[??? no location ???] warning: Incomplete UTF-8 character
+[??? no location ???] warning: Incomplete UTF-8 character
 ## END
 # zsh behavior actually matches bash!
 ## BUG bash/zsh stderr-json: ""
@@ -110,21 +110,21 @@ done
 -1
 ## END
 ## STDERR:
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid UTF-8 continuation byte
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid UTF-8 continuation byte
-osh warning: Invalid UTF-8 continuation byte
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid UTF-8 continuation byte
-osh warning: Invalid UTF-8 continuation byte
-osh warning: Invalid UTF-8 continuation byte
-osh warning: Invalid start of UTF-8 character
-osh warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid UTF-8 continuation byte
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid UTF-8 continuation byte
+[??? no location ???] warning: Invalid UTF-8 continuation byte
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid UTF-8 continuation byte
+[??? no location ???] warning: Invalid UTF-8 continuation byte
+[??? no location ???] warning: Invalid UTF-8 continuation byte
+[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Invalid start of UTF-8 character
 ## END
 ## BUG bash/zsh stderr-json: ""
 ## BUG bash/zsh STDOUT:

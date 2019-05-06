@@ -29,7 +29,6 @@ from asdl import const
 from core.meta import BOOL_ARG_TYPES
 from core import util
 from core.util import e_die
-from core import ui
 from osh import state
 from osh import word
 
@@ -110,11 +109,11 @@ class _ExprEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, exec_opts, word_ev, arena):
+  def __init__(self, mem, exec_opts, word_ev, errfmt):
     self.mem = mem
     self.exec_opts = exec_opts
     self.word_ev = word_ev  # type = word_eval.WordEvaluator
-    self.arena = arena
+    self.errfmt = errfmt
 
   def _StringToIntegerOrError(self, s, blame_word=None,
                               span_id=const.NO_INTEGER):
@@ -129,8 +128,7 @@ class _ExprEvaluator(object):
         raise
       else:
         i = 0
-        # TODO: Need the arena for printing this error?
-        #ui.PrettyPrintError(e)
+        # TODO: location info
         util.warn(e.UserErrorString())
     return i
 
@@ -268,7 +266,7 @@ class ArithEvaluator(_ExprEvaluator):
       else:
         i = 0
         span_id = word.SpanIdFromError(e)
-        ui.PrintWarning(e.UserErrorString(), span_id, self.arena)
+        self.errfmt.PrettyPrintError(e, prefix='warning: ')
     return i
 
   def _LookupVar(self, name):

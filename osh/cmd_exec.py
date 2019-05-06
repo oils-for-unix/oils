@@ -892,7 +892,7 @@ class Executor(object):
       else:
         # Only print warnings, never fatal.
         # Bash oddly only exits 1 for 'return', but no other shell does.
-        ui.PrintWarning(msg, tok.span_id, self.arena)
+        self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
         status = 0
 
     # The only difference between these two is that CommandList has no

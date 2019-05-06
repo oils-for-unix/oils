@@ -446,11 +446,11 @@ def ShellMain(lang, argv0, argv, login_shell):
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
   exec_deps.word_ev = word_ev
 
-  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
+  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.arith_ev = arith_ev
   word_ev.arith_ev = arith_ev  # Another circular dependency
 
-  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.bool_ev = bool_ev
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
