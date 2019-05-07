@@ -476,7 +476,7 @@ class FlagsAndOptions(object):
     return out
 
 
-# TODO: Rename ShBuiltinFlags
+# TODO: Rename OshBuiltinFlags
 class BuiltinFlags(object):
   """Parser for sh builtins, like 'read' or 'echo' (which has a special case).
 
@@ -551,11 +551,13 @@ class BuiltinFlags(object):
 
     return out, arg_r.i
 
-  def _Parse(self, arg_r):
+  def ParseVec(self, arg_vec):
+    arg_r = Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # move past the builtin name
+
     # NOTE about -:
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
-
     out = _Attributes(self.attr_names)
 
     while not arg_r.AtEnd():
@@ -590,17 +592,6 @@ class BuiltinFlags(object):
         break
 
     return out, arg_r.i
-
-  def Parse(self, argv):
-    """TODO: Remove this old API."""
-    arg_r = Reader(argv)
-    return self._Parse(arg_r)
-
-  def ParseVec(self, arg_vec):
-    arg_r = Reader(arg_vec.strs, spids=arg_vec.spids)
-    arg_r.Next()  # move past the builtin name
-    arg, i = self._Parse(arg_r)
-    return arg, i  # adjust
 
 
 # - A flag can start with one or two dashes, but not three

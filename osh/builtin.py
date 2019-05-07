@@ -1090,12 +1090,12 @@ class Command(object):
     self.mem = mem
 
   def __call__(self, arg_vec, fork_external):
-    argv = arg_vec.strs[1:]
-    arg, i = COMMAND_SPEC.Parse(argv)
+    arg, arg_index = COMMAND_SPEC.ParseVec(arg_vec)
     if arg.v:
       path_val = self.mem.GetVar('PATH')
       status = 0
-      for kind, arg in _ResolveNames(argv[i:], self.funcs, self.aliases,
+      names = arg_vec.strs[arg_index:]
+      for kind, arg in _ResolveNames(names, self.funcs, self.aliases,
                                      path_val):
         if kind is None:
           status = 1  # nothing printed, but we fail
@@ -1104,7 +1104,7 @@ class Command(object):
           print(arg)
       return status
 
-    arg_vec2 = arg_vector(argv, arg_vec.spids[1:])  # shift by one
+    arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])  # shift by one
     # 'command ls' suppresses function lookup.
     return self.ex.RunSimpleCommand(arg_vec2, fork_external, funcs=False)
 
@@ -1667,7 +1667,6 @@ class History(object):
     self.readline_mod = readline_mod
 
   def __call__(self, arg_vec):
-    argv = arg_vec.strs[1:]
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.
@@ -1675,14 +1674,13 @@ class History(object):
     if not readline_mod:
       raise args.UsageError("OSH wasn't compiled with the readline module.")
 
-    #arg_r = args.Reader(argv)
-    arg, i = HISTORY_SPEC.Parse(argv)
+    arg, arg_index = HISTORY_SPEC.ParseVec(arg_vec)
 
     # Returns 0 items in non-interactive mode?
     num_items = readline_mod.get_current_history_length()
     #log('len = %d', num_items)
 
-    rest = argv[i:]
+    rest = arg_vec.strs[arg_index:]
     if len(rest) == 0:
       start_index = 1
     elif len(rest) == 1:

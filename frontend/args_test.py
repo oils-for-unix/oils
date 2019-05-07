@@ -5,7 +5,15 @@ args_test.py: Tests for args.py
 
 import unittest
 
+from _devbuild.gen.runtime_asdl import arg_vector
+from asdl import const
 from frontend import args  # module under test
+
+
+def _MakeArgVector(argv):
+  argv = [''] + argv  # add dummy since arg_vec includes argv[0]
+  # no location info
+  return arg_vector(argv, [const.NO_INTEGER] * len(argv))
 
 
 class ArgsTest(unittest.TestCase):
@@ -105,19 +113,20 @@ class ArgsTest(unittest.TestCase):
     s.ShortFlag('-n')
     s.ShortFlag('-d', args.Str)  # delimiter
 
-    arg, i = s.Parse(['-f', 'foo', 'bar'])
-    self.assertEqual(1, i)
+    arg, i = s.ParseVec(_MakeArgVector(['-f', 'foo', 'bar']))
+    self.assertEqual(1, i-1)
     self.assertEqual(True, arg.f)
     self.assertEqual(None, arg.n)
 
-    self.assertRaises(args.UsageError, s.Parse, ['-f', '-d'])
+    self.assertRaises(
+        args.UsageError, s.ParseVec, _MakeArgVector(['-f', '-d']))
 
-    arg, i = s.Parse(['-d', ' ', 'foo'])
-    self.assertEqual(2, i)
+    arg, i = s.ParseVec(_MakeArgVector(['-d', ' ', 'foo']))
+    self.assertEqual(2, i-1)
     self.assertEqual(' ', arg.d)
 
-    arg, i = s.Parse(['-d,',  'foo'])
-    self.assertEqual(1, i)
+    arg, i = s.ParseVec(_MakeArgVector(['-d,',  'foo']))
+    self.assertEqual(1, i-1)
     self.assertEqual(',', arg.d)
 
   def testReadBuiltinFlags(self):
@@ -126,37 +135,37 @@ class ArgsTest(unittest.TestCase):
     s.ShortFlag('-t', args.Float)  # timeout
     s.ShortFlag('-p', args.Str)  # prompt string
 
-    arg, i = s.Parse(['-r', 'foo'])
+    arg, i = s.ParseVec(_MakeArgVector(['-r', 'foo']))
     self.assertEqual(True, arg.r)
-    self.assertEqual(1, i)
+    self.assertEqual(1, i-1)
 
-    arg, i = s.Parse(['-p', '>'])
+    arg, i = s.ParseVec(_MakeArgVector(['-p', '>']))
     self.assertEqual(None, arg.r)
     self.assertEqual('>', arg.p)
-    self.assertEqual(2, i)
+    self.assertEqual(2, i-1)
 
-    arg, i = s.Parse(['-rp', '>'])
+    arg, i = s.ParseVec(_MakeArgVector(['-rp', '>']))
     self.assertEqual(True, arg.r)
     self.assertEqual('>', arg.p)
-    self.assertEqual(2, i)
+    self.assertEqual(2, i-1)
 
     # REALLY ANNOYING: The first r is a flag, the second R is the prompt!  Only
     # works in that order
     # Does that mean anything with an arity consumes the rest?
     # read -p line
     #
-    arg, i = s.Parse(['-rpr'])
+    arg, i = s.ParseVec(_MakeArgVector(['-rpr']))
     self.assertEqual(True, arg.r)
     self.assertEqual('r', arg.p)
-    self.assertEqual(1, i)
+    self.assertEqual(1, i-1)
 
     argv = ['-t1.5', '>']
-    arg, i = s.Parse(argv)
+    arg, i = s.ParseVec(_MakeArgVector(argv))
     self.assertEqual(1.5, arg.t)
-    self.assertEqual(1, i)
+    self.assertEqual(1, i-1)
 
     # Invalid flag 'z'
-    self.assertRaises(args.UsageError, s.Parse, ['-rz'])
+    self.assertRaises(args.UsageError, s.ParseVec, _MakeArgVector(['-rz']))
 
   def testParseLikeEcho(self):
     s = args.BuiltinFlags()
