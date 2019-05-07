@@ -126,6 +126,35 @@ Instead, use `[\[]` and `[\]]`.
 
 TODO: Explanation.
 
+(8) Evaluation model of backticks
+
+TODO: It's largly compatible but differs in case #25 of spec/command-sub.
+
+(9) Evaluation model of aliases
+
+TODO: It's largly compatible but differs with things like:
+
+    alias left='{'; left echo hi; }
+
+    (cases #33-#34 in spec/alias)
+
+or
+
+    alias a=
+    a (( var = 0 ))
+
+(10) break/continue/return are control flow keywords, not builtins
+
+This means that they are not "dynamic":
+
+    a=break
+    while true; do
+      $a
+    done
+
+(This could be changed, but I wanted control flow to be analyzable ...)
+
+
 ## set builtin
 
 ### errexit

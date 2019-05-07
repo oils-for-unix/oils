@@ -499,3 +499,16 @@ a foo bar
 ## stdout: ['foo', 'bar']
 ## BUG dash status: 1
 ## BUG dash stdout-json: ""
+
+#### alias with keywords
+# from issue #299
+shopt -s expand_aliases
+alias a=
+
+# both of these fail to parse in OSH
+
+a (( var = 0 ))
+#a case x in x) true;; esac
+
+echo done
+## stdout: done
