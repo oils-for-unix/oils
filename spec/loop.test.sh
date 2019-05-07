@@ -74,6 +74,24 @@ done
 ## status: 0
 ## stdout-json: "a\nb\n"
 
+#### dynamic control flow (KNOWN INCOMPATIBILITY)
+# hm would it be saner to make FATAL builtins called break/continue/etc.?
+# On the other hand, this spits out errors loudly.
+b=break
+for i in 1 2 3; do
+  echo $i
+  $b
+done
+## STDOUT:
+1
+## END
+## OK osh STDOUT:
+1
+2
+3
+## END
+## OK osh status: 127
+
 #### while in while condition
 # This is a consequence of the grammar
 while while true; do echo cond; break; done
