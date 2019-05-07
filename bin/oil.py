@@ -403,7 +403,11 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   dir_stack = state.DirStack()
 
+  declare_typeset = builtin.DeclareTypeset(mem, funcs)
+
   builtins = {  # Lookup
+      builtin_e.ECHO: builtin.Echo,
+
       builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
       builtin_e.POPD: builtin.Popd(mem, dir_stack, errfmt),
@@ -425,11 +429,17 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.SHOPT: builtin.Shopt(exec_opts),
       builtin_e.UNSET: builtin.Unset(mem, funcs, errfmt),
 
+      builtin_e.SHIFT: builtin.Shift(mem),
+      builtin_e.EXPORT: builtin.Export(mem),
+      builtin_e.DECLARE: declare_typeset,
+      builtin_e.TYPESET: declare_typeset,
+
       builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
 
       builtin_e.HELP: builtin.Help(loader, errfmt),
 
+      builtin_e.TYPE: builtin.Type(funcs, aliases, mem),
       builtin_e.REPR: builtin.Repr(mem, errfmt),
 
       builtin_e.GETOPTS: builtin.GetOpts(mem, errfmt),
@@ -437,6 +447,11 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.WAIT: builtin.Wait(exec_deps.waiter, exec_deps.job_state, mem,
                                    errfmt),
       builtin_e.JOBS: builtin.Jobs(exec_deps.job_state),
+      builtin_e.UMASK: builtin.Umask,
+
+      builtin_e.COLON: lambda arg_vec: 0,  # a "special" builtin 
+      builtin_e.TRUE: lambda arg_vec: 0,
+      builtin_e.FALSE: lambda arg_vec: 1,
   }
 
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,

@@ -269,17 +269,12 @@ class Executor(object):
     # Shift one arg.  Builtins don't need to know their own name.
     argv = arg_vec.strs[1:]
 
-    #
-    # TODO: Convert everything to this new style
-    #
-
+    # Most builtins dispatch with a dictionary
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
       status = builtin_func(arg_vec)
 
-    #
-    # Handled in this function:
-    #
+    # Some builtins "belong" to the executor.
 
     elif builtin_id == builtin_e.EXEC:
       status = self._Exec(arg_vec)  # may never return
@@ -292,15 +287,6 @@ class Executor(object):
 
     elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
       status = self._Source(arg_vec)
-
-    elif builtin_id == builtin_e.COLON:  # special builtin like 'true'
-      status = 0
-
-    elif builtin_id == builtin_e.TRUE:
-      status = 0
-
-    elif builtin_id == builtin_e.FALSE:
-      status = 1
 
     elif builtin_id == builtin_e.COMMAND:
       # TODO: How do we hadnle fork_external?  It doesn't fit the common
@@ -324,33 +310,6 @@ class Executor(object):
 
       arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
       status = self._RunBuiltinAndRaise(to_run, arg_vec2, fork_external)
-
-    #
-    # Handled elsewhere
-    #
-
-    elif builtin_id == builtin_e.ECHO:
-      status = builtin.Echo(argv)
-
-    elif builtin_id == builtin_e.PRINTF:
-      status = builtin.Printf(argv, self.mem)
-
-    elif builtin_id == builtin_e.SHIFT:
-      status = builtin.Shift(argv, self.mem)
-
-    elif builtin_id == builtin_e.EXPORT:
-      status = builtin.Export(argv, self.mem)
-
-    elif builtin_id == builtin_e.UMASK:
-      status = builtin.Umask(argv)
-
-    elif builtin_id == builtin_e.TYPE:
-      path = self.mem.GetVar('PATH')
-      status = builtin.Type(arg_vec, self.funcs, self.aliases, path)
-
-    elif builtin_id in (builtin_e.DECLARE, builtin_e.TYPESET):
-      # These are synonyms
-      status = builtin.DeclareTypeset(argv, self.mem, self.funcs)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)

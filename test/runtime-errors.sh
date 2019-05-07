@@ -327,15 +327,37 @@ undef_arith() {
 }
 
 undef_arith2() {
-  # undefined cell
   a=()
+
+  # undefined cell: This is kind of what happens in awk / "wok"
   (( a[42]++ ))
+  (( a[42]++ ))
+  spec/bin/argv.py "${a[@]}"
 }
 
 array_arith() {
   a=(1 2)
   (( a++ ))  # doesn't make sense
   echo "${a[@]}"
+}
+
+undef_assoc_array() {
+  declare -A A
+  A['foo']=bar
+  echo "${A['foo']}"
+
+  # TODO: none of this is implemented!
+  if false; then
+    A['spam']+=1
+    A['spam']+=1
+
+    spec/bin/argv.py "${A[@]}"
+
+    (( A['spam']++ ))
+    (( A['spam']++ ))
+
+    spec/bin/argv.py "${A[@]}"
+  fi
 }
 
 patsub_bad_glob() {
@@ -570,6 +592,7 @@ all() {
     core_process osh_state \
     nounset bad_var_ref \
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
+    undef_assoc_array \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
     array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \

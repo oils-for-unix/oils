@@ -137,6 +137,9 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   readline = None  # simulate not having it
   builtins = {  # Lookup
+      builtin_e.ECHO: builtin.Echo,
+      builtin_e.SHIFT: builtin.Shift(mem),
+
       builtin_e.HISTORY: builtin.History(readline),
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),

@@ -181,7 +181,7 @@ ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
 
 
-def Echo(argv):
+def Echo(arg_vec):
   """echo builtin.
 
   set -o sane-echo could do the following:
@@ -196,6 +196,7 @@ def Echo(argv):
   # - 'echo -c' should print '-c', not fail
   # - echo '---' should print ---, not fail
 
+  argv = arg_vec.strs[1:]
   arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
   argv = argv[arg_index:]
   if arg.e:
@@ -593,20 +594,24 @@ class Read(object):
     return status
 
 
-def Shift(argv, mem):
-  num_args = len(argv)
-  if num_args == 0:
-    n = 1
-  elif num_args == 1:
-    try:
-      n = int(argv[0])
-    except ValueError:
-      # TODO: arg_vec
-      raise args.UsageError("Invalid shift argument %r" % argv[0])
-  else:
-    raise args.UsageError('got too many arguments')
+class Shift(object):
+  def __init__(self, mem):
+    self.mem = mem
 
-  return mem.Shift(n)
+  def __call__(self, arg_vec):
+    num_args = len(arg_vec.strs) - 1
+    if num_args == 0:
+      n = 1
+    elif num_args == 1:
+      arg = arg_vec.strs[1]
+      try:
+        n = int(arg)
+      except ValueError:
+        raise args.UsageError("Invalid shift argument %r" % arg)
+    else:
+      raise args.UsageError('got too many arguments')
+
+    return self.mem.Shift(n)
 
 
 CD_SPEC = _Register('cd')
@@ -823,35 +828,40 @@ EXPORT_SPEC = _Register('export')
 EXPORT_SPEC.ShortFlag('-n')
 
 
-def Export(argv, mem):
-  arg, i = EXPORT_SPEC.Parse(argv)
-  if arg.n:
-    for name in argv[i:]:
-      if not match.IsValidVarName(name):
-        # TODO: span_id=
-        raise args.UsageError('export: Invalid variable name %r' % name)
+class Export(object):
+  def __init__(self, mem):
+    self.mem = mem
 
-      # NOTE: bash doesn't care if it wasn't found.
-      mem.ClearFlag(name, var_flags_e.Exported, scope_e.Dynamic)
-  else:
-    for arg in argv[i:]:
-      parts = arg.split('=', 1)
-      if len(parts) == 1:
-        name = parts[0]
-        val = None  # Creates an empty variable
-      else:
-        name, s = parts
-        val = value.Str(s)
+  def __call__(self, arg_vec):
+    arg, arg_index = EXPORT_SPEC.ParseVec(arg_vec)
+    positional = arg_vec.strs[arg_index:]
+    if arg.n:
+      for name in positional:
+        if not match.IsValidVarName(name):
+          # TODO: span_id=
+          raise args.UsageError('export: Invalid variable name %r' % name)
 
-      if not match.IsValidVarName(name):
-        # TODO: span_id=
-        raise args.UsageError('export: Invalid variable name %r' % name)
+        # NOTE: bash doesn't care if it wasn't found.
+        self.mem.ClearFlag(name, var_flags_e.Exported, scope_e.Dynamic)
+    else:
+      for arg in positional:
+        parts = arg.split('=', 1)
+        if len(parts) == 1:
+          name = parts[0]
+          val = None  # Creates an empty variable
+        else:
+          name, s = parts
+          val = value.Str(s)
 
-      #log('%s %s', name, val)
-      mem.SetVar(
-          lvalue.LhsName(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
+        if not match.IsValidVarName(name):
+          # TODO: span_id=
+          raise args.UsageError('export: Invalid variable name %r' % name)
 
-  return 0
+        #log('%s %s', name, val)
+        self.mem.SetVar(
+            lvalue.LhsName(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
+
+    return 0
 
 
 def AddOptionsToArgSpec(spec):
@@ -1106,45 +1116,56 @@ TYPE_SPEC.ShortFlag('-p')
 TYPE_SPEC.ShortFlag('-P')
 
 
-def Type(arg_vec, funcs, aliases, path_val):
-  arg, i = TYPE_SPEC.ParseVec(arg_vec)
+class Type(object):
+  def __init__(self, funcs, aliases, mem):
+    self.funcs = funcs
+    self.aliases = aliases
+    self.mem = mem
 
-  status = 0
-  if arg.f:
-    funcs = []
-  for kind, name in _ResolveNames(arg_vec.strs[i:], funcs, aliases, path_val):
-    if kind is None:
-      status = 1  # nothing printed, but we fail
+  def __call__(self, arg_vec):
+    arg, i = TYPE_SPEC.ParseVec(arg_vec)
+    path_val = self.mem.GetVar('PATH')
+
+    if arg.f:
+      funcs = []
     else:
-      if arg.t:
-        print(kind)
-      elif arg.p:
-        if kind == 'file':
-          print(name)
-      elif arg.P:
-        if kind == 'file':
-          print(name)
-        else:
-          kind, path = _ResolveFile(name, _ParsePath(path_val))
-          if kind is None:
-            status = 1
-          else:
-            print(path)
+      funcs = self.funcs
 
+    status = 0
+    r = _ResolveNames(arg_vec.strs[i:], funcs, self.aliases, path_val)
+    for kind, name in r:
+      if kind is None:
+        status = 1  # nothing printed, but we fail
       else:
-        # Alpine's abuild relies on this text because busybox ash doesn't have
-        # -t!
-        # ash prints "is a shell function" instead of "is a function", but the
-        # regex accouts for that.
-        print('%s is a %s' % (name, kind))
-        if kind == 'function':
-          # bash prints the function body, busybox ash doesn't.
-          pass
+        if arg.t:
+          print(kind)
+        elif arg.p:
+          if kind == 'file':
+            print(name)
+        elif arg.P:
+          if kind == 'file':
+            print(name)
+          else:
+            kind, path = _ResolveFile(name, _ParsePath(path_val))
+            if kind is None:
+              status = 1
+            else:
+              print(path)
 
-  # REQUIRED because of Python's buffering.  A command sub may give the wrong
-  # result otherwise.
-  sys.stdout.flush()
-  return status
+        else:
+          # Alpine's abuild relies on this text because busybox ash doesn't have
+          # -t!
+          # ash prints "is a shell function" instead of "is a function", but the
+          # regex accouts for that.
+          print('%s is a %s' % (name, kind))
+          if kind == 'function':
+            # bash prints the function body, busybox ash doesn't.
+            pass
+
+    # REQUIRED because of Python's buffering.  A command sub may give the wrong
+    # result otherwise.
+    sys.stdout.flush()
+    return status
 
 
 DECLARE_SPEC = _Register('declare')
@@ -1153,50 +1174,53 @@ DECLARE_SPEC.ShortFlag('-F')
 DECLARE_SPEC.ShortFlag('-p')
 
 
-def DeclareTypeset(argv, mem, funcs):
-  arg, i = DECLARE_SPEC.Parse(argv)
+class DeclareTypeset(object):
+  def __init__(self, mem, funcs):
+    self.mem = mem
+    self.funcs = funcs
 
-  status = 0
+  def __call__(self, arg_vec):
+    arg, arg_index = DECLARE_SPEC.ParseVec(arg_vec)
+    names = arg_vec.strs[arg_index:]
 
-  # NOTE: in bash, -f shows the function body, while -F shows the name.  In
-  # osh, they're identical and behave like -F.
+    status = 0
 
-  if arg.f or arg.F:  # Lookup and print functions.
-    names = argv[i:]
-    if names:
-      for name in names:
-        if name in funcs:
-          print(name)
-          # TODO: Could print LST, or render LST.  Bash does this.  'trap' too.
-          #print(funcs[name])
-        else:
-          status = 1
-    elif arg.F:
-      for func_name in sorted(funcs):
-        print('declare -f %s' % (func_name))
+    # NOTE: in bash, -f shows the function body, while -F shows the name.  In
+    # osh, they're identical and behave like -F.
+
+    if arg.f or arg.F:  # Lookup and print functions.
+      if names:
+        for name in names:
+          if name in self.funcs:
+            print(name)
+            # TODO: Could print LST, or render LST.  Bash does this.  'trap' too.
+            #print(funcs[name])
+          else:
+            status = 1
+      elif arg.F:
+        for func_name in sorted(self.funcs):
+          print('declare -f %s' % (func_name))
+      else:
+        raise NotImplementedError('declare/typeset -f without args')
+
+    elif arg.p:  # Lookup and print variables.
+      if names:
+        for name in names:
+          val = self.mem.GetVar(name)
+          if val.tag != value_e.Undef:
+            # TODO: Print flags.
+
+            print(name)
+          else:
+            status = 1
+      else:
+        raise NotImplementedError('declare/typeset -p without args')
+
     else:
-      raise NotImplementedError('declare/typeset -f without args')
+      raise NotImplementedError
 
-  elif arg.p:  # Lookup and print variables.
-
-    names = argv[i:]
-    if names:
-      for name in names:
-        val = mem.GetVar(name)
-        if val.tag != value_e.Undef:
-          # TODO: Print flags.
-
-          print(name)
-        else:
-          status = 1
-    else:
-      raise NotImplementedError('declare/typeset -p without args')
-
-  else:
-    raise NotImplementedError
-
-  sys.stdout.flush()
-  return status
+    sys.stdout.flush()
+    return status
 
 
 ALIAS_SPEC = _Register('alias')
@@ -1455,7 +1479,8 @@ class Trap(object):
   # Then hit Ctrl-C.
 
 
-def Umask(argv):
+def Umask(arg_vec):
+  argv = arg_vec.strs[1:]
   if len(argv) == 0:
     # umask() has a dumb API: you can't get it without modifying it first!
     # NOTE: dash disables interrupts around the two umask() calls, but that
