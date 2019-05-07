@@ -327,7 +327,8 @@ class Executor(object):
       # span_id.
       if e.span_id == const.NO_INTEGER:
         e.span_id = self.errfmt.CurrentLocation()
-      ui.PrintUsageError(e, arg0, self.arena)
+      # e.g. 'type' doesn't accept flag '-x'
+      self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
     finally:
       self.errfmt.PopLocation()
@@ -1343,8 +1344,8 @@ class Executor(object):
   def _RunFunc(self, func_node, argv):
     """Used to run SimpleCommand and to run registered completion hooks."""
     # These are redirects at DEFINITION SITE.  You can also have redirects at
-    # the CALLER.  For example:
-
+    # the CALL SITE.  For example:
+    #
     # f() { echo hi; } 1>&2
     # f 2>&1
 
@@ -1388,11 +1389,6 @@ class Executor(object):
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena)
       status = e.exit_status if e.exit_status is not None else 1
-
-    # TODO: Catch IOError here too.  See demo/cannot-fork.sh.
-    # We also need to catch ParseError, in case we 'source' a file with a
-    # syntax error?
-
     except _ControlFlow as e:
       # shouldn't be able to exit the shell from a completion hook!
       # TODO: Avoid overwriting the prompt!
@@ -1400,4 +1396,5 @@ class Executor(object):
                         span_id=e.token.span_id)
 
       status = 1
+    # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
     return status

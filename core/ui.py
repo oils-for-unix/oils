@@ -153,17 +153,6 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f)
 
 
-def PrintUsageError(e, arg0, arena, f=sys.stderr):
-  # type: (Any, str, Arena, IO[str]) -> None
-  # Any -> UsageError after args.py passes
-  """
-  Args:
-    arg0: e.g. 'type', because the error messages are formatted like
-      'type' does not accept flag '-z'
-  """
-  _PrintWithOptionalSpanId('%r ' % arg0, e.msg, e.span_id, arena, f)
-
-
 # TODO:
 # - ColorErrorFormatter
 # - BareErrorFormatter?  Could just display the foo.sh:37:8: and not quotation.
