@@ -150,13 +150,6 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-def warn(msg, *args):
-  # type: (str, *Any) -> None
-  if args:
-    msg = msg % args
-  print('osh warning: ' + msg, file=sys.stderr)
-
-
 def BackslashEscape(s, meta_chars):
   # type: (str, str) -> str
   """Escaped certain characters with backslashes.

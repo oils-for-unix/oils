@@ -412,6 +412,10 @@ args-parse-main() {
   # TODO: opy/opy_main.py uses OilFlags, which has Go-like boolean syntax
 }
 
+strict_backslash_warnings() {
+  echo $'\A'
+  echo -e '\A'
+}
 
 cases-in-strings() {
   set +o errexit

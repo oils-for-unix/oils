@@ -127,9 +127,8 @@ class _ExprEvaluator(object):
       if self.exec_opts.strict_arith:
         raise
       else:
+        self.errfmt.PrettyPrintError(e, prefix='warning: ')
         i = 0
-        # TODO: location info
-        util.warn(e.UserErrorString())
     return i
 
 

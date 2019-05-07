@@ -533,6 +533,8 @@ strict_arith_warnings() {
   local y='-yy-'
   echo $(( y + 1 ))
 
+  [[ $y -eq 0 ]]
+
   echo 'done'
 }
 

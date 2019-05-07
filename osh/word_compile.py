@@ -8,7 +8,7 @@ doesn't depend on any values at runtime.
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import var_flags_e
-from core import util
+from core import ui
 from osh import string_ops
 
 
@@ -48,9 +48,9 @@ def EvalCStringToken(id_, value):
     if 1:
       # TODO:
       # - make this an error in strict mode
-      # - improve the error message
+      # - improve the error message.  We don't have a span_id!
       # Either \A or trailing \ (A is not a valid backslash escape)
-      util.warn('Invalid backslash escape %r in C-style string')
+      ui.Stderr('warning: Invalid backslash escape in C-style string')
     return value
 
   elif id_ == Id.Char_OneChar:
