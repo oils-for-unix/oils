@@ -15,23 +15,25 @@ ParseWholeFile() -- needs to check the here doc.
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import command_t, command
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import (
+    command_t, command,
+    parse_result__EmptyLine, parse_result__Eof, parse_result__Node
+)
 from core import ui
 from core import util
 #from core.util import log
-from osh import word
 
 from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
+  from core.ui import ErrorFormatter
   from osh.cmd_parse import CommandParser
   # commented out so --strict doesn't follow all
   #from osh.cmd_exec import Executor
 
 
-def Interactive(opts, ex, c_parser, display, arena):
-  # type: (Any, Any, CommandParser, Any, Arena) -> Any
+def Interactive(opts, ex, c_parser, display, errfmt):
+  # type: (Any, Any, CommandParser, Any, ErrorFormatter) -> Any
   status = 0
   done = False
   while not done:
@@ -42,18 +44,20 @@ def Interactive(opts, ex, c_parser, display, arena):
 
     while True:  # ONLY EXECUTES ONCE
       try:
-        w = c_parser.Peek()  # may raise HistoryError or ParseError
-
-        c_id = word.CommandId(w)
-        if c_id == Id.Op_Newline:  # print PS1 again, not PS2
+        # may raise HistoryError or ParseError
+        result = c_parser.ParseInteractiveLine()
+        if isinstance(result, parse_result__EmptyLine):
           display.EraseLines()
-          break  # next command
-        elif c_id == Id.Eof_Real:  # InteractiveLineReader prints ^D
+          break  # quit shell
+        elif isinstance(result, parse_result__Eof):
           display.EraseLines()
           done = True
           break  # quit shell
+        elif isinstance(result, parse_result__Node):
+          node = result.cmd
+        else:
+          raise AssertionError
 
-        node = c_parser.ParseLogicalLine()  # ditto, HistoryError or ParseError
       except util.HistoryError as e:  # e.g. expansion failed
         # Where this happens:
         # for i in 1 2 3; do
@@ -64,7 +68,7 @@ def Interactive(opts, ex, c_parser, display, arena):
         break
       except util.ParseError as e:
         display.EraseLines()
-        ui.PrettyPrintError(e, arena)
+        errfmt.PrettyPrintError(e)
         # NOTE: This should set the status interactively!  Bash does this.
         status = 2
         break
@@ -77,13 +81,12 @@ def Interactive(opts, ex, c_parser, display, arena):
         # Unless we SET ex.last_status, scripts see it, so don't bother now.
         break
 
-      if node is None:  # EOF
-        display.EraseLines()
-        # NOTE: We don't care about pending here docs in the interative case.
-        done = True
-        break
-
       display.EraseLines()  # Clear candidates right before executing
+
+      # to debug the slightly different interactive prasing
+      if ex.exec_opts.noexec:
+        ui.PrintAst([node], opts)
+        break
 
       is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
       status = ex.LastStatus()

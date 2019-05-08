@@ -126,3 +126,15 @@ echo 1 ;; echo 2
 ## status: 2
 ## N-I dash status: 0
 ## OK mksh status: 1
+
+#### interactive parse error (regression)
+flags=''
+case $SH in
+  *bash|*osh)
+    flags='--rcfile /dev/null'
+    ;;
+esac  
+$SH $flags -i -c 'var=)'
+
+## status: 2
+## OK bash/mksh status: 1

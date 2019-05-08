@@ -302,4 +302,7 @@ module syntax
   | Pipeline(oil_cmd* children, bool negated)
   | AndOr(id* ops, oil_cmd* children)
   | CommandList(oil_cmd* children)
+
+  -- core/main_loop.py
+  parse_result = EmptyLine | Eof | Node(command cmd)
 }

@@ -194,7 +194,8 @@ class ErrorFormatter(object):
     """Print a message with a code quotation based on the given span_id."""
     span_id = kwargs.pop('span_id', self.CurrentLocation())
     prefix = kwargs.pop('prefix', '')
-    msg = msg % args
+    if args:
+      msg = msg % args
     _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena, sys.stderr)
 
   def PrettyPrintError(self, err, prefix=''):

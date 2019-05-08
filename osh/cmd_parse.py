@@ -29,6 +29,7 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e,
 
     source,
+    parse_result, parse_result_t,
 )
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: rename
 from _devbuild.gen import syntax_asdl  # line_span
@@ -439,12 +440,6 @@ class CommandParser(object):
     # type: (lex_mode_t) -> None
     """Helper method."""
     self.next_lex_mode = lex_mode
-
-  def Peek(self):
-    # type: () -> word_t
-    """Public method for REPL."""
-    self._Peek()
-    return self.cur_word
 
   def _Peek(self):
     # type: () -> None
@@ -1554,6 +1549,7 @@ class CommandParser(object):
     if self.c_kind == Kind.Eof:
       p_die("Unexpected EOF while parsing command", word=self.cur_word)
 
+    # NOTE: This only happens in batch mode in the second turn of the loop!
     # e.g. )
     p_die("Invalid word while parsing command", word=self.cur_word)
 
@@ -1685,9 +1681,10 @@ class CommandParser(object):
        b. If there's a sync_op, process it.  Then look for a newline and
           return.  Otherwise, parse another AndOr.
     """
-    # NOTE: This is slightly different than END_LIST in _ParseCommandTerm, and
-    # unfortunately somewhat ad hoc.
-    END_LIST = (Id.Op_Newline, Id.Eof_Real, Id.Op_RParen)
+    # This END_LIST is slightly different than END_LIST in _ParseCommandTerm.
+    # I don't think we should add anything else here; otherwise it will be
+    # ignored at the end of ParseInteractiveLine(), e.g. leading to bug #301.
+    END_LIST = (Id.Op_Newline, Id.Eof_Real)
 
     children = []
     done = False
@@ -1695,6 +1692,7 @@ class CommandParser(object):
       child = self.ParseAndOr()
 
       self._Peek()
+      #log('c_id after ParseAndOr = %s', self.c_id)
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
         w = cast(word__TokenWord, self.cur_word)  # for MyPy
         child = command.Sentence(child, w.token)
@@ -1810,7 +1808,6 @@ class CommandParser(object):
     """
     self._NewlineOk()
     node = self._ParseCommandTerm()
-    assert node is not None
     return node
 
   def ParseLogicalLine(self):
@@ -1822,18 +1819,31 @@ class CommandParser(object):
 
     Raises:
       ParseError
-
-    We want to be able catch ParseError all in one place.
     """
     self._NewlineOk()
     self._Peek()
-
     if self.c_id == Id.Eof_Real:
-      return None
+      return None  # main loop checks for here docs
+    node = self._ParseCommandLine()
+    return node
+
+  def ParseInteractiveLine(self):
+    # type: () -> parse_result_t
+    """Parse a single line for Interactive main_loop.
+
+    Different from ParseLogicalLine because newlines are handled differently.
+
+    Raises:
+      ParseError
+    """
+    self._Peek()
+    if self.c_id == Id.Op_Newline:
+      return parse_result.EmptyLine()
+    if self.c_id == Id.Eof_Real:
+      return parse_result.Eof()
 
     node = self._ParseCommandLine()
-    assert node is not None
-    return node
+    return parse_result.Node(node)
 
   def ParseCommandSub(self):
     # type: () -> command_t

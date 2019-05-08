@@ -602,7 +602,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
 
     line_reader.Reset()  # After sourcing startup file, render $PS1
-    return main_loop.Interactive(opts, ex, c_parser, display, arena)
+
+    return main_loop.Interactive(opts, ex, c_parser, display, errfmt)
 
   nodes_out = [] if exec_opts.noexec else None
 
