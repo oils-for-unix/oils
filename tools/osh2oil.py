@@ -8,8 +8,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e
 from _devbuild.gen.syntax_asdl import (
-    command_e, redir_e, word_e, word_part_e, arith_expr_e, bool_expr_e,
-    lhs_expr_e
+    command_e, redir_e, word_e, word_part_e, lhs_expr_e
 )
 from asdl import const
 from core import util

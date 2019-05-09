@@ -7,7 +7,7 @@ deps.py
 import sys
 
 from _devbuild.gen.runtime_asdl import builtin_e
-from _devbuild.gen.syntax_asdl import command, command_e
+from _devbuild.gen.syntax_asdl import command
 from asdl import runtime
 from core.util import log
 from osh import builtin

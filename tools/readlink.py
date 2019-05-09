@@ -13,7 +13,7 @@ SPEC.ShortFlag('-f')
 
 
 def main(argv):
-  arg, i = SPEC.Parse(argv)
+  arg, i = SPEC.ParseArgv(argv)
   if not arg.f:
     ui.Stderr("readlink: -f must be passed")
     return 1
