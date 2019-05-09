@@ -30,5 +30,6 @@ static PyMethodDef posix_methods[] = {
   {"WIFSIGNALED", posix_WIFSIGNALED, METH_VARARGS},
   {"WIFEXITED", posix_WIFEXITED, METH_VARARGS},
   {"WEXITSTATUS", posix_WEXITSTATUS, METH_VARARGS},
+  {"WTERMSIG", posix_WTERMSIG, METH_VARARGS},
   {0},
 };

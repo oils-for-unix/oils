@@ -122,10 +122,14 @@ extract-methods() {
 
 source build/common.sh  # $PY27
 
-# TODO: Use PREPROC_FLAGS from build/compile.sh.
 preprocess() {
-  # What about stuff in pyconfig.h?
-  gcc -I $PY27 -E -D OVM_MAIN -
+  # TODO: Use PREPROC_FLAGS from build/compile.sh.
+  # - What about stuff in pyconfig.h?
+  # - Hack to define WTERMSIG!  We really need to include <sys/wait.h>, but
+  # that causes parse errors in cpython_defs.py.  Really we should get rid of
+  # this whole hack!
+  # - WIFSTOPPED is another likely thing...
+  gcc -I $PY27 -E -D OVM_MAIN -D WTERMSIG -
 }
 
 readonly TARBALL_ROOT=$(echo _tmp/oil-tar-test/oil-*)
@@ -144,6 +148,7 @@ cpython-defs() {
 filter-methods() {
   local tmp=$BASE_DIR
   mkdir -p $tmp
+
   extract-all-methods > $tmp/extracted.txt
   cat $tmp/extracted.txt | preprocess > $tmp/preprocessed.txt
 
