@@ -15,11 +15,11 @@
 #   build/doc.sh update-src-versions  (optional)
 #   $0 build-and-test  (builds tarball, runs unit/gold/osh2oil suites, etc.)
 #     prereq: build/codegen.sh {download,install}-re2c
-#     Without OSH_HIJACK_SHEBANG: test/gold.sh run-for-release
+#     test/gold.sh run-for-release (outside OSH_HIJACK_SHEBANG)
 #   $0 metrics  # this can catch bugs
-#   test/wild.sh all (3-4 minutes on fast machine.  Do it outside OSH.)
+#   test/wild.sh all (3-4 minutes on fast machine, outside OSH_HIJACK_SHEBANG)
 #   $0 test-opy (2 minutes on fast machine)
-#   $0 spec-all  # tests 3 OSH binaries
+#   $0 spec-all  # tests 2 OSH binaries
 #   benchmarks:
 #     Sync up oilshell/benchmark-data repo.
 #     flanders: $0 benchmark-build, then $0 benchmark-run
@@ -28,7 +28,7 @@
 #       - benchmarks/osh-runtime.sh {download,extract}
 #       - benchmarks/ovm-build.sh {download,extract-oil,extract-other}
 #       - build/codegen.sh {download,extract}-clang (for OVM build benchmarks)
-#     lisa: $0 benchmark-run, then $0 benchmark-run-on-1-machine (oheap)
+#     lisa: $0 benchmark-run
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 deploy-tar  # needed to checksum

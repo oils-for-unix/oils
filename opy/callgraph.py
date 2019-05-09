@@ -99,7 +99,7 @@ def _GetAttr(module, name):
   try:
     val = getattr(module, name)
   except AttributeError:
-    log('%r not on %r', name, module)
+    #log('%r not on %r', name, module)
     # This could raise too
     val = getattr(__builtin__, name)
   return val
