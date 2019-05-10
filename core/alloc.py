@@ -34,6 +34,7 @@ class Arena(object):
     self.line_vals = []  # type: List[str]
     self.line_nums = []  # type: List[int]
     self.line_srcs = []  # type: List[source_t]
+    self.line_num_strs = {}  # type: Dict[int, str]  # an INTERN table
 
     # indexed by span_id
     self.spans = []  # type: List[line_span]
@@ -69,6 +70,21 @@ class Arena(object):
   def GetLineNumber(self, line_id):
     # type: (int) -> int
     return self.line_nums[line_id]
+
+  # NOTE: Not used yet.  Using an intern table seems like a good idea, but I
+  # haven't measured the performance benefit of it.  The case I'm thinking of
+  # is where you have a tight loop and every line uses $LINENO.  It's better to
+  # create 3 objects rather than 3*N objects, where N is the number of loop
+  # iterations.
+  def GetLineNumStr(self, line_id):
+    # type: (int) -> str
+    line_num = self.line_nums[line_id]
+    try:
+      return self.line_num_strs[line_num]
+    except KeyError:
+      s = str(line_num)
+      self.line_num_strs[line_num] = s
+      return s
 
   def GetLineSource(self, line_id):
     # type: (int) -> source_t

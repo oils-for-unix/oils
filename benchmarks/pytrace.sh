@@ -68,6 +68,21 @@ cprofile-run-abuild() {
   _cprofile _tmp/abuild-run.cprofile "${RUN_ABUILD[@]}"
 }
 
+# TODO: Why doesn't this run correctly?  The results are different.  Maybe run
+# spec tests with bin/osh-cprofile and see where it goes wrong?
+readonly pydir=~/src/languages/Python-2.7.15
+cprofile-pyconfigure() {
+  readonly REPO_ROOT=$PWD
+
+  cd $pydir
+
+  PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor \
+    time python -m cProfile -o pyconfigure.cprofile \
+    $REPO_ROOT/bin/oil.py osh -c 'echo hi'
+    #_cprofile pyconfigure.cprofile \
+}
+print-pyconfigure() { print-cprofile $pydir/pyconfigure.cprofile; }
+
 # TODO: Try uftrace?  I guess you can compare wait4() call duration with bash
 # vs. osh?
 strace-run-abuild() {

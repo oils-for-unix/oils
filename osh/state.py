@@ -576,15 +576,9 @@ class Mem(object):
     a fallback when e_die() didn't set any location information.
     """
     if span_id == const.NO_INTEGER:
+      # TODO: turn this into AssertionError?  Never happens?
       log('Warning: span_id undefined in SetCurrentSpanId')
       return
-
-    span = self.arena.GetLineSpan(span_id)
-
-    # Mutate value.Str() objects.
-    self.source_name.s = self.arena.GetLineSourceString(span.line_id)
-    self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
-
     self.current_spid = span_id
 
   def CurrentSpanId(self):
@@ -1039,10 +1033,23 @@ class Mem(object):
       return value.StrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
+      span = self.arena.GetLineSpan(self.current_spid)
+      # TODO: maybe use interned GetLineNumStr?
+      s = str(self.arena.GetLineNumber(span.line_id))
+
+      # Perf bug: why is this slow?  Commenting it out reduces line count by
+      if 1:
+        self.line_num.s = s  # Python's configure takes 75 seconds!
+      else:
+        # WTF this does not show the per bug?
+        self.line_num.s2 = s  # Python's configure takes 13 seconds!
       return self.line_num
 
     # This is OSH-specific.  Get rid of it in favor of ${BASH_SOURCE[0]} ?
     if name == 'SOURCE_NAME':
+      # Update and reuse an object.
+      span = self.arena.GetLineSpan(self.current_spid)
+      self.source_name.s = self.arena.GetLineSourceString(span.line_id)
       return self.source_name
 
     cell, _ = self._FindCellAndNamespace(name, lookup_mode, writing=False)
