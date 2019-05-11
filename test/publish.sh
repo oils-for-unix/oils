@@ -52,7 +52,7 @@ spec() {
   rsync --archive --verbose --copy-links \
     _tmp/spec/ $user@$host:$dest/
 
-  echo "Visit http://$dest/RESULTS.html"
+  echo "Visit http://$dest/"
 }
 
 # Publish unit tests
