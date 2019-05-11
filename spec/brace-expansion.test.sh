@@ -164,7 +164,7 @@ echo ~
 HOME=/home/bob
 echo {foo~,~}/bar
 ## stdout: foo~/bar /home/bob/bar
-## OK mksh stdout: foo~/bar ~/bar
+## OK osh/mksh stdout: foo~/bar ~/bar
 
 #### Two kinds of tilde expansion
 # NOTE: osh matches mksh.  Is that OK?
@@ -172,7 +172,7 @@ echo {foo~,~}/bar
 HOME=/home/bob
 echo ~{/src,root}
 ## stdout: /home/bob/src /root
-## OK mksh stdout: ~/src ~root
+## OK osh/mksh stdout: ~/src ~root
 
 #### Tilde expansion come before var expansion
 HOME=/home/bob
@@ -366,13 +366,23 @@ echo -{a,b,1..3}-
 echo -{a,b}{1...3}-
 echo -{a,{1...3}}-
 echo {a,b}{}
+## STDOUT:
+-a{1...3}- -b{1...3}-
+-a- -{1...3}-
+a{} b{}
+## END
+# osh doesn't expand ANYTHING on invalid syntax.  That's OK because of the test
+# case below.
+## OK osh STDOUT:
+-{a,b}{1...3}-
+-{a,{1...3}}-
+{a,b}{}
+## END
 
-# OSH outputs it literally like this:
-
-# -{a,b}{1...3}-
-# -{a,{1...3}}-
-# {a,b}{}
-
+#### OSH provides an alternative to invalid syntax
+echo -{a,b}\{1...3\}-
+echo -{a,\{1...3\}}-
+echo {a,b}\{\}
 ## STDOUT:
 -a{1...3}- -b{1...3}-
 -a- -{1...3}-

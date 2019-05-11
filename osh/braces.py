@@ -227,12 +227,13 @@ def _BraceDetect(w):
 
       elif id_ == Id.Lit_RBrace:
         if not stack:  # e.g. echo {a,b}{  -- unbalanced {
-          return None  # early return
+          return None  # do not expand ANYTHING because of invalid syntax
 
         # Detect {1..10} and {1..10..2}
 
         #log('stack[-1]: %s', stack[-1])
         #log('cur_parts: %s', cur_parts)
+
         range_part = None
         # only allow {1..3}, not {a,1..3}
         if not stack[-1].saw_comma and len(cur_parts) == 1:
@@ -243,7 +244,6 @@ def _BraceDetect(w):
               part.token.id == Id.Lit_Chars):
             range_part = _RangePartDetect(part.token)
             if range_part:
-              #log('REPLACED: %s', range_part)
               frame = stack.pop()
               cur_parts = frame.cur_parts
               cur_parts.append(range_part)
@@ -280,7 +280,6 @@ def BraceDetectAll(words):
   """Return a new list of words, possibly with BracedWordTree instances."""
   out = []  # type: List[word_t]
   for w in words:
-    #print(w)
     brace_tree = _BraceDetect(w)
     if brace_tree:
       out.append(brace_tree)
@@ -304,10 +303,6 @@ def _RangeStrings(part):
   # type: (word_part__BracedRange) -> List[str]
 
   if part.kind == Id.Range_Int:
-    if part.step == const.NO_INTEGER:
-      step = 1 if part.start < part.end else -1
-    else:
-      step = part.step
     nums = []
 
     z1 = _LeadingZeros(part.start)
@@ -320,10 +315,13 @@ def _RangeStrings(part):
         width = len(part.end)
       else:
         width = len(part.start)
-      fmt = '%0' + str(width) + 'd'  # dynamic
+      # TODO: Does the mycpp runtime support this dynamic format?  Or write it
+      # out?
+      fmt = '%0' + str(width) + 'd'
 
     n = int(part.start)
     end = int(part.end)
+    step = part.step
     if step > 0:
       while True:
         nums.append(fmt % n)
@@ -337,17 +335,14 @@ def _RangeStrings(part):
         if n < end:
           break
 
-    return [str(i) for i in nums]
+    return nums
 
   else:  # Id.Range_Char
-    if part.step == const.NO_INTEGER:
-      step = 1 if part.start < part.end else -1
-    else:
-      step = part.step
     chars = []
 
     n = ord(part.start)
     ord_end = ord(part.end)
+    step = part.step
     if step > 0:
       while True:
         chars.append(chr(n))

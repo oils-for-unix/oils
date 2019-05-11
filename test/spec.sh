@@ -574,7 +574,7 @@ dparen() {
 }
 
 brace-expansion() {
-  sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/brace-expansion.test.sh \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
