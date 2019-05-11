@@ -417,6 +417,19 @@ strict_backslash_warnings() {
   echo -e '\A'
 }
 
+invalid-brace-ranges() {
+  set +o errexit
+
+  _error-case 'echo {1..3..-1}'
+  _error-case 'echo {1..3..0}'
+  _error-case 'echo {3..1..1}'
+  _error-case 'echo {3..1..0}'
+  _error-case 'echo {a..Z}'
+  _error-case 'echo {a..z..0}'
+  _error-case 'echo {a..z..-1}'
+  _error-case 'echo {z..a..1}'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -444,6 +457,8 @@ cases-in-strings() {
   # frontend/args.py
   args-parse-builtin
   args-parse-main
+
+  invalid-brace-ranges  # osh/braces.py
 }
 
 # Cases in their own file

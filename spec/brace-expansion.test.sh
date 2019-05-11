@@ -200,14 +200,22 @@ echo -{1..10..3}-
 
 #### Ascending number range expansion with negative step is invalid
 echo -{1..8..-3}-
-## stdout: -1- -4- -7-
+## stdout-json: ""
+## status: 2
+## BUG bash stdout: -1- -4- -7-
 ## BUG zsh stdout: -7- -4- -1-
+## BUG bash/zsh status: 0
 ## N-I mksh stdout: -{1..8..-3}-
+## N-I mksh status: 0
 
 #### Descending number range expansion with positive step is invalid
 echo -{8..1..3}-
-## stdout: -8- -5- -2-
+## stdout-json: ""
+## status: 2
+## BUG bash/zsh stdout: -8- -5- -2-
+## BUG bash/zsh status: 0
 ## N-I mksh stdout: -{8..1..3}-
+## N-I mksh status: 0
 
 #### Descending number range expansion with negative step
 echo -{8..1..-3}-
@@ -215,6 +223,44 @@ echo -{8..1..-3}-
 # zsh behavior seems clearly wrong!
 ## BUG zsh stdout: -2- -5- -8-
 ## N-I mksh stdout: -{8..1..-3}-
+
+#### Singleton ranges
+echo {1..1}-
+echo {-9..-9}-
+echo {-9..-9..3}-
+echo {-9..-9..-3}-
+echo {a..a}-
+## STDOUT:
+1-
+-9-
+-9-
+-9-
+a-
+## END
+## N-I mksh STDOUT:
+{1..1}-
+{-9..-9}-
+{-9..-9..3}-
+{-9..-9..-3}-
+{a..a}-
+## END
+
+#### Singleton char ranges with steps
+echo {a..a..2}-
+echo {a..a..-2}-
+## STDOUT:
+a-
+a-
+## END
+# zsh is considered buggy because it implements {a..a} but not {a..a..1} !
+## BUG zsh STDOUT:
+{a..a..2}-
+{a..a..-2}-
+## END
+## N-I mksh STDOUT:
+{a..a..2}-
+{a..a..-2}-
+## END
 
 #### Char range expansion
 echo -{a..e}-
@@ -246,14 +292,18 @@ echo -{e..a..2}-
 case $SH in *zsh) echo BUG; exit ;; esac
 echo -{z..A}-
 echo -{z..A..2}-
-## STDOUT:
+## stdout-json: ""
+## status: 2
+## OK mksh STDOUT:
 -{z..A}-
 -{z..A..2}-
 ## END
+## OK mksh status: 0
 ## BUG zsh stdout: BUG
+## BUG zsh status: 0
 # This is exposed a weird bash bug!!!
-## BUG bash status: 1
 ## BUG bash stdout-json: ""
+## BUG bash status: 1
 
 #### Mixed comma and range doesn't work
 echo -{a,b,1..3}-
@@ -269,13 +319,16 @@ echo -{e..a..-2}-
 #### Fixed width number range expansion
 echo -{01..03}-
 echo -{09..12}-  # doesn't become -012-, fixed width
+echo -{12..07}-
 ## STDOUT:
 -01- -02- -03-
 -09- -10- -11- -12-
+-12- -11- -10- -09- -08- -07-
 ## END
 ## N-I mksh STDOUT:
 -{01..03}-
 -{09..12}-
+-{12..07}-
 ## END
 
 #### Inconsistent fixed width number range expansion

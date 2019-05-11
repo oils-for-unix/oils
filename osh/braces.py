@@ -25,17 +25,10 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import const
 #from core.util import log
+from core.util import p_die
 from frontend.match import BRACE_RANGE_LEXER
 
 from typing import List, Optional, Iterator, Tuple
-
-
-class _StackFrame(object):
-  def __init__(self, cur_parts):
-    # type: (List[word_part_t]) -> None
-    self.cur_parts = cur_parts
-    self.alt_part = word_part.BracedTuple()
-    self.saw_comma = False
 
 
 # The brace language has no syntax errors!  But we still need to abort the
@@ -52,9 +45,11 @@ class _RangeParser(object):
     char_range = Char Dots Char step?
     range = (int_range | char_range) Eof  # ensure no extra tokens!
   """
-  def __init__(self, lexer):
-    # type: (Iterator[Tuple[Id_t, str]]) -> None
+  def __init__(self, lexer, span_id):
+    # type: (Iterator[Tuple[Id_t, str]], int) -> None
     self.lexer = lexer
+    self.span_id = span_id
+
     self.token_type = None  # type: Id_t
     self.token_val = ''
 
@@ -98,13 +93,50 @@ class _RangeParser(object):
   def Parse(self):
     # type: () -> word_part__BracedRange
     self._Next()
-
-    # TODO:
-    # - Check that steps go in the right direction
-    # - Check that cases are equal for char range
-
-    if self.token_type in (Id.Range_Int, Id.Range_Char):
+    if self.token_type == Id.Range_Int:
       part = self._ParseRange(self.token_type)
+
+      # Check step validity and fill in a default
+      start = int(part.start)
+      end = int(part.end)
+      if start < end:
+        if part.step == const.NO_INTEGER:
+          part.step = 1
+        if part.step <= 0:  # 0 step is not allowed
+          p_die('Invalid step %d for ascending integer range', part.step,
+                span_id=self.span_id)
+      elif start > end:
+        if part.step == const.NO_INTEGER:
+          part.step = -1
+        if part.step >= 0:  # 0 step is not allowed
+          p_die('Invalid step %d for descending integer range', part.step,
+                span_id=self.span_id)
+      # else: singleton range is dumb but I suppose consistent
+
+    elif self.token_type == Id.Range_Char:
+      part = self._ParseRange(self.token_type)
+
+      # Check step validity and fill in a default
+      if part.start < part.end:
+        if part.step == const.NO_INTEGER:
+          part.step = 1
+        if part.step <= 0:  # 0 step is not allowed
+          p_die('Invalid step %d for ascending character range', part.step,
+                span_id=self.span_id)
+      elif part.start > part.end:
+        if part.step == const.NO_INTEGER:
+          part.step = -1
+        if part.step >= 0:  # 0 step is not allowed
+          p_die('Invalid step %d for descending character range', part.step,
+                span_id=self.span_id)
+      # else: singleton range is dumb but I suppose consistent
+
+      # Check matching cases
+      upper1 = part.start.isupper()
+      upper2 = part.end.isupper()
+      if upper1 != upper2:
+        p_die('Mismatched cases in character range', span_id=self.span_id)
+
     else:
       raise _NotARange()
 
@@ -117,13 +149,21 @@ def _RangePartDetect(token):
   # type: (token) -> Optional[word_part_t]
   """Parse the token and return a new word_part if it looks like a range."""
   lexer = BRACE_RANGE_LEXER.Tokens(token.val)
-  p = _RangeParser(lexer)
+  p = _RangeParser(lexer, token.span_id)
   try:
     part = p.Parse()
   except _NotARange as e:
     return None
   part.spids.append(token.span_id)  # Propagate location info
   return part
+
+
+class _StackFrame(object):
+  def __init__(self, cur_parts):
+    # type: (List[word_part_t]) -> None
+    self.cur_parts = cur_parts
+    self.alt_part = word_part.BracedTuple()
+    self.saw_comma = False
 
 
 def _BraceDetect(w):
@@ -255,8 +295,20 @@ def BraceDetectAll(words):
   return out
 
 
+def _LeadingZeros(s):
+  # type: (str) -> int
+  n = 0
+  for c in s:
+    if c == '0':
+      n += 1
+    else:
+      break
+  return n
+
+
 def _RangeStrings(part):
   # type: (word_part__BracedRange) -> List[str]
+
   if part.kind == Id.Range_Int:
     if part.step == const.NO_INTEGER:
       step = 1 if part.start < part.end else -1
@@ -264,17 +316,29 @@ def _RangeStrings(part):
       step = part.step
     nums = []
 
+    z1 = _LeadingZeros(part.start)
+    z2 = _LeadingZeros(part.end)
+
+    if z1 == 0 and z2 == 0:
+      fmt = '%d'
+    else:
+      if z1 < z2:
+        width = len(part.end)
+      else:
+        width = len(part.start)
+      fmt = '%0' + str(width) + 'd'  # dynamic
+
     n = int(part.start)
     end = int(part.end)
     if step > 0:
       while True:
-        nums.append(n)
+        nums.append(fmt % n)
         n += step
         if n > end:
           break
     else:
       while True:
-        nums.append(n)
+        nums.append(fmt % n)
         n += step
         if n < end:
           break

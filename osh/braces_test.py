@@ -9,7 +9,6 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word_part_e, token
 from _devbuild.gen.syntax_asdl import word as osh_word
-from asdl import const
 from asdl import format as fmt
 from core.util import log
 from osh import braces  # module under test
@@ -43,7 +42,7 @@ class BracesTest(unittest.TestCase):
         ('a..', None),
         ('a..z', ('a', 'z')),
         ('a..z..', None),
-        ('a..z..-1', ('a', 'z', -1)),
+        ('z..a..-1', ('z', 'a', -1)),
     ]
     for s, expected in CASES:
       tok = token(Id.Lit_Chars, s)
@@ -54,7 +53,7 @@ class BracesTest(unittest.TestCase):
         s, e = expected
         self.assertEqual(s, part.start)
         self.assertEqual(e, part.end)
-        self.assertEqual(const.NO_INTEGER, part.step)
+        #self.assertEqual(const.NO_INTEGER, part.step)
 
       elif len(expected) == 3:
         s, e, step = expected
