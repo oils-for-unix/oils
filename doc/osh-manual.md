@@ -157,6 +157,29 @@ This means that they are not "dynamic":
 
 (This could be changed, but I wanted control flow to be analyzable ...)
 
+(11) **Brace Expansion is All Or Nothing**
+
+Expansions like `{a,b}{` and `{a,b}{1...3}` arguably have bad syntax (note 3
+dots instead of 2 in the second case).
+
+bash will still do some brace expansion here, giving you `a{ b{`, etc.
+
+OSH considers it a syntax error and aborts all brace expansion, giving you the
+same thing back: `{a,b}{`.
+
+The better way to write these examples is `{a,b}\{` and `{a,b}\{1...3\}`.
+
+
+(12) **Tilde Expansion and Brace Expansion Don't Interact**
+
+In bash, something like `{~bob,~jane}/src` will expand to home dirs for both
+people.  OSH doesn't do this because it separates parsing and evaluation.  By
+the time tilde expansion happens, we haven't *evaluated* the brace expansion.
+We've only *parsed* it.
+
+(mksh agrees with OSH, but zsh agrees with bash.)
+
+
 ## set builtin
 
 ### errexit

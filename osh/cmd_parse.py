@@ -359,12 +359,12 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
     if word.HasArrayPart(w):
       p_die("Commands can't contain array literals", word=w)
 
-  # NOTE: # In bash, {~bob,~jane}/src works, even though ~ isn't the leading
-  # character of the initial word.
-  # However, this means we must do tilde detection AFTER brace EXPANSION, not
-  # just after brace DETECTION like we're doing here.
-  # The BracedWordTree instances have to be expanded into CompoundWord
-  # instances for the tilde detection to work.
+  # NOTE: We only do brace DETECTION here, not brace EXPANSION.  Therefore we
+  # can't implement bash's behavior of having say {~bob,~jane}/src work,
+  # because we only have a BracedWordTree.
+  # This is documented in spec/brace-expansion.
+  # NOTE: Technically we could do expansion outside of 'oshc translate', but it
+  # doesn't seem worth it.
   words2 = braces.BraceDetectAll(suffix_words)
   words3 = word.TildeDetectAll(words2)
 
