@@ -17,7 +17,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import const
 from core.util import log
 
-from typing import List
+from typing import List, Dict
 
 
 class Arena(object):

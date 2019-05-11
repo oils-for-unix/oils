@@ -189,13 +189,19 @@ echo $foo
 
 #### Number range expansion
 echo -{1..8..3}-
-## stdout: -1- -4- -7-
-## N-I mksh stdout: -{1..8..3}-
+echo -{1..10..3}-
+## STDOUT:
+-1- -4- -7-
+-1- -4- -7- -10-
+## N-I mksh STDOUT:
+-{1..8..3}-
+-{1..10..3}-
+## END
 
 #### Ascending number range expansion with negative step
 echo -{1..8..-3}-
 ## stdout: -1- -4- -7-
-## OK zsh stdout: -7- -4- -1-
+## BUG zsh stdout: -7- -4- -1-
 ## N-I mksh stdout: -{1..8..-3}-
 
 #### Descending number range expansion
@@ -206,7 +212,7 @@ echo -{8..1..3}-
 #### Descending number range expansion with negative step
 echo -{8..1..-3}-
 ## stdout: -8- -5- -2-
-## OK zsh stdout: -2- -5- -8-
+## BUG zsh stdout: -2- -5- -8-
 ## N-I mksh stdout: -{8..1..-3}-
 
 #### Char range expansion
@@ -219,6 +225,18 @@ echo -{a..e..2}- -{a..e..-2}-
 ## stdout: -a- -c- -e- -a- -c- -e-
 ## N-I mksh/zsh stdout: -{a..e..2}- -{a..e..-2}-
 
+#### Mixed case char expansion doesn't expand
+case $SH in */zsh) echo BUG; exit ;; esac
+echo -{z..A}-
+echo -{z..A..2}-
+## STDOUT:
+-{z..A}-
+-{z..A..2}-
+## END
+## BUG bash status: 1
+## BUG bash stdout-json: ""
+## BUG zsh stdout: BUG
+
 #### Descending char range expansion
 echo -{e..a..2}- -{e..a..-2}-
 ## stdout: -e- -c- -a- -e- -c- -a-
@@ -226,8 +244,15 @@ echo -{e..a..2}- -{e..a..-2}-
 
 #### Fixed width number range expansion
 echo -{01..03}-
-## stdout: -01- -02- -03-
-## N-I mksh stdout: -{01..03}-
+echo -{09..12}-  # doesn't become -012-, fixed width
+## STDOUT:
+-01- -02- -03-
+-09- -10- -11- -12-
+## END
+## N-I mksh STDOUT:
+-{01..03}-
+-{09..12}-
+## END
 
 #### Inconsistent fixed width number range expansion
 # zsh uses the first one, bash uses the max width?
@@ -249,3 +274,26 @@ i=0
 echo {a,b,c}-$((i++))
 ## stdout: a-0 b-1 c-2
 ## OK mksh/zsh stdout: a-0 b-0 c-0
+
+#### Invalid brace expansions don't expand
+echo {1.3}
+echo {1...3}
+echo {1__3}
+## STDOUT:
+{1.3}
+{1...3}
+{1__3}
+## END
+
+#### Invalid brace expansions mixing characters and numbers
+# zsh does something crazy like : ; < = > that I'm not writing
+case $SH in */zsh) echo BUG; exit ;; esac
+echo {1..a}
+echo {z..3}
+## STDOUT:
+{1..a}
+{z..3}
+## END
+## BUG zsh STDOUT:
+BUG
+## END

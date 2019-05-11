@@ -34,44 +34,27 @@ class _StackFrame(object):
 
 def _BraceDetect(w):
   # type: (word__CompoundWord) -> Optional[word__BracedWordTree]
-  """
-  Args:
-    CompoundWord
+  """Return a new word if the input word looks like a brace expansion.
 
-  Returns:
-    CompoundWord or None?
+  e.g. {a,b} or {1..10..2} (TODO)
+  Do we want to accept {01..02} ?  zsh does make some attempt to do this too.
 
-  Another option:
+  NOTE: This is an iterative algorithm that uses a stack.  The grammar-based
+  approach didn't seem natural.
+
+  It's not LL(1) because of 'part*'.  And not LL(k) even?  Maybe it be handled
+  with an LR parser?  In any case the imperative algorithm with 'early return'
+  for a couple cases is fairly simple.
 
   Grammar:
-
     # an alternative is a literal, possibly empty, or another brace_expr
 
     part = <any part except LiteralPart>
-
     alt = part* | brace_expr
 
     # a brace_expr is group of at least 2 braced and comma-separated
     # alternatives, with optional prefix and suffix.
     brace_expr = part* '{' alt ',' alt (',' alt)* '}' part*
-
-  Problem this grammar: it's not LL(1)
-  Is it indirect left-recursive?
-  What's the best way to handle it?  LR(1) parser?
-
-  Iterative algorithm:
-
-  Parse it with a stack?
-    It's a stack that asserts there is at least one , in between {}
-
-  Yeah just go through and when you see {, push another list.
-  When you get ,  append to list
-  When you get } and at least one ',', appendt o list
-  When you get } without, then pop
-
-  If there is no matching }, then abort with error
-
-  if not balanced, return error too?
   """
   # Errors:
   # }a{    - stack depth dips below 0
@@ -95,9 +78,7 @@ def _BraceDetect(w):
         append = False
         found = True  # assume found, but can early exit with None later
 
-      elif id_ == Id.Lit_Comma:
-        # Append a new alternative.
-        #print('*** Appending after COMMA', cur_parts)
+      elif id_ == Id.Lit_Comma:  # Append a new alternative.
 
         # NOTE: Should we allow this:
         # ,{a,b}
@@ -113,20 +94,21 @@ def _BraceDetect(w):
 
       elif id_ == Id.Lit_RBrace:
         # TODO:
-        # - Detect lack of , -- abort the whole thing
         # - Detect {1..10} and {1..10..2}
         #   - bash and zsh only -- this is NOT implemented by mksh
         #   - Use a regex on the middle part:
         #     - digit+ '..' digit+  ( '..' digit+ )?
+        #     - This relies on the fact that 0-9 \. and \- are in Lit_Chars,
+        #       which I think is OK.
         # - Char ranges are bash only!
         #
         # word_part.BracedIntRangePart()
         # word_part.CharRangePart()
 
-        if not stack:  # e.g. echo }  -- unbalancd {
-          return None
+        if not stack:  # e.g. echo {a,b}{  -- unbalanced {
+          return None  # early return
         if not stack[-1].saw_comma:  # {foo} is not a real alternative
-          return None
+          return None  # early return
         stack[-1].alt_part.words.append(word.CompoundWord(cur_parts))
 
         frame = stack.pop()

@@ -375,6 +375,14 @@ class OtherLexerTest(unittest.TestCase):
 
       self.assertEqual(expected_types, actual_types)
 
+  def testBraceRangeLexer(self):
+    lex = match.BRACE_RANGE_LEXER
+    print(list(lex.Tokens('a..z')))
+    print(list(lex.Tokens('100..300')))
+    print(list(lex.Tokens('-300..-100..1')))
+    print(list(lex.Tokens('1.3')))  # invalid
+    print(list(lex.Tokens('aa')))
+
 
 if __name__ == '__main__':
   unittest.main()

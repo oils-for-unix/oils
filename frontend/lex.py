@@ -629,6 +629,14 @@ HISTORY_DEF = [
 ]
 
 
+BRACE_RANGE_DEF = [
+  R(r'-?[0-9]+', Id.Range_Int),
+  R(r'[a-zA-Z]', Id.Range_Char),  # just a single character
+  R(r'\.\.', Id.Range_Dots),
+  R(r'[^\0]', Id.Range_Other),  # invalid
+]
+
+
 #
 # Oil lexing.  TODO: Move to a different file?
 #

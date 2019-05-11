@@ -440,6 +440,8 @@ def AddKinds(spec):
       'Subst', 'Octal3', 'LBrace', 'RBrace', 'Literals', 'BadBackslash',
   ])
 
+  spec.AddKind('Range', ['Int', 'Char', 'Dots', 'Other'])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
