@@ -305,12 +305,6 @@ echo -{z..A..2}-
 ## BUG bash stdout-json: ""
 ## BUG bash status: 1
 
-#### Mixed comma and range doesn't work
-echo -{a,b,1..3}-
-## STDOUT:
--a- -b- -1..3-
-## END
-
 #### Descending char range expansion
 echo -{e..a..-2}-
 ## stdout: -e- -c- -a-
@@ -362,12 +356,27 @@ echo -{a,_{1..3}_,b}-
 -a- -_{1..3}_- -b-
 ## END
 
+#### Mixed comma and range doesn't work
+echo -{a,b,1..3}-
+## STDOUT:
+-a- -b- -1..3-
+## END
+
 #### comma and invalid range (adjacent and nested)
 echo -{a,b}{1...3}-
 echo -{a,{1...3}}-
+echo {a,b}{}
+
+# OSH outputs it literally like this:
+
+# -{a,b}{1...3}-
+# -{a,{1...3}}-
+# {a,b}{}
+
 ## STDOUT:
 -a{1...3}- -b{1...3}-
 -a- -{1...3}-
+a{} b{}
 ## END
 
 #### Side effect in expansion

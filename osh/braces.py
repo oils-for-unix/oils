@@ -213,7 +213,6 @@ def _BraceDetect(w):
         found = True  # assume found, but can early exit with None later
 
       elif id_ == Id.Lit_Comma:  # Append a new alternative.
-
         # NOTE: Should we allow this:
         # ,{a,b}
         # or force this:
@@ -227,25 +226,16 @@ def _BraceDetect(w):
           append = False
 
       elif id_ == Id.Lit_RBrace:
-        # TODO:
-        # - Detect {1..10} and {1..10..2}
-        #   - bash and zsh only -- this is NOT implemented by mksh
-        #   - Use a regex on the middle part:
-        #     - digit+ '..' digit+  ( '..' digit+ )?
-        #     - This relies on the fact that 0-9 \. and \- are in Lit_Chars,
-        #       which I think is OK.
-        # - Char ranges are bash only!
-        #
-        # word_part.BracedIntRangePart()
-        # word_part.CharRangePart()
-
         if not stack:  # e.g. echo {a,b}{  -- unbalanced {
           return None  # early return
+
+        # Detect {1..10} and {1..10..2}
 
         #log('stack[-1]: %s', stack[-1])
         #log('cur_parts: %s', cur_parts)
         range_part = None
-        if len(cur_parts) == 1:  # only allow {1..3}, not {a,1..3}
+        # only allow {1..3}, not {a,1..3}
+        if not stack[-1].saw_comma and len(cur_parts) == 1:
           # It must be ONE part.  For example, -1..-100..-2 is initially
           # lexed as a single Lit_Chars token.
           part = cur_parts[0]
@@ -253,10 +243,14 @@ def _BraceDetect(w):
               part.token.id == Id.Lit_Chars):
             range_part = _RangePartDetect(part.token)
             if range_part:
+              #log('REPLACED: %s', range_part)
               frame = stack.pop()
               cur_parts = frame.cur_parts
               cur_parts.append(range_part)
               append = False
+
+        # It doesn't look like a range -- process it as the last element in
+        # {a,b,c}
 
         if not range_part:
           if not stack[-1].saw_comma:  # {foo} is not a real alternative
