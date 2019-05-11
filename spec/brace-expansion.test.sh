@@ -198,13 +198,13 @@ echo -{1..10..3}-
 -{1..10..3}-
 ## END
 
-#### Ascending number range expansion with negative step
+#### Ascending number range expansion with negative step is invalid
 echo -{1..8..-3}-
 ## stdout: -1- -4- -7-
 ## BUG zsh stdout: -7- -4- -1-
 ## N-I mksh stdout: -{1..8..-3}-
 
-#### Descending number range expansion
+#### Descending number range expansion with positive step is invalid
 echo -{8..1..3}-
 ## stdout: -8- -5- -2-
 ## N-I mksh stdout: -{8..1..3}-
@@ -212,6 +212,7 @@ echo -{8..1..3}-
 #### Descending number range expansion with negative step
 echo -{8..1..-3}-
 ## stdout: -8- -5- -2-
+# zsh behavior seems clearly wrong!
 ## BUG zsh stdout: -2- -5- -8-
 ## N-I mksh stdout: -{8..1..-3}-
 
@@ -221,26 +222,49 @@ echo -{a..e}-
 ## N-I mksh stdout: -{a..e}-
 
 #### Char range expansion with step
-echo -{a..e..2}- -{a..e..-2}-
-## stdout: -a- -c- -e- -a- -c- -e-
-## N-I mksh/zsh stdout: -{a..e..2}- -{a..e..-2}-
+echo -{a..e..2}-
+## stdout: -a- -c- -e-
+## N-I mksh/zsh stdout: -{a..e..2}-
 
-#### Mixed case char expansion doesn't expand
-case $SH in */zsh) echo BUG; exit ;; esac
+#### Char ranges with steps of the wrong sign
+echo -{a..e..-2}-
+echo -{e..a..2}-
+## stdout-json: ""
+## status: 2
+## BUG bash STDOUT:
+-a- -c- -e-
+-e- -c- -a-
+## END
+## BUG bash status: 0
+## N-I mksh/zsh STDOUT:
+-{a..e..-2}-
+-{e..a..2}-
+## END
+## BUG mksh/zsh status: 0
+
+#### Mixed case char expansion is invalid
+case $SH in *zsh) echo BUG; exit ;; esac
 echo -{z..A}-
 echo -{z..A..2}-
 ## STDOUT:
 -{z..A}-
 -{z..A..2}-
 ## END
+## BUG zsh stdout: BUG
+# This is exposed a weird bash bug!!!
 ## BUG bash status: 1
 ## BUG bash stdout-json: ""
-## BUG zsh stdout: BUG
+
+#### Mixed comma and range doesn't work
+echo -{a,b,1..3}-
+## STDOUT:
+-a- -b- -1..3-
+## END
 
 #### Descending char range expansion
-echo -{e..a..2}- -{e..a..-2}-
-## stdout: -e- -c- -a- -e- -c- -a-
-## N-I mksh/zsh stdout: -{e..a..2}- -{e..a..-2}-
+echo -{e..a..-2}-
+## stdout: -e- -c- -a-
+## N-I mksh/zsh stdout: -{e..a..-2}-
 
 #### Fixed width number range expansion
 echo -{01..03}-
@@ -266,6 +290,32 @@ echo -{01..003}-
 echo -{01..3}-
 ## stdout: -01- -02- -03-
 ## N-I mksh stdout: -{01..3}-
+
+#### Adjacent comma and range works
+echo -{a,b}{1..3}-
+## STDOUT:
+-a1- -a2- -a3- -b1- -b2- -b3-
+## END
+## N-I mksh STDOUT:
+-a{1..3}- -b{1..3}-
+## END
+
+#### Range inside comma works
+echo -{a,_{1..3}_,b}-
+## STDOUT:
+-a- -_1_- -_2_- -_3_- -b-
+## END
+## N-I mksh STDOUT:
+-a- -_{1..3}_- -b-
+## END
+
+#### comma and invalid range (adjacent and nested)
+echo -{a,b}{1...3}-
+echo -{a,{1...3}}-
+## STDOUT:
+-a{1...3}- -b{1...3}-
+-a- -{1...3}-
+## END
 
 #### Side effect in expansion
 # bash is the only one that does it first.  I guess since this is

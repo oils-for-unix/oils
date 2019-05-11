@@ -574,8 +574,7 @@ dparen() {
 }
 
 brace-expansion() {
-  # TODO for osh: implement num ranges, mark char ranges unimplemented?
-  sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 12 \
+  sh-spec spec/brace-expansion.test.sh --osh-failures-allowed 11 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 

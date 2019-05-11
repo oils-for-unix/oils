@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__DoubleQuotedPart, word_part__SimpleVarSub,
     word_part__BracedVarSub, word_part__TildeSubPart,
     word_part__CommandSubPart, word_part__ArithSubPart,
-    word_part__BracedAltPart, word_part__ExtGlobPart,
+    word_part__BracedTuple, word_part__ExtGlobPart,
 
     word, word_t, 
     word__CompoundWord, word__TokenWord, word__EmptyWord, word__BracedWordTree,
@@ -167,7 +167,7 @@ def LeftMostSpanForPart(part):
     return part.spids[0]
     #return part.op.span_id  # e.g. @( is the left-most token
 
-  elif isinstance(part, word_part__BracedAltPart):
+  elif isinstance(part, word_part__BracedTuple):
     return const.NO_INTEGER
 
   else:

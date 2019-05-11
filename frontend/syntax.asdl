@@ -86,9 +86,6 @@ module syntax
   -- space.)
   token = (id id, string val, int span_id)
 
-  -- Optional step for {100..50..-15}
-  braced_step = (int val, int negated)
-
   bracket_op = 
     WholeArray(id op_id)  -- * or @
   | ArrayIndex(arith_expr expr)
@@ -125,11 +122,11 @@ module syntax
   | CommandSubPart(command command_list, token left_token)
   | ArithSubPart(arith_expr anode)
     -- {a,b,c}
-  | BracedAltPart(word* words)
-    -- {1..10} or {1..10..2}
-  | BracedIntRangePart(int start, int end, braced_step? step)
+  | BracedTuple(word* words)
+    -- {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     -- {a..f} or {a..f..2} or {a..f..-2}
-  | BracedCharRangePart(string start, string end, braced_step? step)
+  | BracedRange(id kind, string start, string end, int? step)
+    -- note: optional int may need special handling in ASDL
   -- extended globs are parsed statically, unlike globs
   | ExtGlobPart(token op, word* arms)
 

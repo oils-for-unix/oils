@@ -81,7 +81,7 @@ def _TreeCount(tree_word):
   """
   # TODO: Copy the structure of _BraceExpand and _BraceExpandOne.
   for part in tree_word.parts:
-    if isinstance(part, word_part__BracedAltPart):
+    if isinstance(part, word_part__BracedTuple):
       for word in part.words:
         pass
   num_results = 2

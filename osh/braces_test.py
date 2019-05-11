@@ -6,9 +6,12 @@ braces_test.py: Tests for braces.py
 import sys
 import unittest
 
-from _devbuild.gen.syntax_asdl import word_part_e
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import word_part_e, token
 from _devbuild.gen.syntax_asdl import word as osh_word
+from asdl import const
 from asdl import format as fmt
+from core.util import log
 from osh import braces  # module under test
 from osh import word_parse_test
 
@@ -26,6 +29,43 @@ def _PrettyPrint(n):
 
 
 class BracesTest(unittest.TestCase):
+
+  def testRangePartDetect(self):
+    CASES = [
+        ('', None),
+        ('1', None),
+        ('1..', None),
+        ('1..3', ('1', '3')),
+        ('3..-10..-2', ('3', '-10', -2)),
+        ('3..-10..-2..', None), # nope!  unexpected trailing tokens
+
+        ('a', None),
+        ('a..', None),
+        ('a..z', ('a', 'z')),
+        ('a..z..', None),
+        ('a..z..-1', ('a', 'z', -1)),
+    ]
+    for s, expected in CASES:
+      tok = token(Id.Lit_Chars, s)
+      part = braces._RangePartDetect(tok)
+      if expected is None:
+        self.assert_(part is None)
+      elif len(expected) == 2:
+        s, e = expected
+        self.assertEqual(s, part.start)
+        self.assertEqual(e, part.end)
+        self.assertEqual(const.NO_INTEGER, part.step)
+
+      elif len(expected) == 3:
+        s, e, step = expected
+        self.assertEqual(s, part.start)
+        self.assertEqual(e, part.end)
+        self.assertEqual(step, part.step)
+
+      else:
+        raise AssertionError
+
+      log('%r\t%s', s, part)
 
   def testBraceDetect(self):
     w = _assertReadWord(self, '}')
@@ -63,14 +103,14 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
-    self.assertEqual(word_part_e.BracedAltPart, middle_part.tag)
+    self.assertEqual(word_part_e.BracedTuple, middle_part.tag)
     self.assertEqual(4, len(middle_part.words))  # a b c ={d,e}
 
     last_alternative = middle_part.words[3]
     self.assertEqual(2, len(last_alternative.parts)) # = {d,e}
 
     second_part = last_alternative.parts[1]
-    self.assertEqual(word_part_e.BracedAltPart, second_part.tag)
+    self.assertEqual(word_part_e.BracedTuple, second_part.tag)
     self.assertEqual(2, len(second_part.words)) # {d,e}
 
     # Another nested expansion
@@ -80,7 +120,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
-    self.assertEqual(word_part_e.BracedAltPart, middle_part.tag)
+    self.assertEqual(word_part_e.BracedTuple, middle_part.tag)
     self.assertEqual(3, len(middle_part.words))  # a ={b,c}= d
 
     first_alternative = middle_part.words[0]
@@ -92,7 +132,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(middle_alternative.parts))  # = {b,c} =
 
     middle_part2 = middle_alternative.parts[1]
-    self.assertEqual(word_part_e.BracedAltPart, middle_part2.tag)
+    self.assertEqual(word_part_e.BracedTuple, middle_part2.tag)
     self.assertEqual(2, len(middle_part2.words))  # b c
 
     # Third alternative is a CompoundWord with zero parts
