@@ -240,8 +240,63 @@ set -o | grep set
 ## status: 0
 
 #### set without args lists variables
-set | grep PWD
+__GLOBAL=g
+f() {
+  local __mylocal=L
+  local __OTHERLOCAL=L
+  set | grep '^__'
+}
+g() {
+  local __var_in_parent_scope=D
+  f
+}
+g
 ## status: 0
+## STDOUT:
+__GLOBAL='g'
+__OTHERLOCAL='L'
+__mylocal='L'
+__var_in_parent_scope='D'
+## END
+## OK bash STDOUT:
+__GLOBAL=g
+__OTHERLOCAL=L
+__mylocal=L
+__var_in_parent_scope=D
+## END
+## OK mksh STDOUT:
+__GLOBAL=g
+__var_in_parent_scope=D
+__OTHERLOCAL=L
+__mylocal=L
+## END
+
+#### set without args lists array variables
+declare -a __array
+__array=(1 2 '3 4')
+set | grep '^__'
+## STDOUT:
+__array=([0]="1" [1]="2" [2]="3 4")
+## END
+## OK mksh STDOUT:
+__array[0]=1
+__array[1]=2
+__array[2]='3 4'
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+
+#### set without args lists assoc array variables
+typeset -A __assoc
+__assoc['k e y']='v a l'
+__assoc[a]=b
+set | grep '^__'
+## STDOUT:
+__assoc=(["k e y"]="v a l" [a]="b" )
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+## N-I dash stdout-json: ""
+## N-I dash status: 1
 
 #### shopt -q
 shopt -q nullglob
