@@ -338,6 +338,8 @@ def ShellQuote(s):
 
   It doesn't necessarily match bash byte-for-byte.  IIRC bash isn't consistent
   with it anyway.
+
+  Used for 'printf %q', ${x@Q}, and 'set'.
   """
   # Could be made slightly nicer by e.g. returning unmodified when
   # there's nothing that needs to be quoted.  Bash's `printf %q`
@@ -352,8 +354,8 @@ def ShellQuote(s):
 def ShellQuoteB(s):
   """Quote by adding backslashes.
 
-  This is friendlier for display on the command line.
-  TODO: We could also use this strategy for printf %q?
+  Used for autocompletion, so it's friendlier for display on the command line.
+  We use the strategy above for other use cases.
   """
   # There's no way to escape a newline!  Bash prints ^J for some reason, but
   # we're more explicit.  This will happen if there's a newline on a file

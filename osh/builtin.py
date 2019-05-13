@@ -889,17 +889,27 @@ class Set(object):
     # TODO:
     # - How to integrate this with auto-completion?  Have to handle '+'.
 
-    if len(arg_vec.strs) == 1:  # no args
-      # TODO:
-      # - This should be set -o, not plain 'set'.
-      # - When no arguments are given, it shows functions/vars?  Why not show
-      # other state?
-      self.exec_opts.ShowOptions([])
+    if len(arg_vec.strs) == 1:
+      # 'set' without args shows visible variable names and values.  According
+      # to POSIX, the names should be sorted, and the code should be suitable
+      # for re-input to the shell.  We have a spec test for this.
+      # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#set
+      mapping = self.mem.GetAllVars()
+      for name in sorted(mapping):
+        str_val = mapping[name]
+        code_str = '%s=%s' % (name, string_ops.ShellQuote(str_val))
+        print(code_str)
       return 0
 
     arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
     arg_r.Next()  # skip 'set'
     arg = SET_SPEC.Parse(arg_r)
+
+    # - This should be set -o, not plain 'set'.
+    # - When no arguments are given, it shows functions/vars?  Why not show
+    # other state?
+    if 0:
+      self.exec_opts.ShowOptions([])
 
     SetExecOpts(self.exec_opts, arg.opt_changes)
     # Hm do we need saw_double_dash?

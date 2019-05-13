@@ -18,7 +18,7 @@ from typing import List
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import lhs_expr
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, lvalue_e, scope_e, var_flags_e
+    value, value_e, lvalue_e, scope_e, var_flags_e, value__Str
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import const
@@ -1107,6 +1107,8 @@ class Mem(object):
     # lower on the stack.
     for scope in self.var_stack:
       for name, cell in scope.vars.iteritems():
+        # TODO: Disallow exporting at assignment time.  If an exported Str is
+        # changed to StrArray, also clear its 'exported' flag.
         if cell.exported and cell.val.tag == value_e.Str:
           exported[name] = cell.val.s
     return exported
@@ -1120,6 +1122,15 @@ class Mem(object):
     for scope in self.var_stack:
       for name, _ in scope.vars.iteritems():
         yield name
+
+  def GetAllVars(self):
+    """Get all variables and their values, for 'set' builtin. """
+    result = {}
+    for scope in self.var_stack:
+      for name, cell in scope.vars.iteritems():
+        if isinstance(cell.val, value__Str):
+          result[name] = cell.val.s
+    return result
 
 
 def SetLocalString(mem, name, s):
