@@ -279,8 +279,7 @@ __mylocal=L
 
 # NOTE: not testing arrays and associative arrays!
 _space='[ ]'
-# TODO: need to handlet his in OSH
-#_whitespace=$'[\t\r\n]'
+_whitespace=$'[\t\r\n]'
 _sq="'single quotes'"
 _backslash_dq="\\ \""
 _unicode=$'[\u03bc]'
@@ -300,13 +299,14 @@ echo [ $_space $_whitespace $_sq $_backslash_dq $_unicode ]
 echo "Code saved to $varfile" 1>&2  # for debugging
 
 test "$_space" = '[ ]' && echo OK
-#test "$_whitespace" = $'[\t\r\n]' && echo OK
+test "$_whitespace" = $'[\t\r\n]' && echo OK
 test "$_sq" = "'single quotes'" && echo OK
 test "$_backslash_dq" = "\\ \"" && echo OK
 test "$_unicode" = $'[\u03bc]' && echo OK
 
 ## STDOUT:
 [ ]
+OK
 OK
 OK
 OK

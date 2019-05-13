@@ -891,13 +891,17 @@ class Set(object):
 
     if len(arg_vec.strs) == 1:
       # 'set' without args shows visible variable names and values.  According
-      # to POSIX, the names should be sorted, and the code should be suitable
-      # for re-input to the shell.  We have a spec test for this.
+      # to POSIX:
+      # - the names should be sorted, and 
+      # - the code should be suitable for re-input to the shell.  We have a
+      #   spec test for this.
+      # Also:
+      # - autoconf also wants them to fit on ONE LINE.
       # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#set
       mapping = self.mem.GetAllVars()
       for name in sorted(mapping):
         str_val = mapping[name]
-        code_str = '%s=%s' % (name, string_ops.ShellQuote(str_val))
+        code_str = '%s=%s' % (name, string_ops.ShellQuoteOneLine(str_val))
         print(code_str)
       return 0
 
@@ -1350,9 +1354,11 @@ def _MakeSignals():
 
 
 def _GetSignalNumber(sig_spec):
-  # POSIX lists the unmbers that are required.
+  # POSIX lists the numbers that are required.
   # http://pubs.opengroup.org/onlinepubs/9699919799/
-  if sig_spec.strip() in ('1', '2', '3', '6', '9', '14', '15'):
+  #
+  # Added 13 for SIGPIPE because autoconf's 'configure' uses it!
+  if sig_spec.strip() in ('1', '2', '3', '6', '9', '13', '14', '15'):
     return int(sig_spec)
 
   # INT is an alias for SIGINT

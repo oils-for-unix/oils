@@ -440,9 +440,9 @@ special-vars() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-# dash/mksh don't implement this.
+# TODO: $LINENO tests could be enabled in mksh/zsh/dash.
 introspect() {
-  sh-spec spec/introspect.test.sh \
+  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 

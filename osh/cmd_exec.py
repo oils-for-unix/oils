@@ -727,9 +727,6 @@ class Executor(object):
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.Assignment:
-      span_id = self._SpanIdForAssignment(node)
-      self.mem.SetCurrentSpanId(span_id)
-
       # TODO: Also do dynamic assignment here
       flags = word_compile.ParseAssignFlags(node.flags)
 
@@ -751,6 +748,10 @@ class Executor(object):
         raise AssertionError(node.keyword)
 
       for pair in node.pairs:
+        # Assignment always appears to have a spid.
+        # TODO: Use pair!
+        self.mem.SetCurrentSpanId(node.spids[0])
+
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
           val = self.word_ev.EvalRhsWord(pair.rhs)
@@ -787,13 +788,6 @@ class Executor(object):
 
         #log('setting %s to %s with flags %s', lval, val, flags)
         self.mem.SetVar(lval, val, flags, lookup_mode)
-
-        # Assignment always appears to have a spid.
-        if node.spids:
-          current_spid = node.spids[0]
-        else:
-          current_spid = const.NO_INTEGER
-        self.mem.SetCurrentSpanId(current_spid)
         self.tracer.OnAssignment(lval, pair.op, val, flags, lookup_mode)
 
       # PATCH to be compatible with existing shells: If the assignment had a
@@ -938,6 +932,8 @@ class Executor(object):
         self.loop_level -= 1
 
     elif node.tag == command_e.ForEach:
+      self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
+
       iter_name = node.iter_name
       if node.do_arg_iter:
         iter_list = self.mem.GetArgv()

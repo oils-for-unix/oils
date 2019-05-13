@@ -1002,7 +1002,6 @@ class CommandParser(object):
     for (( init; cond; update )) for_sep? do_group
     """
     node = self.w_parser.ReadForExpression()
-    assert node is not None
     self._Next()
 
     self._Peek()
@@ -1016,10 +1015,7 @@ class CommandParser(object):
     else:
       p_die('Invalid word after for expression', word=self.cur_word)
 
-    body_node = self.ParseDoGroup()
-    assert body_node is not None
-
-    node.body = body_node
+    node.body = self.ParseDoGroup()
     return node
 
   def _ParseForEachLoop(self):

@@ -78,6 +78,16 @@ class LibStrTest(unittest.TestCase):
         s,
         string_ops._PatSubAll(s, '(z)', '_'))
 
+  def testShellQuote(self):
+    CASES = [
+        'x y',
+        'one\ntwo\n',
+        "'",
+        '"',
+    ]
+    for case in CASES:
+      print(string_ops.ShellQuoteOneLine(case))
+
 
 if __name__ == '__main__':
   unittest.main()
