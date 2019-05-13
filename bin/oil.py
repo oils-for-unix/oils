@@ -303,6 +303,11 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   fd_state = process.FdState(errfmt)
   exec_opts = state.ExecOpts(mem, line_input)
+
+  if opts.show_options:  # special case: sh -o
+    exec_opts.ShowOptions([])
+    return 0
+
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 

@@ -77,7 +77,8 @@ class _Attributes(object):
   """Object to hold flags"""
 
   def __init__(self, defaults):
-    self.opt_changes = []  # for set -o, etc.
+    self.opt_changes = []  # e.g. set -o errexit +o nounset
+    self.show_options = False  # 'set -o' without an argument
     self.actions = []  # for compgen -A
     self.saw_double_dash = False  # for set --
     for name, v in defaults.iteritems():
@@ -129,7 +130,7 @@ class Reader(object):
     return self.argv[self.i:]
 
   def AtEnd(self):
-    return self.i == self.n
+    return self.i >= self.n  # must be >= and not ==
 
   def _FirstSpanId(self):
     if self.spids:
@@ -285,7 +286,8 @@ class SetNamedOption(_Action):
     try:
       arg = arg_r.Peek()
     except IndexError:
-      raise UsageError('Expected argument for option')
+      out.show_options = True
+      return True  # quit parsing
 
     attr_name = arg
     # Validate the option name against a list of valid names.

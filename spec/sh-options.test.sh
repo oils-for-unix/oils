@@ -236,8 +236,11 @@ echo status=$?
 ## N-I dash/mksh stdout: status=0
 
 #### set -o lists options
-set -o | grep set
-## status: 0
+# NOTE: osh doesn't use the same format yet.
+set -o | grep -o errexit
+## STDOUT:
+errexit
+## END
 
 #### set without args lists variables
 __GLOBAL=g

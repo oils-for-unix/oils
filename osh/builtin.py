@@ -905,11 +905,11 @@ class Set(object):
     arg_r.Next()  # skip 'set'
     arg = SET_SPEC.Parse(arg_r)
 
-    # - This should be set -o, not plain 'set'.
-    # - When no arguments are given, it shows functions/vars?  Why not show
-    # other state?
-    if 0:
+    # 'set -o' shows options.  This is actually used by autoconf-generated
+    # scripts!
+    if arg.show_options:
       self.exec_opts.ShowOptions([])
+      return 0
 
     SetExecOpts(self.exec_opts, arg.opt_changes)
     # Hm do we need saw_double_dash?
