@@ -311,3 +311,12 @@ ok
 ## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 1
+
+#### exec redirect then various builtins
+exec 5>$TMP/log.txt
+echo hi >&5
+set -o >&5
+echo done
+## STDOUT:
+done
+## END

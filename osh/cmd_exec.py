@@ -18,6 +18,7 @@ from __future__ import print_function
 import posix
 import resource
 import time
+import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
@@ -331,6 +332,13 @@ class Executor(object):
       self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
     finally:
+      # Flush stdout after running ANY builtin.  This is very important!
+      # Silence errors like we did from 'echo'.
+      try:
+        sys.stdout.flush()
+      except IOError as e:
+        pass
+
       self.errfmt.PopLocation()
     return status
 
