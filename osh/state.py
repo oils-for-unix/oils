@@ -576,10 +576,11 @@ class Mem(object):
     a fallback when e_die() didn't set any location information.
     """
     if span_id == const.NO_INTEGER:
-      # TODO: turn this into AssertionError?  Never happens?
+      # NOTE: This happened in the osh-runtime benchmark for yash.
       log('Warning: span_id undefined in SetCurrentSpanId')
-      import traceback
-      traceback.print_stack()
+
+      #import traceback
+      #traceback.print_stack()
       return
     self.current_spid = span_id
 
