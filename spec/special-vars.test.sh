@@ -23,6 +23,8 @@ env | grep PWD
 ## BUG mksh status: 1
 
 #### $HOME is NOT set
+case $SH in *zsh) echo 'zsh sets HOME'; exit ;; esac
+
 home=$(echo $HOME)
 test "$home" = ""
 echo status=$?
@@ -39,12 +41,16 @@ status=0
 status=1
 status=1
 ## END
+## BUG zsh STDOUT:
+zsh sets HOME
+## END
 
 
 #### $1 .. $9 are scoped, while $0 is not
 func() { echo $0 $1 $2 | sed -e 's/.*sh/sh/'; }
 func a b
 ## stdout: sh a b
+## BUG zsh stdout: func a b
 
 #### $?
 echo $?  # starts out as 0
@@ -120,8 +126,8 @@ exit 3  # make sure we got here
 subshell OK
 command sub OK
 ## END
-## N-I dash status: 1
-## N-I dash stdout-json: ""
+## N-I dash/zsh status: 1
+## N-I dash/zsh stdout-json: ""
 
 #### Background PID $! looks like a PID
 sleep 0.01 &
@@ -141,9 +147,14 @@ echo $PPID | egrep '[0-9]+'
 echo hi | sh -c 'cat; exit 33' | wc -l >/dev/null
 argv.py "${PIPESTATUS[@]}"
 ## status: 0
-## stdout: ['0', '33', '0']
+## STDOUT:
+['0', '33', '0']
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+## N-I zsh STDOUT:
+['']
+## EN
 
 #### $RANDOM
 expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue
@@ -177,7 +188,104 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
-## N-I dash/mksh STDOUT:
+## N-I dash/mksh/zsh STDOUT:
 status=1
+## END
+
+#### $LINENO is the current line, not line of function call
+echo $LINENO  # first line
+g() {
+  argv.py $LINENO  # line 3
+}
+f() {
+  argv.py $LINENO  # line 6
+  g
+  argv.py $LINENO  # line 8
+}
+f
+## STDOUT: 
+1
+['6']
+['3']
+['8']
+## END
+## BUG zsh STDOUT: 
+1
+['1']
+['1']
+['3']
+## END
+## BUG dash STDOUT: 
+1
+['2']
+['2']
+['4']
+## END
+
+#### $LINENO for [[
+echo one
+[[ $LINENO -eq 2 ]] && echo OK
+## STDOUT:
+one
+OK
+## END
+## N-I dash status: 127
+## N-I dash stdout: one
+## N-I mksh status: 1
+## N-I mksh stdout: one
+
+#### $LINENO for ((
+echo one
+(( x = LINENO ))
+echo $x
+## STDOUT:
+one
+2
+## END
+## N-I dash stdout-json: "one\n\n"
+
+#### $LINENO in for loop
+# hm bash doesn't take into account the word break.  That's OK; we won't either.
+echo one
+for x in \
+  $LINENO zzz; do
+  echo $x
+done
+## STDOUT:
+one
+2
+zzz
+## END
+## OK mksh STDOUT:
+one
+1
+zzz
+## END
+
+#### $LINENO in for (( loop
+# This is a real edge case that I'm not sure we care about.  We would have to
+# change the span ID inside the loop to make it really correct.
+echo one
+for (( i = 0; i < $LINENO; i++ )); do
+  echo $i
+done
+## STDOUT:
+one
+0
+1
+## END
+## N-I dash stdout: one
+## N-I dash status: 2
+## BUG mksh stdout: one
+## BUG mksh status: 1
+
+#### $LINENO for assignment
+a1=$LINENO a2=$LINENO
+b1=$LINENO b2=$LINENO
+echo $a1 $a2
+echo $b1 $b2
+## STDOUT:
+1 1
+2 2
 ## END
 
