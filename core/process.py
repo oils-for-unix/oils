@@ -372,6 +372,13 @@ class Thunk(object):
     raise NotImplementedError
 
 
+def _ShouldHijack(line):
+  if not line.startswith('#!'):
+    return False
+  # hijack /bin/sh and also /usr/bin/env bash
+  return line.endswith('/sh') or line.endswith('bash')
+
+
 class ExternalProgram(object):
   def __init__(self, hijack_shebang, fd_state, errfmt, debug_f):
     """
@@ -401,9 +408,7 @@ class ExternalProgram(object):
       else:
         try:
           line = f.read(40)
-          if (line.startswith('#!/bin/sh') or
-              line.startswith('#!/bin/bash') or
-              line.startswith('#!/usr/bin/env bash')):
+          if _ShouldHijack(line):
             self.debug_f.log('Hijacked: %s with %s', argv, self.hijack_shebang)
             argv = [self.hijack_shebang] + argv
           else:
