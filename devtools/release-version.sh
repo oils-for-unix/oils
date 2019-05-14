@@ -265,6 +265,10 @@ git-changelog-0.6.pre19() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.6.pre20() {
+  _git-changelog origin/release/0.6.pre19 release/0.6.pre20 \
+    > _release/VERSION/changelog.html
+}
 
 
 # For announcement.html
@@ -409,6 +413,10 @@ announcement-0.6.pre18() {
 }
 
 announcement-0.6.pre19() {
+  write-no-announcement
+}
+
+announcement-0.6.pre20() {
   write-no-announcement
 }
 
