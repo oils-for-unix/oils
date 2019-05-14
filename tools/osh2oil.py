@@ -763,7 +763,7 @@ class OilPrinter(object):
       # for x in a b c \
       #    d e f; do
 
-      in_spid, semi_spid = node.spids
+      _, in_spid, semi_spid = node.spids
 
       if in_spid == const.NO_INTEGER:
         #self.cursor.PrintUntil()  # 'for x' and then space

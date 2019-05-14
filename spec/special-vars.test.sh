@@ -262,6 +262,17 @@ one
 zzz
 ## END
 
+#### $LINENO in other for loops
+set -- a b c
+for x; do
+  echo $LINENO $x
+done
+## STDOUT:
+3 a
+3 b
+3 c
+## END
+
 #### $LINENO in for (( loop
 # This is a real edge case that I'm not sure we care about.  We would have to
 # change the span ID inside the loop to make it really correct.

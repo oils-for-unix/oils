@@ -1018,10 +1018,11 @@ class CommandParser(object):
     node.body = self.ParseDoGroup()
     return node
 
-  def _ParseForEachLoop(self):
+  def _ParseForEachLoop(self, for_spid):
     # type: () -> command__ForEach
     node = command.ForEach()
     node.do_arg_iter = False
+    node.spids.append(for_spid)  # for $LINENO and error fallback
 
     ok, iter_name, quoted = word.StaticEval(self.cur_word)
     if not ok or quoted:
@@ -1042,13 +1043,12 @@ class CommandParser(object):
 
       in_spid = word.LeftMostSpanForWord(self.cur_word) + 1
       iter_words, semi_spid = self.ParseForWords()
-      assert iter_words is not None
 
       words2 = braces.BraceDetectAll(iter_words)
       words3 = word.TildeDetectAll(words2)
       node.iter_words = words3
 
-    elif self.c_id == Id.Op_Semi:
+    elif self.c_id == Id.Op_Semi:  # for x; do
       node.do_arg_iter = True  # implicit for loop
       self._Next()
 
@@ -1059,12 +1059,10 @@ class CommandParser(object):
     else:  # for foo BAD
       p_die('Unexpected word after for loop variable', word=self.cur_word)
 
-    node.spids.extend((in_spid, semi_spid))
+    node.body = self.ParseDoGroup()
 
-    body_node = self.ParseDoGroup()
-    assert body_node is not None
-
-    node.body = body_node
+    node.spids.append(in_spid)
+    node.spids.append(semi_spid)
     return node
 
   def ParseFor(self):
@@ -1073,13 +1071,14 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
+    for_spid = word.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_For)
 
     self._Peek()
     if self.c_id == Id.Op_DLeftParen:
       node = self._ParseForExprLoop()  # type: command_t
     else:
-      node = self._ParseForEachLoop()
+      node = self._ParseForEachLoop(for_spid)
 
     return node
 

@@ -578,6 +578,8 @@ class Mem(object):
     if span_id == const.NO_INTEGER:
       # TODO: turn this into AssertionError?  Never happens?
       log('Warning: span_id undefined in SetCurrentSpanId')
+      import traceback
+      traceback.print_stack()
       return
     self.current_spid = span_id
 
@@ -664,8 +666,8 @@ class Mem(object):
     self.var_stack.pop()
 
   def _PushDebugStack(self, func_name, source_name):
-    # self.current_spid is set before every SimpleCommand and Assignment.
-    # Function calls and 'source' are both SimpleCommand.
+    # self.current_spid is set before every SimpleCommand, Assignment, [[, ((,
+    # etc.  Function calls and 'source' are both SimpleCommand.
 
     # These integers are handles/pointers, for use in CrashDumper.
     argv_i = len(self.argv_stack) - 1
