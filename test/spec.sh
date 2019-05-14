@@ -331,8 +331,8 @@ builtin-dirs() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 builtin-getopts() {
@@ -440,7 +440,6 @@ special-vars() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
-# TODO: $LINENO tests could be enabled in mksh/zsh/dash.
 introspect() {
   sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"

@@ -20,19 +20,34 @@ printenv.py GLOBAL
 export -n GLOBAL
 echo $GLOBAL
 printenv.py GLOBAL
-## stdout-json: "X\nX\nX\nNone\n"
-## N-I mksh/dash stdout-json: "X\nX\n"
+## STDOUT: 
+X
+X
+X
+None
+## END
+## N-I mksh/dash STDOUT:
+X
+X
+## END
 ## N-I mksh status: 1
 ## N-I dash status: 2
+## N-I zsh STDOUT:
+X
+X
+X
+X
+## END
 
 #### export -n undefined is ignored
 set -o errexit
 export -n undef
 echo status=$?
 ## stdout: status=0
-## N-I mksh/dash stdout-json: ""
+## N-I mksh/dash/zsh stdout-json: ""
 ## N-I mksh status: 1
-## N-I dash  status: 2
+## N-I dash status: 2
+## N-I zsh status: 1
 
 #### Export a global variable and unset it
 f() { export GLOBAL=X; }
@@ -148,8 +163,7 @@ echo status=$?
 ## stdout: status=0
 
 #### Unset readonly variable
-# dash aborts the whole program.  I'm also aborting the whole program because
-# it's a programming error.
+# dash and zsh abort the whole program.   OSH doesn't?
 readonly R=foo
 unset R
 echo status=$?
@@ -157,6 +171,8 @@ echo status=$?
 ## stdout: status=1
 ## OK dash status: 2
 ## OK dash stdout-json: ""
+## OK zsh status: 1
+## OK zsh stdout-json: ""
 
 #### Unset a function without -f
 f() {
@@ -167,8 +183,11 @@ unset f
 f
 ## stdout: foo
 ## status: 127
-## N-I dash/mksh status: 0
-## N-I dash/mksh stdout-json: "foo\nfoo\n"
+## N-I dash/mksh/zsh status: 0
+## N-I dash/mksh/zsh STDOUT:
+foo
+foo
+## END
 
 #### Unset has dynamic scope
 f() {
@@ -208,6 +227,7 @@ echo "${a[@]}" len="${#a[@]}"
 ## stdout: x z len=2
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+## OK zsh stdout-json: " y z len=3\n"
 
 #### Unset array member with expression
 i=1
@@ -217,6 +237,8 @@ echo "${a[@]}" len="${#a[@]}"
 ## stdout: x z len=2
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
 
 #### Use local twice
 f() {
@@ -226,6 +248,10 @@ f() {
 }
 f
 ## stdout: bar
+## BUG zsh STDOUT:
+foo=bar
+bar
+## END
 
 #### Local without variable is still unset!
 set -o nounset
@@ -234,8 +260,12 @@ f() {
   echo "[$foo]"
 }
 f
+## stdout-json: ""
 ## status: 1
 ## OK dash status: 2
+# zsh doesn't support nounset?
+## BUG zsh stdout: []
+## BUG zsh status: 0
 
 #### local after readonly
 f() { 
