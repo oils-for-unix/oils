@@ -17,6 +17,7 @@ module types {
   | ExtGlob
   | VS_1 | VS_2 | VS_ArgUnquoted | VS_ArgDQ
   | BashRegex | BashRegexChars
+  | PrintfOuter | PrintfPercent
 
   | OilOuter    -- echo foo (should this be OIL_COMMAND?)
   | OilWords -- Like OUTER, but {a,b} and [a-z].? are recognized.

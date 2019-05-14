@@ -71,7 +71,7 @@ from _devbuild.gen.syntax_asdl import (
 # TODO: rename word -> osh_word in syntax.asdl
 from _devbuild.gen.syntax_asdl import word as osh_word
 
-from core.meta import LookupKind
+from core import meta
 from core.util import p_die
 from frontend import reader
 from frontend import tdop
@@ -116,8 +116,8 @@ class WordParser(object):
     """Helper method."""
     if self.next_lex_mode is not None:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
-      self.token_kind = LookupKind(self.cur_token.id)
       self.token_type = self.cur_token.id
+      self.token_kind = meta.LookupKind(self.token_type)
       self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
       self.next_lex_mode = None
     return self.cur_token

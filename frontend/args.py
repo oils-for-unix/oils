@@ -125,9 +125,23 @@ class Reader(object):
     self.Next()
     return arg
 
+  def ReadRequired2(self, error_msg):
+    spid = self.spids[self.i]
+    try:
+      arg = self.Peek()
+    except IndexError:
+      # point at argv[0]
+      raise UsageError(error_msg, span_id=self._FirstSpanId())
+    self.Next()
+    return arg, spid
+
   def Rest(self):
     """Return the rest of the arguments."""
     return self.argv[self.i:]
+
+  def Rest2(self):
+    """Return the rest of the arguments."""
+    return self.argv[self.i:], self.spids[self.i:]
 
   def AtEnd(self):
     return self.i >= self.n  # must be >= and not ==

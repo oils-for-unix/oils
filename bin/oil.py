@@ -70,6 +70,7 @@ from oil_lang import cmd_exec as oil_cmd_exec
 from osh import builtin
 from osh import builtin_bracket
 from osh import builtin_comp
+from osh import builtin_printf
 from osh import cmd_exec
 from osh import expr_eval
 from osh import history
@@ -412,7 +413,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
-      builtin_e.PRINTF: builtin.Printf(mem),
+      builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
       builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),

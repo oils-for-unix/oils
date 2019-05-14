@@ -42,11 +42,9 @@ module syntax
     -- MainFile(string path) or SourcedFile(string path, int spid)
   | MainFile(string path)
   | SourcedFile(string path, int spid)
-  | ArgvWord(extent loc)       -- code parsed from a single word.
-                               -- e.g. trap and complete -W
-  | ArgvCommand(extent first)  -- word splitting changes the arity, so we don't
-                               -- don't know which arg came from which word.
-                               -- Just point to the first word.
+  | ArgvWord(int word_spid)    -- code parsed from a single word.
+                               -- e.g. trap, complete -W, printf
+  | ArgvCommand(int first_spid) -- first word
   | EvalArg(int eval_spid)     -- special case for 'eval'
                                -- The rest of the args are JOINED, so it's not
                                -- clear where they come from.
@@ -256,6 +254,11 @@ module syntax
   -- * Collating symbols are [. .]
   -- * Equivalence classes are [=
 
+  printf_part =
+    Literal(token token)
+    -- flags are 0 hyphen space + #
+    -- type is 's' for %s, etc.
+  | Percent(token? flag, token? width, token? precision, token type)
 
   --
   -- OIL LANGUAGE

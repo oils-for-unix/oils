@@ -169,6 +169,44 @@ class LexerTest(unittest.TestCase):
         if t.id == Id.Eof_Real:
           break
 
+  def testMode_Printf(self):
+    CASES = [
+        r'hello %s\n',
+        r'%% percent %%\377',
+    ]
+
+    for case in CASES:
+      print()
+      print('--- %s ---' % case)
+      print()
+
+      lexer = _InitLexer(case)
+
+      while True:
+        t = lexer.Read(lex_mode_e.PrintfOuter)
+        print(t)
+        if t.id == Id.Eof_Real:
+          break
+
+    # Now test the Printf_Percent mode
+    CASES = [
+        r'-3.3f',
+        r'03d'
+    ]
+
+    for case in CASES:
+      print()
+      print('--- %s ---' % case)
+      print()
+
+      lexer = _InitLexer(case)
+
+      while True:
+        t = lexer.Read(lex_mode_e.PrintfPercent)
+        print(t)
+        if t.id == Id.Eof_Real:
+          break
+
   def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
     # the function; then Peek() the next token.  Then Lookahead in that state.

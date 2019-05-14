@@ -501,6 +501,25 @@ LEXER_DEF[lex_mode_e.DollarSQ] = _C_STRING_COMMON + [
   C('\\\0', Id.Unknown_Tok),
 ]
 
+LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
+  R(OCTAL3_RE, Id.Char_Octal3),
+  R(r"[^%\\\0]+", Id.Char_Literals),
+  C('%%', Id.Format_EscapedPercent),
+  C('%', Id.Format_Percent),
+]
+
+# Maybe: bash also supports %(strftime)T
+LEXER_DEF[lex_mode_e.PrintfPercent] = [
+  # Flags
+  R('[-0 +#]', Id.Format_Flag),
+
+  R('[1-9][0-9]*', Id.Format_Num),
+  C('.', Id.Format_Dot),
+  # We support dsq.  The others we parse to display an error message.
+  R('[disqbcouxXeEfFgG]', Id.Format_Type),
+  R(r'[^\0]', Id.Unknown_Tok),  # any otehr char
+]
+
 LEXER_DEF[lex_mode_e.VS_1] = [
   R(VAR_NAME_RE, Id.VSub_Name),
   #  ${11} is valid, compared to $11 which is $1 and then literal 1.

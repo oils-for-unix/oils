@@ -426,6 +426,13 @@ def AddKinds(spec):
       'BadBackslash',  # \D or trailing \
   ])
 
+  # For C-escaped strings.
+  spec.AddKind('Format', [
+      'EscapedPercent',
+      'Percent',  # starts another lexer mode
+      'Flag', 'Num', 'Dot', 'Type',
+  ])
+
   # For parsing globs and converting them to regexes.
   spec.AddKind('Glob', [
       'LBracket', 'RBracket',

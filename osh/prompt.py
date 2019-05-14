@@ -104,8 +104,8 @@ class Evaluator(object):
     ret = []
     non_printing = 0
     for id_, value in tokens:
-      # BadBacklash means they should have escaped with \\, but we can't 
-      # make this an error.
+      # BadBacklash means they should have escaped with \\.  TODO: Make it an error.
+      # 'echo -e' has a similar issue.
       if id_ in (Id.PS_Literals, Id.PS_BadBackslash):
         ret.append(value)
 

@@ -1019,7 +1019,7 @@ class CommandParser(object):
     return node
 
   def _ParseForEachLoop(self, for_spid):
-    # type: () -> command__ForEach
+    # type: (int) -> command__ForEach
     node = command.ForEach()
     node.do_arg_iter = False
     node.spids.append(for_spid)  # for $LINENO and error fallback
