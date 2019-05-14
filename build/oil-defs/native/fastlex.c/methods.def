@@ -6,6 +6,7 @@ static PyMethodDef methods[] = {
   {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS},
   {"MatchPS1Token", fastlex_MatchPS1Token, METH_VARARGS},
   {"MatchHistoryToken", fastlex_MatchHistoryToken, METH_VARARGS},
+  {"MatchBraceRangeToken", fastlex_MatchBraceRangeToken, METH_VARARGS},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS},
   {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS},
   {0},
