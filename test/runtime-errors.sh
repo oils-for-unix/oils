@@ -420,10 +420,21 @@ array_assign_2() {
   array[0]=x
 }
 
-# Need location info
 readonly_assign() {
   readonly x=1
-  readonly x=2
+  x=2
+}
+
+multiple_assign() {
+  readonly x=1
+  # It blames x, not a!
+  a=1 b=2 x=42
+}
+
+multiple_assign_2() {
+  readonly y
+  local x=1 y=$(( x ))
+  echo $y
 }
 
 #
@@ -595,7 +606,8 @@ all() {
     undef_assoc_array \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool \
-    array_assign_1 array_assign_2 readonly_assign patsub_bad_glob \
+    array_assign_1 array_assign_2 readonly_assign \
+    multiple_assign multiple_assign_2 patsub_bad_glob \
     builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
     builtin_popd builtin_unset builtin_alias_unalias builtin_help \
     builtin_trap builtin_getopts builtin_wait \

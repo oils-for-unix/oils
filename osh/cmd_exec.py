@@ -667,7 +667,7 @@ class Executor(object):
       # context, as well as redirects in the expansion!
 
       # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
-      # expansion, since aliase are discouarged.
+      # expansion, since aliases are discouarged.
 
       if node.more_env:
         self.mem.PushTemp()
@@ -748,9 +748,8 @@ class Executor(object):
         raise AssertionError(node.keyword)
 
       for pair in node.pairs:
-        # Assignment always appears to have a spid.
-        # TODO: Use pair!
-        self.mem.SetCurrentSpanId(node.spids[0])
+        # Use the spid of each pair.
+        self.mem.SetCurrentSpanId(pair.spids[0])
 
         if pair.op == assign_op_e.PlusEqual:
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?

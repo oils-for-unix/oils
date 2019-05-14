@@ -435,6 +435,7 @@ posix() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+# TODO: Add ZSH and move $LINENO tests from spec/introspect here
 special-vars() {
   sh-spec spec/special-vars.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"

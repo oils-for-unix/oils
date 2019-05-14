@@ -78,7 +78,7 @@ cprofile-pyconfigure() {
 
   PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor \
     time python -m cProfile -o pyconfigure.cprofile \
-    $REPO_ROOT/bin/oil.py osh -c 'echo hi'
+    $REPO_ROOT/bin/oil.py osh myconfigure
     #_cprofile pyconfigure.cprofile \
 }
 print-pyconfigure() { print-cprofile $pydir/pyconfigure.cprofile; }

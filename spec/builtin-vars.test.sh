@@ -236,3 +236,19 @@ f() {
 f
 ## status: 1
 ## OK dash status: 2
+
+#### local after readonly
+f() { 
+  readonly y
+  local x=1 y=$(( x ))
+  echo y=$y
+}
+f
+## stdout-json: ""
+## status: 1
+## OK dash status: 2
+## BUG bash stdout: y=
+## BUG bash status: 0
+## BUG mksh stdout: y=0
+## BUG mksh status: 0
+
