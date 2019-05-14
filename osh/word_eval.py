@@ -804,6 +804,7 @@ class _WordEvaluator(object):
         s = ''.join(t.val for t in part.tokens)
       elif part.left.id == Id.Left_DollarSingleQuote:
         # NOTE: This could be done at compile time
+        # TODO: Add location info for invalid backslash
         s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
                     for t in part.tokens)
       else:

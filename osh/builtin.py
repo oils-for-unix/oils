@@ -250,74 +250,80 @@ PRINTF_SPEC = _Register('printf')
 PRINTF_SPEC.ShortFlag('-v', args.Str)
 
 
-def Printf(argv, mem):
-  """
-  printf: printf [-v var] format [argument ...]
-  """
-  arg, args_consumed = PRINTF_SPEC.Parse(argv)
-  if args_consumed >= len(argv):
-    ui.Stderr('osh error: printf: need format string')
-    return 1
-  fmt = argv[args_consumed]
-  vals = argv[args_consumed + 1:]
+class Printf(object):
+  def __init__(self, mem):
+    self.mem = mem
 
-  parts = []
-  f = 0
-  v = 0
-  # Loop invariant: vals[v:] and fmt[f:] remain, to accumulate onto `parts`.
-  while True:
-    f_next = fmt.find('%', f)
-    if f_next < 0:
-      f_next = len(fmt)
+  def __call__(self, arg_vec):
+    """
+    printf: printf [-v var] format [argument ...]
+    """
+    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # skip argv[0]
+    arg, _ = PRINTF_SPEC.Parse(arg_r)
 
-    parts.append(fmt[f:f_next])  # TODO backslash-escapes, at least \n
-    f = f_next
+    fmt = arg_r.ReadRequired('requires a format string')
+    vals = arg_r.Rest()
+    #log('fmt %s', fmt)
+    #log('vals %s', vals)
 
-    if f >= len(fmt):
-      if v >= len(vals):
-        break
-      else:
-        # (handy!) bash printf quirk: re-use fmt to consume remaining vals.
-        f = 0
+    parts = []
+    f = 0
+    v = 0
+    # Loop invariant: vals[v:] and fmt[f:] remain, to accumulate onto `parts`.
+    while True:
+      f_next = fmt.find('%', f)
+      if f_next < 0:
+        f_next = len(fmt)
+
+      parts.append(fmt[f:f_next])  # TODO backslash-escapes, at least \n
+      f = f_next
+
+      if f >= len(fmt):
+        if v >= len(vals):
+          break
+        else:
+          # (handy!) bash printf quirk: re-use fmt to consume remaining vals.
+          f = 0
+          continue
+
+      c = fmt[f+1]
+      if c == '%':
+        f += 2
+        parts.append('%')
         continue
+      elif c == 's':
+        f += 2
+        parts.append(vals[v] if v < len(vals) else '')
+        v += 1
+        continue
+      elif c == 'q':
+        f += 2
+        parts.append(string_ops.ShellQuote(vals[v] if v < len(vals) else ''))
+        v += 1
+        continue
+      elif c == 'd':
+        f += 2
+        val = vals[v] if v < len(vals) else '0'
+        v += 1
+        try:
+          num = int(val)
+        except ValueError:
+          # TODO should print message but carry on as if 0
+          ui.Stderr('osh error: printf: %s: invalid number', val)
+          return 1
+        parts.append(str(num))
+      else:
+        # TODO %b, %(fmt)T, plus "the standard ones in printf(1)"
+        raise NotImplementedError
 
-    c = fmt[f+1]
-    if c == '%':
-      f += 2
-      parts.append('%')
-      continue
-    elif c == 's':
-      f += 2
-      parts.append(vals[v] if v < len(vals) else '')
-      v += 1
-      continue
-    elif c == 'q':
-      f += 2
-      parts.append(string_ops.ShellQuote(vals[v] if v < len(vals) else ''))
-      v += 1
-      continue
-    elif c == 'd':
-      f += 2
-      val = vals[v] if v < len(vals) else '0'
-      v += 1
-      try:
-        num = int(val)
-      except ValueError:
-        # TODO should print message but carry on as if 0
-        ui.Stderr('osh error: printf: %s: invalid number', val)
-        return 1
-      parts.append(str(num))
+    result = ''.join(parts)
+    if arg.v:
+      state.SetLocalString(self.mem, arg.v, result)
     else:
-      # TODO %b, %(fmt)T, plus "the standard ones in printf(1)"
-      raise NotImplementedError
-
-  result = ''.join(parts)
-  if arg.v:
-    state.SetLocalString(mem, arg.v, result)
-  else:
-    sys.stdout.write(result)
-    sys.stdout.flush()
-  return 0
+      sys.stdout.write(result)
+      sys.stdout.flush()
+    return 0
 
 
 WAIT_SPEC = _Register('wait')

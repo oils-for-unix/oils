@@ -405,3 +405,189 @@ echo status=$?
 ## stdout: status=2
 ## OK bash stdout: status=1
 ## N-I zsh stdout-json: ""
+
+#### printf width strings
+printf '[%5s]\n' abc
+printf '[%-5s]\n' abc
+## STDOUT:
+[  abc]
+[abc  ]
+## END
+
+#### printf integer
+printf '[%5d]\n' 42
+printf '[%-5d]\n' 42
+printf '[%05d]\n' 42
+printf '[%-05d]\n' 42  # the leading 0 is meaningless
+## STDOUT:
+[   42]
+[42   ]
+[00042]
+[42   ]
+## END
+
+#### printf %6.4d -- hm I didn't know this worked!
+printf '[%6.4d]\n' 42
+## STDOUT:
+[  0042]
+## END
+
+#### printf %6.4s -- seems overspecified
+printf '[%6.4s]\n' 42
+## STDOUT:
+[    42]
+## END
+
+#### printf unsigned
+printf '[%u]\n' -42
+## STDOUT:
+[18446744073709551574]
+## END
+
+#### integer octal hex
+printf '[%o]\n' 42
+printf '[%x]\n' 42
+printf '[%X]\n' 42
+## STDOUT:
+[52]
+[2a]
+[2A]
+## END
+
+#### printf floating point (not required, but they all implement it)
+printf '[%f]\n' 3.14159
+printf '[%.2f]\n' 3.14159
+printf '[%8.2f]\n' 3.14159
+printf '[%-8.2f]\n' 3.14159
+printf '[%-f]\n' 3.14159
+printf '[%-f]\n' 3.14
+## STDOUT:
+[3.141590]
+[3.14]
+[    3.14]
+[3.14    ]
+[3.141590]
+[3.140000]
+## END
+
+#### printf floating point with - and 0
+printf '[%8.4f]\n' 3.14
+printf '[%08.4f]\n' 3.14
+printf '[%8.04f]\n' 3.14  # meaning less 0
+printf '[%08.04f]\n' 3.14
+echo ---
+# these all boil down to the same thing.  The -, 8, and 4 are respected, but
+# none of the 0 are.
+printf '[%-8.4f]\n' 3.14
+printf '[%-08.4f]\n' 3.14
+printf '[%-8.04f]\n' 3.14
+printf '[%-08.04f]\n' 3.14
+## STDOUT:
+[  3.1400]
+[003.1400]
+[  3.1400]
+[003.1400]
+---
+[3.1400  ]
+[3.1400  ]
+[3.1400  ]
+[3.1400  ]
+## END
+
+#### printf backslash escapes
+argv.py "$(printf 'a\tb')"
+argv.py "$(printf '\xE2\x98\xA0')"
+argv.py "$(printf '\044e')"
+argv.py "$(printf '\0377')"  # out of range
+## STDOUT:
+['a\tb']
+['\xe2\x98\xa0']
+['$e']
+['\x1f7']
+## END
+## N-I dash STDOUT:
+['a\tb']
+['\\xE2\\x98\\xA0']
+['$e']
+['\x1f7']
+## END
+
+#### printf octal backslash escapes
+argv.py "$(printf '\0377')"
+argv.py "$(printf '\377')"
+## STDOUT:
+['\x1f7']
+['\xff']
+## END
+
+#### printf unicode backslash escapes
+argv.py "$(printf '\u2620')"
+argv.py "$(printf '\U0000065f')"
+## STDOUT:
+['\xe2\x98\xa0']
+['\xd9\x9f']
+## END
+## N-I dash/ash STDOUT:
+['\\u2620']
+['\\U0000065f']
+## END
+
+#### printf invalid backslash escape (is ignored)
+printf '[\Z]\n'
+## STDOUT:
+[\Z]
+## END
+
+#### printf % escapes
+printf '[%%]\n'
+## STDOUT:
+[%]
+## END
+
+#### printf other format codes
+# I don't understand what these do?
+printf '[%b]\n' 42
+printf '[%c]\n' 42
+## STDOUT:
+[42]
+[4]
+## END
+
+#### printf invalid format
+printf '%z' 42
+echo status=$?
+printf '%-z' 42
+echo status=$?
+## STDOUT:
+status=1
+status=1
+## END
+## BUG ash STDOUT:
+status=0
+status=0
+## END
+
+#### printf %q
+x='a b'
+printf '[%q]\n' "$x"
+## STDOUT:
+['a b']
+## END
+## OK bash/zsh STDOUT:
+[a\ b]
+## END
+## N-I ash/dash stdout-json: "["
+## N-I ash/dash status: 1
+
+#### printf %6q (width)
+# NOTE: coreutils /usr/bin/printf does NOT implement this %6q !!!
+x='a b'
+printf '[%6q]\n' "$x"
+## STDOUT:
+[ 'a b']
+## END
+## OK bash/zsh STDOUT:
+[  a\ b]
+## END
+## N-I mksh/ash/dash stdout-json: "["
+## N-I mksh/ash/dash status: 1

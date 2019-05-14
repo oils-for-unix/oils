@@ -553,7 +553,10 @@ class BuiltinFlags(object):
 
     return out, arg_r.i
 
-  def _Parse(self, arg_r):
+  def Parse(self, arg_r):
+    """
+    For builtins that need both flags and args.
+    """
     # NOTE about -:
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
@@ -596,12 +599,12 @@ class BuiltinFlags(object):
     """For OSH builtins."""
     arg_r = Reader(arg_vec.strs, spids=arg_vec.spids)
     arg_r.Next()  # move past the builtin name
-    return self._Parse(arg_r)
+    return self.Parse(arg_r)
 
   def ParseArgv(self, argv):
     """For tools/readlink.py -- no location info available."""
     arg_r = Reader(argv)
-    return self._Parse(arg_r)
+    return self.Parse(arg_r)
 
 
 # - A flag can start with one or two dashes, but not three

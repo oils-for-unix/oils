@@ -412,6 +412,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
+      builtin_e.PRINTF: builtin.Printf(mem),
 
       builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
