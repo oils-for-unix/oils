@@ -178,30 +178,73 @@ one
 ## END
 
 #### continue in subshell
-for i in $(seq 3); do
+for i in $(seq 2); do
   echo "> $i"
   ( if true; then continue; fi; echo "Should not print" )
+  echo subshell status=$?
   echo ". $i"
 done
 ## STDOUT:
+# osh lets you fail
 > 1
+subshell status=1
 . 1
 > 2
+subshell status=1
 . 2
-> 3
-. 3
+## END
+## OK dash/bash/zsh STDOUT:
+> 1
+subshell status=0
+. 1
+> 2
+subshell status=0
+. 2
 ## END
 ## BUG mksh STDOUT:
 > 1
 Should not print
+subshell status=0
 . 1
 > 2
 Should not print
+subshell status=0
 . 2
-> 3
-Should not print
-. 3
 ## END
+
+#### continue in subshell aborts with errexit
+# The other shells don't let you recover from this programming error!
+set -o errexit
+for i in $(seq 2); do
+  echo "> $i"
+  ( if true; then continue; fi; echo "Should not print" )
+  echo 'should fail after subshell'
+  echo ". $i"
+done
+## STDOUT:
+> 1
+## END
+## status: 1
+## BUG dash/bash/zsh STDOUT:
+> 1
+should fail after subshell
+. 1
+> 2
+should fail after subshell
+. 2
+## END
+## BUG dash/bash/zsh status: 0
+## BUG mksh STDOUT:
+> 1
+Should not print
+should fail after subshell
+. 1
+> 2
+Should not print
+should fail after subshell
+. 2
+## END
+## BUG mksh status: 0
 
 #### bad arg to break
 x=oops

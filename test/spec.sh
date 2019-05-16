@@ -287,7 +287,7 @@ quote() {
 }
 
 loop() {
-  sh-spec spec/loop.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/loop.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 

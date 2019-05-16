@@ -476,7 +476,10 @@ class SubProgramThunk(object):
     # NOTE: may NOT return due to exec().
     if self.disable_errexit:
       self.ex.exec_opts.errexit.Disable()
+
     self.ex.ExecuteAndCatch(self.node, fork_external=False)
+    # NOTE: We ignore the is_fatal return value.  The user should set -o
+    # errexit so failures in subprocesses cause failures in the parent.
 
     # Raises SystemExit, so we still have time to write a crash dump.
     sys.exit(self.ex.LastStatus())

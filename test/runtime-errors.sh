@@ -585,6 +585,14 @@ strict_control_flow_warnings() {
   break
 }
 
+control_flow_subshell() {
+  set -o errexit
+  for i in $(seq 2); do
+    echo $i
+    ( break; echo 'oops')
+  done
+}
+
 #
 # TEST DRIVER
 #
@@ -622,7 +630,7 @@ all() {
     builtin_popd builtin_unset builtin_alias_unalias builtin_help \
     builtin_trap builtin_getopts builtin_wait \
     strict_word_eval_warnings strict_arith_warnings \
-    strict_control_flow_warnings; do
+    strict_control_flow_warnings control_flow_subshell; do
     _run_test $t
   done
 }

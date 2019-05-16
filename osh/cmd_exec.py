@@ -1192,7 +1192,14 @@ class Executor(object):
         is_control_flow = True
         status = e.StatusCode()
       else:
-        raise  # Invalid
+        # Invalid control flow
+        self.errfmt.Print(
+            "Loop and control flow can't be in a different processes",
+            span_id=e.token.span_id)
+        is_fatal = True
+        # All shells exit 0 here.  It could be hidden behind
+        # strict-control-flow if the incompatibility causes problems.
+        status = 1
     except util.ParseError as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
