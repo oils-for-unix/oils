@@ -22,11 +22,8 @@ _spec-manifest() {
   done | gawk '
   match($0, "spec/(.*)[.]test.sh", array) {
     name = array[1]
-    # Nothing passing here
+    # This is for file system globs.  We have tests elsewhere for the [[ case.
     if (name == "extended-glob") next;
-
-    # For testing printf -v, which I do not want to implement.
-    if (name == "builtin-printf") next;
 
     # This was meant for ANTLR.
     if (name == "shell-grammar") next;

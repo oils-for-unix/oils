@@ -442,7 +442,7 @@ special-vars() {
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/introspect.test.sh \
     $BASH $OSH_LIST "$@"
 }
 
