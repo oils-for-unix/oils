@@ -155,18 +155,23 @@ class Printf(object):
     #log('vals %s', vals)
 
     arena = self.parse_ctx.arena
-    line_reader = reader.StringLineReader(fmt, arena)
-    # TODO: Make public
-    lexer = self.parse_ctx._MakeLexer(line_reader)
-    p = _FormatStringParser(lexer)
-    arena.PushSource(source.ArgvWord(fmt_spid))
-    try:
-      parts = p.Parse()
-    except util.ParseError as e:
-      self.errfmt.PrettyPrintError(e)
-      return 2  # parse error
-    finally:
-      arena.PopSource()
+    if fmt in self.parse_cache:
+      parts = self.parse_cache[fmt]
+    else:
+      line_reader = reader.StringLineReader(fmt, arena)
+      # TODO: Make public
+      lexer = self.parse_ctx._MakeLexer(line_reader)
+      p = _FormatStringParser(lexer)
+      arena.PushSource(source.ArgvWord(fmt_spid))
+      try:
+        parts = p.Parse()
+      except util.ParseError as e:
+        self.errfmt.PrettyPrintError(e)
+        return 2  # parse error
+      finally:
+        arena.PopSource()
+
+      self.parse_cache[fmt] = parts
 
     if 0:
       print()

@@ -30,4 +30,16 @@ printf-loop() {
   done | wc -l
 }
 
+# This microbenchmark justifies the parse_cache member in
+# osh/builtin_printf.py.
+#
+# With the cache, it runs in ~150 ms.
+# Without, it runs in ~230 ms.
+
+printf-loop-complex() {
+  time seq 1000 | while read line; do
+    printf 'hello \t %s \t %q\n' "$line" 'x y'
+  done | wc -l
+}
+
 "$@"
