@@ -1194,7 +1194,7 @@ class Executor(object):
       else:
         # Invalid control flow
         self.errfmt.Print(
-            "Loop and control flow can't be in a different processes",
+            "Loop and control flow can't be in different processes",
             span_id=e.token.span_id)
         is_fatal = True
         # All shells exit 0 here.  It could be hidden behind
