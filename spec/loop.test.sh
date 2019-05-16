@@ -8,7 +8,11 @@ func() {
   done
 }
 func 1 2 3
-## stdout-json: "1\n2\n3\n"
+## STDOUT:
+1
+2
+3
+## END
 
 #### empty for loop (has "in")
 set -- 1 2 3
@@ -33,14 +37,25 @@ HOME=/home/bob
 for name in ~/src ~/git; do
   echo $name
 done
-## stdout-json: "/home/bob/src\n/home/bob/git\n"
+## STDOUT: 
+/home/bob/src
+/home/bob/git
+## END
 
 #### Brace Expansion within Array
 for i in -{a,b} {c,d}-; do
   echo $i
   done
-## stdout-json: "-a\n-b\nc-\nd-\n"
-## N-I dash stdout-json: "-{a,b}\n{c,d}-\n"
+## STDOUT: 
+-a
+-b
+c-
+d-
+## END
+## N-I dash STDOUT:
+-{a,b}
+{c,d}-
+## END
 
 #### using loop var outside loop
 func() {
@@ -51,7 +66,12 @@ func() {
 }
 func
 ## status: 0
-## stdout-json: "a\nb\nc\nc\n"
+## STDOUT:
+a
+b
+c
+c
+## END
 
 #### continue
 for i in a b c; do
@@ -62,7 +82,13 @@ for i in a b c; do
   echo $i
 done
 ## status: 0
-## stdout-json: "a\na\nb\nc\nc\n"
+## STDOUT:
+a
+a
+b
+c
+c
+## END
 
 #### break
 for i in a b c; do
@@ -72,7 +98,10 @@ for i in a b c; do
   fi
 done
 ## status: 0
-## stdout-json: "a\nb\n"
+## STDOUT:
+a
+b
+## END
 
 #### dynamic control flow (KNOWN INCOMPATIBILITY)
 # hm would it be saner to make FATAL builtins called break/continue/etc.?
@@ -99,7 +128,10 @@ do
   echo body
   break
 done
-## stdout-json: "cond\nbody\n"
+## STDOUT:
+cond
+body
+## END
 
 #### while in pipe
 x=$(find spec/ | wc -l)
