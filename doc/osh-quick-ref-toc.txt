@@ -99,7 +99,7 @@ BUILTIN COMMANDS
                   umask   X ulimit   X times
   [Child Process] jobs   wait   ampersand &
                   X fg   X bg   X disown 
-  [External]      test [   X printf   getopts   X kill
+  [External]      test [   printf   getopts   X kill
   [Introspection] help   X hash   type   X caller
   [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
