@@ -229,20 +229,6 @@ def Echo(arg_vec):
   if not arg.n:
     sys.stdout.write('\n')
 
-  # I think the flush fixes a problem with command sub.  But it causes
-  # IOError non-deterministically, when spec/background.test.sh is run in
-  # parallel with other tests.  So just silence it.
-
-  # File "/home/andy/git/oil/bin/../core/cmd_exec.py", line 251, in _RunBuiltin
-  #   status = builtin.Echo(argv)
-  # File "/home/andy/git/oil/bin/../core/builtin.py", line 431, in Echo
-  #   sys.stdout.flush()
-  # IOError: [Errno 32] Broken pipe
-  try:
-    sys.stdout.flush()
-  except IOError as e:
-    pass
-
   return 0
 
 
@@ -629,8 +615,6 @@ def _PrintDirStack(dir_stack, style, home_dir):
   elif style == SINGLE_LINE:
     s = ' '.join(ui.PrettyDir(entry, home_dir) for entry in dir_stack.Iter())
     print(s)
-
-  sys.stdout.flush()
 
 
 class Pushd(object):
@@ -1102,9 +1086,6 @@ class Type(object):
             # bash prints the function body, busybox ash doesn't.
             pass
 
-    # REQUIRED because of Python's buffering.  A command sub may give the wrong
-    # result otherwise.
-    sys.stdout.flush()
     return status
 
 
@@ -1159,7 +1140,6 @@ class DeclareTypeset(object):
     else:
       raise NotImplementedError
 
-    sys.stdout.flush()
     return status
 
 
@@ -1328,7 +1308,6 @@ class Trap(object):
         # bash prints a line that can be re-parsed.
         print('%s %s' % (name, value.__class__.__name__))
 
-      sys.stdout.flush()
       return 0
 
     if arg.l:  # List valid signals and hooks
@@ -1340,7 +1319,6 @@ class Trap(object):
       for name, int_val in ordered:
         print('%2d %s' % (int_val, name))
 
-      sys.stdout.flush()
       return 0
 
     arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
