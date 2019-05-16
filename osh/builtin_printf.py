@@ -13,9 +13,10 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 import sys
 
+from asdl import const
 from core import meta
 from core import util
-from core.util import p_die, e_die
+from core.util import p_die
 from frontend import args
 from frontend import reader
 from osh import builtin
@@ -179,56 +180,66 @@ class Printf(object):
         part.PrettyPrint()
         print()
 
-    count = 0
-    n = len(varargs)
-
     out = []
-    for part in parts:
-      if isinstance(part, printf_part.Literal):
-        token = part.token
-        if token.id == Id.Format_EscapedPercent:
-          s = '%'
-        else:
-          s = word_compile.EvalCStringToken(token.id, token.val)
-        out.append(s)
+    arg_index = 0
+    num_args = len(varargs)
 
-      elif isinstance(part, printf_part.Percent):
-        s = varargs[count % n]
-        word_spid = spids[count % n]
+    while True:
+      for part in parts:
+        if isinstance(part, printf_part.Literal):
+          token = part.token
+          if token.id == Id.Format_EscapedPercent:
+            s = '%'
+          else:
+            s = word_compile.EvalCStringToken(token.id, token.val)
+          out.append(s)
 
-        typ = part.type.val
-        if typ == 's':
-          pass  # val remains the same
-        elif typ == 'q':
-          s = string_ops.ShellQuoteOneLine(s)
-        elif typ in 'di':
+        elif isinstance(part, printf_part.Percent):
           try:
-            d = int(s)
-          except ValueError:
-            self.errfmt.Print('Invalid number %r', s, span_id=word_spid)
-            return 1
-          s = str(d)
+            s = varargs[arg_index]
+            word_spid = spids[arg_index]
+          except IndexError:
+            s = ''
+            word_spid = const.NO_INTEGER
+
+          typ = part.type.val
+          if typ == 's':
+            pass  # val remains the same
+          elif typ == 'q':
+            s = string_ops.ShellQuoteOneLine(s)
+          elif typ in 'di':
+            try:
+              d = int(s)
+            except ValueError:
+              self.errfmt.Print('Invalid number %r', s, span_id=word_spid)
+              return 1
+            s = str(d)
+          else:
+            raise AssertionError
+
+          if part.width:
+            width = int(part.width.val)
+            if part.flag:
+              flag = part.flag.val
+              if flag == '-':
+                s = s.ljust(width, ' ')
+              elif flag == '0':
+                s = s.rjust(width, '0')
+              else:
+                pass
+            else:
+              s = s.rjust(width, ' ')
+
+          out.append(s)
+          arg_index += 1
+
         else:
           raise AssertionError
 
-        if part.width:
-          width = int(part.width.val)
-          if part.flag:
-            flag = part.flag.val
-            if flag == '-':
-              s = s.ljust(width, ' ')
-            elif flag == '0':
-              s = s.rjust(width, '0')
-            else:
-              pass
-          else:
-            s = s.rjust(width, ' ')
-
-        out.append(s)
-        count += 1
-
-      else:
-        raise AssertionError
+      if arg_index >= num_args:
+        break
+      # Otherwise there are more args.  So cycle through the loop once more to
+      # implement the 'arg recycling' behavior.
 
     result = ''.join(out)
     if arg.v:

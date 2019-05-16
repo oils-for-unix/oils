@@ -117,6 +117,20 @@ mylocal=
 not implemented
 ## END
 
+#### printf with too few arguments
+printf -- '-%s-%s-%s-\n' 'a b' 'x y'
+## STDOUT:
+-a b-x y--
+## END
+
+#### printf with too many arguments
+printf -- '-%s-%s-\n' a b c d e
+## STDOUT:
+-a-b-
+-c-d-
+-e--
+## END
+
 #### printf width strings
 printf '[%5s]\n' abc
 printf '[%-5s]\n' abc
