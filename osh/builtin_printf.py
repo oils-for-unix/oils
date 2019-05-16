@@ -211,7 +211,14 @@ class Printf(object):
             try:
               d = int(s)
             except ValueError:
-              self.errfmt.Print('Invalid number %r', s, span_id=word_spid)
+              # This works around the fact that in the arg recycling case, you have no spid.
+              if word_spid == const.NO_INTEGER:
+                self.errfmt.Print("printf got invalid number %r for this substitution", s,
+                                  span_id=part.type.span_id)
+              else:
+                self.errfmt.Print("printf got invalid number %r", s,
+                                  span_id=word_spid)
+
               return 1
             s = str(d)
           else:

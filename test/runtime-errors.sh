@@ -528,6 +528,16 @@ builtin_getopts() {
   getopts 'a:' varname
 }
 
+builtin_printf() {
+  printf '%s %d\n' foo not_a_number
+  echo status=$?
+
+  # bad arg recycling.  This is really a runtime error.
+  printf '%s %d\n' foo 3 bar
+  echo status=$?
+}
+
+
 builtin_wait() {
   wait 1234578
 }

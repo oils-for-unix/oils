@@ -238,6 +238,12 @@ test-builtin() {
   #_error-case '[ -o x ]'
 }
 
+printf-builtin() {
+  set +o errexit
+  _error-case 'printf %'
+  _error-case 'printf [%Z]'
+}
+
 other-builtins() {
   set +o errexit
 
@@ -452,6 +458,7 @@ cases-in-strings() {
 
   bool-expr
   test-builtin
+  printf-builtin
   other-builtins
 
   # frontend/args.py
