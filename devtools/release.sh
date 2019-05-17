@@ -8,8 +8,8 @@
 # Pre-release:
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
-#   build/cpython-defs.sh {oil-py-names,filter-methods}   # regenerate C source
-#     (BUG: this depends on build/test.sh oil-tar and building the tarball)
+#   build/cpython-defs.sh {rebuild-manifest,oil-py-names,filter-methods}
+#     (regenerate C source)
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)

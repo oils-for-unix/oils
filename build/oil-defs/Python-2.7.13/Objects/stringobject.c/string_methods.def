@@ -15,6 +15,8 @@ static PyMethodDef string_methods[] = {
   {"rstrip", (PyCFunction)string_rstrip, METH_VARARGS},
   {"startswith", (PyCFunction)string_startswith, METH_VARARGS},
   {"strip", (PyCFunction)string_strip, METH_VARARGS},
+  {"ljust", (PyCFunction)string_ljust, METH_VARARGS},
+  {"rjust", (PyCFunction)string_rjust, METH_VARARGS},
   {"splitlines", (PyCFunction)string_splitlines, METH_VARARGS},
   {0},
 };
