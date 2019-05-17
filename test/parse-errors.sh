@@ -311,6 +311,12 @@ cmd-parse() {
 
 }
 
+append() {
+  # from spec/append.test.sh.  bash treats this as a runtime error, but it's a
+  # parse error in OSH.
+  _error-case 'a[-1]+=(4 5)'
+}
+
 redirect() {
   set +o errexit
 
@@ -445,6 +451,7 @@ cases-in-strings() {
   redirect
   here-doc
   here-doc-delimiter
+  append
 
   # Word
   word-parse

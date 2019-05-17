@@ -131,9 +131,11 @@ TODO: Explanation.
 
 TODO: It's largly compatible but differs in case #25 of spec/command-sub.
 
+Shells start to disagree on case #26.
+
 (9) **Evaluation model of aliases**
 
-TODO: It's largly compatible but differs with things like:
+It's largly compatible but differs with things like:
 
     alias left='{'
     left echo hi; }

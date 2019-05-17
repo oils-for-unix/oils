@@ -195,7 +195,6 @@ echo-x echo-x
 x echo x
 ## END
 
-
 #### Invalid syntax of alias
 shopt -s expand_aliases  # bash requires this
 alias echo_alias_= 'echo --; echo'  # bad space here
@@ -245,6 +244,8 @@ e_ $i; done
 2
 3
 ## END
+## OK osh stdout-json: ""
+## OK osh status: 2
 
 #### Loop split across both iterative and recursive aliases
 shopt -s expand_aliases  # bash requires this
@@ -261,6 +262,8 @@ FOR2 eye2 IN onetwo 3; do echo $i; done
 2
 3
 ## END
+## OK osh stdout-json: ""
+## OK osh status: 2
 ## BUG zsh stdout-json: ""
 
 #### Alias with a quote in the middle is a syntax error
@@ -387,6 +390,8 @@ LEFT echo one; echo two; }
 one
 two
 ## END
+## OK osh stdout-json: ""
+## OK osh status: 2
 
 #### alias for left paren
 shopt -s expand_aliases
@@ -396,6 +401,8 @@ LEFT echo one; echo two )
 one
 two
 ## END
+## OK osh stdout-json: ""
+## OK osh status: 2
 
 #### alias used in subshell and command sub
 # This spec seems to be contradictoary?

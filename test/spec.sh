@@ -248,7 +248,7 @@ blog-other1() {
 }
 
 alias() {
-  sh-spec spec/alias.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/alias.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -545,7 +545,7 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/append.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
