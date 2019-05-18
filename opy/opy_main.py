@@ -234,8 +234,8 @@ def OpyCommandMain(argv):
                    # That will shift the input.
 
   if action in (
-      'parse', 'compile', 'dis', 'ast', 'symbols', 'cfg', 'compile-ovm',
-      'eval', 'repl', 'run', 'run-ovm'):
+      'parse', 'parse-with', 'compile', 'dis', 'ast', 'symbols', 'cfg',
+      'compile-ovm', 'eval', 'repl', 'run', 'run-ovm'):
     loader = pyutil.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
     gr = grammar.Grammar()
@@ -325,6 +325,27 @@ def OpyCommandMain(argv):
     else:
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
+
+  elif action == 'parse-with':
+    grammar_path = argv[0]
+    start_symbol = argv[1]
+    expr = argv[2]
+
+    import cStringIO
+    f = cStringIO.StringIO(expr)
+    gr = pgen.generate_grammar(grammar_path)
+
+    tokens = tokenize.generate_tokens(f.readline)
+    #print(tokens)
+    p = parse.Parser(gr, convert=skeleton.py2st)
+    parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
+
+    n = CountTupleTree(parse_tree)
+    log('Parsing %r resulted in %d nodes', expr, n)
+
+    if 0:
+      printer = TupleTreePrinter(transformer._names)
+      printer.Print(parse_tree)
 
   elif action == 'ast':  # output AST
     opt, i = compile_spec.Parse(argv)

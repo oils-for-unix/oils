@@ -246,6 +246,20 @@ compile-with-cpython() {
   ../bin/opyc dis $pyc
 }
 
+# Print something 99 parentheses deep!  It causes a MemoryError in the parser,
+# but 98 doesn't.  I noticed MAXSTACK = 1500 in Parser/parser.h.
+pgen-stack() {
+  python -c '
+import sys
+n = int(sys.argv[1])
+print "(" * n
+print "42"
+print ")" * n
+' 99 > _tmp/deep.py
+
+  python _tmp/deep.py
+}
+
 if test $(basename $0) = 'test.sh'; then
   "$@"
 fi

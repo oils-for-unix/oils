@@ -38,6 +38,7 @@ def PushTokens(p, tokens, start_symbol, convert=None, debug=False):
     prefix = ""
     for quintuple in tokens:
         type_, value, start, end, line_text = quintuple
+        #log('token %s %r', type_, value)
         if start != (lineno, column):
             assert (lineno, column) <= start, ((lineno, column), start)
             s_lineno, s_column = start
