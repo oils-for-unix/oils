@@ -21,11 +21,37 @@
 #   - including regex dialect?  (But that changes lexer modes)
 # - Optional type declarations with MyPy-ish syntax
 #
+# Entry points:
+# - var a = ...             # once you see var/const/set, switch
+# - proc copy [src dest] {  # once you see proc, switch.  { switches back.
+# - func f(name Str, age List<int>) List<int> {     # ditto, { switches back.
+# - $stringfunc(x, y)       # once you see SmipleVarSub and look ahead to '('
+#                           # then switch
+# - @arrayfunc(x, y)        # hm this is harder?  Because oil-splice is
+#                           # detected
+#
+# Exit Points:
+# - a = [foo bar] but NOT a = List []   # array literals go back to word parser
+# - a = '
+#   a = $'   or %c''
+#   a = '''  # multiline?               # string literals back to word parser
+# - block {                             # goes back to CommandParser
+#
 # Extensions to pgen:
 # - take tokens from a different lexer
 # - callbacks to invoke the parser
 #   - hm actually the "driver" can do this because it sees all the tokens?
 #   - it's pushing rather than pulling.
+#
+# TODO: 
+# - get rid of cruft and see what happens
+# - write exhaustive test cases and get rid of arglist problem
+#   - although you are going to change it to be honest
+# - hook it up to Zephyr ASDL.  Create a convert= function.
+#   - This is called on shift() and pop() in pgen2/parse.py.  You can look
+#     at (typ, value) to figure out what to put in the LST.
+#
+# Construct an ambiguous grammar and see what happens?
 
 set -o nounset
 set -o pipefail
@@ -58,8 +84,8 @@ parse-exprs() {
   done
 }
 
-parse-decls() {
-  readonly -a decls=( 
+parse-arglists() {
+  readonly -a arglists=( 
     'a'
     'a,b'
     'a,b=1'
@@ -89,17 +115,51 @@ parse-decls() {
     'a+1'
   )
 
-  for expr in "${decls[@]}"; do
+  for expr in "${arglists[@]}"; do
     ../bin/opyc parse-with oil.grammar arglist_input "$expr"
   done
 }
+
+parse-types() {
+  readonly -a types=(
+    'int'
+    'str'
+    'List<str>'
+    'Tuple<str, int, int>'
+    'Dict<str, int>'
+    # aha!  Tokenizer issue
+    #'Dict<str, Tuple<int, int>>'
+
+    # Must be like this!  That's funny.  Oil will have lexer modes to solve
+    # this problem!
+    'Dict<str, Tuple<int, int> >'
+  )
+  for expr in "${types[@]}"; do
+    ../bin/opyc parse-with oil.grammar type_input "$expr"
+  done
+}
+
 
 all() {
   banner 'exprs'
   parse-exprs
 
-  banner 'decls'
-  parse-decls
+  banner 'arglists'
+  parse-arglists
+
+  banner 'types'
+  parse-types
+}
+
+# Hm Python 3 has type syntax!  But we may not use it.
+# And it has async/await.
+# And walrus operator :=.
+# @ matrix multiplication operator.
+
+diff-grammars() {
+  wc -l ~/src/languages/Python-*/Grammar/Grammar
+
+  cdiff ~/src/languages/Python-{2.7.15,3.6.7}/Grammar/Grammar
 }
 
 "$@"

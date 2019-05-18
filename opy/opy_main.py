@@ -341,7 +341,7 @@ def OpyCommandMain(argv):
     parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
 
     n = CountTupleTree(parse_tree)
-    log('Parsing %r resulted in %d nodes', expr, n)
+    log('%r => %d nodes', expr, n)
 
     if 0:
       printer = TupleTreePrinter(transformer._names)
