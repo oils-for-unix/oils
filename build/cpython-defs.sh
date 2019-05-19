@@ -101,19 +101,15 @@ extract-methods() {
     }
   }
 
-  {
-    if (printing) {
-      print
-    }
-  }
+  printing { print }
 
-  /^[:space:]*\}/ {
-    if (printing) {
-      # Print the edit list for #ifdef #endif.
-      line_end = FNR;
-      printf("%s %s %d %d\n", rel_path, def_name, line_begin, line_end) > edit_list;
-      printing = 0;
-    }
+  # Looking for closing brace (with leading space)
+
+  /^[:space:]*\}/ && printing {
+    # Print the edit list for #ifdef #endif.
+    line_end = FNR;
+    printf("%s %s %d %d\n", rel_path, def_name, line_begin, line_end) > edit_list;
+    printing = 0;
   }
 
   END {
