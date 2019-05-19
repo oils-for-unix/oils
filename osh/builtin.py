@@ -1514,7 +1514,9 @@ class GetOpts(object):
     # NOTE: If first char is a colon, error reporting is different.  Alpine
     # might not use that?
     spec_str = arg_r.ReadRequired('requires an argspec')
-    var_name = arg_r.ReadRequired('requires the name of a variable to set')
+
+    var_name, var_spid = arg_r.ReadRequired2(
+        'requires the name of a variable to set')
 
     try:
       spec = _GETOPTS_CACHE[spec_str]
@@ -1537,9 +1539,15 @@ class GetOpts(object):
                                                 self.errfmt)
 
     # Bug fix: bash-completion uses a *local* OPTIND !  Not global.
-    state.SetStringDynamic(self.mem, var_name, opt_char)
     state.SetStringDynamic(self.mem, 'OPTARG', optarg)
     state.SetStringDynamic(self.mem, 'OPTIND', str(optind))
+    if match.IsValidVarName(var_name):
+      state.SetStringDynamic(self.mem, var_name, opt_char)
+    else:
+      # NOTE: The builtin has PARTIALLY filed.  This happens in all shells
+      # except mksh.
+      raise args.UsageError('got invalid variable name %r' % var_name,
+                            span_id=var_spid)
     return status
 
 

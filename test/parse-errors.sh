@@ -259,6 +259,9 @@ other-builtins() {
 
   _error-case 'wait zzz'
   _error-case 'wait %jobspec-not-supported'
+
+  _error-case 'unset invalid-var-name'
+  _error-case 'getopts 'hc:' invalid-var-name'
 }
 
 quoted-strings() {

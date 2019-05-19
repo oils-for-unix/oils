@@ -48,6 +48,14 @@ shift $(( OPTIND - 1 ))
 echo h=$FLAG_h c=$FLAG_c optind=$OPTIND argv=$@
 ## stdout: h=1 c=foo optind=4 argv=x y z
 
+#### getopts with invalid variable name
+set -- -c foo -h
+getopts 'hc:' opt-
+echo status=$? opt=$opt OPTARG=$OPTARG OPTIND=$OPTIND
+## stdout: status=2 opt= OPTARG=foo OPTIND=3
+## OK bash stdout: status=1 opt= OPTARG=foo OPTIND=3
+## OK mksh stdout: status=1 opt= OPTARG= OPTIND=1
+
 #### getopts with invalid flag
 set -- -h -x
 while getopts "hc:" opt; do
