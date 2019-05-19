@@ -18,6 +18,7 @@ from core import meta
 from core import util
 from core.util import p_die
 from frontend import args
+from frontend import match
 from frontend import reader
 from osh import builtin
 from osh import state
@@ -250,7 +251,15 @@ class Printf(object):
 
     result = ''.join(out)
     if arg.v:
-      state.SetStringDynamic(self.mem, arg.v, result)
+      var_name = arg.v
+
+      # Notes:
+      # - bash allows a[i] here (as in unset and ${!x}), but we haven't
+      # implemented it.
+      # - TODO: get the span_id for arg.v!
+      if not match.IsValidVarName(var_name):
+        raise args.UsageError('got invalid variable name %r' % var_name)
+      state.SetStringDynamic(self.mem, var_name, result)
     else:
       sys.stdout.write(result)
     return 0

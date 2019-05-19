@@ -242,6 +242,8 @@ printf-builtin() {
   set +o errexit
   _error-case 'printf %'
   _error-case 'printf [%Z]'
+
+  _error-case 'printf -v "-invalid-" %s foo'
 }
 
 other-builtins() {

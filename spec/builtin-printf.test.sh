@@ -50,6 +50,26 @@ OK
 ## N-I dash stdout-json: ""
 ## N-I dash status: 1
 
+#### printf -v a[1]
+a=(a b c)
+printf -v 'a[1]' %s 'foo'
+echo status=$?
+argv.py "${a[@]}"
+## STDOUT:
+status=0
+['a', 'foo', 'c']
+## END
+## N-I mksh/zsh STDOUT:
+-vstatus=0
+['a', 'b', 'c']
+## END
+## N-I dash/ash stdout-json: ""
+## N-I dash/ash status: 2
+## N-I osh STDOUT:
+status=2
+['a', 'b', 'c']
+## END
+
 #### dynamic declare instead of %s
 var=foo
 declare $var='hello there'
