@@ -91,12 +91,19 @@ def CountTupleTree(tu):
 class TupleTreePrinter(object):
   def __init__(self, names):
     self._names = names
+    # TODO: parameterize by grammar.
+    self.max_token_index = max(token.tok_name)
 
   def Print(self, tu, f=sys.stdout, indent=0):
     ind = '  ' * indent
     f.write(ind)
     if isinstance(tu, tuple):
-      f.write(self._names[tu[0]])
+      num = tu[0]
+      if num < self.max_token_index:
+        f.write(self._names[num])
+        f.write(' %s (%d, %d)\n' % (tu[1], tu[2], tu[3]))
+        return
+      f.write(self._names[num])
       f.write('\n')
       for entry in tu[1:]:
         self.Print(entry, f, indent=indent+1)
@@ -104,10 +111,32 @@ class TupleTreePrinter(object):
       f.write(str(tu))
       f.write('\n')
     elif isinstance(tu, str):
-      f.write(str(tu))
+      f.write(tu)
       f.write('\n')
     else:
       raise AssertionError(tu)
+
+
+class ParseTreePrinter(object):
+  def __init__(self, names):
+    self.names = names
+    # TODO: parameterize by grammar.
+    self.max_token_index = max(token.tok_name)
+
+  def Print(self, node, f=sys.stdout, indent=0):
+    ind = '  ' * indent
+
+    typ, value, context, children = node
+    # NOTE:
+    # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
+    # - context is (str, (lineno, column)), where lineno is 1-based.
+    # What is the string?
+
+    v = value if value is not None else '-'
+    f.write('%s%s %s %s\n' % (ind, self.names[typ], v, context))
+    if children:  # could be None
+      for child in children:
+        self.Print(child, indent=indent+1)
 
 
 class TableOutput(object):
@@ -234,7 +263,7 @@ def OpyCommandMain(argv):
                    # That will shift the input.
 
   if action in (
-      'parse', 'parse-with', 'compile', 'dis', 'ast', 'symbols', 'cfg',
+      'parse', 'compile', 'dis', 'ast', 'symbols', 'cfg',
       'compile-ovm', 'eval', 'repl', 'run', 'run-ovm'):
     loader = pyutil.GetResourceLoader()
     f = loader.open(PICKLE_REL_PATH)
@@ -325,27 +354,6 @@ def OpyCommandMain(argv):
     else:
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
-
-  elif action == 'parse-with':
-    grammar_path = argv[0]
-    start_symbol = argv[1]
-    expr = argv[2]
-
-    import cStringIO
-    f = cStringIO.StringIO(expr)
-    gr = pgen.generate_grammar(grammar_path)
-
-    tokens = tokenize.generate_tokens(f.readline)
-    #print(tokens)
-    p = parse.Parser(gr, convert=skeleton.py2st)
-    parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
-
-    n = CountTupleTree(parse_tree)
-    log('%r => %d nodes', expr, n)
-
-    if 0:
-      printer = TupleTreePrinter(transformer._names)
-      printer.Print(parse_tree)
 
   elif action == 'ast':  # output AST
     opt, i = compile_spec.Parse(argv)

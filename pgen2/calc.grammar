@@ -1,0 +1,12 @@
+eval_input: arith_expr NEWLINE* ENDMARKER
+
+arith_expr: term (('+'|'-') term)*
+term: factor (('*'|'/'|'%'|'//') factor)*
+factor: ('+'|'-'|'~') factor | power
+power: atom trailer* ['**' factor]
+trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+atom: NAME | NUMBER | STRING+
+
+# Trailing commas are allowed!
+arglist: arith_expr (',' arith_expr)* [',']
+subscriptlist: arith_expr (',' arith_expr)* [',']

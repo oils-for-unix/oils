@@ -3,7 +3,7 @@
 # Figuring out if we can use pgen2 for Oil syntax.
 #
 # Usage:
-#   ./oil-syntax.sh <function name>
+#   ./pgen2-test.sh <function name>
 
 # Things to parse:
 # - Expressions
@@ -19,7 +19,16 @@
 #     - "${foo:-}" and [a b "$foo"]
 #     - although disallow ${} and prefer $[] for expressions?
 #   - including regex dialect?  (But that changes lexer modes)
-# - Optional type declarations with MyPy-ish syntax
+# - Types:
+#   - Optional type declarations with MyPy-ish syntax
+#   - casting ("x as Int" like Rust?)
+# - Other:
+#   - classes, record, enum declarations!  Unlike funcs and procs, these do
+#     NOT call back into the OSH parser.  There can be no statements inside
+#     "class", etc.
+#   - awk dialect: BEGIN / END / when.  Ditto, no arbitrary statements.
+#   - 'rule' blocks: colon and other bells and whistles
+#   - find dialect: fs ()
 #
 # Entry points:
 # - var a = ...             # once you see var/const/set, switch
@@ -31,11 +40,24 @@
 #                           # detected
 #
 # Exit Points:
-# - a = [foo bar] but NOT a = List []   # array literals go back to word parser
-# - a = '
-#   a = $'   or %c''
+# - a = [foo bar]                       # array literals go back to word parser
+#   - but NOT a = List [
+# - a = '    and "
+#   a = $'   or %c''                    # not sure if we want $''
 #   a = '''  # multiline?               # string literals back to word parser
 # - block {                             # goes back to CommandParser
+#   - but NOT { for dicts/sets
+#
+# Lexer Modes
+#
+# - lex_mode_e.Expr -- newlines are whitespace
+# - lex_mode_e.Block -- newlines are terminators
+# - lex_mode_e.CharClass -- regex char classes have different rules
+#   (outer regexes use Expr mode, I believe)
+# - lex_mode_e.Str    # simple double-quoted string literal?
+#                     # I don't want all the mess
+#                     # or you can post-process the LST and eliminate
+#                     # undesirable shellc onstructs
 #
 # Extensions to pgen:
 # - take tokens from a different lexer
@@ -63,6 +85,11 @@ banner() {
   echo
 }
 
+# Copied from run.sh
+parse() {
+  PYTHONPATH=. pgen2/pgen2_main.py parse "$@"
+}
+
 parse-exprs() {
   readonly -a exprs=(
     '1+2'
@@ -80,7 +107,7 @@ parse-exprs() {
     'a[i:i+1]'
   )
   for expr in "${exprs[@]}"; do
-    ../bin/opyc parse-with oil.grammar eval_input "$expr"
+    parse pgen2/oil.grammar eval_input "$expr"
   done
 }
 
@@ -116,7 +143,7 @@ parse-arglists() {
   )
 
   for expr in "${arglists[@]}"; do
-    ../bin/opyc parse-with oil.grammar arglist_input "$expr"
+    parse pgen2/oil.grammar arglist_input "$expr"
   done
 }
 
@@ -135,7 +162,50 @@ parse-types() {
     'Dict<str, Tuple<int, int> >'
   )
   for expr in "${types[@]}"; do
-    ../bin/opyc parse-with oil.grammar type_input "$expr"
+    parse pgen2/oil.grammar type_input "$expr"
+  done
+}
+
+calc-test() {
+  readonly -a types=(
+    'a + 2'
+    '1 + 2*3/4'  # operator precedence and left assoc
+    '"abc" + "def"'
+    #'2 ** 3 ** 4'  # right assoc
+    #'f(1, 2, 3)'
+    #'f(a[i], 2, 3)'
+
+    # bad token
+    'a * 3&4'
+  )
+  for expr in "${types[@]}"; do
+    parse pgen2/calc.grammar eval_input "$expr"
+  done
+}
+
+enum-test() {
+  readonly -a enums=(
+    # second alternative
+    'for 3 a'
+    'for 3 { a, b }'
+    'for 3 a { a, b }'
+    #'for'
+    #'a'
+  )
+  for expr in "${enums[@]}"; do
+    parse pgen2/enum.grammar eval_input "$expr"
+  done
+}
+
+ll1-test() {
+  readonly -a enums=(
+    # second alternative
+    'a'
+    'a b'
+    #'b'
+  )
+  for expr in "${enums[@]}"; do
+    parse pgen2/enum.grammar ll1_test "$expr"
   done
 }
 

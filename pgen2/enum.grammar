@@ -1,0 +1,28 @@
+# Demo
+
+eval_input: enum_specifier NEWLINE* ENDMARKER
+
+identifier: NAME
+attributes:  NUMBER
+enumerator_list: identifier (',' identifier)*
+
+enum_specifier: (
+  'for' [attributes] [identifier] '{' enumerator_list [','] '}'
+| 'for' [attributes] identifier
+)
+
+
+ll1_test: ll1 NEWLINE* ENDMARKER
+
+
+ll1: 'a' | 'a' 'b'
+
+p1: 'a'
+p2: 'a' 'b'
+
+# NOT OK!!
+# ValueError: rule p3 is ambiguous; 'a' is in the first sets of p1 as well as
+# p2
+#p3: p1 | p2
+
+#ll_test2: p3 NEWLINE* ENDMARKER
