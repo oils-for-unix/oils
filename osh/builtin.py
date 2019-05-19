@@ -931,28 +931,38 @@ class Unset(object):
     self.funcs = funcs
     self.errfmt = errfmt
 
+  def _UnsetVar(self, name, spid):
+    if not match.IsValidVarName(name):
+      raise args.UsageError(
+          'got invalid variable name %r' % name, span_id=spid)
+
+    ok, found = self.mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
+    if not ok:
+      self.errfmt.Print("Can't unset readonly variable %r", name,
+                        span_id=spid)
+    return ok, found
+
   def __call__(self, arg_vec):
     arg, offset = UNSET_SPEC.ParseVec(arg_vec)
     n = len(arg_vec.strs)
 
     for i in xrange(offset, n):
       name = arg_vec.strs[i]
+      spid = arg_vec.spids[i]
+
       if arg.f:
         if name in self.funcs:
           del self.funcs[name]
       elif arg.v:
-        ok, _  = self.mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
+        ok, _ = self._UnsetVar(name, spid)
         if not ok:
-          self.errfmt.Print("Can't unset readonly variable %r", name,
-                            span_id=arg_vec.spids[i])
           return 1
       else:
         # Try to delete var first, then func.
-        ok, found = self.mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
+        ok, found = self._UnsetVar(name, spid)
         if not ok:
-          self.errfmt.Print("Can't unset readonly variable %r", name,
-                            span_id=arg_vec.spids[i])
           return 1
+
         #log('%s: %s', name, found)
         if not found:
           if name in self.funcs:

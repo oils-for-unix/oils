@@ -199,6 +199,29 @@ f
 echo foo=$foo
 ## stdout-json: "foo=bar\nfoo=\n"
 
+#### Unset invalid variable name
+unset %
+echo status=$?
+## STDOUT:
+status=2
+## END
+## OK bash/mksh STDOUT:
+status=1
+## END
+## BUG zsh STDOUT:
+status=0
+## END
+# dash does a hard failure!
+## OK dash stdout-json: ""
+## OK dash status: 2
+
+#### Unset nonexistent variable
+unset _nonexistent__
+echo status=$?
+## STDOUT:
+status=0
+## END
+
 #### Unset -v
 foo() {
   echo "function foo"
