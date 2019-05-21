@@ -108,7 +108,7 @@ flake8-all() {
   # defined.
   # _abbrev.py modules are concatenated, and don't need to check on their own.
   local -a exclude=(
-    --exclude 'opy/_regtest,opy/byterun,opy/tools/astgen.py,opy/lib/opcode.py,*/*_abbrev.py')
+    --exclude 'opy/_*,opy/byterun,opy/tools/astgen.py,opy/lib/opcode.py,*/*_abbrev.py')
 
   # Step 1: Stop the build if there are Python syntax errors, undefined names,
   # unused imports
