@@ -169,10 +169,13 @@ parse-types() {
 }
 
 calc-test() {
-  readonly -a types=(
+  local -a types=(
     'a + 2'
     '1 + 2*3/4'  # operator precedence and left assoc
-    '"abc" + "def"'
+
+    # Uses string tokens
+    #'"abc" + "def"'
+
     '2 ** 3 ** 4'  # right assoc
     'f(1, 2, 3)'
     'f(a[i], 2, 3)'
@@ -180,7 +183,10 @@ calc-test() {
     # bad token
     'a * 3&4'
   )
+  #types=('a+a')
+
   for expr in "${types[@]}"; do
+    echo "$expr"
     parse pgen2/calc.grammar eval_input "$expr"
   done
 }

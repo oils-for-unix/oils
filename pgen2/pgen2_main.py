@@ -51,9 +51,8 @@ def LexerWrapper(lex, arena):
   # reader doesn't have the line though
   while True:
     tok = lex.Read(lex_mode_e.Arith)
-    print(token)
-    if tok.id == Id.Eof_Real:
-      raise StopIteration
+    if tok.id == Id.Ignored_Space:
+      continue
 
     span = arena.GetLineSpan(tok.span_id)
     line_num = arena.GetLineNumber(span.line_id)
@@ -62,7 +61,49 @@ def LexerWrapper(lex, arena):
     end = (line_num, span.col + span.length)
     line_text = arena.GetLine(span.line_id)
 
-    yield (tok.id, tok.val, start, end, line_text)
+    # Use integer
+    yield (tok.id.enum_id, tok.val, start, end, line_text)
+
+    # AFTER yielding it.
+    if tok.id == Id.Eof_Real:
+      raise StopIteration
+
+
+# TODO: need space
+ARITH_TOKENS = {
+    '+': Id.Arith_Plus,
+    '-': Id.Arith_Minus,
+    '*': Id.Arith_Star,
+    '/': Id.Arith_Slash,
+    '%': Id.Arith_Percent,
+    '(': Id.Arith_LParen,
+    ')': Id.Arith_RParen,
+    '[': Id.Arith_LBracket,
+    ']': Id.Arith_RBracket,
+    '**': Id.Arith_DStar,
+    '~': Id.Arith_Tilde,
+    ',': Id.Arith_Comma,
+
+    'NAME': Id.Lit_ArithVarLike,
+    'NUMBER': Id.Lit_Digits,
+
+    # TODO: Does it ever happen?
+    'STRING': Id.Lit_ArithVarLike,
+    'NEWLINE': Id.Op_Newline,
+
+    'ENDMARKER': Id.Eof_Real,
+}
+
+
+class CalcTokenDef(object):
+
+  def GetTokenNum(self, label):
+    id_ = ARITH_TOKENS[label]
+    return id_.enum_id
+
+  def GetTokenNumForOp(self, value):
+    id_ = ARITH_TOKENS[value]
+    return id_.enum_id
 
 
 def main(argv):
@@ -74,16 +115,17 @@ def main(argv):
     start_symbol = argv[1]
     code_str = argv[2]
 
-    f = cStringIO.StringIO(code_str)
-    gr = pgen.generate_grammar(grammar_path)
+    tok_def = CalcTokenDef()
+    pg = pgen.ParserGenerator(grammar_path, tok_def=tok_def)
+    gr = pg.make_grammar()
 
     symbols = Symbols(gr)
-    #pytree.Init(symbols)  # for type_repr() pretty printing
 
     # next() and StopIteration is the interface
     # I guess I could change it to yield?  OK sure.
 
     if 0:
+      f = cStringIO.StringIO(code_str)
       tokens = tokenize.generate_tokens(f.readline)
     else:
       arena = alloc.Arena()
@@ -91,17 +133,15 @@ def main(argv):
       tokens = LexerWrapper(lex, arena)
 
       # NOTE: This lexer has Id.Arith_Plus
-      # AddToken
+      #
       # translations:
       # driver.py
       #   OP type -> grammar.opmap type
       # parse.py
       #   classify takes NAME -> grammar.keywords or grammar.tokens
-      #
-      # OK fair enough
-      # You have to interject these when parsing
-      #
       # pgen.py: make_label adds to c.tokens and c.keywords
+
+      # tokens should be a dict Id.Foo -> 43
 
     # Semantic actions are registered in this code.
     grammar_name, _ = os.path.splitext(os.path.basename(grammar_path))
@@ -127,9 +167,20 @@ def main(argv):
     if 1:
       # NOTE: Similar work for Python is done in transformer.Init()
       names = {}
-      for k, v in token.tok_name.items():
-          names[k] = v
+      for id_ in ARITH_TOKENS.values():
+        k = id_.enum_id
+        assert k <= 256, (k, id_)
+        names[k] = id_.name
+
+      if 0:
+        for k, v in token.tok_name.items():
+            # NT_OFFSET == 256.  Remove?
+            assert k <= 256, (k, v)
+            names[k] = v
+
       for k, v in gr.number2symbol.items():
+          # eval_input == 256.  Remove?
+          assert k >= 256, (k, v)
           names[k] = v
 
       printer = ParseTreePrinter(names)  # print raw nodes

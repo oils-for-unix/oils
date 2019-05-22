@@ -156,6 +156,11 @@ class Parser(object):
 
     def classify(self, typ, value, context):
         """Turn a token into a label.  (Internal)"""
+
+        # TODO: Get rid of this use of the 'token' module.  We could detect
+        # keywords when building the grammar, and classify them as their own
+        # tokens?
+
         if typ == token.NAME:
             # Keep a listing of all used names
             self.used_names.add(value)

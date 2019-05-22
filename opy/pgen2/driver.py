@@ -25,7 +25,7 @@ def log(msg, *args):
     print(msg, file=sys.stderr)
 
 
-def PushTokens(p, tokens, start_symbol, convert=None, debug=False):
+def PushTokens(p, tokens, start_symbol, debug=False):
     """Parse a series of tokens and return the syntax tree."""
     # XXX Move the prefix computation into a wrapper around tokenize.
 
@@ -56,8 +56,11 @@ def PushTokens(p, tokens, start_symbol, convert=None, debug=False):
                 lineno += 1
                 column = 0
             continue
+
+        # TODO: Move into the lexer.  Or write a different driver?
         if type_ == token.OP:
             type_ = grammar.opmap[value]
+
         if debug:
             log("%s %r (prefix=%r)", token.tok_name[type_], value, prefix)
         if p.addtoken(type_, value, (prefix, start)):

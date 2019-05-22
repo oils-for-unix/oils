@@ -9,15 +9,30 @@ from . import grammar, token, tokenize
 from core.util import log
 
 
+class PythonTokDef(object):
+
+  def GetTokenNum(self, label):
+    itoken = getattr(token, label, None)
+    assert isinstance(itoken, int), label
+    assert itoken in token.tok_name, label
+    return itoken
+
+  def GetTokenNumForOp(self, value):
+    return grammar.opmap[value]  # Fails if unknown token
+
+
 class ParserGenerator(object):
 
-    def __init__(self, filename, stream=None):
+    def __init__(self, filename, stream=None, tok_def=None):
         close_stream = None
         if stream is None:
             stream = open(filename)
             close_stream = stream.close
         self.filename = filename
         self.stream = stream
+
+        self.tok_def = tok_def or PythonTokDef()
+
         self.generator = tokenize.generate_tokens(stream.readline)
         self.gettoken() # Initialize lookahead
         self.dfas, self.startsymbol = self.parse()
@@ -75,13 +90,12 @@ class ParserGenerator(object):
                     return ilabel
             else:
                 # A named token (NAME, NUMBER, STRING)
-                itoken = getattr(token, label, None)
-                assert isinstance(itoken, int), label
-                assert itoken in token.tok_name, label
+                itoken = self.tok_def.GetTokenNum(label)
                 if itoken in gr.tokens:
                     return gr.tokens[itoken]
                 else:
                     gr.labels.append((itoken, None))
+                    #log('%s %d -> %s', token.tok_name[itoken], itoken, ilabel)
                     gr.tokens[itoken] = ilabel
                     return ilabel
         else:
@@ -98,7 +112,7 @@ class ParserGenerator(object):
                     return ilabel
             else:
                 # An operator (any non-numeric token)
-                itoken = grammar.opmap[value] # Fails if unknown token
+                itoken = self.tok_def.GetTokenNumForOp(value)
                 if itoken in gr.tokens:
                     return gr.tokens[itoken]
                 else:

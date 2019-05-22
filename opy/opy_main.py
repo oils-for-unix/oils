@@ -129,9 +129,9 @@ class ParseTreePrinter(object):
     typ, value, context, children = node
     # NOTE:
     # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
-    # - context is (str, (lineno, column)), where lineno is 1-based.
-    # What is the string?
-
+    # - context is (prefix, (lineno, column)), where lineno is 1-based, and
+    #   'prefix' is a string of whitespace.
+    #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
     v = value if value is not None else '-'
     f.write('%s%s %s %s\n' % (ind, self.names[typ], v, context))
     if children:  # could be None
