@@ -6,9 +6,8 @@
 #import grammar, token, tokenize
 # NOTE: Need these special versions of token/tokenize for BACKQUOTE and such.
 from . import grammar, token, tokenize
+from core.util import log
 
-class PgenGrammar(grammar.Grammar):
-    pass
 
 class ParserGenerator(object):
 
@@ -28,62 +27,62 @@ class ParserGenerator(object):
         self.addfirstsets()
 
     def make_grammar(self):
-        c = PgenGrammar()
+        gr = grammar.Grammar()
         names = list(self.dfas.keys())
         names.sort()
         names.remove(self.startsymbol)
         names.insert(0, self.startsymbol)
         for name in names:
-            i = 256 + len(c.symbol2number)
-            c.symbol2number[name] = i
-            c.number2symbol[i] = name
+            i = 256 + len(gr.symbol2number)
+            gr.symbol2number[name] = i
+            gr.number2symbol[i] = name
         for name in names:
             dfa = self.dfas[name]
             states = []
             for state in dfa:
                 arcs = []
-                for label, next in sorted(state.arcs.items()):
-                    arcs.append((self.make_label(c, label), dfa.index(next)))
+                for label, next_ in sorted(state.arcs.items()):
+                    arcs.append((self.make_label(gr, label), dfa.index(next_)))
                 if state.isfinal:
                     arcs.append((0, dfa.index(state)))
                 states.append(arcs)
-            c.states.append(states)
-            c.dfas[c.symbol2number[name]] = (states, self.make_first(c, name))
-        c.start = c.symbol2number[self.startsymbol]
-        return c
+            gr.states.append(states)
+            gr.dfas[gr.symbol2number[name]] = (states, self.make_first(gr, name))
+        gr.start = gr.symbol2number[self.startsymbol]
+        return gr
 
-    def make_first(self, c, name):
+    def make_first(self, gr, name):
         rawfirst = self.first[name]
         first = {}
         for label in sorted(rawfirst):
-            ilabel = self.make_label(c, label)
+            ilabel = self.make_label(gr, label)
             ##assert ilabel not in first # XXX failed on <> ... !=
             first[ilabel] = 1
         return first
 
-    def make_label(self, c, label):
+    def make_label(self, gr, label):
         # XXX Maybe this should be a method on a subclass of converter?
-        ilabel = len(c.labels)
+        ilabel = len(gr.labels)
         if label[0].isalpha():
             # Either a symbol name or a named token
-            if label in c.symbol2number:
+            if label in gr.symbol2number:
                 # A symbol name (a non-terminal)
-                if label in c.symbol2label:
-                    return c.symbol2label[label]
+                if label in gr.symbol2label:
+                    return gr.symbol2label[label]
                 else:
-                    c.labels.append((c.symbol2number[label], None))
-                    c.symbol2label[label] = ilabel
+                    gr.labels.append((gr.symbol2number[label], None))
+                    gr.symbol2label[label] = ilabel
                     return ilabel
             else:
                 # A named token (NAME, NUMBER, STRING)
                 itoken = getattr(token, label, None)
                 assert isinstance(itoken, int), label
                 assert itoken in token.tok_name, label
-                if itoken in c.tokens:
-                    return c.tokens[itoken]
+                if itoken in gr.tokens:
+                    return gr.tokens[itoken]
                 else:
-                    c.labels.append((itoken, None))
-                    c.tokens[itoken] = ilabel
+                    gr.labels.append((itoken, None))
+                    gr.tokens[itoken] = ilabel
                     return ilabel
         else:
             # Either a keyword or an operator
@@ -91,20 +90,20 @@ class ParserGenerator(object):
             value = eval(label)
             if value[0].isalpha():
                 # A keyword
-                if value in c.keywords:
-                    return c.keywords[value]
+                if value in gr.keywords:
+                    return gr.keywords[value]
                 else:
-                    c.labels.append((token.NAME, value))
-                    c.keywords[value] = ilabel
+                    gr.labels.append((token.NAME, value))
+                    gr.keywords[value] = ilabel
                     return ilabel
             else:
                 # An operator (any non-numeric token)
                 itoken = grammar.opmap[value] # Fails if unknown token
-                if itoken in c.tokens:
-                    return c.tokens[itoken]
+                if itoken in gr.tokens:
+                    return gr.tokens[itoken]
                 else:
-                    c.labels.append((itoken, None))
-                    c.tokens[itoken] = ilabel
+                    gr.labels.append((itoken, None))
+                    gr.tokens[itoken] = ilabel
                     return ilabel
 
     def addfirstsets(self):
@@ -330,10 +329,7 @@ class ParserGenerator(object):
 
     def raise_error(self, msg, *args):
         if args:
-            try:
-                msg = msg % args
-            except:
-                msg = " ".join([msg] + list(map(str, args)))
+            msg = msg % args
         raise SyntaxError(msg, (self.filename, self.end[0],
                                 self.end[1], self.line))
 

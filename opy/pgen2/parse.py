@@ -7,22 +7,21 @@ The grammar table must be loaded first.
 
 See Parser/parser.c in the Python distribution for additional info on
 how this parsing engine works.
-
 """
 
-# Local imports
 from . import token
 
 class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
-    def __init__(self, msg, type, value, context):
+    def __init__(self, msg, typ, value, context):
         Exception.__init__(self, "%s: type=%r, value=%r, context=%r" %
-                           (msg, type, value, context))
+                           (msg, typ, value, context))
         self.msg = msg
-        self.type = type
+        self.type = typ
         self.value = value
         self.context = context
+
 
 class Parser(object):
     """Parser engine.
@@ -51,7 +50,6 @@ class Parser(object):
     the ParseError exception.  There is no error recovery; the parser
     cannot be used after a syntax error was reported (but it can be
     reinitialized by calling setup()).
-
     """
 
     def __init__(self, grammar, convert=None):
@@ -81,7 +79,6 @@ class Parser(object):
 
         An abstract syntax tree node may be anything; this is entirely
         up to the converter function.
-
         """
         self.grammar = grammar
         self.convert = convert or (lambda grammar, node: node)
@@ -97,7 +94,6 @@ class Parser(object):
         You can use a Parser instance to parse any number of programs;
         each time you call setup() the parser is reset to an initial
         state determined by the (implicit or explicit) start symbol.
-
         """
         if start is None:
             start = self.grammar.start
@@ -110,10 +106,10 @@ class Parser(object):
         self.rootnode = None
         self.used_names = set() # Aliased to self.rootnode.used_names in pop()
 
-    def addtoken(self, type, value, context):
+    def addtoken(self, typ, value, context):
         """Add a token; return True iff this is the end of the program."""
         # Map from token to label
-        ilabel = self.classify(type, value, context)
+        ilabel = self.classify(typ, value, context)
         # Loop until the token is shifted; may raise exceptions
         while True:
             dfa, state, node = self.stack[-1]
@@ -126,7 +122,7 @@ class Parser(object):
                     # Look it up in the list of labels
                     assert t < 256
                     # Shift a token; we're done with it
-                    self.shift(type, value, newstate, context)
+                    self.shift(typ, value, newstate, context)
                     # Pop while we are in an accept-only state
                     state = newstate
                     while states[state] == [(0, state)]:
@@ -153,38 +149,38 @@ class Parser(object):
                     if not self.stack:
                         # Done parsing, but another token is input
                         raise ParseError("too much input",
-                                         type, value, context)
+                                         typ, value, context)
                 else:
                     # No success finding a transition
-                    raise ParseError("bad input", type, value, context)
+                    raise ParseError("bad input", typ, value, context)
 
-    def classify(self, type, value, context):
+    def classify(self, typ, value, context):
         """Turn a token into a label.  (Internal)"""
-        if type == token.NAME:
+        if typ == token.NAME:
             # Keep a listing of all used names
             self.used_names.add(value)
             # Check for reserved words
             ilabel = self.grammar.keywords.get(value)
             if ilabel is not None:
                 return ilabel
-        ilabel = self.grammar.tokens.get(type)
+        ilabel = self.grammar.tokens.get(typ)
         if ilabel is None:
-            raise ParseError("bad token", type, value, context)
+            raise ParseError("bad token", typ, value, context)
         return ilabel
 
-    def shift(self, type, value, newstate, context):
+    def shift(self, typ, value, newstate, context):
         """Shift a token.  (Internal)"""
         dfa, state, node = self.stack[-1]
-        newnode = (type, value, context, None)
+        newnode = (typ, value, context, None)
         newnode = self.convert(self.grammar, newnode)
         if newnode is not None:
             node[-1].append(newnode)
         self.stack[-1] = (dfa, newstate, node)
 
-    def push(self, type, newdfa, newstate, context):
+    def push(self, typ, newdfa, newstate, context):
         """Push a nonterminal.  (Internal)"""
         dfa, state, node = self.stack[-1]
-        newnode = (type, None, context, [])
+        newnode = (typ, None, context, [])
         self.stack[-1] = (dfa, newstate, node)
         self.stack.append((newdfa, 0, newnode))
 

@@ -7,12 +7,16 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-parse() {
-  PYTHONPATH=. pgen2/pgen2_main.py parse "$@"
+pgen2() {
+  PYTHONPATH=. pgen2/pgen2_main.py "$@"
 }
 
 calc-test() {
-  parse pgen2/calc.grammar eval_input '1+2'
+  pgen2 parse pgen2/calc.grammar eval_input '1+2'
+}
+
+stdlib-test() {
+  pgen2 stdlib-test
 }
 
 "$@"

@@ -54,13 +54,15 @@
 # - lex_mode_e.Block -- newlines are terminators
 # - lex_mode_e.CharClass -- regex char classes have different rules
 #   (outer regexes use Expr mode, I believe)
+# - lex_mode_e.TypeExpr -- because I hit the >> problem! 
+#                          >> is not an operator in type expressions
 # - lex_mode_e.Str    # simple double-quoted string literal?
 #                     # I don't want all the mess
 #                     # or you can post-process the LST and eliminate
 #                     # undesirable shellc onstructs
 #
 # Extensions to pgen:
-# - take tokens from a different lexer
+# - take tokens from a different lexer -- see NOTES-pgen2.txt for syntax ideas
 # - callbacks to invoke the parser
 #   - hm actually the "driver" can do this because it sees all the tokens?
 #   - it's pushing rather than pulling.
@@ -171,9 +173,9 @@ calc-test() {
     'a + 2'
     '1 + 2*3/4'  # operator precedence and left assoc
     '"abc" + "def"'
-    #'2 ** 3 ** 4'  # right assoc
-    #'f(1, 2, 3)'
-    #'f(a[i], 2, 3)'
+    '2 ** 3 ** 4'  # right assoc
+    'f(1, 2, 3)'
+    'f(a[i], 2, 3)'
 
     # bad token
     'a * 3&4'
@@ -208,7 +210,6 @@ ll1-test() {
     parse pgen2/enum.grammar ll1_test "$expr"
   done
 }
-
 
 all() {
   banner 'exprs'
