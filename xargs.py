@@ -12,7 +12,7 @@ import sys
 # Note: -s trumps -n
 xargs = argparse.ArgumentParser(prog='xargs')
 xargs.add_argument('-a', '--arg-file', nargs=1, default='-', metavar='file')
-xargs.add_argument('-E',          dest='eof_str', metavar='eof-str', nargs=1)
+xargs.add_argument('-E',          dest='eof_str', metavar='eof-str')
 xargs.add_argument('-e', '--eof', dest='eof_str', metavar='eof-str', nargs='?')
 xargs.add_argument('-0', '--null',      dest='delimiter', action='store_const', const='\0')
 xargs.add_argument('-d', '--delimiter', dest='delimiter', metavar='delimiter', nargs=1)
@@ -54,6 +54,7 @@ if xargs_args.interactive and not xargs_args.verbose:
 #xargs_args.verbose = True
 
 def read_lines_eof(arg_file, eof_str):
+	eof_str = eof_str + '\n'
 	for line in arg_file:
 		if line == eof_str:
 			return
