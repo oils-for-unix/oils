@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-calc.py
+pgen2_main.py
 """
 from __future__ import print_function
 
@@ -21,7 +21,7 @@ from core import alloc
 from frontend import lexer, match, reader
 
 
-def CalcActions(gr, node):
+def NoSingletonAction(gr, node):
   #log('%s', node)
   typ, value, context, children = node
 
@@ -35,7 +35,7 @@ def CalcActions(gr, node):
   return node
 
 SEMANTIC_ACTIONS = {
-    'calc': CalcActions,
+    'calc': NoSingletonAction,
 }
 
 
@@ -45,28 +45,6 @@ def MakeOilLexer(code_str, arena):
   line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
   lex = lexer.Lexer(line_lexer, line_reader)
   return lex
-
-
-def LexerWrapper(lex, arena):
-  # reader doesn't have the line though
-  while True:
-    tok = lex.Read(lex_mode_e.Arith)
-    if tok.id == Id.Ignored_Space:
-      continue
-
-    span = arena.GetLineSpan(tok.span_id)
-    line_num = arena.GetLineNumber(span.line_id)
-
-    start = (line_num, span.col)
-    end = (line_num, span.col + span.length)
-    line_text = arena.GetLine(span.line_id)
-
-    # Use integer
-    yield (tok.id.enum_id, tok.val, start, end, line_text)
-
-    # AFTER yielding it.
-    if tok.id == Id.Eof_Real:
-      raise StopIteration
 
 
 # TODO: need space
@@ -106,6 +84,26 @@ class CalcTokenDef(object):
     return id_.enum_id
 
 
+def PushOilTokens(p, lex, debug=False):
+    """Parse a series of tokens and return the syntax tree."""
+    while True:
+      tok = lex.Read(lex_mode_e.Arith)
+
+      # TODO: This should be the kind?
+      if tok.id == Id.Ignored_Space:
+        continue
+
+      typ = tok.id.enum_id
+      if p.addtoken(typ, tok.val, tok):
+          if debug:
+              log("Stop.")
+          break
+    else:
+        # We never broke out -- EOF is too soon (how can this happen???)
+        raise parse.ParseError("incomplete input",
+                               type_, value, (prefix, start))
+
+
 def main(argv):
   action = argv[1]
   argv = argv[2:]
@@ -115,64 +113,64 @@ def main(argv):
     start_symbol = argv[1]
     code_str = argv[2]
 
-    tok_def = CalcTokenDef()
+    # For choosing lexer and semantic actions
+    grammar_name, _ = os.path.splitext(os.path.basename(grammar_path))
+
+    tok_def = CalcTokenDef() if grammar_name == 'calc' else None
     pg = pgen.ParserGenerator(grammar_path, tok_def=tok_def)
     gr = pg.make_grammar()
 
-    symbols = Symbols(gr)
-
-    # next() and StopIteration is the interface
-    # I guess I could change it to yield?  OK sure.
-
-    if 0:
-      f = cStringIO.StringIO(code_str)
-      tokens = tokenize.generate_tokens(f.readline)
-    else:
+    if grammar_name == 'calc':
       arena = alloc.Arena()
       lex = MakeOilLexer(code_str, arena)
-      tokens = LexerWrapper(lex, arena)
 
-      # NOTE: This lexer has Id.Arith_Plus
-      #
-      # translations:
-      # driver.py
-      #   OP type -> grammar.opmap type
-      # parse.py
-      #   classify takes NAME -> grammar.keywords or grammar.tokens
-      # pgen.py: make_label adds to c.tokens and c.keywords
+      p = parse.Parser(gr, convert=NoSingletonAction)
 
-      # tokens should be a dict Id.Foo -> 43
+      p.setup(gr.symbol2number[start_symbol])
+      try:
+        PushOilTokens(p, lex)
+      except parse.ParseError as e:
+        log('Parse Error: %s', e)
+        return 1
 
-    # Semantic actions are registered in this code.
-    grammar_name, _ = os.path.splitext(os.path.basename(grammar_path))
-    p = parse.Parser(gr, convert=SEMANTIC_ACTIONS.get(grammar_name))
+      parse_tree = p.rootnode
 
-    try:
-      parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
-    except parse.ParseError as e:
-      # Extract location information and show it.
-      unused, (lineno, offset) = e.context
-      # extra line needed for '\n' ?
-      lines = code_str.splitlines() + ['']
+    else:
+      f = cStringIO.StringIO(code_str)
+      tokens = tokenize.generate_tokens(f.readline)
 
-      line = lines[lineno-1]
-      log('  %s', line)
-      log('  %s^', ' '*offset)
-      log('Parse Error: %s', e)
-      return 1
+      # Semantic actions are registered in this code.
+      #convert = SEMANTIC_ACTIONS.get(grammar_name)
+      convert = NoSingletonAction
+      p = parse.Parser(gr, convert=convert)
+
+      try:
+        parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
+      except parse.ParseError as e:
+        # Extract location information and show it.
+        unused, (lineno, offset) = e.context
+        # extra line needed for '\n' ?
+        lines = code_str.splitlines() + ['']
+
+        line = lines[lineno-1]
+        log('  %s', line)
+        log('  %s^', ' '*offset)
+        log('Parse Error: %s', e)
+        return 1
 
     #n = CountTupleTree(parse_tree)
     #log('%r => %d nodes', expr, n)
 
     if 1:
-      # NOTE: Similar work for Python is done in transformer.Init()
       names = {}
-      for id_ in ARITH_TOKENS.values():
-        k = id_.enum_id
-        assert k <= 256, (k, id_)
-        names[k] = id_.name
 
-      if 0:
+      if grammar_name == 'calc':
+        for id_ in ARITH_TOKENS.values():
+          k = id_.enum_id
+          assert k <= 256, (k, id_)
+          names[k] = id_.name
+      else:
+        # NOTE: Similar work for Python is done in transformer.Init()
         for k, v in token.tok_name.items():
             # NT_OFFSET == 256.  Remove?
             assert k <= 256, (k, v)
@@ -204,7 +202,7 @@ def main(argv):
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

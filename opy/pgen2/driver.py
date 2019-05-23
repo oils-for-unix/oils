@@ -26,12 +26,15 @@ def log(msg, *args):
 
 
 def PushTokens(p, tokens, start_symbol, debug=False):
-    """Parse a series of tokens and return the syntax tree."""
+    """Parse a series of tokens and return the syntax tree.
+
+    NOTE: This function is specific to Python's lexer.
+    """
     # XXX Move the prefix computation into a wrapper around tokenize.
+    # NOTE: It's mainly for lib2to3.
 
     p.setup(start=start_symbol)
 
-    # What is all this for?
     lineno = 1
     column = 0
     type_ = value = start = end = line_text = None
@@ -57,7 +60,6 @@ def PushTokens(p, tokens, start_symbol, debug=False):
                 column = 0
             continue
 
-        # TODO: Move into the lexer.  Or write a different driver?
         if type_ == token.OP:
             type_ = grammar.opmap[value]
 

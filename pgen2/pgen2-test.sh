@@ -181,7 +181,7 @@ calc-test() {
     'f(a[i], 2, 3)'
 
     # bad token
-    'a * 3&4'
+    #'a * 3&4'
   )
   #types=('a+a')
 
@@ -226,6 +226,9 @@ all() {
 
   banner 'types'
   parse-types
+
+  banner 'calc'
+  calc-test
 }
 
 # Hm Python 3 has type syntax!  But we may not use it.
