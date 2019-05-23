@@ -49,9 +49,9 @@ if xargs_args.interactive and not xargs_args.verbose:
 	xargs_args.verbose = True
 
 ### DEBUGGING ###
-print(xargs_args)
-print("ENABLING -t")
-xargs_args.verbose = True
+#print(xargs_args, file=sys.stderr)
+#print("ENABLING -t", file=sys.stderr)
+#xargs_args.verbose = True
 
 def read_lines_eof(arg_file, eof_str):
 	for line in arg_file:
