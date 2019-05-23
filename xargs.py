@@ -29,7 +29,7 @@ xargs.add_argument('-t', '--verbose', action='store_true')
 xargs.add_argument('-x', '--exit', action='store_true')
 xargs.add_argument('-r', '--no-run-if-empty', action='store_true')
 xargs.add_argument('--show-limits', action='store_true')
-xargs.add_argument('command', default='/bin/echo')
+xargs.add_argument('command', nargs='?', default='/bin/echo')
 xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 
 xargs_args = xargs.parse_args()
