@@ -243,13 +243,9 @@ class TdopParser(object):
   def __init__(self, spec, w_parser):
     # type: (ParserSpec, WordParser) -> None
     self.spec = spec
-    self.w_parser = w_parser  # iterable
+    self.w_parser = w_parser
     self.cur_word = None  # type: word_t  # current token
     self.op_id = Id.Undefined_Tok
-
-  def _Led(self, token):
-    # type: (Id_t) -> LeftInfo
-    return self.spec.LookupLed(token)
 
   def AtToken(self, token_type):
     # type: (Id_t) -> bool
@@ -257,7 +253,7 @@ class TdopParser(object):
 
   def Eat(self, token_type):
     # type: (Id_t) -> None
-    """ Eat()? """
+    """Assert that we're at the current token and advance."""
     if not self.AtToken(token_type):
       p_die('Parser expected %s, got %s', token_type, self.cur_word,
             word=self.cur_word)
@@ -265,9 +261,7 @@ class TdopParser(object):
 
   def Next(self):
     # type: () -> bool
-    """Preferred over Eat()? """
     self.cur_word = self.w_parser.ReadWord(lex_mode_e.Arith)
-    assert self.cur_word is not None
     self.op_id = word.ArithId(self.cur_word)
     return True
 
@@ -282,15 +276,15 @@ class TdopParser(object):
       p_die('Unexpected end of input', word=self.cur_word)
 
     t = self.cur_word
-    self.Next()  # skip over the token, e.g. ! ~ + -
+    null_info = self.spec.LookupNud(self.op_id)
 
-    null_info = self.spec.LookupNud(word.ArithId(t))
+    self.Next()  # skip over the token, e.g. ! ~ + -
     node = null_info.nud(self, t, null_info.bp)
 
     while True:
       t = self.cur_word
       try:
-        left_info = self._Led(word.ArithId(t))
+        left_info = self.spec.LookupLed(self.op_id)
       except KeyError:
         raise AssertionError('Invalid token %s' % t)
 
