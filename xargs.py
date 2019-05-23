@@ -74,6 +74,12 @@ def read_args_delim(lines, delim):
 			else:
 				yield "".join(buf)
 				buf = []
+def chunks(iter, chunk_size):
+	while True:
+		chunk = [x for x in itertools.islice(iter, chunk_size)]
+		if not chunk:
+			break
+		yield chunk
 
 def main():
 	if xargs_args.arg_file == '-':
@@ -97,36 +103,43 @@ def main():
 	else:
 		arg_iter = read_args_whitespace(line_iter)
 
-	additional_arguments = [x for x in arg_iter]
+	if xargs_args.max_args:
+		arg_groups_iter = chunks(arg_iter, xargs_args.max_args)
+	else:
+		arg_groups_iter = [arg_iter]
 
-	if xargs_args.no_run_if_empty and not additional_arguments:
-		return 0
+	for arg_group in arg_groups_iter:
+		additional_arguments = [x for x in arg_group]
 
-	cmdline = [xargs_args.command] + xargs_args.initial_arguments
-	cmdline.extend(additional_arguments)
+		if xargs_args.no_run_if_empty and not additional_arguments:
+			return 0
 
-	if xargs_args.verbose:
-		print(*cmdline, file=sys.stderr)
-		# if interactive read from /dev/tty
-		# set tty CLOEXEC
-		# tty = open("/dev/tty", 'r')
-	try:
-		p = subprocess.Popen(cmdline, stdin=cmd_input)
-	except OSError:
-		# 126	command cannot be run
-		# 127	command cannot be found
-		return 127
-	p.wait()
+		cmdline = [xargs_args.command] + xargs_args.initial_arguments
+		cmdline.extend(additional_arguments)
 
-	if p.returncode == 0:
-		return 0
-	if p.returncode >= 0 and p.returncode <= 125:
-		return 123
-	if p.returncode == 255:
-		return 124
-	if p.returncode < 0:
-		return 125
-	return 1
+		if xargs_args.verbose:
+			print(*cmdline, file=sys.stderr)
+			# if interactive read from /dev/tty
+			# set tty CLOEXEC
+			# tty = open("/dev/tty", 'r')
+		try:
+			p = subprocess.Popen(cmdline, stdin=cmd_input)
+		except OSError:
+			# 126	command cannot be run
+			# 127	command cannot be found
+			return 127
+		p.wait()
+
+		if p.returncode == 0:
+			continue
+		if p.returncode >= 0 and p.returncode <= 125:
+			return 123
+		if p.returncode == 255:
+			return 124
+		if p.returncode < 0:
+			return 125
+		return 1
+	return 0
 
 sys.exit(main())
 
