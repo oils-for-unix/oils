@@ -39,8 +39,10 @@ xargs_args = xargs.parse_args()
 if xargs_args.delimiter and xargs_args.eof_str:
 	xargs_args.eof_str = None
 # -I implies -L 1 (and transitively -x)
+# -I implies -d '\n'
 if xargs_args.replace_str and xargs_args.max_lines != 1:
 	xargs_args.max_lines = 1
+	xargs_args.delimiter = r'\n'
 # -L implies -x
 if xargs_args.max_lines is not None and not xargs_args.exit:
 	xargs_args.exit = True
