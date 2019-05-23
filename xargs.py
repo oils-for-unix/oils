@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import itertools
 import os
 # TODO docs.python.org suggests https://pypi.org/project/subprocess32/
 #      for POSIX users
@@ -57,10 +58,7 @@ if xargs_args.interactive and not xargs_args.verbose:
 
 def read_lines_eof(arg_file, eof_str):
 	eof_str = eof_str + '\n'
-	for line in arg_file:
-		if line == eof_str:
-			return
-		yield line
+	return itertools.takewhile(lambda l: l != eof_str,  arg_file)
 
 # TODO xargs does quoting (' and ")
 def read_args_whitespace(lines):
