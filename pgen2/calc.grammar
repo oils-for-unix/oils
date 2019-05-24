@@ -12,7 +12,7 @@ power: atom trailer* ['^' factor]
 
 trailer: '(' [arglist] ')' | '[' subscriptlist ']'
 
-atom: NAME | NUMBER | STRING+
+atom: NAME | NUMBER
 
 # Trailing commas are allowed!
 arglist: expr (',' expr)* [',']

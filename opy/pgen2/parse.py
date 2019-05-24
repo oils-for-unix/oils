@@ -9,8 +9,6 @@ See Parser/parser.c in the Python distribution for additional info on
 how this parsing engine works.
 """
 
-from . import token
-
 class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
@@ -106,10 +104,8 @@ class Parser(object):
         self.rootnode = None
         self.used_names = set() # Aliased to self.rootnode.used_names in pop()
 
-    def addtoken(self, typ, value, context):
+    def addtoken(self, typ, value, context, ilabel):
         """Add a token; return True iff this is the end of the program."""
-        # Map from token to label
-        ilabel = self.classify(typ, value, context)
         # Loop until the token is shifted; may raise exceptions
         while True:
             dfa, state, node = self.stack[-1]
@@ -153,25 +149,6 @@ class Parser(object):
                 else:
                     # No success finding a transition
                     raise ParseError("bad input", typ, value, context)
-
-    def classify(self, typ, value, context):
-        """Turn a token into a label.  (Internal)"""
-
-        # TODO: Get rid of this use of the 'token' module.  We could detect
-        # keywords when building the grammar, and classify them as their own
-        # tokens?
-
-        if typ == token.NAME:
-            # Keep a listing of all used names
-            self.used_names.add(value)
-            # Check for reserved words
-            ilabel = self.grammar.keywords.get(value)
-            if ilabel is not None:
-                return ilabel
-        ilabel = self.grammar.tokens.get(typ)
-        if ilabel is None:
-            raise ParseError("bad token", typ, value, context)
-        return ilabel
 
     def shift(self, typ, value, newstate, context):
         """Shift a token.  (Internal)"""

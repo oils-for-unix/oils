@@ -48,8 +48,8 @@ def MakeOilLexer(code_str, arena):
   return lex
 
 
-# TODO: need space
-ARITH_TOKENS = {
+# Used at grammar BUILD time.
+EXPR_TOKENS = {
     '+': Id.Arith_Plus,
     '-': Id.Arith_Minus,
     '*': Id.Arith_Star,
@@ -73,11 +73,15 @@ ARITH_TOKENS = {
     '<=': Id.Arith_LessEqual,
     '>=': Id.Arith_GreatEqual,
 
+    # What happens in the grammar when you see NAME | NUMBER
+    # atom: NAME | NUMBER | STRING+
+
     'NAME': Id.Expr_Name,
     'NUMBER': Id.Expr_Digits,
 
-    # TODO: Does it ever happen?
-    'STRING': Id.Lit_ArithVarLike,
+    # The grammar seems something like 'for' or '>='
+    # These need to be looked up at "_Classify" time?
+    #'STRING': Id.Expr_Name,
 
     'NEWLINE': Id.Op_Newline,
 
@@ -105,39 +109,71 @@ KEYWORDS = {
 }
 
 
-class CalcTokenDef(object):
+class OilTokenDef(object):
 
   def GetTokenNum(self, label):
-    id_ = ARITH_TOKENS[label]
+    id_ = EXPR_TOKENS[label]
     return id_.enum_id
 
   def GetTokenNumForOp(self, value):
-    id_ = ARITH_TOKENS[value]
+    id_ = EXPR_TOKENS[value]
     return id_.enum_id
 
+  def NameLabel(self):
+    return Id.Expr_Name.enum_id
 
-def PushOilTokens(p, lex, debug=False):
-    """Parse a series of tokens and return the syntax tree."""
-    while True:
-      tok = lex.Read(lex_mode_e.OilExpr)
 
-      # TODO: Use Kind?
-      if tok.id == Id.Ignored_Space:
-        continue
+def _Classify(gr, tok):
+  # We have to match up what ParserGenerator.make_grammar() did when
+  # calling make_label() and make_first().  See classify() in
+  # opy/pgen2/driver.py.
 
-      if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
-        tok.id = KEYWORDS[tok.val]
-        log('Replaced with %s', tok.id)
+  # 'x' and 'for' are both tokenized as Expr_Name.  This handles the 'for'
+  # case.
+  if tok.id == Id.Expr_Name:
+    ilabel = gr.keywords.get(tok.val)
+    if ilabel is not None:
+      return ilabel
 
-      typ = tok.id.enum_id
-      if p.addtoken(typ, tok.val, tok):
-          if debug:
-              log("Stop.")
-          break
-    else:
-        # We never broke out -- EOF is too soon (how can this happen???)
-        raise parse.ParseError("incomplete input",
-                               type_, value, (prefix, start))
+  # This handles 'x'.
+
+  typ = tok.id.enum_id
+  #log('typ = %d, id = %s', typ, tok.id)
+  ilabel = gr.tokens.get(typ)
+  if ilabel is None:
+    raise AssertionError('%d not a keyword and not in gr.tokens: %s' % (typ, tok))
+  return ilabel
+
+
+def PushOilTokens(p, lex, gr, debug=False):
+  """Parse a series of tokens and return the syntax tree."""
+  #log('keywords = %s', gr.keywords)
+  #log('tokens = %s', gr.tokens)
+
+  while True:
+    tok = lex.Read(lex_mode_e.OilExpr)
+
+    # TODO: Use Kind?
+    if tok.id == Id.Ignored_Space:
+      continue
+
+    #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
+    #  tok.id = KEYWORDS[tok.val]
+    #  log('Replaced with %s', tok.id)
+
+    typ = tok.id.enum_id
+
+    #log('tok = %s', tok)
+    ilabel = _Classify(gr, tok)
+
+    if p.addtoken(typ, tok.val, tok, ilabel):
+        if debug:
+            log("Stop.")
+        break
+  else:
+      # We never broke out -- EOF is too soon (how can this happen???)
+      raise parse.ParseError("incomplete input",
+                             type_, value, (prefix, start))
 
 
 def main(argv):
@@ -152,15 +188,18 @@ def main(argv):
     # For choosing lexer and semantic actions
     grammar_name, _ = os.path.splitext(os.path.basename(grammar_path))
 
-    tok_def = CalcTokenDef() if grammar_name == 'calc' else None
+    using_oil_lexer = (grammar_name in ('calc', 'minimal'))
+    #using_oil_lexer = grammar_name in ('calc',)
+
+    tok_def = OilTokenDef() if using_oil_lexer else None
+
     pg = pgen.ParserGenerator(grammar_path, tok_def=tok_def)
     gr = pg.make_grammar()
+    #print(gr.dfas)
+    #return
+    # TODO: We don't need keywords on our grammar.  Only Python uses that.
 
-    # TODO: Need to fix this
-    print(gr.keywords)
-    return
-
-    if grammar_name == 'calc':
+    if using_oil_lexer:
       arena = alloc.Arena()
       lex = MakeOilLexer(code_str, arena)
 
@@ -168,7 +207,7 @@ def main(argv):
 
       p.setup(gr.symbol2number[start_symbol])
       try:
-        PushOilTokens(p, lex)
+        PushOilTokens(p, lex, gr)
       except parse.ParseError as e:
         log('Parse Error: %s', e)
         return 1
@@ -185,7 +224,7 @@ def main(argv):
       p = parse.Parser(gr, convert=convert)
 
       try:
-        parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
+        parse_tree = driver.PushTokens(p, tokens, gr, start_symbol)
       except parse.ParseError as e:
         # Extract location information and show it.
         unused, (lineno, offset) = e.context
@@ -204,8 +243,8 @@ def main(argv):
     if 1:
       names = {}
 
-      if grammar_name == 'calc':
-        for id_ in ARITH_TOKENS.values():
+      if using_oil_lexer:
+        for id_ in EXPR_TOKENS.values():
           k = id_.enum_id
           assert k <= 256, (k, id_)
           names[k] = id_.name

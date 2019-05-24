@@ -685,7 +685,7 @@ _OIL_KEYWORDS = [
   C('in',        Id.KW_In),
   C('while',     Id.KW_While),
 
-  # Connditionals
+  # Conditionals
   C('if',        Id.KW_If),
   C('else',      Id.KW_Else),
   C('elif',      Id.KW_Elif),  # Python and shell both use elif
@@ -830,6 +830,10 @@ LEXER_DEF[lex_mode_e.OilExpr] = [
   # Bitwise complement, as well as infix pattern matching
   C('~', Id.Arith_Tilde),
   C('!~', Id.Expr_NotTilde),
+
+  # Splat operators
+  C('@', Id.Expr_At),
+  C('@@', Id.Expr_DoubleAt),
 
   # Left out for now:
   # % ++ --

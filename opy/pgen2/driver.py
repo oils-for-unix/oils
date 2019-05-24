@@ -25,7 +25,24 @@ def log(msg, *args):
     print(msg, file=sys.stderr)
 
 
-def PushTokens(p, tokens, start_symbol, debug=False):
+def classify(gr, typ, value):
+    """Turn a token into a label.  (Internal)"""
+    if typ == token.NAME:
+        # Keep a listing of all used names
+        # OIL note: removed because it's only used by lib2to3
+        #self.used_names.add(value)
+
+        # Check for reserved words
+        ilabel = gr.keywords.get(value)
+        if ilabel is not None:
+            return ilabel
+    ilabel = gr.tokens.get(typ)
+    if ilabel is None:
+        raise parse.ParseError("bad token", typ, value)
+    return ilabel
+
+
+def PushTokens(p, tokens, gr, start_symbol, debug=False):
     """Parse a series of tokens and return the syntax tree.
 
     NOTE: This function is specific to Python's lexer.
@@ -33,7 +50,7 @@ def PushTokens(p, tokens, start_symbol, debug=False):
     # XXX Move the prefix computation into a wrapper around tokenize.
     # NOTE: It's mainly for lib2to3.
 
-    p.setup(start=start_symbol)
+    p.setup(start=gr.symbol2number[start_symbol])
 
     lineno = 1
     column = 0
@@ -65,7 +82,9 @@ def PushTokens(p, tokens, start_symbol, debug=False):
 
         if debug:
             log("%s %r (prefix=%r)", token.tok_name[type_], value, prefix)
-        if p.addtoken(type_, value, (prefix, start)):
+
+        ilabel = classify(gr, type_, value)
+        if p.addtoken(type_, value, (prefix, start), ilabel):
             if debug:
                 log("Stop.")
             break

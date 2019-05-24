@@ -6,7 +6,7 @@
 #import grammar, token, tokenize
 # NOTE: Need these special versions of token/tokenize for BACKQUOTE and such.
 from . import grammar, token, tokenize
-from core.util import log
+#from core.util import log
 
 
 class PythonTokDef(object):
@@ -20,6 +20,15 @@ class PythonTokDef(object):
   def GetTokenNumForOp(self, value):
     return grammar.opmap[value]  # Fails if unknown token
 
+  def NameLabel(self):
+    """
+    In the grammar, 'for' turns into
+
+    (NAME, 'for')
+    (Id.Expr_Name, 'for')
+    """
+    return token.NAME
+
 
 class ParserGenerator(object):
 
@@ -32,6 +41,7 @@ class ParserGenerator(object):
         self.stream = stream
 
         self.tok_def = tok_def or PythonTokDef()
+        self.name_label = self.tok_def.NameLabel()
 
         self.generator = tokenize.generate_tokens(stream.readline)
         self.gettoken() # Initialize lookahead
@@ -76,20 +86,18 @@ class ParserGenerator(object):
         return first
 
     def make_label(self, gr, label):
+        #log('make_label %r', label)
         # XXX Maybe this should be a method on a subclass of converter?
         ilabel = len(gr.labels)
         if label[0].isalpha():
-            # Either a symbol name or a named token
-            if label in gr.symbol2number:
-                # A symbol name (a non-terminal)
+            if label in gr.symbol2number:  # NON-TERMINAL
                 if label in gr.symbol2label:
                     return gr.symbol2label[label]
                 else:
                     gr.labels.append((gr.symbol2number[label], None))
                     gr.symbol2label[label] = ilabel
                     return ilabel
-            else:
-                # A named token (NAME, NUMBER, STRING)
+            else:  # TERMINAL like (NAME, NUMBER, STRING)
                 itoken = self.tok_def.GetTokenNum(label)
                 if itoken in gr.tokens:
                     return gr.tokens[itoken]
@@ -107,7 +115,7 @@ class ParserGenerator(object):
                 if value in gr.keywords:
                     return gr.keywords[value]
                 else:
-                    gr.labels.append((token.NAME, value))
+                    gr.labels.append((self.name_label, value))
                     gr.keywords[value] = ilabel
                     return ilabel
             else:

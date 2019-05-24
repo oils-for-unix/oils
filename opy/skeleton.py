@@ -114,7 +114,7 @@ def Compile(f, opt, gr, mode, print_action=None):
   elif mode == 'eval':
     start_symbol = 'eval_input'
 
-  parse_tree = driver.PushTokens(p, tokens, gr.symbol2number[start_symbol])
+  parse_tree = driver.PushTokens(p, tokens, gr, start_symbol)
 
   tr = transformer.Transformer()
   as_tree = tr.transform(parse_tree)

@@ -194,6 +194,18 @@ calc-test() {
   done
 }
 
+minimal-test() {
+  local -a e=(
+    '1 + 2'
+    'a - 42'
+    'if a - 42'
+  )
+  for expr in "${e[@]}"; do
+    echo "$expr"
+    parse pgen2/minimal.grammar eval_input "$expr"
+  done
+}
+
 enum-test() {
   readonly -a enums=(
     # second alternative
@@ -232,6 +244,9 @@ all() {
 
   banner 'calc'
   calc-test
+
+  banner 'minimal'
+  minimal-test
 }
 
 # Hm Python 3 has type syntax!  But we may not use it.
