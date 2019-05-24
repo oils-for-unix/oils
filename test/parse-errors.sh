@@ -142,6 +142,11 @@ arith-context() {
   _error-case 'a[]=1'
 
   _error-case 'a[*]=1'
+
+  # These errors are different because the arithmetic lexer mode has } but not
+  # {.  May be changed later.
+  _error-case '(( a + { ))'
+  _error-case '(( a + } ))'
 }
 
 arith-expr() {

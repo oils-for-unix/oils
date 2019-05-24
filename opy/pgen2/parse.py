@@ -117,7 +117,7 @@ class Parser(object):
             arcs = states[state]
             # Look for a state with this label
             for i, newstate in arcs:
-                t, v = self.grammar.labels[i]
+                t, _ = self.grammar.labels[i]
                 if ilabel == i:
                     # Look it up in the list of labels
                     assert t < 256

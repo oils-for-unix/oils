@@ -22,6 +22,7 @@ from frontend import lexer, match, reader
 
 
 def NoSingletonAction(gr, node):
+  """Collapse parse tree."""
   #log('%s', node)
   typ, value, context, children = node
 
@@ -53,23 +54,54 @@ ARITH_TOKENS = {
     '-': Id.Arith_Minus,
     '*': Id.Arith_Star,
     '/': Id.Arith_Slash,
-    '%': Id.Arith_Percent,
+    '^': Id.Arith_Caret,  # exponent
+
+    'div': Id.Expr_Div,
+    'mod': Id.Expr_Mod,
+
     '(': Id.Arith_LParen,
     ')': Id.Arith_RParen,
     '[': Id.Arith_LBracket,
     ']': Id.Arith_RBracket,
-    '**': Id.Arith_DStar,
     '~': Id.Arith_Tilde,
     ',': Id.Arith_Comma,
 
-    'NAME': Id.Lit_ArithVarLike,
-    'NUMBER': Id.Lit_Digits,
+    '==': Id.Arith_DEqual,
+    '!=': Id.Arith_NEqual,
+    '<': Id.Arith_Less,
+    '>': Id.Arith_Great,
+    '<=': Id.Arith_LessEqual,
+    '>=': Id.Arith_GreatEqual,
+
+    'NAME': Id.Expr_Name,
+    'NUMBER': Id.Expr_Digits,
 
     # TODO: Does it ever happen?
     'STRING': Id.Lit_ArithVarLike,
+
     'NEWLINE': Id.Op_Newline,
 
     'ENDMARKER': Id.Eof_Real,
+}
+
+
+KEYWORDS = {
+    'div': Id.Expr_Div,
+    'mod': Id.Expr_Mod,
+    'xor': Id.Expr_Xor,
+
+    'and': Id.Expr_And,
+    'or': Id.Expr_Or,
+    'not': Id.Expr_Not,
+
+    'for': Id.Expr_For,
+    'is': Id.Expr_Is,
+    'in': Id.Expr_In,
+    'if': Id.Expr_If,
+    'else': Id.Expr_Else,
+
+    'match': Id.Expr_Match,
+    'func': Id.Expr_Func,
 }
 
 
@@ -87,11 +119,15 @@ class CalcTokenDef(object):
 def PushOilTokens(p, lex, debug=False):
     """Parse a series of tokens and return the syntax tree."""
     while True:
-      tok = lex.Read(lex_mode_e.Arith)
+      tok = lex.Read(lex_mode_e.OilExpr)
 
-      # TODO: This should be the kind?
+      # TODO: Use Kind?
       if tok.id == Id.Ignored_Space:
         continue
+
+      if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
+        tok.id = KEYWORDS[tok.val]
+        log('Replaced with %s', tok.id)
 
       typ = tok.id.enum_id
       if p.addtoken(typ, tok.val, tok):
@@ -119,6 +155,10 @@ def main(argv):
     tok_def = CalcTokenDef() if grammar_name == 'calc' else None
     pg = pgen.ParserGenerator(grammar_path, tok_def=tok_def)
     gr = pg.make_grammar()
+
+    # TODO: Need to fix this
+    print(gr.keywords)
+    return
 
     if grammar_name == 'calc':
       arena = alloc.Arena()
@@ -196,8 +236,7 @@ def main(argv):
     print(t2)
 
   else:
-    raise RuntimeError('Invalid actio %r' % action)
-
+    raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':

@@ -1,12 +1,29 @@
-eval_input: arith_expr NEWLINE* ENDMARKER
+eval_input: expr NEWLINE* ENDMARKER
+test_input: test NEWLINE* ENDMARKER
 
-arith_expr: term (('+'|'-') term)*
-term: factor (('*'|'/'|'%') factor)*
+expr: term (('+'|'-') term)*
+
+# note: Oil wants 'div' and 'mod'
+term: factor (('*'|'/'|'div'|'mod') factor)*
+
 factor: ('+'|'-'|'~') factor | power
-power: atom trailer* ['**' factor]
+
+power: atom trailer* ['^' factor]
+
 trailer: '(' [arglist] ')' | '[' subscriptlist ']'
+
 atom: NAME | NUMBER | STRING+
 
 # Trailing commas are allowed!
-arglist: arith_expr (',' arith_expr)* [',']
-subscriptlist: arith_expr (',' arith_expr)* [',']
+arglist: expr (',' expr)* [',']
+subscriptlist: expr (',' expr)* [',']
+
+
+test: or_test ['if' or_test 'else' test] | func_literal
+or_test: and_test ('or' and_test)*
+and_test: not_test ('and' not_test)*
+not_test: 'not' not_test | comparison
+comparison: expr (comp_op expr)*
+comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+
+func_literal: 'func'

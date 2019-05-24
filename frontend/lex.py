@@ -552,11 +552,17 @@ LEXER_DEF[lex_mode_e.VS_2] = \
   R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
+_EXPR_OTHER = [
+  # newline is ignored space, unlike in Outer
+  R(r'[ \t\r\n]+', Id.Ignored_Space),
+  C('\\\n', Id.Ignored_LineCont),
+  R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
+]
+
+
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
 LEXER_DEF[lex_mode_e.Arith] = \
     _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
-  # newline is ignored space, unlike in Outer
-  R(r'[ \t\r\n]+', Id.Ignored_Space),
 
   # Examples of arith constants:
   #   64#azAZ
@@ -570,10 +576,7 @@ LEXER_DEF[lex_mode_e.Arith] = \
   C('#', Id.Lit_Pound),  # for 64#a
 
 # TODO: 64#@ interferes with VS_AT.  Hm.
-] + ID_SPEC.LexerPairs(Kind.Arith) + [
-  C('\\\n', Id.Ignored_LineCont),
-  R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
-]
+] + ID_SPEC.LexerPairs(Kind.Arith) + _EXPR_OTHER
 
 # A lexer for the parser that converts globs to extended regexes.  Since we're
 # only parsing character classes ([^[:space:][:alpha:]]) as opaque blobs, we
@@ -758,3 +761,87 @@ LEXER_DEF[lex_mode_e.OilOuter] = (
 
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ])
+
+# NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
+LEXER_DEF[lex_mode_e.OilExpr] = [
+  # These can be looked up as keywords separately, so you enforce that they have
+  # space around them?
+  R(VAR_NAME_RE, Id.Expr_Name),
+  # keywords:
+  # div mod xor  # binary
+  # and or not   # boolean
+  # for  # comprehensions
+  # is
+  # in
+  # if     # ternary
+  # match  # consistent with if/else expressions
+  # func   # literals
+
+  R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
+
+  # Array literals look like @[foo.cc foo.h] @[1 2 3] @[true false T F]
+  C(r'@[', Id.Expr_ArrayBegin),  # mode -> OilOuter
+
+  C(r"'", Id.Left_SingleQuote),  # mode -> OilSQ
+  C(r'"', Id.Left_DoubleQuote),  # mode -> OilDQ
+
+  C(';', Id.Arith_Semi),
+  C(',', Id.Arith_Comma),
+  C(':', Id.Arith_Colon),   # for slicing a[1:2]
+
+  C('?', Id.Arith_QMark),   # regex postfix
+
+  C('+', Id.Arith_Plus),    # arith infix, regex postfix
+  C('-', Id.Arith_Minus),   # arith infix, regex postfix
+  C('*', Id.Arith_Star),
+  C('^', Id.Arith_Caret),   # ^ rather than ** is exponentiation.  xor is 'xor'.
+  C('/', Id.Arith_Slash),   # mode -> Regex only in PREFIX position!
+
+  C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
+  C('::', Id.Expr_DColon),  # static namespace access
+  C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
+                            # instead of d['name']['age']
+  C('=>', Id.Expr_RDArrow), # for df => filter(age > 10)
+                            # and match (x) { 1 => "one" }
+                            # note: other languages use |>
+                            # R/dplyr uses %>%
+
+  C('(', Id.Arith_LParen),
+  C(')', Id.Arith_RParen),
+  # NOTE: type expressions are expressions, e.g. Dict[Str, Int]
+  C('[', Id.Arith_LBracket),
+  C(']', Id.Arith_RBracket),
+  # TODO: Add LBrace.  TdopParser will say "token can't be used in prefix
+  # position"
+
+  C('<', Id.Arith_Less),
+  C('>', Id.Arith_Great),
+  C('<=', Id.Arith_LessEqual),
+  C('>=', Id.Arith_GreatEqual),
+  C('==', Id.Arith_DEqual),
+  C('!=', Id.Arith_NEqual),
+
+  # Bitwise operators
+  C('&', Id.Arith_Amp),
+  C('|', Id.Arith_Pipe),
+  C('>>', Id.Arith_DGreat),
+  C('<<', Id.Arith_DLess),  # Doesn't Java also have <<< ?
+
+  # Bitwise complement, as well as infix pattern matching
+  C('~', Id.Arith_Tilde),
+  C('!~', Id.Expr_NotTilde),
+
+  # Left out for now:
+  # % ++ --
+  # ! && || 
+  # = += etc.
+
+  # NOTE: % could be string interpolation with a context other than locals?
+  # like '$foo $bar' % {foo: 'X', bar: 'Y'}
+  # single quoted rather than double quoted?
+  # Would that be a security issue?
+
+  # expr as List[Int] for casting?  Or just cast(List[Int]], expr)
+  #
+  # inc = |x| x+1 for simple lambdas.
+] + _EXPR_OTHER

@@ -366,6 +366,22 @@ def AddKinds(spec):
       ('CaretEqual', '^=')
   ])
 
+  # Oil expressions use Kind.Arith (above) and Kind.Expr (below)
+  spec.AddKind('Expr', [
+    'Name', 'Digits',
+    'Dot', 'DColon', 'RArrow', 'RDArrow',
+    'At', 'DoubleAt',  # splice operators
+
+    'NotTilde', 'ArrayBegin',
+
+    # Keywords are resolved after lexing, but otherwise behave like tokens.
+    'Div', 'Mod', 'Xor', 
+    'And', 'Or', 'Not', 
+    'For',
+    'Is', 'In', 'If', 'Else',
+    'Match', 'Func',
+  ])
+
   # This kind is for Node types that are NOT tokens.
   spec.AddKind('Node', [
      # Arithmetic nodes

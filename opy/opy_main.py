@@ -123,7 +123,7 @@ class ParseTreePrinter(object):
     # TODO: parameterize by grammar.
     self.max_token_index = max(token.tok_name)
 
-  def Print(self, node, f=sys.stdout, indent=0):
+  def Print(self, node, f=sys.stdout, indent=0, i=0):
     ind = '  ' * indent
 
     typ, value, context, children = node
@@ -133,10 +133,10 @@ class ParseTreePrinter(object):
     #   'prefix' is a string of whitespace.
     #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
     v = value if value is not None else '-'
-    f.write('%s%s %s %s\n' % (ind, self.names[typ], v, context))
+    f.write('%s%d %s %s %s\n' % (ind, i, self.names[typ], v, context))
     if children:  # could be None
-      for child in children:
-        self.Print(child, indent=indent+1)
+      for i, child in enumerate(children):
+        self.Print(child, indent=indent+1, i=i)
 
 
 class TableOutput(object):

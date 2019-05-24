@@ -18,6 +18,7 @@
 #   - string and array literals, which need to invoke WordParser
 #     - "${foo:-}" and [a b "$foo"]
 #     - although disallow ${} and prefer $[] for expressions?
+#   - floating point literals?
 #   - including regex dialect?  (But that changes lexer modes)
 # - Types:
 #   - Optional type declarations with MyPy-ish syntax
@@ -176,9 +177,11 @@ calc-test() {
     # Uses string tokens
     #'"abc" + "def"'
 
-    '2 ** 3 ** 4'  # right assoc
+    '2 ^ 3 ^ 4'  # right assoc
     'f(1, 2, 3)'
     'f(a[i], 2, 3)'
+
+    'x < 3 and y <= 4'
 
     # bad token
     #'a * 3&4'
@@ -187,7 +190,7 @@ calc-test() {
 
   for expr in "${types[@]}"; do
     echo "$expr"
-    parse pgen2/calc.grammar eval_input "$expr"
+    parse pgen2/calc.grammar test_input "$expr"
   done
 }
 
