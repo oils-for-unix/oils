@@ -19,13 +19,27 @@ module types {
   | BashRegex | BashRegexChars
   | PrintfOuter | PrintfPercent
 
-  | OilOuter    -- echo foo (should this be OIL_COMMAND?)
-  | OilWords -- Like OUTER, but {a,b} and [a-z].? are recognized.
-  | OilExpr -- echo ${a * b} $(a * b)
-  | OilSQ -- echo '_\t_'
-  | OilDQ -- echo "hello $name\n"
+  | OilOuter  -- echo foo (should this be Block or OilBlock ?)
+              -- Newlines are terminators
+  | OilWords  -- Like Outer, but {a,b} and [a-z].? and [[a-z]] are recognized.
+              -- entered with @[] for array literals
+  | OilExpr   -- echo ${a * b} $(a * b)
+
+              -- note: could quoted strings be shared with OSH?  Rename that
+              -- to CSQ, CDQ, RawSQ, RawDQ?  Maybe disallow octal literals
+              -- after the fact?
+              -- OilDQ is different because it disallows `` and so forth
+              -- can multiline strings share
+  | OilSQ     -- echo '_\t_'
+  | OilDQ     -- echo "hello $name\n"
+
   | OilRawSQ  -- echo r'foo'
   | OilRawDQ  -- echo r"hello there"
+
+  | Regex     -- [[ is special, e.g. myregex = $/ [[a-z]]+ /
+  | CharClass -- / [a-z space]+ /
+              -- echo foo.[c h]  # spaces allowed?  So it must be its own
+              -- mode
 
   -- More:
   -- * Multiline strings

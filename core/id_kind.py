@@ -372,7 +372,9 @@ def AddKinds(spec):
     'Dot', 'DColon', 'RArrow', 'RDArrow',
     'At', 'DoubleAt',  # splice operators
 
-    'NotTilde', 'ArrayBegin',
+    'NotTilde',  # !~
+
+    'LeftArray', 'LeftRegex',  # Should these be Kind.Left?  Or Kind.OilLeft?
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
     'Div', 'Mod', 'Xor', 

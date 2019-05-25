@@ -1,0 +1,26 @@
+# Is pgen LL(*) ?
+
+ID: NAME
+
+expr: NUMBER
+
+
+# From section 2 of LL(*) ANTLR paper (2011).
+paper: ID | ID '=' expr | 'unsigned'* 'int' ID | 'unsigned'* ID ID
+
+paper_input: paper NEWLINE* ENDMARKER
+
+
+
+
+# From
+# https://theantlrguy.atlassian.net/wiki/spaces/ANTLR3/pages/2687279/What+is+the+difference+between+ANTLR+v2+and+v3
+
+type: 'unsigned' ['int']
+arg: 'arg'
+body: 'body'
+
+method: type ID '(' arg* ')' ';' | type ID '(' arg* ')' '{' body '}' 
+
+method_input: method NEWLINE* ENDMARKER
+

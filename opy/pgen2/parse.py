@@ -99,22 +99,30 @@ class Parser(object):
         # A node is a tuple: (type, value, context, children),
         # where children is a list of nodes or None, and context may be None.
         newnode = (start, None, None, [])
-        stackentry = (self.grammar.dfas[start], 0, newnode)
-        self.stack = [stackentry]
+
+        # TODO: Add the name of the non-terminal here?
+        # And then look up (non-terminal, token) -> lexer mode change.
+        # But it can also be a token??  Don't want that.
+
+        self.stack = [(self.grammar.dfas[start], 0, newnode)]
         self.rootnode = None
-        self.used_names = set() # Aliased to self.rootnode.used_names in pop()
 
     def addtoken(self, typ, value, context, ilabel):
         """Add a token; return True iff this is the end of the program."""
         # Loop until the token is shifted; may raise exceptions
+
+        # Andy NOTE: This is not linear time, i.e. a constant amount of work
+        # for each token?  Is it O(n^2) as the ANTLR paper says?
+        # Do the "accelerators" in pgen.c have anything to do with it?
+
         while True:
             dfa, state, node = self.stack[-1]
-            states, first = dfa
+            states, _ = dfa
             arcs = states[state]
             # Look for a state with this label
-            for i, newstate in arcs:
-                t = self.grammar.labels[i]
-                if ilabel == i:
+            for ilab, newstate in arcs:
+                t = self.grammar.labels[ilab]
+                if ilabel == ilab:
                     # Look it up in the list of labels
                     assert t < 256
                     # Shift a token; we're done with it
@@ -127,7 +135,7 @@ class Parser(object):
                             # Done parsing!
                             return True
                         dfa, state, node = self.stack[-1]
-                        states, first = dfa
+                        states, _ = dfa
                     # Done with this token
                     return False
                 elif t >= 256:
@@ -138,7 +146,8 @@ class Parser(object):
                         # Push a symbol
                         self.push(t, self.grammar.dfas[t], newstate, context)
                         break # To continue the outer while loop
-            else:
+
+            else:  # note: for/else not supported in C++
                 if (0, state) in arcs:
                     # An accepting state, pop it and try something else
                     self.pop()
@@ -152,7 +161,7 @@ class Parser(object):
 
     def shift(self, typ, value, newstate, context):
         """Shift a token.  (Internal)"""
-        dfa, state, node = self.stack[-1]
+        dfa, _, node = self.stack[-1]
         newnode = (typ, value, context, None)
         newnode = self.convert(self.grammar, newnode)
         if newnode is not None:
@@ -161,7 +170,7 @@ class Parser(object):
 
     def push(self, typ, newdfa, newstate, context):
         """Push a nonterminal.  (Internal)"""
-        dfa, state, node = self.stack[-1]
+        dfa, _, node = self.stack[-1]
         newnode = (typ, None, context, [])
         self.stack[-1] = (dfa, newstate, node)
         self.stack.append((newdfa, 0, newnode))
@@ -172,13 +181,7 @@ class Parser(object):
         newnode = self.convert(self.grammar, popnode)
         if newnode is not None:
             if self.stack:
-                dfa, state, node = self.stack[-1]
+                _, _, node = self.stack[-1]
                 node[-1].append(newnode)
             else:
                 self.rootnode = newnode
-                try:
-                    self.rootnode.used_names = self.used_names
-                except AttributeError:
-                    # Don't need this hack?
-                    pass
-

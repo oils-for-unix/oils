@@ -32,6 +32,9 @@
 
 module syntax
 {
+  -- core/main_loop.py
+  parse_result = EmptyLine | Eof | Node(command cmd)
+ 
   source = 
     Interactive
   | Unused(string comment)     -- completion and history never show parse errors?
@@ -265,15 +268,20 @@ module syntax
   --
 
   -- NOTE: These are defined in the same ASDL module since the OSH LST will
-  -- contain oil_command in the form of 'proc and 'func'.  The Oil LST will NOT
-  -- contain any OSH nodes.  It will have 'sh-eval', shEval(), etc. which work
-  -- with strings.
+  -- contain oil_command, e.g. for 'var', 'func', etc.
 
   oil_expr =
-    Name
-  | UnaryOp(token op, oil_expr child)
-  | BinaryOp(token op, oil_expr left, oil_expr right)
+    Const(token c)   -- could be integer, or false, etc.
+  | Var(token name)  -- a variable name to evaluate
+  | Unary(token op, oil_expr child)
+  | Binary(token op, oil_expr left, oil_expr right)
   | FuncCall(oil_expr func, oil_expr* args)
+    -- a[1, 2] or a[1:2]
+    -- should 1:2 be an expression then?
+  | Subscript(oil_expr collection, oil_expr* indices)
+
+  -- NOTE: Remove these for the first cut?  We could mostly reuse OSH nodes.
+  -- And then we can share the evaluator to have identical semantics?
 
   oil_word_part = 
     Literal(token token)
@@ -302,7 +310,4 @@ module syntax
   | Pipeline(oil_cmd* children, bool negated)
   | AndOr(id* ops, oil_cmd* children)
   | CommandList(oil_cmd* children)
-
-  -- core/main_loop.py
-  parse_result = EmptyLine | Eof | Node(command cmd)
 }

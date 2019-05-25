@@ -66,6 +66,9 @@ class Grammar(object):
                      are used to mark state transitions (arcs) in the
                      DFAs.
 
+                     Oil patch: this became List[int] where int is the
+                     token/symbol number.
+
     start         -- the number of the grammar's start symbol.
 
     keywords      -- a dict mapping keyword strings to arc labels.

@@ -180,13 +180,16 @@ calc-test() {
     '2 ^ 3 ^ 4'  # right assoc
     'f(1, 2, 3)'
     'f(a[i], 2, 3)'
+    'f(x)^3'
+    'f(x)[i]^3'
 
     'x < 3 and y <= 4'
 
     # bad token
     #'a * 3&4'
   )
-  #types=('a+a')
+  types=('a+a' '1+2*3' '-42' '2^3^4')
+  #types=( '1+2*3' )
 
   for expr in "${types[@]}"; do
     echo "$expr"
@@ -229,6 +232,36 @@ ll1-test() {
   )
   for expr in "${enums[@]}"; do
     parse pgen2/enum.grammar ll1_test "$expr"
+  done
+}
+
+ll-star-test() {
+  readonly -a e=(
+    # second alternative
+    'a'
+    'a = 3'
+    'unsigned int a'
+    'unsigned unsigned int a'
+    'unsigned unsigned b c'
+    # It correctly detects these as parse errors
+    #'unsigned unsigned b'
+    #'a = b'
+  )
+  for expr in "${e[@]}"; do
+    parse pgen2/ll-star.grammar paper_input "$expr"
+  done
+}
+
+ll-star-test-2() {
+  readonly -a e=(
+    # second alternative
+    'unsigned foo(arg);'
+    'unsigned foo(arg) { body }'
+    # It correctly detects these as parse errors
+    #'unsigned foo(arg)'
+  )
+  for expr in "${e[@]}"; do
+    parse pgen2/ll-star.grammar method_input "$expr"
   done
 }
 

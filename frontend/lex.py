@@ -780,7 +780,8 @@ LEXER_DEF[lex_mode_e.OilExpr] = [
   R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
 
   # Array literals look like @[foo.cc foo.h] @[1 2 3] @[true false T F]
-  C(r'@[', Id.Expr_ArrayBegin),  # mode -> OilOuter
+  C(r'@[', Id.Expr_LeftArray),  # mode -> OilWords, [] and [[ ]] and {} 
+  C(r'$/', Id.Expr_LeftRegex),  # mode -> Regex, [] and [[ ]]
 
   C(r"'", Id.Left_SingleQuote),  # mode -> OilSQ
   C(r'"', Id.Left_DoubleQuote),  # mode -> OilDQ
