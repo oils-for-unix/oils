@@ -79,7 +79,9 @@ class Grammar(object):
         self.number2symbol = {}
         self.states = []
         self.dfas = {}
-        self.labels = [(0, "EMPTY")]
+        # Oil patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?
+        # Or is it ENDMARKER?
+        self.labels = [0]
         self.keywords = {}
         self.tokens = {}
         self.symbol2label = {}

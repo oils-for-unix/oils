@@ -49,7 +49,7 @@ def MakeOilLexer(code_str, arena):
 
 
 # Used at grammar BUILD time.
-EXPR_TOKENS = {
+OPS = {
     '+': Id.Arith_Plus,
     '-': Id.Arith_Minus,
     '*': Id.Arith_Star,
@@ -72,7 +72,9 @@ EXPR_TOKENS = {
     '>': Id.Arith_Great,
     '<=': Id.Arith_LessEqual,
     '>=': Id.Arith_GreatEqual,
+}
 
+TERMINALS = {
     # What happens in the grammar when you see NAME | NUMBER
     # atom: NAME | NUMBER | STRING+
 
@@ -111,16 +113,13 @@ KEYWORDS = {
 
 class OilTokenDef(object):
 
-  def GetTokenNum(self, label):
-    id_ = EXPR_TOKENS[label]
+  def GetTerminalNum(self, label):
+    id_ = TERMINALS[label]
     return id_.enum_id
 
-  def GetTokenNumForOp(self, value):
-    id_ = EXPR_TOKENS[value]
+  def GetOpNum(self, value):
+    id_ = OPS[value]
     return id_.enum_id
-
-  def NameLabel(self):
-    return Id.Expr_Name.enum_id
 
 
 def _Classify(gr, tok):
@@ -244,7 +243,7 @@ def main(argv):
       names = {}
 
       if using_oil_lexer:
-        for id_ in EXPR_TOKENS.values():
+        for id_ in (OPS.values() + TERMINALS.values()):
           k = id_.enum_id
           assert k <= 256, (k, id_)
           names[k] = id_.name

@@ -11,23 +11,16 @@ from . import grammar, token, tokenize
 
 class PythonTokDef(object):
 
-  def GetTokenNum(self, label):
+  def GetTerminalNum(self, label):
+    """ e.g. NAME -> 1 """
     itoken = getattr(token, label, None)
     assert isinstance(itoken, int), label
     assert itoken in token.tok_name, label
     return itoken
 
-  def GetTokenNumForOp(self, value):
-    return grammar.opmap[value]  # Fails if unknown token
-
-  def NameLabel(self):
-    """
-    In the grammar, 'for' turns into
-
-    (NAME, 'for')
-    (Id.Expr_Name, 'for')
-    """
-    return token.NAME
+  def GetOpNum(self, value):
+    """ e.g '(' -> LPAR """
+    return grammar.opmap[value]
 
 
 class ParserGenerator(object):
@@ -41,7 +34,6 @@ class ParserGenerator(object):
         self.stream = stream
 
         self.tok_def = tok_def or PythonTokDef()
-        self.name_label = self.tok_def.NameLabel()
 
         self.generator = tokenize.generate_tokens(stream.readline)
         self.gettoken() # Initialize lookahead
@@ -86,6 +78,14 @@ class ParserGenerator(object):
         return first
 
     def make_label(self, gr, label):
+        """Given a grammar item, return a unique integer representing it.
+
+        It could be:
+        1. 'expr'  - a non-terminal
+        2. NAME    - a terminal
+        3. 'for'   - keyword
+        4. '>='    - operator
+        """
         #log('make_label %r', label)
         # XXX Maybe this should be a method on a subclass of converter?
         ilabel = len(gr.labels)
@@ -94,15 +94,15 @@ class ParserGenerator(object):
                 if label in gr.symbol2label:
                     return gr.symbol2label[label]
                 else:
-                    gr.labels.append((gr.symbol2number[label], None))
+                    gr.labels.append(gr.symbol2number[label])
                     gr.symbol2label[label] = ilabel
                     return ilabel
             else:  # TERMINAL like (NAME, NUMBER, STRING)
-                itoken = self.tok_def.GetTokenNum(label)
+                itoken = self.tok_def.GetTerminalNum(label)
                 if itoken in gr.tokens:
                     return gr.tokens[itoken]
                 else:
-                    gr.labels.append((itoken, None))
+                    gr.labels.append(itoken)
                     #log('%s %d -> %s', token.tok_name[itoken], itoken, ilabel)
                     gr.tokens[itoken] = ilabel
                     return ilabel
@@ -115,16 +115,16 @@ class ParserGenerator(object):
                 if value in gr.keywords:
                     return gr.keywords[value]
                 else:
-                    gr.labels.append((self.name_label, value))
+                    gr.labels.append(token.NAME)  # arbitrary number < 256
                     gr.keywords[value] = ilabel
                     return ilabel
             else:
                 # An operator (any non-numeric token)
-                itoken = self.tok_def.GetTokenNumForOp(value)
+                itoken = self.tok_def.GetOpNum(value)
                 if itoken in gr.tokens:
                     return gr.tokens[itoken]
                 else:
-                    gr.labels.append((itoken, None))
+                    gr.labels.append(itoken)
                     gr.tokens[itoken] = ilabel
                     return ilabel
 
