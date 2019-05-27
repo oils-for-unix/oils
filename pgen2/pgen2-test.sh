@@ -174,22 +174,32 @@ calc-test() {
     'a + 2'
     '1 + 2*3/4'  # operator precedence and left assoc
 
+    # Associative
+    '1+2+3'
+    '4*5*6'
+    'i % n'
+    'i % n / 2'
+
     # Uses string tokens
     #'"abc" + "def"'
 
     '2 ^ 3 ^ 4'  # right assoc
+    'f(1)'
     'f(1, 2, 3)'
+
     'f(a[i], 2, 3)'
+    'f(a[i, j], 2, 3)'
+
     'f(x)^3'
     'f(x)[i]^3'
 
-    'x < 3 and y <= 4'
+    #'x < 3 and y <= 4'
 
     # bad token
     #'a * 3&4'
   )
-  types=('a+a' '1+2*3' '-42' '2^3^4')
-  #types=( '1+2*3' )
+  #types=('a+a' '1+2*3' '-42' '2^3^4')
+  #types=( '1+2+3' '4*5*6' )
 
   for expr in "${types[@]}"; do
     echo "$expr"

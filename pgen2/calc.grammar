@@ -3,8 +3,8 @@ test_input: test NEWLINE* ENDMARKER
 
 expr: term (('+'|'-') term)*
 
-# note: Oil wants 'div' and 'mod'
-term: factor (('*'|'/'|'div'|'mod') factor)*
+# note: In Oil, integer division is 'div'
+term: factor (('*'|'/'|'div'|'%') factor)*
 
 factor: ('+'|'-'|'~') factor | power
 

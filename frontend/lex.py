@@ -768,9 +768,9 @@ LEXER_DEF[lex_mode_e.OilExpr] = [
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
   # keywords:
-  # div mod xor  # binary
+  # div xor      # binary
   # and or not   # boolean
-  # for  # comprehensions
+  # for          # comprehensions
   # is
   # in
   # if     # ternary
@@ -796,7 +796,8 @@ LEXER_DEF[lex_mode_e.OilExpr] = [
   C('-', Id.Arith_Minus),   # arith infix, regex postfix
   C('*', Id.Arith_Star),
   C('^', Id.Arith_Caret),   # ^ rather than ** is exponentiation.  xor is 'xor'.
-  C('/', Id.Arith_Slash),   # mode -> Regex only in PREFIX position!
+  C('/', Id.Arith_Slash),
+  C('%', Id.Arith_Percent),
 
   C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
   C('::', Id.Expr_DColon),  # static namespace access
@@ -847,6 +848,9 @@ LEXER_DEF[lex_mode_e.OilExpr] = [
   # Would that be a security issue?
 
   # expr as List[Int] for casting?  Or just cast(List[Int]], expr)
+  # What about specifying types?  NOTE: we attach it to the expression rather
+  # than the type.
+  # x = [] : Array<Int>
   #
   # inc = |x| x+1 for simple lambdas.
 ] + _EXPR_OTHER

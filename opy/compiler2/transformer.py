@@ -807,7 +807,7 @@ class Transformer(object):
         return node
 
     def power(self, nodelist):
-        # power: atom trailer* ('**' factor)*
+        # power: atom trailer* ['**' factor]
         node = self.com_node(nodelist[0])
         for i in range(1, len(nodelist)):
             elt = nodelist[i]

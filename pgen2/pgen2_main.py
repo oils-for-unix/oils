@@ -121,6 +121,65 @@ class CalcTransformer(object):
   def __init__(self, gr):
     self.number2symbol = gr.number2symbol
 
+  def _AssocBinary(self, children):
+    """For an associative binary operation.
+
+    We don't care if it's (1+2)+3 or 1+(2+3).
+    """
+    assert len(children) >= 3, children
+    # NOTE: opy/compiler2/transformer.py has an interative version of this in
+    # com_binary.
+
+    left, op = children[0], children[1]
+    if len(children) == 3:
+      right = self.Transform(children[2])
+    else:
+      right = self._AssocBinary(children[2:])
+
+    _, _, op_token, _ = op
+
+    #left, op, right = children
+    assert isinstance(op_token, syntax_asdl.token)
+    return oil_expr.Binary(
+        op_token, self.Transform(left), right)
+
+  def _Trailer(self, base, p_trailer):
+    _, _, _, children = p_trailer
+    _, _, op_tok, _ = children[0]
+
+    def HasChildren(p_node):
+      return p_node[3] is not None
+
+    # TODO: We need symbols here
+    if op_tok.id == Id.Arith_LParen:
+       p_args = children[1]
+       #arg_typ = self.number2symbol[p_args[0]]
+       #log('ARG TYP %s', arg_typ)
+
+       # NOTE: This doesn't take into account kwargs and so forth.
+       if HasChildren(p_args):
+         arglist = children[1][3][::2]  # a, b, c -- every other one is a comma
+       else:
+         arg = children[1]
+         arglist = [arg]
+       return oil_expr.FuncCall(base, [self.Transform(a) for a in arglist])
+
+    if op_tok.id == Id.Arith_LBracket:
+       p_args = children[1]
+
+       # NOTE: This doens't take into account slices
+       if HasChildren(p_args):
+         arglist = children[1][3][::2]  # a, b, c -- every other one is a comma
+       else:
+         arg = children[1]
+         arglist = [arg]
+       return oil_expr.Subscript(base, [self.Transform(a) for a in arglist])
+
+    if op_tok.id == Id.Arith_Dot:
+      return self._GetAttr(base, nodelist[2])
+
+    raise AssertionError(tok)
+
   def Transform(self, node):
     """Walk the homogeneous parse tree and create a typed AST."""
     typ, value, tok, children = node
@@ -137,25 +196,11 @@ class CalcTransformer(object):
 
       elif nt_name == 'expr':
         # expr: term (('+'|'-') term)*
-
-        # TODO: Have to loop over children
-
-        left, op, right = children
-        _, _, op_token, _ = op
-        assert isinstance(op_token, syntax_asdl.token)
-        return oil_expr.Binary(
-            op_token, self.Transform(left), self.Transform(right))
+        return self._AssocBinary(children)
 
       elif nt_name == 'term':
         # term: factor (('*'|'/'|'div'|'mod') factor)*
-
-        # TODO: Have to loop over children
-
-        left, op, right = children
-        _, _, op_token, _ = op
-        assert isinstance(op_token, syntax_asdl.token)
-        return oil_expr.Binary(
-            op_token, self.Transform(left), self.Transform(right))
+        return self._AssocBinary(children)
 
       elif nt_name == 'factor':
         # factor: ('+'|'-'|'~') factor | power
@@ -173,24 +218,16 @@ class CalcTransformer(object):
 
         # NOTE: This would be shorter in a recursive style.
 
+        base = self.Transform(children[0])
         n = len(children)
-        i = 0
-        base = self.Transform(children[i])
-        while n > 3:
-          trailer = children[i+1]
-          #expr = n
-          # Now apply expr!
-          i += 1
-          n -= 1
+        for i in xrange(1, n):
+          pnode = children[i]
+          _, _, tok, _ = pnode
+          if tok and tok.id == Id.Arith_Caret:
+            return oil_expr.Binary(tok, base, self.Transform(children[i+1]))
+          base = self._Trailer(base, pnode)
 
-        assert n == 3
-        op = children[i+1]
-        right = children[i+2]
-
-        _, _, op_token, _ = op
-        assert isinstance(op_token, syntax_asdl.token)
-
-        return oil_expr.Binary(op_token, base, self.Transform(right))
+        return base
 
       else:
         raise AssertionError(nt_name)
@@ -219,11 +256,13 @@ OPS = {
     '+': Id.Arith_Plus,
     '-': Id.Arith_Minus,
     '*': Id.Arith_Star,
-    '/': Id.Arith_Slash,
-    '^': Id.Arith_Caret,  # exponent
+
+    '/': Id.Arith_Slash,  # floating point division
+    '%': Id.Arith_Percent,
 
     'div': Id.Expr_Div,
-    'mod': Id.Expr_Mod,
+
+    '^': Id.Arith_Caret,  # exponent
 
     '(': Id.Arith_LParen,
     ')': Id.Arith_RParen,
@@ -260,7 +299,6 @@ TERMINALS = {
 if 0:  # unused because the grammar compile keeps track of keywords!
   KEYWORDS = {
       'div': Id.Expr_Div,
-      'mod': Id.Expr_Mod,
       'xor': Id.Expr_Xor,
 
       'and': Id.Expr_And,
@@ -429,8 +467,9 @@ def main(argv):
     if grammar_name == 'calc':
       tr = CalcTransformer(gr)
       ast_root = tr.Transform(root_node)
+      print('')
       ast_root.PrettyPrint()
-
+      print('')
 
   elif action == 'stdlib-test':
     # This shows how deep Python's parse tree is.  It doesn't use semantic

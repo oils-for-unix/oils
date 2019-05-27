@@ -246,6 +246,9 @@ def AddKinds(spec):
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
 
+      # TODO: Should we use syntax or semantics?  Maybe Left_DollarParen makes
+      # more sense. You can use the token for OSH and Oil.  But
+      # word_part.CommandSub is semantic.
       'ParenSub',           # Oil $(
       'BraceSub',           # Oil ${
       'BracketSub',         # Oil $[
@@ -377,7 +380,7 @@ def AddKinds(spec):
     'LeftArray', 'LeftRegex',  # Should these be Kind.Left?  Or Kind.OilLeft?
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
-    'Div', 'Mod', 'Xor', 
+    'Div', 'Xor', 
     'And', 'Or', 'Not', 
     'For',
     'Is', 'In', 'If', 'Else',
