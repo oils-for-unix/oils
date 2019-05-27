@@ -168,7 +168,7 @@ sys.exit(main())
 # [x]	-d --delimiter
 # [ ]	-I -i --replace
 # [ ]	-L -l --max-lines
-# [ ]	-n --max-args
+# [x]	-n --max-args
 # [ ]	-s --max-chars
 # [ ]	-P --max-procs
 # [ ]	--process-slot-var
