@@ -12,13 +12,29 @@ how this parsing engine works.
 class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
-    def __init__(self, msg, typ, value, context):
-        Exception.__init__(self, "%s: type=%r, value=%r, context=%r" %
-                           (msg, typ, value, context))
+    def __init__(self, msg, typ, opaque):
+        Exception.__init__(self, "%s: type=%r, opaque=%r" % (msg, typ, opaque))
         self.msg = msg
         self.type = typ
-        self.value = value
-        self.context = context
+        self.opaque = opaque
+
+
+class PNode(object):
+  __slots__ = ('typ', 'tok', 'children')
+
+  def __init__(self, typ, tok, children):
+    self.typ = typ  # token or non-terminal
+    self.tok = tok  # opaque object that is passed back to "convert" callback.
+                    # In Oil, this is syntax_asdl.token.  In OPy, it's a
+                    # 3-tuple (val, prefix, loc)
+                    # NOTE: This is None for the first entry in the stack?
+    self.children = children
+
+  def __str__(self):
+    tok_str = str(self.tok) if self.tok else '-'
+    ch_str = 'with %d children' % len(self.children) \
+        if self.children is not None else ''
+    return '<PNode %s %s %s>' % (self.typ, tok_str, ch_str)
 
 
 class Parser(object):
@@ -98,7 +114,7 @@ class Parser(object):
         # Each stack entry is a tuple: (dfa, state, node).
         # A node is a tuple: (type, value, context, children),
         # where children is a list of nodes or None, and context may be None.
-        newnode = (start, None, None, [])
+        newnode = PNode(start, None, [])
 
         # TODO: Add the name of the non-terminal here?
         # And then look up (non-terminal, token) -> lexer mode change.
@@ -107,7 +123,7 @@ class Parser(object):
         self.stack = [(self.grammar.dfas[start], 0, newnode)]
         self.rootnode = None
 
-    def addtoken(self, typ, value, context, ilabel):
+    def addtoken(self, typ, opaque, ilabel):
         """Add a token; return True iff this is the end of the program."""
         # Loop until the token is shifted; may raise exceptions
 
@@ -126,7 +142,7 @@ class Parser(object):
                     # Look it up in the list of labels
                     assert t < 256
                     # Shift a token; we're done with it
-                    self.shift(typ, value, newstate, context)
+                    self.shift(typ, opaque, newstate)
                     # Pop while we are in an accept-only state
                     state = newstate
                     while states[state] == [(0, state)]:
@@ -144,7 +160,7 @@ class Parser(object):
                     itsstates, itsfirst = itsdfa
                     if ilabel in itsfirst:
                         # Push a symbol
-                        self.push(t, self.grammar.dfas[t], newstate, context)
+                        self.push(t, opaque, self.grammar.dfas[t], newstate)
                         break # To continue the outer while loop
 
             else:  # note: for/else not supported in C++
@@ -153,25 +169,24 @@ class Parser(object):
                     self.pop()
                     if not self.stack:
                         # Done parsing, but another token is input
-                        raise ParseError("too much input",
-                                         typ, value, context)
+                        raise ParseError("too much input", typ, opaque)
                 else:
                     # No success finding a transition
-                    raise ParseError("bad input", typ, value, context)
+                    raise ParseError("bad input", typ, opaque)
 
-    def shift(self, typ, value, newstate, context):
+    def shift(self, typ, opaque, newstate):
         """Shift a token.  (Internal)"""
         dfa, _, node = self.stack[-1]
-        newnode = (typ, value, context, None)
+        newnode = PNode(typ, opaque, None)
         newnode = self.convert(self.grammar, newnode)
         if newnode is not None:
-            node[-1].append(newnode)
+            node.children.append(newnode)
         self.stack[-1] = (dfa, newstate, node)
 
-    def push(self, typ, newdfa, newstate, context):
+    def push(self, typ, opaque, newdfa, newstate):
         """Push a nonterminal.  (Internal)"""
         dfa, _, node = self.stack[-1]
-        newnode = (typ, None, context, [])
+        newnode = PNode(typ, opaque, [])
         self.stack[-1] = (dfa, newstate, node)
         self.stack.append((newdfa, 0, newnode))
 
@@ -182,6 +197,6 @@ class Parser(object):
         if newnode is not None:
             if self.stack:
                 _, _, node = self.stack[-1]
-                node[-1].append(newnode)
+                node.children.append(newnode)
             else:
                 self.rootnode = newnode

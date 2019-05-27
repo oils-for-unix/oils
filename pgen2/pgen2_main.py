@@ -23,19 +23,17 @@ from core import meta
 from frontend import lexer, match, reader
 
 
-def NoSingletonAction(gr, node):
+def NoSingletonAction(gr, pnode):
   """Collapse parse tree."""
-  #log('%s', node)
-  typ, value, context, children = node
-
   # collapse
   # hm this was so easy!  Why does it materialize so much then?
   # Does CPython do it, or only pgen2?
   # I think you already know
+  children = pnode.children
   if children is not None and len(children) == 1:
     return children[0]
 
-  return node
+  return pnode
 
 
 # I can't get custom actions to work?  I think I would have to understand more
@@ -44,16 +42,6 @@ def NoSingletonAction(gr, node):
 SEMANTIC_ACTIONS = {
     #'calc': CalcAction,
 }
-
-
-# TODO: Make a Node object to make this easier?
-# The parser will translate better to C++ and to typing as well.
-# for the OPy front end, you can override __getitem__ I think?  So that node[0]
-# is 'typ', etc.
-# Use __slots__ on the node too.
-
-def HasChildren(p_node):
-  return p_node[3] is not None
 
 
 class CalcTransformer(object):
@@ -76,26 +64,20 @@ class CalcTransformer(object):
     else:
       right = self._AssocBinary(children[2:])
 
-    _, _, op_token, _ = op
-
-    #left, op, right = children
-    assert isinstance(op_token, syntax_asdl.token)
-    return oil_expr.Binary(
-        op_token, self.Transform(left), right)
+    assert isinstance(op.tok, syntax_asdl.token)
+    return oil_expr.Binary(op.tok, self.Transform(left), right)
 
   def _Trailer(self, base, p_trailer):
-    _, _, _, children = p_trailer
-    _, _, op_tok, _ = children[0]
+    children = p_trailer.children
+    op_tok = children[0].tok
 
-    # TODO: We need symbols here
     if op_tok.id == Id.Arith_LParen:
        p_args = children[1]
-       #arg_typ = self.number2symbol[p_args[0]]
-       #log('ARG TYP %s', arg_typ)
 
        # NOTE: This doesn't take into account kwargs and so forth.
-       if HasChildren(p_args):
-         arglist = children[1][3][::2]  # a, b, c -- every other one is a comma
+       if p_args.children is not None:
+         # a, b, c -- every other one is a comma
+         arglist = children[1].children[::2]
        else:
          arg = children[1]
          arglist = [arg]
@@ -105,8 +87,9 @@ class CalcTransformer(object):
        p_args = children[1]
 
        # NOTE: This doens't take into account slices
-       if HasChildren(p_args):
-         arglist = children[1][3][::2]  # a, b, c -- every other one is a comma
+       if p_args.children is not None:
+         # a, b, c -- every other one is a comma
+         arglist = children[1].children[::2]
        else:
          arg = children[1]
          arglist = [arg]
@@ -117,9 +100,15 @@ class CalcTransformer(object):
 
     raise AssertionError(tok)
 
-  def Transform(self, node):
+  def Transform(self, pnode):
     """Walk the homogeneous parse tree and create a typed AST."""
-    typ, value, tok, children = node
+    typ = pnode.typ
+    if pnode.tok:
+      value = pnode.tok.val
+    else:
+      value = None
+    tok = pnode.tok
+    children = pnode.children
 
     if typ in self.number2symbol:  # non-terminal
       nt_name = self.number2symbol[typ]
@@ -144,9 +133,8 @@ class CalcTransformer(object):
         # the power would have already been reduced
         assert len(children) == 2, children
         op, e = children
-        _, _, op_token, _ = op
-        assert isinstance(op_token, syntax_asdl.token)
-        return oil_expr.Unary(op_token, self.Transform(e))
+        assert isinstance(op.tok, syntax_asdl.token)
+        return oil_expr.Unary(op.tok, self.Transform(e))
 
       elif nt_name == 'power':
         # power: atom trailer* ['^' factor]
@@ -159,7 +147,7 @@ class CalcTransformer(object):
         n = len(children)
         for i in xrange(1, n):
           pnode = children[i]
-          _, _, tok, _ = pnode
+          tok = pnode.tok
           if tok and tok.id == Id.Arith_Caret:
             return oil_expr.Binary(tok, base, self.Transform(children[i+1]))
           base = self._Trailer(base, pnode)
@@ -167,11 +155,11 @@ class CalcTransformer(object):
         return base
 
       elif nt_name == 'array_literal':
-        _, _, left_tok, _ = children[0]
+        left_tok = children[0].tok
 
-        # Approximatino for now.
+        # Approximation for now.
         items = [
-            node[2] for node in children[1:-1] if node[2].id ==
+            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
             Id.Lit_Chars
         ]
 
@@ -373,7 +361,7 @@ def PushOilTokens(p, lex, gr, debug=False):
 
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)
-    if p.addtoken(tok.id.enum_id, tok.val, tok, ilabel):
+    if p.addtoken(tok.id.enum_id, tok, ilabel):
         if debug:
             log("Stop.")
         break
@@ -463,7 +451,7 @@ def main(argv):
         names[k] = v
 
     if 1:
-      if isinstance(root_node, tuple):
+      if isinstance(root_node, parse.PNode):
         #print(root_node)
         printer = ParseTreePrinter(names)  # print raw nodes
         printer.Print(root_node)

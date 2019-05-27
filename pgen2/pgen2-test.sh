@@ -175,7 +175,7 @@ calc-test() {
     '1 + 2*3/4'  # operator precedence and left assoc
 
     # Associative
-    '1+2+3'
+    '-1+2+3'
     '4*5*6'
     'i % n'
     'i % n / 2'

@@ -84,7 +84,8 @@ def PushTokens(p, tokens, gr, start_symbol, debug=False):
             log("%s %r (prefix=%r)", token.tok_name[type_], value, prefix)
 
         ilabel = classify(gr, type_, value)
-        if p.addtoken(type_, value, (prefix, start), ilabel):
+        opaque = (value, prefix, start)
+        if p.addtoken(type_, opaque, ilabel):
             if debug:
                 log("Stop.")
             break

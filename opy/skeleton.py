@@ -40,19 +40,18 @@ class _ModuleContext(object):
 
 # Emulating parser.st structures from parsermodule.c.
 # They have a totuple() method, which outputs tuples like this.
-def py2st(unused_gr, raw_node):
-  typ, value, context, children = raw_node
-  # See pytree.Leaf
-  if context:
-    _, (lineno, column) = context
+def py2st(unused_gr, pnode):
+  if pnode.tok:
+    value, _, (lineno, column) = pnode.tok  # opaque
   else:
-    lineno = 0  # default in Leaf
+    value = None
+    lineno = 0
     column = 0
 
-  if children:
-    return (typ,) + tuple(children)
+  if pnode.children:
+    return (pnode.typ,) + tuple(pnode.children)
   else:
-    return (typ, value, lineno, column)
+    return (pnode.typ, value, lineno, column)
 
 
 class StringInput(object):
