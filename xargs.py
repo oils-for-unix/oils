@@ -73,6 +73,17 @@ def read_args_delim(lines, delim):
 			else:
 				yield "".join(buf)
 				buf = []
+# TODO call with max_chars := max - inital
+def read_args_delim_maxchars(iter, max_chars):
+	buf = []
+	chars = 0
+	for arg in iter:
+		buf += arg
+		chars += len(arg) + 1 # includes trailing '\0'
+		if chars >= max_chars:
+			yield buf[:-1]
+			buf = buf[-1:]
+			chars = len(buf[0])
 def chunks(iter, chunk_size):
 	while True:
 		chunk = [x for x in itertools.islice(iter, chunk_size)]
@@ -101,6 +112,13 @@ def main():
 		arg_iter = read_args_delim(line_iter, d)
 	else:
 		arg_iter = read_args_whitespace(line_iter)
+
+#	TODO how does this interact with replace?
+#	if xargs_args.max_chars:
+#		arg_iter = read_args_delim_maxchars(arg_iter, ???)
+
+	# TODO max_lines here
+	# TODO trailing blanks logically continue lines
 
 	if xargs_args.max_args:
 		arg_groups_iter = chunks(arg_iter, xargs_args.max_args)
