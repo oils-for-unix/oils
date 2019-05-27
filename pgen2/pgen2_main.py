@@ -38,82 +38,22 @@ def NoSingletonAction(gr, node):
   return node
 
 
-# Hm maybe the semantic action only happens on pop() and not shift?
-# shift() is done on terminals.
-# pop() is done on non-terminals.
-
-# This is called leaves first.
-#
-# Or should we make another pass from the root node?
-
-def CalcAction(gr, node):
-  """Collapse parse tree."""
-  #log('%s', node)
-  if isinstance(node, oil_expr_t):
-    return node
-
-  typ, value, tok, children = node
-
-  if children is not None and len(children) == 1:
-    return children[0]
-
-  if 0:
-    if children is None:
-      return node
-
-    # Collapse
-    if len(children) == 1:
-      node = children[0]
-      typ, value, tok, children = node
-
-    if children is None:
-      return node
-
-  if typ in gr.number2symbol:
-    nt_name = gr.number2symbol[typ]
-    log('non-terminal %s', nt_name)
-    if len(children) != 1:
-      log('  with %d children', len(children))
-
-    if 1:
-      if nt_name == 'term':
-        left, op, right = children
-        return oil_expr.Binary(op, left, right)
-      elif nt_name == 'expr':
-        left, op, right = children
-        return oil_expr.Binary(op, left, right)
-
-      """
-      elif nt_name == 'atom':
-        if tok.id == Id.Expr_Name:
-          context = oil_expr.Var(tok)
-        elif tok.id == Id.Expr_Digits:
-          context = oil_expr.Const(tok)
-        else:
-          raise AssertionError(tok.id)
-        return typ, value, context, None
-
-      elif nt_name == 'power':
-        assert len(children) == 3, children
-        log('power %d', len(children))
-
-        # Or should we keep the order?
-        left, op, right = children
-        context = oil_expr.Binary(op, left, right)
-        return typ, value, context, None
-        """
-
-  else:
-    id_ = meta.IdInstance(typ)
-    log('terminal %s %r', id_, value)
-
-  return node
-
-
+# I can't get custom actions to work?  I think I would have to understand more
+# how the stack in pgen2/parse.py works.
 
 SEMANTIC_ACTIONS = {
     #'calc': CalcAction,
 }
+
+
+# TODO: Make a Node object to make this easier?
+# The parser will translate better to C++ and to typing as well.
+# for the OPy front end, you can override __getitem__ I think?  So that node[0]
+# is 'typ', etc.
+# Use __slots__ on the node too.
+
+def HasChildren(p_node):
+  return p_node[3] is not None
 
 
 class CalcTransformer(object):
@@ -146,9 +86,6 @@ class CalcTransformer(object):
   def _Trailer(self, base, p_trailer):
     _, _, _, children = p_trailer
     _, _, op_tok, _ = children[0]
-
-    def HasChildren(p_node):
-      return p_node[3] is not None
 
     # TODO: We need symbols here
     if op_tok.id == Id.Arith_LParen:
@@ -229,6 +166,17 @@ class CalcTransformer(object):
 
         return base
 
+      elif nt_name == 'array_literal':
+        _, _, left_tok, _ = children[0]
+
+        # Approximatino for now.
+        items = [
+            node[2] for node in children[1:-1] if node[2].id ==
+            Id.Lit_Chars
+        ]
+
+        return oil_expr.ArrayLiteral(left_tok, items)
+
       else:
         raise AssertionError(nt_name)
 
@@ -266,8 +214,13 @@ OPS = {
 
     '(': Id.Arith_LParen,
     ')': Id.Arith_RParen,
+
     '[': Id.Arith_LBracket,
-    ']': Id.Arith_RBracket,
+    ']': Id.Arith_RBracket,  # Problem: in OilOuter, this is OP_RBracket.
+                             # OK I think the metalanguage needs to be
+                             # extended to take something other than ']'
+                             # It needs proper token names!
+
     '~': Id.Arith_Tilde,
     ',': Id.Arith_Comma,
 
@@ -277,6 +230,9 @@ OPS = {
     '>': Id.Arith_Great,
     '<=': Id.Arith_LessEqual,
     '>=': Id.Arith_GreatEqual,
+
+    '@[': Id.Expr_LeftArray,
+    '$/': Id.Expr_LeftRegex,
 }
 
 TERMINALS = {
@@ -293,6 +249,11 @@ TERMINALS = {
     'NEWLINE': Id.Op_Newline,
 
     'ENDMARKER': Id.Eof_Real,
+
+    # Instead of ']', we can also write the name directly
+    'Op_RBracket': Id.Op_RBracket,
+    'Lit_Chars': Id.Lit_Chars,
+    'WS_Space': Id.WS_Space,
 }
 
 
@@ -345,7 +306,36 @@ def _Classify(gr, tok):
   if ilabel is not None:
     return ilabel
 
+  #log('NAME = %s', tok.id.name)
+  # 'Op_RBracket' ->
+  id_ = TERMINALS.get(tok.id.name)
+  if id_ is not None:
+    return id_.enum_id
+
   raise AssertionError('%d not a keyword and not in gr.tokens: %s' % (typ, tok))
+
+
+POP = lex_mode_e.Undefined
+
+_ACTIONS = {
+    # PUSH
+
+    # should this be a special array state?
+    (lex_mode_e.OilExpr, Id.Expr_LeftArray): lex_mode_e.OilOuter,  # x + @[1 2]
+    (lex_mode_e.OilExpr, Id.Expr_LeftRegex): lex_mode_e.Regex,  # $/ any + /
+
+    # POP
+    (lex_mode_e.OilOuter, Id.Op_RBracket): POP,
+    (lex_mode_e.Regex, Id.Arith_Slash): POP,  # $/ any+ / 
+}
+
+
+# Problem: lex_mode_e.Regex is VERY similar to other lex_mode_e.Expr, except
+# that [[ ]] are tokens
+# Is there a way to express this similarity?
+# Ditto for arrays.
+# [[]] conflicts with nested lists?  Though that is a somewhat rare syntax.
+# [ [a, b], [a, b] ] avoids it.
 
 
 def PushOilTokens(p, lex, gr, debug=False):
@@ -353,19 +343,36 @@ def PushOilTokens(p, lex, gr, debug=False):
   #log('keywords = %s', gr.keywords)
   #log('tokens = %s', gr.tokens)
 
-  while True:
-    tok = lex.Read(lex_mode_e.OilExpr)
+  mode = lex_mode_e.OilExpr
+  mode_stack = [mode]
 
-    # TODO: Use Kind?
+  while True:
+    tok = lex.Read(mode)
+    log('tok = %s', tok)
+
+    # TODO: Use Kind.Ignored
     if tok.id == Id.Ignored_Space:
       continue
+
+    action = _ACTIONS.get((mode, tok.id))
+    if action == POP:
+      mode_stack.pop()
+      mode = mode_stack[-1]
+      log('POPPED to %s', mode)
+    elif action:  # it's an Id
+      new_mode = action
+      mode_stack.append(new_mode)
+      mode = new_mode
+      log('PUSHED to %s', mode)
+
+    # otherwise leave it alone
 
     #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
     #  tok.id = KEYWORDS[tok.val]
     #  log('Replaced with %s', tok.id)
 
-    #log('tok = %s', tok)
     ilabel = _Classify(gr, tok)
+    #log('tok = %s, ilabel = %d', tok, ilabel)
     if p.addtoken(tok.id.enum_id, tok.val, tok, ilabel):
         if debug:
             log("Stop.")

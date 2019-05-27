@@ -207,6 +207,24 @@ class LexerTest(unittest.TestCase):
         if t.id == Id.Eof_Real:
           break
 
+  def testMode_Expr(self):
+    CASES = [
+        r'@[ ]',
+    ]
+
+    for case in CASES:
+      print()
+      print('--- %s ---' % case)
+      print()
+
+      lexer = _InitLexer(case)
+
+      while True:
+        t = lexer.Read(lex_mode_e.OilExpr)
+        print(t)
+        if t.id == Id.Eof_Real:
+          break
+
   def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
     # the function; then Peek() the next token.  Then Lookahead in that state.

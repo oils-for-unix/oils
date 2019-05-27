@@ -170,7 +170,7 @@ parse-types() {
 }
 
 calc-test() {
-  local -a types=(
+  local -a exprs=(
     'a + 2'
     '1 + 2*3/4'  # operator precedence and left assoc
 
@@ -198,12 +198,22 @@ calc-test() {
     # bad token
     #'a * 3&4'
   )
-  #types=('a+a' '1+2*3' '-42' '2^3^4')
-  #types=( '1+2+3' '4*5*6' )
 
-  for expr in "${types[@]}"; do
-    echo "$expr"
-    parse pgen2/calc.grammar test_input "$expr"
+  for e in "${exprs[@]}"; do
+    echo "$e"
+    parse pgen2/calc.grammar test_input "$e"
+  done
+}
+
+mode-test() {
+  local -a exprs=(
+    '@[]'
+    'x + @[a b]'
+  )
+
+  for e in "${exprs[@]}"; do
+    echo "$e"
+    parse pgen2/calc.grammar test_input "$e"
   done
 }
 

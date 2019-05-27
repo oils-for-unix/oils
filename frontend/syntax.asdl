@@ -273,6 +273,10 @@ module syntax
   oil_expr =
     Const(token c)   -- could be integer, or false, etc.
   | Var(token name)  -- a variable name to evaluate
+    -- words can look like "$foo" or '1' or '3.14159' or '1e-19'
+    -- also note that ArrayLiterals could appear in command mode.
+    -- echo @[a b c]
+  | ArrayLiteral(token left, word* items)  -- a variable name to evaluate
   | Unary(token op, oil_expr child)
   | Binary(token op, oil_expr left, oil_expr right)
   | FuncCall(oil_expr func, oil_expr* args)

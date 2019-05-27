@@ -1,9 +1,15 @@
 eval_input: expr NEWLINE* ENDMARKER
 test_input: test NEWLINE* ENDMARKER
 
+array_input: array_literal NEWLINE* ENDMARKER
+
+array_item: Lit_Chars
+array_literal: '@[' [WS_Space] [array_item] (WS_Space array_item)* [WS_Space] Op_RBracket
+
 expr: term (('+'|'-') term)*
 
-# note: In Oil, integer division is 'div'
+# integer division is 'div'
+
 term: factor (('*'|'/'|'div'|'%') factor)*
 
 factor: ('+'|'-'|'~') factor | power
@@ -12,7 +18,8 @@ power: atom trailer* ['^' factor]
 
 trailer: '(' [arglist] ')' | '[' subscriptlist ']'
 
-atom: NAME | NUMBER
+# note: calling an array literal is a runtime error
+atom: NAME | NUMBER | array_literal
 
 # Trailing commas are allowed!
 arglist: expr (',' expr)* [',']

@@ -85,6 +85,9 @@ class ParserGenerator(object):
         2. NAME    - a terminal
         3. 'for'   - keyword
         4. '>='    - operator
+
+        Oil addition
+        5. Op_RBracket -- anything with _ is assumed to be in the Id namespace.
         """
         #log('make_label %r', label)
         # XXX Maybe this should be a method on a subclass of converter?

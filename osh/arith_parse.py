@@ -172,9 +172,13 @@ def MakeShellSpec():
 
   spec.Left(19, tdop.LeftBinaryOp, [Id.Arith_NEqual, Id.Arith_DEqual])
 
+  # NOTE: Bitwise & | ^ have lower precedence than comparisons!
+  # Python and Rust correct this:
+  # https://graydon2.dreamwidth.org/218040.html
   spec.Left(15, tdop.LeftBinaryOp, [Id.Arith_Amp])
   spec.Left(13, tdop.LeftBinaryOp, [Id.Arith_Caret])
   spec.Left(11, tdop.LeftBinaryOp, [Id.Arith_Pipe])
+
   spec.Left(9, tdop.LeftBinaryOp, [Id.Arith_DAmp])
   spec.Left(7, tdop.LeftBinaryOp, [Id.Arith_DPipe])
 
