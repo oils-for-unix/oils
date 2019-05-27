@@ -86,7 +86,7 @@ def read_args_delim_maxchars(iter, max_chars):
 			chars = len(buf[0])
 def chunks(iter, chunk_size):
 	while True:
-		chunk = [x for x in itertools.islice(iter, chunk_size)]
+		chunk = list(itertools.islice(iter, chunk_size))
 		if not chunk:
 			break
 		yield chunk
@@ -134,7 +134,7 @@ def main():
 		arg_groups_iter = [arg_iter]
 
 	for arg_group in arg_groups_iter:
-		additional_arguments = [x for x in arg_group]
+		additional_arguments = list(arg_group)
 
 		if xargs_args.no_run_if_empty and not additional_arguments:
 			return 0
