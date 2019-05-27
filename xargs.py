@@ -90,6 +90,14 @@ def chunks(iter, chunk_size):
 		if not chunk:
 			break
 		yield chunk
+def replace_args(init_args, replace_str, add_args):
+	add_args = list(add_args)
+	for arg in init_args:
+		if arg == replace_str:
+			for x in add_args:
+				yield x
+		else:
+			yield arg
 
 def main():
 	if xargs_args.arg_file == '-':
@@ -131,10 +139,24 @@ def main():
 		if xargs_args.no_run_if_empty and not additional_arguments:
 			return 0
 
-		cmdline = [xargs_args.command] + xargs_args.initial_arguments
-		cmdline.extend(additional_arguments)
+		if xargs_args.replace_str:
+			cmdline = itertools.chain(
+				[xargs_args.command],
+				replace_args(
+					xargs_args.initial_arguments,
+					xargs_args.replace_str,
+					additional_arguments
+				)
+			)
+		else:
+			cmdline = itertools.chain(
+				[xargs_args.command],
+				xargs_args.initial_arguments,
+				additional_arguments
+			)
 
 		if xargs_args.verbose:
+			cmdline = list(cmdline)
 			print(*cmdline, file=sys.stderr)
 			# if interactive read from /dev/tty
 			# set tty CLOEXEC
