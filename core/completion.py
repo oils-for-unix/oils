@@ -759,7 +759,7 @@ class RootCompleter(object):
         return
 
       # echo ${
-      if t2.id == Id.Left_VarSub and IsDummy(t1):
+      if t2.id == Id.Left_DollarBrace and IsDummy(t1):
         self.comp_ui_state.display_pos = _TokenStart(t2) + 2  # 2 for ${
         for name in self.mem.VarNames():
           yield line_until_tab + name  # no need to quote var names

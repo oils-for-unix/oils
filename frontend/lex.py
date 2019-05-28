@@ -149,9 +149,9 @@ _VARS = [
 _LEFT_SUBS = [
   C('`', Id.Left_Backtick),
   C('$(', Id.Left_DollarParen),
-  C('${', Id.Left_VarSub),
-  C('$((', Id.Left_ArithSub),
-  C('$[', Id.Left_ArithSub2),
+  C('${', Id.Left_DollarBrace),
+  C('$((', Id.Left_DollarDParen),
+  C('$[', Id.Left_DollarBracket),
 ]
 
 # Additional Kind.Left that are valid in unquoted modes.
@@ -404,7 +404,7 @@ _VS_ARG_COMMON = _BACKSLASH + [
   C('/', Id.Lit_Slash),  # for patsub (not Id.VOp2_Slash)
   C('#', Id.Lit_Pound),  # for patsub prefix (not Id.VOp1_Pound)
   C('%', Id.Lit_Percent),  # for patsdub suffix (not Id.VOp1_Percent)
-  C('}', Id.Right_VarSub),  # For var sub "${a}"
+  C('}', Id.Right_DollarBrace),  # For var sub "${a}"
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
@@ -532,7 +532,7 @@ LEXER_DEF[lex_mode_e.VS_1] = [
   C('-', Id.VSub_Hyphen),
   C('?', Id.VSub_QMark),
 
-  C('}', Id.Right_VarSub),
+  C('}', Id.Right_DollarBrace),
 
   C('\\\n', Id.Ignored_LineCont),
 
@@ -545,7 +545,7 @@ LEXER_DEF[lex_mode_e.VS_2] = \
     ID_SPEC.LexerPairs(Kind.VOp0) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
     ID_SPEC.LexerPairs(Kind.VOp2) + [
-  C('}', Id.Right_VarSub),
+  C('}', Id.Right_DollarBrace),
 
   C('\\\n', Id.Ignored_LineCont),
   C('\n', Id.Unknown_Tok),  # newline not allowed inside ${}
@@ -695,11 +695,20 @@ _OIL_KEYWORDS = [
   C('with',      Id.KW_With),
 ]
 
-# Valid in double-quoted modes.
+# Valid in lex_mode_e.{Command,Expr,OilDQ}
 _OIL_LEFT_SUBS = [
-  C('$(', Id.Left_ParenSub),
-  C('${', Id.Left_BraceSub),
-  C('$[', Id.Left_BracketSub),
+  C('$(', Id.Left_DollarParen),
+  C('${', Id.Left_DollarBrace),
+  C('$[', Id.Left_DollarBracket),
+  #C('$/', Id.Left_DollarSlash),
+
+  # Not valid in OilDQ
+  #C('@[', Id.Left_AtBracket),
+  # Not sure if I want this as a synonym.
+  #C('@(', Id.Left_AtParen),
+
+  # TODO: $stringfunc(x, y)
+  # TODO: @arrayfunc(x, y)
 ]
 
 # Valid in unquoted modes.

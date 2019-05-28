@@ -219,7 +219,7 @@ class WordParser(object):
     # NOTE: If there is a modifier, the pattern can be empty, e.g.
     # ${s/#/foo} and ${a/%/foo}.
 
-    if self.token_type == Id.Right_VarSub:
+    if self.token_type == Id.Right_DollarBrace:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
       return suffix_op.PatSub(pat, None, replace_mode)
 
@@ -227,7 +227,7 @@ class WordParser(object):
       replace = self._ReadVarOpArg(lex_mode)  # do not stop at /
 
       self._Peek()
-      if self.token_type != Id.Right_VarSub:
+      if self.token_type != Id.Right_DollarBrace:
         # NOTE: I think this never happens.
         # We're either in the VS_ARG_UNQ or VS_ARG_DQ lex state, and everything
         # there is Lit_ or Left_, except for }.
@@ -298,7 +298,7 @@ class WordParser(object):
     part = self._ParseVarOf()
 
     self._Peek()
-    if self.token_type == Id.Right_VarSub:
+    if self.token_type == Id.Right_DollarBrace:
       return part  # no ops
 
     op_kind = self.token_kind
@@ -306,7 +306,7 @@ class WordParser(object):
     if op_kind == Kind.VTest:
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
-      if self.token_type != Id.Right_VarSub:
+      if self.token_type != Id.Right_DollarBrace:
         p_die('Unexpected token (after VTest): %r', self.cur_token.val,
               token=self.cur_token)
 
@@ -321,7 +321,7 @@ class WordParser(object):
     elif op_kind == Kind.VOp1:
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
-      if self.token_type != Id.Right_VarSub:
+      if self.token_type != Id.Right_DollarBrace:
         p_die('Unexpected token (after VOp1): %r', self.cur_token.val,
               token=self.cur_token)
 
@@ -339,7 +339,7 @@ class WordParser(object):
         op = cast(suffix_op_t, op_temp)  # for MyPy
 
         # Checked by the method above
-        assert self.token_type == Id.Right_VarSub, self.cur_token
+        assert self.token_type == Id.Right_DollarBrace, self.cur_token
 
       elif self.token_type == Id.VOp2_Colon:
         op = self._ReadSliceVarOp()
@@ -356,7 +356,7 @@ class WordParser(object):
 
     # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
     # mode.  It's redundantly checked above.
-    if self.token_type not in (Id.Right_VarSub, Id.Arith_RBrace):
+    if self.token_type not in (Id.Right_DollarBrace, Id.Arith_RBrace):
       # ${a.} or ${!a.}
       p_die('Expected } after var sub, got %r', self.cur_token.val,
             token=self.cur_token)
@@ -438,13 +438,13 @@ class WordParser(object):
     if ty == Id.VSub_Pound:
       # Disambiguate
       t = self.lexer.LookAhead(lex_mode_e.VS_1)
-      if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
+      if t.id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '#' is the prefix
         self._Next(lex_mode_e.VS_1)
         part = self._ParseVarOf()
 
         self._Peek()
-        if self.token_type != Id.Right_VarSub:
+        if self.token_type != Id.Right_DollarBrace:
           p_die("Expected } after length expression, got %r",
                 self.cur_token.val, token=self.cur_token)
 
@@ -455,7 +455,7 @@ class WordParser(object):
 
     elif ty == Id.VSub_Bang:
       t = self.lexer.LookAhead(lex_mode_e.VS_1)
-      if t.id not in (Id.Unknown_Tok, Id.Right_VarSub):
+      if t.id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '!' is the prefix
         # ${!a} -- this is a ref
         # ${!3} -- this is ref
@@ -523,13 +523,13 @@ class WordParser(object):
     if self.token_type in (Id.Left_DollarParen, Id.Left_Backtick):
       return self._ReadCommandSubPart(self.token_type)
 
-    if self.token_type == Id.Left_VarSub:
+    if self.token_type == Id.Left_DollarBrace:
       return self._ReadBracedBracedVarSub(d_quoted=True)
 
-    if self.token_type == Id.Left_ArithSub:
+    if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSubPart()
 
-    if self.token_type == Id.Left_ArithSub2:
+    if self.token_type == Id.Left_DollarBracket:
       return self._ReadArithSub2Part()
 
     raise AssertionError(self.cur_token)
@@ -557,13 +557,13 @@ class WordParser(object):
         Id.Left_ProcSubOut):
       return self._ReadCommandSubPart(self.token_type)
 
-    if self.token_type == Id.Left_VarSub:
+    if self.token_type == Id.Left_DollarBrace:
       return self._ReadBracedBracedVarSub(d_quoted=False)
 
-    if self.token_type == Id.Left_ArithSub:
+    if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSubPart()
 
-    if self.token_type == Id.Left_ArithSub2:
+    if self.token_type == Id.Left_DollarBracket:
       return self._ReadArithSub2Part()
 
     raise AssertionError('%s not handled' % self.cur_token)
@@ -806,7 +806,7 @@ class WordParser(object):
 
     # The second one needs to be disambiguated in stuff like stuff like:
     # $(echo $(( 1+2 )) )
-    self.lexer.PushHint(Id.Op_RParen, Id.Right_ArithSub)
+    self.lexer.PushHint(Id.Op_RParen, Id.Right_DollarDParen)
 
     # NOTE: To disambiguate $(( as arith sub vs. command sub and subshell, we
     # could save the lexer/reader state here, and retry if the arithmetic parse
@@ -826,7 +826,7 @@ class WordParser(object):
     # PROBLEM: $(echo $(( 1 + 2 )) )
     # Two right parens break the Id.Eof_RParen scheme
     self._Peek()
-    if self.token_type != Id.Right_ArithSub:
+    if self.token_type != Id.Right_DollarDParen:
       p_die('Expected second ) to end arith sub, got %r', self.cur_token.val,
             token=self.cur_token)
 
@@ -1074,7 +1074,7 @@ class WordParser(object):
       return None, True  # Tell wrapper to try again
 
     elif self.token_kind in (Kind.Arith, Kind.Right):
-      # Id.Right_ArithSub IS just a normal token, handled by ArithParser
+      # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
       self._Next(lex_mode_e.Arith)
       w = osh_word.TokenWord(self.cur_token)
       return w, False

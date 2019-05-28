@@ -238,28 +238,21 @@ def AddKinds(spec):
       'SingleQuote',
       'Backtick',           # `
       'DollarParen',        # $(
-      'VarSub',             # ${
-      'ArithSub',           # $((
-      'ArithSub2',          # $[ for bash (and zsh)
+      'DollarBrace',        # ${
+      'DollarDParen',       # $((
+      'DollarBracket',      # $[ - synonym for $(( in bash and zsh
       'DollarDoubleQuote',  # $" for bash localized strings
       'DollarSingleQuote',  # $' for \n escapes
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
-
-      # TODO: Should we use syntax or semantics?  Maybe Left_DollarParen makes
-      # more sense. You can use the token for OSH and Oil.  But
-      # word_part.CommandSub is semantic.
-      'ParenSub',           # Oil $(
-      'BraceSub',           # Oil ${
-      'BracketSub',         # Oil $[
   ])
 
   spec.AddKind('Right', [
       'DoubleQuote',
       'SingleQuote',
       'Backtick',           # `
-      'VarSub',             # }
-      'ArithSub',           # ))
+      'DollarBrace',        # }
+      'DollarDParen',       # )) -- really the second one is a PushHint()
       # ArithSub2 is just Id.Arith_RBracket
       'DollarDoubleQuote',  # "
       'DollarSingleQuote',  # '
