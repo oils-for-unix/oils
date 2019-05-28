@@ -163,10 +163,15 @@ def main():
 
 		if xargs_args.verbose:
 			cmdline = list(cmdline)
-			print(*cmdline, file=sys.stderr)
-			# if interactive read from /dev/tty
-			# set tty CLOEXEC
-			# tty = open("/dev/tty", 'r')
+			print(*cmdline, end=' ', file=sys.stderr)
+			if xargs_args.interactive:
+				with open("/dev/tty", 'r') as tty:
+					print("?...", end='', file=sys.stderr)
+					response = tty.readline()
+					if response[0] != 'y' and response[0] != 'Y':
+						continue
+			else:
+				print(file=sys.stderr)
 		try:
 			subprocs.append(subprocess.Popen(cmdline, stdin=cmd_input))
 		except OSError:
