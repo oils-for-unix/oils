@@ -140,7 +140,7 @@ def main():
 			a[3] / xargs_args.max_chars if xargs_args.max_chars else None,
 		)
 	subprocs = []
-	for k, g in itertools.groupby(arg_iter, kf):
+	for _, g in itertools.groupby(arg_iter, kf):
 		additional_arguments = [m[0] for m in g]
 		if xargs_args.no_run_if_empty and not additional_arguments:
 			return 0
