@@ -204,7 +204,7 @@ if __name__ == "__main__":
 # [x]	-L -l --max-lines
 # [x]	-n --max-args
 # [ ]	-s --max-chars
-# [ ]	-P --max-procs
+# [x]	-P --max-procs
 # [ ]	--process-slot-var
 # [ ]	-p --interactive
 # [x]	-t --verbose
