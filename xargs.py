@@ -64,6 +64,14 @@ def read_args_whitespace(lines):
 	for line in lines:
 		for arg in line.split():
 			yield arg
+def read_n_logical_lines(lines, n):
+	for line in lines:
+		# lines are always '\n' terminated
+		if len(line) > 1 and not line[-2].isspace():
+			n -= 1
+		if n < 0:
+			break
+		yield line
 def read_args_delim(lines, delim):
 	buf = []
 	for line in lines:
@@ -112,8 +120,8 @@ def main():
 	else:
 		line_iter = xargs_input
 		
-	# TODO max_lines here
-	# TODO trailing blanks logically continue lines
+	if xargs_args.max_lines:
+		line_iter = read_n_logical_lines(line_iter, xargs_args.max_lines)
 
 	if xargs_args.delimiter:
 		d = xargs_args.delimiter.decode('string_escape')
