@@ -139,6 +139,7 @@ def main():
 			(a[2] / xargs_args.max_lines) if xargs_args.max_lines else None,
 			(a[3] / xargs_args.max_chars) if xargs_args.max_chars else None,
 		)
+	subprocs = []
 	for k, g in itertools.groupby(arg_iter, kf):
 		additional_arguments = [m[0] for m in g]
 		if xargs_args.no_run_if_empty and not additional_arguments:
@@ -167,16 +168,23 @@ def main():
 			# set tty CLOEXEC
 			# tty = open("/dev/tty", 'r')
 		try:
-			p = subprocess.Popen(cmdline, stdin=cmd_input)
+			subprocs.append(subprocess.Popen(cmdline, stdin=cmd_input))
 		except OSError:
 			# 126	command cannot be run
 			# 127	command cannot be found
 			return 127
-		p.wait()
 
-		err = map_errcode(p.returncode)
-		if err:
-			return err
+		if xargs_args.max_procs and xargs_args.max_procs > len(subprocs):
+			continue
+
+		os.wait()
+		for i in reversed(range(len(subprocs))):
+			if subprocs[i].poll() is None:
+				continue
+			err = map_errcode(subprocs[i].returncode)
+			if err:
+				return err
+			del subprocs[i]
 	return 0
 
 if __name__ == "__main__":
