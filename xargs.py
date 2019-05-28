@@ -200,8 +200,8 @@ if __name__ == "__main__":
 # [x]	-E -e --eof
 # [x]	-0 --null
 # [x]	-d --delimiter
-# [ ]	-I -i --replace
-# [ ]	-L -l --max-lines
+# [x]	-I -i --replace
+# [x]	-L -l --max-lines
 # [x]	-n --max-args
 # [ ]	-s --max-chars
 # [ ]	-P --max-procs
