@@ -90,7 +90,7 @@ class LineLexer(object):
     Called with at least the following modes:
       lex_mode_e.Arith -- for ${a[@]} vs ${a[1+2]}
       lex_mode_e.VS_1
-      lex_mode_e.Outer
+      lex_mode_e.ShCommand
     """
     pos = self.line_pos
     n = len(self.line)

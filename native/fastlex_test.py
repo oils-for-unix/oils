@@ -30,7 +30,7 @@ def MatchOshToken(lex_mode, line, start_pos):
 def TokenizeLineOuter(line):
   start_pos = 0
   while True:
-    tok_type, end_pos = MatchOshToken(lex_mode_e.Outer, line, start_pos)
+    tok_type, end_pos = MatchOshToken(lex_mode_e.ShCommand, line, start_pos)
     tok_val = line[start_pos:end_pos]
     print('TOK: %s %r\n' % (tok_type, tok_val))
     start_pos = end_pos
@@ -53,12 +53,12 @@ class LexTest(unittest.TestCase):
     TokenizeLineOuter(line)
 
   def testOutOfBounds(self):
-    print(MatchOshToken(lex_mode_e.Outer, 'line', 3))
+    print(MatchOshToken(lex_mode_e.ShCommand, 'line', 3))
     # It's an error to point to the end of the buffer!  Have to be one behind
     # it.
     return
-    print(MatchOshToken(lex_mode_e.Outer, 'line', 4))
-    print(MatchOshToken(lex_mode_e.Outer, 'line', 5))
+    print(MatchOshToken(lex_mode_e.ShCommand, 'line', 4))
+    print(MatchOshToken(lex_mode_e.ShCommand, 'line', 5))
 
   def testBug(self):
     code_str = '-n'

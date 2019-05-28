@@ -65,7 +65,7 @@ class _StringWordEmitter(object):
 
   def Read(self):
     """Interface used for special cases below."""
-    return self.ReadWord(lex_mode_e.Outer)
+    return self.ReadWord(lex_mode_e.ShCommand)
 
   def Peek(self, offset):
     """For special cases."""

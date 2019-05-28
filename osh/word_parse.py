@@ -15,7 +15,7 @@ hi$((1 + 2))"$(echo hi)"${var:-__"$(echo default)"__}
 Substitutions can be nested, but which inner subs are allowed depends on the
 outer sub.
 
-lex_mode_e.Outer (_ReadLeftParts)
+lex_mode_e.ShCommand (_ReadLeftParts)
   All subs and quotes are allowed:
   $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
 
@@ -89,14 +89,14 @@ if TYPE_CHECKING:
 
 class WordParser(object):
 
-  def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.Outer):
+  def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.ShCommand):
     # type: (ParseContext, Lexer, _Reader, lex_mode_t) -> None
     self.parse_ctx = parse_ctx
     self.lexer = lexer
     self.line_reader = line_reader
     self.Reset(lex_mode=lex_mode)
 
-  def Reset(self, lex_mode=lex_mode_e.Outer):
+  def Reset(self, lex_mode=lex_mode_e.ShCommand):
     # type: (lex_mode_t) -> None
     """Called by interactive loop."""
     # For _Peek()
@@ -700,7 +700,7 @@ class WordParser(object):
 
     # Set the lexer in a state so ) becomes the EOF token.
     if left_id in (Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
-      self._Next(lex_mode_e.Outer)  # advance past $( etc.
+      self._Next(lex_mode_e.ShCommand)  # advance past $( etc.
 
       right_id = Id.Eof_RParen
       self.lexer.PushHint(Id.Op_RParen, right_id)
@@ -821,7 +821,7 @@ class WordParser(object):
       p_die('Expected first ) to end arith sub, got %r', self.cur_token.val,
             token=self.cur_token)
 
-    self._Next(lex_mode_e.Outer)  # TODO: This could be DQ or ARITH too
+    self._Next(lex_mode_e.ShCommand)  # TODO: This could be DQ or ARITH too
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     # Two right parens break the Id.Eof_RParen scheme
@@ -872,14 +872,14 @@ class WordParser(object):
     if self.token_type != Id.Arith_RParen:
       p_die('Expected first ) to end arith statement, got %r',
             self.cur_token.val, token=self.cur_token)
-    self._Next(lex_mode_e.Outer)
+    self._Next(lex_mode_e.ShCommand)
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     self._Peek()
     if self.token_type != Id.Op_DRightParen:
       p_die('Expected second ) to end arith statement, got %r',
             self.cur_token.val, token=self.cur_token)
-    self._Next(lex_mode_e.Outer)
+    self._Next(lex_mode_e.ShCommand)
 
     return anode, self.cur_token.span_id
 
@@ -922,13 +922,13 @@ class WordParser(object):
     if self.token_type != Id.Arith_RParen:
       p_die('Expected ) to end for loop expression, got %r',
             self.cur_token.val, token=self.cur_token)
-    self._Next(lex_mode_e.Outer)
+    self._Next(lex_mode_e.ShCommand)
 
     return command.ForExpr(init_node, cond_node, update_node)
 
   def _ReadArrayLiteralPart(self):
     # type: () -> word_part__ArrayLiteralPart
-    self._Next(lex_mode_e.Outer)  # advance past (
+    self._Next(lex_mode_e.ShCommand)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:
       p_die('Expected ( after =, got %r', self.cur_token.val,
@@ -938,7 +938,7 @@ class WordParser(object):
     w_parser = WordParser(self.parse_ctx, self.lexer, self.line_reader)
     words = []
     while True:
-      w = w_parser.ReadWord(lex_mode_e.Outer)
+      w = w_parser.ReadWord(lex_mode_e.ShCommand)
 
       if isinstance(w, word__TokenWord):
         word_id = word.CommandId(w)
@@ -960,7 +960,7 @@ class WordParser(object):
     return word_part.ArrayLiteralPart(words3)
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
-                        lex_mode=lex_mode_e.Outer, empty_ok=True):
+                        lex_mode=lex_mode_e.ShCommand, empty_ok=True):
     # type: (Id_t, lex_mode_t, bool) -> word__CompoundWord
     """
     Precondition: Looking at the first token of the first word part
@@ -992,7 +992,7 @@ class WordParser(object):
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:  # foo=
-          t = self.lexer.LookAhead(lex_mode_e.Outer)
+          t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
@@ -1145,7 +1145,7 @@ class WordParser(object):
             self.cur_token
 
         # The next iteration will go into Kind.Ignored and set lex state to
-        # lex_mode_e.Outer/etc.
+        # lex_mode_e.ShCommand/etc.
         return None, True  # tell Read() to try again after comment
 
       else:
@@ -1167,7 +1167,7 @@ class WordParser(object):
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:
-      t = self.lexer.LookAhead(lex_mode_e.Outer)
+      t = self.lexer.LookAhead(lex_mode_e.ShCommand)
     else:
       t = self.cur_token
     return t.id
@@ -1186,7 +1186,7 @@ class WordParser(object):
         # TODO: Can this be unified?
         w, need_more = self._ReadArithWord()
       elif lex_mode in (
-          lex_mode_e.Outer, lex_mode_e.DBracket, lex_mode_e.BashRegex):
+          lex_mode_e.ShCommand, lex_mode_e.DBracket, lex_mode_e.BashRegex):
         w, need_more = self._ReadWord(lex_mode)
       else:
         raise AssertionError('Invalid lex state %s' % lex_mode)

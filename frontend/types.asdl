@@ -9,7 +9,7 @@ module types {
   lex_mode =
     Undefined
   | Comment
-  | Outer
+  | ShCommand
   | Backtick  -- preprocessing before Outer
   | DBracket
   | SQ | DQ | DollarSQ
@@ -17,13 +17,21 @@ module types {
   | ExtGlob
   | VS_1 | VS_2 | VS_ArgUnquoted | VS_ArgDQ
   | BashRegex | BashRegexChars
+
+  -- Two for printf builtin
+
   | PrintfOuter | PrintfPercent
 
-  | OilOuter  -- echo foo (should this be Block or OilBlock ?)
+  -- Oil language has 4 main modes, 2 for regexes, and 4 kinds of strings
+  -- (or maybe 6 with multiline?  Not sure if that's handled in the lexer.)
+
+  | Command   -- echo foo (should this be Block or OilBlock ?)
               -- Newlines are terminators
-  | OilWords  -- Like Outer, but {a,b} and [a-z].? and [[a-z]] are recognized.
+  | Array     -- Like Command, but {a,b} and [a-z].? and [[a-z]] are recognized.
               -- entered with @[] for array literals
-  | OilExpr   -- echo ${a * b} $(a * b)
+  | Expr      -- echo ${a * b} $(a * b)
+
+  | OilVS     -- echo "${x %05d}"
 
               -- note: could quoted strings be shared with OSH?  Rename that
               -- to CSQ, CDQ, RawSQ, RawDQ?  Maybe disallow octal literals
@@ -33,8 +41,9 @@ module types {
   | OilSQ     -- echo '_\t_'
   | OilDQ     -- echo "hello $name\n"
 
-  | OilRawSQ  -- echo r'foo'
-  | OilRawDQ  -- echo r"hello there"
+  | RawSQ     -- echo r'foo'         -- TODO: make this SQ?
+  | RawDQ     -- echo r"hello there" -- this is different than sh DQ because
+                                     -- Left?  Or the same?
 
   | Regex     -- [[ is special, e.g. myregex = $/ [[a-z]]+ /
   | CharClass -- / [a-z space]+ /
@@ -43,5 +52,4 @@ module types {
 
   -- More:
   -- * Multiline strings
-  -- * Bitwise expressions for set x = bits ~a | b ?
 }

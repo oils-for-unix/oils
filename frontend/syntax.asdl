@@ -270,13 +270,25 @@ module syntax
   -- NOTE: These are defined in the same ASDL module since the OSH LST will
   -- contain oil_command, e.g. for 'var', 'func', etc.
 
+  regex = 
+    Var(token name)
+  | SingleQuoted
+  | DoubleQuoted
+  | Repeat(token op, regex child)  -- + * ?
+  | RepeatRange(token min, token max, regex child)  -- x^{1,2}
+  | Concat(regex* parts)
+
   oil_expr =
-    Const(token c)   -- could be integer, or false, etc.
-  | Var(token name)  -- a variable name to evaluate
+    Var(token name)  -- a variable name to evaluate
     -- words can look like "$foo" or '1' or '3.14159' or '1e-19'
     -- also note that ArrayLiterals could appear in command mode.
     -- echo @[a b c]
+  | Const(token c)   -- could be integer, or false, etc.
   | ArrayLiteral(token left, word* items)  -- a variable name to evaluate
+  | RegexLiteral(token left, regex regex)
+  | SingleQuoted
+  | DoubleQuoted
+
   | Unary(token op, oil_expr child)
   | Binary(token op, oil_expr left, oil_expr right)
   | FuncCall(oil_expr func, oil_expr* args)

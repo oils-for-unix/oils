@@ -307,7 +307,7 @@ def IsKeyword(name):
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
-LEXER_DEF[lex_mode_e.Outer] = [
+LEXER_DEF[lex_mode_e.ShCommand] = [
   # These four are not allowed within [[, so they are in Outer but not
   # _UNQUOTED.
 
@@ -717,7 +717,7 @@ _OIL_VARS = [
   R(r'\$[0-9]', Id.VSub_Number),
 ]
 
-LEXER_DEF[lex_mode_e.OilOuter] = (
+LEXER_DEF[lex_mode_e.Command] = (
     _OIL_KEYWORDS + _BACKSLASH + _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + 
     _OIL_VARS + [
 
@@ -762,8 +762,10 @@ LEXER_DEF[lex_mode_e.OilOuter] = (
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ])
 
+# TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
+
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
-LEXER_DEF[lex_mode_e.OilExpr] = [
+LEXER_DEF[lex_mode_e.Expr] = [
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
@@ -853,4 +855,43 @@ LEXER_DEF[lex_mode_e.OilExpr] = [
   # x = [] : Array<Int>
   #
   # inc = |x| x+1 for simple lambdas.
+] + _EXPR_OTHER
+
+# Differences from expression mode:
+# - no nested regexes
+# - only a limited set of operators
+# - character classes are valid
+
+LEXER_DEF[lex_mode_e.Regex] = [
+  # These can be looked up as keywords separately, so you enforce that they have
+  # space around them?
+  R(VAR_NAME_RE, Id.Expr_Name),
+  # keywords:
+  # div xor      # binary
+  # and or not   # boolean
+  # for          # comprehensions
+  # is
+  # in
+  # if     # ternary
+  # match  # consistent with if/else expressions
+  # func   # literals
+
+  R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
+
+  C('?', Id.Arith_QMark),   # optional
+
+  C('+', Id.Arith_Plus),    # 1 or more
+  C('*', Id.Arith_Star),    # 0 or more
+  C('^', Id.Arith_Caret),   # x^{1,3}
+
+  C('(', Id.Op_LParen),
+  C(')', Id.Op_RParen),
+
+  C('[', Id.Op_LBracket),
+  C(']', Id.Op_RBracket),
+
+  C('{', Id.Op_LBrace),
+  C('}', Id.Op_RBrace),
+
+  C('/', Id.Arith_Slash),  # Ends the regex.  TODO: Op_Slash?
 ] + _EXPR_OTHER

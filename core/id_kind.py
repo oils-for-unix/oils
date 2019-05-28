@@ -161,7 +161,7 @@ def AddKinds(spec):
 
   spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
 
-  # Id.WS_Space is for lex_mode_e.Outer; Id.Ignored_Space is for
+  # Id.WS_Space is for lex_mode_e.ShCommand; Id.Ignored_Space is for
   # lex_mode_e.Arith
   spec.AddKind('WS', ['Space'])
 
@@ -380,11 +380,13 @@ def AddKinds(spec):
     'LeftArray', 'LeftRegex',  # Should these be Kind.Left?  Or Kind.OilLeft?
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
-    'Div', 'Xor', 
-    'And', 'Or', 'Not', 
-    'For',
-    'Is', 'In', 'If', 'Else',
-    'Match', 'Func',
+    # NOTE: These are not used because pgen2 automatically creates a
+    # gr.keywords dict in the grammar.
+    #'Div', 'Xor', 
+    #'And', 'Or', 'Not', 
+    #'For',
+    #'Is', 'In', 'If', 'Else',
+    #'Match', 'Func',
   ])
 
   # This kind is for Node types that are NOT tokens.
@@ -419,7 +421,7 @@ def AddKinds(spec):
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
       'Time',
 
-      # Oil keywords
+      # Oil keywords.
       'Const', 'Set', 'SetGlobal', 'Var',  # assignment
       'Fork', 'Shell',  # blocks
       'Proc', 'Func',

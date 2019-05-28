@@ -43,7 +43,7 @@ class OilParser(object):
     self.token_kind = Kind.Undefined
     self.token_type = Id.Undefined_Tok
 
-    self.next_lex_mode = lex_mode_e.OilOuter
+    self.next_lex_mode = lex_mode_e.Command
 
   def _Peek(self):
     """Helper method."""
@@ -70,7 +70,7 @@ class OilParser(object):
   def _NextNonSpace(self):
     """Same logic as _ReadWord, but for ReadForExpresion."""
     while True:
-      self._Next(lex_mode_e.OilOuter)
+      self._Next(lex_mode_e.Command)
       self._Peek()
       if self.token_kind not in (Kind.Ignored, Kind.WS):
         break
@@ -122,7 +122,7 @@ class OilParser(object):
     while not done:
       if self.token_kind == Kind.Lit:
         w.parts.append(oil_word_part.Literal(self.cur_token))
-        self._Next(lex_mode_e.Outer)
+        self._Next(lex_mode_e.ShCommand)
       elif self.token_kind in (Kind.WS, Kind.Eof):
         done = True
       else:
@@ -173,7 +173,7 @@ class OilParser(object):
       else:
         break
 
-      self._Next(lex_mode_e.OilOuter)
+      self._Next(lex_mode_e.Command)
     return oil_cmd.Simple(words)
 
   def ParseCommand(self, cur_aliases=None):

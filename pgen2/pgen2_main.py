@@ -16,7 +16,7 @@ from opy.opy_main import Symbols, ParseTreePrinter, log
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
-from _devbuild.gen.syntax_asdl import source, oil_expr, oil_expr_t
+from _devbuild.gen.syntax_asdl import source, oil_expr, oil_expr_t, regex
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import alloc
 from core import meta
@@ -165,6 +165,17 @@ class CalcTransformer(object):
 
         return oil_expr.ArrayLiteral(left_tok, items)
 
+      elif nt_name == 'regex_literal':
+        left_tok = children[0].tok
+
+        # Approximation for now.
+        items = [
+            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
+            Id.Expr_Name
+        ]
+
+        return oil_expr.RegexLiteral(left_tok, regex.Concat(items))
+
       else:
         raise AssertionError(nt_name)
 
@@ -196,7 +207,7 @@ OPS = {
     '/': Id.Arith_Slash,  # floating point division
     '%': Id.Arith_Percent,
 
-    'div': Id.Expr_Div,
+    #'div': Id.Expr_Div,
 
     '^': Id.Arith_Caret,  # exponent
 
@@ -238,10 +249,16 @@ TERMINALS = {
 
     'ENDMARKER': Id.Eof_Real,
 
+    # For @[]
     # Instead of ']', we can also write the name directly
     'Op_RBracket': Id.Op_RBracket,
     'Lit_Chars': Id.Lit_Chars,
+
     'WS_Space': Id.WS_Space,
+
+    # For $//
+    'Arith_Slash': Id.Arith_Slash,
+    'Expr_Name': Id.Expr_Name,
 }
 
 
@@ -305,15 +322,34 @@ def _Classify(gr, tok):
 
 POP = lex_mode_e.Undefined
 
+# NOTE: Also want something for UNCHANGED?
+# echo $(f(x)) -- you don't change lexer mode on (, but
+#
+# this is NOT expressive enough for:
+#
+# x = func(x, y='default', z={}) {
+#   echo hi
+# }
+
+# That can probably be handled with some state machine.  Or maybe:
+# https://en.wikipedia.org/wiki/Dyck_language
+# When you see "func", start matching () and {}, until you hit a new {.
+# It's not a regular expression.
+
+
 _ACTIONS = {
     # PUSH
 
     # should this be a special array state?
-    (lex_mode_e.OilExpr, Id.Expr_LeftArray): lex_mode_e.OilOuter,  # x + @[1 2]
-    (lex_mode_e.OilExpr, Id.Expr_LeftRegex): lex_mode_e.Regex,  # $/ any + /
+
+    # This should OilWords or OilArray?  Is that the only place it's used?
+    # (x ~ '*.[c h]')  # this is a string
+
+    (lex_mode_e.Expr, Id.Expr_LeftArray): lex_mode_e.Command,  # x + @[1 2]
+    (lex_mode_e.Expr, Id.Expr_LeftRegex): lex_mode_e.Regex,  # $/ any + /
 
     # POP
-    (lex_mode_e.OilOuter, Id.Op_RBracket): POP,
+    (lex_mode_e.Command, Id.Op_RBracket): POP,
     (lex_mode_e.Regex, Id.Arith_Slash): POP,  # $/ any+ / 
 }
 
@@ -331,7 +367,7 @@ def PushOilTokens(p, lex, gr, debug=False):
   #log('keywords = %s', gr.keywords)
   #log('tokens = %s', gr.tokens)
 
-  mode = lex_mode_e.OilExpr
+  mode = lex_mode_e.Expr
   mode_stack = [mode]
 
   while True:

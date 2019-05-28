@@ -206,15 +206,81 @@ calc-test() {
 }
 
 mode-test() {
+  # Test all the mode transitions
   local -a exprs=(
+    # Expr -> Array
+    # TODO: how is OilOuter different than Array
     '@[]'
-    'x + @[a b]'
+    'x + @[a b] + y'
+
+    # Expr -> Regex
+    '$/ /'
+    'x + $/ mypat / + y'  # syntactically valid, semantically invalid
   )
 
   for e in "${exprs[@]}"; do
     echo "$e"
     parse pgen2/calc.grammar test_input "$e"
   done
+
+  exprs+=(
+    # Expr -> OilDQ
+    '"hello \$"'
+    'x + "hello \$" + y'
+
+    # TODO: Also do every other kind of string:
+    # r'raw'   r"raw $sub"   '''   """   r'''   r"""
+
+    # Regex -> CharClass
+    '$/ any* "." [a-z A-Z _] [a-z A-Z _ 0-9]+ /'
+
+    # Array -> CharClass  
+    '@[one two *.[c h] *.[[c h]] ]'
+
+    # Expr -> Array -> CharClass  
+    'left + @[one two *.[c h] ] + right'
+
+    # Array brace sub
+    '@[ -{one,two}- *.[c h] ]'
+
+    # Expr -> Command
+    'x = $[echo hi]'
+    'x = $[echo one; echo two]'
+
+    # Expr -> Command (PROBLEM: mode is grammatical; needs state machine)
+    'x = func(x, y={}) {
+      echo hi
+    }
+    '
+
+    # Expr -> Command (PROBLEM: ditto)
+    # This one is even harder, because technically the expression on the left
+    # could have {}?  Or we can ban that in patterns?
+    'x = match(x) {
+      1 { echo one }
+      2 { echo two }
+    }
+    '
+
+    #'x = $[echo one; echo *.[c h] ]'
+
+    # Command -> Expr
+    'x = a + b'
+    'echo $(a + b)'
+    'echo ${x|html}'
+
+    # Command -> OilVS -- % is not an operator
+    'echo ${x %02d}'
+
+    ## OilDQ -> Expr
+    'echo "var expr $(2 + 3)"'
+
+    ## OilDQ -> Command
+    'echo "command $[echo hi]"'
+
+    # OilDQ -> OilVS -- % is not an operator
+    'echo "quoted ${x %02d}"'
+  )
 }
 
 minimal-test() {

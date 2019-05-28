@@ -419,7 +419,7 @@ class CommandParser(object):
     Called by the interactive loop.
     """
     # Cursor state set by _Peek()
-    self.next_lex_mode = lex_mode_e.Outer
+    self.next_lex_mode = lex_mode_e.ShCommand
     self.cur_word = None  # type: word_t  # current word
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
@@ -436,7 +436,7 @@ class CommandParser(object):
     self.lexer.ResetInputObjects()
     self.line_reader.Reset()
 
-  def _Next(self, lex_mode=lex_mode_e.Outer):
+  def _Next(self, lex_mode=lex_mode_e.ShCommand):
     # type: (lex_mode_t) -> None
     """Helper method."""
     self.next_lex_mode = lex_mode
