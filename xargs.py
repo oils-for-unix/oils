@@ -154,6 +154,7 @@ def main():
 					additional_arguments
 				)
 			)
+			# TODO recalc max-chars, exit if exceeded
 		else:
 			cmdline = itertools.chain(
 				[xargs_args.command],
