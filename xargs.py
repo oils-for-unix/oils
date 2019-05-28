@@ -135,9 +135,9 @@ def main():
 	def kf(a):
 		# TODO max_chars must consider command + initial_arguments
 		return (
-			(a[1] / xargs_args.max_args) if xargs_args.max_args else None,
-			(a[2] / xargs_args.max_lines) if xargs_args.max_lines else None,
-			(a[3] / xargs_args.max_chars) if xargs_args.max_chars else None,
+			a[1] / xargs_args.max_args if xargs_args.max_args else None,
+			a[2] / xargs_args.max_lines if xargs_args.max_lines else None,
+			a[3] / xargs_args.max_chars if xargs_args.max_chars else None,
 		)
 	subprocs = []
 	for k, g in itertools.groupby(arg_iter, kf):
