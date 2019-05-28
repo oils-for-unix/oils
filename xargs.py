@@ -75,17 +75,16 @@ def argsmeta_delim(lines, delim):
 	linec = 0
 	charc = 0
 	buf = []
-	for line in lines:
-		for c in line:
-			if c == delim:
-				arg = "".join(buf)
-				charc += len(arg) + 1
-				yield arg, argc, linec, charc
-				argc += 1
-				linec += 1
-				buf = []
-			else:
-				buf += c
+	for c in itertools.chain.from_iterable(lines):
+		if c == delim:
+			arg = "".join(buf)
+			charc += len(arg) + 1
+			yield arg, argc, linec, charc
+			argc += 1
+			linec += 1
+			buf = []
+		else:
+			buf += c
 
 def replace_args(init_args, replace_str, add_args):
 	add_args = list(add_args)
