@@ -818,7 +818,7 @@ class _WordEvaluator(object):
 
     elif part.tag == word_part_e.CommandSubPart:
       id_ = part.left_token.id
-      if id_ in (Id.Left_CommandSub, Id.Left_Backtick):
+      if id_ in (Id.Left_DollarParen, Id.Left_Backtick):
         v = self._EvalCommandSub(part.command_list, quoted)
 
       elif id_ in (Id.Left_ProcSubIn, Id.Left_ProcSubOut):

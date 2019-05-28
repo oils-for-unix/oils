@@ -237,7 +237,7 @@ def AddKinds(spec):
       'DoubleQuote',
       'SingleQuote',
       'Backtick',           # `
-      'CommandSub',         # $(
+      'DollarParen',        # $(
       'VarSub',             # ${
       'ArithSub',           # $((
       'ArithSub2',          # $[ for bash (and zsh)
@@ -258,7 +258,6 @@ def AddKinds(spec):
       'DoubleQuote',
       'SingleQuote',
       'Backtick',           # `
-      'CommandSub',         # )
       'VarSub',             # }
       'ArithSub',           # ))
       # ArithSub2 is just Id.Arith_RBracket

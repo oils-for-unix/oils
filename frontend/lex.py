@@ -148,7 +148,7 @@ _VARS = [
 
 _LEFT_SUBS = [
   C('`', Id.Left_Backtick),
-  C('$(', Id.Left_CommandSub),
+  C('$(', Id.Left_DollarParen),
   C('${', Id.Left_VarSub),
   C('$((', Id.Left_ArithSub),
   C('$[', Id.Left_ArithSub2),

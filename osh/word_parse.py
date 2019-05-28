@@ -520,7 +520,7 @@ class WordParser(object):
   def _ReadDoubleQuotedLeftParts(self):
     # type: () -> word_part_t
     """Read substitution parts in a double quoted context."""
-    if self.token_type in (Id.Left_CommandSub, Id.Left_Backtick):
+    if self.token_type in (Id.Left_DollarParen, Id.Left_Backtick):
       return self._ReadCommandSubPart(self.token_type)
 
     if self.token_type == Id.Left_VarSub:
@@ -553,7 +553,7 @@ class WordParser(object):
       return self._ReadSingleQuotedPart(lex_mode_e.DollarSQ)
 
     if self.token_type in (
-        Id.Left_CommandSub, Id.Left_Backtick, Id.Left_ProcSubIn,
+        Id.Left_DollarParen, Id.Left_Backtick, Id.Left_ProcSubIn,
         Id.Left_ProcSubOut):
       return self._ReadCommandSubPart(self.token_type)
 
@@ -699,7 +699,7 @@ class WordParser(object):
     left_spid = left_token.span_id
 
     # Set the lexer in a state so ) becomes the EOF token.
-    if left_id in (Id.Left_CommandSub, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+    if left_id in (Id.Left_DollarParen, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
       self._Next(lex_mode_e.ShCommand)  # advance past $( etc.
 
       right_id = Id.Eof_RParen
@@ -1015,8 +1015,9 @@ class WordParser(object):
         # Still part of the word; will be done on the next iter.
         if self.token_type == Id.Right_DoubleQuote:
           pass
-        elif self.token_type == Id.Right_CommandSub:
-          pass
+        # Never happens, no PushHint for this case.
+        #elif self.token_type == Id.Right_DollarParen:
+        #  pass
         elif self.token_type == Id.Right_Subshell:
           # LEXER HACK for (case x in x) ;; esac )
           assert self.next_lex_mode is None  # Rewind before it's used
