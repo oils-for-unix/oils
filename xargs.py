@@ -211,7 +211,7 @@ if __name__ == "__main__":
 # [ ]	-s --max-chars
 # [x]	-P --max-procs
 # [ ]	--process-slot-var
-# [ ]	-p --interactive
+# [x]	-p --interactive
 # [x]	-t --verbose
 # [ ]	-x --exit
 # [x]	-r --no-run-if-empty
