@@ -85,6 +85,10 @@ def argsmeta_delim(lines, delim):
 			buf = []
 		else:
 			buf += c
+	if buf:
+		arg = "".join(buf)
+		charc += len(arg) + 1
+		yield arg, argc, linec, charc
 
 def replace_args(init_args, replace_str, add_args):
 	add_args = list(add_args)
