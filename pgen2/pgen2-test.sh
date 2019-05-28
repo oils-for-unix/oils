@@ -237,6 +237,9 @@ mode-test() {
     # Array -> CharClass  
     '@[one two *.[c h] *.[[c h]] ]'
 
+    # Expr -> Expr even though we saw )
+    'echo $(f(x, y) + (1 * 3))'
+
     # Expr -> Array -> CharClass  
     'left + @[one two *.[c h] ] + right'
 
@@ -262,6 +265,13 @@ mode-test() {
     }
     '
 
+    # stays in Expr for comparison
+    'x = match(x) {
+      1 => "one"
+      2 => "two"
+    }
+    '
+
     #'x = $[echo one; echo *.[c h] ]'
 
     # Command -> Expr
@@ -280,6 +290,15 @@ mode-test() {
 
     # OilDQ -> OilVS -- % is not an operator
     'echo "quoted ${x %02d}"'
+
+    # Command -> CharClass is DISALLOWED.  Must go through array?
+    # @() could be synonym for array expression.
+    # Although if you could come up with a custom syntax error for this: it
+    # might be OK.
+    # a[x] = 1
+    #'echo *.[c h]'
+    #
+    # I think you could restrict the first words
   )
 }
 

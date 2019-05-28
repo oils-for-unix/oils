@@ -153,6 +153,7 @@ false___
 # omit portable-files.mk
 compgen -A directory p
 ## STDOUT:
+pgen2
 pylib
 ## END
 
@@ -243,6 +244,7 @@ build
 compgen -o default p
 ## STDOUT:
 portable-rules.mk
+pgen2
 pylib
 ## END
 
