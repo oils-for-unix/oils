@@ -213,6 +213,11 @@ mode-test() {
     '@[]'
     'x + @[a b] + y'
 
+    # Expr -> Command
+    # TODO: how is OilOuter different than Array
+    '$[]'
+    'x + $[hi there] + y'
+
     # Expr -> Regex
     '$/ /'
     'x + $/ mypat / + y'  # syntactically valid, semantically invalid
@@ -274,8 +279,10 @@ mode-test() {
 
     #'x = $[echo one; echo *.[c h] ]'
 
-    # Command -> Expr
+    # Command -> Expr (PROBLEM: requires lookahead to =)
     'x = a + b'
+
+    # Command -> Expr
     'echo $(a + b)'
     'echo ${x|html}'
 

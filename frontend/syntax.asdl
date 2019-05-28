@@ -286,6 +286,12 @@ module syntax
   | Const(token c)   -- could be integer, or false, etc.
   | ArrayLiteral(token left, word* items)  -- a variable name to evaluate
   | RegexLiteral(token left, regex regex)
+
+    -- These are duplicated as "parts" too
+  | BraceSub(token left, oil_expr e)  -- might be a variant for ${x %02d}
+  | CommandSub(token left, command cmd)
+  | VarSub(token left, oil_expr e)
+
   | SingleQuoted
   | DoubleQuoted
 

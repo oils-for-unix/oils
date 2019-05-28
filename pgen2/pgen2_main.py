@@ -16,7 +16,9 @@ from opy.opy_main import Symbols, ParseTreePrinter, log
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
-from _devbuild.gen.syntax_asdl import source, oil_expr, oil_expr_t, regex
+from _devbuild.gen.syntax_asdl import (
+    source, command, oil_expr, oil_expr_t, regex
+)
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import alloc
 from core import meta
@@ -176,6 +178,19 @@ class CalcTransformer(object):
 
         return oil_expr.RegexLiteral(left_tok, regex.Concat(items))
 
+      elif nt_name == 'command_sub':
+        left_tok = children[0].tok
+
+        # Approximation for now.
+        items = [
+            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
+            Id.Lit_Chars
+        ]
+
+        # TODO: Fix this approximation.
+        words = items
+        return oil_expr.CommandSub(left_tok, command.SimpleCommand(words))
+
       else:
         raise AssertionError(nt_name)
 
@@ -230,8 +245,11 @@ OPS = {
     '<=': Id.Arith_LessEqual,
     '>=': Id.Arith_GreatEqual,
 
-    '@[': Id.Expr_LeftArray,
-    '$/': Id.Expr_LeftRegex,
+    '$[': Id.Left_DollarBracket,
+    '${': Id.Left_DollarBrace,
+    '$(': Id.Left_DollarParen,
+    '$/': Id.Left_DollarSlash,
+    '@[': Id.Left_AtBracket,
 }
 
 TERMINALS = {
@@ -249,11 +267,13 @@ TERMINALS = {
 
     'ENDMARKER': Id.Eof_Real,
 
+    'Op_RBrace': Id.Op_RBrace,
     # For @[]
     # Instead of ']', we can also write the name directly
     'Op_RBracket': Id.Op_RBracket,
-    'Lit_Chars': Id.Lit_Chars,
+    'Op_RParen': Id.Op_RParen,
 
+    'Lit_Chars': Id.Lit_Chars,
     'WS_Space': Id.WS_Space,
 
     # For $//
@@ -345,12 +365,19 @@ _ACTIONS = {
     # This should OilWords or OilArray?  Is that the only place it's used?
     # (x ~ '*.[c h]')  # this is a string
 
-    (lex_mode_e.Expr, Id.Expr_LeftArray): lex_mode_e.Command,  # x + @[1 2]
-    (lex_mode_e.Expr, Id.Expr_LeftRegex): lex_mode_e.Regex,  # $/ any + /
+    (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
+    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
+
+    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.OilVS,  # ${x|html}
+    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
+    (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
 
     # POP
-    (lex_mode_e.Command, Id.Op_RBracket): POP,
-    (lex_mode_e.Regex, Id.Arith_Slash): POP,  # $/ any+ / 
+    (lex_mode_e.Array, Id.Op_RBracket): POP,    # @[1 2]
+    (lex_mode_e.Regex, Id.Arith_Slash): POP,    # $/ any+ / 
+    (lex_mode_e.OilVS, Id.Op_RBrace): POP,      # ${x|html}
+    (lex_mode_e.Command, Id.Op_RBracket): POP,  # $[echo hi]
+    (lex_mode_e.Command, Id.Op_RParen): POP,    # $(1 + 2)
 }
 
 

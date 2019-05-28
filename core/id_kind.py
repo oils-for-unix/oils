@@ -245,6 +245,9 @@ def AddKinds(spec):
       'DollarSingleQuote',  # $' for \n escapes
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
+
+      'DollarSlash',        # $/ for Oil regex
+      'AtBracket',          # @[ for Oil arrays
   ])
 
   spec.AddKind('Right', [
@@ -368,8 +371,6 @@ def AddKinds(spec):
     'At', 'DoubleAt',  # splice operators
 
     'NotTilde',  # !~
-
-    'LeftArray', 'LeftRegex',  # Should these be Kind.Left?  Or Kind.OilLeft?
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
     # NOTE: These are not used because pgen2 automatically creates a

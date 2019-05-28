@@ -695,29 +695,29 @@ _OIL_KEYWORDS = [
   C('with',      Id.KW_With),
 ]
 
-# Valid in lex_mode_e.{Command,Expr,OilDQ}
+# Valid in lex_mode_e.{Command,Array,Expr,OilDQ}
 _OIL_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
   C('$[', Id.Left_DollarBracket),
-  #C('$/', Id.Left_DollarSlash),
-
-  # Not valid in OilDQ
-  #C('@[', Id.Left_AtBracket),
-  # Not sure if I want this as a synonym.
-  #C('@(', Id.Left_AtParen),
+  C('$/', Id.Left_DollarSlash),
 
   # TODO: $stringfunc(x, y)
   # TODO: @arrayfunc(x, y)
 ]
 
-# Valid in unquoted modes.
+# Valid in lex_mode_e.{Command,Array,Expr}
 # TODO:
 # - raw strings with r' r"
 # - multiline strings ''' """ r''' r"""
 _OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
   C("'", Id.Left_SingleQuote),
+
+  # Not valid in OilDQ
+  C('@[', Id.Left_AtBracket),
+  # Not sure if I want this as a synonym.
+  #C('@(', Id.Left_AtParen),
 ]
 
 _OIL_VARS = [
@@ -771,10 +771,34 @@ LEXER_DEF[lex_mode_e.Command] = (
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ])
 
+LEXER_DEF[lex_mode_e.Array] = (
+  _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
+
+  # what about comments?  newline?
+  R(r'[ \t\r]+', Id.WS_Space),
+
+  # For brace expansion.  Although is there a whitespace?
+  # {a, b} vs. {a,' b'} ?
+  C('{', Id.Op_LBrace),
+  C('}', Id.Op_RBrace),
+
+  # For brace expansion
+  C('[', Id.Op_LBracket),
+  C(']', Id.Op_RBracket),
+
+  # placeholder
+  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
+
+  # simple sub $foo
+  # splicing @foo
+
+  R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
+])
+
 # TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
-LEXER_DEF[lex_mode_e.Expr] = [
+LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
@@ -789,13 +813,6 @@ LEXER_DEF[lex_mode_e.Expr] = [
   # func   # literals
 
   R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
-
-  # Array literals look like @[foo.cc foo.h] @[1 2 3] @[true false T F]
-  C(r'@[', Id.Expr_LeftArray),  # mode -> OilWords, [] and [[ ]] and {} 
-  C(r'$/', Id.Expr_LeftRegex),  # mode -> Regex, [] and [[ ]]
-
-  C(r"'", Id.Left_SingleQuote),  # mode -> OilSQ
-  C(r'"', Id.Left_DoubleQuote),  # mode -> OilDQ
 
   C(';', Id.Arith_Semi),
   C(',', Id.Arith_Comma),
