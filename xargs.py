@@ -49,55 +49,44 @@ if xargs_args.max_lines is not None and not xargs_args.exit:
 # -p implies -t
 if xargs_args.interactive and not xargs_args.verbose:
 	xargs_args.verbose = True
-
-### DEBUGGING ###
-#print(xargs_args, file=sys.stderr)
-#print("ENABLING -t", file=sys.stderr)
-#xargs_args.verbose = True
+# TODO? if -d then -L equals -n
 
 def read_lines_eof(arg_file, eof_str):
 	eof_str = eof_str + '\n'
 	return itertools.takewhile(lambda l: l != eof_str, arg_file)
 
-# TODO xargs does quoting (' and ")
-def read_args_whitespace(lines):
+def is_complete_line(line):
+	return len(line) > 1 and line[-2] not in (' ', '\t')
+
+def argsmeta_ws(lines):
+	argc = 0
+	linec = 0
+	charc = 0
 	for line in lines:
+		# TODO xargs does quoting (' and ")
 		for arg in line.split():
-			yield arg
-def read_n_logical_lines(lines, n):
-	for line in lines:
-		# lines are always '\n' terminated
-		if len(line) > 1 and not line[-2].isspace():
-			n -= 1
-		if n < 0:
-			break
-		yield line
-def read_args_delim(lines, delim):
+			charc += len(arg) + 1
+			yield arg, argc, linec, charc
+			argc += 1
+		if is_complete_line(line):
+			linec += 1
+def argsmeta_delim(lines, delim):
+	argc = 0
+	linec = 0
+	charc = 0
 	buf = []
 	for line in lines:
 		for c in line:
-			if c != delim:
-				buf += c
-			else:
-				yield "".join(buf)
+			if c == delim:
+				arg = "".join(buf)
+				charc += len(arg) + 1
+				yield arg, argc, linec, charc
+				argc += 1
+				linec += 1
 				buf = []
-# TODO call with max_chars := max - inital
-def read_args_maxchars(iter, max_chars):
-	buf = []
-	chars = 0
-	for arg in iter:
-		buf += arg
-		chars += len(arg) + 1 # includes trailing '\0'
-		if chars >= max_chars:
-			yield buf[:-1]
-			buf = buf[-1:]
-			chars = len(buf[0])
-def chunks(iter, chunk_size):
-	while True:
-		chunk = list(itertools.islice(iter, chunk_size))
-		if not chunk:
-			break
-		yield chunk
+			else:
+				buf += c
+
 def replace_args(init_args, replace_str, add_args):
 	add_args = list(add_args)
 	for arg in init_args:
@@ -106,6 +95,17 @@ def replace_args(init_args, replace_str, add_args):
 				yield x
 		else:
 			yield arg
+
+def map_errcode(rc):
+	if rc == 0:
+		return 0
+	if rc >= 0 and rc <= 125:
+		return 123
+	if rc == 255:
+		return 124
+	if rc < 0:
+		return 125
+	return 1
 
 def main():
 	if xargs_args.arg_file == '-':
@@ -120,30 +120,24 @@ def main():
 	else:
 		line_iter = xargs_input
 		
-	if xargs_args.max_lines:
-		line_iter = read_n_logical_lines(line_iter, xargs_args.max_lines)
-
 	if xargs_args.delimiter:
 		d = xargs_args.delimiter.decode('string_escape')
 		if len(d) > 1:
 			# TODO error
 			return 1
-		arg_iter = read_args_delim(line_iter, d)
+		arg_iter = argsmeta_delim(line_iter, d)
 	else:
-		arg_iter = read_args_whitespace(line_iter)
+		arg_iter = argsmeta_ws(line_iter)
 
-#	TODO how does this interact with replace?
-#	if xargs_args.max_chars:
-#		arg_iter = read_args_maxchars(arg_iter, ???)
-
-	if xargs_args.max_args:
-		arg_groups_iter = chunks(arg_iter, xargs_args.max_args)
-	else:
-		arg_groups_iter = [arg_iter]
-
-	for arg_group in arg_groups_iter:
-		additional_arguments = list(arg_group)
-
+	def kf(a):
+		# TODO max_chars must consider command + initial_arguments
+		return (
+			(a[1] / xargs_args.max_args) if xargs_args.max_args else None,
+			(a[2] / xargs_args.max_lines) if xargs_args.max_lines else None,
+			(a[3] / xargs_args.max_chars) if xargs_args.max_chars else None,
+		)
+	for k, g in itertools.groupby(arg_iter, kf):
+		additional_arguments = [m[0] for m in g]
 		if xargs_args.no_run_if_empty and not additional_arguments:
 			return 0
 
@@ -177,18 +171,16 @@ def main():
 			return 127
 		p.wait()
 
-		if p.returncode == 0:
-			continue
-		if p.returncode >= 0 and p.returncode <= 125:
-			return 123
-		if p.returncode == 255:
-			return 124
-		if p.returncode < 0:
-			return 125
-		return 1
+		err = map_errcode(p.returncode)
+		if err:
+			return err
 	return 0
 
 if __name__ == "__main__":
+	### DEBUGGING ###
+	#print(xargs_args, file=sys.stderr)
+	#print("ENABLING -t", file=sys.stderr)
+	#xargs_args.verbose = True
 	sys.exit(main())
 
 # TODO
