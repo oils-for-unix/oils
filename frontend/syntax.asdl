@@ -288,12 +288,11 @@ module syntax
   | RegexLiteral(token left, regex regex)
 
     -- These are duplicated as "parts" too
-  | BraceSub(token left, oil_expr e)  -- might be a variant for ${x %02d}
+  | VarSub(token left, oil_expr e)  -- might be a variant for ${x %02d}
   | CommandSub(token left, command cmd)
-  | VarSub(token left, oil_expr e)
-
-  | SingleQuoted
-  | DoubleQuoted
+  | ExprSub(token left, oil_expr e)
+  | SingleQuoted(token left, token* tokens)
+  | DoubleQuoted(token left, oil_word_part* parts)
 
   | Unary(token op, oil_expr child)
   | Binary(token op, oil_expr left, oil_expr right)
@@ -307,7 +306,6 @@ module syntax
 
   oil_word_part = 
     Literal(token token)
-  | EscapedLiteral(token token)
     -- for 'foo=' and "${a:-}"
   | SingleQuoted(token left, token* tokens)
   | DoubleQuoted(token left, oil_word_part* parts)

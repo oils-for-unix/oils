@@ -11,12 +11,17 @@ array_literal: (
 regex_part: Expr_Name
 regex_literal: '$/' [WS_Space] [regex_part] (WS_Space regex_part)* [WS_Space] Arith_Slash
 
+# line continuation is ignored by lexer
+dq_part: Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number
+dq_string: Left_DoubleQuote dq_part* Right_DoubleQuote
+
 command_sub: (
   '$[' [WS_Space] [array_item] (WS_Space array_item)* [WS_Space] Op_RBracket
 )
 
-var_sub: ENDMARKER
-expr_sub: Lit_Chars
+expr_sub: '$(' expr Op_RParen
+
+var_sub: '${' expr Op_RBrace
 
 
 expr: term (('+'|'-') term)*
@@ -34,6 +39,7 @@ trailer: '(' [arglist] ')' | '[' subscriptlist ']'
 # note: calling an array literal is a runtime error
 atom: (
   NAME | NUMBER | array_literal | regex_literal |
+  dq_string |
   command_sub | var_sub | expr_sub
 )
 

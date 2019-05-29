@@ -214,13 +214,28 @@ mode-test() {
     'x + @[a b] + y'
 
     # Expr -> Command
-    # TODO: how is OilOuter different than Array
+    # Hm empty could be illegal?
     '$[]'
     'x + $[hi there] + y'
+
+    # Expr -> Expr
+    '$(x)'
+    # NOTE: operator precedence is respected here!
+    'x + $(f(y) - 3) * 4'
+
+    # Expr -> OilVS
+    #'${}'  # syntax error
+    '${x}'
+    # This will work when we add | to grammar
+    #'x + ${p|html} + y'
 
     # Expr -> Regex
     '$/ /'
     'x + $/ mypat / + y'  # syntactically valid, semantically invalid
+
+    # Expr -> OilDQ
+    '"hello \$"'
+    'x + "hello \$" + y'
   )
 
   for e in "${exprs[@]}"; do
@@ -229,9 +244,6 @@ mode-test() {
   done
 
   exprs+=(
-    # Expr -> OilDQ
-    '"hello \$"'
-    'x + "hello \$" + y'
 
     # TODO: Also do every other kind of string:
     # r'raw'   r"raw $sub"   '''   """   r'''   r"""
@@ -240,7 +252,7 @@ mode-test() {
     '$/ any* "." [a-z A-Z _] [a-z A-Z _ 0-9]+ /'
 
     # Array -> CharClass  
-    '@[one two *.[c h] *.[[c h]] ]'
+    '@[one two *.[c h] *.[NOT c h] ]'
 
     # Expr -> Expr even though we saw )
     'echo $(f(x, y) + (1 * 3))'
@@ -285,6 +297,50 @@ mode-test() {
     # Command -> Expr
     'echo $(a + b)'
     'echo ${x|html}'
+
+    # Command -> Expr
+
+    # The signature must be parsed expression mode if it have
+    # defaults.
+    'func foo(x Int, y Int = 42 + 1) Int {
+       echo $x $y
+     }
+    '
+
+    # I guess [] is parsed in expression mode too.  It's a very simple grammar.
+    # It only accepts strings.  Maybe there is a special "BLOCK" var you can
+    # evaluate.
+    'proc copy [src dest="default $value"] {
+       echo $src $dest
+     }
+    '
+
+    'if (x > 1) { echo hi }'
+
+    'while (x > 0) {
+       set x -= 1
+     }
+    '
+    'for (x in y) {  # "var" is implied; error if x is already defined?
+       echo $y
+     }
+    '
+    'for (i = 0; i < 10; ++i) {
+       echo $i
+     }
+    '
+    'switch (i+1) {
+     case 1:
+       echo "one"
+     case 2:
+       echo "two"
+     }
+    '
+    'match (x) {
+     1 { echo "one" }
+     2 { echo "two" }
+     }
+    '
 
     # Command -> OilVS -- % is not an operator
     'echo ${x %02d}'

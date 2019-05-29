@@ -690,6 +690,7 @@ _OIL_KEYWORDS = [
   C('else',      Id.KW_Else),
   C('elif',      Id.KW_Elif),  # Python and shell both use elif
 
+  C('switch',    Id.KW_Switch),  # for C translation
   C('match',     Id.KW_If),
   C('case',      Id.KW_Case),
   C('with',      Id.KW_With),
@@ -836,13 +837,13 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
                             # note: other languages use |>
                             # R/dplyr uses %>%
 
-  C('(', Id.Arith_LParen),
-  C(')', Id.Arith_RParen),
+  C('(', Id.Op_LParen),
+  C(')', Id.Op_RParen),
   # NOTE: type expressions are expressions, e.g. Dict[Str, Int]
-  C('[', Id.Arith_LBracket),
-  C(']', Id.Arith_RBracket),
-  # TODO: Add LBrace.  TdopParser will say "token can't be used in prefix
-  # position"
+  C('[', Id.Op_LBracket),
+  C(']', Id.Op_RBracket),
+  C('{', Id.Op_LBrace),
+  C('}', Id.Op_RBrace),
 
   C('<', Id.Arith_Less),
   C('>', Id.Arith_Great),
@@ -883,6 +884,11 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # inc = |x| x+1 for simple lambdas.
 ] + _EXPR_OTHER
 
+
+# FOR NOW, ${x|html} is the same!
+LEXER_DEF[lex_mode_e.OilVS] = LEXER_DEF[lex_mode_e.Expr]
+
+
 # Differences from expression mode:
 # - no nested regexes
 # - only a limited set of operators
@@ -921,3 +927,23 @@ LEXER_DEF[lex_mode_e.Regex] = [
 
   C('/', Id.Arith_Slash),  # Ends the regex.  TODO: Op_Slash?
 ] + _EXPR_OTHER
+
+# Oil gets rid of $$, etc.  What about $?  I think that's $status.
+_OIL_VARS = [
+  # Unbraced variables
+  R(r'\$' + VAR_NAME_RE, Id.VSub_DollarName),
+  R(r'\$[0-9]', Id.VSub_Number),
+]
+
+LEXER_DEF[lex_mode_e.OilDQ] = [
+  # Like sh DQ, except no `
+  R(r'\\[$"\\]', Id.Lit_EscapedChar),
+  C('\\\n', Id.Ignored_LineCont),
+] + _OIL_LEFT_SUBS + _OIL_VARS + [
+  R(r'[^$"\0\\]+', Id.Lit_Chars),  # matches a line at most
+  # NOTE: When parsing here doc line, this token doesn't end it.
+  C('"', Id.Right_DoubleQuote),
+  # This matches plain $.  TODO: Make it a syntax error in Oil?
+  R(r'[^\0]', Id.Lit_Other),
+]
+

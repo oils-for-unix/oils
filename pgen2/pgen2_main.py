@@ -17,7 +17,7 @@ from opy.opy_main import Symbols, ParseTreePrinter, log
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
-    source, command, oil_expr, oil_expr_t, regex
+    source, command, oil_expr, oil_expr_t, oil_word_part, regex
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import alloc
@@ -41,9 +41,7 @@ def NoSingletonAction(gr, pnode):
 # I can't get custom actions to work?  I think I would have to understand more
 # how the stack in pgen2/parse.py works.
 
-SEMANTIC_ACTIONS = {
-    #'calc': CalcAction,
-}
+SEMANTIC_MODE_TRANSITIONS = {}
 
 
 class CalcTransformer(object):
@@ -73,7 +71,7 @@ class CalcTransformer(object):
     children = p_trailer.children
     op_tok = children[0].tok
 
-    if op_tok.id == Id.Arith_LParen:
+    if op_tok.id == Id.Op_LParen:
        p_args = children[1]
 
        # NOTE: This doesn't take into account kwargs and so forth.
@@ -85,7 +83,7 @@ class CalcTransformer(object):
          arglist = [arg]
        return oil_expr.FuncCall(base, [self.Transform(a) for a in arglist])
 
-    if op_tok.id == Id.Arith_LBracket:
+    if op_tok.id == Id.Op_LBracket:
        p_args = children[1]
 
        # NOTE: This doens't take into account slices
@@ -97,10 +95,10 @@ class CalcTransformer(object):
          arglist = [arg]
        return oil_expr.Subscript(base, [self.Transform(a) for a in arglist])
 
-    if op_tok.id == Id.Arith_Dot:
+    if op_tok.id == Id.Expr_Dot:
       return self._GetAttr(base, nodelist[2])
 
-    raise AssertionError(tok)
+    raise AssertionError(op_tok)
 
   def Transform(self, pnode):
     """Walk the homogeneous parse tree and create a typed AST."""
@@ -116,7 +114,7 @@ class CalcTransformer(object):
       nt_name = self.number2symbol[typ]
 
       c = '-' if not children else len(children)
-      log('non-terminal %s %s', nt_name, c)
+      #log('non-terminal %s %s', nt_name, c)
 
       if nt_name == 'test_input':
         # test_input: test NEWLINE* ENDMARKER
@@ -191,16 +189,37 @@ class CalcTransformer(object):
         words = items
         return oil_expr.CommandSub(left_tok, command.SimpleCommand(words))
 
+      elif nt_name == 'expr_sub':
+        left_tok = children[0].tok
+
+        return oil_expr.ExprSub(left_tok, self.Transform(children[1]))
+
+      elif nt_name == 'var_sub':
+        left_tok = children[0].tok
+
+        return oil_expr.VarSub(left_tok, self.Transform(children[1]))
+
+      elif nt_name == 'dq_string':
+        left_tok = children[0].tok
+
+        parts = [self.Transform(c) for c in children[1:-1]]
+        return oil_expr.DoubleQuoted(left_tok, parts)
+
       else:
         raise AssertionError(nt_name)
 
     else:  # Terminals should have a token
-      log('terminal %s', tok)
+      #log('terminal %s', tok)
 
       if tok.id == Id.Expr_Name:
         return oil_expr.Var(tok)
       elif tok.id == Id.Expr_Digits:
         return oil_expr.Const(tok)
+
+      # Hm just use word_part.Literal for all these?  Or token?
+      # Id.Lit_EscapedChar is assumed to need \ removed on evaluation.
+      elif tok.id in (Id.Lit_Chars, Id.Lit_Other, Id.Lit_EscapedChar):
+        return oil_word_part.Literal(tok)
       else:
         raise AssertionError(tok.id)
 
@@ -226,14 +245,16 @@ OPS = {
 
     '^': Id.Arith_Caret,  # exponent
 
-    '(': Id.Arith_LParen,
-    ')': Id.Arith_RParen,
+    '(': Id.Op_LParen,
+    ')': Id.Op_RParen,
 
-    '[': Id.Arith_LBracket,
-    ']': Id.Arith_RBracket,  # Problem: in OilOuter, this is OP_RBracket.
+    '[': Id.Op_LBracket,
+    ']': Id.Op_RBracket,     # Problem: in OilOuter, this is OP_RBracket.
                              # OK I think the metalanguage needs to be
                              # extended to take something other than ']'
                              # It needs proper token names!
+    '{': Id.Op_LBrace,
+    '}': Id.Op_RBrace,
 
     '~': Id.Arith_Tilde,
     ',': Id.Arith_Comma,
@@ -244,6 +265,9 @@ OPS = {
     '>': Id.Arith_Great,
     '<=': Id.Arith_LessEqual,
     '>=': Id.Arith_GreatEqual,
+
+    '|': Id.Arith_Pipe,
+    '&': Id.Arith_Amp,
 
     '$[': Id.Left_DollarBracket,
     '${': Id.Left_DollarBrace,
@@ -272,8 +296,19 @@ TERMINALS = {
     # Instead of ']', we can also write the name directly
     'Op_RBracket': Id.Op_RBracket,
     'Op_RParen': Id.Op_RParen,
+    'Op_RBrace': Id.Op_RBrace,
+
+    'Left_DoubleQuote': Id.Left_DoubleQuote,
+    'Right_DoubleQuote': Id.Right_DoubleQuote,
 
     'Lit_Chars': Id.Lit_Chars,
+    'Lit_Other': Id.Lit_Other,
+    'Lit_EscapedChar': Id.Lit_EscapedChar,
+
+    'VSub_DollarName': Id.VSub_DollarName,
+    'VSub_Number': Id.VSub_Number,
+    'Lit_EscapedChar': Id.Lit_EscapedChar,
+
     'WS_Space': Id.WS_Space,
 
     # For $//
@@ -357,7 +392,7 @@ POP = lex_mode_e.Undefined
 # It's not a regular expression.
 
 
-_ACTIONS = {
+_MODE_TRANSITIONS = {
     # PUSH
 
     # should this be a special array state?
@@ -366,18 +401,22 @@ _ACTIONS = {
     # (x ~ '*.[c h]')  # this is a string
 
     (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
+    (lex_mode_e.Array, Id.Op_RBracket): POP,
+
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
+    (lex_mode_e.Regex, Id.Arith_Slash): POP,
 
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.OilVS,  # ${x|html}
-    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
-    (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
+    (lex_mode_e.OilVS, Id.Op_RBrace): POP,
 
-    # POP
-    (lex_mode_e.Array, Id.Op_RBracket): POP,    # @[1 2]
-    (lex_mode_e.Regex, Id.Arith_Slash): POP,    # $/ any+ / 
-    (lex_mode_e.OilVS, Id.Op_RBrace): POP,      # ${x|html}
-    (lex_mode_e.Command, Id.Op_RBracket): POP,  # $[echo hi]
-    (lex_mode_e.Command, Id.Op_RParen): POP,    # $(1 + 2)
+    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
+    (lex_mode_e.Command, Id.Op_RBracket): POP,
+
+    (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
+    (lex_mode_e.Command, Id.Op_RParen): POP,
+
+    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.OilDQ,  # x + "foo"
+    (lex_mode_e.OilDQ, Id.Right_DoubleQuote): POP,
 }
 
 
@@ -405,7 +444,7 @@ def PushOilTokens(p, lex, gr, debug=False):
     if tok.id == Id.Ignored_Space:
       continue
 
-    action = _ACTIONS.get((mode, tok.id))
+    action = _MODE_TRANSITIONS.get((mode, tok.id))
     if action == POP:
       mode_stack.pop()
       mode = mode_stack[-1]
@@ -455,7 +494,7 @@ def main(argv):
     gr = pg.make_grammar()
 
     # Semantic actions are registered in this code.
-    convert = SEMANTIC_ACTIONS.get(grammar_name, NoSingletonAction)
+    convert = NoSingletonAction
 
     if using_oil_lexer:
       arena = alloc.Arena()

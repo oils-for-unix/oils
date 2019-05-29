@@ -419,6 +419,17 @@ def AddKinds(spec):
       'Fork', 'Shell',  # blocks
       'Proc', 'Func',
       'Match', 'With',  # matching
+      # not sure: yield
+
+      # mycpp
+      'Switch', 
+      # mod (class) and 'init' (constructor) and maybe 'call'
+      # record
+      # enum
+      # try except (no finally?)
+      # use (instead of import)
+
+      # dialects: wok rule, etc.
   ])
 
   # Assignment builtins -- treated as statically parsed keywords.  They are
