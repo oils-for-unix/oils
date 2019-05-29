@@ -65,7 +65,7 @@ def argsmeta_ws(lines):
 	for line in lines:
 		# TODO xargs does quoting (' and ")
 		for arg in line.split():
-			charc += len(arg) + 1
+			charc += str_memsize(arg)
 			yield arg, argc, linec, charc
 			argc += 1
 		if is_complete_line(line):
@@ -78,7 +78,7 @@ def argsmeta_delim(lines, delim):
 	for c in itertools.chain.from_iterable(lines):
 		if c == delim:
 			arg = "".join(buf)
-			charc += len(arg) + 1
+			charc += str_memsize(arg)
 			yield arg, argc, linec, charc
 			argc += 1
 			linec += 1
@@ -87,7 +87,7 @@ def argsmeta_delim(lines, delim):
 			buf += c
 	if buf:
 		arg = "".join(buf)
-		charc += len(arg) + 1
+		charc += str_memsize(arg)
 		yield arg, argc, linec, charc
 
 def replace_args(init_args, replace_str, add_args):
@@ -98,6 +98,10 @@ def replace_args(init_args, replace_str, add_args):
 				yield x
 		else:
 			yield arg
+
+def str_memsize(*strings):
+	return sum(len(s) + 1 for s in strings)
+
 
 def map_errcode(rc):
 	if rc == 0:
