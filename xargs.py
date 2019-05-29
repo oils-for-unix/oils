@@ -104,6 +104,15 @@ def replace_args(init_args, replace_str, add_args):
 def str_memsize(*strings):
 	return sum(len(s) + 1 for s in strings)
 
+def gen_args_keyfunc(xargs_args):
+	base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
+	def kf(a):
+		return (
+			a[1] / xargs_args.max_args if xargs_args.max_args else None,
+			a[2] / xargs_args.max_lines if xargs_args.max_lines else None,
+			(a[3]-1) / (xargs_args.max_chars-base) if xargs_args.max_chars else None,
+		)
+	return kf
 
 def map_errcode(rc):
 	if rc == 0:
@@ -138,15 +147,8 @@ def main():
 	else:
 		arg_iter = argsmeta_ws(line_iter)
 
-	def kf(a):
-		# TODO max_chars must consider command + initial_arguments
-		return (
-			a[1] / xargs_args.max_args if xargs_args.max_args else None,
-			a[2] / xargs_args.max_lines if xargs_args.max_lines else None,
-			a[3] / xargs_args.max_chars if xargs_args.max_chars else None,
-		)
 	subprocs = []
-	for _, g in itertools.groupby(arg_iter, kf):
+	for _, g in itertools.groupby(arg_iter, gen_args_keyfunc(xargs_args)):
 		additional_arguments = [m[0] for m in g]
 		if xargs_args.no_run_if_empty and not additional_arguments:
 			return 0
