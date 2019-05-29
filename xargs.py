@@ -205,21 +205,3 @@ if __name__ == "__main__":
 	#print("ENABLING -t", file=sys.stderr)
 	#xargs_args.verbose = True
 	sys.exit(main())
-
-# TODO
-# done?	Feature
-# [x]	-a --arg-file
-# [x]	-E -e --eof
-# [x]	-0 --null
-# [x]	-d --delimiter
-# [x]	-I -i --replace
-# [x]	-L -l --max-lines
-# [x]	-n --max-args
-# [ ]	-s --max-chars
-# [x]	-P --max-procs
-# [ ]	--process-slot-var
-# [x]	-p --interactive
-# [x]	-t --verbose
-# [ ]	-x --exit
-# [x]	-r --no-run-if-empty
-# [ ]	--show-limits
