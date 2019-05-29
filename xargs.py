@@ -33,25 +33,6 @@ xargs.add_argument('--show-limits', action='store_true')
 xargs.add_argument('command', nargs='?', default='/bin/echo')
 xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 
-xargs_args = xargs.parse_args()
-
-# TODO warnings when appropriate
-# -d disables -e
-if xargs_args.delimiter and xargs_args.eof_str:
-	xargs_args.eof_str = None
-# -I implies -L 1 (and transitively -x)
-# -I implies -d '\n'
-if xargs_args.replace_str and xargs_args.max_lines != 1:
-	xargs_args.max_lines = 1
-	xargs_args.delimiter = r'\n'
-# -L implies -x
-if xargs_args.max_lines is not None and not xargs_args.exit:
-	xargs_args.exit = True
-# -p implies -t
-if xargs_args.interactive and not xargs_args.verbose:
-	xargs_args.verbose = True
-# TODO? if -d then -L equals -n
-
 def read_lines_eof(arg_file, eof_str):
 	eof_str = eof_str + '\n'
 	return itertools.takewhile(lambda l: l != eof_str, arg_file)
@@ -125,7 +106,7 @@ def map_errcode(rc):
 		return 125
 	return 1
 
-def main():
+def main(xargs_args):
 	if xargs_args.arg_file == '-':
 		xargs_input = sys.stdin
 		cmd_input = open(os.devnull, 'r')
@@ -212,8 +193,27 @@ def main():
 	return 0
 
 if __name__ == "__main__":
+	xargs_args = xargs.parse_args()
+
+	# TODO warnings when appropriate
+	# -d disables -e
+	if xargs_args.delimiter and xargs_args.eof_str:
+		xargs_args.eof_str = None
+	# -I implies -L 1 (and transitively -x)
+	# -I implies -d '\n'
+	if xargs_args.replace_str and xargs_args.max_lines != 1:
+		xargs_args.max_lines = 1
+		xargs_args.delimiter = r'\n'
+	# -L implies -x
+	if xargs_args.max_lines is not None and not xargs_args.exit:
+		xargs_args.exit = True
+	# -p implies -t
+	if xargs_args.interactive and not xargs_args.verbose:
+		xargs_args.verbose = True
+	# TODO? if -d then -L equals -n
+
 	### DEBUGGING ###
 	#print(xargs_args, file=sys.stderr)
 	#print("ENABLING -t", file=sys.stderr)
 	#xargs_args.verbose = True
-	sys.exit(main())
+	sys.exit(main(xargs_args))
