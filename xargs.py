@@ -67,7 +67,7 @@ def argsmeta_delim(lines, delim):
 			linec += 1
 			buf = []
 		else:
-			buf += c
+			buf.append(c)
 	if buf:
 		arg = "".join(buf)
 		charc += str_memsize(arg)
