@@ -10,7 +10,6 @@ import os
 import subprocess
 import sys
 
-# Note: -s trumps -n
 xargs = argparse.ArgumentParser(prog='xargs')
 xargs.add_argument('-a', '--arg-file', nargs=1, default='-', metavar='file')
 xargs.add_argument('-E',          dest='eof_str', metavar='eof-str')
