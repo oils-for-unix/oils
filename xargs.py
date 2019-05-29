@@ -120,11 +120,7 @@ def main(xargs_args):
 		line_iter = xargs_input
 		
 	if xargs_args.delimiter:
-		d = xargs_args.delimiter.decode('string_escape')
-		if len(d) > 1:
-			# TODO error
-			return 1
-		arg_iter = argsmeta_delim(line_iter, d)
+		arg_iter = argsmeta_delim(line_iter, xargs_args.delimiter)
 	else:
 		arg_iter = argsmeta_ws(line_iter)
 
@@ -195,6 +191,12 @@ def main(xargs_args):
 if __name__ == "__main__":
 	xargs_args = xargs.parse_args()
 
+	if xargs_args.delimiter:
+		xargs_args.delimiter = xargs_args.delimiter.decode('string_escape')
+		if len(xargs_args.delimiter) > 1:
+			# TODO error
+			sys.exit(1)
+
 	# TODO warnings when appropriate
 	# -d disables -e
 	if xargs_args.delimiter and xargs_args.eof_str:
@@ -203,7 +205,7 @@ if __name__ == "__main__":
 	# -I implies -d '\n'
 	if xargs_args.replace_str and xargs_args.max_lines != 1:
 		xargs_args.max_lines = 1
-		xargs_args.delimiter = r'\n'
+		xargs_args.delimiter = '\n'
 	# -L implies -x
 	if xargs_args.max_lines is not None and not xargs_args.exit:
 		xargs_args.exit = True
