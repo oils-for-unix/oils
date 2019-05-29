@@ -147,6 +147,12 @@ def main():
 	else:
 		arg_iter = argsmeta_ws(line_iter)
 
+	if xargs_args.max_chars and xargs_args.exit:
+		base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
+		arg_iter = list(arg_iter)
+		if arg_iter and arg_iter[-1][3] > (xargs_args.max_chars - base):
+			return 1
+
 	subprocs = []
 	for _, g in itertools.groupby(arg_iter, gen_args_keyfunc(xargs_args)):
 		additional_arguments = [m[0] for m in g]
@@ -162,7 +168,11 @@ def main():
 					additional_arguments
 				)
 			)
-			# TODO recalc max-chars, exit if exceeded
+			# max-chars implies exit
+			if xargs_args.max_chars:
+				cmdline = list(cmdline)
+				if str_memsize(*cmdline) > xargs_args.max_chars:
+					return 1
 		else:
 			cmdline = itertools.chain(
 				[xargs_args.command],
