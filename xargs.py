@@ -212,8 +212,4 @@ if __name__ == "__main__":
 		xargs_args.verbose = True
 	# TODO? if -d then -L equals -n
 
-	### DEBUGGING ###
-	#print(xargs_args, file=sys.stderr)
-	#print("ENABLING -t", file=sys.stderr)
-	#xargs_args.verbose = True
 	sys.exit(main(xargs_args))
