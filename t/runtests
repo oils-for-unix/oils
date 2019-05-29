@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -e
-
 t="$(realpath "$(dirname "$0")")"
 cd "$t/.."
 
