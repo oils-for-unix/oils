@@ -7,6 +7,7 @@ import itertools
 import os
 # TODO docs.python.org suggests https://pypi.org/project/subprocess32/
 #      for POSIX users
+import shlex
 import subprocess
 import sys
 
@@ -63,13 +64,14 @@ def argsmeta_ws(lines):
 	linec = 0
 	charc = 0
 	for line in lines:
-		# TODO xargs does quoting (' and ")
-		for arg in line.split():
+		# TODO this might require some more testing
+		for arg in shlex.split(line):
 			charc += str_memsize(arg)
 			yield arg, argc, linec, charc
 			argc += 1
 		if is_complete_line(line):
 			linec += 1
+
 def argsmeta_delim(lines, delim):
 	argc = 0
 	linec = 0
