@@ -87,12 +87,11 @@ def str_memsize(*strings):
 	return sum(len(s) + 1 for s in strings)
 
 def gen_args_keyfunc(xargs_args):
-	base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
 	def kf(a):
 		return (
 			a[1] / xargs_args.max_args if xargs_args.max_args else None,
 			a[2] / xargs_args.max_lines if xargs_args.max_lines else None,
-			(a[3]-1) / (xargs_args.max_chars-base) if xargs_args.max_chars else None,
+			(a[3]-1) / xargs_args.max_chars if xargs_args.max_chars else None,
 		)
 	return kf
 
@@ -124,9 +123,8 @@ def main(xargs_args):
 		arg_iter = argsplit_ws(xargs_input)
 
 	if xargs_args.max_chars and xargs_args.exit:
-		base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
 		arg_iter = list(arg_iter)
-		if arg_iter and arg_iter[-1][3] > (xargs_args.max_chars - base):
+		if arg_iter and arg_iter[-1][3] > xargs_args.max_chars:
 			return 1
 
 	subprocs = []
@@ -146,8 +144,9 @@ def main(xargs_args):
 			)
 			# max-chars implies exit
 			if xargs_args.max_chars:
+				base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
 				cmdline = list(cmdline)
-				if str_memsize(*cmdline) > xargs_args.max_chars:
+				if str_memsize(*cmdline)-base > xargs_args.max_chars:
 					return 1
 		else:
 			cmdline = itertools.chain(
@@ -195,6 +194,12 @@ if __name__ == "__main__":
 		if len(xargs_args.delimiter) > 1:
 			# TODO error
 			sys.exit(1)
+	if xargs_args.max_chars:
+		base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
+		if xargs_args.max_chars < base:
+			# TODO error
+			sys.exit(1)
+		xargs_args.max_chars -= base
 
 	# TODO warnings when appropriate
 	# -d disables -e
