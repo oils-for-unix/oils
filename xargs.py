@@ -34,9 +34,9 @@ xargs.add_argument('--version', action='version', version='%(prog)s 0.0.1', help
 xargs.add_argument('command', nargs='?', default='echo')
 xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 
-def read_lines_eof(arg_file, eof_str):
+def read_lines_eof(eof_str, input):
 	eof_str = eof_str + '\n'
-	return itertools.takewhile(lambda l: l != eof_str, arg_file)
+	return itertools.takewhile(lambda l: l != eof_str, input)
 
 def is_complete_line(line):
 	return len(line) > 1 and line[-2] not in (' ', '\t')
@@ -116,10 +116,8 @@ def main(xargs_args):
 		cmd_input = sys.stdin
 	
 	if xargs_args.eof_str:
-		line_iter = read_lines_eof(xargs_input, xargs_args.eof_str)
-	else:
-		line_iter = xargs_input
-		
+		xargs_input = read_lines_eof(xargs_args.eof_str, xargs_input)
+
 	if xargs_args.delimiter:
 		arg_iter = argsmeta_delim(line_iter, xargs_args.delimiter)
 	else:
