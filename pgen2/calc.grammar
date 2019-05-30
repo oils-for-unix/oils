@@ -3,20 +3,32 @@ test_input: test NEWLINE* ENDMARKER
 
 array_input: array_literal NEWLINE* ENDMARKER
 
-array_item: Lit_Chars
+word_part: Lit_Chars | Lit_Other | Glob_Star | char_class
+word: word_part*
 array_literal: (
-  '@[' [WS_Space] [array_item] (WS_Space array_item)* [WS_Space] Op_RBracket
+  '@[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
 )
 
-regex_part: Expr_Name
-regex_literal: '$/' [WS_Space] [regex_part] (WS_Space regex_part)* [WS_Space] Arith_Slash
+char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
+char_class: (
+  Op_LBracket [WS_Space]
+  [char_class_part] (WS_Space char_class_part)*
+  [WS_Space] Op_RBracket
+)
+
+regex_part: Expr_Name | dq_string | char_class
+# empty regex invalid for now
+regex_literal: '$/' regex_part+ Arith_Slash
 
 # line continuation is ignored by lexer
-dq_part: Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number
+dq_part: (
+  Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number |
+  command_sub | expr_sub | var_sub
+)
 dq_string: Left_DoubleQuote dq_part* Right_DoubleQuote
 
 command_sub: (
-  '$[' [WS_Space] [array_item] (WS_Space array_item)* [WS_Space] Op_RBracket
+  '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
 )
 
 expr_sub: '$(' expr Op_RParen

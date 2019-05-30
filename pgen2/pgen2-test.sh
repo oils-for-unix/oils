@@ -222,6 +222,8 @@ mode-test() {
     '$(x)'
     # NOTE: operator precedence is respected here!
     'x + $(f(y) - 3) * 4'
+    # Expr -> Expr even though we saw )
+    #'$(f(x, y) + (1 * 3))'
 
     # Expr -> OilVS
     #'${}'  # syntax error
@@ -230,12 +232,41 @@ mode-test() {
     #'x + ${p|html} + y'
 
     # Expr -> Regex
-    '$/ /'
+    #'$/ /'
     'x + $/ mypat / + y'  # syntactically valid, semantically invalid
 
     # Expr -> OilDQ
     '"hello \$"'
     'x + "hello \$" + y'
+    # TODO: Also do every other kind of string:
+    # r'raw'   r"raw $sub"   '''   """   r'''   r"""
+
+    # Regex -> CharClass
+    #'$/ any* "." [a-z A-Z _] [a-z A-Z _ 0-9]+ /'
+    '$/ "." [a-z A-Z _] [a-z A-Z _ 0-9] /'
+    '$/ a [b] c /'
+
+    # Array -> CharClass  
+    '@[one two *.[c h] *.[NOT c h] ]'
+
+    # Expr -> Array -> CharClass  
+    'left + @[one two *.[c h] ] + right'
+    # Array brace sub.  Not PARSED yet, but no lexer mode change AFAICT
+    #'@[ -{one,two}- *.[c h] ]'
+
+    ## OilDQ -> Expr
+    '"var expr $(2 + 3)"'
+
+    ## OilDQ -> Command
+    '"command $[echo hi]"'
+
+    # OilDQ -> OilVS -- % is not an operator
+    #'"quoted ${x %02d}"'
+    '"quoted ${x}"'
+
+  #)
+  #local -a exprs=(
+
   )
 
   for e in "${exprs[@]}"; do
@@ -243,56 +274,15 @@ mode-test() {
     parse pgen2/calc.grammar test_input "$e"
   done
 
+  # Command stuff.  TODO: we don't have a parser for this!
+  # Maybe add 'echo' do everything?
   exprs+=(
-
-    # TODO: Also do every other kind of string:
-    # r'raw'   r"raw $sub"   '''   """   r'''   r"""
-
-    # Regex -> CharClass
-    '$/ any* "." [a-z A-Z _] [a-z A-Z _ 0-9]+ /'
-
-    # Array -> CharClass  
-    '@[one two *.[c h] *.[NOT c h] ]'
-
-    # Expr -> Expr even though we saw )
-    'echo $(f(x, y) + (1 * 3))'
-
-    # Expr -> Array -> CharClass  
-    'left + @[one two *.[c h] ] + right'
-
-    # Array brace sub
-    '@[ -{one,two}- *.[c h] ]'
-
-    # Expr -> Command
-    'x = $[echo hi]'
-    'x = $[echo one; echo two]'
-
-    # Expr -> Command (PROBLEM: mode is grammatical; needs state machine)
-    'x = func(x, y={}) {
-      echo hi
-    }
-    '
-
-    # Expr -> Command (PROBLEM: ditto)
-    # This one is even harder, because technically the expression on the left
-    # could have {}?  Or we can ban that in patterns?
-    'x = match(x) {
-      1 { echo one }
-      2 { echo two }
-    }
-    '
-
-    # stays in Expr for comparison
-    'x = match(x) {
-      1 => "one"
-      2 => "two"
-    }
-    '
-
     #'x = $[echo one; echo *.[c h] ]'
 
     # Command -> Expr (PROBLEM: requires lookahead to =)
     'x = a + b'
+    'var x = a + b'
+    'setvar x = a + b'
 
     # Command -> Expr
     'echo $(a + b)'
@@ -306,7 +296,6 @@ mode-test() {
        echo $x $y
      }
     '
-
     # I guess [] is parsed in expression mode too.  It's a very simple grammar.
     # It only accepts strings.  Maybe there is a special "BLOCK" var you can
     # evaluate.
@@ -345,15 +334,6 @@ mode-test() {
     # Command -> OilVS -- % is not an operator
     'echo ${x %02d}'
 
-    ## OilDQ -> Expr
-    'echo "var expr $(2 + 3)"'
-
-    ## OilDQ -> Command
-    'echo "command $[echo hi]"'
-
-    # OilDQ -> OilVS -- % is not an operator
-    'echo "quoted ${x %02d}"'
-
     # Command -> CharClass is DISALLOWED.  Must go through array?
     # @() could be synonym for array expression.
     # Although if you could come up with a custom syntax error for this: it
@@ -363,6 +343,31 @@ mode-test() {
     #
     # I think you could restrict the first words
   )
+
+  # I don't think these are essential.
+  local -a deferred=(
+    # Expr -> Command (PROBLEM: mode is grammatical; needs state machine)
+    'x = func(x, y={}) {
+      echo hi
+    }
+    '
+
+    # Expr -> Command (PROBLEM: ditto)
+    # This one is even harder, because technically the expression on the left
+    # could have {}?  Or we can ban that in patterns?
+    'x = match(x) {
+      1 { echo one }
+      2 { echo two }
+    }
+    '
+
+    # stays in Expr for comparison
+    'x = match(x) {
+      1 => "one"
+      2 => "two"
+    }
+    '
+
 }
 
 minimal-test() {

@@ -140,7 +140,7 @@ class Parser(object):
                 t = self.grammar.labels[ilab]
                 if ilabel == ilab:
                     # Look it up in the list of labels
-                    assert t < 256
+                    assert t < 256, t
                     # Shift a token; we're done with it
                     self.shift(typ, opaque, newstate)
                     # Pop while we are in an accept-only state

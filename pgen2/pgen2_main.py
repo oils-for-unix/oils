@@ -291,12 +291,17 @@ TERMINALS = {
 
     'ENDMARKER': Id.Eof_Real,
 
+    'Glob_Star': Id.Glob_Star,
+
+    'Op_LBrace': Id.Op_LBrace,
+    'Op_LBracket': Id.Op_LBracket,
+    'Op_LParen': Id.Op_LParen,
+
     'Op_RBrace': Id.Op_RBrace,
     # For @[]
     # Instead of ']', we can also write the name directly
     'Op_RBracket': Id.Op_RBracket,
     'Op_RParen': Id.Op_RParen,
-    'Op_RBrace': Id.Op_RBrace,
 
     'Left_DoubleQuote': Id.Left_DoubleQuote,
     'Right_DoubleQuote': Id.Right_DoubleQuote,
@@ -393,30 +398,37 @@ POP = lex_mode_e.Undefined
 
 
 _MODE_TRANSITIONS = {
-    # PUSH
-
-    # should this be a special array state?
-
-    # This should OilWords or OilArray?  Is that the only place it's used?
-    # (x ~ '*.[c h]')  # this is a string
-
+    # Expr -> X
     (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
     (lex_mode_e.Array, Id.Op_RBracket): POP,
 
-    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
+    (lex_mode_e.OilDQ, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
     (lex_mode_e.Regex, Id.Arith_Slash): POP,
-
-    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.OilVS,  # ${x|html}
+    (lex_mode_e.OilDQ, Id.Left_DollarBrace): lex_mode_e.OilVS,  # "${x|html}"
     (lex_mode_e.OilVS, Id.Op_RBrace): POP,
-
-    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
+    (lex_mode_e.OilDQ, Id.Left_DollarBracket): lex_mode_e.Command,  # "$[echo hi]"
     (lex_mode_e.Command, Id.Op_RBracket): POP,
+    (lex_mode_e.OilDQ, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
+    (lex_mode_e.Expr, Id.Op_RParen): POP,
 
+    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
+    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.OilVS,  # ${x|html}
+    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
     (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
-    (lex_mode_e.Command, Id.Op_RParen): POP,
+    (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.OilDQ,  # x + "foo"
     (lex_mode_e.OilDQ, Id.Right_DoubleQuote): POP,
+
+    # Regex
+    (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
+    (lex_mode_e.CharClass, Id.Op_RBracket): POP,
+
+    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.OilDQ,  # $/ "foo" /
+    # POP is done above
+
+    (lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ "foo" /
+    # POP is done above
 }
 
 

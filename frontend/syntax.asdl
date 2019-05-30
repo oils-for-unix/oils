@@ -108,6 +108,7 @@ module syntax
     -- TODO: should be array_item* items.  They CAN be mixed, like a=([x]=y z)
     ArrayLiteralPart(word* words)
   | LiteralPart(token token)
+    -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteralPart(token token)
     -- for 'foo=' and "${a:-}"
   | SingleQuotedPart(token left, token* tokens)

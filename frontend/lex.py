@@ -123,6 +123,8 @@ from frontend.lexer import C, R
 # chain the groups in order.  It might make sense to experiment with the order
 # too.
 
+_SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
+
 _BACKSLASH = [
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
@@ -210,7 +212,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
 
-  R(r'[ \t\r]+', Id.WS_Space),
+  _SIGNIFICANT_SPACE,
 
   C('\n', Id.Op_Newline),
 
@@ -374,7 +376,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # and [].  We will avoid that and ask the user to extract a variable?
 
   R(r'[a-zA-Z0-9_/-]+', Id.Lit_Chars),  # not including period
-  R(r'[ \t\r]+', Id.WS_Space),
+  _SIGNIFICANT_SPACE,
 
   # Normally, \x evalutes to x.  But quoted regex metacharacters like \* should
   # evaluate to \*.  Compare with ( | ).
@@ -733,8 +735,10 @@ LEXER_DEF[lex_mode_e.Command] = (
 
   R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
+  C('*', Id.Glob_Star),  # Statically parsed glob
+
   C('#', Id.Lit_Pound),  # For comments
-  R(r'[ \t\r]+', Id.WS_Space),
+  _SIGNIFICANT_SPACE,
   C('\n', Id.Op_Newline),
 
   # TODO:
@@ -776,7 +780,9 @@ LEXER_DEF[lex_mode_e.Array] = (
   _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
 
   # what about comments?  newline?
-  R(r'[ \t\r]+', Id.WS_Space),
+  _SIGNIFICANT_SPACE,
+
+  C('*', Id.Glob_Star),  # Statically parsed glob
 
   # For brace expansion.  Although is there a whitespace?
   # {a, b} vs. {a,' b'} ?
@@ -894,7 +900,9 @@ LEXER_DEF[lex_mode_e.OilVS] = LEXER_DEF[lex_mode_e.Expr]
 # - only a limited set of operators
 # - character classes are valid
 
-LEXER_DEF[lex_mode_e.Regex] = [
+# TODO: Do we allow $name $() ${} $[] in regexes?  I don't think they're really
+# necessary.
+LEXER_DEF[lex_mode_e.Regex] = _OIL_LEFT_UNQUOTED + [
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
@@ -927,6 +935,17 @@ LEXER_DEF[lex_mode_e.Regex] = [
 
   C('/', Id.Arith_Slash),  # Ends the regex.  TODO: Op_Slash?
 ] + _EXPR_OTHER
+
+LEXER_DEF[lex_mode_e.CharClass] = [
+  # placeholder.  Need a-z A-Z, NOT, \n, \x00, etc.
+  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
+
+  _SIGNIFICANT_SPACE,
+  # end char class
+  C(']', Id.Op_RBracket),
+
+  R(r'[^\]\0]', Id.Lit_Other),
+]
 
 # Oil gets rid of $$, etc.  What about $?  I think that's $status.
 _OIL_VARS = [
