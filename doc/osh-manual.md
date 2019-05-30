@@ -5,13 +5,20 @@ NOTE: This document is in progress.
 
 ### Startup Files
 
-On startup, the interactive shell sources **only** `~/.config/oil/oshrc`.  This
-is to avoid [this kind of mess][mess] ([original][]), with `/etc/profile`,
-`~/.bashrc`, `~/.bash_profile`, and more.
+On startup, the interactive shell sources **only** `~/.config/oil/oshrc`.  Oil
+intends to avoid [this kind of mess][mess] ([original][]).
 
-If you want those files, simply add `source ~/.bashrc` to your `oshrc`.
+With most shells, it's very hard to tell when and if `/etc/profile`,
+`~/.bashrc`, `~/.bash_profile`, etc. are executed.  (TODO: OSH could use some
+tracing features to help users untangle this rat's nest.)
 
-Similarly, if the `.config` path is too long, create an `~/.oshrc` symlink.
+If you want those files, simply add `source <FILE>` to your `oshrc`.
+
+For example, `$LANG` may not get set without `/etc/profile` (e.g. on Arch
+Linux).  So you can add `source /etc/profile` to your `oshrc`.
+
+Similarly, if you get tired of typing `~/.config/oil/oshrc`, symlink it to
+`~/.oshrc`.
 
 [mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
