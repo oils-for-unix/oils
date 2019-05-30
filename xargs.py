@@ -41,7 +41,7 @@ def read_lines_eof(eof_str, input):
 def is_complete_line(line):
 	return len(line) > 1 and line[-2] not in (' ', '\t')
 
-def argsmeta_ws(lines):
+def argsplit_ws(lines):
 	argc = 0
 	linec = 0
 	charc = 0
@@ -54,7 +54,7 @@ def argsmeta_ws(lines):
 		if is_complete_line(line):
 			linec += 1
 
-def argsmeta_delim(lines, delim):
+def argsplit_delim(delim, lines):
 	argc = 0
 	linec = 0
 	charc = 0
@@ -119,9 +119,9 @@ def main(xargs_args):
 		xargs_input = read_lines_eof(xargs_args.eof_str, xargs_input)
 
 	if xargs_args.delimiter:
-		arg_iter = argsmeta_delim(line_iter, xargs_args.delimiter)
+		arg_iter = argsplit_delim(xargs_args.delimiter, xargs_input)
 	else:
-		arg_iter = argsmeta_ws(line_iter)
+		arg_iter = argsplit_ws(xargs_input)
 
 	if xargs_args.max_chars and xargs_args.exit:
 		base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
