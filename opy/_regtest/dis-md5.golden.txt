@@ -212,7 +212,7 @@
  40808 32563c5dd8f47f81e23745fcd3e3d82a _tmp/regtest/codecs.pyc
  41591 12ea1057ab21de139c9216476f70e715 _tmp/regtest/osh/cmd_parse_test.pyc
  41806 0af6b2c2951e2c2e7f04261b4d6de832 _tmp/regtest/osh/cmd_parse.pyc
- 43764 d7051f54f6115b9d8661bcb5e29529cb _tmp/regtest/pickle.pyc
+ 43030 bed6a77433b8a9c924de20388330130b _tmp/regtest/pickle.pyc
  45070 fd2c2c16b5c61b346c50e038b0951086 _tmp/regtest/_devbuild/gen/osh_asdl.pyc
  56695 dc4402957b8a978b829a9dd196550908 _tmp/regtest/opy/compiler2/transformer.pyc
  57165 2c07e6823dbcee196553599c9d6ea8d4 _tmp/regtest/locale.pyc

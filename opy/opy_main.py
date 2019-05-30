@@ -247,7 +247,7 @@ def Options():
 
 
 # Made by the Makefile.
-PICKLE_REL_PATH = '_build/opy/py27.grammar.pickle'
+GRAMMAR_REL_PATH = '_build/opy/py27.grammar.marshal'
 
 def OpyCommandMain(argv):
   """Dispatch to the right action."""
@@ -267,7 +267,7 @@ def OpyCommandMain(argv):
       'parse', 'compile', 'dis', 'ast', 'symbols', 'cfg',
       'compile-ovm', 'eval', 'repl', 'run', 'run-ovm'):
     loader = pyutil.GetResourceLoader()
-    f = loader.open(PICKLE_REL_PATH)
+    f = loader.open(GRAMMAR_REL_PATH)
     gr = grammar.Grammar()
     gr.load(f)
     f.close()

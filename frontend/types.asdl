@@ -27,8 +27,12 @@ module types {
 
   | Command   -- echo foo (should this be Block or OilBlock ?)
               -- Newlines are terminators
-  | Array     -- Like Command, but {a,b} and [a-z].? and [[a-z]] are recognized.
+  | Array     -- Like Command, but {a,b} and [NOT a-z].?
               -- entered with @[] for array literals
+              -- hm actually we don't need another mode?  Just within @[] we
+              -- parse {} as brace sub, and NOT blocks.  They're operators in
+              -- both places.
+
   | Expr      -- echo ${a * b} $(a * b)
 
   | VSub_Oil  -- echo "${x %05d}" (like '%05d' % x)
@@ -53,4 +57,9 @@ module types {
   | CharClass -- / [a-z space]+ /
               -- echo foo.[c h]  # spaces allowed?  So it must be its own
               -- mode
+
+  -- More possibilities
+  -- * numeric constants: -3.14e+00, 3_000_000.50
+  -- * printf formatting ${x %05d}.  I think that is mostly in expression mode
+  --   like ${x|html} or ${x|title}
 }

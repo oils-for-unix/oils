@@ -14,10 +14,10 @@ fallback token code OP, but the parser needs the actual token code.
 
 # Python imports
 import collections
-import pickle
 import marshal
 
 from . import token
+from core.util import log
 
 
 class Grammar(object):
@@ -91,7 +91,9 @@ class Grammar(object):
         self.start = 256
 
     def dump(self, filename):
-        """Dump the grammar tables to a pickle file.
+        """Dump the grammar tables to a marshal file.
+
+        Oil patch: changed pickle to marshal.
 
         dump() recursively changes all dict to OrderedDict, so the pickled file
         is not exactly the same as what was passed in to dump(). load() uses the
@@ -103,28 +105,45 @@ class Grammar(object):
         performance because OrderedDict uses dict's __getitem__ with nothing in
         between.
         """
+        #self.report()
         with open(filename, "wb") as f:
-            d = _make_deterministic(self.__dict__)
-            pickle.dump(d, f, 2)  # protocol 2
-            # d isn't marshallable.  But neither is self.__dict__.
-            # Probably have to go through and marshal each member.
-            #marshal.dump(self.__dict__, f)
-
             if 0:
-              s = ''
-              s += marshal.dumps(self.symbol2number)
-              s += marshal.dumps(self.number2symbol)
-              s += marshal.dumps(self.dfas)
-              s += marshal.dumps(self.labels)
-              s += marshal.dumps(self.keywords)
-              s += marshal.dumps(self.tokens)
-              s += marshal.dumps(self.symbol2label)
-              s += marshal.dumps(self.start)
-              print('Marshalled bytes: %d' % len(s))
+                d = _make_deterministic(self.__dict__)
+                pickle.dump(d, f, 2)  # protocol 2
+                # d isn't marshallable.  But neither is self.__dict__.
+                # Probably have to go through and marshal each member.
+                marshal.dump(self.__dict__, f)
+            else:
+                f.write(self.MARSHAL_HEADER)
+                marshal.dump(self.symbol2number, f)
+                marshal.dump(self.number2symbol, f)
+                marshal.dump(self.states, f)
+                marshal.dump(self.dfas, f)
+                marshal.dump(self.labels, f)
+                marshal.dump(self.keywords, f)
+                marshal.dump(self.tokens, f)
+                marshal.dump(self.symbol2label, f)
+                marshal.dump(self.start, f)
+
+    MARSHAL_HEADER = 'PGEN2\n'  # arbitrary header
 
     def load(self, f):
-        d = pickle.load(f)
-        self.__dict__.update(d)
+        h = f.read(len(self.MARSHAL_HEADER))
+        if h != self.MARSHAL_HEADER:
+          raise RuntimeError('Invalid header %r' % h)
+
+        self.symbol2number = marshal.load(f)
+        assert isinstance(self.symbol2number, dict), self.symbol2number
+        self.number2symbol = marshal.load(f)
+        assert isinstance(self.number2symbol, dict), self.number2symbol
+        self.states = marshal.load(f)
+        self.dfas = marshal.load(f)
+        self.labels = marshal.load(f)
+        self.keywords = marshal.load(f)
+        self.tokens = marshal.load(f)
+        self.symbol2label = marshal.load(f)
+        self.start = marshal.load(f)
+        #self.report()
 
     def copy(self):
         """
@@ -142,16 +161,19 @@ class Grammar(object):
     def report(self):
         """Dump the grammar tables to standard output, for debugging."""
         from pprint import pprint
-        print("s2n")
-        pprint(self.symbol2number)
-        print("n2s")
-        pprint(self.number2symbol)
-        print("states")
-        pprint(self.states)
-        print("dfas")
-        pprint(self.dfas)
+        log("symbol2number: %d entries", len(self.symbol2number))
+        log("number2symbol: %d entries", len(self.number2symbol))
+        log("states: %d entries", len(self.states))
+        log("dfas: %d entries", len(self.dfas))
+        return
         print("labels")
         pprint(self.labels)
+        print("keywords")
+        pprint(self.labels)
+        print("tokens")
+        pprint(self.tokens)
+        print("symbol2label")
+        pprint(self.symbol2label)
         print("start", self.start)
 
 

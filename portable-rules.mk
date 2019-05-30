@@ -60,7 +60,7 @@ _build/%/all-deps-py.txt: _build/%/py-to-compile.txt
 # I should make a _build/oil/py.d file and include it?
 # This depends on the grammar pickle because it's the first one that calls opy
 # compile.
-_build/%/opy-app-deps.txt: _build/opy/py27.grammar.pickle _build/%/all-deps-py.txt
+_build/%/opy-app-deps.txt: _build/opy/py27.grammar.marshal _build/%/all-deps-py.txt
 	# exclude the pickle
 	cat _build/$*/all-deps-py.txt | opy/build.sh compile-manifest _build/$*/bytecode-opy > $@
 
