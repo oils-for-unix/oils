@@ -89,7 +89,7 @@ class LineLexer(object):
 
     Called with at least the following modes:
       lex_mode_e.Arith -- for ${a[@]} vs ${a[1+2]}
-      lex_mode_e.VS_1
+      lex_mode_e.VSub_1
       lex_mode_e.ShCommand
     """
     pos = self.line_pos
@@ -247,7 +247,7 @@ class Lexer(object):
     while True:
       t = self._Read(lex_mode)
       # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means
-      # we don't have to handle them in the VS_1/VS_2/etc. states.
+      # we don't have to handle them in the VSub_1/VSub_2/etc. states.
       if t.id != Id.Ignored_LineCont:
         break
 

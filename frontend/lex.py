@@ -108,7 +108,7 @@ from frontend.lexer import C, R
 
 # In oil, I hope to have these lexer modes:
 # COMMAND
-# EXPRESSION (takes place of ARITH, VS_ArgUnquoted, VS_ArgDQ)
+# EXPRESSION (takes place of ARITH, VSub_ArgUnquoted, VSub_ArgDQ)
 # SQ  RAW_SQ  DQ  RAW_DQ
 # VS    -- a single state here?  Or switches into expression state, because }
 #          is an operator
@@ -410,7 +410,7 @@ _VS_ARG_COMMON = _BACKSLASH + [
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[lex_mode_e.VS_ArgUnquoted] = \
+LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
   _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
@@ -418,7 +418,7 @@ LEXER_DEF[lex_mode_e.VS_ArgUnquoted] = \
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[lex_mode_e.VS_ArgDQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
+LEXER_DEF[lex_mode_e.VSub_ArgDQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
 
   # Weird wart: even in double quoted state, double quotes are allowed
@@ -522,7 +522,7 @@ LEXER_DEF[lex_mode_e.PrintfPercent] = [
   R(r'[^\0]', Id.Unknown_Tok),  # any otehr char
 ]
 
-LEXER_DEF[lex_mode_e.VS_1] = [
+LEXER_DEF[lex_mode_e.VSub_1] = [
   R(VAR_NAME_RE, Id.VSub_Name),
   #  ${11} is valid, compared to $11 which is $1 and then literal 1.
   R(r'[0-9]+', Id.VSub_Number),
@@ -542,7 +542,7 @@ LEXER_DEF[lex_mode_e.VS_1] = [
   R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
-LEXER_DEF[lex_mode_e.VS_2] = \
+LEXER_DEF[lex_mode_e.VSub_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
     ID_SPEC.LexerPairs(Kind.VOp0) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
@@ -698,7 +698,7 @@ _OIL_KEYWORDS = [
   C('with',      Id.KW_With),
 ]
 
-# Valid in lex_mode_e.{Command,Array,Expr,OilDQ}
+# Valid in lex_mode_e.{Command,Array,Expr,DQ_Oil}
 _OIL_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
@@ -717,7 +717,7 @@ _OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
   C("'", Id.Left_SingleQuote),
 
-  # Not valid in OilDQ
+  # Not valid in DQ_Oil
   C('@[', Id.Left_AtBracket),
   # Not sure if I want this as a synonym.
   #C('@(', Id.Left_AtParen),
@@ -892,7 +892,7 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
 
 
 # FOR NOW, ${x|html} is the same!
-LEXER_DEF[lex_mode_e.OilVS] = LEXER_DEF[lex_mode_e.Expr]
+LEXER_DEF[lex_mode_e.VSub_Oil] = LEXER_DEF[lex_mode_e.Expr]
 
 
 # Differences from expression mode:
@@ -954,7 +954,7 @@ _OIL_VARS = [
   R(r'\$[0-9]', Id.VSub_Number),
 ]
 
-LEXER_DEF[lex_mode_e.OilDQ] = [
+LEXER_DEF[lex_mode_e.DQ_Oil] = [
   # Like sh DQ, except no `
   R(r'\\[$"\\]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),

@@ -29,7 +29,7 @@ lex_mode_e.Arith
   allow quotes, but OSH does.  We allow ALL FOUR kinds of quotes, because we
   need those for associative array indexing.
 
-lex_mode_e.VS_ArgUnquoted
+lex_mode_e.VSub_ArgUnquoted
   Like UNQUOTED, everything is allowed (even process substitutions), but we
   stop at }, and space is SIGNIFICANT.
   
@@ -38,7 +38,7 @@ lex_mode_e.VS_ArgUnquoted
   ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
   ${X:-'single'}  ${X:-"double"}  ${X:-$'\n'}  ${X:-<(echo hi)}
 
-lex_mode_e.VS_ArgDQ
+lex_mode_e.VSub_ArgDQ
   In contrast to DQ, VS_ARG_DQ accepts nested "" and $'' and $"", e.g.
   "${x:-"default"}".
 
@@ -158,7 +158,7 @@ class WordParser(object):
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
     # return a CompoundWord with no parts, which is explicitly checked with a
     # custom error message.
-    if not w.parts and arg_lex_mode == lex_mode_e.VS_ArgDQ and empty_ok:
+    if not w.parts and arg_lex_mode == lex_mode_e.VSub_ArgDQ and empty_ok:
       return osh_word.EmptyWord()
 
     return w
@@ -263,7 +263,7 @@ class WordParser(object):
       p_die('Expected ] after subscript, got %r', self.cur_token.val,
             token=self.cur_token)
 
-    self._Next(lex_mode_e.VS_2)  # skip past ]
+    self._Next(lex_mode_e.VSub_2)  # skip past ]
     self._Peek()  # Needed to be in the same spot as no subscript
 
     return op
@@ -278,7 +278,7 @@ class WordParser(object):
     """
     self._Peek()
     name_token = self.cur_token
-    self._Next(lex_mode_e.VS_2)
+    self._Next(lex_mode_e.VSub_2)
 
     self._Peek()  # Check for []
     if self.token_type == Id.VOp2_LBracket:
@@ -315,7 +315,7 @@ class WordParser(object):
     elif op_kind == Kind.VOp0:
       op_id = self.token_type
       part.suffix_op = suffix_op.StringNullary(op_id)
-      self._Next(lex_mode_e.VS_2)  # Expecting }
+      self._Next(lex_mode_e.VSub_2)  # Expecting }
       self._Peek()
 
     elif op_kind == Kind.VOp1:
@@ -426,21 +426,21 @@ class WordParser(object):
     left_spid = self.cur_token.span_id
 
     if d_quoted:
-      arg_lex_mode = lex_mode_e.VS_ArgDQ
+      arg_lex_mode = lex_mode_e.VSub_ArgDQ
     else:
-      arg_lex_mode = lex_mode_e.VS_ArgUnquoted
+      arg_lex_mode = lex_mode_e.VSub_ArgUnquoted
 
-    self._Next(lex_mode_e.VS_1)
+    self._Next(lex_mode_e.VSub_1)
     self._Peek()
 
     ty = self.token_type
 
     if ty == Id.VSub_Pound:
       # Disambiguate
-      t = self.lexer.LookAhead(lex_mode_e.VS_1)
+      t = self.lexer.LookAhead(lex_mode_e.VSub_1)
       if t.id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '#' is the prefix
-        self._Next(lex_mode_e.VS_1)
+        self._Next(lex_mode_e.VSub_1)
         part = self._ParseVarOf()
 
         self._Peek()
@@ -454,7 +454,7 @@ class WordParser(object):
         part = self._ParseVarExpr(arg_lex_mode)
 
     elif ty == Id.VSub_Bang:
-      t = self.lexer.LookAhead(lex_mode_e.VS_1)
+      t = self.lexer.LookAhead(lex_mode_e.VSub_1)
       if t.id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '!' is the prefix
         # ${!a} -- this is a ref
@@ -462,7 +462,7 @@ class WordParser(object):
         # ${!a[1]} -- this is a ref
         # ${!a[@]} -- this is a keys
         # No lookahead -- do it in a second step, or at runtime
-        self._Next(lex_mode_e.VS_1)
+        self._Next(lex_mode_e.VSub_1)
         part = self._ParseVarExpr(arg_lex_mode)
 
         part.prefix_op = Id.VSub_Bang

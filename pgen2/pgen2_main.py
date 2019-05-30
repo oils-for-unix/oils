@@ -402,29 +402,29 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
     (lex_mode_e.Array, Id.Op_RBracket): POP,
 
-    (lex_mode_e.OilDQ, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
+    (lex_mode_e.DQ_Oil, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
     (lex_mode_e.Regex, Id.Arith_Slash): POP,
-    (lex_mode_e.OilDQ, Id.Left_DollarBrace): lex_mode_e.OilVS,  # "${x|html}"
-    (lex_mode_e.OilVS, Id.Op_RBrace): POP,
-    (lex_mode_e.OilDQ, Id.Left_DollarBracket): lex_mode_e.Command,  # "$[echo hi]"
+    (lex_mode_e.DQ_Oil, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # "${x|html}"
+    (lex_mode_e.VSub_Oil, Id.Op_RBrace): POP,
+    (lex_mode_e.DQ_Oil, Id.Left_DollarBracket): lex_mode_e.Command,  # "$[echo hi]"
     (lex_mode_e.Command, Id.Op_RBracket): POP,
-    (lex_mode_e.OilDQ, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
+    (lex_mode_e.DQ_Oil, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
     (lex_mode_e.Expr, Id.Op_RParen): POP,
 
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
-    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.OilVS,  # ${x|html}
+    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # ${x|html}
     (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
     (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
     (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
-    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.OilDQ,  # x + "foo"
-    (lex_mode_e.OilDQ, Id.Right_DoubleQuote): POP,
+    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # x + "foo"
+    (lex_mode_e.DQ_Oil, Id.Right_DoubleQuote): POP,
 
     # Regex
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
     (lex_mode_e.CharClass, Id.Op_RBracket): POP,
 
-    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.OilDQ,  # $/ "foo" /
+    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # $/ "foo" /
     # POP is done above
 
     (lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ "foo" /

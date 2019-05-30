@@ -76,12 +76,12 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.ShCommand)
     self.assertTokensEqual(token(Id.Eof_Real, ''), t)
 
-  def testMode_VS_ArgUnquoted(self):
+  def testMode_VSub_ArgUnquoted(self):
     # Another EOF gives EOF
     lexer = _InitLexer("'hi'")
-    t = lexer.Read(lex_mode_e.VS_ArgUnquoted)
+    t = lexer.Read(lex_mode_e.VSub_ArgUnquoted)
     #self.assertTokensEqual(token(Id.Eof_Real, ''), t)
-    #t = l.Read(lex_mode_e.VS_ArgUnquoted)
+    #t = l.Read(lex_mode_e.VSub_ArgUnquoted)
     print(t)
 
   def testMode_ExtGlob(self):
@@ -299,7 +299,7 @@ class LineLexerTest(unittest.TestCase):
 
   def testRead_VS_ARG_UNQ(self):
     l = LineLexer(match.MATCHER, "'hi'", self.arena)
-    t = l.Read(lex_mode_e.VS_ArgUnquoted)
+    t = l.Read(lex_mode_e.VSub_ArgUnquoted)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):

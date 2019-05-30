@@ -15,7 +15,7 @@ module types {
   | SQ | DQ | DollarSQ
   | Arith
   | ExtGlob
-  | VS_1 | VS_2 | VS_ArgUnquoted | VS_ArgDQ
+  | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ
   | BashRegex | BashRegexChars
 
   -- Two for printf builtin
@@ -31,25 +31,26 @@ module types {
               -- entered with @[] for array literals
   | Expr      -- echo ${a * b} $(a * b)
 
-  | OilVS     -- echo "${x %05d}"
+  | VSub_Oil  -- echo "${x %05d}" (like '%05d' % x)
 
               -- note: could quoted strings be shared with OSH?  Rename that
               -- to CSQ, CDQ, RawSQ, RawDQ?  Maybe disallow octal literals
               -- after the fact?
               -- OilDQ is different because it disallows `` and so forth
               -- can multiline strings share
-  | OilSQ     -- echo '_\t_'
-  | OilDQ     -- echo "hello $name\n"
+  | SQ_Oil    -- echo '_\t_'
+  | DQ_Oil    -- echo "hello $name\n"
 
-  | RawSQ     -- echo r'foo'         -- TODO: make this SQ?
-  | RawDQ     -- echo r"hello there" -- this is different than sh DQ because
+  | SQ_Raw    -- echo r'foo'         -- TODO: identical to SQ for sh?
+  | DQ_Raw    -- echo r"hello there" -- this is different than sh DQ because
                                      -- Left?  Or the same?
+
+  -- TODO:
+  -- * Multiline strings.  May require some parsing too.
+  -- * Tagged strings.  Are these raw by default?
 
   | Regex     -- [[ is special, e.g. myregex = $/ [[a-z]]+ /
   | CharClass -- / [a-z space]+ /
               -- echo foo.[c h]  # spaces allowed?  So it must be its own
               -- mode
-
-  -- More:
-  -- * Multiline strings
 }

@@ -344,8 +344,8 @@ class WordParserTest(unittest.TestCase):
         'echo ${var,,?}',
 
         # Line continuation tests
-        '${\\\nfoo}',  # VS_1
-        '${foo\\\n}',  # VS_2
+        '${\\\nfoo}',  # VSub_1
+        '${foo\\\n}',  # VSub_2
         '${foo#\\\nyo}',  # VS_ARG_UNQ
         '"${foo#\\\nyo}"',  # VS_ARG_DQ
     ]
