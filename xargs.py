@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import collections
 import itertools
 import os
 # TODO docs.python.org suggests https://pypi.org/project/subprocess32/
@@ -34,6 +35,8 @@ xargs.add_argument('--version', action='version', version='%(prog)s 0.0.1', help
 xargs.add_argument('command', nargs='?', default='echo')
 xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 
+ArgWithInfo = collections.namedtuple('ArgWithInfo', 'arg, charc, argc, linec')
+
 def read_lines_eof(eof_str, input):
 	eof_str = eof_str + '\n'
 	return itertools.takewhile(lambda l: l != eof_str, input)
@@ -42,28 +45,28 @@ def is_complete_line(line):
 	return len(line) > 1 and line[-2] not in (' ', '\t')
 
 def argsplit_ws(lines):
+	charc = 0
 	argc = 0
 	linec = 0
-	charc = 0
 	for line in lines:
 		# TODO this might require some more testing
 		for arg in shlex.split(line):
 			charc += str_memsize(arg)
-			yield arg, argc, linec, charc
+			yield ArgWithInfo(arg, charc, argc, linec)
 			argc += 1
 		if is_complete_line(line):
 			linec += 1
 
 def argsplit_delim(delim, lines):
+	charc = 0
 	argc = 0
 	linec = 0
-	charc = 0
 	buf = []
 	for c in itertools.chain.from_iterable(lines):
 		if c == delim:
 			arg = "".join(buf)
 			charc += str_memsize(arg)
-			yield arg, argc, linec, charc
+			yield ArgWithInfo(arg, charc, argc, linec)
 			argc += 1
 			linec += 1
 			buf = []
@@ -72,7 +75,7 @@ def argsplit_delim(delim, lines):
 	if buf:
 		arg = "".join(buf)
 		charc += str_memsize(arg)
-		yield arg, argc, linec, charc
+		yield ArgWithInfo(arg, charc, argc, linec)
 
 def replace_args(init_args, replace_str, add_args):
 	add_args = list(add_args)
@@ -86,15 +89,6 @@ def replace_args(init_args, replace_str, add_args):
 def str_memsize(*strings):
 	return sum(len(s) + 1 for s in strings)
 
-def gen_args_keyfunc(xargs_args):
-	def kf(a):
-		return (
-			a[1] / xargs_args.max_args if xargs_args.max_args else None,
-			a[2] / xargs_args.max_lines if xargs_args.max_lines else None,
-			(a[3]-1) / xargs_args.max_chars if xargs_args.max_chars else None,
-		)
-	return kf
-
 def map_errcode(rc):
 	if rc == 0:
 		return 0
@@ -106,7 +100,59 @@ def map_errcode(rc):
 		return 125
 	return 1
 
+def group_args(max_chars, max_args, max_lines, arg_iter):
+	def kf(a):
+		return (
+			(a.charc-1) / max_chars if max_chars else None,
+			a.argc / max_args if max_args else None,
+			a.linec / max_lines if max_lines else None,
+		)
+	# group args and drop meta-info
+	arggroup_iter = ((m.arg for m in g) for _, g in itertools.groupby(arg_iter, kf))
+	arggroup = next(arggroup_iter, None)
+	yield arggroup if arggroup is not None else []
+	for arggroup in arggroup_iter:
+		yield arggroup
+
+def build_cmdline_replace(command, initial_arguments, replace_str, arggroup_iter):
+	command = [command]
+	for additional_arguments in arggroup_iter:
+		cmdline = itertools.chain(
+			command,
+			replace_args(
+				initial_arguments,
+				replace_str,
+				additional_arguments
+			)
+		)
+		yield cmdline
+
+def build_cmdline(command, initial_arguments, arggroup_iter):
+	command = [command]
+	for additional_arguments in arggroup_iter:
+		cmdline = itertools.chain(
+			command,
+			initial_arguments,
+			additional_arguments
+		)
+		yield cmdline
+
+def prompt_user(interactive, cmdline_iter):
+	for cmdline in cmdline_iter:
+		cmdline = list(cmdline)
+		if interactive:
+			print(*cmdline, end=' ?...', file=sys.stderr)
+			with open("/dev/tty", 'r') as tty:
+				response = tty.readline()
+				if response[0] not in ('y', 'Y'):
+					continue
+		else:
+			print(*cmdline, file=sys.stderr)
+		yield cmdline
+
+
 def main(xargs_args):
+	# phase 1: read input
 	if xargs_args.arg_file == '-':
 		xargs_input = sys.stdin
 		cmd_input = open(os.devnull, 'r')
@@ -117,74 +163,84 @@ def main(xargs_args):
 	if xargs_args.eof_str:
 		xargs_input = read_lines_eof(xargs_args.eof_str, xargs_input)
 
+	# phase 2: split args
 	if xargs_args.delimiter:
 		arg_iter = argsplit_delim(xargs_args.delimiter, xargs_input)
 	else:
 		arg_iter = argsplit_ws(xargs_input)
 
-	if xargs_args.max_chars and xargs_args.exit:
+	if xargs_args.no_run_if_empty:
+		ag = next(arg_iter, None)
+		if ag is None:
+			return 0
+		arg_iter = itertools.chain([ag], arg_iter)
+
+	# if -I, max_chars might be 0 at this point, so check against None
+	if xargs_args.max_chars is not None and xargs_args.exit:
 		arg_iter = list(arg_iter)
-		if arg_iter and arg_iter[-1][3] > xargs_args.max_chars:
+		if arg_iter and arg_iter[-1].charc > xargs_args.max_chars:
 			return 1
 
-	subprocs = []
-	for _, g in itertools.groupby(arg_iter, gen_args_keyfunc(xargs_args)):
-		additional_arguments = [m[0] for m in g]
-		if xargs_args.no_run_if_empty and not additional_arguments:
-			return 0
+	# phase 3: group args
+	arggroup_iter = group_args(
+		xargs_args.max_chars,
+		xargs_args.max_args,
+		xargs_args.max_lines,
+		arg_iter
+	)
 
-		if xargs_args.replace_str:
-			cmdline = itertools.chain(
-				[xargs_args.command],
-				replace_args(
-					xargs_args.initial_arguments,
-					xargs_args.replace_str,
-					additional_arguments
-				)
-			)
-			# max-chars implies exit
-			if xargs_args.max_chars:
-				base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
-				cmdline = list(cmdline)
-				if str_memsize(*cmdline)-base > xargs_args.max_chars:
-					return 1
-		else:
-			cmdline = itertools.chain(
-				[xargs_args.command],
-				xargs_args.initial_arguments,
-				additional_arguments
-			)
+	# phase 4: build command-lines
+	if xargs_args.replace_str:
+		cmdline_iter = build_cmdline_replace(
+			xargs_args.command,
+			xargs_args.initial_arguments,
+			xargs_args.replace_str,
+			arggroup_iter
+		)
+	else:
+		cmdline_iter = build_cmdline(
+			xargs_args.command,
+			xargs_args.initial_arguments,
+			arggroup_iter
+		)
 
-		if xargs_args.verbose:
-			cmdline = list(cmdline)
-			print(*cmdline, end=' ', file=sys.stderr)
-			if xargs_args.interactive:
-				with open("/dev/tty", 'r') as tty:
-					print("?...", end='', file=sys.stderr)
-					response = tty.readline()
-					if response[0] != 'y' and response[0] != 'Y':
-						continue
+	if xargs_args.replace_str and xargs_args.max_chars:
+		cmdline = list(cmdline)
+		# -I implies -x
+		if str_memsize(*cmdline) > xargs_args.max_chars:
+			return 1
+
+	if xargs_args.verbose:
+		cmdline_iter = prompt_user(xargs_args.interactive, cmdline_iter)
+
+	# phase 5: execute command-lines
+	err = 0
+	if xargs_args.max_procs and xargs_args.max_procs > 1:
+		subprocs = []
+		for cmdline in itertools.islice(cmdline_iter, xargs_args.max_procs):
+			p = subprocess.Popen(cmdline, stdin=cmd_input)
+			subprocs.append(p)
+		i = 0
+		for cmdline in cmdline_iter:
+			os.wait()
+			while subprocs[i].poll() is not None:
+				i = (i + 1) % len(subprocs)
+			if subprocs[i].returncode:
+				err = map_errcode(subprocs[i].returncode)
+				break
+			subprocs[i] = subprocess.Popen(cmdline, stdin=cmd_input)
+		for p in subprocs:
+			if not err:
+				err = map_errcode(p.wait())
 			else:
-				print(file=sys.stderr)
-		try:
-			subprocs.append(subprocess.Popen(cmdline, stdin=cmd_input))
-		except OSError:
-			# 126	command cannot be run
-			# 127	command cannot be found
-			return 127
-
-		if xargs_args.max_procs and xargs_args.max_procs > len(subprocs):
-			continue
-
-		os.wait()
-		for i in reversed(range(len(subprocs))):
-			if subprocs[i].poll() is None:
-				continue
-			err = map_errcode(subprocs[i].returncode)
-			if err:
-				return err
-			del subprocs[i]
-	return 0
+				p.wait()
+	else:
+		for cmdline in cmdline_iter:
+			p = subprocess.Popen(cmdline, stdin=cmd_input)
+			if p.wait():
+				err = map_errcode(p.returncode)
+				break
+	return err
 
 if __name__ == "__main__":
 	xargs_args = xargs.parse_args()
@@ -194,9 +250,9 @@ if __name__ == "__main__":
 		if len(xargs_args.delimiter) > 1:
 			# TODO error
 			sys.exit(1)
-	if xargs_args.max_chars:
+	if xargs_args.max_chars and not xargs_args.replace_str:
 		base = str_memsize(xargs_args.command, *xargs_args.initial_arguments)
-		if xargs_args.max_chars < base:
+		if base > xargs_args.max_chars:
 			# TODO error
 			sys.exit(1)
 		xargs_args.max_chars -= base
@@ -207,6 +263,7 @@ if __name__ == "__main__":
 		xargs_args.eof_str = None
 	# -I implies -L 1 (and transitively -x)
 	# -I implies -d '\n'
+	# TODO? -I implies -r (undocumented)
 	if xargs_args.replace_str and xargs_args.max_lines != 1:
 		xargs_args.max_lines = 1
 		xargs_args.delimiter = '\n'
