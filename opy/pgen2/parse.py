@@ -111,15 +111,8 @@ class Parser(object):
         """
         if start is None:
             start = self.grammar.start
-        # Each stack entry is a tuple: (dfa, state, node).
-        # A node is a tuple: (type, value, context, children),
-        # where children is a list of nodes or None, and context may be None.
         newnode = PNode(start, None, [])
-
-        # TODO: Add the name of the non-terminal here?
-        # And then look up (non-terminal, token) -> lexer mode change.
-        # But it can also be a token??  Don't want that.
-
+        # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [(self.grammar.dfas[start], 0, newnode)]
         self.rootnode = None
 

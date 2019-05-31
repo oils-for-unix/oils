@@ -107,23 +107,16 @@ class Grammar(object):
         """
         #self.report()
         with open(filename, "wb") as f:
-            if 0:
-                d = _make_deterministic(self.__dict__)
-                pickle.dump(d, f, 2)  # protocol 2
-                # d isn't marshallable.  But neither is self.__dict__.
-                # Probably have to go through and marshal each member.
-                marshal.dump(self.__dict__, f)
-            else:
-                f.write(self.MARSHAL_HEADER)
-                marshal.dump(self.symbol2number, f)
-                marshal.dump(self.number2symbol, f)
-                marshal.dump(self.states, f)
-                marshal.dump(self.dfas, f)
-                marshal.dump(self.labels, f)
-                marshal.dump(self.keywords, f)
-                marshal.dump(self.tokens, f)
-                marshal.dump(self.symbol2label, f)
-                marshal.dump(self.start, f)
+            f.write(self.MARSHAL_HEADER)
+            marshal.dump(self.symbol2number, f)
+            marshal.dump(self.number2symbol, f)
+            marshal.dump(self.states, f)
+            marshal.dump(self.dfas, f)
+            marshal.dump(self.labels, f)
+            marshal.dump(self.keywords, f)
+            marshal.dump(self.tokens, f)
+            marshal.dump(self.symbol2label, f)
+            marshal.dump(self.start, f)
 
     MARSHAL_HEADER = 'PGEN2\n'  # arbitrary header
 

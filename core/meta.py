@@ -2,13 +2,13 @@
 """
 meta.py
 
-Another "thin waist" of the interpreter.  It can be happen at compile time!
+Holds ID_SPEC, which is used at build time:
 
-We are following the code <-> data pattern, and this is the "data" module.
-id_kind and asdl are the "code" modules.
+- to generate id_kind_asdl
+- to generate the lexer, using LexerPairs()
 
 Usage:
-  from core.meta import syntax_asdl, Id, Kind, ID_SPEC
+  from core.meta import ID_SPEC
 """
 
 from _devbuild.gen.types_asdl import bool_arg_type_t, redir_arg_type_e

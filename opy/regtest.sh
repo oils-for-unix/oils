@@ -125,6 +125,28 @@ compare-other-machine() {
   unzip -p $rel_path $zip | od -c
 }
 
+# One-off debugging
+compare-flanders() {
+  #local rel_path=${1:-'core/word_test.pyc'}
+  #local rel_path=${1:-'core/word_compile.pyc'}
+  local rel_path=${1:-'_devbuild/gen/osh_asdl.pyc'}
+
+  local mine=_tmp/regtest/$rel_path 
+  local flanders=_tmp/flanders-regtest/$rel_path 
+
+  # Not accurate because of timestamps
+  #md5sum $mine $flanders
+
+  # Hm somehow these checksums are different, but the 'dis' dumps are the same.
+  # I guess an ordering issue that goes awa when you print?
+  ../bin/opyc dis-md5 $mine $flanders
+
+  ../bin/opyc dis $mine > _tmp/mine.txt
+  ../bin/opyc dis $flanders > _tmp/flanders.txt
+
+  diff -u _tmp/{mine,flanders}.txt
+}
+
 smoke-three-modes() {
   compile oil
   $THIS_DIR/../bin/opyc eval '1+2*3'

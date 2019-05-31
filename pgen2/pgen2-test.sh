@@ -289,6 +289,8 @@ mode-test() {
     'echo ${x|html}'
 
     # Command -> Expr
+    'echo $stringfunc(x, y)'
+    'echo @arrayfunc(x, y)'
 
     # The signature must be parsed expression mode if it have
     # defaults.
@@ -367,19 +369,7 @@ mode-test() {
       2 => "two"
     }
     '
-
-}
-
-minimal-test() {
-  local -a e=(
-    '1 + 2'
-    'a - 42'
-    'if a - 42'
   )
-  for expr in "${e[@]}"; do
-    echo "$expr"
-    parse pgen2/minimal.grammar eval_input "$expr"
-  done
 }
 
 enum-test() {
@@ -396,54 +386,12 @@ enum-test() {
   done
 }
 
-ll1-test() {
-  readonly -a enums=(
-    # second alternative
-    'a'
-    'a b'
-    #'b'
-  )
-  for expr in "${enums[@]}"; do
-    parse pgen2/enum.grammar ll1_test "$expr"
-  done
-}
-
-ll-star-test() {
-  readonly -a e=(
-    # second alternative
-    'a'
-    'a = 3'
-    'unsigned int a'
-    'unsigned unsigned int a'
-    'unsigned unsigned b c'
-    # It correctly detects these as parse errors
-    #'unsigned unsigned b'
-    #'a = b'
-  )
-  for expr in "${e[@]}"; do
-    parse pgen2/ll-star.grammar paper_input "$expr"
-  done
-}
-
-ll-star-test-2() {
-  readonly -a e=(
-    # second alternative
-    'unsigned foo(arg);'
-    'unsigned foo(arg) { body }'
-    # It correctly detects these as parse errors
-    #'unsigned foo(arg)'
-  )
-  for expr in "${e[@]}"; do
-    parse pgen2/ll-star.grammar method_input "$expr"
-  done
-}
-
 all() {
   banner 'exprs'
   parse-exprs
 
-  banner 'arglists'
-  parse-arglists
+  #banner 'arglists'
+  #parse-arglists
 
   banner 'types'
   parse-types
@@ -451,8 +399,10 @@ all() {
   banner 'calc'
   calc-test
 
-  banner 'minimal'
-  minimal-test
+  banner 'mode-test'
+  mode-test
+
+  # enum-test doesn't work?
 }
 
 # Hm Python 3 has type syntax!  But we may not use it.

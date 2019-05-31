@@ -23,4 +23,3 @@ body: 'body'
 method: type ID '(' arg* ')' ';' | type ID '(' arg* ')' '{' body '}' 
 
 method_input: method NEWLINE* ENDMARKER
-

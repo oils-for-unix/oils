@@ -4,12 +4,15 @@ opy_main.py
 """
 from __future__ import print_function
 
+import cStringIO
 import hashlib
 import optparse
 import os
 import sys
 import marshal
 import types
+
+from _devbuild.gen import syntax_asdl
 
 from . import pytree
 from . import skeleton
@@ -118,6 +121,7 @@ class TupleTreePrinter(object):
 
 
 class ParseTreePrinter(object):
+  """Prints a tree of PNode instances."""
   def __init__(self, names):
     self.names = names
     # TODO: parameterize by grammar.
@@ -130,7 +134,9 @@ class ParseTreePrinter(object):
     # - context is (prefix, (lineno, column)), where lineno is 1-based, and
     #   'prefix' is a string of whitespace.
     #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
-    if pnode.tok:
+    if isinstance(pnode.tok, tuple):
+      v = pnode.tok[0]
+    elif isinstance(pnode.tok, syntax_asdl.token):
       v = pnode.tok.val
     else:
       v = '-'
@@ -264,7 +270,7 @@ def OpyCommandMain(argv):
                    # That will shift the input.
 
   if action in (
-      'parse', 'compile', 'dis', 'ast', 'symbols', 'cfg',
+      'parse', 'parse-with', 'compile', 'dis', 'ast', 'symbols', 'cfg',
       'compile-ovm', 'eval', 'repl', 'run', 'run-ovm'):
     loader = pyutil.GetResourceLoader()
     f = loader.open(GRAMMAR_REL_PATH)
@@ -355,6 +361,33 @@ def OpyCommandMain(argv):
     else:
       tree.PrettyPrint(sys.stdout)
       log('\tChildren: %d' % len(tree.children), file=sys.stderr)
+
+  # Parse with an arbitrary grammar, but the Python lexer.
+  elif action == 'parse-with':
+    grammar_path = argv[0]
+    start_symbol = argv[1]
+    code_str = argv[2]
+
+    gr = pgen.generate_grammar(grammar_path)
+
+    f = cStringIO.StringIO(code_str)
+    tokens = tokenize.generate_tokens(f.readline)
+    p = parse.Parser(gr)  # no convert=
+    try:
+      pnode = driver.PushTokens(p, tokens, gr, start_symbol)
+    except parse.ParseError as e:
+      # Extract location information and show it.
+      _, _, (lineno, offset) = e.opaque
+      # extra line needed for '\n' ?
+      lines = code_str.splitlines() + ['']
+
+      line = lines[lineno-1]
+      log('  %s', line)
+      log('  %s^', ' '*offset)
+      log('Parse Error: %s', e)
+      return 1
+    printer = ParseTreePrinter(transformer._names)  # print raw nodes
+    printer.Print(pnode)
 
   elif action == 'ast':  # output AST
     opt, i = compile_spec.Parse(argv)

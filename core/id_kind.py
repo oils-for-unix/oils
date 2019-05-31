@@ -333,7 +333,7 @@ def AddKinds(spec):
 
   # Operators
   # NOTE: Could share Op_Pipe, Op_Amp, Op_DAmp, Op_Semi, Op_LParen, etc.
-  # Actually All of Arith could be folded into Op, because we are using
+  # Actually all of Arith could be folded into Op, because we are using
   # WordParser._ReadArithWord vs. WordParser._ReadWord.
   spec.AddKindPairs('Arith', [
       ('Semi', ';'),   # ternary for loop only
@@ -349,10 +349,12 @@ def AddKinds(spec):
       ('QMark', '?'), ('Colon', ':'),  # Ternary Op: a < b ? 0 : 1
       ('LessEqual', '<='), ('Less', '<'), ('GreatEqual', '>='), ('Great', '>'),
       ('DEqual', '=='), ('NEqual', '!='),
+      # note: these 3 are not in Oil's Expr.  (Could be used in find dialect.)
       ('DAmp', '&&'), ('DPipe', '||'), ('Bang', '!'),
 
       # Bitwise ops
       ('DGreat', '>>'), ('DLess', '<<'),
+      # Oil: ^ is exponent
       ('Amp', '&'), ('Pipe', '|'), ('Caret', '^'), ('Tilde', '~'),
 
       # 11 mutating operators:  =  +=  -=  etc.

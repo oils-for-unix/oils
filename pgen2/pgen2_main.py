@@ -8,243 +8,22 @@ import cStringIO
 import os
 import sys
 
+from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.syntax_asdl import source
+
 from opy.pgen2 import token
 from opy.pgen2 import tokenize
 from opy.pgen2 import driver, parse, pgen, grammar
 
-from opy.opy_main import Symbols, ParseTreePrinter, log
-
-from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen import syntax_asdl
-from _devbuild.gen.syntax_asdl import (
-    source, command, oil_expr, oil_expr_t, oil_word_part, regex
-)
-from _devbuild.gen.types_asdl import lex_mode_e
 from core import alloc
 from core import meta
+from core.util import log
 from frontend import lexer, match, reader
-
-
-def NoSingletonAction(gr, pnode):
-  """Collapse parse tree."""
-  # collapse
-  # hm this was so easy!  Why does it materialize so much then?
-  # Does CPython do it, or only pgen2?
-  # I think you already know
-  children = pnode.children
-  if children is not None and len(children) == 1:
-    return children[0]
-
-  return pnode
-
-
-# I can't get custom actions to work?  I think I would have to understand more
-# how the stack in pgen2/parse.py works.
-
-SEMANTIC_MODE_TRANSITIONS = {}
-
-
-class CalcTransformer(object):
-  
-  def __init__(self, gr):
-    self.number2symbol = gr.number2symbol
-
-  def _AssocBinary(self, children):
-    """For an associative binary operation.
-
-    We don't care if it's (1+2)+3 or 1+(2+3).
-    """
-    assert len(children) >= 3, children
-    # NOTE: opy/compiler2/transformer.py has an interative version of this in
-    # com_binary.
-
-    left, op = children[0], children[1]
-    if len(children) == 3:
-      right = self.Transform(children[2])
-    else:
-      right = self._AssocBinary(children[2:])
-
-    assert isinstance(op.tok, syntax_asdl.token)
-    return oil_expr.Binary(op.tok, self.Transform(left), right)
-
-  def _Trailer(self, base, p_trailer):
-    children = p_trailer.children
-    op_tok = children[0].tok
-
-    if op_tok.id == Id.Op_LParen:
-       p_args = children[1]
-
-       # NOTE: This doesn't take into account kwargs and so forth.
-       if p_args.children is not None:
-         # a, b, c -- every other one is a comma
-         arglist = children[1].children[::2]
-       else:
-         arg = children[1]
-         arglist = [arg]
-       return oil_expr.FuncCall(base, [self.Transform(a) for a in arglist])
-
-    if op_tok.id == Id.Op_LBracket:
-       p_args = children[1]
-
-       # NOTE: This doens't take into account slices
-       if p_args.children is not None:
-         # a, b, c -- every other one is a comma
-         arglist = children[1].children[::2]
-       else:
-         arg = children[1]
-         arglist = [arg]
-       return oil_expr.Subscript(base, [self.Transform(a) for a in arglist])
-
-    if op_tok.id == Id.Expr_Dot:
-      return self._GetAttr(base, nodelist[2])
-
-    raise AssertionError(op_tok)
-
-  def Transform(self, pnode):
-    """Walk the homogeneous parse tree and create a typed AST."""
-    typ = pnode.typ
-    if pnode.tok:
-      value = pnode.tok.val
-    else:
-      value = None
-    tok = pnode.tok
-    children = pnode.children
-
-    if typ in self.number2symbol:  # non-terminal
-      nt_name = self.number2symbol[typ]
-
-      c = '-' if not children else len(children)
-      #log('non-terminal %s %s', nt_name, c)
-
-      if nt_name == 'test_input':
-        # test_input: test NEWLINE* ENDMARKER
-        return self.Transform(children[0])
-
-      elif nt_name == 'expr':
-        # expr: term (('+'|'-') term)*
-        return self._AssocBinary(children)
-
-      elif nt_name == 'term':
-        # term: factor (('*'|'/'|'div'|'mod') factor)*
-        return self._AssocBinary(children)
-
-      elif nt_name == 'factor':
-        # factor: ('+'|'-'|'~') factor | power
-        # the power would have already been reduced
-        assert len(children) == 2, children
-        op, e = children
-        assert isinstance(op.tok, syntax_asdl.token)
-        return oil_expr.Unary(op.tok, self.Transform(e))
-
-      elif nt_name == 'power':
-        # power: atom trailer* ['^' factor]
-
-        # atom is already reduced to a token
-
-        # NOTE: This would be shorter in a recursive style.
-
-        base = self.Transform(children[0])
-        n = len(children)
-        for i in xrange(1, n):
-          pnode = children[i]
-          tok = pnode.tok
-          if tok and tok.id == Id.Arith_Caret:
-            return oil_expr.Binary(tok, base, self.Transform(children[i+1]))
-          base = self._Trailer(base, pnode)
-
-        return base
-
-      elif nt_name == 'array_literal':
-        left_tok = children[0].tok
-
-        # Approximation for now.
-        items = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Lit_Chars
-        ]
-
-        return oil_expr.ArrayLiteral(left_tok, items)
-
-      elif nt_name == 'regex_literal':
-        left_tok = children[0].tok
-
-        # Approximation for now.
-        items = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Expr_Name
-        ]
-
-        return oil_expr.RegexLiteral(left_tok, regex.Concat(items))
-
-      elif nt_name == 'command_sub':
-        left_tok = children[0].tok
-
-        # Approximation for now.
-        items = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Lit_Chars
-        ]
-
-        # TODO: Fix this approximation.
-        words = items
-        return oil_expr.CommandSub(left_tok, command.SimpleCommand(words))
-
-      elif nt_name == 'expr_sub':
-        left_tok = children[0].tok
-
-        return oil_expr.ExprSub(left_tok, self.Transform(children[1]))
-
-      elif nt_name == 'var_sub':
-        left_tok = children[0].tok
-
-        return oil_expr.VarSub(left_tok, self.Transform(children[1]))
-
-      elif nt_name == 'dq_string':
-        left_tok = children[0].tok
-
-        parts = [self.Transform(c) for c in children[1:-1]]
-        return oil_expr.DoubleQuoted(left_tok, parts)
-
-      else:
-        raise AssertionError(nt_name)
-
-    else:  # Terminals should have a token
-      #log('terminal %s', tok)
-
-      if tok.id == Id.Expr_Name:
-        return oil_expr.Var(tok)
-      elif tok.id == Id.Expr_Digits:
-        return oil_expr.Const(tok)
-
-      # Hm just use word_part.Literal for all these?  Or token?
-      # Id.Lit_EscapedChar is assumed to need \ removed on evaluation.
-      elif tok.id in (Id.Lit_Chars, Id.Lit_Other, Id.Lit_EscapedChar):
-        return oil_word_part.Literal(tok)
-      else:
-        raise AssertionError(tok.id)
-
-
-def MakeOilLexer(code_str, arena):
-  arena.PushSource(source.MainFile('pgen2_main'))
-  line_reader = reader.StringLineReader(code_str, arena)
-  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
-  lex = lexer.Lexer(line_lexer, line_reader)
-  return lex
+from oil_lang import expr_parse
 
 
 # Used at grammar BUILD time.
 OPS = {
-    '+': Id.Arith_Plus,
-    '-': Id.Arith_Minus,
-    '*': Id.Arith_Star,
-
-    '/': Id.Arith_Slash,  # floating point division
-    '%': Id.Arith_Percent,
-
-    #'div': Id.Expr_Div,
-
-    '^': Id.Arith_Caret,  # exponent
-
     '(': Id.Op_LParen,
     ')': Id.Op_RParen,
 
@@ -256,30 +35,19 @@ OPS = {
     '{': Id.Op_LBrace,
     '}': Id.Op_RBrace,
 
-    '~': Id.Arith_Tilde,
-    ',': Id.Arith_Comma,
-
-    '==': Id.Arith_DEqual,
-    '!=': Id.Arith_NEqual,
-    '<': Id.Arith_Less,
-    '>': Id.Arith_Great,
-    '<=': Id.Arith_LessEqual,
-    '>=': Id.Arith_GreatEqual,
-
-    '|': Id.Arith_Pipe,
-    '&': Id.Arith_Amp,
-
     '$[': Id.Left_DollarBracket,
     '${': Id.Left_DollarBrace,
     '$(': Id.Left_DollarParen,
     '$/': Id.Left_DollarSlash,
     '@[': Id.Left_AtBracket,
+
+    '.': Id.Expr_Dot,
+
+    # TODO: do we need div= and xor= ?
 }
 
+# TODO: We should be able to remove all these.
 TERMINALS = {
-    # What happens in the grammar when you see NAME | NUMBER
-    # atom: NAME | NUMBER | STRING+
-
     'NAME': Id.Expr_Name,
     'NUMBER': Id.Expr_Digits,
 
@@ -288,37 +56,7 @@ TERMINALS = {
     #'STRING': Id.Expr_Name,
 
     'NEWLINE': Id.Op_Newline,
-
     'ENDMARKER': Id.Eof_Real,
-
-    'Glob_Star': Id.Glob_Star,
-
-    'Op_LBrace': Id.Op_LBrace,
-    'Op_LBracket': Id.Op_LBracket,
-    'Op_LParen': Id.Op_LParen,
-
-    'Op_RBrace': Id.Op_RBrace,
-    # For @[]
-    # Instead of ']', we can also write the name directly
-    'Op_RBracket': Id.Op_RBracket,
-    'Op_RParen': Id.Op_RParen,
-
-    'Left_DoubleQuote': Id.Left_DoubleQuote,
-    'Right_DoubleQuote': Id.Right_DoubleQuote,
-
-    'Lit_Chars': Id.Lit_Chars,
-    'Lit_Other': Id.Lit_Other,
-    'Lit_EscapedChar': Id.Lit_EscapedChar,
-
-    'VSub_DollarName': Id.VSub_DollarName,
-    'VSub_Number': Id.VSub_Number,
-    'Lit_EscapedChar': Id.Lit_EscapedChar,
-
-    'WS_Space': Id.WS_Space,
-
-    # For $//
-    'Arith_Slash': Id.Arith_Slash,
-    'Expr_Name': Id.Expr_Name,
 }
 
 
@@ -344,145 +82,24 @@ if 0:  # unused because the grammar compile keeps track of keywords!
 
 class OilTokenDef(object):
 
+  def __init__(self, arith_ops):
+    self.arith_ops = arith_ops
+
   def GetTerminalNum(self, label):
-    id_ = TERMINALS[label]
+    id_ = TERMINALS.get(label) or getattr(Id, label)
     return id_.enum_id
 
   def GetOpNum(self, value):
-    id_ = OPS[value]
+    id_ = OPS.get(value) or self.arith_ops[value]
     return id_.enum_id
 
 
-def _Classify(gr, tok):
-  # We have to match up what ParserGenerator.make_grammar() did when
-  # calling make_label() and make_first().  See classify() in
-  # opy/pgen2/driver.py.
-
-  # 'x' and 'for' are both tokenized as Expr_Name.  This handles the 'for'
-  # case.
-  if tok.id == Id.Expr_Name:
-    ilabel = gr.keywords.get(tok.val)
-    if ilabel is not None:
-      return ilabel
-
-  # This handles 'x'.
-  typ = tok.id.enum_id
-  ilabel = gr.tokens.get(typ)
-  if ilabel is not None:
-    return ilabel
-
-  #log('NAME = %s', tok.id.name)
-  # 'Op_RBracket' ->
-  id_ = TERMINALS.get(tok.id.name)
-  if id_ is not None:
-    return id_.enum_id
-
-  raise AssertionError('%d not a keyword and not in gr.tokens: %s' % (typ, tok))
-
-
-POP = lex_mode_e.Undefined
-
-# NOTE: Also want something for UNCHANGED?
-# echo $(f(x)) -- you don't change lexer mode on (, but
-#
-# this is NOT expressive enough for:
-#
-# x = func(x, y='default', z={}) {
-#   echo hi
-# }
-
-# That can probably be handled with some state machine.  Or maybe:
-# https://en.wikipedia.org/wiki/Dyck_language
-# When you see "func", start matching () and {}, until you hit a new {.
-# It's not a regular expression.
-
-
-_MODE_TRANSITIONS = {
-    # Expr -> X
-    (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
-    (lex_mode_e.Array, Id.Op_RBracket): POP,
-
-    (lex_mode_e.DQ_Oil, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
-    (lex_mode_e.Regex, Id.Arith_Slash): POP,
-    (lex_mode_e.DQ_Oil, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # "${x|html}"
-    (lex_mode_e.VSub_Oil, Id.Op_RBrace): POP,
-    (lex_mode_e.DQ_Oil, Id.Left_DollarBracket): lex_mode_e.Command,  # "$[echo hi]"
-    (lex_mode_e.Command, Id.Op_RBracket): POP,
-    (lex_mode_e.DQ_Oil, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
-    (lex_mode_e.Expr, Id.Op_RParen): POP,
-
-    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
-    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # ${x|html}
-    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
-    (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
-    (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
-
-    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # x + "foo"
-    (lex_mode_e.DQ_Oil, Id.Right_DoubleQuote): POP,
-
-    # Regex
-    (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
-    (lex_mode_e.CharClass, Id.Op_RBracket): POP,
-
-    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # $/ "foo" /
-    # POP is done above
-
-    (lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ "foo" /
-    # POP is done above
-}
-
-
-# Problem: lex_mode_e.Regex is VERY similar to other lex_mode_e.Expr, except
-# that [[ ]] are tokens
-# Is there a way to express this similarity?
-# Ditto for arrays.
-# [[]] conflicts with nested lists?  Though that is a somewhat rare syntax.
-# [ [a, b], [a, b] ] avoids it.
-
-
-def PushOilTokens(p, lex, gr, debug=False):
-  """Parse a series of tokens and return the syntax tree."""
-  #log('keywords = %s', gr.keywords)
-  #log('tokens = %s', gr.tokens)
-
-  mode = lex_mode_e.Expr
-  mode_stack = [mode]
-
-  while True:
-    tok = lex.Read(mode)
-    log('tok = %s', tok)
-
-    # TODO: Use Kind.Ignored
-    if tok.id == Id.Ignored_Space:
-      continue
-
-    action = _MODE_TRANSITIONS.get((mode, tok.id))
-    if action == POP:
-      mode_stack.pop()
-      mode = mode_stack[-1]
-      log('POPPED to %s', mode)
-    elif action:  # it's an Id
-      new_mode = action
-      mode_stack.append(new_mode)
-      mode = new_mode
-      log('PUSHED to %s', mode)
-
-    # otherwise leave it alone
-
-    #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
-    #  tok.id = KEYWORDS[tok.val]
-    #  log('Replaced with %s', tok.id)
-
-    ilabel = _Classify(gr, tok)
-    #log('tok = %s, ilabel = %d', tok, ilabel)
-    if p.addtoken(tok.id.enum_id, tok, ilabel):
-        if debug:
-            log("Stop.")
-        break
-  else:
-      # We never broke out -- EOF is too soon (how can this happen???)
-      raise parse.ParseError("incomplete input",
-                             type_, value, (prefix, start))
+def MakeOilLexer(code_str, arena):
+  arena.PushSource(source.MainFile('pgen2_main'))
+  line_reader = reader.StringLineReader(code_str, arena)
+  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
+  lex = lexer.Lexer(line_lexer, line_reader)
+  return lex
 
 
 def main(argv):
@@ -497,94 +114,33 @@ def main(argv):
     # For choosing lexer and semantic actions
     grammar_name, _ = os.path.splitext(os.path.basename(grammar_path))
 
-    using_oil_lexer = (grammar_name in ('calc', 'minimal'))
-    #using_oil_lexer = grammar_name in ('calc',)
+    arith_ops = {}
+    for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
+      arith_ops[token_str] = id_
+    #print(self.arith)
 
-    tok_def = OilTokenDef() if using_oil_lexer else None
-
+    tok_def = OilTokenDef(arith_ops)
     pg = pgen.ParserGenerator(grammar_path, tok_def=tok_def)
     gr = pg.make_grammar()
 
-    # Semantic actions are registered in this code.
-    convert = NoSingletonAction
+    arena = alloc.Arena()
+    lex = MakeOilLexer(code_str, arena)
 
-    if using_oil_lexer:
-      arena = alloc.Arena()
-      lex = MakeOilLexer(code_str, arena)
-
-      p = parse.Parser(gr, convert=convert)
-
-      p.setup(gr.symbol2number[start_symbol])
-      try:
-        PushOilTokens(p, lex, gr)
-      except parse.ParseError as e:
-        log('Parse Error: %s', e)
-        return 1
-
-      root_node = p.rootnode
-
-    else:
-      f = cStringIO.StringIO(code_str)
-      tokens = tokenize.generate_tokens(f.readline)
-
-      p = parse.Parser(gr, convert=convert)
-
-      try:
-        root_node = driver.PushTokens(p, tokens, gr, start_symbol)
-      except parse.ParseError as e:
-        # Extract location information and show it.
-        unused, (lineno, offset) = e.context
-        # extra line needed for '\n' ?
-        lines = code_str.splitlines() + ['']
-
-        line = lines[lineno-1]
-        log('  %s', line)
-        log('  %s^', ' '*offset)
-        log('Parse Error: %s', e)
-        return 1
-
-    # Calculate names for pretty-printing.  TODO: Move this into TOK_DEF?
-    names = {}
-
-    if using_oil_lexer:
-      for id_ in (OPS.values() + TERMINALS.values()):
-        k = id_.enum_id
-        assert k < 256, (k, id_)
-        names[k] = id_.name
-    else:
-      # NOTE: Similar work for Python is done in transformer.Init()
-      for k, v in token.tok_name.items():
-          if v == 'NT_OFFSET':
-            continue
-          assert k < 256, (k, v)
-          names[k] = v
-
-    for k, v in gr.number2symbol.items():
-        # eval_input == 256.  Remove?
-        assert k >= 256, (k, v)
-        names[k] = v
-
-    if 1:
-      if isinstance(root_node, parse.PNode):
-        #print(root_node)
-        printer = ParseTreePrinter(names)  # print raw nodes
-        printer.Print(root_node)
-      else:
-        assert isinstance(root_node, oil_expr_t)
-        root_node.PrettyPrint()
+    p = expr_parse.ExprParser(lex, gr, start_symbol=start_symbol)
+    try:
+      ast_node = p.Parse(transform=(grammar_name == 'calc'))
+    except parse.ParseError as e:
+      log('Parse Error: %s', e)
+      return 1
 
     if grammar_name == 'calc':
-      tr = CalcTransformer(gr)
-      ast_root = tr.Transform(root_node)
-      print('')
-      ast_root.PrettyPrint()
-      print('')
+      ast_node.PrettyPrint()
 
   elif action == 'stdlib-test':
     # This shows how deep Python's parse tree is.  It doesn't use semantic
     # actions to prune on the fly!
 
-    import parser
+    import parser  # builtin module
     t = parser.expr('1+2')
     print(t)
     t2 = parser.st2tuple(t)
